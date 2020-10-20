@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "list_proc.h"
 #include "time_proc.h"
 #include "player_pause_proc.h"
+#include "undo_sequencer_proc.h"
 
 #include "undo_lpbs_proc.h"
 
@@ -48,15 +49,18 @@ static void ADD_UNDO_FUNC(LPBs(
                         )
                    )
 {
-	Undo_Add(
-                 window->l.num,
-                 block->l.num,
-                 tracknum,
-                 realline,
-                 CB_CopyLPBs(block->lpbs),
-                 Undo_Do_LPBs,
-                 "LPBs"
-	);
+  UNDO_OPEN_REC();{
+    CALL_ADD_UNDO_FUNC(Seqblock_block_timing_state(block));
+    Undo_Add(
+             window->l.num,
+             block->l.num,
+             tracknum,
+             realline,
+             CB_CopyLPBs(block->lpbs),
+             Undo_Do_LPBs,
+             "LPBs"
+             );
+  }UNDO_CLOSE();
 }
 
 void ADD_UNDO_FUNC(LPBs_CurrPos(

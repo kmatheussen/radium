@@ -1616,7 +1616,7 @@ static void seqtrackgcfinalizer(void *actual_mem_start, void *user_data){
 
 static int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t seqtime, int64_t end_seqtime);
   
-int SEQBLOCK_insert_seqblock_from_state(hash_t *hash, enum ShowAssertionOrThrowAPIException error_type){
+int SEQBLOCK_insert_seqblock_from_state(const hash_t *hash, enum ShowAssertionOrThrowAPIException error_type){
   int seqtracknum = HASH_get_int32(hash, ":seqtracknum");
   if (seqtracknum < 0 || seqtracknum >= root->song->seqtracks.num_elements)
     return SHOW_ERROR(-1, "No seqtrack #%d", seqtracknum);
@@ -1635,61 +1635,93 @@ int SEQBLOCK_insert_seqblock_from_state(hash_t *hash, enum ShowAssertionOrThrowA
   return SEQTRACK_insert_seqblock(seqtrack, seqblock, seqblock->t.time, seqblock->t.time2);
 }
 
-void SEQBLOCK_replace_seqblock(hash_t *hash, bool must_replace_same_id, enum ShowAssertionOrThrowAPIException error_type){
+void SEQBLOCK_replace_seqblocks(const vector_t seqblocks, bool must_replace_same_id, bool use_old_seqblock_pos, enum ShowAssertionOrThrowAPIException error_type){
   R_ASSERT_RETURN_IF_FALSE(must_replace_same_id==true); // must_replace_same_id==false is not implemented (could have implemented it quickly though, but then it wouldn't have been tested)
+
+  int num_seqblocks = seqblocks.num_elements;
   
-  int seqtracknum = HASH_get_int32(hash, ":seqtracknum");
-  if (seqtracknum < 0 || seqtracknum >= root->song->seqtracks.num_elements){
-    SHOW_ERROR(0, "No seqtrack #%d", seqtracknum);
-    return;
-  }
-  
-  struct SeqTrack *seqtrack = (struct SeqTrack*)root->song->seqtracks.elements[seqtracknum];
+  int seqblocknums[num_seqblocks];
+  struct SeqTrack *seqtracks[num_seqblocks];
+  const struct SeqBlock *old_seqblocks[num_seqblocks];
+  struct SeqBlock *new_seqblocks[num_seqblocks];
 
-  int seqblocknum = HASH_get_int32(hash, ":seqblocknum");
-  if (seqblocknum < 0 || seqblocknum >= seqtrack->seqblocks.num_elements){
-    SHOW_ERROR(0, "No seqblock #%d", seqblocknum);
-    return;
-  }
+  VECTOR_FOR_EACH(const hash_t *, hash, &seqblocks){
+    const int i = iterator666;
 
-  const struct SeqBlock *old_seqblock = (const struct SeqBlock*)seqtrack->seqblocks.elements[seqblocknum];
-  SEQBLOCK_update_with_borders(seqtrack, old_seqblock);
-  
-  struct SeqBlock *new_seqblock = SEQBLOCK_create_from_state(seqtrack, seqtracknum, hash, QSet<int64_t>(), error_type, Seqblock_Type::REGULAR);
-  if (new_seqblock==NULL)
-    return;
+    int seqtracknum = HASH_get_int32(hash, ":seqtracknum");
+    if (seqtracknum < 0 || seqtracknum >= root->song->seqtracks.num_elements){
+      SHOW_ERROR(0, "No seqtrack #%d", seqtracknum);
+      return;
+    }
+    
+    seqtracks[i] = (struct SeqTrack*)root->song->seqtracks.elements[seqtracknum];
+    
+    seqblocknums[i] = HASH_get_int32(hash, ":seqblocknum");
+    if (seqblocknums[i] < 0 || seqblocknums[i] >= seqtracks[i]->seqblocks.num_elements){
+      SHOW_ERROR(0, "No seqblock #%d", seqblocknums[i]);
+      return;
+    }
+    
+    old_seqblocks[i] = (const struct SeqBlock*)seqtracks[i]->seqblocks.elements[seqblocknums[i]];
+    SEQBLOCK_update_with_borders(seqtracks[i], old_seqblocks[i]);
+    
+    new_seqblocks[i] = SEQBLOCK_create_from_state(seqtracks[i], seqtracknum, hash, QSet<int64_t>(), error_type, Seqblock_Type::REGULAR);
+    if (new_seqblocks[i]==NULL)
+      return;
+    
+    if (seqtracks[i]->for_audiofiles)
+      R_ASSERT_RETURN_IF_FALSE(new_seqblocks[i]->block==NULL);
+    
+    
+    if (old_seqblocks[i]->id != new_seqblocks[i]->id){
+      SHOW_ERROR(0, "When replacing seqblock #%d in seqtrack #%d, different id for seqblocks. Old id: %d. New id: %d.", seqblocknums[i], seqtracknum, (int)old_seqblocks[i]->id, (int)new_seqblocks[i]->id);
+      return;
+    }
 
-  if (seqtrack->for_audiofiles)
-    R_ASSERT_RETURN_IF_FALSE(new_seqblock->block==NULL);
+    if (seqtracks[i]->for_audiofiles)
+      prepare_remove_sample_from_seqblock(seqtracks[i], old_seqblocks[i], Seqblock_Type::REGULAR);
 
+  }END_VECTOR_FOR_EACH;
 
-  if (old_seqblock->id != new_seqblock->id){
-    SHOW_ERROR(0, "When replacing seqblock #%d in seqtrack #%d, different id for seqblocks. Old id: %d. New id: %d.", seqblocknum, seqtracknum, (int)old_seqblock->id, (int)new_seqblock->id);
-    return;
-  }
-
-  if (seqtrack->for_audiofiles)
-    prepare_remove_sample_from_seqblock(seqtrack, old_seqblock, Seqblock_Type::REGULAR);
   
   {
     radium::PlayerPause pause(is_playing_song());
     radium::PlayerLock lock;
 
-    move_seqblock(new_seqblock, old_seqblock->t.time);
-    set_seqblock_stretch(seqtrack, new_seqblock);
-    
-    seqtrack->seqblocks.elements[seqblocknum] = new_seqblock;
+    for(int i=0;i<num_seqblocks;i++){
+      if (use_old_seqblock_pos)
+        move_seqblock(new_seqblocks[i], old_seqblocks[i]->t.time);
+      
+      set_seqblock_stretch(seqtracks[i], new_seqblocks[i]);
+      
+      seqtracks[i]->seqblocks.elements[seqblocknums[i]] = new_seqblocks[i];      
+    }
 
-    if (seqtrack->for_audiofiles)
-      SEQTRACKPLUGIN_assert_samples2(seqtrack);
-       
-    RT_legalize_seqtrack_timing(seqtrack, NULL);
+    bool has_legalized[root->song->seqtracks.num_elements] = {false};
+    
+    for(int i=0;i<num_seqblocks;i++){
+      int seqtracknum = get_seqtracknum(seqtracks[i]);
+      
+      if (!has_legalized[seqtracknum]){
+        has_legalized[seqtracknum] = true;
+        if (seqtracks[i]->for_audiofiles)
+          SEQTRACKPLUGIN_assert_samples2(seqtracks[i]);
+        RT_legalize_seqtrack_timing(seqtracks[i], NULL);
+      }
+    }
   }
 
-  SEQBLOCK_update_with_borders(seqtrack, new_seqblock);
+  for(int i=0;i<num_seqblocks;i++)
+    SEQBLOCK_update_with_borders(seqtracks[i], new_seqblocks[i]);
+    
   SEQUENCER_update(SEQUPDATE_BLOCKLIST | SEQUPDATE_PLAYLIST); // in case seqblock name is changed
 }
 
+void SEQBLOCK_replace_seqblock(const hash_t *hash, bool must_replace_same_id, bool use_old_seqblock_pos, enum ShowAssertionOrThrowAPIException error_type){
+  vector_t seqblocks = {};
+  VECTOR_push_back(&seqblocks, hash);
+  SEQBLOCK_replace_seqblocks(seqblocks, must_replace_same_id, use_old_seqblock_pos, error_type);
+}
 
 struct SeqTrack *SEQTRACK_create(const hash_t *automation_state, int seqtracknum, double state_samplerate, bool for_audiofiles, bool is_bus){
   if(!for_audiofiles)
@@ -3778,7 +3810,6 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
   
   SEQUENCER_update(SEQUPDATE_EVERYTHING);
 }
-
 
 // Only used by undo/redo
 hash_t *SEQUENCER_get_automations_state(void){

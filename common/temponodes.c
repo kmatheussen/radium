@@ -132,7 +132,7 @@ struct TempoNodes *AddTempoNode(
 	PlaceCopy(&temponode->l.p,p);
 
         ADD_UNDO(TempoNodes_CurrPos(window));
-
+        
         struct TempoNodes *ret = NULL;
         
         if(ListAddElement3_ns(&block->temponodes,&temponode->l)==-1) {
