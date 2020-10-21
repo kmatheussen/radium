@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e 
+#set -e 
 
 export VISUAL="-DUSE_QT_VISUAL=1 -DUSE_GTK_VISUAL=0"
 
@@ -16,6 +16,7 @@ printf "${GREEN}Compiling${LIGHT_CYAN} Radium${NC}...\n"
 start=`date +%s`
 
 ./build_linux_common.sh $@
+ret=$?
 
 end=`date +%s`
 
@@ -26,6 +27,8 @@ printf "          ${LIGHT_CYAN}Radium ${GREEN} compiled.${YELLOW} (${runtime}s)$
 if [ -x "$(command -v kdialog)" ]; then
     kdialog --title "Radium compiled" --passivepopup "Finished compiling radium" 2 &
 fi
+
+exit $ret
 
 #echo "Building finished."
 #echo
