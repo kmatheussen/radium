@@ -46,7 +46,7 @@ extern LANGSPEC int PLUGIN_get_num_visible_effects(SoundPlugin *plugin);
 extern LANGSPEC int PLUGIN_get_effect_format(struct SoundPlugin *plugin, int effect_num);
 extern LANGSPEC const char *PLUGIN_get_new_name_if_name_has_changed(struct SoundPlugin *plugin, const char *effect_name);
 extern LANGSPEC int PLUGIN_get_effect_num(struct SoundPlugin *plugin, const char *effect_name, char **error_message); // if 'error_message' is NULL, the function will display an error message if there is an error.
-extern LANGSPEC const char *PLUGIN_get_effect_name(SoundPlugin *plugin, int effect_num);
+extern LANGSPEC const char *PLUGIN_get_effect_name(const SoundPlugin *plugin, int effect_num);
 extern LANGSPEC const char *PLUGIN_get_effect_description(const struct SoundPluginType *plugin_type, int effect_num);
 extern LANGSPEC void PLUGIN_get_display_value_string(struct SoundPlugin *plugin, int effect_num, char *buffer, int buffersize);
 
@@ -109,10 +109,10 @@ extern LANGSPEC void PLUGIN_recreate_from_state(SoundPlugin *plugin, hash_t *sta
 extern bool PLUGIN_apply_ab_state(SoundPlugin *plugin, hash_t *new_state, hash_t *old_state, radium::Scheduled_RT_functions &rt_functions);
 #endif
 
-extern LANGSPEC hash_t *PLUGIN_get_ab_state(SoundPlugin *plugin);
+extern LANGSPEC hash_t *PLUGIN_get_ab_state(const SoundPlugin *plugin);
 
-extern LANGSPEC hash_t *PLUGIN_get_effects_state(SoundPlugin *plugin);
-extern LANGSPEC hash_t *PLUGIN_get_state(SoundPlugin *plugin);
+extern LANGSPEC hash_t *PLUGIN_get_effects_state(const SoundPlugin *plugin);
+extern LANGSPEC hash_t *PLUGIN_get_state(const SoundPlugin *plugin);
 
 extern LANGSPEC void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects);
 extern LANGSPEC float PLUGIN_get_last_written_effect_from_name(SoundPlugin *plugin, const char *effect_name);

@@ -587,7 +587,7 @@ static void move_moving_chips(MyScene *myscene, float mouse_x, float mouse_y){
 
 void MW_set_selected_chip(Chip *chip){
   printf("MW_set_selected_chip called\n");
-  QList<QGraphicsItem *> das_items = g_mixer->scene.items();
+  const QList<QGraphicsItem *> &das_items = g_mixer->scene.items();
   for (int i = 0; i < das_items.size(); ++i) {
     Chip *chip2 = dynamic_cast<Chip*>(das_items.at(i));
     if(chip2!=NULL && chip2!=chip)
@@ -597,7 +597,7 @@ void MW_set_selected_chip(Chip *chip){
 }
 
 void MW_update_all_chips(void){
-  QList<QGraphicsItem *> das_items = g_mixer->scene.items();
+  const QList<QGraphicsItem *> &das_items = g_mixer->scene.items();
   for (int i = 0; i < das_items.size(); ++i) {
     Chip *chip2 = dynamic_cast<Chip*>(das_items.at(i));
     if(chip2!=NULL){
@@ -696,8 +696,8 @@ bool MW_move_chip_to_slot(struct Patch *patch, float x, float y){
   return move_chip_to_slot(CHIP_get(&g_mixer->scene, patch),
                            x, y);
 }
-  
-static AudioConnection *find_clean_connection_at(MyScene *scene, float x, float y);
+
+static AudioConnection *find_clean_connection_at(const MyScene *scene, float x, float y);
 
 // Also kicks.
 static bool autoconnect_chip(MyScene *myscene, Chip *chip, float x, float y){
@@ -750,10 +750,10 @@ bool MW_autoconnect(struct Patch *patch, float x, float y){
 }
   
 static bool cleanup_a_chip_position(MyScene *myscene){
-  QList<QGraphicsItem *> das_items = g_mixer->scene.items();
+  const QList<QGraphicsItem *> &das_items = g_mixer->scene.items();
 
   for (int i = 0; i < das_items.size(); ++i) {
-    Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
+    const Chip *chip = dynamic_cast<const Chip*>(das_items.at(i));
     if(chip!=NULL){
       Chip *chip_under = MW_get_chip_at(chip->pos().x()+grid_width/2, chip->pos().y()+grid_height/2, chip);
       if(chip_under!=NULL){
@@ -828,16 +828,16 @@ static bool stop_moving_chips(MyScene *myscene, bool is_ctrl_clicking, const QPo
     return false;
 }
 
-Chip *MW_get_chip_at(float x, float y, Chip *except){
+Chip *MW_get_chip_at(float x, float y, const Chip *except){
   int slot_x = get_slot_x(x);
   int slot_y = get_slot_y(y);
 
-  QList<QGraphicsItem *> das_items = g_mixer->scene.items();
+  const QList<QGraphicsItem *> &das_items = g_mixer->scene.items();
 
   for (int i = 0; i < das_items.size(); ++i) {
     Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
     if(chip!=NULL && chip!=except){
-      QPointF pos = chip->pos();
+      const QPointF pos = chip->pos();
       //printf("%d / %d,    %d / %d\n",get_slot_x(pos.x()+grid_width/2), slot_x,    get_slot_y(pos.y()+grid_height/2), slot_y);
       if(get_slot_x(pos.x()+grid_width/2)==slot_x && get_slot_y(pos.y()+grid_height/2)==slot_y)
         return chip;
@@ -847,11 +847,11 @@ Chip *MW_get_chip_at(float x, float y, Chip *except){
   return NULL;
 }
 
-static AudioConnection *find_clean_connection_at(MyScene *scene, float x, float y){
+static AudioConnection *find_clean_connection_at(const MyScene *scene, float x, float y){
   int slot_x = get_slot_x(x);
   int slot_y = get_slot_y(y);
 
-  QList<QGraphicsItem *> das_items = g_mixer->scene.items();
+  const QList<QGraphicsItem *> &das_items = g_mixer->scene.items();
 
   for (int i = 0; i < das_items.size(); ++i) {
     AudioConnection *connection = dynamic_cast<AudioConnection*>(das_items.at(i));
@@ -867,7 +867,7 @@ static AudioConnection *find_clean_connection_at(MyScene *scene, float x, float 
 }
 
 static Chip *get_chip_with_port_at(QGraphicsScene *scene,int x, int y){
-  QList<QGraphicsItem *> das_items = scene->items();
+  const QList<QGraphicsItem *> &das_items = scene->items();
 
   for (int i = 0; i < das_items.size(); ++i) {
     Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
@@ -1019,7 +1019,7 @@ static bool mousepress_delete_connection(MyScene *scene, radium::MouseCycleEvent
   SuperConnection *connection = dynamic_cast<SuperConnection*>(item);
 
   if(connection==NULL){
-    QList<QGraphicsItem *> das_items = g_mixer->scene.items();
+    const QList<QGraphicsItem *> &das_items = g_mixer->scene.items();
     for (int i = 0; i < das_items.size(); ++i) {
       connection = dynamic_cast<SuperConnection*>(das_items.at(i));
       if(connection!=NULL && connection->isVisible() && connection->isUnderMouse()==true)
@@ -1081,7 +1081,7 @@ static bool mouserelease_replace_patch(MyScene *scene, float mouse_x, float mous
 
 static QVector<Chip*> get_selected_chips(void){
   QVector<Chip*> ret;
-  QList<QGraphicsItem *> das_items = g_mixer->scene.items();
+  const QList<QGraphicsItem *> &das_items = g_mixer->scene.items();
 
   for (int i = 0; i < das_items.size(); ++i) {
     Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
@@ -1288,7 +1288,7 @@ static bool g_connections_are_visible = true;
 static bool g_bus_connections_are_visible = false;
 
 static void update_connections_visibility(void){  
-  QList<QGraphicsItem *> das_items = g_mixer->scene.items();
+  const QList<QGraphicsItem *> &das_items = g_mixer->scene.items();
   for(auto *item : das_items){
     SuperConnection *connection = dynamic_cast<SuperConnection*>(item);
     if (connection != NULL){
@@ -2812,7 +2812,7 @@ void MW_econnect(Patch *source, Patch *dest){
 }
 
 bool MW_edisconnect(Patch *source, Patch *dest){
-  QList<QGraphicsItem *> das_items = g_mixer->scene.items();
+  const QList<QGraphicsItem *> &das_items = g_mixer->scene.items();
   for (int i = 0; i < das_items.size(); ++i) {
     EventConnection *connection = dynamic_cast<EventConnection*>(das_items.at(i));
     if(connection!=NULL){
@@ -2845,7 +2845,7 @@ bool MW_are_econnected(Patch *source, Patch *dest){
 
 #if 0
 static bool delete_a_connection(){
-  QList<QGraphicsItem *> das_items = g_mixer->scene.items();
+  const QList<QGraphicsItem *> &das_items = g_mixer->scene.items();
 
   for (int i = 0; i < das_items.size(); ++i) {
     Connection *connection = dynamic_cast<Connection*>(das_items.at(i));
@@ -2870,7 +2870,7 @@ static void MW_cleanup_connections(bool is_loading){
 static bool delete_a_chip(bool is_loading){
   bool ret = false;
   
-  QList<QGraphicsItem *> das_items = g_mixer->scene.items();
+  const QList<QGraphicsItem *> &das_items = g_mixer->scene.items();
 
   UNDO_OPEN_REC();{
     
@@ -2909,7 +2909,7 @@ void MW_cleanup(bool is_loading){
 }
 
 static void get_patches_min_x_y(const vector_t *patches, float &min_x, float &min_y){
-  QList<QGraphicsItem *> das_items = g_mixer->scene.items();
+  const QList<QGraphicsItem *> &das_items = g_mixer->scene.items();
   
   min_x = 0;
   min_y = 0;
@@ -2918,11 +2918,11 @@ static void get_patches_min_x_y(const vector_t *patches, float &min_x, float &mi
   
   for (int i = 0; i < das_items.size(); ++i) {
     
-    Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
+    const Chip *chip = dynamic_cast<const Chip*>(das_items.at(i));
     
     if(chip!=NULL) {
       
-      struct Patch *patch = CHIP_get_patch(chip);
+      const struct Patch *patch = CHIP_get_patch(chip);
       
       if (patches==NULL || VECTOR_is_in_vector(patches, patch)){
         
@@ -2947,7 +2947,7 @@ static void get_patches_min_x_y(const vector_t *patches, float &min_x, float &mi
   }     
 }
 
-static char *get_patch_key(struct Patch *patch){
+static char *get_patch_key(const struct Patch *patch){
   static char *temp = NULL;
   if(temp==NULL)
     temp = (char*)malloc(sizeof(temp) * 128);
@@ -2960,7 +2960,7 @@ static char *get_patch_key(struct Patch *patch){
 
 static hash_t *MW_get_audio_patches_state(const vector_t *patches, bool put_in_array){
 
-  QList<QGraphicsItem *> das_items = g_mixer->scene.items();
+  const QList<QGraphicsItem *> &das_items = g_mixer->scene.items();
 
   hash_t *chips = HASH_create(das_items.size()/2);
 
@@ -2973,11 +2973,11 @@ static hash_t *MW_get_audio_patches_state(const vector_t *patches, bool put_in_a
   int num_chips=0;
   for (int i = 0; i < das_items.size(); ++i) {
     
-    Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
+    const Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
     
     if(chip!=NULL) {
       
-      struct Patch *patch = CHIP_get_patch(chip);
+      const struct Patch *patch = CHIP_get_patch(chip);
       
       if (patches==NULL || VECTOR_is_in_vector(patches, patch)){
         
@@ -3037,37 +3037,42 @@ static bool connection_is_in_patches(SuperConnection *connection, const vector_t
   return false;
 }
 
-static QVector<SuperConnection*> get_connections(void){ 
+static QVector<SuperConnection*> get_connections(bool include_audio, bool include_event){ 
   QVector<SuperConnection*> ret;
   
-  QList<QGraphicsItem *> das_items = g_mixer->scene.items();
+  const QList<QGraphicsItem *> das_items = g_mixer->scene.items();
   
   for (int i = 0; i < das_items.size(); ++i) {
     SuperConnection *connection = dynamic_cast<SuperConnection*>(das_items.at(i));
-    if(connection!=NULL)
-      if(connection->from!=NULL && connection->to!=NULL) // ongoing connections are not real connections.
-        ret.push_back(connection);
+    if (connection!=NULL)
+      if ((include_event && connection->_is_event_connection) || (include_audio && !connection->_is_event_connection))
+        if (connection->from!=NULL && connection->to!=NULL) // ongoing connections are not real connections.
+          ret.push_back(connection);
   }
 
   return ret;
 }
 
-hash_t *MW_get_connections_state(const vector_t *patches){  
-  QList<QGraphicsItem *> das_items = g_mixer->scene.items();
+hash_t *MW_get_connections_state(const vector_t *patches, bool include_audio, bool include_events, bool include_modulator_connections){
+  const QList<QGraphicsItem *> &das_items = g_mixer->scene.items();
 
   hash_t *connections = HASH_create(das_items.size());
 
-  auto super_connections = get_connections();
+  HASH_put_bool(connections, "includes_audio", include_audio);
+  HASH_put_bool(connections, "includes_events", include_events);
+  
+  auto super_connections = get_connections(include_audio, include_events);
   int num_connections = 0;
   
   for(auto *connection : super_connections){
     if (connection_is_in_patches(connection, patches))
       HASH_put_hash_at(connections, "", num_connections++, CONNECTION_get_state(connection, patches));
   }
-  
+
   HASH_put_int(connections, "num_connections", num_connections);
 
-  HASH_put_dyn(connections, "modulator_connections", MODULATORS_get_connections_state());
+  if (include_modulator_connections)
+    HASH_put_dyn(connections, "modulator_connections", MODULATORS_get_connections_state());
 
   return connections;
 }
@@ -3094,7 +3099,7 @@ hash_t *MW_get_state(const vector_t *patches, bool include_ab){
   hash_t *state = HASH_create(6);
 
   HASH_put_hash(state, "chips", MW_get_audio_patches_state(patches, true));
-  HASH_put_hash(state, "connections", MW_get_connections_state(patches));
+  HASH_put_hash(state, "connections", MW_get_connections_state(patches, true, true, true));
   
   if (include_ab)
     HASH_put_hash(state, "ab_state", MW_get_ab_state());
@@ -3132,7 +3137,7 @@ static void MW_create_chips_from_full_state(hash_t *chips, Buses buses, bool is_
 
 // Only used when loading old songs
 static void MW_create_bus_connections_for_all_chips(Buses &buses){
-  QList<QGraphicsItem *> das_items = g_mixer->scene.items();
+  const QList<QGraphicsItem *> &das_items = g_mixer->scene.items();
 
   for (int i = 0; i < das_items.size(); ++i) {
     Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
@@ -3162,14 +3167,17 @@ static void MW_position_chips_from_state(const hash_t *chips, const vector_t *pa
 // Called from undo_mixer_connections.c
 void MW_create_connections_from_state(const hash_t *connections){
   radium::Scheduled_RT_functions rt_functions;
-  CONNECTIONS_replace_all_with_state(&g_mixer->scene, connections, true, rt_functions);
+  CONNECTIONS_replace_all_with_state(&g_mixer->scene, connections,
+                                     true, true, true, true,
+                                     true,
+                                     rt_functions);
 }
 
 static void add_undo_for_all_chip_positions(void){
-  QList<QGraphicsItem *> das_items = g_mixer->scene.items();
+  const QList<QGraphicsItem *> &das_items = g_mixer->scene.items();
 
   for (int i = 0; i < das_items.size(); ++i) {
-    Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
+    const Chip *chip = dynamic_cast<const Chip*>(das_items.at(i));
     if(chip!=NULL)
       ADD_UNDO(ChipPos_CurrPos(CHIP_get_patch(chip)));
   }
@@ -3418,30 +3426,41 @@ static hash_t *apply_ab_patch_state(hash_t *patches_state, hash_t *chips, hash_t
 */
 
 static hash_t *create_ab_state(void){
+  bool include_volume = includeVolumeInMixerConfig();
+  bool include_audio = include_volume || includeAudioConnectionsInMixerConfig();
+  bool include_event = includeEventConnectionsInMixerConfig();
+  bool include_modulator_connections = includeRememberCurrentInstrumentInMixerConfig();
+    
   hash_t *state = HASH_create(5);
 
   HASH_put_int(state, "version", 1);
-  
-  HASH_put_hash(state, "connections", MW_get_connections_state(NULL));
 
-  vector_t *patches = &get_audio_instrument()->patches;
-  hash_t *plugin_ab_states = HASH_create(patches->num_elements);
+  if (include_audio || include_event || include_modulator_connections)
+    HASH_put_hash(state, "connections", MW_get_connections_state(NULL, include_audio, include_event, include_modulator_connections));
 
-  for(int i=0;i<patches->num_elements;i++){
-    struct Patch *patch = (struct Patch*)patches->elements[i];
-    SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
-    if (plugin==NULL){
-      R_ASSERT(false);
-    } else {
-      HASH_put_hash(plugin_ab_states, get_patch_key(patch), PLUGIN_get_ab_state(plugin));
+  if (include_volume || includePanningInMixerConfig() || includeMuteSoloBypassInMixerConfig() || includeSystemEffectsInMixerConfig() || includeInstrumentEffectsInMixerConfig() || includeInstrumentStatesInMixerConfig()) {
+    
+    vector_t *patches = &get_audio_instrument()->patches;
+    hash_t *plugin_ab_states = HASH_create(patches->num_elements);
+    
+    for(int i=0;i<patches->num_elements;i++){
+      struct Patch *patch = (struct Patch*)patches->elements[i];
+      SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+      if (plugin==NULL){
+        R_ASSERT(false);
+      } else {
+        HASH_put_hash(plugin_ab_states, get_patch_key(patch), PLUGIN_get_ab_state(plugin));
+      }
     }
+
+    HASH_put_hash(state, "plugin_ab_states", plugin_ab_states);
   }
+  
+  if (includeMixerStripsConfigurationInMixerConfig())
+    HASH_put_dyn(state, "mixer_strips_configuration", MW_get_mixer_strips_state());
 
-  HASH_put_hash(state, "plugin_ab_states", plugin_ab_states);
-
-  HASH_put_dyn(state, "mixer_strips_configuration", MW_get_mixer_strips_state());
-
-  HASH_put_instrument(state, "current_instrument", getCurrentInstrument());
+  if (includeRememberCurrentInstrumentInMixerConfig())
+    HASH_put_instrument(state, "current_instrument", getCurrentInstrument());
 
   return state;
 }
@@ -3492,79 +3511,20 @@ static bool in_patches(const vector_t *patches, int64_t id){
 
 static void apply_ab_connections_state(hash_t *connections, radium::Scheduled_RT_functions &rt_functions){
 
-  // All the stuff that was done below should now be handled in QM_chip.cpp / SoundProducer.cpp instead when applying graph changes, and in much better ways.
-  CONNECTIONS_replace_all_with_state(&g_mixer->scene, connections, false, rt_functions);
-
+  bool include_audio = root->song->includeAudioConnectionsInMixerConfig;
+  if (include_audio && HASH_has_key(connections, "includes_audio"))
+    include_audio = HASH_get_bool(connections, "includes_audio");
   
-#if 0
-  const vector_t &patches = get_audio_instrument()->patches;
+  bool include_events = root->song->includeEventConnectionsInMixerConfig;
+  if (include_events && HASH_has_key(connections, "includes_events"))
+    include_events = HASH_get_bool(connections, "includes_events");
 
-  vector_t connections_to_create = {0}; // Using vector_t instead of QVector so that the GC won't delete the contents.
-  
-  for(int i=0;i<HASH_get_int(connections, "num_connections");i++) {
-    hash_t *connection_state = HASH_get_hash_at(connections, "", i);
+  if (include_audio || include_events)
+    ADD_UNDO(MixerConnections_CurrPos());
     
-    int64_t id_from = HASH_get_instrument(connection_state, "from_patch");
-    int64_t id_to = HASH_get_instrument(connection_state, "to_patch");
-    bool is_event_connection = HASH_get_bool(connection_state, "is_event_connection");
-
-    if (in_patches(&patches, id_from) && in_patches(&patches, id_to)) {
-      SuperConnection *connection = get_connection(id_from, id_to, is_event_connection);
-
-      if (connection==NULL) {
-
-        // We must delete old connections before creating new connections. If not, we risk creating recursive connections.
-        VECTOR_push_back(&connections_to_create, connection_state);
-        
-        /*
-        CONNECTION_create_from_state(&g_mixer->scene,
-                                     connection_state,
-                                     -1, -1,
-                                     false);
-        connection = get_connection(id_from, id_to, is_event_connection);
-        R_ASSERT_RETURN_IF_FALSE(connection!=NULL);
-        */
-      } else {
-
-        if (HASH_has_key(connection_state, "enabled")){
-          bool is_enabled = HASH_get_bool(connection_state, "enabled");
-          setAudioConnectionEnabled(id_from, id_to, is_enabled, true);
-        }
-
-        if (HASH_has_key(connection_state, "gain")){
-          float gain = HASH_get_float(connection_state, "gain");
-          setAudioConnectionGain(id_from, id_to, gain, true);
-        }
-
-        connection->is_ab_touched = true;
-        
-      }
-    
-    }
-  }
-
-  auto super_connections = get_connections();
-  
-  for(auto *connection : super_connections){
-    
-    if (connection->is_ab_touched==false)
-      CONNECTION_delete_connection(connection);
-    else
-      connection->is_ab_touched=false;
-    
-  }
-
-  VECTOR_FOR_EACH(hash_t *, connection_state, &connections_to_create){
-    int64_t id_from = HASH_get_instrument(connection_state, "from_patch");
-    int64_t id_to = HASH_get_instrument(connection_state, "to_patch");
-    bool is_event_connection = HASH_get_bool(connection_state, "is_event_connection");
-    CONNECTION_create_from_state(&g_mixer->scene,
-                                 connection_state,
-                                 -1, -1,
-                                 false);
-    R_ASSERT_RETURN_IF_FALSE(get_connection(id_from, id_to, is_event_connection) != NULL);
-  }END_VECTOR_FOR_EACH;
-#endif
+  CONNECTIONS_replace_all_with_state(&g_mixer->scene, connections,
+                                     include_audio, include_events, includeVolumeInMixerConfig(), includeModulatorConnectionsInMixerConfig(),
+                                     false, rt_functions);
 }
 
 // 'curr_state' is used to compare states. We skip applying the new state if it isn't different.
@@ -3582,19 +3542,21 @@ static void apply_ab_state(hash_t *state, hash_t *curr_state){
   radium::Scheduled_RT_functions rt_functions;
   
   UNDO_OPEN();{
-    apply_ab_plugin_ab_states(HASH_get_hash(state, "plugin_ab_states"),
-                              HASH_get_hash(curr_state, "plugin_ab_states"),
-                              rt_functions
-                              );
+    if (HASH_has_key(state, "plugin_ab_states") && HASH_has_key(curr_state, "plugin_ab_states"))
+      apply_ab_plugin_ab_states(HASH_get_hash(state, "plugin_ab_states"),
+                                HASH_get_hash(curr_state, "plugin_ab_states"),
+                                rt_functions
+                                );
     
-    apply_ab_connections_state(HASH_get_hash(state, "connections"), rt_functions);
+    if (HASH_has_key(state, "connections"))
+      apply_ab_connections_state(HASH_get_hash(state, "connections"), rt_functions);
 
   }UNDO_CLOSE();
 
-  if (HASH_has_key(state, "mixer_strips_configuration"))
+  if (includeMixerStripsConfigurationInMixerConfig() && HASH_has_key(state, "mixer_strips_configuration"))
     MW_apply_mixer_strips_state(HASH_get_dyn(state, "mixer_strips_configuration"));
 
-  if (HASH_has_key(state, "current_instrument")){
+  if (includeRememberCurrentInstrumentInMixerConfig() && HASH_has_key(state, "current_instrument")){
     instrument_t instrument = HASH_get_instrument(state, "current_instrument");
     if (isLegalInstrument(instrument) && instrumentIsOpen(instrument))
       setCurrentInstrument(instrument, false, false);

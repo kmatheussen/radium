@@ -36,9 +36,8 @@
             show-keybinding-help-window)
 
 (get-procedure-name show-keybinding-help-window)
+(<ra> :mixer-config-num-is-used 6)
 !!#
-
-
 
 
 (define (FROM_C-show-mixer-config-reset-popup-menu num)
@@ -49,6 +48,30 @@
    "-------------"
    "Help keybindings" show-keybinding-help-window
    ))
+
+(define (FROM_C-show-mixer-config-settings-menu)
+  (popup-menu
+   (map (lambda (base)
+          (define base2 (cons "include" (append base (list "in" "mixer" "config"))))
+          (list (string-join (cons "Include" base) " ")
+                :check (eval-string (<-> "(ra:" (string-join base2 "-") ")"))
+                (lambda (val)
+                  (eval-string (<-> "(ra:" (string-join (cons "set" base2) "-") " " (if val "#t" "#f") ")")))))
+        '(("audio" "connections")
+          ("event" "connections")
+          ("volume")
+          ("panning")
+          ("mute" "solo" "bypass")
+          ("system" "effects")
+          ("instrument" "effects")
+          ("instrument" "states")
+          ("mixer" "strips" "configuration")
+          ("remember" "current" "instrument")
+          ("modulator" "connections")
+          ))
+   ))
+  
+  
 
                                                     
 

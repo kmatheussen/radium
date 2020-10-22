@@ -520,7 +520,7 @@ static float get_effect_value(SoundPlugin *plugin, int effect_num, enum ValueFor
 }
 
 
-static const char *get_effect_name(SoundPlugin *plugin, int effect_num){
+static const char *get_effect_name(const SoundPlugin *plugin, int effect_num){
   TypeData *type_data = (struct TypeData*)plugin->type->data;
   return type_data->effect_names[effect_num];
 }

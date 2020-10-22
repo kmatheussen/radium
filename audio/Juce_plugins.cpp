@@ -2081,7 +2081,7 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
 }
 
 
-static void create_state(struct SoundPlugin *plugin, hash_t *state){
+static void create_state(const struct SoundPlugin *plugin, hash_t *state){
   //const MMLock mmLock;
   
   Data *data = (Data*)plugin->data;
@@ -2202,8 +2202,8 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
     });
 }
 
-static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
-  TypeData *type_data = (struct TypeData*)plugin->type->data;
+static const char *get_effect_name(const struct SoundPlugin *plugin, int effect_num){
+  const TypeData *type_data = (const struct TypeData*)plugin->type->data;
   return type_data->effect_names[effect_num];
 }
 

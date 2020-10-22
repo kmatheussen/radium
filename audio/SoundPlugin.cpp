@@ -847,7 +847,7 @@ int PLUGIN_get_effect_num(struct SoundPlugin *plugin, const char *effect_name, c
   return -1;
 }
 
-const char *PLUGIN_get_effect_name(SoundPlugin *plugin, int effect_num){
+const char *PLUGIN_get_effect_name(const SoundPlugin *plugin, int effect_num){
   const struct SoundPluginType *plugin_type = plugin->type;
 
   R_ASSERT_RETURN_IF_FALSE2(effect_num >= 0,"error1");
@@ -2158,7 +2158,7 @@ float PLUGIN_get_effect_value(struct SoundPlugin *plugin,
 }
 
 
-hash_t *PLUGIN_get_effects_state(SoundPlugin *plugin){
+hash_t *PLUGIN_get_effects_state(const SoundPlugin *plugin){
   const SoundPluginType *type=plugin->type;
   hash_t *effects=HASH_create(type->num_effects);
 
@@ -2349,7 +2349,35 @@ void PLUGIN_recreate_from_state(SoundPlugin *plugin, hash_t *state, bool is_load
   }
 }
 
-static const bool g_apply_plugin_state = false; // TODO: Make it configurable.
+static bool use_ab_effect(const SoundPlugin *plugin, int effect_num){
+  const SoundPluginType *type = plugin->type;
+
+  if (effect_num<type->num_effects) {
+    
+    return includeInstrumentEffectsInMixerConfig();
+  
+  } else if (effect_num==get_volume_effectnum(plugin->type)) {
+
+    return includeVolumeInMixerConfig();
+    
+  } else if (effect_num==get_mute_effectnum(plugin->type)) {
+
+    return includeMuteSoloBypassInMixerConfig();
+    
+  } else {
+    
+    switch(effect_num - type->num_effects){
+      case EFFNUM_PAN:
+      case EFFNUM_PAN_ONOFF:
+        return includePanningInMixerConfig();
+      case EFFNUM_SOLO_ONOFF:
+      case EFFNUM_EFFECTS_ONOFF: // i.e. bypass
+        return includeMuteSoloBypassInMixerConfig();
+      default:
+        return includeSystemEffectsInMixerConfig();
+    }
+  }
+}
 
 // Called from the mixer gui. (the a/b/c/d/e/f/g/h buttons in the mixer)
 bool PLUGIN_apply_ab_state(SoundPlugin *plugin, hash_t *new_state, hash_t *old_state, radium::Scheduled_RT_functions &rt_functions){
@@ -2358,16 +2386,23 @@ bool PLUGIN_apply_ab_state(SoundPlugin *plugin, hash_t *new_state, hash_t *old_s
   struct Patch *patch = (struct Patch*)plugin->patch;
   
   int num_effects = type->num_effects+NUM_SYSTEM_EFFECTS;
-  
+
   hash_t *old_values_state = HASH_get_hash(old_state, "values");
   hash_t *new_values_state = HASH_get_hash(new_state, "values");
 
-  if (HASH_get_array_size(new_values_state, "value") != num_effects){
-    addMessage(talloc_format("Old AB state is not compatible with current plugin (%d vs. %d). Can not apply new ab state for \"%s\"\n", HASH_get_array_size(new_values_state, "value"), num_effects, patch->name));
+  int num_effects_in_new_state;
+  
+  if (HASH_has_key(new_state, "num_effects"))
+    num_effects_in_new_state = HASH_get_int32(new_state, "num_effects");
+  else
+    num_effects_in_new_state = HASH_get_array_size(new_values_state, "value");
+
+  if (num_effects_in_new_state != num_effects){
+    addMessage(talloc_format("Old AB state is not compatible with current plugin (%d vs. %d). Can not apply new ab state for \"%s\"\n", num_effects_in_new_state, num_effects, patch->name));
     return false;
   }
 
-  bool apply_plugin_state = g_apply_plugin_state;
+  bool apply_plugin_state = includeInstrumentStatesInMixerConfig() && HASH_has_key(new_state, "plugin_state");
 
   if (apply_plugin_state)
     if (type->recreate_from_state==NULL)
@@ -2378,109 +2413,86 @@ bool PLUGIN_apply_ab_state(SoundPlugin *plugin, hash_t *new_state, hash_t *old_s
   bool ret = false;
   
   for(int i=0;i<num_effects;i++){
-    float old_value = HASH_get_float_at(old_values_state,"value",i);
-    float new_value = HASH_get_float_at(new_values_state,"value",i);
-    if (!equal_floats(old_value, new_value)){
-      if (apply_plugin_state) {
-        if (!has_made_full_undo){
-          has_made_full_undo = true;
-          ADD_UNDO(PluginState(patch, NULL));
+    if (!use_ab_effect(plugin, i))
+      continue;
+
+    bool has_new_value = HASH_has_key_at(new_values_state, "value", i);
+    bool has_old_value = HASH_has_key_at(old_values_state, "value", i);
+    
+    R_ASSERT_NON_RELEASE(has_old_value);
+
+    if (has_new_value && has_old_value) {
+
+      float old_value = HASH_get_float_at(old_values_state,"value",i);
+      float new_value = HASH_get_float_at(new_values_state,"value",i);
+      
+      if (!equal_floats(old_value, new_value)) {
+        if (apply_plugin_state) {
+          if (!has_made_full_undo){
+            has_made_full_undo = true;
+            ADD_UNDO(PluginState(patch, NULL));
+          }
+        } else {
+          ADD_UNDO(AudioEffect_CurrPos2(patch, i, old_value, AE_NO_FLAGS));
         }
-      } else {
-        ADD_UNDO(AudioEffect_CurrPos2(patch, i, old_value, AE_NO_FLAGS));
-      }
 
 #if !defined(RELEASE)
-      printf("Setting %s::%s from %f to %f\n", plugin->patch->name, PLUGIN_get_effect_name(plugin, i), old_value, new_value);
+        printf("Setting %s::%s from %f to %f\n", plugin->patch->name, PLUGIN_get_effect_name(plugin, i), old_value, new_value);
 #endif
-
-      ret = true;
-      
-      rt_functions.add([plugin,i,new_value](){
-          PLUGIN_set_effect_value(plugin, 0, i, new_value, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
-        });
-
-      // To ensure plugin has not been deleted when running the callback.
-      // (a little bit hacky way to solve this, but PLUGIN_apply_ab_state
-      // is not very likely to be called at the same time as a plugin is deleted.)
-      rt_functions.force_next_scheduling_to_wait = true;
-    }
-  }
-
-#if 0
-  // system effects
-  for(int i=type->num_effects;i<num_effects;i++){
-    float value = HASH_get_float_at(values_state,"value",i);
-    if (true)
-      rt_functions.add([plugin,i,value](){
-          printf("Setting %s::%s to %f\n", plugin->patch->name, PLUGIN_get_effect_name(plugin, i), value);
-          PLUGIN_set_effect_value(plugin, 0, i, value, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
-        });
-    else
-      PLUGIN_set_effect_value(plugin, 0, i, value, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
-  }
-
-  // plugin effects
-  if (false == type->state_contains_effect_values) {
-
-    if (type->num_effects > 0) {
-      float values[type->num_effects];
-      
-      for(int i=0;i<type->num_effects;i++)
-        values[i] = HASH_get_float_at(values_state,"value",i);
-      
-      {
-        radium::PlayerLock lock;
         
-        for(int i=0;i<type->num_effects;i++){
-          PLAYER_maybe_pause_lock_a_little_bit(i);
-          PLUGIN_set_effect_value(plugin, 0, i, values[i], STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
-        }
+        ret = true;
+        
+        rt_functions.add([plugin,i,new_value](){
+            PLUGIN_set_effect_value(plugin, 0, i, new_value, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+          });
+        
+        // To ensure plugin has not been deleted when running the callback.
+        // (a little bit hacky way to solve this, but PLUGIN_apply_ab_state
+        // is not very likely to be called at the same time as a plugin is deleted.)
+        rt_functions.force_next_scheduling_to_wait = true;
       }
     }
-    
-  } else {
-    
-    R_ASSERT_NON_RELEASE(type->recreate_from_state!=NULL);
-    
   }
-#endif
-  
+
   if (apply_plugin_state){
-    if (HASH_has_key(new_state, "plugin_state")) {
-      R_ASSERT_RETURN_IF_FALSE2(type->recreate_from_state!=NULL, ret);
-      if (!has_made_full_undo){
-        has_made_full_undo = true;
-        ADD_UNDO(PluginState(patch, NULL));
-      }
-      PLUGIN_recreate_from_state(plugin, HASH_get_hash(new_state, "plugin_state"), false);
-      ret = true;
+    R_ASSERT_RETURN_IF_FALSE2(type->recreate_from_state!=NULL, ret);
+    R_ASSERT(HASH_has_key(new_state, "plugin_state"));
+    if (!has_made_full_undo){
+      has_made_full_undo = true;
+      ADD_UNDO(PluginState(patch, NULL));
     }
+    PLUGIN_recreate_from_state(plugin, HASH_get_hash(new_state, "plugin_state"), false);
+    ret = true;
   }
 
   return ret;
 }
 
-// Called from the mixer gui. (the a/b/c/d/e/f/g/h buttons in the mixer)
-hash_t *PLUGIN_get_ab_state(SoundPlugin *plugin){
-  hash_t *state = HASH_create(2);
+// Called from the mixer gui. (the a/b/c/d/e/f/g/h buttons in the mixer only, not the a/b/c/etc. buttons in the instrument widget)
+hash_t *PLUGIN_get_ab_state(const SoundPlugin *plugin){
+  hash_t *state = HASH_create(3);
 
-  SoundPluginType *type = plugin->type;
+  const SoundPluginType *type = plugin->type;
   
   int num_effects = type->num_effects+NUM_SYSTEM_EFFECTS;
     
   hash_t *values_state = HASH_create(num_effects);
 
   int start_effectnum = 0;
-  if (type->state_contains_effect_values)
+  if (includeInstrumentStatesInMixerConfig() && type->state_contains_effect_values)
+    start_effectnum = type->num_effects;
+  else if (!includeInstrumentEffectsInMixerConfig())
     start_effectnum = type->num_effects;
   
-  for(int n=start_effectnum;n<num_effects;n++)
-    HASH_put_float_at(values_state, "value", n, plugin->stored_effect_values_native[n]);
-    
+  for(int n=start_effectnum;n<num_effects;n++){
+    if (use_ab_effect(plugin, n))
+      HASH_put_float_at(values_state, "value", n, plugin->stored_effect_values_native[n]);
+  }
+
+  HASH_put_int(state, "num_effects", num_effects);
   HASH_put_hash(state, "values", values_state);
 
-  if (g_apply_plugin_state){
+  if (includeInstrumentStatesInMixerConfig()){
     if(type->create_state!=NULL && type->recreate_from_state!=NULL){
       hash_t *plugin_state = HASH_create(5);
       type->create_state(plugin, plugin_state);
@@ -2491,7 +2503,7 @@ hash_t *PLUGIN_get_ab_state(SoundPlugin *plugin){
   return state;
 }
 
-hash_t *PLUGIN_get_state(SoundPlugin *plugin){
+hash_t *PLUGIN_get_state(const SoundPlugin *plugin){
   const SoundPluginType *type=plugin->type;
 
   hash_t *state=HASH_create(5);

@@ -377,7 +377,7 @@ static int get_effect_format(struct SoundPlugin *plugin, int effect_num){
   return EFFECT_FORMAT_INT;
 }
 
-static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
+static const char *get_effect_name(const struct SoundPlugin *plugin, int effect_num){
   switch(effect_num){
 
 #define c(a,b) case a: return b

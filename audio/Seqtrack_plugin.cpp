@@ -2605,7 +2605,7 @@ static void called_after_plugin_has_been_created(const SoundPluginType *plugin_t
   plugin->RT_input_latency_manifests_into_output_latency = false;
 }
 
-static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
+static const char *get_effect_name(const struct SoundPlugin *plugin, int effect_num){
   return "Enable piping";
 }
 

@@ -1322,7 +1322,7 @@ static int get_effect_format(struct SoundPlugin *plugin, int effect_num){
   }
 }
 
-static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
+static const char *get_effect_name(const struct SoundPlugin *plugin, int effect_num){
   
   switch(effect_num){
 
@@ -1416,7 +1416,7 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
   delete modulator;
 }
 
-static void create_state(struct SoundPlugin *plugin, hash_t *state){
+static void create_state(const struct SoundPlugin *plugin, hash_t *state){
   R_ASSERT_RETURN_IF_FALSE(state!=NULL);
 
   Modulator *modulator = static_cast<Modulator*>(plugin->data);

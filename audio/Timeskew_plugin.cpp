@@ -123,7 +123,7 @@ static float get_timeskew_effect_value(struct SoundPlugin *plugin, int effect_nu
     return data->timeskew;
 }
 
-static const char *get_timeskew_effect_name(struct SoundPlugin *plugin, int effect_num){
+static const char *get_timeskew_effect_name(const struct SoundPlugin *plugin, int effect_num){
   if (effect_num==0)
     return "Skew";
   else

@@ -2520,6 +2520,100 @@ bool mixerConfigNumIsUsed(int num){
   return MW_ab_is_used(num);
 }
 
+bool includeAudioConnectionsInMixerConfig(void){
+  return root->song->includeAudioConnectionsInMixerConfig;  
+}
+
+void setIncludeAudioConnectionsInMixerConfig(bool doit){
+  root->song->includeAudioConnectionsInMixerConfig = doit;
+}
+
+bool includeEventConnectionsInMixerConfig(void){
+  return root->song->includeEventConnectionsInMixerConfig;
+}
+
+void setIncludeEventConnectionsInMixerConfig(bool doit){
+  root->song->includeEventConnectionsInMixerConfig = doit;
+}
+
+bool includeVolumeInMixerConfig(void){
+  return root->song->includeVolumeInMixerConfig;
+}
+
+void setIncludeVolumeInMixerConfig(bool doit){
+  root->song->includeVolumeInMixerConfig = doit;
+}
+
+bool includePanningInMixerConfig(void){
+  return root->song->includePanningInMixerConfig;
+}
+
+void setIncludePanningInMixerConfig(bool doit){
+  root->song->includePanningInMixerConfig = doit;
+}
+
+bool includeMuteSoloBypassInMixerConfig(void){
+  return root->song->includeMuteSoloBypassInMixerConfig;
+}
+
+void setIncludeMuteSoloBypassInMixerConfig(bool doit){
+  root->song->includeMuteSoloBypassInMixerConfig = doit;
+}
+
+
+bool includeSystemEffectsInMixerConfig(void){
+  return root->song->includeSystemEffectsInMixerConfig;
+}
+
+void setIncludeSystemEffectsInMixerConfig(bool doit){
+  root->song->includeSystemEffectsInMixerConfig = doit;
+}
+
+
+bool includeInstrumentEffectsInMixerConfig(void){
+  return root->song->includeInstrumentEffectsInMixerConfig;
+}
+
+void setIncludeInstrumentEffectsInMixerConfig(bool doit){
+  root->song->includeInstrumentEffectsInMixerConfig = doit;
+}
+
+bool includeInstrumentStatesInMixerConfig(void){
+  return root->song->includeInstrumentStatesInMixerConfig;
+}
+
+void setIncludeInstrumentStatesInMixerConfig(bool doit){
+  root->song->includeInstrumentStatesInMixerConfig = doit;
+}
+
+bool includeMixerStripsConfigurationInMixerConfig(void){
+  return root->song->includeMixerStripsConfigurationInMixerConfig;
+}
+
+void setIncludeMixerStripsConfigurationInMixerConfig(bool doit){
+  root->song->includeMixerStripsConfigurationInMixerConfig = doit;
+}
+
+bool includeRememberCurrentInstrumentInMixerConfig(void){
+  return root->song->includeRememberCurrentInstrumentInMixerConfig;
+}
+
+void setIncludeRememberCurrentInstrumentInMixerConfig(bool doit){
+  root->song->includeRememberCurrentInstrumentInMixerConfig = doit;
+}
+
+bool includeModulatorConnectionsInMixerConfig(void){
+  return root->song->includeModulatorConnectionsInMixerConfig;
+}
+
+void setIncludeModulatorConnectionsInMixerConfig(bool doit){
+  root->song->includeModulatorConnectionsInMixerConfig = doit;
+}
+
+
+
+
+
 // modulators
 
 instrument_t createModulator(void){

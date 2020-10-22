@@ -108,7 +108,7 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
   V_free(plugin->data);
 }
 
-static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
+static const char *get_effect_name(const struct SoundPlugin *plugin, int effect_num){
   return "Volume";
 }
 
