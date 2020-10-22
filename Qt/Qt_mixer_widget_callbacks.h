@@ -278,6 +278,8 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget, radium::Timer{
     };
 
     ab_reset->setText("reset.svg");
+    
+    ab_settings_button->setText("settings.svg");
       
     zoomreset_button->_show_popup_menu = [](){
       S7CALL2(void_void,"FROM_C-show-mixer-zoom-reset-popup-menu");
@@ -770,8 +772,12 @@ public:
 
 public slots:
 
-  void on_ab_reset_clicked(){
+  void on_ab_reset_clicked(void){
     MW_reset_ab(-1);
+  }
+
+  void on_ab_settings_button_clicked(void){
+    S7CALL2(void_void,"FROM_C-show-mixer-config-settings-menu");
   }
   
   void on_ab_a_clicked(){ab_rightclicked(0);}

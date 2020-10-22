@@ -749,11 +749,11 @@ static void cleanup_send_plugin_data(SoundPlugin *plugin){
   update_all_send_receivers();
 }
 
-static void create_send_state(struct SoundPlugin *plugin, hash_t *state){
+static void create_send_state(const struct SoundPlugin *plugin, hash_t *state){
   static_cast<SendData*>(plugin->data)->create_state(state);
 }
 
-static void create_receiver_state(struct SoundPlugin *plugin, hash_t *state){
+static void create_receiver_state(const struct SoundPlugin *plugin, hash_t *state){
   static_cast<ReceiveData*>(plugin->data)->create_state(state);  
 }
 

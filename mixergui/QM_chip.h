@@ -753,7 +753,7 @@ extern void CHIP_get_note_indicator_coordinates(int &x1, int &y1, int &x2, int &
 extern void CHIP_kick_left(Chip *chip);
 extern void CHIP_kick_right(Chip *chip);
 
-extern Chip *find_chip_for_plugin(QGraphicsScene *scene, SoundPlugin *plugin);
+extern Chip *find_chip_for_plugin(const QGraphicsScene *scene, const SoundPlugin *plugin);
 extern bool CHIP_connect_chips(QGraphicsScene *scene, Chip *from, Chip *to, ConnectionType connection_type);
 extern bool CHIP_connect_chips(QGraphicsScene *scene, SoundPlugin *from, SoundPlugin *to, ConnectionType connection_type);
 extern bool CHIP_disconnect_chips(QGraphicsScene *scene, Chip *from, Chip *to);
@@ -807,12 +807,15 @@ void CHIP_add_chip_to_connection_sequence(QGraphicsScene *scene, Chip *before, C
 //void CONNECTION_create_from_state2(QGraphicsScene *scene, hash_t *state, int64_t patch_id_old, int64_t patch_id_new, int64_t patch_id_old2, int64_t patch_id_new2, bool all_patches_are_always_supposed_to_be_here);
 //void CONNECTION_create_from_state(QGraphicsScene *scene, hash_t *state, int64_t patch_id_old, int64_t patch_id_new);
 
-void CONNECTIONS_create_from_state(QGraphicsScene *scene, const hash_t *connections,
+void CONNECTIONS_create_from_state(QGraphicsScene *scene, const hash_t *connections,                                   
                                    instrument_t patch_id_old, instrument_t patch_id_new,
                                    instrument_t patch_id_old2, instrument_t patch_id_new2
                                    );
 
-void CONNECTIONS_replace_all_with_state(QGraphicsScene *scene, const hash_t *connections, bool all_patches_are_always_supposed_to_be_here, radium::Scheduled_RT_functions &rt_functions);
+void CONNECTIONS_replace_all_with_state(QGraphicsScene *scene, const hash_t *connections,
+                                        bool include_audio, bool include_events, bool include_connection_gain, bool include_modulator_connections,
+                                        bool all_patches_are_always_supposed_to_be_here,
+                                        radium::Scheduled_RT_functions &rt_functions);
 
 void CONNECTIONS_create_from_presets_state(QGraphicsScene *scene, const hash_t *connections,
                                            const vector_t *patches

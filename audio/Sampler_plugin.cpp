@@ -3274,7 +3274,7 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
   delete_data(data);
 }
 
-static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
+static const char *get_effect_name(const struct SoundPlugin *plugin, int effect_num){
   switch(effect_num){
   case EFF_STARTPOS:
     return "Start Position";
@@ -3443,7 +3443,7 @@ static QString get_final_embedded_filename(QString org_filename, QString new_fil
 }
 */
 
-static void create_state(struct SoundPlugin *plugin, hash_t *state);
+static void create_state(const struct SoundPlugin *plugin, hash_t *state);
   
 static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool is_loading){
   {
@@ -3485,7 +3485,7 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
   //  DISK_delete_base64_file(filename);
 }
 
-static void create_state(struct SoundPlugin *plugin, hash_t *state){
+static void create_state(const struct SoundPlugin *plugin, hash_t *state){
   R_ASSERT_RETURN_IF_FALSE(state!=NULL);
   
   Data *data=(Data*)plugin->data;

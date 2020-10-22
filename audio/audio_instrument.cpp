@@ -1293,13 +1293,13 @@ static void AUDIO_handle_fx_when_a_patch_has_been_replaced(const struct Patch *o
   ValidateCursorPos(root->song->tracker_windows);
 }
 
-hash_t *AUDIO_get_audio_patch_state(struct Patch *patch){
+hash_t *AUDIO_get_audio_patch_state(const struct Patch *patch){
   hash_t *state=HASH_create(4);
 
   R_ASSERT_RETURN_IF_FALSE2(patch->is_usable, NULL);
   R_ASSERT_RETURN_IF_FALSE2(patch->patchdata != NULL, NULL);
   
-  SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+  const SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
   
   /**
    *

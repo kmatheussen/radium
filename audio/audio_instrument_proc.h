@@ -20,7 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 struct SoundPlugin;
 
-extern LANGSPEC hash_t *AUDIO_get_audio_patch_state(struct Patch *patch);
+extern LANGSPEC hash_t *AUDIO_get_audio_patch_state(const struct Patch *patch);
 extern LANGSPEC void AUDIO_set_patch_attributes(struct Patch *patch, void *patchdata);
 extern LANGSPEC bool AUDIO_InitPatch2(struct Patch *patch, const char *type_name, const char *plugin_name, hash_t *state, bool is_loading_song, bool set_as_current, float x, float y);
 extern LANGSPEC int AUDIO_initInstrumentPlugIn(struct Instruments *instrument);

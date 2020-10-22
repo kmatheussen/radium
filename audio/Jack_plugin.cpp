@@ -337,7 +337,7 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
   V_free(data);
 }
 
-static void create_state(struct SoundPlugin *plugin, hash_t *state){
+static void create_state(const struct SoundPlugin *plugin, hash_t *state){
   if(plugin->type->num_outputs>0) {
     for(int i=0 ; i<plugin->type->num_outputs ; i++)
       HASH_put_chars_at(state, "input_portname", i, JACK_get_name(plugin,i));
@@ -553,8 +553,8 @@ void create_jack_plugins(void){
   PR_add_plugin_type(&system_out_type8);
 }
 
-const char *JACK_get_name(SoundPlugin *plugin, int portnum){
-  Data *data = static_cast<Data*>(plugin->data);
+const char *JACK_get_name(const SoundPlugin *plugin, int portnum){
+  const Data *data = static_cast<Data*>(plugin->data);
 
   if(plugin->type->num_outputs>0){
     if (data->input_ports[portnum]!=NULL){

@@ -367,7 +367,7 @@ typedef struct SoundPluginType{
 
   int (*get_effect_format)(struct SoundPlugin *plugin, int effect_num); // Must return one of the EFFECT_* values above.
 
-  const char *(*get_effect_name)(struct SoundPlugin *plugin, int effect_num); // The effect name is used as effect id. Two effects can not have the same name. The returned name is already stored somewhere in memory so we don't have to care about gc-safety.
+  const char *(*get_effect_name)(const struct SoundPlugin *plugin, int effect_num); // The effect name is used as effect id. Two effects can not have the same name. The returned name is already stored somewhere in memory so we don't have to care about gc-safety.
 
   // This functions is called if SoundPluginType->effect_is_RT(effect_num) returns false
   void (*set_effect_value)(struct SoundPlugin *plugin, int block_delta_time, int effect_num, float value, enum ValueFormat value_format, FX_when when); // Can be called from any thread. Player lock is held.
@@ -381,7 +381,7 @@ typedef struct SoundPluginType{
   void (*hide_gui)(struct SoundPlugin *plugin);
 
   void (*recreate_from_state)(struct SoundPlugin *plugin, hash_t *state, bool is_loading); // Optional function. Called after plugin has been created. Note that "state" is the same variable that is sent to "create_plugin_data", but this function is called AFTER the effect values have been set. It makes sense to set state_contains_effect_values=true if 'recreate_from_state' creates and recreates all effects. Note that this function is also called when changing a/b value (where we prefer efficient operation and non-stuttering sound), so it might be a good idea to do "if(HASH_equal(state, create_state())) return;" in the top of the function.
-  void (*create_state)(struct SoundPlugin *plugin, hash_t *state);
+  void (*create_state)(const struct SoundPlugin *plugin, hash_t *state);
 
   // Presets (optional)
   int (*get_num_programs)(struct SoundPlugin *plugin);
@@ -655,6 +655,13 @@ static inline enum ColorNums get_effect_color(const SoundPlugin *plugin, int eff
     return (enum ColorNums)(start + ((effect_num - plugin->type->num_effects) % len));
   else
     return (enum ColorNums)(start + (effect_num % len));
+}
+
+static inline int get_volume_effectnum(const SoundPluginType *type){
+  if (type->num_outputs==0)
+    return type->num_effects + EFFNUM_INPUT_VOLUME;
+  else
+    return type->num_effects + EFFNUM_VOLUME;
 }
 
 static inline int get_mute_effectnum(const SoundPluginType *type){

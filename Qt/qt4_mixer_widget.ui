@@ -64,6 +64,16 @@
        </widget>
       </item>
       <item>
+       <widget class="QToolButton" name="ab_settings_button">
+        <property name="toolTip">
+         <string>Configure A/B settings</string>
+        </property>
+        <property name="text">
+         <string>s</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QCheckBox" name="ab_a">
         <property name="toolTip">
          <string>Select setting A</string>
@@ -472,8 +482,8 @@
  <resources/>
  <connections/>
  <buttongroups>
-  <buttongroup name="buttonGroup"/>
   <buttongroup name="buttonGroup_4"/>
   <buttongroup name="buttonGroup_5"/>
+  <buttongroup name="buttonGroup"/>
  </buttongroups>
 </ui>

@@ -110,7 +110,7 @@ void MW_set_autopos(double *x, double *y);
   
 bool MW_move_chip_to_slot(Chip *chip, float x, float y);
   
-Chip *MW_get_chip_at(float x, float y, Chip *except);
+Chip *MW_get_chip_at(float x, float y, const Chip *except);
 
 void MW_set_selected_chip(Chip *chip);
 
@@ -194,7 +194,7 @@ extern LANGSPEC void MW_get_slotted_x_y(float from_x, float from_y, float *x, fl
 extern LANGSPEC void MW_get_curr_mixer_slot(float &x, float &y);
 #endif
 
-extern LANGSPEC hash_t *MW_get_connections_state(const vector_t *patches);
+extern LANGSPEC hash_t *MW_get_connections_state(const vector_t *patches, bool include_audio, bool include_event, bool include_modulator_connections);
 extern LANGSPEC hash_t *MW_get_state(const vector_t *patches, bool include_ab);
 extern LANGSPEC void MW_create_connections_from_state(const hash_t *connections);
 extern LANGSPEC void MW_create_connections_from_state_and_replace_patch(const hash_t *connections, int patch_id_old, int patch_id_new);

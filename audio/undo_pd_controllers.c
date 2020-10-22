@@ -55,7 +55,7 @@ static void Undo_PdControllers(
   
   undo_ae->patch = patch;
   undo_ae->state = HASH_create(plugin->type->num_effects);
-  PD_create_controllers_from_state(plugin, undo_ae->state);
+  PD_put_controllers_to_state(plugin, undo_ae->state);
 
   printf("********* Storing pd controllers undo.\n");
 
@@ -90,7 +90,7 @@ static void *Undo_Do_PdControllers(
   R_ASSERT_RETURN_IF_FALSE2(plugin!=NULL, pointer);
   
   hash_t *new_state = HASH_create(plugin->type->num_effects);
-  PD_create_controllers_from_state(plugin, new_state);
+  PD_put_controllers_to_state(plugin, new_state);
 
   printf("Calling Undo_do for Pd controllers\n");
 

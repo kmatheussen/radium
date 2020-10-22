@@ -983,7 +983,7 @@ static QTemporaryFile *get_pdfile_from_state(hash_t *state){
 }
 
 // http://www.java2s.com/Code/Cpp/Qt/Readtextfilelinebyline.htm
-static void put_pdfile_into_state(SoundPlugin *plugin, QFile *file, hash_t *state){
+static void put_pdfile_into_state(const SoundPlugin *plugin, QFile *file, hash_t *state){
   Data *data=(Data*)plugin->data;
   void *request;
   PLAYER_lock();{
@@ -1125,7 +1125,7 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, struct Sound
   Data *data = create_data(pdfile, plugin, sample_rate, block_size);
 
   if(state!=NULL)
-    PD_recreate_controllers_from_state(plugin, state);
+    PD_put_controllers_to_state(plugin, state);
 
   PLAYER_lock();{
     data->next = g_instances;    
@@ -1181,7 +1181,7 @@ static int get_effect_format(struct SoundPlugin *plugin, int effect_num){
   return controller->type;
 }
 
-static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
+static const char *get_effect_name(const struct SoundPlugin *plugin, int effect_num){
   static char **notused_names = NULL;
 
   if(notused_names==NULL){
@@ -1294,7 +1294,7 @@ void PD_recreate_controllers_from_state(SoundPlugin *plugin, const hash_t *state
     GFX_update_instrument_widget((struct Patch*)patch);
 }
 
-void PD_create_controllers_from_state(SoundPlugin *plugin, hash_t *state){
+void PD_put_controllers_to_state(const SoundPlugin *plugin, hash_t *state){
   Data *data=(Data*)plugin->data;
 
   int i;
@@ -1313,11 +1313,11 @@ void PD_create_controllers_from_state(SoundPlugin *plugin, hash_t *state){
   }
 }
 
-static void create_state(struct SoundPlugin *plugin, hash_t *state){
+static void create_state(const struct SoundPlugin *plugin, hash_t *state){
   printf("\n\n\n ********** CREATE_STATE ************* \n\n\n");
   Data *data = (Data*)plugin->data;
 
-  PD_create_controllers_from_state(plugin, state);
+  PD_put_controllers_to_state(plugin, state);
 
   put_pdfile_into_state(plugin, data->pdfile, state);
 }

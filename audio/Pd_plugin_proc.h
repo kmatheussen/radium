@@ -25,8 +25,8 @@ extern LANGSPEC Pd_Controller *PD_get_controller(struct SoundPlugin *plugin, int
 extern LANGSPEC void PD_set_qtgui(struct SoundPlugin *plugin, void *qtgui);
 extern LANGSPEC void PD_delete_controller(struct SoundPlugin *plugin, int controller_num);
 
+extern LANGSPEC void PD_put_controllers_to_state(const struct SoundPlugin *plugin, hash_t *state);
 extern LANGSPEC void PD_recreate_controllers_from_state(struct SoundPlugin *plugin, const hash_t *state);
-extern LANGSPEC void PD_create_controllers_from_state(struct SoundPlugin *plugin, hash_t *state);
 
 extern LANGSPEC void RT_PD_set_absolute_time(int64_t time);
 extern LANGSPEC void RT_PD_set_line(int64_t time, int64_t time_line, int line);

@@ -532,7 +532,7 @@ bool FLUIDSYNTH_set_new_preset(SoundPlugin *plugin, filepath_t sf2_file, int ban
   return true;
 }
 
-static void create_state(struct SoundPlugin *plugin, hash_t *state);
+static void create_state(const struct SoundPlugin *plugin, hash_t *state);
 
 static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool is_loading){
   {
@@ -558,7 +558,7 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
   //  DISK_delete_base64_file(filename);
 }
 
-static void create_state(struct SoundPlugin *plugin, hash_t *state){
+static void create_state(const struct SoundPlugin *plugin, hash_t *state){
   Data *data=(Data*)plugin->data;
 
   filepath_t filepath = data->filename.get();
@@ -600,7 +600,7 @@ const wchar_t *FLUIDSYNTH_get_filename_display(struct SoundPlugin *plugin){
                        STRING_create(s2));
 }
 
-static const char *get_effect_name(struct SoundPlugin *plugin_type, int effect_num){
+static const char *get_effect_name(const struct SoundPlugin *plugin_type, int effect_num){
   switch(effect_num){
   case EFF_PITCH:
     return "Pitch";

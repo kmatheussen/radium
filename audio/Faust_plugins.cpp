@@ -354,7 +354,7 @@ static void dev_get_display_value_string(SoundPlugin *plugin, int effect_num, ch
   get_display_value_string2(data, effect_num, buffer, buffersize);
 }
 
-static void create_state(struct SoundPlugin *plugin, hash_t *state){
+static void create_state(const struct SoundPlugin *plugin, hash_t *state){
   //printf("\n\n\n ********** CREATE_STATE ************* \n\n\n");
   Devdata *devdata = (Devdata*)plugin->data;
 
@@ -421,7 +421,7 @@ static int dev_get_effect_format(struct SoundPlugin *plugin, int effect_num){
   return get_effect_format2(data, effect_num);
 }
 
-static const char *dev_get_effect_name(struct SoundPlugin *plugin, int effect_num){
+static const char *dev_get_effect_name(const struct SoundPlugin *plugin, int effect_num){
   Devdata *devdata = (Devdata*)plugin->data;
   Data *data = devdata->reply.data;
   

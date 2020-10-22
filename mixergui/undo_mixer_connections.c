@@ -53,7 +53,7 @@ static void Undo_MixerConnections(
                              wblock->l.num,
                              wblock->wtrack->l.num,
                              wblock->curr_realline,
-                             MW_get_connections_state(NULL),
+                             MW_get_connections_state(NULL, true, true, true),
                              Undo_Do_MixerConnections,
                              "Mixer connections"
                              );
@@ -73,7 +73,7 @@ static void *Undo_Do_MixerConnections(
 	void *pointer
 ){
 
-  hash_t *current_state = MW_get_connections_state(NULL);
+  hash_t *current_state = MW_get_connections_state(NULL, true, true, true);
   MW_create_connections_from_state(pointer);
 
   return current_state;

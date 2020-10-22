@@ -3575,6 +3575,18 @@ struct Song{
         bool RT_mute_plugin_MIDI_when_muted; // must hold player lock when writing.
         bool RT_send_plugin_MIDI_through_when_bypassed; // must hold player lock when writing.
         bool RT_implicitly_mute_plugin_MIDI; // must hold player lock when writing.
+
+        bool includeAudioConnectionsInMixerConfig;
+        bool includeEventConnectionsInMixerConfig;
+        bool includeVolumeInMixerConfig;
+        bool includePanningInMixerConfig;
+        bool includeMuteSoloBypassInMixerConfig;
+        bool includeSystemEffectsInMixerConfig;
+        bool includeInstrumentEffectsInMixerConfig;
+        bool includeInstrumentStatesInMixerConfig;
+        bool includeMixerStripsConfigurationInMixerConfig;
+        bool includeRememberCurrentInstrumentInMixerConfig;
+        bool includeModulatorConnectionsInMixerConfig;
   
 	hash_t *mixerwidget_state; // Only used during loading.
 	hash_t *instrument_widget_order_state; // Only used during loading.

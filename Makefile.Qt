@@ -2251,6 +2251,10 @@ audio/stk_voice_form.cpp: audio/faust-examples/faust-stk/voiceForm.dsp $(FAUST_D
 
 
 $(T)faust_tapiir.o: audio/faust_tapiir.cpp
+	@echo
+	@echo "Changed (audio/tapiir.o):"
+	@echo $?
+	@echo
 	$(CCC2) audio/faust_tapiir.cpp $(FAUST_OPTS2) -DCLASSNAME=Tapiir_dsp -DDSP_NAME=\"Tapiir\" -DCREATE_NAME=create_faust_tapiir_plugin 
 
 audio/faust_tapiir.cpp: audio/faust-examples/tapiir.dsp $(FAUST_DEPENDENCIES)

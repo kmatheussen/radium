@@ -72,8 +72,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "QM_MixerWidget.h"
 #include "QM_chip.h"
 #include "undo_chip_position_proc.h"
+#include "undo_mixer_connections_proc.h"
 
 #include "../audio/audio_instrument_proc.h"
+#include "../audio/undo_audio_connection_gain_proc.h"
 #include "../audio/SoundPlugin_proc.h"
 #include "../audio/SoundProducer_proc.h"
 #include "../audio/AudioMeterPeaks_proc.h"
@@ -423,8 +425,8 @@ static void paint_checkbutton(QPainter *painter, const QString &name, const QCol
   }
 }
 
-Chip *find_chip_for_plugin(QGraphicsScene *scene, SoundPlugin *plugin){
-  QList<QGraphicsItem *> das_items = scene->items();
+Chip *find_chip_for_plugin(const QGraphicsScene *scene, const SoundPlugin *plugin){
+  const QList<QGraphicsItem *> &das_items = scene->items();
 
   for (int i = 0; i < das_items.size(); ++i) {
     Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
@@ -784,6 +786,14 @@ namespace{
       return -1;
     }
 
+    bool has_removed_connection(const Chip *from, const Chip *to) const {
+      return find_pos(to_remove, from, to) >= 0;
+    }
+    
+    bool has_added_connection(const Chip *from, const Chip *to) const {
+      return find_pos(to_add, from, to) >= 0;
+    }
+    
     void add(Chip *from, Chip *to, float volume, radium::EnableType enable_type, ConnectionType connection_type){
       int pos = find_pos(to_remove, from, to);
       if (pos >= 0)
@@ -1090,7 +1100,7 @@ bool CHIP_connect_chips(QGraphicsScene *scene, SoundPlugin *from, SoundPlugin *t
 }
 
 static void changeremove_all_audio_connections(const QGraphicsScene *scene, changes::AudioGraph &changes){
-  QList<QGraphicsItem *> das_items = scene->items();
+  const QList<QGraphicsItem *> &das_items = scene->items();
 
   for (int i = 0; i < das_items.size(); ++i) {
     AudioConnection *audio_connection = dynamic_cast<AudioConnection*>(das_items.at(i));      
@@ -1099,55 +1109,60 @@ static void changeremove_all_audio_connections(const QGraphicsScene *scene, chan
   }
 }
 
-static void CONNECTIONS_remove_all2(QGraphicsScene *scene, changes::AudioGraph &changes){
+static void CONNECTIONS_remove_all2(QGraphicsScene *scene, bool include_audio, bool include_events, changes::AudioGraph &changes){
   radium::Vector<SoundProducer*> producers;
   radium::Vector<EventConnection*> event_connections;
-  
-  changeremove_all_audio_connections(scene, changes);
 
-  {
-    QList<QGraphicsItem *> das_items = scene->items();
+  if (include_audio)
+    changeremove_all_audio_connections(scene, changes);
+
+  if (include_events) {
     
-    for (int i = 0; i < das_items.size(); ++i) {
-      Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
-      if(chip!=NULL)
-        producers.push_back(chip->_sound_producer);
-      else{
-        EventConnection *event_connection = dynamic_cast<EventConnection*>(das_items.at(i));
-        if(event_connection!=NULL)
-          event_connections.push_back(event_connection);
+    {
+      const QList<QGraphicsItem *> &das_items = scene->items();
+      
+      for (int i = 0; i < das_items.size(); ++i) {
+        Chip *chip = dynamic_cast<Chip*>(das_items.at(i));
+        if(chip!=NULL)
+          producers.push_back(chip->_sound_producer);
+        else{
+          EventConnection *event_connection = dynamic_cast<EventConnection*>(das_items.at(i));
+          if(event_connection!=NULL)
+            event_connections.push_back(event_connection);
+        }
       }
     }
-  }
-
-  // Think this must be done before calling SP_remove_all_elinks. (it was opposite before)
-  {
-    radium::PlayerLockOnlyIfNeeded lock;
-
-    int i=0;
-    for(auto *producer : producers){
-      lock.maybe_pause(i++);
-      SoundPlugin *plugin = SP_get_plugin(producer);
-      volatile struct Patch *patch = plugin->patch;
-      if (patch!=NULL)
-        PATCH_remove_all_event_receivers((struct Patch*)patch, lock);
-    }
-  }
-
-  SP_remove_all_elinks(producers);
-
-  for(auto event_connection : event_connections) {
-    //if (is_loading)
-    //  GFX_ShowProgressMessage(talloc_format("Deleting event connection between %s and %s", CHIP_get_patch(event_connection->from)->name, CHIP_get_patch(event_connection->to)->name));
     
-    CONNECTION_delete_an_event_connection_where_all_links_have_been_removed(event_connection);
+    // Think this must be done before calling SP_remove_all_elinks. (it was opposite before)
+    {
+      radium::PlayerLockOnlyIfNeeded lock;
+      
+      int i=0;
+      for(auto *producer : producers){
+        lock.maybe_pause(i++);
+        SoundPlugin *plugin = SP_get_plugin(producer);
+        volatile struct Patch *patch = plugin->patch;
+        if (patch!=NULL)
+          PATCH_remove_all_event_receivers((struct Patch*)patch, lock);
+      }
+    }
+
+    SP_remove_all_elinks(producers);
+
+    for(auto event_connection : event_connections) {
+      //if (is_loading)
+      //  GFX_ShowProgressMessage(talloc_format("Deleting event connection between %s and %s", CHIP_get_patch(event_connection->from)->name, CHIP_get_patch(event_connection->to)->name));
+      
+      CONNECTION_delete_an_event_connection_where_all_links_have_been_removed(event_connection);
+    }
+
   }
 
 }
 
 void CONNECTIONS_remove_all(QGraphicsScene *scene){
   changes::AudioGraph changes;
-  CONNECTIONS_remove_all2(scene, changes);
+  CONNECTIONS_remove_all2(scene, true, true, changes);
   CONNECTIONS_apply_changes(scene, changes);
 }
 
@@ -2826,6 +2841,7 @@ hash_t *CONNECTION_get_state(const SuperConnection *connection, const vector_t *
 static void CONNECTION_create_from_state2(QGraphicsScene *scene, changes::AudioGraph &changes, const hash_t *state,
                                           instrument_t patch_id_old, instrument_t patch_id_new,
                                           instrument_t patch_id_old2, instrument_t patch_id_new2,
+                                          bool include_audio, bool include_events, bool include_connection_gain,
                                           bool all_patches_are_always_supposed_to_be_here
                                           )
 {
@@ -2856,12 +2872,16 @@ static void CONNECTION_create_from_state2(QGraphicsScene *scene, changes::AudioG
     return;
   }
 
-  if(HASH_has_key(state, "is_event_connection") && HASH_get_bool(state, "is_event_connection")) // .rad files before 1.9.31 did not have event connections.
-    CHIP_econnect_chips(scene, from_chip, to_chip);
-  else {
+  if(HASH_has_key(state, "is_event_connection") && HASH_get_bool(state, "is_event_connection")) { // .rad files before 1.9.31 did not have event connections.
+    
+    if (include_events)
+      CHIP_econnect_chips(scene, from_chip, to_chip);
+    
+  } else if (include_audio || include_connection_gain) {
+    
     float gain = -1.0;
 
-    if (HASH_has_key(state, "gain"))
+    if (include_connection_gain && HASH_has_key(state, "gain"))
       gain = HASH_get_float(state, "gain");
 
     bool is_enabled = true;
@@ -2874,13 +2894,37 @@ static void CONNECTION_create_from_state2(QGraphicsScene *scene, changes::AudioG
     if (HASH_has_key(state, ":connection-type"))
       connection_type = get_connection_type_from_int(HASH_get_int32(state, ":connection-type"));
 
-    changes.add(from_chip, to_chip, gain, radium::get_enable_type_from_bool(is_enabled), connection_type);
+    bool doit = include_audio;
+    
+    if (!doit){
+      
+      R_ASSERT(!include_audio);
+      
+      R_ASSERT(include_connection_gain);
+      
+      doit = gain >= -0.001 && CHIPS_are_connected(from_chip, to_chip) && !equal_floats(gain, SP_get_link_gain(to_chip->_sound_producer, from_chip->_sound_producer, NULL));
+
+      if (doit) {
+        /*
+        printf("---------------Gain %s->%s: %f / %f\n",
+               CHIP_get_patch(from_chip)->name, CHIP_get_patch(to_chip)->name,
+               gain, SP_get_link_gain(to_chip->_sound_producer, from_chip->_sound_producer, NULL)
+               );
+        */
+        connection_type = ConnectionType::NOT_SET;
+        ADD_UNDO(AudioConnectionGain_CurrPos(CHIP_get_patch(from_chip), CHIP_get_patch(to_chip))); // Only happens when changing mixer a/b, and then we are inside an undo block.
+      }
+    }
+
+    if (doit)
+      changes.add(from_chip, to_chip, gain, radium::get_enable_type_from_bool(is_enabled), connection_type);
   }
 }
   
 static void CONNECTIONS_create_from_state2(QGraphicsScene *scene, changes::AudioGraph &changes, const hash_t *connections,
                                            instrument_t patch_id_old, instrument_t patch_id_new,
                                            instrument_t patch_id_old2, instrument_t patch_id_new2,
+                                           bool include_audio, bool include_events, bool include_connection_gain,
                                            bool all_patches_are_always_supposed_to_be_here
                                            )
 {
@@ -2890,6 +2934,7 @@ static void CONNECTIONS_create_from_state2(QGraphicsScene *scene, changes::Audio
     CONNECTION_create_from_state2(scene, changes, state,
                                   patch_id_old, patch_id_new,
                                   patch_id_old2, patch_id_new2,
+                                  include_audio, include_events, include_connection_gain,
                                   all_patches_are_always_supposed_to_be_here);
   }
 }
@@ -2901,7 +2946,7 @@ void CONNECTIONS_create_from_state(QGraphicsScene *scene, const hash_t *connecti
                                    )
 {
   changes::AudioGraph changes;
-  CONNECTIONS_create_from_state2(scene, changes, connections, patch_id_old, patch_id_new, patch_id_old2, patch_id_new2, true);
+  CONNECTIONS_create_from_state2(scene, changes, connections, patch_id_old, patch_id_new, patch_id_old2, patch_id_new2, true, true, true, true);
   CONNECTIONS_apply_changes(scene, changes);
 
   if (HASH_has_key(connections, "modulator_connections"))
@@ -2917,19 +2962,25 @@ static void CONNECTION_create_from_state(QGraphicsScene *scene, hash_t *state, i
 }
 */
 
-void CONNECTIONS_replace_all_with_state(QGraphicsScene *scene, const hash_t *connections, bool all_patches_are_always_supposed_to_be_here, radium::Scheduled_RT_functions &rt_functions)
+void CONNECTIONS_replace_all_with_state(QGraphicsScene *scene, const hash_t *connections,
+                                        bool include_audio, bool include_events, bool include_connection_gain, bool include_modulator_connections,
+                                        bool all_patches_are_always_supposed_to_be_here, radium::Scheduled_RT_functions &rt_functions)
 {
-  changes::AudioGraph changes(rt_functions);
+  if (include_audio || include_events || include_connection_gain){
+    changes::AudioGraph changes(rt_functions);
 
-  CONNECTIONS_remove_all2(scene, changes);
+    if (include_audio || include_events)
+      CONNECTIONS_remove_all2(scene, include_audio, include_events, changes);
+    
+    CONNECTIONS_create_from_state2(scene, changes, connections,
+                                   make_instrument(-1), make_instrument(-1), make_instrument(-1), make_instrument(-1),
+                                   include_audio, include_events, include_connection_gain,
+                                   all_patches_are_always_supposed_to_be_here);
+    
+    CONNECTIONS_apply_changes(scene, changes);
+  }
   
-  CONNECTIONS_create_from_state2(scene, changes, connections,
-                                 make_instrument(-1), make_instrument(-1), make_instrument(-1), make_instrument(-1),
-                                 all_patches_are_always_supposed_to_be_here);
-  
-  CONNECTIONS_apply_changes(scene, changes);
-
-  if (HASH_has_key(connections, "modulator_connections"))
+  if (include_modulator_connections && HASH_has_key(connections, "modulator_connections"))
     MODULATORS_apply_connections_state(HASH_get_dyn(connections, "modulator_connections"));
 }
 
@@ -2966,6 +3017,7 @@ void CONNECTIONS_create_from_presets_state(QGraphicsScene *scene, const hash_t *
                                       connection_state,
                                       make_instrument(index_from), id_from,
                                       make_instrument(index_to), id_to,
+                                      true, true, true,
                                       true
                                       );
       }

@@ -775,7 +775,7 @@ static const char *get_effect_name2(Data *data, int effect_num){
   return controller->name.c_str();
 }
 
-static const char *get_effect_name(struct SoundPlugin *plugin, int effect_num){
+static const char *get_effect_name(const struct SoundPlugin *plugin, int effect_num){
   Data *data = (Data*)plugin->data;
   return get_effect_name2(data, effect_num);
 }
