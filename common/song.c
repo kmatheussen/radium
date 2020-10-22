@@ -68,15 +68,20 @@ struct Song *SONG_create(void){
   song->RT_mute_plugin_MIDI_when_muted = true;
   song->RT_send_plugin_MIDI_through_when_bypassed = true;
   song->RT_implicitly_mute_plugin_MIDI = true;
-    
+
+  // Set all mixer config variables to true to be compatible with older songs. New songs only have a few of these set to true by default.
+  // These variables are saved in MW_get_ab_state() and not in SaveSong().
   song->includeAudioConnectionsInMixerConfig = true;
   song->includeEventConnectionsInMixerConfig = true;
   song->includeVolumeInMixerConfig = true;
   song->includePanningInMixerConfig = true;
   song->includeMuteSoloBypassInMixerConfig = true;
-  //song->includeSystemEffectsInMixerConfig = true;
-  //song->includeInstrumentEffectsInMixerConfig = true;
+  song->includeSystemEffectsInMixerConfig = true;
+  song->includeInstrumentEffectsInMixerConfig = true;
+  song->includeInstrumentStatesInMixerConfig = true;
+  song->includeMixerStripsConfigurationInMixerConfig = true;
   song->includeRememberCurrentInstrumentInMixerConfig = true;
+  song->includeModulatorConnectionsInMixerConfig = true;
   
   reset_recording_config(&song->default_recording_config);
 

@@ -3056,7 +3056,7 @@ static QVector<SuperConnection*> get_connections(bool include_audio, bool includ
 hash_t *MW_get_connections_state(const vector_t *patches, bool include_audio, bool include_events, bool include_modulator_connections){
   const QList<QGraphicsItem *> &das_items = g_mixer->scene.items();
 
-  hash_t *connections = HASH_create(das_items.size());
+  hash_t *connections = HASH_create(das_items.size() + 4);
 
   HASH_put_bool(connections, "includes_audio", include_audio);
   HASH_put_bool(connections, "includes_events", include_events);
@@ -3623,6 +3623,18 @@ hash_t *MW_get_ab_state(void){
       HASH_put_hash_at(ab_state, "ab_state", i, g_ab_states[i]);
   }
 
+  HASH_put_bool(ab_state, "includeAudioConnectionsInMixerConfig", includeAudioConnectionsInMixerConfig());
+  HASH_put_bool(ab_state, "includeEventConnectionsInMixerConfig", includeEventConnectionsInMixerConfig());
+  HASH_put_bool(ab_state, "includeVolumeInMixerConfig", includeVolumeInMixerConfig());
+  HASH_put_bool(ab_state, "includePanningInMixerConfig", includePanningInMixerConfig());
+  HASH_put_bool(ab_state, "includeMuteSoloBypassInMixerConfig", includeMuteSoloBypassInMixerConfig());
+  HASH_put_bool(ab_state, "includeSystemEffectsInMixerConfig", includeSystemEffectsInMixerConfig());
+  HASH_put_bool(ab_state, "includeInstrumentEffectsInMixerConfig", includeInstrumentEffectsInMixerConfig());
+  HASH_put_bool(ab_state, "includeInstrumentStatesInMixerConfig", includeInstrumentStatesInMixerConfig());
+  HASH_put_bool(ab_state, "includeMixerStripsConfigurationInMixerConfig", includeMixerStripsConfigurationInMixerConfig());
+  HASH_put_bool(ab_state, "includeRememberCurrentInstrumentInMixerConfig", includeRememberCurrentInstrumentInMixerConfig());
+  HASH_put_bool(ab_state, "includeModulatorConnectionsInMixerConfig", includeModulatorConnectionsInMixerConfig());
+  
   return ab_state;
 }
 
@@ -3637,6 +3649,19 @@ void MW_recreate_ab_from_state(hash_t *ab_state){
       g_ab_states[i] = HASH_get_hash_at(ab_state, "ab_state", i);
   }
 
+  if (HASH_has_key(ab_state, "includeAudioConnectionsInMixerConfig")){
+    setIncludeAudioConnectionsInMixerConfig(HASH_get_bool(ab_state, "includeAudioConnectionsInMixerConfig"));
+    setIncludeEventConnectionsInMixerConfig(HASH_get_bool(ab_state, "includeEventConnectionsInMixerConfig"));
+    setIncludeVolumeInMixerConfig(HASH_get_bool(ab_state, "includeVolumeInMixerConfig"));
+    setIncludePanningInMixerConfig(HASH_get_bool(ab_state, "includePanningInMixerConfig"));
+    setIncludeMuteSoloBypassInMixerConfig(HASH_get_bool(ab_state, "includeMuteSoloBypassInMixerConfig"));
+    setIncludeSystemEffectsInMixerConfig(HASH_get_bool(ab_state, "includeSystemEffectsInMixerConfig"));
+    setIncludeInstrumentEffectsInMixerConfig(HASH_get_bool(ab_state, "includeInstrumentEffectsInMixerConfig"));
+    setIncludeInstrumentStatesInMixerConfig(HASH_get_bool(ab_state, "includeInstrumentStatesInMixerConfig"));
+    setIncludeMixerStripsConfigurationInMixerConfig(HASH_get_bool(ab_state, "includeMixerStripsConfigurationInMixerConfig"));
+    setIncludeRememberCurrentInstrumentInMixerConfig(HASH_get_bool(ab_state, "includeRememberCurrentInstrumentInMixerConfig"));
+    setIncludeModulatorConnectionsInMixerConfig(HASH_get_bool(ab_state, "includeModulatorConnectionsInMixerConfig"));
+  }
 }
 
 #include "mQM_MixerWidget.cpp"
