@@ -608,7 +608,7 @@ public:
       instrument_t patch_id = HASH_get_instrument(target_state, ":instrument-id");
       if (patch_id_mapper.size() > 0){
         if (!patch_id_mapper.contains(patch_id))
-          continue;
+          continue; // Happens when loading an .mrec file where target patch was not included.
         
         patch_id = patch_id_mapper[patch_id];
       }
