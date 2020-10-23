@@ -644,6 +644,8 @@ static bool get_type_name_from_description(const char *instrument_description, c
 }
   
 instrument_t createAudioInstrumentFromDescription(const char *instrument_description, const_char *name, float x, float y, bool set_as_current){
+  radium::ScopedUndo scoped_undo;
+  
   if (strlen(instrument_description)==0)
     return createIllegalInstrument();
 
