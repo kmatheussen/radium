@@ -198,7 +198,7 @@ extern LANGSPEC hash_t *MW_get_connections_state(const vector_t *patches, bool i
 extern LANGSPEC hash_t *MW_get_state(const vector_t *patches, bool include_ab);
 extern LANGSPEC void MW_create_connections_from_state(const hash_t *connections);
 extern LANGSPEC void MW_create_connections_from_state_and_replace_patch(const hash_t *connections, int patch_id_old, int patch_id_new);
-extern LANGSPEC void MW_create_from_state(const hash_t *state, const vector_t *patches, float x, float y);
+extern LANGSPEC void MW_create_from_state(const hash_t *state, const vector_t *patches, const QHash<instrument_t, instrument_t> &patch_id_mapper, float x, float y);
 extern LANGSPEC void MW_create_full_from_state(const hash_t *state, bool is_loading);
 
 extern LANGSPEC void MW_create_plain(void);

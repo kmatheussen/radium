@@ -108,17 +108,9 @@ struct ModulatorTarget{
     , enabled(enabled)
   {}
 
-  ModulatorTarget(const dyn_t dynstate, const struct Patch *modulator_patch)
+  ModulatorTarget(const hash_t *state, const struct Patch *modulator_patch, instrument_t patch_id)
     : ModulatorTarget(NULL, EFFNUM_INPUT_VOLUME, true)
-  {    
-    if (dynstate.type!=HASH_TYPE){
-      R_ASSERT(false);
-      return;
-    }
-
-    const hash_t *state = dynstate.hash;
-    
-    instrument_t patch_id = HASH_get_instrument(state, ":instrument-id");
+  {        
     patch = PATCH_get_from_id(patch_id);
 
     if (HASH_has_key(state, ":effect-name")){
@@ -173,7 +165,7 @@ struct ModulatorTarget{
 
   // Note: Used directly in the API (i.e don't change the key names)
   dyn_t get_state(void) const {
-    hash_t *state = HASH_create(2);
+    hash_t *state = HASH_create(4);
     HASH_put_instrument(state, ":instrument-id", patch->id);
     HASH_put_int(state, ":effect-num", effect_num);
     HASH_put_chars(state, ":effect-name", (patch->instrument==get_audio_instrument()) ? patch->instrument->getFxName(patch, effect_num) : talloc_format("%d", effect_num));
@@ -585,14 +577,18 @@ public:
     return state;
   }
 
-  void apply_state(const hash_t *state){
+  void apply_state(const hash_t *state, const QHash<instrument_t, instrument_t> &patch_id_mapper){
     // Assert that the state is for this modulator.
     const struct Patch *modulator_patch = const_cast<const struct Patch*>(_plugin->patch);
     R_ASSERT_RETURN_IF_FALSE(modulator_patch != NULL);
-    
-    instrument_t patch_id = HASH_get_instrument(state, "modulator_patch_id");
-    R_ASSERT_RETURN_IF_FALSE(patch_id==modulator_patch->id);
 
+    {
+      instrument_t patch_id = HASH_get_instrument(state, "modulator_patch_id");
+      if (patch_id_mapper.size() > 0)
+        patch_id = patch_id_mapper[patch_id];
+      R_ASSERT_RETURN_IF_FALSE(patch_id==modulator_patch->id);
+    }
+    
     radium::Vector<ModulatorTarget*> *new_targets = new radium::Vector<ModulatorTarget*>;
 
     const dyn_t dyntargets = HASH_get_dyn(state, "targets");
@@ -601,7 +597,23 @@ public:
     const dynvec_t *targets = dyntargets.array;
 
     for(const dyn_t &target : targets){
-      auto *new_target = new ModulatorTarget(target, modulator_patch);//targets->elements[i]);
+
+      if (target.type!=HASH_TYPE){
+        R_ASSERT(false);
+        return;
+      }
+
+      const hash_t *target_state = target.hash;
+      
+      instrument_t patch_id = HASH_get_instrument(target_state, ":instrument-id");
+      if (patch_id_mapper.size() > 0){
+        if (!patch_id_mapper.contains(patch_id))
+          continue;
+        
+        patch_id = patch_id_mapper[patch_id];
+      }
+      
+      auto *new_target = new ModulatorTarget(target_state, modulator_patch, patch_id);//targets->elements[i]);
       if (new_target->patch != NULL)
         new_targets->push_back(new_target);
     }
@@ -1007,7 +1019,14 @@ dyn_t MODULATORS_get_connections_state(void){
   return DYN_create_array(vec);
 }
 
-static Modulator *get_modulator_from_patch_id(instrument_t patch_id){
+static Modulator *get_modulator_from_patch_id(instrument_t patch_id, const QHash<instrument_t, instrument_t> &patch_id_mapper){
+  if (patch_id_mapper.size() > 0){
+    if (!patch_id_mapper.contains(patch_id))
+      return NULL;
+    
+    patch_id = patch_id_mapper[patch_id];
+  }
+  
   for(auto *modulator : g_modulators2){
     const struct Patch *modulator_patch = modulator->_plugin->patch;
     if (modulator_patch==NULL)
@@ -1018,7 +1037,7 @@ static Modulator *get_modulator_from_patch_id(instrument_t patch_id){
   return NULL;
 }
 
-void MODULATORS_apply_connections_state(const dyn_t dynstate){
+void MODULATORS_apply_connections_state(const dyn_t dynstate, const QHash<instrument_t, instrument_t> &patch_id_mapper){
   R_ASSERT_RETURN_IF_FALSE(dynstate.type==ARRAY_TYPE);
 
   printf("  --Modulator connections Array length: %d\n", dynstate.array->num_elements);
@@ -1027,13 +1046,19 @@ void MODULATORS_apply_connections_state(const dyn_t dynstate){
     R_ASSERT_RETURN_IF_FALSE(modulator_state.type==HASH_TYPE);
 
     instrument_t patch_id = HASH_get_instrument(modulator_state.hash, "modulator_patch_id");
-    Modulator *modulator = get_modulator_from_patch_id(patch_id);
-    R_ASSERT_RETURN_IF_FALSE(modulator!=NULL);
+    Modulator *modulator = get_modulator_from_patch_id(patch_id, patch_id_mapper);
+    //printf("  patch_id: %d\n", (int)patch_id.id);    
 
-    printf("  patch_id: %d\n", (int)patch_id.id);
-    
-    modulator->apply_state(modulator_state.hash);
+    R_ASSERT_NON_RELEASE(modulator != NULL);
+
+    if (modulator != NULL)
+      modulator->apply_state(modulator_state.hash, patch_id_mapper);
   }
+}
+
+void MODULATORS_apply_connections_state(const dyn_t dynstate){
+  QHash<instrument_t, instrument_t> patch_id_mapper;
+  MODULATORS_apply_connections_state(dynstate, patch_id_mapper);
 }
 
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){

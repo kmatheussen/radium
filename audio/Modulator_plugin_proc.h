@@ -30,6 +30,11 @@ extern LANGSPEC dynvec_t MODULATOR_get_modulator_targets(instrument_t modulator_
 extern LANGSPEC bool MODULATOR_is_modulator(instrument_t modulator_patch_id);
 
 extern LANGSPEC dyn_t MODULATORS_get_connections_state(void);
+
+#ifdef __cplusplus
+void MODULATORS_apply_connections_state(const dyn_t dynstate, const QHash<instrument_t, instrument_t> &patch_id_mapper);
+#endif
+
 extern LANGSPEC void MODULATORS_apply_connections_state(const dyn_t state);
 
 #endif

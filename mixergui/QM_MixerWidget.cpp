@@ -3184,7 +3184,7 @@ static void add_undo_for_all_chip_positions(void){
 }
 
 // Called from audio/Presest.cpp. (Not used when loading song.)
-void MW_create_from_state(const hash_t *state, const vector_t *patches, float x, float y){
+void MW_create_from_state(const hash_t *state, const vector_t *patches, const QHash<instrument_t, instrument_t> &patch_id_mapper, float x, float y){
   R_ASSERT(patches != NULL);
   R_ASSERT(Undo_Is_Open() || Undo_Is_Currently_Ignoring());
  
@@ -3195,7 +3195,7 @@ void MW_create_from_state(const hash_t *state, const vector_t *patches, float x,
 
   hash_t *connections = HASH_get_hash(state, "connections");
 
-  CONNECTIONS_create_from_presets_state(&g_mixer->scene, connections, patches);
+  CONNECTIONS_create_from_presets_state(&g_mixer->scene, connections, patches, patch_id_mapper);
   
   if (patches->num_elements > 1)
     cleanup_chip_positions(&g_mixer->scene);
