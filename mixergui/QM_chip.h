@@ -818,7 +818,8 @@ void CONNECTIONS_replace_all_with_state(QGraphicsScene *scene, const hash_t *con
                                         radium::Scheduled_RT_functions &rt_functions);
 
 void CONNECTIONS_create_from_presets_state(QGraphicsScene *scene, const hash_t *connections,
-                                           const vector_t *patches
+                                           const vector_t *patches,
+                                           const QHash<instrument_t, instrument_t> &patch_id_mapper
                                            );
 
 #endif // __cplusplus

@@ -210,6 +210,8 @@ static hash_t *get_preset_state_from_filename(QString filename){
 
 static instrument_t PRESET_load_multipreset(hash_t *state, const char *name, filepath_t filename, bool inc_usage_number, bool set_as_current, float x, float y){
 
+  QHash<instrument_t, instrument_t> patch_id_mapper;
+  
   struct Patch *first_patch = NULL;
   vector_t patches = {};
   
@@ -222,6 +224,8 @@ static instrument_t PRESET_load_multipreset(hash_t *state, const char *name, fil
     //printf("name1: -%s-, name2: -%s-, name3: %s\n",name,patch->name,HASH_get_chars(patch_state,"name"));
     //getchar();
     VECTOR_push_back(&patches, patch); // NULL values must be pushed as well.
+
+    patch_id_mapper[HASH_get_instrument(patch_state, "id")] = patch->id;
     
     if (patch!=NULL){
 
@@ -246,6 +250,7 @@ static instrument_t PRESET_load_multipreset(hash_t *state, const char *name, fil
 
   MW_create_from_state(HASH_get_hash(state, "mixer_state"),
                        &patches,
+                       patch_id_mapper,
                        x, y);
 
   R_ASSERT(first_patch != NULL);
