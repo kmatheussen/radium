@@ -1869,8 +1869,13 @@ public:
       int highest_input_link_latency = 0;
     
       for (SoundProducerLink *link : _input_links) {
-        if (false==link->is_active)
-          continue;
+
+        // Commented out.
+        // A link can be set non-active when it's muted, implicitly muted, link-volume set to 0, auto-suspended, and maybe other reasons.
+        // We don't want to potentially recalculate latency for the whole audio graph when any of these things happen.
+        //if (false==link->is_active)
+        //  continue;
+        
         if (link->is_event_link)
           continue;
         
