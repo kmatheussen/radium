@@ -12,12 +12,10 @@ static void init_it(Smooth *smooth, float value, int blocksize, int smooth_lengt
     blocksize=RADIUM_BLOCKSIZE;
   }
 
-#if (RADIUM_BLOCKSIZE!=DEFAULT_SMOOTH_LENGTH)
   if (smooth_length!=RADIUM_BLOCKSIZE && smooth_length!=DEFAULT_SMOOTH_LENGTH){
     R_ASSERT(false);
     smooth_length = DEFAULT_SMOOTH_LENGTH;
   }
-#endif
   
   memset(smooth, 0, sizeof(Smooth));
 
