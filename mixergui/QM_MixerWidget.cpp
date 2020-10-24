@@ -3438,7 +3438,7 @@ static hash_t *create_ab_state(void){
   if (include_audio || include_event || include_modulator_connections)
     HASH_put_hash(state, "connections", MW_get_connections_state(NULL, include_audio, include_event, include_modulator_connections));
 
-  if (include_volume || includePanningInMixerConfig() || includeMuteSoloBypassInMixerConfig() || includeSystemEffectsInMixerConfig() || includeInstrumentEffectsInMixerConfig() || includeInstrumentStatesInMixerConfig()) {
+  if (include_volume || includePanningInMixerConfig() || includeMuteSoloBypassInMixerConfig() || includeSystemEffectsInMixerConfig() || includeInstrumentEffectsInMixerConfig() || includeInstrumentStatesInMixerConfig() || includeSystemVolumeInMixerConfig()) {
     
     vector_t *patches = &get_audio_instrument()->patches;
     hash_t *plugin_ab_states = HASH_create(patches->num_elements);
@@ -3634,6 +3634,7 @@ hash_t *MW_get_ab_state(void){
   HASH_put_bool(ab_state, "includeMixerStripsConfigurationInMixerConfig", includeMixerStripsConfigurationInMixerConfig());
   HASH_put_bool(ab_state, "includeRememberCurrentInstrumentInMixerConfig", includeRememberCurrentInstrumentInMixerConfig());
   HASH_put_bool(ab_state, "includeModulatorConnectionsInMixerConfig", includeModulatorConnectionsInMixerConfig());
+  HASH_put_bool(ab_state, "includeSystemVolumeInMixerConfig", includeSystemVolumeInMixerConfig());
   
   return ab_state;
 }
@@ -3661,6 +3662,8 @@ void MW_recreate_ab_from_state(hash_t *ab_state){
     setIncludeMixerStripsConfigurationInMixerConfig(HASH_get_bool(ab_state, "includeMixerStripsConfigurationInMixerConfig"));
     setIncludeRememberCurrentInstrumentInMixerConfig(HASH_get_bool(ab_state, "includeRememberCurrentInstrumentInMixerConfig"));
     setIncludeModulatorConnectionsInMixerConfig(HASH_get_bool(ab_state, "includeModulatorConnectionsInMixerConfig"));
+    if (HASH_has_key(ab_state, "includeSystemVolumeInMixerConfig"))
+      setIncludeSystemVolumeInMixerConfig(HASH_get_bool(ab_state, "includeSystemVolumeInMixerConfig"));
   }
 }
 

@@ -82,6 +82,7 @@ struct Song *SONG_create(void){
   song->includeMixerStripsConfigurationInMixerConfig = true;
   song->includeRememberCurrentInstrumentInMixerConfig = true;
   song->includeModulatorConnectionsInMixerConfig = true;
+  song->includeSystemVolumeInMixerConfig = true;
   
   reset_recording_config(&song->default_recording_config);
 

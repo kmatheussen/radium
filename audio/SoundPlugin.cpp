@@ -2358,7 +2358,10 @@ static bool use_ab_effect(const SoundPlugin *plugin, int effect_num){
   
   } else if (effect_num==get_volume_effectnum(plugin->type)) {
 
-    return includeVolumeInMixerConfig();
+    if (plugin==RT_get_system_out_plugin())
+      return includeSystemVolumeInMixerConfig();
+    else
+      return includeVolumeInMixerConfig();
     
   } else if (effect_num==get_mute_effectnum(plugin->type)) {
 
