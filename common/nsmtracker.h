@@ -3587,6 +3587,7 @@ struct Song{
         bool includeMixerStripsConfigurationInMixerConfig;
         bool includeRememberCurrentInstrumentInMixerConfig;
         bool includeModulatorConnectionsInMixerConfig;
+        bool includeSystemVolumeInMixerConfig;
   
 	hash_t *mixerwidget_state; // Only used during loading.
 	hash_t *instrument_widget_order_state; // Only used during loading.

@@ -68,6 +68,7 @@
           ("mixer" "strips" "configuration")
           ("remember" "current" "instrument")
           ("modulator" "connections")
+          ("system" "volume")
           ))
    ))
   

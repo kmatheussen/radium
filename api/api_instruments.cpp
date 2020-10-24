@@ -2612,6 +2612,14 @@ void setIncludeModulatorConnectionsInMixerConfig(bool doit){
   root->song->includeModulatorConnectionsInMixerConfig = doit;
 }
 
+bool includeSystemVolumeInMixerConfig(void){
+  return root->song->includeSystemVolumeInMixerConfig;
+}
+
+void setIncludeSystemVolumeInMixerConfig(bool doit){
+  root->song->includeSystemVolumeInMixerConfig = doit;
+}
+
 
 
 

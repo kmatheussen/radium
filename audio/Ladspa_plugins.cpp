@@ -126,9 +126,11 @@ static int RT_get_latency(const struct SoundPlugin *plugin){
   Data *data = (Data*)plugin->data;
 
   int latency = data->latency_output_control_port;
-  
-  //if (latency != 0)
-  //  printf("plugin %s has latency %d\n",plugin->patch->name, latency);
+
+  /*
+  if (latency != 0)
+    printf("plugin %s has latency %d\n",plugin->patch->name, latency);
+  */
   
   if (latency < 0)
     latency = 0;
