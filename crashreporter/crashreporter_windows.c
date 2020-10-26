@@ -291,11 +291,13 @@ static void print_osinfo(struct output_buffer *ob){
 
     if (dwVersion < 0x80000000)              
         dwBuild = (DWORD)(HIWORD(dwVersion));
-
+    
     printf_s(ob, "Windows version of this OS is %d.%d (%d)\nVersion names:\n%s\n", 
            dwMajorVersion,
            dwMinorVersion,
            dwBuild,
+             "");
+    /*
            "Windows 8	6.2\n"
            "Windows Server 2012	6.2\n"
            "Windows 7	6.1\n"
@@ -307,6 +309,7 @@ static void print_osinfo(struct output_buffer *ob){
            "Windows XP 64-Bit Edition	5.2\n"
            "Windows XP	5.1\n"
            "Windows 2000	5.0\n");
+    */
 
 }
 
