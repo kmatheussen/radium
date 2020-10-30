@@ -27,6 +27,68 @@ enum ValueType{
 };
 */
 
+#if USE_QT4
+#include "../common/threading.h"
+
+namespace radium{
+
+struct SoloChange{
+  SoundPlugin *_plugin;
+  bool _solo_is_on;
+  SoloChange(SoundPlugin *plugin, bool solo_is_on)
+    : _plugin(plugin)
+    , _solo_is_on(solo_is_on)
+  {
+  }
+};
+
+
+struct SoloChanges {
+    
+  radium::Scheduled_RT_functions &_rt_functions;
+  
+  SoloChanges(const SoloChanges&) = delete;
+  SoloChanges& operator=(const SoloChanges&) = delete;
+
+private:
+  QVector<SoloChange> _changes;
+  
+  radium::Scheduled_RT_functions ___INTERNAL_rt_functions2;
+  
+public:
+  
+  SoloChanges()
+    : _rt_functions(___INTERNAL_rt_functions2)
+  {
+  }
+  
+  SoloChanges(radium::Scheduled_RT_functions &rt_functions)
+    : _rt_functions(rt_functions)
+  {
+  }
+
+  ~SoloChanges(); // implemented in SoundProducer.cpp
+
+  QVector<SoloChange> take_over(void){
+    QVector<SoloChange> ret(_changes);
+    _changes.clear();
+    return ret;
+  }
+  
+  void add(SoundPlugin *plugin, bool solo_is_on){
+    _changes.push_back(SoloChange(plugin, solo_is_on));
+  }
+
+  int size(void) const {
+    return _changes.size();
+  }
+};
+}
+
+extern radium::SoloChanges g_empty_solochanges;
+
+#endif
+
 enum StoreitType{
   STORE_VALUE,
   DONT_STORE_VALUE
@@ -105,8 +167,8 @@ extern LANGSPEC float PLUGIN_get_effect_value(struct SoundPlugin *plugin,
 
 extern LANGSPEC void PLUGIN_recreate_from_state(SoundPlugin *plugin, hash_t *state, bool is_loading);
 
-#ifdef __cplusplus
-extern bool PLUGIN_apply_ab_state(SoundPlugin *plugin, hash_t *new_state, hash_t *old_state, radium::Scheduled_RT_functions &rt_functions);
+#if USE_QT4
+extern bool PLUGIN_apply_ab_state(SoundPlugin *plugin, hash_t *new_state, hash_t *old_state, radium::Scheduled_RT_functions &rt_functions, radium::SoloChanges &solo_changes);
 #endif
 
 extern LANGSPEC hash_t *PLUGIN_get_ab_state(const SoundPlugin *plugin);

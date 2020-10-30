@@ -190,15 +190,17 @@ extern LANGSPEC void MW_update_all_chips(void);
 extern LANGSPEC void MW_cleanup(bool is_loading); // Deletes all chips
 extern LANGSPEC void MW_cleanup_chip_positions(void); // Cleans up chip positions.
 extern LANGSPEC void MW_get_slotted_x_y(float from_x, float from_y, float *x, float *y); // Workaround.
+
 #ifdef __cplusplus
+#include <QHash>
 extern LANGSPEC void MW_get_curr_mixer_slot(float &x, float &y);
+extern LANGSPEC void MW_create_from_state(const hash_t *state, const vector_t *patches, const QHash<instrument_t, instrument_t> &patch_id_mapper, float x, float y);
 #endif
 
 extern LANGSPEC hash_t *MW_get_connections_state(const vector_t *patches, bool include_audio, bool include_event, bool include_modulator_connections);
 extern LANGSPEC hash_t *MW_get_state(const vector_t *patches, bool include_ab);
 extern LANGSPEC void MW_create_connections_from_state(const hash_t *connections);
 extern LANGSPEC void MW_create_connections_from_state_and_replace_patch(const hash_t *connections, int patch_id_old, int patch_id_new);
-extern LANGSPEC void MW_create_from_state(const hash_t *state, const vector_t *patches, const QHash<instrument_t, instrument_t> &patch_id_mapper, float x, float y);
 extern LANGSPEC void MW_create_full_from_state(const hash_t *state, bool is_loading);
 
 extern LANGSPEC void MW_create_plain(void);

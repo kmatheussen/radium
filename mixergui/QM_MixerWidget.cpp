@@ -3167,10 +3167,11 @@ static void MW_position_chips_from_state(const hash_t *chips, const vector_t *pa
 // Called from undo_mixer_connections.c
 void MW_create_connections_from_state(const hash_t *connections){
   radium::Scheduled_RT_functions rt_functions;
+  radium::SoloChanges solo_changes(rt_functions);
   CONNECTIONS_replace_all_with_state(&g_mixer->scene, connections,
                                      true, true, true, true,
                                      true,
-                                     rt_functions);
+                                     rt_functions, solo_changes);
 }
 
 static void add_undo_for_all_chip_positions(void){
@@ -3465,7 +3466,7 @@ static hash_t *create_ab_state(void){
   return state;
 }
 
-static void apply_ab_plugin_ab_states(hash_t *plugin_ab_state, hash_t *curr_plugin_ab_state, radium::Scheduled_RT_functions &rt_functions){
+static void apply_ab_plugin_ab_states(hash_t *plugin_ab_state, hash_t *curr_plugin_ab_state, radium::Scheduled_RT_functions &rt_functions, radium::SoloChanges &solo_changes){
   
   const vector_t &patches = get_audio_instrument()->patches;
 
@@ -3485,7 +3486,7 @@ static void apply_ab_plugin_ab_states(hash_t *plugin_ab_state, hash_t *curr_plug
       if (plugin==NULL){
         R_ASSERT(false);
       }else{
-        if (PLUGIN_apply_ab_state(plugin, ab_state, curr_ab_state, rt_functions)){
+        if (PLUGIN_apply_ab_state(plugin, ab_state, curr_ab_state, rt_functions, solo_changes)){
           CHIP_update(plugin);
           updated = true;
         }
@@ -3509,7 +3510,7 @@ static bool in_patches(const vector_t *patches, int64_t id){
 }
 */
 
-static void apply_ab_connections_state(hash_t *connections, radium::Scheduled_RT_functions &rt_functions){
+static void apply_ab_connections_state(hash_t *connections, radium::Scheduled_RT_functions &rt_functions, radium::SoloChanges &solo_changes){
 
   bool include_audio = root->song->includeAudioConnectionsInMixerConfig;
   if (include_audio && HASH_has_key(connections, "includes_audio"))
@@ -3524,7 +3525,8 @@ static void apply_ab_connections_state(hash_t *connections, radium::Scheduled_RT
     
   CONNECTIONS_replace_all_with_state(&g_mixer->scene, connections,
                                      include_audio, include_events, includeVolumeInMixerConfig(), includeModulatorConnectionsInMixerConfig(),
-                                     false, rt_functions);
+                                     false,
+                                     rt_functions, solo_changes);
 }
 
 // 'curr_state' is used to compare states. We skip applying the new state if it isn't different.
@@ -3540,16 +3542,17 @@ static void apply_ab_state(hash_t *state, hash_t *curr_state){
   }
   
   radium::Scheduled_RT_functions rt_functions;
-  
+  radium::SoloChanges solo_changes(rt_functions);
+      
   UNDO_OPEN();{
     if (HASH_has_key(state, "plugin_ab_states") && HASH_has_key(curr_state, "plugin_ab_states"))
       apply_ab_plugin_ab_states(HASH_get_hash(state, "plugin_ab_states"),
                                 HASH_get_hash(curr_state, "plugin_ab_states"),
-                                rt_functions
+                                rt_functions, solo_changes
                                 );
     
     if (HASH_has_key(state, "connections"))
-      apply_ab_connections_state(HASH_get_hash(state, "connections"), rt_functions);
+      apply_ab_connections_state(HASH_get_hash(state, "connections"), rt_functions, solo_changes);
 
   }UNDO_CLOSE();
 

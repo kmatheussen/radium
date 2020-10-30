@@ -49,6 +49,21 @@ static inline void SMOOTH_print(const char *s, const Smooth *smooth){
          smooth->smooth_length);
 }
 
+// If this function returns true, we can call SMOOTH_force_target_value(smooth, 0.0) instead of SMOOTH_set_target_value(smooth, 0.0). I.e. no need to fade out.
+// 'peak' is usually the peak of last buffer, and the peak should have been generated from a buffer of at least 64 frames or something like that.
+static inline bool SMOOTH_peak_is_below_lowest_fade_value(float peak){
+  R_ASSERT_NON_RELEASE(peak>-0.0001);
+
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wfloat-equal"
+
+  if (peak==0.0f)
+    return true;
+  else
+    return peak <= (1.0f / DEFAULT_SMOOTH_LENGTH);
+
+#  pragma GCC diagnostic pop
+}
 
 typedef struct{
   float vals [2][2];
@@ -125,7 +140,7 @@ extern LANGSPEC void SMOOTH_apply_inverted_volume(const Smooth *smooth, float *s
 extern LANGSPEC void SMOOTH_copy_sound(const Smooth *smooth, const float *src, float *dst, const int num_frames);
 extern LANGSPEC void SMOOTH_mix_sounds_raw(float *target, const float *source, int num_frames, float start_volume, float end_volume);
 extern LANGSPEC bool SMOOTH_are_we_going_to_modify_target_when_mixing_sounds_questionmark(const Smooth *smooth);
-extern LANGSPEC void SMOOTH_mix_sounds(const Smooth *smooth, float *target, const float *source, int num_frames);
+extern LANGSPEC bool SMOOTH_mix_sounds(const Smooth *smooth, float *target, const float *source, int num_frames); // returns true if mixing in anything.
 extern LANGSPEC void SMOOTH_mix_sounds_from_mono_to_stereo(const Smooth *smooth, float *target_ch0, float *target_ch1, const float *source, int num_frames);
 extern LANGSPEC void SMOOTH_mix_sounds_using_inverted_values(const Smooth *smooth, float *target, const float *source, int num_frames);
 extern LANGSPEC void SMOOTH_apply_pan(const Smooth *smooth, float **sound, int num_channels, int num_frames);

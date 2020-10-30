@@ -32,16 +32,29 @@ static void init_it(Smooth *smooth, float value, int blocksize, int smooth_lengt
 void SMOOTH_init(Smooth *smooth, float value, int blocksize){
   init_it(smooth, value, blocksize, DEFAULT_SMOOTH_LENGTH);
 }
+/*
+void SMOOTH_init_custom_smooth_length(Smooth *smooth, float value, int blocksize, int smooth_length){
+  init_it(smooth, value, blocksize, smooth_length);
+}
+*/
 void SMOOTH_init_immediate_smoothing(Smooth *smooth, float value, int blocksize){
   init_it(smooth, value, blocksize, R_MIN(DEFAULT_SMOOTH_LENGTH, RADIUM_BLOCKSIZE));
 }
 
 void SMOOTH_force_target_value(Smooth *smooth, float value){
-  safe_volatile_float_write(&smooth->next_target_value, value);
-  smooth->target_value = value;
-  smooth->value = value;
-
-  juce::FloatVectorOperations::fill(smooth->values, value, R_MIN(smooth->smooth_length, RADIUM_BLOCKSIZE));
+  if (!equal_floats(safe_volatile_float_read(&smooth->next_target_value), value) ||
+      !equal_floats(smooth->target_value, value) ||
+      !equal_floats(smooth->value, value) ||
+      smooth->smoothing_is_necessary
+      )
+    {
+      safe_volatile_float_write(&smooth->next_target_value, value);
+      smooth->target_value = value;
+      smooth->value = value;
+      smooth->smoothing_is_necessary = false;
+      
+      juce::FloatVectorOperations::fill(smooth->values, value, R_MIN(smooth->smooth_length, RADIUM_BLOCKSIZE));
+    }
 }
 
 /*
@@ -245,13 +258,14 @@ bool SMOOTH_are_we_going_to_modify_target_when_mixing_sounds_questionmark(const 
   return smooth->target_audio_will_be_modified;
 }
 
-void SMOOTH_mix_sounds(const Smooth *smooth, float *target, const float *source, int num_frames){
+bool SMOOTH_mix_sounds(const Smooth *smooth, float *target, const float *source, int num_frames){
   R_ASSERT(smooth->target_audio_will_be_modified==true);
   
   if(is_smoothing_necessary(smooth)==true) {
 
+    //SMOOTH_print("SMOOTH_mix_sounds", smooth);
     juce::FloatVectorOperations::addWithMultiply(target, source, smooth->values, num_frames);
-        
+    
   } else {
 
     //printf("%p smooth->get: %f, smooth->set: %f. start: %f, end: %f\n",smooth,smooth->get,smooth->set,smooth->start_value,smooth->end_value);
@@ -262,8 +276,12 @@ void SMOOTH_mix_sounds(const Smooth *smooth, float *target, const float *source,
     
     else if(volume > 0.0f)
       juce::FloatVectorOperations::addWithMultiply(target, source, volume, num_frames);
-    
+
+    else
+      return false;
   }
+
+  return true;
 }
 
 void SMOOTH_mix_sounds_from_mono_to_stereo(const Smooth *__restrict__ smooth, float *__restrict__ target_ch0, float *__restrict__ target_ch1, const float *__restrict__ source, int num_frames){
