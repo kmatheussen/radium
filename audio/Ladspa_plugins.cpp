@@ -590,44 +590,14 @@ static const LADSPA_Descriptor *call_ladspa_get_descriptor_func(LADSPA_Descripto
 }
 */
 
-static SoundPluginType *create_plugin_type(const LADSPA_Descriptor *descriptor, Library *library, int num){
-  SoundPluginType *plugin_type = (SoundPluginType*)V_calloc(1,sizeof(SoundPluginType));
+static TypeData *create_type_data(const SoundPluginType *plugin_type, const LADSPA_Descriptor *descriptor, Library *library, int num){
   TypeData *type_data = (TypeData*)V_calloc(1,sizeof(TypeData));
-
-  plugin_type->data = type_data;
-
   type_data->library = library;
   //type_data->descriptor = descriptor; // We unload the library later in this function, and then 'descriptor' won't be valid anymore.
   type_data->UniqueID = descriptor->UniqueID;
   type_data->Name = V_strdup(descriptor->Name);
   type_data->index = num;
     
-  plugin_type->type_name = "Ladspa";
-  plugin_type->name      = V_strdup(descriptor->Name);
-  plugin_type->info      = create_info_string(descriptor);
-  plugin_type->creator   = create_creator_string(descriptor);
-
-  plugin_type->is_instrument = false;
-
-  // Find num_effects, num_inputs, and num_outputs
-  //
-  for(unsigned int portnum=0;portnum<descriptor->PortCount;portnum++){
-    const LADSPA_PortDescriptor portdescriptor = descriptor->PortDescriptors[portnum];
-
-    if(LADSPA_IS_PORT_CONTROL(portdescriptor) && LADSPA_IS_PORT_INPUT(portdescriptor)){
-      //printf("Adding effect %d\n",plugin_type->num_effects);
-      plugin_type->num_effects++;
-    }
-
-    if(LADSPA_IS_PORT_AUDIO(portdescriptor) && LADSPA_IS_PORT_INPUT(portdescriptor)){
-      plugin_type->num_inputs++;
-    }
-
-    if(LADSPA_IS_PORT_AUDIO(portdescriptor) && LADSPA_IS_PORT_OUTPUT(portdescriptor)){
-      plugin_type->num_outputs++;
-    }
-  }
-
   type_data->min_values     = (float*)V_calloc(sizeof(float),plugin_type->num_effects);
   type_data->default_values = (float*)V_calloc(sizeof(float),plugin_type->num_effects);
   type_data->max_values     = (float*)V_calloc(sizeof(float),plugin_type->num_effects);
@@ -749,6 +719,41 @@ static SoundPluginType *create_plugin_type(const LADSPA_Descriptor *descriptor, 
       }
     }
   }
+
+  return type_data;
+}
+
+static SoundPluginType *create_plugin_type(const LADSPA_Descriptor *descriptor, Library *library, int num){
+  SoundPluginType *plugin_type = (SoundPluginType*)V_calloc(1,sizeof(SoundPluginType));
+
+  plugin_type->type_name = "Ladspa";
+  plugin_type->name      = V_strdup(descriptor->Name);
+  plugin_type->info      = create_info_string(descriptor);
+  plugin_type->creator   = create_creator_string(descriptor);
+
+  plugin_type->is_instrument = false;
+
+  // Find num_effects, num_inputs, and num_outputs
+  //
+  for(unsigned int portnum=0;portnum<descriptor->PortCount;portnum++){
+    const LADSPA_PortDescriptor portdescriptor = descriptor->PortDescriptors[portnum];
+
+    if(LADSPA_IS_PORT_CONTROL(portdescriptor) && LADSPA_IS_PORT_INPUT(portdescriptor)){
+      //printf("Adding effect %d\n",plugin_type->num_effects);
+      plugin_type->num_effects++;
+    }
+
+    if(LADSPA_IS_PORT_AUDIO(portdescriptor) && LADSPA_IS_PORT_INPUT(portdescriptor)){
+      plugin_type->num_inputs++;
+    }
+
+    if(LADSPA_IS_PORT_AUDIO(portdescriptor) && LADSPA_IS_PORT_OUTPUT(portdescriptor)){
+      plugin_type->num_outputs++;
+    }
+  }
+
+  TypeData *type_data = create_type_data(plugin_type, descriptor, library, num);
+  plugin_type->data = type_data;
 
   plugin_type->buffer_size_is_changed = buffer_size_is_changed;
 
