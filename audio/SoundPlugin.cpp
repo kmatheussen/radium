@@ -1228,6 +1228,13 @@ static float get_voice_CHANCE(struct SoundPlugin *plugin, int num, enum ValueFor
     }                                                                   \
   }
 
+static void set_volume(SoundPlugin *plugin, float volume){
+  if (equal_floats(volume, 0.0f) && plugin->sp && PLAYER_current_thread_has_lock() && SP_all_output_links_were_silent(plugin->sp))
+    SMOOTH_force_target_value(&plugin->volume, 0.0f);
+  else
+    SMOOTH_set_target_value(&plugin->volume, volume);
+}
+
 #define SET_SMOOTH_ON_OFF(smooth, on_off, value, on_value, off_value) { \
     {                                                                   \
       bool old_val = ATOMIC_GET(on_off);                                \
@@ -1238,6 +1245,21 @@ static float get_voice_CHANCE(struct SoundPlugin *plugin, int num, enum ValueFor
       }else if (value<0.5f && old_val){                                 \
         ATOMIC_SET(on_off, false);                                      \
         SMOOTH_set_target_value(smooth, off_value);                     \
+        update_instrument_gui(plugin);                                  \
+      }                                                                 \
+    }                                                                   \
+  }
+
+#define SET_VOLUME_SMOOTH_ON_OFF(plugin, on_off, value, on_value, off_value) { \
+    {                                                                   \
+      bool old_val = ATOMIC_GET(on_off);                                \
+      if(value>=0.5f && !old_val){                                      \
+        set_volume(plugin, on_value);                      \
+        ATOMIC_SET(on_off, true);                                       \
+        update_instrument_gui(plugin);                                  \
+      }else if (value<0.5f && old_val){                                 \
+        ATOMIC_SET(on_off, false);                                      \
+        set_volume(plugin, off_value);                                  \
         update_instrument_gui(plugin);                                  \
       }                                                                 \
     }                                                                   \
@@ -1510,8 +1532,12 @@ bool g_calling_set_effect_value_from_pd = false;
 static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, const int time, const int effect_num, float value, const enum StoreitType storeit_type, const FX_when when, const enum ValueFormat value_format, const bool sent_from_midi_learn){
   float store_value_native = value;
   float store_value_scaled = value;
-  //printf("set effect value. effect_num: %d, value: %f, num_effects: %d\n",effect_num,value,plugin->type->num_effects);
 
+  /*
+  if (plugin->patch != NULL)
+    printf("............%s: RT: %d. set effect value. effect: %s, value: %f, num_effects: %d\n",plugin->patch->name, PLAYER_current_thread_has_lock(), PLUGIN_get_effect_name(plugin,effect_num),value,plugin->type->num_effects);
+  */
+  
   PLUGIN_touch(plugin);
   
 #if !defined(RELEASE)
@@ -1613,30 +1639,36 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, const int time,
       
     case EFFNUM_SOLO_ONOFF:
       SET_ATOMIC_ON_OFF(plugin->solo_is_on, value);
-
+      
       if (THREADING_is_main_thread() && g_apply_solo_immediately && PLAYER_current_thread_has_lock()==false && !g_is_starting_up && !g_is_loading)
         update_solo_gui_stuff();
       else
-        ATOMIC_SET(g_atomic_must_update_solo_gui_stuff, true); // If we update solo immediately, solo changes will appear before other mixer changes such as add/remove connections, when changing a/b in mixer.
+        // If we update solo immediately, solo changes will appear before other mixer changes such as add/remove connections, when changing a/b in mixer.
+        ATOMIC_SET(g_atomic_must_update_solo_gui_stuff, true);
+      
       break;
-
-
       
     case EFFNUM_VOLUME:
-      set_gain_store_value(store_value_native, store_value_scaled, value_format);
-      if (ATOMIC_GET(plugin->volume_is_on))
-        SMOOTH_set_target_value(&plugin->volume, store_value_native);
-      //printf("Setting volume to %f. (scaled: %f)\n", store_value_native, store_value_scaled);
+      set_gain_store_value(store_value_native, store_value_scaled, value_format);      
+      if (ATOMIC_GET(plugin->volume_is_on)){
+        /*
+        if (plugin->type->num_outputs > 0){
+          float old_val = db2gain(plugin->output_volume_peaks.decaying_dbs_10x[0]); //atomic_get_float(pos); Må kalle SP_get_actual_link_gain_and_enabled eller lignende.
+          printf("Setting volume to %f. (scaled: %f) for %s. Old val: %f\n", store_value_native, store_value_scaled, plugin->patch->name, old_val);
+        }
+        */
+        set_volume(plugin, store_value_native);
+      }
+      
       break;
 
       
     case EFFNUM_VOLUME_ONOFF:
-      SET_SMOOTH_ON_OFF(&plugin->volume, plugin->volume_is_on, value,
-                        plugin->last_written_effect_values_native[plugin->type->num_effects + EFFNUM_VOLUME],
-                        0.0f);
+      SET_VOLUME_SMOOTH_ON_OFF(plugin, plugin->volume_is_on, value,
+                               plugin->last_written_effect_values_native[plugin->type->num_effects + EFFNUM_VOLUME],
+                               0.0f);
+
       break;
-
-
       
     case EFFNUM_OUTPUT_VOLUME:
       set_gain_store_value(store_value_native, store_value_scaled, value_format);
@@ -2383,7 +2415,7 @@ static bool use_ab_effect(const SoundPlugin *plugin, int effect_num){
 }
 
 // Called from the mixer gui. (the a/b/c/d/e/f/g/h buttons in the mixer)
-bool PLUGIN_apply_ab_state(SoundPlugin *plugin, hash_t *new_state, hash_t *old_state, radium::Scheduled_RT_functions &rt_functions){
+bool PLUGIN_apply_ab_state(SoundPlugin *plugin, hash_t *new_state, hash_t *old_state, radium::Scheduled_RT_functions &rt_functions, radium::SoloChanges &solo_changes){
   SoundPluginType *type = plugin->type;
 
   struct Patch *patch = (struct Patch*)plugin->patch;
@@ -2414,7 +2446,7 @@ bool PLUGIN_apply_ab_state(SoundPlugin *plugin, hash_t *new_state, hash_t *old_s
   bool has_made_full_undo = false;
 
   bool ret = false;
-  
+
   for(int i=0;i<num_effects;i++){
     if (!use_ab_effect(plugin, i))
       continue;
@@ -2439,15 +2471,23 @@ bool PLUGIN_apply_ab_state(SoundPlugin *plugin, hash_t *new_state, hash_t *old_s
           ADD_UNDO(AudioEffect_CurrPos2(patch, i, old_value, AE_NO_FLAGS));
         }
 
-#if !defined(RELEASE)
+#if 0 //!defined(RELEASE)
         printf("Setting %s::%s from %f to %f\n", plugin->patch->name, PLUGIN_get_effect_name(plugin, i), old_value, new_value);
 #endif
         
         ret = true;
-        
-        rt_functions.add([plugin,i,new_value](){
-            PLUGIN_set_effect_value(plugin, 0, i, new_value, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
-          });
+
+        if (i-type->num_effects == EFFNUM_SOLO_ONOFF){
+
+          solo_changes.add(plugin, new_value >= 0.5); // Solo must be treated separately. Setting EFFNUM_SOLO_ONOFF triggers a change in the _next_ cycle. When changes arent applied immediately (and at the same time as changing other effects) we can get audio artifacts.
+          
+        } else {
+
+          rt_functions.add([plugin,i,new_value](){
+              PLUGIN_set_effect_value(plugin, 0, i, new_value, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+            });
+          
+        }
         
         // To ensure plugin has not been deleted when running the callback.
         // (a little bit hacky way to solve this, but PLUGIN_apply_ab_state
@@ -2456,7 +2496,7 @@ bool PLUGIN_apply_ab_state(SoundPlugin *plugin, hash_t *new_state, hash_t *old_s
       }
     }
   }
-
+  
   if (apply_plugin_state){
     R_ASSERT_RETURN_IF_FALSE2(type->recreate_from_state!=NULL, ret);
     R_ASSERT(HASH_has_key(new_state, "plugin_state"));
@@ -3128,7 +3168,7 @@ bool PLUGIN_get_random_behavior(SoundPlugin *plugin, const int effect_num){
 
 
 void PLUGIN_set_soloed(SoundPlugin *plugin, bool soloit, bool apply_now){
-  R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
+  //R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
   
   float new_value = soloit ? 1.0 : 0.0;
   int effect_num = plugin->type->num_effects + EFFNUM_SOLO_ONOFF;
@@ -3139,6 +3179,7 @@ void PLUGIN_set_soloed(SoundPlugin *plugin, bool soloit, bool apply_now){
   }
   g_apply_solo_immediately = false;
 }
+
 
 void PLUGIN_set_muted(SoundPlugin *plugin, bool muteit){
   /*

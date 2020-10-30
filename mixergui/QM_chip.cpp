@@ -752,13 +752,15 @@ namespace{
     QVector<Parm> to_add;
     QVector<Parm> to_remove;
 
-    radium::Scheduled_RT_functions &rt_functions;
-      
   private:
     radium::Scheduled_RT_functions ___INTERNAL_rt_functions2;
+    radium::SoloChanges ___INTERNAL_solo_changes2;
 
   public:
     
+    radium::Scheduled_RT_functions &rt_functions;
+    radium::SoloChanges &solo_changes;
+      
     // Prevent heap allocation
     void *operator new (size_t) = delete;
     void *operator new[] (size_t) = delete;
@@ -768,13 +770,16 @@ namespace{
     AudioGraph(const AudioGraph&) = delete;
     AudioGraph& operator=(const AudioGraph&) = delete;
 
-    AudioGraph(radium::Scheduled_RT_functions &rt_functions)
+    AudioGraph(radium::Scheduled_RT_functions &rt_functions, radium::SoloChanges &solo_changes)
       : rt_functions(rt_functions)
+      , solo_changes(solo_changes)
     {
     }
 
     AudioGraph()
-      : rt_functions(___INTERNAL_rt_functions2)
+      : ___INTERNAL_solo_changes2(___INTERNAL_rt_functions2)
+      , rt_functions(___INTERNAL_rt_functions2)
+      , solo_changes(___INTERNAL_solo_changes2)
     {
     }
 
@@ -906,7 +911,7 @@ static bool CONNECTIONS_apply_changes(QGraphicsScene *scene, const changes::Audi
   if (PLAYER_is_running()==true){ // Player is always running except when starting up, shutting down, and jack has stopped. (and possible sometimes when rendering, not sure).
     
     // Create/remove mixer connections
-    if (SP_add_and_remove_links(add_linkparameters, remove_linkparameters, changes.rt_functions)==false)
+    if (SP_add_and_remove_links(add_linkparameters, remove_linkparameters, changes.solo_changes, changes.rt_functions)==false)
       return false;
         
   } else {
@@ -2964,10 +2969,12 @@ static void CONNECTION_create_from_state(QGraphicsScene *scene, hash_t *state, i
 
 void CONNECTIONS_replace_all_with_state(QGraphicsScene *scene, const hash_t *connections,
                                         bool include_audio, bool include_events, bool include_connection_gain, bool include_modulator_connections,
-                                        bool all_patches_are_always_supposed_to_be_here, radium::Scheduled_RT_functions &rt_functions)
+                                        bool all_patches_are_always_supposed_to_be_here,
+                                        radium::Scheduled_RT_functions &rt_functions, radium::SoloChanges &solo_changes
+                                        )
 {
   if (include_audio || include_events || include_connection_gain){
-    changes::AudioGraph changes(rt_functions);
+    changes::AudioGraph changes(rt_functions, solo_changes);
 
     if (include_audio || include_events)
       CONNECTIONS_remove_all2(scene, include_audio, include_events, changes);

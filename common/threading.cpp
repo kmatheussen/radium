@@ -316,7 +316,10 @@ namespace radium{
       R_ASSERT_NON_RELEASE(finished_running()==false);
 
       bool has_run_a_func = false;
-      
+#if 0 //!defined(RELEASE)
+      static int num = 0;
+      printf("-------------------RT. START running RT funcs. Size: %d. Num: %d------------------\n", _num_functions, num++);
+#endif
       for(; _i < _num_functions ; _i++){
         if (has_run_a_func && has_spent_too_much_time()) // always run at least one func.
           return false;
@@ -326,6 +329,9 @@ namespace radium{
         
         has_run_a_func = true;        
       }
+#if 0 //!defined(RELEASE)
+      printf("-------------------RT. STOP running RT funcs------------------\n");
+#endif
       
       ATOMIC_SET(_finished_running, true);
 
@@ -386,8 +392,12 @@ void radium::Scheduled_RT_functions::wait_until_ready_to_run_is_finished(radium:
     return;
   
   while(true){
+    if (!PLAYER_is_running())
+      break;
+        
     if (ready_to_run->finished_running())
       break;
+    
     msleep(15);
   }
 }

@@ -30,6 +30,7 @@ struct SoundProducer;
 #include <stdint.h>
 
 #include "SoundPlugin.h"
+#include "SoundPlugin_proc.h"
 
 #include "../common/Vector.hpp"
 
@@ -127,7 +128,7 @@ struct LinkParameters : public QVector<LinkParameter> {
 extern const radium::LinkParameters g_empty_linkparameters;
 
 // Either does everything or nothing. Returns false if it did nothing.
-bool SP_add_and_remove_links(const radium::LinkParameters &parm_to_add, const radium::LinkParameters &parm_to_remove, radium::Scheduled_RT_functions &rt_functions); // Shows message before returning false and something was wrong.
+bool SP_add_and_remove_links(const radium::LinkParameters &parm_to_add, const radium::LinkParameters &parm_to_remove, radium::SoloChanges &solo_changes, radium::Scheduled_RT_functions &rt_functions); // Shows message before returning false and something was wrong.
 
 #endif
 
@@ -157,6 +158,7 @@ void SP_write_mixer_tree_to_disk(QFile *file);
 
 #endif // __cplusplus
 
+  
 #ifndef AUDIO_SOUNDPLUGIN_H
 struct SoundPlugin;
 #endif
@@ -171,6 +173,8 @@ extern LANGSPEC bool SP_set_link_explicitly_enabled(struct SoundProducer *target
 extern LANGSPEC bool SP_get_link_explicitly_enabled(SoundProducer *target, SoundProducer *source, const char **error);
 extern LANGSPEC bool SP_get_link_implicitly_muted(SoundProducer *target, SoundProducer *source, const char **error);
 extern LANGSPEC bool SP_get_link_enabled(SoundProducer *target, SoundProducer *source, const char **error); // get actualy enabled status, which might be different than explitly enabled status if using solo.
+
+extern LANGSPEC bool SP_all_output_links_were_silent(SoundProducer *sp);
 
 #ifdef __cplusplus
 float SP_get_actual_link_gain_and_enabled(const SoundProducer *target, const SoundProducer *source, const char **error, bool &is_enabled);

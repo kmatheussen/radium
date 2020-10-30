@@ -854,7 +854,7 @@ struct MouseCycleFix{
                 
         fix_mouseMoveEvent(event2);
       }else{
-#if !defined(RELEASE)
+#if 0 //!defined(RELEASE)
         printf("Note: mouse-move called with same x and y values. Ignored.\n");
 #endif
       }

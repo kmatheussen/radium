@@ -815,7 +815,7 @@ void CONNECTIONS_create_from_state(QGraphicsScene *scene, const hash_t *connecti
 void CONNECTIONS_replace_all_with_state(QGraphicsScene *scene, const hash_t *connections,
                                         bool include_audio, bool include_events, bool include_connection_gain, bool include_modulator_connections,
                                         bool all_patches_are_always_supposed_to_be_here,
-                                        radium::Scheduled_RT_functions &rt_functions);
+                                        radium::Scheduled_RT_functions &rt_functions, radium::SoloChanges &solo_changes);
 
 void CONNECTIONS_create_from_presets_state(QGraphicsScene *scene, const hash_t *connections,
                                            const vector_t *patches,

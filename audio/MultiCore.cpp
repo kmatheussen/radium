@@ -177,6 +177,12 @@ static void process_soundproducer(int cpunum, SoundProducer *sp, int64_t time, i
       for(auto *buffer : sp->_input_buffers)
         buffer->RT_release_channels_if_necessary(radium::NeedsLock::YES);
 
+      for(int ch=0;ch<sp->_num_outputs;ch++)
+        if (!sp->_curr_output_is_silent[ch]){
+          R_ASSERT_NON_RELEASE(false);
+          sp->_curr_output_is_silent[ch] = true;
+        }
+          
       /*
       for(auto link : sp->_output_links){        
         if(!strcmp("Main Pipe", link->source->_plugin->patch->name)
@@ -196,7 +202,7 @@ static void process_soundproducer(int cpunum, SoundProducer *sp, int64_t time, i
     SoundProducer *next = NULL;
 
     for(SoundProducerLink *link : sp->_output_links)
-      if (link->is_active)
+      if (link->RT_is_active)
         dec_sp_dependency(link->source, link->target, next);
 
     // Important that we decrease 'num_sp_left' AFTER scheduling other soundproducers for processing. (i.e. calling when 'dec_sp_dependency')
