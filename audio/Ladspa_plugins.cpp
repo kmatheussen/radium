@@ -590,6 +590,198 @@ static const LADSPA_Descriptor *call_ladspa_get_descriptor_func(LADSPA_Descripto
 }
 */
 
+static SoundPluginType *create_plugin_type(const LADSPA_Descriptor *descriptor, Library *library, int num){
+  SoundPluginType *plugin_type = (SoundPluginType*)V_calloc(1,sizeof(SoundPluginType));
+  TypeData *type_data = (TypeData*)V_calloc(1,sizeof(TypeData));
+
+  plugin_type->data = type_data;
+
+  type_data->library = library;
+  //type_data->descriptor = descriptor; // We unload the library later in this function, and then 'descriptor' won't be valid anymore.
+  type_data->UniqueID = descriptor->UniqueID;
+  type_data->Name = V_strdup(descriptor->Name);
+  type_data->index = num;
+    
+  plugin_type->type_name = "Ladspa";
+  plugin_type->name      = V_strdup(descriptor->Name);
+  plugin_type->info      = create_info_string(descriptor);
+  plugin_type->creator   = create_creator_string(descriptor);
+
+  plugin_type->is_instrument = false;
+
+  // Find num_effects, num_inputs, and num_outputs
+  //
+  for(unsigned int portnum=0;portnum<descriptor->PortCount;portnum++){
+    const LADSPA_PortDescriptor portdescriptor = descriptor->PortDescriptors[portnum];
+
+    if(LADSPA_IS_PORT_CONTROL(portdescriptor) && LADSPA_IS_PORT_INPUT(portdescriptor)){
+      //printf("Adding effect %d\n",plugin_type->num_effects);
+      plugin_type->num_effects++;
+    }
+
+    if(LADSPA_IS_PORT_AUDIO(portdescriptor) && LADSPA_IS_PORT_INPUT(portdescriptor)){
+      plugin_type->num_inputs++;
+    }
+
+    if(LADSPA_IS_PORT_AUDIO(portdescriptor) && LADSPA_IS_PORT_OUTPUT(portdescriptor)){
+      plugin_type->num_outputs++;
+    }
+  }
+
+  type_data->min_values     = (float*)V_calloc(sizeof(float),plugin_type->num_effects);
+  type_data->default_values = (float*)V_calloc(sizeof(float),plugin_type->num_effects);
+  type_data->max_values     = (float*)V_calloc(sizeof(float),plugin_type->num_effects);
+
+  // Find type_data->hint_descriptors.
+  // type_data->hint_descriptor maps effect_num to descriptor for effect_num. (speeds up set_effect())
+  //
+  // Note that we are not storing pointers to LADSPA_PortRangeHintDescriptor (which would not work). Instead
+  // we are copying the memory areas of LADSPA_PortRangeHintDescriptor from the dynamically loaded library and into type_data.
+  // (LADSPA_PortRangeHintDescriptor is actually just an integer)
+  //
+  type_data->hint_descriptors = (LADSPA_PortRangeHintDescriptor*)V_calloc(sizeof(LADSPA_PortRangeHintDescriptor), plugin_type->num_effects);
+  for(int i = 0 ; i < plugin_type->num_effects ; i++)
+    type_data->hint_descriptors[i] = get_hintdescriptor(descriptor,i);
+
+  // Find type_data->min_values and type_data->max_values
+  //
+  {
+    int effect_num = 0;
+    type_data->effect_names = (const char**)V_calloc(sizeof(char*),plugin_type->num_effects);
+      
+    for(unsigned int portnum=0;portnum<descriptor->PortCount;portnum++){
+      const LADSPA_PortDescriptor portdescriptor = descriptor->PortDescriptors[portnum];
+      if(!strcmp(plugin_type->type_name,"Simple Low Pass Filter"))
+        printf("Handling %s. portcount: num_ports: %d. is_control: %d is_input: %d\n",plugin_type->name,(int)descriptor->PortCount,LADSPA_IS_PORT_CONTROL(portdescriptor), LADSPA_IS_PORT_INPUT(portdescriptor));
+
+      if(LADSPA_IS_PORT_CONTROL(portdescriptor) && LADSPA_IS_PORT_INPUT(portdescriptor)){
+        const LADSPA_PortRangeHint *range_hint = &descriptor->PortRangeHints[portnum];
+        LADSPA_PortRangeHintDescriptor hints = range_hint->HintDescriptor;
+
+        if(LADSPA_IS_HINT_BOUNDED_BELOW(hints))
+          type_data->min_values[effect_num] = range_hint->LowerBound;
+
+        if(LADSPA_IS_HINT_BOUNDED_ABOVE(hints))
+          type_data->max_values[effect_num] = range_hint->UpperBound;
+        else
+          type_data->max_values[effect_num] = 1.0f;
+          
+        if(LADSPA_IS_HINT_SAMPLE_RATE(hints)){
+          type_data->min_values[effect_num] *= 44100.0f; //MIXER_get_sample_rate(); No, the number must be a constant.
+          type_data->max_values[effect_num] *= 44100.0f; //MIXER_get_sample_rate(); Same here.
+        }
+
+        float min_value = type_data->min_values[effect_num];
+        float max_value = type_data->max_values[effect_num];
+        float default_value = 0.0f;
+
+        if(!strcmp(plugin_type->type_name,"Simple Low Pass Filter"))
+          printf("Before hints. min/max/default: %f/%f/%f\n",min_value,max_value,default_value);
+
+        if(LADSPA_IS_HINT_HAS_DEFAULT(hints)){
+            
+          // This switch block is copied from QTracktor, and modified.
+          switch (hints & LADSPA_HINT_DEFAULT_MASK) {
+            case LADSPA_HINT_DEFAULT_MINIMUM:
+              default_value = min_value;
+              break;
+            case LADSPA_HINT_DEFAULT_LOW:
+              if (LADSPA_IS_HINT_LOGARITHMIC(hints)){
+                default_value = ::expf(
+                                       ::logf(min_value) * 0.75f + ::logf(max_value) * 0.25f);
+              } else {
+                default_value = (min_value * 0.75f + max_value * 0.25f);
+              }
+              break;
+            case LADSPA_HINT_DEFAULT_MIDDLE:
+              if (LADSPA_IS_HINT_LOGARITHMIC(hints)) {
+                default_value = ::sqrt(min_value * max_value);
+              } else {
+                default_value = (min_value + max_value) * 0.5f;
+              }
+              break;
+            case LADSPA_HINT_DEFAULT_HIGH:
+              if (LADSPA_IS_HINT_LOGARITHMIC(hints)) {
+                default_value = ::expf(
+                                       ::logf(min_value) * 0.25f + ::logf(max_value) * 0.75f);
+              } else {
+                default_value= (min_value * 0.25f + max_value * 0.75f);
+              }
+              break;
+            case LADSPA_HINT_DEFAULT_MAXIMUM:
+              default_value = max_value;
+              break;
+            case LADSPA_HINT_DEFAULT_0:
+              default_value = 0.0f;
+              break;
+            case LADSPA_HINT_DEFAULT_1:
+              default_value = 1.0f;
+              break;
+            case LADSPA_HINT_DEFAULT_100:
+              default_value = 100.0f;
+              break;
+            case LADSPA_HINT_DEFAULT_440:
+              default_value = 440.0f; // this needs to be scaled(440,0,20000,min,max), i think.
+              break;
+            default:
+              default_value = (min_value+max_value)/2.0f;
+          }
+
+        }else{
+          default_value = (min_value+max_value)/2.0f;
+        }
+
+        if(default_value<min_value)
+          default_value=min_value;
+        if(default_value>max_value)
+          default_value=max_value;
+
+        //if(!strcmp(plugin_type->name,"Organ"))
+        //printf("Setting effect %s / %d to %f, %f, %f\n",plugin_type->name,effect_num,min_value,default_value,max_value);
+        type_data->default_values[effect_num] = default_value;
+
+        //if(!strcmp(plugin_type->type_name,"Simple Low Pass Filter"))
+        //  printf("After hints. min/max/default: %f/%f/%f\n",min_value,max_value,default_value);
+
+        type_data->effect_names[effect_num] = V_strdup(talloc_format("%d: %s", effect_num, descriptor->PortNames[portnum]));
+          
+        effect_num++;
+      }
+    }
+  }
+
+  plugin_type->buffer_size_is_changed = buffer_size_is_changed;
+
+  plugin_type->RT_process = RT_process;
+  plugin_type->RT_get_latency = RT_get_latency;
+    
+  plugin_type->create_plugin_data = create_plugin_data;
+  plugin_type->cleanup_plugin_data = cleanup_plugin_data;
+
+  //plugin_type->show_gui = show_gui;
+
+  //plugin_type->play_note       = play_note;
+  //plugin_type->set_note_volume = set_note_volume;
+  //plugin_type->stop_note       = stop_note;
+
+  plugin_type->get_display_value_string = get_display_value_string;
+
+  plugin_type->set_effect_value = set_effect_value;
+  plugin_type->get_effect_value = get_effect_value;
+
+  plugin_type->get_effect_name=get_effect_name;
+  //plugin_type->get_effect_description=get_effect_description;
+  plugin_type->get_effect_format = get_effect_format;
+
+  if(plugin_type->num_inputs==1 && plugin_type->num_outputs==1){ // Use two mono plugin instances to create one stereo plugin.
+    plugin_type->num_inputs = 2;
+    plugin_type->num_outputs = 2;
+    type_data->uses_two_handles = true;
+  }
+
+  return plugin_type;
+}
+
 static void add_ladspa_plugin_type(const QFileInfo &file_info){
   //return; // <- TODO: ThreadSanitizer complains on somethine when loading each ladspa plugins, but there is no proper backtrace so I haven't taken the time to find the cause of it yet.
   
@@ -661,200 +853,7 @@ static void add_ladspa_plugin_type(const QFileInfo &file_info){
   const LADSPA_Descriptor *descriptor;
 
   for(int i = 0; (descriptor=get_descriptor_func(i)) != NULL ; i++){
-    SoundPluginType *plugin_type = (SoundPluginType*)V_calloc(1,sizeof(SoundPluginType));
-    TypeData *type_data = (TypeData*)V_calloc(1,sizeof(TypeData));
-
-    plugin_type->data = type_data;
-
-    type_data->library = library;
-    //type_data->descriptor = descriptor; // We unload the library later in this function, and then 'descriptor' won't be valid anymore.
-    type_data->UniqueID = descriptor->UniqueID;
-    type_data->Name = V_strdup(descriptor->Name);
-    type_data->index = i;
-    
-#if 0
-    QString basename = file_info.fileName();
-    basename.resize(basename.size()-strlen(LIB_SUFFIX)-1);
-    type_data->filename = V_strdup(basename.toUtf8().constData());
-#endif
-
-    plugin_type->type_name = "Ladspa";
-    plugin_type->name      = V_strdup(descriptor->Name);
-    plugin_type->info      = create_info_string(descriptor);
-    plugin_type->creator   = create_creator_string(descriptor);
-
-    plugin_type->is_instrument = false;
-
-    // Find num_effects, num_inputs, and num_outputs
-    //
-    for(unsigned int portnum=0;portnum<descriptor->PortCount;portnum++){
-      const LADSPA_PortDescriptor portdescriptor = descriptor->PortDescriptors[portnum];
-
-      if(LADSPA_IS_PORT_CONTROL(portdescriptor) && LADSPA_IS_PORT_INPUT(portdescriptor)){
-        //printf("Adding effect %d\n",plugin_type->num_effects);
-        plugin_type->num_effects++;
-      }
-
-      if(LADSPA_IS_PORT_AUDIO(portdescriptor) && LADSPA_IS_PORT_INPUT(portdescriptor)){
-        plugin_type->num_inputs++;
-      }
-
-      if(LADSPA_IS_PORT_AUDIO(portdescriptor) && LADSPA_IS_PORT_OUTPUT(portdescriptor)){
-        plugin_type->num_outputs++;
-      }
-    }
-
-    type_data->min_values     = (float*)V_calloc(sizeof(float),plugin_type->num_effects);
-    type_data->default_values = (float*)V_calloc(sizeof(float),plugin_type->num_effects);
-    type_data->max_values     = (float*)V_calloc(sizeof(float),plugin_type->num_effects);
-
-    // Find type_data->hint_descriptors.
-    // type_data->hint_descriptor maps effect_num to descriptor for effect_num. (speeds up set_effect())
-    //
-    // Note that we are not storing pointers to LADSPA_PortRangeHintDescriptor (which would not work). Instead
-    // we are copying the memory areas of LADSPA_PortRangeHintDescriptor from the dynamically loaded library and into type_data.
-    // (LADSPA_PortRangeHintDescriptor is actually just an integer)
-    //
-    type_data->hint_descriptors = (LADSPA_PortRangeHintDescriptor*)V_calloc(sizeof(LADSPA_PortRangeHintDescriptor), plugin_type->num_effects);
-    for(int i = 0 ; i < plugin_type->num_effects ; i++)
-      type_data->hint_descriptors[i] = get_hintdescriptor(descriptor,i);
-
-    // Find type_data->min_values and type_data->max_values
-    //
-    {
-      int effect_num = 0;
-      type_data->effect_names = (const char**)V_calloc(sizeof(char*),plugin_type->num_effects);
-      
-      for(unsigned int portnum=0;portnum<descriptor->PortCount;portnum++){
-        const LADSPA_PortDescriptor portdescriptor = descriptor->PortDescriptors[portnum];
-        if(!strcmp(plugin_type->type_name,"Simple Low Pass Filter"))
-          printf("Handling %s. portcount: num_ports: %d. is_control: %d is_input: %d\n",plugin_type->name,(int)descriptor->PortCount,LADSPA_IS_PORT_CONTROL(portdescriptor), LADSPA_IS_PORT_INPUT(portdescriptor));
-
-        if(LADSPA_IS_PORT_CONTROL(portdescriptor) && LADSPA_IS_PORT_INPUT(portdescriptor)){
-          const LADSPA_PortRangeHint *range_hint = &descriptor->PortRangeHints[portnum];
-          LADSPA_PortRangeHintDescriptor hints = range_hint->HintDescriptor;
-
-          if(LADSPA_IS_HINT_BOUNDED_BELOW(hints))
-            type_data->min_values[effect_num] = range_hint->LowerBound;
-
-          if(LADSPA_IS_HINT_BOUNDED_ABOVE(hints))
-            type_data->max_values[effect_num] = range_hint->UpperBound;
-          else
-            type_data->max_values[effect_num] = 1.0f;
-          
-          if(LADSPA_IS_HINT_SAMPLE_RATE(hints)){
-            type_data->min_values[effect_num] *= 44100.0f; //MIXER_get_sample_rate(); No, the number must be a constant.
-            type_data->max_values[effect_num] *= 44100.0f; //MIXER_get_sample_rate(); Same here.
-          }
-
-          float min_value = type_data->min_values[effect_num];
-          float max_value = type_data->max_values[effect_num];
-          float default_value = 0.0f;
-
-          if(!strcmp(plugin_type->type_name,"Simple Low Pass Filter"))
-            printf("Before hints. min/max/default: %f/%f/%f\n",min_value,max_value,default_value);
-
-          if(LADSPA_IS_HINT_HAS_DEFAULT(hints)){
-            
-            // This switch block is copied from QTracktor, and modified.
-            switch (hints & LADSPA_HINT_DEFAULT_MASK) {
-            case LADSPA_HINT_DEFAULT_MINIMUM:
-              default_value = min_value;
-            break;
-            case LADSPA_HINT_DEFAULT_LOW:
-              if (LADSPA_IS_HINT_LOGARITHMIC(hints)){
-              default_value = ::expf(
-                                     ::logf(min_value) * 0.75f + ::logf(max_value) * 0.25f);
-              } else {
-                default_value = (min_value * 0.75f + max_value * 0.25f);
-              }
-              break;
-            case LADSPA_HINT_DEFAULT_MIDDLE:
-              if (LADSPA_IS_HINT_LOGARITHMIC(hints)) {
-                default_value = ::sqrt(min_value * max_value);
-              } else {
-                default_value = (min_value + max_value) * 0.5f;
-              }
-            break;
-            case LADSPA_HINT_DEFAULT_HIGH:
-              if (LADSPA_IS_HINT_LOGARITHMIC(hints)) {
-                default_value = ::expf(
-                                       ::logf(min_value) * 0.25f + ::logf(max_value) * 0.75f);
-            } else {
-                default_value= (min_value * 0.25f + max_value * 0.75f);
-              }
-              break;
-            case LADSPA_HINT_DEFAULT_MAXIMUM:
-              default_value = max_value;
-              break;
-            case LADSPA_HINT_DEFAULT_0:
-              default_value = 0.0f;
-              break;
-            case LADSPA_HINT_DEFAULT_1:
-              default_value = 1.0f;
-              break;
-            case LADSPA_HINT_DEFAULT_100:
-              default_value = 100.0f;
-              break;
-            case LADSPA_HINT_DEFAULT_440:
-              default_value = 440.0f; // this needs to be scaled(440,0,20000,min,max), i think.
-              break;
-            default:
-              default_value = (min_value+max_value)/2.0f;
-            }
-
-          }else{
-            default_value = (min_value+max_value)/2.0f;
-          }
-
-          if(default_value<min_value)
-            default_value=min_value;
-          if(default_value>max_value)
-            default_value=max_value;
-
-          //if(!strcmp(plugin_type->name,"Organ"))
-          //printf("Setting effect %s / %d to %f, %f, %f\n",plugin_type->name,effect_num,min_value,default_value,max_value);
-          type_data->default_values[effect_num] = default_value;
-
-          if(!strcmp(plugin_type->type_name,"Simple Low Pass Filter"))
-            printf("After hints. min/max/default: %f/%f/%f\n",min_value,max_value,default_value);
-
-          type_data->effect_names[effect_num] = V_strdup(talloc_format("%d: %s", effect_num, descriptor->PortNames[portnum]));
-          
-          effect_num++;
-        }
-      }
-    }
-
-    plugin_type->buffer_size_is_changed = buffer_size_is_changed;
-
-    plugin_type->RT_process = RT_process;
-    plugin_type->RT_get_latency = RT_get_latency;
-    
-    plugin_type->create_plugin_data = create_plugin_data;
-    plugin_type->cleanup_plugin_data = cleanup_plugin_data;
-
-    //plugin_type->show_gui = show_gui;
-
-    //plugin_type->play_note       = play_note;
-    //plugin_type->set_note_volume = set_note_volume;
-    //plugin_type->stop_note       = stop_note;
-
-    plugin_type->get_display_value_string = get_display_value_string;
-
-    plugin_type->set_effect_value = set_effect_value;
-    plugin_type->get_effect_value = get_effect_value;
-
-    plugin_type->get_effect_name=get_effect_name;
-    //plugin_type->get_effect_description=get_effect_description;
-    plugin_type->get_effect_format = get_effect_format;
-
-    if(plugin_type->num_inputs==1 && plugin_type->num_outputs==1){ // Use two mono plugin instances to create one stereo plugin.
-      plugin_type->num_inputs = 2;
-      plugin_type->num_outputs = 2;
-      type_data->uses_two_handles = true;
-    }
-
+    SoundPluginType *plugin_type = create_plugin_type(descriptor, library, i);
     PR_add_plugin_type_no_menu(plugin_type);
     g_plugin_types.push_back(plugin_type);
   }
