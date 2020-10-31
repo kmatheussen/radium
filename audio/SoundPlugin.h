@@ -315,6 +315,10 @@ typedef struct SoundPluginType{
 
   const char *category;
   const char *creator;
+
+  /////////////////////////////////////////////////////////////////////////////////////////
+  // Note: Remember to update PLUGIN_generate_new_patchname when adding new fields here. //
+  /////////////////////////////////////////////////////////////////////////////////////////
   
   const char *(*get_effect_description)(struct SoundPlugin *plugin, int effect_num);
 

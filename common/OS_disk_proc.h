@@ -76,6 +76,34 @@ extern LANGSPEC void DISK_cleanup(void);
 
 #include "OS_disk2_proc.h"
 
+#ifdef __cplusplus
+namespace radium{
+  
+  struct ScopedReadFile{
+    disk_t *_file;
+    ScopedReadFile(filepath_t filename){
+      _file = DISK_open_for_reading(filename);
+    }
+
+    ~ScopedReadFile(){
+      if (_file != NULL)
+        DISK_close_and_delete(_file);
+    }
+  };
+  
+  struct ScopedWriteFile{
+    disk_t *_file;
+    ScopedWriteFile(filepath_t filename){
+      _file = DISK_open_for_writing(filename);
+    }
+
+    ~ScopedWriteFile(){
+      if (_file != NULL)
+        DISK_close_and_delete(_file);
+    }
+  };
+}
+#endif
 
 
 #ifdef USE_QT4

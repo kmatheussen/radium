@@ -3048,6 +3048,88 @@ void PLUGIN_reset_ab(SoundPlugin *plugin, int num){
     plugin->ab_is_valid[num] = false;
 }
 
+
+#define CURR_PULGINTYPE_STATE_VERSION 1
+
+hash_t *PLUGINTYPE_get_state(const SoundPluginType *plugin_type){  
+  hash_t *state = HASH_create(20);
+
+  HASH_put_int(state, "state_version", CURR_PULGINTYPE_STATE_VERSION);
+  
+  HASH_put_chars(state, "type_name", plugin_type->type_name);
+  HASH_put_chars(state, "name", plugin_type->name);
+  
+  HASH_put_int(state, "version", plugin_type->version);
+
+  if (plugin_type->info != NULL)
+    HASH_put_chars(state, "info", plugin_type->info);
+
+  HASH_put_int(state, "num_inputs", plugin_type->num_inputs);
+  HASH_put_int(state, "num_outputs", plugin_type->num_outputs);
+
+  HASH_put_bool(state, "is_instrument", plugin_type->is_instrument);
+
+  HASH_put_bool(state, "note_handling_is_RT", plugin_type->note_handling_is_RT);
+
+  HASH_put_int(state, "num_effects", plugin_type->num_effects);
+
+  HASH_put_bool(state, "state_contains_effect_values", plugin_type->state_contains_effect_values);
+  HASH_put_bool(state, "state_may_contain_effect_values", plugin_type->state_may_contain_effect_values);
+
+  HASH_put_bool(state, "will_always_autosuspend", plugin_type->will_always_autosuspend);
+  HASH_put_bool(state, "will_never_autosuspend", plugin_type->will_never_autosuspend);
+
+  if (plugin_type->category != NULL)
+    HASH_put_chars(state, "category", plugin_type->category);
+
+  if (plugin_type->creator != NULL)
+    HASH_put_chars(state, "creator", plugin_type->creator);
+
+  return state;
+}
+
+
+bool PLUGINTYPE_maybe_apply_state(SoundPluginType *plugin_type, const hash_t *state){
+  if (!HASH_has_key(state, "state_version"))
+    return false;
+  
+  int state_version = HASH_get_int(state, "state_version");
+
+  if (state_version > CURR_PULGINTYPE_STATE_VERSION)
+    return false;
+
+  plugin_type->type_name = strdup(HASH_get_chars(state, "type_name"));
+  plugin_type->name = strdup(HASH_get_chars(state, "name"));
+  
+  plugin_type->version = HASH_get_int(state, "version");
+
+  if (HASH_has_key(state, "info"))
+    plugin_type->info = strdup(HASH_get_chars(state, "info"));
+
+  plugin_type->num_inputs = HASH_get_int(state, "num_inputs");
+  plugin_type->num_outputs = HASH_get_int(state, "num_outputs");
+
+  plugin_type->is_instrument = HASH_get_bool(state, "is_instrument");
+
+  plugin_type->note_handling_is_RT = HASH_get_bool(state, "note_handling_is_RT");
+
+  plugin_type->num_effects = HASH_get_int(state, "num_effects");
+
+  plugin_type->state_contains_effect_values = HASH_get_bool(state, "state_contains_effect_values");
+  plugin_type->state_may_contain_effect_values = HASH_get_bool(state, "state_may_contain_effect_values");
+
+  plugin_type->will_always_autosuspend = HASH_get_bool(state, "will_always_autosuspend");
+  plugin_type->will_never_autosuspend = HASH_get_bool(state, "will_never_autosuspend");
+
+  if (HASH_has_key(state, "category"))
+    plugin_type->category = strdup(HASH_get_chars(state, "category"));
+
+  if (HASH_has_key(state, "creator"))
+    plugin_type->creator = strdup(HASH_get_chars(state, "creator"));
+
+  return true;
+}
+    
 const char *PLUGIN_generate_new_patchname(SoundPlugin *plugin){
   const char *maybe = SEND_RECEIVE_maybe_generate_patch_name(plugin);
   if (maybe)

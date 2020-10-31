@@ -184,6 +184,11 @@ extern LANGSPEC void PLUGIN_DLoad(SoundPlugin *plugin);
 extern LANGSPEC SoundPlugin *PLUGIN_create_from_state(struct Patch *patch, hash_t *state, bool is_loading);
 extern LANGSPEC void PLUGIN_change_ab(SoundPlugin *plugin, int ab); // Only called from AUDIOWIDGET_set_ab. Call AUDIOWIDGET_set_ab instead.
 extern LANGSPEC void PLUGIN_reset_ab(SoundPlugin *plugin, int ab);
+
+// For caching
+extern LANGSPEC hash_t *PLUGINTYPE_get_state(const SoundPluginType *plugin_type);
+extern LANGSPEC bool PLUGINTYPE_maybe_apply_state(SoundPluginType *plugin_type, const hash_t *state);
+
 extern LANGSPEC const char *PLUGIN_generate_new_patchname(SoundPlugin *plugin);
 
 extern LANGSPEC void PLUGIN_add_midi_learn(SoundPlugin *plugin, int effect_num);
