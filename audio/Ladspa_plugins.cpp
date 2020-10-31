@@ -72,14 +72,62 @@ struct Data{
 };
 
 struct Library{ // Used to avoid having lots of unused dynamic libraries loaded into memory at all time (and sometimes using up TLS)
-  const char *filename; // used for error messages
-  QLibrary *library;
-  LADSPA_Descriptor_Function get_descriptor_func;
-  int num_library_references; // library is unloaded when this value decreases from 1 to 0, and loaded when increasing from 0 to 1.
-  int num_times_loaded; // for debugging
+  const wchar_t *filename = NULL; // used for error messages
+  QLibrary *qlibrary = NULL;
+  LADSPA_Descriptor_Function get_descriptor_func = NULL;
+  int num_instances = 0;
+  int num_library_references = 0; // library is unloaded when this value decreases from 1 to 0, and loaded when increasing from 0 to 1.
+  int num_times_loaded = 0; // for debugging
+
+  void unload(void){
+    qlibrary->unload();
+    get_descriptor_func = NULL;
+  }
+
+  bool ensure_descriptor_func(void){
+
+    LADSPA_Descriptor_Function get_descriptor_func = (LADSPA_Descriptor_Function) qlibrary->resolve("ladspa_descriptor");
+    
+    if(get_descriptor_func==NULL){
+      GFX_Message(NULL, "Unable to load plugin. Has the plugin file \"%S\" disappeared?", filename);
+      return false;
+    }
+  
+    this->get_descriptor_func = get_descriptor_func;
+    return true;
+  }
+
+  bool add_reference(void){
+  
+    if (num_library_references==0){
+      printf("**** Loading %S\n",filename);
+      
+      if (!ensure_descriptor_func())
+        return false;
+    }
+    
+    num_library_references++;
+    num_times_loaded++;
+    
+    return true;
+  }
+
+  void remove_reference(void){
+    num_library_references--;
+
+    if (num_library_references==0) {
+      printf("**** Unloading %S\n",filename);
+      unload();
+    }
+  }
+
 };
+ 
+
 
 struct TypeData{
+  bool has_content;
+  
   Library *library; // Referenced from here.
   
   const LADSPA_Descriptor *descriptor;
@@ -188,50 +236,20 @@ static void setup_audio_ports(const SoundPluginType *type, Data *data, int block
   }
 }
 
-static bool add_library_reference(Library *library){
-  
-  if (library->num_library_references==0){
-    printf("**** Loading %s\n",library->filename);
-        
-    LADSPA_Descriptor_Function get_descriptor_func = (LADSPA_Descriptor_Function) library->library->resolve("ladspa_descriptor");
-
-    if(get_descriptor_func==NULL){
-      GFX_Message(NULL, "Unable to load plugin. Has the plugin file \"%s\" disappeared?", library->filename);
-      return false;
-    }
-
-    library->get_descriptor_func = get_descriptor_func;
-  }
-
-  library->num_library_references++;
-  library->num_times_loaded++;
-  
-  return true;
-}
-
-static void remove_library_reference(Library *library){    
-  library->num_library_references--;
-
-  if (library->num_library_references==0) {
-    printf("**** Unloading %s\n",library->filename);
-    library->library->unload();
-  }
-}
-
 static bool add_type_data_reference(TypeData *type_data){
 
   if (type_data->num_typedata_references==0){
 
     R_ASSERT(type_data->descriptor==NULL);
 
-    if (add_library_reference(type_data->library)==false)
+    if (type_data->library->add_reference()==false)
       return false;
     
     type_data->descriptor = type_data->library->get_descriptor_func(type_data->index);
   
     if (type_data->descriptor==NULL) {
-      GFX_Message(NULL, "Unable to load plugin #%d in file \"%s\". That is not supposed to happen since it was possible to load the plugin when the program was initializing.", type_data->index, type_data->library->filename);
-      remove_library_reference(type_data->library);
+      GFX_Message(NULL, "Unable to load plugin #%d in file \"%S\". That is not supposed to happen since it was possible to load the plugin when the program was initializing.", type_data->index, type_data->library->filename);
+      type_data->library->remove_reference();
       return false;
     }
   }
@@ -244,20 +262,168 @@ static void remove_type_data_reference(TypeData *type_data){
   type_data->num_typedata_references--;
 
   if (type_data->num_typedata_references==0){
-    remove_library_reference(type_data->library);
+    type_data->library->remove_reference();
     type_data->descriptor = NULL;
   }
 }
 
+static LADSPA_PortRangeHintDescriptor get_hintdescriptor(const LADSPA_Descriptor *descriptor, int effect_num){
+
+  int effect_num2 = 0;
+  for(unsigned int portnum=0;portnum<descriptor->PortCount;portnum++){
+    const LADSPA_PortDescriptor portdescriptor = descriptor->PortDescriptors[portnum];
+    if(LADSPA_IS_PORT_CONTROL(portdescriptor) && LADSPA_IS_PORT_INPUT(portdescriptor)){
+      if(effect_num2==effect_num){
+        const LADSPA_PortRangeHint *range_hint = &descriptor->PortRangeHints[portnum];
+        const LADSPA_PortRangeHintDescriptor hints = range_hint->HintDescriptor;
+        return hints;
+      }else
+        effect_num2++;
+    }
+  }
+
+  RWarning("Unknown effect %d for Ladspa plugin \"%s\"\n", effect_num, descriptor->Name);
+  return 0;
+}
+
+static void fill_in_type_data_info_from_descriptor(TypeData *type_data, const SoundPluginType *plugin_type, const LADSPA_Descriptor *descriptor){
+  if (type_data->has_content)
+    return;
+  
+  type_data->has_content = true;
+  
+  //type_data->descriptor = descriptor; // We unload the library later in this function, and then 'descriptor' won't be valid anymore.
+  type_data->UniqueID = descriptor->UniqueID;
+  type_data->Name = V_strdup(descriptor->Name);
+    
+  type_data->min_values     = (float*)V_calloc(sizeof(float),plugin_type->num_effects);
+  type_data->default_values = (float*)V_calloc(sizeof(float),plugin_type->num_effects);
+  type_data->max_values     = (float*)V_calloc(sizeof(float),plugin_type->num_effects);
+
+  // Find type_data->hint_descriptors.
+  // type_data->hint_descriptor maps effect_num to descriptor for effect_num. (speeds up set_effect())
+  //
+  // Note that we are not storing pointers to LADSPA_PortRangeHintDescriptor (which would not work). Instead
+  // we are copying the memory areas of LADSPA_PortRangeHintDescriptor from the dynamically loaded library and into type_data.
+  // (LADSPA_PortRangeHintDescriptor is actually just an integer)
+  //
+  type_data->hint_descriptors = (LADSPA_PortRangeHintDescriptor*)V_calloc(sizeof(LADSPA_PortRangeHintDescriptor), plugin_type->num_effects);
+  for(int i = 0 ; i < plugin_type->num_effects ; i++)
+    type_data->hint_descriptors[i] = get_hintdescriptor(descriptor,i);
+
+  // Find type_data->min_values and type_data->max_values
+  //
+  {
+    int effect_num = 0;
+    type_data->effect_names = (const char**)V_calloc(sizeof(char*),plugin_type->num_effects);
+      
+    for(unsigned int portnum=0;portnum<descriptor->PortCount;portnum++){
+      const LADSPA_PortDescriptor portdescriptor = descriptor->PortDescriptors[portnum];
+
+      //if(!strcmp(plugin_type->type_name,"Simple Low Pass Filter"))
+      //  printf("Handling %s. portcount: num_ports: %d. is_control: %d is_input: %d\n",plugin_type->name,(int)descriptor->PortCount,LADSPA_IS_PORT_CONTROL(portdescriptor), LADSPA_IS_PORT_INPUT(portdescriptor));
+
+      if(LADSPA_IS_PORT_CONTROL(portdescriptor) && LADSPA_IS_PORT_INPUT(portdescriptor)){
+        const LADSPA_PortRangeHint *range_hint = &descriptor->PortRangeHints[portnum];
+        LADSPA_PortRangeHintDescriptor hints = range_hint->HintDescriptor;
+
+        if(LADSPA_IS_HINT_BOUNDED_BELOW(hints))
+          type_data->min_values[effect_num] = range_hint->LowerBound;
+
+        if(LADSPA_IS_HINT_BOUNDED_ABOVE(hints))
+          type_data->max_values[effect_num] = range_hint->UpperBound;
+        else
+          type_data->max_values[effect_num] = 1.0f;
+          
+        if(LADSPA_IS_HINT_SAMPLE_RATE(hints)){
+          type_data->min_values[effect_num] *= 44100.0f; //MIXER_get_sample_rate(); No, the number must be a constant.
+          type_data->max_values[effect_num] *= 44100.0f; //MIXER_get_sample_rate(); Same here.
+        }
+
+        float min_value = type_data->min_values[effect_num];
+        float max_value = type_data->max_values[effect_num];
+        float default_value = 0.0f;
+
+        //if(!strcmp(plugin_type->type_name,"Simple Low Pass Filter"))
+        //  printf("Before hints. min/max/default: %f/%f/%f\n",min_value,max_value,default_value);
+
+        if(LADSPA_IS_HINT_HAS_DEFAULT(hints)){
+            
+          // This switch block is copied from QTracktor, and modified.
+          switch (hints & LADSPA_HINT_DEFAULT_MASK) {
+            case LADSPA_HINT_DEFAULT_MINIMUM:
+              default_value = min_value;
+              break;
+            case LADSPA_HINT_DEFAULT_LOW:
+              if (LADSPA_IS_HINT_LOGARITHMIC(hints)){
+                default_value = ::expf(
+                                       ::logf(min_value) * 0.75f + ::logf(max_value) * 0.25f);
+              } else {
+                default_value = (min_value * 0.75f + max_value * 0.25f);
+              }
+              break;
+            case LADSPA_HINT_DEFAULT_MIDDLE:
+              if (LADSPA_IS_HINT_LOGARITHMIC(hints)) {
+                default_value = ::sqrt(min_value * max_value);
+              } else {
+                default_value = (min_value + max_value) * 0.5f;
+              }
+              break;
+            case LADSPA_HINT_DEFAULT_HIGH:
+              if (LADSPA_IS_HINT_LOGARITHMIC(hints)) {
+                default_value = ::expf(
+                                       ::logf(min_value) * 0.25f + ::logf(max_value) * 0.75f);
+              } else {
+                default_value= (min_value * 0.25f + max_value * 0.75f);
+              }
+              break;
+            case LADSPA_HINT_DEFAULT_MAXIMUM:
+              default_value = max_value;
+              break;
+            case LADSPA_HINT_DEFAULT_0:
+              default_value = 0.0f;
+              break;
+            case LADSPA_HINT_DEFAULT_1:
+              default_value = 1.0f;
+              break;
+            case LADSPA_HINT_DEFAULT_100:
+              default_value = 100.0f;
+              break;
+            case LADSPA_HINT_DEFAULT_440:
+              default_value = 440.0f; // this needs to be scaled(440,0,20000,min,max), i think.
+              break;
+            default:
+              default_value = (min_value+max_value)/2.0f;
+          }
+
+        }else{
+          default_value = (min_value+max_value)/2.0f;
+        }
+
+        if(default_value<min_value)
+          default_value=min_value;
+        if(default_value>max_value)
+          default_value=max_value;
+
+        //if(!strcmp(plugin_type->name,"Organ"))
+        //printf("Setting effect %s / %d to %f, %f, %f\n",plugin_type->name,effect_num,min_value,default_value,max_value);
+        type_data->default_values[effect_num] = default_value;
+
+        //if(!strcmp(plugin_type->type_name,"Simple Low Pass Filter"))
+        //  printf("After hints. min/max/default: %f/%f/%f\n",min_value,max_value,default_value);
+
+        type_data->effect_names[effect_num] = V_strdup(talloc_format("%d: %s", effect_num, descriptor->PortNames[portnum]));
+          
+        effect_num++;
+      }
+    }
+  }
+}
+
+
 static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size, bool is_loading){
   R_ASSERT(THREADING_is_main_thread());
     
-  Data *data = (Data*)V_calloc(1, sizeof(Data));
-  TypeData *type_data = (TypeData*)plugin_type->data;
-
-  if (add_type_data_reference(type_data)==false)
-    return NULL;
-
   if (QString(plugin_type->name).startsWith("TAP ")){
 
     bool doit = true;
@@ -283,13 +449,22 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
     }
   }
   
+  Data *data = (Data*)V_calloc(1, sizeof(Data));
+
+  TypeData *type_data = (TypeData*)plugin_type->data;
+
+  if (add_type_data_reference(type_data)==false)
+    return NULL;
+
   const LADSPA_Descriptor *descriptor = type_data->descriptor;
   if (type_data->descriptor==NULL){
     Library *library = type_data->library;
     R_ASSERT_RETURN_IF_FALSE2(library!=NULL, NULL);
-    RError("2. type_data->descriptor==NULL. num_references: %d, num_times_loaded: %d, filename: \"%s\"",library->num_library_references,library->num_times_loaded,library->filename);
+    RError("2. type_data->descriptor==NULL. num_references: %d, num_times_loaded: %d, filename: \"%S\"",library->num_library_references,library->num_times_loaded,library->filename);
     return NULL;
   }
+  
+  fill_in_type_data_info_from_descriptor(type_data, plugin_type, descriptor);
   
   data->control_values = (float*)V_calloc(sizeof(float),descriptor->PortCount);
 
@@ -396,25 +571,6 @@ static void buffer_size_is_changed(SoundPlugin *plugin, int new_buffer_size){
     if(type_data->uses_two_handles==true)
       descriptor->activate(data->handles[1]);
   }
-}
-
-static LADSPA_PortRangeHintDescriptor get_hintdescriptor(const LADSPA_Descriptor *descriptor, int effect_num){
-
-  int effect_num2 = 0;
-  for(unsigned int portnum=0;portnum<descriptor->PortCount;portnum++){
-    const LADSPA_PortDescriptor portdescriptor = descriptor->PortDescriptors[portnum];
-    if(LADSPA_IS_PORT_CONTROL(portdescriptor) && LADSPA_IS_PORT_INPUT(portdescriptor)){
-      if(effect_num2==effect_num){
-        const LADSPA_PortRangeHint *range_hint = &descriptor->PortRangeHints[portnum];
-        const LADSPA_PortRangeHintDescriptor hints = range_hint->HintDescriptor;
-        return hints;
-      }else
-        effect_num2++;
-    }
-  }
-
-  RWarning("Unknown effect %d for Ladspa plugin \"%s\"\n", effect_num, descriptor->Name);
-  return 0;
 }
 
 static float frequency_2_slider(float freq, const float min_freq, const float max_freq){
@@ -590,170 +746,151 @@ static const LADSPA_Descriptor *call_ladspa_get_descriptor_func(LADSPA_Descripto
 }
 */
 
-static TypeData *create_type_data(const SoundPluginType *plugin_type, const LADSPA_Descriptor *descriptor, Library *library, int num){
-  TypeData *type_data = (TypeData*)V_calloc(1,sizeof(TypeData));
-  type_data->library = library;
-  //type_data->descriptor = descriptor; // We unload the library later in this function, and then 'descriptor' won't be valid anymore.
-  type_data->UniqueID = descriptor->UniqueID;
-  type_data->Name = V_strdup(descriptor->Name);
-  type_data->index = num;
-    
-  type_data->min_values     = (float*)V_calloc(sizeof(float),plugin_type->num_effects);
-  type_data->default_values = (float*)V_calloc(sizeof(float),plugin_type->num_effects);
-  type_data->max_values     = (float*)V_calloc(sizeof(float),plugin_type->num_effects);
-
-  // Find type_data->hint_descriptors.
-  // type_data->hint_descriptor maps effect_num to descriptor for effect_num. (speeds up set_effect())
-  //
-  // Note that we are not storing pointers to LADSPA_PortRangeHintDescriptor (which would not work). Instead
-  // we are copying the memory areas of LADSPA_PortRangeHintDescriptor from the dynamically loaded library and into type_data.
-  // (LADSPA_PortRangeHintDescriptor is actually just an integer)
-  //
-  type_data->hint_descriptors = (LADSPA_PortRangeHintDescriptor*)V_calloc(sizeof(LADSPA_PortRangeHintDescriptor), plugin_type->num_effects);
-  for(int i = 0 ; i < plugin_type->num_effects ; i++)
-    type_data->hint_descriptors[i] = get_hintdescriptor(descriptor,i);
-
-  // Find type_data->min_values and type_data->max_values
-  //
-  {
-    int effect_num = 0;
-    type_data->effect_names = (const char**)V_calloc(sizeof(char*),plugin_type->num_effects);
-      
-    for(unsigned int portnum=0;portnum<descriptor->PortCount;portnum++){
-      const LADSPA_PortDescriptor portdescriptor = descriptor->PortDescriptors[portnum];
-      if(!strcmp(plugin_type->type_name,"Simple Low Pass Filter"))
-        printf("Handling %s. portcount: num_ports: %d. is_control: %d is_input: %d\n",plugin_type->name,(int)descriptor->PortCount,LADSPA_IS_PORT_CONTROL(portdescriptor), LADSPA_IS_PORT_INPUT(portdescriptor));
-
-      if(LADSPA_IS_PORT_CONTROL(portdescriptor) && LADSPA_IS_PORT_INPUT(portdescriptor)){
-        const LADSPA_PortRangeHint *range_hint = &descriptor->PortRangeHints[portnum];
-        LADSPA_PortRangeHintDescriptor hints = range_hint->HintDescriptor;
-
-        if(LADSPA_IS_HINT_BOUNDED_BELOW(hints))
-          type_data->min_values[effect_num] = range_hint->LowerBound;
-
-        if(LADSPA_IS_HINT_BOUNDED_ABOVE(hints))
-          type_data->max_values[effect_num] = range_hint->UpperBound;
-        else
-          type_data->max_values[effect_num] = 1.0f;
-          
-        if(LADSPA_IS_HINT_SAMPLE_RATE(hints)){
-          type_data->min_values[effect_num] *= 44100.0f; //MIXER_get_sample_rate(); No, the number must be a constant.
-          type_data->max_values[effect_num] *= 44100.0f; //MIXER_get_sample_rate(); Same here.
-        }
-
-        float min_value = type_data->min_values[effect_num];
-        float max_value = type_data->max_values[effect_num];
-        float default_value = 0.0f;
-
-        if(!strcmp(plugin_type->type_name,"Simple Low Pass Filter"))
-          printf("Before hints. min/max/default: %f/%f/%f\n",min_value,max_value,default_value);
-
-        if(LADSPA_IS_HINT_HAS_DEFAULT(hints)){
-            
-          // This switch block is copied from QTracktor, and modified.
-          switch (hints & LADSPA_HINT_DEFAULT_MASK) {
-            case LADSPA_HINT_DEFAULT_MINIMUM:
-              default_value = min_value;
-              break;
-            case LADSPA_HINT_DEFAULT_LOW:
-              if (LADSPA_IS_HINT_LOGARITHMIC(hints)){
-                default_value = ::expf(
-                                       ::logf(min_value) * 0.75f + ::logf(max_value) * 0.25f);
-              } else {
-                default_value = (min_value * 0.75f + max_value * 0.25f);
-              }
-              break;
-            case LADSPA_HINT_DEFAULT_MIDDLE:
-              if (LADSPA_IS_HINT_LOGARITHMIC(hints)) {
-                default_value = ::sqrt(min_value * max_value);
-              } else {
-                default_value = (min_value + max_value) * 0.5f;
-              }
-              break;
-            case LADSPA_HINT_DEFAULT_HIGH:
-              if (LADSPA_IS_HINT_LOGARITHMIC(hints)) {
-                default_value = ::expf(
-                                       ::logf(min_value) * 0.25f + ::logf(max_value) * 0.75f);
-              } else {
-                default_value= (min_value * 0.25f + max_value * 0.75f);
-              }
-              break;
-            case LADSPA_HINT_DEFAULT_MAXIMUM:
-              default_value = max_value;
-              break;
-            case LADSPA_HINT_DEFAULT_0:
-              default_value = 0.0f;
-              break;
-            case LADSPA_HINT_DEFAULT_1:
-              default_value = 1.0f;
-              break;
-            case LADSPA_HINT_DEFAULT_100:
-              default_value = 100.0f;
-              break;
-            case LADSPA_HINT_DEFAULT_440:
-              default_value = 440.0f; // this needs to be scaled(440,0,20000,min,max), i think.
-              break;
-            default:
-              default_value = (min_value+max_value)/2.0f;
-          }
-
-        }else{
-          default_value = (min_value+max_value)/2.0f;
-        }
-
-        if(default_value<min_value)
-          default_value=min_value;
-        if(default_value>max_value)
-          default_value=max_value;
-
-        //if(!strcmp(plugin_type->name,"Organ"))
-        //printf("Setting effect %s / %d to %f, %f, %f\n",plugin_type->name,effect_num,min_value,default_value,max_value);
-        type_data->default_values[effect_num] = default_value;
-
-        //if(!strcmp(plugin_type->type_name,"Simple Low Pass Filter"))
-        //  printf("After hints. min/max/default: %f/%f/%f\n",min_value,max_value,default_value);
-
-        type_data->effect_names[effect_num] = V_strdup(talloc_format("%d: %s", effect_num, descriptor->PortNames[portnum]));
-          
-        effect_num++;
-      }
-    }
-  }
-
-  return type_data;
+static TypeData *create_empty_type_data(Library *library, int index){
+  auto *ret = (TypeData*)V_calloc(1,sizeof(TypeData));
+  ret->library = library;
+  ret->index = index;
+  return ret;
+}
+  
+static filepath_t get_library_cache_filename(const Library *library){
+  R_ASSERT(library->filename!=NULL);
+  return make_filepath(talloc_wformat(L"%S.cached_library_info", library->filename));
 }
 
-static SoundPluginType *create_plugin_type(const LADSPA_Descriptor *descriptor, Library *library, int num){
+static filepath_t get_instance_cache_filename(const Library *library, int index){
+  R_ASSERT(library->filename!=NULL);
+  return make_filepath(talloc_wformat(L"%S.%d.cached_type_info", library->filename, index));
+}
+
+static bool maybe_fill_in_cached_plugin(TypeData *type_data, SoundPluginType *plugin_type, Library *library, int index){
+  if (!is_radium_internal_file(make_filepath(library->filename)))
+    return false;
+
+  filepath_t filename = get_instance_cache_filename(library, index);
+  if (!DISK_file_exists(filename))
+    return false;
+
+  radium::ScopedReadFile file(filename);
+
+  if (file._file==NULL)
+    return false;
+  
+  hash_t *state = HASH_load2(file._file, true);
+  if (state==NULL)
+    return false;
+
+  if (!HASH_has_key(state, "UniqueID"))
+    return false;
+  if (!HASH_has_key(state, "Name"))
+    return false;
+  if (!HASH_has_key(state, "plugin_type_state"))
+    return false;  
+  if (!HASH_has_key(state, "index"))
+    return false;  
+  
+  type_data->UniqueID = HASH_get_int(state, "UniqueID");
+  type_data->Name = V_strdup(HASH_get_chars(state, "Name"));
+
+  R_ASSERT(HASH_get_int32(state, "index")==index);
+  type_data->index = HASH_get_int32(state, "index");
+
+  if (!PLUGINTYPE_maybe_apply_state(plugin_type, HASH_get_hash(state, "plugin_type_state")))
+    return false;
+
+  return true;
+}
+
+static void maybe_create_cache_file_for_plugin(const SoundPluginType *plugin_type, const Library *library){
+#if defined(RELEASE)
+  return; // We only do this for the included ladspa files to avoid long loading time caused by virus killers scanning library files.
+#endif
+
+  if (!is_radium_internal_file(make_filepath(library->filename)))
+    return;
+
+  TypeData *type_data = (TypeData*)plugin_type->data;
+  
+  hash_t *state = HASH_create(4);
+
+  HASH_put_hash(state, "plugin_type_state", PLUGINTYPE_get_state(plugin_type));
+  HASH_put_int(state, "UniqueID", type_data->UniqueID);
+  HASH_put_chars(state, "Name", type_data->Name);
+  HASH_put_int(state, "index", type_data->index);
+                
+  filepath_t filename = get_instance_cache_filename(library, type_data->index);
+  
+  radium::ScopedWriteFile file(filename);
+
+  if (file._file==NULL)
+    return;
+
+  HASH_save(state, file._file);
+}
+
+
+static SoundPluginType *create_plugin_type(const LADSPA_Descriptor *descriptor, Library *library, int index){
   SoundPluginType *plugin_type = (SoundPluginType*)V_calloc(1,sizeof(SoundPluginType));
 
   plugin_type->type_name = "Ladspa";
-  plugin_type->name      = V_strdup(descriptor->Name);
-  plugin_type->info      = create_info_string(descriptor);
-  plugin_type->creator   = create_creator_string(descriptor);
-
   plugin_type->is_instrument = false;
 
-  // Find num_effects, num_inputs, and num_outputs
-  //
-  for(unsigned int portnum=0;portnum<descriptor->PortCount;portnum++){
-    const LADSPA_PortDescriptor portdescriptor = descriptor->PortDescriptors[portnum];
+  TypeData *type_data = create_empty_type_data(library, index);
+  plugin_type->data = type_data;
+      
+  bool loaded_from_cache = maybe_fill_in_cached_plugin(type_data, plugin_type, library, index);
+  
+  if (!loaded_from_cache){
 
-    if(LADSPA_IS_PORT_CONTROL(portdescriptor) && LADSPA_IS_PORT_INPUT(portdescriptor)){
-      //printf("Adding effect %d\n",plugin_type->num_effects);
-      plugin_type->num_effects++;
+    bool had_descriptor = descriptor!=NULL;
+    
+    if (!had_descriptor) {
+      if (add_type_data_reference(type_data)==false)
+        return NULL;
+      
+      descriptor = type_data->descriptor;
     }
 
-    if(LADSPA_IS_PORT_AUDIO(portdescriptor) && LADSPA_IS_PORT_INPUT(portdescriptor)){
-      plugin_type->num_inputs++;
+
+    plugin_type->name      = V_strdup(descriptor->Name);
+    plugin_type->info      = create_info_string(descriptor);
+    plugin_type->creator   = create_creator_string(descriptor);
+
+
+    // Find num_effects, num_inputs, and num_outputs
+    //
+    for(unsigned int portnum=0;portnum<descriptor->PortCount;portnum++){
+      const LADSPA_PortDescriptor portdescriptor = descriptor->PortDescriptors[portnum];
+      
+      if(LADSPA_IS_PORT_CONTROL(portdescriptor) && LADSPA_IS_PORT_INPUT(portdescriptor)){
+        //printf("Adding effect %d\n",plugin_type->num_effects);
+        plugin_type->num_effects++;
+      }
+      
+      if(LADSPA_IS_PORT_AUDIO(portdescriptor) && LADSPA_IS_PORT_INPUT(portdescriptor)){
+        plugin_type->num_inputs++;
+      }
+      
+      if(LADSPA_IS_PORT_AUDIO(portdescriptor) && LADSPA_IS_PORT_OUTPUT(portdescriptor)){
+        plugin_type->num_outputs++;
+      }
     }
 
-    if(LADSPA_IS_PORT_AUDIO(portdescriptor) && LADSPA_IS_PORT_OUTPUT(portdescriptor)){
-      plugin_type->num_outputs++;
-    }
+
+    fill_in_type_data_info_from_descriptor(type_data, plugin_type, descriptor); // needed by maybe_create_cache_file_for_plugin
+
+    if (!had_descriptor)
+      remove_type_data_reference(type_data);
+  }
+  
+  if(plugin_type->num_inputs==1 && plugin_type->num_outputs==1){ // Use two mono plugin instances to create one stereo plugin.
+    plugin_type->num_inputs = 2;
+    plugin_type->num_outputs = 2;
+    type_data->uses_two_handles = true;
   }
 
-  TypeData *type_data = create_type_data(plugin_type, descriptor, library, num);
-  plugin_type->data = type_data;
+  if (!loaded_from_cache)
+    maybe_create_cache_file_for_plugin(plugin_type, library);
 
   plugin_type->buffer_size_is_changed = buffer_size_is_changed;
 
@@ -778,13 +915,54 @@ static SoundPluginType *create_plugin_type(const LADSPA_Descriptor *descriptor, 
   //plugin_type->get_effect_description=get_effect_description;
   plugin_type->get_effect_format = get_effect_format;
 
-  if(plugin_type->num_inputs==1 && plugin_type->num_outputs==1){ // Use two mono plugin instances to create one stereo plugin.
-    plugin_type->num_inputs = 2;
-    plugin_type->num_outputs = 2;
-    type_data->uses_two_handles = true;
-  }
-
   return plugin_type;
+}
+
+static bool maybe_fill_in_cached_library(Library *library){
+  if (!is_radium_internal_file(make_filepath(library->filename)))
+    return false;
+  
+  filepath_t filename = get_library_cache_filename(library);
+  if (!DISK_file_exists(filename))
+    return false;
+
+  radium::ScopedReadFile file(filename);
+
+  if (file._file==NULL)
+    return false;
+  
+  hash_t *state = HASH_load2(file._file, true);
+  if (state==NULL)
+    return false;
+
+  if (!HASH_has_key(state, "num_instances"))
+    return false;
+
+  library->num_instances = HASH_get_int32(state, "num_instances");
+  
+  return true;
+}
+
+static void maybe_create_cache_file_for_library(const Library *library){
+  #if defined(RELEASE)
+  return; // We only do this for the included ladspa files to avoid long loading time caused by virus killers scanning library files.
+#endif
+
+  if (!is_radium_internal_file(make_filepath(library->filename)))
+    return;
+
+  hash_t *state = HASH_create(4);
+
+  HASH_put_int(state, "num_instances", library->num_instances);
+                
+  filepath_t filename = get_library_cache_filename(library);
+  
+  radium::ScopedWriteFile file(filename);
+
+  if (file._file==NULL)
+    return;
+
+  HASH_save(state, file._file);
 }
 
 static void add_ladspa_plugin_type(const QFileInfo &file_info){
@@ -797,73 +975,96 @@ static void add_ladspa_plugin_type(const QFileInfo &file_info){
 
   QLibrary *qlibrary = new QLibrary(filename);
 
-  LADSPA_Descriptor_Function get_descriptor_func = (LADSPA_Descriptor_Function) qlibrary->resolve("ladspa_descriptor");
-
-  if(get_descriptor_func==NULL){
-    if (qlibrary->errorString().contains("dlopen: cannot load any more object with static TLS")){
-
-      if (PR_is_initing_vst_first()) {
-
-        vector_t v = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
-        
-        int init_ladspa_first = VECTOR_push_back(&v,"Init LADSPA plugins first");
-        VECTOR_push_back(&v,"Continue without loading this plugin library.");
-        
-        int result = GFX_Message(&v,
-                                 "Error: Empty thread local storage.\n"
-                                 "\n"
-                                 "Unable to load LADSPA library file \"%s\".\n"
-                                 "\n"
-                                 "This is not a bug in Radium or the plugin, but a system limitation most likely provoked by\n"
-                                 "the TLS settings of an earlier loaded plugin. (In other words: There's probably nothing wrong with this plugin!).\n"
-                                 "\n"
-                                 "You may be able to work around this problem by initing LADSPA plugins before VST plugins.\n"
-                                 "In case you want to try this, press the \"Init LADSPA plugins first\" button below and start radium again.\n",
-                                 qlibrary->fileName().toUtf8().constData()
-                                 );
-        if (result==init_ladspa_first)
-          PR_set_init_ladspa_first();
-
-      } else {
-        GFX_Message(NULL,
-                    "Error: Empty thread local storage.\n"
-                    "\n"
-                    "Unable to load LADSPA library file \"%s\".\n"
-                    "\n"
-                    "This is not a bug in Radium or the plugin, but a system limitation most likely provoked by\n"
-                    "the TLS settings of an earlier loaded plugin. (In other words: There's probably nothing wrong with this plugin!).\n",
-                    qlibrary->fileName().toUtf8().constData()
-                    );
-      }
-    }
-
-    QString error_string = qlibrary->errorString();
-    
-    delete qlibrary;
-    fprintf(stderr,"(failed: \"%s\") ", error_string.toUtf8().constData());
-    fflush(stderr);
-
-#if !defined(RELEASE)
-    abort();
-#endif
-    return;
-  }
-
-  Library *library = (Library*)V_calloc(1, sizeof(Library));
-  library->library = qlibrary;
-  library->filename = V_strdup(filename.toUtf8().constData());
+  Library *library = new Library;
+  library->qlibrary = qlibrary;
+  library->filename = STRING_create(filename, false); // ("false" means not GC-allocated)
   
   //printf("Resolved \"%s\"\n",myLib.fileName().toUtf8().constData());
 
-  const LADSPA_Descriptor *descriptor;
-
-  for(int i = 0; (descriptor=get_descriptor_func(i)) != NULL ; i++){
-    SoundPluginType *plugin_type = create_plugin_type(descriptor, library, i);
+  
+  
+  auto addit = [library](const LADSPA_Descriptor *descriptor, int index){
+    SoundPluginType *plugin_type = create_plugin_type(descriptor, library, index);
     PR_add_plugin_type_no_menu(plugin_type);
     g_plugin_types.push_back(plugin_type);
+  };
+
+
+  bool got_library_from_cache = maybe_fill_in_cached_library(library);
+  
+  if (got_library_from_cache){
+    
+    for(int index=0 ; index < library->num_instances ; index++)
+      addit(NULL, index);
+    
+  } else {
+
+    LADSPA_Descriptor_Function get_descriptor_func = (LADSPA_Descriptor_Function) qlibrary->resolve("ladspa_descriptor");
+
+    if(get_descriptor_func==NULL){
+      if (qlibrary->errorString().contains("dlopen: cannot load any more object with static TLS")){
+        
+        if (PR_is_initing_vst_first()) {
+          
+          vector_t v = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
+          
+          int init_ladspa_first = VECTOR_push_back(&v,"Init LADSPA plugins first");
+          VECTOR_push_back(&v,"Continue without loading this plugin library.");
+          
+          int result = GFX_Message(&v,
+                                   "Error: Empty thread local storage.\n"
+                                   "\n"
+                                   "Unable to load LADSPA library file \"%s\".\n"
+                                   "\n"
+                                   "This is not a bug in Radium or the plugin, but a system limitation most likely provoked by\n"
+                                   "the TLS settings of an earlier loaded plugin. (In other words: There's probably nothing wrong with this plugin!).\n"
+                                   "\n"
+                                   "You may be able to work around this problem by initing LADSPA plugins before VST plugins.\n"
+                                   "In case you want to try this, press the \"Init LADSPA plugins first\" button below and start radium again.\n",
+                                   qlibrary->fileName().toUtf8().constData()
+                                   );
+          if (result==init_ladspa_first)
+            PR_set_init_ladspa_first();
+          
+        } else {
+          GFX_Message(NULL,
+                      "Error: Empty thread local storage.\n"
+                      "\n"
+                      "Unable to load LADSPA library file \"%s\".\n"
+                      "\n"
+                      "This is not a bug in Radium or the plugin, but a system limitation most likely provoked by\n"
+                      "the TLS settings of an earlier loaded plugin. (In other words: There's probably nothing wrong with this plugin!).\n",
+                      qlibrary->fileName().toUtf8().constData()
+                      );
+        }
+      }
+      
+      QString error_string = qlibrary->errorString();
+      
+      delete qlibrary;
+      fprintf(stderr,"(failed: \"%s\") ", error_string.toUtf8().constData());
+      fflush(stderr);
+      
+#if !defined(RELEASE)
+      abort();
+#endif
+      return;
+    }
+    
+    const LADSPA_Descriptor *descriptor;
+    
+    for(int index = 0; (descriptor=get_descriptor_func(index)) != NULL ; index++){
+      
+      library->num_instances++;
+      addit(descriptor, index);
+      
+    }
+
+    maybe_create_cache_file_for_library(library);
+      
+    library->unload();
   }
 
-  qlibrary->unload();
 }
 
 static SoundPluginType *get_plugin_type_from_id(unsigned long id){
@@ -1138,7 +1339,9 @@ void create_ladspa_plugins(void){
   
   QStringList ladspa_path;
 
-#if FOR_LINUX && !defined(IS_LINUX_BINARY)  // We don't use system ladspa plugins in the binaries because they might use incompatible libraries with the ones included with radium. (happens with guitarix, which links in glib, preventing radium from even starting.)
+#if defined(FOR_LINUX) && !defined(IS_LINUX_BINARY) && defined(RELEASE)  // I.e. Only custom linux release builds.
+
+  // We don't use system ladspa plugins in the binaries because they might use incompatible libraries with the ones included with radium. (happens with guitarix, which links in glib, preventing radium from even starting.)
   
   if(getenv("LADSPA_PATH")==NULL){
     //MyQMessageBox::information(NULL, "LADSPA_PATH is not set.", "LADSPA_PATH is not set.");
