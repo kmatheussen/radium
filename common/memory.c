@@ -385,7 +385,7 @@ char *talloc_format_internal(const char *fmt,...){
 
 wchar_t *talloc_wformat_internal(const wchar_t *fmt,...){
   int size = 64;
-  wchar_t *ret = (wchar_t*)talloc_atomic__(size,__FILE__,__LINE__);
+  wchar_t *ret = (wchar_t*)talloc_atomic__(size*sizeof(wchar_t),__FILE__,__LINE__);
 
   for(;;){
     va_list argp;
@@ -396,10 +396,10 @@ wchar_t *talloc_wformat_internal(const wchar_t *fmt,...){
 
     if (len <= 0) {
       size = size * 2;
-      ret = (wchar_t*)talloc_realloc__(ret, size,__FILE__,__LINE__);
+      ret = (wchar_t*)talloc_realloc__(ret, size*sizeof(wchar_t),__FILE__,__LINE__);
     } else if (len >= size-3) {
       size = len + 16;
-      ret = (wchar_t*)talloc_realloc__(ret, size,__FILE__,__LINE__);
+      ret = (wchar_t*)talloc_realloc__(ret, size*sizeof(wchar_t),__FILE__,__LINE__);
     } else
       break;
   }
