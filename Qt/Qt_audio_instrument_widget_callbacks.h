@@ -482,6 +482,7 @@ public:
     else
       checkwidget->setChecked(val);
 
+    //printf("     Update Checked %d\n", checkwidget==mute_button);
     if (checkwidget==mute_button){
       if (PATCH_get_from_id(_patch->id)==NULL) // happens during initialization.
         mute_button->_is_implicitly_on = false;

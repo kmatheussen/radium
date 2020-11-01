@@ -178,6 +178,7 @@ extern LANGSPEC hash_t *PLUGIN_get_state(const SoundPlugin *plugin);
 
 extern LANGSPEC void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects);
 extern LANGSPEC float PLUGIN_get_last_written_effect_from_name(SoundPlugin *plugin, const char *effect_name);
+extern LANGSPEC int PLUGIN_get_effect_num_from_name(SoundPlugin *plugin, const char *effect_name);
 extern LANGSPEC float PLUGIN_get_effect_from_name(SoundPlugin *plugin, const char *effect_name, enum WhereToGetValue where, enum ValueFormat value_format);
 extern LANGSPEC void PLUGIN_set_effect_from_name(SoundPlugin *plugin, const char *effect_name, float value); // scaled format
 extern LANGSPEC void PLUGIN_DLoad(SoundPlugin *plugin);
