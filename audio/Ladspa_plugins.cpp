@@ -1332,17 +1332,11 @@ static void init_menues(){
 }
 
 void create_ladspa_plugins(void){
-#if !defined(RELEASE) && (defined(FOR_WINDOWS) || defined(FOR_MACOSX))
-  return; // takes a long time to load ladspa plugins in gdb under windows and in lldb under macos.
-#endif
-
   
   QStringList ladspa_path;
 
 #if defined(FOR_LINUX) && !defined(IS_LINUX_BINARY) && defined(RELEASE)  // I.e. Only custom linux release builds.
 
-  // We don't use system ladspa plugins in the binaries because they might use incompatible libraries with the ones included with radium. (happens with guitarix, which links in glib, preventing radium from even starting.)
-  
   if(getenv("LADSPA_PATH")==NULL){
     //MyQMessageBox::information(NULL, "LADSPA_PATH is not set.", "LADSPA_PATH is not set.");
     //return;
@@ -1365,6 +1359,8 @@ void create_ladspa_plugins(void){
     ladspa_path << QString(getenv("LADSPA_PATH")).split(":");
 
 #else
+  
+  // We don't use system ladspa plugins in the binaries because they might use libraries not compatible with the ones included with radium. (happens with guitarix, which links in glib, preventing radium from even starting.)
   
   ladspa_path << STRING_get_qstring(OS_get_full_program_file_path("ladspa").id);
   
