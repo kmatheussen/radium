@@ -91,6 +91,9 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
     through_onoff->setFont(QApplication::font()); // why?
     
     if (_patch->instrument==get_audio_instrument()){
+
+      // Audio instrument.
+      
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 
       if (plugin != NULL) {
@@ -110,7 +113,15 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
         R_ASSERT_NON_RELEASE(false);
         
       }
+      
+    } else {
+
+      // MIDI instrument.
+      
+      through_onoff->hide();
+      
     }
+    
     
 #ifdef USE_QT5
     
