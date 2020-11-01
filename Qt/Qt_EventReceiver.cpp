@@ -125,11 +125,23 @@ void EditorWidget::updateEditor(void) const {
   if(g_is_starting_up==true)
     return;
 
-  {
+  if (ATOMIC_GET_RELAXED(atomic_must_redraw_instrument)!=NULL) {
+
     struct Patch *patch = ATOMIC_GET(atomic_must_redraw_instrument);
-    if (patch!=NULL && patch == PATCH_get_current()){
+    
+    if (patch!=NULL) {
+      
+      /*
+        if (patch!=NULL){
+        static int n=0;
+        printf("          Must redraw %d\n", n++);
+        }
+      */
+      
       ATOMIC_SET(atomic_must_redraw_instrument, NULL);
-      GFX_update_instrument_widget(patch);//GFX_update_instrument_patch_gui(patch);
+      
+      if (patch == PATCH_get_current())
+        GFX_update_instrument_widget(patch);//GFX_update_instrument_patch_gui(patch);      
     }
   }
   

@@ -2326,9 +2326,6 @@ namespace{
                 if (less_frequently_updated) {
                   float volume = chip->get_slider_volume();
                   bool is_muted = is_muted_relaxed(plugin);
-                  bool is_implicitly_muted = plugin->is_implicitly_muted; //SP_mute_because_someone_else_has_solo_left_parenthesis_and_we_dont_right_parenthesis(chip->_sound_producer);
-                  bool is_implicitly_soloed = plugin->is_implicitly_soloed; //SP_mute_because_someone_else_has_solo_left_parenthesis_and_we_dont_right_parenthesis(chip->_sound_producer);
-                  bool is_solo = ATOMIC_GET_RELAXED(plugin->solo_is_on);
                   bool is_bypass = !ATOMIC_GET_RELAXED(plugin->effects_are_on);
                   bool is_recording = ATOMIC_GET_RELAXED(patch->is_recording);
                   bool is_autosuspending = ATOMIC_GET_RELAXED(plugin->_is_autosuspending);
@@ -2344,21 +2341,6 @@ namespace{
                     chip->update();
                   }
 
-                  if (chip->_last_updated_implicitly_muted != is_implicitly_muted){
-                    chip->_last_updated_implicitly_muted = is_implicitly_muted;
-                    chip->update();
-                  }
-                  
-                  if (chip->_last_updated_implicitly_soloed != is_implicitly_soloed){
-                    chip->_last_updated_implicitly_soloed = is_implicitly_soloed;
-                    chip->update();
-                  }
-                
-                  if (chip->_last_updated_solo != is_solo){
-                    chip->_last_updated_solo = is_solo;
-                    chip->update();
-                  }
-                  
                   if (chip->_last_updated_bypass != is_bypass){
                     chip->_last_updated_bypass = is_bypass;
                     chip->update();
