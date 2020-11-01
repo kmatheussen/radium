@@ -1395,7 +1395,6 @@ static DEFINE_ATOMIC(bool, g_atomic_must_update_solo_gui_stuff);
 
 static void update_solo_gui_stuff(void){
   SP_call_me_after_solo_has_changed();
-  MW_update_all_chips(); // Update connection line gfx.
 }
 
 void PLUGIN_call_me_very_often_from_main_thread(void){

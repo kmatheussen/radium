@@ -727,7 +727,8 @@
                              3)))
 
   (when background-color
-    (if (not is-selected)
+    (if (and (not is-selected)
+             (not paint-implicit-border))
         (cond ((string=? text "Record")
                (set! background-color (<gui> :mix-colors background-color "red" 0.9)))
               ((string=? text "Waiting for note...")
@@ -740,7 +741,9 @@
                (set! selected-color (<gui> :mix-colors background-color "yellow" 0.75)))
               ((string=? text "Bypass")
                (set! selected-color (<gui> :mix-colors background-color "zoomline_text1" 0.6))))))
-  
+
+  ;;(if (string=? text "Solo")
+  ;;    (c-display "Solo. Bc:" background-color ". is-selected:" is-selected ". selected-color:" selected-color))
   
   (define (paintit)
     (if (or is-selected

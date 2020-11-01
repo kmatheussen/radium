@@ -489,6 +489,13 @@ public:
         mute_button->_is_implicitly_on = instrumentIsImplicitlyMuted(_patch->id);
     }
     
+    if (checkwidget==solo_button){
+      if (PATCH_get_from_id(_patch->id)==NULL) // happens during initialization.
+        solo_button->_is_implicitly_on = false;
+      else
+        solo_button->_is_implicitly_on = instrumentIsImplicitlySoloed(_patch->id);
+    }
+    
     if(system_effect==EFFNUM_INPUT_VOLUME_ONOFF)
       input_volume_slider->setEnabled(val);
     //if(system_effect==EFFNUM_VOLUME_ONOFF)

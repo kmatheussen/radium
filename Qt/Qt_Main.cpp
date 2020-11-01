@@ -2298,7 +2298,7 @@ protected:
       // Redraw
       if(ATOMIC_COMPARE_AND_SET_BOOL(g_mixer_strips_needs_redraw, true, false)){ // 
         //printf("          (redraw called from qt main)\n");
-        S7CALL2(void_void, "FROM_C-redraw-mixer-strips");
+        redrawMixerStrips(true);
       }
     }
 

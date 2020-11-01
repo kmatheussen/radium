@@ -1188,6 +1188,18 @@ public:
       static int num=0;
       printf("---------------UpdateImplicitSolo #%d. Size: %d\n", num++, _link_enabled_changes.size());
 #endif
+
+      // Update various solo and mute buttons.
+      if (_plugin_implicitly_muted_changes.size() > 0 || _solo_changes.size() > 0 || _link_enabled_changes.size()>0){
+        THREADING_run_on_main_thread_async([]
+           {
+             MW_update_all_chips();
+             redrawMixerStrips(true);
+             GFX_update_current_instrument_widget();
+           },
+           true);
+      }
+
     }
     
     void maybe_add_link_enabled_change(SoundProducerLink *link){
