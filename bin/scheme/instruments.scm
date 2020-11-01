@@ -1485,6 +1485,14 @@
                 (<ra> :set-current-instrument instrument-id))
               (<ra> :set-current-instrument-locked #f)))))
 
+(delafina (get-insert-plugin-popup-menu-entry :instrument-id
+                                              :enabled)
+  (list "Insert plugin"
+        :enabled (and enabled
+                      (> (<ra> :get-num-output-channels instrument-id) 0))
+        :shortcut insert-plugin-for-instrument
+        (lambda ()
+          (insert-plugin-for-instrument instrument-id))))
 
 (delafina (get-instrument-popup-entries :instrument-id
                                         :parentgui
@@ -1523,11 +1531,7 @@
      (and include-insert-plugin
           "------------------")
      (and include-insert-plugin
-          (list "Insert plugin"
-                :enabled (> (<ra> :get-num-output-channels instrument-id) 0)
-                :shortcut insert-plugin-for-instrument
-                (lambda ()
-                  (insert-plugin-for-instrument instrument-id))))
+          (get-insert-plugin-popup-menu-entry instrument-id))
 
      (and include-insert-plugin
           (list "Insert send"
