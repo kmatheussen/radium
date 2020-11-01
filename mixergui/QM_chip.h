@@ -140,9 +140,6 @@ public:
 
   float _last_updated_volume = -1;
   bool _last_updated_mute = false;
-  bool _last_updated_implicitly_muted = false;
-  bool _last_updated_implicitly_soloed = false;
-  bool _last_updated_solo = false;
   bool _last_updated_bypass = false;
   bool _last_updated_recording = false;
   bool _last_updated_autosuspending = false;
