@@ -482,14 +482,25 @@
     (get-mixer-popup-menu-entries))))
 
 (define (FROM_C-show-mixer-connection-popup-menu from-instrument to-instrument is-event-connection)
-  (popup-menu "Delete connection"
-              :shortcut *shift-right-mouse*
-              (lambda ()
-                (<ra> :undo-mixer-connections)
-                (if is-event-connection
-                    (<ra> :delete-event-connection from-instrument to-instrument)
-                    (<ra> :delete-audio-connection from-instrument to-instrument)))
-              ;;(get-mixer-popup-menu-entries)
+  (popup-menu (get-insert-plugin-popup-menu-entry from-instrument (not is-event-connection))
+              (list "Delete connection"
+                    :shortcut *shift-right-mouse*
+                    (lambda ()
+                      (<ra> :undo-mixer-connections)
+                      (if is-event-connection
+                          (<ra> :delete-event-connection from-instrument to-instrument)
+                          (<ra> :delete-audio-connection from-instrument to-instrument)))
+                    ;;(get-mixer-popup-menu-entries)
+                    )
+              "-------------------------"
+              (list "Connection enabled"
+                    :enabled (not is-event-connection)
+                    :check (or is-event-connection
+                               (<ra> :get-connection-enabled from-instrument to-instrument))
+                    (lambda (val)
+                      (<ra> :undo-connection-enabled from-instrument to-instrument)
+                      (<ra> :set-connection-enabled from-instrument to-instrument val)
+                      ))
               ))
   
 (define (get-current-instrument-mixer-popup-menu-entries instrument-id)
