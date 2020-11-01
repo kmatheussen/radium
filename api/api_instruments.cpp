@@ -977,6 +977,20 @@ bool instrumentIsImplicitlySoloed(instrument_t instrument_id){
   return plugin->is_implicitly_soloed;
 }
 
+bool instrumentEffectExists(instrument_t instrument_id, const_char* effect_name){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return false;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("getInstrumentEffect: Instrument #%d has been closed", (int)instrument_id.id);
+    return false;
+  }
+
+  return PLUGIN_get_effect_num_from_name(plugin, effect_name) >= 0;
+}
+
 float getInstrumentEffect(instrument_t instrument_id, const_char* effect_name){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
@@ -1126,6 +1140,24 @@ void deletePdController(instrument_t instrument_id, const char *effect_name){
     return;
 
   PD_delete_controller(plugin, effect_num);
+}
+
+int getInstrumentEffectType(instrument_t instrument_id, const_char* effect_name){
+  const struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return -1;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("getInstrumentEffectColor: Instrument #%d has been closed", (int)instrument_id.id);
+    return -1;
+  }
+
+  int effect_num = get_effect_num(patch, effect_name);
+  if(effect_num==-1)
+    return -1;
+
+  return PLUGIN_get_effect_format(plugin, effect_num);
 }
 
 const_char* getInstrumentEffectColor(instrument_t instrument_id, const_char* effect_name){

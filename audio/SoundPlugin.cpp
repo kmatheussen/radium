@@ -724,9 +724,31 @@ int PLUGIN_get_effect_format(struct SoundPlugin *plugin, int effect_num){
 
   int system_effect = effect_num - plugin_type->num_effects;
 
-  RError("The program isn't supposed to be here");
-
-  if(system_effect==EFFNUM_PAN_ONOFF || system_effect==EFFNUM_EFFECTS_ONOFF || system_effect==EFFNUM_LOWPASS_ONOFF || system_effect==EFFNUM_HIGHPASS_ONOFF || system_effect==EFFNUM_EQ1_ONOFF || system_effect==EFFNUM_EQ2_ONOFF)
+  if (system_effect==EFFNUM_INPUT_VOLUME_ONOFF ||
+      system_effect==EFFNUM_SOLO_ONOFF || 
+      system_effect==EFFNUM_VOLUME_ONOFF ||
+      system_effect==EFFNUM_OUTPUT_VOLUME_ONOFF ||
+      system_effect==EFFNUM_PAN_ONOFF ||
+      system_effect==EFFNUM_EFFECTS_ONOFF ||
+      system_effect==EFFNUM_LOWPASS_ONOFF ||
+      system_effect==EFFNUM_EQ1_ONOFF ||
+      system_effect==EFFNUM_EQ2_ONOFF ||      
+      system_effect==EFFNUM_LOWSHELF_ONOFF ||
+      system_effect==EFFNUM_HIGHSHELF_ONOFF ||
+      system_effect==EFFNUM_HIGHPASS_ONOFF ||
+      system_effect==EFFNUM_EQ_SHOW_GUI ||
+      system_effect==EFFNUM_COMP_ONOFF ||
+      system_effect==EFFNUM_COMP_SHOW_GUI ||
+      system_effect==EFFNUM_BROWSER_SHOW_GUI ||
+      system_effect==EFFNUM_CONTROLS_SHOW_GUI ||
+      system_effect==EFFNUM_VOICE1_ONOFF ||
+      system_effect==EFFNUM_VOICE2_ONOFF ||
+      system_effect==EFFNUM_VOICE3_ONOFF ||
+      system_effect==EFFNUM_VOICE4_ONOFF ||
+      system_effect==EFFNUM_VOICE5_ONOFF ||
+      system_effect==EFFNUM_VOICE6_ONOFF ||
+      system_effect==EFFNUM_VOICE7_ONOFF      
+      )
     return EFFECT_FORMAT_BOOL;
   else
     return EFFECT_FORMAT_FLOAT;
@@ -2643,17 +2665,40 @@ hash_t *PLUGIN_get_state(const SoundPlugin *plugin){
   return state;
 }
 
-float PLUGIN_get_effect_from_name(SoundPlugin *plugin, const char *effect_name, enum WhereToGetValue where, enum ValueFormat value_format){
-  const SoundPluginType *type=plugin->type;
-  int i;
+int PLUGIN_get_effect_num_from_name(SoundPlugin *plugin, const char *effect_name){
+  static QHash<const char *, int> s_system_names;
 
-  // This should be in a hash table. The function is called quite often.
-  for(i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++){
-    if (!strcmp(PLUGIN_get_effect_name(plugin, i), effect_name))
-      break;
+  const SoundPluginType *type=plugin->type;
+
+  if (s_system_names.contains(effect_name)){
+    printf("  ---- Got cached value for %s: %d\n", effect_name, s_system_names[effect_name]);
+    return s_system_names[effect_name] + type->num_effects;
+  }
+  
+  int num = -1;
+  
+  // Hard to cache non-system effect names since a plugin can change effect names.
+  for(int i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++){
+    if (!strcmp(PLUGIN_get_effect_name(plugin, i), effect_name)){
+      num = i;
+      goto gotit;
+    }
   }
 
-  if (i==type->num_effects+NUM_SYSTEM_EFFECTS) {
+  return -1;
+
+ gotit:
+  if (num >= type->num_effects)
+    s_system_names[effect_name] = num - type->num_effects;
+
+  return num;
+}
+
+float PLUGIN_get_effect_from_name(SoundPlugin *plugin, const char *effect_name, enum WhereToGetValue where, enum ValueFormat value_format){
+  const SoundPluginType *type=plugin->type;
+  int i = PLUGIN_get_effect_num_from_name(plugin, effect_name);
+  
+  if (i==-1){
     GFX_Message(NULL, "No effect named \"%s\" in %s/%s", effect_name, type->type_name, type->name);
     return 0;
   }
@@ -2664,14 +2709,9 @@ float PLUGIN_get_effect_from_name(SoundPlugin *plugin, const char *effect_name, 
 
 void PLUGIN_set_effect_from_name(SoundPlugin *plugin, const char *effect_name, float value){
   const SoundPluginType *type=plugin->type;
-  int i;
+  int i = PLUGIN_get_effect_num_from_name(plugin, effect_name);
 
-  for(i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++){
-    if (!strcmp(PLUGIN_get_effect_name(plugin, i), effect_name))
-      break;
-  }
-
-  if (i==type->num_effects+NUM_SYSTEM_EFFECTS) {
+  if (i==-1){
     GFX_Message(NULL, "No effect named \"%s\" in %s/%s", effect_name, type->type_name, type->name);
     return;
   }

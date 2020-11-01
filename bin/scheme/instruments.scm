@@ -1752,7 +1752,37 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
 
 #!!
 (create-select-modulator-popup-menu 1 2 c-display)
+(symbol->string (keyword->symbol :System_space_Volume_space_On/Off))
 !!#
+
+;; Note: used for shortcut
+(define (edit-instrument-effect effect-name)
+  (define instrument-id (<ra> :get-current-instrument-under-mouse))
+  (when (is-legal-audio-instrument? instrument-id)
+    (set! effect-name (string-replace (symbol->string (keyword->symbol effect-name)) "_space_" " "))
+    (if (not (<ra> :instrument-effect-exists instrument-id effect-name))
+        (show-async-message -2 (<-> "Instrument \"" (<ra> :get-instrument-name instrument-id) "\" doesn't have the effect \"" effect-name "\"."))
+        (begin
+          (define old-value (<ra> :get-instrument-effect instrument-id effect-name))
+          (if (= 2 (<ra> :get-instrument-effect-type instrument-id effect-name))
+              (begin
+                (<ra> :undo-instrument-effect instrument-id effect-name)
+                (<ra> :set-instrument-effect instrument-id effect-name
+                      (if (>= old-value 0.5)
+                          0.0
+                          1.0))
+                )
+              (begin
+                (let ((maybe (<gui> :requester-operations
+                                    (<-> "Set new value for \"" effect-name "\":")
+                                    (lambda ()
+                                      (<ra> :request-float "0-1: " 0 1 #f (three-decimal-string old-value))))))
+                  (when (>= maybe 0)
+                    (<ra> :undo-instrument-effect instrument-id effect-name)
+                    (<ra> :set-instrument-effect instrument-id effect-name maybe)))
+                )
+              )))))
+
 
 (delafina (get-effect-popup-entries :instrument-id
                                     :effect-name
@@ -1872,6 +1902,14 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                   (if ison
                       (<ra> :set-note-duplicator-set-new-value-immediately instrument-id effect-name #f)))))))
 
+   (and effect-name
+        (list
+         "--------------"
+         (list (<-> "Keybindings for \"" effect-name "\"")
+               (list
+                (get-keybinding-configuration-popup-menu-entries "edit-instrument-effect"
+                                                                 (list (<-> ":" (string-replace effect-name " " "_space_")))
+                                                                 )))))
    "-----------------"
    (list "Help"
          (lambda ()
@@ -2366,7 +2404,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
           (if (ra:instrument-gui-is-visible id parentgui)
               (ra:hide-instrument-gui id)
               (ra:show-instrument-gui id parentgui))
-          (show-async-message -2 (<-> "Instrument #" id " (" (<ra> :get-instrument-name id) ") doesn't have a GUI"))))))
+          (show-async-message -2 (<-> "Instrument \"" (<ra> :get-instrument-name id) "\" doesn't have a GUI"))))))
 
 
 (define (pan-enabled? instrument-id)
