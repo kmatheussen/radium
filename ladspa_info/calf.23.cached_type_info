@@ -1,0 +1,81 @@
+>> HASH MAP V5 BEGIN
+4
+Name
+0
+STRING_TYPE
+Calf Bass Enhancer LADSPA
+UniqueID
+0
+INT_TYPE
+34098
+index
+0
+INT_TYPE
+23
+plugin_type_state
+0
+HASH_TYPE
+>> HASH MAP V5 BEGIN
+15
+creator
+0
+STRING_TYPE
+Markus Schmidt / Krzysztof Foltman
+info
+0
+STRING_TYPE
+________STRING_IS_BASE64__IkNhbGYgQmFzcyBFbmhhbmNlciBMQURTUEEiIGlzIGEgTEFEU1BBIFBsdWdpbiBtYWRlIGJ5IE1hcmt1cyBTY2htaWR0IC8gS3J6eXN6dG9mIEZvbHRtYW4uCkNvcHlyaWdodDogKEMpIDIwMDEtMjAwOSBLcnp5c3p0b2YgRm9sdG1hbiwgVGhvciBIYXJhbGQgSm9oYW5zc2VuLCBNYXJrdXMgU2NobWlkdCBhbmQgb3RoZXJzOyBsaWNlbnNlOiBMR1BMLg==
+is_instrument
+0
+BOOL_TYPE
+0
+name
+0
+STRING_TYPE
+Calf Bass Enhancer LADSPA
+note_handling_is_RT
+0
+BOOL_TYPE
+0
+num_effects
+0
+INT_TYPE
+10
+num_inputs
+0
+INT_TYPE
+2
+num_outputs
+0
+INT_TYPE
+2
+state_contains_effect_values
+0
+BOOL_TYPE
+0
+state_may_contain_effect_values
+0
+BOOL_TYPE
+0
+state_version
+0
+INT_TYPE
+1
+type_name
+0
+STRING_TYPE
+Ladspa
+version
+0
+INT_TYPE
+0
+will_always_autosuspend
+0
+BOOL_TYPE
+0
+will_never_autosuspend
+0
+BOOL_TYPE
+0
+<< HASH MAP V5 END
+<< HASH MAP V5 END

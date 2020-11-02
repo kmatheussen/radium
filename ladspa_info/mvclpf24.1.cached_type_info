@@ -1,0 +1,81 @@
+>> HASH MAP V5 BEGIN
+4
+Name
+0
+STRING_TYPE
+Mvclpf-2   Digital implementation of the VC filter invented by R.A.Moog
+UniqueID
+0
+INT_TYPE
+1942
+index
+0
+INT_TYPE
+1
+plugin_type_state
+0
+HASH_TYPE
+>> HASH MAP V5 BEGIN
+15
+creator
+0
+STRING_TYPE
+Fons Adriaensen
+info
+0
+STRING_TYPE
+________STRING_IS_BASE64__Ik12Y2xwZi0yICAgRGlnaXRhbCBpbXBsZW1lbnRhdGlvbiBvZiB0aGUgVkMgZmlsdGVyIGludmVudGVkIGJ5IFIuQS5Nb29nIiBpcyBhIExBRFNQQSBQbHVnaW4gbWFkZSBieSBGb25zIEFkcmlhZW5zZW4gPGZvbnNAa29ra2luaXppdGEubmV0Pi4KQ29weXJpZ2h0OiAoQykgMjAwMy0yMDA4IEZvbnMgQWRyaWFlbnNlbiAtIExpY2Vuc2U6IEdQTDIu
+is_instrument
+0
+BOOL_TYPE
+0
+name
+0
+STRING_TYPE
+Mvclpf-2   Digital implementation of the VC filter invented by R.A.Moog
+note_handling_is_RT
+0
+BOOL_TYPE
+0
+num_effects
+0
+INT_TYPE
+6
+num_inputs
+0
+INT_TYPE
+4
+num_outputs
+0
+INT_TYPE
+1
+state_contains_effect_values
+0
+BOOL_TYPE
+0
+state_may_contain_effect_values
+0
+BOOL_TYPE
+0
+state_version
+0
+INT_TYPE
+1
+type_name
+0
+STRING_TYPE
+Ladspa
+version
+0
+INT_TYPE
+0
+will_always_autosuspend
+0
+BOOL_TYPE
+0
+will_never_autosuspend
+0
+BOOL_TYPE
+0
+<< HASH MAP V5 END
+<< HASH MAP V5 END
