@@ -65,6 +65,16 @@ filepath_t DISK_get_filename_without_path_and_suffix(filepath_t wfilename){
   return make_filepath(info.baseName());
 }
 
+filepath_t DISK_get_filename_without_suffix(filepath_t wfilename){
+  ASSERT_NON_RT_NON_RELEASE();
+  
+  QFileInfo info(STRING_get_qstring(wfilename.id));
+
+  QDir dir = info.dir();
+  
+  return make_filepath(dir.path() + dir.separator() + info.baseName());
+}
+
 filepath_t DISK_create_legal_filename(filepath_t filename){
   QString s = STRING_get_qstring(filename.id);
   QString ret;

@@ -8,6 +8,7 @@
 extern LANGSPEC filepath_t DISK_get_absolute_dir_path(filepath_t wfilename);
 extern LANGSPEC filepath_t DISK_get_absolute_file_path(filepath_t wfilename);
 extern LANGSPEC filepath_t DISK_get_pathless_file_path(filepath_t wfilename);
+extern LANGSPEC filepath_t DISK_get_filename_without_suffix(filepath_t wfilename);
 extern LANGSPEC filepath_t DISK_get_filename_without_path_and_suffix(filepath_t wfilename);
 extern LANGSPEC filepath_t DISK_create_legal_filename(filepath_t filename);
 extern LANGSPEC int64_t DISK_get_creation_time(filepath_t wfilename);
