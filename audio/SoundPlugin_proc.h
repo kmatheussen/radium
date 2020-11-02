@@ -40,6 +40,10 @@ struct SoloChange{
     , _solo_is_on(solo_is_on)
   {
   }
+
+  // sigh.
+  SoloChange(){
+  }
 };
 
 

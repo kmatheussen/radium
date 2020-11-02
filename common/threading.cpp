@@ -378,7 +378,7 @@ radium::Ready_To_Run_Scheduled_RT_functions *radium::Scheduled_RT_functions::sch
     printf("THREADING_schedule_on_player_thread: Thread full. Waiting...\n");
     msleep(100);
     safety++;
-    if (safety = 100){
+    if (safety == 100){
       printf("THREADING_schedule_on_player_thread: Giving up.\n");
       break;
     }
