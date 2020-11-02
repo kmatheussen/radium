@@ -2671,7 +2671,7 @@ int PLUGIN_get_effect_num_from_name(SoundPlugin *plugin, const char *effect_name
   const SoundPluginType *type=plugin->type;
 
   if (s_system_names.contains(effect_name)){
-    printf("  ---- Got cached value for %s: %d\n", effect_name, s_system_names[effect_name]);
+    //printf("  ---- Got cached value for %s: %d\n", effect_name, s_system_names[effect_name]);
     return s_system_names[effect_name] + type->num_effects;
   }
   
