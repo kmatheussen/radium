@@ -1450,12 +1450,13 @@ int64_t PATCH_play_note(struct Patch *patch, const note_t note){
 void RT_PATCH_send_stop_note_to_receivers(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, STime time){
   int i;
 
-  if (patch->instrument==get_audio_instrument())
+  if (patch->instrument==get_audio_instrument()){
     if (patch->patchdata!=NULL){
       RT_PLUGIN_touch((struct SoundPlugin*)patch->patchdata);
     }else{
       R_ASSERT_NON_RELEASE(false);
     }
+  }
   
   for(i = 0; i<patch->num_event_receivers; i++) {
     struct Patch *receiver = patch->event_receivers[i];

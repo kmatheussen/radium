@@ -1465,4 +1465,6 @@ void PD_delete_controller(SoundPlugin *plugin, int controller_num) {}
 void PD_recreate_controllers_from_state(SoundPlugin *plugin, const hash_t *state) {}
 void PD_create_controllers_from_state(SoundPlugin *plugin, hash_t *state) {}
 
+void PD_put_controllers_to_state(const SoundPlugin *plugin, hash_t *state){}
+
 #endif // WITH_PD
