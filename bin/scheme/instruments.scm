@@ -1398,6 +1398,15 @@
             (list "Load random sample" ;;s from folders"
                   ra:set-random-sample-for-all-selected-instruments))))
 
+(define (FROM_C-random_sample-button-popup-menu)
+  (popup-menu
+   (get-keybinding-configuration-popup-menu-entries "ra:set-random-sample-for-all-selected-instruments"
+                                                    '()
+                                                    "FOCUS_MIXER")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
+
 ;; Note: Used for shortcut
 (delafina (insert-plugin-for-instrument :instrument-id (<ra> :get-current-instrument-under-mouse)
                                         :gui -2)
