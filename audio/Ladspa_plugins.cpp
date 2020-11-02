@@ -755,12 +755,12 @@ static TypeData *create_empty_type_data(Library *library, int index){
   
 static filepath_t get_library_cache_filename(const Library *library){
   R_ASSERT(library->filename!=NULL);
-  return make_filepath(talloc_wformat(L"%S.cached_library_info", library->filename));
+  return make_filepath(talloc_wformat(L"%S.cached_library_info", DISK_get_filename_without_suffix(make_filepath(library->filename)).id));
 }
 
 static filepath_t get_instance_cache_filename(const Library *library, int index){
   R_ASSERT(library->filename!=NULL);
-  return make_filepath(talloc_wformat(L"%S.%d.cached_type_info", library->filename, index));
+  return make_filepath(talloc_wformat(L"%S.%d.cached_type_info", DISK_get_filename_without_suffix(make_filepath(library->filename)).id, index));
 }
 
 static bool maybe_fill_in_cached_plugin(TypeData *type_data, SoundPluginType *plugin_type, Library *library, int index){
@@ -768,9 +768,11 @@ static bool maybe_fill_in_cached_plugin(TypeData *type_data, SoundPluginType *pl
     return false;
 
   filepath_t filename = get_instance_cache_filename(library, index);
-  if (!DISK_file_exists(filename))
+  if (!DISK_file_exists(filename)){
+    //abort();
     return false;
-
+  }
+  
   radium::ScopedReadFile file(filename);
 
   if (file._file==NULL)
@@ -923,8 +925,10 @@ static bool maybe_fill_in_cached_library(Library *library){
     return false;
   
   filepath_t filename = get_library_cache_filename(library);
-  if (!DISK_file_exists(filename))
+  if (!DISK_file_exists(filename)){
+    //abort();
     return false;
+  }
 
   radium::ScopedReadFile file(filename);
 
