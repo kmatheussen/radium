@@ -346,6 +346,10 @@ class Sample_requester_widget : public QWidget
 
     updateWidgets();
 
+    random_button->_show_popup_menu = [](){
+      S7CALL2(void_void,"FROM_C-random_sample-button-popup-menu");
+    };
+
     is_starting_up = false;
   }
 
