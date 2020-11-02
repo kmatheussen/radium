@@ -108,6 +108,7 @@ bool THREADING_is_juce_thread(void){
 }
 
 
+#ifndef TEST_THREADING
 
 /******************************************/
 /***** Run functions on main thread   ****/
@@ -415,6 +416,10 @@ void THREADING_schedule_on_player_thread_call_very_often(void){
   }
 }
   
+
+#endif // TEST_THREADING
+
+
 
 /******************************************/
 /***** Priority                       ****/
