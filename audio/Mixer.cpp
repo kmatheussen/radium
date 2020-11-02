@@ -760,9 +760,9 @@ struct Mixer{
     }PLAYER_unlock();
 
 #if defined(RELEASE)
-    if (PLAYER_is_running()
+    if (PLAYER_is_running())
 #endif
-        SP_call_me_after_solo_has_changed();
+      SP_call_me_after_solo_has_changed();
   }
 
   void set_output_latency(void) const {
