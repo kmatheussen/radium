@@ -1495,7 +1495,7 @@
               (<ra> :set-current-instrument-locked #f)))))
 
 (delafina (get-insert-plugin-popup-menu-entry :instrument-id
-                                              :enabled)
+                                              :enabled #t)
   (list "Insert plugin"
         :enabled (and enabled
                       (> (<ra> :get-num-output-channels instrument-id) 0))
