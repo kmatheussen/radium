@@ -1,3 +1,207 @@
+Changes 6.4.77 -> 6.5.72:
+* Windows: Fix borderless mixer window. Bug
+  introduced in 6.4.76.
+* Mixer: Fix remembering window position.
+* Sampler instrument: Add entries to edit keybindings
+  to the popup menu of the "R" button.
+* Audio: Add entries to the instrument effect popup
+  menu for adding keybinding to change effect
+* GUI: Increase performance a little bit for effect
+  sliders and other things.
+* Instrument widget: Fix immediately updating graphics
+  of solo and mute buttons when changing solo.
+* Mixer: Add "Insert plugin" and "Connetion enabled"
+  entries to the connection popup menu.
+* Instruments: Remove the "T" (through) button for
+  MIDI instruments (served no purpose).
+* Audio: Cache ladspa plugin info so that they don't
+  have to be loaded during program startup. Only
+  info for included ladspa plugins are cached for
+  now. This fixes very long startup time on windows
+  when realtime virus scanning is enabled, but even
+  startup times on Linux (and probably MacOS) is
+  notably shorter.
+* Audio: Generally improve CPU usage by being more
+  aggresive about not doing mixing when the output
+  of a sound object is silent.
+* Audio: Increase audio level allowed to autosuspend
+  a sound object. May lower CPU usage in some
+  situations.
+* Windows: Remove some unnecessary info from
+  crashreporter message.
+* Mixer: Add "include system volume" option to a/b. API: 
+* Audio: Increase number of frames to fade out/in
+  from 1024 to 2048 when changing mute on/off and
+  various other things.
+* Audio: Don't recalculate latencies on the fly when
+  a sound object is muted, auto-suspended, volume set
+  to 0, and possibly other situations. Although
+  constantly running mimumum latencies uses less
+  CPU, doing this can also cause audible artifacts.
+  E.g. if a plugin reports a latency of 2048 frames,
+  we always compensate for a latency of 2048 frames
+  in parallel running sound objects in the audio
+  graph, even when the plugin makes no sound.
+* Modulators/preset: Fix modulator connections when
+  loading .mrec files.
+* Mixer: Fix undo when creating new sound object
+  from preset file by using keybinding.
+* Mixer: Fix assertion window popping up when
+  creating new sound object from preset file by
+  using keybinding.
+* Mixer: Make it configurable which A/B settings to
+  apply. Click the button with a settings icon to
+  configure. The options are:
+  * audio connections
+  * event connections
+  * volume
+  * panning
+  * mute/solo/bypass
+  * system effects
+  * instrument effects
+  * instrument states
+  * mixer strips configuration
+  * remember current instrument
+  * modulator connections.
+  * system volume
+  Only audio connections, event connections, volume,
+  panning, "mute solo bypass", and "remember current
+  instrument" are enabled by default in new songs.
+* Sequencer: Fix wrong editor seqblock positions
+  after undoing changing block tempos.
+* Mixer: Update connection line gfx immediately
+  after changing solo for an instrument.
+* GUI: Fix Return and Enter keys working in tables.
+  Bug introduced in last release .
+* Plugins: When loading song, don't try to set
+  illegal program number if program number on disk
+  is a negative number or higher than the number of
+  programs provded the plugin. Fixes crash in at
+  least one AU plugin.
+* Audio: Don't send events though (i.e. when "T" is
+  enabled), when an instrument is implicitly muted
+  and "Implicitly mute MIDI the same way as audio"
+  is enabled.
+* Audio: Fix updating implicit mute/solo when
+  removing a connection.
+* MIDI: Add the option "Implicitly mute MIDI the
+  same way as audio" to song properties. I.e. when
+  soloing, we also mute MIDI in implicitly muted
+  instruments. This option is enabled by default for
+  new songs, and disabled by default for old songs
+  (to make sure they continue to sound the same).
+* Audio: Make transition from one A/B setting to
+  another much smoother. Now solo, connections, and
+  instrument effects are all changed at the same
+  time.
+* Audio: Fix latency compensation being wrong in
+  some (very) rare cases when recording from system
+  input. Happened sometimes when there were event
+  connections in the audio graph.
+* Preferences: Make it clearer what latencies are
+  used in the "Latency compensation when recording
+  from system input" option.
+* MIDI: Compensate for latency when playing notes.
+  By default it only compensates for "System out"
+  input-latency.
+* Preferences: Changed tab order a little bit.
+* Preferences: Moved various things from the "Audio"
+  tab to the "Instruments" tab.
+* Instrument widget: Support right-clicking the
+  A/B-buttons and the GUI button.
+* Sequencer: Less experimental default granulation
+  parameters.
+* Mixer: Remember current instrument in a/b.
+* Instrument widget: Support right-clicking the
+  "Replace" and "Load" buttons to configure
+  keybindings.
+* FaustDev: Fix missing info from the info window.
+* Instrument widgets: Don't display multi-presets
+  when asked to load/replace preset.
+* Disk: Don't put program into an endless message
+  loop when loading an erroneous .rad/.rec/etc.
+  file.
+* Instrument widget: Add "prev preset" and
+  "next preset" buttons to quickly switch to
+  previous or next preset in the directory where the
+  instrument was loaded from (if loaded from preset
+  file). If instrument was not loaded from a preset
+  file, select prev/next preset from default or last
+  used directory instead.
+* Instruments: Save preset filename to disk if
+  instrument was loaded from a preset file.
+* Audio: Name VST/AU programs and not presets.
+  "Program" is the common name, plus that "preset"
+  can be confused with radium presets.
+* Instruments widget: Remove the program number-
+  widget. Incorporate the number into the program
+  name-button instead.
+* Instruments widget: Add "prev program" and "next
+  program" buttons. Assign keybindings by
+  right-clicking the buttons.
+* Instruments widget: Immediately update autosuspend
+  button graphics when changing autosuspending type.
+* Audio: Change instruments to not send out events
+  (i.e notes, MIDI messages, etc.) when they are
+  muted. Same with bypass. Old songs behave as
+  before, but this can be changed in the Song
+  Properties.
+* GUI: Draw an SVG image for the various "reset ab"-
+  buttons. Before this, a question mark was drawn
+  instead of the curly arrow utf-8 character when
+  running on windows.
+* Editor: Add option to select current block in the
+  popup menu for the padlock-checkbox in the lower
+  left corner.
+* Sequencer: Remove graphical garbage from the row
+  of pixels placed between the seqtrack headers and
+  the area to the right of the headers.
+* Editor: Fix various error messages popping up when
+  switching current block while moving a pianonote.
+* API:
+ * New: getNumInstrumentPrograms,
+   getCurrInstrumentProgram,
+   setCurrInstrumentProgram,
+   setInstrumentProgramName,
+   getInstrumentProgramName, getDirPath,
+   getPathWithoutDir, getInstrumentPresetPath,
+   getInstrumentPreset, selectInstrumentConfigNum,
+   resetInstrumentConfigNum,
+   getCurrInstrumentConfigNum,
+   instrumentConfigNumIsUsed,
+   getMidiInstrumentLatencyType,
+   setMidiInstrumentLatencyType,
+   getCustomMidiInstrumentLatency,
+   setCustomMidiInstrumentLatency,
+   includeAudioConnectionsInMixerConfig,
+   setIncludeAudioConnectionsInMixerConfig,
+   includeEventConnectionsInMixerConfig,
+   setIncludeEventConnectionsInMixerConfig,
+   includeVolumeInMixerConfig,
+   setIncludeVolumeInMixerConfig,
+   includePanningInMixerConfig,
+   setIncludePanningInMixerConfig,
+   includeMuteSoloBypassInMixerConfig,
+   setIncludeMuteSoloBypassInMixerConfig,
+   includeSystemEffectsInMixerConfig,
+   setIncludeSystemEffectsInMixerConfig,
+   includeInstrumentEffectsInMixerConfig,
+   setIncludeInstrumentEffectsInMixerConfig,
+   includeInstrumentStatesInMixerConfig,
+   setIncludeInstrumentStatesInMixerConfig,
+   includeMixerStripsConfigurationInMixerConfig,
+   setIncludeMixerStripsConfigurationInMixerConfig,
+   includeRememberCurrentInstrumentInMixerConfig,
+   setIncludeRememberCurrentInstrumentInMixerConfig,
+   includeModulatorConnectionsInMixerConfig,
+   setIncludeModulatorConnectionsInMixerConfig,
+   includeSystemVolumeInMixerConfig,
+   setIncludeSystemVolumeInMixerConfig,
+   instrumentEffectExists, getInstrumentEffectType.
+ * Deleted: setInstrumentIsImplicitlyMuted, setInstrumentIsImplicitlySoloed
+ 
+
+
 Changes 6.4.76 -> 6.4.77:
 * Autobackup: Don't create autobackup for demo songs.
 * Instruments: Fix rare crash (only seen on osx) when
