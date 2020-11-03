@@ -205,18 +205,7 @@ public:
     
     MyScene scene;
     MyQGraphicsView *view;
-
-    RememberGeometry remember_geometry;
-
-    void setVisible(bool visible) override {
-      remember_geometry.setVisible_override<QWidget>(this, visible);
-    }
-
-    void hideEvent(QHideEvent *event_) override {
-      remember_geometry.hideEvent_override(this);
-      FOCUSFRAMES_set_focus_best_guess();
-    }
-
+  
   /*
   bool isChildWidget(QWidget *w){
     if (w==NULL)
@@ -273,6 +262,18 @@ public:
   MixerWidget_OnlyMixer *_only_mixer;
 
   QWidget *_bottom_bar;
+
+
+  RememberGeometry remember_geometry;
+
+  void setVisible(bool visible) override {
+    remember_geometry.setVisible_override<QWidget>(this, visible);
+  }
+  
+  void hideEvent(QHideEvent *event_) override {
+    remember_geometry.hideEvent_override(this);
+    FOCUSFRAMES_set_focus_best_guess();
+  }
 
   MixerWidget(QWidget *parent)
   {
