@@ -207,17 +207,33 @@ static inline void moveWindowToCentre(QWidget *widget, QRect parentRect = QRect(
   R_ASSERT_NON_RELEASE(widget->height()>0);
 #endif
 #endif
-  int width = R_MAX(widget->width(), 100);
-  int height = R_MAX(widget->height(), 50);
-  QPoint point = getCentrePosition(widget->parentWidget(), width, height, parentRect);
 
-  widget->move(point);
+  if (widget->window() != widget){
+    
+    R_ASSERT_NON_RELEASE(false);
+    
+  } else {
+
+    int width = R_MAX(widget->width(), 100);
+    int height = R_MAX(widget->height(), 50);
+    QPoint point = getCentrePosition(widget->parentWidget(), width, height, parentRect);
+    
+    widget->move(point);
+  }
 }
 
 static inline void adjustSizeAndMoveWindowToCentre(QWidget *widget, QRect parentRect = QRect()){
-  widget->adjustSize();
-  widget->updateGeometry();
-  moveWindowToCentre(widget, parentRect);
+  if (widget->window() != widget){
+    
+    R_ASSERT_NON_RELEASE(false);
+    
+  } else {
+
+    widget->adjustSize();
+    widget->updateGeometry();
+    moveWindowToCentre(widget, parentRect);
+
+  }
 }
 
 #ifndef D_IS_DEFINED
@@ -1167,25 +1183,33 @@ namespace{
     bool has_stored_geometry = false;
     
     bool move_window_to_centre_first_time_its_opened = true; // may be set to false by owner.
-    
+
     void save(QWidget *widget){
-      geometry = widget->saveGeometry();
-      has_stored_geometry = true;
-      //printf("   SAVING geometry\n");
+      if (widget->window() != widget){
+        R_ASSERT_NON_RELEASE(false);
+      } else {
+        geometry = widget->saveGeometry();
+        has_stored_geometry = true;
+        //printf("   SAVING geometry\n");
+      }
     }
 
     void restore(QWidget *widget){
-      if (has_stored_geometry){
+      if (widget->window() != widget){
+        R_ASSERT_NON_RELEASE(false);
+      } else {
+        if (has_stored_geometry){
 
-        //printf("   RESTORING geometry\n");
-        widget->restoreGeometry(geometry);
-        
-      }else{
-
-        //printf("   88888888888888888888888888888888888888888888 NO geometry stored\n");
-
-        if (move_window_to_centre_first_time_its_opened)
-          moveWindowToCentre(widget);
+          //printf("   RESTORING geometry\n");
+          widget->restoreGeometry(geometry);
+          
+        }else{
+          
+          //printf("   88888888888888888888888888888888888888888888 NO geometry stored\n");
+          
+          if (move_window_to_centre_first_time_its_opened)
+            moveWindowToCentre(widget);
+        }
       }
     }
 
