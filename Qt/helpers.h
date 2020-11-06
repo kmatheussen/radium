@@ -25,7 +25,10 @@
 
 #include "../api/api_proc.h"
 
-
+extern "C"{
+  void CRASHREPORTER_send_assert_message(Crash_Type tye, const char *message, ...);
+}
+  
 #define PUT_ON_TOP 0
 
 extern bool g_radium_runs_custom_exec;
