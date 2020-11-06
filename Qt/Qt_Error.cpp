@@ -46,6 +46,13 @@ both:
 #ifdef COMPILE_EXECUTABLE
 
 
+extern "C"{
+  void CRASHREPORTER_send_assert_message(Crash_Type tye, const char *message, ...){
+    abort();
+  }
+}
+
+
 static int show_message(QString message, const QVector<QString> &menu_strings){
 
   //QPointer<MyQMessageBox> msgBox = MyQMessageBox::create();
