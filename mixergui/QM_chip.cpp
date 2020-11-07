@@ -1109,7 +1109,7 @@ static void changeremove_all_audio_connections(const QGraphicsScene *scene, chan
 
   for (int i = 0; i < das_items.size(); ++i) {
     AudioConnection *audio_connection = dynamic_cast<AudioConnection*>(das_items.at(i));      
-    if(audio_connection!=NULL)
+    if(audio_connection!=NULL && audio_connection->from!=NULL && audio_connection->to!=NULL)
       changes.remove(audio_connection);
   }
 }
@@ -1132,7 +1132,7 @@ static void CONNECTIONS_remove_all2(QGraphicsScene *scene, bool include_audio, b
           producers.push_back(chip->_sound_producer);
         else{
           EventConnection *event_connection = dynamic_cast<EventConnection*>(das_items.at(i));
-          if(event_connection!=NULL)
+          if(event_connection!=NULL && event_connection->from!=NULL && event_connection->to!=NULL)
             event_connections.push_back(event_connection);
         }
       }
@@ -1329,6 +1329,9 @@ void CONNECTION_delete_an_audio_connection_where_all_links_have_been_removed(Aud
   Chip *from = connection->from;
   Chip *to = connection->to;
 
+  R_ASSERT_RETURN_IF_FALSE(from!=NULL);
+  R_ASSERT_RETURN_IF_FALSE(to!=NULL);  
+
   from->_output_audio_connections.remove(connection);
   to->_input_audio_connections.remove(connection);
 
@@ -1349,6 +1352,9 @@ void CONNECTION_delete_an_event_connection_where_all_links_have_been_removed(Eve
   Chip *from = connection->from;
   Chip *to = connection->to;
 
+  R_ASSERT_RETURN_IF_FALSE(from!=NULL);
+  R_ASSERT_RETURN_IF_FALSE(to!=NULL);
+  
   from->_output_event_connections.remove(connection);
   to->_input_event_connections.remove(connection);
   
@@ -1362,6 +1368,9 @@ void CONNECTION_delete_audio_connection(AudioConnection *connection){
 void CONNECTION_delete_event_connection(EventConnection *connection){
   Chip *from = connection->from;
   Chip *to = connection->to;
+
+  R_ASSERT_RETURN_IF_FALSE(from!=NULL);
+  R_ASSERT_RETURN_IF_FALSE(to!=NULL);  
 
   SoundPlugin *plugin1 = SP_get_plugin(from->_sound_producer);
   volatile struct Patch *patch1 = plugin1->patch;
@@ -2823,6 +2832,9 @@ hash_t *CONNECTION_get_state(const SuperConnection *connection, const vector_t *
 
   struct Patch *from = CHIP_get_patch(connection->from);
   struct Patch *to = CHIP_get_patch(connection->to);
+
+  R_ASSERT_RETURN_IF_FALSE2(from!=NULL, NULL);
+  R_ASSERT_RETURN_IF_FALSE2(to!=NULL, NULL);
   
   HASH_put_instrument(state, "from_patch", get_saving_patch_id_or_index(from, patches));
   HASH_put_instrument(state, "to_patch",   get_saving_patch_id_or_index(to,   patches));
