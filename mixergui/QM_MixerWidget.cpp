@@ -3048,8 +3048,11 @@ hash_t *MW_get_connections_state(const vector_t *patches, bool include_audio, bo
   int num_connections = 0;
   
   for(auto *connection : super_connections){
-    if (connection_is_in_patches(connection, patches))
-      HASH_put_hash_at(connections, "", num_connections++, CONNECTION_get_state(connection, patches));
+    if (connection->to!=NULL && connection->from!=NULL && connection_is_in_patches(connection, patches)){
+      hash_t *state = CONNECTION_get_state(connection, patches);
+      if (state != NULL)
+        HASH_put_hash_at(connections, "", num_connections++, state);
+    }
   }
 
   HASH_put_int(connections, "num_connections", num_connections);
