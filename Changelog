@@ -22,14 +22,13 @@ Changes 6.4.77 -> 6.5.72:
   startup times on Linux (and probably MacOS) is
   notably shorter.
 * Audio: Generally improve CPU usage by being more
-  aggresive about not doing mixing when the output
+  aggresive about not mixing audio when the output
   of a sound object is silent.
 * Audio: Increase audio level allowed to autosuspend
   a sound object. May lower CPU usage in some
   situations.
 * Windows: Remove some unnecessary info from
   crashreporter message.
-* Mixer: Add "include system volume" option to a/b. API: 
 * Audio: Increase number of frames to fade out/in
   from 1024 to 2048 when changing mute on/off and
   various other things.
