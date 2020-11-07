@@ -1,3 +1,13 @@
+Changes 6.4.72 -> 6.5.73:
+* Mixer: Don't crash if changing A/B while creating
+  a connection.
+* API:
+  * Fix documentation for getInstrumentEffect and
+    getNativeInstrumentEffect.
+  * New: getStoredNativeInstrumentEffect.
+
+
+
 Changes 6.4.77 -> 6.5.72:
 * Windows: Fix borderless mixer window. Bug
   introduced in 6.4.76.
