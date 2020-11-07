@@ -1033,6 +1033,20 @@ float getStoredInstrumentEffect(instrument_t instrument_id, const_char* effect_n
   return PLUGIN_get_effect_from_name(plugin, effect_name, VALUE_FROM_STORAGE, EFFECT_FORMAT_SCALED);
 }
 
+float getStoredNativeInstrumentEffect(instrument_t instrument_id, const_char* effect_name){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return 0;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("getStoredInstrumentEffect: Instrument #%d has been closed", (int)instrument_id.id);
+    return 0.0;
+  }
+
+  return PLUGIN_get_effect_from_name(plugin, effect_name, VALUE_FROM_STORAGE, EFFECT_FORMAT_NATIVE);
+}
+
 static int get_effect_num(const struct Patch *patch, const_char* effect_name){
   char *error_message = NULL;
   int effect_num = PATCH_get_effect_num(patch, effect_name, &error_message);
