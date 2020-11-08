@@ -68,6 +68,8 @@ struct Data{
   float *control_values;  
   float **inputs;
   float **outputs;
+  unsigned long *input_portnums;
+  unsigned long *output_portnums;
   float latency_output_control_port;
 };
 
@@ -157,8 +159,54 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   const LADSPA_Descriptor *descriptor = type_data->descriptor;
   Data *data = (Data*)plugin->data;
 
-  for(int ch=0;ch<type->num_inputs;ch++)
-    memcpy(data->inputs[ch],inputs[ch],sizeof(float)*num_frames);
+  // Make sure input and output audio ports are set correctly.
+  //
+  if(type_data->uses_two_handles) {
+    
+    if (data->inputs[0] != inputs[0]){
+      descriptor->connect_port(data->handles[0], data->input_portnums[0], inputs[0]);
+      data->inputs[0] = inputs[0];
+      //printf("1: %s\n", plugin->patch->name);
+    }
+    
+    if (data->inputs[1] != inputs[1]){
+      descriptor->connect_port(data->handles[1], data->input_portnums[0], inputs[1]);
+      data->inputs[1] = inputs[1];
+      //printf("2: %s\n", plugin->patch->name);
+    }
+    
+    if (data->outputs[0] != outputs[0]){
+      descriptor->connect_port(data->handles[0], data->output_portnums[0], outputs[0]);
+      data->outputs[0] = outputs[0];
+      //printf("3: %s\n", plugin->patch->name);
+    }
+    
+    if (data->outputs[1] != outputs[1]){
+      descriptor->connect_port(data->handles[1], data->output_portnums[0], outputs[1]);
+      data->outputs[1] = outputs[1];
+      //printf("4: %s\n", plugin->patch->name);
+    }
+    
+  } else {
+
+    for(int ch=0;ch<type->num_inputs;ch++)
+      if (data->inputs[ch] != inputs[ch]){
+        descriptor->connect_port(data->handles[0], data->input_portnums[ch], inputs[ch]);
+        data->inputs[ch] = inputs[ch];
+        //printf("5: %s. ch: %d\n", plugin->patch->name, ch);
+      }
+
+    for(int ch=0;ch<type->num_outputs;ch++)
+      if (data->outputs[ch] != outputs[ch]){
+        descriptor->connect_port(data->handles[0], data->output_portnums[ch], outputs[ch]);
+        data->outputs[ch] = outputs[ch];
+        //printf("6: %s. ch: %d\n", plugin->patch->name, ch);
+      }
+
+  }
+
+  // Process
+  //
   {
     int pos = CRASHREPORTER_set_plugin_name(plugin->type->name); {
       descriptor->run(data->handles[0], num_frames);
@@ -166,8 +214,6 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
         descriptor->run(data->handles[1], num_frames);
     } CRASHREPORTER_unset_plugin_name(pos);
   }
-  for(int ch=0;ch<type->num_outputs;ch++)
-    memcpy(outputs[ch],data->outputs[ch],sizeof(float)*num_frames);
 }
 
 static int RT_get_latency(const struct SoundPlugin *plugin){
@@ -187,28 +233,22 @@ static int RT_get_latency(const struct SoundPlugin *plugin){
 }
 
 static void delete_audio_ports(const SoundPluginType *type, Data *data){
-  for(int i=0; i<type->num_inputs;i++)
-    V_free(data->inputs[i]);
   V_free(data->inputs);
-
-  for(int i=0; i<type->num_outputs;i++)
-    V_free(data->outputs[i]);
   V_free(data->outputs);
+  V_free(data->input_portnums);
+  V_free(data->output_portnums);
 }
 
 static void setup_audio_ports(const SoundPluginType *type, Data *data, int block_size){
   TypeData *type_data = (TypeData*)type->data;
   const LADSPA_Descriptor *descriptor = type_data->descriptor;
 
-  data->inputs=(float**)V_malloc(sizeof(float*)*type->num_inputs);
-  data->outputs=(float**)V_malloc(sizeof(float*)*type->num_outputs);
+  data->inputs=(float**)V_calloc(sizeof(float*),type->num_inputs);
+  data->outputs=(float**)V_calloc(sizeof(float*),type->num_outputs);
   
-  for(int i=0; i<type->num_inputs;i++)
-    data->inputs[i]=(float*)V_calloc(sizeof(float),block_size);
+  data->input_portnums=(unsigned long*)V_calloc(sizeof(unsigned long),type->num_inputs);
+  data->output_portnums=(unsigned long*)V_calloc(sizeof(unsigned long),type->num_outputs);
   
-  for(int i=0; i<type->num_outputs;i++)
-    data->outputs[i]=(float*)V_calloc(sizeof(float),block_size);
-
   {
     int input_num = 0;
     int output_num = 0;
@@ -217,18 +257,12 @@ static void setup_audio_ports(const SoundPluginType *type, Data *data, int block
       const LADSPA_PortDescriptor portdescriptor = descriptor->PortDescriptors[portnum];
 
       if(LADSPA_IS_PORT_AUDIO(portdescriptor) && LADSPA_IS_PORT_INPUT(portdescriptor)){
-        descriptor->connect_port(data->handles[0], portnum, data->inputs[input_num]);
-        if(type_data->uses_two_handles==true)
-          descriptor->connect_port(data->handles[1], portnum, data->inputs[1]);
-
+        data->input_portnums[input_num] = portnum;
         input_num++;
       }
     
       if(LADSPA_IS_PORT_AUDIO(portdescriptor) && LADSPA_IS_PORT_OUTPUT(portdescriptor)){
-        descriptor->connect_port(data->handles[0], portnum, data->outputs[output_num]);
-        if(type_data->uses_two_handles==true)
-          descriptor->connect_port(data->handles[1], portnum, data->outputs[1]);
-
+        data->output_portnums[output_num] = portnum;
         output_num++;
       }
 
