@@ -790,6 +790,8 @@ static bool maybe_fill_in_cached_plugin(TypeData *type_data, SoundPluginType *pl
     return false;  
   if (!HASH_has_key(state, "index"))
     return false;  
+  if (!HASH_has_key(state, "uses_two_handles"))
+    return false;  
   
   type_data->UniqueID = HASH_get_int(state, "UniqueID");
   type_data->Name = V_strdup(HASH_get_chars(state, "Name"));
@@ -797,6 +799,8 @@ static bool maybe_fill_in_cached_plugin(TypeData *type_data, SoundPluginType *pl
   R_ASSERT(HASH_get_int32(state, "index")==index);
   type_data->index = HASH_get_int32(state, "index");
 
+  type_data->uses_two_handles = HASH_get_bool(state, "uses_two_handles");
+  
   if (!PLUGINTYPE_maybe_apply_state(plugin_type, HASH_get_hash(state, "plugin_type_state")))
     return false;
 
@@ -819,6 +823,7 @@ static void maybe_create_cache_file_for_plugin(const SoundPluginType *plugin_typ
   HASH_put_int(state, "UniqueID", type_data->UniqueID);
   HASH_put_chars(state, "Name", type_data->Name);
   HASH_put_int(state, "index", type_data->index);
+  HASH_put_int(state, "uses_two_handles", type_data->uses_two_handles);
                 
   filepath_t filename = get_instance_cache_filename(library, type_data->index);
   
@@ -884,7 +889,7 @@ static SoundPluginType *create_plugin_type(const LADSPA_Descriptor *descriptor, 
     if (!had_descriptor)
       remove_type_data_reference(type_data);
   }
-  
+
   if(plugin_type->num_inputs==1 && plugin_type->num_outputs==1){ // Use two mono plugin instances to create one stereo plugin.
     plugin_type->num_inputs = 2;
     plugin_type->num_outputs = 2;
