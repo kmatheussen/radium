@@ -1,5 +1,5 @@
 >> HASH MAP V5 BEGIN
-4
+5
 Name
 0
 STRING_TYPE
@@ -78,4 +78,8 @@ will_never_autosuspend
 BOOL_TYPE
 0
 << HASH MAP V5 END
+uses_two_handles
+0
+INT_TYPE
+0
 << HASH MAP V5 END
