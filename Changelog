@@ -1,4 +1,17 @@
-Changes 6.4.72 -> 6.5.73:
+Changes 6.5.73 -> 6.5.74:
+* Audio: Remove some unnecessary audio buffers that
+  were used when processing Ladspa plugins. Might
+  decrease CPU usage by using less CPU cache for
+  audio data. (Note that badly written Ladspa
+  plugins could misbehave after this change.)
+* Audio: Fix audio only in left channel for mono
+  Ladspa plugins where plugin info was cached to
+  avoid having to open the plugin during program
+  startup. Bug introduced in 6.5.72
+
+
+
+Changes 6.5.72 -> 6.5.73:
 * Mixer: Don't crash if changing A/B while creating
   a connection.
 * API:
