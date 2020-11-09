@@ -759,6 +759,28 @@
    (lambda (descr)
      (<ra> :create-audio-instrument-from-description descr "" x y))))
 
+;; Note: Used for shortcut.
+(delafina (new-instrument-from-plugin-manager :parentgui (<gui> :get-main-mixer-gui)
+                                              :x (<ra> :get-curr-mixer-slot-x)
+                                              :y (<ra> :get-curr-mixer-slot-y))
+  (pmg-start (make-instrument-conf :connect-to-main-pipe #f
+                                   :parentgui parentgui)
+             (lambda (descr)
+               (<ra> :create-audio-instrument-from-description descr "" x y))))
+
+;; Note: Used for shortcut.
+(define (new-instrument-from-spr-entry type-name plugin-name)
+  (define parentgui (<gui> :get-main-mixer-gui))
+  (define x (<ra> :get-curr-mixer-slot-x))
+  (define y (<ra> :get-curr-mixer-slot-y))
+  (c-display "ENTRY:" type-name plugin-name)
+  (<ra> :create-audio-instrument
+        (keybinding-string->string type-name)
+        (keybinding-string->string plugin-name)
+        ""
+        x
+        y))
+        
 
 
 ;; Called from the outside. 'instrument-description' can be false or empty string.
@@ -1266,10 +1288,15 @@
           (define type (entry :type))
           (define mcallback (lambda ()
                               (callback entry)))
+
+          (define (get-entry-shortcut)
+            (list new-instrument-from-spr-entry (string->keybinding-string (entry :type-name)) (string->keybinding-string (entry :name))))
+          
           ;;(c-display "ENTRY" entry)
           (cond ((string=? type "NORMAL")
                  (cons (list (entry :name)
                              :enabled (can-spr-entry-be-used? entry instrconf)
+                             :shortcut (get-entry-shortcut)
                              mcallback)
                        (loop (cdr entries))))
                 ((string=? type "CONTAINER")
@@ -1326,6 +1353,7 @@
                                            (substring (entry :name) 3))
                                       (<-> (entry :type-name) ": " (entry :name)))
                                   " (" (entry :num-uses) ")")
+                             :shortcut (get-entry-shortcut)
                              mcallback)
                        (loop (cdr entries))))
                 (else
@@ -1673,6 +1701,7 @@
       (set! *popup-menu-args-cache-preset-in-clipboard* (<ra> :instrument-preset-in-clipboard))
       (set! *popup-menu-args-cache-args*
             (get-popup-menu-args (append (list "Plugin Manager"
+                                               :shortcut new-instrument-from-plugin-manager
                                                (lambda ()
                                                  (pmg-start instrconf my-callback))
                                                "--------------")
@@ -1768,7 +1797,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
 (define (edit-instrument-effect effect-name)
   (define instrument-id (<ra> :get-current-instrument-under-mouse))
   (when (is-legal-audio-instrument? instrument-id)
-    (set! effect-name (string-replace (symbol->string (keyword->symbol effect-name)) "_space_" " "))
+    (set! effect-name (keybinding-string->string effect-name))
     (if (not (<ra> :instrument-effect-exists instrument-id effect-name))
         (show-async-message -2 (<-> "Instrument \"" (<ra> :get-instrument-name instrument-id) "\" doesn't have the effect \"" effect-name "\"."))
         (begin
@@ -1917,7 +1946,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
          (list (<-> "Keybindings for \"" effect-name "\"")
                (list
                 (get-keybinding-configuration-popup-menu-entries "edit-instrument-effect"
-                                                                 (list (<-> ":" (string-replace effect-name " " "_space_")))
+                                                                 (list string->keybinding-string effect-name)
                                                                  )))))
    "-----------------"
    (list "Help"
