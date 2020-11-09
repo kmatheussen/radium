@@ -7,6 +7,13 @@
 (<declare-variable> ensure-range-from-selection!) ;; in notem.scm
 
 
+(define (string->keybinding-string string)
+  (<-> ":" (string-replace string " " "_space_")))
+
+(define (keybinding-string->string kstring)
+  (string-replace (symbol->string (keyword->symbol kstring)) "_space_" " "))
+
+
 
 (define (maybe-merge-two-keybindings-2 keybinding1 keybinding2 left right qualifier)
   (define (removeleftright keybinding)
