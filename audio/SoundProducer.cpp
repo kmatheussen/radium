@@ -1874,7 +1874,7 @@ public:
           filter->fade_pos = 0;
 
           // Fill output buffer with empty data
-          {
+          if (filter->plugins != NULL){
             SoundPlugin *plugin = filter->plugins[0];
             int latency = plugin->type->RT_get_latency!=NULL ? plugin->type->RT_get_latency(plugin) : 0;
             if (latency > 0){
