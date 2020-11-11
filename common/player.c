@@ -246,7 +246,7 @@ int PLAYER_get_block_delta_time(struct SeqTrack *seqtrack, STime time){
     if(ret>=RADIUM_BLOCKSIZE){
 
       // Got one assertion report where ret==RADIUM_BLOCKSIZE. Don't know how it could have happened, but perhaps rounding error.
-      if (ret>=RADIUM_BLOCKSIZE)
+      if (ret>RADIUM_BLOCKSIZE)
         RWarning("ret>pc->reltime: %" PRId64 " > %d. Time: %" PRId64 ". Start-time: %f. End-time: %f",ret,RADIUM_BLOCKSIZE, time, seqtrack->start_time, seqtrack->end_time);
       
       return (int)RADIUM_BLOCKSIZE-1;
