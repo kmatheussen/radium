@@ -230,6 +230,7 @@ int PLAYER_get_block_delta_time(struct SeqTrack *seqtrack, STime time){
 
 
   if(is_playing()){
+      
     //int ret = ((time - seqtrack->start_time) * pc->reltime / (seqtrack->end_time - seqtrack->start_time)); // i.e. "scale(time, seqtrack->start_time, seqtrack->end_time, 0, pc->reltime)"
 
     // Note: We are using int64_t instead of int since some assertion reports have indicated that we might get some kind of integer overflow inside the computation in the line below, or even the result.
@@ -243,7 +244,11 @@ int PLAYER_get_block_delta_time(struct SeqTrack *seqtrack, STime time){
     }
     //if(ret>=pc->reltime){
     if(ret>=RADIUM_BLOCKSIZE){
-      RWarning("ret>pc->reltime: %" PRId64 " > %d. Time: %" PRId64 ". Start-time: %f. End-time: %f",ret,RADIUM_BLOCKSIZE, time, seqtrack->start_time, seqtrack->end_time);
+
+      // Got one assertion report where ret==RADIUM_BLOCKSIZE. Don't know how it could have happened, but perhaps rounding error.
+      if (ret>=RADIUM_BLOCKSIZE)
+        RWarning("ret>pc->reltime: %" PRId64 " > %d. Time: %" PRId64 ". Start-time: %f. End-time: %f",ret,RADIUM_BLOCKSIZE, time, seqtrack->start_time, seqtrack->end_time);
+      
       return (int)RADIUM_BLOCKSIZE-1;
     }
     return (int)ret;
