@@ -272,6 +272,19 @@ public:
     updateWidgets();
     setupPeakAndAutomationStuff();
 
+
+    {
+      instrument_t id = _patch->id;
+      pitch_type_button->_show_popup_menu = [id](){
+        struct Patch *patch = PATCH_get_from_id(id);
+        if (patch != NULL){
+          SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+          if (plugin != NULL)
+            S7CALL2(dyn_dyn_charpointer,"FROM_C-show-effect-popup-menu", DYN_create_instrument(id), PLUGIN_get_effect_name(plugin, plugin->type->num_effects + EFFNUM_PITCH_TYPE));
+        }
+      };
+    }
+
     ab_reset_button->_show_popup_menu = [](){
       S7CALL2(void_int,"FROM_C-reset-instrument-a/b-popup-menu", 0);
     };
@@ -374,6 +387,9 @@ public:
 
     case EFFNUM_DELAY_TIME:
       return rightdelay_slider; 
+
+    case EFFNUM_PITCH_PITCH:
+      return pitch_slider; 
 
     default:
       return NULL;
@@ -742,6 +758,7 @@ public:
     updateSlider(EFFNUM_HIGHSHELF_FREQ);
     updateSlider(EFFNUM_HIGHSHELF_GAIN);
     updateSlider(EFFNUM_DELAY_TIME);
+    updateSlider(EFFNUM_PITCH_PITCH);
 
     updateChecked(input_volume_onoff, EFFNUM_INPUT_VOLUME_ONOFF);
     updateChecked(mute_button, EFFNUM_VOLUME_ONOFF);
@@ -844,6 +861,8 @@ public:
       filters_widget->setEnabled(effects_are_on);
       
       volume_widget->setEnabled(effects_are_on);
+
+      pitch_slider->setEnabled(plugin->pitch_type!=SPT_DISABLED);
       
       if (root->song->include_pan_and_dry_in_wet_signal){
         bool pan_is_on = effects_are_on && PLUGIN_get_effect_value(plugin, type->num_effects + EFFNUM_PAN_ONOFF, VALUE_FROM_PLUGIN) >= 0.5f;
@@ -866,6 +885,33 @@ public:
     show_equalizer->setChecked(plugin->show_equalizer_gui);
     show_compressor->setChecked(plugin->show_compressor_gui);
 
+    switch(plugin->pitch_type){
+      case SPT_DISABLED:
+        pitch_type_button->setText("");
+        break;
+        
+      case SPT_ONLY_LEFT:
+        pitch_type_button->setText("L");
+        break;
+        
+      case SPT_ONLY_RIGHT:
+        pitch_type_button->setText("R");
+        break;
+        
+      case SPT_ALL_CHANNELS:
+        pitch_type_button->setText("A");
+        break;
+        
+      case SPT_INVERTED_CHANNELS:
+        pitch_type_button->setText("I");
+        break;
+    }
+
+    {
+      pitch_type_button->setMinimumWidth(rightdelay_onoff->width());
+      pitch_type_button->setMaximumWidth(rightdelay_onoff->width());
+    }
+    
     _patch_widget->updateWidgets();
 
     if(_sample_requester_widget != NULL){
@@ -1460,17 +1506,14 @@ public slots:
     set_plugin_value(val, EFFNUM_DELAY_TIME);
   }
 
-#if 0
-  void on_rightdelay_slider_sliderPressed(){
-    rightdelay_slider->setEnabled(false);
-    printf("Turning off slider\n");
+  void on_pitch_type_button_pressed(void){
+    S7CALL2(void_instrument,"FROM_C-pitch_type_button-pressed", _patch->id);
   }
-
-  void on_rightdelay_slider_sliderReleased(){
-    rightdelay_slider->setEnabled(true);
-    printf("Turning on slider\n");
+  
+  void on_pitch_slider_valueChanged(int val){
+    //set_plugin_value(val==0.5 ? 0 : 10000, EFFNUM_PITCH_TYPE);
+    set_plugin_value(val, EFFNUM_PITCH_PITCH);
   }
-#endif
 
   // Volume
 

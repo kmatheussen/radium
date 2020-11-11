@@ -1085,7 +1085,7 @@ static void post_set_effect(struct Patch *patch, struct SoundPlugin *plugin, con
   GFX_update_instrument_widget(patch);
 }
                        
-void setInstrumentEffect(instrument_t instrument_id, const char *effect_name, float value){
+static void set_instrument_effect(instrument_t instrument_id, const char *effect_name, float value, enum ValueFormat value_format){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return;
@@ -1103,14 +1103,23 @@ void setInstrumentEffect(instrument_t instrument_id, const char *effect_name, fl
   }
   */
 
-  if (value < -0.01f || value > 1.01f){ // Allow a little bit below 0 and a little bit above 1. Probably No need to report floating point rounding errors.
-    handleError("setInstrumentEffect: effect value must be between 0 and 1. Value: %f", value);
-    return;
-  }
+  if (value_format==EFFECT_FORMAT_SCALED)
+    if (value < -0.01f || value > 1.01f){ // Allow a little bit below 0 and a little bit above 1. Probably No need to report floating point rounding errors.
+      handleError("setInstrumentEffect: effect value must be between 0 and 1. Value: %f", value);
+      return;
+    }
   
-  PLUGIN_set_effect_from_name(plugin, effect_name, value);
+  PLUGIN_set_effect_from_name(plugin, effect_name, value, value_format);
 
   post_set_effect(patch, plugin, effect_name);
+}
+
+void setInstrumentEffect(instrument_t instrument_id, const char *effect_name, float value){
+  set_instrument_effect(instrument_id, effect_name, value, EFFECT_FORMAT_SCALED);
+}
+
+void setNativeInstrumentEffect(instrument_t instrument_id, const char *effect_name, float value){
+  set_instrument_effect(instrument_id, effect_name, value,EFFECT_FORMAT_NATIVE);
 }
 
 void resetInstrumentEffect(instrument_t instrument_id, const char *effect_name){

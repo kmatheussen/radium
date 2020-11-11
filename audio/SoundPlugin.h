@@ -174,6 +174,9 @@ enum{
   EFFNUM_DELAY_TIME,
   EFFNUM_DELAY_ONOFF,
 
+  EFFNUM_PITCH_TYPE,
+  EFFNUM_PITCH_PITCH,
+  
   EFFNUM_BROWSER_SHOW_GUI,
   EFFNUM_CONTROLS_SHOW_GUI,
 
@@ -463,6 +466,17 @@ struct SongInitAutomationHelper{
   float value;
   FX_when when;
 };
+
+// Numbers are saved to disk, so these can not be changed.
+enum SoundPluginPitchType{
+  SPT_DISABLED = 0,
+  SPT_ONLY_LEFT = 1,
+  SPT_ONLY_RIGHT = 2,
+  SPT_ALL_CHANNELS = 3,
+  SPT_INVERTED_CHANNELS = 4,
+};
+
+#define SPT_MAX 256 // Meaning, pitch type can only be extended to 128 different types. (saved to disk, so can not be changed)
   
 typedef struct SoundPlugin{
 
@@ -554,6 +568,10 @@ typedef struct SoundPlugin{
   void *delay; // a SmoothDelay instance
   float delay_time;
   DEFINE_ATOMIC(bool, delay_is_on);
+
+  SystemFilter pitch;
+  enum SoundPluginPitchType pitch_type;
+  float pitch_pitch;
   
   bool show_browser_gui;
   bool show_controls_gui;

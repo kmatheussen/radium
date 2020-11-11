@@ -2996,6 +2996,11 @@ int radium_main(const char *arg){
     return 0;
   printf("ending\n");
 
+  if (g_has_added_system_pitchshift==false) {
+    SYSTEM_show_error_message("Could not find the AM pitchshift LADSPA plugin. Radium can not start.");
+    return 0;
+  }
+  
   GFX_ShowProgressMessage("Initializing various parts of the program", true);
   
   SCHEME_init2();
@@ -3349,13 +3354,13 @@ int radium_main(const char *arg){
 #if defined(FOR_LINUX) || defined(FOR_MACOSX)
   setup_SIGTERM_handler();
 #endif
-  
+
 #if USE_QT_VISUAL
   qapplication->exec();
 #else
   GTK_MainLoop();
 #endif
-
+  
 
   printf("--------------------------qapplication->exec() finished------------------\n");
 

@@ -370,9 +370,11 @@ static SoundPluginType *PR_get_plugin_type_by_name(const char *type_name, const 
 
 static SoundPluginType *PR_get_plugin_type_by_name2(const char *container_name, const char *type_name, const char *plugin_name){
   for(SoundPluginType *plugin_type : g_plugin_types)
-    if(!strcmp(plugin_type->type_name,type_name))
+    if(!strcmp(plugin_type->type_name,type_name)){
+      //printf("    type_name: -%s-. name: -%s- / -%s-\n", plugin_type->type_name, plugin_type->name, plugin_name);
       if(!strcmp(plugin_type->name,plugin_name))
         return plugin_type;
+    }
   return NULL;
 }
 
@@ -660,6 +662,8 @@ void PR_add_plugin_type(SoundPluginType *type){
     if(!strcmp(type->name,"System Delay"))
       return;
     if(!strcmp(type->name,"System Tremolo"))
+      return;
+    if(!strcmp(type->name,"System Pitch"))
       return;
   }
 

@@ -2614,3 +2614,24 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
       (<ra> :set-curr-instrument-program instrument-id (+ 1 curr-program))))
 
   
+(delafina (FROM_C-pitch_type_button-pressed :instrument-id (<ra> :get-current-instrument-under-mouse))
+  (define (setit val)
+    (<ra> :set-native-instrument-effect instrument-id "System Pitch type" val))
+  (popup-menu
+   (list "Disabled"
+         (lambda ()
+           (setit 0)))
+   (list "Only Left"
+         (lambda ()
+           (setit 1)))
+   (list "Only Right"
+         (lambda ()
+           (setit 2)))
+   (list "All channels"
+         (lambda ()
+           (setit 3)))
+   (list "Invert"
+         (lambda ()
+           (setit 4)))
+   ))
+

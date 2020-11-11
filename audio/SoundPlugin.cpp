@@ -345,6 +345,9 @@ const char *system_effect_names[NUM_SYSTEM_EFFECTS] = {
   "System Width",
   "System Width On/Off",
 
+  "System Pitch type",
+  "System Pitch",
+  
   "System Sample Browser On/Off",
   "System Controls On/Off",
 
@@ -405,16 +408,23 @@ const char *system_effect_names[NUM_SYSTEM_EFFECTS] = {
   "System Chance Voice 7"  
 };
 
-static void init_system_filter(SystemFilter *filter, int num_channels, const char *name, bool is_loading){
+static void init_system_filter2(SystemFilter *filter, int num_channels, const char *type_name, const char *plugin_name, bool is_loading){
   int ch;
   filter->plugins=(SoundPlugin**)V_calloc(sizeof(SoundPlugin*),num_channels);
   for(ch=0;ch<num_channels;ch++){
     filter->plugins[ch] = (SoundPlugin*)V_calloc(1, sizeof(SoundPlugin));
-    filter->plugins[ch]->type = PR_get_plugin_type_by_name(NULL, "Faust",name);
+    filter->plugins[ch]->type = PR_get_plugin_type_by_name(NULL, type_name, plugin_name);
+    R_ASSERT(!strcmp(filter->plugins[ch]->type->type_name, type_name));
+    R_ASSERT(!strcmp(filter->plugins[ch]->type->name, plugin_name));
     filter->plugins[ch]->data = filter->plugins[ch]->type->create_plugin_data(filter->plugins[ch]->type, filter->plugins[ch], NULL, MIXER_get_sample_rate(), MIXER_get_buffer_size(), is_loading);
+    R_ASSERT(filter->plugins[ch]->data!=NULL);
     filter->was_off = true;
     filter->was_on = false;
   }
+}
+
+static void init_system_filter(SystemFilter *filter, int num_channels, const char *name, bool is_loading){
+  init_system_filter2(filter, num_channels, "Faust", name, is_loading);
 }
 
 static void release_system_filter(SystemFilter *filter, int num_channels){
@@ -534,6 +544,15 @@ SoundPlugin *PLUGIN_create(struct Patch *patch, SoundPluginType *plugin_type, ha
     plugin->highshelf_freq = 1500.0f;
     plugin->highshelf_db = 0.0f;
 
+    //init_system_filter(&plugin->pitch, num_outputs, "System Pitch", is_loading);
+    if (g_has_added_system_pitchshift){
+      init_system_filter2(&plugin->pitch, num_outputs, "Ladspa", "System AM pitchshift", is_loading);
+      for(int ch=0;ch<num_outputs;ch++)
+        plugin->pitch.plugins[ch]->type->set_effect_value(plugin->pitch.plugins[ch], 0, 1, 5, EFFECT_FORMAT_NATIVE, FX_single); // buffer size 5.
+    }
+    plugin->pitch_type = SPT_DISABLED;
+    plugin->pitch_pitch = 0;
+
     if (num_outputs > 0)
       plugin->delay = new radium::SmoothDelay(ms_to_frames(DELAY_MAX));
     //init_system_filter(&plugin->delay, num_outputs, "System Delay", is_loading);
@@ -650,6 +669,8 @@ void PLUGIN_delete(SoundPlugin *plugin){
   release_system_filter(&plugin->lowshelf, plugin_type->num_outputs);
     
   release_system_filter(&plugin->highshelf, plugin_type->num_outputs);
+  
+  release_system_filter(&plugin->pitch, plugin_type->num_outputs);
 
   delete static_cast<radium::SmoothDelay*>(plugin->delay);
   //release_system_filter(&plugin->delay, plugin_type->num_outputs);
@@ -956,6 +977,10 @@ void PLUGIN_get_display_value_string(struct SoundPlugin *plugin, int effect_num,
       snprintf(buffer,buffersize-1,"%.2f ms",store_value);
       break;
 
+    case EFFNUM_PITCH_PITCH:
+      snprintf(buffer,buffersize-1,"%.2f",store_value);
+      break;
+
     case EFFNUM_DRYWET:
       {
         int wet = store_value*100;
@@ -1222,7 +1247,7 @@ static float get_voice_CHANCE(struct SoundPlugin *plugin, int num, enum ValueFor
 }
 
 
-#define SET_ATOMIC_ON_OFF(on_off, value) { \
+#define SET_ATOMIC_ON_OFF(on_off, value) do{ \
     {                                                                   \
       bool old_val = ATOMIC_GET(on_off);                                \
       if(value>=0.5f && !old_val){                                      \
@@ -1233,9 +1258,9 @@ static float get_voice_CHANCE(struct SoundPlugin *plugin, int num, enum ValueFor
         update_instrument_gui(plugin);                                  \
       }                                                                 \
     }                                                                   \
-  }
+  }while(0)
 
-#define SET_ATOMIC_ON_OFF2(on_off, value, var, on_value, off_value) {   \
+#define SET_ATOMIC_ON_OFF2(on_off, value, var, on_value, off_value) do{   \
     {                                                                   \
       bool old_val = ATOMIC_GET(on_off);                                \
       if(value>=0.5f && !old_val){                                      \
@@ -1248,7 +1273,7 @@ static float get_voice_CHANCE(struct SoundPlugin *plugin, int num, enum ValueFor
         update_instrument_gui(plugin);                                  \
       }                                                                 \
     }                                                                   \
-  }
+  }while(0)
 
 static void set_volume(SoundPlugin *plugin, float volume){
   if (equal_floats(volume, 0.0f) && plugin->sp && PLAYER_current_thread_has_lock() && SP_all_output_links_were_silent(plugin->sp))
@@ -1304,6 +1329,66 @@ static void set_volume(SoundPlugin *plugin, float volume){
 #define GET_BUS_VOLUME(busnum, value_format)    \
   get_gain_value(safe_float_read(&plugin->bus_volume[busnum]), value_format)
 
+
+static void change_pitch_stuff(SoundPlugin *plugin, float pitch, enum SoundPluginPitchType type){
+  
+  {
+    radium::PlayerRecursiveLock lock;
+    plugin->pitch_type = type;
+    plugin->pitch_pitch = pitch;
+  }
+  
+  bool is_on = type!=SPT_DISABLED;// && (pitch <= -0.1 || pitch >= 0.1);
+  
+  float ratio = midi_to_hz(48+pitch) / 130.812782357; // midi_to_hz(48)==130.812782357
+  
+  if (is_on)
+    SET_ATOMIC_ON_OFF(plugin->pitch.is_on, true);
+
+  for(int ch=0;ch<plugin->type->num_outputs;ch++)
+    switch(type){
+      case SPT_ONLY_LEFT:
+        plugin->pitch.plugins[ch]->type->set_effect_value(plugin->pitch.plugins[ch], 0, 0, (ch %2)==0 ? ratio : 1.0, EFFECT_FORMAT_NATIVE, FX_single);
+        break;
+      case SPT_ONLY_RIGHT:
+        plugin->pitch.plugins[ch]->type->set_effect_value(plugin->pitch.plugins[ch], 0, 0, (ch % 2)==1 ? ratio : 1.0, EFFECT_FORMAT_NATIVE, FX_single);
+        break;
+      case SPT_DISABLED:
+      case SPT_ALL_CHANNELS:
+        plugin->pitch.plugins[ch]->type->set_effect_value(plugin->pitch.plugins[ch], 0, 0, ratio, EFFECT_FORMAT_NATIVE, FX_single);
+        break;
+      case SPT_INVERTED_CHANNELS:
+        plugin->pitch.plugins[ch]->type->set_effect_value(plugin->pitch.plugins[ch], 0, 0, (ch % 2)==0 ? ratio : 1.0 / ratio, EFFECT_FORMAT_NATIVE, FX_single);
+        break;
+    }
+  
+  if (!is_on)
+    SET_ATOMIC_ON_OFF(plugin->pitch.is_on, false);
+
+  update_instrument_gui(plugin);
+}
+
+static void change_pitch_pitch(SoundPlugin *plugin, float pitch){
+#if 0 //!defined(RELEASE)
+  printf(" Setting pitch to %f. Ratio: %f. Type: %d\n", pitch, ratio, plugin->pitch_type);
+#endif
+
+  if (equal_floats(pitch, plugin->pitch_pitch))
+    return;
+      
+  change_pitch_stuff(plugin, pitch, plugin->pitch_type);
+}
+
+static void change_pitch_type(SoundPlugin *plugin, enum SoundPluginPitchType type){
+  if (type == plugin->pitch_type)
+    return;
+
+#if !defined(RELEASE)
+  printf(" Setting pitch type to %d. ", (int)type);
+#endif
+
+  change_pitch_stuff(plugin, plugin->pitch_pitch, type);
+}
 
 // Only called once (when starting to play)
 void PLUGIN_call_me_before_starting_to_play_song_END(SoundPlugin *plugin){
@@ -1951,6 +2036,30 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, const int time,
         break;
       }
 
+    case EFFNUM_PITCH_TYPE:
+      {
+        if(value_format==EFFECT_FORMAT_SCALED)
+          store_value_native = scale(value, 0, 1, 0, SPT_MAX);
+        else
+          store_value_scaled = R_BOUNDARIES(0, scale(value, 0, SPT_MAX, 0, 1), 1);        
+
+        int type = R_BOUNDARIES(0, (int)roundf(store_value_native), SPT_INVERTED_CHANNELS);        
+        change_pitch_type(plugin, (enum SoundPluginPitchType)type);
+        //change_pitch_type(plugin, SPT_INVERTED_CHANNELS);
+      }
+      break;
+        
+    case EFFNUM_PITCH_PITCH:
+      {
+        if(value_format==EFFECT_FORMAT_SCALED)
+          store_value_native = scale(value, 0, 1, -12, 12);
+        else
+          store_value_scaled = R_BOUNDARIES(0, scale(value, -12, 12, 0, 1), 1);
+
+        change_pitch_pitch(plugin, store_value_native);
+      }
+      break;
+        
 #define SET_VOICE(name, n1, n2)                                         \
       case EFFNUM_VOICE##n2##_##name:                                   \
         set_voice_##name(plugin, n1, store_value_native, store_value_scaled, value_format); \
@@ -2167,6 +2276,19 @@ float PLUGIN_get_effect_value2(struct SoundPlugin *plugin, int effect_num, enum 
     
   case EFFNUM_DELAY_ONOFF:
     return ATOMIC_GET(plugin->delay_is_on)==true ? 1.0 : 0.0f;
+
+  case EFFNUM_PITCH_TYPE:
+    if(value_format==EFFECT_FORMAT_NATIVE)
+      return (int)plugin->pitch_type;
+    else
+      return scale((int)plugin->pitch_type, 0, SPT_MAX, 0.0, 1.0);
+        
+  case EFFNUM_PITCH_PITCH:
+    if(value_format==EFFECT_FORMAT_NATIVE)
+      return plugin->pitch_pitch;
+    else
+      return scale(plugin->pitch_pitch, PITCH_MIN, PITCH_MAX, 0, 1);
+    
 #if 0    
   case EFFNUM_EDITOR_ONOFF:
     return ATOMIC_GET(plugin->editor_is_on)==true ? 1.0 : 0.0f;
@@ -2707,7 +2829,7 @@ float PLUGIN_get_effect_from_name(SoundPlugin *plugin, const char *effect_name, 
 }
 
 
-void PLUGIN_set_effect_from_name(SoundPlugin *plugin, const char *effect_name, float value){
+void PLUGIN_set_effect_from_name(SoundPlugin *plugin, const char *effect_name, float value, enum ValueFormat value_format){
   const SoundPluginType *type=plugin->type;
   int i = PLUGIN_get_effect_num_from_name(plugin, effect_name);
 
@@ -2717,7 +2839,7 @@ void PLUGIN_set_effect_from_name(SoundPlugin *plugin, const char *effect_name, f
   }
 
   //printf("      Going to set %s to %f\n",effect_name,value);
-  PLUGIN_set_effect_value(plugin, -1, i, value, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
+  PLUGIN_set_effect_value(plugin, -1, i, value, STORE_VALUE, FX_single, value_format);
 }
 
 
@@ -3393,15 +3515,12 @@ bool RT_PLUGIN_can_autosuspend(const SoundPlugin *plugin, int64_t time){
       return false;
     }
     
-    // input latency
-    delay += RT_SP_get_input_latency(plugin->sp);
-
-    // plugin latency
-    if (plugin->type->RT_get_latency != NULL)
-      delay += plugin->type->RT_get_latency(plugin);
+    // input latency and soundproducer latency
+    delay += R_MAX(RT_SP_get_input_latency(plugin->sp), RT_SP_get_latency(plugin->sp)); // (It's possible that input latency is not a part of soundproducer latency.)
 
     // smooth delay delay
-    delay += (plugin->delay_time * MIXER_get_sample_rate() / 1000);
+    if (ATOMIC_GET(plugin->delay_is_on))
+      delay += (plugin->delay_time * MIXER_get_sample_rate() / 1000);
     
     // Add soundcard block size since we won't do this check again until the next soundcard block.
     delay += g_jackblock_size;

@@ -870,7 +870,7 @@ static void maybe_create_cache_file_for_plugin(const SoundPluginType *plugin_typ
 }
 
 
-static SoundPluginType *create_plugin_type(const LADSPA_Descriptor *descriptor, Library *library, int index){
+static SoundPluginType *create_plugin_type(const LADSPA_Descriptor *descriptor, Library *library, int index, bool is_system_pitchshift){
   SoundPluginType *plugin_type = (SoundPluginType*)V_calloc(1,sizeof(SoundPluginType));
 
   plugin_type->type_name = "Ladspa";
@@ -879,7 +879,7 @@ static SoundPluginType *create_plugin_type(const LADSPA_Descriptor *descriptor, 
   TypeData *type_data = create_empty_type_data(library, index);
   plugin_type->data = type_data;
       
-  bool loaded_from_cache = maybe_fill_in_cached_plugin(type_data, plugin_type, library, index);
+  bool loaded_from_cache = is_system_pitchshift ? false : maybe_fill_in_cached_plugin(type_data, plugin_type, library, index);
   
   if (!loaded_from_cache){
 
@@ -893,7 +893,7 @@ static SoundPluginType *create_plugin_type(const LADSPA_Descriptor *descriptor, 
     }
 
 
-    plugin_type->name      = V_strdup(descriptor->Name);
+    plugin_type->name      = V_strdup(is_system_pitchshift ? "System AM pitchshift" : descriptor->Name);
     plugin_type->info      = create_info_string(descriptor);
     plugin_type->creator   = create_creator_string(descriptor);
 
@@ -924,13 +924,13 @@ static SoundPluginType *create_plugin_type(const LADSPA_Descriptor *descriptor, 
       remove_type_data_reference(type_data);
   }
 
-  if(plugin_type->num_inputs==1 && plugin_type->num_outputs==1){ // Use two mono plugin instances to create one stereo plugin.
+  if(!is_system_pitchshift && plugin_type->num_inputs==1 && plugin_type->num_outputs==1){ // Use two mono plugin instances to create one stereo plugin.
     plugin_type->num_inputs = 2;
     plugin_type->num_outputs = 2;
     type_data->uses_two_handles = true;
   }
 
-  if (!loaded_from_cache)
+  if (!loaded_from_cache && !is_system_pitchshift)
     maybe_create_cache_file_for_plugin(plugin_type, library);
 
   plugin_type->buffer_size_is_changed = buffer_size_is_changed;
@@ -1008,6 +1008,8 @@ static void maybe_create_cache_file_for_library(const Library *library){
   HASH_save(state, file._file);
 }
 
+bool g_has_added_system_pitchshift = false;
+
 static void add_ladspa_plugin_type(const QFileInfo &file_info){
   //return; // <- TODO: ThreadSanitizer complains on somethine when loading each ladspa plugins, but there is no proper backtrace so I haven't taken the time to find the cause of it yet.
   
@@ -1024,21 +1026,24 @@ static void add_ladspa_plugin_type(const QFileInfo &file_info){
   
   //printf("Resolved \"%s\"\n",myLib.fileName().toUtf8().constData());
 
+  bool is_am_pitchshift = filename.contains("am_pitchshift");
   
-  
-  auto addit = [library](const LADSPA_Descriptor *descriptor, int index){
-    SoundPluginType *plugin_type = create_plugin_type(descriptor, library, index);
+  auto addit = [library, is_am_pitchshift](const LADSPA_Descriptor *descriptor, int index, bool is_system_pitchshift){
+
+    if (is_system_pitchshift)
+      g_has_added_system_pitchshift = true;
+    
+    SoundPluginType *plugin_type = create_plugin_type(descriptor, library, index, is_system_pitchshift);
     PR_add_plugin_type_no_menu(plugin_type);
     g_plugin_types.push_back(plugin_type);
   };
 
-
-  bool got_library_from_cache = maybe_fill_in_cached_library(library);
+  bool got_library_from_cache = is_am_pitchshift ? false : maybe_fill_in_cached_library(library);
   
   if (got_library_from_cache){
     
     for(int index=0 ; index < library->num_instances ; index++)
-      addit(NULL, index);
+      addit(NULL, index, false);
     
   } else {
 
@@ -1099,8 +1104,9 @@ static void add_ladspa_plugin_type(const QFileInfo &file_info){
     for(int index = 0; (descriptor=get_descriptor_func(index)) != NULL ; index++){
       
       library->num_instances++;
-      addit(descriptor, index);
-      
+      addit(descriptor, index, false);
+      if (is_am_pitchshift)
+        addit(descriptor, index, true);
     }
 
     maybe_create_cache_file_for_library(library);
@@ -1171,7 +1177,8 @@ static void menu_descend(const char * uri,
 
     for(unsigned int i=0;i<plugin_types.size();i++){
       //printf("  \"%s\"\n",plugin_types.at(i)->name);
-      PR_add_menu_entry(PluginMenuEntry::normal(plugin_types.at(i)));
+      if (strcmp(plugin_types.at(i)->name, "System AM pitchshift"))
+        PR_add_menu_entry(PluginMenuEntry::normal(plugin_types.at(i)));
     }
     
     lrdf_free_uris (uris);
@@ -1346,7 +1353,8 @@ static void init_uncategorized_menues(){
       SoundPluginType *plugin_type = diff.at(i);
       const char *name = plugin_type->name;
       if(name[0]==last){
-        PR_add_menu_entry(PluginMenuEntry::normal(plugin_type));
+        if (strcmp(name, "System AM pitchshift"))
+          PR_add_menu_entry(PluginMenuEntry::normal(plugin_type));
       }else{
         if(last!=0)
           PR_add_menu_entry(PluginMenuEntry::level_down());
@@ -1355,7 +1363,8 @@ static void init_uncategorized_menues(){
         temp[0]=last;
         temp[1]=0;
         PR_add_menu_entry(PluginMenuEntry::level_up(temp));
-        PR_add_menu_entry(PluginMenuEntry::normal(plugin_type));
+        if (strcmp(name, "System AM pitchshift"))
+          PR_add_menu_entry(PluginMenuEntry::normal(plugin_type));
       }
       
       //printf("Plugin %d/%d/%d: %s\n",(int)i,(int)num_remaining_elements,(int)diff.size(),diff.at(i)->name);
