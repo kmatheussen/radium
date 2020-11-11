@@ -285,6 +285,7 @@ namespace radium{
     std::function<void(void)> **_functions;
 
     bool has_spent_too_much_time(void) const {
+      //return false;
       //return true;
       return MIXER_get_curr_audio_block_cycle_fraction() >= 0.9;
     }

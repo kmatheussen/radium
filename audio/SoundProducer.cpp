@@ -1786,7 +1786,7 @@ public:
     JUCE_add_sound(output, input, num_frames);
   }
 
-  void RT_apply_system_filter_apply(SystemFilter *filter, float **input, float **output, int num_channels, int num_frames, bool process_plugins) const {
+  void RT_apply_system_filter2(SystemFilter *filter, float **input, float **output, int num_channels, int num_frames, bool process_plugins) const {
     if(filter->plugins==NULL)
       if(num_channels==0){
         return;
@@ -1812,26 +1812,36 @@ public:
 
   // Quite chaotic with all the on/off is/was booleans.
   void RT_apply_system_filter(SystemFilter *filter, float **sound, int num_channels, int num_frames, bool process_plugins) const {
+    if (num_channels==0)
+      return;
+    
     if(ATOMIC_GET(filter->is_on)==false && filter->was_on==false)
       return;
 
+    float *s[R_MAX(1, num_channels)];
+    float filter_sound[R_MAX(1, num_channels*num_frames)];
+    for(int ch=0;ch<num_channels;ch++)
+      s[ch] = &filter_sound[ch*num_frames];
+
     {
       // Set up buffers used when fading in/out
-      float *s[R_MAX(1, num_channels)];
-      float filter_sound[R_MAX(1, num_channels*num_frames)];
-      for(int ch=0;ch<num_channels;ch++)
-        s[ch] = &filter_sound[ch*num_frames];
-      
       if(ATOMIC_GET(filter->is_on)==true){
         
         if(filter->was_off==true){ // fade in
-          RT_apply_system_filter_apply(filter,sound,s,num_channels,num_frames, process_plugins);
+
+          for(int ch=0;ch<num_channels;ch++){
+            memcpy(s[ch], sound[ch], sizeof(float) * num_frames);
+            RT_fade_in2(s[ch], filter->fade_pos, num_frames);
+          }
+          
+          RT_apply_system_filter2(filter,s,s,num_channels,num_frames, process_plugins);
           
           for(int ch=0;ch<num_channels;ch++)
             RT_crossfade_in2(s[ch], sound[ch], filter->fade_pos, num_frames);
 
           filter->fade_pos += num_frames;
-          if(filter->fade_pos==FADE_LEN){
+          if(filter->fade_pos>=FADE_LEN){
+            R_ASSERT_NON_RELEASE(filter->fade_pos==FADE_LEN);
             filter->was_off=false;
             filter->fade_pos = 0;
             filter->was_on=true;
@@ -1839,23 +1849,43 @@ public:
           
         }else{
           
-          RT_apply_system_filter_apply(filter,sound,sound,num_channels,num_frames, process_plugins);      
+          RT_apply_system_filter2(filter,sound,sound,num_channels,num_frames, process_plugins);      
           filter->was_on=true;   
         }
        
         
       }else if(filter->was_on==true){ // fade out.
-        
-        RT_apply_system_filter_apply(filter,sound,s,num_channels,num_frames, process_plugins);
+
+        for(int ch=0;ch<num_channels;ch++){
+          memcpy(s[ch], sound[ch], sizeof(float) * num_frames);
+          RT_fade_out2(s[ch], filter->fade_pos, num_frames);
+        }
+          
+        RT_apply_system_filter2(filter,s,s,num_channels,num_frames, process_plugins);
         
         for(int ch=0;ch<num_channels;ch++)
           RT_crossfade_out2(s[ch], sound[ch], filter->fade_pos, num_frames);
                 
         filter->fade_pos += num_frames;
-        if(filter->fade_pos==FADE_LEN){
+        if(filter->fade_pos>=FADE_LEN){
+          R_ASSERT_NON_RELEASE(filter->fade_pos==FADE_LEN);
           filter->was_on=false;
           filter->was_off=true;
           filter->fade_pos = 0;
+
+          // Fill output buffer with empty data
+          {
+            SoundPlugin *plugin = filter->plugins[0];
+            int latency = plugin->type->RT_get_latency!=NULL ? plugin->type->RT_get_latency(plugin) : 0;
+            if (latency > 0){
+              float *empty[num_channels];
+              for(int ch=0;ch<num_channels;ch++)
+                empty[ch] = (float*)g_empty_sound;
+              
+              for(int i=0;i<ceil(latency/RADIUM_BLOCKSIZE);i++)
+                RT_apply_system_filter2(filter, empty, s, num_channels, RADIUM_BLOCKSIZE, process_plugins);
+            }
+          }
         }
       }
 
@@ -1931,10 +1961,22 @@ public:
     
     const int plugin_latency = (_plugin->type->RT_get_latency==NULL || !g_RT_enable_latency_compensation) ? 0 : _plugin->type->RT_get_latency(_plugin);
 
+    int pitch_latency = 0;
+    
+    if (_num_outputs > 0 && ATOMIC_GET(_plugin->pitch.is_on)){
+      SoundPlugin *plugin = _plugin->pitch.plugins[0];
+      pitch_latency = plugin->type->RT_get_latency!=NULL ? plugin->type->RT_get_latency(plugin) : 0;
+    }
+    
     // Used by dry/wet
-    for(int ch = 0 ; ch < _num_dry_sounds ; ch++)
-      _dry_sound_latencycompensator_delays[ch].RT_set_preferred_delay(plugin_latency); // <- Note! NOT set to _latency. Set to plugin_latency.
-
+    for(int ch = 0 ; ch < _num_dry_sounds ; ch++){
+      int latency = plugin_latency;
+      
+      if (root->song->include_pan_and_dry_in_wet_signal)
+        latency += pitch_latency;
+      
+      _dry_sound_latencycompensator_delays[ch].RT_set_preferred_delay(latency); // <- Note! NOT set to _latency. Set to plugin_latency.
+    }
 
     {
       int highest_input_link_latency = 0;
@@ -1965,7 +2007,7 @@ public:
     }
     
     {    
-      int new_latency = plugin_latency;
+      int new_latency = plugin_latency + pitch_latency;
 
       if (_plugin->RT_input_latency_manifests_into_output_latency)
         new_latency +=_highest_input_link_latency;
@@ -2045,13 +2087,15 @@ public:
     }
   }
 
-  void RT_process_pan_and_width(float **outputs, int num_frames) const {
+  void RT_process_pan_width_and_pitch(float **outputs, int num_frames, bool process_plugins) const {
     // Output pan
     SMOOTH_apply_pan(&_plugin->pan, outputs, _num_outputs, num_frames);
-    
+
     // Right channel delay ("width")
     if(_num_outputs>1)
       static_cast<radium::SmoothDelay*>(_plugin->delay)->RT_process(num_frames, outputs[1], outputs[1]);
+
+    RT_apply_system_filter(&_plugin->pitch, outputs, _num_outputs, num_frames, process_plugins);
   }
 
   // Note: Always called for all audio links, active or not, autosuspended or not, bus or not, going to be mixed or not.
@@ -2304,7 +2348,7 @@ public:
     
     
     if (include_pan_and_width_in_wet)
-      RT_process_pan_and_width(wet_sound, num_frames);
+      RT_process_pan_width_and_pitch(wet_sound, num_frames, process_plugins);
 
     {
       float latency_dry_sound_sound[R_MAX(1,_num_dry_sounds)][num_frames]; // Using 'R_MAX' since array[0] is undefined behavior. (ubsan fix only, most likely nothing bad would happen)
@@ -2323,7 +2367,7 @@ public:
     
 
     if (!include_pan_and_width_in_wet)
-      RT_process_pan_and_width(output_sound, num_frames);
+      RT_process_pan_width_and_pitch(output_sound, num_frames, process_plugins);
     
 
     bool is_touched = false;
@@ -2820,6 +2864,11 @@ bool SP_is_plugin_running(const SoundPlugin *plugin){
 int RT_SP_get_input_latency(const SoundProducer *sp){
   R_ASSERT_NON_RELEASE(THREADING_is_runner_thread() || PLAYER_current_thread_has_lock());
   return sp->_highest_input_link_latency;
+}
+
+int RT_SP_get_latency(const SoundProducer *sp){
+  R_ASSERT_NON_RELEASE(THREADING_is_runner_thread() || PLAYER_current_thread_has_lock());
+  return sp->_latency;
 }
 
 double SP_get_running_time(const SoundProducer *sp){
