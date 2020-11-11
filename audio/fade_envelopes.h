@@ -19,7 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define RADIUM_AUDIO_FADE_ENVELOPES_H
 
 // Must be a multiple of RADIUM_BLOCKSIZE
-#define FADE_LEN 1024
+#define FADE_LEN 2048 // 1024 // 2048 // 4096 //(8*1024)
 
 #if 0 // We don't want to use this. It's seems faster to calculate fades than looking up a table.
 
