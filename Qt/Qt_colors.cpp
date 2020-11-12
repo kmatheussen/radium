@@ -238,6 +238,7 @@ static const ColorConfig g_colorconfig[] = {
   {SEQUENCER_BLOCK_SPEED_BOX_COLOR_NUM, "sequencer_block_speed_box_color", "Seqblock speed box", false},
   {SEQUENCER_BLOCK_STRETCH_BOX_COLOR_NUM, "sequencer_block_stretch_box_color", "Seqblock stretch box", false},
   {SEQUENCER_WAVEFORM_COLOR_NUM, "sequencer_waveform_color", "Sequencer: Waveform", false},
+  {SEQUENCER_WAVEFORM_BORDER_COLOR_NUM, "sequencer_waveform_border_color", "Sequencer: Waveform border", false},
 
   {SEQUENCER_GRID_COLOR_NUM, "sequencer_grid_color", "Sequencer grid", false},
   {SEQUENCER_TRACK_BORDER1_COLOR_NUM, "sequencer_track_border1_color", "Sequencer track border color (first)", false},
@@ -403,6 +404,7 @@ static ReplacementColor g_replacement_color[] = {
   {SEQUENCER_BLOCK_SPEED_BOX_COLOR_NUM, QColor("#ffff6060")},
   {SEQUENCER_BLOCK_STRETCH_BOX_COLOR_NUM, QColor("yellow")},
   {SEQUENCER_WAVEFORM_COLOR_NUM, QColor("#c8000000")},
+  {SEQUENCER_WAVEFORM_BORDER_COLOR_NUM, QColor("#c50c23a5")},
 
   {SEQUENCER_GRID_COLOR_NUM, QColor("#99281980")},
   {SEQUENCER_TRACK_BORDER1_COLOR_NUM, QColor("#ff141414")},
