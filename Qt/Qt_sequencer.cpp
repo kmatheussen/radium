@@ -333,13 +333,13 @@ bool myDrawText(QPainter &p, QRectF rect, QString text, int flags, bool wrap_lin
   return org_text==draw_text;
 }
 
-static void myFilledPolygon(QPainter &p, QPointF *points, int num_points, const QColor &color){
-  QPen pen = p.pen();
-  p.setPen(Qt::NoPen);
+static void myFilledPolygon(QPainter &p, QPointF *points, int num_points, const QColor &color, const QPen &pen = Qt::NoPen){
+  QPen old_pen = p.pen();
+  p.setPen(pen);
   p.setBrush(color);
   p.drawPolygon(points, num_points);
   p.setBrush(Qt::NoBrush);
-  p.setPen(pen);
+  p.setPen(old_pen);
 }
 
 static void my_update_sequencer_widget(const QRect &rect);
@@ -1218,7 +1218,9 @@ public:
       num_points++;
 
     const float sample_gain = seqblock->gain;
-    
+
+    QPen waveform_pen(get_qcolor(SEQUENCER_WAVEFORM_BORDER_COLOR_NUM));
+      
     for(int ch=0;ch<num_ch;ch++){
 
       double y1 = scale_double(ch, 0, num_ch, w_y1, w_y2);
@@ -1293,7 +1295,7 @@ public:
         //}
       }
 
-      myFilledPolygon(p, points, num_points*2, color);
+      myFilledPolygon(p, points, num_points*2, color, waveform_pen);
     }
 
 
