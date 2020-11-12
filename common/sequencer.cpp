@@ -3808,9 +3808,8 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
   QTimer::singleShot(100, []{
       setTopmostVisibleSeqtrack(0);
       setCurrSeqtrack(0, true, false);
+      SEQUENCER_update(SEQUPDATE_EVERYTHING);
     });
-  
-  SEQUENCER_update(SEQUPDATE_EVERYTHING);
 }
 
 // Only used by undo/redo

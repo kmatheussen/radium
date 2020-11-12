@@ -2445,7 +2445,9 @@ public:
     {
       double prev_y1 = seqtracks_y1;
 
-      for(int seqtracknum=root->song->topmost_visible_seqtrack-1;seqtracknum>=0;seqtracknum--){
+      R_ASSERT_NON_RELEASE(root->song->topmost_visible_seqtrack-1 <= num_seqtracks-1);
+      
+      for(int seqtracknum=R_MIN(num_seqtracks-1, root->song->topmost_visible_seqtrack-1);seqtracknum>=0;seqtracknum--){
         struct SeqTrack *seqtrack=(struct SeqTrack *)root->song->seqtracks.elements[seqtracknum];
         seqtrack->y2 = prev_y1;
         seqtrack->y1 = seqtrack->y2 - heights[seqtracknum];
@@ -2457,8 +2459,10 @@ public:
     // Below topmost visible seqtrack
     {
       double next_y1 = seqtracks_y1;
-    
-      for(int seqtracknum=root->song->topmost_visible_seqtrack;seqtracknum<num_seqtracks;seqtracknum++){
+
+      R_ASSERT_NON_RELEASE(root->song->topmost_visible_seqtrack >=0);
+      
+      for(int seqtracknum=R_MAX(0, root->song->topmost_visible_seqtrack);seqtracknum<num_seqtracks;seqtracknum++){
         struct SeqTrack *seqtrack=(struct SeqTrack *)root->song->seqtracks.elements[seqtracknum];
         seqtrack->y1 = next_y1;
         seqtrack->y2 = seqtrack->y1 + heights[seqtracknum];
