@@ -1741,6 +1741,8 @@
                                           :num-areas-to-mousewheel-scroll 3
                                           )
 
+  (assert (not sub-areas-can-be-cached)) ;; There'a a bug here when using this. An error message pops up when scrolling.
+  
   (if (number? get-sub-area-height)
       (set! get-sub-area-height (round get-sub-area-height)))
 
