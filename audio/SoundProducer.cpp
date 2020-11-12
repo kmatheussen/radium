@@ -2880,6 +2880,10 @@ bool SP_has_input_links(const SoundProducer *sp){
   return sp->_input_links.size() > 0;
 }
 
+bool SP_has_output_links(const SoundProducer *sp){
+  return sp->_output_links.size() > 0;
+}
+
 int SP_get_max_input_channels_from_audio_input_links(const struct SoundProducer *sp){
   int ret = 0;
   for(auto *link : sp->_input_links)
@@ -2914,6 +2918,10 @@ bool SP_has_audio_input_link(const SoundProducer *sp){
 bool SP_is_audio_connected(const SoundProducer *start_producer, const SoundProducer *end_producer){
   int safety = 0;
   return SoundProducer::is_audio_connected(start_producer, end_producer, safety);
+}
+
+bool SP_is_bus(const SoundProducer *sp){
+  return sp->_is_bus;
 }
 
 void SP_called_regularly_by_main_thread(SoundProducer *sp){

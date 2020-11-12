@@ -66,6 +66,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Modulator_plugin_proc.h"
 #include "AudioBuffer.hpp"
 #include "SendReceive_plugins_proc.h"
+#include "Sampler_plugin_proc.h"
 
 #include "Mixer_proc.h"
 
@@ -75,8 +76,6 @@ extern PlayerClass *pc;
 
 static int g_last_set_producer_buffersize;
 static RSemaphore *g_freewheeling_has_started = NULL;
-
-extern const char *g_click_name;
 
 // these four variables can only be written to in the audio thread.
 static volatile int g_num_allocated_click_plugins = 0;
