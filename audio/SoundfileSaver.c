@@ -77,7 +77,7 @@ static void set_resamplers(bool set_min_type, enum ResamplerType min_type){
           SAMPLER_set_org_resampler_type(plugin);
         }
       }else{
-        R_ASSERT_NON_RELEASE(false);
+        //R_ASSERT_NON_RELEASE(false); // ??
       }
     }
   }END_VECTOR_FOR_EACH;
