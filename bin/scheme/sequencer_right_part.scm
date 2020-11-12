@@ -116,7 +116,7 @@
              :num-sub-areas (length audiofiles)
              :get-sub-area-height entry-height
              :create-sub-area create-entry
-             :sub-areas-can-be-cached #t
+             :sub-areas-can-be-cached #f
              ))
     (if state
         (area :apply-state! state))
