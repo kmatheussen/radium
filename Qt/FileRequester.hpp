@@ -41,7 +41,7 @@ namespace radium{
     
   public:
     
-    FileRequester(QWidget *parent, QString header_text, QString dir, QString filetypename, QString postfixes, bool for_loading)
+    FileRequester(QWidget *parent, QString header_text, QString dir, QString filetypename, QString postfixes, bool for_loading, bool several_files = false)
       : QFileDialog(parent, header_text, dir, FileRequester::get_postfixes_filter(filetypename, postfixes))
     {
       /*
@@ -63,6 +63,9 @@ namespace radium{
       setOption(QFileDialog::DontUseNativeDialog, useNativeFileRequesters());
 #endif
 
+      if (several_files)
+        setFileMode(QFileDialog::ExistingFiles);
+      
       if (for_loading)
         setAcceptMode(QFileDialog::AcceptOpen);
       else
@@ -73,7 +76,7 @@ namespace radium{
       if (!g_filedialog_geometry.isEmpty()){
         restoreGeometry(g_filedialog_geometry);
       }
-
+      
       fixqfiledialog(this);
     }
 
