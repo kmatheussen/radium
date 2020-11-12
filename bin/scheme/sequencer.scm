@@ -1756,6 +1756,7 @@
         (list                                          
          "Insert current audiofile"
          :shortcut insert-current-block-or-audiofile-in-sequencer
+         :enabled (> (length (<ra> :get-audio-files)) 0)
          (lambda ()
            (insert-current-block-or-audiofile-in-sequencer seqtracknum X)))
         (list
