@@ -112,7 +112,7 @@ class Soundfilesaver_widget : public RememberGeometryQDialog, public Ui::Soundfi
 
   void clean_prev(void){
     if (currently_saving_plugin != NULL) {
-      ATOMIC_SET(currently_saving_plugin->solo_is_on, false);
+      setInstrumentSolo(false, currently_saving_plugin->patch->id);
       currently_saving_plugin = NULL;
     }
   }
@@ -132,10 +132,8 @@ class Soundfilesaver_widget : public RememberGeometryQDialog, public Ui::Soundfi
 
     currently_saving_plugin = plugins_to_save.pop(0);
 
-    ATOMIC_SET(currently_saving_plugin->solo_is_on, true);
-    CHIP_update(currently_saving_plugin);
-    GFX_update_instrument_widget((struct Patch*)currently_saving_plugin->patch);
-
+    setInstrumentSolo(true, currently_saving_plugin->patch->id);
+      
     QDir dir(filename_edit->text());
     QString dirname = dir.absolutePath();
 
