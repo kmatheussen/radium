@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/Mixer_proc.h"
 #include "../audio/SoundProducer_proc.h"
 #include "../audio/SoundfileSaver_proc.h"
+#include "../audio/Sampler_plugin_proc.h"
 
 #include "../mixergui/QM_chip.h"
 
@@ -329,11 +330,19 @@ public slots:
         
         const radium::Vector<SoundProducer*> &sp_all = MIXER_get_all_SoundProducers();
         for (auto sp : sp_all){
-          if (!SP_has_input_links(sp)){
-            plugins_to_save.push_back(SP_get_plugin(sp));
+          SoundPlugin *plugin = SP_get_plugin(sp);
+          
+          if (!SP_has_input_links(sp) && SP_has_output_links(sp) && !SP_is_bus(sp) && strcmp(plugin->type->type_name, "Pipe")){
+            bool doit = true;
+            
+            if (!strcmp(plugin->type->name, g_click_name) && !strcmp("Sample Player", plugin->type->type_name))
+              doit = metronomeEnabled();
+                
+            if (doit)
+              plugins_to_save.push_back(plugin);
           }
         }
-
+        
         safeShow(msgBox);
 
         save_next();

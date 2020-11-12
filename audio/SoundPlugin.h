@@ -476,7 +476,7 @@ enum SoundPluginPitchType{
   SPT_INVERTED_CHANNELS = 4,
 };
 
-#define SPT_MAX 256 // Meaning, pitch type can only be extended to 128 different types. (saved to disk, so can not be changed)
+#define SPT_MAX 256 // Meaning, pitch type can only be extended to 256 different types. (saved to disk, so can not be changed)
   
 typedef struct SoundPlugin{
 
