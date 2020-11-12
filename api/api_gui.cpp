@@ -1120,9 +1120,24 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       S7CALL(void_int_int,_func.v, column, row);
     }
 
+    /*
     void fileSelected(const QString &file){
       ScopedEventHandlerTracker event_handler_tracker;
       S7CALL(void_dyn,_func.v, DYN_create_filepath(make_filepath(file)));
+    }
+    */
+    
+    void filesSelected(const QStringList &selected){
+      ScopedEventHandlerTracker event_handler_tracker;
+      if (selected.size()==1){
+        S7CALL(void_dyn,_func.v, DYN_create_filepath(make_filepath(selected.at(0))));
+      } else {
+        dynvec_t ret = {};
+        for(const QString &file : selected)
+          DYNVEC_push_back(&ret, DYN_create_filepath(make_filepath(file)));
+
+        S7CALL(void_dyn,_func.v, DYN_create_array(ret));
+      }
     }
 
     void currentChanged(int index){
@@ -2952,7 +2967,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       {
         QFileDialog *file_dialog = dynamic_cast<QFileDialog*>(_widget.data());
         if (file_dialog!=NULL){
-          file_dialog->connect(file_dialog, SIGNAL(fileSelected(const QString &)), callback, SLOT(fileSelected(const QString &)));
+          //file_dialog->connect(file_dialog, SIGNAL(fileSelected(const QString &)), callback, SLOT(fileSelected(const QString &)));
+          file_dialog->connect(file_dialog, SIGNAL(filesSelected(const QStringList &)), callback, SLOT(filesSelected(const QStringList &)));
           goto gotit;
         }
       }
@@ -4032,8 +4048,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
   public:
     
-    FileRequester(QString header_text, QString dir, QString filetypename, QString postfixes, bool for_loading)
-      : radium::FileRequester(NULL, header_text, dir, filetypename, postfixes, for_loading)
+    FileRequester(QString header_text, QString dir, QString filetypename, QString postfixes, bool for_loading, bool several_files)
+      : radium::FileRequester(NULL, header_text, dir, filetypename, postfixes, for_loading, several_files)
       , Gui(this)
     {
       _have_set_size = true; // shouldn't this one be set only if we restore geometry?
@@ -5252,9 +5268,9 @@ void openExternalWebBrowser(const_char *stringurl){
   QDesktopServices::openUrl(getUrl(stringurl));
 }
 
-int64_t gui_fileRequester(const_char* header_text, filepath_t dir, const_char* filetypename, const_char* postfixes, bool for_loading){
+int64_t gui_fileRequester(const_char* header_text, filepath_t dir, const_char* filetypename, const_char* postfixes, bool for_loading, bool several_files){
   QString dasdir = isLegalFilepath(dir) ? STRING_get_qstring(dir.id) : "";
-  return (new FileRequester(header_text, dasdir, filetypename, postfixes, for_loading))->get_gui_num();
+  return (new FileRequester(header_text, dasdir, filetypename, postfixes, for_loading, several_files))->get_gui_num();
 }
 
 int64_t gui_fontRequester(const_char* fontdescr){

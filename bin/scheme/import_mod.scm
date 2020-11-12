@@ -5835,7 +5835,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
         (lambda ()
           (when (<ra> :ask-are-you-sure-song-has-changed)
             (if (<ra> :is-illegal-filepath filename)
-                (create-file-requester "Choose MOD file" (<ra> :create-illegal-filepath) "Mod files" "*.mod *.MOD mod.* MOD.*" #t #t -1 load-protracker-module)
+                (create-file-requester "Choose MOD file" (<ra> :create-illegal-filepath) "Mod files" "*.mod *.MOD mod.* MOD.*" #t #f #t -1 load-protracker-module)
                 (load-protracker-module filename)))
           #f)))
 

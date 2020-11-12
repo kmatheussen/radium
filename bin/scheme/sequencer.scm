@@ -1418,21 +1418,28 @@
   (if (>= seqtracknum 0)
       (let ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)))))
         (c-display "POS:" pos)
-        (define (create-new-audiofile)
-          (create-file-requester "Choose audio file" (<ra> :create-illegal-filepath) "audio files" (<ra> :get-audiofile-postfixes) #t #f -1
-                                 (lambda (filename)
-                                   (<ra> :create-sample-seqblock seqtracknum filename pos))))
-    
+        (define (create-new-audiofiles)
+          (create-file-requester "Choose audio file(s)" (<ra> :create-illegal-filepath) "audio files" (<ra> :get-audiofile-postfixes) #t #t #f -1
+                                 (lambda (filenames)
+                                   (if (= 1 (length filenames))
+                                       (<ra> :create-sample-seqblock seqtracknum (car filenames) pos)
+                                       (undo-block
+                                        (lambda ()
+                                          (for-each (lambda (filename)
+                                                      (<ra> :append-audio-seqtrack)                                               
+                                                      (<ra> :create-sample-seqblock (- (<ra> :get-num-seqtracks) 1) filename 0))
+                                                    filenames)))))))
+        
         (if (<ra> :seqtrack-for-audiofiles seqtracknum)
             
             (let ((audiofiles (to-list (<ra> :get-audio-files))))
               (cond ((null? audiofiles)
-                     (create-new-audiofile))
+                     (create-new-audiofiles))
                     ;;((= 1 (length audiofiles))
                     ;; (<ra> :create-sample-seqblock seqtracknum (car audiofiles) pos))
                     (else
                      (apply popup-menu
-                            `(,(list "New audio file" create-new-audiofile)
+                            `(,(list "New audio file(s)" create-new-audiofiles)
                               "------------"
                               ,@(map (lambda (audiofile)  
                                        (list (get-audiofile-menu-entry-text audiofile)
@@ -1749,7 +1756,7 @@
             )
         ;;
         (list
-         "Insert audio file"
+         "Insert audio file(s)"
          :shortcut insert-existing-block-or-audiofile-in-sequencer
          (lambda ()
            (insert-existing-block-or-audiofile-in-sequencer seqtracknum X)))
@@ -1871,7 +1878,7 @@
                                  (apply popup-menu
                                         `(,(list "New audio file"
                                                  (lambda ()
-                                                   (create-file-requester "Choose audio file" (<ra> :create-illegal-filepath) "audio files" (<ra> :get-audiofile-postfixes) #t #f -1
+                                                   (create-file-requester "Choose audio file" (<ra> :create-illegal-filepath) "audio files" (<ra> :get-audiofile-postfixes) #t #f #f -1
                                                                           gotit)))
                                           "------------"
                                           ,@(map (lambda (audiofile)
