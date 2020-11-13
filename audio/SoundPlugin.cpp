@@ -705,7 +705,10 @@ void PLUGIN_delete(SoundPlugin *plugin){
   
   R_ASSERT(plugin->midi_learns->size()==0);
   delete plugin->midi_learns;
-    
+
+  if (isLegalFilepath(plugin->preset_filename))
+    V_free((void*)plugin->preset_filename.id);
+           
   //memset(plugin,-1,sizeof(SoundPlugin)); // for debugging. Crashes faster if something is wrong.
   V_free(plugin);
 }
@@ -3119,8 +3122,8 @@ SoundPlugin *PLUGIN_create_from_state(struct Patch *patch, hash_t *state, bool i
     plugin->is_dpi_aware = HASH_get_bool(state, "is_dpi_aware");
 
   if (HASH_has_key(state, "preset_filename"))
-    plugin->preset_filename = HASH_get_filepath(state, "preset_filename");
-
+    plugin->preset_filename = make_filepath(V_wcsdup(HASH_get_filepath(state, "preset_filename").id));
+  
   
   return plugin;
 }
