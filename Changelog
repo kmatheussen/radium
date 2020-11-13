@@ -1,3 +1,53 @@
+Changes 6.5.74 -> 6.5.76:
+* Presets: Fix memory corruption in preset filename
+  (i.e. .rec/.mrec files). Preset filename is shown
+  in GUI and saved to disk, so this bug could cause
+  corrupted .rad files. Bug probably introduced in
+  6.5.72.
+* Sequencer: Paint a thin blue line around
+  waveforms.
+* Sequencer: Change "Insert audio file" to
+  "Insert audio file(s)". If selecting several audio
+  files when using this function, the program will
+  put all selected files into their own newly
+  created audio seqtracks.
+* Sequencer: Fix rare (probably) crash when undoing
+  full sequencer state and topmost seqtrack was not
+  the first seqtrack.
+* Sequencer: Fix wall-of-text error messages popping
+  up in the message window when scrolling in the
+  "Sounds" tab on the right side of the sequencer.
+* Sequencer: Disable the "Insert current audiofile"
+  popup menu entry if there are no used audiofiles
+  in the program.
+* Soundfile saver: Don't create soundfiles for
+  instruments that has no outputs, buses, pipes,
+  and Click instruments if metronome is turned off.
+* Soundfile saver: Fix saving multiple files, one
+  for each instrument. Bug probably introduced in
+  6.5.72.
+* Scheduler: Fix rare assertion message popping up.
+  Probably caused by a rounding error.
+* Instrument widget: Add pitch shift slider. Options
+  to apply pitch to:
+  1. No channels
+  2. Only even-numbered channels
+  3. Only odd-numbered channels
+  4. All channels
+  5. All channels, but invert the pitch ratio of
+     odd-numbered channels.
+* Audio: Double the time it takes to fade in/out
+  system effects.
+* Mixer: Make it possible to assign keybindings to
+  all entries in the "Insert sound object" popup
+  menu.
+* API:
+  * New: setNativeInstrumentEffect
+  * Add optional argument "several_files" to
+    gui_fileRequester
+
+
+
 Changes 6.5.73 -> 6.5.74:
 * Audio: Remove some unnecessary audio buffers that
   were used when processing Ladspa plugins. Might
