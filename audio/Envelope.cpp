@@ -72,7 +72,7 @@ struct Envelope{
     _y[pos] = y;
   }
 
-  int get_data(float *data, int num_frames){
+  int apply_data(float *data, int num_frames){
     int i=0;
     while(i < num_frames && _break_pos<_num_breaks-1){
 
@@ -83,8 +83,10 @@ struct Envelope{
         float val = _y[_break_pos];
         int x;
 
-        for(x=0; x < frames_left ; x++)
-          data[x] = val;
+        if (!equal_floats(val, 1.0f)){
+          for(x=0; x < frames_left ; x++)
+            data[x] *= val;
+        }
 
         i = num_frames;
         break;
@@ -107,15 +109,8 @@ struct Envelope{
           float val     = scale(_frame_pos, x0, x1, y0, y1);
           float inc_val = scale(_frame_pos+1, x0, x1, y0, y1) - val;
 
-#if 0
-          for(int x=0;x<loop_len;x++){
-            data[x] = val;
-            val += inc_val;
-          }
-#else
           for(int x=0;x<loop_len;x++)
-            data[x] = val + x*inc_val;
-#endif
+            data[x] *= (val + x*inc_val);
         }
         
         i          += loop_len;
@@ -139,18 +134,14 @@ struct Envelope{
       abort();
 #endif
     }
-    
-    float env_data[num_frames];
 
-    int len = get_data(env_data, num_frames);
-
+    int len = 0;
     for(int ch=0;ch<num_channels;ch++){
-      float *b=buf[ch];
-      //printf("env_data[0]: %f\n",env_data[0]);
-      for(int i=0;i<len;i++)
-        b[i] *= env_data[i];
+      int new_len = apply_data(buf[ch], num_frames);
+      R_ASSERT_NON_RELEASE(ch==0 || new_len==len);
+      len=new_len;
     }
-
+    
     return len;
   }
 };
