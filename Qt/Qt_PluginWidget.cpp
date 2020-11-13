@@ -126,6 +126,12 @@ PluginWidget *PluginWidget_create(QWidget *parent, struct Patch *patch, SizeType
     iXsPerPage = 8;
     //iPages = 2;
 
+  } else if(is_sampleplayer){
+    
+    iYsPerPage = 9;
+    iXsPerPage = 4;
+    //iPages = 2;
+
   } else {
 
     if (iYsPerPage > MaxYsPerPage) {
@@ -200,7 +206,7 @@ PluginWidget *PluginWidget_create(QWidget *parent, struct Patch *patch, SizeType
     pGridLayout->addWidget(param_widget, iY, iX);
     iY++;
     
-    if (iY >= iYsPerPage || (is_sampleplayer && iX==1 && iY >=iYsPerPage-1)) {
+    if (iY >= iYsPerPage || (is_sampleplayer && (!strcmp(effect_name, "Ping-Pong Loop") || !strcmp(effect_name, "Release") || !strcmp(effect_name, "Reverse")))) { //|| (is_sampleplayer && iX==1 && iY >=iYsPerPage-1)) {
       iY = 0;
       if (++iX >= iXsPerPage) {
         iX = 0;
