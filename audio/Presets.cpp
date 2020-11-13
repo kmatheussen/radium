@@ -235,10 +235,10 @@ static instrument_t PRESET_load_multipreset(hash_t *state, const char *name, fil
       SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
       if(plugin != NULL) {
 
-          plugin->preset_filename = filename;
+        plugin->preset_filename = make_filepath(V_wcsdup(filename.id));
       
-          if (inc_usage_number)
-            PR_inc_plugin_usage_number(plugin->type);
+        if (inc_usage_number)
+          PR_inc_plugin_usage_number(plugin->type);
           
       } else {
         
@@ -270,7 +270,7 @@ static instrument_t PRESET_load_singlepreset(hash_t *state, const_char *name, fi
   
   if (plugin != NULL){
 
-    plugin->preset_filename = filename;
+    plugin->preset_filename = make_filepath(V_wcsdup(filename.id));
     
     if (inc_usage_number)
       PR_inc_plugin_usage_number(plugin->type);
