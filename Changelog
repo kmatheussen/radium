@@ -1,3 +1,12 @@
+Changes 6.5.76 -> 6.5.77:
+* Mixer: When changing A/B, apply instrument state
+  even when number of effects are different.
+* Sampler instrument: Optimize applying AHDSR
+  envelope. Might make a notable difference in CPU
+  usage.
+
+
+
 Changes 6.5.74 -> 6.5.76:
 * Presets: Fix memory corruption in preset filename
   (i.e. .rec/.mrec files). Preset filename is shown
