@@ -2581,7 +2581,7 @@ bool PLUGIN_apply_ab_state(SoundPlugin *plugin, hash_t *new_state, hash_t *old_s
   bool apply_effects = true;
   
   if (num_effects_in_new_state != num_effects){
-    addMessage(talloc_format("Old AB state is not compatible with current plugin (%d vs. %d). Can not apply new ab state for \"%s\"\n", num_effects_in_new_state, num_effects, patch->name));
+    addMessage(talloc_format("Old AB state is not compatible with current plugin (%d vs. %d). Can not apply effects for \"%s\"\n", num_effects_in_new_state, num_effects, patch->name));
     apply_effects = false;
   }
 
