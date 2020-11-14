@@ -2578,9 +2578,11 @@ bool PLUGIN_apply_ab_state(SoundPlugin *plugin, hash_t *new_state, hash_t *old_s
   else
     num_effects_in_new_state = HASH_get_array_size(new_values_state, "value");
 
+  bool apply_effects = true;
+  
   if (num_effects_in_new_state != num_effects){
     addMessage(talloc_format("Old AB state is not compatible with current plugin (%d vs. %d). Can not apply new ab state for \"%s\"\n", num_effects_in_new_state, num_effects, patch->name));
-    return false;
+    apply_effects = false;
   }
 
   bool apply_plugin_state = includeInstrumentStatesInMixerConfig() && HASH_has_key(new_state, "plugin_state");
@@ -2593,54 +2595,58 @@ bool PLUGIN_apply_ab_state(SoundPlugin *plugin, hash_t *new_state, hash_t *old_s
 
   bool ret = false;
 
-  for(int i=0;i<num_effects;i++){
-    if (!use_ab_effect(plugin, i))
-      continue;
-
-    bool has_new_value = HASH_has_key_at(new_values_state, "value", i);
-    bool has_old_value = HASH_has_key_at(old_values_state, "value", i);
+  if (apply_effects) {
     
-    R_ASSERT_NON_RELEASE(has_old_value);
-
-    if (has_new_value && has_old_value) {
-
-      float old_value = HASH_get_float_at(old_values_state,"value",i);
-      float new_value = HASH_get_float_at(new_values_state,"value",i);
+    for(int i=0;i<num_effects;i++){
+      if (!use_ab_effect(plugin, i))
+        continue;
       
-      if (!equal_floats(old_value, new_value)) {
-        if (apply_plugin_state) {
-          if (!has_made_full_undo){
-            has_made_full_undo = true;
-            ADD_UNDO(PluginState(patch, NULL));
+      bool has_new_value = HASH_has_key_at(new_values_state, "value", i);
+      bool has_old_value = HASH_has_key_at(old_values_state, "value", i);
+      
+      R_ASSERT_NON_RELEASE(has_old_value);
+      
+      if (has_new_value && has_old_value) {
+        
+        float old_value = HASH_get_float_at(old_values_state,"value",i);
+        float new_value = HASH_get_float_at(new_values_state,"value",i);
+        
+        if (!equal_floats(old_value, new_value)) {
+          if (apply_plugin_state) {
+            if (!has_made_full_undo){
+              has_made_full_undo = true;
+              ADD_UNDO(PluginState(patch, NULL));
+            }
+          } else {
+            ADD_UNDO(AudioEffect_CurrPos2(patch, i, old_value, AE_NO_FLAGS));
           }
-        } else {
-          ADD_UNDO(AudioEffect_CurrPos2(patch, i, old_value, AE_NO_FLAGS));
-        }
-
+          
 #if 0 //!defined(RELEASE)
-        printf("Setting %s::%s from %f to %f\n", plugin->patch->name, PLUGIN_get_effect_name(plugin, i), old_value, new_value);
+          printf("Setting %s::%s from %f to %f\n", plugin->patch->name, PLUGIN_get_effect_name(plugin, i), old_value, new_value);
 #endif
-        
-        ret = true;
-
-        if (i-type->num_effects == EFFNUM_SOLO_ONOFF){
-
-          solo_changes.add(plugin, new_value >= 0.5); // Solo must be treated separately. Setting EFFNUM_SOLO_ONOFF triggers a change in the _next_ cycle. When changes arent applied immediately (and at the same time as changing other effects) we can get audio artifacts.
           
-        } else {
-
-          rt_functions.add([plugin,i,new_value](){
-              PLUGIN_set_effect_value(plugin, 0, i, new_value, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
-            });
+          ret = true;
           
+          if (i-type->num_effects == EFFNUM_SOLO_ONOFF){
+            
+            solo_changes.add(plugin, new_value >= 0.5); // Solo must be treated separately. Setting EFFNUM_SOLO_ONOFF triggers a change in the _next_ cycle. When changes arent applied immediately (and at the same time as changing other effects) we can get audio artifacts.
+            
+          } else {
+            
+            rt_functions.add([plugin,i,new_value](){
+                PLUGIN_set_effect_value(plugin, 0, i, new_value, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+              });
+            
+          }
+          
+          // To ensure plugin has not been deleted when running the callback.
+          // (a little bit hacky way to solve this, but PLUGIN_apply_ab_state
+          // is not very likely to be called at the same time as a plugin is deleted.)
+          rt_functions.force_next_scheduling_to_wait = true;
         }
-        
-        // To ensure plugin has not been deleted when running the callback.
-        // (a little bit hacky way to solve this, but PLUGIN_apply_ab_state
-        // is not very likely to be called at the same time as a plugin is deleted.)
-        rt_functions.force_next_scheduling_to_wait = true;
       }
     }
+
   }
   
   if (apply_plugin_state){
