@@ -2371,7 +2371,7 @@ $(T)SoundPluginRegistry.o: audio/SoundPluginRegistry.cpp audio/SoundPluginRegist
 	$(CCC2) audio/SoundPluginRegistry.cpp  $(QTOPT)
 
 $(T)SoundPlugin.o: audio/SoundPlugin.cpp audio/SoundPlugin.h audio/SoundPlugin_proc.h audio/SmoothDelay.hpp midi/midi_i_input_proc.h Qt/helpers.h $(T)Sine_plugin.o mixergui/QM_chip.h # we add Sine_plugin.o here to make sure it is up to date.
-	$(CCC2) audio/SoundPlugin.cpp $(QTOPT) $(OPTIMIZE_O3) $(NO_ANALYZER_MALLOC_LEAK)
+	$(CCC2) audio/SoundPlugin.cpp $(QTOPT) $(OPTIMIZE_O3) $(NO_ANALYZER_MALLOC_LEAK) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\"
 ### $(CPUOPT)
 
 $(T)AudioMeterPeaks.o: audio/SoundPlugin.h audio/AudioMeterPeaks.cpp

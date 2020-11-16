@@ -2690,9 +2690,17 @@ static bool get_blub_effects_state(const struct Patch *patch, const SoundPlugin 
       num_effects_in_new_state = HASH_get_int32(state, "num_effects");
     else
       num_effects_in_new_state = HASH_get_array_size(state, "value");
-
+    
     if (num_effects_in_new_state != num_effects){
-      addMessage(talloc_format("Old AB state is not compatible with current plugin (%d vs. %d). Can not apply effects for \"%s\". It might be possible to fix this by loading and saving your song in Radium V6.5.78.\n", num_effects_in_new_state, num_effects, patch->name));
+
+      if (num_effects_in_new_state > 0){
+        addMessage(talloc_format("Old AB state is not compatible with current plugin (%d vs. %d). Can not apply effects for \"%s\".", num_effects_in_new_state, num_effects, patch->name));
+        if (!strcmp(RADIUM_VERSION, "6.5.78"))
+          addMessage("It might be possible to fix this by loading and saving your song in Radium V6.5.78.\n");
+        else
+          addMessage("\n");
+      }
+      
       return false;
     }
 
