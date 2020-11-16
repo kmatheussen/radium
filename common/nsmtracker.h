@@ -1213,6 +1213,8 @@ static inline const char *DYN_type_name(enum DynType type){
       return "INSTRUMENT_TYPE";
     case FILEPATH_TYPE:
       return "FILEPATH_TYPE";
+    case BLUB_TYPE:
+      return "BLUB_TYPE";
     case BOOL_TYPE:
       return "BOOL_TYPE";
   }
@@ -1266,6 +1268,9 @@ static inline bool doubles_are_equal(double x, double y){
 
 
 static inline bool DYN_equal(const dyn_t a1, const dyn_t a2){
+  R_ASSERT_NON_RELEASE(g_dyn_true.bool_number==true);
+  R_ASSERT_NON_RELEASE(g_dyn_false.bool_number==false);
+
   if (a1.type!=a2.type)
     return false;
   
@@ -1310,6 +1315,16 @@ static inline bool DYN_equal(const dyn_t a1, const dyn_t a2){
         return false;
       }else
         return !wcscmp(a1.filepath.id, a2.filepath.id);
+    case BLUB_TYPE:
+      if (a1.blub->size!=a2.blub->size)
+        return false;
+      if (a1.blub->data==a2.blub->data)
+        return true;
+      else if (a1.blub->data==NULL || a2.blub->data==NULL){
+        R_ASSERT_NON_RELEASE(false); // Not sure.
+        return false;
+      }else
+        return 0==memcmp(a1.blub->data, a2.blub->data, a1.blub->size);
     case BOOL_TYPE:
       return a1.bool_number==a2.bool_number;
   }
@@ -1409,6 +1424,28 @@ static inline dyn_t DYN_create_filepath(filepath_t filepath){
   a.type = FILEPATH_TYPE;
   a.filepath = make_filepath(STRING_copy(filepath.id));
   return a;
+}
+
+static inline dyn_t DYN_create_blub(int size, void *data){
+  dyn_t a;
+  a.type = BLUB_TYPE;
+  a.blub = (blub_t*)talloc(sizeof(blub_t));
+  a.blub->size = size;
+  a.blub->data = data;
+  return a;
+}
+
+static inline dyn_t DYN_create_blub_with_data(int size){
+  dyn_t a;
+  a.type = BLUB_TYPE;
+  a.blub = (blub_t*)talloc(sizeof(blub_t));
+  a.blub->size = size;
+  a.blub->data = talloc_atomic(size);
+  return a;
+}
+
+static inline dyn_t DYN_create_blub_and_copy_data(int size, void *data){
+  return DYN_create_blub(size, tcopy2_atomic(data, size));
 }
 
 /*
@@ -1550,6 +1587,8 @@ static inline dyn_t DYN_copy(const dyn_t a){
     return DYN_create_array(DYNVEC_copy(a.array));
   else if (a.type==RATIO_TYPE)
     return DYN_create_ratio(*a.ratio);
+  else if (a.type==BLUB_TYPE)
+    return DYN_create_blub(a.blub->size, a.blub->data);
   else
     return a;
 }

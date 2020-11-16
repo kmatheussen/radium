@@ -12,6 +12,9 @@ typedef struct _hash_t hash_t;
 struct _dynvec_t;
 typedef struct _dynvec_t dynvec_t;
 
+struct _blub_t;
+typedef struct _blub_t blub_t;
+
 enum DynType{
   UNINITIALIZED_TYPE = 0, // Must be 0
   STRING_TYPE,
@@ -24,6 +27,7 @@ enum DynType{
   FUNC_TYPE,
   INSTRUMENT_TYPE,
   FILEPATH_TYPE,
+  BLUB_TYPE,
   BOOL_TYPE // must be placed last (see below)
 };
 
@@ -42,6 +46,7 @@ typedef struct{
     dynvec_t *array;
     Ratio *ratio;
     func_t *func;
+    blub_t *blub;
     bool bool_number;
   };
 } dyn_t;
@@ -50,6 +55,14 @@ struct _dynvec_t{
   int num_elements;
   int num_elements_allocated;
   dyn_t *elements;
+};
+
+struct _blub_t{
+  int size;
+  void *data;
+  
+  dyn_t (*create_savable_dyn)(const blub_t*);
+  dyn_t funcdata;
 };
 
 extern const dynvec_t g_empty_dynvec;

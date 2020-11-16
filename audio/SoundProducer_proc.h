@@ -182,7 +182,7 @@ extern LANGSPEC bool SP_all_output_links_were_silent(SoundProducer *sp);
 float SP_get_actual_link_gain_and_enabled(const SoundProducer *target, const SoundProducer *source, const char **error, bool &is_enabled);
 #endif
 
-extern LANGSPEC struct SoundPlugin *SP_get_plugin(const struct SoundProducer *producer);
+extern LANGSPEC __attribute__((nonnull)) struct SoundPlugin *SP_get_plugin(const struct SoundProducer *producer) __attribute__((nonnull));
 extern LANGSPEC struct SoundProducer *SP_get_sound_producer(const struct SoundPlugin *plugin);
 
 extern LANGSPEC struct SoundProducer *SP_create(struct SoundPlugin *plugin, Buses buses);

@@ -1089,6 +1089,14 @@ static filepath_t get_filepath(const hash_t *hash, const char *key, int i){
   }
 }
 
+static blub_t *get_blub(const hash_t *hash, const char *key, int i){
+  hash_element_t *element = HASH_get(hash,key,i,BLUB_TYPE);
+  if(element==NULL)
+    return DYN_create_blub(0, NULL).blub;
+
+  return element->a.blub;
+}
+
 static double get_number(const hash_t *hash, const char *key, int i){
   hash_element_t *element=HASH_get_no_complaining(hash, key, i);
 
@@ -1198,6 +1206,10 @@ instrument_t HASH_get_instrument(const hash_t *hash, const char *key){
 
 filepath_t HASH_get_filepath(const hash_t *hash, const char *key){
   return get_filepath(hash, key, 0);
+}
+
+blub_t *HASH_get_blub(const hash_t *hash, const char *key){
+  return get_blub(hash, key, 0);
 }
 
 bool HASH_get_bool(const hash_t *hash, const char *key){

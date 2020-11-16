@@ -82,6 +82,7 @@ extern LANGSPEC const char *HASH_get_chars(const hash_t *hash, const char *key);
 extern LANGSPEC int64_t HASH_get_int(const hash_t *hash, const char *key);
 extern LANGSPEC instrument_t HASH_get_instrument(const hash_t *hash, const char *key);
 extern LANGSPEC filepath_t HASH_get_filepath(const hash_t *hash, const char *key);
+extern LANGSPEC blub_t *HASH_get_blub(const hash_t *hash, const char *key);
 extern LANGSPEC bool HASH_get_bool(const hash_t *hash, const char *key);
 extern LANGSPEC double HASH_get_float(const hash_t *hash, const char *key);
 extern LANGSPEC Ratio HASH_get_ratio(hash_t *hash, const char *key);

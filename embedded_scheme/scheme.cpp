@@ -654,6 +654,9 @@ s7_pointer s7extra_make_dyn(s7_scheme *radiums7_sc, const dyn_t dyn){
       return s7extra_make_filepath(s7, dyn.filepath);
     case BOOL_TYPE:
       return s7_make_boolean(radiums7_sc, dyn.bool_number);
+    case BLUB_TYPE:
+      R_ASSERT(false);
+      break;
   }
 
   return s7_make_boolean(radiums7_sc, false);
