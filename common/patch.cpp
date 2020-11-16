@@ -1890,7 +1890,8 @@ extern void aiai(int64_t id, const symbol_t *port_name, uint32_t msg);
 void RT_PATCH_send_raw_midi_message_to_receivers(struct SeqTrack *seqtrack, struct Patch *patch, uint32_t msg, STime time){
 
   if (patch->instrument==get_audio_instrument())
-    RT_PLUGIN_touch((struct SoundPlugin*)patch->patchdata);
+    if (patch->patchdata != NULL) // happens when loading song.
+      RT_PLUGIN_touch((struct SoundPlugin*)patch->patchdata);
 
   for(int i = 0; i<patch->num_event_receivers; i++) {
     struct Patch *receiver = patch->event_receivers[i];    
