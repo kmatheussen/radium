@@ -3081,6 +3081,7 @@ static SuperConnection *get_connection(int64_t id_from, int64_t id_to, bool is_e
 */
 
 
+// Only used when saving .rac and .mrec.
 hash_t *MW_get_state(const vector_t *patches, bool include_ab){
   hash_t *state = HASH_create(6);
 
@@ -3598,6 +3599,7 @@ bool MW_ab_is_used(int num){
   return g_ab_is_valid[num];
 }
 
+// Only used when saving .rad
 hash_t *MW_get_ab_state(void){
   hash_t *ab_state = HASH_create(MW_NUM_AB);
 

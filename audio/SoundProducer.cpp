@@ -307,9 +307,9 @@ public:
     if (_is_bus_link){
       
       if (source_ch==0 && target_ch==0){
-        
+
         SoundPlugin *plugin = SP_get_plugin(source);
-#if !defined(RELEASE)
+#if 0 //!defined(RELEASE)
         if(plugin==NULL){ // silence "null-dereference" warning.
           abort();
           return false;

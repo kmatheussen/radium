@@ -2527,6 +2527,33 @@ void PLUGIN_recreate_from_state(SoundPlugin *plugin, hash_t *state, bool is_load
   }
 }
 
+static bool use_any_ab_effect(const SoundPlugin *plugin){
+  if (includeInstrumentEffectsInMixerConfig())
+    return true;
+
+  if (includeMuteSoloBypassInMixerConfig())
+    return true;
+  
+  if (includePanningInMixerConfig())
+    return true;
+  
+  if (includeMuteSoloBypassInMixerConfig())
+    return true;
+      
+  if (includeSystemEffectsInMixerConfig())
+    return true;
+  
+  if (plugin==RT_get_system_out_plugin()){
+    if (includeSystemVolumeInMixerConfig())
+      return true;
+  } else {
+    if (includeVolumeInMixerConfig())
+      return true;
+  }
+
+  return false;
+}
+
 static bool use_ab_effect(const SoundPlugin *plugin, int effect_num){
   const SoundPluginType *type = plugin->type;
 
@@ -2560,6 +2587,129 @@ static bool use_ab_effect(const SoundPlugin *plugin, int effect_num){
   }
 }
 
+// blub callback.
+static dyn_t get_savable_ab_state(const blub_t *blub){
+  struct Patch *patch = PATCH_get_from_id(blub->funcdata.instrument);
+  if (patch==NULL)
+    return g_dyn_false;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    R_ASSERT_NON_RELEASE(false);
+    return g_dyn_false;
+  }
+  
+  SoundPluginType *type = plugin->type;
+  
+  int num_effects = type->num_effects+NUM_SYSTEM_EFFECTS;
+
+  hash_t *state = HASH_create(num_effects);
+
+  float *data = (float*)blub->data;
+  
+  for(int i=0;i<num_effects;i++)
+    HASH_put_float(state, PLUGIN_get_effect_name(plugin, i), data[i]);
+
+  return DYN_create_hash(state);
+}
+
+static dyn_t create_ab_blub(const SoundPlugin *plugin){
+  SoundPluginType *type = plugin->type;
+  
+  int num_effects = type->num_effects+NUM_SYSTEM_EFFECTS;
+  
+  dyn_t dyn = DYN_create_blub_and_copy_data(sizeof(float)*num_effects, plugin->stored_effect_values_native);
+  
+  dyn.blub->create_savable_dyn = get_savable_ab_state;
+  
+  if (plugin->patch==NULL){
+    R_ASSERT(false);
+    dyn.blub->funcdata = DYN_create_instrument(make_instrument(0));
+  } else {
+    dyn.blub->funcdata = DYN_create_instrument(plugin->patch->id);
+  }
+  return dyn;
+}
+
+// returns true if compatible
+static bool get_blub_effects_state(const struct Patch *patch, const SoundPlugin *plugin, const hash_t *state, blub_t *&blub){
+  SoundPluginType *type = plugin->type;
+  
+  int num_effects = type->num_effects+NUM_SYSTEM_EFFECTS;
+
+  // 1. Check for effects stored internally ("values_blub")
+  //
+  {
+    if (HASH_has_key(state, "values_blub")){
+      
+      dyn_t dyn = HASH_get_dyn(state, "values_blub");
+      
+      if (dyn.type==BLUB_TYPE) {
+
+        // created now in the program.
+        
+        blub = HASH_get_blub(state, "values_blub");
+        if (blub->size != ((int)sizeof(float)*num_effects)){
+          R_ASSERT(false);
+          return false;
+        }
+        return true;
+        
+      } else {
+
+        // got it from disk.
+
+        R_ASSERT_RETURN_IF_FALSE2(dyn.type==HASH_TYPE, false);
+                
+        hash_t *values_state = dyn.hash;
+
+        blub = create_ab_blub(plugin).blub;
+        
+        float *data = (float*)blub->data;
+
+        for (int i=0 ; i < num_effects ; i++){
+          const char *effect_name = PLUGIN_get_effect_name(plugin, i);
+          if (HASH_has_key(values_state, effect_name))
+            data[i] = HASH_get_float(values_state, effect_name);
+        }
+
+        return true;
+      }
+    }
+  }
+  
+
+  // 3. Fallback. Old "values", used before Radium 6.5.78.
+  //
+  {
+    hash_t *values_state = HASH_get_hash(state, "values");
+    
+    int num_effects_in_new_state;
+    
+    if (HASH_has_key(state, "num_effects"))
+      num_effects_in_new_state = HASH_get_int32(state, "num_effects");
+    else
+      num_effects_in_new_state = HASH_get_array_size(state, "value");
+
+    if (num_effects_in_new_state != num_effects){
+      addMessage(talloc_format("Old AB state is not compatible with current plugin (%d vs. %d). Can not apply effects for \"%s\". It might be possible to fix this by loading and saving your song in Radium V6.5.79.\n", num_effects_in_new_state, num_effects, patch->name));
+      return false;
+    }
+
+    blub = create_ab_blub(plugin).blub;
+
+    float *data = (float*)blub->data;
+    
+    for(int i=0;i<num_effects;i++){
+      if (HASH_has_key_at(values_state, "value", i))
+        data[i] = HASH_get_float_at(values_state,"value",i);
+    }
+
+    return true;
+  }
+
+}
+
 // Called from the mixer gui. (the a/b/c/d/e/f/g/h buttons in the mixer)
 bool PLUGIN_apply_ab_state(SoundPlugin *plugin, hash_t *new_state, hash_t *old_state, radium::Scheduled_RT_functions &rt_functions, radium::SoloChanges &solo_changes){
   SoundPluginType *type = plugin->type;
@@ -2567,23 +2717,6 @@ bool PLUGIN_apply_ab_state(SoundPlugin *plugin, hash_t *new_state, hash_t *old_s
   struct Patch *patch = (struct Patch*)plugin->patch;
   
   int num_effects = type->num_effects+NUM_SYSTEM_EFFECTS;
-
-  hash_t *old_values_state = HASH_get_hash(old_state, "values");
-  hash_t *new_values_state = HASH_get_hash(new_state, "values");
-
-  int num_effects_in_new_state;
-  
-  if (HASH_has_key(new_state, "num_effects"))
-    num_effects_in_new_state = HASH_get_int32(new_state, "num_effects");
-  else
-    num_effects_in_new_state = HASH_get_array_size(new_values_state, "value");
-
-  bool apply_effects = true;
-  
-  if (num_effects_in_new_state != num_effects){
-    addMessage(talloc_format("Old AB state is not compatible with current plugin (%d vs. %d). Can not apply effects for \"%s\"\n", num_effects_in_new_state, num_effects, patch->name));
-    apply_effects = false;
-  }
 
   bool apply_plugin_state = includeInstrumentStatesInMixerConfig() && HASH_has_key(new_state, "plugin_state");
 
@@ -2595,55 +2728,60 @@ bool PLUGIN_apply_ab_state(SoundPlugin *plugin, hash_t *new_state, hash_t *old_s
 
   bool ret = false;
 
-  if (apply_effects) {
+  {
+
+    R_ASSERT_RETURN_IF_FALSE2(HASH_has_key(old_state, "values_blub"), false);
+      
+    blub_t *old_blub = HASH_get_blub(old_state, "values_blub");
+    float *old_data = (float*)old_blub->data;
     
-    for(int i=0;i<num_effects;i++){
-      if (!use_ab_effect(plugin, i))
-        continue;
+    blub_t *new_blub;
+
+    if (get_blub_effects_state(patch, plugin, new_state, new_blub)) {
       
-      bool has_new_value = HASH_has_key_at(new_values_state, "value", i);
-      bool has_old_value = HASH_has_key_at(old_values_state, "value", i);
+      float *new_data = (float*)new_blub->data;
       
-      R_ASSERT_NON_RELEASE(has_old_value);
-      
-      if (has_new_value && has_old_value) {
+      for(int i=0;i<num_effects;i++){
+        if (!use_ab_effect(plugin, i))
+          continue;
         
-        float old_value = HASH_get_float_at(old_values_state,"value",i);
-        float new_value = HASH_get_float_at(new_values_state,"value",i);
-        
-        if (!equal_floats(old_value, new_value)) {
-          if (apply_plugin_state) {
-            if (!has_made_full_undo){
-              has_made_full_undo = true;
-              ADD_UNDO(PluginState(patch, NULL));
-            }
-          } else {
-            ADD_UNDO(AudioEffect_CurrPos2(patch, i, old_value, AE_NO_FLAGS));
+        float old_value = old_data[i];
+        float new_value = new_data[i];
+          
+        if (equal_floats(old_value, new_value))
+          continue;
+          
+        if (apply_plugin_state) {
+          if (!has_made_full_undo){
+            has_made_full_undo = true;
+            ADD_UNDO(PluginState(patch, NULL));
           }
+        } else {
+          ADD_UNDO(AudioEffect_CurrPos2(patch, i, old_value, AE_NO_FLAGS));
+        }
           
 #if 0 //!defined(RELEASE)
-          printf("Setting %s::%s from %f to %f\n", plugin->patch->name, PLUGIN_get_effect_name(plugin, i), old_value, new_value);
+        printf("Setting %s::%s from %f to %f\n", plugin->patch->name, PLUGIN_get_effect_name(plugin, i), old_value, new_value);
 #endif
           
-          ret = true;
+        ret = true;
           
-          if (i-type->num_effects == EFFNUM_SOLO_ONOFF){
-            
-            solo_changes.add(plugin, new_value >= 0.5); // Solo must be treated separately. Setting EFFNUM_SOLO_ONOFF triggers a change in the _next_ cycle. When changes arent applied immediately (and at the same time as changing other effects) we can get audio artifacts.
-            
-          } else {
-            
-            rt_functions.add([plugin,i,new_value](){
-                PLUGIN_set_effect_value(plugin, 0, i, new_value, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
-              });
-            
-          }
+        if (i-type->num_effects == EFFNUM_SOLO_ONOFF){
           
-          // To ensure plugin has not been deleted when running the callback.
-          // (a little bit hacky way to solve this, but PLUGIN_apply_ab_state
-          // is not very likely to be called at the same time as a plugin is deleted.)
-          rt_functions.force_next_scheduling_to_wait = true;
+          solo_changes.add(plugin, new_value >= 0.5); // Solo must be treated separately. Setting EFFNUM_SOLO_ONOFF triggers a change in the _next_ cycle. When changes arent applied immediately (and at the same time as changing other effects) we can get audio artifacts.
+          
+        } else {
+          
+          rt_functions.add([plugin,i,new_value](){
+              PLUGIN_set_effect_value(plugin, 0, i, new_value, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+            });
+          
         }
+        
+        // To ensure plugin has not been deleted when running the callback.
+        // (a little bit hacky way to solve this, but PLUGIN_apply_ab_state
+        // is not very likely to be called at the same time as a plugin is deleted.)
+        rt_functions.force_next_scheduling_to_wait = true;
       }
     }
 
@@ -2665,28 +2803,13 @@ bool PLUGIN_apply_ab_state(SoundPlugin *plugin, hash_t *new_state, hash_t *old_s
 
 // Called from the mixer gui. (the a/b/c/d/e/f/g/h buttons in the mixer only, not the a/b/c/etc. buttons in the instrument widget)
 hash_t *PLUGIN_get_ab_state(const SoundPlugin *plugin){
-  hash_t *state = HASH_create(3);
+  hash_t *state = HASH_create(2);
 
   const SoundPluginType *type = plugin->type;
+
+  if (use_any_ab_effect(plugin))
+    HASH_put_dyn(state, "values_blub", create_ab_blub(plugin));
   
-  int num_effects = type->num_effects+NUM_SYSTEM_EFFECTS;
-    
-  hash_t *values_state = HASH_create(num_effects);
-
-  int start_effectnum = 0;
-  if (includeInstrumentStatesInMixerConfig() && type->state_contains_effect_values)
-    start_effectnum = type->num_effects;
-  else if (!includeInstrumentEffectsInMixerConfig())
-    start_effectnum = type->num_effects;
-  
-  for(int n=start_effectnum;n<num_effects;n++){
-    if (use_ab_effect(plugin, n))
-      HASH_put_float_at(values_state, "value", n, plugin->stored_effect_values_native[n]);
-  }
-
-  HASH_put_int(state, "num_effects", num_effects);
-  HASH_put_hash(state, "values", values_state);
-
   if (includeInstrumentStatesInMixerConfig()){
     if(type->create_state!=NULL && type->recreate_from_state!=NULL){
       hash_t *plugin_state = HASH_create(5);

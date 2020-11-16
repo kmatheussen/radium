@@ -47,6 +47,15 @@ bool DYNVEC_equal(dynvec_t *v1, dynvec_t *v2){
 }
 
 void DYN_save(disk_t *file, const dyn_t dyn){
+
+  if (dyn.type==BLUB_TYPE){
+    if (dyn.blub->create_savable_dyn==NULL)
+      R_ASSERT(false);
+    else
+      DYN_save(file, dyn.blub->create_savable_dyn(dyn.blub));
+    return;
+  }
+  
   DISK_printf(file,"%s\n",DYN_type_name(dyn.type));
   
   switch(dyn.type){
@@ -210,6 +219,10 @@ dyn_t DYN_load(disk_t *file, bool *success){
   case FILEPATH_TYPE:
     line = READ_LINE(file);
     ret = DYN_create_filepath(make_filepath(line));
+    break;
+  case BLUB_TYPE:
+    R_ASSERT(false);
+    ret = g_dyn_false;
     break;
   case BOOL_TYPE:
     line = READ_LINE(file);
