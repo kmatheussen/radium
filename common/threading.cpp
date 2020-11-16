@@ -350,19 +350,26 @@ static boost::lockfree::queue< radium::Ready_To_Run_Scheduled_RT_functions* , bo
 
 void RT_call_functions_scheduled_to_run_on_player_thread(void){
 
+  bool have_run_something = false;
+  
   static radium::Ready_To_Run_Scheduled_RT_functions *curr_rt_functions = NULL;
     
   while(true){
 
     if (curr_rt_functions==NULL)
-      if (!g_functions_to_run_on_player_thread_queue.pop(curr_rt_functions))
+      if (!g_functions_to_run_on_player_thread_queue.pop(curr_rt_functions)){
+        if (have_run_something)
+          GFX_ScheduleCurrentInstrumentRedraw();
         break;
+      }
     
-    if (curr_rt_functions->RT_run())
+    if (curr_rt_functions->RT_run()){
+      have_run_something = true;
       curr_rt_functions = NULL;
-    else
+    }else
       break;
   }
+
 }
 
 radium::Ready_To_Run_Scheduled_RT_functions *radium::Scheduled_RT_functions::schedule_it(void){

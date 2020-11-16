@@ -3457,8 +3457,6 @@ static void apply_ab_plugin_ab_states(hash_t *plugin_ab_state, hash_t *curr_plug
   
   const vector_t &patches = get_audio_instrument()->patches;
 
-  bool updated = false;
-
   for(int i=0;i<patches.num_elements;i++){
     
     struct Patch *patch=(struct Patch*)patches.elements[i];
@@ -3474,15 +3472,10 @@ static void apply_ab_plugin_ab_states(hash_t *plugin_ab_state, hash_t *curr_plug
         R_ASSERT(false);
       }else{
         if (PLUGIN_apply_ab_state(plugin, ab_state, curr_ab_state, rt_functions, solo_changes)){
-          CHIP_update(plugin);
-          updated = true;
+          //CHIP_update(plugin);
         }
       }
     }
-  }
-
-  if (updated){
-    GFX_update_current_instrument_widget();
   }
 }
 
