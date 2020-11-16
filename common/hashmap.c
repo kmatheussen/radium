@@ -932,6 +932,9 @@ void HASH_put_array_at(hash_t *hash, const char *key, int i, const dynvec_t val)
 }
 
 static hash_element_t *HASH_get_no_complaining(const hash_t *hash, const char *raw_key, int i){
+  if (hash->elements_size==0)
+    return NULL;
+  
   const char *key = STRING_get_utf8_chars(raw_key);
     
   unsigned int index = oat_hash(key,i) % hash->elements_size;
