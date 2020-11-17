@@ -1,3 +1,21 @@
+Changes 6.5.77 -> 6.5.78:
+* Audio: Show warning if loading an old song that
+  indexes modulator effects by number instead of by
+  name since wrong effects are most likley
+  modulated. Also inform that the workaround is to
+  load and save the song in Radium V5.9.44.
+* Demo songs: Fix wrong effects being modulated in
+  "Concrete Vox" and "Elf".
+* Mixer: Fix updating instrument sliders after
+  changing A/B. (The effects themselves were
+  changed, but not the sliders.)
+* Mixer: Index A/B instrument effects on disk by
+  effect name and not by effect number. This
+  prevents A/B settings from being incompatible
+  again in future versions of the program.
+
+
+
 Changes 6.5.76 -> 6.5.77:
 * Mixer: When changing A/B, apply instrument state
   even when number of effects are different.
