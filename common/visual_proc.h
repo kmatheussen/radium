@@ -155,6 +155,10 @@ static inline void GFX_ScheduleEditorRedrawIfPatchIsCurrentlyVisible(const struc
 }
 
 // RT function.
+static inline void GFX_ScheduleCurrentInstrumentRedraw(void){
+  ATOMIC_SET(atomic_must_redraw_instrument, PATCH_get_current());
+}
+
 static inline void GFX_ScheduleInstrumentRedraw(struct Patch *patch){
   if (patch==PATCH_get_current())
     ATOMIC_SET(atomic_must_redraw_instrument, patch);
