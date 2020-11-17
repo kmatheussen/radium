@@ -1426,7 +1426,8 @@
                                        (undo-block
                                         (lambda ()
                                           (for-each (lambda (filename)
-                                                      (<ra> :append-audio-seqtrack)                                               
+                                                      (<ra> :append-audio-seqtrack)
+                                                      (<ra> :set-seqtrack-name (<ra> :get-path-string (<ra> :get-path-without-dir filename)) (- (<ra> :get-num-seqtracks) 1))
                                                       (<ra> :create-sample-seqblock (- (<ra> :get-num-seqtracks) 1) filename 0))
                                                     filenames)))))))
         
