@@ -911,6 +911,20 @@ public:
       pitch_type_button->setMinimumWidth(rightdelay_onoff->width());
       pitch_type_button->setMaximumWidth(rightdelay_onoff->width());
     }
+
+    {
+      QFontMetrics fm(QApplication::font());
+      int max_width = fm.boundingRect("   Eq2 F.: 20000.0 Hz").width() * 1.3;
+      filters_widget->setMaximumWidth(max_width);
+      filters_widget->setMinimumWidth(max_width);
+    }
+    
+    {
+      QFontMetrics fm(QApplication::font());
+      int max_width = fm.boundingRect("   Dry: 46%. Wet: 54%").width() * 1.3;
+      outputs_widget->setMaximumWidth(max_width);
+      outputs_widget->setMinimumWidth(max_width);
+    }
     
     _patch_widget->updateWidgets();
 
