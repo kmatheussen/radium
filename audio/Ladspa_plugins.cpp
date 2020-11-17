@@ -1028,7 +1028,7 @@ static void add_ladspa_plugin_type(const QFileInfo &file_info){
 
   bool is_am_pitchshift = filename.contains("am_pitchshift");
   
-  auto addit = [library, is_am_pitchshift](const LADSPA_Descriptor *descriptor, int index, bool is_system_pitchshift){
+  auto addit = [library](const LADSPA_Descriptor *descriptor, int index, bool is_system_pitchshift){
 
     if (is_system_pitchshift)
       g_has_added_system_pitchshift = true;
