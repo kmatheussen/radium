@@ -146,6 +146,14 @@ struct ModulatorTarget{
           
           SoundPlugin *plugin = (SoundPlugin *)patch->patchdata;
 
+          addMessage(talloc_format("Error: This song %s too old to load properly into this version of Radium. The modulator for effect #%d in instrument \"%s\" %s the intended effect. "
+                                   "You can fix this by loading and saving this song in Radium V5.9.44.",
+                                   effect_num >= plugin->type->num_effects ? "is probably" : "may be",
+                                   effect_num,
+                                   patch->name,
+                                   effect_num >= plugin->type->num_effects ? "is probably not modulating" : "may not modulate"
+                                   ));
+          
           if(!strcmp("Sample Player", plugin->type->type_name)){
             int load_version = g_disk_load_radium_version_major*10000 + g_disk_load_radium_version_minor*100 + g_disk_load_radium_version_revision;
             if (load_version < 50941){
