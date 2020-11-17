@@ -262,9 +262,9 @@ static inline QObject *get_oldest_parent(QObject *w){
 #ifndef COMPILE_EXECUTABLE
 #ifndef CRASHREPORTER_BIN
       RError("Error! Recursive widget parent for %p. Setting parent to NULL.", w);
+#endif
+#endif
       w->setParent(NULL);
-#endif
-#endif
       return NULL;
     }
   }
@@ -452,7 +452,11 @@ static inline bool a_is_a_parent_of_b(QObject *a, QObject *b){
   }
 
   if (b != NULL){
+#ifndef CRASHREPORTER_BIN
+#ifndef COMPILE_EXECUTABLE    
     RError("Error! Recursive widget parent for %p. Setting parent to NULL.", b);
+#endif
+#endif
     b->setParent(NULL);
   }
   
@@ -464,7 +468,11 @@ static inline void safe_set_parent(QWidget *w, QWidget *parent, Qt::WindowFlags 
   //printf("w: %p. parent: %p. parent==w->parentWidget(): %d. main window: %p\n", w, parent, (w==NULL ? NULL : w->parentWidget()) == parent, g_main_window);
 
   if (a_is_a_parent_of_b(w, parent)){
+#ifndef CRASHREPORTER_BIN
+#ifndef COMPILE_EXECUTABLE
     RError("Error in safe_set_parent(w, parent): \"w\" is a parent of parent. Without this check, Qt would have gone into an infinite recursive loop");
+#endif
+#endif
     return;
   }
 
