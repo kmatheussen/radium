@@ -4376,9 +4376,12 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
   void hideEvent(QHideEvent * event) override {
     //printf("      HIDE 1\n");
-    _sequencer_was_full_before_hidden = !upperPartOfMainWindowIsVisible();
-    showUpperPartOfMainWindow();
 
+    if (!sequencerInMixer()) {
+      _sequencer_was_full_before_hidden = !upperPartOfMainWindowIsVisible();
+      showUpperPartOfMainWindow();
+    }
+    
     _was_hidden = true;
 
     //printf("      HIDE 2\n");
@@ -4389,7 +4392,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   void showEvent(QShowEvent * event) override {
     //printf("      SHOW 1\n");
     
-    if (_sequencer_was_full_before_hidden)
+    if (_sequencer_was_full_before_hidden && !sequencerInMixer())
       hideUpperPartOfMainWindow();
     
     //printf("      SHOW 2\n");
