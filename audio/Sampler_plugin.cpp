@@ -483,14 +483,14 @@ struct CopyData {
 
   float portamento;
 
-  DEFINE_ATOMIC(bool, ahdsr_onoff);
+  bool ahdsr_onoff;
   float a,h,d,s,r;
 
   DEFINE_ATOMIC(bool, loop_onoff);
   int crossfade_length;
 
-  DEFINE_ATOMIC(bool, reverse);
-  DEFINE_ATOMIC(bool, pingpong);
+  bool reverse;
+  bool pingpong;
   
   double vibrato_depth;
   double vibrato_speed;
@@ -503,7 +503,7 @@ struct CopyData {
 
   radium::GranulatorParameters gran_parms;
 
-  DEFINE_ATOMIC(bool, gran_enabled);
+  bool gran_enabled;
 
   double gran_coarse_stretch;
   double gran_fine_stretch;
@@ -884,8 +884,10 @@ static int64_t RT_src_callback_with_normal_looping(Voice *voice, const LoopData 
 static int64_t RT_src_callback_nolooping(Voice *voice, const Sample *sample, Data *data, int64_t start_pos, float **out_data){
   *out_data = &sample->sound[start_pos];
 
-  if(start_pos==sample->num_frames)
+  if(start_pos >= sample->num_frames){
+    R_ASSERT_NON_RELEASE(start_pos==sample->num_frames);
     return 0;
+  }
 
   voice->pos = sample->num_frames; // next
 
@@ -985,14 +987,14 @@ static long RT_src_callback(void *cb_data, float **out_data){
   int64_t start_pos = voice->pos;
   Data  *data = sample->data;
 
-  bool pingpong = ATOMIC_GET(sample->data->p.pingpong);
+  bool pingpong = sample->data->p.pingpong;
   bool reverse = voice->reverse;
 
   LoopData loop_data = ( /*pingpong ||*/ data->p.crossfade_length>0)
     ? voice->loop_data
     : LoopData(sample, data->loop_start_was_set_last); // We get illegal data when changing loop points while playing a voice + crossfading, so we simply don't change loop points while playing a voice if there's crossfade. Might be the same with ping pong.
 
-  bool loop = ATOMIC_GET(data->p.loop_onoff) && loop_data._end > loop_data._start;
+  bool loop = ATOMIC_GET_RELAXED(data->p.loop_onoff) && loop_data._end > loop_data._start;
 
   //printf("loop: %d / %d\n", ATOMIC_GET(data->p.loop_onoff), loop_data._end > loop_data._start);
   
@@ -1006,7 +1008,12 @@ static long RT_src_callback(void *cb_data, float **out_data){
   if (loop && pingpong) {
     
     ret = RT_src_callback_ping_pong_looping(voice, loop_data, sample, data, start_pos, out_data); // ping pong looping
-    
+
+  } else if (!loop) {
+
+    //printf("NOlooping. %d\n", (int)start_pos);
+    ret = RT_src_callback_nolooping(voice, sample, data, start_pos, out_data);
+      
   } else {
 
     if (start_pos >= sample->num_frames){
@@ -1022,10 +1029,6 @@ static long RT_src_callback(void *cb_data, float **out_data){
     if (reverse) {
     
       ret = RT_src_callback_reverse(voice, loop_data, sample, data, start_pos, out_data, loop);
-      
-    } else if (!loop) {
-      
-      ret = RT_src_callback_nolooping(voice, sample, data, start_pos, out_data);
       
     } else {
     
@@ -1221,7 +1224,7 @@ static bool RT_play_voice(Data *data, Voice *voice, int num_frames_to_produce, f
 
   float *adsr_sound_data[1]={&resampled_data[0]};
 
-  bool adsr_onoff = ATOMIC_GET(data->p.ahdsr_onoff);
+  bool adsr_onoff = data->p.ahdsr_onoff;
   
   if(endpos>=0){
     int pre_release_len = endpos-startpos;
@@ -1402,7 +1405,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
     
   if (was_playing_something){
     data->tremolo->type->RT_process(data->tremolo, time, num_frames, outputs, outputs);
-    if(ATOMIC_GET_RELAXED(data->p.gran_enabled)){
+    if(data->p.gran_enabled){
       float gran_volume = data->p.gran_volume;
       if (!equal_floats(gran_volume, 0.0)){
         gran_volume = db2gain(gran_volume);
@@ -1511,7 +1514,7 @@ static void play_note(struct SoundPlugin *plugin, int time, note_t note2){
 
     voice->loop_data = loop_data;
     
-    if(ATOMIC_GET(data->p.loop_onoff)==true && loop_data._end > loop_data._start)
+    if(ATOMIC_GET_RELAXED(data->p.loop_onoff)==true && loop_data._end > loop_data._start)
       voice->pos=scale(data->p.startpos, // set startpos between 0 and loop_end
                        0,1,
                        0,loop_data._end);
@@ -1530,11 +1533,11 @@ static void play_note(struct SoundPlugin *plugin, int time, note_t note2){
       }
     }
 
-    voice->reverse = ATOMIC_GET(sample->data->p.reverse);
+    voice->reverse = sample->data->p.reverse;
     
     voice->pan = get_pan_vals_vector(note2.pan,voice->sample->ch==-1?1:2);
 
-    if (ATOMIC_GET(data->p.gran_enabled))
+    if (data->p.gran_enabled)
       RT_prepare_voice_for_playing_with_granulation(data, voice);
 
     if (voice->_granulator==NULL)
@@ -1757,17 +1760,17 @@ static void apply_adsr_to_peak(Data *data, int64_t time, radium::Peak &peak){
 }
 
 
-static radium::Peak get_peak_from_sample(const Sample *sample, int64_t start_time, const int64_t duration, int rec_level){
+static radium::Peak get_peak_from_sample(Data *data, const Sample *sample, int64_t start_time, const int64_t duration, int rec_level){
   R_ASSERT(rec_level <= 1); // This function can only be called recursively once; when starting in the middle of a loop and ask for more data than is available in the remainder of the loop.
   
   radium::Peak peak;
 
   int64_t end;
 
-  LoopData loop_data(sample, sample->data->loop_start_was_set_last);
+  LoopData loop_data(sample, data->loop_start_was_set_last);
   //printf("Peak: loop start: %d. End: %d\n", (int)loop_data._start, (int)loop_data._end);
   
-  bool is_looping = ATOMIC_GET(sample->data->p.loop_onoff)==true;
+  bool is_looping = ATOMIC_GET(data->p.loop_onoff)==true;
 
   if(is_looping && start_time>=loop_data._end){
 
@@ -1813,7 +1816,7 @@ static radium::Peak get_peak_from_sample(const Sample *sample, int64_t start_tim
     int64_t duration_left = duration - duration_now;
     
     if (duration_left > 0)
-      peak.merge(get_peak_from_sample(sample, loop_data._start, duration_left, rec_level+1));
+      peak.merge(get_peak_from_sample(data, sample, loop_data._start, duration_left, rec_level+1));
   }
   
   return peak;
@@ -1956,7 +1959,7 @@ static int get_peaks(struct SoundPlugin *plugin,
       if(panval>0.0f){
 
         //printf("Asking for peak %d %d (%d). Total sample duration: %d\n", (int)start_frame, (int)end_frame, (int)(end_frame-start_frame), (int)sample->num_frames);
-        radium::Peak new_peak = get_peak_from_sample(sample, start_frame, end_frame-start_frame,0);
+        radium::Peak new_peak = get_peak_from_sample(data, sample, start_frame, end_frame-start_frame,0);
         
         if (new_peak.has_data()){
           new_peak.scale(panval);
@@ -1984,7 +1987,7 @@ static int get_peaks(struct SoundPlugin *plugin,
     goto return_empty;
   }
 
-  if (ATOMIC_GET_RELAXED(data->p.ahdsr_onoff))
+  if (data->p.ahdsr_onoff)
     apply_adsr_to_peak(data, (start_time+end_time)/2, peak);
 
   *min_value = peak.get_min();
@@ -2009,7 +2012,7 @@ static int get_peaks(struct SoundPlugin *plugin,
   
 
 static void set_granulation_enabled(SoundPlugin *plugin, Data *data, bool enabled){
-  bool is_enabled = ATOMIC_GET_RELAXED(data->p.gran_enabled);
+  bool is_enabled = data->p.gran_enabled;
   if (enabled==is_enabled)
     return;
 
@@ -2027,13 +2030,13 @@ static void set_granulation_enabled(SoundPlugin *plugin, Data *data, bool enable
     
   }
 
-  ATOMIC_SET(data->p.gran_enabled, enabled);
+  data->p.gran_enabled = enabled;
 
   update_editor_graphics(plugin);
 }
 
 static bool get_granulation_enabled(Data *data){
-  return ATOMIC_GET_RELAXED(data->p.gran_enabled);
+  return data->p.gran_enabled;
 }
 
 
@@ -2141,15 +2144,15 @@ static void RT_set_loop_data(Data *data, int64_t start, int64_t end){
 }
 
 static void set_loop_onoff(Data *data, bool loop_onoff){
-  ATOMIC_SET(data->p.loop_onoff, loop_onoff);
+  ATOMIC_SET_RELAXED(data->p.loop_onoff, loop_onoff);
 }
 
 static bool get_loop_onoff(Data *data){
-  return ATOMIC_GET(data->p.loop_onoff);
+  return ATOMIC_GET_RELAXED(data->p.loop_onoff);
 }
 
 static bool can_crossfade(Data *data){
-  return ATOMIC_GET(data->p.reverse)==false && ATOMIC_GET(data->p.pingpong)==false;
+  return data->p.reverse==false && data->p.pingpong==false;
 }
 
 static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
@@ -2157,9 +2160,15 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
 
   switch(effect_num){
     case EFF_AHDSR_ONOFF:
-      ATOMIC_SET(data->p.ahdsr_onoff, value >= 0.5);
+      data->p.ahdsr_onoff = value >= 0.5;
       update_editor_graphics(plugin);
       return;
+      
+    case EFF_LOOP_ONOFF:
+      set_loop_onoff(data, value>=0.5f);
+      update_editor_graphics(plugin);
+      return;
+
     case EFF_LOOP_OVERRIDE_DEFAULT:
       {
         data->loop_override_default = value>=0.5f;
@@ -2169,6 +2178,7 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
           GFX_ScheduleInstrumentRedraw((struct Patch*)plugin->patch);
       }
       return;
+      
     case EFF_LOOP_START:
       {
         Sample &sample=data->samples[0];
@@ -2190,6 +2200,7 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
         }
       }
       return;
+      
     case EFF_LOOP_END:
       {
         Sample &sample=data->samples[0];
@@ -2311,11 +2322,6 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
                                   -10.99,10.99);
       break;
 #endif
-    case EFF_LOOP_ONOFF:
-      set_loop_onoff(data, value>=0.5f);
-      update_editor_graphics(plugin);
-      break;
-
     case EFF_CROSSFADE_LENGTH:
       if (can_crossfade(data))
         data->p.crossfade_length = scale(value,
@@ -2328,7 +2334,7 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
       break;
       
     case EFF_REVERSE:      
-      ATOMIC_SET(data->p.reverse, value>=0.5f);
+      data->p.reverse = value>=0.5f;
       if (!can_crossfade(data)){
         
         //printf("Doing it %p\n",plugin->patch);
@@ -2341,7 +2347,7 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
       break;
       
     case EFF_PINGPONG:
-      ATOMIC_SET(data->p.pingpong, value>=0.5f);
+      data->p.pingpong =  value>=0.5f;
       if (!can_crossfade(data)){
 
         PLUGIN_set_effect_value(plugin, time, EFF_CROSSFADE_LENGTH, 0, THREADING_is_main_thread() ? STORE_VALUE : DONT_STORE_VALUE, when, EFFECT_FORMAT_NATIVE);
@@ -2445,21 +2451,17 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
       data->p.octave_adjust = value;
       break;
 #endif
-    case EFF_LOOP_ONOFF:
-      set_loop_onoff(data, value>=0.5f);
-      update_editor_graphics(plugin);
-      break;
 
     case EFF_CROSSFADE_LENGTH:
       data->p.crossfade_length = value;
       break;
 
     case EFF_REVERSE:
-      ATOMIC_SET(data->p.reverse, value>=0.5f);
+      data->p.reverse = value>=0.5f;
       break;
       
     case EFF_PINGPONG:
-      ATOMIC_SET(data->p.pingpong, value>=0.5f);
+      data->p.pingpong = value>=0.5f;
       break;
 
     case EFF_GRAN_onoff:
@@ -2529,7 +2531,7 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
     case EFF_FINETUNE:
       return data->p.finetune;
     case EFF_AHDSR_ONOFF:
-      return ATOMIC_GET(data->p.ahdsr_onoff) ? 1.0 : 0.0;
+      return data->p.ahdsr_onoff ? 1.0 : 0.0;
     case EFF_A:
       return scale(data->p.a,
                    0,MAX_A,
@@ -2593,11 +2595,11 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
       break;
 
     case EFF_REVERSE:
-      return ATOMIC_GET(data->p.reverse)==true?1.0f:0.0f;
+      return data->p.reverse==true?1.0f:0.0f;
       break;
 
     case EFF_PINGPONG:
-      return ATOMIC_GET(data->p.pingpong)==true?1.0f:0.0f;
+      return data->p.pingpong==true?1.0f:0.0f;
       break;
 
     case EFF_GRAN_onoff:
@@ -2645,7 +2647,7 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
     case EFF_FINETUNE:
       return data->p.finetune;
     case EFF_AHDSR_ONOFF:
-      return ATOMIC_GET(data->p.ahdsr_onoff) ? 1.0 : 0.0;
+      return data->p.ahdsr_onoff ? 1.0 : 0.0;
     case EFF_A:
       return data->p.a;
     case EFF_H:
@@ -2679,11 +2681,11 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
       return data->p.crossfade_length;
 
     case EFF_REVERSE:
-      return ATOMIC_GET(data->p.reverse)==true?1.0f:0.0f;
+      return data->p.reverse==true?1.0f:0.0f;
       break;
 
     case EFF_PINGPONG:
-      return ATOMIC_GET(data->p.pingpong)==true?1.0f:0.0f;
+      return data->p.pingpong==true?1.0f:0.0f;
       break;
 
     case EFF_GRAN_onoff:
@@ -3183,7 +3185,7 @@ static Data *create_data(float samplerate, Data *old_data, filepath_t filename, 
 
     data->p.finetune = 0.5f;
 
-    ATOMIC_SET(data->p.ahdsr_onoff, true);
+    data->p.ahdsr_onoff = true;
     
     data->p.a=DEFAULT_A;
     data->p.d=DEFAULT_D;
@@ -3311,7 +3313,10 @@ void SAMPLER_set_loop_data(struct SoundPlugin *plugin, int64_t start, int64_t le
   Data *data=(Data*)plugin->data;
 
   PLAYER_lock();{
-    RT_set_loop_data(data, start, length);
+    PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_OVERRIDE_DEFAULT, 1.0f, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+    PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_START, start, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+    PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_END, start + length, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+    RT_set_loop_data(data, start, start + length); // call directly to set accurate values as well.
     PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_ONOFF, length > 0 ? 1.0f : 0.0f, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
   }PLAYER_unlock();
 
