@@ -1,3 +1,12 @@
+Changes 6.5.78 -> 6.5.79:
+* GUI: Fix crash when pressing the "Full" button in
+  the instrument widget while the sequencer is
+  inside the mixer.
+* Instruments widget: Adjust width of the filter are
+  and the output area.
+
+
+
 Changes 6.5.77 -> 6.5.78:
 * Audio: Show warning if loading an old song that
   indexes modulator effects by number instead of by
