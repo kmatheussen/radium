@@ -105,12 +105,20 @@ struct Envelope{
         if(i+loop_len > num_frames)
           loop_len = num_frames - i;
 
-        {
+        if (equal_floats(y0, y1)) {
+
+          if (!equal_floats(y0, 1.0f))
+            for(int x=0;x<loop_len;x++)
+              data[x] *= y0;
+          
+        } else {
+          
           float val     = scale(_frame_pos, x0, x1, y0, y1);
           float inc_val = scale(_frame_pos+1, x0, x1, y0, y1) - val;
 
           for(int x=0;x<loop_len;x++)
             data[x] *= (val + x*inc_val);
+          
         }
         
         i          += loop_len;
