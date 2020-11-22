@@ -1513,8 +1513,10 @@ static void play_note(struct SoundPlugin *plugin, int time, note_t note2){
     voice->sample = sample;
 
     voice->loop_data = loop_data;
-    
-    if(ATOMIC_GET_RELAXED(data->p.loop_onoff)==true && loop_data._end > loop_data._start)
+
+    bool is_looping = ATOMIC_GET_RELAXED(data->p.loop_onoff)==true && loop_data._end > loop_data._start;
+  
+    if(is_looping)
       voice->pos=scale(data->p.startpos, // set startpos between 0 and loop_end
                        0,1,
                        0,loop_data._end);
@@ -1525,11 +1527,40 @@ static void play_note(struct SoundPlugin *plugin, int time, note_t note2){
 
     //printf("Sample_pos: %d\n",(int)note2.sample_pos);
     if (note2.sample_pos > 0){
+      
       voice->pos += note2.sample_pos / RT_get_src_ratio(data, voice);
-      if (voice->pos >= sample->num_frames){
-        RT_remove_voice(&data->voices_playing, voice);
-        RT_add_voice(&data->voices_not_playing, voice);
-        return;
+      
+      if (is_looping) {
+        
+        if (voice->pos >= loop_data._end) {
+          
+          int num_loops = (voice->pos - loop_data._start) / loop_data._length;
+          voice->pos = voice->pos - (num_loops * loop_data._length);
+          
+          if (voice->pos < loop_data._start){
+            
+            R_ASSERT_NON_RELEASE(false);
+            
+            voice->pos = loop_data._start;
+            
+          } else if (voice->pos >= loop_data._end){
+            
+            R_ASSERT_NON_RELEASE(voice->pos == loop_data._end);
+            
+            voice->pos = loop_data._end;
+            
+          }
+          
+        }
+        
+      } else {
+        
+        if (voice->pos >= sample->num_frames){
+          RT_remove_voice(&data->voices_playing, voice);
+          RT_add_voice(&data->voices_not_playing, voice);
+          return;
+        }
+        
       }
     }
 
