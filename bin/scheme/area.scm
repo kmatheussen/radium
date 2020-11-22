@@ -1038,7 +1038,7 @@
                               :background-color background-color
                               :align-left #t
                               :scale-font-size #f
-                              :only-show-left-part-if-text-dont-fit #f
+                              ;;:only-show-left-part-if-text-dont-fit #f
                               ))
   
   (add-mouse-cycle! :press-func (lambda (button x* y*)
