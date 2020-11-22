@@ -1547,7 +1547,7 @@ static void play_note(struct SoundPlugin *plugin, int time, note_t note2){
             
             R_ASSERT_NON_RELEASE(voice->pos == loop_data._end);
             
-            voice->pos = loop_data._end;
+            voice->pos = loop_data._start;
             
           }
           
