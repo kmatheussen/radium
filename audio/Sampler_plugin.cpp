@@ -3437,6 +3437,8 @@ static bool set_new_sample(struct SoundPlugin *plugin,
 
 bool SAMPLER_set_new_sample(struct SoundPlugin *plugin, filepath_t filename, int instrument_number){
   R_ASSERT_RETURN_IF_FALSE2(!strcmp("Sample Player", plugin->type->type_name), false);
+
+  PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_OVERRIDE_DEFAULT, 0.0f, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE); // turn off custom loop points.
   
   Data *data=(Data*)plugin->data;
   return set_new_sample(plugin,filename,instrument_number,data->resampler_type,data->loop_start,data->loop_end, true, false);
