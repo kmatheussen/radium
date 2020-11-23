@@ -3746,7 +3746,7 @@ static inline struct SeqBlock *RT_get_curr_sample_seqblock(void){
   return RT_get_curr_seqblock2(RT_get_curr_seqtrack());
 }
 
-static inline struct Blocks *RT_get_curr_visible_block(void){
+static inline struct Blocks *RT_get_curr_playing_block(void){
   struct SeqBlock *seqblock = RT_get_curr_seqblock();
   if (seqblock != NULL)
     return seqblock->block;
@@ -3759,6 +3759,18 @@ static inline struct Blocks *RT_get_curr_visible_block(void){
     return root->song->blocks;
   */
 }
+
+static inline bool is_playing_current_block(void){
+  if (pc==NULL)
+    return false;
+  
+  if (RT_get_curr_playing_block() != root->song->tracker_windows->wblock->block)
+    return false;
+
+  Player_State state = ATOMIC_GET(pc->player_state);
+  return state==PLAYER_STATE_STARTING_TO_PLAY || state==PLAYER_STATE_PLAYING;
+}
+
 
 static inline note_t create_note_t_plain(const struct SeqBlock *seqblock,
                                          int64_t note_id,

@@ -144,11 +144,11 @@ struct TimeEstimator{
     , _adjustment(0.0)
   { }
 
-  bool train(){
+  bool train(void){
     return _vblank_estimator.train();
   }
 
-  void reset(){
+  void reset(void){
     _last_value = 0.0;
   }
 
@@ -156,7 +156,7 @@ struct TimeEstimator{
     _vblank_estimator.set_vblank(period);
   }
 
-  double get_vblank(){
+  double get_vblank(void) {
     if (_vblank_estimator.base_interval<=0.1)
       return 1000.0 / 60.0; // 60hz
     else

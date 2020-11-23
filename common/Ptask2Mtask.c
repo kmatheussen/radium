@@ -172,20 +172,28 @@ void P2MUpdateSongPosCallBack(void){
 
   if (isplaying){
 
-    struct Blocks *block = RT_get_curr_visible_block();
+    struct Blocks *block = RT_get_curr_playing_block();
     
-    if (block==NULL){
-          
-      if (window->curr_block != -1){
-        window->curr_block = -1;
+    if (block==NULL) {
+
+      if (allowAutomaticallyChangingCurrentBlock()) {
+        
+        if (window->curr_block != -1){
+          window->curr_block = -1;
+          GL_create(window);
+        }
+
+      } else {
+        
+        // FIX: GL_create is called very often when current seqblock is not the currently visible block. Especially on mac, gfx performance of vu meters might be very slow.
         GL_create(window);
+
       }
-
-      //printf("         Returning\n");
-      return;
       
+      //printf("         Returning\n");
+      return;        
     }
-
+    
     wblock = ListFindElement1(&window->wblocks->l, block->l.num);
     
   } else {
@@ -227,8 +235,10 @@ void P2MUpdateSongPosCallBack(void){
       
       //printf("Bef. w: %d\n",window->curr_block);
       //printf("                 GOT IT\n");
+
+      if (allowAutomaticallyChangingCurrentBlock())
+        SelectWBlock(window, wblock, false);
       
-      SelectWBlock(window, wblock, false);
       goto gotit;
     }
 
@@ -246,8 +256,11 @@ void P2MUpdateSongPosCallBack(void){
   }
   
  gotit:
-    
-  R_ASSERT_NON_RELEASE(window->curr_block==curr_block_num);
+
+#if !defined(RELEASE)
+  if (allowAutomaticallyChangingCurrentBlock())
+    R_ASSERT_NON_RELEASE(window->curr_block==curr_block_num);
+#endif
 
     //printf("Aft. w: %d\n",window->curr_block);
 

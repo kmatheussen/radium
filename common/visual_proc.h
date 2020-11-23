@@ -129,12 +129,6 @@ static inline void GFX_ForceScheduleEditorRedraw(void){
 }
 
 // RT function.
-static inline void GFX_ScheduleEditorRedrawIfCurrentBlockIsVisible(void){
-  if(RT_get_curr_visible_block() != NULL)
-    GFX_ScheduleEditorRedraw();
-}
-
-// RT function.
 static inline void GFX_ScheduleEditorRedrawIfPatchIsCurrentlyVisible(const struct Patch *patch){
   if (ATOMIC_GET(atomic_must_redraw_editor)==true)
     return;

@@ -23,8 +23,8 @@ static void setit(const struct SeqTrack *seqtrack, struct WBlocks *wblock, int r
     
     // Set current realline in opengl thread
     //printf("PEQ: set realline %d\n",realline);
-    GE_set_curr_realline(realline);
-    
+    if (wblock->block==ATOMIC_GET(g_curr_block))
+      GE_set_curr_realline(realline);    
   }
   
   PC_Pause_set_pos(wblock->l.num, realline);
