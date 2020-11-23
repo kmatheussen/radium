@@ -441,6 +441,7 @@ static DEFINE_ATOMIC(int, g_curr_realline);
 
 // TS (called from both main thread and opengl thread)
 void GE_set_curr_realline(int curr_realline){
+  //printf("  ############      Setting g_curr_realline to %d\n", curr_realline);
   ATOMIC_SET(g_curr_realline, curr_realline);
 }
 
@@ -1154,9 +1155,12 @@ private:
     }
 
     const SharedVariables *sv = GE_get_shared_variables(t2_data->painting_data);
-    if (sv->block_is_visible==false && is_playing)
-      is_playing = false; // I.e. we are not rendering the block that is currently playing (if any).
+    if (is_playing)
+      if (sv->block_is_visible==false || sv->block!=sv->curr_playing_block)
+        is_playing = false; // I.e. we are not rendering the block that is currently playing (if any).
 
+    //printf("sv->curr_playing_block: %d\n", sv->curr_playing_block==NULL ? -1 : sv->curr_playing_block->l.num);
+    
     if (new_t2_data!=NULL)// && !is_playing)
       GE_set_curr_realline(sv->curr_realline);
       
@@ -1437,6 +1441,7 @@ private:
   //double _dont_swap_right_now_last_time = 0.0; // only accessed from opengl thread. Need to use a timer in case waiting for vblank isn't working (and it isn't always working on OSX).
 
   bool maybe_dont_swap_right_now(void) {
+    //printf("    ... maybe_dont_swap called. _dont_swap_right_now: %d. _dont_swap_right_now_downcount: %d\n", ATOMIC_GET(_dont_swap_right_now), _dont_swap_right_now_downcount);
     if(ATOMIC_GET(_dont_swap_right_now)){
       msleep(17);
       return true;
@@ -2015,7 +2020,7 @@ public:
     show_layout_cover();
 #endif    
 
-
+    //printf("   Resize. g_editor->window: %p. gl_widget: %p. editor_layout_widget: %p\n", g_editor->window, g_editor->gl_widget, g_editor->editor_layout_widget);
     if (g_editor->window != NULL)
       calculateNewWindowWidthAndHeight(g_editor->window);
     

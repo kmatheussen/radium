@@ -343,8 +343,9 @@ public:
             struct Tracks *track = (struct Tracks*)ListFindElement1_r0(&block->tracks->l, event.timepos.tracknum);
             if (track != NULL){
               if (ATOMIC_GET(track->is_recording) == false){
-                GFX_ScheduleEditorRedrawIfCurrentBlockIsVisible();
                 ATOMIC_SET(track->is_recording, true);
+                if (ATOMIC_GET(g_curr_block)==block)
+                  GFX_ScheduleEditorRedraw();
               }
             }
           }
