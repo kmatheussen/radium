@@ -493,8 +493,10 @@ public:
   }
       
   void update_widget(void) {
-    if(_plugin_widget != NULL)
+    
+    if(_plugin_widget != NULL){
       _plugin_widget->update_gui();
+    }
     
     if(_pd_plugin_widget != NULL)
       _pd_plugin_widget->update_gui();

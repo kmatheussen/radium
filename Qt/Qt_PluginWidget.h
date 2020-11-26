@@ -263,8 +263,8 @@ class ParamWidget : public QWidget {
     }
   }
 
-  void update_gui_element(){
-    //printf("Update GUI called. _slider: %p. _Check_button: %p\n",_slider,_check_button);
+  void update_gui_element(void){
+    //printf("       6. Update GUI called. _slider: %p. _Check_button: %p\n",_slider,_check_button);
 
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     if (plugin==NULL)
@@ -274,7 +274,8 @@ class ParamWidget : public QWidget {
 
     value = PLUGIN_get_effect_value(plugin, _effect_num, VALUE_FROM_STORAGE);
 
-    //printf("UPDATE GUI ELEMENT %d for %s (%p / %p). Value: %f\n",_effect_num,plugin->type->name,_slider,_check_button,value);
+    //if (_effect_num==20)
+    //  printf("UPDATE GUI ELEMENT %d (%s) for %s %s. New value: %f\n",_effect_num,PLUGIN_get_effect_name(plugin, _effect_num), _slider!=NULL ? "slider" : "checkbox", plugin->type->name,value);
 
     _can_update_effect_value = false; {
       

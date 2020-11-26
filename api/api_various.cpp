@@ -1886,6 +1886,36 @@ void setEmbeddedAudioFilesPath(filepath_t new_path){
   SETTINGS_write_string("embedded_audio_files_path", g_embedded_audio_files_path);
 }
 
+static bool g_keep_old_loop_when_loading_new_sample = false;
+bool keepOldLoopWhenLoadingNewSample(void){
+  static bool has_inited = false;
+  
+  if (has_inited==false)
+    g_keep_old_loop_when_loading_new_sample = SETTINGS_read_bool("keep_old_loop_when_loading_new_sample", g_keep_old_loop_when_loading_new_sample);
+  
+  return g_keep_old_loop_when_loading_new_sample;
+}
+
+void setKeepOldLoopWhenLoadingNewSample(bool new_val){
+  g_keep_old_loop_when_loading_new_sample = new_val;
+  SETTINGS_write_bool("keep_old_loop_when_loading_new_sample", g_keep_old_loop_when_loading_new_sample);
+}
+
+static bool g_use_same_loop_frames_when_loading_new_sample = false;
+bool useSameLoopFramesWhenLoadingNewSample(void){
+  static bool has_inited = false;
+  
+  if (has_inited==false)
+    g_use_same_loop_frames_when_loading_new_sample = SETTINGS_read_bool("use_same_loop_frames_when_loading_new_sample", g_use_same_loop_frames_when_loading_new_sample);
+  
+  return g_use_same_loop_frames_when_loading_new_sample;
+}
+
+void setUseSameLoopFramesWhenLoadingNewSample(bool new_val){
+  g_use_same_loop_frames_when_loading_new_sample = new_val;
+  SETTINGS_write_bool("use_same_loop_frames_when_loading_new_sample", g_use_same_loop_frames_when_loading_new_sample);
+}
+
 bool save(void /*bool ignore_nsm*/){
 
   /*

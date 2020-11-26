@@ -604,6 +604,19 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
         
       }
 
+      if (keepOldLoopWhenLoadingNewSample()) {
+        
+        if (useSameLoopFramesWhenLoadingNewSample())
+          keep_old_loop_data_frame->setChecked(true);
+        else
+          keep_old_loop_data_percentage->setChecked(true);
+        
+      } else {
+        
+        discard_loop_data->setChecked(true);
+        
+      }
+            
     }
 
     /*
@@ -1147,6 +1160,24 @@ public slots:
   void on_b2048_toggled(bool val){ if (_initing==false)  SETTINGS_write_int("audio_block_size", 2048);  }
   void on_b4096_toggled(bool val){ if (_initing==false)  SETTINGS_write_int("audio_block_size", 4096);  }
   void on_b8192_toggled(bool val){ if (_initing==false)  SETTINGS_write_int("audio_block_size", 8192);  }
+
+  void on_discard_loop_data_toggled(bool val){
+    if (_initing==false && val)
+      setKeepOldLoopWhenLoadingNewSample(false);
+  }
+  void on_keep_old_loop_data_frame_toggled(bool val){
+    if (_initing==false && val){
+      setUseSameLoopFramesWhenLoadingNewSample(true);
+      setKeepOldLoopWhenLoadingNewSample(true);
+    }
+  }
+  void on_keep_old_loop_data_percentage_toggled(bool val){
+    if (_initing==false && val){
+      setUseSameLoopFramesWhenLoadingNewSample(false);
+      setKeepOldLoopWhenLoadingNewSample(true);
+    }
+  }
+
 
   /*
   // embedded audio file paths
