@@ -492,6 +492,11 @@ struct CopyData {
   bool reverse;
   bool pingpong;
   
+  bool loop_override_default;
+  int64_t loop_start;
+  int64_t loop_end;   // if loop_end<=loop_start, use loop data in sample file instead, if there is any. (loop_start has no meaning if loop_length is 0)
+  bool loop_start_was_set_last;
+  
   double vibrato_depth;
   double vibrato_speed;
   double vibrato_phase_add;
@@ -525,12 +530,6 @@ struct Data{
   CopyData p = {};
 
   bool use_sample_file_middle_note = false; // Set to true by default now, but not included (or set to false) in the state of older states. Without this flag, loading older sounds could sound wrong.
-
-  // Should loop start/length be placed in CopyData?
-  bool loop_override_default = false;
-  int64_t loop_start = 0;
-  int64_t loop_end = 0;   // if loop_end<=loop_start, use loop data in sample file instead, if there is any. (loop_start has no meaning if loop_length is 0)
-  bool loop_start_was_set_last = false;
   
   struct SoundPlugin *tremolo = NULL;
   
@@ -992,7 +991,7 @@ static long RT_src_callback(void *cb_data, float **out_data){
 
   LoopData loop_data = ( /*pingpong ||*/ data->p.crossfade_length>0)
     ? voice->loop_data
-    : LoopData(sample, data->loop_start_was_set_last); // We get illegal data when changing loop points while playing a voice + crossfading, so we simply don't change loop points while playing a voice if there's crossfade. Might be the same with ping pong.
+    : LoopData(sample, data->p.loop_start_was_set_last); // We get illegal data when changing loop points while playing a voice + crossfading, so we simply don't change loop points while playing a voice if there's crossfade. Might be the same with ping pong.
 
   bool loop = ATOMIC_GET_RELAXED(data->p.loop_onoff) && loop_data._end > loop_data._start;
 
@@ -1468,7 +1467,7 @@ static void play_note(struct SoundPlugin *plugin, int time, note_t note2){
   
   for(const Sample* sample : note->samples){ //i=0;i<note->num_samples;i++){
 
-    LoopData loop_data(sample, data->loop_start_was_set_last);
+    LoopData loop_data(sample, data->p.loop_start_was_set_last);
     
     if(data->voices_not_playing==NULL){
       printf("No more free voices\n");
@@ -1798,7 +1797,7 @@ static radium::Peak get_peak_from_sample(Data *data, const Sample *sample, int64
 
   int64_t end;
 
-  LoopData loop_data(sample, data->loop_start_was_set_last);
+  LoopData loop_data(sample, data->p.loop_start_was_set_last);
   //printf("Peak: loop start: %d. End: %d\n", (int)loop_data._start, (int)loop_data._end);
   
   bool is_looping = ATOMIC_GET(data->p.loop_onoff)==true;
@@ -1842,7 +1841,7 @@ static radium::Peak get_peak_from_sample(Data *data, const Sample *sample, int64
   //printf("    Calculating %d -> %d (%d frames)\n", (int)start_time, (int)(end_time), (int)(duration_now));
   peak = sample->peaks->get(start_time, end_time);
 
-  // If start_time==sample->loop_start, we would not get hold of any new peaks in the call to get_peak_from_sample below. (it would also stall the program in some situations)
+  // If start_time==sample->p.loop_start, we would not get hold of any new peaks in the call to get_peak_from_sample below. (it would also stall the program in some situations)
   if (is_looping && start_time > loop_data._start){
     int64_t duration_left = duration - duration_now;
     
@@ -2137,13 +2136,13 @@ static float gran_get_volume(Data *data){
 
   
 
-static void RT_set_loop_data(Data *data, int64_t start, int64_t end){
+static void RT_set_loop_points_internal(Data *data, int64_t start, int64_t end, bool force_use_org = false){
   R_ASSERT_NON_RELEASE(data->is_live==false || PLAYER_current_thread_has_lock());
  
-  data->loop_start = start;
-  data->loop_end = end;
+  data->p.loop_start = start;
+  data->p.loop_end = end;
 
-  //printf("   1. Setting %d %d\n", (int)start, (int)end);
+  //printf("   X internal. Setting %d %d\n", (int)start, (int)end);
   
   float *prev=NULL;
   
@@ -2155,8 +2154,8 @@ static void RT_set_loop_data(Data *data, int64_t start, int64_t end){
     if(sample.sound != prev){
       prev = sample.sound;
       
-      if (data->loop_override_default) {
-
+      if (data->p.loop_override_default && !force_use_org) {
+        
         sample.loop_start = start;
         sample.loop_end = end;
 
@@ -2174,6 +2173,61 @@ static void RT_set_loop_data(Data *data, int64_t start, int64_t end){
   }
 }
 
+// Use this one if setting both at the same time (if not it might not work).
+static void RT_set_loop_points_complete(SoundPlugin *plugin, Data *new_data, int64_t start, int64_t end, bool force_use_org = false){
+  if (force_use_org) {
+    Sample &sample=new_data->samples[0];
+    if (sample.sound!=NULL){
+      start = sample.loop_start_org;
+      end = sample.loop_end_org;
+    }
+  }
+
+  Data *plugin_data=(Data*)plugin->data;
+  
+  //printf("   X complete. Setting %d %d. force_use_org: %d. Datas: %p / %p\n", (int)start, (int)end, force_use_org, plugin_data, new_data);
+
+  plugin_data->p.loop_start = 0; // Ensure EFF_LOOP_END works when calling PLUGIN_set_effect_value.
+  
+  if (new_data==plugin_data) {
+    
+    PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_END, end, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE); // can set end first since we forced loop_start to 0 above.
+    PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_START, start, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+    
+  } else {
+
+    // Send scaled values instead. Can't send native value for a different sample.
+    
+    Sample &sample=new_data->samples[0];
+    if (sample.sound!=NULL){
+
+      int64_t num_frames = sample.num_frames;
+
+      if (num_frames > 0) {
+        
+        float scaled_loop_start = R_BOUNDARIES(0, scale(start, 0, num_frames, 0, 1), 1);
+        float scaled_loop_end = R_BOUNDARIES(0, scale(end, 0, num_frames, 0, 1), 1);
+        
+        PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_END, scaled_loop_end, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED); // can set end first since we forced loop_start to 0 above.
+        PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_START, scaled_loop_start, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
+        
+      } else {
+        
+        R_ASSERT_NON_RELEASE(false);
+        
+      }
+      
+    } else {
+      
+      R_ASSERT_NON_RELEASE(false);
+      
+    }
+  }
+  
+  RT_set_loop_points_internal(new_data, start, end, force_use_org); // The calls to PLUGIN_set_effect_value above might not have set accurate values due to int64_t -> float conversion.
+}
+
+  
 static void set_loop_onoff(Data *data, bool loop_onoff){
   ATOMIC_SET_RELAXED(data->p.loop_onoff, loop_onoff);
 }
@@ -2202,8 +2256,8 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
 
     case EFF_LOOP_OVERRIDE_DEFAULT:
       {
-        data->loop_override_default = value>=0.5f;
-        RT_set_loop_data(data, data->loop_start, data->loop_end);
+        data->p.loop_override_default = value>=0.5f;
+        RT_set_loop_points_internal(data, data->p.loop_start, data->p.loop_end);
         update_editor_graphics(plugin);
         if (plugin->patch != NULL)
           GFX_ScheduleInstrumentRedraw((struct Patch*)plugin->patch);
@@ -2214,15 +2268,15 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
       {
         Sample &sample=data->samples[0];
         if (sample.sound != NULL){
-          RT_set_loop_data(data,
-                           R_BOUNDARIES(0,
-                                        value_format==EFFECT_FORMAT_NATIVE ? value : scale_double(value,
-                                                                                                  0,1,
-                                                                                                  0,sample.num_frames),
-                                        sample.num_frames-1),
-                           data->loop_end
-                           );
-          data->loop_start_was_set_last = true;
+          RT_set_loop_points_internal(data,
+                                      R_BOUNDARIES(0,
+                                                   value_format==EFFECT_FORMAT_NATIVE ? value : scale_double(value,
+                                                                                                             0,1,
+                                                                                                             0,sample.num_frames),
+                                                   sample.num_frames-1),
+                                      data->p.loop_end
+                                      );
+          data->p.loop_start_was_set_last = true;
           update_editor_graphics(plugin);
 
           if (when==FX_single && plugin->patch != NULL)
@@ -2237,15 +2291,16 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
         Sample &sample=data->samples[0];
         //printf("loop end. %p\n", &sample);
         if (sample.sound != NULL){
-          RT_set_loop_data(data,
-                           data->loop_start,
-                           R_BOUNDARIES(1,
-                                        value_format==EFFECT_FORMAT_NATIVE ? value : scale_double(value,
-                                                                                                  0,1,
-                                                                                                  0,sample.num_frames),
-                                        sample.num_frames)
-                           );
-          data->loop_start_was_set_last = false;
+          //printf("       EFF_LOOP_END: %f (%s). (loop_start: %d. num_frames: %d)\n", value, value_format==EFFECT_FORMAT_NATIVE ? "native" : "scaled", (int)data->p.loop_start, (int)sample.num_frames);
+          RT_set_loop_points_internal(data,
+                                      data->p.loop_start,
+                                      R_BOUNDARIES(1,
+                                                   value_format==EFFECT_FORMAT_NATIVE ? value : scale_double(value,
+                                                                                                             0,1,
+                                                                                                             0,sample.num_frames),
+                                                   sample.num_frames)
+                                      );
+          data->p.loop_start_was_set_last = false;
           update_editor_graphics(plugin);
 
           if (when==FX_single && plugin->patch != NULL)
@@ -2532,26 +2587,26 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
 
   switch(effect_num){
     case EFF_LOOP_OVERRIDE_DEFAULT:
-      return data->loop_override_default ? 1.0 : 0.0;
+      return data->p.loop_override_default ? 1.0 : 0.0;
     case EFF_LOOP_START:
       if (value_format==EFFECT_FORMAT_NATIVE)
-        return data->loop_start;
+        return data->p.loop_start;
       else {
         Sample &sample = data->samples[0];
         if (sample.sound==NULL)
           return 0;
         else
-          return scale(data->loop_start, 0, sample.num_frames, 0, 1);
+          return scale(data->p.loop_start, 0, sample.num_frames, 0, 1);
       }
     case EFF_LOOP_END:
       if (value_format==EFFECT_FORMAT_NATIVE)
-        return data->loop_end;
+        return data->p.loop_end;
       else {
         Sample &sample = data->samples[0];
         if (sample.sound==NULL)
           return 0;
         else
-          return scale(data->loop_end, 0, sample.num_frames, 0, 1);
+          return scale(data->p.loop_end, 0, sample.num_frames, 0, 1);
       }
   }
   
@@ -2809,20 +2864,20 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
     {
       Sample &sample = data->samples[0];
       if (sample.sound!=NULL){
-        LoopData loop_data(sample, data->loop_start_was_set_last);
+        LoopData loop_data(sample, data->p.loop_start_was_set_last);
         snprintf(buffer,buffersize-1,"%" PRId64 " samples", loop_data._start);
       }else
-        snprintf(buffer,buffersize-1,"%" PRId64 " samples", data->loop_start);
+        snprintf(buffer,buffersize-1,"%" PRId64 " samples", data->p.loop_start);
     }
     break;
   case EFF_LOOP_END:
     {
       Sample &sample = data->samples[0];
       if (sample.sound!=NULL){
-        LoopData loop_data(sample, data->loop_start_was_set_last);
+        LoopData loop_data(sample, data->p.loop_start_was_set_last);
         snprintf(buffer,buffersize-1,"%" PRId64 " samples", loop_data._end);
       }else
-        snprintf(buffer,buffersize-1,"%" PRId64 " samples", data->loop_end);
+        snprintf(buffer,buffersize-1,"%" PRId64 " samples", data->p.loop_end);
     }
     break;
     
@@ -2976,7 +3031,7 @@ static bool load_sample_with_libsndfile(Data *data, filepath_t filename, bool se
   {
     int num_channels = sf_info.channels;
 
-    printf("Num channels: %d\n",num_channels);
+    //printf("Num channels: %d\n",num_channels);
 
     if(num_channels > 2) // TODO
       num_channels = 2;
@@ -3015,7 +3070,7 @@ static bool load_sample_with_libsndfile(Data *data, filepath_t filename, bool se
       set_legal_loop_points(sample,-1,-1, set_loop_on_off); // By default, don't loop, but if set, loop all.
               
       if((sf_info.format&0xffff0000) == SF_FORMAT_WAV){
-        printf("format: 0x%x. sections: %d, num_frames: %d. SF_FORMAT_WAV: 0x%x. og: 0x%x\n",sf_info.format,sf_info.sections,(int)sf_info.frames,SF_FORMAT_WAV,sf_info.format&SF_FORMAT_WAV);
+        //printf("format: 0x%x. sections: %d, num_frames: %d. SF_FORMAT_WAV: 0x%x. og: 0x%x\n",sf_info.format,sf_info.sections,(int)sf_info.frames,SF_FORMAT_WAV,sf_info.format&SF_FORMAT_WAV);
         set_wav_loop_points(sample,filename,set_loop_on_off);
         if (data->use_sample_file_middle_note)
           middle_note = get_wav_middle_note(filename, middle_note);
@@ -3177,6 +3232,23 @@ static bool load_sample(Data *data, filepath_t filename, int instrument_number, 
         GFX_Message(NULL,"Unable to load %S as soundfile.", filename.id);
         return false;
       }
+    }
+  }
+
+  for(int i=0;i<MAX_NUM_SAMPLES;i++){
+    Sample &sample=data->samples[i];
+    if (sample.sound==NULL){
+      if (i==0){
+        R_ASSERT(false);
+        return false;
+      }
+        
+      break;
+    }
+
+    if (sample.num_frames==0){
+      R_ASSERT(false);
+      return false;
     }
   }
   
@@ -3345,9 +3417,7 @@ void SAMPLER_set_loop_data(struct SoundPlugin *plugin, int64_t start, int64_t le
 
   PLAYER_lock();{
     PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_OVERRIDE_DEFAULT, 1.0f, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
-    PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_START, start, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
-    PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_END, start + length, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
-    RT_set_loop_data(data, start, start + length); // call directly to set accurate values as well.
+    RT_set_loop_points_complete(plugin, data, start, start+length);
     PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_ONOFF, length > 0 ? 1.0f : 0.0f, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
   }PLAYER_unlock();
 
@@ -3364,8 +3434,6 @@ static bool set_new_sample(struct SoundPlugin *plugin,
                            filepath_t filename,
                            int instrument_number,
                            enum ResamplerType resampler_type,
-                           int64_t loop_start,
-                           int64_t loop_end,
                            bool use_sample_file_middle_note,
                            bool is_loading)
 {
@@ -3373,6 +3441,15 @@ static bool set_new_sample(struct SoundPlugin *plugin,
 
   Data *data = NULL;
   Data *old_data = (Data*)plugin->data;
+
+  /*
+  int64_t org_loop_start = data->loop_start; //PLUGIN_get_effect_value2(plugin, EFF_LOOP_START, VALUE_FROM_STORAGE, EFFECT_FORMAT_NATIVE);
+  int64_t org_loop_end = data->loop_end; //PLUGIN_get_effect_value2(plugin, EFF_LOOP_END, VALUE_FROM_STORAGE, EFFECT_FORMAT_NATIVE);
+  */
+
+  //bool org_loop_override_default = data->p.loop_override_default;
+  //float loop_override_default = PLUGIN_get_effect_value2(plugin, EFF_LOOP_OVERRIDE_DEFAULT, VALUE_FROM_STORAGE, EFFECT_FORMAT_NATIVE);
+  
 
   filename = OS_loading_get_resolved_file_path(filename, false); // set program_state_is_valid=false. Might not be necessary, but I'm not sure.
   if (isIllegalFilepath(filename))
@@ -3383,10 +3460,49 @@ static bool set_new_sample(struct SoundPlugin *plugin,
   if(load_sample(data,filename,instrument_number, false)==false)
     goto exit;
 
-  RT_set_loop_data(data, loop_start, loop_end);
+  if (keepOldLoopWhenLoadingNewSample()){
+
+    if (useSameLoopFramesWhenLoadingNewSample()) {
+      
+        RT_set_loop_points_complete(plugin, data,
+                                    data->p.loop_start,
+                                    data->p.loop_end
+                                    );
+        
+    } else {
+      
+      int64_t org_num_frames = old_data->samples[0].sound==NULL ? 0 : old_data->samples[0].num_frames;
+      int64_t new_num_frames = data->samples[0].sound==NULL ? 0 : data->samples[0].num_frames;
+      
+      if (org_num_frames > 0 && new_num_frames > 0) {
+        
+        RT_set_loop_points_complete(plugin, data,
+                                    scale_int64(data->p.loop_start, 0, org_num_frames, 0, new_num_frames),
+                                    scale_int64(data->p.loop_end, 0, org_num_frames, 0, new_num_frames)
+                                    );
+        
+      } else {
+        
+        R_ASSERT_NON_RELEASE(false);
+        
+      }
+      
+    }
+    
+  } else {
+
+    //int64_t new_num_frames = data->samples[0]==NULL ? 0 : data->samples[0].num_frames;
+
+    //printf("**STARTING. Org loop points: %d -> %d. New loop points: %d -> %d\n", (int)old_data->p.loop_start, (int)old_data->p.loop_end, (int)data->p.loop_start, (int)data->p.loop_end);
+    
+    PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_OVERRIDE_DEFAULT, 0.0f, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE); // turn off override default.
+    RT_set_loop_points_complete(plugin, data, 0, 0, true);
+    
+    // Put loop_onoff into storage.
+    //PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_ONOFF, ATOMIC_GET(data->p.loop_onoff)==true?1.0f:0.0f, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+
+  }
   
-  // Put loop_onoff into storage.
-  PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_ONOFF, ATOMIC_GET(data->p.loop_onoff)==true?1.0f:0.0f, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
 
 
   if(SP_is_plugin_running(plugin)){
@@ -3438,10 +3554,17 @@ static bool set_new_sample(struct SoundPlugin *plugin,
 bool SAMPLER_set_new_sample(struct SoundPlugin *plugin, filepath_t filename, int instrument_number){
   R_ASSERT_RETURN_IF_FALSE2(!strcmp("Sample Player", plugin->type->type_name), false);
 
-  PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_OVERRIDE_DEFAULT, 0.0f, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE); // turn off custom loop points.
-  
   Data *data=(Data*)plugin->data;
-  return set_new_sample(plugin,filename,instrument_number,data->resampler_type,data->loop_start,data->loop_end, true, false);
+  if (!set_new_sample(plugin,filename,instrument_number,data->resampler_type, true, false))
+    return false;
+
+  struct Patch *patch = plugin->patch;
+  if(patch!=NULL){
+    //printf("       1. UPDATE %s\n", patch->name);
+    GFX_update_instrument_widget(patch);
+  }
+  
+  return true;
 }
 
 
@@ -3482,7 +3605,7 @@ bool SAMPLER_set_random_sample(struct SoundPlugin *plugin, filepath_t path){
   
   QString new_filename = dir.absoluteFilePath(list.at(qrand() % list.size()));
 
-  printf("*********** filename: -%s-\n", new_filename.toUtf8().constData());
+  //printf("*********** filename: -%s-\n", new_filename.toUtf8().constData());
   
   if (SAMPLER_set_new_sample(plugin, make_filepath(new_filename), 0)==false){
     //GFX_Message(NULL, "Unable to set sample %s", new_filename.toUtf8().constData()); // SAMPLER_set_new_sample has already given a message.
@@ -3497,7 +3620,7 @@ bool SAMPLER_set_temp_resampler_type(struct SoundPlugin *plugin, enum ResamplerT
   Data *data=(Data*)plugin->data;
   data->org_resampler_type = resampler_type;
   if (resampler_type != data->resampler_type)
-    return set_new_sample(plugin,data->filename.get(),data->instrument_number,resampler_type,data->loop_start,data->loop_end, data->use_sample_file_middle_note, false);
+    return set_new_sample(plugin,data->filename.get(),data->instrument_number,resampler_type, data->use_sample_file_middle_note, false);
   else
     return true;
 }
@@ -3505,7 +3628,7 @@ bool SAMPLER_set_temp_resampler_type(struct SoundPlugin *plugin, enum ResamplerT
 void SAMPLER_set_org_resampler_type(struct SoundPlugin *plugin){
   Data *data=(Data*)plugin->data;
   if (data->org_resampler_type != data->resampler_type)
-    set_new_sample(plugin,data->filename.get(),data->instrument_number,data->org_resampler_type,data->loop_start,data->loop_end, data->use_sample_file_middle_note, false);
+    set_new_sample(plugin,data->filename.get(),data->instrument_number,data->org_resampler_type, data->use_sample_file_middle_note, false);
 }
 
 bool SAMPLER_set_resampler_type(struct SoundPlugin *plugin, enum ResamplerType resampler_type){
@@ -3513,7 +3636,7 @@ bool SAMPLER_set_resampler_type(struct SoundPlugin *plugin, enum ResamplerType r
   
   Data *data=(Data*)plugin->data;
   if (resampler_type != data->resampler_type)
-    return set_new_sample(plugin,data->filename.get(),data->instrument_number,resampler_type,data->loop_start,data->loop_end, data->use_sample_file_middle_note, false);
+    return set_new_sample(plugin,data->filename.get(),data->instrument_number,resampler_type, data->use_sample_file_middle_note, false);
   else
     return true;
 }
@@ -3821,21 +3944,27 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
   enum ResamplerType resampler_type    = (enum ResamplerType)HASH_get_int(state, "resampler_type");
   int64_t        loop_start        = 0; if (HASH_has_key(state, "loop_start"))  loop_start  = HASH_get_int(state, "loop_start");
   int64_t        loop_length       = 0; if (HASH_has_key(state, "loop_length")) loop_length = HASH_get_int(state, "loop_length");
-
+  int64_t        loop_end          = loop_start + loop_length;
+  
   filepath_t filename = PLUGIN_DISK_get_audio_filename(state);
 
   if(isIllegalFilepath(filename)) // not supposed to happen though. Assertion in PLUGIN_DISK_get_audio_filename.
     return;
 
-  if(set_new_sample(plugin,filename,instrument_number,resampler_type,loop_start,loop_start+loop_length, use_sample_file_middle_note, is_loading)==false)
-    GFX_Message(NULL, "Could not load soundfile \"%S\". (instrument number: %d)\n", filename.id,instrument_number);
+  if(true || set_new_sample(plugin,filename,instrument_number,resampler_type, use_sample_file_middle_note, is_loading)==false)
+    GFX_addMessage("Could not load soundfile \"%S\". (instrument number: %d)\n", filename.id,instrument_number);
 
   Data *data=(Data*)plugin->data;
-
+  
   if (is_loading && disk_load_version <= 0.865){
     data->p.note_adjust = int(data->p.note_adjust);
   }
 
+  // Loop points. Setting loop points is tricky. Make sure everything is right.
+  {
+    RT_set_loop_points_complete(plugin, data, loop_start, loop_end);
+  }
+  
   /*  
   if (audiodata_is_included) {    
     if (data!=NULL)
@@ -3873,8 +4002,8 @@ static void create_state(const struct SoundPlugin *plugin, hash_t *state){
   HASH_put_int(state, "instrument_number",data->instrument_number);
   HASH_put_int(state, "resampler_type",data->resampler_type);
 
-  HASH_put_int(state, "loop_start",data->loop_start);
-  HASH_put_int(state, "loop_length",data->loop_end - data->loop_start);
+  HASH_put_int(state, "loop_start",data->p.loop_start);
+  HASH_put_int(state, "loop_length",data->p.loop_end - data->p.loop_start);
 
   if (g_embed_samples){
     const char *audiofile = DISK_file_to_base64(data->filename.get());
