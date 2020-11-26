@@ -118,7 +118,7 @@ void Scroll_scroll(
                    int num_lines
 ){
 
-  bool dopause = (ATOMIC_GET(root->play_cursor_onoff)==false);
+  bool dopause = (ATOMIC_GET(root->play_cursor_onoff)==false) && is_playing_current_block();
   
   if (dopause)
     PC_PauseNoMessage();
