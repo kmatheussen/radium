@@ -1,3 +1,25 @@
+Changes 6.5.79 -> 6.5.81:
+* Mixer: Change function used when assigning keybinding to "Generate new color" in the popup menu. Before: generateNewInstrumentColor, now: generateNewColorForAllSelectedInstruments.
+* Editor: Don"t pause player when scrolling up or down when current editor-block is not playing
+* Sampler instrument: 1. Fix various stuff. 2. Add options to keep old loop when changing sample. API: keepOldLoopWhenLoadingNewSample, setKeepOldLoopWhenLoadingNewSample, useSameLoopFramesWhenLoadingNewSample, setUseSameLoopFramesWhenLoadingNewSample
+* Editor: Never let player change editor-block when a block is editor-locked
+* Editor: Change keybindings for general transposing only work when the editor has keyboard focus
+* Sequencer: Fix horizontal alignment for seqtrack names when name doesn"t fit
+* Sampler instrument: Turn off the "Custom loop start/end" effect when loading new sample (probably we usually don"t want to use the looping points set for the previous sample also for the current sample).
+* Sampler instrument: Make sample-seek work with looping
+* Sampler instrument: Fix crossfade for samples that
+  haven't defined the start position of the loop to
+  not start at the beginning of the sample.
+* Sampler instrument: Add "AHDSR on/off" effect.
+* Sampler instrument: Reorganize effect order a bit.
+* Sampler instrument: Fix ping-pong loop looping
+  between loop start/end, and not between the
+  start/end of the sample.
+* Sampler instrument: Make it possible to define
+  custom start/end loop points.
+
+
+
 Changes 6.5.78 -> 6.5.79:
 * GUI: Fix crash when pressing the "Full" button in
   the instrument widget while the sequencer is
