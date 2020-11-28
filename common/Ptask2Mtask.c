@@ -267,6 +267,8 @@ void P2MUpdateSongPosCallBack(void){
   //GE_set_curr_realline(wblock->curr_realline);
   //  printf("till_curr_realline: %d\n",wblock->till_curr_realline);
   //ScrollEditorToRealLine(window,wblock,wblock->curr_realline);
+
+  return;
 }
 
 #else
