@@ -1331,6 +1331,8 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   Data *data = (Data*)plugin->data;
   Voice *voice = data->voices_playing;
 
+  R_ASSERT_NON_RELEASE(data->is_live);
+  
   memset(outputs[0],0,num_frames*sizeof(float));
   memset(outputs[1],0,num_frames*sizeof(float));
 
@@ -3509,6 +3511,8 @@ static bool set_new_sample(struct SoundPlugin *plugin,
 
     //fprintf(stderr, "    *************** 11111. plugin IS running **********\n");
     
+    data->is_live = true;
+    
     ATOMIC_SET(old_data->new_data, data);
 
     if (PLAYER_is_running())
@@ -3519,10 +3523,9 @@ static bool set_new_sample(struct SoundPlugin *plugin,
     //fprintf(stderr, "    *************** 0000. plugin is NOT running **********\n");
     
     plugin->data = data;
+  
     
   }
-
-  data->is_live = true;
 
 
   {
@@ -3932,38 +3935,48 @@ static QString get_final_embedded_filename(QString org_filename, QString new_fil
 static void create_state(const struct SoundPlugin *plugin, hash_t *state);
   
 static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool is_loading){
+  Data *data=(Data*)plugin->data;
+    
   {
     hash_t *curr_state = HASH_create(10);
     create_state(plugin, curr_state);
     if (HASH_equal(state, curr_state))
-      return;
-  }
-                                      
-  bool           use_sample_file_middle_note = true ; if (HASH_has_key(state, "use_sample_file_middle_note")) use_sample_file_middle_note = HASH_get_bool(state, "use_sample_file_middle_note");
-  int            instrument_number = HASH_get_int32(state, "instrument_number");
-  enum ResamplerType resampler_type    = (enum ResamplerType)HASH_get_int(state, "resampler_type");
-  int64_t        loop_start        = 0; if (HASH_has_key(state, "loop_start"))  loop_start  = HASH_get_int(state, "loop_start");
-  int64_t        loop_length       = 0; if (HASH_has_key(state, "loop_length")) loop_length = HASH_get_int(state, "loop_length");
-  int64_t        loop_end          = loop_start + loop_length;
-  
-  filepath_t filename = PLUGIN_DISK_get_audio_filename(state);
-
-  if(isIllegalFilepath(filename)) // not supposed to happen though. Assertion in PLUGIN_DISK_get_audio_filename.
-    return;
-
-  if(true || set_new_sample(plugin,filename,instrument_number,resampler_type, use_sample_file_middle_note, is_loading)==false)
-    GFX_addMessage("Could not load soundfile \"%S\". (instrument number: %d)\n", filename.id,instrument_number);
-
-  Data *data=(Data*)plugin->data;
-  
-  if (is_loading && disk_load_version <= 0.865){
-    data->p.note_adjust = int(data->p.note_adjust);
+      goto exit;
   }
 
-  // Loop points. Setting loop points is tricky. Make sure everything is right.
   {
-    RT_set_loop_points_complete(plugin, data, loop_start, loop_end);
+    bool           use_sample_file_middle_note = true ; if (HASH_has_key(state, "use_sample_file_middle_note")) use_sample_file_middle_note = HASH_get_bool(state, "use_sample_file_middle_note");
+    int            instrument_number = HASH_get_int32(state, "instrument_number");
+    enum ResamplerType resampler_type = (enum ResamplerType)HASH_get_int(state, "resampler_type");
+    int64_t        loop_start        = 0; if (HASH_has_key(state, "loop_start"))  loop_start  = HASH_get_int(state, "loop_start");
+    int64_t        loop_length       = 0; if (HASH_has_key(state, "loop_length")) loop_length = HASH_get_int(state, "loop_length");
+    int64_t        loop_end          = loop_start + loop_length;
+    
+    filepath_t filename = PLUGIN_DISK_get_audio_filename(state);
+    
+    if(isIllegalFilepath(filename)) // not supposed to happen though. Assertion in PLUGIN_DISK_get_audio_filename.
+      goto exit;
+    
+    bool successfully_set_new_sample = set_new_sample(plugin,filename,instrument_number,resampler_type, use_sample_file_middle_note, is_loading);
+    
+    if(!successfully_set_new_sample)
+      GFX_addMessage("Could not load soundfile \"%S\". (instrument number: %d)\n", filename.id,instrument_number);
+
+    data=(Data*)plugin->data; // set_new_sample created new data.
+
+    if (is_loading && disk_load_version <= 0.865){
+      data->p.note_adjust = int(data->p.note_adjust);
+    }
+    
+    // Loop points. Setting loop points is tricky. Make sure everything is right.
+    {
+      if(successfully_set_new_sample)
+        RT_set_loop_points_complete(plugin, data, loop_start, loop_end);
+    }
   }
+  
+ exit:  
+  data->is_live = true;
   
   /*  
   if (audiodata_is_included) {    
