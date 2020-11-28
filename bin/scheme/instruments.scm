@@ -1634,7 +1634,7 @@
            (lambda ()
              (FROM_C-show-instrument-color-dialog parentgui instrument-id)))
      (list "Generate new color"
-           :shortcut ra:generate-new-instrument-color
+           :shortcut ra:generate-new-color-for-all-selected-instruments
            (lambda ()
              (<ra> :generate-new-instrument-color instrument-id)))
      
