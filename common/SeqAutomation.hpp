@@ -1066,14 +1066,15 @@ public:
                                                                          data,
                                                                          fill_color,
                                                                          fill_x1, fill_x2);
-    if (_last_painter != NULL){
+    if (_last_painter != NULL)
       delete _last_painter;
-      _last_painter = painter;
-    }
+    
+    _last_painter = painter;
 
     return painter;
   }
 
+  
   void paint(QPainter *p,
              float x1, float y1, float x2, float y2,
              double start_time, double end_time,
@@ -1085,18 +1086,19 @@ public:
              float fill_x1 = -1, float fill_x2 = -1
              ) const
   {
-    const auto *painter = get_painter(x1, y1, x2, y2,
-                                      start_time, end_time,
-                                      color,
-                                      get_y,
-                                      get_x,
-                                      data,
-                                      fill_color,
-                                      fill_x1, fill_x2);
-    
-    painter->paint_fill(p);
-    painter->paint_lines(p);
-    painter->paint_nodes(p);
+    const SeqAutomationPainter<T> painter(_automation,
+                                          _curr_nodenum, _paint_nodes,
+                                          x1, y1, x2, y2,
+                                          start_time, end_time,
+                                          color,
+                                          get_y,
+                                          get_x,
+                                          data,
+                                          fill_color,
+                                          fill_x1, fill_x2);
+    painter.paint_fill(p);
+    painter.paint_lines(p);
+    painter.paint_nodes(p);
   }
 
   void sort_qvector(QVector<T> &ret) const {
