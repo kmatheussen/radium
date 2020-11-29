@@ -2824,7 +2824,7 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
     snprintf(buffer,buffersize-1,"%f ms",data->p.d);
     break;
   case EFF_S:
-    snprintf(buffer,buffersize-1,"%.2f dB",gain2db(data->p.s));
+    set_db_display(buffer, buffersize, gain2db(data->p.s));
     break;
   case EFF_R:
     snprintf(buffer,buffersize-1,"%f ms",data->p.r);
