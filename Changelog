@@ -1,3 +1,12 @@
+Changes 6.5.81 -> 6.5.82:
+* Audio: Fix more than half of VST2 plugins being
+  loaded as mono plugins, even when they are not.
+  (Fix uses code written by falkTX.)
+* Sequencer: Fix memory leak in automation painter.
+* Sampler instrument: Display sustain value as dB.
+
+
+
 Changes 6.5.79 -> 6.5.81:
 * Mixer: Change function used when assigning
   keybinding to "Generate new color" in the popup
