@@ -140,7 +140,9 @@ static int g_num_data = 0;
 
 static int RT_get_latency(const struct SoundPlugin *plugin);
 
-static void set_plugin_type_data(juce::AudioPluginInstance *audio_instance, SoundPluginType *plugin_type);
+static void set_plugin_type_data(juce::AudioPluginInstance *audio_instance, SoundPluginType *plugin_type, int num_inputs, int num_outputs);
+static void findMaxTotalChannels(juce::AudioProcessor* const filter,
+                                 const bool isAU, int& maxTotalIns, int& maxTotalOuts);
 
 namespace{
 
@@ -512,11 +514,18 @@ namespace{
       : audio_instance(audio_instance)
       , _plugin(plugin)
       , playHead(audio_instance->getPluginDescription().name, plugin)
-      , num_input_channels(audio_instance->getTotalNumInputChannels())
-      , num_output_channels(audio_instance->getTotalNumOutputChannels())
         //, buffer(R_MAX(num_input_channels, num_output_channels), RADIUM_BLOCKSIZE)
       , listener(plugin)
     {
+      
+      {
+        // Code copied from https://github.com/falkTX/Carla/blob/master/source/backend/plugin/CarlaPluginJuce.cpp
+        // "Copyright (C) 2013-2020 Filipe Coelho <falktx@falktx.com>"
+        const juce::PluginDescription &fDesc = type_data->description;
+        const bool isAU = fDesc.pluginFormatName == "AU" || fDesc.pluginFormatName == "AudioUnit";
+        findMaxTotalChannels(audio_instance, isAU, num_input_channels, num_output_channels);
+      }
+      
       g_num_data++;
       audio_instance->addListener(&listener);
       midi_buffer.ensureSize(1024*16);
@@ -526,7 +535,7 @@ namespace{
       //buffer.clear(); // Warm cache and ensure the buffer contains physical memory. This call may not be strictly necessary.
       
       if(type_data->effect_names==NULL)
-        set_plugin_type_data(audio_instance,plugin->type); // 'plugin_type' was created here (by using calloc), so it can safely be casted into a non-const.
+        set_plugin_type_data(audio_instance, plugin->type, num_input_channels, num_output_channels); // 'plugin_type' was created here (by using calloc), so it can safely be casted into a non-const.
     }
 
     ~Data(){
@@ -1269,6 +1278,45 @@ static void buffer_size_is_changed(struct SoundPlugin *plugin, int new_buffer_si
 }
 */
 
+// Function copied from https://github.com/falkTX/Carla/blob/master/source/backend/plugin/CarlaPluginJuce.cpp
+// "Copyright (C) 2013-2020 Filipe Coelho <falktx@falktx.com>"
+static void findMaxTotalChannels(juce::AudioProcessor* const filter,
+                                 const bool isAU, int& maxTotalIns, int& maxTotalOuts)
+{
+    filter->enableAllBuses();
+
+    if (isAU)
+    {
+        maxTotalIns  = static_cast<uint32_t>(juce::jmax(0, filter->getTotalNumInputChannels()));
+        maxTotalOuts = static_cast<uint32_t>(juce::jmax(0, filter->getTotalNumOutputChannels()));
+        return;
+    }
+
+    const int numInputBuses  = filter->getBusCount(true);
+    const int numOutputBuses = filter->getBusCount(false);
+
+    if (numInputBuses > 1 || numOutputBuses > 1)
+    {
+        maxTotalIns = maxTotalOuts = 0;
+
+        for (int i = 0; i < numInputBuses; ++i)
+            maxTotalIns += static_cast<uint32_t>(juce::jmax(0, filter->getChannelCountOfBus(true, i)));
+
+        for (int i = 0; i < numOutputBuses; ++i)
+            maxTotalOuts += static_cast<uint32_t>(juce::jmax(0, filter->getChannelCountOfBus(false, i)));
+    }
+    else
+    {
+        maxTotalIns  = numInputBuses  > 0
+                     ? static_cast<uint32_t>(juce::jmax(0, filter->getBus(true, 0)->getMaxSupportedChannels(64)))
+                     : 0;
+
+        maxTotalOuts = numOutputBuses > 0
+                     ? static_cast<uint32_t>(juce::jmax(0, filter->getBus(false, 0)->getMaxSupportedChannels(64)))
+                     : 0;
+    }
+}
+
 // 
 static void RT_MIDI_send_msg_to_patch_receivers2(struct SeqTrack *seqtrack, struct Patch *patch, juce::MidiMessage message, int64_t seq_time){       
   if (message.isNoteOn()) {
@@ -1870,7 +1918,7 @@ static std::unique_ptr<juce::AudioPluginInstance> create_audio_instance(const Ty
 }
 
 
-static void set_plugin_type_data(juce::AudioPluginInstance *audio_instance, SoundPluginType *plugin_type){
+static void set_plugin_type_data(juce::AudioPluginInstance *audio_instance, SoundPluginType *plugin_type, int num_inputs, int num_outputs){
   TypeData *type_data = (struct TypeData*)plugin_type->data;
 
   /*
@@ -1880,9 +1928,9 @@ static void set_plugin_type_data(juce::AudioPluginInstance *audio_instance, Soun
   }
   */
   
-  // The info in PluginDescription is probably fine, but override here just in case.
-  plugin_type->num_inputs = audio_instance->getTotalNumInputChannels();
-  plugin_type->num_outputs = audio_instance->getTotalNumOutputChannels();
+  // The info in PluginDescription is probably fine, but override here just in case. (no, it's not fine anymore. JUCE has started doing something crazy so half of the vst2 plugins list stereo plugins as being mono plugins)
+  plugin_type->num_inputs = num_inputs;
+  plugin_type->num_outputs = num_outputs;
 
   {
     // Maybe this isn't always true...
