@@ -3535,6 +3535,45 @@ static std::unique_ptr<VSTPluginInstance> createAndUpdateDesc (VSTPluginFormat& 
     return {};
 }
 
+// Function copied from https://github.com/falkTX/Carla/blob/master/source/backend/plugin/CarlaPluginJuce.cpp
+// "Copyright (C) 2013-2020 Filipe Coelho <falktx@falktx.com>"
+static void findMaxTotalChannels(juce::AudioProcessor* const filter,
+                                 const bool isAU, int& maxTotalIns, int& maxTotalOuts)
+{
+    filter->enableAllBuses();
+
+    if (isAU)
+    {
+        maxTotalIns  = static_cast<uint32_t>(juce::jmax(0, filter->getTotalNumInputChannels()));
+        maxTotalOuts = static_cast<uint32_t>(juce::jmax(0, filter->getTotalNumOutputChannels()));
+        return;
+    }
+
+    const int numInputBuses  = filter->getBusCount(true);
+    const int numOutputBuses = filter->getBusCount(false);
+
+    if (numInputBuses > 1 || numOutputBuses > 1)
+    {
+        maxTotalIns = maxTotalOuts = 0;
+
+        for (int i = 0; i < numInputBuses; ++i)
+            maxTotalIns += static_cast<uint32_t>(juce::jmax(0, filter->getChannelCountOfBus(true, i)));
+
+        for (int i = 0; i < numOutputBuses; ++i)
+            maxTotalOuts += static_cast<uint32_t>(juce::jmax(0, filter->getChannelCountOfBus(false, i)));
+    }
+    else
+    {
+        maxTotalIns  = numInputBuses  > 0
+                     ? static_cast<uint32_t>(juce::jmax(0, filter->getBus(true, 0)->getMaxSupportedChannels(64)))
+                     : 0;
+
+        maxTotalOuts = numOutputBuses > 0
+                     ? static_cast<uint32_t>(juce::jmax(0, filter->getBus(false, 0)->getMaxSupportedChannels(64)))
+                     : 0;
+    }
+}
+
 void VSTPluginFormat::findAllTypesForFile (OwnedArray<PluginDescription>& results,
                                            const String& fileOrIdentifier)
 {
@@ -3552,10 +3591,12 @@ void VSTPluginFormat::findAllTypesForFile (OwnedArray<PluginDescription>& result
 
     if (instance->getVstCategory() != Vst2::kPlugCategShell)
     {
+      findMaxTotalChannels(instance.get(), false, desc.numInputChannels, desc.numOutputChannels);
         // Normal plugin...
         results.add (new PluginDescription (desc));
 
-        instance->dispatch (Vst2::effOpen, 0, 0, nullptr, 0);
+        // ??
+        //instance->dispatch (Vst2::effOpen, 0, 0, nullptr, 0);
     }
     else
     {
@@ -3580,7 +3621,8 @@ void VSTPluginFormat::findAllTypesForFile (OwnedArray<PluginDescription>& result
                 jassert (desc.uid == uid);
                 desc.hasSharedContainer = true;
                 desc.name = shellEffectName;
-
+                findMaxTotalChannels(shellInstance.get(), false, desc.numInputChannels, desc.numOutputChannels);
+                
                 if (! arrayContainsPlugin (results, desc))
                     results.add (new PluginDescription (desc));
             }
