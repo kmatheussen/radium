@@ -558,8 +558,6 @@ struct Data{
   DEFINE_ATOMIC(struct Data *, new_data) = NULL;
   RSemaphore *signal_from_RT = NULL;
 
-  bool is_live = false;
-  
   DEFINE_ATOMIC(int, recording_status) = 0;
   MySampleRecorderInstance *recorder_instance = NULL;  // thread-protected by recording_status
   int recording_start_frame = 0;  // thread-protected by recording_status
@@ -1331,8 +1329,6 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   Data *data = (Data*)plugin->data;
   Voice *voice = data->voices_playing;
 
-  R_ASSERT_NON_RELEASE(data->is_live);
-  
   memset(outputs[0],0,num_frames*sizeof(float));
   memset(outputs[1],0,num_frames*sizeof(float));
 
@@ -2138,8 +2134,8 @@ static float gran_get_volume(Data *data){
 
   
 
-static void RT_set_loop_points_internal(Data *data, int64_t start, int64_t end, bool force_use_org = false){
-  R_ASSERT_NON_RELEASE(data->is_live==false || PLAYER_current_thread_has_lock());
+static void RT_set_loop_points_internal(const SoundPlugin *plugin, Data *data, int64_t start, int64_t end, bool force_use_org = false){
+  R_ASSERT_NON_RELEASE(!SP_is_plugin_running(plugin) || PLAYER_current_thread_has_lock());
  
   data->p.loop_start = start;
   data->p.loop_end = end;
@@ -2226,7 +2222,7 @@ static void RT_set_loop_points_complete(SoundPlugin *plugin, Data *new_data, int
     }
   }
   
-  RT_set_loop_points_internal(new_data, start, end, force_use_org); // The calls to PLUGIN_set_effect_value above might not have set accurate values due to int64_t -> float conversion.
+  RT_set_loop_points_internal(plugin, new_data, start, end, force_use_org); // The calls to PLUGIN_set_effect_value above might not have set accurate values due to int64_t -> float conversion.
 }
 
   
@@ -2259,7 +2255,7 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
     case EFF_LOOP_OVERRIDE_DEFAULT:
       {
         data->p.loop_override_default = value>=0.5f;
-        RT_set_loop_points_internal(data, data->p.loop_start, data->p.loop_end);
+        RT_set_loop_points_internal(plugin, data, data->p.loop_start, data->p.loop_end);
         update_editor_graphics(plugin);
         if (plugin->patch != NULL)
           GFX_ScheduleInstrumentRedraw((struct Patch*)plugin->patch);
@@ -2270,7 +2266,8 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
       {
         Sample &sample=data->samples[0];
         if (sample.sound != NULL){
-          RT_set_loop_points_internal(data,
+          RT_set_loop_points_internal(plugin,
+                                      data,
                                       R_BOUNDARIES(0,
                                                    value_format==EFFECT_FORMAT_NATIVE ? value : scale_double(value,
                                                                                                              0,1,
@@ -2294,7 +2291,8 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
         //printf("loop end. %p\n", &sample);
         if (sample.sound != NULL){
           //printf("       EFF_LOOP_END: %f (%s). (loop_start: %d. num_frames: %d)\n", value, value_format==EFFECT_FORMAT_NATIVE ? "native" : "scaled", (int)data->p.loop_start, (int)sample.num_frames);
-          RT_set_loop_points_internal(data,
+          RT_set_loop_points_internal(plugin,
+                                      data,
                                       data->p.loop_start,
                                       R_BOUNDARIES(1,
                                                    value_format==EFFECT_FORMAT_NATIVE ? value : scale_double(value,
@@ -3511,8 +3509,6 @@ static bool set_new_sample(struct SoundPlugin *plugin,
 
     //fprintf(stderr, "    *************** 11111. plugin IS running **********\n");
     
-    data->is_live = true;
-    
     ATOMIC_SET(old_data->new_data, data);
 
     if (PLAYER_is_running())
@@ -3976,7 +3972,8 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
   }
   
  exit:  
-  data->is_live = true;
+
+  return;
   
   /*  
   if (audiodata_is_included) {    
