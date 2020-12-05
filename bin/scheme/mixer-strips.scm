@@ -2883,7 +2883,8 @@
   
   (let ((text (<gui> :text *arrow-text2* "" #f #f)))
     ;;(<gui> :set-background-color text "blue") ;; doesn't work.
-    (<gui> :add horizontal-layout text))
+    (<gui> :add horizontal-layout text)
+    (<gui> :set-layout-stretch horizontal-layout text 2))
   
   (define bus-mixer-strips (add-strips (sort-instruments-by-mixer-position-and-connections (cat-instruments :bus-instruments))))
 
