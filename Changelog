@@ -1,3 +1,17 @@
+Changes 6.5.82 -> 6.5.83:
+* Mixer strips: Set max width of a strip.
+* Mixer strips: Pack strips to the left if the
+  strips can't fill all available horizontal space.
+  Instead of spreading them out evenly, that is.
+* Sequencer: Keep track on/off and fade data when
+  replacing block or audiofile in seqblock.
+* Sampler instrument: Fix playing reverse sample in
+  non-looping mode.
+* Plugins: Fixes displaying correct number of
+  channels for VST2 plugins in the plugin manager.
+
+
+
 Changes 6.5.81 -> 6.5.82:
 * Audio: Fix more than half of VST2 plugins being
   loaded as mono plugins, even when they are not.
