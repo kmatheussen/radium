@@ -1698,8 +1698,8 @@ void SEQBLOCK_replace_seqblocks(const vector_t seqblocks, bool must_replace_same
     }
 
     bool has_legalized[root->song->seqtracks.num_elements];
-    for(int i=0;i<=root->song->seqtracks.num_elements;i++)
-      has_legalized[i]=false;
+    for(int i=0 ; i<root->song->seqtracks.num_elements ; i++)
+      has_legalized[i] = false;
     
     for(int i=0;i<num_seqblocks;i++){
       int seqtracknum = get_seqtracknum(seqtracks[i]);
