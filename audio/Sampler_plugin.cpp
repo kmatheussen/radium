@@ -1009,7 +1009,10 @@ static long RT_src_callback(void *cb_data, float **out_data){
   } else if (!loop) {
 
     //printf("NOlooping. %d\n", (int)start_pos);
-    ret = RT_src_callback_nolooping(voice, sample, data, start_pos, out_data);
+    if (reverse)
+      ret = RT_src_callback_reverse(voice, loop_data, sample, data, start_pos, out_data, false);
+    else
+      ret = RT_src_callback_nolooping(voice, sample, data, start_pos, out_data);
       
   } else {
 
