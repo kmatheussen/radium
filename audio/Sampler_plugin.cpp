@@ -2135,7 +2135,7 @@ static float gran_get_volume(Data *data){
   
 
 static void RT_set_loop_points_internal(const SoundPlugin *plugin, Data *data, int64_t start, int64_t end, bool force_use_org = false){
-  R_ASSERT_NON_RELEASE(!SP_is_plugin_running(plugin) || PLAYER_current_thread_has_lock());
+  R_ASSERT_NON_RELEASE(plugin->data!=data || !SP_is_plugin_running(plugin) || PLAYER_current_thread_has_lock());
  
   data->p.loop_start = start;
   data->p.loop_end = end;
