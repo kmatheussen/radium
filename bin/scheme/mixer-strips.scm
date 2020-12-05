@@ -2830,9 +2830,19 @@
   (define num-visible-strips (length enabled-audio-instruments))
   
   (define num-strips-per-row (ceiling (/ num-visible-strips num-rows)))
+
+  (define max-strip-width (floor (* 1.5 (<gui> :text-width "Sample Player 1. Or maybe two and a half"))))
+
+  (define all-strips-are-narrow #f)
   
+  (define (maybe-add-horizontal-spacer)
+    (when (or #t all-strips-are-narrow)
+      (<gui> :add-layout-space horizontal-layout 0 1 #t #f)
+      (set! all-strips-are-narrow #f)))
+
   (define (add-strips id-instruments)
     ;;(c-display "              ADD-strips:" id-instruments)
+    
     (map (lambda (instrument-id)
            (set! (strips-config :row-num instrument-id) row-num)
            ;;(c-display "adding strips for" instrument-id)
@@ -2849,16 +2859,23 @@
                (<gui> :remove-parent mixer-strip)) ;; remove existing parent of stored mixer strip.
            
            (<gui> :add horizontal-layout mixer-strip)
+           (<gui> :set-layout-stretch horizontal-layout mixer-strip 2)
+           
+           (when (<ra> :has-wide-instrument-strip instrument-id)
+             (set! all-strips-are-narrow #f)
+             (<gui> :set-max-width mixer-strip max-strip-width))
            
            (set! column-num (1+ column-num))
-           (if (= num-strips-per-row column-num)
-               (add-new-horizontal-layout!))
+           
+           (when (= num-strips-per-row column-num)
+             (maybe-add-horizontal-spacer)
+             (add-new-horizontal-layout!))
+           
            (create-stored-mixer-strip instrument-id
                                       mixer-strip))
          (keep (lambda (id)
                  (strips-config :is-enabled id))
                id-instruments)))
-
 
   (define cat-instruments (<new> :get-cat-instruments))
   
@@ -2869,6 +2886,8 @@
     (<gui> :add horizontal-layout text))
   
   (define bus-mixer-strips (add-strips (sort-instruments-by-mixer-position-and-connections (cat-instruments :bus-instruments))))
+
+  (maybe-add-horizontal-spacer)
 
 
   '(<gui> :add-resize-callback mixer-strips-gui
