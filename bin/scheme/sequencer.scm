@@ -1834,41 +1834,73 @@
 (get-curr-seqblock-infos-under-mouse)
 !!#
 
+(define (get-seqblock-on/offs seqblock-info)
+  (define blocknum (<ra> :get-seqblock-blocknum (seqblock-info :seqblocknum) (seqblock-info :seqtracknum)))
+  (map (lambda (tracknum)
+         (<ra> :is-seqblock-track-enabled tracknum (seqblock-info :seqblocknum) (seqblock-info :seqtracknum)))
+       (iota (<ra> :get-num-tracks blocknum))))
+
+(define (apply-seqblock-on/offs seqblock-info seqblock-on/offs)
+  (define blocknum (<ra> :get-seqblock-blocknum (seqblock-info :seqblocknum) (seqblock-info :seqtracknum)))
+  (define num-tracks (<ra> :get-num-tracks blocknum))
+  (if (= num-tracks (length seqblock-on/offs)) ;; we could apply, no problem (map automatically takes care of it working), but chances are that the track configurations are not similar.
+      (map (lambda (tracknum on/off)
+             (<ra> :set-seqblock-track-enabled on/off tracknum (seqblock-info :seqblocknum) (seqblock-info :seqtracknum)))
+           (iota num-tracks)
+           seqblock-on/offs)))
+
+(define (get-seqblock-fades seqblock-info)
+  (hash-table :fade-in (<ra> :get-seqblock-fade-in (seqblock-info :seqblocknum) (seqblock-info :seqtracknum))
+              :fade-out (<ra> :get-seqblock-fade-out (seqblock-info :seqblocknum) (seqblock-info :seqtracknum))
+              :fade-shape-in (<ra> :get-seqblock-fade-shape #t (seqblock-info :seqblocknum) (seqblock-info :seqtracknum))
+              :fade-shape-out (<ra> :get-seqblock-fade-shape #f (seqblock-info :seqblocknum) (seqblock-info :seqtracknum))))
+
+(define (apply-seqblock-fades seqblock-info seqblock-fades)
+  (<ra> :set-seqblock-fade-shape (seqblock-fades :fade-shape-in) #t (seqblock-info :seqblocknum) (seqblock-info :seqtracknum))
+  (<ra> :set-seqblock-fade-shape (seqblock-fades :fade-shape-out) #f (seqblock-info :seqblocknum) (seqblock-info :seqtracknum))
+  (<ra> :set-seqblock-fade-in (seqblock-fades :fade-in) (seqblock-info :seqblocknum) (seqblock-info :seqtracknum))
+  (<ra> :set-seqblock-fade-out (seqblock-fades :fade-out) (seqblock-info :seqblocknum) (seqblock-info :seqtracknum)))
+
+;; todo.
+;;(define (get-seqblock-automations seqblock-info)
+;;  #t)
+
+(define (get-replace-seqblock-state for-audiofiles seqblock-info)
+  (hash-table :on/offs (and (not for-audiofiles)
+                            (get-seqblock-on/offs seqblock-info))
+              :fades (get-seqblock-fades seqblock-info)))
+
+(define (apply-replace-seqblock-state for-audiofiles seqblock-info state)
+  (if (not for-audiofiles)
+      (apply-seqblock-on/offs seqblock-info (state :on/offs)))
+  (apply-seqblock-fades seqblock-info (state :fades)))
+              
+
 ;; Note: Used for shortcut
 (define (replace-seqblocks seqblock-infos
                            get-block-or-audiofile)
-  (c-display seqblock-infos)
-  
+  ;;(c-display seqblock-infos)
   (when (not (null? seqblock-infos))
     (define for-audiofiles (<ra> :seqtrack-for-audiofiles (seqblock-infos 0 :seqtracknum)))
-    
-    (if (not (null? seqblock-infos))
-        (if for-audiofiles
-            (get-block-or-audiofile for-audiofiles
-                                    (lambda (audiofile)
-                                      (undo-block
-                                       (lambda ()
-                                         (for-each (lambda (seqblock-info)
-                                                     (let* ((seqblocknum (seqblock-info :seqblocknum))
-                                                            (seqtracknum (seqblock-info :seqtracknum))
-                                                            (pos (<ra> :get-seqblock-start-time seqblocknum seqtracknum)))
-                                                       (set! *current-seqblock-info* #f)
-                                                       (<ra> :delete-seqblock (seqblock-info :id))
-                                                       (<ra> :create-sample-seqblock seqtracknum audiofile pos)))
-                                                   seqblock-infos)))))
-            (get-block-or-audiofile for-audiofiles
-                                    (lambda (blocknum)
-                                      (undo-block
-                                       (lambda ()
-                                         (for-each (lambda (seqblock-info)
-                                                     (let* ((seqblocknum (seqblock-info :seqblocknum))
-                                                            (seqtracknum (seqblock-info :seqtracknum))
-                                                            (pos (<ra> :get-seqblock-start-time seqblocknum seqtracknum)))
-                                                       (set! *current-seqblock-info* #f)
-                                                       (<ra> :delete-seqblock (seqblock-info :id))
-                                                       (<ra> :create-seqblock seqtracknum blocknum pos)))
-                                                   seqblock-infos)))
-                                      (<ra> :select-block blocknum)))))))
+    (get-block-or-audiofile for-audiofiles
+                            (lambda (blocknum-or-audiofile)
+                              (undo-block
+                               (lambda ()
+                                 (for-each (lambda (seqblock-info)
+                                             (let* ((seqblocknum (seqblock-info :seqblocknum))
+                                                    (seqtracknum (seqblock-info :seqtracknum))
+                                                    (state (get-replace-seqblock-state for-audiofiles seqblock-info))
+                                                    (pos (<ra> :get-seqblock-start-time seqblocknum seqtracknum)))
+                                               (set! *current-seqblock-info* #f)
+                                               (<ra> :delete-seqblock (seqblock-info :id))
+                                               (define new-seqblocknum (if for-audiofiles
+                                                                           (<ra> :create-sample-seqblock seqtracknum blocknum-or-audiofile pos)
+                                                                           (<ra> :create-seqblock seqtracknum blocknum-or-audiofile pos)))
+                                               (if (>= new-seqblocknum 0)
+                                                   (apply-replace-seqblock-state for-audiofiles (make-seqblock-info2 seqtracknum new-seqblocknum) state))))
+                                           seqblock-infos)))
+                              (if (not for-audiofiles)
+                                  (<ra> :select-block blocknum-or-audiofile))))))
 
 (delafina (replace-seqblocks-with-existing-or-new-block-or-audiofile :seqblock-infos (get-curr-seqblock-infos-under-mouse))
   (replace-seqblocks seqblock-infos
