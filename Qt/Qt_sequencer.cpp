@@ -2080,7 +2080,7 @@ public:
     
     return true;
   }
-  
+
   void paint_automation(const QRegion &update_region, QPainter &p, const struct SeqTrack *seqtrack) {
     SEQTRACK_AUTOMATION_paint(&p, seqtrack, t_x1, t_y1, t_x2, t_y2, _start_time, _end_time);
   }

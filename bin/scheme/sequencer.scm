@@ -1073,8 +1073,8 @@
       (ask-user-about-first-audio-seqtrack
        (lambda (doit)
          (if doit
-             (<ra> :insert-seqtrack #t seqtracknum is-bus #t))))
-      (<ra> :insert-seqtrack for-audiofiles seqtracknum is-bus #t)))
+             (<ra> :insert-seqtrack-internal #t seqtracknum is-bus))))
+      (<ra> :insert-seqtrack-internal for-audiofiles seqtracknum is-bus)))
 
 
 

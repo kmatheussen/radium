@@ -257,6 +257,23 @@ float getSeqnavRightSizeHandleY2(void){
   return getSeqnavY2();
 }
 
+static void insertSeqtrackInternal2(bool for_audiofiles, int pos, bool is_bus){
+  SEQUENCER_insert_seqtrack(pos, for_audiofiles, is_bus);
+  setCurrSeqtrack(pos, false, true);
+}
+
+void insertSeqtrackInternal(bool for_audiofiles, int pos, bool is_bus){
+  if (pos==-1)
+    pos = ATOMIC_GET(root->song->curr_seqtracknum);
+  
+  if (pos < 0 || pos > root->song->seqtracks.num_elements){
+    handleError("Position #%d not legal", pos);
+    return;
+  }
+
+  insertSeqtrackInternal2(for_audiofiles, pos, is_bus);
+}
+
 void insertSeqtrack(bool for_audiofiles, int pos, bool is_bus, bool force_insert){
   if (pos==-1)
     pos = ATOMIC_GET(root->song->curr_seqtracknum);
@@ -267,9 +284,8 @@ void insertSeqtrack(bool for_audiofiles, int pos, bool is_bus, bool force_insert
   }
 
   if (force_insert){
-    
-    SEQUENCER_insert_seqtrack(pos, for_audiofiles, is_bus);
-    setCurrSeqtrack(pos, false, true);
+
+    insertSeqtrackInternal2(for_audiofiles, pos, is_bus);
     
   } else {
 
