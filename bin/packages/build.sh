@@ -133,7 +133,7 @@ cd libpd-master/
 sed -i '/define CFLAGS/ s|")| -I/usr/include/tirpc ")|' make.scm
 sed -i 's/k_cext$//' make.scm
 sed -i 's/oscx //' make.scm
-sed -i 's/gcc -O3/clang -Wno-return-type -O3/' make.scm
+sed -i 's/gcc -O3/gcc -fcommon -O3/' make.scm
 make clean
 make -j`nproc`
 cd ..
