@@ -1046,6 +1046,7 @@
 
 
 (<declare-variable> *current-seqblock-info*)
+(<declare-variable> make-seqblock-info2)
 
 (define (FROM_C-call-me-after-seqtrack-has-been-deleted)
   (set! *current-seqblock-info* #f)
