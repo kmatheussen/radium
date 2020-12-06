@@ -1354,7 +1354,7 @@ protected:
       if (s_last_g_main_timer_num_calls==g_main_timer_num_calls && s_last_stack_pos!=(&stack_pos)){
         
         s_num_calls_same_timer++;
-        printf("    NUM: %d\n",(int)s_num_calls_same_timer);
+        //printf("    NUM: %d\n",(int)s_num_calls_same_timer);
         
         if (s_num_calls_same_timer>=10000){
           R_ASSERT(false);
