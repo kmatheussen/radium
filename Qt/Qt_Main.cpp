@@ -642,6 +642,11 @@ static void schedule_set_editor_focus(int ms){
   QTimer::singleShot(ms, set_editor_focus);
 }
 
+namespace radium{
+  class EndlessRecursion{
+  };
+}
+
 namespace{
   struct MouseCycle{    
     QPointer<QObject> widget;
@@ -1326,8 +1331,55 @@ protected:
     return true;
    }
 
+#if 0
+  // Did not work. Program just stopped doing anything.
+  bool notify(QObject* receiver, QEvent* event) override {
+    if (g_endless_recursion && dynamic_cast<QShowEvent*>(event)!=NULL)
+      return false;
+    else
+      return QApplication::notify(receiver, event);
+  }
+#endif
+  
   bool eventFilter(QObject *obj, QEvent *event) override {
 
+    // Detect recursive Qt loop.
+    {
+      bool stack_pos = 0;
+      
+      static int64_t s_last_g_main_timer_num_calls = -1;
+      static int64_t s_num_calls_same_timer = 0;
+      static bool *s_last_stack_pos = NULL;
+      
+      if (s_last_g_main_timer_num_calls==g_main_timer_num_calls && s_last_stack_pos!=(&stack_pos)){
+        
+        s_num_calls_same_timer++;
+        printf("    NUM: %d\n",(int)s_num_calls_same_timer);
+        
+        if (s_num_calls_same_timer>=10000){
+          R_ASSERT(false);
+          s_num_calls_same_timer = 0;
+          throw radium::EndlessRecursion();
+          return false;
+        }
+
+        if (s_num_calls_same_timer>=5000){
+          R_ASSERT(false);
+          g_endless_recursion = true;
+          return false;
+        }
+
+      } else {
+
+        g_endless_recursion = false;
+        s_last_g_main_timer_num_calls = g_main_timer_num_calls;
+        s_num_calls_same_timer = 0;
+        
+      }
+
+      s_last_stack_pos = &stack_pos;
+    }      
+    
 #if 1 // Only needed on macOS, but we do it on all platforms so that it is tested.
 
     // We do this stuff to make ctrl-click work on mac.
@@ -1874,7 +1926,7 @@ static DEFINE_ATOMIC(bool, g_request_to_start_playing) = false;
 static DEFINE_ATOMIC(bool, g_request_to_continue_playing) = false;
 static DEFINE_ATOMIC(bool, g_request_to_stop_playing) = false;
 
-int g_main_timer_num_calls = 0;
+int64_t g_main_timer_num_calls = 0;
 
 namespace{
   struct NoKeyboardEventsQMessageBox : public QMessageBox {
@@ -3356,7 +3408,14 @@ int radium_main(const char *arg){
 #endif
 
 #if USE_QT_VISUAL
-  qapplication->exec();
+ again:
+  try{
+    qapplication->exec();
+  } catch (radium::EndlessRecursion e){
+    SYSTEM_show_error_message("This is a serious bug. You should save and restart the program immediately.");
+    g_endless_recursion = false;
+    goto again; // Doesn't work very well, but it might give the user a chance to save song.
+  }
 #else
   GTK_MainLoop();
 #endif
