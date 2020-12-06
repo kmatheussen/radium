@@ -1355,15 +1355,21 @@ protected:
         
         s_num_calls_same_timer++;
         //printf("    NUM: %d\n",(int)s_num_calls_same_timer);
+
+#if defined(RELEASE)
+        constexpr int dasmax = 4000;
+#else
+        constexpr int dasmax = 1000;
+#endif
         
-        if (s_num_calls_same_timer>=10000){
+        if (s_num_calls_same_timer>=dasmax*2){
           R_ASSERT(false);
           s_num_calls_same_timer = 0;
           throw radium::EndlessRecursion();
           return false;
         }
 
-        if (s_num_calls_same_timer>=5000){
+        if (s_num_calls_same_timer>=dasmax){
           R_ASSERT(false);
           g_endless_recursion = true;
           return false;
