@@ -1,3 +1,19 @@
+Changes 6.5.83 -> 6.5.84:
+* GUI: Don't crash when pressing the "S" button in
+  the mixer and the sequencer is in full mode.
+* GUI: General fix to prevent program from crashing
+  if going into an endless recursive loop.
+* Sequencer: Remember current seqtrack when undoing
+  and redoing.
+* Sequencer: Remove flickering when undoing and
+  redoing.
+* Build: Fix compiling Pd using gcc/clang 10+
+  (Teteros).
+* Mixer strips: Fix width of the arrow separating
+  non-bus and bus strips.
+
+
+
 Changes 6.5.82 -> 6.5.83:
 * Mixer strips: Set max width of a strip.
 * Mixer strips: Pack strips to the left if the
