@@ -3587,8 +3587,6 @@ static double find_samplerate_in_old_song_state(hash_t *song_state){
 
 void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
 
-  int new_curr_seqtracknum = HASH_has_key(state, "curr_seqtracknum") ? HASH_get_int32(state, "curr_seqtracknum") : 0;
-
   {
     SEQUENCER_ScopedGfxDisable gfx_disable;
 
@@ -3715,8 +3713,9 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
       
       song->seqtracks = seqtracks;
 
-      ATOMIC_SET(song->curr_seqtracknum, new_curr_seqtracknum);
-
+      ATOMIC_SET(song->curr_seqtracknum, 0);
+      song->topmost_visible_seqtrack = 0;
+      
       VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &song->seqtracks){
         SEQTRACKPLUGIN_assert_samples2(seqtrack);
       }END_VECTOR_FOR_EACH;
@@ -3808,6 +3807,7 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
   if (g_is_loading) {
     
     QTimer::singleShot(100, []{
+        SEQUENCER_update(SEQUPDATE_TRACKCOORDINATES);
         setTopmostVisibleSeqtrack(0);
         setCurrSeqtrack(0, true, false);
         SEQUENCER_update(SEQUPDATE_EVERYTHING);    
@@ -3815,6 +3815,9 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
     
   } else {
 
+    int new_curr_seqtracknum = HASH_has_key(state, "curr_seqtracknum") ? HASH_get_int32(state, "curr_seqtracknum") : 0;
+
+    SEQUENCER_update(SEQUPDATE_TRACKCOORDINATES);
     setCurrSeqtrack(new_curr_seqtracknum, true, false);
     SEQUENCER_update(SEQUPDATE_EVERYTHING);
     
