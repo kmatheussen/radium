@@ -532,17 +532,29 @@ void showHideFocusSequencer(void){
 
 
 void configureSequencerWidget(bool in_window, bool in_main_tabs){
-  bool change_window = in_window != sequencerInWindow();
-  bool change_position = in_main_tabs == g_sequencerInMixer;
+  bool currently_in_window = sequencerInWindow();
+  bool currently_in_main_tabs = !g_sequencerInMixer;
+  
+  bool change_window = in_window != currently_in_window;
+  bool change_position = in_main_tabs != currently_in_main_tabs;
 
   if(change_window || change_position) {
 
+    g_sequencerInMixer = !in_main_tabs;
+    
     {
       if(change_position && !in_main_tabs){
         API_setLowertabIncludesSequencer(false);
       }
-      
-      S7CALL2(void_bool_bool, "FROM-C-configure-sequencer-widget!", in_window, in_main_tabs);
+
+      S7EXTRA_GET_FUNC(func, "FROM-C-configure-sequencer-widget!");
+      s7extra_applyFunc_void_varargs(func,
+                                     DYN_create_bool(currently_in_window),
+                                     DYN_create_bool(currently_in_main_tabs),
+                                     DYN_create_bool(in_window),
+                                     DYN_create_bool(in_main_tabs),
+                                     g_uninitialized_dyn
+                                     );
       
       if(change_position && in_main_tabs){
         API_setLowertabIncludesSequencer(true);
@@ -550,7 +562,6 @@ void configureSequencerWidget(bool in_window, bool in_main_tabs){
     }
     
     if (change_position) {
-      g_sequencerInMixer = !in_main_tabs;
       SETTINGS_write_bool("position_sequencer_widget_in_mixer", g_sequencerInMixer);
       MW_update_sequencer_in_mixer_checkbox();
       SEQUENCER_update(SEQUPDATE_REMAKE_LEFT_PART); // Make sure F button is correctly shown/hidden.
