@@ -3587,6 +3587,8 @@ static double find_samplerate_in_old_song_state(hash_t *song_state){
 
 void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
 
+  int new_curr_seqtracknum = HASH_has_key(state, "curr_seqtracknum") ? HASH_get_int32(state, "curr_seqtracknum") : 0;
+
   {
     SEQUENCER_ScopedGfxDisable gfx_disable;
 
@@ -3705,8 +3707,6 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
       }
     }
     
-    int new_curr_seqtracknum = HASH_has_key(state, "curr_seqtracknum") ? HASH_get_int32(state, "curr_seqtracknum") : 0;
-
     const vector_t old_seqtracks = song->seqtracks;
     
     {
@@ -3805,11 +3805,20 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
   if (HASH_has_key(state, "seqtrack_config"))
     SEQTRACKS_apply_config_state(HASH_get_hash(state, "seqtrack_config"));
 
-  QTimer::singleShot(100, []{
-      setTopmostVisibleSeqtrack(0);
-      setCurrSeqtrack(0, true, false);
-      SEQUENCER_update(SEQUPDATE_EVERYTHING);
-    });
+  if (g_is_loading) {
+    
+    QTimer::singleShot(100, []{
+        setTopmostVisibleSeqtrack(0);
+        setCurrSeqtrack(0, true, false);
+        SEQUENCER_update(SEQUPDATE_EVERYTHING);    
+      });
+    
+  } else {
+
+    setCurrSeqtrack(new_curr_seqtracknum, true, false);
+    SEQUENCER_update(SEQUPDATE_EVERYTHING);
+    
+  }
 }
 
 // Only used by undo/redo
