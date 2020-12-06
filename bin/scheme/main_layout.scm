@@ -265,17 +265,15 @@
         (window *sequencer-window-gui*))
     (<gui> :remove-parent sequencer-gui)
     (if (not move-to-main-tabs)
-        (begin
-          (let ((ysplitter (<gui> :get-mixer-y-splitter)))
-            (define mixer-height (<gui> :height ysplitter))
-            (define sequencer-height (<gui> :height sequencer-gui))
-            (<gui> :add ysplitter sequencer-gui)
-            (<gui> :show sequencer-gui)
-            ;;(c-display "H1/2:" (list (- mixer-height sequencer-height)
-            ;;                         sequencer-height))
-            (<gui> :set-splitter-sizes ysplitter (list (max 10 (- mixer-height sequencer-height))
-                                                       sequencer-height))
-            )
+        (let ((ysplitter (<gui> :get-mixer-y-splitter)))
+          (define mixer-height (<gui> :height ysplitter))
+          (define sequencer-height (<gui> :height sequencer-gui))
+          (<gui> :add ysplitter sequencer-gui)
+          (<gui> :show sequencer-gui)
+          ;;(c-display "H1/2:" (list (- mixer-height sequencer-height)
+          ;;                         sequencer-height))
+          (<gui> :set-splitter-sizes ysplitter (list (max 10 (- mixer-height sequencer-height))
+                                                     sequencer-height))
           #t)
         (begin
           (<gui> :add-tab *lowertab-gui* *sequencer-gui-tab-name* sequencer-gui 0)
@@ -327,10 +325,7 @@
           (recall-lower-tabs-height)
           (<ra> :show-upper-part-of-main-window)))))
 
-(define (FROM-C-configure-sequencer-widget! in-window in-main-tabs)
-  (define currently-in-window (FROM-C-sequencer-gui-in-window))
-  (define currently-in-main-tabs (not (<ra> :sequencer-in-mixer)))
-
+(define (FROM-C-configure-sequencer-widget! currently-in-window currently-in-main-tabs in-window in-main-tabs)
   (define change-window (not (eq? in-window currently-in-window)))
   (define change-position (not (eq? in-main-tabs currently-in-main-tabs)))
 

@@ -1359,7 +1359,7 @@ protected:
 #if defined(RELEASE)
         constexpr int dasmax = 4000;
 #else
-        constexpr int dasmax = 1000;
+        constexpr int dasmax = 2000;
 #endif
         
         if (s_num_calls_same_timer>=dasmax*2){
