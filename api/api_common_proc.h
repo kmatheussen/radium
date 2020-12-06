@@ -35,7 +35,7 @@ extern void throwExceptionIfError(void); // Warning, is likely to cause a longjm
 extern void clearErrorMessage(void); // Should be called before running code that might call handleError followed by throwExceptionIfError.
 
 extern const char *g_last_api_entry_func_name;
-
+extern bool g_endless_recursion;
 extern bool g_ignore_s_is_calling;
 
   
