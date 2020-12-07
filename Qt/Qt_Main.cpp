@@ -1417,14 +1417,12 @@ protected:
       static int64_t s_last_g_main_timer_num_calls = -1;
       static int64_t s_num_calls_same_timer = 0;
 
-      bool is_intercepted = s_last_g_main_timer_num_calls!=g_main_timer_num_calls;
-
-      if (is_intercepted)
+      if (s_last_g_main_timer_num_calls!=g_main_timer_num_calls)
         detect_stack_grows_one_direction.reset();
 
       DetectStackGrowsOneDirection::PointResult stack_direction = detect_stack_grows_one_direction.add_point(&stack_pos);
         
-      if (is_intercepted || stack_direction==DetectStackGrowsOneDirection::PointResult::Changed_Direction) {
+      if (stack_direction==DetectStackGrowsOneDirection::PointResult::New_Point || stack_direction==DetectStackGrowsOneDirection::PointResult::Changed_Direction) {
 
         g_endless_recursion = false;
         s_last_g_main_timer_num_calls = g_main_timer_num_calls;
