@@ -172,18 +172,42 @@ bool TRACK_has_peaks(struct Tracks *track){
   }
 }
 
+#if 0
+static int g_num_live_tracks = 0;
+
+static void trackgcfinalizer(void *actual_mem_start, void *user_data){
+  struct Tracks *track = (struct Tracks*)actual_mem_start;
+  printf("    GC-ed TRACK %d. Num: %d\n", track->l.num, g_num_live_tracks);
+  g_num_live_tracks--;
+}
+#endif
+
 // l.num must not be set here!
-void InitTrack(struct Tracks *track){
+static void InitTrack(struct Tracks *track){
 	track->onoff=1;
 	track->trackname="(click me)";
 	track->volume=1000;
 	track->panonoff=false;
 	track->volumeonoff=true;
         MIDI_init_track(track);
+#if 0
+        track->stops2 = new radium::TimeData<r::Stop, Ratio>;
+
+        g_num_live_tracks++;
+        GC_register_finalizer(track, trackgcfinalizer, NULL, NULL, NULL);
+
+        printf("--------------------------------NUM live tracks: %d-------------------------\n", g_num_live_tracks);
+#endif
+}
+
+struct Tracks *TRACK_create(int tracknum){
+  struct Tracks *track=(struct Tracks*)talloc(sizeof(struct Tracks));
+  track->l.num = tracknum;
+  InitTrack(track);
+  return track;
 }
 
 static void NewTrack(struct Blocks *block,struct Tracks *track){
-  InitTrack(track);
   ListAddElement1(&block->tracks,&track->l);
   g_editor_blocks_generation++;
 }
@@ -191,7 +215,7 @@ static void NewTrack(struct Blocks *block,struct Tracks *track){
 void AppendTrack(struct Blocks *block){
         int tracknum = block->tracks==NULL ? 0 : ListFindFirstFreePlace1(&block->tracks->l);
 
-	struct Tracks *temp=talloc(sizeof(struct Tracks));
+	struct Tracks *temp=TRACK_create(tracknum);
 
         //printf("AppendTrack. num: %d\n",tracknum);
 
@@ -269,7 +293,7 @@ bool TRACK_split_into_monophonic_tracks(struct Tracker_Windows *window, struct W
   
   PlayStop(); // This function is too chaotic. Don't bother pausing player.
 
-  vector_t notesvector = {0};
+  vector_t notesvector = {};
   
   struct Tracks *track = wtrack->track;
 
@@ -329,19 +353,19 @@ bool TRACK_split_into_monophonic_tracks(struct Tracker_Windows *window, struct W
   printf("Vector length: %d\n",num_tracks);
   int i;
   for(i=0;i<num_tracks;i++){
-    struct Notes *notes = notesvector.elements[i];
+    struct Notes *notes = (struct Notes*)notesvector.elements[i];
     printf("  %d: %d\n", i, ListFindNumElements3((struct ListHeader3*)notes));
     while(notes != NULL){
       printf("    %s\n",NotesTexts3[(int)notes->note]);
       notes = NextNote(notes);
     }
     
-    struct WTracks *towtrack = ListFindElement1(&wblock->wtracks->l, wtrack->l.num+i);
+    struct WTracks *towtrack = (struct WTracks*)ListFindElement1(&wblock->wtracks->l, wtrack->l.num+i);
     
     if (i>0)
       co_CB_PasteTrack(wblock, wtrack_copy, towtrack);
 
-    towtrack->track->notes = notesvector.elements[i];
+    towtrack->track->notes = (struct Notes*)notesvector.elements[i];
   }
 
   window->must_redraw = true;

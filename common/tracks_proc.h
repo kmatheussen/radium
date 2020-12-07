@@ -25,7 +25,7 @@ extern LANGSPEC bool TRACK_get_min_and_max_pitches(const struct Tracks *track, f
 extern LANGSPEC bool TRACK_has_peaks(struct Tracks *track);
 extern LANGSPEC void CloseTrack(struct Blocks *block, NInt tracknum);
 extern LANGSPEC void CloseAllTracks(struct Blocks *block);
-extern LANGSPEC void InitTrack(struct Tracks *track);
+extern LANGSPEC struct Tracks *TRACK_create(int tracknum);
 extern LANGSPEC void AppendTrack(struct Blocks *block);
 extern LANGSPEC void TRACK_make_monophonic_destructively(struct Tracks *track);
 extern LANGSPEC bool TRACK_split_into_monophonic_tracks(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack);

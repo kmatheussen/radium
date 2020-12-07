@@ -14,27 +14,23 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#pragma once
 
 
-
-
-#ifndef TRACKER_INCLUDE
-
-extern bool mo_CB_PasteTrack(
+extern LANGSPEC bool mo_CB_PasteTrack(
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
 	struct WTracks *towtrack
 );
 
-extern bool co_CB_PasteTrack(
+extern LANGSPEC bool co_CB_PasteTrack(
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
 	struct WTracks *towtrack
 );
 
-extern void CB_PasteTrack_CurrPos(struct Tracker_Windows *window);
+extern LANGSPEC void CB_PasteTrack_CurrPos(struct Tracker_Windows *window);
 
-#endif
 
 
 
