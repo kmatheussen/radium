@@ -1340,26 +1340,99 @@ protected:
       return QApplication::notify(receiver, event);
   }
 #endif
+
+  // Since we don't know whether stack grows up or down (and we rather not want to try to find out), we use this one to check if it grows in the same direction, to see if there's a potential endless recursive loop going on.
+  class DetectStackGrowsOneDirection{
+    int _direction = 0; // -1=down, 1=up, 0=no data
+    uintptr_t _last_point = 0;
+
+  public:
+    
+    void reset(void){
+      _direction = 0;
+      _last_point = 0;
+    }
+    
+    // Returns false if stack is not growing in one direction.
+    bool add_point(int *point){
+
+      uintptr_t new_point = reinterpret_cast<std::uintptr_t>(point);
+      
+      if (_last_point == 0) {
+
+        _last_point = new_point;
+        R_ASSERT(_direction==0);
+        
+        return true;
+
+      } else {
+        
+        if (new_point > _last_point){
+          
+          if (_direction==-1) {
+            reset();
+            return false;
+          } else {
+            _last_point = new_point;
+            _direction = 1;
+            return true;
+          }
+          
+        } else if (new_point==_last_point) {
+
+          reset();
+          return false;
+          
+        } else {
+          
+          if (_direction==1) {
+            reset();
+            return false;
+          } else {
+            _direction = -1;
+            _last_point = new_point;
+            return true;
+          }
+          
+        }
+        
+      }
+    }
+  };
+
+  DetectStackGrowsOneDirection detect_stack_grows_one_direction;
   
   bool eventFilter(QObject *obj, QEvent *event) override {
 
     // Detect recursive Qt loop.
     {
-      bool stack_pos = 0;
+      int stack_pos = 0;
       
       static int64_t s_last_g_main_timer_num_calls = -1;
       static int64_t s_num_calls_same_timer = 0;
-      static bool *s_last_stack_pos = NULL;
+
+      bool is_intercepted = s_last_g_main_timer_num_calls!=g_main_timer_num_calls;
+
+      if (is_intercepted)
+        detect_stack_grows_one_direction.reset();
       
-      if (s_last_g_main_timer_num_calls==g_main_timer_num_calls && s_last_stack_pos!=(&stack_pos)){
+      bool grows_one_direction = detect_stack_grows_one_direction.add_point(&stack_pos);
         
+      if (is_intercepted || !grows_one_direction) {
+
+        g_endless_recursion = false;
+        s_last_g_main_timer_num_calls = g_main_timer_num_calls;
+        s_num_calls_same_timer = 0;
+        
+      } else {
+
         s_num_calls_same_timer++;
         //printf("    NUM: %d\n",(int)s_num_calls_same_timer);
 
 #if defined(RELEASE)
-        constexpr int dasmax = 4000;
-#else
         constexpr int dasmax = 2000;
+#else
+        constexpr int dasmax = 200;
 #endif
         
         if (s_num_calls_same_timer>=dasmax*2){
@@ -1375,15 +1448,7 @@ protected:
           return false;
         }
 
-      } else {
-
-        g_endless_recursion = false;
-        s_last_g_main_timer_num_calls = g_main_timer_num_calls;
-        s_num_calls_same_timer = 0;
-        
       }
-
-      s_last_stack_pos = &stack_pos;
     }      
     
 #if 1 // Only needed on macOS, but we do it on all platforms so that it is tested.

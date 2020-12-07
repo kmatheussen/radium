@@ -855,14 +855,17 @@ $(T)hashmap.o:  $(BUILD_DEPENDENCIES) $(CD)hashmap.c
 $(T)Dynvec.o:  $(BUILD_DEPENDENCIES) $(CD)Dynvec.c $(CD)dyn_type.h $(CD)nsmtracker.h
 	$(CC2) $(CD)Dynvec.c $(OPT)
 
+$(T)TimeData.o: $(BUILD_DEPENDENCIES) $(CD)TimeData.cpp $(CD)TimeData.hpp
+	$(CCC2) $(CD)TimeData.cpp $(CPPOPT)
+
 $(T)song.o:  $(BUILD_DEPENDENCIES) $(CD)song.c 
 	$(CC2) $(CD)song.c $(OPT)
 
 $(T)blocks.o:  $(BUILD_DEPENDENCIES) $(CD)blocks.cpp
 	$(CCC2) $(CD)blocks.cpp $(QTOPT)
 
-$(T)tracks.o:  $(BUILD_DEPENDENCIES) $(CD)tracks.c 
-	$(CC2) $(CD)tracks.c $(OPT)
+$(T)tracks.o:  $(BUILD_DEPENDENCIES) $(CD)tracks.cpp $(CD)TimeData.hpp
+	$(CCC2) $(CD)tracks.cpp $(CPPOPT)
 
 $(T)localzooms.o:  $(BUILD_DEPENDENCIES) $(CD)localzooms.c 
 	$(CC2) $(CD)localzooms.c $(OPT)
