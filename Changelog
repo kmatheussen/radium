@@ -1,3 +1,9 @@
+Changes 6.5.84 -> 6.5.85:
+* GUI: Improve Qt recursion detection. Hopefully
+  there won't be false positives on macos now.
+
+
+
 Changes 6.5.83 -> 6.5.84:
 * GUI: Don't crash when pressing the "S" button in
   the mixer and the sequencer is in full mode.
