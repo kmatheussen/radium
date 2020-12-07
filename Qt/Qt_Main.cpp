@@ -1352,9 +1352,16 @@ protected:
       _direction = 0;
       _last_point = 0;
     }
+
+    enum class PointResult {
+      New_Point,
+      Changed_Direction,
+      Same_Point,
+      Same_Direction,
+    };
     
     // Returns false if stack is not growing in one direction.
-    bool add_point(int *point){
+    PointResult add_point(int *point){
 
       uintptr_t new_point = reinterpret_cast<std::uintptr_t>(point);
       
@@ -1363,7 +1370,7 @@ protected:
         _last_point = new_point;
         R_ASSERT(_direction==0);
         
-        return true;
+        return PointResult::New_Point;
 
       } else {
         
@@ -1371,27 +1378,26 @@ protected:
           
           if (_direction==-1) {
             reset();
-            return false;
+            return PointResult::Changed_Direction;
           } else {
             _last_point = new_point;
             _direction = 1;
-            return true;
+            return PointResult::Same_Direction;
           }
           
         } else if (new_point==_last_point) {
 
-          reset();
-          return false;
+          return PointResult::Same_Point;
           
         } else {
           
           if (_direction==1) {
             reset();
-            return false;
+            return PointResult::Changed_Direction;
           } else {
             _direction = -1;
             _last_point = new_point;
-            return true;
+            return PointResult::Same_Direction;
           }
           
         }
@@ -1415,16 +1421,16 @@ protected:
 
       if (is_intercepted)
         detect_stack_grows_one_direction.reset();
-      
-      bool grows_one_direction = detect_stack_grows_one_direction.add_point(&stack_pos);
+
+      DetectStackGrowsOneDirection::PointResult stack_direction = detect_stack_grows_one_direction.add_point(&stack_pos);
         
-      if (is_intercepted || !grows_one_direction) {
+      if (is_intercepted || stack_direction==DetectStackGrowsOneDirection::PointResult::Changed_Direction) {
 
         g_endless_recursion = false;
         s_last_g_main_timer_num_calls = g_main_timer_num_calls;
         s_num_calls_same_timer = 0;
-        
-      } else {
+
+      } else if (stack_direction==DetectStackGrowsOneDirection::PointResult::Same_Direction) {
 
         s_num_calls_same_timer++;
         //printf("    NUM: %d\n",(int)s_num_calls_same_timer);
