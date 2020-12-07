@@ -864,7 +864,7 @@ $(T)song.o:  $(BUILD_DEPENDENCIES) $(CD)song.c
 $(T)blocks.o:  $(BUILD_DEPENDENCIES) $(CD)blocks.cpp
 	$(CCC2) $(CD)blocks.cpp $(QTOPT)
 
-$(T)tracks.o:  $(BUILD_DEPENDENCIES) $(CD)tracks.cpp $(CD)TimeData.hpp
+$(T)tracks.o:  $(BUILD_DEPENDENCIES) $(CD)tracks.cpp #$(CD)TimeData.hpp
 	$(CCC2) $(CD)tracks.cpp $(CPPOPT)
 
 $(T)localzooms.o:  $(BUILD_DEPENDENCIES) $(CD)localzooms.c 
