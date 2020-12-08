@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <string.h>
 
 #include "nsmtracker.h"
+#include "placement_proc.h"
 #include "visual_proc.h"
 #include "vector_proc.h"
 #include "Dynvec_proc.h"
@@ -1325,6 +1326,8 @@ wchar_t *HASH_to_string(const hash_t *hash){
 }
 #endif
 
+static const char *g_ls_id = "_______________________LS________________________";
+
 bool HASH_save(const hash_t *hash, disk_t *file){  
   DISK_write(file, talloc_format(">> HASH MAP V%d BEGIN\n", hash->version));
 
@@ -1339,7 +1342,17 @@ bool HASH_save(const hash_t *hash, disk_t *file){
     for(i=0;i<elements.num_elements;i++){
       hash_element_t *element=elements.elements[i];
       //DISK_write(file,element->key);DISK_write(file,"\n");
-      DISK_printf(file,"%s\n",element->key);
+
+      if (strchr(element->key, '\n') != NULL) {
+        
+        wchar_t *s = STRING_create(element->key);
+        s = STRING_replace(s, "\n", g_ls_id);
+        DISK_printf(file,"%S\n",s);
+        
+      } else {
+        DISK_printf(file,"%s\n",element->key);
+      }
+        
       DISK_printf(file,"%d\n",element->i);
       DYN_save(file, element->a);
     }
@@ -1424,6 +1437,13 @@ hash_t *HASH_load2(disk_t *file, bool return_null_for_unsupported_hasmap_version
         )
     {
       const char *key = STRING_get_chars(line);
+
+      if (strstr(key, g_ls_id) != NULL){
+        wchar_t *s = STRING_create(key);
+        s = STRING_replace(s, g_ls_id, "\n");
+        key = STRING_get_chars(s);
+      }
+      
       int i = 0;
       
       if(version > 1){
