@@ -136,7 +136,7 @@ static int64_t RT_schedule_end_note(struct SeqTrack *seqtrack,
           p = stop_p;
           has_p = true;
         } else {
-          if (p_Greater_Than(stop_p, p))
+          if (p_Less_Than(stop_p, p))
             p = stop_p;
         }
       }
