@@ -54,13 +54,6 @@ extern LANGSPEC bool GFX_Message_ask_ignore_question_questionmark(void);
 extern LANGSPEC void GFX_Message_call_after_showing(bool clicked_ignore);
 
 // NOTE: Might return -1
-extern LANGSPEC int GFX_Message2_internal(vector_t *buttons, bool program_state_is_valid, const char *fmt,...) FORMAT_ATTRIBUTE(3,4);
-#define GFX_Message2(Buttons, PSIV, ...) ((void)donothing(0 && printf(__VA_ARGS__)), GFX_Message2_internal(Buttons, PSIV, __VA_ARGS__)) // Add a "printf" call to make the C compiler show warning/error if using wrong arguments for FMT.
-
-// NOTE: Might return -1
-#define GFX_Message(buttons, ...) GFX_Message2(buttons, false,  __VA_ARGS__)
-
-// NOTE: Might return -1
 #define GFX_SafeMessage(buttons, ...) GFX_Message2(buttons, true, __VA_ARGS__)
 
 //extern LANGSPEC void GFX_addMessage_internal(const char *fmt,...) FORMAT_ATTRIBUTE(1,2);

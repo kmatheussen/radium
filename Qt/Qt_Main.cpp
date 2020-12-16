@@ -1360,7 +1360,6 @@ protected:
       Same_Direction,
     };
     
-    // Returns false if stack is not growing in one direction.
     PointResult add_point(int *point){
 
       uintptr_t new_point = reinterpret_cast<std::uintptr_t>(point);

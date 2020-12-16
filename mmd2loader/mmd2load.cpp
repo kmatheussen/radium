@@ -189,14 +189,14 @@ static void MMD_HandleTempo(
 	struct LPBs *lpb=NULL;
 
 	if(trackline->cmd==0xf && trackline->val>0 && trackline->val<=0xf0){
-		tempo=talloc(sizeof(struct Tempos));
+          tempo=(struct Tempos *)talloc(sizeof(struct Tempos));
 		tempo->Tline=line;
 		tempo->Tdividor=1;
 		tempo->tempo=trackline->val;
 		ListAddElement3(&wblock->block->tempos,&tempo->l);
 	}else{
 		if(trackline->cmd==9){
-			lpb=talloc(sizeof(struct LPBs));
+                  lpb=(struct LPBs *)talloc(sizeof(struct LPBs));
 			lpb->Tline=line;
 			lpb->Tdividor=1;
 			lpb->lpb=flags2*trackline->val/6;
@@ -209,14 +209,14 @@ static void MMD_HandleTempo(
 			cmdtrackline=cmdpagetable[lokke];
 			cmdtrackline=&cmdtrackline[numtracks*line+track];
 			if(tempo==NULL && cmdtrackline->cmd==0xf && cmdtrackline->val>0 && cmdtrackline->val<=0xf0){
-				tempo=talloc(sizeof(struct Tempos));
+                          tempo=(struct Tempos *)talloc(sizeof(struct Tempos));
 				tempo->Tline=line;
 				tempo->Tdividor=1;
 				tempo->tempo=trackline->val;
 				ListAddElement3(&wblock->block->tempos,&tempo->l);
 			}else{
 				if(lpb==NULL && trackline->cmd==9){
-					lpb=talloc(sizeof(struct LPBs));
+                                  lpb=(struct LPBs *)talloc(sizeof(struct LPBs));
 					lpb->Tline=line;
 					lpb->Tdividor=1;
 					lpb->lpb=flags2*trackline->val/6;
@@ -239,12 +239,12 @@ static void LoadOctaBlock(
 	struct TrackLine *octablock,
 	struct CmdTrackLine **cmdpagetable
 ){
-	struct WBlocks *wblock=ListFindElement1_r0(&window->wblocks->l,blocknum);
+        struct WBlocks *wblock=(struct WBlocks *)ListFindElement1_r0(&window->wblocks->l,blocknum);
 	struct TempoNodes *temponode;
 	struct WTracks *wtrack;
 	struct TrackLine *trackline;
 	struct Notes *note;
-	struct Stops *stop;
+	//struct Stops *stop;
 	struct Patch *patch;
 
 	NInt track;
@@ -254,7 +254,7 @@ static void LoadOctaBlock(
 
 	if(wblock==NULL){
 		AppendWBlock_spes(window,numlines,numtracks);
-		wblock=ListFindElement1(&window->wblocks->l,blocknum);
+		wblock=(struct WBlocks *)ListFindElement1(&window->wblocks->l,blocknum);
 		if(wblock==NULL){
 			RError("Error in function 'LoadOctaBlock' in file mmd2loader/mmd2load.c. wblock==NULL\n");
 			return;
@@ -282,8 +282,10 @@ static void LoadOctaBlock(
 		note=NULL;
 		patch=NULL;
 		free=false;
-		wtrack=ListFindElement1(&wblock->wtracks->l,track);
+		wtrack=(struct WTracks *)ListFindElement1(&wblock->wtracks->l,track);
 		for(line=0;line<numlines;line++){
+                        r::TimeData<r::Stop>::Writer writer(wtrack->track->stops2);
+                        
 			trackline=&octablock[numtracks*line+track];
 			trackline->note&=0x7f;
 			trackline->instrument&=0x3f;
@@ -293,10 +295,8 @@ static void LoadOctaBlock(
 			if(trackline->note!=0 || MMD_findEndNote(track,numtracks,line,trackline,numpages,cmdpagetable)){
 				if(note==NULL){
 					if(!free && trackline->note==0){
-						stop=talloc(sizeof(struct Stops));
-						stop->Tline=line;
-						stop->Tdividor=1;
-						ListAddElement3(&wtrack->track->stops,&stop->l);
+                                          r::Stop stop2(make_ratio(line, 1));
+                                          writer.add(stop2);
 					}
 				}else{
 					note->noend=0;
@@ -309,7 +309,7 @@ static void LoadOctaBlock(
 
 			if(trackline->instrument!=0 && patch==NULL){
                           //patch=ListFindElement1_r0(&root->song->instruments->patches->l,(NInt)trackline->instrument-1);
-                          patch=get_MIDI_instrument()->patches.elements[trackline->instrument-1];
+                          patch=(struct Patch*)get_MIDI_instrument()->patches.elements[trackline->instrument-1];
 			}
 			if(trackline->note!=0){
                                 note=NewNote();
@@ -341,12 +341,12 @@ static void LoadOctaBlock(
 	}
 
 	/* Lots of cut and paste. Shouln't do things like this, but its so fast. */
-	temponode=talloc(sizeof(struct TempoNodes));
+	temponode=(struct TempoNodes*)talloc(sizeof(struct TempoNodes));
 	temponode->l.p.dividor=1;
 	temponode->reltempo=0.0f;
 	wblock->block->temponodes=temponode;
 
-	temponode=talloc(sizeof(struct TempoNodes));			//Doubt its safe to make this one atomic.
+	temponode=(struct TempoNodes*)talloc(sizeof(struct TempoNodes));			//Doubt its safe to make this one atomic.
 	temponode->l.p.line=wblock->block->num_lines-1;
 	temponode->l.p.counter=MAX_UINT32-1;
 	temponode->l.p.dividor=MAX_UINT32;
@@ -359,7 +359,7 @@ static void LoadOctaBlock(
 }
 
 
-static char *MMD_GetInstrumentName(disk_t *file,NInt num){
+static const char *MMD_GetInstrumentName(disk_t *file,NInt num){
 	ULONG expdata;
 	ULONG iinfo;
 	UWORD i_ext_entries;
@@ -388,7 +388,7 @@ static char *MMD_GetInstrumentName(disk_t *file,NInt num){
 
 	if(strlen(temp)<2) return "NN";
 
-	name=talloc_atomic((int)strlen(temp)+1);
+	name=(char*)talloc_atomic((int)strlen(temp)+1);
 	sprintf(name,"%s",temp);
 
 	return name;
@@ -398,7 +398,7 @@ static char *MMD_GetInstrumentName(disk_t *file,NInt num){
 static void MMD_LoadInstruments(disk_t *file,ULONG mmd0song){
 	NInt lokke;
 
-	struct MMD0sample *mmd0sample=talloc_atomic(sizeof(struct MMD0sample)*63);
+	struct MMD0sample *mmd0sample=(struct MMD0sample *)talloc_atomic(sizeof(struct MMD0sample)*63);
 
 #if 0
         // FIX
@@ -500,7 +500,7 @@ static void MMD_LoadPlayList(struct Tracker_Windows *window,disk_t *file,ULONG m
 
 	printf("length: %x\n",length);
 
-        int *playlist = talloc_atomic(sizeof(int) * length);
+        int *playlist = (int*)talloc_atomic(sizeof(int) * length);
         
 	for(lokke=0;lokke<length;lokke++){
           blocknum = read_be16uint(file);
@@ -621,21 +621,21 @@ bool LoadMMP2(struct Tracker_Windows *window, filepath_t filename){
 			//fread(&cmdpagepointer,4,1,file);
 
 			if(blocknamelen>0 && blocknamepos>0){
-                                blockname=talloc_atomic(blocknamelen);
-				DISK_set_pos(file,blocknamepos);
-				DISK_read_binary(file, blockname,(size_t)blocknamelen);
+                          blockname=(char*)talloc_atomic(blocknamelen);
+                          DISK_set_pos(file,blocknamepos);
+                          DISK_read_binary(file, blockname,(size_t)blocknamelen);
 			}else{
-				blockname="NN";
+                          blockname=talloc_strdup("NN");
 			}
 		}else{
 			cmdpagepointer=0;
-			blockname="NN";
+			blockname=talloc_strdup("NN");
 		}
 
 		//printf("block: %s: blocknamelen: %d, numtracks: %d, numlines %d\n",blockname,blocknamelen,numtracks,numlines);
 
 		DISK_set_pos(file,blockpointer+8);
-		octablock=talloc_atomic(numlines*numtracks*sizeof(struct TrackLine));
+		octablock=(struct TrackLine *)talloc_atomic(numlines*numtracks*sizeof(struct TrackLine));
 		DISK_read_binary(file, octablock,numlines*numtracks*sizeof(struct TrackLine));
 
 		if(cmdpagepointer>0){
@@ -643,12 +643,12 @@ bool LoadMMP2(struct Tracker_Windows *window, filepath_t filename){
                         numpages = read_be16uint(file);
 			//fread(&numpages,2,1,file);
 
-			cmdpagetable=talloc(numpages*sizeof(struct CmdTrackLine *));
+			cmdpagetable=(struct CmdTrackLine **)talloc(numpages*sizeof(struct CmdTrackLine *));
 			for(lokke2=0;lokke2<numpages;lokke2++){
 				DISK_set_pos(file,cmdpagepointer+4+(lokke2*4));		
                                 pagepointer = read_be32uint(file);
 				//fread(&pagepointer,4,1,file);
-				cmdpagetable[lokke2]=talloc_atomic(sizeof(struct CmdTrackLine)*numtracks*numlines);
+				cmdpagetable[lokke2]=(struct CmdTrackLine *)talloc_atomic(sizeof(struct CmdTrackLine)*numtracks*numlines);
 				DISK_set_pos(file,pagepointer);
 				DISK_read_binary(file, cmdpagetable[lokke2],sizeof(struct CmdTrackLine)*numtracks*numlines);
 			}

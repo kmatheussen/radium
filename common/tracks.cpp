@@ -18,6 +18,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <gc.h>
+
 #include "nsmtracker.h"
 #include "list_proc.h"
 #include "vector_proc.h"
@@ -172,15 +174,18 @@ bool TRACK_has_peaks(struct Tracks *track){
   }
 }
 
-#if 0
+
 static int g_num_live_tracks = 0;
 
 static void trackgcfinalizer(void *actual_mem_start, void *user_data){
   struct Tracks *track = (struct Tracks*)actual_mem_start;
   printf("    GC-ed TRACK %d. Num: %d\n", track->l.num, g_num_live_tracks);
+  
+  delete track->stops2; // Will probably convert the whole program to C++, and then we don't need this stuff.
+  
   g_num_live_tracks--;
 }
-#endif
+
 
 // l.num must not be set here!
 static void InitTrack(struct Tracks *track){
@@ -190,14 +195,13 @@ static void InitTrack(struct Tracks *track){
 	track->panonoff=false;
 	track->volumeonoff=true;
         MIDI_init_track(track);
-#if 0
-        track->stops2 = new radium::TimeData<r::Stop, Ratio>;
+
+        track->stops2 = new r::TimeData<r::Stop>;
 
         g_num_live_tracks++;
         GC_register_finalizer(track, trackgcfinalizer, NULL, NULL, NULL);
 
         printf("--------------------------------NUM live tracks: %d-------------------------\n", g_num_live_tracks);
-#endif
 }
 
 struct Tracks *TRACK_create(int tracknum){

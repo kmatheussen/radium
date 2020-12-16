@@ -176,8 +176,12 @@ static void InsertLines2(
             if(track->notes!=NULL) // need check to avoid ubsan/asan hit
               List_InsertLines3(&track->notes,&track->notes->l,line,toinsert,InsertLines_notes);
             LegalizeNotes(block,track);
+
+            r::TimeData<r::Stop>::Writer(track->stops2).insert_lines(make_ratio(line,1), make_ratio(toinsert,1));
+            /*
             if(track->stops!=NULL) // need check to avoid ubsan/asan hit
               List_InsertLines3(&track->stops,&track->stops->l,line,toinsert,NULL);
+            */
             
             VECTOR_FOR_EACH(struct FXs *, fxs, &track->fxs){
               if(fxs->fxnodelines!=NULL) // need check to avoid ubsan/asan hit
@@ -269,8 +273,11 @@ static bool last_line_contains_something(struct WBlocks *wblock){
       note = NextNote(note);
     }
 
-    if(has_element_at_last_line3((struct ListHeader3 *)track->stops, last_line))
+    if (r::TimeData<r::Stop>::Reader(track->stops2).has_element_between(make_ratio(last_line,1), make_ratio(last_line+1,1)))
       return true;
+    
+    //if(has_element_at_last_line3((struct ListHeader3 *)track->stops, last_line))
+    //  return true;
 
     if(has_element_at_last_line3((struct ListHeader3 *)track->swings, last_line))
       return true;

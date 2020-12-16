@@ -58,12 +58,30 @@ void ClearRange_notes(
 
 
 static void ClearRange_stops(
-                    struct Stops **tostop,
-                    const struct Stops *fromstop,
-                    const Place *p1,
-                    const Place *p2
-                    )
+                             r::TimeData<r::Stop> *stops,
+                             const Place *p1,
+                             const Place *p2
+                             )
 {
+  Ratio start = make_ratio_from_place(*p1);
+  Ratio end = make_ratio_from_place(*p2);
+
+  r::TimeData<r::Stop>::Writer writer(stops);
+
+  std::vector<Ratio> to_remove;
+  
+  for(const r::Stop &stop : writer){
+    if (stop._time >= start) {
+      if (stop._time >= end)
+        break;
+      to_remove.push_back(stop._time);
+    }
+  }
+
+  for(const Ratio &ratio :to_remove)
+    R_ASSERT(writer.remove_at_time(ratio));
+
+  /*
 	struct Stops *next;
 	if(fromstop==NULL) return;
 
@@ -79,6 +97,7 @@ static void ClearRange_stops(
 	ListRemoveElement3(tostop,&fromstop->l);
 
 	ClearRange_stops(tostop,next,p1,p2);
+  */
 }
 
 
@@ -96,13 +115,13 @@ void ClearRange(
         if (endtrack < starttrack)
           return;
         
-	track=ListFindElement1(&block->tracks->l,starttrack);
+	track=(struct Tracks *)ListFindElement1(&block->tracks->l,starttrack);
 
         PC_Pause();{
 
           for(lokke=0;lokke<=endtrack-starttrack;lokke++){
             ClearRange_notes(&track->notes,track->notes,p1,p2);
-            ClearRange_stops(&track->stops,track->stops,p1,p2);
+            ClearRange_stops(track->stops2,p1,p2);
             track=NextTrack(track);
             if(track==NULL) break;
           }

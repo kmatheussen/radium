@@ -5,6 +5,11 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#ifdef __cplusplus
+#include <memory>
+#include <functional>
+#endif
+
 
 #define ATOMIC_NAME(name) \
   name##_atomic
@@ -444,16 +449,14 @@ static inline void atomic_double_write(atomic_double_t *atomic_double, double ne
 */
 
 
-
 #ifdef __cplusplus
-
-namespace radium{
 
 // Can be used if one thread set a set of variables, while another thread read the set of variables
 // The writing thread will not block, while the reading thread might block.
 // Note: I'm not 100% sure the code is correct, but it probably protects more than if it had not been used.
 // Class should not be used if it is extremely important that it works correctly.
 //
+namespace radium{
 class SetSeveralAtomicVariables{
   DEFINE_ATOMIC(int, generation);
   DEFINE_ATOMIC(bool, is_writing);
@@ -494,113 +497,8 @@ class SetSeveralAtomicVariables{
       return false;
   }
 };
-
-
-// Class to store a pointer.
-// The main thread can set, replace and free the pointer at any time. (doesn't look like it can free... that seems to be taken care of automatically)
-// A realtime thread can access the pointer at any time by using the ScopedUsage class.
-//
-template <typename T>
-class AtomicPointerStorage{
-
-  template <typename T2> friend class RT_AtomicPointerStorage_ScopedUsage;
-
-#if !defined(RELEASE)
-  bool _is_used = false;
+}
 #endif
-
-  AtomicPointerStorage(const AtomicPointerStorage&) = delete;
-  AtomicPointerStorage& operator=(const AtomicPointerStorage&) = delete;
-
-private:
-  
-  DEFINE_ATOMIC(T *, _pointer) = NULL;
-  DEFINE_ATOMIC(T *, _old_pointer_to_be_freed) = NULL;
-
-  void (*_free_pointer_function)(T *);
-
-  void maybe_free_something(T *a, T *b){
-    if (_free_pointer_function != NULL){
-      if (a!=NULL)
-        _free_pointer_function(a);
-      if (b!=NULL)
-        _free_pointer_function(b);
-    }
-  }
-
-public:
-
-  AtomicPointerStorage(void (*free_pointer_function)(T *))
-    : _free_pointer_function(free_pointer_function)
-  {
-  }
-
-  ~AtomicPointerStorage(){
-    maybe_free_something(ATOMIC_GET(_pointer), ATOMIC_GET(_old_pointer_to_be_freed));
-  }
-
-  // May be called at any time. 'free_pointer_function' may be called 0, 1, or 2 times. (usually 1 time)
-  void set_new_pointer(T *new_pointer){
-    T *old_pointer_to_be_freed = ATOMIC_SET_RETURN_OLD(_old_pointer_to_be_freed, NULL);
-
-    T *old = ATOMIC_SET_RETURN_OLD(_pointer, new_pointer);
-    //printf("Has set. new: %p, old: %p, curr: %p\n", new_pointer, old, ATOMIC_GET(_pointer));
-
-    maybe_free_something(old, old_pointer_to_be_freed);
-  }
-};
-
-// Create an instance of this class to access pointer from a realtime thread.
-// I don't think it works to create more than one instance of this at the same time.
-template <typename T>
-class RT_AtomicPointerStorage_ScopedUsage{
-
-  AtomicPointerStorage<T> *_storage;
-  T *_pointer;
-
-  RT_AtomicPointerStorage_ScopedUsage(const RT_AtomicPointerStorage_ScopedUsage&) = delete;
-  RT_AtomicPointerStorage_ScopedUsage& operator=(const RT_AtomicPointerStorage_ScopedUsage&) = delete;
-
-public:
-
-  T *get_pointer(void) const {
-    return _pointer;
-  }
-  
-  RT_AtomicPointerStorage_ScopedUsage(AtomicPointerStorage<T> *storage)
-    :_storage(storage)
-  {
-#if !defined(RELEASE)
-    if(storage->_is_used==true)
-      abort();
-    storage->_is_used=true;
-#endif
-    _pointer = ATOMIC_SET_RETURN_OLD(storage->_pointer, NULL);
-  }
-    
-  ~RT_AtomicPointerStorage_ScopedUsage(){
-#if !defined(RELEASE)
-    if(_storage->_is_used==false)
-      abort();
-    _storage->_is_used = false;
-#endif
-
-    if(atomic_compare_and_set_pointer(reinterpret_cast<void**>(&ATOMIC_NAME(_storage->_pointer)), NULL, _pointer)){ // The void-cast is a workaround for compiler error. Strange.
-      return;
-    } else {
-#if !defined(RELEASE)
-      T *old_pointer = ATOMIC_GET(_storage->_old_pointer_to_be_freed);
-      if (old_pointer != NULL && old_pointer!=_pointer)
-        abort();
-#endif
-      ATOMIC_SET(_storage->_old_pointer_to_be_freed, _pointer);
-    }
-  }
-};
-
-} // namespace radium
-
-#endif // __cplusplus
 
 
 #endif

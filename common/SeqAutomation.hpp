@@ -444,6 +444,9 @@ public:
   // I.e. 'node1' and 'node2' can not be used outside the scope (the array holding the nodes could be deleted immediately after the scope runs out).
   struct ScopedRtAccess{
 
+    ScopedRtAccess(const ScopedRtAccess&) = delete;
+    ScopedRtAccess& operator=(const ScopedRtAccess&) = delete;
+    
     const RT_AtomicPointerStorage_ScopedUsage<RT> rt_pointer;
 
     const T *node1=NULL;

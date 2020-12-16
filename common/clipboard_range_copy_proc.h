@@ -26,13 +26,25 @@ extern LANGSPEC void CopyRange_notes(
                             const Place *p2
 );
 
+/*
 extern LANGSPEC void CopyRange_stops(
 	struct Stops **tostop,
 	const struct Stops *fromstop,
 	const Place *p1,
 	const Place *p2
 );
+*/
 
+#ifdef __cplusplus
+void CopyRange_stops(
+                     r::TimeData<r::Stop> *to_stop,
+                     //struct Stops **tostop,
+                     const r::TimeData<r::Stop> *from_stop,
+                     //const struct Stops *from_stop,
+                     const Place *p1,
+                     const Place *p2);
+#endif
+                     
 extern LANGSPEC void CopyRange_fxs(
 	vector_t *tofxs,
 	const vector_t *fromfxs,

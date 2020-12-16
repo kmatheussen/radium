@@ -65,7 +65,7 @@ DC_start("TRACK");
 //	DC_SSN("instrument",track->instrument->l.num);
 
 	SaveNotes(track->notes);
-	SaveStops(track->stops);
+	SaveStops(track);
 	SaveFXs(&track->fxs,track);
         SaveSwings(track->swings);
 
@@ -145,7 +145,7 @@ obj0:
 	DC_ListAdd3_a(&track->notes,LoadNote());
 	goto start;
 obj1:
-	LoadStops(&track->stops);
+	LoadStops(track);
 	goto start;
 obj2:
         VECTOR_push_back(&track->fxs, LoadFXs(track));

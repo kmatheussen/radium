@@ -143,6 +143,19 @@ static void SetEndAttributes(
           nextnote=nextnote->next;
         }
 
+#if 1
+        Ratio r_earliest = make_ratio_from_place(*earliest);
+        Place helper_p2;
+        
+        r::TimeData<r::Stop>::Reader reader(track->stops2);
+        for(const r::Stop &stop : reader) {
+          if (stop._time > r_earliest){
+            helper_p2 = make_place_from_ratio(stop._time);
+            p2 = &helper_p2;
+            break;
+          }            
+        }
+#else
         const struct ListHeader3 *stop= track->stops==NULL ? NULL : &track->stops->l;
         while(stop!=NULL){
           if(PlaceGreaterThan(&stop->p, earliest)){
@@ -151,7 +164,7 @@ static void SetEndAttributes(
           }
           stop=stop->next;
         }
-
+#endif
 	place=PlaceMin(p1,p2);
 
 	if(place!=NULL){
@@ -563,10 +576,11 @@ bool InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyp
       return maybe_scroll_down(window, tr2.note);
     }
 
-    const struct Stops *stop = tr2.stop;
-    {
-      SCOPED_PLAYER_LOCK_IF_PLAYING();
-      ListRemoveElement3(&track->stops, &stop->l);
+    if (!tr2.is_stop){
+      R_ASSERT(false);
+    }else{
+      r::TimeData<r::Stop>::Writer writer(track->stops2);
+      writer.remove_at_time(make_ratio_from_place(tr2.p));
     }
   }
 
@@ -590,11 +604,14 @@ bool InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyp
 }
 
 static void InsertStop(
-                       struct Tracker_Windows *window,
-                       struct WBlocks *wblock,
-                       struct WTracks *wtrack,
+                       struct Blocks *block,
+                       struct Tracks *track,
                        const Place *placement
 ){
+  
+        r::TimeData<r::Stop>::Writer writer(track->stops2);
+
+        /*
 	struct Stops *stop;
 
         stop = (struct Stops*)talloc(sizeof(struct Stops));
@@ -602,9 +619,15 @@ static void InsertStop(
 
         {
           SCOPED_PLAYER_LOCK_IF_PLAYING();
-          StopAllNotesAtPlace(wblock->block,wtrack->track,placement);
-  	  ListAddElement3_ns(&wtrack->track->stops,&stop->l);
+
+          StopAllNotesAtPlace(block,track,placement); // NOTE: This line is still needed.
+          
+  	  ListAddElement3_ns(&track->stops,&stop->l);          
         }
+        */
+        
+        r::Stop stop2(ratio_from_place(*placement));
+        writer.add(stop2);
 }
 
 /**********************************************************************
@@ -665,6 +688,7 @@ void RemoveNote(
 
 void RemoveNoteCurrPos(struct Tracker_Windows *window){
   struct WBlocks       *wblock        = window->wblock;
+  struct Blocks        *block         = wblock->block;
   struct WTracks       *wtrack        = wblock->wtrack;
   struct Tracks        *track         = wtrack->track;
   const struct LocalZooms    *realline      = wblock->reallines[wblock->curr_realline];
@@ -675,7 +699,7 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
   ADD_UNDO(Notes_CurrPos(window));
 
   if (trs.size()==0) {
-    InsertStop(window,wblock,wtrack,&realline->l.p);
+    InsertStop(block,track,&realline->l.p);
     window->must_redraw=true;
     maybe_scroll_down(window, NULL);
     return;
@@ -709,9 +733,9 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
       {
         SCOPED_PLAYER_LOCK_IF_PLAYING();
         ListRemoveElement3(&track->notes,&tr2.note->l);
-        LengthenNotesTo(wblock->block,track,&realline->l.p);
+        LengthenNotesTo(block,track,&realline->l.p);
       }
-      SetNotePolyphonyAttributes(wtrack->track);
+      SetNotePolyphonyAttributes(track);
       ValidateCursorPos(window);
       window->must_redraw=true;
       if (trs.size()==1)
@@ -721,16 +745,26 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
     return;
   }
 
-  const struct Stops *stop = tr2.stop;
-  EVENTLOG_add_event("RemoveNoteCurrPos 3");
-  R_ASSERT_RETURN_IF_FALSE(stop!=NULL);
   
+  EVENTLOG_add_event("RemoveNoteCurrPos 3");
+  R_ASSERT_RETURN_IF_FALSE(tr2.is_stop);
+  
+#if 1
+  {
+    r::TimeData<r::Stop>::Writer writer(track->stops2);
+    if (writer.remove_at_time(make_ratio_from_place(tr2.p))){
+      SCOPED_PLAYER_LOCK_IF_PLAYING();
+      LengthenNotesTo(block,track,&realline->l.p);
+    }
+  }
+#else
   if (track->stops!=NULL && isInList3(&track->stops->l, &stop->l)) {
     SCOPED_PLAYER_LOCK_IF_PLAYING();
     ListRemoveElement3(&track->stops, &stop->l);
-    LengthenNotesTo(wblock->block,track,&realline->l.p);
+    LengthenNotesTo(block,track,&realline->l.p);
   }
-
+#endif
+  
   window->must_redraw=true;
   
   if (trs.size()==1)
