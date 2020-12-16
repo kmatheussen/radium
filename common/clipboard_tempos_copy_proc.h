@@ -24,19 +24,19 @@ extern LANGSPEC struct Swing *CB_CopySwings(
                                             const Place *cut // can be NULL
                                            );
 
-extern struct Signatures *CB_CopySignatures(
+extern LANGSPEC struct Signatures *CB_CopySignatures(
                                             const struct Signatures *signature
 );
 
-extern struct LPBs *CB_CopyLPBs(
+extern LANGSPEC struct LPBs *CB_CopyLPBs(
                                 const struct LPBs *lpb
 );
 
-extern struct Tempos *CB_CopyTempos(
+extern LANGSPEC struct Tempos *CB_CopyTempos(
                                     const struct Tempos *tempo
 );
 
-extern struct TempoNodes *CB_CopyTempoNodes(
+extern LANGSPEC struct TempoNodes *CB_CopyTempoNodes(
                                             const struct TempoNodes *temponode
 );
 

@@ -24,7 +24,13 @@ struct RangeClip{
         int rangenum;
 	NInt num_tracks;
 	struct Notes **notes;
-	struct Stops **stops;
+#ifdef __cplusplus
+        r::TimeData<r::Stop> **stops;
+#else
+        void **stops;
+#endif
+
+  //struct Stops **stops;
   //struct Instruments **instruments;
         vector_t *fxs;
 	Place length;

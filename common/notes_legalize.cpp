@@ -45,8 +45,8 @@ bool LegalizeNotes(struct Blocks *block,struct Tracks *track){
 	Place endplace;
 	struct Notes *note=track->notes;
 	struct Notes *notetemp;
-	struct Stops *stop=track->stops;
-	struct Stops *stoptemp;
+	//struct Stops *stop=track->stops;
+	//struct Stops *stoptemp;
 
 	PlaceSetLastPos(block,&endplace);
 
@@ -109,6 +109,8 @@ bool LegalizeNotes(struct Blocks *block,struct Tracks *track){
 		note=NextNote(note);
 	}
 
+        r::TimeData<r::Stop>::Writer(track->stops2).remove_everything_after(make_ratio_from_place(endplace));
+        /*
 	while(stop!=NULL){
 		if(PlaceGreaterOrEqual(&stop->l.p,&endplace)){
 			stoptemp=NextStop(stop);
@@ -120,7 +122,7 @@ bool LegalizeNotes(struct Blocks *block,struct Tracks *track){
 
 		stop=NextStop(stop);
 	}
-
+        */
 
         return ret;
 }

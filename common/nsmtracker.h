@@ -230,7 +230,6 @@ extern float g_mouse_dx, g_mouse_dy; // Only have valid values in windows.
 extern bool g_wants_delta_movements; // Only useful in windows.
 extern double g_last_time_mouse_pointer_was_moved_by_the_program; // Only used in windows.
 
-#include "atomic.h"
 
 #include "../crashreporter/crashreporter_proc.h"
 
@@ -325,6 +324,17 @@ static inline bool equal_doubles(double x, double y) {
 #endif
 
 
+typedef struct vector_t_ vector_t;
+
+// NOTE: Might return -1
+extern LANGSPEC int GFX_Message2_internal(vector_t *buttons, bool program_state_is_valid, const char *fmt,...) FORMAT_ATTRIBUTE(3,4);
+#define GFX_Message2(Buttons, PSIV, ...) ((void)donothing(0 && printf(__VA_ARGS__)), GFX_Message2_internal(Buttons, PSIV, __VA_ARGS__)) // Add a "printf" call to make the C compiler show warning/error if using wrong arguments for FMT.
+
+// NOTE: Might return -1
+#define GFX_Message(buttons, ...) GFX_Message2(buttons, false,  __VA_ARGS__)
+
+
+
 #define R_ASSERT_MESSAGE(a)                                             \
   do{                                                                   \
     if(!(a))                                                            \
@@ -399,19 +409,15 @@ enum ShowAssertionOrThrowAPIException{
 #  define R_NUM_FRAMES_ARG
 #endif
 
+
+extern LANGSPEC bool RT_message_will_be_sent(void);
+extern LANGSPEC void RT_message_internal(const char *fmt,...) FORMAT_ATTRIBUTE(1,2);
+#define RT_message(...) do{donothing(0 && printf(__VA_ARGS__)); RT_message_internal(__VA_ARGS__);}while(0) // Add a "printf" call to make the C compiler show warning/error if using wrong arguments for FMT.
+
+
 static inline bool is_playing(void);
 
 struct vector_t_;
-
-#include "debug_proc.h"
-#include "threading.h"
-#include "OS_Player_proc.h"
-#include "memory_proc.h"
-#include "nsmtracker_events.h"
-
-#include "OS_error_proc.h"
-#include "OS_Semaphores.h"
-#include "keyboard_focus_proc.h"
 
 static inline int donothing(int input){
   return input;
@@ -424,6 +430,18 @@ extern LANGSPEC void handleError_internal(const char *fmt,...) FORMAT_ATTRIBUTE(
 
 
 extern LANGSPEC void msleep(int ms);
+
+
+#include "atomic.h"
+#include "debug_proc.h"
+#include "threading.h"
+#include "OS_Player_proc.h"
+#include "memory_proc.h"
+#include "nsmtracker_events.h"
+
+#include "OS_error_proc.h"
+#include "OS_Semaphores.h"
+#include "keyboard_focus_proc.h"
 
 #include "validatemem_proc.h"
 
@@ -949,8 +967,6 @@ struct vector_t_{
   void **elements;
 };
 
-typedef struct vector_t_ vector_t;
-
 static inline vector_t create_static_vector_t(int num_elements, void **elements){
   const vector_t ret = {
     .num_elements = num_elements,
@@ -961,8 +977,6 @@ static inline vector_t create_static_vector_t(int num_elements, void **elements)
 }
 
 #include "vector_proc.h"
-
-
 
 
 
@@ -1599,6 +1613,16 @@ static inline dyn_t DYN_copy(const dyn_t a){
 	sndfile.h
 *********************************************************************/
 
+
+#ifdef __cplusplus
+#include "TimeData.hpp"
+#endif
+
+
+/*********************************************************************
+	sndfile.h
+*********************************************************************/
+
 #if defined(INCLUDE_SNDFILE_OPEN_FUNCTIONS)
 
 #if defined(FOR_WINDOWS)
@@ -2137,12 +2161,22 @@ struct Instruments{
 	stops.h
 *********************************************************************/
 
-
+#ifdef __cplusplus
+namespace r{
+struct Stop{
+  Ratio _time;
+  Stop(Ratio time)
+    : _time(time)
+  {}
+};
+}
+#endif
+/*
 struct Stops{
 	struct ListHeader3 l;
 };
 #define NextStop(a) ((struct Stops *)((a)->l.next))
-
+*/
 
 
 /*********************************************************************
@@ -2194,8 +2228,12 @@ struct Tracks{
 	struct ListHeader1 l;
 
 	struct Notes *notes;
-	struct Stops *stops;
-
+#ifdef __cplusplus
+        r::TimeData<r::Stop> *stops2;
+#else
+        void *stops2;
+#endif
+  //	struct Stops *stops;
         struct Notes *gfx_notes; // Used when recording MIDI notes in sequencer mode.
 
         const char *trackname; // Contains the value "(click me)" when patch==NULL
@@ -2229,7 +2267,6 @@ struct Tracks{
         bool volumeonoff;                      /* The volume-button on/off, not track on/off. (i.e. if off, volume=1.0, not 0.0) */
 
         DEFINE_ATOMIC(int, midi_channel);
-  
 };
 #define NextTrack(a) ((struct Tracks *)((a)->l.next))
 
@@ -2349,7 +2386,8 @@ typedef struct{
   Place p;
   struct Notes *note;
   struct Pitches *pitch;
-  struct Stops *stop;
+  //struct Stops *stop;
+  bool is_stop;
   bool is_end_pitch;
 } TrackRealline2;
 

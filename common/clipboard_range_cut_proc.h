@@ -18,14 +18,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #pragma once
 
 
-void ClearRange_notes(
-                    struct Notes **tonote,
-                    const struct Notes *fromnote,
-                    const Place *p1,
-                    const Place *p2
-);
+extern LANGSPEC void ClearRange_notes(
+                                      struct Notes **tonote,
+                                      const struct Notes *fromnote,
+                                      const Place *p1,
+                                      const Place *p2
+                                      );
 
-extern void ClearRange(
+extern LANGSPEC void ClearRange(
                      struct Blocks *block,
                      NInt starttrack,
                      NInt endtrack,
@@ -33,17 +33,17 @@ extern void ClearRange(
                      const Place *p2
 );
 
-void ClearRange2(
+extern LANGSPEC void ClearRange2(
               struct Blocks *block,
               const range_t range);
 
-void CutRange(
+extern LANGSPEC void CutRange(
               struct Blocks *block,
               const range_t range,
               int rangenum
               );
 
-extern void CutRange_CurrPos(
+extern LANGSPEC void CutRange_CurrPos(
                              struct Tracker_Windows *window,
                              int rangenum
 );

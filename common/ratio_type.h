@@ -6,6 +6,22 @@ typedef struct {
   int64_t den;
 } Ratio;
 
+#if 0
+#ifdef __cplusplus
+namespace r{
+  struct Ratio{
+    ::Ratio r;
+    Ratio(::Ratio r)
+    : r(r)
+    {}
+    Ratio(int64_t num, int64_t den){
+      r = {num, den};
+    }
+  };
+}
+#endif
+#endif
+
 // The difference between Ratio and StaticRatio is that numerator and denominoator of StaticRatio are not divided by gcd. StaticRatio is used in quantization, time signatures, bar/beat, and maybe other things.
 // Denominoator of StaticRatio can be 0.
 // StaticRatio can not be used in the arithmetic operations since those assume num and dem are always divided by gcd, plus that a StaticRatio doesn't have to be a legal number (i.e. the denominator of StaticRatio can be 0).

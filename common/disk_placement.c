@@ -34,10 +34,15 @@ void SavePlace(const Place *p){
 	DC_SaveP(p->dividor);
 }
 
+Place LoadPlace2(void){
+  Place p;
+  p.line=DC_LoadI();
+  p.counter=DC_LoadU32();
+  p.dividor=DC_LoadU32();
+  return p;
+}
 
 void LoadPlace(Place *p){
-	p->line=DC_LoadI();
-	p->counter=DC_LoadU32();
-	p->dividor=DC_LoadU32();
+  *p = LoadPlace2();
 }
 

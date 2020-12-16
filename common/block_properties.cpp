@@ -97,7 +97,8 @@ void Block_Set_num_lines2(
               }
               LegalizeNotes(block,track);
 
-              CutListAt_a(&track->stops,&lastplace);
+              r::TimeData<r::Stop>::Writer(track->stops2).remove_everything_after(make_ratio_from_place(lastplace));
+              //              CutListAt_a(&track->stops,&lastplace);
 
               VECTOR_FOR_EACH(struct FXs *, fxs, &track->fxs){
                 CutListAt_a(&fxs->fxnodelines,&lastplace);

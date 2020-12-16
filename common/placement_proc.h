@@ -120,8 +120,83 @@ static inline Place DYN_get_place(const dyn_t dyn){
   return place_from_64b(ratio.num, ratio.den);
 }
 
-static inline Ratio ratio_from_place(const Place place){
-  return make_ratio(place.counter + place.line*place.dividor, place.dividor);
+
+#include "overflow_funcs.h"
+
+
+static inline Ratio ratio_from_place(const Place p){
+  R_ASSERT_NON_RELEASE(p.dividor > 0);
+
+  int64_t num;
+  
+  if (ov_mul(p.line, p.dividor, &num)){
+    R_ASSERT_NON_RELEASE(false); // should be impossible
+  }
+  
+  if (ov_add(num, p.counter, &num)){
+    R_ASSERT_NON_RELEASE(false); // should be impossible
+  }
+  
+  return make_ratio(num, p.dividor);
+}
+
+static inline Ratio make_ratio_from_place(const Place p){
+  return ratio_from_place(p);
+}
+
+static inline Place p_FromDouble(double d);
+
+static inline Place make_place_from_ratio(const Ratio ratio){
+  R_ASSERT_NON_RELEASE(ratio.den > 0);
+  Place place;
+  
+  place.line = ratio.num / ratio.den;
+
+  if (place.line < 0){
+#if !defined(RELEASE)
+    abort();
+#endif
+    place.line = 0;
+    place.counter = 0;
+    place.dividor = 1;
+    return place;
+  }
+  
+  int64_t num;
+  if (ov_mul(place.line, ratio.den, &num))
+    goto overflow_handler;
+  
+  if (ov_sub(ratio.num, num, &num))
+    goto overflow_handler;
+
+  {
+    Ratio r2 = RATIO_minimize(make_ratio(num, ratio.den));
+    
+    if (r2.den <= MAX_UINT32) {
+      
+      place.counter = r2.num;
+      place.dividor = r2.den;
+      
+    } else {
+      
+      place.counter = scale_int64(MAX_UINT32,
+                                  0, r2.den,
+                                  0, r2.num);
+      
+      place.dividor = MAX_UINT32;    
+    }
+
+    return place;
+  }
+  
+ overflow_handler:
+  {
+#if !defined(RELEASE)
+    abort();
+#endif
+    double r = (double)ratio.num / (double)ratio.den;
+    return p_FromDouble(r);
+  }
 }
 
 static inline Place *PlaceCreate(int line, int counter, int dividor) {

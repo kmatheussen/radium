@@ -217,13 +217,15 @@ static bool InsertRatio_signatures(
   return List_InsertRatioLen3(block,&block->signatures,(struct ListHeader3*)block->signatures,ratio,toratio,NULL);
 }
 
+
 static bool InsertRatio_stops(
 	struct Blocks *block,
 	struct Tracks *track,
 	Ratio ratio,
 	Ratio toratio
 ){
-  return List_InsertRatioLen3(block,&track->stops,(struct ListHeader3*)track->stops,ratio,toratio,NULL);
+  return r::TimeData<r::Stop>::Writer(track->stops2).insert_ratio(ratio, toratio, make_ratio(block->num_lines, 1));  
+  //return List_InsertRatioLen3(block,&track->stops,(struct ListHeader3*)track->stops,ratio,toratio,NULL);
 }
 
 

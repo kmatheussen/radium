@@ -33,9 +33,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 
 #include "../common/nsmtracker.h"
+#include "../common/placement_proc.h"
+//#include "../common/ratio_funcs.h"
+
 #include "../common/settings_proc.h"
 #include "../common/list_proc.h"
-#include "../common/placement_proc.h"
 #include "../common/realline_calc_proc.h"
 #include "../common/gfx_subtrack_proc.h"
 #include "../common/wtracks_proc.h"
@@ -2524,10 +2526,25 @@ static void create_track_fxs(const struct Tracker_Windows *window, const struct 
 }
 
 static void create_track_stops(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack){
-  struct Stops *stops = wtrack->track->stops;
 
   float reallineF = 0.0f;
 
+#if 1
+  r::TimeData<r::Stop>::Reader reader(wtrack->track->stops2);
+  for(const r::Stop &stop : reader) {
+    Place place = make_place_from_ratio(stop._time);
+    reallineF = FindReallineForF(wblock, reallineF, &place);
+    float y = get_realline_y(window, reallineF); 
+    GE_Context *c = GE_color_alpha(TEXT_COLOR_NUM, 0.19, y);
+    GE_line(c,
+            wtrack->notearea.x, y,
+            wtrack->x2, y,
+            1.2
+            );
+  }
+#else
+  struct Stops *stops = wtrack->track->stops;
+  
   while(stops != NULL){
     reallineF = FindReallineForF(wblock, reallineF, &stops->l.p);
     float y = get_realline_y(window, reallineF); 
@@ -2539,6 +2556,7 @@ static void create_track_stops(const struct Tracker_Windows *window, const struc
             );
     stops = NextStop(stops);
   }
+#endif
 }
 
 static void create_track_is_recording(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack){
@@ -3092,9 +3110,10 @@ void GL_create(const struct Tracker_Windows *window){
 #if 1 //defined(RELEASE)
   GL_create2(window, window->curr_block < 0 ? NULL : window->wblock);
 #else
+  static int num=0;
   double start = TIME_get_ms();
   GL_create2(window, window->curr_block < 0 ? NULL : window->wblock);
-  printf("   GL_create. dur: %f\n", TIME_get_ms() - start);
+  printf("   GL_create %d. dur: %f\n", num++, TIME_get_ms() - start);
 #endif
 }
 

@@ -112,7 +112,7 @@ static void make_patches_usable(struct Tracks *track){
       return;
     }
     
-    VECTOR_FOR_EACH(struct FXs *fxs, &track->fxs){
+    VECTOR_FOR_EACH(struct FXs *, fxs, &track->fxs){
       struct FX *fx = fxs->fx;
       
       if (fx->patch == old_patch)
@@ -219,7 +219,6 @@ static bool paste_track(
 	totrack->trackname=talloc_strdup(track->trackname);
 
 	totrack->notes=NULL;
-	totrack->stops=NULL;
         totrack->swings=NULL;
 	VECTOR_clean(&totrack->fxs);
 
@@ -227,7 +226,9 @@ static bool paste_track(
 	PlaceSetLastPos(wblock->block,&p2);
 
 	CopyRange_notes(&totrack->notes,track->notes,p1,&p2);
-	CopyRange_stops(&totrack->stops,track->stops,p1,&p2);
+        
+	CopyRange_stops(totrack->stops2,track->stops2,p1,&p2);
+        
 	totrack->swings = CB_CopySwings(track->swings,&p2);
 
         if (totrack->patch != NULL)
@@ -288,7 +289,7 @@ bool co_CB_PasteTrack(
 }
 
 static void remove_fxs_from_fxss(vector_t *fxss, struct FXs *fxs){
-  VECTOR_FOR_EACH(struct FXs *maybe, fxss){
+  VECTOR_FOR_EACH(struct FXs *, maybe, fxss){
     if (maybe->fx->patch==fxs->fx->patch && maybe->fx->effect_num==fxs->fx->effect_num){
       VECTOR_remove(fxss, maybe);
       return;
@@ -406,7 +407,7 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
                               
                               R_ASSERT(cb_wtrack->track->fxs.num_elements==1);
 
-                              struct FXs *fxs = cb_wtrack->track->fxs.elements[0];
+                              struct FXs *fxs = (struct FXs *)cb_wtrack->track->fxs.elements[0];
                               
                               vector_t *fxss = VECTOR_copy(&wtrack->track->fxs);
                               remove_fxs_from_fxss(fxss, fxs);

@@ -391,11 +391,17 @@ static midi_event_t *find_midievent_end_note(std::vector<midi_event_t> &midi_eve
 static void add_recorded_stp(struct Blocks *block, struct Tracks *track, const STime time){
         
   Place place = STime2Place2(block,time,track);
-        
+
+  r::TimeData<r::Stop>::Writer writer(track->stops2);
+
+  r::Stop stop(ratio_from_place(place));
+  writer.add(stop);
+  /*
   struct Stops *stop=(struct Stops*)talloc(sizeof(struct Stops));
   PlaceCopy(&stop->l.p,&place);
           
   ListAddElement3_ns(&track->stops,&stop->l);
+  */
 }
 
 

@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "placement_proc.h"
 #include "clipboard_tempos_copy_proc.h"
 #include "wtracks_proc.h"
+#include "tracks_proc.h"
 #include "fxtext_proc.h"
 #include "swingtext_proc.h"
 
@@ -70,22 +71,20 @@ struct WTracks *internal_copy_track(
 	towtrack=WTRACK_new();
 	memcpy(towtrack,wtrack,sizeof(struct WTracks));
 
-	towtrack->track = totrack = tcopy(track);
-
-        // Null out some data we don't need so it can be GC-ed.
-#if !USE_OPENGL
-        towtrack->wfxnodes = NULL;
-        towtrack->wpitches = NULL;
-#endif
-
+	towtrack->track = totrack = TRACK_create(track->l.num);
+        {
+          auto *stops = totrack->stops2;
+          memcpy(totrack,track,sizeof(struct Tracks));
+          totrack->stops2 = stops;
+        }
+        
         towtrack->track->trackname=talloc_strdup(wtrack->track->trackname);
 
 	const Place *p1=PlaceGetFirstPos();
         Place p2;
 	PlaceSetLastPos(wblock->block,&p2);
 
-	totrack->notes=NULL;
-	totrack->stops=NULL;
+	totrack->notes = NULL;
         totrack->swings=NULL;
         memset(&totrack->fxs, 0, sizeof(vector_t));
 
@@ -95,14 +94,14 @@ struct WTracks *internal_copy_track(
         if (always_copy_all_fxs || subsubtrack==-1) {
           
           CopyRange_notes(&totrack->notes,track->notes,p1,&p2);
-          CopyRange_stops(&totrack->stops,track->stops,p1,&p2);
+          CopyRange_stops(totrack->stops2,track->stops2,p1,&p2);
           totrack->swings = CB_CopySwings(track->swings, &p2);
           CopyRange_fxs(&totrack->fxs,&track->fxs,p1,&p2);
           if (only_one_fxs_was_copied != NULL)
             *only_one_fxs_was_copied = false;
           
         } else{
-          vector_t fxss = {0};
+          vector_t fxss = {};
           VECTOR_push_back(&fxss, fxs);
           CopyRange_fxs(&totrack->fxs,&fxss,p1,&p2);
           *only_one_fxs_was_copied = true;

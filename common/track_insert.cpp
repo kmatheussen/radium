@@ -72,12 +72,12 @@ void DeleteTracks(
             
             struct WTracks *wtrack=CB_CopyTrack(
                                                 wblock,
-                                                ListFindElement1(&wblock->wtracks->l,lokke+todelete)
+                                                (struct WTracks*)ListFindElement1(&wblock->wtracks->l,lokke+todelete)
                                                 );
             co_CB_PasteTrack(
                              wblock,
                              wtrack,
-                             ListFindElement1(&wblock->wtracks->l,lokke)
+                             (struct WTracks*)ListFindElement1(&wblock->wtracks->l,lokke)
                              );
           }
 	
@@ -118,21 +118,22 @@ void InsertTracks(
           for(lokke=num_tracks-1;lokke>=tracknum+toinsert;lokke--){
             wtrack=CB_CopyTrack(
                                 wblock,
-                                ListFindElement1(&wblock->wtracks->l,lokke-toinsert)
+                                (struct WTracks*)ListFindElement1(&wblock->wtracks->l,lokke-toinsert)
                                 );
             co_CB_PasteTrack(
                              wblock,
                              wtrack,
-                             ListFindElement1(&wblock->wtracks->l,lokke)
+                             (struct WTracks*)ListFindElement1(&wblock->wtracks->l,lokke)
                              );
           }
           
           for(lokke=tracknum;lokke<tracknum+toinsert;lokke++){
-            wtrack=ListFindElement1(&wblock->wtracks->l,lokke);
+            wtrack=(struct WTracks*)ListFindElement1(&wblock->wtracks->l,lokke);
             track=wtrack->track;
             
             track->notes=NULL;
-            track->stops=NULL;
+            //track->stops=NULL;
+            r::TimeData<r::Stop>::Writer(track->stops2).clear();
             VECTOR_clean(&track->fxs);
             track->patch=NULL;
           }
