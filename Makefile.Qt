@@ -1143,8 +1143,8 @@ $(T)disk_block.o:  $(BUILD_DEPENDENCIES) $(CD)disk_block.c $(CD)disk.h
 $(T)disk_placement.o:  $(BUILD_DEPENDENCIES) $(CD)disk_placement.c $(CD)disk.h
 	$(CC2) $(CD)disk_placement.c $(OPT)
 
-$(T)disk_stops.o:  $(BUILD_DEPENDENCIES) $(CD)disk_stops.c $(CD)disk.h
-	$(CC2) $(CD)disk_stops.c $(OPT)
+$(T)disk_stops.o:  $(BUILD_DEPENDENCIES) $(CD)disk_stops.cpp $(CD)disk.h
+	$(CCC2) $(CD)disk_stops.cpp $(CPPOPT)
 
 $(T)disk_playlist.o:  $(BUILD_DEPENDENCIES) $(CD)disk_playlist.c $(CD)disk.h
 	$(CC2) $(CD)disk_playlist.c $(OPT)
