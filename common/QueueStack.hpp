@@ -266,6 +266,84 @@ template <typename T, int SIZE> class VectorStack : public BaseQueueStack<T>{
 
 };
 
+// RT safe, but not thread safe.
+template <typename T, int SIZE> class VectorStack_NotThreadSafe : public BaseQueueStack<T>{
+
+  int _pos = 0;
+
+  T _elements[SIZE];
+
+  //int size=0;
+
+  bool pop(T &ret) override{
+    if (_pos==0)
+      return false;
+
+    _pos--;
+
+    ret = _elements[_pos];
+
+    //size--;   printf("        << Pop %p. Size: %d\n", ret, size);
+
+    return true;
+  }
+
+  bool push(T &t) override{
+    //size++;   printf("        >> Push %p. Size: %d\n", t, size);
+
+    if (_pos==SIZE)
+      return false;
+
+    _elements[_pos] = t;
+
+    _pos++;
+
+    return true;
+  }
+
+};
+
+// Simple stack. No waiting. Not thread safe.
+template <typename T, int SIZE> class SimpleStack {
+
+  int _size = 0;
+
+  T _elements[SIZE];
+
+public:
+
+  int size(void) const {
+    return _size;
+  }
+
+  bool is_empty(void) const {
+    return _size==0;
+  }
+  
+  T pop(void){
+    if (_size==0)
+      return NULL;
+
+    _size--;
+
+    return _elements[_size];
+  }
+
+  bool push(T &t) {
+    //size++;   printf("        >> Push %p. Size: %d\n", t, size);
+
+    if (_size==SIZE)
+      return false;
+
+    _elements[_size] = t;
+
+    _size++;
+
+    return true;
+  }
+
+};
+
 static inline int get_curr_cpu(void){
 #if defined(FOR_WINDOWS)
   return GetCurrentProcessorNumber();
