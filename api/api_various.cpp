@@ -540,6 +540,7 @@ void configureSequencerWidget(bool in_window, bool in_main_tabs){
 
   if(change_window || change_position) {
 
+    g_sequencerInMixer = !in_main_tabs;
     
     {
       if(change_position && !in_main_tabs){
@@ -565,7 +566,6 @@ void configureSequencerWidget(bool in_window, bool in_main_tabs){
       MW_update_sequencer_in_mixer_checkbox();
       SEQUENCER_update(SEQUPDATE_REMAKE_LEFT_PART); // Make sure F button is correctly shown/hidden.
     }
-    g_sequencerInMixer = !in_main_tabs;
     
   }
   
