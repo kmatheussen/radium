@@ -50,7 +50,7 @@ void LoadStops(struct Stops **to){
 	while(dc.success){
 		DC_fgets();
 		if(dc.ret[0]=='/') return;
-		stop=DC_alloc(sizeof(struct Stops));
+		stop=(struct Stops*)DC_alloc(sizeof(struct Stops));
 		stop->Tline=atoi(dc.ret);
 		stop->Tcounter=DC_LoadU32();
 		stop->Tdividor=DC_LoadU32();
