@@ -178,6 +178,7 @@ static void InsertLines2(
             LegalizeNotes(block,track);
 
             r::TimeData<r::Stop>::Writer(track->stops2).insert_lines(make_ratio(line,1), make_ratio(toinsert,1));
+            
             /*
             if(track->stops!=NULL) // need check to avoid ubsan/asan hit
               List_InsertLines3(&track->stops,&track->stops->l,line,toinsert,NULL);
