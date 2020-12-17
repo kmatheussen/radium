@@ -699,8 +699,8 @@ static const char *RT_check_abnormal_signal(const SoundPlugin *plugin, int num_f
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
-  if(sum!=0.0f && !isnormal(sum) )
-    return isnan(sum)?"nan":isinf(sum)?"inf":fpclassify(sum)==FP_SUBNORMAL?"denormal":"<something else\?\?\?>";
+  if(sum!=0.0f && !std::isnormal(sum) )
+    return isnan(sum)?"nan":isinf(sum)?"inf":std::fpclassify(sum)==FP_SUBNORMAL?"denormal":"<something else\?\?\?>";
   else
     return NULL;
 #pragma GCC diagnostic pop

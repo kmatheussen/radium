@@ -62,9 +62,11 @@ export CPUOPT=
 # REQUIRES_RTTI=1 cmake -DLLVM_ENABLE_PROJECTS="clang;compiler-rt" -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=$GCC_PREFIX/bin/gcc -DCMAKE_CXX_COMPILER=$GCC_PREFIX/bin/g++ -DGCC_INSTALL_PREFIX=$GCC_PREFIX -DCMAKE_INSTALL_PREFIX=/home/kjetil/site -DLLVM_ENABLE_RTTI=ON ../llvm 
 # REQUIRES_RTTI=1 make REQUIRES_RTTI=1 -j2
 
-if ! env |grep USE_RADIUM_CLANG ; then
-    USE_RADIUM_CLANG=0
+if ! env |grep RADIUM_USE_CLANG ; then
+    RADIUM_USE_CLANG=0
 fi
+
+#RADIUM_USE_CLANG=1
 
 if [[ $RADIUM_USE_CLANG == 1 ]] ; then
     export CLANG_PREFIX=$(dirname `which clang`)/../
