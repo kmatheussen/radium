@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "wtracks_proc.h"
 #include "notes_proc.h"
 #include "patch_proc.h"
+#include "TallocWithDestructor.hpp"
 #include "../embedded_scheme/scheme_proc.h"
 
 #include "clipboard_range_copy_proc.h"
@@ -285,7 +286,12 @@ void CopyRange(
 
         R_ASSERT_RETURN_IF_FALSE(rangenum >= 0 && rangenum < NUM_RANGES);
         
-	struct RangeClip *range_clip=(struct RangeClip *)talloc(sizeof(struct RangeClip));
+	//struct RangeClip *range_clip=(struct RangeClip *)talloc(sizeof(struct RangeClip));
+        struct RangeClip *range_clip=talloc_with_finalizer<struct RangeClip>([](struct RangeClip *range_clip){
+          for(int i=0;i<range_clip->num_tracks;i++)
+            delete range_clip->stops[i];
+        });
+
         range_clip->rangenum = rangenum;
         
         g_range_clips[rangenum] = range_clip;
@@ -294,6 +300,7 @@ void CopyRange(
 
 	range_clip->notes=(struct Notes **)talloc((int)sizeof(struct Notes *)*num_tracks);
         range_clip->stops=(r::TimeData<r::Stop>**)talloc((int)sizeof(r::TimeData<r::Stop> *)*num_tracks);
+
 	//range_clip->instruments=talloc((size_t)(sizeof(struct Instruments *)*num_tracks));
 	range_clip->fxs=(vector_t*)talloc(sizeof(vector_t)*num_tracks);
 
@@ -306,7 +313,7 @@ void CopyRange(
           //range_clip->instruments[lokke]=track->instrument;
           CopyRange_notes(&range_clip->notes[lokke], track->notes, &range.y1, &range.y2);
           
-          range_clip->stops[lokke] = new r::TimeData<r::Stop>; // Note: Memleak.
+          range_clip->stops[lokke] = new r::TimeData<r::Stop>;
           CopyRange_stops(range_clip->stops[lokke], track->stops2, &range.y1, &range.y2);
           
           CopyRange_fxs(&range_clip->fxs[lokke], &track->fxs,      &range.y1, &range.y2);
