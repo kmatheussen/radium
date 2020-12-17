@@ -176,7 +176,7 @@ struct KeyboardFocusFrame : public QFrame{
     }
   }
 
-  void enterEvent(QEvent * event){
+  void enterEvent(QEvent * event) override {
     FOCUSFRAMES_set_focus(_type, true);
   }
 };

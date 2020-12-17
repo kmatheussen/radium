@@ -197,6 +197,7 @@ WNO_DEPRECATED_DECLARATIONS=
 ifeq ($(GCC_MAJOR),10)
 	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined # -fno-sanitize-recover
 	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
+	WNO_DEPRECATED_DECLARATIONS=-Wno-deprecated-declarations
 #	UNDEFINED_SANITIZE_OPTS=
 else ifeq ($(GCC_MAJOR),9)
 	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined -fno-sanitize-recover
@@ -213,6 +214,7 @@ else ifeq ($(GCC_MAJOR),7)
 #	UNDEFINED_SANITIZE_OPTS=
 else ifneq (,$(findstring clang,$(CC)))
 	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
+	WNO_DEPRECATED_DECLARATIONS=-Wno-deprecated-declarations
 else
 	UNDEFINED_SANITIZE_OPTS=
 	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=
@@ -316,7 +318,7 @@ COMMONOPT = -c `cat buildtype.opt` -I$(GCDIR)/include -I$(P) -I$(PYPATH) `cat fl
 ifeq (,$(findstring clang,$(CC)))
 	COMMONOPT += -Wduplicated-cond -Wduplicated-branches -Wlogical-op -Wrestrict -fmax-errors=5 
 else
-        COMMONOPT += -Wno-deprecated-register -Wunused-member-function
+        COMMONOPT += -Wno-deprecated-register # -Wunused-member-function (isn't there a warning to warn about unused variables only, not methods?)
 endif
 
 #ifeq ($(GCC_MAJOR),7)

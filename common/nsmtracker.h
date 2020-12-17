@@ -133,6 +133,7 @@ static_assert (sizeof(long long int) >= 8, "sizof(long long int) must be 8 or hi
 #include <math.h>
 
 #ifdef __cplusplus
+#include <cmath>
 #include <limits>
 #endif
 
@@ -256,14 +257,22 @@ extern double g_last_time_mouse_pointer_was_moved_by_the_program; // Only used i
 static inline bool sane_isnormal_FLOAT(float x) {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
+#ifdef __cplusplus
+  return x==0.0f || std::isnormal(x);
+#else
   return x==0.0f || isnormal(x);
+#endif
 #pragma GCC diagnostic pop
 }
 
 static inline bool sane_isnormal_DOUBLE(double x) {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
+#ifdef __cplusplus
+  return x==0.0 || std::isnormal(x);
+#else
   return x==0.0 || isnormal(x);
+#endif
 #pragma GCC diagnostic pop
 }
 
@@ -970,7 +979,7 @@ struct vector_t_{
 static inline vector_t create_static_vector_t(int num_elements, void **elements){
   const vector_t ret = {
     .num_elements = num_elements,
-     .num_elements_allocated= num_elements,
+    .num_elements_allocated= num_elements,
     .elements = elements
   };
   return ret;
