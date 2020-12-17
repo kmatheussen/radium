@@ -356,6 +356,17 @@ public:
         _time_data->replace_vector(this->_vector);
     }
 
+    // Must be called after modifying if you expect data to be sorted. Does nothing if the vector is already sorted.
+    // Not necessary to call before any of the methods in the Writer class, but may be needed if calling any of the methods in ReaderWriter.
+    void sortit_if_necessary(void){
+      this->_vector->sortit_if_necessary();
+    }
+
+    // If changing a "at_ref()._time" value, call this one afterwards.
+    void mark_not_sorted(void){
+      this->_vector->_is_sorted = false;
+    }
+    
     void add(T &data){
       /*
       int pos = BinarySearch_Left(data.time);
@@ -455,7 +466,7 @@ public:
 
       }
 
-      remove_at_pos(to_remove);
+      remove_at_positions(to_remove);
 
       return ret;
     }
@@ -465,6 +476,7 @@ public:
       insert_ratio(where_to_start, how_much);
     }
 
+    // equiv. to expand_list3
     void expand(const Ratio &start, const Ratio &end, const Ratio &new_end, const Ratio &last_legal_place){
       sortit_if_necessary();
       
@@ -472,47 +484,37 @@ public:
         
         T &t = this->at_ref(i);
 
-        Ratio new_time;
-        
         if (t._time > start) {
 
+          Ratio new_time;
+        
           if (t._time >= end) {
 
             if (new_end < end)
-              new_time -= (end-new_end);
+              new_time = t._time - (end-new_end);
             else
-              new_time += (new_end-end);
+              new_time = t._time + (new_end-end);
             
           } else {
 
             new_time = scale_ratio(t._time, start, end, start, new_end);
+            
+          }
+           
+          if (new_time > last_legal_place) {
+            R_ASSERT_NON_RELEASE(false);
+            new_time = last_legal_place;
           }
           
+          t._time = new_time;
         }
 
-        if (new_time > last_legal_place) {
-          R_ASSERT_NON_RELEASE(false);
-          new_time = last_legal_place;
-        }
-
-        t._time = new_time;
       }
     }
     
     void cancel(void){
       R_ASSERT_NON_RELEASE(_has_cancelled==false);
       _has_cancelled = true;
-    }
-
-    // Must be called after modifying if you expect data to be sorted. Does nothing if the vector is already sorted.
-    // Not necessary to call before any of the methods in the Writer class, but may be needed if calling any of the methods in ReaderWriter.
-    void sortit_if_necesarry(void){
-      this->_vector->sortit_if_necessary();
-    }
-
-    // If changing a "at_ref()._time" value, call this one afterwards.
-    void mark_not_sorted(void){
-      this->_vector->_is_sorted = false;
     }
   };
 
