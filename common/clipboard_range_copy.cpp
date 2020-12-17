@@ -128,9 +128,7 @@ void CopyRange_stops(
 
   r::TimeData<r::Stop>::Reader reader(from_stop);
 
-  r::TimeData<r::Stop>::Writer writer(to_stop);
-
-  writer.clear();
+  r::TimeData<r::Stop>::Writer writer(to_stop, true);
 
   Ratio start = make_ratio_from_place(*p1);
   Ratio end = make_ratio_from_place(*p2);
@@ -141,6 +139,7 @@ void CopyRange_stops(
     if (stop._time >= start) {
       if (stop._time >= end)
         break;
+      stop._time -= start;
       writer.add(stop);
     }
   }
