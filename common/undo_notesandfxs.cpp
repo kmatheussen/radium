@@ -26,13 +26,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "vector_proc.h"
 #include "fxlines_proc.h"
 #include "../midi/midi_fx_proc.h"
+#include "TallocWithDestructor.hpp"
 
 #include "undo_notesandfxs_proc.h"
 
 
-struct Undo_NotesAndFXs{
+struct Undo_NotesAndFXs : radium::GC_able{
 	struct Notes *notes;
-        r::TimeData<r::Stop> *stops; // memleak
+        r::TimeData<r::Stop> stops;
         vector_t fxss;
 	void *midi_instrumentdata;
 };
@@ -57,12 +58,11 @@ static void ADD_UNDO_FUNC(
 {
 	const Place *p1=PlaceGetFirstPos();
 	Place p2;
-	struct Undo_NotesAndFXs *undo_notesandfxs=(struct Undo_NotesAndFXs *)talloc(sizeof(struct Undo_NotesAndFXs));
-        undo_notesandfxs->stops = new r::TimeData<r::Stop>; // fix, memleak
+	struct Undo_NotesAndFXs *undo_notesandfxs=new Undo_NotesAndFXs;
         
 	PlaceSetLastPos(block,&p2);
 
-	CopyRange_stops(undo_notesandfxs->stops,track->stops2,p1,&p2);
+	CopyRange_stops(&undo_notesandfxs->stops,track->stops2,p1,&p2);
 	CopyRange_notes(&undo_notesandfxs->notes,track->notes,p1,&p2);
 	CopyRange_fxs(&undo_notesandfxs->fxss,&track->fxs,p1,&p2);
 	if(track->midi_instrumentdata!=NULL){
@@ -121,9 +121,9 @@ static void *Undo_Do_NotesAndFXs(
           
           stops_temp.move_from(track->stops2);
           
-          track->stops2->move_from(undo_notesandfxs->stops);
+          track->stops2->move_from(&undo_notesandfxs->stops);
            
-          undo_notesandfxs->stops->move_from(&stops_temp);
+          undo_notesandfxs->stops.move_from(&stops_temp);
 
         }
         

@@ -86,11 +86,11 @@ extern const radium::FreeableList *FREEABLELIST_transfer_all(void);
 #if !defined(RELEASE) || defined(TEST_TIMEDATA_MAIN)
 extern int g_num_timedata_vectors;
 #endif
-  
+
 namespace r{
 
 template <typename T>
-class TimeData{
+class TimeData {
 
   static_assert(sizeof(T) < sizeof(void*)*8, "T should be a pointer if too big. This to lower the time it takes to copy the underlying vector.");
   static_assert(std::is_trivially_copyable<T>::value, "T should be a pointer if not trivially copyable. (don't want to copy all data every time we add a block for instance)");
@@ -328,9 +328,10 @@ public:
     
     ~Reader(){
     }
-
+    /*
     BetweenTwoTs get_at_time(Ratio when) const{
     }
+    */
   };
 
 
