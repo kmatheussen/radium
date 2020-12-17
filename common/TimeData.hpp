@@ -325,19 +325,6 @@ public:
       : Reader(const_cast<TimeData*>(time_data))
     {}
     */
-#if 0
-    radium::RT_AtomicPointerStorageMultipleReaders_ScopedUsage<const r::TimeData<Gakk>::TimeDataVector>::RT_AtomicPointerStorageMultipleReaders_ScopedUsage(
-        const radium::AtomicPointerStorageMultipleReaders<r::TimeData<Gakk>::TimeDataVector>&
-    )
-    
-    radium::RT_AtomicPointerStorageMultipleReaders_ScopedUsage<const r::TimeData<Gakk>::TimeDataVector>::RT_AtomicPointerStorageMultipleReaders_ScopedUsage(
-        radium::AtomicPointerStorageMultipleReaders<const r::TimeData<Gakk>::TimeDataVector>&
-    )
-
-    from: const radium::AtomicPointerStorageMultipleReaders<      r::TimeData<Gakk>::TimeDataVector>
-    to:         radium::AtomicPointerStorageMultipleReaders<const r::TimeData<Gakk>::TimeDataVector>&
-    
-#endif
     
     ~Reader(){
     }
@@ -379,9 +366,10 @@ public:
 
     void clear(void){
       this->_vector->clear();
+      this->_vector->_is_sorted = true;
     }
 
-    bool remove_at(int pos){
+    bool remove_at_pos(int pos){
       if (pos < 0 || pos >= this->size()){
         return false;
       }
@@ -390,37 +378,53 @@ public:
       this->_vector->_is_sorted = false; // (_vector->remove_pos doesn't keep order)
       return true;
     }
+
+    void remove_at_positions(std::vector<int> positions){
+      // Make sure we iterate from last to first position.
+      // If not, we might remove wrong elements since 'remove_at_pos' just swap 'pos' with last element and decrements size.
+      std::sort(positions.begin(), positions.end(), std::greater<int>());
+
+      int last = -1;
+      for(int pos : positions){
+        if (last==pos){
+          R_ASSERT_NON_RELEASE(false);
+        } else {
+          remove_at_pos(pos);
+          last = pos;
+        }
+      }
+    }
     
     bool remove_at_time(Ratio ratio){
       int pos = this->find_pos(ratio);
       if (pos < 0)
         return false;
-      return remove_at(pos);
+      return remove_at_pos(pos);
     }
 
     void remove_everything_after(Ratio time, bool include_at = true){
-      for(int i=0;i<this->size();i++){
+      sortit_if_necessary();
+      
+      for(int i=this->size()-1 ; i >= 0 ; i--){
+        
         T &t = this->at_ref(i);
+        
         if (t._time >= time){
+          
           if (t._time==time){
             if (include_at)
-              remove_at(i);
+              remove_at_pos(i);
           }else
-            remove_at(i);
+            remove_at_pos(i);
+          
         }
-      }
-    }
-    
-    void insert_lines(const Ratio &where_to_start, const Ratio &how_much){
-      for(int i=0;i<this->size();i++){
-        T &t = this->at_ref(i);
-        if (t._time >= where_to_start)
-          t._time += how_much;
       }
     }
 
     // equiv. to List_InsertRatioLen3.
-    bool insert_ratio(const Ratio &ratio, const Ratio &toratio, const Ratio &last_legal_place){
+    bool insert_ratio(const Ratio &where_to_start, const Ratio &how_much, const Ratio last_legal_place = make_ratio(-1,1)){
+      sortit_if_necessary();
+      
       std::vector<int> to_remove;
       
       bool ret = false;
@@ -429,18 +433,18 @@ public:
         
         T &t = this->at_ref(i);
 
-        if (t._time >= ratio) {
+        if (t._time >= where_to_start) {
           ret = true;
 
-          if (t._time < (ratio-toratio)) {
+          if (t._time < (where_to_start - how_much)) {
 
             to_remove.push_back(i);
             
           } else {
 
-            t._time += toratio;
+            t._time += how_much;
 
-            if (t._time < make_ratio(0,1) || t._time > last_legal_place){
+            if (t._time.num < 0 || (last_legal_place.num>=0 && t._time > last_legal_place)){
 
               to_remove.push_back(i);
               
@@ -450,16 +454,19 @@ public:
 
       }
 
-      int skew = 0;
-      for(int pos : to_remove){
-        remove_at(pos-skew);
-        skew++;
-      }
+      remove_at_pos(to_remove);
 
       return ret;
     }
 
+    // equiv. to List_InsertLines3.
+    void insert_lines(const Ratio &where_to_start, const Ratio &how_much){
+      insert_ratio(where_to_start, how_much);
+    }
+
     void expand(const Ratio &start, const Ratio &end, const Ratio &new_end, const Ratio &last_legal_place){
+      sortit_if_necessary();
+      
       for(int i=0;i<this->size();i++){
         
         T &t = this->at_ref(i);
@@ -500,6 +507,11 @@ public:
     // Not necessary to call before any of the methods in the Writer class, but may be needed if calling any of the methods in ReaderWriter.
     void sortit_if_necesarry(void){
       this->_vector->sortit_if_necessary();
+    }
+
+    // If changing a "at_ref()._time" value, call this one afterwards.
+    void mark_not_sorted(void){
+      this->_vector->_is_sorted = false;
     }
   };
 

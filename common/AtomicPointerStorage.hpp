@@ -23,12 +23,17 @@ namespace radium{
 // Class to store a pointer.
 // * The main thread can set, replace and free the pointer at any time.
 // * One RT thread (or non-RT thread) can access the pointer at any time by using the ScopedUsage class.
+//   (Use AtomicPointerStorageMultipleReaders instead if you need more than one reader (see below))
 //
 // This code is genious in what it does, but it takes some time understanding how it works.
-// However, there's lots of assertions, there have never been problems with the code,
-// I'm regularly running tsan and asan, and I've looked over the code a few times and
-// and concluded that it's correct, so I'm confident it's working properly (Note added 2020-12).
+// Still, there are good reasons to believe the code is correct:
+// * There's lots of assertions
+// * Stresstests are run regularly (see "make test_timedata" in Makefile and the test itself in common/TimeData.cpp)
+// * asan and ubsan are always enabled in DEBUG mode, and sometimes tsan.
+// * When looking over the code I have always concluded that it's correct.
+// * There have never been problems with the code
 //
+  
 template <typename T>
 class AtomicPointerStorage{
     
@@ -176,10 +181,14 @@ public:
 #define MAX_NUM_READERS 128
   
 // Same as AtomicPointerStorage, but this one also supports up to MAX_NUM_READERS readers at the same time.
-// If using more than MAX_NUM_READERS, the RT_AtomicPointerStorage_ScopedUsage constructor might sleep in the constructor.
 //
-// Performance should be approximately the same as AtomicPointerStorage.
-// However, this one uses uses approx. 4k of memory. (Most of the memory will never be CPU-fetched, so CPU cache should not be affected very much).
+// If using more readers than MAX_NUM_READERS, the code should not produce the wrong result or crash, but the
+// RT_AtomicPointerStorage_ScopedUsage constructor might sleep and an assertion will pop up.
+//
+// Performance should be approximately the same as AtomicPointerStorage, but this one uses a lot more memory (approx. 4k).
+// However, most of the memory will never be CPU-fetched, so CPU cache should not be affected.
+//
+// (AtomicPointerStorageMultipleReaders::set_new_pointer is approx. 128 times slower than AtomicPointerStorage:set_new_pointer, but this should never matter.)
 //
 template <typename T>
 class AtomicPointerStorageMultipleReaders {
@@ -239,7 +248,7 @@ public:
   }
 
   void set_new_pointer(T *new_pointer) {
-    R_ASSERT(new_pointer != NULL); // NULL not supported. If nedaed, NULL can be replaced by a ((T*)-1) or something in AtomicPointerStorage to indicate a used slot instead of NULL.
+    R_ASSERT(new_pointer != NULL); // NULL not supported now. If NULL is needed, we can use ((T*)-1) (or something similar) in AtomicPointerStorage to indicate a used slot instead of NULL.
     
     RefcountT *refcount_t = new RefcountT(new_pointer);
     
