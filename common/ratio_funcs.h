@@ -2,8 +2,9 @@
 #define _RADIUM_COMMON_RATIO_FUNCS_H
 
 #if !defined(__STDC_FORMAT_MACROS)
-#define __STDC_FORMAT_MACROS
+#define __STDC_FORMAT_MACROS 1
 # include <inttypes.h>
+#error "what?"
 #endif
 
 #ifdef TEST_MAIN
