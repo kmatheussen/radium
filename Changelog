@@ -1,3 +1,9 @@
+Changes 6.5.85 -> 6.5.86:
+* Audio: Fix loading and saving when using plugins
+  that have effect names with line shifts.
+
+
+
 Changes 6.5.84 -> 6.5.85:
 * GUI: Improve Qt recursion detection. Hopefully
   there won't be false positives on macos now.
