@@ -27,7 +27,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #if defined(COMPILING_JUCE_PLUGINS_O)
 
 
-
+#define __STDC_FORMAT_MACROS 1
+#include <inttypes.h>
 #include <math.h>
 #include <string.h>
 

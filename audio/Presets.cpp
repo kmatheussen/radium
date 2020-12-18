@@ -1,4 +1,5 @@
 
+#include <inttypes.h>
 #include <QVector>
 #include <QString>
 #include <QFileInfo>
