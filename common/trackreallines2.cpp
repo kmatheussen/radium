@@ -86,12 +86,21 @@ static void add_note(const struct WBlocks *wblock, Trss &trss, struct Notes *not
   }
 }
 
+#if 1
+static void add_stop(const struct WBlocks *wblock, Trss &trss, const r::Stop stop){
+  TrackRealline2 tr = {};
+  tr.p = make_place_from_ratio(stop._time);
+  tr.is_stop = true;
+  add_tr(wblock, trss, tr);
+}
+#else
 static void add_stop(const struct WBlocks *wblock, Trss &trss, struct Stops *stop){
   TrackRealline2 tr = {};
   tr.p = stop->l.p;
   tr.stop = stop;
   add_tr(wblock, trss, tr);
 }
+#endif
 
 static int find_next_used_trackrealline(const struct WBlocks *wblock, Trss &trss, int realline){
   while(realline < wblock->num_reallines && trss.contains(realline)==false)
@@ -190,12 +199,19 @@ const Trss TRSS_get(const struct WBlocks *wblock, const struct WTracks *wtrack){
     note = NextNote(note);
   }
 
+#if 1
+  r::TimeData<r::Stop>::Reader reader(wtrack->track->stops2);
+  for(const r::Stop &stop : reader) {
+    add_stop(wblock, trss, stop);
+  }
+#else
   struct Stops *stop = wtrack->track->stops;
   while(stop!=NULL){
     add_stop(wblock, trss, stop);
     stop = NextStop(stop);
   }
-
+#endif
+  
   spread_trackreallines(wblock, trss);
     
   //  if (wtrack->l.num==0)

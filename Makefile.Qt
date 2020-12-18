@@ -197,6 +197,7 @@ WNO_DEPRECATED_DECLARATIONS=
 ifeq ($(GCC_MAJOR),10)
 	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined # -fno-sanitize-recover
 	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
+	WNO_DEPRECATED_DECLARATIONS=-Wno-deprecated-declarations
 #	UNDEFINED_SANITIZE_OPTS=
 else ifeq ($(GCC_MAJOR),9)
 	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined -fno-sanitize-recover
@@ -213,6 +214,7 @@ else ifeq ($(GCC_MAJOR),7)
 #	UNDEFINED_SANITIZE_OPTS=
 else ifneq (,$(findstring clang,$(CC)))
 	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
+	WNO_DEPRECATED_DECLARATIONS=-Wno-deprecated-declarations
 else
 	UNDEFINED_SANITIZE_OPTS=
 	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=
@@ -316,7 +318,7 @@ COMMONOPT = -c `cat buildtype.opt` -I$(GCDIR)/include -I$(P) -I$(PYPATH) `cat fl
 ifeq (,$(findstring clang,$(CC)))
 	COMMONOPT += -Wduplicated-cond -Wduplicated-branches -Wlogical-op -Wrestrict -fmax-errors=5 
 else
-        COMMONOPT += -Wno-deprecated-register -Wunused-member-function
+        COMMONOPT += -Wno-deprecated-register # -Wunused-member-function (isn't there a warning to warn about unused variables only, not methods?)
 endif
 
 #ifeq ($(GCC_MAJOR),7)
@@ -472,7 +474,7 @@ endif
 
 #-------------------OBJECT DEFINITIONS-------------------------------
 
-OBJ1= $(T)windows.o $(T)window_config.o $(T)list.o $(T)vector.o $(T)hashmap.o $(T)Dynvec.o $(T)song.o $(T)blocks.o $(T)block_insert.o $(T)block_split.o $(T)block_delete.o $(T)block_properties.o $(T)tracks.o $(T)localzooms.o $(T)control.o $(T)lines.o $(T)font.o $(T)track_insert.o $(T)track_onoff.o $(T)settings.o $(T)mmd2load.o
+OBJ1= $(T)windows.o $(T)window_config.o $(T)list.o $(T)vector.o $(T)hashmap.o $(T)Dynvec.o $(T)TimeData.o $(T)song.o $(T)blocks.o $(T)block_insert.o $(T)block_split.o $(T)block_delete.o $(T)block_properties.o $(T)tracks.o $(T)localzooms.o $(T)control.o $(T)lines.o $(T)font.o $(T)track_insert.o $(T)track_onoff.o $(T)settings.o $(T)mmd2load.o
 
 OBJ2= $(T)notes.o $(T)notes_legalize.o $(T)pitches.o $(T)wblocks.o $(T)wtracks.o $(T)sliders.o $(T)common.o
 
@@ -659,15 +661,40 @@ profile:
 #	operf $(RADIUM_BIN) && opreport -ca |more
 
 check: test
-test: test_vector test_placement test_notes test_path_resolver test_seqautomation test_audiobuffer test_smoothdelay test_threading test_samplereader test_ratio
+test: test_vector test_placement test_notes test_path_resolver test_seqautomation test_audiobuffer test_smoothdelay test_threading test_samplereader test_ratio test_timedata
 	@echo
 	@echo " == All tests succeeded, apparently =="
+
+test_timedata:
+	cd common && $(CCC) TimeData.cpp -DTEST_TIMEDATA_MAIN -Wall -Werror -g -lpthread -o a.out &&	./a.out
+	cd common && $(CCC) TimeData.cpp -DTEST_TIMEDATA_MAIN -Wall -Werror -g -lpthread -Ofast -o a.out &&	./a.out
+	cd common && $(CCC) TimeData.cpp -DTEST_TIMEDATA_MAIN -Wall -Werror -g -lpthread -Os -o a.out &&	./a.out
+	cd common && $(CCC) TimeData.cpp -DTEST_TIMEDATA_MAIN -Wall -Werror -g -lpthread -O3 -o a.out &&	./a.out
+
+	cd common && $(CCC) TimeData.cpp -DRELEASE -DTEST_TIMEDATA_MAIN -Wall -Werror -g -lpthread -O2 -o a.out &&	./a.out
+
+	cd common && $(CCC) TimeData.cpp -DTEST_TIMEDATA_MAIN -Wall -Werror -g -lpthread -O3 -fsanitize=thread -o a.out && TSAN_OPTIONS="history_size=7,second_deadlock_stack=1,abort_on_error=1" ./a.out
+	cd common && $(CCC) TimeData.cpp -DTEST_TIMEDATA_MAIN -Wall -Werror -g -lpthread -O2 -fsanitize=undefined -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" ./a.out
+	cd common && $(CCC) TimeData.cpp -DTEST_TIMEDATA_MAIN -Wall -Werror -g -lpthread -O3 -fsanitize=address -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" ./a.out
+	cd common && $(CCC) TimeData.cpp -DTEST_TIMEDATA_MAIN -Wall -Werror -g -lpthread -O2 -fsanitize=undefined -fsanitize=address -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" ./a.out
+
+	cd common && $(CCC) TimeData.cpp -DRELEASE -DTEST_TIMEDATA_MAIN -Wall -Werror -g -lpthread -O2 -fsanitize=thread -o a.out && TSAN_OPTIONS="history_size=7,second_deadlock_stack=1,abort_on_error=1" ./a.out
+	cd common && $(CCC) TimeData.cpp -DRELEASE -DTEST_TIMEDATA_MAIN -Wall -Werror -g -lpthread -O3 -fsanitize=undefined -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" ./a.out
+	cd common && $(CCC) TimeData.cpp -DRELEASE -DTEST_TIMEDATA_MAIN -Wall -Werror -g -lpthread -O2 -fsanitize=address -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" ./a.out
+	cd common && $(CCC) TimeData.cpp -DRELEASE -DTEST_TIMEDATA_MAIN -Wall -Werror -g -lpthread -O3 -fsanitize=undefined -fsanitize=address -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" ./a.out
+
+test_timedata_gdb:
+#	cd common && g++ TimeData.cpp -DTEST_TIMEDATA_MAIN -Wall -Werror -g -lpthread -o a.out &&	gdb -ex "set print thread-events off" ./a.out
+#	cd common && g++ TimeData.cpp -DTEST_TIMEDATA_MAIN -Wall -Werror -g -lpthread -O3 -o a.out &&	gdb -ex "set print thread-events off" ./a.out
+#	cd common && g++ TimeData.cpp -DTEST_TIMEDATA_MAIN -Wall -Werror -g -lpthread -O3 -fsanitize=thread -o a.out &&	gdb -ex "set print thread-events off" TSAN_OPTIONS="history_size=7,second_deadlock_stack=1,abort_on_error=1" ./a.out
+	cd common && g++ TimeData.cpp -DTEST_TIMEDATA_MAIN -Wall -Werror -g -lpthread -O3 -fsanitize=undefined -fsanitize=address -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" gdb -ex "set print thread-events off" ./a.out
+
 
 test_ratio:
 	cd common && ln -sf ratio_funcs.h test_ratio.cpp && g++ test_ratio.cpp -DTEST_MAIN -Wall -Werror -g -o a.out &&	./a.out
 
 test_samplereader:
-	cd audio && g++ SampleReader.cpp -DTEST_MAIN -Wall -std=gnu++14 -g && ./a.out
+	cd audio && $(CCC) SampleReader.cpp -DTEST_MAIN -Wall -std=gnu++14 -g && ./a.out
 
 test_threading:
 	$(CCC) common/threading.cpp -DTEST_THREADING -Wall $(QTOPT) -fPIC -DFOR_LINUX
@@ -864,13 +891,13 @@ $(T)song.o:  $(BUILD_DEPENDENCIES) $(CD)song.c
 $(T)blocks.o:  $(BUILD_DEPENDENCIES) $(CD)blocks.cpp
 	$(CCC2) $(CD)blocks.cpp $(QTOPT)
 
-$(T)tracks.o:  $(BUILD_DEPENDENCIES) $(CD)tracks.cpp #$(CD)TimeData.hpp
+$(T)tracks.o:  $(BUILD_DEPENDENCIES) $(CD)tracks.cpp $(CD)TimeData.hpp
 	$(CCC2) $(CD)tracks.cpp $(CPPOPT)
 
 $(T)localzooms.o:  $(BUILD_DEPENDENCIES) $(CD)localzooms.c 
 	$(CC2) $(CD)localzooms.c $(OPT)
 
-$(T)notes.o:  $(BUILD_DEPENDENCIES) $(CD)notes.cpp common/nsmtracker.h
+$(T)notes.o:  $(BUILD_DEPENDENCIES) $(CD)notes.cpp common/nsmtracker.h common/TimeData.hpp
 	$(CCC2) $(CD)notes.cpp $(QTOPT)
 
 $(T)pitches.o:  $(BUILD_DEPENDENCIES) $(CD)pitches.c 
@@ -900,7 +927,7 @@ $(T)reallines.o:  $(BUILD_DEPENDENCIES) $(CD)reallines.c
 $(T)notestext.o:  $(BUILD_DEPENDENCIES) $(CD)notestext.c
 	$(CC2) $(CD)notestext.c $(OPT)
 
-$(T)trackreallines2.o:  $(BUILD_DEPENDENCIES) $(CD)trackreallines2.cpp
+$(T)trackreallines2.o:  $(BUILD_DEPENDENCIES) $(CD)trackreallines2.cpp common/TimeData.hpp
 	$(CCC2) $(CD)trackreallines2.cpp  $(QTOPT) #$(OPT)
 
 $(T)signaturetext.o:  $(BUILD_DEPENDENCIES) $(CD)signaturetext.cpp
@@ -972,7 +999,7 @@ $(T)LPB.o:  $(BUILD_DEPENDENCIES) $(CD)LPB.cpp
 $(T)Signature.o:  $(BUILD_DEPENDENCIES) $(CD)Signature.cpp
 	$(CCC2) $(CD)Signature.cpp $(QTOPT)
 
-$(T)Beats.o:  $(BUILD_DEPENDENCIES) $(CD)Beats.cpp
+$(T)Beats.o:  $(BUILD_DEPENDENCIES) $(CD)Beats.cpp common/TimeData.hpp
 	$(CCC2) $(CD)Beats.cpp $(QTOPT)
 
 $(T)temponodes.o:  $(BUILD_DEPENDENCIES) $(CD)temponodes.c
@@ -1042,8 +1069,8 @@ $(T)scheduler.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler.c $(CD)scheduler_proc.h
 $(T)scheduler_seqtracks.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_seqtracks.c $(CD)scheduler_proc.h
 	$(CC2) $(CD)scheduler_seqtracks.c $(OPT) #-fno-sanitize=undefined
 
-$(T)scheduler_notes.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_notes.c $(CD)scheduler_proc.h
-	$(CC2) $(CD)scheduler_notes.c $(OPT)
+$(T)scheduler_notes.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_notes.cpp $(CD)scheduler_proc.h
+	$(CCC2) $(CD)scheduler_notes.cpp $(CPPOPT)
 
 $(T)scheduler_pitches.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_pitches.c $(CD)scheduler_proc.h
 	$(CC2) $(CD)scheduler_pitches.c $(OPT)
@@ -1084,14 +1111,14 @@ $(T)clipboard_range.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_range.c $(CD)clipbo
 $(T)clipboard_range_calc.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_range_calc.c $(CD)clipboard_range.h
 	$(CC2) $(CD)clipboard_range_calc.c $(OPT)
 
-$(T)clipboard_range_copy.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_range_copy.c $(CD)clipboard_range.h
-	$(CC2) $(CD)clipboard_range_copy.c $(OPT)
+$(T)clipboard_range_copy.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_range_copy.cpp $(CD)clipboard_range.h
+	$(CCC2) $(CD)clipboard_range_copy.cpp $(CPPOPT)
 
-$(T)clipboard_range_paste.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_range_paste.c $(CD)clipboard_range.h
-	$(CC2) $(CD)clipboard_range_paste.c $(OPT)
+$(T)clipboard_range_paste.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_range_paste.cpp $(CD)clipboard_range.h
+	$(CCC2) $(CD)clipboard_range_paste.cpp $(CPPOPT)
 
-$(T)clipboard_range_cut.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_range_cut.c $(CD)clipboard_range.h
-	$(CC2) $(CD)clipboard_range_cut.c $(OPT)
+$(T)clipboard_range_cut.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_range_cut.cpp $(CD)clipboard_range.h
+	$(CCC2) $(CD)clipboard_range_cut.cpp $(CPPOPT)
 
 $(T)player_pause.o:  $(BUILD_DEPENDENCIES) $(CD)player_pause.c $(CD)playerclass.h
 	$(CC2) $(CD)player_pause.c $(OPT)
@@ -1143,8 +1170,8 @@ $(T)disk_block.o:  $(BUILD_DEPENDENCIES) $(CD)disk_block.c $(CD)disk.h
 $(T)disk_placement.o:  $(BUILD_DEPENDENCIES) $(CD)disk_placement.c $(CD)disk.h
 	$(CC2) $(CD)disk_placement.c $(OPT)
 
-$(T)disk_stops.o:  $(BUILD_DEPENDENCIES) $(CD)disk_stops.c $(CD)disk.h
-	$(CC2) $(CD)disk_stops.c $(OPT)
+$(T)disk_stops.o:  $(BUILD_DEPENDENCIES) $(CD)disk_stops.cpp $(CD)disk.h common/TimeData.hpp
+	$(CCC2) $(CD)disk_stops.cpp $(CPPOPT)
 
 $(T)disk_playlist.o:  $(BUILD_DEPENDENCIES) $(CD)disk_playlist.c $(CD)disk.h
 	$(CC2) $(CD)disk_playlist.c $(OPT)
@@ -1202,20 +1229,20 @@ $(T)disk_patches.o:  $(BUILD_DEPENDENCIES) $(CD)disk_patches.c $(CD)disk.h
 $(T)disk_slider.o:  $(BUILD_DEPENDENCIES) $(CD)disk_slider.c
 	$(CC2) $(CD)disk_slider.c $(OPT)
 
-$(T)clipboard_track_copy.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_track_copy.c
-	$(CC2) $(CD)clipboard_track_copy.c $(OPT)
+$(T)clipboard_track_copy.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_track_copy.cpp
+	$(CCC2) $(CD)clipboard_track_copy.cpp $(CPPOPT)
 
-$(T)clipboard_track_paste.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_track_paste.c
-	$(CC2) $(CD)clipboard_track_paste.c $(OPT)
+$(T)clipboard_track_paste.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_track_paste.cpp
+	$(CCC2) $(CD)clipboard_track_paste.cpp $(CPPOPT)
 
-$(T)clipboard_track_cut.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_track_cut.c
-	$(CC2) $(CD)clipboard_track_cut.c $(OPT)
+$(T)clipboard_track_cut.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_track_cut.cpp common/TimeData.hpp
+	$(CCC2) $(CD)clipboard_track_cut.cpp $(CPPOPT)
 
 $(T)lines.o:  $(BUILD_DEPENDENCIES) $(CD)lines.cpp
 	$(CCC2) $(CD)lines.cpp $(CPPOPT)
 
-$(T)notes_legalize.o:  $(BUILD_DEPENDENCIES) $(CD)notes_legalize.c
-	$(CC2) $(CD)notes_legalize.c $(OPT)
+$(T)notes_legalize.o:  $(BUILD_DEPENDENCIES) $(CD)notes_legalize.cpp
+	$(CCC2) $(CD)notes_legalize.cpp $(CPPOPT)
 
 $(T)temponodes_legalize.o:  $(BUILD_DEPENDENCIES) $(CD)temponodes_legalize.c
 	$(CC2) $(CD)temponodes_legalize.c $(OPT)
@@ -1247,8 +1274,8 @@ $(T)clipboard_block_paste.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_block_paste.c
 $(T)undo.o:  $(BUILD_DEPENDENCIES) $(CD)undo.cpp $(CD)undo.h
 	$(CCC2) $(CD)undo.cpp $(CPPOPT) -DMAX_NUM_UNDOS=$(MAX_NUM_UNDOS)
 
-$(T)undo_notes.o:  $(BUILD_DEPENDENCIES) $(CD)undo_notes.c $(CD)undo.h
-	$(CC2) $(CD)undo_notes.c $(OPT)
+$(T)undo_notes.o:  $(BUILD_DEPENDENCIES) $(CD)undo_notes.cpp $(CD)undo.h
+	$(CCC2) $(CD)undo_notes.cpp $(CPPOPT)
 
 $(T)undo_fxs.o:  $(BUILD_DEPENDENCIES) $(CD)undo_fxs.c $(CD)undo.h
 	$(CC2) $(CD)undo_fxs.c $(OPT)
@@ -1268,8 +1295,8 @@ $(T)undo_lpbs.o:  $(BUILD_DEPENDENCIES) $(CD)undo_lpbs.c $(CD)undo.h
 $(T)undo_signatures.o:  $(BUILD_DEPENDENCIES) $(CD)undo_signatures.c $(CD)undo.h
 	$(CC2) $(CD)undo_signatures.c $(OPT)
 
-$(T)undo_notesandfxs.o:  $(BUILD_DEPENDENCIES) $(CD)undo_notesandfxs.c $(CD)undo.h
-	$(CC2) $(CD)undo_notesandfxs.c $(OPT)
+$(T)undo_notesandfxs.o:  $(BUILD_DEPENDENCIES) $(CD)undo_notesandfxs.cpp $(CD)undo.h
+	$(CCC2) $(CD)undo_notesandfxs.cpp $(CPPOPT)
 
 $(T)undo_reallines.o:  $(BUILD_DEPENDENCIES) $(CD)undo_reallines.c $(CD)undo.h
 	$(CC2) $(CD)undo_reallines.c $(OPT)
@@ -1286,8 +1313,8 @@ $(T)undo_blocks.o:  $(BUILD_DEPENDENCIES) $(CD)undo_blocks.c
 $(T)PEQ_calc_64bit.o:  $(BUILD_DEPENDENCIES) $(CD)PEQ_calc_64bit.c
 	$(CC2) $(CD)PEQ_calc_64bit.c $(OPT)
 
-$(T)track_insert.o:  $(BUILD_DEPENDENCIES) $(CD)track_insert.c
-	$(CC2) $(CD)track_insert.c $(OPT)
+$(T)track_insert.o:  $(BUILD_DEPENDENCIES) $(CD)track_insert.cpp
+	$(CCC2) $(CD)track_insert.cpp $(CPPOPT)
 
 $(T)quantitize.o:  $(BUILD_DEPENDENCIES) $(CD)quantitize.c
 	$(CC2) $(CD)quantitize.c $(OPT)
@@ -1724,8 +1751,8 @@ $(T)posix_settings.o:  $(BUILD_DEPENDENCIES) posix/posix_settings.c
 $(T)settings.o:  $(BUILD_DEPENDENCIES) $(CD)settings.cpp
 	$(CCC2) $(CD)settings.cpp $(QTOPT)
 
-$(T)mmd2load.o:  $(BUILD_DEPENDENCIES) mmd2loader/mmd2load.c
-	$(CC2) mmd2loader/mmd2load.c $(OPT)
+$(T)mmd2load.o:  $(BUILD_DEPENDENCIES) mmd2loader/mmd2load.cpp
+	$(CCC2) mmd2loader/mmd2load.cpp $(CPPOPT)
 
 $(T)scroll.o:  $(BUILD_DEPENDENCIES) $(CD)scroll.c
 	$(CC2) $(CD)scroll.c $(OPT)
@@ -1758,8 +1785,8 @@ $(T)glissando.o:  $(BUILD_DEPENDENCIES)  $(CD)new/glissando.c
 $(T)pitchexpand.o:  $(BUILD_DEPENDENCIES)  $(CD)new/pitchexpand.c
 	$(CC2)  $(CD)new/pitchexpand.c $(OPT)
 
-$(T)expand.o:  $(BUILD_DEPENDENCIES)  $(CD)expand.c
-	$(CC2)  $(CD)expand.c $(OPT)
+$(T)expand.o:  $(BUILD_DEPENDENCIES)  $(CD)expand.cpp
+	$(CCC2)  $(CD)expand.cpp $(CPPOPT)
 
 $(T)api_common.o:  $(BUILD_DEPENDENCIES)  $(API)api_common.cpp
 	@echo "Changed (api_common.o):"
@@ -1778,7 +1805,7 @@ $(T)api_navigate.o:  $(BUILD_DEPENDENCIES)  $(API)api_navigate.c
 $(T)api_disk.o:  $(BUILD_DEPENDENCIES)  $(API)api_disk.cpp 
 	$(CCC2)  $(API)api_disk.cpp $(SNDFILEOPT) $(QTOPT)
 
-$(T)api_noteedit.o:  $(BUILD_DEPENDENCIES)  $(API)api_noteedit.cpp 
+$(T)api_noteedit.o:  $(BUILD_DEPENDENCIES)  $(API)api_noteedit.cpp common/TimeData.hpp
 	$(CCC2)  $(API)api_noteedit.cpp $(QTOPT)
 
 $(T)api_velocities.o:  $(BUILD_DEPENDENCIES)  $(API)api_velocities.c 
@@ -2474,7 +2501,7 @@ $(T)GfxElements.o: OpenGL/GfxElements.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxEleme
 $(T)T2.o: OpenGL/T2.cpp OpenGL/T2.hpp OpenGL/SharedVariables.hpp common/QueueStack.hpp OpenGL/GfxElements.h 
 	$(CCC2) OpenGL/T2.cpp $(VL_CFLAGS) $(QTOPT) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC)    #-Wno-error=unused-variable
 
-$(T)Render.o: OpenGL/Render.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp common/spinlock.h common/time_proc.h common/Beats_proc.h
+$(T)Render.o: OpenGL/Render.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp common/spinlock.h common/time_proc.h common/Beats_proc.h common/TimeData.hpp
 	$(CCC2) OpenGL/Render.cpp $(VL_CFLAGS) $(QTOPT) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC)
 
 $(T)Widget.o: OpenGL/Widget.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/Timing.hpp OpenGL/SharedVariables.hpp common/Mutex.hpp OpenGL/T2.hpp common/spinlock.h common/MovingAverage.hpp bin/packages/Visualization-Library-master/src/vlQt5/Qt5ThreadedWidget.hpp common/Vector.hpp Qt/Timer.hpp

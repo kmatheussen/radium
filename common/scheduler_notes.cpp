@@ -19,9 +19,9 @@ static int rnd(int max){
 
 
 static int64_t RT_scheduled_stop_note(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
-  struct Tracks *track = args[0].pointer;
-  struct Notes *note   = args[1].pointer;
-  const struct SeqBlock *seqblock   = args[2].const_pointer;
+  struct Tracks *track = (struct Tracks *)args[0].pointer;
+  struct Notes *note   = (struct Notes *)args[1].pointer;
+  const struct SeqBlock *seqblock   = (const struct SeqBlock *)args[2].const_pointer;
   
   struct Patch *patch = track->patch;
   
@@ -59,7 +59,7 @@ static int64_t RT_schedule_end_note(struct SeqTrack *seqtrack,
   args[1].const_pointer = note;
   args[2].const_pointer = seqblock;
 
-  int priority = SCHEDULER_NOTE_OFF_PRIORITY;
+  SchedulerPriority priority = SCHEDULER_NOTE_OFF_PRIORITY;
 
 
   if (!note_continues_next_block(block, note)){
@@ -96,14 +96,14 @@ static int64_t RT_schedule_end_note(struct SeqTrack *seqtrack,
             
     } else {
 
-      VECTOR_FOR_EACH(struct SeqBlock *seqblock2, &seqtrack->seqblocks){
+      VECTOR_FOR_EACH(struct SeqBlock *,seqblock2, &seqtrack->seqblocks){
         if (seqblock2->block != NULL && seqblock2->t.time > seqblock->t.time) {
 
           seqblock = seqblock2;
                 
-          struct Tracks *track = ListFindElement1_r0(&seqblock->block->tracks->l, tracknum);
+          struct Tracks *track = (struct Tracks *)ListFindElement1_r0(&seqblock->block->tracks->l, tracknum);
           if (track != NULL){
-            if (track->notes!=NULL || track->stops!=NULL){
+            if (track->notes!=NULL || r::TimeData<r::Stop>::Reader(track->stops2).size()>0){
               next_track = track;
               break;
             }
@@ -117,25 +117,35 @@ static int64_t RT_schedule_end_note(struct SeqTrack *seqtrack,
           
     if (next_track == NULL)
       return -1;
-          
-    const Place *p = NULL;
+
+    bool has_p = false;
+    Place p;
 
     // 2. Find next place.
 
-    if (next_track->notes!=NULL)
-      p = &next_track->notes->l.p;
-          
-    if (next_track->stops!=NULL) {
-      if (p==NULL)
-        p = &next_track->stops->l.p;
-      else
-        p = PlaceMin(p, &next_track->stops->l.p);
+    if (next_track->notes!=NULL){
+      p = next_track->notes->l.p;
+      has_p = true;
+    }      
+
+    {
+      r::TimeData<r::Stop>::Reader reader(next_track->stops2);
+      if (reader.size() > 0){
+        const Place stop_p = make_place_from_ratio(reader.at_ref(0)._time);
+        if (!has_p) {
+          p = stop_p;
+          has_p = true;
+        } else {
+          if (p_Less_Than(stop_p, p))
+            p = stop_p;
+        }
+      }
     }
           
-    if (p==NULL)
+    if (!has_p)
       return -1; // I.e note never stops.
 
-    int64_t time = addtime + get_seqblock_place_time2(seqblock, track, *p);
+    int64_t time = addtime + get_seqblock_place_time2(seqblock, track, p);
 
     if (note_start_time == time)
       priority = SCHEDULER_LOWEST_NOTE_PRIORITY; // Make sure note is stopped after all other events, in case the note is stopped at the same time as it was started. (extreme corner case situtation)
@@ -154,9 +164,9 @@ static void RT_schedule_note(struct SeqTrack *seqtrack,
                              );
 
 static int64_t RT_scheduled_note(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
-  const struct SeqBlock *seqblock = args[0].const_pointer;
-  const struct Tracks *track = args[1].const_pointer;
-  struct Notes *note = args[2].pointer;
+  const struct SeqBlock *seqblock = (const struct SeqBlock *)args[0].const_pointer;
+  const struct Tracks *track = (const struct Tracks *)args[1].const_pointer;
+  struct Notes *note = (struct Notes *)args[2].pointer;
   int64_t note_time = args[3].int_num;
 
   struct Patch *patch = track->patch;

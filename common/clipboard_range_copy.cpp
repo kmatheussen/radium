@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "wtracks_proc.h"
 #include "notes_proc.h"
 #include "patch_proc.h"
+#include "TallocWithDestructor.hpp"
 #include "../embedded_scheme/scheme_proc.h"
 
 #include "clipboard_range_copy_proc.h"
@@ -43,7 +44,7 @@ static void CopyRange_velocities(
 
 	if(PlaceGreaterOrEqual(&fromvelocity->l.p,p2)) return;
 
-	velocity=tcopy(fromvelocity);
+	velocity=(struct Velocities*)tcopy(fromvelocity);
 
 	PlaceSub(&velocity->l.p,p1);
 
@@ -65,7 +66,7 @@ static void CopyRange_pitches(
 
 	if(PlaceGreaterOrEqual(&frompitch->l.p,p2)) return;
 
-	pitch=tcopy(frompitch);
+	pitch=(struct Pitches*)tcopy(frompitch);
 
 	PlaceSub(&pitch->l.p,p1);
 
@@ -117,12 +118,34 @@ void CopyRange_notes(
 
 
 void CopyRange_stops(
-                     struct Stops **tostop,
-                     const struct Stops *fromstop,
+                     r::TimeData<r::Stop> *to_stop,
+                     //struct Stops **tostop,
+                     const r::TimeData<r::Stop> *from_stop,
+                     //const struct Stops *from_stop,
                      const Place *p1,
                      const Place *p2
 ){
-	if(fromstop==NULL) return;
+
+  r::TimeData<r::Stop>::Reader reader(from_stop);
+
+  r::TimeData<r::Stop>::Writer writer(to_stop, true);
+
+  Ratio start = make_ratio_from_place(*p1);
+  Ratio end = make_ratio_from_place(*p2);
+
+  R_ASSERT_NON_RELEASE(end>=start);
+
+  for(r::Stop stop : reader){
+    if (stop._time >= start) {
+      if (stop._time >= end)
+        break;
+      stop._time -= start;
+      writer.add(stop);
+    }
+  }
+
+  /*
+  if(reader.size()==NULL) return;
 
 	if(PlaceLessThan(&fromstop->l.p,p1)){
 		CopyRange_stops(tostop,NextStop(fromstop),p1,p2);
@@ -137,6 +160,7 @@ void CopyRange_stops(
 	ListAddElement3_a(tostop,&stop->l);
 
 	CopyRange_stops(tostop,NextStop(fromstop),p1,p2);
+  */
 
 }
 
@@ -145,7 +169,7 @@ static void add_fxnodeline(
                            const struct FXNodeLines *fromfxnodeline,
                            Place subtract
 ){               
-  struct FXNodeLines *fxnodeline=tcopy(fromfxnodeline);
+  struct FXNodeLines *fxnodeline=(struct FXNodeLines *)tcopy(fromfxnodeline);
   
   fxnodeline->l.p = p_Sub(fxnodeline->l.p, subtract);
   
@@ -219,7 +243,7 @@ void CopyRange_fxs(
                    const Place *p2
                    )
 {
-  VECTOR_FOR_EACH(const struct FXs *fromfxs, das_fromfxs){
+  VECTOR_FOR_EACH(const struct FXs *, fromfxs, das_fromfxs){
 
         R_ASSERT_RETURN_IF_FALSE(fromfxs->fx->patch->is_usable);
         
@@ -231,9 +255,9 @@ void CopyRange_fxs(
         }
 #endif
         
-	struct FXs *fxs=talloc(sizeof(struct FXs));
+	struct FXs *fxs=(struct FXs*)talloc(sizeof(struct FXs));
 
-	fxs->fx=tcopy(fromfxs->fx);
+	fxs->fx=(struct FX *)tcopy(fromfxs->fx);
 
 	VECTOR_push_back(tofxs,fxs);
 
@@ -261,26 +285,36 @@ void CopyRange(
 
         R_ASSERT_RETURN_IF_FALSE(rangenum >= 0 && rangenum < NUM_RANGES);
         
-	struct RangeClip *range_clip=talloc(sizeof(struct RangeClip));
+	//struct RangeClip *range_clip=(struct RangeClip *)talloc(sizeof(struct RangeClip));
+        struct RangeClip *range_clip=talloc_with_finalizer<struct RangeClip>([](struct RangeClip *range_clip){
+          for(int i=0;i<range_clip->num_tracks;i++)
+            delete range_clip->stops[i];
+        });
+
         range_clip->rangenum = rangenum;
         
         g_range_clips[rangenum] = range_clip;
         
 	range_clip->num_tracks = num_tracks = range.x2-range.x1+1;
 
-	range_clip->notes=talloc((int)sizeof(struct Notes *)*num_tracks);
-        range_clip->stops=talloc((int)sizeof(struct Stops *)*num_tracks);
+	range_clip->notes=(struct Notes **)talloc((int)sizeof(struct Notes *)*num_tracks);
+        range_clip->stops=(r::TimeData<r::Stop>**)talloc((int)sizeof(r::TimeData<r::Stop> *)*num_tracks);
+
 	//range_clip->instruments=talloc((size_t)(sizeof(struct Instruments *)*num_tracks));
-	range_clip->fxs=talloc((int)sizeof(vector_t)*num_tracks);
+	range_clip->fxs=(vector_t*)talloc(sizeof(vector_t)*num_tracks);
 
 	range_clip->length = p_Sub(range.y2, range.y1);
         
-	const struct Tracks *track=ListFindElement1(&block->tracks->l,range.x1);
+	const struct Tracks *track=(const struct Tracks *)ListFindElement1(&block->tracks->l,range.x1);
 
 	for(lokke=0;lokke<=range.x2-range.x1;lokke++){
+          
           //range_clip->instruments[lokke]=track->instrument;
           CopyRange_notes(&range_clip->notes[lokke], track->notes, &range.y1, &range.y2);
-          CopyRange_stops(&range_clip->stops[lokke], track->stops, &range.y1, &range.y2);
+          
+          range_clip->stops[lokke] = new r::TimeData<r::Stop>;
+          CopyRange_stops(range_clip->stops[lokke], track->stops2, &range.y1, &range.y2);
+          
           CopyRange_fxs(&range_clip->fxs[lokke], &track->fxs,      &range.y1, &range.y2);
 
           track=NextTrack(track);

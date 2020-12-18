@@ -26,13 +26,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "vector_proc.h"
 #include "fxlines_proc.h"
 #include "../midi/midi_fx_proc.h"
+#include "TallocWithDestructor.hpp"
 
 #include "undo_notesandfxs_proc.h"
 
 
-struct Undo_NotesAndFXs{
+struct Undo_NotesAndFXs : radium::GC_able{
 	struct Notes *notes;
-	struct Stops *stops;
+        r::TimeData<r::Stop> stops;
         vector_t fxss;
 	void *midi_instrumentdata;
 };
@@ -57,11 +58,11 @@ static void ADD_UNDO_FUNC(
 {
 	const Place *p1=PlaceGetFirstPos();
 	Place p2;
-	struct Undo_NotesAndFXs *undo_notesandfxs=talloc(sizeof(struct Undo_NotesAndFXs));
-
+	struct Undo_NotesAndFXs *undo_notesandfxs=new Undo_NotesAndFXs;
+        
 	PlaceSetLastPos(block,&p2);
 
-	CopyRange_stops(&undo_notesandfxs->stops,track->stops,p1,&p2);
+	CopyRange_stops(&undo_notesandfxs->stops,track->stops2,p1,&p2);
 	CopyRange_notes(&undo_notesandfxs->notes,track->notes,p1,&p2);
 	CopyRange_fxs(&undo_notesandfxs->fxss,&track->fxs,p1,&p2);
 	if(track->midi_instrumentdata!=NULL){
@@ -98,27 +99,34 @@ static void *Undo_Do_NotesAndFXs(
 ){
 	struct Undo_NotesAndFXs *undo_notesandfxs=(struct Undo_NotesAndFXs *)pointer;
 	struct Notes *ntemp;
-	struct Stops *stemp;
 
 	void *midi_instrumentdata;
 
 	struct Tracks *track=wtrack->track;
 
 	ntemp=track->notes;
-	stemp=track->stops;
 	vector_t *temp=VECTOR_copy(&track->fxs);
 	midi_instrumentdata=track->midi_instrumentdata;
 
-	track->stops=undo_notesandfxs->stops;
 	track->notes=undo_notesandfxs->notes;
 	track->fxs=*(VECTOR_copy(&undo_notesandfxs->fxss));
 	track->midi_instrumentdata=undo_notesandfxs->midi_instrumentdata;
 
-	undo_notesandfxs->stops=stemp;
 	undo_notesandfxs->notes=ntemp;
 	undo_notesandfxs->fxss=*temp;
 	undo_notesandfxs->midi_instrumentdata=midi_instrumentdata;
 
+        {
+          r::TimeData<r::Stop> stops_temp;
+          
+          stops_temp.move_from(track->stops2);
+          
+          track->stops2->move_from(&undo_notesandfxs->stops);
+           
+          undo_notesandfxs->stops.move_from(&stops_temp);
+
+        }
+        
 #if !USE_OPENGL
 	UpdateFXNodeLines(window,wblock,wtrack);
 #endif

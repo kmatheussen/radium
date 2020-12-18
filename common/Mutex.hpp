@@ -5,7 +5,9 @@
 
 #include <pthread.h>
 #include <sys/time.h>
-# include <errno.h>
+#include <errno.h>
+
+#include <thread>
 
 #ifdef FOR_MACOSX
 # include <sys/types.h>
@@ -57,8 +59,21 @@ public:
   
 };
   */
+
   
-struct Mutex {
+struct AbstractMutex {
+  AbstractMutex(const AbstractMutex&) = delete;
+  AbstractMutex& operator=(const AbstractMutex&) = delete;
+
+  AbstractMutex(){
+  }
+  
+  virtual void lock(void) = 0;
+  virtual void unlock(void) = 0;
+};
+
+  
+struct Mutex : public AbstractMutex {
   friend struct CondWait;
   
 private:
@@ -69,9 +84,9 @@ private:
 
 public:
   
-  Mutex(bool is_recursive = false)
-    :is_recursive(is_recursive)
-    ,num_locks(0)
+  Mutex(bool is_recursive)
+    : is_recursive(is_recursive)
+    , num_locks(0)
   {
     if (is_recursive){
       pthread_mutexattr_t attr;
@@ -83,11 +98,16 @@ public:
     }
   }
 
+  Mutex()
+    : Mutex(false)
+  {
+  }
+  
   ~Mutex(){
     pthread_mutex_destroy(&mutex);
   }
 
-  void lock(void){    
+  void lock(void) override {
     pthread_mutex_lock(&mutex); // Note that pthread_mutex_lock is a lighweight lock, meaning that it only have to do an atomic test-and-set if the mutex wasn't already obtained. So no need to do that optimization here (we would avoid a function call though, but that shouldn't matter). (winpthread implementation: https://sourceforge.net/p/mingw-w64/mingw-w64/ci/master/tree/mingw-w64-libraries/winpthreads/src/mutex.c)
 
     // ehm.
@@ -97,7 +117,7 @@ public:
     num_locks++;
   }
 
-  void unlock(void){
+  void unlock(void) override {
     R_ASSERT_RETURN_IF_FALSE(num_locks>0);
     
     num_locks--;
@@ -110,28 +130,190 @@ public:
   }
 };
 
-struct ScopedMutex{
-  Mutex &mutex;
+
+// Se her for tuna spinlock for audio:  https://timur.audio/using-locks-in-real-time-audio-processing-safely (pthrad_unlock bruker muligens en del tid)
+  // Kanskje det kan løses ved å vente med å kalle unlock() til audio-callback er ferdig.
+struct RT_Mutex : public AbstractMutex {
   
-  ScopedMutex(Mutex &mutex)
-    : mutex(mutex)
+private:
+
+  pthread_mutex_t _mutex;
+  bool _is_recursive;
+  int _num_locks;
+
+#if !defined(FOR_LINUX)
+  priority_t _priority_before_locking;
+#endif
+  
+public:
+  
+  RT_Mutex(bool is_recursive)
+    : _is_recursive(is_recursive)
+    , _num_locks(0)
   {
-    mutex.lock();
+    pthread_mutexattr_t attr;
+
+    int s1 = pthread_mutexattr_init(&attr);
+    if (s1!=0)
+      GFX_Message(NULL, "RT_Mutex: pthread_mutexattr_init failed: %d\n",s1);
+
+#if defined(FOR_LINUX)
+    // It doesn't seem like macos supports PTHREAD_PRIO_INHERIT.
+    // (Googling it, there is one blog post claiming that macosx supports PTHREAD_PRIO_INHERIT,
+    // but there's nothing in the pthread source code of of macos that indicates that it is supported).
+    int s3 = pthread_mutexattr_setprotocol(&attr, PTHREAD_PRIO_INHERIT);
+    if (s3!=0)
+      GFX_Message(NULL, "RT_Mutex: pthread_mutexattr_setprotocol failed: %d\n",s3);
+#endif
+    
+    if (_is_recursive)
+      pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+    else
+      pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_NORMAL);
+    
+    int s4 = pthread_mutex_init(&_mutex, &attr);
+    if (s4!=0)
+      GFX_Message(NULL, "RT_Mutex: pthread_mutex_init failed: %d\n",s4);
   }
 
-  ~ScopedMutex(){
-    mutex.unlock();
+  RT_Mutex()
+    : RT_Mutex(false)
+  {
+  }
+  
+  ~RT_Mutex(){
+    pthread_mutex_destroy(&_mutex);
   }
 
-  void wait_and_pause_lock(int ms){
-    mutex.unlock();
-    OS_WaitForAShortTime(ms);
-    mutex.lock();
+  // Only call if already running realtime.
+  void RT_lock(void) {
+    pthread_mutex_lock(&_mutex);
+
+    // ehm.
+    if (!_is_recursive)
+      R_ASSERT_RETURN_IF_FALSE(_num_locks==0);
+
+    _num_locks++;
+  }
+  
+  void lock(void) override {
+#if !defined(FOR_LINUX)
+    _priority_before_locking = THREADING_get_priority();
+    THREADING_acquire_player_thread_priority();
+#endif
+    
+    RT_lock();
+  }
+  
+  // Only call if already running realtime.
+  void RT_unlock(void){
+    R_ASSERT_RETURN_IF_FALSE(_num_locks>0);
+    
+    _num_locks--;
+    
+    pthread_mutex_unlock(&_mutex);
+  }
+  
+  void unlock(void) override {
+    RT_unlock();
+
+#if !defined(FOR_LINUX)
+    THREADING_set_priority(_priority_before_locking);
+#endif
+  }
+
+  bool is_locked(void) const {
+    return _num_locks>0;
   }
 };
 
+struct ScopedMutex{
 
+  ScopedMutex(const ScopedMutex&) = delete;
+  ScopedMutex& operator=(const ScopedMutex&) = delete;
 
+  AbstractMutex &mutex;
+  const bool _doit;
+  
+  ScopedMutex(AbstractMutex &mutex, bool doit = true)
+    : mutex(mutex)
+    , _doit(doit)
+  {
+    if (_doit)
+      mutex.lock();
+  }
+
+  ~ScopedMutex(){
+    if (_doit)
+      mutex.unlock();
+  }
+
+  void wait_and_pause_lock(int ms){
+    if (_doit)
+      mutex.unlock();
+    OS_WaitForAShortTime(ms);
+    if (_doit)
+      mutex.lock();
+  }
+};
+
+// Class written by Timur Doumler. Code copied from https://timur.audio/using-locks-in-real-time-audio-processing-safely
+// (I assume it is public domain)
+struct AudioSpinMutex : public AbstractMutex{
+  
+  void lock(void) noexcept override {
+    // approx. 5x5 ns (= 25 ns), 10x40 ns (= 400 ns), and 3000x350 ns 
+    // (~ 1 ms), respectively, when measured on a 2.9 GHz Intel i9
+    constexpr int iterations[3] = {5, 10, 3000};
+    
+    for (int i = 0; i < iterations[0]; ++i) {
+      if (try_lock())
+        return;
+    }
+    
+    for (int i = 0; i < iterations[1]; ++i) {
+      if (try_lock())
+        return;
+      
+      _mm_pause();
+    }
+    
+    while (true) {
+      for (int i = 0; i < iterations[2]; ++i) {
+        if (try_lock())
+          return;
+        
+        _mm_pause();
+        _mm_pause();
+        _mm_pause();
+        _mm_pause();
+        _mm_pause();
+        _mm_pause();
+        _mm_pause();
+        _mm_pause();
+        _mm_pause();
+        _mm_pause();
+      }
+      
+      // waiting longer than we should, let's give other threads 
+      // a chance to recover
+      std::this_thread::yield();
+    }
+  }
+
+  bool try_lock(void) noexcept {
+    return !flag.test_and_set(std::memory_order_acquire);
+  }
+  
+  void unlock(void) noexcept override {
+    flag.clear(std::memory_order_release);
+  }
+  
+private:
+  std::atomic_flag flag = ATOMIC_FLAG_INIT;
+};
+
+  
 struct CondWait {
 
   pthread_cond_t cond;

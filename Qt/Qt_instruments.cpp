@@ -753,8 +753,10 @@ void GFX_update_instrument_widget(struct Patch *patch){
       return;
     }
 
-    if (instrument->isVisible())
+    if (instrument->isVisible()){
+      //printf("       2. UPDATE %s\n", patch->name);
       update_audio_instrument_widget(instrument,patch);
+    }
   }
 }
 

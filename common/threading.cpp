@@ -63,39 +63,39 @@ enum ThreadType{
   RUNNER_THREAD
 };
 
-static __thread ThreadType thread_type = OTHER_THREAD;
+static __thread ThreadType g_thread_type = OTHER_THREAD;
 
 
 void THREADING_init_main_thread_type(void) {
-  R_ASSERT_NON_RELEASE(thread_type==OTHER_THREAD);
-  thread_type = MAIN_THREAD;
+  R_ASSERT_NON_RELEASE(g_thread_type==OTHER_THREAD);
+  g_thread_type = MAIN_THREAD;
 }
 
 void THREADING_init_player_thread_type(void) {
-  R_ASSERT_NON_RELEASE(thread_type==OTHER_THREAD);
-  thread_type = PLAYER_THREAD;
+  R_ASSERT_NON_RELEASE(g_thread_type==OTHER_THREAD);
+  g_thread_type = PLAYER_THREAD;
 }
 
 void THREADING_init_runner_thread_type(void) {
-  R_ASSERT_NON_RELEASE(thread_type==OTHER_THREAD);
-  thread_type = RUNNER_THREAD;
+  R_ASSERT_NON_RELEASE(g_thread_type==OTHER_THREAD);
+  g_thread_type = RUNNER_THREAD;
 }
 
 void THREADING_init_juce_thread_type(void) {
-  R_ASSERT_NON_RELEASE(thread_type==OTHER_THREAD);
-  thread_type = JUCE_THREAD;
+  R_ASSERT_NON_RELEASE(g_thread_type==OTHER_THREAD);
+  g_thread_type = JUCE_THREAD;
 }
 
 bool THREADING_is_main_thread(void){
-  return thread_type==MAIN_THREAD;
+  return g_thread_type==MAIN_THREAD;
 }
 
 bool THREADING_is_player_thread(void){
-  return thread_type==PLAYER_THREAD;
+  return g_thread_type==PLAYER_THREAD;
 }
 
 bool THREADING_is_runner_thread(void){
-  return thread_type==RUNNER_THREAD;
+  return g_thread_type==RUNNER_THREAD;
 }
 
 bool THREADING_is_player_or_runner_thread(void){
@@ -104,7 +104,7 @@ bool THREADING_is_player_or_runner_thread(void){
 
 
 bool THREADING_is_juce_thread(void){
-  return thread_type==JUCE_THREAD;
+  return g_thread_type==JUCE_THREAD;
 }
 
 

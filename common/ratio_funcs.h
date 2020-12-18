@@ -1,8 +1,10 @@
 #ifndef _RADIUM_COMMON_RATIO_FUNCS_H
 #define _RADIUM_COMMON_RATIO_FUNCS_H
 
+#if !defined(__STDC_FORMAT_MACROS)
 #define __STDC_FORMAT_MACROS
 # include <inttypes.h>
+#endif
 
 #ifdef TEST_MAIN
 
@@ -15,7 +17,7 @@
 
 #else
 
-# include "placement_proc.h"
+//# include "placement_proc.h"
 
 #endif
 
@@ -62,95 +64,11 @@ static inline double make_double_from_ratio(Ratio r){
   return (double)r.num / (double)r.den;
 }
 
-// the ov_ macros are copied from the s7 source (macros are slightly renamed)
-#if (defined(__clang__) && ((__clang_major__ > 3) || (__clang_major__ == 3 && __clang_minor__ >= 4)))
-#ifdef __cplusplus
-  static_assert(sizeof(void*) == 8, "sizeof(void*) is not 8");
-#endif
-  #define ov_sub(A, B, C)       __builtin_ssubll_overflow((long long)A, (long long)B, (long long *)C)
-  #define ov_add(A, B, C)       __builtin_saddll_overflow((long long)A, (long long)B, (long long *)C)
-  #define ov_mul(A, B, C)       __builtin_smulll_overflow((long long)A, (long long)B, (long long *)C)
-#elif (defined(__GNUC__) && __GNUC__ >= 5)
-  #define ov_sub(A, B, C)       __builtin_sub_overflow(A, B, C)
-  #define ov_add(A, B, C)       __builtin_add_overflow(A, B, C)
-  #define ov_mul(A, B, C)       __builtin_mul_overflow(A, B, C)
-#endif
-
+#include "overflow_funcs.h"
 
 #ifndef TEST_MAIN
-static inline Ratio make_ratio_from_place(const Place p){
-  R_ASSERT_NON_RELEASE(p.dividor > 0);
-
-  int64_t num;
-  
-  if (ov_mul(p.line, p.dividor, &num)){
-    R_ASSERT_NON_RELEASE(false); // should be impossible
-  }
-  
-  if (ov_add(num, p.counter, &num)){
-    R_ASSERT_NON_RELEASE(false); // should be impossible
-  }
-  
-  return make_ratio(num, p.dividor);
-}
-
-#ifndef CUSTOM_R_ASSERT
-#ifdef COMMON_PLACEMENT_PROC_H
-static inline Place make_place_from_ratio(const Ratio ratio){
-  R_ASSERT_NON_RELEASE(ratio.den > 0);
-  Place place;
-  
-  place.line = ratio.num / ratio.den;
-
-  if (place.line < 0){
-#if !defined(RELEASE)
-    abort();
 #endif
-    place.line = 0;
-    place.counter = 0;
-    place.dividor = 1;
-    return place;
-  }
-  
-  int64_t num;
-  if (ov_mul(place.line, ratio.den, &num))
-    goto overflow_handler;
-  
-  if (ov_sub(ratio.num, num, &num))
-    goto overflow_handler;
 
-  {
-    Ratio r2 = RATIO_minimize(make_ratio(num, ratio.den));
-    
-    if (r2.den <= MAX_UINT32) {
-      
-      place.counter = r2.num;
-      place.dividor = r2.den;
-      
-    } else {
-      
-      place.counter = scale_int64(MAX_UINT32,
-                                  0, r2.den,
-                                  0, r2.num);
-      
-      place.dividor = MAX_UINT32;    
-    }
-
-    return place;
-  }
-  
- overflow_handler:
-  {
-#if !defined(RELEASE)
-    abort();
-#endif
-    double r = (double)ratio.num / (double)ratio.den;
-    return p_FromDouble(r);
-  }
-}
-#endif
-#endif
-#endif
 
 static inline Ratio RATIO_mul(const Ratio r1, const Ratio r2){
   R_ASSERT_NON_RELEASE(r1.den > 0);
@@ -229,16 +147,32 @@ static inline bool RATIO_greater_than(const Ratio r1, const Ratio r2){
   R_ASSERT_NON_RELEASE(r1.den > 0);
   R_ASSERT_NON_RELEASE(r2.den > 0);
 
-  if (r1.den == r2.den)
+  if (r1.den == r2.den) {
+
+    // For instance 5/1 > 5/1
+    
     return r1.num > r2.num;
 
-  if (r1.num >= r2.num &&
-      r1.den < r2.den)
-    return true;
-  
-  if (r2.num >= r1.num &&
-      r2.den < r1.den)
-    return false;
+  } else if (r1.den < r2.den) {
+
+    // For instance 5/1 > 5/2
+    
+    if (r1.num >= r2.num)
+      return true;
+
+       
+  } else {
+
+    R_ASSERT_NON_RELEASE(r1.den > r2.den);
+
+    // For instance 5/2 > 5/1
+    
+    if (r2.num >= r1.num)
+      return false;
+    
+  }
+
+  // For instance 1/2 > 2/3
   
   int64_t a,b;
   
@@ -391,15 +325,29 @@ static inline Ratio& operator/=(Ratio& r1, int i2){
   return r1;
 }
 
+static inline Ratio scale_ratio(const Ratio &x, const Ratio &x1, const Ratio &x2, const Ratio &y1, const Ratio &y2){
+  const Ratio diff = x2-x1;
+
+  R_ASSERT_RETURN_IF_FALSE2(diff.num>0, y1);
+  
+  return y1 + ( ((x-x1)*(y2-y1))
+                /
+                diff
+                );
+}
+
+
 #endif
 
 #ifndef TEST_MAIN
+#ifndef TEST_TIMEDATA_MAIN
 static inline char *ratio_to_string(const Ratio ratio){
   if(ratio.den==1)
     return talloc_format("%" PRId64 "", ratio.num);
   else
     return talloc_format("%" PRId64 "/%" PRId64 "", ratio.num, ratio.den);
 }
+#endif
 #endif
 
 #endif

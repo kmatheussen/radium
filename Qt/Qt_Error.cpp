@@ -11,6 +11,7 @@
 
 #include "../common/nsmtracker.h"
 
+
 #include "helpers.h"
 
 #ifdef TEST_MAIN
@@ -26,7 +27,9 @@ static inline QString STRING_get_qstring(const wchar_t *string){ // TODO: Rename
 
 #define LANGSPEC "C"  // LANGSPEC doesn't work in OS_error_proc.h, so can't include nsmtracker.h. Haven't found out why this happens.
 
+#if !defined(COMPILE_EXECUTABLE)
   #include "../common/OS_settings_proc.h"
+#endif
 
 #endif
 
@@ -44,7 +47,6 @@ both:
 
 
 #ifdef COMPILE_EXECUTABLE
-
 
 extern "C"{
   void CRASHREPORTER_send_assert_message(Crash_Type tye, const char *message, ...){

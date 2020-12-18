@@ -49,7 +49,7 @@ static void PasteRange_velocities(
 
         Place lastplace = p_Last_Pos(block);
                 
-        struct Velocities *velocity = tcopy(fromvelocity);
+        struct Velocities *velocity = (struct Velocities *)tcopy(fromvelocity);
         PlaceAdd(&velocity->l.p,place);
 
         if(PlaceGreaterThan(&velocity->l.p,&lastplace))
@@ -77,7 +77,7 @@ static bool PasteRange_FXs(
               );
 
 
-  struct Tracks *track=ListFindElement1(&block->tracks->l,starttrack);
+  struct Tracks *track=(struct Tracks *)ListFindElement1(&block->tracks->l,starttrack);
   int lokke;
   for(lokke=0;lokke<range_clip->num_tracks;lokke++){
     LegalizeFXlines(block,track); // should not be not necessary though.
@@ -101,7 +101,7 @@ static void PasteRange_pitches(
 
         Place lastplace = p_Last_Pos(block);
 
-	struct Pitches *pitch=tcopy(frompitch);
+	struct Pitches *pitch=(struct Pitches *)tcopy(frompitch);
 	PlaceAdd(&pitch->l.p,place);
 
 	if(PlaceGreaterThan(&pitch->l.p,&lastplace))
@@ -147,24 +147,30 @@ static void PasteRange_notes(
 
 static void PasteRange_stops(
 	struct Blocks *block,
-	struct Tracks *track,
-	struct Stops *fromstop,
+        r::TimeData<r::Stop> *to_stop,
+        const r::TimeData<r::Stop> *from_stop,
+	//struct Tracks *track,
+	//struct Stops *fromstop,
 	const Place *place
 ){
 
-	if(fromstop==NULL) return;
+        Ratio lastplace = make_ratio_from_place(p_Last_Pos(block));
+        
 
-        Place lastplace = p_Last_Pos(block);
+        r::TimeData<r::Stop>::Reader reader(from_stop);
 
-	struct Stops *stop=tcopy(fromstop);
-	PlaceAdd(&stop->l.p,place);
+        r::TimeData<r::Stop>::Writer writer(to_stop);
 
-	if(PlaceGreaterThan(&stop->l.p,&lastplace))
-          return;
-
-	ListAddElement3_a(&track->stops,&stop->l);
-
-	PasteRange_stops(block,track,NextStop(fromstop),place);
+        Ratio how_much = make_ratio_from_place(*place);
+        
+        for(r::Stop stop : reader){
+          stop._time += how_much;
+          
+          if (stop._time >= lastplace)
+            break;
+          
+          writer.add(stop);
+        }
 }
 
 
@@ -179,7 +185,7 @@ void PasteRange(
 
 	if(range_clip==NULL) return;
 
-        struct Tracks *track=ListFindElement1(&block->tracks->l,tracknum);
+        struct Tracks *track=(struct Tracks *)ListFindElement1(&block->tracks->l,tracknum);
         if (track==NULL)
             return;
         
@@ -194,7 +200,9 @@ void PasteRange(
               StopAllNotesAtPlace(block,track,place);
 
             PasteRange_notes(block,track,range_clip->notes[lokke],place);
-            PasteRange_stops(block,track,range_clip->stops[lokke],place);
+
+            if (range_clip->stops[lokke] != NULL)
+              PasteRange_stops(block,track->stops2,(const r::TimeData<r::Stop> *)range_clip->stops[lokke],place);
 
             if (doRangePasteCut()) {
               struct Notes *note = FindNextNote(track, &p2);
