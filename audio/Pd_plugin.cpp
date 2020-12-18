@@ -255,6 +255,7 @@ $1 = (SoundPlugin *) 0x0
 
 #ifdef WITH_PD
 
+#include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
