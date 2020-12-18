@@ -14,7 +14,6 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-#define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -87,6 +86,35 @@ static QString get_settings_version_line(void){
   return QString("settings_version = ") + OS_get_qstring_from_double(SETTINGSVERSION) + " # dont change this one";
 }
 
+static QVector<QString> get_lines2(QFile &file){
+  QVector<QString> ret;
+  
+  QTextStream in(&file);
+  in.setCodec("UTF-8");
+  
+  while ( !in.atEnd() ){
+    QString line = in.readLine();
+    
+    if (!line.contains("#") && !line.contains("=")) // Make malformed lines empty
+      line = "";
+    
+    else if (line.contains("#") && !line.contains("=")) // another possible malformed line fix: "a#b" -> "#b"
+      line.remove(0, line.indexOf("#"));
+    
+    if (line.length()>512){ // Because of an old bug, lines could grow and grow. Just delete those lines.
+      GFX_Message(NULL, "A very long line (%d characters) in the config file was ignored",line.length());
+      line = "";
+    }
+    
+    //printf("line: -%s-\n",line.toUtf8().constData());
+    ret.push_back(line);
+  }
+  
+  file.close();
+
+  return ret;
+}
+  
 // Warning, called before GC_init, so it cannot allocate with talloc or talloc_atomic.
 static QVector<QString> get_lines(const char* key){
   R_ASSERT(THREADING_is_main_thread());
@@ -101,7 +129,22 @@ static QVector<QString> get_lines(const char* key){
   
   QFile file(filename);
 
+  bool load_default = false;
+
   if(!file.open(QIODevice::ReadOnly | QIODevice::Text)){
+    
+    load_default = true;
+    
+  } else {
+  
+    ret = get_lines2(file);
+    
+    if (ret.size()==0)
+      load_default = true;
+  }
+
+  
+  if(load_default) {
     
 #if 0
     const char* curr_dir = OS_get_program_path();
@@ -119,33 +162,11 @@ static QVector<QString> get_lines(const char* key){
       GFX_Message(NULL, "Unable to open %s. Make sure Radium is installed properly. Exiting program.",bin_filename.toUtf8().constData());
       exit(-1);
       abort();
-      return ret;
     }
+
+    ret = get_lines2(file);
   }
 
-
-  QTextStream in(&file);
-  in.setCodec("UTF-8");
-  
-  while ( !in.atEnd() ){
-    QString line = in.readLine();
-
-    if (!line.contains("#") && !line.contains("=")) // Make malformed lines empty
-      line = "";
-
-    else if (line.contains("#") && !line.contains("=")) // another possible malformed line fix: "a#b" -> "#b"
-      line.remove(0, line.indexOf("#"));
-
-    if (line.length()>512){ // Because of an old bug, lines could grow and grow. Just delete those lines.
-      GFX_Message(NULL, "A very long line (%d characters) in the config file was ignored",line.length());
-      line = "";
-    }
-    
-    //printf("line: -%s-\n",line.toUtf8().constData());
-    ret.push_back(line);
-  }
-
-  file.close();
 
   /*
   QString version_line = get_settings_version_line(); //QString("settings_version = ") + OS_get_qstring_from_double(SETTINGSVERSION) + " # dont change this one";
@@ -160,8 +181,8 @@ static QVector<QString> get_lines(const char* key){
 #if 0
   {
     int i=0;
-    while(ret[i]!=NULL){
-      printf("ret[%d]: -%s-\n",i,ret[i]);
+    for(auto s : ret){
+      printf("ret[%d]: -%s-\n",i,s.toUtf8().constData());
       i++;
     }
     //getchar();
@@ -263,8 +284,10 @@ bool SETTINGS_remove(const char* key){
 // Warning, called before GC_init, so it cannot allocate with talloc or talloc_atomic.
 static void SETTINGS_put(const char* key, QString val){
   QVector<QString> lines = get_lines(key);
-  if(lines.size()==0)
+  if(lines.size()==0){
+    R_ASSERT(false);
     return;
+  }
   
   int linenum = find_linenum(key,lines);
 
