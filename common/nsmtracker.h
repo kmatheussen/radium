@@ -18,10 +18,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef RADIUM_COMMON_NSMTRACKER_H
 #define RADIUM_COMMON_NSMTRACKER_H 1
 
-#ifdef FOR_WINDOWS
 #ifndef __STDC_FORMAT_MACROS
-#define __STDC_FORMAT_MACROS
-#endif
+#error "what?"
+#define __STDC_FORMAT_MACROS 1
 #endif
 
 #ifdef LANGSPEC
@@ -125,6 +124,7 @@ static_assert (sizeof(long long int) >= 8, "sizof(long long int) must be 8 or hi
 #  define GTK_IS_USED 1
 #endif
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>

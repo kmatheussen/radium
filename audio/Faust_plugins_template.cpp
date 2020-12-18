@@ -4,8 +4,9 @@
 #include "/usr/share/faust/gui/UI.h"
 */
 
-// We use faust1 here.
+#include <inttypes.h>
 
+// We use faust1 here.
 #include <math.h>
 
 /*
