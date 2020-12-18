@@ -2372,6 +2372,7 @@ static SoundPluginType *create_plugin_type(const juce::PluginDescription &descri
     = description.pluginFormatName=="VST" ? "VST"
     : description.pluginFormatName=="VST3" ? "VST3"
     : description.pluginFormatName=="AudioUnit" ? "AU"
+    : description.pluginFormatName=="AU" ? "AU"
     : NULL;
 
   if (plugin_type->type_name==NULL){
