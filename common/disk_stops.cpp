@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "nsmtracker.h"
+#include "placement_proc.h"
 #include "disk.h"
 #include "disk_placement_proc.h"
 
@@ -29,35 +30,48 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-void SaveStops(struct Stops *stop){
-if(stop==NULL) return;
+void SaveStops(struct Tracks *track){
 
-DC_start("STOPS");
+#if 1
 
+  r::TimeData<r::Stop>::Reader reader(track->stops2);
+  if (reader.size()==0)
+    return;
+  
+  DC_start("STOPS");
+  
+  for(const r::Stop &stop : reader){
+    Place p = make_place_from_ratio(stop._time);
+    SavePlace(&p);
+  }
+
+#else
+        if(track->stops==NULL) return;
+        DC_start("STOPS");
 	do{
 		SavePlace(&stop->l.p);
 		stop=NextStop(stop);
 	}while(stop!=NULL);
-
+#endif
 DC_end();
 }
 
 
-void LoadStops(struct Stops **to){
+void LoadStops(struct Tracks *track){
 
-	struct Stops *stop;
-
+        r::TimeData<r::Stop>::Writer writer(track->stops2);
+  
+        R_ASSERT_NON_RELEASE(writer.size()==0);
+        
 	while(dc.success){
 		DC_fgets();
 		if(dc.ret[0]=='/') return;
-		stop=DC_alloc(sizeof(struct Stops));
-		stop->Tline=atoi(dc.ret);
-		stop->Tcounter=DC_LoadU32();
-		stop->Tdividor=DC_LoadU32();
-		ListAddElement3_a(to,&stop->l);
+                Place p;
+                p.line = atoi(dc.ret);
+                p.counter = DC_LoadU32();
+                p.dividor = DC_LoadU32();
+                r::Stop stop2(ratio_from_place(p));
+                writer.add(stop2);
 	}
-
-error:
-	return;
 }
 

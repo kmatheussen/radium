@@ -11,15 +11,12 @@
 
 /**
  *
- * radium::Vector validates multithreaded access and have special support for adding elements when called from a realtime thread.
+ * radium::Vector validates multithreaded access and have special support for realtime usage.
  *
  **/
 
 
 extern bool g_qtgui_has_stopped;
-
-
-// NOTE: Can not use radium::Vector if any of the fields in T uses a custom copy constructor (is there any way to detect that before getting a random crash?)
 
 
 namespace radium{
@@ -58,7 +55,8 @@ private:
   NumElements num_elements;
 
   T *next_elements;
-  
+
+  int num_elements_ready_for_freeing;
   T *elements_ready_for_freeing;
   
   int next_num_elements_max;
@@ -74,18 +72,44 @@ private:
 public:
   
   T *elements;
-  
-  Vector()
-    : num_elements_max(4)
-    , next_elements(NULL)
+
+  Vector(const Vector *vector = NULL)
+    : next_elements(NULL)
     , elements_ready_for_freeing(NULL)
     , next_num_elements_max(0)
   {
     LOCKASSERTER_EXCLUSIVE(&lockAsserter);
 
-    R_ASSERT(num_elements_max > 0);
+#if !defined(RELEASE)
+    if (!std::is_trivially_destructible<T>::value)
+      abort(); // Not handled. Undefined behavior if calling destructor when adding memory to zero-ed memory. (how do we handle that? Use std::memcpy or std::move?)
+#endif
     
-    elements = (T*)V_calloc(num_elements_max, sizeof(T));
+    if (vector != NULL && vector->size()>0) {
+
+      int size = vector->size();
+
+      num_elements_max = vector->num_elements_max;
+      if (num_elements_max < 4){
+        R_ASSERT(false);
+        num_elements_max = 4;
+      }
+      
+      elements = (T*)V_calloc(num_elements_max, sizeof(T));
+
+      std::copy(&vector->elements[0], &vector->elements[size], elements);
+      
+      num_elements.set(size);
+      
+    } else {
+
+      num_elements_max = 4;
+      elements = (T*)V_calloc(num_elements_max, sizeof(T)); // We use V_calloc (and not new[]) to make sure memory is really zeroed out and in cache (this is for realtime code).
+
+    }
+ 
+    R_ASSERT_NON_RELEASE(num_elements_max > 0);
+    R_ASSERT_NON_RELEASE(elements!=NULL);
   }
 
   ~Vector(){
@@ -93,7 +117,7 @@ public:
 
     // Don't want to free static global memory during shut down since it may be used by threads which are not shut down. (hmm, this will probably cover bugs)
     if (g_qtgui_has_stopped==false){
-      V_free(elements);      
+      free_internal(elements, num_elements.get());
       elements = NULL; // For debugging
     }
   }
@@ -109,9 +133,23 @@ public:
     return at_internal(i);
   }
 
+  T &at_ref(int i) const {
+    LOCKASSERTER_SHARED(&lockAsserter);
+
+    return at_internal(i);
+  }
+
 private:
+
+  void free_internal(T *elements, int size){
+    if (!std::is_trivially_destructible<T>::value)
+      for(int i=0;i<size;i++)
+        elements[i].~T();
+    
+    V_free(elements);
+  }
   
-  T at_internal(int i) const {
+  T &at_internal(int i) const {
     R_ASSERT_RETURN_IF_FALSE2(i>=0, elements[0]);
     R_ASSERT_RETURN_IF_FALSE2(i<num_elements.get(), elements[0]);
     
@@ -205,7 +243,7 @@ public:
     LOCKASSERTER_SHARED(&lockAsserter);
     
     if (elements_ready_for_freeing != NULL){
-      V_free(elements_ready_for_freeing);
+      free_internal(elements_ready_for_freeing, num_elements_ready_for_freeing);
       elements_ready_for_freeing = NULL;
     }
   }
@@ -223,7 +261,10 @@ private:
   
   T *create_new_elements(int new_num_elements_max) const {
     T *new_elements = (T*) V_calloc(sizeof(T), new_num_elements_max);
-    memcpy(new_elements, elements, sizeof(T)*num_elements.get());
+    int size = num_elements.get();
+
+    std::copy(&elements[0], &elements[size], new_elements);
+          
     return new_elements;
   }
   
@@ -234,13 +275,18 @@ private:
 
     // Scale up to next multiple by 2.
     new_num_elements_max = find_next_num_elements_max(new_num_elements_max);
+
+    int old_num_elements = num_elements.get();
     
     T* old_elements = elements;
     T* new_elements = create_new_elements(new_num_elements_max);
 
     if (do_lock_player){
+#if !defined(TEST_TIMEDATA_MAIN)
       radium::PlayerLock lock;
-      
+#else
+      abort();
+#endif      
       LOCKASSERTER_EXCLUSIVE(&lockAsserter);
 
       elements = new_elements;
@@ -253,7 +299,8 @@ private:
       
     } 
 
-    V_free(old_elements);
+    R_ASSERT_NON_RELEASE(num_elements.get()==old_num_elements);
+    free_internal(old_elements, old_num_elements);
   }
   
   void basic_push_back(T t){    
@@ -275,11 +322,17 @@ private:
 
     if (keep_order) {
       
-      int i;
       num_elements.dec();
 
-      for(i=pos;i<this->num_elements.get();i++)
+      int size = num_elements.get();
+      
+#if 0
+      // Don't work. std::copy don't work when overlapping. (std::copy works if they are NOT trivially copyable though).
+      std::copy(&this->elements[pos], &this->elements[size], &this->elements[pos+1]);
+#else
+      for(int i=pos;i<size;i++)
         this->elements[i]=this->elements[i+1];
+#endif
       
     } else {
 
@@ -292,7 +345,10 @@ private:
       num_elements.dec();
     }
 
-    memset(&elements[num_elements.get()], 0, sizeof(T)); // for debugging
+    if (std::is_trivially_copyable<T>::value)
+      memset((void*)&elements[num_elements.get()], 0, sizeof(T)); // for debugging
+    else if (!std::is_trivially_destructible<T>::value)
+      elements[num_elements.get()].~T();
   }
 
   int find_pos_internal(const T t) const {
@@ -325,12 +381,13 @@ public:
       
     } else {
 
+      num_elements_ready_for_freeing = num_elements.get();
+      elements_ready_for_freeing = elements;
+      
       num_elements.inc();
 
       R_ASSERT(num_elements.get() <= next_num_elements_max);
 
-      elements_ready_for_freeing = elements;
-      
       elements = next_elements;
       num_elements_max = next_num_elements_max;
       
@@ -350,11 +407,9 @@ public:
     R_ASSERT(PLAYER_current_thread_has_lock()==false);
 
     ensure_there_is_room_for_more_without_having_to_allocate_memory(1);
-
     PLAYER_lock();{
       push_back(t);
     }PLAYER_unlock();
-
     post_add();
   }
 
@@ -371,10 +426,8 @@ public:
 
     R_ASSERT(next_elements == NULL);
     
-    if (new_num_elements_max <= num_elements_max)
-      return;
-    
-    reserve_internal(new_num_elements_max, false);
+    if (new_num_elements_max > num_elements_max)
+      reserve_internal(new_num_elements_max, false);
   }
 
   // Obtains the player lock while modifying state.

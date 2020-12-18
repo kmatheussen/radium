@@ -63,10 +63,12 @@ void CB_ClearTrack_Force(
         R_ASSERT_NON_RELEASE(PLAYER_current_thread_has_lock() || is_playing()==false); // Making it NON_RELEASE because: If "track" is not alive we would get a false assertion here.
   
 	track->notes=NULL;
-	track->stops=NULL;
+	//track->stops=NULL;
         track->swings=NULL;
 
-        VECTOR_FOR_EACH(struct FXs *fxs, &track->fxs){
+        r::TimeData<r::Stop>::Writer writer(track->stops2, true);
+        
+        VECTOR_FOR_EACH(struct FXs *, fxs, &track->fxs){
           (*fxs->fx->closeFX)(fxs->fx,track);
         }END_VECTOR_FOR_EACH;
 
@@ -105,9 +107,9 @@ static struct WTracks *cut_track(
       
     } else {
 
-      struct FXs *fxs = ret->track->fxs.elements[0];
+      struct FXs *fxs = (struct FXs*)ret->track->fxs.elements[0];
       
-      VECTOR_FOR_EACH(struct FXs *maybe, &wtrack->track->fxs){
+      VECTOR_FOR_EACH(struct FXs *, maybe, &wtrack->track->fxs){
         if (maybe->fx->patch==fxs->fx->patch && maybe->fx->effect_num==fxs->fx->effect_num){
           (*maybe->fx->closeFX)(maybe->fx,wtrack->track);
           VECTOR_remove(&wtrack->track->fxs, maybe);

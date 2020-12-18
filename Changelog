@@ -1,6 +1,6 @@
 Changes 6.5.85 -> 6.5.86:
-* Audio: Fix loading and saving when using plugins
-  that have effect names with line shifts.
+* Audio: Fix loading and saving plugins that have
+  effect names with lineshifts.
 
 
 

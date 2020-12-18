@@ -24,16 +24,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "placement_proc.h"
 #include "clipboard_range_copy_proc.h"
 #include "list_proc.h"
-
+#include "TallocWithDestructor.hpp"
 
 #include "undo_notes_proc.h"
 
 
-
-struct Undo_Notes{
+namespace{
+  
+struct Undo_Notes : radium::GC_able{
 	struct Notes *notes;
-	struct Stops *stops;
+        r::TimeData<r::Stop> stops;
 };
+ 
+}
 
 
 static void *Undo_Do_Notes(
@@ -55,14 +58,21 @@ void ADD_UNDO_FUNC(
 {
         const Place *p1=PlaceGetFirstPos();
 	Place p2;
-	struct Undo_Notes *undo_notes=talloc(sizeof(struct Undo_Notes));
+
+        /*
+	struct Undo_Notes *undo_notes=talloc_with_finalizer<struct Undo_Notes>([](struct Undo_Notes *undo_notes){
+          //printf("     UNDOING STOPS\n");
+          delete undo_notes->stops;
+        });
+        */
+        Undo_Notes *undo_notes = new Undo_Notes;
 
 	PlaceSetLastPos(block,&p2);
 
-	CopyRange_stops(&undo_notes->stops,track->stops,p1,&p2);
+	CopyRange_stops(&undo_notes->stops,track->stops2,p1,&p2);
 	CopyRange_notes(&undo_notes->notes,track->notes,p1,&p2);
 
-	Undo_Add(
+	Undo_Add_dont_stop_playing(
                  window->l.num,
                  block->l.num,
                  track->l.num,
@@ -94,15 +104,30 @@ static void *Undo_Do_Notes(
 
 	struct Tracks *track=wtrack->track;
 
-	struct Notes *ntemp=track->notes;
-	struct Stops *stemp=track->stops;
-
-	track->notes=undo_notes->notes;
-	track->stops=undo_notes->stops;
-
-	undo_notes->stops=stemp;
-	undo_notes->notes=ntemp;
-
+        {
+          struct Notes *ntemp=track->notes;
+          //struct Stops *stemp=track->stops;
+          
+          {
+            SCOPED_PLAYER_LOCK_IF_PLAYING();
+            
+            track->notes=undo_notes->notes;
+            //track->stops=undo_notes->stops;
+          }
+          
+          undo_notes->notes=ntemp;
+        }
+        
+        {
+          r::TimeData<r::Stop> stops_temp;
+          
+          stops_temp.move_from(track->stops2);
+          
+          track->stops2->move_from(&undo_notes->stops);
+           
+          undo_notes->stops.move_from(&stops_temp);
+        }
+        
 	return undo_notes;
 }
 

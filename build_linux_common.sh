@@ -62,9 +62,11 @@ export CPUOPT=
 # REQUIRES_RTTI=1 cmake -DLLVM_ENABLE_PROJECTS="clang;compiler-rt" -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=$GCC_PREFIX/bin/gcc -DCMAKE_CXX_COMPILER=$GCC_PREFIX/bin/g++ -DGCC_INSTALL_PREFIX=$GCC_PREFIX -DCMAKE_INSTALL_PREFIX=/home/kjetil/site -DLLVM_ENABLE_RTTI=ON ../llvm 
 # REQUIRES_RTTI=1 make REQUIRES_RTTI=1 -j2
 
-if ! env |grep USE_RADIUM_CLANG ; then
-    USE_RADIUM_CLANG=0
+if ! env |grep RADIUM_USE_CLANG ; then
+    RADIUM_USE_CLANG=0
 fi
+
+#RADIUM_USE_CLANG=1
 
 if [[ $RADIUM_USE_CLANG == 1 ]] ; then
     export CLANG_PREFIX=$(dirname `which clang`)/../
@@ -161,7 +163,7 @@ fi
 export QSCINTILLA_PATH=`pwd`/bin/packages/QScintilla_gpl-2.10.8
 
 if env |grep INCLUDE_FAUSTDEV= ; then
-    FAUSTLDFLAGS="$QSCINTILLA_PATH/Qt4Qt5/libqscintilla2_qt5.a `pwd`/bin/packages/faust/build/lib/libfaust.a `$PKG --libs uuid` `llvm-config --ldflags` $LLVMLIBS -lcrypto -lncurses"
+    FAUSTLDFLAGS="`pwd`/bin/packages/faust/build/lib/libfaust.a `$PKG --libs uuid` `llvm-config --ldflags` $LLVMLIBS -lcrypto -lncurses"
 else    
     FAUSTLDFLAGS=""
 fi
@@ -186,7 +188,7 @@ fi
 fi
 
 export OS_JUCE_LDFLAGS="-lasound -pthread -lrt -lX11 -ldl -lXext "
-export OS_LDFLAGS="$FAUSTLDFLAGS $PDLDFLAGS pluginhost/Builds/Linux/build/libMyPluginHost.a $OS_JUCE_LDFLAGS -llrdf $GCDIR/.libs/libgc.a $PYTHONLIBPATH $PYTHONLIBNAME bin/packages/libgig/src/.libs/libgig.a bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a `$PKG --libs dbus-1` `$PKG --libs sndfile` `$PKG --libs samplerate` `$PKG --libs Qt5X11Extras` `$PKG --libs glib-2.0` `$PKG --libs liblo` -lxcb -lxcb-keysyms $RADIUM_BFD_LDFLAGS -lz -liberty -lutil -lgmp -lmpfr -lmpc"
+export OS_LDFLAGS="$QSCINTILLA_PATH/Qt4Qt5/libqscintilla2_qt5.a $FAUSTLDFLAGS $PDLDFLAGS pluginhost/Builds/Linux/build/libMyPluginHost.a $OS_JUCE_LDFLAGS -llrdf $GCDIR/.libs/libgc.a $PYTHONLIBPATH $PYTHONLIBNAME bin/packages/libgig/src/.libs/libgig.a bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a `$PKG --libs dbus-1` `$PKG --libs sndfile` `$PKG --libs samplerate` `$PKG --libs Qt5X11Extras` `$PKG --libs glib-2.0` `$PKG --libs liblo` -lxcb -lxcb-keysyms $RADIUM_BFD_LDFLAGS -lz -liberty -lutil -lgmp -lmpfr -lmpc"
 
 #-Lbin/packages/libxcb-1.13/src/.libs
 
