@@ -905,8 +905,8 @@ struct Mixer{
 #if FOR_WINDOWS // Noise from jack on windows when changing thread priority
     jack_set_info_function(my_silent_jack_error_callback);
 #endif
-
-    {
+    
+    if (!nsmIsActive()) {
       for(int ch = 0 ; ch < NUM_SYSTEM_INPUT_JACK_PORTS ; ch++){
         _main_inputs[ch] = jack_port_register(_rjack_client, talloc_format("main_input_%d", ch+1), JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0);
         
