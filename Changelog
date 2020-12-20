@@ -1,3 +1,31 @@
+Changes 6.5.86 -> 6.6.77:
+* Macos: Include updated LADSPA plugins.
+* Windows/Macos: Include a new version of qjackctl
+  that doesn't set sample rate and period size unless
+  they're explicitly set to custom values. Might fix
+  problems people have starting Jack on Windows.
+* Windows/Macos: Include a new program called
+  "qjackctl_reset" that resets qjackctl-settings back
+  to default. Can be useful to make Jack run (again).
+* Windows: Update documentation for installing the
+  ASIO Jack driver (it's not a part of Jack anymore).
+* Settings: Make it impossible to corrupt the config
+  file.
+* NSM: Don't autoconnect ports when NSM is active.
+* Settings: Fix writing if the config file (for some
+  reason) have become an empty file.
+* Internal: New data structure for storing editor
+  data. The new data structur supports reading and
+  writing from multiple threads without blocking. So
+  far only the note-stops have been converted to the
+  new data structure, but eventually everything
+  should be converted. Then we will see better
+  realtime behavior and better performance in general
+  because of less CPU cache hits. This is also
+  preparation work for replacing OpenGL with Vulkan.
+
+
+
 Changes 6.5.85 -> 6.5.86:
 * Audio: Fix loading and saving plugins that have
   effect names with lineshifts.
