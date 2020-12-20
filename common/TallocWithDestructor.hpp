@@ -53,9 +53,13 @@ namespace radium{
   
   struct GC_able{
 
+    bool _destructor_has_run = false;
+    
     // Destructor must actually be virtual for destructors in sub classes to be called (stupid c++).
     virtual ~GC_able(){
       /* printf("~GC_able called\n"); */
+      R_ASSERT(_destructor_has_run==false);
+      _destructor_has_run=true;
     }
     
     void * operator new(size_t size) {
@@ -70,19 +74,17 @@ namespace radium{
 
 #if !defined(RELEASE)
     bool _allowed_to_call_destructor = false;
-    bool _destructor_has_run = false;
 #endif
     
     // Should never be deleted explicitly though.
     void operator delete(void *p) {
-#if !defined(RELEASE)  
       radium::GC_able *gc_able = static_cast<radium::GC_able*>(p);
 
       R_ASSERT_RETURN_IF_FALSE(gc_able==dynamic_cast<radium::GC_able*>(gc_able));
 
-      R_ASSERT(gc_able->_destructor_has_run==false);
-      gc_able->_destructor_has_run=true;
+      R_ASSERT_NON_RELEASE(gc_able->_destructor_has_run==false);
 
+#if !defined(RELEASE)  
       R_ASSERT_RETURN_IF_FALSE(gc_able->_allowed_to_call_destructor);
       gc_able->_allowed_to_call_destructor = false;
       

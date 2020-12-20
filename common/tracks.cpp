@@ -209,6 +209,11 @@ void gc_able_gc_finalizer(void *actual_mem_start, void *user_data){
   //printf("    GC_ABLE: %d\n", g_num_gcable);
   //abort();
 
+  if (gakkgakk->_destructor_has_run == true){
+    R_ASSERT_NON_RELEASE(false);
+    return;
+  }
+      
 #if !defined(RELEASE)
   gakkgakk->_allowed_to_call_destructor = true;
 #endif
