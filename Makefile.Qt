@@ -691,7 +691,7 @@ test_timedata_gdb:
 
 
 test_ratio:
-	cd common && ln -sf ratio_funcs.h test_ratio.cpp && g++ test_ratio.cpp -DTEST_MAIN -Wall -Werror -g -o a.out &&	./a.out
+	cd common && ln -sf ratio_funcs.h test_ratio.cpp && g++ test_ratio.cpp -D__STDC_FORMAT_MACROS=1 -DTEST_MAIN -Wall -Werror -g -o a.out &&	./a.out
 
 test_samplereader:
 	cd audio && $(CCC) SampleReader.cpp -DTEST_MAIN -Wall -std=gnu++14 -g && ./a.out
@@ -711,18 +711,18 @@ test_threading:
 
 
 test_vector:
-	$(CC) -g -Wall -Werror -DTEST_VECTOR  -DUSE_QT_REQTYPE=1 common/vector.c common/memory.c -IQt -I$(GCDIR)/include $(GCDIR)/.libs/libgc.a -lpthread -fsanitize=address -fPIC -DFOR_LINUX -std=gnu99
+	$(CC) -g -Wall -Werror -D__STDC_FORMAT_MACROS=1 -DTEST_VECTOR  -DUSE_QT_REQTYPE=1 common/vector.c common/memory.c -IQt -I$(GCDIR)/include $(GCDIR)/.libs/libgc.a -lpthread -fsanitize=address -fPIC -DFOR_LINUX -std=gnu99
 #	valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
 #	ASAN_OPTIONS="detect_leaks=0,allocator_may_return_null=1,suppressions=SanitizerSuppr.txt,abort_on_error=1,new_delete_type_mismatch=0"
 	ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" ./a.out
 
 test_placement:
-	$(CC) -g -Wall -Werror -DTEST_PLACEMENT  -DUSE_QT_REQTYPE=1 common/placement.c common/memory.c -IQt -I$(GCDIR)/include $(GCDIR)/.libs/libgc.a -lpthread -fPIC -DFOR_LINUX -std=gnu99 -lm
+	$(CC) -g -Wall -Werror -DTEST_PLACEMENT -D__STDC_FORMAT_MACROS=1  -DUSE_QT_REQTYPE=1 common/placement.c common/memory.c -IQt -I$(GCDIR)/include $(GCDIR)/.libs/libgc.a -lpthread -fPIC -DFOR_LINUX -std=gnu99 -lm
 #	gdb ./a.out
 	valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
 
 test_notes:
-	$(CCC) -g -Wall -Werror -DTEST_NOTES  -DUSE_OPENGL -DUSE_QT_REQTYPE=1 common/notes.cpp common/memory.c -lm -IQt -I$(GCDIR)/include $(GCDIR)/.libs/libgc.a -lpthread -fPIC -DFOR_LINUX -std=gnu++14
+	$(CCC) -g -Wall -Werror -DTEST_NOTES -D__STDC_FORMAT_MACROS=1  -DUSE_OPENGL -DUSE_QT_REQTYPE=1 common/notes.cpp common/memory.c -lm -IQt -I$(GCDIR)/include $(GCDIR)/.libs/libgc.a -lpthread -fPIC -DFOR_LINUX -std=gnu++14
 #	gdb ./a.out
 	valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
 

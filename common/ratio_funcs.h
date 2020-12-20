@@ -3,9 +3,9 @@
 
 #if !defined(__STDC_FORMAT_MACROS)
 #define __STDC_FORMAT_MACROS 1
-# include <inttypes.h>
-#error "what?"
 #endif
+
+#include <inttypes.h>
 
 #ifdef TEST_MAIN
 
@@ -329,7 +329,12 @@ static inline Ratio& operator/=(Ratio& r1, int i2){
 static inline Ratio scale_ratio(const Ratio &x, const Ratio &x1, const Ratio &x2, const Ratio &y1, const Ratio &y2){
   const Ratio diff = x2-x1;
 
+#ifdef TEST_MAIN
+  if (diff.num<=0)
+    abort();
+#else
   R_ASSERT_RETURN_IF_FALSE2(diff.num>0, y1);
+#endif
   
   return y1 + ( ((x-x1)*(y2-y1))
                 /
