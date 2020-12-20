@@ -52,6 +52,11 @@ static inline T *talloc_with_finalizer(std::function<void(T*)> finalizer){
 namespace radium{
   
   struct GC_able{
+
+    // Destructor must actually be virtual for destructors in sub classes to be called (stupid c++).
+    virtual ~GC_able(){
+      /* printf("~GC_able called\n"); */
+    }
     
     void * operator new(size_t size) {
       //printf("     CUSTOM NEW %d\n", g_num_gcable++);
@@ -63,20 +68,27 @@ namespace radium{
       return ret;
     }
 
+#if !defined(RELEASE)
     bool _allowed_to_call_destructor = false;
+    bool _destructor_has_run = false;
+#endif
     
-    // Must NEVER be deleted explicitly.
+    // Should never be deleted explicitly though.
     void operator delete(void *p) {
-
+#if !defined(RELEASE)  
       radium::GC_able *gc_able = static_cast<radium::GC_able*>(p);
 
       R_ASSERT_RETURN_IF_FALSE(gc_able==dynamic_cast<radium::GC_able*>(gc_able));
+
+      R_ASSERT(gc_able->_destructor_has_run==false);
+      gc_able->_destructor_has_run=true;
 
       R_ASSERT_RETURN_IF_FALSE(gc_able->_allowed_to_call_destructor);
       gc_able->_allowed_to_call_destructor = false;
       
       //printf("     CUSTOM DELETE: %d\n", g_num_gcable--);
       //abort();
+#endif
     }
   };
   

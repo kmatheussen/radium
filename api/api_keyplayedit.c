@@ -54,8 +54,10 @@ void keyDownPlay(int notenum,int windownum){
         bool do_edit = ATOMIC_GET_RELAXED(root->editonoff);
 
         PATCH_playNoteCurrPos(window,notenum,-1);
-        if(do_edit)
+        if(do_edit){
           InsertNoteCurrPos(window,notenum,false,-1);
+          window->must_redraw = true;
+        }
 }
 
 void polyKeyDownPlay(int notenum,int windownum){
