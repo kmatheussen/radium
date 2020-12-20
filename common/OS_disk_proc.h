@@ -67,7 +67,7 @@ extern LANGSPEC int64_t DISK_read_binary(disk_t *disk, void *destination, int64_
 extern LANGSPEC bool DISK_write_binary(disk_t *disk, const void *source, int64_t num_bytes); // returns false if writing failed. Call DISK_error() to get error message.
 
 // CLOSE
-extern LANGSPEC bool DISK_close_and_delete(disk_t *disk);
+extern LANGSPEC bool DISK_close_and_delete(disk_t *disk); // Returns false if writing fails, but no need to report failure since it should have been reported already.
 
 // READ AND WRITE FILES TO/FROM BASE64 STRINGS
 extern LANGSPEC const char *DISK_file_to_base64(filepath_t wfilename); // Returns NULL if error.

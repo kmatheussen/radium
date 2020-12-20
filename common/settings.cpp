@@ -194,6 +194,7 @@ static QVector<QString> get_lines(const char* key){
   return ret;
 }
 
+#if 0
 // Warning, called before GC_init, so it cannot allocate with talloc or talloc_atomic.
 static void transfer_temporary_file_to_file(QString from, QString to){
   
@@ -209,18 +210,22 @@ static void transfer_temporary_file_to_file(QString from, QString to){
   if (QFile::copy(from, to)==false)
     GFX_Message(NULL, "Unable to write config file (\%s\")",to.toUtf8().constData());
 }
-
+#endif
 // Warning, called before GC_init, so it cannot allocate with talloc or talloc_atomic.
 static void write_lines(const char* key, QVector<QString> lines){
   R_ASSERT(THREADING_is_main_thread());
+
+  R_ASSERT_NON_RELEASE(lines.size()>0);
+
+  filepath_t filename = OS_get_config_filename(key);
+  //QString filename = STRING_get_qstring();
+
+  printf("config filename: -%S-\n",filename.id);
+
+  disk_t *file = DISK_open_for_writing(filename);
   
-  QString filename = STRING_get_qstring(OS_get_config_filename(key).id);
-
-  printf("config filename: -%s-\n",filename.toUtf8().constData());
-
-  QTemporaryFile temporary_write_file;
-  if (temporary_write_file.open()==false) {
-    GFX_Message(NULL, "Unable to write config data to temporary file. Disk full? (\%s\")",temporary_write_file.fileName().toUtf8().constData());
+  if (file==NULL) {
+    GFX_Message(NULL, "Unable to write config data to temporary file. Disk full? (\%S\")",filename.id);
     return;
   }
     
@@ -232,26 +237,35 @@ static void write_lines(const char* key, QVector<QString> lines){
     return;
   }
 */
-  
+
+  /*
   QTextStream out(&temporary_write_file);
   out.setCodec("UTF-8"); 
-
+  */
   int version_linenum = find_linenum("settings_version",lines);
   if (version_linenum == -1)
-    out << get_settings_version_line() << "\n";
+    DISK_write_qstring(file, get_settings_version_line() + "\n");
+  
+    //out << get_settings_version_line() << "\n";
   
   for (int i=0 ; i<lines.size(); i++){
     //printf("writing -%s-\n",lines[i].toUtf8().constData());
     if (i==version_linenum)
-      out << get_settings_version_line() << "\n";
+      DISK_write_qstring(file, get_settings_version_line() + "\n");
+    //out << get_settings_version_line() << "\n";
     else
-      out << lines[i] << "\n";
+      DISK_write_qstring(file, lines[i] + "\n");
+    //out << lines[i] << "\n";
   }
 
+  /*
   temporary_write_file.close();
 
   transfer_temporary_file_to_file(temporary_write_file.fileName(), filename);
   //getchar();  
+  */
+
+  DISK_close_and_delete(file);
 }
 
 #if 0
