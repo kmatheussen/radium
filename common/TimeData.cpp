@@ -190,6 +190,9 @@ struct Gakk{
 
 int main(void){
   g_thread_type = 0;
+
+  int seed = time(NULL);
+  printf("Seed: %d\n", (int)seed);
   
   srand(time(NULL));
   
