@@ -68,6 +68,9 @@ struct AbstractMutex {
   AbstractMutex(){
   }
   
+  virtual ~AbstractMutex(){ // stupid c++
+  }
+  
   virtual void lock(void) = 0;
   virtual void unlock(void) = 0;
 };
@@ -131,8 +134,8 @@ public:
 };
 
 
-// Se her for tuna spinlock for audio:  https://timur.audio/using-locks-in-real-time-audio-processing-safely (pthrad_unlock bruker muligens en del tid)
-  // Kanskje det kan løses ved å vente med å kalle unlock() til audio-callback er ferdig.
+#if 0
+  // not tested.
 struct RT_Mutex : public AbstractMutex {
   
 private:
@@ -226,7 +229,9 @@ public:
     return _num_locks>0;
   }
 };
+#endif
 
+  
 struct ScopedMutex{
 
   ScopedMutex(const ScopedMutex&) = delete;
