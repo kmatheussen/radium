@@ -2740,11 +2740,16 @@ QWidget *GL_create_widget(QWidget *parent){
                   "Nouveau OpenGL driver detected."
                   "<p>"
                   "There have been many reports of the Nouveau driver crashing when running Radium.<br>"
+                  "<p>"
                   "Please don't report any more crashes caused by the Nouveau driver.<br>"
+                  "<p>"
+                  "<b>The Nouvea driver is likely to freeze your computer!</b><br>"
+                  "You should quit the program immediately."
                   "<p>"
                   "The Nouveau driver also performs worse than the Nvidia driver."
                   "<p>"
-                  "The Nvidia driver can be installed to get faster and smoother graphics, and to avoid crashing. It can be downloaded here: <a href=\"https://www.nvidia.com/object/unix.html\">https://www.nvidia.com/object/unix.html</a>"
+                  "The Nvidia driver can be installed to get faster and smoother graphics, and to avoid crashing and freezing.<br>"
+                  "The Nvidia driver can be downloaded here: <a href=\"https://www.nvidia.com/object/unix.html\">https://www.nvidia.com/object/unix.html</a>"
                   );
       show_mesa_warning = false;
     }
