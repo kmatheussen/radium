@@ -90,17 +90,12 @@ fi
 
 
 build_faust() {
+    
     rm -fr faust
-    tar xvzf faust-master-dev-2019-12-22.tar.gz 
-    mv faust-master-dev faust
+    tar xvzf faust-2.27.2.tar.gz
+    mv faust-2.27.2 faust
     cd faust
-    tar xvzf ../faustlibraries-2019-12-22.tar.gz
-    rm -fr libraries
-    mv faustlibraries-master libraries
     patch -p0 <../faust.patch
-    patch -p1 <../faust_setlocale.patch
-    patch -p0 <../faust_svgfix.patch
-    patch -p1 <../faust_HTTPDServer.patch 
     if env |grep INCLUDE_FAUSTDEV_BUT_NOT_LLVM ; then
         patch -p0 <../faust_nollvm.patch
     fi
@@ -108,7 +103,6 @@ build_faust() {
     cd ..
 }
 
-    
 build_Visualization-Library() {
 
     rm -fr Visualization-Library-master
@@ -142,6 +136,7 @@ build_libpds() {
     make -j`nproc`
     cd ..
 }
+
 
 build_qhttpserver() {
 
