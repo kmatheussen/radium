@@ -263,7 +263,7 @@ void EditorWidget::wheelEvent(QWheelEvent *qwheelevent){
        
     //struct Tracker_Windows *window=static_cast<struct Tracker_Windows*>(root->song->tracker_windows);
 
-    int num_lines = R_ABS(qwheelevent->delta()/120);
+    int num_lines = R_ABS(qwheelevent->angleDelta().y()/120);
 
     //printf("   Got wheel event %d\n",qwheelevent->delta()/120);
     
@@ -277,7 +277,7 @@ void EditorWidget::wheelEvent(QWheelEvent *qwheelevent){
       
       if (qwheelevent->modifiers() & Qt::ControlModifier) {
         
-        if (qwheelevent->delta() > 0)
+        if (qwheelevent->angleDelta().y() > 0)
           zoom(1,window->l.num);
         else
           zoom(-1,window->l.num);
@@ -294,7 +294,7 @@ void EditorWidget::wheelEvent(QWheelEvent *qwheelevent){
         tevent.keyswitch |= EVENT_MOUSE_EDITOR2 | EVENT_FOCUS_EDITOR2;        
         
         tevent.ID=TR_KEYBOARD;
-        if(qwheelevent->delta()<0)
+        if(qwheelevent->angleDelta().y()<0)
           tevent.SubID=EVENT_DOWNARROW;
         else
           tevent.SubID=EVENT_UPARROW;

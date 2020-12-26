@@ -509,7 +509,7 @@ int NOTE_get_velocity(struct Tracks *track){
   if(drunk_velocity==false)
     return root->standardvel;
 
-  int64_t new_velocity = last_velocity + scale(rand()/100.0f,0,RAND_MAX/100.0f,-(MAX_VELOCITY/3), MAX_VELOCITY/3);
+  int64_t new_velocity = last_velocity + scale_int64(rand(),0,RAND_MAX,-(MAX_VELOCITY/3), MAX_VELOCITY/3);
   if(new_velocity>=root->standardvel)
     new_velocity = root->standardvel - MAX_VELOCITY/50;
   if(new_velocity<root->min_standardvel)

@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QDirIterator>
 #include <QFileInfo>
 #include <QTime>
+#include <QElapsedTimer>
 #include <QToolTip>
 
 #include "Qt_sample_requester_widget.h"
@@ -431,7 +432,7 @@ class Sample_requester_widget : public QWidget
   void update_file_list(bool reread){
     
     struct Tracker_Windows *window = root->song->tracker_windows;
-    QTime time;
+    QElapsedTimer time;
 
     time.start();
     

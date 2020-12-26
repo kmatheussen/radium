@@ -839,7 +839,8 @@ namespace{
   static bool g_check_backtrace_process_finished = false;
   
   static void start_check_backtrace_process(void){
-    g_check_backtrace_process.start(STRING_get_qstring(OS_get_full_program_file_path("radium_plugin_scanner").id) + " test_backtrace");
+    QStringList args = {"test_backtrace"};
+    g_check_backtrace_process.start(STRING_get_qstring(OS_get_full_program_file_path("radium_plugin_scanner").id), args);
   }
   
   static void checkup_on_check_backtrace_process(void){
@@ -4039,6 +4040,8 @@ int main(int argc, char **argv){
   
   QCoreApplication::setLibraryPaths(QStringList());  
 
+  //QCoreApplication::setAttribute(Qt::AA_DontCheckOpenGLContextThreadAffinity);
+
 #if QT_VERSION_MAJOR == 5 && QT_VERSION_MINOR == 9
   QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
 #endif
@@ -4315,7 +4318,6 @@ int main(int argc, char **argv){
   }
 
   qapplication->setWindowIcon(QIcon(STRING_get_qstring(OS_get_full_program_file_path("radium_256x256x32.png").id)));
-
   {
     // Add fonts in the "fonts" directory
     {

@@ -244,7 +244,7 @@ void handleError_internal(const char *fmt,...){
     const char *message2 = V_strdup(talloc_format("%s:%s\n", message, backtrace));
     
     QTimer::singleShot(3,[message2]{
-        GFX_addMessage(message2);
+        GFX_addMessage("%s", message2);
         V_free((void*)message2);
       });
   }

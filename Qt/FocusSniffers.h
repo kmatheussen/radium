@@ -141,7 +141,7 @@ class FocusSnifferQTextEdit : public GL_PauseCaller, public QTextEdit{
     }
   void wheelEvent(QWheelEvent *event_) override {                  
     if (event_->modifiers() & Qt::ControlModifier){                
-      if (event_->delta() > 0)                                     
+      if (event_->angleDelta().y() > 0)                                     
         zoomIn(1);                                                      
       else                                                              
         zoomOut(1);                                                     

@@ -572,7 +572,7 @@ namespace{
       MyQMenu *_myqmenu;
       
       Workaround(MyQMenu *myqmenu)
-        : radium::Timer((int)scale_int64(qrand(), 0, RAND_MAX, 200, 500), true) 
+        : radium::Timer((int)scale_int64(rand(), 0, RAND_MAX, 200, 500), true) 
         , _myqmenu(myqmenu)
       {
       }
@@ -795,19 +795,21 @@ namespace{
     void start_safe_popup_process(void) {
       _kill_file_name = get_kill_temp_filename();
       
-      system(talloc_format("\"%S\" %s %d %d &",
-                           OS_get_full_program_file_path("radium_linux_popup_killscript.sh").id,
-                           _kill_file_name.toUtf8().constData(),
-                           KILL_TIME,
-                           getpid()
-                           ));
+      int res = system(talloc_format("\"%S\" %s %d %d &",
+                                     OS_get_full_program_file_path("radium_linux_popup_killscript.sh").id,
+                                     _kill_file_name.toUtf8().constData(),
+                                     KILL_TIME,
+                                     getpid()
+                                     ));
+      (void)res;
 
       start_timer();
     }
     
     void stop_safe_popup_process(void) {
       printf("Deleting file %s\n", _kill_file_name.toUtf8().constData());
-      system(talloc_format("rm /tmp/%s", _kill_file_name.toUtf8().constData()));
+      int res = system(talloc_format("rm /tmp/%s", _kill_file_name.toUtf8().constData()));
+      (void)res;
       printf(" ... %s deleted\n", _kill_file_name.toUtf8().constData());
     }
     

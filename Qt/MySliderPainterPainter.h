@@ -57,6 +57,7 @@ namespace cvs{
       int pos=scale(val,0,1,0,height);
       p->fillRect(0,pos,width,height,col1);
     }else{
+
       int pos=scale(val,0,1,0,width);
 
       p->setGradient(0,0,width,height*3/4,
@@ -76,6 +77,7 @@ namespace cvs{
       p->drawRect(0,0,pos,height,gray.lighter(50));
 
     }
+
 
 #if 0
     p->setPen(QPen(colors[11].light(110),1));
@@ -101,7 +103,6 @@ namespace cvs{
 #endif
       p->drawText(rect, text, c);
     }
-
 }
  
 } // namespace cvs

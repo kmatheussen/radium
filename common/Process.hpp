@@ -103,7 +103,7 @@ public:
     return ret;
   }
   
-  void start(QString program){
+  void start(QString program, QStringList args){
     R_ASSERT_RETURN_IF_FALSE(_start_has_been_called==false);
 
     R_ASSERT_RETURN_IF_FALSE(get_qprocess() != NULL);
@@ -117,9 +117,9 @@ public:
 #endif
 
 #if FOR_WINDOWS
-    _process->start("\"" + program + "\""); // The surrounding """"  are necessary if path contains spaces.
+    _process->start("\"" + program + "\"", args); // The surrounding """"  are necessary if path contains spaces.
 #else
-    _process->start(program);
+    _process->start(program, args);
 #endif
     
     _start_time = TIME_get_ms();

@@ -3605,7 +3605,7 @@ bool SAMPLER_set_random_sample(struct SoundPlugin *plugin, filepath_t path){
     return false;
   }
   
-  QString new_filename = dir.absoluteFilePath(list.at(qrand() % list.size()));
+  QString new_filename = dir.absoluteFilePath(list.at(rand() % list.size()));
 
   //printf("*********** filename: -%s-\n", new_filename.toUtf8().constData());
   

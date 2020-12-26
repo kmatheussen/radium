@@ -1298,7 +1298,7 @@ static bool add_vst_plugin_type(QFileInfo file_info, QString file_or_identifier,
   return false;
 }
 
-static int create_vst_plugins_recursively(const QString main_path, const QString& sDir, QTime *time, bool is_juce_plugin, const char *container_type_name, bool &continuing)
+static int create_vst_plugins_recursively(const QString main_path, const QString& sDir, QElapsedTimer *time, bool is_juce_plugin, const char *container_type_name, bool &continuing)
 {
   int ret = 0;
   
@@ -1388,21 +1388,21 @@ void create_vst_plugins(bool is_juce_plugin){
 #if defined(FOR_MACOSX)
 
   PR_add_menu_entry(PluginMenuEntry::level_up("VST"));{
-    QTime time;
+    QElapsedTimer time;
     time.start();
     bool continuing = true;
     create_vst_plugins_recursively("/Library/Audio/Plug-Ins/VST/", "/Library/Audio/Plug-Ins/VST/", &time, is_juce_plugin, "VST", continuing);
   }PR_add_menu_entry(PluginMenuEntry::level_down());
 
   PR_add_menu_entry(PluginMenuEntry::level_up("VST3"));{    
-    QTime time;
+    QElapsedTimer time;
     time.start();
     bool continuing = true;
     create_vst_plugins_recursively("/Library/Audio/Plug-Ins/VST3/", "/Library/Audio/Plug-Ins/VST3/", &time, is_juce_plugin, "VST3", continuing);
   }PR_add_menu_entry(PluginMenuEntry::level_down());
 
   PR_add_menu_entry(PluginMenuEntry::level_up("AU"));{
-    QTime time;
+    QElapsedTimer time;
     time.start();
     bool continuing = true;
     create_vst_plugins_recursively("/Library/Audio/Plug-Ins/Components/", "/Library/Audio/Plug-Ins/Components/", &time, is_juce_plugin, "AU", continuing);
@@ -1450,7 +1450,7 @@ void create_vst_plugins(bool is_juce_plugin){
       
       printf("vst_path: %s\n",vst_path.toUtf8().constData());
 
-      QTime time;
+      QElapsedTimer time;
       time.start();
       bool continuing = true;
       int num_plugins_added = create_vst_plugins_recursively(vst_path, vst_path, &time, is_juce_plugin, "VST", continuing);

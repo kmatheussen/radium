@@ -75,9 +75,9 @@ public:
 
   void wheelEvent(QWheelEvent *qwheelevent) override {
     if (HorizontalModifierPressed(qwheelevent->modifiers()))
-      horizontalScrollBar()->setValue(horizontalScrollBar()->value() + qwheelevent->delta()/5);
+      horizontalScrollBar()->setValue(horizontalScrollBar()->value() + qwheelevent->angleDelta().y()/5);
     else
-      verticalScrollBar()->setValue(verticalScrollBar()->value() - qwheelevent->delta()/5);
+      verticalScrollBar()->setValue(verticalScrollBar()->value() - qwheelevent->angleDelta().y()/5);
   }
 };
 }
@@ -229,7 +229,7 @@ struct FaustResultWebView
     if (qwheelevent->modifiers() & Qt::ControlModifier){
       float zoom = zoomFactor();      
       float newzoom;
-      if (qwheelevent->delta() > 0)
+      if (qwheelevent->angleDelta().y() > 0)
         newzoom = zoom * 1.2;
       else
         newzoom = zoom * 0.8;
@@ -258,7 +258,7 @@ struct FaustResultWebView
         direction = -1.0;
       }
     
-      page()->mainFrame()->setScrollBarValue(orientation, page()->mainFrame()->scrollBarValue(orientation) + (direction*qwheelevent->delta()/5));
+      page()->mainFrame()->setScrollBarValue(orientation, page()->mainFrame()->scrollBarValue(orientation) + (direction*qwheelevent->angleDelta().y()/5));
       //scroll_area->wheelEvent(qwheelevent);
 #endif
     }

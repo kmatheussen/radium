@@ -534,7 +534,7 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
       //free(s);
       data.remove(0,1);
       data.append("\n");
-      data.append(text_edit.toPlainText());
+      data.append(text_edit.toPlainText().toUtf8());
       
       QNetworkAccessManager nam;
       QNetworkRequest request(QUrl("http://users.notam02.no/~kjetism/radium/crashreport.php"));

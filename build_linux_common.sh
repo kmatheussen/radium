@@ -122,6 +122,8 @@ export RTMIDI_LDFLAGS="-lpthread -lasound -ljack"
 
 #export OS_OPTS="-DTEST_GC"
 export OS_OPTS="-Werror=array-bounds -msse2 -fomit-frame-pointer -DFOR_LINUX `$PKG --cflags Qt5X11Extras` " # -Ibin/packages/libxcb-1.13/"
+
+
 #export OS_OPTS="-Werror=array-bounds -march=native"
 
 
@@ -140,34 +142,29 @@ fi
 PYTHONLIBPATH=`$PYTHONEXE -c "import sys;print '-L'+sys.prefix+'/lib'"`
 PYTHONLIBNAME=`$PYTHONEXE -c "import sys;print '-lpython'+sys.version[:3]"`
 
-LLVM_OPTS=`llvm-config --cppflags`
-
-MAYBELLVM=`llvm-config --libdir`/libLLVM-`llvm-config --version`.so
-if [ -f $MAYBELLVM ]; then
-    LLVMLIBS=-lLLVM-`llvm-config --version`
-else
-    LLVMLIBS=`llvm-config --libs`
-fi
-
-if env |grep INCLUDE_FAUSTDEV_BUT_NOT_LLVM= ; then
-    if env |grep INCLUDE_FAUSTDEV= ; then
-        LLVMLIBS=
-        export OS_OPTS="$OS_OPTS -DWITHOUT_LLVM_IN_FAUST_DEV"
-    else
-        echo "Error. INCLUDE_FAUSTDEV_BUT_NOT_LLVM defined, but not INCLUDE_FAUSTDEV"
-        exit -1
-    fi
-fi
-
 
 export QSCINTILLA_PATH=`pwd`/bin/packages/QScintilla_gpl-2.10.8
 
 if env |grep INCLUDE_FAUSTDEV= ; then
-    FAUSTLDFLAGS="`pwd`/bin/packages/faust/build/lib/libfaust.a `$PKG --libs uuid` `llvm-config --ldflags` $LLVMLIBS -lcrypto -lncurses"
-else    
-    FAUSTLDFLAGS=""
+    FAUSTLDFLAGS="`pwd`/bin/packages/faust/build/lib/libfaust.a -lcrypto -lncurses"
+    if env |grep INCLUDE_FAUSTDEV_BUT_NOT_LLVM= ; then
+        export OS_OPTS="$OS_OPTS -DWITHOUT_LLVM_IN_FAUST_DEV"
+    else
+        LLVM_OPTS=`llvm-config --cppflags`
+        
+        MAYBELLVM=`llvm-config --libdir`/libLLVM-`llvm-config --version`.so
+        if [ -f $MAYBELLVM ]; then
+            LLVMLIBS=-lLLVM-`llvm-config --version`
+        else
+            LLVMLIBS=`llvm-config --libs`
+        fi
+        
+        FAUSTLDFLAGS="$FAUSTLDFLAGS `$PKG --libs uuid` `llvm-config --ldflags` $LLVMLIBS -ltinfo"
+    fi
 fi
 # _debug
+
+FAUSTLDFLAGS="$FAUSTLDFLAGS `$PKG --libs uuid` `llvm-config --ldflags` `llvm-config --libs` $LLVMLIBS -ltinfo"
 
 if env |grep INCLUDE_PDDEV ; then
     PDLDFLAGS="bin/packages/libpd-master/libs/libpds.a"
@@ -188,7 +185,12 @@ fi
 fi
 
 export OS_JUCE_LDFLAGS="-lasound -pthread -lrt -lX11 -ldl -lXext "
-export OS_LDFLAGS="$QSCINTILLA_PATH/Qt4Qt5/libqscintilla2_qt5.a $FAUSTLDFLAGS $PDLDFLAGS pluginhost/Builds/Linux/build/libMyPluginHost.a $OS_JUCE_LDFLAGS -llrdf $GCDIR/.libs/libgc.a $PYTHONLIBPATH $PYTHONLIBNAME bin/packages/libgig/src/.libs/libgig.a bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a `$PKG --libs dbus-1` `$PKG --libs sndfile` `$PKG --libs samplerate` `$PKG --libs Qt5X11Extras` `$PKG --libs glib-2.0` `$PKG --libs liblo` -lxcb -lxcb-keysyms $RADIUM_BFD_LDFLAGS -lz -liberty -lutil -lgmp -lmpfr -lmpc"
+export OS_LDFLAGS="$QSCINTILLA_PATH/Qt4Qt5/libqscintilla2_qt5.a $FAUSTLDFLAGS $PDLDFLAGS pluginhost/Builds/Linux/build/libMyPluginHost.a $OS_JUCE_LDFLAGS -llrdf $GCDIR/.libs/libgc.a $PYTHONLIBPATH $PYTHONLIBNAME bin/packages/libgig/src/.libs/libgig.a bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a `$PKG --libs sndfile` `$PKG --libs samplerate` `$PKG --libs glib-2.0` `$PKG --libs liblo` -lxcb -lxcb-keysyms $RADIUM_BFD_LDFLAGS -lz -liberty -lutil -licui18n -licuuc -licudata `$PKG --libs Qt5X11Extras`"
+
+# -lgmp -lmpfr -lmpc
+
+# 
+#`$PKG --libs dbus-1`
 
 #-Lbin/packages/libxcb-1.13/src/.libs
 

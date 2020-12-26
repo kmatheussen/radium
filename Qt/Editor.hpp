@@ -234,7 +234,7 @@ class Editor : public FocusSnifferQsciScintilla{
 
   void wheelEvent(QWheelEvent *event_) override {
     if (event_->modifiers() & Qt::ControlModifier){                
-      if (event_->delta() > 0){                                     
+      if (event_->angleDelta().y() > 0){                                     
         zoomIn(1);
         zoomguess++;
       }else{

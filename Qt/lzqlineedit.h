@@ -49,7 +49,7 @@ public:
 
     Rational ratio = getRational(wblock);
 
-    if (qwheelevent->delta()<0)
+    if (qwheelevent->angleDelta().y()<0)
       ratio = ratio.down();
     else
       ratio = ratio.up();
@@ -93,26 +93,26 @@ public:
 
     if (qwheelevent->modifiers() & Qt::ControlModifier) {
 
-      if (qwheelevent->delta()<0 && ratio._denominator >= 2)
+      if (qwheelevent->angleDelta().y()<0 && ratio._denominator >= 2)
         ratio = ratio.downDenominator();
       
-      else if (qwheelevent->delta()>0)
+      else if (qwheelevent->angleDelta().y()>0)
         ratio = ratio.upDenominator();
       
     } else if (_wheelMainlyChangesNumerator){
       
-      if (qwheelevent->delta()<0 && ratio._numerator>1)
+      if (qwheelevent->angleDelta().y()<0 && ratio._numerator>1)
         ratio = ratio.downNumerator();
 
-      else if (qwheelevent->delta()<0 && _wheelDecrasesDenominatorIfNumeratorIsOne)
+      else if (qwheelevent->angleDelta().y()<0 && _wheelDecrasesDenominatorIfNumeratorIsOne)
         ratio = ratio.upDenominator();
         
-      else if(qwheelevent->delta()>0)
+      else if(qwheelevent->angleDelta().y()>0)
         ratio = ratio.upNumerator();
 
     } else {
       
-      if (qwheelevent->delta()<0)
+      if (qwheelevent->angleDelta().y()<0)
         ratio = ratio.down();
       else
         ratio = ratio.up();
@@ -151,7 +151,7 @@ public:
     
     Rational ratio(root->grid_numerator, root->grid_denominator);
     
-    if (qwheelevent->delta()<0)
+    if (qwheelevent->angleDelta().y()<0)
       ratio = ratio.down();
     else
       ratio = ratio.up();
@@ -186,7 +186,7 @@ public:
     
     Rational ratio((int)root->quantitize_options.quant.numerator, (int)root->quantitize_options.quant.denominator);
   
-    if (qwheelevent->delta()<0)
+    if (qwheelevent->angleDelta().y()<0)
       ratio = ratio.down();
     else
       ratio = ratio.up();
@@ -214,7 +214,7 @@ public:
 
     int keynum = getNoteNameValue((char*)text().toUtf8().constData());
     if (keynum!=-1) {
-      if (qwheelevent->delta()<0)
+      if (qwheelevent->angleDelta().y()<0)
         keynum--;
       else
         keynum++;
@@ -251,10 +251,10 @@ public:
 
     //printf("      bef2: %s.",ratio.toString().toUtf8().constData());
     
-    if (qwheelevent->delta()<0 && ratio._numerator>1)
+    if (qwheelevent->angleDelta().y()<0 && ratio._numerator>1)
       ratio = ratio.downNumerator();
 
-    else if(qwheelevent->delta()>0)
+    else if(qwheelevent->angleDelta().y()>0)
       ratio = ratio.upNumerator();
 
     //printf(" aft: %s.",ratio.toString().toUtf8().constData());

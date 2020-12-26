@@ -143,7 +143,7 @@ namespace{
     
     MyProgressWindow()
     {
-      qsrand(QDateTime::currentMSecsSinceEpoch());
+      srand(QDateTime::currentMSecsSinceEpoch());
       generate_new_text();
 
       _org_flags = windowFlags();
@@ -187,7 +187,7 @@ namespace{
       for(int i=1;i<len;i++){
         int pos;
         do{
-          pos=qrand() % len;
+          pos=rand() % len;
         }while(output[pos] != 0);
         output[pos] = input[i];
       }
@@ -639,25 +639,21 @@ void GFX_OpenProgress(const char *message){
   //g_process->setReadChannel(QProcess::StandardOutput);
   //g_process->setProcessChannelMode(QProcess::MergedChannels);
 
+  QStringList args;
+  args << QString::number(fontsize);
+  args << QString::number(rect.x());
+  args << QString::number(rect.y());
+  args << QString::number(rect.width());
+  args << QString::number(rect.height());
+  args << QString(QString(message).toUtf8().toBase64().constData());
+  
 #if 1
-  g_process->start(program+" "+
-                   QString::number(fontsize) + " " +
-                   QString::number(rect.x()) + " " +
-                   QString::number(rect.y()) + " " +
-                   QString::number(rect.width()) + " " +
-                   QString::number(rect.height()) + " " +
-                   QString(QString(message).toUtf8().toBase64().constData()),
+  g_process->start(program,
+                   args,
                    QIODevice::WriteOnly | QIODevice::Text | QIODevice::Unbuffered | QIODevice::Append
                    );
 #else
   g_process->setProgram(program);
-  QStringList args;
-  args << QString::number(fontsize);
-  args <<               QString::number(rect.x());
-  args <<       QString::number(rect.y());
-  args << QString::number(rect.width());
-  args <<       QString::number(rect.height());
-  args <<  QString(QString(message).toUtf8().toBase64().constData());
   g_process->setArguments(args);
   g_process->startDetached();
 #endif

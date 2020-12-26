@@ -12,9 +12,13 @@
 
 
 StaticRatio STATIC_RATIO_from_string(QString string){
-  
-  QStringList splitted = string.split("/", QString::SkipEmptyParts);
 
+#if QT_VERSION >= QT_VERSION_CHECK(5, 13, 0)
+  QStringList splitted = string.split("/", Qt::SkipEmptyParts);
+#else
+  QStringList splitted = string.split("/", QString::SkipEmptyParts);
+#endif
+  
   if (splitted.size() >= 2) {
       
     QString a = splitted[0];

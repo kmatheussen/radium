@@ -17,7 +17,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <math.h>
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnull-dereference"
 #include <QWidget>
+#pragma GCC diagnostic pop
+
 #include <QGraphicsItem>
 #include <QAbstractSlider>
 
@@ -472,7 +476,7 @@ struct SliderPainter{
   
   void paint(QPainter *p){
     R_ASSERT(THREADING_is_main_thread());
-        
+
 #ifdef COMPILING_RADIUM
     //QColor *colors = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget)->colors;
 #else
@@ -489,11 +493,11 @@ struct SliderPainter{
     }
 
     paint_automation_or_peaks(p, false); // chip peaks
-        
+
     cvs::MyPainter mp(p);
 
     SLIDERPAINTERPAINTER_paint(&mp,0,0,width(),height(),
-                               isEnabled(), 
+                               isEnabled(),
                                scale_double(value(),minimum(),maximum(),0.0f,1.0f),
                                _display_string.toStdString(),
                                _alternative_color

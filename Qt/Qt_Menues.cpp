@@ -72,7 +72,7 @@ struct MyMenu : public QMenu, radium::Timer{
 public:
   
   MyMenu()
-    : radium::Timer((int)scale_int64(qrand(), 0, RAND_MAX, 200, 500), true)
+    : radium::Timer((int)scale_int64(rand(), 0, RAND_MAX, 200, 500), true)
   {
     connect(this, SIGNAL(aboutToHide()), this, SLOT(aboutToHide()));
     connect(this, SIGNAL(aboutToShow()), this, SLOT(aboutToShow()));

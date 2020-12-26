@@ -768,26 +768,27 @@ static int find_next_visible_legal_topmost_seqtrack(void){
  
 static void handle_wheel_event(QWidget *widget, QWheelEvent *e, int x1, int x2, double start_play_time, double end_play_time) {
 
-  double pos = R_MAX(0, scale_double(e->x(), x1, x2, start_play_time, end_play_time));
+  //double pos = R_MAX(0, scale_double(e->x(), x1, x2, start_play_time, end_play_time));
+  double pos = R_MAX(0, scale_double(e->position().x(), x1, x2, start_play_time, end_play_time));
   //printf("pos: %f, _start/end: %f / %f. x: %d\n", (double)pos/48000.0, (double)start_play_time / 48000.0, (double)end_play_time / 48000.0, e->x());
 
 
   if (  (e->modifiers() & Qt::ControlModifier)) {
 
-    SEQUENCER_zoom_or_move_leftright(true, (e->delta() > 0) ? 1 : -1, scale_double(e->x(), x1, x2, 0, 1));
+    SEQUENCER_zoom_or_move_leftright(true, (e->angleDelta().y() > 0) ? 1 : -1, scale_double(e->position().x(), x1, x2, 0, 1));
     
   } else if (HorizontalModifierPressed(e->modifiers())) {
 
-    SEQUENCER_zoom_or_move_leftright(false, (e->delta() > 0) ? 1 : -1);;
+    SEQUENCER_zoom_or_move_leftright(false, (e->angleDelta().y() > 0) ? 1 : -1);;
     
   } else {
 
     int vu_width = root->song->tracker_windows->systemfontheight;
-    if (VerticalModifierPressed(e->modifiers()) || mapToEditorX(widget, e->x()) < SEQTRACK_get_x1(0)-vu_width) {
+    if (VerticalModifierPressed(e->modifiers()) || mapToEditorX(widget, e->position().x()) < SEQTRACK_get_x1(0)-vu_width) {
 
       int seqtracknum;
       
-      if (e->delta() > 0){
+      if (e->angleDelta().y() > 0){
         seqtracknum = find_prev_visible_legal_topmost_seqtrack();
       } else {
         seqtracknum = find_next_visible_legal_topmost_seqtrack();
@@ -797,7 +798,7 @@ static void handle_wheel_event(QWidget *widget, QWheelEvent *e, int x1, int x2, 
       
     } else {
 
-      if (e->delta() > 0){
+      if (e->angleDelta().y() > 0){
         
         //printf("        PLAY SONG WHEEL:: %f\n",pos);
         if (!is_playing_song())
@@ -4090,7 +4091,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   void wheelEvent(QWheelEvent *e) override {
     if (API_run_mouse_wheel_event_for_custom_widget(this, e))
       return;
-    else if (e->y() >= _navigator_painter.t_y1)
+    else if (e->position().y() >= _navigator_painter.t_y1)
       handle_wheel_event(this, e, _navigator_painter.t_x1, _navigator_painter.t_x2, 0, _navigator_painter._cursor_end_time);
     else
       handle_wheel_event(this, e, _seqtracks_widget.t_x1, _seqtracks_widget.t_x2, _start_time, _end_time);

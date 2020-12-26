@@ -1392,7 +1392,7 @@ private:
 
 
   int _num_update_event_calls = 0;
-  QTime _update_event_counter_timer;
+  QElapsedTimer _update_event_counter_timer;
 
   // OpenGL thread
   void assertHealthyVBlank(void){
