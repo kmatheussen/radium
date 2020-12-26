@@ -915,13 +915,13 @@ static void setColorEnd(vl::VectorGraphics *vg, const GE_Context *c){
 //
 // OpenGL Thread
 void GE_update_triangle_gradient_shaders(PaintingData *painting_data, float y_offset){
-  for (const auto hepp : painting_data->contexts) {
+  for (const auto &hepp : painting_data->contexts) {
     
-    for (const auto contexts : hepp) {
+    for (const auto &contexts : hepp) {
       
-      for (const auto c2 : contexts) {
+      for (const auto &c2 : contexts) {
 
-        for (const auto c : c2) {
+        for (const auto &c : c2) {
           
           for (vl::ref<GradientTriangles> gradient_triangles : c->gradient_triangles)
             gradient_triangles->set_y_offset(y_offset);
@@ -962,14 +962,14 @@ void GE_draw_vl(T2_data *t2_data){
     vg->setBlendFunc(src_rgb, dst_rgb, vl::BF_ONE_MINUS_SRC_ALPHA, vl::BF_ONE_MINUS_DST_ALPHA);
     */
     
-      for (const auto hepp : painting_data->contexts) {
+      for (const auto &hepp : painting_data->contexts) {
         
-        for (const auto contexts : hepp) {
+        for (const auto &contexts : hepp) {
           
-          for (const auto c2 : contexts) {
+          for (const auto &c2 : contexts) {
         
             // 1. Filled boxes
-            for(const auto c : c2){
+            for(const auto &c : c2){
               
               if(c->boxes.size() > 0) {
                 setColorBegin(vg, c.get());
@@ -981,7 +981,7 @@ void GE_draw_vl(T2_data *t2_data){
             }
           
             // 2. triangle strips
-            for(const auto c : c2){
+            for(const auto &c : c2){
               
 #if USE_TRIANGLE_STRIPS
               if(c->trianglestrips.size() > 0) {
@@ -1036,7 +1036,7 @@ void GE_draw_vl(T2_data *t2_data){
           */
         
           // 6. Text
-            for(const auto c : c2) {
+            for(const auto &c : c2) {
         
               if(c->textbitmaps.points.size() != 0 || c->textbitmaps_halfsize.points.size() != 0) {
                 

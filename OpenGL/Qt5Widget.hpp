@@ -56,14 +56,17 @@ namespace vlQt5
   /** The Qt5Widget class implements an OpenGLContext using the Qt5 API. */
   class VLQT5_EXPORT Qt5Widget : public QGLWidget, public vl::OpenGLContext
   {
-    //Q_OBJECT
+    //    Q_OBJECT
 
   public:
     using vl::Object::setObjectName;
     using QObject::setObjectName;
-  
-    Qt5Widget(QWidget* parent=NULL, const QGLWidget* shareWidget=NULL, Qt::WindowFlags f=0)
-    :QGLWidget(parent,shareWidget,f)
+
+    const vl::OpenGLContextFormat _info;
+    
+    Qt5Widget(const vl::OpenGLContextFormat& info, QWidget* parent=NULL, const QGLWidget* shareWidget=NULL, Qt::WindowFlags f=0)
+      : QGLWidget(getdasformat(info), parent,shareWidget,f)
+      , _info(info)
     {
       setContinuousUpdate(true);
       setMouseTracking(true);
@@ -107,10 +110,60 @@ namespace vlQt5
       }
     }
 
+    QGLFormat getdasformat(const vl::OpenGLContextFormat& info){
+      return QGLFormat(QGL::SampleBuffers);
+      return QGLFormat::defaultFormat();
+      
+      QGLFormat fmt;
+
+      fmt.setProfile(QGLFormat::CompatibilityProfile);
+      // double buffer
+      fmt.setDoubleBuffer( info.doubleBuffer() );
+
+      // color buffer
+      fmt.setRedBufferSize( info.rgbaBits().r() );
+      fmt.setGreenBufferSize( info.rgbaBits().g() );
+      fmt.setBlueBufferSize( info.rgbaBits().b() );
+      // setAlpha == true makes the create() function alway fail
+      // even if the returned format has the requested alpha channel
+      fmt.setAlphaBufferSize( info.rgbaBits().a() );
+      fmt.setAlpha( info.rgbaBits().a() != 0 );
+
+      // accumulation buffer
+      int accum = vl::max( info.accumRGBABits().r(), info.accumRGBABits().g() );
+      accum = vl::max( accum, info.accumRGBABits().b() );
+      accum = vl::max( accum, info.accumRGBABits().a() );
+      fmt.setAccumBufferSize( accum );
+      fmt.setAccum( accum != 0 );
+
+      // multisampling
+      if (info.multisample())
+        fmt.setSamples( info.multisampleSamples() );
+      fmt.setSampleBuffers( info.multisample() );
+
+      // depth buffer
+      fmt.setDepthBufferSize( info.depthBufferBits() );
+      fmt.setDepth( info.depthBufferBits() != 0 );
+
+      // stencil buffer
+      fmt.setStencilBufferSize( info.stencilBufferBits() );
+      fmt.setStencil( info.stencilBufferBits() != 0 );
+
+      // stereo
+      fmt.setStereo( info.stereo() );
+
+      // swap interval / v-sync
+      fmt.setSwapInterval( info.vSync() ? 1 : 0 );
+
+      return fmt;
+    }
+    
     bool initQt5Widget(const vl::String& title, const vl::OpenGLContextFormat& info, const QGLContext* shareContext=0, int x=0, int y=0, int width=640, int height=480)
     {
+#if 0
       // setFormat(fmt) is marked as deprecated so we use this other method
       QGLContext* glctx = new QGLContext(context()->format(), this);
+
       QGLFormat fmt = context()->format();
 
       fmt.setProfile(QGLFormat::CompatibilityProfile);
@@ -152,12 +205,18 @@ namespace vlQt5
       // swap interval / v-sync
       fmt.setSwapInterval( info.vSync() ? 1 : 0 );
 
+      context()->setFormat(fmt);
+      
+#if 0
       glctx->setFormat(fmt);
       // this function returns false when we request an alpha buffer
       // even if the created context seem to have the alpha buffer
       /*bool ok = */glctx->create(shareContext);
       setContext(glctx);
+#endif
 
+#endif
+      
       initGLContext();
 
       framebuffer()->setWidth(width);
@@ -229,9 +288,18 @@ namespace vlQt5
       }
     }
 
-    void initializeGL()
+    virtual void init_vl(vl::OpenGLContext *glContext) = 0;
+
+    //int _num_init_gl = 0;
+    void initializeGL() override
     {
+      //printf("     *************** initializeGL(): %d\n", _num_init_gl++);
+      
       // OpenGL extensions initialization
+      initQt5Widget("hello", _info);
+#if !THREADED_OPENGL
+      init_vl(this);
+#endif
       dispatchInitEvent();
     }
 
