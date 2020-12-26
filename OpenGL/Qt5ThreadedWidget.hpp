@@ -240,12 +240,12 @@ namespace vlQt5
     {
     }
 
-    void resizeGL(int width, int height)
+    void resizeGL(int width, int height) override
     {
       //dispatchResizeEvent(width, height);
     }
 
-    void paintGL()
+    void paintGL() override
     {
       //dispatchRunEvent();
     }
@@ -270,10 +270,10 @@ namespace vlQt5
     }
 #endif
     
-    void 	paintEvent ( QPaintEvent *  ){
+    void 	paintEvent ( QPaintEvent *  ) override {
     }
     
-    void 	resizeEvent ( QResizeEvent *  ) {
+    void 	resizeEvent ( QResizeEvent *  ) override {
 #if 0
       mythread->widget_width = width();
       mythread->widget_height = height();
@@ -303,7 +303,7 @@ namespace vlQt5
       return ATOMIC_GET(_gl_is_initialized);
     }
     
-    void mouseMoveEvent(QMouseEvent* ev)
+    void mouseMoveEvent(QMouseEvent* ev) override
     {
       Event e;
       e.type=Event::MOUSEMOVE;
@@ -312,7 +312,7 @@ namespace vlQt5
       mythread->push_event(e);
     }
 
-    void mousePressEvent(QMouseEvent* ev)
+    void mousePressEvent(QMouseEvent* ev) override
     {
       vl::EMouseButton bt = vl::NoButton;
       switch(ev->button())
@@ -332,7 +332,7 @@ namespace vlQt5
       mythread->push_event(e);
     }
 
-    void mouseReleaseEvent(QMouseEvent* ev)
+    void mouseReleaseEvent(QMouseEvent* ev) override
     {
       vl::EMouseButton bt = vl::NoButton;
       switch(ev->button())
@@ -351,7 +351,7 @@ namespace vlQt5
       mythread->push_event(e);
     }
 
-    void wheelEvent(QWheelEvent* ev)
+    void wheelEvent(QWheelEvent* ev) override
     {
       Event e;
       e.type=Event::WHEEL;
@@ -359,7 +359,7 @@ namespace vlQt5
       mythread->push_event(e);
     }
 
-    void keyPressEvent(QKeyEvent*)
+    void keyPressEvent(QKeyEvent*) override
     {
       unsigned short unicode_ch = 0;
       vl::EKey key = vl::Key_None;
@@ -371,7 +371,7 @@ namespace vlQt5
       mythread->push_event(e);
     }
 
-    void keyReleaseEvent(QKeyEvent*)
+    void keyReleaseEvent(QKeyEvent*) override
     {
       unsigned short unicode_ch = 0;
       vl::EKey key = vl::Key_None;
