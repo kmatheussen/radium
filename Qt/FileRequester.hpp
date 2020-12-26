@@ -12,6 +12,7 @@ extern QByteArray g_filedialog_geometry;
 namespace radium{
 
   static inline void fixqfiledialog(QWidget *widget){
+    //return; // checking.
     if (widget != NULL){
       QComboBox *box = dynamic_cast<QComboBox*>(widget);
       if (box != NULL)
