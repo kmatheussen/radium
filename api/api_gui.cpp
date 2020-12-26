@@ -1411,7 +1411,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       
       // Close plugin GUI children
       {
-        QList<instrument_t> patch_ids = _child_plugin_gui_patch_ids.toList(); // Work on a copy since elements are removed while iterating.
+        QList<instrument_t> patch_ids = _child_plugin_gui_patch_ids.values(); // Work on a copy since elements are removed while iterating.
         
         for(instrument_t patch_id : patch_ids){
         
@@ -1874,9 +1874,12 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
       event->accept();
 
+#if QT_VERSION >= QT_VERSION_CHECK(5, 13, 0)
+      const QPoint &point = event->position().toPoint(); //sigh
+#else
       const QPoint &point = event->pos();
-
-      return S7CALL(bool_bool_float_float,_mouse_wheel_callback.v, event->delta() > 0, point.x(), point.y());
+#endif
+      return S7CALL(bool_bool_float_float,_mouse_wheel_callback.v, event->angleDelta().y() > 0, point.x(), point.y());
     }
     
     void addMouseWheelCallback(func_t* func){      
@@ -4003,7 +4006,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     void wheelEvent(QWheelEvent *qwheelevent) override {
       if (qwheelevent->modifiers() & Qt::ControlModifier){
 
-        zoom(qwheelevent->delta() > 0);
+        zoom(qwheelevent->angleDelta().y() > 0);
 
       } else {
 
@@ -4011,7 +4014,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
           
         if (HorizontalModifierPressed(qwheelevent->modifiers())) {
           orientation = Qt::Horizontal;
-          page()->mainFrame()->setScrollBarValue(orientation, page()->mainFrame()->scrollBarValue(orientation) + qwheelevent->delta()/2);
+          page()->mainFrame()->setScrollBarValue(orientation, page()->mainFrame()->scrollBarValue(orientation) + qwheelevent->angleDelta().y()/2);
         } else {
           //orientation = Qt::Vertical;
           FocusSnifferQWebView::wheelEvent(qwheelevent);
@@ -4463,7 +4466,7 @@ void gui_postKeyEvent(int64_t guinum, int qtkeynum, int64_t qtmodifiers, bool is
 }
 
 int64_t gui_random(void){
-  return g_valid_guis[qrand() % g_valid_guis.size()]->get_gui_num();
+  return g_valid_guis[rand() % g_valid_guis.size()]->get_gui_num();
 }
 
 int64_t gui_child(int64_t guinum, const_char* childname){

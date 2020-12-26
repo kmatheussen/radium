@@ -78,19 +78,20 @@ private:
 
     reset();
 
-    QString ret;
+    //QString ret;
 
     bool a = mincpu<10 && maxcpu<10 && avgcpu<10;
 
-    ret.sprintf("%s%s%d/%s%d/%s%d%s",
-                a ? "  " : "",
-                mincpu < 10 && !a? " " : "", mincpu,
-                avgcpu < 10 && !a ? " " : "", avgcpu,
-                maxcpu < 10 && !a ? " " : "", maxcpu,
-                a ? " " : ""
-                );
+    char temp[100];
+    snprintf(temp,98,"%s%s%d/%s%d/%s%d%s",
+             a ? "  " : "",
+             mincpu < 10 && !a? " " : "", mincpu,
+             avgcpu < 10 && !a ? " " : "", avgcpu,
+             maxcpu < 10 && !a ? " " : "", maxcpu,
+             a ? " " : ""
+             );
 
-    return ret;
+    return QString(temp);
   }
 
 public:

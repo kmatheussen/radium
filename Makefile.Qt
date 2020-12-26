@@ -5,6 +5,9 @@
 RADIUM_VERSION = 6.6.77
 
 
+SHELL := /bin/bash
+
+
 #----------------USER SETTINGS-------------------------------
 
 # 1. Where to install
@@ -49,6 +52,7 @@ PYTHONEXE ?= `which python2`
 
 GCDIR ?= bin/packages/gc-7.4.16
 
+QHTTPSERVER_PATH ?= $(shell pwd)/bin/packages/qhttpserver-master
 #MIDIINC=-Imidi/rtmidi
 #MIDIINC=-Imidi/alsaseq
 
@@ -111,11 +115,23 @@ QT_SYSTEM_CFLAGS ?=
 QSCINTILLA_PATH ?= $(shell pwd)/bin/packages/QScintilla_gpl-2.10.8
 
 ifeq (,$(findstring clang,$(CC)))
+	CLANG_VERSION:=-1
+	CLANG_MAJOR:=-1
+	CLANG_MINOR:=-1
+	CLANG_SUB:=-1
+
 	GCC_VERSION:=$(shell $(GCC) -dumpversion)
 	GCC_MAJOR:=$(shell echo $(GCC_VERSION) | cut -d'.' -f1)
 	GCC_MINOR:=$(shell echo $(GCC_VERSION) | cut -d'.' -f2)
 	GCC_SUB:=$(shell echo $(GCC_VERSION) | cut -d'.' -f3)
+
 else
+
+	CLANG_VERSION:= $(shell $(CC) --version|grep version |& sed "s/.*version \([0-9]*\.[0-9]*\.[0-9]*\\).*/\1/")
+	CLANG_MAJOR:=$(shell echo $(CLANG_VERSION) | cut -d'.' -f1)
+	CLANG_MINOR:=$(shell echo $(CLANG_VERSION) | cut -d'.' -f2)
+	CLANG_SUB:=$(shell echo $(CLANG_VERSION) | cut -d'.' -f3)
+
 	GCC_VERSION:=-1
 	GCC_MAJOR:=-1
 	GCC_MINOR:=-1
@@ -129,7 +145,7 @@ ifeq ($(RADIUM_QT_VERSION),4)
 	QT_GUI_LDFLAGS ?= `$(PKGqt) --libs QtGui`
 	QT_NETWORK_CFLAGS ?=`$(PKGqt) --cflags QtNetwork`
 	QT_NETWORK_LDFLAGS ?= `$(PKGqt) --libs QtNetwork`
-	QT_CFLAGS ?= `$(PKGqt) --cflags QtGui --cflags QtNetwork --cflags QtOpenGL --cflags QtWebKit` -I$(shell pwd)bin/packages/qhttpserver-master/src -I$(QSCINTILLA_PATH)/Qt4Qt5 -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) 
+	QT_CFLAGS ?= `$(PKGqt) --cflags QtGui --cflags QtNetwork --cflags QtOpenGL --cflags QtWebKit` -I$(QHTTPSERVER_PATH)/src -I$(QSCINTILLA_PATH)/Qt4Qt5 -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) 
 	QT_LDFLAGS ?= `$(PKGqt) --libs QtGui --libs QtOpenGL --libs QtNetwork --libs QtWebKit`
 endif
 
@@ -150,16 +166,24 @@ ifeq ($(RADIUM_QT_VERSION),5)
 #	QT_LDFLAGS ?= `$(PKGqt) --libs Qt5Gui --libs Qt5OpenGL --libs Qt5Network --libs Qt5Widgets --libs Qt5WebEngineWidgets`
 
 #	If using QtWebKit:
-	QT_CFLAGS ?= `$(PKGqt) --cflags Qt5Gui --cflags Qt5Network --cflags Qt5OpenGL --cflags Qt5Widgets --cflags Qt5WebKitWidgets --cflags Qt5WebKit --cflags Qt5Concurrent` -Ibin/packages/qhttpserver-master/src -I$(QSCINTILLA_PATH)/Qt4Qt5 -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) $(FPIC)
-	QT_LDFLAGS ?=  $(QT_UI_LDFLAGS) $(QT_SVG_LDFLAGS) `$(PKGqt) --libs Qt5Gui --libs Qt5OpenGL --libs Qt5Network --libs Qt5Widgets --libs Qt5WebKitWidgets --libs Qt5WebKit` $(FPIC)
+	QT_CFLAGS ?= `$(PKGqt) --cflags Qt5Gui --cflags Qt5Network --cflags Qt5OpenGL --cflags Qt5Widgets --cflags Qt5WebKitWidgets --cflags Qt5WebKit --cflags Qt5Concurrent` -I$(QHTTPSERVER_PATH)/src -I$(QSCINTILLA_PATH)/Qt4Qt5 -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) $(FPIC)
+	QT_LDFLAGS ?=  $(QT_UI_LDFLAGS) $(QT_SVG_LDFLAGS) `$(PKGqt) --libs Qt5Gui --libs Qt5OpenGL --libs Qt5Widgets --libs Qt5WebKitWidgets --libs Qt5WebKit --libs Qt5Network ` $(FPIC)
 endif
 
 WNO_DEPRECATED_COPY=
 ifeq ($(GCC_MAJOR),9)
 	WNO_DEPRECATED_COPY=-Wno-deprecated-copy
-	QT_CFLAGS += $(WNO_DEPRECATED_COPY)
+#	QT_CFLAGS += $(WNO_DEPRECATED_COPY) # probably only necessary for qt 5.12 or older
 endif
 
+
+WNO_DEPRECATED_COPY_CLANG=
+WNO_MISLEADING_INDENTATION_CLANG=
+ifeq ($(shell test $(CLANG_MAJOR) -gt 9; echo $$?),0)
+	WNO_DEPRECATED_COPY_CLANG=-Wno-deprecated-copy
+	WNO_MISLEADING_INDENTATION_CLANG=-Wno-misleading-indentation
+#	QT_CFLAGS +=  $(WNO_DEPRECATED_COPY_CLANG) # Only necessary for qt 5.12 or older.
+endif
 
 
 GTK_CFLAGS ?= `$(PKG) --cflags gtk+-2.0`
@@ -207,10 +231,12 @@ else ifeq ($(GCC_MAJOR),9)
 else ifeq ($(GCC_MAJOR),8)
 	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined -fno-sanitize-recover
 	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
+	WNO_DEPRECATED_DECLARATIONS=-Wno-deprecated-declarations
 #	UNDEFINED_SANITIZE_OPTS=
 else ifeq ($(GCC_MAJOR),7)
 	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined -fno-sanitize-recover
 	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
+	WNO_DEPRECATED_DECLARATIONS=-Wno-deprecated-declarations
 #	UNDEFINED_SANITIZE_OPTS=
 else ifneq (,$(findstring clang,$(CC)))
 	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
@@ -411,11 +437,6 @@ endif
 
 WNO_NULL_POINTER_ARITHMETIC=
 ifneq (,$(findstring clang,$(CC)))
-
-  CLANG_VERSION:= $(shell clang --version|grep version |& sed "s/.*version \([0-9]*\.[0-9]*\.[0-9]*\\).*/\1/")
-  CLANG_MAJOR:=$(shell echo $(CLANG_VERSION) | cut -d'.' -f1)
-  CLANG_MINOR:=$(shell echo $(CLANG_VERSION) | cut -d'.' -f2)
-  CLANG_SUB:=$(shell echo $(CLANG_VERSION) | cut -d'.' -f3)
 
   ifeq ($(shell test $(CLANG_MAJOR) -gt 5; echo $$?),0)
      WNO_NULL_POINTER_ARITHMETIC += -Wno-null-pointer-arithmetic
@@ -1700,14 +1721,14 @@ $(T)Qt_Error.o: $(BUILD_DEPENDENCIES) $(P)Qt_Error.cpp
 	@echo "Changed (Qt_Error.o):"
 	@echo $?
 	@echo
-	$(CCC2) $(P)Qt_Error.cpp $(QTOPT)
+	$(CCC2) $(P)Qt_Error.cpp $(QTOPT)  $(WNO_DEPRECATED_COPY_CLANG) #-O0
 
 bin/radium_error_message: $(P)Qt_Error.cpp $(P)EditorWidget.h
 	@echo
 	@echo "Changed (bin/radium_error_message):"
 	@echo $?
 	@echo
-	$(CCC) -Wall $(WERROR) $(P)Qt_Error.cpp $(CPPOPT) $(QT_CFLAGS) $(OS_OPTS) -DCOMPILE_EXECUTABLE $(QT_GUI_CFLAGS) -o errormessagebin.o -Wno-missing-declarations
+	$(CCC) -Wall $(WERROR) $(P)Qt_Error.cpp $(CPPOPT) $(QT_CFLAGS) $(OS_OPTS) -DCOMPILE_EXECUTABLE $(QT_GUI_CFLAGS) -o errormessagebin.o -Wno-missing-declarations  $(WNO_DEPRECATED_COPY_CLANG) # -O0
 	$(LINKER) `cat buildtype.opt` errormessagebin.o -o bin/radium_error_message $(QT_GUI_LDFLAGS)
 	rm errormessagebin.o
 
@@ -1722,7 +1743,7 @@ bin/radium_check_jack_status: audio/KillJackd.cpp $(T)Jack_plugin.o $(T)find_jac
 	rm $(T)radium_check_jack_status.o
 
 bin/radium_check_opengl: OpenGL/CheckOpenGL.cpp common/Process.hpp
-	$(CCC) -Wall $(WERROR) OpenGL/CheckOpenGL.cpp $(CPPOPT) $(QT_CFLAGS) $(OS_OPTS) -std=gnu++14 -DCOMPILE_EXECUTABLE -o radium_check_opengl.o 
+	$(CCC) -Wall $(WERROR) OpenGL/CheckOpenGL.cpp $(CPPOPT) $(QT_CFLAGS) $(OS_OPTS) -std=gnu++14 -DCOMPILE_EXECUTABLE -o radium_check_opengl.o $(WNO_DEPRECATED_DECLARATIONS)
 	$(LINKER) `cat buildtype.opt` radium_check_opengl.o -o bin/radium_check_opengl $(QT_GUI_LDFLAGS) `$(PKGqt) --libs Qt5OpenGL`
 	rm radium_check_opengl.o
 
@@ -2466,7 +2487,7 @@ bin/radium_crashreporter: crashreporter/crashreporter.cpp common/Process.hpp
 	@echo "Changed (bin/radium_crashreporter):"
 	@echo $?
 	@echo
-	$(CCC) -Wall crashreporter/crashreporter.cpp $(RADIUM_BFD_CFLAGS) $(CPPOPT) -DCRASHREPORTER_BIN -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" $(QT_GUI_CFLAGS) $(QT_NETWORK_CFLAGS) $(OS_OPTS) $(IS_LINUX_BINARY) $(WNO_DEPRECATED_DECLARATIONS) $(WNO_DEPRECATED_COPY) -o /tmp/crashbin.o
+	$(CCC) -Wall crashreporter/crashreporter.cpp $(RADIUM_BFD_CFLAGS) $(CPPOPT) -DCRASHREPORTER_BIN -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" $(QT_GUI_CFLAGS) $(QT_NETWORK_CFLAGS) $(OS_OPTS) $(IS_LINUX_BINARY) $(WNO_DEPRECATED_DECLARATIONS) $(WNO_DEPRECATED_COPY) $(WNO_DEPRECATED_COPY_CLANG) -o /tmp/crashbin.o
 	$(LINKER) `cat buildtype.opt` /tmp/crashbin.o -o bin/radium_crashreporter $(QT_GUI_LDFLAGS) $(QT_NETWORK_LDFLAGS)
 	rm /tmp/crashbin.o
 
@@ -2483,7 +2504,7 @@ $(T)crashreporter.o: crashreporter/crashreporter.cpp common/Process.hpp
 	@echo "Changed (crashreporter.o):"
 	@echo $?
 	@echo
-	$(CCC2) crashreporter/crashreporter.cpp $(QTOPT) $(CRASHREPORTER_OPTS) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" $(IS_LINUX_BINARY) $(NO_ANALYZER_MALLOC_LEAK)
+	$(CCC2) crashreporter/crashreporter.cpp $(QTOPT) $(CRASHREPORTER_OPTS) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" $(IS_LINUX_BINARY) $(NO_ANALYZER_MALLOC_LEAK) $(WNO_DEPRECATED_COPY_CLANG)
 
 $(T)crashreporter_posix.o: crashreporter/crashreporter_posix.c crashreporter/backtrace-symbols.c
 	if ! $(CC2) $(RADIUM_BFD_CFLAGS) crashreporter/crashreporter_posix.c $(OPT) $(CRASHREPORTER_POSIX_OPTS) ; then \
@@ -2496,19 +2517,19 @@ $(T)crashreporter_windows.o: crashreporter/crashreporter_windows.c
 #	$(CC2) crashreporter/crashreporter_windows.c $(OPT) -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/bfd -DPACKAGE -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/include -O0
 
 $(T)GfxElements.o: OpenGL/GfxElements.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp OpenGL/FreeType.hpp common/Mutex.hpp OpenGL/T2.hpp common/spinlock.h
-	$(CCC2) OpenGL/GfxElements.cpp $(VL_CFLAGS) $(QTOPT) $(FREETYPE_CFLAGS) $(WNO_SUGGEST_OVERRIDE) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC) $(NO_ANALYZER) #-Wno-error=unused-variable
+	$(CCC2) OpenGL/GfxElements.cpp $(VL_CFLAGS) $(QTOPT) $(FREETYPE_CFLAGS) $(WNO_SUGGEST_OVERRIDE) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC) $(NO_ANALYZER)  $(WNO_DEPRECATED_COPY_CLANG) $(WNO_MISLEADING_INDENTATION_CLANG)  $(WNO_DEPRECATED_DECLARATIONS)
 
 $(T)T2.o: OpenGL/T2.cpp OpenGL/T2.hpp OpenGL/SharedVariables.hpp common/QueueStack.hpp OpenGL/GfxElements.h 
-	$(CCC2) OpenGL/T2.cpp $(VL_CFLAGS) $(QTOPT) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC)    #-Wno-error=unused-variable
+	$(CCC2) OpenGL/T2.cpp $(VL_CFLAGS) $(QTOPT) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC) $(WNO_DEPRECATED_COPY_CLANG) $(WNO_MISLEADING_INDENTATION_CLANG) $(WNO_DEPRECATED_DECLARATIONS)
 
 $(T)Render.o: OpenGL/Render.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp common/spinlock.h common/time_proc.h common/Beats_proc.h common/TimeData.hpp
-	$(CCC2) OpenGL/Render.cpp $(VL_CFLAGS) $(QTOPT) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC)
+	$(CCC2) OpenGL/Render.cpp $(VL_CFLAGS) $(QTOPT) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC) $(WNO_DEPRECATED_COPY_CLANG) $(WNO_MISLEADING_INDENTATION_CLANG)
 
-$(T)Widget.o: OpenGL/Widget.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/Timing.hpp OpenGL/SharedVariables.hpp common/Mutex.hpp OpenGL/T2.hpp common/spinlock.h common/MovingAverage.hpp bin/packages/Visualization-Library-master/src/vlQt5/Qt5ThreadedWidget.hpp common/Vector.hpp Qt/Timer.hpp
-	$(CCC2) OpenGL/Widget.cpp $(VL_CFLAGS) $(QTOPT)  $(WNO_SUGGEST_OVERRIDE) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC) $(NO_SANITIZE_SIGNED_INTEGER_OVERFLOW) $(NO_ANALYZER)  #-Wno-error=unused-variable
+$(T)Widget.o: OpenGL/Widget.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/Timing.hpp OpenGL/SharedVariables.hpp common/Mutex.hpp OpenGL/T2.hpp common/spinlock.h common/MovingAverage.hpp OpenGL/Qt5ThreadedWidget.hpp common/Vector.hpp Qt/Timer.hpp
+	$(CCC2) OpenGL/Widget.cpp $(VL_CFLAGS) $(QTOPT)  $(WNO_SUGGEST_OVERRIDE) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC) $(NO_SANITIZE_SIGNED_INTEGER_OVERFLOW) $(NO_ANALYZER) $(WNO_DEPRECATED_DECLARATIONS) $(WNO_DEPRECATED_COPY_CLANG) $(WNO_MISLEADING_INDENTATION_CLANG)
 
 $(T)CheckOpenGL.o: OpenGL/CheckOpenGL.cpp common/Process.hpp
-	$(CCC2) OpenGL/CheckOpenGL.cpp $(QTOPT)
+	$(CCC2) OpenGL/CheckOpenGL.cpp $(QTOPT) $(WNO_DEPRECATED_DECLARATIONS)
 
 do.o:  $(BUILD_DEPENDENCIES) OpenGL/do.m
 	$(CC) OpenGL/do.m $(OPT)
@@ -2592,9 +2613,9 @@ bin/s7webserver/moc_s7webserver.cpp: bin/s7webserver/s7webserver.h
 	$(MOC) -DCOMPILING_S7WEBSERVER bin/s7webserver/s7webserver.h -o bin/s7webserver/moc_s7webserver.cpp
 
 $(T)scheme.o: embedded_scheme/scheme.cpp  bin/packages/s7/s7.c embedded_scheme/s7extra_proc.h
-	$(CCC2) -c embedded_scheme/scheme.cpp $(QTOPT) -Ibin/packages/qhttpserver-master/src -Ibin/packages/s7
+	$(CCC2) -c embedded_scheme/scheme.cpp $(QTOPT) -I$(QHTTPSERVER_PATH)/src -Ibin/packages/s7
 
-QHTTPSERVERFLAGS= $(CPPOPT) $(QT_CFLAGS) $(NOSHORTEN64TO32FLAG) -Ibin/packages/qhttpserver-master/http-parser -Ibin/packages/qhttpserver-master/build -Wno-null-dereference -D_REENTRANT  #-fno-sanitize=undefined
+QHTTPSERVERFLAGS= $(CPPOPT) $(QT_CFLAGS) $(NOSHORTEN64TO32FLAG) -I$(QHTTPSERVER_PATH)/http-parser -I$(QHTTPSERVER_PATH)/build -Wno-null-dereference -D_REENTRANT  #-fno-sanitize=undefined
 
 ifeq ($(GCC_MAJOR),10)
 	QHTTPCONNECTIONFLAGS=-fno-sanitize=vptr # <- Workaround. Couldn't find real bug. TODO: Update to qhttp.
@@ -2615,26 +2636,26 @@ endif
 
 
 
-$(T)qhttpconnection.o: bin/packages/qhttpserver-master/src/qhttpconnection.cpp
-	$(CCC2) -c bin/packages/qhttpserver-master/src/qhttpconnection.cpp $(QHTTPSERVERFLAGS) -Wno-missing-declarations #$(QHTTPCONNECTIONFLAGS)
-$(T)qhttprequest.o: bin/packages/qhttpserver-master/src/qhttprequest.cpp
-	$(CCC2) -c bin/packages/qhttpserver-master/src/qhttprequest.cpp $(QHTTPSERVERFLAGS)
-$(T)qhttpresponse.o: bin/packages/qhttpserver-master/src/qhttpresponse.cpp
-	$(CCC2) -c bin/packages/qhttpserver-master/src/qhttpresponse.cpp $(QHTTPSERVERFLAGS)
-$(T)qhttpserver.o: bin/packages/qhttpserver-master/src/qhttpserver.cpp
-	$(CCC2) -c bin/packages/qhttpserver-master/src/qhttpserver.cpp $(QHTTPSERVERFLAGS)
-$(T)moc_qhttpconnection.o: bin/packages/qhttpserver-master/build/moc_qhttpconnection.cpp
-	$(CCC2) -c bin/packages/qhttpserver-master/build/moc_qhttpconnection.cpp $(QHTTPSERVERFLAGS)
-$(T)moc_qhttprequest.o: bin/packages/qhttpserver-master/build/moc_qhttprequest.cpp
-	$(CCC2) -c bin/packages/qhttpserver-master/build/moc_qhttprequest.cpp $(QHTTPSERVERFLAGS)
-$(T)moc_qhttpresponse.o: bin/packages/qhttpserver-master/build/moc_qhttpresponse.cpp
-	$(CCC2) -c bin/packages/qhttpserver-master/build/moc_qhttpresponse.cpp $(QHTTPSERVERFLAGS)
-$(T)moc_qhttpserver.o: bin/packages/qhttpserver-master/build/moc_qhttpserver.cpp
-	$(CCC2) -c bin/packages/qhttpserver-master/build/moc_qhttpserver.cpp $(QHTTPSERVERFLAGS)
+$(T)qhttpconnection.o: $(QHTTPSERVER_PATH)/src/qhttpconnection.cpp
+	$(CCC2) -c $(QHTTPSERVER_PATH)/src/qhttpconnection.cpp $(QHTTPSERVERFLAGS) -Wno-missing-declarations #$(QHTTPCONNECTIONFLAGS)
+$(T)qhttprequest.o: $(QHTTPSERVER_PATH)/src/qhttprequest.cpp
+	$(CCC2) -c $(QHTTPSERVER_PATH)/src/qhttprequest.cpp $(QHTTPSERVERFLAGS)
+$(T)qhttpresponse.o: $(QHTTPSERVER_PATH)/src/qhttpresponse.cpp
+	$(CCC2) -c $(QHTTPSERVER_PATH)/src/qhttpresponse.cpp $(QHTTPSERVERFLAGS)
+$(T)qhttpserver.o: $(QHTTPSERVER_PATH)/src/qhttpserver.cpp
+	$(CCC2) -c $(QHTTPSERVER_PATH)/src/qhttpserver.cpp $(QHTTPSERVERFLAGS)
+$(T)moc_qhttpconnection.o: $(QHTTPSERVER_PATH)/build/moc_qhttpconnection.cpp
+	$(CCC2) -c $(QHTTPSERVER_PATH)/build/moc_qhttpconnection.cpp $(QHTTPSERVERFLAGS)
+$(T)moc_qhttprequest.o: $(QHTTPSERVER_PATH)/build/moc_qhttprequest.cpp
+	$(CCC2) -c $(QHTTPSERVER_PATH)/build/moc_qhttprequest.cpp $(QHTTPSERVERFLAGS)
+$(T)moc_qhttpresponse.o: $(QHTTPSERVER_PATH)/build/moc_qhttpresponse.cpp
+	$(CCC2) -c $(QHTTPSERVER_PATH)/build/moc_qhttpresponse.cpp $(QHTTPSERVERFLAGS)
+$(T)moc_qhttpserver.o: $(QHTTPSERVER_PATH)/build/moc_qhttpserver.cpp
+	$(CCC2) -c $(QHTTPSERVER_PATH)/build/moc_qhttpserver.cpp $(QHTTPSERVERFLAGS)
 #ar cqs libqhttpserver.a qhttpconnection.o moc_qhttpconnection.o qhttprequest.o moc_qhttprequest.o qhttpresponse.o moc_qhttpresponse.o qhttpserver.o moc_qhttpserver.o
 
-$(T)http_parser.o: bin/packages/qhttpserver-master/http-parser/http_parser.c
-	$(CC2) -c bin/packages/qhttpserver-master/http-parser/http_parser.c $(OPT) $(HTTPPARSERFLAGS)
+$(T)http_parser.o: $(QHTTPSERVER_PATH)/http-parser/http_parser.c
+	$(CC2) -c $(QHTTPSERVER_PATH)/http-parser/http_parser.c $(OPT) $(HTTPPARSERFLAGS)
 
 $(T)radium_s7_wrap.o: api/radium_s7_wrap.c 
 	$(CC2) api/radium_s7_wrap.c $(OPT) -Ibin/packages/s7

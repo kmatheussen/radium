@@ -117,10 +117,12 @@ QLayoutItem *FlowLayout::takeAt(int index)
         return 0;
 }
 
+/*
 Qt::Orientations FlowLayout::expandingDirections() const
 {
     return 0;
 }
+*/
 
 bool FlowLayout::hasHeightForWidth() const
 {

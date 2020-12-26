@@ -16,6 +16,7 @@
 #include <QKeyEvent>
 #include <QPainter>
 #include <QGraphicsSceneMouseEvent>
+#include <QElapsedTimer>
 
 #include "../OpenGL/Widget_proc.h"
 #include "../common/keyboard_focus_proc.h"
@@ -501,7 +502,7 @@ static inline void safe_set_parent(QWidget *w, QWidget *parent, Qt::WindowFlags 
 }
 
 static inline void safe_set_parent(QWidget *w, QWidget *parent, enum ShowAssertionOrThrowAPIException error_type){
-  safe_set_parent(w, parent, 0, false, error_type);
+  safe_set_parent(w, parent, Qt::Widget, false, error_type);
 }
 
 
@@ -928,11 +929,11 @@ namespace radium{
 
 namespace radium{
   struct ASMTimer : public QTimer{
-    QTime time;
+    QElapsedTimer time;
     bool left_mouse_is_down = false;
     
     ASMTimer(QWidget *parent_)
-      :QTimer(parent_)
+      : QTimer(parent_)
     {
       time.start();
       setInterval(10);
@@ -1106,7 +1107,7 @@ static inline void setUpdatesEnabledRecursively(QWidget *widget, bool doit){
 namespace{
   struct PauseUpdatesTimer : public QTimer{
     QWidget *_w;
-    QTime _time;
+    QElapsedTimer _time;
     int _ms;
     bool _has_done_step1 = false;
     

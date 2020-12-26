@@ -196,7 +196,7 @@ static void check_jackd_arguments(void){
 
       found_jack = true;
 
-      QStringList elements = line.split(" ", QString::SkipEmptyParts);
+      QStringList elements = line.split(" ", Qt::SkipEmptyParts);
 
       for(int i=0;i<elements.size();i++){
         QString element = elements.at(i);
@@ -573,7 +573,7 @@ static DEFINE_ATOMIC(double, jackblock_song_tempo_multiplier) = 1.0;
 //static DEFINE_SPINLOCK(jackblock_spinlock); // used by two realtime threads (midi input and audio thread)
 static radium::SetSeveralAtomicVariables jackblock_variables_protector;
 
-static QTime pause_time;
+static QElapsedTimer pause_time;
 static bool g_process_plugins = true;
 static DEFINE_ATOMIC(bool, g_request_to_pause_plugins) = false;
 

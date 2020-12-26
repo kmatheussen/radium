@@ -20,6 +20,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <stdio.h>
 #include <math.h>
 
+#if defined(FOR_WINDOWS)
+#ifndef WIN32
+#define WIN32 1
+#endif
+#define FLUIDSYNTH_DLL_EXPORTS 1
+#endif
+
 #include "../bin/packages/fluidsynth-1.1.6/include/fluidsynth.h"
 
 #include "../common/nsmtracker.h"

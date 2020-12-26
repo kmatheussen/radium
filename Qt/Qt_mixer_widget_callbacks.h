@@ -82,13 +82,13 @@ public:
     
     qreal scale = get_scale_from_zoom(val);
     
-    QMatrix matrix;
+    QTransform matrix;
     matrix.scale(scale, scale);
     matrix.rotate(_rotate);
     
     setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
     
-    setMatrix(matrix);
+    setTransform(matrix);
   }
 
   void reset_zoom(void){
@@ -176,7 +176,7 @@ public:
       
       // Zooming in / out
       
-      if (e->delta() > 0)
+      if (e->angleDelta().y() > 0)
         zoom(6);
       else
         zoom(-6);
@@ -187,7 +187,7 @@ public:
       
       QScrollBar *scrollbar = horizontalScrollBar();
       if(scrollbar!=NULL){
-        if (e->delta() > 0)
+        if (e->angleDelta().y() > 0)
           scrollbar->setValue(scrollbar->value()+70);
         else
           scrollbar->setValue(scrollbar->value()-70);
@@ -199,7 +199,7 @@ public:
       
       QScrollBar *scrollbar = verticalScrollBar();
       if(scrollbar!=NULL){
-        if (e->delta() > 0)
+        if (e->angleDelta().y() > 0)
           scrollbar->setValue(scrollbar->value()-70);
         else
           scrollbar->setValue(scrollbar->value()+70);
@@ -563,7 +563,7 @@ public:
     
   struct MyTimer : public QTimer{
     Mixer_widget *_parent;
-    QTime time;
+    QElapsedTimer time;
 
     MyTimer(Mixer_widget *parent)
       : _parent(parent)

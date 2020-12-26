@@ -2751,14 +2751,14 @@ void SP_write_mixer_tree_to_disk(QFile *file){
     SoundPlugin *plugin = sp->_plugin;
     volatile Patch *patch = plugin==NULL ? NULL : plugin->patch;
     const char *name = patch==NULL ? "<null>" : patch->name;
-    
-    file->write(QString().sprintf("%d: sp: %p (%s). num_dep: %d, num_dep_left: %d: num_dependant: %d\n",num++,sp,name,sp->_num_active_input_links,ATOMIC_GET(sp->_num_active_input_links_left), sp->_output_links.size()).toUtf8());
+
+    file->write(QString().asprintf("%d: sp: %p (%s). num_dep: %d, num_dep_left: %d: num_dependant: %d\n",num++,sp,name,sp->_num_active_input_links,ATOMIC_GET(sp->_num_active_input_links_left), sp->_output_links.size()).toUtf8());
     
     for (SoundProducerLink *link : sp->_output_links){
       SoundPlugin *plugin = link->target->_plugin;
       volatile Patch *patch = plugin==NULL ? NULL : plugin->patch;
       const char *name = patch==NULL ? "<null>" : patch->name;
-      file->write(QString().sprintf("  %s%s\n",name, link->RT_is_active?"":" (inactive)").toUtf8());
+      file->write(QString().asprintf("  %s%s\n",name, link->RT_is_active?"":" (inactive)").toUtf8());
     }    
   }
 }

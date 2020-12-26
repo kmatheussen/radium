@@ -519,7 +519,7 @@ namespace{
         
         if (is_initializing && reply.error_message != ""){
           has_added_error_message = true;
-          GFX_addMessage(reply.error_message.toUtf8().constData());
+          GFX_addMessage("%s", reply.error_message.toUtf8().constData());
         }
 
         struct SoundPlugin *plugin = maybe_plugin;
@@ -567,7 +567,7 @@ namespace{
         }
         
         if (is_initializing && has_added_error_message==false && devdata->reply.error_message != ""){
-          GFX_addMessage(devdata->reply.error_message.toUtf8().constData());
+          GFX_addMessage("%s", devdata->reply.error_message.toUtf8().constData());
         }
         
         add_factory_ready(devdata, success);

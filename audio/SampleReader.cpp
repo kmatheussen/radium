@@ -1359,7 +1359,7 @@ vector_t SAMPLEREADER_get_all_filenames(void){
   keys.sort(Qt::CaseInsensitive);
   
   vector_t ret = {};
-  for(const auto key : keys)
+  for(const auto &key : keys)
     VECTOR_push_back(&ret, STRING_create(key));
   
   return ret;

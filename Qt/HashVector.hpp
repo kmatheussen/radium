@@ -29,9 +29,15 @@ template <typename K, typename T> class HashVector {
 
     if (_hash.size() != _inv_hash.size())
       abort();
-
+#if QT_VERSION >= QT_VERSION_CHECK(5, 13, 0)
+    auto sigh1 = _hash.keys();
+    auto sigh2 = _inv_hash.toList();
+    QSet<K> keys1(sigh1.begin(), sigh1.end());
+    QSet<K> keys2(sigh2.begin(), sigh2.end());
+#else
     QSet<K> keys1 = _hash.keys().toSet();
     QSet<K> keys2 = _inv_hash.toList().toSet();
+#endif
     if (keys1 != keys2)
       abort();
 

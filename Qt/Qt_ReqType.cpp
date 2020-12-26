@@ -273,8 +273,12 @@ static QString ReadString(ReqType das_reqtype, bool program_state_is_valid){
   edit->updateGeometry();
 
   float spacing = 1.5;
-  
+
+#if QT_VERSION >= QT_VERSION_CHECK(5, 13, 0)
+  QStringList lines = reqtype->label_text.split('\n', Qt::KeepEmptyParts);
+#else
   QStringList lines = reqtype->label_text.split('\n', QString::KeepEmptyParts);
+#endif
   
   if (lines.size() > 0 ){
 

@@ -24,10 +24,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <unistd.h> // Must be placed after includepyton/api_proc to avoid compilation error.
 
-#include <QApplication>
-//#include <QSplitter>
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wnull-dereference"
+#include <QApplication>
+//#include <QSplitter>
 #include <QCloseEvent>
 #pragma GCC diagnostic pop
 

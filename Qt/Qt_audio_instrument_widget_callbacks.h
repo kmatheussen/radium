@@ -581,7 +581,7 @@ public:
     }
   }
     
-  QTime time_of_last_minheight_inc;
+  QElapsedTimer time_of_last_minheight_inc;
   int number_of_minheight_incs = 0;
   
   void calledRegularlyByParent(void){

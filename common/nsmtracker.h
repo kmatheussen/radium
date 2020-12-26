@@ -1276,10 +1276,13 @@ static inline bool doubles_are_equal(double x, double y){
 
   if (diff <= eps)
     return(true);
-
+#if __cplusplus
+  if ((std::isnan(x)) || (std::isnan(y)))
+    return((std::isnan(x)) && (std::isnan(y)));
+#else
   if ((isnan(x)) || (isnan(y)))
     return((isnan(x)) && (isnan(y)));
-
+#endif
   // I don't understand what's happening below here, but I trust Bill.
   
   if (x < 0.0)

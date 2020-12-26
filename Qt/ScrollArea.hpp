@@ -11,6 +11,7 @@
 #include <QScrollArea>
 #include <QResizeEvent>
 #include <QTimer>
+#include <QElapsedTimer>
 #include <QTime>
 #include <QPainter>
 
@@ -145,7 +146,7 @@ class ScrollArea : public QWidget {
           auto *scrollbar = _scroll_area->_horizontal_scroll_bar; //_inner_scroll_area->verticalScrollBar();
           //printf("HOR. Wheel event called. Value: %d.\n", scrollbar->value());// _vertical_scroll_bar, _inner_scroll_area->verticalScrollBar());
           
-          if (e->delta() > 0)
+          if (e->angleDelta().y() > 0)
             scrollbar->setValue(scrollbar->value()+70);
           else
             scrollbar->setValue(scrollbar->value()-70);
@@ -155,7 +156,7 @@ class ScrollArea : public QWidget {
           auto *scrollbar = _scroll_area->_vertical_scroll_bar; //_inner_scroll_area->verticalScrollBar();
           //printf("VER. Wheel event called. Value: %d.\n", scrollbar->value());// _vertical_scroll_bar, _inner_scroll_area->verticalScrollBar());
           
-          if (e->delta() > 0)
+          if (e->angleDelta().y() > 0)
             scrollbar->setValue(scrollbar->value() - 70);
           else
             scrollbar->setValue(scrollbar->value() + 70);
@@ -296,7 +297,7 @@ class ScrollArea : public QWidget {
 #if 1  
   struct MyTimer : public QTimer{
     ScrollArea *_scroll_area;
-    QTime time;
+    QElapsedTimer time;
 
     MyTimer(ScrollArea *scroll_area)
       : _scroll_area(scroll_area)

@@ -324,7 +324,7 @@ static void create_single_linenum_border(
 
 static void stipled_vertical_line(GE_Context *c, float x, float y1, float y2){
   const float width = 0.3;
-  const float bit = 4 + 4 * (float)qrand()/(float)RAND_MAX;
+  const float bit = 4 + 4 * (float)rand()/(float)RAND_MAX;
 
   for (float y = y1 ; y < y2 ; y += bit){
     float y22 = R_MIN(y2, y+bit/2);
