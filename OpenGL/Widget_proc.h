@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+extern bool g_gl_widget_started;
+
 
 // Should be called as early as possible. Might take some time though, so progress window should open first.
 bool GL_check_compatibility(void);

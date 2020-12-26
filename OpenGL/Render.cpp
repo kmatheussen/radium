@@ -3014,8 +3014,6 @@ static void create_lacking_keyboard_focus_greyed_out(const struct Tracker_Window
 
 #include <thread>
 
-extern bool g_gl_widget_started;
-
 static void GL_create2(const struct Tracker_Windows *window, struct WBlocks *wblock){
 
   if (g_gl_widget_started==false) // This check is probably not necessary

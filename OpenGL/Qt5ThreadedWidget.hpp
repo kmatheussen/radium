@@ -240,9 +240,39 @@ namespace vlQt5
     {
     }
 
-    void 	paintEvent ( QPaintEvent *  ){
+    void resizeGL(int width, int height)
+    {
+      //dispatchResizeEvent(width, height);
     }
 
+    void paintGL()
+    {
+      //dispatchRunEvent();
+    }
+
+#if 0
+    virtual void show()
+    {
+      QGLWidget::show();
+    }
+
+    virtual void hide()
+    {
+      QGLWidget::hide();
+    }
+#endif
+
+#if 0
+    void update()
+    {
+      QGLWidget::update();
+      // QGLWidget::updateGL();
+    }
+#endif
+    
+    void 	paintEvent ( QPaintEvent *  ){
+    }
+    
     void 	resizeEvent ( QResizeEvent *  ) {
 #if 0
       mythread->widget_width = width();
@@ -254,10 +284,25 @@ namespace vlQt5
       e.y = height();
       mythread->push_event(e);
     }
+
     //virtual void 	updateGL () {}
     //virtual void 	paintGL () {}
     //virtual bool 	event ( QEvent * e ){ return true;    }
 
+    DEFINE_ATOMIC(bool, _gl_is_initialized) = false; // don't think this one needs to be atomic.
+    int _num_init_gl = 0;
+    void initializeGL() override
+    {
+      printf("     *************** initializeGL(): %d\n", _num_init_gl++);
+      //abort();
+      R_ASSERT_NON_RELEASE(GL_has_initialized()==false);
+      ATOMIC_SET(_gl_is_initialized, true);
+    }
+
+    bool GL_has_initialized(void) const {
+      return ATOMIC_GET(_gl_is_initialized);
+    }
+    
     void mouseMoveEvent(QMouseEvent* ev)
     {
       Event e;
@@ -411,6 +456,11 @@ namespace vlQt5
 
 
     void start(void){
+      
+      while(!GL_has_initialized()){
+        QApplication::processEvents(QEventLoop::ExcludeSocketNotifiers);
+      }
+
       doneCurrent();
 
       init_qt(vlFormat);

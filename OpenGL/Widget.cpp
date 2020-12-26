@@ -14,6 +14,11 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+
+#include <sys/types.h>
+#include <unistd.h>
+#include <errno.h>
+
 #include <bitset>
 
 #include <QWidget>
@@ -44,20 +49,6 @@ static double g_last_resize_time = -1;
 #define USE_LAYOUT_COVER 1
 #else
 #define USE_LAYOUT_COVER 0
-#endif
-
-#if USE_QT5
-#  if THREADED_OPENGL
-#    include <vlQt5/Qt5ThreadedWidget.hpp>
-#    define USE_COVER 1
-#  else
-#    include <vlQt5/Qt5Widget.cpp> // Note Q_OBJECT must be removed from Qt5Widget
-#    define USE_COVER 0
-#    error "what?"
-#  endif
-#else
-#  error "error"
-#  include <vlQt4/Qt4ThreadedWidget.hpp>
 #endif
 
 #include <vlGraphics/SceneManagerActorTree.hpp>
@@ -94,6 +85,7 @@ static double g_last_resize_time = -1;
 #include "../common/Vector.hpp"
 #include "../common/MovingAverage.hpp"
 #include "../common/player_proc.h"
+#include "../common/visual_proc.h"
 
 #include "../mixergui/QM_MixerWidget.h"
 
@@ -112,11 +104,22 @@ static double g_last_resize_time = -1;
 #include "Render_proc.h"
 #include "CheckOpenGL_proc.h"
 
-#include "Widget_proc.h"
+#if USE_QT5
+#  if THREADED_OPENGL
+#    include "Qt5ThreadedWidget.hpp"
+#    define USE_COVER 1
+#  else
+#    include "Qt5Widget.cpp" // Note Q_OBJECT must be removed from Qt5Widget
+#    define USE_COVER 0
+//#    error "what?"
+#  endif
+#else
+#  error "error"
+#  include <vlQt4/Qt4ThreadedWidget.hpp>
+#endif
 
-#include <sys/types.h>
-#include <unistd.h>
-#include <errno.h>
+
+#include "Widget_proc.h"
 
 
 /*
@@ -858,7 +861,7 @@ public:
 #  if THREADED_OPENGL
     : Qt5ThreadedWidget(vlFormat, parent)
 #  else
-    : Qt5Widget(parent)
+      : Qt5Widget(vlFormat, parent)
 #  endif
 #else
     : Qt4ThreadedWidget(vlFormat, parent)
@@ -876,7 +879,7 @@ public:
   {
     ATOMIC_SET(_main_window_is_exposed, false);
 
-#if !THREADED_OPENGL
+#if 0 //!THREADED_OPENGL
     initQt5Widget("hello", vlFormat);
 #endif
     
@@ -895,9 +898,6 @@ public:
     
     _update_event_counter_timer.start();
 
-#if !THREADED_OPENGL
-    init_vl(this);
-#endif
   }
 
   // Main thread
@@ -910,7 +910,7 @@ public:
 
   // OpenGL thread
   void init_vl(vl::OpenGLContext *glContext)
-#if THREADED_OPENGL
+#if 1 //THREADED_OPENGL
     override
 #endif
   {
@@ -1850,7 +1850,9 @@ public:
   void updateEvent() override {
     //{static double last_time = 0; static int counter =0; double nowtime = TIME_get_ms(); printf("   Counter: %d. Time: %f\n", counter++, nowtime-last_time);last_time = nowtime;}
 
+#if THREADED_OPENGL
     const bool handle_current = true;
+#endif
     
 #if USE_COVER
     {
@@ -2008,6 +2010,11 @@ public:
   }
 
   void resizeEvent(QResizeEvent *qresizeevent) override {
+    if (!this->GL_has_initialized()){
+      vlQt5::Qt5ThreadedWidget::QGLWidget::resizeEvent(qresizeevent); // Trigger call to QGLWidget::initializeGL().
+      return;
+    }
+    
     g_last_resize_time = TIME_get_ms();
       
     radium::ScopedResizeEventTracker resize_event_tracker;
@@ -2042,8 +2049,9 @@ public:
   // OpenGL thread
   void resizeEvent(int w, int h) override {
     //printf("|||||||||||||||||||||||--------------------------resisizing %d %d\n",w,h);
-
+#if THREADED_OPENGL
     is_patched();
+#endif
     
 #if USE_COVER
     if(0){
@@ -2455,148 +2463,8 @@ static bool is_opengl_version_recent_enough_questionmark(void){
     return false;
 }
 
-static void setup_widget(QWidget *parent){
-  vl::VisualizationLibrary::init();
-
-  vl::OpenGLContextFormat vlFormat;
-  vlFormat.setDoubleBuffer(true);
-  //vlFormat.setDoubleBuffer(false);
-  vlFormat.setRGBABits( 8,8,8,0 );
-  vlFormat.setDepthBufferBits(24);
-  vlFormat.setFullscreen(false);
-  vlFormat.setMultisampleSamples(GL_get_multisample()); // multisampling 32 seems to make text more blurry. 16 sometimes makes program crawl in full screen (not 32 though).
-  //vlFormat.setMultisampleSamples(8); // multisampling 32 seems to make text more blurry. 16 sometimes makes program crawl in full screen (not 32 though).
-  //vlFormat.setMultisampleSamples(32); // multisampling 32 seems to make text more blurry. 16 sometimes makes program crawl in full screen (not 32 though).
-  vlFormat.setMultisample(GL_get_multisample()>1);
-  //vlFormat.setMultisample(false);
-  vlFormat.setVSync(GL_get_vsync());
-  //vlFormat.setVSync(false);
-
-  widget = new MyQtThreadedWidget(vlFormat, parent);
-#if THREADED_OPENGL
-  widget->start();
-#else
-  widget->initializeGL();
-#endif
-  
-  widget->resize(1000,1000);
-  widget->show();
-
-#if THREADED_OPENGL
-  widget->setAutomaticDelete(false);  // dont want auto-desctruction at program exit.
-#endif
-
-  // This code-block seems to prevent garbled font drawing sometimes happening on windows.
-  {
-    int countdown = 5000 / 20;
-    bool gotit=false;
-    while(gotit==false){
-
-      countdown--;
-      if (countdown <= 0) // security to prevent lockup.
-        break;
-      
-      msleep(20);
-      
-      if (maybe_start_t2_thread()==true)
-        break;
-    }
-  }
-}
-
-static bool g_compatibility_ok = false;
-
-bool GL_check_compatibility(void){
-
-  // Load setting values from disk
-  {
-    doHighCpuOpenGlProtection();
-    doLockJuceWhenSwappingOpenGL();
-    g_safe_mode = GL_get_safe_mode();
-    init_g_pause_rendering_on_off();
-  }
-  
-    
-  if (QGLFormat::hasOpenGL()==false) {
-    GFX_Message(NULL,"OpenGL not found");
-    //exit(-1);
-    return false;
-  }
-
-#if !RADIUM_USES_TSAN
-  if (CHECKOPENGL_checkit()==true)
-    return false;
-#endif
-
-  if (GL_get_vsync()==false){
-    if (SETTINGS_read_bool("show_vsync_warning_during_startup", true)) {
-      vector_t v = {};
-      VECTOR_push_back(&v,"Ok");
-      int vsync_hide = VECTOR_push_back(&v,"Don't show this message again");
-      
-      int vsyncret = GFX_Message(&v,
-                                 "Warning: VSync is disabled. You probably don't want to do that. You can enable vsync under"
-                                 "<p>"
-                                 "Edit -> Preferences -> OpenGL -> Vertical Blank -> VSync"
-                                 "<p>"
-                                 "Disabling vsync will normally cripple graphical performance.<br>"
-                                 "You should only turn off vsync if your gfx driver is misbehaving."
-                                 );
-      if (vsyncret==vsync_hide)
-        SETTINGS_write_bool("show_vsync_warning_during_startup", false);
-    }
-  }
- 
-  if (is_opengl_certainly_too_old_questionmark()){
-    GFX_Message(NULL,
-                "Your version of OpenGL is too old. Radium can not run.\n"
-                "\n"
-                "To solve this problem, you might want to try updating your graphics card driver."
-                );
-    //exit(-1);
-    return false;
-  }
- 
-  if (!is_opengl_version_recent_enough_questionmark()){
-    vector_t v = {};
-    VECTOR_push_back(&v,"Try to run anywyay"); // (but please don't send a bug report if Radium crashes)");
-    int exit_=VECTOR_push_back(&v,"Exit");
-
-    int ret = GFX_Message(&v,
-                          "Your version of OpenGL is too old.\n"
-                          "\n"
-                          "To solve this problem, you might want to try updating your graphics card driver.\n"
-                          "\n"
-                          "You might also have to disable \"Draw in separate process\" under Edit -> Preferences -> OpenGL if you choose to run anyway."
-                          );
-    if (ret==exit_){
-      //exit(-1);
-      return false;
-    }
-
-    msleep(10);
-    //QThread::currentThread()->wait(1000*10);
-  }
-
-
-  g_compatibility_ok = true;
-  
-  CRASHREPORTER_do_report();
-    
-  return true;
-}
-
-QWidget *GL_create_widget(QWidget *parent){
-
-#if defined(FOR_MACOSX)
-  // doesn't work.
-  //cocoa_set_best_resolution(NULL);//(void*)widget->winId());
-#endif
-
-  R_ASSERT_RETURN_IF_FALSE2(g_compatibility_ok==true, NULL);
-
-
-  setup_widget(parent);
+static void init_widget2(void){
+  R_ASSERT(widget->GL_has_initialized());
   
 #if !USE_QT5
   widget->set_vblank(GL_get_estimated_vblank());
@@ -2852,6 +2720,169 @@ QWidget *GL_create_widget(QWidget *parent){
 #endif
   
   g_gl_widget_started = true;
+}
+
+
+static void maybe_init_widget(void){
+  if (widget->GL_has_initialized()==false){
+    QTimer::singleShot(100, maybe_init_widget);
+    return;
+  }
+  
+#if THREADED_OPENGL
+  widget->start();
+  //GFX_ShowProgressMessage("Finished initializing OpenGL Context. Now setting up the OpenGL Widget", true);
+#else
+  //widget->initializeGL();
+#endif
+  
+  // This code-block seems to prevent garbled font drawing sometimes happening on windows.
+  {
+    int countdown = 5000 / 20;
+    bool gotit=false;
+    while(gotit==false){
+      
+      countdown--;
+      if (countdown <= 0) // security to prevent lockup.
+        break;
+      
+      msleep(20);
+      
+      if (maybe_start_t2_thread()==true)
+        break;
+    }
+  }
+
+  init_widget2();
+}
+
+static void setup_widget(QWidget *parent){
+  vl::VisualizationLibrary::init();
+
+  vl::OpenGLContextFormat vlFormat;
+  vlFormat.setDoubleBuffer(true);
+  //vlFormat.setDoubleBuffer(false);
+  vlFormat.setRGBABits( 8,8,8,0 );
+  vlFormat.setDepthBufferBits(24);
+  vlFormat.setFullscreen(false);
+  vlFormat.setMultisampleSamples(GL_get_multisample()); // multisampling 32 seems to make text more blurry. 16 sometimes makes program crawl in full screen (not 32 though).
+  //vlFormat.setMultisampleSamples(8); // multisampling 32 seems to make text more blurry. 16 sometimes makes program crawl in full screen (not 32 though).
+  //vlFormat.setMultisampleSamples(32); // multisampling 32 seems to make text more blurry. 16 sometimes makes program crawl in full screen (not 32 though).
+  vlFormat.setMultisample(GL_get_multisample()>1);
+  //vlFormat.setMultisample(false);
+  vlFormat.setVSync(GL_get_vsync());
+  //vlFormat.setVSync(false);
+
+  widget = new MyQtThreadedWidget(vlFormat, parent);
+
+  widget->resize(1000,1000);
+  widget->show();
+  
+#if THREADED_OPENGL
+  widget->setAutomaticDelete(false);  // dont want auto-desctruction at program exit.
+#endif
+  
+  //GFX_ShowProgressMessage("Waiting for OpenGL Context to initialize", true);
+
+  //QTimer::singleShot(10000, maybe_init_widget);
+  maybe_init_widget();
+}
+
+static bool g_compatibility_ok = false;
+
+bool GL_check_compatibility(void){
+
+  // Load setting values from disk
+  {
+    doHighCpuOpenGlProtection();
+    doLockJuceWhenSwappingOpenGL();
+    g_safe_mode = GL_get_safe_mode();
+    init_g_pause_rendering_on_off();
+  }
+  
+    
+  if (QGLFormat::hasOpenGL()==false) {
+    GFX_Message(NULL,"OpenGL not found");
+    //exit(-1);
+    return false;
+  }
+
+#if !RADIUM_USES_TSAN
+  if (CHECKOPENGL_checkit()==true)
+    return false;
+#endif
+
+  if (GL_get_vsync()==false){
+    if (SETTINGS_read_bool("show_vsync_warning_during_startup", true)) {
+      vector_t v = {};
+      VECTOR_push_back(&v,"Ok");
+      int vsync_hide = VECTOR_push_back(&v,"Don't show this message again");
+      
+      int vsyncret = GFX_Message(&v,
+                                 "Warning: VSync is disabled. You probably don't want to do that. You can enable vsync under"
+                                 "<p>"
+                                 "Edit -> Preferences -> OpenGL -> Vertical Blank -> VSync"
+                                 "<p>"
+                                 "Disabling vsync will normally cripple graphical performance.<br>"
+                                 "You should only turn off vsync if your gfx driver is misbehaving."
+                                 );
+      if (vsyncret==vsync_hide)
+        SETTINGS_write_bool("show_vsync_warning_during_startup", false);
+    }
+  }
+ 
+  if (is_opengl_certainly_too_old_questionmark()){
+    GFX_Message(NULL,
+                "Your version of OpenGL is too old. Radium can not run.\n"
+                "\n"
+                "To solve this problem, you might want to try updating your graphics card driver."
+                );
+    //exit(-1);
+    return false;
+  }
+ 
+  if (!is_opengl_version_recent_enough_questionmark()){
+    vector_t v = {};
+    VECTOR_push_back(&v,"Try to run anywyay"); // (but please don't send a bug report if Radium crashes)");
+    int exit_=VECTOR_push_back(&v,"Exit");
+
+    int ret = GFX_Message(&v,
+                          "Your version of OpenGL is too old.\n"
+                          "\n"
+                          "To solve this problem, you might want to try updating your graphics card driver.\n"
+                          "\n"
+                          "You might also have to disable \"Draw in separate process\" under Edit -> Preferences -> OpenGL if you choose to run anyway."
+                          );
+    if (ret==exit_){
+      //exit(-1);
+      return false;
+    }
+
+    msleep(10);
+    //QThread::currentThread()->wait(1000*10);
+  }
+
+
+  g_compatibility_ok = true;
+  
+  CRASHREPORTER_do_report();
+    
+  return true;
+}
+
+QWidget *GL_create_widget(QWidget *parent){
+
+#if defined(FOR_MACOSX)
+  // doesn't work.
+  //cocoa_set_best_resolution(NULL);//(void*)widget->winId());
+#endif
+
+  R_ASSERT_RETURN_IF_FALSE2(g_compatibility_ok==true, NULL);
+
+
+  setup_widget(parent);
+
+
 
 #if THREADED_OPENGL
   return widget.get();
