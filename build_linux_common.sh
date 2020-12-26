@@ -177,11 +177,11 @@ if ! env |grep RADIUM_BFD_CFLAGS ; then
 fi
 
 if ! env |grep RADIUM_BFD_LDFLAGS ; then
-if [[ $RADIUM_USE_CLANG == 1 ]] ; then
-    export RADIUM_BFD_LDFLAGS="$CLANG_PREFIX/lib/libbfd.a"
-else
-    export RADIUM_BFD_LDFLAGS="-Wl,-Bstatic -lbfd -Wl,-Bdynamic"
-fi
+    if [[ $RADIUM_USE_CLANG == 1 ]] && [ -f "$CLANG_PREFIX/lib/libbfd.a" ]; then
+        export RADIUM_BFD_LDFLAGS="$CLANG_PREFIX/lib/libbfd.a"
+    else
+        export RADIUM_BFD_LDFLAGS="-Wl,-Bstatic -lbfd -Wl,-Bdynamic"
+    fi
 fi
 
 export OS_JUCE_LDFLAGS="-lasound -pthread -lrt -lX11 -ldl -lXext "
