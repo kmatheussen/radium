@@ -4000,16 +4000,27 @@ int main(int argc, char **argv){
 
 #if defined(FOR_LINUX)
   if (getenv("QT_QPA_PLATFORMTHEME")!=NULL){
-    printf("Environment variable QT_QPA_PLATFORMTHEME is set. Will not start program.\n");
-    abort();
+    printf("Warning: Environment variable QT_QPA_PLATFORMTHEME is set.\n");
+    if (getenv("OVERRIDE_RADIUM_QPA")==NULL){
+      printf("Will not start program. Set OVERRIDE_RADIUM_QPA to override.\n");
+      abort();
+    }
   }
   if (getenv("QT_QPA_PLATFORM")!=NULL){
-    printf("Environment variable QT_QPA_PLATFORM is set. Will not start program.\n");
-    abort();
+    if (!strcmp(getenv("QT_QPA_PLATFORM"), "xcb")) {
+      printf("Warning: Environment variable QT_QPA_PLATFORM is not set to \"xcb\".\n");
+      if (getenv("OVERRIDE_RADIUM_QPA")==NULL){
+        printf("Will not start program. Set OVERRIDE_RADIUM_QPA to override.\n");
+        abort();
+      }
+    }
   }
   if (getenv("QT_PLUGIN_PATH")!=NULL){
-    printf("Environment variable QT_PLUGIN_PATH is set. Will not start program.\n");
-    abort();
+    printf("Warning: Environment variable QT_PLUGIN_PATH is set.\n");
+    if (getenv("OVERRIDE_RADIUM_QPA")==NULL){
+      printf("Will not start program. Set OVERRIDE_RADIUM_QPA to override.\n");
+      abort();
+    }
   }
 #endif
            
