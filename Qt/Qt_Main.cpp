@@ -4007,7 +4007,7 @@ int main(int argc, char **argv){
     }
   }
   if (getenv("QT_QPA_PLATFORM")!=NULL){
-    if (!strcmp(getenv("QT_QPA_PLATFORM"), "xcb")) {
+    if (strcmp(getenv("QT_QPA_PLATFORM"), "xcb")) {
       printf("Warning: Environment variable QT_QPA_PLATFORM is not set to \"xcb\".\n");
       if (getenv("OVERRIDE_RADIUM_QPA")==NULL){
         printf("Will not start program. Set OVERRIDE_RADIUM_QPA to override.\n");
