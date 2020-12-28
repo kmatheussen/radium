@@ -1,11 +1,11 @@
---- build/backends/most.cmake~	2019-12-21 23:18:27.816804413 +0100
-+++ build/backends/most.cmake	2019-12-21 23:20:17.930075922 +0100
-@@ -13,7 +13,7 @@
- set ( FIR_BACKEND    OFF        CACHE STRING  "Include FIR backend"       FORCE )
- set ( INTERP_BACKEND STATIC                            CACHE STRING  "Include INTERPRETER backend" FORCE )
- set ( JAVA_BACKEND   OFF        CACHE STRING  "Include JAVA backend"      FORCE )
--set ( LLVM_BACKEND   STATIC        CACHE STRING  "Include LLVM backend"      FORCE )
-+set ( LLVM_BACKEND   OFF        CACHE STRING  "Include LLVM backend"      FORCE )
- set ( OLDCPP_BACKEND OFF        CACHE STRING  "Include old CPP backend"   FORCE )
- set ( RUST_BACKEND   OFF        CACHE STRING  "Include RUST backend"      FORCE )
- set ( SOUL_BACKEND   OFF        CACHE STRING  "Include SOUL backend"      FORCE )
+--- build/backends/most.cmake~	2020-12-27 17:55:15.934022467 +0100
++++ build/backends/most.cmake	2020-12-27 17:55:39.314389218 +0100
+@@ -12,7 +12,7 @@
+ set ( FIR_BACKEND    OFF                            CACHE STRING  "Include FIR backend"       FORCE )
+ set ( INTERP_BACKEND STATIC                         CACHE STRING  "Include INTERPRETER backend" FORCE )
+ set ( JAVA_BACKEND   OFF             CACHE STRING  "Include JAVA backend"      FORCE )
+-set ( LLVM_BACKEND   COMPILER STATIC CACHE STRING  "Include LLVM backend"      FORCE )
++set ( LLVM_BACKEND   OFF             CACHE STRING  "Include LLVM backend"      FORCE )
+ set ( OLDCPP_BACKEND OFF             CACHE STRING  "Include old CPP backend"   FORCE )
+ set ( RUST_BACKEND   OFF             CACHE STRING  "Include RUST backend"      FORCE )
+ set ( SOUL_BACKEND   OFF             CACHE STRING  "Include SOUL backend"      FORCE )
