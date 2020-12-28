@@ -11,7 +11,7 @@ unset CXXFLAGS
 
 export CFLAGS="-mtune=generic -msse2 -mfpmath=sse -Wno-misleading-indentation -fPIC -fno-strict-aliasing"
 export CPPFLAGS="-mtune=generic -msse2 -mfpmath=sse -fPIC -fno-strict-aliasing"
-export CXXFLAGS="-mtune=generic -msse2 -mfpmath=sse -fPIC -fno-strict-aliasing"
+export CXXFLAGS="-mtune=generic -msse2 -mfpmath=sse -fPIC -fno-strict-aliasing -fmax-errors=5 -I/home/kjetil/site_clang10/include "
 
 DASCC=gcc
 DASCXX=g++
@@ -90,11 +90,14 @@ fi
 
 
 build_faust() {
-    
     rm -fr faust
-    tar xvzf faust-2.27.2.tar.gz
-    mv faust-2.27.2 faust
+    tar xvzf faust_2020-12-27.tar.gz 
+    mv faust-master-dev faust
     cd faust
+    tar xvzf ../faustlibraries_2020-12-27.tar.gz 
+    rmdir libraries
+    mv faustlibraries-master libraries
+    
     patch -p0 <../faust.patch
     if env |grep INCLUDE_FAUSTDEV_BUT_NOT_LLVM ; then
         patch -p0 <../faust_nollvm.patch

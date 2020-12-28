@@ -75,7 +75,7 @@ if [[ $RADIUM_USE_CLANG == 1 ]] ; then
     if [[ $BUILDTYPE == RELEASE ]] ; then
         export LINKER="clang++"
     else
-        export LINKER="clang++ --rtlib=compiler-rt -lgcc_s"
+        export LINKER="clang++" # --rtlib=compiler-rt -lgcc_s"
     fi
 else
     export CCC="g++ -mfpmath=sse -msse2"
@@ -91,7 +91,7 @@ export FPIC="-fPIC"
 
 export TARGET_OS=linux
 
-export PKG=pkg-config
+export PKG=`which pkg-config`
 export PYPATH=`$PYTHONEXE -c "import sys;print sys.prefix+'/include/python'+sys.version[:3]"`
 
 # static Qt4:
@@ -164,7 +164,6 @@ if env |grep INCLUDE_FAUSTDEV= ; then
 fi
 # _debug
 
-FAUSTLDFLAGS="$FAUSTLDFLAGS `$PKG --libs uuid` `llvm-config --ldflags` `llvm-config --libs` $LLVMLIBS -ltinfo"
 
 if env |grep INCLUDE_PDDEV ; then
     PDLDFLAGS="bin/packages/libpd-master/libs/libpds.a"
