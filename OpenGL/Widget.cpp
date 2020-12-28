@@ -2753,8 +2753,11 @@ static void maybe_init_widget(void){
 
   init_widget2();
 
-  QResizeEvent qresizeevent(widget->size(), widget->size());
-  widget->resizeEvent(&qresizeevent);
+  // Make sure editor has correct size after startup.
+  {
+    QResizeEvent qresizeevent(widget->size(), widget->size());
+    widget->resizeEvent(&qresizeevent);
+  }
 }
 
 static void setup_widget(QWidget *parent){
