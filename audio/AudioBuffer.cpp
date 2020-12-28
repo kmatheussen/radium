@@ -234,7 +234,7 @@ static void testrun2(int num_elements){
   QVector<radium::AudioBufferChannel*> stuff;
 
   for(int i = 0 ; i < num_elements ; i++){
-    stuff.insert(stuff.size()==0 ? 0 : (qrand() % stuff.size()), RT_AUDIOBUFFER_get_channel(radium::NeedsLock::NO));
+    stuff.insert(stuff.size()==0 ? 0 : (rand() % stuff.size()), RT_AUDIOBUFFER_get_channel(radium::NeedsLock::NO));
   }
   
   for(auto *channel : stuff)
