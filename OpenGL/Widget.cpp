@@ -2701,7 +2701,6 @@ static void init_widget2(void){
 #endif // FOR_LINUX
 
 
-    
     if (s_version.contains("mesa", Qt::CaseInsensitive) && !s_renderer.contains("AMD") && show_mesa_warning==true)
       GFX_Message(NULL,
                   "Warning!\n"
@@ -2711,7 +2710,6 @@ static void init_widget2(void){
                   "\n"
                   "In addition, the graphics tends to not look as good."
                   );
-
   }
   
 #if THREADED_OPENGL
@@ -2754,6 +2752,9 @@ static void maybe_init_widget(void){
   }
 
   init_widget2();
+
+  QResizeEvent qresizeevent(widget->size(), widget->size());
+  widget->resizeEvent(&qresizeevent);
 }
 
 static void setup_widget(QWidget *parent){
