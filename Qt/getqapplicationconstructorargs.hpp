@@ -4,9 +4,9 @@
 
 static inline char **getQApplicationConstructorArgs(int &argc, char **argv){
   
-#if defined(FOR_WINDOWS) || defined(FOR_MACOSX)
+#if defined(FOR_WINDOWS) // || defined(FOR_MACOSX)
   
-  // Add command line arguments to use the freetype font engine
+  // Add command line arguments to use the freetype font engine (much better font rendering)
   argc += 2;
 
   char **ft_argv = (char**)calloc(sizeof(char*), argc);
