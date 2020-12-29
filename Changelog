@@ -1,3 +1,25 @@
+Changes 6.6.77 -> 6.7.68:
+* Faust: Upgrade Faust from 2.27.2-stable to
+  20201227-dev.
+* OpenGL: Make sure editor is always correct size
+  after startup.
+* Linux: The Radium binaries now requires glibc 2.27
+  or newer. The binaries should work on the
+  following Linux distributions (and newer):
+  Arch Linux (current), Debian 10, Fedora 27,
+  Manjaro 17, Mint 19, MX Linux 19,
+  openSuse Tumbleweed, Redhat/Centos 8,
+  Slackware (current), and Ubuntu 18.
+* MacOS: Radium now requires macOS 10.13 or newer.
+* Build: Upgrade Qt to 5.15.2.
+* Faust: Update FAUST package from 20191222-dev to
+  2.27.2-stable. (Teteros)
+* Linux: Show stronger warning about the Novueau
+  driver during startup. The Nouveau driver is
+  likely to freeze your computer if running Radium.
+
+
+
 Changes 6.5.86 -> 6.6.77:
 * Macos: Include updated LADSPA plugins.
 * Windows/Macos: Include a new version of qjackctl
