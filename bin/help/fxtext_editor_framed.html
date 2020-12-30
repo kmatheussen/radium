@@ -5,13 +5,16 @@
 		<title>Radium manual</title>
 		<style type="text/css">
 		
+                @font-face { font-family: RadiumFontBold; src: url('DejaVuSans-Bold.ttf'); }
+		@font-face { font-family: RadiumFont; src: url('DejaVuSans.ttf'); }
+                  
 		body{
 			margin: 0;
 			padding: 0;
 			overflow: hidden;
 			height: 100%; 
-			max-height: 100%; 
-			font-family:Sans-serif;
+       		        max-height: 100%;
+                        font-family: RadiumFont;
 			line-height: 1.5em;
 		}
 		
@@ -119,15 +122,28 @@
 		}
 
 table {
-font-family: arial, sans-serif;
+font-family: RadiumFont;
 font-style: normal;
 border-collapse: collapse;
 }
 
 body{
-font-family: arial, sans-serif;
+font-family: RadiumFont;
 }
 
+
+h1{
+font-family: RadiumFontBold;
+}
+
+h2{
+font-family: RadiumFontBold;
+}
+
+h3{
+font-family: RadiumFontBold;
+}
+                  
 td, th {
 border: 1px solid #dddddd;
 text-align: left;
