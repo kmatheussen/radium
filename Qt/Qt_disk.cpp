@@ -222,16 +222,21 @@ bool DISK_delete_file(filepath_t wfilename){
   return !DISK_file_exists(wfilename);
 }
 
-void DISK_delete_all_files_in_dir(filepath_t wdirname){
-  ASSERT_NON_RT_NON_RELEASE();
+bool DISK_delete_all_files_in_dir(filepath_t wdirname){
+  ASSERT_NON_RT_NON_RELEASE2(false);
+
+  bool ret = true;
   
   QDir dir(STRING_get_qstring(wdirname.id));
-  R_ASSERT_RETURN_IF_FALSE(dir.absolutePath() != QDir::root().absolutePath());
+  R_ASSERT_RETURN_IF_FALSE2(dir.absolutePath() != QDir::root().absolutePath(), false);
   
   QFileInfoList files = dir.entryInfoList(QDir::Files|QDir::NoDotAndDotDot);
   
   for(const auto &file : files)
-    QFile::remove(file.absoluteFilePath());
+    if (!DISK_delete_file(make_filepath(file.absoluteFilePath())))
+      ret = false;
+
+  return ret;
 }
 
 const wchar_t *DISK_get_dir_separator(void){

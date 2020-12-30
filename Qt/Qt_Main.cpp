@@ -3979,7 +3979,10 @@ bar()
 
 int main(int argc, char **argv){
 
-
+  bool clean_configuration = false;
+  if (argc > 1 && !strcmp(argv[1], "--radium-clean-configuration")){
+    clean_configuration = true;
+  }
      
   //  testme();
 #if TEST_CRASHREPORTER
@@ -4127,6 +4130,22 @@ int main(int argc, char **argv){
   g_qt_is_running = true;
 
   CRASHREPORTER_init();
+  
+  if (clean_configuration){
+    g_force_regular_gfx_message = true;
+    vector_t v = {};
+    int doit = VECTOR_push_back(&v, "Ok");
+    VECTOR_push_back(&v, "Cancel");
+    int ret = GFX_Message(&v, "Warning: All your configuration files and plugin cache data will be deleted.");
+    if (ret==doit){
+      SETTINGS_delete_configuration();
+    }
+
+    CRASHREPORTER_dont_report();
+    PLUGINHOST_shut_down();
+    DISKPEAKS_stop();
+    return 0;
+  }
   
   SETTINGS_init();
 

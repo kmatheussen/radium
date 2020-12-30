@@ -99,6 +99,8 @@ static inline void send_key_down(QObject *where, int how_many){
   }
 }
 
+extern bool g_force_regular_gfx_message;
+
 static inline bool safe_to_run_exec(void){
 
 #if 0
