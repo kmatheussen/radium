@@ -39,6 +39,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "OS_settings_proc.h"
 #include "threading.h"
 #include "../config/config.h"
+#include "../api/api_proc.h"
 
 #include "settings_proc.h"
 
@@ -114,7 +115,11 @@ static QVector<QString> get_lines2(QFile &file){
 
   return ret;
 }
-  
+
+static filepath_t get_program_configuration_filename(bool is_color_config){
+  return OS_get_full_program_file_path(is_color_config ? "colors" : "config");
+}
+
 // Warning, called before GC_init, so it cannot allocate with talloc or talloc_atomic.
 static QVector<QString> get_lines(const char* key){
   R_ASSERT(THREADING_is_main_thread());
@@ -155,7 +160,7 @@ static QVector<QString> get_lines(const char* key){
     file = fopen(filename,"r");
 #endif
     
-    QString bin_filename = STRING_get_qstring(OS_get_full_program_file_path(is_color_config ? "colors" : "config").id);
+    QString bin_filename = STRING_get_qstring(get_program_configuration_filename(is_color_config).id);
     
     file.setFileName(bin_filename);
     if (file.open(QIODevice::ReadOnly | QIODevice::Text)==false){
@@ -464,6 +469,37 @@ void SETTINGS_write_string(QString key, QString val){
   SETTINGS_put(key.toUtf8().constData(),val);
 }
 
+// Note: Called before SETTINGS_init.
+void SETTINGS_delete_configuration(void){
+  
+  {
+    filepath_t conf = OS_get_config_filename("something");
+    if (DISK_file_exists(conf) && !DISK_delete_file(conf))
+      GFX_Message(NULL, "Error: Unable to delete file \"%S\". You should try to delete it manually.", conf.id);
+  }
+
+  {
+    filepath_t color = OS_get_config_filename("color5");
+    if (DISK_file_exists(color) && !DISK_delete_file(color))
+      GFX_Message(NULL, "Error: Unable to delete file \"%S\". You should try to delete it manually.", color.id);
+  }
+  
+  filepath_t dotradiumpath = make_filepath(OS_get_dot_radium_path());
+
+  {
+    filepath_t mod_samples = appendFilePaths(dotradiumpath, make_filepath("mod_samples"));
+    if (DISK_dir_exists(mod_samples) && !DISK_delete_all_files_in_dir(mod_samples))
+      GFX_Message(NULL, "Error: Unable to delete all files in \"%S\". You should try to delete them manually.", mod_samples.id);
+  }
+
+  {
+    filepath_t scanned_plugins = appendFilePaths(dotradiumpath, make_filepath("scanned_plugins"));
+    if (DISK_dir_exists(scanned_plugins) && !DISK_delete_all_files_in_dir(scanned_plugins))
+      GFX_Message(NULL, "Error: Unable to delete all files in \"%S\". You should try to delete them manually.", scanned_plugins.id);
+  }
+
+  
+}
 
 void SETTINGS_init(void){
   double settings_version = SETTINGS_read_double("settings_version", 0.0);

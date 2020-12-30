@@ -104,6 +104,12 @@ static inline bool is_doing_RT(void){
     R_ASSERT_NON_RELEASE(!PLAYER_current_thread_has_lock());            \
   }while(0)
 
+#define ASSERT_NON_RT_NON_RELEASE2(ret)                                     \
+  do{                                                                   \
+    R_ASSERT_NON_RELEASE2(!THREADING_is_player_or_runner_thread(),ret);    \
+    R_ASSERT_NON_RELEASE2(!PLAYER_current_thread_has_lock(),ret);          \
+  }while(0)
+
 
 
 

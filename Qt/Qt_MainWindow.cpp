@@ -1002,6 +1002,8 @@ static int show_gfx_message(vector_t *buttons, bool program_state_is_valid, QStr
   return 0;
 }
 
+bool g_force_regular_gfx_message = false;
+
 int GFX_Message2_internal(vector_t *buttons, bool program_state_is_valid, const char *fmt,...){
   bool is_main_thread = THREADING_is_main_thread();
   bool has_player_lock = PLAYER_current_thread_has_lock();
@@ -1036,7 +1038,7 @@ int GFX_Message2_internal(vector_t *buttons, bool program_state_is_valid, const 
   if (is_main_thread && has_player_lock==false)
     EVENTLOG_add_event(talloc_strdup(message));
 
-  if (safe_to_run_exec())
+  if (g_force_regular_gfx_message || safe_to_run_exec())
     return show_gfx_message(buttons, program_state_is_valid, QString(message));
   else
     return SYSTEM_show_message_menu(buttons, message);
