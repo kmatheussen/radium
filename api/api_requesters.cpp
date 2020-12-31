@@ -150,12 +150,12 @@ filepath_t getLoadFilename(const_char *text, const_char *filetypes, filepath_t d
   return GFX_GetLoadFileName(window, NULL, text, dir, filetypes, type, true);
 }
 
-filepath_t getSaveFilename(const_char *text, const_char *filetypes, filepath_t dir, const_char *type){
+filepath_t getSaveFilename(const_char *text, const_char *filetypes, filepath_t dir, const_char *type, const_char *default_suffix){
   struct Tracker_Windows *window=getWindowFromNum(-1);if(window==NULL) return make_filepath(L"");
   if (!strcmp(type,""))
     type = NULL;
 
-  return GFX_GetSaveFileName(window, NULL, text, dir, filetypes, type, true);
+  return GFX_GetSaveFileName(window, NULL, text, dir, filetypes, type, default_suffix, true);
 }
 
 static int g_req_counter = 0;       // these two variables shouldn't be necessary, but it's to avoid crash

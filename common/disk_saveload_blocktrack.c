@@ -78,7 +78,7 @@ void SaveBlockToDisk(filepath_t filename, const struct WBlocks *wblock){
   R_ASSERT_RETURN_IF_FALSE(wblock!=NULL);
 
   if (isIllegalFilepath(filename))
-    filename = GFX_GetSaveFileName(window,NULL,"Select filename for block to save", createIllegalFilepath(), "*.rad_block", "Block files", true);
+    filename = GFX_GetSaveFileName(window,NULL,"Select filename for block to save", createIllegalFilepath(), "*.rad_block", "Block files", ".rad_block", true);
 
   if (isIllegalFilepath(filename))
     return;
@@ -234,7 +234,7 @@ void SaveTrackToDisk(filepath_t filename, const struct WTracks *wtrack){
   R_ASSERT_RETURN_IF_FALSE(wtrack!=NULL);
 
   if (isIllegalFilepath(filename) || !wcscmp(filename.id, L""))
-    filename=GFX_GetSaveFileName(window,NULL,"Select filename for track to save", createIllegalFilepath(), "*.rad_track", "Track files", true);
+    filename=GFX_GetSaveFileName(window,NULL,"Select filename for track to save", createIllegalFilepath(), "*.rad_track", "Track files", ".rad_track", true);
   
   if (isIllegalFilepath(filename))
     return;

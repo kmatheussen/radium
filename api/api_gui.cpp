@@ -4051,8 +4051,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
   public:
     
-    FileRequester(QString header_text, QString dir, QString filetypename, QString postfixes, bool for_loading, bool several_files)
-      : radium::FileRequester(NULL, header_text, dir, filetypename, postfixes, for_loading, several_files)
+    FileRequester(QString header_text, QString dir, QString filetypename, QString postfixes, bool for_loading, const_char* default_suffix, bool several_files)
+      : radium::FileRequester(NULL, header_text, dir, filetypename, postfixes, for_loading, default_suffix, several_files)
       , Gui(this)
     {
       _have_set_size = true; // shouldn't this one be set only if we restore geometry?
@@ -5271,9 +5271,9 @@ void openExternalWebBrowser(const_char *stringurl){
   QDesktopServices::openUrl(getUrl(stringurl));
 }
 
-int64_t gui_fileRequester(const_char* header_text, filepath_t dir, const_char* filetypename, const_char* postfixes, bool for_loading, bool several_files){
+int64_t gui_fileRequester(const_char* header_text, filepath_t dir, const_char* filetypename, const_char* postfixes, bool for_loading, const_char* default_suffix, bool several_files){
   QString dasdir = isLegalFilepath(dir) ? STRING_get_qstring(dir.id) : "";
-  return (new FileRequester(header_text, dasdir, filetypename, postfixes, for_loading, several_files))->get_gui_num();
+  return (new FileRequester(header_text, dasdir, filetypename, postfixes, for_loading, default_suffix, several_files))->get_gui_num();
 }
 
 int64_t gui_fontRequester(const_char* fontdescr){

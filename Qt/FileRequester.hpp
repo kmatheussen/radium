@@ -42,7 +42,7 @@ namespace radium{
     
   public:
     
-    FileRequester(QWidget *parent, QString header_text, QString dir, QString filetypename, QString postfixes, bool for_loading, bool several_files = false)
+    FileRequester(QWidget *parent, QString header_text, QString dir, QString filetypename, QString postfixes, bool for_loading, QString default_suffix = "", bool several_files = false)
       : QFileDialog(parent, header_text, dir, FileRequester::get_postfixes_filter(filetypename, postfixes))
     {
       /*
@@ -51,6 +51,9 @@ namespace radium{
       setSupportedSchemes(FileRequester::get_postfixes_filter(filetypename, postfixes).split(";;"));
       */
 
+      if (default_suffix != "")
+        setDefaultSuffix(default_suffix);
+      
       setOption(QFileDialog::DontUseCustomDirectoryIcons, true); // Sometimes make windows crawl if I remember correctly.
     
 #if FOR_MACOSX

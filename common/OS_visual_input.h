@@ -173,6 +173,7 @@ extern LANGSPEC filepath_t GFX_GetSaveFileName(
                                                const filepath_t dir,
                                                const char *postfixes,
                                                const char *type,
+                                               const char *default_suffix,
                                                bool program_state_is_valid
                                                );
 

@@ -830,14 +830,15 @@ filepath_t GFX_GetLoadFileName(
 }
 
 filepath_t GFX_GetSaveFileName(
-                                     struct Tracker_Windows *tvisual,
-                                     ReqType reqtype,
-                                     const char *seltext,
-                                     const filepath_t wdir,
-                                     const char *postfixes,
-                                     const char *type,
-                                     bool program_state_is_valid
-                                     ){
+                               struct Tracker_Windows *tvisual,
+                               ReqType reqtype,
+                               const char *seltext,
+                               const filepath_t wdir,
+                               const char *postfixes,
+                               const char *type,
+                               const char *default_suffix,
+                               bool program_state_is_valid
+                               ){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
 
   R_ASSERT_RETURN_IF_FALSE2(g_radium_runs_custom_exec==false, createIllegalFilepath());
@@ -849,7 +850,8 @@ filepath_t GFX_GetSaveFileName(
                                               dir,
                                               type,
                                               postfixes,
-                                              false
+                                              false,
+                                              default_suffix
                                               ).get_filename(program_state_is_valid);
 
   if(isIllegalFilepath(filename) || STRING_equals(filename.id, ""))

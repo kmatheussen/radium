@@ -1387,8 +1387,8 @@
 ;;;;;;;;;;;;;;;;;
 
 ;; Includes some qt problem workarounds.
-(define (create-file-requester header-text dir filetype-name postfixes for-loading several-files is-modal parent callback)
-  (let ((gui (<gui> :file-requester header-text dir filetype-name postfixes for-loading several-files
+(define (create-file-requester header-text dir filetype-name postfixes for-loading default-suffix several-files is-modal parent callback)
+  (let ((gui (<gui> :file-requester header-text dir filetype-name postfixes for-loading default-suffix several-files
                     (lambda (filename)
                       (<gui> :update parent) ;; (not sure this makes any difference)
                       (<ra> :schedule 50 ;; Give some time to update graphics after closing the file requester (not always enough)
@@ -1447,7 +1447,7 @@
   (if include-load-button
       (<gui> :add-callback load-button
              (lambda ()
-               (define req (create-file-requester "Choose text file" (<ra> :create-illegal-filepath) "Text files" "*.*" #t #f #t gui
+               (define req (create-file-requester "Choose text file" (<ra> :create-illegal-filepath) "Text files" "*.*" #t "" #f #t gui
                                                   (lambda (filename)
                                                     (<gui> :editor-load-file editor filename))))
                (<ra> :obtain-keyboard-focus req)))
@@ -1462,7 +1462,7 @@
   (if include-save-as-button      
       '(<gui> :add-callback save-as-button
              (lambda ()
-               (create-file-requester "Choose text file" (<ra> :create-illegal-filepath) "Text files" "*.*" #f #f #t gui
+               (create-file-requester "Choose text file" (<ra> :create-illegal-filepath) "Text files" "*.*" #f "" #f #t gui
                                       (lambda (filename)
                                         (<gui> :editor-save-file editor filename)))))
       (<gui> :hide save-as-button))

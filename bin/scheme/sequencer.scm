@@ -1420,7 +1420,7 @@
       (let ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)))))
         (c-display "POS:" pos)
         (define (create-new-audiofiles)
-          (create-file-requester "Choose audio file(s)" (<ra> :create-illegal-filepath) "audio files" (<ra> :get-audiofile-postfixes) #t #t #f -1
+          (create-file-requester "Choose audio file(s)" (<ra> :create-illegal-filepath) "audio files" (<ra> :get-audiofile-postfixes) #t "" #t #f -1
                                  (lambda (filenames)
                                    (if (= 1 (length filenames))
                                        (<ra> :create-sample-seqblock seqtracknum (car filenames) pos)
@@ -1912,7 +1912,7 @@
                                  (apply popup-menu
                                         `(,(list "New audio file"
                                                  (lambda ()
-                                                   (create-file-requester "Choose audio file" (<ra> :create-illegal-filepath) "audio files" (<ra> :get-audiofile-postfixes) #t #f #f -1
+                                                   (create-file-requester "Choose audio file" (<ra> :create-illegal-filepath) "audio files" (<ra> :get-audiofile-postfixes) #t "" #f #f -1
                                                                           gotit)))
                                           "------------"
                                           ,@(map (lambda (audiofile)

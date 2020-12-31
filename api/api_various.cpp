@@ -1968,7 +1968,7 @@ bool exportSong(filepath_t filename){
   if (isIllegalFilepath(filename)){
     const wchar_t *song_path = SETTINGS_read_wchars("filerequester_song_path", NULL);    
     const filepath_t wdir = song_path==NULL ? createIllegalFilepath() : make_filepath(song_path);
-    filename = GFX_GetSaveFileName(root->song->tracker_windows, NULL, " Select file to export", wdir, "*.rad", NULL, true);
+    filename = GFX_GetSaveFileName(root->song->tracker_windows, NULL, " Select file to export", wdir, "*.rad", NULL, ".rad", true);
 
     if(isIllegalFilepath(filename))
       return false;
