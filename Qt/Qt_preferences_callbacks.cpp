@@ -1384,6 +1384,7 @@ public slots:
                                               createIllegalFilepath(),
                                               NULL,
                                               NULL,
+                                              "",
                                               true);
     if (isLegalFilepath(filename))
       GFX_SaveColors(filename);

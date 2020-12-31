@@ -37,12 +37,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../config/config.h"
 
+/*
 static filepath_t fix_filename(const filepath_t filename){
   if (STRING_ends_with(STRING_to_upper(filename.id), ".RAD"))
     return filename;
   
   return make_filepath(STRING_append(filename.id, STRING_create(".rad")));
 }
+*/
 
 bool Save_Initialize(const filepath_t filename, const char *type){  
   
@@ -161,12 +163,12 @@ bool SaveAs(struct Root *theroot){
 
         const wchar_t *song_path = SETTINGS_read_wchars("filerequester_song_path", NULL);
         const filepath_t wdir = song_path==NULL ? createIllegalFilepath() : make_filepath(song_path);
-        const filepath_t maybe_filename = GFX_GetSaveFileName(theroot->song->tracker_windows, NULL, " Select file to save", wdir, "*.rad", NULL, true);
+        const filepath_t filename = GFX_GetSaveFileName(theroot->song->tracker_windows, NULL, " Select file to save", wdir, "*.rad", NULL, ".rad", true);
 
-        if(isIllegalFilepath(maybe_filename))
+        if(isIllegalFilepath(filename))
           return false;
 
-        const filepath_t filename = fix_filename(maybe_filename);
+        //const filepath_t filename = fix_filename(maybe_filename);
         
 #ifndef GUIISQT // Qt asks this question for us.
 	const char *ret=NULL;

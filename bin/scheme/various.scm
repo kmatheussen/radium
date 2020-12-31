@@ -768,7 +768,7 @@
   (list
    "Add new audio file(s)"
    (lambda ()
-     (create-file-requester "Choose audio file(s)" (<ra> :create-illegal-filepath) "audio files" (<ra> :get-audiofile-postfixes) #t #t #f -1
+     (create-file-requester "Choose audio file(s)" (<ra> :create-illegal-filepath) "audio files" (<ra> :get-audiofile-postfixes) #t "" #t #f -1
                             (lambda (filenames)
                               (c-display "FILENAMES:" filenames)
                               (for-each (lambda (filename)
