@@ -95,7 +95,6 @@ build_faust() {
     mv faust-master-dev faust
     cd faust
     tar xvzf ../faustlibraries_2020-12-27.tar.gz 
-    rmdir libraries
     mv faustlibraries-master libraries
     
     patch -p0 <../faust.patch
