@@ -1609,7 +1609,6 @@ void setNumTracks(int numtracks, int blocknum, int windownum){
   wblock->block->is_dirty = true;
 }
 
-
 // Warning, must be called via python (does not update graphics or handle undo/redo)
 void setNumLines(int numlines, int blocknum, int windownum){
   struct Tracker_Windows *window=NULL;
@@ -1622,6 +1621,13 @@ void setNumLines(int numlines, int blocknum, int windownum){
 
   Block_Set_num_lines(wblock->block, numlines);
   wblock->block->is_dirty = true;
+}
+
+const_char* getTrackTypeName(int tracknum){
+  if (tracknum >= 0)
+    return talloc_format("#%d", tracknum);
+  else
+    return talloc_format("\"%s\"", get_track_name(tracknum));
 }
 
 void changeTrackNoteLength(int tracknum, int blocknum, int windownum){

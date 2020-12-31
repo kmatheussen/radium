@@ -4948,21 +4948,25 @@
                                                (lambda ()
                                                  (paste-editor-bar-all-tracks barnum blocknum)))
                                          
-                                         (<-> "-------------Track #" tracknum "")
+                                         (<-> "-------------Track " (<ra> :get-track-type-name tracknum))
                                          (list (<-> "Clear bar #" barnum)
                                                :shortcut clear-editor-bar-one-track
+                                               :enabled (>= tracknum 0)
                                                (lambda ()
                                                  (clear-editor-bar-one-track barnum tracknum blocknum)))
                                          (list (<-> "Cut bar #" barnum)
                                                :shortcut cut-editor-bar-one-track
+                                               :enabled (>= tracknum 0)
                                                (lambda ()
                                                  (cut-editor-bar-one-track barnum tracknum blocknum)))
                                          (list (<-> "Copy bar #" barnum)
                                                :shortcut copy-editor-bar-one-track
+                                               :enabled (>= tracknum 0)
                                                (lambda ()
                                                  (copy-editor-bar-one-track barnum tracknum blocknum)))
                                          (list (<-> "Paste bar #" barnum)
-                                               :enabled (<ra> :has-range-in-clipboard 1)
+                                               :enabled (and (>= tracknum 0)
+                                                             (<ra> :has-range-in-clipboard 1))
                                                :shortcut paste-editor-bar-one-track
                                                (lambda ()
                                                  (paste-editor-bar-one-track barnum tracknum blocknum)))
@@ -4972,8 +4976,9 @@
                                                :shortcut "Left mouse button"
                                                (lambda ()
                                                  (set-range all-tracks-range)))
-                                         (list (<-> "Mark range at bar #" barnum ", only track #" tracknum)
+                                         (list (<-> "Mark range at bar #" barnum ", only track " (<ra> :get-track-type-name tracknum))
                                                :shortcut "Left mouse button"
+                                               :enabled (>= tracknum 0)
                                                (lambda ()
                                                  (set-range curr-track-range)))
                                          )
@@ -5013,21 +5018,25 @@
                                                  (lambda ()
                                                    (paste-editor-beat-all-tracks barnum beatnum blocknum)))
                                            
-                                           (<-> "-------------Track #" tracknum "")
+                                           (<-> "-------------Track " (<ra> :get-track-type-name tracknum))
                                            (list (<-> "Clear " beatname)
                                                  :shortcut clear-editor-beat-one-track
+                                                 :enabled (>= tracknum 0)
                                                  (lambda ()
                                                    (clear-editor-beat-one-track barnum beatnum tracknum blocknum)))
                                            (list (<-> "Cut " beatname)
                                                  :shortcut cut-editor-beat-one-track
+                                                 :enabled (>= tracknum 0)
                                                  (lambda ()
                                                    (cut-editor-beat-one-track barnum beatnum tracknum blocknum)))
                                            (list (<-> "Copy " beatname)
                                                  :shortcut copy-editor-beat-one-track
+                                                 :enabled (>= tracknum 0)
                                                  (lambda ()
                                                    (copy-editor-beat-one-track barnum beatnum tracknum blocknum)))
                                            (list (<-> "Paste " beatname)
-                                                 :enabled (<ra> :has-range-in-clipboard 3)
+                                                 :enabled (and (>= tracknum 0)
+                                                               (<ra> :has-range-in-clipboard 3))
                                                  :shortcut paste-editor-beat-one-track
                                                  (lambda ()
                                                    (paste-editor-beat-one-track barnum beatnum tracknum blocknum)))
@@ -5037,8 +5046,9 @@
                                                  :shortcut "Left mouse button"
                                                  (lambda ()
                                                    (set-range all-tracks-range)))
-                                           (list (<-> "Mark range at " beatname ", only track #" tracknum)
+                                           (list (<-> "Mark range at " beatname ", only track " (<ra> :get-track-type-name tracknum))
                                                  :shortcut "Left mouse button"
+                                                 :enabled (>= tracknum 0)
                                                  (lambda ()
                                                    (set-range curr-track-range)))
                                            ))))
