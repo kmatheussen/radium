@@ -4264,14 +4264,26 @@ int main(int argc, char **argv){
 
 
 #if defined(FOR_MACOSX)
-  if (QSysInfo::productVersion()=="10.15"){
-    GFX_Message(NULL,
-                "Radium has not been tested on this very much on this version of macOS. Please report problems you have with it.\n"
-                "\n"
-                "If Radium crashes right after startup, it's probably the OpenGL library that crashes. "
-                "Fortunately, the bug is usually only hit during startup, and not every time."
-                );
-  } else if (QSysInfo::productVersion()=="10.16" || QSysInfo::productVersion()=="10.17" || QSysInfo::productVersion()=="10.18"){
+  if (QSysInfo::productVersion()=="10.13" || QSysInfo::productVersion()=="10.14" || QSysInfo::productVersion()=="10.15"){
+    const char *confname = "show_macos_opengl_warning_during_startup";
+    if (SETTINGS_read_bool(confname, true)) {
+      vector_t v = {};
+      VECTOR_push_back(&v,"Ok");
+      int dont_show = VECTOR_push_back(&v,"Don't show this message again");
+      
+      int result = GFX_Message(&v,
+                               "Note: On MacOS there are both performance and stability problems. "
+                               "The most serious problems on macOS are caused by Apple's poor support for OpenGL."
+                               "\n"
+                               "If Radium crashes right after startup, it's probably Apple's OpenGL library that crashes. "
+                               "Fortunately, the bug is usually hit only during startup, and not every time."
+                               );
+      if (result==dont_show)
+        SETTINGS_write_bool(confname, false);
+    }      
+  }
+
+  if (QSysInfo::productVersion()=="10.16" || QSysInfo::productVersion()=="10.17" || QSysInfo::productVersion()=="10.18"){
     GFX_Message(NULL, "Radium has not been tested on this version of macOS. Latest supported version of macOS is 10.15. Radium might now freeze, crash, or misbehave in subtle ways. Please report your experience running Radium on this operating system to the forum, the mailing list, or to k.s.matheussen@notam02.no.");
   }
 #endif
