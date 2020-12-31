@@ -470,15 +470,15 @@ void SETTINGS_write_string(QString key, QString val){
 }
 
 // Note: Called before SETTINGS_init.
-void SETTINGS_delete_configuration(void){
+void SETTINGS_delete_configuration(const radium::ResetSettings &rs){
   
-  {
+  if (rs.reset_main_config_file){
     filepath_t conf = OS_get_config_filename("something");
     if (DISK_file_exists(conf) && !DISK_delete_file(conf))
       GFX_Message(NULL, "Error: Unable to delete file \"%S\". You should try to delete it manually.", conf.id);
   }
 
-  {
+  if (rs.reset_color_config_file){
     filepath_t color = OS_get_config_filename("color5");
     if (DISK_file_exists(color) && !DISK_delete_file(color))
       GFX_Message(NULL, "Error: Unable to delete file \"%S\". You should try to delete it manually.", color.id);
@@ -486,19 +486,46 @@ void SETTINGS_delete_configuration(void){
   
   filepath_t dotradiumpath = make_filepath(OS_get_dot_radium_path());
 
-  {
+  if (rs.clean_mod_samples){
     filepath_t mod_samples = appendFilePaths(dotradiumpath, make_filepath("mod_samples"));
     if (DISK_dir_exists(mod_samples) && !DISK_delete_all_files_in_dir(mod_samples))
       GFX_Message(NULL, "Error: Unable to delete all files in \"%S\". You should try to delete them manually.", mod_samples.id);
   }
 
-  {
+  if (rs.clean_xi_samples){
+    filepath_t xi_samples = appendFilePaths(dotradiumpath, make_filepath("xm_xi"));
+    if (DISK_dir_exists(xi_samples) && !DISK_delete_all_files_in_dir(xi_samples))
+      GFX_Message(NULL, "Error: Unable to delete all files in \"%S\". You should try to delete them manually.", xi_samples.id);
+  }
+
+  if (rs.clean_plugin_cache){
     filepath_t scanned_plugins = appendFilePaths(dotradiumpath, make_filepath("scanned_plugins"));
     if (DISK_dir_exists(scanned_plugins) && !DISK_delete_all_files_in_dir(scanned_plugins))
       GFX_Message(NULL, "Error: Unable to delete all files in \"%S\". You should try to delete them manually.", scanned_plugins.id);
   }
 
+  if (rs.reset_keyboard_configuration){
+    filepath_t filename = appendFilePaths(dotradiumpath, make_filepath("keybindings.conf"));
+    
+    if (DISK_file_exists(filename) && !DISK_delete_file(filename))
+      GFX_Message(NULL, "Error: Unable to delete file \"%S\". You should try to delete it manually.", filename.id);
+  }
+
+  {    
+    filepath_t filename = appendFilePaths(dotradiumpath, make_filepath("generated_keybinding_code.py"));
+    
+    if (DISK_file_exists(filename) && !DISK_delete_file(filename))
+      GFX_Message(NULL, "Error: Unable to delete file \"%S\". You should try to delete it manually.", filename.id);
+  }
   
+  {    
+    filepath_t filename = appendFilePaths(dotradiumpath, make_filepath("generated_keybinding_code.pyc"));
+    
+    if (DISK_file_exists(filename) && !DISK_delete_file(filename))
+      GFX_Message(NULL, "Error: Unable to delete file \"%S\". You should try to delete it manually.", filename.id);
+  }
+  
+  //GFX_Message(NULL, "Testing error message");
 }
 
 void SETTINGS_init(void){
