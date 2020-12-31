@@ -64,6 +64,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QWindow>
 #include <QScreen>
 #include <QThread>
+#include <QCheckBox>
+#include <QPushButton>
+#include <QButtonGroup>
 
 #include <QStyleFactory>
 
@@ -3976,6 +3979,112 @@ bar()
 }
 #endif
 
+static void clean_configuration2(void){
+  //g_force_regular_gfx_message = true;
+
+#if 1
+
+  /*
+  auto layout = gui_verticalLayout();
+  auto config_file = gui_checkbox("Clean main configuration file", false, false);
+  gui_add(layout, config_file, -1, -1, -1, -1);
+  gui_show(layout);
+  */
+  
+  QDialog box;
+  QVBoxLayout layout;
+  QHBoxLayout button_layout;
+
+  auto *reset_main_config_file = new QCheckBox("Reset main configuration file");
+  auto *reset_color_config_file = new QCheckBox("Reset color configuration");
+  auto *clean_plugin_cache = new QCheckBox("Clean plugin cache");
+  auto *reset_keyboard_configuration = new QCheckBox("Reset keyboard configuration");
+  auto *clean_mod_samples = new QCheckBox("Clean imported MOD samples");
+  auto *clean_xi_samples = new QCheckBox("Clean imported XI samples");
+
+  reset_main_config_file->setChecked(true);
+  clean_plugin_cache->setChecked(true);
+  clean_mod_samples->setChecked(true);
+  clean_xi_samples->setChecked(true);
+
+  QButtonGroup buttons;
+
+  enum doit{
+    OK = 0,
+    CANCEL = 1
+  };
+  
+  auto *ok_button = new QPushButton("Ok");
+  auto *cancel_button = new QPushButton("Cancel");
+
+  buttons.addButton(ok_button, doit::OK);
+  buttons.addButton(cancel_button, doit::CANCEL);
+  
+  layout.addWidget(reset_main_config_file);
+  layout.addWidget(reset_color_config_file);
+  layout.addWidget(clean_plugin_cache);
+  layout.addWidget(reset_keyboard_configuration);
+  layout.addWidget(clean_mod_samples);
+  layout.addWidget(clean_xi_samples);
+
+  {
+    button_layout.addWidget(ok_button);
+    button_layout.addWidget(cancel_button);
+    
+    layout.addLayout(&button_layout);
+  }
+
+  box.setWindowModality(Qt::ApplicationModal);
+
+  box.setLayout(&layout);
+
+  box.adjustSize();
+  box.updateGeometry();
+
+  box.setVisible(true);
+  box.show();
+  box.activateWindow();
+  box.raise();
+
+  box.connect(&buttons, SIGNAL(buttonClicked(int)), &box, SLOT(done(int)));
+  
+  int ret = box.exec();
+
+  if (ret==doit::CANCEL)
+    return;
+  
+  radium::ResetSettings rs;
+  
+  rs.reset_main_config_file = reset_main_config_file->isChecked(); 
+  rs.reset_color_config_file = reset_color_config_file->isChecked(); 
+  rs.clean_plugin_cache = clean_plugin_cache->isChecked(); 
+  rs.reset_keyboard_configuration = reset_keyboard_configuration->isChecked(); 
+  rs.clean_mod_samples = clean_mod_samples->isChecked(); 
+  rs.clean_xi_samples = clean_xi_samples->isChecked(); 
+
+  printf("Clean config? Ret: %d. %d/%d/%d/%d/%d/%d\n",
+         ret,
+         rs.reset_main_config_file,
+         rs.reset_color_config_file,
+         rs.clean_plugin_cache,
+         rs.reset_keyboard_configuration,
+         rs.clean_mod_samples,
+         rs.clean_xi_samples);
+          
+  SETTINGS_delete_configuration(rs);
+  
+#else
+                                            
+  vector_t v = {};
+  int doit = VECTOR_push_back(&v, "Ok");
+  VECTOR_push_back(&v, "Cancel");
+  int ret = GFX_Message(&v, "Warning: All your configuration files and plugin cache data will be deleted.");
+  if (ret==doit){
+    SETTINGS_delete_configuration();
+  }
+
+#endif
+}
 
 int main(int argc, char **argv){
 
@@ -4132,15 +4241,7 @@ int main(int argc, char **argv){
   CRASHREPORTER_init();
   
   if (clean_configuration){
-    g_force_regular_gfx_message = true;
-    vector_t v = {};
-    int doit = VECTOR_push_back(&v, "Ok");
-    VECTOR_push_back(&v, "Cancel");
-    int ret = GFX_Message(&v, "Warning: All your configuration files and plugin cache data will be deleted.");
-    if (ret==doit){
-      SETTINGS_delete_configuration();
-    }
-
+    clean_configuration2();
     CRASHREPORTER_dont_report();
     PLUGINHOST_shut_down();
     DISKPEAKS_stop();

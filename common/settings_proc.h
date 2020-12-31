@@ -18,6 +18,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef SETTINGS_PROC_H
 #define SETTINGS_PROC_H
 
+#ifdef __cplusplus
+namespace radium{
+  struct ResetSettings{
+    bool reset_main_config_file;
+    bool reset_color_config_file;
+    bool clean_plugin_cache;
+    bool reset_keyboard_configuration;
+    bool clean_mod_samples;
+    bool clean_xi_samples;
+  };
+}
+#endif
+
 extern LANGSPEC bool SETTINGS_has_key(const char *key);
 
 extern LANGSPEC bool SETTINGS_read_bool(const char *key, bool def);
@@ -38,7 +51,9 @@ extern LANGSPEC void SETTINGS_write_string(const char *key, const char *val);
 
 extern LANGSPEC bool SETTINGS_remove(const char* key);
 
-extern LANGSPEC void SETTINGS_delete_configuration(void);
+#ifdef __cplusplus
+extern void SETTINGS_delete_configuration(const radium::ResetSettings &rs);
+#endif
 
 extern LANGSPEC void SETTINGS_init(void);
 
