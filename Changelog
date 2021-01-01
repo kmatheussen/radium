@@ -1,3 +1,22 @@
+Changes 6.6.78 -> 6.7.69:
+* GUI: Fix audio meters often not being updated each
+  frame, even when there is enough CPU time.
+* LADSPA: Remove TAP plugins from the regular menus.
+* Macos: Show text box with info about the state of
+  OpenGL during startup.
+* Disk: Automatically add ".rad" suffix when saving
+  song.
+* Editor: Disable the bar/beat options for current
+  track when current track is a timing track.
+* Settings: Include "Radium reset" program to reset
+  user settings.
+* Manual: Make sure the same font is used on all
+  platforms. Most importantly this fixes really bad
+  text rendering on Windows.
+* API: getTrackTypeName.
+ 
+
+
 Changes 6.6.77 -> 6.7.68:
 * Faust: Upgrade Faust from 2.27.2-stable to
   20201227-dev.
