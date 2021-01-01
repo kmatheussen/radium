@@ -36,7 +36,7 @@ static inline void VECTOR_reserve(vector_t *v, int n){
 
     if (v->num_elements > 0){
       R_ASSERT_RETURN_IF_FALSE(v->elements!=NULL);
-      R_ASSERT_RETURN_IF_FALSE(v->num_elements <= n);
+      //R_ASSERT_RETURN_IF_FALSE(v->num_elements <= n);
       memcpy(new_elements, v->elements, v->num_elements*(int)sizeof(void*));
     }
 

@@ -2092,10 +2092,17 @@ protected:
 #else
     {
       //AUDIOMETERPEAKS_call_very_often(-1);
-      
-      int interval = useCPUFriendlyAudiometerUpdates() ? 50 : 15;
 
-      if (is_called_every_ms(interval)){
+      static double last_time = -1;
+      double now_time = TIME_get_ms();
+      double duration = R_MIN(1000, now_time-last_time);
+      last_time = now_time;
+        
+      //int interval = useCPUFriendlyAudiometerUpdates() ? 50 : 15;
+      double interval = useCPUFriendlyAudiometerUpdates() ? 40 : 10;
+      
+      if (last_time >= interval) {
+        //if (is_called_every_ms(interval)){
         
         AUDIOMETERPEAKS_call_very_often(-1);
 
@@ -2103,7 +2110,7 @@ protected:
         
         API_gui_call_regularly();
 
-        MW_call_each_16ms(interval);
+        MW_call_each_16ms(duration); //interval);
         
         RTWIDGET_call_often();
       }
