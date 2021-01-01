@@ -149,8 +149,13 @@ static_assert (sizeof(long long int) >= 8, "sizof(long long int) must be 8 or hi
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wnull-dereference"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-overflow"
+
 #include <QList>
 #include <QMap>
+
+#pragma GCC diagnostic pop
 
 #pragma GCC diagnostic pop
 
