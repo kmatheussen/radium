@@ -1127,7 +1127,10 @@
                                                      (<gui> :hide web)
                                                      #f))
                     web)))
-  (reopen-gui-at-curr-pos web))
+  (reopen-gui-at-curr-pos web
+                          :parentgui (if (<ra> :help-window-is-child-of-main-window)
+                                         -1
+                                         -3)))
 
 #!!
 (FROM-C-show-help-window "help/home.html")

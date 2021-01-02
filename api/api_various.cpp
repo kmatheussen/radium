@@ -391,6 +391,25 @@ void setMixerWindowIsChildOfMainWindow(bool val){
 }
 
 
+static bool g_helpWindowIsChildOfMainWindow = true;
+
+bool helpWindowIsChildOfMainWindow(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_helpWindowIsChildOfMainWindow = SETTINGS_read_bool("help_window_is_child_of_main_window", g_helpWindowIsChildOfMainWindow);
+    has_inited = true;
+  }
+
+  return g_helpWindowIsChildOfMainWindow;
+}
+
+void setHelpWindowIsChildOfMainWindow(bool val){
+  g_helpWindowIsChildOfMainWindow = val;
+  SETTINGS_write_bool("help_window_is_child_of_main_window", val);
+}
+
+
 //
 
 #if defined(FOR_MACOSX)
