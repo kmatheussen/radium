@@ -22,7 +22,7 @@
 ;; Not sure about this. It's hidden and shown and not very static.
 ;;(<gui> :set-static-toplevel-widget *pluginmanager-gui* #t)
 
-(<gui> :set-modal *pluginmanager-gui* #t)
+;;(<gui> :set-modal *pluginmanager-gui* #t)
 (let ((width (floor (* 3 (<gui> :text-width "Usage  Name  Type    Category    Creator        Path              Inputs Outputs")))))
   (<gui> :set-size *pluginmanager-gui* width (floor (/ width 1.5))))
 

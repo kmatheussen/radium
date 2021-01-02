@@ -932,6 +932,7 @@
 
 ;; instrument-id2 can also be list of instrument-ids.
 (define (insert-new-instrument-between instrument-id1 instrument-id2 position-at-instrument-1? parentgui callback)
+     
   (assert (or instrument-id1 instrument-id2))
   (if (not instrument-id2)
       (assert position-at-instrument-1?))
@@ -939,96 +940,114 @@
       (assert (not position-at-instrument-1?)))
   (if (list? instrument-id2)
       (assert position-at-instrument-1?))
-
-  (define out-list (cond ((not instrument-id2)
-                          '())
-                         ((list? instrument-id2)
-                          instrument-id2)
-                         (else
-                          (list instrument-id2))))                       
-
-  (define gain-list (map (lambda (out-id)
-                           (<ra> :get-audio-connection-gain instrument-id1 out-id))
-                         out-list))
-
-  (define has-instrument2 (not (null? out-list)))
-
+  
+  (define (get-out-list)
+    (keep (lambda (instrument-id)
+            (<ra> :instrument-is-open instrument-id))
+          (cond ((not instrument-id2)
+                 '())
+                ((list? instrument-id2)
+                 instrument-id2)
+                (else
+                 (list instrument-id2)))))
+  
   (start-instrument-popup-menu
    (make-instrument-conf :must-have-inputs (get-bool instrument-id1)
-                         :must-have-outputs has-instrument2
+                         :must-have-outputs (not (null? (get-out-list)))
                          :parentgui parentgui)
+   
    (lambda (instrument-description)
-     (define position-instrument (or (if position-at-instrument-1?
-                                         instrument-id1
-                                         instrument-id2)
-                                     instrument-id2
-                                     instrument-id1))
-     (define x (+ (<ra> :get-instrument-x position-instrument) 0))
-     (define y (+ (<ra> :get-instrument-y position-instrument) 0))
+
+     (call-with-exit
+      (lambda (return)
+
+        (if (and instrument-id1
+                 (not (<ra> :instrument-is-open instrument-id1)))
+            (return))
         
-     (define do-undo #f)
+        (define out-list (get-out-list))
+        
+        (define has-instrument2 (not (null? out-list)))
 
-     ;; Quite clumsy. The reason we don't call the callback directly is that we don't want to call the callback inside the undo block.
-     (define result
-       (undo-block
-        (lambda ()
-          (define new-instrument (<ra> :create-audio-instrument-from-description instrument-description "" x y #f))
-          (if (<ra> :is-legal-instrument new-instrument)
-              (begin
-                (define num-inputs (<ra> :get-num-input-channels new-instrument))
-                (define num-outputs (<ra> :get-num-output-channels new-instrument))
-                
-                (cond ((and instrument-id1
-                            (= 0 num-inputs))
-                       (show-async-message parentgui (<-> "Can not insert instrument named \n\"" (<ra> :get-instrument-name new-instrument) "\"\nsince it has no input channels"))
-                       (set! do-undo #t)
-                       #f)
-                      
-                      ((and (= 0 num-outputs)
-                            has-instrument2)
-                       (show-async-message parentgui (<-> "Can not insert instrument named \n\"" (<ra> :get-instrument-name new-instrument) "\"\nsince it has no output channels"))
-                       (set! do-undo #t)
-                       #f)
-                      
-                      (else
-                       
-                       (<ra> :set-instrument-position x y new-instrument #t)
+        (define position-instrument (or (if position-at-instrument-1?
+                                            instrument-id1
+                                            instrument-id2)
+                                        instrument-id2
+                                        instrument-id1))
+        (define x (+ (<ra> :get-instrument-x position-instrument) 0))
+        (define y (+ (<ra> :get-instrument-y position-instrument) 0))
+        
+        (define do-undo #f)
+        
+        ;; Quite clumsy. The reason we don't call the callback directly is that we don't want to call the callback inside the undo block.
+        (define result
+          (undo-block
+           (lambda ()
+             (define new-instrument (<ra> :create-audio-instrument-from-description instrument-description "" x y #f))
+             (if (not (<ra> :is-legal-instrument new-instrument))
+                 (return))
+             
+             (define num-inputs (<ra> :get-num-input-channels new-instrument))
+             (define num-outputs (<ra> :get-num-output-channels new-instrument))
+             
+             (cond ((and instrument-id1
+                         (= 0 num-inputs))
+                    (show-async-message parentgui (<-> "Can not insert instrument named \n\"" (<ra> :get-instrument-name new-instrument) "\"\nsince it has no input channels"))
+                    (set! do-undo #t)
+                    #f)
+                   
+                   ((and (= 0 num-outputs)
+                         has-instrument2)
+                    (show-async-message parentgui (<-> "Can not insert instrument named \n\"" (<ra> :get-instrument-name new-instrument) "\"\nsince it has no output channels"))
+                    (set! do-undo #t)
+                    #f)
+                   
+                   (else
+                    
+                    (<ra> :set-instrument-position x y new-instrument #t)
+                    
+                    (define changes '())
+                    
+                    (<ra> :undo-mixer-connections)
 
-                       (define changes '())
-                       
-                       (<ra> :undo-mixer-connections)
-                       
-                       (when instrument-id1
-                         (for-each (lambda (to)
-                                     (push-audio-connection-change! changes (list :type "disconnect"
-                                                                                  :source instrument-id1
-                                                                                  :target to)))
-                                   out-list)
-                         (push-audio-connection-change! changes (list :type "connect"
-                                                                      :source instrument-id1
-                                                                      :target new-instrument
-                                                                      :connection-type *plugin-connection-type*
-                                                                      )))
-                       
-                       (for-each (lambda (out-id gain)
-                                   (push-audio-connection-change! changes (list :type "connect"
-                                                                                :source new-instrument
-                                                                                :target out-id
-                                                                                :gain gain)))
-                                 out-list
-                                 gain-list)
+                    ;; Gather list of gains before disconnecting.
+                    (define gain-list (map (lambda (out-id)
+                                             (and instrument-id1
+                                                  (<ra> :get-audio-connection-gain instrument-id1 out-id)))
+                                           out-list))
+                    
+                    (when instrument-id1
+                      (for-each (lambda (to)
+                                  (push-audio-connection-change! changes (list :type "disconnect"
+                                                                               :source instrument-id1
+                                                                               :target to)))
+                                out-list)
+                      (push-audio-connection-change! changes (list :type "connect"
+                                                                   :source instrument-id1
+                                                                   :target new-instrument
+                                                                   :connection-type *plugin-connection-type*
+                                                                   )))
 
-                       (<ra> :change-audio-connections changes) ;; Apply all changes simultaneously
-                       
-                       new-instrument)))
-              #f))))
+                    (for-each (lambda (out-id gain)
+                                (push-audio-connection-change! changes (list :type "connect"
+                                                                             :source new-instrument
+                                                                             :target out-id
+                                                                             :gain gain)))
+                              out-list
+                              gain-list)
+                    
+                    (<ra> :change-audio-connections changes) ;; Apply all changes simultaneously
+                    
+                    new-instrument))
+             #f)))
+     
+        (if do-undo
+            (<ra> :undo))
+        
+        (if (and result
+                 callback)
+            (callback result)))))))
 
-     (if do-undo
-         (<ra> :undo))
-
-     (if (and result
-              callback)
-         (callback result)))))
 
 (define (FROM_C-remove-instrument-from-connection-path parent-instrument-id instrument-id)
   (define child-ids (get-instruments-connecting-from-instrument instrument-id))
