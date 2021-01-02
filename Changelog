@@ -1,3 +1,16 @@
+Changes 6.7.79 -> 6.7.70:
+* Instruments: Fix editing keybinding in the
+  instrument effects popup menu.
+* Help: Add option in preferences to let the help
+  windows be a standalone window.
+* Plugin manager: Don't make the plugin manager
+  window modal. Fixes inactive messages window after
+  scanning plugins.
+* API: helpWindowIsChildOfMainWindow,
+  setHelpWindowIsChildOfMainWindow .
+
+
+
 Changes 6.6.78 -> 6.7.69:
 * GUI: Fix audio meters often not being updated each
   frame, even when there is enough CPU time.
