@@ -1964,9 +1964,16 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
          "--------------"
          (list (<-> "Keybindings for \"" effect-name "\"")
                (list
-                (get-keybinding-configuration-popup-menu-entries "edit-instrument-effect"
-                                                                 (list (string->keybinding-string effect-name))
-                                                                 )))))
+                (cond ((string=? effect-name "System Volume On/Off")                       
+                       (get-keybinding-configuration-popup-menu-entries "ra:switch-mute-for-selected-instruments"
+                                                                        '()))
+                      ((string=? effect-name "System Solo On/Off")
+                       (get-keybinding-configuration-popup-menu-entries "ra:switch-solo-for-selected-instruments"
+                                                                        '()))
+                      (else
+                       (get-keybinding-configuration-popup-menu-entries "edit-instrument-effect"
+                                                                        (list (string->keybinding-string effect-name))
+                                                                        )))))))
    "-----------------"
    (list "Help"
          (lambda ()
