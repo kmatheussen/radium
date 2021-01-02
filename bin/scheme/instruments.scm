@@ -1965,7 +1965,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
          (list (<-> "Keybindings for \"" effect-name "\"")
                (list
                 (get-keybinding-configuration-popup-menu-entries "edit-instrument-effect"
-                                                                 (list string->keybinding-string effect-name)
+                                                                 (list (string->keybinding-string effect-name))
                                                                  )))))
    "-----------------"
    (list "Help"
