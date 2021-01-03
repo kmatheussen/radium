@@ -1,4 +1,10 @@
-Changes 6.7.79 -> 6.7.70:
+Changes 6.7.70 -> 6.7.71:
+* Audio meters: Fix update interval. In 6.7.70 it was
+  by mistake updated each 5ms which is too often.
+
+
+
+Changes 6.7.69 -> 6.7.70:
 * Instruments: Fix editing keybinding in the
   instrument effects popup menu.
 * Help: Add option in preferences to let the help
