@@ -2096,13 +2096,14 @@ protected:
       static double last_time = -1;
       double now_time = TIME_get_ms();
       double duration = R_MIN(1000, now_time-last_time);
-      last_time = now_time;
         
       //int interval = useCPUFriendlyAudiometerUpdates() ? 50 : 15;
       double interval = useCPUFriendlyAudiometerUpdates() ? 40 : 10;
       
-      if (last_time >= interval) {
+      if (duration >= interval) {
         //if (is_called_every_ms(interval)){
+
+        last_time = now_time;
         
         AUDIOMETERPEAKS_call_very_often(-1);
 
@@ -4095,6 +4096,8 @@ static void clean_configuration2(void){
 
 int main(int argc, char **argv){
 
+  //return 0;
+  
   bool clean_configuration = false;
   if (argc > 1 && !strcmp(argv[1], "--radium-clean-configuration")){
     clean_configuration = true;
