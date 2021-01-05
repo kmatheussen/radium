@@ -1,3 +1,9 @@
+Changes 6.7.71 -> 6.7.72:
+* Editor: Fix notes not being stopped when adding a
+  stop note. Bug introduced in 6.6.77.
+
+
+
 Changes 6.7.70 -> 6.7.71:
 * Audio meters: Fix update interval. In 6.7.70 it was
   by mistake updated each 5ms which is too often.
