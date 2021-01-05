@@ -64,7 +64,7 @@ void ADD_UNDO_FUNC(
 	}
 
 	Undo_Add(
--                 window->l.num,
+                 window->l.num,
                  block->l.num,
                  track->l.num,
                  realline,
