@@ -625,6 +625,11 @@ static void InsertStop(
   	  ListAddElement3_ns(&track->stops,&stop->l);          
         }
         */
+
+        {
+          SCOPED_PLAYER_LOCK_IF_PLAYING();
+          StopAllNotesAtPlace(block,track,placement);
+        }
         
         r::Stop stop2(ratio_from_place(*placement));
         writer.add(stop2);
