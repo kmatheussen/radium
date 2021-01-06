@@ -192,7 +192,8 @@ build_fluidsynth() {
 build_libgig () {
 
     rm -fr libgig
-    tar xvzf libgig.tar.gz
+    tar xvzf libgig-4.2.0.tar.bz2
+    mv libgig-4.2.0 libgig
     cd libgig
     make clean
     CFLAGS="-O3 -fno-strict-aliasing" CPPFLAGS="-O3 -fno-strict-aliasing" CXXFLAGS="-O3 -fno-strict-aliasing" CC=$DASCC CXX=$DASCXX ./configure
