@@ -192,7 +192,7 @@ build_fluidsynth() {
 build_libgig () {
 
     rm -fr libgig
-    tar xvzf libgig-4.2.0.tar.bz2
+    tar xvjf libgig-4.2.0.tar.bz2
     mv libgig-4.2.0 libgig
     cd libgig
     make clean
