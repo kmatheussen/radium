@@ -46,29 +46,16 @@ void *MIDILoadFX(struct FX *fx,const struct Tracks *track){
 	const char **objs=NULL;
 	const char *vars[1]={"cc"};
 
-	struct TrackInstrumentData *tid=(struct TrackInstrumentData *)track->midi_instrumentdata;
-	struct UsedTrackMidiCCs *usmf;
-
 	struct MIDI_FX *midi_fx=DC_alloc(sizeof(struct MIDI_FX));
-	fx->closeFX=MIDI_closeFX;
-	fx->SaveFX=MIDISaveFX;
 
 	midi_fx->name=fx->name;
 	midi_fx->min=fx->min;
 	midi_fx->max=fx->max;
 
-	usmf=talloc(sizeof(struct UsedTrackMidiCCs));
-	usmf->next=tid->usmf;
-	tid->usmf=usmf;
-	usmf->midi_fx=midi_fx;
-
 	GENERAL_LOAD(0,1)
 
 var0:
-	fx->effect_num=DC_LoadI();
-	if( ! MIDISetTreatFX(fx,midi_fx)){
-		dc.success=false;
-	}
+	midi_fx->effect_num=DC_LoadI();
 	goto start;
 
 var1:
@@ -103,6 +90,12 @@ obj6:
 
 error:
 end:
+
+        if(dc.success && MIDI_init_fx(track, fx, midi_fx)==FX_FAILED){
+          //! MIDISetTreatFX(fx,midi_fx)){
+          dc.success=false;
+        }
+
 	return midi_fx;
 }
 
