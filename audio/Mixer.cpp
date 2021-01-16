@@ -795,13 +795,13 @@ struct Mixer{
 
     const char *client_name;
 
+    waitUntilNsmHasInited();
+      
     if (supportsSwitchNsmCapability()) {
 
       client_name = "radium_audio";
 
     } else {
-      
-      waitUntilNsmHasInited();
       
       if (!nsmIsActive()) {
         
