@@ -1007,11 +1007,18 @@ static bool TransposeTemponode(struct WBlocks *wblock, TempoNodes *temponode, ra
 
   return true;
 }
- 
+
 static bool TransposeFxNode(struct FX *fx, struct FXNodeLines *fxnode, radium::GeneralTranspose &gt){
   int step = gt.big_step ? 0x10 : 0x1;
   if (gt.is_down)
     step *= -1;
+  
+  // Fix midi minor transpose.
+  if (step==0x1){
+    int span = R_ABS(fx->max - fx->min);
+    if (span < 0x100)
+      step = 0x2;
+  }
   
   int old_value = round(scale_double(fxnode->val, fx->min, fx->max, 0, 0x100));
   if (old_value==0x100)
