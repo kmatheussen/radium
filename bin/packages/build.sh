@@ -259,7 +259,7 @@ build_libpds
 build_qhttpserver
 build_gc
 build_fluidsynth
-build_libgig
+#build_libgig
 build_qscintilla
 build_xcb
 
