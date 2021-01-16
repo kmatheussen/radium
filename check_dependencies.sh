@@ -145,52 +145,72 @@ if [ `uname` == "Linux" ] ; then
 fi
 
 if $(./find_moc_and_uic_paths.sh qmake) --version|grep "5\.0\." ; then
-    echo "Qt is too old. Need at least 5.10"
+    echo "Qt is too old. Need at least 5.14"
     exit 5
 fi
 
 if $(./find_moc_and_uic_paths.sh qmake) --version|grep "5\.1\." ; then
-    echo "Qt is too old. Need at least 5.10"
+    echo "Qt is too old. Need at least 5.14"
     exit 5
 fi
 
 if $(./find_moc_and_uic_paths.sh qmake) --version|grep "5\.2\." ; then
-    echo "Qt is too old. Need at least 5.10"
+    echo "Qt is too old. Need at least 5.14"
     exit 5
 fi
 
 if $(./find_moc_and_uic_paths.sh qmake) --version|grep "5\.3\." ; then
-    echo "Qt is too old. Need at least 5.10"
+    echo "Qt is too old. Need at least 5.14"
     exit 5
 fi
 
 if $(./find_moc_and_uic_paths.sh qmake) --version|grep "5\.4\." ; then
-    echo "Qt is too old. Need at least 5.10"
+    echo "Qt is too old. Need at least 5.14"
     exit 5
 fi
 
 if $(./find_moc_and_uic_paths.sh qmake) --version|grep "5\.5\." ; then
-    echo "Qt is too old. Need at least 5.10"
+    echo "Qt is too old. Need at least 5.14"
     exit 5
 fi
 
 if $(./find_moc_and_uic_paths.sh qmake) --version|grep "5\.6\." ; then
-    echo "Qt is too old. Need at least 5.10"
+    echo "Qt is too old. Need at least 5.14"
     exit 5
 fi
 
 if $(./find_moc_and_uic_paths.sh qmake) --version|grep "5\.7\." ; then
-    echo "Qt is too old. Need at least 5.10"
+    echo "Qt is too old. Need at least 5.14"
     exit 5
 fi
 
 if $(./find_moc_and_uic_paths.sh qmake) --version|grep "5\.8\." ; then
-    echo "Qt is too old. Need at least 5.10"
+    echo "Qt is too old. Need at least 5.14"
     exit 5
 fi
 
 if $(./find_moc_and_uic_paths.sh qmake) --version|grep "5\.9\." ; then
-    echo "Qt is too old. Need at least 5.10"
+    echo "Qt is too old. Need at least 5.14"
+    exit 5
+fi
+
+if $(./find_moc_and_uic_paths.sh qmake) --version|grep "5\.10\." ; then
+    echo "Qt is too old. Need at least 5.14"
+    exit 5
+fi
+
+if $(./find_moc_and_uic_paths.sh qmake) --version|grep "5\.11\." ; then
+    echo "Qt is too old. Need at least 5.14"
+    exit 5
+fi
+
+if $(./find_moc_and_uic_paths.sh qmake) --version|grep "5\.12\." ; then
+    echo "Qt is too old. Need at least 5.14"
+    exit 5
+fi
+
+if $(./find_moc_and_uic_paths.sh qmake) --version|grep "5\.13\." ; then
+    echo "Qt is too old. Need at least 5.14"
     exit 5
 fi
 
