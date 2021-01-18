@@ -75,9 +75,9 @@ bool OS_has_full_program_file_path(QString filename){
   return true;
 }
 
-filepath_t OS_get_full_program_file_path(filepath_t filename){
+QString OS_get_full_program_file_path2(QString filename){
   QDir dir(QCoreApplication::applicationDirPath());
-  QFileInfo info(dir, STRING_get_qstring(filename.id));
+  QFileInfo info(dir, filename);
 
   if (!info.exists()){
     ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create(true));
@@ -87,13 +87,18 @@ filepath_t OS_get_full_program_file_path(filepath_t filename){
     abort();
   }
 
+  return info.absoluteFilePath();
+}
+  
+filepath_t OS_get_full_program_file_path(filepath_t filename){
+
   // Python/Windows32 have screwed up paths that were converted by QDir::toNativeSeparators. (perhaps related to use of backslash)
   /*
   QString ret = QDir::toNativeSeparators(info.absoluteFilePath());
   printf("BEF: -%s-. ret: -%s-\n", info.absoluteFilePath().toUtf8().constData(), ret.toUtf8().constData());
   */
   
-  return make_filepath(info.absoluteFilePath());
+  return make_filepath(OS_get_full_program_file_path2(STRING_get_qstring(filename.id)));
 }
 
 // TODO: Remove.
