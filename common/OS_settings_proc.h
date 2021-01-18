@@ -57,10 +57,15 @@ bool OS_has_conf_filename(QString filename);
 filepath_t OS_get_config_filename(const char *key);
 #endif
 
+  
 extern LANGSPEC filepath_t OS_get_full_program_file_path(filepath_t filename);
 #ifdef __cplusplus
 #if defined(QSTRING_H)
-wchar_t *STRING_create2(const QString s);
+extern wchar_t *STRING_create2(const QString s);
+extern QString OS_get_full_program_file_path2(QString filename);
+static inline QString OS_get_full_program_file_path2(const char *filename){
+  return OS_get_full_program_file_path2(QString(filename));
+}
 static inline filepath_t OS_get_full_program_file_path(QString filename){
   return OS_get_full_program_file_path(make_filepath(STRING_create2(filename)));
 }
