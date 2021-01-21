@@ -215,9 +215,9 @@ int SYSTEM_show_message_menu(const struct vector_t_ *options, const char *messag
     
 
 #if FOR_WINDOWS
-  QString program = STRING_get_qstring(OS_get_full_program_file_path(L"radium_error_message.exe").id);
+  QString program = OS_get_full_program_file_path2("radium_error_message.exe");
 #else
-  QString program = STRING_get_qstring(OS_get_full_program_file_path(L"radium_error_message").id);
+  QString program = OS_get_full_program_file_path2("radium_error_message");
 #endif
 
 #if defined(FOR_WINDOWS)

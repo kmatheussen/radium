@@ -108,7 +108,7 @@ export QT_UI_LDFLAGS="`$QT_QMAKE_BIN_PATH -query QT_INSTALL_LIBS`/libQt5UiTools.
 VL_PATH="bin/packages/Visualization-Library-master"
 #VL_QTLIB="$VL_PATH/src/vlQt$RADIUM_QT_VERSION/lib/libVLQt$RADIUM_QT_VERSION.a"
 export VL_CFLAGS="-DVL_STATIC_LINKING -Wall -I$VL_PATH/src -I$VL_PATH/src/3rdparty/Khronos -I$VL_PATH/src/examples"
-export VL_LIBS="$VL_PATH/src/vlVG/lib/libVLVG.a $VL_PATH/src/vlGraphics/lib/libVLGraphics.a $VL_PATH/src/vlCore/lib/libVLCore.a `$PKG --libs freetype2` -lGL -lGLU"
+export VL_LIBS="$VL_PATH/src/vlVG/lib/libVLVG.a $VL_PATH/src/vlGraphics/lib/libVLGraphics.a $VL_PATH/src/vlCore/lib/libVLCore.a `$PKG --libs freetype2` -lGL -lGLU -lz"
 # $VL_QTLIB
 
 #$VL_PATH/src/vlGraphics/plugins/freetype/lib/libFreeType.a 
@@ -184,7 +184,12 @@ if ! env |grep RADIUM_BFD_LDFLAGS ; then
 fi
 
 export OS_JUCE_LDFLAGS="-lasound -pthread -lrt -lX11 -ldl -lXext "
-export OS_LDFLAGS="$QSCINTILLA_PATH/Qt4Qt5/libqscintilla2_qt5.a $FAUSTLDFLAGS $PDLDFLAGS pluginhost/Builds/Linux/build/libMyPluginHost.a $OS_JUCE_LDFLAGS -llrdf $GCDIR/.libs/libgc.a $PYTHONLIBPATH $PYTHONLIBNAME bin/packages/libgig/src/.libs/RIFF.o bin/packages/libgig/src/.libs/SF.o bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a `$PKG --libs sndfile` `$PKG --libs samplerate` `$PKG --libs glib-2.0` `$PKG --libs liblo` -lxcb -lxcb-keysyms $RADIUM_BFD_LDFLAGS -lz -liberty -lutil -licui18n -licuuc -licudata `$PKG --libs Qt5X11Extras`"
+
+#LIBGIG_LDFLAGS="bin/packages/libgig/src/.libs/RIFF.o bin/packages/libgig/src/.libs/SF.o"
+FLUIDSYNTH_LDFLAGS="bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a `$PKG --libs glib-2.0`"
+export OS_LDFLAGS="$QSCINTILLA_PATH/Qt4Qt5/libqscintilla2_qt5.a $FAUSTLDFLAGS $PDLDFLAGS pluginhost/Builds/Linux/build/libMyPluginHost.a $OS_JUCE_LDFLAGS -llrdf $GCDIR/.libs/libgc.a $PYTHONLIBPATH $PYTHONLIBNAME `$PKG --libs sndfile` `$PKG --libs samplerate` `$PKG --libs liblo` -lxcb -lxcb-keysyms $FLUIDSYNTH_LDFLAGS $RADIUM_BFD_LDFLAGS -liberty `$PKG --libs Qt5X11Extras`"
+
+# -licui18n -licuuc -licudata -lutil 
 
 # -lgmp -lmpfr -lmpc
 

@@ -213,10 +213,13 @@ void gc_able_gc_finalizer(void *actual_mem_start, void *user_data){
     R_ASSERT_NON_RELEASE(false);
     return;
   }
-      
+
+#if 0  // Commented out since vptr is deleted by the destructor.
 #if !defined(RELEASE)
   gakkgakk->_allowed_to_call_destructor = true;
 #endif
+#endif
+  
   delete gakkgakk;
 }
 
