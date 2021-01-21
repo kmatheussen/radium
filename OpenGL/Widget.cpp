@@ -246,6 +246,7 @@ static void set_realtime(int type, int priority){
 #endif
 
 static DEFINE_ATOMIC(bool, g_has_updated_at_least_once) = false;
+static DEFINE_ATOMIC(bool, g_has_resized_at_least_once) = false;
 
 DEFINE_ATOMIC(char *, GE_vendor_string) = NULL;
 DEFINE_ATOMIC(char *, GE_renderer_string) = NULL;
@@ -2089,6 +2090,7 @@ public:
 
       GFX_ScheduleEditorRedraw();
 
+      ATOMIC_SET(g_has_resized_at_least_once, true);
   }
   
   // The rest of the methods in this class are virtual methods required by the vl::UIEventListener class. Not used.
@@ -2734,6 +2736,14 @@ static void maybe_init_widget(void){
   //widget->initializeGL();
 #endif
   
+  init_widget2();
+
+  // Make sure editor has correct size after startup.
+  {
+    QResizeEvent qresizeevent(widget->size(), widget->size());
+    widget->resizeEvent(&qresizeevent);
+  }
+  #if 0
   // This code-block seems to prevent garbled font drawing sometimes happening on windows.
   {
     int countdown = 5000 / 20;
@@ -2750,13 +2760,29 @@ static void maybe_init_widget(void){
         break;
     }
   }
+#endif
+}
 
-  init_widget2();
+static void maybe_init_widget2(void){
+  if (ATOMIC_GET(g_has_resized_at_least_once)==false){
+    QTimer::singleShot(100, maybe_init_widget2);
+    return;
+  }
 
-  // Make sure editor has correct size after startup.
   {
-    QResizeEvent qresizeevent(widget->size(), widget->size());
-    widget->resizeEvent(&qresizeevent);
+    int countdown = 5000 / 20;
+    bool gotit=false;
+    while(gotit==false){
+      
+      countdown--;
+      if (countdown <= 0) // security to prevent lockup.
+        break;
+      
+      msleep(20);
+      
+      if (maybe_start_t2_thread()==true)
+        break;
+    }
   }
 }
 
@@ -2790,6 +2816,7 @@ static void setup_widget(QWidget *parent){
 
   //QTimer::singleShot(10000, maybe_init_widget);
   maybe_init_widget();
+  maybe_init_widget2();
 }
 
 static bool g_compatibility_ok = false;
