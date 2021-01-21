@@ -549,10 +549,10 @@ OBJ14=$(T)disk_midi_fx.o $(T)disk_midi_instrument.o $(T)midi_fx.o $(T)midi_instr
 # alsaseq_midi.o
 
 #Faust plugins
-OBJ_FAUST=$(T)zita_rev.o $(T)stk_flute.o $(T)stk_bowed.o $(T)stk_blow_bottle.o $(T)stk_bass.o $(T)stk_blow_hole.o $(T)stk_brass.o $(T)stk_clarinet.o $(T)stk_flute_stk.o $(T)stk_glass_harmonica.o $(T)stk_harpsi.o $(T)stk_modal_bar.o $(T)stk_NLF_eks.o $(T)stk_NLF_fm.o $(T)stk_piano.o $(T)stk_saxophony.o $(T)stk_sitar.o $(T)stk_tibetan_bowl.o $(T)stk_tuned_bar.o $(T)stk_uni_bar.o $(T)stk_voice_form.o $(T)faust_tapiir.o $(T)faust_system_eq.o $(T)faust_system_tremolo.o $(T)faust_system_lowpass.o $(T)faust_system_highpass.o $(T)faust_system_lowshelf.o $(T)faust_system_highshelf.o $(T)faust_system_pitch.o $(T)faust_multibandcomp.o
+OBJ_FAUST=$(T)zita_rev.o $(T)stk_flute.o $(T)stk_bowed.o $(T)stk_blow_bottle.o $(T)stk_bass.o $(T)stk_blow_hole.o $(T)stk_brass.o $(T)stk_clarinet.o $(T)stk_flute_stk.o $(T)stk_glass_harmonica.o $(T)stk_harpsi.o $(T)stk_modal_bar.o $(T)stk_NLF_eks.o $(T)stk_NLF_fm.o $(T)stk_piano.o $(T)stk_saxophony.o $(T)stk_sitar.o $(T)stk_tibetan_bowl.o $(T)stk_tuned_bar.o $(T)stk_uni_bar.o $(T)stk_voice_form.o $(T)faust_tapiir.o $(T)faust_system_eq.o $(T)faust_system_tremolo.o $(T)faust_system_lowpass.o $(T)faust_system_highpass.o $(T)faust_system_lowshelf.o $(T)faust_system_highshelf.o $(T)faust_multibandcomp.o
 
 #AUDIO
-OBJ_AUDIO=$(T)audio_instrument.o $(T)SoundProducer.o $(T)AudioBuffer.o $(T)Jack_plugin.o $(T)find_jack_library.o $(T)Faust_plugins.o $(T)Bus_plugins.o $(T)Timeskew_plugin.o $(T)Patchbay_plugin.o $(T)MidiMessages_plugin.o $(T)VST_plugins.o $(T)Ladspa_plugins.o $(T)Sampler_plugin.o $(T)SampleRecorder.o $(T)SampleReader.o $(T)Seqtrack_plugin.o $(T)FluidSynth_plugin.o $(T)Pd_plugin.o $(T)Modulator_plugin.o $(T)SendReceive_plugins.o $(T)Pitchshift_plugin.o $(T)SoundPluginRegistry.o $(T)SoundPlugin.o $(T)AudioMeterPeaks.o $(T)Peaks.o $(T)Mixer.o $(T)get_windows_commandlines.o $(T)Envelope.o $(T)Resampler.o $(T)SoundFonts.o $(T)Presets.o $(T)undo_audio_effect.o $(T)undo_connection_enabled.o $(T)undo_audio_connection_gain.o $(T)undo_pd_controllers.o $(T)undo_plugin_state.o $(T)SoundfileSaver.o $(T)system_compressor_wrapper.o $(T)KillJackd.o $(T)SF.o $(T)RIFF.o
+OBJ_AUDIO=$(T)audio_instrument.o $(T)SoundProducer.o $(T)AudioBuffer.o $(T)Jack_plugin.o $(T)find_jack_library.o $(T)Faust_plugins.o $(T)Bus_plugins.o $(T)Timeskew_plugin.o $(T)Patchbay_plugin.o $(T)MidiMessages_plugin.o $(T)VST_plugins.o $(T)Ladspa_plugins.o $(T)Sampler_plugin.o $(T)SampleRecorder.o $(T)SampleReader.o $(T)Seqtrack_plugin.o $(T)FluidSynth_plugin.o $(T)Pd_plugin.o $(T)Modulator_plugin.o $(T)SendReceive_plugins.o $(T)SoundPluginRegistry.o $(T)SoundPlugin.o $(T)AudioMeterPeaks.o $(T)Peaks.o $(T)Mixer.o $(T)get_windows_commandlines.o $(T)Envelope.o $(T)Resampler.o $(T)SoundFonts.o $(T)Presets.o $(T)undo_audio_effect.o $(T)undo_connection_enabled.o $(T)undo_audio_connection_gain.o $(T)undo_pd_controllers.o $(T)undo_plugin_state.o $(T)SoundfileSaver.o $(T)system_compressor_wrapper.o $(T)KillJackd.o $(T)SF.o $(T)RIFF.o
  
 #MultiCore.o $(T)Smooth.o
 
@@ -2657,7 +2657,7 @@ $(T)moc_qhttpserver.o: $(QHTTPSERVER_PATH)/build/moc_qhttpserver.cpp
 $(T)http_parser.o: $(QHTTPSERVER_PATH)/http-parser/http_parser.c
 	$(CC2) -c $(QHTTPSERVER_PATH)/http-parser/http_parser.c $(OPT) $(HTTPPARSERFLAGS)
 
-LIBGIG_FLAGS=-Wno-sign-compare -Wno-missing-declarations -DPACKAGE="\"libgig\"" -DVERSION="\"4.2.0\""
+LIBGIG_FLAGS=-Wno-sign-compare -Wno-missing-declarations -DPACKAGE="\"libgig\"" -DVERSION="\"4.2.0\"" -D_GNU_SOURCE
 
 $(T)RIFF.o: $(LIBGIG_PATH)/SF.cpp
 	$(CCC2) -c $(LIBGIG_PATH)/RIFF.cpp $(CPPOPT) $(LIBGIG_FLAGS)
