@@ -2,7 +2,7 @@
 # Users and packagers: Edit build_*.sh instead.
 #
 
-RADIUM_VERSION = 6.7.72
+RADIUM_VERSION = 6.7.73
 
 
 SHELL := /bin/bash
@@ -677,7 +677,7 @@ profile:
 	@echo
 	@echo "=== NOTE: If 'make profile' fails, two radium instances might be running. ==="
 	@echo
-	perf top -p `pidof radium_linux.bin` -K
+	perf top --sort comm,dso -p `pidof radium_linux.bin` -K
 #--sort comm,dso
 #	operf $(RADIUM_BIN) && opreport -ca |more
 
