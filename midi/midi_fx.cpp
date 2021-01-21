@@ -504,7 +504,7 @@ static int MIDI_default_FX_value(const struct FX *fx){
   return (fx->min + fx->max) / 2;
 }
 
-static int init_fx(const struct Tracks *track,struct FX *fx, struct MIDI_FX *midi_fx){
+int MIDI_init_fx(const struct Tracks *track,struct FX *fx, struct MIDI_FX *midi_fx){
 
 	struct TrackInstrumentData *tid=(struct TrackInstrumentData *)track->midi_instrumentdata;
 	struct UsedTrackMidiCCs *usmf;
@@ -526,7 +526,7 @@ static int init_fx(const struct Tracks *track,struct FX *fx, struct MIDI_FX *mid
 	fx->SaveFX  = MIDISaveFX;
 
 	if( ! MIDISetTreatFX(fx,midi_fx)){
-		return FX_FAILED;
+          return FX_FAILED;
 	}
 
         fx->call_me_before_starting_to_play_song_MIDDLE = MIDI_FX_call_me_before_starting_to_play_song_MIDDLE;
@@ -558,7 +558,7 @@ struct FX *MIDI_createFX(const struct Tracks *track, struct Patch *patch, int ef
   int num_fx_colors = AUTOMATION8_COLOR_NUM - AUTOMATION1_COLOR_NUM;
   fx->color = (enum ColorNums)(AUTOMATION1_COLOR_NUM + (effect_num%num_fx_colors));
 
-  if (init_fx(track, fx, midi_fx)==FX_FAILED)
+  if (MIDI_init_fx(track, fx, midi_fx)==FX_FAILED)
     return NULL;
   
   return fx;
@@ -652,7 +652,7 @@ void MIDIgetFX(struct Tracker_Windows *window,const struct Tracks *track, std::f
             
             if( ! isFXUsed(tid,midi_fx)){
               struct FX *fx = (struct FX*)talloc(sizeof(struct FX));        
-              init_fx(track, fx, midi_fx);
+              MIDI_init_fx(track, fx, midi_fx);
               
               callback(fx);
             }

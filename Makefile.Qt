@@ -53,6 +53,9 @@ PYTHONEXE ?= `which python2`
 GCDIR ?= bin/packages/gc-7.4.16
 
 QHTTPSERVER_PATH ?= $(shell pwd)/bin/packages/qhttpserver-master
+
+LIBGIG_PATH ?= $(shell pwd)/bin/packages/libgig/src
+
 #MIDIINC=-Imidi/rtmidi
 #MIDIINC=-Imidi/alsaseq
 
@@ -546,10 +549,10 @@ OBJ14=$(T)disk_midi_fx.o $(T)disk_midi_instrument.o $(T)midi_fx.o $(T)midi_instr
 # alsaseq_midi.o
 
 #Faust plugins
-OBJ_FAUST=$(T)zita_rev.o $(T)stk_flute.o $(T)stk_bowed.o $(T)stk_blow_bottle.o $(T)stk_bass.o $(T)stk_blow_hole.o $(T)stk_brass.o $(T)stk_clarinet.o $(T)stk_flute_stk.o $(T)stk_glass_harmonica.o $(T)stk_harpsi.o $(T)stk_modal_bar.o $(T)stk_NLF_eks.o $(T)stk_NLF_fm.o $(T)stk_piano.o $(T)stk_saxophony.o $(T)stk_sitar.o $(T)stk_tibetan_bowl.o $(T)stk_tuned_bar.o $(T)stk_uni_bar.o $(T)stk_voice_form.o $(T)faust_tapiir.o $(T)faust_system_eq.o $(T)faust_system_tremolo.o $(T)faust_system_lowpass.o $(T)faust_system_highpass.o $(T)faust_system_lowshelf.o $(T)faust_system_highshelf.o $(T)faust_multibandcomp.o
+OBJ_FAUST=$(T)zita_rev.o $(T)stk_flute.o $(T)stk_bowed.o $(T)stk_blow_bottle.o $(T)stk_bass.o $(T)stk_blow_hole.o $(T)stk_brass.o $(T)stk_clarinet.o $(T)stk_flute_stk.o $(T)stk_glass_harmonica.o $(T)stk_harpsi.o $(T)stk_modal_bar.o $(T)stk_NLF_eks.o $(T)stk_NLF_fm.o $(T)stk_piano.o $(T)stk_saxophony.o $(T)stk_sitar.o $(T)stk_tibetan_bowl.o $(T)stk_tuned_bar.o $(T)stk_uni_bar.o $(T)stk_voice_form.o $(T)faust_tapiir.o $(T)faust_system_eq.o $(T)faust_system_tremolo.o $(T)faust_system_lowpass.o $(T)faust_system_highpass.o $(T)faust_system_lowshelf.o $(T)faust_system_highshelf.o $(T)faust_system_pitch.o $(T)faust_multibandcomp.o
 
 #AUDIO
-OBJ_AUDIO=$(T)audio_instrument.o $(T)SoundProducer.o $(T)AudioBuffer.o $(T)Jack_plugin.o $(T)find_jack_library.o $(T)Faust_plugins.o $(T)Bus_plugins.o $(T)Timeskew_plugin.o $(T)Patchbay_plugin.o $(T)MidiMessages_plugin.o $(T)VST_plugins.o $(T)Ladspa_plugins.o $(T)Sampler_plugin.o $(T)SampleRecorder.o $(T)SampleReader.o $(T)Seqtrack_plugin.o $(T)FluidSynth_plugin.o $(T)Pd_plugin.o $(T)Modulator_plugin.o $(T)SendReceive_plugins.o $(T)SoundPluginRegistry.o $(T)SoundPlugin.o $(T)AudioMeterPeaks.o $(T)Peaks.o $(T)Mixer.o $(T)get_windows_commandlines.o $(T)Envelope.o $(T)Resampler.o $(T)SoundFonts.o $(T)Presets.o $(T)undo_audio_effect.o $(T)undo_connection_enabled.o $(T)undo_audio_connection_gain.o $(T)undo_pd_controllers.o $(T)undo_plugin_state.o $(T)SoundfileSaver.o $(T)system_compressor_wrapper.o $(T)KillJackd.o
+OBJ_AUDIO=$(T)audio_instrument.o $(T)SoundProducer.o $(T)AudioBuffer.o $(T)Jack_plugin.o $(T)find_jack_library.o $(T)Faust_plugins.o $(T)Bus_plugins.o $(T)Timeskew_plugin.o $(T)Patchbay_plugin.o $(T)MidiMessages_plugin.o $(T)VST_plugins.o $(T)Ladspa_plugins.o $(T)Sampler_plugin.o $(T)SampleRecorder.o $(T)SampleReader.o $(T)Seqtrack_plugin.o $(T)FluidSynth_plugin.o $(T)Pd_plugin.o $(T)Modulator_plugin.o $(T)SendReceive_plugins.o $(T)Pitchshift_plugin.o $(T)SoundPluginRegistry.o $(T)SoundPlugin.o $(T)AudioMeterPeaks.o $(T)Peaks.o $(T)Mixer.o $(T)get_windows_commandlines.o $(T)Envelope.o $(T)Resampler.o $(T)SoundFonts.o $(T)Presets.o $(T)undo_audio_effect.o $(T)undo_connection_enabled.o $(T)undo_audio_connection_gain.o $(T)undo_pd_controllers.o $(T)undo_plugin_state.o $(T)SoundfileSaver.o $(T)system_compressor_wrapper.o $(T)KillJackd.o $(T)SF.o $(T)RIFF.o
  
 #MultiCore.o $(T)Smooth.o
 
@@ -817,7 +820,7 @@ start_bin.sh:
 	echo "LD_LIBRARY_PATH=../lib $(PYTHONEXE) start.py keybindings.conf $@" >>start_bin.sh
 	chmod a+rx start_bin.sh
 
-$(RADIUM_BIN): $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a bin/packages/libgig/src/.libs/libgig.a bin/packages/libpd-master/libs/libpds.a $(OS_DEPS)
+$(RADIUM_BIN): $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a bin/packages/libpd-master/libs/libpds.a $(OS_DEPS)
 	@echo
 	@echo "Changed ($(RADIUM_BIN)):"
 	@echo $?
@@ -2322,9 +2325,6 @@ audio/faust_multibandcomp.cpp: audio/faust_multibandcomp.dsp $(FAUST_DEPENDENCIE
 	cd audio && $(FAUST) -vec -cn Multibandcomp_dsp -a Faust_plugins_template.cpp faust_multibandcomp.dsp -o faust_multibandcomp.cpp
 	./fix_faust_code.sh Multibandcomp_dsp $@
 
-
-
-
 $(T)faust_system_eq.o: audio/faust_system_eq.cpp
 	$(CCC2) audio/faust_system_eq.cpp $(FAUST_OPTS2) -DCLASSNAME=System_Eq_dsp -DDSP_NAME=\"System\ Eq\" -DCREATE_NAME=create_faust_system_eq_plugin -DFAUST_SYSTEM_EFFECT
 
@@ -2656,6 +2656,17 @@ $(T)moc_qhttpserver.o: $(QHTTPSERVER_PATH)/build/moc_qhttpserver.cpp
 
 $(T)http_parser.o: $(QHTTPSERVER_PATH)/http-parser/http_parser.c
 	$(CC2) -c $(QHTTPSERVER_PATH)/http-parser/http_parser.c $(OPT) $(HTTPPARSERFLAGS)
+
+LIBGIG_FLAGS=-Wno-sign-compare -Wno-missing-declarations -DPACKAGE="\"libgig\"" -DVERSION="\"4.2.0\""
+
+$(T)RIFF.o: $(LIBGIG_PATH)/SF.cpp
+	$(CCC2) -c $(LIBGIG_PATH)/RIFF.cpp $(CPPOPT) $(LIBGIG_FLAGS)
+
+$(T)SF.o: $(LIBGIG_PATH)/SF.cpp
+	$(CCC2) -c $(LIBGIG_PATH)/SF.cpp $(CPPOPT) $(LIBGIG_FLAGS)
+
+$(LIBGIG_PATH)/SF.cpp: bin/packages/libgig-4.2.0.tar.bz2
+	cd bin/packages && rm -fr libgig && tar xvjf libgig-4.2.0.tar.bz2 && mv libgig-4.2.0 libgig && touch $(LIBGIG_PATH)/SF.cpp
 
 $(T)radium_s7_wrap.o: api/radium_s7_wrap.c 
 	$(CC2) api/radium_s7_wrap.c $(OPT) -Ibin/packages/s7

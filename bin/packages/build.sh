@@ -94,6 +94,7 @@ build_faust() {
     tar xvzf faust_2020-12-27.tar.gz 
     mv faust-master-dev faust
     cd faust
+    rm -fr libraries
     tar xvzf ../faustlibraries_2020-12-27.tar.gz 
     mv faustlibraries-master libraries
     
@@ -258,7 +259,7 @@ build_libpds
 build_qhttpserver
 build_gc
 build_fluidsynth
-build_libgig
+#build_libgig
 build_qscintilla
 build_xcb
 
