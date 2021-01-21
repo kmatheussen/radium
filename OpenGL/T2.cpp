@@ -53,12 +53,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "T2.hpp"
 
 
-
+namespace{
 struct T1_data{
   PaintingData *painting_data;
   GE_Rgb background_color;
   bool stop_me = false;
 };
+}
 
 
 static radium::Queue<T1_data*, 1>  t1_to_t2_queue;
@@ -66,11 +67,13 @@ static radium::SyncQueue<T2_data*> t2_to_t3_queue;
 static radium::Queue<T2_data*, T3_TO_T2_QUEUE_SIZE>  t3_to_t2_queue; // The queue doesn't really have to be able to hold more than 1, perhaps 2 or 3 elements, ideally, but we set it somewhat higher to lower the risk of growing the buffers indefinitely in case something is wrong.
 
 
+namespace{
 enum Use_T2_Thread{ // doesn't work with clang to use enum class here (enum class doesn't work with atomic operations).
   UNINITIALIZED,
   YES,
   NO
 };
+}
 
 static DEFINE_ATOMIC(Use_T2_Thread, g_use_t2_thread) = Use_T2_Thread::UNINITIALIZED;
 
