@@ -1,3 +1,9 @@
+Changes 6.7.74 -> 6.7.75:
+* Release to fix not all changes in being included
+  in v6.7.74. Version number was wrong too.
+
+
+
 Changes 6.7.72 -> 6.7.74:
 * Audio: Disable lots of debug outputs to the
   terminal when modifying the audio graph. (Debug
