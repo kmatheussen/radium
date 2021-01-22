@@ -1054,7 +1054,7 @@ public:
     return false;
   }
 
-#if !defined(RELEASE)
+#if defined(RELEASE)
 #define D(n)
 #else
 #define D(n) n
