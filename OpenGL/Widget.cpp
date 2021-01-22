@@ -60,6 +60,7 @@ static double g_last_resize_time = -1;
 
 
 #include <QGLWidget>
+#include <QOpenGLContext>
 #include <QTextEdit>
 #include <QMessageBox>
 #include <QApplication>
@@ -1851,6 +1852,13 @@ public:
   void updateEvent() override {
     //{static double last_time = 0; static int counter =0; double nowtime = TIME_get_ms(); printf("   Counter: %d. Time: %f\n", counter++, nowtime-last_time);last_time = nowtime;}
 
+#if !defined(RELEASE)
+    if (QGLWidget::context()->isValid()==false){
+      // hmm.
+      abort();
+    }
+#endif
+    
 #if THREADED_OPENGL
     const bool handle_current = true;
 #endif
@@ -2223,12 +2231,32 @@ static bool maybe_start_t2_thread(void){
   if (g_has_started_t2_thread)
     return true;
   
-  QWindow *qwindow = widget->windowHandle();
+  QWindow *qwindow = widget->windowHandle();  
   if (qwindow!=NULL){
+
     QScreen *qscreen = qwindow->screen();
     if (qscreen!=NULL) {
+      
       radium::ScopedMutex lock(make_current_mutex);
-      T1_start_t2_thread(widget->context()->contextHandle());
+
+      QGLContext *glcontext = widget->context();
+      if (glcontext==NULL)
+        return false;
+
+      /*
+      if (glcontext->initialized()==false) // QGLContext::initialized() is a protected method. I guess it's no point using it like this then.
+        return false;
+      */
+      
+      if (glcontext->isValid()==false)
+        return false;
+
+      QOpenGLContext *openglcontext = glcontext->contextHandle();
+
+      if (openglcontext->isValid()==false)
+        return false;
+      
+      T1_start_t2_thread(openglcontext);
       g_has_started_t2_thread = true;
       return true;
     }
@@ -2723,6 +2751,20 @@ static void init_widget2(void){
 }
 
 
+static void maybe_init_widget3(void){
+  static int s_num_tries = 0;
+
+  s_num_tries++;
+  
+  if (ATOMIC_GET(g_has_resized_at_least_once)==false || maybe_start_t2_thread()==false){
+    if (s_num_tries > 100){ // 10s
+      GFX_addMessage("Unable to initialize OpenGL.");
+    } else {
+      QTimer::singleShot(100, maybe_init_widget3);
+    }
+  }
+}
+
 static void maybe_init_widget(void){
   if (widget->GL_has_initialized()==false){
     QTimer::singleShot(100, maybe_init_widget);
@@ -2743,47 +2785,8 @@ static void maybe_init_widget(void){
     QResizeEvent qresizeevent(widget->size(), widget->size());
     widget->resizeEvent(&qresizeevent);
   }
-  #if 0
-  // This code-block seems to prevent garbled font drawing sometimes happening on windows.
-  {
-    int countdown = 5000 / 20;
-    bool gotit=false;
-    while(gotit==false){
-      
-      countdown--;
-      if (countdown <= 0) // security to prevent lockup.
-        break;
-      
-      msleep(20);
-      
-      if (maybe_start_t2_thread()==true)
-        break;
-    }
-  }
-#endif
-}
 
-static void maybe_init_widget2(void){
-  if (ATOMIC_GET(g_has_resized_at_least_once)==false){
-    QTimer::singleShot(100, maybe_init_widget2);
-    return;
-  }
-
-  {
-    int countdown = 5000 / 20;
-    bool gotit=false;
-    while(gotit==false){
-      
-      countdown--;
-      if (countdown <= 0) // security to prevent lockup.
-        break;
-      
-      msleep(20);
-      
-      if (maybe_start_t2_thread()==true)
-        break;
-    }
-  }
+  maybe_init_widget3();
 }
 
 static void setup_widget(QWidget *parent){
@@ -2816,7 +2819,6 @@ static void setup_widget(QWidget *parent){
 
   //QTimer::singleShot(10000, maybe_init_widget);
   maybe_init_widget();
-  maybe_init_widget2();
 }
 
 static bool g_compatibility_ok = false;
