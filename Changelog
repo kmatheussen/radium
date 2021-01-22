@@ -1,3 +1,29 @@
+Changes 6.7.72 -> 6.7.74:
+* Audio: Disable lots of debug outputs to the
+  terminal when modifying the audio graph. (Debug
+  and Delease mode were switched.) This also might
+  fix some audio glitches.
+* Windows: Fix garbled font rendering sometimes
+  happening in the editor. Bug introduced in v6.7.69.
+  (The problem existed before 6.7.69 too, but not
+  as often).
+* Internal: Fix a memory corruption introduced in
+  v6.6.77. The bug probably only manifested in
+  debug builds though, and not in any releases.
+* Internal: Fix semi-rare memory leak when showing a
+  system error message.
+* NSM: Fix error message popping up after startup.
+* Editor: Fix transposing MIDI 7 bit automation when
+  pressing Left Alt + U or Left Alt + D and the
+  cursor was placed inside an fxtext subtrack.
+* MIDI: Fix crash when starting to play in the middle
+  of a song at a position where there is MIDI
+  automation in the editor.
+* Build: Update libgig from 3.3.0 to 4.2.0. Fixes
+  crash when loading some soundfonts.
+
+
+
 Changes 6.7.71 -> 6.7.72:
 * Editor: Fix notes not being stopped when adding a
   stop note. Bug introduced in 6.6.77.
