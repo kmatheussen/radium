@@ -33,8 +33,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #if SAFE_POPUP
 #include <sys/types.h>
 #include <unistd.h>
-#define CLOSE_TIME 40
-#define KILL_TIME 50
+#define CLOSE_TIME 80
+#define KILL_TIME 100
 #endif
 
 #include <memory>

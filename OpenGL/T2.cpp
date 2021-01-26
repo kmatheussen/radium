@@ -181,6 +181,28 @@ T2_data::~T2_data(){
 #endif
 
 
+static QThread *g_draw_thread = NULL;
+static bool g_high_draw_thread_priority = true;
+
+bool GL_get_high_draw_thread_priority(void){
+  static bool s_has_inited = false;
+  if (s_has_inited==false){
+    g_high_draw_thread_priority = SETTINGS_read_bool("high_draw_thread_priority", g_high_draw_thread_priority);
+    s_has_inited = true;
+  }
+  
+  return g_high_draw_thread_priority;
+}
+
+void GL_set_high_draw_thread_priority(bool onoff){
+  printf("setting safe mode to %d\n",onoff);
+  SETTINGS_write_bool("high_draw_thread_priority", onoff);
+  g_high_draw_thread_priority = onoff;
+  if (g_draw_thread != NULL)
+    g_draw_thread->setPriority(onoff ? QThread::HighPriority : QThread::NormalPriority);
+}
+
+
 static void T2_thread_func(QOffscreenSurface *offscreen, QOpenGLContext *offscreen_context){
   
   if (offscreen->isValid()==false){
@@ -193,6 +215,11 @@ static void T2_thread_func(QOffscreenSurface *offscreen, QOpenGLContext *offscre
   if (offscreen_context->isValid()==false){
     GFX_Message2(NULL, true, "Invalid offscreen OpenGL Context. Unable to paint.\n");
     return;
+  }
+
+  g_draw_thread = QThread::currentThread();
+  if (GL_get_high_draw_thread_priority()){
+    g_draw_thread->setPriority(QThread::HighPriority);
   }
 
   while(true){

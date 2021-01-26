@@ -334,6 +334,9 @@ bool GL_maybeLock(void){
 }
 
 void GL_draw_lock(void){
+#if !defined(RELEASE)
+  abort(); // don't think this lock is used anymore.
+#endif
   draw_mutex.lock();
 }
 
@@ -797,6 +800,9 @@ static void schedule_hide_layout_cover(void){
 
 #endif
 
+static QThread *g_render_thread = NULL;
+
+
 class MyQtThreadedWidget
 #if USE_QT5
 #  if THREADED_OPENGL
@@ -923,9 +929,11 @@ public:
     
     glContext->initGLContext(); // Sometimes, the first gl* call crashes inside here on OSX.
 
-    // TODO: Maybe this should be user configurable
 #if THREADED_OPENGL
-    QThread::currentThread()->setPriority(QThread::HighPriority);
+    g_render_thread = QThread::currentThread();
+    if (GL_get_high_render_thread_priority()){
+      g_render_thread->setPriority(QThread::HighestPriority);
+    }
 #endif
     
     _rendering = new vl::Rendering;
@@ -2456,6 +2464,27 @@ void GL_set_safe_mode(bool onoff){
   SETTINGS_write_bool("safe_mode", onoff);
 }
 
+
+static bool g_high_render_thread_priority = true;
+bool GL_get_high_render_thread_priority(void){
+  static bool s_has_inited = false;
+  if (s_has_inited==false){
+    g_high_render_thread_priority = SETTINGS_read_bool("high_render_thread_priority", g_high_render_thread_priority);
+    s_has_inited = true;
+  }
+  
+  return g_high_render_thread_priority;
+}
+
+void GL_set_high_render_thread_priority(bool onoff){
+  printf("setting safe mode to %d\n",onoff);
+  SETTINGS_write_bool("high_render_thread_priority", onoff);
+  g_high_render_thread_priority = onoff;
+  if (g_render_thread != NULL)
+    g_render_thread->setPriority(onoff ? QThread::HighestPriority : QThread::NormalPriority);
+}
+
+
 bool GL_get_safe_mode(void){
   return SETTINGS_read_bool("safe_mode", false);
 }
@@ -2912,7 +2941,9 @@ QWidget *GL_create_widget(QWidget *parent){
 
   R_ASSERT_RETURN_IF_FALSE2(g_compatibility_ok==true, NULL);
 
-
+  GL_get_high_render_thread_priority();
+  GL_get_high_draw_thread_priority();
+  
   setup_widget(parent);
 
 
