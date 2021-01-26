@@ -319,7 +319,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
     {    
       vst_widget->buttonBox->hide();
       
-      tabWidget->insertTab(tabWidget->count()-4, vst_widget, "Plugins");
+      tabWidget->insertTab(tabWidget->count()-5, vst_widget, "Plugins");
     }
 
     // Colors
@@ -374,6 +374,8 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       //contents->adjustSize();
     }
 
+    gui_tab_widget->setCurrentIndex(0);
+    opengl_tab_widget->setCurrentIndex(0);
     tabWidget->setCurrentIndex(0);
 
     _initing = false;
@@ -497,9 +499,14 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       bool draw_in_separate_process = SETTINGS_read_bool("opengl_draw_in_separate_process",true);//GL_using_nvidia_card());
 #endif
       draw_in_separate_process_onoff->setChecked(draw_in_separate_process);
-      
+
+#if 0
       safeModeOnoff->setChecked(GL_get_safe_mode());
       safeModeOnoff->setEnabled(false);
+#endif
+
+      high_priority_render_thread->setChecked(GL_get_high_render_thread_priority());
+      high_priority_drawer_thread->setChecked(GL_get_high_draw_thread_priority());
     }
 
 
@@ -840,12 +847,24 @@ public slots:
     if (_initing==false)
       SETTINGS_write_bool("opengl_draw_in_separate_process",val);
   }
-  
+
+#if 0
   void on_safeModeOnoff_toggled(bool val){
     if (_initing==false)
       GL_set_safe_mode(val);
   }
+#endif
 
+  void on_high_priority_render_thread_toggled(bool val){
+    if (_initing==false)
+      GL_set_high_render_thread_priority(val);
+  }
+  
+  void on_high_priority_draw_thread_toggled(bool val){
+    if (_initing==false)
+      GL_set_high_draw_thread_priority(val);
+  }
+  
   void on_enable_sample_seek_by_default_toggled(bool val){
     if (_initing==false)
       setEnableSampleSeekByDefault(val);
