@@ -4442,7 +4442,17 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
 (define (instrument-sample-name instr)
   (<ra> :from-base64 (instr 0)))
 (define (instrument-sample-filename instr)
-  (<ra> :get-filepath-from-base64 (instr 1)))
+  (define home-path (<ra> :get-home-path))
+  (define samples-path (<ra> :append-file-paths
+                             (<ra> :append-file-paths
+                                   home-path                             
+                                   (<ra> :get-path ".radium"))
+                             (<ra> :get-path "mod_samples")))
+  (define basename (<ra> :get-path (instr 1)))
+  (define full-path (<ra> :append-file-paths
+                          samples-path
+                          basename))
+  full-path)
 (define (instrument-num-samples instr)
   (instr 2))
 (define (instrument-finetune instr)
