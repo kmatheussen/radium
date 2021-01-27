@@ -8,7 +8,7 @@ static bool load_sf2_instrument(Data *data, filepath_t filename, int preset_bag_
     
   hash_t *info = SF2_get_info(filename);
   if(info==NULL){
-    GFX_Message(NULL, "Unable to open soundfont file \"%S\"\n", filename.id);
+    //GFX_Message(NULL, "Unable to open soundfont file \"%S\"\n", filename.id);
     return false;
   }
 
