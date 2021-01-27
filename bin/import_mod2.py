@@ -31,6 +31,7 @@ import sys, os, filecmp, traceback
 import platform
 import struct, copy
 import wave
+import locale
 
 
 class NullWriter(object):
@@ -831,12 +832,17 @@ class Sample:
                 #radium.addMessage("setInstrumentEffect, orgval: "+str(self.finetune)+", instrument num: "+str(self.instrument_num))
                 radium.setInstrumentEffect(self.instrument_num, "Finetune", scale(self.finetune,-8,7,0.25,0.75))
 
-                # We don't hear clicks when modules are played in protracker (is the hardware resampling on amigas doing sample-and-hold?). However, in Radium the clicks are very noticable.
+            # We don't hear clicks when modules are played in protracker (is the hardware resampling on amigas doing sample-and-hold?). However, in Radium the clicks are very noticable,
+            # so we add little bit of attack and release.
             radium.setInstrumentEffect(self.instrument_num, "Attack", 2);
             radium.setInstrumentEffect(self.instrument_num, "Release", 2);
 
     def save(self, file, pos):
         homedir = os.path.expanduser("~") # "~" is supposed to work on windows too, according to the internet.
+        loc = locale.getdefaultlocale()
+        if loc[1]:
+            encoding = loc[1]
+            homedir = homedir.decode(encoding)
         base_dir = os.path.join(homedir, ".radium", "mod_samples")
 
         if not os.path.exists(base_dir):
@@ -884,7 +890,7 @@ class Sample:
                 filename = similar
                 break
 
-        self.filename = filename
+        self.filename = os.path.basename(filename)
 
 def filecopy(infile, inpos, outfile, size):
     for i in range(size):
@@ -1705,7 +1711,7 @@ def import_mod(filename_base64):
         for sample in song.samples:
             code += "(vector "
             code +=     '"' + radium.toBase64(sample.name) + '" '      # 0.
-            code +=     '"' + radium.toBase64(sample.filename) + '" '  # 1.
+            code +=     '"' + sample.filename + '" '  # 1.
             code +=     str(sample.num_bytes()) + " " # 2.
             code +=     str(sample.finetune) + " "    # 3.
             code +=     str(sample.volume) + " "      # 4.
