@@ -5788,7 +5788,11 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
 (define (load-protracker-module filename)
   (assert (<ra> :is-legal-filepath filename))
 
-  (<ra> :open-progress-window (<-> "Please wait, loading " (<ra> :get-path-string filename)))
+  (<ra> :open-progress-window
+        (<ra> :append-base64-strings
+              (<ra> :to-base64 "Please wait, loading ")
+              (<ra> :get-base64-from-filepath filename))
+        #t)
     
   (try-finally
    :try (lambda ()

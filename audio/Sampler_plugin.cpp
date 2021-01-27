@@ -3232,7 +3232,7 @@ static bool load_sample(Data *data, filepath_t filename, int instrument_number, 
   if(load_xi_instrument(data,filename, set_loop_on_off)==false){
     if(load_sample_with_libsndfile(data,filename, set_loop_on_off)==false){
       if(load_sf2_instrument(data,filename,instrument_number, set_loop_on_off)==false){        
-        GFX_Message(NULL,"Unable to load %S as soundfile.", filename.id);
+        GFX_Message(NULL,"Unable to load %S as soundfile. Len: %d. \"%s\"", filename.id, (int)wcslen(filename.id), STRING_get_chars(filename.id));
         return false;
       }
     }

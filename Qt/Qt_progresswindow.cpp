@@ -603,7 +603,7 @@ static QString get_rect_string(void){
 
 static int g_num_open = 0;
 
-void GFX_OpenProgress(const char *message){
+void GFX_OpenProgress2(const wchar_t *message){
   g_num_open++;
 
   if(g_num_open>1)
@@ -645,7 +645,7 @@ void GFX_OpenProgress(const char *message){
   args << QString::number(rect.y());
   args << QString::number(rect.width());
   args << QString::number(rect.height());
-  args << QString(QString(message).toUtf8().toBase64().constData());
+  args << QString(STRING_get_chars(STRING_toBase64(message)));
   
 #if 1
   g_process->start(program,
@@ -674,6 +674,11 @@ void GFX_OpenProgress(const char *message){
   //g_process->setReadChannel(QProcess::StandardOutput);
 }
 
+void GFX_OpenProgress(const char *message){
+  GFX_OpenProgress2(STRING_create(message));
+}
+
+  
 static void send_string(QString message){
   
   printf("-______ sending string %s\n",message.toUtf8().constData());

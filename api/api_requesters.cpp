@@ -441,8 +441,11 @@ void showError(const_char *text){
   RError("%s", text);
 }
 
-void openProgressWindow(const char *message){
-  GFX_OpenProgress(message);
+void openProgressWindow(const char *message, bool message_is_base64){
+  if (message_is_base64)
+    GFX_OpenProgress2(STRING_fromBase64(STRING_create(message)));
+  else
+    GFX_OpenProgress(message);
 }
 void showProgressWindowMessage(const char *message, bool force_show){
   if (progressWindowIsOpen()==false){
