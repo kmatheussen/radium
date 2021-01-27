@@ -2444,7 +2444,7 @@
                               :callback
                               (lambda (new-name)
                                 (if (string=? new-name "")
-                                    path
+                                    (<ra> :get-base64-from-filepath path)
                                     (begin
                                       (c-display "new-name: -" new-name "-" (<ra> :from-base64 new-name) "-")
                                       (set-new-path! (<ra> :get-filepath-from-base64 new-name))
