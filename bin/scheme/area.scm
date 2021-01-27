@@ -1031,14 +1031,12 @@
                                  :get-wide-string #f
                                  :callback)
   (add-sub-area-plain! (<new> :text-area gui x1 y1 x2 y2
-                              :text (lambda ()
-                                      (if get-wide-string
-                                          (<ra> :from-base64 text)
-                                          text))
+                              :text text
                               :background-color background-color
                               :align-left #t
                               :scale-font-size #f
                               ;;:only-show-left-part-if-text-dont-fit #f
+                              :text-is-base64 get-wide-string
                               ))
   
   (add-mouse-cycle! :press-func (lambda (button x* y*)
