@@ -1,3 +1,33 @@
+Changes 6.7.75 -> 6.7.76:
+* Windows: Fix import MOD when the username contains
+  non-ascii characters.
+* Windows: Fix displaying filename with non-ascii
+  characters in the progress window when importing
+  MOD files.
+* Audio: Don't show error about not being able to
+  open soundfont file when failed loading a sound
+  file (we already show a general message about
+  not being able to open the file).
+  a file doesn't exist. 
+* Sequencer: Fix error messages popping up after
+  pressing the Esc key when prompted to manually
+  write new path in the file browser.
+* Windows: Fix displaying paths with non-ascii
+  characters in the file browser in the right-side
+  sequencer tabs.
+* Editor: Add options to set high priority for the
+  OpenGL render thread and the OpenGL drawer thread.
+* Preferences: Remove the OpenGL "Safe mode" option.
+* Preferences: Move the "Vertical blank" OpenGL
+  option into an "advanced" tab (since you normally
+  don't want to touch this option).
+* Preferences: Move the "OpenGL" tab to the right of
+  the "GUI" tab.
+* API: Add "message_is_base64" option to
+  openProgressWindow
+
+
+
 Changes 6.7.74 -> 6.7.75:
 * Release to fix not all changes in being included
   in v6.7.74. Version number was wrong too.
