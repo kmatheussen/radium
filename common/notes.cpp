@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <math.h>
 
 #include "nsmtracker.h"
+#include "TimeData.hpp"
 #include "list_proc.h"
 #include "vector_proc.h"
 #include "placement_proc.h"

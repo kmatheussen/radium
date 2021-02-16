@@ -14,25 +14,9 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-#if !USE_OPENGL
-extern LANGSPEC void UpdateFXNodeLines(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
-	struct WTracks *wtrack
-);
+#pragma once
 
-extern LANGSPEC void UpdateAllFXNodeLines(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock
-);
-
-extern LANGSPEC void UpdateSomeFXNodeLines(
-	struct Tracker_Windows *window,
-	struct WBlocks *wblock,
-	NInt starttrack,
-	NInt endtrack
-);
-#endif
+extern LANGSPEC struct FXs *FXs_create(void);
 
 extern LANGSPEC void FX_min_max_have_changed_for_patch(struct Patch *patch, NInt fxnum, float old_min, float old_max, float new_min, float new_max);
 
@@ -51,4 +35,14 @@ extern LANGSPEC void AddFXNodeLineCurrMousePos(struct Tracker_Windows *window);
 
 extern LANGSPEC void AddFXNodeLineCurrPos(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack);
 
-extern LANGSPEC void DeleteFxNodeLine(struct Tracker_Windows *window, struct WTracks *wtrack, struct FXs *fxs, struct FXNodeLines *fxnodeline);
+//extern LANGSPEC void DeleteFxNodeLine(struct Tracker_Windows *window, struct WTracks *wtrack, struct FXs *fxs, struct FXNodeLines *fxnodeline);
+#if __cplusplus
+void DeleteFxNodes(struct Tracker_Windows *window, struct WTracks *wtrack, struct FXs *fxs, const std::vector<int> &fxnodenums);
+void DeleteFxNode(struct Tracker_Windows *window, struct WTracks *wtrack, struct FXs *fxs, int fxnodenum);
+#endif
+
+extern LANGSPEC void RT_fxline_called_each_block(struct SeqTrack *seqtrack,
+                                                 const struct SeqBlock *seqblock,
+                                                 const int64_t seqtime_start,
+                                                 const int64_t seqtime_end
+                                                 );

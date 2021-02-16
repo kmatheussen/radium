@@ -18,6 +18,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef RADIUM_COMMON_CLIPBOARD_RANGE_H
 #define RADIUM_COMMON_CLIPBOARD_RANGE_H
 
+#ifdef __cplusplus
+//#include "TimeData.hpp" // don't want to do this since it can screw up the call "./grep_touch_files.sh TimeData.hpp"
+#endif
+
 #define NUM_RANGES 5 // see "rangetype" under api/protos.conf
 
 struct RangeClip{

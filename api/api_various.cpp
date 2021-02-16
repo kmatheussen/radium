@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../bin/packages/s7/s7.h"
 
 #include "../common/nsmtracker.h"
+#include "../common/TimeData.hpp"
 #include "../common/list_proc.h"
 #include "../common/ratio_funcs.h"
 #include "../common/placement_proc.h"
@@ -1007,7 +1008,7 @@ static bool TransposeTemponode(struct WBlocks *wblock, TempoNodes *temponode, ra
 
   return true;
 }
-
+#if 0
 static bool TransposeFxNode(struct FX *fx, struct FXNodeLines *fxnode, radium::GeneralTranspose &gt){
   int step = gt.big_step ? 0x10 : 0x1;
   if (gt.is_down)
@@ -1032,6 +1033,36 @@ static bool TransposeFxNode(struct FX *fx, struct FXNodeLines *fxnode, radium::G
     return false;
   
   safe_int_write(&fxnode->val, round(scale_double(new_value, 0, 0x100, fx->min, fx->max)));
+  
+  return true;
+}
+#endif
+
+static bool TransposeFxNode2(struct FX *fx, r::FXNode &node, radium::GeneralTranspose &gt){
+  int step = gt.big_step ? 0x10 : 0x1;
+
+  // Fix midi minor transpose.
+  if (step==0x1){
+    int span = R_ABS(fx->max - fx->min);
+    if (span < 0x100)
+      step = 0x2;
+  }
+  
+  if (gt.is_down)
+    step *= -1;
+
+  int old_value = round(scale_double(node._val, fx->min, fx->max, 0, 0x100));
+  if (old_value==0x100)
+    old_value=0xff;
+  
+  int new_value = R_BOUNDARIES(0, old_value + step, 0xff);
+  
+  //printf("       Step: %d. old: %d (%d). new: %f (%d)\n", step, node._val, old_value, scale_double(new_value, 0, 0x100, fx->min, fx->max), new_value);
+  
+  if (old_value==new_value)
+    return false;
+  
+  node._val = round(scale_double(new_value, 0, 0x100, fx->min, fx->max));
   
   return true;
 }
@@ -1192,6 +1223,7 @@ static bool general_transform_list2(radium::GeneralTranspose &gt,
 }
 
 
+
 template <class T>
 static bool general_transform_list(struct WBlocks *wblock, struct WTracks *wtrack,
                                    radium::GeneralTranspose &gt,
@@ -1236,6 +1268,91 @@ static bool general_transform_list(struct WBlocks *wblock, struct WTracks *wtrac
       make_undo(track);
       
       if (general_transform_list2(gt, get_T(block, track), transformer))
+        ret = true;
+      
+    next:
+      track = NextTrack(track);
+    }
+      
+  }
+    
+    
+  if(ret)
+    root->song->tracker_windows->must_redraw = true;
+  else
+    UNDO_CANCEL_LAST_UNDO();
+
+  return ret;
+}
+
+
+template <typename T, class T2>
+static bool general_transform_timedata2(radium::GeneralTranspose &gt,
+                                        T &writer,
+                                        std::function<bool(T2&, radium::GeneralTranspose&)> transformer
+                                        )
+{
+  bool ret = false;
+
+  for(T2 &t: writer){
+    if (t._time < make_ratio_from_place(gt.y1))
+      continue;
+
+    if (t._time >= make_ratio_from_place(gt.y2))
+      break;
+    
+    if (transformer(t, gt))
+      ret = true;
+  }
+
+  return ret;
+}
+
+template <typename T, typename T2>
+static bool general_transform_timedata(struct WBlocks *wblock, struct WTracks *wtrack,
+                                       radium::GeneralTranspose &gt,
+                                       T &writer,
+                                       std::function<bool(T2&, radium::GeneralTranspose&)> transformer,
+                                       std::function<void(Tracks*)> make_undo
+                                       )
+{
+  
+  struct Blocks *block = wblock->block;
+
+  bool ret = false;
+
+  if (!gt.range_or_all_tracks || wtrack==NULL) {
+
+    struct Tracks *track = wtrack==NULL ? NULL : wtrack->track;
+
+    make_undo(track);
+    
+    if (general_transform_timedata2(gt, writer, transformer))
+      ret = true;
+      
+  } else {
+  
+    if (gt.in_range && !wblock->range.enabled)
+      return false;
+
+    radium::ScopedUndo scoped_undo;
+    
+    struct Tracks *track = block->tracks;
+    
+    while (track != NULL) {
+      
+      if (gt.in_range) {
+        
+        if (track->l.num < wblock->range.x1)
+          goto next;
+        
+        if (track->l.num > wblock->range.x2)
+          break;
+      }
+
+      make_undo(track);
+      
+      if (general_transform_timedata2(gt, writer, transformer))
         ret = true;
       
     next:
@@ -1326,11 +1443,19 @@ static void general_transpose(radium::GeneralTranspose gt){
           TIME_block_swings_have_changed(block);
           
       } else if (FXTEXT_subsubtrack(window, wtrack, &fxs) >= 0){      
-          
+
+        r::TimeData<r::FXNode>::Writer writer(fxs->_fxnodes);
+        
+        general_transform_timedata<r::TimeData<r::FXNode>::Writer, r::FXNode>(wblock, wtrack, gt,
+                                                                              writer,
+                                                                              [fxs](auto &node, auto &gt){return TransposeFxNode2(fxs->fx, node, gt);},
+                                                                              [window, wblock](auto *track){ADD_UNDO(FXs(window, wblock->block, track, wblock->curr_realline));});
+        /*
         general_transform_list<FXNodeLines>(wblock, wtrack, gt,
                                             [fxs](auto *block, auto *track){return fxs->fxnodelines;},
                                             [fxs](auto *node, auto &gt){return TransposeFxNode(fxs->fx, node, gt);},
                                             [window, wblock](auto *track){ADD_UNDO(FXs(window, wblock->block, track, wblock->curr_realline));});
+        */
           
       } else if (CHANCETEXT_subsubtrack(window, wtrack) >= 0){      
           

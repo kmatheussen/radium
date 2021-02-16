@@ -18,7 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "nsmtracker.h"
-
+#include "TimeData.hpp"
 #include "clipboard_range_copy_proc.h"
 #include "clipboard_range_calc_proc.h"
 #include "wtracks_proc.h"
@@ -165,9 +165,9 @@ static bool co_CB_PasteTrackFX(
         Place p2;
 	PlaceSetLastPos(wblock->block,&p2);
 
-	CopyRange_fxs(&totrack->fxs,&track->fxs,p1,&p2);
+	CopyRange_fxs(wblock->block->num_lines, &totrack->fxs,&track->fxs,p1,&p2);
 
-	LegalizeFXlines(wblock->block,totrack);
+	//LegalizeFXlines(wblock->block,totrack);
 
 	return true;
 }
@@ -232,9 +232,9 @@ static bool paste_track(
 	totrack->swings = CB_CopySwings(track->swings,&p2);
 
         if (totrack->patch != NULL)
-          CopyRange_fxs(&totrack->fxs,&track->fxs,p1,&p2);
+          CopyRange_fxs(wblock->block->num_lines, &totrack->fxs,&track->fxs,p1,&p2);
 
-	LegalizeFXlines(wblock->block,totrack);
+	//LegalizeFXlines(wblock->block,totrack);
 	LegalizeNotes(wblock->block,totrack);
 
 	return true;
@@ -380,9 +380,6 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
                             
                             printf("aaa\n");
                             if(co_CB_PasteTrack(wblock,cb_wtrack,wtrack)){
-#if !USE_OPENGL
-                              UpdateFXNodeLines(window,wblock,wtrack);
-#endif
                               window->must_redraw = true;
                             }else{
 #if !USE_OPENGL
@@ -419,9 +416,6 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
                             }
                             
                             if(co_CB_PasteTrackFX(wblock,fromwtrack,wtrack)){
-#if !USE_OPENGL
-                              UpdateFXNodeLines(window,wblock,wtrack);
-#endif
                               window->must_redraw = true;
                             }else{
 #if !USE_OPENGL

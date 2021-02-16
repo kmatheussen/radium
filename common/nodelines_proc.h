@@ -25,6 +25,7 @@ extern LANGSPEC const struct NodeLine *create_nodelines(
 */
 
 extern LANGSPEC const vector_t *get_nodeline_nodes(const struct NodeLine *nodelines, float y_offset);
+extern LANGSPEC const vector_t *get_nodeline_nodes2(const struct NodeLine2 *nodelines, float y_offset);
 
 extern LANGSPEC const struct NodeLine *GetTempoNodeLines(const struct Tracker_Windows *window, const struct WBlocks *wblock);
 extern LANGSPEC const vector_t *GetTempoNodes(const struct Tracker_Windows *window, const struct WBlocks *wblock);
@@ -36,7 +37,7 @@ extern LANGSPEC const vector_t *GetPitchNodes(const struct Tracker_Windows *wind
 extern LANGSPEC const struct NodeLine *GetVelocityNodeLines(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note);
 extern LANGSPEC const vector_t *GetVelocityNodes(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note);
 
-extern LANGSPEC const struct NodeLine *GetFxNodeLines(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct FXs *fxs);
+extern LANGSPEC const struct NodeLine2 *GetFxNodeLines(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct FXs *fxs);
 extern LANGSPEC const vector_t *GetFxNodes(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct FXs *fxs);
 
 extern LANGSPEC const struct NodeLine *GetPianorollNodeLines(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note);

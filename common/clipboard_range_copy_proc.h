@@ -46,10 +46,11 @@ void CopyRange_stops(
 #endif
                      
 extern LANGSPEC void CopyRange_fxs(
-	vector_t *tofxs,
-	const vector_t *fromfxs,
-	const Place *p1,
-	const Place *p2
+                                   int num_lines,
+                                   vector_t *tofxs,
+                                   const vector_t *fromfxs,
+                                   const Place *p1,
+                                   const Place *p2
 );
 
 extern LANGSPEC void CopyRange(

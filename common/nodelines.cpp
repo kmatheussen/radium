@@ -16,6 +16,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "nsmtracker.h"
+#include "TimeData.hpp"
 #include "vector_proc.h"
 #include "list_proc.h"
 #include "placement_proc.h"
@@ -26,6 +27,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "nodelines_proc.h"
 
+namespace r{
+  int64_t g_node_id = 0;
+}
 
 typedef struct Node Node;
 
@@ -45,6 +49,24 @@ static const Node *get_node_from_nodeline2(const struct NodeLine *nodeline, floa
   return ret;
 }
 
+static const Node2 *get_node_from_nodeline1_2(const struct NodeLine2 *nodeline, float y_offset){
+  struct Node2 *ret = (struct Node2*)talloc(sizeof(Node2));
+  ret->x = nodeline->x1;
+  ret->y = nodeline->y1 + y_offset;
+  ret->n = nodeline->n1;
+  ret->id = nodeline->id1;
+  return ret;
+}
+
+static const Node2 *get_node_from_nodeline2_2(const struct NodeLine2 *nodeline, float y_offset){
+  struct Node2 *ret = (struct Node2*)talloc(sizeof(Node2));
+  ret->x = nodeline->x2;
+  ret->y = nodeline->y2 + y_offset;
+  ret->n = nodeline->n2;
+  ret->id = nodeline->id2;
+  return ret;
+}
+
 const vector_t *get_nodeline_nodes(const struct NodeLine *nodelines, float y_offset){
   vector_t *vector = (vector_t*)talloc(sizeof(vector_t));
   while(nodelines != NULL) {
@@ -55,6 +77,24 @@ const vector_t *get_nodeline_nodes(const struct NodeLine *nodelines, float y_off
 
     if (next==NULL) {
       VECTOR_push_back(vector, get_node_from_nodeline2(nodelines, y_offset));
+      break;
+    }else{
+      nodelines = next;
+    }
+  }
+  return vector;
+}
+
+const vector_t *get_nodeline_nodes2(const struct NodeLine2 *nodelines, float y_offset){
+  vector_t *vector = (vector_t*)talloc(sizeof(vector_t));
+  while(nodelines != NULL) {
+    if (nodelines->is_node)
+      VECTOR_push_back(vector, get_node_from_nodeline1_2(nodelines, y_offset));
+
+    struct NodeLine2 *next = nodelines->next;
+
+    if (next==NULL) {
+      VECTOR_push_back(vector, get_node_from_nodeline2_2(nodelines, y_offset));
       break;
     }else{
       nodelines = next;
@@ -106,6 +146,70 @@ static void insert_nonnode_nodeline(struct NodeLine *nodelines, const struct Lis
       }
       nodelines->element2 = n->element1;
 
+      return;
+    }
+
+    nodelines = nodelines->next;
+  }
+}
+
+
+// Note that 'y' can be outside the range of the nodeline. If that happens, nodelines is not modified.
+template<typename T> 
+static void insert_nonnode_nodeline2(const T &reader,
+                                     struct NodeLine2 *nodelines,
+                                     const struct ListHeader3 *element,
+                                     float y)
+{
+
+  if(y <= nodelines->y1)
+    return;
+
+  while(nodelines != NULL) {
+    if(y>nodelines->y1 && y<nodelines->y2){
+
+      // put it after
+
+      struct NodeLine2 *n = (struct NodeLine2 *)talloc(sizeof(struct NodeLine2));
+      //n->element1 = element;
+      n->n1 = -1;
+      n->id1 = -1;
+      n->y1 = y;
+
+      Ratio time1 = nodelines->n1 < 0 ? make_ratio(0,1) : reader.at_ref(nodelines->n1)._time;
+      Ratio time2 = nodelines->n2 < 0 ? make_ratio(0,1) : reader.at_ref(nodelines->n2)._time;
+      
+      n->x1 = scale(GetfloatFromPlace(&element->p),
+                    make_double_from_ratio(time1),
+                    make_double_from_ratio(time2),
+                    nodelines->x1, nodelines->x2
+                    );
+
+      //n->x1 = scale(y, nodelines->y1, nodelines->y2, nodelines->x1, nodelines->x2);
+      
+      n->next = nodelines->next ;
+      nodelines->next = n;
+
+      n->x2 = nodelines->x2;
+      n->y2 = nodelines->y2;
+      if (n->y2 < n->y1) {
+        RWarning("1. y2 < y1: %f < %f",n->y2,n->y1);
+        n->y2 = n->y1;
+      }
+      //n->element2 = nodelines->element2;
+      n->n2 = nodelines->n2;
+      n->id2 = nodelines->id2;
+      
+      nodelines->x2 = n->x1;
+      nodelines->y2 = n->y1;
+      if (nodelines->y2 < nodelines->y1) {
+        RWarning("2. y2 < y1: %f < %f",nodelines->y2,nodelines->y1);
+        nodelines->y2 = nodelines->y1;
+      }
+      //nodelines->element2 = n->element1;
+      nodelines->n2 = n->n1;
+      nodelines->id2 = n->id1;
+      
       return;
     }
 
@@ -214,6 +318,99 @@ static const struct NodeLine *create_nodelines(
 }
 
 
+template<typename T, typename T2> 
+static const struct NodeLine2 *create_nodelines2(
+                                                 const struct Tracker_Windows *window,
+                                                 const struct WBlocks *wblock,
+                                                 const T &reader,
+                                                 float (*get_x)(const struct WBlocks *wblock, const T2 &node, int *logtype) // should return a value between 0 and 1.
+                                                 )
+{
+  struct NodeLine2 *nodelines = NULL;
+
+  // 1. Create straight forward nodelines from the list
+  {
+    float reallineF = 0.0f;
+    struct NodeLine2 *nodelines_last = NULL;
+
+    int i = -1;
+    for(const T2 &node : reader) {
+      i++;
+      struct NodeLine2 *nodeline = (struct NodeLine2 *)talloc(sizeof(struct NodeLine2));
+
+      nodeline->x1 = get_x(wblock, node, &nodeline->logtype);
+      reallineF = FindReallineForRatioF(wblock, reallineF, node._time);
+      nodeline->y1 = get_realline_y(window, reallineF);
+      //Place da = make_place_from_ratio(node._time);
+      //printf("reallinef: %f. time: %f. y1: %f. Place: %s\n", reallineF, (double)node._time.num/(double)node._time.den, nodeline->y1, PlaceToString(&da));
+      //nodeline->element1 = list;
+      nodeline->n1 = i;
+      nodeline->id1 = node._id;
+      nodeline->is_node = true;
+
+      if(nodelines_last==NULL)
+        nodelines = nodelines_last = nodeline;
+      else {
+        nodelines_last->next = nodeline;
+        nodelines_last = nodeline;
+      }
+    }
+  }
+
+
+  // 2. Insert x2, y2 and element2 attributes, and remove last element.
+  {
+    R_ASSERT_RETURN_IF_FALSE2(nodelines!=NULL, NULL); // shouldn't be possible, but I got a crash report that indicates that this might have happened.
+    R_ASSERT_RETURN_IF_FALSE2(nodelines->next!=NULL, NULL); // shouldn't be possible either, but more likely than the line above.
+
+    struct NodeLine2 *ns = nodelines;
+    struct NodeLine2 *next = ns->next;
+    
+    for(;;){
+      ns->x2 = next->x1;//ns->logtype==LOGTYPE_HOLD ? ns->x1 : next->x1;
+      ns->y2 = next->y1;
+
+      if (ns->y2 < ns->y1) {
+        RWarning("3. y2 < y1: %f < %f",ns->y2,ns->y1);
+        ns->y2 = ns->y1;
+      }
+
+      //ns->element2 = next->element1;
+      ns->n2 = next->n1;
+      ns->id2 = next->id1;
+      if(next->next==NULL)
+        break;
+      ns = next;
+      next = next->next;
+    }
+    ns->next = NULL; // Cut the last element
+  }
+
+
+  // 3. Insert all non-node break-points. (caused by realline level changes)
+  {
+    const struct LocalZooms **reallines=wblock->reallines;
+    int curr_level = reallines[0]->level;
+    int realline;
+    float reallineF = 0.0f;
+    
+    for(realline = 1; realline < wblock->num_reallines ; realline++) {
+          
+      const struct LocalZooms *localzoom = reallines[realline];
+      
+      if (localzoom->level != curr_level){
+        reallineF = FindReallineForF(wblock, reallineF, &localzoom->l.p);
+        insert_nonnode_nodeline2(reader, nodelines, &localzoom->l, get_realline_y(window, reallineF));
+        curr_level = localzoom->level;
+      }
+    }
+  }
+
+
+  return nodelines;
+}
+
+
 // temponodes
 ///////////////////////////////////////////////////////////
 
@@ -277,13 +474,13 @@ const struct NodeLine *GetPitchNodeLines(const struct Tracker_Windows *window, c
     
   TRACK_get_min_and_max_pitches(wtrack->track, &track_pitch_min, &track_pitch_max);
 
-  struct Pitches *first_pitch = talloc(sizeof(struct Pitches));
+  struct Pitches *first_pitch = (struct Pitches *)talloc(sizeof(struct Pitches));
   first_pitch->l.p = note->l.p;
   first_pitch->l.next = note->pitches==NULL ? NULL : &note->pitches->l;
   first_pitch->note = note->note;
   first_pitch->logtype = note->pitch_first_logtype;
   
-  struct Pitches *last_pitch = talloc(sizeof(struct Pitches));
+  struct Pitches *last_pitch = (struct Pitches *)talloc(sizeof(struct Pitches));
   last_pitch->l.p = note->end;
   last_pitch->l.next = NULL;
 
@@ -339,13 +536,13 @@ const struct NodeLine *GetPianorollNodeLines(const struct Tracker_Windows *windo
 
   pianoroll_wtrack = wtrack;
 
-  struct Pitches *first_pitch = talloc(sizeof(struct Pitches));
+  struct Pitches *first_pitch = (struct Pitches *)talloc(sizeof(struct Pitches));
   first_pitch->l.p = note->l.p;
   first_pitch->l.next = note->pitches==NULL ? NULL : &note->pitches->l;
   first_pitch->note = note->note;
   first_pitch->logtype = note->pitch_first_logtype;
     
-  struct Pitches *last_pitch = talloc(sizeof(struct Pitches));
+  struct Pitches *last_pitch = (struct Pitches *)talloc(sizeof(struct Pitches));
   last_pitch->l.p = note->end;
   last_pitch->l.next = NULL;
     
@@ -417,6 +614,31 @@ const vector_t *GetVelocityNodes(const struct Tracker_Windows *window, const str
 
 static float fx_min, fx_max, wtrackfx_x1, wtrackfx_x2;
 
+#if 1
+
+static float get_fxs_x(const struct WBlocks *wblock, const r::FXNode &fxnode, int *logtype){
+  *logtype = fxnode._logtype;
+  return scale(fxnode._val, fx_min, fx_max, wtrackfx_x1, wtrackfx_x2);
+}
+
+
+const struct NodeLine2 *GetFxNodeLines(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct FXs *fxs){
+  fx_min = fxs->fx->min;
+  fx_max = fxs->fx->max;
+  wtrackfx_x1 = wtrack->fxarea.x;
+  wtrackfx_x2 = wtrack->fxarea.x2;
+
+  r::TimeData<r::FXNode>::Reader reader(fxs->_fxnodes);
+  
+  auto *ret = create_nodelines2(window,
+                                wblock,
+                                reader,
+                                get_fxs_x
+                                );
+  return ret;
+}
+
+#else
 static float get_fxs_x(const struct WBlocks *wblock, const struct ListHeader3 *element, int *logtype){
   struct FXNodeLines *fxnode = (struct FXNodeLines *)element;
   *logtype = fxnode->logtype;
@@ -437,10 +659,11 @@ const struct NodeLine *GetFxNodeLines(const struct Tracker_Windows *window, cons
                           NULL
                           );  
 }
+#endif
 
 const vector_t *GetFxNodes(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct FXs *fxs){
-  const struct NodeLine *nodelines = GetFxNodeLines(window, wblock, wtrack, fxs);
-  return get_nodeline_nodes(nodelines, wblock->t.y1);
+  const struct NodeLine2 *nodelines = GetFxNodeLines(window, wblock, wtrack, fxs);
+  return get_nodeline_nodes2(nodelines, wblock->t.y1);
 }
   
 

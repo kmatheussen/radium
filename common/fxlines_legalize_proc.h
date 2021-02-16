@@ -14,9 +14,10 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-
+#pragma once
 
 extern LANGSPEC void LegalizeFXlines(struct Blocks *block, struct Tracks *track);
 
-
-
+#if __cplusplus
+[[nodiscard]] bool LegalizeFXlines2(int num_lines, const struct FX *fx, r::TimeData<r::FXNode>::Writer &writer);
+#endif

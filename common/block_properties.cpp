@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "nsmtracker.h"
+#include "TimeData.hpp"
 #include "placement_proc.h"
 #include "list_proc.h"
 #include "vector_proc.h"
@@ -75,6 +76,8 @@ void Block_Set_num_lines2(
 
           PlaceSetLastPos(block,&lastplace);
 
+          const Ratio rlastplace = make_ratio_from_place(lastplace);
+        
           if(num_lines<org_num_lines){
 
             CutListAt_a(&block->signatures,&lastplace);
@@ -96,14 +99,25 @@ void Block_Set_num_lines2(
                 note=NextNote(note);
               }
               LegalizeNotes(block,track);
-
-              r::TimeData<r::Stop>::Writer(track->stops2).remove_everything_after(make_ratio_from_place(lastplace));
+              
+              r::TimeData<r::Stop>::Writer(track->stops2).remove_everything_after(rlastplace);
               //              CutListAt_a(&track->stops,&lastplace);
+              
+              {
+                std::vector<struct FXs*> to_remove;
+                
+                VECTOR_FOR_EACH(struct FXs *, fxs, &track->fxs){
+                  r::TimeData<r::FXNode>::Writer writer(fxs->_fxnodes);
+                  if (LegalizeFXlines2(block->num_lines,fxs->fx,writer)==false){
+                    writer.cancel();
+                    to_remove.push_back(fxs);
+                  }
+                }END_VECTOR_FOR_EACH;
 
-              VECTOR_FOR_EACH(struct FXs *, fxs, &track->fxs){
-                CutListAt_a(&fxs->fxnodelines,&lastplace);
-              }END_VECTOR_FOR_EACH;
-              LegalizeFXlines(block,track);
+                for(auto *fxs : to_remove)
+                  VECTOR_remove(&track->fxs, fxs);
+              }
+              
               track=NextTrack(track);
             }
             while(window!=NULL){

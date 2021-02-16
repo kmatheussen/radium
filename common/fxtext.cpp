@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <math.h>
 
 #include "nsmtracker.h"
+#include "TimeData.hpp"
 #include "vector_proc.h"
 #include "list_proc.h"
 #include "realline_calc_proc.h"
@@ -29,13 +30,32 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "fxtext_proc.h"
 
+#if 1
+static void add_fxtext(const struct WBlocks *wblock, FXText_trss &fxtexts, const struct FX *fx, const r::FXNode &fxnode, int fxnodenum){
 
+  int realline = FindReallineForRatio(wblock, 0, fxnode._time);
+  FXText_trs &v = fxtexts[realline];
+
+  r::FXText fxtext(fxnode);
+
+  fxtext.fx = fx;
+  fxtext.fxnodenum = fxnodenum;
+  
+  fxtext.value = round(scale_double(fxnode._val, fx->min, fx->max, 0, 0x100));
+  if (fxtext.value==0x100)
+    fxtext.value=0xff;
+  fxtext.logtype = fxnode._logtype;
+
+  v.push_back(fxtext);
+  //TRS_INSERT_PLACE(v, fxtext);
+}
+#else
 static void add_fxtext(const struct WBlocks *wblock, FXText_trss &fxtexts, const struct FX *fx, struct FXNodeLines *fxnodeline){
 
   int realline = FindRealLineFor(wblock, 0, &fxnodeline->l.p);      
   FXText_trs &v = fxtexts[realline];
 
-  FXText fxtext = {};
+  r::FXText fxtext = {};
 
   fxtext.p = fxnodeline->l.p;
   fxtext.fx = fx;
@@ -48,6 +68,7 @@ static void add_fxtext(const struct WBlocks *wblock, FXText_trss &fxtexts, const
 
   TRS_INSERT_PLACE(v, fxtext);
 }
+#endif
 
 static void move_fxtexts_to_unique_reallines(const struct WBlocks *wblock, FXText_trss &fxtexts){
   for(int realline=0;realline<wblock->num_reallines-1;realline++){
@@ -73,12 +94,25 @@ static void move_fxtexts_to_unique_reallines(const struct WBlocks *wblock, FXTex
 const FXText_trss FXTEXTS_get(const struct WBlocks *wblock, const struct WTracks *wtrack, const struct FXs *fxs){
   FXText_trss fxtexts;
 
+#if 1
+  
+  r::TimeData<r::FXNode>::Reader reader(fxs->_fxnodes);
+  int i =0;
+  for(const r::FXNode &node : reader){
+    add_fxtext(wblock, fxtexts, fxs->fx, node, i);
+    i++;
+  }
+  
+#else
+  
   struct FXNodeLines *fxnodeline = fxs->fxnodelines;
   while(fxnodeline!=NULL){
     add_fxtext(wblock, fxtexts, fxs->fx, fxnodeline);
     fxnodeline = NextFXNodeLine(fxnodeline);
   }
-
+  
+#endif
+  
   move_fxtexts_to_unique_reallines(wblock, fxtexts);
   
   return fxtexts;
@@ -142,11 +176,12 @@ bool FXTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, str
     // MORE THAN ONE ELEMENT
     
     if (key == EVENT_DEL){
-      
-      for (auto vt : fxtext) {
-        if (VECTOR_is_in_vector(&wtrack->track->fxs, fxs) && isInList3(&fxs->fxnodelines->l, &vt.fxnodeline->l)) // We might have removed all nodes already (see line below)
-          DeleteFxNodeLine(window, wtrack, fxs, vt.fxnodeline); // In this line, two nodes are removed if there's only two left.
-      }
+
+      std::vector<int> fxnodenums;
+      for (auto vt : fxtext)
+        fxnodenums.push_back(vt.fxnodenum);
+        
+      DeleteFxNodes(window, wtrack, fxs, fxnodenums);
       
     } else {
       
@@ -172,25 +207,30 @@ bool FXTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, str
       if (dat.is_valid==false)
         return false;
 
-      int pos = AddFXNodeLine(window, wblock, wtrack, fxs, dat.value, place);
-            
-      struct FXNodeLines *fxnodeline = (struct FXNodeLines*)ListFindElement1_num(&fxs->fxnodelines->l, pos);
-      fxnodeline->logtype = dat.logtype;      
+      r::TimeData<r::FXNode>::Writer writer(fxs->_fxnodes);
+
+      Ratio ratio = ratio_from_place(*place);
+      auto node = r::FXNode(*fxs->fx, ratio, dat.value, dat.logtype);
+      writer.add(node);
     }
 
   } else {
 
     // ONE ELEMENT
     
-    const FXText &vt = fxtext.at(0);
-    struct FXNodeLines *fxnodeline = vt.fxnodeline;
+    const r::FXText &vt = fxtext.at(0);
+    
+    //struct FXNodeLines *fxnodeline = vt.fxnodeline;
   
     if (key == EVENT_DEL) {
 
-      if (subsubtrack == 2)
-        fxnodeline->logtype = LOGTYPE_LINEAR;
-      else
-        DeleteFxNodeLine(window, wtrack, fxs, fxnodeline);
+      if (subsubtrack == 2) {
+        r::TimeData<r::FXNode>::Writer writer(fxs->_fxnodes);
+        r::FXNode &node = writer.at_ref(vt.fxnodenum);
+        node._logtype = LOGTYPE_LINEAR;
+      } else {
+        DeleteFxNode(window, wtrack, fxs, vt.fxnodenum);
+      }
       
     } else {
 
@@ -200,8 +240,10 @@ bool FXTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, str
       if (dat.is_valid==false)
         return false;
 
-      fxnodeline->val = dat.value;
-      fxnodeline->logtype = dat.logtype;
+      r::TimeData<r::FXNode>::Writer writer(fxs->_fxnodes);
+      r::FXNode &node = writer.at_ref(vt.fxnodenum);
+      node._val = dat.value;
+      node._logtype = dat.logtype;
       
     }    
   }

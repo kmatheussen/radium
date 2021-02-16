@@ -377,7 +377,7 @@ void SONG_call_me_before_starting_to_play_song(int64_t seqtime){
             
             STime blocktime = R_MIN(getBlockSTimeLength(block), seqtime_to_blocktime(seqblock, seqtime - seqblock->t.time));
             
-            FX_call_me_before_starting_to_play_song(seqtrack, seqblock, blocktime);
+            FX_call_me_before_starting_to_play_song2(seqtrack, seqblock, blocktime);
           }
         }
       }

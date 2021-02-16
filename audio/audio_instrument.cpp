@@ -609,7 +609,7 @@ static float get_effect_val_from_fx_val(int fxval){
 static void send_fx_to_plugin(struct SeqTrack *seqtrack, SoundPlugin *plugin, STime time, FX_when when, int val, int effect_num){
   R_ASSERT_NON_RELEASE(FX_when_is_automation(when));
   
-  //printf("send_fx_to_plugin %s. effect_num: %d, effect_value: %f\n",plugin->patch->name, effect_num, effect_val);
+  //printf("send_fx_to_plugin %s. effect_num: %d, effect_value: %f. Time: %d. When: %d\n",plugin->patch->name, effect_num, get_effect_val_from_fx_val(val), (int)time, (int)when);
   
   PLUGIN_set_effect_value(plugin,
                           PLAYER_get_block_delta_time(seqtrack, time),
@@ -660,26 +660,25 @@ static void AUDIO_treat_FX(struct SeqTrack *seqtrack, struct FX *fx,int val,STim
 
   RT_PLUGIN_touch(plugin);
 
-  //bool is_initing_song = THREADING_is_main_thread() && g_initing_starting_to_play_song; // never happens. we call 'AUDIO_FX_call_me_before_starting_to_play_song' instead.
-  //const int latency = is_initing_song==true ? 0 : RT_SP_get_input_latency(plugin->sp);
-  
   const int latency = RT_SP_get_input_latency(plugin->sp);
 
-  if (latency == 0) {
+  if (latency<2 && fabs(seqtrack->start_time-time)<2 && when != FX_start) { // Note: FX_start is always scheduled to ensure that FX_end for the same fx is always sent out before FX_start.
+    
     send_fx_to_plugin(seqtrack, plugin, time, when, val, effect_num);
-    return;
+    
+  } else {
+
+    time += ((double)latency * block_reltempo);
+
+    union SuperType args[4];
+    args[0].pointer = patch;
+    args[1].int_num = when;
+    args[2].int_num = val;
+    args[3].int_num = effect_num;
+    
+    //printf("   Scheduling FX. Time: %d (latency: %d). block_reltempo: %f. Time: %d. When: %d\n", (int)time, latency, block_reltempo, (int)time, (int)when);
+    SCHEDULER_add_event(seqtrack, time, RT_scheduled_send_fx_to_plugin, &args[0], 4, when==FX_end ? SCHEDULER_FX_END_PRIORITY : SCHEDULER_FX_PRIORITY);
   }
-
-  time += ((double)latency * block_reltempo);
-
-  union SuperType args[4];
-  args[0].pointer = patch;
-  args[1].int_num = when;
-  args[2].int_num = val;
-  args[3].int_num = effect_num;
-
-  //printf("   Scheduling %d (latency: %d). block_reltempo: %f\n", (int)time, latency, get_note_reltempo(note));
-  SCHEDULER_add_event(seqtrack, time, RT_scheduled_send_fx_to_plugin, &args[0], 4, SCHEDULER_FX_PRIORITY);
 }
 
 static void AUDIO_FX_call_me_before_starting_to_play_song_MIDDLE(struct FX *fx, int val, int64_t abstime, FX_when when){

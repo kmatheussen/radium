@@ -811,7 +811,12 @@ static s7_pointer radium_s7_add2_d8_d9(s7_scheme *sc, s7_pointer org_args) // de
         description       = "("+scheme_funcname+" "+self.get_arg_list(self.args," ")+")"
         signature         = self.make_s7_make_signature_string()
 
-        oh.write('  s7_define_unsafe_typed_function(s7, "'+scheme_funcname+'", '+c_funcname+", "+str(num_required_args)+", "+str(num_optional_args)+", "+has_rest_arg+', "'+description+'", ' + signature + ');\n')
+        oh.write('#if defined(RELEASE)\n')
+        oh.write('  s7_define_unsafe_typed_function\n')
+        oh.write('#else\n')
+        oh.write('  s7_define_semisafe_typed_function\n')
+        oh.write('#endif\n')
+        oh.write('(s7, "'+scheme_funcname+'", '+c_funcname+", "+str(num_required_args)+", "+str(num_optional_args)+", "+has_rest_arg+', "'+description+'", ' + signature + ');\n')
 
     def write_scheme_proto(self, oh):
         oh.write("  (")

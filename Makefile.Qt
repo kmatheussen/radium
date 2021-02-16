@@ -347,7 +347,7 @@ COMMONOPT = -D__STDC_FORMAT_MACROS=1 -c `cat buildtype.opt` -I$(GCDIR)/include -
 ifeq (,$(findstring clang,$(CC)))
 	COMMONOPT += -Wduplicated-cond -Wduplicated-branches -Wlogical-op -Wrestrict -fmax-errors=5 
 else
-        COMMONOPT += -Wno-deprecated-register # -Wunused-member-function (isn't there a warning to warn about unused variables only, not methods?)
+        COMMONOPT += -Wno-deprecated-register -Wlogical-op-parentheses # -Wunused-member-function (isn't there a warning to warn about unused variables only, not methods?)
 endif
 
 #ifeq ($(GCC_MAJOR),7)
@@ -516,7 +516,8 @@ OBJ7= $(T)instruments.o $(T)patch.o $(T)undo_audio_patch_addremove.o $(T)fxlines
 OBJ8= $(T)reltempo.o $(T)temponodes.o $(T)tempos.o $(T)time.o $(T)temponodes_legalize.o $(T)swing.o
 
 #Playing
-OBJ9= $(T)Ptask2Mtask.o $(T)player.o $(T)scheduler.o $(T)scheduler_seqtracks.o $(T)scheduler_notes.o $(T)scheduler_pitches.o $(T)scheduler_velocities.o $(T)scheduler_fxs.o $(T)scheduler_reallines.o $(T)scheduler_LPB.o $(T)scheduler_Beats.o $(T)scheduler_Signature.o $(T)playerclass.o $(T)player_startstop.o $(T)player_pause.o
+OBJ9= $(T)Ptask2Mtask.o $(T)player.o $(T)scheduler.o $(T)scheduler_seqtracks.o $(T)scheduler_notes.o $(T)scheduler_pitches.o $(T)scheduler_velocities.o $(T)scheduler_reallines.o $(T)scheduler_LPB.o $(T)scheduler_Beats.o $(T)scheduler_Signature.o $(T)playerclass.o $(T)player_startstop.o $(T)player_pause.o
+# $(T)scheduler_fxs.o
 
 #Disk
 OBJ10= $(T)disk.o $(T)disk_fxs.o $(T)disk_wblock.o $(T)disk_localzooms.o $(T)disk_track.o $(T)disk_fx.o $(T)disk_fxnodelines.o $(T)disk_wtrack.o $(T)disk_temponodes.o $(T)disk_tempos.o $(T)disk_song.o $(T)disk_velocities.o $(T)disk_block.o $(T)disk_placement.o $(T)disk_stops.o $(T)disk_playlist.o $(T)disk_root.o $(T)disk_notes.o $(T)disk_lpbs.o $(T)disk_signatures.o $(T)disk_swing.o $(T)disk_windows.o $(T)disk_warea.o $(T)disk_save.o $(T)disk_load.o $(T)disk_saveload_blocktrack.o $(T)disk_instrument.o $(T)disk_patches.o $(T)disk_slider.o
@@ -689,29 +690,33 @@ test: test_vector test_placement test_notes test_path_resolver test_seqautomatio
 	@echo
 	@echo " == All tests succeeded, apparently =="
 
+TEST_TIMEDATA_OPTS=-DTEST_TIMEDATA_MAIN -Wall -Werror -g -lpthread  $(filter-out -c, $(CPPOPT)) -DFOR_LINUX -I. -I../Qt
+
+TEST_TIMEDATA_RUNNER=gdb -ex "set print thread-events off" -ex run -ex=quit ./a.out
+
 test_timedata:
-	cd common && $(CCC) TimeData.cpp -DTEST_TIMEDATA_MAIN -Wall -Werror -g -lpthread -o a.out &&	./a.out
-	cd common && $(CCC) TimeData.cpp -DTEST_TIMEDATA_MAIN -Wall -Werror -g -lpthread -Ofast -o a.out &&	./a.out
-	cd common && $(CCC) TimeData.cpp -DTEST_TIMEDATA_MAIN -Wall -Werror -g -lpthread -Os -o a.out &&	./a.out
-	cd common && $(CCC) TimeData.cpp -DTEST_TIMEDATA_MAIN -Wall -Werror -g -lpthread -O3 -o a.out &&	./a.out
+	$(CCC) common/TimeData.cpp $(TEST_TIMEDATA_OPTS) -o a.out &&	$(TEST_TIMEDATA_RUNNER)
+	cd common && $(CCC) TimeData.cpp $(TEST_TIMEDATA_OPTS) -Ofast -o a.out &&	$(TEST_TIMEDATA_RUNNER)
+	cd common && $(CCC) TimeData.cpp $(TEST_TIMEDATA_OPTS) -Os -o a.out &&	$(TEST_TIMEDATA_RUNNER)
+	cd common && $(CCC) TimeData.cpp $(TEST_TIMEDATA_OPTS) -O3 -o a.out &&	$(TEST_TIMEDATA_RUNNER)
 
-	cd common && $(CCC) TimeData.cpp -DRELEASE -DTEST_TIMEDATA_MAIN -Wall -Werror -g -lpthread -O2 -o a.out &&	./a.out
+	cd common && $(CCC) TimeData.cpp -DRELEASE $(TEST_TIMEDATA_OPTS) -O2 -o a.out &&	$(TEST_TIMEDATA_RUNNER)
 
-	cd common && $(CCC) TimeData.cpp -DTEST_TIMEDATA_MAIN -Wall -Werror -g -lpthread -O3 -fsanitize=thread -o a.out && TSAN_OPTIONS="history_size=7,second_deadlock_stack=1,abort_on_error=1" ./a.out
-	cd common && $(CCC) TimeData.cpp -DTEST_TIMEDATA_MAIN -Wall -Werror -g -lpthread -O2 -fsanitize=undefined -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" ./a.out
-	cd common && $(CCC) TimeData.cpp -DTEST_TIMEDATA_MAIN -Wall -Werror -g -lpthread -O3 -fsanitize=address -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" ./a.out
-	cd common && $(CCC) TimeData.cpp -DTEST_TIMEDATA_MAIN -Wall -Werror -g -lpthread -O2 -fsanitize=undefined -fsanitize=address -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" ./a.out
+	cd common && $(CCC) TimeData.cpp $(TEST_TIMEDATA_OPTS) -O3 -fsanitize=thread -o a.out && TSAN_OPTIONS="history_size=7,second_deadlock_stack=1,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
+	cd common && $(CCC) TimeData.cpp $(TEST_TIMEDATA_OPTS) -O2 -fsanitize=undefined -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
+	cd common && $(CCC) TimeData.cpp $(TEST_TIMEDATA_OPTS) -O3 -fsanitize=address -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
+	cd common && $(CCC) TimeData.cpp $(TEST_TIMEDATA_OPTS) -O2 -fsanitize=undefined -fsanitize=address -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
 
-	cd common && $(CCC) TimeData.cpp -DRELEASE -DTEST_TIMEDATA_MAIN -Wall -Werror -g -lpthread -O2 -fsanitize=thread -o a.out && TSAN_OPTIONS="history_size=7,second_deadlock_stack=1,abort_on_error=1" ./a.out
-	cd common && $(CCC) TimeData.cpp -DRELEASE -DTEST_TIMEDATA_MAIN -Wall -Werror -g -lpthread -O3 -fsanitize=undefined -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" ./a.out
-	cd common && $(CCC) TimeData.cpp -DRELEASE -DTEST_TIMEDATA_MAIN -Wall -Werror -g -lpthread -O2 -fsanitize=address -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" ./a.out
-	cd common && $(CCC) TimeData.cpp -DRELEASE -DTEST_TIMEDATA_MAIN -Wall -Werror -g -lpthread -O3 -fsanitize=undefined -fsanitize=address -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" ./a.out
+	cd common && $(CCC) TimeData.cpp -DRELEASE $(TEST_TIMEDATA_OPTS) -O2 -fsanitize=thread -o a.out && TSAN_OPTIONS="history_size=7,second_deadlock_stack=1,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
+	cd common && $(CCC) TimeData.cpp -DRELEASE $(TEST_TIMEDATA_OPTS) -O3 -fsanitize=undefined -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
+	cd common && $(CCC) TimeData.cpp -DRELEASE $(TEST_TIMEDATA_OPTS) -O2 -fsanitize=address -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
+	cd common && $(CCC) TimeData.cpp -DRELEASE $(TEST_TIMEDATA_OPTS) -O3 -fsanitize=undefined -fsanitize=address -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
 
 test_timedata_gdb:
-#	cd common && g++ TimeData.cpp -DTEST_TIMEDATA_MAIN -Wall -Werror -g -lpthread -o a.out &&	gdb -ex "set print thread-events off" ./a.out
-#	cd common && g++ TimeData.cpp -DTEST_TIMEDATA_MAIN -Wall -Werror -g -lpthread -O3 -o a.out &&	gdb -ex "set print thread-events off" ./a.out
-#	cd common && g++ TimeData.cpp -DTEST_TIMEDATA_MAIN -Wall -Werror -g -lpthread -O3 -fsanitize=thread -o a.out &&	gdb -ex "set print thread-events off" TSAN_OPTIONS="history_size=7,second_deadlock_stack=1,abort_on_error=1" ./a.out
-	cd common && g++ TimeData.cpp -DTEST_TIMEDATA_MAIN -Wall -Werror -g -lpthread -O3 -fsanitize=undefined -fsanitize=address -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" gdb -ex "set print thread-events off" ./a.out
+#	cd common && g++ TimeData.cpp $(TEST_TIMEDATA_OPTS) -o a.out &&	gdb -ex "set print thread-events off" $(TEST_TIMEDATA_RUNNER)
+#	cd common && g++ TimeData.cpp $(TEST_TIMEDATA_OPTS) -O3 -o a.out &&	gdb -ex "set print thread-events off" $(TEST_TIMEDATA_RUNNER)
+#	cd common && g++ TimeData.cpp $(TEST_TIMEDATA_OPTS) -O3 -fsanitize=thread -o a.out &&	gdb -ex "set print thread-events off" TSAN_OPTIONS="history_size=7,second_deadlock_stack=1,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
+	cd common && g++ TimeData.cpp $(TEST_TIMEDATA_OPTS) -O3 -fsanitize=undefined -fsanitize=address -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" gdb -ex "set print thread-events off" ./a.out
 
 
 test_ratio:
@@ -757,7 +762,7 @@ test_path_resolver:
 #	valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
 
 test_seqautomation:
-	$(CCC) -g -Wall -Wextra -Werror test/test_seqautomation.cpp -lm $(QTOPT) -UNDEBUG -fsanitize=address -fsanitize=undefined  -DUSE_QT4 -DUSE_QT5 -fPIC -DFOR_LINUX 
+	$(CCC) -g -Wall -Wextra -Werror test/test_seqautomation.cpp -lm $(QTOPT) -UNDEBUG -fsanitize=address -fsanitize=undefined  -DUSE_QT4 -DUSE_QT5 -fPIC -DFOR_LINUX -DTEST_SEQAUTOMATION_MAIN
 	$(CCC) test_seqautomation.o $(QT_LDFLAGS) $(QTLINKFLAGS) $(OS_LDFLAGS2) -fsanitize=address -fsanitize=undefined -o test_seqautomation
 	./test_seqautomation
 	@echo "=== success: test_seqautomation ==="
@@ -1043,8 +1048,8 @@ $(T)tbox.o:  $(BUILD_DEPENDENCIES) $(CD)tbox.c
 $(T)area.o:  $(BUILD_DEPENDENCIES) $(CD)area.c
 	$(CC2) $(CD)area.c $(OPT)
 
-$(T)nodelines.o:  $(BUILD_DEPENDENCIES) $(CD)nodelines.c
-	$(CC2) $(CD)nodelines.c $(OPT)
+$(T)nodelines.o:  $(BUILD_DEPENDENCIES) $(CD)nodelines.cpp
+	$(CCC2) $(CD)nodelines.cpp $(CPPOPT)
 
 $(T)range.o:  $(BUILD_DEPENDENCIES) $(CD)range.c
 	$(CC2) $(CD)range.c $(OPT)
@@ -1102,8 +1107,8 @@ $(T)scheduler_pitches.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_pitches.c $(CD)sc
 $(T)scheduler_velocities.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_velocities.c $(CD)scheduler_proc.h
 	$(CC2) $(CD)scheduler_velocities.c $(OPT) #-fno-sanitize=undefined -O0
 
-$(T)scheduler_fxs.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_fxs.c $(CD)scheduler_proc.h
-	$(CC2) $(CD)scheduler_fxs.c $(OPT)
+#$(T)scheduler_fxs.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_fxs.c $(CD)scheduler_proc.h
+#	$(CC2) $(CD)scheduler_fxs.c $(OPT)
 
 $(T)scheduler_reallines.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_reallines.c $(CD)scheduler_proc.h
 	$(CC2) $(CD)scheduler_reallines.c $(OPT)
@@ -1170,8 +1175,8 @@ $(T)disk_track.o:  $(BUILD_DEPENDENCIES) $(CD)disk_track.c $(CD)disk.h
 $(T)disk_fx.o:  $(BUILD_DEPENDENCIES) $(CD)disk_fx.c $(CD)disk.h
 	$(CC2) $(CD)disk_fx.c $(OPT)
 
-$(T)disk_fxnodelines.o:  $(BUILD_DEPENDENCIES) $(CD)disk_fxnodelines.c $(CD)disk.h
-	$(CC2) $(CD)disk_fxnodelines.c $(OPT)
+$(T)disk_fxnodelines.o:  $(BUILD_DEPENDENCIES) $(CD)disk_fxnodelines.cpp $(CD)disk.h
+	$(CCC2) $(CD)disk_fxnodelines.cpp $(CPPOPT)
 
 $(T)disk_wtrack.o:  $(BUILD_DEPENDENCIES) $(CD)disk_wtrack.c $(CD)disk.h
 	$(CC2) $(CD)disk_wtrack.c $(OPT)
@@ -1271,8 +1276,8 @@ $(T)notes_legalize.o:  $(BUILD_DEPENDENCIES) $(CD)notes_legalize.cpp
 $(T)temponodes_legalize.o:  $(BUILD_DEPENDENCIES) $(CD)temponodes_legalize.c
 	$(CC2) $(CD)temponodes_legalize.c $(OPT)
 
-$(T)fxlines_legalize.o:  $(BUILD_DEPENDENCIES) $(CD)fxlines_legalize.c
-	$(CC2) $(CD)fxlines_legalize.c $(OPT)
+$(T)fxlines_legalize.o:  $(BUILD_DEPENDENCIES) $(CD)fxlines_legalize.cpp
+	$(CCC2) $(CD)fxlines_legalize.cpp $(CPPOPT)
 
 $(T)reallines_insert.o:  $(BUILD_DEPENDENCIES) $(CD)reallines_insert.cpp
 	$(CCC2) $(CD)reallines_insert.cpp $(CPPOPT)

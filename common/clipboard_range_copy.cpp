@@ -17,6 +17,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <string.h>
 
 #include "nsmtracker.h"
+#include "TimeData.hpp"
 #include "clipboard_range_calc_proc.h"
 #include "placement_proc.h"
 #include "list_proc.h"
@@ -25,7 +26,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "wtracks_proc.h"
 #include "notes_proc.h"
 #include "patch_proc.h"
+#include "fxlines_proc.h"
 #include "TallocWithDestructor.hpp"
+#include "fxlines_legalize_proc.h"
+
 #include "../embedded_scheme/scheme_proc.h"
 
 #include "clipboard_range_copy_proc.h"
@@ -164,6 +168,7 @@ void CopyRange_stops(
 
 }
 
+/*
 static void add_fxnodeline(
                            struct FXNodeLines **tofxnodeline,
                            const struct FXNodeLines *fromfxnodeline,
@@ -175,8 +180,17 @@ static void add_fxnodeline(
   
   ListAddElement3_a(tofxnodeline,&fxnodeline->l);
 }
+*/
 
+static void add_fxnodeline2(r::TimeData<r::FXNode>::Writer &writer,
+                            r::FXNode node,
+                            const Ratio &subtract)
+{
+  node._time = node._time - subtract;
+  writer.add(node);
+}
 
+/*
 static void add_scaled_fxnodeline(
                                   struct FXNodeLines **tofxnodeline,
                                   const struct FXNodeLines *nodeline1,
@@ -195,13 +209,41 @@ static void add_scaled_fxnodeline(
 
   add_fxnodeline(tofxnodeline, &fxnodeline, subtract);
 }
+*/
+
+static void add_scaled_fxnodeline2(const struct FX &fx,
+                                   r::TimeData<r::FXNode>::Writer &writer,
+                                   const r::FXNode &node1,
+                                   const r::FXNode &node2,
+                                   const Ratio &time,
+                                   const Ratio &subtract
+                                   )
+{
+  r::FXNode node = node1;
+  node._time = time;
+  
+  R_ASSERT(time >= node1._time);
+  R_ASSERT(node2._time >= time);
+  
+  if (node1._logtype != LOGTYPE_HOLD){
+    if (node._time==node2._time)
+      node._val = node2._val;
+    else
+      node._val = round(scale_double(make_double_from_ratio(time),
+                                     make_double_from_ratio(node._time), make_double_from_ratio(node2._time),
+                                     node1._val, node2._val));
+    node._val = R_BOUNDARIES(fx.min, node._val, fx.max);
+  }
+  
+  add_fxnodeline2(writer, node, subtract);
+}
 
 
-
+/*
 static void CopyRange_fxnodelines(
                                   struct FXNodeLines **tofxnodeline,
                                   const struct FXNodeLines *fromfxnodeline,
-                                  const struct FXNodeLines *last,
+                                  const struct FXNodeLines *previous,
                                   Place p1,
                                   Place p2
 ){
@@ -216,13 +258,13 @@ static void CopyRange_fxnodelines(
           return;
 	}
 
-        if (last!=NULL)
-          if (p_Less_Than(last->l.p, p1))
-            add_scaled_fxnodeline(tofxnodeline, last, fromfxnodeline, p1, p1);
+        if (previous!=NULL)
+          if (p_Less_Than(previous->l.p, p1))
+            add_scaled_fxnodeline(tofxnodeline, previous, fromfxnodeline, p1, p1);
 
         if(p_Greater_Or_Equal(fromfxnodeline->l.p, p2)) {
-          if (last!=NULL)
-            add_scaled_fxnodeline(tofxnodeline, last, fromfxnodeline, p2, p1);
+          if (previous!=NULL)
+            add_scaled_fxnodeline(tofxnodeline, previous, fromfxnodeline, p2, p1);
           return;
         }
 
@@ -235,8 +277,41 @@ static void CopyRange_fxnodelines(
                               p2);
 }
 
+*/
+
+static void CopyRange_fxnodelines2(const struct FX &fx,
+                                   r::TimeData<r::FXNode>::Writer &writer,
+                                   const r::TimeData<r::FXNode>::Reader &reader,
+                                   const Ratio &time1,
+                                   const Ratio &time2)
+{
+  const r::FXNode *previous = NULL;
+  
+  for(const r::FXNode &from_node : reader){
+
+    if (from_node._time >= time1) {
+    
+      if (previous!=NULL)
+        if (previous->_time < time1)
+          add_scaled_fxnodeline2(fx, writer, *previous, from_node, time1, time1);
+      
+      if(from_node._time >= time2) {
+        if (previous!=NULL)
+          add_scaled_fxnodeline2(fx, writer, *previous, from_node, time2, time1);
+        return;
+      }
+
+      previous = &from_node;
+      add_fxnodeline2(writer, from_node, time1);
+
+    }
+    
+  }
+}
+
 
 void CopyRange_fxs(
+                   int num_lines,
                    vector_t *tofxs,
                    const vector_t *das_fromfxs,
                    const Place *p1,
@@ -255,14 +330,32 @@ void CopyRange_fxs(
         }
 #endif
         
-	struct FXs *fxs=(struct FXs*)talloc(sizeof(struct FXs));
+	struct FXs *fxs = FXs_create();
 
 	fxs->fx=(struct FX *)tcopy(fromfxs->fx);
 
-	VECTOR_push_back(tofxs,fxs);
+        bool push_it = true;
 
-	CopyRange_fxnodelines(&fxs->fxnodelines,fromfxs->fxnodelines,NULL,*p1,*p2);
+        //CopyRange_fxnodelines(&fxs->fxnodelines,fromfxs->fxnodelines,NULL,*p1,*p2);
 
+        {
+          r::TimeData<r::FXNode>::Writer writer(fxs->_fxnodes);
+          r::TimeData<r::FXNode>::Reader reader(fromfxs->_fxnodes);
+          CopyRange_fxnodelines2(*fxs->fx, writer, reader, make_ratio_from_place(*p1), make_ratio_from_place(*p2));
+          //printf("Reader size: %d. Writer size: %d\n", reader.size(), writer.size());
+          //getchar();
+          R_ASSERT_NON_RELEASE(reader.size() >= 2);
+          R_ASSERT_NON_RELEASE(writer.size() >= 2);
+          if (!LegalizeFXlines2(num_lines, fxs->fx, writer)){
+            writer.cancel();
+            push_it = false;
+          }
+          
+        }
+
+        if (push_it)
+          VECTOR_push_back(tofxs,fxs);
+        
   }END_VECTOR_FOR_EACH;
 }
 
@@ -315,7 +408,7 @@ void CopyRange(
           range_clip->stops[lokke] = new r::TimeData<r::Stop>;
           CopyRange_stops(range_clip->stops[lokke], track->stops2, &range.y1, &range.y2);
           
-          CopyRange_fxs(&range_clip->fxs[lokke], &track->fxs,      &range.y1, &range.y2);
+          CopyRange_fxs(block->num_lines, &range_clip->fxs[lokke], &track->fxs,      &range.y1, &range.y2);
 
           track=NextTrack(track);
           if (track==NULL)

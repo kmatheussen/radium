@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "nsmtracker.h"
+#include "TimeData.hpp"
 #include "block_properties_proc.h"
 #include "undo_blocks_proc.h"
 #include "clipboard_track_cut_proc.h"
@@ -163,9 +164,6 @@ void InsertTracks_CurrPos(
 
 	SetCursorPosConcrete(window,wblock,0,-1);
 
-#if !USE_OPENGL
-	UpdateAllFXNodeLines(window,wblock);
-#endif
 	SetCursorPosConcrete(window,wblock,curr_track,-1);
 
         ValidateCursorPos(root->song->tracker_windows);

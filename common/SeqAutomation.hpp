@@ -32,6 +32,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QPainter>
 
 #include "../Qt/Qt_mix_colors.h"
+#include "AtomicPointerStorage.hpp"
+
 
 namespace radium{
 
@@ -581,20 +583,43 @@ public:
 
 private:
 
+#if 0
   // Based on pseudocode for the function BinarySearch_Left found at https://rosettacode.org/wiki/Binary_search
-  int BinarySearch_Left(const struct RT *rt, double value, int low, int high) const {   // initially called with low = 0, high = N - 1
-      // invariants: value  > A[i] for all i < low
-      //             value <= A[i] for all i > high
-      if (high < low)
+  int BinarySearch_Left(const struct RT *rt, double time, int low, int high) const {   // initially called with low = 0, high = N - 1
+      // invariants: time  > A[i] for all i < low
+      //             time <= A[i] for all i > high
+      if (high < low) // Pretty sure we can use <= instead of < here...
         return low;
       
       int mid = (low + high) / 2;
         
-      if (rt->nodes[mid].time >= value)
-        return BinarySearch_Left(rt, value, low, mid-1);
+      if (rt->nodes[mid].time >= time)
+        return BinarySearch_Left(rt, time, low, mid-1);
       else
-        return BinarySearch_Left(rt, value, mid+1, high);
+        return BinarySearch_Left(rt, time, mid+1, high);
   }
+#endif
+
+  // Made by looking at https://en.wikipedia.org/wiki/Binary_search_algorithm#Duplicate_elements
+  int BinarySearch_Rightmost(const struct RT *rt, double time, int low, int high) const {
+      R_ASSERT_NON_RELEASE(this->size() >= 2);
+      R_ASSERT_NON_RELEASE(low >= 1);
+      R_ASSERT_NON_RELEASE(high < this->size());
+      
+      while(low<high){
+        const int mid = (low+high)/2;
+        const double mid_time = rt->nodes[mid].time;
+        if (mid_time > time)
+          high = mid;
+        else
+          low = mid+1;
+      }
+      return high; // (normally this algorithm returns high-1 here, but we just want the high value)
+    }
+
+#ifdef TEST_SEQAUTOMATION_MAIN
+public:
+#endif
   
   int _RT_last_search_pos = 1;
 
@@ -656,12 +681,18 @@ public:
           
           node1_ = &rt->nodes[i-1];
           node2_ = &rt->nodes[i];
-          if (time >= node1_->time && time <= node2_->time) // Same position in array as last time. No need to do binary search. This is the path we usually take.
+          /*
+          printf("%f >= %f && %f < %f\n",
+                 time, node1_->time,
+                 time, node2_->time);
+          */
+          if (time >= node1_->time && time < node2_->time) // Same position in array as last time. No need to do binary search. This is the path we usually take.
             goto gotit;
         }
         
-        i = BinarySearch_Left(rt, time, 0, num_nodes-1);
-
+        i = BinarySearch_Rightmost(rt, time, 1, num_nodes-1);
+        //printf("Binary search returned %d for time %f\n", i, time);
+        
         if (i > 0){
         
           _RT_last_search_pos = i;
@@ -794,7 +825,7 @@ public:
             goto gotit;
         }
         
-        i = BinarySearch_Left(rt, time, 0, num_nodes-1);
+        i = BinarySearch_Rightmost(rt, time, 1, num_nodes-1);
         R_ASSERT_NON_RELEASE(i>0);
         
         _RT_last_search_pos = i;

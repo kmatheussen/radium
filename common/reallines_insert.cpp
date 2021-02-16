@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "nsmtracker.h"
+#include "TimeData.hpp"
 #include "placement_proc.h"
 #include "list_proc.h"
 #include "vector_proc.h"
@@ -116,19 +117,18 @@ static bool InsertRatio_fxs(
                             Ratio toratio
                             )
 {
+  r::TimeData<r::FXNode>::Writer writer(fxs->_fxnodes);
 
-  bool ret = List_InsertRatioLen3(
-                                  block,
-                                  &fxs->fxnodelines,
-                                  (struct ListHeader3*)fxs->fxnodelines,
-                                  ratio,
-                                  toratio,
-                                  NULL
-                                  );
+  bool ret = writer.insert_ratio(ratio, toratio, make_ratio(block->num_lines, 1));
   
-  if (ret)
-    LegalizeFXlines(block,track);
-
+  if (ret) {
+    if (!LegalizeFXlines2(block->num_lines, fxs->fx, writer)){
+      R_ASSERT_NON_RELEASE(false);
+      writer.cancel();
+      VECTOR_remove(&track->fxs, fxs);
+    }
+  }
+  
   return ret;
 }
 
@@ -142,19 +142,9 @@ static bool InsertRatio_all_fxs(
   bool ret = false;
   
   VECTOR_FOR_EACH(struct FXs *, fxs, &track->fxs){
-    if (List_InsertRatioLen3(
-                             block,
-                             &fxs->fxnodelines,
-                             (struct ListHeader3*)fxs->fxnodelines,
-                             ratio,
-                             toratio,
-                             NULL
-                             ))
+    if (InsertRatio_fxs(block, track, fxs, ratio, toratio))
       ret = true;
   }END_VECTOR_FOR_EACH;
-
-  if (ret)
-    LegalizeFXlines(block,track);
 
   return ret;
 }

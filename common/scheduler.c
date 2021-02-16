@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "OS_Player_proc.h"
 #include "OS_visual_input.h"
 #include "sequencer_proc.h"
+#include "fxlines_proc.h"
 #include "../audio/Mixer_proc.h"
 
 #include "scheduler_proc.h"
@@ -257,6 +258,23 @@ bool SCHEDULER_called_per_block(struct SeqTrack *seqtrack, double reltime){
   double end_time_f = scheduler->current_time + reltime;
   int64_t end_time = end_time_f;
 
+  if (is_playing()) {
+    if (pc->playtype==PLAYBLOCK){
+      //R_ASSERT(seqtrack==root->song->block_seqtrack); // hmm. sometimes fails.
+      if (seqtrack==root->song->block_seqtrack)
+        RT_fxline_called_each_block(seqtrack, &g_block_seqtrack_seqblock, seqtrack->start_time, seqtrack->end_time);
+    }else
+      if (seqtrack!=root->song->block_seqtrack)
+        VECTOR_FOR_EACH(struct SeqBlock *seqblock, &seqtrack->seqblocks){
+          if (seqblock->block != NULL){
+            //printf("seqtime: %d->%d. seqblock: %d -> %d\n", (int)seqtrack->start_time, (int)seqtrack->end_time, (int)seqblock->t.time, (int)seqblock->t.time2);
+            if (true
+                && seqtrack->end_time > seqblock->t.time
+                && seqtrack->start_time < seqblock->t.time2)
+              RT_fxline_called_each_block(seqtrack, seqblock, seqtrack->start_time, seqtrack->end_time);
+          }
+        }END_VECTOR_FOR_EACH;
+  }
   
   //printf("   called per block. start_time: %f. reltime: %f\n",seqtrack->start_time/44100.0, reltime);
   //printf("  called_per_block. end_time: %d. seqtrack->start_time: %f\n",(int)end_time, seqtrack->start_time);

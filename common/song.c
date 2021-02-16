@@ -84,6 +84,8 @@ struct Song *SONG_create(void){
   song->includeModulatorConnectionsInMixerConfig = true;
   song->includeSystemVolumeInMixerConfig = true;
   
+  song->max_num_parallel_editor_seqblocks = 1;
+  
   reset_recording_config(&song->default_recording_config);
 
   VECTOR_push_back(&song->seqtracks, SEQTRACK_create(NULL, 0, -1, false, false));

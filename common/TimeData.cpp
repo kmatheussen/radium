@@ -8,48 +8,71 @@
 #include <unistd.h>
 #include <sys/time.h>
 
+#include "nsmtracker.h"
+
 
 bool g_qtgui_has_stopped = false;
 
+/*
 #define R_ASSERT(a) do{if(!(a))abort();}while(0)
 #define R_ASSERT_RETURN_IF_FALSE(a) R_ASSERT(a)
 #define R_ASSERT_RETURN_IF_FALSE2(a,b) R_ASSERT(a)
 #define R_ASSERT_NON_RELEASE(a) R_ASSERT(a)
 #define RError(...) abort()
 #define CR_FORMATEVENT(a) "formt"
+*/
 
 #if !defined(RELEASE)
-static bool MIXER_is_saving(){
+bool MIXER_is_saving(){
   return false;
 }
 #endif
 
-static void PLAYER_lock(){
+void PLAYER_lock(){
   abort();
 }
   
-static void PLAYER_unlock(){
+void PLAYER_unlock(){
   abort();
 }
 
 static __thread int g_thread_type = -1;
 
-static bool PLAYER_current_thread_has_lock(void){
+bool PLAYER_current_thread_has_lock(void){
   return g_thread_type==1;
 }
-static bool THREADING_is_main_thread(void){
+bool THREADING_is_main_thread(void){
   return g_thread_type==0;
 }
 
-static bool RT_message(const char *a){
-  abort();
+bool THREADING_is_player_or_runner_thread(void){
+  return !THREADING_is_main_thread();
 }
 
-static void msleep(int ms){
+bool THREADING_is_player_thread(void){
+  return !THREADING_is_main_thread();
+}
+
+/*
+bool RT_message(const char *a){
+  abort();
+}
+*/
+
+void CRASHREPORTER_send_assert_message(Crash_Type tye, const char *message, ...){
+  abort();
+}
+void RError_internal(const char *fmt,...){
+  abort();
+}
+void RT_message_internal(const char *fmt,...){
+  abort();
+}
+void msleep(int ms){
   usleep(1000*ms);
 }
 
-static double TIME_get_ms(void){
+double TIME_get_ms(void){
   struct timeval now;
 
   int err = gettimeofday(&now, NULL);
@@ -59,7 +82,7 @@ static double TIME_get_ms(void){
   return (double)now.tv_sec*1000.0 + (double)now.tv_usec/1000.0;
 }
 
-#define ASSERT_NON_RT_NON_RELEASE() R_ASSERT(THREADING_is_main_thread())
+//#define ASSERT_NON_RT_NON_RELEASE() R_ASSERT(THREADING_is_main_thread())
 
 #include "atomic.h"
 # include "ratio_type.h"

@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "nsmtracker.h"
 #include "../config/config.h"
 #include "vector_proc.h"
+#include "fxlines_proc.h"
 #include "disk.h"
 #include "disk_fx_proc.h"
 #include "disk_fxnodelines_proc.h"
@@ -42,7 +43,7 @@ void SaveFXs(vector_t *fxss,struct Tracks *track){
         DC_SaveN(fxs->fx->effect_num); // Not used. It's only used for validation now, and perhaps for newer songs to be less incompatible with older versions of radium.
         
 	SaveFX(fxs->fx,track);
-	SaveFXNodeLines(fxs->fxnodelines);
+	SaveFXNodeLines(fxs);
 
 
     }DC_end();
@@ -57,7 +58,7 @@ struct FXs *LoadFXs(struct Tracks *track){
 	};
 	static const char **vars=NULL;
 
-	struct FXs *fxs=DC_alloc(sizeof(struct FXs));
+	struct FXs *fxs = FXs_create();
 
 	printf("\tLoadFXs_start\n");
 	int effect_num = DC_LoadN();
@@ -71,7 +72,7 @@ obj0:
         //fxs->l.num = fxs->fx->effect_num; // Sometimes fx->effect_num is the only one containing the right value. (bug in previous version) (fxs->l.num doesn't exist anymore.)
 	goto start;
 obj1:
-	LoadFXNodeLines(&fxs->fxnodelines);
+	LoadFXNodeLines(fxs);
 	goto start;
 
 

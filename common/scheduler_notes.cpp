@@ -1,5 +1,6 @@
 
 #include "nsmtracker.h"
+#include "TimeData.hpp"
 #include "patch_proc.h"
 #include "notes_proc.h"
 #include "time_proc.h"
@@ -42,6 +43,89 @@ static int64_t RT_scheduled_stop_note(struct SeqTrack *seqtrack, int64_t time, u
   return DONT_RESCHEDULE;
 }
 
+static const Place *RT_find_first_place(struct ListHeader3 *l, const Place place_start){
+  while(l != NULL){
+    if (p_Greater_Or_Equal(l->p, place_start))
+      return &l->p;
+
+    l = l->next;
+  }
+
+  return NULL;
+}
+
+static bool RT_find_next_note_stop_after_place(const struct Tracks *track, const Place place_start, Place &ret){
+  const Place *note_place = track->notes==NULL ? NULL : (const Place *)RT_find_first_place(&track->notes->l, place_start);
+  //const Place *stop_place = track->stops==NULL ? NULL : RT_find_first_place(&track->stops->l, place_start);
+
+
+  bool has_stop = false;
+  Place stop_place;
+
+  {
+    r::TimeData<r::Stop>::Reader reader(track->stops2);
+    for(const r::Stop &stop : reader) {
+      if (stop._time >= make_ratio_from_place(place_start)){
+        has_stop = true;
+        stop_place = make_place_from_ratio(stop._time);
+        break;
+      }
+    }
+  }
+
+  if (note_place==NULL && has_stop==false){
+    return false;
+  }
+      
+  if (!has_stop) {
+    ret = *note_place;
+    return true;
+  }
+
+  if (note_place==NULL){
+    ret = stop_place;
+    return true;
+  }
+
+  if (p_Less_Than(*note_place, stop_place))
+    ret = *note_place;
+  else
+    ret = stop_place;
+
+  return true;
+}
+
+static bool RT_find_next_note_stop_after_seqblock_end(const struct SeqTrack *seqtrack, const struct SeqBlock **seqblock, int tracknum, Place &ret){
+  VECTOR_FOR_EACH(const struct SeqBlock *, seqblock2, &seqtrack->seqblocks){
+    if (seqblock2->block != NULL && seqblock2->t.time > (*seqblock)->t.time) {
+
+      *seqblock = seqblock2;
+      
+      struct Tracks *track = (struct Tracks *)ListFindElement1_r0(&seqblock2->block->tracks->l, tracknum);
+
+      if (track != NULL)
+        if (RT_find_next_note_stop_after_place(track, seqblock2->t.start_place, ret))
+          return true;
+    }
+    
+  }END_VECTOR_FOR_EACH;
+
+  return false;
+}
+
+static inline bool note_continues_next_seqblock(const struct SeqBlock *seqblock, const struct Notes *note){
+  if (note->noend==0)
+    return false;
+  
+  const struct Blocks *block = seqblock->block;
+
+  if (p_Equal(seqblock->t.end_place, p_Absolute_Last_Pos(block)))
+    return note_continues_next_block(block, note);
+      
+  return p_Greater_Than(note->l.p, seqblock->t.end_place);
+}
+
+
 static int64_t RT_schedule_end_note(struct SeqTrack *seqtrack,
                                     const struct SeqBlock *seqblock,
                                     const struct Tracks *track,
@@ -49,9 +133,6 @@ static int64_t RT_schedule_end_note(struct SeqTrack *seqtrack,
                                     int64_t note_start_time
                                     )
 {
-  const struct Blocks *block = seqblock->block;
-  NInt tracknum=track->l.num;
-
   const int num_args = 3;
         
   union SuperType args[num_args];
@@ -62,7 +143,7 @@ static int64_t RT_schedule_end_note(struct SeqTrack *seqtrack,
   SchedulerPriority priority = SCHEDULER_NOTE_OFF_PRIORITY;
 
 
-  if (!note_continues_next_block(block, note)){
+  if (!note_continues_next_seqblock(seqblock, note)){
           
     int64_t time = get_seqblock_place_time2(seqblock, track, note->end);
 
@@ -83,68 +164,29 @@ static int64_t RT_schedule_end_note(struct SeqTrack *seqtrack,
         
   // The note continues playing into the next block. We need to find out when, and if, it ends.
   {
-    const struct Tracks *next_track = NULL;
-
     int64_t addtime = 0;
 
-    // 1. Find track and seqblock with the next stop or note event.
-
+    bool has_p = false;
+    
+    Place p;
+    
     if(pc->playtype==PLAYBLOCK) {
-            
+
+      Place start_place = PlaceFirstPos;      
+      has_p = RT_find_next_note_stop_after_place(track, start_place, p);
+
       addtime = SEQBLOCK_get_seq_duration(seqblock);
-      next_track = track;
-            
+
     } else {
 
-      VECTOR_FOR_EACH(struct SeqBlock *,seqblock2, &seqtrack->seqblocks){
-        if (seqblock2->block != NULL && seqblock2->t.time > seqblock->t.time) {
-
-          seqblock = seqblock2;
-                
-          struct Tracks *track = (struct Tracks *)ListFindElement1_r0(&seqblock->block->tracks->l, tracknum);
-          if (track != NULL){
-            if (track->notes!=NULL || r::TimeData<r::Stop>::Reader(track->stops2).size()>0){
-              next_track = track;
-              break;
-            }
-          }
-                
-        }
-              
-      }END_VECTOR_FOR_EACH;
-            
+      has_p = RT_find_next_note_stop_after_seqblock_end(seqtrack, &seqblock, track->l.num, p);
+        
     }
           
-    if (next_track == NULL)
-      return -1;
-
-    bool has_p = false;
-    Place p;
-
-    // 2. Find next place.
-
-    if (next_track->notes!=NULL){
-      p = next_track->notes->l.p;
-      has_p = true;
-    }      
-
-    {
-      r::TimeData<r::Stop>::Reader reader(next_track->stops2);
-      if (reader.size() > 0){
-        const Place stop_p = make_place_from_ratio(reader.at_ref(0)._time);
-        if (!has_p) {
-          p = stop_p;
-          has_p = true;
-        } else {
-          if (p_Less_Than(stop_p, p))
-            p = stop_p;
-        }
-      }
-    }
-          
-    if (!has_p)
+    if (has_p == false)
       return -1; // I.e note never stops.
 
+    //printf("P: %d %d %d\n",(int)p.line,(int)p.counter,(int)p.dividor);
     int64_t time = addtime + get_seqblock_place_time2(seqblock, track, p);
 
     if (note_start_time == time)
