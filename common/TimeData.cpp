@@ -1,4 +1,7 @@
 
+#include <gc.h>
+
+
 #if defined(TEST_TIMEDATA_MAIN)
 
 #include <stdlib.h>
@@ -197,19 +200,258 @@ const radium::FreeableList *FREEABLELIST_transfer_all(void){
 #endif
 #endif
 
+//////////////////////////////////////////////////////
+/************** Player Cache start *****************/
+////////////////////////////////////////////////////
+
+// Note: This code is not enabled yet. For now all Reader::get_value calls are uncached.
+
+
+static radium::Vector<r::RT_TimeData_Player_Cache_Holder*> g_timedata_playercache_holders; // For safety, it's probably best to disable bdwgc gc when traversing this one.
+
+static r::RT_TimeData_Player_Cache *TIMEDATA_PLAYERCACHE_make_cache_array(int num){
+  r::RT_TimeData_Player_Cache *ret = new r::RT_TimeData_Player_Cache[num];
+  return ret;
+}
+
+static void set_new_holder_data(r::RT_TimeData_Player_Cache_Holder *holder, int num, r::RT_TimeData_Player_Cache *caches){
+#if !defined(RELEASE)
+  R_ASSERT(num > holder->_num_caches);
+  holder->_num_caches = num;
+#endif
+  holder->caches = caches;
+}
+
+void TIMEDATA_PLAYERCACHE_add_and_initialize(r::RT_TimeData_Player_Cache_Holder *holder){
+  R_ASSERT(THREADING_is_main_thread());
+  R_ASSERT_RETURN_IF_FALSE(!g_timedata_playercache_holders.contains(holder));
+
+  g_timedata_playercache_holders.push_back(holder);
+
+#if defined(TEST_TIMEDATA_MAIN)
+  int num = 1;
+#else
+  int num = root->song->max_num_parallel_editor_seqblocks;
+#endif
+  
+  set_new_holder_data(holder, num, TIMEDATA_PLAYERCACHE_make_cache_array(num));
+}
+
+void TIMEDATA_PLAYERCACHE_remove(r::RT_TimeData_Player_Cache_Holder *holder){
+  R_ASSERT(THREADING_is_main_thread());
+  R_ASSERT_RETURN_IF_FALSE(g_timedata_playercache_holders.contains(holder));
+  
+  g_timedata_playercache_holders.remove(holder);
+
+  delete[] holder->caches;
+}
+
+#if !defined(TEST_TIMEDATA_MAIN)
+
+static int find_max_num_parallel_editor_seqblocks(void){
+  return 2; // FIX.
+}
+
+static void set_all_timedata_player_index_values_to_minus_one(void){
+  // TODO: Implement
+}
+
+
+// Called whenever an editor seqblock is moved, added, or deleted.
+void TIMEDATA_PLAYERCACHE_reconfigure(void){
+  R_ASSERT(THREADING_is_main_thread());
+  
+  int max_num_parallel_editor_seqblocks = find_max_num_parallel_editor_seqblocks();
+  if (max_num_parallel_editor_seqblocks <= root->song->max_num_parallel_editor_seqblocks)
+    return;
+  
+  GC_gcollect(); // For the time being, elements are reduced from g_timedata_playercache_holders when running a gc collection.
+
+  root->song->max_num_parallel_editor_seqblocks = max_num_parallel_editor_seqblocks;
+
+  GC_disable(); // Won't risk g_timedata_playercache_holders being reduced while doing this. (we don't use gc inside here, but maybe in the future. Disabling doesn't hurt when not using the gc so no problem.)
+  {
+    radium::Vector<r::RT_TimeData_Player_Cache *> old_caches;
+    radium::Vector<r::RT_TimeData_Player_Cache *> new_caches;
+    //r::RT_TimeData_Player_Cache *old_caches[g_timedata_playercache_holders.size()];
+    //r::RT_TimeData_Player_Cache *new_caches[g_timedata_playercache_holders.size()];
+    
+    for(int i=0;i<g_timedata_playercache_holders.size();i++){
+      old_caches.push_back(g_timedata_playercache_holders.at(i)->caches);
+      new_caches.push_back(TIMEDATA_PLAYERCACHE_make_cache_array(max_num_parallel_editor_seqblocks));
+    }
+    
+    set_all_timedata_player_index_values_to_minus_one();
+
+    {
+      // FIX: Should optimize this (or better: optimize schedule_to_run_on_player_thread_and_wait so that it sleeps on a semaphore instead of msleep()).
+      radium::Scheduled_RT_functions rt_functions;
+      rt_functions.add([](){
+          return;
+        });
+      rt_functions.schedule_to_run_on_player_thread_and_wait(); // Wait for one audio block to be played, so that we can safely modify the holder->caches values below.
+    }
+    
+    
+    for(int i=0;i<g_timedata_playercache_holders.size();i++)
+      set_new_holder_data(g_timedata_playercache_holders.at(i), max_num_parallel_editor_seqblocks, new_caches.at(i));
+    
+    // HERE: Set all seqblock->timedata_player_index values to correct value.
+    
+    for(auto *old_cache : old_caches)
+      delete[] old_cache; // Should be safe to do this now after calling schedule_to_run_on_player_thread_and_wait(). All TimeData::Reader instances that used it should have been deleted now.
+    
+  }
+  GC_enable();
+  
+}
+#endif
+
+
+////////////////////////////////////////////////////
+/************** Player Cache end *****************/
+//////////////////////////////////////////////////
+
+
 
 #ifdef TEST_TIMEDATA_MAIN
 
 #include <thread>
 
+
 struct Gakk{
   Ratio _time;
 
-  Gakk(int64_t a, int64_t b)
+  int _val;
+  int _logtype;
+    
+  Gakk(int64_t a, int64_t b, int val = 1, int logtype = LOGTYPE_LINEAR)
   {
     _time = make_ratio(a,b);
+    _val = val;
+    _logtype = logtype;
   }
 };
+
+static Gakk make_gakk(int64_t a, int64_t b, int val = 1, int logtype = LOGTYPE_LINEAR){
+  Gakk gakk(a,b,val,logtype);
+  return gakk;
+}
+
+#define TEST(a, b)                  do{         \
+  if (a!=b)                                     \
+    abort();                                    \
+  }while(0)
+
+
+
+static void test_get_value(void){
+  r::TimeData<Gakk> gakk;
+  
+  {
+    r::TimeData<Gakk>::Writer writer(&gakk);
+    writer.add2(make_gakk(10,1,10)); // 0
+    writer.add2(make_gakk(20,1,20, LOGTYPE_HOLD)); // 1
+    writer.add2(make_gakk(30,1,30)); // 2
+    writer.add2(make_gakk(40,1,40)); // 3
+    writer.add2(make_gakk(40,1,50)); // 4
+    writer.add2(make_gakk(40,1,60)); // 5
+    writer.add2(make_gakk(40,1,70)); // 6
+    writer.add2(make_gakk(40,1,80)); // 7
+    writer.add2(make_gakk(40,1,90)); // 8
+    writer.add2(make_gakk(40,1,100)); // 9
+    writer.add2(make_gakk(40,1,110)); // 10
+    writer.add2(make_gakk(50,1,120)); // 11
+    writer.add2(make_gakk(60,1,130, LOGTYPE_HOLD)); // 12
+  }
+
+  r::TimeData<Gakk>::Reader reader(&gakk);
+
+  auto test_binsearch = [&reader](int time, int expect){
+    int ret = reader.BinarySearch_Rightmost(make_ratio(time, 1), 1, reader.size()-1);
+    printf("test_binsearch. time: %d. expect: %d. ret: %d.\n", time, expect, ret);
+    TEST(ret, expect);
+  };
+  
+  test_binsearch(10,1);
+  test_binsearch(11,1);
+  test_binsearch(19,1);
+  test_binsearch(20,2);
+  test_binsearch(30,3);
+  test_binsearch(39,3);
+  test_binsearch(40,11);
+  test_binsearch(49,11);
+  test_binsearch(50,12);
+  test_binsearch(60,12);
+  
+  auto test_pos = [&reader](int time, int expect){
+    int ret = reader.find_pos_for_get_value(make_ratio(time, 1));
+    printf("test_pos. time: %d. expect: %d. ret: %d.\n", time, expect, ret);
+    TEST(ret, expect);
+  };
+
+  test_pos(10,1);
+  test_pos(11,1);
+  test_pos(19,1);
+  test_pos(20,2);
+  test_pos(30,3);
+  test_pos(39,3);
+  test_pos(40,11);
+  test_pos(49,11);
+  test_pos(50,12);
+  test_pos(59,12);
+
+  bool random_cache;
+  
+  auto test_value = [&reader, &random_cache](int time, int expect){
+    if (random_cache)
+      reader._curr_pos = 1 + rand() % reader.size();
+
+    FX_when when;
+    int ret;
+    bool legal = reader.get_value(0, make_ratio(time, 1), ret, when, make_ratio(time-1,1));
+    if (!legal)
+      ret = -1;
+
+    if (!random_cache)
+      printf("test_value. time: %d. expect: %d. ret: %d.\n", time, expect, ret);
+    
+    TEST(ret, expect);
+  };
+  
+  auto testit = [&test_value](void){
+    test_value(9,-1);
+    
+    test_value(10,10);
+    test_value(11,11);
+    test_value(15,15);
+    test_value(19,19);
+    
+    test_value(20,20);
+    test_value(21,-1);
+    test_value(25,-1);
+    test_value(29,-1);
+    
+    test_value(30,30);
+    test_value(39,39);
+    
+    test_value(40,110);
+    
+    test_value(41,111);
+    test_value(50,120);
+    test_value(59,129);
+    test_value(60,130);
+    
+    test_value(61,-1);
+  };
+
+  random_cache = false;
+  testit();
+
+  random_cache = true;
+  for(int i=0;i<1000;i++)
+    testit();
+}
 
 int main(void){
   g_thread_type = 0;
@@ -221,6 +463,8 @@ int main(void){
   
   const int num_main_iterations = 75 + rand()%50;
   int total_num_elements = 0;
+
+  test_get_value();
   
   r::TimeData<Gakk> *gakk = new r::TimeData<Gakk>;
   
@@ -321,7 +565,7 @@ int main(void){
   delete gakk;
 
   if (g_num_timedata_vectors != 0){
-    printf("Num unfreed TimeDataVectors: %d\n", g_num_timedata_vectors);
+    printf("Num unfreed TimeDataVectors: %d\n", g_num_timedata_vectors); // Extremely rarely, this actually fails. Might be a bug in the program, might be something else. However, since it's so extremely seldom, and it's just a minor memory leak, it doesn't seem important to fix.
     abort();
   }
   
