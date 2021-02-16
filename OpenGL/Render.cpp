@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 
 #include "../common/nsmtracker.h"
+#include "../common/TimeData.hpp"
 #include "../common/placement_proc.h"
 //#include "../common/ratio_funcs.h"
 
@@ -226,12 +227,15 @@ const struct ListHeader3 *g_indicator_node = NULL;
 int g_indicator_velocity_num = -1;
 int g_indicator_pitch_num = -1;
 
-static void draw_skewed_box(const struct Tracker_Windows *window,
-                            const struct ListHeader3 *node,
-                            enum ColorNums color,
-                            float x, float y,
-                            enum UseScissors use_scissors
-                            )
+int64_t g_current_node_id = -1;
+int64_t g_indicator_node_id = -1;
+
+static void draw_skewed_box_doit(const struct Tracker_Windows *window,
+                                 bool is_current_node,
+                                 enum ColorNums color,
+                                 float x, float y,
+                                 enum UseScissors use_scissors
+                                 )
 {
  
   float minnodesize = get_min_node_size();
@@ -243,7 +247,7 @@ static void draw_skewed_box(const struct Tracker_Windows *window,
 
   GE_Conf conf(Z_ABOVE(Z_ZERO), y, use_scissors);
 
-  if (node == g_current_node) {
+  if (is_current_node) {
     GE_filledBox(GE_mix_alpha_z(GE_get_rgb(color), White_rgb(), 300, 0.3, conf),
                  x1,y1,
                  x2-1,y2
@@ -275,6 +279,25 @@ static void draw_skewed_box(const struct Tracker_Windows *window,
           width);
 }
 
+static void draw_skewed_box(const struct Tracker_Windows *window,
+                                 const struct ListHeader3 *node,
+                                 enum ColorNums color,
+                                 float x, float y,
+                                 enum UseScissors use_scissors
+                                 )
+{
+  draw_skewed_box_doit(window, node == g_current_node, color, x, y, use_scissors);
+}
+
+static void draw_skewed_box2(const struct Tracker_Windows *window,
+                            int64_t node_id,
+                            enum ColorNums color,
+                            float x, float y,
+                            enum UseScissors use_scissors
+                            )
+{
+  draw_skewed_box_doit(window, node_id == g_current_node_id, color, x, y, use_scissors);
+}
 
 static void create_double_border(
                           float x, int y, int y2,
@@ -333,7 +356,17 @@ static void stipled_vertical_line(GE_Context *c, float x, float y1, float y2){
 }
 
 
-static GE_Context *drawNodeLines(const struct Tracker_Windows *window, const struct NodeLine *nodelines, enum ColorNums colnum, bool is_selected, float alpha, float alpha_selected, bool hide_vertical, enum UseScissors use_scissors = USE_SCISSORS){
+template<typename NodeLine> 
+static GE_Context *drawNodeLines(const struct Tracker_Windows *window,
+                                 const NodeLine *nodelines,
+                                 enum ColorNums colnum,
+                                 bool is_selected,
+                                 float alpha,
+                                 float alpha_selected,
+                                 bool hide_vertical,
+                                 enum UseScissors use_scissors = USE_SCISSORS
+                                 )
+{
   const float cut_size1 = window->fontheight*2;
   //const float cut_size2 = 10;
 
@@ -341,7 +374,7 @@ static GE_Context *drawNodeLines(const struct Tracker_Windows *window, const str
   
   float width = get_nodeline_width(is_selected);
   
-  for(const struct NodeLine *ns = nodelines ; ns!=NULL ; ns=ns->next) {
+  for(const NodeLine *ns = nodelines ; ns!=NULL ; ns=ns->next) {
     int logtype = ns->logtype;
     float x1 = ns->x1;
     float x2 = logtype==LOGTYPE_HOLD ? ns->x1 : ns->x2;
@@ -379,6 +412,8 @@ static GE_Context *drawNodeLines(const struct Tracker_Windows *window, const str
   
   return c;
 }
+
+
 
 
 
@@ -2506,19 +2541,19 @@ static void create_track_velocities(const struct Tracker_Windows *window, const 
 
 
 static void create_track_fxs(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct FXs *fxs){
-  const struct NodeLine *nodelines = GetFxNodeLines(window, wblock, wtrack, fxs);
+  const struct NodeLine2 *nodelines = GetFxNodeLines(window, wblock, wtrack, fxs);
 
   bool is_current = wblock->mouse_track==wtrack->l.num && wblock->mouse_fxs==fxs;
 
   drawNodeLines(window, nodelines, fxs->fx->color, is_current, 0.6, 1.0, true);
   
-  if (g_indicator_node != NULL || is_current) {
-    const vector_t *nodes = get_nodeline_nodes(nodelines, wblock->t.y1);
+  if (g_indicator_node_id >= 0 || is_current) {
+    const vector_t *nodes = get_nodeline_nodes2(nodelines, wblock->t.y1);
 
-    VECTOR_FOR_EACH(const Node *, node, nodes){
+    VECTOR_FOR_EACH(const Node2 *, node, nodes){
       if (wblock->mouse_track==wtrack->l.num && wblock->mouse_fxs==fxs)
-        draw_skewed_box(window, node->element, TEXT_COLOR_NUM, node->x, node->y - wblock->t.y1, USE_SCISSORS);
-      if (node->element==g_indicator_node)
+        draw_skewed_box2(window, node->id, TEXT_COLOR_NUM, node->x, node->y - wblock->t.y1, USE_SCISSORS);
+      if (node->id==g_indicator_node_id)
         draw_node_indicator(node->x, node->y - wblock->t.y1, fxs->fx->color);
     }END_VECTOR_FOR_EACH;
 
@@ -2662,7 +2697,7 @@ static void create_track_fxtext(const struct Tracker_Windows *window, const stru
   if (num_elements == 0)
     return;
 
-  const FXText &vt = trs[0];
+  const r::FXText &vt = trs[0];
 
   if (num_elements > 1){
     create_track_fxtext2(window, wblock, wtrack, realline, vt.fx->color, column, 'x', 'x', 'x');

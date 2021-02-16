@@ -565,7 +565,7 @@ public:
   void sort(S comp){
     LOCKASSERTER_EXCLUSIVE(&lockAsserter);
     
-    std::sort(&elements[0], &elements[num_elements.get()], comp);
+    std::stable_sort(&elements[0], &elements[num_elements.get()], comp);
   }
     
   std::vector<T> to_std_vector(void) const{
@@ -581,6 +581,11 @@ public:
     return ret;
   }
 
+  const T* get_array(void) const{
+    LOCKASSERTER_SHARED(&lockAsserter);
+    return elements;
+  }
+  
   // RT safe
   //
   // This function can NOT be called in parallell with other functions

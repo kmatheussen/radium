@@ -1627,12 +1627,33 @@ static inline dyn_t DYN_copy(const dyn_t a){
 
 
 /*********************************************************************
-	sndfile.h
+	logtype.h
 *********************************************************************/
+
+// Note that logtype values have been saved to disk for some time. These enum values can not change values without doing conversion when loading old songs.
+enum{
+  LOGTYPE_IRRELEVANT = -2,    // Logtype value of a last node.
+  LOGTYPE_IMMEDIATELY = -1,   // Like this: f(x) = f(1),  [ 0 <= x <= 1 ]
+  LOGTYPE_LINEAR = 0,         // Like this: f(x) = x
+  LOGTYPE_MIN = 1,            // Probably something like this: f(x)=x^0.1
+  LOGTYPE_ALSO_LINEAR = 100,  // Something like this: f(x) = x
+  LOGTYPE_MAX = 200,          // Probably something like this: f(x)=x^10
+  LOGTYPE_HOLD = 201          // Like this: f(x) = f(0), [ 0 <= x <= 1 ]. Currently the only understood value, together with LOGTYPE_LINEAR.
+};
+
+typedef enum {
+  FX_start = 0,   // Used by automation and envelope controller
+  FX_middle = 1,  // Used by automation and envelope controller
+  FX_end = 2,     // Used by automation and envelope controller
+  FX_single = 3,
+  //FX_no_fx = 4; // No effect must be sent out. Used by seqtrack automation.
+} FX_when;
 
 
 #ifdef __cplusplus
-#include "TimeData.hpp"
+namespace r{
+  template <typename T> class TimeData;
+}
 #endif
 
 
@@ -1706,20 +1727,6 @@ typedef struct{
 
 
 
-/*********************************************************************
-	logtype.h
-*********************************************************************/
-
-// Note that logtype values have been saved to disk for some time. These enum values can not change values without doing conversion when loading old songs.
-enum{
-  LOGTYPE_IRRELEVANT = -2,    // Logtype value of a last node.
-  LOGTYPE_IMMEDIATELY = -1,   // Like this: f(x) = f(1),  [ 0 <= x <= 1 ]
-  LOGTYPE_LINEAR = 0,         // Like this: f(x) = x
-  LOGTYPE_MIN = 1,            // Probably something like this: f(x)=x^0.1
-  LOGTYPE_ALSO_LINEAR = 100,  // Something like this: f(x) = x
-  LOGTYPE_MAX = 200,          // Probably something like this: f(x)=x^10
-  LOGTYPE_HOLD = 201          // Like this: f(x) = f(0), [ 0 <= x <= 1 ]. Currently the only understood value, together with LOGTYPE_LINEAR.
-};
 
 // Fade types take from ardour. The numbers must start at 0, and increase by 1 so that they can easily be iterated.
 enum FadeShape{
@@ -2059,14 +2066,6 @@ static inline void Patch_copyAttributesFromAnotherPatch(struct Patch *dest, stru
 	fx.h
 *********************************************************************/
 
-typedef enum {
-  FX_start = 0,   // Used by automation and envelope controller
-  FX_middle = 1,  // Used by automation and envelope controller
-  FX_end = 2,     // Used by automation and envelope controller
-  FX_single = 3,
-  //FX_no_fx = 4; // No effect must be sent out. Used by seqtrack automation.
-} FX_when;
-
 static inline bool FX_when_is_automation(FX_when when){
   return (when != FX_single);
 }
@@ -2180,6 +2179,7 @@ struct Instruments{
 
 #ifdef __cplusplus
 namespace r{
+
 struct Stop{
   Ratio _time;
   Stop(Ratio time)
@@ -2200,18 +2200,51 @@ struct Stops{
 	fxnodelines.h
 *********************************************************************/
 
-
+/*
 struct FXNodeLines{
 	struct ListHeader3 l;
 	int val;
     	int logtype;
 };
 #define NextFXNodeLine(a) ((struct FXNodeLines *)((a)->l.next))
+*/
+
+#ifdef __cplusplus
+namespace r{
+
+extern int64_t g_node_id;
+  
+struct NodeId{
+  int64_t _id;
+  NodeId()
+    : _id(g_node_id++)
+  {
+    R_ASSERT_NON_RELEASE(THREADING_is_main_thread()); // because of g_node_id
+  }
+};
+
+struct FXNode : NodeId {
+  Ratio _time;
+  int _val;
+  int _logtype;
+  FXNode(const struct FX &fx, Ratio time, int val, int logtype = LOGTYPE_LINEAR)
+    : _time(time)
+    , _val(R_BOUNDARIES(fx.min, val, fx.max))
+    , _logtype(logtype)
+  {}
+};
+}
+#endif
 
 
 struct FXs{
 	struct FX *fx;
-	struct FXNodeLines *fxnodelines;
+  //struct FXNodeLines *fxnodelines;
+#ifdef __cplusplus
+        r::TimeData<r::FXNode> *_fxnodes;
+#else
+        void *_fxnodes;
+#endif
 };
 
 
@@ -2418,15 +2451,26 @@ typedef struct{
   bool is_last_velocity;
 } VelText;
 
-typedef struct{
-  Place p;
+#if __cplusplus
+namespace r{
+struct FXText {
   const struct FX *fx;
+#if 0
+  Place p;
   struct FXNodeLines *fxnodeline;
-
+#else
+  int fxnodenum;
+  r::FXNode fxnode;
+#endif
   int value;
   int logtype;
-} FXText;
 
+  FXText(FXNode fxnode)
+    : fxnode(fxnode)
+  {}
+};
+}
+#endif
 
 
 #if USE_QT4
@@ -2439,7 +2483,7 @@ typedef QMap<int, bool> Waveform_trss;
 typedef QList<VelText> VelText_trs;
 typedef QMap<int, VelText_trs> VelText_trss;
 
-typedef QList<FXText> FXText_trs;
+typedef QList<r::FXText> FXText_trs;
 typedef QMap<int, FXText_trs> FXText_trss;
 
 #define TRS_INSERT_PLACE(trs, tr)                                       \
@@ -2471,7 +2515,21 @@ struct NodeLine{
 
   const struct ListHeader3 *element1;
   const struct ListHeader3 *element2;
+  
+  int logtype;
+  
+  bool is_node;
+};
 
+struct NodeLine2{
+  struct NodeLine2 *next;
+
+  float x1,y1;
+  float x2,y2;
+
+  int n1,n2;
+  int64_t id1,id2;
+  
   int logtype;
   
   bool is_node;
@@ -2488,6 +2546,12 @@ static inline const struct NodeLine *Nodeline_n(const struct NodeLine *nodeline,
 struct Node{
   float x, y;
   const struct ListHeader3 *element;
+};
+
+struct Node2{
+  float x, y;
+  int n;
+  int64_t id;
 };
 
 struct MinMax{
@@ -3395,6 +3459,10 @@ struct SeqBlock{
   int64_t id;
 
   struct SeqBlockTimings t; // Note, player lock must be obtained when changing values in t, even when not playing song. There's a race condition in audio/Seqtrack_plugin.c that's quite tricky to avoid, so it's probably better to always lock player.
+
+  // TODO: Write a function to recalculate this number for all editor-seqblocks in the sequencer whenever a seqblock is moved, added, or deleted.
+  DEFINE_ATOMIC(int, timedata_player_index); // Used by the player for caching vector index. (editor-seqblocks only)
+
   
   struct Blocks *block; // If NULL, then the seqblock holds a sample.
 
@@ -3436,7 +3504,7 @@ struct SeqBlock{
   struct StretchspeedTimeConversionTable conversion_table;
 
   int64_t curr_scheduled_realline_counter; // used by the scheduler. Only accessed from the main player thread.
-  
+
   /*
   double stretch_automation_compensation;
   double speed_automation_compensation;
@@ -3686,6 +3754,8 @@ struct Song{
   
 	hash_t *mixerwidget_state; // Only used during loading.
 	hash_t *instrument_widget_order_state; // Only used during loading.
+  
+        int max_num_parallel_editor_seqblocks;
 };
 
 extern LANGSPEC void SONGPROPERTIES_update(struct Song *song);

@@ -100,9 +100,6 @@ static void NewWTrack(
 	wtrack->fxonoff=1;
 	//wtrack->num_vel=1;
 
-#if !USE_OPENGL
-	UpdateFXNodeLines(window,wblock,wtrack);
-#endif
 	ListAddElement1(&wblock->wtracks,&wtrack->l);
 }
 
@@ -462,10 +459,6 @@ void UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 ){
   //  struct WTracks *startwtrack,*endwtrack;
 
-#if !USE_OPENGL
-	UpdateSomeFXNodeLines(window,wblock,starttrack,endtrack);
-	UpdateAndClearSomeWTracks(window,wblock,starttrack,endtrack,wblock->top_realline,wblock->bot_realline);
-#endif
 
 	//	startwtrack=ListFindElement1(&wblock->wtracks->l,starttrack);
 	//	endwtrack=ListFindElement1(&wblock->wtracks->l,endtrack);
@@ -553,10 +546,6 @@ void MinimizeTrack_CurrPos(
 
 	SetNoteLength(window,wtrack,2);
 	wtrack->fxwidth=window->fontwidth*wtrack->track->polyphony*2;
-
-#if !USE_OPENGL
-	UpdateFXNodeLines(window,wblock,wtrack);
-#endif       
 
 	window->must_redraw = true;
 }
@@ -677,7 +666,6 @@ update:
 	UpdateWTempoNodes(window,wblock);
 	wtrack=wblock->wtracks;
 	while(wtrack!=NULL){
-		UpdateFXNodeLines(window,wblock,wtrack);
 		UpdateTrackReallines(window,wblock,wtrack);
 		wtrack=NextWTrack(wtrack);
 	}
@@ -720,14 +708,6 @@ void SwapTrack_CurrPos(
           mo_CB_PasteTrack(wblock,next,wtrack);
           mo_CB_PasteTrack(wblock,temp,next);
           
-#if !USE_OPENGL       
-          UpdateFXNodeLines(window,wblock,wtrack);
-#endif
-          
-#if !USE_OPENGL
-          UpdateFXNodeLines(window,wblock,next);
-#endif
-
         }PC_StopPause(NULL);
 
         window->must_redraw = true;

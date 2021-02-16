@@ -74,7 +74,6 @@ void SEQBLOCK_AUTOMATION_default_duration_changed(struct SeqblockAutomation *seq
 
 ////////////////////////
 
-void RT_SEQBLOCK_AUTOMATION_called_after_editor_and_before_audio(const struct SeqTrack *seqtrack, int64_t seqblock_time);
 void RT_SEQBLOCK_AUTOMATION_called_when_player_stopped(void);
 dyn_t SEQBLOCK_AUTOMATION_get_state(const struct SeqblockAutomation *seqblockenvelope);
 void SEQBLOCK_AUTOMATION_apply_state(struct SeqblockAutomation *seqblockenvelope, const dyn_t envelope_state, double state_samplerate);

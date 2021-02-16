@@ -58,7 +58,7 @@ void ADD_UNDO_FUNC(
 
 	PlaceSetLastPos(block,&p2);
 
-	CopyRange_fxs(&undo_fxs->fxss,&track->fxs,p1,&p2);
+	CopyRange_fxs(block->num_lines, &undo_fxs->fxss,&track->fxs,p1,&p2);
 	if(track->midi_instrumentdata!=NULL){
 		undo_fxs->midi_instrumentdata=MIDI_CopyInstrumentData(track);
 	}
@@ -99,9 +99,7 @@ static void *Undo_Do_FXs(
 
 	track->fxs = *(VECTOR_copy(&undo_fxs->fxss));
 	track->midi_instrumentdata=undo_fxs->midi_instrumentdata;
-#if !USE_OPENGL
-	UpdateFXNodeLines(window,wblock,wtrack);
-#endif
+        
 	undo_fxs->fxss = *temp;
 	undo_fxs->midi_instrumentdata=midi_instrumentdata;
 

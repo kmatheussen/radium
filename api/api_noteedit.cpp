@@ -17,6 +17,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Python.h"
 
 #include "../common/nsmtracker.h"
+#include "../common/TimeData.hpp"
 #include "../common/list_proc.h"
 #include "../common/placement_proc.h"
 #include "../common/velocities_proc.h"

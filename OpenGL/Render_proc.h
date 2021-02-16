@@ -4,6 +4,9 @@ extern const struct ListHeader3 *g_indicator_node;
 extern int g_indicator_velocity_num;
 extern int g_indicator_pitch_num;
 
+extern int64_t g_current_node_id;
+extern int64_t g_indicator_node_id;
+
 extern int g_current_bar_num;
 extern int g_current_beat_num;
 extern int g_current_barbeat_block_num;

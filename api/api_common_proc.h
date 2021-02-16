@@ -192,6 +192,16 @@ extern dyn_t MoveNote(struct Blocks *block, struct Tracks *track, struct Notes *
 #ifdef __cplusplus
 }
 
+template <typename T>
+static inline bool num_is_valid(T &reader, int num, const char *type){
+  if (num < 0 || num >= reader.size()) {
+    handleError("There is no %s %d (size: %d)",type,num,reader.size());
+    return false;
+  }
+  return true;
+}
+  
+
 #include "../common/OS_string_proc.h"
 
 static inline const wchar_t *w_path_to_path(const char *w_path){

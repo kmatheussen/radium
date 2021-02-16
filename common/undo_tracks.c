@@ -110,10 +110,6 @@ static void *Undo_Do_Track(
 
   mo_CB_PasteTrack(wblock, undo_tracks->wtrack, wtrack);
   
-#if !USE_OPENGL
-  UpdateFXNodeLines(window,wblock,wtrack);
-#endif
-
   undo_tracks->wtrack = temp;
   return undo_tracks;
 }

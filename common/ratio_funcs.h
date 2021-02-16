@@ -38,13 +38,14 @@ static inline Ratio128 make_ratio128(Ratio ratio){
 }
 #endif
 
-static inline Ratio make_ratio_from_double(double val){
+
+static inline Ratio make_ratio_from_double_internal(double val, const int num_bits){
 
 #ifndef TEST_MAIN
-  R_ASSERT_NON_RELEASE(false);
+  //R_ASSERT_NON_RELEASE(false);
 #endif
 
-  int64_t den = (2LL << 60) / (1 + (int64_t)val);
+  int64_t den = (2LL << num_bits) / (1 + (int64_t)val);
   int64_t num = round((double)den * val);
   //printf("num: %d\n",(int)num);
 
@@ -61,15 +62,21 @@ static inline Ratio make_ratio_from_double(double val){
   return make_ratio(num, den);
 }
 
+#ifdef __cplusplus
+static inline Ratio make_ratio_from_double(double val, const int num_bits = 60){
+  return make_ratio_from_double_internal(val, num_bits);
+}
+#else
+static inline Ratio make_ratio_from_double(double val){
+  return make_ratio_from_double_internal(val, 60);
+}
+#endif
+  
 static inline double make_double_from_ratio(Ratio r){
   return (double)r.num / (double)r.den;
 }
 
 #include "overflow_funcs.h"
-
-#ifndef TEST_MAIN
-#endif
-
 
 static inline Ratio RATIO_mul(const Ratio r1, const Ratio r2){
   R_ASSERT_NON_RELEASE(r1.den > 0);
@@ -260,6 +267,19 @@ static inline Ratio operator/(const Ratio &r1, const Ratio &r2){
   return RATIO_div(r1, r2);
 }
 
+static inline Ratio operator+(const Ratio &r1, int64_t i2){
+  return RATIO_add(r1, make_ratio(i2, 1));
+}
+static inline Ratio operator-(const Ratio &r1, int64_t i2){
+  return RATIO_sub(r1, make_ratio(i2, 1));
+}
+static inline Ratio operator*(const Ratio &r1, int64_t i2){
+  return RATIO_mul(r1, make_ratio(i2, 1));
+}
+static inline Ratio operator/(const Ratio &r1, int64_t i2){
+  return RATIO_div(r1, make_ratio(i2, 1));
+}
+
 static inline Ratio operator-(const Ratio &r){
   Ratio ret = r;
   ret.num = -ret.num;
@@ -284,6 +304,26 @@ static inline bool operator<(const Ratio &r1, const Ratio &r2){
 }
 static inline bool operator<=(const Ratio &r1, const Ratio &r2){
   return RATIO_less_or_equal_than(r1, r2);
+}
+
+static inline bool operator==(const Ratio &r1, int64_t i2){
+  return RATIO_equal(r1, make_ratio(i2,1));
+}
+static inline bool operator!=(const Ratio &r1, int64_t i2){
+  return !RATIO_equal(r1, make_ratio(i2,1));
+}
+
+static inline bool operator>(const Ratio &r1, int64_t i2){
+  return RATIO_greater_than(r1, make_ratio(i2,1));
+}
+static inline bool operator>=(const Ratio &r1, int64_t i2){
+  return RATIO_greater_or_equal_than(r1, make_ratio(i2,1));
+}
+static inline bool operator<(const Ratio &r1, int64_t i2){
+  return RATIO_less_than(r1, make_ratio(i2,1));
+}
+static inline bool operator<=(const Ratio &r1, int64_t i2){
+  return RATIO_less_or_equal_than(r1, make_ratio(i2,1));
 }
 
 static inline Ratio& operator+=(Ratio& r1, const Ratio &r2){
@@ -344,6 +384,23 @@ static inline Ratio scale_ratio(const Ratio &x, const Ratio &x1, const Ratio &x2
 
 
 #endif
+
+#ifdef __cplusplus
+namespace r{
+  struct RatioPeriod{
+    Ratio _start, _end;
+    RatioPeriod(const Ratio &start, const Ratio &end)
+      : _start(start)
+      , _end(end)
+    {
+      R_ASSERT_NON_RELEASE(_end >= _start);
+    }
+    RatioPeriod(){
+    }
+  };
+}
+#endif
+
 
 #ifndef TEST_MAIN
 #ifndef TEST_TIMEDATA_MAIN

@@ -66,6 +66,7 @@ typedef uint8_t UBYTE;
 #endif
 
 #include "../common/nsmtracker.h"
+#include "../common/TimeData.hpp"
 #include "../api/api_proc.h"
 #include "../common/list_proc.h"
 #include "../common/vector_proc.h"

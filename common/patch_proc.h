@@ -101,7 +101,8 @@ extern LANGSPEC void RT_play_click_note(struct SeqTrack *seqtrack, int64_t time,
 extern LANGSPEC void RT_FX_treat_fx(struct SeqTrack *seqtrack, struct FX *fx,int val,STime time,int skip, FX_when when);
 //extern LANGSPEC void FX_treat_fx(struct FX *fx,int val,int skip);
 extern LANGSPEC void FX_call_me_before_starting_to_play_song(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, STime start_time);
-  
+extern LANGSPEC void FX_call_me_before_starting_to_play_song2(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, STime start_time);
+
 extern LANGSPEC void PATCH_turn_voice_on(struct Patch *patch, int voicenum);
 extern LANGSPEC void PATCH_turn_voice_off(struct Patch *patch, int voicenum);
 //extern LANGSPEC void PATCH_change_voice_transpose(struct Patch *patch, int voicenum, float new_tranpose);

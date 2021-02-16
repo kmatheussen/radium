@@ -6,9 +6,9 @@ typedef struct {
   int64_t den;
 } Ratio;
 
-#if 0
 #ifdef __cplusplus
 namespace r{
+#if 0
   struct Ratio{
     ::Ratio r;
     Ratio(::Ratio r)
@@ -18,8 +18,8 @@ namespace r{
       r = {num, den};
     }
   };
-}
 #endif
+}
 #endif
 
 // The difference between Ratio and StaticRatio is that numerator and denominoator of StaticRatio are not divided by gcd. StaticRatio is used in quantization, time signatures, bar/beat, and maybe other things.
@@ -86,7 +86,7 @@ static inline Ratio make_ratio(int64_t num, int64_t den) {
   R_ASSERT(den > 0L);
 #endif
 #endif
-
+  
   Ratio ratio = {num, den};
   return RATIO_minimize(ratio);
 }

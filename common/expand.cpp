@@ -17,6 +17,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <string.h>
 
 #include "nsmtracker.h"
+#include "TimeData.hpp"
 #include "player_proc.h"
 #include "player_pause_proc.h"
 #include "placement_proc.h"
@@ -95,8 +96,11 @@ static void expand_track(struct Tracks *track, const Place start, const Place en
     expand_list3(&track->stops->l, start, end, new_end, last_place);
   */
   VECTOR_FOR_EACH(struct FXs *,fxs, &track->fxs){
+    r::TimeData<r::FXNode>::Writer(fxs->_fxnodes).expand(ratio_from_place(start), ratio_from_place(end), ratio_from_place(new_end), ratio_from_place(last_place));
+    /*
     if(fxs->fxnodelines!=NULL)
       expand_list3(&fxs->fxnodelines->l, start, end, new_end, last_place);
+    */
   }END_VECTOR_FOR_EACH;
 }
 

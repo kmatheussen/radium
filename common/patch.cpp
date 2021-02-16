@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QTimer>
 
 #include "nsmtracker.h"
+#include "TimeData.hpp"
 #include "visual_proc.h"
 #include "list_proc.h"
 #include "vector_proc.h"
@@ -1971,7 +1972,7 @@ void FX_treat_fx(struct FX *fx,int val,int skip){
 }
 */
 
-
+#if 0
 // Send out FX values for what they would have been at time 'time' if playing block from the beginning.
 void FX_call_me_before_starting_to_play_song(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, STime start_time){
   const struct Blocks *block = seqblock->block;
@@ -2035,6 +2036,71 @@ void FX_call_me_before_starting_to_play_song(struct SeqTrack *seqtrack, const st
       int64_t abstime = seqblock->t.time + blocktime_to_seqtime(seqblock, time);
                                
       fx->call_me_before_starting_to_play_song_MIDDLE(fxs->fx, value, abstime, when);
+      
+    }END_VECTOR_FOR_EACH;
+    
+    track = NextTrack(track);
+  }
+}
+#endif
+
+void FX_call_me_before_starting_to_play_song2(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, STime blocktime){
+
+  const struct Blocks *block = seqblock->block;
+  if(block==NULL)
+    return;
+  
+  int play_id = ATOMIC_GET(pc->play_id);
+  
+  struct Tracks *track = block->tracks;
+  while(track != NULL){
+
+    VECTOR_FOR_EACH(struct FXs *, fxs, &track->fxs){
+      struct FX *fx = fxs->fx;
+
+      r::TimeData<r::FXNode>::Reader reader(fxs->_fxnodes, -1); // FIX: We might want to change -1 to ATOMIC_GET(seqblock->timedata_player_index) when caching has been enabled (and make sure play_id is correct).
+      const r::FXNode &last = reader.at_ref(reader.size()-1);
+      
+      if (last._time >= blocktime) {
+
+        Place place = make_place_from_ratio(last._time);
+        int64_t stime = Place2STime2(block, &place, track);
+              
+        int64_t seqtime = seqblock->t.time + blocktime_to_seqtime(seqblock, stime);
+
+#if !defined(RELEASE)
+        fprintf(stderr,"FX_CALL_ME_FIRST2. ==Time: %d (seqtime: %d) (seqblock->t.time: %d). Val: %d. player_num: %d. FX: %p. MIDDLE: %p\n",
+                (int)blocktime, (int)seqtime,
+                (int)seqblock->t.time,
+                last._val,
+                ATOMIC_GET(seqblock->timedata_player_index),
+                fx,
+                fx==NULL ? (void*)NULL : (void*)fx->call_me_before_starting_to_play_song_MIDDLE);
+#endif
+        
+        fx->call_me_before_starting_to_play_song_MIDDLE(fx, last._val, seqtime, FX_end);
+        
+      } else {
+
+        Place place = STime2Place2(block, blocktime, track);
+        Ratio ratio = make_ratio_from_place(place); // TODO: Create STime2Ratio2-function.
+
+        FX_when when;
+        
+        int value;
+        
+        if (reader.get_value(play_id, ratio, value, when)) {
+
+#if !defined(RELEASE)
+          fprintf(stderr,"FX_CALL_ME_FIRST. ==Time: %d (seqblock->t.time: %d). Val: %d. When: %d. player_num: %d. FX: %p. MIDDLE: %p\n",
+                  (int)blocktime, (int)seqblock->t.time, value, (int)when, ATOMIC_GET(seqblock->timedata_player_index), fx,
+                  fx==NULL ? NULL : fx->call_me_before_starting_to_play_song_MIDDLE);
+#endif          
+          fx->call_me_before_starting_to_play_song_MIDDLE(fx, value, blocktime, when);
+        }
+
+      }
+      
       
     }END_VECTOR_FOR_EACH;
     

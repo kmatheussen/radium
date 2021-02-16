@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "nsmtracker.h"
+#include "TimeData.hpp"
 #include "windows_proc.h"
 #include "list_proc.h"
 #include "ratio_funcs.h"
@@ -177,19 +178,37 @@ static void InsertLines2(
               List_InsertLines3(&track->notes,&track->notes->l,line,toinsert,InsertLines_notes);
             LegalizeNotes(block,track);
 
-            r::TimeData<r::Stop>::Writer(track->stops2).insert_lines(make_ratio(line,1), make_ratio(toinsert,1));
+            const Ratio rlines = make_ratio(line, 1);
+            const Ratio rtoinsert = make_ratio(toinsert, 1);
+            
+            r::TimeData<r::Stop>::Writer(track->stops2).insert_lines(rlines, rtoinsert);
             
             /*
             if(track->stops!=NULL) // need check to avoid ubsan/asan hit
               List_InsertLines3(&track->stops,&track->stops->l,line,toinsert,NULL);
             */
+
+            {
+              std::vector<struct FXs*> to_remove;
+              
+              VECTOR_FOR_EACH(struct FXs *, fxs, &track->fxs){
+                r::TimeData<r::FXNode>::Writer writer(fxs->_fxnodes);
+                writer.insert_lines(rlines, rtoinsert);
+                
+                if (LegalizeFXlines2(block->num_lines,fxs->fx,writer)==false){
+                  writer.cancel();
+                  to_remove.push_back(fxs);
+                }
+                /*
+                  if(fxs->fxnodelines!=NULL) // need check to avoid ubsan/asan hit
+                  List_InsertLines3(&fxs->fxnodelines,&fxs->fxnodelines->l,line,toinsert,NULL);
+                */
+              }END_VECTOR_FOR_EACH;
+              
+              for(auto *fxs : to_remove)
+                VECTOR_remove(&track->fxs, fxs);
+            }
             
-            VECTOR_FOR_EACH(struct FXs *, fxs, &track->fxs){
-              if(fxs->fxnodelines!=NULL) // need check to avoid ubsan/asan hit
-                List_InsertLines3(&fxs->fxnodelines,&fxs->fxnodelines->l,line,toinsert,NULL);
-            }END_VECTOR_FOR_EACH;
-            
-            LegalizeFXlines(block,track);
             track=NextTrack(track);
           }
 
@@ -242,6 +261,9 @@ static bool last_line_contains_something(struct WBlocks *wblock){
   struct Blocks *block = wblock->block;
   int last_line = block->num_lines-1;
   
+  const Ratio rlast_line = make_ratio(block->num_lines-1, 1);
+  const Ratio rnum_lines = make_ratio(block->num_lines, 1);
+    
   struct TempoNodes *secondlast_temponode = (struct TempoNodes *)ListSecondLast3((struct ListHeader3*)block->temponodes);
   if (secondlast_temponode->l.p.line==last_line)
     return true;
@@ -274,7 +296,7 @@ static bool last_line_contains_something(struct WBlocks *wblock){
       note = NextNote(note);
     }
 
-    if (r::TimeData<r::Stop>::Reader(track->stops2).has_element_between(make_ratio(last_line,1), make_ratio(last_line+1,1)))
+    if (r::TimeData<r::Stop>::Reader(track->stops2).has_element_between(rlast_line, rnum_lines))
       return true;
     
     //if(has_element_at_last_line3((struct ListHeader3 *)track->stops, last_line))
@@ -284,8 +306,12 @@ static bool last_line_contains_something(struct WBlocks *wblock){
       return true;
 
     VECTOR_FOR_EACH(struct FXs *, fxs, &track->fxs){
+      if (r::TimeData<r::FXNode>::Reader(fxs->_fxnodes).has_element_between(rlast_line, rnum_lines))
+        return true;
+      /*
       if(has_element_at_last_line3((struct ListHeader3 *)fxs->fxnodelines, last_line))
         return true;
+      */
     }END_VECTOR_FOR_EACH;
 
     track = NextTrack(track);

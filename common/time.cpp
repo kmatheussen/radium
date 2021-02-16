@@ -41,6 +41,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Beats_proc.h"
 #include "visual_proc.h"
 #include "sequencer_timing_proc.h"
+#include "ratio_funcs.h"
 
 
 #include "../embedded_scheme/s7extra_proc.h"
@@ -897,6 +898,7 @@ static const struct STimeChange *get_stimechange(const struct STimes *stimes, do
 }
 
 // Can be called from any thread.
+
 double Place2STime_from_times2(
                                const struct STimes *stimes,
                                double place_as_float
@@ -915,7 +917,9 @@ double Place2STime_from_times2(
   //R_ASSERT_NON_RELEASE(ret < time_change->t2 + 300);
 
   if (ret > time_change->t2){
+#if !defined(RELEASE)
     fprintf(stderr, "  Ret: %f. Place-as-float: %f. Found %f -> %f. (%f -> %f). t1: %f. t2: %f\n", ret, place_as_float, time_change->y1, time_change->y2, time_change->t1/pc->pfreq, time_change->t2/pc->pfreq, time_change->t1, time_change->t2);
+#endif
     R_ASSERT_NON_RELEASE(ret+0.001 > time_change->t2);
     return time_change->t2; // Could happen due to rounding errors. (not anymore)
   }else
@@ -1706,15 +1710,15 @@ static double gakk_STime2Place_internal(
 
   else if (maybe_time > correct_time)
     return gakk_STime2Place_internal(times,
-                                      correct_time,
-                                      num_tries_left-1,
-                                      
-                                      low_result,
-                                      maybe_result,
-                                      
-                                      low_time,
-                                      maybe_time
-                                      );
+                                     correct_time,
+                                     num_tries_left-1,
+                                     
+                                     low_result,
+                                     maybe_result,
+                                     
+                                     low_time,
+                                     maybe_time
+                                     );
   
   else
     return gakk_STime2Place_internal(times,
@@ -1774,11 +1778,41 @@ static double gakk_STime2Place_f(
                                    );
 }
 
-static Place gakk_STime2Place(
-                              const struct Blocks *block,
-                              STime time,
-                              const struct STimes *times
-                              )
+Ratio STime2Place4(
+                   const struct Blocks *block,
+                   STime time,
+                   const struct STimes *times
+                   )
+{
+  Ratio first_ratio = make_ratio(0,1);
+  
+  if (time < 0)
+    return first_ratio;
+
+  Ratio last_ratio = make_ratio(block->num_lines, 1);
+  
+  if (time >= getBlockSTimeLength(block))
+    return last_ratio;
+    
+  double place_f = gakk_STime2Place_f(block,time,times);
+
+  Ratio ratio = make_ratio_from_double(place_f, 18);
+  
+  if (ratio > last_ratio)
+    return ratio;
+
+  if (ratio < first_ratio)
+    return first_ratio;
+
+  return ratio;
+}
+
+
+Place STime2Place3(
+                          const struct Blocks *block,
+                          STime time,
+                          const struct STimes *times
+                          )
 {
   Place place;
   const Place *firstplace = PlaceGetFirstPos();
@@ -1790,8 +1824,13 @@ static Place gakk_STime2Place(
   }
 
   if (time >= getBlockSTimeLength(block)){
+#if 0
     PlaceTilLimit(&place,&lastplace);
     return place;
+#else
+    // NOTE: Changed. This is correct (probably), but maybe something could break now. Should check.
+    return p_Absolute_Last_Pos(block);
+#endif
   }
 
   double place_f = gakk_STime2Place_f(block,time,times);
@@ -1799,7 +1838,7 @@ static Place gakk_STime2Place(
   Double2Placement(place_f, &place);
     
   if (PlaceGreaterOrEqual(&place, &lastplace))
-    PlaceTilLimit(&place,&lastplace);
+    return p_Absolute_Last_Pos(block);
 
   else if (PlaceLessThan(&place,firstplace))
     place = *firstplace;
@@ -1828,7 +1867,7 @@ Place STime2Place(
                   )
 {
   const struct STimes *times = get_stimes_from_swinging_mode(block, swinging_mode);
-  return gakk_STime2Place(block, time, times);
+  return STime2Place3(block, time, times);
 }
 
 double STime2Place2_f(
@@ -1846,6 +1885,6 @@ Place STime2Place2(
                    const struct Tracks *track
                    )
 {
-  return gakk_STime2Place(block, time, track->times);
+  return STime2Place3(block, time, track->times);
 }
 

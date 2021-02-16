@@ -85,7 +85,7 @@ static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
     }
 
     // fx
-    RT_schedule_fxs_newblock(seqtrack, seqblock, seqtime, place);
+    //RT_schedule_fxs_newblock(seqtrack, seqblock, seqtime, place);
     
     // notes
     RT_schedule_notes_newblock(seqtrack, seqblock, seqtime, place);
@@ -127,13 +127,11 @@ static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
     //
     if (next_seqblock != NULL) {
 
-      static const Place first_place = {0,0,1};
-
       union SuperType args[G_NUM_ARGS];
 
       args[0].pointer       = next_seqblock;
       args[1].int_num       = next_time;
-      args[2].const_pointer = &first_place;
+      args[2].const_pointer = &seqblock->t.start_place;
       args[3].int32_num     = playtype;
       args[4].const_pointer = seqblock;
       args[5].const_pointer = NULL;

@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <string.h>
 
 #include "nsmtracker.h"
+#include "TimeData.hpp"
 #include "undo.h"
 #include "placement_proc.h"
 #include "clipboard_range_copy_proc.h"
@@ -64,7 +65,7 @@ static void ADD_UNDO_FUNC(
 
 	CopyRange_stops(&undo_notesandfxs->stops,track->stops2,p1,&p2);
 	CopyRange_notes(&undo_notesandfxs->notes,track->notes,p1,&p2);
-	CopyRange_fxs(&undo_notesandfxs->fxss,&track->fxs,p1,&p2);
+	CopyRange_fxs(block->num_lines, &undo_notesandfxs->fxss,&track->fxs,p1,&p2);
 	if(track->midi_instrumentdata!=NULL){
           undo_notesandfxs->midi_instrumentdata=MIDI_CopyInstrumentData(track);
 	}
@@ -127,9 +128,6 @@ static void *Undo_Do_NotesAndFXs(
 
         }
         
-#if !USE_OPENGL
-	UpdateFXNodeLines(window,wblock,wtrack);
-#endif
 	return undo_notesandfxs;
 }
 

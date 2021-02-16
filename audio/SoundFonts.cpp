@@ -50,6 +50,7 @@ template<class T> static inline std::string ToString(T o) {
     return ss.str();
 }
 
+
 // Taken from sf2dump.cpp by Grigor Iliev
 template<class T> static inline string GetValue(T val) {
   if (val == (T)sf2::NONE) return "NONE";
@@ -371,6 +372,7 @@ hash_t *SF2_get_info(filepath_t filename){
 #endif
     
     sf2::File file(&riff);
+      
     hash_t *hash = HASH_create(5);
     HASH_put_hash(hash,"samples",get_samples_info(&file));
     HASH_put_hash(hash,"instruments",get_instruments_info(&file));

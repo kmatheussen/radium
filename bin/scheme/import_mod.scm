@@ -5598,7 +5598,8 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
     ;;(c-display "instr after: " instruments)
     (set-events! message (cadr new-instruments-and-events)))
   
-
+  (c-display "MAX:" max)
+  (c-display "PLAYLIST:" playlist)
   (define num-original-patterns (1+ (apply max playlist)))
 
   ;;(set-events! "Fix break events"

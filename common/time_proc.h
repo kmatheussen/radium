@@ -110,12 +110,23 @@ static inline const struct STimes *get_stimes_from_swinging_mode(const struct Bl
         const struct WTracks *wtrack = wblock->wtrack;
               
 #if !defined(RELEASE)
+        
+        // Note: Lots of things fail here if playing extremely fast (LPB=99, BPM=999, tempo multiplier=6*99).
+        // This may be a problem, but firstly I haven't seen any crashes caused by using extreme tempos, and secondly, no one uses that kind of tempos.
+        
         if((rand() % 1000) == 0){ // this function is called very often, and therefore this block uses lots of cpu.
           struct Tracks *track = wtrack->track;
           while(track!=NULL){
             
-            if (track->times==NULL || track->times->tchanges==NULL)
+            if (track->times==NULL){
+              fprintf(stderr, "1. wblock: %p. wtrack: %p. track: %p. block: %p. tracknum: %d\n", wblock, wtrack, track, block, track->l.num);
               abort();
+            }
+            
+            if (track->times->tchanges==NULL){
+              fprintf(stderr, "2. wblock: %p. wtrack: %p. track: %p. block: %p. tracknum: %d\n", wblock, wtrack, track, block, track->l.num);
+              abort();
+            }
 
             if (track!=wblock->wtrack->track && track->times==wblock->block->times_with_global_swings){
               track = NextTrack(track);
@@ -248,6 +259,18 @@ static inline STime Place2NonSwingingSTime(
   return Place2STime_from_times(block->num_time_lines, block->times_without_global_swings, p);
 }
 */
+
+extern LANGSPEC Ratio STime2Place4(
+                                   const struct Blocks *block,
+                                   STime time,
+                                   const struct STimes *times
+                                   );
+
+extern LANGSPEC Place STime2Place3(
+                                   const struct Blocks *block,
+                                   STime time,
+                                   const struct STimes *times
+                                   );
 
 extern LANGSPEC double STime2Place_f(
                                     const struct Blocks *block,

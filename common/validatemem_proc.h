@@ -75,7 +75,9 @@ static inline void* my_calloc(size_t size1,size_t size2) {
   char*  ret  = (char*)malloc(size);
   if (ret==NULL){
     R_ASSERT(false);
+#if !defined(TEST_TIMEDATA_MAIN)
     msleep(10000);
+#endif
     return calloc(1,size); // return calloc(1,size) instead of NULL to avoid null-reference warning.
   }
   
