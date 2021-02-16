@@ -314,8 +314,8 @@ void CopyRange_fxs(
                    int num_lines,
                    vector_t *tofxs,
                    const vector_t *das_fromfxs,
-                   const Place *p1,
-                   const Place *p2
+                   const Ratio r1,
+                   const Ratio r2
                    )
 {
   VECTOR_FOR_EACH(const struct FXs *, fromfxs, das_fromfxs){
@@ -341,7 +341,7 @@ void CopyRange_fxs(
         {
           r::TimeData<r::FXNode>::Writer writer(fxs->_fxnodes);
           r::TimeData<r::FXNode>::Reader reader(fromfxs->_fxnodes);
-          CopyRange_fxnodelines2(*fxs->fx, writer, reader, make_ratio_from_place(*p1), make_ratio_from_place(*p2));
+          CopyRange_fxnodelines2(*fxs->fx, writer, reader, r1, r2);
           //printf("Reader size: %d. Writer size: %d\n", reader.size(), writer.size());
           //getchar();
           R_ASSERT_NON_RELEASE(reader.size() >= 2);
@@ -407,8 +407,17 @@ void CopyRange(
           
           range_clip->stops[lokke] = new r::TimeData<r::Stop>;
           CopyRange_stops(range_clip->stops[lokke], track->stops2, &range.y1, &range.y2);
+
+          Place p2;
+          PlaceSetLastPos(block,&p2);
           
-          CopyRange_fxs(block->num_lines, &range_clip->fxs[lokke], &track->fxs,      &range.y1, &range.y2);
+          Ratio r2;
+          if (p_Equal(range.y2, p2))
+            r2 = make_ratio(block->num_lines, 1);
+          else
+            r2 = make_ratio_from_place(range.y2);
+          
+          CopyRange_fxs(block->num_lines, &range_clip->fxs[lokke], &track->fxs, make_ratio_from_place(range.y1), r2);
 
           track=NextTrack(track);
           if (track==NULL)

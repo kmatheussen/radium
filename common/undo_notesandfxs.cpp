@@ -65,7 +65,8 @@ static void ADD_UNDO_FUNC(
 
 	CopyRange_stops(&undo_notesandfxs->stops,track->stops2,p1,&p2);
 	CopyRange_notes(&undo_notesandfxs->notes,track->notes,p1,&p2);
-	CopyRange_fxs(block->num_lines, &undo_notesandfxs->fxss,&track->fxs,p1,&p2);
+	CopyRange_fxs(block->num_lines, &undo_notesandfxs->fxss,&track->fxs, make_ratio(0,1), make_ratio(block->num_lines, 1));
+        
 	if(track->midi_instrumentdata!=NULL){
           undo_notesandfxs->midi_instrumentdata=MIDI_CopyInstrumentData(track);
 	}
