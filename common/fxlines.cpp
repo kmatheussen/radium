@@ -333,16 +333,21 @@ static void selectFX(
   if(num_usedFX>0){
     int lokke;
     vector_t v={};
-
+    
     VECTOR_push_back(&v,talloc_format("----------New FX (track #%d)", wtrack->l.num));
-    VECTOR_push_back(&v,"Add");
+    int add = VECTOR_push_back(&v,"Add");
     
     VECTOR_push_back(&v,talloc_format("----------Existing FX (track #%d)", wtrack->l.num));
-        
+
+    int first = -1;
+    
     for(lokke=0;lokke<num_usedFX;lokke++){
       auto *fx = getTrackFX(track,lokke);
-      if (fx != NULL)
-        VECTOR_push_back(&v,get_track_fx_display_name(wtrack->track, fx));
+      if (fx != NULL){
+        int n = VECTOR_push_back(&v,get_track_fx_display_name(wtrack->track, fx));
+        if (first==-1)
+          first = n;
+      }
     }
 
 #if 0
@@ -350,14 +355,14 @@ static void selectFX(
       VECTOR_push_back(&v,talloc_format("extra %d",lokke));
 #endif
     
-    GFX_Menu3(v,[num_usedFX, callback, window, track, patch](int selection, bool onoff){
+    GFX_Menu3(v,[add, first, num_usedFX, callback, window, track, patch](int selection, bool onoff){
         if (selection==-1)
           return;
-        
-        if(selection<num_usedFX)
-          callback(getTrackFX(track,selection));
-        else
+
+        if (selection==add)
           patch->instrument->getFX(window,track,callback);
+        else
+          callback(getTrackFX(track,selection-first));
       });
 
     return;
