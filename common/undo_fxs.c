@@ -63,16 +63,15 @@ void ADD_UNDO_FUNC(
 		undo_fxs->midi_instrumentdata=MIDI_CopyInstrumentData(track);
 	}
 
-	Undo_Add(
-                 window->l.num,
-                 block->l.num,
-                 track->l.num,
-                 realline,
-                 undo_fxs,
-                 Undo_Do_FXs,
-                 "Track fxs"
-                 );
-
+	Undo_Add_dont_stop_playing(
+                                   window->l.num,
+                                   block->l.num,
+                                   track->l.num,
+                                   realline,
+                                   undo_fxs,
+                                   Undo_Do_FXs,
+                                   "Track fxs"
+                                   );
 }
 
 void ADD_UNDO_FUNC(FXs_CurrPos(
@@ -97,8 +96,13 @@ static void *Undo_Do_FXs(
 	vector_t *temp = VECTOR_copy(&track->fxs);
 	void *midi_instrumentdata=track->midi_instrumentdata;
 
-	track->fxs = *(VECTOR_copy(&undo_fxs->fxss));
-	track->midi_instrumentdata=undo_fxs->midi_instrumentdata;
+        vector_t *new_track_fxs = VECTOR_copy(&undo_fxs->fxss);
+        
+        {
+          SCOPED_PLAYER_LOCK_IF_PLAYING();
+          track->fxs = *new_track_fxs;
+          track->midi_instrumentdata=undo_fxs->midi_instrumentdata;
+        }
         
 	undo_fxs->fxss = *temp;
 	undo_fxs->midi_instrumentdata=midi_instrumentdata;

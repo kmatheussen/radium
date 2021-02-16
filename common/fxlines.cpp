@@ -276,30 +276,6 @@ int AddFXNodeLine(
         return ret;
 }
 
-static void AddNewTypeOfFxNodeLine(struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, struct FX *fx, const Place *p2, int val){
-  //printf("new, fxnum: %d, wtrack->fx->fx->effect_num:%d\n",fx->num,wtrack->track->fxs==NULL?-1000:wtrack->track->fx->effect_num);
-  
-  struct FXs *fxs=FXs_create();
-  fxs->fx=fx;
-  VECTOR_push_back(&wtrack->track->fxs, fxs);
-
-  /*
-  struct FXNodeLines *fxnodeline=(struct FXNodeLines *)talloc(sizeof(struct FXNodeLines));
-  fxnodeline->val=val;
-  PlaceCopy(&fxnodeline->l.p,p2);
-  ListAddElement3(&fxs->fxnodelines,&fxnodeline->l);
-  */
-  
-  {
-    r::TimeData<r::FXNode>::Writer writer(fxs->_fxnodes);
-    Ratio ratio = ratio_from_place(*p2);
-    auto node = r::FXNode(*fx, ratio, val);
-    writer.add(node);
-  }
-  
-  window->must_redraw = true;
-}
-
 static struct FXs *get_fxs_for_fx(struct Tracks *track, struct FX *fx){
   //printf("Calling get_fxs_for_fx for track %p. num_fxs: %d\n", track, track->fxs.num_elements);
   VECTOR_FOR_EACH(struct FXs *, fxs, &track->fxs){
@@ -315,11 +291,14 @@ static void AddFXNodeLineCurrPosInternal(struct Tracker_Windows *window, struct 
 
   Place p1;
   PlaceCopy(&p1, place);
-  
-        struct FXs *fxs=get_fxs_for_fx(wtrack->track, fx);
-        if (fxs==NULL){
-          Place p2;
 
+  bool created_new_fxs = false;
+  Place p2;
+            
+  struct FXs *fxs=get_fxs_for_fx(wtrack->track, fx);
+  
+  if (fxs==NULL){
+    
           //printf("    FXS 1: %p\n",fxs);
           
           PlaceCopy(&p2, &p1);
@@ -340,30 +319,36 @@ static void AddFXNodeLineCurrPosInternal(struct Tracker_Windows *window, struct 
             p1.counter = 0;
           }
 
-          AddNewTypeOfFxNodeLine(window, wblock, wtrack, fx, &p2, val);
+          fxs = FXs_create();
+          fxs->fx = fx;
+  
+          created_new_fxs = true;
+  }
 
-          fxs=get_fxs_for_fx(wtrack->track, fx);
-          //printf("    FXS 2: %p\n",fxs);
-          
-          R_ASSERT_RETURN_IF_FALSE(fxs!=NULL);
-        }
+  AddFXNodeLine(
+                window,wblock,wtrack,
+                fxs,
+                val,
+                &p1
+                );
 
-	AddFXNodeLine(
-                      window,wblock,wtrack,
-                      fxs,
-                      val,
-                      &p1
-                      );
+  if (created_new_fxs) {
+    AddFXNodeLine(
+                  window,wblock,wtrack,
+                  fxs,
+                  val,
+                  &p2
+                  );
 
-#if !USE_OPENGL
-
-	ClearTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
-	UpdateWTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
-#endif
-
-        window->must_redraw = true; // fx must always use must_redraw, not must_redraw_editor, to update lower scrollbar and legalize cursor pos.
-        
-        return;
+    const rt_vector_t *rt_vector = VECTOR_create_rt_vector(&wtrack->track->fxs, 1);
+    
+    {
+      SCOPED_PLAYER_LOCK_IF_PLAYING();
+      RT_VECTOR_push_back(&wtrack->track->fxs, fxs, rt_vector);
+    }
+  }
+                         
+  window->must_redraw = true; // fx must always use must_redraw, not must_redraw_editor, to update lower scrollbar and legalize cursor pos.
 }
 
 
@@ -423,9 +408,7 @@ void AddFXNodeLineCurrPos(struct Tracker_Windows *window, struct WBlocks *wblock
     
     ADD_UNDO(FXs_CurrPos(window));
     
-    PC_Pause();{
-      AddFXNodeLineCustomFxAndPos(window, wblock, wtrack, fx, &place, 0.5);
-    }PC_StopPause(NULL);
+    AddFXNodeLineCustomFxAndPos(window, wblock, wtrack, fx, &place, 0.5);
   };
     
   selectFX(window,wblock,wtrack, callback);
@@ -500,17 +483,15 @@ void DeleteFxNodes(struct Tracker_Windows *window, struct WTracks *wtrack, struc
 
     writer.remove_at_pos(0);
     
-    PC_Pause();{
+    struct FX *fx = fxs->fx;
+    struct Tracks *track = wtrack->track;
       
-      struct FX *fx = fxs->fx;
-      struct Tracks *track = wtrack->track;
-      
-      //OS_SLIDER_release_automation_pointers(track->patch,fx->effect_num);
-      (*fx->closeFX)(fx,track);
+    (*fx->closeFX)(fx,track);
+
+    {
+      SCOPED_PLAYER_LOCK_IF_PLAYING();
       VECTOR_remove(&track->fxs, fxs);
-      
-    }PC_StopPause(NULL);
-    
+    }
   }
 
   window->must_redraw = true; // fx must always use must_redraw, not must_redraw_editor, to update lower scrollbar and legalize cursor pos.
@@ -544,7 +525,7 @@ void r::TimeData<T>::ReaderWriter<TimeData, TimeDataVector>::iterate_fx(struct S
   {
     if (period._start.num==0 || period._start < first_t._time) { // Note: period._start==0 when it's the first call to block.
 
-      prev_value = 0.0; // Not necessary. Only to silence compiler error. (Usually I have the opposite problem, that it won't give error when using uninitialized value. Sigh. Why don't the gcc people prioritize to get this right? It seems far more important than minor optimizations for instance.)
+      prev_value = 0.0; // Not necessary. Only to silence compiler error. (Usually I have the opposite problem, that it won't give error when using uninitialized value. Sigh. Why don't the gcc and clang people prioritize to get this right? It seems far more important than minor optimizations for instance.)
       has_prev_value = false;
     
     } else {
