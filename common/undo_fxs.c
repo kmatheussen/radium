@@ -52,26 +52,25 @@ void ADD_UNDO_FUNC(
                    )
 {
 
-	const Place *p1=PlaceGetFirstPos();
-	Place p2;
-	struct Undo_FXs *undo_fxs=talloc(sizeof(struct Undo_FXs));
+  Ratio r1 = make_ratio(0,1);
+  Ratio r2 = make_ratio(block->num_lines, 1);
 
-	PlaceSetLastPos(block,&p2);
+  struct Undo_FXs *undo_fxs=talloc(sizeof(struct Undo_FXs));
 
-	CopyRange_fxs(block->num_lines, &undo_fxs->fxss,&track->fxs,p1,&p2);
-	if(track->midi_instrumentdata!=NULL){
-		undo_fxs->midi_instrumentdata=MIDI_CopyInstrumentData(track);
-	}
-
-	Undo_Add_dont_stop_playing(
-                                   window->l.num,
-                                   block->l.num,
-                                   track->l.num,
-                                   realline,
-                                   undo_fxs,
-                                   Undo_Do_FXs,
-                                   "Track fxs"
-                                   );
+  CopyRange_fxs(block->num_lines, &undo_fxs->fxss, &track->fxs, r1, r2);
+  if(track->midi_instrumentdata!=NULL){
+    undo_fxs->midi_instrumentdata=MIDI_CopyInstrumentData(track);
+  }
+  
+  Undo_Add_dont_stop_playing(
+                             window->l.num,
+                             block->l.num,
+                             track->l.num,
+                             realline,
+                             undo_fxs,
+                             Undo_Do_FXs,
+                             "Track fxs"
+                             );
 }
 
 void ADD_UNDO_FUNC(FXs_CurrPos(

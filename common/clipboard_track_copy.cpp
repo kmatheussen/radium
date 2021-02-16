@@ -96,14 +96,15 @@ struct WTracks *internal_copy_track(
           CopyRange_notes(&totrack->notes,track->notes,p1,&p2);
           CopyRange_stops(totrack->stops2,track->stops2,p1,&p2);
           totrack->swings = CB_CopySwings(track->swings, &p2);
-          CopyRange_fxs(wblock->block->num_lines, &totrack->fxs,&track->fxs,p1,&p2);
+          CopyRange_fxs(wblock->block->num_lines, &totrack->fxs,&track->fxs, make_ratio(0,1), make_ratio(wblock->block->num_lines, 1));
+          
           if (only_one_fxs_was_copied != NULL)
             *only_one_fxs_was_copied = false;
           
         } else{
           vector_t fxss = {};
           VECTOR_push_back(&fxss, fxs);
-          CopyRange_fxs(wblock->block->num_lines, &totrack->fxs,&fxss,p1,&p2);
+          CopyRange_fxs(wblock->block->num_lines, &totrack->fxs,&fxss, make_ratio(0,1), make_ratio(wblock->block->num_lines, 1));
           *only_one_fxs_was_copied = true;
         }
         

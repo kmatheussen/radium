@@ -49,9 +49,8 @@ extern LANGSPEC void CopyRange_fxs(
                                    int num_lines,
                                    vector_t *tofxs,
                                    const vector_t *fromfxs,
-                                   const Place *p1,
-                                   const Place *p2
-);
+                                   const Ratio time1,
+                                   const Ratio time2);
 
 extern LANGSPEC void CopyRange(
                                struct Blocks *wblock,

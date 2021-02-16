@@ -161,11 +161,7 @@ static bool co_CB_PasteTrackFX(
 
 	VECTOR_clean(&totrack->fxs);
 
-	const Place *p1=PlaceGetFirstPos();
-        Place p2;
-	PlaceSetLastPos(wblock->block,&p2);
-
-	CopyRange_fxs(wblock->block->num_lines, &totrack->fxs,&track->fxs,p1,&p2);
+	CopyRange_fxs(wblock->block->num_lines, &totrack->fxs, &track->fxs, make_ratio(0,1), make_ratio(wblock->block->num_lines, 1));
 
 	//LegalizeFXlines(wblock->block,totrack);
 
@@ -180,7 +176,6 @@ static bool paste_track(
 {
         struct Tracks *totrack = towtrack->track;
         struct Tracks *track = wtrack->track;
-        Place p2;
 
         {
           const char *src_start = (const char*)wtrack;
@@ -223,6 +218,7 @@ static bool paste_track(
 	VECTOR_clean(&totrack->fxs);
 
 	const Place *p1=PlaceGetFirstPos();
+        Place p2;
 	PlaceSetLastPos(wblock->block,&p2);
 
 	CopyRange_notes(&totrack->notes,track->notes,p1,&p2);
@@ -232,7 +228,7 @@ static bool paste_track(
 	totrack->swings = CB_CopySwings(track->swings,&p2);
 
         if (totrack->patch != NULL)
-          CopyRange_fxs(wblock->block->num_lines, &totrack->fxs,&track->fxs,p1,&p2);
+          CopyRange_fxs(wblock->block->num_lines, &totrack->fxs,&track->fxs, make_ratio(0,1), make_ratio(wblock->block->num_lines, 1));
 
 	//LegalizeFXlines(wblock->block,totrack);
 	LegalizeNotes(wblock->block,totrack);
