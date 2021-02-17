@@ -340,11 +340,11 @@ static void AddFXNodeLineCurrPosInternal(struct Tracker_Windows *window, struct 
                   &p2
                   );
 
-    const rt_vector_t *rt_vector = VECTOR_create_rt_vector(&wtrack->track->fxs, 1);
+    VECTOR_ensure_space_for_one_more_element(&wtrack->track->fxs);
     
     {
       SCOPED_PLAYER_LOCK_IF_PLAYING();
-      RT_VECTOR_push_back(&wtrack->track->fxs, fxs, rt_vector);
+      VECTOR_push_back_internal(&wtrack->track->fxs, fxs);
     }
   }
                          
