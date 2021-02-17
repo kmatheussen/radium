@@ -72,6 +72,7 @@ extern LANGSPEC const rt_vector_t *VECTOR_create_rt_vector(const vector_t *v, in
 
 extern LANGSPEC int RT_VECTOR_push_back(vector_t *v, const void *element, const rt_vector_t *rt_vector);
 
+// Note: May be called from a realtime thread.
 static inline int VECTOR_push_back_internal(vector_t *v, const void *element){
   R_ASSERT_RETURN_IF_FALSE2(v!=NULL, 0);
 
