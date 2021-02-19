@@ -188,9 +188,11 @@ extern dyn_t GetNoteId(struct Notes *note);
 extern void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes *note, const Place *place, bool last_legal_may_be_next_note);
 extern dyn_t MoveNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Place *place, bool replace_note_ends);
 
-  
 #ifdef __cplusplus
 }
+#endif
+
+#if USE_QT4
 
 template <typename T>
 static inline bool num_is_valid(T &reader, int num, const char *type){

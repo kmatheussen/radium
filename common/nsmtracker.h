@@ -3147,7 +3147,7 @@ struct Tracker_Windows{
 	int systemfontheight;
   
 	NInt curr_track;
-	int curr_track_sub;				/* -1=note, 0,1,2,...,n=vel */
+	int curr_track_sub;				/* -1=note, 0,1,2,...,n=vel (note that the swing subtracks are 0,1,2 even though swing is to the left of the note. note is always -1.)*/
         NInt curr_block; // Used by P2MUpdateSongPosCallBack to keep track of whether to switch current block. The value -1 means that current block is not visible. (happens when playing song)
         int curr_othertrack_sub; // subtrack for bpm track, and so forth.
         

@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/wtracks_proc.h"
 #include "../common/OS_visual_input.h"
 #include "../common/realline_calc_proc.h"
-#include "../Qt/Rational.h"
+#include "../common/notes_proc.h"
 
 #include "api_common_proc.h"
 
@@ -277,6 +277,8 @@ void requestCursorMove(void){
   struct WBlocks *wblock = window->wblock;
 
   ReqType reqtype = GFX_OpenReq(window, 50, 4, "");
+
+  int len, split_pos;
   
   const char *line = GFX_GetString(window,reqtype,"Move cursor (write \"h\" to get examples): >",true);
   //char *line = GFX_GetString(window,NULL,"'2' jumps to bar 2. '2/3' jumps to bar 2, beat 3. '2/3,4' jumps to bar 2, beat 3, track 4: >");
@@ -296,12 +298,12 @@ void requestCursorMove(void){
     if (line==NULL)
       goto exit;
   }
-  
-  int len = (int)strlen(line);
+
+  len = (int)strlen(line);
   if (len==0)
     goto exit;
   
-  int split_pos = string_charpos(line,',');
+  split_pos = string_charpos(line,',');
   //printf("split_pos: %d, len: %d, string: -%s-\n",split_pos, len, line);
   
   if (split_pos != -1){
@@ -317,7 +319,7 @@ void requestCursorMove(void){
     
     int tracknum = atoi(trackstring);
     if (tracknum >= 0)
-      SetCursorPosConcrete_CurrPos(window,(NInt)tracknum);
+      setCurrentTrack(tracknum, -1, window->l.num);
   }
 
   if (strlen(line) > 0) {
@@ -373,39 +375,419 @@ void selectPrevPlaylistBlock(void){
 }
 
 void selectTrack(int tracknum,int windownum){
-	struct Tracker_Windows *window=getWindowFromNum(windownum);
-	if(window==NULL) return;
-
-	SetCursorPosConcrete_CurrPos(window,(NInt)tracknum);
+  setCurrentTrack(tracknum, -1, windownum);
 }
+
+void setCurrentTrack(int tracknum, int subtrack, int windownum){
+  if (tracknum < 0 && subtrack==-1) // fix default subtrack value
+    subtrack = 0;
+  
+  struct Tracker_Windows *window=getWindowFromNum(windownum);
+  if(window==NULL) return;
+
+  struct WBlocks *wblock = window->wblock;
+  //struct Blocks *block = wblock->block;
+  
+  //printf("setCurrentTrack: %d / %d. Can move: %d\n", tracknum, subtrack, canCursorMoveToTrack(tracknum, subtrack, -1, windownum));
+  
+  if (!canCursorMoveToTrack(tracknum, subtrack, -1, windownum)){
+    handleError("setCurrentTrack: Illegal track #%d, subtrack #%d in current block", tracknum, subtrack);
+    return;
+  }
+
+  int prevcurrtrack = window->curr_track;
+
+  ATOMIC_WRITE(window->curr_track, tracknum);
+
+  /*
+  curr_track_sub er alltid 0 når tracknun < 0.
+  curr_othertrack_sub er alltid 2 når tracknum >= 0.
+  */
+
+  if (tracknum < 0) {
+    window->curr_track_sub = 0; // In the old system, this value was always 0 when tracknum<0. Probably makes no difference though.
+    window->curr_othertrack_sub = subtrack;
+  } else {
+    window->curr_track_sub = subtrack;
+    window->curr_othertrack_sub = 2; // In the old system, this value was always 2 when tracknum>=0. Probably makes no difference though.
+  }
+  
+  struct WTracks *wtrack = tracknum < 0 ? wblock->wtracks : getWTrackFromNum(windownum, wblock->l.num, tracknum);
+  if (wtrack==NULL){
+    R_ASSERT(false);
+  } else {
+    if (wblock->wtrack != wtrack)
+      ATOMIC_WRITE(wblock->wtrack, wtrack);
+  }
+
+  GFX_adjust_skew_x(window, wblock, prevcurrtrack);
+  GFX_update_instrument_patch_gui(wtrack->track->patch);
+  GFX_show_curr_track_in_statusbar(window, wblock);
+  
+  window->must_redraw = true;
+}
+
+int getCurrentTrack(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(windownum);
+  if(window==NULL)
+    return 0;
+
+  return window->curr_track;
+}
+
+int getCurrentSubtrack(int windownum){
+  struct Tracker_Windows *window=getWindowFromNum(windownum);
+  if(window==NULL)
+    return 0;
+
+  int tracknum = getCurrentTrack(windownum);
+  
+  int subtracknum;
+  
+  if (window->curr_track < 0)
+    subtracknum = window->curr_othertrack_sub;
+  else
+    subtracknum = window->curr_track_sub;
+
+  int num_subtracks = getNumSubtracks(tracknum, -1, windownum);
+
+  if (tracknum >= 0)
+    return R_BOUNDARIES(-1, subtracknum, num_subtracks-1);
+  else
+    return R_BOUNDARIES(0, subtracknum, num_subtracks-1);
+}
+
+int getNumSubtracks(int tracknum, int blocknum, int windownum){
+  switch(tracknum){
+    case TEMPOCOLORTRACK: return 0;
+    case TEMPOTRACK: return 4;
+    case LPBTRACK: return 2;
+    case SIGNATURETRACK: return 1;
+    case LINENUMBTRACK: return 0;
+    case SWINGTRACK: return 3;
+    case TEMPONODETRACK: return 1;
+    default:
+      break;
+  }
+  
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return 1;
+
+  return GetNumSubtracks(wtrack);
+}
+
+bool getTrackVisible(int tracknum, int blocknum, int windownum){
+  if (tracknum >= 0)
+    return true;
+  
+  struct Tracker_Windows *window=getWindowFromNum(windownum);
+  if(window==NULL) return false;
+        
+  switch(tracknum){
+    case TEMPOCOLORTRACK: return true;
+    case TEMPOTRACK: return window->show_bpm_track;
+    case LPBTRACK: return window->show_lpb_track;
+    case SIGNATURETRACK: return window->show_signature_track;
+    case LINENUMBTRACK: return true;
+    case SWINGTRACK: return window->show_swing_track;
+    case TEMPONODETRACK: return window->show_reltempo_track;
+    default:
+      return true;
+  }
+}
+
+bool canCursorMoveToTrack(int tracknum, int subtrack, int blocknum, int windownum){
+  if (subtrack==-1 && tracknum < 0) // fix default subtrack value
+    subtrack = 0;
+  
+  if (tracknum < LEFTMOSTTRACK)
+    return false;
+  
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  if(wblock==NULL)
+    return false;
+
+  if (tracknum >= wblock->block->num_tracks)
+    return false;
+  
+  int num_subtracks = getNumSubtracks(tracknum, blocknum, windownum);
+
+  if (subtrack < 0){
+    if (subtrack < -1)
+      return false;
+    
+    if (tracknum < 0)
+      return false;
+  }
+
+  if (subtrack >= num_subtracks)
+    return false;
+  
+  if (tracknum >= 0)
+    return true;
+
+  if (getTrackVisible(tracknum, blocknum, windownum)==false)
+    return false;
+
+  switch(tracknum){
+    case TEMPOCOLORTRACK: return false;
+    case LINENUMBTRACK: return false;
+    default:
+      return true;
+  }
+}
+
+int getLeftmostCursorTrack(int blocknum, int windownum){
+  return TEMPOTRACK;
+}
+
+static int get_next_legal_track(int tracknum, int num_tracks, int windownum){
+  for(;;) {
+    tracknum++;
+  
+    if (tracknum>=num_tracks)
+      return NOTRACK;
+    
+    if (canCursorMoveToTrack(tracknum, -1, -1, windownum))
+      return tracknum;
+  }
+}
+
 
 void cursorRight(int windownum){
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 	if(window==NULL) return;
 
-	CursorRight_CurrPos(window);
+        int tracknum = getCurrentTrack(windownum);
+        int subtracknum = getCurrentSubtrack(windownum);
+
+        //printf("right. tracknum: %d. subtracknum: %d\n", tracknum, subtracknum);
+        
+        int num_tracks = getNumTracks(-1);
+        int num_subtracks = getNumSubtracks(tracknum, -1, windownum);
+
+        if (tracknum >= 0 && swingtextVisible(tracknum, -1, windownum)) {
+
+          if (subtracknum==-1)
+            subtracknum = 3;
+          else if (subtracknum==2)
+            subtracknum = -1;
+          else
+            subtracknum++;
+            
+        } else {
+          
+          subtracknum++;
+          
+        }
+
+        if (subtracknum==num_subtracks){
+          
+          tracknum = get_next_legal_track(tracknum, num_tracks, windownum);
+            
+          if (tracknum==NOTRACK)
+            return;
+          
+          if (tracknum < 0 || swingtextVisible(tracknum, -1, windownum))
+            subtracknum = 0;
+          else
+            subtracknum = -1;
+        }
+        
+        if (!canCursorMoveToTrack(tracknum, subtracknum, -1, windownum))
+          return;
+
+        setCurrentTrack(tracknum, subtracknum, windownum);
 }
 
 void cursorNextTrack(int windownum){
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 	if(window==NULL) return;
 
-	CursorNextTrack_CurrPos(window);
+        int tracknum = getCurrentTrack(windownum);
+        int org_tracknum = tracknum;
+        int subtracknum = getCurrentSubtrack(windownum);
+
+        int num_tracks = getNumTracks(-1);
+        
+        //printf("next track. tracknum: %d. subtracknum: %d\n", tracknum, subtracknum);
+
+        tracknum = get_next_legal_track(tracknum, num_tracks, windownum);
+        
+        if (tracknum==NOTRACK)
+          tracknum = get_next_legal_track(LEFTMOSTTRACK, num_tracks, windownum);
+
+        R_ASSERT_RETURN_IF_FALSE(tracknum != NOTRACK);
+          
+        if (org_tracknum < 0 || tracknum < 0) {
+
+          if (tracknum >= 0)
+            subtracknum = -1;
+          else
+            subtracknum = 0;              
+
+        } else {
+
+          bool org_track_has_swing = swingtextVisible(org_tracknum, -1, windownum);
+          bool new_track_has_swing = swingtextVisible(tracknum, -1, windownum);
+            
+          if (org_track_has_swing && !new_track_has_swing && subtracknum <= 2) {
+            
+            subtracknum = -1;
+
+          } else if (new_track_has_swing && !org_track_has_swing && subtracknum <= 2 && (subtracknum != -1)) {
+            
+            subtracknum += 3;
+            
+          }
+
+          int num_subtracks = getNumSubtracks(tracknum, -1, windownum);
+            
+          if (subtracknum >= num_subtracks)
+            subtracknum = num_subtracks -1;
+        }
+        
+        setCurrentTrack(tracknum, subtracknum, windownum);
+}
+
+static int get_previous_legal_track(int tracknum, int windownum){
+  for(;;) {
+    tracknum--;
+  
+    if (tracknum<=LEFTMOSTTRACK)
+      return NOTRACK;
+    
+    if (canCursorMoveToTrack(tracknum, -1, -1, windownum))
+      return tracknum;
+  }
 }
 
 void cursorLeft(int windownum){
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 	if(window==NULL) return;
 
-	CursorLeft_CurrPos(window);
+        int tracknum = getCurrentTrack(windownum);
+        int subtracknum = getCurrentSubtrack(windownum);
+
+        //printf("right. tracknum: %d. subtracknum: %d\n", tracknum, subtracknum);
+        
+        //int num_tracks = getNumTracks(-1);
+
+        if (tracknum >= 0 && swingtextVisible(tracknum, -1, windownum)) {
+          
+          if (subtracknum==-1)
+            subtracknum = 2;
+          else if (subtracknum==3)
+            subtracknum = -1;
+          else
+            subtracknum--;
+            
+        } else {
+          
+          subtracknum--;
+          
+        }
+
+        bool move_prev_track = false;
+        
+        if (tracknum >= 0) {
+
+          if (swingtextVisible(tracknum, -1, windownum)) {
+            
+            if (subtracknum < 0){
+              R_ASSERT_NON_RELEASE(subtracknum==-1);
+              move_prev_track = true;
+            }
+            
+          } else {
+
+            if (subtracknum < -1){
+              R_ASSERT_NON_RELEASE(subtracknum==-2);
+              move_prev_track = true;
+            }
+          }
+          
+        } else {
+          
+          if (subtracknum < 0){
+            R_ASSERT_NON_RELEASE(subtracknum==-1);
+            move_prev_track = true;
+          }
+          
+        }
+            
+        if (move_prev_track) {
+          
+          tracknum = get_previous_legal_track(tracknum, windownum);
+
+          if (tracknum==NOTRACK)
+            return;
+          
+          if (!canCursorMoveToTrack(tracknum, -1, -1, windownum))
+            return;
+
+          int num_subtracks = getNumSubtracks(tracknum, -1, windownum);
+
+          subtracknum = num_subtracks -1;
+        }
+        
+        if (!canCursorMoveToTrack(tracknum, subtracknum, -1, windownum))
+          return;
+
+        setCurrentTrack(tracknum, subtracknum, windownum);
 }
 
 void cursorPrevTrack(int windownum){
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 	if(window==NULL) return;
 
-	CursorPrevTrack_CurrPos(window);
+        int tracknum = getCurrentTrack(windownum);
+        int org_tracknum = tracknum;
+        int subtracknum = getCurrentSubtrack(windownum);
+
+        int num_tracks = getNumTracks(-1);
+        
+        //printf("prev track. tracknum: %d. subtracknum: %d\n", tracknum, subtracknum);
+
+        tracknum = get_previous_legal_track(tracknum, windownum);
+        if (tracknum==NOTRACK)
+          tracknum = num_tracks -1;
+
+        if (org_tracknum < 0 || tracknum < 0) {
+
+          if (tracknum >= 0)
+            subtracknum = -1;
+          else
+            subtracknum = 0;              
+
+        } else {
+
+          bool org_track_has_swing = swingtextVisible(org_tracknum, -1, windownum);
+          bool new_track_has_swing = swingtextVisible(tracknum, -1, windownum);
+            
+          if (org_track_has_swing && !new_track_has_swing && subtracknum <= 2) {
+            
+            subtracknum = -1;
+
+          } else if (new_track_has_swing && !org_track_has_swing && subtracknum <= 2 && (subtracknum != -1)) {
+            
+            subtracknum += 3;
+            
+          }
+
+          int num_subtracks = getNumSubtracks(tracknum, -1, windownum);
+            
+          if (subtracknum >= num_subtracks)
+            subtracknum = num_subtracks -1;
+        }
+        
+        setCurrentTrack(tracknum, subtracknum, windownum);
 }
+
 
 int currentBlock(int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);

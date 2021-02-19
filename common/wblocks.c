@@ -497,8 +497,9 @@ void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock, bool fo
       
       window->curr_track_sub=-1;
       ATOMIC_WRITE(window->curr_track, newcurrtrack);
-      
-      SetCursorPosConcrete(window,wblock,newcurrtrack,newcurrtracksub);
+
+      if (window->wblock==wblock)
+        setCurrentTrack(newcurrtrack, newcurrtracksub, window->l.num);
       
       //if (SetCursorPosConcrete(window,wblock,newcurrtrack,newcurrtracksub)==false)
       //  ATOMIC_WRITE(window->curr_track, 0);
