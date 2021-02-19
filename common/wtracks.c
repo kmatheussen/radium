@@ -36,9 +36,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "swingtext_proc.h"
 #include "fxtext_proc.h"
 
+#include "../api/api_proc.h"
+
 #include "wtracks_proc.h"
 
-extern PlayerClass *pc;
 
 
 int WTRACK_num_non_polyphonic_subtracks(const struct WTracks *wtrack){
@@ -574,8 +575,9 @@ void MinimizeBlock_CurrPos(
         ADD_UNDO(Block_CurrPos(window));
 
         wblock->skew_x = 0;
-        
-	SetCursorPosConcrete(window,wblock,0,-1);
+
+        if (wblock==window->wblock)
+          setCurrentTrack(0, -1, window->l.num);
 
 	wblock->temponodearea.width=2;
 	wtrack=wblock->wtracks;
@@ -712,7 +714,7 @@ void SwapTrack_CurrPos(
 
         window->must_redraw = true;
 
-        CursorNextTrack_CurrPos(window);
+        cursorNextTrack(window->l.num);
 }
 
 

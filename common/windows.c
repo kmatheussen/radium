@@ -271,7 +271,7 @@ void checkIfWBlocksAreDirty(void) {
 void ValidateCursorPos(struct Tracker_Windows *window){
   struct WBlocks *wblock = window->wblock;
   struct WTracks *wtrack = wblock->wtrack;
-  
+
   int num_subtracks = WTRACK_num_subtracks(wtrack);
   
   if (window->curr_track_sub >= num_subtracks)

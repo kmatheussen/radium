@@ -1828,8 +1828,8 @@ $(T)api_keyplay.o:  $(BUILD_DEPENDENCIES)  $(API)api_keyplay.c
 $(T)api_keyplayedit.o:  $(BUILD_DEPENDENCIES)  $(API)api_keyplayedit.c 
 	$(CC2)  $(API)api_keyplayedit.c $(OPT)
 
-$(T)api_navigate.o:  $(BUILD_DEPENDENCIES)  $(API)api_navigate.c 
-	$(CC2)  $(API)api_navigate.c $(OPT)
+$(T)api_navigate.o:  $(BUILD_DEPENDENCIES)  $(API)api_navigate.cpp
+	$(CCC2)  $(API)api_navigate.cpp $(CPPOPT)
 
 $(T)api_disk.o:  $(BUILD_DEPENDENCIES)  $(API)api_disk.cpp 
 	$(CCC2)  $(API)api_disk.cpp $(SNDFILEOPT) $(QTOPT)

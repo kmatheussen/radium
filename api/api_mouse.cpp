@@ -535,8 +535,9 @@ void setTrackSliderPos(float pos, int blocknum, int windownum){
 
     if (xb2 > wblock->t.x1)
       break;
-    
-    CursorRight(window, wblock);
+
+    if (window->wblock==wblock)
+      cursorRight(window->l.num);
 
     if (track==window->curr_track && subtrack==window->curr_track_sub)
       break;
@@ -560,7 +561,8 @@ void setTrackSliderPos(float pos, int blocknum, int windownum){
     if (xb1 < wblock->t.x2)
       break;
     
-    CursorLeft(window, wblock);
+    if (window->wblock==wblock)
+      cursorLeft(window->l.num);
 
     if (track==window->curr_track && subtrack==window->curr_track_sub)
       break;
@@ -3009,16 +3011,6 @@ void disablePortamento(dyn_t dynnote, int tracknum, int blocknum, int windownum)
 
 // subtracks
 ///////////////////////////////////////////////////
-int getNumSubtracks(int tracknum, int blocknum, int windownum){
-  struct Tracker_Windows *window;
-  struct WBlocks *wblock;
-  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
-  if (wtrack==NULL)
-    return 1;
-
-  return GetNumSubtracks(wtrack);
-}
-
 static struct WTracks *getSubtrackWTrack(int subtracknum, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;

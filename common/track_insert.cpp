@@ -36,6 +36,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "player_proc.h"
 #include "player_pause_proc.h"
 
+#include "../api/api_proc.h"
+
 #include "track_insert_proc.h"
 
 
@@ -162,14 +164,10 @@ void InsertTracks_CurrPos(
 		curr_track=wblock->block->num_tracks-1;
 	}
 
-	SetCursorPosConcrete(window,wblock,0,-1);
-
-	SetCursorPosConcrete(window,wblock,curr_track,-1);
-
-        ValidateCursorPos(root->song->tracker_windows);
-        
+        setCurrentTrack(0, -1, window->l.num);
+        setCurrentTrack(curr_track, -1, window->l.num);
+          
 	window->must_redraw = true;
-
 }
 
 

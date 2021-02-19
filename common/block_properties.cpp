@@ -208,11 +208,8 @@ void Block_Set_num_tracks(
             //ATOMIC_WRITE(window->curr_track, num_tracks - 1);
             wblock=(struct WBlocks *)ListFindElement1(&window->wblocks->l,block->l.num);
 
-            SetCursorPosConcrete(
-                                 window,
-                                 wblock,
-                                 num_tracks - 1,
-                                 -1);
+            if (wblock==window->wblock)            
+              setCurrentTrack(num_tracks-1, -1, window->l.num);
           }
           CutListAt1(&block->tracks,num_tracks);
           while(window!=NULL){
@@ -249,7 +246,8 @@ void Block_Properties(
 		struct Tracker_Windows *window=root->song->tracker_windows;
 		while(window!=NULL){
 			struct WBlocks *wblock=(struct WBlocks *)ListFindElement1(&window->wblocks->l,block->l.num);
-			SetCursorPosConcrete(window,wblock,0,-1);
+                        if (wblock==window->wblock)            
+                          setCurrentTrack(num_tracks-1, -1, window->l.num);
 			window=NextWindow(window);
 		}
                 player_pause.need_it();
