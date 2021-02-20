@@ -1355,7 +1355,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;
 
 (define (create-font-requester org-font set-font-func)
-  (let ((fontreq (<gui> :font-requester "")))
+  (let ((fontreq (<gui> :font-requester org-font)))
     
     (<gui> :add-callback fontreq
            (lambda (fontstring-or-buttons)
@@ -1380,6 +1380,7 @@
 
 
 #!!
+(<ra> :get-editor-font)
 (create-change-system-font-requester)
 (create-change-editor-font-requester)
 !!#
