@@ -270,6 +270,12 @@ const char *GFX_GetSystemFont(void){
   return talloc_strdup(qApp->font().toString().toUtf8().constData());
 }
 
+static void save_editor_font_to_config(struct Tracker_Windows *tvisual){
+  EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
+  SETTINGS_write_string("font",editor->font.toString().toUtf8().constData());
+  SETTINGS_write_string("font_style",editor->font.styleName()); // toString doesn't seem to cover this.
+}
+
 void GFX_SetEditorFont(const char *fontdescr){
   struct Tracker_Windows *tvisual = root->song->tracker_windows;
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
@@ -277,6 +283,7 @@ void GFX_SetEditorFont(const char *fontdescr){
   font.fromString(fontdescr);
   editor->font = font;
   setFontValues(tvisual);
+  save_editor_font_to_config(tvisual);
   UpdateAllWBlockWidths(tvisual);
   GL_create(tvisual);
 }
@@ -313,10 +320,8 @@ static char *GFX_SelectEditFont(struct Tracker_Windows *tvisual){
 }
 
 void GFX_ConfigFonts(struct Tracker_Windows *tvisual){
-  char *font = GFX_SelectEditFont(tvisual);
-  SETTINGS_write_string("font",font);
-  EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
-  SETTINGS_write_string("font_style",editor->font.styleName()); // toString doesn't seem to cover this.
+  GFX_SelectEditFont(tvisual);
+  save_editor_font_to_config(tvisual);
 }
 
 void GFX_ResetFontSize(struct Tracker_Windows *tvisual){
