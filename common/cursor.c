@@ -89,17 +89,17 @@ static void make_cursor_visible(struct Tracker_Windows *window,struct WBlocks *w
     return;
   }
 
-  int x2 = GetXSubTrack_B2(wblock,track,subtrack)+1;
+  int x2 = GetXSubTrack_B2(wblock,track,subtrack) + 10; // I don't know why we have to add 10 here. The number does not seem to be related to font size, left slider width, or number of tracks.
 
   if (x2 > wblock->t.x2){
     int bef = wblock->skew_x;
-    ////wblock->skew_x -= x2 - wblock->t.x2;
-    wblock->skew_x = wblock->t.x2 - x2;
+    wblock->skew_x -= x2 - wblock->t.x2;
     struct WTracks *wtrack = ListFindElement1(&wblock->wtracks->l,track);
-    printf("Skewing right: %d -> %d. x2: %d. wblock->t.x: %d -> %d. wtrack->notearea.x2: %d, track: %d. subtrack: %d\n",
-           bef, wblock->skew_x,
-           x2, wblock->t.x1, wblock->t.x2, wtrack->notearea.x2,
-           track, subtrack);
+    if (0)
+      printf("Skewing right: %d -> %d. x2: %d. wblock->t.x: %d -> %d. wtrack->notearea.x2: %d, track: %d. subtrack: %d\n",
+             bef, wblock->skew_x,
+             x2, wblock->t.x1, wblock->t.x2, wtrack->notearea.x2,
+             track, subtrack);
     return;
   }
 }
