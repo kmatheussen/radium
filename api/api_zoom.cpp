@@ -26,6 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_visual_input.h"
 #include "../common/visual_proc.h"
 #include "../common/sequencer_proc.h"
+#include "../common/cursor_proc.h"
 
 #include "../Qt/KeyboardFocusFrame.hpp"
 #include "../Qt/Qt_sequencer_proc.h"
