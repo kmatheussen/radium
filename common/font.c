@@ -22,8 +22,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "reallines_proc.h"
 #include "windows_proc.h"
 #include "wblocks_proc.h"
+#include "wtracks_proc.h"
 #include "OS_visual_input.h"
-
+#include "cursor_proc.h"
 
 #include "font_proc.h"
 
@@ -49,6 +50,10 @@ void IncFontSize_CurrPos(
 	//	UpdateReallinesDependens(window,wblock);
 
         UpdateAllWBlockWidths(window);
+        UpdateWBlockCoordinates(window, wblock);
+        
+        GFX_adjust_skew_x(window, wblock, window->curr_track);
+        
 	window->must_redraw = true;
 }
 
