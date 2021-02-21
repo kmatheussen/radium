@@ -28,6 +28,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "font_proc.h"
 
+static void after(struct Tracker_Windows *window){
+  struct WBlocks *wblock=window->wblock;
+  
+  UpdateAllWBlockWidths(window);
+  UpdateWBlockCoordinates(window, wblock);
+  
+  GFX_adjust_skew_x(window, wblock, window->curr_track);
+  
+  window->must_redraw = true;
+}
 
 void IncFontSize_CurrPos(
 	struct Tracker_Windows *window,
@@ -49,12 +59,7 @@ void IncFontSize_CurrPos(
         GFX_IncFontSize(window, incnum);
 	//	UpdateReallinesDependens(window,wblock);
 
-        UpdateAllWBlockWidths(window);
-        UpdateWBlockCoordinates(window, wblock);
-        
-        GFX_adjust_skew_x(window, wblock, window->curr_track);
-        
-	window->must_redraw = true;
+        after(window);
 }
 
 void SetFontSizeNormal_CurrPos(
@@ -62,7 +67,6 @@ void SetFontSizeNormal_CurrPos(
 ){
   //IncFontSize_CurrPos(window,window->org_fontheight-window->fontheight+2);
   GFX_ResetFontSize(window);
-  UpdateAllWBlockWidths(window);
-  window->must_redraw = true;
+  after(window);
 }
 
