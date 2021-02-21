@@ -243,6 +243,7 @@ void Block_Properties(
         radium::PlayerPauseOnlyIfNeeded player_pause;
       
 	if(num_tracks!=block->num_tracks){
+          /*
 		struct Tracker_Windows *window=root->song->tracker_windows;
 		while(window!=NULL){
 			struct WBlocks *wblock=(struct WBlocks *)ListFindElement1(&window->wblocks->l,block->l.num);
@@ -251,6 +252,7 @@ void Block_Properties(
 			window=NextWindow(window);
 		}
                 player_pause.need_it();
+          */
 		Block_Set_num_tracks(block,num_tracks);
 	}
 
