@@ -159,7 +159,7 @@ struct Favourites{
       }
     }END_VECTOR_FOR_EACH;
 
-    std::sort(hepps.begin(), hepps.end(), compare_hepps);
+    std::stable_sort(hepps.begin(), hepps.end(), compare_hepps);
   }
 
   void set_num_uses(SoundPluginType *type){

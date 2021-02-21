@@ -889,7 +889,7 @@ void MODULATOR_maybe_create_and_add_target(const struct Patch *patch, int effect
   VECTOR_push_back(&v, "--------------");
 
   auto modulators = g_modulators2.to_std_vector(); // Make a copy so we don't have to lock player while sorting.
-  std::sort(modulators.begin(), modulators.end(), sort_modulators_by_creation_time);
+  std::stable_sort(modulators.begin(), modulators.end(), sort_modulators_by_creation_time);
 
   for(auto *modulator : modulators){
     struct Patch *patch = modulator->_plugin->patch;
