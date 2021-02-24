@@ -319,7 +319,7 @@ void requestCursorMove(void){
     
     int tracknum = atoi(trackstring);
     if (tracknum >= 0)
-      setCurrentTrack(tracknum, -1, window->l.num);
+      setCurrentTrack(tracknum, -2, window->l.num);
   }
 
   if (strlen(line) > 0) {
@@ -375,18 +375,42 @@ void selectPrevPlaylistBlock(void){
 }
 
 void selectTrack(int tracknum,int windownum){
-  setCurrentTrack(tracknum, -1, windownum);
+  setCurrentTrack(tracknum, -2, windownum);
 }
 
 void setCurrentTrack(int tracknum, int subtrack, int windownum){
-  if (tracknum < 0 && subtrack==-1) // fix default subtrack value
-    subtrack = 0;
-  
   struct Tracker_Windows *window=getWindowFromNum(windownum);
   if(window==NULL) return;
 
   struct WBlocks *wblock = window->wblock;
   //struct Blocks *block = wblock->block;
+  
+
+  // fix default subtrack value
+  if (subtrack==-2) {
+    int current_track = getCurrentTrack(windownum);
+    
+    if (tracknum < 0) {
+
+      if (current_track==tracknum)
+        return;
+      else
+        subtrack = 0;
+      
+    } else {
+      int current_subtrack = getCurrentSubtrack(windownum);
+      int num_tracks = getNumTracks(wblock->l.num);
+      if (tracknum >= num_tracks){
+        handleError("setCurrentTrack: Illegal track #%d in current block", tracknum);
+        return;
+      }
+      int num_subtracks = getNumSubtracks(tracknum, wblock->l.num, windownum);
+      if (current_subtrack >= num_subtracks)
+        subtrack = num_subtracks - 1;
+      else
+        subtrack = current_subtrack;
+    }      
+  }
   
   //printf("setCurrentTrack: %d / %d. Can move: %d\n", tracknum, subtrack, canCursorMoveToTrack(tracknum, subtrack, -1, windownum));
   
@@ -544,6 +568,18 @@ bool canCursorMoveToTrack(int tracknum, int subtrack, int blocknum, int windownu
 int getLeftmostCursorTrack(int blocknum, int windownum){
   return TEMPOTRACK;
 }
+
+/*
+int getSubtracknum(const_char* subtracktype, int subtracktypenum, int tracknum, int blocknum, int windownum){
+}
+
+const_char* getSubtrackType(int subtracknum, int tracknum, int blocknum, int windownum){
+}
+
+int getSubtrackTypeNum(int subtracknum, int tracknum, int blocknum, int windownum){
+}
+*/
+
 
 static int get_next_legal_track(int tracknum, int num_tracks, int windownum){
   for(;;) {
