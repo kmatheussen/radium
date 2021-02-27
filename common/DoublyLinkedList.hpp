@@ -57,7 +57,7 @@ private:
         break;
       }
 
-      R_ASSERT(element->dll_prev = prev);
+      R_ASSERT(element->dll_prev == prev);
 
       prev = element;
       element = element->dll_next;

@@ -241,7 +241,7 @@ struct SincResampler : public Resampler{
 struct radium::Resampler *RESAMPLER_create(src_callback_t callback, int num_channels, void *arg, enum ResamplerType type){
   radium::Resampler *resampler;
 
-  R_ASSERT(num_channels = 1);
+  R_ASSERT(num_channels == 1);
 
   if(type==RESAMPLER_CUBIC) {
     resampler = new radium::InterpolatingResampler(callback, arg);

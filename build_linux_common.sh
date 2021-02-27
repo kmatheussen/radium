@@ -251,9 +251,18 @@ ln -sf $RADIUM_BIN bin/
 ln -sf `pwd`/bin/* /tmp/radium_bin/ || true
 
 echo
-if grep static\  */*.c */*.cpp */*.m */*/*.c */*/*.cpp | grep "\[" | grep -v "\[\]"|grep -v static\ void |grep -v unused_files |grep -v GTK |grep -v test\/ |grep -v X11\/ |grep -v amiga |grep -v faust-examples|grep -v temp\/ |grep -v "\[NO_STATIC_ARRAY_WARNING\]" |grep -v backup ; then
+if grep static\  */*.c */*.cpp */*.m */*/*.c */*/*.cpp | grep "\[" | grep -v "\[\]"|grep -v static\ void |grep -v unused_files |grep -v GTK |grep -v test\/ |grep -v X11\/ |grep -v amiga |grep -v faust-examples|grep -v temp\/ |grep -v "\[NO_STATIC_ARRAY_WARNING\]" |grep -v backup |grep -v mingw |grep -v Dropbox ; then
     echo
     echo "ERROR in line(s) above. Static arrays may decrease GC performance notably.";
     echo
     exit -1
+fi
+
+if [ -d .git ] ; then
+    if git grep R_ASSERT|grep \=|grep -v \=\=|grep -v \!\=|grep -v \>\=|grep -v \<\= |grep -v build_linux_common.sh ; then
+        echo
+        echo "ERROR in line(s) above. An R_ASSERT line is possibly wrongly used.";
+        echo
+        exit -1
+    fi            
 fi

@@ -353,7 +353,7 @@ static inline QWidget *get_current_parent(QWidget *child, bool is_going_to_run_c
 #endif
       if (child==g_main_window){
         int *ai=NULL;
-        ai[0] = 51; // Start the crash reporter. We can't use R_ASSERT in this function since get_current_parent is used by some of the bin/radium_* programs.
+        ai[0] = 51; // Start the crash reporter. We can't use R_ASSERT in this function since get_current_parent is used by some of the bin/radium_* programs. (==)
       }
       return g_main_window;
     }

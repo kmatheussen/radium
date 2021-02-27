@@ -754,7 +754,7 @@ static void PLUGIN_RT_process(SoundPlugin *plugin, int64_t time, int num_frames,
     for(int i=0;i<plugin->type->num_inputs;i++)
       R_ASSERT(inputs_check[i]==inputs[i]);
     for(int i=0;i<plugin->type->num_outputs;i++)
-      R_ASSERT(outputs_check[i]=outputs[i]);
+      R_ASSERT(outputs_check[i]==outputs[i]);
 #endif
 
     const char *abnormal_signal_type = RT_check_abnormal_signal(plugin, num_frames, outputs);
