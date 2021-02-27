@@ -2904,6 +2904,12 @@ struct STimes{									/* One element for each line. */
 
 extern int64_t g_editor_blocks_generation; //This number increases every time a block is added or removed, tracks are added or removed, block is renamed, block changes color, or block duration changes.
 
+#ifdef __cplusplus
+namespace r{
+class CacheNumHolder;
+}
+#endif
+
 struct Blocks{
 	struct ListHeader1 l;
 
@@ -2939,8 +2945,16 @@ struct Blocks{
   unsigned int color;
   
   // This variable is checked after each keyboard or menu event. If true, trackreallines, wtracks, etc. will be updated.
-  bool is_dirty; 
+  bool is_dirty;
+
+#ifdef __cplusplus
+  r::CacheNumHolder *cache_num_holder; // Sets seqblock->cache_num in the player.
+#else
+  void *cache_num_holder;
+#endif
 };
+
+
 #define NextBlock(a) (struct Blocks *)((a)->l.next)
 
 
@@ -3505,6 +3519,15 @@ struct SeqBlock{
 
   int64_t curr_scheduled_realline_counter; // used by the scheduler. Only accessed from the main player thread.
 
+  // These two are used by the scheduler to find cache_num in various TimeData structures.
+#ifdef __cplusplus
+  mutable int last_play_id;
+  mutable int cache_num;
+#else
+  int last_play_id;
+  int cache_num;
+#endif
+  
   /*
   double stretch_automation_compensation;
   double speed_automation_compensation;

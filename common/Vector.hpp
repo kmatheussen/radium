@@ -22,7 +22,7 @@ extern bool g_qtgui_has_stopped;
 namespace radium{
 
 template <typename T> struct Vector{
-  
+
 private:
   int num_elements_max;
 
@@ -134,6 +134,7 @@ public:
   }
 
   T &at_ref(int i) const {
+    //fprintf(stderr, "\nat_ref. i: %d. num_elements: %d.\n", i, num_elements.get());
     LOCKASSERTER_SHARED(&lockAsserter);
 
     return at_internal(i);
@@ -150,6 +151,7 @@ private:
   }
   
   T &at_internal(int i) const {
+    //fprintf(stderr, "\nat_internal. i: %d. num_elements: %d.\n", i, num_elements.get());
     R_ASSERT_RETURN_IF_FALSE2(i>=0, elements[0]);
     R_ASSERT_RETURN_IF_FALSE2(i<num_elements.get(), elements[0]);
     
@@ -585,15 +587,22 @@ public:
     LOCKASSERTER_SHARED(&lockAsserter);
     return elements;
   }
+
+  // RT safe
+  //
+  // This function can NOT be called in parallell with other functions
+  void set_num_elements(int new_num_elements) {
+    LOCKASSERTER_EXCLUSIVE(&lockAsserter);
+
+    R_ASSERT(next_elements == NULL);
+    num_elements.set(new_num_elements);
+  }
   
   // RT safe
   //
   // This function can NOT be called in parallell with other functions
   void clear(void) {
-    LOCKASSERTER_EXCLUSIVE(&lockAsserter);
-
-    R_ASSERT(next_elements == NULL);
-    num_elements.set(0);
+    set_num_elements(0);
   }
 
 };

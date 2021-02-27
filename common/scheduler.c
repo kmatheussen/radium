@@ -259,21 +259,24 @@ bool SCHEDULER_called_per_block(struct SeqTrack *seqtrack, double reltime){
   int64_t end_time = end_time_f;
 
   if (is_playing()) {
+    
     if (pc->playtype==PLAYBLOCK){
       //R_ASSERT(seqtrack==root->song->block_seqtrack); // hmm. sometimes fails.
+      
       if (seqtrack==root->song->block_seqtrack)
         RT_fxline_called_each_block(seqtrack, &g_block_seqtrack_seqblock, seqtrack->start_time, seqtrack->end_time);
-    }else
-      if (seqtrack!=root->song->block_seqtrack)
-        VECTOR_FOR_EACH(struct SeqBlock *seqblock, &seqtrack->seqblocks){
-          if (seqblock->block != NULL){
-            //printf("seqtime: %d->%d. seqblock: %d -> %d\n", (int)seqtrack->start_time, (int)seqtrack->end_time, (int)seqblock->t.time, (int)seqblock->t.time2);
-            if (true
-                && seqtrack->end_time > seqblock->t.time
-                && seqtrack->start_time < seqblock->t.time2)
-              RT_fxline_called_each_block(seqtrack, seqblock, seqtrack->start_time, seqtrack->end_time);
-          }
-        }END_VECTOR_FOR_EACH;
+      
+    }else if (seqtrack!=root->song->block_seqtrack && !seqtrack->for_audiofiles) {
+
+      VECTOR_FOR_EACH(struct SeqBlock *seqblock, &seqtrack->seqblocks){
+        //printf("seqtime: %d->%d. seqblock: %d -> %d\n", (int)seqtrack->start_time, (int)seqtrack->end_time, (int)seqblock->t.time, (int)seqblock->t.time2);
+        if (true
+            && seqtrack->end_time > seqblock->t.time
+            && seqtrack->start_time < seqblock->t.time2)
+          RT_fxline_called_each_block(seqtrack, seqblock, seqtrack->start_time, seqtrack->end_time);
+      }END_VECTOR_FOR_EACH;
+    }
+    
   }
   
   //printf("   called per block. start_time: %f. reltime: %f\n",seqtrack->start_time/44100.0, reltime);

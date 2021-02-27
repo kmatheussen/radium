@@ -26,7 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "clipboard_tempos_copy_proc.h"
 #include "list_proc.h"
 #include "placement_proc.h"
-#include <string.h>
+#include "blocks_proc.h"
 
 #include "clipboard_block_copy_proc.h"
 
@@ -50,9 +50,9 @@ struct WBlocks *CB_CopyBlock(
 	towblock=talloc(sizeof(struct WBlocks));
 	memcpy(towblock,wblock,sizeof(struct WBlocks));
 
-	towblock->block=toblock=talloc(sizeof(struct Blocks));
-	memcpy(toblock,block,sizeof(struct Blocks));
-
+	towblock->block = toblock = BLOCK_create();
+        memcpy(toblock, block, offsetof(struct Blocks, cache_num_holder));
+        
 	towblock->l.next=NULL;
 
 	towblock->localzooms=CB_CopyLocalZooms(wblock);

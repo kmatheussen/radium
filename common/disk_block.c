@@ -35,6 +35,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "time_proc.h"
 #include "Beats_proc.h"
 #include "visual_proc.h"
+#include "blocks_proc.h"
+
 #include "../OpenGL/Widget_proc.h"
 
 #include "disk_block_proc.h"
@@ -85,7 +87,7 @@ struct Blocks *LoadBlock(void){
                 "color",
                 "swing_enabled"
 	};
-	struct Blocks *block=DC_alloc(sizeof(struct Blocks));
+	struct Blocks *block = BLOCK_create();
 	ATOMIC_DOUBLE_SET(block->reltempo, 1.0);
 
 	block->l.num=DC_LoadN();

@@ -5,6 +5,7 @@
 #include "placement_proc.h"
 #include "sequencer_proc.h"
 #include "visual_proc.h"
+#include "fxlines_proc.h"
 
 #include "../audio/Mixer_proc.h"
 
@@ -46,6 +47,12 @@ static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
     int64_t duration = SEQBLOCK_get_seq_duration(seqblock);
     seqblock->t.time = block_start_time; // We can not set seqblock->time before scheduling since seqblock->time is used various places when playing a block.
     seqblock->t.time2 = seqblock->t.time + duration;
+
+    R_ASSERT_NON_RELEASE(seqtrack==root->song->block_seqtrack);
+    
+    // Need to call RT_fxline_called_each_block again here since last call to it hadn't updated t.time/t.time2 values.
+    if (seqtrack==root->song->block_seqtrack)
+      RT_fxline_called_each_block(seqtrack, &g_block_seqtrack_seqblock, seqtrack->start_time, seqtrack->end_time);
 
   } else {
 
@@ -302,7 +309,7 @@ void start_seqtrack_song_scheduling(const player_start_data_t *startdata, int pl
 struct SeqBlock g_block_seqtrack_seqblock = {0};
 
 void start_seqtrack_block_scheduling(struct Blocks *block, const Place place, int playtype){
-  R_ASSERT(playtype=PLAYBLOCK);
+  R_ASSERT(playtype==PLAYBLOCK);
   
   static Place static_place;
 

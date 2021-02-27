@@ -71,7 +71,7 @@ struct Blocks *InsertBlock(
           
         InsertBlock_IncBlockNums(blockpos);
 
-        block=talloc(sizeof(struct Blocks));
+        block = BLOCK_create();
           
         block->l.num=blockpos;
         NewBlock(block,num_tracks,num_lines,name);

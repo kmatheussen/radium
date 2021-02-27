@@ -19,6 +19,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <stdlib.h>
 
 #include "nsmtracker.h"
+#include "TallocWithDestructor.hpp"
+#include "TimeData.hpp"
 
 #include "list_proc.h"
 #include "tracks_proc.h"
@@ -32,6 +34,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "blocks_proc.h"
 
+struct Blocks *BLOCK_create(void){
+  struct Blocks *block = talloc_with_finalizer<struct Blocks>([](struct Blocks *block){
+      delete block->cache_num_holder;
+    });
+  
+  block->cache_num_holder = new r::CacheNumHolder;
+  return block;
+}
 
 void CloseBlock(NInt blocknum){
 	struct Blocks *temp=(struct Blocks *)ListFindElement1(&root->song->blocks->l,blocknum);
@@ -101,7 +111,7 @@ struct Blocks *AppendBlock(void){
           }
         }
         
-	struct Blocks *block=(struct Blocks*)talloc(sizeof(struct Blocks));
+	struct Blocks *block=BLOCK_create();
 
 	block->l.num=blocknum;
 	NewBlock(block,num_tracks,num_lines,"NN");
