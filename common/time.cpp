@@ -1156,7 +1156,7 @@ static void postprocess_swing_changes(const struct Beats *beats, struct STimeCha
       do{
         struct STimeChange &swing_change = swing_changes[changepos2];
         if (swing_change.y1+0.00001 >= float_p2){
-          R_ASSERT_NON_RELEASE(equal_doubles(swing_change.y1, float_p2)); // I guess this assertion could fail in some situations without anything being wrong. (probably not in debug mode on an intel cpu though) Note: did get an assertion once with these numbers: y1=35.626262626262623, float_p2=35.62626262626263.
+          R_ASSERT_NON_RELEASE(equal_doubles(swing_change.y1, float_p2)); // I guess this assertion could fail in some situations without anything being wrong. (probably not in debug mode on an intel cpu though) Note: did get an assertion once with these numbers: y1=35.626262626262623, float_p2=35.62626262626263. (==)
           break;
         }
         
@@ -1458,7 +1458,7 @@ static void update_stuff2(struct Blocks *blocks[], const int num_blocks,
               const dyn_t filledout_trackswing = filledout_trackswingss[i].elements[track->l.num];
               struct STimes *trackstimes = create_stimes(blocks[i], dynbeats[i], beats[i], filledout_trackswing, stimes_without_global_swings[i], default_bpm, default_lpb);
               VECTOR_push_back(&trackstimess[i], trackstimes);
-              R_ASSERT(trackstimes[num_lines].time = blocklen);
+              R_ASSERT(trackstimes[num_lines].time == blocklen);
             }
             track = NextTrack(track);
           }
