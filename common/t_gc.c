@@ -288,7 +288,7 @@ void FreeMemRoot(void){
 		element=rows[lokke];
 		rows[lokke]=NULL;
 		while(element!=NULL){
-			if(u=0)mi=ma=element->row;
+			if(u==0)mi=ma=element->row;
 			mi=min(mi,element->row);
 			ma=max(mi,element->row);
 			tfree++;

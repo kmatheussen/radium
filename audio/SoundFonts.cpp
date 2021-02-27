@@ -123,9 +123,10 @@ void PrintRegion(int idx, sf2::Region* reg) {
     if (reg->initialFilterQ == (int)::sf2::NONE) cout << "None" << endl;
     else cout << (reg->initialFilterQ / 10.0) << "dB" << endl;
 
-    if (reg->exclusiveClass) cout << ", Exclusive group=" << reg->exclusiveClass;
+    if (reg->exclusiveClass
+        ) cout << ", Exclusive group=" << reg->exclusiveClass;
     cout << endl;
-
+    
     if (reg->pInstrument != NULL) {
         cout << "\t\t    Instrument: " << reg->pInstrument->Name << endl << endl;
     }

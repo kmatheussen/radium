@@ -62,7 +62,8 @@ static void SetNum_Vel_set(
 
 	while(velstruct!=NULL){
 		num_vel+=velstruct->startstop;
-		if(num_vel>wtrack->num_vel) wtrack->num_vel=num_vel;
+		if(num_vel>wtrack->num_vel)
+                  wtrack->num_vel=num_vel;
 		velstruct=NextFindNum_Velstruct(velstruct);
 	}
 	wtrack->num_vel=R_MAX(1,wtrack->num_vel);

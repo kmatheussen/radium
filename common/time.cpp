@@ -314,8 +314,12 @@ static void STP_fillinSTimes2(
 	if(PlaceEqual(p1,p2)){
 		return;
 	}
-	if(reltempo1!=reltempo2) reltempo_changed=true;
-	if(reltempo_changed || p1->counter>0) create_timechange_node=true;
+        
+	if(reltempo1!=reltempo2)
+          reltempo_changed=true;
+        
+	if(reltempo_changed || p1->counter>0)
+          create_timechange_node=true;
 
 	if(create_timechange_node){
 		timechange=talloc(sizeof(struct STimeChanges));
@@ -577,9 +581,14 @@ static void STP_Constructor(STimePlace *stp,struct Blocks *block, int default_bp
 	}
 
 	/* bools */
-	if(stp->stempo!=NULL && PlaceEqual(stp->p2,&stp->stempo->l.p)) stp->btempo=true;
-	if(stp->slpb!=NULL && PlaceEqual(stp->p2,&stp->slpb->l.p)) stp->blpb=true;
-	if(PlaceEqual(stp->p2,&stp->temponode->l.p)) stp->breltempo=true;
+	if(stp->stempo!=NULL && PlaceEqual(stp->p2,&stp->stempo->l.p))
+          stp->btempo=true;
+        
+	if(stp->slpb!=NULL && PlaceEqual(stp->p2,&stp->slpb->l.p))
+          stp->blpb=true;
+        
+	if(PlaceEqual(stp->p2,&stp->temponode->l.p))
+          stp->breltempo=true;
 
 	/* time */
 	stp->nexttime=0;

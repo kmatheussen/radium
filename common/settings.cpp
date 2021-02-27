@@ -96,10 +96,10 @@ static QVector<QString> get_lines2(QFile &file){
   while ( !in.atEnd() ){
     QString line = in.readLine();
     
-    if (!line.contains("#") && !line.contains("=")) // Make malformed lines empty
+    if (!line.contains("#") && !line.contains("=")) // Make malformed lines empty (==)
       line = "";
     
-    else if (line.contains("#") && !line.contains("=")) // another possible malformed line fix: "a#b" -> "#b"
+    else if (line.contains("#") && !line.contains("=")) // another possible malformed line fix: "a#b" -> "#b" (==)
       line.remove(0, line.indexOf("#"));
     
     if (line.length()>512){ // Because of an old bug, lines could grow and grow. Just delete those lines.

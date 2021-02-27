@@ -392,9 +392,14 @@ void EditorWidget::keyPressEvent(QKeyEvent *qkeyevent){
 
   tevent.keyswitch=0;
 
-  if(buttonstate&Qt::ShiftModifier) tevent.keyswitch=EVENT_LEFTSHIFT;
-  if(buttonstate&Qt::ControlModifier) tevent.keyswitch|=EVENT_LEFTCTRL;
-  if(buttonstate&Qt::AltModifier) tevent.keyswitch|=EVENT_RIGHTEXTRA1;
+  if(buttonstate&Qt::ShiftModifier)
+    tevent.keyswitch=EVENT_LEFTSHIFT;
+  
+  if(buttonstate&Qt::ControlModifier)
+    tevent.keyswitch|=EVENT_LEFTCTRL;
+  
+  if(buttonstate&Qt::AltModifier)
+    tevent.keyswitch|=EVENT_RIGHTEXTRA1;
 
   //  printf("%d\n",qkeyevent->key());
 

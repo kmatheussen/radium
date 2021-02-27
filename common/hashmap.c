@@ -1311,7 +1311,7 @@ static int compare_hash_elements(const void *a2, const void *b2){
 static vector_t get_sorted_elements(const hash_t *hash){
   vector_t elements = get_elements(hash);
   
-  if(elements.num_elements>1) // fsanitize=undefined aborts the program if sending null pointer to qsort.
+  if(elements.num_elements>1) // fsanitize=undefined aborts the program if sending null pointer to qsort. (==)
     qsort(elements.elements, elements.num_elements, sizeof(void*), compare_hash_elements);
   
   return elements;
