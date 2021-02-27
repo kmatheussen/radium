@@ -536,9 +536,6 @@ void r::TimeData<T>::ReaderWriter<TimeData, TimeDataVector>::iterate_fx(struct S
         
       } else {
 
-        // FIX: Hvis det er noder mellom period._prev og period._start, set has_prev_value = false.
-        // Kanskje også hvis det er tempoforandringer der, om det er praktisk enkelt å sjekke det.
-        
         Ratio ratio_prev = period._start - (period._end-period._start); // approx. (this is a corner case. Even if this value is totally wrong, no one would probably notice, and if they did it would be extremely seldom.)
         if (ratio_prev < first_t._time) {
           prev_value = first_t._val;
@@ -579,12 +576,12 @@ void r::TimeData<T>::ReaderWriter<TimeData, TimeDataVector>::iterate_fx(struct S
 
 #if !defined(RELEASE)
       int curr_pos = _curr_pos;      
-      R_ASSERT_NON_RELEASE(curr_pos = find_pos_for_get_value(period._start));
+      R_ASSERT_NON_RELEASE(curr_pos == find_pos_for_get_value(period._start));
 #endif
     }
   }
 
-  bool same_value_as_last_time =
+  const bool same_value_as_last_time =
     has_prev_value
     && (std::is_same<ValType, int>::value
         ? int(prev_value)==value
@@ -595,7 +592,14 @@ void r::TimeData<T>::ReaderWriter<TimeData, TimeDataVector>::iterate_fx(struct S
         );
 
   if (when==FX_start || when==FX_end || !same_value_as_last_time){
-    //printf("....1. %d: %f. When: %d. _curr_pos: %d\n", (int)value_time, (double)value / (double)fx->max, (int) when, _curr_pos);
+    if (0) {
+      printf("....1. %d: %f. When: %d. _curr_pos: %d\n", (int)value_time, (double)value / (double)fx->max, (int) when, _curr_pos);
+      if (when==FX_middle){
+        auto node = _vector->at_ref(_curr_pos-1);
+        auto value_time = get_seqblock_place_time2(seqblock, track, make_place_from_ratio(node._time));
+        printf("........ time last node: %d. Value last node: %f\n", (int)value_time, (double)node._val / (double)fx->max);
+      }
+    }
     RT_FX_treat_fx(seqtrack, fx, value, value_time, 0, when);
   }
 
@@ -605,7 +609,20 @@ void r::TimeData<T>::ReaderWriter<TimeData, TimeDataVector>::iterate_fx(struct S
     while(_curr_pos < das_size - 1) { 
 
       const T &node = at(_curr_pos);
-      if (node._time >= period._end)
+
+      if (0){
+        auto node_time = get_seqblock_place_time2(seqblock, track, make_place_from_ratio(node._time));
+        auto end_time = get_seqblock_place_time2(seqblock, track, make_place_from_ratio(node._time));
+        printf("............(2) _curr_pos: %d. node(_curr_pos) time: %d. end_time: %d. node ratio: %d / %d. end ratio: %d / %d\n", _curr_pos, (int)node_time, (int)end_time,
+               (int)node._time.num, (int)node._time.den, 
+               (int)period._end.num, (int)period._end.den);
+      }
+      
+      // (maybe) FIX: The correct test here is actually node._time >= period._end, and not node._time > period._end.
+      // However, because of rounding errors, notes can be sent out in the block before an fx node at the same position.
+      // And it's quite important that fx are sent out before note start, for instance if setting start position of a sample (common in MOD files).
+      // Afters notes have been converted to TimeData, this test should probably be corrected.
+      if (node._time > period._end)
         break;
       
       value = node._val;
@@ -658,6 +675,14 @@ void RT_fxline_called_each_block(struct SeqTrack *seqtrack,
                                                  seqtime_start,
                                                  seqtime_end);
   
+  if (play_id != seqblock->last_play_id) {
+    
+    seqblock->cache_num = block->cache_num_holder->RT_obtain(play_id);
+    seqblock->last_play_id = play_id;
+    
+    //printf("++       Setting seqblock->cache_num to %d. Play_id: %d\n", seqblock->cache_num, play_id);
+  }
+  
   while(track!=NULL){
 
     int tracknum = track->l.num;
@@ -678,18 +703,19 @@ void RT_fxline_called_each_block(struct SeqTrack *seqtrack,
                            seqtime_start,
                            seqtime_end);
       
-      /*
-      if (false && track->l.num==0)
+      if (0 && track->l.num==0){
+        auto ratio_start = period._start;
+        auto ratio_end = period._end;
         printf("B: %d. Ratio start: %d / %d (%f). Ratio end: %d / %d (%f). Seqtime: %d -> %d. Seqblock time: %d -> %d\n", block->l.num, (int)ratio_start.num, (int)ratio_start.den, make_double_from_ratio(ratio_start), (int)ratio_end.num, (int)ratio_end.den, make_double_from_ratio(ratio_end), (int)seqtime_start, (int)seqtime_end, (int)seqblock->t.time, (int)seqblock->t.time2);
-      */
+      }
       
       VECTOR_FOR_EACH(struct FXs *, fxs, &track->fxs){
 
         struct FX *fx = fxs->fx;
         
         if (fx->is_enabled) {
-
-          r::TimeData<r::FXNode>::Reader reader(fxs->_fxnodes, -1); // <- -1 means that cache is not enabled yet. Cache code: ATOMIC_GET(seqblock->timedata_player_index));
+          
+          r::TimeData<r::FXNode>::Reader reader(fxs->_fxnodes, (0 && ATOMIC_GET(root->editonoff)) ? -1 : seqblock->cache_num);
 
           reader.iterate_fx<int>(seqtrack, seqblock, track, fx, play_id, seqtime_start, das_period);
 
@@ -701,4 +727,12 @@ void RT_fxline_called_each_block(struct SeqTrack *seqtrack,
     track=NextTrack(track);   
   }
 
+  // We don't release cache_num if playing block since play_id don't change when replaying a block.
+  if (pc->playtype!=PLAYBLOCK && seqtime_end >= seqblock->t.time2) {
+    
+    //printf("--       Releasing seqblock->cache_num (%d) for block %d. Play_id: %d. seqtime_end: %d. seqblock->t.time2: %d\n", seqblock->cache_num, block->l.num, play_id, (int)seqtime_end, (int)seqblock->t.time2);
+    
+    block->cache_num_holder->RT_release(seqblock->cache_num);
+  }
+  
 }

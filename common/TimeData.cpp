@@ -200,118 +200,6 @@ const radium::FreeableList *FREEABLELIST_transfer_all(void){
 #endif
 #endif
 
-//////////////////////////////////////////////////////
-/************** Player Cache start *****************/
-////////////////////////////////////////////////////
-
-// Note: This code is not enabled yet. For now all Reader::get_value calls are uncached.
-
-
-static radium::Vector<r::RT_TimeData_Player_Cache_Holder*> g_timedata_playercache_holders; // For safety, it's probably best to disable bdwgc gc when traversing this one.
-
-static r::RT_TimeData_Player_Cache *TIMEDATA_PLAYERCACHE_make_cache_array(int num){
-  r::RT_TimeData_Player_Cache *ret = new r::RT_TimeData_Player_Cache[num];
-  return ret;
-}
-
-static void set_new_holder_data(r::RT_TimeData_Player_Cache_Holder *holder, int num, r::RT_TimeData_Player_Cache *caches){
-#if !defined(RELEASE)
-  R_ASSERT(num > holder->_num_caches);
-  holder->_num_caches = num;
-#endif
-  holder->caches = caches;
-}
-
-void TIMEDATA_PLAYERCACHE_add_and_initialize(r::RT_TimeData_Player_Cache_Holder *holder){
-  R_ASSERT(THREADING_is_main_thread());
-  R_ASSERT_RETURN_IF_FALSE(!g_timedata_playercache_holders.contains(holder));
-
-  g_timedata_playercache_holders.push_back(holder);
-
-#if defined(TEST_TIMEDATA_MAIN)
-  int num = 1;
-#else
-  int num = root->song->max_num_parallel_editor_seqblocks;
-#endif
-  
-  set_new_holder_data(holder, num, TIMEDATA_PLAYERCACHE_make_cache_array(num));
-}
-
-void TIMEDATA_PLAYERCACHE_remove(r::RT_TimeData_Player_Cache_Holder *holder){
-  R_ASSERT(THREADING_is_main_thread());
-  R_ASSERT_RETURN_IF_FALSE(g_timedata_playercache_holders.contains(holder));
-  
-  g_timedata_playercache_holders.remove(holder);
-
-  delete[] holder->caches;
-}
-
-#if !defined(TEST_TIMEDATA_MAIN)
-
-static int find_max_num_parallel_editor_seqblocks(void){
-  return 2; // FIX.
-}
-
-static void set_all_timedata_player_index_values_to_minus_one(void){
-  // TODO: Implement
-}
-
-
-// Called whenever an editor seqblock is moved, added, or deleted.
-void TIMEDATA_PLAYERCACHE_reconfigure(void){
-  R_ASSERT(THREADING_is_main_thread());
-  
-  int max_num_parallel_editor_seqblocks = find_max_num_parallel_editor_seqblocks();
-  if (max_num_parallel_editor_seqblocks <= root->song->max_num_parallel_editor_seqblocks)
-    return;
-  
-  GC_gcollect(); // For the time being, elements are reduced from g_timedata_playercache_holders when running a gc collection.
-
-  root->song->max_num_parallel_editor_seqblocks = max_num_parallel_editor_seqblocks;
-
-  GC_disable(); // Won't risk g_timedata_playercache_holders being reduced while doing this. (we don't use gc inside here, but maybe in the future. Disabling doesn't hurt when not using the gc so no problem.)
-  {
-    radium::Vector<r::RT_TimeData_Player_Cache *> old_caches;
-    radium::Vector<r::RT_TimeData_Player_Cache *> new_caches;
-    //r::RT_TimeData_Player_Cache *old_caches[g_timedata_playercache_holders.size()];
-    //r::RT_TimeData_Player_Cache *new_caches[g_timedata_playercache_holders.size()];
-    
-    for(int i=0;i<g_timedata_playercache_holders.size();i++){
-      old_caches.push_back(g_timedata_playercache_holders.at(i)->caches);
-      new_caches.push_back(TIMEDATA_PLAYERCACHE_make_cache_array(max_num_parallel_editor_seqblocks));
-    }
-    
-    set_all_timedata_player_index_values_to_minus_one();
-
-    {
-      // FIX: Should optimize this (or better: optimize schedule_to_run_on_player_thread_and_wait so that it sleeps on a semaphore instead of msleep()).
-      radium::Scheduled_RT_functions rt_functions;
-      rt_functions.add([](){
-          return;
-        });
-      rt_functions.schedule_to_run_on_player_thread_and_wait(); // Wait for one audio block to be played, so that we can safely modify the holder->caches values below.
-    }
-    
-    
-    for(int i=0;i<g_timedata_playercache_holders.size();i++)
-      set_new_holder_data(g_timedata_playercache_holders.at(i), max_num_parallel_editor_seqblocks, new_caches.at(i));
-    
-    // HERE: Set all seqblock->timedata_player_index values to correct value.
-    
-    for(auto *old_cache : old_caches)
-      delete[] old_cache; // Should be safe to do this now after calling schedule_to_run_on_player_thread_and_wait(). All TimeData::Reader instances that used it should have been deleted now.
-    
-  }
-  GC_enable();
-  
-}
-#endif
-
-
-////////////////////////////////////////////////////
-/************** Player Cache end *****************/
-//////////////////////////////////////////////////
-
 
 
 #ifdef TEST_TIMEDATA_MAIN
@@ -403,46 +291,60 @@ static void test_get_value(void){
 
   bool random_cache;
   
-  auto test_value = [&reader, &random_cache](int time, int expect){
+  auto test_value = [&reader, &random_cache](int time, int expect, int do_binary_search){
     if (random_cache)
       reader._curr_pos = 1 + rand() % reader.size();
 
+    int num_binarysearches = reader._num_calls_to_binarysearch;
+
+    int prev_curr_pos = reader._curr_pos;
+    
     FX_when when;
     int ret;
-    bool legal = reader.get_value(0, make_ratio(time, 1), ret, when, make_ratio(time-1,1));
+    bool legal = reader.get_value(0, make_ratio(time, 1), ret, when);
     if (!legal)
       ret = -1;
 
-    if (!random_cache)
-      printf("test_value. time: %d. expect: %d. ret: %d.\n", time, expect, ret);
+    if (!random_cache) {
+
+      printf("test_value. time: %d. expect: %d. ret: %d. Prev curr_pos: %d\n", time, expect, ret, prev_curr_pos);
+      
+      if (do_binary_search==1)
+        TEST(num_binarysearches + 1, reader._num_calls_to_binarysearch);
+      else if (do_binary_search==0)
+        TEST(num_binarysearches, reader._num_calls_to_binarysearch);
+      
+    }
     
     TEST(ret, expect);
   };
   
   auto testit = [&test_value](void){
-    test_value(9,-1);
+    test_value(9,-1, -1);
     
-    test_value(10,10);
-    test_value(11,11);
-    test_value(15,15);
-    test_value(19,19);
+    test_value(10,10, -1);
+    test_value(11,11, 0);
+    test_value(15,15, 0);
+    test_value(19,19, 0);
     
-    test_value(20,20);
-    test_value(21,-1);
-    test_value(25,-1);
-    test_value(29,-1);
+    test_value(20,20, 0);
+    test_value(21,20, 0);
+    test_value(25,20, 0);
+    test_value(29,20, 0);
+
+    test_value(30,30, 0);
+    test_value(39,39, 0);
     
-    test_value(30,30);
-    test_value(39,39);
+    test_value(40,110, 1);
     
-    test_value(40,110);
+    test_value(41,111, 0);
+    test_value(50,120, 0);
+    test_value(59,129, 0);
+    test_value(60,130, 0);
     
-    test_value(41,111);
-    test_value(50,120);
-    test_value(59,129);
-    test_value(60,130);
-    
-    test_value(61,-1);
+    test_value(61,-1, 0);
+
+    test_value(10,10, 1);
   };
 
   random_cache = false;

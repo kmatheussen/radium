@@ -17,6 +17,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef _RADIUM_COMMON_BLOCKS_PROC_H
 #define _RADIUM_COMMON_BLOCKS_PROC_H
 
+extern LANGSPEC struct Blocks *BLOCK_create(void); // Must use this function to allocate memory for a struct Blocks.
+
 extern LANGSPEC void CloseBlock(NInt blocknum);
 extern LANGSPEC void CloseAllBlocks(void);
 extern LANGSPEC void NewBlock(

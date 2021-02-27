@@ -74,7 +74,7 @@ void CB_PasteBlock(
 	NInt org_num_tracks=toblock->num_tracks;
 
 	memcpy(towblock,wblock,sizeof(struct WBlocks));
-	memcpy(toblock,block,sizeof(struct Blocks));
+        memcpy(toblock, block, offsetof(struct Blocks, cache_num_holder));
 
         toblock->color = org_color; // Don't want to paste color.
         

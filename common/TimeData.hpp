@@ -28,27 +28,29 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
     "Ratio _time;"
     (TimeData can probably easily be extended to support any _time type, not just Ratio, by making Ratio a template type, if necessary)
   * The underlying vector is sorted by _time.
-  * Accessing a random element (from time) is O(Log(n)) while accessing a later element (from time) is usually O(1) if player_num >= 0.
+  * Accessing a random element is O(Log(n)) while accessing a sequential element is usually O(1)
+    if cache_num >= 0 (i.e. when time is only a little bit higher than last call).
 
 
   HOW IT WORKS
   ============
   * We never modify the underlying vector.
-    We only modify a COPY of the underlying vector, and when finished, the underlying vector is atomically replaced with the copy.
+    We only modify a COPY of the underlying vector, and when finished, the underlying vector is atomically replaced with the modified copy.
   * To make sure making a copy of the underlying vector doesn't take too much time, the element type ("DataType") must not be too complicated.
     If DataType is big, use pointers to instances instead of the instance itself.
   * A Reader object is optimized to get data in a linear increasing fashion,
     i.e. starting with a low time and ending on a high time, always increasing time from call to call. (This is not a requirement, but when
     time is not increasing, it's necessary to do a O(log N) binary search to find the new index.)
-    If player_num >= 0, the index is also remembered in the TimeData object itself, further decreasing the need to do a binary search in the audio realtime thread.
+    If cache_num >= 0, the index is also remembered in the TimeData object itself, further decreasing the need to do a binary search in the audio realtime thread.
 
 
   NOTES
   =====
-  * Writing is a heavy operation since it recreates the underlying vector. Therefore, nothing is actually written until the Writer is deleted, and it makes sense to create as few
-    writer objects as possible.
-  * TimeData is very similar to SeqAutomation, but TimeData supports more than one simultaneous reader, it uses Ratio as time type instead of double,
-    and it provides a wrapper around radium::Vector instead of QVector (writing) and plain array (reader).
+  * Writing is a heavy operation since it recreates the underlying vector. Therefore, nothing is actually written until the Writer
+    object is deleted, and it makes sense to create as few writer objects as possible.
+  * TimeData is very similar to SeqAutomation. The main difference is that TimeData supports more than one simultaneous reader, but
+    it also uses Ratio as time type instead of double, and it provides a wrapper around radium::Vector instead of using QVector for
+    writing and a plain array for reading.
  */
 
 #pragma once
@@ -61,7 +63,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "AtomicPointerStorage.hpp"
 
 
-#define MAX_NUM_PARALLEL_TIMEDATAS 16
+#define MAX_NUM_PARALLEL_TIMEDATAS 64 // If using more than this, caching is disabled for the extra timedatas, and performance will be slightly worse for those.
 
 /*
 // "FreeableList" is it's own thing, but I don't bother making a new file for it. Especially since it's likely to be only used by TimeData.
@@ -89,14 +91,93 @@ extern int g_num_timedata_vectors;
 #endif
 
 namespace r{
-  struct RT_TimeData_Player_Cache_Holder;
-}
 
-extern void TIMEDATA_PLAYERCACHE_add_and_initialize(r::RT_TimeData_Player_Cache_Holder *holder);
-extern void TIMEDATA_PLAYERCACHE_remove(r::RT_TimeData_Player_Cache_Holder *holder);
-extern void TIMEDATA_PLAYERCACHE_reconfigure(void);
+class CacheNumHolder{
+  
+  radium::Vector<int> _used;
+  radium::Vector<int> _free;
 
-namespace r{
+  int _last_play_id = -1;
+  
+public:
+
+#define ASSERT_SIZE() R_ASSERT_NON_RELEASE(_free.size() + _used.size() == MAX_NUM_PARALLEL_TIMEDATAS);
+
+  CacheNumHolder(){
+    for(int i = MAX_NUM_PARALLEL_TIMEDATAS-1 ; i >= 0 ; i--)
+      _free.push_back(i);
+    
+    _used.reserve(MAX_NUM_PARALLEL_TIMEDATAS);
+
+    R_ASSERT(_free.size()==MAX_NUM_PARALLEL_TIMEDATAS);
+    R_ASSERT(_used.size()==0);
+
+    ASSERT_SIZE();
+  }
+
+  int RT_get_play_id(void) const {
+    return _last_play_id;
+  }
+
+  int RT_obtain(int play_id){
+    ASSERT_SIZE();
+    
+    if (play_id != _last_play_id) {
+
+      _last_play_id = play_id;
+
+      if (!_used.is_empty()) {
+
+        int ret = _used.at(0);
+        
+        for(int pos = 1 ; pos < _used.size() ; pos++)
+          _free.push_back(_used.at(pos));
+
+        _used.set_num_elements(1);
+
+        ASSERT_SIZE();
+        
+        return ret;
+
+      }
+    }
+    
+    if (_free.is_empty()){
+      R_ASSERT_NON_RELEASE(false); // Note: Only an error if a block is played more than MAX_NUM_PARALLEL_TIMEDATAS times simultaneously.
+      return -1;
+    }
+
+    int ret = _free.pop_back();
+    _used.push_back(ret);
+
+    ASSERT_SIZE();
+    
+    return ret;
+  }
+
+  void RT_release(int num){
+    ASSERT_SIZE();
+    
+    if (num==-1){
+      R_ASSERT_NON_RELEASE(false); // Note: Only an error if a block is played more than MAX_NUM_PARALLEL_TIMEDATAS times simultaneously.
+      return;
+    }
+
+#if !defined(RELEASE)
+    if (!_used.contains(num))
+      abort();
+    if (_free.contains(num))
+      abort();
+#endif
+
+    _used.remove(num, false);
+    _free.push_back(num);
+    ASSERT_SIZE();
+  }
+
+#undef ASSERT_SIZE
+};
+
 
   /*
 enum class DataTypeReturnType{
@@ -113,27 +194,15 @@ struct RT_TimeData_Player_Cache{
   int _last_play_id = -1; // Value of pc->play_id when last_value was returned.
 };
 
-struct RT_TimeData_Player_Cache_Holder{
-#if !defined(RELEASE)
-  int _num_caches;
-#endif
-  RT_TimeData_Player_Cache *caches; // array;
-
-  RT_TimeData_Player_Cache_Holder()
-  {
-    TIMEDATA_PLAYERCACHE_add_and_initialize(this);
-  }
-
-  ~RT_TimeData_Player_Cache_Holder(){
-    TIMEDATA_PLAYERCACHE_remove(this);
-  }
-};
-  
 template <typename T>
 class TimeData {
 
   static_assert(sizeof(T) < sizeof(void*)*8, "T should be a pointer if too big. This to lower the time it takes to copy the underlying vector.");
   static_assert(std::is_trivially_copyable<T>::value, "T should be a pointer if not trivially copyable. (don't want to copy all data every time we add a block for instance)");
+
+#if !defined(RELEASE)
+  mutable int _binsearch=0;  
+#endif
   
 private:
 
@@ -198,16 +267,7 @@ private:
 
   mutable radium::AtomicPointerStorageMultipleReaders<TimeDataVector> _atomic_pointer_storage;
 
-#if 1
-
-  RT_TimeData_Player_Cache_Holder _player_cache_holder;
-
-#else
-  
-  mutable int _RT_player_curr_pos[MAX_NUM_PARALLEL_TIMEDATAS] = {}; // Used by the player. Is mutable because it's used by the Reader for caching read position.
-  mutable double _RT_player_last_value[MAX_NUM_PARALLEL_TIMEDATAS] = {}; // Used by the player. Is mutable because it's used by the Reader for caching read position.
-  mutable int _RT_player_last_play_id[MAX_NUM_PARALLEL_TIMEDATAS] = {}; // Used by the player. Is mutable because it's used by the Reader for caching read position.
-#endif
+  mutable RT_TimeData_Player_Cache _player_caches[MAX_NUM_PARALLEL_TIMEDATAS];
 
   
 public:
@@ -262,13 +322,17 @@ private:
   public:
 #endif
     
-    const int _player_num; // is -1 if not a player.
+    const int _cache_num; // is -1 if not a player.
     int &_curr_pos; // caching read position
     mutable int _non_player_curr_pos = 0;
     
   private:
     
     int BinarySearch_Left_exact(const T *array, const Ratio ratio, const int low, const int high, bool &found_exact) const {   // initially called with low = 0, high = N - 1
+
+#if defined(TEST_TIMEDATA_MAIN)
+      _num_calls_to_binarysearch++;
+#endif
       
       // invariants: ratio  > A[i] for all i < low
       //             ratio <= A[i] for all i > high
@@ -293,42 +357,19 @@ private:
       return BinarySearch_Left_exact(_vector->get_array(), ratio, 0, size()-1, found_exact);
     }
 
-#if 0 // not used
-    
-    int BinarySearch_Left(const T *array, const Ratio ratio, const int low, const int high) const {
-      printf("BinarySearch. Ratio: %f. low: %d (%f). High: %d (%f)\n", (double)ratio.num/(double)ratio.den, low,
-             make_double_from_ratio(array[low]._time),  high, make_double_from_ratio(array[high]._time)
-             );
-      
-      // invariants: ratio  > A[i] for all i < low
-      //             ratio <= A[i] for all i > high
-      if (high <= low) // Hmm. We use "<=" here, which has to be correct, but "<" everywhere else. ("<" is probably correct too though, but probably slower). Binarysearch is hard.
-        return low;
-      
-      const int mid = (low + high) / 2;
-      const Ratio mid_time = array[mid]._time;
-
-      printf("    .... mid: %d. mid-time: %f\n", mid, make_double_from_ratio(mid_time));
-      
-      if (mid_time >= ratio)
-        return BinarySearch_Left(array, ratio, low, mid-1);
-      else
-        return BinarySearch_Left(array, ratio, mid+1, high);
-    }
-
-    int BinarySearch_Left(const Ratio ratio, const int low, const int high) const {
-      R_ASSERT_NON_RELEASE(this->size() >= 2);
-      R_ASSERT_NON_RELEASE(low >= 1);
-      R_ASSERT_NON_RELEASE(high < this->size());
-      return BinarySearch_Left(_vector->get_array(), ratio, low, high);
-    }
-#endif
-    
     // Made by looking at https://en.wikipedia.org/wiki/Binary_search_algorithm#Duplicate_elements
     int BinarySearch_Rightmost(const T *array, const Ratio ratio, int low, int high) const {
       R_ASSERT_NON_RELEASE(this->size() >= 2);
       R_ASSERT_NON_RELEASE(low >= 1);
       R_ASSERT_NON_RELEASE(high < this->size());
+
+#if defined(TEST_TIMEDATA_MAIN)
+      _num_calls_to_binarysearch++;
+#endif
+
+#if !defined(RELEASE)
+      printf("   DOING BINARYSEARCH %d. Low: %d. High: %d. Cache #%d\n", _time_data->_binsearch++, low, high, _cache_num);
+#endif
       
       while(low<high){
         const int mid = (low+high)/2;
@@ -357,7 +398,7 @@ private:
 
     // returns -1 if not found.
     int find_pos_exact(const Ratio &ratio) const {
-      R_ASSERT(_player_num==-1);
+      R_ASSERT(_cache_num==-1);
       
       bool found_exact;
 
@@ -371,6 +412,7 @@ private:
 
 #if defined(TEST_TIMEDATA_MAIN)
   public:
+    mutable int _num_calls_to_binarysearch = 0;
 #endif
     
     // Only used from get_value, used by the player. Should be as fast as possible.
@@ -386,39 +428,41 @@ private:
       
       int curr_pos = R_MAX(_curr_pos, 1);
         
-      if (curr_pos < das_size - 1) {
+      if (curr_pos < das_size) {
         
         R_ASSERT_NON_RELEASE(curr_pos>=0);
 
         //printf(" F1. curr_pos: %d. ratio: %f. [curr_pos]._time: %f\n", curr_pos, make_double_from_ratio(ratio), make_double_from_ratio(_vector->at_ref(curr_pos)._time));
         
-        if (ratio >= _vector->at_ref(curr_pos)._time) {
+        if (ratio >= _vector->at_ref(curr_pos-1)._time) {
 
           //printf(" F2\n");
           // Hopefully the compiler is able to hyper-optimize this block.
 
+          //curr_pos--;
+          
           for(int i=0 ; i < 4; i++, curr_pos++) {
-            R_ASSERT_NON_RELEASE(curr_pos < das_size-1);
+            R_ASSERT_NON_RELEASE(curr_pos < das_size);
             
-            const T &next = _vector->at_ref(curr_pos + 1);
+            const T &next = _vector->at_ref(curr_pos);
 
             //printf(" F3 %d\n", i);
             
             if (ratio < next._time){
-              _curr_pos = curr_pos+1;
+              _curr_pos = curr_pos;
               //printf(" F4 %d\n", _curr_pos);
               return _curr_pos;
             }
           }
           
           _curr_pos = BinarySearch_Rightmost(ratio, curr_pos, das_size-1);
-          //printf(" F5 %d\n", _curr_pos);
+          //printf("   F5 %d\n", _curr_pos);
           return _curr_pos;
           
         } else {
 
           _curr_pos = BinarySearch_Rightmost(ratio, 1, curr_pos);
-          //printf(" F6 %d\n", _curr_pos);
+          //printf("   F6 %d\n", _curr_pos);
           return _curr_pos;          
           
         }
@@ -426,7 +470,7 @@ private:
       } else {
 
         _curr_pos = BinarySearch_Rightmost(ratio, 1, das_size-1);
-        //printf(" F7 %d\n", _curr_pos);
+        //printf("   F7 %d\n", _curr_pos);
         return _curr_pos;
 
       }
@@ -442,15 +486,14 @@ private:
     
   public:
     
-    ReaderWriter(TimeData *time_data, TimeDataVector *vector, const int player_num)
+    ReaderWriter(TimeData *time_data, TimeDataVector *vector, const int cache_num)
       : _time_data(time_data)
       , _vector(vector)
-      , _player_num(player_num)
-      , _curr_pos(player_num >= 0 ? time_data->_player_cache_holder.caches[player_num]._curr_pos : _non_player_curr_pos)
+      , _cache_num(cache_num)
+      , _curr_pos(cache_num >= 0 ? time_data->_player_caches[cache_num]._curr_pos : _non_player_curr_pos)
     {
-      R_ASSERT_NON_RELEASE(player_num < MAX_NUM_PARALLEL_TIMEDATAS);
-      R_ASSERT_NON_RELEASE(player_num==-1 || THREADING_is_player_thread());      
-      R_ASSERT_NON_RELEASE(player_num>=-1 || player_num < time_data->_player_cache_holder._num_caches);
+      R_ASSERT_NON_RELEASE(cache_num < MAX_NUM_PARALLEL_TIMEDATAS);
+      R_ASSERT_NON_RELEASE(cache_num==-1 || THREADING_is_player_thread());      
     }
 
     /*
@@ -496,7 +539,11 @@ private:
   private:
     
     double get_value_raw(const Ratio &ratio, const int das_size) const {
+      //printf("Get value raw, start 1.\n");
+      //int old = _curr_pos;
       int index = find_pos_for_get_value(ratio);
+      //printf("...Result: %d -> %d, %d\n\n", old, index, _curr_pos);
+      
       R_ASSERT_NON_RELEASE(index > 0);
       R_ASSERT_NON_RELEASE(index < das_size);
       
@@ -535,15 +582,6 @@ private:
 
   public:
     
-#if 0
-    VI må bruke ratio_start, ikke ratio_end. Vil tro at massakre høres riktig ut da (den har start-pos automasjon med flere node).
-    Men da MÅ nok denne også kunne returnere to verdier når last()._time != ratio_start.
-      Er kanskje ikke så viktig at massakre osv. høres helt riktig ut da. Det vil uansett høres riktig ut ca. 99% av tida. Men det kan være at noen trenger at det er helt nøyaktig.
-      Men det virker fortsatt riktig å returnere fra ratio_start. Effekten skal jo representere det som spilles av i tidsrommet.
-
-      Løsning: Lag en egen process_fx_values HER. (eller, selve implementasjonen av TimeData::Reader::process_fx_values kan jo ligge i fxlines.cpp da)
-#endif
-
     bool period_is_inside(const r::RatioPeriod &period) const {
       const int das_size = size();
       if (das_size<2)
@@ -563,7 +601,7 @@ private:
     }
 
     RT_TimeData_Player_Cache *get_player_cache(void) const {
-      return _player_num < 0 ? NULL : &_time_data->_player_cache_holder.caches[_player_num];
+      return _cache_num < 0 ? NULL : &_time_data->_player_caches[_cache_num];
     };
     
     // Implemented in fxlines.cpp (the method is very general, it can probably easily be converted into a general iterate function)
@@ -618,7 +656,7 @@ private:
     }
 
 #if 0
-    // ratio_start is used if _player_num == -1.
+    // ratio_start is used if _cache_num == -1.
     template <typename ValType>
     bool get_value_old(int play_id, const RatioPeriod &period, ValType &value, FX_when &when) const {
 
@@ -705,14 +743,14 @@ private:
   
 public:
   
-  // Optimized reader if reading the vector in a timely linear fashion.
+  // Optimized reader if reading the vector in a timely linear fashion (cache_num should be supplied).
   class Reader : radium::RT_AtomicPointerStorageMultipleReaders_ScopedUsage<TimeDataVector>, public ReaderWriter<const TimeData, const TimeDataVector>{
 
    public:
     
-    Reader(const TimeData *time_data, const int player_num = -1)
+    Reader(const TimeData *time_data, const int cache_num = -1)
       : radium::RT_AtomicPointerStorageMultipleReaders_ScopedUsage<TimeDataVector>(time_data->_atomic_pointer_storage)
-      , ReaderWriter<const TimeData, const TimeDataVector>(time_data, radium::RT_AtomicPointerStorageMultipleReaders_ScopedUsage<TimeDataVector>::get_pointer(), player_num)
+      , ReaderWriter<const TimeData, const TimeDataVector>(time_data, radium::RT_AtomicPointerStorageMultipleReaders_ScopedUsage<TimeDataVector>::get_pointer(), cache_num)
     {
     }
     

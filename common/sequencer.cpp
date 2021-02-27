@@ -476,6 +476,9 @@ static int64_t new_seqblock_id(void){
 void SEQBLOCK_init(const struct SeqTrack *seqtrack, struct SeqBlock *seqblock, struct Blocks *block, const hash_t *seqblock_state, double state_samplerate, bool *track_is_disabled, int64_t time){
   
   seqblock->id = new_seqblock_id();
+
+  seqblock->last_play_id = -1;
+  seqblock->cache_num = -1;
   
   seqblock->block = block;
   seqblock->sample_id = -1;
