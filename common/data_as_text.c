@@ -291,16 +291,22 @@ bool DAT_keypress(struct Tracker_Windows *window, int key, bool is_keydown){
   
   const Place *place = &wblock->reallines[realline]->l.p;
 
-  if (VELTEXT_keypress(window, wblock, wtrack, realline, place, key) == false) {
-    if (FXTEXT_keypress(window, wblock, wtrack, realline, place, key) == false) {
-      if (CHANCETEXT_keypress(window, wblock, wtrack, realline, place, key) == false) {
-        if (CENTTEXT_keypress(window, wblock, wtrack, realline, place, key) == false) {
-          if (BPMTEXT_keypress(window, wblock, realline, place, key) == false) {
-            if (LPBTEXT_keypress(window, wblock, realline, place, key) == false) {
-              if (SIGNATURETEXT_keypress(window, wblock, realline, place, key) == false) {
-                if (SWINGTEXT_keypress(window, wblock, window->curr_track < 0 ? NULL : wtrack, realline, place, key) == false) {
-                  return false;
-                }
+  if (window->curr_track < 0) {
+    if (LPBTEXT_keypress(window, wblock, realline, place, key) == false) {
+      if (SIGNATURETEXT_keypress(window, wblock, realline, place, key) == false) {
+        if (SWINGTEXT_keypress(window, wblock, NULL, realline, place, key) == false) {
+          return false;
+        }
+      }
+    }
+  } else {
+    if (VELTEXT_keypress(window, wblock, wtrack, realline, place, key) == false) {
+      if (FXTEXT_keypress(window, wblock, wtrack, realline, place, key) == false) {
+        if (CHANCETEXT_keypress(window, wblock, wtrack, realline, place, key) == false) {
+          if (CENTTEXT_keypress(window, wblock, wtrack, realline, place, key) == false) {
+            if (BPMTEXT_keypress(window, wblock, realline, place, key) == false) {
+              if (SWINGTEXT_keypress(window, wblock, wtrack, realline, place, key) == false) {
+                return false;
               }
             }
           }
