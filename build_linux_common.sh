@@ -259,10 +259,21 @@ if grep static\  */*.c */*.cpp */*.m */*/*.c */*/*.cpp | grep "\[" | grep -v "\[
 fi
 
 if [ -d .git ] ; then
-    if git grep R_ASSERT|grep \=|grep -v \=\=|grep -v \!\=|grep -v \>\=|grep -v \<\= |grep -v build_linux_common.sh ; then
+    if git grep -n R_ASSERT|grep \=|grep -v \=\=|grep -v \!\=|grep -v \>\=|grep -v \<\= |grep -v build_linux_common.sh ; then
         echo
         echo "ERROR in line(s) above. An R_ASSERT line is possibly wrongly used.";
         echo
         exit -1
     fi            
+
+    if git grep -e if\( --or -e if\ \( *|grep \=|grep -v \=\=|grep -v \!\=|grep -v \>\=|grep -v \<\=|grep -v pluginhost|grep -v bin/scheme|grep -v rtmidi|grep -v python|grep -v amiga|grep -v unused_files|grep -v weakjack|grep -v radium_wrap_1.c|grep -v keybindings.conf ; then
+        echo
+        echo "ERROR in line(s) above. A single '=' can not be placed on the same line as an if.";
+        echo
+        exit -1
+    fi            
+
+
+
 fi
+

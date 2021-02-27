@@ -56,9 +56,11 @@ void LoadVelocities(struct Velocities **to){
 		velocity->Tline=atoi(dc.ret);
 		velocity->Tcounter=DC_LoadU32();
 		velocity->Tdividor=DC_LoadU32();
-		velocity->velocity=DC_LoadI();  if(disk_load_version<0.67) velocity->velocity=velocity->velocity*MAX_VELOCITY/127;
-                
-                if (disk_load_version >= 0.775)
+		velocity->velocity=DC_LoadI();
+
+                if(disk_load_version<0.67)
+                  velocity->velocity=velocity->velocity*MAX_VELOCITY/127;
+                else if (disk_load_version >= 0.775)
                   velocity->logtype = LoadLogType();
                     
 		ListAddElement3_a(to,&velocity->l);

@@ -389,7 +389,7 @@ typedef struct SoundPluginType{
   bool (*show_gui)(struct SoundPlugin *plugin, int64_t parentgui); // If NULL, the "GUI" button will not show. Returns true if gui was opened.
   void (*hide_gui)(struct SoundPlugin *plugin);
 
-  void (*recreate_from_state)(struct SoundPlugin *plugin, hash_t *state, bool is_loading); // Optional function. Called after plugin has been created. Note that "state" is the same variable that is sent to "create_plugin_data", but this function is called AFTER the effect values have been set. It makes sense to set state_contains_effect_values=true if 'recreate_from_state' creates and recreates all effects. Note that this function is also called when changing a/b value (where we prefer efficient operation and non-stuttering sound), so it might be a good idea to do "if(HASH_equal(state, create_state())) return;" in the top of the function.
+  void (*recreate_from_state)(struct SoundPlugin *plugin, hash_t *state, bool is_loading); // Optional function. Called after plugin has been created. Note that "state" is the same variable that is sent to "create_plugin_data", but this function is called AFTER the effect values have been set. It makes sense to set state_contains_effect_values=true if 'recreate_from_state' creates and recreates all effects. Note that this function is also called when changing a/b value (where we prefer efficient operation and non-stuttering sound), so it might be a good idea to do "if(HASH_equal(state, create_state())) return;" in the top of the function. (==)
   void (*create_state)(const struct SoundPlugin *plugin, hash_t *state);
 
   // Presets (optional)

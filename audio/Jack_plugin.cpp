@@ -53,14 +53,14 @@ static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *clie
       sprintf(temp, "%s", input_portnames[i]);
     else
       sprintf(temp, "in_%d",++n);
-    
-    if((data->input_ports[i] = jack_port_register(client,
-                                                  V_strdup(temp),
-                                                  JACK_DEFAULT_AUDIO_TYPE,
-                                                  JackPortIsInput,
-                                                  0
-                                                  )
-        )==NULL)
+
+    data->input_ports[i] = jack_port_register(client,
+                                              V_strdup(temp),
+                                              JACK_DEFAULT_AUDIO_TYPE,
+                                              JackPortIsInput,
+                                              0
+                                              );
+    if(data->input_ports[i]==NULL)
       GFX_Message(NULL, "Error. Could not register jack port.\n");
   }
 
@@ -144,14 +144,14 @@ static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *clie
     else
       sprintf(temp, "out_%d",++n);
 
-    if((data->output_ports[i] = jack_port_register(
-                                                   client,
-                                                   V_strdup(temp),
-                                                   JACK_DEFAULT_AUDIO_TYPE,
-                                                   JackPortIsOutput,
-                                                   0
-                                                 )
-        )==NULL)
+    data->output_ports[i] = jack_port_register(
+                                               client,
+                                               V_strdup(temp),
+                                               JACK_DEFAULT_AUDIO_TYPE,
+                                               JackPortIsOutput,
+                                               0
+                                               );
+    if(data->output_ports[i]==NULL)
       GFX_Message(NULL, "Error. Could not register jack port.\n");
   }
 

@@ -860,9 +860,12 @@ int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
   case WM_SYSKEYDOWN:
     {
       if (ignore_autorepeat && !event_is_arrow(msg->wParam)){
-        if (CHECK_BIT(msg->lParam, 30)) { // autorepeat. https://msdn.microsoft.com/en-us/library/windows/desktop/ms646280(v=vs.85).aspx
+
+        // autorepeat. https://msdn.microsoft.com/en-us/library/windows/desktop/ms646280(v=vs.85).aspx
+        if (CHECK_BIT(msg->lParam, 30)) {
           return TR_AUTOREPEAT;
         }
+        
       }
       return TR_KEYBOARD;
     }

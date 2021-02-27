@@ -70,13 +70,22 @@ struct Notes *LoadNote(void){
 
 	DC_LoadI(); // cents
         
-	note->velocity=DC_LoadI(); if(disk_load_version<0.67) note->velocity=note->velocity*MAX_VELOCITY/127;
-        if (disk_load_version >= 0.775) note->velocity_first_logtype = LoadLogType();
+	note->velocity=DC_LoadI();
+        
+        if(disk_load_version<0.67)
+          note->velocity=note->velocity*MAX_VELOCITY/127;        
+        else if (disk_load_version >= 0.775)
+          note->velocity_first_logtype = LoadLogType();
                 
 	LoadPlace(&note->end);
-	note->velocity_end=DC_LoadI(); if(disk_load_version<0.67) note->velocity_end=note->velocity_end*MAX_VELOCITY/127;
-        if (disk_load_version>0.75)
+        
+	note->velocity_end=DC_LoadI();
+        
+        if(disk_load_version<0.67)
+          note->velocity_end=note->velocity_end*MAX_VELOCITY/127;
+        else if (disk_load_version>0.75)
           note->pitch_end = DC_LoadF();
+        
 	note->noend=DC_LoadI();
 
         if (disk_load_version > 0.835)

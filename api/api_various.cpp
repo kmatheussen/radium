@@ -2589,7 +2589,8 @@ void switchTrackNoteShowType(int tracknum,int blocknum,int windownum){
   if(wtrack==NULL) return;
 
   wtrack->noteshowtype++;
-  if(wtrack->noteshowtype>MAXTYPE) wtrack->noteshowtype=0;
+  if(wtrack->noteshowtype>MAXTYPE)
+    wtrack->noteshowtype=0;
 
 #if !USE_OPENGL
   if(window->wblock==wblock){

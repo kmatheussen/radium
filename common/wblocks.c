@@ -68,10 +68,17 @@ void CloseWBlock(struct Tracker_Windows *window, NInt blocknum){
 
 bool WBlock_legalizeStartEndReallines(const struct WBlocks *wblock,int *start_realline,int *end_realline){
 
-  if(*start_realline<wblock->top_realline) *start_realline=wblock->top_realline;
-  if(*start_realline<0) *start_realline=0;
-  if(*end_realline>=wblock->num_reallines) *end_realline=wblock->num_reallines-1;
-  if(*end_realline>wblock->bot_realline) *end_realline=wblock->bot_realline;
+  if(*start_realline<wblock->top_realline)
+    *start_realline=wblock->top_realline;
+  
+  if(*start_realline<0)
+    *start_realline=0;
+  
+  if(*end_realline>=wblock->num_reallines)
+    *end_realline=wblock->num_reallines-1;
+  
+  if(*end_realline>wblock->bot_realline)
+    *end_realline=wblock->bot_realline;
 
   if(*end_realline<*start_realline){
     return false;

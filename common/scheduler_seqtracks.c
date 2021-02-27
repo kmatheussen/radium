@@ -205,7 +205,12 @@ static int64_t RT_scheduled_seqblock(struct SeqTrack *seqtrack, int64_t seqtime,
       }
     }
   }
-  
+
+  /*
+  if (playtype==PLAYBLOCK)
+    ATOMIC_ADD(pc->play_id, 1);
+  */
+
   RT_schedule_new_seqblock(seqtrack, seqblock, next_seqblock, seqtime, block_start_time, place, playtype);
 
   return DONT_RESCHEDULE;

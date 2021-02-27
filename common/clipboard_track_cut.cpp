@@ -148,13 +148,15 @@ static void CB_ClearOrCutTrack_CurrPos(
 	switch(window->curr_track){
 		case SWINGTRACK:
                   ADD_UNDO(Swings_CurrPos(window, NULL));
-                        if (do_cut) cb_swing=CB_CopySwings(block->swings, NULL);
+                        if (do_cut)
+                          cb_swing=CB_CopySwings(block->swings, NULL);
 			block->swings=NULL;
                         TIME_block_swings_have_changed(block);
 			break;
 		case SIGNATURETRACK:
                   ADD_UNDO(Signatures_CurrPos(window));
-			if (do_cut) cb_signature=CB_CopySignatures(block->signatures);
+			if (do_cut)
+                          cb_signature=CB_CopySignatures(block->signatures);
 			block->signatures=NULL;
                         TIME_block_signatures_have_changed(block);
                         UpdateWBlockWidths(window, wblock);
@@ -163,20 +165,23 @@ static void CB_ClearOrCutTrack_CurrPos(
 			break;
 		case LPBTRACK:
                   ADD_UNDO(LPBs_CurrPos(window));
-			if (do_cut) cb_lpb=CB_CopyLPBs(block->lpbs);
+			if (do_cut)
+                          cb_lpb=CB_CopyLPBs(block->lpbs);
 			block->lpbs=NULL;
                         TIME_block_LPBs_have_changed(block);
 			//UpdateWLPBs(window,wblock);
 			break;
 		case TEMPOTRACK:
                   ADD_UNDO(Tempos_CurrPos(window));
-			if (do_cut) cb_tempo=CB_CopyTempos(block->tempos);
+			if (do_cut)
+                          cb_tempo=CB_CopyTempos(block->tempos);
 			block->tempos=NULL;
                         TIME_block_tempos_have_changed(block);
 			break;
 		case TEMPONODETRACK:
                   ADD_UNDO(TempoNodes_CurrPos(window));
-			if (do_cut) cb_temponode=CB_CopyTempoNodes(block->temponodes);
+			if (do_cut)
+                          cb_temponode=CB_CopyTempoNodes(block->temponodes);
 			block->temponodes=NULL;
 			LegalizeTempoNodes(block);
                         TIME_block_tempos_have_changed(block);
@@ -184,7 +189,8 @@ static void CB_ClearOrCutTrack_CurrPos(
 		default:
                   ADD_UNDO(Track_CurrPos(wblock->l.num, wtrack->l.num));
                   if (SWINGTEXT_subsubtrack(window, wtrack) != -1){
-                    if (do_cut) cb_swing = wtrack->track->swings;
+                    if (do_cut)
+                      cb_swing = wtrack->track->swings;
                     wtrack->track->swings = NULL;
                     TIME_block_swings_have_changed(block);
                   } else {
