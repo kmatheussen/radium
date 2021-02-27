@@ -606,7 +606,7 @@ void r::TimeData<T>::ReaderWriter<TimeData, TimeDataVector>::iterate_fx(struct S
   // Send out all node values between period._start and period._end
   if (when != FX_end) {
     
-    while(_curr_pos < das_size - 1) { 
+    for( ; _curr_pos < das_size ; _curr_pos++) {
 
       const T &node = at(_curr_pos);
 
@@ -632,8 +632,6 @@ void r::TimeData<T>::ReaderWriter<TimeData, TimeDataVector>::iterate_fx(struct S
       int64_t time = get_seqblock_place_time2(seqblock, track, make_place_from_ratio(node._time));
       //printf("....2. %d: %f. When: %d. _curr_pos: %d\n", (int)value, (double)value / (double)fx->max, (int) when, _curr_pos);
       RT_FX_treat_fx(seqtrack, fx, value, time, 0, when);
-
-      _curr_pos++;
 
     }
   }
