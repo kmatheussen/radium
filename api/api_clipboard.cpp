@@ -175,8 +175,6 @@ void cutTrack(int tracknum, int blocknum, int windownum){
     
     cb_wtrack = CB_CutTrack(window, wblock, wtrack);
 
-    TIME_block_swings_have_changed(wblock->block);
-    
     window->must_redraw_editor = true;
   }
 }
@@ -205,11 +203,12 @@ void clearTrack(int tracknum, int blocknum, int windownum){
 
     ADD_UNDO(Track_CurrPos(wblock->l.num, wtrack->l.num));
 
-    PC_Pause();{
-      CB_ClearTrack_Force(wblock->block, wtrack->track);
-    }PC_StopPause(window);
+    radium::PlayerPauseOnlyIfNeeded pause_player;
+    bool swings_have_changed = false;
+    CB_ClearTrack_Force(wblock->block, wtrack->track, pause_player, swings_have_changed);
 
-    TIME_block_swings_have_changed(wblock->block);
+    if (swings_have_changed)
+      TIME_block_swings_have_changed(wblock->block);
     
     window->must_redraw = true;
   }

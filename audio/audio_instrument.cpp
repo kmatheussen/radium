@@ -595,7 +595,9 @@ static int AUDIO_getMaxVelocity(const struct Patch *patch){
 static void AUDIO_close_FX(struct FX *fx,const struct Tracks *track){
   //struct Patch *patch = track->patch;
 
-  printf("AUDIO_close_FX called for track %d\n",track->l.num);
+  // Commented out. May hold player lock.
+  // printf("AUDIO_close_FX called for track %d\n",track->l.num);
+  
   //SoundPlugin *plugin = (SoundPlugin*) track->patch->patchdata;
   //AUDIO_FX_data_t *fxdata = (AUDIO_FX_data_t*)fx->fxdata;
 

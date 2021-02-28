@@ -271,8 +271,10 @@ static void LoadOctaBlock(
 //		Block_Properties(wblock->block,numtracks,numlines);
 		wtrack=wblock->wtracks;
 		while(wtrack!=NULL){
-			CB_CutTrack_Force(wblock,wtrack);
-			wtrack=NextWTrack(wtrack);
+                  radium::PlayerPauseOnlyIfNeeded pause_player;
+                  bool swings_have_changed = false;
+                  CB_ClearTrack_Force(wblock->block, wtrack->track, pause_player, swings_have_changed);
+                  wtrack=NextWTrack(wtrack);
 		}
 	}
 

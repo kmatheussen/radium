@@ -64,7 +64,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/SoundPlugin.h"
 #include "../common/disk_load_proc.h"
 
-#ifdef __cplusplus
+#ifdef USE_QT4
 
 #include <QGraphicsSceneMouseEvent>
 #include <QUrl>
@@ -170,7 +170,7 @@ extern void MW_reset_zoom(void);
 
 extern LANGSPEC void MW_connect_plugin_to_main_pipe(SoundPlugin *plugin);
 
-#ifdef __cplusplus
+#ifdef USE_QT4
 extern void MW_connect(struct Patch *source, struct Patch *dest, ConnectionType connection_type);
 #endif
 
@@ -191,7 +191,7 @@ extern LANGSPEC void MW_cleanup(bool is_loading); // Deletes all chips
 extern LANGSPEC void MW_cleanup_chip_positions(void); // Cleans up chip positions.
 extern LANGSPEC void MW_get_slotted_x_y(float from_x, float from_y, float *x, float *y); // Workaround.
 
-#ifdef __cplusplus
+#ifdef USE_QT4
 #include <QHash>
 extern LANGSPEC void MW_get_curr_mixer_slot(float &x, float &y);
 extern LANGSPEC void MW_create_from_state(const hash_t *state, const vector_t *patches, const QHash<instrument_t, instrument_t> &patch_id_mapper, float x, float y);

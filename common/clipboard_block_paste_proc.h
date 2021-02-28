@@ -17,22 +17,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
+#pragma once
 
 
-
-#ifndef TRACKER_INCLUDE
-
-extern void CB_PasteBlock(
+extern LANGSPEC void CB_PasteBlock(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	struct WBlocks *towblock
 );
 
-extern void CB_PasteBlock_CurrPos(
+extern LANGSPEC void CB_PasteBlock_CurrPos(
 	struct Tracker_Windows *window
 );
-
-#endif
 
 
 
