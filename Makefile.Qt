@@ -1858,8 +1858,8 @@ $(T)api_notemanipulate.o:  $(BUILD_DEPENDENCIES)  $(API)api_notemanipulate.c
 $(T)api_play.o:  $(BUILD_DEPENDENCIES)  $(API)api_play.cpp
 	$(CCC2)  $(API)api_play.cpp $(QTOPT)
 
-$(T)api_clipboard.o:  $(BUILD_DEPENDENCIES)  $(API)api_clipboard.c 
-	$(CC2)  $(API)api_clipboard.c $(OPT)
+$(T)api_clipboard.o:  $(BUILD_DEPENDENCIES)  $(API)api_clipboard.cpp
+	$(CCC2)  $(API)api_clipboard.cpp $(CPPOPT)
 
 $(T)api_undo.o:  $(BUILD_DEPENDENCIES)  $(API)api_undo.cpp  embedded_scheme/s7extra_proc.h
 	$(CCC2)  $(API)api_undo.cpp $(QTOPT)

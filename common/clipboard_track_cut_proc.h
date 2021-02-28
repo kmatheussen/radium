@@ -17,16 +17,21 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #pragma once
 
+#ifdef __cplusplus
+extern void CB_ClearTrack_Force(
+                                struct Blocks *block,
+                                struct Tracks *track,
+                                radium::PlayerPauseOnlyIfNeeded &pause_player,
+                                bool &swings_have_changed
+                                );
+#endif
 
-extern LANGSPEC void CB_ClearTrack_Force(
-                         struct Blocks *block,
-                         struct Tracks *track
-                         );
-
+#if 0
 extern LANGSPEC void CB_CutTrack_Force(
 	struct WBlocks *wblock,
 	struct WTracks *wtrack
 );
+#endif
 
 extern LANGSPEC struct WTracks *CB_CutTrack(
                             struct Tracker_Windows *window,

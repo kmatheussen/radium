@@ -356,6 +356,7 @@ static bool isFXUsed(struct TrackInstrumentData *tid,struct MIDI_FX *midi_fx){
 	return false;
 }
 
+// Note: May hold player lock here.
 void MIDI_closeFX(struct FX *fx,const struct Tracks *track){
 	struct TrackInstrumentData *tid=(struct TrackInstrumentData *)track->midi_instrumentdata;
 	struct UsedTrackMidiCCs *usmf=tid->usmf;

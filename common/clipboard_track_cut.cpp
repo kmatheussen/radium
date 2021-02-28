@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "undo_lpbs_proc.h"
 #include "undo_tempos_proc.h"
 #include "undo_temponodes_proc.h"
+#include "undo_fxs_proc.h"
 #include "player_proc.h"
 #include "player_pause_proc.h"
 #include "windows_proc.h"
@@ -44,6 +45,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Beats_proc.h"
 #include "clipboard_track_cut_proc.h"
 #include "swingtext_proc.h"
+#include "fxtext_proc.h"
 
 
 extern struct Swing *cb_swing;
@@ -59,13 +61,24 @@ extern struct WTracks *cb_wtrack;
 // called from clearTrack, cut_track, CB_CutTrack_Force, and CB_ClearOrCutTrack_CurrPos.
 void CB_ClearTrack_Force(
 	struct Blocks *block,
-	struct Tracks *track
+	struct Tracks *track,
+        radium::PlayerPauseOnlyIfNeeded &pause_player,
+        bool &swings_have_changed
 ){
-        R_ASSERT_NON_RELEASE(PLAYER_current_thread_has_lock() || is_playing()==false); // Making it NON_RELEASE because: If "track" is not alive we would get a false assertion here.
+  //R_ASSERT_NON_RELEASE(PLAYER_current_thread_has_lock() || is_playing()==false); // Making it NON_RELEASE because: If "track" is not alive we would get a false assertion here.
+
+        swings_have_changed = false;
   
-	track->notes=NULL;
-	//track->stops=NULL;
-        track->swings=NULL;
+        if (track->notes != NULL || track->swings!=NULL){
+          pause_player.need_it();
+          track->notes=NULL;
+          //track->stops=NULL;
+
+          if (track->swings != NULL){
+            track->swings=NULL;
+            swings_have_changed = true;
+          }
+        }
 
         r::TimeData<r::Stop>::Writer writer(track->stops2, true);
         
@@ -73,10 +86,14 @@ void CB_ClearTrack_Force(
           (*fxs->fx->closeFX)(fxs->fx,track);
         }END_VECTOR_FOR_EACH;
 
-	VECTOR_clean(&track->fxs);
+        {
+          SCOPED_PLAYER_LOCK_IF_PLAYING();
+          VECTOR_clean(&track->fxs);
+        }
 }
 
-void CB_CutTrack_Force(
+/*
+static void CB_CutTrack_Force(
 	struct WBlocks *wblock,
 	struct WTracks *wtrack
 ){
@@ -84,13 +101,16 @@ void CB_CutTrack_Force(
 
         CB_ClearTrack_Force(wblock->block, wtrack->track);
 }
+*/
 
 static struct WTracks *cut_track(
                                  struct Tracker_Windows *window,
                                  struct WBlocks *wblock,
                                  struct WTracks *wtrack,
                                  bool always_cut_all_fxs,
-                                 bool *only_one_fxs_was_cut
+                                 bool *only_one_fxs_was_cut,
+                                 radium::PlayerPauseOnlyIfNeeded &pause_player,
+                                 bool &swings_have_changed
 ){
 
   if (!always_cut_all_fxs)
@@ -98,16 +118,16 @@ static struct WTracks *cut_track(
   
   struct WTracks *ret;
   
-  PC_Pause();{
-            
     ret = internal_copy_track(wblock, wtrack, always_cut_all_fxs, only_one_fxs_was_cut);
 
     if (always_cut_all_fxs || (*only_one_fxs_was_cut)==false) {
-
-      CB_ClearTrack_Force(wblock->block, wtrack->track);
       
+      CB_ClearTrack_Force(wblock->block, wtrack->track, pause_player, swings_have_changed);
+  
     } else {
 
+      SCOPED_PLAYER_LOCK_IF_PLAYING();
+      
       struct FXs *fxs = (struct FXs*)ret->track->fxs.elements[0];
       
       VECTOR_FOR_EACH(struct FXs *, maybe, &wtrack->track->fxs){
@@ -120,8 +140,6 @@ static struct WTracks *cut_track(
       
     }
 
-  }PC_StopPause(window);
-  
   return ret;
 }
 
@@ -130,8 +148,14 @@ struct WTracks *CB_CutTrack(
 	struct WBlocks *wblock,
 	struct WTracks *wtrack
 ){
-  struct WTracks *ret = cut_track(window, wblock, wtrack, true, NULL);
-  TIME_block_swings_have_changed(wblock->block);
+  radium::PlayerPauseOnlyIfNeeded pause_player;
+  bool swings_have_changed = false;
+
+  struct WTracks *ret = cut_track(window, wblock, wtrack, true, NULL, pause_player, swings_have_changed);
+
+  if (swings_have_changed)
+    TIME_block_swings_have_changed(wblock->block);
+  
   return ret;
 }
 
@@ -143,13 +167,14 @@ static void CB_ClearOrCutTrack_CurrPos(
 	struct Blocks *block=wblock->block;
 	struct WTracks *wtrack=wblock->wtrack;
 
-        PC_Pause();{
+        radium::PlayerPauseOnlyIfNeeded pause_player;
           
 	switch(window->curr_track){
 		case SWINGTRACK:
                   ADD_UNDO(Swings_CurrPos(window, NULL));
                         if (do_cut)
                           cb_swing=CB_CopySwings(block->swings, NULL);
+                        pause_player.need_it();
 			block->swings=NULL;
                         TIME_block_swings_have_changed(block);
 			break;
@@ -157,6 +182,7 @@ static void CB_ClearOrCutTrack_CurrPos(
                   ADD_UNDO(Signatures_CurrPos(window));
 			if (do_cut)
                           cb_signature=CB_CopySignatures(block->signatures);
+                        pause_player.need_it();
 			block->signatures=NULL;
                         TIME_block_signatures_have_changed(block);
                         UpdateWBlockWidths(window, wblock);
@@ -167,6 +193,7 @@ static void CB_ClearOrCutTrack_CurrPos(
                   ADD_UNDO(LPBs_CurrPos(window));
 			if (do_cut)
                           cb_lpb=CB_CopyLPBs(block->lpbs);
+                        pause_player.need_it();
 			block->lpbs=NULL;
                         TIME_block_LPBs_have_changed(block);
 			//UpdateWLPBs(window,wblock);
@@ -175,6 +202,7 @@ static void CB_ClearOrCutTrack_CurrPos(
                   ADD_UNDO(Tempos_CurrPos(window));
 			if (do_cut)
                           cb_tempo=CB_CopyTempos(block->tempos);
+                        pause_player.need_it();
 			block->tempos=NULL;
                         TIME_block_tempos_have_changed(block);
 			break;
@@ -182,23 +210,40 @@ static void CB_ClearOrCutTrack_CurrPos(
                   ADD_UNDO(TempoNodes_CurrPos(window));
 			if (do_cut)
                           cb_temponode=CB_CopyTempoNodes(block->temponodes);
+                        pause_player.need_it();
 			block->temponodes=NULL;
 			LegalizeTempoNodes(block);
                         TIME_block_tempos_have_changed(block);
 			break;
 		default:
-                  ADD_UNDO(Track_CurrPos(wblock->l.num, wtrack->l.num));
+                  
                   if (SWINGTEXT_subsubtrack(window, wtrack) != -1){
+                    
+                    ADD_UNDO(Swings_CurrPos(window, wtrack->track));
+                  
                     if (do_cut)
                       cb_swing = wtrack->track->swings;
+                    
+                    pause_player.need_it();
                     wtrack->track->swings = NULL;
                     TIME_block_swings_have_changed(block);
+                    
                   } else {
+
+                        {
+                          struct FXs *fxs;
+                          if (do_cut && FXTEXT_subsubtrack(root->song->tracker_windows, wtrack, &fxs) != -1)
+                            ADD_UNDO(FXs_CurrPos(window));
+                          else
+                            ADD_UNDO(Track_CurrPos(wblock->l.num, wtrack->l.num));
+                        }
+                          
+                        bool swings_have_changed = false;
 			if (do_cut)
-                          cb_wtrack = cut_track(window, wblock, wtrack, false, &cb_wtrack_only_contains_one_fxs);
+                          cb_wtrack = cut_track(window, wblock, wtrack, false, &cb_wtrack_only_contains_one_fxs, pause_player, swings_have_changed);
                         else
-                          CB_ClearTrack_Force(wblock->block, wtrack->track);
-                        
+                          CB_ClearTrack_Force(wblock->block, wtrack->track, pause_player, swings_have_changed);
+
                         //#if !USE_OPENGL
 			UpdateAndClearSomeTrackReallinesAndGfxWTracks(
 				window,
@@ -207,14 +252,14 @@ static void CB_ClearOrCutTrack_CurrPos(
 				window->curr_track
 			);
                         ValidateCursorPos(window);
-                        TIME_block_swings_have_changed(block);
+
+                        if (swings_have_changed)
+                          TIME_block_swings_have_changed(block);
                         //#endif
 			break;
                   }
 	}
 
-        }PC_StopPause(window);
-        
         window->must_redraw=true;
 }
 

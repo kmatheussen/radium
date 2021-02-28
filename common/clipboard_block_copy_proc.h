@@ -15,19 +15,15 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
+#pragma once
 
-
-#ifndef TRACKER_INCLUDE
-
-extern struct WBlocks *CB_CopyBlock(
+extern LANGSPEC struct WBlocks *CB_CopyBlock(
                                     const struct WBlocks *wblock
 );
 
-extern void CB_CopyBlock_CurrPos(
+extern LANGSPEC void CB_CopyBlock_CurrPos(
                                  const struct Tracker_Windows *window
 );
-
-#endif
 
 
 
