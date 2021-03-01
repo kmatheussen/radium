@@ -75,7 +75,7 @@ extern struct Tempos *cb_tempo;
 extern struct TempoNodes *cb_temponode;
 
 
-static void make_patches_usable(struct Tracks *track){
+static void make_patches_usable(struct Tracks *track, radium::PlayerPauseOnlyIfNeeded &pause_player){
   struct Patch *old_patch = track->patch;
   
   if (old_patch != NULL) {
@@ -100,11 +100,15 @@ static void make_patches_usable(struct Tracks *track){
         }
 
       }
-      
+
+      pause_player.need_it();
       track->patch = new_patch;
     }
 
     if (track->patch->patchdata==NULL){
+      
+      pause_player.need_it();
+      
       R_ASSERT(track->patch->instrument == get_MIDI_instrument()); // This can happen if deleting all unused midi instruments.
       if (PATCH_get_current() == track->patch)
         PATCH_remove_current();
@@ -115,9 +119,14 @@ static void make_patches_usable(struct Tracks *track){
     VECTOR_FOR_EACH(struct FXs *, fxs, &track->fxs){
       struct FX *fx = fxs->fx;
       
-      if (fx->patch == old_patch)
-        fx->patch = new_patch;
-      else if (!fx->patch->is_usable){
+      if (fx->patch == old_patch) {
+
+        if (fx->patch != new_patch) {
+          pause_player.need_it();
+          fx->patch = new_patch;
+        }
+        
+      } else if (!fx->patch->is_usable){
         
         if (old_patch->instrument != get_audio_instrument()) {
           
@@ -125,6 +134,8 @@ static void make_patches_usable(struct Tracks *track){
           
         } else {
 
+          pause_player.need_it();
+          
           if (fx->patch->permanent_id != 0)
             fx->patch = AUDIO_get_the_replacement_for_old_permanent_patch(fx->patch);
           else
@@ -140,28 +151,35 @@ static void make_patches_usable(struct Tracks *track){
 static bool co_CB_PasteTrackFX(
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
-	struct WTracks *towtrack
+	struct WTracks *towtrack,
+        radium::PlayerPauseOnlyIfNeeded &pause_player
 ){
-	struct Tracks *totrack;
-	struct Tracks *track;
 
         R_ASSERT_RETURN_IF_FALSE2(towtrack!=NULL, false);
 
-	totrack=towtrack->track;
-	track=wtrack->track;
+	struct Tracks *totrack = towtrack->track;
+	struct Tracks *track = wtrack->track;
 
-        make_patches_usable(track);
+        make_patches_usable(track, pause_player);
 
-        if (totrack->patch == NULL)
+        if (totrack->patch == NULL && track->patch != NULL){
+          pause_player.need_it();
           totrack->patch = track->patch;
-                      
-	if(track->midi_instrumentdata!=NULL){
+        }
+        
+	if(track->midi_instrumentdata!=NULL)
           totrack->midi_instrumentdata=MIDI_CopyInstrumentData(track);
-	}
 
-	VECTOR_clean(&totrack->fxs);
-
-	CopyRange_fxs(wblock->block->num_lines, &totrack->fxs, &track->fxs, make_ratio(0,1), make_ratio(wblock->block->num_lines, 1));
+        {
+          vector_t fxs = {};
+          
+          CopyRange_fxs(wblock->block->num_lines, &fxs, &track->fxs, make_ratio(0,1), make_ratio(wblock->block->num_lines, 1));
+          
+          {
+            SCOPED_PLAYER_LOCK_IF_PLAYING();
+            totrack->fxs = fxs;
+          }
+        }
 
 	//LegalizeFXlines(wblock->block,totrack);
 
@@ -274,8 +292,12 @@ bool co_CB_PasteTrack(
 
         struct Tracks *totrack = towtrack->track;
 	struct Tracks *track = wtrack->track;
+
+        radium::PlayerPauseOnlyIfNeeded pause_player;
         
-        make_patches_usable(track);
+        make_patches_usable(track, pause_player);
+
+        pause_player.need_it();
         
         totrack->patch = track->patch;
 
@@ -299,19 +321,21 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 	struct WTracks *wtrack=wblock->wtrack;
 	Place lastplace;
 
+        radium::PlayerPauseOnlyIfNeeded pause_player;
+        
 	PlaceSetLastPos(wblock->block,&lastplace);
 
-        PC_Pause();
-                  
 	switch(window->curr_track){
 		case SWINGTRACK:
                   if(cb_swing==NULL) goto exit;
+                        pause_player.need_it();
                         ADD_UNDO(Swings_CurrPos(window, NULL));
 			block->swings=CB_CopySwings(cb_swing, &lastplace);
                         TIME_block_swings_have_changed(block);
 			break;
 		case SIGNATURETRACK:
                   if(cb_signature==NULL) goto exit;
+                        pause_player.need_it();
 			ADD_UNDO(Signatures_CurrPos(window));
 			block->signatures=CB_CopySignatures(cb_signature);
 			CutListAt_a(&block->signatures,&lastplace);
@@ -319,8 +343,9 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
                         TIME_block_signatures_have_changed(block);
 			break;
 		case LPBTRACK:
-			if(cb_lpb==NULL) goto exit;
 			ADD_UNDO(LPBs_CurrPos(window));
+			if(cb_lpb==NULL) goto exit;
+                        pause_player.need_it();
 			block->lpbs=CB_CopyLPBs(cb_lpb);
 			CutListAt_a(&block->lpbs,&lastplace);
                         TIME_block_LPBs_have_changed(block);
@@ -331,6 +356,7 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 		case TEMPOTRACK:
 			if(cb_tempo==NULL) goto exit;
 			ADD_UNDO(Tempos_CurrPos(window));
+                        pause_player.need_it();
 			block->tempos=CB_CopyTempos(cb_tempo);
 			CutListAt_a(&block->tempos,&lastplace);
 			//UpdateWTempos(window,wblock);
@@ -342,6 +368,7 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 		case TEMPONODETRACK:
 			if(cb_temponode==NULL) goto exit;
 			ADD_UNDO(TempoNodes_CurrPos(window));
+                        pause_player.need_it();
 			block->temponodes=CB_CopyTempoNodes(cb_temponode);
 			CutListAt_a(&block->temponodes,&lastplace);
 			LegalizeTempoNodes(block);
@@ -360,6 +387,7 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
                     PlaceSetLastPos(wblock->block,&p2);
 
                     ADD_UNDO(Track_CurrPos(wblock->l.num, wtrack->l.num));
+                    pause_player.need_it();
                     wtrack->track->swings = CB_CopySwings(cb_swing,&p2);
                     TIME_block_swings_have_changed(block);
 
@@ -411,7 +439,7 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
                               fromwtrack->track->fxs = *VECTOR_copy(fxss);
                             }
                             
-                            if(co_CB_PasteTrackFX(wblock,fromwtrack,wtrack)){
+                            if(co_CB_PasteTrackFX(wblock, fromwtrack, wtrack, pause_player)){
                               window->must_redraw = true;
                             }else{
 #if !USE_OPENGL
@@ -435,7 +463,6 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
 
 
  exit:
-        PC_StopPause(window);
 
         window->must_redraw=true;
 }
