@@ -171,7 +171,7 @@ static void CB_ClearOrCutTrack_CurrPos(
           
 	switch(window->curr_track){
 		case SWINGTRACK:
-                  ADD_UNDO(Swings_CurrPos(window, NULL));
+                        ADD_UNDO(Swings_CurrPos(window, NULL));
                         if (do_cut)
                           cb_swing=CB_CopySwings(block->swings, NULL);
                         pause_player.need_it();
