@@ -303,7 +303,11 @@ static void AddFXNodeLineCurrPosInternal(struct Tracker_Windows *window, struct 
           
           PlaceCopy(&p2, &p1);
 
-          p2.line ++;
+          int linezoom = getLineZoomBlock(wblock->l.num, window->l.num);
+          if (linezoom > 0)
+            p2 = make_place_from_ratio(make_ratio_from_place(p2) + make_ratio(1, linezoom));
+          else
+            p2.line += -linezoom;
           
           Place lastplace;
           PlaceSetLastPos(wblock->block, &lastplace);
