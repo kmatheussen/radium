@@ -163,7 +163,7 @@ public:
           R_ASSERT_NON_RELEASE(_start_pos < _size);
         }
         
-        R_ASSERT_NON_RELEASE(_start_pos = _end_pos);
+        R_ASSERT_NON_RELEASE(_start_pos == _end_pos);
         
         _num_frames_available = _size;
         
