@@ -21,7 +21,12 @@
 
 #include "SoundPluginRegistry_proc.h"
 
+#include "../api/api_proc.h"
+
+
 #include "Jack_plugin_proc.h"
+
+
 
 /*
   Note that plugin_type->num_input corresponds to jack_client->num_outputs, and vica versa.
@@ -64,7 +69,7 @@ static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *clie
       GFX_Message(NULL, "Error. Could not register jack port.\n");
   }
 
-  if(!strcmp(plugin_type->name,"System In")){
+  if(!strcmp(plugin_type->name,"System In") && !nsmIsActive()){
     
     const char **outportnames=jack_get_ports(client,NULL,NULL,JackPortIsPhysical|JackPortIsOutput);
 
@@ -155,7 +160,7 @@ static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *clie
       GFX_Message(NULL, "Error. Could not register jack port.\n");
   }
 
-  if(!strcmp(plugin_type->name,"System Out") || !strcmp(plugin_type->name,"System Out 8")){
+  if(!nsmIsActive() && (!strcmp(plugin_type->name,"System Out") || !strcmp(plugin_type->name,"System Out 8"))){
 
     const char **inportnames=jack_get_ports(client,NULL,NULL,JackPortIsPhysical|JackPortIsInput);
 
