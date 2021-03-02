@@ -255,9 +255,10 @@
   (define next-mouse-y #f)
   
   (define (call-move-and-release $button $x $y)
+    ;;(c-display "prev-y:" prev-y)
     ;;(set! $x (<ra> :get-mouse-pointer-x))
     ;;(set! $y (<ra> :get-mouse-pointer-y))
-
+    
     (define mouse-pointer-is-hidden (and mouse-pointer-is-hidden-func
                                          (mouse-pointer-is-hidden-func)))
     
@@ -375,9 +376,12 @@
   
   (add-mouse-cycle (make-mouse-cycle
                     :press-func (lambda ($button $x $y)
+                                  ;;(c-display "PRESS. y:" $y)
                                   (set! instance (press $button $x $y))
                                   (if instance
                                       (begin
+                                        (set! next-mouse-x $x)
+                                        (set! next-mouse-y $y)
                                         (set! prev-x $x)
                                         (set! prev-y $y)
                                         (<ra> :get-delta-mouse-x) ;; reset delta
@@ -386,11 +390,13 @@
                                       #f))
                     :drag-func  call-move-and-release
                     :release-func (lambda ($button $x $y)
+                                    ;;(c-display "RELEASE")
                                     (call-move-and-release $button $x $y)
                                     (if release
                                         (release $button $x $y instance))
                                     (set! prev-x #f)
-                                    (set! prev-y #f)))))
+                                    (set! prev-y #f)
+                                    ))))
 
 
 ;; Functions called from radium
