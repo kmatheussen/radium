@@ -345,7 +345,7 @@ void CopyRange_fxs(
           //printf("Reader size: %d. Writer size: %d\n", reader.size(), writer.size());
           //getchar();
           R_ASSERT_NON_RELEASE(reader.size() >= 2);
-          R_ASSERT_NON_RELEASE(writer.size() >= 2);
+          //R_ASSERT_NON_RELEASE(writer.size() >= 2);
           if (!LegalizeFXlines2(num_lines, fxs->fx, writer)){
             writer.cancel();
             push_it = false;

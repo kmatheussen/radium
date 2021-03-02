@@ -3450,13 +3450,12 @@ int addFxnode(float value, Place place, int fxnum, int tracknum, int blocknum, i
   R_ASSERT(value >= 0.0f);
   R_ASSERT(value <= 1.0f);
 
-  Place lastplace;
-  PlaceSetLastPos(wblock->block, &lastplace);
-
   if (PlaceLessThan(&place, PlaceGetFirstPos())){
     handleError("addFxnode: placement before top of block for fx #%d. (%s)", fxnum, PlaceToString(&place));
     place = *PlaceGetFirstPos();
   }
+
+  Place lastplace = p_Absolute_Last_Pos(wblock->block);
 
   if (PlaceGreaterThan(&place, &lastplace)) {    
     handleError("addFxnode: placement after fx end for fx #%d (%s). num_lines: #%d", fxnum, PlaceToString(&place), wblock->block->num_lines);
