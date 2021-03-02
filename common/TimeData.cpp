@@ -1,6 +1,4 @@
 
-#include <gc.h>
-
 
 #if defined(TEST_TIMEDATA_MAIN)
 
