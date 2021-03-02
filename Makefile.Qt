@@ -2662,7 +2662,7 @@ $(T)moc_qhttpserver.o: $(QHTTPSERVER_PATH)/build/moc_qhttpserver.cpp
 $(T)http_parser.o: $(QHTTPSERVER_PATH)/http-parser/http_parser.c
 	$(CC2) -c $(QHTTPSERVER_PATH)/http-parser/http_parser.c $(OPT) $(HTTPPARSERFLAGS)
 
-LIBGIG_FLAGS=-Wno-sign-compare -Wno-missing-declarations -DPACKAGE="\"libgig\"" -DVERSION="\"4.2.0\"" -D_GNU_SOURCE
+LIBGIG_FLAGS=-Wno-sign-compare -Wno-missing-declarations -Wno-unused-result -DPACKAGE="\"libgig\"" -DVERSION="\"4.2.0\"" -D_GNU_SOURCE
 
 $(T)RIFF.o: $(LIBGIG_PATH)/SF.cpp
 	$(CCC2) -c $(LIBGIG_PATH)/RIFF.cpp $(CPPOPT) $(LIBGIG_FLAGS)
