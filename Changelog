@@ -1,3 +1,59 @@
+Changes 6.7.76 -> 6.8.71:
+* Scripting: Update S7.
+* NSM: Never autoconnect jack ports when nsm is
+  active.
+* Editor/mouse: Fix moving an element after
+  previously moving that element beyond a limit.
+  Before, when moving that element again, the
+  element would automatically jump the same number
+  of pixels in the opposite direction first. (The
+  fix was only necessary on Linux and Windows.)
+* Modulators: Don't break chronological order when
+  adding or removing a modulator.
+* Mixer: Keep crologocial order for the plugin
+  favourites.
+* Fonts: Display currently used font in font
+  requester when changing editor font or system
+  font.
+* Fonts: Fix saving custom editor font to settings.
+* Editor/cursor: Try to move to the same subtrack
+  when using Ctrl + J.
+* Editor/cursor: Make sure cursor is visible after
+  changing zoom value.
+* Editor/cursor: Make sure the complete current
+  track is visible when scrolling left/right and
+  there's enough space. Before, we only made sure
+  the complete current subtrack was visible.
+* Editor/cursor: Fix showing full subtrack when
+  moving cursor to a subtrack that is outside the
+  visible area.
+* Editor/cursor: Fix cursor sometimes moving to the
+  wrong place when moving left or right in the
+  timing tracks.
+* Editor/cursor: Fix cursor moving to the same
+  subtrack when moving cursor to the left or right
+  track.
+* Editor/FX: Convert FX (i.e. effect automation in
+  the editor) to the new data structure:
+  * Better performance (should be more notable in
+    later releases though).
+  * Changes are heard immediately and player never
+    has to be paused.
+  * Necessary for future plans.
+* Editor/FX: Fix popup menu for adding an already
+  used FX to a track.
+* Editor/FX: When creating new FX, make sure the
+  initial length is equal to visible line length
+  (i.e. take LZ into account).
+* API:
+  * New: setCurrentTrack, getCurrentTrack,
+    getCurrentSubtrack, getTrackVisible,
+    canCursorMoveToTrack, getLeftmostCursorTrack.
+  * Make -2 the default subtrack value for
+    setCurrentTrack.
+
+
+
 Changes 6.7.75 -> 6.7.76:
 * Windows: Fix import MOD when the username contains
   non-ascii characters.
