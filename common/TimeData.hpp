@@ -197,7 +197,7 @@ struct RT_TimeData_Player_Cache{
 template <typename T>
 class TimeData {
 
-  static_assert(sizeof(T) < sizeof(void*)*8, "T should be a pointer if too big. This to lower the time it takes to copy the underlying vector.");
+  //static_assert(sizeof(T) < sizeof(void*)*8, "T should be a pointer if too big. This to lower the time it takes to copy the underlying vector.");
   static_assert(std::is_trivially_copyable<T>::value, "T should be a pointer if not trivially copyable. (don't want to copy all data every time we add a block for instance)");
 
 #if !defined(RELEASE)
@@ -611,7 +611,7 @@ private:
 
     template <typename ValType>
     bool get_value(int play_id, const Ratio &ratio, ValType &value, FX_when &when) const {
-      static_assert(std::is_same<ValType, int>::value || std::is_same<ValType, float>::value || std::is_same<ValType, double>::value);
+      static_assert(std::is_same<ValType, int>::value || std::is_same<ValType, float>::value || std::is_same<ValType, double>::value, "ValType should be int, float, or double");
         
       RT_TimeData_Player_Cache *cache = get_player_cache();
 

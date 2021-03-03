@@ -216,7 +216,7 @@ static void selectFX(
       VECTOR_push_back(&v,talloc_format("extra %d",lokke));
 #endif
     
-    GFX_Menu3(v,[add, first, num_usedFX, callback, window, track, patch](int selection, bool onoff){
+    GFX_Menu3(v,[add, first, callback, window, track, patch](int selection, bool onoff){
         if (selection==-1)
           return;
 

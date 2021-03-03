@@ -8,10 +8,12 @@
 #endif
   #define ov_sub(A, B, C)       __builtin_ssubll_overflow((long long)A, (long long)B, (long long *)C)
   #define ov_add(A, B, C)       __builtin_saddll_overflow((long long)A, (long long)B, (long long *)C)
-  #define ov_mul_(A, B, C)       __builtin_smulll_overflow((long long)A, (long long)B, (long long *)C)
+  #define ov_mul(A, B, C)       __builtin_smulll_overflow((long long)A, (long long)B, (long long *)C)
 #elif (defined(__GNUC__) && __GNUC__ >= 5)
   #define ov_sub(A, B, C)       __builtin_sub_overflow(A, B, C)
   #define ov_add(A, B, C)       __builtin_add_overflow(A, B, C)
   #define ov_mul(A, B, C)       __builtin_mul_overflow(A, B, C)
+#else
+#error "missing definitions for sub_overflow/add_overflow/mul_overflow"
 #endif
 
