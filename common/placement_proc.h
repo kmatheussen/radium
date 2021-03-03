@@ -17,6 +17,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef COMMON_PLACEMENT_PROC_H
 #define COMMON_PLACEMENT_PROC_H
 
+#include "overflow_funcs.h"
+
 static inline Place p_Create(int line, int counter, int dividor) {
   // Uncomment here. p_Create() is used more for calculation
   /*
