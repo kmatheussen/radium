@@ -51,7 +51,7 @@ static inline void sleep_1second(void){
 
   #include <time.h>
 
-  double monotonic_seconds() {
+  double monotonic_seconds(void) {
     struct timespec time;
     // Note: Make sure to link with -lrt to define clock_gettime.
     clock_gettime(CLOCK_MONOTONIC, &time);
@@ -156,11 +156,13 @@ static inline void sleep_1second(void){
 
 #if defined(NEED_RDTSC)
 
-#if defined(RELEASE)
+//#if defined(RELEASE)
 //#if !defined(FOR_WINDOWS)
+
 #error "should not be necessary, we should have _POSIX_MONOTONIC_CLOCK on all three platforms."
+
   //#endif
-#endif
+  //#endif
 
 static inline uint64_t rdtsc() {
   uint32_t hi, lo;
@@ -190,6 +192,11 @@ static inline double monotonic_rdtsc_seconds(){
 
 #endif
  
+
+double RT_TIME_get_ms(void){
+  return monotonic_seconds() * 1000.0;
+}
+
 
 
 void MONOTONIC_TIMER_init(void ){

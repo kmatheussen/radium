@@ -243,9 +243,6 @@ static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *clie
 }
 
 
-extern jack_time_t g_jackblock_delta_time;
-
-
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
   const SoundPluginType *type = plugin->type;
   Data *data = static_cast<Data*>(plugin->data);

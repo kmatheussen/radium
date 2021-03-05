@@ -12,7 +12,6 @@ extern LANGSPEC void PLAYER_memory_debug_wake_up(void);
 #define NUM_SYSTEM_INPUT_JACK_PORTS 8
   
 
-extern DEFINE_ATOMIC(bool, g_currently_processing_dsp);
 extern DEFINE_ATOMIC(double, g_curr_song_tempo_automation_tempo);
 
 extern LANGSPEC bool PLAYER_is_running(void);
@@ -102,6 +101,7 @@ static inline int MIXER_get_buffer_size(void){
 }
 
 extern int g_jackblock_size; // Should only be accessed from player thread
+extern int g_jackblock_delta_time; // same here.
 extern int g_jack_system_input_latency;
 extern int g_jack_system_output_latency;
 

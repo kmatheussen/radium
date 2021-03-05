@@ -71,9 +71,13 @@ void THREADING_init_main_thread_type(void) {
   g_thread_type = MAIN_THREAD;
 }
 
-void THREADING_init_player_thread_type(void) {
-  R_ASSERT_NON_RELEASE(g_thread_type==OTHER_THREAD);
+// Note, called very often.
+bool THREADING_init_player_thread_type(void) {
+  if (g_thread_type == PLAYER_THREAD)
+    return false;
+  
   g_thread_type = PLAYER_THREAD;
+  return true;
 }
 
 void THREADING_init_runner_thread_type(void) {

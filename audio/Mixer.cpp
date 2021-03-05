@@ -149,14 +149,6 @@ void THREADING_acquire_player_thread_priority(void){
 #endif
 }
 
-static void PLAYER_acquire_same_priority(void){
-  //printf("Setting real time priority temporarily for %p.\n",(void*)pthread_self());
-  if (g_jack_client==NULL)
-    return;
-
-  THREADING_acquire_player_thread_priority();
-}	
-
 void THREADING_drop_player_thread_priority(void){
   if (g_jack_client==NULL)
     return;
@@ -338,6 +330,30 @@ static void RT_unlock_player(){
   if (!g_signalled_someone)
     player_lock_semaphore.signalIfAnyoneIsWaiting();
   unlock_player();
+}
+
+namespace{
+class PlayerLock_Local{
+
+  PlayerLock_Local(const PlayerLock_Local&) = delete;
+  PlayerLock_Local& operator=(const PlayerLock_Local&) = delete;
+
+public:
+
+  const bool _enable;
+  
+  PlayerLock_Local(const bool enable = true)
+    : _enable(enable)
+  {
+    if (enable)
+      RT_lock_player();
+  }
+
+  ~PlayerLock_Local(){
+    if (_enable)
+      RT_unlock_player();
+  }
+};
 }
 
 #if !defined(FOR_LINUX) || USE_SPINLOCK_FOR_PLAYER_LOCK
@@ -560,7 +576,7 @@ static void RT_MIXER_check_if_someone_has_solo(void);
 static void RT_MIXER_check_if_at_least_two_soundproducers_are_selected(void);
 */
 
-jack_time_t g_jackblock_delta_time = 0;
+int g_jackblock_delta_time = 0;
 
 int g_jackblock_size = 0; // Should only be accessed from player thread
 static DEFINE_ATOMIC(int, g_jackblock_size2) = 0;
@@ -584,16 +600,6 @@ int g_jack_system_output_latency = 0;
 void RT_pause_plugins(void){
   ATOMIC_SET(g_request_to_pause_plugins, true);
 }
-
-#if FOR_WINDOWS
-#define USE_WORKAROUND 1
-#else
-#define USE_WORKAROUND 0
-#endif
-
-#if USE_WORKAROUND
-static void start_workaround_thread(void);
-#endif
 
 #if FOR_WINDOWS
 extern "C" {
@@ -881,7 +887,8 @@ struct Mixer{
     jack_set_buffer_size_callback(_rjack_client,RT_rjack_buffer_size_changed,this);
     jack_set_freewheel_callback(_rjack_client, RT_rjack_freewheel_changed, this);
     jack_on_info_shutdown(_rjack_client, RT_rjack_shutdown, this);
-    jack_set_process_thread(_rjack_client,RT_rjack_thread,this);
+    //jack_set_process_thread(_rjack_client,RT_rjack_thread,this);
+    jack_set_process_callback(_rjack_client,RT_jack_process,this);
     jack_set_sync_callback(_rjack_client, RT_rjack_sync, this);
     if(isJackTimebaseMaster())
       MIXER_set_jack_timebase_master(true);
@@ -985,6 +992,9 @@ struct Mixer{
 
     //create_jack_plugins(_rjack_client);
 
+    while(ATOMIC_GET(_RT_process_has_inited)==false)
+      msleep(50);
+    
     return true;
   }
 
@@ -1015,293 +1025,267 @@ struct Mixer{
 #endif
   }
 
-  // Starting to get very chaotic...
 
-  void RT_thread(void){
-    
+  radium::Time _excessive_time;
 
-    //#ifndef DOESNT_HAVE_SSE
-    AVOIDDENORMALS;
-    //#endif
-
-        
-    touch_stack();
-
-    pause_time.start();
-    
-    radium::Time excessive_time;
-
-    RT_lock_player();  // This is an RT-safe lock. Priority inversion can (or at least should) not happen.
-
-    while(true){
-
-      // Schedule new notes, etc.
-      //PlayerTask(_buffer_size); // The editor player.
-
-      RT_call_functions_scheduled_to_run_on_player_thread(); // Call this one right before releasing lock and waiting for cycle. This function is allowed to run almost to the end of the jack cycle.
+  void RT_before_processing_audio_block_not_holding_lock(void) {
+    if (ATOMIC_GET(g_request_to_pause_plugins)==true){
+      ATOMIC_SET(g_request_to_pause_plugins, false);
+      g_process_plugins = false;
+      pause_time.restart();
+    }
       
-      RT_unlock_player();
+    if (g_process_plugins==false) {
+      if (pause_time.elapsed() > 5000)
+        g_process_plugins = true;
+    } else if (_is_freewheeling==false && _excessive_time.elapsed() > 2000) { // 2 seconds
+      if (ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING) {
+        RT_request_to_stop_playing();
+        RT_message("Error!\n"
+                   "\n"
+                   "Audio using too much CPU. Stopping player to avoid locking up the computer.%s",
+                   MULTICORE_get_num_threads()>1 ? "" : "\n\nTip: Turning on Multi CPU processing might help."
+                   );
+      } else {
+        RT_message("Error!\n"
+                   "\n"
+                   "Audio using too much CPU. Pausing audio generation for 5 seconds to avoid locking up the computer.%s",
+                   MULTICORE_get_num_threads()>1 ? "" : "\n\nTip: Turning on Multi CPU processing might help."
+                   );
+        printf("stop processing plugins\n");
+        g_process_plugins = false; // Because the main thread waits very often waits for the audio thread, we can get very long breaks where nothing happens if the audio thread uses too much CPU.
+      }
+        
+      pause_time.restart();
+      _excessive_time.restart();
+    }
 
-#ifdef MEMORY_DEBUG
-      debug_wait.wait(&debug_mutex, 1000*10); // Speed up valgrind
-#endif
+    RT_AUDIOBUFFERS_optimize();
+  }
 
-      // Wait for our jack cycle
-      jack_nframes_t num_frames = jack_cycle_wait(_rjack_client);
+  int64_t _last_frame_time = 0;
+
+
+  DEFINE_ATOMIC(bool, _RT_process_has_inited) = false;
+
+  void RT_process_audio_block(const int num_frames) {
+
+    if (ATOMIC_GET_RELAXED(_RT_process_has_inited)==false || THREADING_init_player_thread_type()){
+      AVOIDDENORMALS;
+      
+      THREADING_init_player_thread_type(); // This is a light operation. Just call it again in case has_inited was false.
+      R_ASSERT(THREADING_is_player_thread());
+      R_ASSERT(!THREADING_is_main_thread());
+      
+      ATOMIC_SET(_RT_process_has_inited, true);
+    }
+
+
+    RT_before_processing_audio_block_not_holding_lock();
+
+    PlayerLock_Local player_lock;
+      
+    int64_t now_frame_time = (int64_t)jack_last_frame_time(_rjack_client);
+    //printf("Frame time: %" PRId64 " (dx: %d)\n", now_frame_time, (int)(now_frame_time - _last_frame_time));
+    _last_frame_time = now_frame_time;
     
-      if((int)num_frames!=_buffer_size){
-        R_ASSERT_NON_RELEASE(false);
-        printf("What???\n");
+    jackblock_variables_protector.write_start();{
+
+      struct SeqTrack *seqtrack = RT_get_curr_seqtrack();
+      struct SeqBlock *curr_seqblock = seqtrack==NULL ? NULL : seqtrack->curr_seqblock;
+        
+      g_jackblock_size = num_frames;
+      ATOMIC_SET(g_jackblock_size2, g_jackblock_size);
+        
+      if (seqtrack!=NULL)
+        ATOMIC_SET(jackblock_cycle_start_stime, seqtrack->end_time);
+      else
+        ATOMIC_SET(jackblock_cycle_start_stime, 0);
+      ATOMIC_SET(jackblock_last_frame_stime, jack_last_frame_time(_rjack_client));
+
+      if (curr_seqblock != NULL && curr_seqblock->block!=NULL) {
+        ATOMIC_SET(jackblock_seqtime, curr_seqblock->t.time);
+        ATOMIC_SET(jackblock_block, curr_seqblock->block);
+      } else {
+        ATOMIC_SET(jackblock_seqtime, 0);
+        ATOMIC_SET(jackblock_block, NULL);
       }
 
-      if (ATOMIC_GET(g_request_to_pause_plugins)==true){
-        ATOMIC_SET(g_request_to_pause_plugins, false);
-        g_process_plugins = false;
-        pause_time.restart();
-      }
-      
-      if (g_process_plugins==false) {
-        if (pause_time.elapsed() > 5000)
-          g_process_plugins = true;
-      } else if (_is_freewheeling==false && excessive_time.elapsed() > 2000) { // 2 seconds
-        if (ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING) {
-          RT_request_to_stop_playing();
-          RT_message("Error!\n"
-                     "\n"
-                     "Audio using too much CPU. Stopping player to avoid locking up the computer.%s",
-                     MULTICORE_get_num_threads()>1 ? "" : "\n\nTip: Turning on Multi CPU processing might help."
-                     );
-        } else {
-          RT_message("Error!\n"
-                     "\n"
-                     "Audio using too much CPU. Pausing audio generation for 5 seconds to avoid locking up the computer.%s",
-                     MULTICORE_get_num_threads()>1 ? "" : "\n\nTip: Turning on Multi CPU processing might help."
-                     );
-          printf("stop processing plugins\n");
-          g_process_plugins = false; // Because the main thread waits very often waits for the audio thread, we can get very long breaks where nothing happens if the audio thread uses too much CPU.
-        }
-        
-        pause_time.restart();
-        excessive_time.restart();
-      }
-
-      RT_AUDIOBUFFERS_optimize();
-        
-      RT_lock_player();
-      
-      jackblock_variables_protector.write_start();{
-
-        struct SeqTrack *seqtrack = RT_get_curr_seqtrack();
-        struct SeqBlock *curr_seqblock = seqtrack==NULL ? NULL : seqtrack->curr_seqblock;
-        
-        g_jackblock_size = num_frames;
-        ATOMIC_SET(g_jackblock_size2, g_jackblock_size);
-        
-        if (seqtrack!=NULL)
-          ATOMIC_SET(jackblock_cycle_start_stime, seqtrack->end_time);
-        else
-          ATOMIC_SET(jackblock_cycle_start_stime, 0);
-        ATOMIC_SET(jackblock_last_frame_stime, jack_last_frame_time(_rjack_client));
-
-        if (curr_seqblock != NULL && curr_seqblock->block!=NULL) {
-          ATOMIC_SET(jackblock_seqtime, curr_seqblock->t.time);
-          ATOMIC_SET(jackblock_block, curr_seqblock->block);
-        } else {
-          ATOMIC_SET(jackblock_seqtime, 0);
-          ATOMIC_SET(jackblock_block, NULL);
-        }
-
-        ATOMIC_DOUBLE_SET(jackblock_song_tempo_multiplier, ATOMIC_DOUBLE_GET(g_curr_song_tempo_automation_tempo));
+      ATOMIC_DOUBLE_SET(jackblock_song_tempo_multiplier, ATOMIC_DOUBLE_GET(g_curr_song_tempo_automation_tempo));
                           
-      }jackblock_variables_protector.write_end();
+    }jackblock_variables_protector.write_end();
       
-      if(g_test_crashreporter_in_audio_thread){
-        //R_ASSERT(false);
-        int *ai2=NULL;
-        ai2[0] = 50;
-      }
+    if(g_test_crashreporter_in_audio_thread){
+      //R_ASSERT(false);
+      int *ai2=NULL;
+      ai2[0] = 50;
+    }
       
-      jack_time_t start_time = jack_get_time();
+    double start_time = RT_TIME_get_ms();
 
-      //jackblock_size = num_frames;
+    //jackblock_size = num_frames;
 
-      // Process sound.
+    // Process sound.
 
-      if (MULTICORE_get_num_threads() > 1)
-        RT_sort_sound_producers_by_running_time();
+    if (MULTICORE_get_num_threads() > 1)
+      RT_sort_sound_producers_by_running_time();
 
-      //printf("\n\nNew:\n");
+    //printf("\n\nNew:\n");
 
-      for (SoundProducer *sp : _sound_producers)
-        SP_RT_called_for_each_soundcard_block1(sp, _time);
+    for (SoundProducer *sp : _sound_producers)
+      SP_RT_called_for_each_soundcard_block1(sp, _time);
       
-      for (SoundProducer *sp : _sound_producers)
-        SP_RT_called_for_each_soundcard_block2(sp, _time);
+    for (SoundProducer *sp : _sound_producers)
+      SP_RT_called_for_each_soundcard_block2(sp, _time);
 
-      bool can_not_start_playing_right_now_because_jack_transport_is_not_ready_yet = false;
+    bool can_not_start_playing_right_now_because_jack_transport_is_not_ready_yet = false;
 
-      if (useJackTransport()){
+    if (useJackTransport()){
         
-        jack_transport_state_t state = jack_transport_query(g_jack_client,NULL);
+      jack_transport_state_t state = jack_transport_query(g_jack_client,NULL);
         
-        if (state == JackTransportStarting){
+      if (state == JackTransportStarting){
 
-          R_ASSERT(_radium_transport_state!=RadiumTransportState::NO_STATE);
+        R_ASSERT(_radium_transport_state!=RadiumTransportState::NO_STATE);
                    
-          if (_radium_transport_state!=RadiumTransportState::PLAY_REQUEST_FAILED)
-            can_not_start_playing_right_now_because_jack_transport_is_not_ready_yet = true;
+        if (_radium_transport_state!=RadiumTransportState::PLAY_REQUEST_FAILED)
+          can_not_start_playing_right_now_because_jack_transport_is_not_ready_yet = true;
           
-        }
+      }
         
 #if 0
-        // When debugging jack transport handling
-        {
-          static int downcount = 0;
-          static jack_transport_state_t last_state = (jack_transport_state_t)-1;
-          static jack_nframes_t frame0time = -1894944768; // Must be a constant in order to compare values of several simultaneous running radium instances.
-          jack_position_t pos;
-          jack_transport_state_t state = jack_transport_query(_rjack_client,&pos);
-          if (state != last_state){
-            downcount = 5;
-            last_state = state;
-          }
-          if (downcount > 0 || state==JackTransportStarting){
-            printf("** %d: %d - %s. seq: %d, jack: %d\n", (int)pos.frame, can_not_start_playing_right_now_because_jack_transport_is_not_ready_yet, state==JackTransportStarting ? "Starting" : state==JackTransportRolling ? "Rolling" : "Stopped", (int)ATOMIC_DOUBLE_GET(pc->song_abstime), (int)(jack_last_frame_time(_rjack_client) - frame0time));
-            downcount--;
-          }
+      // When debugging jack transport handling
+      {
+        static int downcount = 0;
+        static jack_transport_state_t last_state = (jack_transport_state_t)-1;
+        static jack_nframes_t frame0time = -1894944768; // Must be a constant in order to compare values of several simultaneous running radium instances.
+        jack_position_t pos;
+        jack_transport_state_t state = jack_transport_query(_rjack_client,&pos);
+        if (state != last_state){
+          downcount = 5;
+          last_state = state;
         }
-#endif
-        
-        if (_radium_transport_state == RadiumTransportState::PLAYER_IS_READY && !can_not_start_playing_right_now_because_jack_transport_is_not_ready_yet){
-          //R_ASSERT(state==JackTransportRolling); Guess it could be JackTransportStopped too.
-          R_ASSERT(state!=JackTransportStarting);
-          _radium_transport_state = RadiumTransportState::NO_STATE;
+        if (downcount > 0 || state==JackTransportStarting){
+          printf("** %d: %d - %s. seq: %d, jack: %d\n", (int)pos.frame, can_not_start_playing_right_now_because_jack_transport_is_not_ready_yet, state==JackTransportStarting ? "Starting" : state==JackTransportRolling ? "Rolling" : "Stopped", (int)ATOMIC_DOUBLE_GET(pc->song_abstime), (int)(jack_last_frame_time(_rjack_client) - frame0time));
+          downcount--;
         }
       }
-      
-      static float max_playertask_audio_cycle_fraction = 0.01;
-
-      ATOMIC_SET(g_currently_processing_dsp, true); {
+#endif
         
-        MULTICORE_start_block(); {
+      if (_radium_transport_state == RadiumTransportState::PLAYER_IS_READY && !can_not_start_playing_right_now_because_jack_transport_is_not_ready_yet){
+        //R_ASSERT(state==JackTransportRolling); Guess it could be JackTransportStopped too.
+        R_ASSERT(state!=JackTransportStarting);
+        _radium_transport_state = RadiumTransportState::NO_STATE;
+      }
+    }
+      
+    static float max_playertask_audio_cycle_fraction = 0.01;
 
-          g_jackblock_delta_time = 0;
-          while(g_jackblock_delta_time < num_frames){
+    MULTICORE_start_block(); {
+
+      g_jackblock_delta_time = 0;
+      while(g_jackblock_delta_time < num_frames){
             
 
-            double curr_song_tempo_automation_tempo = pc->playtype==PLAYSONG ? RT_TEMPOAUTOMATION_get_value(ATOMIC_DOUBLE_GET(pc->song_abstime)) : 1.0;
-            ATOMIC_DOUBLE_SET(g_curr_song_tempo_automation_tempo, curr_song_tempo_automation_tempo);
+        double curr_song_tempo_automation_tempo = pc->playtype==PLAYSONG ? RT_TEMPOAUTOMATION_get_value(ATOMIC_DOUBLE_GET(pc->song_abstime)) : 1.0;
+        ATOMIC_DOUBLE_SET(g_curr_song_tempo_automation_tempo, curr_song_tempo_automation_tempo);
 
-            PlayerTask((double)RADIUM_BLOCKSIZE * curr_song_tempo_automation_tempo, can_not_start_playing_right_now_because_jack_transport_is_not_ready_yet, max_playertask_audio_cycle_fraction);
+        PlayerTask((double)RADIUM_BLOCKSIZE * curr_song_tempo_automation_tempo, can_not_start_playing_right_now_because_jack_transport_is_not_ready_yet, max_playertask_audio_cycle_fraction);
             
-            if (is_playing()) {
-              if (pc->playtype==PLAYBLOCK) {
+        if (is_playing()) {
+          if (pc->playtype==PLAYBLOCK) {
 
-                RT_LPB_set_beat_position(root->song->block_seqtrack, RADIUM_BLOCKSIZE);
+            RT_LPB_set_beat_position(root->song->block_seqtrack, RADIUM_BLOCKSIZE);
 
-              } else { 
+          } else { 
 
-                VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
-                  RT_LPB_set_beat_position(seqtrack, RADIUM_BLOCKSIZE);
-                }END_VECTOR_FOR_EACH;
+            VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
+              RT_LPB_set_beat_position(seqtrack, RADIUM_BLOCKSIZE);
+            }END_VECTOR_FOR_EACH;
             
-              }
-            }
-
-            
-            RT_MIDI_handle_play_buffer();
-
-            RT_MODULATOR_process(); // Important that the modulators run after handling midi so MIDI-learned parameters won't be delayed by a block.
-
-            float start_time;
-
-            if (g_jackblock_delta_time==0) start_time = MIXER_get_curr_audio_block_cycle_fraction(); else start_time = 0; // else clause added to silence compiler warning.
-
-            {
-              MULTICORE_run_all(_sound_producers, _time, RADIUM_BLOCKSIZE, g_process_plugins);
-            }
-            if (g_jackblock_delta_time==0){
-              float curr_audio_fraction = MIXER_get_curr_audio_block_cycle_fraction() - start_time;
-              curr_audio_fraction *= (num_frames / RADIUM_BLOCKSIZE);
-              max_playertask_audio_cycle_fraction = (1.0 - curr_audio_fraction) / 2;
-              //printf("   max fract: %f\n", max_playertask_audio_cycle_fraction);
-            }
-            
-            //static int bufs = 0; printf("Buf: %d\n", (int)bufs++);
-
-            _time += RADIUM_BLOCKSIZE;
-            g_jackblock_delta_time += RADIUM_BLOCKSIZE;
           }
+        }
 
-        } MULTICORE_end_block();
+            
+        RT_MIDI_handle_play_buffer();
+
+        RT_MODULATOR_process(); // Important that the modulators run after handling midi so MIDI-learned parameters won't be delayed by a block.
+
+        float start_time;
+
+        if (g_jackblock_delta_time==0) start_time = MIXER_get_curr_audio_block_cycle_fraction(); else start_time = 0; // else clause added to silence compiler warning.
+
+        {
+          MULTICORE_run_all(_sound_producers, _time, RADIUM_BLOCKSIZE, g_process_plugins);
+        }
         
-        ATOMIC_SET(g_last_mixer_time, _time);
+        if (g_jackblock_delta_time==0){
+          float curr_audio_fraction = MIXER_get_curr_audio_block_cycle_fraction() - start_time;
+          curr_audio_fraction *= (num_frames / RADIUM_BLOCKSIZE);
+          max_playertask_audio_cycle_fraction = (1.0 - curr_audio_fraction) / 2;
+          //printf("   max fract: %f\n", max_playertask_audio_cycle_fraction);
+        }
+            
+        //static int bufs = 0; printf("Buf: %d\n", (int)bufs++);
 
-      } ATOMIC_SET(g_currently_processing_dsp, false);
-      
-      jack_time_t end_time = jack_get_time();
+        _time += RADIUM_BLOCKSIZE;
+        g_jackblock_delta_time += RADIUM_BLOCKSIZE;
+      }
 
+    } MULTICORE_end_block();
+        
+    ATOMIC_SET(g_last_mixer_time, _time);
 
-      // Tell jack we are finished.
+    double process_duration = RT_TIME_get_ms() - start_time;
 
-      jack_cycle_signal(_rjack_client, 0);
-
-      
-      //printf("        FRAMES: %d (duration: %f). How much: %f\n", jack_time_to_frames(g_jack_client, process_duration), (double)process_duration/1000.0, MIXER_get_curr_audio_block_cycle_fraction());
-      
-      // CPU usage
-      jack_time_t process_duration = end_time-start_time;
-      float new_cpu_usage = (double)(process_duration) * 0.0001 *_sample_rate / num_frames;
+    // CPU usage
+    {
+      float new_cpu_usage = process_duration * 0.1 *_sample_rate / num_frames;
       
       g_cpu_usage.addUsage(new_cpu_usage);
-
+      
       // Uncomment these two lines to continually test realtime message.
       if (new_cpu_usage < 98)
-        excessive_time.restart();
-
-    } // end while
-
-    RT_unlock_player();
-  }
-      
-  static void *RT_rjack_thread(void *arg){
-    /*
-      // crashreporter test
-      int *p=NULL;
-      p[5] = 2;
-    */
-#if 0
-    fprintf(stderr,"gakk gakk\n");
-    malloc(500);
-    getchar();
-#endif
-
-#if USE_WORKAROUND
-    // workaround for non-working UnhandledExceptionFilter in the jack thread. (strange)
-    start_workaround_thread();
-    
-    while(true){
-      OS_WaitForAShortTime(1000*1000);
+        _excessive_time.restart();
     }
-#endif
-    
-    Mixer *mixer = static_cast<Mixer*>(arg);
-    //printf("RT_rjack_process called %d\n",num_frames);
 
-    //char *hello = NULL;
-    //hello[0] = 50;
+    //printf("        FRAMES: %d (duration: %f). How much: %f\n", jack_time_to_frames(g_jack_client, process_duration), (double)process_duration/1000.0, MIXER_get_curr_audio_block_cycle_fraction());
 
 
-    THREADING_init_player_thread_type();
-    R_ASSERT(THREADING_is_player_thread());
-    R_ASSERT(!THREADING_is_main_thread());
-
-    PLAYER_acquire_same_priority();
-
-    mixer->RT_thread();
-    return NULL;
+    // Call this one right before releasing lock and waiting for cycle. This function is allowed to run almost to the end of the jack cycle.
+    RT_call_functions_scheduled_to_run_on_player_thread();
   }
 
+
+  void RT_jack_process_audio_block(void) {
+#ifdef MEMORY_DEBUG
+    debug_wait.wait(&debug_mutex, 1000*10); // Speed up valgrind
+#endif
+
+    // Wait for our jack cycle
+    int num_frames = jack_cycle_wait(_rjack_client);
+    
+    if((int)num_frames!=_buffer_size){
+      R_ASSERT_NON_RELEASE(false);
+      printf("What???\n");
+    }
+
+
+    RT_process_audio_block(num_frames);
+
+    // Tell jack we are finished.
+
+    jack_cycle_signal(_rjack_client, 0);
+  }
+
+  static int RT_jack_process(jack_nframes_t nframes, void *arg){
+    Mixer *mixer = static_cast<Mixer*>(arg);
+
+    mixer->RT_process_audio_block(nframes);
+
+    return 0;
+  }
+  
   static void RT_rjack_freewheel_changed(int starting, void *arg){
     Mixer *mixer = static_cast<Mixer*>(arg);
 
@@ -1528,44 +1512,6 @@ struct Mixer{
     
 static Mixer *g_mixer = NULL;
 
-#if USE_WORKAROUND
-
-// workaround for non-working UnhandledExceptionFilter in the jack thread. (strange)
-
-namespace{
-struct Workaround : public QThread {
-
-  radium::Semaphore startit;
-  
-  Workaround(){
-    start(QThread::LowestPriority); //QThread::TimeCriticalPriority); // The priority shouldn't matter though since PLAYER_acquire_same_priority() is called inside run().
-  }
-  
-  void run(){
-        
-    THREADING_init_player_thread_type();
-    R_ASSERT(THREADING_is_player_thread());
-    R_ASSERT(!THREADING_is_main_thread());
-
-    startit.wait();
-    
-    PLAYER_acquire_same_priority();
-
-    g_mixer->RT_thread();
-  }
-};
-}
-
-static Workaround *g_workaround;
-
-static void create_workaround_thread(void){
-  g_workaround = new Workaround;
-}
-
-static void start_workaround_thread(void){
-  g_workaround->startit.signal();
-}
-#endif
 
 
 static void maybe_warn_about_jack1(void){
@@ -1643,10 +1589,6 @@ bool MIXER_start(void){
   g_freewheeling_has_started = RSEMAPHORE_create(0);
   g_player_stopped_semaphore = RSEMAPHORE_create(0);
 
-#if USE_WORKAROUND
-  create_workaround_thread();
-#endif
-  
   g_mixer = new Mixer();  
   
   if(g_mixer->start_jack()==false)
