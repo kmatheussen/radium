@@ -2714,12 +2714,12 @@ static void SP_RT_process(SoundProducer *producer, int64_t time, int num_frames,
   bool add_cpu_data = is_visible && cpu_usage!=NULL;
 
   //double start_time;  // <--- This one must be used when testing a time function that provides seconds.
-  jack_time_t start_time = 0;
+  double start_time = 0;
   
   if (add_cpu_data) {
     //start_time = monotonic_seconds(); // Checking if max time would fluctuate less with this timer. Didn't make a difference though. Both are probably using CLOCK_MONOTONIC.
     //start_time = monotonic_rdtsc_seconds();
-    start_time = jack_get_time();
+    start_time = RT_TIME_get_ms();
   }
   
   producer->RT_process(time, num_frames, process_plugins);
@@ -2727,7 +2727,7 @@ static void SP_RT_process(SoundProducer *producer, int64_t time, int num_frames,
   if (add_cpu_data){
     //double end_time = monotonic_rdtsc_seconds();
     //double end_time = monotonic_seconds();
-    jack_time_t end_time = jack_get_time();
+    double end_time = RT_TIME_get_ms();
 
     plugin->processing_time_so_far_in_jack_block += (end_time-start_time);
     
@@ -2735,9 +2735,9 @@ static void SP_RT_process(SoundProducer *producer, int64_t time, int num_frames,
 
     //printf("Adding cpu usage for %s\n",plugin->patch->name);
     if (MIXER_get_remaining_num_jackblock_frames()==num_frames){//g_jackblock_delta_time==0){
-      float new_cpu_usage = plugin->processing_time_so_far_in_jack_block * 0.0001 * MIXER_get_sample_rate() / g_jackblock_size; //num_frames;
+      float new_cpu_usage = plugin->processing_time_so_far_in_jack_block * 0.1 * MIXER_get_sample_rate() / g_jackblock_size; //num_frames;
       cpu_usage->addUsage(new_cpu_usage);
-      plugin->processing_time_so_far_in_jack_block = 0;
+      plugin->processing_time_so_far_in_jack_block = 0.0;
     }
   }
 }
