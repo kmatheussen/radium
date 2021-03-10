@@ -47,6 +47,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 static QString custom_configuration_filename;
 
 static QString not_found("___________NOT-FOUND");
+static QString g_line_shift("<____________LS____________>");
 
 
 static QString get_value(QString line){
@@ -310,7 +311,10 @@ static void SETTINGS_put(const char* key, QString val){
   
   int linenum = find_linenum(key,lines);
 
-  QString temp = QString(key) + " = " + val;
+  QString temp = QString(key) + " = " +
+    val
+    .replace("\r\n", g_line_shift)
+    .replace("\n", g_line_shift);
 
   if(linenum==-1)
     lines.push_back(temp);
@@ -331,7 +335,7 @@ static QString SETTINGS_get(const char* key){
   if(linenum==-1)
     return not_found;
 
-  return get_value(lines[linenum]);
+  return get_value(lines[linenum]).replace(g_line_shift, "\n");
 }
 
 static const char* SETTINGS_get_chars(const char* key){
@@ -458,7 +462,7 @@ void SETTINGS_write_string(const char* key, QString val){
 }
 
 void SETTINGS_write_wchars(const char* key, const wchar_t *wchars){
-  SETTINGS_put(key, STRING_get_chars(wchars));
+  SETTINGS_put(key, STRING_get_qstring(wchars));
 }
 
 void SETTINGS_write_string(QString key, const char* val){
