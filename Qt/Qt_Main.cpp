@@ -3513,6 +3513,8 @@ int radium_main(const char *arg){
 #define D(A)
 //#define D(A) A
 
+
+  
   D(GFX_OpenProgress("Closing\n"));
   D(GFX_ShowProgressMessage("1", true));
 
@@ -3581,7 +3583,7 @@ int radium_main(const char *arg){
   //EndGuiThread();
 
   fprintf(stderr,"          ENDING 5\n");
-  
+
   MIXER_stop();
 
   D(GFX_ShowProgressMessage("12", true));
@@ -4003,6 +4005,7 @@ static void clean_configuration2(void){
   QVBoxLayout layout;
   QHBoxLayout button_layout;
 
+  auto *reset_soundcard_config = new QCheckBox("Reset soundcard configuration");
   auto *reset_main_config_file = new QCheckBox("Reset main configuration file");
   auto *reset_color_config_file = new QCheckBox("Reset color configuration");
   auto *clean_plugin_cache = new QCheckBox("Clean plugin cache");
@@ -4010,11 +4013,14 @@ static void clean_configuration2(void){
   auto *clean_mod_samples = new QCheckBox("Clean imported MOD samples");
   auto *clean_xi_samples = new QCheckBox("Clean imported XI samples");
 
+  /*
   reset_main_config_file->setChecked(true);
+  reset_soundcard_config->setChecked(true);
   clean_plugin_cache->setChecked(true);
   clean_mod_samples->setChecked(true);
   clean_xi_samples->setChecked(true);
-
+  */
+  
   QButtonGroup buttons;
 
   enum doit{
@@ -4028,6 +4034,7 @@ static void clean_configuration2(void){
   buttons.addButton(ok_button, doit::OK);
   buttons.addButton(cancel_button, doit::CANCEL);
   
+  layout.addWidget(reset_soundcard_config);
   layout.addWidget(reset_main_config_file);
   layout.addWidget(reset_color_config_file);
   layout.addWidget(clean_plugin_cache);
@@ -4064,15 +4071,17 @@ static void clean_configuration2(void){
   radium::ResetSettings rs;
   
   rs.reset_main_config_file = reset_main_config_file->isChecked(); 
+  rs.reset_soundcard_config = reset_soundcard_config->isChecked(); 
   rs.reset_color_config_file = reset_color_config_file->isChecked(); 
   rs.clean_plugin_cache = clean_plugin_cache->isChecked(); 
   rs.reset_keyboard_configuration = reset_keyboard_configuration->isChecked(); 
   rs.clean_mod_samples = clean_mod_samples->isChecked(); 
   rs.clean_xi_samples = clean_xi_samples->isChecked(); 
 
-  printf("Clean config? Ret: %d. %d/%d/%d/%d/%d/%d\n",
+  printf("Clean config? Ret: %d. %d/%d/%d/%d/%d/%d/%d\n",
          ret,
          rs.reset_main_config_file,
+         rs.reset_soundcard_config,
          rs.reset_color_config_file,
          rs.clean_plugin_cache,
          rs.reset_keyboard_configuration,

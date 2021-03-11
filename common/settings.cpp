@@ -477,9 +477,20 @@ void SETTINGS_write_string(QString key, QString val){
 void SETTINGS_delete_configuration(const radium::ResetSettings &rs){
   
   if (rs.reset_main_config_file){
+    
     filepath_t conf = OS_get_config_filename("something");
     if (DISK_file_exists(conf) && !DISK_delete_file(conf))
       GFX_Message(NULL, "Error: Unable to delete file \"%S\". You should try to delete it manually.", conf.id);
+    
+  } else if (rs.reset_soundcard_config){
+
+    filepath_t conf = OS_get_config_filename("something");
+    if (DISK_file_exists(conf)) {
+      if (!SETTINGS_remove("audio_device")){
+        GFX_Message(NULL, "Error: Unable to remove \"audio_device\" from \"%S\". You may try to edit the file manually instead.", conf.id);
+      }
+    }
+    
   }
 
   if (rs.reset_color_config_file){
