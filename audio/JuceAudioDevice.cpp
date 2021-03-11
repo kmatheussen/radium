@@ -212,12 +212,7 @@ public:
     g_juce_num_output_audio_channels = totalNumOutputChannels;
     g_juce_output_audio_channels = outputChannelData;
 
-    if (numSamples >= 64) {
-      if ( (numSamples % 64)==0)
-        _callback(numSamples, _samplerate, _callback_data);
-      else
-        _callback(64, _samplerate, _callback_data);
-    }
+    _callback(numSamples, _samplerate, _callback_data);
     
     //printf("Fraction: %f\n", MIXER_get_curr_audio_block_cycle_fraction());
   }
@@ -296,15 +291,7 @@ public:
     
     int buffer_size = device->getCurrentBufferSizeSamples();
 
-    if ((buffer_size % 64) != 0) {
-      GFX_Message(NULL,
-                  "Error: Soundcard buffer size must be a multiple of 64."
-                  "<UL>"
-                  "<LI>Soundcard buffer size: %d"
-                  "</UL>",
-                  buffer_size
-                  );
-    } else if ((buffer_size % RADIUM_BLOCKSIZE) != 0)
+    if (buffer_size < RADIUM_BLOCKSIZE || (buffer_size % RADIUM_BLOCKSIZE) != 0)
       GFX_Message(NULL,
                   "Error: Soundcard buffer size must be a multiple of the internal block size."
                   "<UL>"

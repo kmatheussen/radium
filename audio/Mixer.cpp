@@ -1114,7 +1114,7 @@ struct Mixer{
 
   DEFINE_ATOMIC(bool, _RT_process_has_inited) = false;
 
-  void RT_process_audio_block(const int num_frames, const double samplerate) {
+  void RT_process_audio_block(int num_frames, const double samplerate) {
 
 #ifdef MEMORY_DEBUG
     debug_wait.wait(&debug_mutex, 1000*10); // Speed up valgrind
@@ -1148,24 +1148,24 @@ struct Mixer{
     //printf("So far: %f\n", RT_TIME_get_ms() - JUCE_audio_time_at_cycle_start());
     
     audioblock_variables_protector.write_start();{
-
+        
       struct SeqTrack *seqtrack = RT_get_curr_seqtrack();
       struct SeqBlock *curr_seqblock = seqtrack==NULL ? NULL : seqtrack->curr_seqblock;
-
+        
       //R_ASSERT_NON_RELEASE((num_frames % RADIUM_BLOCKSIZE) == 0);
-      
+        
       ATOMIC_SET(g_soundcardblock_size2, g_soundcardblock_size);
         
       if (seqtrack!=NULL)
         ATOMIC_SET(audioblock_cycle_start_time, seqtrack->end_time);
       else
         ATOMIC_SET(audioblock_cycle_start_time, 0);
-
+        
       if (_rjack_client != NULL)
         ATOMIC_SET(audioblock_last_frame_stime, jack_last_frame_time(_rjack_client));
       else
         ATOMIC_DOUBLE_SET(audioblock_cycle_start_ms, JUCE_audio_time_at_cycle_start());
-      
+        
       if (curr_seqblock != NULL && curr_seqblock->block!=NULL) {
         ATOMIC_SET(audioblock_seqtime, curr_seqblock->t.time);
         ATOMIC_SET(audioblock_block, curr_seqblock->block);
@@ -1173,12 +1173,12 @@ struct Mixer{
         ATOMIC_SET(audioblock_seqtime, 0);
         ATOMIC_SET(audioblock_block, NULL);
       }
-
+        
       ATOMIC_DOUBLE_SET(audioblock_song_tempo_multiplier, ATOMIC_DOUBLE_GET(g_curr_song_tempo_automation_tempo));
-                          
+        
     }audioblock_variables_protector.write_end();
-
-    
+      
+      
     if(g_test_crashreporter_in_audio_thread){
       //R_ASSERT(false);
       int *ai2=NULL;
@@ -1278,7 +1278,8 @@ struct Mixer{
 
         if (g_soundcardblock_delta_time==0) start_time = MIXER_get_curr_audio_block_cycle_fraction(); else start_time = 0; // else clause added to silence compiler warning.
 
-        {
+        if (g_soundcardblock_delta_time + RADIUM_BLOCKSIZE <= num_frames){
+          // Note that the user should already have seen an error if num_frames is illegal.
           MULTICORE_run_all(_sound_producers, _time, RADIUM_BLOCKSIZE, g_process_plugins);
         }
         
@@ -1313,8 +1314,7 @@ struct Mixer{
     }
 
     //printf("        FRAMES: %d (duration: %f). How much: %f\n", jack_time_to_frames(g_jack_client, process_duration), (double)process_duration/1000.0, MIXER_get_curr_audio_block_cycle_fraction());
-
-
+    
     // Call this one right before releasing lock and waiting for cycle. This function is allowed to run almost to the end of the jack cycle.
     RT_call_functions_scheduled_to_run_on_player_thread();
   }
