@@ -275,7 +275,7 @@
               <item>
                <widget class="QLabel" name="label_13">
                 <property name="text">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;A larger block size will cause less CPU usage at the cost of higher memory usage, lower accuracy of automation, and other things. &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Note 1: Setting the internal block size to a higher value than 64 should for now be considered an experimental feature. Please report any problems you may have. &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Note 2: The soundcard block size must be a multiple of the internal block size.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;A larger block size will cause less CPU usage at the cost of higher memory usage, lower accuracy of automation, and other things. &lt;/span&gt; (Restart required)&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Note 1: Setting the internal block size to a higher value than 64 should for now be considered an experimental feature. Please report any problems you may have. &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Note 2: The soundcard block size must be a multiple of the internal block size.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                 <property name="textFormat">
                  <enum>Qt::AutoText</enum>

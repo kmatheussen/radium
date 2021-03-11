@@ -444,6 +444,9 @@ public:
     if (is_event_link)
       return true;
 
+    if (g_soundcardblock_size < RADIUM_BLOCKSIZE) // rt_process is not called in this case, so we can't wait for it to fade out.
+      return true;
+  
     if(safe_bool_read(&RT_is_active))
       return false;
       
@@ -1546,6 +1549,7 @@ public:
       for(auto *link : to_remove)
         rt_functions.add([link]
           {
+            //printf("   ___ Requesting to turn off link %p\n", link);
             link->RT_request_turn_off();
           });
       
@@ -1588,12 +1592,14 @@ public:
     for(auto *link : to_remove){
       PLUGIN_touch(link->source->_plugin);
       PLUGIN_touch(link->target->_plugin);
+      //printf("   _______ waiting for link %p to be turned off...\n", link);
       while(link->can_be_removed()==false){
         PLUGIN_touch(link->source->_plugin);
         PLUGIN_touch(link->target->_plugin);
         PLAYER_memory_debug_wake_up();
         msleep(5);
       }
+      //printf("   ___________got it. link %p was turned off...\n", link);
     }
 
 
