@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>8</number>
+      <number>1</number>
      </property>
      <property name="elideMode">
       <enum>Qt::ElideNone</enum>
@@ -1167,7 +1167,7 @@
             <item>
              <widget class="QCheckBox" name="autodelete_takes_when_undoing">
               <property name="text">
-               <string>Automatically delete takes when it's becomes impossible to access due to undoing.</string>
+               <string>Automatically delete takes when they become impossible to access due to undoing.</string>
               </property>
               <property name="checked">
                <bool>true</bool>
