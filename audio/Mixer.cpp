@@ -74,8 +74,7 @@ volatile bool g_test_crashreporter_in_audio_thread = false;
 
 extern PlayerClass *pc;
 
-static int g_last_set_producer_buffersize;
-static RSemaphore *g_freewheeling_has_started = NULL;
+static RSemaphore *g_saving_sound_has_started = NULL;
 
 // these four variables can only be written to in the audio thread.
 static volatile int g_num_allocated_click_plugins = 0;
@@ -576,25 +575,26 @@ static void RT_MIXER_check_if_someone_has_solo(void);
 static void RT_MIXER_check_if_at_least_two_soundproducers_are_selected(void);
 */
 
-int g_jackblock_delta_time = 0;
+int g_soundcardblock_delta_time = 0;
 
-int g_jackblock_size = 0; // Should only be accessed from player thread
-static DEFINE_ATOMIC(int, g_jackblock_size2) = 0;
-static DEFINE_ATOMIC(STime, jackblock_cycle_start_stime) = 0;
-static DEFINE_ATOMIC(STime, jackblock_last_frame_stime) = 0;
-static DEFINE_ATOMIC(Blocks *, jackblock_block) = NULL;
-static DEFINE_ATOMIC(STime, jackblock_seqtime) = 0;
-static DEFINE_ATOMIC(double, jackblock_song_tempo_multiplier) = 1.0;
+int g_soundcardblock_size = 0; // Should only be accessed from player thread
+static DEFINE_ATOMIC(int, g_soundcardblock_size2) = 0;
+static DEFINE_ATOMIC(STime, audioblock_cycle_start_time) = 0;
+static DEFINE_ATOMIC(STime, audioblock_last_frame_stime) = 0;
+static DEFINE_ATOMIC(double, audioblock_cycle_start_ms) = 0.0;
+static DEFINE_ATOMIC(Blocks *, audioblock_block) = NULL;
+static DEFINE_ATOMIC(STime, audioblock_seqtime) = 0;
+static DEFINE_ATOMIC(double, audioblock_song_tempo_multiplier) = 1.0;
 
-//static DEFINE_SPINLOCK(jackblock_spinlock); // used by two realtime threads (midi input and audio thread)
-static radium::SetSeveralAtomicVariables jackblock_variables_protector;
+//static DEFINE_SPINLOCK(audioblock_spinlock); // used by two realtime threads (midi input and audio thread)
+static radium::SetSeveralAtomicVariables audioblock_variables_protector;
 
 static QElapsedTimer pause_time;
 static bool g_process_plugins = true;
 static DEFINE_ATOMIC(bool, g_request_to_pause_plugins) = false;
 
-int g_jack_system_input_latency = 0;
-int g_jack_system_output_latency = 0;
+int g_audio_system_input_latency = 0;
+int g_audio_system_output_latency = 0;
 
 
 void RT_pause_plugins(void){
@@ -620,30 +620,25 @@ namespace{
 namespace{
 
 struct Mixer{
-  SoundProducer *_bus[NUM_BUSES];
+  SoundProducer *_bus[NUM_BUSES] = {};
 
   radium::Vector<SoundProducer*> _sound_producers;
   
-  jack_client_t *_rjack_client;
-  int64_t _last_time;
-  int64_t _time;
+  jack_client_t *_rjack_client = NULL;
+  int64_t _last_time = 0;
+  int64_t _time = 0;
 
   float _sample_rate;
   int _buffer_size;
 
   jack_port_t *_main_inputs[NUM_SYSTEM_INPUT_JACK_PORTS];
   
-  bool _is_freewheeling;
+  bool _is_saving_sound = false; // should only be accessed from the player
 
   RadiumTransportState _radium_transport_state = RadiumTransportState::NO_STATE;
   
   Mixer()
-    : _rjack_client(NULL)
-    , _last_time(0)
-    , _time(0)
-    , _is_freewheeling(false)
   {
-    memset(_bus, 0, sizeof(SoundProducer*)*NUM_BUSES);
   }
 
   void add_SoundProducer(SoundProducer *sound_producer){    
@@ -770,7 +765,7 @@ struct Mixer{
       SP_call_me_after_solo_has_changed();
   }
 
-  void set_output_latency(void) const {
+  void set_jack_output_latency(void) const {
     const char **inportnames=jack_get_ports(_rjack_client,NULL,NULL,JackPortIsPhysical|JackPortIsInput);
 
     if (inportnames != NULL) {
@@ -783,9 +778,9 @@ struct Mixer{
 
           jack_latency_range_t range;
           jack_port_get_latency_range(physical_port, JackPlaybackLatency, &range);
-          g_jack_system_output_latency = R_MAX(0, (int)range.max);
+          g_audio_system_output_latency = R_MAX(0, (int)range.max);
 
-          if (g_jack_system_output_latency > 0)
+          if (g_audio_system_output_latency > 0)
             break;
 
         }
@@ -821,7 +816,7 @@ struct Mixer{
 
     }
         
-    _rjack_client=jack_client_open(client_name,JackNoStartServer,&status,NULL);
+    _rjack_client = jack_client_open(client_name,JackNoStartServer,&status,NULL);
     g_jack_client = _rjack_client;
 
     if (_rjack_client == NULL) {
@@ -831,6 +826,7 @@ struct Mixer{
 	fprintf (stderr, "Unable to connect to JACK server\n");
       }
 
+      /*
       ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create(true));
       msgBox->setIcon(QMessageBox::Critical);
       msgBox->setText("Unable to connect to Jack.");
@@ -841,7 +837,8 @@ struct Mixer{
       
       msgBox->setStandardButtons(QMessageBox::Ok);
       safeExec(msgBox, false);
-
+      */
+      
       return false;
 
     }
@@ -873,7 +870,6 @@ struct Mixer{
 
     }
     
-    g_last_set_producer_buffersize = _buffer_size;
     g_jack_client_priority = jack_client_real_time_priority(_rjack_client);
 
     if(_sample_rate<100.0)
@@ -946,10 +942,10 @@ struct Mixer{
             
           } else {
 
-            if (g_jack_system_input_latency == 0){
+            if (g_audio_system_input_latency == 0){
               jack_latency_range_t range;
               jack_port_get_latency_range(physical_port, JackCaptureLatency, &range);
-              g_jack_system_input_latency = R_MAX(0, (int)range.max);
+              g_audio_system_input_latency = R_MAX(0, (int)range.max);
             }
 
             const char *radium_port_name = jack_port_name(_main_inputs[ch]);
@@ -987,17 +983,66 @@ struct Mixer{
         jack_free(outportnames);
       }
 
-      set_output_latency();
+      set_jack_output_latency();
     }
 
     //create_jack_plugins(_rjack_client);
 
-    while(ATOMIC_GET(_RT_process_has_inited)==false)
-      msleep(50);
+    return true;
+  }
+
+  DEFINE_ATOMIC(bool, _juce_audio_start_saving_soundfile) = false;
+  DEFINE_ATOMIC(bool, _juce_audio_stop_saving_soundfile) = false;
+
+  void juce_start_saving_soundfile_thread(void){
+    auto thread = std::thread([this](){
+
+        // Note: RT_process_audio_block sets player thread type at every call (just in case), so it's not necessary to set it here.
+        
+        while(!ATOMIC_GET(_juce_audio_stop_saving_soundfile))
+          RT_process_audio_block(g_soundcardblock_size, _sample_rate);
+                  
+        ATOMIC_SET(_juce_audio_stop_saving_soundfile, false);
+
+        R_ASSERT_NON_RELEASE(_is_saving_sound==true);
+        
+        _is_saving_sound = false;
+        
+      });
+    
+    thread.detach();
+  }
+    
+  static bool juce_audio_device_callback(const int num_frames, const double samplerate, void *data){
+    Mixer *mixer = static_cast<Mixer*>(data);
+
+    if (ATOMIC_GET(mixer->_juce_audio_start_saving_soundfile)){
+      
+      ATOMIC_SET(mixer->_juce_audio_start_saving_soundfile, false);
+      
+      mixer->_is_saving_sound = true;
+
+      RSEMAPHORE_signal(g_saving_sound_has_started,1);
+    }
+
+    if (!mixer->_is_saving_sound)
+      mixer->RT_process_audio_block(num_frames, samplerate);
     
     return true;
   }
 
+  bool start_juce_audio(void) {
+    if (JUCE_init_audio_device(juce_audio_device_callback, this)==false)
+      return false;
+
+    _sample_rate = JUCE_audio_get_sample_rate();
+    _buffer_size = JUCE_audio_get_buffer_size();
+
+    pc->pfreq = _sample_rate; // bang!
+    
+    return true;
+  }
+  
   /*
   static int compare_sound_producers(const void *vsp1, const void *vsp2) {
     const SoundProducer **sp1 = (const SoundProducer**)(vsp1);
@@ -1038,7 +1083,7 @@ struct Mixer{
     if (g_process_plugins==false) {
       if (pause_time.elapsed() > 5000)
         g_process_plugins = true;
-    } else if (_is_freewheeling==false && _excessive_time.elapsed() > 2000) { // 2 seconds
+    } else if (_is_saving_sound==false && _excessive_time.elapsed() > 2000) { // 2 seconds
       if (ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING) {
         RT_request_to_stop_playing();
         RT_message("Error!\n"
@@ -1063,19 +1108,24 @@ struct Mixer{
     RT_AUDIOBUFFERS_optimize();
   }
 
+#if 0
   int64_t _last_frame_time = 0;
-
+#endif
 
   DEFINE_ATOMIC(bool, _RT_process_has_inited) = false;
 
-  void RT_process_audio_block(const int num_frames) {
+  void RT_process_audio_block(const int num_frames, const double samplerate) {
+
+#ifdef MEMORY_DEBUG
+    debug_wait.wait(&debug_mutex, 1000*10); // Speed up valgrind
+#endif
 
     if (ATOMIC_GET_RELAXED(_RT_process_has_inited)==false || THREADING_init_player_thread_type()){
       AVOIDDENORMALS;
       
-      THREADING_init_player_thread_type(); // This is a light operation. Just call it again in case has_inited was false.
+      THREADING_init_player_thread_type(); // This is a light operation. Just call it again in case "_RT_process_has_inited" was false above.
       R_ASSERT(THREADING_is_player_thread());
-      R_ASSERT(!THREADING_is_main_thread());
+      R_ASSERT_NON_RELEASE(!THREADING_is_main_thread());
       
       ATOMIC_SET(_RT_process_has_inited, true);
     }
@@ -1084,48 +1134,62 @@ struct Mixer{
     RT_before_processing_audio_block_not_holding_lock();
 
     PlayerLock_Local player_lock;
-      
+
+    g_soundcardblock_size = num_frames;
+    _sample_rate = samplerate;
+    pc->pfreq = samplerate;
+    
+#if 0
     int64_t now_frame_time = (int64_t)jack_last_frame_time(_rjack_client);
     //printf("Frame time: %" PRId64 " (dx: %d)\n", now_frame_time, (int)(now_frame_time - _last_frame_time));
     _last_frame_time = now_frame_time;
+#endif
+
+    //printf("So far: %f\n", RT_TIME_get_ms() - JUCE_audio_time_at_cycle_start());
     
-    jackblock_variables_protector.write_start();{
+    audioblock_variables_protector.write_start();{
 
       struct SeqTrack *seqtrack = RT_get_curr_seqtrack();
       struct SeqBlock *curr_seqblock = seqtrack==NULL ? NULL : seqtrack->curr_seqblock;
-        
-      g_jackblock_size = num_frames;
-      ATOMIC_SET(g_jackblock_size2, g_jackblock_size);
+
+      //R_ASSERT_NON_RELEASE((num_frames % RADIUM_BLOCKSIZE) == 0);
+      
+      ATOMIC_SET(g_soundcardblock_size2, g_soundcardblock_size);
         
       if (seqtrack!=NULL)
-        ATOMIC_SET(jackblock_cycle_start_stime, seqtrack->end_time);
+        ATOMIC_SET(audioblock_cycle_start_time, seqtrack->end_time);
       else
-        ATOMIC_SET(jackblock_cycle_start_stime, 0);
-      ATOMIC_SET(jackblock_last_frame_stime, jack_last_frame_time(_rjack_client));
+        ATOMIC_SET(audioblock_cycle_start_time, 0);
 
+      if (_rjack_client != NULL)
+        ATOMIC_SET(audioblock_last_frame_stime, jack_last_frame_time(_rjack_client));
+      else
+        ATOMIC_DOUBLE_SET(audioblock_cycle_start_ms, JUCE_audio_time_at_cycle_start());
+      
       if (curr_seqblock != NULL && curr_seqblock->block!=NULL) {
-        ATOMIC_SET(jackblock_seqtime, curr_seqblock->t.time);
-        ATOMIC_SET(jackblock_block, curr_seqblock->block);
+        ATOMIC_SET(audioblock_seqtime, curr_seqblock->t.time);
+        ATOMIC_SET(audioblock_block, curr_seqblock->block);
       } else {
-        ATOMIC_SET(jackblock_seqtime, 0);
-        ATOMIC_SET(jackblock_block, NULL);
+        ATOMIC_SET(audioblock_seqtime, 0);
+        ATOMIC_SET(audioblock_block, NULL);
       }
 
-      ATOMIC_DOUBLE_SET(jackblock_song_tempo_multiplier, ATOMIC_DOUBLE_GET(g_curr_song_tempo_automation_tempo));
+      ATOMIC_DOUBLE_SET(audioblock_song_tempo_multiplier, ATOMIC_DOUBLE_GET(g_curr_song_tempo_automation_tempo));
                           
-    }jackblock_variables_protector.write_end();
-      
+    }audioblock_variables_protector.write_end();
+
+    
     if(g_test_crashreporter_in_audio_thread){
       //R_ASSERT(false);
       int *ai2=NULL;
       ai2[0] = 50;
     }
       
-    double start_time = RT_TIME_get_ms();
-
-    //jackblock_size = num_frames;
+    //audioblock_size = num_frames;
 
     // Process sound.
+
+    double start_time = RT_TIME_get_ms();
 
     if (MULTICORE_get_num_threads() > 1)
       RT_sort_sound_producers_by_running_time();
@@ -1140,7 +1204,7 @@ struct Mixer{
 
     bool can_not_start_playing_right_now_because_jack_transport_is_not_ready_yet = false;
 
-    if (useJackTransport()){
+    if (g_jack_client!=NULL && useJackTransport()){
         
       jack_transport_state_t state = jack_transport_query(g_jack_client,NULL);
         
@@ -1183,10 +1247,9 @@ struct Mixer{
 
     MULTICORE_start_block(); {
 
-      g_jackblock_delta_time = 0;
-      while(g_jackblock_delta_time < num_frames){
+      g_soundcardblock_delta_time = 0;
+      while(g_soundcardblock_delta_time < num_frames){
             
-
         double curr_song_tempo_automation_tempo = pc->playtype==PLAYSONG ? RT_TEMPOAUTOMATION_get_value(ATOMIC_DOUBLE_GET(pc->song_abstime)) : 1.0;
         ATOMIC_DOUBLE_SET(g_curr_song_tempo_automation_tempo, curr_song_tempo_automation_tempo);
 
@@ -1213,13 +1276,13 @@ struct Mixer{
 
         float start_time;
 
-        if (g_jackblock_delta_time==0) start_time = MIXER_get_curr_audio_block_cycle_fraction(); else start_time = 0; // else clause added to silence compiler warning.
+        if (g_soundcardblock_delta_time==0) start_time = MIXER_get_curr_audio_block_cycle_fraction(); else start_time = 0; // else clause added to silence compiler warning.
 
         {
           MULTICORE_run_all(_sound_producers, _time, RADIUM_BLOCKSIZE, g_process_plugins);
         }
         
-        if (g_jackblock_delta_time==0){
+        if (g_soundcardblock_delta_time==0){
           float curr_audio_fraction = MIXER_get_curr_audio_block_cycle_fraction() - start_time;
           curr_audio_fraction *= (num_frames / RADIUM_BLOCKSIZE);
           max_playertask_audio_cycle_fraction = (1.0 - curr_audio_fraction) / 2;
@@ -1229,7 +1292,7 @@ struct Mixer{
         //static int bufs = 0; printf("Buf: %d\n", (int)bufs++);
 
         _time += RADIUM_BLOCKSIZE;
-        g_jackblock_delta_time += RADIUM_BLOCKSIZE;
+        g_soundcardblock_delta_time += RADIUM_BLOCKSIZE;
       }
 
     } MULTICORE_end_block();
@@ -1257,32 +1320,9 @@ struct Mixer{
   }
 
 
-  void RT_jack_process_audio_block(void) {
-#ifdef MEMORY_DEBUG
-    debug_wait.wait(&debug_mutex, 1000*10); // Speed up valgrind
-#endif
-
-    // Wait for our jack cycle
-    int num_frames = jack_cycle_wait(_rjack_client);
-    
-    if((int)num_frames!=_buffer_size){
-      R_ASSERT_NON_RELEASE(false);
-      printf("What???\n");
-    }
-
-
-    RT_process_audio_block(num_frames);
-
-    // Tell jack we are finished.
-
-    jack_cycle_signal(_rjack_client, 0);
-  }
-
   static int RT_jack_process(jack_nframes_t nframes, void *arg){
     Mixer *mixer = static_cast<Mixer*>(arg);
-
-    mixer->RT_process_audio_block(nframes);
-
+    mixer->RT_process_audio_block(nframes, mixer->_sample_rate);
     return 0;
   }
   
@@ -1290,12 +1330,12 @@ struct Mixer{
     Mixer *mixer = static_cast<Mixer*>(arg);
 
     if(starting!=0){
-      mixer->_is_freewheeling = true;
-      RSEMAPHORE_signal(g_freewheeling_has_started,1);
+      mixer->_is_saving_sound = true;
+      RSEMAPHORE_signal(g_saving_sound_has_started,1);
       //SOUNDFILESAVER_start();
     }else{
-      printf("MIXER: Freewheeling stopped\n");
-      mixer->_is_freewheeling = false;
+      printf("MIXER: Saving sound stopped\n");
+      mixer->_is_saving_sound = false;
       //SOUNDFILESAVER_stop();
     }
   }
@@ -1332,12 +1372,13 @@ struct Mixer{
       
     }unlock_player();
 
-    const char *main_message = "Error: Radium does not officially support changing jack block size during runtime. It might work, it might not work. You should save your song and restart Radium to avoid undefined behavior.";
+
+    //const char *main_message = "Error: Radium does not officially support changing jack block size during runtime. It might work, it might not work. You should save your song and restart Radium to avoid undefined behavior.";
                
     if( (mixer->_buffer_size % RADIUM_BLOCKSIZE) != 0)
-      RT_message("%s.\nAlso, jack's blocksize of %d is not dividable by Radium's block size of %d. You will get bad sound. Adjust your audio settings.", main_message, mixer->_buffer_size, RADIUM_BLOCKSIZE);
-    else
-      RT_message("%s", main_message);
+      RT_message("jack's blocksize of %d is not dividable by Radium's block size of %d. You will get bad sound. Adjust your audio settings.", mixer->_buffer_size, RADIUM_BLOCKSIZE);
+    //else
+    //  RT_message("%s", main_message);
 
     return 0;
   }
@@ -1513,7 +1554,7 @@ struct Mixer{
 static Mixer *g_mixer = NULL;
 
 
-
+#if defined(RELEASE)
 static void maybe_warn_about_jack1(void){
 
   const char *config_name = "show_jack1_warning_during_startup";
@@ -1522,9 +1563,9 @@ static void maybe_warn_about_jack1(void){
     return;
     
   bool ok = true;
-  
-  const char *version_string = WJACK_get_version_string();
 
+  const char *version_string = WJACK_get_version_string();
+  
   if (version_string==NULL) {
     
     ok = false;
@@ -1568,17 +1609,22 @@ static void maybe_warn_about_jack1(void){
   }
 
 }
+#endif
 
 bool MIXER_start(void){
   
   R_ASSERT(THREADING_is_main_thread());
 
+#if defined(RELEASE)
+  warning. this block should also be eabled in !release mode.
+    
   maybe_warn_about_jack1(); 
   
   if (KILLJACKD_kill_jackd_if_unresponsive()==true){
     return false;
   }
-
+#endif
+  
   // Read a couple of settings variables from disk, so we don't read from disk in the realtime threads.
   useJackTransport();
 
@@ -1586,14 +1632,27 @@ bool MIXER_start(void){
   
   SampleRecorder_Init();
     
-  g_freewheeling_has_started = RSEMAPHORE_create(0);
+  g_saving_sound_has_started = RSEMAPHORE_create(0);
   g_player_stopped_semaphore = RSEMAPHORE_create(0);
 
   g_mixer = new Mixer();  
   
   if(g_mixer->start_jack()==false)
-    return false;
-  
+    if (g_mixer->start_juce_audio()==false) {
+
+      ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create(true));
+      msgBox->setIcon(QMessageBox::Critical);
+      msgBox->setText("Unable to start audio driver. Can't start program.");
+      msgBox->setStandardButtons(QMessageBox::Ok);
+      safeExec(msgBox, false);
+      
+      return false;
+    }
+
+
+  while(ATOMIC_GET(g_mixer->_RT_process_has_inited)==false)
+    msleep(50);
+    
   PR_init_plugin_types();
 
   //Sleep(3000);
@@ -1613,7 +1672,7 @@ bool MIXER_start(void){
 void MIXER_stop(void){
   static bool has_been_called = false;
   
-  R_ASSERT(g_mixer->_rjack_client != NULL);
+  //  R_ASSERT(g_mixer->_rjack_client != NULL);
   R_ASSERT(has_been_called==false);
 
   SampleRecorder_shut_down();
@@ -1623,6 +1682,8 @@ void MIXER_stop(void){
   if (g_mixer->_rjack_client != NULL)
     jack_client_close(g_mixer->_rjack_client);
 
+  JUCE_stop_audio_device();
+  
   has_been_called=true;
 }
 
@@ -1633,6 +1694,8 @@ void OS_InitAudioTiming(void){
 }
 
 int64_t MIXER_TRANSPORT_set_pos(double abstime){
+  R_ASSERT_NON_RELEASE(g_jack_client!=NULL);
+  
   if (g_jack_client==NULL)
     return 0;
   
@@ -1680,6 +1743,8 @@ int64_t MIXER_TRANSPORT_set_pos(double abstime){
 }
 
 void MIXER_TRANSPORT_play(double abstime){
+  R_ASSERT_NON_RELEASE(g_jack_client!=NULL);
+  
   if (g_jack_client==NULL)
     return;
 
@@ -1697,6 +1762,8 @@ void MIXER_TRANSPORT_play(double abstime){
 }
 
 void MIXER_TRANSPORT_stop(void){
+  R_ASSERT_NON_RELEASE(g_jack_client!=NULL);
+  
   if (g_jack_client==NULL)
     return;
   if (jack_transport_query(g_jack_client,NULL) != JackTransportStopped)
@@ -1704,6 +1771,9 @@ void MIXER_TRANSPORT_stop(void){
 }
 
 void MIXER_set_jack_timebase_master(bool doit){
+  if (g_jack_client == NULL)
+    return;
+  
   jack_set_timebase_callback(g_jack_client, 0, doit ? Mixer::RT_rjack_timebase : NULL, g_mixer);
 }
 
@@ -1747,8 +1817,8 @@ void MIXER_call_very_often(void){
 bool MIXER_is_saving(void){
   if (g_mixer==NULL)
     return false;
-  
-  return g_mixer->_is_freewheeling;
+
+  return g_mixer->_is_saving_sound;
 }
 
 
@@ -1764,16 +1834,27 @@ void MIXER_set_all_non_realtime(bool is_non_realtime){
 
 void MIXER_start_saving_soundfile(void){
   EVENTLOG_add_event("MIXER_request_start_saving_soundfile Enter");
-  
-  RSEMAPHORE_reset(g_freewheeling_has_started); // Must do this in case a different jack client started freewheeling since last call to sem_init.
-  
-  EVENTLOG_add_event("MIXER_request_start_saving_soundfile Step 1");
-  
-  jack_set_freewheel(g_jack_client, 1);
-  
-  EVENTLOG_add_event("MIXER_request_start_saving_soundfile Step 2");
-  
-  RSEMAPHORE_wait(g_freewheeling_has_started,1);
+    
+  RSEMAPHORE_reset(g_saving_sound_has_started); // Must do this in case a different jack client started freewheeling since last call to sem_init.
+    
+  if (g_jack_client==NULL) {
+
+    ATOMIC_SET(g_mixer->_juce_audio_start_saving_soundfile, true);
+               
+  } else {
+    
+    EVENTLOG_add_event("MIXER_request_start_saving_soundfile Step 1");
+    
+    jack_set_freewheel(g_jack_client, 1);
+    
+    EVENTLOG_add_event("MIXER_request_start_saving_soundfile Step 2");
+    
+  }
+
+  RSEMAPHORE_wait(g_saving_sound_has_started,1);
+
+  if (g_jack_client==NULL)
+    g_mixer->juce_start_saving_soundfile_thread();
   
   EVENTLOG_add_event("MIXER_request_start_saving_soundfile Leave");
 }
@@ -1781,8 +1862,16 @@ void MIXER_start_saving_soundfile(void){
 void MIXER_request_stop_saving_soundfile(void){
   EVENTLOG_add_event("MIXER_request_stop_saving_soundfile Enter");
   
-  jack_set_freewheel(g_jack_client, 0);
-  
+  if (g_jack_client==NULL) {
+
+    ATOMIC_SET(g_mixer->_juce_audio_stop_saving_soundfile, true);
+    
+  } else {
+    
+    jack_set_freewheel(g_jack_client, 0);
+
+  }
+
   EVENTLOG_add_event("MIXER_request_stop_saving_soundfile Leave");
   
   printf("REQUEST to stop saving received\n");
@@ -1794,10 +1883,25 @@ STime MIXER_get_block_delta_time(STime time){
 }
 
 int MIXER_get_main_inputs(const float **audio, int max_num_ch){
-  int num_ch = R_MIN(NUM_SYSTEM_INPUT_JACK_PORTS, max_num_ch);
-  for(int i=0;i<num_ch;i++)
-    audio[i] = ((float*)jack_port_get_buffer(g_mixer->_main_inputs[i],g_jackblock_size)) + g_jackblock_delta_time;
-  return num_ch;
+  if (g_jack_client==NULL) {
+
+    int ch_out = 0;
+    
+    for(int ch_in = 0 ; ch_in < R_MIN(max_num_ch, g_juce_num_input_audio_channels) ; ch_in++)
+      if (g_juce_input_audio_channels[ch_in] != NULL)
+        audio[ch_out++] = g_juce_input_audio_channels[ch_in] + g_soundcardblock_delta_time;
+      
+    return ch_out;
+    
+  } else {
+  
+    int num_ch = R_MIN(NUM_SYSTEM_INPUT_JACK_PORTS, max_num_ch);
+    
+    for(int i=0;i<num_ch;i++)
+      audio[i] = ((float*)jack_port_get_buffer(g_mixer->_main_inputs[i],g_soundcardblock_size)) + g_soundcardblock_delta_time;
+    
+    return num_ch;
+  }
 }
 
 /*
@@ -1810,8 +1914,29 @@ int64_t MIXER_get_time(void){
 // 0 = audio block cycle just started
 // 1 = audio block cycle just ended.
 // > ~1 = we will probably get xrun(s)
+static float MIXER_get_curr_audio_block_cycle_fraction2(double cycle_start_ms){
+  R_ASSERT_NON_RELEASE(g_jack_client==NULL);
+  
+  double duration = RT_TIME_get_ms() - cycle_start_ms;
+  double block_duration = frames_to_ms(g_mixer->_buffer_size);
+  return duration / block_duration;
+}
+
 float MIXER_get_curr_audio_block_cycle_fraction(void){
-  return (float)jack_frames_since_cycle_start(g_jack_client) / (float)g_mixer->_buffer_size;
+#if !defined(RELEASE)
+  if (!THREADING_is_player_thread())
+    printf("MIXER_get_curr_audio_block_cycle_fraction: Warning, not called from player thread\n");
+#endif
+  
+  if (g_jack_client==NULL) {
+
+    return MIXER_get_curr_audio_block_cycle_fraction2(JUCE_audio_time_at_cycle_start());
+    
+  } else {
+
+    return (float)jack_frames_since_cycle_start(g_jack_client) / (float)g_mixer->_buffer_size;
+
+  }
 }
 
 static int get_audioblock_time(STime jack_block_start_time){
@@ -1825,9 +1950,10 @@ static int get_audioblock_time(STime jack_block_start_time){
 // I understand the function quite well when writing this comment, but I might not next time reading this code.
 // Should probably think about how to abstract all this stuff.
 static bool fill_in_time_position2(time_position_t *time_position){
-  STime jackblock_cycle_start_stime2;
-  STime jackblock_last_frame_stime2;
-  STime jackblock_size2;
+  STime audioblock_cycle_start_time2;
+  STime audioblock_last_frame_stime2;
+  double audioblock_cycle_start_ms2;
+  STime audioblock_size2;
   struct Blocks *block;
   STime seqtime;
   double song_tempo_multiplier;
@@ -1835,31 +1961,45 @@ static bool fill_in_time_position2(time_position_t *time_position){
   //int playlistpos;
   //int playlistpos_numfromcurrent = 0;
 
+  int num_tries = 0;
+  
   int generation;
   do{
-    generation = jackblock_variables_protector.read_start();
+    num_tries++;
+    generation = audioblock_variables_protector.read_start();
     
-    jackblock_cycle_start_stime2 = ATOMIC_GET(jackblock_cycle_start_stime);
-    jackblock_last_frame_stime2  = ATOMIC_GET(jackblock_last_frame_stime);
-    jackblock_size2              = ATOMIC_GET(g_jackblock_size2);
-    block                        = ATOMIC_GET(jackblock_block);
-    seqtime                      = ATOMIC_GET(jackblock_seqtime);
-    song_tempo_multiplier        = ATOMIC_DOUBLE_GET(jackblock_song_tempo_multiplier);
-    //playlistpos                  = ATOMIC_GET(jackblock_playlistpos);
+    audioblock_cycle_start_time2 = ATOMIC_GET(audioblock_cycle_start_time);
+    if (g_jack_client != NULL)
+      audioblock_last_frame_stime2  = ATOMIC_GET(audioblock_last_frame_stime);
+    else
+      audioblock_cycle_start_ms2 = ATOMIC_DOUBLE_GET(audioblock_cycle_start_ms);
+    audioblock_size2              = ATOMIC_GET(g_soundcardblock_size2);
+    block                        = ATOMIC_GET(audioblock_block);
+    seqtime                      = ATOMIC_GET(audioblock_seqtime);
+    song_tempo_multiplier        = ATOMIC_DOUBLE_GET(audioblock_song_tempo_multiplier);
+    //playlistpos                  = ATOMIC_GET(audioblock_playlistpos);
     
-  } while(jackblock_variables_protector.read_end(generation)==false); // ensure that the variables inside this loop are read atomically.
+  } while(audioblock_variables_protector.read_end(generation)==false); // ensure that the variables inside this loop are read atomically.
 
   if (block==NULL)
     return false;
+  
+  STime deltatime;
 
-  int deltatime = get_audioblock_time(jackblock_last_frame_stime2);
+  if (g_jack_client != NULL)
+    deltatime = scale(get_audioblock_time(audioblock_last_frame_stime2),
+                      0, audioblock_size2,
+                      0, audioblock_size2 * ATOMIC_DOUBLE_GET(block->reltempo) * song_tempo_multiplier
+                      );
+  else
+    deltatime = scale(1.3 + (0.0 * MIXER_get_curr_audio_block_cycle_fraction2(audioblock_cycle_start_ms2)),
+                      0, 1,
+                      0,audioblock_size2 * ATOMIC_DOUBLE_GET(block->reltempo) * song_tempo_multiplier
+                      );
 
-  STime accurate_radium_time =
-    jackblock_cycle_start_stime2 +
-    scale(deltatime,
-          0, jackblock_size2,
-          0, jackblock_size2 * ATOMIC_DOUBLE_GET(block->reltempo) * song_tempo_multiplier
-          );
+  //printf("Deltatime: %d. Fraction: %f. num_tries: %d\n", (int)deltatime, MIXER_get_curr_audio_block_cycle_fraction2(audioblock_cycle_start_ms2), num_tries);
+  
+  STime accurate_radium_time = audioblock_cycle_start_time2 + deltatime;
   
   STime accurate_block_time = accurate_radium_time - seqtime;
 #if !defined(RELEASE)
@@ -1997,7 +2137,7 @@ float MIXER_get_sample_rate(void){
 
 int64_t MIXER_get_recording_latency_compensation_from_system_in(void){
   if (getRecordingLatencyFromSystemInputIsAutomaticallyDetermined())
-    return g_jack_system_input_latency + g_jack_system_output_latency;
+    return g_audio_system_input_latency + g_audio_system_output_latency;
   else
     return ms_to_frames(getCustomRecordingLatencyFromSystemInput());
 }
@@ -2038,9 +2178,11 @@ bool MIXER_is_connected_to_system_out(const SoundProducer *sp){
   return SP_is_audio_connected(sp, main_system_out);
 }
 
-int MIXER_get_remaining_num_jackblock_frames(void){
-  return g_jackblock_size - g_jackblock_delta_time;
+
+int MIXER_get_remaining_num_audioblock_frames(void){
+  return g_soundcardblock_size - g_soundcardblock_delta_time;
 }
+
 
 // Returns first sound plugin in mixer that matches type_name and name. name can be NULL.
 struct SoundPlugin *MIXER_get_soundplugin(const char *type_name, const char *name){

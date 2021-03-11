@@ -50,7 +50,6 @@ extern LANGSPEC void OS_InitMidiTiming(void);
 extern bool g_player_was_stopped_because_it_reached_sequencer_loop_end;
 
 void PlayerTask(double reltime, bool can_not_start_playing_right_now_because_jack_transport_is_not_ready_yet, float max_audio_cycle_fraction){
-
         if (ATOMIC_GET(is_starting_up))
           return;
 
@@ -105,10 +104,8 @@ void PlayerTask(double reltime, bool can_not_start_playing_right_now_because_jac
 
         R_ASSERT(player_state==PLAYER_STATE_STARTING_TO_PLAY || player_state==PLAYER_STATE_PLAYING || player_state==PLAYER_STATE_STOPPED);
 
-
         if (player_state==PLAYER_STATE_STARTING_TO_PLAY && can_not_start_playing_right_now_because_jack_transport_is_not_ready_yet)
           return;
-
         
         if (player_state != PLAYER_STATE_STOPPED)
           if(g_time_was_stopped){
@@ -187,10 +184,8 @@ void PlayerTask(double reltime, bool can_not_start_playing_right_now_because_jac
         RT_PD_set_absolute_time(ATOMIC_DOUBLE_GET(pc->song_abstime));
 #endif
 
-        
         if (player_state == PLAYER_STATE_STARTING_TO_PLAY)
           ATOMIC_SET(pc->player_state, PLAYER_STATE_PLAYING);
-
         
         //printf("num_scheduled: %d. state: %d\n",num_scheduled_events,player_state);
         if(player_state == PLAYER_STATE_PLAYING && is_finished){

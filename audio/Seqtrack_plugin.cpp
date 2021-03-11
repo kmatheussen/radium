@@ -2387,14 +2387,15 @@ static void RT_record(Data *data, int num_frames, const float **instrument_input
   //
   float *inputs_[NUM_CHANNELS_RECORDING_MATRIX];
   float **inputs = inputs_;
-  
-  const int num_ch = NUM_CHANNELS_RECORDING_MATRIX;
-  
-  if (config.record_from_system_input)
-    R_ASSERT(MIXER_get_main_inputs(const_cast<const float**>(inputs), num_ch)==num_ch);
-  else
-    memcpy(inputs, instrument_inputs, sizeof(float*)*num_ch);
 
+  {
+    const int num_ch = NUM_CHANNELS_RECORDING_MATRIX;
+    
+    if (config.record_from_system_input)
+      R_ASSERT(MIXER_get_main_inputs(const_cast<const float**>(inputs), num_ch)==num_ch);
+    else
+      memcpy(inputs, instrument_inputs, sizeof(float*)*num_ch);
+  }
   
   // Output buffer (i.e. audio sent to soundfile)
   //

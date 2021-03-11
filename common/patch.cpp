@@ -1356,7 +1356,7 @@ static int64_t get_midi_latency(struct Patch *patch){
     switch(getMidiInstrumentLatencyType()){
       case 0: return 0;
       case 1: return g_RT_system_out_input_latency;
-      case 2: return g_RT_system_out_input_latency + g_jack_system_input_latency + g_jack_system_output_latency;
+      case 2: return g_RT_system_out_input_latency + g_audio_system_input_latency + g_audio_system_output_latency;
       case 3: return g_RT_system_out_input_latency + ms_to_frames(getCustomMidiInstrumentLatency());
       default: R_ASSERT_NON_RELEASE(false) ; return 0;
     }

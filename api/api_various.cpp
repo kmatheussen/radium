@@ -99,6 +99,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/Faust_plugins_proc.h"
 #include "../audio/SampleReader_proc.h"
 #include "../audio/SoundfileSaver_proc.h"
+#include "../audio/Juce_plugins_proc.h"
 
 #include "../midi/midi_i_input_proc.h"
 
@@ -1946,6 +1947,10 @@ void openCommentDialog(void){
 
 void openSongPropertiesDialog(void){
   SONGPROPERTIES_open();
+}
+
+void openAudioDevicePreferencesDialog(void){
+  JUCE_audio_open_preferences_window();
 }
 
 void openPreferencesDialog(void){

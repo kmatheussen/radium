@@ -852,7 +852,7 @@ PLUGINHOSTOPTS = CXX="$(CCC) -DCOMPILING_JUCE_PLUGINS_O=1 -DDEBUG_ALLOWED -DJUCE
 LIBPLUGIN_SCANNER_OPTS = CXX="$(CCC) -DCOMPILING_RADIUM_PLUGIN_SCANNER=1 -DDEBUG_ALLOWED -DJUCE_ALSA_MIDI_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_INPUT_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_OUTPUT_NAME=\\\"Radium\\\" " TARGET_ARCH="-g -fno-strict-aliasing" TARGET="libMyPluginHost_for_scanner.a"
 
 
-pluginhost/Builds/Linux/build/libMyPluginHost.a: pluginhost/Builds/Linux/build/libMyPluginHost_for_scanner.a audio/Juce_plugins.cpp midi/midi_juce.cpp flagopts.opt pluginhost/MyPluginHost.jucer common/Vector.hpp audio/Smooth.cpp audio/Smooth_proc.h
+pluginhost/Builds/Linux/build/libMyPluginHost.a: pluginhost/Builds/Linux/build/libMyPluginHost_for_scanner.a audio/Juce_plugins.cpp midi/midi_juce.cpp flagopts.opt pluginhost/MyPluginHost.jucer common/Vector.hpp audio/Smooth.cpp audio/Smooth_proc.h audio/JuceAudioDevice.cpp
 	rm -f pluginhost/Builds/Linux/build/*/*/Juce_plugins_*.o pluginhost/Builds/Linux/build/*/*/Juce_plugin_scanner.o
 # dryrun
 	if [ $(BUILDTYPE) = DEBUG ] ; then \
@@ -1892,7 +1892,7 @@ $(T)api_mouse.o:  $(BUILD_DEPENDENCIES)  $(API)api_mouse.cpp common/Beats_proc.h
 	$(CCC2)  $(API)api_mouse.cpp $(QTOPT)
 
 $(T)api_sequencer.o:  $(BUILD_DEPENDENCIES)  $(API)api_sequencer.cpp $(API)api_sequencer_proc.h  audio/Envelope.hpp common/seqblock_automation_proc.h embedded_scheme/s7extra_proc.h
-	$(CCC2)  $(API)api_sequencer.cpp $(QTOPT)
+	$(CCC2) $(JACKOPT) $(API)api_sequencer.cpp $(QTOPT)
 
 $(T)api_osc.o:  $(BUILD_DEPENDENCIES)  $(API)api_osc.cpp embedded_scheme/s7extra_proc.h
 	$(CCC2) $(LIBLOOPT) $(API)api_osc.cpp $(QTOPT) -fno-sanitize=undefined # -O0 # Adding -fno-sanitize=undefined since liblo sends misaligned data to calbacks.

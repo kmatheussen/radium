@@ -2734,8 +2734,8 @@ static void SP_RT_process(SoundProducer *producer, int64_t time, int num_frames,
     //float new_cpu_usage = 100.0 * (end_time-start_time) / ((double)num_frames / MIXER_get_sample_rate());
 
     //printf("Adding cpu usage for %s\n",plugin->patch->name);
-    if (MIXER_get_remaining_num_jackblock_frames()==num_frames){//g_jackblock_delta_time==0){
-      float new_cpu_usage = plugin->processing_time_so_far_in_jack_block * 0.1 * MIXER_get_sample_rate() / g_jackblock_size; //num_frames;
+    if (MIXER_get_remaining_num_audioblock_frames()==num_frames){//g_soundcardblock_delta_time==0){
+      float new_cpu_usage = plugin->processing_time_so_far_in_jack_block * 0.1 * MIXER_get_sample_rate() / g_soundcardblock_size; //num_frames;
       cpu_usage->addUsage(new_cpu_usage);
       plugin->processing_time_so_far_in_jack_block = 0.0;
     }

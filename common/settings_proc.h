@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 namespace radium{
   struct ResetSettings{
     bool reset_main_config_file;
+    bool reset_soundcard_config;
     bool reset_color_config_file;
     bool clean_plugin_cache;
     bool reset_keyboard_configuration;

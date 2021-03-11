@@ -16,27 +16,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-
-
-
-
-#include <gc.h>
-
 #include "nsmtracker.h"
 #include "playerclass.h"
 #include "placement_proc.h"
 #include "OS_Player_proc.h"
-#if 0
-#include "PEQrealline_proc.h"
-#include "PEQline_proc.h"
-#include "PEQblock_proc.h"
-#include "PEQnotes_proc.h"
-#include "PEQ_clock_proc.h"
-#include "PEQ_LPB_proc.h"
-#include "PEQ_Signature_proc.h"
-#include "PEQ_Beats_proc.h"
-#include "PEQmempool_proc.h"
-#endif
 #include "instruments_proc.h"
 #include "OS_Ptask2Mtask_proc.h"
 #include "time_proc.h"
@@ -134,7 +117,7 @@ static void PlayStopReally(bool doit, bool stop_jack_transport_as_well){
   R_ASSERT(g_assert_not_stopping_player==0);
   
   if (stop_jack_transport_as_well)
-    if (useJackTransport()){
+    if (isUsingJackTransport()){
       MIXER_TRANSPORT_stop();
       // We can not exit here. Some code depends on the player to have stopped when PlayStopReally returns.
     }
@@ -603,7 +586,7 @@ bool g_initing_starting_to_play_song = false;
 static void play_song(double abstime, int64_t absabstime, bool called_from_jack_transport){
   //printf("--------------Play song called. Jack_transport: %d. abstime: %f, absabstime: %f\n", called_from_jack_transport, abstime, (double)absabstime/44100.0);
 
-  if (called_from_jack_transport==false && useJackTransport()){
+  if (called_from_jack_transport==false && isUsingJackTransport()){
     R_ASSERT_RETURN_IF_FALSE(abstime>=0);
     R_ASSERT_RETURN_IF_FALSE(absabstime<0);
     MIXER_TRANSPORT_play(abstime); // This call will eventually trigger a new call to play_song, where 'called_from_jack_transport' is true.
@@ -721,7 +704,7 @@ void PLAYER_set_song_pos(int64_t pos, int64_t absabstime, bool called_from_jack_
   ATOMIC_DOUBLE_SET(pc->song_abstime, pos);
   pc->absabstime = absabstime;
   
-  if (false==called_from_jack_transport && useJackTransport())
+  if (false==called_from_jack_transport && isUsingJackTransport())
     MIXER_TRANSPORT_set_pos(pos);
   
   // The if-test is a fix for current line to go back to current sequencer position when stopping playing block.

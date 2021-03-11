@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <property name="elideMode">
       <enum>Qt::ElideNone</enum>
@@ -179,7 +179,7 @@
           <item row="2" column="3">
            <widget class="QLabel" name="label_16">
             <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;May make audio performance scale better if using several CPUs. But it can also cause CPU spikes if there are&lt;br&gt; plugins doing multi-threaded audio processing.&lt;/span&gt;Restart required&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;May make audio performance scale better if using several CPUs. But it can also cause CPU spikes if there are&lt;br&gt; plugins doing multi-threaded audio processing.&lt;/span&gt; (Restart required)&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
@@ -275,7 +275,7 @@
               <item>
                <widget class="QLabel" name="label_13">
                 <property name="text">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;A larger block size will cause less CPU usage at the cost of higher memory usage, lower accuracy of automation, and other things. &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Note 1: Setting the internal block size to a higher value than 64 should for now be considered an experimental feature. Please report any problems you may have. &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Note 2: Radium will not use a higher block size than the jack block size. &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; color:#ffffff;&quot;&gt;Restart required. &lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;A larger block size will cause less CPU usage at the cost of higher memory usage, lower accuracy of automation, and other things. &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Note 1: Setting the internal block size to a higher value than 64 should for now be considered an experimental feature. Please report any problems you may have. &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Note 2: The soundcard block size must be a multiple of the internal block size.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                 <property name="textFormat">
                  <enum>Qt::AutoText</enum>

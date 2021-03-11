@@ -3663,7 +3663,7 @@ bool RT_PLUGIN_can_autosuspend(const SoundPlugin *plugin, int64_t time){
       delay += (plugin->delay_time * MIXER_get_sample_rate() / 1000);
     
     // Add soundcard block size since we won't do this check again until the next soundcard block.
-    delay += g_jackblock_size;
+    delay += g_soundcardblock_size;
 
     // ...and we add some frames to eliminate rounding errors and possibly other minor things (system filters, etc.). (important for instruments that implement RT_get_audio_tail_length)
     delay += 64;
