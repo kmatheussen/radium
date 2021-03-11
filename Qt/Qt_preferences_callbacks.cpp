@@ -580,7 +580,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
         auto_recording_latency->setText(QString("System Out input-latency + Soundcard input+output latency. (")
                                         + QString::number(frames_to_ms(MIXER_get_latency_for_main_system_out()), 'f', 2) + "ms"
                                         + " + "
-                                        + QString::number(frames_to_ms(g_jack_system_input_latency + g_jack_system_output_latency), 'f', 2)
+                                        + QString::number(frames_to_ms(g_audio_system_input_latency + g_audio_system_output_latency), 'f', 2)
                                         + "ms)");
         
         custom_recording_latency->setText(QString("System Out input-latency + Custom recording latency. (")
@@ -605,7 +605,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
           default: break;
         }
 
-        //auto_midi_instrument_latency->setText("System Out input latency + Soundcard output latency. (" + QString::number(frames_to_ms(g_jack_system_output_latency), 'f', 2) + "ms)");
+        //auto_midi_instrument_latency->setText("System Out input latency + Soundcard output latency. (" + QString::number(frames_to_ms(g_audio_system_output_latency), 'f', 2) + "ms)");
         
         custom_midi_instrument_latency_value->setValue(getCustomMidiInstrumentLatency());
         

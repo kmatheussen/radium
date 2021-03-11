@@ -18,6 +18,7 @@
 #include "SoundPlugin_proc.h"
 #include "SoundfileSaver_proc.h"
 #include "Mixer_proc.h"
+#include "Juce_plugins_proc.h"
 
 #include "SoundPluginRegistry_proc.h"
 
@@ -35,22 +36,27 @@
 namespace{
   
 struct Data {
-  jack_client_t *client;
+  jack_client_t *client; // Is NULL if jack is not used.
   jack_port_t **input_ports;
   jack_port_t **output_ports;
+  bool is_system_in_or_out;
 };
 
 }
  
-static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *client, int num_inputs, int num_outputs, const char **input_portnames, const char **output_portnames){
+static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *client, int num_inputs, int num_outputs, const char **input_portnames, const char **output_portnames, bool is_system_in_or_out){
   Data *data = (Data*)V_calloc(1,sizeof(Data));
   data->client = client;
   data->input_ports=(jack_port_t**)V_calloc(num_outputs,sizeof(jack_port_t*));
   data->output_ports=(jack_port_t**)V_calloc(num_inputs,sizeof(jack_port_t*));
+  data->is_system_in_or_out = is_system_in_or_out;
 
-  int i;
+  if (client==NULL){
+    R_ASSERT(is_system_in_or_out==true);
+    return data;
+  }
 
-  for(i=0;i<num_outputs;i++){
+  for(int i=0;i<num_outputs;i++){
     static int n=0;
     char temp[500];
 
@@ -140,7 +146,7 @@ static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *clie
     
   }
 
-  for(i=0;i<num_inputs;i++){
+  for(int i=0;i<num_inputs;i++){
     static int n=0;
     char temp[500];
 
@@ -176,10 +182,10 @@ static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *clie
           
         } else {
 
-          if (g_jack_system_output_latency == 0){
+          if (g_audio_system_output_latency == 0){
             jack_latency_range_t range;
             jack_port_get_latency_range(physical_port, JackPlaybackLatency, &range);
-            g_jack_system_output_latency = R_MAX(0, (int)range.max);
+            g_audio_system_output_latency = R_MAX(0, (int)range.max);
           }
 
           if (data->output_ports[ch] == NULL) {
@@ -258,20 +264,46 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 
     if (GFX_OS_patch_is_system_out((struct Patch*)plugin->patch))
       SOUNDFILESAVER_write(inputs, type->num_inputs, num_frames);
-    
+
+    if (data->client==NULL)
+      return;
   }
 
-  for(int ch=0;ch<type->num_inputs;ch++)
-    if (data->output_ports[ch]!=NULL)
-      memcpy(((float*)jack_port_get_buffer(data->output_ports[ch],g_jackblock_size))+g_jackblock_delta_time,
-             inputs[ch],
-             sizeof(float)*num_frames);
-  
-  for(int ch=0;ch<type->num_outputs;ch++)
-    if (data->input_ports[ch]!=NULL)
-      memcpy(outputs[ch],
-             ((float*)jack_port_get_buffer(data->input_ports[ch],g_jackblock_size))+g_jackblock_delta_time,
-             sizeof(float)*num_frames);
+  if (data->client==NULL) {
+
+    R_ASSERT_NON_RELEASE(data->is_system_in_or_out);
+    
+    for(int ch=0;ch<R_MIN(type->num_inputs, g_juce_num_output_audio_channels);ch++){
+      //printf("%d\n", g_soundcardblock_delta_time);
+      if (g_juce_output_audio_channels[ch]!=NULL){
+        //if (ch==0) printf("Writing to ch %d. delta: %d. num_frames: %d\n", ch, g_soundcardblock_delta_time, num_frames);
+        JUCE_add_sound(g_juce_output_audio_channels[ch] + g_soundcardblock_delta_time,
+                       inputs[ch],
+                       num_frames);
+      }
+    }
+    
+    for(int ch=0;ch<R_MIN(type->num_outputs, g_juce_num_input_audio_channels);ch++)
+      if (g_juce_input_audio_channels[ch]!=NULL)
+        memcpy(outputs[ch],
+               g_juce_input_audio_channels+g_soundcardblock_delta_time,
+               sizeof(float)*num_frames); 
+    
+  } else {
+    
+    for(int ch=0;ch<type->num_inputs;ch++)
+      if (data->output_ports[ch]!=NULL)
+        memcpy(((float*)jack_port_get_buffer(data->output_ports[ch],g_soundcardblock_size))+g_soundcardblock_delta_time,
+               inputs[ch],
+               sizeof(float)*num_frames);
+    
+    for(int ch=0;ch<type->num_outputs;ch++)
+      if (data->input_ports[ch]!=NULL)
+        memcpy(outputs[ch],
+               ((float*)jack_port_get_buffer(data->input_ports[ch],g_soundcardblock_size))+g_soundcardblock_delta_time,
+               sizeof(float)*num_frames);
+
+  }
 }
 
 
@@ -287,7 +319,7 @@ void PLAYER_mute(void){
   OS_GFX_SetVolume(0);
 }
 
-static void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size, bool is_loading){
+static void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size, bool is_loading, bool is_system_in_or_out){
   const char *input_portnames[R_MAX(1, plugin_type->num_outputs)]; // R_MAX is here to make the undefined sanitizer be quiet
   const char *output_portnames[R_MAX(1, plugin_type->num_inputs)]; // R_MAX is here to make the undefined sanitizer be quiet
   int i;
@@ -301,8 +333,17 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, struct Sound
                      plugin_type->num_inputs,
                      plugin_type->num_outputs,
                      input_portnames,
-                     output_portnames
+                     output_portnames,
+                     is_system_in_or_out
                      );
+}
+
+static void *create_plugin_data_nonsystem(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size, bool is_loading){
+  return create_plugin_data(plugin_type, plugin, state, sample_rate, block_size, is_loading, false);
+}
+
+static void *create_plugin_data_system(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size, bool is_loading){
+  return create_plugin_data(plugin_type, plugin, state, sample_rate, block_size, is_loading, true);
 }
 
 static void called_after_system_out_has_been_created(const SoundPluginType *plugin_type, struct SoundPlugin *plugin){
@@ -325,14 +366,18 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
     }
   }
 
-  for(i=0;i<plugin->type->num_outputs;i++)
-    if(data->input_ports[i]!=NULL)
-      jack_port_unregister(data->client,data->input_ports[i]);
-
-  for(i=0;i<plugin->type->num_inputs;i++)
-    if(data->output_ports[i]!=NULL)
-      jack_port_unregister(data->client,data->output_ports[i]);
-
+  if (data->client != NULL) {
+    
+    for(i=0;i<plugin->type->num_outputs;i++)
+      if(data->input_ports[i]!=NULL)
+        jack_port_unregister(data->client,data->input_ports[i]);
+    
+    for(i=0;i<plugin->type->num_inputs;i++)
+      if(data->output_ports[i]!=NULL)
+        jack_port_unregister(data->client,data->output_ports[i]);
+    
+  }
+  
   V_free(data->input_ports);
   V_free(data->output_ports);
 
@@ -377,7 +422,7 @@ static void init_types(void){
  stereo_in_type.note_handling_is_RT      = false;
  stereo_in_type.num_effects              = 0;
  stereo_in_type.will_never_autosuspend   = true;
- stereo_in_type.create_plugin_data       = create_plugin_data;
+ stereo_in_type.create_plugin_data       = create_plugin_data_nonsystem;
  stereo_in_type.cleanup_plugin_data      = cleanup_plugin_data;
 
  stereo_in_type.create_state        = create_state;
@@ -395,7 +440,7 @@ static void init_types(void){
  stereo_out_type.note_handling_is_RT      = false;
  stereo_out_type.num_effects              = 0;
  stereo_out_type.will_never_autosuspend   = true;
- stereo_out_type.create_plugin_data       = create_plugin_data;
+ stereo_out_type.create_plugin_data       = create_plugin_data_nonsystem;
  stereo_out_type.cleanup_plugin_data      = cleanup_plugin_data;
 
  stereo_out_type.create_state        = create_state;
@@ -413,7 +458,7 @@ static void init_types(void){
  jack8_in_type.note_handling_is_RT      = false;
  jack8_in_type.num_effects              = 0;
  jack8_in_type.will_never_autosuspend   = true;
- jack8_in_type.create_plugin_data       = create_plugin_data;
+ jack8_in_type.create_plugin_data       = create_plugin_data_nonsystem;
  jack8_in_type.cleanup_plugin_data      = cleanup_plugin_data;
 
  jack8_in_type.create_state        = create_state;
@@ -431,7 +476,7 @@ static void init_types(void){
  jack8_out_type.note_handling_is_RT      = false;
  jack8_out_type.num_effects              = 0;
  jack8_out_type.will_never_autosuspend   = true;
- jack8_out_type.create_plugin_data       = create_plugin_data;
+ jack8_out_type.create_plugin_data       = create_plugin_data_nonsystem;
  jack8_out_type.cleanup_plugin_data      = cleanup_plugin_data;
 
  jack8_out_type.create_state        = create_state;
@@ -449,7 +494,7 @@ static void init_types(void){
  system_in_type.note_handling_is_RT      = false;
  system_in_type.num_effects              = 0;
  system_in_type.will_never_autosuspend   = true;
- system_in_type.create_plugin_data       = create_plugin_data;
+ system_in_type.create_plugin_data       = create_plugin_data_system;
  system_in_type.cleanup_plugin_data      = cleanup_plugin_data;
 
  system_in_type.create_state        = create_state;
@@ -467,7 +512,7 @@ static void init_types(void){
  system_in_type8.note_handling_is_RT      = false;
  system_in_type8.num_effects              = 0;
  system_in_type8.will_never_autosuspend   = true;
- system_in_type8.create_plugin_data       = create_plugin_data;
+ system_in_type8.create_plugin_data       = create_plugin_data_system;
  system_in_type8.cleanup_plugin_data      = cleanup_plugin_data;
 
  system_in_type8.create_state        = create_state;
@@ -486,7 +531,7 @@ static void init_types(void){
  system_out_type.note_handling_is_RT      = false;
  system_out_type.num_effects              = 0;
  system_out_type.will_never_autosuspend   = true;
- system_out_type.create_plugin_data       = create_plugin_data;
+ system_out_type.create_plugin_data       = create_plugin_data_system;
  system_out_type.cleanup_plugin_data      = cleanup_plugin_data;
 
  system_out_type.called_after_plugin_has_been_created = called_after_system_out_has_been_created;
@@ -506,7 +551,7 @@ static void init_types(void){
  system_out_type8.is_instrument            = false;
  system_out_type8.note_handling_is_RT      = false;
  system_out_type8.num_effects              = 0;
- system_out_type8.create_plugin_data       = create_plugin_data;
+ system_out_type8.create_plugin_data       = create_plugin_data_system;
  system_out_type8.cleanup_plugin_data      = cleanup_plugin_data;
 
  system_out_type8.called_after_plugin_has_been_created = called_after_system_out_has_been_created;
@@ -518,28 +563,27 @@ static void init_types(void){
 }
 
 
- 
-extern jack_client_t *g_jack_client;
-
 void create_jack_plugins(void){
   static bool has_inited = false;
   if (has_inited==false){
     init_types();
     has_inited = true;
   }
+
+  if (g_jack_client != NULL) {
+    stereo_in_type.data = g_jack_client;
+    PR_add_plugin_type(&stereo_in_type);
+    
+    jack8_in_type.data = g_jack_client;
+    PR_add_plugin_type(&jack8_in_type);
+    
+    stereo_out_type.data = g_jack_client;
+    PR_add_plugin_type(&stereo_out_type);
+    
+    jack8_out_type.data = g_jack_client;
+    PR_add_plugin_type(&jack8_out_type);
+  }
   
-  stereo_in_type.data = g_jack_client;
-  PR_add_plugin_type(&stereo_in_type);
-
-  jack8_in_type.data = g_jack_client;
-  PR_add_plugin_type(&jack8_in_type);
-
-  stereo_out_type.data = g_jack_client;
-  PR_add_plugin_type(&stereo_out_type);
-
-  jack8_out_type.data = g_jack_client;
-  PR_add_plugin_type(&jack8_out_type);
-
   //PR_add_menu_entry(PluginMenuEntry::separator());
   
   system_in_type.data = g_jack_client;

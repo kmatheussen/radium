@@ -132,6 +132,25 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../midi/midi_juce.cpp"
 #include "Smooth.cpp"
 
+namespace{
+  void *run_callback(void *arg){
+    std::function<void(void)> *callback = static_cast<std::function<void(void)> *>(arg);
+    (*callback)();
+    return NULL;
+  }
+  
+  void run_on_message_thread(std::function<void(void)> callback){
+    if (THREADING_is_main_thread())
+      juce::MessageManager::getInstance()->callFunctionOnMessageThread(run_callback, &callback); // Note that 'callFunctionOnMessageThread' checks if this is the message thread and calls directly if so.
+    else
+      R_ASSERT(false); // Calling callFunctionOnMessageThread on a player thread can cause deadlock.
+  }
+
+}
+
+
+#include "JuceAudioDevice.cpp"
+
 
 
 
@@ -174,19 +193,6 @@ namespace{
     }    
   };
 
-  
-  void *run_callback(void *arg){
-    std::function<void(void)> *callback = static_cast<std::function<void(void)> *>(arg);
-    (*callback)();
-    return NULL;
-  }
-  
-  void run_on_message_thread(std::function<void(void)> callback){
-    if (THREADING_is_main_thread())
-      juce::MessageManager::getInstance()->callFunctionOnMessageThread(run_callback, &callback); // Note that 'callFunctionOnMessageThread' checks if this is the message thread and calls directly if so.
-    else
-      R_ASSERT(false); // Calling callFunctionOnMessageThread on a player thread can cause deadlock.
-  }
   
   /*
   static bool is_au(const struct SoundPluginType *type) {
@@ -3093,8 +3099,8 @@ void PLUGINHOST_shut_down(void){
     juce::shutdownJuce_GUI();
 
   }
-  
-  printf(" PLUGINHOST_shut_down: Got it\n");
+
+  printf(" PLUGINHOST_shut_down 2: Got it\n");
 }
 
 #endif // defined(COMPILING_JUCE_PLUGINS_O)

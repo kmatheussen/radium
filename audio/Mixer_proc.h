@@ -10,7 +10,10 @@ extern LANGSPEC void PLAYER_memory_debug_wake_up(void);
 
 
 #define NUM_SYSTEM_INPUT_JACK_PORTS 8
-  
+
+#ifdef __jack_h__
+extern jack_client_t *g_jack_client;
+#endif
 
 extern DEFINE_ATOMIC(double, g_curr_song_tempo_automation_tempo);
 
@@ -100,12 +103,12 @@ static inline int MIXER_get_buffer_size(void){
   return RADIUM_BLOCKSIZE;
 }
 
-extern int g_jackblock_size; // Should only be accessed from player thread
-extern int g_jackblock_delta_time; // same here.
-extern int g_jack_system_input_latency;
-extern int g_jack_system_output_latency;
+extern int g_soundcardblock_size; // Should only be accessed from player thread
+extern int g_soundcardblock_delta_time; // same here.
+extern int g_audio_system_input_latency;
+extern int g_audio_system_output_latency;
 
-extern LANGSPEC int MIXER_get_remaining_num_jackblock_frames(void);
+extern LANGSPEC int MIXER_get_remaining_num_audioblock_frames(void);
 
 
 extern LANGSPEC struct SoundPlugin *MIXER_get_soundplugin(const char *type_name, const char *name);

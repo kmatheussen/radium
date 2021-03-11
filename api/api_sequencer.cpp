@@ -23,6 +23,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QSet>
 #include <QUuid>
 
+#include "../weakjack/weak_libjack.h"
+
 #include "../common/nsmtracker.h"
 #include "../common/sequencer_proc.h"
 #include "../common/seqtrack_automation_proc.h"
@@ -2366,6 +2368,15 @@ void setAutoscrollSequencerToMakePlaycursorVisible(bool doit){
 
 
 static DEFINE_ATOMIC(bool, g_use_jack_transport) = false;
+
+bool isUsingJack(void){
+  return g_jack_client != NULL;
+}
+
+bool isUsingJackTransport(void){
+  return isUsingJack() && useJackTransport();
+}
+
 
 bool useJackTransport(void){
   static bool has_inited = false;
