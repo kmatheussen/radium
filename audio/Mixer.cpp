@@ -595,7 +595,9 @@ static void RT_MIXER_check_if_at_least_two_soundproducers_are_selected(void);
 
 int g_soundcardblock_delta_time = 0;
 
-int g_soundcardblock_size = 0; // Should only be accessed from player thread
+int g_soundcardblock_size = 0; // Player and runner threads.
+DEFINE_ATOMIC(int, g_soundcardblock_size) = 0; // Any thread
+
 static DEFINE_ATOMIC(int, g_soundcardblock_size2) = 0;
 static DEFINE_ATOMIC(STime, audioblock_cycle_start_time) = 0;
 static DEFINE_ATOMIC(STime, audioblock_last_frame_stime) = 0;
@@ -1156,7 +1158,10 @@ struct Mixer{
     //if (num_frames >= RADIUM_BLOCKSIZE && (num_frames % RADIUM_BLOCKSIZE) != 0)
     //  num_frames = RADIUM_BLOCKSIZE;
 
-    g_soundcardblock_size = num_frames;
+    if (g_soundcardblock_size != num_frames) {
+      ATOMIC_SET(g_soundcardblock_size, num_frames);
+      g_soundcardblock_size = num_frames;
+    }
     //_sample_rate = samplerate;
     //pc->pfreq = samplerate;
     
@@ -2201,6 +2206,7 @@ bool MIXER_is_connected_to_system_out(const SoundProducer *sp){
 
 
 int MIXER_get_remaining_num_audioblock_frames(void){
+  R_ASSERT_NON_RELEASE(THREADING_is_player_or_runner_thread());
   return g_soundcardblock_size - g_soundcardblock_delta_time;
 }
 

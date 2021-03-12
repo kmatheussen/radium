@@ -103,7 +103,9 @@ static inline int MIXER_get_buffer_size(void){
   return RADIUM_BLOCKSIZE;
 }
 
-extern int g_soundcardblock_size; // Should only be accessed from player thread
+extern int g_soundcardblock_size; // Player and runner threads.
+extern DEFINE_ATOMIC(int, g_soundcardblock_size); // Any thread
+
 extern int g_soundcardblock_delta_time; // same here.
 extern int g_audio_system_input_latency;
 extern int g_audio_system_output_latency;
