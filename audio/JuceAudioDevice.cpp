@@ -173,7 +173,9 @@ public:
     }
   }
 
+#if 0
   bool _has_inited = false;
+#endif
   
   void audioDeviceIOCallback(const float ** 	inputChannelData, 
 			     int 	totalNumInputChannels, 
@@ -207,12 +209,15 @@ public:
       _buffer_size = numSamples;
     }
 #endif
-    
+
+#if 0
+    // Not necessary, juce have already done this.
     if (_has_inited==false){
       THREADING_acquire_player_thread_priority();
       _has_inited=true;
     }
-
+#endif
+    
 #if !defined(RELEASE)
     // Assert that it's legal to read input
     for(int i=0;i<totalNumInputChannels;i++)
@@ -336,6 +341,10 @@ public:
 
 static radium::JucePlayer *g_juce_player = NULL;
 
+bool JUCE_audio_set_audio_thread_priority_of_current_thread(void){
+  return juce::Thread::setCurrentThreadPriority(juce::Thread::realtimeAudioPriority);
+}
+  
 double JUCE_audio_get_sample_rate(void){
   return g_juce_player->_samplerate;
 }

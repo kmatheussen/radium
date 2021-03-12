@@ -10,6 +10,7 @@ extern const float **g_juce_input_audio_channels;
 extern int g_juce_num_output_audio_channels;  
 extern float **g_juce_output_audio_channels;
 
+extern bool JUCE_audio_set_audio_thread_priority_of_current_thread(void);
 extern double JUCE_audio_get_sample_rate(void);
 extern int JUCE_audio_get_buffer_size(void);
 extern double JUCE_audio_time_at_cycle_start(void);

@@ -118,33 +118,51 @@ void THREADING_acquire_player_thread_priority(void){
   // If we haven't started jack yet, we don"t have a proper value for g_jack_client_priority. And it's probably no any point setting realtime priority for a thread either.
   if (g_jack_client==NULL)
     return;
-    
-  int err = jack_acquire_real_time_scheduling(GET_CURRENT_THREAD(), g_jack_client_priority);
-  if (err != 0 && has_shown_warning==false) {
-#if 0 //def FOR_MACOSX
-    printf("jack_acquire_real_time_scheduling(GET_CURRENT_THREAD(), g_jack_client_priority); failed: %d\n", err);
-#endif
-    has_shown_warning=true;
-    RT_message("Unable to set real time priority. Error code: %d. (EPERM: %d) (errno: %d) (strerror: \"%s\")\n"
-               "\n"
-               "You should:\n"
-               "\n"
-               "1. Quit Radium\n"
-               "2. Stop Jack\n"
-               "3. Start Jack\n"
-               "4. Start Radium\n"
+
+  if (g_jack_client==NULL) {
+
+    if (!JUCE_audio_set_audio_thread_priority_of_current_thread()) {
+      if (has_shown_warning==false) {
+        has_shown_warning=true;
 #if defined(FOR_LINUX)
-               "\n"
-               "On Linux, you might also want to check your system configuration."
+        RT_message("Error: Unable to set real time priority.");
+#else
+        RT_message("Error: Unable to set real time priority. You might want to check your system configuration.");
 #endif
-               "\n\n"
-               , err,
-               EPERM,
-               errno,
-               strerror(errno)
-               );
+      }
+    }
     
+  } else {
+    
+    int err = jack_acquire_real_time_scheduling(GET_CURRENT_THREAD(), g_jack_client_priority);
+    
+    if (err != 0 && has_shown_warning==false) {
+#if 0 //def FOR_MACOSX
+      printf("jack_acquire_real_time_scheduling(GET_CURRENT_THREAD(), g_jack_client_priority); failed: %d\n", err);
+#endif
+      has_shown_warning=true;
+      RT_message("Unable to set real time priority. Error code: %d. (EPERM: %d) (errno: %d) (strerror: \"%s\")\n"
+                 "\n"
+                 "You should:\n"
+                 "\n"
+                 "1. Quit Radium\n"
+                 "2. Stop Jack\n"
+                 "3. Start Jack\n"
+                 "4. Start Radium\n"
+#if defined(FOR_LINUX)
+                 "\n"
+                 "On Linux, you might also want to check your system configuration."
+#endif
+                 "\n\n"
+                 , err,
+                 EPERM,
+                 errno,
+                 strerror(errno)
+                 );
+      
+    }
   }
+  
 #endif
 }
 
