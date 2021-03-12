@@ -115,10 +115,6 @@ void THREADING_acquire_player_thread_priority(void){
 #if 1
   static bool has_shown_warning = false;
 
-  // If we haven't started jack yet, we don"t have a proper value for g_jack_client_priority. And it's probably no any point setting realtime priority for a thread either.
-  if (g_jack_client==NULL)
-    return;
-
   if (g_jack_client==NULL) {
 
     if (!JUCE_audio_set_audio_thread_priority_of_current_thread()) {
@@ -812,6 +808,9 @@ struct Mixer{
   }
   
   bool start_jack(void){
+    if (have_libjack()!=0)
+      return false;
+      
     jack_status_t status;
 
     const char *client_name;
@@ -1580,7 +1579,7 @@ struct Mixer{
 static Mixer *g_mixer = NULL;
 
 
-#if defined(RELEASE)
+#if 1 //defined(RELEASE)
 static void maybe_warn_about_jack1(void){
 
   const char *config_name = "show_jack1_warning_during_startup";
@@ -1641,14 +1640,17 @@ bool MIXER_start(void){
   
   R_ASSERT(THREADING_is_main_thread());
 
-#if defined(RELEASE)
-  warning. this block should also be eabled in !release mode.
+#if 1 //defined(RELEASE)
+
+  if (have_libjack()==0) {
     
-  maybe_warn_about_jack1(); 
-  
-  if (KILLJACKD_kill_jackd_if_unresponsive()==true){
-    return false;
+    maybe_warn_about_jack1(); 
+    
+    if (KILLJACKD_kill_jackd_if_unresponsive()==true){
+      return false;
+    }
   }
+  
 #endif
   
   // Read a couple of settings variables from disk, so we don't read from disk in the realtime threads.
@@ -1683,7 +1685,8 @@ bool MIXER_start(void){
 
   //Sleep(3000);
 
-  check_jackd_arguments();
+  if (have_libjack()==0 && g_jack_client!=NULL)
+    check_jackd_arguments();
 
   // Multicore is initialized after starting jack, since the "runners" call THREADING_acquire_player_thread_priority in the constructor, which don't work before jack has started.
   MULTICORE_init();
