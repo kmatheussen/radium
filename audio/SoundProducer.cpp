@@ -444,7 +444,7 @@ public:
     if (is_event_link)
       return true;
 
-    if (g_soundcardblock_size < RADIUM_BLOCKSIZE) // rt_process is not called in this case, so we can't wait for it to fade out.
+    if (ATOMIC_GET(g_soundcardblock_size) < RADIUM_BLOCKSIZE) // rt_process is not called in this case, so we can't wait for it to fade out.
       return true;
   
     if(safe_bool_read(&RT_is_active))
