@@ -2388,13 +2388,16 @@ static void RT_record(Data *data, int num_frames, const float **instrument_input
   float *inputs_[NUM_CHANNELS_RECORDING_MATRIX];
   float **inputs = inputs_;
 
-  {
-    const int num_ch = NUM_CHANNELS_RECORDING_MATRIX;
+  static_assert(NUM_CHANNELS_RECORDING_MATRIX==NUM_INPUTS, "hmm");
+  static_assert(NUM_CHANNELS_RECORDING_MATRIX==NUM_OUTPUTS, "hmm");
+
+  int num_input_channels;
     
-    if (config.record_from_system_input)
-      R_ASSERT(MIXER_get_main_inputs(const_cast<const float**>(inputs), num_ch)==num_ch);
-    else
-      memcpy(inputs, instrument_inputs, sizeof(float*)*num_ch);
+  if (config.record_from_system_input) {
+    num_input_channels = MIXER_get_main_inputs(const_cast<const float**>(inputs), NUM_CHANNELS_RECORDING_MATRIX);
+  } else {
+    memcpy(inputs, instrument_inputs, sizeof(float*)*NUM_CHANNELS_RECORDING_MATRIX);
+    num_input_channels = NUM_CHANNELS_RECORDING_MATRIX;
   }
   
   // Output buffer (i.e. audio sent to soundfile)
@@ -2413,7 +2416,7 @@ static void RT_record(Data *data, int num_frames, const float **instrument_input
     bool has_been_used = false;
     bool has_been_used_more_than_once = false;
     
-    for(int input_ch=0;input_ch<NUM_CHANNELS_RECORDING_MATRIX;input_ch++) {
+    for(int input_ch=0;input_ch<num_input_channels;input_ch++) {
       
       if (config.matrix[input_ch][output_ch]==true) {
 

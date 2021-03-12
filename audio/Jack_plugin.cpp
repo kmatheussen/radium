@@ -249,6 +249,10 @@ static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *clie
 }
 
 
+#define NUM_MUTEXES 16
+static radium::Mutex *g_audio_out_mutexes = NULL;
+
+
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
   const SoundPluginType *type = plugin->type;
   Data *data = static_cast<Data*>(plugin->data);
@@ -272,22 +276,32 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   if (data->client==NULL) {
 
     R_ASSERT_NON_RELEASE(data->is_system_in_or_out);
+
+    const int min_num_audio_out_ch = R_MIN(type->num_inputs, g_juce_num_output_audio_channels);
     
-    for(int ch=0;ch<R_MIN(type->num_inputs, g_juce_num_output_audio_channels);ch++){
-      //printf("%d\n", g_soundcardblock_delta_time);
+    for(int ch=0 ; ch<min_num_audio_out_ch ; ch++){
+      
       if (g_juce_output_audio_channels[ch]!=NULL){
+        
+        radium::ScopedMutex lock(g_audio_out_mutexes[ch % NUM_MUTEXES]);
+
         //if (ch==0) printf("Writing to ch %d. delta: %d. num_frames: %d\n", ch, g_soundcardblock_delta_time, num_frames);
         JUCE_add_sound(g_juce_output_audio_channels[ch] + g_soundcardblock_delta_time,
                        inputs[ch],
-                       num_frames);
+                       num_frames
+                       );
       }
     }
+
+    const int min_num_audio_in_ch = R_MIN(type->num_outputs, g_juce_num_input_audio_channels);
     
-    for(int ch=0;ch<R_MIN(type->num_outputs, g_juce_num_input_audio_channels);ch++)
-      if (g_juce_input_audio_channels[ch]!=NULL)
+    for(int ch=0 ; ch<min_num_audio_in_ch ; ch++)
+      if (g_juce_input_audio_channels[ch]!=NULL){
         memcpy(outputs[ch],
-               g_juce_input_audio_channels+g_soundcardblock_delta_time,
-               sizeof(float)*num_frames); 
+               g_juce_input_audio_channels[ch]+g_soundcardblock_delta_time,
+               sizeof(float)*num_frames
+               );
+      }
     
   } else {
     
@@ -295,13 +309,15 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
       if (data->output_ports[ch]!=NULL)
         memcpy(((float*)jack_port_get_buffer(data->output_ports[ch],g_soundcardblock_size))+g_soundcardblock_delta_time,
                inputs[ch],
-               sizeof(float)*num_frames);
+               sizeof(float)*num_frames
+               );
     
     for(int ch=0;ch<type->num_outputs;ch++)
       if (data->input_ports[ch]!=NULL)
         memcpy(outputs[ch],
                ((float*)jack_port_get_buffer(data->input_ports[ch],g_soundcardblock_size))+g_soundcardblock_delta_time,
-               sizeof(float)*num_frames);
+               sizeof(float)*num_frames
+               );
 
   }
 }
@@ -567,6 +583,9 @@ void create_jack_plugins(void){
   static bool has_inited = false;
   if (has_inited==false){
     init_types();
+
+    g_audio_out_mutexes = new radium::Mutex[NUM_MUTEXES];
+    
     has_inited = true;
   }
 

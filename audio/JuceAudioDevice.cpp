@@ -23,9 +23,21 @@ class PrefsWindow
 public:
   
   PrefsWindow()
-    : juce::DialogWindow("Audio Settings", juce::Colours::black, true)
+    : juce::DialogWindow("Audio Settings",
+                         juce::Colours::lightgrey,
+                         //juce::Colours::black,
+                         true)
   {
     g_prefs_dialog = this;
+
+    {
+      static juce::LookAndFeel_V3 *s_lookandfeel = NULL;
+      if (s_lookandfeel==NULL)
+        s_lookandfeel = new juce::LookAndFeel_V3();
+      
+      this->setLookAndFeel(s_lookandfeel);
+    }
+    
 #if defined(FOR_LINUX)
     startTimer(1000);
 #endif
@@ -201,6 +213,15 @@ public:
       _has_inited=true;
     }
 
+#if !defined(RELEASE)
+    // Assert that it's legal to read input
+    for(int i=0;i<totalNumInputChannels;i++)
+      if(inputChannelData[i]!=NULL){
+        if (totalNumOutputChannels > 0 && outputChannelData[0] != NULL)
+          memcpy(outputChannelData[0], inputChannelData[i], sizeof(float)*numSamples);
+      }
+#endif
+    
     for(int i=0;i<totalNumOutputChannels;i++)
       if(outputChannelData[i]!=NULL){
         memset(outputChannelData[i], 0, sizeof(float)*numSamples);
