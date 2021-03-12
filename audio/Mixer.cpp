@@ -1130,14 +1130,17 @@ struct Mixer{
       ATOMIC_SET(_RT_process_has_inited, true);
     }
 
-
     RT_before_processing_audio_block_not_holding_lock();
 
     PlayerLock_Local player_lock;
 
+    // Make sure num_frames is legal. Seen some weird memory corruption errors when it's not. (note that the user should already have seen an error if num_frames is illegal)
+    //if (num_frames >= RADIUM_BLOCKSIZE && (num_frames % RADIUM_BLOCKSIZE) != 0)
+    //  num_frames = RADIUM_BLOCKSIZE;
+
     g_soundcardblock_size = num_frames;
-    _sample_rate = samplerate;
-    pc->pfreq = samplerate;
+    //_sample_rate = samplerate;
+    //pc->pfreq = samplerate;
     
 #if 0
     int64_t now_frame_time = (int64_t)jack_last_frame_time(_rjack_client);

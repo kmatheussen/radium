@@ -958,11 +958,13 @@ namespace{
       this->setOpaque(true);
       this->addToDesktop();//getDesktopWindowStyleFlags());
 
-      static juce::LookAndFeel_V3 *lookandfeel = NULL;
-      if (lookandfeel==NULL)
-        lookandfeel = new juce::LookAndFeel_V3();
-
-      this->setLookAndFeel(lookandfeel);
+      {
+        static juce::LookAndFeel_V3 *s_lookandfeel = NULL;
+        if (s_lookandfeel==NULL)
+          s_lookandfeel = new juce::LookAndFeel_V3();
+        
+        this->setLookAndFeel(s_lookandfeel);
+      }
       
       if(try_to_resize_editor())
         this->setResizable(true, true);
