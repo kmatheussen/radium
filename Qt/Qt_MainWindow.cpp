@@ -937,6 +937,10 @@ static int show_gfx_message(vector_t *buttons, bool program_state_is_valid, QStr
     return 0;
 
   ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create(true));
+
+  QFont font = msgBox->font();
+  font.setBold(false);
+  msgBox->setFont(font);
   
   msgBox->setText(message);
 
@@ -1006,7 +1010,11 @@ static int show_gfx_message(vector_t *buttons, bool program_state_is_valid, QStr
 
 bool g_force_regular_gfx_message = false;
 
+static DEFINE_ATOMIC(bool, g_is_showing_message) = false;
+
 int GFX_Message2_internal(vector_t *buttons, bool program_state_is_valid, const char *fmt,...){
+  ATOMIC_SET(g_is_showing_message, true);
+  
   bool is_main_thread = THREADING_is_main_thread();
   bool has_player_lock = PLAYER_current_thread_has_lock();
   
@@ -1031,6 +1039,7 @@ int GFX_Message2_internal(vector_t *buttons, bool program_state_is_valid, const 
       const char *message2 = talloc_format("  TESTING. show_gfx_message: %s. Num buttons: %d. Autoreturning false.\n", message, buttons==NULL ? 0 : buttons->num_elements);
       addMessage(message2);
       puts(message2);
+      ATOMIC_SET(g_is_showing_message, false);
       return 0;
     }
   }
@@ -1040,10 +1049,20 @@ int GFX_Message2_internal(vector_t *buttons, bool program_state_is_valid, const 
   if (is_main_thread && has_player_lock==false)
     EVENTLOG_add_event(talloc_strdup(message));
 
+  int ret;
+  
   if (g_force_regular_gfx_message || safe_to_run_exec())
-    return show_gfx_message(buttons, program_state_is_valid, QString(message));
+    ret = show_gfx_message(buttons, program_state_is_valid, QString(message));
   else
-    return SYSTEM_show_message_menu(buttons, message);
+    ret = SYSTEM_show_message_menu(buttons, message);
+
+  ATOMIC_SET(g_is_showing_message, false);
+  return ret;
+}
+
+// Note: Can be called from any thread
+bool GFX_is_showing_message(void){
+  return ATOMIC_GET(g_is_showing_message);
 }
 
 void GFX_addMessage_internal(const char *message){

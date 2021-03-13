@@ -4562,7 +4562,7 @@ void msleep(int ms){
 
 #if defined(FOR_LINUX)
   
-  // Not sure, but QThread::msleep may use a lot of CPU on linux since QTimer uses a lot of CPU on linux (think buzy-waits to be more accurate even when using the default "coarse timer". (The "very coarse timer" doesn't work at all on linux.)).
+  // Not sure, but QThread::msleep may use a lot of CPU on linux since QTimer uses a lot of CPU on linux (I think it buzy-waits to be more accurate even when using the default "coarse timer". (The "very coarse timer" doesn't work at all on linux.)).
   if (ms < 1000)
     usleep(1000*ms);
   else

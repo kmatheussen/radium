@@ -1,9 +1,9 @@
 
-int g_juce_num_input_audio_channels;
-const float **g_juce_input_audio_channels;
+int g_juce_num_input_audio_channels = 0;
+const float **g_juce_input_audio_channels = NULL;
 
-int g_juce_num_output_audio_channels;  
-float **g_juce_output_audio_channels;
+int g_juce_num_output_audio_channels = 0;
+float **g_juce_output_audio_channels = NULL;
 
   
 namespace radium{
@@ -12,10 +12,11 @@ class PrefsWindow;
   
 static class PrefsWindow *g_prefs_dialog = NULL;
 
+#define KEEP_PREFS_WINDOW_ON_TOP_REGULARLY 1
 
 class PrefsWindow
   : public juce::DialogWindow
-#if defined(FOR_LINUX)
+#if KEEP_PREFS_WINDOW_ON_TOP_REGULARLY
   , public juce::Timer
 #endif
 {
@@ -38,7 +39,7 @@ public:
       this->setLookAndFeel(s_lookandfeel);
     }
     
-#if defined(FOR_LINUX)
+#if KEEP_PREFS_WINDOW_ON_TOP_REGULARLY
     startTimer(1000);
 #endif
   }
@@ -47,10 +48,11 @@ public:
     g_prefs_dialog = NULL;
   }
 
-#if defined(FOR_LINUX)
+#if KEEP_PREFS_WINDOW_ON_TOP_REGULARLY
   void timerCallback() final {
     //printf("TIMERCALLGACN\n");
-    toFront(false); // Linux: shouldAlsoGainFocus==false doesn't work.
+    if (!is_showing_RT_message() && !GFX_is_showing_message())
+      toFront(false); // Linux: shouldAlsoGainFocus==false doesn't work.
   }
 #endif
   
@@ -155,10 +157,17 @@ public:
                                                                 _settings.get(),
                                                                 true  /* select default device on failure */));
     
+    // start the IO device pulling its data from our callback..
+    _audio_device_manager.addAudioCallback (this);
+      
     if (_audio_device_manager.getCurrentAudioDevice()==NULL || error.isNotEmpty()) {
 
-      // We also give error in Mixer.cpp though, but the error message might be useful. Should never happen though. I think JUCE falls back to dummy driver.
-      GFX_Message(NULL, "Audio device manager: \"%S\"", error.toWideCharPointer());
+      // We also give error in Mixer.cpp though, but the error message might be useful.
+      if (error.isNotEmpty())
+        GFX_Message(NULL, "Audio device manager: \"%S\"", error.toWideCharPointer());
+
+      _last_reported_samplerate = 48000;
+      _samplerate = 48000;
       
       return false;
       
@@ -166,8 +175,6 @@ public:
       
       //isinitialized=true;
 	
-      // start the IO device pulling its data from our callback..
-      _audio_device_manager.addAudioCallback (this);
       return true;
       
     }
@@ -185,6 +192,26 @@ public:
 			     )
     override
   {
+    if (numSamples < RADIUM_BLOCKSIZE || MIXER_dummy_driver_is_running()){
+
+      if (!MIXER_dummy_driver_is_running()){
+        
+        R_ASSERT_NON_RELEASE(false);
+        MIXER_start_dummy_driver();
+        
+      }
+      
+      R_ASSERT_NON_RELEASE(numSamples < RADIUM_BLOCKSIZE);
+      
+      return;
+      
+    } else {
+
+      R_ASSERT_NON_RELEASE(!MIXER_dummy_driver_is_running());
+      R_ASSERT_NON_RELEASE(numSamples >= RADIUM_BLOCKSIZE);
+      
+    }
+    
     double now = RT_TIME_get_ms();
     //printf("Time: %f\n", now - _time_cycle_start);
     _time_cycle_start = now;
@@ -282,7 +309,8 @@ public:
                                     true
                                     );
     */
-    
+
+#if !KEEP_PREFS_WINDOW_ON_TOP_REGULARLY
 #if FOR_WINDOWS
     {
       void *parent = API_get_native_gui_handle(-1);
@@ -293,7 +321,8 @@ public:
       }
     }
 #endif
-
+#endif
+    
     /*
     if(_audio_device_manager.getCurrentAudioDevice()==NULL)
       printf("gakk\n");
@@ -317,20 +346,46 @@ public:
     
     int buffer_size = device->getCurrentBufferSizeSamples();
 
-    if (buffer_size < RADIUM_BLOCKSIZE || (buffer_size % RADIUM_BLOCKSIZE) != 0)
-      GFX_Message(NULL,
-                  "Error: Soundcard buffer size must be a multiple of the internal block size."
-                  "<UL>"
-                  "<LI>Soundcard buffer size: %d"
-                  "<LI>Internal block size: %d"
-                  "</UL>"
-                  "You can adjust the internal block size under <b>Edit -> Preferences -> Audio -> internal block size.</b>",
-                  buffer_size, RADIUM_BLOCKSIZE);
+    if (buffer_size < RADIUM_BLOCKSIZE || (buffer_size % RADIUM_BLOCKSIZE) != 0){
+      THREADING_run_on_main_thread_async([buffer_size]
+                                         {
+                                           GFX_Message(NULL,
+                                                       "Error: Soundcard buffer size must be a multiple of the internal block size."
+                                                       "<UL>"
+                                                       "<LI>Soundcard buffer size: %d"
+                                                       "<LI>Internal block size: %d"
+                                                       "</UL>"
+                                                       "You can adjust the internal block size under <b>Edit -> Preferences -> Audio -> internal block size.</b>",
+                                                       buffer_size, RADIUM_BLOCKSIZE);
+                                         });
+    }
+
+    if (buffer_size < RADIUM_BLOCKSIZE) {
+      
+      if (!MIXER_dummy_driver_is_running())
+        MIXER_start_dummy_driver();
+      
+    } else {
+      
+      if (MIXER_dummy_driver_is_running())
+        MIXER_stop_dummy_driver();
+      
+    }
   }
   
   void audioDeviceStopped() override
   {
     printf("Audio device stopped\n");
+
+    g_juce_num_input_audio_channels = 0;
+    g_juce_input_audio_channels = NULL;
+
+    g_juce_num_output_audio_channels = 0;
+    g_juce_output_audio_channels = NULL;
+
+    if (!MIXER_dummy_driver_is_running())
+      MIXER_start_dummy_driver();
+    
     return;
   }
 

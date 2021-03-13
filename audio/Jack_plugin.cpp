@@ -273,6 +273,9 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
       return;
   }
 
+  if (MIXER_dummy_driver_is_running())
+    return;
+  
   if (data->client==NULL) {
 
     R_ASSERT_NON_RELEASE(data->is_system_in_or_out);

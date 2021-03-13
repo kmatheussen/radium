@@ -239,9 +239,6 @@ void PlayStop_from_jack_transport(void){
 static void start_player(int playtype, double abstime, int64_t absabstime, const Place *place, struct Blocks *block, struct SeqTrack *seqtrack, struct SeqBlock *seqblock){
   R_ASSERT(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPED);
 
-  if (PLAYER_is_running()==false)
-    return;
-  
   if (abstime<0)
     R_ASSERT(absabstime>=0);
   else if (absabstime<0)
