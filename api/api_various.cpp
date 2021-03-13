@@ -1998,7 +1998,7 @@ void openAboutWindow(void){
               "<p>"
               "<A href=\"https://users.notam02.no/~kjetism/radium/documentation.php#acknowledgment\">Credits</A>"
               "<p>"
-              "Jack samplerate: %d<br>"
+              "Audio: %dHz / %.02fms<br>"
               "Monitor refresh rate: %s<br>"
               "Control port: %d"
               "<p>"
@@ -2011,7 +2011,7 @@ void openAboutWindow(void){
               ATOMIC_GET(GE_version_string)==NULL ? "(null)" : ATOMIC_GET(GE_version_string),
               ATOMIC_GET(GE_opengl_version_flags),
               GFX_qVersion(),
-              (int)MIXER_get_sample_rate(),
+              (int)MIXER_get_sample_rate(), frames_to_ms(ATOMIC_GET(g_soundcardblock_size)),
               vblank < 0 ? "Refresh rate not detected" : talloc_format("%.2f", 1000.0 / vblank),
               SCHEME_get_webserver_port(),
               minutes, seconds, s2
