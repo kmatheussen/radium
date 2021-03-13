@@ -1354,7 +1354,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
     for(int ch=0;ch<num_ch;ch++)
       audio_[ch] += data->recording_start_frame;
 
-    R_ASSERT_RETURN_IF_FALSE(num_ch==data->recorder_instance->num_ch);
+    //R_ASSERT_RETURN_IF_FALSE(num_ch==data->recorder_instance->num_ch);
     
     /*
       // No need. Mixer always have at least 2 channels, and data->recorder->num_ch can never have more than 2 channels.
@@ -1363,10 +1363,10 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
       audio[ch] = empty_block;
     */
     
-    if (false==RT_SampleRecorder_add_audio(data->recorder_instance,
-                                           const_cast<const float**>(audio),
-                                           RADIUM_BLOCKSIZE - data->recording_start_frame
-                                           ))
+    if (num_ch!=data->recorder_instance->num_ch || false==RT_SampleRecorder_add_audio(data->recorder_instance,
+                                                                                      const_cast<const float**>(audio),
+                                                                                      RADIUM_BLOCKSIZE - data->recording_start_frame
+                                                                                      ))
       {
         struct Patch *patch = (struct Patch*)plugin->patch;
         
@@ -3514,8 +3514,7 @@ static bool set_new_sample(struct SoundPlugin *plugin,
     
     ATOMIC_SET(old_data->new_data, data);
 
-    if (PLAYER_is_running())
-      RSEMAPHORE_wait(old_data->signal_from_RT,1);
+    RSEMAPHORE_wait(old_data->signal_from_RT,1);
 
   } else {
 
@@ -3684,6 +3683,9 @@ void SAMPLER_start_recording(struct SoundPlugin *plugin, filepath_t pathdir, int
 #if !defined(RELEASE)
   R_ASSERT_RETURN_IF_FALSE(!strcmp("Sample Player", plugin->type->type_name));
 #endif
+
+  if (MIXER_dummy_driver_is_running())
+    return;
   
   R_ASSERT_RETURN_IF_FALSE(num_channels > 0);
 

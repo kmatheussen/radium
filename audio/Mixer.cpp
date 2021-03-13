@@ -105,12 +105,6 @@ struct CpuUsage g_cpu_usage;
 
 DEFINE_ATOMIC(int64_t, g_last_mixer_time) = 0;
 
-static DEFINE_ATOMIC(bool, g_jack_is_running) = true;
-
-bool PLAYER_is_running(void){
-  return ATOMIC_GET(g_jack_is_running);
-}
-
 void THREADING_acquire_player_thread_priority(void){
 #if 1
   static bool has_shown_warning = false;
@@ -775,10 +769,7 @@ struct Mixer{
       
     }PLAYER_unlock();
 
-#if defined(RELEASE)
-    if (PLAYER_is_running())
-#endif
-      SP_call_me_after_solo_has_changed();
+    SP_call_me_after_solo_has_changed();
   }
 
   void set_jack_output_latency(void) const {
@@ -836,7 +827,6 @@ struct Mixer{
     }
         
     _rjack_client = jack_client_open(client_name,JackNoStartServer,&status,NULL);
-    g_jack_client = _rjack_client;
 
     if (_rjack_client == NULL) {
       fprintf (stderr, "jack_client_open() failed, "
@@ -866,29 +856,37 @@ struct Mixer{
     // No, if that happens, jack should be resetted.
     //jack_set_freewheel(_rjack_client, 0);
   
-    _sample_rate = jack_get_sample_rate(_rjack_client);
-    _buffer_size = jack_get_buffer_size(_rjack_client);
     //if(_buffer_size < RADIUM_BLOCKSIZE)
     //  GFX_Message(NULL, "Jack's blocksize of %d is less than Radium's block size of %d. You will get bad sound. Adjust your audio settings.", _buffer_size, RADIUM_BLOCKSIZE);
-    
-    if(_buffer_size < RADIUM_BLOCKSIZE){
 
-      SETTINGS_write_int("audio_block_size",_buffer_size);
+    int buffer_size = jack_get_buffer_size(_rjack_client);
+
+    if(buffer_size < RADIUM_BLOCKSIZE){
+
+      //SETTINGS_write_int("audio_block_size",_buffer_size);
       
       GFX_Message(NULL,
-                  "Radium's internal block size (%d) is higher than Jack's block size (%d). This is not supported.\n"
-                  "Radium block size has now been set to %d, but Radium needs to restart first. After program is finished shutting down, please start Radium again."
+                  "Radium's internal block size (%d) is higher than Jack's block size (%d). This is not supported. Program will not use jack.\n"
+                  //"Radium block size has now been set to %d, but Radium needs to restart first. After program is finished shutting down, please start Radium again."
                   ,
-                  RADIUM_BLOCKSIZE, _buffer_size, _buffer_size);
+                  RADIUM_BLOCKSIZE, buffer_size);
+
+      jack_client_close(_rjack_client);
+      _rjack_client = NULL;
       
       return false;
       
-    } else if((_buffer_size % RADIUM_BLOCKSIZE) != 0) {
+    } else if((buffer_size % RADIUM_BLOCKSIZE) != 0) {
       
-      GFX_Message(NULL, "Jack's blocksize of %d is not dividable by Radium's block size of %d. You will get bad sound. Adjust your audio settings.", _buffer_size, RADIUM_BLOCKSIZE);
+      GFX_Message(NULL, "Jack's blocksize of %d is not dividable by Radium's block size of %d. You will get bad sound. Adjust your audio settings.", buffer_size, RADIUM_BLOCKSIZE);
 
     }
+
+    _sample_rate = jack_get_sample_rate(_rjack_client);
+    _buffer_size = buffer_size;
     
+    g_jack_client = _rjack_client;
+
     g_jack_client_priority = jack_client_real_time_priority(_rjack_client);
 
     if(_sample_rate<100.0)
@@ -1044,6 +1042,8 @@ struct Mixer{
       RSEMAPHORE_signal(g_saving_sound_has_started,1);
     }
 
+    R_ASSERT_NON_RELEASE(!MIXER_dummy_driver_is_running());
+          
     if (!mixer->_is_saving_sound)
       mixer->RT_process_audio_block(num_frames, samplerate);
     
@@ -1139,6 +1139,8 @@ struct Mixer{
     debug_wait.wait(&debug_mutex, 1000*10); // Speed up valgrind
 #endif
 
+    R_ASSERT_NON_RELEASE(num_frames >= RADIUM_BLOCKSIZE);
+    
     if (ATOMIC_GET_RELAXED(_RT_process_has_inited)==false || THREADING_init_player_thread_type()){
       AVOIDDENORMALS;
       
@@ -1344,10 +1346,50 @@ struct Mixer{
     RT_call_functions_scheduled_to_run_on_player_thread();
   }
 
+  DEFINE_ATOMIC(bool, _dummy_driver_is_running) = false;
+  std::thread _dummy_driver_thread;
+
+  // Note: Might be called from the JUCE message thread or from the jack shutdown thread.
+  void start_dummy_driver(void){
+    if (ATOMIC_SET_RETURN_OLD(_dummy_driver_is_running, true)==true) {
+      R_ASSERT_NON_RELEASE(false);
+      return;
+    }
+    
+    _dummy_driver_thread = std::thread([this](){
+
+        int blocksize = RADIUM_BLOCKSIZE;
+        while(blocksize < 2048)
+          blocksize += RADIUM_BLOCKSIZE;
+        
+        while(ATOMIC_GET(_dummy_driver_is_running)){
+          RT_process_audio_block(blocksize, _sample_rate);
+          QThread::msleep(frames_to_ms(blocksize));
+        }
+        
+      });
+  }
+
+  // Note: Might be called from the JUCE message thread or from the jack shutdown thread.
+  void stop_dummy_driver(void){
+    if (ATOMIC_SET_RETURN_OLD(_dummy_driver_is_running, false)==false) {      
+      R_ASSERT_NON_RELEASE(false);
+      return;
+    }
+
+    _dummy_driver_thread.join();
+  }
+
+  // Note: Might be called from JUCE message thread.
+  bool dummy_driver_is_running(void){
+    return ATOMIC_GET(_dummy_driver_is_running);
+  }
+
 
   static int RT_jack_process(jack_nframes_t nframes, void *arg){
     Mixer *mixer = static_cast<Mixer*>(arg);
-    mixer->RT_process_audio_block(nframes, mixer->_sample_rate);
+    if (!MIXER_dummy_driver_is_running())
+      mixer->RT_process_audio_block(nframes, mixer->_sample_rate);
     return 0;
   }
   
@@ -1366,8 +1408,9 @@ struct Mixer{
   }
 
   static void RT_rjack_shutdown(jack_status_t code, const char *reason, void *arg){
-    ATOMIC_SET(g_jack_is_running, false); // must be set before rt_message to avoid deadlock
-    ATOMIC_SET(pc->player_state, PLAYER_STATE_STOPPED);
+    if (!MIXER_dummy_driver_is_running())
+      MIXER_start_dummy_driver();
+    
     RT_message("The jack server shut down\n"
                "(Reason from the server: \"%s\").\n"
                "\n"
@@ -1375,33 +1418,46 @@ struct Mixer{
                "1. Save.\n"
                "2. Exit Radium.\n"
                "3. Start Jack again.\n"
-               "4. Start Radium again.\n"
-               "\n"
-               "Radium can be unstable if you do other operations.",
+               "4. Start Radium again.\n",
                reason
                );
   }
   
-  static int RT_rjack_buffer_size_changed(jack_nframes_t num_frames, void *arg){
+  static int RT_rjack_buffer_size_changed(jack_nframes_t num_frames2, void *arg){
+
+    int num_frames = num_frames2;
     
     Mixer *mixer = static_cast<Mixer*>(arg);
 
-    if (mixer->_buffer_size==(int)num_frames)
-      return 0;
-    
-    lock_player();{  // Not sure which thread this callback is called from.
-      mixer->_buffer_size = num_frames;
-
-      //for (SoundProducer *sp : mixer->_sound_producers)
-      //  SP_set_buffer_size(sp, mixer->_buffer_size);
-      
-    }unlock_player();
-
-
     //const char *main_message = "Error: Radium does not officially support changing jack block size during runtime. It might work, it might not work. You should save your song and restart Radium to avoid undefined behavior.";
-               
-    if( (mixer->_buffer_size % RADIUM_BLOCKSIZE) != 0)
-      RT_message("jack's blocksize of %d is not dividable by Radium's block size of %d. You will get bad sound. Adjust your audio settings.", mixer->_buffer_size, RADIUM_BLOCKSIZE);
+
+    if (num_frames < RADIUM_BLOCKSIZE){
+      
+       RT_message("jack's blocksize (%d) can not be smaller than Radium's internal block size of %d.", num_frames, RADIUM_BLOCKSIZE);
+       if (!MIXER_dummy_driver_is_running())
+         MIXER_start_dummy_driver();
+
+    } else {
+
+      if (MIXER_dummy_driver_is_running())
+         MIXER_stop_dummy_driver();
+
+      if ((num_frames % RADIUM_BLOCKSIZE) != 0)
+        RT_message("jack's blocksize of %d is not dividable by Radium's block size of %d. You will get bad sound. Adjust your audio settings.", num_frames, RADIUM_BLOCKSIZE);
+      
+      if (mixer->_buffer_size!=(int)num_frames) {
+        
+        lock_player();{  // Not sure which thread this callback is called from.
+          mixer->_buffer_size = num_frames;
+          
+          //for (SoundProducer *sp : mixer->_sound_producers)
+          //  SP_set_buffer_size(sp, mixer->_buffer_size);
+          
+        }unlock_player();
+      }
+    }
+
+    
     //else
     //  RT_message("%s", main_message);
 
@@ -1632,9 +1688,20 @@ static void maybe_warn_about_jack1(void){
       SETTINGS_write_bool(config_name, false);
 
   }
-
 }
 #endif
+
+void MIXER_start_dummy_driver(void){
+  g_mixer->start_dummy_driver();
+}
+
+void MIXER_stop_dummy_driver(void){
+  g_mixer->stop_dummy_driver();
+}
+
+bool MIXER_dummy_driver_is_running(void){
+  return g_mixer->dummy_driver_is_running();
+}
 
 bool MIXER_start(void){
   
@@ -1670,11 +1737,17 @@ bool MIXER_start(void){
 
       ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create(true));
       msgBox->setIcon(QMessageBox::Critical);
-      msgBox->setText("Unable to start audio driver. Can't start program.");
+      msgBox->setText("Unable to start audio driver. Configure audio under <b>Edit -> Soundcard preferences</b>");
       msgBox->setStandardButtons(QMessageBox::Ok);
       safeExec(msgBox, false);
+
+      g_mixer->_sample_rate = JUCE_audio_get_sample_rate();
+      g_mixer->_buffer_size = 1024;
+      pc->pfreq = g_mixer->_sample_rate;
       
-      return false;
+      MIXER_start_dummy_driver();
+
+      //return false;
     }
 
 
@@ -1712,6 +1785,9 @@ void MIXER_stop(void){
     jack_client_close(g_mixer->_rjack_client);
 
   JUCE_stop_audio_device();
+
+  if (MIXER_dummy_driver_is_running())
+    MIXER_stop_dummy_driver();
   
   has_been_called=true;
 }
@@ -1912,6 +1988,10 @@ STime MIXER_get_block_delta_time(STime time){
 }
 
 int MIXER_get_main_inputs(const float **audio, int max_num_ch){
+  if (MIXER_dummy_driver_is_running()){
+    return 0;
+  }
+  
   if (g_jack_client==NULL) {
 
     int ch_out = 0;
@@ -1956,8 +2036,11 @@ float MIXER_get_curr_audio_block_cycle_fraction(void){
   if (!THREADING_is_player_thread())
     printf("MIXER_get_curr_audio_block_cycle_fraction: Warning, not called from player thread\n");
 #endif
+
+  if (MIXER_dummy_driver_is_running())
+    return 0.1;
   
-  if (g_jack_client==NULL) {
+  else if (g_jack_client==NULL) {
 
     return MIXER_get_curr_audio_block_cycle_fraction2(JUCE_audio_time_at_cycle_start());
     

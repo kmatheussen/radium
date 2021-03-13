@@ -444,9 +444,6 @@ public:
     if (is_event_link)
       return true;
 
-    if (ATOMIC_GET(g_soundcardblock_size) < RADIUM_BLOCKSIZE) // rt_process is not called in this case, so we can't wait for it to fade out.
-      return true;
-  
     if(safe_bool_read(&RT_is_active))
       return false;
       
@@ -1009,13 +1006,8 @@ public:
   ~SoundProducer(){
     R_ASSERT(THREADING_is_main_thread());
 
-    if (PLAYER_is_running()) {
-      R_ASSERT(_input_links.size()==0);
-      R_ASSERT(_output_links.size()==0);
-    }else{
-      R_ASSERT_NON_RELEASE(_input_links.size()==0);
-      R_ASSERT_NON_RELEASE(_output_links.size()==0);
-    }
+    R_ASSERT(_input_links.size()==0);
+    R_ASSERT(_output_links.size()==0);
 
     MIXER_remove_SoundProducer(this);
 
@@ -1638,9 +1630,6 @@ public:
   }
 
   bool add_eventSoundProducerInput(SoundProducer *source){
-    if (PLAYER_is_running()==false)
-      return false;
-
     bool is_recursive = source->is_recursive(this); // Just used for assertion.
     /*
     if(source->is_recursive(this)==true){
@@ -1662,9 +1651,6 @@ public:
   
   bool add_SoundProducerInput(SoundProducer *source, int source_ch, int target_ch){
     //fprintf(stderr,"*** this: %p. Adding input %p / %d,%d\n",this,sound_producer,sound_producer_ch,ch);
-
-    if (PLAYER_is_running()==false)
-      return false;
 
     bool is_recursive = source->is_recursive(this); // Only used for assertion.
 
@@ -1706,9 +1692,6 @@ public:
   }
   
   void remove_eventSoundProducerInput(const SoundProducer *source){
-    if (PLAYER_is_running()==false)
-      return;
-
     SoundProducerLink *link = find_input_event_link(source);
     if (link!=NULL){
       SoundProducer::remove_link(link);
@@ -1767,9 +1750,6 @@ public:
   
   void remove_SoundProducerInput(const SoundProducer *source, int source_ch, int target_ch){
     //printf("**** Asking to remove connection\n");
-
-    if (PLAYER_is_running()==false)
-      return;
 
     SoundProducerLink *link = find_input_audio_link(source, source_ch, target_ch);
     if (link!=NULL)
@@ -2441,9 +2421,6 @@ bool SP_add_and_remove_links(const radium::LinkParameters &parm_to_add,
 
   //printf("     SP_add_and-remove. Num to add: %d. Num to remove: %d.\n", parm_to_add.size(), parm_to_remove.size());
   
-  if (PLAYER_is_running()==false)
-    return false;
-
   if (parm_to_add.size()==0 && parm_to_remove.size()==0)
     return false;
   

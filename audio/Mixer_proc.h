@@ -17,8 +17,10 @@ extern jack_client_t *g_jack_client;
 
 extern DEFINE_ATOMIC(double, g_curr_song_tempo_automation_tempo);
 
-extern LANGSPEC bool PLAYER_is_running(void);
-  
+extern LANGSPEC void MIXER_start_dummy_driver(void);
+extern LANGSPEC void MIXER_stop_dummy_driver(void);
+extern LANGSPEC bool MIXER_dummy_driver_is_running(void);
+
 extern LANGSPEC bool MIXER_start(void);
 extern LANGSPEC void MIXER_stop(void);
 

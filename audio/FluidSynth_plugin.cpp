@@ -513,8 +513,7 @@ bool FLUIDSYNTH_set_new_preset(SoundPlugin *plugin, filepath_t sf2_file, int ban
 
       ATOMIC_SET(data->new_data, new_data);
 
-      if (PLAYER_is_running())
-        RSEMAPHORE_wait(data->signal_from_RT,1);
+      RSEMAPHORE_wait(data->signal_from_RT,1);
 
     } else{
 

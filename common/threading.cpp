@@ -405,8 +405,6 @@ void radium::Scheduled_RT_functions::wait_until_ready_to_run_is_finished(radium:
     return;
   
   while(true){
-    if (!PLAYER_is_running())
-      break;
         
     if (ready_to_run->finished_running())
       break;

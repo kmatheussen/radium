@@ -909,18 +909,9 @@ static bool CONNECTIONS_apply_changes(QGraphicsScene *scene, const changes::Audi
   }
 
 
-  if (PLAYER_is_running()==true){ // Player is always running except when starting up, shutting down, and jack has stopped. (and possible sometimes when rendering, not sure).
-    
-    // Create/remove mixer connections
-    if (SP_add_and_remove_links(add_linkparameters, remove_linkparameters, changes.solo_changes, changes.rt_functions)==false)
-      return false;
-        
-  } else {
-
-    if (add_linkparameters.size()==0 && remove_linkparameters.size()==0)
-      return false;
-    
-  }
+  // Create/remove mixer connections
+  if (SP_add_and_remove_links(add_linkparameters, remove_linkparameters, changes.solo_changes, changes.rt_functions)==false)
+    return false;
 
   QSet<const struct Patch *> mixerstrips_to_remake;
   QSet<const struct Patch *> mixerstrips_to_redraw;

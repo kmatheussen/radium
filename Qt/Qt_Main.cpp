@@ -2262,10 +2262,6 @@ protected:
     //if (qapplication->activeWindow() != NULL)
     //  printf("   active window\n");
     
-    // Check if player has shut down
-    if (PLAYER_is_running()==false)
-      PlayStop();
-
     MIXER_call_very_often();
     
     PLUGIN_call_me_very_often_from_main_thread();
@@ -2517,6 +2513,10 @@ void RT_message_internal(const char *fmt,...){
   ATOMIC_SET(rt_message_status, RT_MESSAGE_READY_FOR_SHOWING);
 }
 
+// Note: Can be called from any thread.
+bool is_showing_RT_message(void){
+  return ATOMIC_GET(rt_message_status) != RT_MESSAGE_READY;
+}
 
 bool RT_jack_transport_play_request_is_finished(void){
   return ATOMIC_GET(g_request_from_jack_transport_to_start_playing) == -1;
@@ -4583,7 +4583,7 @@ int main(int argc, char **argv){
 #endif
 
   g_program_has_ended = true;
-  
+
   //RError("hepp");
   return 0;
 }
