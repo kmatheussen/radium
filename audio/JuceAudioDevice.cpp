@@ -1,3 +1,4 @@
+#include <windows.h>
 
 int g_juce_num_input_audio_channels = 0;
 const float **g_juce_input_audio_channels = NULL;
@@ -422,7 +423,7 @@ static radium::JucePlayer *g_juce_player = NULL;
 
 bool JUCE_audio_set_audio_thread_priority_of_current_thread(void){
 #if defined(FOR_WINDOWS)
-  if (SetThreadPriority(thread, THREAD_PRIORITY_TIME_CRITICAL))
+  if (SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL))
     return true;
   else
     return false;
