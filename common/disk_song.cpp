@@ -100,6 +100,8 @@ DC_start("SONG");
 DC_end();
 }
 
+bool g_is_loading_mixer = false;
+
 struct Song *LoadSong(void){
 	const char *objs[7]={
 		"TRACKER_WINDOW",
@@ -175,19 +177,23 @@ obj2:
 	LoadPlayList(); // Used in older songs instead of sequencer.
 	goto start;
 obj3:
+        GFX_ShowProgressMessage("Loading instruments", true);
         LoadInstrument();
 	goto start;
 
 obj4:
         {
+          g_is_loading_mixer = true;
+          GFX_ShowProgressMessage("Loading mixer", true);
           hash_t *mixer_state = HASH_load(dc.file);
           DC_fgets();
-          
+          g_is_loading_mixer = false;
           song->mixerwidget_state = mixer_state;
           goto start;
         }
 obj5:
         {
+          GFX_ShowProgressMessage("Loading sequencer", true);
           g_sequencer_state = HASH_load(dc.file);          
           DC_fgets();
 

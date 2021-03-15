@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "OS_settings_proc.h"
 #include "OS_disk_proc.h"
 #include "ratio_funcs.h"
+#include "disk.h"
 
 #include "../api/api_proc.h"
 
@@ -1379,6 +1380,8 @@ static wchar_t *read_line(disk_t *file){
 
 #define READ_LINE(file) read_line(file); if (line==NULL) return NULL;
 
+static vector_t g_load_rec_progress = {0};
+
 hash_t *HASH_load2(disk_t *file, bool return_null_for_unsupported_hasmap_versions){
 
   wchar_t *line = L"";
@@ -1428,7 +1431,10 @@ hash_t *HASH_load2(disk_t *file, bool return_null_for_unsupported_hasmap_version
   hash->version = version;
 
   line = READ_LINE(file);
-  
+
+  float *gakk = NULL;
+  int i=0;
+
   while(!STRING_equals(line,"<< HASH MAP END")
         && !STRING_equals(line,"<< HASH MAP V2 END")
         && !STRING_equals(line,"<< HASH MAP V3 END")
@@ -1436,6 +1442,26 @@ hash_t *HASH_load2(disk_t *file, bool return_null_for_unsupported_hasmap_version
         && !STRING_equals(line,"<< HASH MAP V5 END")
         )
     {
+      if (g_is_loading_mixer && GFX_ProgressIsOpen()){
+
+        if (gakk==NULL) {
+          gakk = talloc(sizeof(float));
+          VECTOR_push_back(&g_load_rec_progress, gakk);
+        }
+  
+        *gakk = (float)i / (float)(elements_size-1);
+        
+        const char *s = "Loading mixer data";
+
+        VECTOR_FOR_EACH(float *val, &g_load_rec_progress){
+          s = talloc_format("%s %.02f", s, *val);
+        }END_VECTOR_FOR_EACH;
+        
+        GFX_ShowProgressMessage(s, false);
+      }
+
+      i++;
+
       const char *key = STRING_get_chars(line);
 
       if (strstr(key, g_ls_id) != NULL){
@@ -1465,8 +1491,11 @@ hash_t *HASH_load2(disk_t *file, bool return_null_for_unsupported_hasmap_version
       
       bool success;
       dyn_t dyn = DYN_load(file, &success);
-      if (!success)
+      if (!success){
+        if (g_is_loading_mixer)
+          VECTOR_delete_last(&g_load_rec_progress);
         return NULL;
+      }
 
       if (hash->version < 4 && !strcmp(key, ":instrument-id") && dyn.type==INT_TYPE)
         dyn = DYN_create_instrument(make_instrument(dyn.int_number));
@@ -1475,6 +1504,9 @@ hash_t *HASH_load2(disk_t *file, bool return_null_for_unsupported_hasmap_version
       
       line = READ_LINE(file);
     }
+
+  if (g_is_loading_mixer)
+    VECTOR_delete_last(&g_load_rec_progress);
   
   return hash;  
 }
