@@ -4187,8 +4187,10 @@ int main(int argc, char **argv){
 #if QT_VERSION_MAJOR == 5 && QT_VERSION_MINOR == 9
   QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
 #endif
+#if QT_VERSION_MAJOR != 5 || QT_VERSION_MINOR != 15
   QCoreApplication::setAttribute(Qt::AA_X11InitThreads);
-
+#endif
+  
 #ifndef USE_QT5
   QTextCodec::setCodecForCStrings(QTextCodec::codecForName("UTF-8"));
 #endif
