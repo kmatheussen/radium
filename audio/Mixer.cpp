@@ -84,6 +84,8 @@ static Patch **g_click_patches = NULL; // only written to in RT_MIXER_get_all_cl
 
 int g_audio_block_size = 64;
 
+DEFINE_ATOMIC(int, g_num_jack_xruns) = 0;
+
 
 #ifdef MEMORY_DEBUG
 
@@ -903,6 +905,8 @@ struct Mixer{
     //jack_set_process_thread(_rjack_client,RT_rjack_thread,this);
     jack_set_process_callback(_rjack_client,RT_jack_process,this);
     jack_set_sync_callback(_rjack_client, RT_rjack_sync, this);
+    jack_set_xrun_callback(_rjack_client, RT_rjack_xrun, this);
+    
     if(isJackTimebaseMaster())
       MIXER_set_jack_timebase_master(true);
   
@@ -1464,6 +1468,11 @@ struct Mixer{
     return 0;
   }
 
+  static int RT_rjack_xrun(void *arg){
+    ATOMIC_ADD(g_num_jack_xruns, 1);
+    return 0;
+  }
+  
   static int RT_rjack_sync(jack_transport_state_t state, jack_position_t *pos, void *arg){
     Mixer *mixer = static_cast<Mixer*>(arg);
     
@@ -1700,7 +1709,10 @@ void MIXER_stop_dummy_driver(void){
 }
 
 bool MIXER_dummy_driver_is_running(void){
-  return g_mixer->dummy_driver_is_running();
+  if (g_mixer==NULL)
+    return false;
+  else
+    return g_mixer->dummy_driver_is_running();
 }
 
 bool MIXER_start(void){
@@ -1797,6 +1809,7 @@ void OS_InitAudioTiming(void){
   g_startup_time = g_mixer->_time;
   //printf("OS_InitAudioTiming called. New time: %d\n",(int)g_startup_time);
 }
+
 
 int64_t MIXER_TRANSPORT_set_pos(double abstime){
   R_ASSERT_NON_RELEASE(g_jack_client!=NULL);
@@ -1985,6 +1998,16 @@ void MIXER_request_stop_saving_soundfile(void){
 // dont work.
 STime MIXER_get_block_delta_time(STime time){
   return (time+g_startup_time) - g_mixer->_time;
+}
+
+int MIXER_get_num_xruns(void){  
+  if (g_mixer==NULL || MIXER_dummy_driver_is_running())
+    return 0;
+  
+  if (g_jack_client==NULL)
+    return JUCE_get_num_xruns();
+  else
+    return ATOMIC_GET(g_num_jack_xruns);
 }
 
 int MIXER_get_main_inputs(const float **audio, int max_num_ch){

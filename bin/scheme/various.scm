@@ -823,6 +823,196 @@
 
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Bottom bar CPU / XRUNS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+#!!
+(<ra> :get-num-xruns)
+!!#
+
+(define (get-xruns-area-X-width)
+  (* 1.2 (<gui> :text-width "X:")))
+
+(define (get-xruns-area-number-width)
+  (* 1.2 (<gui> :text-width "00")))
+
+(define (get-xruns-area-width)
+  (+ (get-xruns-area-X-width)
+     (get-xruns-area-number-width)))
+
+(define (get-cpu-area-single-width)
+  (* 1.2 (<gui> :text-width "00")))
+(define (get-cpu-area-dash-width)
+  (* 1.2 (<gui> :text-width "-")))
+(define (get-cpu-area-width)
+  (+ (* 3 (get-cpu-area-single-width))
+     (* 2 (get-cpu-area-dash-width))))
+
+(define *zero-num-xruns* (<ra> :get-num-xruns))
+(define *num-xruns* 0)
+
+(define *cpu-usage-guis* '())
+
+(define *cpu-usage* (<ra> :get-cpu-usage))
+
+(define (reset-cpu-usage!)
+  (set! *zero-num-xruns* (<ra> :get-num-xruns))
+  (set! *num-xruns* 0))
+
+(define *cpu-usage-poller-has-started #f)
+
+(define (maybe-start-cpu-usage-poller)
+  (when (not *cpu-usage-poller-has-started)
+    (set! *cpu-usage-poller-has-started #t)
+    (reset-cpu-usage!)
+    (<ra> :schedule 1000
+          (lambda ()
+            ;;(c-display "..update")
+            (set! *num-xruns* (max 0 (- (<ra> :get-num-xruns) *zero-num-xruns*)))
+            (set! *cpu-usage* (<ra> :get-cpu-usage))
+            (set! *cpu-usage-guis* (keep (lambda (area)
+                                           (if (<gui> :is-open area)
+                                               (begin
+                                                 (<gui> :update area)
+                                                 #t)
+                                               #f))
+                                         *cpu-usage-guis*))
+            1000))))
+
+(def-area-subclass (<cpu-usage-area> :gui :x1 :y1 :x2 :y2)
+  (define dash-width (get-cpu-area-dash-width))
+  (define single-width (get-cpu-area-single-width))
+  (define c1-x1 0)
+  (define d1-x1 single-width)
+  (define c2-x1 (+ d1-x1 dash-width))
+  (define d2-x1 (+ c2-x1 single-width))
+  (define c3-x1 (+ d2-x1 dash-width))
+  (define c3-x2 (+ c3-x1 single-width))
+
+  (define xruns-X-x1 (+ c3-x2 2))
+  (define xruns-X-x2 (+ xruns-X-x1 (get-xruns-area-X-width)))
+  (define xruns-number-x1 xruns-X-x2)
+  (define xruns-number-x2 (+ xruns-X-x2 (get-xruns-area-number-width)))
+  
+  (<ra> :schedule 0
+        (lambda ()
+          (if (<gui> :is-open gui)
+              (set-fixed-width gui (ceiling xruns-number-x2)))
+          #f))
+  
+  (c-display "      CREATING")
+  
+  (define cpu-area-x2 (get-cpu-area-width))
+
+  (add-mouse-cycle! :press-func (lambda (button x* y*)
+                                  (reset-cpu-usage!)
+                                  (update-me!)
+                                  #f
+                                  ))
+                    
+  (add-raw-mouse-cycle!
+   :enter-func (lambda (button x* y*)
+                 (<gui> :tool-tip
+                        (<->"<html><head/><body><p>The first three numbers, from left to right, show:</p>"
+                            "<p>1. The <span style=\" font-size:11pt; font-weight:600; text-decoration: underline;\">lowest</span> amount of CPU measured for processing an audio block during the last second. (%)</p>"
+                            "<p>2. The <span style=\" font-size:11pt; font-weight:600; text-decoration: underline;\">average</span> amount of CPU measured for processing audio blocks during the last second. (%)</p>"
+                            "<p>3. The <span style=\" font-size:11pt; font-weight:600; text-decoration: underline;\">highest</span> amount of CPU measured for processing an audio block during the last second. (%)</p>"
+                            "<p>Note that the sum of average numbers for all instruments is likely to be higher than the average CPU you see in the bottom bar due to processing instruments in parallel.</p>"
+                            "<p>The last number shows number of soundcard Xruns. Click to reset.</p>"
+                            "</body></html>")
+                        )))
+
+  (define dascolor (<gui> :mix-colors "green" *text-color* 0.5))
+
+  (define-override (paint) ;; workaround for osx.
+    ;;(c-display "GAKK")
+    (<gui> :filled-box gui "high_background" x1 y1 x2 y2 0 0 #t)
+    
+    (define (draw-text text color x1 x2 scale-font-size)
+      (<gui> :draw-text gui color text
+             x1
+             y1
+             x2
+             y2
+             #f ;; wrap-lines
+             #f ;; align-top
+             #f ;; align-left
+             0 ;; rotate
+             #f ;;cut-text-to-fit
+             scale-font-size ;;scale-font-size
+             ))
+
+    ;; cpu usage
+    ;;;;;;;;;;;;;;;;;
+    (define (draw-number i x1 x2)
+      (define n (round (*cpu-usage* i)))
+      (define text (if (< n 10)
+                       (<-> "0" (number->string n))
+                       (number->string n)))
+      (define color (cond ((>= n 90)
+                           "red")
+                          ((>= n 60)
+                           "yellow")
+                          (else
+                           dascolor)))
+      (draw-text text color x1 x2 (> n 99)))
+    
+    (define (draw-dash x1 x2)
+      (draw-text "-" *text-color* x1 x2 #f))
+    
+    (draw-number 0 c1-x1 d1-x1)
+    
+    (draw-dash d1-x1 c2-x1)
+    
+    (draw-number 1 c2-x1 d2-x1)
+    
+    (draw-dash d2-x1 c3-x1)
+    
+    ;;(c-display d1-x1 c2-x1 d2-x1 c3-x1)
+    
+    (draw-number 2 c3-x1 c3-x2)
+
+    ;; xruns
+    ;;;;;;;;;;;;;;;;;
+    (draw-text "X:" dascolor xruns-X-x1 xruns-X-x2 #f)
+    
+    (let ((xruns *num-xruns*))
+      (draw-text (if (< xruns 10)
+                     (<-> "0" xruns)
+                     (number->string xruns))
+                 (if (> xruns 0)
+                     "red"
+                     dascolor)
+                 xruns-number-x1
+                 xruns-number-x2
+                 (> xruns 99)))
+    )
+  )
+
+(define (FROM_C-create-cpu-usage-widget)
+  (maybe-start-cpu-usage-poller)
+  (define testarea (make-qtarea :width 160 :height 20
+                                :sub-area-creation-callback
+                                (lambda (gui width height state)
+                                  (<new> :cpu-usage-area gui 0 0 width height))))
+  (push-back! *cpu-usage-guis* (testarea :get-gui))
+  (testarea :get-gui))
+
+#!!
+(let ()
+  (define gui (FROM_C-create-cpu-usage-widget))
+  (<gui> :set-parent gui -1)
+  (<gui> :show gui))
+!!#
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Various popup menus
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
 ;; Instruments
   
 

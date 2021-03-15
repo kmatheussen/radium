@@ -100,6 +100,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/SampleReader_proc.h"
 #include "../audio/SoundfileSaver_proc.h"
 #include "../audio/Juce_plugins_proc.h"
+#include "../audio/CpuUsage.hpp"
 
 #include "../midi/midi_i_input_proc.h"
 
@@ -4477,6 +4478,19 @@ int64_t getSongLengthInFrames(void){
 
 int getSampleRate(void){
   return MIXER_get_sample_rate();
+}
+
+dyn_t getCpuUsage(void){
+  auto [minusage, avgusage, maxusage] = g_cpu_usage.get_cpu_usage_since_last_time();
+  dynvec_t ret = {};
+  DYNVEC_push_back(ret, DYN_create_float(minusage));
+  DYNVEC_push_back(ret, DYN_create_float(avgusage));
+  DYNVEC_push_back(ret, DYN_create_float(maxusage));
+  return DYN_create_array(ret);
+}
+
+int getNumXruns(void){
+  return MIXER_get_num_xruns();
 }
 
 int64_t g_editor_blocks_generation = 0;

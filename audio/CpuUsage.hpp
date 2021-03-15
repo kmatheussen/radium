@@ -55,16 +55,17 @@ private:
   
   float min(void){
     if (ATOMIC_GET_RELAXED(num_cpu_usage)==0)
-      return 0.0;
+      return 0;
     else
       return ATOMIC_GET_RELAXED(min_cpu_usage) / 1000.0;
   }
 
   float avg(void){
-    if (ATOMIC_GET_RELAXED(num_cpu_usage)==0)
-      return 0.0;
+    int num = ATOMIC_GET_RELAXED(num_cpu_usage);
+    if (num==0)
+      return 0.0; // prevent theoretical division by zero.
     else
-      return (ATOMIC_GET_RELAXED(total_cpu_usage) / ATOMIC_GET_RELAXED(num_cpu_usage)) / 1000.0;
+      return (ATOMIC_GET_RELAXED(total_cpu_usage) / num) / 1000.0;
   }
   
   float max(void){
@@ -96,6 +97,13 @@ private:
 
 public:
 
+  std::tuple<float,float,float> get_cpu_usage_since_last_time(void){
+    std::tuple<float,float,float> ret = {min(), avg(), max()};
+    reset();
+    _last_cpu_update_time = TIME_get_ms();
+    return ret;
+  }
+  
   bool should_update(int64_t time = TIME_get_ms()){
     
     if (_last_cpu_text=="" || time > (_last_cpu_update_time + 1000))
@@ -162,3 +170,4 @@ static inline void set_cpu_usage_font_and_width(QWidget *widget, bool shows_inte
 
 extern LANGSPEC void CpuUsage_delete(void *cpu_usage);
 
+extern CpuUsage g_cpu_usage;

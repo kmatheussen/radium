@@ -180,6 +180,29 @@ public:
     }
   }
 
+  int get_num_xruns(void){
+#if 1
+    // Probably safe to do this in the main thread.
+    auto *device = _audio_device_manager.getCurrentAudioDevice();
+    if (device==NULL)
+      return 0;
+    else
+      return device->getXRunCount();
+#else
+    int ret = 0;
+    run_on_message_thread([this, &ret](){
+        auto device = _audio_device_manager.getCurrentAudioDevice();
+        if (device==NULL){
+          R_ASSERT_NON_RELEASE(false);
+        } else {
+          ret = device->getXRunCount();
+          //printf("RET: %d\n", ret);
+        }
+      });
+    return ret;
+#endif
+  }
+  
 #if 0
   bool _has_inited = false;
 #endif
@@ -407,6 +430,15 @@ double JUCE_audio_get_sample_rate(void){
 int JUCE_audio_get_buffer_size(void){
   return g_juce_player->_buffer_size;
 };
+
+int JUCE_get_num_xruns(void){
+  if (g_juce_player==NULL){
+    R_ASSERT_NON_RELEASE(false);
+    return 0;
+  }
+
+  return g_juce_player->get_num_xruns();
+}
 
 double JUCE_audio_time_at_cycle_start(void){
   //R_ASSERT_NON_RELEASE(THREADING_is_player_thread());
