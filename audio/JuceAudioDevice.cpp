@@ -73,8 +73,6 @@ private:
   JUCE_audio_device_callback _callback;
   void *_callback_data;
 
-  bool _legal_blocksize = true;
-  
 public:
 
   double _last_reported_samplerate = -1;
