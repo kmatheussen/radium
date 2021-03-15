@@ -1153,7 +1153,7 @@ static void set_voice_TRANSPOSE(struct SoundPlugin *plugin, int num, float &nati
                   -100, 100,
                   native_value, scaled_value, value_format);
 
-  if(patch != NULL)
+  if(patch != NULL && patch->patchdata!=NULL)
     RT_PATCH_voice_pitch_has_changed(patch, num);
 }
                       
@@ -1170,7 +1170,7 @@ static void set_voice_VOLUME(struct SoundPlugin *plugin, int num, float &native_
                   patch==NULL ? NULL : &patch->voices[num].volume,
                   MIN_PATCHVOICE_VOLUME, MAX_PATCHVOICE_VOLUME,
                   native_value, scaled_value, value_format);
-  if(patch != NULL)
+  if(patch != NULL && patch->patchdata!=NULL)
     RT_PATCH_voice_volume_has_changed(patch, num);
 }
                       
@@ -1214,7 +1214,7 @@ static void set_voice_PAN(struct SoundPlugin *plugin, int num, float &native_val
                   MIN_PATCHVOICE_PAN, MAX_PATCHVOICE_PAN,
                   native_value, scaled_value, value_format);
 
-  if(patch != NULL)
+  if(patch != NULL && patch->patchdata!=NULL)
     RT_PATCH_voice_pan_has_changed(patch, num);
 }
                       
