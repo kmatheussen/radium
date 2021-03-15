@@ -3951,7 +3951,6 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
     enum ResamplerType resampler_type = (enum ResamplerType)HASH_get_int(state, "resampler_type");
     int64_t        loop_start        = 0;
     int64_t        loop_length       = 0;
-    int64_t        loop_end          = loop_start + loop_length;
 
     if (HASH_has_key(state, "use_sample_file_middle_note"))
       use_sample_file_middle_note = HASH_get_bool(state, "use_sample_file_middle_note");
@@ -3961,6 +3960,8 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
 
     if (HASH_has_key(state, "loop_length"))
       loop_length = HASH_get_int(state, "loop_length");
+    
+    int64_t loop_end = loop_start + loop_length;
     
     filepath_t filename = PLUGIN_DISK_get_audio_filename(state);
     
