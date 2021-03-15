@@ -408,7 +408,7 @@ static void lock_player_from_nonrt_thread(void){
   // Windows: It's a bit unclear how well priority inheritance works on this platform.
   // Probably we don't have to acquire same priority, but we do it anyway to be sure.
   //
-  PLAYER_acquire_same_priority();
+  THREADING_acquire_player_thread_priority();
 
   MAYBE_WAIT_FOR_PLAYER_TO_FINISH();
 
