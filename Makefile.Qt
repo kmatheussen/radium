@@ -1698,7 +1698,7 @@ $(P)Qt_vst_paths_widget.h: $(P)qt4_vst_paths_widget.ui
 
 
 $(T)Qt_tools_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_tools_callbacks.cpp $(P)Qt_tools_callbacks.h $(P)Qt_tools.h Qt/helpers.h midi/midi_i_input_proc.h common/Vector.hpp Qt/ScrollArea.hpp  Qt/Qt_MyQScrollBar.hpp
-	$(CCC2) $(P)Qt_tools_callbacks.cpp $(QTOPT)
+	$(CCC2) $(P)Qt_tools_callbacks.cpp $(QTOPT) $(WNO_DEPRECATED_DECLARATIONS)
 
 $(P)Qt_tools.h: $(BUILD_DEPENDENCIES) $(P)qt4_tools.ui $(P)Qt_tools_callbacks.h $(P)lzqlineedit.h
 	cd $(P) && $(UIC) qt4_tools.ui | sed s/protected/public/ | sed s/QSpinBox/MyQSpinBox/ | sed s/QDoubleSpinBox/FocusSnifferQDoubleSpinBox/ | sed s:\#include\ \<QtGui/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QWidgets/FocusSnifferQDoubleSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QtGui/MyQSpinBox\>://\ \ qspingox.h: | sed s:\#include\ \<QtWidgets/MyQSpinBox\>://\ \ qspingox.h: | sed s/QLineEdit/FocusSnifferQLineEdit/ | sed s:\#include\ \<QtWidgets/FocusSnifferQLineEdit\>://\ \ qlineedit.h: > Qt_tools.h
@@ -1901,7 +1901,7 @@ $(T)api_osc.o:  $(BUILD_DEPENDENCIES)  $(API)api_osc.cpp embedded_scheme/s7extra
 
 $(T)api_gui.o:  $(BUILD_DEPENDENCIES)  $(API)api_gui.cpp  Qt/ScrollArea.hpp Qt/helpers.h Qt/lzqlineedit.h  Qt/Rational.h Qt/Qt_MyQCheckBox.h embedded_scheme/s7extra_proc.h Qt/Qt_MyQScrollBar.hpp Qt/FileRequester.hpp Qt/Timer.hpp Qt/HashVector.hpp Qt/Qt_MyQCheckBox.h Qt/FocusSniffers.h Qt/Editor.hpp
 	$(MOC) $(API)api_gui.cpp > $(API)mapi_gui.cpp
-	$(CCC2)  $(API)api_gui.cpp $(QTOPT) $(QT_UI_CFLAGS) $(QT_SVG_CFLAGS) $(FPIC) -Wno-null-dereference $(NO_ANALYZER)
+	$(CCC2)  $(API)api_gui.cpp $(QTOPT) $(QT_UI_CFLAGS) $(QT_SVG_CFLAGS) $(FPIC) -Wno-null-dereference $(NO_ANALYZER) $(WNO_DEPRECATED_DECLARATIONS)
 
 
 NOUNUSEDBUTSETVARIABLEWARNING=
@@ -2016,7 +2016,7 @@ $(QM)mQM_MixerWidget.cpp: $(QM)QM_MixerWidget.h $(QM)QM_MixerWidget.cpp $(P)Qt_M
 #	$(CCC2) $(QM)images.cpp  `$(PKG) --libs --cflags QtGui` -c
 
 $(T)QM_MixerWidget.o: $(QM)mQM_MixerWidget.cpp $(QM)QM_MixerWidget.cpp $(QM)QM_chip.h $(P)Qt_mixer_widget.h $(QM)QM_MixerWidget.h audio/SoundPluginRegistry_proc.h audio/CpuUsage.hpp Qt/helpers.h common/Vector.hpp Qt/Qt_MyQScrollBar.hpp Qt/KeyboardFocusFrame.hpp Qt/Timer.hpp Qt/Qt_MyQCheckBox.h
-	$(CCC2) $(QM)QM_MixerWidget.cpp $(QTOPT)
+	$(CCC2) $(QM)QM_MixerWidget.cpp $(QTOPT) $(WNO_DEPRECATED_DECLARATIONS)
 
 $(T)QM_view.o: $(QM)QM_view.cpp $(QM)QM_view.h $(QM)QM_chip.h $(QM)mQM_view.cpp $(QM)QM_MixerWidget.h
 	$(CCC2) $(QM)QM_view.cpp $(QTOPT)
