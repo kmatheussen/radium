@@ -14,6 +14,7 @@ extern bool JUCE_audio_set_audio_thread_priority_of_current_thread(void);
 extern double JUCE_audio_get_sample_rate(void);
 extern int JUCE_audio_get_buffer_size(void);
 extern double JUCE_audio_time_at_cycle_start(void);
+extern int JUCE_get_num_xruns(void);
 
 extern void JUCE_audio_open_preferences_window(void);
 extern void JUCE_audio_close_preferences_window(void);

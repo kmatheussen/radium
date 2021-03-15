@@ -300,6 +300,7 @@ FROM_C-show-hide-instrument-gui-popup-menu
 FROM_C-select-instrument-a/b-popup-menu
 FROM_C-show-mixer-config-settings-menu
 FROM_C-pitch_type_button-pressed
+FROM_C-create-cpu-usage-widget
 ))
 
 (define-constant *functions-and-symbols-used-by-C-that-are-not-available-at-program-startup*

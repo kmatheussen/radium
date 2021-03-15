@@ -55,31 +55,12 @@ static struct Patch *g_system_out_patch = NULL;
 static struct SoundPlugin *g_system_out_plugin = NULL;
 
 extern bool drunk_velocity;
-extern CpuUsage g_cpu_usage;
 
 extern int scrolls_per_second;
 extern int default_scrolls_per_second;
 
 class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
   Q_OBJECT
-
-  static void maybe_update_cpu(void) {
-
-    QString cpu_string;
-
-    if (g_cpu_usage.maybe_update(cpu_string)){
-      
-      for(auto *bottom_bar_widget : g_bottom_bars){
-        if(bottom_bar_widget==NULL)
-          RError("bottom_bar_widget==NULL");
-        else if (bottom_bar_widget->cpu_label==NULL)
-          RError("bottom_bar_widget->cpu_label==NULL");
-        else
-          bottom_bar_widget->cpu_label->setText(cpu_string);
-      }
-
-    }
-  }
 
   bool has_midi_learn = false;
 
@@ -157,8 +138,6 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
     
       for(auto *bottom_bar_widget : g_bottom_bars)
         bottom_bar_widget->frequent_timer_callback();
-
-      Bottom_bar_widget::maybe_update_cpu();
     }
   };
 
@@ -206,9 +185,6 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
     sps_label->hide();
     sps_line->hide();
 
-    // Adjust cpu label width
-    set_cpu_usage_font_and_width(cpu_label, true, false);
-
     // Adjust velocity slider widths
     {
       QFontMetrics fm(QApplication::font());
@@ -218,8 +194,21 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
       velocity_slider->setMinimumWidth(width);
     }
 
+    // cpu / xruns
+    {
+      int64_t guinum = S7CALL2(int_void,"FROM_C-create-cpu-usage-widget");
+      QWidget *cpuusage = API_gui_get_widget(guinum);
+      if (cpuusage != NULL)
+        horizontalLayout_2->addWidget(cpuusage);
+      else{
+        R_ASSERT_NON_RELEASE(false);
+      }
+    }
+
+    
     _initing = false;
 
+    
     // set up timers, but only in the first created bottom bar.
     if (g_bottom_bars.size() == 0){
 
