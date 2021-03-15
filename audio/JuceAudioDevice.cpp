@@ -203,7 +203,7 @@ public:
 #endif
   }
   
-#if 0
+#if 1
   bool _has_inited = false;
 #endif
   
@@ -260,10 +260,13 @@ public:
     }
 #endif
 
-#if 0
-    // Not necessary, juce have already done this.
+#if 1
+    // Juce doesn't use realtime priority for audio on windows. Boost it up.
     if (_has_inited==false){
+      
+      // Note: If we call JUCE_audio_set_audio_thread_priority_of_current_thread() directly here, error message won't be shown if it fails.
       THREADING_acquire_player_thread_priority();
+      
       _has_inited=true;
     }
 #endif
@@ -420,7 +423,28 @@ public:
 static radium::JucePlayer *g_juce_player = NULL;
 
 bool JUCE_audio_set_audio_thread_priority_of_current_thread(void){
-  return juce::Thread::setCurrentThreadPriority(juce::Thread::realtimeAudioPriority);
+#if defined(FOR_WINDOWS)
+  if (SetThreadPriority(thread, THREAD_PRIORITY_TIME_CRITICAL))
+    return true;
+  else
+    return false;
+#else
+  auto policy = SCHED_RR; // Maybe use SCHED_FIFO instead.
+  auto min_priority = sched_get_priority_min (policy);
+  auto max_priority = sched_get_priority_max (policy);
+
+  struct sched_param param;
+
+  param.sched_priority = R_BOUNDARIES(min_priority, scale(1,0,2,min_priority,max_priority), max_priority);
+  
+  if (pthread_setschedparam(pthread_self(), policy, &param) == 0)
+    return true;
+  else
+    return false;
+#endif
+  
+  // not good enough: (on windows)
+  //return juce::Thread::setCurrentThreadPriority(juce::Thread::realtimeAudioPriority);
 }
   
 double JUCE_audio_get_sample_rate(void){
