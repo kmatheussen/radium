@@ -110,6 +110,7 @@ extern int g_disk_load_radium_version_major;
 extern int g_disk_load_radium_version_minor;
 extern int g_disk_load_radium_version_revision;
 extern int g_curr_disk_line;
+extern bool g_is_loading_mixer;
 
 static inline bool disk_load_radium_version_is_older_than_or_equal_to(int major, int minor, int revision){
 

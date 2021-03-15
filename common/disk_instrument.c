@@ -3,6 +3,7 @@
 #include "instruments_proc.h"
 #include "vector_proc.h"
 #include "patch_proc.h"
+#include "visual_proc.h"
 
 #include "disk.h"
 #include "disk_patches_proc.h"
@@ -15,6 +16,7 @@ void SaveInstrument(struct Instruments *instrument){
 DC_start("INSTRUMENT");
 
 	DC_SSS("instrumentname",instrument->instrumentname);
+	DC_SSI("num_patches",instrument->patches.num_elements);
 
 	SavePatches(&instrument->patches);
 
@@ -26,13 +28,17 @@ struct Instruments *LoadInstrument(void){
                 "PATCH",
                 "PATCH_V2"
 	};
-	const char *vars[1]={
-		"instrumentname"
+	const char *vars[2]={
+          "instrumentname",
+          "num_patches"
 	};
         char *instrument_name = NULL;
 	struct Instruments *instrument=NULL;
 
-	GENERAL_LOAD(2,1)
+        int curr_patch_num = 0;
+        int num_patches = 0;
+        
+	GENERAL_LOAD(2,2)
 
 
 var0:
@@ -44,6 +50,10 @@ var0:
 
 	goto start;
 
+var1:
+        num_patches = DC_LoadI();
+        goto start;
+        
 obj0:
         if(instrument==NULL) {
           RError("Instrument==NULL in disk_instrument.c. instrument_name: \"%s\", strcmp returns: %d, get_audio_instrument() returns: %p",instrument_name,strcmp("Audio instrument",instrument_name),get_audio_instrument());
@@ -58,12 +68,16 @@ obj1:
           RError("Instrument==NULL in disk_instrument.c. instrument_name: \"%s\", strcmp returns: %d, get_audio_instrument() returns: %p",instrument_name,strcmp("Audio instrument",instrument_name),get_audio_instrument());
           instrument = get_MIDI_instrument();
         }
-          
+
+        curr_patch_num++;
+        
+        if (num_patches > 0)
+          GFX_ShowProgressMessage(talloc_format("Loading instrument data %d / %d", curr_patch_num, num_patches), false);
+    
         PATCH_add_to_instrument(LoadPatchV2());
 	goto start;
 
         
-var1:
 var2:
 var3:
 var4:

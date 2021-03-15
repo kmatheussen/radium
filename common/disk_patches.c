@@ -260,7 +260,6 @@ void SavePatches(vector_t *v){
 struct Patch *LoadPatchV2(void){
   struct Patch *patch = PATCH_create_from_state(HASH_load(dc.file));
   DC_fgets();
-    
   return patch;
 }
 
