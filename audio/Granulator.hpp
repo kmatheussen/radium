@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Mixer_proc.h"
 #include "Fade.hpp"
+#include "Juce_plugins_proc.h"
 
 #include "GranResampler.hpp"
 
@@ -116,22 +117,13 @@ public:
   bool is_filled_up(void) const {
     return _size==_num_frames_available;
   }
-  
-  void pick_up_more_samples(int num_frames){
-    float *samples[_num_ch];
-    
-    for(int ch=0;ch<_num_ch;ch++)
-      samples[ch] = _data[ch] + _end_pos;
 
-    R_ASSERT_NON_RELEASE(num_frames <= MIXER_get_remaining_num_jackblock_frames());
-    
-    const int num_frames_to_pick_up = R_MIN(R_MAX(num_frames, MIXER_get_remaining_num_jackblock_frames()), _size - _end_pos);
-    num_frames = _sample_up_picker->pick_up(samples, _num_ch, num_frames_to_pick_up);
-    //printf("     .... Got %d samples. Wanted: %d\n", num_frames, wanted);
+  int get_num_possible_frames_to_pick_up(void) const {
+    R_ASSERT_NON_RELEASE((_size - _end_pos) > 0);
+    return _size - _end_pos;
+  }
 
-    R_ASSERT_NON_RELEASE(num_frames > 0);
-    R_ASSERT_NON_RELEASE(num_frames <= (_size-_end_pos));
-    R_ASSERT_NON_RELEASE(num_frames <= num_frames_to_pick_up);
+  void push_or_pick_postop(int num_frames){
 
     // Adjust _end_pos
     {    
@@ -171,6 +163,45 @@ public:
     }
   }
 
+  int push_samples(const float **samples, int num_frames){
+    if (num_frames==0)
+      return 0;
+    
+    const int num_possible_frames_to_pick_up = get_num_possible_frames_to_pick_up();
+    if (num_possible_frames_to_pick_up==0)
+      return 0;
+
+    if (num_possible_frames_to_pick_up < num_frames)
+      num_frames = num_possible_frames_to_pick_up;
+    
+    for(int ch=0;ch<_num_ch;ch++)
+      memcpy(_data[ch] + _end_pos, samples[ch], sizeof(float) * num_frames);
+
+    push_or_pick_postop(num_frames);
+
+    return num_frames;
+  }
+  
+  void pick_up_more_samples(int num_frames){
+    float *samples[_num_ch];
+    
+    for(int ch=0;ch<_num_ch;ch++)
+      samples[ch] = _data[ch] + _end_pos;
+
+    R_ASSERT_NON_RELEASE(num_frames <= MIXER_get_remaining_num_audioblock_frames());
+    
+    const int num_frames_to_pick_up = R_MIN(R_MAX(num_frames, MIXER_get_remaining_num_audioblock_frames()),
+                                            get_num_possible_frames_to_pick_up());
+    num_frames = _sample_up_picker->pick_up(samples, _num_ch, num_frames_to_pick_up);
+    //printf("     .... Got %d samples. Wanted: %d\n", num_frames, wanted);
+
+    R_ASSERT_NON_RELEASE(num_frames > 0);
+    R_ASSERT_NON_RELEASE(num_frames <= (_size-_end_pos));
+    R_ASSERT_NON_RELEASE(num_frames <= num_frames_to_pick_up);
+
+    push_or_pick_postop(num_frames);
+  }
+  
   int get_local_pos_from_global_pos(int64_t global_pos){
     int diff = global_pos - _start_pos_global_pos;
     
@@ -527,6 +558,9 @@ public:
     return _sample_up_picker;
   }
 
+  int push_samples(const float **samples, int num_frames){
+    return _pickup_buffer.push_samples(samples, num_frames);
+  }
   
 private:
 
