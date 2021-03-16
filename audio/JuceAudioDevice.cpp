@@ -1,4 +1,23 @@
+/* Copyright 2021 Kjetil S. Matheussen
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
+
+
+#if defined(FOR_WINDOWS)
 #include <windows.h>
+#endif
 
 int g_juce_num_input_audio_channels = 0;
 const float **g_juce_input_audio_channels = NULL;
@@ -203,7 +222,7 @@ public:
   }
   
 #if 1
-  bool _has_inited = false;
+  bool _has_set_realtime_priority = false;
 #endif
   
   void audioDeviceIOCallback(const float ** 	inputChannelData, 
@@ -261,12 +280,12 @@ public:
 
 #if 1
     // Juce doesn't use realtime priority for audio on windows. Boost it up.
-    if (_has_inited==false){
+    if (_has_set_realtime_priority==false){
       
-      // Note: If we call JUCE_audio_set_audio_thread_priority_of_current_thread() directly here, error message won't be shown if it fails.
+      // Note: If we call JUCE_audio_set_audio_thread_priority_of_current_thread() here instead, error message won't be shown if it fails.
       THREADING_acquire_player_thread_priority();
       
-      _has_inited=true;
+      _has_set_realtime_priority=true;
     }
 #endif
     
@@ -356,6 +375,9 @@ public:
   
   void audioDeviceAboutToStart (juce::AudioIODevice *device) override
   {
+
+    _has_set_realtime_priority = false;
+    
     double sampleRate = device->getCurrentSampleRate ();
     
     //printf("Samplerate set to %f\n",(float)sampleRate);
