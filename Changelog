@@ -1,3 +1,40 @@
+Changes 6.9.63 -> 6.9.64:
+* Windows: Fix possible dropouts if changing audio
+  settings after startup when not using jack.
+
+
+
+Changes 6.8.71 -> 6.9.63:
+* Bottom bar: Improve displaying CPU usage.
+* Bottom bar: Show number of xruns.
+* Sampler instrument: Fix a bug sometimes causing
+  wrong custom loop points after loading song. Bug
+  seems to have been introduced in 6.7.76.
+* Audio: Fix rare possible crash when undoing
+  deleting instrument.
+* Load: Show more progress information when loading
+  songs with many instruments.
+* About window: Replace "Jack samplerate" with just
+  "Audio". Also show block size in ms.
+* Audio: Improve Jack shutdown handling.
+* Audio: Fix program freeze and memory corruption
+  if internal block size is not a multiple of the
+  Juce/Jack block size.
+* Audio: Use Juce audio to get audio in and out of
+  the program if Jack is not running.
+* Radium reset: Include checkbox to only reset
+  soundcard configuration.
+* Radium reset: Disable all options by default.
+* Preferences GUI: Minor tweaks.
+* Windows: Fix loading/saving current filerequester
+  path to config for paths with non-ascii
+  characters.
+* API: openAudioDevicePreferencesDialog,
+  isUsingJack, isUsingJackTransport, getCpuUsage,
+  getNumXruns.
+
+
+
 Changes 6.7.76 -> 6.8.71:
 * Scripting: Update S7.
 * NSM: Never autoconnect jack ports when nsm is
