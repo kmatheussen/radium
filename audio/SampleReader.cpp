@@ -525,13 +525,13 @@ public:
     //RT_message("Testing RT message. pos %" PRId64 " in file %S. Max pos: %" PRId64 ". (%s)" , pos, _filename, _num_frames, sf_strerror(sndfile));
     
     if (sndfile != NULL){
-      
+
       if (sf_seek(sndfile, pos, SEEK_SET) != pos){
 
         RT_message("Unable to seek to pos %" PRId64 " in file %S. Max pos: %" PRId64 ". (%s)" , pos, _filename.getString(), _num_frames, sf_strerror(sndfile));
         
       } else {
-        
+
         float *buffer = _num_ch==1 ? slicebuffer->samples : interleaved_samples;
         
         int num_frames_read = sf_readf_float(sndfile, buffer, SLICE_SIZE);

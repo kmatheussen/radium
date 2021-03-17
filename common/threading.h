@@ -130,7 +130,15 @@ void RT_call_functions_scheduled_to_run_on_player_thread(void);
 void THREADING_schedule_on_player_thread_call_very_often(void);
 #endif
 
+#if defined(FOR_WINDOWS)
+typedef HANDLE radium_thread_t;
+#else
+typedef pthread_t radium_thread_t;
+#endif
+
+extern LANGSPEC void THREADING_acquire_player_thread_priority2(radium_thread_t thread);  // Implemented in audio/Mixer.cpp
 extern LANGSPEC void THREADING_acquire_player_thread_priority(void); // Implemented in audio/Mixer.cpp
+extern LANGSPEC void THREADING_drop_player_thread_priority2(radium_thread_t thread); // Implemented in audio/Mixer.cpp
 extern LANGSPEC void THREADING_drop_player_thread_priority(void); // Implemented in audio/Mixer.cpp
 
 #endif

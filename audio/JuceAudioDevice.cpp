@@ -19,6 +19,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <windows.h>
 #endif
 
+#include "../common/threading_lowlevel.h"
+
+
 int g_juce_num_input_audio_channels = 0;
 const float **g_juce_input_audio_channels = NULL;
 
@@ -443,9 +446,9 @@ public:
 
 static radium::JucePlayer *g_juce_player = NULL;
 
-bool JUCE_audio_set_audio_thread_priority_of_current_thread(void){
+bool JUCE_audio_set_audio_thread_priority(radium_thread_t thread){
 #if defined(FOR_WINDOWS)
-  if (SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL))
+  if (SetThreadPriority(thread, THREAD_PRIORITY_TIME_CRITICAL))
     return true;
   else
     return false;
@@ -454,11 +457,11 @@ bool JUCE_audio_set_audio_thread_priority_of_current_thread(void){
   auto min_priority = sched_get_priority_min (policy);
   auto max_priority = sched_get_priority_max (policy);
 
-  struct sched_param param;
+  struct sched_param param = {};
 
   param.sched_priority = R_BOUNDARIES(min_priority, scale(1,0,2,min_priority,max_priority), max_priority);
   
-  if (pthread_setschedparam(pthread_self(), policy, &param) == 0)
+  if (pthread_setschedparam(thread, policy, &param) == 0)
     return true;
   else
     return false;
@@ -467,7 +470,33 @@ bool JUCE_audio_set_audio_thread_priority_of_current_thread(void){
   // not good enough: (on windows)
   //return juce::Thread::setCurrentThreadPriority(juce::Thread::realtimeAudioPriority);
 }
+
+bool JUCE_audio_set_audio_thread_priority_of_current_thread(void){
+  return JUCE_audio_set_audio_thread_priority(GET_CURRENT_THREAD());
+}
+
+bool JUCE_audio_set_normal_thread_priority(radium_thread_t thread){
+#if defined(FOR_WINDOWS)
   
+  if (SetThreadPriority(thread, THREAD_PRIORITY_NORMAL))
+    return true;
+  else
+    return false;
+  
+#else
+  
+  auto policy = SCHED_OTHER;
+  
+  struct sched_param param = {};
+  param.sched_priority = 0;
+  
+  if (pthread_setschedparam(thread, policy, &param) == 0)
+    return true;
+  else
+    return false;
+#endif
+}
+
 double JUCE_audio_get_sample_rate(void){
   return g_juce_player->_samplerate;
 }

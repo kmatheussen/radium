@@ -12,6 +12,7 @@
 #include "../common/settings_proc.h"
 #include "../common/Semaphores.hpp"
 #include "../common/QueueStack.hpp"
+#include "../common/threading_lowlevel.h"
 
 #include "../common/OS_Player_proc.h"
 
@@ -233,6 +234,8 @@ public:
   radium::Semaphore can_start_main_loop;
   DEFINE_ATOMIC(bool, must_exit);
 
+  radium_thread_t _thread_id;
+    
   int64_t time;
   int num_frames;
   bool process_plugins;
@@ -250,6 +253,8 @@ public:
   void run() override {
     AVOIDDENORMALS;
 
+    _thread_id = GET_CURRENT_THREAD();
+      
     THREADING_init_runner_thread_type();
       
     touch_stack();
@@ -365,6 +370,20 @@ static void process_single_core(int64_t time, int num_frames, bool process_plugi
 
 static int g_num_runners = 0;
 static Runner **g_runners = NULL;
+
+
+void MULTICORE_enable_RT_priority(void){
+  for(int i=0;i<g_num_runners;i++){
+    THREADING_acquire_player_thread_priority2(g_runners[i]->_thread_id);
+  }
+}
+
+void MULTICORE_disable_RT_priority(void){
+  for(int i=0;i<g_num_runners;i++){
+    THREADING_drop_player_thread_priority2(g_runners[i]->_thread_id);
+  }
+}
+  
 
 
 // Called for each sound card block, not for each radium block
@@ -540,7 +559,6 @@ void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t tim
   }
 
 }
-
 
 
 #if 0
