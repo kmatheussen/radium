@@ -48,7 +48,6 @@
 
   #define GET_CURRENT_THREAD() GetCurrentThread()
 
-
 typedef struct{
   int priority;
 } priority_t;
@@ -70,7 +69,6 @@ typedef struct{
   #endif
 
   #define GET_CURRENT_THREAD() pthread_self()
-
 
 typedef struct{
   int policy;  

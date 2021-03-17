@@ -107,26 +107,26 @@ struct CpuUsage g_cpu_usage;
 
 DEFINE_ATOMIC(int64_t, g_last_mixer_time) = 0;
 
-void THREADING_acquire_player_thread_priority(void){
+void THREADING_acquire_player_thread_priority2(radium_thread_t thread){
 #if 1
   static bool has_shown_warning = false;
 
   if (g_jack_client==NULL) {
 
-    if (!JUCE_audio_set_audio_thread_priority_of_current_thread()) {
+    if (!JUCE_audio_set_audio_thread_priority(thread)) {
       if (has_shown_warning==false) {
         has_shown_warning=true;
 #if defined(FOR_LINUX)
-        RT_message("Error: Unable to set real time priority.");
-#else
         RT_message("Error: Unable to set real time priority. You might want to check your system configuration.");
+#else
+        RT_message("Error: Unable to set real time priority.");
 #endif
       }
     }
     
   } else {
     
-    int err = jack_acquire_real_time_scheduling(GET_CURRENT_THREAD(), g_jack_client_priority);
+    int err = jack_acquire_real_time_scheduling(thread, g_jack_client_priority);
     
     if (err != 0 && has_shown_warning==false) {
 #if 0 //def FOR_MACOSX
@@ -158,11 +158,24 @@ void THREADING_acquire_player_thread_priority(void){
 #endif
 }
 
-void THREADING_drop_player_thread_priority(void){
+void THREADING_acquire_player_thread_priority(void){
+  THREADING_acquire_player_thread_priority2(GET_CURRENT_THREAD());
+}
+
+void THREADING_drop_player_thread_priority2(radium_thread_t thread){
+  bool success;
+  
   if (g_jack_client==NULL)
-    return;
-    
-  jack_drop_real_time_scheduling(GET_CURRENT_THREAD());
+    success = JUCE_audio_set_normal_thread_priority(thread);
+  else    
+    success = (jack_drop_real_time_scheduling(thread)==0);
+
+  if (!success)
+    RT_message("Error: Unable to drop real time priority.");  
+}
+
+void THREADING_drop_player_thread_priority(void){
+  THREADING_drop_player_thread_priority2(GET_CURRENT_THREAD());
 }
 
 #if 0
@@ -1016,15 +1029,22 @@ struct Mixer{
   DEFINE_ATOMIC(bool, _juce_audio_stop_saving_soundfile) = false;
 
   void juce_start_saving_soundfile_thread(void){
+
     auto thread = std::thread([this](){
 
         // Note: RT_process_audio_block sets player thread type at every call (just in case), so it's not necessary to set it here.
         
-        while(!ATOMIC_GET(_juce_audio_stop_saving_soundfile))
-          RT_process_audio_block(g_soundcardblock_size, _sample_rate);
-                  
+        MULTICORE_disable_RT_priority();
+        {
+          
+          while(!ATOMIC_GET(_juce_audio_stop_saving_soundfile))
+            RT_process_audio_block(g_soundcardblock_size, _sample_rate);
+          
+        }
+        MULTICORE_enable_RT_priority();
+        
         ATOMIC_SET(_juce_audio_stop_saving_soundfile, false);
-
+          
         R_ASSERT_NON_RELEASE(_is_saving_sound==true);
         
         _is_saving_sound = false;
@@ -1365,6 +1385,8 @@ struct Mixer{
         int blocksize = RADIUM_BLOCKSIZE;
         while(blocksize < 2048)
           blocksize += RADIUM_BLOCKSIZE;
+
+        THREADING_acquire_player_thread_priority();
         
         while(ATOMIC_GET(_dummy_driver_is_running)){
           RT_process_audio_block(blocksize, _sample_rate);
@@ -1401,13 +1423,21 @@ struct Mixer{
     Mixer *mixer = static_cast<Mixer*>(arg);
 
     if(starting!=0){
+      
+      MULTICORE_disable_RT_priority();
+      
       mixer->_is_saving_sound = true;
       RSEMAPHORE_signal(g_saving_sound_has_started,1);
       //SOUNDFILESAVER_start();
+      
     }else{
+
+      MULTICORE_enable_RT_priority();
+      
       printf("MIXER: Saving sound stopped\n");
       mixer->_is_saving_sound = false;
       //SOUNDFILESAVER_stop();
+      
     }
   }
 
