@@ -84,5 +84,27 @@ extern LANGSPEC priority_t THREADING_get_priority(void);
 extern LANGSPEC void THREADING_set_priority(priority_t priority);
 
 
+#ifdef __cplusplus
+
+// To prevent priority inversion.
+namespace radium{
+class ScopedPlayerThreadPriority {
+  const bool _doit;
+  const priority_t _priority_before = THREADING_get_priority();
+ public:
+  ScopedPlayerThreadPriority(bool doit)
+    : _doit(doit)
+  {
+    if (doit)
+      THREADING_acquire_player_thread_priority();
+  }
+  ~ScopedPlayerThreadPriority(){
+    if (_doit)
+      THREADING_set_priority(_priority_before);
+  }
+};    
+}
+#endif
+
 
 #endif

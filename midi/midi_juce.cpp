@@ -29,14 +29,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/Vector.hpp"
 #include "../common/Mutex.hpp"
 #include "../common/settings_proc.h"
+#include "../common/threading_lowlevel.h"
+
 
 namespace{
 struct MyMidiPortOs{
   std::unique_ptr<juce::MidiOutput> midiout;
+  radium::Mutex _midi_out_mutex;
 };
 }
 
-static radium::Mutex g_midi_out_mutex;
 
 
 int MIDI_msg_len(uint32_t msg){
@@ -148,14 +150,13 @@ void OS_PutMidi(MidiPortOs port,
   if (output==NULL) // I.e. the "dummy" driver. (necessary on windows)
     return;
 
-
   
   //printf("current time: %f\n",(float)RtMidiOut::getCurrentTime(myport->midiout->getCurrentApi()));
 
   {
-    radium::ScopedMutex lock(g_midi_out_mutex); // Sometimes, the GUI wants to send midi signals, and that's why we need a lock here.
-    //                                              Don't think priority inheritance should be a big issue when the user drags sliders, etc. (why not use the player lock?)
-
+    radium::ScopedPlayerThreadPriority player_thread_priority(THREADING_is_main_thread()); // prevent priority inversion.
+      
+    radium::ScopedMutex lock(myport->_midi_out_mutex);
 
     //printf("got midi: %x,%x,%x at time %f (rtmidi_time: %f) (current_time: %f)\n",cc,data1,data2,(float)time/(double)PFREQ,rtmidi_time,(float)RtMidiOut::getCurrentTime(midiout->getCurrentApi()));
 
