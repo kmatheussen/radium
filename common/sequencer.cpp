@@ -1403,6 +1403,8 @@ static struct SeqBlock *SEQBLOCK_create_from_state(const struct SeqTrack *seqtra
                             "Illegal sequencer block speed value. It must be larger than 0. Got %f", speed
                             );
 
+  filepath_t filename = make_filepath(L"");
+
   struct SeqBlock *seqblock;
 
   if (HASH_has_key(state, ":blocknum")){
@@ -1420,7 +1422,6 @@ static struct SeqBlock *SEQBLOCK_create_from_state(const struct SeqTrack *seqtra
 
   } else {
     
-    filepath_t filename = make_filepath(L"");
 #if defined(FOR_WINDOWS)
     const wchar_t *filename2 = L"";
     if (get_value(state, ":sample-base64", STRING_TYPE, HASH_get_string, error_type, filename2, false)){
@@ -1520,8 +1521,9 @@ static struct SeqBlock *SEQBLOCK_create_from_state(const struct SeqTrack *seqtra
           show_rerror = false;  // Don't show error if it could be caused by a rounding error.
 #endif
         
-        if (show_rerror) // && may_have_different_audiofile==false)
-          RError("interior-end value is larger than the default block duration: %d > %d", (int)interior_end, (int)default_duration);
+        if (show_rerror)
+          GFX_addMessage(talloc_format("Note: Expected \"%S\" to be at least %d frames long. Instead it was %d frames long. The file seems to have changed since it was last used in Radium.", filename.id, (int)interior_end, (int)default_duration));
+        //RError("interior-end value is larger than the default block duration: %d > %d", (int)interior_end, (int)default_duration);
         
         interior_end = default_duration;
         
