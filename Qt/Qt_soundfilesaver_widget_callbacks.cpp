@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/SoundProducer_proc.h"
 #include "../audio/SoundfileSaver_proc.h"
 #include "../audio/Sampler_plugin_proc.h"
+#include "../audio/SampleReader_proc.h"
 
 #include "../mixergui/QM_chip.h"
 
@@ -65,7 +66,7 @@ class Soundfilesaver_widget : public RememberGeometryQDialog, public Ui::Soundfi
   
   void save(QString filename){
 
-    EVENTLOG_add_event(talloc_format("Saving sound \"%s\"", filename.toUtf8().constData()));
+    EVENTLOG_add_event(talloc_format("Saving sound \"%S\"", STRING_create(filename)));
     
     const char *error_string;
 
@@ -241,6 +242,11 @@ class Soundfilesaver_widget : public RememberGeometryQDialog, public Ui::Soundfi
 
 public slots:
 
+  // Override this one to prevent qt from automatically closing dialog when pressing a button in the button box.
+  void accept() override{
+  }
+  
+
   void on_format_flac_toggled(bool is_on){
     if (is_on){
       if (format_32->isChecked() || format_float->isChecked())
@@ -266,12 +272,12 @@ public slots:
 
 #else // FULL_VERSION==0
 
+      bool save_multi = many_soundfiles->isChecked();
+
       if (GFX_OS_get_system_out() == NULL) {
         GFX_Message2(NULL, true, "No \"System Out\" instrument found in the mixer.");
         return;
       }
-
-      bool save_multi = many_soundfiles->isChecked();
 
       if(filename_edit->text()==QString("")){
         GFX_Message2(NULL,
@@ -282,6 +288,31 @@ public slots:
         return;
       }
 
+      const filepath_t filepath = make_filepath(filename_edit->text());
+      
+      if (!save_multi && DISK_file_exists(filepath)){
+        
+        if (SAMPLEREADER_has_file(filepath)){
+          GFX_Message2(NULL,
+                       true,
+                       "Can not save to \"%S\" because the file already exists and is currently used in the program.",
+                       filepath.id);
+          return;
+        }
+                              
+        vector_t options = {};
+        int yes = VECTOR_push_back(&options, "Yes");
+        VECTOR_push_back(&options, "No");
+        
+        if (GFX_Message2(&options,
+                         true,
+                         "File \%S\" already exists. Overwrite file?",
+                         filepath.id
+                         )
+            !=yes)
+          return;
+      }
+      
       delete msgBox;
       msgBox = MyQMessageBox::create(false, g_main_window);  // ensure clickedButton()==NULL.
 
@@ -299,7 +330,7 @@ public slots:
         if (info.isFile()){
           GFX_Message2(NULL,
                        true,
-                       "Can not save. \"%s\" is a file, and not a directory", filename_edit->text().toUtf8().constData()
+                       "Can not save. \"%S\" is a file, and not a directory", filepath.id
                        );
           return;
         }
@@ -314,15 +345,15 @@ public slots:
           
           if (GFX_Message2(&options,
                            true,
-                           "Directory \%s\" already exists. Overwrite files in that directory?",
-                           dirname.toUtf8().constData()
+                           "Directory \%S\" already exists. Overwrite files in that directory?",
+                           STRING_create(dirname.toUtf8().constData())
                            )
               ==1)
             return;
         } else {
 
           if(QDir::root().mkpath(dirname)==false){ // why on earth isn't mkpath a static function?
-            GFX_Message2(NULL, true, "Unable to create directory \"%s\".", dirname.toUtf8().constData());
+            GFX_Message2(NULL, true, "Unable to create directory \"%S\".", STRING_create(dirname));
             return;
           }
           
@@ -354,6 +385,8 @@ public slots:
         save(filename_edit->text());
 
       }
+
+      close();
       
 #endif //FULL_VERSION==0
     }
