@@ -2689,6 +2689,12 @@ void CpuUsage_delete(void *cpu_usage){
 }
 
 static void SP_RT_process(SoundProducer *producer, int64_t time, int num_frames, bool process_plugins){
+#if !defined(RELEASE)
+  if (!MIXER_is_saving()){
+    R_ASSERT_NON_RELEASE(THREADING_has_player_thread_priority());
+  }
+#endif
+      
   SoundPlugin *plugin = producer->_plugin;
   
   bool is_visible = ATOMIC_GET_RELAXED(g_show_cpu_usage_in_mixer) || ATOMIC_GET_RELAXED(plugin->is_visible);

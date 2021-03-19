@@ -515,6 +515,17 @@ void THREADING_set_priority(priority_t priority){
 #endif
 }
 
+
+bool THREADING_has_player_thread_priority(void){
+  priority_t priority = THREADING_get_priority();
+#if defined(FOR_WINDOWS)
+  return priority.priority==THREAD_PRIORITY_TIME_CRITICAL;
+#else
+  return (priority.policy==SCHED_RR || priority.policy==SCHED_FIFO);
+#endif
+}
+  
+
 #ifdef TEST_THREADING
 
 

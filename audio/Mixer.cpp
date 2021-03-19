@@ -1155,15 +1155,40 @@ struct Mixer{
   int64_t _last_frame_time = 0;
 #endif
 
+#if !defined(RELEASE)
+  int _num_visitors = 0;
+  struct ScopedVisitors{
+    int &_num_visitors;
+    
+    ScopedVisitors(int &num_visitors)
+      : _num_visitors(num_visitors)
+    {
+      _num_visitors++;
+    }
+    ~ScopedVisitors(){
+      _num_visitors--;
+    }
+  };
+#endif
+  
   DEFINE_ATOMIC(bool, _RT_process_has_inited) = false;
 
   void RT_process_audio_block(int num_frames, const double samplerate) {
-
+#if !defined(RELEASE)
+    ScopedVisitors scoped_visitors(_num_visitors);
+    if (_num_visitors != 1)
+      abort();
+#endif
+    
 #ifdef MEMORY_DEBUG
     debug_wait.wait(&debug_mutex, 1000*10); // Speed up valgrind
 #endif
 
     R_ASSERT_NON_RELEASE(num_frames >= RADIUM_BLOCKSIZE);
+
+    if (!_is_saving_sound){
+      R_ASSERT_NON_RELEASE(THREADING_has_player_thread_priority());
+    }
     
     if (ATOMIC_GET_RELAXED(_RT_process_has_inited)==false || THREADING_init_player_thread_type()){
       AVOIDDENORMALS;
