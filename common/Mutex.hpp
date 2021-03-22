@@ -110,9 +110,16 @@ public:
     pthread_mutex_destroy(&mutex);
   }
 
-  void lock(void) override {
-    pthread_mutex_lock(&mutex); // Note that pthread_mutex_lock is a lighweight lock, meaning that it only have to do an atomic test-and-set if the mutex wasn't already obtained. So no need to do that optimization here (we would avoid a function call though, but that shouldn't matter). (winpthread implementation: https://sourceforge.net/p/mingw-w64/mingw-w64/ci/master/tree/mingw-w64-libraries/winpthreads/src/mutex.c)
+  bool trylock(void) {
+    bool ret = pthread_mutex_trylock(&mutex)==0;
+    if (ret)
+      num_locks++;
+    return ret;
+  }
 
+  void lock(void) override {
+
+    pthread_mutex_lock(&mutex); // Note that pthread_mutex_lock is a lighweight lock, meaning that it only have to do an atomic test-and-set if the mutex wasn't already obtained. So no need to do that optimization here (we would avoid a function call though, but that shouldn't matter). (winpthread implementation: https://sourceforge.net/p/mingw-w64/mingw-w64/ci/master/tree/mingw-w64-libraries/winpthreads/src/mutex.c)
     // ehm.
     if (!is_recursive)
       R_ASSERT_RETURN_IF_FALSE(num_locks==0);
@@ -124,7 +131,7 @@ public:
     R_ASSERT_RETURN_IF_FALSE(num_locks>0);
     
     num_locks--;
-    
+
     pthread_mutex_unlock(&mutex);
   }
 
@@ -132,6 +139,7 @@ public:
     return num_locks>0;
   }
 };
+
 
 
 #if 0

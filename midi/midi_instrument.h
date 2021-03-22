@@ -19,20 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "OS_midi_proc.h"
 
-struct MidiPort{
-  struct MidiPort *next;
-  const char *name;
-
-  MidiPortOs port;
-
-  /* Keep track of last used LSB/MSB/preset. If patchdata has different values than this (when playing a note), new values are sent to the midi port. */
-  char LSB[16];
-  char MSB[16];
-  char preset[16];
-
-  /* To keep track of how many times the notes has to be turned off. */
-  int num_ons[16][128];
-};
+struct MidiPort;
 
 struct PatchData{
 	struct MidiPort *midi_port;

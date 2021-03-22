@@ -40,7 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/Mixer_proc.h"
 #include "../midi/midi_i_input_proc.h"
 #include "../midi/midi_instrument_proc.h"
-#include "../midi/midi_menues_proc.h"
+#include "../midi/midi_ports_proc.h"
 #include "../midi/OS_midi_proc.h"
 
 #include "../api/api_proc.h"
@@ -284,7 +284,7 @@ public:
 
   void delete_released(){
     printf("%s deleted\n",name.toUtf8().constData());
-    MIDI_OS_RemoveInputPort(name.toUtf8().constData());
+    MIDI_remove_editor_input_port(name.toUtf8().constData());
     PREFERENCES_update();
   }
 };
@@ -765,7 +765,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
         delete midi_input_layout->itemAt(0)->widget();
 
       int num_input_ports;
-      const char **input_port_names = MIDI_OS_get_connected_input_ports(&num_input_ports);
+      const char **input_port_names = MIDIPORT_get_editor_input_ports(&num_input_ports);
       for(int i=0;i<num_input_ports;i++){
         MidiInput *l = new MidiInput(this, input_port_names[i]);
         midi_input_layout->addWidget(l);

@@ -108,6 +108,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../api/api_gui_proc.h"
 #include "../api/api_various_proc.h"
 #include "../api/api_instruments_proc.h"
+#include "../api/api_midi_proc.h"
 #include "../api/api_common_proc.h"
 
 #include "../mixergui/QM_MixerWidget.h"
@@ -2447,6 +2448,7 @@ protected:
     }
     
     API_call_very_often();
+    API_MIDI_called_regularly();
 
     THREADING_call_very_often();
     THREADING_schedule_on_player_thread_call_very_often();

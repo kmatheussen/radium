@@ -20,6 +20,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "midi_instrument.h"
 
+extern LANGSPEC void MIDI_send3(struct PatchData *patchdata, const int byte1, const int byte2, const int byte3);
+extern LANGSPEC void MIDI_send2(struct PatchData *patchdata, const int byte1, const int byte2);
+
+const char* MIDI_get_port_name(struct PatchData *patchdata);
+
 extern LANGSPEC bool MIDI_get_use_0x90_for_note_off(void);
 extern LANGSPEC void MIDI_set_use_0x90_for_note_off(bool doit);
 
@@ -55,58 +60,12 @@ extern LANGSPEC const char *MIDIrequestPortName(struct Tracker_Windows *window,R
 extern LANGSPEC struct MidiPort *MIDIgetPort(struct Tracker_Windows *window,ReqType reqtype,const char *name,bool program_state_is_valid);
 extern LANGSPEC void MIDISetPatchData(struct Patch *patch, const char *key, const char *value,bool program_state_is_valid);
 
-extern LANGSPEC void MyGoodPutMidi(
-	struct MidiPort *midi_port,
-	int cc,
-	int data1,
-	int data2,
-	int maxbuff
-);
-
-extern LANGSPEC void MyMyPutMidi(
-	struct MidiPort *midi_port,
-	int cc,
-	int data1,
-	int data2
-);
-
-extern LANGSPEC void MyPutMidi(
-	struct MidiPort *midi_port,
-	int cc,
-	int data1,
-	int data2,
-        STime time,
-	int maxbuff,
-	int skip
-);
-
-
-
-
-/***************** General ****************************/
-
-#define PutMidi3(a,b,c,d,time,s) MyPutMidi(a,b,c,d,time,s,0)
-//MyPutMidi(a,(ULONG)(((b)<<24)|((c)<<16)|((d)<<8)),s,0)
-#define PutMidi2(a,b,c,time,s) MyPutMidi(a,b,c,0,time,s,0)
-//MyPutMidi(a,(ULONG)(((b)<<24)|((c)<<16)),s,0)
-
-#define PutMidi3_FX(a,b,c,d,time,s,skip) MyPutMidi(a,b,c,d,time,s,skip)
-//MyPutMidi(a,(ULONG)(((b)<<24)|((c)<<16)|((d)<<8)),s,skip)
-#define PutMidi2_FX(a,b,c,time,s,skip) MyPutMidi(a,b,c,0,time,s,skip)
-//MyPutMidi(a,(ULONG)(((b)<<24)|((c)<<16)),s,skip)
-
-//#define D_PutMidi3(a,b,c,d) GoodPutMidi(a,(ULONG)(((b)<<24)|((c)<<16)|((d)<<8)),1000)
-//#define D_PutMidi2(a,b,c) GoodPutMidi(a,(ULONG)(((b)<<24)|((c)<<16)),1000)
-
-#define D_PutMidi3(a,b,c,d) MyGoodPutMidi(a,b,c,d,1000)
-#define D_PutMidi2(a,b,c) MyGoodPutMidi(a,b,c,0,1000)
-
-//#define R_PutMidi3(a,b,c,d) PutMidi(a,(ULONG)(((b)<<24)|((c)<<16)|((d)<<8)))
-//#define R_PutMidi2(a,b,c) PutMidi(a,(ULONG)(((b)<<24)|((c)<<16)))
-
-#define R_PutMidi3(a,b,c,d) MyMyPutMidi(a,b,c,d)
-#define R_PutMidi2(a,b,c) MyMyPutMidi(a,b,c,0)
-
+extern LANGSPEC int MIDIResetAllControllers( void );
+extern LANGSPEC int MIDILocalKeyboardOn( void );
+extern LANGSPEC int MIDILocalKeyboardOff( void );
+extern LANGSPEC int MIDIAllNotesOff( void );
+extern LANGSPEC int MIDIAllSoundsOff( void );
+extern LANGSPEC int MIDISetInputPort(bool program_state_is_valid);
 
 #endif
 

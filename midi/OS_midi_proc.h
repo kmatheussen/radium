@@ -19,55 +19,39 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define OS_MIDI_PROC_H
 
 
+extern LANGSPEC void MIDI_OS_InitTiming(void);
+
+#ifdef __cplusplus
+
+namespace radium{
+  struct MidiOutputPortOs;
+  struct MidiInputPortOs;
+}
 
 
-typedef void* MidiPortOs;
+const symbol_t *MIDI_OS_get_port_name(const char *name_c);
+
+extern const char **MIDI_OS_getOutputPortNames(int *retsize); // returns all ports that's possible to connect to (whether we are connected or not)
+extern const char **MIDI_OS_getInputPortNames(int *retsize); // returns all ports that's possible to connect to (whether we are connected or not)
+
+extern const char *MIDI_OS_getDefaultOutputPort(void);
 
 
-extern LANGSPEC void OS_InitMidiTiming(void);
-
-
-extern LANGSPEC const char **MIDI_OS_get_connected_input_ports(int *retsize); // returns ports we are connected to
-
-extern LANGSPEC const char **MIDI_getOutputPortOsNames(int *retsize); // returns all ports that's possible to connect to (whether we are connected or not)
-extern LANGSPEC const char **MIDI_getInputPortOsNames(int *retsize); // returns all ports that's possible to connect to (whether we are connected or not)
-
-extern LANGSPEC const char *MIDI_getDefaultOutputPort(void);
-
-
-// DeleteMidi(midinode);
-//	CloseLibrary(CamdBase);
-//	UninitMiniCamd();
-//	if(inputsig!=-1) FreeSignal(inputsig);
-extern LANGSPEC void MIDI_Delete(void);
-
-extern LANGSPEC void MIDI_closeMidiPortOs(MidiPortOs port);
-
-extern LANGSPEC MidiPortOs MIDI_getMidiPortOs(struct Tracker_Windows *window, ReqType reqtype,const char *name);
-//GoodPutMidi(mymidilink->midilink,(ULONG)((cc<<24)|(data1<<16)|(data2<<8)),(ULONG)maxbuff);
-
-extern LANGSPEC void MIDI_OS_AddInputPortIfNotAlreadyAdded(const char *portname);
-extern LANGSPEC void MIDI_OS_RemoveInputPort(const char *portname);
-
-extern LANGSPEC void OS_GoodPutMidi(MidiPortOs port,
-                                    int cc,
-                                    int data1,
-                                    int data2,
-                                    STime time,
-                                    uint32_t maxbuff
-                                 );
-
-extern LANGSPEC void OS_PutMidi(MidiPortOs port,
+extern void MIDI_OS_sendMessage(radium::MidiOutputPortOs *port,
                                 int cc,
                                 int data1,
-                                int data2,
-                                STime time
-                             );
+                                int data2
+                                );
 
-extern LANGSPEC void OS_PlayFromStart(MidiPortOs port);
+extern void MIDI_OS_PlayFromStart(radium::MidiOutputPortOs *port);
 
-extern LANGSPEC bool MIDI_New(struct Instruments *instrument);
+extern radium::MidiOutputPortOs *MIDI_OS_create_output_port(const symbol_t *port_name, bool create_new_if_not_existing);
+extern radium::MidiInputPortOs *MIDI_OS_create_input_port(const symbol_t *port_name, bool create_new_if_not_existing);
 
+extern void MIDI_OS_delete_input_port(radium::MidiInputPortOs *port);
+extern void MIDI_OS_delete_output_port(radium::MidiOutputPortOs *port);
+
+#endif
 
 
 #endif

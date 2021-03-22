@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 //#include "PEQ_type_proc.h"
 #include "../audio/Mixer_proc.h"
 #include "../audio/Pd_plugin_proc.h"
+#include "../midi/OS_midi_proc.h"
 #include "../Qt/Qt_AutoBackups_proc.h"
 #include "scheduler_proc.h"
 #include "sequencer_proc.h"
@@ -44,8 +45,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern PlayerClass *pc;
 extern struct Root *root;
-
-extern LANGSPEC void OS_InitMidiTiming(void);
 
 extern bool g_player_was_stopped_because_it_reached_sequencer_loop_end;
 
@@ -109,7 +108,6 @@ void PlayerTask(double reltime, bool can_not_start_playing_right_now_because_jac
         
         if (player_state != PLAYER_STATE_STOPPED)
           if(g_time_was_stopped){
-            OS_InitMidiTiming();
             OS_InitAudioTiming();
             g_time_was_stopped = false;
           }

@@ -78,8 +78,7 @@ public slots:
     
     patchdata->volume = val;
 
-    D_PutMidi3(
-               patchdata->midi_port,
+    MIDI_send3(patchdata,
                0xb0|patchdata->channel,
                7,
                patchdata->volume
@@ -156,8 +155,7 @@ public slots:
     
     patchdata->pan = val + 63;
 
-    D_PutMidi3(
-               patchdata->midi_port,
+    MIDI_send3(patchdata,
                0xb0|patchdata->channel,
                10,
                patchdata->pan

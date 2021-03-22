@@ -92,7 +92,7 @@ class ScopedPlayerThreadPriority {
   const bool _doit;
   const priority_t _priority_before = THREADING_get_priority();
  public:
-  ScopedPlayerThreadPriority(bool doit)
+  ScopedPlayerThreadPriority(bool doit = true)
     : _doit(doit)
   {
     if (doit)

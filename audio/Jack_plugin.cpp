@@ -268,8 +268,8 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 
     if (GFX_OS_patch_is_system_out((struct Patch*)plugin->patch)) {
 
-      // Note: No need for lock here. GFX_OS_patch_is_system_out only returns true for System Out connected to the bottom bar volume control.
-      // (Besides that, SOUNDFILESAVER_write can not be called more than one time per audio block anyway, even if we had a lock here.)
+      // Note: No need for lock here. 'GFX_OS_patch_is_system_out' only returns true for one System Out instance, the one connected to the bottom bar volume control.
+      // (Also, SOUNDFILESAVER_write can not be called more than one time per audio block anyway, even if we had a lock here.)
       SOUNDFILESAVER_write(inputs, type->num_inputs, num_frames);
       
     }
