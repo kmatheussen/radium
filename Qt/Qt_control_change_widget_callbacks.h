@@ -52,8 +52,7 @@ public slots:
     patchdata->ccvalues[this->ccnum] = val;
     printf("num: %d, value: %d\n",patchdata->cc[this->ccnum],val);
 
-    D_PutMidi3(
-               patchdata->midi_port,
+    MIDI_send3(patchdata,
                0xb0|patchdata->channel,
                patchdata->cc[this->ccnum],
                val

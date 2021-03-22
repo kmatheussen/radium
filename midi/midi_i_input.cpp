@@ -61,6 +61,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/SoundPlugin.h"
 #include "../audio/SoundPlugin_proc.h"
 
+#include "../api/api_midi_proc.h"
+
 #include "midi_instrument.h"
 #include "midi_instrument_proc.h"
 #include "midi_proc.h"
@@ -195,14 +197,14 @@ void MIDI_set_record_velocity(bool doit){
  *********************************************************
  *********************************************************/
 
-
+namespace{
 typedef struct _midi_event_t{
   time_position_t timepos;
   uint32_t msg;
   SoundPlugin *plugin;
   int effect_num;
 } midi_event_t;
-
+}
 
 static radium::Mutex g_midi_event_mutex;
 static radium::Vector<midi_event_t> g_recorded_midi_events;
@@ -996,7 +998,7 @@ struct Patch *MIDI_GetThroughPatch(void){
  *********************************************************/
 
 // Can be called from any thread
-void MIDI_InputMessageHasBeenReceived(const symbol_t *port_name, int cc,int data1,int data2){
+void MIDI_editor_and_midi_learn_InputMessageHasBeenReceived(const symbol_t *port_name, int cc,int data1,int data2){
   //printf("got new message. on/off:%d. Message: %x,%x,%x\n",(int)root->editonoff,cc,data1,data2);
   //static int num=0;
   //num++;
@@ -1053,7 +1055,6 @@ void MIDI_InputMessageHasBeenReceived(const symbol_t *port_name, int cc,int data
 
 // called very often from the main thread
 void MIDI_HandleInputMessage(void){
-  // should be a memory barrier here somewhere.
 
   uint32_t msg = ATOMIC_GET(g_msg); // Hmm, should have an ATOMIC_COMPAREFALSE_AND_SET function. (doesn't matter though, it would just look better)
   

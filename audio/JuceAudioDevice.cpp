@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 
 #include "../common/threading_lowlevel.h"
+#include "../common/settings_proc.h"
 
 
 int g_juce_num_input_audio_channels = 0;
@@ -284,9 +285,8 @@ public:
 #if 1
     // Juce doesn't use realtime priority for audio on windows. Boost it up.
     if (_has_set_realtime_priority==false){
-      
-      // Note: If we call JUCE_audio_set_audio_thread_priority_of_current_thread() here instead, error message won't be shown if it fails.
-      THREADING_acquire_player_thread_priority();
+            
+      THREADING_acquire_player_thread_priority(); // Note: If we call JUCE_audio_set_audio_thread_priority_of_current_thread() instead, error message won't be shown if it fails.
       
       _has_set_realtime_priority=true;
     }

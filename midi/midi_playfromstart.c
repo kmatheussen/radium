@@ -30,26 +30,23 @@ void MIDIPlaySongHook(struct Instruments *instrument, int64_t abstime){
 
     struct PatchData *patchdata=(struct PatchData *)patch->patchdata;
     int channel=patchdata->channel;
-    struct MidiPort *midi_port = patchdata->midi_port;
     
     if(patchdata->volumeonoff){
-      R_PutMidi3(midi_port,0xb0|channel,0x7,patchdata->volume);
+      MIDI_send3(patchdata, 0xb0|channel,0x7,patchdata->volume);
     }
     if(patchdata->panonoff){
-      R_PutMidi3(midi_port,0xb0|channel,0xa,patchdata->pan);
+      MIDI_send3(patchdata, 0xb0|channel,0xa,patchdata->pan);
     }
     
     {
       int lokke;
       for(lokke=0;lokke<8;lokke++){
         if(patchdata->cc[lokke]>=0 && patchdata->ccsonoff[lokke]){
-          R_PutMidi3(midi_port,0xb0|channel,patchdata->cc[lokke],patchdata->ccvalues[lokke]);
+          MIDI_send3(patchdata, 0xb0|channel,patchdata->cc[lokke],patchdata->ccvalues[lokke]);
         }
       }
     }
-    
-    OS_PlayFromStart(midi_port);
-    
+
   }END_VECTOR_FOR_EACH;
   
 }

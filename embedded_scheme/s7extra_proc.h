@@ -212,6 +212,9 @@ extern "C" {
   bool s7extra_callFunc_bool_int_int_float_float(const func_t *func, int64_t arg1, int64_t arg2, double arg3, double arg4);
   bool s7extra_callFunc2_bool_int_int_float_float(const char *funcname, int64_t arg1, int64_t arg2, double arg3, double arg4);
 
+  bool s7extra_callFunc_bool_int_int_int(const func_t *func, int64_t arg1, int64_t arg2, int arg3);
+  bool s7extra_callFunc2_bool_int_int_int(const char *funcname, int64_t arg1, int64_t arg2, int arg3);
+
   bool s7extra_callFunc_bool_int_int_int_int(const func_t *func, int64_t arg1, int64_t arg2, int arg3, int arg4);
   bool s7extra_callFunc2_bool_int_int_int_int(const char *funcname, int64_t arg1, int64_t arg2, int arg3, int arg4);
 

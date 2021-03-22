@@ -34,7 +34,7 @@ extern LANGSPEC void MIDI_set_record_accurately(bool accurately);
 extern LANGSPEC bool MIDI_get_record_velocity(void);
 extern LANGSPEC void MIDI_set_record_velocity(bool doit);
 
-extern LANGSPEC void MIDI_InputMessageHasBeenReceived(const symbol_t *port_name, int cc,int data1,int data2);
+extern LANGSPEC void MIDI_editor_and_midi_learn_InputMessageHasBeenReceived(const symbol_t *port_name, int cc,int data1,int data2);
 
 extern LANGSPEC void MIDI_SetThroughPatch(struct Patch *patch);
 extern LANGSPEC struct Patch *MIDI_GetThroughPatch(void);

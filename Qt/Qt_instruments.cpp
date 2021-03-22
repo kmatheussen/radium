@@ -327,7 +327,7 @@ static void updateMidiPortsWidget(MIDI_instrument_widget *instrument){
   for(int i = 0; i<num_ports ; i++){
     instrument->port->addItem(portnames[i]);
     if (instrument->patchdata==NULL) return;
-    if(!strcmp(portnames[i],instrument->patchdata->midi_port->name))
+    if(!strcmp(portnames[i],MIDI_get_port_name(instrument->patchdata)))
       item_num = i;
   }
 
@@ -736,7 +736,7 @@ void GFX_update_instrument_widget(struct Patch *patch){
     return;
   
   if(patch->instrument==get_MIDI_instrument()){
-    printf("PP update. Instrument name: \"%s\". port name: \"%s\"\n",patch==NULL?"(null)":patch->name,patch==NULL?"(null)":((struct PatchData*)patch->patchdata)->midi_port->name);
+    //printf("PP update. Instrument name: \"%s\". port name: \"%s\"\n",patch==NULL?"(null)":patch->name,patch==NULL?"(null)":((struct PatchData*)patch->patchdata)->midi_port->name);
 
     MIDI_instrument_widget *instrument = get_midi_instrument_widget(patch);
     if(instrument==NULL){
@@ -824,7 +824,7 @@ static void GFX_PP_Update_internal(struct Patch *patch, bool is_loading, bool op
       //g_instruments_widget->tabs->showPage(no_instrument_widget);
 
     }else if(patch->instrument==get_MIDI_instrument()){
-      printf("PP update. Instrument name: \"%s\". port name: \"%s\"\n",patch==NULL?"(null)":patch->name,patch==NULL?"(null)":((struct PatchData*)patch->patchdata)->midi_port->name);
+      //printf("PP update. Instrument name: \"%s\". port name: \"%s\"\n",patch==NULL?"(null)":patch->name,patch==NULL?"(null)":((struct PatchData*)patch->patchdata)->midi_port->name);
 
       MIDI_instrument_widget *instrument = get_midi_instrument_widget(patch);
       if(instrument==NULL){
