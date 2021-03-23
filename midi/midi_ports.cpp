@@ -35,13 +35,19 @@ struct MidiOutputPort {
 
   ~MidiOutputPort(){
     if (_num_users==0){
-      MIDI_OS_delete_output_port(_os_port);
-      _os_port = NULL;
+      close_os_port();
     } else {
       R_ASSERT_NON_RELEASE(false);
     }
   }
 
+  void close_os_port(void){
+    R_ASSERT_RETURN_IF_FALSE(_num_users==0);
+    R_ASSERT_RETURN_IF_FALSE(_os_port != NULL);
+    MIDI_OS_delete_output_port(_os_port);
+    _os_port = NULL;
+  }
+    
   /* Keep track of last used LSB/MSB/preset. If patchdata has different values than this (when playing a note), new values are sent to the midi port. */
   char _LSB[16] = {};
   char _MSB[16] = {};
@@ -107,7 +113,14 @@ void MIDIPORT_close_output(radium::MidiOutputPort *port){
 
   if (port->_num_users==0) {
     R_ASSERT_RETURN_IF_FALSE(g_output_ports.remove(port->_port_name)==1);
+
+    // FIX: This is a memory leak. It's here because I got a crash once that could indicate that we were using a deleted port.
+#if 0
     delete port;
+#else
+    port->close_os_port();
+#endif
+    
   }
 }
 
@@ -225,6 +238,8 @@ void MIDIPORT_send_message(
   }
 #endif
 
+  R_ASSERT_RETURN_IF_FALSE(midi_port->_num_users > 0);
+                           
   R_ASSERT_RETURN_IF_FALSE(data1 < 0xf0);
   R_ASSERT_RETURN_IF_FALSE(data2 < 0x100);
   R_ASSERT_RETURN_IF_FALSE(data3 < 0x100);
@@ -250,6 +265,8 @@ void MIDIPORT_send_message(
 }
 
 void MIDIPORT_stop_all_notes(radium::MidiOutputPort *midi_port){
+  R_ASSERT_RETURN_IF_FALSE(midi_port->_num_users > 0);
+  
   for(int ch=0;ch<16;ch++){
       
     PLAYER_maybe_pause_lock_a_little_bit(ch);
