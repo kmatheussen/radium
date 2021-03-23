@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern LANGSPEC void MIDI_send3(struct PatchData *patchdata, const int byte1, const int byte2, const int byte3);
 extern LANGSPEC void MIDI_send2(struct PatchData *patchdata, const int byte1, const int byte2);
 
-const char* MIDI_get_port_name(struct PatchData *patchdata);
+extern LANGSPEC const char* MIDI_get_port_name(const struct PatchData *patchdata);
 
 extern LANGSPEC bool MIDI_get_use_0x90_for_note_off(void);
 extern LANGSPEC void MIDI_set_use_0x90_for_note_off(bool doit);
