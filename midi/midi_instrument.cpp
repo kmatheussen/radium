@@ -630,7 +630,7 @@ static void MIDI_handle_fx_when_a_patch_has_been_replaced(const struct Patch *ol
   }
 }
 
-const char* MIDI_get_port_name(struct PatchData *patchdata){
+const char* MIDI_get_port_name(const struct PatchData *patchdata){
   return patchdata->midi_port->name;
 }
 

@@ -32,7 +32,7 @@ hash_t *MIDI_get_patchdata_state(const void *pd){
   
   hash_t *state = HASH_create(15);
   
-  HASH_put_chars(state, "clustername",patchdata->midi_port->name);
+  HASH_put_chars(state, "clustername", MIDI_get_port_name(patchdata));
   HASH_put_int(state, "channel",patchdata->channel);
   HASH_put_int(state, "preset",patchdata->preset);
   HASH_put_int(state, "LSB",patchdata->LSB);
@@ -93,7 +93,7 @@ void SaveMIDIPatchData(const void *pd){
 	struct PatchData *patchdata=(struct PatchData *)pd;
 DC_start("PATCHDATA");
 
-        DC_SSS("clustername",patchdata->midi_port->name);
+        DC_SSS("clustername", MIDI_get_port_name(patchdata));
 	DC_SSI("channel",patchdata->channel);
 	DC_SSI("preset",patchdata->preset);
 	DC_SSI("LSB",patchdata->LSB);
