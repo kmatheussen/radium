@@ -1,3 +1,37 @@
+Changes 6.9.64 -> 6.9.66:
+* Audio: Fix random data sent out of "System In"
+  instruments when not using jack and the soundcard
+  has less input channels than the "System In"
+  instrument has output channels.
+* Audio: Fix losing the jack port names of
+  "System in" and "System out" instruments when a
+  song is saved when not running jack. This caused
+  the message "Could not register jack port" when
+  later loading the song using jack.
+* MIDI: Possible fix for rare situations of hanging
+  notes.
+* Soundfile renderer: Don't close dialog window if
+  we couldn't save file.
+* Soundfile renderer: Don't allow overwriting an
+  audio file currently used by the program.
+* Soundfile renderer: Ask yes/no if trying to
+  overwrite an existing audio file.
+* Sequencer: Don't show assertion reporter when
+  loading a song with an audio file that has become
+  shorter than last time. Instead just show a note
+  in the message log window.
+* MIDI: More fine-grained locking and prevent
+  priority inversion when sending midi from main
+  thread.
+* Audio: Turn off realtime priority when rendering
+  audio file.
+* API: sendMidiMessage, openMidiOutputPort,
+  closeMidiOutputPort, openMidiInputPort,
+  closeMidiInputPort, closeAllMidiInputPorts,
+  getMidiOutputPortNames, getMidiInputPortNames.
+
+
+
 Changes 6.9.63 -> 6.9.64:
 * Windows: Fix possible dropouts if changing audio
   settings after startup when not using jack.
