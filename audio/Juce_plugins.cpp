@@ -88,6 +88,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_system_proc.h"
 #include "../common/OS_settings_proc.h"
 #include "../common/threading.h"
+#include "../common/threading_lowlevel.h"
 #include "../common/sequencer_timing_proc.h"
 
 #include "../Qt/Qt_instruments_proc.h"

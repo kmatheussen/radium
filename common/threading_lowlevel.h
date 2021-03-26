@@ -84,6 +84,21 @@ extern LANGSPEC priority_t THREADING_get_priority(void);
 extern LANGSPEC void THREADING_set_priority(priority_t priority);
 
 
+#if defined(FOR_WINDOWS)
+typedef HANDLE radium_thread_t;
+#else
+typedef pthread_t radium_thread_t;
+#endif
+
+extern LANGSPEC bool THREADING_has_player_thread_priority(void);  // Implemented in common/threading.cpp
+
+extern LANGSPEC void THREADING_acquire_player_thread_priority2(radium_thread_t thread);  // Implemented in audio/Mixer.cpp
+extern LANGSPEC void THREADING_acquire_player_thread_priority(void); // Implemented in audio/Mixer.cpp
+extern LANGSPEC void THREADING_drop_player_thread_priority2(radium_thread_t thread); // Implemented in audio/Mixer.cpp
+extern LANGSPEC void THREADING_drop_player_thread_priority(void); // Implemented in audio/Mixer.cpp
+
+
+
 #ifdef __cplusplus
 
 // To prevent priority inversion.

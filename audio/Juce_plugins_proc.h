@@ -2,6 +2,8 @@
 #ifndef JUCE_PLUGIN_H_INCLUDED
 #define JUCE_PLUGIN_H_INCLUDED
 
+#include "../common/threading_lowlevel.h"
+
 typedef bool (*JUCE_audio_device_callback) (const int num_frames, const double samplerate, void *callback_data);
 
 extern int g_juce_num_input_audio_channels;
