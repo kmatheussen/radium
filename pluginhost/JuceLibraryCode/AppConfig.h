@@ -50,19 +50,19 @@
 #define JUCE_DISPLAY_SPLASH_SCREEN 0
 
 #ifndef    JUCE_ASIO
- #define JUCE_ASIO 0
+ #define JUCE_ASIO 1
 #endif
 
 #ifndef    JUCE_WASAPI
- #define JUCE_WASAPI 0
+ #define JUCE_WASAPI 1
 #endif
 
 #ifndef    JUCE_WASAPI_EXCLUSIVE
- #define JUCE_WASAPI_EXCLUSIVE 0
+ #define JUCE_WASAPI_EXCLUSIVE 1
 #endif
 
 #ifndef    JUCE_DIRECTSOUND
- #define JUCE_DIRECTSOUND 0
+ #define JUCE_DIRECTSOUND 1
 #endif
 
 #ifndef    JUCE_ALSA
@@ -78,7 +78,7 @@
 #endif
 
 #ifndef    JUCE_USE_WINRT_MIDI
- #define JUCE_USE_WINRT_MIDI 0
+ #define JUCE_USE_WINRT_MIDI 1
 #endif
 
 #ifndef    JUCE_USE_CDREADER
