@@ -61,17 +61,10 @@ static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *clie
   
   data->is_system_in_or_out = is_system_in_or_out;
 
-  if (client==NULL){
-    
-    for(int i=0;i<num_outputs;i++)
-      data->juce_input_portnames[i] = V_strdup(input_portnames[i]);
-      
-    for(int i=0;i<num_inputs;i++)
-      data->juce_output_portnames[i] = V_strdup(output_portnames[i]);
-      
+
+  if (data->client==NULL)
     R_ASSERT(is_system_in_or_out==true);
-    return data;
-  }
+  
 
   for(int i=0;i<num_outputs;i++){
     static int n=0;
@@ -82,17 +75,25 @@ static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *clie
     else
       sprintf(temp, "in_%d",++n);
 
-    data->input_ports[i] = jack_port_register(client,
-                                              V_strdup(temp),
-                                              JACK_DEFAULT_AUDIO_TYPE,
-                                              JackPortIsInput,
-                                              0
-                                              );
-    if(data->input_ports[i]==NULL)
-      GFX_Message(NULL, "Error. Could not register jack input port \"%s\".\n", temp);
+    if (client==NULL){
+    
+      data->juce_input_portnames[i] = V_strdup(temp);
+                                               
+    } else {
+      
+      data->input_ports[i] = jack_port_register(client,
+                                                V_strdup(temp),
+                                                JACK_DEFAULT_AUDIO_TYPE,
+                                                JackPortIsInput,
+                                                0
+                                                );
+      if(data->input_ports[i]==NULL)
+        GFX_Message(NULL, "Error. Could not register jack input port \"%s\".\n", temp);
+
+    }
   }
 
-  if(!strcmp(plugin_type->name,"System In") && !nsmIsActive()){
+  if(data->client != NULL && !strcmp(plugin_type->name,"System In") && !nsmIsActive()){
     
     const char **outportnames=jack_get_ports(client,NULL,NULL,JackPortIsPhysical|JackPortIsOutput);
 
@@ -172,18 +173,29 @@ static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *clie
     else
       sprintf(temp, "out_%d",++n);
 
-    data->output_ports[i] = jack_port_register(
-                                               client,
-                                               V_strdup(temp),
-                                               JACK_DEFAULT_AUDIO_TYPE,
-                                               JackPortIsOutput,
-                                               0
-                                               );
-    if(data->output_ports[i]==NULL)
-      GFX_Message(NULL, "Error. Could not register jack output port \"%s\".\n", temp);
+    printf("\n\nI: %d. num_inputs: %d. portnames[i]: \"%s\". temp: \"%s\"\n", i, num_inputs, output_portnames[i], temp);
+
+    if (data->client == NULL) {
+
+      data->juce_output_portnames[i] = V_strdup(temp);
+      
+    } else {
+      
+      data->output_ports[i] = jack_port_register(
+                                                 client,
+                                                 V_strdup(temp),
+                                                 JACK_DEFAULT_AUDIO_TYPE,
+                                                 JackPortIsOutput,
+                                                 0
+                                                 );
+      if(data->output_ports[i]==NULL)
+        GFX_Message(NULL, "Error. Could not register jack output port \"%s\".\n", temp);
+
+    }
+    
   }
 
-  if(!nsmIsActive() && (!strcmp(plugin_type->name,"System Out") || !strcmp(plugin_type->name,"System Out 8"))){
+  if(data->client!=NULL && !nsmIsActive() && (!strcmp(plugin_type->name,"System Out") || !strcmp(plugin_type->name,"System Out 8"))){
 
     const char **inportnames=jack_get_ports(client,NULL,NULL,JackPortIsPhysical|JackPortIsInput);
 
@@ -290,13 +302,23 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
       SOUNDFILESAVER_write(inputs, type->num_inputs, num_frames);
       
     }
-
-    if (data->client==NULL)
+        
+    if (data->client==NULL) {
+      
+      for(int ch=0 ; ch<type->num_outputs ; ch++)
+        memset(outputs[ch], 0, sizeof(float)*num_frames);
+      
       return;
+    }
   }
 
-  if (MIXER_dummy_driver_is_running())
+  if (MIXER_dummy_driver_is_running()) {
+    
+    for(int ch=0 ; ch<type->num_outputs ; ch++)
+      memset(outputs[ch], 0, sizeof(float)*num_frames);
+    
     return;
+  }
   
   if (data->client==NULL) {
 
@@ -327,6 +349,15 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
                sizeof(float)*num_frames
                );
       }
+    
+    for(int ch=0 ; ch<type->num_outputs ; ch++)
+      if (ch < g_juce_num_input_audio_channels && g_juce_input_audio_channels[ch]!=NULL)
+        memcpy(outputs[ch],
+               g_juce_input_audio_channels[ch]+g_soundcardblock_delta_time,
+               sizeof(float)*num_frames
+               );
+      else
+        memset(outputs[ch], 0, sizeof(float)*num_frames);
     
   } else {
     
