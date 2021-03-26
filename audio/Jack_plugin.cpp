@@ -39,6 +39,10 @@ struct Data {
   jack_client_t *client; // Is NULL if jack is not used.
   jack_port_t **input_ports;
   jack_port_t **output_ports;
+  
+  const char **juce_input_portnames; // Need to store jack port names when using juce
+  const char **juce_output_portnames; // Need to store jack port names when using juce
+  
   bool is_system_in_or_out;
 };
 
@@ -46,12 +50,25 @@ struct Data {
  
 static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *client, int num_inputs, int num_outputs, const char **input_portnames, const char **output_portnames, bool is_system_in_or_out){
   Data *data = (Data*)V_calloc(1,sizeof(Data));
+  
   data->client = client;
+  
   data->input_ports=(jack_port_t**)V_calloc(num_outputs,sizeof(jack_port_t*));
   data->output_ports=(jack_port_t**)V_calloc(num_inputs,sizeof(jack_port_t*));
+  
+  data->juce_input_portnames=(const char**)V_calloc(num_outputs,sizeof(const char*));
+  data->juce_output_portnames=(const char**)V_calloc(num_inputs,sizeof(const char*));
+  
   data->is_system_in_or_out = is_system_in_or_out;
 
   if (client==NULL){
+    
+    for(int i=0;i<num_outputs;i++)
+      data->juce_input_portnames[i] = V_strdup(input_portnames[i]);
+      
+    for(int i=0;i<num_inputs;i++)
+      data->juce_output_portnames[i] = V_strdup(output_portnames[i]);
+      
     R_ASSERT(is_system_in_or_out==true);
     return data;
   }
@@ -72,7 +89,7 @@ static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *clie
                                               0
                                               );
     if(data->input_ports[i]==NULL)
-      GFX_Message(NULL, "Error. Could not register jack port.\n");
+      GFX_Message(NULL, "Error. Could not register jack input port \"%s\".\n", temp);
   }
 
   if(!strcmp(plugin_type->name,"System In") && !nsmIsActive()){
@@ -163,7 +180,7 @@ static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *clie
                                                0
                                                );
     if(data->output_ports[i]==NULL)
-      GFX_Message(NULL, "Error. Could not register jack port.\n");
+      GFX_Message(NULL, "Error. Could not register jack output port \"%s\".\n", temp);
   }
 
   if(!nsmIsActive() && (!strcmp(plugin_type->name,"System Out") || !strcmp(plugin_type->name,"System Out 8"))){
@@ -349,9 +366,11 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, struct Sound
   int i;
   for(i=0;i<plugin_type->num_outputs;i++)
     input_portnames[i] = state==NULL ? NULL : HASH_get_chars_at(state, "input_portname",i);
-  for(i=0;i<plugin_type->num_inputs;i++)
+  for(i=0;i<plugin_type->num_inputs;i++){
     output_portnames[i] = state==NULL ? NULL : HASH_get_chars_at(state, "output_portname",i);
-
+    printf("        INIT. Output portname[%d]: \"%s\"\n", i, output_portnames[i]);
+  }
+  
   return create_data(plugin_type,
                      (jack_client_t*)plugin_type->data,
                      plugin_type->num_inputs,
@@ -404,6 +423,15 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
   
   V_free(data->input_ports);
   V_free(data->output_ports);
+
+  for(int i=0;i<plugin->type->num_outputs;i++)
+    V_free((void*)data->juce_input_portnames[i]);
+    
+  for(int i=0;i<plugin->type->num_inputs;i++)
+    V_free((void*)data->juce_output_portnames[i]);
+
+  V_free(data->juce_input_portnames);
+  V_free(data->juce_output_portnames);
 
   V_free(data);
 }
@@ -630,39 +658,60 @@ const char *JACK_get_name(const SoundPlugin *plugin, int portnum){
   const Data *data = static_cast<Data*>(plugin->data);
 
   if(plugin->type->num_outputs>0){
-    if (data->input_ports[portnum]!=NULL){
-#if defined(DEBUG)
-      jack_latency_range_t range1,range2;
-      jack_port_get_latency_range(data->input_ports[portnum], JackCaptureLatency, &range1);
-      jack_port_get_latency_range(data->input_ports[portnum], JackPlaybackLatency, &range2);
+    
+    if (data->client == NULL) {
 
-      return strdup(talloc_format("%s. latency: %d->%d / %d->%d total: %d\n",
-                                  jack_port_short_name(data->input_ports[portnum]),
-                                  range1.min, range1.max,
-                                  range2.min, range2.max,
-                                  jack_port_get_total_latency(data->client, data->input_ports[portnum])
-                                  ));
-#else
-      return jack_port_short_name(data->input_ports[portnum]);
-#endif      
-    }
-  } else {
-    if (data->output_ports[portnum] != NULL){
-#if defined(DEBUG)
-      jack_latency_range_t range1,range2;
-      jack_port_get_latency_range(data->output_ports[portnum], JackCaptureLatency, &range1);
-      jack_port_get_latency_range(data->output_ports[portnum], JackPlaybackLatency, &range2);
+      if (data->juce_input_portnames[portnum] != NULL)
+        return data->juce_input_portnames[portnum];
       
-      return strdup(talloc_format("%s. latency: %d->%d / %d->%d total: %d\n",
-                                  jack_port_short_name(data->output_ports[portnum]),
-                                  range1.min, range1.max,
-                                  range2.min, range2.max,
-                                  jack_port_get_total_latency(data->client, data->output_ports[portnum])
-                                  ));
+    } else {
+
+      if (data->input_ports[portnum]!=NULL){
+#if 0 //defined(DEBUG)
+        jack_latency_range_t range1,range2;
+        jack_port_get_latency_range(data->input_ports[portnum], JackCaptureLatency, &range1);
+        jack_port_get_latency_range(data->input_ports[portnum], JackPlaybackLatency, &range2);
+        
+        return strdup(talloc_format("%s. latency: %d->%d / %d->%d total: %d\n",
+                                    jack_port_short_name(data->input_ports[portnum]),
+                                    range1.min, range1.max,
+                                    range2.min, range2.max,
+                                    jack_port_get_total_latency(data->client, data->input_ports[portnum])
+                                    ));
 #else
-      return jack_port_short_name(data->output_ports[portnum]);
-#endif
+        return jack_port_short_name(data->input_ports[portnum]);
+#endif      
+      }
     }
+    
+  } else {
+
+    if (data->client == NULL) {
+
+      if (data->juce_output_portnames[portnum] != NULL)
+        return data->juce_output_portnames[portnum];
+      
+    } else {
+
+      if (data->output_ports[portnum] != NULL){
+#if 0 //defined(DEBUG)
+        jack_latency_range_t range1,range2;
+        jack_port_get_latency_range(data->output_ports[portnum], JackCaptureLatency, &range1);
+        jack_port_get_latency_range(data->output_ports[portnum], JackPlaybackLatency, &range2);
+        
+        return strdup(talloc_format("%s. latency: %d->%d / %d->%d total: %d\n",
+                                    jack_port_short_name(data->output_ports[portnum]),
+                                    range1.min, range1.max,
+                                    range2.min, range2.max,
+                                    jack_port_get_total_latency(data->client, data->output_ports[portnum])
+                                    ));
+#else
+        return jack_port_short_name(data->output_ports[portnum]);
+#endif
+      }
+
+    }
+    
   }
 
   return "jack port could not be registered";
@@ -672,11 +721,37 @@ void JACK_set_name(SoundPlugin *plugin, int portnum, const char *new_name){
   Data *data = static_cast<Data*>(plugin->data);
 
   if(plugin->type->num_inputs>0){
-    if (data->output_ports[portnum] != NULL)
-      jack_port_set_name(data->output_ports[portnum], new_name);
+    
+    if (data->client==NULL) {
+      
+      if (data->juce_output_portnames[portnum] != NULL){
+        V_free((void*)data->juce_output_portnames[portnum]);
+        data->juce_output_portnames[portnum] = V_strdup(new_name);
+      }
+      
+    } else {
+      
+      if (data->output_ports[portnum] != NULL)
+        jack_port_set_name(data->output_ports[portnum], new_name);
+      
+    }
+    
   }else{
-    if (data->input_ports[portnum] != NULL)
-      jack_port_set_name(data->input_ports[portnum], new_name);
+    
+    if (data->client==NULL) {
+      
+      if (data->juce_input_portnames[portnum] != NULL){
+        V_free((void*)data->juce_input_portnames[portnum]);
+        data->juce_input_portnames[portnum] = V_strdup(new_name);
+      }
+      
+    } else {
+      
+      if (data->input_ports[portnum] != NULL)
+        jack_port_set_name(data->input_ports[portnum], new_name);
+
+    }
+    
   }
 }
 
