@@ -500,7 +500,7 @@ endif
 
 #-------------------OBJECT DEFINITIONS-------------------------------
 
-OBJ1= $(T)windows.o $(T)window_config.o $(T)list.o $(T)vector.o $(T)hashmap.o $(T)Dynvec.o $(T)TimeData.o $(T)song.o $(T)blocks.o $(T)block_insert.o $(T)block_split.o $(T)block_delete.o $(T)block_properties.o $(T)tracks.o $(T)localzooms.o $(T)control.o $(T)lines.o $(T)font.o $(T)track_insert.o $(T)track_onoff.o $(T)settings.o $(T)mmd2load.o
+OBJ1= $(T)windows.o $(T)window_config.o $(T)list.o $(T)vector.o $(T)hashmap.o $(T)Dynvec.o $(T)TimeData.o $(T)song.o $(T)blocks.o $(T)block_insert.o $(T)block_split.o $(T)block_delete.o $(T)block_properties.o $(T)tracks.o $(T)localzooms.o $(T)control.o $(T)lines.o $(T)font.o $(T)track_insert.o $(T)track_onoff.o $(T)settings.o $(T)mmd2load.o $(T)RT_memory_allocator.o
 
 OBJ2= $(T)notes.o $(T)notes_legalize.o $(T)pitches.o $(T)wblocks.o $(T)wtracks.o $(T)sliders.o $(T)common.o
 
@@ -722,6 +722,13 @@ test_timedata_gdb:
 	cd common && g++ TimeData.cpp $(TEST_TIMEDATA_OPTS) -O3 -fsanitize=undefined -fsanitize=address -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" gdb -ex "set print thread-events off" ./a.out
 
 
+test_rt_memory_allocator:
+	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_TIMEDATA_OPTS) -DTEST_MAIN -O3 -fsanitize=thread -o a.out && TSAN_OPTIONS="history_size=7,second_deadlock_stack=1,abort_on_error=1,suppressions=../SanitizerSuppr.txt" $(TEST_TIMEDATA_RUNNER)
+	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_TIMEDATA_OPTS) -DTEST_MAIN -O0 -o a.out && $(TEST_TIMEDATA_RUNNER)
+	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_TIMEDATA_OPTS) -DTEST_MAIN -O3 -o a.out && $(TEST_TIMEDATA_RUNNER)
+
+	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_TIMEDATA_OPTS) -DTEST_MAIN -O3 -fsanitize=address -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
+
 test_ratio:
 	cd common && ln -sf ratio_funcs.h test_ratio.cpp && g++ test_ratio.cpp -D__STDC_FORMAT_MACROS=1 -DTEST_MAIN -Wall -Werror -g -o a.out &&	./a.out
 
@@ -916,6 +923,10 @@ $(T)Dynvec.o:  $(BUILD_DEPENDENCIES) $(CD)Dynvec.c $(CD)dyn_type.h $(CD)nsmtrack
 
 $(T)TimeData.o: $(BUILD_DEPENDENCIES) $(CD)TimeData.cpp $(CD)TimeData.hpp
 	$(CCC2) $(CD)TimeData.cpp $(CPPOPT)
+
+$(T)RT_memory_allocator.o: $(BUILD_DEPENDENCIES) $(CD)RT_memory_allocator.cpp
+	$(CCC2) $(CD)RT_memory_allocator.cpp $(CPPOPT)
+
 
 $(T)song.o:  $(BUILD_DEPENDENCIES) $(CD)song.c 
 	$(CC2) $(CD)song.c $(OPT)
