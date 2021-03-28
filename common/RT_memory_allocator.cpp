@@ -4,7 +4,8 @@
 /* Realtime threadsafe memory allocator. Very simple, not very smart. Huge fragmentation and waste.
    Should be good enough to prevent calls to system malloc in juce::MidiMessage and similar usages.
 
-   The allocator resorts to malloc if it fails. A RT warning will be shown if we resort to using malloc.
+   The allocator resorts to malloc in the unlikely event that it fails. An RT warning will be shown if we resort to using malloc.
+   Also note that all memory allocated by malloc is added to the pool when released (i.e. "free" is never called).
 */
 
 
@@ -13,7 +14,9 @@
 #if TEST_MAIN
 #include <unistd.h>
 #include <sys/time.h>
+#include <stdarg.h>
 #include "nsmtracker.h"
+
 void CRASHREPORTER_send_assert_message(Crash_Type tye, const char *message, ...){
   abort();
 }
@@ -21,7 +24,12 @@ void RError_internal(const char *fmt,...){
   abort();
 }
 void RT_message_internal(const char *fmt,...){
-  abort();
+  va_list argp;
+  va_start(argp,fmt);
+  vfprintf(stderr,fmt,argp);
+  fprintf(stderr, "\n");
+  //vsnprintf(rt_message,rt_message_length-1,fmt,argp);
+  va_end(argp);
 }
 void msleep(int ms){
   usleep(1000*ms);
@@ -46,7 +54,7 @@ double TIME_get_ms(void){
 
 
 #if TEST_MAIN
-#  define TOTAL_MEM_SIZE (1024*3)
+#  define TOTAL_MEM_SIZE (1024) // Use very low value to provoke calls to malloc.
 #else
 #  define TOTAL_MEM_SIZE (1024*1024)
 #endif
@@ -54,7 +62,7 @@ double TIME_get_ms(void){
 #define NUM_POOLS 16
 
 #if TEST_MAIN
-#define MAX_POOL_SIZE 64
+#define MAX_POOL_SIZE 10 // Very low value to provoke RT_free to fail now and then (to check that it doesn't crash if rt_free fails)
 #else
 #define MAX_POOL_SIZE 512
 #endif
@@ -139,10 +147,15 @@ static RT_Mem_internal *RT_alloc_from_global_mem(int size, int pool_num){
   return &ret->_mem;
 }
 
+#if TEST_MAIN
+static DEFINE_ATOMIC(int, g_total_malloc) = 0;
+#endif
+
 static RT_Mem_internal *RT_alloc_using_malloc(int size, int pool_num, const char *who, int where){
   
 #if TEST_MAIN
   //printf("...RT_alloc failed. Who: \"%s\". Size: %d. Where: %d\n", who, size, where);
+  ATOMIC_ADD(g_total_malloc, size);
 #else
   RT_message("RT_alloc failed. Who: \"%s\". Size: %d. Where: %d", who, size, where);
 #endif
@@ -164,14 +177,14 @@ void *RT_alloc_raw(int size, const char *who){
 
   if (size > g_max_mem_size)
     return RT_alloc_using_malloc(size, -1, who, 1);
-
+  
   int pool_num;
   POOL *pool = get_pool(size, pool_num); // <- Note: Adjusts size to nearest power of two.
 
 #if TEST_MAIN
   ATOMIC_ADD(g_used_mem, size);
 #endif
-
+  
   RT_Mem_internal *ret = RT_alloc_from_pool(pool);
   if (ret != NULL)
     return ret;
@@ -202,25 +215,25 @@ void RT_inc_ref_raw(void *mem){
 void RT_free_raw(void *mem, const char *who){
   if (mem==NULL)
     return;
-    
+  
   char *cmem = (char*)mem;
   
   RT_mempool_data *data = (RT_mempool_data *)(cmem - g_offset_of_data);
-
-  //printf("RT_Free: num users: %d\n", ATOMIC_GET(data->_num_users));
-
+  
+  //fprintf(stderr, "RT_Free: num users: %d. pool num: %d\n", ATOMIC_GET(data->_num_users), data->_pool_num);
+  
+  R_ASSERT_RETURN_IF_FALSE(data->_pool_num < NUM_POOLS);
+  
   R_ASSERT_NON_RELEASE(ATOMIC_GET(data->_num_users) > 0);
   
   if (ATOMIC_ADD_RETURN_NEW(data->_num_users, -1) > 0)
     return;
-  
+     
   if (data->_pool_num < 0){
-    R_ASSERT(data->_pool_num==-1);
+    R_ASSERT(data->_pool_num==-1); // pool_num is -1 if size of memory block is larger than g_max_mem_size.
     free(mem);
     return;
   }
-
-  R_ASSERT_RETURN_IF_FALSE(data->_pool_num < NUM_POOLS);
 
   POOL *pool = g_pools[data->_pool_num];
   
@@ -245,6 +258,7 @@ bool PLAYER_current_thread_has_lock(void){
 
 
 DEFINE_ATOMIC(int, g_allocated_middle) = 0;
+DEFINE_ATOMIC(int, g_allocated_total) = 0;
 
 int main(){
 
@@ -265,18 +279,22 @@ int main(){
     if (ATOMIC_GET(g_used_mem) != 0)
       abort();
     
-    printf("  I: %d/%d (%d, %d).  Used global mem: %d / %d. Max used mem: %d\n",
+    printf("  I: %d/%d (%d, %d).  Used global mem: %d / %d. Max used mem: %d. Total allocation: %d. Total malloc allocations: %d\n",
            i,
            num_main_iterations,
            num_threads,
            num_reader_iterations,
            ATOMIC_GET(g_curr_mem_size),
            TOTAL_MEM_SIZE,
-           ATOMIC_GET(g_allocated_middle)
+           ATOMIC_GET(g_allocated_middle),
+           ATOMIC_GET(g_allocated_total),
+           ATOMIC_GET(g_total_malloc)
            );
 
     ATOMIC_SET(g_allocated_middle, 0);
-      
+    ATOMIC_SET(g_allocated_total, 0);
+    ATOMIC_SET(g_total_malloc, 0);
+    
     std::thread t[num_threads];
     
     for(int i=0;i<num_threads;i++){
@@ -297,6 +315,8 @@ int main(){
 
               radium::RT_Array<char> data(size, "test");
 
+              ATOMIC_ADD(g_allocated_total, size);
+              
               if (ATOMIC_GET(g_used_mem) > ATOMIC_GET(g_allocated_middle))
                 ATOMIC_SET(g_allocated_middle, ATOMIC_GET(g_used_mem));
               
