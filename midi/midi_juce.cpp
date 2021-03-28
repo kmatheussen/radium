@@ -20,6 +20,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 // Note that compilation settings are a bit different here. FOR_LINUX/etc. are not defined, etc. */
 
 
+#include "../common/Mutex.hpp"
+
 
 #include "midi_ports_proc.h"
 
@@ -65,13 +67,20 @@ struct MidiInputPortOs : juce::MidiInputCallback{
     int length = message.getRawDataSize();
       
     if(length==1)
-      MIDI_InputMessageHasBeenReceived(_port_name, raw[0],0,0);
+      MIDI_InputMessageHasBeenReceived(_port_name, radium::MidiMessage(raw[0],0,0));
     else if(length==2)
-      MIDI_InputMessageHasBeenReceived(_port_name, raw[0],raw[1],0);
+      MIDI_InputMessageHasBeenReceived(_port_name, radium::MidiMessage(raw[0],raw[1],0));
     else if(length==3)
-      MIDI_InputMessageHasBeenReceived(_port_name, raw[0],raw[1],raw[2]);
+      MIDI_InputMessageHasBeenReceived(_port_name, radium::MidiMessage(raw[0],raw[1],raw[2]));
     else{
-      R_ASSERT_NON_RELEASE(false);
+#if !defined(RELEASE)
+      printf("Received MIDI message > 3. Name: \"%s\". Length: %d:", _port_name->name, length);
+      for(int i=0;i<length;i++)
+        printf(" %x", raw[i]);
+      printf("\n");
+#endif
+      radium::MidiMessage message2(message.getRT_Mem(), length);
+      MIDI_InputMessageHasBeenReceived(_port_name, message2);
     }
       
     //printf("got message to %s (%d %d %d)\n",(const char*)midi_input->getName().toUTF8(),(int)raw[0],(int)raw[1],(int)raw[2]);
@@ -98,6 +107,42 @@ int MIDI_msg_len(uint32_t msg){
 }
 
 
+static void send_message(radium::MidiOutputPortOs *port,
+                         const juce::MidiMessage &message,
+                         radium::AbstractMutex *mutex
+                         )
+{
+#if 0
+  if(true || time<0)
+    printf("got midi. time: %f. startup_time: %f, jack time: %f. %x/%x/%x (%d/%d/%d)\n",
+           ((double)time/(double)pc->pfreq),(float)startup_time,(float)RtMidiOut::getCurrentTime(myport->midiout->getCurrentApi()),
+           cc,data1,data2,cc,data1,data2
+           );
+#endif
+
+  juce::MidiOutput *output = port->_midi_out.get();
+
+  if (output==NULL){// I.e. the "dummy" driver. (necessary on windows)
+#if !defined(FOR_WINDOWS)
+    R_ASSERT_NON_RELEASE(false);
+#endif
+    return;
+  }
+
+  
+  //printf("current time: %f\n",(float)RtMidiOut::getCurrentTime(myport->midiout->getCurrentApi()));
+
+  //printf("got midi: %x,%x,%x at time %f (rtmidi_time: %f) (current_time: %f)\n",cc,data1,data2,(float)time/(double)PFREQ,rtmidi_time,(float)RtMidiOut::getCurrentTime(midiout->getCurrentApi()));
+
+  if (mutex != NULL)
+    mutex->lock();
+  
+  output->sendMessageNow(message);
+
+  if (mutex != NULL)
+    mutex->unlock();
+}
+
 void MIDI_OS_sendMessage(radium::MidiOutputPortOs *port,
                          int cc,
                          int data1,
@@ -123,37 +168,24 @@ void MIDI_OS_sendMessage(radium::MidiOutputPortOs *port,
     return;
   }
 
-#if 0
-  if(true || time<0)
-    printf("got midi. time: %f. startup_time: %f, jack time: %f. %x/%x/%x (%d/%d/%d)\n",
-           ((double)time/(double)pc->pfreq),(float)startup_time,(float)RtMidiOut::getCurrentTime(myport->midiout->getCurrentApi()),
-           cc,data1,data2,cc,data1,data2
-           );
-#endif
-
-  juce::MidiOutput *output = port->_midi_out.get();
-
-  if (output==NULL){// I.e. the "dummy" driver. (necessary on windows)
-#if !defined(FOR_WINDOWS)
-    R_ASSERT_NON_RELEASE(false);
-#endif
-    return;
-  }
-
-  
-  //printf("current time: %f\n",(float)RtMidiOut::getCurrentTime(myport->midiout->getCurrentApi()));
-
-  //printf("got midi: %x,%x,%x at time %f (rtmidi_time: %f) (current_time: %f)\n",cc,data1,data2,(float)time/(double)PFREQ,rtmidi_time,(float)RtMidiOut::getCurrentTime(midiout->getCurrentApi()));
-
-  
   if(len==1)
-    output->sendMessageNow(juce::MidiMessage(cc));
+    send_message(port, juce::MidiMessage(cc), NULL);
   else if(len==2)
-    output->sendMessageNow(juce::MidiMessage(cc, data1));
+    send_message(port, juce::MidiMessage(cc, data1), NULL);
   else
-    output->sendMessageNow(juce::MidiMessage(cc, data1, data2));
+    send_message(port, juce::MidiMessage(cc, data1, data2), NULL);
 }
 
+void MIDI_OS_sendMessage(radium::MidiOutputPortOs *port,
+                         int len,
+                         uint8_t *data,
+                         radium::AbstractMutex *mutex)
+{
+  R_ASSERT_NON_RELEASE(!PLAYER_current_thread_has_lock());
+  
+  send_message(port, juce::MidiMessage(data, len), mutex);
+}
+  
 static const char** string_array_to_char_array(const juce::StringArray &devices, int *retsize){
   *retsize = devices.size();
   

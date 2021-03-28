@@ -664,11 +664,19 @@ public:
       ATOMIC_SET_ARRAY(_in_use, pos, false);
     }
     
-    int RT_obtain(void){
+    int RT_obtain_may_fail(void) {
       for(int i=0;i<SIZE;i++)
         if(ATOMIC_COMPARE_AND_SET_BOOL_ARRAY(_in_use, i, false, true))
           return i;
 
+      return -1;
+    }
+    int RT_obtain(void){
+      int ret = RT_obtain_may_fail();
+
+      if (ret >= 0)
+        return ret;
+      
       R_ASSERT(false);
 
       return 0;

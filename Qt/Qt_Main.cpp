@@ -89,6 +89,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define INCLUDE_SNDFILE_OPEN_FUNCTIONS 1
 #include "../common/nsmtracker.h"
+#include "../common/RT_memory_allocator_proc.h"
 #include "../common/threading.h"
 #include "../common/blocks_proc.h"
 #include "../common/disk_load_proc.h"
@@ -4198,7 +4199,9 @@ int main(int argc, char **argv){
 #endif
   
   MONOTONIC_TIMER_init();
-  
+
+  RT_mempool_init();
+    
   PLUGINHOST_init();
   
   //signal(SIGSEGV,crash);

@@ -359,7 +359,7 @@ int main(void){
   int seed = time(NULL);
   printf("Seed: %d\n", (int)seed);
   
-  srand(time(NULL));
+  srand(seed);
   
   const int num_main_iterations = 75 + rand()%50;
   int total_num_elements = 0;

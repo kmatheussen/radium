@@ -175,6 +175,16 @@ static void testmidi(void){
 }
 #endif
 
+#include "../common/RT_memory_allocator_proc.h"
+
+void *RT_alloc_raw(int size, const char *who){
+  return malloc(size);
+}
+
+void RT_free_raw(void *mem, const char *who){
+  free(mem);
+}
+
 int main(int argc, char **argv){
 
   //printf("Launched 1 -%s- (%s)\n",argv[1], Base64::toBase64(argv[1]).toRawUTF8());

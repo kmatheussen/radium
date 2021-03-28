@@ -105,13 +105,15 @@ extern LANGSPEC void THREADING_drop_player_thread_priority(void); // Implemented
 namespace radium{
 class ScopedPlayerThreadPriority {
   const bool _doit;
-  const priority_t _priority_before = THREADING_get_priority();
+  priority_t _priority_before;
  public:
   ScopedPlayerThreadPriority(bool doit = true)
     : _doit(doit)
   {
-    if (doit)
+    if (doit){
+      _priority_before = THREADING_get_priority();
       THREADING_acquire_player_thread_priority();
+    }
   }
   ~ScopedPlayerThreadPriority(){
     if (_doit)

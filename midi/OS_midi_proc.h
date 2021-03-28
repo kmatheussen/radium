@@ -18,7 +18,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef OS_MIDI_PROC_H
 #define OS_MIDI_PROC_H
 
-
 extern LANGSPEC void MIDI_OS_InitTiming(void);
 
 #ifdef __cplusplus
@@ -26,6 +25,7 @@ extern LANGSPEC void MIDI_OS_InitTiming(void);
 namespace radium{
   struct MidiOutputPortOs;
   struct MidiInputPortOs;
+  struct AbstractMutex;
 }
 
 
@@ -42,6 +42,12 @@ extern void MIDI_OS_sendMessage(radium::MidiOutputPortOs *port,
                                 int data1,
                                 int data2
                                 );
+
+// This function is not realtime safe. Supply a mutex if the underlying port needs to be protected from simultaneous access.
+extern void MIDI_OS_sendMessage(radium::MidiOutputPortOs *port,
+                                int len,
+                                uint8_t *data,
+                                radium::AbstractMutex *mutex = NULL);
 
 extern void MIDI_OS_PlayFromStart(radium::MidiOutputPortOs *port);
 

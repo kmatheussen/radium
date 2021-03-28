@@ -264,6 +264,59 @@ void MIDIPORT_send_message(
   }
 }
 
+namespace{
+  struct SysexLock : public radium::AbstractMutex{
+
+    const bool _do_boost_priority;
+    priority_t _priority_before;
+    radium::Mutex &_midi_out_mutex;
+    
+    SysexLock(radium::MidiOutputPort *midi_port)
+      : _do_boost_priority(THREADING_is_main_thread() && midi_port->_is_RT)
+      , _midi_out_mutex(midi_port->_midi_out_mutex)
+    {
+    }
+    
+    void lock(void) override {
+      if (_do_boost_priority) {
+        _priority_before = THREADING_get_priority();
+        THREADING_acquire_player_thread_priority();
+      }
+
+      _midi_out_mutex.lock();
+    }
+    
+    void unlock(void)  override {
+      _midi_out_mutex.unlock();
+      
+      if (_do_boost_priority)
+        THREADING_set_priority(_priority_before);
+    }
+  };
+}
+
+void MIDIPORT_send_sysex(
+                         radium::MidiOutputPort *midi_port,
+                         int len,
+                         uint8_t *data)
+{
+#if !defined(RELEASE)
+  if (THREADING_has_player_thread_priority())
+    abort();
+
+  if (!THREADING_is_main_thread())
+    abort();
+#endif
+  
+  R_ASSERT_NON_RELEASE(len >= 2);
+  R_ASSERT_NON_RELEASE(data[0]==0xf0);
+  R_ASSERT_NON_RELEASE(data[len-1]==0xf7);
+                       
+  SysexLock lock(midi_port);
+  
+  MIDI_OS_sendMessage(midi_port->_os_port, len, data, &lock);
+}
+
 void MIDIPORT_stop_all_notes(radium::MidiOutputPort *midi_port){
   R_ASSERT_RETURN_IF_FALSE(midi_port->_num_users > 0);
   
@@ -316,8 +369,8 @@ struct MidiInputPort {
     , _callback_arg(callback_arg)
   {}
 
-  void input_message_has_been_received(int cc, int data1, int data2) const {
-    _callback(_port_name, cc, data1, data2, _callback_arg);
+  void input_message_has_been_received(const radium::MidiMessage &message) const {
+    _callback(_port_name, message, _callback_arg);
   }
 };
 
@@ -341,12 +394,13 @@ const symbol_t *MIDIPORT_get_port_name(radium::MidiInputPort *port){
 
 
 // called from juce_midi.cpp
-void MIDI_InputMessageHasBeenReceived(const symbol_t *port_name, int cc, int data1, int data2){
+void MIDI_InputMessageHasBeenReceived(const symbol_t *port_name, const radium::MidiMessage &message){
   radium::ScopedMutex lock(g_input_ports_lock);
   
   for(const radium::MidiInputPort *port : g_input_ports){
+    //printf("N1: \"%s\" N2: \"%s\". Equal: %d\n", port_name->name, port->_port_name->name, port->_port_name==port_name);
     if (port->_port_name==port_name)
-      port->input_message_has_been_received(cc, data1, data2);
+      port->input_message_has_been_received(message);
   }
 }
 
@@ -435,8 +489,13 @@ static void update_editor_ports_config_settings(void){
     SETTINGS_write_string(talloc_format("midi_input_port_%d",i), g_editor_inports[i]->_port_name->name);
 }
 
-static void editor_midi_input_callback(const symbol_t *port_name, int cc, int data1, int data2, void *arg){
-  MIDI_editor_and_midi_learn_InputMessageHasBeenReceived(port_name, cc, data1, data2);
+static void editor_midi_input_callback(const symbol_t *port_name, const radium::MidiMessage &message, void *arg){
+  if (message._sysex_msg==NULL)
+    MIDI_editor_and_midi_learn_InputMessageHasBeenReceived(port_name,
+                                                           MIDI_msg_byte1(message._msg),
+                                                           MIDI_msg_byte2(message._msg),
+                                                           MIDI_msg_byte3(message._msg)
+                                                           );
 }
 
 bool MIDI_has_editor_input_port(const char *name){
