@@ -62,7 +62,12 @@ static QSet<func_t*> g_deleted_callbacks;
 namespace{
 typedef struct _midi_event_t{
   func_t *_callback;
-  uint32_t _msg;
+
+  union{
+    uint32_t _msg;
+    uint32_t _sysex_len;
+  };
+  RT_Mem<uint8_t> *_sysex_msg;
 } midi_event_t;
 }
 
@@ -74,7 +79,7 @@ static boost::lockfree::queue<midi_event_t, boost::lockfree::capacity<8000> > *g
 /********** OUTPUT *******************/
 
 void sendMidiMessage(int64_t port_id, int byte1, int byte2, int byte3){
-  if (byte1 >= 0x100 || byte2 >= 0x100 || byte3 >= 0x100){
+  if (byte1 >= 0x100 || byte2 >= 0x7f || byte3 >= 0x7f || byte1 < 0x80 || byte2 < 0 || byte3 < 0 || byte1==0xf0){
     handleError("sendMidiMessage: Illegal MIDI message %x %d %d", byte1, byte2, byte3);
     return;
   }
@@ -93,12 +98,73 @@ void sendMidiMessage(int64_t port_id, int byte1, int byte2, int byte3){
   MIDIPORT_send_message(port, byte1, byte2, byte3);
 }
 
+void sendSysex(int64_t port_id, dynvec_t bytes){
+  radium::MidiOutputPort *port = g_output_ports.value(port_id);
+  if (port==NULL){
+
+    if (port_id >= 0 && port_id < g_output_port_counter)
+      handleError("sendSysex: MIDI output port %d has been closed.", (int)port_id);
+    else
+      handleError("sendSysex: MIDI output port %d has never been opened.", (int)port_id);
+
+    return;
+  }
+
+  if (bytes.num_elements < 2 || bytes.num_elements > 10000000){
+    handleError("sendSysex: Illlegal message. Size: %d", bytes.num_elements);
+    return;
+  }
+
+  uint8_t *data = (uint8_t *)talloc(sizeof(uint8_t)*bytes.num_elements);
+
+  int i = 0;
+  
+  for(dyn_t dyn : bytes) {
+
+    if (dyn.type != INT_TYPE){
+      handleError("sendSysex: Element #%d is not an integer. Found: %s", i, DYN_type_name(dyn.type));
+      return;
+    }
+
+    int b = dyn.int_number;
+
+    if (i==0) {
+      
+      if (b != 0xf0) {
+        handleError("sendSysex: First byte is not 0xf0. Found: %x", b);
+        return;
+      }
+
+    } else if (i==bytes.num_elements-1) {
+
+      if (b != 0xff) {
+        handleError("sendSysex: Last byte is not 0xf7. Found: %x", b);
+        return;
+      }
+
+    } else {
+
+      if (b < 0 || b > 0x7f) {
+        handleError("sendSysex: Byte #%d has illegal value %x", i, b);
+        return;
+      }
+
+    }
+
+    data[i] = b;
+    
+    i++;
+  }
+  
+  MIDIPORT_send_sysex(port, bytes.num_elements, data);
+}
+
 // returns -1 on error
 int64_t openMidiOutputPort(const_char* portname, bool create_new_if_not_existing){
-  // FIX: Check if port is open already.
 
   radium::MidiOutputPort *port = MIDIPORT_open_output(portname, create_new_if_not_existing, false);
   if (port==NULL){
+    R_ASSERT(!create_new_if_not_existing);
     handleError("Unable to open output MIDI port \"%s\"", portname);
     return -1;
   }
@@ -161,11 +227,12 @@ void API_MIDI_called_regularly(void){
   while(g_midi_event_queue->pop(event)==true){
     
     func_t *callback = event._callback;
+
     uint32_t msg = event._msg;
-    
+
     R_ASSERT_RETURN_IF_FALSE(callback != NULL);
 
-    printf("Calling callback %d %d %d\n", MIDI_msg_byte1(msg), MIDI_msg_byte2(msg), MIDI_msg_byte3(msg));
+    //printf("Calling callback %d %d %d\n", MIDI_msg_byte1(msg), MIDI_msg_byte2(msg), MIDI_msg_byte3(msg));
 
     if (msg==UNPROTECT_MESSAGE) {
       
@@ -173,33 +240,89 @@ void API_MIDI_called_regularly(void){
       R_ASSERT_NON_RELEASE(n==1);
       
     } else if (!g_deleted_callbacks.contains(callback)) {
+
+      bool ret;
       
-      if (false==S7CALL(bool_int_int_int, callback, MIDI_msg_byte1(msg), MIDI_msg_byte2(msg), MIDI_msg_byte3(msg))) {
+      if (event._sysex_msg != NULL) {
+
+        //printf("  API: Got sysex. Lenght: %d\n", event._sysex_len);
+
+        dynvec_t bytes = DYNVEC_create(event._sysex_len);
         
-        int64_t port_id = get_port_id_from_callback(callback);
+        for(int i=0 ; i < (int)event._sysex_len ; i++)
+          bytes.elements[i] = DYN_create_int(RT_data(event._sysex_msg)[i]);
+
+        ret = S7CALL(bool_dyn, callback, DYN_create_array(bytes));
+
+        RT_free(event._sysex_msg, "API_MIDI_called_regularly");
         
-        if (port_id >= 0)
-          closeMidiInputPort(port_id, false);
+      } else {
+
+        int len = MIDI_msg_len(msg);
         
+        dynvec_t bytes = DYNVEC_create(len);
+
+        bytes.elements[0] = DYN_create_int(MIDI_msg_byte1(msg));
+
+        if (len > 1)
+          bytes.elements[1] = DYN_create_int(MIDI_msg_byte2(msg));
+
+        if (len > 2)
+          bytes.elements[2] = DYN_create_int(MIDI_msg_byte3(msg));
+        
+        ret = S7CALL(bool_dyn, callback, DYN_create_array(bytes));
+          
       }
       
+        if (false==ret) {
+          
+          int64_t port_id = get_port_id_from_callback(callback);
+          
+          if (port_id >= 0)
+            closeMidiInputPort(port_id, false);
+          
+        }
+
     }
     
   }
 }
 
-static void midi_input_callback(const symbol_t *port_name, int cc, int data1, int data2, void *arg){
+static void midi_input_callback(const symbol_t *port_name, const radium::MidiMessage &message, void *arg){
 
+  //printf("    API: midi_input_callback called. Message.sysex_msg: %p\n", message._sysex_msg);
+  
   func_t *callback = static_cast<func_t*>(arg);
   
   R_ASSERT_RETURN_IF_FALSE(callback!=NULL);
   
   midi_event_t event;
   event._callback = callback;
-  event._msg = MIDI_msg_pack3(cc, data1, data2);
 
-  if (!g_midi_event_queue->bounded_push(event))
-    RT_message("MIDI API queue full");
+  if (message._sysex_msg != NULL) {
+    
+    event._sysex_msg = message._sysex_msg;
+    RT_inc_ref(event._sysex_msg);
+
+    event._sysex_len = message._sysex_len;
+    
+  } else {
+
+    event._msg = message._msg;
+    event._sysex_msg = NULL;
+    
+  }
+  
+  for(int i=0;i<10000;i++){
+    
+    if (g_midi_event_queue->bounded_push(event))
+      return;
+    
+    msleep(10);
+  }
+
+  
+  RT_message("MIDI API queue full");
 }
 
 // returns -1 on error

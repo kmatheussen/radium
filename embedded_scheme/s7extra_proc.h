@@ -230,6 +230,9 @@ extern "C" {
   bool s7extra_callFunc_bool_bool_dyn(const func_t *func, bool arg1, dyn_t arg2);
   bool s7extra_callFunc2_bool_bool_dyn(const char *funcname, bool arg1, dyn_t arg2);
 
+  bool s7extra_callFunc_bool_dyn(const func_t *func, dyn_t arg2);
+  bool s7extra_callFunc2_bool_dyn(const char *funcname, dyn_t arg2);
+
   bool s7extra_callFunc_bool_bool_charpointer_charpointer_dyn(const func_t *func, bool arg1, const char *arg2, const char *arg3, dyn_t arg4);
   bool s7extra_callFunc2_bool_bool_charpointer_charpointer_dyn(const char *funcname, bool arg1, const char *arg2, const char *arg3, dyn_t arg4);
 

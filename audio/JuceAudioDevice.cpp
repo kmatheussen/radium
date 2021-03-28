@@ -229,7 +229,7 @@ public:
   bool _has_set_realtime_priority = false;
 #endif
   
-  void audioDeviceIOCallback(const float ** 	inputChannelData, 
+  void audioDeviceIOCallback(const float **inputChannelData, 
 			     int 	totalNumInputChannels, 
 			     float ** 	outputChannelData, 
 			     int 	totalNumOutputChannels, 

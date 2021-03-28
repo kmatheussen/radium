@@ -17,12 +17,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef MIDI_MENUES_PROC_H
 #define MIDI_MENUES_PROC_H
 
-extern LANGSPEC int MIDIResetAllControllers( void );
-extern LANGSPEC int MIDILocalKeyboardOn( void );
-extern LANGSPEC int MIDILocalKeyboardOff( void );
-extern LANGSPEC int MIDIAllNotesOff( void );
-extern LANGSPEC int MIDIAllSoundsOff( void );
-extern LANGSPEC int MIDISetInputPort(bool program_state_is_valid);
 
 #endif
 

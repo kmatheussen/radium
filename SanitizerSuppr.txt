@@ -33,3 +33,7 @@ race:RX11_get_event_response_type
 race:call_ladspa_get_descriptor_func
 
 #interceptor_via_lib:fglrx_dri.so
+
+race:boost::lockfree::stack<RT_mempool_data*>::pop
+race:boost::lockfree::stack<RT_mempool_data*>::bounded_push
+
