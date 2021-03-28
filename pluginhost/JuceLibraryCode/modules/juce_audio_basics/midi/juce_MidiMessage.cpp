@@ -20,6 +20,9 @@
   ==============================================================================
 */
 
+#include "../../../../../common/RT_memory_allocator_proc.h"
+
+
 namespace juce
 {
 
@@ -266,22 +269,20 @@ MidiMessage::MidiMessage (const void* srcData, int sz, int& numBytesUsed, const 
 
 MidiMessage& MidiMessage::operator= (const MidiMessage& other)
 {
+  
     if (this != &other)
     {
+        if (isHeapAllocated())
+              RT_free(packedData.allocatedData, "juce::MidiMessage::operator=");
+          
         if (other.isHeapAllocated())
         {
-            if (isHeapAllocated())
-                packedData.allocatedData = static_cast<uint8*> (std::realloc (packedData.allocatedData, (size_t) other.size));
-            else
-                packedData.allocatedData = static_cast<uint8*> (std::malloc ((size_t) other.size));
-
-            memcpy (packedData.allocatedData, other.packedData.allocatedData, (size_t) other.size);
+            packedData.allocatedData = RT_alloc<uint8>(other.size, "juce::MidiMessage::operator=");
+            
+            memcpy (packedData.allocatedData, other.packedData.allocatedData, (size_t) other.size);            
         }
         else
         {
-            if (isHeapAllocated())
-                std::free (packedData.allocatedData);
-
             packedData.allocatedData = other.packedData.allocatedData;
         }
 
@@ -311,16 +312,16 @@ MidiMessage& MidiMessage::operator= (MidiMessage&& other) noexcept
 MidiMessage::~MidiMessage() noexcept
 {
     if (isHeapAllocated())
-        std::free (packedData.allocatedData);
+        RT_free(packedData.allocatedData, "juce::MidiMessage::~MidiMessage"); //std::free (packedData.allocatedData);
 }
 
 uint8* MidiMessage::allocateSpace (int bytes)
 {
     if (bytes > (int) sizeof (packedData))
     {
-        auto d = static_cast<uint8*> (std::malloc ((size_t) bytes));
+        auto d = RT_alloc<uint8>(bytes, "juce::MidiMessage::allocateSpace"); //std::malloc ((size_t) bytes));
         packedData.allocatedData = d;
-        return d;
+        return getData();
     }
 
     return packedData.asBytes;

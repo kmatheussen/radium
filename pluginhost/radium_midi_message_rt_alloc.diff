@@ -1,0 +1,107 @@
+diff --git a/pluginhost/JuceLibraryCode/modules/juce_audio_basics/midi/juce_MidiMessage.cpp b/pluginhost/JuceLibraryCode/modules/juce_audio_basics/midi/juce_MidiMessage.cpp
+index 9ccccfa..c8e1bbc 100644
+--- a/pluginhost/JuceLibraryCode/modules/juce_audio_basics/midi/juce_MidiMessage.cpp
++++ b/pluginhost/JuceLibraryCode/modules/juce_audio_basics/midi/juce_MidiMessage.cpp
+@@ -20,6 +20,9 @@
+   ==============================================================================
+ */
+ 
++#include "../../../../../common/RT_memory_allocator_proc.h"
++
++
+ namespace juce
+ {
+ 
+@@ -266,22 +269,20 @@ MidiMessage::MidiMessage (const void* srcData, int sz, int& numBytesUsed, const
+ 
+ MidiMessage& MidiMessage::operator= (const MidiMessage& other)
+ {
++  
+     if (this != &other)
+     {
++        if (isHeapAllocated())
++              RT_free(packedData.allocatedData, "juce::MidiMessage::operator=");
++          
+         if (other.isHeapAllocated())
+         {
+-            if (isHeapAllocated())
+-                packedData.allocatedData = static_cast<uint8*> (std::realloc (packedData.allocatedData, (size_t) other.size));
+-            else
+-                packedData.allocatedData = static_cast<uint8*> (std::malloc ((size_t) other.size));
+-
+-            memcpy (packedData.allocatedData, other.packedData.allocatedData, (size_t) other.size);
++            packedData.allocatedData = RT_alloc<uint8>(other.size, "juce::MidiMessage::operator=");
++            
++            memcpy (packedData.allocatedData, other.packedData.allocatedData, (size_t) other.size);            
+         }
+         else
+         {
+-            if (isHeapAllocated())
+-                std::free (packedData.allocatedData);
+-
+             packedData.allocatedData = other.packedData.allocatedData;
+         }
+ 
+@@ -311,16 +312,16 @@ MidiMessage& MidiMessage::operator= (MidiMessage&& other) noexcept
+ MidiMessage::~MidiMessage() noexcept
+ {
+     if (isHeapAllocated())
+-        std::free (packedData.allocatedData);
++        RT_free(packedData.allocatedData, "juce::MidiMessage::~MidiMessage"); //std::free (packedData.allocatedData);
+ }
+ 
+ uint8* MidiMessage::allocateSpace (int bytes)
+ {
+     if (bytes > (int) sizeof (packedData))
+     {
+-        auto d = static_cast<uint8*> (std::malloc ((size_t) bytes));
++        auto d = RT_alloc<uint8>(bytes, "juce::MidiMessage::allocateSpace"); //std::malloc ((size_t) bytes));
+         packedData.allocatedData = d;
+-        return d;
++        return getData();
+     }
+ 
+     return packedData.asBytes;
+diff --git a/pluginhost/JuceLibraryCode/modules/juce_audio_basics/midi/juce_MidiMessage.h b/pluginhost/JuceLibraryCode/modules/juce_audio_basics/midi/juce_MidiMessage.h
+index 5628c3a..3704e91 100644
+--- a/pluginhost/JuceLibraryCode/modules/juce_audio_basics/midi/juce_MidiMessage.h
++++ b/pluginhost/JuceLibraryCode/modules/juce_audio_basics/midi/juce_MidiMessage.h
+@@ -20,6 +20,8 @@
+   ==============================================================================
+ */
+ 
++#include "../../../../../common/RT_memory_allocator_proc.h"
++
+ namespace juce
+ {
+ 
+@@ -137,6 +139,8 @@ public:
+     */
+     int getRawDataSize() const noexcept                 { return size; }
+ 
++    RT_Mem<uint8> *getRT_Mem() const noexcept { return isHeapAllocated() ? packedData.allocatedData : NULL; }
++              
+     //==============================================================================
+     /** Returns a human-readable description of the midi message as a string,
+         for example "Note On C#3 Velocity 120 Channel 1".
+@@ -935,8 +939,9 @@ private:
+    #ifndef DOXYGEN
+     union PackedData
+     {
+-        uint8* allocatedData;
+-        uint8 asBytes[sizeof (uint8*)];
++        RT_Mem<uint8> *allocatedData;
++
++        uint8 asBytes[sizeof (RT_Mem<uint8>*)];
+     };
+ 
+     PackedData packedData;
+@@ -945,7 +950,7 @@ private:
+    #endif
+ 
+     inline bool isHeapAllocated() const noexcept  { return size > (int) sizeof (packedData); }
+-    inline uint8* getData() const noexcept        { return isHeapAllocated() ? packedData.allocatedData : (uint8*) packedData.asBytes; }
++    inline uint8* getData() const noexcept        { return isHeapAllocated() ? RT_data(packedData.allocatedData) : (uint8*) packedData.asBytes; }
+     uint8* allocateSpace (int);
+ };
+ 
