@@ -19,6 +19,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <windows.h>
 #endif
 
+#if defined(FOR_MACOSX)
+#include "../macosx/machthreads_proc.h"
+#endif
+
 #include "../common/threading_lowlevel.h"
 #include "../common/settings_proc.h"
 
@@ -383,6 +387,12 @@ public:
     
     double sampleRate = device->getCurrentSampleRate ();
     
+    int buffer_size = device->getCurrentBufferSizeSamples();
+
+#if defined(FOR_MACOSX)
+    MACH_THREADS_set_period_and_buffer_size(sampleRate, buffer_size);
+#endif
+    
     //printf("Samplerate set to %f\n",(float)sampleRate);
     
     _samplerate = sampleRate;
@@ -394,8 +404,6 @@ public:
     printf("Latency in/out: %d / %d\n", g_audio_system_input_latency, g_audio_system_output_latency);
 #endif
     
-    int buffer_size = device->getCurrentBufferSizeSamples();
-
     if (buffer_size < RADIUM_BLOCKSIZE || (buffer_size % RADIUM_BLOCKSIZE) != 0){
       THREADING_run_on_main_thread_async([buffer_size]
                                          {
@@ -447,12 +455,19 @@ public:
 static radium::JucePlayer *g_juce_player = NULL;
 
 bool JUCE_audio_set_audio_thread_priority(radium_thread_t thread){
-#if defined(FOR_WINDOWS)
+#if defined(FOR_MACOSX)
+  
+  return MACH_THREADS_jack_acquire_real_time_scheduling(thread);
+  
+#elif defined(FOR_WINDOWS)
+  
   if (SetThreadPriority(thread, THREAD_PRIORITY_TIME_CRITICAL))
     return true;
   else
     return false;
+  
 #else
+  
   auto policy = SCHED_RR; // Maybe use SCHED_FIFO instead.
   auto min_priority = sched_get_priority_min (policy);
   auto max_priority = sched_get_priority_max (policy);
@@ -465,6 +480,7 @@ bool JUCE_audio_set_audio_thread_priority(radium_thread_t thread){
     return true;
   else
     return false;
+  
 #endif
   
   // not good enough: (on windows)
@@ -476,7 +492,11 @@ bool JUCE_audio_set_audio_thread_priority_of_current_thread(void){
 }
 
 bool JUCE_audio_set_normal_thread_priority(radium_thread_t thread){
-#if defined(FOR_WINDOWS)
+#if defined(FOR_MACOSX)
+  
+  return MACH_THREADS_jack_drop_real_time_scheduling(thread);
+  
+#elif defined(FOR_WINDOWS)
   
   if (SetThreadPriority(thread, THREAD_PRIORITY_NORMAL))
     return true;

@@ -28,7 +28,12 @@
 
 #include "../audio/Mixer_proc.h"
 
+#if defined(FOR_MACOSX)
+#include "../macosx/machthreads_proc.h"
+#endif
+
 #include "OS_Player_proc.h"
+
 
 
 #ifndef TEST_THREADING
@@ -464,6 +469,15 @@ priority_t THREADING_get_priority(void){
 
 
 void THREADING_set_priority(priority_t priority){
+
+  // NOTE! This function is always used to set non-realtime priority. This is asserted in debug mode on linux.
+  
+#if !defined(RELEASE)
+#if defined(FOR_LINUX)
+  R_ASSERT(priority.policy==SCHED_OTHER);
+#endif
+#endif
+  
 #if defined(FOR_WINDOWS)
   
   int success = SetThreadPriority(GetCurrentThread(), priority.priority);
@@ -479,7 +493,7 @@ void THREADING_set_priority(priority_t priority){
 
 #if defined(FOR_MACOSX)
   // Workaround for 10.12
-  if (priority.policy==SCHED_OTHER){
+  if (true || priority.policy==SCHED_OTHER){
     int success = jack_drop_real_time_scheduling(GET_CURRENT_THREAD());
     if (success!=0) {
       GFX_Message(NULL, "jack_drop_real_time_scheduling(GET_CURRENT_THREAD()) returned %d (policy: %d, priority: %d, message: \"%s\")",
@@ -515,7 +529,8 @@ void THREADING_set_priority(priority_t priority){
 #endif
 }
 
-
+#if !defined(RELEASE)
+#if !defined(FOR_MACOSX)
 bool THREADING_has_player_thread_priority(void){
   priority_t priority = THREADING_get_priority();
 #if defined(FOR_WINDOWS)
@@ -523,8 +538,9 @@ bool THREADING_has_player_thread_priority(void){
 #else
   return (priority.policy==SCHED_RR || priority.policy==SCHED_FIFO);
 #endif
+#endif
 }
-  
+#endif
 
 #ifdef TEST_THREADING
 

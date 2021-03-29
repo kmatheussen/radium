@@ -90,7 +90,11 @@ typedef HANDLE radium_thread_t;
 typedef pthread_t radium_thread_t;
 #endif
 
+#if !defined(RELEASE)
+#if !defined(FOR_MACOSX)
 extern LANGSPEC bool THREADING_has_player_thread_priority(void);  // Implemented in common/threading.cpp
+#endif
+#endif
 
 extern LANGSPEC void THREADING_acquire_player_thread_priority2(radium_thread_t thread);  // Implemented in audio/Mixer.cpp
 extern LANGSPEC void THREADING_acquire_player_thread_priority(void); // Implemented in audio/Mixer.cpp
