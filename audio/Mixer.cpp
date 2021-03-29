@@ -1186,9 +1186,11 @@ struct Mixer{
 
     R_ASSERT_NON_RELEASE(num_frames >= RADIUM_BLOCKSIZE);
 
+#if !defined(FOR_MACOSX)
     if (!_is_saving_sound){
       R_ASSERT_NON_RELEASE(THREADING_has_player_thread_priority());
     }
+#endif
     
     if (ATOMIC_GET_RELAXED(_RT_process_has_inited)==false || THREADING_init_player_thread_type()){
       AVOIDDENORMALS;

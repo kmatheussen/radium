@@ -226,6 +226,7 @@ void MIDIPORT_send_message(
                            )
 {
 #if !defined(RELEASE)
+#if !defined(FOR_MACOSX)
   if (THREADING_has_player_thread_priority()) {
     
     if (!midi_port->_is_RT)
@@ -236,6 +237,7 @@ void MIDIPORT_send_message(
     if (!THREADING_is_main_thread())
       abort();
   }
+#endif
 #endif
 
   R_ASSERT_RETURN_IF_FALSE(midi_port->_num_users > 0);
@@ -301,9 +303,11 @@ void MIDIPORT_send_sysex(
                          uint8_t *data)
 {
 #if !defined(RELEASE)
+#if defined(FOR_MACOSX)
   if (THREADING_has_player_thread_priority())
     abort();
-
+#endif
+  
   if (!THREADING_is_main_thread())
     abort();
 #endif

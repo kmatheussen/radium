@@ -542,7 +542,7 @@ OBJ_POSIX=$(T)posix_settings.o $(T)posix_Player.o
 # Two of the following three must be set empty by the build script.
 OBJ_X11 ?= $(T)X11_keyboard.o $(T)X11_disk.o
 OBJ_WIN ?= $(T)X11_disk.o $(T)W_Keyboard.o
-OBJ_MACOSX ?= $(T)X11_disk.o $(T)cocoa_Keyboard.o do.o
+OBJ_MACOSX ?= $(T)X11_disk.o $(T)cocoa_Keyboard.o do.o $(T)machthreads.o
 
 #Python
 OBJ13=$(T)radium_wrap.o $(T)api_common.o $(T)api_keyplay.o $(T)api_keyplayedit.o $(T)api_navigate.o $(T)api_disk.o $(T)api_noteedit.o $(T)api_velocities.o $(T)api_pitches.o $(T)api_timing.o $(T)api_support.o $(T)wrapfunclist.o $(T)api_trackonoff.o $(T)api_zoom.o $(T)api_notemanipulate.o $(T)api_play.o $(T)api_clipboard.o $(T)api_undo.o $(T)api_various.o $(T)api_instruments.o $(T)api_soundpluginregistry.o $(T)api_requesters.o $(T)api_mouse.o $(T)api_sequencer.o $(T)api_gui.o $(T)api_osc.o $(T)api_midi.o
@@ -1455,6 +1455,9 @@ $(T)W_Keyboard.o:  $(BUILD_DEPENDENCIES) windows/W_Keyboard.c
 
 $(T)cocoa_Keyboard.o:  $(BUILD_DEPENDENCIES) macosx/cocoa_Keyboard.m
 	$(CC2) macosx/cocoa_Keyboard.m $(OPT)
+
+$(T)machthreads.o:  $(BUILD_DEPENDENCIES) macosx/machthreads.mm
+	$(CC2) macosx/machthreads.mm $(OPT)
 
 $(T)X11_Ptask2Mtask.o:  $(BUILD_DEPENDENCIES) X11/X11_Ptask2Mtask.c 
 	$(CC2) X11/X11_Ptask2Mtask.c $(OPT)
