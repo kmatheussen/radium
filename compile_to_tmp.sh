@@ -26,6 +26,13 @@ for var in "$@"; do
         #echo "YES2: $var"
         break
     fi
+    if [ -z ${var##*.mm} ]; then
+        sourcefile=$var
+        base=${var##*/}
+        base=${base%.*}
+        #echo "YES2: $var"
+        break
+    fi
 done
 
 #echo "base:" $base

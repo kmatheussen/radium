@@ -18,13 +18,63 @@ But it's not easy to understand. Instead we just use the jack code.
 #include <TargetConditionals.h>
 #include <mach/thread_policy.h>
 #include <mach/thread_act.h>
+#include <CoreAudio/CoreAudio.h>
 
 
 #include "machthreads_proc.h"
 
+#define THREAD_SET_PRIORITY         0
+#define THREAD_SCHEDULED_PRIORITY   1
 
+static int GetThreadPriority(pthread_t thread, int inWhichPriority)
+{
+    thread_basic_info_data_t threadInfo;
+    policy_info_data_t thePolicyInfo;
+    unsigned int count;
 
-static bool JackMachThread_SetThreadToPriority(pthread_t thread, UInt32 inPriority, Boolean inIsFixed, UInt64 period, UInt64 computation, UInt64 constraint)
+    // get basic info
+    count = THREAD_BASIC_INFO_COUNT;
+    thread_info(pthread_mach_thread_np(thread), THREAD_BASIC_INFO, (thread_info_t)&threadInfo, &count);
+
+    switch (threadInfo.policy) {
+        case POLICY_TIMESHARE:
+            count = POLICY_TIMESHARE_INFO_COUNT;
+            thread_info(pthread_mach_thread_np(thread), THREAD_SCHED_TIMESHARE_INFO, (thread_info_t)&(thePolicyInfo.ts), &count);
+            if (inWhichPriority == THREAD_SCHEDULED_PRIORITY) {
+                return thePolicyInfo.ts.cur_priority;
+            } else {
+                return thePolicyInfo.ts.base_priority;
+            }
+            break;
+
+        case POLICY_FIFO:
+            count = POLICY_FIFO_INFO_COUNT;
+            thread_info(pthread_mach_thread_np(thread), THREAD_SCHED_FIFO_INFO, (thread_info_t)&(thePolicyInfo.fifo), &count);
+            if ( (thePolicyInfo.fifo.depressed) && (inWhichPriority == THREAD_SCHEDULED_PRIORITY) ) {
+                return thePolicyInfo.fifo.depress_priority;
+            }
+            return thePolicyInfo.fifo.base_priority;
+            break;
+
+        case POLICY_RR:
+            count = POLICY_RR_INFO_COUNT;
+            thread_info(pthread_mach_thread_np(thread), THREAD_SCHED_RR_INFO, (thread_info_t)&(thePolicyInfo.rr), &count);
+            if ( (thePolicyInfo.rr.depressed) && (inWhichPriority == THREAD_SCHEDULED_PRIORITY) ) {
+                return thePolicyInfo.rr.depress_priority;
+            }
+            return thePolicyInfo.rr.base_priority;
+            break;
+    }
+
+    return 0;
+}
+
+static int GetThreadSetPriority(pthread_t thread)
+{
+    return GetThreadPriority(thread, THREAD_SET_PRIORITY);
+}
+
+static bool SetThreadToPriority(pthread_t thread, int inPriority, bool inIsFixed, uint64_t period, uint64_t computation, uint64_t constraint)
 {
     if (inPriority == 96) {
       
@@ -55,7 +105,7 @@ static bool JackMachThread_SetThreadToPriority(pthread_t thread, UInt32 inPriori
         // OTHER THREADS
         thread_extended_policy_data_t theFixedPolicy;
         thread_precedence_policy_data_t thePrecedencePolicy;
-        SInt32 relativePriority;
+        int relativePriority;
 
         // [1] SET FIXED / NOT FIXED
         theFixedPolicy.timeshare = !inIsFixed;
@@ -85,28 +135,28 @@ static bool JackMachThread_SetThreadToPriority(pthread_t thread, UInt32 inPriori
     }
 }
 
-static bool JackMachThread_AcquireRealTimeImp(pthread_t thread, UInt64 period, UInt64 computation, UInt64 constraint)
+static bool JackMachThread_AcquireRealTimeImp2(pthread_t thread, UInt64 period, UInt64 computation, UInt64 constraint)
 {
   return SetThreadToPriority(thread, 96, true, period, computation, constraint);
 }
 
 
-static int fPeriod = 0;
-static int fComputation = 0;
-static int fConstraint;
+static uint64_t fPeriod = 0;
+static uint64_t fComputation = 0;
+static uint64_t fConstraint;
 
 static bool JackMachThread_AcquireRealTimeImp(pthread_t thread, /* int priority, */ UInt64 period, UInt64 computation, UInt64 constraint)
 {
-  return JackMachThread_AcquireRealTimeImp(thread, period, computation, constraint);
+  return JackMachThread_AcquireRealTimeImp2(thread, period, computation, constraint);
 }
 
 bool MACH_THREADS_jack_acquire_real_time_scheduling(pthread_t thread /* , int priority */){ // Note: priority is not actually used here.
-  return JackThread_AcquireRealTimeImp(thread,
-                                       /* priority, */
-                                       fPeriod, // I guess this one must be how long time between each wakeup.
-                                       fComputation, // How long time it takes to compute when woken up?
-                                       fConstraint // ? (Set to fPeriod anyway)
-                                       );
+  return JackMachThread_AcquireRealTimeImp(thread,
+                                           /* priority, */
+                                           fPeriod, // I guess this one must be how long time between each wakeup.
+                                           fComputation, // How long time it takes to compute when woken up?
+                                           fConstraint // ? (Set to fPeriod anyway)
+                                           );
 }
 
 static bool JackMachThread_DropRealTimeImp(pthread_t thread)
@@ -116,7 +166,7 @@ static bool JackMachThread_DropRealTimeImp(pthread_t thread)
 
 bool MACH_THREADS_jack_drop_real_time_scheduling(pthread_t thread)
 {
-  return JackThread_DropRealTimeImp(thread);
+  return JackMachThread_DropRealTimeImp(thread);
 }
 
 
@@ -150,7 +200,7 @@ void MACH_THREADS_set_period_and_buffer_size(double sample_rate, int buffer_size
   const int fPeriodUsecs = 1000000.f / sample_rate * buffer_size;
   fPeriod = fPeriodUsecs * 1000;
   fConstraint = fPeriodUsecs * 1000;
-  fComputation = ComputationMicroSec(fBufferSize) * 1000;
+  fComputation = ComputationMicroSec(buffer_size) * 1000;
 }
 
 
