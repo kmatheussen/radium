@@ -191,6 +191,9 @@ void closeMidiOutputPort(int64_t port_id){
   }
 
   int n = g_output_ports.remove(port_id);
+#if defined(RELEASE)
+  (void)n;
+#endif
   R_ASSERT_NON_RELEASE(n==1);
   
   MIDIPORT_close_output(port);
@@ -237,6 +240,9 @@ void API_MIDI_called_regularly(void){
     if (msg==UNPROTECT_MESSAGE) {
       
       int n = g_deleted_callbacks.remove(callback);
+#if defined(RELEASE)
+      (void)n;
+#endif
       R_ASSERT_NON_RELEASE(n==1);
       
     } else if (!g_deleted_callbacks.contains(callback)) {

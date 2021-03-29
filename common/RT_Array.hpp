@@ -20,11 +20,16 @@ template<typename T> struct RT_Array{
     RT_inc_ref(_data);
   }
 
+  RT_Array& operator=(const RT_Array &other) = delete;
+  
+  /*
+    Doesn't compile with clang:
   RT_Array& operator=(const RT_Array &other){
     this._data = other._data;
     this._size = other._size;
     RT_inc_ref(_data);
   }
+  */
   
   RT_Array(int num_elements, const char *who)
     : _data(RT_alloc<T>(sizeof(T) * std::max(1, num_elements), who)) // Allocate at least one element to prevent crash if [] is used the wrong way.
