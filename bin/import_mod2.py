@@ -839,10 +839,11 @@ class Sample:
 
     def save(self, file, pos):
         homedir = os.path.expanduser("~") # "~" is supposed to work on windows too, according to the internet.
-        loc = locale.getdefaultlocale()
-        if loc[1]:
-            encoding = loc[1]
-            homedir = homedir.decode(encoding)
+        if radium.getOsName() != "macosx": # This block fails on macosx for some reason.
+            loc = locale.getdefaultlocale()
+            if loc[1]:
+                encoding = loc[1]
+                homedir = homedir.decode(encoding)
         base_dir = os.path.join(homedir, ".radium", "mod_samples")
 
         if not os.path.exists(base_dir):
