@@ -1,3 +1,13 @@
+Changes 6.9.66 -> 6.9.67:
+* Macos: Fix error about not being able to set
+  realtime priority. Bug introduced in 6.9.63.
+* API:
+  * New: sendSysex.
+  * Make midi input callbacks also receive syex
+    messages.
+
+
+
 Changes 6.9.64 -> 6.9.66:
 * Audio: Fix random data sent out of "System In"
   instruments when not using jack and the soundcard
