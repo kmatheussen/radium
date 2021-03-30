@@ -107,6 +107,12 @@ struct CpuUsage g_cpu_usage;
 
 DEFINE_ATOMIC(int64_t, g_last_mixer_time) = 0;
 
+namespace{
+  struct Mixer;
+}
+static Mixer *g_mixer = NULL;
+
+
 void THREADING_acquire_player_thread_priority2(radium_thread_t thread){
 #if 1
   static bool has_shown_warning = false;
@@ -421,7 +427,8 @@ static void lock_player_from_nonrt_thread(void){
   // Windows: It's a bit unclear how well priority inheritance works on this platform.
   // Probably we don't have to acquire same priority, but we do it anyway to be sure.
   //
-  THREADING_acquire_player_thread_priority();
+  if (g_mixer != NULL) // On MacOS we get an error message if trying to obtain player priority before mixer has started.
+    THREADING_acquire_player_thread_priority();
 
   MAYBE_WAIT_FOR_PLAYER_TO_FINISH();
 
@@ -1698,8 +1705,6 @@ struct Mixer{
 };
 }
     
-static Mixer *g_mixer = NULL;
-
 
 #if 1 //defined(RELEASE)
 static void maybe_warn_about_jack1(void){
