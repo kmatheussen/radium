@@ -96,10 +96,17 @@ static bool SetThreadToPriority(pthread_t thread, int inPriority, bool inIsFixed
                                               (thread_policy_t) &theTCPolicy,
                                               THREAD_TIME_CONSTRAINT_POLICY_COUNT
                                               );
-#if !defined(RELEASE)        
+#if 0 //!defined(RELEASE)        
         jack_log("JackMachThread::thread_policy_set res = %ld", res);
 #endif
+#if 1
         return (res == KERN_SUCCESS); // ? 0 : -1;
+#else
+        if (res != KERN_SUCCESS)
+          printf("   Non-RT FAILED: %d\n", res);
+        //return (res == KERN_SUCCESS); // ? 0 : -1;
+        return true;
+#endif
         
     } else {
         // OTHER THREADS
@@ -128,10 +135,16 @@ static bool SetThreadToPriority(pthread_t thread, int inPriority, bool inIsFixed
                                               THREAD_PRECEDENCE_POLICY,
                                               (thread_policy_t) &thePrecedencePolicy,
                                               THREAD_PRECEDENCE_POLICY_COUNT);
-#if !defined(RELEASE)        
+#if 0 //!defined(RELEASE)        
         printf("JackMachThread::thread_policy_set res = %ld", res);
 #endif
+#if 1
         return (res == KERN_SUCCESS); // ? 0 : -1;
+#else
+        if (res != KERN_SUCCESS)
+          printf("   RT FAILED: %d\n", res);
+        return true;
+#endif
     }
 }
 
