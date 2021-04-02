@@ -18,8 +18,8 @@ static inline void RT_free(RT_Mem<T> *mem, const char *who){
 }
 
 template<typename T> 
-static inline RT_Mem<T> *RT_alloc(int size, const char *who){
-  return static_cast<RT_Mem<T>*>(RT_alloc_raw(size, who));
+static inline RT_Mem<T> *RT_alloc(int num_elements, const char *who){
+  return static_cast<RT_Mem<T>*>(RT_alloc_raw(sizeof(T)*num_elements, who));
 }
 /*
 template<typename T> 
