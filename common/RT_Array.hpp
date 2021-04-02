@@ -32,7 +32,7 @@ template<typename T> struct RT_Array{
   */
   
   RT_Array(int num_elements, const char *who)
-    : _data(RT_alloc<T>(sizeof(T) * std::max(1, num_elements), who)) // Allocate at least one element to prevent crash if [] is used the wrong way.
+    : _data(RT_alloc<T>(std::max(1, num_elements), who)) // Allocate at least one element to prevent crash if [] is used the wrong way.
     , _size(num_elements)
   {}
 
@@ -42,10 +42,10 @@ template<typename T> struct RT_Array{
   
   inline T &operator[](int i) const {
     if (i < 0) {
-      R_ASSERT_NON_RELEASE(false);
+      R_ASSERT(false);
       return RT_data(_data)[0];
     } else if (i >= _size) {
-      R_ASSERT_NON_RELEASE(false);
+      R_ASSERT(false);
       return RT_data(_data)[_size-1];
     } else {
       return RT_data(_data)[i];

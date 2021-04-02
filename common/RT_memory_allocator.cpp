@@ -39,11 +39,22 @@ double TIME_get_ms(void){
   struct timeval now;
 
   int err = gettimeofday(&now, NULL);
-  if (err != 0)
-    abort();
+  if (err != 0){
+    fprintf(stderr, "============ err: %d ==========\n", err);
+    //abort();
+  }
 
   return (double)now.tv_sec*1000.0 + (double)now.tv_usec/1000.0;
 }
+
+#  define ASSERT_MEMORY 1
+
+#else
+
+#  if !defined(RELEASE)
+#    define ASSERT_MEMORY 1
+#  endif
+
 #endif
 
 #include "nsmtracker.h"
@@ -62,28 +73,39 @@ double TIME_get_ms(void){
 #define NUM_POOLS 16
 
 #if TEST_MAIN
-#define MAX_POOL_SIZE 10 // Very low value to provoke RT_free to fail now and then (to check that it doesn't crash if rt_free fails)
+#  define MAX_POOL_SIZE 8 // Very low value to provoke RT_free to fail now and then (to check that it doesn't crash if rt_free fails)
 #else
-#define MAX_POOL_SIZE 512
+#  define MAX_POOL_SIZE 512
 #endif
 
-static constexpr int g_max_mem_size = 4 << (NUM_POOLS-1);
+#define MIN_MEMPOOL_SIZE 8
+
+static constexpr int g_max_mem_size = MIN_MEMPOOL_SIZE << (NUM_POOLS-1);
 
 static char *g_mem;
 
 static DEFINE_ATOMIC(int, g_curr_mem_size) = 0;
 
-struct RT_Mem_internal{
-  int _something;
-};
-
-struct RT_mempool_data{
-  int16_t _pool_num;
-  DEFINE_ATOMIC(int16_t, _num_users);
-  struct RT_Mem_internal _mem;
-};
+namespace{
+  struct RT_Mem_internal{
+    int _something;
+  };
+  
+  struct RT_mempool_data{
+    union{
+      int64_t something;
+      struct{
+        int32_t _pool_num;
+        DEFINE_ATOMIC(int32_t, _num_users);
+      };
+    };
+    struct RT_Mem_internal _mem;
+  };
+}
 
 static constexpr int g_offset_of_data = offsetof(RT_mempool_data, _mem);
+
+static_assert(g_offset_of_data==8, "RT-allocated memory will not be aligned by 64 bit");
 
 
 #define POOL boost::lockfree::stack<RT_mempool_data*>
@@ -93,6 +115,14 @@ static POOL *g_pools[NUM_POOLS]; // First pool has 4, second has 8, third has 16
 
 void RT_mempool_init(void){
   g_mem = (char*)calloc(1, TOTAL_MEM_SIZE);
+
+#if ASSERT_MEMORY
+  {
+    unsigned char *mem = (unsigned char*)g_mem;
+    for(int i=0 ; i < TOTAL_MEM_SIZE ; i++)
+      mem[i] = 0x3e;
+  }
+#endif
   
   for(int i=0;i<NUM_POOLS;i++)
     g_pools[i] = new POOL(MAX_POOL_SIZE);
@@ -100,12 +130,12 @@ void RT_mempool_init(void){
 
 // Note: Also sets size;
 static POOL *get_pool(int &size, int &pool_num){
-  int size2 = 4;
+  int size2 = MIN_MEMPOOL_SIZE;
   
   for(pool_num = 0 ; pool_num<NUM_POOLS ; pool_num++) {
     if (size2 >= size) {
         size = size2;
-        R_ASSERT(size==4<<pool_num);
+        R_ASSERT_NON_RELEASE(size==(MIN_MEMPOOL_SIZE<<pool_num));
         return g_pools[pool_num];
     }
     
@@ -117,10 +147,11 @@ static POOL *get_pool(int &size, int &pool_num){
   return NULL;
 }
 
-static RT_Mem_internal *RT_alloc_from_pool(POOL *pool){
+static RT_Mem_internal *RT_alloc_from_pool(POOL *pool, int pool_num){
   RT_mempool_data *data;
   
   if (pool->pop(data)){
+    R_ASSERT_NON_RELEASE(data->_pool_num >= pool_num);
     R_ASSERT_NON_RELEASE(ATOMIC_GET(data->_num_users)==0);
     ATOMIC_SET(data->_num_users, 1);
     return &data->_mem;
@@ -147,6 +178,32 @@ static RT_Mem_internal *RT_alloc_from_global_mem(int size, int pool_num){
   return &ret->_mem;
 }
 
+#define FREE_FROM_GLOBAL_MEM 0 // Not much point, doesn't succeed that often, and there is also a bug causing tsan to fail some times.
+
+static bool RT_maybe_free_to_global_mem(RT_mempool_data *data){
+#if !FREE_FROM_GLOBAL_MEM
+  return false;
+#else
+  
+  if ( ((char*)data) < g_mem){
+    //fprintf(stderr,"a\n");
+    return false;
+  }
+  
+  int size = g_offset_of_data + (MIN_MEMPOOL_SIZE << data->_pool_num);
+
+  int pos = ((char*)data) - ((char*)g_mem);
+
+  if (pos+size > g_max_mem_size){
+    //fprintf(stderr,"b\n");
+    return false;
+  }
+  
+  //printf("pos: %d. g_curr_mem_size: %d\n", pos+size, ATOMIC_GET(g_curr_mem_size));
+  return ATOMIC_COMPARE_AND_SET_INT(g_curr_mem_size, pos+size, pos);
+#endif
+}
+
 #if TEST_MAIN
 static DEFINE_ATOMIC(int, g_total_malloc) = 0;
 #endif
@@ -163,7 +220,15 @@ static RT_Mem_internal *RT_alloc_using_malloc(int size, int pool_num, const char
   RT_mempool_data *data = (RT_mempool_data *)malloc(g_offset_of_data + size);
   data->_pool_num = pool_num;
   ATOMIC_NAME(data->_num_users) = 1;
-  
+
+#if ASSERT_MEMORY
+  {
+    unsigned char *mem = (unsigned char*)&data->_mem;
+    for(int i=0 ; i < size ; i++)
+      mem[i] = 0x3e;
+  }
+#endif
+
   return &data->_mem;
 }
 
@@ -175,25 +240,48 @@ void *RT_alloc_raw(int size, const char *who){
 
   R_ASSERT_NON_RELEASE(g_mem != NULL);
 
-  if (size > g_max_mem_size)
-    return RT_alloc_using_malloc(size, -1, who, 1);
+  void *ret;
   
-  int pool_num;
-  POOL *pool = get_pool(size, pool_num); // <- Note: Adjusts size to nearest power of two.
+  if (size > g_max_mem_size) {
+    
+    ret = RT_alloc_using_malloc(size, -1, who, 1);
 
+  } else {
+    
+    int pool_num;
+    POOL *pool = get_pool(size, pool_num); // <- Note: Adjusts size to nearest power of two.
+    
 #if TEST_MAIN
-  ATOMIC_ADD(g_used_mem, size);
+    ATOMIC_ADD(g_used_mem, size);
+#endif
+    
+    ret = RT_alloc_from_pool(pool, pool_num);
+
+    if (ret == NULL) {
+      ret = RT_alloc_from_global_mem(size, pool_num);
+
+      if (ret == NULL)
+        ret = RT_alloc_using_malloc(size, pool_num, who, 2);
+
+    }
+
+  }
+
+#if ASSERT_MEMORY
+  {
+    const char *data = (const char*)ret;
+    
+    for(int i3=0 ; i3 < size ; i3 ++){
+      if (data[i3] != 0x3e){
+        fprintf(stderr, "i3: %d. data[i3]: %d. size: %d\n", i3, data[i3], size);
+        abort();
+      }
+    }
+  }
+
 #endif
   
-  RT_Mem_internal *ret = RT_alloc_from_pool(pool);
-  if (ret != NULL)
-    return ret;
-  
-  ret = RT_alloc_from_global_mem(size, pool_num);
-  if (ret != NULL)
-    return ret;
-  
-  return RT_alloc_using_malloc(size, pool_num, who, 2);
+  return ret;
 }
 
 
@@ -217,32 +305,59 @@ void RT_free_raw(void *mem, const char *who){
     return;
   
   char *cmem = (char*)mem;
-  
+
   RT_mempool_data *data = (RT_mempool_data *)(cmem - g_offset_of_data);
-  
+
+
   //fprintf(stderr, "RT_Free: num users: %d. pool num: %d\n", ATOMIC_GET(data->_num_users), data->_pool_num);
   
   R_ASSERT_RETURN_IF_FALSE(data->_pool_num < NUM_POOLS);
   
+  R_ASSERT_NON_RELEASE(data->_pool_num >= 0);
   R_ASSERT_NON_RELEASE(ATOMIC_GET(data->_num_users) > 0);
   
   if (ATOMIC_ADD_RETURN_NEW(data->_num_users, -1) > 0)
     return;
-     
+
+#if ASSERT_MEMORY
+  {
+    char *m = (char*)&data->_mem;
+    for(int i3=0 ; i3 < (MIN_MEMPOOL_SIZE<<data->_pool_num) ; i3 ++)
+      m[i3] = 0x3e;
+  }
+#endif
+
   if (data->_pool_num < 0){
+    
     R_ASSERT(data->_pool_num==-1); // pool_num is -1 if size of memory block is larger than g_max_mem_size.
     free(mem);
-    return;
-  }
-
-  POOL *pool = g_pools[data->_pool_num];
-  
-  if (!pool->bounded_push(data))
-    RT_message("RT_free failed. Who: \"%s\". pool_num: %d. Size: %d", who, data->_pool_num, 4 << data->_pool_num);
+    
+  } else {
 
 #if TEST_MAIN
-  ATOMIC_ADD(g_used_mem, -(4<<data->_pool_num));
+    ATOMIC_ADD(g_used_mem, -(MIN_MEMPOOL_SIZE<<data->_pool_num));
 #endif
+  
+
+    if (RT_maybe_free_to_global_mem(data)) {
+    
+      //    printf("GOTIT\n");
+    
+    } else {
+
+      //abort();
+      
+      for(int i = data->_pool_num ; i >= data->_pool_num ; i--)
+        if (g_pools[i]->bounded_push(data))
+          break;
+
+#if !TEST_MAIN
+      RT_message("RT_free failed. Who: \"%s\". pool_num: %d. Size: %d.", who, data->_pool_num, MIN_MEMPOOL_SIZE << data->_pool_num);
+#endif
+    }
+    
+  }
+  
 }
 
 
@@ -257,7 +372,7 @@ bool PLAYER_current_thread_has_lock(void){
 }
 
 
-DEFINE_ATOMIC(int, g_allocated_middle) = 0;
+DEFINE_ATOMIC(int, g_highest_allocated) = 0;
 DEFINE_ATOMIC(int, g_allocated_total) = 0;
 
 int main(){
@@ -271,13 +386,17 @@ int main(){
   
   const int num_main_iterations = 40 + rand()%25;
 
+  int *highest_allocated = (int*)calloc(sizeof(int), num_main_iterations);
+  
   for(int i=0;i<num_main_iterations;i++){
     
-    const int num_threads = 20 + rand()%50;
+    const int num_threads = 2 + rand()%5;
     const int num_reader_iterations = 2 + rand()%20;
 
-    if (ATOMIC_GET(g_used_mem) != 0)
-      abort();
+    if (ATOMIC_GET(g_used_mem) != 0) {
+      fprintf(stderr, "Unused mem: %d\n", ATOMIC_GET(g_used_mem));
+      abort(); // memleak
+    }
     
     printf("  I: %d/%d (%d, %d).  Used global mem: %d / %d. Max used mem: %d. Total allocation: %d. Total malloc allocations: %d\n",
            i,
@@ -286,12 +405,12 @@ int main(){
            num_reader_iterations,
            ATOMIC_GET(g_curr_mem_size),
            TOTAL_MEM_SIZE,
-           ATOMIC_GET(g_allocated_middle),
+           ATOMIC_GET(g_highest_allocated),
            ATOMIC_GET(g_allocated_total),
            ATOMIC_GET(g_total_malloc)
            );
 
-    ATOMIC_SET(g_allocated_middle, 0);
+    ATOMIC_SET(g_highest_allocated, 0);
     ATOMIC_SET(g_allocated_total, 0);
     ATOMIC_SET(g_total_malloc, 0);
     
@@ -299,7 +418,7 @@ int main(){
     
     for(int i=0;i<num_threads;i++){
 
-      t[i] = std::thread([i, num_threads, num_reader_iterations](){
+      t[i] = std::thread([num_reader_iterations](){
           
           g_thread_type = 1;
           
@@ -317,24 +436,22 @@ int main(){
 
               ATOMIC_ADD(g_allocated_total, size);
               
-              if (ATOMIC_GET(g_used_mem) > ATOMIC_GET(g_allocated_middle))
-                ATOMIC_SET(g_allocated_middle, ATOMIC_GET(g_used_mem));
+              if (ATOMIC_GET(g_used_mem) > ATOMIC_GET(g_highest_allocated))
+                ATOMIC_SET(g_highest_allocated, ATOMIC_GET(g_used_mem));
               
               int val = rand() % 127;
               
-              for(int i3=0; i3 < size ; i3 ++){
+              for(int i3=0; i3 < size ; i3 ++)
                 data[i3] = val;
-              }
 
               if (rand() % 1)
                 msleep(2);
 
-              for(int i3=0; i3 < size ; i3 ++){
+              for(int i3=0; i3 < size ; i3 ++)
                 if (data[i3] != val){
                   fprintf(stderr, "i3: %d. data[i3]: %d. val: %d\n", i3, data[i3], val);
                   abort();
                 }
-              }
             }
             
             if (rand() % 5)
@@ -348,7 +465,15 @@ int main(){
 
     for(int i=0;i<num_threads;i++)
       t[i].join();
+
+    highest_allocated[i] = ATOMIC_GET(g_highest_allocated);
   }
+
+  int64_t sum = 0;
+  for(int i=0;i<num_main_iterations;i++)
+    sum += highest_allocated[i];
+
+  printf("Average highest: %f\n", (double)sum / (double)num_main_iterations);
   
   return 0;
 }
