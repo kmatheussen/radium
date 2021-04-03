@@ -110,7 +110,7 @@ static_assert(g_offset_of_data==8, "RT-allocated memory will not be aligned by 6
 
 #define POOL boost::lockfree::stack<RT_mempool_data*>
 
-static POOL *g_pools[NUM_POOLS]; // First pool has 4, second has 8, third has 16, and so forth. [NO_STATIC_ARRAY_WARNING]
+static POOL *g_pools[NUM_POOLS]; // First pool has 8, second has 16, third has 32, and so forth. [NO_STATIC_ARRAY_WARNING]
 
 
 void RT_mempool_init(void){
@@ -128,7 +128,7 @@ void RT_mempool_init(void){
     g_pools[i] = new POOL(MAX_POOL_SIZE);
 }
 
-// Note: Also sets size;
+// Note: Also sets size and pool_num
 static POOL *get_pool(int &size, int &pool_num){
   int size2 = MIN_MEMPOOL_SIZE;
   
@@ -287,7 +287,7 @@ void *RT_alloc_raw(int size, const char *who){
 
 void RT_inc_ref_raw(void *mem){
   if (mem==NULL){
-    R_ASSERT(false);
+    R_ASSERT_NON_RELEASE(false);
     return;
   }
     
@@ -365,6 +365,36 @@ void RT_free_raw(void *mem, const char *who){
 
 #include <thread>
 
+#include "RT_Smartpointers.hpp"
+
+
+struct RT_usage : public radium::RT_Class {
+  int something = 90;
+};
+
+struct RT_usage2 : public radium::RT_Class {
+  int something2[50] = {91};
+};
+
+static void test_RT_Smartpointers(void){
+  radium::RT_shared_ptr<RT_usage> usage(new RT_usage);
+  
+  printf("A: %d\n", ATOMIC_GET(g_used_mem));
+  
+  radium::RT_shared_ptr usage2 = usage;
+  
+  radium::RT_shared_ptr usage3(new RT_usage2);
+  
+  radium::RT_shared_ptr usage4(usage3);
+
+  radium::RT_scoped_ptr usage5(new RT_usage2);
+  
+  printf("B: %d. %d / %d\n", ATOMIC_GET(g_used_mem), usage2->something, usage4->something2[0]);
+}
+
+
+
+
 static __thread int g_thread_type = -1;
 
 bool PLAYER_current_thread_has_lock(void){
@@ -372,8 +402,8 @@ bool PLAYER_current_thread_has_lock(void){
 }
 
 
-DEFINE_ATOMIC(int, g_highest_allocated) = 0;
-DEFINE_ATOMIC(int, g_allocated_total) = 0;
+static DEFINE_ATOMIC(int, g_highest_allocated) = 0;
+static DEFINE_ATOMIC(int, g_allocated_total) = 0;
 
 int main(){
 
@@ -381,8 +411,15 @@ int main(){
   printf("Seed: %d\n", (int)seed);
 
   srand(seed);
-    
+
   RT_mempool_init();
+
+  {
+    test_RT_Smartpointers();
+    if (ATOMIC_GET(g_used_mem) != 0)
+      abort();
+    //return 0;
+  }
   
   const int num_main_iterations = 40 + rand()%25;
 

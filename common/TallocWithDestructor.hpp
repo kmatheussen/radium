@@ -62,7 +62,7 @@ namespace radium{
       _destructor_has_run=true;
     }
     
-    void * operator new(size_t size) {
+    void *operator new(size_t size){
       //printf("     CUSTOM NEW %d\n", g_num_gcable++);
 
       void *ret = talloc(size);
@@ -79,7 +79,7 @@ namespace radium{
 #endif
     
     // Need to override the delete operator so that the memory block is not released by the system (BDW-GC takes care of reusing the memory).
-    void operator delete(void *p) {
+    void operator delete(void *p){
       //printf("delete GC_able called %p\n", p);
       
       /* 
