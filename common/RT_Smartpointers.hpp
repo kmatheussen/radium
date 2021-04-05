@@ -27,6 +27,8 @@ struct RT_Class{
 //   2. To prevent accidentally sharing pointers that are not supposed to be shared, at compile time. (The copy constructors are explicitly deleted in RT_scoped_ptr.)
 template<typename T> class RT_scoped_ptr{
 
+  static_assert(std::is_base_of<RT_Class, T>::value, "T is not a subclass of RT_Class");
+  
   T *_data;
 
 public:
@@ -40,7 +42,6 @@ public:
     : _data(data)
   {
     R_ASSERT_NON_RELEASE(data != NULL);
-    R_ASSERT_NON_RELEASE(dynamic_cast<RT_Class*>(data)==data);
   }
   
   ~RT_scoped_ptr(){
@@ -59,6 +60,8 @@ public:
   
 template<typename T> class RT_shared_ptr{
 
+  static_assert(std::is_base_of<RT_Class, T>::value, "T is not a subclass of RT_Class");
+  
   T *_data;
 
 public:
@@ -70,18 +73,33 @@ public:
   }
 
   RT_shared_ptr& operator=(const RT_shared_ptr &other){
-    this._data = other._data;
+    this->_data = other._data;
     RT_inc_ref(_data);
+    return *this;
   }
 
-  // Note: RT_shared_ptr takes ownership of data here.
+#if 0
+  // move constructor. Don't know if if this is correct.
+  RT_shared_ptr(RT_shared_ptr&& other)
+    : _data(other.data)
+  {
+  }
+#endif
+  
+  // Note: RT_shared_ptr takes ownership of data here. A new RT_shared_ptr can be initiated like this:
+  //
+  //   RT_shared_ptr ptr(new SubClassOfRT_Class(...));
+  //
+  // Or like this:
+  //
+  //   auto ptr = radium::make_RT_shared_ptr<SubClassOfRT>(...);
+  //
   RT_shared_ptr(T *data)
     : _data(data)
   {
     R_ASSERT_NON_RELEASE(data != NULL);
-    R_ASSERT_NON_RELEASE(dynamic_cast<RT_Class*>(data)==data);
   }
-  
+
   ~RT_shared_ptr(){
     delete _data;
   }
@@ -94,6 +112,14 @@ public:
     return _data;
   }
 };
-  
+
+template<class T, typename ... Args> static inline radium::RT_scoped_ptr<T> make_RT_scoped_ptr (Args ... args){
+  return radium::RT_scoped_ptr<T>(new T(args...));
+}  
+
+template<class T, typename ... Args> static inline radium::RT_shared_ptr<T> make_RT_shared_ptr (Args ... args){
+  return radium::RT_shared_ptr<T>(new T(args...));
+}  
+
 }
 
