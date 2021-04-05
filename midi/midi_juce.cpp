@@ -182,7 +182,14 @@ void MIDI_OS_sendMessage(radium::MidiOutputPortOs *port,
                          radium::AbstractMutex *mutex)
 {
   R_ASSERT_NON_RELEASE(!PLAYER_current_thread_has_lock());
-  
+
+#if !defined(RELEASE)
+      printf("Sending MIDI message > 3. Length: %d:", len);
+      for(int i=0;i<len;i++)
+        printf(" %x", data[i]);
+      printf("\n");
+#endif
+
   send_message(port, juce::MidiMessage(data, len), mutex);
 }
   

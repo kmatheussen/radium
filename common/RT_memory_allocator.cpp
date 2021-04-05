@@ -377,9 +377,10 @@ struct RT_usage2 : public radium::RT_Class {
 };
 
 static void test_RT_Smartpointers(void){
+  //auto usage = radium::make_RT_shared_ptr<RT_usage>();
   radium::RT_shared_ptr<RT_usage> usage(new RT_usage);
   
-  printf("A: %d\n", ATOMIC_GET(g_used_mem));
+  printf("A: %d (%d)\n", ATOMIC_GET(g_used_mem), usage.get()->something);
   
   radium::RT_shared_ptr usage2 = usage;
   

@@ -197,6 +197,9 @@ FREETYPE_CFLAGS ?=
 
 VST_OPTS ?=
 
+BOOST_INCLUDE=-I${HOME}/boost_1_75_0 -I${HOME}/boost_1_70_0 -I${HOME}/boost_1_67_0 -I${HOME}/boost_1_63_0 
+BOOST_FLAGS=-Wno-class-memaccess $(BOOST_INCLUDE)
+
 CRASHREPORTER_OPTS ?= 
 CRASHREPORTER_POSIX_OPTS ?= 
 
@@ -337,7 +340,7 @@ MENU_TYPE = -DUSE_QT_MENU=1 -DUSE_GTK_MENU=0
 
 FLAGOPTS = $(DEFINES) -DGUIISQT -DFULL_VERSION=$(FULL_VERSION) -DIS_LITTLE_ENDIAN=1 -DUSE_OPENGL=1 $(VISUAL) $(REQTYPE_TYPE) $(MENU_TYPE)
 
-COMMONOPT = -D__STDC_FORMAT_MACROS=1 -c `cat buildtype.opt` -I$(GCDIR)/include -I$(P) -I$(PYPATH) `cat flagopts.opt` $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -I${HOME}/boost_1_70_0 -I${HOME}/boost_1_67_0 -I${HOME}/boost_1_63_0 -I ~/SDKs/VST_SDK/VST2_SDK/ -I ~/SDKs/vstsdk2.4/ -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wno-unknown-pragmas -fno-strict-aliasing -Wmissing-field-initializers -Wnull-dereference 
+COMMONOPT = -D__STDC_FORMAT_MACROS=1 -c `cat buildtype.opt` -I$(GCDIR)/include -I$(P) $(PYPATH) `cat flagopts.opt` $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -I ~/SDKs/VST_SDK/VST2_SDK/ -I ~/SDKs/vstsdk2.4/ -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wno-unknown-pragmas -fno-strict-aliasing -Wmissing-field-initializers -Wnull-dereference 
 #-fdelete-null-pointer-checks 
 # -Werror
 
@@ -723,12 +726,15 @@ test_timedata_gdb:
 	cd common && g++ TimeData.cpp $(TEST_TIMEDATA_OPTS) -O3 -fsanitize=undefined -fsanitize=address -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" gdb -ex "set print thread-events off" ./a.out
 
 
-test_rt_memory_allocator:
-	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_TIMEDATA_OPTS) -DTEST_MAIN -O3 -fsanitize=thread -o a.out && TSAN_OPTIONS="history_size=7,second_deadlock_stack=1,abort_on_error=1,suppressions=../SanitizerSuppr.txt" $(TEST_TIMEDATA_RUNNER)
-	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_TIMEDATA_OPTS) -DTEST_MAIN -O0 -o a.out && $(TEST_TIMEDATA_RUNNER)
-	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_TIMEDATA_OPTS) -DTEST_MAIN -O3 -o a.out && $(TEST_TIMEDATA_RUNNER)
+TEST_RT_MEMORY_ALLOCATOR_OPTS=$(BOOST_FLAGS) $(TEST_TIMEDATA_OPTS)
 
-	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_TIMEDATA_OPTS) -DTEST_MAIN -O3 -fsanitize=address -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
+test_rt_memory_allocator:
+	cd common && touch buildtype.opt flagopts.opt
+	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DTEST_MAIN -O3 -fsanitize=thread -o a.out && TSAN_OPTIONS="history_size=7,second_deadlock_stack=1,abort_on_error=1,suppressions=../SanitizerSuppr.txt" $(TEST_TIMEDATA_RUNNER)
+	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DTEST_MAIN -O0 -o a.out && $(TEST_TIMEDATA_RUNNER)
+	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DTEST_MAIN -O3 -o a.out && $(TEST_TIMEDATA_RUNNER)
+
+	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DTEST_MAIN -O3 -fsanitize=address -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
 
 test_ratio:
 	cd common && ln -sf ratio_funcs.h test_ratio.cpp && g++ test_ratio.cpp -D__STDC_FORMAT_MACROS=1 -DTEST_MAIN -Wall -Werror -g -o a.out &&	./a.out
@@ -926,7 +932,7 @@ $(T)TimeData.o: $(BUILD_DEPENDENCIES) $(CD)TimeData.cpp $(CD)TimeData.hpp
 	$(CCC2) $(CD)TimeData.cpp $(CPPOPT)
 
 $(T)RT_memory_allocator.o: $(BUILD_DEPENDENCIES) $(CD)RT_memory_allocator.cpp
-	$(CCC2) $(CD)RT_memory_allocator.cpp $(CPPOPT)
+	$(CCC2) $(CD)RT_memory_allocator.cpp $(CPPOPT) $(BOOST_FLAGS)
 
 
 $(T)song.o:  $(BUILD_DEPENDENCIES) $(CD)song.c 
@@ -1430,7 +1436,7 @@ $(T)error.o:  $(BUILD_DEPENDENCIES) $(CD)error.c
 	$(CC2) $(CD)error.c $(OPT) -Wno-null-dereference
 
 $(T)threading.o:  $(BUILD_DEPENDENCIES)  $(CD)threading.cpp common/threading.h
-	$(CCC2)  $(CD)threading.cpp $(JACKOPT) $(QTOPT)
+	$(CCC2)  $(CD)threading.cpp $(JACKOPT) $(QTOPT) $(BOOST_INCLUDE)
 
 $(T)Semaphores.o: $(BUILD_DEPENDENCIES) $(CD)/Semaphores.cpp $(CD)/sema.h common/Semaphores.hpp common/OS_Semaphores.h
 	$(CCC2) $(CD)Semaphores.cpp $(QTOPT)
@@ -1498,7 +1504,7 @@ $(P)EditorWidget.h: $(BUILD_DEPENDENCIES)
 $(T)Qt_Main.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_instruments_proc.h $(QM)QM_MixerWidget.h Qt/helpers.h audio/SampleRecorder_proc.h common/nag.h Qt/KeyboardFocusFrame.hpp common/Process.hpp Qt/Timer.hpp
 	$(MOC) Qt/Qt_Main.cpp > Qt/mQt_Main.cpp
 	cd Qt && $(MOC) -DFOR_LINUX Timer.hpp > mTimer.hpp
-	$(CCC2) $(P)Qt_Main.cpp $(QTOPT) $(SNDFILEOPT) $(IS_LINUX_BINARY) -Wno-null-dereference # -Wno-deprecated-declarations -Wno-shadow 
+	$(CCC2) $(P)Qt_Main.cpp $(QTOPT) $(SNDFILEOPT) $(IS_LINUX_BINARY) $(BOOST_INCLUDE) -Wno-null-dereference # -Wno-deprecated-declarations -Wno-shadow 
 
 $(T)KeyboardFocus.o:  $(BUILD_DEPENDENCIES) Qt/KeyboardFocus.cpp Qt/KeyboardFocusFrame.hpp
 	$(CCC2) $(P)KeyboardFocus.cpp $(QTOPT)
@@ -1916,7 +1922,7 @@ $(T)api_osc.o:  $(BUILD_DEPENDENCIES)  $(API)api_osc.cpp embedded_scheme/s7extra
 	$(CCC2) $(LIBLOOPT) $(API)api_osc.cpp $(QTOPT) -fno-sanitize=undefined # -O0 # Adding -fno-sanitize=undefined since liblo sends misaligned data to calbacks.
 
 $(T)api_midi.o:  $(BUILD_DEPENDENCIES)  $(API)api_midi.cpp
-	$(CCC2) $(API)api_midi.cpp $(QTOPT)
+	$(CCC2) $(API)api_midi.cpp $(QTOPT) $(BOOST_INCLUDE)
 
 $(T)api_gui.o:  $(BUILD_DEPENDENCIES)  $(API)api_gui.cpp  Qt/ScrollArea.hpp Qt/helpers.h Qt/lzqlineedit.h  Qt/Rational.h Qt/Qt_MyQCheckBox.h embedded_scheme/s7extra_proc.h Qt/Qt_MyQScrollBar.hpp Qt/FileRequester.hpp Qt/Timer.hpp Qt/HashVector.hpp Qt/Qt_MyQCheckBox.h Qt/FocusSniffers.h Qt/Editor.hpp
 	$(MOC) $(API)api_gui.cpp > $(API)mapi_gui.cpp
@@ -1971,7 +1977,7 @@ $(T)midi_playfromstart.o:  $(BUILD_DEPENDENCIES)  midi/midi_playfromstart.c
 $(T)midi_instrument.o:  $(BUILD_DEPENDENCIES)  midi/midi_instrument.cpp
 	$(CCC2)  midi/midi_instrument.cpp $(CPPOPT) 
 $(T)midi_i_input.o:  $(BUILD_DEPENDENCIES)  midi/midi_i_input.cpp  midi/midi_i_input_proc.h common/Vector.hpp
-	$(CCC2)  midi/midi_i_input.cpp $(QTOPT) $(JACKOPT)
+	$(CCC2)  midi/midi_i_input.cpp $(QTOPT) $(JACKOPT) $(BOOST_INCLUDE) 
 $(T)midi_fx.o:  $(BUILD_DEPENDENCIES)  midi/midi_fx.cpp
 	$(CCC2)  midi/midi_fx.cpp $(CPPOPT) 
 
@@ -2089,7 +2095,7 @@ $(T)Sampler_plugin.o: audio/Sampler_plugin.cpp audio/Sampler_plugin_wav_parse.c 
 	$(CCC2) $(QTOPT) audio/Sampler_plugin.cpp $(SNDFILEOPT) $(SAMPLERATEOPT) $(OPTIMIZE_O3) $(NO_ANALYZER) #  $(CPUOPT) 
 
 $(T)SampleRecorder.o: audio/SampleRecorder.cpp audio/SampleRecorder_proc.h common/OS_string_proc.h
-	$(CCC2) $(QTOPT) audio/SampleRecorder.cpp $(SNDFILEOPT)
+	$(CCC2) $(QTOPT) audio/SampleRecorder.cpp $(SNDFILEOPT) $(BOOST_INCLUDE) 
 
 $(T)SampleReader.o: audio/SampleReader.cpp audio/SampleReader_proc.h
 	$(CCC2) $(QTOPT) audio/SampleReader.cpp $(SNDFILEOPT)
@@ -2433,7 +2439,7 @@ audio/faust_system_highshelf.cpp: audio/system_highshelf.dsp $(FAUST_DEPENDENCIE
 
 $(T)SoundProducer.o: audio/SoundProducer.cpp audio/SoundProducer_proc.h audio/fade_envelopes.h audio/MultiCore.cpp audio/monotonic_timer.c common/sema.h common/Semaphores.hpp common/QueueStack.hpp audio/SmoothDelay.hpp common/Vector.hpp common/spinlock.h audio/CpuUsage.hpp audio/AudioBuffer.hpp audio/AudioMeterPeaks_proc.h common/threading.h
 	$(MOC) audio/MultiCore.cpp >audio/mMultiCore.cpp
-	$(CCC2) audio/SoundProducer.cpp $(JACKOPT) $(QTOPT) $(OPTIMIZE_O3) $(CPUOPT) $(NO_ANALYZER_MALLOC_LEAK) # -O3 # 
+	$(CCC2) audio/SoundProducer.cpp $(JACKOPT) $(QTOPT) $(OPTIMIZE_O3) $(CPUOPT) $(NO_ANALYZER_MALLOC_LEAK)  $(BOOST_INCLUDE) # -O3 # 
 #-fno-tree-vectorize # tree-vectorize makes radium crash on windows 8 with gcc 4.7.2
 
 #-finline-functions -funswitch-loops -fvect-cost-model -fipa-cp-clone  -fpredictive-commoning -fgcse-after-reload
@@ -2450,7 +2456,7 @@ $(T)SoundPluginRegistry.o: audio/SoundPluginRegistry.cpp audio/SoundPluginRegist
 	$(CCC2) audio/SoundPluginRegistry.cpp  $(QTOPT)
 
 $(T)SoundPlugin.o: audio/SoundPlugin.cpp audio/SoundPlugin.h audio/SoundPlugin_proc.h audio/SmoothDelay.hpp midi/midi_i_input_proc.h Qt/helpers.h $(T)Sine_plugin.o mixergui/QM_chip.h # we add Sine_plugin.o here to make sure it is up to date.
-	$(CCC2) audio/SoundPlugin.cpp $(QTOPT) $(OPTIMIZE_O3) $(NO_ANALYZER_MALLOC_LEAK) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\"
+	$(CCC2) audio/SoundPlugin.cpp $(QTOPT) $(OPTIMIZE_O3) $(NO_ANALYZER_MALLOC_LEAK) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" $(BOOST_INCLUDE) 
 ### $(CPUOPT)
 
 $(T)AudioMeterPeaks.o: audio/SoundPlugin.h audio/AudioMeterPeaks.cpp
@@ -2548,7 +2554,7 @@ $(T)GfxElements.o: OpenGL/GfxElements.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxEleme
 	$(CCC2) OpenGL/GfxElements.cpp $(VL_CFLAGS) $(QTOPT) $(FREETYPE_CFLAGS) $(WNO_SUGGEST_OVERRIDE) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC) $(NO_ANALYZER)  $(WNO_DEPRECATED_COPY_CLANG) $(WNO_MISLEADING_INDENTATION_CLANG)  $(WNO_DEPRECATED_DECLARATIONS)
 
 $(T)T2.o: OpenGL/T2.cpp OpenGL/T2.hpp OpenGL/SharedVariables.hpp common/QueueStack.hpp OpenGL/GfxElements.h 
-	$(CCC2) OpenGL/T2.cpp $(VL_CFLAGS) $(QTOPT) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC) $(WNO_DEPRECATED_COPY_CLANG) $(WNO_MISLEADING_INDENTATION_CLANG) $(WNO_DEPRECATED_DECLARATIONS)
+	$(CCC2) OpenGL/T2.cpp $(VL_CFLAGS) $(QTOPT) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC) $(WNO_DEPRECATED_COPY_CLANG) $(WNO_MISLEADING_INDENTATION_CLANG) $(WNO_DEPRECATED_DECLARATIONS) $(BOOST_INCLUDE) 
 
 $(T)Render.o: OpenGL/Render.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp common/spinlock.h common/time_proc.h common/Beats_proc.h common/TimeData.hpp
 	$(CCC2) OpenGL/Render.cpp $(VL_CFLAGS) $(QTOPT) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC) $(WNO_DEPRECATED_COPY_CLANG) $(WNO_MISLEADING_INDENTATION_CLANG)

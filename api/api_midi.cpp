@@ -98,20 +98,20 @@ void sendMidiMessage(int64_t port_id, int byte1, int byte2, int byte3){
   MIDIPORT_send_message(port, byte1, byte2, byte3);
 }
 
-void sendSysex(int64_t port_id, dynvec_t bytes){
+void sendMidiSysex(int64_t port_id, dynvec_t bytes){
   radium::MidiOutputPort *port = g_output_ports.value(port_id);
   if (port==NULL){
 
     if (port_id >= 0 && port_id < g_output_port_counter)
-      handleError("sendSysex: MIDI output port %d has been closed.", (int)port_id);
+      handleError("sendMidiSysex: MIDI output port %d has been closed.", (int)port_id);
     else
-      handleError("sendSysex: MIDI output port %d has never been opened.", (int)port_id);
+      handleError("sendMidiSysex: MIDI output port %d has never been opened.", (int)port_id);
 
     return;
   }
 
   if (bytes.num_elements < 2 || bytes.num_elements > 10000000){
-    handleError("sendSysex: Illlegal message. Size: %d", bytes.num_elements);
+    handleError("sendMidiSysex: Illlegal message. Size: %d", bytes.num_elements);
     return;
   }
 
@@ -122,7 +122,7 @@ void sendSysex(int64_t port_id, dynvec_t bytes){
   for(dyn_t dyn : bytes) {
 
     if (dyn.type != INT_TYPE){
-      handleError("sendSysex: Element #%d is not an integer. Found: %s", i, DYN_type_name(dyn.type));
+      handleError("sendMidiSysex: Element #%d is not an integer. Found: %s", i, DYN_type_name(dyn.type));
       return;
     }
 
@@ -131,21 +131,21 @@ void sendSysex(int64_t port_id, dynvec_t bytes){
     if (i==0) {
       
       if (b != 0xf0) {
-        handleError("sendSysex: First byte is not 0xf0. Found: %x", b);
+        handleError("sendMidiSysex: First byte is not 0xf0. Found: %x", b);
         return;
       }
 
     } else if (i==bytes.num_elements-1) {
 
-      if (b != 0xff) {
-        handleError("sendSysex: Last byte is not 0xf7. Found: %x", b);
+      if (b != 0xf7) {
+        handleError("sendMidiSysex: Last byte is not 0xf7. Found: %x", b);
         return;
       }
 
     } else {
 
       if (b < 0 || b > 0x7f) {
-        handleError("sendSysex: Byte #%d has illegal value %x", i, b);
+        handleError("sendMidiSysex: Byte #%d has illegal value %x", i, b);
         return;
       }
 

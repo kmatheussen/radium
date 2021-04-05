@@ -92,7 +92,7 @@ export FPIC="-fPIC"
 export TARGET_OS=linux
 
 export PKG=`which pkg-config`
-export PYPATH=`$PYTHONEXE -c "import sys;print sys.prefix+'/include/python'+sys.version[:3]"`
+export PYPATH="-I `$PYTHONEXE -c "import sys;print sys.prefix+'/include/python'+sys.version[:3]"`"
 
 # static Qt4:
 #RQTDIR=/home/kjetil/qt-everywhere-opensource-src-4.8.6
