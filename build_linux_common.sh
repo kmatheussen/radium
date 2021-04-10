@@ -105,10 +105,19 @@ export QT_UI_CFLAGS="-I $QT_INCLUDE_PATH/QtUiTools" # Doing this instead of usin
 export QT_UI_LDFLAGS="`$QT_QMAKE_BIN_PATH -query QT_INSTALL_LIBS`/libQt5UiTools.a"
 
 
+#One of these:
+# 1. OLD
 VL_PATH="bin/packages/Visualization-Library-master"
-#VL_QTLIB="$VL_PATH/src/vlQt$RADIUM_QT_VERSION/lib/libVLQt$RADIUM_QT_VERSION.a"
-export VL_CFLAGS="-DVL_STATIC_LINKING -Wall -I$VL_PATH/src -I$VL_PATH/src/3rdparty/Khronos -I$VL_PATH/src/examples"
+export VL_CFLAGS="-DVL_STATIC_LINKING -Wall -I$VL_PATH/src -I$VL_PATH/src/3rdparty/Khronos -I$VL_PATH/src/examples -DNEW_VL=0"
 export VL_LIBS="$VL_PATH/src/vlVG/lib/libVLVG.a $VL_PATH/src/vlGraphics/lib/libVLGraphics.a $VL_PATH/src/vlCore/lib/libVLCore.a `$PKG --libs freetype2` -lGL -lGLU -lz"
+
+# Or 2. NEW:
+#VL_PATH="bin/packages/VisualizationLibrary"
+#export VL_CFLAGS="-DVL_STATIC_LINKING -Wall -I$VL_PATH/src -I$VL_PATH/src/gui -I$VL_PATH/src/external/Khronos -I$VL_PATH/src/examples -DNEW_VL=1"
+#export VL_LIBS="$VL_PATH/src/vlMain/lib/libVLMain.a $VL_PATH/src/vlX/lib/libVLX.a $VL_PATH/src/vlVG/lib/libVLVG.a $VL_PATH/src/vlGraphics/lib/libVLGraphics.a $VL_PATH/src/vlCore/lib/libVLCore.a `$PKG --libs freetype2` -lGL -lGLU -lz"
+
+#VL_QTLIB="$VL_PATH/src/vlQt$RADIUM_QT_VERSION/lib/libVLQt$RADIUM_QT_VERSION.a"
+
 # $VL_QTLIB
 
 #$VL_PATH/src/vlGraphics/plugins/freetype/lib/libFreeType.a 

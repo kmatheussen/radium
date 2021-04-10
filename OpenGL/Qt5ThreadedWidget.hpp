@@ -215,9 +215,13 @@ namespace vlQt5
           }
 #endif
           
-          //widget->swapBuffers();    
-          
+          //widget->swapBuffers();
+
+#if NEW_VL
+          dispatchUpdateEvent();
+#else
           dispatchRunEvent();
+#endif
 
           //printf("width/height: %d/%d\n",width(),height());
           

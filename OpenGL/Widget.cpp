@@ -58,8 +58,12 @@ static double g_last_resize_time = -1;
 
 #include <vlCore/Matrix4.hpp>
 
+#if NEW_VL
+#include <vlQt5/QtDirectory.cpp>
+#include <vlQt5/QtFile.cpp>
+#endif
 
-#include <QGLWidget>
+#include <QOpenGLWidget>
 #include <QOpenGLContext>
 #include <QTextEdit>
 #include <QMessageBox>
@@ -105,12 +109,23 @@ static double g_last_resize_time = -1;
 #include "Render_proc.h"
 #include "CheckOpenGL_proc.h"
 
+#define USE_QOPENGL 0
+
 #if USE_QT5
 #  if THREADED_OPENGL
-#    include "Qt5ThreadedWidget.hpp"
+#    if USE_QOPENGL
+#      include "Qt6ThreadedWidget.hpp"
+#    else
+#      include "Qt5ThreadedWidget.hpp"
+#    endif
 #    define USE_COVER 1
 #  else
-#    include "Qt5Widget.cpp" // Note Q_OBJECT must be removed from Qt5Widget
+#  if USE_QOPENGL
+#    include "Qt6Widget.hpp" // Note Q_OBJECT must be removed from Qt6Widget
+#  else
+#    include "Qt5Widget.hpp" // Note Q_OBJECT must be removed from Qt5Widget
+#    include <gui/vlQt5/Qt5Widget.cpp>
+#  endif
 #    define USE_COVER 0
 //#    error "what?"
 #  endif
@@ -119,6 +134,11 @@ static double g_last_resize_time = -1;
 #  include <vlQt4/Qt4ThreadedWidget.hpp>
 #endif
 
+#if USE_QOPENGL
+#  define Q_QL_Widget QOpenGLWidget
+#else
+#  define Q_QL_Widget QGLWidget
+#endif
 
 #include "Widget_proc.h"
 
@@ -918,7 +938,7 @@ public:
 
   // OpenGL thread
   void init_vl(vl::OpenGLContext *glContext)
-#if 1 //THREADED_OPENGL
+#if THREADED_OPENGL
     override
 #endif
   {
@@ -926,8 +946,18 @@ public:
     printf("init_vl\n");
 
     msleep(200); // Maybe this prevents opengl from crashing during startup on osx.
-    
+
     glContext->initGLContext(); // Sometimes, the first gl* call crashes inside here on OSX.
+
+#if USE_QOPENGL
+    glContext->vl::OpenGLContext::framebuffer()->setExternallyManaged( true );
+    //dispatchInitEvent();
+#endif
+      
+
+    // Important! Qt 6 instead of using the default framebuffer 0 uses its own framebuffer for offscreen rendering which also changes at every resize.
+    // We set to FBO to externally managed so VL does not override the FBO settings prepared by Qt upon pain event.
+    //glContext->vl::OpenGLContext::framebuffer()->setExternallyManaged( true );
 
 #if THREADED_OPENGL
     g_render_thread = QThread::currentThread();
@@ -1687,7 +1717,7 @@ private:
       //return !_image.isNull();
     }
 
-    bool maybe_grab_frame_buffer(QGLWidget *parent){
+    bool maybe_grab_frame_buffer(Q_QL_Widget *parent){
       radium::ScopedMutex lock(_image_mutex);
       
       if(_has_grabbed_image==false){
@@ -1695,7 +1725,11 @@ private:
         if(true){
           
           printf("                GRABBING OpenGL frame buffer\n");
+#if USE_QOPENGL
+          _image = parent->grabFramebuffer();
+#else
           _image = parent->grabFrameBuffer();
+#endif
           //_image = parent->renderPixmap().toImage();
           _has_grabbed_image = true;
           
@@ -1861,7 +1895,7 @@ public:
     //{static double last_time = 0; static int counter =0; double nowtime = TIME_get_ms(); printf("   Counter: %d. Time: %f\n", counter++, nowtime-last_time);last_time = nowtime;}
 
 #if !defined(RELEASE)
-    if (QGLWidget::context()->isValid()==false){
+    if (Q_QL_Widget::context()->isValid()==false){
       // hmm.
       abort();
     }
@@ -1892,7 +1926,7 @@ public:
 #if THREADED_OPENGL
     
     if (handle_current)
-      QGLWidget::makeCurrent();  // Not sure about this. updateEvent() is called immediately again after it returns.
+      Q_QL_Widget::makeCurrent();  // Not sure about this. updateEvent() is called immediately again after it returns.
 #endif
 
     if (g_order_pause_gl_thread.tryWait()) {
@@ -1903,7 +1937,7 @@ public:
     if (g_order_make_current.tryWait()) {
 #if THREADED_OPENGL
       if (!handle_current)
-        QGLWidget::makeCurrent();
+        Q_QL_Widget::makeCurrent();
 #endif
       g_ack_make_current.notify_one();
     }
@@ -1927,7 +1961,7 @@ public:
 #if USE_QT5
     if (ATOMIC_GET(g_qtgui_has_started_step2)==false || ATOMIC_GET(_main_window_is_exposed)==false){
       if (handle_current)
-        QGLWidget::doneCurrent();
+        Q_QL_Widget::doneCurrent();
       //printf("hepp1\n");
       lock.wait_and_pause_lock(200);
       return;
@@ -2017,7 +2051,7 @@ public:
 
 #if THREADED_OPENGL
     if (handle_current)
-      QGLWidget::doneCurrent();
+      Q_QL_Widget::doneCurrent();
 #endif
   }
 
@@ -2027,10 +2061,12 @@ public:
   }
 
   void resizeEvent(QResizeEvent *qresizeevent) override {
+#if THREADED_OPENGL
     if (!this->GL_has_initialized()){
-      vlQt5::Qt5ThreadedWidget::QGLWidget::resizeEvent(qresizeevent); // Trigger call to QGLWidget::initializeGL().
+      vlQt5::Qt5ThreadedWidget::Q_QL_Widget::resizeEvent(qresizeevent); // Trigger call to QOpenGLWidget::initializeGL().
       return;
     }
+#endif
     
     g_last_resize_time = TIME_get_ms();
       
@@ -2247,7 +2283,7 @@ static bool maybe_start_t2_thread(void){
       
       radium::ScopedMutex lock(make_current_mutex);
 
-      QGLContext *glcontext = widget->context();
+      auto *glcontext = widget->context();
       if (glcontext==NULL)
         return false;
 
@@ -2259,10 +2295,13 @@ static bool maybe_start_t2_thread(void){
       if (glcontext->isValid()==false)
         return false;
 
+#if USE_QOPENGL
+      QOpenGLContext *openglcontext = glcontext;
+#else
       QOpenGLContext *openglcontext = glcontext->contextHandle();
-
       if (openglcontext->isValid()==false)
         return false;
+#endif
       
       T1_start_t2_thread(openglcontext);
       g_has_started_t2_thread = true;
@@ -2523,7 +2562,9 @@ static bool is_opengl_version_recent_enough_questionmark(void){
 }
 
 static void init_widget2(void){
+#if THREADED_OPENGL
   R_ASSERT(widget->GL_has_initialized());
+#endif
   
 #if !USE_QT5
   widget->set_vblank(GL_get_estimated_vblank());
@@ -2779,12 +2820,11 @@ static void init_widget2(void){
   g_gl_widget_started = true;
 }
 
-
 static void maybe_init_widget3(void){
   static int s_num_tries = 0;
 
   s_num_tries++;
-  
+
   if (ATOMIC_GET(g_has_resized_at_least_once)==false || maybe_start_t2_thread()==false){
     if (s_num_tries > 100){ // 10s
       GFX_addMessage("Unable to initialize OpenGL.");
@@ -2795,12 +2835,11 @@ static void maybe_init_widget3(void){
 }
 
 static void maybe_init_widget(void){
+#if THREADED_OPENGL
   if (widget->GL_has_initialized()==false){
     QTimer::singleShot(100, maybe_init_widget);
     return;
   }
-  
-#if THREADED_OPENGL
   widget->start();
   //GFX_ShowProgressMessage("Finished initializing OpenGL Context. Now setting up the OpenGL Widget", true);
 #else
@@ -2811,10 +2850,14 @@ static void maybe_init_widget(void){
 
   // Make sure editor has correct size after startup.
   {
-    QResizeEvent qresizeevent(widget->size(), widget->size());
+    QResizeEvent qresizeevent(widget->Q_QL_Widget::size(), widget->Q_QL_Widget::size());
     widget->resizeEvent(&qresizeevent);
   }
 
+#if !THREADED_OPENGL
+  ATOMIC_SET(g_has_resized_at_least_once, true);
+#endif
+    
   maybe_init_widget3();
 }
 
