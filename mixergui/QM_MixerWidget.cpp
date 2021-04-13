@@ -889,7 +889,13 @@ static Chip *get_chip_with_port_at(QGraphicsScene *scene,int x, int y){
 
 static void delete_instrument(struct Patch *patch){
   struct Patch *parent = NULL;
-  
+
+  if (AUDIO_is_permanent_patch(patch)) {
+    GFX_addMessage("Instrument \"%s\" can not be deleted", patch->name);
+    return;
+  }    
+    
+
   if (getNumInAudioConnections(patch->id)==1){
     instrument_t parent_id = getAudioConnectionSourceInstrument(0, patch->id);
     parent = getAudioPatchFromNum(parent_id);
@@ -3206,8 +3212,9 @@ static hash_t *get_chips_and_bus_chips(const hash_t *state){
     hash_t *chip = HASH_get_hash_at(old_chips, "", i);
     hash_t *plugin = HASH_get_hash(chip, "plugin");    
     const char *type_name = HASH_get_chars(plugin, "type_name");
+    const char *name = HASH_get_chars(plugin, "name");
     
-    if (!strcmp(type_name,"Bus")) {
+    if (!strcmp(type_name,"Bus") && STRING_starts_with(STRING_create(name), "Bus ")) {
       fprintf(stderr, "\n   Bus %d/%d. Id: %d\n", num_buses, i, (int)HASH_get_instrument(chip, "patch").id);
       HASH_put_hash_at(buses, "", num_buses++, chip);
     } else

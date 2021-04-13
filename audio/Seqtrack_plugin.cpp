@@ -1709,7 +1709,7 @@ static int64_t add_sample(Data *data, filepath_t filename, enum ResamplerType re
 int64_t SEQTRACKPLUGIN_add_sample(const struct SeqTrack *seqtrack, SoundPlugin *plugin, filepath_t filename, enum ResamplerType resampler_type, const struct SeqBlock *seqblock, Seqblock_Type type){
   R_ASSERT(THREADING_is_main_thread());
   
-  R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), -1);
+  R_ASSERT_RETURN_IF_FALSE2(PLUGIN_is_for_seqtrack(plugin), -1);
 
   Data *data = (Data*)plugin->data;
 
@@ -1954,8 +1954,8 @@ static Sample *get_sample(const SoundPlugin *plugin, int64_t id, bool search_non
 
 void SEQTRACKPLUGIN_request_remove_sample(SoundPlugin *plugin, int64_t id, enum Seqblock_Type type){
   R_ASSERT(THREADING_is_main_thread());
-  
-  R_ASSERT_RETURN_IF_FALSE(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name));
+
+  R_ASSERT_RETURN_IF_FALSE(PLUGIN_is_for_seqtrack(plugin));
   
   Data *data = (Data*)plugin->data;
 
@@ -2016,8 +2016,8 @@ int SEQTRACKPLUGIN_get_num_samples(const SoundPlugin *plugin){
 
 int SEQTRACKPLUGIN_get_num_channels(const SoundPlugin *plugin, int64_t id){
   R_ASSERT(THREADING_is_main_thread());
-  
-  R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), -1);
+
+  R_ASSERT_RETURN_IF_FALSE2(PLUGIN_is_for_seqtrack(plugin), -1);
 
   if (id <= HIGHEST_RECORDER_ID){
     Recorder *recorder = g_recorders.value(id);
@@ -2038,7 +2038,7 @@ int SEQTRACKPLUGIN_get_num_channels(const SoundPlugin *plugin, int64_t id){
 }
 
 int64_t SEQTRACKPLUGIN_get_total_num_frames_for_sample(const SoundPlugin *plugin, int64_t id){
-  R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), -1);
+  R_ASSERT_RETURN_IF_FALSE2(PLUGIN_is_for_seqtrack(plugin), -1);
   
   Sample *sample = get_sample(plugin, id, true, true, true);
   if (sample==NULL)
@@ -2061,7 +2061,7 @@ int64_t SEQTRACKPLUGIN_get_total_num_frames_in_sample(const SoundPlugin *plugin,
 */
 
 filepath_t SEQTRACKPLUGIN_get_sample_name(const SoundPlugin *plugin, int64_t id, bool full_path){
-  R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), make_filepath(L""));
+  R_ASSERT_RETURN_IF_FALSE2(PLUGIN_is_for_seqtrack(plugin), make_filepath(L""));
 
   if (id == INITIAL_RECORDER_ID)
     return make_filepath(L"");
@@ -2106,7 +2106,7 @@ unsigned int SEQTRACKPLUGIN_get_sample_color(const SoundPlugin *plugin, int64_t 
 }
   
 radium::Peaks **SEQTRACKPLUGIN_get_peaks(const SoundPlugin *plugin, int64_t id){
-  R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), NULL);
+  R_ASSERT_RETURN_IF_FALSE2(PLUGIN_is_for_seqtrack(plugin), NULL);
 
   if (id <= HIGHEST_RECORDER_ID){
     Recorder *recorder = g_recorders.value(id);
@@ -2143,7 +2143,7 @@ void SEQTRACKPLUGIN_set_resampler_ratio(const SoundPlugin *plugin, int64_t id, d
 */
 
 double SEQTRACKPLUGIN_get_resampler_ratio(const SoundPlugin *plugin, int64_t id){
-  R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), 1.0);
+  R_ASSERT_RETURN_IF_FALSE2(PLUGIN_is_for_seqtrack(plugin), 1.0);
 
   if (id <= HIGHEST_RECORDER_ID)
     return 1.0;
@@ -2156,7 +2156,7 @@ double SEQTRACKPLUGIN_get_resampler_ratio(const SoundPlugin *plugin, int64_t id)
 }
 
 void SEQTRACKPLUGIN_set_grain_strict_no_jitter(SoundPlugin *plugin, int64_t id, bool new_strict_no_jitter){
-  R_ASSERT_RETURN_IF_FALSE(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name));
+  R_ASSERT_RETURN_IF_FALSE(PLUGIN_is_for_seqtrack(plugin));
 
   Sample *sample = get_sample(plugin, id, true, true, true);
   if (sample==NULL)
@@ -2169,7 +2169,7 @@ void SEQTRACKPLUGIN_set_grain_strict_no_jitter(SoundPlugin *plugin, int64_t id, 
 }
 
 bool SEQTRACKPLUGIN_get_grain_strict_no_jitter(const struct SoundPlugin *plugin, int64_t id){
-  R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), 50);
+  R_ASSERT_RETURN_IF_FALSE2(PLUGIN_is_for_seqtrack(plugin), 50);
 
   Sample *sample = get_sample(plugin, id, true, true, true);
   if (sample==NULL)
@@ -2179,7 +2179,7 @@ bool SEQTRACKPLUGIN_get_grain_strict_no_jitter(const struct SoundPlugin *plugin,
 }
     
 void SEQTRACKPLUGIN_set_grain_overlap(SoundPlugin *plugin, int64_t id, double new_gf){
-  R_ASSERT_RETURN_IF_FALSE(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name));
+  R_ASSERT_RETURN_IF_FALSE(PLUGIN_is_for_seqtrack(plugin));
 
   Sample *sample = get_sample(plugin, id, true, true, true);
   if (sample==NULL)
@@ -2191,7 +2191,7 @@ void SEQTRACKPLUGIN_set_grain_overlap(SoundPlugin *plugin, int64_t id, double ne
 }
 
 double SEQTRACKPLUGIN_get_grain_overlap(const struct SoundPlugin *plugin, int64_t id){
-  R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), 50);
+  R_ASSERT_RETURN_IF_FALSE2(PLUGIN_is_for_seqtrack(plugin), 50);
 
   Sample *sample = get_sample(plugin, id, true, true, true);
   if (sample==NULL)
@@ -2201,7 +2201,7 @@ double SEQTRACKPLUGIN_get_grain_overlap(const struct SoundPlugin *plugin, int64_
 }
     
 void SEQTRACKPLUGIN_set_grain_length(SoundPlugin *plugin, int64_t id, double new_gf){
-  R_ASSERT_RETURN_IF_FALSE(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name));
+  R_ASSERT_RETURN_IF_FALSE(PLUGIN_is_for_seqtrack(plugin));
 
   Sample *sample = get_sample(plugin, id, true, true, true);
   if (sample==NULL)
@@ -2213,7 +2213,7 @@ void SEQTRACKPLUGIN_set_grain_length(SoundPlugin *plugin, int64_t id, double new
 }
 
 double SEQTRACKPLUGIN_get_grain_length(const struct SoundPlugin *plugin, int64_t id){
-  R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), 50);
+  R_ASSERT_RETURN_IF_FALSE2(PLUGIN_is_for_seqtrack(plugin), 50);
 
   Sample *sample = get_sample(plugin, id, true, true, true);
   if (sample==NULL)
@@ -2223,7 +2223,7 @@ double SEQTRACKPLUGIN_get_grain_length(const struct SoundPlugin *plugin, int64_t
 }
     
 void SEQTRACKPLUGIN_set_grain_jitter(struct SoundPlugin *plugin, int64_t id, double new_gf){
-  R_ASSERT_RETURN_IF_FALSE(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name));
+  R_ASSERT_RETURN_IF_FALSE(PLUGIN_is_for_seqtrack(plugin));
 
   Sample *sample = get_sample(plugin, id, true, true, true);
   if (sample==NULL)
@@ -2235,7 +2235,7 @@ void SEQTRACKPLUGIN_set_grain_jitter(struct SoundPlugin *plugin, int64_t id, dou
 }
 
 double SEQTRACKPLUGIN_get_grain_jitter(const struct SoundPlugin *plugin, int64_t id){
-  R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), 50);
+  R_ASSERT_RETURN_IF_FALSE2(PLUGIN_is_for_seqtrack(plugin), 50);
 
   Sample *sample = get_sample(plugin, id, true, true, true);
   if (sample==NULL)
@@ -2245,7 +2245,7 @@ double SEQTRACKPLUGIN_get_grain_jitter(const struct SoundPlugin *plugin, int64_t
 }
     
 void SEQTRACKPLUGIN_set_grain_ramp(struct SoundPlugin *plugin, int64_t id, double new_gf){
-  R_ASSERT_RETURN_IF_FALSE(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name));
+  R_ASSERT_RETURN_IF_FALSE(PLUGIN_is_for_seqtrack(plugin));
 
   Sample *sample = get_sample(plugin, id, true, true, true);
   if (sample==NULL)
@@ -2257,7 +2257,7 @@ void SEQTRACKPLUGIN_set_grain_ramp(struct SoundPlugin *plugin, int64_t id, doubl
 }
 
 double SEQTRACKPLUGIN_get_grain_ramp(const struct SoundPlugin *plugin, int64_t id){
-  R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), 33.3);
+  R_ASSERT_RETURN_IF_FALSE2(PLUGIN_is_for_seqtrack(plugin), 33.3);
 
   Sample *sample = get_sample(plugin, id, true, true, true);
   if (sample==NULL)
@@ -2267,7 +2267,7 @@ double SEQTRACKPLUGIN_get_grain_ramp(const struct SoundPlugin *plugin, int64_t i
 }
     
 enum ResamplerType SEQTRACKPLUGIN_get_resampler_type(const struct SoundPlugin *plugin, int64_t id){
-  R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), RESAMPLER_SINC1);
+  R_ASSERT_RETURN_IF_FALSE2(PLUGIN_is_for_seqtrack(plugin), RESAMPLER_SINC1);
 
   Sample *sample = get_sample(plugin, id, true, true, true);
   if (sample==NULL)
@@ -2479,22 +2479,25 @@ static void RT_record(Data *data, int num_frames, const float **instrument_input
     }
 }
 
-static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **__restrict__ inputs, float **__restrict__ outputs){
+
+static void RT_process(SoundPlugin *plugin, const int64_t time, const int num_frames, float **__restrict__ inputs, float **__restrict__ outputs, const bool is_bus){
   //SoundPluginType *type = plugin->type;
   Data *data = (Data*)plugin->data;
-
-  SMOOTH_called_per_block(&data->_piping_volume);
 
   int status = ATOMIC_GET(data->_recording_status);
   if (status==IS_RECORDING || status==REQUEST_STOP_RECORDING)
     RT_record(data, num_frames, const_cast<const float**>(inputs));
   
   for(int ch = 0 ; ch < NUM_OUTPUTS ; ch++)
-    if(ch < NUM_INPUTS)
-      SMOOTH_copy_sound(&data->_piping_volume, inputs[ch], outputs[ch], num_frames);
-    else
+    if(ch < NUM_INPUTS) {
+      if (is_bus)
+        memcpy(outputs[ch], inputs[ch], sizeof(float) * num_frames);
+      else
+        SMOOTH_copy_sound(&data->_piping_volume, inputs[ch], outputs[ch], num_frames);
+    } else {
       memset(outputs[ch], 0, num_frames*sizeof(float));    
-
+    }
+  
   if (data->_samples.size()==0)
     return;
   
@@ -2549,6 +2552,18 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 #endif
 }
 
+static void RT_process_bus(SoundPlugin *plugin, int64_t time, int num_frames, float **__restrict__ inputs, float **__restrict__ outputs){
+  RT_process(plugin, time, num_frames, inputs, outputs, true);
+}
+
+static void RT_process_the_other_one(SoundPlugin *plugin, int64_t time, int num_frames, float **__restrict__ inputs, float **__restrict__ outputs){
+  Data *data = (Data*)plugin->data;
+
+  SMOOTH_called_per_block(&data->_piping_volume);
+
+  RT_process(plugin, time, num_frames, inputs, outputs, false);
+}
+
 static void RT_player_is_stopped(struct SoundPlugin *plugin){
   //printf("   RT_player_is_stopped called %f\n", TIME_get_ms() / 1000.0);
   
@@ -2588,7 +2603,38 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
   snprintf(buffer,buffersize-1,"%s",data->_enable_piping ? "On" : "Off");
 }
 
+static SoundPlugin *bus1 = NULL;
+static SoundPlugin *bus2 = NULL;
+static SoundPlugin *bus3 = NULL;
+static SoundPlugin *bus4 = NULL;
+static SoundPlugin *bus5 = NULL;
+
+static SoundPluginType bus_type1 = {};
+static SoundPluginType bus_type2 = {};
+static SoundPluginType bus_type3 = {};
+static SoundPluginType bus_type4 = {};
+static SoundPluginType bus_type5 = {};
+
+static SoundPluginType seqtrack_type_general = {};
+static SoundPluginType bus_type_general = {};
+
+bool PLUGIN_is_permanent_bus(SoundPluginType *type){
+  return type==&bus_type1 || type==&bus_type2 || type==&bus_type3 || type==&bus_type4 || type==&bus_type5;  
+}
+
 static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size, bool is_loading){
+  
+  if(plugin_type==&bus_type1)
+    bus1 = plugin;
+  if(plugin_type==&bus_type2)
+    bus2 = plugin;
+  if(plugin_type==&bus_type3)
+    bus3 = plugin;
+  if(plugin_type==&bus_type4)
+    bus4 = plugin;
+  if(plugin_type==&bus_type5)
+    bus5 = plugin;
+
   bool enable_piping = false;
   
   Data *data = new Data(sample_rate, enable_piping);
@@ -2600,6 +2646,19 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
 }
 
 static void cleanup_plugin_data(SoundPlugin *plugin){
+  const SoundPluginType *plugin_type = plugin->type;
+  
+  if(plugin_type==&bus_type1)
+    bus1 = NULL;
+  if(plugin_type==&bus_type2)
+    bus2 = NULL;
+  if(plugin_type==&bus_type3)
+    bus3 = NULL;
+  if(plugin_type==&bus_type4)
+    bus4 = NULL;
+  if(plugin_type==&bus_type5)
+    bus5 = NULL;
+
   Data *data = (Data*)plugin->data;
   //printf(">>>>>>>>>>>>>> Cleanup_plugin_data called for %p\n",plugin);
   delete data;
@@ -2617,16 +2676,35 @@ static int get_effect_format(struct SoundPlugin *plugin, int effect_num){
   return EFFECT_FORMAT_BOOL;
 }
 
-void create_seqtrack_plugin(void){
-  SoundPluginType *plugin_type = (SoundPluginType*)V_calloc(1,sizeof(SoundPluginType));
+const char *BUS_get_bus_name(int bus_num){
+  if(bus_num==0)
+    return bus1==NULL ? "Reverb Bus" : bus1->patch->name;
+  else if(bus_num==1)
+    return bus2==NULL ? "Chorus Bus" : bus2->patch->name;
+  else if(bus_num==2)
+    return bus3==NULL ? "Aux 1 Bus" : bus3->patch->name;
+  else if(bus_num==3)
+    return bus4==NULL ? "Aux 2 Bus" : bus4->patch->name;
+  else if(bus_num==4)
+    return bus5==NULL ? "Aux 3 Bus" : bus5->patch->name;
+  else {
+    RError("Unknown bus num %d", bus_num);
+    return "???";
+  }
+}
 
-  plugin_type->type_name                = SEQTRACKPLUGIN_NAME;
-  plugin_type->name                     = SEQTRACKPLUGIN_NAME;
+
+static void init_type(SoundPluginType *plugin_type, const char *type_name, const char *name){
+
+  bool is_bus = !strcmp("Bus", type_name);
+  
+  plugin_type->type_name                = type_name;
+  plugin_type->name                     = name;
   plugin_type->num_inputs               = NUM_INPUTS;
   plugin_type->num_outputs              = NUM_OUTPUTS;
   plugin_type->is_instrument            = false;
   plugin_type->note_handling_is_RT      = false;
-  plugin_type->num_effects              = EFF_NUM_EFFECTS,
+  plugin_type->num_effects              = is_bus ? 0 : EFF_NUM_EFFECTS,
   plugin_type->get_effect_format        = get_effect_format,
   plugin_type->get_effect_name          = get_effect_name;
   plugin_type->effect_is_RT             = NULL;
@@ -2634,7 +2712,7 @@ void create_seqtrack_plugin(void){
   plugin_type->cleanup_plugin_data      = cleanup_plugin_data;
   plugin_type->called_after_plugin_has_been_created = called_after_plugin_has_been_created;
   
-  plugin_type->RT_process       = RT_process;
+  plugin_type->RT_process       = is_bus ? RT_process_bus : RT_process_the_other_one;
   plugin_type->RT_player_is_stopped = RT_player_is_stopped;
   
   plugin_type->set_effect_value = set_effect_value;
@@ -2642,7 +2720,31 @@ void create_seqtrack_plugin(void){
   plugin_type->get_display_value_string = get_display_value_string;
 
   plugin_type->will_never_autosuspend = true; // TODO: Touch plugin manually instead.
-  
-  PR_add_plugin_type_no_menu(plugin_type);
+}
+
+void create_seqtrack_plugin(void){
+  static bool has_inited = false;
+
+  if (has_inited==false) {
+    has_inited = true;
+
+      init_type(&bus_type1, "Bus", "Bus 1");
+      init_type(&bus_type2, "Bus", "Bus 2");
+      init_type(&bus_type3, "Bus", "Bus 3");
+      init_type(&bus_type4, "Bus", "Bus 4");
+      init_type(&bus_type5, "Bus", "Bus 5");
+
+      init_type(&seqtrack_type_general, SEQTRACKPLUGIN_NAME, SEQTRACKPLUGIN_NAME);
+      init_type(&bus_type_general, "Bus", SEQTRACKPLUGIN_NAME);
+  }
+
+  PR_add_plugin_type_no_menu(&bus_type1);
+  PR_add_plugin_type_no_menu(&bus_type2);
+  PR_add_plugin_type_no_menu(&bus_type3);
+  PR_add_plugin_type_no_menu(&bus_type4);
+  PR_add_plugin_type_no_menu(&bus_type5);
+
+  PR_add_plugin_type_no_menu(&seqtrack_type_general);
+  PR_add_plugin_type_no_menu(&bus_type_general);
   //PR_add_plugin_type(plugin_type);
 }

@@ -676,7 +676,13 @@ struct Mixer{
   void add_SoundProducer(SoundProducer *sound_producer){    
     SoundPlugin *plugin = SP_get_plugin(sound_producer);
     int bus_num = SP_get_bus_num(sound_producer);
-
+#if !defined(RELEASE)
+    if (bus_num>=0){
+      if (plugin->patch->id.id==0)
+        abort();
+    }
+#endif
+      
     bool is_click_patch = false;
     SoundPlugin **new_g_click_plugins = NULL;
     Patch **new_g_click_patches = NULL;

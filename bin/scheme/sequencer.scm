@@ -1055,14 +1055,15 @@
                                         *current-seqtrack-num*))))
 
 (define (FROM_C-delete-seqtrack seqtracknum)
-  (if (and (= 0 seqtracknum)
-           (not (<ra> :seqtrack-for-audiofiles 0))
-           (<ra> :seqtrack-for-audiofiles 1))
-      (ask-user-about-first-audio-seqtrack
-       (lambda (doit)
-         (if doit
-             (<ra> :force-delete-seqtrack seqtracknum))))
-      (<ra> :force-delete-seqtrack seqtracknum)))
+  (cond ((and (= 0 seqtracknum)
+              (not (<ra> :seqtrack-for-audiofiles 0))
+              (<ra> :seqtrack-for-audiofiles 1))
+         (ask-user-about-first-audio-seqtrack
+          (lambda (doit)
+            (if doit
+                (<ra> :force-delete-seqtrack seqtracknum)))))
+        (else
+         (<ra> :force-delete-seqtrack seqtracknum))))
 
 (define (FROM_C-insert-seqtrack for-audiofiles seqtracknum is-bus)
   (if (= -1 seqtracknum)
@@ -1076,6 +1077,20 @@
              (<ra> :insert-seqtrack-internal #t seqtracknum is-bus))))
       (<ra> :insert-seqtrack-internal for-audiofiles seqtracknum is-bus)))
 
+(delafina (delete-seqtrack :seqtracknum -1)
+  (if (> (<ra> :get-num-seqtracks) 1)
+      (if (<ra> :seqtrack-is-permanent seqtracknum)
+          (if #f
+              (<ra> :set-seqtrack-visible seqtracknum #f)
+              (if (<ra> :get-seqtrack-visible seqtracknum)
+                  (show-async-message :text (<-> (<ra> :get-seqtrack-name seqtracknum) " can not be deleted<p>"
+                                                 "Do you want to make the seqtrack invisible?")
+                                      :buttons '("No" "Yes")
+                                      :callback (lambda (answer)
+                                                  (if (string=? answer "Yes")
+                                                      (<ra> :set-seqtrack-visible seqtracknum #f))))
+                  (show-async-message :text (<-> (<ra> :get-seqtrack-name seqtracknum) " can not be deleted"))))                  
+          (<ra> :delete-seqtrack seqtracknum))))
 
 
 (define (get-seqtrack-config-popup-menu-entries)
@@ -1089,8 +1104,9 @@
          ra:insert-bus-seqtrack)
    "----Delete seqtrack"
    (list (<-> "Delete \"" (<ra> :get-seqtrack-name (<ra> :get-curr-seqtrack)) "\"")
-         :enabled (> (<ra> :get-num-seqtracks) 1)
-         ra:delete-seqtrack)
+         :enabled (and (> (<ra> :get-num-seqtracks) 1)
+                       (not (<ra> :seqtrack-is-permanent)))
+         delete-seqtrack)
    "----Append seqtrack"
    (list "+A Append editor seqtrack"
          ra:append-editor-seqtrack)

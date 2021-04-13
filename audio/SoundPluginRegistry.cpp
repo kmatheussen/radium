@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Jack_plugin_proc.h"
 #include "SendReceive_plugins_proc.h"
 #include "VST_plugins_proc.h"
+#include "Seqtrack_plugin_proc.h"
 
 #include "../mixergui/QM_MixerWidget.h"
 
@@ -384,7 +385,6 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const ch
   if (!strcmp(type_name, "Patchbay") && !strcmp(plugin_name, "Patchbay"))
     plugin_name = "Patchbay 8x8";
 
-  
   {
     if (container_name != NULL)
       PR_ensure_container_is_populated(container_name, type_name);
@@ -666,9 +666,6 @@ void PR_add_plugin_type(SoundPluginType *type){
     if(!strcmp(type->name,"System Pitch"))
       return;
   }
-
-  if(!strcmp(type->type_name,"Bus"))
-    return;
 
   PR_add_menu_entry(PluginMenuEntry::normal(type));
 }

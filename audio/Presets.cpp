@@ -371,12 +371,13 @@ static bool valid_patches(const vector_t *patches){
         return false;
       }
       
-      if (!strcmp(plugin->type->type_name,SEQTRACKPLUGIN_NAME)){
+      if (PLUGIN_is_for_seqtrack(plugin)){
         GFX_addMessage("Can not cut, copy, delete, or save a Seqtrack preset"); // Workaround for Qt bug. Running a custom exec screws up QGraphicsScene mouse handling
         return false;
       }
       
       if (AUDIO_is_permanent_patch(patch)){
+        R_ASSERT_NON_RELEASE(false); // should be covered in "Bus" above.
         GFX_addMessage("Can not cut, copy, delete, or save the Main Pipe preset"); // Workaround for Qt bug. Running a custom exec screws up QGraphicsScene mouse handling
         return false;
       }

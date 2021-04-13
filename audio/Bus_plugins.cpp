@@ -30,11 +30,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Bus_plugins_proc.h"
 
-static SoundPluginType bus_type1 = {};
-static SoundPluginType bus_type2 = {};
-static SoundPluginType bus_type3 = {};
-static SoundPluginType bus_type4 = {};
-static SoundPluginType bus_type5 = {};
 static SoundPluginType pipe_type = {};
 static SoundPluginType pipe_type8 = {};
 
@@ -80,13 +75,9 @@ static int RT_get_audio_tail_length(const struct SoundPlugin *plugin){
 
 
 
-static SoundPlugin *bus1 = NULL;
-static SoundPlugin *bus2 = NULL;
-static SoundPlugin *bus3 = NULL;
-static SoundPlugin *bus4 = NULL;
-static SoundPlugin *bus5 = NULL;
 
 static void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size, bool is_loading){
+  /*
   if(plugin_type==&bus_type1)
     bus1 = plugin;
   if(plugin_type==&bus_type2)
@@ -97,39 +88,11 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, struct Sound
     bus4 = plugin;
   if(plugin_type==&bus_type5)
     bus5 = plugin;
+  */
   return (void*)plugin_type;
 }
 
 static void cleanup_plugin_data(SoundPlugin *plugin){
-  const SoundPluginType *plugin_type = plugin->type;
-  
-  if(plugin_type==&bus_type1)
-    bus1 = NULL;
-  if(plugin_type==&bus_type2)
-    bus2 = NULL;
-  if(plugin_type==&bus_type3)
-    bus3 = NULL;
-  if(plugin_type==&bus_type4)
-    bus4 = NULL;
-  if(plugin_type==&bus_type5)
-    bus5 = NULL;
-}
-
-const char *BUS_get_bus_name(int bus_num){
-  if(bus_num==0)
-    return bus1==NULL ? "Reverb Bus" : bus1->patch->name;
-  else if(bus_num==1)
-    return bus2==NULL ? "Chorus Bus" : bus2->patch->name;
-  else if(bus_num==2)
-    return bus3==NULL ? "Aux 1 Bus" : bus3->patch->name;
-  else if(bus_num==3)
-    return bus4==NULL ? "Aux 2 Bus" : bus4->patch->name;
-  else if(bus_num==4)
-    return bus5==NULL ? "Aux 3 Bus" : bus5->patch->name;
-  else {
-    RError("Unknown bus num %d", bus_num);
-    return "???";
-  }
 }
 
 #if 0
@@ -201,100 +164,6 @@ static SoundPluginType pipe_type = {
 void create_bus_plugins(bool only_pipe){
   static bool has_inited = false;
 
-  if (has_inited==false)
-  {
-    bus_type1.type_name                = "Bus";
-    bus_type1.name                     = "Bus 1";
-    bus_type1.num_inputs               = 2;
-    bus_type1.num_outputs              = 2;
-    bus_type1.is_instrument            = false;
-    bus_type1.num_effects              = 0;
-    bus_type1.will_always_autosuspend  = true,
-    bus_type1.create_plugin_data       = create_plugin_data;
-    bus_type1.cleanup_plugin_data      = cleanup_plugin_data;
-    
-    //bus_type1.RT_process               = RT_bus_process;
-    bus_type1.RT_process               = RT_pipe_process;
-    bus_type1.RT_get_audio_tail_length = RT_get_audio_tail_length;
-      
-    bus_type1.data                     = NULL;
-  }
-
-  if (has_inited==false)
-  {
-    bus_type2.type_name                = "Bus";
-    bus_type2.name                     = "Bus 2";
-    bus_type2.num_inputs               = 2;
-    bus_type2.num_outputs              = 2;
-    bus_type2.is_instrument            = false;
-    bus_type2.num_effects              = 0;
-    bus_type2.will_always_autosuspend  = true,
-    bus_type2.create_plugin_data       = create_plugin_data;
-    bus_type2.cleanup_plugin_data      = cleanup_plugin_data;
-    
-    //bus_type2.RT_process               = RT_bus_process;
-    bus_type2.RT_process               = RT_pipe_process;
-    bus_type2.RT_get_audio_tail_length = RT_get_audio_tail_length;
-    
-    bus_type2.data                     = NULL;
-  }
-
-  if (has_inited==false)
-  {
-    bus_type3.type_name                = "Bus";
-    bus_type3.name                     = "Bus 3";
-    bus_type3.num_inputs               = 2;
-    bus_type3.num_outputs              = 2;
-    bus_type3.is_instrument            = false;
-    bus_type3.num_effects              = 0;
-    bus_type3.will_always_autosuspend  = true,
-    bus_type3.create_plugin_data       = create_plugin_data;
-    bus_type3.cleanup_plugin_data      = cleanup_plugin_data;
-    
-    //bus_type2.RT_process               = RT_bus_process;
-    bus_type3.RT_process               = RT_pipe_process;
-    bus_type3.RT_get_audio_tail_length = RT_get_audio_tail_length;
-    
-    bus_type3.data                     = NULL;
-  }
-
-  if (has_inited==false)
-  {
-    bus_type4.type_name                = "Bus";
-    bus_type4.name                     = "Bus 4";
-    bus_type4.num_inputs               = 2;
-    bus_type4.num_outputs              = 2;
-    bus_type4.is_instrument            = false;
-    bus_type4.num_effects              = 0;
-    bus_type4.will_always_autosuspend  = true,
-    bus_type4.create_plugin_data       = create_plugin_data;
-    bus_type4.cleanup_plugin_data      = cleanup_plugin_data;
-    
-    //bus_type2.RT_process               = RT_bus_process;
-    bus_type4.RT_process               = RT_pipe_process;
-    bus_type4.RT_get_audio_tail_length = RT_get_audio_tail_length;
-    
-    bus_type4.data                     = NULL;
-  }
-
-  if (has_inited==false)
-  {
-    bus_type5.type_name                = "Bus";
-    bus_type5.name                     = "Bus 5";
-    bus_type5.num_inputs               = 2;
-    bus_type5.num_outputs              = 2;
-    bus_type5.is_instrument            = false;
-    bus_type5.num_effects              = 0;
-    bus_type5.will_always_autosuspend  = true,
-    bus_type5.create_plugin_data       = create_plugin_data;
-    bus_type5.cleanup_plugin_data      = cleanup_plugin_data;
-    
-    //bus_type2.RT_process               = RT_bus_process;
-    bus_type5.RT_process               = RT_pipe_process;
-    bus_type5.RT_get_audio_tail_length = RT_get_audio_tail_length;
-    
-    bus_type5.data                     = NULL;
-  }
 
   if (has_inited==false)
   {
@@ -399,11 +268,6 @@ void create_bus_plugins(bool only_pipe){
   if (only_pipe) {
     PR_add_plugin_type(&pipe_type);
   } else {
-    PR_add_plugin_type(&bus_type1);
-    PR_add_plugin_type(&bus_type2);
-    PR_add_plugin_type(&bus_type3);
-    PR_add_plugin_type(&bus_type4);
-    PR_add_plugin_type(&bus_type5);
     PR_add_plugin_type(&pipe_type8);
     
     PR_add_plugin_type_no_menu(&left_in_type);

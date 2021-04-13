@@ -180,7 +180,7 @@ extern LANGSPEC hash_t *PLUGIN_get_ab_state(const SoundPlugin *plugin);
 extern LANGSPEC hash_t *PLUGIN_get_effects_state(const SoundPlugin *plugin);
 extern LANGSPEC hash_t *PLUGIN_get_state(const SoundPlugin *plugin);
 
-extern LANGSPEC void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects);
+extern LANGSPEC void PLUGIN_set_effects_from_state(SoundPlugin *plugin, const hash_t *effects, bool set_default_values_for_unspecified_effects);
 extern LANGSPEC float PLUGIN_get_last_written_effect_from_name(SoundPlugin *plugin, const char *effect_name);
 extern LANGSPEC int PLUGIN_get_effect_num_from_name(SoundPlugin *plugin, const char *effect_name);
 extern LANGSPEC float PLUGIN_get_effect_from_name(SoundPlugin *plugin, const char *effect_name, enum WhereToGetValue where, enum ValueFormat value_format);
@@ -264,6 +264,8 @@ extern LANGSPEC void PLUGIN_reset_one_effect(SoundPlugin *plugin, int effect_num
 extern LANGSPEC void PLUGIN_random(SoundPlugin *plugin);
 
 extern LANGSPEC void PLUGIN_show_info_window(const SoundPluginType *type, SoundPlugin *plugin, int64_t parentgui);
+
+extern LANGSPEC bool PLUGIN_is_permanent_bus(SoundPluginType *type);
 
 extern LANGSPEC filepath_t PLUGIN_DISK_get_audio_filename(hash_t *state);
 

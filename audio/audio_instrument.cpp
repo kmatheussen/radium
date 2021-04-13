@@ -531,6 +531,7 @@ bool AUDIO_InitPatch2(struct Patch *patch, const char *type_name, const char *pl
     }
   }
 
+#if 0
   // Add this check here (and not at the beginning of the function) since type_name is NULL when creating from state.
   if (false==is_loading_song && !g_is_loading){
     if (!strcmp(plugin->type->type_name,"Bus")){
@@ -539,6 +540,7 @@ bool AUDIO_InitPatch2(struct Patch *patch, const char *type_name, const char *pl
       return false;
     }
   }
+#endif
   
   bool needs_name = patch->name==NULL || (strlen(patch->name)==0);
 
@@ -1359,19 +1361,28 @@ static const char *AUDIO_getPatchData(struct Patch *patch, const char *key){
 
 extern SoundPlugin *g_system_bus;
 
-bool AUDIO_is_permanent_patch(struct Patch *patch){
+bool AUDIO_is_permanent_patch(const struct Patch *patch){
   R_ASSERT_RETURN_IF_FALSE2(patch->patchdata!=NULL, true);
   
-  SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
+  const SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
   if (plugin==NULL)
     return false;
   
   if(plugin==get_main_pipe())
     return true;
 
-  else if (!strcmp(plugin->type->type_name,"Bus")) {
+  const SoundProducer *sp = SP_get_sound_producer(plugin);
+                        
+  Buses buses = MIXER_get_buses();
+  if (sp==buses.bus1 || sp==buses.bus2 || sp==buses.bus3 || sp==buses.bus4 || sp==buses.bus5) {
+    
     return true;
 
+  /*
+  else if (!strcmp(plugin->type->type_name,"Bus")) {
+    return true;
+  */
+  
   /*
   } else if (!strcmp(plugin->type->type_name,SEQTRACKPLUGIN_NAME)){
     printf("NUM samples: %d\n", SEQTRACKPLUGIN_get_num_samples(plugin));
