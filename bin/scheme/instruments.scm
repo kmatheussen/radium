@@ -633,11 +633,16 @@
 (define (replace-instrument-in-mixer id-old-instrument id-new-instrument)
   (define x (+ 0 (<ra> :get-instrument-x id-old-instrument)))
   (define y (+ 0 (<ra> :get-instrument-y id-old-instrument)))
-  (if (equal? (<ra> :get-main-pipe-instrument) id-old-instrument)
+  
+  (define is-main-pipe (equal? (<ra> :get-main-pipe-instrument) id-old-instrument))
+  ;;(define is-bus (member id-old-instrument (get-pure-buses)))
+  
+  (if is-main-pipe
       (begin
         (<ra> :internal-replace-main-pipe id-new-instrument)
         (set! id-new-instrument (<ra> :get-main-pipe-instrument)))
       (<ra> :delete-instrument id-old-instrument))
+  
   (<ra> :set-instrument-position x y id-new-instrument)
   )
 
@@ -1464,11 +1469,12 @@
                                      -2
                                      #f)))
 
+
 (define (request-send-instrument instrument-id callback)
   ;;(define is-bus-descendant (<ra> :instrument-is-bus-descendant instrument-id))
-  (define pure-buses (get-pure-buses))
-  (define seqtrack-buses (get-seqtrack-buses))
-  (define buses (append pure-buses seqtrack-buses))
+  ;;(define pure-buses (get-pure-buses))
+  (define seqtrack-buses (get-seqtrack-buses)) ;; Note: pure buses are now seqtrack buses, not pipes.
+  (define buses seqtrack-buses) ;;(append pure-buses seqtrack-buses))
   (define (create-entry-text instrument-id)
     (<-> *arrow-text* " " (<ra> :get-instrument-name instrument-id)))
 
@@ -2661,3 +2667,52 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
            (setit 4)))
    ))
 
+
+
+;;;;;;;;;;;;;;;;;;;;;; Convert between bus and pipe ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (FROM_C-convert-pipe-to-bus instrument-id)
+  ;;(<ra> :get-instrument-type-name instrument-id)
+  ;;(<ra> :get-instrument-plugin-name instrument-id)
+  
+  (define effects (<ra> :get-instrument-effects instrument-id))
+  (define name (<ra> :get-instrument-name instrument-id))
+  
+  (undo-block
+   (lambda ()
+
+     (define seqtracknum (<ra> :append-bus-seqtrack))
+     (define new-instrument-id (<ra> :get-seqtrack-instrument seqtracknum))
+
+     
+     ;; disconnect connection to main pipe.
+     (let ()
+       (define changes '())
+       (push-audio-connection-change! changes (list :type "disconnect"
+                                                    :source new-instrument-id
+                                                    :target (<ra> :get-main-pipe-instrument)))
+       (<ra> :change-audio-connections changes))
+     
+     (move-connections-to-new-instrument instrument-id new-instrument-id)
+     (replace-instrument-in-mixer instrument-id new-instrument-id)
+
+     (if (equal? (<ra> :get-main-pipe-instrument) instrument-id)
+         (set! new-instrument-id (<ra> :get-main-pipe-instrument)))
+     
+     (<ra> :set-instrument-effects new-instrument-id effects);
+     (<ra> :set-instrument-name (string-replace name "Pipe" "Bus") new-instrument-id)
+
+     seqtracknum
+     )))
+
+#!
+(FROM_C-convert-pipe-to-bus (<ra> :get-main-pipe-instrument))
+(FROM_C-convert-pipe-to-bus (<ra> :get-audio-bus-id 0))
+!#
+
+#||
+(define (FROM_C-bus-to-pipe instrument-id)
+  #t)
+||#
+
+  

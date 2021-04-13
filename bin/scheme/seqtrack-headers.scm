@@ -989,7 +989,7 @@
                                            (<ra> :shift-pressed)
                                            (> (<ra> :get-num-seqtracks) 1))
                                       (begin
-                                        (<ra> :delete-seqtrack)
+                                        (delete-seqtrack)
                                         #t)
                                       #f)))
   (if for-audiofiles
@@ -1158,7 +1158,7 @@
            (<ra> :insert-seqtrack #t -1 (eq? type 'InsertB)))
           ((eq? type '-)
            (if (> (<ra> :get-num-seqtracks) 1)
-               (<ra> :delete-seqtrack)))
+               (delete-seqtrack)))
           ((eq? type 'AppendE)
            (<ra> :append-seqtrack #f))
           ((eq? type 'AppendA)
@@ -1214,7 +1214,7 @@
                                                                      ((eq? type 'InsertB)
                                                                       (list "ra:insert-bus-seqtrack"))
                                                                      ((eq? type '-)
-                                                                      (list "ra:delete-seqtrack"))
+                                                                      (list "delete-seqtrack"))
                                                                      ((eq? type 'AppendE)
                                                                       (list "ra:append-editor-seqtrack"))
                                                                      ((eq? type 'AppendA)

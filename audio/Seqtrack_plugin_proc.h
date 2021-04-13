@@ -21,7 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define SEQTRACKPLUGIN_NAME "Sequencer audio file recorder/player"
 
-struct SoundPlugin;
+#include "SoundPlugin.h"
+
 
 /*
 No need for these two functions. Just set seqblock->t.interior_start / seqblock->t.interior_end while holding player lock.
@@ -91,6 +92,17 @@ namespace radium{
 }
 extern radium::Peaks **SEQTRACKPLUGIN_get_peaks(const SoundPlugin *plugin, int64_t id);
 #endif
+
+extern LANGSPEC const char *BUS_get_bus_name(int bus_num);
+
+static inline bool PLUGIN_is_for_seqtrack(const SoundPlugin *plugin){
+  if (!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name))
+    return true;
+  else if (!strcmp("Bus", plugin->type->type_name))
+    return true;
+  else
+    return false;
+}
 
 #endif
 

@@ -203,7 +203,7 @@ BOOST_FLAGS=-Wno-class-memaccess $(BOOST_INCLUDE)
 CRASHREPORTER_OPTS ?= 
 CRASHREPORTER_POSIX_OPTS ?= 
 
-DEFINES=-DNOPAUSEPLAY -DCOMPILING_RADIUM -DUSE_WEAK_JACK -DTHREADED_OPENGL
+DEFINES=-DNOPAUSEPLAY -DCOMPILING_RADIUM -DUSE_WEAK_JACK
 #-DDISABLE_BDWGC <---- It makes a lot of sense to enable this option in DEBUG mode if using -fsanitize=address
 #-DMEMORY_DEBUG
 # define SYSBASEDEBUG
@@ -340,7 +340,7 @@ MENU_TYPE = -DUSE_QT_MENU=1 -DUSE_GTK_MENU=0
 
 FLAGOPTS = $(DEFINES) -DGUIISQT -DFULL_VERSION=$(FULL_VERSION) -DIS_LITTLE_ENDIAN=1 -DUSE_OPENGL=1 $(VISUAL) $(REQTYPE_TYPE) $(MENU_TYPE)
 
-COMMONOPT = -D__STDC_FORMAT_MACROS=1 -c `cat buildtype.opt` -I$(GCDIR)/include -I$(P) $(PYPATH) `cat flagopts.opt` $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -I ~/SDKs/VST_SDK/VST2_SDK/ -I ~/SDKs/vstsdk2.4/ -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wno-unknown-pragmas -fno-strict-aliasing -Wmissing-field-initializers -Wnull-dereference 
+COMMONOPT = -D__STDC_FORMAT_MACROS=1 -c `cat buildtype.opt` -I$(GCDIR)/include -I$(P) $(PYPATH) `cat flagopts.opt` $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -I ~/SDKs/VST_SDK/VST2_SDK/ -I ~/SDKs/vstsdk2.4/ -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wno-unknown-pragmas -fno-strict-aliasing -Wmissing-field-initializers -Wnull-dereference -DTHREADED_OPENGL=1
 #-fdelete-null-pointer-checks 
 # -Werror
 
@@ -1570,7 +1570,7 @@ ifeq (,$(findstring clang,$(CC)))
 endif
 
 $(T)Qt_sequencer.o:  $(BUILD_DEPENDENCIES) $(P)Qt_sequencer.cpp Qt/helpers.h audio/Envelope.hpp audio/Peaks.hpp common/seqblock_automation_proc.h Qt/KeyboardFocusFrame.hpp Qt/Qt_MyQCheckBox.h
-	$(CCC2) $(P)Qt_sequencer.cpp $(QTOPT) $(SNDFILEOPT) $(QT_SEQUENCER_OPT)
+	$(CCC2) $(P)Qt_sequencer.cpp $(QTOPT) $(SNDFILEOPT) $(QT_SEQUENCER_OPT)  $(BOOST_INCLUDE)
 
 #QD = /home/kjetil/site/src/qt-x11-free-3.3.8b/src/dialogs/
 QD = $(P)
@@ -2101,7 +2101,7 @@ $(T)SampleReader.o: audio/SampleReader.cpp audio/SampleReader_proc.h
 	$(CCC2) $(QTOPT) audio/SampleReader.cpp $(SNDFILEOPT)
 
 $(T)Seqtrack_plugin.o: audio/Seqtrack_plugin.cpp audio/SampleReader_proc.h audio/GranResampler.hpp audio/Granulator.hpp common/Random.hpp audio/Peaks.hpp audio/SampleRecorder_proc.h common/seqblock_automation_proc.h audio/Fade.hpp
-	$(CCC2) $(QTOPT) audio/Seqtrack_plugin.cpp $(SNDFILEOPT) $(OPTIMIZE_O3) $(NO_ANALYZER_MALLOC_LEAK) # $(CPUOPT) 
+	$(CCC2) $(QTOPT) audio/Seqtrack_plugin.cpp $(SNDFILEOPT) $(OPTIMIZE_O3) $(NO_ANALYZER_MALLOC_LEAK) $(BOOST_INCLUDE) # $(CPUOPT) 
 
 $(T)FluidSynth_plugin.o: audio/FluidSynth_plugin.cpp
 	$(CCC2) $(CPPOPT) $(CPUOPT) audio/FluidSynth_plugin.cpp #-Wno-gnu-designator
@@ -2551,7 +2551,7 @@ $(T)crashreporter_windows.o: crashreporter/crashreporter_windows.c
 #	$(CC2) crashreporter/crashreporter_windows.c $(OPT) -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/bfd -DPACKAGE -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/include -O0
 
 $(T)GfxElements.o: OpenGL/GfxElements.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp OpenGL/FreeType.hpp common/Mutex.hpp OpenGL/T2.hpp common/spinlock.h
-	$(CCC2) OpenGL/GfxElements.cpp $(VL_CFLAGS) $(QTOPT) $(FREETYPE_CFLAGS) $(WNO_SUGGEST_OVERRIDE) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC) $(NO_ANALYZER)  $(WNO_DEPRECATED_COPY_CLANG) $(WNO_MISLEADING_INDENTATION_CLANG)  $(WNO_DEPRECATED_DECLARATIONS)
+	$(CCC2) OpenGL/GfxElements.cpp $(VL_CFLAGS) $(QTOPT) $(FREETYPE_CFLAGS) $(WNO_SUGGEST_OVERRIDE) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC) $(NO_ANALYZER)  $(WNO_DEPRECATED_COPY_CLANG) $(WNO_MISLEADING_INDENTATION_CLANG)  $(WNO_DEPRECATED_DECLARATIONS) $(BOOST_INCLUDE)
 
 $(T)T2.o: OpenGL/T2.cpp OpenGL/T2.hpp OpenGL/SharedVariables.hpp common/QueueStack.hpp OpenGL/GfxElements.h 
 	$(CCC2) OpenGL/T2.cpp $(VL_CFLAGS) $(QTOPT) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC) $(WNO_DEPRECATED_COPY_CLANG) $(WNO_MISLEADING_INDENTATION_CLANG) $(WNO_DEPRECATED_DECLARATIONS) $(BOOST_INCLUDE) 

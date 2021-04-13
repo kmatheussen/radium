@@ -2983,7 +2983,7 @@ void PLUGIN_set_effect_from_name(SoundPlugin *plugin, const char *effect_name, f
 }
 
 
-void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
+void PLUGIN_set_effects_from_state(SoundPlugin *plugin, const hash_t *effects, bool set_default_values_for_unspecified_effects){
   const SoundPluginType *type=plugin->type;
 
   hash_t *copy = HASH_copy(effects);
@@ -3062,8 +3062,10 @@ void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
         break;
     }
 
-    float val = has_value[i] ? values[i] : plugin->initial_effect_values_native[i];
-    PLUGIN_set_effect_value(plugin, -1, i, val, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+    if (has_value[i] || set_default_values_for_unspecified_effects) {
+      float val = has_value[i] ? values[i] : plugin->initial_effect_values_native[i];
+      PLUGIN_set_effect_value(plugin, -1, i, val, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+    }
     
     /*
       ?? (old code)
@@ -3104,10 +3106,13 @@ void PLUGIN_set_effects_from_state(SoundPlugin *plugin, hash_t *effects){
       radium::PlayerLock lock; // To avoid relocking for every effect.
 
       for(int i=0 ; i<type->num_effects ; i++){
-        PLAYER_maybe_pause_lock_a_little_bit(i);
-        
-        float val = has_value[i] ? values[i] : plugin->initial_effect_values_native[i];
-        PLUGIN_set_effect_value(plugin, -1, i, val, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+        if (has_value[i] || set_default_values_for_unspecified_effects) {
+
+          PLAYER_maybe_pause_lock_a_little_bit(i);
+
+          float val = has_value[i] ? values[i] : plugin->initial_effect_values_native[i];
+          PLUGIN_set_effect_value(plugin, -1, i, val, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+        }
       }
       
     }
@@ -3166,7 +3171,7 @@ SoundPlugin *PLUGIN_create_from_state(struct Patch *patch, hash_t *state, bool i
 
   // effects state
   hash_t *effects = HASH_get_hash(state, "effects");
-  PLUGIN_set_effects_from_state(plugin, effects);
+  PLUGIN_set_effects_from_state(plugin, effects, true);
 
   if(plugin_state!=NULL && type->recreate_from_state!=NULL)
     PLUGIN_recreate_from_state(plugin, plugin_state, is_loading);

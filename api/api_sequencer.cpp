@@ -50,6 +50,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/SoundPlugin.h"
 #include "../audio/SampleReader_proc.h"
 #include "../audio/Envelope.hpp"
+#include "../audio/audio_instrument_proc.h"
 
 #include "api_common_proc.h"
 
@@ -260,7 +261,7 @@ float getSeqnavRightSizeHandleY2(void){
 }
 
 static void insertSeqtrackInternal2(bool for_audiofiles, int pos, bool is_bus){
-  SEQUENCER_insert_seqtrack(pos, for_audiofiles, is_bus);
+  SEQUENCER_insert_seqtrack(pos, for_audiofiles, is_bus, NULL);
   setCurrSeqtrack(pos, false, true);
 }
 
@@ -313,39 +314,115 @@ void insertBusSeqtrack(int pos, bool force_insert){
   insertSeqtrack(true, pos, true, force_insert);
 }
 
-void appendSeqtrack(bool for_audiofiles, bool is_bus){
-  R_ASSERT_NON_RELEASE(for_audiofiles || !is_bus);
+static int find_seqtrack_to_append_to(bool for_audiofiles, bool is_bus){
+  int last = -1;
   
-  SEQUENCER_append_seqtrack(for_audiofiles, is_bus);
+  for(int i=0;i<root->song->seqtracks.num_elements;i++)
 
-  setCurrSeqtrack(root->song->seqtracks.num_elements - 1, false, true);
+    if (!for_audiofiles) {
+
+      if (!seqtrackForAudiofiles(i))
+        last = i;
+      
+    } else {
+      
+      if (is_bus) {
+        
+        if (!seqtrackIsPermanent(i)) {
+          last = i;
+        }
+        
+        
+      } else {
+        
+        if (!seqtrackIsBus(i)) {
+          last = i;
+        }
+      
+      }
+
+    }
+  
+  return last;
 }
 
-void appendEditorSeqtrack(void){
-  appendSeqtrack(false, false);
+int appendSeqtrack(bool for_audiofiles, bool is_bus){
+  R_ASSERT_NON_RELEASE(for_audiofiles || !is_bus);
+
+  int last = find_seqtrack_to_append_to(for_audiofiles, is_bus);
+  int pos = last + 1;
+  
+  SEQUENCER_insert_seqtrack(pos, for_audiofiles, is_bus, NULL);
+
+  setCurrSeqtrack(pos, false, true);
+
+  return pos;
+  
+  //SEQUENCER_append_seqtrack(for_audiofiles, is_bus);
+  //setCurrSeqtrack(root->song->seqtracks.num_elements - 1, false, true);
 }
 
-void appendAudioSeqtrack(void){
-  appendSeqtrack(true, false);
+int appendEditorSeqtrack(void){
+  return appendSeqtrack(false, false);
 }
 
-void appendBusSeqtrack(void){
-  appendSeqtrack(true, true);
+int appendAudioSeqtrack(void){
+  return appendSeqtrack(true, false);
 }
+
+int appendBusSeqtrack(void){
+  return appendSeqtrack(true, true);
+}
+
+bool seqtrackIsPermanent(int seqtracknum){
+  if (seqtracknum==-1)
+    seqtracknum = ATOMIC_GET(root->song->curr_seqtracknum);
+  
+  if (seqtracknum < 0 || seqtracknum >= root->song->seqtracks.num_elements){
+    handleError("seqtrackIsPermanent: Sequencer track #%d does not exist", seqtracknum);
+    return false;
+  }
+  
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  R_ASSERT_RETURN_IF_FALSE2(seqtrack!=NULL, false);
+  
+  if (seqtrack->for_audiofiles)
+    if (AUDIO_is_permanent_patch(seqtrack->patch))
+      return true;
+
+  return false;
+}
+
+bool seqtrackIsBus(int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return false;
+
+  return seqtrack->for_audiofiles && seqtrack->is_bus;
+}
+
 
 static void deleteSeqtrack(int seqtracknum, bool force_delete){
   if (seqtracknum==-1)
     seqtracknum = ATOMIC_GET(root->song->curr_seqtracknum);
   
   if (seqtracknum < 0 || seqtracknum >= root->song->seqtracks.num_elements){
-    handleError("Sequencer track #%d does not exist", seqtracknum);
+    handleError("deleteSeqtrack: Sequencer track #%d does not exist", seqtracknum);
     return;
   }
 
+  if (seqtrackIsPermanent(seqtracknum)){
+    struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+    R_ASSERT_RETURN_IF_FALSE(seqtrack!=NULL);
+    handleError("deleteSeqtrack: \"%s\" can not be deleted", seqtrack->patch->name);
+    return;
+  }
+  
   if (root->song->seqtracks.num_elements==1){
-    handleError("Must have at least one sequencer track");
+    handleError("deleteSeqtrack: Must have at least one sequencer track");
     return;
   }    
+
 
   if (force_delete){
 
@@ -700,6 +777,51 @@ void setTopmostVisibleSeqtrack(int new_topmost){
 
 int getLowestPossibleTopmostVisibleSeqtrack(void){
   return SEQUENCER_get_lowest_reasonable_topmost_seqtracknum();
+}
+
+void moveSeqtrack(int seqtracknum, int new_pos){
+  struct SeqTrack *seqtrack1 = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack1==NULL)
+    return;
+  
+  struct SeqTrack *seqtrack2 = getSeqtrackFromNum(new_pos);
+  if (seqtrack2==NULL)
+    return;
+
+  if (seqtracknum==new_pos)
+    return;
+  
+  //ADD_UNDO(Sequencer());
+
+  { 
+    radium::PlayerPause pause(is_playing_song());
+    radium::PlayerLock lock;
+
+    if (seqtracknum < new_pos) {
+      
+      for(int i=seqtracknum ; i < new_pos ; i++)
+        root->song->seqtracks.elements[i] = root->song->seqtracks.elements[i+1];
+
+    } else {
+      
+      for(int i=seqtracknum ; i > new_pos ; i--)
+        root->song->seqtracks.elements[i] = root->song->seqtracks.elements[i-1];
+
+    }
+    
+    root->song->seqtracks.elements[new_pos] = seqtrack1;
+
+    if(seqtracknum==0 || new_pos==0) {
+
+      struct SeqTrack *seqtrack0 = getSeqtrackFromNum(0);
+      
+      if (root->song->use_sequencer_tempos_and_signatures==false && seqtrack0->for_audiofiles)
+        root->song->use_sequencer_tempos_and_signatures = true;
+    }
+
+  }
+  
+  SEQUENCER_update(SEQUPDATE_EVERYTHING);
 }
 
 void swapSeqtracks(int seqtracknum1, int seqtracknum2){

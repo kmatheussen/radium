@@ -511,11 +511,13 @@ extern LANGSPEC void SEQUENCER_create_from_state(hash_t *state, struct Song *son
 //extern LANGSPEC void SEQUENCER_update_all_seqblock_start_and_end_times(void);
 
 // Note: Creates undo.
-extern LANGSPEC void SEQUENCER_insert_seqtrack(int pos, bool for_audiofiles, bool is_bus);
+extern LANGSPEC void SEQUENCER_insert_seqtrack(int pos, bool for_audiofiles, bool is_bus, struct Patch *audio_seqtrack_patch);
 
 static inline void SEQUENCER_append_seqtrack(bool for_audiofiles, bool is_bus){
-  SEQUENCER_insert_seqtrack(root->song->seqtracks.num_elements, for_audiofiles, is_bus);
+  SEQUENCER_insert_seqtrack(root->song->seqtracks.num_elements, for_audiofiles, is_bus, NULL);
 }
+
+extern LANGSPEC void SEQUENCER_ensure_bus_tracks_exist(void);
 
 extern LANGSPEC void SEQUENCER_replace_seqtrack(struct SeqTrack *new_seqtrack, int pos);
 extern LANGSPEC void SEQUENCER_delete_seqtrack(int pos);

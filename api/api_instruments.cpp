@@ -1701,6 +1701,41 @@ bool atLeastOneInstrumentHasSolo(void){
   return false;
 }
 
+dyn_t getInstrumentEffects(instrument_t instrument_id){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return g_dyn_false;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("getInstrumentEffects: Instrument #%d (\"%s\") has been closed", (int)instrument_id.id, patch->name);
+    return g_dyn_false;
+  }
+
+  hash_t *state = PLUGIN_get_effects_state(plugin);
+  return DYN_create_hash(state);  
+}
+
+void setInstrumentEffects(instrument_t instrument_id, dyn_t effects, bool set_default_values_for_unspecified_effects){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("setInstrumentEffects: Instrument #%d (\"%s\") has been closed", (int)instrument_id.id, patch->name);
+    return;
+  }
+
+  if (effects.type != HASH_TYPE){
+    handleError("setInstrumentEffects: effects is not a hash table. Found: %s", DYN_type_name(effects.type));
+    return;
+  }
+
+  PLUGIN_set_effects_from_state(plugin, effects.hash, set_default_values_for_unspecified_effects);
+}
+
+
 void undoInstrumentEffect(instrument_t instrument_id, const char *effect_name){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
@@ -1828,7 +1863,7 @@ bool instrumentIsSeqtrackBus(instrument_t instrument_id){
     return true;
   }
 
-  if (strcmp(plugin->type->type_name, SEQTRACKPLUGIN_NAME))
+  if (strcmp(plugin->type->type_name, "Bus"))
     return false;
   
   VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
@@ -2974,14 +3009,10 @@ void deleteInstrument(instrument_t instrument_id){
 
   if (patch->instrument==get_audio_instrument()){
 
-    /*
-      No point. This check only prevents seqtrack with seqblocks from being deleted, which there is no reason to prevent here.
-
     if (AUDIO_is_permanent_patch(patch)==true){
-      handleError("Instrument \"%s\" can not be deleted", patch->name);;
+      GFX_addMessage("Instrument \"%s\" can not be deleted", patch->name);;
       return;
     }
-    */
     
     SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
     if (plugin==NULL){
@@ -2990,7 +3021,7 @@ void deleteInstrument(instrument_t instrument_id){
     }
 
     // Check if instrument is a seqtrack instrument. If so, we delete the seqtrack instead of deleting the instrument directly.
-    if (!strcmp(plugin->type->type_name, SEQTRACKPLUGIN_NAME)){
+    if (PLUGIN_is_for_seqtrack(plugin)){
       
       int seqtracknum = get_seqtracknum_from_patch(patch);
       R_ASSERT_RETURN_IF_FALSE(seqtracknum>=0);
@@ -3012,10 +3043,12 @@ void deleteInstrument(instrument_t instrument_id){
 }
 
 void internalReplaceMainPipe(instrument_t new_main_pipe_id){
+  /*
   if (g_is_replacing_main_pipe==false){
     handleError("Can not call this function like this");
     return;
   }
+  */
   
   struct Patch *patch = PATCH_get_from_id(new_main_pipe_id);
   if (patch != NULL)

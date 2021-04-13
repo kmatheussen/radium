@@ -59,6 +59,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "CpuUsage.hpp"
 #include "SmoothDelay.hpp"
 #include "AudioBuffer.hpp"
+#include "Seqtrack_plugin_proc.h"
 
 #include "../mixergui/QM_MixerWidget.h"
 
@@ -801,7 +802,7 @@ static void PLUGIN_RT_process(SoundPlugin *plugin, int64_t time, int num_frames,
 }
 
 static int get_bus_num(const SoundPlugin *plugin){
-  if (strcmp(plugin->type->type_name,"Bus"))
+  if (!PLUGIN_is_permanent_bus(plugin->type))
     return -1;
 
   if(!strcmp(plugin->type->name,"Bus 1"))
@@ -815,8 +816,8 @@ static int get_bus_num(const SoundPlugin *plugin){
   else if(!strcmp(plugin->type->name,"Bus 5"))
     return 4;
 
-  RError("Unknown bus: -%s-", plugin->type->name);
-  return 0;
+  R_ASSERT_NON_RELEASE(false);
+  return -1;
 }
 
 static int id_counter = 0;
@@ -965,6 +966,26 @@ public:
     _bus_num = get_bus_num(plugin);
     _is_bus = _bus_num >= 0;
 
+#if !defined(RELEASE)
+    if (_is_bus){
+      if (strcmp(plugin->type->type_name, "Bus"))
+        abort();
+      if (!strcmp(plugin->type->name, "Bus 1") ||          
+          !strcmp(plugin->type->name, "Bus 2") ||
+          !strcmp(plugin->type->name, "Bus 3") ||
+          !strcmp(plugin->type->name, "Bus 4") ||
+          !strcmp(plugin->type->name, "Bus 5")
+          )
+        {
+        }else{
+          abort();
+        }
+
+      if (plugin->patch->id.id==0)
+        abort();
+    }
+#endif
+    
     if (_is_bus) {
       if (_bus_num == 0)
         R_ASSERT(buses.bus1==NULL);
@@ -2244,7 +2265,6 @@ public:
       for(int ch=0;ch<_num_inputs;ch++)
         if (!has_set[ch])
           memset(dry_sound[ch], 0, sizeof(float)*num_frames);
-      
     }
     
     PLUGIN_update_smooth_values(_plugin);

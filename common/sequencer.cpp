@@ -62,6 +62,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/SampleReader_proc.h"
 #include "../audio/Peaks.hpp"
 #include "../audio/Envelope.hpp"
+#include "../audio/SoundProducer_proc.h"
+
+#include "../mixergui/QM_MixerWidget.h"
 
 #include "../api/api_sequencer_proc.h"
 
@@ -263,7 +266,7 @@ static struct Patch *create_seqtrack_patch(bool is_bus, int seqtracknum){
     //int seqtracknum = get_seqtracknum(seqtrack);
     name = talloc_format("Seqtrack %d", seqtracknum);
   }
-  instrument_t patch_id = createAudioInstrument(SEQTRACKPLUGIN_NAME, SEQTRACKPLUGIN_NAME, name, 0, 0, true);
+  instrument_t patch_id = createAudioInstrument(is_bus ? "Bus" : SEQTRACKPLUGIN_NAME, SEQTRACKPLUGIN_NAME, name, 0, 0, true);
   R_ASSERT_RETURN_IF_FALSE2(patch_id.id >= 0, NULL);
   
   struct Patch *patch = PATCH_get_from_id(patch_id);
@@ -272,7 +275,9 @@ static struct Patch *create_seqtrack_patch(bool is_bus, int seqtracknum){
   if (is_bus){
     
     patch->color = GFX_get_color(INSTRUMENT_BUS_DEFAULT_COLOR_NUM);
-    setInstrumentEffect(patch_id, "Enable piping", 1);
+
+    if (!is_bus)
+      setInstrumentEffect(patch_id, "Enable piping", 1);
     
   } else {
 
@@ -611,7 +616,7 @@ static struct SeqBlock *SEQBLOCK_create_sample(const struct SeqTrack *seqtrack, 
   
   SoundPlugin *plugin = (SoundPlugin*) seqtrack->patch->patchdata;
   
-  R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), NULL);
+  R_ASSERT_RETURN_IF_FALSE2(PLUGIN_is_for_seqtrack(plugin), NULL);
 
   seqblock->sample_id = SEQTRACKPLUGIN_add_sample(seqtrack, plugin, filename, resampler_type, seqblock, type);
   if (seqblock->sample_id==-1)
@@ -1462,7 +1467,7 @@ static struct SeqBlock *SEQBLOCK_create_from_state(const struct SeqTrack *seqtra
       return NULL;
 
     SoundPlugin *plugin = (SoundPlugin*) seqtrack->patch->patchdata;
-    R_ASSERT_RETURN_IF_FALSE2(!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name), NULL);
+    R_ASSERT_RETURN_IF_FALSE2(PLUGIN_is_for_seqtrack(plugin), NULL);
 
     if (HASH_has_key(state, ":grain-overlap")){
       if (HASH_has_key(state, ":grain-strict-no-jitter"))
@@ -3158,7 +3163,7 @@ void SEQUENCER_remove_block_from_seqtracks(struct Blocks *block){
 }
 
 // Note: Creates undo.
-void SEQUENCER_insert_seqtrack(int pos, bool for_audiofiles, bool is_bus){
+void SEQUENCER_insert_seqtrack(int pos, bool for_audiofiles, bool is_bus, struct Patch *audio_seqtrack_patch){
 
   if(is_bus)
     R_ASSERT_RETURN_IF_FALSE(for_audiofiles);
@@ -3167,8 +3172,12 @@ void SEQUENCER_insert_seqtrack(int pos, bool for_audiofiles, bool is_bus){
   
   struct Patch *patch = NULL;
   
-  if (for_audiofiles)
-    patch = create_seqtrack_patch(is_bus, pos);
+  if (for_audiofiles) {
+    if (audio_seqtrack_patch != NULL)
+      patch = audio_seqtrack_patch;
+    else
+      patch = create_seqtrack_patch(is_bus, pos);
+  }
 
   ADD_UNDO(Sequencer());
   
@@ -3194,6 +3203,51 @@ void SEQUENCER_insert_seqtrack(int pos, bool for_audiofiles, bool is_bus){
   SEQUENCER_update(SEQUPDATE_EVERYTHING);
 }
 
+static void ensure_bus_track_exists(SoundProducer *bus){
+  auto *plugin = SP_get_plugin(bus);
+  R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
+  
+  struct Patch *patch = plugin->patch;
+  R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
+  
+  VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
+    if (seqtrack->for_audiofiles && seqtrack->patch==patch)
+      return;
+  }END_VECTOR_FOR_EACH;
+
+  R_ASSERT_RETURN_IF_FALSE(PLUGIN_is_for_seqtrack(plugin));
+
+  patch->color = GFX_get_color(INSTRUMENT_BUS_DEFAULT_COLOR_NUM);
+//  setInstrumentEffect(patch->id, "Enable piping", 1);
+  
+  SEQUENCER_insert_seqtrack(root->song->seqtracks.num_elements, true, true, patch);
+  setSeqtrackMinHeightType(4, root->song->seqtracks.num_elements-1);
+  setSeqtrackVisible(root->song->seqtracks.num_elements-1, false);
+}
+
+// Called when loading song.
+void SEQUENCER_ensure_bus_tracks_exist(void){
+  Buses buses = MIXER_get_buses();
+  ensure_bus_track_exists(buses.bus1);
+  ensure_bus_track_exists(buses.bus2);
+  ensure_bus_track_exists(buses.bus3);
+  ensure_bus_track_exists(buses.bus4);
+  ensure_bus_track_exists(buses.bus5);
+
+          
+  struct Patch *main_pipe_patch = get_main_pipe_patch();
+  R_ASSERT_RETURN_IF_FALSE(main_pipe_patch!=NULL);
+
+  SoundPlugin *main_pipe = get_main_pipe();
+  R_ASSERT_RETURN_IF_FALSE(main_pipe!=NULL);
+
+  if (!strcmp(main_pipe->type->type_name, "Pipe")) {
+    int seqtracknum = S7CALL2(int_instrument, "FROM_C-convert-pipe-to-bus", main_pipe_patch->id);
+    moveSeqtrack(seqtracknum, root->song->seqtracks.num_elements-1);
+    setSeqtrackMinHeightType(4, root->song->seqtracks.num_elements-1);
+    //setSeqtrackVisible
+  }
+}
 
 static void call_me_after_seqtrack_has_been_removed(struct SeqTrack *seqtrack){
   struct Patch *patch = seqtrack->patch;

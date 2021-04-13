@@ -34,7 +34,7 @@ extern LANGSPEC void DLoadAudioInstrument(struct Root *newroot, struct Song *son
 
 extern LANGSPEC void AUDIO_update_all_permanent_ids(void);
   
-extern LANGSPEC bool AUDIO_is_permanent_patch(struct Patch *patch);
+extern LANGSPEC bool AUDIO_is_permanent_patch(const struct Patch *patch);
 extern LANGSPEC struct Patch *AUDIO_get_the_replacement_for_old_permanent_patch(struct Patch *old_patch);
   
 #endif

@@ -8552,8 +8552,7 @@
                      (<ra> :shift-pressed)
                      *current-seqtrack-num*
                      (begin
-                       (if (> (<ra> :get-num-seqtracks) 1)
-                           (<ra> :delete-seqtrack *current-seqtrack-num*))
+                       (delete-seqtrack *current-seqtrack-num*)
                        #t)))))
 
 
