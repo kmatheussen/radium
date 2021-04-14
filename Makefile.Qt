@@ -2092,13 +2092,13 @@ $(T)Ladspa_plugins.o: audio/Ladspa_plugins.cpp
 	$(CCC2) audio/Ladspa_plugins.cpp $(QTOPT) $(LRDFOPT) $(IS_LINUX_BINARY)
 
 $(T)Sampler_plugin.o: audio/Sampler_plugin.cpp audio/Sampler_plugin_wav_parse.c audio/Sampler_plugin_xi_load.c audio/Sampler_plugin_sf2_load.c audio/SoundFonts_proc.h audio/Peaks.hpp audio/SampleRecorder_proc.h common/OS_string_proc.h audio/Granulator.hpp  audio/GranResampler.hpp audio/Fade.hpp
-	$(CCC2) $(QTOPT) audio/Sampler_plugin.cpp $(SNDFILEOPT) $(SAMPLERATEOPT) $(OPTIMIZE_O3) $(NO_ANALYZER) #  $(CPUOPT) 
+	$(CCC2) $(QTOPT) audio/Sampler_plugin.cpp $(SNDFILEOPT) $(SAMPLERATEOPT) $(OPTIMIZE_O3) $(NO_ANALYZER) $(BOOST_INCLUDE) #  $(CPUOPT) 
 
 $(T)SampleRecorder.o: audio/SampleRecorder.cpp audio/SampleRecorder_proc.h common/OS_string_proc.h
 	$(CCC2) $(QTOPT) audio/SampleRecorder.cpp $(SNDFILEOPT) $(BOOST_INCLUDE) 
 
 $(T)SampleReader.o: audio/SampleReader.cpp audio/SampleReader_proc.h
-	$(CCC2) $(QTOPT) audio/SampleReader.cpp $(SNDFILEOPT)
+	$(CCC2) $(QTOPT) audio/SampleReader.cpp $(SNDFILEOPT) $(BOOST_INCLUDE)
 
 $(T)Seqtrack_plugin.o: audio/Seqtrack_plugin.cpp audio/SampleReader_proc.h audio/GranResampler.hpp audio/Granulator.hpp common/Random.hpp audio/Peaks.hpp audio/SampleRecorder_proc.h common/seqblock_automation_proc.h audio/Fade.hpp
 	$(CCC2) $(QTOPT) audio/Seqtrack_plugin.cpp $(SNDFILEOPT) $(OPTIMIZE_O3) $(NO_ANALYZER_MALLOC_LEAK) $(BOOST_INCLUDE) # $(CPUOPT) 
@@ -2117,7 +2117,10 @@ $(T)Modulator_plugin.o: audio/Modulator_plugin.cpp audio/Delay.hpp
 
 
 $(T)SendReceive_plugins.o: audio/SendReceive_plugins.cpp common/Vector.hpp
-	$(CCC2) $(QTOPT) audio/SendReceive_plugins.cpp
+	$(CCC2) $(QTOPT) audio/SendReceive_plugins.cpp $(BOOST_INCLUDE)
+
+$(T)Pitchshift_plugin.o: audio/Pitchshift_plugin.cpp
+	$(CCC2) $(CPPOPT) audio/Pitchshift_plugin.cpp
 
 
 FAUST_DEPENDENCIES = audio/Faust_plugins_template.cpp audio/Faust_plugins_template1.cpp audio/Faust_plugins_template2.cpp audio/mfaustqt2.cpp
@@ -2128,7 +2131,7 @@ FAUST_OPTS2 = $(FAUST_OPTS) -Wno-float-equal
 
 $(T)Faust_plugins.o: audio/Faust_plugins.cpp audio/Faust_factory_factory.cpp $(FAUST_DEPENDENCIES) audio/Faust_plugins_template.cpp audio/Faust_plugins_template1.cpp audio/Faust_plugins_template2.cpp audio/mfaustqt2.cpp
 	$(MOC) audio/Faust_factory_factory.cpp >audio/mFaust_factory_factory.cpp
-	$(CCC2) $(FAUST_OPTS) $(LLVM_OPTS) -DDSP_NAME="\"FaustDev\"" audio/Faust_plugins.cpp $(NOSHORTEN64TO32FLAG) # Qt 5.5 headers (which we use for qtwebkit) needs -Wno-shorten-64-to-32 flag.
+	$(CCC2) $(FAUST_OPTS) $(LLVM_OPTS) -DDSP_NAME="\"FaustDev\"" audio/Faust_plugins.cpp $(NOSHORTEN64TO32FLAG) $(BOOST_INCLUDE) # Qt 5.5 headers (which we use for qtwebkit) needs -Wno-shorten-64-to-32 flag.
 
 audio/mfaustqt2.cpp: $(FAUSTDIR)/architecture/faust/gui/QTUI.h #bin/packages/faust2/architecture/faust/gui/faustqt.h
 	cd audio && $(MOC) $(FAUSTDIR)/architecture/faust/gui/QTUI.h >mfaustqt2.cpp
@@ -2439,7 +2442,7 @@ audio/faust_system_highshelf.cpp: audio/system_highshelf.dsp $(FAUST_DEPENDENCIE
 
 $(T)SoundProducer.o: audio/SoundProducer.cpp audio/SoundProducer_proc.h audio/fade_envelopes.h audio/MultiCore.cpp audio/monotonic_timer.c common/sema.h common/Semaphores.hpp common/QueueStack.hpp audio/SmoothDelay.hpp common/Vector.hpp common/spinlock.h audio/CpuUsage.hpp audio/AudioBuffer.hpp audio/AudioMeterPeaks_proc.h common/threading.h
 	$(MOC) audio/MultiCore.cpp >audio/mMultiCore.cpp
-	$(CCC2) audio/SoundProducer.cpp $(JACKOPT) $(QTOPT) $(OPTIMIZE_O3) $(CPUOPT) $(NO_ANALYZER_MALLOC_LEAK)  $(BOOST_INCLUDE) # -O3 # 
+	$(CCC2) audio/SoundProducer.cpp $(JACKOPT) $(QTOPT) $(OPTIMIZE_O3) $(CPUOPT) $(NO_ANALYZER_MALLOC_LEAK) $(BOOST_INCLUDE) # -O3 # 
 #-fno-tree-vectorize # tree-vectorize makes radium crash on windows 8 with gcc 4.7.2
 
 #-finline-functions -funswitch-loops -fvect-cost-model -fipa-cp-clone  -fpredictive-commoning -fgcse-after-reload
@@ -2463,7 +2466,7 @@ $(T)AudioMeterPeaks.o: audio/SoundPlugin.h audio/AudioMeterPeaks.cpp
 	$(CCC2) audio/AudioMeterPeaks.cpp $(QTOPT) $(NO_ANALYZER_MALLOC_LEAK)
 
 $(T)Peaks.o: audio/Peaks.cpp audio/Peaks.hpp
-	$(CCC2) audio/Peaks.cpp $(SNDFILEOPT) $(QTOPT)
+	$(CCC2) audio/Peaks.cpp $(SNDFILEOPT) $(QTOPT) $(BOOST_INCLUDE)
 
 $(T)Mixer.o: audio/Mixer.cpp audio/SoundProducer_proc.h Qt/helpers.h audio/SampleRecorder_proc.h audio/CpuUsage.hpp
 	$(CCC2) audio/Mixer.cpp  $(JACKOPT) $(QTOPT)  $(CPUOPT) -Wno-null-dereference $(NO_ANALYZER_MALLOC_LEAK)
