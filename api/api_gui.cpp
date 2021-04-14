@@ -780,7 +780,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       QColor color4db = get_qcolor(PEAKS_4DB_COLOR_NUM);
       QColor color0db = get_qcolor(PEAKS_0DB_COLOR_NUM);
       QColor colorgreen  = get_qcolor(PEAKS_COLOR_NUM);
-      QColor colordarkgreen  = get_qcolor(PEAKS_COLOR_NUM).darker(150);
+      QColor colordarkgreen  = get_qcolor(PEAKS_COLOR_NUM).darker(120);
 
       float posm20db = db2linear(-20, get_pos_y1(), get_pos_y2());
       float pos0db = db2linear(0, get_pos_y1(), get_pos_y2());
