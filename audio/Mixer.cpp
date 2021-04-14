@@ -2415,6 +2415,12 @@ struct Patch *MIXER_get_bus(int bus_num){
   return (struct Patch*)plugin->patch;
 }
 
+/*
+void MIXER_set_bus(int bus_num, SoundProducer *producer){
+  g_mixer->_bus[bus_num] = producer;
+}
+*/
+
 void MIXER_called_regularly_by_main_thread(void){
   // Not enabled. Enable in Qt_Main.cpp.
   if (g_mixer != NULL)
