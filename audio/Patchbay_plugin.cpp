@@ -79,10 +79,54 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   }
 }
 
+static void RT_patchbay_plugin_update_num_visible_outputs(SoundPlugin *plugin, const Data *data, int effect_num, bool ison){
+  int ch = effect_num % plugin->type->num_outputs;
+
+  //printf("ch: %d. Effect_num: %d. num_outputs: %d. ison: %d. num_visible_outputs: %d\n", ch, effect_num, plugin->type->num_outputs, ison, plugin->num_visible_outputs);
+  
+  if (ison) {
+
+    int new_num_outputs = ch+1;
+    
+    if (plugin->num_visible_outputs < new_num_outputs)
+      safe_int_write(&plugin->num_visible_outputs, new_num_outputs); // using safe_int_write to avoid asan hit.
+    
+  } else {
+
+    if (plugin->num_visible_outputs==-1 || plugin->num_visible_outputs==(ch+1)) {
+      
+      effect_num--;
+      
+      while(effect_num > 0){
+        if (data->routes[effect_num])
+          break;
+        
+        effect_num--;
+      }
+
+      int ch = effect_num % plugin->type->num_outputs;
+      int new_num_outputs = ch+1;
+      
+      if (new_num_outputs != plugin->num_visible_outputs)
+        safe_int_write(&plugin->num_visible_outputs, new_num_outputs); // using safe_int_write to avoid asan hit.
+
+      //printf("...new_num_outputs: %d\n", new_num_outputs);
+    }
+    
+  }
+}
+
 static void set_effect_value(SoundPlugin *plugin, int time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
   Data *data = (Data*)plugin->data;
 
-  data->routes[effect_num] = value > 0.5f;
+  bool ison = value > 0.5f;
+
+  if (data->routes[effect_num]==ison)
+    return;
+  
+  data->routes[effect_num] = ison;
+
+  RT_patchbay_plugin_update_num_visible_outputs(plugin, data, effect_num, ison);
 }
 
 static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format){
@@ -94,6 +138,9 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, struct Sound
   Data *data = (Data*)V_calloc(1,sizeof(Data));
   data->routes[0]=1;
   data->routes[plugin_type->num_outputs+1]=1;
+
+  plugin->num_visible_outputs=2;
+  
   return data;
 }
 
