@@ -73,7 +73,7 @@ class song_properties : public RememberGeometryQDialog, public Ui::Song_properti
     swing_along->setChecked(song->editor_should_swing_along);
 
     mixer_comments_visible->setChecked(mixerStripCommentsVisible());
-    //two_channels_in_main_pipe->setChecked(song->num_channels_in_main_pipe==2);
+    two_channels_in_main_pipe->setChecked(song->num_channels_in_main_pipe==2);
     include_pan_and_dry_in_wet->setChecked(includePanAndDryInWetSignal());
 
     mute_plugin_MIDI->setChecked(song->RT_mute_plugin_MIDI_when_muted);
@@ -95,7 +95,6 @@ class song_properties : public RememberGeometryQDialog, public Ui::Song_properti
       rit_slower_and_slower->setChecked(true);
   }
 
-  /*
   void set_num_channels_in_main_pipe(int num_channels){
     R_ASSERT_RETURN_IF_FALSE(num_channels==2 || num_channels==8);
     if (num_channels == root->song->num_channels_in_main_pipe)
@@ -112,8 +111,7 @@ class song_properties : public RememberGeometryQDialog, public Ui::Song_properti
     }
     // g_is_replacing_main_pipe is set to false in internalReplaceMainPipe in api/api_instruments.c
   }
-  */
-  
+
 public slots:
 
   void on_acc_linear_toggled(bool val){
@@ -144,15 +142,13 @@ public slots:
     root->song->tracker_windows->must_redraw_editor = true;
   }
 
-  /*
   void on_two_channels_in_main_pipe_toggled(bool val){
     if (_initing==true)
       return;
 
     set_num_channels_in_main_pipe(val==true ? 2 : 8);
   }
-  */
-  
+
   void on_mixer_comments_visible_toggled(bool val){
     if (_initing==true)
       return;
