@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>881</width>
-    <height>477</height>
+    <width>880</width>
+    <height>451</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -211,17 +211,37 @@
       <string>Mixer</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
-      <item row="1" column="0">
-       <widget class="QCheckBox" name="include_pan_and_dry_in_wet">
+      <item row="2" column="0">
+       <widget class="QRadioButton" name="eight_channels_in_main_pipe">
         <property name="text">
-         <string>Include Panning and Width in the Wet signal</string>
+         <string>8 channels main pipe</string>
         </property>
+        <attribute name="buttonGroup">
+         <string notr="true">buttonGroup</string>
+        </attribute>
        </widget>
       </item>
       <item row="0" column="0">
        <widget class="QCheckBox" name="mixer_comments_visible">
         <property name="text">
          <string>Show comments</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QRadioButton" name="two_channels_in_main_pipe">
+        <property name="text">
+         <string>2 channels main pipe</string>
+        </property>
+        <attribute name="buttonGroup">
+         <string notr="true">buttonGroup</string>
+        </attribute>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QCheckBox" name="include_pan_and_dry_in_wet">
+        <property name="text">
+         <string>Include Panning and Width in the Wet signal</string>
         </property>
        </widget>
       </item>
