@@ -2160,6 +2160,8 @@ static bool fill_in_time_position2(time_position_t *time_position){
   struct Blocks *block;
   STime seqtime;
   double song_tempo_multiplier;
+
+  const bool use_jack = g_jack_client!=NULL; // Use local variable to tell the compiler that the value won't change. (if not, it might report that audioblock_cycle_start_ms2 might be used uninitialized)
   
   //int playlistpos;
   //int playlistpos_numfromcurrent = 0;
@@ -2172,7 +2174,7 @@ static bool fill_in_time_position2(time_position_t *time_position){
     generation = audioblock_variables_protector.read_start();
     
     audioblock_cycle_start_time2 = ATOMIC_GET(audioblock_cycle_start_time);
-    if (g_jack_client != NULL)
+    if (use_jack)
       audioblock_last_frame_stime2  = ATOMIC_GET(audioblock_last_frame_stime);
     else
       audioblock_cycle_start_ms2 = ATOMIC_DOUBLE_GET(audioblock_cycle_start_ms);
@@ -2189,7 +2191,7 @@ static bool fill_in_time_position2(time_position_t *time_position){
   
   STime deltatime;
 
-  if (g_jack_client != NULL)
+  if (use_jack)
     deltatime = scale(get_audioblock_time(audioblock_last_frame_stime2),
                       0, audioblock_size2,
                       0, audioblock_size2 * ATOMIC_DOUBLE_GET(block->reltempo) * song_tempo_multiplier
