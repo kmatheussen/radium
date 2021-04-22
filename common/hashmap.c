@@ -1505,7 +1505,7 @@ hash_t *HASH_load2(disk_t *file, bool return_null_for_unsupported_hasmap_version
       line = READ_LINE(file);
     }
 
-  if (g_is_loading_mixer)
+  if (gakk != NULL)
     VECTOR_delete_last(&g_load_rec_progress);
   
   return hash;  
