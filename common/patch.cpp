@@ -947,8 +947,71 @@ void PATCH_replace_main_pipe(struct Patch *new_main_pipe){
   PATCH_force_make_inactive(get_main_pipe_patch());
 
   PATCH_remove_from_instrument(new_main_pipe);
-  new_main_pipe->id = make_instrument(0);
+  {
+    new_main_pipe->id = make_instrument(0);
+  }
   PATCH_add_to_instrument(new_main_pipe);
+}
+
+// Should not be used for anything other than converting main pipe to main bus when loading old song.
+void PATCH_replace_permanent(struct Patch *old_patch, struct Patch *new_patch){
+  SoundPlugin *new_plugin = (SoundPlugin*)new_patch->patchdata;
+  SoundPlugin *old_plugin = (SoundPlugin*)old_patch->patchdata;
+
+  R_ASSERT_RETURN_IF_FALSE(old_plugin != NULL);
+  R_ASSERT_RETURN_IF_FALSE(new_plugin != NULL);
+
+  int bus_num = PLUGIN_get_bus_num(old_plugin->type);
+  bool is_main_pipe = old_patch->id.id==0;
+
+  struct SeqTrack *seqtrack = NULL;
+
+  if (!strcmp(old_plugin->type->type_name, "Bus")) { // When loading old songs, the main bus is a pipe and not a bus.
+
+    VECTOR_FOR_EACH(struct SeqTrack *, maybe, &root->song->seqtracks){
+      
+      if (maybe->patch==old_patch) {
+        seqtrack = maybe;
+        goto gotit;
+      }
+      
+    }END_VECTOR_FOR_EACH;
+    
+    R_ASSERT(false);
+    
+  } else {
+
+    R_ASSERT(old_patch->id.id == 0); // the only exception.
+    
+  }
+  
+ gotit:
+  
+  PATCH_force_make_inactive(old_patch);
+
+  if (seqtrack != NULL)
+    seqtrack->patch = new_patch;
+  
+  if (is_main_pipe){
+    
+    R_ASSERT(bus_num==-1);
+    
+    PATCH_remove_from_instrument(new_patch);
+
+    new_patch->id = make_instrument(0);
+  
+    PATCH_add_to_instrument(new_patch);
+    
+  } else {
+
+    R_ASSERT_RETURN_IF_FALSE(bus_num >= 0);
+    
+    auto *producer = SP_get_sound_producer(new_plugin);
+    R_ASSERT_RETURN_IF_FALSE(producer != NULL);
+    
+    MIXER_set_bus(bus_num, producer);
+
+  }
 }
 
 static bool has_recursive_event_connection(struct Patch *patch, struct Patch *start_patch){

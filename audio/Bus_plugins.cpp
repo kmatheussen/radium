@@ -110,7 +110,7 @@ static SoundPluginType mono_plugin_type = {
  data                     : NULL
 };
 
-
+/*
 static SoundPluginType bus_type = {
  name                     : "Bus",
  num_inputs               : 2,
@@ -126,6 +126,7 @@ static SoundPluginType bus_type = {
  
  data                     : NULL
 };
+*/
 
 static SoundPluginType pipe_type = {
  name                     : "Pipe",

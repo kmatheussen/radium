@@ -32,11 +32,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../api/api_gui_proc.h"
 #include "../api/api_proc.h"
 
-//namespace{
 #include "Qt_MyQCheckBox.h"
-//}
+#include "../Qt/Qt_MyQSpinBox.h"
+#include "../Qt/Qt_MyQLabel.h"
+
 
 #include "Qt_song_properties.h"
+
 
 bool g_is_replacing_main_pipe = false;
 
@@ -62,6 +64,16 @@ class song_properties : public RememberGeometryQDialog, public Ui::Song_properti
     _initing = false;
   }
 
+  // weird workaround to prevent closing the window when pressing the return key when editing num bus channels.
+  void keyPressEvent(QKeyEvent *event) override {
+    printf("Gakk!\n");
+    set_editor_focus();
+    GL_lock();{
+      num_bus_ch->clearFocus();
+    }GL_unlock();
+    event->ignore();
+  }
+  
   void update_widgets(struct Song *song){
     R_ASSERT(_initing==true);
     
@@ -73,7 +85,10 @@ class song_properties : public RememberGeometryQDialog, public Ui::Song_properti
     swing_along->setChecked(song->editor_should_swing_along);
 
     mixer_comments_visible->setChecked(mixerStripCommentsVisible());
-    two_channels_in_main_pipe->setChecked(song->num_channels_in_main_pipe==2);
+    
+    //two_channel_buses->setChecked(song->default_num_bus_channels==2);
+    num_bus_ch->setValue(song->default_num_bus_channels);
+    
     include_pan_and_dry_in_wet->setChecked(includePanAndDryInWetSignal());
 
     mute_plugin_MIDI->setChecked(song->RT_mute_plugin_MIDI_when_muted);
@@ -95,22 +110,76 @@ class song_properties : public RememberGeometryQDialog, public Ui::Song_properti
       rit_slower_and_slower->setChecked(true);
   }
 
-  void set_num_channels_in_main_pipe(int num_channels){
+#if 0  
+  void set_num_bus_channels(int num_channels){
     R_ASSERT_RETURN_IF_FALSE(num_channels==2 || num_channels==8);
-    if (num_channels == root->song->num_channels_in_main_pipe)
+    if (num_channels == root->song->default_num_bus_channels)
       return;
 
-    struct SoundPlugin *plugin = get_main_pipe();
-    struct Patch *patch = plugin->patch;
+    int old_channels = root->song->default_num_bus_channels;
+    int new_channels = num_channels;
+    
+    auto setit = [this](int num_channels){
 
-    const_char *description = getAudioInstrumentDescription(toBase64(""), toBase64("Pipe"), toBase64(num_channels==2 ? "Pipe" : "Pipe8"));
+      int64_t guinum = API_get_gui_from_existing_widget(this);
+      
+      // main pipe
+      /*
+      if(0){
+        struct SoundPlugin *plugin = get_main_pipe();
+        struct Patch *patch = plugin->patch;
+        
+        g_is_replacing_main_pipe = true;
+        {
+          requestReplaceInstrument(patch->id, description, guinum);
+        }
+        // g_is_replacing_main_pipe is set to false in internalReplaceMainPipe in api/api_instruments.c
+      }
+      */
+      
+      // other buses
+      {
+        //kan heller bare iterere seqtracks.
+        
+        std::vector<SoundProducer*> sp_all = MIXER_get_all_SoundProducers().to_std_vector(); // Make a copy because we modify the content.
+        
+        for (SoundProducer *sp : sp_all) {
+          SoundPlugin *plugin = SP_get_plugin(sp);
 
-    g_is_replacing_main_pipe = true;
-    {
-      requestReplaceInstrument(patch->id, description, API_get_gui_from_existing_widget(this));
-    }
-    // g_is_replacing_main_pipe is set to false in internalReplaceMainPipe in api/api_instruments.c
+          if (!strcmp(plugin->type->type_name, "Bus")) {
+
+            int bus_num = PLUGIN_get_bus_num(plugin->type);
+                             
+            const char *plugin_name = toBase64(PLUGIN_get_bus_plugin_name(bus_num, num_channels));
+            const char *description = getAudioInstrumentDescription(toBase64(""), toBase64("Bus"), plugin_name);
+      
+            struct Patch *patch = plugin->patch;
+            requestReplaceInstrument(patch->id, description, guinum);
+          }
+        }
+      }
+
+      root->song->default_num_bus_channels = num_channels;
+
+      {
+        R_ASSERT(_initing==false);
+        _initing=true;
+        two_channel_buses->setChecked(root->song->default_num_bus_channels==2);
+        _initing=false;
+      }
+    };
+    
+    UNDO_functions(
+                   "Set number of bus channels",
+                   [setit, new_channels](){
+                     setit(new_channels);
+                   },
+                   [setit, old_channels](){
+                     setit(old_channels);
+                   });
+
   }
+#endif
 
 public slots:
 
@@ -142,13 +211,29 @@ public slots:
     root->song->tracker_windows->must_redraw_editor = true;
   }
 
-  void on_two_channels_in_main_pipe_toggled(bool val){
+  void on_num_bus_ch_valueChanged(int val){
+    if (_initing==true)
+      return;
+    
+    printf("Setting to %d\n", val);
+    root->song->default_num_bus_channels = val;
+  }
+  
+  void on_num_bus_ch_editingFinished(int val){
+    set_editor_focus();
+    GL_lock();{
+      num_bus_ch->clearFocus();
+    }GL_unlock();
+  }
+  /*
+  void on_two_channel_buses_toggled(bool val){
     if (_initing==true)
       return;
 
-    set_num_channels_in_main_pipe(val==true ? 2 : 8);
+    set_num_bus_channels(val==true ? 2 : 8);
   }
-
+  */
+ 
   void on_mixer_comments_visible_toggled(bool val){
     if (_initing==true)
       return;

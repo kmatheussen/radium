@@ -3212,9 +3212,9 @@ static hash_t *get_chips_and_bus_chips(const hash_t *state){
     hash_t *chip = HASH_get_hash_at(old_chips, "", i);
     hash_t *plugin = HASH_get_hash(chip, "plugin");    
     const char *type_name = HASH_get_chars(plugin, "type_name");
-    const char *name = HASH_get_chars(plugin, "name");
+    const char *plugin_name = HASH_get_chars(plugin, "name");
     
-    if (!strcmp(type_name,"Bus") && STRING_starts_with(STRING_create(name), "Bus ")) {
+    if (!strcmp(type_name,"Bus") && STRING_starts_with(STRING_create(plugin_name), "Bus ")) {
       fprintf(stderr, "\n   Bus %d/%d. Id: %d\n", num_buses, i, (int)HASH_get_instrument(chip, "patch").id);
       HASH_put_hash_at(buses, "", num_buses++, chip);
     } else

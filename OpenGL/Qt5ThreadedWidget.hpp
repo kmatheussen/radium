@@ -158,16 +158,16 @@ namespace vlQt5
         queue.enqueue(e);
       }
 
-      void update(){
+      void update() override {
         //printf("update callled\n");
       }
 
-      void swapBuffers()
+      void swapBuffers() override
       {
         _widget->swapBuffers();
       }
 
-      void makeCurrent()
+      void makeCurrent() override
       {
         // _widget->makeCurrent() is already called in run().
         // Calling it more often sometimes causes crashes using the catalyst driver on Linux.
@@ -480,7 +480,7 @@ namespace vlQt5
       delete mythread;
     }
 
-    void stop(){
+    void stop(void){
       if (mythread->isRunning()) {
         Event e;
         e.type = Event::DESTROY;

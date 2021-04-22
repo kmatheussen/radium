@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/Qt_comment_dialog_proc.h"
 #include "../audio/audio_instrument_proc.h"
 #include "../audio/Presets_proc.h"
+#include "../audio/Seqtrack_plugin_proc.h"
 #include "../midi/midi_i_input_proc.h"
 
 #include "../api/api_proc.h"
@@ -74,7 +75,9 @@ DC_start("SONG");
         DC_SSB("mute_plugin_MIDI_when_muted", song->RT_mute_plugin_MIDI_when_muted);
         DC_SSB("send_plugin_MIDI_through_when_bypassed", song->RT_send_plugin_MIDI_through_when_bypassed);
         DC_SSB("implicitly_mute_plugin_MIDI", song->RT_implicitly_mute_plugin_MIDI);
-                          
+
+        DC_SSI("default_num_bus_channels", song->default_num_bus_channels);
+        
         DC_start("COMMENT");{
           HASH_save(COMMENT_get_state(), dc.file);
         }DC_end();
@@ -112,7 +115,7 @@ struct Song *LoadSong(void){
                 "SEQUENCER",
                 "COMMENT"
 	};
-	const char *vars[16]={
+	const char *vars[17]={
 		"num_blocks",
 		"length",
 		"songname",
@@ -128,7 +131,8 @@ struct Song *LoadSong(void){
                 "include_pan_and_dry_in_wet_signal",
                 "mute_plugin_MIDI_when_muted",
                 "send_plugin_MIDI_through_when_bypassed",
-                "implicitly_mute_plugin_MIDI"
+                "implicitly_mute_plugin_MIDI",
+                "default_num_bus_channels"
                 //"use_sequencer_timing"
 	};
 	struct Song *song=SONG_create();
@@ -165,7 +169,7 @@ struct Song *LoadSong(void){
 
         COMMENT_reset();
 
-        GENERAL_LOAD(7,16)
+        GENERAL_LOAD(7,17)
 
 obj0:
 	DC_ListAdd1(&song->tracker_windows,LoadWindow());
@@ -270,6 +274,9 @@ var15:
         goto start;        
         
 var16:
+        song->default_num_bus_channels = DC_LoadI();
+        BUS_set_num_channels(song->default_num_bus_channels);
+        goto start;
 var17:
 var18:
 var19:

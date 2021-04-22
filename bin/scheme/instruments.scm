@@ -636,18 +636,28 @@
   
   (define is-main-pipe (equal? (<ra> :get-main-pipe-instrument) id-old-instrument))
   ;;(define is-bus (member id-old-instrument (get-pure-buses)))
+  ;;(define is-seqtrack-bus (<ra> :instrument-is-seqtrack-bus id-old-instrument))
+  ;;(define is-permanent (<ra> :instrument-is-permanent id-old-instrument)) ;; (member id-old-instrument (get-pure-buses)))
   
-  (if is-main-pipe
+  (if is-main-pipe ;;(and #f (or is-permanent ;;is-main-pipe
+                  ;;is-seqtrack-bus))
+      ;;(begin
+      ;;  (<ra> :internal-replace-main-pipe id-new-instrument)
+      ;;  (set! id-new-instrument (<ra> :get-main-pipe-instrument)))
+      (set! id-new-instrument (<ra> :internal-replace-permanent id-old-instrument id-new-instrument)) ;;get-main-pipe-instrument)))
       (begin
-        (<ra> :internal-replace-main-pipe id-new-instrument)
-        (set! id-new-instrument (<ra> :get-main-pipe-instrument)))
-      (<ra> :delete-instrument id-old-instrument))
+        (c-display "     DELETE INSTRUMENT" (<ra> :get-instrument-name id-old-instrument))
+        (<ra> :delete-instrument id-old-instrument)))
   
   (<ra> :set-instrument-position x y id-new-instrument)
+
+  id-new-instrument
   )
 
-;; Called from the outside. 'instrument-description' can be false or empty string.
+
+;; 'instrument-description' can be false or empty string.
 ;; Async. Returns immediately.
+;; Note: Also called from api_instruments.cpp: requestReplaceInstrument
 (delafina (async-replace-instrument :id-old-instrument
                                     :description
                                     :instrconf)
@@ -677,7 +687,8 @@
              (<ra> :undo-mixer-connections)
              (move-connections-to-new-instrument id-old-instrument id-new-instrument)
              ;;(replace-instrument-in-all-tracks! id-old-instrument id-new-instrument)
-             (replace-instrument-in-mixer id-old-instrument id-new-instrument)
+
+             (set! id-new-instrument (replace-instrument-in-mixer id-old-instrument id-new-instrument))
              
              (if is-current
                  (<ra> :set-current-instrument id-new-instrument))
@@ -687,7 +698,7 @@
              
              )))))
 
-  (cond ((equal? (<ra> :get-main-pipe-instrument) id-old-instrument)
+  (cond ((<ra> :instrument-is-permanent id-old-instrument) ;;((equal? (<ra> :get-main-pipe-instrument) id-old-instrument)
          (<ra> :schedule 0 ;; We do this since the function is specified to return immediately. I.e. the caller expects the instrument configuration to be the same when we return.
                (lambda ()
                  (ignore-undo-block

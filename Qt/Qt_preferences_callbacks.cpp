@@ -117,7 +117,7 @@ public:
   }
 
 #if FOR_MACOSX && !USE_QT5
-  void closeEvent(QCloseEvent *event) {
+  void closeEvent(QCloseEvent *event) override {
     hide();
     event->ignore(); // Only hide the window, dont close it.
   }

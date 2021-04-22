@@ -801,25 +801,6 @@ static void PLUGIN_RT_process(SoundPlugin *plugin, int64_t time, int num_frames,
 
 }
 
-static int get_bus_num(const SoundPlugin *plugin){
-  if (!PLUGIN_is_permanent_bus(plugin->type))
-    return -1;
-
-  if(!strcmp(plugin->type->name,"Bus 1"))
-    return 0;
-  else if(!strcmp(plugin->type->name,"Bus 2"))
-    return 1;
-  else if(!strcmp(plugin->type->name,"Bus 3"))
-    return 2;
-  else if(!strcmp(plugin->type->name,"Bus 4"))
-    return 3;
-  else if(!strcmp(plugin->type->name,"Bus 5"))
-    return 4;
-
-  R_ASSERT_NON_RELEASE(false);
-  return -1;
-}
-
 static int id_counter = 0;
 
 namespace{
@@ -963,11 +944,12 @@ public:
     
     R_ASSERT(THREADING_is_main_thread());
     
-    _bus_num = get_bus_num(plugin);
+    _bus_num = PLUGIN_get_bus_num(plugin->type);
     _is_bus = _bus_num >= 0;
 
 #if !defined(RELEASE)
     if (_is_bus){
+      //fprintf(stderr,"type_name: -%s-\n", plugin->type->type_name);
       if (strcmp(plugin->type->type_name, "Bus"))
         abort();
       if (!strcmp(plugin->type->name, "Bus 1") ||          
@@ -987,6 +969,7 @@ public:
 #endif
     
     if (_is_bus) {
+      /*
       if (_bus_num == 0)
         R_ASSERT(buses.bus1==NULL);
       if (_bus_num == 1)
@@ -997,6 +980,7 @@ public:
         R_ASSERT(buses.bus4==NULL);
       if (_bus_num == 4)
         R_ASSERT(buses.bus5==NULL);
+      */
     }else{
       R_ASSERT(buses.bus1!=NULL);
       R_ASSERT(buses.bus2!=NULL);

@@ -831,6 +831,7 @@
                                       :seqtracknum)
 
   (define for-audiofiles (<ra> :seqtrack-for-audiofiles seqtracknum))
+  (define is-bus (and for-audiofiles (<ra> :seqtrack-is-bus seqtracknum)))
   (define for-blocks (not for-audiofiles))
   (define instrument-id (if for-blocks
                             (<ra> :create-illegal-instrument)
@@ -844,9 +845,9 @@
   (define fontheight (get-fontheight))
   (define fontheight-and-borders (+ 4 fontheight))
 
-  (define mutesolo-width (myfloor (* 1.8 (<gui> :text-width (if for-audiofiles
-                                                                "H R M S "
-                                                                "M H ")))))
+  (define mutesolo-width (get-mutesolo-width for-audiofiles
+                                             (and for-audiofiles
+                                                  (not is-bus))))
   (define meter-width (if for-audiofiles
                           (max 4 (myfloor (/ fontheight 2)))
                           0))
@@ -906,7 +907,12 @@
   (add-sub-area-plain! (<new> :mute-solo-buttons gui
                               (+ b x2-split) y1
                               x-meter-split y-split
-                              instrument-id #t #t seqtracknum))
+                              instrument-id
+                              #t ;; use single letters
+                              #t ;; stack horizontally
+                              seqtracknum
+                              (and for-audiofiles (not is-bus)))) ;; include-rec-button
+
   
   (if show-panner
       (add-sub-area-plain! (<new> :instrument-pan-slider gui

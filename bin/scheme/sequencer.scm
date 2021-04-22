@@ -1019,6 +1019,8 @@
              (set! *curr-record-config-window* #f)))
     ))
   
+(delafina (switch-seqtrack-visible :seqtracknum (<ra> :get-curr-seqtrack))
+  (<ra> :set-seqtrack-visible seqtracknum (not (<ra> :get-seqtrack-visible seqtracknum))))
   
 (define (ask-user-about-first-audio-seqtrack2 callback)
   (show-async-message (<gui> :get-sequencer-gui)
@@ -1192,7 +1194,14 @@
    (list "Set name"
          :shortcut show-set-seqtrack/seqblock-name-requester
          (lambda ()
-           (show-set-seqtrack/seqblock-name-requester seqtracknum)))))
+           (show-set-seqtrack/seqblock-name-requester seqtracknum)))
+   (list
+    "Visible"
+    :shortcut switch-seqtrack-visible
+    :check (<ra> :get-seqtrack-visible seqtracknum)
+    (lambda (is-on)
+      (<ra> :set-seqtrack-visible seqtracknum is-on)))))
+
 
 ;; Note: Used for shortcut
 (define (set-no-looping-or-punching-in-sequencer)
@@ -1685,6 +1694,7 @@
 
 (define (get-seqtrack-menu-entries seqtracknum X Y)
   (define for-audiofiles (<ra> :seqtrack-for-audiofiles seqtracknum))
+  (define is-bus (and for-audiofiles (<ra> :seqtrack-is-bus seqtracknum)))
   (define for-blocks (not for-audiofiles))
 
   (list
@@ -1757,39 +1767,42 @@
                                         ;     )
                                         ;   )
         )
-       
-       (list
-        "--------------------Audio Seqtrack"
-        (if (<ra> :release-mode)
-            '()
-            (list                                               
-             "Insert my soundfile"
-             (lambda ()
-               (let* ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)))))
-                 ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/demosong_24000.wav") pos))))
-                 ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/karin_24000.wav") pos))))
-                 ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/karin.wav") pos))))
-                 (<ra> :create-sample-seqblock seqtracknum (<ra> :get-path "/home/kjetil/390514__tylean__counting-1-to-10.wav") pos))))
-            ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/tannenbaum.ogg") pos)))
-            )
-        ;;
-        (list
-         "Insert audio file(s)"
-         :shortcut insert-existing-block-or-audiofile-in-sequencer
-         (lambda ()
-           (insert-existing-block-or-audiofile-in-sequencer seqtracknum X)))
-        (list                                          
-         "Insert current audiofile"
-         :shortcut insert-current-block-or-audiofile-in-sequencer
-         :enabled (> (length (<ra> :get-audio-files)) 0)
-         (lambda ()
-           (insert-current-block-or-audiofile-in-sequencer seqtracknum X)))
-        (list
-         "Recording options"
-         :shortcut show-record-popup-menu
-         (lambda ()
-           (show-record-popup-menu seqtracknum)))
-        ))
+
+       (and (not is-bus)
+            (list
+             "--------------------Audio Seqtrack"
+             (if (<ra> :release-mode)
+                 '()
+                 (list                                               
+                  "Insert my soundfile"
+                  (lambda ()
+                    (let* ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)))))
+                      ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/demosong_24000.wav") pos))))
+                      ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/karin_24000.wav") pos))))
+                      ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/karin.wav") pos))))
+                      (<ra> :create-sample-seqblock seqtracknum (<ra> :get-path "/home/kjetil/390514__tylean__counting-1-to-10.wav") pos))))
+                 ;;(<ra> :create-sample-seqblock seqtracknum (<ra> :to-base64 "/home/kjetil/tannenbaum.ogg") pos)))
+                 )
+             ;;
+             (list
+              "Insert audio file(s)"
+              :shortcut insert-existing-block-or-audiofile-in-sequencer
+              (lambda ()
+                (insert-existing-block-or-audiofile-in-sequencer seqtracknum X)))
+             (list                                          
+              "Insert current audiofile"
+              :shortcut insert-current-block-or-audiofile-in-sequencer
+              :enabled (> (length (<ra> :get-audio-files)) 0)
+              (lambda ()
+                (insert-current-block-or-audiofile-in-sequencer seqtracknum X)))
+             (list
+              "Recording options"
+              :shortcut show-record-popup-menu
+              (lambda ()
+                (show-record-popup-menu seqtracknum)))
+             ))
+       )
+   
    
    ;;"--------------------"
   
