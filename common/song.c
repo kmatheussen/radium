@@ -60,7 +60,7 @@ struct Song *SONG_create(void){
   struct Song *song=talloc(sizeof(struct Song));
   song->editor_should_swing_along = true;
   song->mute_editor_automation_when_track_is_muted = true;
-  song->num_channels_in_main_pipe = 2;
+  song->default_num_bus_channels = 2;
   
   song->show_bars_and_beats_sequencer_lane = true;
   song->show_markers_sequencer_lane = true;
@@ -83,8 +83,6 @@ struct Song *SONG_create(void){
   song->includeRememberCurrentInstrumentInMixerConfig = true;
   song->includeModulatorConnectionsInMixerConfig = true;
   song->includeSystemVolumeInMixerConfig = true;
-  
-  song->max_num_parallel_editor_seqblocks = 1;
   
   reset_recording_config(&song->default_recording_config);
 

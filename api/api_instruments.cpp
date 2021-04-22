@@ -1875,8 +1875,8 @@ bool instrumentIsSeqtrackBus(instrument_t instrument_id){
 }
 
 bool instrumentIsPermanent(instrument_t instrument_id){  
-  if (g_is_replacing_main_pipe==true) // hack
-    return false;
+  //if (g_is_replacing_main_pipe==true) // hack
+  //  return false;
 
   struct Patch *patch = getPatchFromNum(instrument_id);
   if(patch==NULL)
@@ -3043,12 +3043,10 @@ void deleteInstrument(instrument_t instrument_id){
 }
 
 void internalReplaceMainPipe(instrument_t new_main_pipe_id){
-  /*
   if (g_is_replacing_main_pipe==false){
     handleError("Can not call this function like this");
     return;
   }
-  */
   
   struct Patch *patch = PATCH_get_from_id(new_main_pipe_id);
   if (patch != NULL)
@@ -3057,6 +3055,27 @@ void internalReplaceMainPipe(instrument_t new_main_pipe_id){
     R_ASSERT(false);
 
   g_is_replacing_main_pipe = false;
+}
+
+// should not be used for anything other than converting main pipe to main bus when loading old song.
+instrument_t internalReplacePermanent(instrument_t id_old, instrument_t id_new){
+  /*
+  if (g_is_replacing_main_pipe==false){
+    handleError("Can not call this function like this");
+    return id_new;
+  }
+  */
+  
+  struct Patch *old_patch = PATCH_get_from_id(id_old);
+  struct Patch *new_patch = PATCH_get_from_id(id_new);
+  if (new_patch != NULL &&  old_patch!=NULL)
+    PATCH_replace_permanent(old_patch, new_patch);
+  else
+    R_ASSERT(false);
+
+  g_is_replacing_main_pipe = false;
+
+  return new_patch->id;
 }
 
 instrument_t getMainPipeInstrument(void){

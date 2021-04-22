@@ -266,7 +266,10 @@ static struct Patch *create_seqtrack_patch(bool is_bus, int seqtracknum){
     //int seqtracknum = get_seqtracknum(seqtrack);
     name = talloc_format("Seqtrack %d", seqtracknum);
   }
-  instrument_t patch_id = createAudioInstrument(is_bus ? "Bus" : SEQTRACKPLUGIN_NAME, SEQTRACKPLUGIN_NAME, name, 0, 0, true);
+
+  const char *plugin_name = is_bus ? SEQTRACKPLUGIN_BUS_NAME : SEQTRACKPLUGIN_NAME;
+    
+  instrument_t patch_id = createAudioInstrument(is_bus ? "Bus" : SEQTRACKPLUGIN_NAME, plugin_name, name, 0, 0, true);
   R_ASSERT_RETURN_IF_FALSE2(patch_id.id >= 0, NULL);
   
   struct Patch *patch = PATCH_get_from_id(patch_id);
@@ -2634,6 +2637,7 @@ static filepath_t get_recording_path(const struct SoundPlugin *plugin){
 void SEQTRACK_set_recording(struct SeqTrack *seqtrack, bool is_recording){
   R_ASSERT(THREADING_is_main_thread());
   R_ASSERT_RETURN_IF_FALSE(seqtrack->for_audiofiles);
+  R_ASSERT_RETURN_IF_FALSE(!seqtrack->is_bus);
 
   if (is_recording==seqtrack->is_recording)
     return;

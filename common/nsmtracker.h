@@ -3756,7 +3756,7 @@ struct Song{
         bool mixer_comments_visible;
         bool include_pan_and_dry_in_wet_signal;
         bool mute_editor_automation_when_track_is_muted;
-        int num_channels_in_main_pipe;
+        int default_num_bus_channels; // currently 2 or 8.
 
         struct SeqtrackRecordingConfig default_recording_config;
 
@@ -3779,8 +3779,6 @@ struct Song{
   
 	hash_t *mixerwidget_state; // Only used during loading.
 	hash_t *instrument_widget_order_state; // Only used during loading.
-  
-        int max_num_parallel_editor_seqblocks;
 };
 
 extern LANGSPEC void SONGPROPERTIES_update(struct Song *song);

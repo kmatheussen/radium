@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define RADIUM_AUDIO_SEQTRACK_PLUGIN_PROC_H
 
 #define SEQTRACKPLUGIN_NAME "Sequencer audio file recorder/player"
+#define SEQTRACKPLUGIN_BUS_NAME "Bus"
 
 #include "SoundPlugin.h"
 
@@ -94,6 +95,7 @@ extern radium::Peaks **SEQTRACKPLUGIN_get_peaks(const SoundPlugin *plugin, int64
 #endif
 
 extern LANGSPEC const char *BUS_get_bus_name(int bus_num);
+extern LANGSPEC void BUS_set_num_channels(int num_channels);
 
 static inline bool PLUGIN_is_for_seqtrack(const SoundPlugin *plugin){
   if (!strcmp(SEQTRACKPLUGIN_NAME, plugin->type->type_name))

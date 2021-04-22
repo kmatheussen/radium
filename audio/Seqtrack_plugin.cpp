@@ -114,9 +114,27 @@ namespace radium{
  */
 
 enum{
-  EFF_ENABLE_PIPING,
+  EFF_ENABLE_PIPING = 0,
   EFF_NUM_EFFECTS
 };
+
+enum{
+  //EFF_NUM_VISIBLE_PORTS = 0,
+  EFF_NUM_BUS_EFFECTS
+};
+
+//#define MIN_NUM_VISIBLE_PORTS 1
+//#define MAX_NUM_VISIBLE_PORTS 8
+
+
+static SoundPluginType bus_type1 = {};
+static SoundPluginType bus_type2 = {};
+static SoundPluginType bus_type3 = {};
+static SoundPluginType bus_type4 = {};
+static SoundPluginType bus_type5 = {};
+
+static SoundPluginType seqtrack_type_general = {};
+static SoundPluginType bus_type_general = {};
 
 
 static void set_num_visible_outputs(SoundPlugin *plugin);
@@ -1400,6 +1418,8 @@ struct Data {
 
   Smooth _piping_volume;
   bool _enable_piping = false;
+
+  //bool _is_bus;
   
 #if !defined(RELEASE)
   
@@ -1642,6 +1662,10 @@ void SEQTRACKPLUGIN_clear_resampler_warning_hashmap(void){
 }
 
 static void set_num_visible_outputs(SoundPlugin *plugin){
+
+  if (plugin->type != &seqtrack_type_general)
+    return; // Number of visible outputs for buses is static.
+  
   R_ASSERT(THREADING_is_main_thread());
   
   Data *data = (Data*)plugin->data;
@@ -2480,24 +2504,7 @@ static void RT_record(Data *data, int num_frames, const float **instrument_input
 }
 
 
-static void RT_process(SoundPlugin *plugin, const int64_t time, const int num_frames, float **__restrict__ inputs, float **__restrict__ outputs, const bool is_bus){
-  //SoundPluginType *type = plugin->type;
-  Data *data = (Data*)plugin->data;
-
-  int status = ATOMIC_GET(data->_recording_status);
-  if (status==IS_RECORDING || status==REQUEST_STOP_RECORDING)
-    RT_record(data, num_frames, const_cast<const float**>(inputs));
-  
-  for(int ch = 0 ; ch < NUM_OUTPUTS ; ch++)
-    if(ch < NUM_INPUTS) {
-      if (is_bus)
-        memcpy(outputs[ch], inputs[ch], sizeof(float) * num_frames);
-      else
-        SMOOTH_copy_sound(&data->_piping_volume, inputs[ch], outputs[ch], num_frames);
-    } else {
-      memset(outputs[ch], 0, num_frames*sizeof(float));    
-    }
-  
+static void RT_process_play_audiofiles(Data *data, SoundPlugin *plugin, int num_frames, float **__restrict__ inputs, float **__restrict__ outputs){
   if (data->_samples.size()==0)
     return;
   
@@ -2510,8 +2517,10 @@ static void RT_process(SoundPlugin *plugin, const int64_t time, const int num_fr
   for(Sample *sample : data->_samples)
     max_ch = R_MAX(max_ch, sample->_num_ch);
 
+  int num_outputs = plugin->type->num_outputs;
+  
   // change outputs in case there are more channels in the audio file than NUM_OUTPUTS
-  int extra_num_ch = max_ch - NUM_OUTPUTS;
+  int extra_num_ch = max_ch - num_outputs;
   float *extra_outputs[R_MAX(1, max_ch)];
   float extra[extra_num_ch > 0 ? num_frames : 1];
 
@@ -2519,10 +2528,10 @@ static void RT_process(SoundPlugin *plugin, const int64_t time, const int num_fr
 
     memset(extra, 0, num_frames*sizeof(float)); // This data is not used for anything, but since we add data to it, we null it out first avoid nominalization/inf/nan/etc. problems.
 
-    for(int ch=0;ch<NUM_OUTPUTS;ch++)
+    for(int ch=0;ch<num_outputs;ch++)
       extra_outputs[ch] = outputs[ch];
 
-    for(int ch=NUM_OUTPUTS;ch<max_ch;ch++){
+    for(int ch=num_outputs;ch<max_ch;ch++){
       extra_outputs[ch] = extra;
     }
 
@@ -2552,17 +2561,39 @@ static void RT_process(SoundPlugin *plugin, const int64_t time, const int num_fr
 #endif
 }
 
-static void RT_process_bus(SoundPlugin *plugin, int64_t time, int num_frames, float **__restrict__ inputs, float **__restrict__ outputs){
-  RT_process(plugin, time, num_frames, inputs, outputs, true);
-}
-
 static void RT_process_the_other_one(SoundPlugin *plugin, int64_t time, int num_frames, float **__restrict__ inputs, float **__restrict__ outputs){
+
+  //SoundPluginType *type = plugin->type;
   Data *data = (Data*)plugin->data;
 
   SMOOTH_called_per_block(&data->_piping_volume);
 
-  RT_process(plugin, time, num_frames, inputs, outputs, false);
+  int status = ATOMIC_GET(data->_recording_status);
+  if (status==IS_RECORDING || status==REQUEST_STOP_RECORDING)
+    RT_record(data, num_frames, const_cast<const float**>(inputs));
+  
+  for(int ch = 0 ; ch < NUM_OUTPUTS ; ch++)
+    if(ch < NUM_INPUTS) {
+      SMOOTH_copy_sound(&data->_piping_volume, inputs[ch], outputs[ch], num_frames);
+    } else {
+      memset(outputs[ch], 0, num_frames*sizeof(float));    
+    }
+
+  RT_process_play_audiofiles(data, plugin, num_frames, inputs, outputs);
 }
+
+static void RT_process_bus(SoundPlugin *plugin, int64_t time, int num_frames, float **__restrict__ inputs, float **__restrict__ outputs){
+  int num_ch = plugin->type->num_outputs;
+  R_ASSERT_NON_RELEASE(num_ch==plugin->type->num_inputs);
+  
+  for(int ch = 0 ; ch < num_ch ; ch++)
+    memcpy(outputs[ch], inputs[ch], sizeof(float) * num_frames);
+
+  Data *data = (Data*)plugin->data;
+  
+  RT_process_play_audiofiles(data, plugin, num_frames, inputs, outputs);
+}
+
 
 static void RT_player_is_stopped(struct SoundPlugin *plugin){
   //printf("   RT_player_is_stopped called %f\n", TIME_get_ms() / 1000.0);
@@ -2593,14 +2624,47 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
   }
 }
 
+static void set_bus_effect_value(struct SoundPlugin *plugin, int time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
+  R_ASSERT_NON_RELEASE(false);
+  /*
+  int num_visible_outputs = round(scale(value, 0, 1, MIN_NUM_VISIBLE_PORTS-1, MAX_NUM_VISIBLE_PORTS));
+  if (num_visible_outputs < MIN_NUM_VISIBLE_PORTS)
+    plugin->num_visible_outputs = -1;
+  else
+    plugin->num_visible_outputs = R_MIN(num_visible_outputs, MAX_NUM_VISIBLE_PORTS);
+  */
+}
+
 static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format){
   Data *data = (Data*)plugin->data;
   return data->_enable_piping ? 1.0 : 0.0;
 }
 
+static float get_bus_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format){
+  R_ASSERT_NON_RELEASE(false);
+  return 0;
+  
+  /*
+  if (plugin->num_visible_outputs == -1)
+    return 0;
+  else
+    return R_BOUNDARIES(0, scale(plugin->num_visible_outputs, MIN_NUM_VISIBLE_PORTS-1, MAX_NUM_VISIBLE_PORTS, 0, 1), 1);
+  */
+}
+
 static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *buffer, int buffersize){
   Data *data = (Data*)plugin->data;
   snprintf(buffer,buffersize-1,"%s",data->_enable_piping ? "On" : "Off");
+}
+
+static void get_bus_display_value_string(SoundPlugin *plugin, int effect_num, char *buffer, int buffersize){
+  R_ASSERT_NON_RELEASE(false);
+  /*
+  if (plugin->num_visible_outputs == -1)
+    snprintf(buffer,buffersize-1,"Auto");
+  else
+    snprintf(buffer,buffersize-1,"%d",plugin->num_visible_outputs);
+  */
 }
 
 static SoundPlugin *bus1 = NULL;
@@ -2609,19 +2673,73 @@ static SoundPlugin *bus3 = NULL;
 static SoundPlugin *bus4 = NULL;
 static SoundPlugin *bus5 = NULL;
 
-static SoundPluginType bus_type1 = {};
-static SoundPluginType bus_type2 = {};
-static SoundPluginType bus_type3 = {};
-static SoundPluginType bus_type4 = {};
-static SoundPluginType bus_type5 = {};
 
-static SoundPluginType seqtrack_type_general = {};
-static SoundPluginType bus_type_general = {};
-
-bool PLUGIN_is_permanent_bus(SoundPluginType *type){
-  return type==&bus_type1 || type==&bus_type2 || type==&bus_type3 || type==&bus_type4 || type==&bus_type5;  
+int PLUGIN_get_bus_num(SoundPluginType *type){
+  if (type==&bus_type1)
+    return 0;
+  
+  if (type==&bus_type2)
+    return 1;
+  
+  if (type==&bus_type3)
+    return 2;
+  
+  if (type==&bus_type4)
+    return 3;
+  
+  if (type==&bus_type5)
+    return 4;
+  
+  return -1;
 }
 
+bool PLUGIN_is_permanent_bus(SoundPluginType *type){
+  return PLUGIN_get_bus_num(type) >= 0;
+}
+
+const char *PLUGIN_get_bus_plugin_name(int bus_num, int num_ch){
+  switch(bus_num){
+    case 0: return "Bus 1";
+    case 1: return "Bus 2";
+    case 2: return "Bus 3";
+    case 3: return "Bus 4";
+    case 4: return "Bus 5";
+    default:{
+      R_ASSERT(bus_num==-1);
+      return SEQTRACKPLUGIN_BUS_NAME;
+    }
+  }
+  
+  /*
+  if (num_ch==8) {
+    switch(bus_num){
+      case 0: return "Bus 1 (8ch)";
+      case 1: return "Bus 2 (8ch)";
+      case 2: return "Bus 3 (8ch)";
+      case 3: return "Bus 4 (8ch)";
+      case 4: return "Bus 5 (8ch)";
+      default:{
+        R_ASSERT(bus_num==-1);
+        return SEQTRACKPLUGIN_BUS8_NAME;
+      }
+    }
+  } else {
+    R_ASSERT(num_ch==2);
+    switch(bus_num){
+      case 0: return "Bus 1";
+      case 1: return "Bus 2";
+      case 2: return "Bus 3";
+      case 3: return "Bus 4";
+      case 4: return "Bus 5";
+      default:{
+        R_ASSERT(bus_num==-1);
+        return SEQTRACKPLUGIN_BUS2_NAME;
+      }
+    }
+  }
+  */
+}
+                                       
 static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin *plugin, hash_t *state, float sample_rate, int block_size, bool is_loading){
   
   if(plugin_type==&bus_type1)
@@ -2672,8 +2790,18 @@ static const char *get_effect_name(const struct SoundPlugin *plugin, int effect_
   return "Enable piping";
 }
 
+static const char *get_bus_effect_name(const struct SoundPlugin *plugin, int effect_num){
+  R_ASSERT_NON_RELEASE(false);
+  return "Number of audio meters";
+}
+
 static int get_effect_format(struct SoundPlugin *plugin, int effect_num){
   return EFFECT_FORMAT_BOOL;
+}
+
+static int get_bus_effect_format(struct SoundPlugin *plugin, int effect_num){
+  R_ASSERT_NON_RELEASE(false);
+  return EFFECT_FORMAT_INT;
 }
 
 const char *BUS_get_bus_name(int bus_num){
@@ -2693,20 +2821,24 @@ const char *BUS_get_bus_name(int bus_num){
   }
 }
 
-
-static void init_type(SoundPluginType *plugin_type, const char *type_name, const char *name){
+static void init_num_ch(SoundPluginType *plugin_type, int num_ch){
+  plugin_type->num_inputs               = num_ch; // Note: For bus plugins, this value is overwritten each time when loading song
+  plugin_type->num_outputs              = num_ch; // Note: For bus plugins, this value is overwritten each time when loading song.
+}
+  
+static void init_type(SoundPluginType *plugin_type, const char *type_name, const char *name, int num_ch){
 
   bool is_bus = !strcmp("Bus", type_name);
-  
+
+  init_num_ch(plugin_type, num_ch);
+
   plugin_type->type_name                = type_name;
   plugin_type->name                     = name;
-  plugin_type->num_inputs               = NUM_INPUTS;
-  plugin_type->num_outputs              = NUM_OUTPUTS;
   plugin_type->is_instrument            = false;
   plugin_type->note_handling_is_RT      = false;
-  plugin_type->num_effects              = is_bus ? 0 : EFF_NUM_EFFECTS,
-  plugin_type->get_effect_format        = get_effect_format,
-  plugin_type->get_effect_name          = get_effect_name;
+  plugin_type->num_effects              = is_bus ? (int)EFF_NUM_BUS_EFFECTS : (int)EFF_NUM_EFFECTS;
+  plugin_type->get_effect_format        = is_bus ? get_bus_effect_format : get_effect_format;
+  plugin_type->get_effect_name          = is_bus ? get_bus_effect_name : get_effect_name;
   plugin_type->effect_is_RT             = NULL;
   plugin_type->create_plugin_data       = create_plugin_data;
   plugin_type->cleanup_plugin_data      = cleanup_plugin_data;
@@ -2715,12 +2847,23 @@ static void init_type(SoundPluginType *plugin_type, const char *type_name, const
   plugin_type->RT_process       = is_bus ? RT_process_bus : RT_process_the_other_one;
   plugin_type->RT_player_is_stopped = RT_player_is_stopped;
   
-  plugin_type->set_effect_value = set_effect_value;
-  plugin_type->get_effect_value = get_effect_value;
-  plugin_type->get_display_value_string = get_display_value_string;
+  plugin_type->set_effect_value = is_bus ? set_bus_effect_value : set_effect_value;
+  plugin_type->get_effect_value = is_bus ? get_bus_effect_value : get_effect_value;
+  plugin_type->get_display_value_string = is_bus ? get_bus_display_value_string : get_display_value_string;
 
   plugin_type->will_never_autosuspend = true; // TODO: Touch plugin manually instead.
 }
+
+// Called from disk_song.cpp.
+void BUS_set_num_channels(int num_channels){
+  init_num_ch(&bus_type1, num_channels);
+  init_num_ch(&bus_type2, num_channels);
+  init_num_ch(&bus_type3, num_channels);
+  init_num_ch(&bus_type4, num_channels);
+  init_num_ch(&bus_type5, num_channels);
+  init_num_ch(&bus_type_general, num_channels);
+}
+
 
 void create_seqtrack_plugin(void){
   static bool has_inited = false;
@@ -2728,14 +2871,16 @@ void create_seqtrack_plugin(void){
   if (has_inited==false) {
     has_inited = true;
 
-      init_type(&bus_type1, "Bus", "Bus 1");
-      init_type(&bus_type2, "Bus", "Bus 2");
-      init_type(&bus_type3, "Bus", "Bus 3");
-      init_type(&bus_type4, "Bus", "Bus 4");
-      init_type(&bus_type5, "Bus", "Bus 5");
-
-      init_type(&seqtrack_type_general, SEQTRACKPLUGIN_NAME, SEQTRACKPLUGIN_NAME);
-      init_type(&bus_type_general, "Bus", SEQTRACKPLUGIN_NAME);
+    init_type(&bus_type1, "Bus", PLUGIN_get_bus_plugin_name(0, 2), 2);
+    init_type(&bus_type2, "Bus", PLUGIN_get_bus_plugin_name(1, 2), 2);
+    init_type(&bus_type3, "Bus", PLUGIN_get_bus_plugin_name(2, 2), 2);
+    init_type(&bus_type4, "Bus", PLUGIN_get_bus_plugin_name(3, 2), 2);
+    init_type(&bus_type5, "Bus", PLUGIN_get_bus_plugin_name(4, 2), 2);
+    
+    static_assert(NUM_INPUTS==NUM_OUTPUTS, "hmm");
+    init_type(&seqtrack_type_general, SEQTRACKPLUGIN_NAME, SEQTRACKPLUGIN_NAME, NUM_INPUTS);
+    
+    init_type(&bus_type_general, "Bus", SEQTRACKPLUGIN_BUS_NAME, 2);
   }
 
   PR_add_plugin_type_no_menu(&bus_type1);
@@ -2746,5 +2891,4 @@ void create_seqtrack_plugin(void){
 
   PR_add_plugin_type_no_menu(&seqtrack_type_general);
   PR_add_plugin_type_no_menu(&bus_type_general);
-  //PR_add_plugin_type(plugin_type);
 }

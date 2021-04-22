@@ -79,6 +79,7 @@ extern const radium::Vector<SoundProducer*> &MIXER_get_all_SoundProducers(void);
 
 extern LANGSPEC Buses MIXER_get_buses(void);
 //extern LANGSPEC struct SoundProducer *MIXER_get_bus(int bus_num);
+extern LANGSPEC void MIXER_set_bus(int bus_num, SoundProducer *producer);
 
 extern LANGSPEC struct Patch **RT_MIXER_get_all_click_patches(int *num_click_patches);
 

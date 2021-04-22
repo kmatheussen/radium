@@ -1367,7 +1367,7 @@ bool AUDIO_is_permanent_patch(const struct Patch *patch){
   const SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
   if (plugin==NULL)
     return false;
-  
+
   if(plugin==get_main_pipe())
     return true;
 

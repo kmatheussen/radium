@@ -1125,6 +1125,11 @@ void setSeqtrackIsRecording(int seqtracknum, bool is_recording){
   if (seqtrack==NULL)
     return;
 
+  if (seqtrack->is_bus){
+    handleError("setSeqtrackIsRecording: Can not record to a bus");
+    return;
+  }
+  
   if (is_recording && get_num_recording_soundfile_channels(get_seqtrack_recording_config(seqtrack))==0){
     handleError("setSeqtrackIsRecording: Can not record since no channels are selected in the matrix");
     return;

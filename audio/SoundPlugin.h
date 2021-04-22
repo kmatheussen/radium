@@ -491,7 +491,7 @@ typedef struct SoundPlugin{
   void *data;
 
   int num_visible_outputs; // Used by the peak meters. Must never be higher than num_outputs. If the value is -1, it is ignored. Only used by the main thread.
-  bool automatically_set_num_visible_outputs; // false by default.
+  bool automatically_set_num_visible_outputs; // false by default. If true, num_visible_outputs will be set automatically based on peak values.
   
   // Data below handled by Radium.
 

@@ -265,7 +265,9 @@ extern LANGSPEC void PLUGIN_random(SoundPlugin *plugin);
 
 extern LANGSPEC void PLUGIN_show_info_window(const SoundPluginType *type, SoundPlugin *plugin, int64_t parentgui);
 
-extern LANGSPEC bool PLUGIN_is_permanent_bus(SoundPluginType *type);
+extern LANGSPEC int PLUGIN_get_bus_num(SoundPluginType *type); // returns -1 if not a bus.
+extern LANGSPEC bool PLUGIN_is_permanent_bus(SoundPluginType *type); // same as PLUGIN_get_bus_num(type)>=0;
+extern LANGSPEC const char *PLUGIN_get_bus_plugin_name(int bus_num, int num_ch); // returns plugin->type->name. bus_num can be -1, 0, 1, 2, 3, or 4. num_ch can be 2 or 8.
 
 extern LANGSPEC filepath_t PLUGIN_DISK_get_audio_filename(hash_t *state);
 
