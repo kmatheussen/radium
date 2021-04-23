@@ -1,3 +1,49 @@
+Changes 6.9.67 -> 6.9.69:
+* Windows: Fix showing current system font when
+  opening the "change system font" requester.
+* Editor: Fix hanging notes when recording MIDI and
+  not using Jack. MIDI recording accuracy, though,
+  is slightly worse now when not using jack for
+  audio. This can be compensated by using smaller
+  audio buffers.
+* Load: Fix assertion window popping up when loading
+  some songs. The assertion was innocent though. Bug
+  introduced in 6.9.63.
+* Song properties: Remove option to select 2 or 8
+  channel main pipe.
+* Song Properties: Add option to set number of audio
+  channels for buses. (between 1 and 99 channels)
+* Sequencer: Add seqtrack "Visible" checkbox to the
+  seqtrack popup menu.
+* Sequencer: Remove all audio file options from the
+  Bus seqtrack popup menu.
+* Sequencer: Disable ability to record audio files
+  into Bus seqtracks.
+* Audio: Only display used output channels in the
+  audio meters for patch instruments.
+* Audio meters: Make the default green color lighter.
+* Audio: Convert "Main Pipe" and the 5 effect
+  buses from pipes to sequencer buses.
+* Audio: Rename "Main Pipe" to "Main Bus".
+* Audio: Remove the "Enable piping" effect
+  from sequencer buses.
+* Audio: Make the "Main Bus" sequencer bus
+  visible by default. The 5 effect buses are not
+  visible by default.
+* Macos: Fix importing mod files
+* Internal: Various changes.
+* API:
+  * New: getInstrumentEffects, setInstrumentEffects,
+    seqtrackIsPermanent, seqtrackIsBus, moveSeqtrack,
+    internalReplacePermanent.
+  * Let appendSeqtrack, appendEditorSeqtrack,
+    appendAudioSeqtrack, and appendBusSeqtrack
+    return the seqtrack number for the newly created
+    seqtrack.
+  * Rename sendSysex -> sendMidiSysex.
+
+
+
 Changes 6.9.66 -> 6.9.67:
 * Macos: Fix error about not being able to set
   realtime priority. Bug introduced in 6.9.63.
