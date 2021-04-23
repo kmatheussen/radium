@@ -303,7 +303,7 @@ void MIDIPORT_send_sysex(
                          uint8_t *data)
 {
 #if !defined(RELEASE)
-#if defined(FOR_MACOSX)
+#if !defined(FOR_MACOSX)
   if (THREADING_has_player_thread_priority())
     abort();
 #endif

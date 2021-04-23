@@ -538,8 +538,8 @@ bool THREADING_has_player_thread_priority(void){
 #else
   return (priority.policy==SCHED_RR || priority.policy==SCHED_FIFO);
 #endif
-#endif
 }
+#endif
 #endif
 
 #ifdef TEST_THREADING
