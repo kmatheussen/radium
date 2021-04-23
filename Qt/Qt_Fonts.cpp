@@ -401,6 +401,10 @@ void GFX_SetDefaultSystemFont(struct Tracker_Windows *tvisual){
   {
     QString fontstring = SETTINGS_read_qstring("system_font","");
 
+#if defined(FOR_WINDOWS)
+    fontstring = fontstring.replace("Lato Black", "Lato");
+#endif
+    
     font.fromString(fontstring);
 
 #if 0 //FOR_MACOSX
