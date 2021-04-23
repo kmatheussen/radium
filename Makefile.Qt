@@ -112,7 +112,7 @@ SAMPLERATEOPT ?= `$(PKG) --cflags samplerate`
 LIBLOOPT ?= `$(PKG) --cflags liblo`
 # (G_BYTE_ORDER == G_LITTLE_ENDIAN)
 
-PYPATH ?=
+PYOPTS ?=
 QT_SYSTEM_CFLAGS ?=
 
 QSCINTILLA_PATH ?= $(shell pwd)/bin/packages/QScintilla_gpl-2.10.8
@@ -188,6 +188,10 @@ ifeq ($(shell test $(CLANG_MAJOR) -gt 9; echo $$?),0)
 #	QT_CFLAGS +=  $(WNO_DEPRECATED_COPY_CLANG) # Only necessary for qt 5.12 or older.
 endif
 
+WNO_CLASS_MEMACCESS=
+ifeq (,$(findstring clang,$(CC)))
+	WNO_CLASS_MEMACCESS=-Wno-class-memaccess
+endif
 
 GTK_CFLAGS ?= `$(PKG) --cflags gtk+-2.0`
 GTK_LDFLAGS ?= `$(PKG) --libs gtk+-2.0`
@@ -198,7 +202,7 @@ FREETYPE_CFLAGS ?=
 VST_OPTS ?=
 
 BOOST_INCLUDE=-I${HOME}/boost_1_75_0 -I${HOME}/boost_1_70_0 -I${HOME}/boost_1_67_0 -I${HOME}/boost_1_63_0 
-BOOST_FLAGS=-Wno-class-memaccess $(BOOST_INCLUDE)
+BOOST_FLAGS=$(WNO_CLASS_MEMACCESS) $(BOOST_INCLUDE)
 
 CRASHREPORTER_OPTS ?= 
 CRASHREPORTER_POSIX_OPTS ?= 
@@ -340,7 +344,7 @@ MENU_TYPE = -DUSE_QT_MENU=1 -DUSE_GTK_MENU=0
 
 FLAGOPTS = $(DEFINES) -DGUIISQT -DFULL_VERSION=$(FULL_VERSION) -DIS_LITTLE_ENDIAN=1 -DUSE_OPENGL=1 $(VISUAL) $(REQTYPE_TYPE) $(MENU_TYPE)
 
-COMMONOPT = -D__STDC_FORMAT_MACROS=1 -c `cat buildtype.opt` -I$(GCDIR)/include -I$(P) $(PYPATH) `cat flagopts.opt` $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -I ~/SDKs/VST_SDK/VST2_SDK/ -I ~/SDKs/vstsdk2.4/ -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wno-unknown-pragmas -fno-strict-aliasing -Wmissing-field-initializers -Wnull-dereference -DTHREADED_OPENGL=1
+COMMONOPT = -D__STDC_FORMAT_MACROS=1 -c `cat buildtype.opt` -I$(GCDIR)/include -I$(P) $(PYOPTS) `cat flagopts.opt` $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -I ~/SDKs/VST_SDK/VST2_SDK/ -I ~/SDKs/vstsdk2.4/ -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wno-unknown-pragmas -fno-strict-aliasing -Wmissing-field-initializers -Wnull-dereference -DTHREADED_OPENGL=1
 #-fdelete-null-pointer-checks 
 # -Werror
 
@@ -743,9 +747,9 @@ test_samplereader:
 	cd audio && $(CCC) SampleReader.cpp -DTEST_MAIN -Wall -std=gnu++14 -g && ./a.out
 
 test_threading:
-	$(CCC) common/threading.cpp -DTEST_THREADING -Wall $(QTOPT) -fPIC -DFOR_LINUX
+	$(CCC) common/threading.cpp -DTEST_THREADING -Wall $(QTOPT) $(BOOST_FLAGS) -fPIC -DFOR_LINUX
 	mv threading.o test_threading.o
-	$(CCC) test_threading.o $(QT_LDFLAGS) -lpthread -fsanitize=address -fsanitize=undefined  -std=gnu++14
+	$(CCC) test_threading.o $(QT_LDFLAGS) $(BOOST_FLAGS) -lpthread -fsanitize=address -fsanitize=undefined  -std=gnu++14
 	./a.out
 #	rm -f test_threading.o
 #	echo "GGGGGGGGGGG"
