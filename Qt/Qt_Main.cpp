@@ -4515,6 +4515,10 @@ int main(int argc, char **argv){
       custom_config_set = true;
     }
 
+#if defined(FOR_WINDOWS)
+    fontstring = fontstring.replace("Lato Black", "Lato");
+#endif
+
     {
       QFont font;
       font.fromString(fontstring);
