@@ -661,7 +661,6 @@ struct Mixer{
   int64_t _time = 0;
 
   float _sample_rate;
-  int _buffer_size;
 
   jack_port_t *_main_inputs[NUM_SYSTEM_INPUT_JACK_PORTS];
   
@@ -911,7 +910,6 @@ struct Mixer{
     }
 
     _sample_rate = jack_get_sample_rate(_rjack_client);
-    _buffer_size = buffer_size;
     
     g_jack_client = _rjack_client;
 
@@ -1092,7 +1090,6 @@ struct Mixer{
       return false;
 
     _sample_rate = JUCE_audio_get_sample_rate();
-    _buffer_size = JUCE_audio_get_buffer_size();
 
     pc->pfreq = _sample_rate; // bang!
     
@@ -1501,7 +1498,7 @@ struct Mixer{
 
     int num_frames = num_frames2;
     
-    Mixer *mixer = static_cast<Mixer*>(arg);
+    //Mixer *mixer = static_cast<Mixer*>(arg);
 
     //const char *main_message = "Error: Radium does not officially support changing jack block size during runtime. It might work, it might not work. You should save your song and restart Radium to avoid undefined behavior.";
 
@@ -1518,17 +1515,6 @@ struct Mixer{
 
       if ((num_frames % RADIUM_BLOCKSIZE) != 0)
         RT_message("jack's blocksize of %d is not dividable by Radium's block size of %d. You will get bad sound. Adjust your audio settings.", num_frames, RADIUM_BLOCKSIZE);
-      
-      if (mixer->_buffer_size!=(int)num_frames) {
-        
-        lock_player();{  // Not sure which thread this callback is called from.
-          mixer->_buffer_size = num_frames;
-          
-          //for (SoundProducer *sp : mixer->_sound_producers)
-          //  SP_set_buffer_size(sp, mixer->_buffer_size);
-          
-        }unlock_player();
-      }
     }
 
     
@@ -1822,7 +1808,6 @@ bool MIXER_start(void){
       safeExec(msgBox, false);
 
       g_mixer->_sample_rate = JUCE_audio_get_sample_rate();
-      g_mixer->_buffer_size = 1024;
       pc->pfreq = g_mixer->_sample_rate;
       
       MIXER_start_dummy_driver();
@@ -2114,12 +2099,13 @@ int64_t MIXER_get_time(void){
 // 0 = audio block cycle just started
 // 1 = audio block cycle just ended.
 // > ~1 = we will probably get xrun(s)
-static float MIXER_get_curr_audio_block_cycle_fraction2(double cycle_start_ms){
+static float MIXER_get_curr_audio_block_cycle_fraction2(double cycle_start_ms, int soundcardblock_size){
   R_ASSERT_NON_RELEASE(g_jack_client==NULL);
   
   double duration = RT_TIME_get_ms() - cycle_start_ms;
-  double block_duration = frames_to_ms(g_mixer->_buffer_size);
-  return duration / block_duration;
+  double block_duration = frames_to_ms(soundcardblock_size); //g_mixer->_buffer_size);
+  float ret = duration / block_duration;
+  return ret; //R_BOUNDARIES(0, ret, 1);
 }
 
 float MIXER_get_curr_audio_block_cycle_fraction(void){
@@ -2133,11 +2119,11 @@ float MIXER_get_curr_audio_block_cycle_fraction(void){
   
   else if (g_jack_client==NULL) {
 
-    return MIXER_get_curr_audio_block_cycle_fraction2(JUCE_audio_time_at_cycle_start());
+    return MIXER_get_curr_audio_block_cycle_fraction2(JUCE_audio_time_at_cycle_start(), g_soundcardblock_size);
     
   } else {
 
-    return (float)jack_frames_since_cycle_start(g_jack_client) / (float)g_mixer->_buffer_size;
+    return (float)jack_frames_since_cycle_start(g_jack_client) / (float)g_soundcardblock_size;
 
   }
 }
@@ -2154,7 +2140,7 @@ static int get_audioblock_time(STime jack_block_start_time){
 // Should probably think about how to abstract all this stuff.
 static bool fill_in_time_position2(time_position_t *time_position){
   STime audioblock_cycle_start_time2;
-  STime audioblock_last_frame_stime2;
+  STime audioblock_last_frame_stime2 = 0; // Set to 0 to silence buggy error message in gcc 10.
   double audioblock_cycle_start_ms2;
   STime audioblock_size2;
   struct Blocks *block;
@@ -2197,12 +2183,26 @@ static bool fill_in_time_position2(time_position_t *time_position){
                       0, audioblock_size2 * ATOMIC_DOUBLE_GET(block->reltempo) * song_tempo_multiplier
                       );
   else
-    deltatime = scale(1.3 + (0.0 * MIXER_get_curr_audio_block_cycle_fraction2(audioblock_cycle_start_ms2)),
-                      0, 1,
-                      0,audioblock_size2 * ATOMIC_DOUBLE_GET(block->reltempo) * song_tempo_multiplier
-                      );
+    deltatime = true ? 0 : scale(MIXER_get_curr_audio_block_cycle_fraction2(audioblock_cycle_start_ms2, audioblock_size2), // FIX, maybe. JUCE don't call callbacks regularly, so setting deltatime to 0 is less worse than the alternative.
+                                 0, 1,
+                                 0,audioblock_size2 * ATOMIC_DOUBLE_GET(block->reltempo) * song_tempo_multiplier
+                                 );
 
-  //printf("Deltatime: %d. Fraction: %f. num_tries: %d\n", (int)deltatime, MIXER_get_curr_audio_block_cycle_fraction2(audioblock_cycle_start_ms2), num_tries);
+#if 0
+  float gakk;
+  if (use_jack)
+    gakk = ((float)get_audioblock_time(audioblock_last_frame_stime2) / (float)audioblock_size2);
+  else
+    gakk = MIXER_get_curr_audio_block_cycle_fraction2(audioblock_cycle_start_ms2, audioblock_size2);
+
+  printf("%d: Deltatime: %d. Fraction: %f. num_tries: %d. blocksize: %d / %d\n",
+         (int)audioblock_cycle_start_time2,
+         (int)deltatime,
+         gakk,
+         //MIXER_get_curr_audio_block_cycle_fraction(),
+         num_tries,
+         (int)audioblock_size2, g_soundcardblock_size);
+#endif
   
   STime accurate_radium_time = audioblock_cycle_start_time2 + deltatime;
   
@@ -2237,7 +2237,8 @@ static bool fill_in_time_position2(time_position_t *time_position){
   
   time_position->blocknum = block->l.num;
   time_position->blocktime = accurate_block_time;
-  
+
+  //printf("...............blocktime: %d\n", (int)accurate_block_time);
   return true;
 }
 

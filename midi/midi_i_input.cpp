@@ -225,9 +225,9 @@ static void record_midi_event(const symbol_t *port_name, const uint32_t msg){
   
   time_position_t timepos;
   
-  if (MIXER_fill_in_time_position(&timepos) == false)
+  if (MIXER_fill_in_time_position(&timepos) == false){
     return; // <-- MIXER_fill_in_time_position returns false if the event was recorded after song end, or program is initializing, or there was an error.
-      
+  }
 
   if (is_fx){
     
@@ -369,6 +369,7 @@ public:
 static RecordingQueuePullThread g_recording_queue_pull_thread; // Must be placed below the definition of 'g_midi_learns' since the destructor of 'g_recording_queue_pull_thread' must be called before the destructor of 'g_midi_learns'.
 
 
+static midi_event_t g_no_time;
 
 static midi_event_t *find_midievent_end_note(std::vector<midi_event_t> &midi_events, int blocknum, int pos, int notenum_to_find, STime starttime_of_note){
 
@@ -381,8 +382,14 @@ static midi_event_t *find_midievent_end_note(std::vector<midi_event_t> &midi_eve
     int      notenum = MIDI_msg_byte2(msg);
     
     if (msg_is_note_off(msg)){
-      if (notenum==notenum_to_find && midi_event.timepos.blocktime > starttime_of_note)
-        return &midi_event;
+      if (notenum==notenum_to_find) {
+        if (midi_event.timepos.blocktime >= starttime_of_note){
+          if (midi_event.timepos.blocktime == starttime_of_note)
+            return &g_no_time;
+          else
+            return &midi_event;
+        }
+      }
     }
   }
 
@@ -419,6 +426,10 @@ static void add_recorded_note(std::vector<midi_event_t> &midi_events, struct WBl
           
   midi_event_t *midi_event_endnote = find_midievent_end_note(midi_events, block->l.num, recorded_midi_events_pos+1, notenum, time);
   if (midi_event_endnote != NULL) {
+    
+    if (midi_event_endnote==&g_no_time) // To short to record.
+      return;
+    
     endplace = STime2Place2(block,midi_event_endnote->timepos.blocktime,wtrack->track);
     endplace_p = &endplace;
     if(!is_gfx)
