@@ -1231,7 +1231,7 @@ struct Recorder : public radium::SampleRecorderInstance{
 
   const int64_t _id = g_recorder_id--;
   
-  radium::Array<radium::Peaks*> _peaks;
+  radium::Peaks *_peaks;
 
   //Data *_data;
   
@@ -1246,7 +1246,7 @@ struct Recorder : public radium::SampleRecorderInstance{
   
   Recorder(struct SeqTrack *seqtrack, filepath_t recording_path, const SeqtrackRecordingConfig *config, int64_t latency)
     : SampleRecorderInstance(recording_path, get_num_recording_soundfile_channels(config), 48, latency) // 60 is standard value, I think, but the sample recorder adds 12 to the middle note, for some reason.
-    , _peaks(num_ch)
+    , _peaks(new radium::Peaks[num_ch])
       //, _data(data)
     , _seqtrack(seqtrack)
     , _config(*config)
@@ -1255,10 +1255,12 @@ struct Recorder : public radium::SampleRecorderInstance{
     printf("-------------------------     recorder CONSTRUCTOR %d (%p)\n", (int)_seqtrack_recording_generation, this);
     R_ASSERT(THREADING_is_main_thread());
     R_ASSERT(seqtrack->for_audiofiles);
-      
+
+    /*
     for(int ch=0;ch<num_ch;ch++)
       _peaks.set(ch, new radium::Peaks);
-
+    */
+    
     g_recorders[_id] = this;
   }
 
@@ -1267,9 +1269,12 @@ struct Recorder : public radium::SampleRecorderInstance{
     
     printf("-------------------------     recorder DESTRUCTOR %d (%p)\n", (int)_seqtrack_recording_generation, this);
     g_recorders.remove(_id);
-    
+
+    /*
     for(int ch=0;ch<num_ch;ch++)
       delete _peaks[ch];
+    */
+    delete[] _peaks;
   }
 
   void insert_audiofile(void){
@@ -1375,7 +1380,7 @@ public:
   
   void add_recorded_peak(int ch, float min_peak, float max_peak) override {
 
-    _peaks[ch]->add(radium::Peak(min_peak, max_peak));
+    _peaks[ch].add(radium::Peak(min_peak, max_peak));
 
     if (ch==num_ch-1){
 
@@ -2129,8 +2134,8 @@ unsigned int SEQTRACKPLUGIN_get_sample_color(const SoundPlugin *plugin, int64_t 
   return SAMPLEREADER_get_sample_color(SEQTRACKPLUGIN_get_sample_name(plugin, id, true));
 }
   
-radium::Peaks **SEQTRACKPLUGIN_get_peaks(const SoundPlugin *plugin, int64_t id){
-  R_ASSERT_RETURN_IF_FALSE2(PLUGIN_is_for_seqtrack(plugin), NULL);
+radium::Peakss SEQTRACKPLUGIN_get_peaks(const SoundPlugin *plugin, int64_t id){
+  R_ASSERT_RETURN_IF_FALSE2(PLUGIN_is_for_seqtrack(plugin), radium::Peakss(NULL));
 
   if (id <= HIGHEST_RECORDER_ID){
     Recorder *recorder = g_recorders.value(id);
@@ -2138,17 +2143,17 @@ radium::Peaks **SEQTRACKPLUGIN_get_peaks(const SoundPlugin *plugin, int64_t id){
     if (recorder==NULL){
       R_ASSERT_NON_RELEASE(false);
       printf("SEQTRACKPLUGIN_get_peaks: recorder==NULL\n");
-      return NULL;
+      return radium::Peakss(NULL);
     }
 
-    return recorder->_peaks.get_array();
+    return radium::Peakss(recorder->_peaks, recorder->num_ch); //.get_array();
   }
 
   Sample *sample = get_sample(plugin, id, true, true, true);
   if (sample==NULL)
-    return NULL;
+    return radium::Peakss(NULL);
 
-  return sample->_peaks->_peaks;
+  return radium::Peakss(sample->_peaks->_peaks, sample->_peaks->_num_ch);
 }
 
 /*

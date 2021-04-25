@@ -27,6 +27,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QTimer>
 
 #include "nsmtracker.h"
+#include "../audio/Peaks.hpp"
+
 #include "player_proc.h"
 #include "vector_proc.h"
 #include "placement_proc.h"
@@ -60,7 +62,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/Seqtrack_plugin_proc.h"
 #include "../audio/Juce_plugins_proc.h"
 #include "../audio/SampleReader_proc.h"
-#include "../audio/Peaks.hpp"
 #include "../audio/Envelope.hpp"
 #include "../audio/SoundProducer_proc.h"
 
@@ -128,7 +129,7 @@ float SEQBLOCK_get_max_sample_gain(const struct SeqTrack *seqtrack, const struct
   const SoundPlugin *plugin = (SoundPlugin*) seqtrack->patch->patchdata;
   R_ASSERT_RETURN_IF_FALSE2(plugin!=NULL, 1.0);
   
-  radium::Peaks **peaks = SEQTRACKPLUGIN_get_peaks(plugin, seqblock->sample_id);
+  radium::Peakss peaks = SEQTRACKPLUGIN_get_peaks(plugin, seqblock->sample_id);
 
   const double resample_ratio = SEQTRACKPLUGIN_get_resampler_ratio(plugin, seqblock->sample_id);
   
@@ -140,7 +141,7 @@ float SEQBLOCK_get_max_sample_gain(const struct SeqTrack *seqtrack, const struct
   float max = 0;
   
   for(int ch=0;ch<num_ch;ch++){
-    const radium::Peak peak = peaks[ch]->get(time1, time2);
+    const radium::Peak peak = peaks.peaks[ch].get(time1, time2);
     float peak_min = fabsf(peak.get_min());
     float peak_max = fabsf(peak.get_max());
     
