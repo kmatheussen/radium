@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define INCLUDE_SNDFILE_OPEN_FUNCTIONS 1
 #include "../common/nsmtracker.h"
+#include "../audio/Peaks.hpp"
 
 #include "../audio/SampleReader_proc.h"
 
@@ -53,7 +54,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../audio/Mixer_proc.h"
 
-#include "../audio/Peaks.hpp"
 #include "../audio/Envelope.hpp"
 
 #include "../embedded_scheme/s7extra_proc.h"
@@ -1157,7 +1157,7 @@ public:
       
   }
   
-  void drawWaveform(QPainter &p, const QRegion &update_region, const SoundPlugin *plugin, radium::Peaks **peaks, const struct SeqBlock *seqblock, Seqblock_Type type, const QColor &color, int64_t time1, int64_t time2, double x1, double x2, double w_y1, double w_y2) const {
+  void drawWaveform(QPainter &p, const QRegion &update_region, const SoundPlugin *plugin, const radium::Peakss &peaks, const struct SeqBlock *seqblock, Seqblock_Type type, const QColor &color, int64_t time1, int64_t time2, double x1, double x2, double w_y1, double w_y2) const {
 
     if (false==workingQRegionIntersects(update_region, QRectF(x1, w_y1, x2-x1, w_y2-w_y1))){
       //printf("   drawWaveform: No intersection\n");
@@ -1212,7 +1212,7 @@ public:
     const double pixels_per_peak = R_MAX(2.7, (double)root->song->tracker_windows->systemfontheight / 6.5);
     double width = x2-x1;
 
-    int num_ch = SEQTRACKPLUGIN_get_num_channels(plugin, seqblock->sample_id);
+    int num_ch = peaks.num_ch; //SEQTRACKPLUGIN_get_num_channels(plugin, seqblock->sample_id);
 
     int num_points = R_MAX(4, width / pixels_per_peak);
     if ((num_points % 2) != 0)
@@ -1258,7 +1258,7 @@ public:
 
           if (p_end_time > p_start_time) {
                 
-            const radium::Peak peak = peaks[ch]->get(p_start_time, p_end_time);
+            const radium::Peak peak = peaks.peaks[ch].get(p_start_time, p_end_time);
 
             double min,max;
                 
@@ -1328,8 +1328,8 @@ public:
       // 2. The thing
       // 3. Interior end (in a lot more transparent color)
       
-      radium::Peaks **peaks = SEQTRACKPLUGIN_get_peaks(plugin, seqblock->sample_id);
-      if (peaks != NULL){
+      radium::Peakss peaks = SEQTRACKPLUGIN_get_peaks(plugin, seqblock->sample_id);
+      if (peaks.peaks != NULL){
 
         const double resample_ratio = SEQTRACKPLUGIN_get_resampler_ratio(plugin, seqblock->sample_id);
 

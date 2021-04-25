@@ -309,7 +309,25 @@ public:
   }
   
 };
- 
+
+struct Peakss{
+  Peaks *peaks;
+  int num_ch;
+
+  Peakss(Peaks *peaks, int num_ch)
+    : peaks(peaks)
+    , num_ch(num_ch)
+  {}
+
+  Peakss(Peaks *argpeaks)
+    : peaks(NULL)
+    , num_ch(-1)
+  {
+    R_ASSERT(argpeaks==NULL);
+  }
+
+};
+    
 }
 
 
@@ -342,7 +360,7 @@ public:
 
   int64_t _total_frames = -1;
   int _num_ch = -1;
-  Peaks **_peaks = NULL;
+  Peaks *_peaks;
 
   radium::FilePath _filename;
   DEFINE_ATOMIC(int, num_visitors) = 0;
@@ -367,9 +385,10 @@ public:
       return;
     }
 
-    _peaks = (Peaks**)calloc(_num_ch, sizeof(Peaks*));
-    for(int ch=0;ch<_num_ch;ch++)
-      _peaks[ch] = new Peaks;
+    _peaks = new Peaks[_num_ch];
+    //(Peaks**)calloc(_num_ch, sizeof(Peaks*));
+    //for(int ch=0;ch<_num_ch;ch++)
+    //  _peaks[ch] = new Peaks;
     
     ATOMIC_SET(_is_valid, true);
 
@@ -384,10 +403,13 @@ public:
     R_ASSERT(ATOMIC_GET(num_visitors)==0);
 
     printf("Deleting DISKPeaks %S\n", _peak_filename.getString());
+    /*
     for(int ch=0;ch<_num_ch;ch++)
       delete _peaks[ch];
 
     free(_peaks);
+    */
+    delete[] _peaks;
   }
 
   bool is_valid(void){
@@ -398,14 +420,17 @@ public:
     return ATOMIC_GET(_percentage_read);
   }
 
-  bool has_valid_peaks_on_disk(void) const {
+  bool has_valid_peaks_on_disk(void) {
     if (DISK_file_exists(_peak_filename.get())==false)
       return false;
     
     int64_t peaks_creation_time = DISK_get_creation_time(_peak_filename.get());
     int64_t sample_creation_time = DISK_get_creation_time(_filename.get());
 
-    return peaks_creation_time > sample_creation_time;
+    if (peaks_creation_time < sample_creation_time)
+      return false;
+
+    return read_peaks_from_disk(true);
   }
 
   // Run inside the diskpeaks thread.
@@ -416,7 +441,7 @@ public:
     printf("   Reading peaks from file %S\n", _peak_filename.getString());
 
     if (has_valid_peaks_on_disk())
-      read_peaks_from_disk();
+      read_peaks_from_disk(false);
     else{
       read_peaks_from_sample_file();
     }
@@ -426,7 +451,7 @@ public:
 
 private:
 
-  void read_peaks_from_disk(void){
+  bool read_peaks_from_disk(bool only_check_validity) {
     bool success = false;
 
     disk_t *disk = DISK_open_binary_for_reading(_peak_filename.get());
@@ -496,6 +521,11 @@ private:
         }
       }
 
+      if (only_check_validity) {
+        success = true;
+        goto exit;
+      }
+      
 #define READ_EVERYTHING_AT_ONCE 1
       
 #if READ_EVERYTHING_AT_ONCE
@@ -523,14 +553,14 @@ private:
           abort();
         }
 #endif
-        _peaks[ch]->add(Peak(min,max));
+        _peaks[ch].add(Peak(min,max));
 #else
         float minmax[2];
         
         if (DISK_read_binary(disk, &minmax[0], sizeof(float)*2)==-1)
           goto exit;
         
-        _peaks[ch]->add(Peak(minmax[0], minmax[1]));
+        _peaks[ch].add(Peak(minmax[0], minmax[1]));
 #endif
         
         {
@@ -559,12 +589,12 @@ private:
 
     DISK_close_and_delete(disk);
 
-    if (success==false){
+    if (success==false && !only_check_validity){
       read_peaks_from_sample_file();
       //start();
     }
 
-    return;
+    return success;
   }
 
   void store_peaks_to_disk(void){
@@ -597,17 +627,17 @@ private:
 
       {
         unsigned char source[4];
-        put_le_32(source, _peaks[ch]->_peaks.size());
+        put_le_32(source, _peaks[ch]._peaks.size());
         DISK_write_binary(disk, source, 4);
       }
 
       {
         unsigned char source[8];
-        put_le_64(source, _peaks[ch]->_total_frames);
+        put_le_64(source, _peaks[ch]._total_frames);
         DISK_write_binary(disk, source, 8);
       }
 
-      for(const auto &peak : _peaks[ch]->_peaks){
+      for(const auto &peak : _peaks[ch]._peaks){
         peak.write_to_disk(disk);
       }
     }
@@ -671,7 +701,7 @@ private:
           samples[ch][i] = interleaved_samples[pos++];
       
       for(int ch=0;ch<_num_ch;ch++)
-        _peaks[ch]->add_samples(samples[ch], num_read, is_finished ? Peaks::THIS_IS_THE_LAST_CALL : Peaks::MORE_IS_COMING_LATER);
+        _peaks[ch].add_samples(samples[ch], num_read, is_finished ? Peaks::THIS_IS_THE_LAST_CALL : Peaks::MORE_IS_COMING_LATER);
       
       if (is_finished==true)
         break;
