@@ -2485,7 +2485,7 @@ $(T)Resampler.o: audio/Resampler.cpp audio/SampleInterpolator.cpp
 #	$(CCC2) audio/Resampler.cpp $(CPPOPT) `$(PKG) --cflags samplerate`
 	$(CCC2) audio/Resampler.cpp $(CPPOPT) $(CPUOPT) `$(PKG) --cflags samplerate`
 
-$(T)SoundFonts.o: audio/SoundFonts.cpp
+$(T)SoundFonts.o: audio/SoundFonts.cpp $(LIBGIG_PATH)/SF.cpp
 	$(CCC2) audio/SoundFonts.cpp $(QTOPT) -Ibin/packages/libgig/src/
 # `$(PKG) --cflags glib-2.0`
 
