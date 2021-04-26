@@ -331,7 +331,7 @@ class SampleProvider{
 
 public:
 
-  int _num_ch;
+  int _num_ch = -1;
   double _samplerate;
   int64_t _num_slices;
   int64_t _num_frames;
@@ -356,20 +356,22 @@ public:
   radium::FilePath _filename;
   radium::FilePath _filename_without_path;
 
-  SNDFILE *create_sndfile2(SF_INFO *sf_info){
-    return radium_sf_open(_filename.get(),SFM_READ,sf_info);
-  }
-
-  SNDFILE *create_sndfile(std::string &error){
-    SF_INFO sf_info; memset(&sf_info,0,sizeof(sf_info));
-    auto *ret = create_sndfile2(&sf_info);
-    
+  SNDFILE *create_sndfile2(SF_INFO *sf_info, std::string &error){
+    auto *ret = radium_sf_open(_filename.get(),SFM_READ,sf_info);
     if(ret==NULL) {
       error = sf_strerror(NULL);
       return NULL;
     }
+    return ret;
+  }
+
+  SNDFILE *create_sndfile(std::string &error){
+    R_ASSERT_NON_RELEASE(_num_ch > 0);
     
-    if (sf_info.channels != _num_ch){
+    SF_INFO sf_info; memset(&sf_info,0,sizeof(sf_info));
+    auto *ret = create_sndfile2(&sf_info, error);
+
+    if (ret != NULL && sf_info.channels != _num_ch){
       error = "Number of channels have changed. You must restart the program to use the new file.";
       sf_close(ret);
       return NULL;      
@@ -396,9 +398,10 @@ public:
     }
     
     SF_INFO sf_info; memset(&sf_info,0,sizeof(sf_info));
-    SNDFILE *sndfile = create_sndfile2(&sf_info);
+    std::string error;
+    SNDFILE *sndfile = create_sndfile2(&sf_info, error);
     if (sndfile==NULL){
-      GFX_addMessage("Could not open file \"%S\"", filename.id);
+      GFX_addMessage("Could not open file \"%S\": %s", filename.id, error.c_str());
       return;
     }
 
