@@ -360,9 +360,15 @@ public:
     return radium_sf_open(_filename.get(),SFM_READ,sf_info);
   }
 
-  SNDFILE *create_sndfile(void){
+  SNDFILE *create_sndfile(std::string &error){
     SF_INFO sf_info; memset(&sf_info,0,sizeof(sf_info));
-    return create_sndfile2(&sf_info);
+    auto *ret = create_sndfile2(&sf_info);
+    if (sf_info.channels != _num_ch){
+      error = "Number of channels have changed. You must restart the program to use the new file.";
+      sf_close(ret);
+      ret = NULL;
+    }
+    return ret;
   }
 
   // Note: Probably no need to optimize this constructor (by lazily allocating what we need).
@@ -533,8 +539,11 @@ public:
       } else {
 
         float *buffer = _num_ch==1 ? slicebuffer->samples : interleaved_samples;
-        
-        int num_frames_read = sf_readf_float(sndfile, buffer, SLICE_SIZE);
+
+        // Note: We are using sf_read_float instead of sf_readf_float here in order to avoid memory corruption if number of channels is changed
+        // in the file while program is open. (It took a long time to track down that bug.)
+        //
+        int num_frames_read = sf_read_float(sndfile, buffer, SLICE_SIZE * _num_ch) / _num_ch;
         
         if (num_frames_read <= 0){
           
@@ -635,9 +644,10 @@ public:
 #endif
         
         if (client->_sndfile==NULL){
-          client->_sndfile = client->_provider->create_sndfile();
+          std::string error = "File not found";
+          client->_sndfile = client->_provider->create_sndfile(error);
           if (client->_sndfile==NULL)
-            RT_message("Could not open file \"%S\"", client->_provider->_filename.getString());
+            RT_message("Could not open file \"%S\": %s", client->_provider->_filename.getString(), error.c_str());
         }
 
         SPT_fill_slice(client->_sndfile, slice, slice_num);          
