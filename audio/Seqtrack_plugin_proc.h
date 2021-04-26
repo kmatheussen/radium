@@ -88,10 +88,9 @@ extern LANGSPEC void SEQTRACKPLUGIN_convert_old_granular_parameters(const struct
 extern LANGSPEC enum ResamplerType SEQTRACKPLUGIN_get_resampler_type(const struct SoundPlugin *plugin, int64_t id);
 
 #ifdef __cplusplus
-namespace radium{
-  class Peaks;
-}
-extern radium::Peaks **SEQTRACKPLUGIN_get_peaks(const SoundPlugin *plugin, int64_t id);
+#ifdef RADIUM_AUDIO_PEAKS_HPP
+extern radium::Peakss SEQTRACKPLUGIN_get_peaks(const SoundPlugin *plugin, int64_t id);
+#endif
 #endif
 
 extern LANGSPEC const char *BUS_get_bus_name(int bus_num);
