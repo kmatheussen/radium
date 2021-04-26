@@ -363,11 +363,18 @@ public:
   SNDFILE *create_sndfile(std::string &error){
     SF_INFO sf_info; memset(&sf_info,0,sizeof(sf_info));
     auto *ret = create_sndfile2(&sf_info);
+    
+    if(ret==NULL) {
+      error = sf_strerror(NULL);
+      return NULL;
+    }
+    
     if (sf_info.channels != _num_ch){
       error = "Number of channels have changed. You must restart the program to use the new file.";
       sf_close(ret);
-      ret = NULL;
+      return NULL;      
     }
+    
     return ret;
   }
 
@@ -644,7 +651,7 @@ public:
 #endif
         
         if (client->_sndfile==NULL){
-          std::string error = "File not found";
+          std::string error;
           client->_sndfile = client->_provider->create_sndfile(error);
           if (client->_sndfile==NULL)
             RT_message("Could not open file \"%S\": %s", client->_provider->_filename.getString(), error.c_str());
