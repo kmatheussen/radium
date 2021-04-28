@@ -1022,7 +1022,7 @@ public:
     last_node.time = new_duration;
 
     {
-      radium::PlayerLockOnlyIfNeeded::ScopedLockPause pause(lock);
+      radium::PlayerLockOnlyIfNeeded::ScopedLockPause pause(lock); // why?
       create_new_rt_data();
     }
   }
@@ -1039,7 +1039,7 @@ public:
     
     for(T &node : _automation){
       if (node.time > new_duration){
-        radium::PlayerLockOnlyIfNeeded::ScopedLockPause pause(lock);
+        radium::PlayerLockOnlyIfNeeded::ScopedLockPause pause(lock); // why ?
         return cut_after(new_duration);
       }
     }
@@ -1054,7 +1054,7 @@ public:
     }
     
     {
-      radium::PlayerLockOnlyIfNeeded::ScopedLockPause pause(lock);
+      radium::PlayerLockOnlyIfNeeded::ScopedLockPause pause(lock); // why ?
       
       T new_node = last_node;
       new_node.time = new_duration;
