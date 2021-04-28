@@ -231,11 +231,13 @@ static const struct NodeLine *create_nodelines(
   R_ASSERT(list != NULL);
   R_ASSERT(list->next != NULL || last_element!=NULL);
 
+#if !defined(RELEASE) // somewhat serious bug, but the backtrace we get at this point is not very useful, so it's very little point bothering the user with it.
   if (last_element!=NULL){
     const Place *start = &list->p;
     const Place *end = &last_element->p;
     R_ASSERT(PlaceGreaterThan(end, start));
   }
+#endif
   
   // 1. Create straight forward nodelines from the list
   {
