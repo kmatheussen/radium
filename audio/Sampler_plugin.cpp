@@ -301,7 +301,7 @@ struct Sample{
 };
 
 
-#define MIN_LOOP_LENGTH 32
+#define MIN_LOOP_LENGTH 2
 
 
 // Never access sample->loop_start and sample->loop_end directly. Instead use this one to always have legal values.
@@ -1031,7 +1031,9 @@ static long RT_src_callback(void *cb_data, float **out_data){
       ret = RT_src_callback_reverse(voice, loop_data, sample, data, start_pos, out_data, loop);
       
     } else {
-    
+
+      //int bef = start_pos;
+      
       if (start_pos >= loop_data._end)
         start_pos = loop_data._start;
       
@@ -1039,7 +1041,17 @@ static long RT_src_callback(void *cb_data, float **out_data){
         ret = RT_src_callback_with_crossfade_looping(voice, loop_data, sample, data, start_pos, out_data);    
       else
         ret = RT_src_callback_with_normal_looping(voice, loop_data, sample, data, start_pos, out_data);
-      
+
+      /*
+      printf("   RET: %d. voice->pos: %d. bef: %d. loop_data._start: %d. loop_data._end: %d. data: %p\n",
+             (int)ret,
+             (int)voice->pos,
+             (int)bef,
+             (int)start_pos,
+             (int)loop_data._end,
+             *out_data);
+             */
+             
       if (loop){
         R_ASSERT_NON_RELEASE(voice->pos < loop_data._end); // happens when changing between ping-poing and non-ping-pong
       }
@@ -3248,9 +3260,14 @@ static bool load_sample(Data *data, filepath_t filename, int instrument_number, 
         
       break;
     }
-
-    if (sample.num_frames==0){
+    
+    if (sample.num_frames < 0){
       R_ASSERT(false);
+      return false;
+    }
+    
+    if (sample.num_frames < MIN_LOOP_LENGTH) {
+      GFX_Message(NULL,"Unable to load soundfile %S. File contains too few samples: %d", filename.id, (int)sample.num_frames);
       return false;
     }
   }
