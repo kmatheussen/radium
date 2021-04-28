@@ -43,48 +43,41 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #ifndef TEST_NOTES
 
-static const int end_places_size = 1024*32;
-static const Place **end_places = NULL;
-
-static int last_free_polyphony_num;
-
-static int FindFirstFreePolyphony_num(const Place *p){
-  int i;
-  for(i=0 ; i < end_places_size ; i++){
-    //printf("i: %d, last_free:%d, p: %s\n", i, last_free_polyphony_num, PlaceToString(p));
-    if (i==last_free_polyphony_num) {
-      last_free_polyphony_num++;
+static int FindFirstFreePolyphony_num(const std::vector<Place> &end_places, const Place *p){
+  
+  for(int i=0 ; i < (int)end_places.size() ; i++)
+    if (PlaceGreaterOrEqual(p, &end_places[i]))
       return i;
-    }
-    if (PlaceGreaterOrEqual(p, end_places[i]))
-      return i;
-  }
 
-  return 0; // A polyphony of 32*1024 voices. Impressive.
+  return (int)end_places.size();
 }
 
 // Also sets the track->polyphony attribute.
 void SetNotePolyphonyAttributes(struct Tracks *track){
   R_ASSERT_RETURN_IF_FALSE(track!=NULL);
-  
+  R_ASSERT(THREADING_is_main_thread()); // This function is not thread safe.
+ 
   //printf("**************  Track: %d\n", track->l.num);
-  last_free_polyphony_num = 0; // reset
-  
-  if (end_places==NULL)
-    end_places = (const Place**)V_calloc(end_places_size,sizeof(const Place*)); // Using calloc since this memory is only used temporarily in here, so it's not necessary for the GC to know about it in any way.
+  static std::vector<Place> end_places;
 
+  end_places.clear();
+  
   track->polyphony = 1;
   
   struct Notes *note = track->gfx_notes!=NULL ? track->gfx_notes : track->notes;
   while(note != NULL){
     //printf("**************  Note at: %s\n", PlaceToString(&note->l.p));
-    int polyphony_num = FindFirstFreePolyphony_num(&note->l.p);
+    int polyphony_num = FindFirstFreePolyphony_num(end_places, &note->l.p);
     note->polyphony_num = polyphony_num;
     
     if (polyphony_num+1 > track->polyphony)
       track->polyphony = polyphony_num+1;
+
+    if (polyphony_num==(int)end_places.size())
+      end_places.push_back(note->end);
+    else
+      end_places[polyphony_num] = note->end;
     
-    end_places[polyphony_num] = &note->end;
     note = NextNote(note);
   }
 }
