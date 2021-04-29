@@ -860,6 +860,9 @@ static void GFX_PP_Update_internal(struct Patch *patch, bool is_loading, bool op
       RError("PP_Update: Don't know how to handle instrument %p",patch->instrument);
     }
 
+    
+    set_editor_focus(); // Sample browser sometimes steels keyboard focus when switching to a new instrument.
+
     // background color for editor tracks assigned to current instrument are slightly different than background color for non-current instruments.
     if(patch!=NULL && patch_used_in_current_editor_block(patch))
       root->song->tracker_windows->must_redraw = true;
