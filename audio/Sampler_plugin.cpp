@@ -3455,13 +3455,22 @@ static bool set_new_sample(struct SoundPlugin *plugin,
                            int instrument_number,
                            enum ResamplerType resampler_type,
                            bool use_sample_file_middle_note,
-                           bool is_loading)
+                           bool is_loading,
+                           int64_t loop_start = -1,
+                           int64_t loop_end = -1)
 {
   bool success=false;
 
   Data *data = NULL;
   Data *old_data = (Data*)plugin->data;
 
+#if !defined(RELEASE)
+  if (loop_start < 0 || loop_end < 0)
+    R_ASSERT(loop_start==-1 && loop_end==-1);
+  else if (loop_start != 0 || loop_end != 0)
+    R_ASSERT(loop_end > loop_start);
+#endif
+  
   /*
   int64_t org_loop_start = data->loop_start; //PLUGIN_get_effect_value2(plugin, EFF_LOOP_START, VALUE_FROM_STORAGE, EFFECT_FORMAT_NATIVE);
   int64_t org_loop_end = data->loop_end; //PLUGIN_get_effect_value2(plugin, EFF_LOOP_END, VALUE_FROM_STORAGE, EFFECT_FORMAT_NATIVE);
@@ -3480,14 +3489,15 @@ static bool set_new_sample(struct SoundPlugin *plugin,
   if(load_sample(data,filename,instrument_number, false)==false)
     goto exit;
 
+
   if (keepOldLoopWhenLoadingNewSample()){
 
+    int64_t loop_start2 = loop_start >= 0 ? loop_start : data->p.loop_start;
+    int64_t loop_end2 = loop_end >= 0 ? loop_end : data->p.loop_end;
+    
     if (useSameLoopFramesWhenLoadingNewSample()) {
       
-        RT_set_loop_points_complete(plugin, data,
-                                    data->p.loop_start,
-                                    data->p.loop_end
-                                    );
+      RT_set_loop_points_complete(plugin, data, loop_start2, loop_end2);
         
     } else {
       
@@ -3497,8 +3507,8 @@ static bool set_new_sample(struct SoundPlugin *plugin,
       if (org_num_frames > 0 && new_num_frames > 0) {
         
         RT_set_loop_points_complete(plugin, data,
-                                    scale_int64(data->p.loop_start, 0, org_num_frames, 0, new_num_frames),
-                                    scale_int64(data->p.loop_end, 0, org_num_frames, 0, new_num_frames)
+                                    scale_int64(loop_start2, 0, org_num_frames, 0, new_num_frames),
+                                    scale_int64(loop_end2, 0, org_num_frames, 0, new_num_frames)
                                     );
         
       } else {
@@ -3511,12 +3521,15 @@ static bool set_new_sample(struct SoundPlugin *plugin,
     
   } else {
 
+    int64_t loop_start2 = loop_start >= 0 ? loop_start : 0;
+    int64_t loop_end2 = loop_end >= 0 ? loop_end : 0;
+
     //int64_t new_num_frames = data->samples[0]==NULL ? 0 : data->samples[0].num_frames;
 
     //printf("**STARTING. Org loop points: %d -> %d. New loop points: %d -> %d\n", (int)old_data->p.loop_start, (int)old_data->p.loop_end, (int)data->p.loop_start, (int)data->p.loop_end);
     
     PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_OVERRIDE_DEFAULT, 0.0f, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE); // turn off override default.
-    RT_set_loop_points_complete(plugin, data, 0, 0, true);
+    RT_set_loop_points_complete(plugin, data, loop_start2, loop_end2, true);
     
     // Put loop_onoff into storage.
     //PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_ONOFF, ATOMIC_GET(data->p.loop_onoff)==true?1.0f:0.0f, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
@@ -3966,7 +3979,7 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
     bool           use_sample_file_middle_note = true;
     int            instrument_number = HASH_get_int32(state, "instrument_number");
     enum ResamplerType resampler_type = (enum ResamplerType)HASH_get_int(state, "resampler_type");
-    int64_t        loop_start        = 0;
+    int64_t        loop_start        = -1;
     int64_t        loop_length       = 0;
 
     if (HASH_has_key(state, "use_sample_file_middle_note"))
@@ -3985,7 +3998,7 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
     if(isIllegalFilepath(filename)) // not supposed to happen though. Assertion in PLUGIN_DISK_get_audio_filename.
       goto exit;
     
-    bool successfully_set_new_sample = set_new_sample(plugin,filename,instrument_number,resampler_type, use_sample_file_middle_note, is_loading);
+    bool successfully_set_new_sample = set_new_sample(plugin,filename,instrument_number,resampler_type, use_sample_file_middle_note, is_loading, loop_start, loop_end);
     
     if(!successfully_set_new_sample)
       GFX_addMessage("Could not load soundfile \"%S\". (instrument number: %d)\n", filename.id,instrument_number);
@@ -3994,12 +4007,6 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
 
     if (is_loading && disk_load_version <= 0.865){
       data->p.note_adjust = int(data->p.note_adjust);
-    }
-    
-    // Loop points. Setting loop points is tricky. Make sure everything is right.
-    {
-      if(successfully_set_new_sample)
-        RT_set_loop_points_complete(plugin, data, loop_start, loop_end);
     }
   }
   
