@@ -356,6 +356,7 @@
 
   (define auto-button (<new> :button gui x-split1 y1 x-split2 y2
                              :text "A"
+                             :statusbar-text "Automatically set pianoroll range"
                              :callback-release (lambda ()
                                                  (<ra> :set-pianoroll-auto-range tracknum))
                              ))
