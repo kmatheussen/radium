@@ -15,21 +15,15 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
+#pragma once
 
 
-
-#ifndef TRACKER_INCLUDE
-
-
-extern void SaveWBlock(const struct WBlocks *wblock, bool save_all);
-extern struct WBlocks *LoadWBlock(void);
-extern void DLoadWBlocks(
-                         const struct Root *newroot,
-                         struct Tracker_Windows *window,
-                         struct WBlocks *wblock,
-                         bool dload_all
-);
-
-
-#endif
+extern LANGSPEC void SaveWBlock(const struct WBlocks *wblock, bool save_all);
+extern LANGSPEC struct WBlocks *LoadWBlock(void);
+extern LANGSPEC void DLoadWBlocks(
+                                  const struct Root *newroot,
+                                  struct Tracker_Windows *window,
+                                  struct WBlocks *wblock,
+                                  bool dload_all
+                                  );
 

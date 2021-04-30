@@ -232,7 +232,7 @@ public:
 #if 1
   bool _has_set_realtime_priority = false;
 #endif
-  
+
   void audioDeviceIOCallback(const float **inputChannelData, 
 			     int 	totalNumInputChannels, 
 			     float ** 	outputChannelData, 
@@ -240,7 +240,7 @@ public:
 			     int 	numSamples
 			     )
     override
-  {
+  {    
     if (numSamples < RADIUM_BLOCKSIZE || MIXER_dummy_driver_is_running()){
 
       if (!MIXER_dummy_driver_is_running()){

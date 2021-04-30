@@ -16,15 +16,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
+#pragma once
 
 
-#ifndef TRACKER_INCLUDE
+extern LANGSPEC void SaveFXs(vector_t *fxss,struct Tracks *track);
 
-extern void SaveFXs(vector_t *fxss,struct Tracks *track);
+extern LANGSPEC struct FXs *LoadFXs(struct Tracks *track);
 
-extern struct FXs *LoadFXs(struct Tracks *track);
-
-extern void DLoadFXs(const struct Root *newroot,struct Tracks *track, vector_t *fxss);
-
-#endif
+extern LANGSPEC void DLoadFXs(const struct Root *newroot,struct Tracks *track, vector_t *fxss);
 

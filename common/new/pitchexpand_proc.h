@@ -1,12 +1,15 @@
-void PExpandRange_CurrPos(
+#pragma once
+
+
+extern LANGSPEC void PExpandRange_CurrPos(
 			  struct Tracker_Windows *window,
 			  float scalefactor
 );
-void PExpandTrack_CurrPos(
+extern LANGSPEC void PExpandTrack_CurrPos(
 			  struct Tracker_Windows *window,
 			  float scalefactor
 );
-void PExpandBlock_CurrPos(
+extern LANGSPEC void PExpandBlock_CurrPos(
 			  struct Tracker_Windows *window,
 			  float scalefactor
 );

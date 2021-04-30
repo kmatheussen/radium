@@ -21,6 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <inttypes.h>
 
 #include "nsmtracker.h"
+#include "TimeData.hpp"
+#include "FX.hpp"
 #include "placement_proc.h"
 #include "list_proc.h"
 #include "undo_tracks_proc.h"
@@ -193,7 +195,7 @@ static bool Quantitize_range(
 
         bool ret = false;
         
-        struct Tracks *track = ListFindElement1(&wblock->block->tracks->l,wblock->range.x1);
+        struct Tracks *track = (struct Tracks *)ListFindElement1(&wblock->block->tracks->l,wblock->range.x1);
 
         int tracknum;
 	for(tracknum=0;tracknum<=wblock->range.x2-wblock->range.x1;tracknum++){

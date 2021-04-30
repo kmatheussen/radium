@@ -1,9 +1,12 @@
-void BackWardsRange_CurrPos(
+#pragma once
+
+
+extern LANGSPEC void BackWardsRange_CurrPos(
 	struct Tracker_Windows *window
 );
-void BackWardsTrack_CurrPos(
+extern LANGSPEC void BackWardsTrack_CurrPos(
 	struct Tracker_Windows *window
 );
-void BackWardsBlock_CurrPos(
+extern LANGSPEC void BackWardsBlock_CurrPos(
 	struct Tracker_Windows *window
 );

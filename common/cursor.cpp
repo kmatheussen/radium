@@ -114,7 +114,7 @@ static void make_cursor_visible(struct Tracker_Windows *window,struct WBlocks *w
   if (x2 > wblock->t.x2){
     int bef = wblock->skew_x;
     wblock->skew_x -= x2 - wblock->t.x2;
-    struct WTracks *wtrack = ListFindElement1(&wblock->wtracks->l,track);
+    struct WTracks *wtrack = (struct WTracks *)ListFindElement1(&wblock->wtracks->l,track);
     if (0)
       printf("Skewing right: %d -> %d. x2: %d. wblock->t.x: %d -> %d. wtrack->notearea.x2: %d, track: %d. subtrack: %d\n",
              bef, wblock->skew_x,

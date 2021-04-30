@@ -24,6 +24,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "nsmtracker.h"
 #include "../config/config.h"
+#include "TimeData.hpp"
+#include "FX.hpp"
 #include "vector_proc.h"
 #include "fxlines_proc.h"
 #include "disk.h"
@@ -36,7 +38,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 void SaveFXs(vector_t *fxss,struct Tracks *track){
-  VECTOR_FOR_EACH(struct FXs *fxs, fxss){
+  VECTOR_FOR_EACH(struct FXs *, fxs, fxss){
 
     DC_start("FXS"); {
 
@@ -115,7 +117,7 @@ end:
 
 
 void DLoadFXs(const struct Root *newroot,struct Tracks *track, vector_t *fxss){
-  VECTOR_FOR_EACH(struct FXs *fxs, fxss){
+  VECTOR_FOR_EACH(struct FXs *, fxs, fxss){
    DLoadFX(newroot, track, fxs, fxs->fx);
   }END_VECTOR_FOR_EACH;
 }

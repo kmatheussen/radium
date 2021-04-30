@@ -22,6 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "nsmtracker.h"
 #include "../config/config.h"
+#include "TimeData.hpp"
+#include "FX.hpp"
 #include "disk.h"
 #include "patch_proc.h"
 
@@ -61,7 +63,7 @@ struct FX *LoadFX(struct Tracks *track){
                 "effect_num",
                 "patchnum"
 	};
-	struct FX *fx=DC_alloc(sizeof(struct FX));
+	struct FX *fx=(struct FX*)DC_alloc(sizeof(struct FX));
 	DC_LoadN(); // ignore. Earlier, there was a field called fx->num, which was just a number containing fx->effect_num.
 
         fx->is_enabled = true;
@@ -75,9 +77,9 @@ var0:
 	fx->name=DC_LoadSNoMatterWhat();
 	goto start;
 var1:
-	fx->color=DC_LoadI();
+	fx->color=(ColorNums)DC_LoadI();
 	if(dc.colorize==true){
-		fx->color=dc.startcolor;
+		fx->color=(ColorNums)dc.startcolor;
 		dc.startcolor++;
 		if(dc.startcolor==256){
 			dc.startcolor=4;

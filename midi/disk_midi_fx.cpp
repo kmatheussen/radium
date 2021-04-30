@@ -23,6 +23,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "nsmtracker.h"
+#include "../common/TimeData.hpp"
+#include "../common/FX.hpp"
 #include "../common/disk.h"
 #include "midi_instrument.h"
 #include "midi_fx_proc.h"
@@ -46,7 +48,7 @@ void *MIDILoadFX(struct FX *fx,const struct Tracks *track){
 	const char **objs=NULL;
 	const char *vars[1]={"cc"};
 
-	struct MIDI_FX *midi_fx=DC_alloc(sizeof(struct MIDI_FX));
+	struct MIDI_FX *midi_fx=(struct MIDI_FX *)DC_alloc(sizeof(struct MIDI_FX));
 
 	midi_fx->name=fx->name;
 	midi_fx->min=fx->min;
