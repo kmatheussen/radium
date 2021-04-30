@@ -1,9 +1,11 @@
-void InvertRange_CurrPos(
+#pragma once
+
+extern LANGSPEC void InvertRange_CurrPos(
 	struct Tracker_Windows *window
 );
-void InvertTrack_CurrPos(
+extern LANGSPEC void InvertTrack_CurrPos(
 	struct Tracker_Windows *window
 );
-void InvertBlock_CurrPos(
+extern LANGSPEC void InvertBlock_CurrPos(
 	struct Tracker_Windows *window
 );

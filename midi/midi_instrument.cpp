@@ -19,6 +19,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "nsmtracker.h"
+#include "../common/TimeData.hpp"
+#include "../common/FX.hpp"
 #include "../common/vector_proc.h"
 #include "../common/visual_proc.h"
 #include "../common/playerclass.h"

@@ -15,29 +15,26 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
+#pragma once
 
 
-#ifndef TRACKER_INCLUDE
-
-extern void TransposeRange_CurrPos(
+extern LANGSPEC void TransposeRange_CurrPos(
 	struct Tracker_Windows *window,
 	int trans
 );
 
-void TransposeNote_CurrPos(
+extern LANGSPEC void TransposeNote_CurrPos(
 	struct Tracker_Windows *window,
 	int trans
 );
 
-extern void TransposeTrack_CurrPos(
+extern LANGSPEC void TransposeTrack_CurrPos(
 	struct Tracker_Windows *window,
 	int trans
 );
 
-extern void TransposeBlock_CurrPos(
+extern LANGSPEC  void TransposeBlock_CurrPos(
 	struct Tracker_Windows *window,
 	int trans
 );
-
-#endif
 

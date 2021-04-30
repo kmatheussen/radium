@@ -1,5 +1,7 @@
 
 #include "nsmtracker.h"
+#include "TimeData.hpp"
+#include "FX.hpp"
 #include "disk.h"
 #include "disk_save_proc.h"
 #include "disk_load_proc.h"
@@ -32,7 +34,7 @@ static void add_track_patches(vector_t *v, const struct Tracks *track){
   if (track->patch != NULL && !VECTOR_is_in_vector(v, track->patch))
     VECTOR_push_back(v, track->patch);
   
-  VECTOR_FOR_EACH(struct FXs *fxs, &track->fxs){
+  VECTOR_FOR_EACH(struct FXs *, fxs, &track->fxs){
     struct FX *fx = fxs->fx;
     if (fx->patch != NULL && !VECTOR_is_in_vector(v, fx->patch))
       VECTOR_push_back(v, fx->patch);
@@ -40,7 +42,7 @@ static void add_track_patches(vector_t *v, const struct Tracks *track){
 }
 
 static void save_block_patches(const struct Blocks *block){
-  vector_t v = {0};
+  vector_t v = {};
 
   const struct Tracks *track = block->tracks;
   while(track!=NULL){
@@ -53,7 +55,7 @@ static void save_block_patches(const struct Blocks *block){
 }
 
 static void save_track_patches(const struct Tracks *track){
-  vector_t v = {0};
+  vector_t v = {};
 
   add_track_patches(&v, track);
   
@@ -65,7 +67,7 @@ static void remove_all_patches_and_fxs_from_track(struct Tracks *track){
   if (track->patch != NULL)
     track->patch->id = make_instrument(-1);
   
-  vector_t fxs = {0};
+  vector_t fxs = {};
   track->fxs = fxs;
 }
   
@@ -124,7 +126,7 @@ void LoadBlockFromDisk(filepath_t filename){
   }
     
 
-  NInt blockpos=window->wblock->l.num+1;
+  NInt blockpos; blockpos=window->wblock->l.num+1;
   
   if (Load_Initialize(filename, "RADIUM BLOCK")==false) {
     goto exit;
@@ -137,7 +139,7 @@ void LoadBlockFromDisk(filepath_t filename){
     return;
   }
 
-  float block_version = DC_LoadF();
+  float block_version; block_version = DC_LoadF();
   if (block_version>BLOCKDISKVERSION+0.05){
     GFX_Message2(NULL,true,"Need a newer version of Radium to load this file. The file version is %f, while this program only supports %f.\n",block_version,BLOCKDISKVERSION);
     goto exit;
@@ -160,7 +162,7 @@ void LoadBlockFromDisk(filepath_t filename){
     return;
   }
 
-  struct WBlocks *wblock = LoadWBlock();
+  struct WBlocks *wblock; wblock = LoadWBlock();
   wblock->l.num = blockpos;
 
   DC_Next();
@@ -170,7 +172,7 @@ void LoadBlockFromDisk(filepath_t filename){
     goto exit;
   }
 
-  struct Blocks *block = LoadBlock();
+  struct Blocks *block; block = LoadBlock();
   block->l.num = blockpos;
 
   remove_all_patches_and_fxs_from_loaded_block(block);
@@ -280,7 +282,7 @@ void LoadTrackFromDisk(filepath_t filename, struct Tracker_Windows *window, stru
     return;
   }
 
-  float track_version = DC_LoadF();
+  float track_version; track_version = DC_LoadF();
   if (track_version>TRACKDISKVERSION+0.05){
     GFX_Message2(NULL,true,"Need a newer version of Radium to load this file. The file version is %f, while this program only supports %f.\n",track_version,TRACKDISKVERSION);
     goto exit;
@@ -303,7 +305,7 @@ void LoadTrackFromDisk(filepath_t filename, struct Tracker_Windows *window, stru
     return;
   }
 
-  struct WTracks *wtrack = LoadWTrack();
+  struct WTracks *wtrack; wtrack = LoadWTrack();
   wtrack->l.num = old_wtrack->l.num;
 
   DC_Next();
@@ -313,7 +315,7 @@ void LoadTrackFromDisk(filepath_t filename, struct Tracker_Windows *window, stru
     goto exit;
   }
 
-  struct Tracks *track = LoadTrack();
+  struct Tracks *track; track = LoadTrack();
   track->l.num = old_wtrack->l.num;
 
   DISK_close_and_delete(dc.file);

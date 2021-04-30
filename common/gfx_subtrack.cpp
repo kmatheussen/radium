@@ -17,6 +17,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "nsmtracker.h"
+#include "TimeData.hpp"
+#include "FX.hpp"
 #include "list_proc.h"
 #include "notes_proc.h"
 #include "wtracks_proc.h"
@@ -247,7 +249,7 @@ int GetXSubTrack_B1(
 	int subtrack
 ){
   if(track>=0){
-    struct WTracks *wtrack = ListFindElement1(&wblock->wtracks->l,track);
+    struct WTracks *wtrack = (struct WTracks *)ListFindElement1(&wblock->wtracks->l,track);
     if (wtrack==NULL)
       wtrack=wblock->wtrack; // error is shown in ListFindElement1.
     
@@ -286,7 +288,7 @@ int GetXSubTrack_B2(
 	int subtrack
 ){
   if(track>=0){
-    struct WTracks *wtrack = ListFindElement1(&wblock->wtracks->l,track);
+    struct WTracks *wtrack = (struct WTracks *)ListFindElement1(&wblock->wtracks->l,track);
     if (wtrack==NULL)
       wtrack = wblock->wtrack; // error is shown in ListFindElement1.
 

@@ -1026,8 +1026,8 @@ $(T)placement.o:  $(BUILD_DEPENDENCIES) $(CD)placement.c
 $(T)t_gc.o:  $(BUILD_DEPENDENCIES) $(CD)t_gc.c
 	$(CC2) $(CD)t_gc.c $(OPT)
 
-$(T)cursor.o:  $(BUILD_DEPENDENCIES) $(CD)cursor.c
-	$(CC2) $(CD)cursor.c $(OPT)
+$(T)cursor.o:  $(BUILD_DEPENDENCIES) $(CD)cursor.cpp
+	$(CCC2) $(CD)cursor.cpp $(QTOPT)
 
 $(T)cursor_updown.o:  $(BUILD_DEPENDENCIES) $(CD)cursor_updown.cpp
 	$(CCC2) $(CD)cursor_updown.cpp $(QTOPT)
@@ -1038,8 +1038,8 @@ $(T)velocities.o:  $(BUILD_DEPENDENCIES) $(CD)velocities.cpp
 $(T)realline_calc.o:  $(BUILD_DEPENDENCIES) $(CD)realline_calc.c
 	$(CC2) $(CD)realline_calc.c $(OPT)
 
-$(T)gfx_subtrack.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_subtrack.c common/nsmtracker.h
-	$(CC2) $(CD)gfx_subtrack.c $(OPT)
+$(T)gfx_subtrack.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_subtrack.cpp common/nsmtracker.h
+	$(CCC2) $(CD)gfx_subtrack.cpp $(QTOPT)
 
 $(T)tempos.o:  $(BUILD_DEPENDENCIES) $(CD)tempos.cpp
 	$(CCC2) $(CD)tempos.cpp $(QTOPT)
@@ -1197,8 +1197,8 @@ $(T)disk_localzooms.o:  $(BUILD_DEPENDENCIES) $(CD)disk_localzooms.c $(CD)disk.h
 $(T)disk_track.o:  $(BUILD_DEPENDENCIES) $(CD)disk_track.c $(CD)disk.h
 	$(CC2) $(CD)disk_track.c $(OPT)
 
-$(T)disk_fx.o:  $(BUILD_DEPENDENCIES) $(CD)disk_fx.c $(CD)disk.h
-	$(CC2) $(CD)disk_fx.c $(OPT)
+$(T)disk_fx.o:  $(BUILD_DEPENDENCIES) $(CD)disk_fx.cpp $(CD)disk.h
+	$(CCC2) $(CD)disk_fx.cpp $(QTOPT)
 
 $(T)disk_fxnodelines.o:  $(BUILD_DEPENDENCIES) $(CD)disk_fxnodelines.cpp $(CD)disk.h
 	$(CCC2) $(CD)disk_fxnodelines.cpp $(CPPOPT)
@@ -1253,7 +1253,7 @@ ifeq (,$(findstring clang,$(CC)))
  DISK_FX_OPT += -Wno-jump-misses-init
 endif
 $(T)disk_fxs.o:  $(BUILD_DEPENDENCIES) $(CD)disk_fxs.c $(CD)disk.h
-	$(CC2) $(CD)disk_fxs.c $(OPT) $(DISK_FX_OPT)
+	$(CCC2) $(CD)disk_fxs.c $(QTOPT)
 
 $(T)disk.o:  $(BUILD_DEPENDENCIES) $(CD)disk.c $(CD)disk.h
 	$(CC2) $(CD)disk.c $(OPT)
@@ -1267,8 +1267,8 @@ $(T)disk_save.o:  $(BUILD_DEPENDENCIES) $(CD)disk_save.c config/config.h common/
 $(T)disk_load.o:  $(BUILD_DEPENDENCIES) $(CD)disk_load.c config/config.h
 	$(CC2) $(CD)disk_load.c $(OPT)
 
-$(T)disk_saveload_blocktrack.o:  $(BUILD_DEPENDENCIES) $(CD)disk_saveload_blocktrack.c config/config.h
-	$(CC2) $(CD)disk_saveload_blocktrack.c $(OPT)
+$(T)disk_saveload_blocktrack.o:  $(BUILD_DEPENDENCIES) $(CD)disk_saveload_blocktrack.cpp config/config.h
+	$(CCC2) $(CD)disk_saveload_blocktrack.cpp $(QTOPT)
 
 
 $(T)control.o:  $(BUILD_DEPENDENCIES) $(CD)control.c
@@ -1370,8 +1370,8 @@ $(T)PEQ_calc_64bit.o:  $(BUILD_DEPENDENCIES) $(CD)PEQ_calc_64bit.c
 $(T)track_insert.o:  $(BUILD_DEPENDENCIES) $(CD)track_insert.cpp
 	$(CCC2) $(CD)track_insert.cpp $(CPPOPT)
 
-$(T)quantitize.o:  $(BUILD_DEPENDENCIES) $(CD)quantitize.c
-	$(CC2) $(CD)quantitize.c $(OPT)
+$(T)quantitize.o:  $(BUILD_DEPENDENCIES) $(CD)quantitize.cpp
+	$(CCC2) $(CD)quantitize.cpp $(QTOPT)
 
 $(T)undo_trackheader.o:  $(BUILD_DEPENDENCIES) $(CD)undo_trackheader.c
 	$(CC2) $(CD)undo_trackheader.c $(OPT)
@@ -1880,8 +1880,8 @@ $(T)api_trackonoff.o:  $(BUILD_DEPENDENCIES)  $(API)api_trackonoff.c
 $(T)api_zoom.o:  $(BUILD_DEPENDENCIES)  $(API)api_zoom.cpp Qt/KeyboardFocusFrame.hpp 
 	$(CCC2)  $(API)api_zoom.cpp $(QTOPT)
 
-$(T)api_notemanipulate.o:  $(BUILD_DEPENDENCIES)  $(API)api_notemanipulate.c 
-	$(CC2)  $(API)api_notemanipulate.c $(OPT)
+$(T)api_notemanipulate.o:  $(BUILD_DEPENDENCIES)  $(API)api_notemanipulate.cpp
+	$(CCC2)  $(API)api_notemanipulate.cpp $(QTOPT)
 
 $(T)api_play.o:  $(BUILD_DEPENDENCIES)  $(API)api_play.cpp
 	$(CCC2)  $(API)api_play.cpp $(QTOPT)
@@ -1991,8 +1991,8 @@ $(T)midi_fx.o:  $(BUILD_DEPENDENCIES)  midi/midi_fx.cpp
 
 $(T)disk_midi_instrument.o:  $(BUILD_DEPENDENCIES)  midi/disk_midi_instrument.c $(CD)disk.h
 	$(CC2)  midi/disk_midi_instrument.c $(OPT) 
-$(T)disk_midi_fx.o:  $(BUILD_DEPENDENCIES)  midi/disk_midi_fx.c $(CD)disk.h
-	$(CC2)  midi/disk_midi_fx.c $(OPT) 
+$(T)disk_midi_fx.o:  $(BUILD_DEPENDENCIES)  midi/disk_midi_fx.cpp $(CD)disk.h
+	$(CCC2)  midi/disk_midi_fx.cpp $(QTOPT) 
 #$(T)alsaseq_midi.o:  $(BUILD_DEPENDENCIES)  midi/alsaseq/alsaseq_midi.c
 #	$(CC2)  midi/alsaseq/alsaseq_midi.c $(OPT) 
 #midi_getEvents.o:  $(BUILD_DEPENDENCIES)  midi/midi_getEvents.c
