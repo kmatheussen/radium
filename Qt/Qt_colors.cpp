@@ -361,7 +361,7 @@ static ReplacementColor g_replacement_color[] = {
   {TEMPOGRAPH_COLOR_NUM, QColor("#ff434a43")},
 
   {SOUNDFONT_COLOR_NUM, QColor("#ff009000")},
-  {SOUNDFILE_COLOR_NUM, QColor("#ff0000f0")},
+  {SOUNDFILE_COLOR_NUM, QColor("#0000a7")},
   {CURRENT_SOUNDFILE_COLOR_NUM, QColor("#ff9a9a9a")},
 
   {MIXER_TEXT_COLOR_NUM, QColor(1,1,1)},

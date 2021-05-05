@@ -1865,8 +1865,8 @@ $(T)api_disk.o:  $(BUILD_DEPENDENCIES)  $(API)api_disk.cpp
 $(T)api_noteedit.o:  $(BUILD_DEPENDENCIES)  $(API)api_noteedit.cpp common/TimeData.hpp
 	$(CCC2)  $(API)api_noteedit.cpp $(QTOPT)
 
-$(T)api_velocities.o:  $(BUILD_DEPENDENCIES)  $(API)api_velocities.c 
-	$(CC2)  $(API)api_velocities.c $(OPT)
+$(T)api_velocities.o:  $(BUILD_DEPENDENCIES)  $(API)api_velocities.cpp
+	$(CCC2)  $(API)api_velocities.cpp $(CPPOPT)
 
 $(T)api_pitches.o:  $(BUILD_DEPENDENCIES)  $(API)api_pitches.c 
 	$(CC2)  $(API)api_pitches.c $(OPT)
