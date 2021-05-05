@@ -36,7 +36,7 @@ static struct Node *get_velocitynode(int velocitynum, dyn_t dynnote, int tracknu
     return NULL;
   }
   
-  return nodes->elements[velocitynum];
+  return (struct Node*)nodes->elements[velocitynum];
 }
 
 
@@ -240,7 +240,7 @@ dyn_t setVelocity(float value, Place place, int velocitynum, dyn_t dynnote, int 
 
     if (p_is_same_place(place)){
       
-      velocity = ListFindElement3_num(&note->velocities->l, velocitynum-1);
+      velocity = (struct Velocities *)ListFindElement3_num(&note->velocities->l, velocitynum-1);
       
     } else {
       
@@ -353,7 +353,7 @@ void setVelocityLogtype(int logtype, int velocitynum, dyn_t dynnote, int tracknu
   if (is_first)
     note->velocity_first_logtype = logtype;
   else {
-    struct Node *node = nodes->elements[velocitynum];
+    struct Node *node = (struct Node*)nodes->elements[velocitynum];
     struct Velocities *velocity = (struct Velocities*)node->element;
 
     velocity->logtype = logtype;
@@ -377,7 +377,7 @@ void setCurrentVelocityNode(int velocitynum, dyn_t dynnote, int tracknum, int bl
     return;
   }
 
-  struct Node *node = nodes->elements[velocitynum];
+  struct Node *node = (struct Node*)nodes->elements[velocitynum];
   struct Velocities *current = (struct Velocities*)node->element;
 
   API_setCurrentNode(&current->l);
