@@ -31,7 +31,6 @@ import sys, os, filecmp, traceback
 import platform
 import struct, copy
 import wave
-import locale
 
 
 class NullWriter(object):
@@ -804,6 +803,14 @@ def clean_filename(name):
     clean = map(clean_filename_char, name)
     return "".join(clean)
 
+g_homedir = os.path.expanduser("~") # "~" is supposed to work on windows too, according to the internet.
+if radium.getOsName() == "windows": # This block fails on macosx for some reason. (It also fails on Linux. I guess it can be caused by missing included locale library in the binaries.)
+    import locale
+    loc = locale.getdefaultlocale()
+    if loc[1]:
+        encoding = loc[1]
+        g_homedir = g_homedir.decode(encoding)
+
 class Sample:
     def __init__(self, name, num_samples, finetune, volume, loop_start, loop_length):
         if name=="":
@@ -838,13 +845,7 @@ class Sample:
             radium.setInstrumentEffect(self.instrument_num, "Release", 2);
 
     def save(self, file, pos):
-        homedir = os.path.expanduser("~") # "~" is supposed to work on windows too, according to the internet.
-        if radium.getOsName() != "macosx": # This block fails on macosx for some reason.
-            loc = locale.getdefaultlocale()
-            if loc[1]:
-                encoding = loc[1]
-                homedir = homedir.decode(encoding)
-        base_dir = os.path.join(homedir, ".radium", "mod_samples")
+        base_dir = os.path.join(g_homedir, ".radium", "mod_samples")
 
         if not os.path.exists(base_dir):
             os.makedirs(base_dir)
@@ -911,9 +912,7 @@ class Xi:
             radium.setInstrumentSample(self.instrument_num, self.filename)
 
     def save(self, file, pos):
-
-        homedir = os.path.expanduser("~") # supposed to work on windows too, according to the internet
-        base_dir = os.path.join(homedir, ".radium", "xm_xi")
+        base_dir = os.path.join(g_homedir, ".radium", "xm_xi")
 
         if not os.path.exists(base_dir):
             os.makedirs(base_dir)
