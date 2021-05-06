@@ -1252,8 +1252,8 @@ DISK_FX_OPT=
 ifeq (,$(findstring clang,$(CC)))
  DISK_FX_OPT += -Wno-jump-misses-init
 endif
-$(T)disk_fxs.o:  $(BUILD_DEPENDENCIES) $(CD)disk_fxs.c $(CD)disk.h
-	$(CCC2) $(CD)disk_fxs.c $(QTOPT)
+$(T)disk_fxs.o:  $(BUILD_DEPENDENCIES) $(CD)disk_fxs.cpp $(CD)disk.h
+	$(CCC2) $(CD)disk_fxs.cpp $(QTOPT)
 
 $(T)disk.o:  $(BUILD_DEPENDENCIES) $(CD)disk.c $(CD)disk.h
 	$(CC2) $(CD)disk.c $(OPT)
