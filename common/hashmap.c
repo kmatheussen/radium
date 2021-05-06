@@ -1364,9 +1364,9 @@ bool HASH_save(const hash_t *hash, disk_t *file){
   return DISK_get_error(file)==NULL;
 }
 
-static wchar_t *read_line(disk_t *file){
+static const wchar_t *read_line(disk_t *file){
 
-  wchar_t *line = DISK_read_wchar_line(file);
+  const wchar_t *line = DISK_read_wchar_line(file);
     
   //printf("%d: -%S-\n", g_curr_disk_line, line);
   
@@ -1384,7 +1384,7 @@ static vector_t g_load_rec_progress = {0};
 
 hash_t *HASH_load2(disk_t *file, bool return_null_for_unsupported_hasmap_versions){
 
-  wchar_t *line = L"";
+  const wchar_t *line = L"";
   while(STRING_starts_with(line, "#") || STRING_equals2(STRING_trim(line), L"")){
     line = READ_LINE(file);
     if (line==NULL)
@@ -1442,7 +1442,7 @@ hash_t *HASH_load2(disk_t *file, bool return_null_for_unsupported_hasmap_version
         && !STRING_equals(line,"<< HASH MAP V5 END")
         )
     {
-      if (g_is_loading_mixer && GFX_ProgressIsOpen()){
+      if (g_is_loading_mixer && GFX_ProgressIsOpen() && elements_size > 1){
 
         if (gakk==NULL) {
           gakk = talloc(sizeof(float));
@@ -1465,7 +1465,7 @@ hash_t *HASH_load2(disk_t *file, bool return_null_for_unsupported_hasmap_version
       const char *key = STRING_get_chars(line);
 
       if (strstr(key, g_ls_id) != NULL){
-        wchar_t *s = STRING_create(key);
+        const wchar_t *s = STRING_create(key);
         s = STRING_replace(s, g_ls_id, "\n");
         key = STRING_get_chars(s);
       }
