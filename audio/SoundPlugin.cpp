@@ -41,6 +41,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/threading.h"
 #include "../common/disk.h"
 #include "../common/sequencer_proc.h"
+#include "../common/FX.hpp"
 
 #include "../midi/midi_i_input_proc.h"
 
