@@ -1,6 +1,8 @@
 Changes 6.9.67 -> 6.9.69:
 * Windows: Fix showing current system font when
   opening the "change system font" requester.
+* Windows: Fix using "Lato Black" as the default
+  system font.
 * Editor: Fix hanging notes when recording MIDI and
   not using Jack. MIDI recording accuracy, though,
   is slightly worse now when not using jack for
