@@ -70,7 +70,7 @@ void CloseWTrack(struct WBlocks *wblock, NInt wtracknum){
 }
 
 struct WTracks *WTRACK_new(void){
-  struct WTracks *wtrack=talloc(sizeof(struct WTracks));
+  struct WTracks *wtrack=(struct WTracks *)talloc(sizeof(struct WTracks));
 
   //wtrack->pianoroll_on = true;
   wtrack->pianoroll_on = false;
@@ -116,7 +116,7 @@ void UpdateWTracks(struct Tracker_Windows *window, struct WBlocks *wblock){
 	struct Tracks *track=wblock->block->tracks;
 	struct WTracks *wtrack=wblock->wtracks;
 
-	struct WTracks *new;
+	struct WTracks *new_;
 
 	while(track!=NULL){
 		if(wtrack==NULL){
@@ -125,8 +125,8 @@ void UpdateWTracks(struct Tracker_Windows *window, struct WBlocks *wblock){
 		}
 
 		if(track->l.num!=wtrack->l.num){
-                        new=WTRACK_new();
-  			NewWTrack(window,wblock,new,track);
+                        new_=WTRACK_new();
+  			NewWTrack(window,wblock,new_,track);
 			return;
 		}
 
@@ -553,7 +553,7 @@ void MinimizeTrack_CurrPos(
 
 
 static bool WTRACK_allinside(struct Tracker_Windows *window, struct WBlocks *wblock){
-  struct WTracks *last = ListLast1(&wblock->wtracks->l);
+  struct WTracks *last = (struct WTracks *)ListLast1(&wblock->wtracks->l);
   if (last->x2 <= wblock->t.x2)
     return true;
   else
@@ -773,7 +773,7 @@ int WTRACK_getx1(
           return wblock->temponodearea.x2+3;
 	}
 
-	wtrack=ListFindElement1(&wblock->wtracks->l,tracknum);
+	wtrack=(struct WTracks *)ListFindElement1(&wblock->wtracks->l,tracknum);
 
 	return wtrack->x;
 }
@@ -816,7 +816,7 @@ int WTRACK_getx2(
           return wblock->temponodearea.x2+3;
 	}
 
-	wtrack=ListFindElement1(&wblock->wtracks->l,tracknum);
+	wtrack=(struct WTracks *)ListFindElement1(&wblock->wtracks->l,tracknum);
 
 	return wtrack->x2;
 

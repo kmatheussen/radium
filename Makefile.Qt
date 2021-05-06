@@ -960,8 +960,8 @@ $(T)pitches.o:  $(BUILD_DEPENDENCIES) $(CD)pitches.c
 $(T)wblocks.o:  $(BUILD_DEPENDENCIES) $(CD)wblocks.c 
 	$(CC2) $(CD)wblocks.c $(OPT)
 
-$(T)wtracks.o:  $(BUILD_DEPENDENCIES) $(CD)wtracks.c 
-	$(CC2) $(CD)wtracks.c $(OPT)
+$(T)wtracks.o:  $(BUILD_DEPENDENCIES) $(CD)wtracks.cpp
+	$(CCC2) $(CD)wtracks.cpp $(CPPOPT)
 
 $(T)sliders.o:  $(BUILD_DEPENDENCIES) $(CD)sliders.c 
 	$(CC2) $(CD)sliders.c $(OPT)
