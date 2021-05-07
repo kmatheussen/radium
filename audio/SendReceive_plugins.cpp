@@ -616,7 +616,7 @@ const wchar_t *SEND_RECEIVE_get_name(SoundPlugin *plugin){
 
   //QString name(patch->name);
   
-  wchar_t *name = STRING_create(patch->name);
+  const wchar_t *name = STRING_create(patch->name);
   int dashpos = STRING_find_pos(name, 0, "=>");
   
   if (dashpos==-1)

@@ -963,12 +963,12 @@ const wchar_t *DISK_run_program_that_writes_to_temp_file(const wchar_t *program,
 
   QString full_path_program = STRING_get_qstring(OS_get_full_program_file_path(make_filepath(QString::fromWCharArray(program))).id);
   
-  wchar_t *p = STRING_create(full_path_program, false);
-  wchar_t *p1 = STRING_create(QString("\"") + full_path_program + "\"", false);
-  wchar_t *a1 = STRING_create(QString("\"") + QString::fromWCharArray(arg1) + "\"", false); // _wspawnl is really stupid. (https://blogs.msdn.microsoft.com/twistylittlepassagesallalike/2011/04/23/everyone-quotes-command-line-arguments-the-wrong-way/)
-  wchar_t *a2 = STRING_create(QString("\"") + QString::fromWCharArray(arg2) + "\"", false);
-  wchar_t *a3 = STRING_create(QString("\"") + QString::fromWCharArray(arg3) + "\"", false);
-  wchar_t *a4 = STRING_create("\""+filename+"\"", false);
+  const wchar_t *p = STRING_create(full_path_program, false);
+  const wchar_t *p1 = STRING_create(QString("\"") + full_path_program + "\"", false);
+  const wchar_t *a1 = STRING_create(QString("\"") + QString::fromWCharArray(arg1) + "\"", false); // _wspawnl is really stupid. (https://blogs.msdn.microsoft.com/twistylittlepassagesallalike/2011/04/23/everyone-quotes-command-line-arguments-the-wrong-way/)
+  const wchar_t *a2 = STRING_create(QString("\"") + QString::fromWCharArray(arg2) + "\"", false);
+  const wchar_t *a3 = STRING_create(QString("\"") + QString::fromWCharArray(arg3) + "\"", false);
+  const wchar_t *a4 = STRING_create("\""+filename+"\"", false);
   printf("   file.fileName(): -%s-\n",filename.toUtf8().constData());
 
 
