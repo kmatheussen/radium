@@ -711,12 +711,12 @@ static void run_program(QString program, QString arg1, QString arg2, QString arg
 
 #if defined(FOR_WINDOWS)
 
-  wchar_t *p = STRING_create(program, false);
-  wchar_t *p1 = STRING_create(QString("\"") + program + "\"" , false);
-  wchar_t *a1 = STRING_create(arg1, false);
-  wchar_t *a2 = STRING_create(arg2, false);
-  wchar_t *a3 = STRING_create(arg3, false);
-  wchar_t *a4 = STRING_create(arg4, false);
+  const wchar_t *p = STRING_create(program, false);
+  const wchar_t *p1 = STRING_create(QString("\"") + program + "\"" , false);
+  const wchar_t *a1 = STRING_create(arg1, false);
+  const wchar_t *a2 = STRING_create(arg2, false);
+  const wchar_t *a3 = STRING_create(arg3, false);
+  const wchar_t *a4 = STRING_create(arg4, false);
 
   printf("  a1: -%S-\n", a1);
   

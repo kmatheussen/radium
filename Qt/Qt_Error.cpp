@@ -338,7 +338,7 @@ bool g_qt_is_running = true;
 extern "C"{
 filepath_t OS_get_full_program_file_path(filepath_t filename){
   QString ret = QString("../bin/") + QString::fromWCharArray(filename.id);
-  wchar_t * ch = (wchar_t*)calloc(sizeof(wchar_t), ret.size()+1);
+  const wchar_t * ch = (const wchar_t*)calloc(sizeof(wchar_t), ret.size()+1);
   ret.toWCharArray(ch);
   return make_filepath(ch);
 }

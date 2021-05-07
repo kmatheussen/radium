@@ -3022,7 +3022,7 @@ dynvec_t getAudioFiles(void){
   dynvec_t ret = {};
   vector_t filenames = SAMPLEREADER_get_all_filenames();
 
-  VECTOR_FOR_EACH(wchar_t *, filename, &filenames){
+  VECTOR_FOR_EACH(const wchar_t *, filename, &filenames){
     DYNVEC_push_back(ret, DYN_create_filepath(make_filepath(filename)));
   }END_VECTOR_FOR_EACH;
 
