@@ -41,8 +41,8 @@ typedef struct{
         bool has_deleted_files_in_embedded_dir;
 	bool success;
 	int type;
-	char *ls;
-	char *ret;
+	const char *ls;
+	const char *ret;
 
 	struct PlayListHolder *playlist;
 	NInt num_playlists;
@@ -93,8 +93,8 @@ extern LANGSPEC float DC_LoadF(void);
 extern LANGSPEC double DC_LoadD(void);
 extern LANGSPEC uint_32 DC_LoadU32(void);
 extern LANGSPEC NInt DC_LoadN(void);
-extern LANGSPEC char *DC_LoadS(void);
-extern LANGSPEC char *DC_LoadSNoMatterWhat(void);
+extern LANGSPEC const char *DC_LoadS(void);
+extern LANGSPEC const char *DC_LoadSNoMatterWhat(void);
 extern LANGSPEC bool DC_LoadB(void);
 
 extern LANGSPEC void *DC_doalloc(int size);
@@ -137,7 +137,7 @@ static inline bool disk_load_radium_version_is_older_than_or_equal_to(int major,
 #include "list_proc.h"
 
 static inline int LoadLogType(void){
-  char *s = DC_LoadS();
+  const char *s = DC_LoadS();
 
   if (!strcmp(s,"LOGTYPE_IRRELEVANT")) return LOGTYPE_IRRELEVANT;
   if (!strcmp(s,"LOGTYPE_IMMEDIATELY")) return LOGTYPE_IMMEDIATELY;

@@ -2977,7 +2977,7 @@ static void testing(void){
 }
 #endif
 
-void PLUGINHOST_load_fxbp(SoundPlugin *plugin, wchar_t *wfilename){
+void PLUGINHOST_load_fxbp(SoundPlugin *plugin, const wchar_t *wfilename){
   Data *data = (Data*)plugin->data;
   juce::AudioPluginInstance *instance = data->audio_instance;
 
@@ -3001,7 +3001,7 @@ void PLUGINHOST_load_fxbp(SoundPlugin *plugin, wchar_t *wfilename){
   printf("************** size: %d\n",(int)memoryBlock.getSize());
 }
   
-static void save_fxbp(SoundPlugin *plugin, wchar_t *wfilename, bool is_fxb){
+static void save_fxbp(SoundPlugin *plugin, const wchar_t *wfilename, bool is_fxb){
   Data *data = (Data*)plugin->data;
   juce::AudioPluginInstance *instance = data->audio_instance;
 
@@ -3033,11 +3033,11 @@ static void save_fxbp(SoundPlugin *plugin, wchar_t *wfilename, bool is_fxb){
   printf("\n\n\n ***************** result: %d\n\n\n\n",result);
 }
 
-void PLUGINHOST_save_fxb(SoundPlugin *plugin, wchar_t *filename){
+void PLUGINHOST_save_fxb(SoundPlugin *plugin, const wchar_t *filename){
   save_fxbp(plugin, filename, true);
 }
   
-void PLUGINHOST_save_fxp(SoundPlugin *plugin, wchar_t *filename){
+void PLUGINHOST_save_fxp(SoundPlugin *plugin, const wchar_t *filename){
   save_fxbp(plugin, filename, false);
 }
 

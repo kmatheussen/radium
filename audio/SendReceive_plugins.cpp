@@ -676,11 +676,11 @@ bool SEND_RECEIVE_handle_new_patchname(SoundPlugin *plugin, const char *s_patch_
   if (type==Type::SOMETHING_ELSE)
     return false;
   
-  wchar_t *patch_name = STRING_create(s_patch_name);
+  const wchar_t *patch_name = STRING_create(s_patch_name);
   
   int dash_pos = STRING_find_pos(patch_name, 0, "=>");
 
-  wchar_t *new_name;
+  const wchar_t *new_name;
   
   if (dash_pos==-1)
     new_name = patch_name;

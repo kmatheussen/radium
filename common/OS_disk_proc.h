@@ -33,7 +33,7 @@ extern LANGSPEC disk_t *DISK_open_binary_for_reading(filepath_t filename);
 extern LANGSPEC disk_t *DISK_open_binary_for_writing(filepath_t wfilename);
 
 extern LANGSPEC disk_t *DISK_open_temp_for_writing(void);
-extern LANGSPEC wchar_t *DISK_close_temp_for_writing(disk_t *disk);
+extern LANGSPEC const wchar_t *DISK_close_temp_for_writing(disk_t *disk);
 
 // If disk==NULL, then return reason file couldn't be opened.
 // else, Returns NULL if there is no error.
@@ -51,9 +51,9 @@ extern LANGSPEC bool DISK_write(disk_t *disk, const char *data); // returns fals
 // READ TEXT
 extern LANGSPEC bool DISK_at_end(disk_t *disk);
 extern LANGSPEC int DISK_get_curr_read_line(disk_t *disk);
-extern LANGSPEC wchar_t *DISK_read_wchar_line(disk_t *disk);
-extern LANGSPEC char *DISK_readline(disk_t *disk);
-extern LANGSPEC char *DISK_read_trimmed_line(disk_t *disk);
+extern LANGSPEC const wchar_t *DISK_read_wchar_line(disk_t *disk);
+extern LANGSPEC const char *DISK_readline(disk_t *disk);
+extern LANGSPEC const char *DISK_read_trimmed_line(disk_t *disk);
 
 
 // READ BINARY

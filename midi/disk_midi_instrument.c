@@ -130,7 +130,7 @@ void LoadMIDIPatchData(struct PatchData *patchdata){
                 "pan",
                 "controlchange"
 	};
-	char *clustername = NULL;
+	const char *clustername = NULL;
 
 	GENERAL_LOAD(0,10)
 

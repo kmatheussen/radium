@@ -145,7 +145,7 @@ extern LANGSPEC void MW_set_instrument_in_mixer(bool include_instrument_widget);
 //extern LANGSPEC void MW_set_sequencer_in_mixer(bool include_instrument_widget);
 extern LANGSPEC void MW_update_sequencer_in_mixer_checkbox(void);
 
-extern LANGSPEC char *MW_request_load_preset_instrument_description(void);
+//extern LANGSPEC const char *MW_request_load_preset_instrument_description(void);
 extern LANGSPEC const char *MW_popup_plugin_selector2(bool must_have_inputs, bool must_have_outputs);
 extern LANGSPEC SoundPluginType *MW_popup_plugin_type_selector(bool must_have_inputs, bool must_have_outputs);
 

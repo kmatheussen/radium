@@ -61,7 +61,7 @@ filepath_t OS_get_config_filename(const char *key);
 extern LANGSPEC filepath_t OS_get_full_program_file_path(filepath_t filename);
 #ifdef __cplusplus
 #if defined(QSTRING_H)
-extern wchar_t *STRING_create2(const QString s);
+extern const wchar_t *STRING_create2(const QString s);
 extern QString OS_get_full_program_file_path2(QString filename);
 static inline QString OS_get_full_program_file_path2(const char *filename){
   return OS_get_full_program_file_path2(QString(filename));
@@ -87,7 +87,7 @@ extern LANGSPEC filepath_t OS_get_menues_conf_filename(void);
 extern LANGSPEC filepath_t OS_get_custom_keybindings_conf_filename(void);
 
 //extern LANGSPEC char *OS_get_keybindings_conf_filename2(void);
-extern LANGSPEC char *OS_get_menues_conf_filename2(void);
+extern LANGSPEC const char *OS_get_menues_conf_filename2(void);
 
 //extern LANGSPEC char *OS_get_custom_keybindings_conf_filename2(void);
 
@@ -95,7 +95,7 @@ extern LANGSPEC void OS_make_config_file_expired(const char *key);
 
 // locale independent.
 extern LANGSPEC double OS_get_double_from_string(const char *s);
-extern LANGSPEC char *OS_get_string_from_double(double d);
+extern LANGSPEC const char *OS_get_string_from_double(double d);
 
 #ifdef USE_QT4
 QString OS_get_qstring_from_double(double d);

@@ -765,7 +765,7 @@ QString FAUSTGUI_get_code(QWidget *widget){
 namespace{
   struct Undo_FaustDev{
     struct Patch *patch;
-    wchar_t *code; // this is clumsy. Should investigate the time finding out if there are the quirks using bdw-gc with c++.
+    const wchar_t *code; // this is clumsy. Should investigate the time finding out if there are the quirks using bdw-gc with c++.
     int cursor_line;
     int cursor_index;
   };
@@ -834,7 +834,7 @@ static void *Undo_Do_FaustDev(
   Faust_Plugin_widget *faust_plugin_widget = AUDIOWIDGET_get_faust_plugin_widget(audio_instrument_widget);
   R_ASSERT_RETURN_IF_FALSE2(faust_plugin_widget!=NULL, undo_fd);
 
-  wchar_t *new_code = STRING_create(FAUST_get_code(plugin));
+  const wchar_t *new_code = STRING_create(FAUST_get_code(plugin));
 
   int new_cursor_line, new_cursor_index;
   faust_plugin_widget->_faust_editor->getCursorPosition(&new_cursor_line, &new_cursor_index);

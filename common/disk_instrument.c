@@ -32,7 +32,7 @@ struct Instruments *LoadInstrument(void){
           "instrumentname",
           "num_patches"
 	};
-        char *instrument_name = NULL;
+        const char *instrument_name = NULL;
 	struct Instruments *instrument=NULL;
 
         int curr_patch_num = 0;

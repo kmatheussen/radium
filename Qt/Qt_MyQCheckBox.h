@@ -128,7 +128,7 @@ struct MyQCheckBox_OnlyCustomPainting : public QCheckBox{
   }
 
 
-  radium::GcHolder<wchar_t> _text_to_draw;
+  radium::GcHolder<const wchar_t> _text_to_draw;
   
   void paintEvent ( QPaintEvent * ev ) override {
     TRACK_PAINT();

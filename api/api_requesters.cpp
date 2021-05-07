@@ -313,7 +313,7 @@ int64_t popupMenu(dynvec_t strings, func_t* callback){
       handleError("popupMenu: Element #%d is not a string. Found: %s", i, DYN_type_name(strings.elements[i].type));
       return -1;
     }
-    vec.elements[i] = STRING_get_chars(strings.elements[i].string);
+    vec.elements[i] = (void*)STRING_get_chars(strings.elements[i].string);
   }
 
   //printf("   NUM_elements: %d\n", vec.num_elements);

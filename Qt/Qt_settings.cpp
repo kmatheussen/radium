@@ -106,7 +106,7 @@ const char *OS_get_program_path(void){
   return talloc_strdup(QDir::toNativeSeparators(QCoreApplication::applicationDirPath()).toLocal8Bit().constData());
 }
 
-wchar_t *STRING_create(const QString s, bool use_gc_alloc){
+const wchar_t *STRING_create(const QString s, bool use_gc_alloc){
   int size = (int)sizeof(wchar_t)*(s.length()+1);
   
   wchar_t *array;
@@ -126,11 +126,11 @@ wchar_t *STRING_create(const QString s, bool use_gc_alloc){
   return array;
 }
 
-wchar_t *STRING_create2(const QString s){
+const wchar_t *STRING_create2(const QString s){
   return STRING_create(s);
 }
 
-wchar_t *STRING_create(const char *s){
+const wchar_t *STRING_create(const char *s){
   QString string = QString::fromUtf8(s);
   return STRING_create(string);
 }
@@ -147,13 +147,13 @@ const wchar_t *STRING_get_sha1(const wchar_t *string){
 }
 
 // TODO: Rename to STRING_create_chars. It doesn't return a constant string which is available somewhere.
-char* STRING_get_chars(const wchar_t *string){
+const char* STRING_get_chars(const wchar_t *string){
   QString s = STRING_get_qstring(string);
   
   return talloc_strdup(s.toLocal8Bit().constData());
 }
 
-char* STRING_get_utf8_chars(const char* s){
+const char* STRING_get_utf8_chars(const char* s){
   QString qstring = QString::fromUtf8(s);
   return talloc_strdup(qstring.toLocal8Bit().constData());
 }
@@ -168,7 +168,7 @@ bool STRING_starts_with(const wchar_t *string, const char *endswith){
   return s.startsWith(endswith);
 }
 
-wchar_t *STRING_remove_starts_with(const wchar_t *string, const char *startswith){
+const wchar_t *STRING_remove_starts_with(const wchar_t *string, const char *startswith){
   QString s1 = STRING_get_qstring(string);
   QString s2 = startswith;
   R_ASSERT_NON_RELEASE(s1.startsWith(s2));
@@ -190,23 +190,23 @@ bool STRING_equals(const wchar_t *string, const char *s2){
   return s == QString(s2);
 }
 
-wchar_t *STRING_replace(const wchar_t *string, const char *a, const char *b){
+const wchar_t *STRING_replace(const wchar_t *string, const char *a, const char *b){
   QString s = STRING_get_qstring(string);
   return STRING_create(s.replace(a,b));
 }
 
-wchar_t *STRING_append(const wchar_t *s1, const wchar_t *s2){
+const wchar_t *STRING_append(const wchar_t *s1, const wchar_t *s2){
   return STRING_create(STRING_get_qstring(s1) + STRING_get_qstring(s2));
 }
 
-wchar_t *STRING_append(const wchar_t *s1, const char *s2){
+const wchar_t *STRING_append(const wchar_t *s1, const char *s2){
   return STRING_create(STRING_get_qstring(s1) + s2);
 }
 
-wchar_t *STRING_to_upper(const wchar_t *string){
+const wchar_t *STRING_to_upper(const wchar_t *string){
   return STRING_create(STRING_get_qstring(string).toUpper());
 }
-wchar_t *STRING_to_lower(const wchar_t *string){
+const wchar_t *STRING_to_lower(const wchar_t *string){
   return STRING_create(STRING_get_qstring(string).toLower());
 }
 
@@ -214,7 +214,7 @@ int STRING_find_pos(const wchar_t *string, int start_pos, const char *what_to_fi
   return STRING_get_qstring(string).indexOf(what_to_find, 0);
 }
 
-wchar_t *STRING_remove_start(const wchar_t *string, int new_start_pos){
+const wchar_t *STRING_remove_start(const wchar_t *string, int new_start_pos){
   QString s2 = STRING_get_qstring(string);
   
   int len = s2.length();
@@ -227,7 +227,7 @@ wchar_t *STRING_remove_start(const wchar_t *string, int new_start_pos){
   return STRING_create(s2.right(len-new_start_pos));
 }
 
-wchar_t *STRING_remove_end(const wchar_t *string, int new_end_pos){
+const wchar_t *STRING_remove_end(const wchar_t *string, int new_end_pos){
   QString s2 = STRING_get_qstring(string);
   
   int len = s2.length();
@@ -243,14 +243,14 @@ wchar_t *STRING_remove_end(const wchar_t *string, int new_end_pos){
   return STRING_create(s2.left(new_end_pos));
 }
 
-wchar_t *STRING_toBase64(const wchar_t *s){
+const wchar_t *STRING_toBase64(const wchar_t *s){
   QString s2 = STRING_get_qstring(s);
   //QString encoded = s2.toLocal8Bit().toBase64();
   QString encoded = s2.toUtf8().toBase64();
   return STRING_create(encoded);
 }
 
-wchar_t *STRING_fromBase64(const wchar_t *encoded){
+const wchar_t *STRING_fromBase64(const wchar_t *encoded){
   QString encoded2 = STRING_get_qstring(encoded);
   //QString decoded = QString::fromLocal8Bit(QByteArray::fromBase64(encoded2.toLocal8Bit()).data());
   QString decoded = QString::fromUtf8(QByteArray::fromBase64(encoded2.toUtf8()).data());
@@ -272,7 +272,7 @@ bool STRING_is_local8Bit_compatible(QString s){
   */
 }
 
-wchar_t *STRING_trim(const wchar_t *string){
+const wchar_t *STRING_trim(const wchar_t *string){
   QString s = STRING_get_qstring(string);
   return STRING_create(s.trimmed());
 }
@@ -517,7 +517,7 @@ double OS_get_double_from_string(const char *s){
   return string.toDouble();
 }
 
-char *OS_get_string_from_double(double d){
+const char *OS_get_string_from_double(double d){
   QString string = QString::number(d,'g',16);
   return talloc_strdup(string.toLocal8Bit().constData());
 }

@@ -122,7 +122,7 @@ struct MyQButton : public QToolButton, public radium::MouseCycleFix {
   }
   */
 
-  radium::GcHolder<wchar_t> _text_to_draw;
+  radium::GcHolder<const wchar_t> _text_to_draw;
   
   void paintEvent ( QPaintEvent * ev ) override {
     TRACK_PAINT();

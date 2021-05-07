@@ -186,7 +186,7 @@ static inline bool RATIO_equal(const Ratio r1, const Ratio r2){
 extern "C"{
 #endif
   
-extern wchar_t *STATIC_RATIO_as_string(const StaticRatio ratio);
+extern const wchar_t *STATIC_RATIO_as_string(const StaticRatio ratio);
 extern StaticRatio STATIC_RATIO_from_string(const wchar_t *wstring);
 
 #ifdef __cplusplus

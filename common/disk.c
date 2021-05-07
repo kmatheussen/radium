@@ -170,7 +170,7 @@ int g_curr_disk_line;
 static void DC_fgetsNoMatterWhat(void){
         g_curr_disk_line++;
 
-	char *ret = dc.ls = DISK_read_trimmed_line(dc.file);
+	const char *ret = dc.ls = DISK_read_trimmed_line(dc.file);
 
 	if(ret==NULL){
           GFX_Message(NULL, "Unable to read string from file \"%S\". Line: %d.",
@@ -257,7 +257,7 @@ NInt DC_LoadN(void){
   return (NInt)DC_LoadL();
 }
 
-char *DC_LoadS(void){
+const char *DC_LoadS(void){
 	char *ret;
 	DC_fgets();
         if(!strcmp(dc.ret, emptystringstring)){
@@ -275,7 +275,7 @@ error:
 	return ret;
 }
 
-char *DC_LoadSNoMatterWhat(void){
+const char *DC_LoadSNoMatterWhat(void){
 	char *ret;
 	DC_fgetsNoMatterWhat();
         if(!strcmp(dc.ret, emptystringstring)){
@@ -343,7 +343,7 @@ int DC_Next(void){
 
 
 int DC_whatString(const char **variables,int num){
-	char *string;
+	const char *string;
 	int ret=0;
 
 	if( ! dc.success ) return LS_ERROR;

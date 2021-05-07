@@ -1346,7 +1346,7 @@ bool HASH_save(const hash_t *hash, disk_t *file){
 
       if (strchr(element->key, '\n') != NULL) {
         
-        wchar_t *s = STRING_create(element->key);
+        const wchar_t *s = STRING_create(element->key);
         s = STRING_replace(s, "\n", g_ls_id);
         DISK_printf(file,"%S\n",s);
         

@@ -123,11 +123,11 @@ static const wchar_t *get_filename(void){
 
 static void show_star(void){
   if(showing_star_in_filename==false){
-    wchar_t *s = STRING_append(
-                               STRING_append(STRING_create("** "),
-                                             get_filename()),
-                               STRING_create(" **")
-                               );
+    const wchar_t *s = STRING_append(
+                                     STRING_append(STRING_create("** "),
+                                                   get_filename()),
+                                     STRING_create(" **")
+                                     );
     GFX_SetWindowTitle(root->song->tracker_windows,s);    
     showing_star_in_filename=true;
     API_call_me_when_dirty_status_has_changed(true);

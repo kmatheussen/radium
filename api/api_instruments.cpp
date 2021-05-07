@@ -666,7 +666,7 @@ instrument_t createAudioInstrumentFromDescription(const char *instrument_descrip
     
   } else if (instrument_description[0]=='2'){
     
-    wchar_t *filename = STRING_fromBase64(STRING_create(&instrument_description[1]));
+    const wchar_t *filename = STRING_fromBase64(STRING_create(&instrument_description[1]));
     //printf("filename: %s\n",filename);
 
     return PRESET_load(make_filepath(filename), name, true, set_as_current, x, y);
