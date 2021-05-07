@@ -412,13 +412,13 @@ const char* p_ToString(const Place a){
 #ifndef TEST_PLACEMENT
 
 Place p_FromString(const char* s){
-  wchar_t *w = STRING_create(s);
+  const wchar_t *w = STRING_create(s);
 
 
-  wchar_t *w_line = NULL;
-  wchar_t *w_ratio = NULL;
-  wchar_t *w_numerator = NULL;
-  wchar_t *w_denominator = NULL;
+  const wchar_t *w_line = NULL;
+  const wchar_t *w_ratio = NULL;
+  const wchar_t *w_numerator = NULL;
+  const wchar_t *w_denominator = NULL;
   
   int plus_pos = STRING_find_pos(w, 0, "+");
 

@@ -3647,7 +3647,7 @@ struct Song{
         bool show_markers_sequencer_lane;
 
 	NInt num_blocks;
-	char *songname;
+	const char *songname;
 
         bool linear_accelerando; // player must be stopped when writing to, or hold the player lock.
         bool linear_ritardando; // player must be stopped when writing to, or hold the player lock.

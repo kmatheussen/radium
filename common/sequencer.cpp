@@ -2621,12 +2621,12 @@ static filepath_t get_recording_path(const struct SoundPlugin *plugin){
     return createIllegalFilepath();
   }
 
-  wchar_t *last_dir = STRING_replace(STRING_replace(STRING_create(plugin->patch->name),
-                                                    "/",
-                                                    "_slash_"),
-                                     "\\",
-                                     "_backslash_");
-
+  const wchar_t *last_dir = STRING_replace(STRING_replace(STRING_create(plugin->patch->name),
+                                                          "/",
+                                                          "_slash_"),
+                                           "\\",
+                                           "_backslash_");
+  
   QString s = STRING_get_qstring(last_dir);
 
   s.remove(QRegExp("[^a-zA-Z\\d\\s]"));

@@ -582,7 +582,7 @@ disk_t *DISK_open_temp_for_writing(void){
   return disk;
 }
 
-wchar_t *DISK_close_temp_for_writing(disk_t *disk){
+const wchar_t *DISK_close_temp_for_writing(disk_t *disk){
   ASSERT_NON_RT_NON_RELEASE();
   
   GFX_Message(NULL, "Warning, never tested");
@@ -722,7 +722,7 @@ QString DISK_read_qstring_line(disk_t *disk){
   return disk->stream->readLine();
 }
 
-wchar_t *DISK_read_wchar_line(disk_t *disk){
+const wchar_t *DISK_read_wchar_line(disk_t *disk){
   ASSERT_NON_RT_NON_RELEASE();
   
   QString line = DISK_read_qstring_line(disk);
@@ -733,7 +733,7 @@ wchar_t *DISK_read_wchar_line(disk_t *disk){
   return STRING_create(line);
 }
 
-char *DISK_readline(disk_t *disk){
+const char *DISK_readline(disk_t *disk){
   ASSERT_NON_RT_NON_RELEASE();
   
   QString line = DISK_read_qstring_line(disk);
@@ -744,7 +744,7 @@ char *DISK_readline(disk_t *disk){
   return talloc_strdup(line.toUtf8().constData());
 }
 
-char *DISK_read_trimmed_line(disk_t *disk){
+const char *DISK_read_trimmed_line(disk_t *disk){
   ASSERT_NON_RT_NON_RELEASE();
   
   QString line = DISK_read_qstring_line(disk);

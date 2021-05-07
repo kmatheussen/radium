@@ -110,7 +110,7 @@ extern LANGSPEC vector_t FindAllNotes(
 extern LANGSPEC struct Notes *FindNoteCurrPos(struct Tracker_Windows *window);
 extern LANGSPEC vector_t FindAllNotesCurrPos(struct Tracker_Windows *window);
 
-extern LANGSPEC char *notetext_from_notenum(float notenumf);
+extern LANGSPEC const char *notetext_from_notenum(float notenumf);
 extern LANGSPEC float notenum_from_notetext(const char *notetext);
 
 extern LANGSPEC void EditNoteCurrPos(struct Tracker_Windows *window);

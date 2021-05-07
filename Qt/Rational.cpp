@@ -72,7 +72,7 @@ QString STATIC_RATIO_as_qstring(const StaticRatio ratio){
   return Rational(ratio).toString();
 }
 
-wchar_t *STATIC_RATIO_as_string(const StaticRatio ratio){
+const wchar_t *STATIC_RATIO_as_string(const StaticRatio ratio){
   return STRING_create(STATIC_RATIO_as_qstring(ratio));
 }
 

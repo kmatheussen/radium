@@ -1148,7 +1148,7 @@ float notenum_from_notetext(const char *notetext){
     return notenum;
 }
 
-char *notetext_from_notenum(float notenumf){
+const char *notetext_from_notenum(float notenumf){
   int notenum = notenumf;
   int cents = 0;
   

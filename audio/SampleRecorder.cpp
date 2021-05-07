@@ -165,12 +165,12 @@ private:
   }
   
   bool is_valid_new_soundfile_name(QString filename){
-    wchar_t *wfilename = STRING_create(filename, false); // fix: comment why it's done like this.
+    const wchar_t *wfilename = STRING_create(filename, false); // fix: comment why it's done like this.
     
     bool has_file = SAMPLEREADER_has_file(make_filepath(wfilename));
     bool file_exists = DISK_file_exists(make_filepath(wfilename));
     
-    free(wfilename);
+    free((void*)wfilename);
     
     if (has_file==false && false==file_exists) // Check for SAMPLEREADER_has_file since the user could have manually deleted an earlier recording.
       return true;
