@@ -79,6 +79,7 @@ static QStack<QMenu* >g_curr_menu;
 
 extern QMenuBar *g_main_menu_bar;
 
+int g_is_calling_from_menu = 0;
 
 namespace{
 
@@ -211,6 +212,8 @@ namespace{
     
     void run_callbacks(void){
       EVENTLOG_add_event(talloc_format("popup menu: %s", _text.toUtf8().constData()));
+
+      g_is_calling_from_menu++;
       
       if (callback.v != NULL){
         if (is_checkable)
@@ -221,6 +224,8 @@ namespace{
         
       if (callback3)
         callback3(num, checked);
+
+      g_is_calling_from_menu--;
     }
 
     

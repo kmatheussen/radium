@@ -477,7 +477,7 @@ static bool sequencer_really_in_full_mode(void){
 }
 
 void showHideFocusEditor(void){
-  if (editorIsVisible(-1) && !editorHasKeyboardFocus() && !sequencer_really_in_full_mode())
+  if (editorIsVisible(-1) && !editorHasKeyboardFocus() && !sequencer_really_in_full_mode() && !g_is_calling_from_menu)
     setEditorKeyboardFocus(true);
   else
     showHideEditor(-1);
@@ -544,7 +544,7 @@ void showHideSequencer(void){
 }
 
 void showHideFocusSequencer(void){
-  if (sequencerIsVisible() && !sequencerHasKeyboardFocus())
+  if (sequencerIsVisible() && !sequencerHasKeyboardFocus() && !g_is_calling_from_menu)
     setSequencerKeyboardFocus(true);
   else
     showHideSequencer();
@@ -651,7 +651,7 @@ bool mixerIsVisible(void){
 }
 
 void showHideFocusMixer(void){
-  if (mixerIsVisible() && !mixerHasKeyboardFocus() && !sequencer_really_in_full_mode())
+  if (mixerIsVisible() && !mixerHasKeyboardFocus() && !sequencer_really_in_full_mode() && !g_is_calling_from_menu)
     setMixerKeyboardFocus(true);
   else
     showHideMixerWidget();
