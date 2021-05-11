@@ -208,6 +208,7 @@ static const ColorConfig g_colorconfig[] = {
   {MIXER_EVENT_CONNECTION_COLOR_NUM, "mixer_event_connection_color", "Modular Mixer: Event connection", false},
   {MIXER_AUDIO_CONNECTION_COLOR_NUM, "mixer_audio_connection_color", "Modular Mixer: Audio connection", false},
   {MIXER_AUDIO_PORT_COLOR_NUM, "mixer_audio_port_color", "Modular Mixer: Audio connection port", false},
+  {MIXER_SLOT_INDICATOR_COLOR_NUM, "mixer_slot_indicator", "Modular Mixer: Current slot", false},
   
   {MIXER_AUTOSUSPENSION_COLOR_NUM, "mixer_autosuspension_color", "Modular Mixer: Auto-suspension mixer object", false},
   //{MIXER_SELECTED_OBJECT_COLOR_NUM, "mixer_selected_object_color_num", "Mixer: Selected sound object", false},
@@ -376,6 +377,8 @@ static ReplacementColor g_replacement_color[] = {
   {MIXER_EVENT_CONNECTION_COLOR_NUM, QColor("#8c061990")},
   {MIXER_AUDIO_CONNECTION_COLOR_NUM, QColor("#ff2e0359")},
   {MIXER_AUDIO_PORT_COLOR_NUM, QColor(80,90,80,20)},
+  {MIXER_SLOT_INDICATOR_COLOR_NUM, QColor(59,68,155,40)},
+  
   {MIXER_AUTOSUSPENSION_COLOR_NUM, QColor("#3ca6a6a6")},
   {MIXER_CURRENT_OBJECT_BORDER_COLOR_NUM, QColor("#ff041da7")},
   {MIXER_SELECTED_OBJECT_BORDER_COLOR_NUM, QColor("#ff81080a")},

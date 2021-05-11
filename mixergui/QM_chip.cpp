@@ -2231,12 +2231,12 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     if(_num_inputs>0)
       painter->drawRoundedRect(xborder, y1+yborder,
                                port_width-2-xborder, y2-y1-yborder*2,
-                               10,10);
+                               2,2);
 
     if(_num_outputs>0)
       painter->drawRoundedRect(x2+2, y1+yborder,
                                port_width-2-xborder, y2-y1-yborder*2,
-                               10,10);
+                               2,2);
 
     painter->setBrush(Qt::NoBrush);
   }

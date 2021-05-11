@@ -395,7 +395,7 @@ class SlotIndicatorItem : public QGraphicsItem
                 QWidget *widget)
        override
      {
-       QColor color(59,68,155,40);
+       QColor color = get_qcolor(MIXER_SLOT_INDICATOR_COLOR_NUM); //(59,68,155,40);
        painter->setPen(color);
        painter->setBrush(QBrush(color,Qt::SolidPattern));
        //painter->drawRoundedRect(port_width, port_height, grid_width-(port_width*2), grid_height-(port_height*2), grid_border, grid_border);
