@@ -2220,7 +2220,7 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 
     //painter->setPen(QPen(Qt::gray, 2));
     //QColor color(59,155,68,40);
-    QColor color(80,90,80,20);
+    QColor color = get_qcolor(MIXER_AUDIO_PORT_COLOR_NUM);
     //painter->setPen(color);
     painter->setPen(Qt::NoPen);
     painter->setBrush(QBrush(color,Qt::SolidPattern));
