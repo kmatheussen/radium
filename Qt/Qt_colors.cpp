@@ -136,10 +136,12 @@ static const ColorConfig g_colorconfig[] = {
   {LAST_VELOCITY_TEXT_COLOR_NUM,     "velocity_text_last", "Velocity text, last", false},
    
   {HIGH_EDITOR_BACKGROUND_COLOR_NUM,                  "high_editor", "High Editor background", false},
+  {EDITOR_GRAYED_OUT_COLOR_NUM,                  "editor_grayed_out", "Grayed out editor", false},
   {SCROLLBAR_COLOR_NUM,                  "scroll_bar_v2", "Scroll bar", false},
   {SCROLLBAR_BACKGROUND_COLOR_NUM,                  "scroll_bar_background_v2", "Scroll bar background", false},
 
   {KEYBOARD_FOCUS_BORDER_COLOR_NUM,                  "keyboard_focus_border", "Keyboard Focus Border", false},
+  {ALTERNATIVE_LABEL_COLOR_NUM,                  "dialog_help_text", "Dialog Help Text", false},
 
   {SOUNDFONT_COLOR_NUM,         "soundfont",          "Browser: Soundfont", false},
   {SOUNDFILE_COLOR_NUM,         "soundfile",          "Browser: Sound file", false},
@@ -281,6 +283,7 @@ static ReplacementColorNum g_replacement_color_num[] = {
 static ReplacementColor g_replacement_color[] = {
   {LOW_EDITOR_BACKGROUND_COLOR_NUM, QColor("#475253")},
   {HIGH_EDITOR_BACKGROUND_COLOR_NUM, QColor("#ff585d55")},
+  {EDITOR_GRAYED_OUT_COLOR_NUM, QColor(100,100,100,120)},
   {LOW_BACKGROUND_COLOR_NUM, QColor("#50585a")},
   {HIGH_BACKGROUND_COLOR_NUM, QColor("#22282a")},
   {TEXT_COLOR_NUM, QColor("#ffffffff")},
@@ -310,6 +313,7 @@ static ReplacementColor g_replacement_color[] = {
   {SCROLLBAR_BACKGROUND_COLOR_NUM, QColor("#69b8b8b8")},
   
   {KEYBOARD_FOCUS_BORDER_COLOR_NUM, QColor("#ff9d00")},
+  {ALTERNATIVE_LABEL_COLOR_NUM, QColor("#000000")},
 
   {CURSOR_BORDER_COLOR_NUM, QColor("#50000000")},
   {CURSOR_CURR_COLUMN_BORDER_COLOR_NUM, QColor("#d0ff0000")},
@@ -1121,6 +1125,37 @@ static void updateAll(EditorWidget *my_widget){
   updateApplication(my_widget,application);
 }
 
+static void update_label_colors(QObject *object, QString old_color, QString new_color){
+  if (object != NULL){
+
+    QLabel *label = dynamic_cast<QLabel*>(object);
+
+    if (label != NULL) {
+      QString text = label->text();
+      text = text.replace("color:" + old_color, "color:" + new_color);
+      label->setText(text);
+    }
+
+    for(auto *c : object->children())
+      update_label_colors(c, old_color, new_color);
+    
+  }
+}
+
+static inline void update_label_colors(QString new_color){
+  static QString old_color("#000000");
+
+  printf("   OLD: %s. NEW: %s\n", old_color.toUtf8().constData(), new_color.toUtf8().constData());
+
+  if (new_color == old_color)
+    return;
+
+  foreach (QWidget *widget, QApplication::allWidgets())
+    update_label_colors(widget, old_color, new_color);
+
+  old_color = new_color;
+}
+
 void setWidgetColors(QWidget *widget){
   struct Tracker_Windows *window = root->song->tracker_windows;
   EditorWidget *my_widget = static_cast<EditorWidget*>(window->os_visual.widget);
@@ -1145,9 +1180,8 @@ void setApplicationColors(QApplication *app){
   if(my_widget==NULL)
     updateApplication(my_widget,app);
   else
-    updateAll(my_widget);
+    updateAll(my_widget);  
 }
-
 
 
 static void setColor(enum ColorNums num, const QRgb &rgb){
@@ -1231,8 +1265,13 @@ void testColorInRealtime(enum ColorNums num, QColor color){
   
   struct Tracker_Windows *window = root->song->tracker_windows;
   EditorWidget *my_widget=(EditorWidget *)window->os_visual.widget;
+
   setColor(num,color.rgba());
-  updateAll(my_widget);
+  
+  if (num==ALTERNATIVE_LABEL_COLOR_NUM)
+    update_label_colors(color.name());
+  else
+    updateAll(my_widget);
 
   GFX_update_current_instrument_widget();
 

@@ -308,6 +308,8 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
 
     setupUi(this);
 
+    testColorInRealtime(ALTERNATIVE_LABEL_COLOR_NUM, get_qcolor(ALTERNATIVE_LABEL_COLOR_NUM)); // Update label colors.
+    
     scrollArea->setHorizontalScrollBar(new Qt_MyQScrollBar(Qt::Horizontal));
     scrollArea->setVerticalScrollBar(new Qt_MyQScrollBar(Qt::Vertical));
     scrollArea_2->setHorizontalScrollBar(new Qt_MyQScrollBar(Qt::Horizontal));
