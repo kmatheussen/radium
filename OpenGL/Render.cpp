@@ -3038,7 +3038,8 @@ static void create_message(const struct Tracker_Windows *window, QString message
 static void create_lacking_keyboard_focus_greyed_out(const struct Tracker_Windows *window){
   if (g_do_grey_editor){
     const GE_Conf conf(Z_STATIC, NOMASK_Y, NO_SCISSORS);
-    GE_Context *grey = GE_z(GE_rgba(100,100,100,120), conf);
+    //GE_Context *grey = GE_z(GE_rgba(100,100,100,120), conf);
+    GE_Context *grey = GE_z(GE_get_rgb(EDITOR_GRAYED_OUT_COLOR_NUM), conf);
     GE_filledBox(grey, 0, 0, window->width, window->height);
   }
 }
