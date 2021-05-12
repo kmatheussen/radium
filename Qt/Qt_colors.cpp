@@ -376,8 +376,8 @@ static ReplacementColor g_replacement_color[] = {
 
   {MIXER_EVENT_CONNECTION_COLOR_NUM, QColor("#8c061990")},
   {MIXER_AUDIO_CONNECTION_COLOR_NUM, QColor("#ff2e0359")},
-  {MIXER_AUDIO_PORT_COLOR_NUM, QColor(80,90,80,20)},
-  {MIXER_SLOT_INDICATOR_COLOR_NUM, QColor(59,68,155,40)},
+  {MIXER_AUDIO_PORT_COLOR_NUM, QColor("#14000000")},
+  {MIXER_SLOT_INDICATOR_COLOR_NUM, QColor("#14ff0000")},
   
   {MIXER_AUTOSUSPENSION_COLOR_NUM, QColor("#3ca6a6a6")},
   {MIXER_CURRENT_OBJECT_BORDER_COLOR_NUM, QColor("#ff041da7")},
@@ -603,7 +603,7 @@ unsigned int GFX_get_color_from_colorname(const char *colorname){
 
 const char *GFX_get_colorname_from_color(unsigned int colornum){
 #if DEBUG_COLORS
-  return talloc_strdup(QColor(GFX_MakeRandomColor()).name().toUtf8());
+  return talloc_strdup(QColor(GFX_MakeRandomColor()).name(QColor::HexArgb).toUtf8());
 #endif
   
   QColor color(colornum);
@@ -960,13 +960,13 @@ static void updatePalette(EditorWidget *my_widget, QWidget *widget, QPalette &pa
   /*
   if(system_color==NULL){
     system_color=new QColor(SETTINGS_read_string("system_color","#d2d0d5"));
-    SETTINGS_write_string("system_color",system_color->name());
+    SETTINGS_write_string("system_color",system_color->name(QColor::HexArgb));
   }
   */
   /*
   if(button_color==NULL){
     button_color=new QColor(SETTINGS_read_string("button_v2_color","#c1f1e3"));
-    SETTINGS_write_string("button_v2_color",button_color->name());
+    SETTINGS_write_string("button_v2_color",button_color->name(QColor::HexArgb));
   }
   */
   if(override_default_qt_colors==false){
@@ -1275,7 +1275,7 @@ void testColorInRealtime(enum ColorNums num, QColor color){
   setColor(num,color.rgba());
   
   if (num==ALTERNATIVE_LABEL_COLOR_NUM)
-    update_label_colors(color.name());
+    update_label_colors(color.name(QColor::HexArgb));
   else
     updateAll(my_widget);
 
