@@ -3033,11 +3033,11 @@ static void save_fxbp(SoundPlugin *plugin, const wchar_t *wfilename, bool is_fxb
   printf("\n\n\n ***************** result: %d\n\n\n\n",result);
 }
 
-void PLUGINHOST_save_fxb(SoundPlugin *plugin, const wchar_t *filename){
+void PLUGINHOST_save_fxb(struct SoundPlugin *plugin, const wchar_t *filename){
   save_fxbp(plugin, filename, true);
 }
-  
-void PLUGINHOST_save_fxp(SoundPlugin *plugin, const wchar_t *filename){
+
+void PLUGINHOST_save_fxp(struct SoundPlugin *plugin, const wchar_t *filename){
   save_fxbp(plugin, filename, false);
 }
 

@@ -27,7 +27,7 @@ void SaveOsStuff(void){
 }
 
 void LoadOsStuff(void){
-  char *osname=DC_LoadS();
+  const char *osname=DC_LoadS();
   printf("osname: %s\n",osname);
 
   DC_SkipBlock();
