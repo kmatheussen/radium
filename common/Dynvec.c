@@ -131,9 +131,9 @@ void DYNVEC_save(disk_t *file, const dynvec_t dynvec){
 }
 
 
-static wchar_t *das_read_line(disk_t *file){
+static const wchar_t *das_read_line(disk_t *file){
 
-  wchar_t *line = DISK_read_wchar_line(file);
+  const wchar_t *line = DISK_read_wchar_line(file);
 
   //printf("%d: -%S-\n", g_curr_disk_line, line);
   
@@ -156,7 +156,7 @@ dyn_t DYN_load(disk_t *file, bool *success){
 
   dyn_t ret = {0};
   
-  wchar_t *line = READ_LINE(file);
+  const wchar_t *line = READ_LINE(file);
 
   int type = typename_to_type(line);
 
@@ -243,7 +243,7 @@ dynvec_t DYNVEC_load(disk_t *file, bool *success){
 
   *success = false;
   
-  wchar_t *line = READ_LINE(file);
+  const wchar_t *line = READ_LINE(file);
 
   if (!STRING_equals(line,">> DYNVEC BEGIN")){
     GFX_Message(NULL, "Trying to load something which is not an array. Expected \"%s\", found \"%S\"", ">> DYNVEC BEGIN", line);
