@@ -5,10 +5,10 @@
 //typedef struct _string string_t;
 
 // implemented in Qt/Qt_Settings.cpp
-extern LANGSPEC wchar_t *STRING_create(const char *s);
+extern LANGSPEC const wchar_t *STRING_create(const char *s);
 
 //extern LANGSPEC wchar_t *STRING_copy(const wchar_t *s);
-static inline wchar_t *STRING_copy(const wchar_t *s){
+static inline const wchar_t *STRING_copy(const wchar_t *s){
   return talloc_wcsdup(s);
 }
 
@@ -16,32 +16,32 @@ static inline int STRING_length(const wchar_t *s){
   return wcslen(s);
 }
 
-extern LANGSPEC char* STRING_get_chars(const wchar_t *string);
-extern LANGSPEC char* STRING_get_utf8_chars(const char* s);
+extern LANGSPEC const char* STRING_get_chars(const wchar_t *string);
+extern LANGSPEC const char* STRING_get_utf8_chars(const char* s);
 
 extern LANGSPEC bool STRING_starts_with(const wchar_t *string, const char *startswith);
 extern LANGSPEC bool STRING_starts_with2(const wchar_t *string, const wchar_t *startswith);
-extern LANGSPEC wchar_t *STRING_remove_starts_with(const wchar_t *string, const char *startswith);
+extern LANGSPEC const wchar_t *STRING_remove_starts_with(const wchar_t *string, const char *startswith);
 extern LANGSPEC bool STRING_ends_with(const wchar_t *string, const char *endswiths);
 extern LANGSPEC bool STRING_equals(const wchar_t *string, const char *s2);
 extern LANGSPEC bool STRING_equals2(const wchar_t *string, const wchar_t *s2);
-extern LANGSPEC wchar_t *STRING_replace(const wchar_t *string, const char *a, const char *b);
+extern LANGSPEC const wchar_t *STRING_replace(const wchar_t *string, const char *a, const char *b);
 
-extern LANGSPEC wchar_t *STRING_append(const wchar_t *s1, const wchar_t *w2);
+extern LANGSPEC const wchar_t *STRING_append(const wchar_t *s1, const wchar_t *w2);
 
-extern LANGSPEC wchar_t *STRING_to_upper(const wchar_t *string);
-extern LANGSPEC wchar_t *STRING_to_lower(const wchar_t *string);
+extern LANGSPEC const wchar_t *STRING_to_upper(const wchar_t *string);
+extern LANGSPEC const wchar_t *STRING_to_lower(const wchar_t *string);
 
 extern LANGSPEC int STRING_find_pos(const wchar_t *string, int start_pos, const char *what_to_find); // returns -1 if not found.
-extern LANGSPEC wchar_t *STRING_remove_start(const wchar_t *string, int new_start_pos);
-extern LANGSPEC wchar_t *STRING_remove_end(const wchar_t *string, int new_end_pos);
+extern LANGSPEC const wchar_t *STRING_remove_start(const wchar_t *string, int new_start_pos);
+extern LANGSPEC const wchar_t *STRING_remove_end(const wchar_t *string, int new_end_pos);
 
 
-extern LANGSPEC wchar_t *STRING_toBase64(const wchar_t *s);
-extern LANGSPEC wchar_t *STRING_fromBase64(const wchar_t *encoded);
+extern LANGSPEC const wchar_t *STRING_toBase64(const wchar_t *s);
+extern LANGSPEC const wchar_t *STRING_fromBase64(const wchar_t *encoded);
 extern LANGSPEC const wchar_t *STRING_get_sha1(const wchar_t *string);
 
-extern LANGSPEC wchar_t *STRING_trim(const wchar_t *string);
+extern LANGSPEC const wchar_t *STRING_trim(const wchar_t *string);
 
 #ifndef TEST_PLACEMENT
 
@@ -64,9 +64,9 @@ static inline double STRING_get_double(const wchar_t *string){
 
 #include <QString>
 
-wchar_t *STRING_append(const wchar_t *s1, const char *w2);
+const wchar_t *STRING_append(const wchar_t *s1, const char *w2);
 
-wchar_t *STRING_create(const QString s, bool use_gc_alloc = true);
+const wchar_t *STRING_create(const QString s, bool use_gc_alloc = true);
 
 static inline QString STRING_get_qstring(const wchar_t *string){ // TODO: Rename to STRING_create_qstring.
   if (string==NULL)
