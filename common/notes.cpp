@@ -1407,7 +1407,7 @@ static void cmp(const char *text, float value){
   
   float from_text = notenum_from_notetext(text);
 
-  char *from_value = notetext_from_notenum(value);
+  const char *from_value = notetext_from_notenum(value);
   float from_text_from_value = notenum_from_notetext(from_value);
 
   fprintf(stderr,"from_text: %f, from_value: \"%s\", from_text_from_value: %f (value: %f)\n",
