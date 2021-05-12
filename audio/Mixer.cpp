@@ -1956,7 +1956,7 @@ void MIXER_call_very_often(void){
 
   static bool use_jack_transport = useJackTransport();
   
-  if (is_called_every_ms(100)){
+  if (is_called_every_ms(105)){
     use_jack_transport = useJackTransport();
   }
   
