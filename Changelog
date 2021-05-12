@@ -1,3 +1,57 @@
+Changes 6.9.71 -> 6.9.72:
+* Sequencer: Add a "Duplicate seqblock and block"
+  option to the editor seqblock popup menu.
+* Mixer: Make current mixer slot color red.
+* Mixer: Make the sound object ports more visible.
+* Mixer: Improved sound object port graphics.
+* Colors: Made it possible to configure the color of
+  the current slot.
+* Colors: Made the audio port color in the mixer
+  configurable.
+* Colors: Make it possible to configure the
+  out-grayed color in the editor when a custom
+  widget has keyboard focus.
+* Colors: Make it possible to configure dialog
+  help text color.
+* Menus: Fix selecting "Show/Hide Mixer" and
+  "Show/Hide Sequencer" without using shortcuts.
+* Editor: Fix editing BPM. Bug introduced in 6.8.71.
+
+
+
+Changes 6.9.69 -> 6.9.71:
+* Linux: Fix importing MOD files in the binaries.
+  (Probably broken in 6.7.76.)
+* Sampler instrument / Fluidsynth instrument: Made
+  soundfile text color a little bit darker.
+* Editor: Display "Automatically set pianoroll
+  range" in the status bar when the mouse pointer is
+  above an "A" button in the track headers.
+* Sampler instrument: Fix sample browser stealing
+  keyboard focus when the current instrument is
+  changed to an instrument that had keyboard focus
+  inside the sample browser the last time it was
+  used.
+* Editor: Don't show assertion reporter in release
+  mode when note structure is slightly corrupt.
+* Sampler instrument: Fix illegal samples being
+  played if loading an audio file with less than 32
+  samples, or a sample loop is less than 32 samples.
+  Fixes playing chip tune MOD songs for instance.
+  Bug introduced in 6.5.81
+* Sequencer: If soundfile is shorter than last time
+  it was used in Radium, also cut seqblock
+  automation so that nodes are not placed after the
+  end of the file (where they can't be edited).
+* Build: Fix faust llvm build. Should fix #1339
+* Sequencer: Give more detailed information if a
+  sound file couldn't be opened.
+* Sequencer: Handle properly if an audio file is
+  physically replaced with a file with different
+  number of channels while the program is running.
+
+
+
 Changes 6.9.67 -> 6.9.69:
 * Windows: Fix showing current system font when
   opening the "change system font" requester.
