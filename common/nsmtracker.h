@@ -204,7 +204,7 @@ extern int g_audio_block_size;
 
 #define MAX_NUM_CPUS 128
 
-#define MAIN_TIMER_INTERVAL 5 // in milliseconds. Can be set to 1, 5, 10, 25, or 50. (must probably be set to 5)
+#define MAIN_TIMER_INTERVAL 15 // in milliseconds. Can be set to 1, 5, 10, 25, or 50. (must probably be set to 5)
 extern int64_t g_main_timer_num_calls;
 
 #define MINBLOCKRELTIME 0.001f

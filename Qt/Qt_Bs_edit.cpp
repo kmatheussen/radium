@@ -373,7 +373,7 @@ void BS_call_very_often(void){
   
   ScopedVisitors v;
   
-  if (is_called_every_ms(70)){
+  if (is_called_every_ms(15*5)){
 
     if (is_playing() && pc->playtype==PLAYSONG)
       API_setCurrPlaylistPos_while_playing();

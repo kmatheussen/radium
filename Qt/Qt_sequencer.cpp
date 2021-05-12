@@ -4344,11 +4344,11 @@ struct Sequencer_widget : public MouseTrackerQWidget {
     
     // Check if the number of seqtracks have changed
     //
-    if (is_called_every_ms(50)){
+    if (is_called_every_ms(45)){
       bool do_update = root->song->seqtracks.num_elements != _last_num_seqtracks;
       
       if (!do_update) {
-        if (is_called_every_ms(1000)) // This is only an insurance. SEQUENCER_update is supposed to be called manually when needed.
+        if (is_called_every_ms(1005)) // This is only an insurance. SEQUENCER_update is supposed to be called manually when needed.
           if (!equal_doubles(_last_visible_song_length, get_visible_song_length())) {
             do_update = true;
             _last_visible_song_length = get_visible_song_length();

@@ -2076,7 +2076,7 @@ protected:
 
 #if 0 // Not sure whether 0 or 1 is best. In theory 1 should be the best, but I can't see any difference compared to non-cpu friendly operation right now. However, I have seen that 0 has worked before, so I'm fairly confident 0 could work. Whether 1 may work remains to be seen.
     {
-      if (is_called_every_ms(20)){
+      if (is_called_every_ms(15)){
         API_gui_call_regularly(); // light operation
         
         //int interval = useCPUFriendlyAudiometerUpdates() ? 40 : 20;
@@ -2343,7 +2343,7 @@ protected:
     }
 
     /*
-    if (is_called_every_ms(1000)){
+    if (is_called_every_ms(1005)){
       QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
       //bool is_visible = OS_SYSTEM_window_is_actually_visible((void*)main_window->winId());
       auto rect = main_window->visibleRegion().boundingRect();
@@ -2351,7 +2351,7 @@ protected:
     }
     */
         
-    if (is_called_every_ms(5000)){  // Ask for gl.make_current each 5 seconds.
+    if (is_called_every_ms(5010)){  // Ask for gl.make_current each 5 seconds.
       GL_lock();{
         GL_EnsureMakeCurrentIsCalled();
       }GL_unlock();
@@ -2441,10 +2441,10 @@ protected:
     BLOCKS_called_very_often();
 
     if (num_calls_at_this_point < 100) {
-      if (is_called_every_ms(20))
+      if (is_called_every_ms(30))
         MIXERSTRIP_call_regularly();
     } else {
-      if (is_called_every_ms(100))
+      if (is_called_every_ms(105))
         MIXERSTRIP_call_regularly();
     }
     
@@ -2455,7 +2455,7 @@ protected:
     THREADING_schedule_on_player_thread_call_very_often();
   
     SEQTRACK_call_me_very_often();
-    if (is_called_every_ms(1000))
+    if (is_called_every_ms(1005))
       DISKPEAKS_call_very_often();
 
     if (MIDI_insert_recorded_midi_gfx_events()){
@@ -2463,7 +2463,7 @@ protected:
       SEQUENCER_update(SEQUPDATE_TIME);
     }
 
-    if (is_called_every_ms(50))
+    if (is_called_every_ms(45))
       SAMPLEREADER_call_very_often();
     
 #if 0
@@ -2475,7 +2475,7 @@ protected:
 #endif
 
 #if !defined(FOR_WINDOWS)    
-    if (is_called_every_ms(5000))
+    if (is_called_every_ms(5010))
       checkup_on_check_backtrace_process();
 #endif
   }

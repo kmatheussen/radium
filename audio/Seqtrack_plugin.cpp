@@ -1641,7 +1641,7 @@ public:
       sample->interior_start_may_have_changed(); // light operation.
     }
 
-    if (is_called_every_ms(1000))
+    if (is_called_every_ms(1005))
       set_num_visible_outputs(plugin);
   }
 

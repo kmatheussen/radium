@@ -313,7 +313,7 @@ static void ensure_seqtrack_has_instrument(const struct SeqTrack *seqtrack){ // 
 }
 
 void SEQTRACK_call_me_very_often(void){
-  if (is_called_every_ms(500)) {
+  if (is_called_every_ms(510)) {
     VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
 
       if (seqtrack->for_audiofiles){
