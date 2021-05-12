@@ -152,10 +152,10 @@
               "last y2:" (<ra> :get-seqtrack-y2 last-visible)
               ":last-visible:" last-visible
               ":...:" (get-sequencer-left-part-seqtracks-y2) (<ra> :get-seqtracks-y1))
-  
-  (+ (- (<ra> :get-seqtrack-y2 last-visible)
-        (<ra> :get-seqtrack-y1 first-visible))
-     bottom-empty-space))
+
+  (+ bottom-empty-space
+     (- (<ra> :get-seqtrack-y2 last-visible)
+        (<ra> :get-seqtrack-y1 first-visible))))
 
 #!
 (<ra> :get-seqtrack-y1 10)
@@ -2196,6 +2196,20 @@
               (<ra> :select-block blocknum)))))))
 
 
+;; Note: used for shortcut
+(delafina (duplicate-seqblock-and-block :seqblock-id (and *current-seqblock-info*
+                                                          (*current-seqblock-info* :id)))
+  (when seqblock-id
+    ;;(c-display "----------seqblock-id:" seqblock-id)
+    (define seqtracknum (<ra> :get-seqblock-seqtrack-num seqblock-id))
+    (define seqblocknum (<ra> :get-seqblock-seqblock-num seqblock-id))
+    (undo-block
+     (lambda ()
+       (clone-seqblock-block seqblock-id)
+       (define new-blocknum (- (<ra> :get-num-blocks) 1))
+       (<ra> :create-seqblock seqtracknum new-blocknum (<ra> :get-seqblock-end-time seqblocknum seqtracknum))))))
+    
+    
 (define (get-editor-seqblock-popup-menu-entries seqblock-infos seqblocknum seqtracknum seqblockid X)
   (define seqblock-info *current-seqblock-info*)
   (define blocknum (<ra> :get-seqblock-blocknum seqblocknum seqtracknum))
@@ -2396,7 +2410,17 @@
          (lambda ()
            (let ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)))))
              (<ra> :paste-seqblocks seqtracknum pos))))
-   
+
+   (list "Duplicate seqblock and block"
+         :enabled seqblocknum
+         :shortcut duplicate-seqblock-and-block
+         (lambda ()
+           (duplicate-seqblock-and-block seqblockid)))
+                                        ;           (if (and seqblocknum
+;                    (not (<ra> :is-seqblock-selected seqblocknum seqtracknum)))
+;               (<ra> :select-seqblock #t seqblocknum seqtracknum))
+;           (<ra> :copy-selected-seqblocks)))
+
    "------------------"
    
    (list
