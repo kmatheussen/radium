@@ -265,30 +265,40 @@ void API_MIDI_called_regularly(void){
       } else {
 
         int len = MIDI_msg_len(msg);
-        
-        dynvec_t bytes = DYNVEC_create(len);
 
-        bytes.elements[0] = DYN_create_int(MIDI_msg_byte1(msg));
+        if (len < 1) {
+          
+          handleError("Error. Midi msg %u has len: %d\n", msg, len);
+          R_ASSERT_NON_RELEASE(false);
+          ret = false;
+          
+        } else {
+          
+          dynvec_t bytes = DYNVEC_create(len);
+          
+          bytes.elements[0] = DYN_create_int(MIDI_msg_byte1(msg));
+          
+          if (len > 1)
+            bytes.elements[1] = DYN_create_int(MIDI_msg_byte2(msg));
+          
+          if (len > 2)
+            bytes.elements[2] = DYN_create_int(MIDI_msg_byte3(msg));
+          
+          ret = S7CALL(bool_dyn, callback, DYN_create_array(bytes));
 
-        if (len > 1)
-          bytes.elements[1] = DYN_create_int(MIDI_msg_byte2(msg));
-
-        if (len > 2)
-          bytes.elements[2] = DYN_create_int(MIDI_msg_byte3(msg));
-        
-        ret = S7CALL(bool_dyn, callback, DYN_create_array(bytes));
+        }
           
       }
       
-        if (false==ret) {
+      if (false==ret) {
           
-          int64_t port_id = get_port_id_from_callback(callback);
-          
-          if (port_id >= 0)
-            closeMidiInputPort(port_id, false);
-          
-        }
-
+        int64_t port_id = get_port_id_from_callback(callback);
+        
+        if (port_id >= 0)
+          closeMidiInputPort(port_id, false);
+        
+      }
+      
     }
     
   }

@@ -537,9 +537,9 @@ SNDFILE *radium_sf_open(filepath_t filename, int mode, SF_INFO *sfinfo){
 
 SNDFILE *radium_sf_open(QString filename, int mode, SF_INFO *sfinfo){
 #if defined(FOR_WINDOWS)
-  wchar_t *wfilename = STRING_create(filename, false);
+  const wchar_t *wfilename = STRING_create(filename, false);
   SNDFILE *ret = radium_sf_open(make_filepath(wfilename), mode, sfinfo);
-  V_free(wfilename);
+  V_free((void*)wfilename);
   return ret;
 #else
   char *osfilename = V_strdup(QFile::encodeName(filename).constData());

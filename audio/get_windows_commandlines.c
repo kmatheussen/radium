@@ -76,12 +76,12 @@ vector_t *get_windows_command_lines(void){
     goto exit;
 
   //connect to the WMI
-  hr = WbemLocator->lpVtbl->ConnectServer(WbemLocator, L"ROOT\\CIMV2", NULL, NULL, NULL, 0, NULL, NULL, &WbemServices);   
+  hr = WbemLocator->lpVtbl->ConnectServer(WbemLocator, SysAllocString(L"ROOT\\CIMV2"), NULL, NULL, NULL, 0, NULL, NULL, &WbemServices);   
   if (WbemServices == NULL)
     goto exit;
 
   //Run the WQL Query
-  hr = WbemServices->lpVtbl->ExecQuery(WbemServices, L"WQL", L"SELECT ProcessId,CommandLine FROM Win32_Process", WBEM_FLAG_FORWARD_ONLY, NULL, &EnumWbem);
+  hr = WbemServices->lpVtbl->ExecQuery(WbemServices, SysAllocString(L"WQL"), SysAllocString(L"SELECT ProcessId,CommandLine FROM Win32_Process"), WBEM_FLAG_FORWARD_ONLY, NULL, &EnumWbem);
   if (EnumWbem == NULL)
     goto exit;
 
