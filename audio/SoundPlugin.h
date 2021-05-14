@@ -326,6 +326,7 @@ typedef struct SoundPluginType{
   const char *(*get_effect_description)(struct SoundPlugin *plugin, int effect_num);
 
   void (*get_display_value_string)(struct SoundPlugin *plugin, int effect_num, char *buffer, int buffersize);
+  const char* (*get_displayable_effect_name)(struct SoundPlugin *plugin, int effect_num); // If NULL, get_effect_name is used instead.
 
   bool (*effect_is_visible)(struct SoundPlugin *plugin, int effect_num);
 

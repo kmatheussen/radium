@@ -310,11 +310,18 @@ class ParamWidget : public QWidget {
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     if (plugin==NULL)
       return "";
+
+    QString name;
+    
+    if (_effect_num<plugin->type->num_effects && plugin->type->get_displayable_effect_name != NULL)
+      name = plugin->type->get_displayable_effect_name(plugin, _effect_num);
+    else
+      name = _name;
     
     char buf[66]={0};
     PLUGIN_get_display_value_string(plugin, _effect_num, buf, 64);
 
-    return get_parameter_prepend_text(_patch.data(), _effect_num) + _name + ": " + QString::fromUtf8(buf);
+    return get_parameter_prepend_text(_patch.data(), _effect_num) + name + ": " + QString::fromUtf8(buf);
   }
   
   void set_slider_string(void){
