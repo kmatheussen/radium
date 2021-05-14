@@ -206,7 +206,7 @@ PluginWidget *PluginWidget_create(QWidget *parent, struct Patch *patch, SizeType
     pGridLayout->addWidget(param_widget, iY, iX);
     iY++;
     
-    if (iY >= iYsPerPage || (is_sampleplayer && (!strcmp(effect_name, "Loop end") || !strcmp(effect_name, "Release") || !strcmp(effect_name, "Reverse")))) {
+    if (iY >= iYsPerPage || (is_sampleplayer && (!strcmp(effect_name, "Loop window") || !strcmp(effect_name, "Release") || !strcmp(effect_name, "Reverse")))) {
       iY = 0;
       if (++iX >= iXsPerPage) {
         iX = 0;

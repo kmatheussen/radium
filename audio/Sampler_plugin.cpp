@@ -174,7 +174,8 @@ enum{
   EFF_LOOP_OVERRIDE_DEFAULT,
   EFF_LOOP_START,
   EFF_LOOP_END,
-
+  EFF_LOOP_WINDOW,
+  
   EFF_GRAN_onoff,
   EFF_GRAN_coarse_stretch,
   EFF_GRAN_fine_stretch,
@@ -2276,18 +2277,21 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
           GFX_ScheduleInstrumentRedraw((struct Patch*)plugin->patch);
       }
       return;
-      
+
     case EFF_LOOP_START:
       {
         Sample &sample=data->samples[0];
         if (sample.sound != NULL){
+
+          int64_t start = R_BOUNDARIES(0,
+                                       value_format==EFFECT_FORMAT_NATIVE ? value : scale_double(value,
+                                                                                                 0,1,
+                                                                                                 0,sample.num_frames),
+                                       sample.num_frames-1);
+          
           RT_set_loop_points_internal(plugin,
                                       data,
-                                      R_BOUNDARIES(0,
-                                                   value_format==EFFECT_FORMAT_NATIVE ? value : scale_double(value,
-                                                                                                             0,1,
-                                                                                                             0,sample.num_frames),
-                                                   sample.num_frames-1),
+                                      start,
                                       data->p.loop_end
                                       );
           data->p.loop_start_was_set_last = true;
@@ -2306,14 +2310,14 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
         //printf("loop end. %p\n", &sample);
         if (sample.sound != NULL){
           //printf("       EFF_LOOP_END: %f (%s). (loop_start: %d. num_frames: %d)\n", value, value_format==EFFECT_FORMAT_NATIVE ? "native" : "scaled", (int)data->p.loop_start, (int)sample.num_frames);
+          int64_t end = value_format==EFFECT_FORMAT_NATIVE ? value : scale_double(value,
+                                                                                  0,1,
+                                                                                  0,sample.num_frames);
+            
           RT_set_loop_points_internal(plugin,
                                       data,
                                       data->p.loop_start,
-                                      R_BOUNDARIES(1,
-                                                   value_format==EFFECT_FORMAT_NATIVE ? value : scale_double(value,
-                                                                                                             0,1,
-                                                                                                             0,sample.num_frames),
-                                                   sample.num_frames)
+                                      R_BOUNDARIES(1, end, sample.num_frames)
                                       );
           data->p.loop_start_was_set_last = false;
           update_editor_graphics(plugin);
@@ -2321,6 +2325,40 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
           if (when==FX_single && plugin->patch != NULL)
             GFX_ScheduleInstrumentRedraw((struct Patch*)plugin->patch);          
           
+        }
+      }
+      return;
+      
+    case EFF_LOOP_WINDOW:
+      {
+        Sample &sample=data->samples[0];
+        if (sample.sound != NULL){
+
+          int64_t length;
+          
+          {
+            LoopData loop_data(sample, data->p.loop_start_was_set_last);
+            length = loop_data._end - loop_data._start;
+            //printf("start: %d end: %d length: %d. Length: %d\n", (int)loop_data._start, (int)loop_data._end, (int)length, (int)sample.num_frames);
+          }
+
+          int64_t start = R_BOUNDARIES(0,
+                                       value_format==EFFECT_FORMAT_NATIVE ? value : scale_double(value,
+                                                                                                 0,1,
+                                                                                                 0,sample.num_frames),
+                                       sample.num_frames-length);
+          
+          RT_set_loop_points_internal(plugin,
+                                      data,
+                                      start,
+                                      R_BOUNDARIES(1, (start + length), sample.num_frames)
+                                      );
+          data->p.loop_start_was_set_last = true;
+          update_editor_graphics(plugin);
+
+          if (when==FX_single && plugin->patch != NULL)
+            GFX_ScheduleInstrumentRedraw((struct Patch*)plugin->patch);
+
         }
       }
       return;
@@ -2604,6 +2642,7 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
     case EFF_LOOP_OVERRIDE_DEFAULT:
       return data->p.loop_override_default ? 1.0 : 0.0;
     case EFF_LOOP_START:
+    case EFF_LOOP_WINDOW:
       if (value_format==EFFECT_FORMAT_NATIVE)
         return data->p.loop_start;
       else {
@@ -2622,7 +2661,7 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
           return 0;
         else
           return scale(data->p.loop_end, 0, sample.num_frames, 0, 1);
-      }
+      }      
   }
   
   if(value_format==EFFECT_FORMAT_SCALED){
@@ -2818,6 +2857,8 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
   }
 }
 
+static const char *get_effect_name(const struct SoundPlugin *plugin, int effect_num);
+  
 static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *buffer, int buffersize){
   Data *data = (Data*)plugin->data;
   switch(effect_num){
@@ -2893,6 +2934,34 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
         snprintf(buffer,buffersize-1,"%" PRId64 " samples", loop_data._end);
       }else
         snprintf(buffer,buffersize-1,"%" PRId64 " samples", data->p.loop_end);
+    }
+    break;
+  case EFF_LOOP_WINDOW:
+    {
+      Sample &sample = data->samples[0];
+      if (sample.sound!=NULL){
+        LoopData loop_data(sample, data->p.loop_start_was_set_last);
+        
+#if ((LONG_MAX) == (INT64_MAX)) // Workaround. Sometimes PRId64 doesn't work.
+        snprintf(buffer,buffersize-1,"%" PRId64 "->%ld samples", loop_data._start, loop_data._end);
+#elif ((LONG_LONG_MAX) == (INT64_MAX))
+        snprintf(buffer,buffersize-1,"%" PRId64 "->%lld samples", loop_data._start, loop_data._end);
+#else
+#       error "don't know what to do."
+#endif
+        
+      }else {
+        
+#if ((LONG_MAX) == (INT64_MAX)) // Workaround. Sometimes PRId64 doesn't work.
+        snprintf(buffer,buffersize-1,"%" PRId64 "->%ld samples", data->p.loop_start, data->p.loop_end);
+#elif ((LONG_LONG_MAX) == (INT64_MAX))
+        snprintf(buffer,buffersize-1,"%" PRId64 "->%lld samples", data->p.loop_start, data->p.loop_end);
+#else
+#       error "don't know what to do."
+#endif
+      
+      }
+      
     }
     break;
     
@@ -3320,7 +3389,7 @@ static Data *create_data(float samplerate, Data *old_data, filepath_t filename, 
     data->p.gran_coarse_stretch = 1;
     data->p.gran_fine_stretch = 1;
     data->p.gran_volume = -6;
-    
+
   }else{
 
     data->p = old_data->p;
@@ -3828,6 +3897,8 @@ static const char *get_effect_name(const struct SoundPlugin *plugin, int effect_
     return "Loop start";
   case EFF_LOOP_END:
     return "Loop end";
+  case EFF_LOOP_WINDOW:
+    return "Loop window";
   case EFF_CROSSFADE_LENGTH:
     return "Crossfade";
   case EFF_REVERSE:
@@ -4116,7 +4187,7 @@ static void init_plugin_type(void){
  plugin_type.set_effect_value = set_effect_value;
  plugin_type.get_effect_value = get_effect_value;
  plugin_type.get_display_value_string = get_display_value_string;
-
+   
  plugin_type.gui_is_visible = gui_is_visible;
  plugin_type.show_gui = show_gui;
  plugin_type.hide_gui = hide_gui;
