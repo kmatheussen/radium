@@ -24,6 +24,12 @@
 
 #include <math.h>
 
+#if __MINGW32__
+#if __MINGW64__
+// Seems like I have assumed that __MINW32__ is only defined in 32 bit builds. Add an assertion here so the code below can be fixed if that assumption was wrong.
+#error "something is wrong"
+#endif
+#endif
 
 #if !__MINGW32__
 typedef struct {
