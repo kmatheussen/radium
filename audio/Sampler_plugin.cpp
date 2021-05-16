@@ -807,7 +807,8 @@ static int RT_src_callback_with_crossfade_do_looping(Voice *voice, const LoopDat
   int legal_crossfade_length = RT_legal_crossfade_length(loop_data, data);
 
   voice->pos = end_pos; // next
-  if (voice->pos==loop_data._end){
+  if (voice->pos>=loop_data._end){
+    R_ASSERT_NON_RELEASE(voice->pos==loop_data._end);
     voice->pos = loop_data._start + legal_crossfade_length;
     //printf("crossfading %d -> %d-%d -> %d (%d)\n",sample->loop_start,start_pos,end_pos,sample->loop_end,voice->pos);
     R_ASSERT_NON_RELEASE(voice->pos < loop_data._end);
@@ -829,13 +830,17 @@ static int RT_src_callback_with_crossfade_do_looping(Voice *voice, const LoopDat
 
 static int64_t RT_src_callback_with_crossfade_between_looping(Voice *voice, const LoopData &loop_data, const Sample *sample, Data *data, int64_t start_pos, float **out_data){
   *out_data = sample->sound + voice->pos;
+  
   int64_t prev_voice_pos = voice->pos;
+  
   voice->pos = loop_data._end - RT_legal_crossfade_length(loop_data, data); // next
   
   R_ASSERT_NON_RELEASE(voice->pos < loop_data._end);
+
+  // Can happen when changing loop points while playing.
+  //R_ASSERT_NON_RELEASE( (voice->pos - prev_voice_pos) >= 0);
   
-  R_ASSERT_NON_RELEASE(voice->pos-prev_voice_pos >= 0);
-  return voice->pos - prev_voice_pos;
+  return R_MAX(1, voice->pos - prev_voice_pos); // prev_voice_pos can be equal or larger than voice->pos when changing crossfade and/or changing loop points while playing.
 }
 
 static int64_t RT_src_callback_with_crossfade_before_looping(Voice *voice, const LoopData &loop_data, const Sample *sample, Data *data, int64_t start_pos, float **out_data){  
@@ -988,9 +993,7 @@ static long RT_src_callback(void *cb_data, float **out_data){
   bool pingpong = sample->data->p.pingpong;
   bool reverse = voice->reverse;
 
-  LoopData loop_data = ( /*pingpong ||*/ data->p.crossfade_length>0)
-    ? voice->loop_data
-    : LoopData(sample, data->p.loop_start_was_set_last); // We get illegal data when changing loop points while playing a voice + crossfading, so we simply don't change loop points while playing a voice if there's crossfade. Might be the same with ping pong.
+  LoopData loop_data(sample, data->p.loop_start_was_set_last);
 
   bool loop = ATOMIC_GET_RELAXED(data->p.loop_onoff) && loop_data._end > loop_data._start;
 
@@ -2185,6 +2188,7 @@ static void RT_set_loop_points_internal(const SoundPlugin *plugin, Data *data, i
       }
     }
   }
+
 }
 
 // Use this one if setting both at the same time (if not it might not work).
