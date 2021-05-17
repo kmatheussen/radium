@@ -25,13 +25,16 @@
 #include <math.h>
 
 #if __MINGW32__
-#if __MINGW64__
-// Seems like I have assumed that __MINW32__ is only defined in 32 bit builds. Add an assertion here so the code below can be fixed if that assumption was wrong.
-#error "something is wrong"
-#endif
+#  if __MINGW64__
+#    define USE_RATIO128 1
+#  else
+#    define USE_RATIO128 0
+#  endif
+#else
+#  define USE_RATIO128 1
 #endif
 
-#if !__MINGW32__
+#if USE_RATIO128
 typedef struct {
   __int128_t num;
   __int128_t den;
@@ -203,7 +206,7 @@ static inline bool RATIO_greater_than(const Ratio r1, const Ratio r2){
 
   R_ASSERT_NON_RELEASE(false);
 
-#if !__MINGW32__
+#if USE_RATIO128
   Ratio128 ra = make_ratio128(r1);
   Ratio128 rb = make_ratio128(r2);
   return (ra.num * rb.den) > (rb.num * ra.den);
@@ -407,6 +410,8 @@ namespace r{
 }
 #endif
 
+
+#undef USE_RATIO128
 
 #ifndef TEST_MAIN
 #ifndef TEST_TIMEDATA_MAIN
