@@ -187,6 +187,9 @@ static const ColorConfig g_colorconfig[] = {
   {ZOOMLINE_TEXT_COLOR_NUM7, "zoomline_text7", "Zoom line 7", false},
 
   {TEMPOGRAPH_COLOR_NUM, "tempograph", "Tempo graph", false},
+  {TEMPO_MULTIPLIER_SLIDER_COLOR_NUM, "tempo_multiplier_slider", "Tempo multiplier slider", false},
+  {TEMPO_MULTIPLIER_SLIDER_TEXT_COLOR_NUM, "tempo_multiplier_slider_text", "Tempo multiplier slider text", false},
+  
   {RANGE_COLOR_NUM, "range", "Range", false},
   {PITCH_LINE_COLOR_NUM, "pitchlines", "Pitch change lines", false},
 
@@ -366,6 +369,8 @@ static ReplacementColor g_replacement_color[] = {
   {TRACK_SEPARATOR2B_COLOR_NUM, QColor("#ff777e7f")},
 
   {TEMPOGRAPH_COLOR_NUM, QColor("#ff434a43")},
+  {TEMPO_MULTIPLIER_SLIDER_COLOR_NUM, QColor("#395832")},
+  {TEMPO_MULTIPLIER_SLIDER_TEXT_COLOR_NUM, QColor("#ffe5c4")},
 
   {SOUNDFONT_COLOR_NUM, QColor("#ff009000")},
   {SOUNDFILE_COLOR_NUM, QColor("#0000a7")},
@@ -1265,7 +1270,7 @@ void GFX_SetBrightness(struct Tracker_Windows *tvisual, float how_much){
 }
 
 void GFX_reload_qt_stylesheets(void){
-  int darker = 150;
+  int darker = 150; // Push buttons are painted in a gradient color, which makes them a little bit lighter than the background-color overall. We compensate for this by darkening the background color a little bit.
   
   qApp->setStyleSheet("QPushButton{"
                       "  color: " + get_qcolor(BUTTONS_TEXT_COLOR_NUM).name(QColor::HexArgb) + ";" +

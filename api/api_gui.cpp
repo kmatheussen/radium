@@ -349,8 +349,11 @@ static inline QColor getQColor(int64_t color){
 
 static QColor getQColor(const_char* colorname){
 #if !defined(RELEASE)
-  if(strlen(colorname) > 9 && colorname[0]=='#')
-    abort();
+  if(strlen(colorname) > 9 && colorname[0]=='#'){
+    fprintf(stderr, "COLORNAME: \"%s\"\n", colorname);
+    getchar();
+    //abort();
+  }
 #endif
 
 #if DEBUG_COLORS
@@ -360,7 +363,8 @@ static QColor getQColor(const_char* colorname){
   QColor color = get_config_qcolor(colorname);
   if (!color.isValid()){
 #if !defined(RELEASE)
-    abort();
+    fprintf(stderr, "COLORNAME: \"%s\"\n", colorname);
+    getchar();
 #endif
 
     
