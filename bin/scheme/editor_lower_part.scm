@@ -110,9 +110,9 @@
                              (get-curr-statusbar-text)
                              (+ 1 x1) (+ y1 0.0)
                              (- x2 1) (- y2 0.0)
-                             :color "color12"
-                             :color2 #f ;;(<gui> :mix-colors "color0" "black" 0.7)
-                             :text-color "black"
+                             :color "tempo_multiplier_slider";color12"
+                             :color2 "black" ;#f ;;(<gui> :mix-colors "color0" "black" 0.7)
+                             :text-color "tempo_multiplier_slider_text"
                              :border-color "#222222"
                              :border-width 0
                              :cut-text-to-fit #f
