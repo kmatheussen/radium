@@ -944,6 +944,8 @@
                                 :align-left #f
                                 :paint-border #t
                                 :border-rounding 2
+                                :border-width 1.2
+                                :border-color "#222222"
                                 :scale-font-size #t
                                 :cut-text-to-fit #f
                                 :only-show-left-part-if-text-dont-fit #t ;; only make sense to set #f if both scale-font-size and cut-text-to-fit is #f.
@@ -957,8 +959,18 @@
 
   (define (get-text-color)
     (if (procedure? text-color)
-        (text)
+        (text-color)
         text-color))
+
+  (define (get-border-color)
+    (if (procedure? border-color)
+        (border-color)
+        border-color))
+
+  (define (get-border-width)
+    (if (procedure? border-width)
+        (border-width)
+        border-width))
 
   (define (get-background-color)
     (and background-color
@@ -1011,7 +1023,7 @@
              (lambda ()
                ;;(<gui> :draw-box gui background-color (+ 0 x1) (+ 0 y1) (- x2 0) (- y2 0) 2 0 0)
                ;;(<gui> :draw-box gui *mixer-strip-border-color* x1 y1 x2 y2 1.5 border-rounding border-rounding)
-               (<gui> :draw-box gui "#222222" x1 y1 x2 y2 1.2 border-rounding border-rounding)
+               (<gui> :draw-box gui (get-border-color) x1 y1 x2 y2 (get-border-width) border-rounding border-rounding)
                ))
       )
     )
@@ -1610,7 +1622,7 @@
         ;;(c-display "Area " i ": " area-y1 area-y2)
         (set! i (+ i 1))
         (if expand-area-widths
-            (area :set-position-and-size! x1 area-y1 (- scrollbar-x1 1) area-y2)
+            (area :set-position-and-size! x1 area-y1 (- scrollbar-x1 0) area-y2)
             (area :set-position! x1 area-y1))
         (when (and (>= area-y2 y1)
                    (< area-y1 y2))          

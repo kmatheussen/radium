@@ -95,8 +95,8 @@
                                         (<ra> :to-base64 (<-> (if (< i 10) " " "") i ": "))
                                         (<ra> :get-base64-from-filepath (file-info :filename)))
                                   :background-color (lambda ()
-                                                      (let ((base (<gui> :set-alpha-for-color color 0.05)))
-                                                        (if (is-current?)
+                                                      (let ((base (<gui> :set-alpha-for-color color 0.5)))
+                                                        (if (and #f (is-current?))
                                                             (<gui> :mix-colors "high_background" base 0.95)
                                                             base)))
                                   :text-color (lambda ()
@@ -104,7 +104,16 @@
                                                     *text-color*
                                                     "black"))
                                   :align-left #t
-                                  :paint-border #f
+                                  :paint-border #t
+                                  :border-rounding 0
+                                  :border-width (lambda ()
+                                                  (if (is-current?)
+                                                      2.9
+                                                      0.5))
+                                  :border-color (lambda ()
+                                                  (if (is-current?)
+                                                      "sequencer_text_current_block_color"
+                                                      "high_background"))
                                   :cut-text-to-fit #t
                                   :text-is-base64 #t
                                   )))
@@ -210,15 +219,29 @@
                        (let ()
                          (let ((text-area (<new> :text-area gui 10 0 100 (round (* 0.8 (get-fontheight)))
                                                  (<-> (if (< blocknum 10) " " "") blocknum ": " (<ra> :get-block-name blocknum))
-                                                 :background-color (let ((base (<gui> :set-alpha-for-color color 0.05)))
-                                                                     (if is-current
-                                                                         (<gui> :mix-colors "high_background" base 0.95)
-                                                                         base))
-                                                 :text-color (if is-current
-                                                                 *text-color*
-                                                                 "black")
+                                                 :background-color (if #t
+                                                                       color
+                                                                       (let ((base color)) ;;(<gui> :set-alpha-for-color color 0.5)))
+                                                                         (if is-current
+                                                                             (<gui> :mix-colors "high_background" base 0.95)
+                                                                             base)))
+                                                 :text-color (lambda ()
+                                                               (if is-current
+                                                                   "sequencer_text_current_block_color"
+                                                                   "sequencer_text_color"))
                                                  :align-left #t
-                                                 :paint-border #f
+                                                 :paint-border #t ;;is-current
+                                                 :border-rounding 0
+                                                 ;;:border-width 2.9
+                                                 ;;:border-color "sequencer_text_current_block_color"
+                                                 :border-width (lambda ()
+                                                                 (if is-current
+                                                                     2.9
+                                                                     0.5))
+                                                 :border-color (lambda ()
+                                                                 (if is-current
+                                                                     "sequencer_text_current_block_color"
+                                                                     "high_background"))
                                                  :cut-text-to-fit #t
                                                  )))
                            (text-area :add-mouse-cycle! mouse-callback)
@@ -427,24 +450,36 @@
                                                               (else
                                                                #f)))
                                           (if color
-                                              (set! color (<gui> :set-alpha-for-color color 0.1)))
+                                              (set! color (<gui> :set-alpha-for-color color 0.5)))
                                           (cond ;((eq? (entry :type) 'pause)
                                         ; "low_background");;#f) ;;"#666666")
                                            ((is-current?)
                                             (if color
-                                                (<gui> :mix-colors "high_background" color 0.95)
+                                                color ;;(<gui> :mix-colors "high_background" color 0.95)
                                                 "high_background"))
                                            (else
                                             color)))
                       :text-color (lambda ()
                                     (cond ((is-current?)
-                                           *text-color*)
-                                          ((eq? (entry :type) 'pause)
-                                           "black") ;;*text-color*)
+                                           "sequencer_text_current_block_color")
                                           (else
-                                           "black")))
+                                           "sequencer_text_color")))
+                                           ;;*text-color*)
+                                          ;;((eq? (entry :type) 'pause)
+                                          ;; "black") ;;*text-color*)
+                                          ;;(else
+                                          ;; "black")))
                       :align-left #t
-                      :paint-border #f
+                      :paint-border #t
+                      :border-rounding 0
+                      :border-width (lambda ()
+                                      (if (is-current?)
+                                          2.9
+                                          0.5))
+                      :border-color (lambda ()
+                                      (if (is-current?)
+                                          "sequencer_text_current_block_color"
+                                          "high_background"))
                       :cut-text-to-fit #t
                       :text-is-base64 #t
                       ))
