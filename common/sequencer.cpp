@@ -1531,10 +1531,10 @@ static struct SeqBlock *SEQBLOCK_create_from_state(const struct SeqTrack *seqtra
 #endif
         
         if (show_rerror)
-          GFX_addMessage(talloc_format("Note: Expected \"%S\" to be at least %d frames long. Instead it was %d frames long. The file seems to have changed since it was last used in Radium.",
-                                       filename.id,
-                                       (int)interior_end,
-                                       (int)default_duration)
+          GFX_addMessage("Note: Expected \"%S\" to be at least %d frames long. Instead it was %d frames long. The file seems to have changed since it was last used in Radium.",
+                         filename.id,
+                         (int)interior_end,
+                         (int)default_duration
                          );
         //RError("interior-end value is larger than the default block duration: %d > %d", (int)interior_end, (int)default_duration);
         
