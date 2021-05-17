@@ -16,11 +16,26 @@ QGroupBox::title {
 
 QScrollArea { background: transparent; }
 QScrollArea > QWidget > QWidget { background: transparent; }
-QScrollArea > QWidget > QScrollBar { background: rgba(ff, ff, ff, 50); }
+QScrollArea > QWidget > QScrollBar { background: rgba(255, 255, 255, 50); }
 
 QTabBar::pane { border: 0; }
+
+/*
+QPushButton::hover{
+    background: rgba(127, 127, 127, 20);
+}
+
+QPushButton::hover{
+    background: rgba(127, 127, 127, 20);
+}
+*/
 
 /*
 QTabWidget::pane { border: 0; background: blue}
 */
 
+/* 
+QMenu::separator {
+    background-color: gray;
+}
+*/
