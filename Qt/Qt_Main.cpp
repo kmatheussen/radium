@@ -3290,10 +3290,7 @@ int radium_main(const char *arg){
 
   }
 
-  qApp->setStyleSheet("QSplitter::handle{background-color: " + get_qcolor(HIGH_BACKGROUND_COLOR_NUM).darker(110).name(QColor::HexArgb) + ";}" +
-                      "QTabWidget::pane { border: 0; background: " + get_qcolor(LOW_BACKGROUND_COLOR_NUM).name(QColor::HexArgb) + "}" +
-                      DISK_file_to_qstring(OS_get_full_program_file_path("stylesheet.css"))
-                      );
+  GFX_reload_qt_stylesheets();
 
   GFX_ShowProgressMessage("Creating main menus", true);
   S7CALL2(void_void,"generate-main-menus");

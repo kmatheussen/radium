@@ -1264,6 +1264,22 @@ void GFX_SetBrightness(struct Tracker_Windows *tvisual, float how_much){
   tvisual->must_redraw = true;
 }
 
+void GFX_reload_qt_stylesheets(void){
+  int darker = 150;
+  
+  qApp->setStyleSheet("QPushButton{"
+                      "  color: " + get_qcolor(BUTTONS_TEXT_COLOR_NUM).name(QColor::HexArgb) + ";" +
+                      "  background-color: " + get_qcolor(BUTTONS_COLOR_NUM).darker(darker).name(QColor::HexArgb) + ";" +
+                      "}" +
+                      "QPushButton:pressed{ background-color: " + get_qcolor(BUTTONS_PRESSED_COLOR_NUM).darker(darker).name(QColor::HexArgb) + ";}" +
+                      "QPushButton:disabled{ background-color: " + mix_colors(QColor("#808080"), get_qcolor(BUTTONS_PRESSED_COLOR_NUM).darker(darker), 0.5).name(QColor::HexArgb) + ";}" +
+                      "QPushButton:hover{ background-color: " + get_qcolor(BUTTONS_COLOR_NUM).lighter(100).name(QColor::HexArgb) + ";}" +
+                      "QSplitter::handle{background-color: " + get_qcolor(HIGH_BACKGROUND_COLOR_NUM).darker(110).name(QColor::HexArgb) + ";}" +
+                      "QTabWidget::pane { border: 0; background: " + get_qcolor(LOW_BACKGROUND_COLOR_NUM).name(QColor::HexArgb) + "}" +
+                      DISK_file_to_qstring(OS_get_full_program_file_path("stylesheet.css"))
+                      );
+}
+
 void testColorInRealtime(enum ColorNums num, QColor color){
   R_ASSERT_RETURN_IF_FALSE(num<END_CONFIG_COLOR_NUM);
 
@@ -1279,6 +1295,11 @@ void testColorInRealtime(enum ColorNums num, QColor color){
   else
     updateAll(my_widget);
 
+  if (num==HIGH_BACKGROUND_COLOR_NUM || num==LOW_BACKGROUND_COLOR_NUM || num==BUTTONS_COLOR_NUM || num==BUTTONS_PRESSED_COLOR_NUM || num==BUTTONS_TEXT_COLOR_NUM){
+    GFX_reload_qt_stylesheets();
+  }
+
+      
   GFX_update_current_instrument_widget();
 
   window->must_redraw = true;
