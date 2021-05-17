@@ -591,7 +591,7 @@ const wchar_t *DISK_close_temp_for_writing(disk_t *disk){
 
   QByteArray data = disk->temporary_write_file->readAll();
 
-  wchar_t *ret = STRING_create(data.toUtf8().constData());
+  const wchar_t *ret = STRING_create(data.toUtf8().constData());
 
   delete disk;
 
