@@ -33,6 +33,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern PlayerClass *pc;
 extern QApplication *g_qapplication;
 
+constexpr int k_filename_len = 23; //floor((double)width*32.0 / (double)fn.boundingRect("99999999999999999999999999999999").width());
+
+
 QStringList get_sample_name_filters(void){
   static bool inited=false;
   static QStringList list;
@@ -134,8 +137,6 @@ static QString get_sample_filename_display_string(QFileInfo file_info, int width
   int64_t num_bytes = file_info.size();
 
   //const QFontMetrics fn = QFontMetrics(font);
-  const int k_filename_len = 23; //floor((double)width*32.0 / (double)fn.boundingRect("99999999999999999999999999999999").width());
-
   QString ret =
     file_info.fileName().leftJustified(k_filename_len-2,'.') +
     ".." + QString::number(num_channels)+"ch,";
@@ -247,6 +248,7 @@ class Sample_requester_widget : public QWidget
     file_list->setHorizontalScrollBar(new Qt_MyQScrollBar(Qt::Horizontal));
     file_list->setVerticalScrollBar(new Qt_MyQScrollBar(Qt::Vertical));
 
+
     // set _dir
     {
       bool use_saved_path = true;
@@ -343,9 +345,9 @@ class Sample_requester_widget : public QWidget
     down->setFont(QApplication::font()); // why?
     up->setFont(QApplication::font()); // why?
     
-    update_file_list(false);
-
     updateWidgets();
+
+    update_file_list(false);
 
     random_button->_show_popup_menu = [](){
       S7CALL2(void_void,"FROM_C-random_sample-button-popup-menu");
@@ -556,6 +558,30 @@ class Sample_requester_widget : public QWidget
         file_list->addItem(item);
       }
     }
+
+    {
+      const QFontMetrics fn = QFontMetrics(soundfile_font);
+      double fwidth = fn.averageCharWidth(); //boundingRect(".").width();
+      
+      /*
+        printf("font width: %d %d %f. framewidth: %d. scrollbar width: %d. Left/right margin: %d / %d\n",
+        soundfile_font.pointSize(), soundfile_font.pixelSize(), fwidth,
+        file_list->frameWidth(), file_list->verticalScrollBar()->width(),
+        file_list->contentsMargins().left(),
+        file_list->contentsMargins().right()
+        );
+      */
+      
+      file_list->setFixedWidth(ceil((k_filename_len + 9.0) * fwidth)
+                               + 2 * file_list->frameWidth()
+                               + g_default_slider_height
+                               //+ file_list->verticalScrollBar()->width()
+                               + file_list->contentsMargins().left()
+                               + file_list->contentsMargins().right()
+                               + 4 // don't know why.
+                               );
+    }
+    
 
     file_list->setCurrentRow(1);
 
@@ -847,7 +873,7 @@ public slots:
       /*
       ADD_UNDO(PluginState(_patch.data()));
       
-      wchar_t *filename = STRING_create(_sf2_file);
+      const wchar_t *filename = STRING_create(_sf2_file);
 
       hash_t *bank = get_bank(filename, _sf2_bank);
 
