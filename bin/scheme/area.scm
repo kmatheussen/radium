@@ -979,7 +979,7 @@
   (define (paint-text-area gui x1 y1 x2 y2)
     (let ((background-color (get-background-color)))
       (if background-color
-          (<gui> :filled-box gui background-color x1 y1 x2 y2 border-rounding border-rounding #f)))
+          (<gui> :filled-box gui background-color x1 y1 x2 y2 border-rounding border-rounding #t)))
 
     (define text (maybe-thunk-value text))
 
