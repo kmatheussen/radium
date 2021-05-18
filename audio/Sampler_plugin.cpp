@@ -780,10 +780,10 @@ static int RT_crossfade(int64_t start_pos, int64_t end_pos, int64_t crossfade_st
                   start_fade_val, end_fade_val
                   );
   RT_fade_add(
-                 out_data,
-                 in_data + fade_in_start_pos,
-                 num_frames,
-                 1.0f - start_fade_val, 1.0f - end_fade_val
+                  out_data,
+                  in_data + fade_in_start_pos,
+                  num_frames,
+                  1.0f - start_fade_val, 1.0f - end_fade_val
               );
 
   return num_frames;
@@ -796,20 +796,17 @@ static int RT_legal_crossfade_length(const LoopData &loop_data, Data *data){
   return (int)R_MIN(crossfade_length, loop_length/2);
 }
 
-static int RT_src_callback_with_crossfade_do_looping(Voice *voice, const LoopData &loop_data, const Sample *sample, Data *data, int64_t start_pos, float **out_data){
+static int RT_src_callback_with_crossfade_do_looping(Voice *voice, const LoopData &loop_data, const Sample *sample, Data *data, int64_t start_pos, float **out_data, int crossfade_length){
   *out_data = voice->crossfade_buffer;
-  const int len_out_data = CROSSFADE_BUFFER_LENGTH;
 
-  int64_t end_pos = start_pos + len_out_data;
+  int64_t end_pos = start_pos + CROSSFADE_BUFFER_LENGTH;
   if (end_pos > loop_data._end)
     end_pos = loop_data._end;
-
-  int legal_crossfade_length = RT_legal_crossfade_length(loop_data, data);
 
   voice->pos = end_pos; // next
   if (voice->pos>=loop_data._end){
     R_ASSERT_NON_RELEASE(voice->pos==loop_data._end);
-    voice->pos = loop_data._start + legal_crossfade_length;
+    voice->pos = loop_data._start + crossfade_length;
     //printf("crossfading %d -> %d-%d -> %d (%d)\n",sample->loop_start,start_pos,end_pos,sample->loop_end,voice->pos);
     R_ASSERT_NON_RELEASE(voice->pos < loop_data._end);
   }
@@ -822,30 +819,28 @@ static int RT_src_callback_with_crossfade_do_looping(Voice *voice, const LoopDat
   float *in_data = voice->sample->sound;
 
   return RT_crossfade(start_pos, end_pos,
-                      loop_data._end - legal_crossfade_length, loop_data._end,
+                      loop_data._end - crossfade_length, loop_data._end,
                       loop_data._start,
                       *out_data, in_data
                       );
 }
 
-static int64_t RT_src_callback_with_crossfade_between_looping(Voice *voice, const LoopData &loop_data, const Sample *sample, Data *data, int64_t start_pos, float **out_data){
-  *out_data = sample->sound + voice->pos;
+static int64_t RT_src_callback_with_crossfade_between_looping(Voice *voice, const LoopData &loop_data, const Sample *sample, Data *data, int64_t start_pos, float **out_data, const int64_t crossfade_start){
+  *out_data = sample->sound + start_pos;
   
-  int64_t prev_voice_pos = voice->pos;
-  
-  voice->pos = loop_data._end - RT_legal_crossfade_length(loop_data, data); // next
+  // We add R_MAX(prev_voice_pos+1, ...) because othervice prev_voice_pos can be equal or larger than voice->pos when changing crossfade and/or changing loop points while playing.
+  voice->pos = R_MAX(start_pos+1, crossfade_start); // next
   
   R_ASSERT_NON_RELEASE(voice->pos < loop_data._end);
 
-  // Can happen when changing loop points while playing.
-  //R_ASSERT_NON_RELEASE( (voice->pos - prev_voice_pos) >= 0);
+  R_ASSERT_NON_RELEASE( (voice->pos - start_pos) >= 0);
   
-  return R_MAX(1, voice->pos - prev_voice_pos); // prev_voice_pos can be equal or larger than voice->pos when changing crossfade and/or changing loop points while playing.
+  return voice->pos - start_pos;
 }
 
-static int64_t RT_src_callback_with_crossfade_before_looping(Voice *voice, const LoopData &loop_data, const Sample *sample, Data *data, int64_t start_pos, float **out_data){  
+static int64_t RT_src_callback_with_crossfade_before_looping(Voice *voice, const LoopData &loop_data, const Sample *sample, Data *data, int64_t start_pos, float **out_data, int64_t crossfade_start){  
   *out_data = sample->sound;
-  voice->pos = loop_data._end - RT_legal_crossfade_length(loop_data, data); // next
+  voice->pos = crossfade_start; // next
   R_ASSERT_NON_RELEASE(voice->pos < loop_data._end);
 
   R_ASSERT_NON_RELEASE(voice->pos >= 0);
@@ -855,14 +850,17 @@ static int64_t RT_src_callback_with_crossfade_before_looping(Voice *voice, const
 static int64_t RT_src_callback_with_crossfade_looping(Voice *voice, const LoopData &loop_data, const Sample *sample, Data *data, int64_t start_pos, float **out_data){
   //printf("crossfading %d -> %d -> %d (%d)\n",sample->loop_start,start_pos,sample->loop_end,voice->pos);
 
-  if(start_pos==0 && loop_data._start>0)
-    return RT_src_callback_with_crossfade_before_looping(voice, loop_data, sample, data, start_pos, out_data);
+  const int crossfade_length = RT_legal_crossfade_length(loop_data, data);
+  const int64_t crossfade_start = loop_data._end - crossfade_length;
+  
+  if (start_pos==0 && loop_data._start>0)
+    return RT_src_callback_with_crossfade_before_looping(voice, loop_data, sample, data, start_pos, out_data, crossfade_start);
 
-  else if (start_pos >= loop_data._end - RT_legal_crossfade_length(loop_data, data))
-    return RT_src_callback_with_crossfade_do_looping(voice, loop_data, sample, data, start_pos, out_data);
+  else if (start_pos >= crossfade_start)
+    return RT_src_callback_with_crossfade_do_looping(voice, loop_data, sample, data, start_pos, out_data, crossfade_length);
 
   else
-    return RT_src_callback_with_crossfade_between_looping(voice, loop_data, sample, data, start_pos, out_data);
+    return RT_src_callback_with_crossfade_between_looping(voice, loop_data, sample, data, start_pos, out_data, crossfade_start);
 }
 /**********************************
   End of crossfading code
