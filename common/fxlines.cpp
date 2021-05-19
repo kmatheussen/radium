@@ -671,12 +671,12 @@ void RT_fxline_called_each_block(struct SeqTrack *seqtrack,
   
   struct Tracks *track = block->tracks;
 
-  const struct STimes *times = get_stimes_from_swinging_mode(block, PLUGINS_AND_JACK_TRANSPORT_SWINGING_MODE);
+  const struct STimes *block_times = get_stimes_from_swinging_mode(block, PLUGINS_AND_JACK_TRANSPORT_SWINGING_MODE);
   
-  const r::RatioPeriod period = get_ratio_period(seqblock,
-                                                 times,                                                 
-                                                 seqtime_start,
-                                                 seqtime_end);
+  const r::RatioPeriod block_period = get_ratio_period(seqblock,
+                                                       block_times,                                                 
+                                                       seqtime_start,
+                                                       seqtime_end);
   
   if (play_id != seqblock->last_play_id) {
     
@@ -698,19 +698,24 @@ void RT_fxline_called_each_block(struct SeqTrack *seqtrack,
 
     if (enabled && doit){
 
-      const r::RatioPeriod das_period
-        = track->times==times
-        ? period
+      // TODO: Optimize by taking latency into account here instead of rescheduling in audio_instrument.cpp.
+      // (It's a bigger optimization doing it when notes have been converted to TimeData though.)
+      
+      const r::RatioPeriod track_period
+        = track->times==block_times
+        ? block_period
         : get_ratio_period(seqblock,
                            track->times,                                                 
                            seqtime_start,
                            seqtime_end);
-      
-      if (0 && track->l.num==0){
-        auto ratio_start = period._start;
-        auto ratio_end = period._end;
+
+#if 0
+      if (track->l.num==0){
+        auto ratio_start = block_period._start;
+        auto ratio_end = block_period._end;
         printf("B: %d. Ratio start: %d / %d (%f). Ratio end: %d / %d (%f). Seqtime: %d -> %d. Seqblock time: %d -> %d\n", block->l.num, (int)ratio_start.num, (int)ratio_start.den, make_double_from_ratio(ratio_start), (int)ratio_end.num, (int)ratio_end.den, make_double_from_ratio(ratio_end), (int)seqtime_start, (int)seqtime_end, (int)seqblock->t.time, (int)seqblock->t.time2);
       }
+#endif
       
       VECTOR_FOR_EACH(struct FXs *, fxs, &track->fxs){
 
@@ -720,7 +725,7 @@ void RT_fxline_called_each_block(struct SeqTrack *seqtrack,
           
           r::TimeData<r::FXNode>::Reader reader(fxs->_fxnodes, (0 && ATOMIC_GET(root->editonoff)) ? -1 : seqblock->cache_num);
 
-          reader.iterate_fx<int>(seqtrack, seqblock, track, fx, play_id, seqtime_start, das_period);
+          reader.iterate_fx<int>(seqtrack, seqblock, track, fx, play_id, seqtime_start, track_period);
 
         }
         
