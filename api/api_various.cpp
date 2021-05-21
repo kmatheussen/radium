@@ -4196,7 +4196,7 @@ void setUseNativeFileRequesters(bool doit){
 
 
 
-static float g_instrument_brightness = 0.531000018119812;
+static float g_instrument_brightness = 0.4819999933242798;
 
 static void update_all_instrument_colors_in_editor(void){
   root->song->tracker_windows->must_redraw_editor=true;
@@ -4296,7 +4296,7 @@ void setInstrumentSaturationInEditor(float val){
 }
 
 
-static float g_block_brightness = 0.5;
+static float g_block_brightness = 0.3899999856948853;
 
 static void update_all_block_colors(void){
   SEQUENCER_update(SEQUPDATE_EVERYTHING);

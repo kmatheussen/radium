@@ -98,7 +98,7 @@ static const ColorConfig g_colorconfig[] = {
   {AUTOMATION_SEPARATOR, "", "Automation", true},
   {INSTRUMENT_SEPARATOR, "", "Instruments", true},
   {MIXER_SEPARATOR, "", "Mixer", true},
-  {SEQUENCER_SEPARATOR, "", "Sequencer", true},
+  {SEQUENCER_SEPARATOR, "", "Sequencer / Playlist", true},
   //{_SEPARATOR, "", "", true},
   //{_SEPARATOR, "", "", true},
   
@@ -396,12 +396,12 @@ static ReplacementColor g_replacement_color[] = {
   {SEQTRACK_INSTRUMENT_DEFAULT_COLOR_NUM, QColor("#692426")},
 
   {SEQUENCER_CURRTRACK_BORDER_COLOR_NUM, QColor("#ffc8c8c8")},
-  {SEQUENCER_CURR_SEQBLOCK_BORDER_COLOR_NUM, QColor("#ebc909")},
+  {SEQUENCER_CURR_SEQBLOCK_BORDER_COLOR_NUM, QColor("#ffffbc11")},
   {SEQUENCER_LANES_BACKGROUND_COLOR_NUM, QColor("#ff464d47")},
   {SEQTRACKS_BACKGROUND_COLOR_NUM, QColor("#ff3a4844")},
   {SEQUENCER_BORDER_COLOR_NUM, QColor("#ff010101")},
   {SEQUENCER_TEXT_COLOR_NUM, QColor("#ff010101")},
-  {SEQUENCER_TEXT_CURRENT_BLOCK_COLOR_NUM, QColor("#d4d4d4")},
+  {SEQUENCER_TEXT_CURRENT_BLOCK_COLOR_NUM, QColor("#ffffffff")},
   {SEQUENCER_NOTE_COLOR_NUM, QColor("#960101c8")},
   {SEQUENCER_NOTE_START_COLOR_NUM, QColor("#ff000000")},
 
