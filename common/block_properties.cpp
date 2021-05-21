@@ -252,8 +252,8 @@ void Block_Properties(
                           setCurrentTrack(num_tracks-1, -1, window->l.num);
 			window=NextWindow(window);
 		}
-                player_pause.need_it();
           */
+                player_pause.need_it();
 		Block_Set_num_tracks(block,num_tracks);
 	}
 
