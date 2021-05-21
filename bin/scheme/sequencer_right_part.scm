@@ -35,13 +35,13 @@
 
 (define *curr-audiofile-num* 0)
 
-(define (create-audio-files-browser-area gui x1 y1 x2 y2 draggable state)
+(define (create-audio-files-browser-area gui x1 y1 x2 y2 is-draggable state)
   (c-display "CRETING")
   
   (define curr-audiofile #f)
   
   (define (recreate x1 y1 x2 y2 state)
-    (define entry-height (round (if draggable
+    (define entry-height (round (if is-draggable
                                     (* 1.2 (get-fontheight))
                                     (* 0.8 (get-fontheight)))))
     (define audiofiles (<ra> :get-audio-files))
@@ -60,7 +60,7 @@
         ;;(c-display "HEPP:" (<ra> :from-base64 audiofile) i *curr-audiofile-num*)
         (area :update-me!)
         (cond ((= button *right-button*)
-               (if draggable
+               (if is-draggable
                    (show-audiolist-popup-menu audiofile)
                    (FROM_C-show-blocklist-popup-menu))
                #t)
@@ -81,7 +81,7 @@
         (and *curr-audiofile-num*
              (= i *curr-audiofile-num*)))
       
-      (if draggable
+      (if is-draggable
           (<new> :seqblock-table-entry-area gui x1 0 x2 entry-height
                  :is-current is-current?
                  :entry-num i
@@ -141,7 +141,7 @@
                               (area :update-me!))
                             (and (= button *right-button*)
                                  (begin
-                                   (if draggable
+                                   (if is-draggable
                                        (show-audiolist-popup-menu #f) ;;curr-audiofile)
                                        (FROM_C-show-blocklist-popup-menu))
                                    #t))))
@@ -182,7 +182,7 @@
 (define *blocklist-has-been-overridden* (defined? '*blocklist-areas*))
 (define *blocklist-areas* (<new> :container '() eq?))
 
-(define (create-blocks-browser-area gui x1 y1 x2 y2 draggable state)
+(define (create-blocks-browser-area gui x1 y1 x2 y2 is-draggable state)
 
   (define entry-areas '())
   
@@ -206,7 +206,7 @@
                    #f)
                  
                  (define entry
-                   (if draggable
+                   (if is-draggable
                        (<new> :seqblock-table-entry-area gui 10 0 100 (round (* 1.2 (get-fontheight)))
                               :is-current is-current
                               :entry-num blocknum
@@ -240,7 +240,7 @@
                                                                      0.5))
                                                  :border-color (lambda ()
                                                                  (if is-current
-                                                                     "sequencer_text_current_block_color"
+                                                                     "sequencer_text_current_block_color" ;;"sequencer_curr_seqblock_border_color" ;;"sequencer_text_current_block_color"
                                                                      "high_background"))
                                                  :cut-text-to-fit #t
                                                  )))
@@ -269,7 +269,7 @@
                             (and (not (<ra> :shift-pressed))
                                  (= button *right-button*)
                                  (begin
-                                   (if draggable
+                                   (if is-draggable
                                        (show-blocklist-popup-menu)
                                        (FROM_C-show-blocklist-popup-menu))
                                    #t))))
@@ -478,7 +478,7 @@
                                           0.5))
                       :border-color (lambda ()
                                       (if (is-current?)
-                                          "sequencer_text_current_block_color"
+                                          "sequencer_curr_seqblock_border_color" ;;"sequencer_text_current_block_color"
                                           "high_background"))
                       :cut-text-to-fit #t
                       :text-is-base64 #t

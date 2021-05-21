@@ -953,24 +953,16 @@
                                 )
 
   (define (get-text)
-    (if (procedure? text)
-        (text)
-        text))
+    (maybe-thunk-value text))
 
   (define (get-text-color)
-    (if (procedure? text-color)
-        (text-color)
-        text-color))
+    (maybe-thunk-value text-color))
 
   (define (get-border-color)
-    (if (procedure? border-color)
-        (border-color)
-        border-color))
+    (maybe-thunk-value border-color))
 
   (define (get-border-width)
-    (if (procedure? border-width)
-        (border-width)
-        border-width))
+    (maybe-thunk-value border-width))
 
   (define (get-background-color)
     (and background-color
@@ -2122,7 +2114,7 @@
     (cond ((is-current?)
            *text-color*)
           (blocknum
-           "black")
+           "sequencer_text_color")
           ((file-info :is-dir)
            *text-color*)
           (background-color
@@ -2233,7 +2225,7 @@
     ;;    (set! entry-background-color (<gui> :mix-colors entry-background-color "green" 0.1)))
 
     ;;(<gui> :filled-box gui (<gui> :get-background-color gui) (+ 1 x1) y1 x2 y2 4 4)
-    (<gui> :filled-box gui entry-background-color (+ 1 x1) y1 x2 y2 4 4 (if background-color #t #f))
+    (<gui> :filled-box gui entry-background-color (+ 1 x1) y1 (- x2 2) y2 4 4 (if background-color #t #f))
 
     ;; name
     (<gui> :draw-text gui (get-text-color) name-text
@@ -2292,7 +2284,7 @@
       ;; Why was this line here?
       ;;(<gui> :set-clip-rect gui (+ x1 1) y1 x2 y2)
       
-      (<gui> :draw-box gui "sequencer_curr_entry_border_color" (+ 1 x1) (+ y1 0) (- x2 0) (- y2 0) (/ (get-fontheight) 2.5) 4 4)
+      (<gui> :draw-box gui "sequencer_text_current_block_color" (+ 0.5 x1) (+ y1 0.5) (- x2 1) (- y2 1) 1.9 4 4) ;;2 2)
       ;;(<gui> :set-clip-rect gui cx1 cy1 cx2 cy2)
       )
 
