@@ -3,7 +3,7 @@
 #include "RT_memory_allocator_proc.h"
 
 /*
-  Realtime safe and multithread safe scoped_ptr and shared_ptr.
+  Realtime-safe and multithread-safe scoped_ptr and shared_ptr.
   See test_RT_Smartpointers for example of usage.
  */
 

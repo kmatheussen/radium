@@ -491,9 +491,13 @@ public:
   ~Plugin_widget(){
     prepare_for_deletion();
   }
-      
-  void update_widget(void) {
+
+  void set_effect_display_boundaries(int effect_num, int min_value, int max_value){
+    _plugin_widget->set_effect_display_boundaries(effect_num, min_value, max_value);
+  }
     
+  void update_widget(void) {
+    //printf("_plugin->update_widget()\n");
     if(_plugin_widget != NULL){
       _plugin_widget->update_gui();
     }

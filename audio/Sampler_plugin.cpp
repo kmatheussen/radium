@@ -69,7 +69,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Sampler_plugin_proc.h"
 
-
 #define POLYPHONY 256
 #define MAX_NUM_SAMPLES 256
 #define CROSSFADE_BUFFER_LENGTH 128
@@ -199,7 +198,6 @@ namespace{
 struct ResettableGranResamplerCallback : public radium::GranResamplerCallback, public radium::AudioPickuper {
   virtual void reset2(void) = 0; // There is already a reset() function in AudioPickuper, so we call this one reset2 to avoid confusion about which one is called.
 };
-
 
 static radium::Spinlock _gran_pool_spinlock;
 static radium::Granulator *_gran_pool; // access protected by obtaining _gran_pool_spinlock.
@@ -2256,6 +2254,36 @@ static bool can_crossfade(Data *data){
   return data->p.reverse==false && data->p.pingpong==false;
 }
 
+static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format);
+
+static void maybe_update_loop_slider_boundaries(struct SoundPlugin *plugin, const Sample &sample){
+  if (plugin->curr_storeit_type!=STORE_VALUE)
+    return;
+  
+  if (!THREADING_is_main_thread())
+    return;
+
+  struct Patch *patch = plugin->patch;
+  
+  if (patch==NULL){
+    R_ASSERT_NON_RELEASE(false);
+    return;
+  }
+  
+  int64_t start = get_effect_value(plugin, EFF_LOOP_START, EFFECT_FORMAT_NATIVE);
+  int64_t end = get_effect_value(plugin, EFF_LOOP_END, EFFECT_FORMAT_NATIVE);
+  int64_t len = end-start;
+  
+  int minval = scale_int64(start + MIN_LOOP_LENGTH, 0, sample.num_frames, 0, 10000);  
+  int maxval = scale_int64(end - MIN_LOOP_LENGTH, 0, sample.num_frames, 0, 10000);
+  
+  GFX_set_effect_display_boundaries(patch, EFF_LOOP_START, 0, maxval);
+
+  GFX_set_effect_display_boundaries(patch, EFF_LOOP_END, minval, 10000);
+  
+  GFX_set_effect_display_boundaries(patch, EFF_LOOP_WINDOW, 0, 10000 - scale_int64(len, 0, sample.num_frames, 0, 10000));
+}
+
 static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
   Data *data = (Data*)plugin->data;
 
@@ -2297,6 +2325,19 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
                                       data->p.loop_end
                                       );
           data->p.loop_start_was_set_last = true;
+
+          PLUGIN_call_me_when_an_effect_value_has_changed(plugin,
+                                                          EFF_LOOP_WINDOW,
+                                                          data->p.loop_start,
+                                                          get_effect_value(plugin, EFF_LOOP_START, EFFECT_FORMAT_SCALED),
+                                                          false, // make undo
+                                                          plugin->curr_storeit_type,
+                                                          when,
+                                                          false //update_instrument_widget
+                                                          );
+
+          maybe_update_loop_slider_boundaries(plugin, sample);
+          
           update_editor_graphics(plugin);
 
           if (when==FX_single && plugin->patch != NULL)
@@ -2312,16 +2353,26 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
         //printf("loop end. %p\n", &sample);
         if (sample.sound != NULL){
           //printf("       EFF_LOOP_END: %f (%s). (loop_start: %d. num_frames: %d)\n", value, value_format==EFFECT_FORMAT_NATIVE ? "native" : "scaled", (int)data->p.loop_start, (int)sample.num_frames);
-          int64_t end = value_format==EFFECT_FORMAT_NATIVE ? value : scale_double(value,
-                                                                                  0,1,
-                                                                                  0,sample.num_frames);
-            
+
+          LoopData loop_data(sample, data->p.loop_start_was_set_last);
+          int64_t old_start = loop_data._start;
+          
+          int64_t end = R_BOUNDARIES(old_start + MIN_LOOP_LENGTH,
+                                     value_format==EFFECT_FORMAT_NATIVE ? value : scale_double(value,
+                                                                                               0,1,
+                                                                                               0,sample.num_frames),
+                                     sample.num_frames
+                                     );
+
           RT_set_loop_points_internal(plugin,
                                       data,
-                                      data->p.loop_start,
-                                      R_BOUNDARIES(1, end, sample.num_frames)
+                                      old_start, //data->p.loop_start,
+                                      end
                                       );
           data->p.loop_start_was_set_last = false;
+
+          maybe_update_loop_slider_boundaries(plugin, sample);
+          
           update_editor_graphics(plugin);
 
           if (when==FX_single && plugin->patch != NULL)
@@ -2356,6 +2407,29 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
                                       R_BOUNDARIES(1, (start + length), sample.num_frames)
                                       );
           data->p.loop_start_was_set_last = true;
+
+          PLUGIN_call_me_when_an_effect_value_has_changed(plugin,
+                                                          EFF_LOOP_START,
+                                                          data->p.loop_start,
+                                                          get_effect_value(plugin, EFF_LOOP_START, EFFECT_FORMAT_SCALED),
+                                                          false, // make undo
+                                                          plugin->curr_storeit_type,
+                                                          when,
+                                                          false //update_instrument_widget
+                                                          );
+                                                          
+          PLUGIN_call_me_when_an_effect_value_has_changed(plugin,
+                                                          EFF_LOOP_END,
+                                                          data->p.loop_end,
+                                                          get_effect_value(plugin, EFF_LOOP_END, EFFECT_FORMAT_SCALED),
+                                                          false, // make undo
+                                                          plugin->curr_storeit_type,
+                                                          when,
+                                                          false //update_instrument_widget
+                                                          );
+
+          maybe_update_loop_slider_boundaries(plugin, sample);
+          
           update_editor_graphics(plugin);
 
           if (when==FX_single && plugin->patch != NULL)
@@ -2645,16 +2719,38 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
       return data->p.loop_override_default ? 1.0 : 0.0;
     case EFF_LOOP_START:
     case EFF_LOOP_WINDOW:
-      if (value_format==EFFECT_FORMAT_NATIVE)
-        return data->p.loop_start;
-      else {
+      {
         Sample &sample = data->samples[0];
-        if (sample.sound==NULL)
-          return 0;
-        else
-          return scale(data->p.loop_start, 0, sample.num_frames, 0, 1);
+        if (sample.sound==NULL){
+          if (value_format==EFFECT_FORMAT_NATIVE)
+            return data->p.loop_start;
+          else
+            return 0;
+        }else{
+          LoopData loop_data(sample, data->p.loop_start_was_set_last);
+          if (value_format==EFFECT_FORMAT_NATIVE)
+            return loop_data._start;
+          else
+            return scale(loop_data._start, 0, sample.num_frames, 0, 1);
+        }
       }
     case EFF_LOOP_END:
+      {
+        Sample &sample = data->samples[0];
+        if (sample.sound==NULL){
+          if (value_format==EFFECT_FORMAT_NATIVE)
+            return data->p.loop_end;
+          else
+            return 0;
+        }else{
+          LoopData loop_data(sample, data->p.loop_start_was_set_last);
+          if (value_format==EFFECT_FORMAT_NATIVE)
+            return loop_data._end;
+          else
+            return scale(loop_data._end, 0, sample.num_frames, 0, 1);
+        }
+      }
+#if 0
       if (value_format==EFFECT_FORMAT_NATIVE)
         return data->p.loop_end;
       else {
@@ -2663,7 +2759,8 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
           return 0;
         else
           return scale(data->p.loop_end, 0, sample.num_frames, 0, 1);
-      }      
+      }
+#endif
   }
   
   if(value_format==EFFECT_FORMAT_SCALED){

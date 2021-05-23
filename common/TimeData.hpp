@@ -28,8 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
     "Ratio _time;"
     (TimeData can probably easily be extended to support any _time type, not just Ratio, by making Ratio a template type, if necessary)
   * The underlying vector is sorted by _time.
-  * Accessing a random element is O(Log(n)) while accessing a sequential element is usually O(1)
-    if cache_num >= 0 (i.e. when time is only a little bit higher than last call).
+  * Accessing a random element (given time) is O(Log(n)) while accessing a sequential element is usually O(1) if cache_num >= 0 (i.e. when time is only a little bit higher than last call).
 
 
   HOW IT WORKS
@@ -757,6 +756,14 @@ public:
     ~Reader(){
     }
 
+    const T &at_first(void) const {
+      return this->_vector->at_first();
+    }
+
+    const T &at_last(void) const {
+      return this->_vector->at_last();
+    }
+
     const T &at_ref(int i) const {
       return this->_vector->at_ref(i);
     }
@@ -782,6 +789,7 @@ public:
       : ReaderWriter<TimeData, TimeDataVector>(time_data, time_data->get_write_vector(get_clean), -1)
     {
       R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
+      R_ASSERT_NON_RELEASE(!PLAYER_current_thread_has_lock());
     }
     
     ~Writer(){
@@ -791,6 +799,14 @@ public:
         this->_time_data->replace_vector(this->_vector);
     }
 
+    T &at_first(void) const {
+      return this->_vector->at_first();
+    }
+    
+    T &at_last(void) const {
+      return this->_vector->at_last();
+    }
+    
     T &at_ref(int i) const {
       return this->_vector->at_ref(i);
     }
@@ -820,6 +836,7 @@ public:
       add(data);
     }
 
+    // Moves node within MAX(0, previous node) and MIN(next node, max_pos)
     bool constraint_move(int num, Ratio new_pos, Ratio max_pos){
       Ratio min_pos;
 
@@ -877,6 +894,9 @@ public:
 
     void remove_at_positions(const std::vector<int> &positions){
 
+      if (positions.size()==0)
+        return;
+      
 #if 1
       TimeDataVector *_new_vector = new TimeDataVector();
 
@@ -920,6 +940,16 @@ public:
       sortit();
 #endif
     }
+
+    void remove(std::function<bool(int, T&)> remove_questionmark){
+      std::vector<int> to_remove;
+      
+      for(int i=0;i<this->size();i++)
+        if (remove_questionmark(i, at_ref(i)))
+          to_remove.push_back(i);
+      
+      remove_at_positions(to_remove);      
+    }
     
     bool remove_at_time(Ratio ratio){
       int pos = this->find_pos_exact(ratio);
@@ -933,16 +963,19 @@ public:
       for(int i=this->size()-1 ; i >= 0 ; i--){
         
         T &t = this->at_ref(i);
-        
-        if (t._time >= time){
-          
-          if (t._time==time){
-            if (include_at)
-              remove_at_pos(i);
-          }else
+
+        if (include_at) {
+
+          if (t._time >= time)
             remove_at_pos(i);
           
+        } else {
+
+          if (t._time > time)
+            remove_at_pos(i);
+
         }
+        
       }
     }
 
@@ -1031,7 +1064,6 @@ public:
       _has_cancelled = true;
     }
   };
-
 
   void move_from(TimeData<T> *from){
     Writer to_writer(this, true);
