@@ -421,6 +421,11 @@
 !!#
 
 (define (get-playlist-entry-area gui entry playlist-pos)
+
+  (define (is-current-block?)
+    (if (eq? (entry :type) 'block)
+        (= (<ra> :current-block) (entry :blocknum))
+        (is-current?)))
   
   (define (is-current?)
     (if #t
@@ -460,7 +465,7 @@
                                            (else
                                             color)))
                       :text-color (lambda ()
-                                    (cond ((is-current?)
+                                    (cond ((is-current-block?)
                                            "sequencer_text_current_block_color")
                                           (else
                                            "sequencer_text_color")))

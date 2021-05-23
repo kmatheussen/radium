@@ -538,7 +538,7 @@ void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock, bool fo
 
       EVENTLOG_add_event("SelectWBlock 4");
       
-      SEQUENCER_update(SEQUPDATE_TIME);
+      SEQUENCER_update(SEQUPDATE_TIME | SEQUPDATE_PLAYLIST);
       
       window->must_redraw = true;
 
