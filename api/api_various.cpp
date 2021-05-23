@@ -4322,7 +4322,7 @@ void setBlockBrightness(float val){
 }
 
 
-static float g_block_saturation = 1.0;
+static float g_block_saturation = 0.3420000076293945;
 
 float getBlockSaturation(void){
   static bool has_inited = false;
