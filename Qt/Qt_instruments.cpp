@@ -731,6 +731,42 @@ static void update_audio_instrument_widget(Audio_instrument_widget *instrument, 
   instrument->_plugin_widget->update_widget();
 }
 
+void GFX_set_effect_display_boundaries(struct Patch *patch, int effect_num, int min_value, int max_value){
+  if (patch==NULL)
+    return;
+
+  if (min_value > max_value) {
+#if !defined(RELEASE)
+    abort();
+#endif
+    return;
+  }
+  
+  if (min_value < 0) {
+#if !defined(RELEASE)
+    abort();
+#endif
+    return;
+  }
+  
+  if (max_value > 10000) {
+#if !defined(RELEASE)
+    abort();
+#endif
+    return;
+  }
+  
+  R_ASSERT_RETURN_IF_FALSE(patch->instrument==get_audio_instrument());
+  
+  Audio_instrument_widget *instrument = get_audio_instrument_widget(patch);
+  if(instrument==NULL){
+    printf("GFX_set_effect_display_boundaries. instrument==NULL\n");
+    return;
+  }
+
+  instrument->_plugin_widget->set_effect_display_boundaries(effect_num, min_value, max_value);
+}
+
 void GFX_update_instrument_widget(struct Patch *patch){
   if (patch==NULL)
     return;

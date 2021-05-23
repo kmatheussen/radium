@@ -37,3 +37,5 @@ extern LANGSPEC void ADSR_release(void *adsr);
 extern LANGSPEC void ADSR_reset(void *adsr);
 
 extern LANGSPEC void ADSR_set_adsr(void *adsr, float a, float h, float d, float s, float r);
+
+extern LANGSPEC void ADSR_set_samplerate(void *adsr, float samplerate);

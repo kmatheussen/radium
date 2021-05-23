@@ -252,6 +252,13 @@ class ParamWidget : public QWidget {
     adjustFontSize();
     QWidget::resizeEvent(event);
   }
+
+  void set_effect_display_boundaries(int effect_num, int min_value, int max_value){
+    R_ASSERT_NON_RELEASE(_slider!=NULL);
+    
+    if (_slider != NULL)
+      SLIDERPAINTER_setValueBoundaries(_slider->_painter, min_value, max_value);
+  }
   
   void set_effect_value(float value){
     if (_can_update_effect_value) {
@@ -282,8 +289,12 @@ class ParamWidget : public QWidget {
       if(_slider!=NULL) {
         set_slider_string(); // maybe fix: set_slider_string will be called twice if the value has changed.
         _slider->setValue(value * 10000.0f);
-        //if (_effect_num==0)
-        //  printf("   ===== ParamWidget. Setting slider value to %f (%s)\n", value,get_slider_string().toUtf8().constData());
+
+        /*
+        if (get_slider_string().startsWith("Loop end"))
+          printf("   ===== ParamWidget. Setting slider value to %f (%s). Slider pos: %d\n", value, get_slider_string().toUtf8().constData(), _slider->value());
+        */
+        
       } else if(_check_button!=NULL)
         _check_button->setChecked(value>0.5f);
       
@@ -321,7 +332,7 @@ class ParamWidget : public QWidget {
     char buf[66]={0};
     PLUGIN_get_display_value_string(plugin, _effect_num, buf, 64);
 
-    return get_parameter_prepend_text(_patch.data(), _effect_num) + name + ": " + QString::fromUtf8(buf);
+    return get_parameter_prepend_text(_patch.data(), _effect_num) + name + ": " + QString::fromUtf8(buf) /* + ". " + QString::number(_slider->value()) */ ;
   }
   
   void set_slider_string(void){
@@ -332,6 +343,10 @@ class ParamWidget : public QWidget {
 
     void sliderValueChanged (int value){
       if(_slider!=NULL){
+        /*
+        if (get_slider_string().startsWith("Loop end"))
+          printf("Value changed. Value: %d\n", value);
+        */
         set_effect_value(value/10000.0f);
         set_slider_string();
         //_slider->display_string.sprintf("%s: %s",_name.toUtf8().constData(),
@@ -340,7 +355,7 @@ class ParamWidget : public QWidget {
     }
 
     void checkBoxPressed(){
-      printf("checkbox pressed\n");
+      //printf("checkbox pressed\n");
       ADD_UNDO(AudioEffect_CurrPos(_patch.data(), _effect_num, AE_NO_FLAGS)); // Undo for sliders is taken care of in MyQSlider.h.
     }
 
@@ -371,6 +386,7 @@ struct PluginWidget : public QWidget{
   }
 
   void update_gui(void){
+    //printf("   update_gui called\n");
     for(ParamWidget *param_widget : _param_widgets)
       param_widget->update_gui_element();
 
@@ -387,7 +403,14 @@ struct PluginWidget : public QWidget{
     }
 
   }
-  
+
+  void set_effect_display_boundaries(int effect_num, int min_value, int max_value){
+    R_ASSERT_RETURN_IF_FALSE(effect_num >= 0);
+    R_ASSERT_RETURN_IF_FALSE(effect_num < _param_widgets.size());
+    
+    _param_widgets.at(effect_num)->set_effect_display_boundaries(effect_num, min_value, max_value);
+  }
+
   void calledRegularlyByParent(void){
     bool has_been_visible = false;
     

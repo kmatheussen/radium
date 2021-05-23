@@ -218,6 +218,7 @@ struct MyQSlider : public QSlider, public radium::MouseCycleFix {
       last_value = maximum();
 
     setValue(last_value);
+    //SLIDERPAINTER_setValue(_painter, last_value);
 
     //printf("dx: %f, per_pixel: %f, min/max: %f / %f, value: %f\n",dx,per_pixel,(float)minimum(),(float)maximum(),(float)value());
 

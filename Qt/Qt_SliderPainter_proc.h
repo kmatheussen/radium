@@ -35,6 +35,8 @@ void SLIDERPAINTER_set_num_channels(SliderPainter *painter, int num_channels);
 
 void SLIDERPAINTER_setValue(SliderPainter *painter, int value); // only works with graphics item.
 
+void SLIDERPAINTER_setValueBoundaries(SliderPainter *painter, int min_value, int max_value);
+
 void SLIDERPAINTER_set_peak_value_pointers(SliderPainter *painter, int num_channels, float *pointers, bool single_line_style);
 void SLIDERPAINTER_set_automation_value_pointer(SliderPainter *painter, enum ColorNums color_num, float *pointer);
 void SLIDERPAINTER_call_regularly(SliderPainter *painter, int num_channels);

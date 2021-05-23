@@ -254,6 +254,12 @@ enum{
   EFFECT_FORMAT_RADIO
 };
 
+enum StoreitType{
+  STORE_VALUE,
+  DONT_STORE_VALUE
+};
+
+
 enum ValueFormat{
   EFFECT_FORMAT_NATIVE,
   EFFECT_FORMAT_SCALED // scaled between 0 and 1
@@ -667,6 +673,12 @@ typedef struct SoundPlugin{
   bool RT_input_latency_manifests_into_output_latency; // true by default. Can be set if holding player lock.
 
   filepath_t preset_filename;
+
+  // Contains the value for the "storeit_type" parameter when PLUGIN_set_value is called. Needed when calling PLUGIN_call_me_when_an_effect_value_has_changed from type->set_effect_value.
+  enum StoreitType curr_storeit_type;
+    
+  int mcu_strip_num; // is -1 if this one is not an mcu strip num.
+  
 } SoundPlugin;
 
   

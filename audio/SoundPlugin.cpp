@@ -1712,8 +1712,13 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, const int time,
         
   if(effect_num < plugin->type->num_effects){
 
-    radium::PlayerRecursiveLock lock; // Need lock both because set_effect_value expect player lock to be held, but also to ensure another thread doesn't interfere between set_effect_value() and get_effect_value().
+    // Need lock to:
+    // 1. Avoid race conditions in plugins. (plugin->type->set_effect_value expects player to be locked when called)
+    // 2. Ensure another thread doesn't interfere between set_effect_value() and get_effect_value().
+    radium::PlayerRecursiveLock lock;
 
+    plugin->curr_storeit_type = storeit_type;
+    
     plugin->type->set_effect_value(plugin,time,effect_num,value,value_format,when);
     
     if(storeit_type==STORE_VALUE) {

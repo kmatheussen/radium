@@ -154,9 +154,13 @@ struct SliderPainter{
   bool _alternative_color;
   bool _is_hovered = false;
   bool _recording_color;
-  
+
+  bool _custom_value = false;
   int _value;
 
+  bool _has_value_boundaries = false;
+  int _min_value, _max_value;
+  
   QString _display_string;
 
   int _num_channels;
@@ -166,10 +170,16 @@ struct SliderPainter{
 
 
   int value(){
-    if(_qslider!=NULL)
-      return _qslider->value();
+    int ret;
+    if(_custom_value==false && _qslider!=NULL)
+      ret = _qslider->value();
     else
-      return _value;
+      ret = _value;
+
+    if (_has_value_boundaries)
+      return R_BOUNDARIES(_min_value, ret, _max_value);
+    else
+      return ret;
   }
 
   int minimum(){
@@ -543,7 +553,14 @@ void SLIDERPAINTER_became_invisible(SliderPainter *painter){
   R_ASSERT(THREADING_is_main_thread());
 }
 
+void SLIDERPAINTER_setValueBoundaries(SliderPainter *painter, int min_value, int max_value){
+  painter->_min_value = min_value;
+  painter->_max_value = max_value;
+  painter->_has_value_boundaries = true;
+}
+
 void SLIDERPAINTER_setValue(SliderPainter *painter, int value){
+  painter->_custom_value = true;
   painter->_value = value;
 }
 

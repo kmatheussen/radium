@@ -58,6 +58,10 @@ struct Envelope{
     _freeze_breakpoint = -1;
   }
 
+  void set_samplerate(float samplerate){
+    _samplerate = samplerate;
+  }
+  
   void set_freeze_breakpoint(int num){
     _freeze_breakpoint = num;
   }
@@ -240,4 +244,9 @@ void ADSR_reset(void *adsr){
 void ADSR_set_adsr(void *adsr, float a, float h, float d, float s, float r){
   ADSR *das_adsr=(ADSR*)adsr;
   das_adsr->set_adsr(a,h,d,s,r);
+}
+
+void ADSR_set_samplerate(void *adsr, float samplerate){
+  ADSR *das_adsr=(ADSR*)adsr;
+  das_adsr->env->set_samplerate(samplerate);
 }

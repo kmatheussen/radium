@@ -93,11 +93,6 @@ extern radium::SoloChanges g_empty_solochanges;
 
 #endif
 
-enum StoreitType{
-  STORE_VALUE,
-  DONT_STORE_VALUE
-};
-
 enum WhereToGetValue{
   VALUE_FROM_PLUGIN,
   VALUE_FROM_STORAGE

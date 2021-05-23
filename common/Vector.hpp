@@ -133,6 +133,26 @@ public:
     return at_internal(i);
   }
 
+  T &at_first(void) const {
+    //fprintf(stderr, "\nat_ref. i: %d. num_elements: %d.\n", i, num_elements.get());
+    LOCKASSERTER_SHARED(&lockAsserter);
+
+    int size = num_elements.get();
+    R_ASSERT_RETURN_IF_FALSE2(size > 0, elements[0]);
+
+    return elements[0];
+  }
+
+  T &at_last(void) const {
+    //fprintf(stderr, "\nat_ref. i: %d. num_elements: %d.\n", i, num_elements.get());
+    LOCKASSERTER_SHARED(&lockAsserter);
+
+    int size = num_elements.get();
+    R_ASSERT_RETURN_IF_FALSE2(size > 0, elements[0]);
+    
+    return elements[size-1];
+  }
+
   T &at_ref(int i) const {
     //fprintf(stderr, "\nat_ref. i: %d. num_elements: %d.\n", i, num_elements.get());
     LOCKASSERTER_SHARED(&lockAsserter);
