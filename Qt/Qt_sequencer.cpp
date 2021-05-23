@@ -2237,7 +2237,7 @@ public:
         VECTOR_FOR_EACH(struct SeqBlock *, seqblock, gfx_seqblocks(seqtrack)){
 
           if (is_current_seqblock(seqblock)){
-            
+            //printf("CURRENT: %d\n", iterator666);
             bool paint_float = true;//seqtrack->gfx_seqblocks != NULL;
 
             if(false==paint_float)
@@ -3563,7 +3563,7 @@ public:
     {
 
       //QColor block_color = QColor(140,140,140,180);
-      QColor text_color = get_qcolor(SEQUENCER_TEXT_COLOR_NUM);
+      //QColor text_color = get_qcolor(SEQUENCER_TEXT_COLOR_NUM);
       //text_color.setAlpha(128);
 
       VECTOR_FOR_EACH(const struct SeqTrack *, seqtrack, &root->song->seqtracks){
@@ -3601,6 +3601,10 @@ public:
             : &seqtrack->recording_seqblocks;
 
           VECTOR_FOR_EACH(const struct SeqBlock *, seqblock, seqblocks){
+
+            bool is_current_block = seqblock->block!=NULL && seqblock->block == root->song->tracker_windows->wblock->block;
+      
+            QColor text_color = is_current_block ? get_block_qcolor(SEQUENCER_TEXT_CURRENT_BLOCK_COLOR_NUM, type) : get_block_qcolor(SEQUENCER_TEXT_COLOR_NUM, type);
 
             QColor seqblock_color = get_seqblock_color(seqtrack, seqblock); //.lighter(150);
             
