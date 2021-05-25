@@ -2,7 +2,7 @@
 # Users and packagers: Edit build_*.sh instead.
 #
 
-RADIUM_VERSION = 6.9.72
+RADIUM_VERSION = 6.9.74
 
 
 SHELL := /bin/bash
