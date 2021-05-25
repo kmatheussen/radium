@@ -111,7 +111,10 @@ struct ModulatorTarget{
 
   ModulatorTarget(const hash_t *state, const struct Patch *modulator_patch, instrument_t patch_id)
     : ModulatorTarget(NULL, EFFNUM_INPUT_VOLUME, true)
-  {        
+  {
+
+    int load_version = g_disk_load_radium_version_major*10000 + g_disk_load_radium_version_minor*100 + g_disk_load_radium_version_revision;
+
     patch = PATCH_get_from_id(patch_id);
 
     if (HASH_has_key(state, ":effect-name")){
@@ -125,6 +128,30 @@ struct ModulatorTarget{
           return;
         }
 
+        if (patch->patchdata==NULL){
+          
+          R_ASSERT(false);
+          
+        } else {
+          
+          SoundPlugin *plugin = (SoundPlugin *)patch->patchdata;
+          if (!strcmp("Sample Player", plugin->type->type_name)) {
+            if (!strcmp(effect_name, "Crossfade")) {
+              if (load_version < 60974) {
+                addMessage(talloc_format("Warning: This song modulates the Crossfade effect in a song saved with an earlier version of Radium that had a linear mapping between the slider and the crossfade value."
+                                         " It might not sound the same:<br>"
+                                         "<UL>"
+                                         "<LI>Name of Sampler instrument: \"%s\""
+                                         "<LI>Name of Modulator instrument: \"%s\""
+                                         "</UL>",
+                                         patch->name,
+                                         modulator_patch->name
+                                         ));
+              }
+            }
+          }
+          
+        }
       }
       
       char *error_message = NULL;
@@ -156,7 +183,6 @@ struct ModulatorTarget{
                                    ));
           
           if(!strcmp("Sample Player", plugin->type->type_name)){
-            int load_version = g_disk_load_radium_version_major*10000 + g_disk_load_radium_version_minor*100 + g_disk_load_radium_version_revision;
             if (load_version < 50941){
               if (effect_num >= 17){
                 effect_num += 9;
