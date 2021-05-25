@@ -139,10 +139,13 @@ struct MyQSlider : public QSlider, public radium::MouseCycleFix {
   }
 
   bool _popup_menu_is_visible = false;
+
+  bool _is_hovered = false;
   
   void enterEvent(QEvent *event) override {
     if (_patch.data() != NULL && isEnabled()){
       SLIDERPAINTER_set_hovered(_painter, true);
+      _is_hovered = true;
       update();
       if(_patch->instrument==get_audio_instrument())
         GFX_SetStatusBar(talloc_format("\"%s\" (right-click for options)", getInstrumentEffectName(_effect_num, _patch->id)));
@@ -155,6 +158,7 @@ struct MyQSlider : public QSlider, public radium::MouseCycleFix {
     if (_patch.data() != NULL && isEnabled()){
       if(_popup_menu_is_visible==false){
         SLIDERPAINTER_set_hovered(_painter, false);
+        _is_hovered = false;
         update();
       }
       GFX_SetStatusBar("");
@@ -419,6 +423,13 @@ struct MyQSlider : public QSlider, public radium::MouseCycleFix {
 #endif
 
     QPainter p(this);
+
+    QColor bc = get_qcolor(SLIDER_BACKGROUND_COLOR_NUM);
+    if (_is_hovered && isEnabled())
+      bc = bc.lighter(110);
+    
+    myFillRect(p, QRectF(1,1,width()-2,height()-2), bc, false);
+     
     SLIDERPAINTER_paint(_painter,&p);
   }
 

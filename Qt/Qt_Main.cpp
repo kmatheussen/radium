@@ -3357,12 +3357,12 @@ int radium_main(const char *arg){
 
   //printf("col: -%s-, font: -%s-\n",SETTINGS_read_string("last_color_version","0.0"),SETTINGS_read_string("last_system_font_version","0.0"));
 
-  const char *last_color_version = "3.7.3";
+  const char *last_color_version = "6.9.74";
   
   if(strcmp(SETTINGS_read_string("last_color_version","0.0"),last_color_version)){
     GFX_Message(NULL,
                 "Note!\n\n"
-                "The default colors have changed. In case you have run Radium before, you might want to go to the Edit menu and select \"Set Default Colors\".\n"
+                "The default colors have changed. If you are using the default colors, you might want to go to the Edit menu and select \"Set Default Colors\".\n"
                 "\n"
                 "You will only see this message once.");
     SETTINGS_write_string("last_color_version",last_color_version);
