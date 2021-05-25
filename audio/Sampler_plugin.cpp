@@ -3042,7 +3042,7 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
         LoopData loop_data(sample, data->p.loop_start_was_set_last);
         
 #if ((LONG_MAX) == (INT64_MAX)) // Workaround. Sometimes PRId64 doesn't work.
-        snprintf(buffer,buffersize-1,"%" PRId64 "->%ld samples", loop_data._start, loop_data._end);
+        snprintf(buffer,buffersize-1,"%" PRId64 "->%ld samples", loop_data._start, (long)loop_data._end);
 #elif ((LONG_LONG_MAX) == (INT64_MAX))
         snprintf(buffer,buffersize-1,"%" PRId64 "->%lld samples", loop_data._start, loop_data._end);
 #else
@@ -3052,7 +3052,7 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
       }else {
         
 #if ((LONG_MAX) == (INT64_MAX)) // Workaround. Sometimes PRId64 doesn't work.
-        snprintf(buffer,buffersize-1,"%" PRId64 "->%ld samples", data->p.loop_start, data->p.loop_end);
+        snprintf(buffer,buffersize-1,"%" PRId64 "->%ld samples", data->p.loop_start, (long)data->p.loop_end);
 #elif ((LONG_LONG_MAX) == (INT64_MAX))
         snprintf(buffer,buffersize-1,"%" PRId64 "->%lld samples", data->p.loop_start, data->p.loop_end);
 #else
