@@ -10,32 +10,26 @@
 (my-require 'sequencer_upper_part.scm)
 
 (<declare-variable> get-mutesolo-width)
-(<declare-variable> get-seqtrack-background-color)
 
 
 
 ;;(define *curr-seqtrack-color* "#7c3a3a")
 ;;(define *curr-seqtrack-color* "#776757")
-(define *curr-seqtrack-color* (ra:gui_mix-colors *current-mixer-strip-border-color* "black" 0.6))
+;;(define *curr-seqtrack-color* (ra:gui_mix-colors *current-mixer-strip-border-color* "black" 0.6))
 ;;(define *curr-seqtrack-color* (<gui> :mix-colors *current-mixer-strip-border-color* "white" 0.92))
 
 
 (define (get-seqtrack-background-color gui seqtracknum)
-  (if (not (<ra> :seqtrack-for-audiofiles seqtracknum))
-      (if (and #f (= seqtracknum (<ra> :get-curr-seqtrack)))
-          *curr-seqtrack-color*
-          (get-instrument-background-color gui (<ra> :create-illegal-instrument)))
-      (begin
-        (define instrument-id (<ra> :get-seqtrack-instrument seqtracknum))
-        (let ((background-color (get-instrument-background-color gui instrument-id)))
-          (if (= seqtracknum (<ra> :get-curr-seqtrack))
-              (<gui> :make-color-lighter (<ra> :get-instrument-color instrument-id) 1.3)
-;              (<gui> :mix-colors
-;                     (<gui> :mix-colors *curr-seqtrack-color* background-color 0.2)
-;                     "white"
-;                     0.95)
-              background-color
-              )))))
+  (let ((color (if (not (<ra> :seqtrack-for-audiofiles seqtracknum))
+                   "sequencer_editor_seqtrack"
+                   (begin
+                     (define instrument-id (<ra> :get-seqtrack-instrument seqtracknum))
+                     (<ra> :get-instrument-color instrument-id)))))
+;;                     (get-instrument-background-color gui instrument-id)))))
+    
+    (if (= seqtracknum (<ra> :get-curr-seqtrack))
+        (<gui> :make-color-lighter color 1.2)
+        color)))
 
 (define (get-sequencer-header-popup-menu-entries seqtracknum instrument-id effect-name parentgui)
   (list
@@ -257,9 +251,7 @@
                             :prompt "New name:"
                             :text last-painted-name
                             :background-color (lambda ()
-                                                (if (= seqtracknum (<ra> :get-curr-seqtrack))
-                                                    (get-seqtrack-background-color gui seqtracknum)
-                                                    (get-instrument-background-color gui instrument-id)))
+                                                (get-seqtrack-background-color gui seqtracknum))
                             :callback (lambda (new-name)
                                         (if (string=? "" new-name)
                                             #f
@@ -864,10 +856,11 @@
   (define y-split (myfloor (+ y1 name-height)))
 
   (delafina (get-background-color :gakk #f)
-    (cond ((= seqtracknum (<ra> :get-curr-seqtrack))
+    (define is-current (= seqtracknum (<ra> :get-curr-seqtrack)))
+    (cond (for-blocks
            (get-seqtrack-background-color gui seqtracknum))
-          (for-blocks
-           "sequencer_background_color")
+          (is-current
+           (get-seqtrack-background-color gui seqtracknum))
           (gakk
            (get-instrument-background-color gui instrument-id))
           (else

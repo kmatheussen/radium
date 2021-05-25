@@ -19,7 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 namespace cvs{
 
-  static inline void SLIDERPAINTERPAINTER_paint(MyPainter *p, int x1, int y1, int x2, int y2, bool is_enabled, float val, std::string text, bool alternative_color){
+  static inline void SLIDERPAINTERPAINTER_paint(MyPainter *p, int x1, int y1, int x2, int y2, bool is_enabled, float val, std::string text, bool alternative_color, bool is_hightlighted = false){
 #if 0 //def JUCE_API // Must do this to make the colors look equal. Don't know why, could be that the color mixing functions used for the two API's work differently.
     static MyColor gray(80,80,80);
 #else
@@ -44,7 +44,13 @@ namespace cvs{
     
     if(alternative_color==true)
       col1 = MyColor(200,200,200);
+
+    if (is_hightlighted) {
+      col1 = col1.lighter(150);
+      col1b = col1b.lighter(150);
+    }
     
+#if 0
     if(alternative_color==false){
       col1.setAlpha(80);
       col1b.setAlpha(100);
@@ -52,7 +58,8 @@ namespace cvs{
       col1.setAlpha(120);
       col1b.setAlpha(120);
     }
-
+#endif
+    
     if(height > width){ // i.e. vertical
       int pos=scale(val,0,1,0,height);
       p->fillRect(0,pos,width,height,col1);
