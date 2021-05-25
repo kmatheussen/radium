@@ -1,3 +1,42 @@
+Changes 6.9.72 -> 6.9.74:
+* GUI: Made it possible to configure all label
+  colors. Before this, it was hardcoded to light
+  gray.
+* Sequencer: Made it possible to configure the
+  editor seqtrack header backgound color
+  separately. Before, it just used the "Sequencer
+  background" color.
+* Sampler instrument: Made the crossfade slider
+  exponential so that it'll be possible to set
+  accurate small values.
+* Sequencer: Paint name of current editor seqblock
+  in white color also in the navigator widgets.
+* GUI: Adjust default colors a little bit.
+* Editor: Fix assertion reporter popping up when
+  changing number of tracks in "block properties"
+  while playing.
+* GUI: Paint gradient background color for various
+  text.
+* Editor: Tweak tempo multiplier slider graphics a
+  little bit. Also make the colors for the slider
+  configurable.
+* Playlist: Use same colors as in the sequencer and
+  paint a border around current entries instead of
+  using a different background color. Also paint a
+  small border around non-current entries.
+* Sample instrument/Fluidsynth instrument: Make sure
+  the sample browser is wide enough to show all text
+  of normal-sized filenames.
+* GUI: Make all buttons have the "Buttons" color.
+* GUI: Make group boxes easier to see.
+* Sampler instrument: Support loop crossfade when
+  using custom loop start/end points.
+* Sampler instrument: New effect "Loop window".
+* Internal: Change main timer interval from 5ms to
+  15ms. This might lighten up CPU usage a little bit.
+
+
+
 Changes 6.9.71 -> 6.9.72:
 * Sequencer: Add a "Duplicate seqblock and block"
   option to the editor seqblock popup menu.
