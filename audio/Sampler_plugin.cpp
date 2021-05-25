@@ -2538,12 +2538,14 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
       break;
 #endif
     case EFF_CROSSFADE_LENGTH:
-      if (can_crossfade(data))
-        data->p.crossfade_length = scale(value,
-                                         0.0, 1.0,
-                                         0, MAX_CROSSFADE_LENGTH
-                                         );
-      else
+      if (can_crossfade(data)) {
+        double dvalue = value;
+        data->p.crossfade_length = scale_double(dvalue*dvalue*dvalue*dvalue,
+                                                0.0, 1.0,
+                                                0, MAX_CROSSFADE_LENGTH
+                                                );
+        //GFX_ScheduleInstrumentRedraw((struct Patch*)plugin->patch);
+      } else
         data->p.crossfade_length = 0;
       
       break;
@@ -2830,7 +2832,10 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
       break;
 
     case EFF_CROSSFADE_LENGTH:
-      return scale(data->p.crossfade_length,0,MAX_CROSSFADE_LENGTH,0,1);
+      {
+        double normalized = scale_double(data->p.crossfade_length,0,MAX_CROSSFADE_LENGTH,0.0,1.0);
+        return pow(normalized, 1.0/4.0);
+      }
       break;
 
     case EFF_REVERSE:

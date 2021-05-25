@@ -10,7 +10,7 @@
 (define (get-fontheight)
   (+ 4 (<gui> :get-system-fontheight))) ;; If changing this one, change the "font_height" variable in Seqtracks_widget::get_heights, and paintVamps in api_gui.cpp, too.
 
-(define-constant *text-color* "#cccccc")
+(define-constant *text-color* "labels")
 
 
 (define-constant *mixer-strip-border-color* "#bb222222")

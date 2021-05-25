@@ -101,6 +101,8 @@ static const ColorConfig g_colorconfig[] = {
   {SEQUENCER_SEPARATOR, "", "Sequencer / Playlist", true},
   //{_SEPARATOR, "", "", true},
   //{_SEPARATOR, "", "", true},
+
+  {LABEL_COLOR_NUM,      "labels",  "Labels", false},
   
   {LOW_EDITOR_BACKGROUND_COLOR_NUM, "low_editor_background",  "Low Editor background", false},
   {TEXT_COLOR_NUM,      "color1",  "Text", false},
@@ -149,6 +151,7 @@ static const ColorConfig g_colorconfig[] = {
       
   {SLIDER1_COLOR_NUM,           "slider1",            "Slider 1", false},
   {SLIDER2_COLOR_NUM,           "slider2",            "Slider 2", false},
+  {SLIDER_BACKGROUND_COLOR_NUM,  "slider_background",  "Slider background", false},
   {SLIDER_DISABLED_COLOR_NUM,   "slider_disabled",    "Slider disabled", false},
   {SLIDER_TEXT_COLOR_NUM,       "slider_text",        "Slider Text", false},
   {SLIDER_RECORDING_COLOR_NUM,  "slider_recording",   "Slider recording", false},
@@ -218,6 +221,9 @@ static const ColorConfig g_colorconfig[] = {
   {MIXER_CURRENT_OBJECT_BORDER_COLOR_NUM, "mixer_current_object_border_color_num", "Modular Mixer: Current object border", false},
   {MIXER_SELECTED_OBJECT_BORDER_COLOR_NUM, "mixer_selected_object_border_color_num", "Modular Mixer: Selected object border", false},
   {MIXERSTRIPS_CURRENT_INSTRUMENT_BORDER_COLOR_NUM, "mixerstrips_selected_object_color_num", "Mixer Strips: Current instrument border", false},
+
+  
+  {SEQUENCER_EDITOR_SEQTRACKS_BACKGROUND_COLOR_NUM, "sequencer_editor_seqtrack", "Editor seqtrack header", false},
   
   {INSTRUMENT_BUS_DEFAULT_COLOR_NUM, "default_bus_color", "Default Bus", false},
   {SEQTRACK_INSTRUMENT_DEFAULT_COLOR_NUM, "default_seqtrack_instrument_color", "Default Seqtrack instrument", false},
@@ -287,15 +293,17 @@ static ReplacementColorNum g_replacement_color_num[] = {
 };
 
 static ReplacementColor g_replacement_color[] = {
-  {LOW_EDITOR_BACKGROUND_COLOR_NUM, QColor("#475253")},
+  {LOW_EDITOR_BACKGROUND_COLOR_NUM, QColor("#ff3d4748")},
   {HIGH_EDITOR_BACKGROUND_COLOR_NUM, QColor("#ff585d55")},
   {EDITOR_GRAYED_OUT_COLOR_NUM, QColor(100,100,100,120)},
-  {LOW_BACKGROUND_COLOR_NUM, QColor("#50585a")},
-  {HIGH_BACKGROUND_COLOR_NUM, QColor("#22282a")},
+  {LOW_BACKGROUND_COLOR_NUM, QColor("#ff4d5558")},
+  {HIGH_BACKGROUND_COLOR_NUM, QColor("#ff23292b")},
   {TEXT_COLOR_NUM, QColor("#ffffffff")},
-  {MENU_TEXT_COLOR_NUM, QColor("#f7f5e4")},
+  {MENU_TEXT_COLOR_NUM, QColor("#fffffdec")},
   {MENU_KEYBINDING_TEXT_COLOR_NUM, QColor("#e57c12")},
-  
+
+  {LABEL_COLOR_NUM, QColor("#ffe3e3e3")},
+
   {INSTRUMENT_NAME_COLOR_NUM, QColor("#fffdfec8")},
   {CURSOR_EDIT_ON_COLOR_NUM, QColor("#ff0b186c")},
   {CURSOR_EDIT_OFF_COLOR_NUM, QColor("#ff434a43")},
@@ -330,12 +338,13 @@ static ReplacementColor g_replacement_color[] = {
   {MIDDLE_VELOCITY_TEXT_COLOR_NUM, QColor("#dbffb8")},
   {LAST_VELOCITY_TEXT_COLOR_NUM, QColor("#f57676")},
 
-  {SLIDER1_COLOR_NUM, QColor("#ff3d0001")},
-  {SLIDER2_COLOR_NUM, QColor("#ff00551f")},
+  {SLIDER1_COLOR_NUM, QColor("#c80a6800")},
+  {SLIDER2_COLOR_NUM, QColor("#78d60003")},
+  {SLIDER_BACKGROUND_COLOR_NUM, QColor("#ff0f160d")},
   {SLIDER_DISABLED_COLOR_NUM, QColor("#ff454d4f")},
   {TRACK_SLIDER_COLOR_NUM, QColor("#ff939393")},
   
-  {SLIDER_TEXT_COLOR_NUM, QColor("#ffe1ddd3")},
+  {SLIDER_TEXT_COLOR_NUM, QColor("#fffffbf0")},
   {SLIDER_RECORDING_COLOR_NUM, QColor("#ffc50003")},
 
   {PEAKS_COLOR_NUM,     QColor("#ff10ff68")},
@@ -345,10 +354,10 @@ static ReplacementColor g_replacement_color[] = {
   {TAB_SELECTED_COLOR_NUM,  QColor("green")},
   {TAB_UNSELECTED_COLOR_NUM,  QColor("#004000")},
 
-  {BUTTONS_COLOR_NUM, QColor("#293c58")},
+  {BUTTONS_COLOR_NUM, QColor("#ff304768")},
   {BUTTONS_PRESSED_COLOR_NUM, QColor("#ff082441")},
   {CHECK_BOX_SELECTED_COLOR_NUM,  QColor("#ff115a2e")},
-  {CHECK_BOX_UNSELECTED_COLOR_NUM,  QColor("#ff34413c")},
+  {CHECK_BOX_UNSELECTED_COLOR_NUM,  QColor("#ff26412f")},
   {BUTTONS_TEXT_COLOR_NUM, QColor("#ffe9e9e9")},
 
   {PORTAMENTO_NOTE_TEXT_COLOR_NUM, QColor("#ffc28963")},
@@ -376,7 +385,7 @@ static ReplacementColor g_replacement_color[] = {
   {SOUNDFILE_COLOR_NUM, QColor("#0000a7")},
   {CURRENT_SOUNDFILE_COLOR_NUM, QColor("#ff9a9a9a")},
 
-  {MIXER_TEXT_COLOR_NUM, QColor(1,1,1)},
+  {MIXER_TEXT_COLOR_NUM, QColor("black")},
   {MIXER_BORDER_COLOR_NUM, QColor(1,1,1)},
 
   {MIXER_EVENT_CONNECTION_COLOR_NUM, QColor("#8c061990")},
@@ -391,6 +400,8 @@ static ReplacementColor g_replacement_color[] = {
 
   {NOTE_EVENT_INDICATOR_COLOR_NUM, QColor("#ffcadce1")},
   {NOTE_EVENT_INDICATOR_BORDER_COLOR_NUM, QColor("#ff0b186c")},
+  
+  {SEQUENCER_EDITOR_SEQTRACKS_BACKGROUND_COLOR_NUM, QColor("#ff295924")},
 
   {INSTRUMENT_BUS_DEFAULT_COLOR_NUM, QColor("#1b5f72")},
   {SEQTRACK_INSTRUMENT_DEFAULT_COLOR_NUM, QColor("#692426")},
@@ -1281,6 +1292,7 @@ void GFX_reload_qt_stylesheets(void){
                       "QPushButton:hover{ background-color: " + get_qcolor(BUTTONS_COLOR_NUM).lighter(100).name(QColor::HexArgb) + ";}" +
                       "QSplitter::handle{background-color: " + get_qcolor(HIGH_BACKGROUND_COLOR_NUM).darker(110).name(QColor::HexArgb) + ";}" +
                       "QTabWidget::pane { border: 0; background: " + get_qcolor(LOW_BACKGROUND_COLOR_NUM).name(QColor::HexArgb) + "}" +
+                      "QLabel { color: " + get_qcolor(LABEL_COLOR_NUM).name(QColor::HexArgb) + "}" +
                       DISK_file_to_qstring(OS_get_full_program_file_path("stylesheet.css"))
                       );
 }
@@ -1300,7 +1312,7 @@ void testColorInRealtime(enum ColorNums num, QColor color){
   else
     updateAll(my_widget);
 
-  if (num==HIGH_BACKGROUND_COLOR_NUM || num==LOW_BACKGROUND_COLOR_NUM || num==BUTTONS_COLOR_NUM || num==BUTTONS_PRESSED_COLOR_NUM || num==BUTTONS_TEXT_COLOR_NUM){
+  if (num==HIGH_BACKGROUND_COLOR_NUM || num==LOW_BACKGROUND_COLOR_NUM || num==BUTTONS_COLOR_NUM || num==BUTTONS_PRESSED_COLOR_NUM || num==BUTTONS_TEXT_COLOR_NUM || num==LABEL_COLOR_NUM){
     GFX_reload_qt_stylesheets();
   }
 
