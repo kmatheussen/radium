@@ -972,7 +972,8 @@ void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes *note,
 
   {
     SCOPED_PLAYER_LOCK_IF_PLAYING();
-    note->end = *PlaceBetween(&firstLegal, place, &lastLegal);
+    Place new_end = *PlaceBetween(&firstLegal, place, &lastLegal);
+    note->end = new_end;
     NOTE_validate(block, track, note);
   }
     
