@@ -299,10 +299,10 @@ static ReplacementColor g_replacement_color[] = {
   {LOW_BACKGROUND_COLOR_NUM, QColor("#ff4d5558")},
   {HIGH_BACKGROUND_COLOR_NUM, QColor("#ff23292b")},
   {TEXT_COLOR_NUM, QColor("#ffffffff")},
-  {MENU_TEXT_COLOR_NUM, QColor("#f7f5e4")},
+  {MENU_TEXT_COLOR_NUM, QColor("#fffffdec")},
   {MENU_KEYBINDING_TEXT_COLOR_NUM, QColor("#e57c12")},
 
-  {LABEL_COLOR_NUM, QColor("white")},
+  {LABEL_COLOR_NUM, QColor("#ffe3e3e3")},
 
   {INSTRUMENT_NAME_COLOR_NUM, QColor("#fffdfec8")},
   {CURSOR_EDIT_ON_COLOR_NUM, QColor("#ff0b186c")},
@@ -354,7 +354,7 @@ static ReplacementColor g_replacement_color[] = {
   {TAB_SELECTED_COLOR_NUM,  QColor("green")},
   {TAB_UNSELECTED_COLOR_NUM,  QColor("#004000")},
 
-  {BUTTONS_COLOR_NUM, QColor("#293c58")},
+  {BUTTONS_COLOR_NUM, QColor("#ff304768")},
   {BUTTONS_PRESSED_COLOR_NUM, QColor("#ff082441")},
   {CHECK_BOX_SELECTED_COLOR_NUM,  QColor("#ff115a2e")},
   {CHECK_BOX_UNSELECTED_COLOR_NUM,  QColor("#ff26412f")},
@@ -385,7 +385,7 @@ static ReplacementColor g_replacement_color[] = {
   {SOUNDFILE_COLOR_NUM, QColor("#0000a7")},
   {CURRENT_SOUNDFILE_COLOR_NUM, QColor("#ff9a9a9a")},
 
-  {MIXER_TEXT_COLOR_NUM, QColor(1,1,1)},
+  {MIXER_TEXT_COLOR_NUM, QColor("black")},
   {MIXER_BORDER_COLOR_NUM, QColor(1,1,1)},
 
   {MIXER_EVENT_CONNECTION_COLOR_NUM, QColor("#8c061990")},
