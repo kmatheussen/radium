@@ -434,6 +434,19 @@ struct PluginWidget : public QWidget{
     for (auto *param_widget : _param_widgets)
       param_widget->prepare_for_deletion();
   }
+
+  void paintEvent ( QPaintEvent * ev ) override {
+    TRACK_PAINT();
+
+    RETURN_IF_DATA_IS_INACCESSIBLE();
+
+    if (_param_widgets.size()==0)
+      return;
+    
+    QPainter p(this);
+
+    myFillRect(p, QRectF(0,0,width(),height()), get_qcolor(SLIDER_BACKGROUND_COLOR_NUM), false);
+  }
   
   ~PluginWidget(){
     printf("        Deleting PluginWidget\n");

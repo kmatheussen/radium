@@ -484,7 +484,7 @@ struct SliderPainter{
     }
   }
   
-  void paint(QPainter *p){
+  void paint(QPainter *p) {
     R_ASSERT(THREADING_is_main_thread());
 
 #ifdef COMPILING_RADIUM
@@ -510,9 +510,18 @@ struct SliderPainter{
                                isEnabled(),
                                scale_double(value(),minimum(),maximum(),0.0f,1.0f),
                                _display_string.toStdString(),
-                               _alternative_color
+                               _alternative_color,
+                               _is_hovered && _qslider->isEnabled()
                                );
 
+    /*
+    if (_is_hovered && _qslider->isEnabled()){
+      QColor c(0x0,0x0,0xff,40); // = _qslider->palette().color(_qslider->backgroundRole());
+      myFillRect(*p, QRectF(1,1,width()-2,height()-2), c, true);
+      //myFillRect(*p, QRectF(0,0,width(),height()), c);
+    }
+    */
+    
     paint_automation_or_peaks(p, true); // everything else
   }
 
