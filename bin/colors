@@ -1,5 +1,5 @@
 settings_version = 0.73 # dont change this one
-last_color_version = 3.7.3
+last_color_version = 6.9.74
 
 # Colors below must be defined in order to run radium 5.9.86 and older. (this file is copied into ~/.radium/)
 

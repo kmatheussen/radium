@@ -149,6 +149,7 @@ static const ColorConfig g_colorconfig[] = {
       
   {SLIDER1_COLOR_NUM,           "slider1",            "Slider 1", false},
   {SLIDER2_COLOR_NUM,           "slider2",            "Slider 2", false},
+  {SLIDER_BACKGROUND_COLOR_NUM,  "slider_background",  "Slider background", false},
   {SLIDER_DISABLED_COLOR_NUM,   "slider_disabled",    "Slider disabled", false},
   {SLIDER_TEXT_COLOR_NUM,       "slider_text",        "Slider Text", false},
   {SLIDER_RECORDING_COLOR_NUM,  "slider_recording",   "Slider recording", false},
@@ -218,6 +219,9 @@ static const ColorConfig g_colorconfig[] = {
   {MIXER_CURRENT_OBJECT_BORDER_COLOR_NUM, "mixer_current_object_border_color_num", "Modular Mixer: Current object border", false},
   {MIXER_SELECTED_OBJECT_BORDER_COLOR_NUM, "mixer_selected_object_border_color_num", "Modular Mixer: Selected object border", false},
   {MIXERSTRIPS_CURRENT_INSTRUMENT_BORDER_COLOR_NUM, "mixerstrips_selected_object_color_num", "Mixer Strips: Current instrument border", false},
+
+  
+  {SEQUENCER_EDITOR_SEQTRACKS_BACKGROUND_COLOR_NUM, "sequencer_editor_seqtrack", "Editor seqtrack header", false},
   
   {INSTRUMENT_BUS_DEFAULT_COLOR_NUM, "default_bus_color", "Default Bus", false},
   {SEQTRACK_INSTRUMENT_DEFAULT_COLOR_NUM, "default_seqtrack_instrument_color", "Default Seqtrack instrument", false},
@@ -332,6 +336,7 @@ static ReplacementColor g_replacement_color[] = {
 
   {SLIDER1_COLOR_NUM, QColor("#ff3d0001")},
   {SLIDER2_COLOR_NUM, QColor("#ff00551f")},
+  {SLIDER_BACKGROUND_COLOR_NUM, QColor("#ff000000")},
   {SLIDER_DISABLED_COLOR_NUM, QColor("#ff454d4f")},
   {TRACK_SLIDER_COLOR_NUM, QColor("#ff939393")},
   
@@ -391,6 +396,8 @@ static ReplacementColor g_replacement_color[] = {
 
   {NOTE_EVENT_INDICATOR_COLOR_NUM, QColor("#ffcadce1")},
   {NOTE_EVENT_INDICATOR_BORDER_COLOR_NUM, QColor("#ff0b186c")},
+  
+  {SEQUENCER_EDITOR_SEQTRACKS_BACKGROUND_COLOR_NUM, QColor("#00ff00")},
 
   {INSTRUMENT_BUS_DEFAULT_COLOR_NUM, QColor("#1b5f72")},
   {SEQTRACK_INSTRUMENT_DEFAULT_COLOR_NUM, QColor("#692426")},
