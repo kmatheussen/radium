@@ -22,9 +22,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "sequencer_proc.h"
 #include "instruments_proc.h"
 #include "Vector.hpp"
+#include "disk.h"
+#include "SeqAutomation.hpp"
+
 #include "../Qt/Qt_mix_colors.h"
 #include "../Qt/Qt_colors_proc.h"
-#include "SeqAutomation.hpp"
+
 #include "../audio/SoundPlugin.h"
 #include "../audio/SoundPlugin_proc.h"
 #include "../audio/SoundProducer_proc.h"
@@ -184,6 +187,21 @@ struct Automation{
       effect_num = i;//HASH_get_int32(state, "effect_num");
       color = get_qcolor(get_effect_color(plugin, effect_num));
     }
+
+    if (g_is_loading) {
+      int load_version = g_disk_load_radium_version_major*10000 + g_disk_load_radium_version_minor*100 + g_disk_load_radium_version_revision;
+      
+      if (!strcmp(effect_name, "Crossfade") && !strcmp("Sample Player", plugin->type->type_name) && load_version < 60974) {
+        GFX_addMessage(talloc_format("Warning: This song automaties the Crossfade effect in a song saved with an earlier version of Radium that had a linear mapping between the slider and the crossfade value. You might need to adjust the automation:<br>"
+                                     "<UL>"
+                                     "<LI>Name of Sampler instrument: \"%s\""
+                                     "<LI>Seqtrack: %d"
+                                     "</UL>",
+                                     patch->name,
+                                     seqtracknum));
+      }
+    }
+
   }
 
   ~Automation(){
