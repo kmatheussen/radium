@@ -1087,7 +1087,8 @@ void DLoadAudioInstrument(struct Root *newroot, struct Song *song){
                                            "<UL>"
                                            "<LI>Name of Sampler instrument: \"%s\""
                                            "<LI>Block: %d: %s."
-                                           "<LI>Track: %d",
+                                           "<LI>Track: %d"
+                                           "</UL>",
                                            patch->name,
                                            block->l.num, block->name,
                                            track->l.num));              
