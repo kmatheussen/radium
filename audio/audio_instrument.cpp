@@ -1080,6 +1080,19 @@ void DLoadAudioInstrument(struct Root *newroot, struct Song *song){
           
           if(plugin!=NULL){
 
+            int load_version = g_disk_load_radium_version_major*10000 + g_disk_load_radium_version_minor*100 + g_disk_load_radium_version_revision;
+            
+            if (!strcmp(fx->name, "Crossfade") && !strcmp("Sample Player", plugin->type->type_name) && load_version < 60974) {
+              GFX_addMessage(talloc_format("Warning: This song automaties the Crossfade effect in a song saved with an earlier version of Radium that had a linear mapping between the slider and the crossfade value. You might need to adjust the automation:<br>"
+                                           "<UL>"
+                                           "<LI>Name of Sampler instrument: \"%s\""
+                                           "<LI>Block: %d: %s."
+                                           "<LI>Track: %d",
+                                           patch->name,
+                                           block->l.num, block->name,
+                                           track->l.num));              
+            }
+            
             if (AUDIO_maybe_warn_about_automating_bus_onoff(fx->patch, fx->name, "automation", talloc_format(" in block %d, track %d", block->l.num, track->l.num))){
               
               to_remove.push_back(fxs);
