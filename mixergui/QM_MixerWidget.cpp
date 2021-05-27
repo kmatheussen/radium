@@ -425,11 +425,12 @@ MyScene::MyScene(QWidget *parent)
   _slot_indicator->setZValue(-20);
 
   //setAcceptDrops(true);
-  
   addItem(_slot_indicator);
   //new HelpText(this);
-  
+
+  setBackgroundBrush(get_qcolor(MIXER_BACKGROUND_COLOR_NUM));
 }
+
 
 static void get_slot_coordinates(int slot_x, int slot_y, float &x1, float &y1, float &x2, float &y2){
   //const int border_width = (grid_width-slot_width)/2;
