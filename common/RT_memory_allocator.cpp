@@ -347,7 +347,7 @@ void RT_free_raw(void *mem, const char *who){
 
       //abort();
       
-      for(int i = data->_pool_num ; i >= data->_pool_num ; i--)
+      for(int i = data->_pool_num ; i >= 0 ; i--)
         if (g_pools[i]->bounded_push(data))
           return;
 
