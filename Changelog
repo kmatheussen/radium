@@ -1,3 +1,25 @@
+Changes 6.9.74 -> 6.9.75:
+* GUI: Tweak default background color of the editor
+  and the modular mixer.
+* Audio/MIDI: Fix erroneous error message
+  ("RT_free failed") possibly being displayed when
+  sending and receing MIDI from VST plugins. Bug
+  probably introduced around 6.9.66.
+* Sequencer: Warn about non-linear mapping if
+  loading an older song that has Crossover
+  automation for the sampler instrument.
+* Editor: Warn about non-linear mapping if loading
+  an older song that has Crossover automation for
+  the sampler instrument.
+* Mixer: Made it possible to configure the
+  background color of the modular mixer separately.
+* Sampler instrument: Fix loading songs with custom
+  loops.
+* API: Fix wrong error message possibly being
+  displayed when sending/receiving MIDI.
+
+
+
 Changes 6.9.72 -> 6.9.74:
 * GUI: Made it possible to configure all label
   colors. Before this, it was hardcoded to light
