@@ -2516,7 +2516,7 @@ void PLUGIN_recreate_from_state(SoundPlugin *plugin, hash_t *state, bool is_load
 
   R_ASSERT_RETURN_IF_FALSE(type->recreate_from_state != NULL);
   
-  type->recreate_from_state(plugin, state, false);
+  type->recreate_from_state(plugin, state, is_loading);
 
   // Put values into storage if the plugin state may contain effect values.
   if (true == type->state_may_contain_effect_values || true == type->state_contains_effect_values){
