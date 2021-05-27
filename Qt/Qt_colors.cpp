@@ -296,7 +296,7 @@ static ReplacementColorNum g_replacement_color_num[] = {
 };
 
 static ReplacementColor g_replacement_color[] = {
-  {LOW_EDITOR_BACKGROUND_COLOR_NUM, QColor("#ff3d4748")},
+  {LOW_EDITOR_BACKGROUND_COLOR_NUM, QColor("#ff575d5b")},
   {HIGH_EDITOR_BACKGROUND_COLOR_NUM, QColor("#ff585d55")},
   {EDITOR_GRAYED_OUT_COLOR_NUM, QColor(100,100,100,120)},
   {LOW_BACKGROUND_COLOR_NUM, QColor("#ff4d5558")},
@@ -388,7 +388,7 @@ static ReplacementColor g_replacement_color[] = {
   {SOUNDFILE_COLOR_NUM, QColor("#0000a7")},
   {CURRENT_SOUNDFILE_COLOR_NUM, QColor("#ff9a9a9a")},
 
-  {MIXER_BACKGROUND_COLOR_NUM, QColor("#ff585d55")},
+  {MIXER_BACKGROUND_COLOR_NUM, QColor("#ff575d5b")},
   {MIXER_TEXT_COLOR_NUM, QColor("black")},
   {MIXER_BORDER_COLOR_NUM, QColor(1,1,1)},
 
