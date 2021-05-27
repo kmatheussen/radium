@@ -5,6 +5,12 @@ extern void RT_inc_ref_raw(void *mem); // Reference counting. (Use RT_free() to 
 extern void RT_free_raw(void *mem, const char *who);
 extern void *RT_alloc_raw(int size, const char *who);
 
+static inline void *RT_alloc_clean_raw(int size, const char *who){
+  void *ret = RT_alloc_raw(size, who);
+  memset(ret, 0, size);
+  return ret;
+}
+
 template<typename T> struct RT_Mem;
 
 template<typename T> 
