@@ -3700,8 +3700,10 @@ static bool set_new_sample(struct SoundPlugin *plugin,
     //int64_t new_num_frames = data->samples[0]==NULL ? 0 : data->samples[0].num_frames;
 
     //printf("**STARTING. Org loop points: %d -> %d. New loop points: %d -> %d\n", (int)old_data->p.loop_start, (int)old_data->p.loop_end, (int)data->p.loop_start, (int)data->p.loop_end);
+
+    if (!is_loading)
+      PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_OVERRIDE_DEFAULT, 0.0f, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE); // turn off override default.
     
-    PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_OVERRIDE_DEFAULT, 0.0f, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE); // turn off override default.
     RT_set_loop_points_complete(plugin, data, loop_start2, loop_end2, true);
     
     // Put loop_onoff into storage.
@@ -4183,6 +4185,13 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
     if (is_loading && disk_load_version <= 0.865){
       data->p.note_adjust = int(data->p.note_adjust);
     }
+
+    // Loop points. Setting loop points is tricky. Make sure everything is right.
+    {
+      if(successfully_set_new_sample)
+        RT_set_loop_points_complete(plugin, data, loop_start, loop_end);
+    }
+
   }
   
  exit:  
