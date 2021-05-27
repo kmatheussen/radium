@@ -58,8 +58,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/settings_proc.h"
 #include "../common/windows_proc.h"
-#include "../GTK/GTK_visual_proc.h"
 #include "../common/OS_settings_proc.h"
+
+#include "../mixergui/QM_MixerWidget.h"
+
 #include "../embedded_scheme/s7extra_proc.h"
 
 #include "../api/api_gui_proc.h"
@@ -208,6 +210,7 @@ static const ColorConfig g_colorconfig[] = {
   {NOTE_EVENT_INDICATOR_COLOR_NUM, "note_event_indicator",  "Note event indicator", false},
   {NOTE_EVENT_INDICATOR_BORDER_COLOR_NUM, "note_event_indicator_border",  "Note event indicator border", false},
 
+  {MIXER_BACKGROUND_COLOR_NUM, "mixer_background", "Modular Mixer: Background", false},
   {MIXER_TEXT_COLOR_NUM, "mixer_text_color", "Modular Mixer: Object text", false},
   {MIXER_BORDER_COLOR_NUM, "mixer_border_color", "Modular Mixer: Object border", false},
   
@@ -385,6 +388,7 @@ static ReplacementColor g_replacement_color[] = {
   {SOUNDFILE_COLOR_NUM, QColor("#0000a7")},
   {CURRENT_SOUNDFILE_COLOR_NUM, QColor("#ff9a9a9a")},
 
+  {MIXER_BACKGROUND_COLOR_NUM, QColor("#ff585d55")},
   {MIXER_TEXT_COLOR_NUM, QColor("black")},
   {MIXER_BORDER_COLOR_NUM, QColor(1,1,1)},
 
@@ -1306,20 +1310,26 @@ void testColorInRealtime(enum ColorNums num, QColor color){
   EditorWidget *my_widget=(EditorWidget *)window->os_visual.widget;
 
   setColor(num,color.rgba());
+
+  if (num==MIXER_BACKGROUND_COLOR_NUM) {
+    
+    get_scene(g_mixer_widget)->setBackgroundBrush(color);
   
-  if (num==ALTERNATIVE_LABEL_COLOR_NUM)
-    update_label_colors(color.name(QColor::HexArgb));
-  else
-    updateAll(my_widget);
+  } else {
+    
+    if (num==ALTERNATIVE_LABEL_COLOR_NUM)
+      update_label_colors(color.name(QColor::HexArgb));
+    else
+      updateAll(my_widget);
 
-  if (num==HIGH_BACKGROUND_COLOR_NUM || num==LOW_BACKGROUND_COLOR_NUM || num==BUTTONS_COLOR_NUM || num==BUTTONS_PRESSED_COLOR_NUM || num==BUTTONS_TEXT_COLOR_NUM || num==LABEL_COLOR_NUM){
-    GFX_reload_qt_stylesheets();
+    if (num==HIGH_BACKGROUND_COLOR_NUM || num==LOW_BACKGROUND_COLOR_NUM || num==BUTTONS_COLOR_NUM || num==BUTTONS_PRESSED_COLOR_NUM || num==BUTTONS_TEXT_COLOR_NUM || num==LABEL_COLOR_NUM){
+      GFX_reload_qt_stylesheets();
+    }
+
+    GFX_update_current_instrument_widget();
+
+    window->must_redraw = true;
   }
-
-      
-  GFX_update_current_instrument_widget();
-
-  window->must_redraw = true;
 }
 
 #include "Qt_Main_proc.h"
