@@ -349,11 +349,12 @@ void RT_free_raw(void *mem, const char *who){
       
       for(int i = data->_pool_num ; i >= data->_pool_num ; i--)
         if (g_pools[i]->bounded_push(data))
-          break;
+          return;
 
 #if !TEST_MAIN
       RT_message("RT_free failed. Who: \"%s\". pool_num: %d. Size: %d.", who, data->_pool_num, MIN_MEMPOOL_SIZE << data->_pool_num);
 #endif
+
     }
     
   }
