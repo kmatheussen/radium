@@ -5,9 +5,24 @@ extern void RT_inc_ref_raw(void *mem); // Reference counting. (Use RT_free() to 
 extern void RT_free_raw(void *mem, const char *who);
 extern void *RT_alloc_raw(int size, const char *who);
 
-static inline void *RT_alloc_clean_raw(int size, const char *who){
+extern void *RT_alloc_raw_internal(const int minimum_num_elements, const int element_size, int &actual_num_elements, const char *who); // Use RT_alloc_raw2 or RT_alloc_raw instead.
+
+// Same as calling RT_alloc_raw(minimum_size*sizeof(T), who), but also sets the actual number of elements available for the returned mem into actual_num_elements.
+template<typename T>
+static inline T *RT_alloc_raw2(const int minimum_num_elements, int &actual_num_elements, const char *who){
+  return (T*)RT_alloc_raw_internal(minimum_num_elements, sizeof(T), actual_num_elements, who);
+}
+
+static inline void *RT_alloc_clean_raw(const int size, const char *who){
   void *ret = RT_alloc_raw(size, who);
   memset(ret, 0, size);
+  return ret;
+}
+
+template<typename T>
+static inline T *RT_alloc_clean_raw2(const int minimum_num_elements, int &actual_num_elements, const char *who){
+  T *ret = RT_alloc_raw2<T>(minimum_num_elements, actual_num_elements, who);
+  memset((void*)ret, 0, actual_num_elements*sizeof(T));
   return ret;
 }
 

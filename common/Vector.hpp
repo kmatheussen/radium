@@ -27,7 +27,17 @@ enum class AllocatorType{
   STD
 };
   
-template <typename T> struct Vector{
+template <typename T, AllocatorType ALLOCATOR_TYPE = AllocatorType::STD>
+struct Vector{
+  
+  static_assert(std::is_trivially_destructible<T>::value,
+                "Not handled. Undefined behavior if calling destructor when adding memory to zero-ed memory. (how do we handle that? Use std::memcpy or std::move?"
+                );
+  
+  static_assert(
+                ALLOCATOR_TYPE == AllocatorType::STD || std::is_trivially_copyable<T>::value,
+                "Doesn't have to be a problem. The assertion is just added because it seems likely to be an error in the code if this assertion fails."
+                );
 
 private:
   int _num_elements_max;
@@ -69,8 +79,6 @@ private:
   
   LockAsserter _lockAsserter;
 
-  AllocatorType _allocator_type;
-  
   // Normally it would be a typo or an error if trying to copy a radium::Vector.
   Vector(const Vector&) = delete;
   Vector& operator=(const Vector&) = delete;
@@ -80,18 +88,12 @@ public:
   
   T *elements;
 
-  Vector(const Vector *vector = NULL, AllocatorType allocator_type = AllocatorType::STD)
+  Vector(const Vector *vector = NULL)
     : _next_elements(NULL)
     , _elements_ready_for_freeing(NULL)
     , _next_num_elements_max(0)
-    , _allocator_type(allocator_type)
   {
     LOCKASSERTER_EXCLUSIVE(&_lockAsserter);
-
-#if !defined(RELEASE)
-    if (!std::is_trivially_destructible<T>::value)
-      abort(); // Not handled. Undefined behavior if calling destructor when adding memory to zero-ed memory. (how do we handle that? Use std::memcpy or std::move?)
-#endif
     
     if (vector != NULL && vector->size()>0) {
 
@@ -103,8 +105,8 @@ public:
         _num_elements_max = 4;
       }
 
-      if (_allocator_type == AllocatorType::RT)
-        elements = (T*)RT_alloc_clean_raw(_num_elements_max * sizeof(T), "Vector.hpp");
+      if (ALLOCATOR_TYPE == AllocatorType::RT)
+        elements = RT_alloc_clean_raw2<T>(_num_elements_max, _num_elements_max, "Vector.hpp");
       else
         elements = (T*)V_calloc(_num_elements_max, sizeof(T));
       
@@ -116,8 +118,8 @@ public:
 
       _num_elements_max = 4;
       
-      if (_allocator_type == AllocatorType::RT)
-        elements = (T*)RT_alloc_clean_raw(_num_elements_max * sizeof(T), "Vector.hpp");
+      if (ALLOCATOR_TYPE == AllocatorType::RT)
+        elements = RT_alloc_clean_raw2<T>(_num_elements_max, _num_elements_max, "Vector.hpp");
       else
         elements = (T*)V_calloc(_num_elements_max, sizeof(T)); // We use V_calloc (and not new[]) to make sure memory is really zeroed out and in cache (this is for realtime code).
     }
@@ -181,7 +183,7 @@ private:
       for(int i=0;i<size;i++)
         elements[i].~T();
 
-    if (_allocator_type == AllocatorType::RT)
+    if (ALLOCATOR_TYPE == AllocatorType::RT)
       RT_free_raw(elements, "Vector.hpp");
     else
       V_free(elements);
@@ -298,11 +300,11 @@ private:
     return new_num_elements_max;
   }
   
-  T *create_new_elements(int new_num_elements_max) const {
+  T *create_new_elements(int &new_num_elements_max) const {
     T *new_elements;
 
-    if (_allocator_type == AllocatorType::RT)
-      new_elements = (T*) RT_alloc_clean_raw(sizeof(T) * new_num_elements_max, "Vector.hpp");
+    if (ALLOCATOR_TYPE == AllocatorType::RT)
+      new_elements = RT_alloc_clean_raw2<T>(new_num_elements_max, new_num_elements_max, "Vector.hpp");
     else
       new_elements = (T*) V_calloc(sizeof(T), new_num_elements_max);
     
@@ -315,7 +317,7 @@ private:
   
   void reserve_internal(int new_num_elements_max, bool do_lock_player){
 #if !defined(RELEASE)
-    if (_allocator_type != AllocatorType::RT){
+    if (ALLOCATOR_TYPE != AllocatorType::RT){
       ASSERT_NON_RT_NON_RELEASE(); // V_realloc should already have an assertion for this, but the memory functions are a bit chaotic.
     }
 #endif
@@ -331,10 +333,13 @@ private:
     T* new_elements = create_new_elements(new_num_elements_max);
 
     if (do_lock_player){
-#if !defined(TEST_TIMEDATA_MAIN)
-      radium::PlayerLock lock;
-#else
+      
+      R_ASSERT_NON_RELEASE(ALLOCATOR_TYPE != AllocatorType::RT);
+      
+#if defined(TEST_TIMEDATA_MAIN)
       abort();
+#else
+      radium::PlayerLock lock;
 #endif      
       LOCKASSERTER_EXCLUSIVE(&_lockAsserter);
 
@@ -463,12 +468,12 @@ public:
   }
 
 
-  // Ensures at least new_num_elements_max is reserved so that add/insert/push_back can be callled without any memory being allocated.
+  // Ensures at least new_num_elements_max is reserved so that add/insert/push_back can be callled once without any memory being allocated.
   //
-  // Scales 'new_num_elements_max' up to next n^2.
+  // If we have to allocate new space, 'new_num_elements_max' will be set to at least the next n^2.
   // Returns immediately if there is already room for new_num_elements_max elements.
   //
-  // NOT RT safe
+  // Not RT safe unless ALLOCATOR_TYPE == AllocatorType::RT.
   //
   void reserve(int new_num_elements_max) {
     LOCKASSERTER_EXCLUSIVE(&_lockAsserter);
