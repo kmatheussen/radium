@@ -236,14 +236,17 @@ static RT_Mem_internal *RT_alloc_using_malloc(int size, int pool_num, const char
 static DEFINE_ATOMIC(int, g_used_mem) = 0;
 #endif
 
-void *RT_alloc_raw(int size, const char *who){
+void *RT_alloc_raw_internal(const int minimum_num_elements, const int element_size, int &actual_num_elements, const char *who){
 
   R_ASSERT_NON_RELEASE(g_mem != NULL);
 
+  int size = minimum_num_elements * element_size;
+  
   void *ret;
   
   if (size > g_max_mem_size) {
-    
+
+    actual_num_elements = minimum_num_elements;
     ret = RT_alloc_using_malloc(size, -1, who, 1);
 
   } else {
@@ -257,7 +260,14 @@ void *RT_alloc_raw(int size, const char *who){
     
     ret = RT_alloc_from_pool(pool, pool_num);
 
-    if (ret == NULL) {
+    if (ret != NULL) {
+
+      actual_num_elements = size / element_size;
+
+    } else {
+
+      actual_num_elements = minimum_num_elements;
+
       ret = RT_alloc_from_global_mem(size, pool_num);
 
       if (ret == NULL)
@@ -282,6 +292,12 @@ void *RT_alloc_raw(int size, const char *who){
 #endif
   
   return ret;
+}
+
+
+void *RT_alloc_raw(const int size, const char *who){
+  int actual_size;
+  return RT_alloc_raw_internal(size, 1, actual_size, who);
 }
 
 
