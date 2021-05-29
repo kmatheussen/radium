@@ -377,7 +377,7 @@ namespace{
         return create_updated_receivers(new_receivers);
       
       for(auto *new_receiver : new_receivers)
-        if (!_receivers->contains(new_receiver))  // Kan ikke gjøre dette. RT kan sette _receivers.
+        if (!_receivers->contains(new_receiver))
           return create_updated_receivers(new_receivers);
 
       return NULL;
