@@ -405,6 +405,12 @@ bool SEQBLOCK_set_fade_in_shape(struct SeqBlock *seqblock, enum FadeShape shape)
 bool SEQBLOCK_set_fade_out_shape(struct SeqBlock *seqblock, enum FadeShape shape);
 
 
+extern LANGSPEC void RT_EDITSEQBLOCK_call_each_block(struct SeqTrack *seqtrack,
+                                                     const struct SeqBlock *seqblock,
+                                                     const int64_t seqtime_start,
+                                                     const int64_t seqtime_end
+                                                     );
+
 extern LANGSPEC bool RT_SEQTRACK_called_before_editor(struct SeqTrack *seqtrack); // Sets seqtrack->curr_sample_seqblock when starting/stopping playing audio file.
 
 #ifdef __cplusplus

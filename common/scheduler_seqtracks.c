@@ -6,6 +6,7 @@
 #include "sequencer_proc.h"
 #include "visual_proc.h"
 #include "fxlines_proc.h"
+#include "velocities_proc.h"
 
 #include "../audio/Mixer_proc.h"
 
@@ -50,9 +51,9 @@ static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
 
     R_ASSERT_NON_RELEASE(seqtrack==root->song->block_seqtrack);
     
-    // Need to call RT_fxline_called_each_block again here since last call to it hadn't updated t.time/t.time2 values.
+    // Need to call RT_EDITSEQBLOCK_call_each_block again here since last call to it hadn't updated t.time/t.time2 values.
     if (seqtrack==root->song->block_seqtrack)
-      RT_fxline_called_each_block(seqtrack, &g_block_seqtrack_seqblock, seqtrack->start_time, seqtrack->end_time);
+      RT_EDITSEQBLOCK_call_each_block(seqtrack, &g_block_seqtrack_seqblock, seqtrack->start_time, seqtrack->end_time);
 
   } else {
 

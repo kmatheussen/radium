@@ -650,97 +650,26 @@ void r::TimeData<T>::ReaderWriter<TimeData, TimeDataVector>::iterate_fx(struct S
 
 }
 
-static const r::RatioPeriod get_ratio_period(const struct SeqBlock *seqblock, const struct STimes *times, const int64_t seqtime_start, const int64_t seqtime_end) {
-  const struct Blocks *block = seqblock->block;
-    
-  const Ratio ratio_start = STime2Place4(block, seqtime_to_blocktime(seqblock, seqtime_start-seqblock->t.time), times);  
-  const Ratio ratio_end = STime2Place4(block, seqtime_to_blocktime(seqblock, seqtime_end-seqblock->t.time), times);
-
-  return r::RatioPeriod(ratio_start, ratio_end);
-}
-
 void RT_fxline_called_each_block(struct SeqTrack *seqtrack,
+                                 const int play_id,
                                  const struct SeqBlock *seqblock,
+                                 const struct Tracks *track,                                 
                                  const int64_t seqtime_start,
-                                 const int64_t seqtime_end
+                                 const int64_t seqtime_end,
+                                 const r::RatioPeriod &track_period
                                  )
-{
-  int play_id = ATOMIC_GET(pc->play_id);
-  
-  struct Blocks *block = seqblock->block;
-  
-  struct Tracks *track = block->tracks;
-
-  const struct STimes *block_times = get_stimes_from_swinging_mode(block, PLUGINS_AND_JACK_TRANSPORT_SWINGING_MODE);
-  
-  const r::RatioPeriod block_period = get_ratio_period(seqblock,
-                                                       block_times,                                                 
-                                                       seqtime_start,
-                                                       seqtime_end);
-  
-  if (play_id != seqblock->last_play_id) {
+{  
+  VECTOR_FOR_EACH(struct FXs *, fxs, &track->fxs){
     
-    seqblock->cache_num = block->cache_num_holder->RT_obtain(play_id);
-    seqblock->last_play_id = play_id;
+    struct FX *fx = fxs->fx;
     
-    //printf("++       Setting seqblock->cache_num to %d. Play_id: %d\n", seqblock->cache_num, play_id);
-  }
-  
-  while(track!=NULL){
-
-    int tracknum = track->l.num;
-
-    bool enabled = track->onoff==1 || root->song->mute_editor_automation_when_track_is_muted==false;
-    
-    bool doit = seqblock->track_is_disabled==NULL  // i.e. playing block
-      || tracknum >= MAX_DISABLED_SEQBLOCK_TRACKS
-      || !seqblock->track_is_disabled[tracknum];
-
-    if (enabled && doit){
-
-      // TODO: Optimize by taking latency into account here instead of rescheduling in audio_instrument.cpp.
-      // (It's a bigger optimization doing it when notes have been converted to TimeData though.)
+    if (fx->is_enabled) {
       
-      const r::RatioPeriod track_period
-        = track->times==block_times
-        ? block_period
-        : get_ratio_period(seqblock,
-                           track->times,                                                 
-                           seqtime_start,
-                           seqtime_end);
-
-#if 0
-      if (track->l.num==0){
-        auto ratio_start = block_period._start;
-        auto ratio_end = block_period._end;
-        printf("B: %d. Ratio start: %d / %d (%f). Ratio end: %d / %d (%f). Seqtime: %d -> %d. Seqblock time: %d -> %d\n", block->l.num, (int)ratio_start.num, (int)ratio_start.den, make_double_from_ratio(ratio_start), (int)ratio_end.num, (int)ratio_end.den, make_double_from_ratio(ratio_end), (int)seqtime_start, (int)seqtime_end, (int)seqblock->t.time, (int)seqblock->t.time2);
-      }
-#endif
+      r::TimeData<r::FXNode>::Reader reader(fxs->_fxnodes, (0 && ATOMIC_GET(root->editonoff)) ? -1 : seqblock->cache_num);
       
-      VECTOR_FOR_EACH(struct FXs *, fxs, &track->fxs){
-
-        struct FX *fx = fxs->fx;
-        
-        if (fx->is_enabled) {
-          
-          r::TimeData<r::FXNode>::Reader reader(fxs->_fxnodes, (0 && ATOMIC_GET(root->editonoff)) ? -1 : seqblock->cache_num);
-
-          reader.iterate_fx<int>(seqtrack, seqblock, track, fx, play_id, seqtime_start, track_period);
-
-        }
-        
-      }END_VECTOR_FOR_EACH;
+      reader.iterate_fx<int>(seqtrack, seqblock, track, fx, play_id, seqtime_start, track_period);
+      
     }
     
-    track=NextTrack(track);   
-  }
-
-  // We don't release cache_num if playing block since play_id don't change when replaying a block.
-  if (pc->playtype!=PLAYBLOCK && seqtime_end >= seqblock->t.time2) {
-    
-    //printf("--       Releasing seqblock->cache_num (%d) for block %d. Play_id: %d. seqtime_end: %d. seqblock->t.time2: %d\n", seqblock->cache_num, block->l.num, play_id, (int)seqtime_end, (int)seqblock->t.time2);
-    
-    block->cache_num_holder->RT_release(seqblock->cache_num);
-  }
-  
+  }END_VECTOR_FOR_EACH;
 }
