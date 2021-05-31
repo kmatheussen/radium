@@ -37,12 +37,15 @@ extern LANGSPEC void AddFXNodeLineCurrPos(struct Tracker_Windows *window, struct
 
 //extern LANGSPEC void DeleteFxNodeLine(struct Tracker_Windows *window, struct WTracks *wtrack, struct FXs *fxs, struct FXNodeLines *fxnodeline);
 #if __cplusplus
-void DeleteFxNodes(struct Tracker_Windows *window, struct WTracks *wtrack, struct FXs *fxs, const std::vector<int> &fxnodenums);
-void DeleteFxNode(struct Tracker_Windows *window, struct WTracks *wtrack, struct FXs *fxs, int fxnodenum);
-#endif
+extern void DeleteFxNodes(struct Tracker_Windows *window, struct WTracks *wtrack, struct FXs *fxs, const std::vector<int> &fxnodenums);
+extern void DeleteFxNode(struct Tracker_Windows *window, struct WTracks *wtrack, struct FXs *fxs, int fxnodenum);
 
-extern LANGSPEC void RT_fxline_called_each_block(struct SeqTrack *seqtrack,
-                                                 const struct SeqBlock *seqblock,
-                                                 const int64_t seqtime_start,
-                                                 const int64_t seqtime_end
-                                                 );
+extern void RT_fxline_called_each_block(struct SeqTrack *seqtrack,
+                                        const int play_id,
+                                        const struct SeqBlock *seqblock,
+                                        const struct Tracks *track,                                 
+                                        const int64_t seqtime_start,
+                                        const int64_t seqtime_end,
+                                        const r::RatioPeriod &track_period
+                                        );
+#endif

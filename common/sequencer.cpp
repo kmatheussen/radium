@@ -26,9 +26,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QUuid>
 #include <QTimer>
 
+#define SEQBLOCK_USING_VECTOR 1
 #include "nsmtracker.h"
+#include "TimeData.hpp"
+#include "ratio_funcs.h"
+
 #include "../audio/Peaks.hpp"
 
+#include "fxlines_proc.h"
 #include "player_proc.h"
 #include "vector_proc.h"
 #include "placement_proc.h"
@@ -2726,7 +2731,122 @@ bool SEQBLOCK_set_fade_out_shape(struct SeqBlock *seqblock, enum FadeShape shape
   return true;
 }
 
+
+static const r::RatioPeriod get_ratio_period(const struct SeqBlock *seqblock,
+                                             const struct STimes *times,
+                                             const int64_t seqtime_start,
+                                             const int64_t seqtime_end)
+{
+  const struct Blocks *block = seqblock->block;
     
+  const Ratio ratio_start = STime2Place4(block, seqtime_to_blocktime(seqblock, seqtime_start-seqblock->t.time), times);  
+  const Ratio ratio_end = STime2Place4(block, seqtime_to_blocktime(seqblock, seqtime_end-seqblock->t.time), times);
+
+  return r::RatioPeriod(ratio_start, ratio_end);
+}
+
+void RT_EDITSEQBLOCK_call_each_block(struct SeqTrack *seqtrack,
+                                     const struct SeqBlock *seqblock,
+                                     const int64_t seqtime_start,
+                                     const int64_t seqtime_end
+                                     )
+{
+  int play_id = ATOMIC_GET(pc->play_id);
+  
+  struct Blocks *block = seqblock->block;
+  
+  struct Tracks *track = block->tracks;
+
+  const struct STimes *block_times = get_stimes_from_swinging_mode(block, PLUGINS_AND_JACK_TRANSPORT_SWINGING_MODE);
+  
+  const r::RatioPeriod block_period = get_ratio_period(seqblock,
+                                                       block_times,                                                 
+                                                       seqtime_start,
+                                                       seqtime_end);
+  
+  if (play_id != seqblock->last_play_id) {
+    
+    seqblock->cache_num = block->cache_num_holder->RT_obtain(play_id);
+    seqblock->last_play_id = play_id;
+    
+    //printf("++       Setting seqblock->cache_num to %d. Play_id: %d\n", seqblock->cache_num, play_id);
+  }
+  
+  while(track!=NULL){
+
+    int tracknum = track->l.num;
+
+    bool enabled = track->onoff==1 || root->song->mute_editor_automation_when_track_is_muted==false;
+    
+    bool doit = seqblock->track_is_disabled==NULL  // i.e. playing block
+      || tracknum >= MAX_DISABLED_SEQBLOCK_TRACKS
+      || !seqblock->track_is_disabled[tracknum];
+
+    if (enabled && doit){
+
+      // TODO: Optimize by taking latency into account here instead of rescheduling in audio_instrument.cpp.
+      // (It's a bigger optimization doing it when notes have been converted to TimeData though.)
+      
+      const r::RatioPeriod track_period
+        = track->times==block_times
+        ? block_period
+        : get_ratio_period(seqblock,
+                           track->times,                                                 
+                           seqtime_start,
+                           seqtime_end);
+
+#if 0
+      if (track->l.num==0){
+        auto ratio_start = block_period._start;
+        auto ratio_end = block_period._end;
+        printf("B: %d. Ratio start: %d / %d (%f). Ratio end: %d / %d (%f). Seqtime: %d -> %d. Seqblock time: %d -> %d\n", block->l.num, (int)ratio_start.num, (int)ratio_start.den, make_double_from_ratio(ratio_start), (int)ratio_end.num, (int)ratio_end.den, make_double_from_ratio(ratio_end), (int)seqtime_start, (int)seqtime_end, (int)seqblock->t.time, (int)seqblock->t.time2);
+      }
+#endif
+
+      RT_fxline_called_each_block(seqtrack, play_id, seqblock, track, seqtime_start, seqtime_end, track_period);
+    }
+    
+    track=NextTrack(track);   
+  }
+
+  // We don't release cache_num if playing block since play_id don't change when replaying a block.
+  if (pc->playtype!=PLAYBLOCK && seqtime_end >= seqblock->t.time2) {
+    
+    //printf("--       Releasing seqblock->cache_num (%d) for block %d. Play_id: %d. seqtime_end: %d. seqblock->t.time2: %d\n", seqblock->cache_num, block->l.num, play_id, (int)seqtime_end, (int)seqblock->t.time2);
+    
+    block->cache_num_holder->RT_release(seqblock->cache_num);
+  }
+  
+
+}
+
+  
+static void RT_handle_editor_seqblocks_each_block(struct SeqTrack *seqtrack){
+  
+  if (is_playing()) {
+    
+    if (pc->playtype==PLAYBLOCK){
+      //R_ASSERT(seqtrack==root->song->block_seqtrack); // hmm. sometimes fails.
+      
+      if (seqtrack==root->song->block_seqtrack)
+        RT_EDITSEQBLOCK_call_each_block(seqtrack, &g_block_seqtrack_seqblock, seqtrack->start_time, seqtrack->end_time);
+      
+    }else if (seqtrack!=root->song->block_seqtrack && !seqtrack->for_audiofiles) {
+      
+      VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
+        //printf("seqtime: %d->%d. seqblock: %d -> %d\n", (int)seqtrack->start_time, (int)seqtrack->end_time, (int)seqblock->t.time, (int)seqblock->t.time2);
+        if (true
+            && seqtrack->end_time > seqblock->t.time
+            && seqtrack->start_time < seqblock->t.time2)
+          RT_EDITSEQBLOCK_call_each_block(seqtrack, seqblock, seqtrack->start_time, seqtrack->end_time);
+      }END_VECTOR_FOR_EACH;
+    }
+    
+  }
+
+}
+
+
 // Called from scheduler.c, before scheduling editor things.
 // Returns true if there is more to play.
 bool RT_SEQTRACK_called_before_editor(struct SeqTrack *seqtrack){
@@ -2777,6 +2897,8 @@ bool RT_SEQTRACK_called_before_editor(struct SeqTrack *seqtrack){
     
   }
 
+  RT_handle_editor_seqblocks_each_block(seqtrack);
+    
   return more_things_to_do;
 }
 
