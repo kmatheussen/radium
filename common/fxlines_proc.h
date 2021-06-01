@@ -40,6 +40,7 @@ extern LANGSPEC void AddFXNodeLineCurrPos(struct Tracker_Windows *window, struct
 extern void DeleteFxNodes(struct Tracker_Windows *window, struct WTracks *wtrack, struct FXs *fxs, const std::vector<int> &fxnodenums);
 extern void DeleteFxNode(struct Tracker_Windows *window, struct WTracks *wtrack, struct FXs *fxs, int fxnodenum);
 
+#if defined(_RADIUM_COMMON_RATIO_FUNCS_H)
 extern void RT_fxline_called_each_block(struct SeqTrack *seqtrack,
                                         const int play_id,
                                         const struct SeqBlock *seqblock,
@@ -48,4 +49,6 @@ extern void RT_fxline_called_each_block(struct SeqTrack *seqtrack,
                                         const int64_t seqtime_end,
                                         const r::RatioPeriod &track_period
                                         );
+#endif
+
 #endif
