@@ -101,10 +101,7 @@ private:
 
 public:
   
-  virtual bool RT_get_automation_recording_data(struct SoundPlugin **plugin, int *effect_num){
-    printf("MidiLearn::RT_get_automation_recording_data. Error: This method is supposed to be overridden.\n");
-    return false;
-  }
+  virtual bool RT_get_automation_recording_data(struct SoundPlugin **plugin, int *effect_num) = 0;
 
   QString get_source_info(void){
     if (ATOMIC_GET(is_learning))
@@ -127,17 +124,11 @@ public:
     return make_instrument(-1);
   }
   
-  virtual QString get_dest_info(void){
-    return QString("MidiLearn::get_dest_info. Error: This method is supposed to be overridden.");
-  }
+  virtual QString get_dest_info(void) = 0;
   
-  virtual void delete_me(void){
-    printf("MidiLearn::delete_me. Error: This method is supposed to be overridden.\n");
-  }
+  virtual void delete_me(void) = 0;
   
-  virtual void RT_callback(float val){
-    printf("MidiLearn::callback got %f. Error: This method is supposed to be overridden.\n", val);
-  }
+  virtual void RT_callback(float val) = 0;
 
   static void RT_maybe_use_forall(instrument_t instrument_id, const symbol_t *port_name, uint32_t msg);
 };
