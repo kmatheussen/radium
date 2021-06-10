@@ -2365,6 +2365,10 @@ static void set_non_realtime(struct SoundPlugin *plugin, bool is_non_realtime){
   }
 }
 
+bool PLUGINHOST_is_vst_or_au_plugin(SoundPlugin *plugin){
+  return plugin->type->RT_process==RT_process;
+}
+
 static SoundPluginType *create_plugin_type(const juce::PluginDescription &description, const wchar_t *file_or_identifier, SoundPluginTypeContainer *container){ //, const wchar_t *library_file_full_path){
   printf("b02 %S\n",file_or_identifier);
   fflush(stdout);
