@@ -1711,6 +1711,21 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, const int time,
   }      
 
         
+  if (THREADING_is_main_thread()) {
+    if (!sane_isnormal(value)) {
+      fprintf(stderr, "Warning: PLUGIN_set_effect_value called with a non-normal float. Instrument: \"%s\". Effect: %d / \"%s\". Value %f. isinf: %d. isnan: %d.\n",
+              plugin->patch==NULL ? plugin->type->name : plugin->patch->name,
+              effect_num, PLUGIN_get_effect_name(plugin, effect_num),
+              value, isinf(value), isnan(value)
+              );
+#if !defined(RELEASE)
+      getchar();
+#endif
+      if (effect_num >= plugin->type->num_effects || !PLUGINHOST_is_vst_or_au_plugin(plugin)) // Some plugins might store weird things in the paramters. It couold be intentional.
+        value = 0.0;
+    }
+  }
+
   if(effect_num < plugin->type->num_effects){
 
     // Need lock to:
