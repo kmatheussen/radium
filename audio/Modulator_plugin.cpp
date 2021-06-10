@@ -328,9 +328,11 @@ struct OscillatorGenerator : public Generator {
       
     }
 
-    _curr_value = scale_double(oscillator(_phase),
-                               -1.0f, 1.0f,
-                               parms.min, parms.max);
+    _curr_value = equal_doubles(parms.min, parms.max)
+      ? parms.min
+      : scale_double(oscillator(_phase),
+                     -1.0, 1.0,
+                     parms.min, parms.max);
     
     //printf("_curr_value: %f - %f. %*f\n", _phase, beatpos, 10 + (int)scale(_curr_value, 0, 1, 0, 150), _curr_value);//_curr_value);
 
@@ -495,10 +497,12 @@ public:
       fRec0[1] = fRec0[0];      
     }
 
-    _curr_value = scale(fRec0[0], // last output value
-                        0,1,
-                        parms.min, parms.max
-                        );
+    _curr_value = equal_floats(parms.min, parms.max)
+      ? parms.min
+      : scale(fRec0[0], // last output value
+              0,1,
+              parms.min, parms.max
+              );
   }
 
 };
@@ -554,16 +558,13 @@ public:
   }
 
   void RT_set_audio_generator_value(float val){
-    float value =  /*
-                     scale(_parms.phase_shift,
-                     0, 1,
-                     -1, 1)
-                     +
-                   */
-      scale(val,
-            0, 1,
-            _parms.min, _parms.max);
-
+    float value
+      = equal_floats(_parms.min, _parms.max)
+      ? _parms.min
+      : scale(val,
+              0, 1,
+              _parms.min, _parms.max);
+    
     _audio_input_generator._curr_value = value;
   }
 
@@ -584,9 +585,12 @@ public:
   }
 
   void set_manual_parameter_input(float val){
-    _manual_parameter_input_generator._curr_value = scale(val,
-                                                          0,1,
-                                                          _parms.min, _parms.max);
+    _manual_parameter_input_generator._curr_value
+      = equal_floats(_parms.min, _parms.max)
+      ? _parms.min
+      : scale(val,
+              0, 1,
+              _parms.min, _parms.max);
   }
 
   float get_manual_parameter_input(void) const {
