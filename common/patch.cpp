@@ -2127,7 +2127,7 @@ void FX_call_me_before_starting_to_play_song2(struct SeqTrack *seqtrack, const s
       
       if (last._time >= blocktime) {
 
-        Place place = make_place_from_ratio(last._time);
+        Place place = ratio2place(last._time);
         int64_t stime = Place2STime2(block, &place, track);
               
         int64_t seqtime = seqblock->t.time + blocktime_to_seqtime(seqblock, stime);
@@ -2147,7 +2147,7 @@ void FX_call_me_before_starting_to_play_song2(struct SeqTrack *seqtrack, const s
       } else {
 
         Place place = STime2Place2(block, blocktime, track);
-        Ratio ratio = make_ratio_from_place(place); // TODO: Create STime2Ratio2-function.
+        Ratio ratio = place2ratio(place); // TODO: Create STime2Ratio2-function.
 
         FX_when when;
         

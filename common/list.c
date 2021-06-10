@@ -1041,7 +1041,7 @@ void List_InsertRatio3(
 	void (*Insert_Ratio_extra)(void *to,struct ListHeader3 *l, const Place place, const Ratio toinsert)
 ){
 
-        const Ratio start_place = make_ratio_from_place(place);
+        const Ratio start_place = place2ratio(place);
         const Ratio new_place = RATIO_add(start_place, toinsert);
           
 	while(l!=NULL){
@@ -1050,7 +1050,7 @@ void List_InsertRatio3(
             (*Insert_Ratio_extra)(to, l, place, toinsert);
           }
 
-          Ratio old_place = make_ratio_from_place(l->p);
+          Ratio old_place = place2ratio(l->p);
             
           if(RATIO_greater_or_equal_than(old_place, start_place)) {
             
@@ -1068,7 +1068,7 @@ void List_InsertRatio3(
               
             }
 
-            l->p = make_place_from_ratio(new_place);
+            l->p = ratio2place(new_place);
             
           }
           
@@ -1132,7 +1132,7 @@ bool List_InsertRatioLen3(
       
     }
     
-    Ratio place = make_ratio_from_place(l->p);
+    Ratio place = place2ratio(l->p);
     
     if(RATIO_greater_or_equal_than(place, ratio)){
 
@@ -1146,7 +1146,7 @@ bool List_InsertRatioLen3(
         
         place = RATIO_add(place, toratio);
         
-        Place place_place = make_place_from_ratio(place);
+        Place place_place = ratio2place(place);
         
         if( ! PlaceLegal(block,&place_place)){
           

@@ -166,7 +166,7 @@ static inline bool RATIO_greater_than(const Ratio r1, const Ratio r2){
 
   if (r1.den == r2.den) {
 
-    // For instance 5/1 > 5/1
+    // For instance 6/1 > 5/1
     
     return r1.num > r2.num;
 

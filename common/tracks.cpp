@@ -280,7 +280,7 @@ void TRACK_make_monophonic_destructively(struct Tracks *track){
     if (next==NULL)
       break;
 
-    if (PlaceGreaterThan(&note->end, &next->l.p)){
+    if (note->end > place2ratio(next->l.p)) {
 
       if (have_made_undo==false){      
         ADD_UNDO(Notes(window,
@@ -359,7 +359,7 @@ bool TRACK_split_into_monophonic_tracks(struct Tracker_Windows *window, struct W
       if (next==NULL)
         break;
 
-      if (PlaceGreaterThan(&notes->end, &next->l.p)){
+      if (notes->end > place2ratio(next->l.p)){
 
         if (have_made_undo==false) {
           ADD_UNDO(Block_CurrPos(window));    

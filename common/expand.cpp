@@ -73,9 +73,18 @@ static void expand_list3(struct ListHeader3 *l, const Place start, const Place e
 
 static void expand_note(struct Notes *note, const Place start, const Place end, const Place new_end, const Place last_place){
   note->l.p = expand_place(note->l.p, start, end, new_end, last_place);
-  note->end = expand_place(note->end, start, end, new_end, last_place);
+  note->end = place2ratio(expand_place(ratio2place(note->end), start, end, new_end, last_place));
+
+  /*
   if(note->velocities!=NULL)
     expand_list3(&note->velocities->l, start, end, new_end, last_place);
+  */
+  
+  {
+    r::TimeData<r::Velocity>::Writer writer(note->_velocities);
+    writer.expand(ratio_from_place(start), ratio_from_place(end), ratio_from_place(new_end), ratio_from_place(last_place));
+  }
+    
   if(note->pitches!=NULL)
     expand_list3(&note->pitches->l, start, end, new_end, last_place);
 }

@@ -282,7 +282,7 @@ static inline bool sane_isnormal_DOUBLE(double x) {
 }
 
 #define sane_isnormal(x) (sizeof (x) == sizeof (float) ? sane_isnormal_FLOAT(x) : sane_isnormal_DOUBLE(x))
-  
+
 #ifdef __cplusplus
 static inline bool equal_floats(float x, float y) {
 #if !defined(RELEASE)
@@ -520,9 +520,15 @@ static inline float scale(const float x, const float x1, const float x2, const f
   float diff = x2-x1;
   
 #if !defined(RELEASE)
-  if(!sane_isnormal(x) || !sane_isnormal(x2) || !sane_isnormal(x2) || !sane_isnormal(y1) || !sane_isnormal(y2) || !sane_isnormal(diff)){
-    fprintf(stderr, "scale(): Calling abort(). x/x1/x2/y1/y2: %f %f %f %f %f\n", x,x1,x2,y1,y2);
-    abort();
+  if(!sane_isnormal(x) || !sane_isnormal(12) || !sane_isnormal(x2) || !sane_isnormal(y1) || !sane_isnormal(y2) || !sane_isnormal(diff)){
+
+    fprintf(stderr, "scale(): Calling abort(). x/x1/x2/y1/y2: %f %f %f %f %f ---- %d %d %d %d %d %d\n", x,x1,x2,y1,y2,
+            sane_isnormal(x), sane_isnormal(12), sane_isnormal(x2), sane_isnormal(y1), sane_isnormal(y2), sane_isnormal(diff));
+
+    if (isfinite(x) && isfinite(12) && isfinite(x2) && isfinite(y1) && isfinite(y2) && isfinite(diff))
+      fprintf(stderr, "   ....Aborting call to abort. None of the numbers where inf or nan.\n");
+    else
+      abort();
   }
   
   R_ASSERT(!equal_floats(diff,0.0));
@@ -1797,6 +1803,7 @@ static inline enum FadeShape string_to_fade_shape(const char *string){
 
 #define MAX_VELOCITY (1<<16)
 
+/*
 struct Velocities{
 	struct ListHeader3 l;
 
@@ -1804,10 +1811,39 @@ struct Velocities{
 	int logtype;
 };
 #define NextVelocity(a) ((struct Velocities *)((a)->l.next))
+*/
 
 static inline float VELOCITY_get(int velocity){
   return scale_double(velocity,0,MAX_VELOCITY,0,1);
 }
+
+#ifdef __cplusplus
+namespace r{
+
+extern int64_t g_node_id;
+  
+struct NodeId{
+  int64_t _id;
+  NodeId()
+    : _id(g_node_id++)
+  {
+    R_ASSERT_NON_RELEASE(THREADING_is_main_thread()); // because of g_node_id
+  }
+};
+
+
+struct Velocity : NodeId {
+  Ratio _time;
+  int _val;
+  int _logtype;
+  Velocity(Ratio time, int val, int logtype = LOGTYPE_LINEAR)
+    : _time(time)
+    , _val(R_BOUNDARIES(0, val, MAX_VELOCITY))
+    , _logtype(logtype)
+  {}
+};
+}
+#endif
 
 /*********************************************************************
 	pitches.h
@@ -1846,19 +1882,27 @@ struct Notes{
 	int velocity;
 	int velocity_first_logtype;
   
-	Place end;
+	Ratio end;
 
         int chance;
   
-	struct Velocities *velocities;
+        //struct Velocities *velocities;
 	int velocity_end;
-  
+
+#ifdef __cplusplus
+        r::TimeData<r::Velocity> *_velocities;
+#else
+        void *_velocities;
+#endif
+
 	struct Pitches *pitches;
         float pitch_end; // If pitch_end==0 and pitches==NULL, there's no pitch changes for this note.
-  
+
+  /*
 	struct Velocities first_velocity; // used by nodelines
 	struct Velocities last_velocity; // used by nodelines
-
+  */
+  
         int polyphony_num; //subtrack;
 
 	int noend;
@@ -2381,16 +2425,19 @@ typedef struct{
   bool is_end_pitch;
 } TrackRealline2;
 
+#if __cplusplus
 typedef struct{
   Place p;
   struct Notes *note;
-  struct Velocities *velocity;
+  //r::Velocity velocity(make_ratio(0,1),0);
+  int velocity_value;
   int value;
   int logtype;
   bool is_first_velocity;
   bool is_last_velocity;
+  int velnum;
 } VelText;
-
+#endif
 
 
 #if USE_QT4
@@ -2444,7 +2491,8 @@ struct NodeLine2{
   float x1,y1;
   float x2,y2;
 
-  int n1,n2;
+  //int n1,n2;
+  Ratio time1, time2;
   int64_t id1,id2;
   
   int logtype;
@@ -2467,7 +2515,7 @@ struct Node{
 
 struct Node2{
   float x, y;
-  int n;
+  //int n;
   int64_t id;
 };
 
@@ -3386,6 +3434,13 @@ namespace radium{
 */
 #endif
 
+#if SEQBLOCK_USING_VECTOR
+#include "Vector.hpp"
+namespace radium{
+  using RT_NoteVector = radium::Vector<struct Notes*, radium::AllocatorType::RT>;
+}
+#endif
+
 struct SeqBlock{
   int64_t id;
 
@@ -3443,6 +3498,12 @@ struct SeqBlock{
 #else
   int last_play_id;
   int cache_num;
+#endif
+
+#if SEQBLOCK_USING_VECTOR
+  radium::Vector< radium::RT_NoteVector*, radium::AllocatorType::RT > *playing_notes;
+#else
+  void *playing_notes;
 #endif
   
   /*

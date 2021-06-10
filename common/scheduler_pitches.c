@@ -188,7 +188,7 @@ static void RT_schedule_pitch(struct SeqTrack *seqtrack,
   const struct Pitches *pitch2 = pitch1==NULL ? note->pitches : NextPitch(pitch1);
 
   Place p1 = pitch1==NULL ? note->l.p : pitch1->l.p;
-  Place p2 = pitch2==NULL ? note->end : pitch2->l.p;
+  Place p2 = pitch2==NULL ? ratio2place(note->end) : pitch2->l.p;
   
   int64_t time1 = get_seqblock_place_time2(seqblock, track, p1);
   int64_t time2 = get_seqblock_place_time2(seqblock, track, p2);

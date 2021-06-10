@@ -9,6 +9,8 @@
 #include "list_proc.h"
 #include "placement_proc.h"
 #include "instruments_proc.h"
+#include "velocities_proc.h"
+
 #include "../audio/SoundPlugin.h"
 
 #include "scheduler_proc.h"
@@ -22,7 +24,7 @@ static int rnd(int max){
 static int64_t RT_scheduled_stop_note(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
   struct Tracks *track = (struct Tracks *)args[0].pointer;
   struct Notes *note   = (struct Notes *)args[1].pointer;
-  const struct SeqBlock *seqblock   = (const struct SeqBlock *)args[2].const_pointer;
+  struct SeqBlock *seqblock   = (struct SeqBlock *)args[2].pointer;
   
   struct Patch *patch = track->patch;
   
@@ -39,6 +41,11 @@ static int64_t RT_scheduled_stop_note(struct SeqTrack *seqtrack, int64_t time, u
     RT_PATCH_stop_note(seqtrack, patch,note2,time);
     
   }
+
+#if 1
+  if (time < seqblock->t.time2) // when time==seqblock->t.time2, the playing_notes vector is cleared anyway. (and we get an assertion error when trying to remove something which is not in the vector)
+    RT_SEQBLOCK_remove_playing_note(seqblock, track, note);
+#endif
 
   return DONT_RESCHEDULE;
 }
@@ -65,9 +72,9 @@ static bool RT_find_next_note_stop_after_place(const struct Tracks *track, const
   {
     r::TimeData<r::Stop>::Reader reader(track->stops2);
     for(const r::Stop &stop : reader) {
-      if (stop._time >= make_ratio_from_place(place_start)){
+      if (stop._time >= place2ratio(place_start)){
         has_stop = true;
-        stop_place = make_place_from_ratio(stop._time);
+        stop_place = ratio2place(stop._time);
         break;
       }
     }
@@ -145,7 +152,7 @@ static int64_t RT_schedule_end_note(struct SeqTrack *seqtrack,
 
   if (!note_continues_next_seqblock(seqblock, note)){
           
-    int64_t time = get_seqblock_place_time2(seqblock, track, note->end);
+    int64_t time = get_seqblock_place_time3(seqblock, track, note->end);
 
     if (time < note_start_time){
       // RError("time >= note_start_time: %d - %d", (int)time, (int)note_start_time); // Can happen if seq_time < pc->start_time in schedule_event.
@@ -206,7 +213,7 @@ static void RT_schedule_note(struct SeqTrack *seqtrack,
                              );
 
 static int64_t RT_scheduled_note(struct SeqTrack *seqtrack, int64_t time, union SuperType *args){
-  const struct SeqBlock *seqblock = (const struct SeqBlock *)args[0].const_pointer;
+  struct SeqBlock *seqblock = (struct SeqBlock *)args[0].pointer;
   const struct Tracks *track = (const struct Tracks *)args[1].const_pointer;
   struct Notes *note = (struct Notes *)args[2].pointer;
   int64_t note_time = args[3].int_num;
@@ -268,12 +275,16 @@ static int64_t RT_scheduled_note(struct SeqTrack *seqtrack, int64_t time, union 
     bool schedule_pitches_and_velocities = true;
     if (sample_pos>0 && (patch->instrument==get_audio_instrument() && ATOMIC_GET(((SoundPlugin*)patch->patchdata)->enable_sample_seek)==false))
       schedule_pitches_and_velocities = false; // Temporary hack to prevent CPU spike while starting to play in the middle of a block. Proper solution should be applied in the next release.
-        
+    
     if (schedule_pitches_and_velocities){
       RT_schedule_pitches_newnote(time, seqtrack, seqblock, track, note);
-      RT_schedule_velocities_newnote(time, seqtrack, seqblock, track, note);
+      //RT_schedule_velocities_newnote(time, seqtrack, seqblock, track, note);
     }
-    
+
+#if 1
+    RT_SEQBLOCK_add_playing_note(seqblock, track, note);
+#endif
+
     RT_schedule_end_note(seqtrack, seqblock, track, note, time);
   }
 
@@ -340,8 +351,10 @@ void RT_schedule_notes_newblock(struct SeqTrack *seqtrack,
     
     if (doit){
       struct Notes *note=track->notes;
-    
-      while(note != NULL && p_Less_Than(note->end,start_place))
+
+      Ratio start_ratio = place2ratio(start_place);
+      
+      while(note != NULL && note->end < start_ratio)
         note=NextNote(note);
     
       if(note!=NULL)

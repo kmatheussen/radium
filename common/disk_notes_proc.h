@@ -16,14 +16,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
+#pragma once
 
 
-#ifndef TRACKER_INCLUDE
 
-
-extern void SaveNotes(struct Notes *note);
-extern struct Notes *LoadNote(void);
-extern void DLoadNotes(const struct Root *newroot,struct Tracks *track, struct Notes *notes);
-
-#endif
+extern LANGSPEC void SaveNotes(struct Notes *note);
+extern LANGSPEC struct Notes *LoadNote(void);
+extern LANGSPEC void DLoadNotes(const struct Root *newroot,struct Tracks *track, struct Notes *notes);
 

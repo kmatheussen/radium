@@ -81,7 +81,7 @@ static void add_note(const struct WBlocks *wblock, Trss &trss, struct Notes *not
 
   if (note->pitch_end > 0) {
     TrackRealline2 tr = {};
-    tr.p = note->end;
+    tr.p = ratio2place(note->end);
     tr.note = note;
     tr.is_end_pitch = true;
     add_tr(wblock, trss, tr);
@@ -91,7 +91,7 @@ static void add_note(const struct WBlocks *wblock, Trss &trss, struct Notes *not
 #if 1
 static void add_stop(const struct WBlocks *wblock, Trss &trss, const r::Stop stop){
   TrackRealline2 tr = {};
-  tr.p = make_place_from_ratio(stop._time);
+  tr.p = ratio2place(stop._time);
   tr.is_stop = true;
   add_tr(wblock, trss, tr);
 }

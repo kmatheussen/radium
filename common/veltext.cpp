@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <math.h>
 
 #include "nsmtracker.h"
+#include "TimeData.hpp"
 #include "vector_proc.h"
 #include "realline_calc_proc.h"
 #include "undo.h"
@@ -42,16 +43,19 @@ static void add_veltext(const struct WBlocks *wblock, VelText_trss &veltexts, Ve
   
   veltext.note = note;
 
+  veltext.velocity_value = velocity;
+
   TRS_INSERT_PLACE(trs, veltext);
 }
                    
 
-static void add_velocity(const struct WBlocks *wblock, VelText_trss &veltexts, struct Notes *note, struct Velocities *velocity){
+static void add_velocity(const struct WBlocks *wblock, VelText_trss &veltexts, struct Notes *note, const r::Velocity &velocity, int velnum){
   VelText tr = {};
-  tr.p = velocity->l.p;
-  tr.velocity = velocity;
-  tr.logtype = velocity->logtype;
-  add_veltext(wblock, veltexts, tr, note, velocity->velocity);
+  tr.p = ratio2place(velocity._time);//velocity->l.p;
+  //tr.velocity = velocity;
+  tr.logtype = velocity._logtype;
+  tr.velnum = velnum;
+  add_veltext(wblock, veltexts, tr, note, velocity._val);
 }
 
 static void add_note(const struct WBlocks *wblock, VelText_trss &veltexts, struct Notes *note){
@@ -64,23 +68,29 @@ static void add_note(const struct WBlocks *wblock, VelText_trss &veltexts, struc
     tr.p = note->l.p;
     tr.logtype = note->velocity_first_logtype;
     tr.is_first_velocity = true;
-    
+    tr.velnum=-1;
     add_veltext(wblock, veltexts, tr, note, note->velocity);
   }
 
-  struct Velocities *velocity = note->velocities;
-  while(velocity != NULL){
-    add_velocity(wblock, veltexts, note, velocity);
-    last_velocity = velocity->velocity;
-    last_logtype = velocity->logtype;
-    velocity = NextVelocity(velocity);
+
+  {
+    r::TimeData<r::Velocity>::Reader reader(note->_velocities);
+    
+    int velnum = 0;
+    for(const r::Velocity &velocity : reader){
+      add_velocity(wblock, veltexts, note, velocity, velnum);
+      last_velocity = velocity._val;
+      last_logtype = velocity._logtype;
+      velnum++;
+    }
   }
 
   if (last_velocity != note->velocity_end && last_logtype!=LOGTYPE_HOLD)  {
     VelText tr = {};
-    tr.p = note->end;
+    tr.p = ratio2place(note->end);
     tr.logtype = LOGTYPE_IRRELEVANT;
     tr.is_last_velocity = true;
+    tr.velnum=-2;
     add_veltext(wblock, veltexts, tr, note, note->velocity_end);
   }
 }
@@ -166,6 +176,7 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, st
     
     if (key == EVENT_DEL){
 
+      /*
       PLAYER_lock();{
         for (auto vt : veltext){
           struct Notes *note = vt.note;
@@ -173,7 +184,16 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, st
             ListRemoveElement3(&note->velocities, &vt.velocity->l);
         }
       }PLAYER_unlock();
+      */
       
+      for (auto vt : veltext){
+        struct Notes *note = vt.note;
+        if (vt.velnum >= 0) {
+          r::TimeData<r::Velocity>::Writer writer(note->_velocities);
+          writer.remove_at_pos(vt.velnum);
+        }
+      }
+
     } else {
       
       UNDO_CANCEL_LAST_UNDO();
@@ -197,9 +217,7 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, st
       if (dat.is_valid==false)
         return false;
 
-      struct Velocities *velocity = AddVelocity2(dat.value, place, note);
-      safe_int_write(&velocity->logtype, dat.logtype);
-      
+      AddVelocity3(dat.logtype, dat.value, place, note);
     }
 
   } else {
@@ -208,16 +226,26 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, st
     
     const VelText &vt = veltext.at(0);
     struct Notes *note = vt.note;
-    struct Velocities *velocity = vt.velocity;
+    //struct Velocities *velocity = vt.velocity;
   
-    if (key == EVENT_DEL && velocity != NULL) {
+    if (key == EVENT_DEL && vt.velnum >= 0) {
 
+      /*
       PLAYER_lock();{
         if (subsubtrack == 2)
           velocity->logtype = LOGTYPE_LINEAR;
         else
           ListRemoveElement3(&note->velocities, &velocity->l);
       }PLAYER_unlock();
+      */
+      
+      {
+        r::TimeData<r::Velocity>::Writer writer(note->_velocities);
+        if (subsubtrack == 2)
+          writer.at_ref(vt.velnum)._logtype = LOGTYPE_LINEAR;
+        else
+          writer.remove_at_pos(vt.velnum);
+      }
       
     } else {
 
@@ -226,15 +254,18 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, st
       if (dat.is_valid==false)
         return false;
 
+      int num_velocities = r::TimeData<r::Velocity>::Reader(note->_velocities).size();
+        
       if (vt.is_first_velocity){
 
         bool is_equal = false;
 
-        if (note->velocities==NULL)
+        if (false
+            || num_velocities==0
+            || (num_velocities==1 && dat.logtype==LOGTYPE_HOLD)
+            )
           is_equal = note->velocity==note->velocity_end; // Don't use equal_floats since note->velocity is an integer.
-        else if (dat.logtype==LOGTYPE_HOLD && note->velocities->l.next==NULL)
-          is_equal = note->velocity==note->velocity_end;
-                                    
+
         safe_int_write(&note->velocity, dat.value);
         safe_int_write(&note->velocity_first_logtype, dat.logtype);
 
@@ -249,12 +280,20 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, st
         
         bool is_equal = false;
 
-        if (dat.logtype==LOGTYPE_HOLD && note->velocities->l.next==NULL)
-          is_equal = velocity->velocity==note->velocity_end;
-        
+        if (dat.logtype==LOGTYPE_HOLD && num_velocities==1)
+          is_equal = vt.velocity_value==note->velocity_end;
+
+        /*
         safe_int_write(&velocity->velocity, dat.value);
         safe_int_write(&velocity->logtype, dat.logtype);
-
+        */
+        
+        {
+          r::TimeData<r::Velocity>::Writer writer(note->_velocities);
+          writer.at_ref(vt.velnum)._val = dat.value;
+          writer.at_ref(vt.velnum)._logtype = dat.logtype;
+        }
+        
         if (is_equal)
           safe_int_write(&note->velocity_end, dat.value);
 

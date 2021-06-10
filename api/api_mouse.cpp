@@ -1350,7 +1350,7 @@ static void MOVE_PLACE(Place *place, float diff){
 */
 
 static void MOVE_PLACE2(Place *place, const Ratio diff){
-  *place = make_place_from_ratio(make_ratio_from_place(*place) + diff);
+  *place = ratio2place(place2ratio(*place) + diff);
 }
 
 static void setPianoNoteValues(float value, int pianonotenum, struct Notes *note){
@@ -1416,7 +1416,7 @@ Place getPianonotePlace(int pianonotenum, dyn_t dynnote, int tracknum, int block
     return p_Create(0,0,1);
 
   if (ListFindNumElements3((ListHeader3*)note->pitches)+1==pianonotenum)
-    return note->end;
+    return ratio2place(note->end);
   
   return get_pianonote_place(pianonotenum, note);
 }
@@ -1466,16 +1466,16 @@ static int getPitchNumFromPianonoteNum(int pianonotenum, dyn_t dynnote, int trac
 }
 
 static dyn_t moveNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Ratio diff){
-  Ratio old_start = make_ratio_from_place(note->l.p);
+  Ratio old_start = place2ratio(note->l.p);
 
   if (RATIO_less_than_zero(old_start + diff))
     diff = -old_start;
 
   //printf("new_start 1: %f\n",old_start+diff);
 
-  Ratio old_end = make_ratio_from_place(note->end);
+  Ratio old_end = note->end;
 
-  Ratio lastplace = make_ratio_from_place(p_Last_Pos(block));
+  Ratio lastplace = place2ratio(p_Last_Pos(block));
 
   if ((old_end + diff) > lastplace)
     diff = lastplace - old_end;
@@ -1490,14 +1490,8 @@ static dyn_t moveNote(struct Blocks *block, struct Tracks *track, struct Notes *
     //Float2Placement(new_start, &note->l.p);
     //Float2Placement(new_end, &note->end);
     MOVE_PLACE2(&note->l.p, diff);
-    MOVE_PLACE2(&note->end, diff);
+    note->end += diff;
     
-    struct Velocities *velocity = note->velocities;
-    while(velocity != NULL){
-      MOVE_PLACE2(&velocity->l.p, diff);
-      velocity = NextVelocity(velocity);
-    }
-
     struct Pitches *pitch = note->pitches;
     while(pitch != NULL){
       MOVE_PLACE2(&pitch->l.p, diff);
@@ -1507,6 +1501,12 @@ static dyn_t moveNote(struct Blocks *block, struct Tracks *track, struct Notes *
     ListAddElement3_a(&track->notes, &note->l);
 
     NOTE_validate(block, track, note);
+  }
+
+  {
+    r::TimeData<r::Velocity>::Writer writer(note->_velocities);
+    for(r::Velocity &velocity : writer)
+      velocity._time += diff;
   }
 
   return GetNoteId(note);
@@ -1542,7 +1542,7 @@ dyn_t movePianonote(int pianonotenum, float value, Place place, dyn_t dynnote, i
   float diff      = floatplace - old_floatplace;
   */
   
-  Ratio diff = make_ratio_from_place(place) - make_ratio_from_place(get_pianonote_place(pianonotenum, note));
+  Ratio diff = place2ratio(place) - place2ratio(get_pianonote_place(pianonotenum, note));
   
   return moveNote(block, track, note, diff);
 }
@@ -1580,25 +1580,28 @@ dyn_t movePianonoteStart(int pianonotenum, float value, Place place_arg, dyn_t d
     return dynnote;
 
   //float floatplace = GetfloatFromPlace(&place);
-  Ratio place = make_ratio_from_place(place_arg);
+  Ratio place = place2ratio(place_arg);
   
   //const float mindiff = 0.001;
   const Ratio mindiff = make_ratio(1, 1024);
   
   //float lastplacefloat = GetfloatFromPlace(&note->end);
-  const Ratio lastplace = make_ratio_from_place(note->end);
+  const Ratio lastplace = note->end;
   if ( (place+mindiff) >= lastplace)
     place = lastplace - mindiff;
 
-  if (note->velocities != NULL) {
-    const Ratio firstvelplace = make_ratio_from_place(note->velocities->l.p);
-    if ( (place+mindiff) >= firstvelplace)
-      place = firstvelplace - mindiff;
+  {
+    r::TimeData<r::Velocity>::Reader reader(note->_velocities);
+    if (reader.size() > 0) {
+      const Ratio firstvelplace = reader.at_first()._time;
+      if ( (place+mindiff) >= firstvelplace)
+        place = firstvelplace - mindiff;
+    }
   }
 
   // (there are no pitches here)
 
-  const Place new_place = make_place_from_ratio(place);
+  const Place new_place = ratio2place(place);
   
   {
     SCOPED_PLAYER_LOCK_IF_PLAYING();
@@ -1711,13 +1714,16 @@ dyn_t movePianonoteEnd(int pianonotenum, float value, Place place_arg, dyn_t dyn
       floatplace_changed = true;
     }
 
-    if (note->velocities != NULL) {
-      float lastvelplace = GetfloatFromPlace(ListLastPlace3(&note->velocities->l));
-      if (floatplace-mindiff <= lastvelplace){
-        floatplace = lastvelplace + mindiff;
-        floatplace_changed = true;
+    {
+      r::TimeData<r::Velocity>::Reader reader(note->_velocities);
+      if (reader.size() > 0) {
+        const Ratio lastvelplace = reader.at_last()._time;
+        float lastvelfloat = make_double_from_ratio(lastvelplace);
+        if (floatplace-mindiff <= lastvelfloat){
+          floatplace = lastvelfloat + mindiff;
+          floatplace_changed = true;
+        }
       }
-
     }
 
     // (there are no pitches here)
@@ -1737,7 +1743,7 @@ dyn_t movePianonoteEnd(int pianonotenum, float value, Place place_arg, dyn_t dyn
       {
         SCOPED_PLAYER_LOCK_IF_PLAYING();
 
-        note->end = new_place;
+        note->end = place2ratio(new_place);
       
         NOTE_validate(block, track, note);
       }
@@ -2603,9 +2609,10 @@ int getNotenumForPitchnum(int pitchnum, int tracknum, int blocknum, int windownu
 static int getReallineForPitch(const struct WBlocks *wblock, struct Pitches *pitch, struct Notes *note, bool is_end_pitch){
   if( pitch!=NULL)
     return FindRealLineFor(wblock,pitch->Tline,&pitch->l.p);
-  else if (is_end_pitch)
-    return find_realline_for_end_pitch(wblock, &note->end);
-  else
+  else if (is_end_pitch){
+    Place p = ratio2place(note->end);
+    return find_realline_for_end_pitch(wblock, &p);
+  }else
     return FindRealLineFor(wblock,note->Tline,&note->l.p);
 }
 
@@ -2748,7 +2755,7 @@ Place getPitchnumPlace(int pitchnum, int tracknum, int blocknum, int windownum){
   R_ASSERT_RETURN_IF_FALSE2(note!=NULL, p_Create(0,0,1));
 
   if (is_end_pitch)
-    return note->end;
+    return ratio2place(note->end);
   else if (pitch==NULL)
     return note->l.p;
   else
@@ -2832,7 +2839,10 @@ static int setPitchnum2(int num, float value, Place place, int tracknum, int blo
       
       Place firstLegalPlace,lastLegalPlace;
       PlaceFromLimit(&firstLegalPlace, &note->l.p);
-      PlaceTilLimit(&lastLegalPlace, &note->end);
+      {
+        Place p = ratio2place(note->end);
+        PlaceTilLimit(&lastLegalPlace, &p);
+      }
 
       {
         SCOPED_PLAYER_LOCK_IF_PLAYING();
@@ -2875,7 +2885,8 @@ static struct Notes *getNoteAtPlace(struct Tracks *track, Place *place){
   struct Notes *note = track->notes;
 
   while(note != NULL){
-    if (PlaceIsBetween3(place, &note->l.p, &note->end))
+    Place p = ratio2place(note->end);
+    if (PlaceIsBetween3(place, &note->l.p, &p))
       return note;
     else
       note = NextNote(note);
@@ -3262,7 +3273,7 @@ Place getFxnodePlace(int fxnodenum, int fxnum, int tracknum, int blocknum, int w
     return p_Create(0,0,1);
   
   const r::FXNode &fxnode = reader.at_ref(fxnodenum);
-  return make_place_from_ratio(fxnode._time);  
+  return ratio2place(fxnode._time);  
 }
 
 float getFxnodeValue(int fxnodenum, int fxnum, int tracknum, int blocknum, int windownum){
@@ -3528,7 +3539,7 @@ void setFxnode(int fxnodenum, float value, Place place, int fxnum, int tracknum,
   
   if (!p_is_same_place(place)){
 
-    Ratio ratio = make_ratio_from_place(place);
+    Ratio ratio = place2ratio(place);
     
     if (ratio < 0) {
       

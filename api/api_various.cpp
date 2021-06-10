@@ -1111,7 +1111,7 @@ namespace{
       {
         Pitches2 *pitches2 = (struct Pitches2*)talloc(sizeof(Pitches2));
         
-        pitches2->l.p = notes->end;
+        pitches2->l.p = ratio2place(notes->end);
         if (notes->pitches != NULL && notes->pitch_end > 0.005)
           pitches2->note = &notes->pitch_end;
         pitches2->velocity = &notes->velocity_end;
@@ -1297,10 +1297,10 @@ static bool general_transform_timedata2(radium::GeneralTranspose &gt,
   bool ret = false;
 
   for(T2 &t: writer){
-    if (t._time < make_ratio_from_place(gt.y1))
+    if (t._time < place2ratio(gt.y1))
       continue;
 
-    if (t._time >= make_ratio_from_place(gt.y2))
+    if (t._time >= place2ratio(gt.y2))
       break;
     
     if (transformer(t, gt))
@@ -1601,14 +1601,14 @@ void insertLines2(Place start, Place how_much, int blocknum){
   if (block==NULL)
     return;
 
-  Ratio r_start = make_ratio_from_place(start);
+  Ratio r_start = place2ratio(start);
       
   if (p_Greater_Or_Equal(start, p_Absolute_Last_Pos(block)) || r_start < make_ratio(0,1)){
     handleError("insertLines2: Illegal start: %s", PlaceToString(&start));
     return;
   }
 
-  Ratio r_how_much = make_ratio_from_place(how_much);
+  Ratio r_how_much = place2ratio(how_much);
   if (r_how_much < make_ratio(0,1)){
     handleError("insertLines2: Illegal how_much: %s", PlaceToString(&how_much));
     return;
@@ -1631,8 +1631,8 @@ void deleteLines2(Place start, Place end, int blocknum){
   if (block==NULL)
     return;
 
-  Ratio r_start = make_ratio_from_place(start);
-  Ratio r_end = make_ratio_from_place(end);
+  Ratio r_start = place2ratio(start);
+  Ratio r_end = place2ratio(end);
 
   if (r_start < make_ratio(0,1))
     goto failed;
@@ -1641,7 +1641,7 @@ void deleteLines2(Place start, Place end, int blocknum){
     goto failed;
     
 
-  if (r_end > make_ratio_from_place(p_Absolute_Last_Pos(block)))
+  if (r_end > place2ratio(p_Absolute_Last_Pos(block)))
     goto failed;
   
   if (r_end==r_start)

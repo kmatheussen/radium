@@ -17,11 +17,20 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 //extern void SetNum_Vel(struct WTracks *wtrack);
 
+extern LANGSPEC int AddVelocity3(
+                                 int logtype,
+                                 int velocityvelocity,
+                                 const Place *placement,
+                                 struct Notes *note
+                                 );
+
+/*
 extern LANGSPEC struct Velocities *AddVelocity2(
                                                 int velocityvelocity,
                                                 const Place *placement,
                                                 struct Notes *note
                                                 );
+*/
 
 extern LANGSPEC int AddVelocity(
                                 int velocityvelocity,
@@ -33,3 +42,13 @@ extern LANGSPEC void AddVelocityCurrPos(struct Tracker_Windows *window);
 
 extern LANGSPEC void IncreaseVelocityCurrPos(struct Tracker_Windows *window,int inc);
 
+#ifdef __cplusplus
+extern void RT_VELOCITIES_called_each_block(struct SeqTrack *seqtrack,
+                                            const int play_id,
+                                            const struct SeqBlock *seqblock,
+                                            const struct Tracks *track,
+                                            const int64_t seqtime_start,
+                                            const int64_t seqtime_end,
+                                            const r::RatioPeriod &track_period
+                                            );
+#endif

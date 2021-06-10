@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "nsmtracker.h"
+#include "placement_proc.h"
 #include "disk.h"
 #include "disk_placement_proc.h"
 #include "disk_velocities_proc.h"
@@ -45,14 +46,15 @@ DC_start("NOTE");
 	DC_SaveI(note->velocity);
         SaveLogType(note->velocity_first_logtype);
         
-	SavePlace(&note->end);
+        DC_SaveRatio(note->end);
+        
 	DC_SaveI(note->velocity_end);
         DC_SaveF(note->pitch_end);
 	DC_SaveI(note->noend);
 
         DC_SaveI(note->chance);
         
-	SaveVelocities(note->velocities);
+	SaveVelocities(note);
 	SavePitches(note->pitches);
 
 DC_end();
@@ -76,8 +78,14 @@ struct Notes *LoadNote(void){
           note->velocity=note->velocity*MAX_VELOCITY/127;        
         else if (disk_load_version >= 0.775)
           note->velocity_first_logtype = LoadLogType();
-                
-	LoadPlace(&note->end);
+
+        if (disk_load_version < 1.225) {
+          Place noteend;
+          LoadPlace(&noteend);
+          note->end = place2ratio(noteend);
+        } else {
+          note->end = DC_LoadRatio();
+        }
         
 	note->velocity_end=DC_LoadI();
         
@@ -96,15 +104,19 @@ struct Notes *LoadNote(void){
         if(disk_load_version<0.69) {
 
           if(DC_Next()==LS_OBJECT){
-            LoadVelocities(&note->velocities);
+            LoadVelocities_oldformat(note);
             DC_Next();
           }
 
         } else {
 
             DC_Next();
-            LoadVelocities(&note->velocities);
 
+            if (disk_load_version < 1.225) {
+              LoadVelocities_oldformat(note);
+            } else
+              LoadVelocities(note);
+            
             DC_Next();
             LoadPitches(&note->pitches);
             DC_Next();

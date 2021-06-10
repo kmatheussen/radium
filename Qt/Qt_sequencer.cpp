@@ -1060,7 +1060,7 @@ public:
     while(note != NULL){
 
       struct Pitches last_pitch;
-      last_pitch.l.p = note->end;
+      last_pitch.l.p = ratio2place(note->end);
       last_pitch.note = note->pitch_end;
       
       struct Pitches first_pitch;

@@ -478,7 +478,7 @@ Place p_FromString(const char* s){
     
     Ratio ratio = make_ratio(numerator + line*denominator, denominator);
 
-    Place place = make_place_from_ratio(ratio);
+    Place place = ratio2place(ratio);
 
     return place;
   }

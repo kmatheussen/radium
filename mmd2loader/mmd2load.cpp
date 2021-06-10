@@ -303,8 +303,7 @@ static void LoadOctaBlock(
 					}
 				}else{
 					note->noend=0;
-					note->end.line=line;
-					note->end.dividor=1;
+                                        note->end = make_ratio(line, 1);
 					ListAddElement3(&wtrack->track->notes,&note->l);
 					note=NULL;
 				}
@@ -335,7 +334,7 @@ static void LoadOctaBlock(
 		}
 		if(note!=NULL){
 			note->noend=1;
-			PlaceSetLastPos(wblock->block,&note->end);
+                        note->end = place2ratio(p_Last_Pos(wblock->block));
 			ListAddElement3(&wtrack->track->notes,&note->l);
 		}
                 if (patch!=NULL)

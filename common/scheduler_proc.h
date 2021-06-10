@@ -120,11 +120,13 @@ extern LANGSPEC void RT_schedule_pitches_newnote(int64_t current_time,
 
 // scheduler_velocities_proc.h
 
+/*
 extern LANGSPEC void RT_schedule_velocities_newnote(int64_t current_time,
                                                     struct SeqTrack *seqtrack,
                                                     const struct SeqBlock *seqblock,
                                                     const struct Tracks *track,
                                                     struct Notes *note);
+*/
 
 // scheduler_fxs_proc.h
 

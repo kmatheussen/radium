@@ -38,7 +38,7 @@ void SaveStops(struct Tracks *track){
   DC_start("STOPS");
   
   for(const r::Stop &stop : reader){
-    Place p = make_place_from_ratio(stop._time);
+    Place p = ratio2place(stop._time);
     SavePlace(&p);
   }
 

@@ -7,6 +7,8 @@
 #define DO_DEBUG 0
 
 
+#if 0
+
 #define g_num_velocities_args 7
 
 
@@ -114,7 +116,7 @@ static int64_t RT_scheduled_glide_velocity(struct SeqTrack *seqtrack, int64_t ti
     printf("  Sending velocity %x at %d\n",val,(int)time);
 #endif
 
-    note->has_sent_seqblock_volume_automation_this_block = true;
+    note->has_sent_seqblock_volume_automation_this_block = true; // Shouldn't this variable be in seqblock? (maybe not)
     
     if (note->scheduler_must_send_velocity_next_block)
       note->scheduler_must_send_velocity_next_block = false;
@@ -173,7 +175,7 @@ static void RT_schedule_velocity(struct SeqTrack *seqtrack,
   const struct Velocities *velocity2 = velocity1==NULL ? note->velocities : NextVelocity(velocity1);
 
   Place p1 = velocity1==NULL ? note->l.p : velocity1->l.p;
-  Place p2 = velocity2==NULL ? note->end : velocity2->l.p;
+  Place p2 = velocity2==NULL ? ratio2place(note->end) : velocity2->l.p;
   
   int64_t time1 = get_seqblock_place_time2(seqblock, track, p1);
   int64_t time2 = get_seqblock_place_time2(seqblock, track, p2);
@@ -241,6 +243,8 @@ void RT_schedule_velocities_newnote(int64_t current_time,
                                     const struct Tracks *track,
                                     struct Notes *note)
 {
+  return;
+  
   if (track->patch==NULL)
     return;
 
@@ -249,3 +253,4 @@ void RT_schedule_velocities_newnote(int64_t current_time,
 
   RT_schedule_velocity(seqtrack, current_time, seqblock, track, note, NULL, true);
 }
+#endif

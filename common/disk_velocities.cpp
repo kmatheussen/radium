@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "nsmtracker.h"
+#include "TimeData.hpp"
 #include "disk.h"
 #include "disk_placement_proc.h"
 
@@ -30,44 +31,67 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-void SaveVelocities(struct Velocities *velocity){
-DC_start("VELOCITIES");
- 
-	while(velocity!=NULL){
-		SavePlace(&velocity->l.p);
-		DC_SaveI(velocity->velocity);
-                SaveLogType(velocity->logtype);
-		velocity=NextVelocity(velocity);
-	}
+void SaveVelocities(struct Notes *note){
+DC_start("VELOCITIES2");
+
+  r::TimeData<r::Velocity>::Reader reader(note->_velocities);
+  
+  for(const r::Velocity &velocity : reader){
+    DC_SaveRatio(velocity._time);
+    
+    DC_SaveI(velocity._val);
+    SaveLogType(velocity._logtype);
+  }
 
 DC_end();
 }
 
 
-void LoadVelocities(struct Velocities **to){
+void LoadVelocities(struct Notes *note){
 
-	struct Velocities *velocity;
-
+  r::TimeData<r::Velocity>::Writer writer(note->_velocities);
+  
 
 	while(dc.success){
 		DC_fgets();
 		if(dc.ret[0]=='/') return;
-		velocity=DC_alloc(sizeof(struct Velocities));
-		velocity->Tline=atoi(dc.ret);
-		velocity->Tcounter=DC_LoadU32();
-		velocity->Tdividor=DC_LoadU32();
-		velocity->velocity=DC_LoadI();
 
-                if(disk_load_version<0.67)
-                  velocity->velocity=velocity->velocity*MAX_VELOCITY/127;
-                else if (disk_load_version >= 0.775)
-                  velocity->logtype = LoadLogType();
-                    
-		ListAddElement3_a(to,&velocity->l);
+                Ratio ratio = DC_LoadRatio(atoll(dc.ret), true);
+                int velocity = DC_LoadI();
+                int logtype = LoadLogType();
+
+                auto node = r::Velocity(ratio, velocity, logtype);
+                writer.add(node);
 	}
 
+}
 
-error:
+
+void LoadVelocities_oldformat(struct Notes *note){
+
+  r::TimeData<r::Velocity>::Writer writer(note->_velocities);
+
+	while(dc.success){
+		DC_fgets();
+		if(dc.ret[0]=='/') return;
+
+                Place p;
+                p.line = atoi(dc.ret);
+		p.counter=DC_LoadU32();
+		p.dividor=DC_LoadU32();
+                
+		int velocity=DC_LoadI();
+                int logtype = LOGTYPE_LINEAR;
+                
+                if(disk_load_version<0.67)
+                  velocity=velocity*MAX_VELOCITY/127;
+                else if (disk_load_version >= 0.775)
+                  logtype = LoadLogType();
+                    
+                auto node = r::Velocity(place2ratio(p), velocity, logtype);
+                writer.add(node);
+	}
+
 	return;
 }
 
@@ -95,7 +119,7 @@ void LoadPitches(struct Pitches **to){
 	while(dc.success){
 		DC_fgets();
 		if(dc.ret[0]=='/') return;
-		pitch=DC_alloc(sizeof(struct Pitches));
+		pitch=(struct Pitches*)DC_alloc(sizeof(struct Pitches));
 		pitch->Tline=atoi(dc.ret);
 		pitch->Tcounter=DC_LoadU32();
 		pitch->Tdividor=DC_LoadU32();

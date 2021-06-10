@@ -236,6 +236,12 @@ extern LANGSPEC STime Place2STime2(
                                    const struct Tracks *track
                                    );
 
+extern LANGSPEC STime Place2STime3(
+                                   const struct Blocks *block,
+                                   Ratio ratio,
+                                   const struct Tracks *track
+                                   );
+
 /*
 static inline STime Place2SwingingSTime(
 	const struct Blocks *block,

@@ -142,13 +142,13 @@ static inline Ratio ratio_from_place(const Place p){
   return make_ratio(num, p.dividor);
 }
 
-static inline Ratio make_ratio_from_place(const Place p){
+static inline Ratio place2ratio(const Place p){
   return ratio_from_place(p);
 }
 
 static inline Place p_FromDouble(double d);
 
-static inline Place make_place_from_ratio(const Ratio ratio){
+static inline Place ratio2place(const Ratio ratio){
   R_ASSERT_NON_RELEASE(ratio.den > 0);
   Place place;
   

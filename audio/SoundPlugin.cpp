@@ -1719,7 +1719,7 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, const int time,
     radium::PlayerRecursiveLock lock;
 
     plugin->curr_storeit_type = storeit_type;
-    
+
     plugin->type->set_effect_value(plugin,time,effect_num,value,value_format,when);
     
     if(storeit_type==STORE_VALUE) {

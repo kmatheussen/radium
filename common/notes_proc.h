@@ -21,15 +21,17 @@ extern LANGSPEC void SetNotePolyphonyAttributes(struct Tracks *track);
 extern LANGSPEC int GetNoteSubtrack(const struct WTracks *wtrack, struct Notes *note);
 extern LANGSPEC int GetNumSubtracks(const struct WTracks *wtrack);
 
-extern LANGSPEC void StopAllNotesAtPlace(
-                                         struct Blocks *block,
-                                         struct Tracks *track,
-                                         const Place *placement
-                                         );
+#ifdef __cplusplus
+extern void StopAllNotesAtPlace(
+                                struct Blocks *block,
+                                struct Tracks *track,
+                                const Place *placement
+                                );
+#endif
 
 extern LANGSPEC struct Notes *GetCurrNote(struct Tracker_Windows *window);
 
-extern LANGSPEC void NOTE_init(struct Notes *note);
+//extern LANGSPEC void NOTE_init(struct Notes *note);
 extern LANGSPEC struct Notes *NewNote(void);
 extern LANGSPEC struct Notes *CopyNote(const struct Notes *old_note);
 
@@ -117,11 +119,12 @@ extern LANGSPEC void EditNoteCurrPos(struct Tracker_Windows *window);
 
 extern LANGSPEC void StopVelocityCurrPos(struct Tracker_Windows *window,int noend);
 
+#if __cplusplus
+#include "placement_proc.h"
+#include "ratio_funcs.h"
 static inline bool note_continues_next_block(const struct Blocks *block, const struct Notes *note){
-  return note->noend==1 &&
-    note->end.line==block->num_lines-1 &&
-    note->end.counter==MAX_UINT32-1 &&
-    note->end.dividor==MAX_UINT32;
+  return note->noend==1 && note->end >= place2ratio(p_Last_Pos(block));
 }
+#endif
 
 #endif

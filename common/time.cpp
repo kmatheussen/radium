@@ -886,6 +886,8 @@ static double get_stime_from_stimechange(const struct STimeChange &c, double y, 
 }
 
 static const struct STimeChange *get_stimechange(const struct STimes *stimes, double y){
+  R_ASSERT_NON_RELEASE(y>=0);
+  
   const struct STimeChange *time_change=stimes[(int)y].tchanges;
 
   if (time_change==NULL){
@@ -913,6 +915,11 @@ double Place2STime_from_times2(
                                double place_as_float
                                )
 {
+  if (place_as_float < 0){
+    R_ASSERT_NON_RELEASE(false);
+    return 0;
+  }
+  
   R_ASSERT_NON_RELEASE(stimes!=NULL);
   R_ASSERT_NON_RELEASE(&stimes[(int)place_as_float] != NULL);
 
@@ -974,6 +981,17 @@ STime Place2STime2(
                                 track->times,
                                 p);
 }
+
+STime Place2STime3(
+                                 const struct Blocks *block,
+                                 Ratio ratio,
+                                 const struct Tracks *track
+                                 )
+{
+  return Place2STime_from_times2(track->times,
+                                 make_double_from_ratio(ratio)
+                                 );
+};
 
 // Precalculate timing for all line starts. (optimization)
 static struct STimes *create_stimes_from_tchanges(int num_lines, const struct STimeChange *time_changes, int num_elements){//const struct STimeChange **tchanges){

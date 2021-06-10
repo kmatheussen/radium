@@ -28,10 +28,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define SEQBLOCK_USING_VECTOR 1
 #include "nsmtracker.h"
-#include "TimeData.hpp"
-#include "ratio_funcs.h"
 
 #include "../audio/Peaks.hpp"
+
+#include "TimeData.hpp"
+#include "ratio_funcs.h"
 
 #include "fxlines_proc.h"
 #include "player_proc.h"
@@ -56,6 +57,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "instruments_proc.h"
 #include "visual_proc.h"
 #include "undo_sequencer_proc.h"
+#include "velocities_proc.h"
 
 #include "../embedded_scheme/s7extra_proc.h"
 
@@ -438,6 +440,28 @@ static void seqblockgcfinalizer(void *actual_mem_start, void *user_data){
   delete seqblock->fade_in_envelope;
   delete seqblock->fade_out_envelope;
 
+  if (seqblock->playing_notes != NULL) {
+    for(radium::RT_NoteVector *track_notes : *seqblock->playing_notes){
+
+#if !defined(RELEASE)
+      if (track_notes->size() > 0) {
+        printf("seqblockgcfinalizer: track_notes->size() != 0: %d. seqblock: %p. seqblock->playing_notes: %p",
+               track_notes->size(),
+               seqblock,
+               seqblock->playing_notes);
+        abort();
+      }
+#endif
+      
+      std::destroy_at(track_notes); // Workaround. Neither pn->~Vector, pn->~Vector<struct Notes*>, nor pn->~radium::Vector<struct Notes*> worked.
+      RT_free_raw(track_notes, "seqblockgcfinalizer");
+    }
+    
+    delete seqblock->playing_notes;
+
+    //seqblock->playing_notes = NULL; // necessary 
+  }
+  
   SEQBLOCK_STRETCHSPEED_call_me_when_seqblock_is_released(seqblock);
 }
 #endif
@@ -506,6 +530,20 @@ void SEQBLOCK_init(const struct SeqTrack *seqtrack, struct SeqBlock *seqblock, s
     seqblock->t.start_place = p_Create(0,0,1);
     
     seqblock->t.end_place = p_Absolute_Last_Pos(block);
+
+    if (seqblock->playing_notes!=NULL) {
+
+      R_ASSERT(seqtrack==NULL);
+      
+    } else {
+
+      seqblock->playing_notes = new radium::Vector< radium::RT_NoteVector*, radium::AllocatorType::RT>;
+#if !defined(RELEASE)
+      if ( (rand() % 2) == 0)
+#endif
+        RT_SEQBLOCK_reserve_playing_notes_tracks(seqblock, block->num_tracks);
+    }
+    
   }else{
     default_duration_changed(seqblock, 48000, 48000);
   }
@@ -2732,6 +2770,87 @@ bool SEQBLOCK_set_fade_out_shape(struct SeqBlock *seqblock, enum FadeShape shape
 }
 
 
+void RT_SEQBLOCK_reserve_playing_notes_tracks(struct SeqBlock *seqblock,
+                                              int num_tracks)
+{
+  for(int i=seqblock->playing_notes->size() ; i < num_tracks ; i++){
+    void *mem = RT_alloc_raw(sizeof(radium::RT_NoteVector), "RT_VELOCITIES_add_note");
+    seqblock->playing_notes->push_back(new(mem) radium::RT_NoteVector);
+  }
+}
+
+void RT_SEQBLOCK_add_playing_note(struct SeqBlock *seqblock,
+                            const struct Tracks *track,
+                            struct Notes *note)
+{
+  int tracknum = track->l.num;
+
+  RT_SEQBLOCK_reserve_playing_notes_tracks(seqblock, tracknum + 1);
+  
+  auto *pn = seqblock->playing_notes->at_ref(track->l.num);
+      
+  pn->push_back(note);
+
+  // Update velocity cache value to prevent the same value from being sent out unnecessarily right after starting to play the note.
+  {
+    r::TimeData<r::Velocity>::Reader reader(note->_velocities, seqblock->cache_num);
+    r::RT_TimeData_Cache_Handler<typeof(note->velocity)> cache(reader.get_player_cache(), ATOMIC_GET(pc->play_id));
+    cache.update_value(note->velocity);
+  }
+  
+  //printf("Adding %f. size: %d. (seqblock: %p)\n", note->note, pn->size(), seqblock);
+}
+
+void RT_SEQBLOCK_remove_playing_note(struct SeqBlock *seqblock,
+                               const struct Tracks *track,
+                               struct Notes *note)
+{
+  int tracknum = track->l.num;
+  if (seqblock->playing_notes->size() <= tracknum){
+    R_ASSERT_NON_RELEASE(false);
+    return;
+  }
+
+  auto *pn = seqblock->playing_notes->at_ref(track->l.num);
+
+  int pos = pn->find_pos(note);
+  if (pos >= 0)
+    pn->remove_pos(pos);
+#if 0 // !defined(RELEASE)
+  else
+    R_ASSERT(false);
+#endif
+
+#if 0
+  if (pos >= 0)
+    printf("Removing %f. size: %d. (seqblock: %p)\n", note->note, pn->size(), seqblock);
+#endif
+}
+
+// must be called when seqblock is finished.
+// Note: Might not be called while holding player lock.
+void RT_SEQBLOCK_remove_all_playing_notes(struct SeqBlock *seqblock){
+  if (seqblock->playing_notes != NULL)
+    for(auto pn : *seqblock->playing_notes){
+      pn->clear();
+    }
+  
+  //printf("Removed all notes from seqblock %p\n", seqblock);
+}
+
+// Note: Is not called while holding player lock.
+void RT_SEQUENCER_remove_all_playing_notes(void){
+  RT_SEQBLOCK_remove_all_playing_notes(&g_block_seqtrack_seqblock);
+
+  VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
+    if (!seqtrack->for_audiofiles) {
+      VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
+        RT_SEQBLOCK_remove_all_playing_notes(seqblock);
+      }END_VECTOR_FOR_EACH;
+    }
+  }END_VECTOR_FOR_EACH;
+}
+
 static const r::RatioPeriod get_ratio_period(const struct SeqBlock *seqblock,
                                              const struct STimes *times,
                                              const int64_t seqtime_start,
@@ -2804,6 +2923,7 @@ void RT_EDITSEQBLOCK_call_each_block(struct SeqTrack *seqtrack,
 #endif
 
       RT_fxline_called_each_block(seqtrack, play_id, seqblock, track, seqtime_start, seqtime_end, track_period);
+      RT_VELOCITIES_called_each_block(seqtrack, play_id, seqblock, track, seqtime_start, seqtime_end, track_period);
     }
     
     track=NextTrack(track);   

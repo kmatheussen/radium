@@ -266,10 +266,8 @@ int AddFXNodeLine(
           
           Ratio ratio = ratio_from_place(*p1);
           
-          if (!writer.has_element_at_ratio(ratio)) {
-            auto node = r::FXNode(*fxs->fx, ratio, val);
-            writer.add(node);
-          }
+          if (!writer.has_element_at_ratio(ratio))
+            writer.add2(r::FXNode(*fxs->fx, ratio, val));
 
           ret=writer.find_element_at_ratio(ratio);
         }
@@ -306,7 +304,7 @@ static void AddFXNodeLineCurrPosInternal(struct Tracker_Windows *window, struct 
 
           int linezoom = getLineZoomBlock(wblock->l.num, window->l.num);
           if (linezoom > 0)
-            p2 = make_place_from_ratio(make_ratio_from_place(p2) + make_ratio(1, linezoom));
+            p2 = ratio2place(place2ratio(p2) + make_ratio(1, linezoom));
           else
             p2.line += -linezoom;
           
@@ -507,148 +505,25 @@ void DeleteFxNode(struct Tracker_Windows *window, struct WTracks *wtrack, struct
   DeleteFxNodes(window, wtrack, fxs, fxnodenums);
 }
 
-template <typename T>
-template <typename TimeData, typename TimeDataVector>
-template <typename ValType>
-void r::TimeData<T>::ReaderWriter<TimeData, TimeDataVector>::iterate_fx(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, const struct Tracks *track, struct FX *fx, int play_id, const int64_t seqtime_start, const r::RatioPeriod &period) const {
+namespace{
+  class FxIterateCallback : public r::IterateCallback<int> {
 
-  R_ASSERT_NON_RELEASE(period._end >= period._start);
-  
-  if (!period_is_inside(period))
-    return;
+    FX *_fx;
 
-  const int das_size = size();
-  const T &first_t = _vector->at_ref(0);
-  const T &last_t = _vector->at_ref(das_size-1);
-  
-  RT_TimeData_Player_Cache *cache = get_player_cache();
-
-  bool has_prev_value;
-  double prev_value;
-
-  // Find previous value
-  {
-    if (period._start.num==0 || period._start < first_t._time) { // Note: period._start==0 when it's the first call to block.
-
-      prev_value = 0.0; // Not necessary. Only to silence compiler error. (Usually I have the opposite problem, that it won't give error when using uninitialized value. Sigh. Why don't the gcc and clang people prioritize to get this right? It seems far more important than minor optimizations for instance.)
-      has_prev_value = false;
+  public:
     
-    } else {
-      
-      if (cache!=NULL && cache->_last_play_id == play_id) {
-        
-        prev_value = cache->_last_value;
-        
-      } else {
+    FxIterateCallback(FX *fx)
+      : _fx(fx)
+    {}
 
-        Ratio ratio_prev = period._start - (period._end-period._start); // approx. (this is a corner case. Even if this value is totally wrong, no one would probably notice, and if they did it would be extremely seldom.)
-        if (ratio_prev < first_t._time) {
-          prev_value = first_t._val;
-        } else {
-          prev_value = get_value_raw(ratio_prev, das_size);
-        }
-        
-      }
-      
-      has_prev_value = true;
+    void callback(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, const struct Tracks *track, int val, int64_t time, FX_when when) const override {
+      //printf("Callback called: %d\n", val);
+      RT_FX_treat_fx(seqtrack, _fx, val, time, 0, when);
     }
-  }
 
-  int64_t value_time;
-  ValType value;
-  FX_when when;
-
-  // Find value at period._start
-  {
-    if (period._end >= last_t._time){
-
-      value_time = get_seqblock_place_time2(seqblock, track, make_place_from_ratio(last_t._time));
-      value = last_t._val;
-      when = FX_end;
-
-    } else if (period._start.num==0 || period._start < first_t._time) { // Note: period._start==0 when it's the first call to block.
-
-      value_time = get_seqblock_place_time2(seqblock, track, make_place_from_ratio(first_t._time));
-      value = first_t._val;
-      when = FX_start;
-      _curr_pos = 1;
-      
-    } else {
-
-      value_time = seqtime_start;
-      value = get_value_raw(period._start, das_size); // get_value_raw updates _curr_pos.
-      when = FX_middle;
-
-#if !defined(RELEASE)
-      int curr_pos = _curr_pos;      
-      R_ASSERT_NON_RELEASE(curr_pos == find_pos_for_get_value(period._start));
-#endif
-    }
-  }
-
-  const bool same_value_as_last_time =
-    has_prev_value
-    && (std::is_same<ValType, int>::value
-        ? int(prev_value)==value
-        : (std::is_same<ValType, float>::value
-           ? equal_floats(float(prev_value), value)
-           : equal_doubles(prev_value, value)
-           )
-        );
-
-  if (when==FX_start || when==FX_end || !same_value_as_last_time){
-    if (0) {
-      printf("....1. %d: %f. When: %d. _curr_pos: %d\n", (int)value_time, (double)value / (double)fx->max, (int) when, _curr_pos);
-      if (when==FX_middle){
-        auto node = _vector->at_ref(_curr_pos-1);
-        auto value_time = get_seqblock_place_time2(seqblock, track, make_place_from_ratio(node._time));
-        printf("........ time last node: %d. Value last node: %f\n", (int)value_time, (double)node._val / (double)fx->max);
-      }
-    }
-    RT_FX_treat_fx(seqtrack, fx, value, value_time, 0, when);
-  }
-
-  // Send out all node values between period._start and period._end
-  if (when != FX_end) {
-    
-    for( ; _curr_pos < das_size ; _curr_pos++) {
-
-      const T &node = at(_curr_pos);
-
-      if (0){
-        auto node_time = get_seqblock_place_time2(seqblock, track, make_place_from_ratio(node._time));
-        auto end_time = get_seqblock_place_time2(seqblock, track, make_place_from_ratio(node._time));
-        printf("............(2) _curr_pos: %d. node(_curr_pos) time: %d. end_time: %d. node ratio: %d / %d. end ratio: %d / %d\n", _curr_pos, (int)node_time, (int)end_time,
-               (int)node._time.num, (int)node._time.den, 
-               (int)period._end.num, (int)period._end.den);
-      }
-      
-      // (maybe) FIX: The correct test here is actually node._time >= period._end, and not node._time > period._end.
-      // However, because of rounding errors, notes can be sent out in the block before an fx node at the same position.
-      // And it's quite important that fx are sent out before note start, for instance if setting start position of a sample (common in MOD files).
-      // Afters notes have been converted to TimeData, this test should probably be corrected.
-      if (node._time > period._end)
-        break;
-      
-      value = node._val;
-      
-      FX_when when = _curr_pos == das_size-1 ? FX_end : FX_middle;
-
-      int64_t time = get_seqblock_place_time2(seqblock, track, make_place_from_ratio(node._time));
-      //printf("....2. %d: %f. When: %d. _curr_pos: %d\n", (int)value, (double)value / (double)fx->max, (int) when, _curr_pos);
-      RT_FX_treat_fx(seqtrack, fx, value, time, 0, when);
-
-    }
-  }
-
-  if (cache != NULL) {
-
-    cache->_last_value = value;
-    cache->_last_play_id = play_id;
-    
-  }
-
+  };
 }
+
 
 void RT_fxline_called_each_block(struct SeqTrack *seqtrack,
                                  const int play_id,
@@ -664,10 +539,12 @@ void RT_fxline_called_each_block(struct SeqTrack *seqtrack,
     struct FX *fx = fxs->fx;
     
     if (fx->is_enabled) {
-      
+
+      FxIterateCallback callback(fx);
+        
       r::TimeData<r::FXNode>::Reader reader(fxs->_fxnodes, (0 && ATOMIC_GET(root->editonoff)) ? -1 : seqblock->cache_num);
       
-      reader.iterate_fx<int>(seqtrack, seqblock, track, fx, play_id, seqtime_start, track_period);
+      reader.iterate<int>(seqtrack, seqblock, track, play_id, seqtime_start, track_period, callback);
       
     }
     
