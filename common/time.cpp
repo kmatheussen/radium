@@ -982,7 +982,7 @@ STime Place2STime2(
                                 p);
 }
 
-STime Place2STime3(
+STime Ratio2STime2(
                                  const struct Blocks *block,
                                  Ratio ratio,
                                  const struct Tracks *track

@@ -761,13 +761,13 @@ private:
       {
         if (period._end >= last_t._time){
 
-          value_time = get_seqblock_place_time3(seqblock, track, last_t._time);
+          value_time = get_seqblock_ratio_time2(seqblock, track, last_t._time);
           value = last_t._val;
           when = FX_end;
 
         } else if (period._start.num==0 || period._start < first_t._time) { // Note: period._start==0 when it's the first call to block.
 
-          value_time = get_seqblock_place_time3(seqblock, track, first_t._time);
+          value_time = get_seqblock_ratio_time2(seqblock, track, first_t._time);
           value = first_t._val;
           when = FX_start;
           _curr_pos = 1;
@@ -793,7 +793,7 @@ private:
           printf("....1. %d: %f. When: %d. _curr_pos: %d\n", (int)value_time, (double)value / (double)fx->max, (int) when, _curr_pos);
           if (when==FX_middle){
           auto node = _vector->at_ref(_curr_pos-1);
-          auto value_time = get_seqblock_place_time3(seqblock, track, node._time);
+          auto value_time = get_seqblock_ratio_time2(seqblock, track, node._time);
           printf("........ time last node: %d. Value last node: %f\n", (int)value_time, (double)node._val / (double)fx->max);
           }
           }
@@ -809,8 +809,8 @@ private:
           const T &node = at_ref(_curr_pos);
 
           if (0){
-            auto node_time = get_seqblock_place_time3(seqblock, track, node._time);
-            auto end_time = get_seqblock_place_time3(seqblock, track, node._time);
+            auto node_time = get_seqblock_ratio_time2(seqblock, track, node._time);
+            auto end_time = get_seqblock_ratio_time2(seqblock, track, node._time);
             printf("............(2) _curr_pos: %d. node(_curr_pos) time: %d. end_time: %d. node ratio: %d / %d. end ratio: %d / %d\n", _curr_pos, (int)node_time, (int)end_time,
                    (int)node._time.num, (int)node._time.den, 
                    (int)period._end.num, (int)period._end.den);
@@ -827,7 +827,7 @@ private:
       
           FX_when when = _curr_pos == das_size-1 ? FX_end : FX_middle;
 
-          int64_t time = get_seqblock_place_time3(seqblock, track, node._time);
+          int64_t time = get_seqblock_ratio_time2(seqblock, track, node._time);
           //printf("....2. %d: %f. When: %d. _curr_pos: %d\n", (int)value, (double)value / (double)fx->max, (int) when, _curr_pos);
           callback.callback(seqtrack, seqblock, track, value, time, when);
 

@@ -236,7 +236,7 @@ extern LANGSPEC STime Place2STime2(
                                    const struct Tracks *track
                                    );
 
-extern LANGSPEC STime Place2STime3(
+extern LANGSPEC STime Ratio2STime2(
                                    const struct Blocks *block,
                                    Ratio ratio,
                                    const struct Tracks *track

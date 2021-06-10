@@ -94,13 +94,13 @@ static inline int64_t get_seqblock_place_time2(const struct SeqBlock *seqblock,
   return seqblock->t.time + blocktime_to_seqtime(seqblock, Place2STime2(seqblock->block, &p,  track));
 }
 
-static inline int64_t get_seqblock_place_time3(const struct SeqBlock *seqblock,
+static inline int64_t get_seqblock_ratio_time2(const struct SeqBlock *seqblock,
                                                const struct Tracks *track,
                                                const Ratio ratio
                                                )
 {
   R_ASSERT_NON_RELEASE(track==NULL || track->times!=NULL);
-  return seqblock->t.time + blocktime_to_seqtime(seqblock, Place2STime3(seqblock->block, ratio,  track));
+  return seqblock->t.time + blocktime_to_seqtime(seqblock, Ratio2STime2(seqblock->block, ratio,  track));
 }
 
 /*
