@@ -359,8 +359,8 @@ static ReplacementColor g_replacement_color[] = {
 
   {BUTTONS_COLOR_NUM, QColor("#ff304768")},
   {BUTTONS_PRESSED_COLOR_NUM, QColor("#ff082441")},
-  {CHECK_BOX_SELECTED_COLOR_NUM,  QColor("#ff115a2e")},
-  {CHECK_BOX_UNSELECTED_COLOR_NUM,  QColor("#ff26412f")},
+  {CHECK_BOX_SELECTED_COLOR_NUM,  QColor("#ff146a35")},
+  {CHECK_BOX_UNSELECTED_COLOR_NUM,  QColor("#ff2f473a")},
   {BUTTONS_TEXT_COLOR_NUM, QColor("#ffe9e9e9")},
 
   {PORTAMENTO_NOTE_TEXT_COLOR_NUM, QColor("#ffc28963")},
