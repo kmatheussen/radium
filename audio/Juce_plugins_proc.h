@@ -26,8 +26,6 @@ extern void JUCE_audio_close_preferences_window(void);
 extern bool JUCE_init_audio_device(JUCE_audio_device_callback callback, void *callback_data);
 extern void JUCE_stop_audio_device(void);
 
-struct SoundPlugin;
-
 extern LANGSPEC bool JUCE_native_gui_grabs_keyboard(void);
 
 extern LANGSPEC void *JUCE_lock(void);
@@ -43,8 +41,10 @@ float JUCE_get_max_val(const float *array, const int num_elements);
   
 void add_juce_plugin_type(const char *name, const wchar_t *file_or_identifier, const wchar_t *library_file_full_path, const char *container_type_name);
 
+
 struct SoundPlugin;
-bool PLUGINHOST_is_vst_or_au_plugin(SoundPlugin *plugin);
+
+bool PLUGINHOST_is_vst_or_au_plugin(struct SoundPlugin *plugin);
   
 void PLUGINHOST_load_fxbp(struct SoundPlugin *plugin, const wchar_t *filename);
 void PLUGINHOST_save_fxb(struct SoundPlugin *plugin, const wchar_t *filename);
