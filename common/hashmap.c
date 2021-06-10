@@ -847,7 +847,7 @@ void HASH_put_ratio(hash_t *hash, const char *key, const Ratio val){
 }
 
 void HASH_put_place(hash_t *hash, const char *key, const Place place){
-  HASH_put_ratio(hash, key, make_ratio_from_place(place));
+  HASH_put_ratio(hash, key, place2ratio(place));
 }
 
 
@@ -1227,7 +1227,7 @@ Ratio HASH_get_ratio(hash_t *hash, const char *key){
 }
 
 Place HASH_get_place(hash_t *hash, const char *key){
-  return make_place_from_ratio(HASH_get_ratio(hash, key));
+  return ratio2place(HASH_get_ratio(hash, key));
 }
 
 double HASH_get_number(const hash_t *hash, const char *key){
@@ -1367,7 +1367,9 @@ bool HASH_save(const hash_t *hash, disk_t *file){
 static const wchar_t *read_line(disk_t *file){
 
   const wchar_t *line = DISK_read_wchar_line(file);
-    
+
+  g_curr_disk_line++;
+  
   //printf("%d: -%S-\n", g_curr_disk_line, line);
   
   if(line==NULL){

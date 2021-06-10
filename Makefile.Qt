@@ -526,8 +526,8 @@ OBJ7= $(T)instruments.o $(T)patch.o $(T)undo_audio_patch_addremove.o $(T)fxlines
 OBJ8= $(T)reltempo.o $(T)temponodes.o $(T)tempos.o $(T)time.o $(T)temponodes_legalize.o $(T)swing.o
 
 #Playing
-OBJ9= $(T)Ptask2Mtask.o $(T)player.o $(T)scheduler.o $(T)scheduler_seqtracks.o $(T)scheduler_notes.o $(T)scheduler_pitches.o $(T)scheduler_velocities.o $(T)scheduler_reallines.o $(T)scheduler_LPB.o $(T)scheduler_Beats.o $(T)scheduler_Signature.o $(T)playerclass.o $(T)player_startstop.o $(T)player_pause.o
-# $(T)scheduler_fxs.o
+OBJ9= $(T)Ptask2Mtask.o $(T)player.o $(T)scheduler.o $(T)scheduler_seqtracks.o $(T)scheduler_notes.o $(T)scheduler_pitches.o $(T)scheduler_reallines.o $(T)scheduler_LPB.o $(T)scheduler_Beats.o $(T)scheduler_Signature.o $(T)playerclass.o $(T)player_startstop.o $(T)player_pause.o
+# $(T)scheduler_fxs.o $(T)scheduler_velocities.o 
 
 #Disk
 OBJ10= $(T)disk.o $(T)disk_fxs.o $(T)disk_wblock.o $(T)disk_localzooms.o $(T)disk_track.o $(T)disk_fx.o $(T)disk_fxnodelines.o $(T)disk_wtrack.o $(T)disk_temponodes.o $(T)disk_tempos.o $(T)disk_song.o $(T)disk_velocities.o $(T)disk_block.o $(T)disk_placement.o $(T)disk_stops.o $(T)disk_playlist.o $(T)disk_root.o $(T)disk_notes.o $(T)disk_lpbs.o $(T)disk_signatures.o $(T)disk_swing.o $(T)disk_windows.o $(T)disk_warea.o $(T)disk_save.o $(T)disk_load.o $(T)disk_saveload_blocktrack.o $(T)disk_instrument.o $(T)disk_patches.o $(T)disk_slider.o
@@ -1074,7 +1074,7 @@ $(T)area.o:  $(BUILD_DEPENDENCIES) $(CD)area.c
 	$(CC2) $(CD)area.c $(OPT)
 
 $(T)nodelines.o:  $(BUILD_DEPENDENCIES) $(CD)nodelines.cpp
-	$(CCC2) $(CD)nodelines.cpp $(CPPOPT)
+	$(CCC2) $(CD)nodelines.cpp $(QTOPT)
 
 $(T)range.o:  $(BUILD_DEPENDENCIES) $(CD)range.c
 	$(CC2) $(CD)range.c $(OPT)
@@ -1103,7 +1103,7 @@ $(T)seqblock_stretchspeed.o:  $(BUILD_DEPENDENCIES) $(CD)seqblock_stretchspeed.c
 	$(CCC2) $(CD)seqblock_stretchspeed.cpp $(QTOPT) $(SEQBLOCK_STRETCHSPEED_OPT)
 
 $(T)time.o:  $(BUILD_DEPENDENCIES) $(CD)time.cpp common/time_proc.h
-	$(CCC2) $(CD)time.cpp $(CPPOPT) 
+	$(CCC2) $(CD)time.cpp $(CPPOPT)
 
 $(T)reltempo.o:  $(BUILD_DEPENDENCIES) $(CD)reltempo.c
 	$(CC2) $(CD)reltempo.c $(OPT)
@@ -1129,8 +1129,8 @@ $(T)scheduler_notes.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_notes.cpp $(CD)sche
 $(T)scheduler_pitches.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_pitches.c $(CD)scheduler_proc.h
 	$(CC2) $(CD)scheduler_pitches.c $(OPT)
 
-$(T)scheduler_velocities.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_velocities.c $(CD)scheduler_proc.h
-	$(CC2) $(CD)scheduler_velocities.c $(OPT) #-fno-sanitize=undefined -O0
+#$(T)scheduler_velocities.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_velocities.c $(CD)scheduler_proc.h
+#	$(CC2) $(CD)scheduler_velocities.c $(OPT) #-fno-sanitize=undefined -O0
 
 #$(T)scheduler_fxs.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_fxs.c $(CD)scheduler_proc.h
 #	$(CC2) $(CD)scheduler_fxs.c $(OPT)
@@ -1215,8 +1215,8 @@ $(T)disk_tempos.o:  $(BUILD_DEPENDENCIES) $(CD)disk_tempos.c $(CD)disk.h
 $(T)disk_song.o:  $(BUILD_DEPENDENCIES) $(CD)disk_song.cpp $(CD)disk.h
 	$(CCC2) $(CD)disk_song.cpp $(QTOPT)
 
-$(T)disk_velocities.o:  $(BUILD_DEPENDENCIES) $(CD)disk_velocities.c $(CD)disk.h
-	$(CC2) $(CD)disk_velocities.c $(OPT)
+$(T)disk_velocities.o:  $(BUILD_DEPENDENCIES) $(CD)disk_velocities.cpp $(CD)disk.h
+	$(CCC2) $(CD)disk_velocities.cpp $(CPPOPT)
 
 $(T)disk_block.o:  $(BUILD_DEPENDENCIES) $(CD)disk_block.c $(CD)disk.h
 	$(CC2) $(CD)disk_block.c $(OPT)
@@ -1233,8 +1233,8 @@ $(T)disk_playlist.o:  $(BUILD_DEPENDENCIES) $(CD)disk_playlist.c $(CD)disk.h
 $(T)disk_root.o:  $(BUILD_DEPENDENCIES) $(CD)disk_root.c $(CD)disk.h
 	$(CC2) $(CD)disk_root.c $(OPT)
 
-$(T)disk_notes.o:  $(BUILD_DEPENDENCIES) $(CD)disk_notes.c $(CD)disk.h
-	$(CC2) $(CD)disk_notes.c $(OPT)
+$(T)disk_notes.o:  $(BUILD_DEPENDENCIES) $(CD)disk_notes.cpp $(CD)disk.h
+	$(CCC2) $(CD)disk_notes.cpp $(CPPOPT)
 
 $(T)disk_lpbs.o:  $(BUILD_DEPENDENCIES) $(CD)disk_lpbs.c $(CD)disk.h
 	$(CC2) $(CD)disk_lpbs.c $(OPT)
@@ -1574,7 +1574,7 @@ ifeq (,$(findstring clang,$(CC)))
 endif
 
 $(T)Qt_sequencer.o:  $(BUILD_DEPENDENCIES) $(P)Qt_sequencer.cpp Qt/helpers.h audio/Envelope.hpp audio/Peaks.hpp common/seqblock_automation_proc.h Qt/KeyboardFocusFrame.hpp Qt/Qt_MyQCheckBox.h
-	$(CCC2) $(P)Qt_sequencer.cpp $(QTOPT) $(SNDFILEOPT) $(QT_SEQUENCER_OPT)  $(BOOST_INCLUDE)
+	$(CCC2) $(P)Qt_sequencer.cpp $(QTOPT) $(SNDFILEOPT) $(QT_SEQUENCER_OPT)  $(BOOST_INCLUDE) 
 
 #QD = /home/kjetil/site/src/qt-x11-free-3.3.8b/src/dialogs/
 QD = $(P)
@@ -1868,8 +1868,8 @@ $(T)api_noteedit.o:  $(BUILD_DEPENDENCIES)  $(API)api_noteedit.cpp common/TimeDa
 $(T)api_velocities.o:  $(BUILD_DEPENDENCIES)  $(API)api_velocities.cpp
 	$(CCC2)  $(API)api_velocities.cpp $(CPPOPT)
 
-$(T)api_pitches.o:  $(BUILD_DEPENDENCIES)  $(API)api_pitches.c 
-	$(CC2)  $(API)api_pitches.c $(OPT)
+$(T)api_pitches.o:  $(BUILD_DEPENDENCIES)  $(API)api_pitches.cpp 
+	$(CCC2)  $(API)api_pitches.cpp $(CPPOPT)
 
 $(T)api_timing.o:  $(BUILD_DEPENDENCIES)  $(API)api_timing.cpp
 	$(CCC2)  $(API)api_timing.cpp $(QTOPT)
@@ -2102,7 +2102,7 @@ $(T)SampleRecorder.o: audio/SampleRecorder.cpp audio/SampleRecorder_proc.h commo
 	$(CCC2) $(QTOPT) audio/SampleRecorder.cpp $(SNDFILEOPT) $(BOOST_INCLUDE) 
 
 $(T)SampleReader.o: audio/SampleReader.cpp audio/SampleReader_proc.h
-	$(CCC2) $(QTOPT) audio/SampleReader.cpp $(SNDFILEOPT) $(BOOST_INCLUDE)
+	$(CCC2) $(QTOPT) audio/SampleReader.cpp $(SNDFILEOPT) $(BOOST_INCLUDE) 
 
 $(T)Seqtrack_plugin.o: audio/Seqtrack_plugin.cpp audio/SampleReader_proc.h audio/GranResampler.hpp audio/Granulator.hpp common/Random.hpp audio/Peaks.hpp audio/SampleRecorder_proc.h common/seqblock_automation_proc.h audio/Fade.hpp
 	$(CCC2) $(QTOPT) audio/Seqtrack_plugin.cpp $(SNDFILEOPT) $(OPTIMIZE_O3) $(NO_ANALYZER_MALLOC_LEAK) $(BOOST_INCLUDE) # $(CPUOPT) 
@@ -2483,7 +2483,7 @@ $(T)Envelope.o: audio/Envelope.cpp
 
 $(T)Resampler.o: audio/Resampler.cpp audio/SampleInterpolator.cpp
 #	$(CCC2) audio/Resampler.cpp $(CPPOPT) `$(PKG) --cflags samplerate`
-	$(CCC2) audio/Resampler.cpp $(CPPOPT) $(CPUOPT) `$(PKG) --cflags samplerate`
+	$(CCC2) audio/Resampler.cpp $(CPPOPT) $(CPUOPT) `$(PKG) --cflags samplerate` 
 
 $(T)SoundFonts.o: audio/SoundFonts.cpp $(LIBGIG_PATH)/SF.cpp
 	$(CCC2) audio/SoundFonts.cpp $(QTOPT) -Ibin/packages/libgig/src/

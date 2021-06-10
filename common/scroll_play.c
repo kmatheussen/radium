@@ -79,8 +79,9 @@ static void Scroll_play_down3(
                                             0,
                                             0)
                               );
-            
-            if (PlaceIsBetween2(&note->end, p1, p2))
+
+            Place endplace = ratio2place(note->end);
+            if (PlaceIsBetween2(&endplace, p1, p2))
               PATCH_stop_note(patch,
                               create_note_t(NULL,
                                             note->id,

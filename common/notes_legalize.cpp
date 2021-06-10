@@ -42,7 +42,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 ****************************************************/
 
 bool LegalizeNotes(struct Blocks *block,struct Tracks *track){
-	Place *p1,*p2,*p;
 	Place endplace;
 	struct Notes *note=track->notes;
 	struct Notes *notetemp;
@@ -50,12 +49,14 @@ bool LegalizeNotes(struct Blocks *block,struct Tracks *track){
 	//struct Stops *stoptemp;
 
 	PlaceSetLastPos(block,&endplace);
-
+        //const Ratio r_endplace = place2ratio(endplace);
+          
         bool ret = false;
         
 	while(note!=NULL){
-                p1=&note->l.p;
-		p2=&note->end;
+                Place *p1=&note->l.p;
+                Place endnote = ratio2place(note->end);
+		Place *p2=&endnote;
 
 		if(PlaceGreaterOrEqual(p2,&endplace)){
 			PlaceCopy(p2,&endplace);
@@ -70,9 +71,10 @@ bool LegalizeNotes(struct Blocks *block,struct Tracks *track){
 			continue;
 		}
 
+                /*
 		struct Velocities *velocity=note->velocities;
 		while(velocity!=NULL){
-			p=&velocity->l.p;
+			Place *p=&velocity->l.p;
 			if(
 				PlaceLessThan(p,p1) ||
 				PlaceGreaterThan(p,p2)
@@ -86,13 +88,31 @@ bool LegalizeNotes(struct Blocks *block,struct Tracks *track){
 			p1=p;
 			velocity=NextVelocity(velocity);
 		}
+                */
+                
+                {
+                  r::TimeData<r::Velocity>::Writer writer(note->_velocities);
+                  Ratio r1 = ratio_from_place(*p1);
+                  Ratio r2 = ratio_from_place(*p2);
+                  writer.remove([r1, r2, &ret](int i, r::Velocity &velocity){
+                      if ((velocity._time < r1) || (velocity._time > r2)){
+                        ret = true;
+                        return true;
+                      } else {
+                        return false;
+                      }
+                    });
+                }
+                
 
+                endnote = ratio2place(note->end);
+                
                 p1=&note->l.p;
-		p2=&note->end;
+		p2=&endnote;
                 
 		struct Pitches *pitch=note->pitches;
 		while(pitch!=NULL){
-			p=&pitch->l.p;
+			Place *p=&pitch->l.p;
 			if(
 				PlaceLessThan(p,p1) ||
 				PlaceGreaterThan(p,p2)
@@ -110,7 +130,7 @@ bool LegalizeNotes(struct Blocks *block,struct Tracks *track){
 		note=NextNote(note);
 	}
 
-        r::TimeData<r::Stop>::Writer(track->stops2).remove_everything_after(make_ratio_from_place(endplace));
+        r::TimeData<r::Stop>::Writer(track->stops2).remove_everything_after(place2ratio(endplace));
         /*
 	while(stop!=NULL){
 		if(PlaceGreaterOrEqual(&stop->l.p,&endplace)){

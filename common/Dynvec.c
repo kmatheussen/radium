@@ -4,6 +4,7 @@
 #include "nsmtracker.h"
 #include "visual_proc.h"
 #include "hashmap_proc.h"
+#include "disk.h"
 
 #include "Dynvec_proc.h"
 
@@ -134,7 +135,8 @@ void DYNVEC_save(disk_t *file, const dynvec_t dynvec){
 static const wchar_t *das_read_line(disk_t *file){
 
   const wchar_t *line = DISK_read_wchar_line(file);
-
+  g_curr_disk_line++;
+  
   //printf("%d: -%S-\n", g_curr_disk_line, line);
   
   if(line==NULL){

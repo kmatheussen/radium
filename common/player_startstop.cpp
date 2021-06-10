@@ -138,6 +138,8 @@ static void PlayStopReally(bool doit, bool stop_jack_transport_as_well){
     clear_scheduler_and_stop_player_and_releases_player_lock(); // must clear, and it doesn't hurt to stop player one more time.
     return;
   }
+
+  RT_SEQUENCER_remove_all_playing_notes();
   
   PLAYER_lock();{
     

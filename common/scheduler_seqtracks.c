@@ -21,6 +21,12 @@ static int64_t RT_scheduled_seqblock(struct SeqTrack *seqtrack, int64_t time, un
 static int64_t RT_scheduled_end_of_seqblock(struct SeqTrack *seqtrack, int64_t seqtime, union SuperType *args){
   atomic_pointer_write_relaxed((void**)&seqtrack->curr_seqblock, NULL);
 
+#if 1
+  struct SeqBlock *seqblock = args[0].pointer;
+  RT_SEQBLOCK_remove_all_playing_notes(seqblock);
+#endif
+
+  
   return DONT_RESCHEDULE;
 }
 
@@ -102,7 +108,8 @@ static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
   // Schedule end block
   {
     union SuperType args[1];
-    SCHEDULER_add_event(seqtrack, seqblock->t.time2, RT_scheduled_end_of_seqblock, &args[0], 0, SCHEDULER_ENDBLOCK_PRIORITY);
+    args[0].pointer = seqblock;
+    SCHEDULER_add_event(seqtrack, seqblock->t.time2, RT_scheduled_end_of_seqblock, &args[0], 1, SCHEDULER_ENDBLOCK_PRIORITY);
   }
     
 
@@ -331,7 +338,7 @@ void start_seqtrack_block_scheduling(struct Blocks *block, const Place place, in
   int64_t seq_start_time = Place2STime(block, &place, EDITOR_CURR_TRACK_SWINGING_MODE); // When playing block, seqtime==blocktime.
 
   SEQBLOCK_init(NULL, &g_block_seqtrack_seqblock, block, NULL, -1, NULL, 0);
-                
+
   PLAYER_lock();{
 
     pc->playtype = playtype;

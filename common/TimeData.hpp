@@ -59,6 +59,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Vector.hpp"
 #include "ratio_funcs.h"
+#include "sequencer_proc.h"
 #include "AtomicPointerStorage.hpp"
 
 
@@ -187,11 +188,100 @@ enum class DataTypeReturnType{
 };
   */
   
-struct RT_TimeData_Player_Cache{
-  int _curr_pos = 0; // vector pos.
+class RT_TimeData_Player_Cache{
+
+public:
+    int _curr_pos = 0; // vector pos.
+
+private:
+  
+  template <typename ValType>
+  friend class RT_TimeData_Cache_Handler;
+    
   double _last_value = 0; // last value returned from TimeData::get_value();
   int _last_play_id = -1; // Value of pc->play_id when last_value was returned.
 };
+
+
+template <typename ValType>
+struct RT_TimeData_Cache_Handler{
+
+  RT_TimeData_Player_Cache *_cache;
+  int64_t _play_id;
+  
+  RT_TimeData_Cache_Handler(RT_TimeData_Player_Cache *cache, int64_t play_id)
+    : _cache(cache)
+    , _play_id(play_id)
+  {
+  }
+
+  ValType get_value(void) const {
+    if (_cache==NULL){
+      R_ASSERT_NON_RELEASE(false);
+      return -1;
+    }else
+      return _cache->_last_value;
+  }
+  
+  bool has_value(void) const {
+    if (_cache==NULL)
+      return false;
+    if (_play_id != _cache->_last_play_id)
+      return false;
+
+    return true;
+  }
+  
+  bool is_same_value(ValType value1, ValType value2) const {
+    return (std::is_same<ValType, int>::value
+            ? value1==value2
+            : (std::is_same<ValType, float>::value
+               ? equal_floats(value1, value2)
+               : equal_doubles(value1, value2)
+               )
+            );
+  }
+  
+  bool is_same_value(ValType value) const {
+    return has_value() && is_same_value(value, _cache->_last_value);
+  }
+
+  void update_value(ValType value) {
+    if (_cache==NULL)
+      return;
+
+    _cache->_last_value = value;
+    _cache->_last_play_id = _play_id;
+  }
+
+};
+  
+
+template <typename ValType>
+class IterateCallback {
+public:
+  
+  virtual void callback(struct SeqTrack *seqtrack,
+                        const struct SeqBlock *seqblock,
+                        const struct Tracks *track,
+                        ValType val,
+                        int64_t time,
+                        FX_when when) const = 0;
+};
+
+template <typename ValType>
+struct TimeDataSimpleNode{
+  Ratio _time;
+  ValType _val;
+  int _logtype;
+  
+  TimeDataSimpleNode(Ratio time, ValType val, int logtype = LOGTYPE_LINEAR)
+    : _time(time)
+    , _val(val)
+    , _logtype(logtype)
+  {}
+};
+
 
 template <typename T>
 class TimeData {
@@ -492,7 +582,8 @@ private:
       , _curr_pos(cache_num >= 0 ? time_data->_player_caches[cache_num]._curr_pos : _non_player_curr_pos)
     {
       R_ASSERT_NON_RELEASE(cache_num < MAX_NUM_PARALLEL_TIMEDATAS);
-      R_ASSERT_NON_RELEASE(cache_num==-1 || THREADING_is_player_thread());      
+      R_ASSERT_NON_RELEASE(cache_num==-1 || THREADING_is_player_thread());
+
     }
 
     /*
@@ -501,6 +592,10 @@ private:
         _time_data->_RT_player_curr_pos = _curr_pos;
     }
     */
+    const T &at_ref(int i) const {
+      return _vector->at_ref(i);
+    }
+    
     const T at(int i) const {
       return _vector->at(i);
     }
@@ -546,8 +641,8 @@ private:
       R_ASSERT_NON_RELEASE(index > 0);
       R_ASSERT_NON_RELEASE(index < das_size);
       
-      const T &t1 = _vector->at_ref(index-1);
-      const T &t2 = _vector->at_ref(index);
+      const T &t1 = at_ref(index-1);
+      const T &t2 = at_ref(index);
       
 #if !defined(RELEASE)
       if (ratio < t1._time)
@@ -602,17 +697,168 @@ private:
     RT_TimeData_Player_Cache *get_player_cache(void) const {
       return _cache_num < 0 ? NULL : &_time_data->_player_caches[_cache_num];
     };
-    
-    // Implemented in fxlines.cpp (the method is very general, it can probably easily be converted into a general iterate function)
+
+    // Same as calling get_value, sort of, but also makes sure all values positioned at nodes inside 'period' are sent out.
     template <typename ValType>
-    void iterate_fx(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, const struct Tracks *track, struct FX *fx, int play_id, const int64_t seqtime_start, const r::RatioPeriod &period) const;
+    void iterate(struct SeqTrack *seqtrack,
+                 const struct SeqBlock *seqblock,
+                 const struct Tracks *track,
+                 int play_id,
+                 const int64_t seqtime_start,
+                 const r::RatioPeriod &period,
+                 const IterateCallback<ValType> &callback) const
+    {
+      R_ASSERT_NON_RELEASE(period._end >= period._start);
+  
+      if (!period_is_inside(period))
+        return;
 
+      const int das_size = size();
+      const T &first_t = at_ref(0);
+      const T &last_t = at_ref(das_size-1);
 
+      RT_TimeData_Cache_Handler<ValType> cache(get_player_cache(), play_id);
+
+      bool has_prev_value;
+      double prev_value;
+
+      // Find previous value
+      {
+        if (period._start.num==0 || period._start < first_t._time) { // Note: period._start==0 when it's the first call to block.
+
+          prev_value = 0.0; // Not necessary. Only to silence compiler error. (Usually I have the opposite problem, that it won't give error when using uninitialized value. Sigh. Why don't the gcc and clang people prioritize to get this right? It seems far more important than minor optimizations for instance.)
+          has_prev_value = false;
+    
+        } else {
+      
+          if (cache.has_value()) {
+        
+            prev_value = cache.get_value();
+        
+          } else {
+
+            // Approximately. (This is a corner case,
+            // even if this value is totally wrong, no one would probably notice, and if they did it would be extremely seldom.)
+            Ratio ratio_prev = period._start - (period._end-period._start);
+            
+            if (ratio_prev < first_t._time) {
+              prev_value = first_t._val;
+            } else {
+              prev_value = get_value_raw(ratio_prev, das_size);
+            }
+        
+          }
+      
+          has_prev_value = true;
+        }
+      }
+
+      int64_t value_time;
+      ValType value;
+      FX_when when;
+
+      // Find value at period._start
+      {
+        if (period._end >= last_t._time){
+
+          value_time = get_seqblock_place_time3(seqblock, track, last_t._time);
+          value = last_t._val;
+          when = FX_end;
+
+        } else if (period._start.num==0 || period._start < first_t._time) { // Note: period._start==0 when it's the first call to block.
+
+          value_time = get_seqblock_place_time3(seqblock, track, first_t._time);
+          value = first_t._val;
+          when = FX_start;
+          _curr_pos = 1;
+      
+        } else {
+
+          value_time = seqtime_start;
+          value = get_value_raw(period._start, das_size); // get_value_raw updates _curr_pos.
+          when = FX_middle;
+
+#if !defined(RELEASE)
+          int curr_pos = _curr_pos;      
+          R_ASSERT_NON_RELEASE(curr_pos == find_pos_for_get_value(period._start));
+#endif
+        }
+      }
+
+      const bool same_value_as_last_time = has_prev_value && cache.is_same_value(prev_value, value);
+
+      if (when==FX_start || when==FX_end || !same_value_as_last_time){
+        /*
+          if (0) {
+          printf("....1. %d: %f. When: %d. _curr_pos: %d\n", (int)value_time, (double)value / (double)fx->max, (int) when, _curr_pos);
+          if (when==FX_middle){
+          auto node = _vector->at_ref(_curr_pos-1);
+          auto value_time = get_seqblock_place_time3(seqblock, track, node._time);
+          printf("........ time last node: %d. Value last node: %f\n", (int)value_time, (double)node._val / (double)fx->max);
+          }
+          }
+        */
+        callback.callback(seqtrack, seqblock, track, value, value_time, when);
+      }
+
+      // Send out all node values between period._start and period._end
+      if (when != FX_end) {
+    
+        for( ; _curr_pos < das_size ; _curr_pos++) {
+
+          const T &node = at_ref(_curr_pos);
+
+          if (0){
+            auto node_time = get_seqblock_place_time3(seqblock, track, node._time);
+            auto end_time = get_seqblock_place_time3(seqblock, track, node._time);
+            printf("............(2) _curr_pos: %d. node(_curr_pos) time: %d. end_time: %d. node ratio: %d / %d. end ratio: %d / %d\n", _curr_pos, (int)node_time, (int)end_time,
+                   (int)node._time.num, (int)node._time.den, 
+                   (int)period._end.num, (int)period._end.den);
+          }
+      
+          // (maybe) FIX: The correct test here is actually node._time >= period._end, and not node._time > period._end.
+          // However, because of rounding errors, notes can be sent out in the block before an fx node at the same position.
+          // And it's quite important that fx are sent out before note start, for instance if setting start position of a sample (common in MOD files).
+          // Afters notes have been converted to TimeData, this test should probably be corrected.
+          if (node._time > period._end)
+            break;
+      
+          value = node._val;
+      
+          FX_when when = _curr_pos == das_size-1 ? FX_end : FX_middle;
+
+          int64_t time = get_seqblock_place_time3(seqblock, track, node._time);
+          //printf("....2. %d: %f. When: %d. _curr_pos: %d\n", (int)value, (double)value / (double)fx->max, (int) when, _curr_pos);
+          callback.callback(seqtrack, seqblock, track, value, time, when);
+
+        }
+      }
+
+      cache.update_value(value);
+    }
+
+    // Same as iterate, but also handles one external node placed before first node, and one external node placed after last node.
+    // Used for handling note velocities and note pitches.
+    // Implemented in velocities.cpp
+    template <typename ValType>
+    void iterate_extended(struct SeqTrack *seqtrack,
+                          const struct SeqBlock *seqblock,
+                          const struct Tracks *track,
+                          int play_id,
+                          
+                          const int64_t seqtime_start,
+                          const r::RatioPeriod &period,
+                          
+                          const r::IterateCallback<ValType> &callback,
+                          
+                          const r::TimeDataSimpleNode<ValType> &node_start,
+                          const r::TimeDataSimpleNode<ValType> &node_end
+                          ) const;
+
+    
     template <typename ValType>
     bool get_value(int play_id, const Ratio &ratio, ValType &value, FX_when &when) const {
       static_assert(std::is_same<ValType, int>::value || std::is_same<ValType, float>::value || std::is_same<ValType, double>::value, "ValType should be int, float, or double");
-        
-      RT_TimeData_Player_Cache *cache = get_player_cache();
 
       const int das_size = size();
       const T &first_t = _vector->at_ref(0);
@@ -641,109 +887,27 @@ private:
         curr_value = get_value_raw(ratio, das_size);
         
       }
-      
-      if (cache != NULL) {
 
-        cache->_last_value = curr_value;
-        cache->_last_play_id = play_id;
-        
-      }
+      RT_TimeData_Cache_Handler<ValType> cache(get_player_cache(), play_id);
+
+      cache.update_value(curr_value);
 
       value = curr_value;
       
       return true;
     }
 
-#if 0
-    // ratio_start is used if _cache_num == -1.
-    template <typename ValType>
-    bool get_value_old(int play_id, const RatioPeriod &period, ValType &value, FX_when &when) const {
-
-      static_assert(std::is_same<ValType, int>::value || std::is_same<ValType, float>::value || std::is_same<ValType, double>::value);
-        
-      if (!period_is_inside(period))
-        return false;
-
-      RT_TimeData_Player_Cache *cache = get_player_cache();
-
-      const int das_size = size();
-      const T &first_t = _vector->at_ref(0);
-      const T &last_t = _vector->at_ref(das_size-1);
-      
-      bool has_prev_value;
-      double prev_value;
-
-      if (period._start.num==0 || period._start < first_t._time) // Note: ratio_start==0 when it's the first call to block.
-        
-        has_prev_value = false;
-      
-      else {
-        
-        if (cache!=NULL && cache->_last_play_id == play_id)
-          prev_value = cache->_last_value;
-        else
-          prev_value = get_value_raw(period._start, das_size); // Faster to call get_value_raw(period._start,...) before get_value_raw(ratio,...) than the other way.
-        
-        has_prev_value = true;
-      }
-      
-        
-      double curr_value;
-      
-      if (period._end >= last_t._time){
-        
-        curr_value = last_t._val;
-        when = FX_end;
-        
-      } else {
-
-        if (period._start.num==0 || period._start < first_t._time)
-          when = FX_start;
-        else
-          when = FX_middle;
-
-        //printf("HERE: Ratio: %d / %d\n", (int)ratio.num, (int)ratio.den);
-        
-        curr_value = get_value_raw(period._end, das_size);
-        
-      }
-      
-      value = curr_value; // Note: typeof(value)==ValType. typeof(curr_value)==double
-
-      /*
-      printf("has_prev: %d. prev: %f. curr: %f. First_time: %f. Prev time: %f. Now Time: %f\n", has_prev_value, ( (!has_prev_value) ? -1234.0 : prev_value), curr_value,
-             make_double_from_ratio(first_t._time),
-             make_double_from_ratio(period._start),
-             make_double_from_ratio(period._end));
-      */
-      
-      bool same_value_as_last_time =
-        has_prev_value
-        && (std::is_same<ValType, int>::value
-            ? int(prev_value)==value
-            : (std::is_same<ValType, float>::value
-               ? equal_floats(float(prev_value), value)
-               : equal_doubles(prev_value, value)
-               )
-            );
-
-      if (cache != NULL) {
-
-        cache->_last_value = curr_value;
-        cache->_last_play_id = play_id;
-        
-      }
-
-      return when==FX_end || when==FX_start || !same_value_as_last_time;
-    }
-#endif
 };
   
   
 public:
-  
+
   // Optimized reader if reading the vector in a timely linear fashion (cache_num should be supplied).
   class Reader : radium::RT_AtomicPointerStorageMultipleReaders_ScopedUsage<TimeDataVector>, public ReaderWriter<const TimeData, const TimeDataVector>{
+
+    // We can probably make this work, but if trying to copy a Reader, it's most likely (over 99% sure) an error.
+    Reader(const Reader&) = delete;
+    Reader& operator=(const Reader&) = delete;
 
    public:
     
@@ -781,6 +945,10 @@ public:
 
   class Writer : public ReaderWriter<TimeData, TimeDataVector>{
 
+    // We can probably make this work, but if trying to copy a Writer, it's most likely (over 99% sure) an error.
+    Writer(const Writer&) = delete;
+    Writer& operator=(const Writer&) = delete;
+
     bool _has_cancelled = false;
     
   public:
@@ -790,6 +958,8 @@ public:
     {
       R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
       R_ASSERT_NON_RELEASE(!PLAYER_current_thread_has_lock());
+
+      //printf("New writer\n");
     }
     
     ~Writer(){
@@ -797,6 +967,8 @@ public:
         delete this->_vector;
       }else
         this->_time_data->replace_vector(this->_vector);
+
+      //printf("...New writer created: %d\n", !_has_cancelled);
     }
 
     T &at_first(void) const {

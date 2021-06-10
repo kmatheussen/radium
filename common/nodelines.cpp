@@ -54,7 +54,7 @@ static const Node2 *get_node_from_nodeline1_2(const struct NodeLine2 *nodeline, 
   struct Node2 *ret = (struct Node2*)talloc(sizeof(Node2));
   ret->x = nodeline->x1;
   ret->y = nodeline->y1 + y_offset;
-  ret->n = nodeline->n1;
+  //ret->n = nodeline->n1;
   ret->id = nodeline->id1;
   return ret;
 }
@@ -63,7 +63,7 @@ static const Node2 *get_node_from_nodeline2_2(const struct NodeLine2 *nodeline, 
   struct Node2 *ret = (struct Node2*)talloc(sizeof(Node2));
   ret->x = nodeline->x2;
   ret->y = nodeline->y2 + y_offset;
-  ret->n = nodeline->n2;
+  //ret->n = nodeline->n2;
   ret->id = nodeline->id2;
   return ret;
 }
@@ -156,11 +156,10 @@ static void insert_nonnode_nodeline(struct NodeLine *nodelines, const struct Lis
 
 
 // Note that 'y' can be outside the range of the nodeline. If that happens, nodelines is not modified.
-template<typename T> 
-static void insert_nonnode_nodeline2(const T &reader,
-                                     struct NodeLine2 *nodelines,
+static void insert_nonnode_nodeline2(struct NodeLine2 *nodelines,
                                      const struct ListHeader3 *element,
-                                     float y)
+                                     float y,
+                                     Ratio ratio)
 {
 
   if(y <= nodelines->y1)
@@ -173,16 +172,25 @@ static void insert_nonnode_nodeline2(const T &reader,
 
       struct NodeLine2 *n = (struct NodeLine2 *)talloc(sizeof(struct NodeLine2));
       //n->element1 = element;
-      n->n1 = -1;
       n->id1 = -1;
       n->y1 = y;
 
-      Ratio time1 = nodelines->n1 < 0 ? make_ratio(0,1) : reader.at_ref(nodelines->n1)._time;
-      Ratio time2 = nodelines->n2 < 0 ? make_ratio(0,1) : reader.at_ref(nodelines->n2)._time;
+      Ratio time1 = nodelines->time1 < 0 ? make_ratio(0,1) : nodelines->time1;
+      Ratio time2 = nodelines->time2 < 0 ? make_ratio(0,1) : nodelines->time2;
+
+      double dtime1 = make_double_from_ratio(time1);
+      double dtime2 = make_double_from_ratio(time2);
       
+      n->time1 = ratio;
+                             
+      /*
+        n->time1 = make_ratio_from_double(scale_double(y,
+        nodelines->y1, nodelines->y2,
+        dtime1, dtime2
+        ));*/
+                       
       n->x1 = scale(GetfloatFromPlace(&element->p),
-                    make_double_from_ratio(time1),
-                    make_double_from_ratio(time2),
+                    dtime1, dtime2,
                     nodelines->x1, nodelines->x2
                     );
 
@@ -198,7 +206,7 @@ static void insert_nonnode_nodeline2(const T &reader,
         n->y2 = n->y1;
       }
       //n->element2 = nodelines->element2;
-      n->n2 = nodelines->n2;
+      n->time2 = nodelines->time2;
       n->id2 = nodelines->id2;
       
       nodelines->x2 = n->x1;
@@ -208,7 +216,7 @@ static void insert_nonnode_nodeline2(const T &reader,
         nodelines->y2 = nodelines->y1;
       }
       //nodelines->element2 = n->element1;
-      nodelines->n2 = n->n1;
+      nodelines->time2 = n->time1;
       nodelines->id2 = n->id1;
       
       return;
@@ -320,13 +328,16 @@ static const struct NodeLine *create_nodelines(
   return nodelines;
 }
 
-
-template<typename T, typename T2> 
+//template<typename T2> 
 static const struct NodeLine2 *create_nodelines2(
                                                  const struct Tracker_Windows *window,
                                                  const struct WBlocks *wblock,
-                                                 const T &reader,
-                                                 float (*get_x)(const struct WBlocks *wblock, const T2 &node, int *logtype) // should return a value between 0 and 1.
+                                                 //const Iterator &iterator;
+                                                 //const T &reader,
+                                                 //std::function<T2&(int n)> get_element,
+                                                 int num_elements,
+                                                 std::function<void(int n, float &x, int &logtype, Ratio &time, int64_t &id)> get_node_info
+                                                 //float (*get_x)(const struct WBlocks *wblock, const T2 &node, int *logtype) // should return a value between 0 and 1.
                                                  )
 {
   struct NodeLine2 *nodelines = NULL;
@@ -336,19 +347,22 @@ static const struct NodeLine2 *create_nodelines2(
     float reallineF = 0.0f;
     struct NodeLine2 *nodelines_last = NULL;
 
-    int i = -1;
-    for(const T2 &node : reader) {
-      i++;
+    for(int i=0 ; i < num_elements ; i++) {
+
+      //T2 &node = get_element(i);
+      
       struct NodeLine2 *nodeline = (struct NodeLine2 *)talloc(sizeof(struct NodeLine2));
 
-      nodeline->x1 = get_x(wblock, node, &nodeline->logtype);
-      reallineF = FindReallineForRatioF(wblock, reallineF, node._time);
+      get_node_info(i, nodeline->x1, nodeline->logtype, nodeline->time1, nodeline->id1);
+      
+      //nodeline->x1 = get_x(wblock, node, &nodeline->logtype);
+      reallineF = FindReallineForRatioF(wblock, reallineF, nodeline->time1);
       nodeline->y1 = get_realline_y(window, reallineF);
-      //Place da = make_place_from_ratio(node._time);
+      //Place da = ratio2place(node._time);
       //printf("reallinef: %f. time: %f. y1: %f. Place: %s\n", reallineF, (double)node._time.num/(double)node._time.den, nodeline->y1, PlaceToString(&da));
       //nodeline->element1 = list;
-      nodeline->n1 = i;
-      nodeline->id1 = node._id;
+      //nodeline->time1 = node._time;
+      //nodeline->id1 = node._id;
       nodeline->is_node = true;
 
       if(nodelines_last==NULL)
@@ -379,7 +393,7 @@ static const struct NodeLine2 *create_nodelines2(
       }
 
       //ns->element2 = next->element1;
-      ns->n2 = next->n1;
+      ns->time2 = next->time1;
       ns->id2 = next->id1;
       if(next->next==NULL)
         break;
@@ -403,7 +417,7 @@ static const struct NodeLine2 *create_nodelines2(
       
       if (localzoom->level != curr_level){
         reallineF = FindReallineForF(wblock, reallineF, &localzoom->l.p);
-        insert_nonnode_nodeline2(reader, nodelines, &localzoom->l, get_realline_y(window, reallineF));
+        insert_nonnode_nodeline2(nodelines, &localzoom->l, get_realline_y(window, reallineF), ratio_from_place(localzoom->l.p));
         curr_level = localzoom->level;
       }
     }
@@ -484,7 +498,7 @@ const struct NodeLine *GetPitchNodeLines(const struct Tracker_Windows *window, c
   first_pitch->logtype = note->pitch_first_logtype;
   
   struct Pitches *last_pitch = (struct Pitches *)talloc(sizeof(struct Pitches));
-  last_pitch->l.p = note->end;
+  last_pitch->l.p = ratio2place(note->end);
   last_pitch->l.next = NULL;
 
   if (note->pitch_end>0)
@@ -546,7 +560,7 @@ const struct NodeLine *GetPianorollNodeLines(const struct Tracker_Windows *windo
   first_pitch->logtype = note->pitch_first_logtype;
     
   struct Pitches *last_pitch = (struct Pitches *)talloc(sizeof(struct Pitches));
-  last_pitch->l.p = note->end;
+  last_pitch->l.p = ratio2place(note->end);
   last_pitch->l.next = NULL;
     
   if (note->pitch_end>0)
@@ -573,12 +587,14 @@ const vector_t *GetPianorollNodes(const struct Tracker_Windows *window, const st
 // velocities
 ///////////////////////////////////////////////////////////
 
-static float subtrack_x1, subtrack_x2;
+#if 0
+
+static float g_subtrack_x1, g_subtrack_x2;
 
 static float get_velocity_x(const struct WBlocks *wblock, const struct ListHeader3 *element, int *logtype){
   struct Velocities *velocity = (struct Velocities*)element;
   *logtype = velocity->logtype;
-  return scale_double(velocity->velocity, 0, MAX_VELOCITY, subtrack_x1, subtrack_x2);
+  return scale_double(velocity->velocity, 0, MAX_VELOCITY, g_subtrack_x1, g_subtrack_x2);
 }
 
 const struct NodeLine *GetVelocityNodeLines(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note){
@@ -595,8 +611,8 @@ const struct NodeLine *GetVelocityNodeLines(const struct Tracker_Windows *window
   last_velocity->logtype = LOGTYPE_IRRELEVANT;
   
   //printf("Note: %s, pointer: %p, subtrack: %d\n",NotesTexts3[(int)note->note],note,note->subtrack);
-  subtrack_x1 = GetNoteX1(wtrack,note);
-  subtrack_x2 = R_MAX(subtrack_x1+1, GetNoteX2(wtrack,note));
+  g_subtrack_x1 = GetNoteX1(wtrack,note);
+  g_subtrack_x2 = R_MAX(g_subtrack_x1+1, GetNoteX2(wtrack,note));
   
   return create_nodelines(window,
                           wblock,
@@ -605,38 +621,95 @@ const struct NodeLine *GetVelocityNodeLines(const struct Tracker_Windows *window
                           &last_velocity->l
                           );
 }
+#endif
+
+const struct NodeLine2 *GetVelocityNodeLines2(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note){  
+  //printf("Note: %s, pointer: %p, subtrack: %d\n",NotesTexts3[(int)note->note],note,note->subtrack);
+  double subtrack_x1 = GetNoteX1(wtrack,note);
+  double subtrack_x2 = R_MAX(subtrack_x1+1, GetNoteX2(wtrack,note));
+
+  r::TimeData<r::Velocity>::Reader reader(note->_velocities);
+
+  auto *ret = create_nodelines2(window,
+                                wblock,
+                                reader.size() + 2,
+                                [&reader, subtrack_x1, subtrack_x2, note](int n, float &x, int &logtype, Ratio &time, int64_t &id) {
+
+                                  int val;
+                                  
+                                  if (n==0){
+                                    
+                                    val = note->velocity;
+                                    logtype = note->velocity_first_logtype;
+                                    time = ratio_from_place(note->l.p);
+                                    id = -1; // FIX
+                                    
+                                  } else if (n==reader.size()+1) {
+                                    
+                                    val = note->velocity_end;
+                                    logtype = LOGTYPE_IRRELEVANT;
+                                    time = note->end;
+                                    id = -2; // FIX
+                                    
+                                  } else {
+                                  
+                                    const r::Velocity &node = reader.at_ref(n-1);
+                                    val = node._val;
+                                    
+                                    logtype = node._logtype;
+                                    time = node._time;
+                                    id = node._id;
+                                    
+                                  }
+
+                                  x = scale_double(val, 0, MAX_VELOCITY, subtrack_x1, subtrack_x2);
+                                  
+                                }
+                                );
+  return ret;
+}
 
 const vector_t *GetVelocityNodes(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note){
-  return get_nodeline_nodes(GetVelocityNodeLines(window, wblock, wtrack, note),
-                            wblock->t.y1);
+  return get_nodeline_nodes2(GetVelocityNodeLines2(window, wblock, wtrack, note),
+                             wblock->t.y1);
 }
 
 
 // fxs
 ///////////////////////////////////////////////////////////
 
-static float fx_min, fx_max, wtrackfx_x1, wtrackfx_x2;
+//static float fx_min, fx_max, wtrackfx_x1, wtrackfx_x2;
 
 #if 1
 
+/*
 static float get_fxs_x(const struct WBlocks *wblock, const r::FXNode &fxnode, int *logtype){
   *logtype = fxnode._logtype;
   return scale(fxnode._val, fx_min, fx_max, wtrackfx_x1, wtrackfx_x2);
 }
-
+*/
 
 const struct NodeLine2 *GetFxNodeLines(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct FXs *fxs){
-  fx_min = fxs->fx->min;
-  fx_max = fxs->fx->max;
-  wtrackfx_x1 = wtrack->fxarea.x;
-  wtrackfx_x2 = wtrack->fxarea.x2;
 
   r::TimeData<r::FXNode>::Reader reader(fxs->_fxnodes);
-  
+
   auto *ret = create_nodelines2(window,
                                 wblock,
-                                reader,
-                                get_fxs_x
+                                reader.size(),
+                                [&reader, wtrack, fxs](int n, float &x, int &logtype, Ratio &time, int64_t &id) {
+                                  
+                                  const r::FXNode &node = reader.at_ref(n);
+                                  
+                                  float fx_min = fxs->fx->min;
+                                  float fx_max = fxs->fx->max;
+                                  float wtrackfx_x1 = wtrack->fxarea.x;
+                                  float wtrackfx_x2 = wtrack->fxarea.x2;
+  
+                                  x = scale(node._val, fx_min, fx_max, wtrackfx_x1, wtrackfx_x2);
+                                  logtype = node._logtype;
+                                  time = node._time;
+                                  id = node._id;
+                                }
                                 );
   return ret;
 }

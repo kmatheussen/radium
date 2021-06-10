@@ -64,7 +64,7 @@ Place getPitchPlace(int pitchnum, dyn_t dynnote, int tracknum, int blocknum, int
       return note->l.p;
 
     else
-      return note->end;
+      return ratio2place(note->end);
 
   }
 
@@ -148,8 +148,8 @@ int addPitch(float value, Place place, dyn_t dynnote, int tracknum, int blocknum
     return -1;
   }
 
-  if (PlaceGreaterThan(&place, &note->end)) {
-    handleError("addPitch: placement after note end for note. pitch: %s. note end: %s", p_ToString(place), p_ToString(note->end));
+  if (place2ratio(place) > note->end) {
+    handleError("addPitch: placement after note end for note. pitch: %s. note end: %s", p_ToString(place), p_ToString(ratio2place(note->end)));
     return -1;
   }
 
@@ -227,12 +227,14 @@ dyn_t setPitch(float value, Place place, int pitchnum, dyn_t dynnote, int trackn
     struct Pitches *pitch;
 
     if (p_is_same_place(place)){
-      pitch = ListFindElement3_num(&note->pitches->l, pitchnum-1);
+      pitch = (struct Pitches*)ListFindElement3_num(&note->pitches->l, pitchnum-1);
     } else {
       if(place.line < 0){handleError("Negative place");return dynnote;}
       Place firstLegalPlace,lastLegalPlace;
       PlaceFromLimit(&firstLegalPlace, &note->l.p);
-      PlaceTilLimit(&lastLegalPlace, &note->end);
+
+      Place noteend = ratio2place(note->end);
+      PlaceTilLimit(&lastLegalPlace, &noteend);
       
       {
         SCOPED_PLAYER_LOCK_IF_PLAYING();

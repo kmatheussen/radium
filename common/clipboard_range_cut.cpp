@@ -64,8 +64,8 @@ static void ClearRange_stops(
                              const Place *p2
                              )
 {
-  Ratio start = make_ratio_from_place(*p1);
-  Ratio end = make_ratio_from_place(*p2);
+  Ratio start = place2ratio(*p1);
+  Ratio end = place2ratio(*p2);
 
   r::TimeData<r::Stop>::Writer writer(stops);
 

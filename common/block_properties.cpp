@@ -77,7 +77,7 @@ void Block_Set_num_lines2(
 
           PlaceSetLastPos(block,&lastplace);
 
-          const Ratio rlastplace = make_ratio_from_place(lastplace);
+          const Ratio rlastplace = place2ratio(lastplace);
         
           if(num_lines<org_num_lines){
 
@@ -92,10 +92,11 @@ void Block_Set_num_lines2(
               CutListAt_a(&track->notes,&lastplace);
               note=track->notes;
               while(note!=NULL){
-                CutListAt(&note->velocities,&lastplace);
+                //CutListAt(&note->velocities,&lastplace);
+                r::TimeData<r::Velocity>::Writer(note->_velocities).remove_everything_after(rlastplace);
                 CutListAt(&note->pitches,&lastplace);
-                if(PlaceEqual(&note->end,&lastplace1) && note->noend==1){
-                  PlaceCopy(&note->end,&lastplace);
+                if(note->end >= place2ratio(lastplace1) && note->noend==1){
+                  note->end = place2ratio(lastplace);
                 }
                 note=NextNote(note);
               }
@@ -133,8 +134,8 @@ void Block_Set_num_lines2(
             while(track!=NULL){
               note=track->notes;
               while(note!=NULL){
-                if(PlaceEqual(&note->end,&lastplace1) && note->noend==1){
-                  PlaceSetLastPos(block,&note->end);
+                if(note->end>=place2ratio(lastplace1) && note->noend==1){
+                  note->end = place2ratio(p_Last_Pos(block));
                 }
                 note=NextNote(note);
               }

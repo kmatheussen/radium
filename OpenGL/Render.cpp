@@ -1895,7 +1895,7 @@ static void create_pianoroll_notes(const struct Tracker_Windows *window, const s
         
         ghost_note.note = g_current_piano_ghost_note.value;
         ghost_note.l.p = g_current_piano_ghost_note.start;
-        ghost_note.end = g_current_piano_ghost_note.end;
+        ghost_note.end = place2ratio(g_current_piano_ghost_note.end);
         
         note = &ghost_note;
         is_painting_ghost_note = true;
@@ -2168,7 +2168,7 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
 
 static float subtrack_x1, subtrack_x2;
 
-static void create_track_peaks(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note, const struct NodeLine *nodelines){
+static void create_track_peaks(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note, const struct NodeLine2 *nodelines){
   struct Patch *patch = wtrack->track->patch;
   STime note_time = Place2STime2(wblock->block, &note->l.p, wtrack->track);
 
@@ -2198,7 +2198,7 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
 
     GE_ScopedTrianglestrip trianglestrip;
 
-    for(const struct NodeLine *ns = nodelines ; ns!=NULL ; ns=ns->next){
+    for(const struct NodeLine2 *ns = nodelines ; ns!=NULL ; ns=ns->next){
       int logtype = ns->logtype;
       float x1 = ns->x1;
       float x2 = logtype==LOGTYPE_HOLD ? ns->x1 : ns->x2;
@@ -2209,8 +2209,8 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
       
       c = c!=NULL ? GE_y(c, y1) : GE_mix_color_z(GE_get_rgb(LOW_EDITOR_BACKGROUND_COLOR_NUM), GE_get_rgb(WAVEFORM_COLOR_NUM), 100, GE_Conf(Z_ABOVE(Z_ZERO), y1));
 
-      const STime time1 = Place2STime2(wblock->block, &ns->element1->p, wtrack->track) - note_time;
-      const STime time2 = Place2STime2(wblock->block, &ns->element2->p, wtrack->track) - note_time;
+      const STime time1 = Place2STime3(wblock->block, ns->time1, wtrack->track) - note_time;
+      const STime time2 = Place2STime3(wblock->block, ns->time2, wtrack->track) - note_time;
 
       R_ASSERT_NON_RELEASE(time2 >= time1);
       
@@ -2318,7 +2318,7 @@ static void create_velocity_gradient_background(
                                                 float area_y2,
                                                 float start_note,
                                                 float end_note,
-                                                const struct NodeLine *velocity_nodelines
+                                                const struct NodeLine2 *velocity_nodelines
                                                 )
 {
 
@@ -2327,7 +2327,7 @@ static void create_velocity_gradient_background(
 
   GE_Context *c = NULL;
 
-  const struct NodeLine *nodeline = velocity_nodelines;
+  const struct NodeLine2 *nodeline = velocity_nodelines;
   while (nodeline != NULL){
     float vel_y1 = nodeline->y1;
     float vel_y2 = nodeline->y2;
@@ -2376,7 +2376,7 @@ static float track_pitch_max;
 
 static void create_velocities_gradient_background(
                                                   const struct NodeLine *pitch_nodelines,
-                                                  const struct NodeLine *velocity_nodelines
+                                                  const struct NodeLine2 *velocity_nodelines
                                                   )
 {
   const struct NodeLine *nodeline = pitch_nodelines;
@@ -2460,8 +2460,8 @@ static void create_track_velocities(const struct Tracker_Windows *window, const 
   if(equal_floats(subtrack_x1, subtrack_x2))
     return;
   
-  const struct NodeLine *nodelines = GetVelocityNodeLines(window, wblock, wtrack, note);
-  const vector_t *nodes = get_nodeline_nodes(nodelines, wblock->t.y1);
+  const struct NodeLine2 *nodelines = GetVelocityNodeLines2(window, wblock, wtrack, note);
+  const vector_t *nodes = get_nodeline_nodes2(nodelines, wblock->t.y1);
 
   // background
   {
@@ -2475,7 +2475,7 @@ static void create_track_velocities(const struct Tracker_Windows *window, const 
       
       GE_ScopedTrianglestrip trianglestrip;
     
-      for(const struct NodeLine *ns = nodelines ; ns!=NULL ; ns=ns->next){
+      for(const struct NodeLine2 *ns = nodelines ; ns!=NULL ; ns=ns->next){
         int logtype = ns->logtype;
         float x1 = ns->x1;
         float x2 = logtype==LOGTYPE_HOLD ? ns->x1 : ns->x2;
@@ -2523,20 +2523,26 @@ static void create_track_velocities(const struct Tracker_Windows *window, const 
     create_track_peaks(window, wblock, wtrack, note, nodelines);
 
   // nodes
-  if (is_current)
-    VECTOR_FOR_EACH(Node *, node, nodes){
-      draw_skewed_box(window, node->element, VELOCITY1_COLOR_NUM, node->x, node->y - wblock->t.y1, USE_SCISSORS);
+  if (is_current || g_indicator_node_id!=-1)
+    VECTOR_FOR_EACH(const Node2 *, node, nodes){
+      if (is_current)
+        draw_skewed_box2(window, node->id, VELOCITY1_COLOR_NUM, node->x, node->y - wblock->t.y1, USE_SCISSORS);
+      if (node->id==g_indicator_node_id && g_indicator_node_id!=-1)
+        draw_node_indicator(node->x, node->y - wblock->t.y1, VELOCITY_TEXT_COLOR_NUM);
     }END_VECTOR_FOR_EACH;
 
+#if 1
   if (g_indicator_node == &note->l && g_indicator_velocity_num!=-1) {
     if (g_indicator_velocity_num >= nodes->num_elements)
       //RError("g_indicator_velocity_node_num(%d) >= nodes->num_elements(%d)",g_indicator_velocity_num,nodes->num_elements);
       printf("g_indicator_velocity_node_num(%d) >= nodes->num_elements(%d)\n",g_indicator_velocity_num,nodes->num_elements); // TODO: Find out why this happens so often.
     else {
-      struct Node *node = (struct Node *)nodes->elements[g_indicator_velocity_num];
+      struct Node2 *node = (struct Node2 *)nodes->elements[g_indicator_velocity_num];
       draw_node_indicator(node->x, node->y-wblock->t.y1, VELOCITY_TEXT_COLOR_NUM);
+      //printf("  Drawing vel indicator. Note: %f. velnum: %d. x: %f. y: %f\n", note->note, g_indicator_velocity_num, node->x, node->y);
     }
   }
+#endif
 }
 
 
@@ -2567,7 +2573,7 @@ static void create_track_stops(const struct Tracker_Windows *window, const struc
 #if 1
   r::TimeData<r::Stop>::Reader reader(wtrack->track->stops2);
   for(const r::Stop &stop : reader) {
-    Place place = make_place_from_ratio(stop._time);
+    Place place = ratio2place(stop._time);
     reallineF = FindReallineForF(wblock, reallineF, &place);
     float y = get_realline_y(window, reallineF); 
     GE_Context *c = GE_color_alpha(TEXT_COLOR_NUM, 0.19, y);

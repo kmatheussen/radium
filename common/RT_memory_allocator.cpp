@@ -75,7 +75,7 @@ double TIME_get_ms(void){
 #if TEST_MAIN
 #  define MAX_POOL_SIZE 8 // Very low value to provoke RT_free to fail now and then (to check that it doesn't crash if rt_free fails)
 #else
-#  define MAX_POOL_SIZE 512
+#  define MAX_POOL_SIZE 4096
 #endif
 
 #define MIN_MEMPOOL_SIZE 8
@@ -355,7 +355,7 @@ void RT_free_raw(void *mem, const char *who){
 #endif
   
 
-    if (RT_maybe_free_to_global_mem(data)) {
+    if (RT_maybe_free_to_global_mem(data)) { // Note: RT_maybe_free_to_global_mem is currently disabled. It's not much point.
     
       //    printf("GOTIT\n");
     

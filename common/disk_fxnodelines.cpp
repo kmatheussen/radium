@@ -35,16 +35,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 void SaveFXNodeLines(struct FXs *fxs){
 #if 1
 
+  DC_start("FXNODELINES2");
+
   r::TimeData<r::FXNode>::Reader reader(fxs->_fxnodes);
   
-  if (reader.size()==0)
-    return;
-
-  DC_start("FXNODELINES");
-
   for(const r::FXNode &fxnode : reader){
-    Place p = make_place_from_ratio(fxnode._time);
-    SavePlace(&p);
+    DC_SaveRatio(fxnode._time);
     DC_SaveI(fxnode._val);
     SaveLogType(fxnode._logtype);
   }
@@ -69,6 +65,40 @@ DC_end();
  #endif
 }
 
+
+void LoadFXNodeLines2(struct FXs *fxs){
+
+        r::TimeData<r::FXNode>::Writer writer(fxs->_fxnodes);
+        
+	printf("\t\tLoadFXNodeLines2_start\n");
+	while(dc.success){
+		DC_fgets();
+		if(dc.ret[0]=='/') return;
+
+                Ratio ratio = DC_LoadRatio(atoll(dc.ret), true);
+
+                int val = DC_LoadI();
+                int logtype = LoadLogType();
+
+                /*
+                {
+                  struct FXNodeLines *fxnodeline=(struct FXNodeLines *)DC_alloc(sizeof(struct FXNodeLines));
+                  fxnodeline->l.p = p;
+                  fxnodeline->val=val;
+                  fxnodeline->logtype = logtype;
+
+                  ListAddElement3_a(&fxs->fxnodelines,&fxnodeline->l);
+                }
+                */
+                
+                auto node = r::FXNode(*fxs->fx, ratio, val, logtype);
+                writer.add(node);
+
+	}
+
+	printf("\t\tLoadFXNodeLines2_end\n");
+	return;
+}
 
 void LoadFXNodeLines(struct FXs *fxs){
 

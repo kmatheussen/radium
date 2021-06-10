@@ -64,18 +64,23 @@ static bool InsertRatio_notes_extra(
   bool ret = false;
   
   struct Notes *note=(struct Notes *)l;
-  Ratio endratio = make_ratio_from_place(note->end);
+  Ratio endratio = note->end;
   
   if(endratio >= ratio){
     
     if (RATIO_greater_than_zero(endratio+toratio)){
       
       //RatioAddfloat(&note->end,toratio);
-      note->end = make_place_from_ratio(make_ratio_from_place(note->end) + toratio);
+      note->end = note->end + toratio;
 
+      /*
       if (List_InsertRatioLen3(block,&note->velocities,(struct ListHeader3*)note->velocities,ratio,toratio,NULL))
         ret = true;
+      */
       
+      if (r::TimeData<r::Velocity>::Writer(note->_velocities).insert_ratio(ratio, toratio, make_ratio(block->num_lines, 1)))
+        ret = true;
+          
       if (List_InsertRatioLen3(block,&note->pitches,(struct ListHeader3*)note->pitches,ratio,toratio,NULL))
         ret = true;
       
@@ -231,13 +236,13 @@ void InsertRealLines_CurrPos(
 
 	if(num_reallines==0) return;
 
-        Ratio ratio = make_ratio_from_place(realline->l.p);
+        Ratio ratio = place2ratio(realline->l.p);
 
 	Ratio toratio;
 	if(curr_realline==wblock->num_reallines-1){
           toratio = RATIO_floor(ratio + make_ratio(1,1)); // floor(ratio+1.0f);
 	}else{
-          toratio = make_ratio_from_place(reallines[curr_realline+1]->l.p); // GetfloatFromPlace(&reallines[curr_realline+1]->l.p);
+          toratio = place2ratio(reallines[curr_realline+1]->l.p); // GetfloatFromPlace(&reallines[curr_realline+1]->l.p);
 	}
 
 	toratio -= ratio;

@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "nsmtracker.h"
 #include "TimeData.hpp"
+#include "TallocWithDestructor.hpp"
 #include "list_proc.h"
 #include "vector_proc.h"
 #include "placement_proc.h"
@@ -43,10 +44,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #ifndef TEST_NOTES
 
-static int FindFirstFreePolyphony_num(const std::vector<Place> &end_places, const Place *p){
+static int FindFirstFreePolyphony_num(const std::vector<Ratio> &end_places, const Ratio &ratio){
   
   for(int i=0 ; i < (int)end_places.size() ; i++)
-    if (PlaceGreaterOrEqual(p, &end_places[i]))
+    if (ratio >= end_places[i])
       return i;
 
   return (int)end_places.size();
@@ -58,7 +59,7 @@ void SetNotePolyphonyAttributes(struct Tracks *track){
   R_ASSERT(THREADING_is_main_thread()); // This function is not thread safe.
  
   //printf("**************  Track: %d\n", track->l.num);
-  static std::vector<Place> end_places;
+  static std::vector<Ratio> end_places;
 
   end_places.clear();
   
@@ -67,7 +68,7 @@ void SetNotePolyphonyAttributes(struct Tracks *track){
   struct Notes *note = track->gfx_notes!=NULL ? track->gfx_notes : track->notes;
   while(note != NULL){
     //printf("**************  Note at: %s\n", PlaceToString(&note->l.p));
-    int polyphony_num = FindFirstFreePolyphony_num(end_places, &note->l.p);
+    int polyphony_num = FindFirstFreePolyphony_num(end_places, place2ratio(note->l.p));
     note->polyphony_num = polyphony_num;
     
     if (polyphony_num+1 > track->polyphony)
@@ -125,12 +126,13 @@ static void SetEndAttributes(
 	const Place *place;
 	const Place *p1=NULL,*p2=NULL;
 
-        bool endSetEarlier = PlaceGreaterThan(&note->end, &note->l.p);
-        const Place *earliest = endSetEarlier ? &note->end : &note->l.p;
+        bool endSetEarlier = note->end.den>0 && note->end > place2ratio(note->l.p); //PlaceGreaterThan(&note->end, &note->l.p);
+        const Ratio earliest = endSetEarlier ? note->end : place2ratio(note->l.p);
 
         struct ListHeader3 *nextnote=track->notes==NULL ? NULL : &track->notes->l;
         while(nextnote!=NULL){
-          if(PlaceGreaterThan(&nextnote->p, earliest)){
+          Ratio r = place2ratio(nextnote->p);
+          if (r > earliest) {
             p1 = &nextnote->p;
             break;
           }
@@ -138,13 +140,12 @@ static void SetEndAttributes(
         }
 
 #if 1
-        Ratio r_earliest = make_ratio_from_place(*earliest);
         Place helper_p2;
         
         r::TimeData<r::Stop>::Reader reader(track->stops2);
         for(const r::Stop &stop : reader) {
-          if (stop._time > r_earliest){
-            helper_p2 = make_place_from_ratio(stop._time);
+          if (stop._time > earliest){
+            helper_p2 = ratio2place(stop._time);
             p2 = &helper_p2;
             break;
           }            
@@ -159,18 +160,17 @@ static void SetEndAttributes(
           stop=stop->next;
         }
 #endif
+
 	place=PlaceMin(p1,p2);
 
 	if(place!=NULL){
-		note->end.line=place->line;
-		note->end.counter=place->counter;
-		note->end.dividor=place->dividor;
+          note->end = place2ratio(*place);
 	}else{
-        	PlaceSetLastPos(block, &note->end);
-        	note->noend=1;
+          note->end = place2ratio(p_Last_Pos(block));
+          note->noend=1;
 	}
 
-        ValidatePlace(&note->end);
+        //ValidatePlace(&note->end);
 }
 
 /**************************************************************
@@ -191,9 +191,19 @@ void StopAllNotesAtPlace(
 
 	temp=track->notes;
 
+        Ratio r_placement = place2ratio(*placement);
+        
 	while(temp!=NULL && PlaceLessThan(&temp->l.p,placement)){
-		if(PlaceGreaterThan(&temp->end,placement)){
-			CutListAt(&temp->velocities,placement);
+              if(temp->end > r_placement) {
+                //CutListAt(&temp->velocities,placement);
+
+                        {
+                          radium::PlayerUnlock unlock(PLAYER_current_thread_has_lock()); // Writer allocates memory. (Shouldn't be a problem temporarily unlocking here.)
+                            
+                          r::TimeData<r::Velocity>::Writer writer(temp->_velocities);
+                          writer.remove_everything_after(ratio_from_place(*placement), true);
+                        }
+                        
 			CutListAt(&temp->pitches,placement);
 			PlaceCopy(&temp->end,placement);
                         NOTE_validate(block, track, temp);
@@ -202,7 +212,7 @@ void StopAllNotesAtPlace(
 	}
 }
 
-void NOTE_init(struct Notes *note){
+static void NOTE_init(struct Notes *note){
   static int64_t curr_id = -1;
 
   if(curr_id==-1)
@@ -213,8 +223,18 @@ void NOTE_init(struct Notes *note){
   //printf("note->id: %d\n",(int)note->id);
 }
 
+static struct Notes *alloc_note(void){
+  struct Notes *note = talloc_with_finalizer<struct Notes>([](struct Notes *note){
+      delete note->_velocities;
+    });
+  
+  note->_velocities = new r::TimeData<r::Velocity>;
+  return note;
+}
+
 struct Notes *NewNote(void){
-  struct Notes *note=(struct Notes*)talloc(sizeof(struct Notes));
+  struct Notes *note = alloc_note();
+  
   NOTE_init(note);
   note->chance = 0x100;
 
@@ -222,9 +242,14 @@ struct Notes *NewNote(void){
 }
 
 struct Notes *CopyNote(const struct Notes *old_note){
-  struct Notes *note = (struct Notes*)tcopy(old_note);
+  struct Notes *note = alloc_note();
+  
+  auto *_velocities = note->_velocities;
+  memcpy(note, old_note, sizeof(struct Notes));
+  note->_velocities = _velocities;
+  
   note->l.next = NULL;
-  note->velocities = NULL;
+  //note->velocities = NULL;
   note->pitches = NULL;
   
   NOTE_init(note);
@@ -281,7 +306,7 @@ struct Notes *NOTES_sort_by_pitch(struct Notes *notes){
   return notes;
 }
 
-static void set_new_position(struct Tracks *track, struct Notes *note, Place *start, Place *end){
+static void set_new_position(struct Tracks *track, struct Notes *note, Place *start, Ratio *end){
 
   bool has_lock = PLAYER_current_thread_has_lock();
 
@@ -299,7 +324,7 @@ static void set_new_position(struct Tracks *track, struct Notes *note, Place *st
     if (start!=NULL && start!=&note->l.p)
       note->l.p = *start;
     
-    if (end!=NULL && end!=&note->end)
+    if (end!=NULL)
       note->end = *end;
     
     if (track!=NULL)
@@ -309,29 +334,32 @@ static void set_new_position(struct Tracks *track, struct Notes *note, Place *st
 
 static void set_legal_start_and_end_pos(const struct Blocks *block, struct Tracks *track, struct Notes *note){
   Place *start = &note->l.p;
-  Place *end = &note->end;
+  Ratio end = note->end;
   Place endplace;
 
   PlaceSetLastPos(block,&endplace);
+
+  Ratio r_endplace = place2ratio(endplace);
   
   if(PlaceGreaterOrEqual(start,&endplace)) {
-    RError("note is placed after block end. start: %f, end: %f", GetfloatFromPlace(&note->l.p), GetfloatFromPlace(&note->end));
+    RError("note is placed after block end. start: %f, end: %f", GetfloatFromPlace(&note->l.p), make_double_from_ratio(note->end));
     set_new_position(track, note, PlaceCreate(block->num_lines - 2, 0, 1), NULL);
     start = &note->l.p;
   }
   
   if (start->line < 0) {
-    RError("note is placed before block start. start: %f, end: %f", GetfloatFromPlace(&note->l.p), GetfloatFromPlace(&note->end));
+    RError("note is placed before block start. start: %f, end: %f", GetfloatFromPlace(&note->l.p), make_double_from_ratio(note->end));
     set_new_position(track, note, PlaceCreate(0,1,1), NULL);
     start = &note->l.p;
   }
   
-  if(PlaceGreaterThan(end,&endplace)) {
-    RError("note end is placed after block end. start: %f, end: %f. block end: %f", GetfloatFromPlace(&note->l.p), GetfloatFromPlace(&note->end), GetfloatFromPlace(&endplace));
-    set_new_position(track, note, NULL, &endplace);
-    end = &note->end;
+  if(end > r_endplace) {
+    RError("note end is placed after block end. start: %f, end: %f. block end: %f", GetfloatFromPlace(&note->l.p), make_double_from_ratio(note->end), GetfloatFromPlace(&endplace));
+    set_new_position(track, note, NULL, &r_endplace);
+    end = note->end;
   }
 
+  /*
   if (note->velocities != NULL) {
     {
       struct Velocities *first_velocity = note->velocities;
@@ -359,12 +387,13 @@ static void set_legal_start_and_end_pos(const struct Blocks *block, struct Track
     }
 
   }
+  */
   
   if (note->pitches != NULL) {
     {
       struct Pitches *first_pitch = note->pitches;
       if(PlaceGreaterThan(start, &first_pitch->l.p)){
-        RError("note start is placed after first pitch. start: %f, first: %f, end: %f", GetfloatFromPlace(&note->l.p), GetfloatFromPlace(&first_pitch->l.p), GetfloatFromPlace(&note->end));
+        RError("note start is placed after first pitch. start: %f, first: %f, end: %f", GetfloatFromPlace(&note->l.p), GetfloatFromPlace(&first_pitch->l.p), make_double_from_ratio(note->end));
         float e = p_float(first_pitch->l.p);
         e -= 0.01;
         e = R_MAX(0.0, e);
@@ -376,23 +405,21 @@ static void set_legal_start_and_end_pos(const struct Blocks *block, struct Track
     }
     
     struct Pitches *last_pitch = (struct Pitches*)ListLast3(&note->pitches->l);
-    if(PlaceLessThan(end, &last_pitch->l.p)){
-      RError("note end is placed before last pitch. start: %f, last: %f, end: %f", GetfloatFromPlace(&note->l.p), GetfloatFromPlace(&last_pitch->l.p), GetfloatFromPlace(&note->end));
+    if(end < place2ratio(last_pitch->l.p)) {
+      RError("note end is placed before last pitch. start: %f, last: %f, end: %f", GetfloatFromPlace(&note->l.p), GetfloatFromPlace(&last_pitch->l.p), make_double_from_ratio(note->end));
       float e = p_float(last_pitch->l.p);
       e += 0.01;
-      Place new_end;
-      Float2Placement(e, &new_end);
+      Ratio new_end = make_ratio_from_double(e);
       set_new_position(track, note, NULL, &new_end);
-      end = &note->end;
+      end = note->end;
     }
   }
   
-  if(PlaceLessOrEqual(end,start)) {
-    RError("note end is placed before (or on) note start. start: %f, end: %f", GetfloatFromPlace(&note->l.p), GetfloatFromPlace(&note->end));
+  if(end < place2ratio(*start)) {
+    RError("note end is placed before (or on) note start. start: %f, end: %f", GetfloatFromPlace(&note->l.p), make_double_from_ratio(note->end));
     float e = p_float(*start);
     e += 0.01;
-    Place new_end;
-    Float2Placement(e, &new_end);
+    Ratio new_end = make_ratio_from_double(e);
     set_new_position(track, note, NULL, &new_end);
   }
 
@@ -416,7 +443,7 @@ void NOTE_validate(const struct Blocks *block, struct Tracks *track, struct Note
   set_legal_start_and_end_pos(block, track, note);
 
   ValidatePlace(&note->l.p);
-  ValidatePlace(&note->end);
+  //ValidatePlace(&note->end);
 }
 
 
@@ -437,7 +464,7 @@ static struct Notes *make_note(const struct Blocks *block,
   note->velocity_end=note->velocity;
 
   if (end_placement != NULL)
-    PlaceCopy(&note->end, end_placement);
+    note->end = place2ratio(*end_placement);
   else
     SetEndAttributes(block,track,note);
 
@@ -516,7 +543,6 @@ int NOTE_get_velocity(struct Tracks *track){
   return (int)new_velocity;
 }
 
-
 static bool maybe_scroll_down(struct Tracker_Windows *window, const struct Notes *dont_play_this_note){
   if(window->curr_track_sub==-1) 
     return MaybeScrollEditorDownAfterEditing(window, dont_play_this_note);
@@ -562,7 +588,7 @@ bool InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyp
 
       if (org_velocity >= 0){
         tr2.note->velocity = velocity;
-        if (tr2.note->velocities==NULL)
+        if (r::TimeData<r::Velocity>::Reader(tr2.note->_velocities).size()==0)
           tr2.note->velocity_end = velocity;
       }
 
@@ -574,7 +600,7 @@ bool InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyp
       R_ASSERT(false);
     }else{
       r::TimeData<r::Stop>::Writer writer(track->stops2);
-      writer.remove_at_time(make_ratio_from_place(tr2.p));
+      writer.remove_at_time(place2ratio(tr2.p));
     }
   }
 
@@ -642,8 +668,8 @@ void LengthenNotesTo(
 	struct Notes *note=track->notes;
 	while(note!=NULL){
 		if(PlaceGreaterThan(&note->l.p,placement)) break;
-		if(PlaceEqual(&note->end,placement))
-			SetEndAttributes(block,track,note);
+		if(note->end == place2ratio(*placement))
+                  SetEndAttributes(block,track,note);
 		note=NextNote(note);
 	}
 }
@@ -666,8 +692,8 @@ void ReplaceNoteEnds(
 	while(note!=NULL){
           if (note->polyphony_num == polyphony_num) {
             if(PlaceGreaterThan(&note->l.p,old_placement)) break;
-            if(PlaceEqual(&note->end,old_placement)) {
-              note->end = *new_placement;
+            if(note->end == place2ratio(*old_placement)) {
+              note->end = place2ratio(*old_placement);
               NOTE_validate(block, track, note);
             }
           }
@@ -751,7 +777,7 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
 #if 1
   {
     r::TimeData<r::Stop>::Writer writer(track->stops2);
-    if (writer.remove_at_time(make_ratio_from_place(tr2.p))){
+    if (writer.remove_at_time(place2ratio(tr2.p))){
       SCOPED_PLAYER_LOCK_IF_PLAYING();
       LengthenNotesTo(block,track,&realline->l.p);
     }
@@ -807,7 +833,8 @@ struct Notes *FindNoteOnSubTrack(
         struct Notes *note = wtrack->track->notes;
         
         while (note != NULL) {
-          if(PlaceIsBetween2(placement,&note->l.p,&note->end))
+          Place p = ratio2place(note->end);
+          if(PlaceIsBetween2(placement,&note->l.p,&p))
             if (NOTE_subtrack(wtrack, note)==subtrack)
               return note;
           
@@ -824,7 +851,8 @@ struct Notes *FindNote(
 {
   struct Notes *note = track->notes;
   while(note != NULL) {
-    if (PlaceIsBetween2(placement, &note->l.p, &note->end))
+    Place p = ratio2place(note->end);
+    if (PlaceIsBetween2(placement, &note->l.p, &p))
       break;
     note = NextNote(note);
   }
@@ -840,7 +868,8 @@ vector_t FindAllNotes(
   
   struct Notes *note = track->notes;
   while(note != NULL) {
-    if (PlaceIsBetween2(placement, &note->l.p, &note->end))
+    Place p = ratio2place(note->end);
+    if (PlaceIsBetween2(placement, &note->l.p, &p))
       VECTOR_push_back(&ret, note);
     note = NextNote(note);
   }
@@ -862,8 +891,9 @@ struct Notes *FindNextNote(
   return note;
 }
 
-static bool is_at_last_line_of_note(const struct WBlocks *wblock, const struct Notes *note, int realline){  
-  int last_note_line = FindRealLineFor(wblock, 0, &note->end);
+static bool is_at_last_line_of_note(const struct WBlocks *wblock, const struct Notes *note, int realline){
+  Place p = ratio2place(note->end);
+  int last_note_line = FindRealLineFor(wblock, 0, &p);
   //printf("last_note_line/realline: %d %d\n",last_note_line,realline);
 
   if (last_note_line == realline)
@@ -1305,9 +1335,11 @@ void EditNoteCurrPos(struct Tracker_Windows *window){
 void CutNoteAt(const struct Blocks *block, const struct Tracks *track,struct Notes *note, const Place *place){
 
   R_ASSERT(PLAYER_current_thread_has_lock() || is_playing()==false);
-          
-  if (PlaceGreaterOrEqual(place, &note->end)){
-    RError("Illegal argument for CutNoteAt 1. %f >= %f\n",GetfloatFromPlacement(place),GetfloatFromPlacement(&note->end));
+
+  Place p = ratio2place(note->end);
+  
+  if (PlaceGreaterOrEqual(place, &p)){
+    RError("Illegal argument for CutNoteAt 1. %f >= %f\n",GetfloatFromPlacement(place),GetfloatFromPlacement(&p));
     return;
   }
   
@@ -1316,10 +1348,16 @@ void CutNoteAt(const struct Blocks *block, const struct Tracks *track,struct Not
     return;
   }
   
-  CutListAt(&note->velocities,place);
-  CutListAt(&note->pitches,place);
-  PlaceCopy(&note->end,place);
+  //CutListAt(&note->velocities,place);
 
+  {
+    r::TimeData<r::Velocity>::Writer writer(note->_velocities);
+    writer.remove_everything_after(ratio_from_place(*place), true);
+  }
+
+  CutListAt(&note->pitches,place);
+
+  note->end = place2ratio(*place);
 }
 
 void StopVelocityCurrPos(struct Tracker_Windows *window,int noend){

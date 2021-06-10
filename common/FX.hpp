@@ -36,20 +36,7 @@ struct FX{
 #define FX_SUCCESS 1
 
 
-
 namespace r{
-
-extern int64_t g_node_id;
-  
-struct NodeId{
-  int64_t _id;
-  NodeId()
-    : _id(g_node_id++)
-  {
-    R_ASSERT_NON_RELEASE(THREADING_is_main_thread()); // because of g_node_id
-  }
-};
-
 
 struct FXNode : NodeId {
   Ratio _time;

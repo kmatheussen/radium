@@ -130,7 +130,8 @@ int FindRealLineForEndNote(
                            int realline,
                            const struct Notes *note
 ){
-	return FindRealLineFor(wblock,R_MAX(note->end.line,realline),&note->end);
+  Place p = ratio2place(note->end);
+  return FindRealLineFor(wblock,R_MAX(p.line,realline),&p);
 }
 
 

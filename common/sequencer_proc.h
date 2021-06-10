@@ -94,6 +94,15 @@ static inline int64_t get_seqblock_place_time2(const struct SeqBlock *seqblock,
   return seqblock->t.time + blocktime_to_seqtime(seqblock, Place2STime2(seqblock->block, &p,  track));
 }
 
+static inline int64_t get_seqblock_place_time3(const struct SeqBlock *seqblock,
+                                               const struct Tracks *track,
+                                               const Ratio ratio
+                                               )
+{
+  R_ASSERT_NON_RELEASE(track==NULL || track->times!=NULL);
+  return seqblock->t.time + blocktime_to_seqtime(seqblock, Place2STime3(seqblock->block, ratio,  track));
+}
+
 /*
 static inline int64_t get_seqblock_place_time2(const struct SeqBlock *seqblock, const struct Tracks *track, const Place p){
   R_ASSERT_NON_RELEASE(track->times!=NULL);
@@ -404,6 +413,22 @@ extern LANGSPEC bool SEQBLOCK_set_interior_end(struct SeqTrack *seqtrack, struct
 bool SEQBLOCK_set_fade_in_shape(struct SeqBlock *seqblock, enum FadeShape shape);
 bool SEQBLOCK_set_fade_out_shape(struct SeqBlock *seqblock, enum FadeShape shape);
 
+extern LANGSPEC void RT_SEQBLOCK_reserve_playing_notes_tracks(struct SeqBlock *seqblock,
+                                                              int num_tracks);
+
+extern LANGSPEC void RT_SEQBLOCK_add_playing_note(struct SeqBlock *seqblock,
+                                                  const struct Tracks *track,
+                                                  struct Notes *note);
+
+extern LANGSPEC void RT_SEQBLOCK_remove_playing_note(struct SeqBlock *seqblock,
+                                                     const struct Tracks *track,
+                                                     struct Notes *note);
+
+// must be called when seqblock is finished.
+extern LANGSPEC void RT_SEQBLOCK_remove_all_playing_notes(struct SeqBlock *seqblock);
+
+// Called when player is stopped.
+extern LANGSPEC void RT_SEQUENCER_remove_all_playing_notes(void);
 
 extern LANGSPEC void RT_EDITSEQBLOCK_call_each_block(struct SeqTrack *seqtrack,
                                                      const struct SeqBlock *seqblock,

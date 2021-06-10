@@ -36,7 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "clipboard_range_copy_proc.h"
 
 
-
+/*
 static void CopyRange_velocities(
                           struct Velocities **tovelocity,
                           const struct Velocities *fromvelocity,
@@ -57,7 +57,34 @@ static void CopyRange_velocities(
 
 	CopyRange_velocities(tovelocity,NextVelocity(fromvelocity),p1,p2);
 }
+*/
 
+
+static void CopyRange_velocities2(
+                                  r::TimeData<r::Velocity> *to,
+                                  const r::TimeData<r::Velocity> *from,
+                                  const Place *p1,
+                                  const Place *p2
+                                  )
+{
+  r::TimeData<r::Velocity>::Reader reader(from);
+
+  r::TimeData<r::Velocity>::Writer writer(to, true);
+  
+  Ratio start = place2ratio(*p1);
+  Ratio end = place2ratio(*p2);
+  
+  R_ASSERT_NON_RELEASE(end>=start);
+  
+  for(r::Velocity velocity : reader){
+    if (velocity._time >= start) {
+      if (velocity._time >= end)
+        break;
+      velocity._time -= start;
+      writer.add(velocity);
+    }
+  }
+}
 
 static void CopyRange_pitches(
                        struct Pitches **topitch,
@@ -88,8 +115,6 @@ void CopyRange_notes(
                      const Place *p2
 ){
 
-	struct Notes *note;
-
 	if(fromnote==NULL){
 		return;
 	}
@@ -105,17 +130,19 @@ void CopyRange_notes(
 		return;
 	}
 
-	note=CopyNote(fromnote);
+	struct Notes *note=CopyNote(fromnote);
         note->pitches = NULL;
-        note->velocities = NULL;
-        NOTE_init(note);
+        //note->velocities = NULL;
 
 	PlaceSub(&note->l.p,p1);
-	PlaceSub(&note->end,p1);
+
+        note->end -= place2ratio(*p1);
+	//PlaceSub(&note->end,p1);
 
 	ListAddElement3_a(tonote,&note->l);
 
-	CopyRange_velocities(&note->velocities,fromnote->velocities,p1,p2);
+	//CopyRange_velocities(&note->velocities,fromnote->velocities,p1,p2);
+	CopyRange_velocities2(note->_velocities,fromnote->_velocities,p1,p2);
 	CopyRange_pitches(&note->pitches,fromnote->pitches,p1,p2);
 
 	CopyRange_notes(tonote,NextNote(fromnote),p1,p2);
@@ -135,8 +162,8 @@ void CopyRange_stops(
 
   r::TimeData<r::Stop>::Writer writer(to_stop, true);
 
-  Ratio start = make_ratio_from_place(*p1);
-  Ratio end = make_ratio_from_place(*p2);
+  Ratio start = place2ratio(*p1);
+  Ratio end = place2ratio(*p2);
 
   R_ASSERT_NON_RELEASE(end>=start);
 
@@ -416,9 +443,9 @@ void CopyRange(
           if (p_Equal(range.y2, p2))
             r2 = make_ratio(block->num_lines, 1);
           else
-            r2 = make_ratio_from_place(range.y2);
+            r2 = place2ratio(range.y2);
           
-          CopyRange_fxs(block->num_lines, &range_clip->fxs[lokke], &track->fxs, make_ratio_from_place(range.y1), r2);
+          CopyRange_fxs(block->num_lines, &range_clip->fxs[lokke], &track->fxs, place2ratio(range.y1), r2);
 
           track=NextTrack(track);
           if (track==NULL)

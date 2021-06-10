@@ -84,11 +84,11 @@ static inline float get_realline_y(const struct Tracker_Windows *window, float r
 
 #ifdef __cplusplus
 static inline int FindReallineForRatio(const struct WBlocks *wblock, int realline, const Ratio &ratio){
-  Place place = make_place_from_ratio(ratio);
+  Place place = ratio2place(ratio);
   return FindRealLineFor(wblock, realline, &place);
 }
 static inline float FindReallineForRatioF(const struct WBlocks *wblock, int realline, const Ratio &ratio){
-  Place place = make_place_from_ratio(ratio);
+  Place place = ratio2place(ratio);
   return FindReallineForF(wblock, realline, &place);
 }
 #endif

@@ -171,6 +171,19 @@ static inline void SaveLogType(int logtype){
   DC_SaveCleanString(s);DC_SaveCleanString("\n");
 }
 
+#ifdef __cplusplus
+static inline void DC_SaveRatio(const Ratio &ratio){
+  DC_SaveL(ratio.num);
+  DC_SaveL(ratio.den);
+}
+static inline Ratio DC_LoadRatio(int64_t num = -1, bool has_num = false){
+  if (!has_num)
+    num = DC_LoadL();
+  int64_t den = DC_LoadL();
+  return make_ratio(num, den);
+}
+#endif
+
 #define DC_success() if( ! dc.success ) return
 
 #define DC_start(structname) DC_success();DC_SaveST(structname)

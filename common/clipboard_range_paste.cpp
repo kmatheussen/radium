@@ -39,7 +39,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "clipboard_range_paste_proc.h"
 
-
+/*
 static void PasteRange_velocities(
                                   const struct Blocks *block,
                                   struct Velocities **tovelocity,
@@ -60,6 +60,33 @@ static void PasteRange_velocities(
 	ListAddElement3_a(tovelocity,&velocity->l);
 
 	PasteRange_velocities(block,tovelocity,NextVelocity(fromvelocity),place);
+}
+*/
+static void PasteRange_velocities2(
+                                   const struct Blocks *block,
+                                   r::TimeData<r::Velocity> *to,
+                                   const r::TimeData<r::Velocity> *from,
+                                   const Place *place
+                                   )
+{
+  r::TimeData<r::Velocity>::Reader reader(from);
+  
+  if (reader.size()==0)
+    return;
+  
+  Ratio ratio = ratio_from_place(*place);
+  
+  r::TimeData<r::Velocity>::Writer writer(to, true);
+  
+  for(r::Velocity velocity : reader){
+    
+    velocity._time += ratio;
+    
+    if (velocity._time > block->num_lines)
+      break;
+    
+    writer.add(velocity);
+  }
 }
 
 static bool PasteRange_FXs(
@@ -143,21 +170,25 @@ static void PasteRange_notes(
 
 	struct Notes *note=CopyNote(fromnote);
 	PlaceAdd(&note->l.p,place);
-	PlaceAdd(&note->end,place);
+	//PlaceAdd(&note->end,place);
+        note->end += place2ratio(*place);
         
         Place lastplace = p_Last_Pos(block);
-
+        
 	if(PlaceGreaterThan(&note->l.p,&lastplace))
           return;
 
-	if(PlaceGreaterThan(&note->end,&lastplace)){
-          PlaceSetLastPos(block,&note->end);
+        Ratio r_lastplace = place2ratio(lastplace);
+
+	if(note->end > r_lastplace) {
+          note->end = r_lastplace;
           note->noend=1;
 	}
 
 	ListAddElement3_a(&track->notes,&note->l);
         
-	PasteRange_velocities(block,&note->velocities,fromnote->velocities,place);
+	//PasteRange_velocities(block,&note->velocities,fromnote->velocities,place);
+	PasteRange_velocities2(block,note->_velocities,fromnote->_velocities,place);
 	PasteRange_pitches(block,&note->pitches,fromnote->pitches,place);
 
 	PasteRange_notes(block,track,NextNote(fromnote),place);
@@ -173,14 +204,14 @@ static void PasteRange_stops(
 	const Place *place
 ){
 
-        Ratio lastplace = make_ratio_from_place(p_Last_Pos(block));
+        Ratio lastplace = place2ratio(p_Last_Pos(block));
         
 
         r::TimeData<r::Stop>::Reader reader(from_stop);
 
         r::TimeData<r::Stop>::Writer writer(to_stop);
 
-        Ratio how_much = make_ratio_from_place(*place);
+        Ratio how_much = place2ratio(*place);
         
         for(r::Stop stop : reader){
           stop._time += how_much;

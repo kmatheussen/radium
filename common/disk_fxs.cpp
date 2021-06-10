@@ -54,9 +54,10 @@ void SaveFXs(vector_t *fxss,struct Tracks *track){
 }
 
 struct FXs *LoadFXs(struct Tracks *track){
-	const char *objs[2]={
+	const char *objs[3]={
 		"FX",
-		"FXNODELINES"
+		"FXNODELINES",
+		"FXNODELINES2"
 	};
 	static const char **vars=NULL;
 
@@ -65,7 +66,7 @@ struct FXs *LoadFXs(struct Tracks *track){
 	printf("\tLoadFXs_start\n");
 	int effect_num = DC_LoadN();
 
-	GENERAL_LOAD(2,0)
+	GENERAL_LOAD(3,0)
 
 obj0:
 	fxs->fx=LoadFX(track);
@@ -79,6 +80,9 @@ obj1:
 
 
 obj2:
+	LoadFXNodeLines2(fxs);
+	goto start;
+        
 obj3:
 obj4:
 obj5:

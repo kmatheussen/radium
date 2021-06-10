@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "../common/nsmtracker.h"
+#include "../common/TimeData.hpp"
 #include "../common/list_proc.h"
 #include "../common/vector_proc.h"
 #include "../common/placement_proc.h"
@@ -480,7 +481,16 @@ struct Pitches *getPitchFromNum(int windownum,int blocknum,int tracknum,dyn_t dy
 }
 
 
-struct Velocities *getVelocityFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, dyn_t dynnote, struct Notes **note, int velocitynum){
+const r::Velocity *getVelocityFromNumA(int windownum,
+                                       struct Tracker_Windows **window,
+                                       int blocknum,
+                                       struct WBlocks **wblock,
+                                       int tracknum,
+                                       struct WTracks **wtrack,
+                                       dyn_t dynnote,
+                                       struct Notes **note,
+                                       int velocitynum)
+{
   (*note) = getNoteFromNumA(windownum, window, blocknum, wblock, tracknum, wtrack, dynnote);
   if ((*note)==NULL)
     return NULL;
@@ -488,20 +498,28 @@ struct Velocities *getVelocityFromNumA(int windownum,struct Tracker_Windows **wi
   if (velocitynum==0)
     return NULL; // velocity 0 is the note itself.
 
-  int num_velocities = ListFindNumElements3((struct ListHeader3*)(*note)->velocities);
-  if (velocitynum==num_velocities+1)
+  r::TimeData<r::Velocity>::Reader reader((*note)->_velocities);
+  
+  int num_velocities = reader.size();
+
+  velocitynum--;
+
+  if (velocitynum==num_velocities)
     return NULL; // last velocity
-      
-  struct Velocities *velocity = (struct Velocities *)ListFindElement3_num_r0(&(*note)->velocities->l, velocitynum-1);
-  if (velocity==NULL){
+
+  if (velocitynum < 0 || velocitynum > num_velocities) {
     handleError("There is no velocity #%d in note with id \"%d\" in track #%d in block #%d",velocitynum,(int)(*note)->id,tracknum,blocknum);
     return NULL;
   }
 
-  return velocity;
+  static r::Velocity ret(make_ratio(0,1),1,1);
+
+  ret = reader.at_ref(velocitynum); // Return a copy just in case. Should not use nodes outside the reader scope.
+  
+  return &ret;
 }
 
-struct Velocities *getVelocityFromNum(int windownum,int blocknum,int tracknum,dyn_t dynnote,int velocitynum){
+const r::Velocity *getVelocityFromNum(int windownum,int blocknum,int tracknum,dyn_t dynnote,int velocitynum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
@@ -896,31 +914,39 @@ struct SeqBlock *getGfxGfxSeqblockFromNumA(int seqblocknum, int seqtracknum, str
 
 // NOTES
 
-static const Place *getPrevLegalNotePlace(const struct Tracks *track, const struct Notes *note){
-  const Place *end = PlaceGetFirstPos(); // small bug here, cant move pitch to first position, only almost to first position.
+static const Place getPrevLegalNotePlace(const struct Tracks *track, const struct Notes *note){
+  Place end = *PlaceGetFirstPos(); // small bug here, cant move pitch to first position, only almost to first position.
 
   struct Notes *prev = FindPrevNoteOnSameSubTrack(track, note);
   //printf("prev: %p. next(prev): %p, note: %p, next(note): %p\n",prev,prev!=NULL?NextNote(prev):NULL,note,NextNote(note));
   
   if (prev != NULL) {
-    end = &prev->l.p;
-    if (prev->velocities!=NULL)
-      end = ListLastPlace3(&prev->velocities->l);
+    end = prev->l.p;
+
+    r::TimeData<r::Velocity>::Reader reader(note->_velocities);
+    
+    if (reader.size() > 0)
+      end = ratio2place(reader.at_last()._time);
+    
     if (prev->pitches!=NULL)
-      end = PlaceMax(end, ListLastPlace3(&prev->pitches->l));
+      end = *PlaceMax(&end, ListLastPlace3(&prev->pitches->l));
   }
   
   return end;
 }
 
-static const Place *getNextLegalNotePlace(const struct Notes *note){
-  const Place *end = &note->end;
+static const Place getNextLegalNotePlace(const struct Notes *note){
+  Place end = ratio2place(note->end);
 
-  if (note->velocities != NULL)
-    end = PlaceMin(end, &note->velocities->l.p);
+  r::TimeData<r::Velocity>::Reader reader(note->_velocities);
+
+  if (reader.size() > 0) {
+    Place first_vel = ratio2place(reader.at_first()._time);    
+    end = *PlaceMin(&end, &first_vel);
+  }
 
   if (note->pitches != NULL)
-    end = PlaceMin(end, &note->pitches->l.p);
+    end = *PlaceMin(&end, &note->pitches->l.p);
 
   return end;
 }
@@ -957,27 +983,35 @@ void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes *note,
     
   }
 
-  
-  const Place *last_pitch = ListLastPlace3((struct ListHeader3*)note->pitches);
-  const Place *last_velocity = ListLastPlace3((struct ListHeader3*)note->velocities);
   const Place *startPlace = &note->l.p;
 
+  const Place *last_pitch = ListLastPlace3((struct ListHeader3*)note->pitches);
   if (last_pitch==NULL)
     last_pitch = startPlace;
-  if (last_velocity==NULL)
+  
+  Place das_last_velocity;
+  r::TimeData<r::Velocity>::Reader velocity_reader(note->_velocities);
+  int num_velocities = velocity_reader.size();
+  
+  const Place *last_velocity = NULL; //ListLastPlace3((struct ListHeader3*)note->velocities);
+  if (num_velocities==0)
     last_velocity = startPlace;
-
+  else {
+    das_last_velocity = ratio2place(velocity_reader.at_last()._time);
+    last_velocity = &das_last_velocity;
+  }
+  
   const Place *firstLegalConst = PlaceMax(last_pitch, last_velocity);
   PlaceFromLimit(&firstLegal, firstLegalConst);
 
   {
     SCOPED_PLAYER_LOCK_IF_PLAYING();
     Place new_end = *PlaceBetween(&firstLegal, place, &lastLegal);
-    note->end = new_end;
+    note->end = place2ratio(new_end);
     NOTE_validate(block, track, note);
   }
     
-  R_ASSERT(PlaceLessOrEqual(&note->end, &lastLegal));
+  R_ASSERT(note->end <= place2ratio(lastLegal));
 }
 
 dyn_t MoveNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Place *place, bool replace_note_ends){
@@ -988,14 +1022,14 @@ dyn_t MoveNote(struct Blocks *block, struct Tracks *track, struct Notes *note, P
     //printf("MoveNote. old: %f, new: %f\n", GetfloatFromPlace(&old_place), GetfloatFromPlace(place));
          
     if (PlaceLessThan(place, &old_place)) {
-      const Place *prev_legal = getPrevLegalNotePlace(track, note);
+      const Place prev_legal = getPrevLegalNotePlace(track, note);
       //printf("prev_legal: %f\n",GetfloatFromPlace(prev_legal));
-      if (PlaceLessOrEqual(place, prev_legal))
-        PlaceFromLimit(place, prev_legal);
+      if (PlaceLessOrEqual(place, &prev_legal))
+        PlaceFromLimit(place, &prev_legal);
     } else {
-      const Place *next_legal = getNextLegalNotePlace(note);
-      if (PlaceGreaterOrEqual(place, next_legal))
-        PlaceTilLimit(place, next_legal);
+      const Place next_legal = getNextLegalNotePlace(note);
+      if (PlaceGreaterOrEqual(place, &next_legal))
+        PlaceTilLimit(place, &next_legal);
     }
     
     {

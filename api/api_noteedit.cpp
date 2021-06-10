@@ -406,7 +406,7 @@ void cutNote(Place place, dyn_t dynnote, int tracknum, int blocknum, int windown
   if (note==NULL)
     return;
 
-  if (PlaceGreaterOrEqual(&place, &note->end))
+  if (place2ratio(place) >= note->end)
     return;
   
   if (PlaceLessOrEqual(&place, &note->l.p))
@@ -541,7 +541,7 @@ Place getNoteEnd(dyn_t dynnote, int tracknum, int blocknum, int windownum){
   if(note==NULL)
     return p_Create(1,0,1);
 
-  return note->end;
+  return ratio2place(note->end);
 }
 
 float getNoteValue(dyn_t dynnote, int tracknum, int blocknum, int windownum){

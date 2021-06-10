@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/placement_proc.h"
 #include "../common/visual_proc.h"
 #include "../common/ratio_funcs.h"
+#include "../common/notes_proc.h"
 
 #include "../Qt/Qt_PopupMenu_proc.h"
 
@@ -2370,7 +2371,7 @@ bool quantitize_note(const struct Blocks *block, struct Notes *note, bool *was_c
                                             6,
                                             scheme_func,
                                             place_to_ratio(&note->l.p),
-                                            place_to_ratio(&note->end),
+                                            note->end,
                                             s7_make_ratio(s7, quant.num, quant.den),
                                             place_to_ratio(&last_place),
                                             s7_make_integer(s7, root->quantitize_options.type),
@@ -2387,14 +2388,14 @@ bool quantitize_note(const struct Blocks *block, struct Notes *note, bool *was_c
   }
 
   Place new_start = number_to_place(s7, s7_car(result), NULL);
-  Place new_end = number_to_place(s7, s7_cdr(result), NULL);
+  Ratio new_end = place2ratio(number_to_place(s7, s7_cdr(result), NULL));
 
   if (!p_Equal(new_start, note->l.p)){
     note->l.p = new_start;
     *was_changed = true;
   }
 
-  if (!p_Equal(note->end, new_end)){
+  if (note->end != new_end) {
     note->end = new_end;
     *was_changed = true;
   }
