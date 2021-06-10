@@ -152,7 +152,7 @@ static int64_t RT_schedule_end_note(struct SeqTrack *seqtrack,
 
   if (!note_continues_next_seqblock(seqblock, note)){
           
-    int64_t time = get_seqblock_place_time3(seqblock, track, note->end);
+    int64_t time = get_seqblock_ratio_time2(seqblock, track, note->end);
 
     if (time < note_start_time){
       // RError("time >= note_start_time: %d - %d", (int)time, (int)note_start_time); // Can happen if seq_time < pc->start_time in schedule_event.

@@ -351,7 +351,7 @@ void r::TimeData<T>::ReaderWriter<TimeData, TimeDataVector>::iterate_extended(st
       
       if (das_size==1 && track_period._end >= first_t._time) {
 
-        int64_t node_time = get_seqblock_place_time3(seqblock, track, first_t._time);
+        int64_t node_time = get_seqblock_ratio_time2(seqblock, track, first_t._time);
         callback.callback(seqtrack, seqblock, track, first_t._val, node_time, FX_single);
 
         cache.update_value(first_t._val);
