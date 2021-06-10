@@ -139,8 +139,6 @@ static void PlayStopReally(bool doit, bool stop_jack_transport_as_well){
     return;
   }
 
-  RT_SEQUENCER_remove_all_playing_notes();
-  
   PLAYER_lock();{
     
     StopAllInstruments();
@@ -517,6 +515,7 @@ static void PlayHandleRangeLoop(void){
     if (g_player_was_stopped_manually==false) {
       maybe_draw_lock(&got_lock);
       //printf(" here\n");
+
       StopAllInstruments();
       
       if (MIXER_is_saving())

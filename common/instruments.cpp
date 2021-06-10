@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "list_proc.h"
 #include "vector_proc.h"
 #include "patch_proc.h"
+#include "sequencer_proc.h"
 
 #include "instruments_proc.h"
 #include "../midi/midi_instrument_proc.h"
@@ -118,6 +119,8 @@ void RT_StopAllInstruments(void){
 
 void StopAllInstruments(void){
         struct Instruments *instrument=g_instruments;
+
+        RT_SEQUENCER_remove_all_playing_notes(); // don't need lock. Probably better to call it outside lock.
         
         radium::PlayerRecursiveLock lock;
           
