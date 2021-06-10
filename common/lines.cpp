@@ -79,13 +79,15 @@ static void InsertLines_notes(
 			note->noend=1;
 		}else{
                   Ratio new_end = note->end + toinsert;
-                  if (new_end > line)
-                    note->end = make_ratio(line,1);
+                  if (new_end > make_ratio(block->num_lines, 1))
+                    note->end = make_ratio(block->num_lines, 1);
+                  note->end = new_end;
 		}
           /*
                 if(note->velocities!=NULL) // need check to avoid ubsan/asan hit
                   List_InsertLines3(&note->velocities,&note->velocities->l,line,toinsert,NULL);
           */
+          
                 {
                   r::TimeData<r::Velocity>::Writer writer(note->_velocities);
                   writer.insert_lines(make_ratio(line, 1), make_ratio(toinsert, 1));
