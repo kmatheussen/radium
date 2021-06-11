@@ -4186,10 +4186,12 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
       data->p.note_adjust = int(data->p.note_adjust);
     }
 
-    // Loop points. Setting loop points is tricky. Make sure everything is right.
+    // Loop points. Setting loop points is tricky. Make sure everything is right. (This should not have been necessary though, but I think it was)
     {
-      if(successfully_set_new_sample)
+      if(successfully_set_new_sample){
+        radium::PlayerLock lock(SP_is_plugin_running(plugin));
         RT_set_loop_points_complete(plugin, data, loop_start, loop_end);
+      }
     }
 
   }
