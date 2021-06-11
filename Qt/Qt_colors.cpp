@@ -352,7 +352,7 @@ static ReplacementColor g_replacement_color[] = {
   {SLIDER_POINTER_COLOR_NUM, QColor("#ffa38672")},
   {SLIDER_RECORDING_COLOR_NUM, QColor("#ffc50003")},
 
-  {PEAKS_COLOR_NUM,     QColor("#ff10ff68")},
+  {PEAKS_COLOR_NUM,     QColor("#ff12fc12")},
   {PEAKS_0DB_COLOR_NUM, QColor("#ffffe200")},
   {PEAKS_4DB_COLOR_NUM, QColor("#ffff0707")},
 
