@@ -156,6 +156,7 @@ static const ColorConfig g_colorconfig[] = {
   {SLIDER_BACKGROUND_COLOR_NUM,  "slider_background",  "Slider background", false},
   {SLIDER_DISABLED_COLOR_NUM,   "slider_disabled",    "Slider disabled", false},
   {SLIDER_TEXT_COLOR_NUM,       "slider_text",        "Slider Text", false},
+  {SLIDER_POINTER_COLOR_NUM,       "slider_pointer",        "Slider pointer", false},
   {SLIDER_RECORDING_COLOR_NUM,  "slider_recording",   "Slider recording", false},
 
   {TAB_SELECTED_COLOR_NUM,  "tab_selected",   "Selected tab", false},
@@ -348,6 +349,7 @@ static ReplacementColor g_replacement_color[] = {
   {TRACK_SLIDER_COLOR_NUM, QColor("#ff939393")},
   
   {SLIDER_TEXT_COLOR_NUM, QColor("#fffffbf0")},
+  {SLIDER_POINTER_COLOR_NUM, QColor("#ffa38672")},
   {SLIDER_RECORDING_COLOR_NUM, QColor("#ffc50003")},
 
   {PEAKS_COLOR_NUM,     QColor("#ff10ff68")},

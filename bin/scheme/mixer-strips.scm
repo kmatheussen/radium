@@ -2109,7 +2109,18 @@
   (define automation-slider-value -10)
 
   (define volume-automation-color (<ra> :get-instrument-effect-color instrument-id effect-name))
-                                 
+
+  ;; confusing. looks like peaks.
+  ;(define (get-pointer-color db)
+  ;  (cond ((<= db -20)
+  ;         (<gui> :make-color-darker "peaks" 1.2))
+  ;        ((<= db 0)
+  ;         "peaks")
+  ;        ((<= db 4)
+  ;         "peaks0db")
+  ;        (else
+  ;         "peaks4db")))
+          
   (set! paint-slider
         (lambda ()
           (define volslider-width (<gui> :width volslider))
@@ -2121,7 +2132,10 @@
           (define height (<gui> :height volslider))
           (define x1 0)
           (define x2 width)
-          (define middle_y (scale (db-to-slider (get-volume)) 0 1 height 0))
+
+          (define db (get-volume))
+          
+          (define middle_y (scale (db-to-slider db) 0 1 height 0))
           
           ;; background
           (<gui> :filled-box volslider background-color 0 0 volslider-width height)
@@ -2135,6 +2149,22 @@
           (<gui> :filled-box volslider col2 x1 0 x2 height volslider-rounding volslider-rounding) ;; up (fill everything)
           (<gui> :filled-box volslider col1 x1 middle_y x2 height volslider-rounding volslider-rounding) ;; down
 
+          ;; slider handler
+          (define pointer-color "slider_pointer") ;;(get-pointer-color db))
+          (define pointer-height (/ fontheight 12))
+          (<gui> :filled-box volslider pointer-color
+                 (+ x1 0) (- middle_y pointer-height)
+                 (- x2 0) (+ middle_y pointer-height)
+                 1 1)
+          ;(<gui> :filled-box volslider "green"
+          ;       (+ x1 1) (- middle_y 1)
+          ;       (- x2 1) (+ middle_y 1)
+          ;       1 1)
+          ;(<gui> :filled-box volslider (<gui> :make-color-darker pointer-color 2.5)
+          ;       (+ x1 2) (- middle_y 0.5)
+          ;       (- x2 2) (+ middle_y 0.5)
+          ;       1 1)
+          
           ;; slider border
           (<gui> :draw-box volslider "#222222" (+ 0.5 x1) 0.5 (- x2 0.5) (- height 0.5) 1.0 volslider-rounding volslider-rounding)
           ;;(<gui> :filled-box volslider "black" 0 0 (1+ x2) height)
