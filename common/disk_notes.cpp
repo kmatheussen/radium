@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "nsmtracker.h"
+#include "TimeData.hpp"
 #include "placement_proc.h"
 #include "disk.h"
 #include "disk_placement_proc.h"
@@ -120,6 +121,27 @@ struct Notes *LoadNote(void){
             DC_Next();
             LoadPitches(&note->pitches);
             DC_Next();
+        }
+
+        // Workaround for bug in old Radium (<= V6.9.75). We do this to make sure old songs sound the same.
+        //
+        if (disk_load_version < 1.225) {
+
+          /* In the old version of Radium, if the following test was true:
+
+                (note->velocities==NULL && equal_floats(note->velocity_end, 0.0)
+
+             ...then Radium didn't handle velocities for that note. Of course, the test should have looked like this:
+ 
+                note->velocities==NULL && (note->velocity_first_logtype==LOGTYPE_HOLD || equal_floats(note->velocity, note->velocity_end)
+
+             But nonetheless, old songs should sound the same, so we just set velocity_end to the same value as velocity_first when
+             velocity_end==0 and velocities.size()==0.
+          */
+
+          if (r::TimeData<r::Velocity>::Reader(note->_velocities).size()==0)
+            if (equal_floats(note->velocity_end, 0.0))
+              note->velocity_end = note->velocity;
         }
         
         /*
