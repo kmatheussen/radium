@@ -125,9 +125,9 @@ struct Notes *LoadNote(void){
 
         // Workaround for bug in old Radium (<= V6.9.75). We do this to make sure old songs sound the same.
         //
-        if (disk_load_version < 1.225) {
+        if (disk_load_version > 0.88 && disk_load_version < 1.225) {
 
-          /* In the old version of Radium, if the following test was true:
+          /* In these old versions of Radium, if the following test was true:
 
                 (note->velocities==NULL && equal_floats(note->velocity_end, 0.0)
 
@@ -135,7 +135,7 @@ struct Notes *LoadNote(void){
  
                 note->velocities==NULL && (note->velocity_first_logtype==LOGTYPE_HOLD || equal_floats(note->velocity, note->velocity_end)
 
-             But nonetheless, old songs should sound the same, so we just set velocity_end to the same value as velocity_first when
+             ...But nonetheless, old songs should sound the same, so we just set velocity_end to the same value as velocity_first when
              velocity_end==0 and velocities.size()==0.
           */
 
