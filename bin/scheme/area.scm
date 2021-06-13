@@ -971,7 +971,7 @@
   (define (paint-text-area gui x1 y1 x2 y2)
     (let ((background-color (get-background-color)))
       (if background-color
-          (<gui> :filled-box gui background-color x1 y1 x2 y2 border-rounding border-rounding #t)))
+          (<gui> :filled-box gui background-color x1 y1 x2 y2 border-rounding border-rounding)))
 
     (define text (maybe-thunk-value text))
 
@@ -2184,7 +2184,7 @@
                                         (<gui> :create-block-drag-icon gui (floor width) (floor height) (floor (- x* x1)) (floor (- y* y1)) blocknum
                                                (lambda (gui width height)
                                                  ;;(c-display "-------w2: " width height)
-                                                 ;;(<gui> :filled-box gui "#00000000" 0 0 width height 0 0 #f) ;; fill with transparent background
+                                                 ;;(<gui> :filled-box gui "#00000000" 0 0 width height 0 0 *no-gradient*) ;; fill with transparent background
                                                  (paint2 gui -1 0 width height)
                                                  ;;(line :paint-text-area gui 0 0 width height)
                                                  ;;(<gui> :draw-line gui "black" 5 3 10 5 20)
@@ -2225,7 +2225,7 @@
     ;;    (set! entry-background-color (<gui> :mix-colors entry-background-color "green" 0.1)))
 
     ;;(<gui> :filled-box gui (<gui> :get-background-color gui) (+ 1 x1) y1 x2 y2 4 4)
-    (<gui> :filled-box gui entry-background-color (+ 1 x1) y1 (- x2 2) y2 4 4 (if background-color #t #f))
+    (<gui> :filled-box gui entry-background-color (+ 1 x1) y1 (- x2 2) y2 4 4 (if background-color *gradient-default* *no-gradient*))
 
     ;; name
     (<gui> :draw-text gui (get-text-color) name-text

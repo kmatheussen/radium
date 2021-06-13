@@ -483,7 +483,7 @@
                                           0.5))
                       :border-color (lambda ()
                                       (if (is-current?)
-                                          "sequencer_curr_seqblock_border_color" ;;"sequencer_text_current_block_color"
+                                          "sequencer_curr_seqblock_border_color" ;; "sequencer_cursor_color" "sequencer_text_current_block_color"
                                           "high_background"))
                       :cut-text-to-fit #t
                       :text-is-base64 #t
@@ -807,7 +807,7 @@
 
   ;;(<gui> :set-background-color gui "low_background") doesn't work on osx. (really strange)
   (define-override (paint) ;; workaround for osx.
-    (<gui> :filled-box gui "low_background" x1 y1 x2 y2 0 0 #t))
+    (<gui> :filled-box gui "low_background" x1 y1 x2 y2 0 0))
 
 
   (add-raw-mouse-cycle!
