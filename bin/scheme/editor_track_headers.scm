@@ -571,7 +571,7 @@
 
   ;; Workaround. TODO: Investigate why this is necessary.
   (define-override (paint)
-    (<gui> :filled-box gui "high_background" x1 y1 x2 y2 -1 -1 #f))
+    (<gui> :filled-box gui "high_background" x1 y1 x2 y2 -1 -1 *no-gradient*))
   )
 
 (define *last-created-editor-track-headers-area* (if (defined? '*last-created-editor-track-headers-area*)

@@ -17,6 +17,22 @@
 (define-constant *mixer-strip-background-color* "#222222")
 (define *current-mixer-strip-border-color* "mixerstrips_selected_object_color_num")
 
+(define-constant *no-gradient* -1)
+(define-constant *gradient-horizontal-dark-left* 0)
+(define-constant *gradient-horizontal-light-left* 1)
+(define-constant *gradient-vertical-dark-top* 2)
+(define-constant *gradient-vertical-light-top* 3)
+(define-constant *gradient-horizontal-dark-sides* 4)
+(define-constant *gradient-horizontal-light-sides* 5)
+(define-constant *gradient-vertical-dark-sides* 6)
+(define-constant *gradient-vertical-light-sides* 7)
+(define-constant *gradient-diagonal-dark-upper-left* 8)
+(define-constant *gradient-diagonal-light-upper-left* 9)
+(define-constant *gradient-diagonal-dark-upper-right* 10)
+(define-constant *gradient-diaglonal-light-upper-right* 11)
+
+(define *gradient-default* *gradient-vertical-light-top*)
+
 (define *last-statusbar-id* -1)
 
 (define (set-editor-statusbar text)
@@ -551,7 +567,7 @@
   (define background (if is-on
                          (<gui> :mix-colors background-color "black" 0.39)
                          (<gui> :mix-colors background-color "white" 0.95)))
-  (<gui> :filled-box gui background x1 y1 x2 y2 5 5 #f)
+  (<gui> :filled-box gui background x1 y1 x2 y2 5 5 *no-gradient*)
   (define col1 (<gui> :mix-colors "white" background 0.4))
   (define col2 (<gui> :mix-colors "#010101" background 0.5))
 
@@ -562,9 +578,9 @@
   
   (define middle (scale value -90 90 (+ inner-width/2 outer-width/2) (- width (+ inner-width/2 outer-width/2))))
   
-  (<gui> :filled-box gui col1 (+ x1 (- middle inner-width/2))               (+ y1 2) (+ x1 middle inner-width/2)               (- y2 3) -1 -1 #f)
-  (<gui> :filled-box gui col2 (+ x1 (- middle inner-width/2 outer-width/2)) (+ y1 2) (+ x1 (- middle inner-width/2))           (- y2 3) -1 -1 #f)
-  (<gui> :filled-box gui col2 (+ x1 (+ middle inner-width/2))               (+ y1 2) (+ x1 middle inner-width/2 outer-width/2) (- y2 3) -1 -1 #f)
+  (<gui> :filled-box gui col1 (+ x1 (- middle inner-width/2))               (+ y1 2) (+ x1 middle inner-width/2)               (- y2 3) -1 -1 *no-gradient*)
+  (<gui> :filled-box gui col2 (+ x1 (- middle inner-width/2 outer-width/2)) (+ y1 2) (+ x1 (- middle inner-width/2))           (- y2 3) -1 -1 *no-gradient*)
+  (<gui> :filled-box gui col2 (+ x1 (+ middle inner-width/2))               (+ y1 2) (+ x1 middle inner-width/2 outer-width/2) (- y2 3) -1 -1 *no-gradient*)
   ;;(<gui> :draw-text gui "white" (<-> value "o") 0 0 width height #t)
 
   (when (and automation-slider-value
@@ -606,8 +622,8 @@
   (define pos (scale value 0 1 x1 x2))
   ;;(<gui> :filled-box widget (<gui> :get-background-color widget) x1 y1 x2 y2)
   (if color2
-      (<gui> :filled-box widget color2 (1+ x1) (1+ y1) (1- x2) (1- y2) rounding rounding #f))
-  (<gui> :filled-box widget color x1 y1 pos y2 rounding rounding #f)
+      (<gui> :filled-box widget color2 (1+ x1) (1+ y1) (1- x2) (1- y2) rounding rounding *no-gradient*))
+  (<gui> :filled-box widget color x1 y1 pos y2 rounding rounding *no-gradient*)
   
   ;;(if (equal? (<ra> :get-current-instrument) instrument-id)
   ;;    (<gui> :filled-box widget "#aa111144" 1 1 (1- width) (1- height) 5 5))
@@ -758,7 +774,7 @@
                      color))
                (+ x-border x1) (+ y-border y1) (- x2 x-border) (- y2 y-border)
                box-rounding box-rounding
-               gradient-background))
+               (if gradient-background *gradient-default* *no-gradient*)))
 
     ;;(set! text "Gakk")
     
@@ -1736,7 +1752,7 @@
                                             (<gui> :is-enabled widget))
                                        hover-background-color
                                        nonhover-background-color)))
-             (<gui> :filled-box widget background-color 0 0 width height -1 -1 #f))
+             (<gui> :filled-box widget background-color 0 0 width height -1 -1 *no-gradient*))
            
            (if is-first
                (<gui> :draw-line widget

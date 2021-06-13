@@ -343,8 +343,8 @@
 
   (define (paint-background)
 
-    ;;(<gui> :filled-box gui "sequencer_timeline_background_color" x1 y1 x2 y2 0 0 #f)
-    ;;(<gui> :filled-box gui "sequencer_background_color" x1 y1 x2 y2 0 0 #f)
+    ;;(<gui> :filled-box gui "sequencer_timeline_background_color" x1 y1 x2 y2 0 0 *no-gradient*)
+    ;;(<gui> :filled-box gui "sequencer_background_color" x1 y1 x2 y2 0 0 *no-gradient*)
 
     (set! paint-entries (to-list (get-visible-entries)))
 
@@ -945,7 +945,7 @@
   ;;(c-display "    Timeline-area y1/y2:" y1 y2)
   
   (define-override (paint)
-    (<gui> :filled-box gui "sequencer_background_color" x1 y1 x2 y2 0 0 #f)
+    (<gui> :filled-box gui "sequencer_background_color" x1 y1 x2 y2 0 0 *no-gradient*)
 
     (for-each (lambda (sub-area)
                 (sub-area :paint-background))

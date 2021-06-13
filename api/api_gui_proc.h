@@ -49,6 +49,26 @@ bool API_run_mouse_leave_event_for_custom_widget(QWidget *widget, QEvent *ev);
 void API_run_resize_event_for_custom_widget(QWidget *widget, QResizeEvent *ev);
 #endif
 
+namespace r{
+  enum GradientType{
+    HORIZONTAL_DARK_LEFT,
+    HORIZONTAL_LIGHT_LEFT,
+    VERTICAL_DARK_TOP,
+    VERTICAL_LIGHT_TOP,
+    HORIZONTAL_DARK_SIDES,
+    HORIZONTAL_LIGHT_SIDES,
+    VERTICAL_DARK_SIDES,
+    VERTICAL_LIGHT_SIDES,
+    DIAGONAL_DARK_UPPER_LEFT,
+    DIAGONAL_LIGHT_UPPER_LEFT,
+    DIAGONAL_DARK_UPPER_RIGHT,
+    DIAGONAL_LIGHT_UPPER_RIGHT,
+    NUM_GRADIENT_TYPES,
+  };
+}
+
+extern QLinearGradient &API_get_gradient(int gradient_num, float x1, float y1, float x2, float y2, const QColor &color, double darkness_factor = 1.0);
+
 QWidget *API_get_main_ysplitter(void);
 QWidget *API_get_lowertabs(void);
 void API_setLowertabIncludesInstrument(bool includeit);

@@ -928,7 +928,7 @@
 
   (define-override (paint) ;; workaround for osx.
     ;;(c-display "GAKK")
-    (<gui> :filled-box gui "high_background" x1 y1 x2 y2 0 0 #t)
+    (<gui> :filled-box gui "high_background" x1 y1 x2 y2 0 0)
     
     (define (draw-text text color x1 x2 scale-font-size)
       (<gui> :draw-text gui color text
