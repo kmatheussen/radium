@@ -138,7 +138,7 @@ static void gcfinalizer(void *actual_mem_start, void *user_data){
 void *tracker_alloc__(int size,void *(*AllocFunction)(size_t size2), const char *filename, int linenumber){
 	allocated+=size;
 
-        if (PLAYER_current_thread_has_lock())
+        if (THREADING_is_runner_thread() || PLAYER_current_thread_has_lock())
           RError("Calling GC-alloc while holding player lock. %s: %d", filename, linenumber);
 
         if (THREADING_is_main_thread()==false){
