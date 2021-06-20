@@ -178,6 +178,18 @@ static RT_Mem_internal *RT_alloc_from_global_mem(int size, int pool_num){
   return &ret->_mem;
 }
 
+static bool data_is_in_global_mem(const RT_mempool_data *data){
+  const char *cdata = (const char*) data;
+
+  if (cdata < g_mem)
+    return false;
+
+  if (cdata >= &g_mem[TOTAL_MEM_SIZE])
+    return false;
+  
+  return true;
+}
+                      
 #define FREE_FROM_GLOBAL_MEM 0 // Not much point, doesn't succeed that often, and there is also a bug causing tsan to fail some times.
 
 static bool RT_maybe_free_to_global_mem(RT_mempool_data *data){
@@ -208,16 +220,27 @@ static bool RT_maybe_free_to_global_mem(RT_mempool_data *data){
 static DEFINE_ATOMIC(int, g_total_malloc) = 0;
 #endif
 
-static RT_Mem_internal *RT_alloc_using_malloc(int size, int pool_num, const char *who, int where){
+static RT_Mem_internal *RT_alloc_using_malloc(int size, int pool_num, const char *who, int where, bool show_warning, bool we_know_for_sure_we_are_not_RT){
   
 #if TEST_MAIN
   //printf("...RT_alloc failed. Who: \"%s\". Size: %d. Where: %d\n", who, size, where);
   ATOMIC_ADD(g_total_malloc, size);
 #else
-  RT_message("RT_alloc failed. Who: \"%s\". Size: %d. Where: %d", who, size, where);
+  if (show_warning) {
+#if !defined(RELEASE)
+    fprintf(stderr, "-----------RT_alloc failed. Who: \"%s\". Size: %d. Where: %d", who, size, where);
+    getchar();
 #endif
-  
-  RT_mempool_data *data = (RT_mempool_data *)malloc(g_offset_of_data + size);
+    RT_message("RT_alloc failed. Who: \"%s\". Size: %d. Where: %d", who, size, where);
+  }
+#endif
+
+  RT_mempool_data *data;
+  if (we_know_for_sure_we_are_not_RT)
+    data = (RT_mempool_data *)V_calloc(1, g_offset_of_data + size); // makes sure data is in cache.
+  else
+    data = (RT_mempool_data *)malloc(g_offset_of_data + size);
+
   data->_pool_num = pool_num;
   ATOMIC_NAME(data->_num_users) = 1;
 
@@ -232,7 +255,7 @@ static RT_Mem_internal *RT_alloc_using_malloc(int size, int pool_num, const char
   return &data->_mem;
 }
 
-#if TEST_MAIN
+#if !defined(RELEASE)
 static DEFINE_ATOMIC(int, g_used_mem) = 0;
 #endif
 
@@ -247,15 +270,16 @@ void *RT_alloc_raw_internal(const int minimum_num_elements, const int element_si
   if (size > g_max_mem_size) {
 
     actual_num_elements = minimum_num_elements;
-    ret = RT_alloc_using_malloc(size, -1, who, 1);
+    ret = RT_alloc_using_malloc(size, -1, who, 1, true, false);
 
   } else {
     
     int pool_num;
     POOL *pool = get_pool(size, pool_num); // <- Note: Adjusts size to nearest power of two.
     
-#if TEST_MAIN
+#if !defined(RELEASE)
     ATOMIC_ADD(g_used_mem, size);
+    //printf("    ALLOCED MEM: %d\n", ATOMIC_GET(g_used_mem));
 #endif
     
     ret = RT_alloc_from_pool(pool, pool_num);
@@ -268,10 +292,18 @@ void *RT_alloc_raw_internal(const int minimum_num_elements, const int element_si
 
       actual_num_elements = minimum_num_elements;
 
-      ret = RT_alloc_from_global_mem(size, pool_num);
+      if (!THREADING_is_runner_thread() && !PLAYER_current_thread_has_lock()) {
+        
+        ret = RT_alloc_using_malloc(size, pool_num, who, 2, false, true);
+        
+      } else {
+      
+        ret = RT_alloc_from_global_mem(size, pool_num);
 
-      if (ret == NULL)
-        ret = RT_alloc_using_malloc(size, pool_num, who, 2);
+        if (ret == NULL)
+          ret = RT_alloc_using_malloc(size, pool_num, who, 2, true, false);
+
+      }
 
     }
 
@@ -350,7 +382,7 @@ void RT_free_raw(void *mem, const char *who){
     
   } else {
 
-#if TEST_MAIN
+#if !defined(RELEASE)
     ATOMIC_ADD(g_used_mem, -(MIN_MEMPOOL_SIZE<<data->_pool_num));
 #endif
   
@@ -361,9 +393,17 @@ void RT_free_raw(void *mem, const char *who){
     
     } else {
 
-      //abort();
+      if (g_pools[data->_pool_num]->bounded_push(data))
+        return;
+
+      const bool can_free = !data_is_in_global_mem(data) && !THREADING_is_runner_thread() && !PLAYER_current_thread_has_lock();
+
+      if (can_free) {
+        V_free(data);
+        return;
+      }
       
-      for(int i = data->_pool_num ; i >= 0 ; i--)
+      for(int i = data->_pool_num-1 ; i >= 0 ; i--)
         if (g_pools[i]->bounded_push(data))
           return;
 
@@ -419,6 +459,9 @@ bool PLAYER_current_thread_has_lock(void){
   return g_thread_type==1;
 }
 
+bool THREADING_is_runner_thread(void){
+  return false;
+}
 
 static DEFINE_ATOMIC(int, g_highest_allocated) = 0;
 static DEFINE_ATOMIC(int, g_allocated_total) = 0;
