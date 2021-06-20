@@ -98,6 +98,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/Qt_Fonts_proc.h"
 
 #include "api_common_proc.h"
+#include "api_various_proc.h"
 
 #include "radium_proc.h"
 #include "api_gui_proc.h"
