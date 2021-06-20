@@ -71,6 +71,9 @@ static inline Ratio RATIO_minimize(const Ratio a){
     return a;
   
   Ratio ratio = {a.num/gcd_a, a.den/gcd_a};
+  
+  R_ASSERT_NON_RELEASE(ratio.den > 0L);
+  
   return ratio;
 }
 

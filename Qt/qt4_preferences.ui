@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1125</width>
-    <height>622</height>
+    <height>558</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>3</number>
      </property>
      <property name="elideMode">
       <enum>Qt::ElideNone</enum>
@@ -3209,6 +3209,22 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_5">
          <item>
+          <widget class="QGroupBox" name="groupBox_22">
+           <property name="title">
+            <string>Seqblocks</string>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_28">
+            <item>
+             <widget class="QCheckBox" name="autoselect_editor_block_under_mouse">
+              <property name="text">
+               <string>Auto-select current editor block under mouse</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
           <widget class="QGroupBox" name="groupBox_16">
            <property name="title">
             <string>Audio files</string>
@@ -5791,7 +5807,7 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
                <x>0</x>
                <y>0</y>
                <width>975</width>
-               <height>295</height>
+               <height>231</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="midi_input_layout">
@@ -9442,7 +9458,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
               <x>0</x>
               <y>0</y>
               <width>604</width>
-              <height>365</height>
+              <height>250</height>
              </rect>
             </property>
             <property name="sizePolicy">

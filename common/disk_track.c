@@ -95,6 +95,7 @@ struct Tracks *LoadTrack(void){
 		"relvol",
                 "instrument_type"
 	};
+
 	struct Tracks *track=TRACK_create(DC_LoadN());
 
 	GENERAL_LOAD(4,10)

@@ -34,14 +34,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 void SaveVelocities(struct Notes *note){
 DC_start("VELOCITIES2");
 
-  r::TimeData<r::Velocity>::Reader reader(note->_velocities);
-  
-  for(const r::Velocity &velocity : reader){
-    DC_SaveRatio(velocity._time);
-    
-    DC_SaveI(velocity._val);
-    SaveLogType(velocity._logtype);
-  }
+ r::TimeData<r::Velocity>::Reader reader(note->_velocities);
+ 
+ for(const r::Velocity &velocity : reader){
+   DC_SaveRatio(velocity._time);
+   
+   DC_SaveI(velocity._val);
+   SaveLogType(velocity._logtype);
+ }
 
 DC_end();
 }

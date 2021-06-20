@@ -7351,7 +7351,13 @@
                                                                   (let* ((seqtracknum (and seqblock-info (seqblock-info :seqtracknum)))
                                                                          (seqblocknum (and seqblock-info (seqblock-info :seqblocknum))))
                                                                          ;;(is-selected (<ra> :is-seqblock-selected seqblocknum seqtracknum)))
-                                                                    
+
+                                                                    (when (not (<ra> :is-playing-song))
+                                                                      (define blocknum (and (<ra> :seqblock-holds-block seqblocknum seqtracknum)
+                                                                                            (<ra> :get-seqblock-blocknum seqblocknum seqtracknum)))
+                                                                      (if blocknum
+                                                                          (<ra> :select-block blocknum)))
+                                                                        
                                                                     (cond ((<= (<ra> :get-num-selected-seqblocks) 1)
                                                                            
                                                                            ;;(if (and (not (<ra> :is-playing-song))
@@ -8500,7 +8506,7 @@
 
 ;; highlight current seqblock autmation node
 (add-mouse-move-handler
- :move (lambda ($button $x $y)         
+ :move (lambda ($button $x $y)
          ;;(c-display *current-seqautomation/distance*
          ;;           (and *current-seqautomation/distance* (*current-seqautomation/distance* :seqblock))
          ;;           "INSIDE:" (inside-box? (<ra> :get-box sequencer) $x $y))

@@ -43,6 +43,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../midi/midi_ports_proc.h"
 #include "../midi/OS_midi_proc.h"
 
+#include "../api/api_various_proc.h"
 #include "../api/api_proc.h"
 
 #include "Qt_MyQSpinBox.h"
@@ -702,6 +703,8 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       
       default_fadeout->setValue(getDefaultAudiofileFadeout());
       auto_crossfades->setChecked(doAutoCrossfades());
+
+      autoselect_editor_block_under_mouse->setChecked(autoselectEditorBlockUnderMouse());
     }
 
     // Windows
@@ -1350,6 +1353,11 @@ public slots:
   void on_auto_crossfades_toggled(bool val){
     if (_initing==false)
       setDoAutoCrossfades(val);
+  }
+
+  void on_autoselect_editor_block_under_mouse_toggled(bool val){
+    if (_initing==false)
+      setAutoselectEditorBlockUnderMouse(val);
   }
 
   // colors

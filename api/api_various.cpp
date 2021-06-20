@@ -873,6 +873,25 @@ bool switchAllowAutomaticallyChangingCurrentBlock(void){
 }
 
 
+static bool g_autoselectEditorBlockUnderMouse = false;
+
+bool autoselectEditorBlockUnderMouse(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_autoselectEditorBlockUnderMouse = SETTINGS_read_bool("autoselect_editor_block_under_mouse", g_autoselectEditorBlockUnderMouse);
+    has_inited = true;
+  }
+
+  return g_autoselectEditorBlockUnderMouse;
+}
+
+void setAutoselectEditorBlockUnderMouse(bool val){
+  g_autoselectEditorBlockUnderMouse = val;
+  SETTINGS_write_bool("autoselect_editor_block_under_mouse", val);
+}
+
+
 void insertReallines(int toinsert,int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   InsertRealLines_CurrPos(window,toinsert);
