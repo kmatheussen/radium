@@ -1438,6 +1438,10 @@ void RError_internal(const char *fmt,...){
 bool PLAYER_current_thread_has_lock(void){
   return false;
 }
+bool THREADING_is_runner_thread(void){
+  return false;
+}
+
 }
 
 static void cmp(const char *text, float value){

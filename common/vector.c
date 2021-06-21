@@ -271,6 +271,10 @@ void RWarning_internal(const char *fmt,...){
   abort();
 }
 
+bool THREADING_is_runner_thread(void){
+  return false;
+}
+
 bool THREADING_is_player_or_runner_thread(void){
   return false;
 }

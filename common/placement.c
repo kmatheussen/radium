@@ -518,6 +518,10 @@ bool PLAYER_current_thread_has_lock(void){
   return false;
 }
 
+bool THREADING_is_runner_thread(void){
+  return false;
+}
+
 bool g_is_starting_up = false;
 
 void RError_internal(const char *fmt,...){
