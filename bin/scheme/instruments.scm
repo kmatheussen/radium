@@ -1589,7 +1589,7 @@
                   "------------------"))))
      
      (get-sample-player-mixer-popup-menu-entries (list instrument-id))
-     (list "Connected to main pipe"
+     (list "Connected to main bus"
            :enabled (and (> (<ra> :get-num-output-channels instrument-id) 0)
                          (if (is-connected-to-main-pipe instrument-id)
                              (is-directly-connected-to-main-pipe instrument-id) ;; Connected, but only enable entry if connected directly.
