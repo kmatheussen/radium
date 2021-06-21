@@ -4755,13 +4755,13 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       QPainter p(this);
 
       if (seqtracks_are_painted)
-        myFillRect(p, _seqtracks_widget.t_rect.adjusted(-10, 0, 0, 10), get_qcolor(SEQTRACKS_BACKGROUND_COLOR_NUM), true, 15);
+        myFillRect(p, _seqtracks_widget.t_rect.adjusted(-10, 0, 0, 10), get_qcolor(SEQTRACKS_BACKGROUND_COLOR_NUM), true, 0.15);
 
       D(t1 = TIME_get_ms());
       
       if (right_part_is_painted){
         QRectF rect(_seqtracks_widget.t_x2, 0, width() - _seqtracks_widget.t_x2, height());
-        myFillRect(p, rect, get_qcolor(HIGH_BACKGROUND_COLOR_NUM), true, 15);
+        myFillRect(p, rect, get_qcolor(HIGH_BACKGROUND_COLOR_NUM), true, 0.15);
       }
           
       /*

@@ -750,6 +750,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       instrument_saturation_in_editor->setValue(getInstrumentSaturationInEditor()*1000);
       block_brightness->setValue(getBlockBrightness()*1000);
       block_saturation->setValue(getBlockSaturation()*1000);
+      gradient_slider->setValue(getAmountOfGradient()*1000);
     }
     
     // MIDI

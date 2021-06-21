@@ -543,6 +543,14 @@ static inline float scale(const float x, const float x1, const float x2, const f
                   );
 }
 
+// When exp_value < 1, then scale_exp(0.5,0,1,0,1,..) < 0.5
+// When exp_value > 1, then scale_exp(0.5,0,1,0,1,..) > 0.5
+static inline float scale_exp(float x, float x1, float x2, float y1, float y2, float exp_value){
+  float normalized_x = scale(x, x1, x2, 0, 1);
+  float normalized_y = powf(normalized_x, exp_value);
+  return scale(normalized_y, 0, 1, y1, y2);
+}
+
 #if defined(_MATH_H) || defined(__MATH_H__) || defined(_MATH_H_)
 //          ^ linux             ^ osx                  ^ windows
 static inline double midi_to_hz(double midi){
