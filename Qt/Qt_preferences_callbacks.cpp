@@ -1431,7 +1431,7 @@ public slots:
       setInstrumentBrightness((float)val/1000.0);
   }
   void on_reset_instrument_brightness_clicked(){
-    instrument_brightness->setValue(500);
+    instrument_brightness->setValue(1000 * DEFAULT_INSTRUMENT_BRIGHTNESS);
   }
 
   void on_instrument_saturation_valueChanged(int val){
@@ -1439,7 +1439,7 @@ public slots:
       setInstrumentSaturation((float)val/1000.0);
   }
   void on_reset_instrument_saturation_clicked(){
-    instrument_saturation->setValue(670);
+    instrument_saturation->setValue(1000 * DEFAULT_INSTRUMENT_SATURATION);
   }
   
   void on_instrument_brightness_in_editor_valueChanged(int val){
@@ -1447,7 +1447,7 @@ public slots:
       setInstrumentBrightnessInEditor((float)val/1000.0);
   }
   void on_reset_instrument_brightness_in_editor_clicked(){
-    instrument_brightness_in_editor->setValue(500);
+    instrument_brightness_in_editor->setValue(1000 * DEFAULT_INSTRUMENT_BRIGHTNESS_IN_EDITOR);
   }
 
   void on_instrument_saturation_in_editor_valueChanged(int val){
@@ -1455,7 +1455,7 @@ public slots:
       setInstrumentSaturationInEditor((float)val/1000.0);
   }
   void on_reset_instrument_saturation_in_editor_clicked(){
-    instrument_saturation_in_editor->setValue(500);
+    instrument_saturation_in_editor->setValue(1000 * DEFAULT_INSTRUMENT_SATURATION_IN_EDITOR);
   }
   
   void on_block_brightness_valueChanged(int val){
@@ -1463,7 +1463,7 @@ public slots:
       setBlockBrightness((float)val/1000.0);
   }
   void on_reset_block_brightness_clicked(){
-    block_brightness->setValue(500);
+    block_brightness->setValue(1000 * DEFAULT_BLOCK_BRIGHTNESS);
   }
 
   void on_block_saturation_valueChanged(int val){
@@ -1471,7 +1471,15 @@ public slots:
       setBlockSaturation((float)val/1000.0);
   }
   void on_reset_block_saturation_clicked(){
-    block_saturation->setValue(1000);
+    block_saturation->setValue(1000 * DEFAULT_BLOCK_SATURATION);
+  }
+  
+  void on_gradient_slider_valueChanged(int val){
+    if (_initing==false)
+      setAmountOfGradient((float)val/1000.0);
+  }
+  void on_reset_gradient_button_clicked(){
+    gradient_slider->setValue(1000 * DEFAULT_AMOUNT_OF_GRADIENT);
   }
   
   // windows
