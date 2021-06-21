@@ -1333,18 +1333,57 @@ public:
 
 }
 
-static inline void myFillRectHorizontalGradient(QPainter &p, QRectF rect, const QColor &color, bool do_gradient = true, int how_much_gradient = 15){
+
+namespace r{
+  enum GradientType{
+    HORIZONTAL_DARK_LEFT,
+    HORIZONTAL_LIGHT_LEFT,
+    VERTICAL_DARK_TOP,
+    VERTICAL_LIGHT_TOP,
+    HORIZONTAL_DARK_SIDES,
+    HORIZONTAL_LIGHT_SIDES,
+    VERTICAL_DARK_SIDES,
+    VERTICAL_LIGHT_SIDES,
+    DIAGONAL_DARK_UPPER_LEFT,
+    DIAGONAL_LIGHT_UPPER_LEFT,
+    DIAGONAL_DARK_UPPER_RIGHT,
+    DIAGONAL_LIGHT_UPPER_RIGHT,
+    NUM_GRADIENT_TYPES,
+  };
+}
+
+extern QBrush API_get_gradient(int gradient_num, float x1, float y1, float x2, float y2, const QColor &color, double darkness_factor = 1.0);
+
+static inline QBrush API_get_gradient(int gradient_num, const QRectF &rect, const QColor &color, double darkness_factor = 1.0){
+  return API_get_gradient(gradient_num, rect.x(), rect.y(), rect.x()+rect.width(), rect.y()+rect.height(), color, darkness_factor);
+}
+
+
+
+static inline void myFillRectHorizontalGradient(QPainter &p, const QRectF &rect, const QColor &color, bool do_gradient = true, float how_much_gradient = 0.15){
   QPen pen = p.pen();
   p.setPen(Qt::NoPen);
   
   
   if (do_gradient){
+    QBrush gradient = API_get_gradient(r::HORIZONTAL_DARK_SIDES, rect, color, how_much_gradient);
+
+#if 0
+    QLinearGradient gradient(rect.topLeft(), rect.topRight());
     int lighter = 100 + how_much_gradient;
     int darker = 100 + how_much_gradient;
+#endif
     
-    QLinearGradient gradient(rect.topLeft(), rect.topRight());
+#if 0
     gradient.setColorAt(0, color.lighter(lighter));
     gradient.setColorAt(1, color.darker(darker));
+#else
+#if 0
+    gradient.setColorAt(0, color.darker(darker));
+    gradient.setColorAt(0.5, color.lighter(lighter));
+    gradient.setColorAt(1, color.darker(darker));
+#endif
+#endif
     p.setBrush(gradient);
   } else {
     p.setBrush(color);
@@ -1354,18 +1393,23 @@ static inline void myFillRectHorizontalGradient(QPainter &p, QRectF rect, const 
   p.setPen(pen);
 }
 
-static inline void myFillRect(QPainter &p, QRectF rect, const QColor &color, bool do_gradient = true, int how_much_gradient = 10){
+static inline void myFillRect(QPainter &p, const QRectF &rect, const QColor &color, bool do_gradient = true, float how_much_gradient = 0.10){
   QPen pen = p.pen();
   p.setPen(Qt::NoPen);
   
   if (do_gradient){
 
+    QBrush gradient = API_get_gradient(r::VERTICAL_LIGHT_TOP, rect, color, how_much_gradient);
+
+    /*
     int lighter = 100 + how_much_gradient;
     int darker = 100 + how_much_gradient;
 
     QLinearGradient gradient(rect.topLeft(), rect.bottomLeft());
     gradient.setColorAt(0, color.lighter(lighter));
     gradient.setColorAt(1, color.darker(darker));
+    */
+    
     p.setBrush(gradient);
   } else {
     p.setBrush(color);
@@ -1374,13 +1418,16 @@ static inline void myFillRect(QPainter &p, QRectF rect, const QColor &color, boo
   p.setBrush(Qt::NoBrush);
   p.setPen(pen);
 }
-static inline void myFillRoundedRect(QPainter &p, QRectF rect, const QColor &color, float rounding, bool do_gradient = true){
+static inline void myFillRoundedRect(QPainter &p, const QRectF &rect, const QColor &color, float rounding, bool do_gradient = true){
   QPen pen = p.pen();
   p.setPen(Qt::NoPen);
   if (do_gradient){
+    QBrush gradient = API_get_gradient(r::VERTICAL_LIGHT_TOP, rect, color, 0.25);
+    /*
     QLinearGradient gradient(rect.topLeft(), rect.bottomLeft());
     gradient.setColorAt(0, color.lighter(125));
     gradient.setColorAt(1, color.darker(125));
+    */
     p.setBrush(gradient);
   } else {
     p.setBrush(color);

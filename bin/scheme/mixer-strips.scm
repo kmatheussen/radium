@@ -2138,16 +2138,19 @@
           (define middle_y (scale (db-to-slider db) 0 1 height 0))
           
           ;; background
-          (<gui> :filled-box volslider background-color 0 0 volslider-width height)
+          ;;(<gui> :filled-box volslider background-color 0 0 volslider-width height)
           
-          (define col1 (<gui> :mix-colors
-                              (if is-sink? "#f0f0f0" "#010101")
-                              background-color 0.2)) ;; down
+          (define col1 (if is-sink?
+                           (<gui> :make-color-lighter background-color 2.5)
+                           background-color))
+;                           (<gui> :mix-colors
+;                              (if is-sink? "#f0f0f0" "#010101")
+;                              background-color 0.2)) ;; down
           (define col2 (<gui> :mix-colors "#010101" background-color 0.9)) ;; up
 
           ;; slider
           (<gui> :filled-box volslider col2 x1 0 x2 height volslider-rounding volslider-rounding) ;; up (fill everything)
-          (<gui> :filled-box volslider col1 x1 middle_y x2 height volslider-rounding volslider-rounding) ;; down
+          (<gui> :filled-box volslider col1 x1 middle_y x2 height volslider-rounding volslider-rounding *gradient-diagonal-light-upper-left* 0.2) ;; down
 
           ;; slider handler
           (define pointer-color "slider_pointer") ;;(get-pointer-color db))
@@ -2155,7 +2158,9 @@
           (<gui> :filled-box volslider pointer-color
                  (+ x1 0) (- middle_y pointer-height)
                  (- x2 0) (+ middle_y pointer-height)
-                 1 1)
+                 1 1
+                 *gradient-horizontal-dark-sides*
+                 0.5)
           ;(<gui> :filled-box volslider "green"
           ;       (+ x1 1) (- middle_y 1)
           ;       (- x2 1) (+ middle_y 1)

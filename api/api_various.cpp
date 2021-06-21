@@ -4363,6 +4363,31 @@ void setBlockSaturation(float val){
 }
 
 
+static float g_amount_gradient = DEFAULT_AMOUNT_OF_GRADIENT;
+
+float getAmountOfGradient(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_amount_gradient = SETTINGS_read_double("color_amount_gradient", g_amount_gradient);
+    has_inited = true;
+  }
+
+  return g_amount_gradient;
+}
+
+void setAmountOfGradient(float val){
+  if (!equal_floats(val, g_amount_gradient)){
+    g_amount_gradient = val;
+
+    for(auto *window : QApplication::topLevelWidgets())
+      updateWidgetRecursively(window);
+
+    SETTINGS_write_double("color_amount_gradient", val);
+  }
+}
+
+
 
 void printMixerTree(void){
   SP_print_tree();

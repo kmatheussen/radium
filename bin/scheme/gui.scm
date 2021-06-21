@@ -29,7 +29,7 @@
 (define-constant *gradient-diagonal-dark-upper-left* 8)
 (define-constant *gradient-diagonal-light-upper-left* 9)
 (define-constant *gradient-diagonal-dark-upper-right* 10)
-(define-constant *gradient-diaglonal-light-upper-right* 11)
+(define-constant *gradient-diagonal-light-upper-right* 11)
 
 (define *gradient-default* *gradient-vertical-light-top*)
 

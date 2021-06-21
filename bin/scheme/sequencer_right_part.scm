@@ -337,7 +337,7 @@
 (let ()
   (define testarea (make-qtarea :width 450 :height 750
                                 :sub-area-creation-callback (lambda (gui width height state)
-                                                              (create-blocks-browser-area gui 0 0 width height #f state))))
+                                                              (create-blocks-browser-area gui 0 0 width height #t state))))
   (<gui> :show (testarea :get-gui)))
 
 !!#

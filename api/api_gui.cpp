@@ -824,7 +824,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         const bool do_gradient = false;
 
         float ratio = (_y2-_y1) / (x2-x1);
-        int how_much_gradient = R_BOUNDARIES(5, scale(ratio, 1, 15, 0, 15), 15);
+        float how_much_gradient = 0.50 + R_BOUNDARIES(0.05, scale(ratio, 1, 15, 0, 0.15), 0.15);
         
         // decaying meter
         {
@@ -915,17 +915,19 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
                                 x2-x1, falloff_height);
             */
             QRectF falloff_rect = get_falloff_rect(x1, x2, falloff_pos);
-            
-            if (falloff_pos > posm20db)
-              p.setBrush(colordarkgreen);
-            else if (falloff_pos > pos0db)
-              p.setBrush(colorgreen);
-            else if (falloff_pos > pos4db)
-              p.setBrush(color0db);
-            else
-              p.setBrush(color4db);
 
-            p.drawRect(falloff_rect);
+            QColor falloff_color;
+            if (falloff_pos > posm20db)
+              falloff_color = colordarkgreen;
+            else if (falloff_pos > pos0db)
+              falloff_color = colorgreen;
+            else if (falloff_pos > pos4db)
+              falloff_color = color0db;
+            else
+              falloff_color = color4db;
+
+            myFillRectHorizontalGradient(p, falloff_rect, falloff_color, true, how_much_gradient);
+            //p.drawRect(falloff_rect);
           }
         }
 
@@ -2506,7 +2508,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         myupdate(x1-halfwidth, y1-halfwidth, x2+halfwidth, y2+halfwidth);
     }
 
-    void filledBox(const_char* color, float x1, float y1, float x2, float y2, float round_x, float round_y, int gradient_type) {
+    void filledBox(const_char* color, float x1, float y1, float x2, float y2, float round_x, float round_y, int gradient_type, float how_much_gradient) {
       QPainter *painter = get_painter();
 
       QRectF rect(x1, y1, x2-x1, y2-y1);
@@ -2518,6 +2520,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       painter->setPen(Qt::NoPen);
 
       if(gradient_type >= 0){
+#if 0
         //QLinearGradient gradient((x1+x2)/2.0, y1, (x1+x2)/2.0, y2);
         int min = R_MIN(rect.height(), rect.width());
         int how_much = 115;
@@ -2527,7 +2530,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
           else
             how_much = scale(min, gui_getSystemFontheight()*3, gui_getSystemFontheight()*6, 115, 105);
         }
-            
+#endif
+        
 #if 0
         QLinearGradient gradient(x1, y1, x1, y2);
         gradient.setColorAt(0, qcolor.lighter(how_much));
@@ -2539,7 +2543,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         gradient.setColorAt(0.5, qcolor.lighter(how_much));
         gradient.setColorAt(1, qcolor.darker(how_much));
         */
-        QLinearGradient &gradient = API_get_gradient(gradient_type, x1, y1, x2, y2, qcolor, scale(how_much, 0, 200, 0, 2));
+        //QLinearGradient &gradient = API_get_gradient(gradient_type, x1, y1, x2, y2, qcolor, scale(how_much, 0, 200, 0, 2));
+        QBrush gradient = API_get_gradient(gradient_type, x1, y1, x2, y2, qcolor, how_much_gradient);
 #endif
         painter->setBrush(gradient);
       } else {
@@ -2613,9 +2618,12 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       if (do_fill){
         painter->setPen(Qt::NoPen);
         if(do_gradient){
+          QBrush gradient = API_get_gradient(r::VERTICAL_LIGHT_TOP, min_x, min_y, max_x, max_y, qcolor, 0.25);
+          /*
           QLinearGradient gradient((min_x+max_x)/2.0, min_y, (min_x+max_x)/2.0, max_y);
           gradient.setColorAt(0, qcolor.lighter(125));
           gradient.setColorAt(1, qcolor.darker(125));
+          */
           painter->setBrush(gradient);
         } else {
           painter->setBrush(qcolor);
@@ -7720,19 +7728,19 @@ int64_t gui_getMixerStripsGuiInActiveWindow(void){
 namespace{
   struct GradientPoint{
     const double _where; // between 0 and 1
-    const double _darkness; // normally 1.15 (dark) or 0.87 (light)
-    GradientPoint(const double where, const double darkness)
+    const bool _is_dark;
+    GradientPoint(const double where, const bool is_dark)
       : _where(where)
-      , _darkness(darkness)
+      , _is_dark(is_dark)
     {}
   };
 
   static GradientPoint dark_point(double where){
-    return GradientPoint(where, 1.15);
+    return GradientPoint(where, true);
   }
     
   static GradientPoint light_point(double where){
-    return GradientPoint(where, 0.87);
+    return GradientPoint(where, false);
   }
     
   struct Gradient{
@@ -7744,8 +7752,8 @@ namespace{
       , _x2(x2)
       , _y2(y2)
     {}
-    void add_point(double where, double darkness){
-      _points.push_back(GradientPoint(where, darkness));
+    void add_point(double where, bool is_dark) {
+      _points.push_back(GradientPoint(where, is_dark));
     }
     void add_light_point(double where){
       _points.push_back(light_point(where));
@@ -7759,12 +7767,17 @@ namespace{
 };
 
 // default value for darkness_factor is 1.0.
-QLinearGradient &API_get_gradient(int gradient_num, float x1, float y1, float x2, float y2, const QColor &color, double darkness_factor) {
-  
+QBrush API_get_gradient(int gradient_num, float x1, float y1, float x2, float y2, const QColor &color, double darkness_factor) {
+
+  static QLinearGradient s_lg;  // static to avoid allocation memory for qvector. (probably makes no difference though)
+  static QGradientStops s_stops; // same here.
+
   static bool s_has_inited = false;
   if (!s_has_inited){
     s_has_inited = true;
-    
+
+    s_lg.setStops(s_stops);
+  
     g_gradients.push_back(Gradient(0,0,1,0));
     g_gradients[r::HORIZONTAL_DARK_LEFT].add_dark_point(0);
     g_gradients[r::HORIZONTAL_DARK_LEFT].add_light_point(1);
@@ -7773,7 +7786,7 @@ QLinearGradient &API_get_gradient(int gradient_num, float x1, float y1, float x2
     g_gradients[r::HORIZONTAL_LIGHT_LEFT].add_light_point(0);
     g_gradients[r::HORIZONTAL_LIGHT_LEFT].add_dark_point(1);
 
-    g_gradients.push_back(Gradient(0,0,0,1));
+    g_gradients.push_back(Gradient(0.5,0,0.5,1));
     g_gradients[r::VERTICAL_DARK_TOP].add_dark_point(0);
     g_gradients[r::VERTICAL_DARK_TOP].add_light_point(1);
 
@@ -7820,41 +7833,84 @@ QLinearGradient &API_get_gradient(int gradient_num, float x1, float y1, float x2
 
   if (gradient_num >= g_gradients.size()) {
     R_ASSERT_NON_RELEASE(false);
-    static QLinearGradient gradient(x1,y1,x2,y2);
-    return gradient;
+    return QBrush(color);
   }
+
+  float g_gradient = getAmountOfGradient();
+  if (g_gradient > DEFAULT_AMOUNT_OF_GRADIENT) {
+    darkness_factor = scale(g_gradient, DEFAULT_AMOUNT_OF_GRADIENT, 1.0, darkness_factor, 1.0);
+  } else {
+    darkness_factor = scale(g_gradient, 0.0, DEFAULT_AMOUNT_OF_GRADIENT, 0.0, darkness_factor);
+  }
+
+  if (darkness_factor < 0.001)
+    return QBrush(color);
+  
 
   const Gradient &gradient = g_gradients.at(gradient_num);
 
-  static QLinearGradient s_ret;  // static to avoid allocation memory for qvector. (probably makes no difference though)
-  static QGradientStops s_stops; // same here.
+  s_lg.setStart(scale(gradient._x1, 0, 1, x1, x2),
+                 scale(gradient._y1, 0, 1, y1, y2));
+  s_lg.setFinalStop(scale(gradient._x2, 0, 1, x1, x2),
+                     scale(gradient._y2, 0, 1, y1, y2));
 
-  s_ret.setStart(x1*gradient._x1, y1*gradient._y1);
-  s_ret.setFinalStop(x2*gradient._x2, y2*gradient._y2);
+  s_stops.resize(gradient._points.size());
 
+
+  qreal huef, satf, valuef, alfaf;
+  color.getHsvF(&huef, &satf, &valuef, &alfaf);
+  
+
+  // Note: Using fromHsvF instead of darker() and lighter() since saturation is lowered when using darker() and lighter().
+  // It also seems to look better when increasing alfa for darker and lighter colors.
+  
+  QColor dark_color = QColor::fromHsvF(huef,
+                                        satf,
+                                        R_BOUNDARIES(0,
+                                                     scale(darkness_factor,
+                                                           0, 1,
+                                                           valuef, 0.0), // (0=black, 1=white)
+                                                     1),
+                                       R_BOUNDARIES(0,
+                                                    scale(darkness_factor,
+                                                          0,1,
+                                                          alfaf, 1.0f),
+                                                    1)
+                                       );
+  
+  QColor light_color = QColor::fromHsvF(huef,
+                                        satf,
+                                        R_BOUNDARIES(0,
+                                                     scale(darkness_factor,
+                                                           0,1,
+                                                           valuef, 1.0),
+                                                     1),
+                                        R_BOUNDARIES(0,
+                                                     scale(darkness_factor,
+                                                           0,1,
+                                                           alfaf, 1.0f),
+                                                     1)
+                                        );
+        
   int i = 0;
   for(const GradientPoint &point : gradient._points){
-    if (i >= s_stops.size())
-      s_stops.push_back(QGradientStop());
+    //if (i >= s_stops.size())
+    //  s_stops.push_back(QGradientStop());
     QGradientStop &stop = s_stops[i++];
     R_ASSERT_NON_RELEASE((i==1 || point._where > s_stops[i-2].first) && point._where>=0 && point._where<=1);
     stop.first = point._where;
-    if (equal_floats(point._darkness, 1.0))
-      stop.second = color;
-    else if (point._darkness < 1.0) {
-      float d = darkness_factor * (1.0 - point._darkness);
-      stop.second = color.darker(100 * (1.0 - d));
+    if (point._is_dark) {
+      stop.second = dark_color;
     } else {
-      float d = darkness_factor * (point._darkness - 1.0);
-      stop.second = color.darker(100 * (1.0 + d));
+      stop.second = light_color;
     }
-    printf("%d: %f, %f/%f/%d, %s\n", i-1, stop.first, darkness_factor, point._darkness, int(100 * darkness_factor * point._darkness), stop.second.name().toUtf8().constData());
+    //printf("%d: %f, %f/%f/%d, %s\n", i-1, stop.first, darkness_factor, point._darkness, int(100 * darkness_factor * point._darkness), stop.second.name().toUtf8().constData());
   }
-    //= (setColorAt(point._where, color.darker(100 * darkness_factor * point._darkness));
 
-  s_ret.setStops(s_stops);
+  // Seems like we have to do this every time.
+  s_lg.setStops(s_stops);
   
-  return s_ret;
+  return QBrush(s_lg);
 }
 
 ///////////////// Drawing
@@ -7876,12 +7932,12 @@ void gui_drawBox(int64_t guinum, const_char* color, float x1, float y1, float x2
   gui->drawBox(color, x1, y1, x2, y2, width, round_x, round_y);
 }
 
-void gui_filledBox(int64_t guinum, const_char* color, float x1, float y1, float x2, float y2, float round_x, float round_y, int gradient_type){
+void gui_filledBox(int64_t guinum, const_char* color, float x1, float y1, float x2, float y2, float round_x, float round_y, int gradient_type, float how_much_gradient){
   Gui *gui = get_gui(guinum);
   if (gui==NULL)
     return;
 
-  gui->filledBox(color, x1, y1, x2, y2, round_x, round_y, gradient_type);
+  gui->filledBox(color, x1, y1, x2, y2, round_x, round_y, gradient_type, how_much_gradient);
 }
 
 void gui_filledPolygon(int64_t guinum, const_char* color, dynvec_t points){

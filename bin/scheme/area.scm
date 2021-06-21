@@ -971,8 +971,9 @@
   (define (paint-text-area gui x1 y1 x2 y2)
     (let ((background-color (get-background-color)))
       (if background-color
-          (<gui> :filled-box gui background-color x1 y1 x2 y2 border-rounding border-rounding)))
-
+          ;;(<gui> :filled-box gui background-color x1 y1 x2 y2 border-rounding border-rounding *gradient-vertical-dark-sides* 0.1)))
+          (<gui> :filled-box gui background-color x1 y1 x2 y2 border-rounding border-rounding (if align-right *gradient-diagonal-light-upper-right* *gradient-diagonal-light-upper-left*) 0.1)))
+    
     (define text (maybe-thunk-value text))
 
     (define text-width (<gui> :text-width text gui))
@@ -1034,9 +1035,11 @@
                                  :background-color "low_background"
                                  :get-wide-string #f
                                  :callback)
+  
   (add-sub-area-plain! (<new> :text-area gui x1 y1 x2 y2
                               :text text
                               :background-color background-color
+                              ;;:text-color "black"
                               :align-left #t
                               :scale-font-size #f
                               ;;:only-show-left-part-if-text-dont-fit #f
@@ -2112,7 +2115,8 @@
   
   (define (get-text-color)
     (cond ((is-current?)
-           *text-color*)
+           "sequencer_text_current_block_color")
+          ;;*text-color*)
           (blocknum
            "sequencer_text_color")
           ((file-info :is-dir)
@@ -2225,7 +2229,10 @@
     ;;    (set! entry-background-color (<gui> :mix-colors entry-background-color "green" 0.1)))
 
     ;;(<gui> :filled-box gui (<gui> :get-background-color gui) (+ 1 x1) y1 x2 y2 4 4)
-    (<gui> :filled-box gui entry-background-color (+ 1 x1) y1 (- x2 2) y2 4 4 (if background-color *gradient-default* *no-gradient*))
+    (<gui> :filled-box gui
+           entry-background-color
+           (+ 1 x1) y1 (- x2 2) y2 4 4
+           (if background-color *gradient-vertical-light-top* *no-gradient*))
 
     ;; name
     (<gui> :draw-text gui (get-text-color) name-text
