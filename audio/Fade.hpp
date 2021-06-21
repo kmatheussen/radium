@@ -82,7 +82,7 @@ public:
 
       if (in == NULL) {
 
-#if !defined(RADUM_USES_UBSAN)
+#if !defined(RADIUM_USES_UBSAN)
         #pragma clang loop vectorize(enable) interleave(enable)
 #endif
         for(int i=0;i<how_many;i++)
@@ -91,14 +91,14 @@ public:
       } else {
 
         if (add) {
-#if !defined(RADUM_USES_UBSAN)
+#if !defined(RADIUM_USES_UBSAN)
           #pragma clang loop vectorize(enable) interleave(enable)
 #endif
           for(int i=0;i<how_many;i++)
             data[i] += in[i] * (fade_mul + i*fade_inc);
 
          } else {
-#if !defined(RADUM_USES_UBSAN)
+#if !defined(RADIUM_USES_UBSAN)
            #pragma clang loop vectorize(enable) interleave(enable)
 #endif
            for(int i=0;i<how_many;i++)
