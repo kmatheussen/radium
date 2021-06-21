@@ -734,7 +734,7 @@ TEST_RT_MEMORY_ALLOCATOR_OPTS=$(BOOST_FLAGS) $(TEST_TIMEDATA_OPTS)
 
 test_rt_memory_allocator:
 	cd common && touch buildtype.opt flagopts.opt
-	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DTEST_MAIN -DRADIUM_USES_UBSAN -DRADIUM_USES_ASAN -O3 -fsanitize=undefined $(ADDRESS_SANITIZE_OPTS) -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
+	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DTEST_MAIN -DRADIUM_USES_UBSAN -O3 -fsanitize=undefined $(ADDRESS_SANITIZE_OPTS) -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
 	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DTEST_MAIN -DRADIUM_USES_TSAN -O3 -fsanitize=thread -o a.out && TSAN_OPTIONS="history_size=7,second_deadlock_stack=1,abort_on_error=1,suppressions=../SanitizerSuppr.txt" $(TEST_TIMEDATA_RUNNER)
 	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DTEST_MAIN -O0 -o a.out && $(TEST_TIMEDATA_RUNNER)
 	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DTEST_MAIN -O3 -o a.out && $(TEST_TIMEDATA_RUNNER)
