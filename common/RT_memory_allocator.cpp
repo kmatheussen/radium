@@ -9,6 +9,13 @@
 */
 
 
+#if defined(RADIUM_USES_ASAN)
+#  include "sanitizer/asan_interface.h"
+#else
+#  define ASAN_UNPOISON_MEMORY_REGION(a,b)
+#  define ASAN_POISON_MEMORY_REGION(a,b)
+#endif
+
 #include <boost/lockfree/stack.hpp>
 
 #if TEST_MAIN
@@ -49,7 +56,7 @@ double TIME_get_ms(void){
 
 #  define ASSERT_MEMORY 1
 
-#else
+#else // TEST_MAIN -> ! TEST_MAIN
 
 #  if !defined(RELEASE)
 #    define ASSERT_MEMORY 1
@@ -57,11 +64,42 @@ double TIME_get_ms(void){
 
 #endif
 
+#if defined(RELEASE)
+#  if ASSERT_MEMORY
+#    error "error"
+#  endif
+#endif
+
 #include "nsmtracker.h"
 #include "Vector.hpp"
 
 #include "RT_memory_allocator_proc.h"
 #include "RT_Array.hpp"
+
+
+namespace{
+  struct Scoped_asan_unpoison{
+    const volatile void *_addr;
+    const size_t _size;
+    Scoped_asan_unpoison(const volatile void *addr, const size_t size)
+      : _addr(addr)
+      , _size(size)
+    {
+#if defined(RADIUM_USES_ASAN)
+      R_ASSERT(__asan_address_is_poisoned(addr) == 1); // This might not always be true though due to alignment restrictions (unpoisoning can unpoison more than it was asked, and poison might poison less than it was asked). If that happens it might help to uncomment the line with "[529834]" below.
+#endif
+      ASAN_UNPOISON_MEMORY_REGION(addr, size);
+    }
+
+    ~Scoped_asan_unpoison(){
+#if defined(RADIUM_USES_ASAN)
+      R_ASSERT(__asan_address_is_poisoned(_addr) == 0);
+#endif
+      ASAN_POISON_MEMORY_REGION(_addr, _size);
+    }
+  };
+}
+
 
 
 #if TEST_MAIN
@@ -99,11 +137,15 @@ namespace{
         DEFINE_ATOMIC(int32_t, _num_users);
       };
     };
+#if defined(RADIUM_USES_ASAN)
+    //int64_t fillin[128]; // [529834]
+#endif
     struct RT_Mem_internal _mem;
   };
 }
 
 static constexpr int g_offset_of_data = offsetof(RT_mempool_data, _mem);
+
 
 static_assert(g_offset_of_data==8, "RT-allocated memory will not be aligned by 64 bit");
 
@@ -123,7 +165,9 @@ void RT_mempool_init(void){
       mem[i] = 0x3e;
   }
 #endif
-  
+
+  ASAN_POISON_MEMORY_REGION(g_mem, TOTAL_MEM_SIZE);  
+
   for(int i=0;i<NUM_POOLS;i++)
     g_pools[i] = new POOL(MAX_POOL_SIZE);
 }
@@ -151,9 +195,16 @@ static RT_Mem_internal *RT_alloc_from_pool(POOL *pool, int pool_num){
   RT_mempool_data *data;
   
   if (pool->pop(data)){
+    Scoped_asan_unpoison unpoison(data, g_offset_of_data);
+    
     R_ASSERT_NON_RELEASE(data->_pool_num >= pool_num);
     R_ASSERT_NON_RELEASE(ATOMIC_GET(data->_num_users)==0);
     ATOMIC_SET(data->_num_users, 1);
+
+#if defined(RADIUM_USES_ASAN)
+    R_ASSERT(__asan_address_is_poisoned(&data->_mem) == 1);
+#endif
+    
     return &data->_mem;
   }
 
@@ -172,8 +223,11 @@ static RT_Mem_internal *RT_alloc_from_global_mem(int size, int pool_num){
 
   RT_mempool_data *ret = (RT_mempool_data*)(g_mem + pos);
 
-  ret->_pool_num = pool_num;
-  ATOMIC_NAME(ret->_num_users) = 1;
+  {
+    Scoped_asan_unpoison unpoison(ret, g_offset_of_data);
+    ret->_pool_num = pool_num;
+    ATOMIC_NAME(ret->_num_users) = 1;
+  }
   
   return &ret->_mem;
 }
@@ -252,6 +306,8 @@ static RT_Mem_internal *RT_alloc_using_malloc(int size, int pool_num, const char
   }
 #endif
 
+  ASAN_POISON_MEMORY_REGION(data, g_offset_of_data + size);
+
   return &data->_mem;
 }
 
@@ -309,6 +365,26 @@ void *RT_alloc_raw_internal(const int minimum_num_elements, const int element_si
 
   }
 
+  ASAN_UNPOISON_MEMORY_REGION(ret, size);
+
+#if 0
+  // Note: Both of the printf should hit asan errors. Should probably test this automatically though.
+  RT_mempool_data *data = (RT_mempool_data *)(((char*)ret) - g_offset_of_data);
+  printf("hepp1: %d\n", data->_pool_num);
+  printf("hepp2: %d\n", ATOMIC_GET(data->_num_users));
+#endif
+
+#if defined(RADIUM_USES_ASAN)
+  {
+    // These tests might not always be true though due to alignment restrictions (unpoisoning can unpoison more than it was asked, and poison might poison less than it was asked).
+    // If this fails it might help to uncomment the line with "[529834]" above.
+    RT_mempool_data *data = (RT_mempool_data *)(((char*)ret) - g_offset_of_data);
+    R_ASSERT(__asan_address_is_poisoned(&data->_pool_num) == 1);
+    R_ASSERT(__asan_address_is_poisoned(&ATOMIC_NAME(data->_num_users)) == 1);
+    R_ASSERT(__asan_address_is_poisoned(ret) == 0);
+  }
+#endif
+
 #if ASSERT_MEMORY
   {
     const char *data = (const char*)ret;
@@ -332,7 +408,6 @@ void *RT_alloc_raw(const int size, const char *who){
   return RT_alloc_raw_internal(size, 1, actual_size, who);
 }
 
-
 void RT_inc_ref_raw(void *mem){
   if (mem==NULL){
     R_ASSERT_NON_RELEASE(false);
@@ -343,9 +418,14 @@ void RT_inc_ref_raw(void *mem){
   
   RT_mempool_data *data = (RT_mempool_data *)(cmem - g_offset_of_data);
 
-  R_ASSERT_NON_RELEASE(ATOMIC_GET(data->_num_users) > 0);
-  
-  ATOMIC_ADD(data->_num_users, 1);
+  {
+    Scoped_asan_unpoison unpoison(data, g_offset_of_data);
+    
+    R_ASSERT_NON_RELEASE(ATOMIC_GET(data->_num_users) > 0);
+    
+    ATOMIC_ADD(data->_num_users, 1);
+  }
+
 }
 
 void RT_free_raw(void *mem, const char *who){
@@ -358,32 +438,40 @@ void RT_free_raw(void *mem, const char *who){
 
 
   //fprintf(stderr, "RT_Free: num users: %d. pool num: %d\n", ATOMIC_GET(data->_num_users), data->_pool_num);
-  
-  R_ASSERT_RETURN_IF_FALSE(data->_pool_num < NUM_POOLS);
-  
-  R_ASSERT_NON_RELEASE(data->_pool_num >= 0);
-  R_ASSERT_NON_RELEASE(ATOMIC_GET(data->_num_users) > 0);
-  
-  if (ATOMIC_ADD_RETURN_NEW(data->_num_users, -1) > 0)
-    return;
+
+  int pool_num;
+  {
+    Scoped_asan_unpoison unpoison(data, g_offset_of_data);
+    pool_num = data->_pool_num;
+
+    R_ASSERT_RETURN_IF_FALSE(pool_num < NUM_POOLS);  
+    R_ASSERT_NON_RELEASE(pool_num >= 0);
+
+    R_ASSERT_NON_RELEASE(ATOMIC_GET(data->_num_users) > 0);
+    if (ATOMIC_ADD_RETURN_NEW(data->_num_users, -1) > 0)
+      return;
+  }
 
 #if ASSERT_MEMORY
   {
     char *m = (char*)&data->_mem;
-    for(int i3=0 ; i3 < (MIN_MEMPOOL_SIZE<<data->_pool_num) ; i3 ++)
+    for(int i3=0 ; i3 < (MIN_MEMPOOL_SIZE<<pool_num) ; i3 ++)
       m[i3] = 0x3e;
   }
 #endif
 
-  if (data->_pool_num < 0){
+  if (pool_num < 0){
     
-    R_ASSERT(data->_pool_num==-1); // pool_num is -1 if size of memory block is larger than g_max_mem_size.
+    R_ASSERT(pool_num==-1); // pool_num is -1 if size of memory block is larger than g_max_mem_size.
+
+    ASAN_UNPOISON_MEMORY_REGION(mem, g_offset_of_data);
+    
     free(mem);
     
   } else {
 
 #if !defined(RELEASE)
-    ATOMIC_ADD(g_used_mem, -(MIN_MEMPOOL_SIZE<<data->_pool_num));
+    ATOMIC_ADD(g_used_mem, -(MIN_MEMPOOL_SIZE<<pool_num));
 #endif
   
 
@@ -393,22 +481,25 @@ void RT_free_raw(void *mem, const char *who){
     
     } else {
 
-      if (g_pools[data->_pool_num]->bounded_push(data))
+      ASAN_POISON_MEMORY_REGION(&data->_mem, (MIN_MEMPOOL_SIZE<<pool_num));
+      
+      if (g_pools[pool_num]->bounded_push(data))
         return;
 
       const bool can_free = !data_is_in_global_mem(data) && !THREADING_is_runner_thread() && !PLAYER_current_thread_has_lock();
 
       if (can_free) {
+        ASAN_UNPOISON_MEMORY_REGION(data, g_offset_of_data + (MIN_MEMPOOL_SIZE<<pool_num));
         V_free(data);
         return;
       }
       
-      for(int i = data->_pool_num-1 ; i >= 0 ; i--)
+      for(int i = pool_num-1 ; i >= 0 ; i--)
         if (g_pools[i]->bounded_push(data))
           return;
 
 #if !TEST_MAIN
-      RT_message("RT_free failed. Who: \"%s\". pool_num: %d. Size: %d.", who, data->_pool_num, MIN_MEMPOOL_SIZE << data->_pool_num);
+      RT_message("RT_free failed. Who: \"%s\". pool_num: %d. Size: %d.", who, pool_num, MIN_MEMPOOL_SIZE << pool_num);
 #endif
 
     }
