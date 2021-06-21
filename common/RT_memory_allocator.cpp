@@ -118,7 +118,11 @@ namespace{
 
 #define MIN_MEMPOOL_SIZE 8
 
-static constexpr int g_max_mem_size = MIN_MEMPOOL_SIZE << (NUM_POOLS-1);
+
+#define POOL_MEM_SIZE(Pool_num) (MIN_MEMPOOL_SIZE<<(Pool_num))
+
+
+static constexpr int g_max_mem_size = POOL_MEM_SIZE(NUM_POOLS-1);
 
 static char *g_mem;
 
@@ -179,7 +183,7 @@ static POOL *get_pool(int &size, int &pool_num){
   for(pool_num = 0 ; pool_num<NUM_POOLS ; pool_num++) {
     if (size2 >= size) {
         size = size2;
-        R_ASSERT_NON_RELEASE(size==(MIN_MEMPOOL_SIZE<<pool_num));
+        R_ASSERT_NON_RELEASE(size==POOL_MEM_SIZE(pool_num));
         return g_pools[pool_num];
     }
     
@@ -256,7 +260,7 @@ static bool RT_maybe_free_to_global_mem(RT_mempool_data *data){
     return false;
   }
   
-  int size = g_offset_of_data + (MIN_MEMPOOL_SIZE << data->_pool_num);
+  int size = g_offset_of_data + POOL_MEM_SIZE(data->_pool_num);
 
   int pos = ((char*)data) - ((char*)g_mem);
 
@@ -291,7 +295,7 @@ static RT_Mem_internal *RT_alloc_using_malloc(int size, int pool_num, const char
 
   RT_mempool_data *data;
   if (we_know_for_sure_we_are_not_RT)
-    data = (RT_mempool_data *)V_calloc(1, g_offset_of_data + size); // makes sure data is in cache.
+    data = (RT_mempool_data *)V_calloc(1, g_offset_of_data + size); // V_calloc makes sure data is in cache.
   else
     data = (RT_mempool_data *)malloc(g_offset_of_data + size);
 
@@ -455,7 +459,7 @@ void RT_free_raw(void *mem, const char *who){
 #if ASSERT_MEMORY
   {
     char *m = (char*)&data->_mem;
-    for(int i3=0 ; i3 < (MIN_MEMPOOL_SIZE<<pool_num) ; i3 ++)
+    for(int i3=0 ; i3 < POOL_MEM_SIZE(pool_num) ; i3 ++)
       m[i3] = 0x3e;
   }
 #endif
@@ -471,7 +475,7 @@ void RT_free_raw(void *mem, const char *who){
   } else {
 
 #if !defined(RELEASE)
-    ATOMIC_ADD(g_used_mem, -(MIN_MEMPOOL_SIZE<<pool_num));
+    ATOMIC_ADD(g_used_mem, -POOL_MEM_SIZE(pool_num));
 #endif
   
 
@@ -481,7 +485,7 @@ void RT_free_raw(void *mem, const char *who){
     
     } else {
 
-      ASAN_POISON_MEMORY_REGION(&data->_mem, (MIN_MEMPOOL_SIZE<<pool_num));
+      ASAN_POISON_MEMORY_REGION(&data->_mem, POOL_MEM_SIZE(pool_num));
       
       if (g_pools[pool_num]->bounded_push(data))
         return;
@@ -489,7 +493,7 @@ void RT_free_raw(void *mem, const char *who){
       const bool can_free = !data_is_in_global_mem(data) && !THREADING_is_runner_thread() && !PLAYER_current_thread_has_lock();
 
       if (can_free) {
-        ASAN_UNPOISON_MEMORY_REGION(data, g_offset_of_data + (MIN_MEMPOOL_SIZE<<pool_num));
+        ASAN_UNPOISON_MEMORY_REGION(data, g_offset_of_data + POOL_MEM_SIZE(pool_num));
         V_free(data);
         return;
       }
@@ -499,7 +503,7 @@ void RT_free_raw(void *mem, const char *who){
           return;
 
 #if !TEST_MAIN
-      RT_message("RT_free failed. Who: \"%s\". pool_num: %d. Size: %d.", who, pool_num, MIN_MEMPOOL_SIZE << pool_num);
+      RT_message("RT_free failed. Who: \"%s\". pool_num: %d. Size: %d.", who, pool_num, POOL_MEM_SIZE(pool_num));
 #endif
 
     }
