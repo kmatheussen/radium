@@ -51,7 +51,21 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #if __tune_corei7__
 #error "Compiled with -mtune=native or -mtune=corei7"
 #endif
- 
+
+#if !defined(RELEASE)
+#  include <sanitizer/common_interface_defs.h>
+#  if defined(RADIUM_USES_ASAN)
+#    if !__has_feature(address_sanitizer) && !defined(__SANITIZE_ADDRESS__)
+#      error "Error. Check usage of ASAN_POISON_MEMORY_REGION / ASAN_UNPOISON_MEMORY_REGION macros"
+#    endif
+#  endif
+#  if __has_feature(address_sanitizer) || defined(__SANITIZE_ADDRESS__)
+#    if !defined(RADIUM_USES_ASAN)
+#      error "Error. RADIUM_USES_ASAN macro not defined"
+#    endif
+#  endif
+#endif
+
 #ifdef RELEASE
   #ifndef __OPTIMIZE__
     #error "Missing -O2 or -O3 compiler option"

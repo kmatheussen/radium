@@ -378,7 +378,7 @@ static bool valid_patches(const vector_t *patches){
       
       if (AUDIO_is_permanent_patch(patch)){
         R_ASSERT_NON_RELEASE(false); // should be covered in "Bus" above.
-        GFX_addMessage("Can not cut, copy, delete, or save the Main Pipe preset"); // Workaround for Qt bug. Running a custom exec screws up QGraphicsScene mouse handling
+        GFX_addMessage("Can not cut, copy, delete, or save the Main Bus preset"); // Workaround for Qt bug. Running a custom exec screws up QGraphicsScene mouse handling
         return false;
       }
     }else{
