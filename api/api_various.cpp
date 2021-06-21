@@ -4215,7 +4215,7 @@ void setUseNativeFileRequesters(bool doit){
 
 
 
-static float g_instrument_brightness = 0.5350000262260437;
+static float g_instrument_brightness = DEFAULT_INSTRUMENT_BRIGHTNESS;
 
 static void update_all_instrument_colors_in_editor(void){
   root->song->tracker_windows->must_redraw_editor=true;
@@ -4249,7 +4249,7 @@ void setInstrumentBrightness(float val){
 }
 
 
-static float g_instrument_brightness_in_editor = 0.5;
+static float g_instrument_brightness_in_editor = DEFAULT_INSTRUMENT_BRIGHTNESS_IN_EDITOR;
 
 float getInstrumentBrightnessInEditor(void){
   static bool has_inited = false;
@@ -4271,7 +4271,7 @@ void setInstrumentBrightnessInEditor(float val){
 }
 
 
-static float g_instrument_saturation = 0.4339999854564667;
+static float g_instrument_saturation = DEFAULT_INSTRUMENT_SATURATION;
 
 float getInstrumentSaturation(void){
   static bool has_inited = false;
@@ -4293,7 +4293,7 @@ void setInstrumentSaturation(float val){
 }
 
 
-static float g_instrument_saturation_in_editor = 0.3109999895095825;
+static float g_instrument_saturation_in_editor = DEFAULT_INSTRUMENT_SATURATION_IN_EDITOR;
 
 float getInstrumentSaturationInEditor(void){
   static bool has_inited = false;
@@ -4315,7 +4315,7 @@ void setInstrumentSaturationInEditor(float val){
 }
 
 
-static float g_block_brightness = 0.4210000038146973;
+static float g_block_brightness = DEFAULT_BLOCK_BRIGHTNESS;
 
 static void update_all_block_colors(void){
   SEQUENCER_update(SEQUPDATE_EVERYTHING);
@@ -4341,7 +4341,7 @@ void setBlockBrightness(float val){
 }
 
 
-static float g_block_saturation = 0.4390000104904175;
+static float g_block_saturation = DEFAULT_BLOCK_SATURATION;
 
 float getBlockSaturation(void){
   static bool has_inited = false;
