@@ -1288,6 +1288,7 @@
             (not (= (*current-seqblock-info* :id) seqblockid)))    
     (set! *current-seqblock-info* (make-seqblock-info3 seqblockid))))
 
+;; Currently only called from the mouse-move handler below.
 (define (set-curr-seqblock-info! X Y)
   (let ((old *current-seqblock-info*)
         (new (or (maybe-get-seqblock-info-from-current-seqautomation)
@@ -1296,7 +1297,7 @@
     ;;(c-display "seqtrack-under-mouse:" new)
     (cond ((and old (not new))
            (if *current-seqtrack-num*
-               (<ra> :set-curr-seqtrack *current-seqtrack-num* #f))
+               (maybe-autoselect-curr-seqtrack *current-seqtrack-num*)))
            (<ra> :cancel-curr-seqblock-under-mouse)
            (set! *current-seqblock-info* #f))
           ((or (and new (not old))
@@ -1314,7 +1315,7 @@
           (else
            ;;(c-display "old/new:" (if old #t #f) (if new #t #f))
            (if *current-seqtrack-num*
-               (<ra> :set-curr-seqtrack *current-seqtrack-num* #f))
+               (maybe-autoselect-curr-seqtrack *current-seqtrack-num*))
            #f))))
   
 (add-mouse-move-handler

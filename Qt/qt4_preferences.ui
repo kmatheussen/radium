@@ -3209,6 +3209,22 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_5">
          <item>
+          <widget class="QGroupBox" name="groupBox_23">
+           <property name="title">
+            <string>Seqtracks</string>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_29">
+            <item>
+             <widget class="QCheckBox" name="autoselect_seqtrack_under_mouse">
+              <property name="text">
+               <string>Auto-select current seqtrack under mouse</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
           <widget class="QGroupBox" name="groupBox_22">
            <property name="title">
             <string>Seqblocks</string>

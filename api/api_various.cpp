@@ -892,6 +892,25 @@ void setAutoselectEditorBlockUnderMouse(bool val){
 }
 
 
+static bool g_autoselectSeqtrackUnderMouse = false;
+
+bool autoselectSeqtrackUnderMouse(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_autoselectSeqtrackUnderMouse = SETTINGS_read_bool("autoselect_seqtrack_under_mouse", g_autoselectSeqtrackUnderMouse);
+    has_inited = true;
+  }
+
+  return g_autoselectSeqtrackUnderMouse;
+}
+
+void setAutoselectSeqtrackUnderMouse(bool val){
+  g_autoselectSeqtrackUnderMouse = val;
+  SETTINGS_write_bool("autoselect_seqtrack_under_mouse", val);
+}
+
+
 void insertReallines(int toinsert,int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   InsertRealLines_CurrPos(window,toinsert);
