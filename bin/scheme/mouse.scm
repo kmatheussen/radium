@@ -1297,7 +1297,7 @@
     ;;(c-display "seqtrack-under-mouse:" new)
     (cond ((and old (not new))
            (if *current-seqtrack-num*
-               (maybe-autoselect-curr-seqtrack *current-seqtrack-num*)))
+               (maybe-autoselect-curr-seqtrack *current-seqtrack-num*))
            (<ra> :cancel-curr-seqblock-under-mouse)
            (set! *current-seqblock-info* #f))
           ((or (and new (not old))
