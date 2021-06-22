@@ -1118,6 +1118,11 @@
          ra:append-bus-seqtrack)
    ))
 
+(delafina (maybe-autoselect-curr-seqtrack :seqtracknum
+                                          :auto_scroll_to_make_seqtrack_visible #f
+                                          :change_curr_instrument #f)
+  (if (<ra> :autoselect-seqtrack-under-mouse)
+      (<ra> :set-curr-seqtrack seqtracknum auto_scroll_to_make_seqtrack_visible change_curr_instrument)))
 
 ;; Note: Used for shortcut
 (delafina (swap-with-prev-seqtrack :seqtracknum (<ra> :get-curr-seqtrack))

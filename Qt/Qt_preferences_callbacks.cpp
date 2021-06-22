@@ -704,6 +704,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       default_fadeout->setValue(getDefaultAudiofileFadeout());
       auto_crossfades->setChecked(doAutoCrossfades());
 
+      autoselect_seqtrack_under_mouse->setChecked(autoselectSeqtrackUnderMouse());
       autoselect_editor_block_under_mouse->setChecked(autoselectEditorBlockUnderMouse());
     }
 
@@ -1359,6 +1360,11 @@ public slots:
   void on_autoselect_editor_block_under_mouse_toggled(bool val){
     if (_initing==false)
       setAutoselectEditorBlockUnderMouse(val);
+  }
+
+  void on_autoselect_seqtrack_under_mouse_toggled(bool val){
+    if (_initing==false)
+      setAutoselectSeqtrackUnderMouse(val);
   }
 
   // colors
