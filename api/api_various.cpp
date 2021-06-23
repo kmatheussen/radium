@@ -892,6 +892,25 @@ void setAutoselectEditorBlockUnderMouse(bool val){
 }
 
 
+static bool g_autoselectEditorBlockWhenChangingSeqtrack = false;
+
+bool autoselectEditorBlockWhenChangingSeqtrack(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_autoselectEditorBlockWhenChangingSeqtrack = SETTINGS_read_bool("autoselect_editor_block_when_changing_seqtrack", g_autoselectEditorBlockWhenChangingSeqtrack);
+    has_inited = true;
+  }
+
+  return g_autoselectEditorBlockWhenChangingSeqtrack;
+}
+
+void setAutoselectEditorBlockWhenChangingSeqtrack(bool val){
+  g_autoselectEditorBlockWhenChangingSeqtrack = val;
+  SETTINGS_write_bool("autoselect_editor_block_when_changing_seqtrack", val);
+}
+
+
 static bool g_autoselectSeqtrackUnderMouse = false;
 
 bool autoselectSeqtrackUnderMouse(void){
@@ -908,6 +927,25 @@ bool autoselectSeqtrackUnderMouse(void){
 void setAutoselectSeqtrackUnderMouse(bool val){
   g_autoselectSeqtrackUnderMouse = val;
   SETTINGS_write_bool("autoselect_seqtrack_under_mouse", val);
+}
+
+
+static bool g_sequencerMouseScrollWheelStartsStopsPlaying = true;
+
+bool sequencerMouseScrollWheelStartsStopsPlaying(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_sequencerMouseScrollWheelStartsStopsPlaying = SETTINGS_read_bool("sequencer_mouse_scroll_wheel_starts_stops_playing", g_sequencerMouseScrollWheelStartsStopsPlaying);
+    has_inited = true;
+  }
+
+  return g_sequencerMouseScrollWheelStartsStopsPlaying;
+}
+
+void setSequencerMouseScrollWheelStartsStopsPlaying(bool val){
+  g_sequencerMouseScrollWheelStartsStopsPlaying = val;
+  SETTINGS_write_bool("sequencer_mouse_scroll_wheel_starts_stops_playing", val);
 }
 
 

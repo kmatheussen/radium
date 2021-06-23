@@ -3237,6 +3237,13 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
               </property>
              </widget>
             </item>
+            <item>
+             <widget class="QCheckBox" name="autoselect_editor_block_when_changing_seqtrack">
+              <property name="text">
+               <string>Auto-select current editor block when changing current seqtrack</string>
+              </property>
+             </widget>
+            </item>
            </layout>
           </widget>
          </item>
@@ -3311,6 +3318,46 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
          </item>
          <item>
           <spacer name="horizontalSpacer_14">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_15">
+         <item>
+          <widget class="QGroupBox" name="groupBox_24">
+           <property name="title">
+            <string>Mouse</string>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_30">
+            <item>
+             <widget class="QRadioButton" name="sequencer_scroll_wheel_starts_stops_playing">
+              <property name="text">
+               <string>Scroll wheel starts/stops playing</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QRadioButton" name="radioButton_2">
+              <property name="text">
+               <string>Scroll wheel scrolls seqtracks up/down</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_3">
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
            </property>
