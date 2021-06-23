@@ -783,8 +783,12 @@ static void handle_wheel_event(QWidget *widget, QWheelEvent *e, int x1, int x2, 
     
   } else {
 
+    bool do_playstop = sequencerMouseScrollWheelStartsStopsPlaying();
+    if (VerticalModifierPressed(e->modifiers()))
+      do_playstop = !do_playstop;
+      
     int vu_width = root->song->tracker_windows->systemfontheight;
-    if (VerticalModifierPressed(e->modifiers()) || mapToEditorX(widget, e->position().x()) < SEQTRACK_get_x1(0)-vu_width) {
+    if (!do_playstop || mapToEditorX(widget, e->position().x()) < SEQTRACK_get_x1(0)-vu_width) {
 
       int seqtracknum;
       
