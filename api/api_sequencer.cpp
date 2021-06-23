@@ -3239,7 +3239,7 @@ static void set_curr_seqblock(int64_t seqblockid, bool update_playlist){
 
   g_curr_seqblock_id = seqblockid;
 
-  if (g_is_changing_curr_seqtrack==0)
+  if (g_is_changing_curr_seqtrack==0 && autoselectSeqtrackUnderMouse())
     setCurrSeqtrack2(seqtracknum, true, false);
 
   SEQBLOCK_update_with_borders(seqtrack, seqblock);
