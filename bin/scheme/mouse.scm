@@ -1285,7 +1285,8 @@
 
 (define (FROM_C-call-me-after-curr-seqblock-under-mouse-has-been-called seqblockid)
   (when (or (not *current-seqblock-info*)
-            (not (= (*current-seqblock-info* :id) seqblockid)))    
+            (not (= (*current-seqblock-info* :id) seqblockid)))
+    ;;(c-display "SETTING CURR SEQBLOCK")
     (set! *current-seqblock-info* (make-seqblock-info3 seqblockid))))
 
 ;; Currently only called from the mouse-move handler below.
@@ -1299,6 +1300,7 @@
            (if *current-seqtrack-num*
                (maybe-autoselect-curr-seqtrack *current-seqtrack-num*))
            (<ra> :cancel-curr-seqblock-under-mouse)
+           ;;(c-display "     1. cancelling CURR SEQBLOCK")
            (set! *current-seqblock-info* #f))
           ((or (and new (not old))
                (not (morally-equal? new old)))
@@ -1308,6 +1310,7 @@
            ;;(set-custom-seq-indicator (<ra> :get-seqblock-start-time (new :seqblocknum) (new :seqtracknum))
            ;;                          -1
            ;;                          (<ra> :get-seqblock-color id))
+           ;;(c-display "     2. maybe cancelling CURR SEQBLOCK")
            (set! *current-seqblock-info* new) ;; set this one first, so we don't have to create seqblock-info twice.
            ;;(<ra> :set-curr-seqblock-under-mouse id)
            (<ra> :set-curr-seqblock id)
@@ -5269,6 +5272,7 @@
 
 ;; 1. Change current instrument when clicking in a seqtrack in the sequencer. (not in the header)
 ;; 2. Handle double-clicking seqblock.
+;; 3. Set current seqtrack when clicking in a seqtrack.
 (add-mouse-cycle-front (make-mouse-cycle
                   :press-func (lambda (Button X Y)
                                 (let ((seqtracknum *current-seqtrack-num*))
@@ -5277,6 +5281,7 @@
                                              (= Button *left-button*)
                                              (not *current-seqautomation/distance*))
                                     (<ra> :set-curr-seqtrack seqtracknum #f #t)
+                                    (set-curr-seqblock-info! X Y) ;; Call this since ra:set-curr-seqtrack might have screwed up *current-seqblock-info* if changing current seqblock.
                                     (let ((seqblock-info *current-seqblock-info*))
                                       ;;(c-display "get-existing " seqblock-info X Y seqtracknum)
                                       (if seqblock-info
@@ -7337,7 +7342,7 @@
                         :Get-existing-node-info (lambda (X Y callback)
                                                   ;;(c-display "         MOVE SINGLE SEQBLOCK start")
                                                   (let ((seqtracknum *current-seqtrack-num*))
-                                                    ;;(c-display "seqtracknum" seqtracknum ". boxnum:" (<ra> :get-seqblock-selected-box))
+                                                    ;;(c-display "seqtracknum" seqtracknum ". right box:" (= (<ra> :get-seqblock-selected-box) 0))
                                                     (and (not *current-seqautomation/distance*)
                                                          (if (not (<ra> :is-right-mouse-pressed))
                                                              #t
@@ -7348,17 +7353,22 @@
                                                            ;;(<ra> :set-curr-seqtrack seqtracknum)
                                                            (let ((seqblock-info *current-seqblock-info*))
                                                              ;;(c-display "get-existing " seqblock-info X Y seqtracknum)
+                                                             ;;(c-display "   seqblock-info: " (if seqblock-info #t #f) ". seqtracknums: "
+                                                             ;;           seqtracknum
+                                                             ;;           (and seqblock-info (seqblock-info :seqtracknum))
+                                                             ;;           (<ra> :get-curr-seqtrack-under-mouse #f) )
                                                              (and seqblock-info
+                                                                  (morally-equal? (<ra> :get-curr-seqtrack-under-mouse #f) (seqblock-info :seqtracknum))
                                                                   (let* ((seqtracknum (and seqblock-info (seqblock-info :seqtracknum)))
                                                                          (seqblocknum (and seqblock-info (seqblock-info :seqblocknum))))
                                                                          ;;(is-selected (<ra> :is-seqblock-selected seqblocknum seqtracknum)))
 
-                                                                    (when (not (<ra> :is-playing-song))
+                                                                    (when (and (not (<ra> :is-playing-song)))
                                                                       (define blocknum (and (<ra> :seqblock-holds-block seqblocknum seqtracknum)
                                                                                             (<ra> :get-seqblock-blocknum seqblocknum seqtracknum)))
                                                                       (if blocknum
                                                                           (<ra> :select-block blocknum)))
-                                                                        
+
                                                                     (cond ((<= (<ra> :get-num-selected-seqblocks) 1)
                                                                            
                                                                            ;;(if (and (not (<ra> :is-playing-song))
