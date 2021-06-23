@@ -705,7 +705,11 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       auto_crossfades->setChecked(doAutoCrossfades());
 
       autoselect_seqtrack_under_mouse->setChecked(autoselectSeqtrackUnderMouse());
+      
       autoselect_editor_block_under_mouse->setChecked(autoselectEditorBlockUnderMouse());
+      autoselect_editor_block_when_changing_seqtrack->setChecked(autoselectEditorBlockWhenChangingSeqtrack());
+      
+      sequencer_scroll_wheel_starts_stops_playing->setChecked(sequencerMouseScrollWheelStartsStopsPlaying());
     }
 
     // Windows
@@ -1362,11 +1366,21 @@ public slots:
       setAutoselectEditorBlockUnderMouse(val);
   }
 
+  void on_autoselect_editor_block_when_changing_seqtrack_toggled(bool val){
+    if (_initing==false)
+      setAutoselectEditorBlockWhenChangingSeqtrack(val);
+  }
+  
   void on_autoselect_seqtrack_under_mouse_toggled(bool val){
     if (_initing==false)
       setAutoselectSeqtrackUnderMouse(val);
   }
 
+  void on_sequencer_scroll_wheel_starts_stops_playing_toggled(bool val){
+    if (_initing==false)
+      setSequencerMouseScrollWheelStartsStopsPlaying(val);
+  }
+  
   // colors
   void color_changed(const QColor &col){
     //printf("HAPP! %s\n",col.name(QColor::HexArgb).toUtf8().constData());

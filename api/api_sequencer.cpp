@@ -485,20 +485,20 @@ static int64_t get_seqblock_closeness(const struct SeqBlock *seqblock1, const st
     return B_end - B_start;  
 }
 
-
 static void change_curr_seqblock_when_curr_seqtrack_has_changed(int new_seqtracknum, const struct SeqTrack *new_seqtrack){
   
   radium::Vector_t<const struct SeqBlock> seqblocks(new_seqtrack->seqblocks);
-  
+
   if (seqblocks.size()==0)
     return;
 
   for(const SeqBlock *seqblock : seqblocks)
     if (seqblock->id == new_seqtrack->last_curr_seqblock_id){
+      //printf("...seqblock->id: %d. new_seqtrack->last_curr_seqblock_id: %d\n", (int)seqblock->id, (int)new_seqtrack->last_curr_seqblock_id);
       setCurrSeqblock(seqblock->id);
       return;
     }
-  
+
   struct SeqTrack *old_seqtrack;
   int old_seqblocknum, old_seqtracknum;
   
@@ -548,6 +548,8 @@ static void setCurrSeqtrack2(int seqtracknum, bool called_from_set_curr_seqblock
   
   //if (true || seqtracknum != ATOMIC_GET(root->song->curr_seqtracknum)){ // We always go in here since the function is sometimes called just for the update() calls.
 
+  //printf("    seqtracknum: %d. Old: %d. called_from_set_curr_seqblock: %d\n", seqtracknum, old, called_from_set_curr_seqblock);
+
   if (seqtracknum != old) {
 
     if (old >= 0 && old < root->song->seqtracks.num_elements){
@@ -563,7 +565,7 @@ static void setCurrSeqtrack2(int seqtracknum, bool called_from_set_curr_seqblock
     
       R_ASSERT_NON_RELEASE(old_seqtrack != seqtrack);
     }
-  
+
     if (called_from_set_curr_seqblock==false)
       change_curr_seqblock_when_curr_seqtrack_has_changed(seqtracknum, seqtrack);
   
@@ -587,8 +589,17 @@ static void setCurrSeqtrack2(int seqtracknum, bool called_from_set_curr_seqblock
     }
 
     API_curr_seqtrack_has_changed();
+
+    if (autoselectEditorBlockWhenChangingSeqtrack()) {
+      struct SeqTrack *seqtrack;
+      int seqblocknum, seqtracknum;
+      struct SeqBlock *seqblock = getSeqblockFromIdB(g_curr_seqblock_id, &seqtrack, seqblocknum, seqtracknum, false);
+      if (seqblock != NULL && seqblock->block != NULL)
+        selectBlock(seqblock->block->l.num, -1, true);
+    }
+
   }
-  
+
 }
 
 void autoscrollSeqtracks(int seqtracknum, bool make_fully_visible){
