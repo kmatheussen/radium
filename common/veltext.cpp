@@ -30,6 +30,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "data_as_text_proc.h"
 #include "atomic.h"
 
+#include "../api/api_common_proc.h"
+
 #include "veltext_proc.h"
 
 
@@ -227,24 +229,27 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, st
     const VelText &vt = veltext.at(0);
     struct Notes *note = vt.note;
     //struct Velocities *velocity = vt.velocity;
-  
-    if (key == EVENT_DEL && vt.velnum >= 0) {
 
-      /*
-      PLAYER_lock();{
-        if (subsubtrack == 2)
-          velocity->logtype = LOGTYPE_LINEAR;
-        else
-          ListRemoveElement3(&note->velocities, &velocity->l);
-      }PLAYER_unlock();
-      */
-      
-      {
+    if (key == EVENT_DEL) {
+
+      if (false && subsubtrack == 2) {
+        
         r::TimeData<r::Velocity>::Writer writer(note->_velocities);
-        if (subsubtrack == 2)
-          writer.at_ref(vt.velnum)._logtype = LOGTYPE_LINEAR;
+        writer.at_ref(vt.velnum)._logtype = LOGTYPE_LINEAR;
+
+      } else {
+
+        int velocity_num;
+        
+        if (vt.is_first_velocity)
+          velocity_num = 0;
+        else if (vt.is_last_velocity)
+          velocity_num = r::TimeData<r::Velocity>::Reader(note->_velocities).size() + 1;
         else
-          writer.remove_at_pos(vt.velnum);
+          velocity_num = vt.velnum + 1;
+        
+        deleteVelocity(velocity_num, DYN_create_string_from_chars(GetNoteIdAsCharString(note->id)), wtrack->l.num, wblock->l.num, window->l.num);
+        
       }
       
     } else {
@@ -264,7 +269,7 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, st
             || num_velocities==0
             || (num_velocities==1 && dat.logtype==LOGTYPE_HOLD)
             )
-          is_equal = note->velocity==note->velocity_end; // Don't use equal_floats since note->velocity is an integer.
+          is_equal = note->velocity==note->velocity_end; // Note: not using equal_floats since note->velocity is an integer.
 
         safe_int_write(&note->velocity, dat.value);
         safe_int_write(&note->velocity_first_logtype, dat.logtype);
@@ -273,11 +278,11 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, st
           safe_int_write(&note->velocity_end, dat.value);
         
       } else if (vt.is_last_velocity){
-        
+
         safe_int_write(&note->velocity_end, dat.value);
         
       } else {
-        
+
         bool is_equal = false;
 
         if (dat.logtype==LOGTYPE_HOLD && num_velocities==1)
