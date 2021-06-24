@@ -3357,7 +3357,7 @@ int radium_main(const char *arg){
 
   //printf("col: -%s-, font: -%s-\n",SETTINGS_read_string("last_color_version","0.0"),SETTINGS_read_string("last_system_font_version","0.0"));
 
-  const char *last_color_version = "6.9.75";
+  const char *last_color_version = "6.9.80";
   
   if(strcmp(SETTINGS_read_string("last_color_version","0.0"),last_color_version)){
     GFX_Message(NULL,
