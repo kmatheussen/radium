@@ -1936,7 +1936,7 @@ struct Notes{
 #endif
         bool scheduler_may_send_velocity_next_block;
         bool scheduler_must_send_velocity_next_block; // Can only be set to true if sheduler_may_send_velocity_next_block==true.
-        float curr_velocity;
+        float curr_velocity; // Don't think this variable needs to be stored in seqblock->playing_notes. It seems to only contain note->velocity*track->volume*track->mute
         int64_t curr_velocity_time;
   
         bool scheduler_may_send_pitch_next_block;
