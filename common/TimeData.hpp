@@ -196,7 +196,7 @@ public:
 private:
   
   template <typename ValType>
-  friend class RT_TimeData_Cache_Handler;
+  friend struct RT_TimeData_Cache_Handler;
     
   double _last_value = 0; // last value returned from TimeData::get_value();
   int _last_play_id = -1; // Value of pc->play_id when last_value was returned.
