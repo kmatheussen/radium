@@ -539,7 +539,7 @@ static inline float scale(const float x, const float x1, const float x2, const f
     fprintf(stderr, "scale(): Calling abort(). x/x1/x2/y1/y2: %f %f %f %f %f ---- %d %d %d %d %d %d\n", x,x1,x2,y1,y2,
             sane_isnormal(x), sane_isnormal(12), sane_isnormal(x2), sane_isnormal(y1), sane_isnormal(y2), sane_isnormal(diff));
 
-    if (isfinite(x) && isfinite(12) && isfinite(x2) && isfinite(y1) && isfinite(y2) && isfinite(diff))
+    if (isfinite(x) && isfinite(x1) && isfinite(x2) && isfinite(y1) && isfinite(y2) && isfinite(diff))
       fprintf(stderr, "   ....Aborting call to abort. None of the numbers where inf or nan.\n");
     else
       abort();
