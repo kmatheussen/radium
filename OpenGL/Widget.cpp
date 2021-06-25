@@ -2815,6 +2815,8 @@ static void init_widget2(void){
 #if THREADED_OPENGL
   while(ATOMIC_GET(g_has_updated_at_least_once)==false)
     msleep(5);
+
+  msleep(200);  // Possible fix for font garbage in windows.
 #endif
   
   g_gl_widget_started = true;
@@ -2825,7 +2827,18 @@ static void maybe_init_widget3(void){
 
   s_num_tries++;
 
-  if (ATOMIC_GET(g_has_resized_at_least_once)==false || maybe_start_t2_thread()==false){
+  if (ATOMIC_GET(g_has_resized_at_least_once)==false) {
+    if (s_num_tries > 100){ // 10s
+      GFX_addMessage("Unable to initialize OpenGL.");
+    } else {
+      QTimer::singleShot(100, maybe_init_widget3);
+    }
+    return;
+  }
+
+  msleep(200); // Possible fix for font garbage in windows.
+  
+  if (maybe_start_t2_thread()==false){
     if (s_num_tries > 100){ // 10s
       GFX_addMessage("Unable to initialize OpenGL.");
     } else {
