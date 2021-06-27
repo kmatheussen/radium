@@ -111,10 +111,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "VST_plugins_proc.h"
 
 #if 1 // no more vestige. why did I ever bother with it?
-#if FOR_LINUX
-  #  undef PRAGMA_ALIGN_SUPPORTED
-  #  define __cdecl
-#endif
+#  if FOR_LINUX
+#    undef PRAGMA_ALIGN_SUPPORTED
+#    define __cdecl
+#  endif
 #  include "pluginterfaces/vst2.x/aeffectx.h"
 #else
 #  include "vestige/aeffectx.h"  // It should not be a problem to use VESTIGE in this case. It's just used for getting vendor string and product string.
@@ -1983,9 +1983,95 @@ static void set_plugin_type_data(juce::AudioPluginInstance *audio_instance, Soun
 }
 
 
-static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool is_loading){
+namespace{
+  const juce::String g_no_string = "________________RADIUM_JUCE_no_string___________________";
+  
+  struct State{
+    juce::String _audio_instance_state = g_no_string;
+    juce::String _audio_instance_program_state = g_no_string;
+    int _audio_instance_current_program;
+    bool _audio_instance_current_program_set = false;
+    juce::String _identifier_string = g_no_string;
+
+    bool _is_valid = true;
+    
+    explicit State(const struct SoundPlugin *plugin){
+      
+      Data *data = (Data*)plugin->data;
+        
+      juce::AudioPluginInstance *audio_instance = data->audio_instance;
+
+      run_on_message_thread([&](){
+          juce::MemoryBlock state_info;
+          juce::MemoryBlock program_state_info;
+          audio_instance->getStateInformation(state_info);
+          audio_instance->getCurrentProgramStateInformation(program_state_info);
+          
+          _audio_instance_current_program = audio_instance->getCurrentProgram();
+          _audio_instance_current_program_set = true;
+          
+          if (state_info.getSize() > 0)
+            _audio_instance_state = state_info.toBase64Encoding();
+          
+          if (program_state_info.getSize() > 0)
+            _audio_instance_program_state = program_state_info.toBase64Encoding();
+
+          TypeData *type_data = (struct TypeData*)plugin->type->data;
+          _identifier_string = type_data->description.createIdentifierString().toRawUTF8();
+        });
+    }
+
+    explicit State(const hash_t *state){
+      if (state==NULL) {
+
+        _is_valid = false;
+
+      } else {
+        
+        if (HASH_has_key(state, "audio_instance_state"))
+          _audio_instance_state = HASH_get_chars(state, "audio_instance_state");
+        
+        if (HASH_has_key(state, "audio_instance_program_state"))
+          _audio_instance_program_state = HASH_get_chars(state, "audio_instance_program_state");      
+        
+        if (HASH_has_key(state, "audio_instance_current_program")){
+          _audio_instance_current_program = HASH_get_int(state, "audio_instance_current_program");
+          _audio_instance_current_program_set = true;
+        }
+        
+        if (HASH_has_key(state, "identifier_string"))
+          _identifier_string = HASH_get_chars(state, "identifier_string");
+
+      }
+    }
+      
+    void insert_in_hash(hash_t *state){
+      HASH_put_chars(state, "audio_instance_state", _audio_instance_state.toRawUTF8());
+      HASH_put_chars(state, "audio_instance_program_state", _audio_instance_program_state.toRawUTF8());
+      HASH_put_int(state, "audio_instance_current_program", _audio_instance_current_program);
+      HASH_put_chars(state, "identifier_string", _identifier_string.toRawUTF8());
+    }
+  
+  };
+}
+
+
+
+// Must be called on the message thread.
+static void recreate_from_state(struct SoundPlugin *plugin, const State &state, bool is_loading){
   //const MMLock mmLock;
 
+  if (!juce::MessageManager::getInstance()->isThisTheMessageThread()){
+    R_ASSERT_NON_RELEASE(false);
+    run_on_message_thread([&](){
+        recreate_from_state(plugin, state, is_loading);
+      });
+    return;
+  }
+  
+  if (!state._is_valid)
+    return;
+  
   Data *data = (Data*)plugin->data;
   
   juce::AudioPluginInstance *audio_instance = data->audio_instance;
@@ -1994,15 +2080,16 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
 
   bool is_compatible = true;
 
-  if (HASH_has_key(state, "identifier_string")){
-    bool matches;
-    const char *identifier_string = HASH_get_chars(state, "identifier_string");
-    run_on_message_thread([&](){
-        matches = type_data->description.matchesIdentifierString(identifier_string);
-      });
+  if (state._identifier_string != g_no_string) {
+    bool matches = type_data->description.matchesIdentifierString(state._identifier_string);
     if (!matches){
       if (type_data->has_shown_noncompatible_warning == false){
-        GFX_addMessage("Warning: Saved state is not compatible with \"%s\" / \"%s\".\n\nThe state was probably saved for a different plugin with the same name.", plugin->type->type_name, plugin->type->name);
+        THREADING_run_on_main_thread_async([plugin]
+                                           {
+                                             GFX_addMessage("Warning: Saved state is not compatible with \"%s\" / \"%s\".\n\nMaybe the state was saved with a different type of plugin that had the same name?",
+                                                            plugin->type->type_name, plugin->type->name);
+                                           });
+                                           
         type_data->has_shown_noncompatible_warning = true;
       }
       is_compatible = false;
@@ -2011,43 +2098,35 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
 
   if (is_compatible) {
 
-    if (HASH_has_key(state, "audio_instance_state")) {
-      const char *stateAsString = HASH_get_chars(state, "audio_instance_state");
-      run_on_message_thread([&](){
-          juce::MemoryBlock sourceData;
-          sourceData.fromBase64Encoding(stateAsString);
-          audio_instance->setStateInformation(sourceData.getData(), sourceData.getSize());
-        });
+    if (state._audio_instance_state != g_no_string) {
+      juce::MemoryBlock sourceData;
+      sourceData.fromBase64Encoding(state._audio_instance_state);
+      audio_instance->setStateInformation(sourceData.getData(), sourceData.getSize());
     }
     
     
-    if (HASH_has_key(state, "audio_instance_current_program")) {
-      int current_program = HASH_get_int(state, "audio_instance_current_program");
-      if (current_program >= 0) {
-        int num_programs;
-        run_on_message_thread([&](){
-            num_programs = audio_instance->getNumPrograms();
-            if (current_program < num_programs)
-              audio_instance->setCurrentProgram(current_program);
-          });
-        if (num_programs > 0 && current_program >= num_programs){
-          GFX_addMessage("Warning: Program number for \"%s\" / \"%s\" on disk is %d, while the plugin only have %d program%s.",
-                         plugin->type->type_name, plugin->type->name,
-                         current_program, num_programs,
-                         num_programs==1 ? "" : "s"
-                         );
-        }
-      }
+    if (state._audio_instance_current_program_set) {
+      int current_program = state._audio_instance_current_program;
+
+      int num_programs = audio_instance->getNumPrograms();
+      if (current_program < num_programs)
+        audio_instance->setCurrentProgram(current_program);
+
+      if (num_programs > 0 && current_program >= num_programs)
+        THREADING_run_on_main_thread_async([plugin, current_program, num_programs]
+                                           {
+                                             GFX_addMessage("Warning: Program number for \"%s\" / \"%s\" on disk is %d, while the plugin only have %d program%s.",
+                                                            plugin->type->type_name, plugin->type->name,
+                                                            current_program, num_programs,
+                                                            num_programs==1 ? "" : "s"
+                                                            );
+                                           });
     }
     
-    if (HASH_has_key(state, "audio_instance_program_state")){
-      const char *programStateAsString = HASH_get_chars(state, "audio_instance_program_state");
-      run_on_message_thread([&](){
-          juce::MemoryBlock sourceData;
-          sourceData.fromBase64Encoding(programStateAsString);
-      
-          audio_instance->setCurrentProgramStateInformation(sourceData.getData(), sourceData.getSize());
-        });          
+    if (state._audio_instance_program_state != g_no_string) {
+      juce::MemoryBlock sourceData;
+      sourceData.fromBase64Encoding(state._audio_instance_program_state);      
+      audio_instance->setCurrentProgramStateInformation(sourceData.getData(), sourceData.getSize());
     }
   }
 
@@ -2059,6 +2138,15 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
     data->y = HASH_get_int(state, "y_pos");
   */
 }
+
+static void plugin_type_recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool is_loading){
+  State state2(state);
+  
+  run_on_message_thread([&](){
+      recreate_from_state(plugin, state2, is_loading);
+    });
+}
+
 
 
 static int num_running_plugins = 0;
@@ -2113,17 +2201,18 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
     return NULL;
   }
 
+
   juce::AudioPluginInstance *audio_instance_pointer = audio_instance.get();
   
   {
     //const MMLock mmLock;
+
+    State state2(state); // (don't need to check if state==NULL here.)
     
-    run_on_message_thread([audio_instance_pointer, plugin, type_data]() {
-      plugin->data = new Data(audio_instance_pointer, plugin, type_data);        
-    });
-    
-    if (state!=NULL)
-      recreate_from_state(plugin, state, is_loading);
+    run_on_message_thread([audio_instance_pointer, plugin, type_data, state2, is_loading]() {
+      plugin->data = new Data(audio_instance_pointer, plugin, type_data);
+      recreate_from_state(plugin, state2, is_loading);
+      });
     
     num_running_plugins++;
 
@@ -2138,62 +2227,12 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
   }
 }
 
-
 static void create_state(const struct SoundPlugin *plugin, hash_t *state){
   //const MMLock mmLock;
-  
-  Data *data = (Data*)plugin->data;
-  
-  juce::AudioPluginInstance *audio_instance = data->audio_instance;
 
-  // save state
-  {    
-    juce::MemoryBlock destData;
-    run_on_message_thread([&](){
-        audio_instance->getStateInformation(destData);
-      });
+  State state2(plugin);
 
-    if (destData.getSize() > 0){
-      juce::String stateAsString = destData.toBase64Encoding();    
-      HASH_put_chars(state, "audio_instance_state", stateAsString.toRawUTF8());
-    }
-  }
-
-  // save program state
-  {
-    juce::MemoryBlock destData;
-    run_on_message_thread([&](){
-        audio_instance->getCurrentProgramStateInformation(destData);
-      });
-    
-    if (destData.getSize() > 0){
-      juce::String stateAsString = destData.toBase64Encoding();    
-      HASH_put_chars(state, "audio_instance_program_state", stateAsString.toRawUTF8());
-    }
-  }
-
-  int current_program;
-  
-  run_on_message_thread([&](){
-      current_program = audio_instance->getCurrentProgram();
-    });
-  HASH_put_int(state, "audio_instance_current_program", current_program);
-
-  /*
-  HASH_put_int(state, "x_pos", data->x);
-  HASH_put_int(state, "y_pos", data->y);
-  */
-  
-  {
-    TypeData *type_data = (struct TypeData*)plugin->type->data;
-    const char *identifier_string;
-    run_on_message_thread([&](){
-        identifier_string = V_strdup(type_data->description.createIdentifierString().toRawUTF8());
-      });  
-    
-    HASH_put_chars(state, "identifier_string", identifier_string);
-    V_free((void*)identifier_string);
-  }
+  state2.insert_in_hash(state);
 }
 
 
@@ -2441,7 +2480,7 @@ static SoundPluginType *create_plugin_type(const juce::PluginDescription &descri
   //plugin_type->get_effect_description=get_effect_description;
 
   plugin_type->create_state = create_state;
-  plugin_type->recreate_from_state = recreate_from_state;
+  plugin_type->recreate_from_state = plugin_type_recreate_from_state;
 
   plugin_type->get_num_programs = get_num_programs;
   plugin_type->get_current_program = get_current_program;
