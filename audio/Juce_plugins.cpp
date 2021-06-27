@@ -2447,6 +2447,7 @@ bool PLUGINHOST_is_vst_or_au_plugin(SoundPlugin *plugin){
   return plugin->type->RT_process==RT_process;
 }
 
+
 static SoundPluginType *create_plugin_type(const juce::PluginDescription &description, const wchar_t *file_or_identifier, SoundPluginTypeContainer *container){ //, const wchar_t *library_file_full_path){
   printf("b02 %S\n",file_or_identifier);
   fflush(stdout);
@@ -2866,6 +2867,10 @@ char *JUCE_download(const char *url_url){
   return strdup(text.toRawUTF8());
 }
 
+bool JUCE_current_thread_is_message_thread(void){
+  return juce::MessageManager::getInstance()-> isThisTheMessageThread();
+}
+  
 static juce::String g_backtrace;
 
 const char *JUCE_get_backtrace(void){

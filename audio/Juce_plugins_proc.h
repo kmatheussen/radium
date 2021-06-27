@@ -34,6 +34,8 @@ extern LANGSPEC void JUCE_unlock(void *lock);
 extern LANGSPEC char *JUCE_download(const char *url_url); // the returned pointer must be freed manually using free().
 extern LANGSPEC const char *JUCE_get_backtrace(void);
 
+extern LANGSPEC bool JUCE_current_thread_is_message_thread(void);
+  
 void JUCE_add_sound(float *dst, const float *src, int num_frames);
 
 void JUCE_get_min_max_val(const float *array, const int num_elements, float *min_val, float *max_val);

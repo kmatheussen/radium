@@ -27,6 +27,7 @@
 #include "threading_lowlevel.h"
 
 #include "../audio/Mixer_proc.h"
+#include "../audio/Juce_plugins_proc.h"
 
 #if defined(FOR_MACOSX)
 #include "../macosx/machthreads_proc.h"
@@ -199,6 +200,10 @@ void THREADING_wait_for_async_function(int64_t id){
     
   } else {
 
+#if !defined(RELEASE)
+    R_ASSERT(!JUCE_current_thread_is_message_thread()); // Big chance of deadlock if waiting for the main thread on the juce message thread. The juce message thread often waits for the main thread.
+#endif
+
     radium::Semaphore semaphore;
     
     {
@@ -272,7 +277,7 @@ void THREADING_run_on_main_thread_and_wait(std::function<void(void)> callback){
     callback();
     return;    
   }
-  
+
   int64_t id = THREADING_run_on_main_thread_async(callback);
   THREADING_wait_for_async_function(id);
 }
