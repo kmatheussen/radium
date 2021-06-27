@@ -1918,6 +1918,54 @@ static std::unique_ptr<juce::AudioPluginInstance> create_audio_instance(const Ty
     
       //const MMLock mmLock;
       run_on_message_thread([&](){
+
+          instance->enableAllBuses();
+
+          /*
+          int num_input_channels;
+          int num_output_channels;
+
+          const bool isAU = description.pluginFormatName == "AU" || description.pluginFormatName == "AudioUnit";
+          findMaxTotalChannels(instance.get(), isAU, num_input_channels, num_output_channels);
+
+          auto layout = instance->getBusesLayout();
+          */
+          int num_input_buses = instance->getBusCount(true);
+          int num_output_buses = instance->getBusCount(false);
+
+          if (num_input_buses > 0){
+            auto *bus = instance->getBus(true, 0);
+            bus->setCurrentLayout(bus->supportedLayoutWithChannels(bus->getMaxSupportedChannels(64)));
+          }
+
+          if (num_output_buses > 0){
+            auto *bus = instance->getBus(false, 0);
+            bus->setCurrentLayout(bus->supportedLayoutWithChannels(bus->getMaxSupportedChannels(64)));
+          }
+
+          {
+            auto layout = instance->getBusesLayout();
+            int num_input_buses = instance->getBusCount(true);
+            int num_output_buses = instance->getBusCount(false);
+            printf("------. num input buses: %d. num output buses: %d. num channels: %d/%d, channel set sizes: %d / %d. channel types: %d / %d.\n"
+                   "           Speaker arrs: \"%s\" / \"%s\"\n",
+                   num_input_buses,
+                   num_output_buses,
+                   layout.getNumChannels(true, 0),
+                   layout.getNumChannels(false, 0),
+                   layout.getChannelSet(true, 0).size(),
+                   layout.getChannelSet(false, 0).size(),
+                   (int)layout.getChannelSet(false, 0).getTypeOfChannel(0),
+                   (int)layout.getChannelSet(true, 0).getTypeOfChannel(0),
+                   layout.getChannelSet(false, 0).getSpeakerArrangementAsString().toRawUTF8(),
+                   layout.getChannelSet(false, 0).getSpeakerArrangementAsString().toRawUTF8()
+                   );
+                    
+            //getchar();
+          }
+          
+          //audio_instance->enableAllBuses();
+          
           instance->prepareToPlay(sample_rate, block_size);
         });
       
