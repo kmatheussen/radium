@@ -205,7 +205,7 @@ void StopAllNotesAtPlace(
                         }
                         
 			CutListAt(&temp->pitches,placement);
-			PlaceCopy(&temp->end,placement);
+			temp->end = r_placement;
                         NOTE_validate(block, track, temp);
 		}
 		temp=NextNote(temp);
