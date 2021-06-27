@@ -1,3 +1,21 @@
+Changes 6.9.80 -> 6.9.81:
+* Load: Fix program freeze if loading a song with a
+  VST/AU plugin from the command line. Was probably
+  only a problem on Linux.
+* VST/AU: Enable all audio channels of VST/AU plugins
+  when the plugin is initiated since some plugins
+  don't enable all channels by default. For instance,
+  the U-he Runciter plugin only enables one of its
+  channels. In the future there should be an option
+  to select bus layout for plugins
+* Editor: Fix inserting a new note below another note
+  in a non-polyphonic matter, i.e. so that the end of
+  the first note stops where the second note starts.
+  This could in some situations fail spectacularly.
+  Bug introduced in 6.9.80
+
+
+
 Changes 6.9.75 -> 6.9.80:
 * Windows/Editor: Another workaround to fix garbled
   fonts sometimes happening in the editor right after
