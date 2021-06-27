@@ -3303,20 +3303,7 @@ int radium_main(const char *arg){
   //QFontDatabase::addApplicationFont("/gammelhd/usr/share/fonts/liberation/LiberationMono-Regular.ttf");
 
   ResetUndo();
-  if(g_load_new_song==true){
-    if (g_songfile_from_commandline != NULL) {
-      
-      QFileInfo info(g_songfile_from_commandline);
-      QString filename = g_songfile_from_commandline;
-      if (!info.isAbsolute())
-        filename = g_startup_path + OS_get_directory_separator() + filename;
-      
-      if (LoadSong_CurrPos(window, make_filepath(filename))==false)
-        NewSong_CurrPos(window);
-      
-    }else
-      NewSong_CurrPos(window);
-  }
+  NewSong_CurrPos(window);
 
   //updateAllFonts(QApplication::mainWidget());
 
@@ -3492,6 +3479,18 @@ int radium_main(const char *arg){
 #if defined(FOR_LINUX) || defined(FOR_MACOSX)
   setup_SIGTERM_handler();
 #endif
+
+  if(g_load_new_song==true){
+    if (g_songfile_from_commandline != NULL) {
+      
+      QFileInfo info(g_songfile_from_commandline);
+      QString filename = g_songfile_from_commandline;
+      if (!info.isAbsolute())
+        filename = g_startup_path + OS_get_directory_separator() + filename;
+      
+      LoadSong_CurrPos(window, make_filepath(filename));
+    }
+  }
 
 #if USE_QT_VISUAL
  again:

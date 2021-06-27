@@ -142,16 +142,16 @@ public:
 
       if (_settings.get()!=NULL) {
 
-        const wchar_t *w = _settings->toString().toWideCharPointer();
+        juce::String settings_string = _settings->toString();
         
-        THREADING_run_on_main_thread_and_wait([w] // Must wait since 'w' is probably deleted when we go out of scope.
-                                              {
-                                                SETTINGS_write_wchars("audio_device", STRING_replace(STRING_replace(w, "\r\n", " "), "\n", " "));
-                                              });
+        THREADING_run_on_main_thread_async([settings_string]
+                                           {
+                                             SETTINGS_write_wchars("audio_device", STRING_replace(STRING_replace(settings_string.toWideCharPointer(), "\r\n", " "), "\n", " "));
+                                           });
         
         //printf("old: %f. _last_reported: %f. Settings: \"%s\"\n", old_samplerate, _last_reported_samplerate, _settings->toString().toRawUTF8());
       }
-
+      
       
       if (old_samplerate >= 0 && !equal_doubles(old_samplerate, _last_reported_samplerate)){
 
