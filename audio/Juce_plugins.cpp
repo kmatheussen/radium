@@ -1921,15 +1921,6 @@ static std::unique_ptr<juce::AudioPluginInstance> create_audio_instance(const Ty
 
           instance->enableAllBuses();
 
-          /*
-          int num_input_channels;
-          int num_output_channels;
-
-          const bool isAU = description.pluginFormatName == "AU" || description.pluginFormatName == "AudioUnit";
-          findMaxTotalChannels(instance.get(), isAU, num_input_channels, num_output_channels);
-
-          auto layout = instance->getBusesLayout();
-          */
           int num_input_buses = instance->getBusCount(true);
           int num_output_buses = instance->getBusCount(false);
 
@@ -1943,6 +1934,7 @@ static std::unique_ptr<juce::AudioPluginInstance> create_audio_instance(const Ty
             bus->setCurrentLayout(bus->supportedLayoutWithChannels(bus->getMaxSupportedChannels(64)));
           }
 
+#if !defined(RELEASE)
           {
             auto layout = instance->getBusesLayout();
             int num_input_buses = instance->getBusCount(true);
@@ -1963,8 +1955,7 @@ static std::unique_ptr<juce::AudioPluginInstance> create_audio_instance(const Ty
                     
             //getchar();
           }
-          
-          //audio_instance->enableAllBuses();
+#endif
           
           instance->prepareToPlay(sample_rate, block_size);
         });
