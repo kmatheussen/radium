@@ -479,13 +479,11 @@ extern const Place PlaceFirstPos;
 
 #define PlaceIsFirstPos(a) ((a)->line==0 && (a)->counter==0)
 
-#define PlaceCopy(a,b) do {                              \
-    Place *das_a = (Place *)a;                           \
-    Place *das_b = (Place *)b;                                    \
-    das_a->line=das_b->line;                                      \
-    das_a->counter=das_b->counter;                                \
-    das_a->dividor=das_b->dividor;                                \
-  } while(0)
+static inline void PlaceCopy(Place *to, const Place *from){
+  to->line = from->line;
+  to->counter = from->counter;
+  to->dividor = from->dividor;
+}
 
 #define GetfloatFromPlace(a) ((float) ( \
 		(float)((a)->line) + ( \
