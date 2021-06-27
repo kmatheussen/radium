@@ -1,3 +1,89 @@
+Changes 6.9.75 -> 6.9.80:
+* Windows/Editor: Another workaround to fix garbled
+  fonts sometimes happening in the editor right after
+  startup.
+* Editor: Changed the behavior when pressing DEL on a
+  veltext entry so that it behaves the same way as
+  when deleting a velocity node with the mouse.
+* Manual: Minor updates.
+* Sequencer: Make it optional in preferences
+  whether changing current seqtrack also changes
+  current editor block. Also disable this option by
+  default, before it was enabled.
+* Sequencer: Add option in preferences whether mouse
+  wheel up/down starts/stops playing or scrolls
+  up/down seqtracks.
+* Sequencer: New option in preferences to select
+  whether to autoselect the seqtrack which is
+  currently below the mouse pointer. In addition,
+  turn this option OFF by default (before this
+  behavior was ON).
+* Mixer: Change the "Connected to main pipe" option
+  in the popup menus to "Connected to main bus".
+* Preferences/colors: Add slider to adjust the amount
+  of gradient colors of various filled rectangles.
+* GUI: Various tweaks to color shading.
+* Preferences/colors: Fix setting correct default
+  values for the saturation and brightness sliders
+  when pressing "Reset".
+* Sequencer: New option in preferences to select
+  whether to autoselect block currently under the
+  mouse pointer. In addition, turn this option OFF by
+  default (before this behavior was ON).
+* Load: Add workaround for loading songs saved with
+  Radium older than 6.9.76. Before that there was a
+  bug that caused no volume change to be played if
+  there were only two velocity nodes for a note and
+  the last node had value 0 (i.e. plain
+  decrescendo where not played).
+* GUI: Made the green audio peak color greener.
+* Mixer: Paint a handler for the volume sliders to
+  better see current value.
+* Colors: Adjusted check box colors a little bit.
+* Modulator: Fix division by zero if min and max is
+  equal. (This caused illegal floating points to
+  wander around in the system).
+* Audio: Assert that the value is a legal floating
+  point when setting plugin parameters.
+* Editor: Convert note velocities to the new data
+  structure:
+  * The most notable change is that any editing is
+    heard immediately if playing block or song at
+    the same time.
+  * Using less CPU cache. CPU usage might be notably
+    lower after notes themselves have been converted
+    to the new data structure.
+  * Coincidentally fixed a bug that caused no
+    volume change to be heard if there were only
+    two velocity nodes for a note and the last node
+    had value 0 (i.e. plain decrescendos were not
+    played). Also add a workaround for this bug so
+    that loading old songs still sound the same.
+  * Necessary for future work such as replacing
+    OpenGL with Vulkan.
+* Editor: Don't delete note when deleting the last
+  velocity node and there are pitch changes unless
+  there are only two velocity nodes.
+* Loading: Fix showing correct line numbers when
+  loading song fails.
+* Internal: Various improvements to the RT memory
+  allocator.
+* API:
+  * New: autoselectEditorBlockUnderMouse,
+    setAutoselectEditorBlockUnderMouse,
+    getAmountOfGradient, setAmountOfGradient,
+    autoselectSeqtrackUnderMouse,
+    setAutoselectSeqtrackUnderMouse,
+    autoselectEditorBlockWhenChangingSeqtrack,
+    setAutoselectEditorBlockWhenChangingSeqtrack,
+    sequencerMouseScrollWheelStartsStopsPlaying,
+    setSequencerMouseScrollWheelStartsStopsPlaying.
+  * Change last argument (gradient) for gui_filledBox
+    from boolean to int, and add 13 different types of
+    gradients to choose from.
+
+
+
 Changes 6.9.74 -> 6.9.75:
 * GUI: Tweak default background color of the editor
   and the modular mixer.
