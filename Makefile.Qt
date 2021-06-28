@@ -955,8 +955,8 @@ $(T)localzooms.o:  $(BUILD_DEPENDENCIES) $(CD)localzooms.c
 $(T)notes.o:  $(BUILD_DEPENDENCIES) $(CD)notes.cpp common/nsmtracker.h common/TimeData.hpp
 	$(CCC2) $(CD)notes.cpp $(QTOPT)
 
-$(T)pitches.o:  $(BUILD_DEPENDENCIES) $(CD)pitches.c 
-	$(CC2) $(CD)pitches.c $(OPT)
+$(T)pitches.o:  $(BUILD_DEPENDENCIES) $(CD)pitches.cpp
+	$(CCC2) $(CD)pitches.cpp $(CPPOPT)
 
 $(T)wblocks.o:  $(BUILD_DEPENDENCIES) $(CD)wblocks.c 
 	$(CC2) $(CD)wblocks.c $(OPT)

@@ -47,7 +47,7 @@ struct Notes *GetNextPitchNote(const struct Notes *note){
 */
 
 struct Pitches *AddPitch(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct Notes *note, const Place *place, float notenum){
-  struct Pitches *pitch = talloc(sizeof(struct Pitches));
+  struct Pitches *pitch = (struct Pitches *)talloc(sizeof(struct Pitches));
   PlaceCopy(&pitch->l.p,place);
   pitch->note = notenum;
   //pitch->note_note = note;
