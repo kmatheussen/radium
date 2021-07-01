@@ -1,3 +1,10 @@
+Changes 6.9.81 -> 6.9.82:
+* Editor: Don't show assertion window when changing
+  the number of lines in a block causes a note to
+  be shortened. Bug introduced in 6.9.80
+
+
+
 Changes 6.9.80 -> 6.9.81:
 * Load: Fix program freeze if loading a song with a
   VST/AU plugin from the command line. Was probably
