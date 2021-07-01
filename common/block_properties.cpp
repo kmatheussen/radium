@@ -56,7 +56,7 @@ void Block_Set_num_lines2(
                           int num_lines,
                           radium::PlayerPauseOnlyIfNeeded &player_pause
 ){
-	Place lastplace1,lastplace;
+	Place lastplace;
 	struct Tracker_Windows *window=root->song->tracker_windows;
 	struct WBlocks *wblock;
 	struct LocalZooms *localzoom;
@@ -71,7 +71,7 @@ void Block_Set_num_lines2(
 
           player_pause.need_it();
           
-          PlaceSetLastPos(block,&lastplace1);
+          //PlaceSetLastPos(block,&lastplace1);
 
           block->num_lines=num_lines;
 
@@ -94,10 +94,14 @@ void Block_Set_num_lines2(
               while(note!=NULL){
                 //CutListAt(&note->velocities,&lastplace);
                 r::TimeData<r::Velocity>::Writer(note->_velocities).remove_everything_after(rlastplace);
+                
                 CutListAt(&note->pitches,&lastplace);
-                if(note->end >= place2ratio(lastplace1) && note->noend==1){
+                r::TimeData<r::Pitch>::Writer(note->_pitches).remove_everything_after(rlastplace);
+                
+                if(note->end >= place2ratio(lastplace)) { // && note->noend==1){
                   note->end = place2ratio(lastplace);
                 }
+                
                 note=NextNote(note);
               }
               LegalizeNotes(block,track);
@@ -134,7 +138,7 @@ void Block_Set_num_lines2(
             while(track!=NULL){
               note=track->notes;
               while(note!=NULL){
-                if(note->end>=place2ratio(lastplace1) && note->noend==1){
+                if(note->end>=place2ratio(lastplace)) { // && note->noend==1){
                   note->end = place2ratio(p_Last_Pos(block));
                 }
                 note=NextNote(note);
