@@ -96,7 +96,7 @@ void Block_Set_num_lines2(
                 r::TimeData<r::Velocity>::Writer(note->_velocities).remove_everything_after(rlastplace);
                 
                 CutListAt(&note->pitches,&lastplace);
-                r::TimeData<r::Pitch>::Writer(note->_pitches).remove_everything_after(rlastplace);
+                //r::TimeData<r::Pitch>::Writer(note->_pitches).remove_everything_after(rlastplace);
                 
                 if(note->end >= place2ratio(lastplace)) { // && note->noend==1){
                   note->end = place2ratio(lastplace);
