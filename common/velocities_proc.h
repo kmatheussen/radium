@@ -43,12 +43,13 @@ extern LANGSPEC void AddVelocityCurrPos(struct Tracker_Windows *window);
 extern LANGSPEC void IncreaseVelocityCurrPos(struct Tracker_Windows *window,int inc);
 
 #ifdef __cplusplus
-extern void RT_VELOCITIES_called_each_block(struct SeqTrack *seqtrack,
-                                            const int play_id,
-                                            const struct SeqBlock *seqblock,
-                                            const struct Tracks *track,
-                                            const int64_t seqtime_start,
-                                            const int64_t seqtime_end,
-                                            const r::RatioPeriod &track_period
-                                            );
+extern void RT_VELOCITIES_called_each_block_for_each_note(struct SeqTrack *seqtrack,
+                                                          const int play_id,
+                                                          const struct SeqBlock *seqblock,
+                                                          const struct Tracks *track,
+                                                          const int64_t seqtime_start,
+                                                          const r::RatioPeriod &track_period,
+                                                          struct Patch *patch,
+                                                          struct Notes *note
+                                                          );
 #endif
