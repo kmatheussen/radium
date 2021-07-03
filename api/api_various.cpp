@@ -1767,7 +1767,9 @@ void generalReturn(int windownum){
         EditNoteCurrPos(window);
     }
     break;
-  }  
+  }
+
+  window->must_redraw = true;
 }
 
 int appendBlock(void){
