@@ -1872,17 +1872,15 @@
   (show-async-message :text
                       (<-> "No range in block, and no notes in the pianroll selected."
                            "<br>"
-                           "<UL>"
-                           "<LI>To select range:<OL>"
-                           "<br>"
-                           "  <LI>Move cursor to range should start and press Left Meta + B."
-                           "  <LI>Move cursor to range should end and press Left Meta + B, again."
-                           "  </OL>"
-                           "<br>"
-                           "<LI>To select pianoroll notes:<UL>"
-                           "  <LI>Ctrl-click notes (in the pianoroll)."
-                           "  <LI>Ctrl-drag to create selection-rectangle (in the pianoroll)."
-                           "  </UL>"
-                           "</UL>"
-                           )))
+                           )
+                      :buttons '("1. HOWTO set range" "2. HOWTO select notes in the pianoroll" "Close")
+                      :callback (lambda (what)
+                                  (cond ((string-starts-with? what "1.")
+                                         (FROM-C-show-help-window "help/notetext_editor_framed.html"))
+                                        ((string-starts-with? what "2.")
+                                         (FROM-C-show-help-window "help/pianoroll_editor_framed.html"))))
+                      ))
 
+#!!
+(show-missing-range-message)
+!!#
