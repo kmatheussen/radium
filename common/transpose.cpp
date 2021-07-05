@@ -97,7 +97,6 @@ static bool TransposeRange(
 	struct WBlocks *wblock,
 	int trans
 ){
-	struct Tracks *track;
 	int lokke;
 
 	const Place *p1=&wblock->range.y1;
@@ -110,7 +109,7 @@ static bool TransposeRange(
 
         bool ret = false;
         
-	track=ListFindElement1(&wblock->block->tracks->l,wblock->range.x1);
+	struct Tracks *track = (struct Tracks *)ListFindElement1(&wblock->block->tracks->l,wblock->range.x1);
 
 	for(lokke=0;lokke<=wblock->range.x2-wblock->range.x1;lokke++){
           if (Transpose_notes(track->notes,p1,p2,trans, false))
@@ -200,7 +199,7 @@ void TransposeNote_CurrPos(
   
   ADD_UNDO(Notes_CurrPos(window));
 
-  VECTOR_FOR_EACH(struct Notes *note, &notes){
+  VECTOR_FOR_EACH(struct Notes *, note, &notes){
     Transpose_note(note,trans);
   }END_VECTOR_FOR_EACH;
   
@@ -235,12 +234,3 @@ void TransposeBlock_CurrPos(
 	);
 
 }
-
-
-
-
-
-
-
-
-

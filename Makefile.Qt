@@ -1182,8 +1182,8 @@ $(T)PEQ_type.o:  $(BUILD_DEPENDENCIES) $(CD)PEQ_type.c $(CD)playerclass.h
 	$(CC2) $(CD)PEQ_type.c $(OPT)
 
 
-$(T)transpose.o:  $(BUILD_DEPENDENCIES) $(CD)transpose.c
-	$(CC2) $(CD)transpose.c $(OPT)
+$(T)transpose.o:  $(BUILD_DEPENDENCIES) $(CD)transpose.cpp
+	$(CCC2) $(CD)transpose.cpp $(CPPOPT)
 
 
 
