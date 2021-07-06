@@ -1,0 +1,26 @@
+--- compiler/generator/llvm/llvm_instructions.hh~	2020-12-23 21:09:06.000000000 +0000
++++ compiler/generator/llvm/llvm_instructions.hh	2021-07-06 18:35:53.832423033 +0100
+@@ -170,7 +170,11 @@
+     LLVMType getStructType(const string& name, const LLVMVecTypes& types)
+     {
+         // We want to have a unique creation for struct types, so check if the given type has already been created
++    #if defined(LLVM_120)
++        StructType* struct_type = StructType::getTypeByName(fModule->getContext(), name);
++    #else
+         StructType* struct_type = fModule->getTypeByName(name);
++    #endif
+         if (!struct_type) {
+             struct_type = StructType::create(fModule->getContext(), name);
+             // Create "packed" struct type to match the size of C++ "packed" defined ones
+@@ -191,7 +195,11 @@
+         if (basic_typed) {
+             return fTypeMap[basic_typed->fType];
+         } else if (named_typed) {
++        #if defined(LLVM_120)
++            LLVMType type = StructType::getTypeByName(fModule->getContext(), "struct.dsp" + named_typed->fName);
++        #else
+             LLVMType type = fModule->getTypeByName("struct.dsp" + named_typed->fName);
++        #endif
+             // Subcontainer type (RWTable...)
+             return (type) ? getTyPtr(type) : convertFIRType(named_typed->fType);
+         } else if (array_typed) {

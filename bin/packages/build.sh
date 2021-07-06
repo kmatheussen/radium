@@ -104,6 +104,7 @@ build_faust() {
     fi
     patch -p1 <../faust_llvm_fix.patch
     patch -p0 <../faust_add_include.patch
+    patch -p0 <../fix-faust-llvm12-gettypebyname.patch
     VERBOSE=1 CFLAGS="$CFLAGS" CXXFLAGS="$CXXFLAGS" CMAKEOPT="-DCMAKE_BUILD_TYPE=Release -DSELF_CONTAINED_LIBRARY=on -DCMAKE_CXX_COMPILER=`which $DASCXX` -DCMAKE_C_COMPILER=`which $DASCC`" make most
     cd ..
 }
