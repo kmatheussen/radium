@@ -1,0 +1,56 @@
+diff -aur --no-dereference '--exclude=.git' faust-master-dev/architecture/faust/gui/JSONUI.h faust/architecture/faust/gui/JSONUI.h
+--- faust-master-dev/architecture/faust/gui/JSONUI.h	2020-12-23 21:09:06.000000000 +0000
++++ faust/architecture/faust/gui/JSONUI.h	2021-07-06 21:31:09.077275706 +0100
+@@ -32,6 +32,7 @@
+ #include <iomanip>
+ #include <sstream>
+ #include <algorithm>
++#include <limits>
+ 
+ #include "faust/gui/UI.h"
+ #include "faust/gui/PathBuilder.h"
+diff -aur --no-dereference '--exclude=.git' faust-master-dev/build/CMakeLists.txt faust/build/CMakeLists.txt
+--- faust-master-dev/build/CMakeLists.txt	2020-12-23 21:09:06.000000000 +0000
++++ faust/build/CMakeLists.txt	2021-07-06 21:31:58.384158199 +0100
+@@ -84,7 +84,13 @@
+ 		llvm_cmake()
+ 	endif()
+ 
+-	string (REGEX REPLACE "([0-9]+)\\.([0-9]+).*" "LLVM_\\1\\2" LLVM_VERSION ${LLVM_PACKAGE_VERSION})
++	string (REGEX REPLACE "([0-9]+)\\.[0-9]+.*" "\\1" LLVM_MAJOR_VERSION ${LLVM_PACKAGE_VERSION})
++	string (REGEX REPLACE "[0-9]+\\.([0-9]+).*" "\\1" LLVM_MINOR_VERSION ${LLVM_PACKAGE_VERSION})
++        if(LLVM_MAJOR_VERSION GREATER 9)
++          set(LLVM_VERSION "LLVM_${LLVM_MAJOR_VERSION}0")
++        else()
++          set(LLVM_VERSION "LLVM_${LLVM_MAJOR_VERSION}${LLVM_MINOR_VERSION}")
++        endif()
+ 
+ 	# the declarations below are redundant but necessary to cope with different cmake behaviors on different platforms
+ 	set (TMP ${SRCDIR}/generator/llvm)
+diff -aur --no-dereference '--exclude=.git' faust-master-dev/compiler/generator/llvm/llvm_instructions.hh faust/compiler/generator/llvm/llvm_instructions.hh
+--- faust-master-dev/compiler/generator/llvm/llvm_instructions.hh	2020-12-23 21:09:06.000000000 +0000
++++ faust/compiler/generator/llvm/llvm_instructions.hh	2021-07-06 21:32:23.194267677 +0100
+@@ -170,7 +170,11 @@
+     LLVMType getStructType(const string& name, const LLVMVecTypes& types)
+     {
+         // We want to have a unique creation for struct types, so check if the given type has already been created
++    #if defined(LLVM_120)
++        StructType* struct_type = StructType::getTypeByName(fModule->getContext(), name);
++    #else
+         StructType* struct_type = fModule->getTypeByName(name);
++    #endif
+         if (!struct_type) {
+             struct_type = StructType::create(fModule->getContext(), name);
+             // Create "packed" struct type to match the size of C++ "packed" defined ones
+@@ -191,7 +195,11 @@
+         if (basic_typed) {
+             return fTypeMap[basic_typed->fType];
+         } else if (named_typed) {
++        #if defined(LLVM_120)
++            LLVMType type = StructType::getTypeByName(fModule->getContext(), "struct.dsp" + named_typed->fName);
++        #else
+             LLVMType type = fModule->getTypeByName("struct.dsp" + named_typed->fName);
++        #endif
+             // Subcontainer type (RWTable...)
+             return (type) ? getTyPtr(type) : convertFIRType(named_typed->fType);
+         } else if (array_typed) {
