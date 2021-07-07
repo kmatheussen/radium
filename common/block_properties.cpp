@@ -93,10 +93,10 @@ void Block_Set_num_lines2(
               note=track->notes;
               while(note!=NULL){
                 //CutListAt(&note->velocities,&lastplace);
-                r::TimeData<r::Velocity>::Writer(note->_velocities).remove_everything_after(rlastplace);
+                r::VelocityTimeData::Writer(note->_velocities).remove_everything_after(rlastplace);
                 
-                CutListAt(&note->pitches,&lastplace);
-                //r::TimeData<r::Pitch>::Writer(note->_pitches).remove_everything_after(rlastplace);
+                //CutListAt(&note->pitches,&lastplace);
+                r::PitchTimeData::Writer(note->_pitches).remove_everything_after(rlastplace);
                 
                 if(note->end >= place2ratio(lastplace)) { // && note->noend==1){
                   note->end = place2ratio(lastplace);
@@ -106,14 +106,14 @@ void Block_Set_num_lines2(
               }
               LegalizeNotes(block,track);
               
-              r::TimeData<r::Stop>::Writer(track->stops2).remove_everything_after(rlastplace);
+              r::StopTimeData::Writer(track->stops2).remove_everything_after(rlastplace);
               //              CutListAt_a(&track->stops,&lastplace);
               
               {
                 std::vector<struct FXs*> to_remove;
                 
                 VECTOR_FOR_EACH(struct FXs *, fxs, &track->fxs){
-                  r::TimeData<r::FXNode>::Writer writer(fxs->_fxnodes);
+                  r::FXTimeData::Writer writer(fxs->_fxnodes);
                   if (LegalizeFXlines2(block->num_lines,fxs->fx,writer)==false){
                     writer.cancel();
                     to_remove.push_back(fxs);

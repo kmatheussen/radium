@@ -287,7 +287,7 @@ static void LoadOctaBlock(
 		free=false;
 		wtrack=(struct WTracks *)ListFindElement1(&wblock->wtracks->l,track);
 		for(line=0;line<numlines;line++){
-                        r::TimeData<r::Stop>::Writer writer(wtrack->track->stops2);
+                        r::StopTimeData::Writer writer(wtrack->track->stops2);
                         
 			trackline=&octablock[numtracks*line+track];
 			trackline->note&=0x7f;

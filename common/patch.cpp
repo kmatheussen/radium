@@ -2122,7 +2122,7 @@ void FX_call_me_before_starting_to_play_song2(struct SeqTrack *seqtrack, const s
     VECTOR_FOR_EACH(struct FXs *, fxs, &track->fxs){
       struct FX *fx = fxs->fx;
 
-      r::TimeData<r::FXNode>::Reader reader(fxs->_fxnodes, -1); // FIX: We might want to change -1 to ATOMIC_GET(seqblock->timedata_player_index) when caching has been enabled (and make sure play_id is correct).
+      r::FXTimeData::Reader reader(fxs->_fxnodes, -1); // FIX: We might want to change -1 to ATOMIC_GET(seqblock->timedata_player_index) when caching has been enabled (and make sure play_id is correct).
       const r::FXNode &last = reader.at_ref(reader.size()-1);
       
       if (last._time >= blocktime) {

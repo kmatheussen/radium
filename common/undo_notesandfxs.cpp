@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 struct Undo_NotesAndFXs : radium::GC_able{
 	struct Notes *notes;
-        r::TimeData<r::Stop> stops;
+        r::StopTimeData stops;
         vector_t fxss;
 	void *midi_instrumentdata;
 };
@@ -119,7 +119,7 @@ static void *Undo_Do_NotesAndFXs(
 	undo_notesandfxs->midi_instrumentdata=midi_instrumentdata;
 
         {
-          r::TimeData<r::Stop> stops_temp;
+          r::StopTimeData stops_temp;
           
           stops_temp.move_from(track->stops2);
           

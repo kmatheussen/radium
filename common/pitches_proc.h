@@ -14,6 +14,9 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#pragma once
+
 //struct Notes *GetNextPitchNote(const struct Notes *note);
-extern LANGSPEC struct Pitches *AddPitch(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct Notes *note, const Place *place, float notenum);
-extern LANGSPEC void DeletePitch(struct Tracks *track, struct Notes *note, struct Pitches *pitchtodelete);
+extern LANGSPEC int AddPitch(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct Notes *note, const Place *place, float notenum);
+extern LANGSPEC void DeletePitch(struct Tracks *track, struct Notes *note, int pitchnum);
+

@@ -89,13 +89,18 @@ static void InsertLines_notes(
           */
           
                 {
-                  r::TimeData<r::Velocity>::Writer writer(note->_velocities);
+                  r::VelocityTimeData::Writer writer(note->_velocities);
+                  writer.insert_lines(make_ratio(line, 1), make_ratio(toinsert, 1));
+                }
+
+                {
+                  r::PitchTimeData::Writer writer(note->_pitches);
                   writer.insert_lines(make_ratio(line, 1), make_ratio(toinsert, 1));
                 }
 
                 
-                if(note->pitches!=NULL) // need check to avoid ubsan/asan hit
-                  List_InsertLines3(&note->pitches,&note->pitches->l,line,toinsert,NULL);
+                //if(note->pitches!=NULL) // need check to avoid ubsan/asan hit
+                //  List_InsertLines3(&note->pitches,&note->pitches->l,line,toinsert,NULL);
 	}
 }
 
@@ -192,7 +197,7 @@ static void InsertLines2(
             const Ratio rlines = make_ratio(line, 1);
             const Ratio rtoinsert = make_ratio(toinsert, 1);
             
-            r::TimeData<r::Stop>::Writer(track->stops2).insert_lines(rlines, rtoinsert);
+            r::StopTimeData::Writer(track->stops2).insert_lines(rlines, rtoinsert);
             
             /*
             if(track->stops!=NULL) // need check to avoid ubsan/asan hit
@@ -203,7 +208,7 @@ static void InsertLines2(
               std::vector<struct FXs*> to_remove;
               
               VECTOR_FOR_EACH(struct FXs *, fxs, &track->fxs){
-                r::TimeData<r::FXNode>::Writer writer(fxs->_fxnodes);
+                r::FXTimeData::Writer writer(fxs->_fxnodes);
                 writer.insert_lines(rlines, rtoinsert);
                 
                 if (LegalizeFXlines2(block->num_lines,fxs->fx,writer)==false){
@@ -307,7 +312,7 @@ static bool last_line_contains_something(struct WBlocks *wblock){
       note = NextNote(note);
     }
 
-    if (r::TimeData<r::Stop>::Reader(track->stops2).has_element_between(rlast_line, rnum_lines))
+    if (r::StopTimeData::Reader(track->stops2).has_element_between(rlast_line, rnum_lines))
       return true;
     
     //if(has_element_at_last_line3((struct ListHeader3 *)track->stops, last_line))
@@ -317,7 +322,7 @@ static bool last_line_contains_something(struct WBlocks *wblock){
       return true;
 
     VECTOR_FOR_EACH(struct FXs *, fxs, &track->fxs){
-      if (r::TimeData<r::FXNode>::Reader(fxs->_fxnodes).has_element_between(rlast_line, rnum_lines))
+      if (r::FXTimeData::Reader(fxs->_fxnodes).has_element_between(rlast_line, rnum_lines))
         return true;
       /*
       if(has_element_at_last_line3((struct ListHeader3 *)fxs->fxnodelines, last_line))

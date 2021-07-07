@@ -47,13 +47,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
   =====
   * Writing is a heavy operation since it recreates the underlying vector. Therefore, nothing is actually written until the Writer
     object is deleted, and it makes sense to create as few writer objects as possible.
-  * TimeData is very similar to SeqAutomation. The main difference is that TimeData supports more than one simultaneous reader, but
-    it also uses Ratio as time type instead of double, and it provides a wrapper around radium::Vector instead of using QVector for
-    writing and a plain array for reading.
+  * TimeData is very similar to SeqAutomation. Both datatypes support multithreaded reading and writing. Differences:
+    1. TimeData supports 128 simultaneous readers, all of them can be RT. SeqAutomation only supports one RT reader
+       and one main thread reader (i.e. the writer can also be used as a reader).
+    2. TimeData uses Ratio as time type. SeqAutomation uses double.
+    3. TimeData provides a wrapper around radium::Vector for writing, while SeqAutomation provides a wrapper around QVector.
+    4. TimeData uses radium::Vector also for reading (in fact the same vector used for writing), while SeqAutomation only uses a plain array for reading.
  */
 
 #pragma once
 
+#define RADIUM_COMMON_TIMEDATA_HPP 1
 
 #include <memory>
 
@@ -115,12 +119,16 @@ public:
     ASSERT_SIZE();
   }
 
+  /*
   int RT_get_play_id(void) const {
     return _last_play_id;
   }
-
+  */
+  
   int RT_obtain(int play_id){
     ASSERT_SIZE();
+    
+    R_ASSERT_NON_RELEASE(THREADING_is_player_thread());
     
     if (play_id != _last_play_id) {
 
@@ -128,9 +136,9 @@ public:
 
       if (!_used.is_empty()) {
 
-        int ret = _used.at(0);
+        int ret = _used.at(0); // Just reuse the first one. All of them were used so it doesn't matter CPU cache-vice which one to pick.
         
-        for(int pos = 1 ; pos < _used.size() ; pos++)
+        for(int pos = 1 ; pos < _used.size() ; pos++) // Note: Usually _used.size() should not be large. Probably no need to optimize this.
           _free.push_back(_used.at(pos));
 
         _used.set_num_elements(1);
@@ -157,6 +165,8 @@ public:
 
   void RT_release(int num){
     ASSERT_SIZE();
+
+    R_ASSERT_NON_RELEASE(THREADING_is_player_thread());
     
     if (num==-1){
       R_ASSERT_NON_RELEASE(false); // Note: Only an error if a block is played more than MAX_NUM_PARALLEL_TIMEDATAS times simultaneously.
@@ -187,29 +197,18 @@ enum class DataTypeReturnType{
   LAST_VALUE,
 };
   */
-  
-class RT_TimeData_Player_Cache{
-
-public:
-    int _curr_pos = 0; // vector pos.
-
-private:
-  
-  template <typename ValType>
-  friend struct RT_TimeData_Cache_Handler;
-    
-  double _last_value = 0; // last value returned from TimeData::get_value();
-  int _last_play_id = -1; // Value of pc->play_id when last_value was returned.
-};
 
 
-template <typename ValType>
+
+template <class SeqBlockT>
 struct RT_TimeData_Cache_Handler{
 
-  RT_TimeData_Player_Cache *_cache;
+  SeqBlockT *_cache;
   int64_t _play_id;
+
+  using ValType = typeof(SeqBlockT::_last_value);
   
-  RT_TimeData_Cache_Handler(RT_TimeData_Player_Cache *cache, int64_t play_id)
+  RT_TimeData_Cache_Handler(SeqBlockT *cache, int64_t play_id)
     : _cache(cache)
     , _play_id(play_id)
   {
@@ -232,7 +231,7 @@ struct RT_TimeData_Cache_Handler{
     return true;
   }
   
-  bool is_same_value(ValType value1, ValType value2) const {
+  static bool is_same_value(ValType value1, ValType value2) {
     return (std::is_same<ValType, int>::value
             ? value1==value2
             : (std::is_same<ValType, float>::value
@@ -264,9 +263,11 @@ public:
   virtual void callback(struct SeqTrack *seqtrack,
                         const struct SeqBlock *seqblock,
                         const struct Tracks *track,
+                        int index,
                         ValType val,
                         int64_t time,
-                        FX_when when) const = 0;
+                        FX_when when,
+                        bool is_new_node) const = 0;
 };
 
 template <typename ValType>
@@ -283,7 +284,16 @@ struct TimeDataSimpleNode{
 };
 
 
-template <typename T>
+/*
+  SeqBlockT must be a subclass of RT_TimeData_Player_Cache.
+
+  The SeqBlockT class must contain both any seqblock-specific data needed when playing, and the cache data in RT_TimeData_Player_Cache.
+  It doesn't make sense to unlink these two types since the cache data is always seqblock-specific.
+  Cache data must be seqblock-specific in order to correctly play the same block at the same time in more than one seqtrack.
+  Maybe SeqBlockT should have been named SeqblockT_And_RT_Cache though, which would have been a clearer, but less correct, name.
+*/
+  
+template <class T, class SeqBlockT>
 class TimeData {
 
   //static_assert(sizeof(T) < sizeof(void*)*8, "T should be a pointer if too big. This to lower the time it takes to copy the underlying vector.");
@@ -292,6 +302,10 @@ class TimeData {
 #if !defined(RELEASE)
   mutable int _binsearch=0;  
 #endif
+
+public:
+  
+  using RT_CacheHandler = RT_TimeData_Cache_Handler<SeqBlockT>;
   
 private:
 
@@ -354,9 +368,9 @@ private:
 
   TimeDataVector* _vector;
 
-  mutable radium::AtomicPointerStorageMultipleReaders<TimeDataVector> _atomic_pointer_storage;
+  mutable radium::AtomicPointerStorageMultipleReaders<const TimeDataVector> _atomic_pointer_storage;
 
-  mutable RT_TimeData_Player_Cache _player_caches[MAX_NUM_PARALLEL_TIMEDATAS];
+  mutable SeqBlockT _player_caches[MAX_NUM_PARALLEL_TIMEDATAS];
 
   
 public:
@@ -393,7 +407,8 @@ private:
     _atomic_pointer_storage.set_new_pointer(_vector);
   }
 
-  template <typename TimeData, typename TimeDataVector>
+  
+  template <class TimeData, class TimeDataVector>
   class ReaderWriter{
 
     ReaderWriter(const ReaderWriter&) = delete;
@@ -405,7 +420,7 @@ private:
 
     TimeDataVector *_vector;
     
-    RT_TimeData_Player_Cache *_player_cache;
+    SeqBlockT *_player_cache;
 
 #if defined(TEST_TIMEDATA_MAIN)
   public:
@@ -694,7 +709,7 @@ private:
       return true;
     }
 
-    RT_TimeData_Player_Cache *get_player_cache(void) const {
+    SeqBlockT *get_player_cache(void) const {
       return _cache_num < 0 ? NULL : &_time_data->_player_caches[_cache_num];
     };
 
@@ -713,12 +728,16 @@ private:
       if (!period_is_inside(period))
         return;
 
+      //int prev_curr_pos = _curr_pos;
+        
       const int das_size = size();
       const T &first_t = at_ref(0);
       const T &last_t = at_ref(das_size-1);
 
-      RT_TimeData_Cache_Handler<ValType> cache(get_player_cache(), play_id);
+      RT_CacheHandler cache(get_player_cache(), play_id);
 
+      int old_pos = _curr_pos;
+      
       bool has_prev_value;
       double prev_value;
 
@@ -798,7 +817,8 @@ private:
           }
           }
         */
-        callback.callback(seqtrack, seqblock, track, value, value_time, when);
+        //printf("Callback 1. pos: %d -> %d\n", old_pos, _curr_pos);
+        callback.callback(seqtrack, seqblock, track, when==FX_start ? 0 : when==FX_end ? das_size-1 : _curr_pos-1, value, value_time, when, when==FX_start || when==FX_end || old_pos != _curr_pos);
       }
 
       // Send out all node values between period._start and period._end
@@ -808,14 +828,16 @@ private:
 
           const T &node = at_ref(_curr_pos);
 
-          if (0){
+#if 0
+          {
             auto node_time = get_seqblock_ratio_time2(seqblock, track, node._time);
             auto end_time = get_seqblock_ratio_time2(seqblock, track, node._time);
             printf("............(2) _curr_pos: %d. node(_curr_pos) time: %d. end_time: %d. node ratio: %d / %d. end ratio: %d / %d\n", _curr_pos, (int)node_time, (int)end_time,
                    (int)node._time.num, (int)node._time.den, 
                    (int)period._end.num, (int)period._end.den);
           }
-      
+#endif
+          
           // (maybe) FIX: The correct test here is actually node._time >= period._end, and not node._time > period._end.
           // However, because of rounding errors, notes can be sent out in the block before an fx node at the same position.
           // And it's quite important that fx are sent out before note start, for instance if setting start position of a sample (common in MOD files).
@@ -828,8 +850,8 @@ private:
           FX_when when = _curr_pos == das_size-1 ? FX_end : FX_middle;
 
           int64_t time = get_seqblock_ratio_time2(seqblock, track, node._time);
-          //printf("....2. %d: %f. When: %d. _curr_pos: %d\n", (int)value, (double)value / (double)fx->max, (int) when, _curr_pos);
-          callback.callback(seqtrack, seqblock, track, value, time, when);
+          //printf("....2. %d: %f. When: %d. _curr_pos: %d\n", (int)value, (double)value, (int) when, _curr_pos);
+          callback.callback(seqtrack, seqblock, track, _curr_pos, value, time, when, true);
 
         }
       }
@@ -839,7 +861,7 @@ private:
 
     // Same as iterate, but also handles one external node placed before first node, and one external node placed after last node.
     // Used for handling note velocities and note pitches.
-    // Implemented in velocities.cpp
+    // Implemented in notes.cpp
     template <typename ValType>
     void iterate_extended(struct SeqTrack *seqtrack,
                           const struct SeqBlock *seqblock,
@@ -888,7 +910,7 @@ private:
         
       }
 
-      RT_TimeData_Cache_Handler<ValType> cache(get_player_cache(), play_id);
+      RT_CacheHandler cache(get_player_cache(), play_id);
 
       cache.update_value(curr_value);
 
@@ -902,9 +924,12 @@ private:
   
 public:
 
-  // Optimized reader if reading the vector in a timely linear fashion (cache_num should be supplied).
-  class Reader : radium::RT_AtomicPointerStorageMultipleReaders_ScopedUsage<TimeDataVector>, public ReaderWriter<const TimeData, const TimeDataVector>{
-
+  // Optimized reader if reading the vector in a timely linear fashion (cache_num should be supplied in RT code).
+  class Reader
+    : private radium::RT_AtomicPointerStorageMultipleReaders_ScopedUsage<const TimeDataVector>
+    , public ReaderWriter<const TimeData, const TimeDataVector>
+  {
+    
     // We can probably make this work, but if trying to copy a Reader, it's most likely (over 99% sure) an error.
     Reader(const Reader&) = delete;
     Reader& operator=(const Reader&) = delete;
@@ -912,8 +937,10 @@ public:
    public:
     
     Reader(const TimeData *time_data, const int cache_num = -1)
-      : radium::RT_AtomicPointerStorageMultipleReaders_ScopedUsage<TimeDataVector>(time_data->_atomic_pointer_storage)
-      , ReaderWriter<const TimeData, const TimeDataVector>(time_data, radium::RT_AtomicPointerStorageMultipleReaders_ScopedUsage<TimeDataVector>::get_pointer(), cache_num)
+      : radium::RT_AtomicPointerStorageMultipleReaders_ScopedUsage<const TimeDataVector>(time_data->_atomic_pointer_storage)
+      , ReaderWriter<const TimeData, const TimeDataVector>(time_data,
+                                                           radium::RT_AtomicPointerStorageMultipleReaders_ScopedUsage<const TimeDataVector>::get_pointer(),
+                                                           cache_num)
     {
     }
     
@@ -963,9 +990,9 @@ public:
     }
     
     ~Writer(){
-      if (_has_cancelled){
+      if (_has_cancelled)
         delete this->_vector;
-      }else
+      else
         this->_time_data->replace_vector(this->_vector);
 
       //printf("...New writer created: %d\n", !_has_cancelled);
@@ -992,6 +1019,7 @@ public:
     }
 
     void sortit(void){
+      R_ASSERT_NON_RELEASE(_has_cancelled==false);
       this->_vector->sortit();
     }
     
@@ -1008,8 +1036,15 @@ public:
       add(data);
     }
 
+    template<typename ... Args> 
+    void add(Args ... args){
+      add2(T(args...));
+    }
+
     // Moves node within MAX(0, previous node) and MIN(next node, max_pos)
     bool constraint_move(int num, Ratio new_pos, Ratio max_pos){
+      R_ASSERT_NON_RELEASE(_has_cancelled==false);
+
       Ratio min_pos;
 
       if (num < 0){
@@ -1046,10 +1081,14 @@ public:
     }
     
     void clear(void){
+      R_ASSERT_NON_RELEASE(_has_cancelled==false);
+      
       this->_vector->clear();
     }
 
     bool remove_at_pos(int pos){
+      R_ASSERT_NON_RELEASE(_has_cancelled==false);
+      
       int dassize = this->size();
       
       if (pos < 0 || pos >= dassize){
@@ -1065,6 +1104,7 @@ public:
     }
 
     void remove_at_positions(const std::vector<int> &positions){
+      R_ASSERT_NON_RELEASE(_has_cancelled==false);
 
       if (positions.size()==0)
         return;
@@ -1195,6 +1235,7 @@ public:
 
     // equiv. to expand_list3
     void expand(const Ratio &start, const Ratio &end, const Ratio &new_end, const Ratio &last_legal_place){
+      R_ASSERT_NON_RELEASE(_has_cancelled==false);
       
       for(int i=0;i<this->size();i++){
         
@@ -1233,11 +1274,20 @@ public:
     
     void cancel(void){
       R_ASSERT_NON_RELEASE(_has_cancelled==false);
+      
       _has_cancelled = true;
     }
   };
 
-  void move_from(TimeData<T> *from){
+  void copy_from(const TimeData<T,SeqBlockT> *from){
+    Writer to_writer(this, true);
+    Writer from_reader(from);
+
+    for(T t : from_reader)
+      to_writer.add(t);
+  }
+  
+  void move_from(TimeData<T,SeqBlockT> *from){
     Writer to_writer(this, true);
     Writer from_writer(from);
 

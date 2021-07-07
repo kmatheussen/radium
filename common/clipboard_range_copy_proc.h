@@ -37,9 +37,9 @@ extern LANGSPEC void CopyRange_stops(
 
 #ifdef __cplusplus
 void CopyRange_stops(
-                     r::TimeData<r::Stop> *to_stop,
+                     r::StopTimeData *to_stop,
                      //struct Stops **tostop,
-                     const r::TimeData<r::Stop> *from_stop,
+                     const r::StopTimeData *from_stop,
                      //const struct Stops *from_stop,
                      const Place *p1,
                      const Place *p2);

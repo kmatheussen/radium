@@ -80,7 +80,7 @@ void CB_ClearTrack_Force(
           }
         }
 
-        r::TimeData<r::Stop>::Writer writer(track->stops2, true);
+        r::StopTimeData::Writer writer(track->stops2, true);
         
         VECTOR_FOR_EACH(struct FXs *, fxs, &track->fxs){
           (*fxs->fx->closeFX)(fxs->fx,track);

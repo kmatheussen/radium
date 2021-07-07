@@ -122,12 +122,12 @@ extern struct WTracks *getWTrackFromNumA(
 extern struct Notes *getNoteFromNum(int windownum,int blocknum,int tracknum,dyn_t note);
 extern struct Notes *getNoteFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, dyn_t dynnote);
 
-extern struct Pitches *getPitchFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, dyn_t dynnote, struct Notes **note, int pitchnum);
-extern struct Pitches *getPitchFromNum(int windownum,int blocknum,int tracknum,dyn_t dynnote,int pitchnum);
+ #ifdef __cplusplus
+extern r::Pitch getPitchFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, dyn_t dynnote, struct Notes **note, int pitchnum);
+  //extern struct Pitches *getPitchFromNum(int windownum,int blocknum,int tracknum,dyn_t dynnote,int pitchnum);
 
-#ifdef __cplusplus
-extern const r::Velocity *getVelocityFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, dyn_t dynnote, struct Notes **note, int velocitynum);
-extern const r::Velocity *getVelocityFromNum(int windownum,int blocknum,int tracknum,dyn_t dynnote,int velocitynum);
+extern r::Velocity getVelocityFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, dyn_t dynnote, struct Notes **note, int velocitynum);
+  //extern const r::Velocity *getVelocityFromNum(int windownum,int blocknum,int tracknum,dyn_t dynnote,int velocitynum);
 #endif
   
 extern struct Signatures *getSignatureFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int num);

@@ -49,6 +49,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/patch_proc.h"
 #include "../common/nodelines_proc.h"
 #include "../common/wtracks_proc.h"
+#include "../common/tracks_proc.h"
 #include "../common/undo_blocks_proc.h"
 #include "../common/tempos_proc.h"
 #include "../common/undo_tempos_proc.h"
@@ -1259,23 +1260,28 @@ static float get_pianonote_info(enum PianoNoteWhatToGet what_to_get, int pianono
     if (pianonotenum==0)
       return note->note;
 
-    struct Pitches *pitch = (struct Pitches*)ListFindElement3_num_r0((ListHeader3*)note->pitches, pianonotenum-1);
-    if (pitch==NULL){
+    const r::PitchTimeData::Reader reader(note->_pitches);
 
-      if (ListFindNumElements3((struct ListHeader3*)note->pitches)+1==pianonotenum){
+    if (pianonotenum >= reader.size()+1) {
+
+      if (pianonotenum == reader.size()+1) {
         if (pianonotenum==1 && equal_floats(note->pitch_end, 0))
           return note->note;
         else
           return note->pitch_end;
       }
-    
+      
       handleError("There is no pianonote #%d in note %d in track #%d in block #%d",pianonotenum,(int)note->id,tracknum,blocknum);
       return 0;
     }
-    return pitch->note;
+    
+    return reader.at_ref(pianonotenum-1)._val;
   }
+
+  const r::PitchTimeData::Reader reader(note->_pitches);
   
-  const struct NodeLine *nodeline = GetPianorollNodeLines(window, wblock, wtrack, note);
+  //const struct NodeLine *nodeline0 = GetPianorollNodeLines(window, wblock, wtrack, note);
+  const struct NodeLine2 *nodeline = GetPianorollNodeLines2(window, wblock, wtrack, note, reader);
 
   int num = -1;
 
@@ -1294,7 +1300,13 @@ static float get_pianonote_info(enum PianoNoteWhatToGet what_to_get, int pianono
     return 0;
   }
 
-  NodelineBox box = GetPianoNoteBox(wtrack, nodeline);
+  NodelineBox box = GetPianoNoteBox2(wtrack, nodeline);
+
+  /*
+  NodelineBox box0 = GetPianoNoteBox(wtrack, nodeline0);
+
+  printf("box. x1: %d/%d. y1: %d/%d. x2: %d/%d. y2: %d/%d\n", (int)box.x1, (int)box0.x1, (int)box.y1, (int)box0.y1, (int)box.x2, (int)box0.x2, (int)box.y2, (int)box0.y2);
+  */
   
   switch (what_to_get){
   case PIANONOTE_INFO_X1:
@@ -1337,7 +1349,8 @@ int getNumPianonotes(dyn_t dynnote, int tracknum, int blocknum, int windownum){
   if (note==NULL)
     return 0;
 
-  return 1 + ListFindNumElements3((struct ListHeader3*)note->pitches);
+  return 1 + r::PitchTimeData::Reader(note->_pitches).size();
+  //return 1 + ListFindNumElements3((struct ListHeader3*)note->pitches);
 }
 
 /*
@@ -1364,7 +1377,8 @@ static void setPianoNoteValues(float value, int pianonotenum, struct Notes *note
     old_value = note->note;
     
   } else {
-  
+
+    /*
     struct Pitches *pitch = (struct Pitches*)ListFindElement3_num_r0((ListHeader3*)note->pitches, pianonotenum-1);
     if (pitch==NULL){
       handleError("There is no pianonote %d",pianonotenum);
@@ -1372,6 +1386,16 @@ static void setPianoNoteValues(float value, int pianonotenum, struct Notes *note
     }
 
     old_value = pitch->note;
+    */
+
+    const r::PitchTimeData::Reader reader(note->_pitches);
+
+    if (pianonotenum-1 >= reader.size()){
+      handleError("There is no pianonote %d",pianonotenum);
+      return;
+    }
+      
+    old_value = reader.at_ref(pianonotenum-1)._val;
   }
 
   
@@ -1386,18 +1410,18 @@ static void setPianoNoteValues(float value, int pianonotenum, struct Notes *note
   if (note->pitch_end > 0)
     note->pitch_end = R_BOUNDARIES(1, note->pitch_end + delta, 127);
 
-  struct Pitches *pitch = note->pitches;
-  while(pitch != NULL){
-    pitch->note = R_BOUNDARIES(1, pitch->note + delta, 127);
-    pitch = NextPitch(pitch);
+  {
+    r::PitchTimeData::Writer writer(note->_pitches);
+    for(r::Pitch &pitch : writer)
+      pitch._val = R_BOUNDARIES(1, pitch._val + delta, 127);
   }
-  
 }
 
-static Place get_pianonote_place(int pianonotenum, struct Notes *note){
+static Place get_pianonote_place(int pianonotenum, struct Notes *note, const r::PitchTimeData::Reader &reader){
   if (pianonotenum==0)
     return note->l.p;
 
+  /*
   struct Pitches *pitch = (struct Pitches*)ListFindElement3_num((ListHeader3*)note->pitches, pianonotenum-1);
   if (pitch==NULL){
     handleError("There is no pianonote %d",pianonotenum);
@@ -1405,6 +1429,14 @@ static Place get_pianonote_place(int pianonotenum, struct Notes *note){
   }
 
   return pitch->l.p;
+  */
+  
+  if (pianonotenum-1 >= reader.size()){
+    handleError("There is no pianonote %d",pianonotenum);
+    return note->l.p;
+  }
+      
+  return ratio2place(reader.at_ref(pianonotenum-1)._time);
 }
 
 Place getPianonotePlace(int pianonotenum, dyn_t dynnote, int tracknum, int blocknum, int windownum){
@@ -1415,10 +1447,12 @@ Place getPianonotePlace(int pianonotenum, dyn_t dynnote, int tracknum, int block
   if (note==NULL)
     return p_Create(0,0,1);
 
-  if (ListFindNumElements3((ListHeader3*)note->pitches)+1==pianonotenum)
+  const r::PitchTimeData::Reader reader(note->_pitches);
+    
+  if (reader.size()+1==pianonotenum)
     return ratio2place(note->end);
   
-  return get_pianonote_place(pianonotenum, note);
+  return get_pianonote_place(pianonotenum, note, reader);
 }
 
 static int getPitchNumFromPianonoteNum(int pianonotenum, dyn_t dynnote, int tracknum, int blocknum, int windownum){
@@ -1438,22 +1472,31 @@ static int getPitchNumFromPianonoteNum(int pianonotenum, dyn_t dynnote, int trac
 
   while(note2!=NULL){
 
+    const r::PitchTimeData::Reader pitch_reader(note2->_pitches);
+      
     if (note2==note) {
       
       if (pianonotenum > 0) {
+        if (pianonotenum-1 >= pitch_reader.size()) {
+          handleError("There is no pianonote #%d in note %d in track #%d in block #%d",pianonotenum,(int)note->id,tracknum,blocknum);
+          return 0;
+        }
+        /*        
         struct Pitches *pitch = (struct Pitches*)ListFindElement3_num_r0((ListHeader3*)note->pitches, pianonotenum-1);
         if (pitch==NULL){
           handleError("There is no pianonote #%d in note %d in track #%d in block #%d",pianonotenum,(int)note->id,tracknum,blocknum);
           return 0;
         }
+        */
       }
-      
+
       return ret + pianonotenum;
     }
-      
+
     ret++;
 
-    ret += ListFindNumElements3((struct ListHeader3*)note2->pitches);
+    //ret += ListFindNumElements3((struct ListHeader3*)note2->pitches);
+    ret += pitch_reader.size(); //ListFindNumElements3((struct ListHeader3*)note2->pitches);
 
     if (note2->pitch_end > 0)
       ret++;
@@ -1482,31 +1525,41 @@ static dyn_t moveNote(struct Blocks *block, struct Tracks *track, struct Notes *
 
   //printf("new_start 2: %f\n",old_start+diff);
 
+  struct Notes *new_note = CopyNote(note); // Until notes have been converted to TimeData, making a copy seems to be the best way to ensure atomic operation since we can't use a Writer (neither constructor/destructor/adding are RT safe) while holding the player lock.
+
+  //Float2Placement(new_start, &note->l.p);
+  //Float2Placement(new_end, &note->end);
+  MOVE_PLACE2(&new_note->l.p, diff);
+  new_note->end += diff;
+
+  new_note->id = note->id; // This is probably safe. 'note' should not be accessible afterwards.
+    
+  {
+    const r::PitchTimeData::Reader pitch_reader(note->_pitches);
+    const r::VelocityTimeData::Reader velocity_reader(note->_velocities);
+    
+    r::PitchTimeData::Writer pitch_writer(new_note->_pitches);
+    r::VelocityTimeData::Writer velocity_writer(new_note->_velocities);
+    
+    for(r::Pitch pitch : pitch_reader){
+      pitch._time += diff;
+      pitch_writer.add(pitch);
+    }
+    
+    for(r::Velocity velocity : velocity_reader){
+      velocity._time += diff;
+      velocity_writer.add(velocity);
+    }
+  }
+  
   {
     SCOPED_PLAYER_LOCK_IF_PLAYING();
     
     ListRemoveElement3(&track->notes, &note->l);
     
-    //Float2Placement(new_start, &note->l.p);
-    //Float2Placement(new_end, &note->end);
-    MOVE_PLACE2(&note->l.p, diff);
-    note->end += diff;
-    
-    struct Pitches *pitch = note->pitches;
-    while(pitch != NULL){
-      MOVE_PLACE2(&pitch->l.p, diff);
-      pitch = NextPitch(pitch);
-    }
-    
-    ListAddElement3_a(&track->notes, &note->l);
+    ListAddElement3_a(&track->notes, &new_note->l);
 
-    NOTE_validate(block, track, note);
-  }
-
-  {
-    r::TimeData<r::Velocity>::Writer writer(note->_velocities);
-    for(r::Velocity &velocity : writer)
-      velocity._time += diff;
+    NOTE_validate(block, track, new_note);
   }
 
   return GetNoteId(note);
@@ -1541,8 +1594,10 @@ dyn_t movePianonote(int pianonotenum, float value, Place place, dyn_t dynnote, i
   float old_floatplace = GetfloatFromPlace(&old_place);
   float diff      = floatplace - old_floatplace;
   */
-  
-  Ratio diff = place2ratio(place) - place2ratio(get_pianonote_place(pianonotenum, note));
+
+  const r::PitchTimeData::Reader reader(note->_pitches);
+
+  Ratio diff = place2ratio(place) - place2ratio(get_pianonote_place(pianonotenum, note, reader));
   
   return moveNote(block, track, note, diff);
 }
@@ -1560,7 +1615,9 @@ dyn_t movePianonoteStart(int pianonotenum, float value, Place place_arg, dyn_t d
   struct Blocks *block = wblock->block;
   struct Tracks *track = wtrack->track;
 
-  if (note->pitches!=NULL) {
+  const r::PitchTimeData::Reader reader(note->_pitches);
+
+  if (reader.size() > 0) { //note->pitches!=NULL) {
     setPitchnum2(getPitchNumFromPianonoteNum(pianonotenum, dynnote, tracknum, blocknum, windownum),
                  value, place_arg,
                  tracknum, blocknum, windownum,
@@ -1591,7 +1648,7 @@ dyn_t movePianonoteStart(int pianonotenum, float value, Place place_arg, dyn_t d
     place = lastplace - mindiff;
 
   {
-    r::TimeData<r::Velocity>::Reader reader(note->_velocities);
+    const r::VelocityTimeData::Reader reader(note->_velocities);
     if (reader.size() > 0) {
       const Ratio firstvelplace = reader.at_first()._time;
       if ( (place+mindiff) >= firstvelplace)
@@ -1620,7 +1677,7 @@ dyn_t movePianonoteStart(int pianonotenum, float value, Place place_arg, dyn_t d
 }
 
 static int getPitchnumLogtype_internal(int pitchnum, struct Tracks *track);
-static void setPitchnumLogtype2(int logtype, int pitchnum, struct Tracks *track);
+static void setPitchnumLogtype2(int logtype, int pitchnum, struct Tracks *track, int blocknum);
   
 int getPianonoteLogtype(int pianonotenum, dyn_t dynnote, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
@@ -1647,9 +1704,10 @@ void setPianonoteLogtype(int logtype, int pianonotenum, dyn_t dynnote, int track
   struct Tracks *track = wtrack->track;
 
   window->must_redraw_editor=true;
-  
+
   int pitchnum = getPitchNumFromPianonoteNum(pianonotenum, dynnote, tracknum, blocknum, windownum);
-  setPitchnumLogtype2(logtype, pitchnum, track);
+  printf("pitchnum: %d. pianonotenum: %d. wtrack: %d. wblock: %d\n", pitchnum, pianonotenum, wtrack->l.num, wblock->l.num);
+  setPitchnumLogtype2(logtype, pitchnum, track, blocknum);
 }
   
 dyn_t movePianonoteEnd(int pianonotenum, float value, Place place_arg, dyn_t dynnote_arg, int tracknum, int blocknum, int windownum){
@@ -1665,8 +1723,10 @@ dyn_t movePianonoteEnd(int pianonotenum, float value, Place place_arg, dyn_t dyn
   
   struct Blocks *block = wblock->block;
   struct Tracks *track = wtrack->track;
+  
+  const r::PitchTimeData::Reader reader(note->_pitches);
 
-  if (note->pitches != NULL) {
+  if (reader.size() > 0) { //note->pitches != NULL) {
     
     int pitchnum = getPitchNumFromPianonoteNum(pianonotenum, dynnote, tracknum, blocknum, windownum);
     int logtype  = getPitchnumLogtype_internal(pitchnum, track);    
@@ -1691,7 +1751,7 @@ dyn_t movePianonoteEnd(int pianonotenum, float value, Place place_arg, dyn_t dyn
     window->must_redraw_editor=true;
 
     if (value > 0){
-      if(note->pitch_end > 0 || note->pitches!=NULL)
+      if(note->pitch_end > 0 || reader.size() > 0) //note->pitches!=NULL)
         note->pitch_end = R_BOUNDARIES(1, value, 127);
       else
         note->note = R_BOUNDARIES(1, value, 127);
@@ -1715,7 +1775,7 @@ dyn_t movePianonoteEnd(int pianonotenum, float value, Place place_arg, dyn_t dyn
     }
 
     {
-      r::TimeData<r::Velocity>::Reader reader(note->_velocities);
+      const r::VelocityTimeData::Reader reader(note->_velocities);
       if (reader.size() > 0) {
         const Ratio lastvelplace = reader.at_last()._time;
         float lastvelfloat = make_double_from_ratio(lastvelplace);
@@ -2320,29 +2380,24 @@ bool hasBeat(int barnum, int beatnum, int blocknum){
 // pitchnums
 //////////////////////////////////////////////////
 
-static int getPitchNum(struct Tracks *track, struct Notes *note, struct Pitches *pitch, bool is_end_pitch){
+static int getPitchNum(struct Tracks *track, struct Notes *note, int pitchnum2, bool is_end_pitch){
   int num = 0;
   struct Notes *note2 = track->notes;
 
   while(note2!=NULL){
 
-    if (note==note2 && pitch==NULL && is_end_pitch==false)
+    if (note==note2 && pitchnum2<0 && is_end_pitch==false)
       return num;
 
     num++;
+
+    if (note==note2 && pitchnum2 >= 0)
+      return num + pitchnum2;
+
+    num += r::PitchTimeData::Reader(note2->_pitches).size();
     
-    struct Pitches *pitch2 = note2->pitches;
-    while(pitch2!=NULL){
-      if (note2==note && pitch==pitch2)
-        return num;
-
-      num++;
-
-      pitch2 = NextPitch(pitch2);
-    }
-
     if (note2->pitch_end > 0){
-      if (note==note2 && pitch==NULL && is_end_pitch==true)
+      if (note==note2 && pitchnum2 < 0 && is_end_pitch==true)
         return num;
       
       num++;
@@ -2374,12 +2429,8 @@ int getNumPitchnums(int tracknum, int blocknum, int windownum){
   while(notes!=NULL){
 
     num++;
-    
-    struct Pitches *pitches = notes->pitches;
-    while(pitches!=NULL){
-      num++;
-      pitches = NextPitch(pitches);
-    }
+
+    num += r::PitchTimeData::Reader(notes->_pitches).size();
 
     if (notes->pitch_end > 0)
       num++;
@@ -2414,7 +2465,10 @@ void deletePitchnum(int pitchnum, int tracknum, int blocknum){
     }
     
     num++;
-    
+
+    const r::PitchTimeData::Reader reader(notes->_pitches);
+
+#if 0
     struct Pitches *pitches = notes->pitches;
     while(pitches!=NULL){
       if (pitchnum==num){
@@ -2430,14 +2484,32 @@ void deletePitchnum(int pitchnum, int tracknum, int blocknum){
       num++;
       pitches = NextPitch(pitches);
     }
-
+#else
+    for(int n = 0 ; n < reader.size() ; n++) {
+      if (pitchnum==num) {
+        r::PitchTimeData::Writer writer(notes->_pitches);
+        writer.remove_at_pos(n);
+        goto gotit;
+      }
+      num++;
+    }
+#endif
+        
     if (notes->pitch_end > 0) {
       if (pitchnum==num){
+#if 0
         struct Pitches *pitch = (struct Pitches *)ListLast3((struct ListHeader3*)notes->pitches);
         if (pitch!=NULL)
           notes->pitch_end = pitch->note;
         else
           notes->pitch_end = 0;
+#else
+        if (reader.size()==0)
+          notes->pitch_end = 0;
+        else
+          notes->pitch_end = reader.at_last()._val;
+        
+#endif
         goto gotit;
       }
       num++;
@@ -2454,7 +2526,7 @@ void deletePitchnum(int pitchnum, int tracknum, int blocknum){
 }
 
 
-
+/*
 static bool getPitch(int pitchnum, struct Pitches **pitch, struct Notes **note, bool *is_end_pitch, struct Tracks *track){
   int num = 0;
   struct Notes *notes = track->notes;
@@ -2499,6 +2571,56 @@ static bool getPitch(int pitchnum, struct Pitches **pitch, struct Notes **note, 
   handleError("Pitch #%d in track #%d does not exist",pitchnum,track->l.num);
   return false;
 }
+*/
+
+static bool getPitch2(int pitchnum, int &pitchnum2, struct Notes **note, bool *is_end_pitch, struct Tracks *track){
+  int num = 0;
+  struct Notes *notes = track->notes;
+  
+  *is_end_pitch = false;
+  
+  while(notes!=NULL){
+
+    if(num==pitchnum) {
+      *note = notes;
+      pitchnum2 = -1;
+      return true;
+    }
+
+    num++;
+
+    pitchnum2 = 0;
+
+    const r::PitchTimeData::Reader reader(notes->_pitches);
+
+    for(const r::Pitch &pitch : reader) {
+      (void)pitch;
+      
+      if(num==pitchnum) {
+        *note = notes;
+        return true;
+      }
+
+      num++;
+      pitchnum2++;
+    }
+      
+    
+    if (notes->pitch_end > 0) {
+      if(num==pitchnum) {
+        *note = notes;
+        *is_end_pitch = true;
+        return true;
+      }
+      num++;
+    }
+    
+    notes = NextNote(notes);
+  }
+
+  handleError("Pitch #%d in track #%d does not exist",pitchnum,track->l.num);
+  return false;
+}
 
 /*
 Place getPitchStart(int pitchnum,  dyn_t dynnote, int tracknum, int blocknum, int windownum){
@@ -2526,16 +2648,16 @@ Place getPitchStart(int pitchnum,  dyn_t dynnote, int tracknum, int blocknum, in
 static int getPitchnumLogtype_internal(int pitchnum, struct Tracks *track){
   bool is_end_pitch = false;
   struct Notes *note = NULL;
-  struct Pitches *pitch = NULL;
-  if (getPitch(pitchnum, &pitch, &note, &is_end_pitch, track)==false)
+  int pitchnum2;
+  if (getPitch2(pitchnum, pitchnum2, &note, &is_end_pitch, track)==false)
     return 0;
 
   if (is_end_pitch)
     return LOGTYPE_IRRELEVANT;
-  else if (pitch==NULL)
-    return note->pitch_first_logtype;
+  else if (pitchnum2>=0)
+    return r::PitchTimeData::Reader(note->_pitches).at_ref(pitchnum2)._logtype;
   else
-    return pitch->logtype;
+    return note->pitch_first_logtype;
 }
 
 /*
@@ -2551,23 +2673,27 @@ Place getPitchnumLogtype(int num,  int tracknum, int blocknum, int windownum){
 }
 */
 
-static void setPitchnumLogtype2(int logtype, int pitchnum, struct Tracks *track){
+static void setPitchnumLogtype2(int logtype, int pitchnum, struct Tracks *track, int blocknum){
   bool is_end_pitch = false;
   struct Notes *note = NULL;
-  struct Pitches *pitch = NULL;
-
-  if (getPitch(pitchnum, &pitch, &note, &is_end_pitch, track)==false)
+  int pitchnum2;
+  
+  if (getPitch2(pitchnum, pitchnum2, &note, &is_end_pitch, track)==false)
     return;
 
   if (is_end_pitch) {
-    handleError("Can not set logtype of end pitch. pitchnum: %d, tracknum: %d",pitchnum,track->l.num);
+    handleError("Can not set logtype of end pitch. pitchnum: %d, tracknum: %d, blocknum: %d. (pitchnum2: %d. num pitches in note: %d)",pitchnum,track->l.num, blocknum, pitchnum2, r::PitchTimeData::Reader(note->_pitches).size());
+    //abort();
     return;
   }
       
-  if (pitch==NULL)
+  if (pitchnum2 < 0)
     note->pitch_first_logtype = logtype;
-  else
-    pitch->logtype = logtype;
+  else {
+    r::PitchTimeData::Writer writer(note->_pitches);
+    r::Pitch &pitch = writer.at_ref(pitchnum2);
+    pitch._logtype = logtype;
+  }
 }
 
 
@@ -2579,7 +2705,7 @@ void setPitchnumLogtype(int logtype, int pitchnum, int tracknum, int blocknum, i
   if (wtrack==NULL)
     return;
 
-  setPitchnumLogtype2(logtype, pitchnum, wtrack->track);
+  setPitchnumLogtype2(logtype, pitchnum, wtrack->track, blocknum);
 }
 
 int getNotenumForPitchnum(int pitchnum, int tracknum, int blocknum, int windownum){
@@ -2594,9 +2720,9 @@ int getNotenumForPitchnum(int pitchnum, int tracknum, int blocknum, int windownu
   
   bool is_end_pitch = false;
   struct Notes *note = NULL;
-  struct Pitches *pitch = NULL;
+  int pitchnum2;
 
-  if (getPitch(pitchnum, &pitch, &note, &is_end_pitch, track)==false)
+  if (getPitch2(pitchnum, pitchnum2, &note, &is_end_pitch, track)==false)
     return -1;
 
   R_ASSERT_RETURN_IF_FALSE2(note!=NULL, -1);
@@ -2606,12 +2732,13 @@ int getNotenumForPitchnum(int pitchnum, int tracknum, int blocknum, int windownu
 
 
 
-static int getReallineForPitch(const struct WBlocks *wblock, struct Pitches *pitch, struct Notes *note, bool is_end_pitch){
-  if( pitch!=NULL)
-    return FindRealLineFor(wblock,pitch->Tline,&pitch->l.p);
-  else if (is_end_pitch){
+static int getReallineForPitch(const struct WBlocks *wblock, int pitchnum2, struct Notes *note, bool is_end_pitch){
+  if (is_end_pitch){
     Place p = ratio2place(note->end);
     return find_realline_for_end_pitch(wblock, &p);
+  } else if(pitchnum2 >= 0) {
+    const r::PitchTimeData::Reader reader(note->_pitches);
+    return FindReallineForRatio(wblock,0,reader.at_ref(pitchnum2)._time);
   }else
     return FindRealLineFor(wblock,note->Tline,&note->l.p);
 }
@@ -2631,23 +2758,23 @@ static float getPitchInfo(enum PitchInfoWhatToGet what_to_get, int pitchnum, int
     return 0;
 
   struct Notes *note;
-  struct Pitches *pitch;
+  int pitchnum2;
   bool is_end_pitch;
   
-  if (getPitch(pitchnum, &pitch, &note, &is_end_pitch, wtrack->track)==false)
+  if (getPitch2(pitchnum, pitchnum2, &note, &is_end_pitch, wtrack->track)==false)
     return 0;
   
   switch (what_to_get){
   case PITCH_INFO_Y1:
-    return get_mouse_realline_y1(window, getReallineForPitch(wblock, pitch, note, is_end_pitch));
+    return get_mouse_realline_y1(window, getReallineForPitch(wblock, pitchnum2, note, is_end_pitch));
   case PITCH_INFO_Y2:
-    return get_mouse_realline_y2(window, getReallineForPitch(wblock, pitch, note, is_end_pitch));
+    return get_mouse_realline_y2(window, getReallineForPitch(wblock, pitchnum2, note, is_end_pitch));
   case PITCH_INFO_VALUE:
     {
-      if (pitch!=NULL)
-        return pitch->note;
-      else if (is_end_pitch)
+      if (is_end_pitch)
         return note->pitch_end;
+      else if (pitchnum2>=0)
+        return r::PitchTimeData::Reader(note->_pitches).at_ref(pitchnum2)._val;
       else
         return note->note;
     }
@@ -2675,7 +2802,7 @@ float getPitchnumX2(int pitchnum, int tracknum, int blocknum, int windownum){
   return wtrack==NULL ? 0.0f : wtrack->notearea.x2;
 }
 
-static struct Node *get_pitchnodeline(int pitchnum, int tracknum, int blocknum, int windownum, bool *is_end_pitch){
+static struct Node2 *get_pitchnodeline(int pitchnum, int tracknum, int blocknum, int windownum, bool *is_end_pitch){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
@@ -2683,31 +2810,31 @@ static struct Node *get_pitchnodeline(int pitchnum, int tracknum, int blocknum, 
     return NULL;
 
   struct Notes *note;
-  struct Pitches *pitch;  
+  int pitchnum2;
   
-  if (getPitch(pitchnum, &pitch, &note, is_end_pitch, wtrack->track)==false)
+  if (getPitch2(pitchnum, pitchnum2, &note, is_end_pitch, wtrack->track)==false)
     return NULL;
 
   int note_pitchnum;
 
-  if (pitch==NULL) {
-    if (*is_end_pitch) {
-      note_pitchnum = note->pitches==NULL ? 1 : ListFindNumElements3((struct ListHeader3*)note->pitches) + 1;
-    } else {
-      note_pitchnum = 0;
-    }
-  } else
-    note_pitchnum = ListPosition3(&note->pitches->l, &pitch->l) + 1;
+  if (pitchnum2 < 0)
+    note_pitchnum = 0;
+  else
+    note_pitchnum = pitchnum2 + 1; //ListPosition3(&note->pitches->l, &pitch->l) + 1;
 
-  const vector_t *nodes = GetPitchNodes(window, wblock, wtrack, note);
 
-  return (struct Node*)nodes->elements[note_pitchnum];
+  float track_pitch_min, track_pitch_max;
+  TRACK_get_min_and_max_pitches(wtrack->track, &track_pitch_min, &track_pitch_max);
+
+  const vector_t *nodes = GetPitchNodes2(window, wblock, wtrack, note, track_pitch_min, track_pitch_max);
+
+  return (struct Node2*)nodes->elements[note_pitchnum];
 }
 
 
 float getPitchnumX(int num,  int tracknum, int blocknum, int windownum){
   bool is_end_pitch;
-  struct Node *nodeline = get_pitchnodeline(num, tracknum, blocknum, windownum, &is_end_pitch);
+  struct Node2 *nodeline = get_pitchnodeline(num, tracknum, blocknum, windownum, &is_end_pitch);
   if (nodeline==NULL)
     return 0;
 
@@ -2716,7 +2843,7 @@ float getPitchnumX(int num,  int tracknum, int blocknum, int windownum){
 
 float getPitchnumY(int num, int tracknum, int blocknum, int windownum){
   bool is_end_pitch;
-  struct Node *nodeline = get_pitchnodeline(num, tracknum, blocknum, windownum, &is_end_pitch);
+  struct Node2 *nodeline = get_pitchnodeline(num, tracknum, blocknum, windownum, &is_end_pitch);
   if (nodeline==NULL)
     return 0;
 
@@ -2747,19 +2874,19 @@ Place getPitchnumPlace(int pitchnum, int tracknum, int blocknum, int windownum){
   
   bool is_end_pitch = false;
   struct Notes *note = NULL;
-  struct Pitches *pitch = NULL;
-
-  if (getPitch(pitchnum, &pitch, &note, &is_end_pitch, track)==false)
+  int pitchnum2;
+  
+  if (getPitch2(pitchnum, pitchnum2, &note, &is_end_pitch, track)==false)
     return p_Create(0,0,1);
 
   R_ASSERT_RETURN_IF_FALSE2(note!=NULL, p_Create(0,0,1));
 
   if (is_end_pitch)
     return ratio2place(note->end);
-  else if (pitch==NULL)
-    return note->l.p;
+  else if (pitchnum2>=0)
+    return ratio2place(r::PitchTimeData::Reader(note->_pitches).at_ref(pitchnum2)._time);
   else
-    return pitch->l.p;
+    return note->l.p;
 }
 
 void setCurrentPitchnum(int num, int tracknum, int blocknum){
@@ -2770,13 +2897,17 @@ void setCurrentPitchnum(int num, int tracknum, int blocknum){
     return;
 
   struct Notes *note;
-  struct Pitches *pitch;
   bool is_end_pitch;
-  if (getPitch(num, &pitch, &note, &is_end_pitch, wtrack->track)==false)
+  int pitchnum2;
+  if (getPitch2(num, pitchnum2, &note, &is_end_pitch, wtrack->track)==false)
     return;
 
-  struct ListHeader3 *listHeader3 = pitch!=NULL ? &pitch->l : &note->l;
-  API_setCurrentNode(listHeader3);
+  if (pitchnum2 >= 0 && !is_end_pitch) {
+    const r::PitchTimeData::Reader reader(note->_pitches);
+    API_setCurrentNode2(reader.at_ref(pitchnum2)._id);
+  } else {
+    API_setCurrentNode(&note->l);
+  }
 }
 
 void setIndicatorPitchnum(int num, int tracknum, int blocknum){
@@ -2787,23 +2918,18 @@ void setIndicatorPitchnum(int num, int tracknum, int blocknum){
     return;
 
   struct Notes *note;
-  struct Pitches *pitch;
   bool is_end_pitch;
-  
-  if (getPitch(num, &pitch, &note, &is_end_pitch, wtrack->track)==false)
+  int pitchnum2;
+
+  if (getPitch2(num, pitchnum2, &note, &is_end_pitch, wtrack->track)==false)
     return;
 
   API_setIndicatorNode(&note->l);
 
-  if (pitch==NULL) {
-    if (is_end_pitch)
-      g_indicator_pitch_num = 1 + ListFindNumElements3((struct ListHeader3*)note->pitches);
-    else
-      g_indicator_pitch_num = 0;
-  } else {
-    int pitchnum = ListPosition3(&note->pitches->l, &pitch->l);
-    g_indicator_pitch_num = pitchnum + 1;
-  }
+  if(pitchnum2<0)
+    g_indicator_pitch_num = 0;
+  else
+    g_indicator_pitch_num = pitchnum2 + 1;
 }
 
 static int setPitchnum2(int num, float value, Place place, int tracknum, int blocknum, int windownum, bool replace_note_ends){
@@ -2820,36 +2946,50 @@ static int setPitchnum2(int num, float value, Place place, int tracknum, int blo
   float clamped_value = R_BOUNDARIES(1,value,127);
 
   struct Notes *note;
-  struct Pitches *pitch;
   bool is_end_pitch;
+
+  int pitchnum2;
   
-  if (getPitch(num, &pitch, &note, &is_end_pitch, track)==false)
+  if (getPitch2(num, pitchnum2, &note, &is_end_pitch, track)==false)
     return num;
 
   window->must_redraw_editor = true;
 
-  if (pitch != NULL) {
+  if (pitchnum2 >= 0 && !is_end_pitch) {
 
-    if (value > 0)
-      pitch->note = clamped_value;
-
+    R_ASSERT_NON_RELEASE(pitchnum2 >= 0);
+    
+    r::PitchTimeData::Writer writer(note->_pitches);
+    r::Pitch &pitch2 = writer.at_ref(pitchnum2);
+    
+    if (value > 0){
+      pitch2._val = clamped_value;
+    }
+    
     if (!p_is_same_place(place)){
       
       if(place.line < 0){handleError("Negative place");return num;}
-      
-      Place firstLegalPlace,lastLegalPlace;
-      PlaceFromLimit(&firstLegalPlace, &note->l.p);
-      {
-        Place p = ratio2place(note->end);
-        PlaceTilLimit(&lastLegalPlace, &p);
-      }
 
       {
-        SCOPED_PLAYER_LOCK_IF_PLAYING();
+        Ratio ratio = place2ratio(place);
         
-        ListMoveElement3_ns(&note->pitches, &pitch->l, &place, &firstLegalPlace, &lastLegalPlace);
-        NOTE_validate(block, track, note);
+        if (ratio < 0) {
+          
+          handleError("Position before start of block");
+          
+        } else if (ratio > wblock->block->num_lines) {
+          
+          handleError("Position after end of block");
+          
+        } else {
+          
+          writer.constraint_move(pitchnum2,
+                                 R_BOUNDARIES(place2ratio(note->l.p), place2ratio(place), note->end),
+                                 wblock->block->num_lines
+                                 );
+        }
       }
+
     }
                         
   } else if (is_end_pitch){
@@ -2859,7 +2999,7 @@ static int setPitchnum2(int num, float value, Place place, int tracknum, int blo
     
     if (!p_is_same_place(place)){
       MoveEndNote(block, track, note, &place, true);
-      return getPitchNum(track, note, NULL, true);
+      return getPitchNum(track, note, -1, true);
     }
     
   } else {
@@ -2870,7 +3010,7 @@ static int setPitchnum2(int num, float value, Place place, int tracknum, int blo
     if (place.line >= 0) {
       if(place.line < 0){handleError("Negative place");return num;}
       MoveNote(block, track, note, &place, replace_note_ends);
-      return getPitchNum(track, note, NULL, false);
+      return getPitchNum(track, note, -1, false);
     }
   }
 
@@ -2901,7 +3041,7 @@ static int addNote4(struct Tracker_Windows *window, struct WBlocks *wblock, stru
 
   window->must_redraw_editor = true;
 
-  return getPitchNum(wtrack->track, note, NULL, false);
+  return getPitchNum(wtrack->track, note, -1, false);
 }
 
 static int addPitch2(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct Notes *note, Place *place, float value){
@@ -2909,9 +3049,9 @@ static int addPitch2(struct Tracker_Windows *window, struct WBlocks *wblock, str
   if (validate_place(*place)==false)
     return -1;
 
-  struct Pitches *pitch = AddPitch(window, wblock, wtrack, note, place, value);
+  int pos = AddPitch(window, wblock, wtrack, note, place, value);
 
-  if(pitch==NULL)
+  if(pos < 0)
     return -1;
 
   //if (note->pitch_end==0)
@@ -2919,7 +3059,7 @@ static int addPitch2(struct Tracker_Windows *window, struct WBlocks *wblock, str
   
   window->must_redraw_editor = true;
 
-  return getPitchNum(wtrack->track, note, pitch, false);
+  return getPitchNum(wtrack->track, note, pos, false);
 }
 
 int addPitchnum(float value, Place place, int tracknum, int blocknum, int windownum){
@@ -3013,8 +3153,8 @@ void disablePortamento(dyn_t dynnote, int tracknum, int blocknum, int windownum)
     return;
 
   {
-    SCOPED_PLAYER_LOCK_IF_PLAYING();
-    note->pitches = NULL;
+    r::PitchTimeData::Writer writer(note->_pitches);
+    writer.clear();
     note->pitch_end = 0;
   }
   
@@ -3268,7 +3408,7 @@ Place getFxnodePlace(int fxnodenum, int fxnum, int tracknum, int blocknum, int w
   if (fxs==NULL)
     return p_Create(0,0,1);
 
-  r::TimeData<r::FXNode>::Reader reader(fxs->_fxnodes);
+  const r::FXTimeData::Reader reader(fxs->_fxnodes);
   if (!num_is_valid(reader, fxnodenum, "fx node"))
     return p_Create(0,0,1);
   
@@ -3287,7 +3427,7 @@ float getFxnodeValue(int fxnodenum, int fxnum, int tracknum, int blocknum, int w
   int max = fxs->fx->max;
   int min = fxs->fx->min;
 
-  r::TimeData<r::FXNode>::Reader reader(fxs->_fxnodes);
+  const r::FXTimeData::Reader reader(fxs->_fxnodes);
   if (!num_is_valid(reader, fxnodenum, "fx node"))
     return 0.0f;
   
@@ -3303,7 +3443,7 @@ int getFxnodeLogtype(int fxnodenum, int fxnum, int tracknum, int blocknum, int w
   if (fxs==NULL)
     return 0.0f;
 
-  r::TimeData<r::FXNode>::Reader reader(fxs->_fxnodes);
+  const r::FXTimeData::Reader reader(fxs->_fxnodes);
   if (!num_is_valid(reader, fxnodenum, "fx node"))
     return 0.0f;
   
@@ -3377,7 +3517,7 @@ const_char* getFxString(int fxnodenum, int fxnum, int tracknum, int blocknum, in
   if (fxs==NULL)
     return "<fx not found>";
 
-  r::TimeData<r::FXNode>::Reader reader(fxs->_fxnodes);
+  const r::FXTimeData::Reader reader(fxs->_fxnodes);
   if (!num_is_valid(reader, fxnodenum, "fx node"))
     return "<fxnode not found>";
   
@@ -3415,7 +3555,7 @@ int getNumFxnodes(int fxnum, int tracknum, int blocknum, int windownum){
     return 0;
 
 #if 1  
-  r::TimeData<r::FXNode>::Reader reader(fxs->_fxnodes);
+  const r::FXTimeData::Reader reader(fxs->_fxnodes);
   return reader.size();
 #else  
   return ListFindNumElements3((struct ListHeader3*)fxs->fxnodelines);
@@ -3530,12 +3670,11 @@ void setFxnode(int fxnodenum, float value, Place place, int fxnum, int tracknum,
   int fxmax = fxs->fx->max;
   int fxmin = fxs->fx->min;
   
-  r::TimeData<r::FXNode>::Writer writer(fxs->_fxnodes);
+  r::FXTimeData::Writer writer(fxs->_fxnodes);
   if (!num_is_valid(writer, fxnodenum, "fx node"))
     return;
 
-  r::FXNode &fxnode = writer.at_ref(fxnodenum);
-  fxnode._val=scale(value, 0.0f, 1.0f, fxmin, fxmax);
+  writer.at_ref(fxnodenum)._val = scale(value, 0.0f, 1.0f, fxmin, fxmax);
   
   if (!p_is_same_place(place)){
 
@@ -3581,7 +3720,7 @@ void setFxnodeLogtype(int logtype, int fxnodenum, int fxnum, int tracknum, int b
   if (fxs==NULL)
     return;
 
-  r::TimeData<r::FXNode>::Writer writer(fxs->_fxnodes);
+  r::FXTimeData::Writer writer(fxs->_fxnodes);
   if (!num_is_valid(writer, fxnodenum, "fx node"))
     return;
 

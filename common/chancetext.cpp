@@ -19,6 +19,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <math.h>
 
 #include "nsmtracker.h"
+#include "TimeData.hpp"
+#include "list_proc.h"
 #include "vector_proc.h"
 #include "realline_calc_proc.h"
 #include "undo.h"
@@ -67,11 +69,27 @@ bool CHANCETEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock,
 
       for (const TrackRealline2 &tr2 : trs){
         struct Notes *note = tr2.note;
-        struct Pitches *pitch = tr2.pitch;
-        if (pitch!=NULL)
-          safe_int_write(&pitch->chance, 0x100);
-        else if (note!=NULL)
-          safe_int_write(&note->chance, 0x100);
+
+        switch(tr2.type){
+          case TR2_NOTE_START:
+            safe_int_write(&note->chance, MAX_PATCHVOICE_CHANCE);
+            break;
+          case TR2_NOTE_END:
+            // no chance text for end-pitch.
+            break;
+          case TR2_PITCH:
+            {
+              r::PitchTimeData::Writer writer(note->_pitches);
+              if (tr2.pitchnum < 0 || tr2.pitchnum >= writer.size())
+                R_ASSERT(false);
+              else 
+                writer.at_ref(tr2.pitchnum)._chance = MAX_PATCHVOICE_CHANCE;
+            }
+            break;
+          case TR2_STOP:
+            break;
+        }
+
       }
       
     } else {
@@ -92,41 +110,88 @@ bool CHANCETEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock,
     
     const TrackRealline2 &tr2 = trs[0];
     struct Notes *dasnote = tr2.note;
-    struct Pitches *pitch = tr2.pitch;
   
     if (key == EVENT_DEL) {
 
-      if (pitch!=NULL)
-        safe_int_write(&pitch->chance, 0x100);
-      else if (dasnote!=NULL)
-        safe_int_write(&dasnote->chance, 0x100);
-      else
-        return false;
+      switch(tr2.type){
+        case TR2_NOTE_START:
+          safe_int_write(&dasnote->chance, MAX_PATCHVOICE_CHANCE);
+          break;
+        case TR2_NOTE_END:
+          UNDO_CANCEL_LAST_UNDO();
+          return false;
+        case TR2_PITCH:
+          {
+            r::PitchTimeData::Writer writer(dasnote->_pitches);
+            if (tr2.pitchnum < 0 || tr2.pitchnum >= writer.size())
+              R_ASSERT(false);
+            else 
+              writer.at_ref(tr2.pitchnum)._chance = MAX_PATCHVOICE_CHANCE;
+          }
+          break;
+        case TR2_STOP:
+          UNDO_CANCEL_LAST_UNDO();
+          return false;
+      }
       
     } else {
 
       int chance;
-      
-      if (pitch!=NULL)
-        chance = pitch->chance;
-      else if (dasnote!=NULL)
-        chance = dasnote->chance;
-      else
-        return false;
+
+      switch(tr2.type){
+        case TR2_NOTE_START:
+          chance = dasnote->chance;
+          break;
+        case TR2_NOTE_END:
+          UNDO_CANCEL_LAST_UNDO();
+          return false;
+        case TR2_PITCH:
+          {
+            const r::PitchTimeData::Reader reader(dasnote->_pitches);
+            if (tr2.pitchnum < 0 || tr2.pitchnum >= reader.size()){
+              R_ASSERT(false);
+              return true;
+            }
+
+            chance = reader.at_ref(tr2.pitchnum)._chance;
+          }
+          break;
+        case TR2_STOP:
+          UNDO_CANCEL_LAST_UNDO();
+          return false;
+      }
       
       data_as_text_t dat = DAT_get_overwrite(chance, 0, subsubtrack, key, 0, 0xff, 0, 0xff, true, false);
 
-      if (dat.is_valid==false)
+      if (dat.is_valid==false){
+        UNDO_CANCEL_LAST_UNDO();
         return false;
+      }
 
       //double new_note = floor(note) + ((double)dat.value / 100.0);
       printf("new_chance: %d\n",dat.value);
-      
-      if (pitch!=NULL)
-        safe_int_write(&pitch->chance, dat.value);
-      else
-        safe_int_write(&dasnote->chance, dat.value);
-      
+
+      switch(tr2.type){
+        case TR2_NOTE_START:
+          safe_int_write(&dasnote->chance, dat.value);
+          break;
+        case TR2_NOTE_END:
+          R_ASSERT_NON_RELEASE(false);
+          break;
+        case TR2_PITCH:
+          {
+            r::PitchTimeData::Writer writer(dasnote->_pitches);
+            if (tr2.pitchnum < 0 || tr2.pitchnum >= writer.size())
+              R_ASSERT(false);
+            else 
+              writer.at_ref(tr2.pitchnum)._chance = dat.value;
+          }
+          break;
+        case TR2_STOP:
+          R_ASSERT_NON_RELEASE(false);
+          break;
+      }
+
     }    
   }
 

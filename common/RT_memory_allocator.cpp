@@ -371,13 +371,6 @@ void *RT_alloc_raw_internal(const int minimum_num_elements, const int element_si
 
   ASAN_UNPOISON_MEMORY_REGION(ret, size);
 
-#if 0
-  // Note: Both of the printf should hit asan errors. Should probably test this automatically though.
-  RT_mempool_data *data = (RT_mempool_data *)(((char*)ret) - g_offset_of_data);
-  printf("hepp1: %d\n", data->_pool_num);
-  printf("hepp2: %d\n", ATOMIC_GET(data->_num_users));
-#endif
-
 #if defined(RADIUM_USES_ASAN)
   {
     // These tests might not always be true though due to alignment restrictions (unpoisoning can unpoison more than it was asked, and poison might poison less than it was asked).

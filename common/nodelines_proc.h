@@ -31,8 +31,16 @@ extern LANGSPEC const struct NodeLine *GetTempoNodeLines(const struct Tracker_Wi
 extern LANGSPEC const vector_t *GetTempoNodes(const struct Tracker_Windows *window, const struct WBlocks *wblock);
 
 
+/*
 extern LANGSPEC const struct NodeLine *GetPitchNodeLines(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note);
 extern LANGSPEC const vector_t *GetPitchNodes(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note);
+*/
+
+#ifdef RADIUM_COMMON_TIMEDATA_HPP
+extern const struct NodeLine2 *GetPitchNodeLines2(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note, const float track_pitch_min, const float track_pitch_max, const r::PitchTimeData::Reader &reader);
+#endif
+
+extern LANGSPEC const vector_t *GetPitchNodes2(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note, const float track_pitch_min, const float track_pitch_max);
 
 //extern LANGSPEC const struct NodeLine *GetVelocityNodeLines(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note);
 extern LANGSPEC const vector_t *GetVelocityNodes(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note);
@@ -42,9 +50,17 @@ extern LANGSPEC const struct NodeLine2 *GetVelocityNodeLines2(const struct Track
 extern LANGSPEC const struct NodeLine2 *GetFxNodeLines(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct FXs *fxs);
 extern LANGSPEC const vector_t *GetFxNodes(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct FXs *fxs);
 
+/*
 extern LANGSPEC const struct NodeLine *GetPianorollNodeLines(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note);
 extern LANGSPEC const vector_t *GetPianorollNodes(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note);
-  
+*/
+
+#ifdef RADIUM_COMMON_TIMEDATA_HPP
+extern const struct NodeLine2 *GetPianorollNodeLines2(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note, const r::PitchTimeData::Reader &reader);
+//extern LANGSPEC const vector_t *GetPianorollNodes2(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note);
+#endif
+
+
   
 #if !USE_OPENGL
 extern LANGSPEC void MakeNodeLines(

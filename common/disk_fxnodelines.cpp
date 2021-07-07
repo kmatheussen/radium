@@ -37,7 +37,7 @@ void SaveFXNodeLines(struct FXs *fxs){
 
   DC_start("FXNODELINES2");
 
-  r::TimeData<r::FXNode>::Reader reader(fxs->_fxnodes);
+  r::FXTimeData::Reader reader(fxs->_fxnodes);
   
   for(const r::FXNode &fxnode : reader){
     DC_SaveRatio(fxnode._time);
@@ -68,7 +68,7 @@ DC_end();
 
 void LoadFXNodeLines2(struct FXs *fxs){
 
-        r::TimeData<r::FXNode>::Writer writer(fxs->_fxnodes);
+        r::FXTimeData::Writer writer(fxs->_fxnodes);
         
 	printf("\t\tLoadFXNodeLines2_start\n");
 	while(dc.success){
@@ -102,7 +102,7 @@ void LoadFXNodeLines2(struct FXs *fxs){
 
 void LoadFXNodeLines(struct FXs *fxs){
 
-        r::TimeData<r::FXNode>::Writer writer(fxs->_fxnodes);
+        r::FXTimeData::Writer writer(fxs->_fxnodes);
         
 	printf("\t\tLoadFXNodeLines_start\n");
 	while(dc.success){

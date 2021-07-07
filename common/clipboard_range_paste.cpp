@@ -64,19 +64,19 @@ static void PasteRange_velocities(
 */
 static void PasteRange_velocities2(
                                    const struct Blocks *block,
-                                   r::TimeData<r::Velocity> *to,
-                                   const r::TimeData<r::Velocity> *from,
+                                   r::VelocityTimeData *to,
+                                   const r::VelocityTimeData *from,
                                    const Place *place
                                    )
 {
-  r::TimeData<r::Velocity>::Reader reader(from);
+  r::VelocityTimeData::Reader reader(from);
   
   if (reader.size()==0)
     return;
   
   Ratio ratio = ratio_from_place(*place);
   
-  r::TimeData<r::Velocity>::Writer writer(to, true);
+  r::VelocityTimeData::Writer writer(to, true);
   
   for(r::Velocity velocity : reader){
     
@@ -115,7 +115,7 @@ static bool PasteRange_FXs(
     std::vector<struct FXs*> to_remove;
     
     VECTOR_FOR_EACH(struct FXs *, fxs, &track->fxs){
-      r::TimeData<r::FXNode>::Writer writer(fxs->_fxnodes);
+      r::FXTimeData::Writer writer(fxs->_fxnodes);
 
       if (!LegalizeFXlines2(block->num_lines, fxs->fx, writer)){
         R_ASSERT_NON_RELEASE(false);
@@ -135,7 +135,7 @@ static bool PasteRange_FXs(
   return true;
 }
 
-
+/*
 static void PasteRange_pitches(
                         const struct Blocks *block,
                         struct Pitches **topitch,
@@ -157,6 +157,35 @@ static void PasteRange_pitches(
 
 	PasteRange_pitches(block,topitch,NextPitch(frompitch),place);
 }
+*/
+
+static void PasteRange_pitches2(
+                                const struct Blocks *block,
+                                r::PitchTimeData *to,
+                                const r::PitchTimeData *from,
+                                const Place *place
+                                )
+{
+  r::PitchTimeData::Reader reader(from);
+  
+  if (reader.size()==0)
+    return;
+  
+  Ratio ratio = ratio_from_place(*place);
+  
+  r::PitchTimeData::Writer writer(to, true);
+  
+  for(r::Pitch pitch : reader){
+    
+    pitch._time += ratio;
+    
+    if (pitch._time > block->num_lines)
+      break;
+    
+    writer.add(pitch);
+  }
+}
+
 
 static void PasteRange_notes(
                       const struct Blocks *block,
@@ -189,7 +218,8 @@ static void PasteRange_notes(
         
 	//PasteRange_velocities(block,&note->velocities,fromnote->velocities,place);
 	PasteRange_velocities2(block,note->_velocities,fromnote->_velocities,place);
-	PasteRange_pitches(block,&note->pitches,fromnote->pitches,place);
+	//PasteRange_pitches(block,&note->pitches,fromnote->pitches,place);
+	PasteRange_pitches2(block,note->_pitches,fromnote->_pitches,place);
 
 	PasteRange_notes(block,track,NextNote(fromnote),place);
 }
@@ -197,8 +227,8 @@ static void PasteRange_notes(
 
 static void PasteRange_stops(
 	struct Blocks *block,
-        r::TimeData<r::Stop> *to_stop,
-        const r::TimeData<r::Stop> *from_stop,
+        r::StopTimeData *to_stop,
+        const r::StopTimeData *from_stop,
 	//struct Tracks *track,
 	//struct Stops *fromstop,
 	const Place *place
@@ -207,9 +237,9 @@ static void PasteRange_stops(
         Ratio lastplace = place2ratio(p_Last_Pos(block));
         
 
-        r::TimeData<r::Stop>::Reader reader(from_stop);
+        r::StopTimeData::Reader reader(from_stop);
 
-        r::TimeData<r::Stop>::Writer writer(to_stop);
+        r::StopTimeData::Writer writer(to_stop);
 
         Ratio how_much = place2ratio(*place);
         
@@ -252,7 +282,7 @@ void PasteRange(
             PasteRange_notes(block,track,range_clip->notes[lokke],place);
 
             if (range_clip->stops[lokke] != NULL)
-              PasteRange_stops(block,track->stops2,(const r::TimeData<r::Stop> *)range_clip->stops[lokke],place);
+              PasteRange_stops(block,track->stops2,(const r::StopTimeData *)range_clip->stops[lokke],place);
 
             if (doRangePasteCut()) {
               struct Notes *note = FindNextNote(track, &p2);

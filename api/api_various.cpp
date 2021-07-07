@@ -1086,35 +1086,6 @@ static bool TransposeTemponode(struct WBlocks *wblock, TempoNodes *temponode, ra
 
   return true;
 }
-#if 0
-static bool TransposeFxNode(struct FX *fx, struct FXNodeLines *fxnode, radium::GeneralTranspose &gt){
-  int step = gt.big_step ? 0x10 : 0x1;
-  if (gt.is_down)
-    step *= -1;
-  
-  // Fix midi minor transpose.
-  if (step==0x1){
-    int span = R_ABS(fx->max - fx->min);
-    if (span < 0x100)
-      step = 0x2;
-  }
-  
-  int old_value = round(scale_double(fxnode->val, fx->min, fx->max, 0, 0x100));
-  if (old_value==0x100)
-    old_value=0xff;
-  
-  int new_value = R_BOUNDARIES(0, old_value + step, 0xff);
-  
-  //printf("       Step: %f. old: %f. new: %f\n", step, temponode->reltempo, new_reltempo);
-  
-  if (old_value==new_value)
-    return false;
-  
-  safe_int_write(&fxnode->val, round(scale_double(new_value, 0, 0x100, fx->min, fx->max)));
-  
-  return true;
-}
-#endif
 
 static bool TransposeFxNode2(struct FX *fx, r::FXNode &node, radium::GeneralTranspose &gt){
   int step = gt.big_step ? 0x10 : 0x1;
@@ -1145,72 +1116,13 @@ static bool TransposeFxNode2(struct FX *fx, r::FXNode &node, radium::GeneralTran
   return true;
 }
 
-namespace{
 
-  struct Pitches2{
-    ListHeader3 l;
-    float *note;
-    int *chance;
-    int *velocity;
-  };
-  
-  Pitches2 *get_pitches2_from_track(struct Tracks *track){
-    struct Pitches2 *pitches2s = NULL;
-    
-    struct Notes *notes = track->notes;
-    
-    while(notes!=NULL){
-      {
-        Pitches2 *pitches2 = (struct Pitches2*)talloc(sizeof(Pitches2));
-        
-        pitches2->l.p = notes->l.p;
-        pitches2->note = &notes->note;
-        pitches2->chance = &notes->chance;
-        pitches2->velocity = &notes->velocity;
-        
-        ListAddElement3(&pitches2s, &pitches2->l);
-      }
-      
-      struct Pitches *pitches = notes->pitches;
-      while(pitches != NULL){
-        Pitches2 *pitches2 = (struct Pitches2*)talloc(sizeof(Pitches2));
-      
-        pitches2->l.p = pitches->l.p;
-        pitches2->note = &pitches->note;
-        pitches2->chance = &pitches->chance;
-
-        ListAddElement3(&pitches2s, &pitches2->l);
-        
-        pitches = NextPitch(pitches);
-      }
-
-      {
-        Pitches2 *pitches2 = (struct Pitches2*)talloc(sizeof(Pitches2));
-        
-        pitches2->l.p = ratio2place(notes->end);
-        if (notes->pitches != NULL && notes->pitch_end > 0.005)
-          pitches2->note = &notes->pitch_end;
-        pitches2->velocity = &notes->velocity_end;
-        
-        ListAddElement3(&pitches2s, &pitches2->l);
-      }
-      
-      notes = NextNote(notes);
-    }
-
-    return pitches2s;
-  }
-}
-
-static bool TransposeChance(Pitches2 *pitches2, radium::GeneralTranspose &gt){
-  if (pitches2->chance==NULL)
-    return false;
-  
+static bool TransposeChance(int &chance, const radium::GeneralTranspose &gt){
   int step = gt.big_step ? 0x10 : 0x1;
   if (gt.is_down)
     step *= -1;
   
-  int old_value = *pitches2->chance;
+  int old_value = chance;
   
   int new_value = R_BOUNDARIES(0, old_value + step, 0xff);
   
@@ -1219,49 +1131,17 @@ static bool TransposeChance(Pitches2 *pitches2, radium::GeneralTranspose &gt){
   if (old_value==new_value)
     return false;
   
-  safe_int_write(pitches2->chance, new_value);
-  
-  return true;
-}
- 
-static bool TransposePitch2(Pitches2 *pitches2, radium::GeneralTranspose &gt, double small_step, double big_step){
-  if (pitches2->note==NULL)
-    return false;
-  
-  double step = gt.big_step ? big_step : small_step;
-  if (gt.is_down)
-    step *= -1;
-
-  double old_value = *pitches2->note;
-  double new_value = R_BOUNDARIES(0.01, old_value + step, 127.99);
-  
-  //printf("       Step: %f. old: %f. new: %f\n", step, temponode->reltempo, new_reltempo);
-  
-  if (equal_floats(old_value, new_value))
-    return false;
-
-  safe_float_write(pitches2->note, new_value);
+  chance = new_value;
   
   return true;
 }
 
-static bool TransposeCent(Pitches2 *pitches2, radium::GeneralTranspose &gt){
-  return TransposePitch2(pitches2, gt, 0.01, 0.1);
-}
-
-static bool TransposePitch(Pitches2 *pitches2, radium::GeneralTranspose &gt){
-  return TransposePitch2(pitches2, gt, 1, 12);
-}
- 
-static bool TransposeVelocity(Pitches2 *pitches2, radium::GeneralTranspose &gt){
-  if (pitches2->velocity==NULL)
-    return false;
-  
+static bool TransposeVelocity4(int &velocity, const radium::GeneralTranspose &gt){
   int step = gt.big_step ? 0x10 : 0x1;
   if (gt.is_down)
     step *= -1;
 
-  int old_value = round(scale_double(*pitches2->velocity, 0, MAX_VELOCITY, 0, 0x100));
+  int old_value = round(scale_double(velocity, 0, MAX_VELOCITY, 0, 0x100));
   int new_value = R_BOUNDARIES(0, scale_double(old_value + step, 0, 0x100, 0, MAX_VELOCITY), MAX_VELOCITY);
   
   //printf("       Step: %f. old: %f. new: %f\n", step, temponode->reltempo, new_reltempo);
@@ -1269,11 +1149,39 @@ static bool TransposeVelocity(Pitches2 *pitches2, radium::GeneralTranspose &gt){
   if (old_value==new_value)
     return false;
 
-  safe_int_write(pitches2->velocity, new_value);
+  velocity = new_value;
   
   return true;
 }
- 
+
+static bool TransposePitch5(float &pitch, const radium::GeneralTranspose &gt, double step){
+  if (gt.is_down)
+    step *= -1;
+  
+  double old_value = pitch;
+  double new_value = R_BOUNDARIES(0.01, old_value + step, 127.99);
+  
+  //printf("       Step: %f. old: %f. new: %f\n", step, temponode->reltempo, new_reltempo);
+  
+  if (equal_floats(old_value, new_value))
+    return false;
+
+  pitch = new_value;
+  
+  return true;
+}
+
+static bool TransposePitch4(float &pitch, const radium::GeneralTranspose &gt){
+  double step = gt.big_step ? 12 : 1;
+
+  return TransposePitch5(pitch, gt, step);
+}
+
+static bool TransposeCent(float &pitch, const radium::GeneralTranspose &gt){
+  double step = gt.big_step ? 0.1 : 0.01;
+
+  return TransposePitch5(pitch, gt, step);
+}
 
 template <class T>
 static bool general_transform_list2(radium::GeneralTranspose &gt,
@@ -1363,7 +1271,6 @@ static bool general_transform_list(struct WBlocks *wblock, struct WTracks *wtrac
   return ret;
 }
 
-
 template <typename T, class T2>
 static bool general_transform_timedata2(radium::GeneralTranspose &gt,
                                         T &writer,
@@ -1449,6 +1356,86 @@ static bool general_transform_timedata(struct WBlocks *wblock, struct WTracks *w
 }
 
 
+template <class ValType>
+static bool general_transform3(const radium::GeneralTranspose &gt,
+                               const Ratio ratio,
+                               ValType &val,
+                               bool &is_changed,
+                               std::function<bool(ValType&, const radium::GeneralTranspose&)> transformer
+                               )
+{
+  if (ratio < place2ratio(gt.y1))
+    return true;
+    
+  if (ratio >= place2ratio(gt.y2))
+    return false;
+    
+  if (transformer(val, gt))
+    is_changed = true;
+
+  return true;
+}
+
+template <class ValType>
+static bool general_transform(struct WBlocks *wblock, struct WTracks *wtrack,
+                              radium::GeneralTranspose &gt,
+                              std::function<void(Blocks*, Tracks*, bool&)> callback,
+                              std::function<void(Tracks*)> make_undo
+                              ){
+  
+  struct Blocks *block = wblock->block;
+
+  bool is_changed = false;
+
+  if (!gt.range_or_all_tracks || wtrack==NULL) {
+
+    struct Tracks *track = wtrack==NULL ? NULL : wtrack->track;
+
+    make_undo(track);
+
+    callback(block, track, is_changed);
+      
+  } else {
+  
+    if (gt.in_range && !wblock->range.enabled)
+      return false;
+
+    radium::ScopedUndo scoped_undo;
+    
+    struct Tracks *track = block->tracks;
+    
+    while (track != NULL) {
+      
+      if (gt.in_range) {
+        
+        if (track->l.num < wblock->range.x1)
+          goto next;
+        
+        if (track->l.num > wblock->range.x2)
+          break;
+      }
+
+      make_undo(track);
+
+      callback(block, track, is_changed);
+      
+    next:
+      track = NextTrack(track);
+    }
+      
+  }
+    
+    
+  if(is_changed)
+    root->song->tracker_windows->must_redraw = true;
+  else
+    UNDO_CANCEL_LAST_UNDO();
+
+  return is_changed;
+}
+
+
+
 static void general_transpose(radium::GeneralTranspose gt){
   struct Tracker_Windows *window=root->song->tracker_windows;
   struct WBlocks *wblock=window->wblock;
@@ -1522,12 +1509,12 @@ static void general_transpose(radium::GeneralTranspose gt){
           
       } else if (FXTEXT_subsubtrack(window, wtrack, &fxs) >= 0){      
 
-        r::TimeData<r::FXNode>::Writer writer(fxs->_fxnodes);
+        r::FXTimeData::Writer writer(fxs->_fxnodes);
         
-        general_transform_timedata<r::TimeData<r::FXNode>::Writer, r::FXNode>(wblock, wtrack, gt,
-                                                                              writer,
-                                                                              [fxs](auto &node, auto &gt){return TransposeFxNode2(fxs->fx, node, gt);},
-                                                                              [window, wblock](auto *track){ADD_UNDO(FXs(window, wblock->block, track, wblock->curr_realline));});
+        general_transform_timedata<r::FXTimeData::Writer, r::FXNode>(wblock, wtrack, gt,
+                                                                     writer,
+                                                                     [fxs](auto &node, auto &gt){return TransposeFxNode2(fxs->fx, node, gt);},
+                                                                     [window, wblock](auto *track){ADD_UNDO(FXs(window, wblock->block, track, wblock->curr_realline));});
         /*
         general_transform_list<FXNodeLines>(wblock, wtrack, gt,
                                             [fxs](auto *block, auto *track){return fxs->fxnodelines;},
@@ -1537,32 +1524,120 @@ static void general_transpose(radium::GeneralTranspose gt){
           
       } else if (CHANCETEXT_subsubtrack(window, wtrack) >= 0){      
           
+        general_transform<float>(wblock, wtrack, gt,
+                                 [gt](auto *block, auto *track, bool &is_changed){
+                                   struct Notes *note = track->notes;
+                                   while(note != NULL) {
+
+                                     if (!general_transform3<int>(gt, place2ratio(note->l.p), note->chance, is_changed, TransposeChance))
+                                       break;
+                                     
+                                     r::PitchTimeData::Writer writer(note->_pitches);
+                                     
+                                     for(r::Pitch &pitch : writer)
+                                       if (!general_transform3<int>(gt, pitch._time, pitch._chance, is_changed, TransposeChance))
+                                         break;
+
+                                     note = NextNote(note);
+                                   }
+                                 },
+                                 [window, wblock](auto *track){ADD_UNDO(Notes(window, wblock->block, track, wblock->curr_realline));}
+                                 );
+        /*
         general_transform_list<Pitches2>(wblock, wtrack, gt,
                                          [](auto *block, auto *track){return get_pitches2_from_track(track);},
                                          TransposeChance,
                                          [window, wblock](auto *track){ADD_UNDO(Notes(window, wblock->block, track, wblock->curr_realline));});
+        */
           
       } else if (CENTTEXT_subsubtrack(window, wtrack) >= 0){      
           
+        general_transform<float>(wblock, wtrack, gt,
+                                 [gt](auto *block, auto *track, bool &is_changed){
+                                   struct Notes *note = track->notes;
+                                   while(note != NULL) {
+
+                                     if (!general_transform3<float>(gt, place2ratio(note->l.p), note->note, is_changed, TransposeCent))
+                                       break;
+                                     
+                                     r::PitchTimeData::Writer writer(note->_pitches);
+                                     
+                                     for(r::Pitch &pitch : writer)
+                                       if (!general_transform3<float>(gt, pitch._time, pitch._val, is_changed, TransposeCent))
+                                         break;
+
+                                     if (note->pitch_end > 0 || writer.size() > 0)
+                                       general_transform3<float>(gt, note->end, note->pitch_end, is_changed, TransposeCent);
+                                     
+                                     note = NextNote(note);
+                                   }
+                                 },
+                                 [window, wblock](auto *track){ADD_UNDO(Notes(window, wblock->block, track, wblock->curr_realline));}
+                                 );
+        /*
         general_transform_list<Pitches2>(wblock, wtrack, gt,
                                          [](auto *block, auto *track){return get_pitches2_from_track(track);},
                                          TransposeCent,
                                          [window, wblock](auto *track){ADD_UNDO(Notes(window, wblock->block, track, wblock->curr_realline));});
-          
+        */
+        
       } else if (VELTEXT_subsubtrack(window, wtrack) >= 0){      
           
+        general_transform<int>(wblock, wtrack, gt,
+                               [gt](auto *block, auto *track, bool &is_changed){
+                                 struct Notes *note = track->notes;
+                                 while(note != NULL) {
+                                   
+                                   if (!general_transform3<int>(gt, place2ratio(note->l.p), note->velocity, is_changed, TransposeVelocity4))
+                                     break;
+                                   
+                                   r::VelocityTimeData::Writer writer(note->_velocities);
+                                   
+                                   for(r::Velocity &velocity : writer)
+                                     if (!general_transform3<int>(gt, velocity._time, velocity._val, is_changed, TransposeVelocity4))
+                                       break;
+                                   //ret.push_back(QPair<Ratio,float&>(velocity._time,velocity._val));
+                                   
+                                   general_transform3<int>(gt, note->end, note->velocity_end, is_changed, TransposeVelocity4);
+                                   
+                                   note = NextNote(note);
+                                 }
+                               },
+                               [window, wblock](auto *track){ADD_UNDO(Notes(window, wblock->block, track, wblock->curr_realline));}
+                               );
+        /*
         general_transform_list<Pitches2>(wblock, wtrack, gt,
                                          [](auto *block, auto *track){return get_pitches2_from_track(track);},
                                          TransposeVelocity,
                                          [window, wblock](auto *track){ADD_UNDO(Notes(window, wblock->block, track, wblock->curr_realline));});
+        */
           
       } else {
-          
-        general_transform_list<Pitches2>(wblock, wtrack, gt,
-                                         [](auto *block, auto *track){return get_pitches2_from_track(track);},
-                                         TransposePitch,
-                                         [window, wblock](auto *track){ADD_UNDO(Notes(window, wblock->block, track, wblock->curr_realline));});
-          
+
+        general_transform<float>(wblock, wtrack, gt,
+                                 [gt](auto *block, auto *track, bool &is_changed){
+                                   struct Notes *note = track->notes;
+                                   while(note != NULL) {
+
+                                     if (!general_transform3<float>(gt, place2ratio(note->l.p), note->note, is_changed, TransposePitch4))
+                                       break;
+                                     
+                                     r::PitchTimeData::Writer writer(note->_pitches);
+                                     
+                                     for(r::Pitch &pitch : writer)
+                                       if (!general_transform3<float>(gt, pitch._time, pitch._val, is_changed, TransposePitch4))
+                                         break;
+                                     //ret.push_back(QPair<Ratio,float&>(pitch._time,pitch._val));
+
+                                     if (note->pitch_end > 0 || writer.size() > 0)
+                                       general_transform3<float>(gt, note->end, note->pitch_end, is_changed, TransposePitch4);
+                                     
+                                     note = NextNote(note);
+                                   }
+                                 },
+                                 [window, wblock](auto *track){ADD_UNDO(Notes(window, wblock->block, track, wblock->curr_realline));}
+                                 );
+
       }
     
       break;
@@ -2907,12 +2982,11 @@ bool centtextCanBeTurnedOff(int tracknum, int blocknum, int windownum){
   while(note!=NULL){
     if (!equal_floats(note->note, floorf(note->note)))
       return false;
-    
-    struct Pitches *pitch = note->pitches;
-    while(pitch != NULL){
-      if (!equal_floats(pitch->note, floorf(pitch->note)))
+
+    const r::PitchTimeData::Reader reader(note->_pitches);
+    for(const r::Pitch &pitch : reader){
+      if (!equal_floats(pitch._val, floorf(pitch._val)))
         return false;
-      pitch = NextPitch(pitch);
     }
     
     note = NextNote(note);

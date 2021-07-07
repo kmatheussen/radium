@@ -34,7 +34,7 @@ namespace{
   
 struct Undo_Notes : radium::GC_able{
 	struct Notes *notes;
-        r::TimeData<r::Stop> stops;
+        r::StopTimeData stops;
 };
  
 }
@@ -120,7 +120,7 @@ static void *Undo_Do_Notes(
         }
         
         {
-          r::TimeData<r::Stop> stops_temp;
+          r::StopTimeData stops_temp;
           
           stops_temp.move_from(track->stops2);
           

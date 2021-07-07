@@ -451,27 +451,43 @@ struct Notes *getNoteFromNum(int windownum,int blocknum,int tracknum,dyn_t dynno
   return getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
 }
 
-struct Pitches *getPitchFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, dyn_t dynnote, struct Notes **note, int pitchnum){
-  (*note) = getNoteFromNumA(windownum, window, blocknum, wblock, tracknum, wtrack, dynnote);
-  if ((*note)==NULL)
-    return NULL;
+r::Pitch getPitchFromNumA(int windownum,
+                          struct Tracker_Windows **window,
+                          int blocknum,
+                          struct WBlocks **wblock,
+                          int tracknum,
+                          struct WTracks **wtrack,
+                          dyn_t dynnote,
+                          struct Notes **retnote,
+                          int pitchnum)
+{
+  *retnote = NULL;
+  
+  struct Notes *note = getNoteFromNumA(windownum, window, blocknum, wblock, tracknum, wtrack, dynnote);
+  if (note==NULL)
+    return r::Pitch(make_ratio(0,1),1,1);
+  
+  const r::PitchTimeData::Reader reader(note->_pitches);
+  
+  int num_pitches = reader.size() + 2;
 
-  if (pitchnum==0)
-    return NULL; // pitch 0 is the note itself.
-
-  int num_pitches = ListFindNumElements3((struct ListHeader3*)(*note)->pitches);
-  if (pitchnum==num_pitches+1)
-    return NULL; // last pitch
-      
-  struct Pitches *pitch = (struct Pitches *)ListFindElement3_num_r0(&(*note)->pitches->l, pitchnum-1);
-  if (pitch==NULL){
-    handleError("There is no pitch #%d in note %d in track #%d in block #%d",pitchnum,(int)(*note)->id,tracknum,blocknum);
-    return NULL;
+  if (pitchnum < 0 || pitchnum >= num_pitches){
+    handleError("There is no pitch #%d in note with id \"%d\" in track #%d in block #%d",pitchnum,(int)note->id,tracknum,blocknum);
+    return r::Pitch(make_ratio(0,1),1,1);
   }
 
-  return pitch;
+  *retnote = note;
+
+  if (pitchnum==0)
+    return r::Pitch(place2ratio(note->l.p), note->note, note->pitch_first_logtype, note->chance);
+
+  if (pitchnum==num_pitches-1)
+    return r::Pitch(note->end, note->pitch_end);
+  
+  return reader.at(pitchnum-1);
 }
 
+ /*
 struct Pitches *getPitchFromNum(int windownum,int blocknum,int tracknum,dyn_t dynnote,int pitchnum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
@@ -479,54 +495,53 @@ struct Pitches *getPitchFromNum(int windownum,int blocknum,int tracknum,dyn_t dy
   struct Notes *note;
   return getPitchFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote, &note, pitchnum);
 }
+ */
 
-
-const r::Velocity *getVelocityFromNumA(int windownum,
-                                       struct Tracker_Windows **window,
-                                       int blocknum,
-                                       struct WBlocks **wblock,
-                                       int tracknum,
-                                       struct WTracks **wtrack,
-                                       dyn_t dynnote,
-                                       struct Notes **note,
-                                       int velocitynum)
+r::Velocity getVelocityFromNumA(int windownum,
+                                struct Tracker_Windows **window,
+                                int blocknum,
+                                struct WBlocks **wblock,
+                                int tracknum,
+                                struct WTracks **wtrack,
+                                dyn_t dynnote,
+                                struct Notes **retnote,
+                                int velocitynum)
 {
-  (*note) = getNoteFromNumA(windownum, window, blocknum, wblock, tracknum, wtrack, dynnote);
-  if ((*note)==NULL)
-    return NULL;
-
-  if (velocitynum==0)
-    return NULL; // velocity 0 is the note itself.
-
-  r::TimeData<r::Velocity>::Reader reader((*note)->_velocities);
+  *retnote = NULL;
   
-  int num_velocities = reader.size();
+  struct Notes *note = getNoteFromNumA(windownum, window, blocknum, wblock, tracknum, wtrack, dynnote);
+  if (note==NULL)
+    return r::Velocity(make_ratio(0,1),1,1);
+  
+  const r::VelocityTimeData::Reader reader(note->_velocities);
+  
+  int num_velocities = reader.size() + 2;
 
-  velocitynum--;
-
-  if (velocitynum==num_velocities)
-    return NULL; // last velocity
-
-  if (velocitynum < 0 || velocitynum > num_velocities) {
-    handleError("There is no velocity #%d in note with id \"%d\" in track #%d in block #%d",velocitynum,(int)(*note)->id,tracknum,blocknum);
-    return NULL;
+  if (velocitynum < 0 || velocitynum >= num_velocities){
+    handleError("There is no velocity #%d in note with id \"%d\" in track #%d in block #%d",velocitynum,(int)note->id,tracknum,blocknum);
+    return r::Velocity(make_ratio(0,1),1,1);
   }
 
-  static r::Velocity ret(make_ratio(0,1),1,1);
+  *retnote = note;
 
-  ret = reader.at_ref(velocitynum); // Return a copy just in case. Should not use nodes outside the reader scope.
+  if (velocitynum==0)
+    return r::Velocity(place2ratio(note->l.p), note->velocity, note->velocity_first_logtype);
+
+  if (velocitynum==num_velocities-1)
+    return r::Velocity(note->end, note->velocity_end);
   
-  return &ret;
+  return reader.at(velocitynum-1);
 }
 
-const r::Velocity *getVelocityFromNum(int windownum,int blocknum,int tracknum,dyn_t dynnote,int velocitynum){
+/*
+r::Velocity getVelocityFromNum(int windownum,int blocknum,int tracknum,dyn_t dynnote,int velocitynum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
   struct Notes *note;
   return getVelocityFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote, &note, velocitynum);
 }
-
+*/
 
 struct Signatures *getSignatureFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int num){
   (*wblock) = getWBlockFromNumA(windownum, window, blocknum);
@@ -923,13 +938,21 @@ static const Place getPrevLegalNotePlace(const struct Tracks *track, const struc
   if (prev != NULL) {
     end = prev->l.p;
 
-    r::TimeData<r::Velocity>::Reader reader(note->_velocities);
-    
-    if (reader.size() > 0)
-      end = ratio2place(reader.at_last()._time);
-    
-    if (prev->pitches!=NULL)
-      end = *PlaceMax(&end, ListLastPlace3(&prev->pitches->l));
+    {
+      const r::VelocityTimeData::Reader reader(note->_velocities);
+      
+      if (reader.size() > 0)
+        end = ratio2place(reader.at_last()._time);
+    }
+
+    {
+      const r::PitchTimeData::Reader reader(note->_pitches);
+
+      if (reader.size() > 0){
+        Place p = ratio2place(reader.at_last()._time);
+        end = *PlaceMax(&end, &p);
+      }
+    }
   }
   
   return end;
@@ -938,15 +961,23 @@ static const Place getPrevLegalNotePlace(const struct Tracks *track, const struc
 static const Place getNextLegalNotePlace(const struct Notes *note){
   Place end = ratio2place(note->end);
 
-  r::TimeData<r::Velocity>::Reader reader(note->_velocities);
-
-  if (reader.size() > 0) {
-    Place first_vel = ratio2place(reader.at_first()._time);    
-    end = *PlaceMin(&end, &first_vel);
+  {
+    const r::VelocityTimeData::Reader reader(note->_velocities);
+    
+    if (reader.size() > 0) {
+      Place first_vel = ratio2place(reader.at_first()._time);    
+      end = *PlaceMin(&end, &first_vel);
+    }
   }
 
-  if (note->pitches != NULL)
-    end = *PlaceMin(&end, &note->pitches->l.p);
+  {
+    const r::PitchTimeData::Reader reader(note->_pitches);
+    
+    if (reader.size() > 0) {
+      Place first_vel = ratio2place(reader.at_first()._time);    
+      end = *PlaceMin(&end, &first_vel);
+    }
+  }
 
   return end;
 }
@@ -983,16 +1014,24 @@ void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes *note,
     
   }
 
-  const Place *startPlace = &note->l.p;
-
-  const Place *last_pitch = ListLastPlace3((struct ListHeader3*)note->pitches);
-  if (last_pitch==NULL)
-    last_pitch = startPlace;
-  
   Place das_last_velocity;
-  r::TimeData<r::Velocity>::Reader velocity_reader(note->_velocities);
+  const r::VelocityTimeData::Reader velocity_reader(note->_velocities);
   int num_velocities = velocity_reader.size();
   
+  Place das_last_pitch;
+  const r::PitchTimeData::Reader pitch_reader(note->_pitches);
+  int num_pitches = pitch_reader.size();
+  
+  const Place *startPlace = &note->l.p;
+
+  const Place *last_pitch = NULL;
+  if (num_pitches==0)
+    last_pitch = startPlace;
+  else {
+    das_last_pitch = ratio2place(pitch_reader.at_last()._time);
+    last_pitch = &das_last_pitch;
+  }
+
   const Place *last_velocity = NULL; //ListLastPlace3((struct ListHeader3*)note->velocities);
   if (num_velocities==0)
     last_velocity = startPlace;

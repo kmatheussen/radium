@@ -91,7 +91,7 @@ bool LegalizeNotes(struct Blocks *block,struct Tracks *track){
                 */
                 
                 {
-                  r::TimeData<r::Velocity>::Writer writer(note->_velocities);
+                  r::VelocityTimeData::Writer writer(note->_velocities);
                   Ratio r1 = ratio_from_place(*p1);
                   Ratio r2 = ratio_from_place(*p2);
                   writer.remove([r1, r2, &ret](int i, r::Velocity &velocity){
@@ -107,9 +107,10 @@ bool LegalizeNotes(struct Blocks *block,struct Tracks *track){
 
                 endnote = ratio2place(note->end);
                 
+                /*
                 p1=&note->l.p;
 		p2=&endnote;
-                
+
 		struct Pitches *pitch=note->pitches;
 		while(pitch!=NULL){
 			Place *p=&pitch->l.p;
@@ -126,11 +127,29 @@ bool LegalizeNotes(struct Blocks *block,struct Tracks *track){
 			p1=p;
 			pitch=NextPitch(pitch);
 		}
+                */
+                
+                p1=&note->l.p;
+		p2=&endnote;
 
+                {
+                  r::PitchTimeData::Writer writer(note->_pitches);
+                  Ratio r1 = ratio_from_place(*p1);
+                  Ratio r2 = ratio_from_place(*p2);
+                  writer.remove([r1, r2, &ret](int i, r::Pitch &pitch){
+                      if ((pitch._time < r1) || (pitch._time > r2)){
+                        ret = true;
+                        return true;
+                      } else {
+                        return false;
+                      }
+                    });
+                }
+                
 		note=NextNote(note);
 	}
 
-        r::TimeData<r::Stop>::Writer(track->stops2).remove_everything_after(place2ratio(endplace));
+        r::StopTimeData::Writer(track->stops2).remove_everything_after(place2ratio(endplace));
         /*
 	while(stop!=NULL){
 		if(PlaceGreaterOrEqual(&stop->l.p,&endplace)){

@@ -61,15 +61,15 @@ static void CopyRange_velocities(
 
 
 static void CopyRange_velocities2(
-                                  r::TimeData<r::Velocity> *to,
-                                  const r::TimeData<r::Velocity> *from,
+                                  r::VelocityTimeData *to,
+                                  const r::VelocityTimeData *from,
                                   const Place *p1,
                                   const Place *p2
                                   )
 {
-  r::TimeData<r::Velocity>::Reader reader(from);
+  const r::VelocityTimeData::Reader reader(from);
 
-  r::TimeData<r::Velocity>::Writer writer(to, true);
+  r::VelocityTimeData::Writer writer(to, true);
   
   Ratio start = place2ratio(*p1);
   Ratio end = place2ratio(*p2);
@@ -86,6 +86,7 @@ static void CopyRange_velocities2(
   }
 }
 
+/*
 static void CopyRange_pitches(
                        struct Pitches **topitch,
                        const struct Pitches *frompitch,
@@ -106,7 +107,33 @@ static void CopyRange_pitches(
 
 	CopyRange_pitches(topitch,NextPitch(frompitch),p1,p2);
 }
+*/
 
+static void CopyRange_pitches2(
+                               r::PitchTimeData *to,
+                               const r::PitchTimeData *from,
+                               const Place *p1,
+                               const Place *p2
+                               )
+{
+  const r::PitchTimeData::Reader reader(from);
+
+  r::PitchTimeData::Writer writer(to, true);
+  
+  Ratio start = place2ratio(*p1);
+  Ratio end = place2ratio(*p2);
+  
+  R_ASSERT_NON_RELEASE(end>=start);
+  
+  for(r::Pitch pitch : reader){
+    if (pitch._time >= start) {
+      if (pitch._time >= end)
+        break;
+      pitch._time -= start;
+      writer.add(pitch);
+    }
+  }
+}
 
 void CopyRange_notes(
                      struct Notes **tonote,
@@ -131,7 +158,7 @@ void CopyRange_notes(
 	}
 
 	struct Notes *note=CopyNote(fromnote);
-        note->pitches = NULL;
+        //note->pitches = NULL;
         //note->velocities = NULL;
 
 	PlaceSub(&note->l.p,p1);
@@ -143,24 +170,25 @@ void CopyRange_notes(
 
 	//CopyRange_velocities(&note->velocities,fromnote->velocities,p1,p2);
 	CopyRange_velocities2(note->_velocities,fromnote->_velocities,p1,p2);
-	CopyRange_pitches(&note->pitches,fromnote->pitches,p1,p2);
+	//CopyRange_pitches(&note->pitches,fromnote->pitches,p1,p2);
+	CopyRange_pitches2(note->_pitches,fromnote->_pitches,p1,p2);
 
 	CopyRange_notes(tonote,NextNote(fromnote),p1,p2);
 }
 
 
 void CopyRange_stops(
-                     r::TimeData<r::Stop> *to_stop,
+                     r::StopTimeData *to_stop,
                      //struct Stops **tostop,
-                     const r::TimeData<r::Stop> *from_stop,
+                     const r::StopTimeData *from_stop,
                      //const struct Stops *from_stop,
                      const Place *p1,
                      const Place *p2
 ){
 
-  r::TimeData<r::Stop>::Reader reader(from_stop);
+  const r::StopTimeData::Reader reader(from_stop);
 
-  r::TimeData<r::Stop>::Writer writer(to_stop, true);
+  r::StopTimeData::Writer writer(to_stop, true);
 
   Ratio start = place2ratio(*p1);
   Ratio end = place2ratio(*p2);
@@ -210,7 +238,7 @@ static void add_fxnodeline(
 }
 */
 
-static void add_fxnodeline2(r::TimeData<r::FXNode>::Writer &writer,
+static void add_fxnodeline2(r::FXTimeData::Writer &writer,
                             r::FXNode node,
                             const Ratio &subtract)
 {
@@ -240,7 +268,7 @@ static void add_scaled_fxnodeline(
 */
 
 static void add_scaled_fxnodeline2(const struct FX &fx,
-                                   r::TimeData<r::FXNode>::Writer &writer,
+                                   r::FXTimeData::Writer &writer,
                                    const r::FXNode &node1,
                                    const r::FXNode &node2,
                                    const Ratio &time,
@@ -308,8 +336,8 @@ static void CopyRange_fxnodelines(
 */
 
 static void CopyRange_fxnodelines2(const struct FX &fx,
-                                   r::TimeData<r::FXNode>::Writer &writer,
-                                   const r::TimeData<r::FXNode>::Reader &reader,
+                                   r::FXTimeData::Writer &writer,
+                                   const r::FXTimeData::Reader &reader,
                                    const Ratio &time1,
                                    const Ratio &time2)
 {
@@ -367,8 +395,8 @@ void CopyRange_fxs(
         //CopyRange_fxnodelines(&fxs->fxnodelines,fromfxs->fxnodelines,NULL,*p1,*p2);
 
         {
-          r::TimeData<r::FXNode>::Writer writer(fxs->_fxnodes);
-          r::TimeData<r::FXNode>::Reader reader(fromfxs->_fxnodes);
+          r::FXTimeData::Writer writer(fxs->_fxnodes);
+          const r::FXTimeData::Reader reader(fromfxs->_fxnodes);
           CopyRange_fxnodelines2(*fxs->fx, writer, reader, r1, r2);
           //printf("Reader size: %d. Writer size: %d\n", reader.size(), writer.size());
           //getchar();
@@ -419,7 +447,7 @@ void CopyRange(
 	range_clip->num_tracks = num_tracks = range.x2-range.x1+1;
 
 	range_clip->notes=(struct Notes **)talloc((int)sizeof(struct Notes *)*num_tracks);
-        range_clip->stops=(r::TimeData<r::Stop>**)talloc((int)sizeof(r::TimeData<r::Stop> *)*num_tracks);
+        range_clip->stops=(r::StopTimeData**)talloc((int)sizeof(r::StopTimeData *)*num_tracks);
 
 	//range_clip->instruments=talloc((size_t)(sizeof(struct Instruments *)*num_tracks));
 	range_clip->fxs=(vector_t*)talloc(sizeof(vector_t)*num_tracks);
@@ -433,7 +461,7 @@ void CopyRange(
           //range_clip->instruments[lokke]=track->instrument;
           CopyRange_notes(&range_clip->notes[lokke], track->notes, &range.y1, &range.y2);
           
-          range_clip->stops[lokke] = new r::TimeData<r::Stop>;
+          range_clip->stops[lokke] = new r::StopTimeData;
           CopyRange_stops(range_clip->stops[lokke], track->stops2, &range.y1, &range.y2);
 
           Place p2;

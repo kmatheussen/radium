@@ -183,6 +183,8 @@ class Hepp2 : public Hepp{
 void * operator new(decltype(sizeof(0)) size) noexcept(false)
 {
   R_ASSERT(!PLAYER_current_thread_has_lock());
+  R_ASSERT(!THREADING_is_runner_thread());
+  
   void *mem = malloc(size);
   if (size > 1048576) // If changing 1048576, also change 1048576 in run_gdb.sh
     memset(mem, rand(), size);

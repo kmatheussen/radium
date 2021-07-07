@@ -37,7 +37,7 @@ static struct Node2 *get_velocitynode(int velocitynum, dyn_t dynnote, int trackn
     return NULL;
   }
 
-  R_ASSERT_NON_RELEASE(r::TimeData<r::Velocity>::Reader(note->_velocities).size()==nodes->num_elements-2);
+  R_ASSERT_NON_RELEASE(r::VelocityTimeData::Reader(note->_velocities).size()==nodes->num_elements-2);
   
   return (struct Node2*)nodes->elements[velocitynum];
 }
@@ -60,22 +60,12 @@ float getVelocityValue(int velocitynum, dyn_t dynnote, int tracknum, int blocknu
   struct WTracks *wtrack;
   struct Notes *note = NULL;
 
-  const r::Velocity *velocity = getVelocityFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote, &note, velocitynum);
+  const r::Velocity velocity = getVelocityFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote, &note, velocitynum);
 
-  if (velocity==NULL){
+  if (note==NULL)
+    return 0;
 
-    if (note==NULL)
-      return 0;
-
-    else if (velocitynum==0)
-      return (double)note->velocity / (double)MAX_VELOCITY;
-
-    else
-      return (double)note->velocity_end / (double)MAX_VELOCITY;
-
-  }
-
-  return (double)velocity->_val / (double)MAX_VELOCITY;
+  return (double)velocity._val / (double)MAX_VELOCITY;
 }
 
 Place getVelocityPlace(int velocitynum, dyn_t dynnote, int tracknum, int blocknum, int windownum){
@@ -84,22 +74,12 @@ Place getVelocityPlace(int velocitynum, dyn_t dynnote, int tracknum, int blocknu
   struct WTracks *wtrack;
   struct Notes *note = NULL;
 
-  const r::Velocity *velocity = getVelocityFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote, &note, velocitynum);
+  const r::Velocity velocity = getVelocityFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote, &note, velocitynum);
 
-  if (velocity==NULL){
+  if (note==NULL)
+    return p_Create(0,0,1);
 
-    if (note==NULL)
-      return p_Create(0,0,1);
-
-    else if (velocitynum==0)
-      return note->l.p;
-
-    else
-      return ratio2place(note->end);
-
-  }
-
-  return ratio2place(velocity->_time);
+  return ratio2place(velocity._time);
 }
 
 int getVelocityLogtype(int velocitynum, dyn_t dynnote, int tracknum, int blocknum, int windownum){
@@ -108,21 +88,12 @@ int getVelocityLogtype(int velocitynum, dyn_t dynnote, int tracknum, int blocknu
   struct WTracks *wtrack;
   struct Notes *note = NULL;
 
-  const r::Velocity *velocity = getVelocityFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote, &note, velocitynum);
+  const r::Velocity velocity = getVelocityFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote, &note, velocitynum);
 
-  if (velocity==NULL){
+  if (note==NULL)
+    return 0;
 
-    if (note==NULL)
-      return 0;
-
-    else if (velocitynum==0)
-      return note->velocity_first_logtype;
-
-    else
-      return 0; // Last logtype. Always 0. Irrelevant.
-  }
-
-  return velocity->_logtype;
+  return velocity._logtype;
 }
 
 int getNumVelocities(dyn_t dynnote, int tracknum, int blocknum, int windownum){
@@ -133,7 +104,7 @@ int getNumVelocities(dyn_t dynnote, int tracknum, int blocknum, int windownum){
   if (note==NULL)
     return 0;
 
-  return r::TimeData<r::Velocity>::Reader(note->_velocities).size() + 2;
+  return r::VelocityTimeData::Reader(note->_velocities).size() + 2;
 }
 
 static int addVelocity2(float value, Place place, dyn_t dynnote, int tracknum, int blocknum, int windownum, bool show_errors){
@@ -241,7 +212,7 @@ dyn_t setVelocity(float value, Place place, int velocitynum, dyn_t dynnote, int 
     
   } else {
 
-    r::TimeData<r::Velocity>::Writer writer(note->_velocities);
+    r::VelocityTimeData::Writer writer(note->_velocities);
     r::Velocity &vel = writer.at_ref(velocitynum-1);
     
     vel._val = value2;
@@ -318,7 +289,7 @@ void deleteVelocity(int velocitynum, dyn_t dynnote, int tracknum, int blocknum, 
     Ratio new_last_ratio;
 
     {
-      r::TimeData<r::Velocity>::Writer writer(note->_velocities);
+      r::VelocityTimeData::Writer writer(note->_velocities);
       new_last_velocity = writer.at_last()._val;
       new_last_ratio = writer.at_last()._time;
       writer.remove_at_pos(velocitynum-2);
@@ -331,7 +302,7 @@ void deleteVelocity(int velocitynum, dyn_t dynnote, int tracknum, int blocknum, 
     }
 
   } else {
-    r::TimeData<r::Velocity>::Writer writer(note->_velocities);
+    r::VelocityTimeData::Writer writer(note->_velocities);
     writer.remove_at_pos(velocitynum-1);
   }
 
@@ -369,7 +340,7 @@ void setVelocityLogtype(int logtype, int velocitynum, dyn_t dynnote, int tracknu
     
   } else {
 
-    r::TimeData<r::Velocity>::Writer writer(note->_velocities);
+    r::VelocityTimeData::Writer writer(note->_velocities);
     R_ASSERT_RETURN_IF_FALSE(writer.size() > 0);
     writer.at_ref(velocitynum-1)._logtype = logtype;
   
@@ -395,7 +366,7 @@ void setCurrentVelocityNode(int velocitynum, dyn_t dynnote, int tracknum, int bl
 
   if (velocitynum > 0 && velocitynum < num_velocities-1) {
 
-    r::TimeData<r::Velocity>::Reader reader(note->_velocities);
+    const r::VelocityTimeData::Reader reader(note->_velocities);
     API_setCurrentNode2(reader.at_ref(velocitynum-1)._id);
   }
 
@@ -423,7 +394,7 @@ void setIndicatorVelocityNode(int velocitynum, dyn_t dynnote, int tracknum, int 
   
   if (velocitynum > 0 && velocitynum < num_velocities-1)
     {
-      r::TimeData<r::Velocity>::Reader reader(note->_velocities);
+      const r::VelocityTimeData::Reader reader(note->_velocities);
       API_setIndicatorNode2(reader.at_ref(velocitynum-1)._id);
     }
 

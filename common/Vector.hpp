@@ -473,7 +473,7 @@ public:
   }
 
 
-  // Ensures at least new_num_elements_max is reserved so that add/insert/push_back can be callled once without any memory being allocated.
+  // Ensures at least new_num_elements_max is reserved so that add/insert/push_back can be callled without any memory being allocated.
   //
   // If we have to allocate new space, 'new_num_elements_max' will be set to at least the next n^2.
   // Returns immediately if there is already room for new_num_elements_max elements.

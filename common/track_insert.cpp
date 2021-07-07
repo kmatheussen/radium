@@ -136,7 +136,7 @@ void InsertTracks(
             
             track->notes=NULL;
             //track->stops=NULL;
-            r::TimeData<r::Stop>::Writer(track->stops2).clear();
+            r::StopTimeData::Writer(track->stops2).clear();
             VECTOR_clean(&track->fxs);
             track->patch=NULL;
           }

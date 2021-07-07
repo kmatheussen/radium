@@ -31,7 +31,7 @@ void SaveStops(struct Tracks *track){
 
 #if 1
 
-  r::TimeData<r::Stop>::Reader reader(track->stops2);
+  r::StopTimeData::Reader reader(track->stops2);
   if (reader.size()==0)
     return;
   
@@ -56,7 +56,7 @@ DC_end();
 
 void LoadStops(struct Tracks *track){
 
-        r::TimeData<r::Stop>::Writer writer(track->stops2);
+        r::StopTimeData::Writer writer(track->stops2);
   
         R_ASSERT_NON_RELEASE(writer.size()==0);
         

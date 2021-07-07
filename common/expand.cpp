@@ -81,12 +81,14 @@ static void expand_note(struct Notes *note, const Place start, const Place end, 
   */
   
   {
-    r::TimeData<r::Velocity>::Writer writer(note->_velocities);
+    r::VelocityTimeData::Writer writer(note->_velocities);
     writer.expand(ratio_from_place(start), ratio_from_place(end), ratio_from_place(new_end), ratio_from_place(last_place));
   }
     
-  if(note->pitches!=NULL)
-    expand_list3(&note->pitches->l, start, end, new_end, last_place);
+  {
+    r::PitchTimeData::Writer writer(note->_pitches);
+    writer.expand(ratio_from_place(start), ratio_from_place(end), ratio_from_place(new_end), ratio_from_place(last_place));
+  }
 }
 
 static void expand_track(struct Tracks *track, const Place start, const Place end, const Place new_end, const Place last_place){
@@ -100,13 +102,13 @@ static void expand_track(struct Tracks *track, const Place start, const Place en
   if(track->swings!=NULL)
     expand_list3(&track->swings->l, start, end, new_end, last_place);
 
-  r::TimeData<r::Stop>::Writer(track->stops2).expand(ratio_from_place(start), ratio_from_place(end), ratio_from_place(new_end), ratio_from_place(last_place));
+  r::StopTimeData::Writer(track->stops2).expand(ratio_from_place(start), ratio_from_place(end), ratio_from_place(new_end), ratio_from_place(last_place));
   /*                                                     
   if(track->stops!=NULL)
     expand_list3(&track->stops->l, start, end, new_end, last_place);
   */
   VECTOR_FOR_EACH(struct FXs *,fxs, &track->fxs){
-    r::TimeData<r::FXNode>::Writer(fxs->_fxnodes).expand(ratio_from_place(start), ratio_from_place(end), ratio_from_place(new_end), ratio_from_place(last_place));
+    r::FXTimeData::Writer(fxs->_fxnodes).expand(ratio_from_place(start), ratio_from_place(end), ratio_from_place(new_end), ratio_from_place(last_place));
     /*
     if(fxs->fxnodelines!=NULL)
       expand_list3(&fxs->fxnodelines->l, start, end, new_end, last_place);
