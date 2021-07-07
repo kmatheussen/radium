@@ -70,7 +70,7 @@ static bool RT_find_next_note_stop_after_place(const struct Tracks *track, const
   Place stop_place;
 
   {
-    r::TimeData<r::Stop>::Reader reader(track->stops2);
+    r::StopTimeData::Reader reader(track->stops2);
     for(const r::Stop &stop : reader) {
       if (stop._time >= place2ratio(place_start)){
         has_stop = true;
@@ -271,16 +271,18 @@ static int64_t RT_scheduled_note(struct SeqTrack *seqtrack, int64_t time, union 
 
     //printf("  scheduler_notes.c. Playing note at %d. Velocity: %f. Pitch: %f. Sample pos: %d\n",(int)time, note2.velocity, note2.pitch, (int)sample_pos);
     RT_PATCH_play_note(seqtrack, patch, note2, note, time);
-    
+
+#if 0
     bool schedule_pitches_and_velocities = true;
     if (sample_pos>0 && (patch->instrument==get_audio_instrument() && ATOMIC_GET(((SoundPlugin*)patch->patchdata)->enable_sample_seek)==false))
       schedule_pitches_and_velocities = false; // Temporary hack to prevent CPU spike while starting to play in the middle of a block. Proper solution should be applied in the next release.
     
     if (schedule_pitches_and_velocities){
-      RT_schedule_pitches_newnote(time, seqtrack, seqblock, track, note);
+      //RT_schedule_pitches_newnote(time, seqtrack, seqblock, track, note);
       //RT_schedule_velocities_newnote(time, seqtrack, seqblock, track, note);
     }
-
+#endif
+    
 #if 1
     RT_SEQBLOCK_add_playing_note(seqblock, track, note);
 #endif

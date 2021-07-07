@@ -219,6 +219,10 @@ struct Gakk{
   }
 };
 
+
+using GakkTimeData = r::TimeData<Gakk, r::RT_TimeData_Player_Cache<typeof(Gakk::_val)>>;
+
+
 static Gakk make_gakk(int64_t a, int64_t b, int val = 1, int logtype = LOGTYPE_LINEAR){
   Gakk gakk(a,b,val,logtype);
   return gakk;
@@ -230,12 +234,11 @@ static Gakk make_gakk(int64_t a, int64_t b, int val = 1, int logtype = LOGTYPE_L
   }while(0)
 
 
-
 static void test_get_value(void){
-  r::TimeData<Gakk> gakk;
+  GakkTimeData gakk;
   
   {
-    r::TimeData<Gakk>::Writer writer(&gakk);
+    GakkTimeData::Writer writer(&gakk);
     writer.add2(make_gakk(10,1,10)); // 0
     writer.add2(make_gakk(20,1,20, LOGTYPE_HOLD)); // 1
     writer.add2(make_gakk(30,1,30)); // 2
@@ -251,7 +254,7 @@ static void test_get_value(void){
     writer.add2(make_gakk(60,1,130, LOGTYPE_HOLD)); // 12
   }
 
-  r::TimeData<Gakk>::Reader reader(&gakk);
+  GakkTimeData::Reader reader(&gakk);
 
   auto test_binsearch = [&reader](int time, int expect){
     int ret = reader.BinarySearch_Rightmost(make_ratio(time, 1), 1, reader.size()-1);
@@ -366,10 +369,10 @@ int main(void){
 
   test_get_value();
   
-  r::TimeData<Gakk> *gakk = new r::TimeData<Gakk>;
+  GakkTimeData *gakk = new GakkTimeData;
   
   {
-    r::TimeData<Gakk>::Writer writer(gakk);
+    GakkTimeData::Writer writer(gakk);
   }
 
   for(int i=0;i<num_main_iterations;i++){
@@ -394,7 +397,7 @@ int main(void){
           do{
             for(int i2=0;i2<num_reader_iterations;i2++){
 
-              r::TimeData<Gakk>::Reader reader(gakk);
+              GakkTimeData::Reader reader(gakk);
               
               Ratio prev = make_ratio(0,1);
               
@@ -416,7 +419,7 @@ int main(void){
     }
 
     for(int i2=0;i2<num_writer_iterations;i2++){
-      r::TimeData<Gakk>::Writer writer(gakk);
+      GakkTimeData::Writer writer(gakk);
 
       if (total_num_elements < 0)
         abort();
@@ -442,13 +445,13 @@ int main(void){
     }
 
     {
-      r::TimeData<Gakk>::Reader reader(gakk);
-      r::TimeData<Gakk>::Reader reader2(gakk);
-      r::TimeData<Gakk>::Reader reader3(gakk);
-      r::TimeData<Gakk>::Reader reader4(gakk);
-      r::TimeData<Gakk>::Reader reader5(gakk);
-      r::TimeData<Gakk>::Reader reader6(gakk);
-      r::TimeData<Gakk>::Reader reader7(gakk);
+      GakkTimeData::Reader reader(gakk);
+      GakkTimeData::Reader reader2(gakk);
+      GakkTimeData::Reader reader3(gakk);
+      GakkTimeData::Reader reader4(gakk);
+      GakkTimeData::Reader reader5(gakk);
+      GakkTimeData::Reader reader6(gakk);
+      GakkTimeData::Reader reader7(gakk);
     }
 
     for(int i=0;i<num_threads;i++)
@@ -456,7 +459,7 @@ int main(void){
   }
 
   {
-    r::TimeData<Gakk>::Reader reader(gakk);
+    GakkTimeData::Reader reader(gakk);
     reader.get_vector()->print_all_times();
     if (reader.size() != total_num_elements)
       abort();

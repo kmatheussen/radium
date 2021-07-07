@@ -58,13 +58,27 @@ float TRACK_get_min_pitch(const struct Tracks *track){
     struct Notes *note = track->notes;
     while(note!=NULL){
       min_pitch = R_MIN(note->note, min_pitch);
+
+      if (note->pitch_end > 0)
+        min_pitch = R_MIN(note->pitch_end, min_pitch);
+        
       num_pitches ++;
+
+      /*
       struct Pitches *pitch = note->pitches;
       while(pitch != NULL){
         min_pitch = R_MIN(pitch->note, min_pitch);
         num_pitches ++;
         pitch = NextPitch(pitch);
       }
+      */
+      
+      r::PitchTimeData::Reader reader(note->_pitches);
+      for(const r::Pitch &pitch : reader){
+        min_pitch = R_MIN(pitch._val, min_pitch);
+        num_pitches ++;
+      }
+      
       note = NextNote(note);
     }
   }
@@ -84,13 +98,27 @@ float TRACK_get_max_pitch(const struct Tracks *track){
     struct Notes *note = track->notes;
     while(note!=NULL){
       max_pitch = R_MAX(note->note, max_pitch);
+
+      if (note->pitch_end > 0)
+        max_pitch = R_MAX(note->pitch_end, max_pitch);
+      
       num_pitches ++;
+
+      /*
       struct Pitches *pitch = note->pitches;
       while(pitch != NULL){
         max_pitch = R_MAX(pitch->note, max_pitch);
         num_pitches ++;
         pitch = NextPitch(pitch);
       }
+      */
+
+      r::PitchTimeData::Reader reader(note->_pitches);
+      for(const r::Pitch &pitch : reader){
+        max_pitch = R_MAX(pitch._val, max_pitch);
+        num_pitches ++;
+      }
+      
       note = NextNote(note);
     }
   }
@@ -120,6 +148,8 @@ bool TRACK_get_min_and_max_pitches(const struct Tracks *track, float *ret_min_pi
         max_pitch = R_MAX(note->pitch_end, max_pitch);
         num_pitches ++;
       }
+
+      /*
       struct Pitches *pitch = note->pitches;
       while(pitch != NULL){
         min_pitch = R_MIN(pitch->note, min_pitch);
@@ -127,6 +157,15 @@ bool TRACK_get_min_and_max_pitches(const struct Tracks *track, float *ret_min_pi
         num_pitches ++;
         pitch = NextPitch(pitch);
       }
+      */
+      
+      r::PitchTimeData::Reader reader(note->_pitches);
+      for(const r::Pitch &pitch : reader){
+        min_pitch = R_MIN(pitch._val, min_pitch);
+        max_pitch = R_MAX(pitch._val, max_pitch);
+        num_pitches ++;
+      }
+
       note = NextNote(note);
     }
 
@@ -233,7 +272,7 @@ static void InitTrack(struct Tracks *track){
 	track->volumeonoff=true;
         MIDI_init_track(track);
 
-        track->stops2 = new r::TimeData<r::Stop>;
+        track->stops2 = new r::StopTimeData;
 
         g_num_live_tracks++;
         GC_register_finalizer(track, trackgcfinalizer, NULL, NULL, NULL);

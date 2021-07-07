@@ -17,6 +17,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <string.h>
 
 #include "nsmtracker.h"
+#include "TimeData.hpp"
 #include "list_proc.h"
 #include "placement_proc.h"
 #include "notes_proc.h"
@@ -46,36 +47,46 @@ struct Notes *GetNextPitchNote(const struct Notes *note){
 }
 */
 
-struct Pitches *AddPitch(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct Notes *note, const Place *place, float notenum){
+int AddPitch(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct Notes *note, const Place *place, float notenum){
+  /*
   struct Pitches *pitch = (struct Pitches *)talloc(sizeof(struct Pitches));
   PlaceCopy(&pitch->l.p,place);
   pitch->note = notenum;
   //pitch->note_note = note;
 
-  pitch->chance = 0x100;
+  pitch->chance = MAX_PATCHVOICE_CHANCE;
+  */
+  
+  int pos2;
+  
+  {
+    r::PitchTimeData::Writer writer(note->_pitches);
     
-  int pos;
-  pos=ListAddElement3_ns(&note->pitches, &pitch->l);
-  if (pos >= 0){
-    if (equal_floats(note->pitch_end, 0.0f))
-      note->pitch_end = notenum;
+    Ratio ratio = ratio_from_place(*place);
+    if (!writer.has_element_at_ratio(ratio)) {
+      
+      writer.add2(r::Pitch(ratio, notenum));
+
+      pos2 = writer.find_element_at_ratio(ratio);
+      
+    } else {
+      
+      pos2 = -1;
+      
+    }
+
   }
 
-  if(pos==-1)
-    return NULL;
-  
-#if !USE_OPENGL
-  ClearTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
-  UpdateWTrack(window,wblock,wtrack,wblock->top_realline,wblock->bot_realline);
-#endif
-  return pitch;
+  if(pos2 >= 0)
+    if (equal_floats(note->pitch_end, 0.0f))
+      note->pitch_end = notenum;
+
+  return pos2;
 }
 
-void DeletePitch(struct Tracks *track, struct Notes *note, struct Pitches *pitch){
-  {
-    SCOPED_PLAYER_LOCK_IF_PLAYING();
-    ListRemoveElement3(&note->pitches, &pitch->l);
-    //if (note->pitches==NULL)
-    //  note->pitch_end = 0;
+void DeletePitch(struct Tracks *track, struct Notes *note, int pitchnum){
+  r::PitchTimeData::Writer writer(note->_pitches);
+  if (!writer.remove_at_pos(pitchnum)){
+    R_ASSERT_NON_RELEASE(false);
   }
 }

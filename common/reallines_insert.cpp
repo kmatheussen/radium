@@ -78,12 +78,11 @@ static bool InsertRatio_notes_extra(
         ret = true;
       */
       
-      if (r::TimeData<r::Velocity>::Writer(note->_velocities).insert_ratio(ratio, toratio, make_ratio(block->num_lines, 1)))
+      if (r::VelocityTimeData::Writer(note->_velocities).insert_ratio(ratio, toratio, make_ratio(block->num_lines, 1)))
         ret = true;
-          
-      if (List_InsertRatioLen3(block,&note->pitches,(struct ListHeader3*)note->pitches,ratio,toratio,NULL))
+
+      if (r::PitchTimeData::Writer(note->_pitches).insert_ratio(ratio, toratio, make_ratio(block->num_lines, 1)))
         ret = true;
-      
     }
   }
 
@@ -122,7 +121,7 @@ static bool InsertRatio_fxs(
                             Ratio toratio
                             )
 {
-  r::TimeData<r::FXNode>::Writer writer(fxs->_fxnodes);
+  r::FXTimeData::Writer writer(fxs->_fxnodes);
 
   bool ret = writer.insert_ratio(ratio, toratio, make_ratio(block->num_lines, 1));
   
@@ -219,7 +218,7 @@ static bool InsertRatio_stops(
 	Ratio ratio,
 	Ratio toratio
 ){
-  return r::TimeData<r::Stop>::Writer(track->stops2).insert_ratio(ratio, toratio, make_ratio(block->num_lines, 1));  
+  return r::StopTimeData::Writer(track->stops2).insert_ratio(ratio, toratio, make_ratio(block->num_lines, 1));  
   //return List_InsertRatioLen3(block,&track->stops,(struct ListHeader3*)track->stops,ratio,toratio,NULL);
 }
 

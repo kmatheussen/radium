@@ -29,7 +29,7 @@ struct RangeClip{
 	NInt num_tracks;
 	struct Notes **notes;
 #ifdef __cplusplus
-        r::TimeData<r::Stop> **stops;
+        r::StopTimeData **stops;
 #else
         void **stops;
 #endif

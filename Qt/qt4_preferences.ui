@@ -3342,14 +3342,14 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
             <item>
              <widget class="QRadioButton" name="sequencer_scroll_wheel_starts_stops_playing">
               <property name="text">
-               <string>Scroll wheel starts/stops playing (Note: Left shift inverts)</string>
+               <string>Scroll wheel starts/stops playing (press left shift to swap behavior)</string>
               </property>
              </widget>
             </item>
             <item>
              <widget class="QRadioButton" name="sequencer_scroll_wheel_scrolls_up_down">
               <property name="text">
-               <string>Scroll wheel scrolls seqtracks up/down (Note: Left shift inverts)</string>
+               <string>Scroll wheel scrolls seqtracks up/down (press left shit to swap behavior)</string>
               </property>
              </widget>
             </item>

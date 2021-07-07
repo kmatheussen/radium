@@ -127,4 +127,16 @@ static inline bool note_continues_next_block(const struct Blocks *block, const s
 }
 #endif
 
+#if __cplusplus
+void RT_notes_called_each_block(struct SeqTrack *seqtrack,
+                                const int play_id,
+                                const struct SeqBlock *seqblock,
+                                const struct Tracks *track,
+                                const int64_t seqtime_start,
+                                const int64_t seqtime_end,
+                                const r::RatioPeriod &period
+                                );
+#endif
+
+  
 #endif

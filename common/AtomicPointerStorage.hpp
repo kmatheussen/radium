@@ -17,6 +17,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #pragma once
 
+
 namespace radium{
 
 
@@ -33,7 +34,8 @@ namespace radium{
 // * When looking over the code I have always concluded that it's correct.
 // * There have never been problems with the code
 //
-  
+
+
 template <typename T>
 class AtomicPointerStorage{
     
@@ -128,21 +130,17 @@ public:
   ~AtomicPointerStorage(){
     maybe_free_something(ATOMIC_GET(_pointer), ATOMIC_GET(_old_pointer_to_be_freed));
   }
-  
 
-  // May be called at any time. 'free_pointer_function' may be called 0, 1, or 2 times. (usually 1 time)
   void set_new_pointer(T *new_pointer) {
-    
-    R_ASSERT(new_pointer != NULL); // NULL not supported. If nedaed, NULL can be replaced by a ((T*)-1) or something to indicate a used slot instead of NULL.
+    R_ASSERT(new_pointer != NULL); // NULL not supported. If neaded, NULL can be replaced by a ((T*)-1) value or something to indicate an unused slot instead of NULL.
     
     T *old_pointer_to_be_freed = ATOMIC_SET_RETURN_OLD(_old_pointer_to_be_freed, NULL);
 
     T *old = ATOMIC_SET_RETURN_OLD(_pointer, new_pointer);
 
-    //printf("Has set. new: %p, old: %p, old_pointer_to_be_freed: %p\n", new_pointer, old, old_pointer_to_be_freed);
-    
     maybe_free_something(old, old_pointer_to_be_freed);
   }
+
 };
 
 

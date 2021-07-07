@@ -1692,10 +1692,39 @@ typedef enum {
   //FX_no_fx = 4; // No effect must be sent out. Used by seqtrack automation.
 } FX_when;
 
+static inline const char *get_FX_when_name(FX_when when){
+  switch(when){
+    case FX_start: return "FX_start";
+    case FX_middle: return "FX_middle";
+    case FX_end: return "FX_end";
+    case FX_single: return "FX_single";
+    default:
+      R_ASSERT_NON_RELEASE(false);
+      return "Error";
+  }  
+}
 
 #ifdef __cplusplus
+
 namespace r{
-  template <typename T> class TimeData;
+
+template <typename ValType>
+class RT_TimeData_Player_Cache{
+
+public:
+    int _curr_pos = 0; // vector pos.
+
+  template <class SeqBlockT>
+  friend struct RT_TimeData_Cache_Handler;
+  
+private:
+  
+  ValType _last_value = 0; // last value returned from TimeData::get_value();
+  int _last_play_id = -1; // Value of pc->play_id when last_value was returned.
+};
+
+
+  template <typename T, typename SeqBlockT> class TimeData;
 }
 #endif
 
@@ -1843,35 +1872,46 @@ static inline float VELOCITY_get(int velocity){
 #ifdef __cplusplus
 namespace r{
 
-extern int64_t g_node_id;
+  extern int64_t g_node_id;
   
-struct NodeId{
-  int64_t _id;
-  NodeId()
-    : _id(g_node_id++)
-  {
-    R_ASSERT_NON_RELEASE(THREADING_is_main_thread()); // because of g_node_id
-  }
-};
+  struct NodeId{
+    int64_t _id;
+    NodeId()
+      : _id(g_node_id++)
+    {
+      R_ASSERT_NON_RELEASE(THREADING_is_main_thread()); // because of g_node_id. If needed, we can make g_node_id atomic.
+    }
+  };
 
 
-struct Velocity : NodeId {
-  Ratio _time;
-  int _val;
-  int _logtype;
-  Velocity(Ratio time, int val, int logtype = LOGTYPE_LINEAR)
-    : _time(time)
-    , _val(R_BOUNDARIES(0, val, MAX_VELOCITY))
-    , _logtype(logtype)
-  {}
-};
+  struct Velocity : NodeId {
+    Ratio _time;
+    int _val;
+    int _logtype;
+    Velocity(Ratio time, int val, int logtype = LOGTYPE_LINEAR)
+      : _time(time)
+      , _val(R_BOUNDARIES(0, val, MAX_VELOCITY))
+      , _logtype(logtype)
+    {}    
+  };
+
+  struct VelocitySeqBlock : public RT_TimeData_Player_Cache<typeof(Velocity::_val)> {
+  };
+  
+  using VelocityTimeData = TimeData<Velocity, VelocitySeqBlock>;
 }
 #endif
+
+
+#define MIN_PATCHVOICE_CHANCE 0
+#define MAX_PATCHVOICE_CHANCE (0x100)
+
 
 /*********************************************************************
 	pitches.h
 *********************************************************************/
 
+/*
 struct Pitches{
 	struct ListHeader3 l;
   
@@ -1881,7 +1921,35 @@ struct Pitches{
         int chance;
 };
 #define NextPitch(a) ((struct Pitches *)((a)->l.next))
+*/
 
+#ifdef __cplusplus
+
+namespace r{
+
+struct Pitch : NodeId {
+  Ratio _time;
+
+  float _val;
+  int _logtype;
+
+  int _chance;
+
+  Pitch(Ratio time, float pitch, int logtype = LOGTYPE_LINEAR, int chance = MAX_PATCHVOICE_CHANCE)
+    : _time(time)
+    , _val(pitch)
+    , _logtype(logtype)
+    , _chance(chance)
+  {}
+};
+
+  struct PitchSeqBlock : RT_TimeData_Player_Cache<typeof(Pitch::_val)> {
+    bool _enabled = true; // Can be false if pitch._chance < MAX_PATCHVOICE_CHANCE.
+  };
+
+  using PitchTimeData = TimeData<Pitch, PitchSeqBlock>;
+}
+#endif
 
 
 /*********************************************************************
@@ -1913,14 +1981,21 @@ struct Notes{
 	int velocity_end;
 
 #ifdef __cplusplus
-        r::TimeData<r::Velocity> *_velocities;
+        r::VelocityTimeData *_velocities;
 #else
         void *_velocities;
 #endif
 
-	struct Pitches *pitches;
+        //struct Pitches *pitches;
         float pitch_end; // If pitch_end==0 and pitches==NULL, there's no pitch changes for this note.
 
+#ifdef __cplusplus
+       r::PitchTimeData *_pitches;
+       //r::TimeData<r::Pitch> *_pitches;
+#else
+        void *_pitches;
+#endif
+  
   /*
 	struct Velocities first_velocity; // used by nodelines
 	struct Velocities last_velocity; // used by nodelines
@@ -2003,8 +2078,9 @@ struct PatchVoice{
 #define MAX_PATCHVOICE_VOLUME 35
 //#define MAX_PATCHVOICE_VOLUME 75
 
-#define MIN_PATCHVOICE_CHANCE 0
-#define MAX_PATCHVOICE_CHANCE (0x100)
+// These two have been moved up.
+//#define MIN_PATCHVOICE_CHANCE 0
+//#define MAX_PATCHVOICE_CHANCE (0x100)
 
 
 /*
@@ -2230,7 +2306,14 @@ struct Stop{
   Stop(Ratio time)
     : _time(time)
   {}
+  //int _val; // dummy
 };
+
+  struct StopSeqBlock : RT_TimeData_Player_Cache<int> {
+  };
+  
+  using StopTimeData = TimeData<Stop, StopSeqBlock>;
+
 }
 #endif
 /*
@@ -2286,7 +2369,7 @@ struct Tracks{
 
 	struct Notes *notes;
 #ifdef __cplusplus
-        r::TimeData<r::Stop> *stops2;
+        r::StopTimeData *stops2;
 #else
         void *stops2;
 #endif
@@ -2439,13 +2522,24 @@ typedef struct{
 	trackreallines2.h
 *********************************************************************/
 
+enum TR2_Type{
+  TR2_NOTE_START,
+  TR2_NOTE_END,
+  TR2_PITCH,
+  TR2_STOP
+};
+
 typedef struct{
   Place p;
+  enum TR2_Type type;
+
   struct Notes *note;
-  struct Pitches *pitch;
-  //struct Stops *stop;
-  bool is_stop;
-  bool is_end_pitch;
+
+  int64_t node_id;
+  float pitch;
+  int chance;
+
+  int pitchnum;
 } TrackRealline2;
 
 #if __cplusplus
@@ -2659,6 +2753,7 @@ struct CurrentPianoGhostNote{
 
 extern struct CurrentPianoGhostNote g_current_piano_ghost_note;
 
+/*
 static inline NodelineBox GetPianoNoteBox(const struct WTracks *wtrack, const struct NodeLine *nodeline){
   const float gfx_width  = wtrack->pianoroll_area.x2 - wtrack->pianoroll_area.x;
   const float notespan   = wtrack->pianoroll_highkey - wtrack->pianoroll_lowkey;
@@ -2671,6 +2766,43 @@ static inline NodelineBox GetPianoNoteBox(const struct WTracks *wtrack, const st
   float y_max = R_MAX(nodeline->y1, nodeline->y2);
 
   const struct NodeLine *next = nodeline->next;
+  
+  while(next!=NULL){
+    if (next->is_node)
+      break;
+
+    x_min = R_MIN(x_min, R_MIN(next->x1, next->x2));
+    x_max = R_MAX(x_max, R_MAX(next->x1, next->x2));
+
+    y_min = R_MIN(y_min, R_MIN(next->y1, next->y2));
+    y_max = R_MAX(y_max, R_MAX(next->y1, next->y2));
+
+    next = next->next;
+  }
+
+  NodelineBox nodelineBox;
+
+  nodelineBox.x1 = x_min-note_width/2.0f;
+  nodelineBox.y1 = y_min;
+  nodelineBox.x2 = x_max+note_width/2.0f;
+  nodelineBox.y2 = y_max;
+
+  return nodelineBox;
+}
+*/
+
+static inline NodelineBox GetPianoNoteBox2(const struct WTracks *wtrack, const struct NodeLine2 *nodeline){
+  const float gfx_width  = wtrack->pianoroll_area.x2 - wtrack->pianoroll_area.x;
+  const float notespan   = wtrack->pianoroll_highkey - wtrack->pianoroll_lowkey;
+  const float note_width = gfx_width / notespan;
+
+  float x_min = R_MIN(nodeline->x1, nodeline->x2);
+  float x_max = R_MAX(nodeline->x1, nodeline->x2);
+
+  float y_min = R_MIN(nodeline->y1, nodeline->y2);
+  float y_max = R_MAX(nodeline->y1, nodeline->y2);
+
+  const struct NodeLine2 *next = nodeline->next;
   
   while(next!=NULL){
     if (next->is_node)
@@ -2894,7 +3026,7 @@ extern int64_t g_editor_blocks_generation; //This number increases every time a 
 
 #ifdef __cplusplus
 namespace r{
-class CacheNumHolder;
+  class CacheNumHolder;
 }
 #endif
 

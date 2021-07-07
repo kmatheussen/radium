@@ -30,6 +30,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/nsmtracker.h"
 #include "../audio/Peaks.hpp"
 
+#include "../common/TimeData.hpp"
+
 #include "../audio/SampleReader_proc.h"
 
 #include "Qt_MyQCheckBox.h"
@@ -1063,46 +1065,65 @@ public:
     struct Notes *note = track->gfx_notes!=NULL ? track->gfx_notes : track->notes;
     while(note != NULL){
 
+      const r::PitchTimeData::Reader reader(note->_pitches);
+
+      /*
       struct Pitches last_pitch;
       last_pitch.l.p = ratio2place(note->end);
       last_pitch.note = note->pitch_end;
-      
+
       struct Pitches first_pitch;
       first_pitch.l.p = note->l.p;
       first_pitch.l.next = note->pitches==NULL ? NULL : &note->pitches->l;
       first_pitch.note = note->note;
       first_pitch.logtype = note->pitch_first_logtype;
+      */
       
-      struct Pitches *pitch = &first_pitch;
+      //struct Pitches *pitch = &first_pitch;
 
+      r::Pitch first_pitch(place2ratio(note->l.p), note->note, note->pitch_first_logtype);
+      r::Pitch last_pitch(note->end, note->pitch_end);
+      
       const double init_last_y = -10000;
       double last_y = init_last_y;
-      
-      while(true){
 
+      for(int i = -1 ; i < reader.size() ; i++) {
+
+        bool is_last = i==reader.size()-1;
+        
+        const r::Pitch &pitch = i==-1 ? first_pitch : reader.at_ref(i);
+        const r::Pitch &next_pitch = is_last ? last_pitch : reader.at_ref(i+1);
+        
+        /*
         struct Pitches *next_pitch = NextPitch(pitch);
         if(next_pitch==NULL)
           next_pitch = &last_pitch;
-        
+        */
+
+        /*
         int64_t start = Place2STime2(block, &pitch->l.p, track);
         int64_t end = Place2STime2(block, &next_pitch->l.p, track);
+        */
+        
+        int64_t start = Ratio2STime2(block, pitch._time, track);
+        int64_t end = Ratio2STime2(block, next_pitch._time, track);
         
         double n_x1 = scale_double(start, 0, blocklen, x1, x2);
         double n_x2 = scale_double(end, 0, blocklen, x1, x2);
         
         p.setPen(pen1);
         
-        double n_y1 = equal_floats(track_pitch_max, track_pitch_min) ? (y1+y2)/2.0 : scale_double(pitch->note+0.5, track_pitch_max, track_pitch_min, y1, y2);
+        double n_y1 = equal_floats(track_pitch_max, track_pitch_min) ? (y1+y2)/2.0 : scale_double(pitch._val+0.5, track_pitch_max, track_pitch_min, y1, y2);
         double n_y2;
 
         if(equal_floats(track_pitch_max, track_pitch_min))
           n_y2 = (y1+y2)/2.0;
-        else if (next_pitch==&last_pitch && equal_floats(next_pitch->note, 0.0f))
+        else if (is_last && equal_floats(next_pitch._val, 0.0f))
           n_y2 = scale_double(note->note+0.5, track_pitch_max, track_pitch_min, y1, y2);
-        else if (pitch->logtype==LOGTYPE_HOLD)
+        else if (pitch._logtype==LOGTYPE_HOLD)
           n_y2 = n_y1;
         else
-          n_y2 = scale_double(next_pitch->note+0.5, track_pitch_max, track_pitch_min, y1, y2);
+          n_y2 = scale_double(next_pitch._val+0.5, track_pitch_max, track_pitch_min, y1, y2);
                  
 
         if (equal_doubles(last_y, init_last_y)){
@@ -1133,11 +1154,13 @@ public:
         }
 
         last_y = n_y2;
-        
+
+        /*
         if (next_pitch==&last_pitch)
           break;
         else
           pitch = next_pitch;
+        */
       }
       
 #undef SHOW_BARS

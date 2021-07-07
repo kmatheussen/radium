@@ -49,6 +49,11 @@ struct FXNode : NodeId {
   {}
 };
 
+  struct FXSeqBlock : RT_TimeData_Player_Cache<typeof(FXNode::_val)> {
+  };
+  
+  using FXTimeData = TimeData<FXNode, FXSeqBlock>;
+
 
 struct FXText {
   const struct FX *fx;
@@ -77,6 +82,6 @@ typedef QMap<int, FXText_trs> FXText_trss;
 
 struct FXs{
 	struct FX *fx;
-        r::TimeData<r::FXNode> *_fxnodes;
+        r::FXTimeData *_fxnodes;
 };
 

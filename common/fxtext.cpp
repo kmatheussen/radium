@@ -97,7 +97,7 @@ const FXText_trss FXTEXTS_get(const struct WBlocks *wblock, const struct WTracks
 
 #if 1
   
-  r::TimeData<r::FXNode>::Reader reader(fxs->_fxnodes);
+  r::FXTimeData::Reader reader(fxs->_fxnodes);
   int i =0;
   for(const r::FXNode &node : reader){
     add_fxtext(wblock, fxtexts, fxs->fx, node, i);
@@ -208,7 +208,7 @@ bool FXTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, str
       if (dat.is_valid==false)
         return false;
 
-      r::TimeData<r::FXNode>::Writer writer(fxs->_fxnodes);
+      r::FXTimeData::Writer writer(fxs->_fxnodes);
 
       Ratio ratio = ratio_from_place(*place);
       auto node = r::FXNode(*fxs->fx, ratio, dat.value, dat.logtype);
@@ -226,7 +226,7 @@ bool FXTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, str
     if (key == EVENT_DEL) {
 
       if (subsubtrack == 2) {
-        r::TimeData<r::FXNode>::Writer writer(fxs->_fxnodes);
+        r::FXTimeData::Writer writer(fxs->_fxnodes);
         r::FXNode &node = writer.at_ref(vt.fxnodenum);
         node._logtype = LOGTYPE_LINEAR;
       } else {
@@ -241,7 +241,7 @@ bool FXTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, str
       if (dat.is_valid==false)
         return false;
 
-      r::TimeData<r::FXNode>::Writer writer(fxs->_fxnodes);
+      r::FXTimeData::Writer writer(fxs->_fxnodes);
       r::FXNode &node = writer.at_ref(vt.fxnodenum);
       node._val = dat.value;
       node._logtype = dat.logtype;

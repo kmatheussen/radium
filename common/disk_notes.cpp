@@ -56,7 +56,7 @@ DC_start("NOTE");
         DC_SaveI(note->chance);
         
 	SaveVelocities(note);
-	SavePitches(note->pitches);
+	SavePitches(note);
 
 DC_end();
 SaveNotes(NextNote(note));
@@ -100,7 +100,7 @@ struct Notes *LoadNote(void){
         if (disk_load_version > 0.835)
           note->chance = DC_LoadI();
         else
-          note->chance = 0x100;
+          note->chance = MAX_PATCHVOICE_CHANCE;
         
         if(disk_load_version<0.69) {
 
@@ -119,7 +119,11 @@ struct Notes *LoadNote(void){
               LoadVelocities(note);
             
             DC_Next();
-            LoadPitches(&note->pitches);
+            if (disk_load_version < 1.235) {
+              LoadPitches_oldformat(note);
+            } else
+              LoadPitches(note);
+            //LoadPitches(note);
             DC_Next();
         }
 
@@ -139,7 +143,7 @@ struct Notes *LoadNote(void){
              velocity_end==0 and velocities.size()==0.
           */
 
-          if (r::TimeData<r::Velocity>::Reader(note->_velocities).size()==0)
+          if (r::VelocityTimeData::Reader(note->_velocities).size()==0)
             if (equal_floats(note->velocity_end, 0.0))
               note->velocity_end = note->velocity;
         }
@@ -156,10 +160,11 @@ void DLoadNotes(const struct Root *newroot,struct Tracks *track, struct Notes *n
   if(notes==NULL) return;
 
   // Fix pitch_end for older songs.
-  if(notes->pitches != NULL && equal_floats(notes->pitch_end, 0)){
+  if (equal_floats(notes->pitch_end, 0) && r::PitchTimeData::Reader(notes->_pitches).size() > 0){
     struct Notes *next_note = NextNote(notes);
     if (next_note==NULL)
       next_note = track->notes;
+      
     notes->pitch_end = next_note->note;
   }
   

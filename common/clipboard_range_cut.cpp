@@ -59,7 +59,7 @@ void ClearRange_notes(
 
 
 static void ClearRange_stops(
-                             r::TimeData<r::Stop> *stops,
+                             r::StopTimeData *stops,
                              const Place *p1,
                              const Place *p2
                              )
@@ -67,7 +67,7 @@ static void ClearRange_stops(
   Ratio start = place2ratio(*p1);
   Ratio end = place2ratio(*p2);
 
-  r::TimeData<r::Stop>::Writer writer(stops);
+  r::StopTimeData::Writer writer(stops);
 
   std::vector<Ratio> to_remove;
   

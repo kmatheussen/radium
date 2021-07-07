@@ -53,7 +53,7 @@ struct FXs *FXs_create(void){
       delete fxs->_fxnodes;
     });
   
-  fxs->_fxnodes = new r::TimeData<r::FXNode>;
+  fxs->_fxnodes = new r::FXTimeData;
   return fxs;
 }
 
@@ -109,7 +109,7 @@ void FX_min_max_have_changed_for_patch(struct Patch *patch, NInt fxnum, float ol
             }
             */
 
-            r::TimeData<r::FXNode>::Writer writer(fxs->_fxnodes);
+            r::FXTimeData::Writer writer(fxs->_fxnodes);
             for(r::FXNode &node : writer){
               double real_val = scale_double(node._val, fx_min,  fx_max,  old_min, old_max);
               node._val       = scale_double(real_val,  new_min, new_max, fx_min,  fx_max);
@@ -262,12 +262,12 @@ int AddFXNodeLine(
         R_ASSERT_RETURN_IF_FALSE2(fxs->_fxnodes!=NULL, 0);
 
         {
-          r::TimeData<r::FXNode>::Writer writer(fxs->_fxnodes);
+          r::FXTimeData::Writer writer(fxs->_fxnodes);
           
           Ratio ratio = ratio_from_place(*p1);
           
           if (!writer.has_element_at_ratio(ratio))
-            writer.add2(r::FXNode(*fxs->fx, ratio, val));
+            writer.add(*fxs->fx, ratio, val);
 
           ret=writer.find_element_at_ratio(ratio);
         }
@@ -456,7 +456,7 @@ void DeleteFxNodeLine(struct Tracker_Windows *window, struct WTracks *wtrack, st
   }
 
   {
-    r::TimeData<r::FXNode>::Writer writer(fxs->_fxnodes);
+    r::FXTimeData::Writer writer(fxs->_fxnodes);
     R_ASSERT(writer.remove_at_pos(pos));
     // NOTE: Must include fx->closeFX etc. above if necessary.
   }
@@ -470,7 +470,7 @@ void DeleteFxNodes(struct Tracker_Windows *window, struct WTracks *wtrack, struc
   if (fxnodenums.size()==0)
     return;
   
-  r::TimeData<r::FXNode>::Writer writer(fxs->_fxnodes);
+  r::FXTimeData::Writer writer(fxs->_fxnodes);
 
   int size_before = writer.size();
   
@@ -505,6 +505,12 @@ void DeleteFxNode(struct Tracker_Windows *window, struct WTracks *wtrack, struct
   DeleteFxNodes(window, wtrack, fxs, fxnodenums);
 }
 
+
+
+
+/*********** RT playing fx ************************/
+
+
 namespace{
   class FxIterateCallback : public r::IterateCallback<int> {
 
@@ -516,7 +522,7 @@ namespace{
       : _fx(fx)
     {}
 
-    void callback(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, const struct Tracks *track, int val, int64_t time, FX_when when) const override {
+    void callback(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, const struct Tracks *track, int index, int val, int64_t time, FX_when when, bool is_new_node) const override {
       //printf("Callback called: %d\n", val);
       RT_FX_treat_fx(seqtrack, _fx, val, time, 0, when);
     }
@@ -542,7 +548,7 @@ void RT_fxline_called_each_block(struct SeqTrack *seqtrack,
 
       FxIterateCallback callback(fx);
         
-      r::TimeData<r::FXNode>::Reader reader(fxs->_fxnodes, (0 && ATOMIC_GET(root->editonoff)) ? -1 : seqblock->cache_num);
+      const r::FXTimeData::Reader reader(fxs->_fxnodes, (0 && ATOMIC_GET(root->editonoff)) ? -1 : seqblock->cache_num);
       
       reader.iterate<int>(seqtrack, seqblock, track, play_id, seqtime_start, track_period, callback);
       

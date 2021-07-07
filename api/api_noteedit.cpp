@@ -456,7 +456,7 @@ void deleteAllNotesAndStopsInTrack(int tracknum, int blocknum, int windownum){
     //wtrack->track->stops = NULL;
   }
 
-  r::TimeData<r::Stop>::Writer writer(wtrack->track->stops2, true);
+  r::StopTimeData::Writer writer(wtrack->track->stops2, true);
 
   window->must_redraw=true; // must use must_redraw and not must_redraw_editor since polyphony might have changed.
 }
@@ -477,7 +477,7 @@ void deleteAllStopsInTrack(int tracknum, int blocknum, int windownum){
   }
   */
   
-  r::TimeData<r::Stop>::Writer writer(wtrack->track->stops2, true);
+  r::StopTimeData::Writer writer(wtrack->track->stops2, true);
 
   window->must_redraw_editor=true;
 }

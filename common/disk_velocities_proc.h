@@ -19,11 +19,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #pragma once
 
 
-extern LANGSPEC void SaveVelocities(struct Notes *note);
+extern LANGSPEC void SaveVelocities(const struct Notes *note);
 extern LANGSPEC void LoadVelocities_oldformat(struct Notes *note);
 extern LANGSPEC void LoadVelocities(struct Notes *note);
 
-extern LANGSPEC void SavePitches(struct Pitches *pitches);
-extern LANGSPEC void LoadPitches(struct Pitches **to);
+extern LANGSPEC void SavePitches(const struct Notes *note);
+extern LANGSPEC void LoadPitches(struct Notes *note);
+extern LANGSPEC void LoadPitches_oldformat(struct Notes *note);
 
 

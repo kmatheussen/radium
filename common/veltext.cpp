@@ -76,7 +76,7 @@ static void add_note(const struct WBlocks *wblock, VelText_trss &veltexts, struc
 
 
   {
-    r::TimeData<r::Velocity>::Reader reader(note->_velocities);
+    r::VelocityTimeData::Reader reader(note->_velocities);
     
     int velnum = 0;
     for(const r::Velocity &velocity : reader){
@@ -191,7 +191,7 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, st
       for (auto vt : veltext){
         struct Notes *note = vt.note;
         if (vt.velnum >= 0) {
-          r::TimeData<r::Velocity>::Writer writer(note->_velocities);
+          r::VelocityTimeData::Writer writer(note->_velocities);
           writer.remove_at_pos(vt.velnum);
         }
       }
@@ -234,7 +234,7 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, st
 
       if (false && subsubtrack == 2) {
         
-        r::TimeData<r::Velocity>::Writer writer(note->_velocities);
+        r::VelocityTimeData::Writer writer(note->_velocities);
         writer.at_ref(vt.velnum)._logtype = LOGTYPE_LINEAR;
 
       } else {
@@ -244,7 +244,7 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, st
         if (vt.is_first_velocity)
           velocity_num = 0;
         else if (vt.is_last_velocity)
-          velocity_num = r::TimeData<r::Velocity>::Reader(note->_velocities).size() + 1;
+          velocity_num = r::VelocityTimeData::Reader(note->_velocities).size() + 1;
         else
           velocity_num = vt.velnum + 1;
         
@@ -259,7 +259,7 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, st
       if (dat.is_valid==false)
         return false;
 
-      int num_velocities = r::TimeData<r::Velocity>::Reader(note->_velocities).size();
+      int num_velocities = r::VelocityTimeData::Reader(note->_velocities).size();
         
       if (vt.is_first_velocity){
 
@@ -294,7 +294,7 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, st
         */
         
         {
-          r::TimeData<r::Velocity>::Writer writer(note->_velocities);
+          r::VelocityTimeData::Writer writer(note->_velocities);
           writer.at_ref(vt.velnum)._val = dat.value;
           writer.at_ref(vt.velnum)._logtype = dat.logtype;
         }

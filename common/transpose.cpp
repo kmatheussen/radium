@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "nsmtracker.h"
+#include "TimeData.hpp"
 #include "placement_proc.h"
 #include "clipboard_range_calc_proc.h"
 #include "list_proc.h"
@@ -46,12 +47,18 @@ static void Transpose_note(
   note->note = getTransposed(note->note, trans);
   if (note->pitch_end > 0)
     note->pitch_end = getTransposed(note->pitch_end, trans);
-  
+
+  /*
   struct Pitches *pitch = note->pitches;
   while(pitch!=NULL){
     pitch->note = getTransposed(pitch->note, trans);
     pitch = NextPitch(pitch);
   }
+  */
+  
+  r::PitchTimeData::Writer writer(note->_pitches);
+  for(auto &pitch : writer)
+    pitch._val = getTransposed(pitch._val, trans);
 }
 
 static bool Transpose_notes(

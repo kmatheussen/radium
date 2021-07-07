@@ -96,15 +96,17 @@ strip:
 	@echo Stripping MyPluginHost
 	-@strip --strip-unneeded $(OUTDIR)/$(TARGET)
 
+R_OPTS=-Wall -Wextra -Wno-unused-parameter
+
 $(OBJDIR)/Juce_plugins_6c083ccb.o: ../../../audio/Juce_plugins.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling Juce_plugins.cpp"
-	$(CXX) $(CXXFLAGS) -Wall -o "$@" -c "$<"
+	$(CXX) $(CXXFLAGS) $(R_OPTS) -o "$@" -c "$<"
 
 $(OBJDIR)/Juce_plugin_scanner.o: ../../../audio/Juce_plugin_scanner.cpp
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling Juce_plugins.cpp"
-	@$(CXX) $(CXXFLAGS) -Wall -o "$@" -c "$<"
+	@$(CXX) $(CXXFLAGS) $(R_OPTS) -o "$@" -c "$<"
 #-Werror
 
 $(OBJDIR)/juce_audio_basics_2442e4ea.o: ../../JuceLibraryCode/modules/juce_audio_basics/juce_audio_basics.cpp

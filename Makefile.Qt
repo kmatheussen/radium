@@ -526,8 +526,8 @@ OBJ7= $(T)instruments.o $(T)patch.o $(T)undo_audio_patch_addremove.o $(T)fxlines
 OBJ8= $(T)reltempo.o $(T)temponodes.o $(T)tempos.o $(T)time.o $(T)temponodes_legalize.o $(T)swing.o
 
 #Playing
-OBJ9= $(T)Ptask2Mtask.o $(T)player.o $(T)scheduler.o $(T)scheduler_seqtracks.o $(T)scheduler_notes.o $(T)scheduler_pitches.o $(T)scheduler_reallines.o $(T)scheduler_LPB.o $(T)scheduler_Beats.o $(T)scheduler_Signature.o $(T)playerclass.o $(T)player_startstop.o $(T)player_pause.o
-# $(T)scheduler_fxs.o $(T)scheduler_velocities.o 
+OBJ9= $(T)Ptask2Mtask.o $(T)player.o $(T)scheduler.o $(T)scheduler_seqtracks.o $(T)scheduler_notes.o $(T)scheduler_reallines.o $(T)scheduler_LPB.o $(T)scheduler_Beats.o $(T)scheduler_Signature.o $(T)playerclass.o $(T)player_startstop.o $(T)player_pause.o
+# $(T)scheduler_fxs.o $(T)scheduler_velocities.o $(T)scheduler_pitches.o 
 
 #Disk
 OBJ10= $(T)disk.o $(T)disk_fxs.o $(T)disk_wblock.o $(T)disk_localzooms.o $(T)disk_track.o $(T)disk_fx.o $(T)disk_fxnodelines.o $(T)disk_wtrack.o $(T)disk_temponodes.o $(T)disk_tempos.o $(T)disk_song.o $(T)disk_velocities.o $(T)disk_block.o $(T)disk_placement.o $(T)disk_stops.o $(T)disk_playlist.o $(T)disk_root.o $(T)disk_notes.o $(T)disk_lpbs.o $(T)disk_signatures.o $(T)disk_swing.o $(T)disk_windows.o $(T)disk_warea.o $(T)disk_save.o $(T)disk_load.o $(T)disk_saveload_blocktrack.o $(T)disk_instrument.o $(T)disk_patches.o $(T)disk_slider.o
@@ -1127,8 +1127,8 @@ $(T)scheduler_seqtracks.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_seqtracks.c $(C
 $(T)scheduler_notes.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_notes.cpp $(CD)scheduler_proc.h
 	$(CCC2) $(CD)scheduler_notes.cpp $(CPPOPT)
 
-$(T)scheduler_pitches.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_pitches.c $(CD)scheduler_proc.h
-	$(CC2) $(CD)scheduler_pitches.c $(OPT)
+#$(T)scheduler_pitches.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_pitches.c $(CD)scheduler_proc.h
+#	$(CC2) $(CD)scheduler_pitches.c $(OPT)
 
 #$(T)scheduler_velocities.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_velocities.c $(CD)scheduler_proc.h
 #	$(CC2) $(CD)scheduler_velocities.c $(OPT) #-fno-sanitize=undefined -O0

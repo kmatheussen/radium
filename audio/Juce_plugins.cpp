@@ -168,11 +168,11 @@ static void findMaxTotalChannels(juce::AudioProcessor* const filter,
 namespace{
 
 #if FOR_LINUX
-  static const bool g_use_custom_mm_thread = true;
+  static constexpr bool g_use_custom_mm_thread = true;
 #elif FOR_WINDOWS  
-  static const bool g_use_custom_mm_thread = false;
+  static constexpr bool g_use_custom_mm_thread = false;
 #elif FOR_MACOSX
-  static const bool g_use_custom_mm_thread = false;
+  static constexpr bool g_use_custom_mm_thread = false;
 #else
   #error "unknown platform"
 #endif

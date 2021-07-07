@@ -708,8 +708,11 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       
       autoselect_editor_block_under_mouse->setChecked(autoselectEditorBlockUnderMouse());
       autoselect_editor_block_when_changing_seqtrack->setChecked(autoselectEditorBlockWhenChangingSeqtrack());
-      
-      sequencer_scroll_wheel_starts_stops_playing->setChecked(sequencerMouseScrollWheelStartsStopsPlaying());
+
+      if (sequencerMouseScrollWheelStartsStopsPlaying())
+        sequencer_scroll_wheel_starts_stops_playing->setChecked(true);
+      else
+        sequencer_scroll_wheel_scrolls_up_down->setChecked(true);
     }
 
     // Windows

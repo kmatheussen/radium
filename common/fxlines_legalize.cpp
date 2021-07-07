@@ -80,7 +80,7 @@ void LegalizeFXlines(struct Blocks *block, struct Tracks *track){
 }
 #endif
 
-static void LegalizeStart(r::TimeData<r::FXNode>::Writer &writer){
+static void LegalizeStart(r::FXTimeData::Writer &writer){
 
   std::vector<int> to_remove;
   
@@ -120,7 +120,7 @@ static void LegalizeStart(r::TimeData<r::FXNode>::Writer &writer){
   writer.remove_at_positions(to_remove);
 }
 
-static void LegalizeEnd(int num_lines, r::TimeData<r::FXNode>::Writer &writer){
+static void LegalizeEnd(int num_lines, r::FXTimeData::Writer &writer){
   
   std::vector<int> to_remove;
   
@@ -161,7 +161,7 @@ static void LegalizeEnd(int num_lines, r::TimeData<r::FXNode>::Writer &writer){
   writer.remove_at_positions(to_remove);
 }
 
-static void LegalizeValues(const struct FX *fx, r::TimeData<r::FXNode>::Writer &writer){
+static void LegalizeValues(const struct FX *fx, r::FXTimeData::Writer &writer){
   for(r::FXNode &node : writer){
     if (node._val < fx->min)
       node._val = fx->min;
@@ -170,7 +170,7 @@ static void LegalizeValues(const struct FX *fx, r::TimeData<r::FXNode>::Writer &
   }
 }
 
-bool LegalizeFXlines2(int num_lines, const struct FX *fx, r::TimeData<r::FXNode>::Writer &writer){
+bool LegalizeFXlines2(int num_lines, const struct FX *fx, r::FXTimeData::Writer &writer){
   writer.sortit();
 
   LegalizeStart(writer);
