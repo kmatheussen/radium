@@ -120,10 +120,15 @@ bool CENTTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, s
         case TR2_PITCH:
           {
             r::PitchTimeData::Writer writer(dasnote->_pitches);
+
+            //float bef = writer.at_ref(tr2.pitchnum)._val;
+            
             if (tr2.pitchnum < 0 || tr2.pitchnum >= writer.size())
               R_ASSERT(false);
             else 
-              writer.at_ref(tr2.pitchnum)._val = float(writer.at_ref(tr2.pitchnum)._val);
+              writer.at_ref(tr2.pitchnum)._val = floor(writer.at_ref(tr2.pitchnum)._val);
+
+            //printf("  Bef: %f. Aft: %f\n", bef, writer.at_ref(tr2.pitchnum)._val);
           }
           break;
         case TR2_STOP:
@@ -170,7 +175,7 @@ bool CENTTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, s
       }
 
       double new_note = floor(note) + ((double)dat.value / 100.0);
-      printf("new_note: %f, dat.value: %d / %f\n",new_note,dat.value,((float)dat.value / 100.0f));
+      //printf("new_note: %f, dat.value: %d / %f\n",new_note,dat.value,((float)dat.value / 100.0f));
 
       switch(tr2.type){
         case TR2_NOTE_START:
