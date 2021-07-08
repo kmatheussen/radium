@@ -1624,7 +1624,8 @@
 (define (centtext-popup-elements)
   (list (list "Cents text"
               :check (<ra> :centtext-visible *current-track-num*)
-              :enabled (<ra> :centtext-can-be-turned-off *current-track-num*)
+              :enabled (or (not (<ra> :centtext-visible *current-track-num*))
+                           (<ra> :centtext-can-be-turned-off *current-track-num*))
               :shortcut ra:show-hide-centtext
               (lambda (onoff)
                 (<ra> :show-centtext onoff *current-track-num*)))

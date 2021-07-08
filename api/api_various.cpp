@@ -2968,15 +2968,20 @@ bool centtextCanBeTurnedOff(int tracknum, int blocknum, int windownum){
                            tracknum
                            );
 
-  if(wtrack==NULL) return true;
+  if(wtrack==NULL)
+    return true;
 
   if (wtrack->notesonoff==0)
     return true;
-  
-  int num_cents_subtracks = wtrack->centtext_on ? 2 : 0;
 
-  if (WTRACK_num_non_polyphonic_subtracks(wtrack)==num_cents_subtracks)
-    return true;
+  if (wtrack->chancetext_on)
+    return false;
+      
+  if (wtrack->veltext_on)
+    return false;
+
+  if (wtrack->fxtext_on)
+    return false;
   
   struct Notes *note = wtrack->track->notes;
   while(note!=NULL){
