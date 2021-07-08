@@ -962,8 +962,9 @@ namespace radium{
     const bool for_entry;
     const bool is_down;
     const bool big_step;
-    const bool range_or_all_tracks;
-
+    bool range_or_all_tracks;
+    bool do_selection;
+    
     Place y1,y2;
     
     GeneralTranspose(bool all_tracks,
@@ -977,10 +978,17 @@ namespace radium{
       , is_down(is_down)
       , big_step(big_step)
       , range_or_all_tracks(all_tracks || in_range)
+      , do_selection(false)
     {
       struct Tracker_Windows *window=root->song->tracker_windows;
       struct WBlocks *wblock=window->wblock;
-        
+
+      if (in_range && !wblock->range.enabled) {
+        in_range = false;
+        range_or_all_tracks = false;
+        do_selection = true;
+      }
+      
       if (for_entry){
         
         int realline = wblock->curr_realline;
@@ -1004,7 +1012,15 @@ namespace radium{
         y2 = p_Absolute_Last_Pos(wblock->block);
       }
     }
-    
+
+    bool do_note(const struct Notes *note) const {
+      //printf("do_selection: %d. Note %f. selected: %d\n", do_selection, note->note, note->pianonote_is_selected);
+      
+      if (!do_selection)
+        return true;
+
+      return note->pianonote_is_selected;
+    }
   };
 }
 
@@ -1529,15 +1545,18 @@ static void general_transpose(radium::GeneralTranspose gt){
                                    struct Notes *note = track->notes;
                                    while(note != NULL) {
 
-                                     if (!general_transform3<int>(gt, place2ratio(note->l.p), note->chance, is_changed, TransposeChance))
-                                       break;
+                                     if (gt.do_note(note)) {
                                      
-                                     r::PitchTimeData::Writer writer(note->_pitches);
-                                     
-                                     for(r::Pitch &pitch : writer)
-                                       if (!general_transform3<int>(gt, pitch._time, pitch._chance, is_changed, TransposeChance))
+                                       if (!general_transform3<int>(gt, place2ratio(note->l.p), note->chance, is_changed, TransposeChance))
                                          break;
-
+                                       
+                                       r::PitchTimeData::Writer writer(note->_pitches);
+                                       
+                                       for(r::Pitch &pitch : writer)
+                                         if (!general_transform3<int>(gt, pitch._time, pitch._chance, is_changed, TransposeChance))
+                                           break;
+                                     }
+                                     
                                      note = NextNote(note);
                                    }
                                  },
@@ -1557,17 +1576,20 @@ static void general_transpose(radium::GeneralTranspose gt){
                                    struct Notes *note = track->notes;
                                    while(note != NULL) {
 
-                                     if (!general_transform3<float>(gt, place2ratio(note->l.p), note->note, is_changed, TransposeCent))
-                                       break;
-                                     
-                                     r::PitchTimeData::Writer writer(note->_pitches);
-                                     
-                                     for(r::Pitch &pitch : writer)
-                                       if (!general_transform3<float>(gt, pitch._time, pitch._val, is_changed, TransposeCent))
+                                     if (gt.do_note(note)) {
+                                       
+                                       if (!general_transform3<float>(gt, place2ratio(note->l.p), note->note, is_changed, TransposeCent))
                                          break;
-
-                                     if (note->pitch_end > 0 || writer.size() > 0)
-                                       general_transform3<float>(gt, note->end, note->pitch_end, is_changed, TransposeCent);
+                                       
+                                       r::PitchTimeData::Writer writer(note->_pitches);
+                                       
+                                       for(r::Pitch &pitch : writer)
+                                         if (!general_transform3<float>(gt, pitch._time, pitch._val, is_changed, TransposeCent))
+                                           break;
+                                       
+                                       if (note->pitch_end > 0 || writer.size() > 0)
+                                         general_transform3<float>(gt, note->end, note->pitch_end, is_changed, TransposeCent);
+                                     }
                                      
                                      note = NextNote(note);
                                    }
@@ -1587,18 +1609,21 @@ static void general_transpose(radium::GeneralTranspose gt){
                                [gt](auto *block, auto *track, bool &is_changed){
                                  struct Notes *note = track->notes;
                                  while(note != NULL) {
-                                   
-                                   if (!general_transform3<int>(gt, place2ratio(note->l.p), note->velocity, is_changed, TransposeVelocity4))
-                                     break;
-                                   
-                                   r::VelocityTimeData::Writer writer(note->_velocities);
-                                   
-                                   for(r::Velocity &velocity : writer)
-                                     if (!general_transform3<int>(gt, velocity._time, velocity._val, is_changed, TransposeVelocity4))
+
+                                   if (gt.do_note(note)) {
+                                     
+                                     if (!general_transform3<int>(gt, place2ratio(note->l.p), note->velocity, is_changed, TransposeVelocity4))
                                        break;
-                                   //ret.push_back(QPair<Ratio,float&>(velocity._time,velocity._val));
                                    
-                                   general_transform3<int>(gt, note->end, note->velocity_end, is_changed, TransposeVelocity4);
+                                     r::VelocityTimeData::Writer writer(note->_velocities);
+                                     
+                                     for(r::Velocity &velocity : writer)
+                                       if (!general_transform3<int>(gt, velocity._time, velocity._val, is_changed, TransposeVelocity4))
+                                         break;
+                                     //ret.push_back(QPair<Ratio,float&>(velocity._time,velocity._val));
+                                     
+                                     general_transform3<int>(gt, note->end, note->velocity_end, is_changed, TransposeVelocity4);
+                                   }
                                    
                                    note = NextNote(note);
                                  }
@@ -1619,18 +1644,21 @@ static void general_transpose(radium::GeneralTranspose gt){
                                    struct Notes *note = track->notes;
                                    while(note != NULL) {
 
-                                     if (!general_transform3<float>(gt, place2ratio(note->l.p), note->note, is_changed, TransposePitch4))
-                                       break;
-                                     
-                                     r::PitchTimeData::Writer writer(note->_pitches);
-                                     
-                                     for(r::Pitch &pitch : writer)
-                                       if (!general_transform3<float>(gt, pitch._time, pitch._val, is_changed, TransposePitch4))
+                                     if (gt.do_note(note)) {
+                                       
+                                       if (!general_transform3<float>(gt, place2ratio(note->l.p), note->note, is_changed, TransposePitch4))
                                          break;
-                                     //ret.push_back(QPair<Ratio,float&>(pitch._time,pitch._val));
-
-                                     if (note->pitch_end > 0 || writer.size() > 0)
-                                       general_transform3<float>(gt, note->end, note->pitch_end, is_changed, TransposePitch4);
+                                       
+                                       r::PitchTimeData::Writer writer(note->_pitches);
+                                       
+                                       for(r::Pitch &pitch : writer)
+                                         if (!general_transform3<float>(gt, pitch._time, pitch._val, is_changed, TransposePitch4))
+                                           break;
+                                       //ret.push_back(QPair<Ratio,float&>(pitch._time,pitch._val));
+                                       
+                                       if (note->pitch_end > 0 || writer.size() > 0)
+                                         general_transform3<float>(gt, note->end, note->pitch_end, is_changed, TransposePitch4);
+                                     }
                                      
                                      note = NextNote(note);
                                    }
