@@ -134,7 +134,8 @@ static void insert_nonnode_nodeline(struct NodeLine *nodelines, const struct Lis
       n->x2 = nodelines->x2;
       n->y2 = nodelines->y2;
       if (n->y2 < n->y1) {
-        RWarning("1. y2 < y1: %f < %f",n->y2,n->y1);
+        printf("\n\n\n3. y2 < y1: %f < %f",n->y2,n->y1);
+        R_ASSERT_NON_RELEASE(false);
         n->y2 = n->y1;
       }
       n->element2 = nodelines->element2;
@@ -142,7 +143,8 @@ static void insert_nonnode_nodeline(struct NodeLine *nodelines, const struct Lis
       nodelines->x2 = n->x1;
       nodelines->y2 = n->y1;
       if (nodelines->y2 < nodelines->y1) {
-        RWarning("2. y2 < y1: %f < %f",nodelines->y2,nodelines->y1);
+        printf("\n\n\n3. y2 < y1: %f < %f",nodelines->y2,nodelines->y1);
+        R_ASSERT_NON_RELEASE(false);
         nodelines->y2 = nodelines->y1;
       }
       nodelines->element2 = n->element1;
@@ -202,7 +204,8 @@ static void insert_nonnode_nodeline2(struct NodeLine2 *nodelines,
       n->x2 = nodelines->x2;
       n->y2 = nodelines->y2;
       if (n->y2 < n->y1) {
-        RWarning("1. y2 < y1: %f < %f",n->y2,n->y1);
+        printf("\n\n\n3. y2 < y1: %f < %f",n->y2,n->y1);
+        R_ASSERT_NON_RELEASE(false);
         n->y2 = n->y1;
       }
       //n->element2 = nodelines->element2;
@@ -212,7 +215,9 @@ static void insert_nonnode_nodeline2(struct NodeLine2 *nodelines,
       nodelines->x2 = n->x1;
       nodelines->y2 = n->y1;
       if (nodelines->y2 < nodelines->y1) {
-        RWarning("2. y2 < y1: %f < %f",nodelines->y2,nodelines->y1);
+        printf("\n\n\n3. y2 < y1: %f < %f",nodelines->y2,nodelines->y1);
+        R_ASSERT_NON_RELEASE(false);
+
         nodelines->y2 = nodelines->y1;
       }
       //nodelines->element2 = n->element1;
@@ -291,7 +296,8 @@ static const struct NodeLine *create_nodelines(
       ns->y2 = next->y1;
 
       if (ns->y2 < ns->y1) {
-        RWarning("3. y2 < y1: %f < %f",ns->y2,ns->y1);
+        printf("\n\n\n3. y2 < y1: %f < %f",ns->y2,ns->y1);
+        R_ASSERT_NON_RELEASE(false);
         ns->y2 = ns->y1;
       }
 
@@ -388,7 +394,8 @@ static const struct NodeLine2 *create_nodelines2(
       ns->y2 = next->y1;
 
       if (ns->y2 < ns->y1) {
-        RWarning("3. y2 < y1: %f < %f",ns->y2,ns->y1);
+        printf("\n\n\n3. y2 < y1: %f < %f",ns->y2,ns->y1);
+        R_ASSERT_NON_RELEASE(false);
         ns->y2 = ns->y1;
       }
 
