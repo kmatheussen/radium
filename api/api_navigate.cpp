@@ -709,16 +709,22 @@ void cursorLeft(int windownum){
         int tracknum = getCurrentTrack(windownum);
         int subtracknum = getCurrentSubtrack(windownum);
 
-        //printf("right. tracknum: %d. subtracknum: %d\n", tracknum, subtracknum);
+        //printf("cursorLeft. tracknum: %d. subtracknum: %d\n", tracknum, subtracknum);
         
         //int num_tracks = getNumTracks(-1);
 
+        bool move_prev_track = false;
+        
         if (tracknum >= 0 && swingtextVisible(tracknum, -1, windownum)) {
           
           if (subtracknum==-1)
             subtracknum = 2;
           else if (subtracknum==3)
             subtracknum = -1;
+          else if (subtracknum==0){
+            subtracknum = -1;
+            move_prev_track = true;
+          }
           else
             subtracknum--;
             
@@ -728,34 +734,30 @@ void cursorLeft(int windownum){
           
         }
 
-        bool move_prev_track = false;
-        
-        if (tracknum >= 0) {
-
-          if (swingtextVisible(tracknum, -1, windownum)) {
+        if (!move_prev_track) {
+          
+          if (tracknum >= 0) {
+            
+            if (!swingtextVisible(tracknum, -1, windownum)) {
+              
+              if (subtracknum < -1){
+                R_ASSERT_NON_RELEASE(subtracknum==-2);
+                move_prev_track = true;
+              }
+            }
+            
+          } else {
             
             if (subtracknum < 0){
               R_ASSERT_NON_RELEASE(subtracknum==-1);
               move_prev_track = true;
             }
             
-          } else {
+          }
 
-            if (subtracknum < -1){
-              R_ASSERT_NON_RELEASE(subtracknum==-2);
-              move_prev_track = true;
-            }
-          }
-          
-        } else {
-          
-          if (subtracknum < 0){
-            R_ASSERT_NON_RELEASE(subtracknum==-1);
-            move_prev_track = true;
-          }
-          
         }
-            
+
+        
         if (move_prev_track) {
           
           tracknum = get_previous_legal_track(tracknum, windownum);
