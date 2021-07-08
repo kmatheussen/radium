@@ -3002,14 +3002,9 @@ bool centtextCanBeTurnedOff(int tracknum, int blocknum, int windownum){
   if (wtrack->notesonoff==0)
     return true;
 
-  if (wtrack->chancetext_on)
-    return false;
-      
-  if (wtrack->veltext_on)
-    return false;
-
-  if (wtrack->fxtext_on)
-    return false;
+  // Allow turning of cent text if there are no other text subtracks that can clubber up.
+  if (!wtrack->chancetext_on && !wtrack->veltext_on && !wtrack->fxtext_on)
+    return true;
   
   struct Notes *note = wtrack->track->notes;
   while(note!=NULL){
@@ -3017,10 +3012,14 @@ bool centtextCanBeTurnedOff(int tracknum, int blocknum, int windownum){
       return false;
 
     const r::PitchTimeData::Reader reader(note->_pitches);
-    for(const r::Pitch &pitch : reader){
+    
+    for(const r::Pitch &pitch : reader)
       if (!equal_floats(pitch._val, floorf(pitch._val)))
         return false;
-    }
+    
+    if (reader.size()>0 || !equal_floats(note->pitch_end, 0.0))
+      if (!equal_floats(note->pitch_end, floorf(note->pitch_end)))
+        return false;
     
     note = NextNote(note);
   }
