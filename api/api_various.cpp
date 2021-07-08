@@ -3002,7 +3002,7 @@ bool centtextCanBeTurnedOff(int tracknum, int blocknum, int windownum){
   if (wtrack->notesonoff==0)
     return true;
 
-  // Allow turning of cent text if there are no other text subtracks that can clubber up.
+  // Allow turning of cent text if there are no other text subtracks that can mess up.
   if (!wtrack->chancetext_on && !wtrack->veltext_on && !wtrack->fxtext_on)
     return true;
   
