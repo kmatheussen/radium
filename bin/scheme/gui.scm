@@ -195,6 +195,9 @@
                   rows)
         table)))
 
+(define (draw-hovering-overlay gui x1 y1 x2 y2)
+  (<gui> :filled-box gui "#01dddddd" x1 y1 x2 y2))
+
 (define (split-text-at-first-best-space text width callback)
   (define (return-result before after)
     (callback (string-strip before) (string-strip after)))
@@ -561,12 +564,17 @@
                             :value ;; -90 -> 90
                             :is-on
                             :background-color
+                            :is-hovering
                             :automation-slider-value #f
                             :automation-color #f
                             )
   (define background (if is-on
                          (<gui> :mix-colors background-color "black" 0.39)
                          (<gui> :mix-colors background-color "white" 0.95)))
+
+  (if is-hovering
+      (set! background (<gui> :make-color-lighter background 1.1)))
+  
   (<gui> :filled-box gui background x1 y1 x2 y2 5 5 *no-gradient*)
   (define col1 (<gui> :mix-colors "white" background 0.4))
   (define col2 (<gui> :mix-colors "#010101" background 0.5))
@@ -612,6 +620,7 @@
                                    :text-color #f
                                    :border-color "gray"
                                    :border-width 0.8
+                                   :is-hovering #f
                                    :cut-text-to-fit #t
                                    :wrap-lines #t
                                    )
@@ -621,8 +630,14 @@
   
   (define pos (scale value 0 1 x1 x2))
   ;;(<gui> :filled-box widget (<gui> :get-background-color widget) x1 y1 x2 y2)
-  (if color2
-      (<gui> :filled-box widget color2 (1+ x1) (1+ y1) (1- x2) (1- y2) rounding rounding *no-gradient*))
+  (when color2
+    (if is-hovering
+        (set! color2 (<gui> :make-color-lighter color2 1.1)))
+    (<gui> :filled-box widget color2 (1+ x1) (1+ y1) (1- x2) (1- y2) rounding rounding *no-gradient*))
+
+  (if is-hovering
+      (set! color (<gui> :make-color-lighter color 1.1)))
+  
   (<gui> :filled-box widget color x1 y1 pos y2 rounding rounding *no-gradient*)
   
   ;;(if (equal? (<ra> :get-current-instrument) instrument-id)
@@ -1873,7 +1888,7 @@
                       (<-> "No range in block, and no notes in the pianroll selected."
                            "<br>"
                            )
-                      :buttons '("1. HOWTO set range" "2. HOWTO select notes in the pianoroll" "Close")
+                      :buttons '("1. HOWTO set range" "2. HOWTO set selection" "Close")
                       :callback (lambda (what)
                                   (cond ((string-starts-with? what "1.")
                                          (FROM-C-show-help-window "help/notetext_editor_framed.html"))

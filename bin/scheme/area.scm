@@ -408,7 +408,19 @@
                        (set! (raw-mouse-cycle :is-active) is-active)))
                  raw-mouse-cycles))
      
-     
+     (define is-hovering #f)
+
+     (define (detect-hovering!)
+       (add-raw-mouse-cycle!
+        :enter-func (lambda (button x y)
+                      (set! is-hovering #t)
+                      (update-me!)
+                      #t)
+        :leave-func (lambda (button x y)
+                      (set! is-hovering #f)
+                      (update-me!)
+                      #f)))
+
      ;; Mouse cycles (only when button is pressed)
      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -742,6 +754,8 @@
      :add-raw-mouse-cycle! x (apply add-raw-mouse-cycle! x)
      :get-raw-mouse-cycles x raw-mouse-cycles
      :handle-raw-mouse-cycles x (apply handle-raw-mouse-cycles x)
+     :detect-hovering! x (apply detect-hovering! x)
+     :is-hovering () is-hovering
      :add-mouse-pointerhandler x (apply add-mouse-pointerhandler x)
      :overlaps? x (apply overlaps? x)
      ;;:paint x (apply paint x)
@@ -1083,7 +1097,7 @@
   (if (not selected-color)
       (set! selected-color "check_box_selected_v2")) ;;(get-default-button-color gui)))
 
-  (define is-hovering #f)
+  (detect-hovering!)
 
   (define-override (paint)
     (if paint-func
@@ -1107,16 +1121,6 @@
                          )
           ;;(<gui> :draw-box gui "black" x1 y1 x2 y2 1.1 3 3)
           )))
-
-  (add-raw-mouse-cycle!
-   :enter-func (lambda (button x y)
-                 (set! is-hovering #t)
-                 (update-me!)
-                 #t)
-   :leave-func (lambda (button x y)
-                 (set! is-hovering #f)
-                 (update-me!)
-                 #f))
 
   (add-mouse-cycle! (lambda (button x* y*)
                       (cond ((and right-mouse-clicked-callback
@@ -1220,8 +1224,6 @@
         (set! is-pressing maybe))
     (update-me!))
 
-  (define is-hovering #f)
-  
   (define fontheight (get-fontheight))
   (define b (max 1 (myfloor (/ fontheight 2.5)))) ;; border
   
@@ -1230,6 +1232,8 @@
 
   (if (not background-color)
       (set! background-color "button_v2")) ;;(get-default-button-color gui)))
+
+  (detect-hovering!)
 
   (define (mypaint)
     ;;(<gui> :filled-box gui background-color x1 y1 x2 y2)
@@ -1290,16 +1294,6 @@
   (if statusbar-text
       (add-statusbar-text-handler statusbar-text))
 
-  (add-raw-mouse-cycle!
-   :enter-func (lambda (button x y)
-                 (set! is-hovering #t)
-                 (update-me!)
-                 #t)
-   :leave-func (lambda (button x y)
-                 (set! is-hovering #f)
-                 (update-me!)
-                 #f))
-  
   (add-mouse-cycle! (lambda (button x* y*)
                       ;;(c-display "BUTTON:" button)
                       (cond ((and right-mouse-clicked-callback

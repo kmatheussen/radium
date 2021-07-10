@@ -103,6 +103,8 @@
 
   (define (get-curr-statusbar-text)
     (<-> "Tempo multiplier: " (two-decimal-string (<ra> :get-reltempo))))
+
+  (detect-hovering!)
   
   (define-override (paint)
     (paint-horizontal-slider gui
@@ -117,6 +119,7 @@
                              :border-width 0
                              :cut-text-to-fit #f
                              :wrap-lines #f
+                             :is-hovering is-hovering
                              )
     )
   

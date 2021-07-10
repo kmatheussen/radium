@@ -370,6 +370,8 @@
                                                            (radium-normalized-to-slider automation)))
                                 (update-me!))))
   
+  (detect-hovering!)
+  
   (define-override (paint)
     (define b 1)
     (define radium-normalized (get-radium-normalized))
@@ -385,7 +387,12 @@
                                         (+ b x1)
                                         (+ b x1) (+ b y1) (- x2 b) (- y2 b)
                                         (get-color)
-                                        ))
+                                        is-hovering
+                                        )
+    ;;(if is-hovering
+    ;;    (draw-hovering-overlay gui x1 y1 x2 y2))
+    )
+
   
   (define start-mouse-value #f)
   
@@ -473,6 +480,8 @@
   
   (define last-painted-gain -10000)
 
+  (detect-hovering!)
+  
   (define-override (paint)
     (define b 1)
     (define gain (get-gain))
@@ -492,7 +501,13 @@
                              :is-current #f
                              :get-automation-data #f
                              :text-x1 (+ b x1)
-                             ))
+                             :is-hovering is-hovering
+                             )
+
+    ;;(if is-hovering
+    ;;    (draw-hovering-overlay gui x1 y1 x2 y2))
+    )
+
   
   (define start-mouse-value #f)
   
@@ -576,6 +591,8 @@
   (define automation-slider-value -1000)
   (define pan-automation-color (<ra> :get-instrument-effect-color instrument-id "System Pan"))
 
+  (detect-hovering!)
+  
   (define-override (paint)
     (define value (get-pan))
     (set! last-painted-normalized-pan (scale value -90 90 0 1))
@@ -584,10 +601,13 @@
     ;;(define background-color (get-color))
     
     (define used-background-color (paint-pan-slider gui x1 y1 x2 y2 value is-on (get-color)
+                                                    :is-hovering is-hovering
                                                     :automation-slider-value automation-slider-value
                                                     :automation-color pan-automation-color))
 
-    
+    ;;(if is-hovering
+    ;;    (draw-hovering-overlay gui x1 y1 x2 y2))
+
     (when (<ra> :instrument-effect-has-midi-learn instrument-id "System Pan")
       (define midi-learn-color (<gui> :mix-colors *text-color* used-background-color 0.2))
       (<gui> :draw-text gui midi-learn-color "[M]" (+ x1 2) (+ y1 2) (- x2 2) (- y2 2)
