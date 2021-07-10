@@ -2609,7 +2609,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                :box-rounding 2)
   )
 
-(define (paint-horizontal-instrument-slider widget instrument-id value text is-enabled is-current get-automation-data text-x1 x1 y1 x2 y2 color)
+(define (paint-horizontal-instrument-slider widget instrument-id value text is-enabled is-current get-automation-data text-x1 x1 y1 x2 y2 color is-hovering)
   (paint-horizontal-slider :widget widget
                            :value value
                            :text text
@@ -2623,6 +2623,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                            :get-automation-data get-automation-data
                            :text-x1 text-x1
                            :border-color (get-instrument-border-color instrument-id)
+                           :is-hovering is-hovering
                            ))
 
 (define (FROM_C-select-prev-instrument-program-popup-menu) 

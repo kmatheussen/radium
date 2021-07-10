@@ -1046,6 +1046,8 @@
     (<-> midi-learn-text instrument-name ": " (get-value-text value)))
 
   (define couldnt-fit-all-text #f)
+
+  (define is-hovering #f)
   
   (define (paint-slider x1-on/off width height)
     ;;(c-display "   Paint slider")
@@ -1061,6 +1063,7 @@
                                                        x1-on/off
                                                        0 0 width height
                                                        (<ra> :get-instrument-color instrument-id)
+                                                       is-hovering
                                                        ))
               couldnt-fit-all-text)))
   
@@ -1139,10 +1142,18 @@
                                     ;;(c-display "state:" state button)
                                     '(if (and (and strips-config (not (strips-config :is-standalone)))
                                              (or #t (= state *is-pressing*)))
-                                        (set-curr-instrument-in-mouse-callback instrument-id widget))
+                                         (set-curr-instrument-in-mouse-callback instrument-id widget))
+                                    
                                     (define is-left-pressing (and (= button *left-button*)
                                                                   (= state *is-pressing*)))
-
+                                    
+                                    (cond ((= state *is-entering*)
+                                           (set! is-hovering #t)
+                                           (<gui> :update widget))
+                                          ((= state *is-leaving*)
+                                           (set! is-hovering #f)
+                                           (<gui> :update widget)))
+                                    
                                     (if (in-enabled-box? x y)
                                         (begin
                                           (if is-left-pressing
@@ -1745,7 +1756,8 @@
 
   (define automation-slider-value -100)
   (define pan-automation-color (<ra> :get-instrument-effect-color instrument-id "System Pan"))
-                                 
+
+  (define is-hovering #f)
 
   (set! paint
         (lambda ()
@@ -1756,6 +1768,10 @@
           (define background (if is-on
                                  (<gui> :mix-colors background-color "black" 0.39)
                                  (<gui> :mix-colors background-color "white" 0.95)))
+
+          (if is-hovering
+              (set! background (<gui> :make-color-lighter background 1.2)))
+              
           (<gui> :filled-box slider background 0 0 width height 2 2 *no-gradient*)
           (define col1 (<gui> :mix-colors "white" background 0.4))
           (define col2 (<gui> :mix-colors "#010101" background 0.5))
@@ -1818,6 +1834,12 @@
    (lambda (button state x y)
      (<ra> :set-statusbar-text (<-> "Pan: " (get-pan)))
      (set-curr-instrument-in-mouse-callback instrument-id slider)
+     (cond ((= state *is-entering*)
+            (set! is-hovering #t)
+            (<gui> :update slider))
+           ((= state *is-leaving*)
+            (set! is-hovering #f)
+            (<gui> :update slider)))
      (cond ((and (= button *left-button*)
                  (= state *is-pressing*))
             (set! has-made-undo #f)
@@ -2061,12 +2083,18 @@
   ;;(<gui> :set-min-width volslider 1) ;; ?? Why is this necessary?
   (<gui> :set-min-height volslider (* (get-fontheight) 2)) ;; This is strange. If we don't do this, min-height will be set to approx something that looks very good, but I don't find the call doing that.
 
-  (define (paint-text gui text cut-text-to-fit red-background)
+  (define voltext-is-hovering #f)
+  (define peaktext-is-hovering #f)
+  
+  (define (paint-text gui text cut-text-to-fit red-background is-hovering)
     (define width (<gui> :width gui))
     (define height (<gui> :height gui))
     
     (define col1 (<gui> :mix-colors (if red-background "red" "#010101") background-color 0.7))
-    
+
+    (if is-hovering
+        (set! col1 (<gui> :make-color-lighter col1 1.3)))
+        
     ;; background
     ;;(<gui> :filled-box gui (if red-background "red" background-color) 0 0 width height -1 -1 *no-gradient*)
     
@@ -2088,7 +2116,7 @@
   (when show-voltext
     (set! paint-voltext
           (lambda ()
-            (paint-text voltext (db-to-text (get-volume) #f) #f #f)))
+            (paint-text voltext (db-to-text (get-volume) #f) #f #f voltext-is-hovering)))
     
     (add-safe-paint-callback voltext (lambda x (paint-voltext)))
     ;;(paint-voltext)
@@ -2097,7 +2125,7 @@
   (when show-peaktext
     (set! paint-peaktext
           (lambda ()
-            (paint-text peaktext peaktexttext #f peaktext-is-red)))
+            (paint-text peaktext peaktexttext #f peaktext-is-red peaktext-is-hovering)))
     
     (add-safe-paint-callback peaktext (lambda x (paint-peaktext)))
     ;;(paint-peaktext)
@@ -2120,7 +2148,9 @@
   ;         "peaks0db")
   ;        (else
   ;         "peaks4db")))
-          
+
+  (define is-hovering #f)
+  
   (set! paint-slider
         (lambda ()
           (define volslider-width (<gui> :width volslider))
@@ -2147,6 +2177,10 @@
 ;                              (if is-sink? "#f0f0f0" "#010101")
 ;                              background-color 0.2)) ;; down
           (define col2 (<gui> :mix-colors "#010101" background-color 0.9)) ;; up
+
+          (when is-hovering
+            (set! col2 (<gui> :make-color-lighter col2 1.3))
+            (set! col1 (<gui> :make-color-lighter col1 1.3)))
 
           ;; slider
           (<gui> :filled-box volslider col2 x1 0 x2 height volslider-rounding volslider-rounding) ;; up (fill everything)
@@ -2237,6 +2271,15 @@
       (if is-slider
           (<ra> :set-statusbar-text (<-> (<ra> :get-instrument-name instrument-id) ": " (db-to-text (get-volume) #t))))
       ;;(<ra> :set-statusbar-text (<-> "volume:" (db-to-text (get-volume) #t))))
+
+      (if is-slider
+          (cond ((= state *is-entering*)
+                 (set! is-hovering #t)
+                 (<gui> :update gui))
+                ((= state *is-leaving*)
+                 (set! is-hovering #f)
+                 (<gui> :update gui))))
+      
       (set-curr-instrument-in-mouse-callback instrument-id gui)
       (cond ((and (= button *left-button*)
                   (= state *is-pressing*))
@@ -2278,8 +2321,17 @@
   (when show-voltext
     (add-safe-mouse-callback voltext
                              (lambda (button state x y)
+
                                (<ra> :set-statusbar-text "Click to set new volume.") ;;(<-> (<ra> :get-instrument-name instrument-id) ": " (db-to-text (get-volume) #t) ". Click to set new value"))
                                (set-curr-instrument-in-mouse-callback instrument-id voltext)
+
+                               (cond ((= state *is-entering*)
+                                      (set! voltext-is-hovering #t)
+                                      (<gui> :update voltext))
+                                     ((= state *is-leaving*)
+                                      (set! voltext-is-hovering #f)
+                                      (<gui> :update voltext)))
+                               
                                (cond ((and (= button *right-button*)
                                            (= state *is-pressing*))
                                       (if (and effect-name
@@ -2317,8 +2369,17 @@
 
     (add-safe-mouse-callback peaktext
                              (lambda (button state x y)
+
                                (<ra> :set-statusbar-text "Click to reset peak.") ;;(<-> (<ra> :get-instrument-name instrument-id) ": " (db-to-text (get-volume) #t) ". Click to set new value"))
                                (set-curr-instrument-in-mouse-callback instrument-id peaktext)
+
+                               (cond ((= state *is-entering*)
+                                      (set! peaktext-is-hovering #t)
+                                      (<gui> :update peaktext))
+                                     ((= state *is-leaving*)
+                                      (set! peaktext-is-hovering #f)
+                                      (<gui> :update peaktext)))
+
                                (cond ((and (= button *right-button*)
                                            (= state *is-pressing*))
                                       (if (<ra> :shift-pressed)

@@ -1635,6 +1635,7 @@
   (set! *current-track-num* 0)
   (popup-menu (centtext-popup-elements)))
 
+(<ra> :centtext-visible 0)
 !!#
 
 (define (chancetext-popup-elements)

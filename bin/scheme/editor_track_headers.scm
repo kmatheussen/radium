@@ -137,6 +137,8 @@
      #f
      ))
 
+  (detect-hovering!)
+  
   (define-override (paint)
     (when (< tracknum (<ra> :get-num-tracks))
       (define b 1)
@@ -148,6 +150,7 @@
                                x1 y1 x2 y2
                                :color (or instrument-color
                                           *editor-track-background-color*)
+                               :is-hovering is-hovering
                                )))
 
   )
@@ -209,6 +212,8 @@
      #f
      ))
 
+  (detect-hovering!)
+  
   (define-override (paint)
     (when (< tracknum (<ra> :get-num-tracks))
       (define b 1)
@@ -218,7 +223,9 @@
                         (get-degree-value)
                         #t
                         :background-color (or instrument-color
-                                              *editor-track-background-color*))
+                                              *editor-track-background-color*)
+                        :is-hovering is-hovering
+                        )
       
       '(paint-horizontal-slider gui
                                 value
@@ -421,6 +428,13 @@
                        (+ x1 9) ;; Meter-bredde bør kanskje være oddetall.
                        x1))
 
+  (define (get-text-area-background-color)
+    (define color (or instrument-color
+                      *editor-track-background-color*))
+    (if (name :is-hovering)
+        (set! color (<gui> :make-color-lighter color 1.1)))
+    color)
+              
   (define name (<new> :text-area gui meter-x2 y1 x2 y-split
                       (<-> (if (= start-tracknum end-tracknum)
                                        start-tracknum
@@ -429,8 +443,7 @@
                            (if (<ra> :is-legal-instrument instrument-id)
                                (<ra> :get-instrument-name instrument-id)
                                "(click me)"))
-                      :background-color (or instrument-color
-                                            *editor-track-background-color*)
+                      :background-color get-text-area-background-color
                       :align-left #t
                       :scale-font-size #f
                       :cut-text-to-fit #t
@@ -438,6 +451,8 @@
   
   (add-sub-area-plain! name)
 
+  (name :detect-hovering!)
+  
   (add-mouse-cycle! (lambda (button x* y*)
                       ;;(c-display "hepp:" button x* y*)
                       (define tracknum (get-track-num x* y*))
