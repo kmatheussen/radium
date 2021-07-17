@@ -117,9 +117,9 @@
                              :text-color "tempo_multiplier_slider_text"
                              :border-color "#222222"
                              :border-width 0
-                             :cut-text-to-fit #f
-                             :wrap-lines #f
                              :is-hovering is-hovering
+                             :cut-text-to-fit #f
+                             :wrap-lines #f                             
                              )
     )
   
