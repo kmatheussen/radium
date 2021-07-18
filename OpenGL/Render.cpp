@@ -1619,6 +1619,10 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
       case TR2_STOP:
         highlight = false;
         break;
+      default:
+        R_ASSERT_NON_RELEASE(false);
+        highlight = false;
+        break;
     }
 
     //printf("highlight: %d %p %p\n",highlight,trackrealline->daspitch,trackrealline->dasnote);

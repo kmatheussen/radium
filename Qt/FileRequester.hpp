@@ -34,10 +34,12 @@ namespace radium{
         return QSortFilterProxyModel::filterAcceptsRow(source_row, source_parent);
       }
 
+#if !defined(FOR_WINDOWS)
       void sort(int column, Qt::SortOrder order = Qt::AscendingOrder) override{
         QFileSystemModel* fileModel = qobject_cast<QFileSystemModel*>(sourceModel());
         fileModel->sort(column, order);
       }
+#endif
     };
     
   public:

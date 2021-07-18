@@ -163,6 +163,9 @@ bool CENTTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, s
           UNDO_CANCEL_LAST_UNDO();
           return false;
           break;
+        default:
+          R_ASSERT_NON_RELEASE(false);
+          return false;
       }
       
       int cents = round((note - floor(note)) * 100);
