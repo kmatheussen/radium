@@ -3585,7 +3585,10 @@ void SEQUENCER_delete_seqtrack(int pos){
     if (curr_seqtracknum >= root->song->seqtracks.num_elements){
       new_seqtracknum = root->song->seqtracks.num_elements -1;
       ATOMIC_SET(root->song->curr_seqtracknum, new_seqtracknum); // Set it now, while holding the player lock, to avoid root->song->curr_seqtracknum having an illegal value.
-    }      
+    }
+
+    if (g_curr_seqtrack_under_mouse >= root->song->seqtracks.num_elements)
+      g_curr_seqtrack_under_mouse = root->song->seqtracks.num_elements-1;
   }
 
   if (last_seqtrack_was_visible)
@@ -3910,6 +3913,8 @@ static double find_samplerate_in_old_song_state(hash_t *song_state){
 }
 
 void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
+
+  g_curr_seqtrack_under_mouse = -1;
 
   {
     SEQUENCER_ScopedGfxDisable gfx_disable;

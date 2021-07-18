@@ -206,7 +206,7 @@ struct RT_TimeData_Cache_Handler{
   SeqBlockT *_cache;
   int64_t _play_id;
 
-  using ValType = typeof(SeqBlockT::_last_value);
+  using ValType = decltype(SeqBlockT::_last_value); //typename SeqBlockT::RT_TimeData_Player_Cache::ValType;
   
   RT_TimeData_Cache_Handler(SeqBlockT *cache, int64_t play_id)
     : _cache(cache)
@@ -231,14 +231,22 @@ struct RT_TimeData_Cache_Handler{
     return true;
   }
   
-  static bool is_same_value(ValType value1, ValType value2) {
+  static bool is_same_value(ValType value1, ValType value2) {    
+#if defined(__GNUC__) && __GNUC__ < 9
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#endif
+    
     return (std::is_same<ValType, int>::value
-            ? value1==value2
-            : (std::is_same<ValType, float>::value
-               ? equal_floats(value1, value2)
-               : equal_doubles(value1, value2)
-               )
-            );
+      ? value1==value2
+      : (std::is_same<ValType, float>::value
+         ? equal_floats(value1, value2)
+         : equal_doubles(value1, value2)
+         ));
+
+#if defined(__GNUC__) && __GNUC__ < 9
+#pragma GCC diagnostic pop
+#endif
   }
   
   bool is_same_value(ValType value) const {
