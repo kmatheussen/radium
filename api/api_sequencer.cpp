@@ -3227,7 +3227,10 @@ static void set_curr_seqblock(int64_t seqblockid, bool update_playlist){
   
   if (seqblockid==g_curr_seqblock_id){
 #if  CURR_SEQBLOCK_EQUALS_SEQBLOCKS_UNDER_MOUSE
-    setCurrSeqblockUnderMouse(seqblockid);
+    if (seqblockid >= 0)
+      setCurrSeqblockUnderMouse(seqblockid);
+    else
+      cancelCurrSeqblockUnderMouse();
 #endif
     return;
   }
