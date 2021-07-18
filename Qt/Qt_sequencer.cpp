@@ -693,11 +693,7 @@ private:
       }
 
     //printf("==============CURR: %d\n", last_visible_seqtrack_num);
-    if (g_curr_seqtrack_under_mouse != last_visible_seqtrack_num){
-      g_curr_seqtrack_under_mouse = last_visible_seqtrack_num;
-      SEQUENCER_update(SEQUPDATE_EVERYTHING);
-    }
-
+    setCurrSeqtrackUnderMouse(last_visible_seqtrack_num);
   }
   
 public:
@@ -800,12 +796,8 @@ public:
       return;
     }
 
-    if (_is_sequencer_widget) {
-      if (g_curr_seqtrack_under_mouse != -1){
-        g_curr_seqtrack_under_mouse = -1;
-        SEQUENCER_update(SEQUPDATE_EVERYTHING);
-      }
-    }
+    if (_is_sequencer_widget)
+      setCurrSeqtrackUnderMouse(-1);
     
     API_run_mouse_leave_event_for_custom_widget(SEQUENCER_getWidget(), event);
   }

@@ -600,6 +600,7 @@ static void setCurrSeqtrack2(int seqtracknum, bool called_from_set_curr_seqblock
 
   }
 
+  setCurrSeqtrackUnderMouse(seqtracknum);
 }
 
 void autoscrollSeqtracks(int seqtracknum, bool make_fully_visible){
@@ -3487,6 +3488,13 @@ int getCurrSeqtrackUnderMouse(bool forgiving, bool only_inside_timeline){
   }
   
   return seqtracknum;
+}
+
+void setCurrSeqtrackUnderMouse(int seqtracknum){
+  if (g_curr_seqtrack_under_mouse != seqtracknum){
+    g_curr_seqtrack_under_mouse = seqtracknum;
+    SEQUENCER_update(SEQUPDATE_EVERYTHING); // TODO: This can be optimized by only updating old and new seqtrack + navigators.
+  }
 }
 
 void cancelCurrSeqblockUnderMouse(void){
