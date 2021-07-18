@@ -733,7 +733,11 @@ public:
 
     SCHEME_mousepress(_currentButton, point.x(), point.y());
     //printf("  Press. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
+
+    if (_is_sequencer_widget)
+      maybe_set_curr_seqtrack_num_under_mouse(event.x(), event.y());
   }
+  
   void	fix_mouseMoveEvent(radium::MouseCycleEvent &event) override{
     //printf("sequencer. mouseMove: %d,%d\n", event.x(), event.y());
 
@@ -773,6 +777,9 @@ public:
     SCHEME_mouserelease(_currentButton, point.x(), point.y());
     _currentButton = 0;
     //printf("  Release. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
+
+    if (_is_sequencer_widget)
+      maybe_set_curr_seqtrack_num_under_mouse(event.x(), event.y());
   }
 
   MOUSE_CYCLE_CALLBACKS_FOR_QT;
