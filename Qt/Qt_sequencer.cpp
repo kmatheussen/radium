@@ -173,6 +173,8 @@ static Sequencer_widget *g_sequencer_widget = NULL;
 
 static double get_seqtrack_y1(int seqtracknum);
 static double get_seqtrack_y2(int seqtracknum);
+static double get_seqtrack_x1(void);
+static double get_seqtrack_x2(void);
 static double get_seqtracks_y1(void);
 static double get_seqtracks_y2(void);
 
@@ -655,8 +657,9 @@ private:
   
   void maybe_set_curr_seqtrack_num_under_mouse(float x, float y) {
     int last_visible_seqtrack_num = -1;
-
-    if (y >= get_seqtracks_y1() && y < get_seqtracks_y2() && x >= (SEQUENCER_get_left_part_x1()-getSeqtrackBorderWidth()) && x < SEQTRACK_get_x2(0))
+    //printf("x1: %f. x: %f. x2: %f\n", SEQUENCER_get_left_part_x1()-getSeqtrackBorderWidth(), x, get_seqtrack_x2());
+    
+    if (y >= get_seqtracks_y1() && y < get_seqtracks_y2() && x >= (SEQUENCER_get_left_part_x1()-getSeqtrackBorderWidth()) && x < get_seqtrack_x2())
       for(int i=root->song->topmost_visible_seqtrack;i<root->song->seqtracks.num_elements;i++){
 
         struct SeqTrack *seqtrack = (struct SeqTrack *)root->song->seqtracks.elements[i]; //getSeqtrackFromNum(seqtracknum);
@@ -5792,12 +5795,20 @@ SEQBLOCK_handles(stretch, yfunc_ysplit3, SEQBLOCK_get_y2);
 
 // seqtracks
 
+static double get_seqtrack_x1(void){
+  return g_sequencer_widget->_seqtracks_widget.t_x1;
+}
+
 float SEQTRACK_get_x1(int seqtracknum){
-  return mapToEditorX(g_sequencer_widget, g_sequencer_widget->_seqtracks_widget.t_x1);
+  return mapToEditorX(g_sequencer_widget, get_seqtrack_x1()); //g_sequencer_widget->_seqtracks_widget.t_x1);
+}
+
+static double get_seqtrack_x2(void){
+  return g_sequencer_widget->_seqtracks_widget.t_x2;
 }
 
 float SEQTRACK_get_x2(int seqtracknum){
-  return mapToEditorX(g_sequencer_widget, g_sequencer_widget->_seqtracks_widget.t_x2);
+  return mapToEditorX(g_sequencer_widget, get_seqtrack_x2()); //g_sequencer_widget->_seqtracks_widget.t_x2);
 }
 
 static double get_seqtrack_y1(int seqtracknum){
