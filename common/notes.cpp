@@ -1602,6 +1602,7 @@ static void call_callback_between_nodes(struct SeqTrack *seqtrack,
   }
 }
 
+
 template <class T, class SeqBlockT>
 template <typename TimeData, typename TimeDataVector>
 template <typename ValType>
