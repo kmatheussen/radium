@@ -52,7 +52,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #error "Compiled with -mtune=native or -mtune=corei7"
 #endif
 
-#if !defined(RELEASE)
+#if !defined(RELEASE) && !defined(FOR_WINDOWS)
 #  include <sanitizer/common_interface_defs.h>
 #  if defined(RADIUM_USES_ASAN)
 #    if !__has_feature(address_sanitizer) && !defined(__SANITIZE_ADDRESS__)
