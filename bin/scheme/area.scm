@@ -964,6 +964,7 @@
                                 :cut-text-to-fit #f
                                 :only-show-left-part-if-text-dont-fit #t ;; only make sense to set #f if both scale-font-size and cut-text-to-fit is #f.
                                 :text-is-base64 #f
+                                :light-up-when-hovered #f
                                 )
 
   (define (get-text)
@@ -981,12 +982,18 @@
   (define (get-background-color)
     (and background-color
          (maybe-thunk-value background-color)))
-
+  
+  (if light-up-when-hovered
+      (detect-hovering!))
+  
   (define (paint-text-area gui x1 y1 x2 y2)
     (let ((background-color (get-background-color)))
-      (if background-color
-          ;;(<gui> :filled-box gui background-color x1 y1 x2 y2 border-rounding border-rounding *gradient-vertical-dark-sides* 0.1)))
-          (<gui> :filled-box gui background-color x1 y1 x2 y2 border-rounding border-rounding (if align-right *gradient-diagonal-light-upper-right* *gradient-diagonal-light-upper-left*) 0.1)))
+      (when background-color
+        (if (and light-up-when-hovered
+                 is-hovering)
+            (set! background-color (<gui> :make-color-lighter background-color 1.2)))
+        ;;(<gui> :filled-box gui background-color x1 y1 x2 y2 border-rounding border-rounding *gradient-vertical-dark-sides* 0.1)))
+        (<gui> :filled-box gui background-color x1 y1 x2 y2 border-rounding border-rounding (if align-right *gradient-diagonal-light-upper-right* *gradient-diagonal-light-upper-left*) 0.1)))
     
     (define text (maybe-thunk-value text))
 
@@ -1058,6 +1065,7 @@
                               :scale-font-size #f
                               ;;:only-show-left-part-if-text-dont-fit #f
                               :text-is-base64 get-wide-string
+                              :light-up-when-hovered #t
                               ))
   
   (add-mouse-cycle! :press-func (lambda (button x* y*)
