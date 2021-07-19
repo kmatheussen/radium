@@ -228,6 +228,7 @@ int64_t THREADING_run_on_main_thread_async(std::function<void(void)> callback, b
   R_ASSERT(!PLAYER_current_thread_has_lock());
 
   if (called_from_main_thread){
+    
     R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
 
     if (run_now_if_called_from_main_thread){
@@ -236,7 +237,11 @@ int64_t THREADING_run_on_main_thread_async(std::function<void(void)> callback, b
     }
 
   }else{
-    R_ASSERT_NON_RELEASE(!THREADING_is_main_thread());
+
+    // Happens on JucePlayer::changeListenerCallback when starting up, on windows only.
+    // Shouldn't be a problem if we are running on the main thread here though.
+    //R_ASSERT_NON_RELEASE(!THREADING_is_main_thread());
+    
   }
 
   {

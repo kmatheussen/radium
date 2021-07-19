@@ -125,8 +125,10 @@ public:
   }
   
   void changeListenerCallback(juce::ChangeBroadcaster *source) override {
-    
+
+#if !defined(RELEASE) // Guess we could be called from a realtime thread here.
     printf("Some audio change thing: %p\n", _audio_device_manager.getCurrentAudioDevice());
+#endif
     
     if(_audio_device_manager.getCurrentAudioDevice()!=NULL){
 
@@ -138,7 +140,7 @@ public:
       double new_samplerate = _audio_device_manager.getCurrentAudioDevice()->getCurrentSampleRate();
       _last_reported_samplerate = new_samplerate;
       
-      _settings = _audio_device_manager.createStateXml();
+      _settings = _audio_device_manager.createStateXml(); // This is probably not RT safe, but it's probably not that important.
 
       if (_settings.get()!=NULL) {
 
@@ -167,8 +169,10 @@ public:
       }
       
     }else{
-      
+
+#if !defined(RELEASE) // Guess we could be called from a realtime thread here.
       fprintf(stderr,"Gakkegakke\n");
+#endif
       
     }
   }
@@ -178,11 +182,18 @@ public:
     if (wcslen(settings_string) > 0)
       _settings = juce::XmlDocument::parse(juce::String(settings_string));
 
+    juce::AudioDeviceManager::AudioDeviceSetup preferred;
+    preferred.bufferSize = 1024;
+    preferred.sampleRate = 44100;
+    
     const juce::String error (_audio_device_manager.initialise (8, /* number of input channels */
                                                                 8, /* number of output channels */
                                                                 _settings.get(),
-                                                                true  /* select default device on failure */));
-    
+                                                                true, //,  /* select default device on failure */
+                                                                "",
+                                                                &preferred
+                                                                ));
+ 
     // start the IO device pulling its data from our callback..
     _audio_device_manager.addAudioCallback (this);
       
