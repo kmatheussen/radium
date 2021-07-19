@@ -184,9 +184,11 @@ public:
 
     juce::AudioDeviceManager::AudioDeviceSetup preferred;
     preferred.bufferSize = 1024;
-    preferred.sampleRate = 44100;
+    //preferred.sampleRate = 44100; // It's most important to let the audio device manager try to find something that works with buffersize 1024. Maybe setting samplerate could screw that up.
+    preferred.inputChannels = 0; // We don't want any input channels either, by default, since this can also screw up the sound sometimes.
+    preferred.useDefaultInputChannels = false;
     
-    const juce::String error (_audio_device_manager.initialise (8, /* number of input channels */
+    const juce::String error (_audio_device_manager.initialise (0, /* number of input channels */
                                                                 8, /* number of output channels */
                                                                 _settings.get(),
                                                                 true, //,  /* select default device on failure */
