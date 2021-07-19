@@ -2,7 +2,7 @@
 # Users and packagers: Edit build_*.sh instead.
 #
 
-RADIUM_VERSION = 6.9.82
+RADIUM_VERSION = 6.9.86
 
 
 SHELL := /bin/bash
@@ -77,7 +77,7 @@ PKGqt ?= $(PKG)
 CCC ?= g++
 CC ?= gcc
 CC_STATIC ?= $(CC)
-GCC ?= $(CC)
+GCC ?= gcc
 GPLUSPLUS ?= $(CCC)
 LINKER ?= g++
 
@@ -1015,7 +1015,7 @@ $(T)debug.o:  $(BUILD_DEPENDENCIES) $(CD)debug.c
 	$(CC2) $(CD)debug.c $(OPT) 
 
 $(T)memory.o:  $(BUILD_DEPENDENCIES) $(CD)memory.c
-	$(GCC2) $(CD)memory.c $(OPT)
+	$(CC2) $(CD)memory.c $(OPT)
 
 $(T)validatemem.o:  $(BUILD_DEPENDENCIES) $(CD)validatemem.cpp $(CD)atomic.h
 	$(CCC2) $(CD)validatemem.cpp $(QTOPT)
