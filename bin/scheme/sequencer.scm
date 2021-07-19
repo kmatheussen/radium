@@ -1450,16 +1450,24 @@
       (let ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)))))
         (c-display "POS:" pos)
         (define (create-new-audiofiles)
-          (create-file-requester "Choose audio file(s)" (<ra> :create-illegal-filepath) "audio files" (<ra> :get-audiofile-postfixes) #t "" #t #f -1
+          (create-file-requester "Choose audio file(s)"
+                                 (<ra> :create-illegal-filepath)
+                                 "audio files"
+                                 (<ra> :get-audiofile-postfixes)
+                                 #t ;; for loading
+                                 "" ;; default suffix
+                                 #t ;; several files
+                                 #f ;; is modal
+                                 (<gui> :get-sequencer-gui) ;; parent
                                  (lambda (filenames)
                                    (if (= 1 (length filenames))
                                        (<ra> :create-sample-seqblock seqtracknum (car filenames) pos)
                                        (undo-block
                                         (lambda ()
                                           (for-each (lambda (filename)
-                                                      (<ra> :append-audio-seqtrack)
-                                                      (<ra> :set-seqtrack-name (<ra> :get-path-string (<ra> :get-path-without-dir filename)) (- (<ra> :get-num-seqtracks) 1))
-                                                      (<ra> :create-sample-seqblock (- (<ra> :get-num-seqtracks) 1) filename 0))
+                                                      (define seqtracknum (<ra> :append-audio-seqtrack))
+                                                      (<ra> :set-seqtrack-name (<ra> :get-path-string (<ra> :get-path-without-dir filename)) seqtracknum)
+                                                      (<ra> :create-sample-seqblock seqtracknum filename 0))
                                                     filenames)))))))
         
         (if (<ra> :seqtrack-for-audiofiles seqtracknum)
