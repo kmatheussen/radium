@@ -77,7 +77,7 @@ public:
   }
 
 #if KEEP_PREFS_WINDOW_ON_TOP_REGULARLY
-  void timerCallback() final {
+  void timerCallback() override final {
     //printf("TIMERCALLGACN\n");
     if (!is_showing_RT_message() && !GFX_is_showing_message())
       toFront(false); // Linux: shouldAlsoGainFocus==false doesn't work.
@@ -187,11 +187,33 @@ public:
     //preferred.sampleRate = 44100; // It's most important to let the audio device manager try to find something that works with buffersize 1024. Maybe setting samplerate could screw that up.
     preferred.inputChannels = 0; // We don't want any input channels either, by default, since this can also screw up the sound sometimes.
     preferred.useDefaultInputChannels = false;
+
+#if defined(FOR_WINDOWS)
+    
+    // Force normal shared WASAPI for the default device. We do this to avoid the "Windows Audio (low latency)" device, which seems to be stuck at 480 frames, which is not supported by Radium.
+    
+    for (auto *type : _audio_device_manager.getAvailableDeviceTypes()) {
+      if (type->getTypeName()=="Windows Audio") {
+        
+        printf("Type: %s\n", type->getTypeName().toRawUTF8());
+        
+        int defaultN = type->getDefaultDeviceIndex(false);
+        auto names = type->getDeviceNames(false);
+        
+        if (defaultN >= 0 && defaultN < names.size()) {
+          preferred.outputDeviceName = names[defaultN];
+          printf("   Default: %s\n", preferred.outputDeviceName.toRawUTF8());
+        }
+        
+        break;
+      }
+    }
+#endif
     
     const juce::String error (_audio_device_manager.initialise (0, /* number of input channels */
                                                                 8, /* number of output channels */
                                                                 _settings.get(),
-                                                                true, //,  /* select default device on failure */
+                                                                true, //,  /* select default device on failure */ 
                                                                 "",
                                                                 &preferred
                                                                 ));
