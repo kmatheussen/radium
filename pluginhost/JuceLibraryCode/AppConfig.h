@@ -41,6 +41,8 @@
 #define JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED 1
 
 
+#define JUCE_MODAL_LOOPS_PERMITTED 1
+
 //==============================================================================
 // juce_audio_devices flags:
 

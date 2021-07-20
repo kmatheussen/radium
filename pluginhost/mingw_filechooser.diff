@@ -1,0 +1,30 @@
+diff --git a/pluginhost/JuceLibraryCode/modules/juce_gui_basics/native/juce_win32_FileChooser.cpp b/pluginhost/JuceLibraryCode/modules/juce_gui_basics/native/juce_win32_FileChooser.cpp
+index 7f7d766f8..4f04deb4f 100755
+--- a/pluginhost/JuceLibraryCode/modules/juce_gui_basics/native/juce_win32_FileChooser.cpp
++++ b/pluginhost/JuceLibraryCode/modules/juce_gui_basics/native/juce_win32_FileChooser.cpp
+@@ -23,6 +23,11 @@
+   ==============================================================================
+ */
+ 
++#if JUCE_MINGW
++LWSTDAPI IUnknown_GetWindow (IUnknown* punk, HWND* phwnd);
++#endif
++
++
+ namespace juce
+ {
+ 
+@@ -480,11 +485,13 @@ private:
+ 
+         const Remover remover (*this);
+ 
++       #if ! JUCE_MINGW
+         if (SystemStats::getOperatingSystemType() >= SystemStats::WinVista
+             && customComponent == nullptr)
+         {
+             return openDialogVistaAndUp (async);
+         }
++       #endif
+ 
+         return openDialogPreVista (async);
+     }

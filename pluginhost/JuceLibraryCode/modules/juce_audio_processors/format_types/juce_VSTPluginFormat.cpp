@@ -65,8 +65,8 @@ JUCE_BEGIN_IGNORE_WARNINGS_MSVC (4355)
   #define WM_APPCOMMAND 0x0319
  #endif
 
- extern "C" void _fpreset();
- extern "C" void _clearfp();
+//extern "C" void _fpreset();
+// extern "C" void _clearfp();
 #elif ! JUCE_WINDOWS
  static void _fpreset() {}
  static void _clearfp() {}
