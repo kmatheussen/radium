@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2017 - ROLI Ltd.
+   Copyright (c) 2020 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -19,8 +19,6 @@
 
   ==============================================================================
 */
-
-#include "../../../../../common/RT_memory_allocator_proc.h"
 
 namespace juce
 {
@@ -139,8 +137,6 @@ public:
     */
     int getRawDataSize() const noexcept                 { return size; }
 
-    RT_Mem<uint8> *getRT_Mem() const noexcept { return isHeapAllocated() ? packedData.allocatedData : NULL; }
-              
     //==============================================================================
     /** Returns a human-readable description of the midi message as a string,
         for example "Note On C#3 Velocity 120 Channel 1".
@@ -405,7 +401,7 @@ public:
     /** Returns true if the message is an aftertouch event.
 
         For aftertouch events, use the getNoteNumber() method to find out the key
-        that it applies to, and getAftertouchValue() to find out the amount. Use
+        that it applies to, and getAfterTouchValue() to find out the amount. Use
         getChannel() to find out the channel.
 
         @see getAftertouchValue, getNoteNumber
@@ -862,11 +858,45 @@ public:
     //==============================================================================
     /** Reads a midi variable-length integer.
 
-        @param data             the data to read the number from
-        @param numBytesUsed     on return, this will be set to the number of bytes that were read
+        This signature has been deprecated in favour of the safer
+        readVariableLengthValue.
+
+        The `data` argument indicates the data to read the number from,
+        and `numBytesUsed` is used as an out-parameter to indicate the number
+        of bytes that were read.
     */
-    static int readVariableLengthVal (const uint8* data,
-                                      int& numBytesUsed) noexcept;
+    JUCE_DEPRECATED (static int readVariableLengthVal (const uint8* data,
+                                                       int& numBytesUsed) noexcept);
+
+    /** Holds information about a variable-length value which was parsed
+        from a stream of bytes.
+
+        A valid value requires that `bytesUsed` is greater than 0.
+    */
+    struct VariableLengthValue
+    {
+        VariableLengthValue() = default;
+
+        VariableLengthValue (int valueIn, int bytesUsedIn)
+            : value (valueIn), bytesUsed (bytesUsedIn) {}
+
+        bool isValid() const noexcept  { return bytesUsed > 0; }
+
+        int value = 0;
+        int bytesUsed = 0;
+    };
+
+    /** Reads a midi variable-length integer, with protection against buffer overflow.
+
+        @param data             the data to read the number from
+        @param maxBytesToUse    the number of bytes in the region following `data`
+        @returns                a struct containing the parsed value, and the number
+                                of bytes that were read. If parsing fails, both the
+                                `value` and `bytesUsed` fields will be set to 0 and
+                                `isValid()` will return false
+    */
+    static VariableLengthValue readVariableLengthValue (const uint8* data,
+                                                        int maxBytesToUse) noexcept;
 
     /** Based on the first byte of a short midi message, this uses a lookup table
         to return the message length (either 1, 2, or 3 bytes).
@@ -939,10 +969,8 @@ private:
    #ifndef DOXYGEN
     union PackedData
     {
-      //uint8* allocatedData;
-        RT_Mem<uint8> *allocatedData;
-
-        uint8 asBytes[sizeof (RT_Mem<uint8>*)];
+        uint8* allocatedData;
+        uint8 asBytes[sizeof (uint8*)];
     };
 
     PackedData packedData;
@@ -951,7 +979,7 @@ private:
    #endif
 
     inline bool isHeapAllocated() const noexcept  { return size > (int) sizeof (packedData); }
-    inline uint8* getData() const noexcept        { return isHeapAllocated() ? RT_data(packedData.allocatedData) : (uint8*) packedData.asBytes; }
+    inline uint8* getData() const noexcept        { return isHeapAllocated() ? packedData.allocatedData : (uint8*) packedData.asBytes; }
     uint8* allocateSpace (int);
 };
 

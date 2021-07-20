@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2017 - ROLI Ltd.
+   Copyright (c) 2020 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -70,10 +70,14 @@ bool JUCE_CALLTYPE Process::openEmailWithAttachments (const String& /* targetEma
 class WebInputStream::Pimpl
 {
 public:
-    Pimpl (WebInputStream& pimplOwner, const URL& urlToCopy, bool shouldUsePost)
-        : owner (pimplOwner), url (urlToCopy),
-          isPost (shouldUsePost), httpRequestCmd (shouldUsePost ? "POST" : "GET")
-    {}
+    Pimpl (WebInputStream& pimplOwner, const URL& urlToCopy, bool addParametersToBody)
+        : owner (pimplOwner),
+          url (urlToCopy),
+          addParametersToRequestBody (addParametersToBody),
+          hasBodyDataToSend (addParametersToRequestBody || url.hasBodyDataToSend()),
+          httpRequestCmd (hasBodyDataToSend ? "POST" : "GET")
+    {
+    }
 
     ~Pimpl()
     {
@@ -127,7 +131,7 @@ public:
                 return false;
         }
 
-        address = url.toString (! isPost);
+        address = url.toString (! addParametersToRequestBody);
         statusCode = createConnection (listener, numRedirectsToFollow);
 
         return statusCode != 0;
@@ -256,7 +260,7 @@ private:
     MemoryBlock postData;
     int64 contentLength = -1, position = 0;
     bool finished = false;
-    const bool isPost;
+    const bool addParametersToRequestBody, hasBodyDataToSend;
     int timeOutMs = 0;
     int numRedirectsToFollow = 5;
     String httpRequestCmd;
@@ -285,8 +289,11 @@ private:
     {
         closeSocket (false);
 
-        if (isPost)
-            WebInputStream::createHeadersAndPostData (url, headers, postData);
+        if (hasBodyDataToSend)
+            WebInputStream::createHeadersAndPostData (url,
+                                                      headers,
+                                                      postData,
+                                                      addParametersToRequestBody);
 
         auto timeOutTime = Time::getMillisecondCounter();
 
@@ -333,7 +340,7 @@ private:
 
         struct addrinfo* result = nullptr;
 
-        if (getaddrinfo (serverName.toUTF8(), String (port).toUTF8(), &hints, &result) != 0 || result == 0)
+        if (getaddrinfo (serverName.toUTF8(), String (port).toUTF8(), &hints, &result) != 0 || result == nullptr)
             return 0;
 
         {
@@ -351,7 +358,7 @@ private:
 
         int receiveBufferSize = 16384;
         setsockopt (socketHandle, SOL_SOCKET, SO_RCVBUF, (char*) &receiveBufferSize, sizeof (receiveBufferSize));
-        setsockopt (socketHandle, SOL_SOCKET, SO_KEEPALIVE, 0, 0);
+        setsockopt (socketHandle, SOL_SOCKET, SO_KEEPALIVE, nullptr, 0);
 
       #if JUCE_MAC
         setsockopt (socketHandle, SOL_SOCKET, SO_NOSIGPIPE, 0, 0);
@@ -367,8 +374,8 @@ private:
         freeaddrinfo (result);
 
         {
-            const MemoryBlock requestHeader (createRequestHeader (hostName, hostPort, proxyName, proxyPort, hostPath,
-                                                                  address, headers, postData, isPost, httpRequestCmd));
+            const MemoryBlock requestHeader (createRequestHeader (hostName, hostPort, proxyName, proxyPort, hostPath, address,
+                                                                  headers, postData, httpRequestCmd));
 
             if (! sendHeader (socketHandle, requestHeader, timeOutTime, owner, listener))
             {
@@ -474,7 +481,7 @@ private:
                                             const String& proxyName, int proxyPort,
                                             const String& hostPath, const String& originalURL,
                                             const String& userHeaders, const MemoryBlock& postData,
-                                            bool isPost, const String& httpRequestCmd)
+                                            const String& httpRequestCmd)
     {
         MemoryOutputStream header;
 
@@ -488,15 +495,18 @@ private:
                                                                         "." JUCE_STRINGIFY(JUCE_BUILDNUMBER));
         writeValueIfNotPresent (header, userHeaders, "Connection:", "close");
 
-        if (isPost)
-            writeValueIfNotPresent (header, userHeaders, "Content-Length:", String ((int) postData.getSize()));
+        const auto postDataSize = postData.getSize();
+        const auto hasPostData = postDataSize > 0;
+
+        if (hasPostData)
+            writeValueIfNotPresent (header, userHeaders, "Content-Length:", String ((int) postDataSize));
 
         if (userHeaders.isNotEmpty())
             header << "\r\n" << userHeaders;
 
         header << "\r\n\r\n";
 
-        if (isPost)
+        if (hasPostData)
             header << postData;
 
         return header.getMemoryBlock();
@@ -576,7 +586,7 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Pimpl)
 };
 
-URL::DownloadTask* URL::downloadToFile (const File& targetLocation, String extraHeaders, DownloadTask::Listener* listener, bool shouldUsePost)
+std::unique_ptr<URL::DownloadTask> URL::downloadToFile (const File& targetLocation, String extraHeaders, DownloadTask::Listener* listener, bool shouldUsePost)
 {
     return URL::DownloadTask::createFallbackDownloader (*this, targetLocation, extraHeaders, listener, shouldUsePost);
 }

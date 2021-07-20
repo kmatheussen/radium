@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2017 - ROLI Ltd.
+   Copyright (c) 2020 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -54,7 +54,7 @@ public:
         int numArguments;
     };
 
-    using NativeFunction = std::function<var(const NativeFunctionArgs&)>;
+    using NativeFunction = std::function<var (const NativeFunctionArgs&)>;
 
     //==============================================================================
     /** Creates a void variant. */
@@ -283,18 +283,8 @@ public:
 
 private:
     //==============================================================================
-    class VariantType;
-    class VariantType_Void;
-    class VariantType_Undefined;
-    class VariantType_Int;
-    class VariantType_Int64;
-    class VariantType_Double;
-    class VariantType_Bool;
-    class VariantType_String;
-    class VariantType_Object;
-    class VariantType_Array;
-    class VariantType_Binary;
-    class VariantType_Method;
+    struct VariantType;
+    struct Instance;
 
     union ValueUnion
     {
