@@ -1271,6 +1271,7 @@ static bool add_vst_plugin_type(QFileInfo file_info, QString file_or_identifier,
   QString basename = file_info.fileName();
 
 #if defined(FOR_MACOSX)
+  
   const char *plugin_name = talloc_strdup(QFileInfo(QDir(file_or_identifier).dirName()).baseName().toUtf8().constData());
   //filename = file_or_identifier + "/Contents/MacOS/"; // Confusion: this is actually the name of a directory, not a filename. The dirname is used in VST_get_uids.
   if(QFileInfo(file_or_identifier + "/Contents/MacOS/").exists()==false) {
@@ -1280,6 +1281,7 @@ static bool add_vst_plugin_type(QFileInfo file_info, QString file_or_identifier,
   }
   
 #else
+  
   if(file_info.suffix().toLower()==VST_SUFFIX) {
     basename.resize(basename.size()-strlen(VST_SUFFIX)-1);
   } else {
@@ -1287,6 +1289,7 @@ static bool add_vst_plugin_type(QFileInfo file_info, QString file_or_identifier,
     container_type_name = "VST3";
   }
   const char *plugin_name = talloc_strdup(basename.toUtf8().constData());
+  
 #endif
 
   if (is_juce_plugin) {
@@ -1341,13 +1344,25 @@ static int create_vst_plugins_recursively(const QString main_path, const QString
     }
 
 #if FOR_MACOSX
+    
     QDir dir(file_info.absoluteFilePath() + "/Contents/MacOS/");
     if (dir.exists()) {
       add_vst_plugin_type(file_info, file_info.absoluteFilePath(), is_juce_plugin, container_type_name);
       ret++;
     } else
-#endif
+
+#else
       
+    if(file_info.suffix().toLower()==VST_SUFFIX){
+      if(add_vst_plugin_type(file_info, file_path, is_juce_plugin, "VST"))
+        ret++;
+    }else if(file_info.suffix().toLower()==VST3_SUFFIX){
+      if(add_vst_plugin_type(file_info, file_path, is_juce_plugin, "VST3"))
+        ret++;
+    } else
+      
+#endif
+    
       if (file_info.isDir() && file_info.dir().dirName()!="unstable") {
 
         PR_add_menu_entry(PluginMenuEntry::level_up(file_info.baseName()));
@@ -1368,15 +1383,6 @@ static int create_vst_plugins_recursively(const QString main_path, const QString
           return ret;
       }
     
-#if !defined(FOR_MACOSX)       
-      else if(file_info.suffix().toLower()==VST_SUFFIX){
-        if(add_vst_plugin_type(file_info, file_path, is_juce_plugin, "VST"))
-          ret++;
-      }else if(file_info.suffix().toLower()==VST3_SUFFIX){
-        if(add_vst_plugin_type(file_info, file_path, is_juce_plugin, "VST3"))
-          ret++;
-      }
-#endif
   }
 
   return ret;

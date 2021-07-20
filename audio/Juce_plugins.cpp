@@ -258,7 +258,7 @@ namespace{
     Listener(SoundPlugin *plugin) : _plugin(plugin) {}
     
     // Receives a callback when a parameter is changed.
-    void 	audioProcessorParameterChanged (juce::AudioProcessor *processor, int parameterIndex, float newValue) override {
+    void audioProcessorParameterChanged (juce::AudioProcessor *processor, int parameterIndex, float newValue) override {
 
 #if !defined(RELEASE)
       printf("   JUCE listener: parm %d changed to %f. has_inited: %d. is_shutting_down: %d\n",parameterIndex, newValue, ATOMIC_GET(_plugin->MT_has_initialized), ATOMIC_GET(_plugin->is_shutting_down));
@@ -274,18 +274,22 @@ namespace{
     }
  
     // Called to indicate that something else in the plugin has changed, like its program, number of parameters, etc.
-    void 	audioProcessorChanged (juce::AudioProcessor *processor) override {
+    void audioProcessorChanged (juce::AudioProcessor *processor
+#if JUCE_MAJOR_VERSION>5
+                                , const juce::AudioProcessorListener::ChangeDetails &details
+#endif
+                                ) override {
 #if !defined(RELEASE)
       printf("    JUCE listener: audioProcessorChanged...\n");
 #endif
-      volatile struct Patch *patch = _plugin->patch;
+      struct Patch *patch = _plugin->patch;
       if (patch != NULL)
         ATOMIC_SET(patch->widget_needs_to_be_updated, true);
     }
  
 
     //Indicates that a parameter change gesture has started.
-    void 	audioProcessorParameterChangeGestureBegin (juce::AudioProcessor *processor, int parameterIndex) override {
+    void audioProcessorParameterChangeGestureBegin (juce::AudioProcessor *processor, int parameterIndex) override {
 #if !defined(RELEASE)
       printf("    JUCE listener: gesture starts for %d\n",parameterIndex);
 #endif
@@ -576,7 +580,7 @@ namespace{
   //int button_height = 10;
 
   struct ToolTipMouseListener : public juce::MouseListener {
-    void mouseMove (const juce::MouseEvent &event){
+    void mouseMove (const juce::MouseEvent &event) override {
       gui_toolTip("Make plugin take care of scaling the user interface itself.\n"
                   "\n"
                   "Disabling this option can fix strange graphics or strange\n"
@@ -1328,7 +1332,7 @@ static void findMaxTotalChannels(juce::AudioProcessor* const filter,
 }
 
 // 
-static void RT_MIDI_send_msg_to_patch_receivers2(struct SeqTrack *seqtrack, struct Patch *patch, juce::MidiMessage message, int64_t seq_time){       
+static void RT_MIDI_send_msg_to_patch_receivers2(struct SeqTrack *seqtrack, struct Patch *patch, const juce::MidiMessage &message, int64_t seq_time){       
   if (message.isNoteOn()) {
     //printf("Out. Sending note ON %d\n",  message.getNoteNumber());
     note_t note = create_note_t(NULL,
@@ -1537,15 +1541,26 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
     if (RT_do_send_MIDI_to_receivers(plugin)){
     
       struct Patch *patch = plugin->patch;
-      
+
+#if JUCE_MAJOR_VERSION<6
       juce::MidiBuffer::Iterator iterator(data->midi_buffer);
+#endif
       
       RT_PLAYER_runner_lock();{ // We obtain this lock since RT_PATCH_send_play_note_to_receivers and so forth are not thread safe.
+
+#if JUCE_MAJOR_VERSION>5
+        for (const auto meta_data : data->midi_buffer) {
+          int samplePosition = meta_data.samplePosition;
+          int len = meta_data.numBytes;
+          
+#else
         juce::MidiMessage message;
         int samplePosition;
         
         while(iterator.getNextEvent(message, samplePosition)){
-          
+          int len = message.getRawDataSize();
+#endif
+ 
 #ifndef RELEASE
           if (samplePosition >= num_frames || samplePosition < 0)
             RT_message("The instrument named \"%s\" of type %s/%s\n"
@@ -1561,8 +1576,6 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
           if (samplePosition < 0)
             samplePosition = 0;
           
-          int len = message.getRawDataSize();
-          
 #ifndef RELEASE
           R_ASSERT(len > 0);
 #endif
@@ -1574,6 +1587,10 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
               int64_t delta_time = PLAYER_get_block_delta_time(seqtrack, seqtrack->start_time+samplePosition);
               
               int64_t radium_time = seqtrack->start_time + delta_time;
+
+#if JUCE_MAJOR_VERSION>5
+              const juce::MidiMessage message = meta_data.getMessage();
+#endif
               
               RT_MIDI_send_msg_to_patch_receivers2(seqtrack, (struct Patch*)patch, message, radium_time);            
             }

@@ -197,8 +197,8 @@ public:
         
         printf("Type: %s\n", type->getTypeName().toRawUTF8());
         
-        int defaultN = type->getDefaultDeviceIndex(false);
-        auto names = type->getDeviceNames(false);
+        const int defaultN = type->getDefaultDeviceIndex(false);
+        const auto names = type->getDeviceNames(false);
         
         if (defaultN >= 0 && defaultN < names.size()) {
           preferred.outputDeviceName = names[defaultN];

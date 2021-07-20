@@ -43,6 +43,14 @@ Changes 6.9.82 -> 6.9.86:
 * Editor: Improve logic for whether to show the
   centtext subtrack or not.
 * Editor: Convert pitches to TimeData.
+  * The most notable change is that any editing is
+    heard immediately if playing block or song at
+    the same time.
+  * Using less CPU cache. CPU usage might be notably
+    lower after notes themselves have been converted
+    to the new data structure.
+  * Necessary for future work such as replacing
+    OpenGL with Vulkan.
 * Editor: Fix transpose velocity.
 * Build: Fix compiling for LLVM12 (Teteros)
 * Editor: Let the window that shows the
