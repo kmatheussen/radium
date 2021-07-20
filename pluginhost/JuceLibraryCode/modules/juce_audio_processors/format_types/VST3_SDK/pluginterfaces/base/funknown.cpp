@@ -68,7 +68,9 @@ namespace FUnknownPrivate {
 int32 PLUGIN_API atomicAdd (int32& var, int32 d)
 {
 #if SMTG_OS_WINDOWS
-	return InterlockedExchangeAdd (&var, d) + d;
+	__gnu_cxx::__atomic_add (&var, d);
+	return var;
+        //	return InterlockedExchangeAdd (&var, d) + d;
 #elif SMTG_OS_MACOS
 	return OSAtomicAdd32Barrier (d, (int32_t*)&var);
 #elif SMTG_OS_LINUX

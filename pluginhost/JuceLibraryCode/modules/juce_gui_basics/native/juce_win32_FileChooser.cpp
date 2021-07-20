@@ -23,6 +23,11 @@
   ==============================================================================
 */
 
+#if JUCE_MINGW
+LWSTDAPI IUnknown_GetWindow (IUnknown* punk, HWND* phwnd);
+#endif
+
+
 namespace juce
 {
 
@@ -480,11 +485,13 @@ private:
 
         const Remover remover (*this);
 
+       #if ! JUCE_MINGW
         if (SystemStats::getOperatingSystemType() >= SystemStats::WinVista
             && customComponent == nullptr)
         {
             return openDialogVistaAndUp (async);
         }
+       #endif
 
         return openDialogPreVista (async);
     }

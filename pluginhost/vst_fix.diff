@@ -1,0 +1,15 @@
+diff --git a/pluginhost/JuceLibraryCode/modules/juce_audio_processors/format_types/juce_VSTPluginFormat.cpp b/pluginhost/JuceLibraryCode/modules/juce_audio_processors/format_types/juce_VSTPluginFormat.cpp
+index 647a6b55b..736909baa 100644
+--- a/pluginhost/JuceLibraryCode/modules/juce_audio_processors/format_types/juce_VSTPluginFormat.cpp
++++ b/pluginhost/JuceLibraryCode/modules/juce_audio_processors/format_types/juce_VSTPluginFormat.cpp
+@@ -65,8 +65,8 @@ JUCE_BEGIN_IGNORE_WARNINGS_MSVC (4355)
+   #define WM_APPCOMMAND 0x0319
+  #endif
+ 
+- extern "C" void _fpreset();
+- extern "C" void _clearfp();
++//extern "C" void _fpreset();
++// extern "C" void _clearfp();
+ #elif ! JUCE_WINDOWS
+  static void _fpreset() {}
+  static void _clearfp() {}
