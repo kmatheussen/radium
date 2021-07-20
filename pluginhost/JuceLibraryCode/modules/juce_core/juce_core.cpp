@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2017 - ROLI Ltd.
+   Copyright (c) 2020 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -36,9 +36,10 @@
 
 #include "juce_core.h"
 
-#include <locale>
 #include <cctype>
 #include <cstdarg>
+#include <locale>
+#include <thread>
 
 #if ! JUCE_ANDROID
  #include <sys/timeb.h>
@@ -53,10 +54,9 @@
   #include <cstdio>
   #include <locale.h>
  #else
-  #pragma warning (push)
-  #pragma warning (disable: 4091)
+  JUCE_BEGIN_IGNORE_WARNINGS_MSVC (4091)
   #include <Dbghelp.h>
-  #pragma warning (pop)
+  JUCE_END_IGNORE_WARNINGS_MSVC
 
   #if ! JUCE_DONT_AUTOLINK_TO_WIN32_LIBRARIES
    #pragma comment (lib, "DbgHelp.lib")
@@ -70,6 +70,16 @@
   #include <sys/errno.h>
   #include <unistd.h>
   #include <netinet/in.h>
+ #endif
+
+ #if JUCE_WASM
+  #include <stdio.h>
+  #include <sys/types.h>
+  #include <sys/socket.h>
+  #include <errno.h>
+  #include <unistd.h>
+  #include <netinet/in.h>
+  #include <sys/stat.h>
  #endif
 
  #if JUCE_LINUX
@@ -92,7 +102,7 @@
  #include <net/if.h>
  #include <sys/ioctl.h>
 
- #if ! JUCE_ANDROID
+ #if ! (JUCE_ANDROID || JUCE_WASM)
   #include <execinfo.h>
  #endif
 #endif
@@ -100,7 +110,6 @@
 #if JUCE_MAC || JUCE_IOS
  #include <xlocale.h>
  #include <mach/mach.h>
- #include <signal.h>
 #endif
 
 #if JUCE_ANDROID
@@ -125,6 +134,7 @@
 #include "containers/juce_ReferenceCountedArray.cpp"
 #include "containers/juce_SparseSet.cpp"
 #include "files/juce_DirectoryIterator.cpp"
+#include "files/juce_RangedDirectoryIterator.cpp"
 #include "files/juce_File.cpp"
 #include "files/juce_FileInputStream.cpp"
 #include "files/juce_FileOutputStream.cpp"
@@ -136,6 +146,7 @@
 #include "maths/juce_Expression.cpp"
 #include "maths/juce_Random.cpp"
 #include "memory/juce_MemoryBlock.cpp"
+#include "memory/juce_AllocationHooks.cpp"
 #include "misc/juce_RuntimePermissions.cpp"
 #include "misc/juce_Result.cpp"
 #include "misc/juce_Uuid.cpp"
@@ -228,14 +239,20 @@
  #include "native/juce_android_Threads.cpp"
  #include "native/juce_android_RuntimePermissions.cpp"
 
+#elif JUCE_WASM
+ #include "native/juce_wasm_SystemStats.cpp"
+
 #endif
 
-#include "threads/juce_ChildProcess.cpp"
 #include "threads/juce_HighResolutionTimer.cpp"
 #include "threads/juce_WaitableEvent.cpp"
 #include "network/juce_URL.cpp"
-#include "network/juce_WebInputStream.cpp"
-#include "streams/juce_URLInputSource.cpp"
+
+#if ! JUCE_WASM
+ #include "threads/juce_ChildProcess.cpp"
+ #include "network/juce_WebInputStream.cpp"
+ #include "streams/juce_URLInputSource.cpp"
+#endif
 
 //==============================================================================
 #if JUCE_UNIT_TESTS
