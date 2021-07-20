@@ -65,14 +65,14 @@ static void add_descriptions_from_plugin_file(juce::OwnedArray<juce::PluginDescr
   juce::VSTPluginFormat vst2_format;
   vst2_format.findAllTypesForFile(descriptions, description_filename);
     
-#if !defined(FOR_LINUX)
-    juce::VST3PluginFormat vst3_format;
-    vst3_format.findAllTypesForFile(descriptions, description_filename);
+#if !defined(FOR_LINUX) || JUCE_MAJOR_VERSION>5
+  juce::VST3PluginFormat vst3_format;
+  vst3_format.findAllTypesForFile(descriptions, description_filename);
 #endif
     
 #if FOR_MACOSX
-    juce::AudioUnitPluginFormat au_format;
-    au_format.findAllTypesForFile(descriptions, description_filename);
+  juce::AudioUnitPluginFormat au_format;
+  au_format.findAllTypesForFile(descriptions, description_filename);
 #endif
 
   //}CRASHREPORTER_do_report();
