@@ -118,7 +118,7 @@ struct Library{
 
 private:
   QLibraryHolder _qlibrary;
-  
+
   void unload(void){
     
     R_ASSERT_NON_RELEASE(_qlibrary.has_library());
@@ -934,6 +934,8 @@ static void maybe_create_cache_file_for_plugin(const SoundPluginType *plugin_typ
   HASH_put_int(state, "uses_two_handles", type_data->uses_two_handles);
                 
   filepath_t filename = get_instance_cache_filename(library, type_data->index);
+
+  printf("    CACHE filename: -%S-\n", filename.id);
   
   radium::ScopedWriteFile file(filename);
 
@@ -1089,8 +1091,7 @@ static void add_ladspa_plugin_type(const QFileInfo &file_info){
   
   QString filename = file_info.absoluteFilePath();
   
-  fprintf(stderr,"\"%s\"... ",filename.toUtf8().constData());
-  fflush(stderr);
+  printf("\"%s\"... ",filename.toUtf8().constData());
 
   Library *library = new Library(filename);
   
@@ -1117,8 +1118,8 @@ static void add_ladspa_plugin_type(const QFileInfo &file_info){
     
   } else {
 
-    QLibrary *qlibrary = new QLibrary(filename);
-
+    QScopedPointer<QLibrary> qlibrary(new QLibrary(filename)); // There's probably nothing to gain by getting QLibrary from 'library'. We are only getting parameters and so forth here, not using the plugin.
+    
     LADSPA_Descriptor_Function get_descriptor_func = (LADSPA_Descriptor_Function) qlibrary->resolve("ladspa_descriptor");
 
     if(get_descriptor_func==NULL){
@@ -1160,8 +1161,6 @@ static void add_ladspa_plugin_type(const QFileInfo &file_info){
       }
       
       QString error_string = qlibrary->errorString();
-
-      delete qlibrary;
 
       fprintf(stderr,"(failed: \"%s\") ", error_string.toUtf8().constData());
       fflush(stderr);
@@ -1506,5 +1505,7 @@ void create_ladspa_plugins(void){
 
   }
 
+  printf("\n");
+  
   init_menues();
 }
