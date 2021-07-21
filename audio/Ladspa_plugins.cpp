@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QFileInfo>
 #include <QLibrary>
 #include <QDir>
+#include <QDirIterator>
 #include <QHash>
 
 #if defined(__linux__)
@@ -1086,10 +1087,10 @@ static void maybe_create_cache_file_for_library(const Library *library){
 
 bool g_has_added_system_pitchshift = false;
 
-static void add_ladspa_plugin_type(const QFileInfo &file_info){
+static void add_ladspa_plugin_type(QString filename) {
   //return; // <- TODO: ThreadSanitizer complains on somethine when loading each ladspa plugins, but there is no proper backtrace so I haven't taken the time to find the cause of it yet.
   
-  QString filename = file_info.absoluteFilePath();
+  //QString filename = file_info.absoluteFilePath();
   
   printf("\"%s\"... ",filename.toUtf8().constData());
 
@@ -1490,18 +1491,31 @@ void create_ladspa_plugins(void){
 
   for(QString dirname : ladspa_path){
 
+#if 1
+    
     QDir dir(dirname);
 
     dir.setFilter(QDir::Files | QDir::NoDotAndDotDot);
     dir.setSorting(QDir::Name);
+
+    QStringList list = dir.entryList();
+
+    for (QString filename : list)
+      if(filename.endsWith(LIB_SUFFIX))
+        add_ladspa_plugin_type(dirname + QDir::separator() + filename);
     
-    QFileInfoList list = dir.entryInfoList();
+#else
+
+    // no sorting
     
-    for (int i = 0; i < list.size(); ++i) {
-      QFileInfo fileInfo = list.at(i);
-      if(fileInfo.suffix()==LIB_SUFFIX)
-        add_ladspa_plugin_type(fileInfo);
+    QDirIterator it(dirname, QDir::Files | QDir::NoDotAndDotDot, QDirIterator::FollowSymlinks);
+    while (it.hasNext()) {
+      QString path = it.next();
+      if(path.endsWith(LIB_SUFFIX))
+        add_ladspa_plugin_type(path);
     }
+    
+#endif
 
   }
 
