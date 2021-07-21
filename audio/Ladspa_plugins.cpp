@@ -63,6 +63,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Mixer_proc.h"
 
 namespace{
+  
 struct Data{
   LADSPA_Handle handles[2];
   float *control_values;  
@@ -73,22 +74,66 @@ struct Data{
   float latency_output_control_port;
 };
 
-struct Library{ // Used to avoid having lots of unused dynamic libraries loaded into memory at all time (and sometimes using up TLS)
+ 
+class QLibraryHolder{
+  QString _filename;
+  QLibrary *_qlibrary = NULL;
+
+public:
+  
+  QLibraryHolder(QString filename)
+    : _filename(filename)
+  {}
+
+  QLibrary *get(void){
+    if (_qlibrary == NULL)
+      _qlibrary = new QLibrary(_filename);
+
+    return _qlibrary;
+  }
+
+  bool has_library(void){
+    return _qlibrary != NULL;
+  }
+
+  bool is_loaded(void){
+    return _qlibrary!=NULL && _qlibrary->isLoaded();
+  }
+  
+  void maybe_unload(void){
+    if (_qlibrary != NULL)
+      _qlibrary->unload();
+  }
+};
+ 
+
+// Used to avoid having lots of unused dynamic libraries loaded into memory at all time (and sometimes using up TLS)
+struct Library{
+  
   const wchar_t *filename = NULL; // used for error messages
-  QLibrary *qlibrary = NULL;
   LADSPA_Descriptor_Function get_descriptor_func = NULL;
   int num_instances = 0;
   int num_library_references = 0; // library is unloaded when this value decreases from 1 to 0, and loaded when increasing from 0 to 1.
   int num_times_loaded = 0; // for debugging
 
+private:
+  QLibraryHolder _qlibrary;
+  
   void unload(void){
-    qlibrary->unload();
+    
+    R_ASSERT_NON_RELEASE(_qlibrary.has_library());
+    
+    _qlibrary.maybe_unload();
+
     get_descriptor_func = NULL;
   }
 
-  bool ensure_descriptor_func(void){
+  
+  bool load_descriptor_func(void){
 
-    LADSPA_Descriptor_Function get_descriptor_func = (LADSPA_Descriptor_Function) qlibrary->resolve("ladspa_descriptor");
+    R_ASSERT_NON_RELEASE(this->get_descriptor_func==NULL);
+    
+    LADSPA_Descriptor_Function get_descriptor_func = (LADSPA_Descriptor_Function) _qlibrary.get()->resolve("ladspa_descriptor");
     
     if(get_descriptor_func==NULL){
       GFX_Message(NULL, "Unable to load plugin. Has the plugin file \"%S\" disappeared?", filename);
@@ -99,13 +144,39 @@ struct Library{ // Used to avoid having lots of unused dynamic libraries loaded 
     return true;
   }
 
-  bool add_reference(void){
+public:
+  Library(QString qfilename)
+    : _qlibrary(qfilename)
+  {
+    filename = STRING_create(qfilename, false); // ("false" means not GC-allocated)
+  }
+
+#if !defined(RELEASE)
+  ~Library(){
+    abort(); // not supposed to happen
+  }
+#endif
   
-    if (num_library_references==0){
-      printf("**** Loading %S\n",filename);
+  bool add_reference(void){
+
+    R_ASSERT_NON_RELEASE(num_library_references >= 0);
       
-      if (!ensure_descriptor_func())
+    if (num_library_references==0){
+      R_ASSERT_NON_RELEASE(!_qlibrary.is_loaded());
+                           
+      printf("**** Loading %S\n",filename);
+
+      _qlibrary.get()->load();
+      
+      if (!load_descriptor_func()) {
+        unload();
         return false;
+      }
+      
+    } else {
+
+      R_ASSERT_NON_RELEASE(_qlibrary.is_loaded());
+      
     }
     
     num_library_references++;
@@ -115,6 +186,9 @@ struct Library{ // Used to avoid having lots of unused dynamic libraries loaded 
   }
 
   void remove_reference(void){
+    R_ASSERT_NON_RELEASE(num_library_references > 0);
+    R_ASSERT_NON_RELEASE(_qlibrary.is_loaded());
+        
     num_library_references--;
 
     if (num_library_references==0) {
@@ -1018,11 +1092,7 @@ static void add_ladspa_plugin_type(const QFileInfo &file_info){
   fprintf(stderr,"\"%s\"... ",filename.toUtf8().constData());
   fflush(stderr);
 
-  QLibrary *qlibrary = new QLibrary(filename);
-
-  Library *library = new Library;
-  library->qlibrary = qlibrary;
-  library->filename = STRING_create(filename, false); // ("false" means not GC-allocated)
+  Library *library = new Library(filename);
   
   //printf("Resolved \"%s\"\n",myLib.fileName().toUtf8().constData());
 
@@ -1046,6 +1116,8 @@ static void add_ladspa_plugin_type(const QFileInfo &file_info){
       addit(NULL, index, false);
     
   } else {
+
+    QLibrary *qlibrary = new QLibrary(filename);
 
     LADSPA_Descriptor_Function get_descriptor_func = (LADSPA_Descriptor_Function) qlibrary->resolve("ladspa_descriptor");
 
@@ -1088,8 +1160,9 @@ static void add_ladspa_plugin_type(const QFileInfo &file_info){
       }
       
       QString error_string = qlibrary->errorString();
-      
+
       delete qlibrary;
+
       fprintf(stderr,"(failed: \"%s\") ", error_string.toUtf8().constData());
       fflush(stderr);
       
@@ -1110,8 +1183,6 @@ static void add_ladspa_plugin_type(const QFileInfo &file_info){
     }
 
     maybe_create_cache_file_for_library(library);
-      
-    library->unload();
   }
 
 }
