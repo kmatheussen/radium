@@ -50,8 +50,8 @@ static void show_alert(juce::String message){
 #else
   juce::initialiseJuce_GUI();
   juce::AlertWindow::showMessageBox(juce::AlertWindow::AlertIconType::WarningIcon,
-                              "Radium plugin scanner",
-                              message);
+                                    "Radium plugin scanner",
+                                    message);
 #endif
 }
 
