@@ -72,6 +72,7 @@ static double g_last_resize_time = -1;
 #include <QGLFormat>
 #include <QDebug>
 #include <QElapsedTimer>
+#include <QOperatingSystemVersion>
 
 #define GE_DRAW_VL
 
@@ -839,6 +840,12 @@ class MyQtThreadedWidget
     
 public:
 
+#if defined(FOR_MACOSX)
+  const bool _use_cover = QOperatingSystemVersion::current() < QOperatingSystemVersion::MacOSBigSur;
+#else
+  constexpr bool _use_cover = true;
+#endif
+  
   int current_width;
   int current_height;
   
@@ -1783,7 +1790,13 @@ private:
 
   
   void hide_cover(void){
+
+#if !defined(FOR_MACOSX)
+    if (!_use_cover)
+      return;
+#endif
     
+
 #if USE_COVER
     IsAlive is_alive(this);
 
@@ -1791,7 +1804,7 @@ private:
 
 #if defined(FOR_MACOSX)
         // Workaround for sequencer, playlist and mixer not being updated when moving dragger.
-        // Doesn't seem like Qt care very much about macos. There are lots of these types of bugs coming and going for each new version of Qt.
+        // Doesn't seem like Qt cares very much about macos. There are lots of these types of bugs coming and going for each new version of Qt.
         
         //printf(".......Updating it\n");
         //SEQUENCER_update(SEQUPDATE_EVERYTHING); // This one is also updated in gui_setSplitterSizes, which should take care of most updates.
@@ -1799,36 +1812,40 @@ private:
         
         //gui_update(gui_getMainXSplitter(),-1,-1,-1,-1);
         QTimer::singleShot(50, [](){
-          //printf(".......Updating 50\n");
-        updateWidgetRecursively(API_get_main_ysplitter()); // This updates everything in the main window. Do this to update the Y splitter widget itself.
-        //gui_updateRecursively(gui_getMainXSplitter()); // Yes, it's necessary to update recursively.
-          //SEQUENCER_update(SEQUPDATE_EVERYTHING);
-        });
+            //printf(".......Updating 50\n");
+            updateWidgetRecursively(API_get_main_ysplitter()); // This updates everything in the main window. Do this to update the Y splitter widget itself.
+            //gui_updateRecursively(gui_getMainXSplitter()); // Yes, it's necessary to update recursively.
+            //SEQUENCER_update(SEQUPDATE_EVERYTHING);
+          });
         
         QTimer::singleShot(250, [](){
-          //printf(".......Updating 250\n");
-        updateWidgetRecursively(API_get_main_ysplitter()); // This updates everything in the main window. Do this to update the Y splitter widget itself.
-        //          gui_updateRecursively(gui_getMainXSplitter());
-          //SEQUENCER_update(SEQUPDATE_EVERYTHING);
-        });
+            //printf(".......Updating 250\n");
+            updateWidgetRecursively(API_get_main_ysplitter()); // This updates everything in the main window. Do this to update the Y splitter widget itself.
+            //          gui_updateRecursively(gui_getMainXSplitter());
+            //SEQUENCER_update(SEQUPDATE_EVERYTHING);
+          });
         
         QTimer::singleShot(450, [](){
-          //printf(".......Updating 450\n");
-          updateWidgetRecursively(API_get_main_ysplitter()); // This updates everything in the main window. Do this to update the Y splitter widget itself.
-          //SEQUENCER_update(SEQUPDATE_EVERYTHING); // Must have this one though, in case the y splitter is not updated from the dragger. (not needed to call this when updating the y splitter)
-        });
+            //printf(".......Updating 450\n");
+            updateWidgetRecursively(API_get_main_ysplitter()); // This updates everything in the main window. Do this to update the Y splitter widget itself.
+            //SEQUENCER_update(SEQUPDATE_EVERYTHING); // Must have this one though, in case the y splitter is not updated from the dragger. (not needed to call this when updating the y splitter)
+          });
 #endif
 
-        QTimer::singleShot(80, [is_alive, this](){
-            if (!is_alive)
-              return;
+        if (_use_cover) {
 
-            {
-              radium::ScopedMutex lock(_cover_mutex);
-              delete _cover;
-              _cover = NULL;
-            }
-          });
+          QTimer::singleShot(80, [is_alive, this](){
+              if (!is_alive)
+                return;
+              
+              {
+                radium::ScopedMutex lock(_cover_mutex);
+                delete _cover;
+                _cover = NULL;
+              }
+            });
+        }
+        
       });
 #else
     
@@ -1836,7 +1853,10 @@ private:
   }
 
   void show_cover(void){
-    
+
+    if (!_use_cover)
+      return;
+        
 #if USE_COVER
     radium::ScopedMutex lock(_cover_mutex);
 
@@ -1906,7 +1926,7 @@ public:
 #endif
     
 #if USE_COVER
-    {
+    if (_use_cover) {
       radium::ScopedMutex lock(_cover_mutex);
       if (_cover != NULL){
         if(_cover->maybe_grab_frame_buffer(this)){
