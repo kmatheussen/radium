@@ -79,17 +79,24 @@ struct Data{
 class QLibraryHolder{
   QString _filename;
   QLibrary *_qlibrary = NULL;
+  bool _is_loaded = false; // Need to keep local track. Seems like QLibrary::isLoaded() also returns true if the library was loaded in the system, not just inside the QLibrary.
 
-public:
+  friend class Library;
   
   QLibraryHolder(QString filename)
     : _filename(filename)
   {}
 
   QLibrary *get(void){
-    if (_qlibrary == NULL)
-      _qlibrary = new QLibrary(_filename);
+    if (!is_loaded()) {
+      R_ASSERT_NON_RELEASE(false);
 
+      if (_qlibrary == NULL)
+        _qlibrary = new QLibrary(_filename);
+
+      load();
+    }
+    
     return _qlibrary;
   }
 
@@ -98,12 +105,21 @@ public:
   }
 
   bool is_loaded(void){
-    return _qlibrary!=NULL && _qlibrary->isLoaded();
+    return _qlibrary!=NULL && _is_loaded;
+  }
+
+  void load(void){
+    if (_qlibrary==NULL)
+      _qlibrary = new QLibrary(_filename);
+    
+    _qlibrary->load();
+    _is_loaded = true;
   }
   
   void maybe_unload(void){
     if (_qlibrary != NULL)
       _qlibrary->unload();
+    _is_loaded = false;
   }
 };
  
@@ -163,11 +179,23 @@ public:
     R_ASSERT_NON_RELEASE(num_library_references >= 0);
       
     if (num_library_references==0){
-      R_ASSERT_NON_RELEASE(!_qlibrary.is_loaded());
-                           
       printf("**** Loading %S\n",filename);
 
-      _qlibrary.get()->load();
+      /*
+      if (STRING_equals(filename, "/tmp/radium_bin/ladspa/am_pitchshift_1433.so")){
+        printf("    (press return)\n");
+        getchar();
+      }
+      */
+
+#if !defined(RELEASE)
+      if (_qlibrary.is_loaded()){
+        printf("    Error. (press return)\n");
+        getchar();
+      }
+#endif
+                           
+      _qlibrary.load();
       
       if (!load_descriptor_func()) {
         unload();
@@ -194,6 +222,14 @@ public:
 
     if (num_library_references==0) {
       printf("**** Unloading %S\n",filename);
+
+      /*
+      if (STRING_equals(filename, "/tmp/radium_bin/ladspa/am_pitchshift_1433.so")){
+        printf("    (press return)\n");
+        getchar();
+      }
+      */
+      
       unload();
     }
   }
