@@ -81,7 +81,7 @@ class QLibraryHolder{
   QLibrary *_qlibrary = NULL;
   bool _is_loaded = false; // Need to keep local track. Seems like QLibrary::isLoaded() also returns true if the library was loaded in the system, not just inside the QLibrary.
 
-  friend class Library;
+public:
   
   QLibraryHolder(QString filename)
     : _filename(filename)
