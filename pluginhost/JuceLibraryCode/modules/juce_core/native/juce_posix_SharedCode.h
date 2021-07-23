@@ -952,6 +952,9 @@ void JUCE_CALLTYPE Thread::setCurrentThreadName (const String& name)
 
 bool Thread::setThreadPriority (void* handle, int priority)
 {
+    if (priority==realtimeAudioPriority)
+      priority = 9;
+    
     struct sched_param param;
     int policy;
     priority = jlimit (0, 10, priority);
@@ -962,12 +965,25 @@ bool Thread::setThreadPriority (void* handle, int priority)
     if (pthread_getschedparam ((pthread_t) handle, &policy, &param) != 0)
         return false;
 
-    policy = priority == 0 ? SCHED_OTHER : SCHED_RR;
+    if (priority >= 8) {
+      
+      policy = SCHED_RR;
+      
+      const int minPriority = sched_get_priority_min (policy);
+      const int maxPriority = sched_get_priority_max (policy);
+      
+      param.sched_priority =
+        priority==8 ? minPriority :
+        priority==9 ? (minPriority+maxPriority)/2
+        : maxPriority;
 
-    const int minPriority = sched_get_priority_min (policy);
-    const int maxPriority = sched_get_priority_max (policy);
-
-    param.sched_priority = ((maxPriority - minPriority) * priority) / 10 + minPriority;
+    } else {
+      
+      policy = SCHED_OTHER;
+      param.sched_priority = 0;
+      
+    }
+    
     return pthread_setschedparam ((pthread_t) handle, policy, &param) == 0;
 }
 

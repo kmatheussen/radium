@@ -123,6 +123,9 @@ Thread::ThreadID JUCE_CALLTYPE Thread::getCurrentThreadId()
 
 bool Thread::setThreadPriority (void* handle, int priority)
 {
+    if (priority==realtimeAudioPriority)
+      priority = 9;
+    
     int pri = THREAD_PRIORITY_TIME_CRITICAL;
 
     if (priority < 1)       pri = THREAD_PRIORITY_IDLE;
