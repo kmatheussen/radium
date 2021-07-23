@@ -90,10 +90,6 @@ class QLibraryHolder{
   QLibrary *get(void){
     if (!is_loaded()) {
       R_ASSERT_NON_RELEASE(false);
-
-      if (_qlibrary == NULL)
-        _qlibrary = new QLibrary(_filename);
-
       load();
     }
     
