@@ -1,0 +1,13 @@
+diff --git a/pluginhost/JuceLibraryCode/modules/juce_core/native/juce_posix_SharedCode.h b/pluginhost/JuceLibraryCode/modules/juce_core/native/juce_posix_SharedCode.h
+index 0b7145391..925c15709 100644
+--- a/pluginhost/JuceLibraryCode/modules/juce_core/native/juce_posix_SharedCode.h
++++ b/pluginhost/JuceLibraryCode/modules/juce_core/native/juce_posix_SharedCode.h
+@@ -984,8 +984,6 @@ bool Thread::setThreadPriority (void* handle, int priority)
+       
+     }
+     
+-    printf("Thread::setThreadPriority. priority: %d. param.sched_priority: %d. policy: %d. realtimeAudioPriority: %d\n", priority, param.sched_priority, policy, realtimeAudioPriority);
+-      
+     return pthread_setschedparam ((pthread_t) handle, policy, &param) == 0;
+ }
+ 
