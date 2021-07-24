@@ -42,6 +42,14 @@ void CRASHREPORTER_send_assert_message(enum Crash_Type crash_type, const char *f
   abort();
 }
 
+bool THREADING_has_player_thread_priority(void){
+  return false;
+}
+
+bool THREADING_is_runner_thread(void){
+  return false;
+}
+
 void JUCE_add_sound(float *dst, const float *src, int num_frames){
   for(int i=0;i<num_frames;i++)
     dst[i] += src[i];

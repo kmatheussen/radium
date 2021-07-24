@@ -42,6 +42,10 @@ void msleep(int ms){
   usleep(1000*ms);
 }
 
+bool THREADING_has_player_thread_priority(void){
+  return false;
+}
+
 double TIME_get_ms(void){
   struct timeval now;
 
