@@ -1,3 +1,19 @@
+Changes 6.9.86 -> 6.9.88:
+* Editor/Instrument: Enable sample-seek by default.
+* Macos: Runs under Macos 11.
+* Windows: Antivirus programs should never scan
+  LADSPA plugins during startup anymore.
+* JUCE: Don't allocate memory in realtime code for
+  VST3 plugins when setting parameter values.
+* Editor: Fix "Rec" not being removed immediately
+  after stopping to record MIDI input.
+* Linux: Fix JUCE thread issues which might have
+  caused glitches in sound when using VST plugins.
+* JUCE: Upgrade to V6.0.8. Most important change is
+  probably support for VST3 plugins on Linux.
+
+
+
 Changes 6.9.82 -> 6.9.86:
 * Audio: Try not to open any audio input device by
   default. Sometimes this screws up the output
