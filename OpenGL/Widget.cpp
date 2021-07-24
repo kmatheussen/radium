@@ -843,7 +843,7 @@ public:
 #if defined(FOR_MACOSX)
   const bool _use_cover = QOperatingSystemVersion::current() < QOperatingSystemVersion::MacOSBigSur;
 #else
-  constexpr bool _use_cover = true;
+  const bool _use_cover = true;
 #endif
   
   int current_width;
