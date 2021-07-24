@@ -55,15 +55,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #else
 #include <stdint.h>
-typedef uint32_t ULONG;
-typedef uint16_t UWORD;
-typedef int16_t WORD;
-typedef int8_t BYTE;
-typedef uint8_t UBYTE;
-
-#define EXEC_TYPES_H 1
-#include "proplayer.h"
-#endif
 
 #include "../common/nsmtracker.h"
 #include "../common/TimeData.hpp"
@@ -90,6 +81,17 @@ typedef uint8_t UBYTE;
 
 
 #include "mmd2load_proc.h"
+
+
+#define ULONG uint32_t
+#define UWORD uint16_t
+#define WORD int16_t
+#define BYTE int8_t
+#define UBYTE uint8_t
+
+#define EXEC_TYPES_H 1
+#include "proplayer.h"
+#endif
 
 
 typedef uint8_t A_UBYTE;
