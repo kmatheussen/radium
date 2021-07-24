@@ -179,18 +179,19 @@ class Hepp2 : public Hepp{
 
 // The address sanitizer (asan) tends to zero out all allocated memory, covering up bugs. 
 // This is a workaround.
-#if defined(RADIUM_USES_ASAN)
+
+// Comment out line below. Always do this in debug mode since it's useful to catch wrong usage of 'new'.
+// #if defined(RADIUM_USES_ASAN)
+
 void * operator new(decltype(sizeof(0)) size) noexcept(false)
 {
-  R_ASSERT(!PLAYER_current_thread_has_lock());
-  R_ASSERT(!THREADING_is_runner_thread());
-  
-  void *mem = malloc(size);
+ void *mem = V_malloc(size);
   if (size > 1048576) // If changing 1048576, also change 1048576 in run_gdb.sh
     memset(mem, rand(), size);
   return mem;
 }
-#endif
+
+// #endif // defined(RADIUM_USES_ASAN)
 
 #endif
 
