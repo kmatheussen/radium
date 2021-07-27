@@ -15,7 +15,7 @@
 (define *sequencer-right-part-area* #f)
 
 (define (show-sequencer-help-window)
-  (FROM-C-show-help-window "help/sequencer_framed.html"))
+  (FROM-C-show-help-window "help/index.html?page=sequencer"))
 
 
 (define *sequencer-window-gui* (if (defined? '*sequencer-window-gui*)

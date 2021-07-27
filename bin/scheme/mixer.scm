@@ -6,7 +6,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (show-keybinding-help-window)
-  (FROM-C-show-help-window "help/keybindings_gui_framed.html"))
+  (FROM-C-show-help-window "help/index.html?page=editing_keybindings"))
 
 (define (FROM_C-show-mixer-config-popup-menu num)
   (popup-menu

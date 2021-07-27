@@ -4251,7 +4251,10 @@ int main(int argc, char **argv){
   qapplication->setAttribute(Qt::AA_DontCreateNativeWidgetSiblings); // Fix splitter handlers on OSX. Seems like a good flag to set in general. Seems like a hack qt has added to workaround bugs in qt. https://bugreports.qt.io/browse/QTBUG-33479
 
   QWebSettings::globalSettings()->setAttribute(QWebSettings::PluginsEnabled, false);
-
+#if !defined(RELEASE)
+  QWebSettings::globalSettings()->setAttribute(QWebSettings::DeveloperExtrasEnabled, true);
+#endif
+  
   init_weak_jack();
   
   g_startup_rect = QRect(QPoint(0,0), QGuiApplication::screens().at(0)->size()); //QApplication::desktop()->screenGeometry(); // Probably no point. Hoped that it would force radium to open on the same desktop that was current when program started.

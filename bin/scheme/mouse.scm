@@ -3121,7 +3121,7 @@
             #t)))
 
 (define (show-pianoroll-help-window)
-  (FROM-C-show-help-window "help/pianoroll_editor_framed.html"))
+  (FROM-C-show-help-window "help/index.html?page=pianoroll"))
 
 (define (get-pianoroll-popup-menu-common-entries)
   (list
