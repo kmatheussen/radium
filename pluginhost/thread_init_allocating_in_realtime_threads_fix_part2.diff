@@ -1,0 +1,35 @@
+diff --git a/pluginhost/JuceLibraryCode/modules/juce_core/threads/juce_Thread.cpp b/pluginhost/JuceLibraryCode/modules/juce_core/threads/juce_Thread.cpp
+index 740c9b683..10490e9d9 100644
+--- a/pluginhost/JuceLibraryCode/modules/juce_core/threads/juce_Thread.cpp
++++ b/pluginhost/JuceLibraryCode/modules/juce_core/threads/juce_Thread.cpp
+@@ -90,7 +90,8 @@ void Thread::threadEntryPoint()
+       setCurrentThreadAffinityMask (affinityMask);
+ 
+     setCurrentThreadPriority (threadPriority);
+-        
++    startSuspensionEvent.signal();
++    
+     try
+       {
+         run();
+@@ -127,6 +128,7 @@ void Thread::startThread()
+     if (threadHandle.get() == nullptr)
+     {
+         launchThread();
++        startSuspensionEvent.wait(10000);
+     }
+ }
+ 
+diff --git a/pluginhost/JuceLibraryCode/modules/juce_core/threads/juce_Thread.h b/pluginhost/JuceLibraryCode/modules/juce_core/threads/juce_Thread.h
+index 225fdff5f..07776ed6e 100644
+--- a/pluginhost/JuceLibraryCode/modules/juce_core/threads/juce_Thread.h
++++ b/pluginhost/JuceLibraryCode/modules/juce_core/threads/juce_Thread.h
+@@ -386,7 +386,7 @@ private:
+     Atomic<void*> threadHandle { nullptr };
+     Atomic<ThreadID> threadId = {};
+     CriticalSection startStopLock;
+-    WaitableEvent defaultEvent;
++    WaitableEvent startSuspensionEvent, defaultEvent;
+     int threadPriority = 5;
+     size_t threadStackSize;
+     uint32 affinityMask = 0;
