@@ -2896,9 +2896,14 @@ const char *JUCE_get_backtrace(void){
   g_backtrace = juce::SystemStats::getStackBacktrace();
   printf("Got backtrace %d\n", num);
   num++;
-  return g_backtrace.toUTF8();
+  return g_backtrace.toRawUTF8();
 }
 
+bool JUCE_open_external_web_browser(const char *urlstring){
+  auto url = juce::URL(urlstring);
+  printf("   Url query: -%s-\n", url.getQueryString().toRawUTF8());
+  return url.launchInDefaultBrowser();
+}
 
 void JUCE_add_sound(float *dst, const float *src, int num_frames){
   juce::FloatVectorOperations::add(dst, src, num_frames);  
