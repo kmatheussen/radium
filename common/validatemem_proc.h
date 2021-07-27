@@ -112,11 +112,28 @@ static inline void* my_calloc(size_t size1,size_t size2) {
 #    define V_free_function V_free
 
 static inline void assert_allowed_to_alloc(void){
+#if 0
+  
+  if (PLAYER_current_thread_has_lock())
+    abort();
+
+  if (THREADING_is_runner_thread())
+    abort();
+
+#if !defined(FOR_MACOSX)
+  if (THREADING_has_player_thread_priority())
+    abort();
+#endif
+  
+#else
+  
   R_ASSERT(!PLAYER_current_thread_has_lock());
   R_ASSERT(!THREADING_is_runner_thread());
 
 #if !defined(FOR_MACOSX)
   R_ASSERT(!THREADING_has_player_thread_priority());
+#endif
+  
 #endif
 }
 

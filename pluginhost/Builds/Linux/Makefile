@@ -37,7 +37,7 @@ ifeq ($(CONFIG),Debug)
     TARGET_ARCH := 
   endif
 
-  CPPFLAGS := $(COMMONCPPFLAGS) -D "DEBUG=1"
+  CPPFLAGS := $(COMMONCPPFLAGS) -D "DEBUG=1" 
 
   CFLAGS += $(CPPFLAGS) $(TARGET_ARCH) -g -ggdb -O0 -I../../../Qt `cat ../../../flagopts.opt`
   CXXFLAGS += $(CFLAGS) -std=gnu++14

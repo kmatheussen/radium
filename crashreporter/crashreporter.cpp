@@ -38,6 +38,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QLayout>
 #include <QThread>
 #include <QProcessEnvironment>
+#include <QOperatingSystemVersion>
 
 #if USE_QT5
 #include <QUrlQuery>
@@ -608,6 +609,11 @@ int main(int argc, char **argv){
 
   QLocale::setDefault(QLocale::c());
   QLocale::setDefault(QLocale::C);
+
+#if defined(FOR_MACOSX)
+  if (QOperatingSystemVersion::current() >= QOperatingSystemVersion::MacOSBigSur)
+    setenv("QT_MAC_WANTS_LAYER", "1", 1);
+#endif
 
   argv = getQApplicationConstructorArgs(argc, argv);
   QApplication app(argc, argv);
