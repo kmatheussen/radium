@@ -9,8 +9,8 @@ unset CPPFLAGS
 unset LDFLAGS
 unset CXXFLAGS
 
-export CFLAGS="-mtune=generic -msse2 -mfpmath=sse -Wno-misleading-indentation -fPIC -fno-strict-aliasing"
-export CPPFLAGS="-mtune=generic -msse2 -mfpmath=sse -fPIC -fno-strict-aliasing"
+export CFLAGS="-mtune=generic -msse2 -mfpmath=sse -Wno-misleading-indentation -fPIC -fno-strict-aliasing "
+export CPPFLAGS="-mtune=generic -msse2 -mfpmath=sse -fPIC -fno-strict-aliasing "
 export CXXFLAGS="-mtune=generic -msse2 -mfpmath=sse -fPIC -fno-strict-aliasing -fmax-errors=5 -I/home/kjetil/site_clang10/include "
 
 DASCC=gcc
@@ -103,7 +103,15 @@ build_faust() {
         patch -p0 <../faust_nollvm.patch
     fi
     patch -p1 <../faust_llvm10-11_fixes.patch
-    VERBOSE=1 CFLAGS="$CFLAGS" CXXFLAGS="$CXXFLAGS" CMAKEOPT="-DCMAKE_BUILD_TYPE=Release -DSELF_CONTAINED_LIBRARY=on -DCMAKE_CXX_COMPILER=`which $DASCXX` -DCMAKE_C_COMPILER=`which $DASCC`" make most
+
+    patch -p0 <../faust_interpreter_rt_alloc.patch
+    
+    # release build
+    VERBOSE=1 CFLAGS="$CFLAGS" CXXFLAGS="$CXXFLAGS" CMAKEOPT="-DCMAKE_BUILD_TYPE=Release -DSELF_CONTAINED_LIBRARY=on -DCMAKE_CXX_COMPILER=`which $DASCXX` -DCMAKE_C_COMPILER=`which $DASCC` " make most
+
+    # debug build
+    #VERBOSE=1 CFLAGS="$CFLAGS" CXXFLAGS="$CXXFLAGS" CMAKEOPT="-DCMAKE_BUILD_TYPE=Debug -DSELF_CONTAINED_LIBRARY=on -DCMAKE_CXX_COMPILER=`which $DASCXX` -DCMAKE_C_COMPILER=`which $DASCC` " make most
+    
     cd ..
 }
 
