@@ -849,7 +849,7 @@ static void* threadEntryProc (void* userData)
     {
         juce_threadEntryPoint (myself);
     }
-
+    
    #if JUCE_ANDROID
     if (androidJNIJavaVM != nullptr)
     {
@@ -902,7 +902,6 @@ void Thread::launchThread()
         attrPtr = &attr;
         pthread_attr_setstacksize (attrPtr, threadStackSize);
     }
-
 
     if (pthread_create (&handle, attrPtr, threadEntryProc, this) == 0)
     {
