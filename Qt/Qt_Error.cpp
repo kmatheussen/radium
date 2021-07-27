@@ -8,6 +8,7 @@
 #include <QDir>
 #include <qfontdatabase.h>
 #include <QMouseEvent>
+#include <QOperatingSystemVersion>
 
 #include "../common/nsmtracker.h"
 
@@ -152,6 +153,11 @@ int main(int argc, char **argv){
   QLocale::setDefault(QLocale::c());
   QLocale::setDefault(QLocale::C);
 
+#if defined(FOR_MACOSX)
+  if (QOperatingSystemVersion::current() >= QOperatingSystemVersion::MacOSBigSur)
+    setenv("QT_MAC_WANTS_LAYER", "1", 1);
+#endif
+  
   QString message = QByteArray::fromBase64(argv[1]);
 
   QVector<QString> menu_strings;

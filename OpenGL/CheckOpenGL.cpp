@@ -10,6 +10,8 @@
 #include <QWidget>
 #include <QGLFormat>
 #include <QGuiApplication>
+#include <QOperatingSystemVersion>
+
 
 //extern void init_weak_jack(void);
 
@@ -19,6 +21,11 @@ int main(int argc, char **argv){
   int *ai2=NULL;
   ai2[0] = 50;
   */
+
+#if defined(FOR_MACOSX)
+  if (QOperatingSystemVersion::current() >= QOperatingSystemVersion::MacOSBigSur)
+    setenv("QT_MAC_WANTS_LAYER", "1", 1);
+#endif
 
   QGuiApplication app(argc, argv);
 

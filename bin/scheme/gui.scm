@@ -1151,17 +1151,20 @@
 (define-constant *help-windows* (make-hash-table 10 string=?))
 
 (define (FROM-C-show-help-window filename)
-  (define web (or (*help-windows* filename)
-                  (let ((web (<gui> :web filename)))
-                    (set! (*help-windows* filename) web)
-                    (<gui> :add-close-callback web (lambda x
-                                                     (<gui> :hide web)
-                                                     #f))
-                    web)))
-  (reopen-gui-at-curr-pos web
-                          :parentgui (if (<ra> :help-window-is-child-of-main-window)
-                                         -1
-                                         -3)))
+  (if (string=? (<ra> :get-os-name) "macosx")
+      (<ra> :open-external-web-browser filename)
+      (let ()
+        (define web (or (*help-windows* filename)
+                        (let ((web (<gui> :web filename)))
+                          (set! (*help-windows* filename) web)
+                          (<gui> :add-close-callback web (lambda x
+                                                           (<gui> :hide web)
+                                                           #f))
+                          web)))
+        (reopen-gui-at-curr-pos web
+                                :parentgui (if (<ra> :help-window-is-child-of-main-window)
+                                               -1
+                                               -3)))))
 
 #!!
 (FROM-C-show-help-window "help/index.html?page=gakk")
