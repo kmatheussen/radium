@@ -386,7 +386,7 @@ private:
     Atomic<void*> threadHandle { nullptr };
     Atomic<ThreadID> threadId = {};
     CriticalSection startStopLock;
-    WaitableEvent defaultEvent;
+    WaitableEvent startSuspensionEvent, defaultEvent;
     int threadPriority = 5;
     size_t threadStackSize;
     uint32 affinityMask = 0;

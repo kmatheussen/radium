@@ -90,7 +90,8 @@ void Thread::threadEntryPoint()
       setCurrentThreadAffinityMask (affinityMask);
 
     setCurrentThreadPriority (threadPriority);
-        
+    startSuspensionEvent.signal();
+    
     try
       {
         run();
@@ -127,6 +128,7 @@ void Thread::startThread()
     if (threadHandle.get() == nullptr)
     {
         launchThread();
+        startSuspensionEvent.wait(10000);
     }
 }
 
