@@ -1164,7 +1164,8 @@
                                          -3)))
 
 #!!
-(FROM-C-show-help-window "help/home.html")
+(FROM-C-show-help-window "help/index.html?page=gakk")
+(FROM-C-show-help-window "help/index.html")
 !!#
 
 
@@ -1891,9 +1892,9 @@
                       :buttons '("1. HOWTO set range" "2. HOWTO set selection" "Close")
                       :callback (lambda (what)
                                   (cond ((string-starts-with? what "1.")
-                                         (FROM-C-show-help-window "help/notetext_editor_framed.html"))
+                                         (FROM-C-show-help-window "help/index.html?page=notetext"))
                                         ((string-starts-with? what "2.")
-                                         (FROM-C-show-help-window "help/pianoroll_editor_framed.html"))))
+                                         (FROM-C-show-help-window "help/index.html?page=pianoroll"))))
                       ))
 
 #!!
