@@ -3853,14 +3853,31 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
   MakeFocusSnifferClass(QWebView);
 
   static QUrl getUrl(QString stringurl){
-    if (stringurl.startsWith("http") || stringurl.startsWith("file:"))
+    if (stringurl.startsWith("http:") || stringurl.startsWith("https:") || stringurl.startsWith("file:")) {
+      
       return stringurl;
-    else if (QFileInfo(stringurl).isAbsolute())
-      return QUrl::fromLocalFile(QDir::fromNativeSeparators(stringurl));
-    else if (OS_has_full_program_file_path(stringurl))
-      return QUrl::fromLocalFile(QDir::fromNativeSeparators(STRING_get_qstring(OS_get_full_program_file_path(stringurl).id)));
-    else
-      return QUrl::fromLocalFile(QDir::fromNativeSeparators(stringurl));
+      
+    } else {
+      
+      auto splitted = stringurl.split('?');
+      QString query = splitted.size()==1 ? "" : splitted.takeLast();
+      QString filename = splitted.join('?');
+
+      //printf("Stringurl: -%s-. Query: -%s-. Filename: -%s-\n", stringurl.toUtf8().constData(), query.toUtf8().constData(), filename.toUtf8().constData());
+
+      QUrl ret;
+      
+      if (QFileInfo(stringurl).isAbsolute())
+        ret = QUrl::fromLocalFile(QDir::fromNativeSeparators(stringurl));
+      else if (OS_has_full_program_file_path(filename))
+        ret = QUrl::fromLocalFile(QDir::fromNativeSeparators(STRING_get_qstring(OS_get_full_program_file_path(filename).id)));
+      else
+        ret = QUrl::fromLocalFile(QDir::fromNativeSeparators(stringurl));      
+
+      ret.setQuery(query);
+
+      return ret;
+    }
   }
   
   struct Web : FocusSnifferQWebView, Gui, public radium::MouseCycleFix {
@@ -3885,6 +3902,12 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     }
     */
 
+#if 0 // !defined(RELEASE)
+    void javaScriptConsoleMessage(const QString & message, int lineNumber, const QString & sourceID) override {
+      printf("%s/%d: %s\n", sourceID.toUtf8().constData(), lineNumber, message.toUtf8().constData()); 
+    }
+#endif
+    
     // https://forum.qt.io/topic/23736/qwebview-qwebpage-need-help-with-context-menu/4
     void contextMenuEvent(QContextMenuEvent * ev) override {
       ScopedEventHandlerTracker event_handler_tracker;
@@ -4006,10 +4029,13 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
       // cancel search
       // (Must also catch Key_Escape since the focussniffer gives up focus when receiving escape.)
-      if (event->key()==Qt::Key_Escape){
-        findText(""); // Cancel search highlightning
-        event->accept();
-        return;
+      if (_last_search_text != "") {
+        if (event->key()==Qt::Key_Escape){
+          findText(""); // Cancel search highlightning
+          event->accept();
+          _last_search_text = "";
+          return;
+        }
       }
       
       if (!Gui::keyPressEvent(event)){
