@@ -4305,14 +4305,16 @@ int main(int argc, char **argv){
 #if defined(FOR_MACOSX)
   if (QOperatingSystemVersion::current() <= QOperatingSystemVersion::MacOSBigSur){
     
-    const char *confname = "show_macos_warning_during_startup";
-    if (QSysInfo::productVersion() != SETTINGS_read_qstring(confname, "0")) {
+    const char *confname = "show_macos_warning_during_startup_v" RADIUM_VERSION;
+    if (QSysInfo::productVersion() != SETTINGS_read_qstring(confname, "definitelynotthishopefully")) {
       vector_t v = {};
       VECTOR_push_back(&v,"Ok");
       int dont_show = VECTOR_push_back(&v,"Don't show this message again");
       
       int result = GFX_Message(&v,
-                               "Note: On MacOS there are both performance and stability problems when running Radium. In addition you might experience various types of quirks and misbehavours.\n"
+                               "Radium for macOS is BETA software!\n"
+                               "\n"
+                               "Note: On macOS there are both performance and stability problems when running Radium. In addition you might experience various types of quirks and misbehavours.\n"
                                "\n"
                                "The most serious problems on macOS are caused by Apple's poor support for OpenGL. "
                                "If Radium crashes right after startup, it's probably Apple's OpenGL library that crashes. "
@@ -4324,11 +4326,15 @@ int main(int argc, char **argv){
 
   } else {
 
-    GFX_Message(NULL, "Radium has not been tested on this version of macOS. Latest supported version of macOS is 11.0. Radium might now freeze, crash, or misbehave in subtle ways. Please report your experience running Radium on this operating system to the forum, the mailing list, or to k.s.matheussen@notam02.no.");
+    GFX_Message(NULL,
+                "Radium has not been tested on this version of macOS. Latest supported version of macOS is 11.0. Radium might now freeze, crash, or misbehave in subtle ways. Please report your experience running Radium on this operating system to the forum, the mailing list, or to k.s.matheussen@notam02.no.");
     
   }
 #endif
 
+  //GFX_Message(NULL, "hello");
+  //system("osascript -e 'tell application \"Finder\"' -e 'activate' -e 'display dialog \"Hello 2\" {\"OK\"}' -e 'end tell'&");
+  
   //GC_disable();
   //QPixmap pixmap(OS_get_full_program_file_path("radium_256x256x32.png"));
   //QPixmap pixmap(QPixmap(OS_get_full_program_file_path("/home/kjetil/radium/pictures/logo_big.png")).scaled(QSize(256,256), Qt::KeepAspectRatioByExpanding));

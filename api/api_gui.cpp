@@ -3852,10 +3852,10 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
   MakeFocusSnifferClass(QWebView);
 
-  static QString getAbsoluteUrl(QString stringurl){
+  static std::tuple<QString,QString, bool> getAbsoluteUrl(QString stringurl){
     if (stringurl.startsWith("http:") || stringurl.startsWith("https:") || stringurl.startsWith("file:")) {
       
-      return stringurl;
+      return {stringurl, "", false};
       
     } else {
       
@@ -3872,17 +3872,28 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       else if (OS_has_full_program_file_path(filename))
         ret = STRING_get_qstring(OS_get_full_program_file_path(filename).id);
       else
-        ret = QDir::fromNativeSeparators(stringurl);
+        ret = stringurl;
 
-      if (query != "")
-        ret += "?" + query;
-
-      return "file://" + ret;
+      return {ret, query, true};
     }
   }
   
   static QUrl getUrl(QString stringurl){
-    return getAbsoluteUrl(stringurl);
+    auto [absoluteurl, query, is_local_file] = getAbsoluteUrl(stringurl);
+    
+    if (is_local_file) {
+      
+      QUrl url = QUrl::fromLocalFile(absoluteurl);
+      if (query != "")
+        url.setQuery(query);
+      
+      return url;
+      
+    } else {
+      
+      return absoluteurl;
+      
+    }
   }
   
   struct Web : FocusSnifferQWebView, Gui, public radium::MouseCycleFix {
@@ -5326,10 +5337,21 @@ void openExternalWebBrowser(const_char *charstringurl){
 
   // Neither Qt nor JUCE were able to handle queries. Using osascript worked though.
 
-  QString urlstring = getAbsoluteUrl(charstringurl);
+  auto [absoluteurl, query, is_local_file] = getAbsoluteUrl(charstringurl);
+
+  if (query != "")
+    absoluteurl += "?" + query;
+
+  if (is_local_file)
+    absoluteurl = "file://" + absoluteurl;
   
-  const char *command = talloc_format("osascript -e 'tell application \"Safari\"\nopen location \"%s\"\nactivate\nend tell\n'&", urlstring.toUtf8().constData());
-  //printf("Command: -%s-\n", command);
+  const char *command = talloc_format("osascript -e 'tell application \"Safari\"\n"
+                                      "activate\n"
+                                      "open location \"%s\"\n"
+                                      "end tell\n'"
+                                      "&",
+                                      absoluteurl.toUtf8().constData());
+  printf("Command: -%s-\n", command);
   system(command);
 
 #else
