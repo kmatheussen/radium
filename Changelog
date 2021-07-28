@@ -1,3 +1,22 @@
+Changes 6.9.88 -> 6.9.89:
+* Editor: Fix crash when quantitizing notes. Bug
+  introduced in 6.9.80.
+* Windows32: Fix import MOD.
+* Macos: Open Help windows in an external browser
+  since the manual now uses javascript-features not
+  supported by QtWebkit 5.9.
+* Manual: Include search field + various other
+  improvements.
+* Faust: Fix possible performance problem for the
+  interpreter backend.
+* API:
+  * gui_web: Handle local files with queries.
+  * gui_web: Only accept Escape key if currently
+    searching. (Previously it hindered all other
+    usage of the Escape key by web pages.)
+
+
+
 Changes 6.9.86 -> 6.9.88:
 * Editor/Instrument: Enable sample-seek by default.
 * Macos: Runs under Macos 11.
