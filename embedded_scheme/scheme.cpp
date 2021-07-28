@@ -2371,7 +2371,7 @@ bool quantitize_note(const struct Blocks *block, struct Notes *note, bool *was_c
                                             6,
                                             scheme_func,
                                             place_to_ratio(&note->l.p),
-                                            note->end,
+                                            s7_make_ratio(s7, note->end.num, note->end.den),
                                             s7_make_ratio(s7, quant.num, quant.den),
                                             place_to_ratio(&last_place),
                                             s7_make_integer(s7, root->quantitize_options.type),
