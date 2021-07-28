@@ -75,13 +75,13 @@
   (if (<= q 0)
       (error 'illegal-quantitize-value q))
 
-  (c-display "*** Calling quantitizenote" start end ", len:" org-length ", q:" q ", quant start:" quantitize-start ", quant end:" quantitize-end ", keep-note-length:" keep-note-length ", type:" type)
+  ;;(c-display "*** Calling quantitizenote" start end ", len:" org-length ", q:" q ", quant start:" quantitize-start ", quant end:" quantitize-end ", keep-note-length:" keep-note-length ", type:" type)
   
   (if keep-note-length
       (keep-original-note-length!))
 
   (define (legalize-length!)
-    (c-display "calling legalize-length? " (>= new-start new-end) ". type:" type)
+    ;;(c-display "calling legalize-length? " (>= new-start new-end) ". type:" type)
     (if (>= new-start new-end)
         (cond ((= type 1) ;; move-start-to-previous
                (set! new-start (quantitize new-start q))
@@ -117,11 +117,11 @@
     (set! new-start (legal-pos new-start))
     (set! new-end (legal-pos new-end)))
 
-  (c-display "bef: new-start/new-end" new-start new-end ", org-len:" org-length)
+  ;;(c-display "bef: new-start/new-end" new-start new-end ", org-len:" org-length)
   ;;(keep-original-note-length!)
   ;;(c-display "bef2: new-start/new-end" new-start new-end)
 
-  (c-display "type: " type ", empty:" (>= new-start new-end))
+  ;;(c-display "type: " type ", empty:" (>= new-start new-end))
   
   (legalize!)
 
@@ -131,7 +131,7 @@
   (if (>= new-start new-end)
       (legalize!))
 
-  (c-display "aft: new-start/new-end" new-start new-end)
+  ;;(c-display "aft: new-start/new-end" new-start new-end)
   
   (if delete-it
       #f
