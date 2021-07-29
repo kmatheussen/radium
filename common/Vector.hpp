@@ -112,7 +112,7 @@ private:
 public:
   
   Vector(const Vector *vector = NULL) {
-    LOCKASSERTER_EXCLUSIVE(&_lockAsserter);
+    LOCKASSERTER_EXCLUSIVE_NON_RELEASE(&_lockAsserter);
 
     constexpr int num_preallocated_elements = sizeof(_pre_allocated_memory) / sizeof(T);
 
@@ -161,7 +161,7 @@ public:
   }
 
   ~Vector(){
-    LOCKASSERTER_EXCLUSIVE(&_lockAsserter);
+    LOCKASSERTER_EXCLUSIVE_NON_RELEASE(&_lockAsserter);
 
     // Don't want to free static global memory during shut down since it may be used by threads which are not shut down. (hmm, this will probably cover bugs)
     if (g_qtgui_has_stopped==false){
@@ -176,14 +176,14 @@ public:
   }
 
   T at(int i) const {
-    LOCKASSERTER_SHARED(&_lockAsserter);
+    LOCKASSERTER_SHARED_NON_RELEASE(&_lockAsserter);
 
     return at_internal(i);
   }
 
   T &at_first(void) const {
     //fprintf(stderr, "\nat_ref. i: %d. _num_elements: %d.\n", i, _num_elements.get());
-    LOCKASSERTER_SHARED(&_lockAsserter);
+    LOCKASSERTER_SHARED_NON_RELEASE(&_lockAsserter);
 
     int size = _num_elements.get();
     R_ASSERT_RETURN_IF_FALSE2(size > 0, _elements[0]);
@@ -193,7 +193,7 @@ public:
 
   T &at_last(void) const {
     //fprintf(stderr, "\nat_ref. i: %d. _num_elements: %d.\n", i, _num_elements.get());
-    LOCKASSERTER_SHARED(&_lockAsserter);
+    LOCKASSERTER_SHARED_NON_RELEASE(&_lockAsserter);
 
     int size = _num_elements.get();
     R_ASSERT_RETURN_IF_FALSE2(size > 0, _elements[0]);
@@ -203,7 +203,7 @@ public:
 
   T &at_ref(int i) const {
     //fprintf(stderr, "\nat_ref. i: %d. _num_elements: %d.\n", i, _num_elements.get());
-    LOCKASSERTER_SHARED(&_lockAsserter);
+    LOCKASSERTER_SHARED_NON_RELEASE(&_lockAsserter);
 
     return at_internal(i);
   }
@@ -240,7 +240,7 @@ private:
 public:
   
   T* ref(int i) const {
-    LOCKASSERTER_SHARED(&_lockAsserter);
+    LOCKASSERTER_SHARED_NON_RELEASE(&_lockAsserter);
     
     R_ASSERT(i>=0);
     R_ASSERT(i<_num_elements.get());
@@ -250,28 +250,28 @@ public:
 
   // This function can be called in parallell with the other const functions (i.e. the non-mutating ones).
   const T* begin() const {
-    LOCKASSERTER_SHARED(&_lockAsserter);
+    LOCKASSERTER_SHARED_NON_RELEASE(&_lockAsserter);
     
     return &_elements[0];
   }
 
   // This function can be called in parallell with the other const functions (i.e. the non-mutating ones).
   const T* end() const {
-    LOCKASSERTER_SHARED(&_lockAsserter);
+    LOCKASSERTER_SHARED_NON_RELEASE(&_lockAsserter);
     
     return &_elements[_num_elements.get()];
   }
 
   // This function can be called in parallell with the other const functions (i.e. the non-mutating ones).
   bool is_empty(void) const {
-    LOCKASSERTER_SHARED(&_lockAsserter);
+    LOCKASSERTER_SHARED_NON_RELEASE(&_lockAsserter);
     
     return _num_elements.get() == 0;
   }
 
   // This function can be called in parallell with the other const functions (i.e. the non-mutating ones).
   int size(void) const {
-    LOCKASSERTER_SHARED(&_lockAsserter);
+    LOCKASSERTER_SHARED_NON_RELEASE(&_lockAsserter);
     
     return _num_elements.get();
   }
@@ -283,7 +283,7 @@ public:
   }
 
   int free_space(void) const {
-    LOCKASSERTER_SHARED(&_lockAsserter);
+    LOCKASSERTER_SHARED_NON_RELEASE(&_lockAsserter);
 
     return _num_elements_max - _num_elements.get();
   }
@@ -298,7 +298,7 @@ public:
   //
   // post_add MUST be called after calling add after calling ensure_there_is_room_for_more_without_having_to_allocate_memory.
   void ensure_there_is_room_for_more_without_having_to_allocate_memory(int how_many = 1){
-    LOCKASSERTER_SHARED(&_lockAsserter);
+    LOCKASSERTER_SHARED_NON_RELEASE(&_lockAsserter);
 
     R_ASSERT(_elements_ready_for_freeing == NULL);
     R_ASSERT(_next_elements == NULL);
@@ -321,7 +321,7 @@ public:
     
   // Must be called after calling 'add' if 'ensure_there_is_room_for_one_more_without_having_to_allocate_memory' was called before 'add'.
   void post_add(void){
-    LOCKASSERTER_SHARED(&_lockAsserter);
+    LOCKASSERTER_SHARED_NON_RELEASE(&_lockAsserter);
     
     if (_elements_ready_for_freeing != NULL){
       free_internal(_elements_ready_for_freeing, _num_elements_ready_for_freeing);
@@ -381,7 +381,7 @@ private:
 #else
       radium::PlayerLock lock;
 #endif      
-      LOCKASSERTER_EXCLUSIVE(&_lockAsserter);
+      LOCKASSERTER_EXCLUSIVE_NON_RELEASE(&_lockAsserter);
 
       _elements = new_elements;
       _num_elements_max = new_num_elements_max;
@@ -468,7 +468,7 @@ public:
   // This function can NOT be called in parallell with other functions
   //
   void push_back(T t){
-    LOCKASSERTER_EXCLUSIVE(&_lockAsserter);
+    LOCKASSERTER_EXCLUSIVE_NON_RELEASE(&_lockAsserter);
 
     //R_ASSERT(_elements_ready_for_freeing == NULL); <-- Fails when we have preallocated for more than one element.
 
@@ -523,7 +523,7 @@ public:
   // Not RT safe unless ALLOCATOR_TYPE == AllocatorType::RT.
   //
   void reserve(int new_num_elements_max) {
-    LOCKASSERTER_EXCLUSIVE(&_lockAsserter);
+    LOCKASSERTER_EXCLUSIVE_NON_RELEASE(&_lockAsserter);
 
     R_ASSERT(_next_elements == NULL);
     
@@ -543,7 +543,7 @@ public:
     R_ASSERT(_next_elements == NULL);
     
     {
-      LOCKASSERTER_SHARED(&_lockAsserter);
+      LOCKASSERTER_SHARED_NON_RELEASE(&_lockAsserter);
       if (new_num_elements_max <= _num_elements_max)
         return;
     }
@@ -555,7 +555,7 @@ public:
   //
   // This function can NOT be called in parallell with other functions
   void append(Vector<T> *ts){
-    LOCKASSERTER_EXCLUSIVE(&_lockAsserter);
+    LOCKASSERTER_EXCLUSIVE_NON_RELEASE(&_lockAsserter);
     
     R_ASSERT(_next_elements == NULL);
 
@@ -567,7 +567,7 @@ public:
   //
   // This function can NOT be called in parallell with other functions
   void append(Vector<T> &ts){
-    LOCKASSERTER_EXCLUSIVE(&_lockAsserter);
+    LOCKASSERTER_EXCLUSIVE_NON_RELEASE(&_lockAsserter);
     
     R_ASSERT(_next_elements == NULL);
     
@@ -615,7 +615,7 @@ public:
   
   // This function can be called in parallell with the other const functions (i.e. the non-mutating ones).
   int find_pos(const T t) const {
-    LOCKASSERTER_SHARED(&_lockAsserter);
+    LOCKASSERTER_SHARED_NON_RELEASE(&_lockAsserter);
 
     return find_pos_internal(t);
   }
@@ -628,7 +628,7 @@ public:
   //
   // This function can NOT be called in parallell with other functions
   void remove(const T t, bool keep_order = false){
-    LOCKASSERTER_EXCLUSIVE(&_lockAsserter);
+    LOCKASSERTER_EXCLUSIVE_NON_RELEASE(&_lockAsserter);
     
     R_ASSERT(_next_elements == NULL);
     R_ASSERT(_elements_ready_for_freeing == NULL);
@@ -643,13 +643,13 @@ public:
   //
   // This function can NOT be called in parallell with other functions
   void remove_pos(int pos, bool keep_order = false){
-    LOCKASSERTER_EXCLUSIVE(&_lockAsserter);
+    LOCKASSERTER_EXCLUSIVE_NON_RELEASE(&_lockAsserter);
 
     remove_pos_internal(pos, keep_order);
   }
 
   T pop(int pos, bool keep_order = false){
-    LOCKASSERTER_EXCLUSIVE(&_lockAsserter);
+    LOCKASSERTER_EXCLUSIVE_NON_RELEASE(&_lockAsserter);
     
     T ret = at_internal(pos);
     
@@ -664,13 +664,13 @@ public:
   
   template <class S>
   void sort(S comp){
-    LOCKASSERTER_EXCLUSIVE(&_lockAsserter);
+    LOCKASSERTER_EXCLUSIVE_NON_RELEASE(&_lockAsserter);
     
     std::stable_sort(&_elements[0], &_elements[_num_elements.get()], comp);
   }
     
   std::vector<T> to_std_vector(void) const{
-    LOCKASSERTER_SHARED(&_lockAsserter);
+    LOCKASSERTER_SHARED_NON_RELEASE(&_lockAsserter);
 
     std::vector<T> ret;
 
@@ -683,7 +683,7 @@ public:
   }
 
   const T* get_array(void) const{
-    LOCKASSERTER_SHARED(&_lockAsserter);
+    LOCKASSERTER_SHARED_NON_RELEASE(&_lockAsserter);
     return _elements;
   }
 
@@ -691,7 +691,7 @@ public:
   //
   // This function can NOT be called in parallell with other functions
   void set_num_elements(int new_num_elements) {
-    LOCKASSERTER_EXCLUSIVE(&_lockAsserter);
+    LOCKASSERTER_EXCLUSIVE_NON_RELEASE(&_lockAsserter);
 
     R_ASSERT(_next_elements == NULL);
     _num_elements.set(new_num_elements);
