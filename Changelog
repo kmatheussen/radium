@@ -1,3 +1,17 @@
+Changes 6.9.89 -> 6.9.90:
+* Internal: Reorganize code protecting s7 gc
+  variables a little bit. Might have fixed some
+  potential problems.
+* Internal: Preallocate a little bit of memory for
+  vectors. Also remove some thread assertion code
+  from non-debug builds. Might improve performance
+  a little bit.
+* Internal: Make sure memory allocated by the RT
+  memory allocator is always aligned at maximum.
+  This could theoretically increase performance.
+
+
+
 Changes 6.9.88 -> 6.9.89:
 * Editor: Fix crash when quantitizing notes. Bug
   introduced in 6.9.80.
