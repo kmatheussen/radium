@@ -2774,7 +2774,10 @@ void RT_SEQBLOCK_reserve_playing_notes_tracks(struct SeqBlock *seqblock,
                                               int num_tracks)
 {
   for(int i=seqblock->playing_notes->size() ; i < num_tracks ; i++){
+    //void *mem = malloc(sizeof(radium::RT_NoteVector)); //
     void *mem = RT_alloc_raw(sizeof(radium::RT_NoteVector), "RT_VELOCITIES_add_note");
+    //printf("Mem: %p. Alignment: %d. Ptr alignment: %d. Max alignment: %d\n", mem, (int)std::alignment_of<radium::RT_NoteVector>::value, (int)std::alignment_of<radium::RT_NoteVector*>::value, (int)std::alignment_of<std::max_align_t>::value);
+    //abort();
     seqblock->playing_notes->push_back(new(mem) radium::RT_NoteVector);
   }
 }

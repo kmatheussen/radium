@@ -546,6 +546,7 @@ bool THREADING_has_player_thread_priority(void){
 #if defined(FOR_WINDOWS)
   return priority.priority==THREAD_PRIORITY_TIME_CRITICAL;
 #else
+  //printf("----policy: %d. RR: %d. FIFO: %d. priority: %d\n", priority.policy, SCHED_RR, SCHED_FIFO, priority.param.sched_priority);
   return (priority.policy==SCHED_RR || priority.policy==SCHED_FIFO);
 #endif
 }
