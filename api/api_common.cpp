@@ -191,7 +191,9 @@ void clearErrorMessage(void){
   if(message != NULL){
     printf("********** Warning, the error \"%s\" was not handled by throwing an error.\n", message);
 #if !defined(RELEASE)
-    abort();
+    printf("********************* Press return to continue ***********************\n");
+    getchar();
+    //abort();
 #endif
     message = NULL;
   }

@@ -119,7 +119,7 @@
                              :border-width 0
                              :is-hovering is-hovering
                              :cut-text-to-fit #f
-                             :wrap-lines #f
+                             :wrap-lines #f                             
                              )
     )
   

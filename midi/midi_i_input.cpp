@@ -603,9 +603,10 @@ static bool insert_recorded_midi_events(bool is_gfx){
 
         // Update GFX
         //
-        if(!is_gfx)
+        if(!is_gfx){
           ATOMIC_SET(track->is_recording, false);
-
+          window->must_redraw_editor = true;
+        }
 
         // Do things that should only be done once for each track.
         // 

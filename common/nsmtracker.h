@@ -52,7 +52,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #error "Compiled with -mtune=native or -mtune=corei7"
 #endif
 
-#if !defined(RELEASE)
+#if !defined(RELEASE) && !defined(FOR_WINDOWS)
 #  include <sanitizer/common_interface_defs.h>
 #  if defined(RADIUM_USES_ASAN)
 #    if !__has_feature(address_sanitizer) && !defined(__SANITIZE_ADDRESS__)
@@ -1718,6 +1718,9 @@ public:
   friend struct RT_TimeData_Cache_Handler;
   
 private:
+#if defined(__GNUC__) && __GNUC__ < 8 // "friend" above doesn't work for gcc 7.
+ public:
+#endif
   
   ValType _last_value = 0; // last value returned from TimeData::get_value();
   int _last_play_id = -1; // Value of pc->play_id when last_value was returned.
@@ -3673,6 +3676,7 @@ struct SeqBlock{
 
 
 //extern struct SeqBlock *g_curr_seqblock;
+extern int g_curr_seqtrack_under_mouse;
 extern int64_t g_curr_seqblock_id_under_mouse;
 extern int64_t g_curr_seqblock_id;
 

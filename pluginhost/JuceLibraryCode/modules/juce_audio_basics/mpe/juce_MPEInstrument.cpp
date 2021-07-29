@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2017 - ROLI Ltd.
+   Copyright (c) 2020 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -27,35 +27,55 @@ namespace
 {
     const uint8 noLSBValueReceived = 0xff;
     const Range<int> allChannels { 1, 17 };
+
+    template <typename Range, typename Value>
+    void mpeInstrumentFill (Range& range, const Value& value)
+    {
+        std::fill (std::begin (range), std::end (range), value);
+    }
 }
 
 //==============================================================================
 MPEInstrument::MPEInstrument() noexcept
 {
-    std::fill_n (lastPressureLowerBitReceivedOnChannel, 16, noLSBValueReceived);
-    std::fill_n (lastTimbreLowerBitReceivedOnChannel, 16, noLSBValueReceived);
-    std::fill_n (isMemberChannelSustained, 16, false);
+    mpeInstrumentFill (lastPressureLowerBitReceivedOnChannel, noLSBValueReceived);
+    mpeInstrumentFill (lastTimbreLowerBitReceivedOnChannel, noLSBValueReceived);
+    mpeInstrumentFill (isMemberChannelSustained, false);
 
     pitchbendDimension.value = &MPENote::pitchbend;
     pressureDimension.value = &MPENote::pressure;
     timbreDimension.value = &MPENote::timbre;
 
-    // the default value for pressure is 0, for all other dimension it is centre (= default MPEValue)
-    std::fill_n (pressureDimension.lastValueReceivedOnChannel, 16, MPEValue::minValue());
+    resetLastReceivedValues();
 
     legacyMode.isEnabled = false;
     legacyMode.pitchbendRange = 2;
     legacyMode.channelRange = allChannels;
 }
 
-MPEInstrument::~MPEInstrument()
-{
-}
+MPEInstrument::~MPEInstrument() = default;
 
 //==============================================================================
 MPEZoneLayout MPEInstrument::getZoneLayout() const noexcept
 {
     return zoneLayout;
+}
+
+void MPEInstrument::resetLastReceivedValues()
+{
+    struct Defaults
+    {
+        MPEDimension& dimension;
+        MPEValue defaultValue;
+    };
+
+    // The default value for pressure is 0, for all other dimensions it is centre
+    for (const auto& pair : { Defaults { pressureDimension,  MPEValue::minValue() },
+                              Defaults { pitchbendDimension, MPEValue::centreValue() },
+                              Defaults { timbreDimension,    MPEValue::centreValue() } })
+    {
+        mpeInstrumentFill (pair.dimension.lastValueReceivedOnChannel, pair.defaultValue);
+    }
 }
 
 void MPEInstrument::setZoneLayout (MPEZoneLayout newLayout)
@@ -65,6 +85,8 @@ void MPEInstrument::setZoneLayout (MPEZoneLayout newLayout)
     const ScopedLock sl (lock);
     legacyMode.isEnabled = false;
     zoneLayout = newLayout;
+
+    resetLastReceivedValues();
 }
 
 //==============================================================================
@@ -336,8 +358,8 @@ void MPEInstrument::noteOff (int midiChannel,
         note->keyState = (note->keyState == MPENote::keyDownAndSustained) ? MPENote::sustained : MPENote::off;
         note->noteOffVelocity = midiNoteOffVelocity;
 
-        // If no more notes are playing on this channel, reset the dimension values
-        if (getLastNotePlayedPtr (midiChannel) == nullptr)
+        // If no more notes are playing on this channel in mpe mode, reset the dimension values
+        if (! legacyMode.isEnabled && getLastNotePlayedPtr (midiChannel) == nullptr)
         {
             pressureDimension.lastValueReceivedOnChannel[midiChannel - 1] = MPEValue::minValue();
             pitchbendDimension.lastValueReceivedOnChannel[midiChannel - 1] = MPEValue::centreValue();
@@ -395,7 +417,7 @@ void MPEInstrument::polyAftertouch (int midiChannel, int midiNoteNumber, MPEValu
 
 MPEValue MPEInstrument::getInitialValueForNewNote (int midiChannel, MPEDimension& dimension) const
 {
-    if (getLastNotePlayedPtr (midiChannel) != nullptr)
+    if (! legacyMode.isEnabled && getLastNotePlayedPtr (midiChannel) != nullptr)
         return &dimension == &pressureDimension ? MPEValue::minValue() : MPEValue::centreValue();
 
     return dimension.lastValueReceivedOnChannel[midiChannel - 1];
@@ -491,17 +513,19 @@ void MPEInstrument::updateNoteTotalPitchbend (MPENote& note)
 {
     if (legacyMode.isEnabled)
     {
-        note.totalPitchbendInSemitones = note.pitchbend.asSignedFloat() * legacyMode.pitchbendRange;
+        note.totalPitchbendInSemitones = note.pitchbend.asSignedFloat() * (float) legacyMode.pitchbendRange;
     }
     else
     {
         auto zone = zoneLayout.getLowerZone();
 
-        if (! zone.isUsing (note.midiChannel))
+        if (! zone.isActive() || ! zone.isUsing (note.midiChannel))
         {
-            if (zoneLayout.getUpperZone().isUsing (note.midiChannel))
+            auto upperZone = zoneLayout.getUpperZone();
+
+            if (upperZone.isActive() && upperZone.isUsing (note.midiChannel))
             {
-                zone = zoneLayout.getUpperZone();
+                zone = upperZone;
             }
             else
             {
@@ -514,11 +538,11 @@ void MPEInstrument::updateNoteTotalPitchbend (MPENote& note)
         auto notePitchbendInSemitones = 0.0f;
 
         if (zone.isUsingChannelAsMemberChannel (note.midiChannel))
-            notePitchbendInSemitones = note.pitchbend.asSignedFloat() * zone.perNotePitchbendRange;
+            notePitchbendInSemitones = note.pitchbend.asSignedFloat() * (float) zone.perNotePitchbendRange;
 
         auto masterPitchbendInSemitones = pitchbendDimension.lastValueReceivedOnChannel[zone.getMasterChannel() - 1]
                                                             .asSignedFloat()
-                                          * zone.masterPitchbendRange;
+                                          * (float) zone.masterPitchbendRange;
 
         note.totalPitchbendInSemitones = notePitchbendInSemitones + masterPitchbendInSemitones;
     }
@@ -576,11 +600,9 @@ void MPEInstrument::handleSustainOrSostenuto (int midiChannel, bool isDown, bool
 
     if (! isSostenuto)
     {
-        if (legacyMode.isEnabled)
-        {
-            isMemberChannelSustained[midiChannel - 1] = isDown;
-        }
-        else
+        isMemberChannelSustained[midiChannel - 1] = isDown;
+
+        if (! legacyMode.isEnabled)
         {
             if (zone.isLowerZone())
                 for (auto i = zone.getFirstMemberChannel(); i <= zone.getLastMemberChannel(); ++i)
@@ -1834,12 +1856,8 @@ public:
             buffer.addEvents (MPEMessages::setLowerZone (5), 0, -1, 0);
             buffer.addEvents (MPEMessages::setUpperZone (6), 0, -1, 0);
 
-            MidiBuffer::Iterator iter (buffer);
-            MidiMessage message;
-            int samplePosition; // not actually used, so no need to initialise.
-
-            while (iter.getNextEvent (message, samplePosition))
-                test.processNextMidiEvent (message);
+            for (const auto metadata : buffer)
+                test.processNextMidiEvent (metadata.getMessage());
 
             expect (test.getZoneLayout().getLowerZone().isActive());
             expect (test.getZoneLayout().getUpperZone().isActive());

@@ -2,7 +2,7 @@
 # Users and packagers: Edit build_*.sh instead.
 #
 
-RADIUM_VERSION = 6.9.82
+RADIUM_VERSION = 6.9.90
 
 
 SHELL := /bin/bash
@@ -77,7 +77,7 @@ PKGqt ?= $(PKG)
 CCC ?= g++
 CC ?= gcc
 CC_STATIC ?= $(CC)
-GCC ?= $(CC)
+GCC ?= gcc
 GPLUSPLUS ?= $(CCC)
 LINKER ?= g++
 
@@ -256,8 +256,7 @@ else
 	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=
 endif
 
-
-UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined -fno-sanitize-recover=undefined -DRADIUM_USES_UBSAN # ,integer ,integer
+UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow -fno-sanitize-recover=undefined -DRADIUM_USES_UBSAN # ,integer ,integer
 #UNDEFINED_SANITIZE_OPTS=
 
 # -fsanitize-thread sometimes require: "export __GL_THREADED_OPTIMIZATIONS=0"
@@ -622,7 +621,7 @@ clean: clean_pluginhost
 	rm -f $(T)*.o *.o */*.o featurelist *~ */*~ */*~ */*/*~ core bin/core */*.pyc */*/*.pyc $(API)radium_wrap.c $(API)wrapfunclist.c $(API)radium.i $(API)radium_proc.h api/s7_types_code.c api/s7_types_code_init.c api/s7_types.h bin/protos.conf bin/radium bin/radium_linux.bin python/core bin/X11_XSendEvent bin/X11_Qtstuff.py makescript.sh $(P)mQt_instruments_widget_callbacks.h $(P)Qt_midi_instrument_widget.h $(P)Qt_audio_instrument_widget.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_control_change_widget_callbacks.h $(P)mQt* $(P)Qt_preferences.h $(P)Qt_vst_paths_widget.h $(QM)mQM* $(QM)images.cpp a.out common/keyboard_sub_ids.h $(CD)visual_op_queue_proc.h w dependencies_ok buildtype.opt flagopts.opt bin/radium_crashreporter bin/radium_crashreporter.exe bin/radium_error_message bin/radium_progress_window bin/radium_progress_window.exe bin/radium_error_message.exe bin/radium.bin.exe bin/radium_check_jack_status bin/radium_check_jack_status.exe bin/radium_check_opengl bin/radium_check_opengl.exe bin/radium_plugin_scanner bin/radium_plugin_scanner.exe bin/radium_addr2line bin/radium_addr2line.exe linux_objs/* darwinx_objs/* mingw_objs/* */*/*/Juce_plugins.o bin/s7webserver/moc_s7webserver.cpp audio/mfaustqt2.cpp bin/styles/* api/mapi_gui.cpp sndlib_built sndlib_objectfiles/* bin/packages/sndlib/*.o
 	rm -fr /tmp/radium_bin /tmp/radium_objects
 	rm -f audio/zita_rev.cpp audio/stk_flute.cpp audio/stk_bowed.cpp audio/stk_blow_bottle.cpp audio/stk_bass.cpp audio/stk_blow_hole.cpp audio/stk_brass.cpp audio/stk_clarinet.cpp audio/stk_flute_stk.cpp audio/stk_glass_harmonica.cpp audio/stk_harpsi.cpp audio/stk_modal_bar.cpp audio/stk_NLF_eks.cpp audio/stk_NLF_fm.cpp audio/stk_piano.cpp audio/stk_saxophony.cpp audio/stk_sitar.cpp audio/stk_tibetan_bowl.cpp audio/stk_tuned_bar.cpp audio/stk_uni_bar.cpp audio/stk_voice_form.cpp audio/faust_tapiir.cpp audio/faust_multibandcomp.cpp audio/faust_system_eq.cpp audio/faust_system_tremolo.cpp audio/faust_system_lowpass.cpp audio/faust_system_highpass.cpp audio/faust_system_lowshelf.cpp audio/faust_system_highshelf.cpp audio/system_compressor.cpp 
-	cd pluginhost/Builds/Linux && $(MAKE) clean && rm -fr build
+	cd pluginhost/Builds/Linux && GCC=$(GCC) $(MAKE) clean && rm -fr build
 #	cd bin/packages/sndlib && $(MAKE) clean && rm -f sndlib.a sndlib.so
 
 clean_pluginhost:
@@ -734,10 +733,14 @@ TEST_RT_MEMORY_ALLOCATOR_OPTS=$(BOOST_FLAGS) $(TEST_TIMEDATA_OPTS)
 
 test_rt_memory_allocator:
 	cd common && touch buildtype.opt flagopts.opt
-	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DTEST_MAIN -DRADIUM_USES_UBSAN -O3 -fsanitize=undefined $(ADDRESS_SANITIZE_OPTS) -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
+	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DTEST_MAIN -DRADIUM_USES_UBSAN -O3 -fsanitize=undefined $(ADDRESS_SANITIZE_OPTS)  -O0 -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
+	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DTEST_MAIN -DRADIUM_USES_UBSAN -O3 -fsanitize=undefined $(ADDRESS_SANITIZE_OPTS)  -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
 	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DTEST_MAIN -DRADIUM_USES_TSAN -O3 -fsanitize=thread -o a.out && TSAN_OPTIONS="history_size=7,second_deadlock_stack=1,abort_on_error=1,suppressions=../SanitizerSuppr.txt" $(TEST_TIMEDATA_RUNNER)
 	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DTEST_MAIN -O0 -o a.out && $(TEST_TIMEDATA_RUNNER)
 	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DTEST_MAIN -O3 -o a.out && $(TEST_TIMEDATA_RUNNER)
+
+#mingw32:
+#i686-w64-mingw32.static-g++ -Wall -Wno-parentheses RT_memory_allocator.cpp -I/home/kjetil/boost_1_63_0 -DTEST_MAIN -DFOR_WINDOWS -D__STDC_FORMAT_MACROS=1 -O3 -msse2 -mfpmath=sse -I../Qt -std=gnu++17 -o a.out
 
 
 test_ratio:
@@ -1016,7 +1019,7 @@ $(T)debug.o:  $(BUILD_DEPENDENCIES) $(CD)debug.c
 	$(CC2) $(CD)debug.c $(OPT) 
 
 $(T)memory.o:  $(BUILD_DEPENDENCIES) $(CD)memory.c
-	$(GCC2) $(CD)memory.c $(OPT)
+	$(CC2) $(CD)memory.c $(OPT)
 
 $(T)validatemem.o:  $(BUILD_DEPENDENCIES) $(CD)validatemem.cpp $(CD)atomic.h
 	$(CCC2) $(CD)validatemem.cpp $(QTOPT)
@@ -1509,7 +1512,7 @@ $(P)EditorWidget.h: $(BUILD_DEPENDENCIES)
 $(T)Qt_Main.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_instruments_proc.h $(QM)QM_MixerWidget.h Qt/helpers.h audio/SampleRecorder_proc.h common/nag.h Qt/KeyboardFocusFrame.hpp common/Process.hpp Qt/Timer.hpp
 	$(MOC) Qt/Qt_Main.cpp > Qt/mQt_Main.cpp
 	cd Qt && $(MOC) -DFOR_LINUX Timer.hpp > mTimer.hpp
-	$(CCC2) $(P)Qt_Main.cpp $(QTOPT) $(SNDFILEOPT) $(IS_LINUX_BINARY) $(BOOST_INCLUDE) -Wno-null-dereference # -Wno-deprecated-declarations -Wno-shadow 
+	$(CCC2) $(P)Qt_Main.cpp $(QTOPT) $(SNDFILEOPT) $(IS_LINUX_BINARY) $(BOOST_INCLUDE) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" -Wno-null-dereference # -Wno-deprecated-declarations -Wno-shadow 
 
 $(T)KeyboardFocus.o:  $(BUILD_DEPENDENCIES) Qt/KeyboardFocus.cpp Qt/KeyboardFocusFrame.hpp
 	$(CCC2) $(P)KeyboardFocus.cpp $(QTOPT)

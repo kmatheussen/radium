@@ -159,6 +159,9 @@ bool CHANCETEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock,
         case TR2_STOP:
           UNDO_CANCEL_LAST_UNDO();
           return false;
+        default:
+          R_ASSERT_NON_RELEASE(false);
+          return false;
       }
       
       data_as_text_t dat = DAT_get_overwrite(chance, 0, subsubtrack, key, 0, 0xff, 0, 0xff, true, false);

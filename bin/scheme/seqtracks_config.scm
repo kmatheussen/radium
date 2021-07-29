@@ -82,6 +82,7 @@
                            :align-left #t
                            :paint-border #f
                            :cut-text-to-fit #t
+                           :light-up-when-hovered #t
                            ))
 
   (name-area :add-mouse-cycle!

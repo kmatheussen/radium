@@ -1,3 +1,117 @@
+Changes 6.9.89 -> 6.9.90:
+* Internal: Reorganize code protecting s7 gc
+  variables a little bit. Might have fixed some
+  potential problems.
+* Internal: Preallocate a little bit of memory for
+  vectors. Also remove some thread assertion code
+  from non-debug builds. Might improve performance
+  a little bit.
+* Internal: Make sure memory allocated by the RT
+  memory allocator is always aligned at maximum.
+  This could theoretically increase performance.
+
+
+
+Changes 6.9.88 -> 6.9.89:
+* Editor: Fix crash when quantitizing notes. Bug
+  introduced in 6.9.80.
+* Windows32: Fix import MOD.
+* Macos: Open Help windows in an external browser
+  since the manual now uses javascript-features not
+  supported by QtWebkit 5.9.
+* Manual: Include search field + various other
+  improvements.
+* Faust: Fix possible performance problem for the
+  interpreter backend.
+* API:
+  * gui_web: Handle local files with queries.
+  * gui_web: Only accept Escape key if currently
+    searching. (Previously it hindered all other
+    usage of the Escape key by web pages.)
+
+
+
+Changes 6.9.86 -> 6.9.88:
+* Editor/Instrument: Enable sample-seek by default.
+* Macos: Runs under Macos 11.
+* Windows: Antivirus programs should never scan
+  LADSPA plugins during startup anymore.
+* JUCE: Don't allocate memory in realtime code for
+  VST3 plugins when setting parameter values.
+* Editor: Fix "Rec" not being removed immediately
+  after stopping to record MIDI input.
+* Linux: Fix JUCE thread issues which might have
+  caused glitches in sound when using VST plugins.
+* JUCE: Upgrade to V6.0.8. Most important change is
+  probably support for VST3 plugins on Linux.
+
+
+
+Changes 6.9.82 -> 6.9.86:
+* Audio: Try not to open any audio input device by
+  default. Sometimes this screws up the output
+  sound.
+* Audio: Try to use a default buffer size of 1024
+  when initializing the audio device. Earlier the
+  audio device was sometimes initialized with an
+  incompatible block size.
+* Sequencer: Fix inserting several audio files at
+  once when selecting "Insert audio file(s)" from
+  the popup menu. For a few releases now, inserting
+  several audio files inserted the new audio files
+  into the wrong sequencer tracks.
+* Sequencer: Also set seqtrack-under-mouse when
+  changing current seqtrack.
+* Sequencer: Fix moving several seqblocks at once
+  when there are hidden seqtracks.
+* Sequencer: Light up seqtrack names, both in
+  seqtrack headers and in the "Tracks" tab, when
+  mouse is above.
+* Sequencer: Light up the editable path name field in
+  the "Files" tab when mouse is above.
+* Sequencer: Light up seqtrack currently under mouse.
+* Sequencer: Fix keybindings not always working on
+  current seqtrack pointed to by the mouse.
+* Sequencer: Paint orange border around current
+  seqblock in the sequencer navigators.
+* Sequencer: Fix possible weird behavior when moving
+  more than one seqblock and one or more of those
+  seqblocks were deleted because they were moved to
+  a seqtrack of the wrong type.
+* GUI: Make all sliders in the editor/mixer/sequencer
+  to light up when mouse is above the slider.
+* Mixer: Make the volume text and peak text light up
+  when mouse is above.
+* Editor: Convert various node assertions to fire in
+  debug builds only.
+* Editor: Fix moving cursor left when the cursor is
+  positioned on the leftmost centtext subtrack and
+  the swing subtrack is visible.
+* Editor: Fix transposing selected notes in the
+  pianoroll when using left meta + u/d.
+* Editor: Improve logic for whether to show the
+  centtext subtrack or not.
+* Editor: Convert pitches to TimeData.
+  * The most notable change is that any editing is
+    heard immediately if playing block or song at
+    the same time.
+  * Using less CPU cache. CPU usage might be notably
+    lower after notes themselves have been converted
+    to the new data structure.
+  * Necessary for future work such as replacing
+    OpenGL with Vulkan.
+* Editor: Fix transpose velocity.
+* Build: Fix compiling for LLVM12 (Teteros)
+* Editor: Let the window that shows the
+  no-range-or-selection error show buttons to open
+  the manual instead of explaining directly how to
+  edit range and selection.
+* Editor: Make sure editor graphics is updated when
+  pressing left alt + return.
+* API: setCurrSeqtrackUnderMouse
+
+
+
 Changes 6.9.81 -> 6.9.82:
 * Editor: Don't show assertion window when changing
   the number of lines in a block causes a note to

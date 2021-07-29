@@ -600,6 +600,7 @@ static void setCurrSeqtrack2(int seqtracknum, bool called_from_set_curr_seqblock
 
   }
 
+  setCurrSeqtrackUnderMouse(seqtracknum);
 }
 
 void autoscrollSeqtracks(int seqtracknum, bool make_fully_visible){
@@ -2389,12 +2390,15 @@ double getSeqtrackBorderWidth(void){
 }
                           
 int getSeqtrackFromY(int y){
-  for(int seqtracknum=0;seqtracknum<getNumSeqtracks();seqtracknum++){
-    float y1 = getSeqtrackY1(seqtracknum);
-    float y2 = getSeqtrackY2(seqtracknum);
-    //printf("y1: %f / %f,%d / %f\n", y1, tevent.x, y, y2);
-    if (y>=y1 && y <= y2)
-      return seqtracknum;
+  int topmost_visible = getTopmostVisibleSeqtrack();
+  int lowest_visible = getLowestVisibleSeqtrack(false);
+  
+  for(int seqtracknum=topmost_visible;seqtracknum<=lowest_visible;seqtracknum++){
+    if (getSeqtrackVisible(seqtracknum)) {    
+      if (y>=getSeqtrackY1(seqtracknum)
+          && y <= getSeqtrackY2(seqtracknum))
+        return seqtracknum;
+    }
   }
 
   return -1;
@@ -3227,7 +3231,10 @@ static void set_curr_seqblock(int64_t seqblockid, bool update_playlist){
   
   if (seqblockid==g_curr_seqblock_id){
 #if  CURR_SEQBLOCK_EQUALS_SEQBLOCKS_UNDER_MOUSE
-    setCurrSeqblockUnderMouse(seqblockid);
+    if (seqblockid >= 0)
+      setCurrSeqblockUnderMouse(seqblockid);
+    else
+      cancelCurrSeqblockUnderMouse();
 #endif
     return;
   }
@@ -3254,6 +3261,7 @@ static void set_curr_seqblock(int64_t seqblockid, bool update_playlist){
     setCurrSeqtrack2(seqtracknum, true, false);
 
   SEQBLOCK_update_with_borders(seqtrack, seqblock);
+  SEQUENCER_update(SEQUPDATE_NAVIGATOR);
   
   if(seqblock->block != NULL){
     S7EXTRA_GET_FUNC(func, "FROM_C-update-seqblock-track-on-off-configuration");
@@ -3431,6 +3439,7 @@ void setCurrSeqblockUnderMouse(int64_t seqblockid){
   //printf("   CURR seqblocknum: %d\n", seqblocknum);
   
   SEQBLOCK_update(seqtrack, seqblock);
+  SEQUENCER_update(SEQUPDATE_NAVIGATOR);
   /*
   SEQTRACK_update(seqtrack);
   if (prev_seqtrack_under_mouse != NULL)
@@ -3457,6 +3466,11 @@ int getCurrSeqblockUnderMouse(void){
 
 int getCurrSeqtrackUnderMouse(bool forgiving, bool only_inside_timeline){
 
+  int seqtracknum = g_curr_seqtrack_under_mouse;
+
+  if (seqtracknum < 0)
+    return seqtracknum;
+  
   if (only_inside_timeline){
     int x = getMousePointerX(-2);
     if (x < SEQTRACK_get_x1(0))
@@ -3465,17 +3479,22 @@ int getCurrSeqtrackUnderMouse(bool forgiving, bool only_inside_timeline){
       return -1;
   }
 
-  int y = getMousePointerY(-2);
-
-  if (!forgiving)
-    return getSeqtrackFromY(y);
-  
-  for(int i=1;i<root->song->seqtracks.num_elements;i++){
-    if (y < getSeqtrackY1(i))
-      return i-1;
+  if (!forgiving) {
+    int y = getMousePointerY(-2);
+    if (y < getSeqtrackY1(seqtracknum))
+      return -1;
+    if (y > getSeqtrackY2(seqtracknum))
+      return -1;
   }
+  
+  return seqtracknum;
+}
 
-  return root->song->seqtracks.num_elements-1;
+void setCurrSeqtrackUnderMouse(int seqtracknum){
+  if (g_curr_seqtrack_under_mouse != seqtracknum){
+    g_curr_seqtrack_under_mouse = seqtracknum;
+    SEQUENCER_update(SEQUPDATE_EVERYTHING); // TODO: This can be optimized by only updating old and new seqtrack + navigators.
+  }
 }
 
 void cancelCurrSeqblockUnderMouse(void){
@@ -3491,6 +3510,8 @@ void cancelCurrSeqblockUnderMouse(void){
   else
     SEQUENCER_update(SEQUPDATE_TIME); // A scheme error will be thrown if this happens.
 
+  SEQUENCER_update(SEQUPDATE_NAVIGATOR);
+  
   //g_curr_seqblock_under_mouse = NULL;
   g_curr_seqblock_id_under_mouse = -1;
 
@@ -4559,7 +4580,7 @@ void pasteSeqblocks(int seqtracknum, int64_t abstime){
   //abort();
 
   if (seqtracknum==-1)
-    seqtracknum = getSeqtrackFromY(tevent.y);
+    seqtracknum = g_curr_seqtrack_under_mouse;
 
   //printf("seqtracknum: %d\n", seqtracknum);
 

@@ -67,7 +67,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QCheckBox>
 #include <QPushButton>
 #include <QButtonGroup>
-
+#include <QOperatingSystemVersion>
 #include <QStyleFactory>
 
 
@@ -179,18 +179,19 @@ class Hepp2 : public Hepp{
 
 // The address sanitizer (asan) tends to zero out all allocated memory, covering up bugs. 
 // This is a workaround.
-#if defined(RADIUM_USES_ASAN)
+
+// Comment out line below. Always do this in debug mode since it's useful to catch wrong usage of 'new'.
+// #if defined(RADIUM_USES_ASAN)
+
 void * operator new(decltype(sizeof(0)) size) noexcept(false)
 {
-  R_ASSERT(!PLAYER_current_thread_has_lock());
-  R_ASSERT(!THREADING_is_runner_thread());
-  
-  void *mem = malloc(size);
+ void *mem = V_malloc(size);
   if (size > 1048576) // If changing 1048576, also change 1048576 in run_gdb.sh
     memset(mem, rand(), size);
   return mem;
 }
-#endif
+
+// #endif // defined(RADIUM_USES_ASAN)
 
 #endif
 
@@ -4112,7 +4113,18 @@ int main(int argc, char **argv){
   if (argc > 1 && !strcmp(argv[1], "--radium-clean-configuration")){
     clean_configuration = true;
   }
-     
+
+#if defined(FOR_MACOSX)
+  if (QOperatingSystemVersion::current() >= QOperatingSystemVersion::MacOSBigSur){
+#if 0
+    system("osascript -e 'tell application \"Finder\"' -e 'activate' -e 'display dialog \"Radium does not run on macOS 11 or newer\" buttons {\"OK\"}' -e 'end tell'&");
+    return -100;
+#else
+    setenv("QT_MAC_WANTS_LAYER", "1", 1);
+#endif
+  }
+#endif
+  
   //  testme();
 #if TEST_CRASHREPORTER
   QApplication dasqapp(argc,argv);
@@ -4239,7 +4251,10 @@ int main(int argc, char **argv){
   qapplication->setAttribute(Qt::AA_DontCreateNativeWidgetSiblings); // Fix splitter handlers on OSX. Seems like a good flag to set in general. Seems like a hack qt has added to workaround bugs in qt. https://bugreports.qt.io/browse/QTBUG-33479
 
   QWebSettings::globalSettings()->setAttribute(QWebSettings::PluginsEnabled, false);
-
+#if !defined(RELEASE)
+  QWebSettings::globalSettings()->setAttribute(QWebSettings::DeveloperExtrasEnabled, true);
+#endif
+  
   init_weak_jack();
   
   g_startup_rect = QRect(QPoint(0,0), QGuiApplication::screens().at(0)->size()); //QApplication::desktop()->screenGeometry(); // Probably no point. Hoped that it would force radium to open on the same desktop that was current when program started.
@@ -4288,30 +4303,38 @@ int main(int argc, char **argv){
 
 
 #if defined(FOR_MACOSX)
-  if (QSysInfo::productVersion()=="10.13" || QSysInfo::productVersion()=="10.14" || QSysInfo::productVersion()=="10.15"){
-    const char *confname = "show_macos_opengl_warning_during_startup";
-    if (SETTINGS_read_bool(confname, true)) {
+  if (QOperatingSystemVersion::current() <= QOperatingSystemVersion::MacOSBigSur){
+    
+    const char *confname = "show_macos_warning_during_startup_v" RADIUM_VERSION;
+    if (QSysInfo::productVersion() != SETTINGS_read_qstring(confname, "definitelynotthishopefully")) {
       vector_t v = {};
       VECTOR_push_back(&v,"Ok");
       int dont_show = VECTOR_push_back(&v,"Don't show this message again");
       
       int result = GFX_Message(&v,
-                               "Note: On MacOS there are both performance and stability problems. "
-                               "The most serious problems on macOS are caused by Apple's poor support for OpenGL."
+                               "Radium for macOS is BETA software!\n"
                                "\n"
+                               "Note: On macOS there are both performance and stability problems when running Radium. In addition you might experience various types of quirks and misbehavours.\n"
+                               "\n"
+                               "The most serious problems on macOS are caused by Apple's poor support for OpenGL. "
                                "If Radium crashes right after startup, it's probably Apple's OpenGL library that crashes. "
                                "Fortunately, the bug is usually hit only during startup, and not every time."
                                );
       if (result==dont_show)
-        SETTINGS_write_bool(confname, false);
+        SETTINGS_write_string(confname, QSysInfo::productVersion());
     }      
-  }
 
-  if (QSysInfo::productVersion()=="10.16" || QSysInfo::productVersion()=="10.17" || QSysInfo::productVersion()=="10.18"){
-    GFX_Message(NULL, "Radium has not been tested on this version of macOS. Latest supported version of macOS is 10.15. Radium might now freeze, crash, or misbehave in subtle ways. Please report your experience running Radium on this operating system to the forum, the mailing list, or to k.s.matheussen@notam02.no.");
+  } else {
+
+    GFX_Message(NULL,
+                "Radium has not been tested on this version of macOS. Latest supported version of macOS is 11.0. Radium might now freeze, crash, or misbehave in subtle ways. Please report your experience running Radium on this operating system to the forum, the mailing list, or to k.s.matheussen@notam02.no.");
+    
   }
 #endif
 
+  //GFX_Message(NULL, "hello");
+  //system("osascript -e 'tell application \"Finder\"' -e 'activate' -e 'display dialog \"Hello 2\" {\"OK\"}' -e 'end tell'&");
+  
   //GC_disable();
   //QPixmap pixmap(OS_get_full_program_file_path("radium_256x256x32.png"));
   //QPixmap pixmap(QPixmap(OS_get_full_program_file_path("/home/kjetil/radium/pictures/logo_big.png")).scaled(QSize(256,256), Qt::KeepAspectRatioByExpanding));

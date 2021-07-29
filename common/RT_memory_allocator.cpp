@@ -42,6 +42,14 @@ void msleep(int ms){
   usleep(1000*ms);
 }
 
+#if !defined(RELEASE)
+#if !defined(FOR_MACOSX)
+bool THREADING_has_player_thread_priority(void){
+  return false;
+}
+#endif
+#endif
+
 double TIME_get_ms(void){
   struct timeval now;
 
@@ -55,6 +63,10 @@ double TIME_get_ms(void){
 }
 
 #  define ASSERT_MEMORY 1
+
+#if defined(RELEASE)
+#  error "RELEASE should not be defined"
+#endif
 
 #else // TEST_MAIN -> ! TEST_MAIN
 
@@ -116,8 +128,16 @@ namespace{
 #  define MAX_POOL_SIZE 4096
 #endif
 
-#define MIN_MEMPOOL_SIZE 8
+#define ALIGN_MAX ((int)(std::alignment_of<std::max_align_t>::value))
 
+static_assert(ALIGN_MAX==8 || ALIGN_MAX==16, "ALIGN_MAX must be 2,4,8,16,32,etc.");
+
+#define IS_ALIGNED(POINTER) (((uintptr_t)(const void *)(POINTER)) % (ALIGN_MAX) == 0)
+
+#define ALIGN_UP(value,alignment) (((uintptr_t)value + alignment - 1) & -alignment)
+
+
+#define MIN_MEMPOOL_SIZE ALIGN_MAX // The way things work now, this is necessary to ensure memory blocks are properly aligned.
 
 #define POOL_MEM_SIZE(Pool_num) (MIN_MEMPOOL_SIZE<<(Pool_num))
 
@@ -134,25 +154,20 @@ namespace{
   };
   
   struct RT_mempool_data{
-    union{
-      int64_t something;
-      struct{
-        int32_t _pool_num;
-        DEFINE_ATOMIC(int32_t, _num_users);
-      };
-    };
-#if defined(RADIUM_USES_ASAN)
-    //int64_t fillin[128]; // [529834]
-#endif
-    struct RT_Mem_internal _mem;
+    int32_t _pool_num;
+    DEFINE_ATOMIC(int32_t, _num_users);
+
+    // This makes RT_mempool_data blocks at least 32 bytes long on x86-64 CPUs since both max alignment and MIN_MEMPOOL_SIZE are 16 bytes each;
+    // There are probably ways to lower the overhead, but it might not be worth it.
+    struct RT_Mem_internal _mem __attribute__((aligned(std::alignment_of<std::max_align_t>::value)));
   };
 }
 
 static constexpr int g_offset_of_data = offsetof(RT_mempool_data, _mem);
 
 
-static_assert(g_offset_of_data==8, "RT-allocated memory will not be aligned by 64 bit");
-
+static_assert(g_offset_of_data==ALIGN_MAX, "RT-allocated memory will not be aligned at max");
+static_assert(g_offset_of_data==MIN_MEMPOOL_SIZE, "RT-allocated memory alignment must be equal to minimum pool size. If not things could end up not being properly aligned the way things work now.");
 
 #define POOL boost::lockfree::stack<RT_mempool_data*>
 
@@ -162,6 +177,13 @@ static POOL *g_pools[NUM_POOLS]; // First pool has 8, second has 16, third has 3
 void RT_mempool_init(void){
   g_mem = (char*)calloc(1, TOTAL_MEM_SIZE);
 
+#if !defined(RELEASE)
+  if (!IS_ALIGNED(g_mem)) {
+    printf(" Memory is not aligned. Mem: %p. Size: %d\n", g_mem, TOTAL_MEM_SIZE);
+    abort();
+  }
+#endif
+  
 #if ASSERT_MEMORY
   {
     unsigned char *mem = (unsigned char*)g_mem;
@@ -208,6 +230,8 @@ static RT_Mem_internal *RT_alloc_from_pool(POOL *pool, int pool_num){
 #if defined(RADIUM_USES_ASAN)
     R_ASSERT(__asan_address_is_poisoned(&data->_mem) == 1);
 #endif
+
+    //printf("Got memory from pool %d\n", pool_num);
     
     return &data->_mem;
   }
@@ -217,8 +241,12 @@ static RT_Mem_internal *RT_alloc_from_pool(POOL *pool, int pool_num){
 
 static RT_Mem_internal *RT_alloc_from_global_mem(int size, int pool_num){
   size += g_offset_of_data;
-                 
+
+  size = ALIGN_UP(size, ALIGN_MAX); // We need to do this to ensure g_curr_mem_size continues to be properly aligned also for the next call to this function.
+    
   int pos = ATOMIC_ADD_RETURN_OLD(g_curr_mem_size, size);
+
+  //printf("---Allocating global. pos: %d. size: %d\n", size, pos);
   
   if (pos + size > TOTAL_MEM_SIZE){
     ATOMIC_ADD_RETURN_OLD(g_curr_mem_size, -size);
@@ -232,6 +260,17 @@ static RT_Mem_internal *RT_alloc_from_global_mem(int size, int pool_num){
     ret->_pool_num = pool_num;
     ATOMIC_NAME(ret->_num_users) = 1;
   }
+  
+#if !defined(RELEASE)
+  if (!IS_ALIGNED(ret)) {
+    printf(" Memory is not aligned. Mem: %p. Size: %d\n", ret, size);
+    abort();
+  }
+  if (!IS_ALIGNED(&ret->_mem)) {
+    printf(" Memory is not aligned. Mem: %p. Size: %d\n", &ret->_mem, size);
+    abort();
+  }
+#endif
   
   return &ret->_mem;
 }
@@ -302,6 +341,17 @@ static RT_Mem_internal *RT_alloc_using_malloc(int size, int pool_num, const char
   data->_pool_num = pool_num;
   ATOMIC_NAME(data->_num_users) = 1;
 
+#if !defined(RELEASE)
+  if (!IS_ALIGNED(data)) {
+    printf(" Memory is not aligned. Mem: %p. Size: %d\n", data, g_offset_of_data + size);
+    abort();
+  }
+  if (!IS_ALIGNED(&data->_mem)) {
+    printf(" Memory is not aligned. Mem: %p. Size: %d\n", data, g_offset_of_data + size);
+    abort();
+  }
+#endif
+  
 #if ASSERT_MEMORY
   {
     unsigned char *mem = (unsigned char*)&data->_mem;
@@ -341,7 +391,7 @@ void *RT_alloc_raw_internal(const int minimum_num_elements, const int element_si
     ATOMIC_ADD(g_used_mem, size);
     //printf("    ALLOCED MEM: %d\n", ATOMIC_GET(g_used_mem));
 #endif
-    
+
     ret = RT_alloc_from_pool(pool, pool_num);
 
     if (ret != NULL) {
@@ -352,12 +402,13 @@ void *RT_alloc_raw_internal(const int minimum_num_elements, const int element_si
 
       actual_num_elements = minimum_num_elements;
 
-      if (!THREADING_is_runner_thread() && !PLAYER_current_thread_has_lock()) {
-        
+      if (!THREADING_is_runner_thread() && !PLAYER_current_thread_has_lock())
+      {
+
         ret = RT_alloc_using_malloc(size, pool_num, who, 2, false, true);
         
       } else {
-      
+
         ret = RT_alloc_from_global_mem(size, pool_num);
 
         if (ret == NULL)
@@ -396,13 +447,32 @@ void *RT_alloc_raw_internal(const int minimum_num_elements, const int element_si
 
 #endif
   
+#if !defined(RELEASE)
+  if (!IS_ALIGNED(ret)) {
+    fprintf(stderr, " Memory is not aligned. Mem: %p. Size: %d\n", g_mem, TOTAL_MEM_SIZE);
+    abort();
+  }
+#endif
+  
   return ret;
 }
 
 
 void *RT_alloc_raw(const int size, const char *who){
   int actual_size;
-  return RT_alloc_raw_internal(size, 1, actual_size, who);
+  
+  void *ret = RT_alloc_raw_internal(1, size, actual_size, who);
+  
+  R_ASSERT_NON_RELEASE(actual_size > 0);
+
+#if !defined(RELEASE)
+  if (!IS_ALIGNED(ret)) {
+    fprintf(stderr, " Memory is not aligned. Mem: %p. Size: %d\n", g_mem, TOTAL_MEM_SIZE);
+    abort();
+  }
+#endif
+  
+  return ret;
 }
 
 void RT_inc_ref_raw(void *mem){
@@ -538,13 +608,40 @@ static void test_RT_Smartpointers(void){
   printf("B: %d. %d / %d\n", ATOMIC_GET(g_used_mem), usage2->something, usage4->something2[0]);
 }
 
+static void test_memory_alignment(void){
+  std::vector<void*> allocated;
+  
+  for(int i = 1 ; i < g_max_mem_size  ; i++) {
+
+    int size = 1 + rand()%4;
+    
+    void *mem = RT_alloc_raw(size, "test_memory_alignment");
+    //printf("Mem: %p. Pos: %d. Max mem: %d\n", mem, int(((char*)mem)-g_mem), g_max_mem_size);
+    
+    if (!IS_ALIGNED(mem)) {
+      printf(" Memory is not aligned. Mem: %p. Size: %d\n", mem, size);
+      abort();
+    }
+
+    if (rand()%8)
+      RT_free_raw(mem, "test_memory_alignment");
+    else
+      allocated.push_back(mem);
+  }
+
+  for(int i=0;i<(int)allocated.size();i++)
+    if (allocated.at(i) != NULL)
+      RT_free_raw(allocated.at(i), "test_memory_alignment2");
+}
 
 
+#define CURRENT_THREAD_HAS_LOCK 1
+#define CURRENT_THREAD_DOES_NOT_HAVE_LOCK 0
 
 static __thread int g_thread_type = -1;
 
 bool PLAYER_current_thread_has_lock(void){
-  return g_thread_type==1;
+  return g_thread_type==CURRENT_THREAD_HAS_LOCK;
 }
 
 bool THREADING_is_runner_thread(void){
@@ -559,17 +656,27 @@ int main(){
   int seed = time(NULL);
   printf("Seed: %d\n", (int)seed);
 
+  printf("Align max: %d\n", (int)std::alignment_of<std::max_align_t>::value);
+  
   srand(seed);
 
   RT_mempool_init();
 
-  {
+  g_thread_type = CURRENT_THREAD_HAS_LOCK; // If not we don't test the custom allocator.
+  
+  if (rand()%2==0) {
+    test_memory_alignment();
+    if (ATOMIC_GET(g_used_mem) != 0)
+      abort();
+  }
+  
+  if (rand()%2==0){
     test_RT_Smartpointers();
     if (ATOMIC_GET(g_used_mem) != 0)
       abort();
     //return 0;
   }
-  
+
   const int num_main_iterations = 40 + rand()%25;
 
   int *highest_allocated = (int*)calloc(sizeof(int), num_main_iterations);
@@ -604,9 +711,9 @@ int main(){
     
     for(int i=0;i<num_threads;i++){
 
-      t[i] = std::thread([num_reader_iterations](){
-          
-          g_thread_type = 1;
+      t[i] = std::thread([i, num_reader_iterations](){
+
+          g_thread_type = i==0 ? CURRENT_THREAD_DOES_NOT_HAVE_LOCK : CURRENT_THREAD_HAS_LOCK; // Let first thread act as main thread.
           
           msleep(rand() % 2);
           

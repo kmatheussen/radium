@@ -2,17 +2,16 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2017 - ROLI Ltd.
+   Copyright (c) 2020 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
 
-   By using JUCE, you agree to the terms of both the JUCE 5 End-User License
-   Agreement and JUCE 5 Privacy Policy (both updated and effective as of the
-   27th April 2017).
+   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
+   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
 
-   End User License Agreement: www.juce.com/juce-5-licence
-   Privacy Policy: www.juce.com/juce-5-privacy-policy
+   End User License Agreement: www.juce.com/juce-6-licence
+   Privacy Policy: www.juce.com/juce-privacy-policy
 
    Or: You may also use this code under the terms of the GPL v3 (see
    www.gnu.org/licenses).
@@ -126,6 +125,7 @@ public:
     ~FileChooser();
 
     //==============================================================================
+   #if JUCE_MODAL_LOOPS_PERMITTED || DOXYGEN
     /** Shows a dialog box to choose a file to open.
 
         This will display the dialog box modally, using an "open file" mode, so that
@@ -181,6 +181,7 @@ public:
         browseForFileToOpen() for more info about the behaviour of this method.
     */
     bool browseForMultipleFilesOrDirectories (FilePreviewComponent* previewComponent = nullptr);
+   #endif
 
     //==============================================================================
     /** Runs a dialog box for the given set of option flags.
@@ -209,7 +210,7 @@ public:
         the lifetime of the file-chooser.
     */
     void launchAsync (int flags,
-                      std::function<void(const FileChooser&)>,
+                      std::function<void (const FileChooser&)>,
                       FilePreviewComponent* previewComponent = nullptr);
 
     //==============================================================================
@@ -310,7 +311,7 @@ private:
     Array<URL> results;
     const bool useNativeDialogBox;
     const bool treatFilePackagesAsDirs;
-    std::function<void(const FileChooser&)> asyncCallback;
+    std::function<void (const FileChooser&)> asyncCallback;
 
     //==============================================================================
     void finished (const Array<URL>&);
@@ -324,12 +325,11 @@ private:
         virtual void runModally() = 0;
     };
 
-    std::unique_ptr<Pimpl> pimpl;
+    std::shared_ptr<Pimpl> pimpl;
 
     //==============================================================================
-    Pimpl* createPimpl (int, FilePreviewComponent*);
-    static Pimpl* showPlatformDialog (FileChooser&, int,
-                                      FilePreviewComponent*);
+    std::shared_ptr<Pimpl> createPimpl (int, FilePreviewComponent*);
+    static std::shared_ptr<Pimpl> showPlatformDialog (FileChooser&, int, FilePreviewComponent*);
 
     class NonNative;
     friend class NonNative;

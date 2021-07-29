@@ -2774,7 +2774,10 @@ void RT_SEQBLOCK_reserve_playing_notes_tracks(struct SeqBlock *seqblock,
                                               int num_tracks)
 {
   for(int i=seqblock->playing_notes->size() ; i < num_tracks ; i++){
+    //void *mem = malloc(sizeof(radium::RT_NoteVector)); //
     void *mem = RT_alloc_raw(sizeof(radium::RT_NoteVector), "RT_VELOCITIES_add_note");
+    //printf("Mem: %p. Alignment: %d. Ptr alignment: %d. Max alignment: %d\n", mem, (int)std::alignment_of<radium::RT_NoteVector>::value, (int)std::alignment_of<radium::RT_NoteVector*>::value, (int)std::alignment_of<std::max_align_t>::value);
+    //abort();
     seqblock->playing_notes->push_back(new(mem) radium::RT_NoteVector);
   }
 }
@@ -3585,7 +3588,10 @@ void SEQUENCER_delete_seqtrack(int pos){
     if (curr_seqtracknum >= root->song->seqtracks.num_elements){
       new_seqtracknum = root->song->seqtracks.num_elements -1;
       ATOMIC_SET(root->song->curr_seqtracknum, new_seqtracknum); // Set it now, while holding the player lock, to avoid root->song->curr_seqtracknum having an illegal value.
-    }      
+    }
+
+    if (g_curr_seqtrack_under_mouse >= root->song->seqtracks.num_elements)
+      g_curr_seqtrack_under_mouse = root->song->seqtracks.num_elements-1;
   }
 
   if (last_seqtrack_was_visible)
@@ -3910,6 +3916,8 @@ static double find_samplerate_in_old_song_state(hash_t *song_state){
 }
 
 void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
+
+  g_curr_seqtrack_under_mouse = -1;
 
   {
     SEQUENCER_ScopedGfxDisable gfx_disable;
