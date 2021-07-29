@@ -739,6 +739,9 @@ test_rt_memory_allocator:
 	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DTEST_MAIN -O0 -o a.out && $(TEST_TIMEDATA_RUNNER)
 	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DTEST_MAIN -O3 -o a.out && $(TEST_TIMEDATA_RUNNER)
 
+#mingw32:
+#i686-w64-mingw32.static-g++ -Wall -Wno-parentheses RT_memory_allocator.cpp -I/home/kjetil/boost_1_63_0 -DTEST_MAIN -DFOR_WINDOWS -D__STDC_FORMAT_MACROS=1 -O3 -msse2 -mfpmath=sse -I../Qt -std=gnu++17 -o a.out
+
 
 test_ratio:
 	cd common && ln -sf ratio_funcs.h test_ratio.cpp && g++ test_ratio.cpp -D__STDC_FORMAT_MACROS=1 -DTEST_MAIN -Wall -Werror -g -o a.out &&	./a.out
