@@ -42,9 +42,13 @@ void msleep(int ms){
   usleep(1000*ms);
 }
 
+#if !defined(RELEASE)
+#if !defined(FOR_MACOSX)
 bool THREADING_has_player_thread_priority(void){
   return false;
 }
+#endif
+#endif
 
 double TIME_get_ms(void){
   struct timeval now;
@@ -126,6 +130,8 @@ namespace{
 
 #define ALIGN_MAX ((int)(std::alignment_of<std::max_align_t>::value))
 
+static_assert(ALIGN_MAX==8 || ALIGN_MAX==16, "ALIGN_MAX must be 2,4,8,16,32,etc.");
+
 #define IS_ALIGNED(POINTER) (((uintptr_t)(const void *)(POINTER)) % (ALIGN_MAX) == 0)
 
 #define ALIGN_UP(value,alignment) (((uintptr_t)value + alignment - 1) & -alignment)
@@ -162,7 +168,6 @@ static constexpr int g_offset_of_data = offsetof(RT_mempool_data, _mem);
 
 static_assert(g_offset_of_data==ALIGN_MAX, "RT-allocated memory will not be aligned at max");
 static_assert(g_offset_of_data==MIN_MEMPOOL_SIZE, "RT-allocated memory alignment must be equal to minimum pool size. If not things could end up not being properly aligned the way things work now.");
-
 
 #define POOL boost::lockfree::stack<RT_mempool_data*>
 
@@ -651,6 +656,8 @@ int main(){
   int seed = time(NULL);
   printf("Seed: %d\n", (int)seed);
 
+  printf("Align max: %d\n", (int)std::alignment_of<std::max_align_t>::value);
+  
   srand(seed);
 
   RT_mempool_init();
