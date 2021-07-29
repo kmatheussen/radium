@@ -4091,7 +4091,7 @@ bool includePanAndDryInWetSignal(void){
   return root->song->include_pan_and_dry_in_wet_signal;
 }
 
-static bool g_enable_sample_seek_by_default = false;
+static bool g_enable_sample_seek_by_default = true;
 
 bool enableSampleSeekByDefault(void){
   static bool has_inited = false;

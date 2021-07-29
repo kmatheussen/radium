@@ -15,7 +15,7 @@
 (define *sequencer-right-part-area* #f)
 
 (define (show-sequencer-help-window)
-  (FROM-C-show-help-window "help/sequencer_framed.html"))
+  (FROM-C-show-help-window "help/index.html?page=sequencer"))
 
 
 (define *sequencer-window-gui* (if (defined? '*sequencer-window-gui*)
@@ -1153,7 +1153,7 @@
       (swapit)))
 
 ;; Note: Used for shortcut
-(delafina (show-set-seqtrack/seqblock-name-requester :seqtracknum (<ra> :get-curr-seqtrack-under-mouse #f #t) ;; (<ra> :get-curr-seqtrack)
+(delafina (show-set-seqtrack/seqblock-name-requester :seqtracknum (<ra> :get-curr-seqtrack-under-mouse #t #t) ;; (<ra> :get-curr-seqtrack)
                                                      :seqblock-id (and *current-seqblock-info*
                                                                        (*current-seqblock-info* :id)))
   (if seqblock-id
@@ -1443,23 +1443,31 @@
                                                                                      (info :samplerate)))))))
 
 ;; Note: Used for shortcut
-(delafina (insert-existing-block-or-audiofile-in-sequencer :seqtracknum (<ra> :get-curr-seqtrack-under-mouse #f #t)
+(delafina (insert-existing-block-or-audiofile-in-sequencer :seqtracknum (<ra> :get-curr-seqtrack-under-mouse #t #t)
                                                            :X (<ra> :get-mouse-pointer-x -2))
   ;;(c-display "X:" X "seqgracknum:" seqtracknum)
   (if (>= seqtracknum 0)
       (let ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)))))
         (c-display "POS:" pos)
         (define (create-new-audiofiles)
-          (create-file-requester "Choose audio file(s)" (<ra> :create-illegal-filepath) "audio files" (<ra> :get-audiofile-postfixes) #t "" #t #f -1
+          (create-file-requester "Choose audio file(s)"
+                                 (<ra> :create-illegal-filepath)
+                                 "audio files"
+                                 (<ra> :get-audiofile-postfixes)
+                                 #t ;; for loading
+                                 "" ;; default suffix
+                                 #t ;; several files
+                                 #f ;; is modal
+                                 (<gui> :get-sequencer-gui) ;; parent
                                  (lambda (filenames)
                                    (if (= 1 (length filenames))
                                        (<ra> :create-sample-seqblock seqtracknum (car filenames) pos)
                                        (undo-block
                                         (lambda ()
                                           (for-each (lambda (filename)
-                                                      (<ra> :append-audio-seqtrack)
-                                                      (<ra> :set-seqtrack-name (<ra> :get-path-string (<ra> :get-path-without-dir filename)) (- (<ra> :get-num-seqtracks) 1))
-                                                      (<ra> :create-sample-seqblock (- (<ra> :get-num-seqtracks) 1) filename 0))
+                                                      (define seqtracknum (<ra> :append-audio-seqtrack))
+                                                      (<ra> :set-seqtrack-name (<ra> :get-path-string (<ra> :get-path-without-dir filename)) seqtracknum)
+                                                      (<ra> :create-sample-seqblock seqtracknum filename 0))
                                                     filenames)))))))
         
         (if (<ra> :seqtrack-for-audiofiles seqtracknum)
@@ -1496,7 +1504,7 @@
                                 (iota (<ra> :get-num-blocks))))))))))
 
 ;; Note: Used for shortcut
-(delafina (insert-current-block-or-audiofile-in-sequencer :seqtracknum (<ra> :get-curr-seqtrack-under-mouse #f #t)
+(delafina (insert-current-block-or-audiofile-in-sequencer :seqtracknum (<ra> :get-curr-seqtrack-under-mouse #t #t)
                                                           :X (<ra> :get-mouse-pointer-x -2))
   (<declare-variable> *curr-audiofile-num*)
   (if (>= seqtracknum 0)
@@ -1563,7 +1571,7 @@
 
 
 ;; Note: Used for shortcut
-(delafina (paste-seqtrack-automation :seqtracknum (<ra> :get-curr-seqtrack-under-mouse #f #t)
+(delafina (paste-seqtrack-automation :seqtracknum (<ra> :get-curr-seqtrack-under-mouse #t #t)
                                      :time (<ra> :get-seq-gridded-time (round (get-sequencer-time (<ra> :get-mouse-pointer-x -2))))
                                      :seqtrack-automation *clipboard-seqtrack-automation*)
 
@@ -1679,7 +1687,7 @@
 
 
 ;; Note: Used for shortcut
-(delafina (create-sequencer-automation :seqtracknum (<ra> :get-curr-seqtrack-under-mouse #f #t) ;;get-curr-seqtrack)
+(delafina (create-sequencer-automation :seqtracknum (<ra> :get-curr-seqtrack-under-mouse #t #t) ;;get-curr-seqtrack)
                                        :X (<ra> :get-mouse-pointer-x -2)
                                        :Y (<ra> :get-mouse-pointer-y -2))
   (if (>= seqtracknum 0)
@@ -1828,7 +1836,7 @@
    ))
 
 ;; Note: used for shortcut
-(delafina (show-seqtrack-popup-menu :seqtracknum (<ra> :get-curr-seqtrack-under-mouse #f #t)
+(delafina (show-seqtrack-popup-menu :seqtracknum (<ra> :get-curr-seqtrack-under-mouse #t #t)
                                     :X (<ra> :get-mouse-pointer-x -2)
                                     :Y (<ra> :get-mouse-pointer-y -2))
   (popup-menu (get-seqtrack-menu-entries seqtracknum X Y)))

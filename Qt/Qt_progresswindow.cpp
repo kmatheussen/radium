@@ -16,6 +16,7 @@
 #include <QDateTime>
 #include <QToolButton>
 #include <QScreen>
+#include <QOperatingSystemVersion>
 
 
 static const QString message_hide = "_MESSAGE_HIDE";
@@ -481,6 +482,11 @@ int main(int argc, char **argv){
 
   QLocale::setDefault(QLocale::c());
   QLocale::setDefault(QLocale::C);
+
+#if defined(FOR_MACOSX)
+  if (QOperatingSystemVersion::current() >= QOperatingSystemVersion::MacOSBigSur)
+    setenv("QT_MAC_WANTS_LAYER", "1", 1);
+#endif
 
   argv = getQApplicationConstructorArgs(argc, argv);
   QApplication app(argc, argv);

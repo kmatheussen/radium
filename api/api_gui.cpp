@@ -3852,15 +3852,48 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
   MakeFocusSnifferClass(QWebView);
 
+  static std::tuple<QString,QString, bool> getAbsoluteUrl(QString stringurl){
+    if (stringurl.startsWith("http:") || stringurl.startsWith("https:") || stringurl.startsWith("file:")) {
+      
+      return {stringurl, "", false};
+      
+    } else {
+      
+      auto splitted = stringurl.split('?');
+      QString query = splitted.size()==1 ? "" : splitted.takeLast();
+      QString filename = splitted.join('?');
+
+      //printf("Stringurl: -%s-. Query: -%s-. Filename: -%s-\n", stringurl.toUtf8().constData(), query.toUtf8().constData(), filename.toUtf8().constData());
+
+      QString ret;
+
+      if (QFileInfo(stringurl).isAbsolute())
+        ret = stringurl;
+      else if (OS_has_full_program_file_path(filename))
+        ret = STRING_get_qstring(OS_get_full_program_file_path(filename).id);
+      else
+        ret = stringurl;
+
+      return {ret, query, true};
+    }
+  }
+  
   static QUrl getUrl(QString stringurl){
-    if (stringurl.startsWith("http") || stringurl.startsWith("file:"))
-      return stringurl;
-    else if (QFileInfo(stringurl).isAbsolute())
-      return QUrl::fromLocalFile(QDir::fromNativeSeparators(stringurl));
-    else if (OS_has_full_program_file_path(stringurl))
-      return QUrl::fromLocalFile(QDir::fromNativeSeparators(STRING_get_qstring(OS_get_full_program_file_path(stringurl).id)));
-    else
-      return QUrl::fromLocalFile(QDir::fromNativeSeparators(stringurl));
+    auto [absoluteurl, query, is_local_file] = getAbsoluteUrl(stringurl);
+    
+    if (is_local_file) {
+      
+      QUrl url = QUrl::fromLocalFile(absoluteurl);
+      if (query != "")
+        url.setQuery(query);
+      
+      return url;
+      
+    } else {
+      
+      return absoluteurl;
+      
+    }
   }
   
   struct Web : FocusSnifferQWebView, Gui, public radium::MouseCycleFix {
@@ -3885,6 +3918,12 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     }
     */
 
+#if 0 // !defined(RELEASE)
+    void javaScriptConsoleMessage(const QString & message, int lineNumber, const QString & sourceID) override {
+      printf("%s/%d: %s\n", sourceID.toUtf8().constData(), lineNumber, message.toUtf8().constData()); 
+    }
+#endif
+    
     // https://forum.qt.io/topic/23736/qwebview-qwebpage-need-help-with-context-menu/4
     void contextMenuEvent(QContextMenuEvent * ev) override {
       ScopedEventHandlerTracker event_handler_tracker;
@@ -4006,10 +4045,13 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
       // cancel search
       // (Must also catch Key_Escape since the focussniffer gives up focus when receiving escape.)
-      if (event->key()==Qt::Key_Escape){
-        findText(""); // Cancel search highlightning
-        event->accept();
-        return;
+      if (_last_search_text != "") {
+        if (event->key()==Qt::Key_Escape){
+          findText(""); // Cancel search highlightning
+          event->accept();
+          _last_search_text = "";
+          return;
+        }
       }
       
       if (!Gui::keyPressEvent(event)){
@@ -5290,8 +5332,37 @@ void gui_setUrl(int64_t guinum, const_char* url){
   }
 }
 
-void openExternalWebBrowser(const_char *stringurl){
-  QDesktopServices::openUrl(getUrl(stringurl));
+void openExternalWebBrowser(const_char *charstringurl){
+#if defined(FOR_MACOSX)
+
+  // Neither Qt nor JUCE were able to handle queries. Using osascript worked though.
+
+  auto [absoluteurl, query, is_local_file] = getAbsoluteUrl(charstringurl);
+
+  if (query != "")
+    absoluteurl += "?" + query;
+
+  if (is_local_file)
+    absoluteurl = "file://" + absoluteurl;
+  
+  const char *command = talloc_format("osascript -e 'tell application \"Safari\"\n"
+                                      "activate\n"
+                                      "open location \"%s\"\n"
+                                      "end tell\n'"
+                                      "&",
+                                      absoluteurl.toUtf8().constData());
+  printf("Command: -%s-\n", command);
+  system(command);
+
+#else
+
+#  if 1
+  QDesktopServices::openUrl(getUrl(charstringurl));
+#  else
+  JUCE_open_external_web_browser(geAbsolutetUrl(charstringurl).toUtf8().constData());
+#  endif
+
+#endif
 }
 
 int64_t gui_fileRequester(const_char* header_text, filepath_t dir, const_char* filetypename, const_char* postfixes, bool for_loading, const_char* default_suffix, bool several_files){

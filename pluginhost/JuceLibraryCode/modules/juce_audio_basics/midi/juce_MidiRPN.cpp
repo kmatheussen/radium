@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2017 - ROLI Ltd.
+   Copyright (c) 2020 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -36,7 +36,7 @@ bool MidiRPNDetector::parseControllerMessage (int midiChannel,
                                               int controllerValue,
                                               MidiRPNMessage& result) noexcept
 {
-    jassert (midiChannel >= 1 && midiChannel <= 16);
+    jassert (midiChannel > 0 && midiChannel <= 16);
     jassert (controllerNumber >= 0 && controllerNumber < 128);
     jassert (controllerValue >= 0 && controllerValue < 128);
 
@@ -351,14 +351,13 @@ private:
     //==============================================================================
     void expectContainsRPN (const MidiBuffer& midiBuffer, MidiRPNMessage expected)
     {
-        MidiBuffer::Iterator iter (midiBuffer);
-        MidiMessage midiMessage;
         MidiRPNMessage result = MidiRPNMessage();
         MidiRPNDetector detector;
-        int samplePosition; // not actually used, so no need to initialise.
 
-        while (iter.getNextEvent (midiMessage, samplePosition))
+        for (const auto metadata : midiBuffer)
         {
+            const auto midiMessage = metadata.getMessage();
+
             if (detector.parseControllerMessage (midiMessage.getChannel(),
                                                  midiMessage.getControllerNumber(),
                                                  midiMessage.getControllerValue(),

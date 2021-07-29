@@ -1,0 +1,66 @@
+commit aec9db8b246e1426d6cba4db2a1e86a17cb8bb6a
+Author: Kjetil Matheussen <k.s.matheussen@notam02.no>
+Date:   Fri Jul 23 10:10:23 2021 +0200
+
+    JUCE: Fix (severely) broken thread priorities
+
+diff --git a/pluginhost/JuceLibraryCode/modules/juce_core/native/juce_posix_SharedCode.h b/pluginhost/JuceLibraryCode/modules/juce_core/native/juce_posix_SharedCode.h
+index 082a5697a..925c15709 100644
+--- a/pluginhost/JuceLibraryCode/modules/juce_core/native/juce_posix_SharedCode.h
++++ b/pluginhost/JuceLibraryCode/modules/juce_core/native/juce_posix_SharedCode.h
+@@ -952,6 +952,9 @@ void JUCE_CALLTYPE Thread::setCurrentThreadName (const String& name)
+ 
+ bool Thread::setThreadPriority (void* handle, int priority)
+ {
++    if (priority==realtimeAudioPriority)
++      priority = 9;
++    
+     struct sched_param param;
+     int policy;
+     priority = jlimit (0, 10, priority);
+@@ -962,12 +965,25 @@ bool Thread::setThreadPriority (void* handle, int priority)
+     if (pthread_getschedparam ((pthread_t) handle, &policy, &param) != 0)
+         return false;
+ 
+-    policy = priority == 0 ? SCHED_OTHER : SCHED_RR;
+-
+-    const int minPriority = sched_get_priority_min (policy);
+-    const int maxPriority = sched_get_priority_max (policy);
+-
+-    param.sched_priority = ((maxPriority - minPriority) * priority) / 10 + minPriority;
++    if (priority >= 8) {
++      
++      policy = SCHED_RR;
++      
++      const int minPriority = sched_get_priority_min (policy);
++      const int maxPriority = sched_get_priority_max (policy);
++      
++      param.sched_priority =
++        priority==8 ? minPriority :
++        priority==9 ? (minPriority+maxPriority)/2
++        : maxPriority;
++
++    } else {
++      
++      policy = SCHED_OTHER;
++      param.sched_priority = 0;
++      
++    }
++    
+     return pthread_setschedparam ((pthread_t) handle, policy, &param) == 0;
+ }
+ 
+diff --git a/pluginhost/JuceLibraryCode/modules/juce_core/native/juce_win32_Threads.cpp b/pluginhost/JuceLibraryCode/modules/juce_core/native/juce_win32_Threads.cpp
+index 4a4148119..a36bc7289 100644
+--- a/pluginhost/JuceLibraryCode/modules/juce_core/native/juce_win32_Threads.cpp
++++ b/pluginhost/JuceLibraryCode/modules/juce_core/native/juce_win32_Threads.cpp
+@@ -123,6 +123,9 @@ Thread::ThreadID JUCE_CALLTYPE Thread::getCurrentThreadId()
+ 
+ bool Thread::setThreadPriority (void* handle, int priority)
+ {
++    if (priority==realtimeAudioPriority)
++      priority = 9;
++    
+     int pri = THREAD_PRIORITY_TIME_CRITICAL;
+ 
+     if (priority < 1)       pri = THREAD_PRIORITY_IDLE;

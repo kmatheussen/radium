@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2017 - ROLI Ltd.
+   Copyright (c) 2020 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -82,6 +82,12 @@
    #define NSAlertStyleInformational        NSInformationalAlertStyle
    #define NSEventTypeTabletPoint           NSTabletPoint
    #define NSEventTypeTabletProximity       NSTabletProximity
+   #define NSEventTypeFlagsChanged          NSFlagsChanged
+   #define NSEventTypeAppKitDefined         NSAppKitDefined
+   #define NSEventTypeSystemDefined         NSSystemDefined
+   #define NSEventTypeApplicationDefined    NSApplicationDefined
+   #define NSEventTypePeriodic              NSPeriodic
+   #define NSEventTypeSmartMagnify          NSEventTypeSmartMagnify
   #endif
   #import <CoreAudio/HostTime.h>
   #include <sys/dir.h>
@@ -126,14 +132,14 @@
  #define STRICT 1
  #define WIN32_LEAN_AND_MEAN 1
  #if JUCE_MINGW
-  #define _WIN32_WINNT 0x0501
+  #define _WIN32_WINNT 0x0600
  #else
   #define _WIN32_WINNT 0x0602
  #endif
  #define _UNICODE 1
  #define UNICODE 1
  #ifndef _WIN32_IE
-  #define _WIN32_IE 0x0500
+  #define _WIN32_IE 0x0501
  #endif
 
  #include <windows.h>

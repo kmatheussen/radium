@@ -54,6 +54,18 @@ bool THREADING_is_player_thread(void){
   return !THREADING_is_main_thread();
 }
 
+#if !defined(RELEASE)
+#if !defined(FOR_MACOSX)
+bool THREADING_has_player_thread_priority(void){
+  return false;
+}
+#endif
+#endif
+
+bool THREADING_is_runner_thread(void){
+  return false;
+}
+
 /*
 bool RT_message(const char *a){
   abort();

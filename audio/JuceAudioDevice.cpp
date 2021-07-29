@@ -77,7 +77,7 @@ public:
   }
 
 #if KEEP_PREFS_WINDOW_ON_TOP_REGULARLY
-  void timerCallback() final {
+  void timerCallback() override final {
     //printf("TIMERCALLGACN\n");
     if (!is_showing_RT_message() && !GFX_is_showing_message())
       toFront(false); // Linux: shouldAlsoGainFocus==false doesn't work.
@@ -125,8 +125,10 @@ public:
   }
   
   void changeListenerCallback(juce::ChangeBroadcaster *source) override {
-    
+
+#if !defined(RELEASE) // Guess we could be called from a realtime thread here.
     printf("Some audio change thing: %p\n", _audio_device_manager.getCurrentAudioDevice());
+#endif
     
     if(_audio_device_manager.getCurrentAudioDevice()!=NULL){
 
@@ -138,7 +140,7 @@ public:
       double new_samplerate = _audio_device_manager.getCurrentAudioDevice()->getCurrentSampleRate();
       _last_reported_samplerate = new_samplerate;
       
-      _settings = _audio_device_manager.createStateXml();
+      _settings = _audio_device_manager.createStateXml(); // This is probably not RT safe, but it's probably not that important.
 
       if (_settings.get()!=NULL) {
 
@@ -167,8 +169,10 @@ public:
       }
       
     }else{
-      
+
+#if !defined(RELEASE) // Guess we could be called from a realtime thread here.
       fprintf(stderr,"Gakkegakke\n");
+#endif
       
     }
   }
@@ -178,11 +182,42 @@ public:
     if (wcslen(settings_string) > 0)
       _settings = juce::XmlDocument::parse(juce::String(settings_string));
 
-    const juce::String error (_audio_device_manager.initialise (8, /* number of input channels */
+    juce::AudioDeviceManager::AudioDeviceSetup preferred;
+    preferred.bufferSize = 1024;
+    //preferred.sampleRate = 44100; // It's most important to let the audio device manager try to find something that works with buffersize 1024. Maybe setting samplerate could screw that up.
+    preferred.inputChannels = 0; // We don't want any input channels either, by default, since this can also screw up the sound sometimes.
+    preferred.useDefaultInputChannels = false;
+
+#if defined(FOR_WINDOWS)
+    
+    // Force normal shared WASAPI for the default device. We do this to avoid the "Windows Audio (low latency)" device, which seems to be stuck at 480 frames, which is not supported by Radium.
+    
+    for (auto *type : _audio_device_manager.getAvailableDeviceTypes()) {
+      if (type->getTypeName()=="Windows Audio") {
+        
+        printf("Type: %s\n", type->getTypeName().toRawUTF8());
+        
+        const int defaultN = type->getDefaultDeviceIndex(false);
+        const auto names = type->getDeviceNames(false);
+        
+        if (defaultN >= 0 && defaultN < names.size()) {
+          preferred.outputDeviceName = names[defaultN];
+          printf("   Default: %s\n", preferred.outputDeviceName.toRawUTF8());
+        }
+        
+        break;
+      }
+    }
+#endif
+    
+    const juce::String error (_audio_device_manager.initialise (0, /* number of input channels */
                                                                 8, /* number of output channels */
                                                                 _settings.get(),
-                                                                true  /* select default device on failure */));
-    
+                                                                true, //,  /* select default device on failure */ 
+                                                                "",
+                                                                &preferred
+                                                                ));
+ 
     // start the IO device pulling its data from our callback..
     _audio_device_manager.addAudioCallback (this);
       

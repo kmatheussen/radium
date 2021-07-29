@@ -26,10 +26,17 @@
                      (define instrument-id (<ra> :get-seqtrack-instrument seqtracknum))
                      (<ra> :get-instrument-color instrument-id)))))
 ;;                     (get-instrument-background-color gui instrument-id)))))
-    
-    (if (= seqtracknum (<ra> :get-curr-seqtrack))
-        (<gui> :make-color-lighter color 1.2)
-        color)))
+
+    (define is-curr-seqtrack (= seqtracknum (<ra> :get-curr-seqtrack)))
+    (define is-curr-seqtrack-under-mouse (= seqtracknum (<ra> :get-curr-seqtrack-under-mouse)))
+    (cond ((and is-curr-seqtrack
+                is-curr-seqtrack-under-mouse)
+           (<gui> :make-color-lighter color 1.4))
+          ((or is-curr-seqtrack
+               is-curr-seqtrack-under-mouse)
+           (<gui> :make-color-lighter color 1.2))
+          (else
+           color))))
 
 (define (get-sequencer-header-popup-menu-entries seqtracknum instrument-id effect-name parentgui)
   (list
@@ -876,7 +883,8 @@
   (define y-split (myfloor (+ y1 name-height)))
 
   (delafina (get-background-color :gakk #f)
-    (define is-current (= seqtracknum (<ra> :get-curr-seqtrack)))
+    (define is-current (or (= seqtracknum (<ra> :get-curr-seqtrack))
+                           (= seqtracknum (<ra> :get-curr-seqtrack-under-mouse))))
     (cond (for-blocks
            (get-seqtrack-background-color gui seqtracknum))
           (is-current

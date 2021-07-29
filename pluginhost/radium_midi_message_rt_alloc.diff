@@ -1,5 +1,5 @@
 diff --git a/pluginhost/JuceLibraryCode/modules/juce_audio_basics/midi/juce_MidiMessage.cpp b/pluginhost/JuceLibraryCode/modules/juce_audio_basics/midi/juce_MidiMessage.cpp
-index 9ccccfa..c8e1bbc 100644
+index e1a215045..d92702e1c 100644
 --- a/pluginhost/JuceLibraryCode/modules/juce_audio_basics/midi/juce_MidiMessage.cpp
 +++ b/pluginhost/JuceLibraryCode/modules/juce_audio_basics/midi/juce_MidiMessage.cpp
 @@ -20,6 +20,9 @@
@@ -12,7 +12,7 @@ index 9ccccfa..c8e1bbc 100644
  namespace juce
  {
  
-@@ -266,22 +269,20 @@ MidiMessage::MidiMessage (const void* srcData, int sz, int& numBytesUsed, const
+@@ -283,22 +286,20 @@ MidiMessage::MidiMessage (const void* srcData, int sz, int& numBytesUsed, const
  
  MidiMessage& MidiMessage::operator= (const MidiMessage& other)
  {
@@ -42,7 +42,7 @@ index 9ccccfa..c8e1bbc 100644
              packedData.allocatedData = other.packedData.allocatedData;
          }
  
-@@ -311,16 +312,16 @@ MidiMessage& MidiMessage::operator= (MidiMessage&& other) noexcept
+@@ -328,16 +329,16 @@ MidiMessage& MidiMessage::operator= (MidiMessage&& other) noexcept
  MidiMessage::~MidiMessage() noexcept
  {
      if (isHeapAllocated())
@@ -63,7 +63,7 @@ index 9ccccfa..c8e1bbc 100644
  
      return packedData.asBytes;
 diff --git a/pluginhost/JuceLibraryCode/modules/juce_audio_basics/midi/juce_MidiMessage.h b/pluginhost/JuceLibraryCode/modules/juce_audio_basics/midi/juce_MidiMessage.h
-index 5628c3a..3704e91 100644
+index 22ac79483..362675cb8 100644
 --- a/pluginhost/JuceLibraryCode/modules/juce_audio_basics/midi/juce_MidiMessage.h
 +++ b/pluginhost/JuceLibraryCode/modules/juce_audio_basics/midi/juce_MidiMessage.h
 @@ -20,6 +20,8 @@
@@ -84,7 +84,7 @@ index 5628c3a..3704e91 100644
      //==============================================================================
      /** Returns a human-readable description of the midi message as a string,
          for example "Note On C#3 Velocity 120 Channel 1".
-@@ -935,8 +939,9 @@ private:
+@@ -969,8 +973,9 @@ private:
     #ifndef DOXYGEN
      union PackedData
      {
@@ -96,7 +96,7 @@ index 5628c3a..3704e91 100644
      };
  
      PackedData packedData;
-@@ -945,7 +950,7 @@ private:
+@@ -979,7 +984,7 @@ private:
     #endif
  
      inline bool isHeapAllocated() const noexcept  { return size > (int) sizeof (packedData); }

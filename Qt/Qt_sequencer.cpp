@@ -162,6 +162,7 @@ static bool smooth_scrolling(void){
 
 static bool g_draw_colored_seqblock_tracks = true;
 
+int g_curr_seqtrack_under_mouse = -1;
 int64_t g_curr_seqblock_id_under_mouse = -1;
 
 namespace{
@@ -172,7 +173,10 @@ static Sequencer_widget *g_sequencer_widget = NULL;
 
 static double get_seqtrack_y1(int seqtracknum);
 static double get_seqtrack_y2(int seqtracknum);
+static double get_seqtrack_x1(void);
+static double get_seqtrack_x2(void);
 static double get_seqtracks_y1(void);
+static double get_seqtracks_y2(void);
 
 static int get_seqtrack_scrollbar_width(void){
   static int ret = -1;
@@ -649,6 +653,51 @@ public:
   
   int _currentButton = 0;
 
+private:
+  
+  void maybe_set_curr_seqtrack_num_under_mouse(float x, float y) {
+    int last_visible_seqtrack_num = -1;
+    //printf("x1: %f. x: %f. x2: %f\n", SEQUENCER_get_left_part_x1()-getSeqtrackBorderWidth(), x, get_seqtrack_x2());
+    
+    if (y >= get_seqtracks_y1() && y < get_seqtracks_y2() && x >= (SEQUENCER_get_left_part_x1()-getSeqtrackBorderWidth()) && x < get_seqtrack_x2())
+      for(int i=root->song->topmost_visible_seqtrack;i<root->song->seqtracks.num_elements;i++){
+
+        struct SeqTrack *seqtrack = (struct SeqTrack *)root->song->seqtracks.elements[i]; //getSeqtrackFromNum(seqtracknum);
+        
+        if (seqtrack->is_visible)
+          last_visible_seqtrack_num = i;
+        
+        float y2;
+        
+        if (i==root->song->seqtracks.num_elements-1) {
+          
+          if (last_visible_seqtrack_num < 0)
+            break;
+          
+          y2 = get_seqtrack_y2(last_visible_seqtrack_num)+1;
+          
+        } else {
+          
+          struct SeqTrack *next_seqtrack = (struct SeqTrack *)root->song->seqtracks.elements[i+1]; //getSeqtrackFromNum(seqtracknum);
+          if (!next_seqtrack->is_visible)
+            continue;
+          else
+            y2 = get_seqtrack_y1(i+1);
+          
+        }
+        
+        //printf("%d. y: %f. y2: %f. last_visible: %d\n", i, y, y2, last_visible_seqtrack_num);
+        
+        if (last_visible_seqtrack_num >= 0 && y < y2)
+          break;
+      }
+
+    //printf("==============CURR: %d\n", last_visible_seqtrack_num);
+    setCurrSeqtrackUnderMouse(last_visible_seqtrack_num);
+  }
+  
+public:
+  
   void	fix_mousePressEvent(radium::MouseCycleEvent &event) override{
     event.accept();
 
@@ -661,9 +710,11 @@ public:
     
     //FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::SEQUENCER, true);
       
-    if (_is_sequencer_widget)
+    if (_is_sequencer_widget) {
+
       if (API_run_mouse_press_event_for_custom_widget(SEQUENCER_getWidget(), event))
         return;
+    }
     
     _currentButton = getMouseButtonEventID(event);
     QPoint point = mapToEditor(this, event.pos());
@@ -681,7 +732,11 @@ public:
 
     SCHEME_mousepress(_currentButton, point.x(), point.y());
     //printf("  Press. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
+
+    if (_is_sequencer_widget)
+      maybe_set_curr_seqtrack_num_under_mouse(event.x(), event.y());
   }
+  
   void	fix_mouseMoveEvent(radium::MouseCycleEvent &event) override{
     //printf("sequencer. mouseMove: %d,%d\n", event.x(), event.y());
 
@@ -689,10 +744,14 @@ public:
     
     event.accept();
     
-    if (_is_sequencer_widget)
+    if (_is_sequencer_widget) {
+
+      maybe_set_curr_seqtrack_num_under_mouse(event.x(), event.y());
+      
       if (API_run_mouse_move_event_for_custom_widget(SEQUENCER_getWidget(), event))
         return;
-
+    }
+    
     if (_is_standalone_navigator){
       return;
     }
@@ -717,9 +776,19 @@ public:
     SCHEME_mouserelease(_currentButton, point.x(), point.y());
     _currentButton = 0;
     //printf("  Release. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
+
+    if (_is_sequencer_widget)
+      maybe_set_curr_seqtrack_num_under_mouse(event.x(), event.y());
   }
 
   MOUSE_CYCLE_CALLBACKS_FOR_QT;
+
+  void enterEvent(QEvent *event) override {
+    if (_is_sequencer_widget) {
+      auto pos = mapFromGlobal(QCursor::pos());
+      maybe_set_curr_seqtrack_num_under_mouse(pos.x(), pos.y());
+    }
+  }
   
   void leaveEvent(QEvent *event) override{
 
@@ -727,6 +796,9 @@ public:
       return;
     }
 
+    if (_is_sequencer_widget)
+      setCurrSeqtrackUnderMouse(-1);
+    
     API_run_mouse_leave_event_for_custom_widget(SEQUENCER_getWidget(), event);
   }
 };
@@ -3494,6 +3566,39 @@ public:
   
 };
 
+static void paint_seqblocks_background(QPainter &p, const QRectF &rect, const QRectF &rect_seqtrack_under_mouse){
+    
+  p.setPen(Qt::NoPen);
+    
+  QColor color = get_qcolor(SEQTRACKS_BACKGROUND_COLOR_NUM);
+    
+  if (g_curr_seqtrack_under_mouse >= 0) {
+    
+    {
+      QBrush gradient1 = API_get_gradient(r::VERTICAL_LIGHT_TOP, rect, color, 0.15);
+      
+      p.setBrush(gradient1);
+      
+      p.drawRect(rect);
+    }
+    
+    {
+      QBrush gradient2 = API_get_gradient(r::VERTICAL_LIGHT_TOP, rect, color.lighter(120), 0.15);
+      
+      p.setBrush(gradient2);
+      
+      p.drawRect(rect_seqtrack_under_mouse);
+    }
+    
+    p.setBrush(Qt::NoBrush);
+    
+  } else {
+    
+    myFillRect(p, rect, color, true, 0.15);
+    
+  }
+
+}
 
 struct Seqtracks_navigator_painter;
  
@@ -3566,26 +3671,58 @@ public:
     */
     _widget->update(t_rect.toAlignedRect());
   }
+
+  void get_seqtrack_y1_y2(const struct SeqTrack *seqtrack, double seqtrack0_y1, double seqtrackN_y2, double &y1, double &y2) const {
+    y1 = scale_double(seqtrack->y1, seqtrack0_y1, seqtrackN_y2, t_y1 + 3, t_y2 - 3);
+    y2 = scale_double(seqtrack->y2, seqtrack0_y1, seqtrackN_y2, t_y1 + 3, t_y2 - 3);
+  }
   
   void paint(const QRegion &update_region, QPainter &p) const {
+ 
+    int num_seqtracks = root->song->seqtracks.num_elements;
+    if (num_seqtracks==0){
+      p.fillRect(t_rect, get_qcolor(SEQTRACKS_BACKGROUND_COLOR_NUM));
+      return;
+    }
+
+    double seqtrack0_y1 = getSeqtrackFromNum(0)->y1;
+    double seqtrackN_y2 = getSeqtrackFromNum(num_seqtracks-1)->y2;
+
+    if (seqtrackN_y2 < 1){
+      p.fillRect(t_rect, get_qcolor(SEQTRACKS_BACKGROUND_COLOR_NUM));
+      return; // positions have not been calculated yet.
+    }
 
     QColor border_color = get_qcolor(SEQUENCER_BORDER_COLOR_NUM);      
 
     // Background
     //
-    p.fillRect(t_rect, get_qcolor(SEQTRACKS_BACKGROUND_COLOR_NUM));
+    {
+      QRectF rect_seqtrack_under_mouse;
+      
+      if (g_curr_seqtrack_under_mouse >= 0){
+        if (g_curr_seqtrack_under_mouse >= root->song->seqtracks.num_elements) {
+          
+          R_ASSERT_NON_RELEASE(false);
+          
+        } else {
+          
+          const struct SeqTrack *seqtrack = (const struct SeqTrack *)root->song->seqtracks.elements[g_curr_seqtrack_under_mouse];
+          
+          double y1,y2;
+          get_seqtrack_y1_y2(seqtrack, seqtrack0_y1, seqtrackN_y2, y1, y2);
+          
+          rect_seqtrack_under_mouse = QRectF(t_rect.x(), y1, t_rect.width(), y2-y1);
+          
+        }
+      }
+      
+      paint_seqblocks_background(p, t_rect, rect_seqtrack_under_mouse);
 
-
-    int num_seqtracks = root->song->seqtracks.num_elements;
-    if (num_seqtracks==0)
-      return;
-
-    double seqtrack0_y1 = getSeqtrackFromNum(0)->y1;
-    double seqtrackN_y2 = getSeqtrackFromNum(num_seqtracks-1)->y2;
-
-    if (seqtrackN_y2 < 1)
-      return; // positions have not been calculated yet.
+      //p.fillRect(t_rect, get_qcolor(SEQTRACKS_BACKGROUND_COLOR_NUM));
+    }
     
+
     // Seqblocks
     {
 
@@ -3606,9 +3743,9 @@ public:
         
         if(seqtrack->has_calculated_coordinates==false)
           continue;
-        
-        double y1 = scale_double(seqtrack->y1, seqtrack0_y1, seqtrackN_y2, t_y1 + 3, t_y2 - 3);
-        double y2 = scale_double(seqtrack->y2, seqtrack0_y1, seqtrackN_y2, t_y1 + 3, t_y2 - 3);
+
+        double y1,y2;
+        get_seqtrack_y1_y2(seqtrack, seqtrack0_y1, seqtrackN_y2, y1, y2);
 
         /*
         SEQTRACK_update_all_seqblock_start_and_end_times(seqtrack);
@@ -3662,9 +3799,12 @@ public:
               p.setPen(QColor("red"));
             else if (type==Seqblock_Type::GFX_GFX)
               p.setPen(get_qcolor(SEQUENCER_BLOCK_MULTISELECT_BACKGROUND_COLOR_NUM).lighter(150));
-            else if(rect.height() > 2)
-              p.setPen(border_color);
-            else
+            else if(rect.height() > 2) {
+              if (is_current_seqblock(seqblock))
+                p.setPen(get_qcolor(SEQUENCER_CURR_SEQBLOCK_BORDER_COLOR_NUM));
+              else
+                p.setPen(border_color);
+            } else
               p.setPen(seqblock_color);
             
             p.drawRect(rect);
@@ -4781,9 +4921,21 @@ struct Sequencer_widget : public MouseTrackerQWidget {
       
       QPainter p(this);
 
-      if (seqtracks_are_painted)
-        myFillRect(p, _seqtracks_widget.t_rect.adjusted(-10, 0, 0, 10), get_qcolor(SEQTRACKS_BACKGROUND_COLOR_NUM), true, 0.15);
+      if (seqtracks_are_painted) {
 
+        QRectF rect = _seqtracks_widget.t_rect.adjusted(-10, 0, 0, 10);
+
+        QRectF rect_seqtrack_under_mouse; 
+          
+        if (g_curr_seqtrack_under_mouse >= 0){
+          Seqblocks_widget seqblocks_widget = get_seqblocks_widget(g_curr_seqtrack_under_mouse, true);
+          rect_seqtrack_under_mouse = seqblocks_widget._rect;
+        }
+
+        paint_seqblocks_background(p, rect, rect_seqtrack_under_mouse);
+        
+      }
+      
       D(t1 = TIME_get_ms());
       
       if (right_part_is_painted){
@@ -5073,6 +5225,10 @@ float SEQTRACKS_get_x2(void){
 
 static double get_seqtracks_y1(void){
   return g_sequencer_widget->_seqtracks_widget.t_y1;
+}
+ 
+static double get_seqtracks_y2(void){
+  return g_sequencer_widget->_seqtracks_widget.t_y2;
 }
  
 float SEQTRACKS_get_y1(void){
@@ -5631,12 +5787,20 @@ SEQBLOCK_handles(stretch, yfunc_ysplit3, SEQBLOCK_get_y2);
 
 // seqtracks
 
+static double get_seqtrack_x1(void){
+  return g_sequencer_widget->_seqtracks_widget.t_x1;
+}
+
 float SEQTRACK_get_x1(int seqtracknum){
-  return mapToEditorX(g_sequencer_widget, g_sequencer_widget->_seqtracks_widget.t_x1);
+  return mapToEditorX(g_sequencer_widget, get_seqtrack_x1()); //g_sequencer_widget->_seqtracks_widget.t_x1);
+}
+
+static double get_seqtrack_x2(void){
+  return g_sequencer_widget->_seqtracks_widget.t_x2;
 }
 
 float SEQTRACK_get_x2(int seqtracknum){
-  return mapToEditorX(g_sequencer_widget, g_sequencer_widget->_seqtracks_widget.t_x2);
+  return mapToEditorX(g_sequencer_widget, get_seqtrack_x2()); //g_sequencer_widget->_seqtracks_widget.t_x2);
 }
 
 static double get_seqtrack_y1(int seqtracknum){

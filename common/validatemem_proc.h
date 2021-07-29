@@ -3,6 +3,9 @@
 #ifndef RADIUM_COMMON_VALIDATE_MEM_PROC_H
 #define RADIUM_COMMON_VALIDATE_MEM_PROC_H
 
+#include "threading_lowlevel.h"
+
+
 #if 0
 
 #if !defined(RELEASE)
@@ -108,8 +111,34 @@ static inline void* my_calloc(size_t size1,size_t size2) {
 
 #    define V_free_function V_free
 
-static inline void *V_malloc(size_t size){
+static inline void assert_allowed_to_alloc(void){
+#if 0
+  
+  if (PLAYER_current_thread_has_lock())
+    abort();
+
+  if (THREADING_is_runner_thread())
+    abort();
+
+#if !defined(FOR_MACOSX)
+  if (THREADING_has_player_thread_priority())
+    abort();
+#endif
+  
+#else
+  
   R_ASSERT(!PLAYER_current_thread_has_lock());
+  R_ASSERT(!THREADING_is_runner_thread());
+
+#if !defined(FOR_MACOSX)
+  R_ASSERT(!THREADING_has_player_thread_priority());
+#endif
+  
+#endif
+}
+
+static inline void *V_malloc(size_t size){
+  assert_allowed_to_alloc();
   return malloc(size);
 }
 static inline char *V_strdup(const char *s){
@@ -125,7 +154,7 @@ static inline wchar_t *V_wcsdup(const wchar_t *s){
 static inline void *V_calloc(size_t n, size_t size)  __attribute__((returns_nonnull));
 
 static inline void *V_calloc(size_t n, size_t size){
-  R_ASSERT(!PLAYER_current_thread_has_lock());
+  assert_allowed_to_alloc();
   return my_calloc(n,size);
 }
 
@@ -135,7 +164,8 @@ static inline void *V_calloc(size_t n, size_t size){
 #endif
 
 static inline void V_free(void *ptr){
-  R_ASSERT(!PLAYER_current_thread_has_lock());
+  assert_allowed_to_alloc();
+  
 #ifndef __clang__
 #if defined(FOR_LINUX)
 #if !defined(RELEASE)
@@ -147,7 +177,7 @@ static inline void V_free(void *ptr){
   free(ptr);
 }
 static inline void *V_realloc(void *ptr, size_t size){
-  R_ASSERT(!PLAYER_current_thread_has_lock());
+  assert_allowed_to_alloc();
   return realloc(ptr, size);
 }
 

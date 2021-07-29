@@ -12,6 +12,18 @@ bool THREADING_is_player_or_runner_thread(void){
   return true;
 }
 
+#if !defined(RELEASE)
+#if !defined(FOR_MACOSX)
+bool THREADING_has_player_thread_priority(void){
+  return false;
+}
+#endif
+#endif
+
+bool THREADING_is_runner_thread(void){
+  return false;
+}
+
 void CRASHREPORTER_send_assert_message(enum Crash_Type crash_type, const char *fmt,...){
   abort();
 }

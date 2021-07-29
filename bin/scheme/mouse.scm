@@ -3121,7 +3121,7 @@
             #t)))
 
 (define (show-pianoroll-help-window)
-  (FROM-C-show-help-window "help/pianoroll_editor_framed.html"))
+  (FROM-C-show-help-window "help/index.html?page=pianoroll"))
 
 (define (get-pianoroll-popup-menu-common-entries)
   (list
@@ -5797,8 +5797,55 @@
 (define2 gakkgakk-really-last-inc-time number? 0)
 (define2 gakkgakk-last-inc-track number? 0)
 
+(define (get-num-visible-seqtracks-between a b)
+  (define inc-val (if (> b a) 1 -1))
+  
+  (let loop ((ret 0)
+             (a a)
+             (counter 0))
+    (cond ((= a b)
+           ret)
+          ((> counter 1000)
+           (error "Error in get-num-visible-seqtracks-between"))
+          ((<ra> :get-seqtrack-visible a)
+           (loop (+ ret inc-val)
+                 (+ a inc-val)
+                 (+ counter 1)))           
+          (else
+           (loop ret
+                 (+ a inc-val)
+                 (+ counter 1))))))
+        
+(define (get-nth-visible-seqtrack seqtracknum n-goal)
+  (if (= 0 n-goal)
+      seqtracknum
+      (let ()
+        (define num-seqtracks (<ra> :get-num-seqtracks))
+        (define inc-val (if (< n-goal 0) -1 1))
+        
+        (let loop ((seqtracknum (+ seqtracknum inc-val))
+                   (n inc-val))
+          ;;(c-display ":seqtracknum" seqtracknum "/" (and (>= seqtracknum 0)
+          ;;                                               (< seqtracknum num-seqtracks)
+          ;;                                               (<ra> :get-seqtrack-name seqtracknum))
+          ;;           ". :visible" (and (>= seqtracknum 0)
+          ;;                             (< seqtracknum num-seqtracks)
+          ;;                             (<ra> :get-seqtrack-visible seqtracknum))
+          ;;           ". :n" n ". :n-goal" n-goal)
+          (cond ((or (< seqtracknum 0)
+                     (>= seqtracknum num-seqtracks))
+                 #f)
+                ((<ra> :get-seqtrack-visible seqtracknum)
+                 (if (= n n-goal)
+                     seqtracknum
+                     (loop (+ seqtracknum inc-val)
+                           (+ n inc-val))))
+                (else
+                 (loop (+ seqtracknum inc-val)
+                       n)))))))
+        
+         
 (define (get-data-for-seqblock-moving seqblock-infos inc-time inc-track)
-  (define num-seqtracks (<ra> :get-num-seqtracks))
 
   (define skew #f) ;; We want the same skew for all blocks. Use skew for the first block, i.e. the uppermost leftmost one.
   
@@ -5814,10 +5861,9 @@
          (define is-stretched (not (= (<ra> :get-seqblock-stretch seqblockid) 1.0)))
          (define end-time (seqblock :end-time))
          ;;(c-display "is-stretched:" is-stretched ". end-time:" end-time)
-         (define new-seqtracknum (+ seqtracknum inc-track))
+         (define new-seqtracknum (get-nth-visible-seqtrack seqtracknum inc-track))
          
-         (if (and (>= new-seqtracknum 0)
-                  (< new-seqtracknum num-seqtracks))
+         (if new-seqtracknum
              (begin
                (define new-pos (floor (+ inc-time start-time)))
                
@@ -5848,10 +5894,11 @@
 
   (set! gakkgakk-last-inc-time inc-time)
   (set! gakkgakk-last-inc-track inc-track)
+  ;;(c-display "\n\n\nMOVING:\n")
   (for-each (lambda (seqblock)
               ;;(c-display "seqblock:" (pp seqblock))
               (if seqblock
-                  (ra:create-gfx-gfx-seqblock seqblock)))
+                  (<ra> :create-gfx-gfx-seqblock seqblock)))
             (get-data-for-seqblock-moving seqblock-infos inc-time inc-track)))
 
 (define (apply-gfx-gfx-seqblocks seqblock-infos)
@@ -7570,7 +7617,7 @@
                                                                  (if (<= Y (<ra> :get-seqtrack-y1 first-visible-seqtrack))
                                                                      first-visible-seqtrack
                                                                      (find-last-visible-seqtrack))))
-                                     (define inctrack (- new-seqtracknum gakkgakk-startseqtracknum))
+                                     (define inctrack (get-num-visible-seqtracks-between gakkgakk-startseqtracknum new-seqtracknum))
                                      ;;(c-display new-seqtracknum gakkgakk-startseqtracknum inctrack)
                                      (delete-all-gfx-gfx-seqblocks)
                                      (create-gfx-gfx-seqblocks seqblock-infos (floor Value) inctrack)

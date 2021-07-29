@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QFileInfo>
 #include <QLibrary>
 #include <QDir>
+#include <QDirIterator>
 #include <QHash>
 
 #if defined(__linux__)
@@ -63,6 +64,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Mixer_proc.h"
 
 namespace{
+  
 struct Data{
   LADSPA_Handle handles[2];
   float *control_values;  
@@ -73,22 +75,78 @@ struct Data{
   float latency_output_control_port;
 };
 
-struct Library{ // Used to avoid having lots of unused dynamic libraries loaded into memory at all time (and sometimes using up TLS)
+ 
+class QLibraryHolder{
+  QString _filename;
+  QLibrary *_qlibrary = NULL;
+  bool _is_loaded = false; // Need to keep local track. Seems like QLibrary::isLoaded() also returns true if the library was loaded in the system, not just inside the QLibrary.
+
+public:
+  
+  QLibraryHolder(QString filename)
+    : _filename(filename)
+  {}
+
+  QLibrary *get(void){
+    if (!is_loaded()) {
+      R_ASSERT_NON_RELEASE(false);
+      load();
+    }
+    
+    return _qlibrary;
+  }
+
+  bool has_library(void){
+    return _qlibrary != NULL;
+  }
+
+  bool is_loaded(void){
+    return _qlibrary!=NULL && _is_loaded;
+  }
+
+  void load(void){
+    if (_qlibrary==NULL)
+      _qlibrary = new QLibrary(_filename);
+    
+    _qlibrary->load();
+    _is_loaded = true;
+  }
+  
+  void maybe_unload(void){
+    if (_qlibrary != NULL)
+      _qlibrary->unload();
+    _is_loaded = false;
+  }
+};
+ 
+
+// Used to avoid having lots of unused dynamic libraries loaded into memory at all time (and sometimes using up TLS)
+struct Library{
+  
   const wchar_t *filename = NULL; // used for error messages
-  QLibrary *qlibrary = NULL;
   LADSPA_Descriptor_Function get_descriptor_func = NULL;
   int num_instances = 0;
   int num_library_references = 0; // library is unloaded when this value decreases from 1 to 0, and loaded when increasing from 0 to 1.
   int num_times_loaded = 0; // for debugging
 
+private:
+  QLibraryHolder _qlibrary;
+
   void unload(void){
-    qlibrary->unload();
+    
+    R_ASSERT_NON_RELEASE(_qlibrary.has_library());
+    
+    _qlibrary.maybe_unload();
+
     get_descriptor_func = NULL;
   }
 
-  bool ensure_descriptor_func(void){
+  
+  bool load_descriptor_func(void){
 
-    LADSPA_Descriptor_Function get_descriptor_func = (LADSPA_Descriptor_Function) qlibrary->resolve("ladspa_descriptor");
+    R_ASSERT_NON_RELEASE(this->get_descriptor_func==NULL);
+    
+    LADSPA_Descriptor_Function get_descriptor_func = (LADSPA_Descriptor_Function) _qlibrary.get()->resolve("ladspa_descriptor");
     
     if(get_descriptor_func==NULL){
       GFX_Message(NULL, "Unable to load plugin. Has the plugin file \"%S\" disappeared?", filename);
@@ -99,13 +157,51 @@ struct Library{ // Used to avoid having lots of unused dynamic libraries loaded 
     return true;
   }
 
-  bool add_reference(void){
+public:
+  Library(QString qfilename)
+    : _qlibrary(qfilename)
+  {
+    filename = STRING_create(qfilename, false); // ("false" means not GC-allocated)
+  }
+
+#if !defined(RELEASE)
+  ~Library(){
+    abort(); // not supposed to happen
+  }
+#endif
   
+  bool add_reference(void){
+
+    R_ASSERT_NON_RELEASE(num_library_references >= 0);
+      
     if (num_library_references==0){
       printf("**** Loading %S\n",filename);
+
+      /*
+      if (STRING_equals(filename, "/tmp/radium_bin/ladspa/am_pitchshift_1433.so")){
+        printf("    (press return)\n");
+        getchar();
+      }
+      */
+
+#if !defined(RELEASE)
+      if (_qlibrary.is_loaded()){
+        printf("    Error. (press return)\n");
+        getchar();
+      }
+#endif
+                           
+      _qlibrary.load();
       
-      if (!ensure_descriptor_func())
+      if (!load_descriptor_func()) {
+        unload();
         return false;
+      }
+      
+    } else {
+
+      R_ASSERT_NON_RELEASE(_qlibrary.is_loaded());
+      
     }
     
     num_library_references++;
@@ -115,10 +211,21 @@ struct Library{ // Used to avoid having lots of unused dynamic libraries loaded 
   }
 
   void remove_reference(void){
+    R_ASSERT_NON_RELEASE(num_library_references > 0);
+    R_ASSERT_NON_RELEASE(_qlibrary.is_loaded());
+        
     num_library_references--;
 
     if (num_library_references==0) {
       printf("**** Unloading %S\n",filename);
+
+      /*
+      if (STRING_equals(filename, "/tmp/radium_bin/ladspa/am_pitchshift_1433.so")){
+        printf("    (press return)\n");
+        getchar();
+      }
+      */
+      
       unload();
     }
   }
@@ -860,6 +967,8 @@ static void maybe_create_cache_file_for_plugin(const SoundPluginType *plugin_typ
   HASH_put_int(state, "uses_two_handles", type_data->uses_two_handles);
                 
   filepath_t filename = get_instance_cache_filename(library, type_data->index);
+
+  printf("    CACHE filename: -%S-\n", filename.id);
   
   radium::ScopedWriteFile file(filename);
 
@@ -1010,19 +1119,14 @@ static void maybe_create_cache_file_for_library(const Library *library){
 
 bool g_has_added_system_pitchshift = false;
 
-static void add_ladspa_plugin_type(const QFileInfo &file_info){
+static void add_ladspa_plugin_type(QString filename) {
   //return; // <- TODO: ThreadSanitizer complains on somethine when loading each ladspa plugins, but there is no proper backtrace so I haven't taken the time to find the cause of it yet.
   
-  QString filename = file_info.absoluteFilePath();
+  //QString filename = file_info.absoluteFilePath();
   
-  fprintf(stderr,"\"%s\"... ",filename.toUtf8().constData());
-  fflush(stderr);
+  printf("\"%s\"... ",filename.toUtf8().constData());
 
-  QLibrary *qlibrary = new QLibrary(filename);
-
-  Library *library = new Library;
-  library->qlibrary = qlibrary;
-  library->filename = STRING_create(filename, false); // ("false" means not GC-allocated)
+  Library *library = new Library(filename);
   
   //printf("Resolved \"%s\"\n",myLib.fileName().toUtf8().constData());
 
@@ -1047,6 +1151,8 @@ static void add_ladspa_plugin_type(const QFileInfo &file_info){
     
   } else {
 
+    QScopedPointer<QLibrary> qlibrary(new QLibrary(filename)); // There's probably nothing to gain by getting QLibrary from 'library'. We are only getting parameters and so forth here, not using the plugin.
+    
     LADSPA_Descriptor_Function get_descriptor_func = (LADSPA_Descriptor_Function) qlibrary->resolve("ladspa_descriptor");
 
     if(get_descriptor_func==NULL){
@@ -1088,8 +1194,7 @@ static void add_ladspa_plugin_type(const QFileInfo &file_info){
       }
       
       QString error_string = qlibrary->errorString();
-      
-      delete qlibrary;
+
       fprintf(stderr,"(failed: \"%s\") ", error_string.toUtf8().constData());
       fflush(stderr);
       
@@ -1110,8 +1215,6 @@ static void add_ladspa_plugin_type(const QFileInfo &file_info){
     }
 
     maybe_create_cache_file_for_library(library);
-      
-    library->unload();
   }
 
 }
@@ -1420,20 +1523,35 @@ void create_ladspa_plugins(void){
 
   for(QString dirname : ladspa_path){
 
+#if 1
+    
     QDir dir(dirname);
 
     dir.setFilter(QDir::Files | QDir::NoDotAndDotDot);
     dir.setSorting(QDir::Name);
+
+    QStringList list = dir.entryList();
+
+    for (QString filename : list)
+      if(filename.endsWith(LIB_SUFFIX))
+        add_ladspa_plugin_type(dirname + QDir::separator() + filename);
     
-    QFileInfoList list = dir.entryInfoList();
+#else
+
+    // no sorting
     
-    for (int i = 0; i < list.size(); ++i) {
-      QFileInfo fileInfo = list.at(i);
-      if(fileInfo.suffix()==LIB_SUFFIX)
-        add_ladspa_plugin_type(fileInfo);
+    QDirIterator it(dirname, QDir::Files | QDir::NoDotAndDotDot, QDirIterator::FollowSymlinks);
+    while (it.hasNext()) {
+      QString path = it.next();
+      if(path.endsWith(LIB_SUFFIX))
+        add_ladspa_plugin_type(path);
     }
+    
+#endif
 
   }
 
+  printf("\n");
+  
   init_menues();
 }

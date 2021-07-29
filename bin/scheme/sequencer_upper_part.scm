@@ -46,7 +46,7 @@
        (< y y2)))
 
 (define (show-sequencer-timing-help)
-  (FROM-C-show-help-window "help/timing_framed.html"))
+  (FROM-C-show-help-window "help/index.html?page=timing"))
 
 (define (get-sequencer-timing-popup-menu-entries)
   (list "-------------------"

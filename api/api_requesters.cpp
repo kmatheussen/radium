@@ -469,39 +469,39 @@ bool progressWindowIsOpen(void){
 }
 
 void showHomeHelpWindow(void){
-  S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/gui_framed.html");
+  S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/index.html");
 }
 void showMixerHelpWindow(void){
-  S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/mixer_framed.html");
+  S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/index.html?page=mixer");
 }
 void showChanceHelpWindow(void){
-  S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/chancetext_editor_framed.html");
+  S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/index.html?page=chancetext");
 }
 void showVelocityHelpWindow(void){
-  S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/velocitytext_editor_framed.html");
+  S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/index.html?page=veltext");
 }
 void showFXTextHelpWindow(void){
-  S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/fxtext_editor_framed.html");
+  S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/index.html?page=fxtext");
 }
 void showSwingHelpWindow(void){
-  S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/swingtext_editor_framed.html");
+  S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/index.html?page=swingtext");
 }
 void showKeybindingsHelpWindow(void){
-  S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/keybindings_framed.html");
+  S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/index.html?page=editing_keybindings");
 }
 
 void showBpmTextHelpWindow(void){
-  S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/bpmtext_editor_framed.html");
+  S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/index.html?page=bpmtext");
 }
 void showLpbTextHelpWindow(void){
-  S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/lpbtext_editor_framed.html");
+  S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/index.html?page=lpbtext");
 }
 void showSignatureTextHelpWindow(void){
-  S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/signaturetext_editor_framed.html");
+  S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/index.html?page=signaturetext");
 }
 void showLzTrackHelpWindow(void){
-  S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/lztrack_editor_framed.html");
+  S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/index.html?page=lztrack");
 }
 void showTempoAutomationTrackHelpWindow(void){
-  S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/tempoautomationtrack_editor_framed.html");
+  S7CALL2(void_charpointer, "FROM-C-show-help-window", "help/index.html?page=tempoautomationtrack");
 }
