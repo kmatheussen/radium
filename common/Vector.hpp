@@ -26,8 +26,23 @@ enum class AllocatorType{
   RT,
   STD
 };
+
+template <typename T>
+static inline constexpr int find_vector_preallocate_size(const int max_size){
   
-template <typename T, AllocatorType ALLOCATOR_TYPE = AllocatorType::STD>
+  int ret = sizeof(T);
+  
+  for(;;){
+    int maybe = ret + sizeof(T);
+    if (maybe > max_size)
+      return ret;
+    else
+      ret = maybe;
+  }
+}
+  
+// Note:  PRESTACKALLOCATED_SIZE is number of bytes, not number of elements. Number of elements is rounded down, but there will always be room for at least one element.
+template <typename T, AllocatorType ALLOCATOR_TYPE = AllocatorType::STD, int PRESTACKALLOCATED_SIZE = 256>
 struct Vector{
   
   static_assert(std::is_trivially_destructible<T>::value,
@@ -70,45 +85,59 @@ private:
   
   NumElements _num_elements;
 
-  T *_next_elements;
+  T *_next_elements = NULL;
 
-  int _num_elements_ready_for_freeing;
-  T *_elements_ready_for_freeing;
+  int _num_elements_ready_for_freeing = 0;
+  T *_elements_ready_for_freeing = NULL;
   
   int _next_num_elements_max;
-  
-  LockAsserter _lockAsserter;
 
+#if !defined(RELEASE)
+  LockAsserter _lockAsserter;
+#endif
+  
   // Normally it would be a typo or an error if trying to copy a radium::Vector.
   Vector(const Vector&) = delete;
   Vector& operator=(const Vector&) = delete;
 
-  
+
 public:
   
   T *_elements;
 
-  Vector(const Vector *vector = NULL)
-    : _next_elements(NULL)
-    , _elements_ready_for_freeing(NULL)
-    , _next_num_elements_max(0)
-  {
+private:
+
+  char  _pre_allocated_memory[find_vector_preallocate_size<T>(PRESTACKALLOCATED_SIZE)] __attribute__((aligned(std::alignment_of<T>::value)));
+
+public:
+  
+  Vector(const Vector *vector = NULL) {
     LOCKASSERTER_EXCLUSIVE(&_lockAsserter);
-    
+
+    constexpr int num_preallocated_elements = sizeof(_pre_allocated_memory) / sizeof(T);
+
+    static_assert(num_preallocated_elements==std::max(1, int(PRESTACKALLOCATED_SIZE / sizeof(T))), "?");
+
     if (vector != NULL && vector->size()>0) {
 
       int size = vector->size();
 
-      _num_elements_max = vector->_num_elements_max;
-      if (_num_elements_max < 4){
-        R_ASSERT(false);
-        _num_elements_max = 4;
-      }
+      if (size <= num_preallocated_elements) {
+        
+        _num_elements_max = num_preallocated_elements;
+        _elements = (T*)_pre_allocated_memory;
+        
+      } else if (ALLOCATOR_TYPE == AllocatorType::RT) {
 
-      if (ALLOCATOR_TYPE == AllocatorType::RT)
+        _num_elements_max = vector->_num_elements_max;
         _elements = RT_alloc_clean_raw2<T>(_num_elements_max, _num_elements_max, "Vector.hpp");
-      else
+        
+      } else {
+
+        _num_elements_max = vector->_num_elements_max;
         _elements = (T*)V_calloc(_num_elements_max, sizeof(T));
+
+      }
       
       std::copy(&vector->_elements[0], &vector->_elements[size], _elements);
       
@@ -116,12 +145,15 @@ public:
       
     } else {
 
-      _num_elements_max = 4;
-      
+      _num_elements_max = num_preallocated_elements;
+
+      _elements = (T*)_pre_allocated_memory;
+      /*
       if (ALLOCATOR_TYPE == AllocatorType::RT)
         _elements = RT_alloc_clean_raw2<T>(_num_elements_max, _num_elements_max, "Vector.hpp");
       else
         _elements = (T*)V_calloc(_num_elements_max, sizeof(T)); // We use V_calloc (and not new[]) to make sure memory is really zeroed out and in cache (this is for realtime code).
+      */
     }
  
     R_ASSERT_NON_RELEASE(_num_elements_max > 0);
@@ -176,6 +208,10 @@ public:
     return at_internal(i);
   }
 
+  bool is_preallocated(T *elements) const {
+    return (char*)elements==&_pre_allocated_memory[0];
+  }
+  
 private:
 
   void free_internal(T *elements, int size) const {
@@ -184,11 +220,13 @@ private:
       for(int i=0;i<size;i++)
         elements[i].~T();
     }
-    
-    if (ALLOCATOR_TYPE == AllocatorType::RT)
-      RT_free_raw(elements, "Vector.hpp");
-    else
-      V_free(elements);
+
+    if (!is_preallocated(elements)) {
+      if (ALLOCATOR_TYPE == AllocatorType::RT)
+        RT_free_raw(elements, "Vector.hpp");
+      else
+        V_free(elements);
+    }
   }
   
   T &at_internal(int i) const {
@@ -440,8 +478,12 @@ public:
       
     } else {
 
-      _num_elements_ready_for_freeing = _num_elements.get();
-      _elements_ready_for_freeing = _elements;
+      if (!is_preallocated(_elements)) {
+        
+        _num_elements_ready_for_freeing = _num_elements.get();
+        _elements_ready_for_freeing = _elements;
+        
+      }
       
       _num_elements.inc();
 
