@@ -130,7 +130,7 @@ public:
       } else if (ALLOCATOR_TYPE == AllocatorType::RT) {
 
         _num_elements_max = vector->_num_elements_max;
-        _elements = RT_alloc_clean_raw2<T>(_num_elements_max, _num_elements_max, "Vector.hpp");
+        _elements = RT_alloc_raw2<T>(_num_elements_max, _num_elements_max, "Vector.hpp");
         
       } else {
 
@@ -148,12 +148,7 @@ public:
       _num_elements_max = num_preallocated_elements;
 
       _elements = (T*)_pre_allocated_memory;
-      /*
-      if (ALLOCATOR_TYPE == AllocatorType::RT)
-        _elements = RT_alloc_clean_raw2<T>(_num_elements_max, _num_elements_max, "Vector.hpp");
-      else
-        _elements = (T*)V_calloc(_num_elements_max, sizeof(T)); // We use V_calloc (and not new[]) to make sure memory is really zeroed out and in cache (this is for realtime code).
-      */
+      
     }
  
     R_ASSERT_NON_RELEASE(_num_elements_max > 0);
@@ -344,7 +339,7 @@ private:
     T *new_elements;
 
     if (ALLOCATOR_TYPE == AllocatorType::RT)
-      new_elements = RT_alloc_clean_raw2<T>(new_num_elements_max, new_num_elements_max, "Vector.hpp");
+      new_elements = RT_alloc_raw2<T>(new_num_elements_max, new_num_elements_max, "Vector.hpp");
     else
       new_elements = (T*) V_calloc(sizeof(T), new_num_elements_max);
     
