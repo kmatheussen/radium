@@ -4301,34 +4301,36 @@ int main(int argc, char **argv){
     g_gc_is_incremental = true;
   }
 
-
 #if defined(FOR_MACOSX)
-  if (QOperatingSystemVersion::current() <= QOperatingSystemVersion::MacOSBigSur){
-    
+
+  {
     const char *confname = "show_macos_warning_during_startup_v" RADIUM_VERSION;
     if (QSysInfo::productVersion() != SETTINGS_read_qstring(confname, "definitelynotthishopefully")) {
       vector_t v = {};
       VECTOR_push_back(&v,"Ok");
       int dont_show = VECTOR_push_back(&v,"Don't show this message again");
       
-      int result = GFX_Message(&v,
-                               "Radium for macOS is BETA software!\n"
-                               "\n"
-                               "Note: On macOS there are both performance and stability problems when running Radium. In addition you might experience various types of quirks and misbehavours.\n"
-                               "\n"
-                               "The most serious problems on macOS are caused by Apple's poor support for OpenGL. "
-                               "If Radium crashes right after startup, it's probably Apple's OpenGL library that crashes. "
-                               "Fortunately, the bug is usually hit only during startup, and not every time."
-                               );
+      int result = SYSTEM_show_message_menu(&v,
+                                            "Radium for macOS is BETA software!\n"
+                                            "Radium is primarly developed for Windows and Linux.\n"
+                                            "\n"
+                                            "On macOS there are both performance and stability problems. In addition you might experience various types of quirks and misbehavours. However, many people find the program useful anyway, and there is no plan to stop developing the program for Mac.\n"
+                                            "\n"
+                                            "The most serious problems on macOS are caused by Apple's poor support for OpenGL. "
+                                            "If Radium crashes right after startup, it's probably Apple's OpenGL library that crashes. "
+                                            "Fortunately, the bug is usually hit only during startup, and not every time.",
+                                            10*60*1000-1 // 10 minutes
+                                            );
       if (result==dont_show)
         SETTINGS_write_string(confname, QSysInfo::productVersion());
     }      
-
-  } else {
-
-    GFX_Message(NULL,
-                "Radium has not been tested on this version of macOS. Latest supported version of macOS is 11.0. Radium might now freeze, crash, or misbehave in subtle ways. Please report your experience running Radium on this operating system to the forum, the mailing list, or to k.s.matheussen@notam02.no.");
-    
+  }
+  
+  if (QOperatingSystemVersion::current() > QOperatingSystemVersion::MacOSBigSur){
+    SYSTEM_show_message_menu(NULL,
+                             "Radium has not been tested on this version of macOS. Latest supported version of macOS is 11.0. Radium might now freeze, crash, or misbehave in subtle ways. Please report your experience running Radium on this operating system to the forum, the mailing list, or to k.s.matheussen@notam02.no.",
+                             10*60*1000-1 // 10 minutes
+                             );    
   }
 #endif
 
