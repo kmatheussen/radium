@@ -5328,7 +5328,9 @@ void gui_setUrl(int64_t guinum, const_char* url){
   
   if (web != NULL){
     //web->setWindowTitle(url);
-    web->setUrl(getUrl(url));
+    QUrl dasurl = getUrl(url);
+    if (web->url() != dasurl)
+      web->setUrl(dasurl);
   }
 }
 
