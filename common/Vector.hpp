@@ -241,10 +241,10 @@ public:
   
   T* ref(int i) const {
     LOCKASSERTER_SHARED_NON_RELEASE(&_lockAsserter);
-    
-    R_ASSERT(i>=0);
-    R_ASSERT(i<_num_elements.get());
-    
+
+    R_ASSERT_RETURN_IF_FALSE2(i>=0, &_elements[0]);
+    R_ASSERT_RETURN_IF_FALSE2(i<_num_elements.get(), &_elements[0]);
+
     return &_elements[i];
   }
 
