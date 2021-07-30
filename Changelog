@@ -1,3 +1,14 @@
+Changes 6.9.90 -> 6.9.91:
+* Macos: Improve startup message.
+* Internal: Minor improvements.
+* Help: Fix the various help buttons and menu
+  entries not showing correct web page if user
+  had manually changed web page on the assigned
+  window (help windows are cached to open
+  quicker the second time).
+
+
+
 Changes 6.9.89 -> 6.9.90:
 * Internal: Reorganize code protecting s7 gc
   variables a little bit. Might have fixed some
