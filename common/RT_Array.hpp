@@ -46,7 +46,7 @@ template<typename T> struct RT_Array{
       return RT_data(_data)[0];
     } else if (i >= _size) {
       R_ASSERT(false);
-      return RT_data(_data)[_size-1];
+      return RT_data(_data)[0];
     } else {
       return RT_data(_data)[i];
     }
