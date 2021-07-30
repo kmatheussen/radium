@@ -1147,14 +1147,16 @@
 
 !!#
 
-
 (define-constant *help-windows* (make-hash-table 10 string=?))
 
 (define (FROM-C-show-help-window filename)
   (if (string=? (<ra> :get-os-name) "macosx")
       (<ra> :open-external-web-browser filename)
       (let ()
-        (define web (or (*help-windows* filename)
+        (define web (if (*help-windows* filename)
+                        (let ((web (*help-windows* filename)))
+                          (<gui> :set-url web filename)
+                          web)
                         (let ((web (<gui> :web filename)))
                           (set! (*help-windows* filename) web)
                           (<gui> :add-close-callback web (lambda x
