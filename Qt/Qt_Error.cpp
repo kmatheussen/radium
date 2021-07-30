@@ -207,9 +207,7 @@ int main(int argc, char **argv){
 
 extern bool g_qt_is_running;
 
-extern "C" {
-
-int SYSTEM_show_message_menu(const struct vector_t_ *options, const char *message){
+int SYSTEM_show_message_menu(const struct vector_t_ *options, const char *message, int ms_timeout){
 
   if (g_qt_is_running==false){
     fprintf(stderr,"\n\n\n   === %s ===\n\n\n", message);
@@ -275,7 +273,7 @@ int SYSTEM_show_message_menu(const struct vector_t_ *options, const char *messag
   int res;
   
   GFX_HideProgress();{
-    res = myProcess->waitForFinished(20000);
+    res = myProcess->waitForFinished(ms_timeout);
   }GFX_ShowProgress();
   
   if (res==false){ // Have timeout value in case the GUI doesn't show up or is hidden somehow.
@@ -288,6 +286,8 @@ int SYSTEM_show_message_menu(const struct vector_t_ *options, const char *messag
   printf("  Exit code: %d\n", myProcess->exitCode());
   return myProcess->exitCode();
 }
+
+extern "C" {
 
 // Note: Can be called from any thread. No gc-alloc.
 int SYSTEM_show_error_message(const char *message){
