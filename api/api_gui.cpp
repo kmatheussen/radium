@@ -5334,6 +5334,14 @@ void gui_setUrl(int64_t guinum, const_char* url){
   }
 }
 
+bool gui_webCanShowManual(void){
+  int major = qWebKitVersion().split(".")[0].toInt();
+
+  //printf("Version: %s. Major: %d\n", qWebKitVersion().toUtf8().constData(), major);
+
+  return major >= 600;
+}
+
 void openExternalWebBrowser(const_char *charstringurl){
 #if defined(FOR_MACOSX)
 

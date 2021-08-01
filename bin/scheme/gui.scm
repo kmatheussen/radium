@@ -1150,7 +1150,7 @@
 (define-constant *help-windows* (make-hash-table 10 string=?))
 
 (define (FROM-C-show-help-window filename)
-  (if (string=? (<ra> :get-os-name) "macosx")
+  (if (not (<gui> :web-can-show-manual)) ;;string=? (<ra> :get-os-name) "macosx")
       (<ra> :open-external-web-browser filename)
       (let ()
         (define web (if (*help-windows* filename)
