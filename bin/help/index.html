@@ -1774,10 +1774,41 @@ g_pages.push(
 
 
 const editor_fxarea_text = `
-<h2>FX automation</h2>
+
+<h2>FX automation and Velocity automation</h2>
+
+Both FX automation and Velocity automation are placed in the same subtrack. The Velocity/FX subtrack can not be hidden.
+
+<p>
 
 
-<h2>Velocity automation</h2>
+<h3>FX automation</h3>
+
+How to add FX automation to a track:
+
+<OL>
+  <LI> If the track doesn't have an instrument assigned, left-click in the track header where it says <b>(click me)</b>, and then select an instrument. For instance <B>New Sample Player</b>.
+  <LI> Move the mouse pointer inside the track itself (i.e. below the track header).
+  <LI> <b>Right-click</b> and select <b>New FX</b> at the top of the popup menu.
+  <LI> Select which FX you want to automate.
+  <LI> A minimal automation with two nodes should now have been created.
+</OL>
+
+If you want to edit automation by keyboard instead of mouse, look at <A href="index.html?page=fxtext">FX text</A>.
+
+
+<p>
+
+  
+<h3>Velocity automation</h3>
+
+Velocity is the volume of a single note. Velocity automation can be used to create crescendos and decresendos for instance.
+Velocity automation automatically appears for notes inside the fx/velocity subtrak.
+
+<p>
+  If you want to edit velocity automation by keyboard instead of mouse, look at <A href="index.html?page=veltext">Velocity text</A>.
+
+  
   `;
 
 g_pages.push(
@@ -2308,7 +2339,7 @@ Lets you record automation:
   <LI> The recorded automation should now be placed in the current track.    
   <LI> To quantitize the newly recorded automation:
   <OL>
-    <LI> Show <a href="fxtext_editor_framed">FX text</a> for the editor track
+    <LI> Show <a href="index.html?page=fxtext">FX text</a> for the editor track
     <LI> Adjust <A href="index.html?page=lztrack">LZ</A> to the wanted resolution.
     <LI> Press <b>Left alt + Q</b>
   </OL>
