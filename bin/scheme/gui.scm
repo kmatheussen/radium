@@ -5,7 +5,7 @@
 
 (define-constant *min-db* (<ra> :get-min-db))
 (define-constant *max-db* (<ra> :get-max-db))
-(define-constant *max-mixer-db* 6)
+(define-constant *max-mixer-db* (<ra> :get-max-volume-slider-db))
 
 (define (get-fontheight)
   (+ 4 (<gui> :get-system-fontheight))) ;; If changing this one, change the "font_height" variable in Seqtracks_widget::get_heights, and paintVamps in api_gui.cpp, too.

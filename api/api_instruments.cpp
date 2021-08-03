@@ -1776,6 +1776,10 @@ float getMaxDb(void){
   return MAX_DB;
 }
 
+float getMaxVolumeSliderDb(void){
+  return MAX_VOLUME_SLIDER_DB;
+}
+
 float dbToGain(float db){
   return db2gain(db);
 }

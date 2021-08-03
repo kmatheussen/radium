@@ -180,27 +180,14 @@ void CHIP_get_note_indicator_coordinates(int &x1, int &y1, int &x2, int &y2){
   get_note_indicator_coordinates(x1,y1,x2,y2);
 }
 
-static void get_slider1_coordinates(int &x1, int &y1, int &x2, int &y2){
-  get_name_coordinates(x1,y1,x2,y2);
-
-  x1 = chip_box_x1;// + left_border;
-  x2 = chip_box_x2;// - right_border;
-  y2 = y1;
-  y1 = chip_box_y1; // + top_border;
+static int get_volume_onoff_x1(int x2){
+  return x2 - button_width*3;
 }
-
-
-static void get_slider2_coordinates(int &x1, int &y1, int &x2, int &y2){
-  get_slider1_coordinates(x1,y1,x2,y2);
-  //y1+=slider_height;
-  //y2+=slider_height;
-}
-
 
 static void get_volume_onoff_coordinates(int &x1, int &y1, int &x2, int &y2){
   get_coordinates(x1,y1,x2,y2);
 
-  x1 = x2 - button_width*3;
+  x1 = get_volume_onoff_x1(x2);
   x2 = x2 - button_width*2;
 
   y2 = y1 + button_width - 1;
@@ -222,6 +209,24 @@ static void get_effects_onoff_coordinates(int &x1, int &y1, int &x2, int &y2){
 
   y2 = y1 + button_width - 1;
 }
+
+
+static void get_slider1_coordinates(int &x1, int &y1, int &x2, int &y2){
+  get_name_coordinates(x1,y1,x2,y2);
+
+  x1 = chip_box_x1;// + left_border;
+  x2 = get_volume_onoff_x1(x2); //chip_box_x2;// - right_border;
+  y2 = y1;
+  y1 = chip_box_y1; // + top_border;
+}
+
+
+static void get_slider2_coordinates(int &x1, int &y1, int &x2, int &y2){
+  get_slider1_coordinates(x1,y1,x2,y2);
+  //y1+=slider_height;
+  //y2+=slider_height;
+}
+
 
 
 
@@ -443,9 +448,23 @@ void CHIP_update(Chip *chip, SoundPlugin *plugin){
   int eff1 = plugin->type->num_effects+EFFNUM_INPUT_VOLUME;
   int eff2 = plugin->type->num_effects+EFFNUM_VOLUME;
 
-  int val1 = scale(PLUGIN_get_effect_value(plugin, eff1, VALUE_FROM_STORAGE), 0,1,0,10000);
-  int val2 = scale(PLUGIN_get_effect_value(plugin, eff2, VALUE_FROM_STORAGE), 0,1,0,10000);
-
+  float max_gain = ::scale(MAX_VOLUME_SLIDER_DB, MIN_DB, MAX_DB, 0, 1);
+  
+  float val1_f = R_BOUNDARIES(0,
+                              scale(PLUGIN_get_effect_value(plugin, eff1, VALUE_FROM_STORAGE),
+                                    0,max_gain,
+                                    0,1),
+                              1);
+  
+  float val2_f = R_BOUNDARIES(0,
+                              scale(PLUGIN_get_effect_value(plugin, eff2, VALUE_FROM_STORAGE),
+                                    0,max_gain,
+                                    0,1),
+                              1);
+  
+  int val1 = (val1_f*val1_f) * 10000;
+  int val2 = (val2_f*val2_f) * 10000;
+  
   SLIDERPAINTER_setValue(chip->_input_slider, val1);
   SLIDERPAINTER_setValue(chip->_output_slider, val2);
 
@@ -1778,11 +1797,11 @@ void Chip::init_new_plugin(void){
   }
   
   if (has_output_slider())
-    SLIDERPAINTER_set_peak_value_pointers(_output_slider, _num_outputs, plugin->output_volume_peaks.decaying_dbs, false);
+    SLIDERPAINTER_set_peak_value_pointers(_output_slider, _num_outputs, plugin->output_volume_peaks.decaying_dbs, true);
   //ATOMIC_SET(plugin->volume_peak_values_for_chip, SLIDERPAINTER_obtain_peak_value_pointers(_output_slider,_num_outputs));
 
   if (has_input_slider())
-    SLIDERPAINTER_set_peak_value_pointers(_input_slider, _num_inputs, plugin->input_volume_peaks.decaying_dbs, false);
+    SLIDERPAINTER_set_peak_value_pointers(_input_slider, _num_inputs, plugin->input_volume_peaks.decaying_dbs, true);
   //ATOMIC_SET(plugin->input_volume_peak_values_for_chip, SLIDERPAINTER_obtain_peak_value_pointers(_input_slider,_num_inputs));
   
   CHIP_update(plugin);
@@ -2560,7 +2579,11 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
         }
 
         VECTOR_FOR_EACH(Chip*,chip, &chips){
-          chip->_slider_start_value = chip->get_slider_volume();
+          float max_gain = ::scale(MAX_VOLUME_SLIDER_DB, MIN_DB, MAX_DB, 0, 1);
+          float val = R_BOUNDARIES(0,
+                                   ::scale(chip->get_slider_volume(), 0, max_gain, 0, 1),
+                                   1);
+          chip->_slider_start_value = val*val;
         }END_VECTOR_FOR_EACH;
 
         _slider_start_pos = pos.x();
@@ -2671,13 +2694,22 @@ void Chip::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
         SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
         
         if (plugin != NULL){
-          float value = chip->_slider_start_value + ::scale(delta,0,x2-x1,0,1.0);
-          if(value>1.0)
-            value=1.0;
+          float value = chip->_slider_start_value + ::scale(delta,
+                                                            0,x2-x1,
+                                                            0,1.0);
+          
+          if(value>1)
+            value=1;
           if(value<0.0)
             value=0.0;
           
           chip->_slider_start_value = value;
+
+          float max_gain = ::scale(MAX_VOLUME_SLIDER_DB, MIN_DB, MAX_DB, 0, 1);
+
+          value = ::scale(sqrtf(value),
+                           0,1,
+                           0,max_gain);
           
           int effect_num = chip->get_volume_effect_num();
           
