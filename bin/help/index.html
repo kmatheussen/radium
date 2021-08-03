@@ -1023,7 +1023,7 @@ g_pages.push(
 const editor_grid_text = `
   <h2>Grid</h2>
 
-  Sets mouse grid.<br>
+  Sets mouse grid. (snap-to-grid behavior)<br>
   
   <IMG SRC="editorgrid.png" ALT="Editor grid" style="border:10px solid transparent">
 
@@ -1044,16 +1044,6 @@ g_pages.push(
 
 
 const editor_bpmtext_text = `
-  <h2>Default BPM</h2>
-
-  The BPM text entry in the upper left corner of the editor, or in the bottom bar, lets you set the default tempo.<br>
-
-  <IMG SRC="globalbpm.png" ALT="Global BPM in the editor" style="border:10px solid transparent">
-  <IMG SRC="globalbpm2.png" ALT="Global BPM in the bottom bar" style="border:10px solid transparent">
-
-
-  <p>
-
   <IMG SRC="bpmtext.png" ALT="BPM text" style="border:10px solid transparent" align="right">
 
     <h2>BPM track</h2>
@@ -1078,7 +1068,7 @@ const editor_bpmtext_text = `
  Press <b>T</b> to switch between the two modes.
       
  Notes:
-  * If <b>xxxt</b> has an 'm' prefix, it means that the line contains more than one BPM entry. The last BPM is displayed.
+  * If <b>xxxt</b> has an 'm' prefix, it means that the line contains more than one BPM entry. The last BPM value is displayed.
   * If <b>xxxt</b> has a 'd' prefix, it means that the BPM entry starts below the start of the line.
   </pre>  
 
@@ -1091,6 +1081,20 @@ const editor_bpmtext_text = `
   <LI> To remove a BPM entry, press DEL.
   <LI> To adjust accelerando and deaccelerando behavior (relevant when <b>t</b> is empty), go to File -> Song properties.
 </UL>
+
+  <h2>Default BPM</h2>
+
+  The BPM text entry lets you set the default tempo.
+  The text entry is either placed in the upper left corner of the editor or in the bottom bar, depending on whether the BPM track is visible or not.
+  <br>
+
+  <IMG SRC="globalbpm.png" ALT="Global BPM in the editor" style="border:10px solid transparent">
+  <IMG SRC="globalbpm2.png" ALT="Global BPM in the bottom bar" style="border:10px solid transparent">
+
+
+  <p>
+
+
   `;
 
 g_pages.push(
@@ -1113,15 +1117,6 @@ const editor_lpbtext_text = `
   LPB would in most situations be set to 4, and not changed afterwards.
   
 
-  <h2>Default LPB</h2>
-
-  The LPB text entry lets you set the default LPB. The LPB text entry is either placed in the upper left corner of the editor, or in the bottom bar:<br>
-
-  <IMG SRC="globallpb.png" ALT="Global LPB in the editor" style="border:10px solid transparent">
-  <IMG SRC="globallpb2.png" ALT="Global LPB in the bottom bar" style="border:10px solid transparent">
-
-
-  <p>
   <p>
 
   <IMG SRC="lpbtext.png" ALT="LPB text" style="border:10px solid transparent" align="right">
@@ -1141,7 +1136,7 @@ const editor_lpbtext_text = `
  LPB format: <b>xx</b>, where xx goes between 1 and 99.
       
  Notes:
-  * If <b>xx</b> has an 'm' prefix, it means that the line contains more than one LPB entry. The last LPB is displayed.
+  * If <b>xx</b> has an 'm' prefix, it means that the line contains more than one LPB entry. The last LPB value is displayed.
   * If <b>xx</b> has a 'd' prefix, it means that the LPB entry starts below the start of the line.
       
   </pre>  
@@ -1154,6 +1149,18 @@ const editor_lpbtext_text = `
 <UL>
   <LI> To remove an LPB entry, press DEL.
 </UL>
+
+    <h2>Default LPB</h2>
+
+  The LPB text entry lets you set default LPB.
+  The text entry is either placed in the upper left corner of the editor or in the bottom bar, depending on whether the LPB track is visible or not.<br>
+
+  <IMG SRC="globallpb.png" ALT="Global LPB in the editor" style="border:10px solid transparent">
+  <IMG SRC="globallpb2.png" ALT="Global LPB in the bottom bar" style="border:10px solid transparent">
+
+
+  <p>
+
   `;
 
 g_pages.push(
@@ -1177,15 +1184,6 @@ const editor_signaturetext_text = `
   Example 1: If tempo is set to 64 BPM, and the signature is set to 8/8, a new bar will be played every 16 seconds (64/4 * 8/8), and a new beat will be played every 2 seconds (64/4 * 1/8). Example 2: If the signature is set to 2/4, a new bar will be played every 8 seconds (64/4 * 2/4), and a new beat will be played every 4 seconds (64/4 * 1/4).
   
 
-  <h2>Default Signature</h2>
-
-  The Signature text entry lets you set the default Signature. The Signature text entry is either placed in the upper left corner of the editor, or in the bottom bar:<br>
-
-  <IMG SRC="globalsignature.png" ALT="Global Signature in the editor" style="border:10px solid transparent">
-  <IMG SRC="globalsignature2.png" ALT="Global Signature in the bottom bar" style="border:10px solid transparent">
-  <br>
-  This entry is shown in the bottom bar if the signature track is hidden in the editor.
-  
   <p>
 
   <IMG SRC="signaturetext.png" ALT="Signature timing track" style="border:10px solid transparent" align="right">
@@ -1213,6 +1211,19 @@ const editor_signaturetext_text = `
   <LI> Press Return to create a new Signature entry or to edit an existing Signautre entry.
   <LI> Press DEL to remove a Signature entry.
 </UL>
+
+  <h2>Default Signature</h2>
+
+  The Signature text entry lets you set the default Signature. The Signature text entry is either placed in the upper left corner of the editor, or in the bottom bar:<br>
+
+  <IMG SRC="globalsignature.png" ALT="Global Signature in the editor" style="border:10px solid transparent">
+  <IMG SRC="globalsignature2.png" ALT="Global Signature in the bottom bar" style="border:10px solid transparent">
+  <br>
+  This entry is shown in the bottom bar if the signature track is hidden in the editor.
+  
+
+
+
   `;
 
 g_pages.push(
@@ -1262,12 +1273,12 @@ const editor_swingtext_text = `
 <OL>
   <LI>The global swing track.<br>
     <UL>
-      <LI><b>Position:</b> To the right of the "LZ" track. (See first picture.)
+      <LI><b>Where:</b> To the right of the "LZ" track. (See first picture.)
       <LI><b>Task:</b> Apply swing to all tracks in a block.
     </UL>
   <LI>Swing subtracks.
     <UL>
-      <LI><b>Position:</b> To the left of note text. (See second picture.)
+      <LI><b>Where:</b> To the left of note text. (See second picture.)
       <LI><b>Task:</b> Apply swing to individual tracks, overriding the global swing track for that track.
       <LI><b>How to enable:</b> Right-click inside a track and enable "Swing text".
     </UL>
@@ -1777,14 +1788,14 @@ const editor_fxarea_text = `
 
 <h2>FX automation and Velocity automation</h2>
 
-Both FX automation and Velocity automation are placed in the same subtrack. The Velocity/FX subtrack can not be hidden.
+Both FX automation and Velocity automation are placed in the same subtrack, which is also the rightmost subtrack in a track. The Velocity/FX subtrack can not be hidden.
 
 <p>
 
 
 <h3>FX automation</h3>
 
-How to add FX automation to a track:
+To add FX automation to a track:
 
 <OL>
   <LI> If the track doesn't have an instrument assigned, left-click in the track header where it says <b>(click me)</b>, and then select an instrument. For instance <B>New Sample Player</b>.
@@ -1802,7 +1813,7 @@ If you want to edit automation by keyboard instead of mouse, look at <A href="in
   
 <h3>Velocity automation</h3>
 
-Velocity is the volume of a single note. Velocity automation can be used to create crescendos and decresendos for instance.
+Velocity is the volume of a single note. Velocity automation can for instance be used to create crescendos and decresendos.
 Velocity automation automatically appears for notes inside the fx/velocity subtrak.
 
 <p>
@@ -2118,7 +2129,7 @@ const sequencer_text = `
 <h3>Timeline</h3>
 
 <UL>
-  <LI> Left-click the <b>Grid: Bar</b> button to enable/disable grid.
+  <LI> Left-click the <b>Grid: Bar</b> button to enable/disable grid. (snap-to-grid behavior)
   <LI> Right-click the <b>Grid: Bar</b> button to set grid type.
   <LI> Double-click a marker to loop between that marker and the next marker. (If you double-click the last marker, you will be asked to rename that marker instead)
 </UL>
