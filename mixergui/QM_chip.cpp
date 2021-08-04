@@ -366,7 +366,7 @@ bool CHIP_is_at_output_eport(Chip *chip, int x, int y){
 // stuff 
 
 
-static void paint_checkbutton(QPainter *painter, const QString &name, const QColor &text_color, const QColor &background_color, int x1, int y1, int x2, int y2, bool is_on, bool is_implicitly_on){
+static void paint_checkbutton(QPainter *painter, const QString &name, const QColor &patch_color, const QColor &text_color, const QColor &background_color, int x1, int y1, int x2, int y2, bool is_on, bool is_implicitly_on){
 
   {
     QColor c = get_qcolor(MIXER_BORDER_COLOR_NUM);
@@ -388,8 +388,6 @@ static void paint_checkbutton(QPainter *painter, const QString &name, const QCol
   
   if(is_on || is_implicitly_on){
 
-    QColor c = background_color;
-
     /*
     painter->drawLine(x1, y1, x2, y2);
     painter->drawLine(x2, y1, x1, y2);
@@ -398,32 +396,45 @@ static void paint_checkbutton(QPainter *painter, const QString &name, const QCol
     //#else
     //QColor c(10,12,30,65);
     //painter->setPen(QPen(c, 2));
-    c.setAlpha(200);
 
+    QColor c = background_color;
+    c.setAlpha(200);
+      
     if (is_on){
+
       painter->setPen(Qt::NoPen);
       painter->setBrush(c);
       painter->drawRoundedRect(rect,4,4);
+      
     }else{
+      
       rect.adjust(1,1,-1,-1);
       painter->setPen(QPen(c, 2));
+      painter->setBrush(patch_color);
       painter->drawRoundedRect(rect,3,3);
+      
     }
     //    if (is_on)
     //  painter->fillRect(rect, c);
     //else
     //#endif
 
-    if (is_on)
-      painter->setBrush(Qt::NoBrush);
-    
     /*
     c.setAlpha(255);
     painter->drawLine(x1, y1, x2, y2);
     painter->drawLine(x2, y1, x1, y2);
     */
+    
+  } else {
+
+      painter->setPen(Qt::NoPen);
+      painter->setBrush(patch_color);
+      painter->drawRect(rect);
+
   }
 
+  painter->setBrush(Qt::NoBrush);
+    
   {
     painter->setPen(QPen(text_color, 2));
 
@@ -2026,7 +2037,20 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
   QColor text_color = get_qcolor(is_current_patch ? SEQUENCER_TEXT_CURRENT_BLOCK_COLOR_NUM : MIXER_TEXT_COLOR_NUM);
   //if(is_current_patch==false)
   text_color.setAlpha(160);
+
+  QColor patchcolor = get_displayed_instrument_color(patch);
+
+  patchcolor = patchcolor.lighter(120);
+  /*
+    (false && is_selected)
+    ? mix_colors(QColor(30,25,70,60), patchcolor, 0.45)
+    : mix_colors(QColor(30,65,70,35), patchcolor, 0.05);
+  */
   
+  if (ATOMIC_GET(patch->is_recording))
+    patchcolor = mix_colors(patchcolor, QColor(255,0,0), 0.1);
+
+
 
   QColor border_color = get_qcolor(MIXER_BORDER_COLOR_NUM);
   if(is_current_patch_under_mouse==false)
@@ -2039,6 +2063,7 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     int x1,y1,x2,y2;
     get_slider2_coordinates(x1,y1,x2,y2);      
 
+    /*
     {
       QColor c = get_qcolor(MIXER_BORDER_COLOR_NUM);
       c.setAlpha(10);
@@ -2047,20 +2072,40 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
       painter->drawRoundedRect(x1,y1,x2-x1,y2-y1, 2,2);
       painter->setBrush(Qt::NoBrush);
     }
+    */
 
+    QRectF slider_rect(x1,y1,x2-x1,y2-y1);
+    
+    myFillRect(*painter, slider_rect, Qt::black);
+
+    bool is_input = false;
+    
     // input slider
     if(has_input_slider()){
+      //SLIDERPAINTER_set_string(_input_slider, buf);
       painter->translate(x1,y1);
       SLIDERPAINTER_paint(_input_slider, painter);
       painter->translate(-x1,-y1);
+      is_input = true;
     }
 
     // output slider (not painted if input slider is painted)
     if(has_output_slider()){
+      //SLIDERPAINTER_set_string(_output_slider, buf);
       painter->translate(x1,y1);
       SLIDERPAINTER_paint(_output_slider, painter);
       painter->translate(-x1,-y1);
     }
+
+    int effect_num = get_volume_effect_num();
+    
+    char buf[64]={};
+    PLUGIN_get_display_value_string(plugin, effect_num, buf, 64);
+
+    QColor col = get_qcolor(TEXT_COLOR_NUM);
+    col.setAlphaF((is_current_patch || is_input) ? 0.9 : 0.6);
+    painter->setPen(col);
+    myDrawText(*painter, slider_rect.adjusted(4,3,0,0), buf, Qt::AlignLeft|Qt::AlignVCenter, false, 0, true, false);
   }
 
 
@@ -2075,19 +2120,7 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     int x1,y1,x2,y2;
     get_name_coordinates(x1,y1,x2,y2);
 
-    QColor patchcolor = get_displayed_instrument_color(patch);
-
-    QColor c = patchcolor.lighter(120);
-    /*
-      (false && is_selected)
-      ? mix_colors(QColor(30,25,70,60), patchcolor, 0.45)
-      : mix_colors(QColor(30,65,70,35), patchcolor, 0.05);
-    */
-    
-    if (ATOMIC_GET(patch->is_recording))
-      c = mix_colors(c, QColor(255,0,0), 0.1);
-
-    myFillRect(*painter, QRectF(chip_box_x1, y1, x2-chip_box_x1, y2-y1), c);
+    myFillRect(*painter, QRectF(chip_box_x1, y1, x2-chip_box_x1, y2-y1), patchcolor);
     /*
     painter->setPen(Qt::NoPen);
     painter->setBrush(c);
@@ -2140,13 +2173,15 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 
       int x1,y1,x2,y2;
       get_volume_onoff_coordinates(x1,y1,x2,y2);
-      paint_checkbutton(painter, "M", text_color, Qt::green, x1,y1,x2,y2, is_muted_relaxed(plugin), plugin->is_implicitly_muted);
+
+
+      paint_checkbutton(painter, "M", patchcolor, text_color, Qt::green, x1,y1,x2,y2, is_muted_relaxed(plugin), plugin->is_implicitly_muted);
 
       get_solo_onoff_coordinates(x1,y1,x2,y2);
-      paint_checkbutton(painter, "S", text_color, Qt::yellow, x1,y1,x2,y2, ATOMIC_GET_RELAXED(plugin->solo_is_on), plugin->is_implicitly_soloed);
+      paint_checkbutton(painter, "S", patchcolor, text_color, Qt::yellow, x1,y1,x2,y2, ATOMIC_GET_RELAXED(plugin->solo_is_on), plugin->is_implicitly_soloed);
 
       get_effects_onoff_coordinates(x1,y1,x2,y2);
-      paint_checkbutton(painter, "B", text_color, get_qcolor(ZOOMLINE_TEXT_COLOR_NUM1), x1,y1,x2,y2, !ATOMIC_GET_RELAXED(plugin->effects_are_on), false);
+      paint_checkbutton(painter, "B", patchcolor, text_color, get_qcolor(ZOOMLINE_TEXT_COLOR_NUM1), x1,y1,x2,y2, !ATOMIC_GET_RELAXED(plugin->effects_are_on), false);
     }
   }
 
