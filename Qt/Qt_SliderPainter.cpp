@@ -496,7 +496,7 @@ struct SliderPainter{
     if (_recording_color){
       QColor c = get_qcolor(SLIDER_RECORDING_COLOR_NUM);
       p->fillRect(0,0,width(),height(),c);
-    } else if (_is_hovered && _qslider->isEnabled()){
+    } else if (_is_hovered && _qslider!=NULL && _qslider->isEnabled()){
       QColor c = _qslider->palette().color(_qslider->backgroundRole());
       myFillRect(*p, QRectF(0,0,width(),height()), c.lighter(110), false);
       //myFillRect(*p, QRectF(0,0,width(),height()), c);
@@ -511,7 +511,7 @@ struct SliderPainter{
                                scale_double(value(),minimum(),maximum(),0.0f,1.0f),
                                _display_string.toStdString(),
                                _alternative_color,
-                               _is_hovered && _qslider->isEnabled()
+                               _is_hovered && (_qslider==NULL || _qslider->isEnabled())
                                );
 
     /*

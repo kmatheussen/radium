@@ -174,6 +174,8 @@ class MyScene : public QGraphicsScene ,public radium::MouseCycleFix {
   Chip *_current_from_chip;
   Chip *_current_to_chip;
 
+  QPointer<Chip> _current_temp_connection_chip; // Make it a qpointer just in case (theoretically it shouldn't be necessary but it's just to be safe (I especially don't trust Qt to always call the mouse release event)).
+
   EventConnection *_current_econnection;
   Chip *_ecurrent_from_chip;
   Chip *_ecurrent_to_chip;
@@ -981,6 +983,7 @@ static bool mousepress_start_connection(MyScene *scene, radium::MouseCycleEvent 
         }
         
         scene->_current_connection = new AudioConnection(scene, scene->_current_from_chip, scene->_current_to_chip, ConnectionType::IS_SEND, true/*, true*/);
+        scene->_current_connection->set_on_top();
         scene->addItem(scene->_current_connection);
         
         scene->_current_connection->setLine(mouse_x,mouse_y,mouse_x,mouse_y);
@@ -1009,6 +1012,7 @@ static bool mousepress_start_connection(MyScene *scene, radium::MouseCycleEvent 
 
         scene->_current_econnection = new EventConnection(scene, scene->_ecurrent_from_chip, scene->_ecurrent_to_chip);
         scene->addItem(scene->_current_econnection);
+        scene->_current_econnection->set_on_top();
         
         scene->_current_econnection->setLine(mouse_x,mouse_y,mouse_x,mouse_y);
         scene->_current_econnection->update_shape(true, true);
@@ -1968,6 +1972,63 @@ void MyScene::fix_mousePressEvent(radium::MouseCycleEvent &event){
     QGraphicsScene::mousePressEvent(event.get_qtscene_event());
 }
 
+static Chip *handle_temp_connection_chip(MyScene *myscene, bool is_output, SuperConnection *current_connection, int x1, int y1, int x2, int y2){
+  
+  Chip *chip = MW_get_chip_at(x2, y2, NULL);
+
+  if (chip != NULL) {
+    
+    if (current_connection->_from != NULL && chip==current_connection->_from)
+      chip=NULL;
+    
+    if (current_connection->_to != NULL && chip==current_connection->_to)
+      chip=NULL;
+  }
+  
+  if (chip != myscene->_current_temp_connection_chip.data()) {
+    
+    if (chip != NULL) {
+
+      if (current_connection->_is_event_connection) {
+        
+        chip->set_hover_item(Chip::HoverItem::EVENT_PORT);
+        
+      } else {
+        
+        if(is_output){
+          chip->set_hover_item(Chip::HoverItem::AUDIO_INPUT_PORT);
+        }else{
+          chip->set_hover_item(Chip::HoverItem::AUDIO_OUTPUT_PORT);
+        }
+        
+      }
+    }
+    
+    if (myscene->_current_temp_connection_chip.data() != NULL)
+      myscene->_current_temp_connection_chip->set_hover_item(Chip::HoverItem::NOTHING);
+    
+    myscene->_current_temp_connection_chip = chip;
+
+  }
+  
+  if (chip != NULL) {
+      
+    if (is_output) {
+      x2 = current_connection->_is_event_connection ? CHIP_get_eport_x(chip) : CHIP_get_input_port_x(chip);
+      y2 = current_connection->_is_event_connection ? CHIP_get_input_eport_y(chip) : CHIP_get_port_y(chip);
+    } else {
+      x2 = current_connection->_is_event_connection ? CHIP_get_eport_x(chip) : CHIP_get_output_port_x(chip);
+      y2 = current_connection->_is_event_connection ? CHIP_get_output_eport_y(chip) : CHIP_get_port_y(chip);
+    }
+
+  }
+    
+  current_connection->setLine(x1,y1,x2,y2);
+  current_connection->update_shape(true, true);
+    
+  return chip;
+}
+
 void MyScene::fix_mouseMoveEvent (radium::MouseCycleEvent &event){
   FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::MIXER, true);
 
@@ -2001,9 +2062,8 @@ void MyScene::fix_mouseMoveEvent (radium::MouseCycleEvent &event){
     int x2 = pos.x();
     int y2 = pos.y();
 
-    _current_connection->setLine(x1,y1,x2,y2);
-    _current_connection->update_shape(true, true);
-
+    handle_temp_connection_chip(this, _current_from_chip != NULL, _current_connection, x1, y1, x2, y2);
+  
     event.accept();
 
   }else if(_current_econnection != NULL){
@@ -2024,6 +2084,8 @@ void MyScene::fix_mouseMoveEvent (radium::MouseCycleEvent &event){
     _current_econnection->setLine(x1,y1,x2,y2);
     _current_econnection->update_shape(true, true);
     
+    handle_temp_connection_chip(this, _ecurrent_from_chip != NULL, _current_econnection, x1, y1, x2, y2);
+
     event.accept();
 
   } else if(_moving_chips.size()>0){
@@ -2129,6 +2191,11 @@ void MyScene::fix_mouseReleaseEvent(radium::MouseCycleEvent &event){
     _current_from_chip = NULL;
     _current_to_chip = NULL;
 
+    if (_current_temp_connection_chip.data() != NULL) {
+      _current_temp_connection_chip->set_hover_item(Chip::HoverItem::NOTHING);
+      _current_temp_connection_chip = NULL;
+    }
+          
     must_accept = true;
     
   } else if (_current_econnection!=NULL){
@@ -2168,6 +2235,11 @@ void MyScene::fix_mouseReleaseEvent(radium::MouseCycleEvent &event){
     _ecurrent_from_chip = NULL;
     _ecurrent_to_chip = NULL;
 
+    if (_current_temp_connection_chip.data() != NULL) {
+      _current_temp_connection_chip->set_hover_item(Chip::HoverItem::NOTHING);
+      _current_temp_connection_chip = NULL;
+    }
+    
     must_accept = true;
     
   } else if (_moving_chips.size()>0 && stop_moving_chips(this, g_is_ctrl_clicking_this_cycle, pos)) {

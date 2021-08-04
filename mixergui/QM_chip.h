@@ -90,6 +90,17 @@ class Chip : public QGraphicsItem, public QObject
   
 public:
 
+  enum class HoverItem{
+      NOTHING,
+      SOLO_BUTTON,
+      MUTE_BUTTON,
+      BYPASS_BUTTON,
+      VOLUME_SLIDER,
+      EVENT_PORT,
+      AUDIO_INPUT_PORT,
+      AUDIO_OUTPUT_PORT,
+  };
+
   void init_new_plugin(void);
   
   Chip(QGraphicsScene *scene, SoundProducer *sound_producer, float x, float y);
@@ -104,6 +115,14 @@ public:
   bool myMouseDoubleClickEvent (float x, float y);
 
   QString _name_text;
+  
+ private:
+  
+  HoverItem _hover_item = HoverItem::NOTHING;
+
+ public:
+  
+  void set_hover_item(HoverItem hover_item);
 
 protected:
     void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
@@ -213,7 +232,7 @@ extern LANGSPEC bool MW_get_bus_connections_visibility(void);
 typedef Chip* ChipPointer;
 
 class SuperConnection : public QGraphicsLineItem {
-  
+
 public:
 
   static SuperConnection *get_current_connection(void);
@@ -461,6 +480,11 @@ public:
     //remakeMixerStrips(-1);
   }
 
+  void set_on_top(void){
+    _visible_line.setZValue(100);
+    _arrow.setZValue(101);
+  }
+  
   void update_visibility(void){
     if (to==NULL)
       setVisibility(true);

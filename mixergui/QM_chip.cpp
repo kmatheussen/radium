@@ -373,7 +373,7 @@ bool CHIP_is_at_output_eport(Chip *chip, int x, int y){
 // stuff 
 
 
-static void paint_checkbutton(QPainter *painter, const QString &name, const QColor &patch_color, const QColor &text_color, const QColor &background_color, int x1, int y1, int x2, int y2, bool is_on, bool is_implicitly_on){
+static void paint_checkbutton(QPainter *painter, const QString &name, QColor patch_color, const QColor &text_color, const QColor &background_color, int x1, int y1, int x2, int y2, bool is_on, bool is_implicitly_on, bool is_hovered){
 
   {
     QColor c = get_qcolor(MIXER_BORDER_COLOR_NUM);
@@ -391,6 +391,9 @@ static void paint_checkbutton(QPainter *painter, const QString &name, const QCol
     }
   }
 
+  if (is_hovered)
+    patch_color = patch_color.lighter(150);
+
   QRectF rect(x1+0.25, y1+0.75, x2-x1-1, y2-y1-1.25);
   
   if(is_on || is_implicitly_on){
@@ -406,7 +409,10 @@ static void paint_checkbutton(QPainter *painter, const QString &name, const QCol
 
     QColor c = background_color;
     c.setAlpha(200);
-      
+
+    if (is_hovered)
+      c = c.lighter(150);
+
     if (is_on){
 
       painter->setPen(Qt::NoPen);
@@ -2195,13 +2201,13 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
       get_volume_onoff_coordinates(x1,y1,x2,y2);
 
 
-      paint_checkbutton(painter, "M", patchcolor, text_color, Qt::green, x1,y1,x2,y2, is_muted_relaxed(plugin), plugin->is_implicitly_muted);
+      paint_checkbutton(painter, "M", patchcolor, text_color, Qt::green, x1,y1,x2,y2, is_muted_relaxed(plugin), plugin->is_implicitly_muted, _hover_item==HoverItem::MUTE_BUTTON);
 
       get_solo_onoff_coordinates(x1,y1,x2,y2);
-      paint_checkbutton(painter, "S", patchcolor, text_color, Qt::yellow, x1,y1,x2,y2, ATOMIC_GET_RELAXED(plugin->solo_is_on), plugin->is_implicitly_soloed);
+      paint_checkbutton(painter, "S", patchcolor, text_color, Qt::yellow, x1,y1,x2,y2, ATOMIC_GET_RELAXED(plugin->solo_is_on), plugin->is_implicitly_soloed, _hover_item==HoverItem::SOLO_BUTTON);
 
       get_effects_onoff_coordinates(x1,y1,x2,y2);
-      paint_checkbutton(painter, "B", patchcolor, text_color, get_qcolor(ZOOMLINE_TEXT_COLOR_NUM1), x1,y1,x2,y2, !ATOMIC_GET_RELAXED(plugin->effects_are_on), false);
+      paint_checkbutton(painter, "B", patchcolor, text_color, get_qcolor(ZOOMLINE_TEXT_COLOR_NUM1), x1,y1,x2,y2, !ATOMIC_GET_RELAXED(plugin->effects_are_on), false, _hover_item==HoverItem::BYPASS_BUTTON);
     }
   }
 
@@ -2226,10 +2232,18 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 
     // border
     QColor border_color = get_qcolor(NOTE_EVENT_INDICATOR_BORDER_COLOR_NUM);
+    if (_hover_item==HoverItem::EVENT_PORT){
+      painter->setBrush(patchcolor.lighter(150));
+      border_color = border_color.lighter(150);
+    }
+    
     //painter->setBrush(QBrush());
     painter->setPen(border_color);
     //painter->setPen(Qt::NoPen);
     painter->drawRoundedRect(x1,y1,x2-x1,y2-y1,0.5,0.5);
+
+    if (_hover_item==HoverItem::EVENT_PORT)
+      painter->setBrush(Qt::NoBrush);
   }
 
 
@@ -2295,23 +2309,52 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     //painter->setPen(QPen(Qt::gray, 2));
     //QColor color(59,155,68,40);
     QColor color = get_qcolor(MIXER_AUDIO_PORT_COLOR_NUM);
+
+    QColor border_color = color.darker();
     //painter->setPen(color);
-    painter->setPen(color.darker());
-    painter->setBrush(QBrush(color.lighter(),Qt::SolidPattern));
+    painter->setPen(border_color);
+
+    QColor fill_color = color.lighter();
+    painter->setBrush(QBrush(fill_color,Qt::SolidPattern));
 
     const int xborder = 5;
     const int yborder = 5;
 
-    if(_num_inputs>0)
+    if(_num_inputs>0){
+      
+      if (_hover_item==HoverItem::AUDIO_INPUT_PORT){
+        QColor col = fill_color;
+        col.setAlphaF(R_MIN(1.0, col.alphaF()+0.3));
+        painter->setBrush(col.lighter(150));
+        painter->setPen(col.darker(150));
+        //printf("Set input\n");
+      }
+      
       painter->drawRoundedRect(xborder, y1+yborder,
                                port_width-2-xborder, y2-y1-yborder*2,
                                2,2);
+      
+      if (_hover_item==HoverItem::AUDIO_INPUT_PORT){
+        painter->setBrush(QBrush(fill_color,Qt::SolidPattern));
+        painter->setPen(border_color);
+      }
+    }
 
-    if(_num_outputs>0)
+    if(_num_outputs>0) {
+
+      if (_hover_item==HoverItem::AUDIO_OUTPUT_PORT){
+        QColor col = fill_color;
+        col.setAlphaF(R_MIN(1.0, col.alphaF()+0.3));
+        painter->setBrush(col.lighter(150));
+        painter->setPen(col.darker(150));
+        //printf("Set output\n");
+      }
+      
       painter->drawRoundedRect(x2+2, y1+yborder,
                                port_width-2-xborder, y2-y1-yborder*2,
                                2,2);
-
+    }
+    
     painter->setBrush(Qt::NoBrush);
   }
 }
@@ -2415,31 +2458,48 @@ static void set_slider_statusbar(const Chip *chip){
   g_statusbar_id = setStatusbarText(talloc_format("%s: %s", patch->name, temp));
 }
 
-static void handle_mouse_hover_chip(const Chip *chip, const QGraphicsSceneHoverEvent * event ){
+void Chip::set_hover_item(HoverItem hover_item){
+  if (_hover_item != hover_item){
+    
+    if (_hover_item==HoverItem::VOLUME_SLIDER || hover_item==HoverItem::VOLUME_SLIDER)        
+      SLIDERPAINTER_set_hovered(has_input_slider() ? _input_slider : _output_slider, hover_item==HoverItem::VOLUME_SLIDER);
+    
+    _hover_item = hover_item;
+    update();
+  }
+}
+
+static void handle_mouse_hover_chip(Chip *chip, const QGraphicsSceneHoverEvent * event ){
   const QPointF pos = event->pos();
   
   if (in_solo_button(pos)){
 
+    chip->set_hover_item(Chip::HoverItem::SOLO_BUTTON);
     set_solo_statusbar(chip);
     
   } else if (in_volume_button(pos)){
 
+    chip->set_hover_item(Chip::HoverItem::MUTE_BUTTON);
     set_mute_statusbar(chip);
         
   } else if (in_bypass_button(pos)){
 
+    chip->set_hover_item(Chip::HoverItem::BYPASS_BUTTON);
     set_bypass_statusbar(chip);
     
   } else if(in_slider(pos)){
 
+    chip->set_hover_item(Chip::HoverItem::VOLUME_SLIDER);
     set_slider_statusbar(chip);
     
   } else if (pos.x() < chip_box_x1 || pos.x() >= chip_box_x2) {
 
+    chip->set_hover_item(pos.x() < chip_box_x1 ? Chip::HoverItem::AUDIO_INPUT_PORT : Chip::HoverItem::AUDIO_OUTPUT_PORT);
     g_statusbar_id = setStatusbarText("Press mouse button to create new audio-connection");
 
   } else {
-    
+
+    chip->set_hover_item(Chip::HoverItem::EVENT_PORT);    
     g_statusbar_id = setStatusbarText("Press mouse button to create new event-connection");
     
   }
@@ -2466,6 +2526,8 @@ void Chip::hoverLeaveEvent ( QGraphicsSceneHoverEvent * event ){
     g_statusbar_id=-1;
     
   }
+
+  set_hover_item(Chip::HoverItem::NOTHING);
 }
 
 void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
