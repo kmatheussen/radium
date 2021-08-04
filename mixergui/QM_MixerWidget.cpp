@@ -1360,14 +1360,54 @@ static bool mousepress_save_presets_etc(MyScene *scene, radium::MouseCycleEvent 
   if (patches.num_elements==0)
     return false;
 
-  S7EXTRA_GET_FUNC(func, "FROM_C-show-mixer-popup-menu");
+  const SoundPlugin *plugin = SP_get_plugin(chip_under->_sound_producer);
+  R_ASSERT_RETURN_IF_FALSE2(plugin!=NULL, false);
+  R_ASSERT_RETURN_IF_FALSE2(plugin->patch!=NULL, false);
+  
+  int effect_num = -1;
 
-  s7extra_applyFunc_void_varargs(func,
-                                 DYN_create_instrument(CHIP_get_patch(chip_under)->id),
-                                 DYN_create_float(mouse_x),
-                                 DYN_create_float(mouse_y),
-                                 g_uninitialized_dyn);
+  switch(chip_under->get_hover_item()){
+    case Chip::HoverItem::NOTHING:
+    case Chip::HoverItem::EVENT_PORT:
+    case Chip::HoverItem::AUDIO_INPUT_PORT:
+    case Chip::HoverItem::AUDIO_OUTPUT_PORT:
+      {
 
+        S7EXTRA_GET_FUNC(func, "FROM_C-show-mixer-popup-menu");
+    
+        s7extra_applyFunc_void_varargs(func,
+                                       DYN_create_instrument(CHIP_get_patch(chip_under)->id),
+                                       DYN_create_float(mouse_x),
+                                       DYN_create_float(mouse_y),
+                                       g_uninitialized_dyn);
+        break;
+      }
+      
+    case Chip::HoverItem::SOLO_BUTTON:
+      effect_num = EFFNUM_SOLO_ONOFF;
+      break;
+      
+    case Chip::HoverItem::MUTE_BUTTON:
+      effect_num = get_mute_effectnum(plugin->type);
+      break;
+      
+    case Chip::HoverItem::BYPASS_BUTTON:
+      effect_num = EFFNUM_EFFECTS_ONOFF;
+      break;
+      
+    case Chip::HoverItem::VOLUME_SLIDER:
+      effect_num = chip_under->get_volume_effect_num();
+      break;
+  }
+
+  if (effect_num >= 0) {
+    S7CALL2(dyn_dyn_charpointer,
+            "FROM_C-show-effect-popup-menu",
+            DYN_create_instrument(plugin->patch->id),
+            PLUGIN_get_effect_name(plugin, plugin->type->num_effects + effect_num)
+            );
+  }
+  
   return true;
 
   /*

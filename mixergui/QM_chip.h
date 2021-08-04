@@ -122,6 +122,10 @@ public:
 
  public:
   
+  HoverItem get_hover_item(void){
+    return _hover_item;
+  }
+  
   void set_hover_item(HoverItem hover_item);
 
 protected:
