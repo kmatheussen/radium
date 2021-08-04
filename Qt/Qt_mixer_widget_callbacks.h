@@ -127,8 +127,11 @@ public:
                                              0, total_height);
       
       double slider_inner_height = slider_xy2 - slider_xy1;
-      
-      double new_value = init_value + delta / ((total_height-slider_inner_height) * scale) * (max-min);
+
+      double div = (total_height-slider_inner_height) * scale;
+      if (equal_doubles(div,0))
+        div=1;
+      double new_value = init_value + (delta / div) * (max-min);
 
       /*
       printf("min: %f. max: %f. scale: %f. old_value: %d. new_value: %f\n",
