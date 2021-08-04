@@ -1706,7 +1706,7 @@ void setPianonoteLogtype(int logtype, int pianonotenum, dyn_t dynnote, int track
   window->must_redraw_editor=true;
 
   int pitchnum = getPitchNumFromPianonoteNum(pianonotenum, dynnote, tracknum, blocknum, windownum);
-  printf("pitchnum: %d. pianonotenum: %d. wtrack: %d. wblock: %d\n", pitchnum, pianonotenum, wtrack->l.num, wblock->l.num);
+  //printf("pitchnum: %d. pianonotenum: %d. wtrack: %d. wblock: %d\n", pitchnum, pianonotenum, wtrack->l.num, wblock->l.num);
   setPitchnumLogtype2(logtype, pitchnum, track, blocknum);
 }
   
