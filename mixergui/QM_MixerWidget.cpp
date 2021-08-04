@@ -1384,7 +1384,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, radium::MouseCycleEvent 
       }
       
     case Chip::HoverItem::SOLO_BUTTON:
-      effect_num = EFFNUM_SOLO_ONOFF;
+      effect_num = plugin->type->num_effects + EFFNUM_SOLO_ONOFF;
       break;
       
     case Chip::HoverItem::MUTE_BUTTON:
@@ -1392,7 +1392,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, radium::MouseCycleEvent 
       break;
       
     case Chip::HoverItem::BYPASS_BUTTON:
-      effect_num = EFFNUM_EFFECTS_ONOFF;
+      effect_num = plugin->type->num_effects + EFFNUM_EFFECTS_ONOFF;
       break;
       
     case Chip::HoverItem::VOLUME_SLIDER:
@@ -1404,7 +1404,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, radium::MouseCycleEvent 
     S7CALL2(dyn_dyn_charpointer,
             "FROM_C-show-effect-popup-menu",
             DYN_create_instrument(plugin->patch->id),
-            PLUGIN_get_effect_name(plugin, plugin->type->num_effects + effect_num)
+            PLUGIN_get_effect_name(plugin, effect_num)
             );
   }
   
