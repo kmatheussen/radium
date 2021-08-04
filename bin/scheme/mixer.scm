@@ -521,7 +521,9 @@
               ;;"------------Mixer"
               ;;(list "Mixer"
               (get-mixer-all-objects-popup-menu-entries x y)
-              (get-mixer-popup-menu-entries)
+              "------------Mixer"
+              (list "Mixer"
+                    (get-mixer-popup-menu-entries))
               ))
 
 (define (FROM_C-show-mixer-popup-menu curr-instrument-id x y)
