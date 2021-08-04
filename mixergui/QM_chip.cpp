@@ -108,11 +108,12 @@ extern EditorWidget *g_editor;
 
 
 
-
+/*
 static int get_text_width(const QFont &font, const QString &text){
   const QFontMetrics fn = QFontMetrics(font);
   return fn.boundingRect(text).width();
 }
+*/
 
 #if 0
 static const int left_border   = 2;
@@ -149,7 +150,7 @@ static void get_name_coordinates(int &x1, int &y1, int &x2, int &y2){
   //get_slider2_coordinates(x1,y1,x2,y2);
 
   x1 = x1 + name_height;
-  y1 = y2 - name_height;
+  y2 = y1 + name_height;
 
   //  y1+=slider_height;
   //  y2+=name_height;
@@ -190,6 +191,7 @@ static void get_volume_onoff_coordinates(int &x1, int &y1, int &x2, int &y2){
   x1 = get_volume_onoff_x1(x2);
   x2 = x2 - button_width*2;
 
+  y1 = y1 + name_height;
   y2 = y1 + button_width - 1;
 }
 
@@ -199,6 +201,7 @@ static void get_solo_onoff_coordinates(int &x1, int &y1, int &x2, int &y2){
   x1 = x2 - button_width*2;
   x2 = x2 - button_width;
 
+  y1 = y1 + name_height;
   y2 = y1 + button_width - 1;
 }
 
@@ -207,6 +210,7 @@ static void get_effects_onoff_coordinates(int &x1, int &y1, int &x2, int &y2){
 
   x1 = x2 - button_width;
 
+  y1 = y1 + name_height;
   y2 = y1 + button_width - 1;
 }
 
@@ -216,8 +220,8 @@ static void get_slider1_coordinates(int &x1, int &y1, int &x2, int &y2){
 
   x1 = chip_box_x1;// + left_border;
   x2 = get_volume_onoff_x1(x2); //chip_box_x2;// - right_border;
-  y2 = y1;
-  y1 = chip_box_y1; // + top_border;
+  y1 = y2;
+  y2 = chip_box_y2; // + top_border;
 }
 
 
@@ -329,7 +333,9 @@ static int get_output_eport_y1(Chip *chip){
 }
 
 static int get_output_eport_y2(Chip *chip){
-  return chip->y() + grid_height;
+  int x1,y1,x2,y2;
+  get_name_coordinates(x1,y1,x2,y2);
+  return chip->y() + y2; //grid_height;
   //return CHIP_get_output_eport_y(chip)+port_height/2;
 }
 
@@ -351,10 +357,11 @@ bool CHIP_is_at_input_eport(Chip *chip, int x, int y){
 }
 
 bool CHIP_is_at_output_eport(Chip *chip, int x, int y){
+  /*
   printf("x/y: %d/%d. x1/y1: %d/%d. x2/y2: %d/%d\n",x,y,
          get_eport_x1(chip),get_output_eport_y1(chip),
          get_eport_x2(chip),get_output_eport_y2(chip));
-
+  */
   return (x >= get_eport_x1(chip))
     && (x < get_eport_x2(chip))
     && (y >= get_output_eport_y1(chip))
@@ -2146,12 +2153,14 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
       _name_text = patch->name;
       
     }
-    
-    float textlen = get_text_width(painter->font(),_name_text);       
-    float width = x2-x1;
 
     //printf("updating %d\n",(int)::scale(patch->visual_note_intencity, MAX_NOTE_INTENCITY, 0, 150, 100));
     painter->setPen(QPen(text_color, 2));
+
+    /*
+    
+    float textlen = get_text_width(painter->font(),_name_text);       
+    float width = x2-x1;
 
     if(textlen>=width){
       float s = width/textlen;
@@ -2162,7 +2171,18 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     }else{
       painter->drawText(x1, y1, width, y2-y1, Qt::AlignLeft, _name_text);
     }
+    */
 
+    myDrawText(*painter,
+               QRectF(x1, y1, x2-x1, y2-y1),
+               _name_text,
+               Qt::AlignLeft|Qt::AlignVCenter,
+               false, // wrap
+               0, // rotate
+               true, // scale
+               true // cut_text_to_fit
+               );
+        
     // checbuttons.
     {
 
@@ -2224,8 +2244,8 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
       QColor c = is_current_patch_under_mouse
         ? (is_selected ? mix_colors(get_qcolor(MIXER_CURRENT_OBJECT_BORDER_COLOR_NUM), get_qcolor(MIXER_SELECTED_OBJECT_BORDER_COLOR_NUM), 0.5) : get_qcolor(MIXER_CURRENT_OBJECT_BORDER_COLOR_NUM))
         : get_qcolor(MIXER_SELECTED_OBJECT_BORDER_COLOR_NUM);
-      painter->setPen(QPen(c, 4));
-      painter->drawRoundedRect(x1,y1,x2-x1,y2-y1,6,6);
+      painter->setPen(QPen(c, 3));
+      painter->drawRoundedRect(x1,y1,x2-x1,y2-y1,1,1);
     } else {
       painter->setPen(QPen(border_color, 1));
       painter->drawRoundedRect(x1,y1,x2-x1,y2-y1,1,1);
