@@ -1979,18 +1979,24 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
    (and effect-name
         (list
          "--------------"
-         (list (<-> "Keybindings for \"" effect-name "\"")
-               (list
-                (cond ((string=? effect-name "System Volume On/Off")                       
-                       (get-keybinding-configuration-popup-menu-entries "ra:switch-mute-for-selected-instruments"
-                                                                        '()))
-                      ((string=? effect-name "System Solo On/Off")
-                       (get-keybinding-configuration-popup-menu-entries "ra:switch-solo-for-selected-instruments"
-                                                                        '()))
-                      (else
-                       (get-keybinding-configuration-popup-menu-entries "edit-instrument-effect"
-                                                                        (list (string->keybinding-string effect-name))
-                                                                        )))))))
+         (cond ((string=? effect-name "System Volume On/Off")
+                (list "Muted"
+                      :check (not (<ra> :get-instrument-mute instrument-id))
+                      ra:switch-mute-for-selected-instruments))
+               ((string=? effect-name "System Solo On/Off")
+                (list "Solo"
+                      :check (<ra> :get-instrument-solo instrument-id)
+                      ra:switch-solo-for-selected-instruments))
+               ((string=? effect-name "System Effects On/Off")
+                (list "Bypass"
+                      :check (<ra> :get-instrument-bypass instrument-id)
+                      ra:switch-bypass-for-selected-instruments))
+               (else
+                (list (<-> "Set " effect-name)
+                      :shortcut (list edit-instrument-effect (string->keyword (string-drop (string->keybinding-string effect-name) 1)))
+                      (lambda ()
+                        (c-display "GAKK: " (string->keyword (string-drop (string->keybinding-string effect-name) 1)))
+                        (edit-instrument-effect (string->keyword (string-drop (string->keybinding-string effect-name) 1)))))))))
    "-----------------"
    (list "Help"
          (lambda ()
