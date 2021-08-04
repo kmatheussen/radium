@@ -479,7 +479,9 @@
             (<ra> :paste-mixer-objects x y)))
     (get-mixer-popup-menu-selected-objects-entries selected-instruments)
     (get-mixer-all-objects-popup-menu-entries x y)
-    (get-mixer-popup-menu-entries))))
+    "------------Mixer"
+    (list "Mixer"
+          (get-mixer-popup-menu-entries)))))
 
 (define (FROM_C-show-mixer-connection-popup-menu from-instrument to-instrument is-event-connection)
   (popup-menu (get-insert-plugin-popup-menu-entry from-instrument (not is-event-connection))
