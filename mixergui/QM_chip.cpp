@@ -2254,16 +2254,26 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 
     //    if(is_current_patch==true){
       //}
-    if (is_current_patch_under_mouse || is_selected){      
+    if (is_current_patch_under_mouse || is_selected){
+      
       QColor c = is_current_patch_under_mouse
         ? (is_selected ? mix_colors(get_qcolor(MIXER_CURRENT_OBJECT_BORDER_COLOR_NUM), get_qcolor(MIXER_SELECTED_OBJECT_BORDER_COLOR_NUM), 0.5) : get_qcolor(MIXER_CURRENT_OBJECT_BORDER_COLOR_NUM))
         : get_qcolor(MIXER_SELECTED_OBJECT_BORDER_COLOR_NUM);
+      
       painter->setPen(QPen(c, 3));
-      painter->drawRoundedRect(x1,y1,x2-x1,y2-y1,1,1);
+      
+      painter->drawRoundedRect(QRectF(x1-1, y1-1,
+                                      x2-x1+2, y2-y1+2),
+                               1,1);
+
     } else {
+      
       painter->setPen(QPen(border_color, 1));
       painter->drawRoundedRect(x1,y1,x2-x1,y2-y1,1,1);
+      
     }
+
+
     //painter->fillRect(x1,y1,x2-x1,y2-y1);
 
     
