@@ -414,8 +414,8 @@ public:
     , _arrow(this)
   {
 
-    QColor c(30,25,70,0);
-    c.setAlpha(100);
+    QColor c(get_qcolor(color_num));//30,25,70,0);
+    c.setAlpha(100); // hovered color
 
     QPen pen(c, 26); // width of the line when hovered.
     pen.setJoinStyle(Qt::RoundJoin);
