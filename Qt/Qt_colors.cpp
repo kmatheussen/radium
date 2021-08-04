@@ -394,7 +394,7 @@ static ReplacementColor g_replacement_color[] = {
   {MIXER_TEXT_COLOR_NUM, QColor("black")},
   {MIXER_BORDER_COLOR_NUM, QColor(1,1,1)},
 
-  {MIXER_EVENT_CONNECTION_COLOR_NUM, QColor("#8c061990")},
+  {MIXER_EVENT_CONNECTION_COLOR_NUM, QColor("#ffff0000")},
   {MIXER_AUDIO_CONNECTION_COLOR_NUM, QColor("#ff2e0359")},
   {MIXER_AUDIO_PORT_COLOR_NUM, QColor("#14000000")},
   {MIXER_SLOT_INDICATOR_COLOR_NUM, QColor("#14ff0000")},
