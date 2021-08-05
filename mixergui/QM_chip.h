@@ -92,6 +92,7 @@ public:
 
   enum class HoverItem{
       NOTHING,
+      NAME,
       SOLO_BUTTON,
       MUTE_BUTTON,
       BYPASS_BUTTON,

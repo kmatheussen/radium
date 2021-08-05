@@ -686,7 +686,7 @@ static bool move_chip_to_slot(Chip *chip, float from_x, float from_y){
 
   chip->setPos(x,y);
 
-  printf("       Remake: move_chip_to_slot\n");
+  //printf("       Remake: move_chip_to_slot\n");
   remakeMixerStrips(make_instrument(-2));
   
   return chip->_moving_start_pos!=chip->pos();
@@ -1368,6 +1368,7 @@ static bool mousepress_save_presets_etc(MyScene *scene, radium::MouseCycleEvent 
 
   switch(chip_under->get_hover_item()){
     case Chip::HoverItem::NOTHING:
+    case Chip::HoverItem::NAME:
     case Chip::HoverItem::EVENT_PORT:
     case Chip::HoverItem::AUDIO_INPUT_PORT:
     case Chip::HoverItem::AUDIO_OUTPUT_PORT:
@@ -1884,6 +1885,8 @@ void MyScene::fix_mousePressEvent(radium::MouseCycleEvent &event){
   
   //MOUSE_CYCLE_register(g_mixer_widget, get_qmouseevent(event));
 
+  //printf("  1. MousePress. Ctrl-clicking: %d\n", g_is_ctrl_clicking_this_cycle);
+  
   _mouse_has_moved = false;
   
   if (g_is_pressed==true)
@@ -1951,28 +1954,7 @@ void MyScene::fix_mousePressEvent(radium::MouseCycleEvent &event){
     
   }
   
-  if(event.button()==Qt::LeftButton) {
-    
-    if(ctrl_pressed==false && mousepress_start_connection(this,event,item,mouse_x,mouse_y)==true)
-      return;
-
-    if(ctrl_pressed==true && mousepress_select_chip(this,event,item,mouse_x,mouse_y,ctrl_pressed)==true) // select
-      return;
-
-    if (dynamic_cast<Chip*>(item) == NULL) {
-      
-      clearSelection();
-      g_is_moving_rubberband = true;
-      g_start_rubberband = pos;
-      
-      _rubber_band = new QRubberBand(QRubberBand::Rectangle, g_mixer->view->viewport());
-      QPoint p(g_mixer->view->mapFromScene(pos));
-      _rubber_band->setGeometry(QRect(p, p));
-      _rubber_band->show();
-      
-    }
-    
-  } else if (event.button()==Qt::RightButton){
+  if (event.button()==Qt::RightButton || (ctrl_pressed==false && event.button()==Qt::LeftButton && dynamic_cast<Chip*>(item)!=NULL && dynamic_cast<Chip*>(item)->get_hover_item()==Chip::HoverItem::NAME)){
 
     /*
     if(ctrl_pressed==false && mousepress_create_chip(this,event,item,mouse_x,mouse_y)==true) { // create
@@ -2006,8 +1988,29 @@ void MyScene::fix_mousePressEvent(radium::MouseCycleEvent &event){
 
     //if(mousepress_select_chip(this,event,item,mouse_x,mouse_y,ctrl_pressed)==true) // select
     //  return;
-  }
+    
+  } else if(event.button()==Qt::LeftButton) {
+    
+    if(ctrl_pressed==false && mousepress_start_connection(this,event,item,mouse_x,mouse_y)==true)
+      return;
 
+    if(ctrl_pressed==true && mousepress_select_chip(this,event,item,mouse_x,mouse_y,ctrl_pressed)==true) // select
+      return;
+
+    if (dynamic_cast<Chip*>(item) == NULL) {
+      
+      clearSelection();
+      g_is_moving_rubberband = true;
+      g_start_rubberband = pos;
+      
+      _rubber_band = new QRubberBand(QRubberBand::Rectangle, g_mixer->view->viewport());
+      QPoint p(g_mixer->view->mapFromScene(pos));
+      _rubber_band->setGeometry(QRect(p, p));
+      _rubber_band->show();
+      
+    }
+    
+  } 
   if(event.button()!=Qt::RightButton)
     QGraphicsScene::mousePressEvent(event.get_qtscene_event());
 }
@@ -2072,6 +2075,8 @@ static Chip *handle_temp_connection_chip(MyScene *myscene, bool is_output, Super
 void MyScene::fix_mouseMoveEvent (radium::MouseCycleEvent &event){
   FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::MIXER, true);
 
+  //printf("  2. MouseMove. Ctrl-clicking: %d\n", g_is_ctrl_clicking_this_cycle);
+  
   if (g_is_ctrl_clicking_this_cycle){
     event.accept();
     return;
@@ -2169,6 +2174,8 @@ void MyScene::fix_mouseMoveEvent (radium::MouseCycleEvent &event){
 void MyScene::fix_mouseReleaseEvent(radium::MouseCycleEvent &event){
   //MOUSE_CYCLE_unregister(g_mixer_widget);
 
+  //printf("  3. MouseRelease. Ctrl-clicking: %d\n", g_is_ctrl_clicking_this_cycle);
+  
   g_is_pressed = false;
 
   //printf("mouse release: %p\n",_current_connection);
@@ -2184,6 +2191,7 @@ void MyScene::fix_mouseReleaseEvent(radium::MouseCycleEvent &event){
   //printf("           SCENE release: %f %f. Has moved: %d\n", mouse_x, mouse_y, _mouse_has_moved);
 
   if (g_is_ctrl_clicking_this_cycle){
+    g_is_ctrl_clicking_this_cycle = false;
     event.accept();
     return;
   }
@@ -2283,7 +2291,7 @@ void MyScene::fix_mouseReleaseEvent(radium::MouseCycleEvent &event){
     
   } else if (_moving_chips.size()>0 && stop_moving_chips(this, g_is_ctrl_clicking_this_cycle, pos)) {
 
-    printf("       Remake: mousereleaseevent\n");
+    //printf("       Remake: mousereleaseevent\n");
     remakeMixerStrips(make_instrument(-2));
     
     must_accept = true;
