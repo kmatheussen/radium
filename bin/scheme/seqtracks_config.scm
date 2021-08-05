@@ -95,11 +95,16 @@
                                  (if (> (<ra> :get-num-seqtracks) 1)
                                      (delete-seqtrack))
                                  (popup-menu
-                                  (list (<-> "--------------------\"" (<ra> :get-seqtrack-name seqtracknum) "\"")
-                                        (get-delete-all-pauses-menu-entry seqtracknum)
-                                        (get-seqtrack-popup-menu-entries seqtracknum)
+                                  (list (list "---------Seqtrack"
+                                              (list (<-> "\"" (<ra> :get-seqtrack-name seqtracknum) "\"")
+                                                    (list
+                                                     (get-delete-all-pauses-menu-entry seqtracknum)
+                                                     (get-seqtrack-popup-menu-entries seqtracknum))))
                                         (and for-audiofiles
-                                             (get-instrument-popup-entries instrument-id gui :include-replace #f))
+                                             (list "--------Instrument"
+                                                   (get-instrument-popup-entries instrument-id gui
+                                                                                 :include-replace #f
+                                                                                 :put-in-submenu #t)))
                                         (get-seqtrack-config-popup-menu-entries)
                                         )))
                              'eat-mouse-cycle)
