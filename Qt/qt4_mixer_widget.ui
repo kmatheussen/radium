@@ -375,7 +375,7 @@
       <item>
        <widget class="QCheckBox" name="connections_visibility">
         <property name="toolTip">
-         <string>Show connections</string>
+         <string>Show audio connections</string>
         </property>
         <property name="text">
          <string>C1</string>
@@ -385,7 +385,7 @@
       <item>
        <widget class="QCheckBox" name="bus_connections_visibility">
         <property name="toolTip">
-         <string>Show bus connections</string>
+         <string>Show bus connections (main bus connections are always visible)</string>
         </property>
         <property name="text">
          <string>C2</string>

@@ -3515,6 +3515,8 @@ void SEQUENCER_ensure_bus_tracks_exist(void){
     setSeqtrackMinHeightType(4, root->song->seqtracks.num_elements-1);
     //setSeqtrackVisible
   }
+
+  MW_update_connections_visibility(); // if not, main pipe connections are not shown. (and we do it anyway, just in case)
 }
 
 static void call_me_after_seqtrack_has_been_removed(struct SeqTrack *seqtrack){

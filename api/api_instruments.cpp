@@ -1856,26 +1856,92 @@ instrument_t getAudioBusId(int bus_num){
   return patch->id;
 }
 
-bool instrumentIsSeqtrackBus(instrument_t instrument_id){
+dynvec_t getInstruments(void){
+  dynvec_t ret = {};
+
+  {
+    auto midi_instrument = get_MIDI_instrument();
+    auto patches = midi_instrument->patches;
+    
+    VECTOR_FOR_EACH(struct Patch *, patch, &patches){
+      DYNVEC_push_back(&ret, DYN_create_instrument(patch->id));
+    }END_VECTOR_FOR_EACH;
+  }
+
+  {
+    auto audio_instrument = get_audio_instrument();
+    auto patches = audio_instrument->patches;
+    
+    VECTOR_FOR_EACH(struct Patch *, patch, &patches){
+      DYNVEC_push_back(&ret, DYN_create_instrument(patch->id));
+    }END_VECTOR_FOR_EACH;
+  }
+  
+  return ret;
+}
+
+dynvec_t getMidiInstruments(void){
+  dynvec_t ret = {};
+
+  auto midi_instrument = get_MIDI_instrument();
+  auto patches = midi_instrument->patches;
+  
+  VECTOR_FOR_EACH(struct Patch *, patch, &patches){
+    DYNVEC_push_back(&ret, DYN_create_instrument(patch->id));
+  }END_VECTOR_FOR_EACH;
+  
+  return ret;
+}
+
+dynvec_t getAudioInstruments(void){
+  dynvec_t ret = {};
+
+  auto audio_instrument = get_audio_instrument();
+  auto patches = audio_instrument->patches;
+  
+  VECTOR_FOR_EACH(struct Patch *, patch, &patches){
+    DYNVEC_push_back(&ret, DYN_create_instrument(patch->id));
+  }END_VECTOR_FOR_EACH;
+  
+  return ret;
+}
+
+dynvec_t getBuses(void){
+  dynvec_t ret = {};
+
+  auto audio_instrument = get_audio_instrument();
+  auto patches = audio_instrument->patches;
+  
+  VECTOR_FOR_EACH(struct Patch *, patch, &patches){
+    SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+    if (plugin != NULL && !strcmp(plugin->type->type_name, "Bus"))
+      DYNVEC_push_back(&ret, DYN_create_instrument(patch->id));
+  }END_VECTOR_FOR_EACH;
+  
+  return ret;
+}
+
+bool instrumentIsBus(instrument_t instrument_id){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)
     return false;
 
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin==NULL){
-    handleError("instrumentIsSeqtrackBus: Instrument #%d has been closed", (int)instrument_id.id);
+    handleError("instrumentIsBus: Instrument #%d has been closed", (int)instrument_id.id);
     return true;
   }
 
-  if (strcmp(plugin->type->type_name, "Bus"))
-    return false;
-  
+  return !strcmp(plugin->type->type_name, "Bus");
+
+  /*
   VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
     if (seqtrack->patch==patch)
       return seqtrack->is_bus;
   }END_VECTOR_FOR_EACH;
 
   return false;
+  */
 }
 
 bool instrumentIsPermanent(instrument_t instrument_id){  

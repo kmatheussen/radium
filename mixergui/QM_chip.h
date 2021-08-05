@@ -213,6 +213,12 @@ public:
     int effect_num = get_volume_effect_num();
     return PLUGIN_get_effect_value(plugin, effect_num, VALUE_FROM_STORAGE);
   }
+
+  // Note: Returns false for the main bus.
+  bool is_bus(void) const;
+  
+  // returns true if (num_inputs>0 && (instrument_is_main_bus() || bus_connections_are_visible() || !instrument_is_bus()))
+  bool input_audio_port_is_operational(void) const;
   
   void mySetSelected(bool selected);
   
@@ -489,14 +495,11 @@ public:
     _visible_line.setZValue(100);
     _arrow.setZValue(101);
   }
+
+  bool should_be_visible(void) const;
   
   void update_visibility(void){
-    if (to==NULL)
-      setVisibility(true);
-    else if (!_is_event_connection && SP_get_bus_num(to->_sound_producer) >= 0)
-      setVisibility(MW_get_bus_connections_visibility());
-    else
-      setVisibility(MW_get_connections_visibility());
+    setVisibility(should_be_visible());
   }
   
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option,

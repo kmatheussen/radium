@@ -116,6 +116,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern EditorWidget *g_editor;
 
+static bool g_connections_are_visible = true;
+static bool g_bus_connections_are_visible = false;
+
+
 
 #define MOUSE_SCENE_CYCLE_CALLBACKS_FOR_QT                                    \
   void	mousePressEvent(QGraphicsSceneMouseEvent *event) override{cycle_mouse_press_event(this, event, true);} \
@@ -967,7 +971,7 @@ static bool mousepress_start_connection(MyScene *scene, radium::MouseCycleEvent 
                  
       } else if(CHIP_is_at_input_port(chip,mouse_x,mouse_y)) {
         
-        if (chip->_num_inputs==0)
+        if (!chip->input_audio_port_is_operational())
           return false;
         
         scene->_current_to_chip = chip;
@@ -1296,9 +1300,6 @@ bool MW_has_mouse_pointer(void){
     return false;
 }
 
-static bool g_connections_are_visible = true;
-static bool g_bus_connections_are_visible = false;
-
 static void update_connections_visibility(void){  
   const QList<QGraphicsItem *> &das_items = g_mixer->scene.items();
   for(auto *item : das_items){
@@ -1309,6 +1310,10 @@ static void update_connections_visibility(void){
   }
 }
 
+void MW_update_connections_visibility(void){
+  update_connections_visibility();
+}
+  
 bool MW_get_connections_visibility(void){
   return g_connections_are_visible;
 }
@@ -1323,8 +1328,11 @@ bool MW_get_bus_connections_visibility(void){
 }
 
 void MW_set_bus_connections_visibility(bool show){
-  g_bus_connections_are_visible=show;
-  update_connections_visibility();
+  if (show != g_bus_connections_are_visible) {
+    g_bus_connections_are_visible=show;
+    update_connections_visibility();
+    MW_update_all_chips(); // input ports for buses.
+  }
 }
 
 void MW_zoom(int inc){
