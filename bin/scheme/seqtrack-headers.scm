@@ -42,11 +42,14 @@
   (list
    (and effect-name
         (get-effect-popup-entries instrument-id effect-name))
-   
-   (get-instrument-popup-entries instrument-id parentgui :include-replace #f)
+
+   (and effect-name
+        "--------Instrument")
+   (get-instrument-popup-entries instrument-id parentgui :include-replace #f :put-in-submenu effect-name)
    
    "------------Seqtrack"
-   (get-seqtrack-popup-menu-entries seqtracknum)))
+   (list (<-> "\"" (<ra> :get-seqtrack-name seqtracknum) "\"")
+         (get-seqtrack-popup-menu-entries seqtracknum))))
    
 (define (show-sequencer-header-popup-menu seqtracknum instrument-id effect-name parentgui)
   (if (and effect-name

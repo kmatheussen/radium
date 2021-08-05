@@ -50,9 +50,12 @@
 
 (define (get-sequencer-timing-popup-menu-entries)
   (list "-------------------"
-        (list "Help timing"
+        "----Help timing"
+        (list "Help"
               show-sequencer-timing-help)
-        (get-sequencer-conf-menues)
+        "----Sequencer"
+        (list "Sequencer"
+              (get-sequencer-conf-menues))
         ))
 
 (define *show-editor-timing-warning* #t)

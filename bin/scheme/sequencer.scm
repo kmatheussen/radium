@@ -1320,7 +1320,7 @@
                     (lambda (doit)
                       (when doit
                         (<ra> :set-using-sequencer-timing #f)))))
-        "-------Sequencer"
+        "-------Misc"
         (list "Visible"
               :check (<ra> :sequencer-is-visible)
               :shortcut ra:show-hide-sequencer
@@ -1831,8 +1831,10 @@
    ;;        (<ra> :delete-seqtrack seqtracknum)))
    ;;"Append sequencer track" (lambda ()
    ;;                           (<ra> :append-seqtrack))
-   
-   (get-sequencer-conf-menues)
+
+   "----Sequencer"
+   (list "Sequencer"
+         (get-sequencer-conf-menues))
    ))
 
 ;; Note: used for shortcut
