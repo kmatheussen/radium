@@ -2032,12 +2032,54 @@ inline static void CHECKBOX_paint_arc(QPainter *painter, bool is_checked, bool i
 }
 */
 
+bool SuperConnection::should_be_visible(void) const {
+  //R_ASSERT_NON_RELEASE(to!=NULL); (happens when creating new connection)
+  
+  if (to==NULL || _is_event_connection)
+    return true;
+
+  if (to->is_bus())
+    return MW_get_bus_connections_visibility();
+  else
+    return MW_get_connections_visibility();
+}
+
+bool Chip::is_bus(void) const {
+  const SoundPlugin *plugin = SP_get_plugin(_sound_producer);
+  if (plugin==NULL){
+    R_ASSERT_NON_RELEASE(false);
+    return false;
+  }
+  
+  const struct Patch *patch = plugin->patch;
+  R_ASSERT_RETURN_IF_FALSE2(patch!=NULL, false);
+
+  if (patch->id==get_main_pipe_patch_id())
+    return false;
+
+  return !strcmp(plugin->type->type_name, "Bus");
+  //return instrumentIsSeqtrackBus(patch->id);
+}
+
+bool Chip::input_audio_port_is_operational(void) const {
+  
+  if(_num_inputs==0)
+    return false;
+  
+  if (MW_get_bus_connections_visibility())
+    return true;
+
+  return !is_bus();
+}
+
 void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
 {
   Q_UNUSED(widget);
   
   SoundPlugin *plugin = SP_get_plugin(_sound_producer);
-  struct Patch *patch = const_cast<struct Patch*>(plugin->patch);
+  R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
+  
+  const struct Patch *patch = plugin->patch;
   R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
 
   bool is_selected = (option->state & QStyle::State_Selected);
@@ -2344,7 +2386,7 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     const int xborder = 5;
     const int yborder = 5;
 
-    if(_num_inputs>0){
+    if(input_audio_port_is_operational()) { 
       
       if (_hover_item==HoverItem::AUDIO_INPUT_PORT){
         QColor col = fill_color;

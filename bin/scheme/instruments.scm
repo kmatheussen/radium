@@ -187,14 +187,10 @@
             (iota (<ra> :get-num-blocks))))
 
 (define-instrument-memoized (get-all-midi-instruments)
-  (map (lambda (instrument-num)
-         (<ra> :get-midi-instrument-id instrument-num))
-       (iota (<ra> :get-num-midi-instruments))))
+  (to-list (<ra> :get-midi-instruments)))
          
 (define-instrument-memoized (get-all-audio-instruments)
-  (map (lambda (instrument-num)
-         (<ra> :get-audio-instrument-id instrument-num))
-       (iota (<ra> :get-num-audio-instruments))))
+  (to-list (<ra> :get-audio-instruments)))
 
 (define-instrument-memoized (get-instrument-from-name name)
   (let loop ((instruments (append (get-all-midi-instruments)
@@ -317,13 +313,12 @@
                   (cdr bus-effect-names))))))
   
 
-(define-instrument-memoized (get-seqtrack-buses)
-  (keep ra:instrument-is-seqtrack-bus
-        (get-all-audio-instruments)))
-
 (define-instrument-memoized (get-buses)
-  (append (get-seqtrack-buses)
-          (get-pure-buses)))
+  (to-list (<ra> :get-buses)))
+
+#!!
+(get-buses)
+!!#
 
 (define-instrument-memoized (get-instruments-connecting-to-instrument id-instrument)
   (map (lambda (in-connection)
@@ -1123,6 +1118,7 @@
 
 (define (FROM_C-switch-mute-for-selected-instruments)
   (let ((instruments (to-list (<ra> :get-curr-mixer-instruments))))
+    ;;(c-display "instruments:" instruments)
     (undo-block
      (lambda ()           
        (for-each (lambda (instrument-id)
@@ -1484,8 +1480,7 @@
 (define (request-send-instrument instrument-id callback)
   ;;(define is-bus-descendant (<ra> :instrument-is-bus-descendant instrument-id))
   ;;(define pure-buses (get-pure-buses))
-  (define seqtrack-buses (get-seqtrack-buses)) ;; Note: pure buses are now seqtrack buses, not pipes.
-  (define buses seqtrack-buses) ;;(append pure-buses seqtrack-buses))
+  (define buses (get-buses))
   (define (create-entry-text instrument-id)
     (<-> *arrow-text* " " (<ra> :get-instrument-name instrument-id)))
 

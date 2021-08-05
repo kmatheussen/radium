@@ -159,6 +159,8 @@ extern LANGSPEC instrument_t MW_paste(float x, float y);
 
 extern LANGSPEC bool MW_has_mouse_pointer(void);
 
+extern LANGSPEC void MW_update_connections_visibility(void);
+
 extern LANGSPEC bool MW_get_connections_visibility(void);
 extern LANGSPEC void MW_set_connections_visibility(bool show);
 

@@ -362,6 +362,6 @@ void DLoadSong(struct Root *newroot,struct Song *song){
           DLoadPlayList(newroot,song);
 
         SEQUENCER_ensure_bus_tracks_exist();
-
+        
         song->tracker_windows->must_redraw = true;
 }
