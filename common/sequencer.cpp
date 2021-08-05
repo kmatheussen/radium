@@ -3471,19 +3471,19 @@ void SEQUENCER_insert_seqtrack(int pos, bool for_audiofiles, bool is_bus, struct
   SEQUENCER_update(SEQUPDATE_EVERYTHING);
 }
 
-static void ensure_bus_track_exists(SoundProducer *bus){
+static bool ensure_bus_track_exists(SoundProducer *bus){
   auto *plugin = SP_get_plugin(bus);
-  R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
+  R_ASSERT_RETURN_IF_FALSE2(plugin!=NULL, false);
   
   struct Patch *patch = plugin->patch;
-  R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
+  R_ASSERT_RETURN_IF_FALSE2(patch!=NULL, false);
   
   VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
     if (seqtrack->for_audiofiles && seqtrack->patch==patch)
-      return;
+      return false;
   }END_VECTOR_FOR_EACH;
 
-  R_ASSERT_RETURN_IF_FALSE(PLUGIN_is_for_seqtrack(plugin));
+  R_ASSERT_RETURN_IF_FALSE2(PLUGIN_is_for_seqtrack(plugin), false);
 
   patch->color = GFX_get_color(INSTRUMENT_BUS_DEFAULT_COLOR_NUM);
 //  setInstrumentEffect(patch->id, "Enable piping", 1);
@@ -3491,16 +3491,25 @@ static void ensure_bus_track_exists(SoundProducer *bus){
   SEQUENCER_insert_seqtrack(root->song->seqtracks.num_elements, true, true, patch);
   setSeqtrackMinHeightType(4, root->song->seqtracks.num_elements-1);
   setSeqtrackVisible(root->song->seqtracks.num_elements-1, false);
+
+  return true;
 }
 
 // Called when loading song.
 void SEQUENCER_ensure_bus_tracks_exist(void){
+  bool changed = false;
+  
   Buses buses = MIXER_get_buses();
-  ensure_bus_track_exists(buses.bus1);
-  ensure_bus_track_exists(buses.bus2);
-  ensure_bus_track_exists(buses.bus3);
-  ensure_bus_track_exists(buses.bus4);
-  ensure_bus_track_exists(buses.bus5);
+  if (ensure_bus_track_exists(buses.bus1))
+    changed = true;
+  if (ensure_bus_track_exists(buses.bus2))
+    changed = true;
+  if (ensure_bus_track_exists(buses.bus3))
+    changed = true;
+  if (ensure_bus_track_exists(buses.bus4))
+    changed = true;
+  if (ensure_bus_track_exists(buses.bus5))
+    changed = true;
 
           
   struct Patch *main_pipe_patch = get_main_pipe_patch();
@@ -3513,10 +3522,15 @@ void SEQUENCER_ensure_bus_tracks_exist(void){
     int seqtracknum = S7CALL2(int_instrument, "FROM_C-convert-pipe-to-bus", main_pipe_patch->id);
     moveSeqtrack(seqtracknum, root->song->seqtracks.num_elements-1);
     setSeqtrackMinHeightType(4, root->song->seqtracks.num_elements-1);
-    //setSeqtrackVisible
+    changed = true;
   }
 
-  MW_update_connections_visibility(); // if not, main pipe connections are not shown. (and we do it anyway, just in case)
+  if (changed) {
+    
+    setCurrSeqtrack(0, true, true); // Happens when loading an older song. If we don't do this, the first seqtrack is not set to current, which can be confusing.
+  
+    MW_update_connections_visibility(); // if not, main pipe connections are not shown.
+  }
 }
 
 static void call_me_after_seqtrack_has_been_removed(struct SeqTrack *seqtrack){
