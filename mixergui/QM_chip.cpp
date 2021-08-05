@@ -1746,8 +1746,9 @@ void EventConnection::update_position(void){
     return;
   
   int x1 = CHIP_get_eport_x(from);
-  int x2 = CHIP_get_eport_x(to);
   int y1 = CHIP_get_output_eport_y(from);
+  
+  int x2 = CHIP_get_eport_x(to);
   int y2 = CHIP_get_input_eport_y(to);
   
   /*
@@ -2133,7 +2134,9 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     int x1,y1,x2,y2;
     get_name_coordinates(x1,y1,x2,y2);
 
-    myFillRect(*painter, QRectF(chip_box_x1, y1, x2-chip_box_x1, y2-y1), patchcolor);
+    myFillRect(*painter, QRectF(chip_box_x1, y1, x2-chip_box_x1, y2-y1), _hover_item==HoverItem::NAME ? patchcolor.lighter(150) : patchcolor); // Background color of note indicator.
+    
+    //myFillRect(*painter, QRectF(x1, y1, x2-x1, y2-y1), _hover_item==HoverItem::NAME ? patchcolor.lighter(150) : patchcolor);
     /*
     painter->setPen(Qt::NoPen);
     painter->setBrush(c);
@@ -2217,24 +2220,35 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     int x1,y1,x2,y2;
     get_note_indicator_coordinates(x1,y1,x2,y2);
 
+    if (_hover_item==HoverItem::NAME)
+      myFillRect(*painter, QRectF(x1, y1, x2-x1, y2-y1), patchcolor);
+    
+    QColor border_color = get_qcolor(NOTE_EVENT_INDICATOR_BORDER_COLOR_NUM);
+    
     int intencity = ATOMIC_GET_RELAXED(patch->visual_note_intencity);
+    
     if(intencity>0){      
       //c = mix_colors(c,QColor(168,35,35),::scale(patch->visual_note_intencity, MAX_NOTE_INTENCITY, 0, 0, 1));
       //QColor c = mix_colors(background_color,g_editor->colors[12],::scale(patch->visual_note_intencity, MAX_NOTE_INTENCITY, 0, 0, 1));
       QColor c = get_qcolor(NOTE_EVENT_INDICATOR_COLOR_NUM);
+      
+      if (_hover_item==HoverItem::EVENT_PORT)
+        c = c.lighter(150);
+        
       c.setAlphaF(::scale(intencity, 0, MAX_NOTE_INTENCITY, 0.0, 1.0));
       //painter->setPen(c);
       painter->setBrush(QBrush(c,Qt::SolidPattern));
       painter->setPen(Qt::NoPen);
       painter->drawRoundedRect(x1,y1,x2-x1,y2-y1,0.5,0.5);
       painter->setBrush(Qt::NoBrush);
-    }
+      
+    } else {
 
-    // border
-    QColor border_color = get_qcolor(NOTE_EVENT_INDICATOR_BORDER_COLOR_NUM);
-    if (_hover_item==HoverItem::EVENT_PORT){
-      painter->setBrush(patchcolor.lighter(150));
-      border_color = border_color.lighter(150);
+      if (_hover_item==HoverItem::EVENT_PORT){
+        painter->setBrush(patchcolor.lighter(150));
+        border_color = border_color.lighter(150);
+      }
+      
     }
     
     //painter->setBrush(QBrush());
@@ -2242,7 +2256,7 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     //painter->setPen(Qt::NoPen);
     painter->drawRoundedRect(x1,y1,x2-x1,y2-y1,0.5,0.5);
 
-    if (_hover_item==HoverItem::EVENT_PORT)
+    if (intencity==0 && _hover_item==HoverItem::EVENT_PORT)
       painter->setBrush(Qt::NoBrush);
   }
 
@@ -2441,6 +2455,24 @@ static bool in_slider(const QPointF &pos){
   return pos.x()>x1 && pos.x()<x2 && pos.y()>y1 && pos.y()<y2;     
 }
 
+static bool in_name(const QPointF &pos){
+  int x1,y1,x2,y2;
+  get_name_coordinates(x1,y1,x2,y2);      
+
+  return pos.x()>x1 && pos.x()<x2 && pos.y()>y1 && pos.y()<y2;     
+}
+
+static bool in_note_indicator(const QPointF &pos){
+  int x1,y1,x2,y2;
+  get_note_indicator_coordinates(x1,y1,x2,y2);
+  x1-=2;
+  y1-=2;
+  x2+=2;
+  y2+=2;
+  
+  return pos.x()>x1 && pos.x()<x2 && pos.y()>y1 && pos.y()<y2;     
+}
+
 static int64_t g_statusbar_id = -1;
 
 static void set_solo_statusbar(const Chip *chip){
@@ -2466,6 +2498,14 @@ static void set_slider_statusbar(const Chip *chip){
   PLUGIN_get_display_value_string(plugin, effect_num, temp, 62);
   
   g_statusbar_id = setStatusbarText(talloc_format("%s: %s", patch->name, temp));
+}
+
+static void set_name_statusbar(const Chip *chip){
+  SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
+  const struct Patch *patch = const_cast<const struct Patch*>(plugin->patch);
+  R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
+
+  g_statusbar_id = setStatusbarText(patch->name);
 }
 
 void Chip::set_hover_item(HoverItem hover_item){
@@ -2502,6 +2542,16 @@ static void handle_mouse_hover_chip(Chip *chip, const QGraphicsSceneHoverEvent *
     chip->set_hover_item(Chip::HoverItem::VOLUME_SLIDER);
     set_slider_statusbar(chip);
     
+  } else if(in_note_indicator(pos)){
+
+    chip->set_hover_item(Chip::HoverItem::EVENT_PORT);    
+    g_statusbar_id = setStatusbarText("Press mouse button to create new event-connection");
+    
+  } else if(in_name(pos)){
+
+    chip->set_hover_item(Chip::HoverItem::NAME);
+    set_name_statusbar(chip);
+    
   } else if (pos.x() < chip_box_x1 || pos.x() >= chip_box_x2) {
 
     chip->set_hover_item(pos.x() < chip_box_x1 ? Chip::HoverItem::AUDIO_INPUT_PORT : Chip::HoverItem::AUDIO_OUTPUT_PORT);
@@ -2509,8 +2559,8 @@ static void handle_mouse_hover_chip(Chip *chip, const QGraphicsSceneHoverEvent *
 
   } else {
 
-    chip->set_hover_item(Chip::HoverItem::EVENT_PORT);    
-    g_statusbar_id = setStatusbarText("Press mouse button to create new event-connection");
+    chip->set_hover_item(Chip::HoverItem::NAME);
+    set_name_statusbar(chip);
     
   }
 
