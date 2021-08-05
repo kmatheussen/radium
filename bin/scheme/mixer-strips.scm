@@ -74,8 +74,12 @@
 (delafina (get-global-mixer-strips-popup-entries :instrument-id
                                                  :strips-config
                                                  :wide-mode-instrument-id #f
-                                                 :effect-name #f)
+                                                 :effect-name #f
+                                                 :mixer-in-sub-menu 'undefined)
 
+  (if (eq? mixer-in-sub-menu 'undefined)
+      (set! mixer-in-sub-menu effect-name))
+      
   (if (not wide-mode-instrument-id)
       (set! wide-mode-instrument-id instrument-id))
 
@@ -83,14 +87,88 @@
   (newline)
   (define is-standalone (or (not strips-config) (strips-config :is-standalone)))
   ;;(c-display "num-instruments:" is-standalone strips-config)
-  
+
+  (define (get-mixer-entries)
+    (list
+     (and (not is-standalone)
+          (list
+           "---------Mixer"
+           (list "Make all strips wide"
+                 :shortcut switch-all-no-mixer-strips-wide
+                 make-all-mixer-strips-wide)
+           (list "Make no strips wide"
+                 :shortcut switch-all-no-mixer-strips-wide
+                 make-no-mixer-strips-wide)
+           
+           "----------"
+           
+           (list
+            :radio-buttons
+            (map (lambda (num-rows)
+                   (list (<-> num-rows " row" (if (> num-rows 1) "s" ""))
+                         :check (= (strips-config :num-rows) num-rows)
+                         :shortcut (list ra:gui_set-num-rows-in-mixer-strips num-rows)
+                         (lambda (ison)
+                           (if ison
+                               (set! (strips-config :num-rows) num-rows)))))
+                 (map 1+ (iota 4))))
+           ))
+     
+     (and strips-config
+          (list
+           :radio-buttons
+           (let ((makeit (lambda (name vert-ratio)
+                           (list name
+                                 :check (= (strips-config :vert-ratio) vert-ratio)
+                                 :shortcut (list ra:eval-scheme (<-> "(ra:gui_set-vert-ratio-in-mixer-strips " vert-ratio ")"))
+                                 (lambda (ison)
+                                   (if ison
+                                       (set! (strips-config :vert-ratio) vert-ratio)))))))
+             (list
+              "--------Height ratio"
+              (makeit "1/3" 1/3)
+              (makeit "1" 1)
+              (makeit "3/1" 3)))))
+     
+     ;;(if strips-config
+     ;;    (list "Set number of rows"
+     ;;          (lambda ()
+     ;;            (define num-rows-now (strips-config :num-rows))
+     ;;            (popup-menu (map (lambda (num-rows)
+     ;;                               (list (number->string num-rows)
+     ;;                                     :enabled (not (= num-rows num-rows-now))
+     ;;                                     (lambda ()
+     ;;                                       (set! (strips-config :num-rows) num-rows))))
+     ;;                             (map 1+ (iota 6))))))
+     ;;    '())
+     
+     "----------"
+     
+     (and (not is-standalone)
+          (list "Configure mixer strips on/off" :enabled strips-config
+                :shortcut mixer-strip-show-strips-config
+                (lambda ()
+                  (strips-config :show-config-gui))))
+     
+     (get-forced-as-current-instrument-menu-entry instrument-id)
+     
+     (list "Set current instrument"
+           show-set-current-instrument-popup-menu)
+     
+     "----------"
+     
+     (list "Help"
+           ra:show-mixer-help-window)
+     
+     ))
+    
   (list
    (and effect-name
         (get-effect-popup-entries instrument-id effect-name))
 
    (and instrument-id
         (if (not is-standalone)
-            (list (<-> "------------Mixer strip for " (<ra> :get-instrument-name instrument-id))
+            (list "------------Mixer strip" ;;(<-> "------------Mixer strip for " (<ra> :get-instrument-name instrument-id))
                   
                   ;;(list "Pan Enabled"
                   ;;      :check (pan-enabled? instrument-id)
@@ -139,78 +217,14 @@
                           (<ra> :show-hide-mixer-strip)))))
         )
 
-   (and (not is-standalone)
-        (list
-         "---------Mixer"
-         (list "Make all strips wide"
-               :shortcut switch-all-no-mixer-strips-wide
-               make-all-mixer-strips-wide)
-         (list "Make no strips wide"
-               :shortcut switch-all-no-mixer-strips-wide
-               make-no-mixer-strips-wide)
-
-         "----------"
-
-         (list
-          :radio-buttons
-          (map (lambda (num-rows)
-                 (list (<-> num-rows " row" (if (> num-rows 1) "s" ""))
-                       :check (= (strips-config :num-rows) num-rows)
-                       :shortcut (list ra:gui_set-num-rows-in-mixer-strips num-rows)
-                       (lambda (ison)
-                         (if ison
-                             (set! (strips-config :num-rows) num-rows)))))
-               (map 1+ (iota 4))))
-         ))
-
-   (and strips-config
-        (list
-         :radio-buttons
-         (let ((makeit (lambda (name vert-ratio)
-                         (list name
-                               :check (= (strips-config :vert-ratio) vert-ratio)
-                               :shortcut (list ra:eval-scheme (<-> "(ra:gui_set-vert-ratio-in-mixer-strips " vert-ratio ")"))
-                               (lambda (ison)
-                                 (if ison
-                                     (set! (strips-config :vert-ratio) vert-ratio)))))))
-           (list
-            "--------Height ratio"
-            (makeit "1/3" 1/3)
-            (makeit "1" 1)
-            (makeit "3/1" 3)))))
-   
-   ;;(if strips-config
-   ;;    (list "Set number of rows"
-   ;;          (lambda ()
-   ;;            (define num-rows-now (strips-config :num-rows))
-   ;;            (popup-menu (map (lambda (num-rows)
-   ;;                               (list (number->string num-rows)
-   ;;                                     :enabled (not (= num-rows num-rows-now))
-   ;;                                     (lambda ()
-   ;;                                       (set! (strips-config :num-rows) num-rows))))
-   ;;                             (map 1+ (iota 6))))))
-   ;;    '())
-
-   "----------"
-
-   (and (not is-standalone)
-        (list "Configure mixer strips on/off" :enabled strips-config
-              :shortcut mixer-strip-show-strips-config
-              (lambda ()
-                (strips-config :show-config-gui))))
-
-   (get-forced-as-current-instrument-menu-entry instrument-id)
-
-   (list "Set current instrument"
-         show-set-current-instrument-popup-menu)
-      
-   "----------"
-   
-   (list "Help"
-         ra:show-mixer-help-window)
-
-   ))
-
+   (if mixer-in-sub-menu
+       (list "---------Mixer"
+             (list "Mixer"
+                   (get-mixer-entries)))
+       (get-mixer-entries))
+   )
+  )
+  
 
 (delafina (create-instrument-effect-checkbox :instrument-id
                                              :strips-config
@@ -955,7 +969,7 @@
                          (cons first-instrument-id
                                (get-list-of-mixer-strip-path-instruments first-instrument-id))))
 
-              (get-global-mixer-strips-popup-entries first-instrument-id strips-config parent-instrument-id)
+              (get-global-mixer-strips-popup-entries first-instrument-id strips-config parent-instrument-id :mixer-in-sub-menu #t)
               )
 
   ;;(when (and strips-config (not (strips-config :is-standalone)))
@@ -1866,12 +1880,13 @@
                                         ;                (<ra> :set-instrument-effect instrument-id "System Pan" 0.5)))
                  (list "Pan Enabled"
                        :check pan-enabled
-                       enable!)                              
+                       enable!)                 
                  (get-effect-popup-entries instrument-id "System Pan"
                                            :pre-undo-block-callback (lambda ()
                                                                       (enable! #t)))
-                 (get-instrument-popup-entries instrument-id slider)
-                 (get-global-mixer-strips-popup-entries instrument-id strips-config)))
+                 "--------Instrument"
+                 (get-instrument-popup-entries instrument-id slider :put-in-submenu #t)
+                 (get-global-mixer-strips-popup-entries instrument-id strips-config :mixer-in-sub-menu #t)))
             #t)
            (else
             #f))))
