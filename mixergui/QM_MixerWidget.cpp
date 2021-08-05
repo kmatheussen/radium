@@ -2089,18 +2089,19 @@ void MyScene::fix_mouseMoveEvent (radium::MouseCycleEvent &event){
   
   if(_current_connection != NULL){
 
-    int x1,y1;
+    int x1,y1, x2, y2;
 
     if(_current_from_chip != NULL){
       x1 = CHIP_get_output_port_x(_current_from_chip);
       y1 = CHIP_get_port_y(_current_from_chip);
+      x2 = pos.x();
+      y2 = pos.y();
     }else{
-      x1 = CHIP_get_input_port_x(_current_to_chip);
-      y1 = CHIP_get_port_y(_current_to_chip);
+      x1 = pos.x();
+      y1 = pos.y();
+      x2 = CHIP_get_input_port_x(_current_to_chip);
+      y2 = CHIP_get_port_y(_current_to_chip);
     }
-
-    int x2 = pos.x();
-    int y2 = pos.y();
 
     handle_temp_connection_chip(this, _current_from_chip != NULL, _current_connection, x1, y1, x2, y2);
   
@@ -2108,22 +2109,20 @@ void MyScene::fix_mouseMoveEvent (radium::MouseCycleEvent &event){
 
   }else if(_current_econnection != NULL){
 
-    int x1,y1;
-
+    int x1,y1, x2, y2;
+    
     if(_ecurrent_from_chip != NULL){
       x1 = CHIP_get_eport_x(_ecurrent_from_chip);
       y1 = CHIP_get_output_eport_y(_ecurrent_from_chip);
+      x2 = pos.x();
+      y2 = pos.y();
     }else{
-      x1 = CHIP_get_eport_x(_ecurrent_to_chip);
-      y1 = CHIP_get_input_eport_y(_ecurrent_to_chip);
+      x1 = pos.x();
+      y1 = pos.y();
+      x2 = CHIP_get_eport_x(_ecurrent_to_chip);
+      y2 = CHIP_get_input_eport_y(_ecurrent_to_chip);
     }
 
-    int x2 = pos.x();
-    int y2 = pos.y();
-
-    _current_econnection->setLine(x1,y1,x2,y2);
-    _current_econnection->update_shape(true, true);
-    
     handle_temp_connection_chip(this, _ecurrent_from_chip != NULL, _current_econnection, x1, y1, x2, y2);
 
     event.accept();
