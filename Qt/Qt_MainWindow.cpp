@@ -529,9 +529,33 @@ public:
   }
 
   void resizeEvent(QResizeEvent *event) override {
+    //printf("RESIZE\n");
     CancelMaybeNavigateMenus();
   }
 
+  void changeEvent(QEvent *e) override {
+    if (e->type()==QEvent::WindowStateChange) {
+      QWindowStateChangeEvent *event = static_cast<QWindowStateChangeEvent*>(e);
+      
+      auto oldstate = event->oldState();
+      auto newstate = this->windowState();
+
+      /*
+      printf("GOTIT. Oldstate: %d. Nostate: %d. Newstate: %d. Maxstate: %d\n",
+             (int)oldstate,
+             (int)Qt::WindowNoState,
+             (int)newstate,
+             (int)Qt::WindowMaximized
+             );
+      */
+      
+      if (oldstate==Qt::WindowNoState && (newstate==Qt::WindowMaximized || newstate==Qt::WindowFullScreen)) {
+        QTimer::singleShot(10,[]{ 
+            S7CALL2(void_bool,"FROM_C-minimize-lowertab", true);
+          });
+      }
+    }
+  }
   
   void dropEvent(QDropEvent *event) override {
     printf("Got drop event\n");
