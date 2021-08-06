@@ -815,7 +815,7 @@
 
   (add-raw-mouse-cycle!
    :enter-func (lambda (button x y)
-                 (<ra> :set-editor-keyboard-focus)
+                 (<ra> :set-sequencer-keyboard-focus)
                  #f))
   
   (define-override (get-state)
