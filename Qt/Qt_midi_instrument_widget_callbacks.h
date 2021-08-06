@@ -232,7 +232,7 @@ public slots:
 
       const char *name = GFX_GetString(window,reqtype,(char*)"Name: ", true);
       if(name!=NULL)
-        patchdata->midi_port = MIDIgetPort(window,reqtype,name,true);
+        patchdata->midi_port = MIDIgetPort(window,reqtype,patch.data(),name,true);
 
       GFX_CloseReq(window,reqtype);
     }else
