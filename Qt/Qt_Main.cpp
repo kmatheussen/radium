@@ -3499,7 +3499,7 @@ int radium_main(const char *arg){
   GFX_showHideMixerWidget();
 
   // Sometimes sequencer is not minimized after startup. Maybe this will help.
-  S7CALL2(void_void,"FROM_C-minimize-lowertab");
+  S7CALL2(void_bool,"FROM_C-minimize-lowertab", true);
   
 #if USE_QT_VISUAL
  again:
