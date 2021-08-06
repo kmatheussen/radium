@@ -339,8 +339,8 @@ class Signatures:
     def add_event(self, event):
         if type(event) is midi.TimeSignatureEvent:
             self.signatures.append(event)
-            print "22222 GAOIJADFGAOIJOAFIJG"
-            print event
+            #print "22222 GAOIJADFGAOIJOAFIJG"
+            #print event
             #sys.exit()
 
     def send_signatures_to_radium(self, resolution, lpb):
@@ -525,11 +525,12 @@ class Events:
             self.set_endnote(event.tick, event.channel, event.pitch, 0)
         elif type(event) is midi.NoteOffEvent:
             self.set_endnote(event.tick, event.channel, event.pitch, event.velocity)
-        else:
-            print event
-            if type(event) is midi.SetTempoEvent:
-                print event.get_bpm()
+        else:            
+            #print event
+            #if type(event) is midi.SetTempoEvent:
+            #    print event.get_bpm()
             #self.events[channel] = event
+            pass
 
 
 def tick_to_place_simple(tick, resolution, lpb):
@@ -677,7 +678,7 @@ def import_midi_do(tracks, lpb=4, midi_port="", polyphonic=True):
             radium.setNumTracks(num_tracks)
             
             for notes in tracks:
-                print "VVV instrument: '"+notes.instrument.name+"'. preset:"+str(notes.instrument.preset)
+                #print "VVV instrument: '"+notes.instrument.name+"'. preset:"+str(notes.instrument.preset)
                 send_notes_to_radium_track(notes.notes[notes.channel], tracknum, resolution, lpb)
                 radium.setTrackVolume(1.0,tracknum)
                 radium_tracks.append(notes)
@@ -692,15 +693,10 @@ def get_tracks(filename):
     if filename=="":
         filename = radium.getLoadFilename("Choose midi file", "*.mid *.MID *.midi *.MIDI")
     if not filename or filename=="" or radium.isIllegalFilepath(filename):
+        radium.addMessage("Could not find file \""+filename+"\".")
         return False
-    try:
-        filename = radium.getPathString(filename)
-        tracks = midi.read_midifile(filename)
-    except:
-        message = traceback.format_exc()
-        radium.addMessage("Gakk. Could not read "+filename+". Either file doesn't exist, or it could not be read as a standard midi file.\n\n" + message)
-        return False
-    
+    filename = radium.getPathString(filename)
+    tracks = midi.read_midifile(filename)
     return tracks
 
     
@@ -732,13 +728,20 @@ def get_parameters(lpb, midi_port, polyphonic):
 def import_midi(filename="", lpb=0, midi_port="", polyphonic="not set"):
     #filename = "sinclair.MID"
     #filename = "/gammelhd/gammelhd/gammel_lyd/gammelhd/amiga/work/gammelhd/music/octamed6/Midi/simpsons.mid"
-    tracks = get_tracks(filename)
-    if tracks==False:
-        return
-    
-    lpb, midi_port, polyphonic = get_parameters(lpb, midi_port, polyphonic)
-    
-    return import_midi_do(tracks, lpb, midi_port, polyphonic)
+
+    try:
+        tracks = get_tracks(filename)
+        if tracks==False:
+            return False
+        
+        lpb, midi_port, polyphonic = get_parameters(lpb, midi_port, polyphonic)
+        
+        return import_midi_do(tracks, lpb, midi_port, polyphonic)
+    except:
+        message = traceback.format_exc().replace('\0', '')
+        #print "message:",message
+        radium.addMessage("Gakk2. Could not read "+filename.replace('\0','')+". Either file doesn't exist, or it could not be read as a standard midi file.<p><pre>" + message + "</pre>")
+        return False
 
 
 if __name__ == "__main__":
