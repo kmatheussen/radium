@@ -1,3 +1,100 @@
+Changes 6.9.91 -> 6.9.94:
+* Instruments: Reorganize the "Insert new sound
+  object" / "New audio instrument" menu.
+* Playlist: Give keyboard focus to the sequencer
+  instead of the editor when the mouse is inside the
+  playlist.
+* Sequencer: Minimize sequencer height when
+  maximizing window or showing full-screen.
+* GUI: Try to fix sequencer sometimes not being
+  fully minimized right after startup.
+* Windows: Partially fix importing MIDI files, i.e.
+  smaller files are imported perfectly now. However,
+  larger MIDI files seems to only be partially
+  imported on Windows. The problem does not seem to
+  be present on Linux and macOS.
+* GUI: When showing sequencer, make sure the mixer
+  is visible first if sequencer is inside the mixer.
+* GUI: Fix keyboard focus when showing sequencer.
+* GUI: Don't show mixer at program startup.
+* MIDI: Give more information when warning about
+  possibly creating a recursive connection when
+  connecting an instrument to a MIDI output port.
+  Before it could look like the program was stuck in
+  an infinite loop when importing MIDI files.
+* Sequencer: Clean up popup menus a little bit.
+* Mixer strips: Clean up popup menus a little bit.
+* Sequencer: Make sure first seqtrack is the current
+  seqtrack after loading an older song. Before this
+  commit, a hidden seqtrack bus was set as the
+  current seqtrack.
+* Modular mixer: Let the "C2" button apply to all
+  buses, not just the 5 effect buses.
+* Instrument effect popup menu: Replace the
+  "keybindings for.." sub menu with entries that
+  actually changes the value. This value can instead
+  be right-clicked to change keybinding. Redundant
+  functionality though, but it looks cleaner.
+* Modular mixer: Include "mixer" elements in a
+  "mixer" sub menu for the popup menu.
+* Modular mixer: Snap connections to modules when
+  being created.
+* Modular mixer: Put connection lines on top of all
+  other graphical elements when being created.
+* Modular mixer: Fix hovered connection color (it
+  was hardcoded to a bluish color).
+* Mixer: Make event connections red. (The old color
+  looked too much like the audio connection color,
+  and yellow (used before that again) looks too much
+  like white which is used to show a current event
+  going through the connection.)
+* Modular mixer: Fix possible division by zero
+  sometimes happening when using middle button to
+  drag.
+* Modular mixer: Redesign GUI of the modules:
+  * Don't overlap volume sliders with the
+    mute/solo/bypass buttons.
+  * Modular mixer: Switch back to displaying simple
+    peaks.
+  * Modular mixer: Use the instrument color for the
+    background color of the M/S/B buttons.
+  * Modular mixer: Use black background color for
+    the volume sliders.
+  * Modular mixer: Write dB value inside the volume
+    sliders.
+  * Swap upper and bottom half of the modules. I.e.
+    paint text and note indicator above slider and
+    buttons.
+  * Less rounded and a little bit thinner borders.
+  * Limit the volume sliders between -40dB and +6dB.
+    Before, it was between -40dB and +35dB, which is
+    usually a too big range.
+  * Make non-linear scaling between effect value and
+    slider positions, similarly to the mapping in
+    the mixer strips. (i.e. we have approximately
+    equal room between -6dB and 6dB and between -35dB
+    and -6dB now).
+  * Adjust audio port colors.
+  * Light up elements below the mouse pointer.
+  * Don't draw audio input/output ports when they're
+    not used, not visible, or doesn't exist.
+  * Alternatively move module by left-dragging the
+    name instead of using the right-button.
+  * When right-clicking the volume slider, mute,
+    solo, or bypass, show the instrument effect
+    popup menu instead of the module popup menu.
+* Manual: Document the FX/Velocity subtrack.
+* Manual: Some minor improvements here and there.
+* Help: Open help windows in external browser if the
+  built-in browser is not able to show the manual
+  (i.e. compiled against a too old version of
+  qtwebkit).
+* API:
+  * Renamed: instrumentIsSeqtrackBus -> instrumentIsBus
+  * New: gui_webCanShowManual, getInstruments, getMidiInstruments, getAudioInstruments, getBuses
+
+
+
 Changes 6.9.90 -> 6.9.91:
 * Macos: Improve startup message.
 * Internal: Minor improvements.
