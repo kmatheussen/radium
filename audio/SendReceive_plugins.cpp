@@ -868,6 +868,9 @@ void create_sendreceive_plugins(void){
 
   PR_add_plugin_type(&send_type2);
   PR_add_plugin_type(&send_type8);
+  
+  PR_add_menu_entry(PluginMenuEntry::separator());
+  
   PR_add_plugin_type(&receive_type2);
   PR_add_plugin_type(&receive_type8);
 }

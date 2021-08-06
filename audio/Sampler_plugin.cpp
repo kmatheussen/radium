@@ -4315,7 +4315,7 @@ static void init_plugin_type(void){
 
 static SoundPluginType click_type;
 
-void create_sample_plugin(void){
+void create_sample_plugin(bool is_click){
 
   static bool has_inited = false;
 
@@ -4332,7 +4332,8 @@ void create_sample_plugin(void){
     has_inited = true;
   }
 
-  PR_add_plugin_type(&plugin_type);
-
-  PR_add_plugin_type(&click_type);
+  if (is_click)
+    PR_add_plugin_type(&click_type);
+  else
+    PR_add_plugin_type(&plugin_type);
 }

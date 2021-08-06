@@ -679,6 +679,8 @@ void create_jack_plugins(void){
   system_in_type8.data = g_jack_client;
   PR_add_plugin_type(&system_in_type8);
 
+  PR_add_menu_entry(PluginMenuEntry::separator());
+  
   system_out_type.data = g_jack_client;
   PR_add_plugin_type(&system_out_type);
 

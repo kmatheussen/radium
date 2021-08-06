@@ -43,6 +43,8 @@ struct PluginMenuEntry{
   SoundPluginTypeContainer *plugin_type_container = NULL;
   radium::FilePath preset_filename;
   QString level_up_name;
+
+  QString separator_name;
   
   NumUsedPluginEntry hepp;
 
@@ -85,9 +87,10 @@ struct PluginMenuEntry{
     return type_to_string(entry.type);
   }
     
-  static PluginMenuEntry separator(void){
+  static PluginMenuEntry separator(QString separator_name = ""){
     PluginMenuEntry entry;
     entry.type=IS_SEPARATOR;
+    entry.separator_name = separator_name;
     return entry;
   }
   static PluginMenuEntry load_preset(void){
@@ -170,7 +173,7 @@ extern void create_timeskew_plugin(void);
 extern void create_patchbay_plugin(void);
 extern void create_juce_plugins(void);
 extern void create_ladspa_plugins(void);
-extern void create_sample_plugin(void);
+extern void create_sample_plugin(bool is_click);
 extern LANGSPEC void create_fluidsynth_plugin(void);
 extern void create_pd_plugin(void);
 extern void create_modulator_plugin(void);
@@ -185,12 +188,15 @@ extern void create_faust_multibandcomp_plugin(void);
 extern void create_faust_plugin(void);
 #endif
 
+extern void create_pitchshift_plugin(void);
+
 extern void create_faust_system_eq_plugin(void);
 extern void create_faust_system_tremolo_plugin(void);
 extern void create_faust_system_lowpass_plugin(void);
 extern void create_faust_system_highpass_plugin(void);
 extern void create_faust_system_lowshelf_plugin(void);
 extern void create_faust_system_highshelf_plugin(void);
+extern void create_faust_system_pitch_plugin(void);
 //extern void create_faust_system_delay_plugin(void);
 
 extern void create_stk_bass_plugin(void);

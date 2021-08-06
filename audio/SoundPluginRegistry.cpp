@@ -487,7 +487,7 @@ const QVector<PluginMenuEntry> PR_get_menu_entries(void){
 
   // Add favourite menu entries. (i.e. most used plugins)
   if (favourites->hepps.size() > 0) {
-    ret.push_back(PluginMenuEntry::separator());
+    ret.push_back(PluginMenuEntry::separator("Favourites"));
     
     bool has_next = false;
     
@@ -722,14 +722,14 @@ void PR_init_plugin_types(void){
   
   PR_add_menu_entry(PluginMenuEntry::paste_preset());
   
-  PR_add_menu_entry(PluginMenuEntry::separator());
+  PR_add_menu_entry(PluginMenuEntry::separator("External plugins"));
 
 
   if (true || PR_is_initing_vst_first()){
 
     create_vst_plugins(true);
 
-    PR_add_menu_entry(PluginMenuEntry::separator());
+    PR_add_menu_entry(PluginMenuEntry::separator("LADSPA plugins"));
 
     static bool has_run = false;
     if (has_run==false){
@@ -755,10 +755,44 @@ void PR_init_plugin_types(void){
     create_vst_plugins(false);
   }PR_add_menu_entry(PluginMenuEntry::level_down());
   */
+
+
   
-  PR_add_menu_entry(PluginMenuEntry::separator());
+  PR_add_menu_entry(PluginMenuEntry::separator("Routing"));
+
+  create_bus_plugins(true);
+  create_bus_plugins(false);
+
+  PR_add_menu_entry(PluginMenuEntry::level_up("In/Out"));
+  {
+    create_jack_plugins();
+  }
+  PR_add_menu_entry(PluginMenuEntry::level_down());
+
+
+  PR_add_menu_entry(PluginMenuEntry::level_up("Send/Receive"));
+  {
+    create_sendreceive_plugins();
+  }
+  PR_add_menu_entry(PluginMenuEntry::level_down());
+
+  create_patchbay_plugin();
+
+  PR_add_menu_entry(PluginMenuEntry::separator("Misc."));
+
+  create_seqtrack_plugin();
+  create_timeskew_plugin();
+  create_midimessages_plugin();
+  create_modulator_plugin();
+  create_sample_plugin(true);
   
-  PR_add_menu_entry(PluginMenuEntry::level_up("Physical Modelling"));
+  PR_add_menu_entry(PluginMenuEntry::separator("Instruments"));
+
+  //create_sine_plugin();
+  create_sample_plugin(false);
+  create_fluidsynth_plugin();
+
+    PR_add_menu_entry(PluginMenuEntry::level_up("Physical Modelling"));
   {
     create_stk_bass_plugin();
     create_stk_blow_bottle_plugin();
@@ -783,49 +817,36 @@ void PR_init_plugin_types(void){
   }
   PR_add_menu_entry(PluginMenuEntry::level_down());
 
-
+  PR_add_menu_entry(PluginMenuEntry::separator("Effects"));
   
-  PR_add_menu_entry(PluginMenuEntry::separator());
-
-  create_bus_plugins(true);
-
-  PR_add_menu_entry(PluginMenuEntry::level_up("In/Out, Pipe8, Send/Receive"));
-  create_jack_plugins();
-  PR_add_menu_entry(PluginMenuEntry::separator());
-  create_bus_plugins(false);
-  PR_add_menu_entry(PluginMenuEntry::separator());
-  create_sendreceive_plugins();
-  
-  PR_add_menu_entry(PluginMenuEntry::level_down());
-
-  PR_add_menu_entry(PluginMenuEntry::separator());
-
-  create_seqtrack_plugin();
-  create_timeskew_plugin();
-  create_patchbay_plugin();
-  create_midimessages_plugin();
-  create_modulator_plugin();
-  PR_add_menu_entry(PluginMenuEntry::separator());
-
-  //create_sine_plugin();
-  create_sample_plugin();
-  create_fluidsynth_plugin();
-  create_pd_plugin();
   create_zita_rev_plugin();
   create_faust_tapiir_plugin();
   create_faust_multibandcomp_plugin();
 
-#ifdef WITH_FAUST_DEV
-  create_faust_plugin();
-#endif
-  
+  create_pitchshift_plugin();
+    
   create_faust_system_eq_plugin();
   create_faust_system_tremolo_plugin();
   create_faust_system_lowpass_plugin();
   create_faust_system_highpass_plugin();
   create_faust_system_lowshelf_plugin();
   create_faust_system_highshelf_plugin();
+  create_faust_system_pitch_plugin();
   //create_faust_system_delay_plugin();
+
+#if defined(WITH_PD) || defined(WITH_FAUST_DEV)
+  PR_add_menu_entry(PluginMenuEntry::separator("Development"));
+  
+#ifdef WITH_PD
+  create_pd_plugin();
+#endif
+  
+#ifdef WITH_FAUST_DEV
+  create_faust_plugin();
+#endif
+
+#endif
+  
 
   GFX_ShowProgressMessage("Recreating instrument favourites...", true);
   recreate_favourites(true);
