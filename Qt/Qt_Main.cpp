@@ -3495,6 +3495,9 @@ int radium_main(const char *arg){
     }
   }
 
+  // Hide mixer widget at startup.
+  GFX_showHideMixerWidget();
+  
 #if USE_QT_VISUAL
  again:
   try{
