@@ -823,7 +823,7 @@ void PR_init_plugin_types(void){
   create_faust_tapiir_plugin();
   create_faust_multibandcomp_plugin();
 
-  create_pitchshift_plugin();
+  //create_pitchshift_plugin();
     
   create_faust_system_eq_plugin();
   create_faust_system_tremolo_plugin();
@@ -831,7 +831,7 @@ void PR_init_plugin_types(void){
   create_faust_system_highpass_plugin();
   create_faust_system_lowshelf_plugin();
   create_faust_system_highshelf_plugin();
-  create_faust_system_pitch_plugin();
+  //create_faust_system_pitch_plugin();
   //create_faust_system_delay_plugin();
 
 #if defined(WITH_PD) || defined(WITH_FAUST_DEV)
