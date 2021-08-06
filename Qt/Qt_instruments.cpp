@@ -720,7 +720,7 @@ static void update_midi_instrument_widget(MIDI_instrument_widget *instrument, st
 
     cc->value_slider->_patch.set(patch);
     cc->value_slider->_effect_num = patchdata->cc[ccnum];
-    printf("Update effectnum for %d to %d\n",ccnum,patchdata->cc[ccnum]);
+    //printf("Update effectnum for %d to %d\n",ccnum,patchdata->cc[ccnum]);
   }
 }
 
@@ -845,7 +845,7 @@ static bool patch_used_in_current_editor_block(struct Patch *patch){
 }
 
 static void GFX_PP_Update_internal(struct Patch *patch, bool is_loading, bool open_even_if_locked){
-  printf("GFX_PP_Update %s\n", patch==NULL?"(null)":patch->name);
+  //printf("GFX_PP_Update %s\n", patch==NULL?"(null)":patch->name);
 
   struct Patch *old_current = PATCH_get_current();
 

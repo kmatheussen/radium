@@ -151,7 +151,7 @@ public slots:
   {
     if( panning_slider->value() != val)
       panning_slider->setValue(val);
-    printf("Pan %d\n",val);
+    //printf("Pan %d\n",val);
     
     patchdata->pan = val + 63;
 
