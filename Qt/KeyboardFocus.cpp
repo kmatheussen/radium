@@ -27,13 +27,13 @@ namespace{
 
       radium::KeyboardFocusFrame *gakk = dynamic_cast<radium::KeyboardFocusFrame *>(w);
       
-      if (g_keyboard_focus_frames[(int)radium::KeyboardFocusFrameType::EDITOR].contains(gakk) || w==_edit_gui || w==BS_get())
+      if (g_keyboard_focus_frames[(int)radium::KeyboardFocusFrameType::EDITOR].contains(gakk) || w==_edit_gui)
         FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::EDITOR, true);
       
       else if (g_keyboard_focus_frames[(int)radium::KeyboardFocusFrameType::MIXER].contains(gakk))
         FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::MIXER, true);
       
-      else if (g_keyboard_focus_frames[(int)radium::KeyboardFocusFrameType::SEQUENCER].contains(gakk))
+      else if (g_keyboard_focus_frames[(int)radium::KeyboardFocusFrameType::SEQUENCER].contains(gakk) || w==BS_get())
         FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::SEQUENCER, true);
 
       else
