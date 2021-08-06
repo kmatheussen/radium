@@ -18,6 +18,6 @@ extern LANGSPEC hash_t *MIDI_get_patchdata_state(const void *pd);
 extern LANGSPEC void MIDI_apply_state_to_patchdata(void *pd, const hash_t *state);
 
 extern LANGSPEC void SaveMIDIPatchData(const void *pd);
-extern LANGSPEC void LoadMIDIPatchData(struct PatchData *patchdata);
+extern LANGSPEC void LoadMIDIPatchData(struct Patch *patch, struct PatchData *patchdata);
 
 

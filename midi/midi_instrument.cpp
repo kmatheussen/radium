@@ -232,7 +232,7 @@ static void MIDIchangeTrackPan(int newpan,const struct Tracks *track){
 0 - 127
 */
 
-static struct PatchData *createPatchData(void);
+static struct PatchData *createPatchData(struct Patch *patch);
   
 static struct PatchData *getPatchData(struct Patch *patch){
   struct PatchData *ret = NULL;
@@ -247,7 +247,7 @@ static struct PatchData *getPatchData(struct Patch *patch){
   }
 
   if (ret==NULL)
-    ret = createPatchData();
+    ret = createPatchData(patch);
   
   return ret;
 }
@@ -256,7 +256,12 @@ void MIDISetPatchData(struct Patch *patch, const char *key, const char *value, b
   if(false){
 
   }else if(!strcasecmp(key,"port")){
-    getPatchData(patch)->midi_port = MIDIgetPort(NULL, NULL, value==NULL ? NULL : !strcmp("",value) ? NULL : value, program_state_is_valid);
+    getPatchData(patch)->midi_port = MIDIgetPort(NULL,
+                                                 NULL,
+                                                 patch,
+                                                 value==NULL ? NULL : !strcmp("",value) ? NULL : value,
+                                                 program_state_is_valid
+                                                 );
     printf("Sat patchdata(%s)->midi_port to %s\n",patch->name,value);
 
   }else if(!strcasecmp(key,"channel")){
@@ -303,7 +308,7 @@ static void MIDIclosePatch(struct Patch *patch){
 	return;
 }
 
-static struct PatchData *createPatchData(void) {
+static struct PatchData *createPatchData(struct Patch *patch) {
   struct PatchData *patchdata=(struct PatchData *)talloc(sizeof(struct PatchData));
   patchdata->preset=-1;
   patchdata->MSB=-1;
@@ -345,7 +350,7 @@ static struct PatchData *createPatchData(void) {
     const char *portname = MIDI_OS_getDefaultOutputPort();
     if (portname==NULL)
       portname = "default";
-    patchdata->midi_port = MIDIgetPort(NULL,NULL,portname,false);
+    patchdata->midi_port = MIDIgetPort(NULL,NULL,patch,portname,false);
   }
 
   return patchdata;
@@ -428,7 +433,7 @@ const char *MIDIrequestPortName(struct Tracker_Windows *window, ReqType reqtype,
 }
 
 // This function must never return NULL.
-struct MidiPort *MIDIgetPort(struct Tracker_Windows *window,ReqType reqtype,const char *name,bool program_state_is_valid){
+struct MidiPort *MIDIgetPort(struct Tracker_Windows *window,ReqType reqtype,struct Patch *patch,const char *name,bool program_state_is_valid){
   //printf("    Calling MIDIgetPort -%s-\n", name);
   bool created_new_port = false;
 
@@ -474,13 +479,20 @@ struct MidiPort *MIDIgetPort(struct Tracker_Windows *window,ReqType reqtype,cons
         int yes = VECTOR_push_back(&v, "Yes");
         int yes_dont_ask_again = VECTOR_push_back(&v, "Yes (don't ask again)");
         
-        int result = GFX_Message2(&v, program_state_is_valid, "Are you sure you want to connect to \"%s\"? We are also connected to an input port with the same name. If this device sends out its input, you risk starting a recursive connection that will be impossible to stop.", midi_port->name);
+        int result = GFX_Message2(&v,
+                                  program_state_is_valid,
+                                  "Are you sure you want to connect to the MIDI output port \"%s\"%s?\n"
+                                  "\n"
+                                  "We are also connected to a MIDI input port with the same name. If this device sends out its input, you risk starting a recursive connection that will be impossible to stop.",
+                                  midi_port->name,
+                                  (patch==NULL || patch->name==NULL) ? "" : talloc_format(" for the instrument \"%s\"", patch->name)
+                                  );
 
         if (result==yes_dont_ask_again)
           HASH_put_bool(dont_ask_again, portname, true);
         
         if (g_user_interaction_enabled==false || (result!=yes && result!=yes_dont_ask_again))
-          return MIDIgetPort(window, reqtype, NULL, program_state_is_valid);
+          return MIDIgetPort(window, reqtype, patch, NULL, program_state_is_valid);
       }
       
     }
@@ -504,7 +516,7 @@ void MIDI_InitPatch(struct Patch *patch) {
   patch->closePatch=MIDIclosePatch;
   patch->changeTrackPan=MIDIchangeTrackPan;
 
-  patch->patchdata = createPatchData();
+  patch->patchdata = createPatchData(patch);
 
   patch->instrument = get_MIDI_instrument();
   

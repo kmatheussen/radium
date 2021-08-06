@@ -65,7 +65,7 @@ void MIDI_apply_state_to_patchdata(void *pd, const hash_t *state){
   struct PatchData *patchdata = pd;
   const char *clustername = HASH_get_chars(state, "clustername");
   
-  patchdata->midi_port = MIDIgetPort(NULL,NULL,clustername,false);
+  patchdata->midi_port = MIDIgetPort(NULL,NULL,NULL,clustername,false);
 
   patchdata->channel = HASH_get_int(state, "channel");
   patchdata->preset = HASH_get_int(state, "preset");
@@ -116,7 +116,7 @@ DC_start("PATCHDATA");
 DC_end();
 }
 
-void LoadMIDIPatchData(struct PatchData *patchdata){
+void LoadMIDIPatchData(struct Patch *patch, struct PatchData *patchdata){
 	const char **objs=NULL;
 	const char *vars[10]={
 		"clustername",
@@ -136,7 +136,7 @@ void LoadMIDIPatchData(struct PatchData *patchdata){
 
 var0:
 	clustername=DC_LoadS();
-        patchdata->midi_port = MIDIgetPort(NULL,NULL,clustername,false);
+        patchdata->midi_port = MIDIgetPort(NULL,NULL,patch,clustername,false);
 #if 0
 	if(patchdata->mymidilink==NULL){
 		fprintf(stderr,"Can't find midicluster '%s', using standard midi outlink instead\n",clustername);
