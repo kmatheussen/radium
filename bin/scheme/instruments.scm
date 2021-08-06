@@ -1345,7 +1345,7 @@
 ;                               in-container
 ;                               (list "------------cccc")))))
                 ((string=? type "SEPARATOR")
-                 (cons "----------------"
+                 (cons (<-> "----------------" (entry :separator-name))
                        (loop (cdr entries))))
                 ((string=? type "LEVEL_UP")                 
                  (define rest #f)

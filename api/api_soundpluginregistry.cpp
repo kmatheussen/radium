@@ -469,7 +469,11 @@ static void get_entry(dynvec_t &ret, const PluginMenuEntry &entry, const QString
       DYNVEC_push_back(ret, DYN_create_hash(get_entry_from_type(entry.plugin_type, extend_path(path, entry.plugin_type->name))));
     else
       R_ASSERT(false);
-        
+
+  } else if (entry.type==PluginMenuEntry::IS_SEPARATOR) {
+    hash = HASH_create(2);
+    HASH_put_string(hash, ":separator-name", entry.separator_name);
+    
   } else {
     hash = HASH_create(1);
   }
