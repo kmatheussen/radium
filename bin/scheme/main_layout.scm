@@ -369,12 +369,23 @@
 
 (define (FROM-C-show-sequencer-gui)
   (<ra> :set-sequencer-keyboard-focus)
+
+  (if (and (<ra> :sequencer-in-mixer)
+           (not (<ra> :mixer-is-visible)))
+      (<ra> :show-hide-mixer-widget))
+  
   (cond (*sequencer-window-gui-active*
          (<gui> :show *sequencer-window-gui*))
         ((<ra> :sequencer-in-mixer)
          (<gui> :show (<gui> :get-sequencer-frame-gui)))
         (else
-         (show-lowertab-gui (<gui> :get-sequencer-frame-gui)))))
+         (show-lowertab-gui (<gui> :get-sequencer-frame-gui))))
+  
+  (<ra> :schedule 50
+        (lambda ()
+          (<ra> :set-sequencer-keyboard-focus)
+          #f))
+  )
 
 (define (FROM-C-hide-sequencer-gui)
   (cond (*sequencer-window-gui-active*
