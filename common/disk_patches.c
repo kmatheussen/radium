@@ -343,7 +343,7 @@ obj0:
         is_MIDI_instrument = true;
         MIDI_InitPatch(patch);
         //printf("---Load MIDI Patch Data: %p\n",patch->patchdata);
-	LoadMIDIPatchData(patch->patchdata);
+	LoadMIDIPatchData(patch,patch->patchdata);
         //printf("---Finished Load MIDI Patch Data\n");
 	goto start;
 

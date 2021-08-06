@@ -57,7 +57,7 @@ extern LANGSPEC void MIDI_init_track(struct Tracks *track);
 extern LANGSPEC const char **MIDI_getPortNames(int *retsize, bool is_input);
 
 extern LANGSPEC const char *MIDIrequestPortName(struct Tracker_Windows *window,ReqType reqtype, bool is_input, bool program_state_is_valid);
-extern LANGSPEC struct MidiPort *MIDIgetPort(struct Tracker_Windows *window,ReqType reqtype,const char *name,bool program_state_is_valid);
+extern LANGSPEC struct MidiPort *MIDIgetPort(struct Tracker_Windows *window,ReqType reqtype,struct Patch *patch,const char *name,bool program_state_is_valid);
 extern LANGSPEC void MIDISetPatchData(struct Patch *patch, const char *key, const char *value,bool program_state_is_valid);
 
 extern LANGSPEC int MIDIResetAllControllers( void );

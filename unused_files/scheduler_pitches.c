@@ -1,4 +1,4 @@
-
+#if 0
 #include "nsmtracker.h"
 #include "patch_proc.h"
 
@@ -71,9 +71,9 @@ static bool get_doit(struct Patch *patch, const struct Pitches *pitch){
 
   } else {
 
-    if (pitch->chance==0x100)
+    if (pitch->chance==MAX_PATCHVOICE_CHANCE)
       doit = true;
-    else if (pitch->chance > rnd(0x100))
+    else if (pitch->chance > rnd(MAX_PATCHVOICE_CHANCE))
       doit = true;
     else
       doit = false;
@@ -194,7 +194,7 @@ static void RT_schedule_pitch(struct SeqTrack *seqtrack,
   int64_t time2 = get_seqblock_place_time2(seqblock, track, p2);
 
   if (pitch2==NULL)
-    time2--; // Can not send out pitch at the same time as note_end, since note_end events has higher priority than pitch events.
+    time2--; // Can not send out pitch at the same time as note_end, since note_end events have higher priority than pitch events.
 #if !defined(RELEASE)
   else
     R_ASSERT(time2 >= time1);
@@ -272,3 +272,4 @@ void RT_schedule_pitches_newnote(int64_t current_time,
 
   RT_schedule_pitch(seqtrack, current_time, seqblock, track, note, NULL, true);
 }
+#endif
