@@ -1196,7 +1196,7 @@
          :shortcut show-select-both-seqtrack-size-types-gui
          (lambda ()
            (show-select-both-seqtrack-size-types-gui seqtracknum)))
-   (list "Set name"
+   (list "Rename"
          :shortcut show-set-seqtrack/seqblock-name-requester
          (lambda ()
            (show-set-seqtrack/seqblock-name-requester seqtracknum)))
@@ -2439,7 +2439,7 @@
    "------------------"
    
    (list
-    "Set name"
+    "Rename"
     :enabled seqblock-info
     :shortcut show-set-seqtrack/seqblock-name-requester
     (lambda ()
