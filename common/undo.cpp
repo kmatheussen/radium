@@ -911,6 +911,10 @@ void Redo(void){
         API_call_me_right_after_undoing_or_redoing();
 }
 
+bool CanRedo(void){
+  return CurrUndo->next!=NULL;
+}
+
 void SetMaxUndos(struct Tracker_Windows *window){
 	int newmax=0;
 	char seltext[50];

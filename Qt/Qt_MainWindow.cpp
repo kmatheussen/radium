@@ -531,6 +531,17 @@ public:
   void resizeEvent(QResizeEvent *event) override {
     //printf("RESIZE\n");
     CancelMaybeNavigateMenus();
+
+    if (TIME_get_ms() < 10000){
+
+      // Schedule it to run a little bit later. Changing window configuration from a resize event is asking for trouble.
+      QTimer::singleShot(50, []{
+          
+          // Sometimes sequencer is not minimized after startup. Maybe this will help.
+          S7CALL2(void_bool,"FROM_C-minimize-lowertab", true);
+
+        });
+    }
   }
 
   void changeEvent(QEvent *e) override {
