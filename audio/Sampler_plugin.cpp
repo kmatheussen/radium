@@ -1744,7 +1744,7 @@ namespace{
   // TimeToFrame class used to prevent logical errors. When converting more than one time-value to frame simultaneously, we want to use the same src and stretch values for all computations. If not, the result may not only be slighly wrong now and then (no big deal), but we also risk end frame starting before start frame.
   struct TimeToFrame{
 
-    int _A;
+    int64_t _A;
     double _B;
     
     TimeToFrame(Data *data, float f_note_num){
@@ -1767,9 +1767,20 @@ namespace{
 
       _A = data->p.startpos*sample->num_frames;
       _B = src_ratio*stretch;
+
+      /*
+      printf("src_ratio: %f. startpos: %f. num_frames: %d. _A: %d. src_ratio: %f. stretch: %f. _B: %f\n",
+             src_ratio,
+             data->p.startpos,
+             (int)sample->num_frames,
+             _A,
+             src_ratio,
+             stretch,
+             _B);
+      */
     }
     
-    int get(double time){
+    int64_t get(double time){
       return _A + time/_B;
     }
   };
