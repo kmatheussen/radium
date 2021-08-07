@@ -115,10 +115,16 @@ public:
       double min = scrollbar->minimum();
       double max = scrollbar->maximum();
 
+      if (equal_doubles(min,max))
+        return;
+      
       qreal scale = get_scale_from_zoom(_zoom_value);
 
       const int page_step = scrollbar->pageStep();
 
+      if (equal_doubles(min,max+page_step))
+        return;
+      
       const double slider_xy1 = scale_double(init_value,
                                              min, max+page_step,
                                              0, total_height);
