@@ -722,77 +722,17 @@ void PR_init_plugin_types(void){
   
   PR_add_menu_entry(PluginMenuEntry::paste_preset());
   
-  PR_add_menu_entry(PluginMenuEntry::separator("External plugins"));
+  PR_add_menu_entry(PluginMenuEntry::separator("Plugins"));
 
+  create_vst_plugins(true);
 
-  if (true || PR_is_initing_vst_first()){
-
-    create_vst_plugins(true);
-
-    PR_add_menu_entry(PluginMenuEntry::separator("LADSPA plugins"));
-
-    static bool has_run = false;
-    if (has_run==false){
-      GFX_ShowProgressMessage("Adding LADSPA plugins... (This may take some time if realtime virus scanning is enabled)", true);
-      has_run = true;
-    } else {
-      GFX_ShowProgressMessage("Adding LADSPA plugins...", true);
-    }
-    create_ladspa_plugins();
-
-  } else {
-
-    create_ladspa_plugins();
-    PR_add_menu_entry(PluginMenuEntry::separator());
-
-    create_vst_plugins(true);  
-  }
-
-  GFX_ShowProgressMessage("Adding built-in instruments...", true);
-  
-  /*
-  PR_add_menu_entry(PluginMenuEntry::level_up("VST"));{
-    create_vst_plugins(false);
-  }PR_add_menu_entry(PluginMenuEntry::level_down());
-  */
-
-
-  
-  PR_add_menu_entry(PluginMenuEntry::separator("Routing"));
-
-  create_bus_plugins(true);
-  create_bus_plugins(false);
-
-  PR_add_menu_entry(PluginMenuEntry::level_up("In/Out"));
-  {
-    create_jack_plugins();
-  }
-  PR_add_menu_entry(PluginMenuEntry::level_down());
-
-
-  PR_add_menu_entry(PluginMenuEntry::level_up("Send/Receive"));
-  {
-    create_sendreceive_plugins();
-  }
-  PR_add_menu_entry(PluginMenuEntry::level_down());
-
-  create_patchbay_plugin();
-
-  PR_add_menu_entry(PluginMenuEntry::separator("Misc."));
-
-  create_seqtrack_plugin();
-  create_timeskew_plugin();
-  create_midimessages_plugin();
-  create_modulator_plugin();
-  create_sample_plugin(true);
-  
   PR_add_menu_entry(PluginMenuEntry::separator("Instruments"));
 
   //create_sine_plugin();
   create_sample_plugin(false);
   create_fluidsynth_plugin();
 
-    PR_add_menu_entry(PluginMenuEntry::level_up("Physical Modelling"));
+  PR_add_menu_entry(PluginMenuEntry::level_up("Physical Modelling"));
   {
     create_stk_bass_plugin();
     create_stk_blow_bottle_plugin();
@@ -834,6 +774,56 @@ void PR_init_plugin_types(void){
   //create_faust_system_pitch_plugin();
   //create_faust_system_delay_plugin();
 
+  PR_add_menu_entry(PluginMenuEntry::separator("LADSPA effects"));
+
+  static bool has_run = false;
+  if (has_run==false){
+    GFX_ShowProgressMessage("Adding LADSPA plugins... (This may take some time if realtime virus scanning is enabled)", true);
+    has_run = true;
+  } else {
+    GFX_ShowProgressMessage("Adding LADSPA plugins...", true);
+  }
+    create_ladspa_plugins();
+    
+
+  GFX_ShowProgressMessage("Adding built-in instruments...", true);
+  
+  /*
+  PR_add_menu_entry(PluginMenuEntry::level_up("VST"));{
+    create_vst_plugins(false);
+  }PR_add_menu_entry(PluginMenuEntry::level_down());
+  */
+
+
+  
+  PR_add_menu_entry(PluginMenuEntry::separator("Routing"));
+
+  create_bus_plugins(true);
+  create_bus_plugins(false);
+
+  PR_add_menu_entry(PluginMenuEntry::level_up("In/Out"));
+  {
+    create_jack_plugins();
+  }
+  PR_add_menu_entry(PluginMenuEntry::level_down());
+
+
+  PR_add_menu_entry(PluginMenuEntry::level_up("Send/Receive"));
+  {
+    create_sendreceive_plugins();
+  }
+  PR_add_menu_entry(PluginMenuEntry::level_down());
+
+  create_patchbay_plugin();
+
+  PR_add_menu_entry(PluginMenuEntry::separator("Misc."));
+
+  create_seqtrack_plugin();
+  create_timeskew_plugin();
+  create_midimessages_plugin();
+  create_modulator_plugin();
+  create_sample_plugin(true);
+  
 #if defined(WITH_PD) || defined(WITH_FAUST_DEV)
   PR_add_menu_entry(PluginMenuEntry::separator("Development"));
   
