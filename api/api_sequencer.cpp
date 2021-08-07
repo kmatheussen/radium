@@ -41,6 +41,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/visual_proc.h"
 #include "../common/player_pause_proc.h"
 #include "../common/player_proc.h"
+#include "../common/block_properties_proc.h"
 
 #include "../Qt/Qt_colors_proc.h"
 
@@ -3550,16 +3551,18 @@ void setSeqblockName(const_char* new_name, int64_t seqblockid, bool name_is_base
       seqblock->name = w_path_to_path(new_name);
     else
       seqblock->name = STRING_create(new_name);
-    
+
+    SEQBLOCK_update(seqtrack, seqblock);
+    SEQUENCER_update(SEQUPDATE_BLOCKLIST | SEQUPDATE_PLAYLIST);
+
   } else {
 
     ADD_UNDO(Block_CurrPos(root->song->tracker_windows));
-    seqblock->block->name = talloc_strdup(name_is_base64 ? fromBase64(new_name) : new_name);
 
+    Block_set_name(seqblock->block, name_is_base64 ? fromBase64(new_name) : new_name);
+    //seqblock->block->name = talloc_strdup(
   }
-
-  SEQBLOCK_update(seqtrack, seqblock);
-  SEQUENCER_update(SEQUPDATE_BLOCKLIST | SEQUPDATE_PLAYLIST);
+  
 }
   
 const_char* getSeqblockName(int64_t seqblockid){

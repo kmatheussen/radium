@@ -139,7 +139,7 @@ void CB_PasteBlock(
 
         g_editor_blocks_generation++;
 	BS_UpdateBlockList();
-	BS_UpdatePlayList();
+	BS_UpdatePlayListForceUpdate();
 }
 	
 

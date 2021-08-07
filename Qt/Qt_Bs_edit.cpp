@@ -288,7 +288,7 @@ void BS_UpdateBlockList(void){
 
 }
 
-static void update_playlist(void){
+static void update_playlist(bool force_update){
 
   //struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
   
@@ -307,7 +307,8 @@ static void update_playlist(void){
       goto update_it;
   }
 
-  goto finish;
+  if (!force_update)
+    goto finish;
 
  update_it:
   S7CALL2(void_void, "FROM_C-recreate-playlist-area");
@@ -331,7 +332,25 @@ void BS_UpdatePlayList(void){
   if (root->song->seqtracks.num_elements==0)
     return;
 
-  update_playlist();
+  update_playlist(false);
+}
+
+void BS_UpdatePlayListForceUpdate(void){
+  ScopedVisitors v;
+
+  //printf("  updateplaylist start\n");
+
+  // Must update if hidden because of BS_GetCurrPlaylistklistPos()
+  //if (g_is_hidden)
+  //  return;
+  
+  if (g_block_and_playlist==NULL)
+    return;
+  
+  if (root->song->seqtracks.num_elements==0)
+    return;
+
+  update_playlist(true);
 }
 
 void BS_SelectBlock(struct Blocks *block){

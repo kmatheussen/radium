@@ -22,6 +22,7 @@ extern LANGSPEC void BS_call_very_often(void);
 extern LANGSPEC void BS_resizewindow(void);
 extern LANGSPEC void BS_UpdateBlockList(void);
 extern LANGSPEC void BS_UpdatePlayList(void);
+extern LANGSPEC void BS_UpdatePlayListForceUpdate(void); // must be called instead of BS_UpdatePlayList if name of a block might have been changed.
 extern LANGSPEC void BS_SelectBlock(struct Blocks *block);
 extern LANGSPEC void BS_SelectBlocklistPos(int pos);
 extern LANGSPEC void BS_SelectPlaylistPos(int pos, bool change_song_pos_too);

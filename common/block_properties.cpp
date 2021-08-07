@@ -43,8 +43,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "OS_Bs_edit_proc.h"
 #include "wblocks_proc.h"
 #include "Beats_proc.h"
-#include "../embedded_scheme/scheme_proc.h"
 #include "sequencer_proc.h"
+
+#include "../embedded_scheme/scheme_proc.h"
+#include "../embedded_scheme/s7extra_proc.h"
 
 #include "block_properties_proc.h"
 
@@ -284,7 +286,7 @@ void Block_set_name(struct Blocks *block, const char *new_name){
   block->name=talloc_strdup(new_name);
   g_editor_blocks_generation++;
   BS_UpdateBlockList();
-  BS_UpdatePlayList();
+  BS_UpdatePlayListForceUpdate();
 }
 
 static void create_undo(struct Tracker_Windows *window){
