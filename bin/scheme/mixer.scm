@@ -283,6 +283,16 @@
 
 
 ;; Note: Used for shortcut
+(delafina (insert-new-bus-in-mixer :x (<ra> :get-curr-mixer-slot-x)
+                                   :y (<ra> :get-curr-mixer-slot-y))
+  (undo-block
+   (lambda ()
+     (define seqtracknum (<ra> :append-bus-seqtrack))
+     (<ra> :set-seqtrack-visible seqtracknum #f)
+     (<ra> :set-instrument-position x y (<ra> :get-seqtrack-instrument seqtracknum)))))
+
+
+;; Note: Used for shortcut
 (delafina (unsolo-all-instruments)
   (<ra> :set-solo-for-instruments (get-all-audio-instruments) #f))
   
@@ -467,10 +477,14 @@
   (popup-menu
    (list
     "-----------Insert"
-    (list "Insert new sound object"
+    (list "New instrument or effect"
           :shortcut insert-new-sound-object-in-mixer
           (lambda ()
             (insert-new-sound-object-in-mixer x y)))
+    (list "New bus"
+          :shortcut insert-new-bus-in-mixer
+          (lambda ()
+            (insert-new-bus-in-mixer x y)))
     "---------------"
     (list "Paste"
           :enabled (<ra> :instrument-preset-in-clipboard)
