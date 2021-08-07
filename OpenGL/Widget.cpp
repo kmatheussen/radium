@@ -82,6 +82,7 @@ static double g_last_resize_time = -1;
 #include "../common/list_proc.h"
 #include "../common/realline_calc_proc.h"
 #include "../common/time_proc.h"
+#include "../common/disk.h"
 #include "../common/sequencer_proc.h"
 #include "../common/settings_proc.h"
 #include "../common/OS_Semaphores.h"
@@ -2115,6 +2116,16 @@ public:
 #else
     vlQt4::Qt4ThreadedWidget::resizeEvent(qresizeevent);
 #endif
+
+    if (Undo_num_undos()==0 && !CanRedo() && isIllegalFilepath(dc.filename)){
+
+      // Schedule it to run a little bit later just to be safe. minimizeBlockTracks is doing a lot so it's hard to keep track at all times of whether it does Qt operations or not.
+      QTimer::singleShot(1, []{
+          radium::ScopedIgnoreUndo ignore;
+          minimizeBlockTracks(-1,-1); // maximize track widths.
+        });
+    }
+
   }
 
   

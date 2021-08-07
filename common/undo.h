@@ -139,6 +139,7 @@ extern LANGSPEC bool Undo_NSM_are_you_sure_questionmark(void);
 extern LANGSPEC bool Undo_are_you_sure_questionmark(void);
 extern LANGSPEC void Undo(void);
 extern LANGSPEC void Redo(void);
+extern LANGSPEC bool CanRedo(void);
 extern LANGSPEC void SetMaxUndos(struct Tracker_Windows *window);
 
 typedef void (*UndoUnavailableCallback)(void*);
