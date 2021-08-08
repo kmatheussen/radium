@@ -3267,10 +3267,11 @@ static void MW_create_bus_connections_for_all_chips(Buses &buses){
   }
 }
 
-static void MW_position_chips_from_state(const hash_t *chips, const vector_t *patches, float x, float y){
+// Called from audio/Presest.cpp. (Not used when loading song.)
+static void MW_position_chips_from_state(const hash_t *chips, const vector_t *patches, const QHash<instrument_t, instrument_t> &patch_id_mapper, float x, float y){
   
   int64_t num_chips = HASH_get_int(chips, "num_chips");
-  printf("number of chips: %d\n",(int)num_chips);
+  //printf("number of chips: %d\n",(int)num_chips);
 
   R_ASSERT_RETURN_IF_FALSE(patches->num_elements==num_chips);
 
@@ -3279,9 +3280,29 @@ static void MW_position_chips_from_state(const hash_t *chips, const vector_t *pa
   
   for(int i=0;i<num_chips;i++) {
     hash_t *state = HASH_get_hash_at(chips, "", i);
+    //printf("   Chip %d: %d\n", i, (int)HASH_get_instrument(state, "patch").id);
 
-    struct Patch *patch = (struct Patch*)patches->elements[i];
-    CHIP_set_pos(patch, HASH_get_float(state, "x") + x - min_x, HASH_get_float(state, "y") + y - min_y);
+    instrument_t instrument_old = HASH_get_instrument(state, "patch");
+
+    if (!patch_id_mapper.contains(instrument_old)){
+      R_ASSERT_NON_RELEASE(false);
+      break;
+    }
+
+    instrument_t instrument_new = patch_id_mapper[instrument_old];
+    
+    struct Patch *patch = NULL;
+    VECTOR_FOR_EACH(struct Patch*, maybe, patches){
+      if (maybe->id==instrument_new){
+        patch=maybe;
+        break;
+      }
+    }END_VECTOR_FOR_EACH;
+
+    R_ASSERT_NON_RELEASE(patch!=NULL);
+    
+    if (patch!=NULL)
+      CHIP_set_pos(patch, HASH_get_float(state, "x") + x - min_x, HASH_get_float(state, "y") + y - min_y);
   }
 }
 
@@ -3313,7 +3334,7 @@ void MW_create_from_state(const hash_t *state, const vector_t *patches, const QH
   ADD_UNDO(MixerConnections_CurrPos());
   add_undo_for_all_chip_positions(); // We might kick any chip, so we need to add undo points for all chips
           
-  MW_position_chips_from_state(HASH_get_hash(state, "chips"), patches, x, y);
+  MW_position_chips_from_state(HASH_get_hash(state, "chips"), patches, patch_id_mapper, x, y);
 
   hash_t *connections = HASH_get_hash(state, "connections");
 
