@@ -856,13 +856,46 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
   }
 }
 
-static char *create_info_string(const LADSPA_Descriptor *descriptor){
-  char temp[4096];
-  sprintf(temp,
-          "\"%s\" is a LADSPA Plugin made by %s.\n"
-          "Copyright: %s.",
-          descriptor->Name,descriptor->Maker,descriptor->Copyright);
-  return V_strdup(temp);
+static const char *create_info_string(bool has_inputs, bool has_outputs, const LADSPA_Descriptor *descriptor){
+  const char *ret = talloc_format("\"%s\" is a LADSPA Plugin made by %s.\n"
+                                  "Copyright: %s.\n",
+                                  descriptor->Name,
+                                  descriptor->Maker,descriptor->Copyright
+                                  );
+
+  if (has_inputs){
+
+    ret = talloc_format("%s\nAudio inputs\n", ret);
+    
+    int ch = 0;
+    
+    for(unsigned int portnum=0;portnum<descriptor->PortCount;portnum++){
+      const LADSPA_PortDescriptor portdescriptor = descriptor->PortDescriptors[portnum];
+
+      if(LADSPA_IS_PORT_AUDIO(portdescriptor) && LADSPA_IS_PORT_INPUT(portdescriptor)){        
+        //const LADSPA_PortDescriptor portdescriptor = descriptor->PortDescriptors[portnum];
+        ret = talloc_format("%s  ch%d: \"%s\"\n", ret, ch++, descriptor->PortNames[portnum]);
+      }
+    }
+  }
+  
+  if (has_outputs){
+
+    ret = talloc_format("%s\nAudio outputs\n", ret);
+    
+    int ch = 0;
+    
+    for(unsigned int portnum=0;portnum<descriptor->PortCount;portnum++){
+      const LADSPA_PortDescriptor portdescriptor = descriptor->PortDescriptors[portnum];
+
+      if(LADSPA_IS_PORT_AUDIO(portdescriptor) && LADSPA_IS_PORT_OUTPUT(portdescriptor)){        
+        //const LADSPA_PortDescriptor portdescriptor = descriptor->PortDescriptors[portnum];
+        ret = talloc_format("%s  ch%d: \"%s\"\n", ret, ch++, descriptor->PortNames[portnum]);
+      }
+    }
+  }
+  
+  return V_strdup(ret);
 }
 
 static char *create_creator_string(const LADSPA_Descriptor *descriptor){
@@ -905,6 +938,8 @@ static filepath_t get_instance_cache_filename(const Library *library, int index)
 }
 
 static bool maybe_fill_in_cached_plugin(TypeData *type_data, SoundPluginType *plugin_type, Library *library, int index){
+  //return false; // uncomment to regenerate all cache files.
+  
   if (!is_radium_internal_file(make_filepath(library->filename)))
     return false;
 
@@ -1003,7 +1038,6 @@ static SoundPluginType *create_plugin_type(const LADSPA_Descriptor *descriptor, 
 
 
     plugin_type->name      = V_strdup(is_system_pitchshift ? "System AM pitchshift" : descriptor->Name);
-    plugin_type->info      = create_info_string(descriptor);
     plugin_type->creator   = create_creator_string(descriptor);
 
 
@@ -1026,8 +1060,9 @@ static SoundPluginType *create_plugin_type(const LADSPA_Descriptor *descriptor, 
       }
     }
 
-
     fill_in_type_data_info_from_descriptor(type_data, plugin_type, descriptor); // needed by maybe_create_cache_file_for_plugin
+
+    plugin_type->info  = create_info_string(plugin_type->num_inputs > 0, plugin_type->num_outputs > 0, descriptor);
 
     if (!had_descriptor)
       remove_type_data_reference(type_data);
