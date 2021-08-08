@@ -5063,6 +5063,11 @@
                                                  :enabled (>= tracknum 0)
                                                  (lambda ()
                                                    (set-range curr-track-range)))
+                                           
+                                           "------------------Timing tracks"
+                                           (list "Timing tracks"
+                                                 (list
+                                                  (get-time-tracks-popup-menu-entries)))
                                            ))))
                                   
                                   (let ()
