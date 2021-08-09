@@ -1410,11 +1410,13 @@ static bool mousepress_save_presets_etc(MyScene *scene, radium::MouseCycleEvent 
   }
 
   if (effect_num >= 0) {
-    S7CALL2(dyn_dyn_charpointer,
-            "FROM_C-show-effect-popup-menu",
+
+    S7CALL2(void_dyn_dyn,
+            "FROM_C-show-mixer-popup-menu-effect",
             DYN_create_instrument(plugin->patch->id),
-            PLUGIN_get_effect_name(plugin, effect_num)
+            DYN_create_string(PLUGIN_get_effect_name(plugin, effect_num))
             );
+
   }
   
   return true;
