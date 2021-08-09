@@ -1148,13 +1148,14 @@
     (<ra> :undo-sequencer)
     (<ra> :swap-seqtracks (- seqtracknum 1) seqtracknum)
     (<ra> :set-curr-seqtrack (- seqtracknum 1)))
-  (if (and (= 1 seqtracknum)
-           (<ra> :seqtrack-for-audiofiles 1))
-      (ask-user-about-first-audio-seqtrack
-       (lambda (doit)
-         (if doit
-             (swapit))))
-      (swapit)))
+  (when (> seqtracknum 0)
+    (if (and (= 1 seqtracknum)
+             (<ra> :seqtrack-for-audiofiles 1))
+        (ask-user-about-first-audio-seqtrack
+         (lambda (doit)
+           (if doit
+               (swapit))))
+        (swapit))))
 
 ;; Note: Used for shortcut
 (delafina (swap-with-next-seqtrack :seqtracknum (<ra> :get-curr-seqtrack))
@@ -1162,13 +1163,14 @@
     (<ra> :undo-sequencer)
     (<ra> :swap-seqtracks seqtracknum (1+ seqtracknum))
     (<ra> :set-curr-seqtrack (1+ seqtracknum)))
-  (if (and (= 0 seqtracknum)
-           (<ra> :seqtrack-for-audiofiles 1))
-      (ask-user-about-first-audio-seqtrack
-       (lambda (doit)
-         (if doit
-             (swapit))))
-      (swapit)))
+  (when (< seqtracknum (- (<ra> :get-num-seqtracks) 1))
+    (if (and (= 0 seqtracknum)
+             (<ra> :seqtrack-for-audiofiles 1))
+        (ask-user-about-first-audio-seqtrack
+         (lambda (doit)
+           (if doit
+               (swapit))))
+        (swapit))))
 
 ;; Note: Used for shortcut
 (delafina (show-set-seqtrack/seqblock-name-requester :seqtracknum (<ra> :get-curr-seqtrack-under-mouse #t #t) ;; (<ra> :get-curr-seqtrack)
