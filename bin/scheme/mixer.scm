@@ -476,11 +476,21 @@
 (define (show-mixer-popup-menu-no-chip-under x y selected-instruments)
   (popup-menu
    (list
-    "-----------Insert"
-    (list "New instrument or effect"
+    "-----------Insert module"
+    (list "From plugin manager"
+          :shortcut new-instrument-from-plugin-manager
+          (lambda ()
+            (new-instrument-from-plugin-manager -2 x y)))
+    (list "From instrument/effect menu" ;;New instrument or effect"
           :shortcut insert-new-sound-object-in-mixer
           (lambda ()
             (insert-new-sound-object-in-mixer x y)))
+    "---------------"
+    (list "From preset file (.rec/.mrec)"
+          :shortcut new-instrument-from-preset
+          (lambda ()
+            (new-instrument-from-preset -2 x y)))
+    "-----------"
     (list "New bus"
           :shortcut insert-new-bus-in-mixer
           (lambda ()
@@ -498,7 +508,7 @@
           (get-mixer-popup-menu-entries)))))
 
 (define (FROM_C-show-mixer-connection-popup-menu from-instrument to-instrument is-event-connection)
-  (popup-menu (get-insert-plugin-popup-menu-entry from-instrument (not is-event-connection))
+  (popup-menu (get-insert-plugin-entry from-instrument (not is-event-connection))
               (list "Delete connection"
                     :shortcut *shift-right-mouse*
                     (lambda ()
@@ -551,7 +561,13 @@
           (show-mixer-popup-menu-one-instrument curr-instrument-id x y))))
 
 
+(define (FROM_C-show-mixer-popup-menu-effect instrument-id effect-name)
+  (popup-menu (get-effect-popup-entries instrument-id effect-name)
+              "------------Mixer"
+              (list "Mixer"
+                    (get-mixer-popup-menu-entries))))
 
+  
 #!!
 (<ra> :num-selected-instruments)
 !!#

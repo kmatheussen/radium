@@ -941,29 +941,34 @@
 (<ra> :get-path-string (<ra> :create-illegal-filepath))
 !!#
 
-;; instrument-id2 can also be list of instrument-ids.
-(define (insert-new-instrument-between instrument-id1 instrument-id2 position-at-instrument-1? parentgui callback)
+;; instrument-after-id can also be list of instrument-ids.
+(define (insert-new-instrument-between instrument-before-id
+                                       instrument-after-id
+                                       position-at-instrument-1?
+                                       parentgui
+                                       get-instrument-description-func)
      
-  (assert (or instrument-id1 instrument-id2))
-  (if (not instrument-id2)
+  (assert (or instrument-before-id instrument-after-id))
+  (if (not instrument-after-id)
       (assert position-at-instrument-1?))
-  (if (not instrument-id1)
+  (if (not instrument-before-id)
       (assert (not position-at-instrument-1?)))
-  (if (list? instrument-id2)
+  (if (list? instrument-after-id)
       (assert position-at-instrument-1?))
   
   (define (get-out-list)
     (keep (lambda (instrument-id)
             (<ra> :instrument-is-open instrument-id))
-          (cond ((not instrument-id2)
+          (cond ((not instrument-after-id)
                  '())
-                ((list? instrument-id2)
-                 instrument-id2)
+                ((list? instrument-after-id)
+                 instrument-after-id)
                 (else
-                 (list instrument-id2)))))
-  
-  (start-instrument-popup-menu
-   (make-instrument-conf :must-have-inputs (get-bool instrument-id1)
+                 (list instrument-after-id)))))
+
+  (get-instrument-description-func
+   
+   (make-instrument-conf :must-have-inputs (get-bool instrument-before-id)
                          :must-have-outputs (not (null? (get-out-list)))
                          :parentgui parentgui)
    
@@ -972,8 +977,8 @@
      (call-with-exit
       (lambda (return)
 
-        (if (and instrument-id1
-                 (not (<ra> :instrument-is-open instrument-id1)))
+        (if (and instrument-before-id
+                 (not (<ra> :instrument-is-open instrument-before-id)))
             (return))
         
         (define out-list (get-out-list))
@@ -981,83 +986,79 @@
         (define has-instrument2 (not (null? out-list)))
 
         (define position-instrument (or (if position-at-instrument-1?
-                                            instrument-id1
-                                            instrument-id2)
-                                        instrument-id2
-                                        instrument-id1))
+                                            instrument-before-id
+                                            instrument-after-id)
+                                        instrument-after-id
+                                        instrument-before-id))
         (define x (+ (<ra> :get-instrument-x position-instrument) 0))
         (define y (+ (<ra> :get-instrument-y position-instrument) 0))
         
         (define do-undo #f)
         
-        ;; Quite clumsy. The reason we don't call the callback directly is that we don't want to call the callback inside the undo block.
-        (define result
-          (undo-block
-           (lambda ()
-             (define new-instrument (<ra> :create-audio-instrument-from-description instrument-description "" x y #f))
-             (if (not (<ra> :is-legal-instrument new-instrument))
-                 (return))
-             
-             (define num-inputs (<ra> :get-num-input-channels new-instrument))
-             (define num-outputs (<ra> :get-num-output-channels new-instrument))
-             
-             (cond ((and instrument-id1
-                         (= 0 num-inputs))
-                    (show-async-message parentgui (<-> "Can not insert instrument named \n\"" (<ra> :get-instrument-name new-instrument) "\"\nsince it has no input channels"))
-                    (set! do-undo #t)
-                    #f)
-                   
-                   ((and (= 0 num-outputs)
-                         has-instrument2)
-                    (show-async-message parentgui (<-> "Can not insert instrument named \n\"" (<ra> :get-instrument-name new-instrument) "\"\nsince it has no output channels"))
-                    (set! do-undo #t)
-                    #f)
-                   
-                   (else
+        (undo-block
+         (lambda ()
+           (define new-instrument (<ra> :create-audio-instrument-from-description instrument-description "" x y #f))
+           (if (not (<ra> :is-legal-instrument new-instrument))
+               (return))
+           
+           (define num-inputs (<ra> :get-num-input-channels new-instrument))
+           (define num-outputs (<ra> :get-num-output-channels new-instrument))
+           
+           (cond ((and instrument-before-id
+                       (= 0 num-inputs))
+                  (show-async-message parentgui (<-> "Can not insert instrument named \n\"" (<ra> :get-instrument-name new-instrument) "\"\nsince it has no input channels"))
+                  (set! do-undo #t)
+                  #f)
+                 
+                 ((and (= 0 num-outputs)
+                       has-instrument2)
+                  (show-async-message parentgui (<-> "Can not insert instrument named \n\"" (<ra> :get-instrument-name new-instrument) "\"\nsince it has no output channels"))
+                  (set! do-undo #t)
+                  #f)
+                 
+                 (else
+                  
+                  (<ra> :set-instrument-position x y new-instrument #t)
+                  
+                  (define changes '())
+                  
+                  (<ra> :undo-mixer-connections)
+                  
+                  ;; Gather list of gains before disconnecting.
+                  (define gain-list (map (lambda (out-id)
+                                           (and instrument-before-id
+                                                (<ra> :get-audio-connection-gain instrument-before-id out-id)))
+                                         out-list))
+                  
+                  (when instrument-before-id
+                    (for-each (lambda (to)
+                                (push-audio-connection-change! changes (list :type "disconnect"
+                                                                             :source instrument-before-id
+                                                                             :target to)))
+                              out-list)
+                    (push-audio-connection-change! changes (list :type "connect"
+                                                                 :source instrument-before-id
+                                                                 :target new-instrument
+                                                                 :connection-type *plugin-connection-type*
+                                                                 )))
+                  
+                  (for-each (lambda (out-id gain)
+                              (push-audio-connection-change! changes (list :type "connect"
+                                                                           :source new-instrument
+                                                                           :target out-id
+                                                                           :gain gain)))
+                            out-list
+                            gain-list)
+                  
+                  (<ra> :change-audio-connections changes) ;; Apply all changes simultaneously
                     
-                    (<ra> :set-instrument-position x y new-instrument #t)
-                    
-                    (define changes '())
-                    
-                    (<ra> :undo-mixer-connections)
-
-                    ;; Gather list of gains before disconnecting.
-                    (define gain-list (map (lambda (out-id)
-                                             (and instrument-id1
-                                                  (<ra> :get-audio-connection-gain instrument-id1 out-id)))
-                                           out-list))
-                    
-                    (when instrument-id1
-                      (for-each (lambda (to)
-                                  (push-audio-connection-change! changes (list :type "disconnect"
-                                                                               :source instrument-id1
-                                                                               :target to)))
-                                out-list)
-                      (push-audio-connection-change! changes (list :type "connect"
-                                                                   :source instrument-id1
-                                                                   :target new-instrument
-                                                                   :connection-type *plugin-connection-type*
-                                                                   )))
-
-                    (for-each (lambda (out-id gain)
-                                (push-audio-connection-change! changes (list :type "connect"
-                                                                             :source new-instrument
-                                                                             :target out-id
-                                                                             :gain gain)))
-                              out-list
-                              gain-list)
-                    
-                    (<ra> :change-audio-connections changes) ;; Apply all changes simultaneously
-                    
-                    new-instrument))
-             #f)))
-     
+                  new-instrument))
+           #f))
+      
         (if do-undo
             (<ra> :undo))
-        
-        (if (and result
-                 callback)
-            (callback result)))))))
+         
+        )))))
 
 
 (define (FROM_C-remove-instrument-from-connection-path parent-instrument-id instrument-id)
@@ -1467,14 +1468,50 @@
    ))
 
 ;; Note: Used for shortcut
-(delafina (insert-plugin-for-instrument :instrument-id (<ra> :get-current-instrument-under-mouse)
-                                        :gui -2)
+(delafina (insert-plugin-for-instrument-from-popup-menu :instrument-id (<ra> :get-current-instrument-under-mouse)
+                                                        :gui -2)
   (if (<ra> :is-legal-instrument instrument-id)
       (insert-new-instrument-between instrument-id
                                      (get-instruments-connecting-from-instrument instrument-id)
                                      #t
                                      -2
-                                     #f)))
+                                     start-instrument-popup-menu
+                                     ;; Note: Last arg is the same as this:
+                                     ;;(lambda (conf kont) 
+                                     ;;  (start-instrument-popup-menu conf
+                                     ;;                               (lambda (instrument-description)
+                                     ;;                                 (kont instrument-description)))))))                                                                    
+                                     )))
+
+;; Note: Used for shortcut
+(delafina (insert-plugin-for-instrument-from-plugin-manager :instrument-id (<ra> :get-current-instrument-under-mouse)
+                                                            :gui -2)
+  (if (<ra> :is-legal-instrument instrument-id)
+      (insert-new-instrument-between instrument-id
+                                     (get-instruments-connecting-from-instrument instrument-id)
+                                     #t
+                                     -2
+                                     pmg-start
+                                     ;; Note: Last arg is the same as this:
+                                     ;;(lambda (conf kont)
+                                     ;;  (pmg-start conf (lambda (instrument-description)
+                                     ;;                    (kont instrument-description))))
+                                     )))
+
+
+;; Note: Used for shortcut
+(delafina (insert-plugin-for-instrument-from-preset-file :instrument-id (<ra> :get-current-instrument-under-mouse)
+                                                         :gui -2)
+  (if (<ra> :is-legal-instrument instrument-id)
+      (insert-new-instrument-between instrument-id
+                                     (get-instruments-connecting-from-instrument instrument-id)
+                                     #t
+                                     -2
+                                     (lambda (conf kont)
+                                       (request-select-instrument-preset (conf :parentgui) (<ra> :create-illegal-instrument) #t
+                                                                         (lambda (instrument-description)
+                                                                           (kont instrument-description))))
+                                     )))
 
 
 (define (request-send-instrument instrument-id callback)
@@ -1564,14 +1601,39 @@
                 (<ra> :set-current-instrument instrument-id))
               (<ra> :set-current-instrument-locked #f)))))
 
-(delafina (get-insert-plugin-popup-menu-entry :instrument-id
-                                              :enabled #t)
-  (list "Insert plugin"
-        :enabled (and enabled
-                      (> (<ra> :get-num-output-channels instrument-id) 0))
-        :shortcut insert-plugin-for-instrument
-        (lambda ()
-          (insert-plugin-for-instrument instrument-id))))
+(delafina (get-insert-plugin-entry :instrument-id
+                                   :enabled #t
+                                   :is-top-instrument #t
+                                   :parentgui -2)
+  (set! enabled
+        (and enabled
+             (> (<ra> :get-num-output-channels instrument-id) 0)))
+  (list (if is-top-instrument
+            "Insert plugin"
+            (<-> "Insert plugin after " (<ra> :get-instrument-name instrument-id)))
+        (list
+         (list "From plugin manager"                           
+               :shortcut (and is-top-instrument
+                              insert-plugin-for-instrument-from-plugin-manager)
+               :enabled enabled
+               (lambda ()
+                 (insert-plugin-for-instrument-from-plugin-manager instrument-id parentgui)))
+         (list "From instrument/effect-menu"
+               :shortcut (and is-top-instrument
+                              insert-plugin-for-instrument-from-popup-menu)
+               :enabled enabled
+               (lambda ()
+                 (insert-plugin-for-instrument-from-popup-menu instrument-id parentgui)))
+         "----------------"
+         (list "From preset file (.rec/.mrec)"
+               :shortcut (and is-top-instrument
+                              insert-plugin-for-instrument-from-preset-file)
+               :enabled enabled
+               (lambda ()
+                 (insert-plugin-for-instrument-from-preset-file instrument-id parentgui)
+                 ))))
+  )
+
 
 (delafina (get-instrument-popup-entries :instrument-id
                                         :parentgui
@@ -1610,7 +1672,7 @@
      (and include-insert-plugin
           "------------------")
      (and include-insert-plugin
-          (get-insert-plugin-popup-menu-entry instrument-id))
+          (get-insert-plugin-entry instrument-id))
 
      (and include-insert-plugin
           (list "Insert send"
@@ -1742,11 +1804,11 @@
       (set! *popup-menu-args-cache-generation* curr-generation)
       (set! *popup-menu-args-cache-preset-in-clipboard* (<ra> :instrument-preset-in-clipboard))
       (set! *popup-menu-args-cache-args*
-            (get-popup-menu-args (append (list "Plugin Manager"
-                                               :shortcut new-instrument-from-plugin-manager
-                                               (lambda ()
-                                                 (pmg-start instrconf my-callback))
-                                               "--------------")
+            (get-popup-menu-args (append ;(list "Plugin Manager"
+                                         ;      :shortcut new-instrument-from-plugin-manager
+                                         ;      (lambda ()
+                                         ;        (pmg-start instrconf my-callback))
+                                         ;      "--------------")
                                          (spr-entries->menu-entries (<ra> :get-sound-plugin-registry)
                                                                     instrconf
                                                                     (lambda (entry)
@@ -2453,18 +2515,18 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
    ;;    (list "<New Pd Instrument>" (lambda ()
    ;;                                  (LOAD (<ra> :create-audio-instrument "Pd" "Simple Midi Synth"))))
    ;;    #f)
-   "----------------"
-   "New Audio Instrument" (lambda ()
-                            (start-instrument-popup-menu instr-conf callback))
-   "New MIDI Instrument" (lambda ()
-                             (LOAD (<ra> :create-midi-instrument "Unnamed")))
-   "----------------"
-   "Load Preset" (lambda ()
-                   (request-select-instrument-preset -1 (<ra> :create-illegal-instrument) #t callback))
-   "----------------"
-   "Show plugin manager" (lambda ()
+   "----------------" 
+   "From plugin manager" (lambda ()
                            (pmg-start instr-conf callback))
    
+   "From instrument/effect-menu" (lambda ()
+                                   (start-instrument-popup-menu instr-conf callback))
+   "----------------"
+   "From preset file (.rec/.mrec)" (lambda ()
+                                     (request-select-instrument-preset -1 (<ra> :create-illegal-instrument) #t callback))
+   "-----------------"
+   "New MIDI Instrument" (lambda ()
+                             (LOAD (<ra> :create-midi-instrument "Unnamed")))
    "----------Use an existing instrument"
    "All" (get-instrument-entries #f)
    "----------Clone an existing instrument"

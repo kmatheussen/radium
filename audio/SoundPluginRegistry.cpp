@@ -718,9 +718,9 @@ void PR_init_plugin_types(void){
   g_plugin_types.clear();
   g_plugin_menu_entries.clear();
 
-  PR_add_menu_entry(PluginMenuEntry::load_preset());
+  //PR_add_menu_entry(PluginMenuEntry::load_preset());
   
-  PR_add_menu_entry(PluginMenuEntry::paste_preset());
+  //PR_add_menu_entry(PluginMenuEntry::paste_preset());
   
   PR_add_menu_entry(PluginMenuEntry::separator("Plugins"));
 
