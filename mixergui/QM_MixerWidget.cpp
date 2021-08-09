@@ -3279,17 +3279,17 @@ static void MW_position_chips_from_state(const hash_t *chips, const vector_t *pa
   float min_y = HASH_get_float(chips, "min_y_pos");
   
   for(int i=0;i<num_chips;i++) {
-    hash_t *state = HASH_get_hash_at(chips, "", i);
+    const hash_t *state = HASH_get_hash_at(chips, "", i);
     //printf("   Chip %d: %d\n", i, (int)HASH_get_instrument(state, "patch").id);
 
-    instrument_t instrument_old = HASH_get_instrument(state, "patch");
+    const instrument_t instrument_old = HASH_get_instrument(state, "patch");
 
     if (!patch_id_mapper.contains(instrument_old)){
       R_ASSERT_NON_RELEASE(false);
       break;
     }
 
-    instrument_t instrument_new = patch_id_mapper[instrument_old];
+    const instrument_t instrument_new = patch_id_mapper[instrument_old];
     
     struct Patch *patch = NULL;
     VECTOR_FOR_EACH(struct Patch*, maybe, patches){

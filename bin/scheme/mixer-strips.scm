@@ -844,19 +844,10 @@
                                      instrument-id))
   
   (popup-menu (<-> "----------Insert")
-              (list (if is-top-instrument
-                        "Insert plugin"
-                        (<-> "Insert plugin after " (<ra> :get-instrument-name curr-plugin-instrument)))
-                    :enabled (> (<ra> :get-num-output-channels first-instrument-id) 0)
-                    :shortcut (and is-top-instrument
-                                   insert-plugin-for-instrument)
-                    (lambda ()
-                      (insert-new-instrument-between curr-plugin-instrument
-                                                     (get-instruments-connecting-from-instrument curr-plugin-instrument)
-                                                     #t
-                                                     parentgui
-                                                     #f)))
-              
+              (get-insert-plugin-entry curr-plugin-instrument
+                                       #t
+                                       is-top-instrument
+                                       parentgui)
               (list (<-> "Insert send for " (if is-send?
                                                 (<ra> :get-instrument-name parent-instrument-id)
                                                 (<ra> :get-instrument-name instrument-id)))
