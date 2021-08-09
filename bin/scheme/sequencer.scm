@@ -56,6 +56,24 @@
 (define (FROM_C-set-current-seqblock! seqtracknum id)
   (set-current-seqblock! seqtracknum id))
 
+(define (find-prev-visible-seqtrack seqtracknum)
+  (let loop ((seqtracknum (- seqtracknum 1)))
+    (cond ((<= seqtracknum 0)
+           0)
+          ((<ra> :get-seqtrack-visible seqtracknum)
+           seqtracknum)
+          (else
+           (loop (- seqtracknum 1))))))
+
+(define (find-next-visible-seqtrack seqtracknum)
+  (let loop ((seqtracknum (+ seqtracknum 1)))
+    (cond ((>= seqtracknum (- (<ra> :get-num-seqtracks) 1))
+           (- (<ra> :get-num-seqtracks) 1))
+          ((<ra> :get-seqtrack-visible seqtracknum)
+           seqtracknum)
+          (else
+           (loop (+ seqtracknum 1))))))
+
 
 ;; Note: "visible" means existing seqtrack where (<ra> :seqtrack-is-visible) is #t.
 ;; I.e. NOT necessarily visible on screen, but instead marked as visible in the "Tracks" tab.
@@ -1143,7 +1161,7 @@
   (define (swapit)
     (<ra> :undo-sequencer)
     (<ra> :swap-seqtracks seqtracknum (1+ seqtracknum))
-    (<ra> :set-curr-seqtrack (1+ seqtracknum)))          
+    (<ra> :set-curr-seqtrack (1+ seqtracknum)))
   (if (and (= 0 seqtracknum)
            (<ra> :seqtrack-for-audiofiles 1))
       (ask-user-about-first-audio-seqtrack
