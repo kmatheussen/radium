@@ -682,8 +682,8 @@ def clean_generated_keybinding_file():
 
 clean_generated_keybinding_file() # If not, we will run previous keybinding in the next line. If it contained e.g. "*exit()*", radium wouldn't start. But it could also create other types of confusion.
 
-if not is_mocked:
-    import generated_keybinding_code as keybinding
+#if not is_mocked: # When running the binaries on ubuntu 20, the import line below didn't work unless the "if not is_mocked:" conditional was removed.
+import generated_keybinding_code as keybinding
 
 def parse():
     global keyhandles,radium
