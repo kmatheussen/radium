@@ -40,6 +40,15 @@
 
 (define2 *current-seqtrack-num* (curry-or not integer?) #f)
 
+
+(define (get-seqtrack-order)
+  (map ra:get-seqtrack-uuid
+       (iota (<ra> :get-num-seqtracks))))
+
+(define (equal-seqtrack-order? order1 order2)
+  (equal? order1 order2))
+
+
 ;; Current seqblock, and sequencer block order
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -1060,7 +1069,6 @@
          (undo-block
           (lambda ()                               
             (when arg
-              (<ra> :undo-sequencer)
               (<ra> :set-using-sequencer-timing #t))
             (callback arg)))))))
 
