@@ -801,12 +801,15 @@
   (define was-using-sequencer-timing #f)
   (define first-seqtrack-was-audio #f)
 
+  (define order-before '())
+
   (add-delta-mouse-cycle!
    (lambda (button x* y*)
      (set-statusbar-text! (get-statusbar-text))
      (set! has-made-undo #f)
      (set! first-seqtrack-was-audio (<ra> :seqtrack-for-audiofiles 0))
      (set! was-using-sequencer-timing (<ra> :is-using-sequencer-timing))
+     (set! order-before (get-seqtrack-order))
      (if (= button *left-button*)
          (begin
            (set! *hovering-seqtrack-number* seqtracknum)
@@ -817,7 +820,7 @@
      (define new-seqtracknum (get-new-seqtracknum y*))
      (cond ((< new-seqtracknum seqtracknum)
             (let loop ((seqtracknum2 seqtracknum)
-                       (safety 0))                                     
+                       (safety 0))
               (when (and (> seqtracknum2 new-seqtracknum)
                          (< safety 100000))
                 (maybe-make-undo)
@@ -841,18 +844,23 @@
      (<ra> :set-curr-seqtrack seqtracknum #f)
      )
    (lambda (button x* y* dx dy)
-     ;;(c-display (not was-using-sequencer-timing)
-     ;;           (not first-seqtrack-was-audio)
-     ;;           (<ra> :seqtrack-for-audiofiles 0))
      (set! *hovering-seqtrack-number* -1)
      (update-me-and-all-parents-and-siblings!) ;; Update hovered background color of all numbers. (this area might not correspond to the area of the actual current seqtrack anymore)
-     (when (and (not was-using-sequencer-timing)
-                (not first-seqtrack-was-audio)
-                (<ra> :seqtrack-for-audiofiles 0))
-       (ask-user-about-first-audio-seqtrack2
-        (lambda (res)
-          (if (string=? res "No")
-              (<ra> :undo))))))
+
+     (cond ((equal-seqtrack-order? order-before (get-seqtrack-order))
+            (<ra> :undo)) ;; This not only reverts an unnecesarry undo, but it can also revert an unintended timing mode change.
+           ((and (not was-using-sequencer-timing)
+                 (not first-seqtrack-was-audio)
+                 (<ra> :seqtrack-for-audiofiles 0))
+            (ask-user-about-first-audio-seqtrack2
+             (lambda (res)
+               (if (string=? res "No")
+                   (<ra> :undo)))))
+           ((and (not (eq? was-using-sequencer-timing
+                           (<ra> :is-using-sequencer-timing)))
+                 (eq? first-seqtrack-was-audio
+                      (<ra> :seqtrack-for-audiofiles 0)))
+            (<ra> :set-using-sequencer-timing was-using-sequencer-timing #f)))) ;; revert unintended timing mode change.
    )
   )
 

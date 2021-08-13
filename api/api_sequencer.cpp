@@ -977,6 +977,14 @@ void resetSeqtrackConfig(void){
   SEQTRACKS_reset_config();
 }
 
+const_char* getSeqtrackUuid(int seqtracknum){
+  struct SeqTrack *seqtrack = getSeqtrackFromNum(seqtracknum);
+  if (seqtrack==NULL)
+    return "";
+
+  return seqtrack->uuid;
+}
+
 void setCurrSeqtrackConfigNum(int num){
   if (num < 0 || num >= NUM_SEQTRACKS_CONFIGS){
     handleError("setCurrSeqtrackConfigNum: Wrong number: %d", num);
@@ -4907,11 +4915,12 @@ bool isUsingSequencerTiming(void){
   return root->song->use_sequencer_tempos_and_signatures;
 }
 
-void setUsingSequencerTiming(bool use_sequencer){
+void setUsingSequencerTiming(bool use_sequencer, bool make_undo){
   if (use_sequencer==root->song->use_sequencer_tempos_and_signatures)
     return;
 
-  ADD_UNDO(Sequencer());
+  if (make_undo)
+    ADD_UNDO(Sequencer());
 
   {
     radium::PlayerLock lock(is_playing_song());
