@@ -909,6 +909,8 @@
 (define (FROM_C-show-playlist-popup-menu)
   (define seqtracknum (<ra> :get-curr-seqtrack))
   (popup-menu
+   (get-blocklist/playlist-common-entries)
+   "---------------"
    (get-delete-all-pauses-menu-entry seqtracknum)
 
    "---------------"

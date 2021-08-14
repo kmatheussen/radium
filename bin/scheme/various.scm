@@ -707,6 +707,19 @@
 ;;; Blocklist / Playlist 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; Note: may be used for keybinding
+(define (show-set-current-seqtrack-menu)
+  (popup-menu (map (lambda (seqtracknum)
+                     (list (<ra> :get-seqtrack-name seqtracknum)
+                           (lambda ()
+                             (<ra> :set-curr-seqtrack seqtracknum))))
+                   (iota (<ra> :get-num-seqtracks)))))
+  
+(define (get-blocklist/playlist-common-entries)
+  (list "Set current seqtrack"
+        show-set-current-seqtrack-menu))
+             
+
 (define (get-blocklist-popup-menu-entries)
   (define blocknum (<ra> :current-block))
 
@@ -758,11 +771,15 @@
      
      "Show block list"
      ra:show-blocklist-gui
+     
+     "---------------"
+
      ))
   (get-block-entries))
 
 (define (show-blocklist-popup-menu)
-  (popup-menu (get-blocklist-popup-menu-entries)))
+  (popup-menu (get-blocklist-popup-menu-entries)
+              (get-blocklist/playlist-common-entries)))
   
 (define (get-audiofile-entries filename)
   (list
@@ -804,6 +821,9 @@
    (if for-blocks
        (get-blocklist-popup-menu-entries)
        (get-audiofile-entries #f))
+
+   "---------------"
+   (get-blocklist/playlist-common-entries)
 
    "---------------"
    
