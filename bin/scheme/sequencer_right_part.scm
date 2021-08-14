@@ -116,6 +116,7 @@
                                                       "high_background"))
                                   :cut-text-to-fit #t
                                   :text-is-base64 #t
+                                  :light-up-when-hovered #t
                                   )))
             (text-area :add-mouse-cycle! mouse-callback)
             text-area)))
@@ -243,6 +244,7 @@
                                                                      "sequencer_text_current_block_color" ;;"sequencer_curr_seqblock_border_color" ;;"sequencer_text_current_block_color"
                                                                      "high_background"))
                                                  :cut-text-to-fit #t
+                                                 :light-up-when-hovered #t
                                                  )))
                            (text-area :add-mouse-cycle! mouse-callback)
                            text-area))))
@@ -487,10 +489,16 @@
                                           "high_background"))
                       :cut-text-to-fit #t
                       :text-is-base64 #t
+                      :light-up-when-hovered #t
                       ))
 
+  (area :add-hover-callback! (lambda (is-hovering)
+                               (if (and is-hovering
+                                        (entry :seqblockid))
+                                   (<ra> :set-curr-seqblock-under-mouse (entry :seqblockid)))))
+  
   (area :add-method! :is-current? is-current?)
-                                    
+
   (area :add-mouse-cycle! (lambda (button x* y*)
                             ;;(if (entry :seqblockid)
                             ;;    (<ra> :set-curr-seqblock (entry :seqblockid)))
@@ -551,7 +559,7 @@
   
   (define (ensure-entry-area-visible-in-playlist playlist-area curr-entry-area)
     (playlist-area :ensure-area-is-visible curr-entry-area))
-
+  
   (define area (<new> :use-first-subarea-state-as-state-area gui x1 y1 x2 y2))
 
   (area :add-sub-area-plain! (recreate x1 y1 x2 y2 state))

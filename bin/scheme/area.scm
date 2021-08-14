@@ -409,18 +409,31 @@
                  raw-mouse-cycles))
      
      (define is-hovering #f)
-
+     (define has-detected-hovering #f)
+  
+     (define-optional-func hovering-callback (callback))
+     
      (define (detect-hovering!)
-       (add-raw-mouse-cycle!
-        :enter-func (lambda (button x y)
-                      (set! is-hovering #t)
-                      (update-me!)
-                      #t)
-        :leave-func (lambda (button x y)
-                      (set! is-hovering #f)
-                      (update-me!)
-                      #f)))
-
+       (when (not has-detected-hovering)
+         (set! has-detected-hovering #t)
+         (add-raw-mouse-cycle!
+          :enter-func (lambda (button x y)
+                        (set! is-hovering #t)
+                        (if hovering-callback
+                            (hovering-callback #t))
+                        (update-me!)
+                        #t)
+          :leave-func (lambda (button x y)
+                        (set! is-hovering #f)
+                        (if hovering-callback
+                            (hovering-callback #f))
+                        (update-me!)
+                        #f))))
+     
+     (define (add-hover-callback! callback)
+       (set! hovering-callback callback)
+       (detect-hovering!))
+     
      ;; Mouse cycles (only when button is pressed)
      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -756,6 +769,7 @@
      :handle-raw-mouse-cycles x (apply handle-raw-mouse-cycles x)
      :detect-hovering! x (apply detect-hovering! x)
      :is-hovering () is-hovering
+     :add-hover-callback! x (apply add-hover-callback! x)
      :add-mouse-pointerhandler x (apply add-mouse-pointerhandler x)
      :overlaps? x (apply overlaps? x)
      ;;:paint x (apply paint x)
@@ -988,10 +1002,12 @@
   
   (define (paint-text-area gui x1 y1 x2 y2)
     (let ((background-color (get-background-color)))
-      (when background-color
-        (if (and light-up-when-hovered
-                 is-hovering)
-            (set! background-color (<gui> :make-color-lighter background-color 1.2)))
+      (when (or background-color
+                (and light-up-when-hovered
+                     is-hovering))
+        (when (and light-up-when-hovered
+                   is-hovering)
+          (set! background-color (<gui> :make-color-lighter (if background-color background-color "#88888888") 1.2)))
         ;;(<gui> :filled-box gui background-color x1 y1 x2 y2 border-rounding border-rounding *gradient-vertical-dark-sides* 0.1)))
         (<gui> :filled-box gui background-color x1 y1 x2 y2 border-rounding border-rounding (if align-right *gradient-diagonal-light-upper-right* *gradient-diagonal-light-upper-left*) 0.1)))
     
@@ -2110,6 +2126,8 @@
   
   (assert (or file-info blocknum))
 
+  (detect-hovering!)
+
   (define (is-current?)
     (if (procedure? is-current)
         (is-current)
@@ -2225,6 +2243,9 @@
                                        background-color
                                        "low_background"))
 
+    (if is-hovering
+        (set! entry-background-color (<gui> :make-color-lighter entry-background-color 1.2)))
+    
     ;;(set! entry-background-color (<gui> :set-alpha-for-color entry-background-color 0.05)))
 
     ;;(if is-current
