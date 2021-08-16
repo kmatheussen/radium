@@ -384,29 +384,37 @@
 
      ;; This function handles all raw mouse cycles, and it is only called from mouse-callback-internal in the gui that is placed directly on the underlying qt widget,
      ;; or from the parent widget's handle-raw-mouse-cycles function.
-     (define (handle-raw-mouse-cycles button state x y)
+     (define (handle-raw-mouse-cycles check-leave button state x y)
        (for-each (lambda (sub-area)
-                   (sub-area :handle-raw-mouse-cycles button state x y))
+                   (sub-area :handle-raw-mouse-cycles check-leave button state x y))
                  sub-areas) ;; (reverse sub-areas))
-       (define is-inside (and (not (eq? state *is-leaving*))
-                              (inside? x y)))
-       (for-each (lambda (raw-mouse-cycle)
-                   (define was-active (raw-mouse-cycle :is-active))
-                   (define is-active was-active)
-                   ;;(if (or is-inside was-active is-active)
-                   ;;    (c-display "inside?:" is-inside ". is-active:" is-active ". was-active: " was-active ". class-name:" class-name ". state:" state))
-                   (if is-active
-                       (if is-inside
-                           (set! is-active (raw-mouse-cycle :move-func button x y))
-                           (begin
-                             ;;(c-display "     RAW Leave func for called for" class-name ".")
-                             (raw-mouse-cycle :leave-func button x y)
-                             (set! is-active #f)))
-                       (if is-inside
-                           (set! is-active (raw-mouse-cycle :enter-func button x y))))
-                   (if (not (eq? was-active is-active))
-                       (set! (raw-mouse-cycle :is-active) is-active)))
-                 raw-mouse-cycles))
+       
+       (define (is-inside?)
+         (and (not (eq? state *is-leaving*))
+              (inside? x y)))
+
+       (if check-leave
+           (for-each (lambda (raw-mouse-cycle)
+                       (when (and (raw-mouse-cycle :is-active)
+                                  (not (is-inside?)))
+                         ;;(c-display "     RAW Leave func for called for" class-name "." x y)
+                         (raw-mouse-cycle :leave-func button x y)
+                         (set! (raw-mouse-cycle :is-active) #f)))
+                     raw-mouse-cycles)
+           (for-each (lambda (raw-mouse-cycle)
+                       (define was-active (raw-mouse-cycle :is-active))
+                       (define is-active was-active)
+                       ;;(if (or is-inside was-active is-active)
+                       ;;    (c-display "inside?:" is-inside ". is-active:" is-active ". was-active: " was-active ". class-name:" class-name ". state:" state))
+                       (when (is-inside?)
+                         (if is-active
+                             (set! is-active (raw-mouse-cycle :move-func button x y))
+                             (begin
+                               ;;(c-display "    RAW enter func for called for" class-name "." x y)
+                               (set! is-active (raw-mouse-cycle :enter-func button x y)))))
+                       (if (not (eq? was-active is-active))
+                           (set! (raw-mouse-cycle :is-active) is-active)))
+                     raw-mouse-cycles)))
      
      (define is-hovering #f)
      (define has-detected-hovering #f)
@@ -579,7 +587,9 @@
        ;;(c-display "   mouse-callback-internal" "has:" (if curr-mouse-cycle #t #f) ". button/state:" button state
        ;;           (if (= state *is-releasing*) "releasing" (if (= state *is-leaving*) "leaving" (if (= state *is-pressing*) "pressing" "unknown"))))
        
-       (handle-raw-mouse-cycles button state x y)
+       (handle-raw-mouse-cycles #t button state x y)
+       (handle-raw-mouse-cycles #f button state x y)
+       
        
        ;; make sure release is always called when releasing, no matter other states.
        (when (or (= state *is-releasing*)

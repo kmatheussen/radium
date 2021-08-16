@@ -3429,6 +3429,10 @@ void setCurrSeqblockUnderMouse(int64_t seqblockid){
   //g_curr_seqblock_id_under_mouse = seqblock;    
   g_curr_seqblock_id_under_mouse = seqblockid;
 
+  setCurrEditorBlockUnderMouseForSequencer(-1);
+  setCurrSampleUnderMouseForSequencer(createIllegalFilepath());
+
+
   S7EXTRA_GET_FUNC(func, "FROM_C-call-me-after-curr-seqblock-under-mouse-has-been-called");
   S7CALL(void_int, func, seqblockid);
   
@@ -3524,6 +3528,32 @@ void cancelCurrSeqblockUnderMouse(void){
   //g_curr_seqblock_under_mouse = NULL;
   g_curr_seqblock_id_under_mouse = -1;
 
+}
+
+
+static int g_curr_editor_block_under_mouse_for_sequencer = 0;
+
+void setCurrEditorBlockUnderMouseForSequencer(int blocknum){
+  if (blocknum < -1 || blocknum >= getNumBlocks()){
+    handleError("setCurrEditorBlockUnderMouseForSequencer: There is no editor block #%d", blocknum);
+    return;
+  }
+  g_curr_editor_block_under_mouse_for_sequencer = blocknum;
+}
+
+int getCurrEditorBlockUnderMouseForSequencer(void){
+  return R_BOUNDARIES(-1, g_curr_editor_block_under_mouse_for_sequencer, getNumBlocks());
+}
+
+
+static filepath_t g_curr_sample_under_mouse_for_sequencer = g_illegal_filepath;
+
+void setCurrSampleUnderMouseForSequencer(filepath_t filepath){
+  g_curr_sample_under_mouse_for_sequencer = filepath;
+}
+
+filepath_t getCurrSampleUnderMouseForSequencer(void){
+  return g_curr_sample_under_mouse_for_sequencer;
 }
 
 dynvec_t getBlockUsageInSequencer(void){
