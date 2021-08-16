@@ -316,21 +316,27 @@
 
 (define (FROM-C-generate-new-color-for-all-selected-seqblocks mix-background)
   (define color (<ra> :generate-new-block-color mix-background))
-  
-  (define (generate seqblockid seqtracknum seqblocknum)
-    (if (<ra> :seqblock-holds-sample seqblocknum seqtracknum)
-        (<ra> :set-audiofile-color color (<ra> :get-seqblock-sample seqblocknum seqtracknum))
-        (<ra> :set-block-color color (<ra> :get-seqblock-blocknum seqblocknum seqtracknum))))
-  
-  (undo-block (lambda ()
-                (if (> (<ra> :get-num-selected-seqblocks) 0)
-                    (for-each-selected-seqblock (lambda (seqtracknum seqblocknum)
-                                                  (generate (<ra> :get-seqblock-id seqblocknum seqtracknum) seqtracknum seqblocknum)))
-                    (let ((seqblockid (<ra> :get-curr-seqblock-id)))
-                      (if (>= seqblockid 0)
-                          (generate seqblockid
-                                    (<ra> :get-seqblock-seqtrack-num seqblockid)
-                                    (<ra> :get-seqblock-seqblock-num seqblockid))))))))
+
+  (cond ((>= (<ra> :get-curr-editor-block-under-mouse-for-sequencer) 0)
+         (<ra> :set-block-color color (<ra> :get-curr-editor-block-under-mouse-for-sequencer)))
+        ((<ra> :is-legal-filepath (<ra> :get-curr-sample-under-mouse-for-sequencer))
+         ;;(c-display "curr:" (<ra> :get-curr-sample-under-mouse-for-sequencer))
+         (<ra> :set-audiofile-color color (<ra> :get-curr-sample-under-mouse-for-sequencer)))
+        (else
+         (define (generate seqblockid seqtracknum seqblocknum)
+           (if (<ra> :seqblock-holds-sample seqblocknum seqtracknum)
+               (<ra> :set-audiofile-color color (<ra> :get-seqblock-sample seqblocknum seqtracknum))
+               (<ra> :set-block-color color (<ra> :get-seqblock-blocknum seqblocknum seqtracknum))))
+         
+         (undo-block (lambda ()
+                       (if (> (<ra> :get-num-selected-seqblocks) 0)
+                           (for-each-selected-seqblock (lambda (seqtracknum seqblocknum)
+                                                         (generate (<ra> :get-seqblock-id seqblocknum seqtracknum) seqtracknum seqblocknum)))
+                           (let ((seqblockid (<ra> :get-curr-seqblock-id)))
+                             (if (>= seqblockid 0)
+                                 (generate seqblockid
+                                           (<ra> :get-seqblock-seqtrack-num seqblockid)
+                                           (<ra> :get-seqblock-seqblock-num seqblockid))))))))))
 
 (define (insert-pause-in-seqtrack! seqtracknum pos duration)
   (define seqblocks (to-list (<ra> :get-seqblocks-state seqtracknum)))

@@ -80,46 +80,55 @@
         ;;     (string=? audiofile curr-audiofile))
         (and *curr-audiofile-num*
              (= i *curr-audiofile-num*)))
-      
-      (if is-draggable
-          (<new> :seqblock-table-entry-area gui x1 0 x2 entry-height
-                 :is-current is-current?
-                 :entry-num i
-                 :file-info file-info
-                 :allow-dragging #t
-                 :background-color color
-                 :callback mouse-callback
-                 )
-          (let ((text-area (<new> :text-area gui x1 0 x2 entry-height
-                                  (<ra> :append-base64-strings
-                                        (<ra> :to-base64 (<-> (if (< i 10) " " "") i ": "))
-                                        (<ra> :get-base64-from-filepath (file-info :filename)))
-                                  :background-color (lambda ()
-                                                      (let ((base (<gui> :set-alpha-for-color color 0.5)))
-                                                        (if (and #f (is-current?))
-                                                            (<gui> :mix-colors "high_background" base 0.95)
-                                                            base)))
-                                  :text-color (lambda ()
-                                                (if (is-current?)
-                                                    *text-color*
-                                                    "black"))
-                                  :align-left #t
-                                  :paint-border #t
-                                  :border-rounding 0
-                                  :border-width (lambda ()
+
+      (define entry
+        (if is-draggable
+            (<new> :seqblock-table-entry-area gui x1 0 x2 entry-height
+                   :is-current is-current?
+                   :entry-num i
+                   :file-info file-info
+                   :allow-dragging #t
+                   :background-color color
+                   :callback mouse-callback
+                   )
+            (let ((text-area (<new> :text-area gui x1 0 x2 entry-height
+                                    (<ra> :append-base64-strings
+                                          (<ra> :to-base64 (<-> (if (< i 10) " " "") i ": "))
+                                          (<ra> :get-base64-from-filepath (file-info :filename)))
+                                    :background-color (lambda ()
+                                                        (let ((base (<gui> :set-alpha-for-color color 0.5)))
+                                                          (if (and #f (is-current?))
+                                                              (<gui> :mix-colors "high_background" base 0.95)
+                                                              base)))
+                                    :text-color (lambda ()
                                                   (if (is-current?)
-                                                      2.9
-                                                      0.5))
-                                  :border-color (lambda ()
-                                                  (if (is-current?)
-                                                      "sequencer_text_current_block_color"
-                                                      "high_background"))
-                                  :cut-text-to-fit #t
-                                  :text-is-base64 #t
-                                  :light-up-when-hovered #t
-                                  )))
-            (text-area :add-mouse-cycle! mouse-callback)
-            text-area)))
+                                                      *text-color*
+                                                      "black"))
+                                    :align-left #t
+                                    :paint-border #t
+                                    :border-rounding 0
+                                    :border-width (lambda ()
+                                                    (if (is-current?)
+                                                        2.9
+                                                        0.5))
+                                    :border-color (lambda ()
+                                                    (if (is-current?)
+                                                        "sequencer_text_current_block_color"
+                                                        "high_background"))
+                                    :cut-text-to-fit #t
+                                    :text-is-base64 #t
+                                    :light-up-when-hovered #t
+                                    )))
+              (text-area :add-mouse-cycle! mouse-callback)
+              text-area)))
+
+      (entry :add-hover-callback! (lambda (is-above)
+                                    (c-display is-above audiofile)
+                                    (<ra> :set-curr-sample-under-mouse-for-sequencer (if is-above
+                                                                                         audiofile
+                                                                                         (<ra> :create-illegal-filepath)))))
+
+      entry)
     
     (define area
       (<new> :vertical-list-area2 gui x1 y1 x2 y2
@@ -249,6 +258,11 @@
                            (text-area :add-mouse-cycle! mouse-callback)
                            text-area))))
                  
+                 (entry :add-hover-callback! (lambda (is-above)
+                                               ;;(c-display is-above blocknum)
+                                               (<ra> :set-curr-editor-block-under-mouse-for-sequencer (if is-above
+                                                                                                          blocknum
+                                                                                                          -1))))
                  (entry :add-method! :is-current? (lambda ()
                                                     is-current))
                  entry)

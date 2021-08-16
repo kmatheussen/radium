@@ -165,6 +165,7 @@ extern struct SeqBlock *getSeqblockFromIdA(int64_t seqblock_id, struct SeqTrack 
 extern struct SeqBlock *getGfxSeqblockFromIdA(int64_t seqblock_id, struct SeqTrack **seqtrack);
 extern struct SeqBlock *getSeqblockFromId(int64_t seqblock_id);
 extern struct SeqBlock *getGfxSeqblockFromId(int64_t seqblock_id);
+extern struct SeqBlock *getEditorSeqblockFromId(int64_t seqblock_id);
 extern struct SeqBlock *getAudioSeqblockFromIdA(int64_t seqblockid, struct SeqTrack **seqtrack);
 extern struct SeqBlock *getAudioGfxSeqblockFromIdA(int64_t seqblockid, struct SeqTrack **seqtrack);
 extern struct SeqBlock *getAudioSeqblockFromId(int64_t seqblock_id);

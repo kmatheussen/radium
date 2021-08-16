@@ -854,6 +854,21 @@ struct SeqBlock *getSeqblockFromId(int64_t seqblock_id){
   struct SeqTrack *seqtrack;
   return getSeqblockFromIdA(seqblock_id, &seqtrack);
 }
+                                      
+struct SeqBlock *getEditorSeqblockFromId(int64_t seqblock_id){
+  struct SeqTrack *seqtrack;
+  struct SeqBlock *seqblock = getSeqblockFromIdA(seqblock_id, &seqtrack);
+  
+  if (seqblock==NULL)
+    return NULL;
+  
+  if (seqblock->block==NULL){
+    handleError("Seqblock with id #%d is not an editor seqblock", (int)seqblock_id);
+    return NULL;
+  }
+
+  return seqblock;
+}
 
 struct SeqBlock *getGfxSeqblockFromId(int64_t seqblock_id){
   struct SeqTrack *seqtrack;
