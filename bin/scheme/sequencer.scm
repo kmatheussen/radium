@@ -919,14 +919,39 @@
    "---------------"
    (get-delete-all-pauses-menu-entry seqtracknum)
 
-   "---------------"
+   "---------------Playlist"
 
+   (get-blocklist/playlist-common-entries)
+    
    (list "Hide"
          (lambda ()
            (<ra> :show-hide-playlist -1)
            ))))
 
+(define (show-playlist-popup-menu-for-seqblock seqblockid X Y)
+  (define seqtracknum (<ra> :get-seqblock-seqtrack-num seqblockid))
+  (define seqblocknum (<ra> :get-seqblock-seqblock-num seqblockid))
+  (define seqblock-info (make-seqblock-info3 seqblockid))
+  
+  (set-current-seqblock! seqtracknum seqblockid)
 
+  (popup-menu
+   (get-seqblock-popup-menu-entries (list seqblock-info)
+                                               seqblocknum
+                                               seqtracknum
+                                               seqblockid
+                                               X
+                                               Y)
+   "---------------Playlist"
+
+   (get-blocklist/playlist-common-entries)
+   
+   (list "Hide"
+         (lambda ()
+           (<ra> :show-hide-playlist -1)
+           ))))
+   
+  
 (define *open-record-config-windows* (make-hash-table))
 (define *curr-record-config-window* #f) ;; only show one at a time.
 

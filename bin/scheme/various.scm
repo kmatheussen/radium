@@ -716,26 +716,23 @@
                    (iota (<ra> :get-num-seqtracks)))))
   
 (define (get-blocklist/playlist-common-entries)
-  (list "Set current seqtrack"
-        show-set-current-seqtrack-menu))
+  (list
+
+   "Show blocklist"
+   ra:show-blocklist-gui
+
+   "Set current seqtrack"
+   show-set-current-seqtrack-menu))
              
 
 (define (get-blocklist-popup-menu-entries)
   (define blocknum (<ra> :current-block))
 
   (define (get-block-entries)
-    (list 
-     "Insert new block"
-     ra:insert-block
+    (list
      
-     "Append new block"
-     ra:append-block
+     (<-> "-------\"" (<ra> :get-block-name blocknum) "\"")
      
-     "Delete block"
-     ra:delete-block
-     
-     "---------------"
-
      (list "Rename"
            (lambda ()
              (define old-name (<ra> :get-block-name blocknum))
@@ -759,6 +756,17 @@
              (let ((color (<ra> :generate-new-block-color 1.0)))
                (<ra> :set-block-color color blocknum))))
      
+     "Delete"
+     ra:delete-block
+     
+     "-------Editor blocks"
+
+     "Insert new block"
+     ra:insert-block
+     
+     "Append new block"
+     ra:append-block
+     
      "---------------"
      
      "Load Block (BETA!)"
@@ -769,11 +777,6 @@
 
      "---------------"
      
-     "Show block list"
-     ra:show-blocklist-gui
-     
-     "---------------"
-
      ))
   (get-block-entries))
 
@@ -822,11 +825,10 @@
        (get-blocklist-popup-menu-entries)
        (get-audiofile-entries #f))
 
-   "---------------"
+   "---------------Playlist"
+
    (get-blocklist/playlist-common-entries)
 
-   "---------------"
-   
    "Hide"
    (lambda ()
      (<ra> :show-hide-playlist -1)

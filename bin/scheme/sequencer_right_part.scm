@@ -555,8 +555,10 @@
                                            #t)
                                           (else
                                            (assert #f)))
-                                (if (= button *right-button*)                                    
-                                    (FROM_C-show-playlist-popup-menu)))
+                                (when (= button *right-button*)
+                                  (if (eq? (entry :type) 'last)
+                                      (FROM_C-show-playlist-popup-menu)
+                                      (show-playlist-popup-menu-for-seqblock (entry :seqblockid) x* y*))))
                             #t))
   area
   )
