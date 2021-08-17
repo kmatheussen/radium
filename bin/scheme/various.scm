@@ -737,7 +737,7 @@
   (define (get-block-entries)
     (list
      
-     (<-> "-------\"" (<ra> :get-block-name blocknum) "\"")
+     (<-> "-------" blocknum ": \"" (<ra> :get-block-name blocknum) "\"")
      
      (list "Rename"
            (lambda ()
