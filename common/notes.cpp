@@ -1346,7 +1346,7 @@ void EditNoteCurrPos(struct Tracker_Windows *window){
 
 void CutNoteAt(const struct Blocks *block, const struct Tracks *track,struct Notes *note, const Place *place){
 
-  R_ASSERT(PLAYER_current_thread_has_lock() || is_playing()==false);
+  //R_ASSERT(PLAYER_current_thread_has_lock() || is_playing()==false);
 
   Place p = ratio2place(note->end);
   
@@ -1398,17 +1398,22 @@ void StopVelocityCurrPos(struct Tracker_Windows *window,int noend){
         ADD_UNDO(Notes_CurrPos(window));
 
         {
-          SCOPED_PLAYER_LOCK_IF_PLAYING();
           
           if(PlaceGreaterOrEqual(&note->l.p,&realline->l.p)){
+            
+            SCOPED_PLAYER_LOCK_IF_PLAYING();
+            
             RemoveNote(wblock->block,wtrack->track,note);
             SetNotePolyphonyAttributes(wtrack->track);
             ValidateCursorPos(window);
+            
           }else{
+            
             CutNoteAt(wblock->block, wtrack->track, note, &realline->l.p);
+            
           }
 
-          note->noend=noend;
+          note->noend = noend;
           
         }
         
