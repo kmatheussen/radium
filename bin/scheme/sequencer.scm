@@ -915,10 +915,6 @@
 (define (FROM_C-show-playlist-popup-menu)
   (define seqtracknum (<ra> :get-curr-seqtrack))
   (popup-menu
-   (get-blocklist/playlist-common-entries)
-   "---------------"
-   (get-delete-all-pauses-menu-entry seqtracknum)
-
    "---------------Playlist"
 
    (get-blocklist/playlist-common-entries)
@@ -928,30 +924,6 @@
            (<ra> :show-hide-playlist -1)
            ))))
 
-(define (show-playlist-popup-menu-for-seqblock seqblockid X Y)
-  (define seqtracknum (<ra> :get-seqblock-seqtrack-num seqblockid))
-  (define seqblocknum (<ra> :get-seqblock-seqblock-num seqblockid))
-  (define seqblock-info (make-seqblock-info3 seqblockid))
-  
-  (set-current-seqblock! seqtracknum seqblockid)
-
-  (popup-menu
-   (get-seqblock-popup-menu-entries (list seqblock-info)
-                                               seqblocknum
-                                               seqtracknum
-                                               seqblockid
-                                               X
-                                               Y)
-   "---------------Playlist"
-
-   (get-blocklist/playlist-common-entries)
-   
-   (list "Hide"
-         (lambda ()
-           (<ra> :show-hide-playlist -1)
-           ))))
-   
-  
 (define *open-record-config-windows* (make-hash-table))
 (define *curr-record-config-window* #f) ;; only show one at a time.
 
@@ -2426,118 +2398,5 @@
   )
    
 
-
-
-(define (get-seqblock-popup-menu-entries seqblock-infos seqblocknum seqtracknum seqblockid X Y)
-  (define seqblock-info *current-seqblock-info*)
-  (define blocknum (and seqblock-info
-                        (<ra> :seqblock-holds-block seqblocknum seqtracknum)
-                        (<ra> :get-seqblock-blocknum seqblocknum seqtracknum)))
-  
-  (define is-selected (and seqblocknum
-                           (<ra> :is-seqblock-selected seqblocknum seqtracknum)))
-  (define num-selected (<ra> :get-num-selected-seqblocks))
-  (define num-selected-with-current (+ num-selected
-                                       (if (or (not seqblocknum)
-                                               is-selected)
-                                           0
-                                           1)))
-  (list
-
-   (if blocknum
-       (get-editor-seqblock-popup-menu-entries seqblock-infos seqblocknum seqtracknum seqblockid X)
-       (get-audio-seqblock-popup-menu-entries seqblocknum seqtracknum seqblockid X))
-
-   (if (> num-selected-with-current 1)       
-       "-----------Seqblocks (selection)"
-       (get-seqblock-separator-text "Seqblock" seqblockid))
-   
-   (list "Copy"
-         :enabled (> num-selected-with-current 0)
-         :shortcut ra:copy-selected-seqblocks
-         (lambda ()
-           (if (and seqblocknum
-                    (not (<ra> :is-seqblock-selected seqblocknum seqtracknum)))
-               (<ra> :select-seqblock #t seqblocknum seqtracknum))
-           (<ra> :copy-selected-seqblocks)))
-   ;;(copy-blocks-to-clipboard (list (make-seqblock-info2 seqtracknum seqblocknum))))))
-   
-   (list "Cut"
-         :enabled (> num-selected-with-current 0)
-         :shortcut ra:cut-selected-seqblocks
-         (lambda ()
-           (if (and seqblocknum
-                    (not (<ra> :is-seqblock-selected seqblocknum seqtracknum)))
-               (<ra> :select-seqblock #t seqblocknum seqtracknum))
-           (<ra> :cut-selected-seqblocks)))
-   
-   (list "Delete all selected"
-         :enabled (> num-selected-with-current 1)
-         :shortcut ra:delete-selected-seqblocks
-         (lambda ()
-           (if (and seqblocknum
-                    (not (<ra> :is-seqblock-selected seqblocknum seqtracknum)))
-               (<ra> :select-seqblock #t seqblocknum seqtracknum))
-           (<ra> :delete-selected-seqblocks)))
-   
-   (list "Paste"
-         :enabled (not (empty? *seqblock-clipboard*))
-         :shortcut ra:paste-seqblocks
-         (lambda ()
-           (let ((pos (<ra> :get-seq-gridded-time (round (get-sequencer-time X)))))
-             (<ra> :paste-seqblocks seqtracknum pos))))
-
-   (list "Duplicate seqblock and block"
-         :enabled seqblocknum
-         :shortcut duplicate-seqblock-and-block
-         (lambda ()
-           (duplicate-seqblock-and-block seqblockid)))
-                                        ;           (if (and seqblocknum
-;                    (not (<ra> :is-seqblock-selected seqblocknum seqtracknum)))
-;               (<ra> :select-seqblock #t seqblocknum seqtracknum))
-;           (<ra> :copy-selected-seqblocks)))
-
-   "------------------"
-   
-   (list
-    "Rename"
-    :enabled seqblock-info
-    :shortcut show-set-seqtrack/seqblock-name-requester
-    (lambda ()
-      (show-set-seqtrack/seqblock-name-requester seqtracknum seqblockid)))
-   
-   (list "Configure color"
-         :enabled seqblock-info
-         :shortcut configure-seqblock-color
-         (lambda ()
-           (configure-seqblock-color seqblockid)))
-   
-   (list "Generate new color"
-         :enabled seqblock-info
-         :shortcut ra:generate-new-color-for-all-selected-seqblocks
-         (lambda ()
-           (let ((color (<ra> :generate-new-block-color 1.0)))
-             (if blocknum
-                 (<ra> :set-block-color color blocknum)
-                 (let ((filename (<ra> :get-seqblock-sample seqblocknum seqtracknum)))
-                   (<ra> :set-audiofile-color color filename))))))
-   
-   (list "Delete current"
-         :shortcut ra:delete-seqblock ;;*shift-right-mouse*
-         :enabled seqblock-info
-         (lambda ()
-           (set! *current-seqblock-info* #f)
-           (<ra> :delete-seqblock seqblockid)
-           (set! *current-seqblock-info* #f)))
-
-   "---------------------"
-   
-   (list "Select previous seqblock"
-         ra:select-prev-seqblock)
-   (list "Select next seqblock"
-         ra:select-next-seqblock)
-
-   (get-main-sequencer-popup-menu-entries seqtracknum X Y)
-   ))
 
 
