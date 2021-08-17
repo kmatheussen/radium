@@ -227,6 +227,8 @@ static const ColorConfig g_colorconfig[] = {
   {MIXERSTRIPS_CURRENT_INSTRUMENT_BORDER_COLOR_NUM, "mixerstrips_selected_object_color_num", "Mixer Strips: Current instrument border", false},
 
   
+  {PLAYLIST_CURRENT_ENTRIES_BORDER_COLOR_NUM, "playlist_current_entries_border", "Playlist/blocklist current entry border", false},
+  
   {SEQUENCER_EDITOR_SEQTRACKS_BACKGROUND_COLOR_NUM, "sequencer_editor_seqtrack", "Editor seqtrack header", false},
   
   {INSTRUMENT_BUS_DEFAULT_COLOR_NUM, "default_bus_color", "Default Bus", false},
@@ -406,7 +408,8 @@ static ReplacementColor g_replacement_color[] = {
 
   {NOTE_EVENT_INDICATOR_COLOR_NUM, QColor("#ffcadce1")},
   {NOTE_EVENT_INDICATOR_BORDER_COLOR_NUM, QColor("#ff0b186c")},
-  
+
+  {PLAYLIST_CURRENT_ENTRIES_BORDER_COLOR_NUM, QColor("white")},
   {SEQUENCER_EDITOR_SEQTRACKS_BACKGROUND_COLOR_NUM, QColor("#ff295924")},
 
   {INSTRUMENT_BUS_DEFAULT_COLOR_NUM, QColor("#1b5f72")},

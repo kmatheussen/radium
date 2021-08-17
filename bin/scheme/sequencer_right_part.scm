@@ -259,7 +259,7 @@
                                                                      0.5))
                                                  :border-color (lambda ()
                                                                  (if is-current-blocklist-pos
-                                                                     "white" ;;"sequencer_curr_seqblock_border_color" ;;"sequencer_text_current_block_color"
+                                                                     "playlist_current_entries_border"
                                                                      "high_background"))
                                                  :cut-text-to-fit #t
                                                  :light-up-when-hovered #t
@@ -514,7 +514,7 @@
                                              0.5)))
                       :border-color (lambda ()
                                       (cond ((is-current-playlist-pos?)
-                                             "white")
+                                             "playlist_current_entries_border")
                                             ((is-current-seqblock?)
                                              "sequencer_curr_seqblock_border_color" ;; "sequencer_cursor_color" "sequencer_text_current_block_color"
                                              )
