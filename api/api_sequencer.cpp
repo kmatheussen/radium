@@ -2699,7 +2699,22 @@ void insertSilenceToSeqtrack(int seqtracknum, int64_t pos, int64_t duration){
   SEQTRACK_insert_silence(seqtrack, pos, duration);
 }
 
+
+static int g_curr_blocklist_pos = 0;
 static int g_curr_playlist_pos = 0;
+
+int getCurrBlocklistPos(void){
+  return R_BOUNDARIES(0, g_curr_blocklist_pos, getNumBlocks()-1);
+}
+
+void setCurrBlocklistPos(int pos){
+  if (pos < 0 || pos >= getNumBlocks()){
+    handleError("setCurrBlocklistPos: There is no editor block #%d", pos);
+    return;
+  }
+
+  g_curr_blocklist_pos = pos;
+}
 
 #if 0
 static int get_num_playlist_entries(const struct SeqTrack *seqtrack){
@@ -2740,11 +2755,19 @@ int getCurrPlaylistPos(void){
       return getPlaylistPosForSeqblock(g_curr_seqblock_id);
   }
   
-  if (is_playing() && pc->playtype==PLAYSONG) {
+  if (false) { // (is_playing() && pc->playtype==PLAYSONG) {
+
     
     struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
     
-    double current_seq_time = ATOMIC_DOUBLE_GET_RELAXED(seqtrack->start_time_nonrealtime);
+    double current_seq_time;
+
+    if (is_playing() && pc->playtype==PLAYSONG)
+      current_seq_time = ATOMIC_DOUBLE_GET_RELAXED(seqtrack->start_time_nonrealtime);
+    else
+      current_seq_time = ATOMIC_DOUBLE_GET(pc->song_abstime);
+    
+    printf("Current time: %f  (%f)\n", current_seq_time / (double)pc->pfreq, current_seq_time);
     
     int64_t last_end_seq_time = 0;
 
@@ -3281,6 +3304,8 @@ static void set_curr_seqblock(int64_t seqblockid, bool update_playlist){
   if(update_playlist){
     int pos = getPlaylistPosForSeqblock(seqblock->id);
     set_curr_playlist_pos(pos, false, false);
+  } else {
+    S7CALL2(void_void, "FROM_C-update-playlist-area"); // Update orange border around current seqblock.
   }
   
   if (!is_playing_song())
@@ -3300,7 +3325,7 @@ static void set_curr_seqblock(int64_t seqblockid, bool update_playlist){
 }
 
 void setCurrSeqblock(int64_t seqblockid){
-  set_curr_seqblock(seqblockid, true);
+  set_curr_seqblock(seqblockid, false);//true);
 }
 
 bool seqblockIsAlive(int64_t seqblockid){

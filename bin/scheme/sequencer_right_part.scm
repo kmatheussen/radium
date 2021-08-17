@@ -202,23 +202,32 @@
                  (define color (<ra> :get-block-color blocknum))
                   ;;;(set! color (<gui> :make-color-lighter color 1.5))
                  (set! color (<gui> :set-alpha-for-color color 0.5))
-                 (define is-current (= (<ra> :current-block) blocknum))
+                 
+                 (define is-current-block (= (<ra> :current-block) blocknum))
+                 
+                 (define is-current-blocklist-pos (= (<ra> :get-curr-blocklist-pos) blocknum))
+                 
                  (define (mouse-callback button x y . rest)
+                   (<ra> :set-curr-blocklist-pos blocknum)
                    (cond ((and (= button *right-button*)
                                (<ra> :shift-pressed))
                           (<ra> :delete-block blocknum))
                          ((and (= button *left-button*)
                                (<gui> :is-double-clicking gui))
-                          (<ra> :create-seqblock -1 blocknum))
+                          (<ra> :playlist-insert)
+                          ;;(<ra> :create-seqblock -1 blocknum)
+                          )
                          ((not (<ra> :is-playing-song))
-                          (<ra> :select-block blocknum -1 #f)))
+                          ;;(<ra> :playlist-insert)
+                          (<ra> :select-block blocknum -1 #f)
+                          ))
                    (update)
                    #f)
                  
                  (define entry
                    (if is-draggable
                        (<new> :seqblock-table-entry-area gui 10 0 100 (round (* 1.2 (get-fontheight)))
-                              :is-current is-current
+                              :is-current is-current-block
                               :entry-num blocknum
                               :blocknum blocknum
                               :allow-dragging #t
@@ -232,11 +241,11 @@
                                                  :background-color (if #t
                                                                        color
                                                                        (let ((base color)) ;;(<gui> :set-alpha-for-color color 0.5)))
-                                                                         (if is-current
+                                                                         (if is-current-block
                                                                              (<gui> :mix-colors "high_background" base 0.95)
                                                                              base)))
                                                  :text-color (lambda ()
-                                                               (if is-current
+                                                               (if is-current-block
                                                                    "sequencer_text_current_block_color"
                                                                    "sequencer_text_color"))
                                                  :align-left #t
@@ -245,12 +254,12 @@
                                                  ;;:border-width 2.9
                                                  ;;:border-color "sequencer_text_current_block_color"
                                                  :border-width (lambda ()
-                                                                 (if is-current
+                                                                 (if is-current-blocklist-pos
                                                                      2.9
                                                                      0.5))
                                                  :border-color (lambda ()
-                                                                 (if is-current
-                                                                     "sequencer_text_current_block_color" ;;"sequencer_curr_seqblock_border_color" ;;"sequencer_text_current_block_color"
+                                                                 (if is-current-blocklist-pos
+                                                                     "white" ;;"sequencer_curr_seqblock_border_color" ;;"sequencer_text_current_block_color"
                                                                      "high_background"))
                                                  :cut-text-to-fit #t
                                                  :light-up-when-hovered #t
@@ -263,8 +272,8 @@
                                                (<ra> :set-curr-editor-block-under-mouse-for-sequencer (if is-above
                                                                                                           blocknum
                                                                                                           -1))))
-                 (entry :add-method! :is-current? (lambda ()
-                                                    is-current))
+                 (entry :add-method! :is-current-blocklist-pos? (lambda ()
+                                                                  is-current-blocklist-pos))
                  entry)
                
                (iota (<ra> :get-num-blocks))))
@@ -302,7 +311,7 @@
                                                      (let loop ((entry-areas entry-areas))
                                                        (when (not (null? entry-areas))
                                                          (define entry-area (car entry-areas))
-                                                         (if (entry-area :is-current?)
+                                                         (if (entry-area :is-current-blocklist-pos?)
                                                              (ensure-entry-area-visible (get-vertical-list-area) entry-area)
                                                              (loop (cdr entry-areas)))))))
 
@@ -438,24 +447,27 @@
 
 (define (get-playlist-entry-area gui entry playlist-pos)
 
-  (define (is-current-block?)
-    (if (eq? (entry :type) 'block)
-        (= (<ra> :current-block) (entry :blocknum))
-        (is-current?)))
+  ;(define (is-current-block?)
+  ;  (if (eq? (entry :type) 'block)
+  ;      (= (<ra> :current-block) (entry :blocknum))))
+  ;      (is-current?)))
   
-  (define (is-current?)
-    (if #t
-        (= (<ra> :get-curr-playlist-pos)
-           playlist-pos)
-        (if (<ra> :is-playing-song)
-            (and (>= (<ra> :get-song-pos)
-                     (entry :start-time))
-                 (or (not (entry :duration))
-                     (< (<ra> :get-song-pos)
-                        (+ (entry :start-time) (entry :duration)))))
-            (equal? (entry :seqblockid)
-                    (<ra> :get-curr-seqblock-id))))
-    )
+  (define (is-current-playlist-pos?)
+    (= (<ra> :get-curr-playlist-pos)
+       playlist-pos))
+
+  (define (is-current-seqblock?)
+    (equal? (entry :seqblockid)
+            (<ra> :get-curr-seqblock-id)))
+  
+  '(if (<ra> :is-playing-song)
+       (and (>= (<ra> :get-song-pos)
+                (entry :start-time))
+            (or (not (entry :duration))
+                (< (<ra> :get-song-pos)
+                   (+ (entry :start-time) (entry :duration)))))
+       (equal? (entry :seqblockid)
+               (<ra> :get-curr-seqblock-id)))
   
   
   ;  (equal? (entry :seqblockid)
@@ -474,14 +486,14 @@
                                               (set! color (<gui> :set-alpha-for-color color 0.5)))
                                           (cond ;((eq? (entry :type) 'pause)
                                         ; "low_background");;#f) ;;"#666666")
-                                           ((is-current?)
+                                           ((is-current-seqblock?)
                                             (if color
                                                 color ;;(<gui> :mix-colors "high_background" color 0.95)
                                                 "high_background"))
                                            (else
                                             color)))
                       :text-color (lambda ()
-                                    (cond ((is-current-block?)
+                                    (cond ((is-current-seqblock?)
                                            "sequencer_text_current_block_color")
                                           (else
                                            "sequencer_text_color")))
@@ -494,13 +506,20 @@
                       :paint-border #t
                       :border-rounding 0
                       :border-width (lambda ()
-                                      (if (is-current?)
-                                          2.9
-                                          0.5))
+                                      (cond ((is-current-playlist-pos?)
+                                             2.9)
+                                            ((is-current-seqblock?)
+                                             1.2)
+                                            (else
+                                             0.5)))
                       :border-color (lambda ()
-                                      (if (is-current?)
-                                          "sequencer_curr_seqblock_border_color" ;; "sequencer_cursor_color" "sequencer_text_current_block_color"
-                                          "high_background"))
+                                      (cond ((is-current-playlist-pos?)
+                                             "white")
+                                            ((is-current-seqblock?)
+                                             "sequencer_curr_seqblock_border_color" ;; "sequencer_cursor_color" "sequencer_text_current_block_color"
+                                             )
+                                            (else
+                                             "high_background")))
                       :cut-text-to-fit #t
                       :text-is-base64 #t
                       :light-up-when-hovered #t
@@ -511,7 +530,7 @@
                                         (entry :seqblockid))
                                    (<ra> :set-curr-seqblock-under-mouse (entry :seqblockid)))))
   
-  (area :add-method! :is-current? is-current?)
+  (area :add-method! :is-current-playlist-pos? is-current-playlist-pos?)
 
   (area :add-mouse-cycle! (lambda (button x* y*)
                             ;;(if (entry :seqblockid)
@@ -553,7 +572,7 @@
                         ;;(c-display "RECREATING. len:" (length entries))
                         (map (lambda (entry playlist-pos)
                                (define entry-area (get-playlist-entry-area gui entry playlist-pos))
-                               (if (entry-area :is-current?)
+                               (if (entry-area :is-current-playlist-pos?)
                                    (set! curr-entry-area entry-area))
                                entry-area)                             
                              entries
@@ -601,7 +620,7 @@
                                                      (let loop ((entry-areas entry-areas))
                                                        (when (not (null? entry-areas))
                                                          (define entry-area (car entry-areas))
-                                                         (if (entry-area :is-current?)
+                                                         (if (entry-area :is-current-playlist-pos?)
                                                              (ensure-entry-area-visible-in-playlist (get-vertical-list-area) entry-area)
                                                              (loop (cdr entry-areas)))))))
                                                      
@@ -660,7 +679,9 @@
   (define pos (<ra> :get-curr-playlist-pos))
   (c-display "POS:" pos)
   (define entry (get-curr-playlist-entry))
-  (if (<ra> :seqtrack-for-audiofiles -1)
+  (c-display "ENTRY:" entry)
+  (if (not (<ra> :seqtrack-for-audiofiles -1))
+      (<ra> :create-seqblock -1 (<ra> :get-curr-blocklist-pos) (entry :start-time))
       (let* ((pos (entry :start-time))
              (filename (let ((v (<ra> :get-audio-files)))
                          (if (not *curr-audiofile-num*)
@@ -681,8 +702,7 @@
                      filename
                      (entry :start-time)
                      ))))
-        )
-      (<ra> :create-seqblock -1 -1 (entry :start-time)))
+        ))
   (<ra> :set-curr-playlist-pos (+ pos 1) #f #t))
 
 

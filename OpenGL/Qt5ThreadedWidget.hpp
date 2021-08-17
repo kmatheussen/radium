@@ -184,7 +184,7 @@ namespace vlQt5
         delete wait_semaphore;
       }
 
-      void run() {
+      void run() override {
 #if 0
         int width = 0;
         int height = 0;
