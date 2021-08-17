@@ -1838,11 +1838,14 @@
               "-------Editor"
               (get-editor-editor-menu-entries)
               "-------Help"
-              (cadr (swingtext-popup-elements))
-              (cadr (centtext-popup-elements))
-              (cadr (chancetext-popup-elements))
-              (cadr (velocitytext-popup-elements))
-              (cadr (fxtext-popup-elements))
+              (list "Editor help"
+                    (lambda ()
+                      (FROM-C-show-help-window "help/index.html?page=editor")))              
+                                        ;(cadr (swingtext-popup-elements))
+              ;(cadr (centtext-popup-elements))
+              ;(cadr (chancetext-popup-elements))
+              ;(cadr (velocitytext-popup-elements))
+              ;(cadr (fxtext-popup-elements))
               ))
 
 #||        
