@@ -393,7 +393,6 @@
         ((eq? (entry :type) 'last)
          "")
         (else
-         (c-display "      ENTRY:" entry)
          (assert #f))))
 
 (define (get-playlist-entries seqtracknum)
@@ -556,9 +555,10 @@
                                           (else
                                            (assert #f)))
                                 (when (= button *right-button*)
-                                  (if (eq? (entry :type) 'last)
-                                      (FROM_C-show-playlist-popup-menu)
-                                      (show-playlist-popup-menu-for-seqblock (entry :seqblockid) x* y*))))
+                                  (if (entry :seqblockid)
+                                      (show-playlist-popup-menu-for-seqblock (entry :seqblockid) x* y*)
+                                      (FROM_C-show-playlist-popup-menu))
+                                  ))
                             #t))
   area
   )
@@ -679,9 +679,7 @@
 
 (define (FROM_C-playlist-insert!)
   (define pos (<ra> :get-curr-playlist-pos))
-  (c-display "POS:" pos)
   (define entry (get-curr-playlist-entry))
-  (c-display "ENTRY:" entry)
   (if (not (<ra> :seqtrack-for-audiofiles -1))
       (<ra> :create-seqblock -1 (<ra> :get-curr-blocklist-pos) (entry :start-time))
       (let* ((pos (entry :start-time))

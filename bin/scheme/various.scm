@@ -714,15 +714,21 @@
                            (lambda ()
                              (<ra> :set-curr-seqtrack seqtracknum))))
                    (iota (<ra> :get-num-seqtracks)))))
-  
+
+
+(<declare-variable> get-delete-all-pauses-menu-entry) ;; in sequencer.scm
+
 (define (get-blocklist/playlist-common-entries)
   (list
 
-   "Show blocklist"
-   ra:show-blocklist-gui
+   (get-delete-all-pauses-menu-entry (<ra> :get-curr-seqtrack))
 
    "Set current seqtrack"
-   show-set-current-seqtrack-menu))
+   show-set-current-seqtrack-menu
+
+   "Show blocklist"
+   ra:show-blocklist-gui))
+
              
 
 (define (get-blocklist-popup-menu-entries)
