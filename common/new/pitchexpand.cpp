@@ -17,8 +17,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-
 #include "../nsmtracker.h"
+#include "../TimeData.hpp"
 #include "../placement_proc.h"
 #include "../clipboard_range_calc_proc.h"
 #include "../list_proc.h"
@@ -31,10 +31,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "pitchexpand_proc.h"
 
+
 static int minnote;
 static int maxnote;
 
+
 #define SCALE(x,x1,x2,y1,y2) ((y1)+(((x)-(x1))*((y2)-(y1)))/((x2)-(x1)))
+
 
 static void PExpand_SetMinMax(
 			      struct Notes *note,
@@ -57,11 +60,49 @@ static void PExpand_SetMinMax(
 		  maxnote=0;
 		  firsttime=false;
 		}
+
+                const Ratio ratio1 = place2ratio(*p1);
+                const Ratio ratio2 = place2ratio(*p2);
+        
+                const r::PitchTimeData::Reader reader(note->_pitches);
+                for(const r::Pitch &pitch : reader){
+
+                  if(pitch._time >= ratio2)
+                    break;
+
+                  if (pitch._time >= ratio1) {
+                    maxnote=R_MAX(pitch._val,maxnote);
+                    minnote=R_MIN(pitch._val,minnote);
+                  }
+                  
+                }
+
+                if (note->end<ratio2) {
+                  maxnote=R_MAX(note->pitch_end,maxnote);
+                  minnote=R_MIN(note->pitch_end,minnote);
+                }
+        
 	}
 
 	PExpand_SetMinMax(NextNote(note),p1,p2,firsttime);
 }
 
+static int expandit(float note, float scalefactor){
+  
+  float midnote=(minnote+maxnote)/2.0f;
+
+  float ret = (int) (0.5f + SCALE(note, 
+                                  minnote, 
+                                  maxnote, 
+                                  midnote - ( (midnote-minnote) * scalefactor),
+                                  midnote + ( (midnote-minnote) * scalefactor)
+                                  )
+                     );
+  
+  ret = R_MAX(1,R_MIN(127,ret));
+
+  return ret;
+}
 
 static void PExpand_DoIt(
 	struct Notes *note,
@@ -73,20 +114,24 @@ static void PExpand_DoIt(
         if(minnote==maxnote) return;
 
 	if(PlaceGreaterOrEqual(&note->l.p,p1)){
-	  float midnote;
+          
 	  if(PlaceGreaterOrEqual(&note->l.p,p2)) return;
 
-	  midnote=(minnote+maxnote)/2.0f;
+          note->note = expandit(note->note, scalefactor);
 
-	  note->note=(int) (0.5f + SCALE(note->note, 
-                                         minnote, 
-                                         maxnote, 
-                                         midnote - ( (midnote-minnote) * scalefactor),
-                                         midnote + ( (midnote-minnote) * scalefactor)
-                                         )
-                            );
-	  note->note=R_MAX(1,R_MIN(127,note->note));
+          const Ratio ratio1 = place2ratio(*p1);
+          const Ratio ratio2 = place2ratio(*p2);
+          
+          r::PitchTimeData::Writer writer(note->_pitches);
+          for(r::Pitch &pitch : writer){
 
+            if(pitch._time >= ratio2)
+              break;
+
+            if (pitch._time >= ratio1)
+              pitch._val = expandit(pitch._val, scalefactor);
+          }
+          
 	}
 
 	PExpand_DoIt(NextNote(note),p1,p2,scalefactor);
@@ -106,7 +151,7 @@ static void PExpandRange(
 	const Place *p1=&wblock->range.y1;
 	const Place *p2=&wblock->range.y2;
 
-	track=ListFindElement1(&wblock->block->tracks->l,wblock->range.x1);
+	track=(struct Tracks *)ListFindElement1(&wblock->block->tracks->l,wblock->range.x1);
 
 	for(lokke=0;lokke<=wblock->range.x2-wblock->range.x1;lokke++){
 	  PExpand_SetMinMax(track->notes,p1,p2,firsttime);
@@ -114,7 +159,7 @@ static void PExpandRange(
 	  track=NextTrack(track);
 	}
 
-	track=ListFindElement1(&wblock->block->tracks->l,wblock->range.x1);
+	track=(struct Tracks *)ListFindElement1(&wblock->block->tracks->l,wblock->range.x1);
 	for(lokke=0;lokke<=wblock->range.x2-wblock->range.x1;lokke++){
 	  PExpand_DoIt(track->notes,p1,p2,scalefactor);
 	  track=NextTrack(track);
