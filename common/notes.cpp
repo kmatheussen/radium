@@ -1256,13 +1256,13 @@ static void r_add_note(struct Tracker_Windows *window, struct WBlocks *wblock, s
 }
 
 static void r_edit_pitch(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct Notes *note, int pitchnum) {
-  R_ASSERT_RETURN_IF_FALSE(pitchnum < 0);
+  R_ASSERT_RETURN_IF_FALSE(pitchnum >= 0);
     
   float notenum;
   {
     const r::PitchTimeData::Reader reader(note->_pitches);
                               
-    R_ASSERT_RETURN_IF_FALSE(pitchnum >= reader.size());
+    R_ASSERT_RETURN_IF_FALSE(pitchnum < reader.size());
 
     notenum = request_notenum(window, "Edit pitch", reader.at_ref(pitchnum)._val);
   }
@@ -1272,7 +1272,7 @@ static void r_edit_pitch(struct Tracker_Windows *window, struct WBlocks *wblock,
     
     r::PitchTimeData::Writer writer(note->_pitches);
 
-    R_ASSERT_RETURN_IF_FALSE(pitchnum >= writer.size());
+    R_ASSERT_RETURN_IF_FALSE(pitchnum < writer.size());
 
     writer.at_ref(pitchnum)._val = notenum;
   }
