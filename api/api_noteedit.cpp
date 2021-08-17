@@ -412,11 +412,7 @@ void cutNote(Place place, dyn_t dynnote, int tracknum, int blocknum, int windown
   if (PlaceLessOrEqual(&place, &note->l.p))
     return;
 
-  {
-    SCOPED_PLAYER_LOCK_IF_PLAYING();
-    CutNoteAt(wblock->block, wtrack->track, note, &place);
-  }
-  
+  CutNoteAt(wblock->block, wtrack->track, note, &place);
 }
 
 void deleteNote(dyn_t dynnote, int tracknum, int blocknum, int windownum){
