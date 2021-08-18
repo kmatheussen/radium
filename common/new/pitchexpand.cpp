@@ -77,7 +77,7 @@ static void PExpand_SetMinMax(
                   
                 }
 
-                if (note->end<ratio2) {
+                if (note->end < ratio2 && !equal_floats(note->pitch_end, 0.0)) {
                   maxnote=R_MAX(note->pitch_end,maxnote);
                   minnote=R_MIN(note->pitch_end,minnote);
                 }
