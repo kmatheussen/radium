@@ -132,6 +132,9 @@ static void PExpand_DoIt(
               pitch._val = expandit(pitch._val, scalefactor);
           }
           
+          if (note->end < ratio2 && !equal_floats(note->pitch_end, 0.0))
+            note->pitch_end = expandit(note->pitch_end, scalefactor);
+            
 	}
 
 	PExpand_DoIt(NextNote(note),p1,p2,scalefactor);
