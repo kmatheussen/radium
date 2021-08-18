@@ -856,16 +856,16 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
   }
 }
 
-static const char *create_info_string(bool has_inputs, bool has_outputs, const LADSPA_Descriptor *descriptor){
+static const char *create_info_string(int num_inputs, int num_outputs, const LADSPA_Descriptor *descriptor){
   const char *ret = talloc_format("\"%s\" is a LADSPA Plugin made by %s.\n"
                                   "Copyright: %s.\n",
                                   descriptor->Name,
                                   descriptor->Maker,descriptor->Copyright
                                   );
 
-  if (has_inputs){
+  if (num_inputs > 0){
 
-    ret = talloc_format("%s\nAudio inputs\n", ret);
+    ret = talloc_format("%s\nAudio inputs:", ret);
     
     int ch = 0;
     
@@ -874,14 +874,17 @@ static const char *create_info_string(bool has_inputs, bool has_outputs, const L
 
       if(LADSPA_IS_PORT_AUDIO(portdescriptor) && LADSPA_IS_PORT_INPUT(portdescriptor)){        
         //const LADSPA_PortDescriptor portdescriptor = descriptor->PortDescriptors[portnum];
-        ret = talloc_format("%s  ch%d: \"%s\"\n", ret, ch++, descriptor->PortNames[portnum]);
+        ret = talloc_format("%s\n  ch%d: \"%s\"", ret, ch++, descriptor->PortNames[portnum]);
       }
     }
   }
   
-  if (has_outputs){
+  if (num_outputs > 0){
 
-    ret = talloc_format("%s\nAudio outputs\n", ret);
+    if (num_inputs > 0)
+      ret = talloc_format("%s\n", ret);
+    
+    ret = talloc_format("%s\nAudio outputs:", ret);
     
     int ch = 0;
     
@@ -890,10 +893,13 @@ static const char *create_info_string(bool has_inputs, bool has_outputs, const L
 
       if(LADSPA_IS_PORT_AUDIO(portdescriptor) && LADSPA_IS_PORT_OUTPUT(portdescriptor)){        
         //const LADSPA_PortDescriptor portdescriptor = descriptor->PortDescriptors[portnum];
-        ret = talloc_format("%s  ch%d: \"%s\"\n", ret, ch++, descriptor->PortNames[portnum]);
+        ret = talloc_format("%s\n  ch%d: \"%s\"", ret, ch++, descriptor->PortNames[portnum]);
       }
     }
   }
+  
+  if (num_inputs==1 && num_outputs==1)
+    ret = talloc_format("%s\n\n(this is a mono plugin automatically transformed into a stereo plugin by Radium)", ret);
   
   return V_strdup(ret);
 }
@@ -1062,7 +1068,7 @@ static SoundPluginType *create_plugin_type(const LADSPA_Descriptor *descriptor, 
 
     fill_in_type_data_info_from_descriptor(type_data, plugin_type, descriptor); // needed by maybe_create_cache_file_for_plugin
 
-    plugin_type->info  = create_info_string(plugin_type->num_inputs > 0, plugin_type->num_outputs > 0, descriptor);
+    plugin_type->info  = create_info_string(plugin_type->num_inputs, plugin_type->num_outputs, descriptor);
 
     if (!had_descriptor)
       remove_type_data_reference(type_data);
