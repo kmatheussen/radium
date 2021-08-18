@@ -444,6 +444,8 @@
 (<ra> :get-curr-playlist-pos)
 !!#
 
+(<declare-variable> show-playlist-popup-menu-for-seqblock) ;; in mouse.scm
+
 (define (get-playlist-entry-area gui entry playlist-pos)
 
   ;(define (is-current-block?)
