@@ -2480,6 +2480,15 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
 
   (define (get-instrument-entries only-if-used)
     (list
+     "----------Audio instruments currently used"
+     (map (lambda (num instrument-id)
+            (and (or (not only-if-used)
+                     (<ra> :instrument-has-been-used instrument-id))
+                 (list (<-> num ". " (<ra> :get-instrument-name instrument-id))                     
+                       (lambda ()
+                         (LOAD instrument-id)))))
+          (iota (length instruments-before))
+          instruments-before)
      (and (> (length midi-instruments) 0)
           (list "----------MIDI instruments currently used"
                 (map (lambda (num instrument-id)
@@ -2489,16 +2498,8 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                                   (lambda ()
                                     (LOAD instrument-id)))))
                      (iota (length midi-instruments))
-                     midi-instruments)))
-     "----------Audio instruments currently used"
-     (map (lambda (num instrument-id)
-            (and (or (not only-if-used)
-                     (<ra> :instrument-has-been-used instrument-id))
-                 (list (<-> num ". " (<ra> :get-instrument-name instrument-id))                     
-                       (lambda ()
-                         (LOAD instrument-id)))))
-          (iota (length instruments-before))
-          instruments-before)))
+                     midi-instruments)))))
+  
 
   (define instr-conf (make-instrument-conf :connect-to-main-pipe #t
                                            :parentgui -1))
