@@ -1846,15 +1846,6 @@ g_pages.push(
 const mixer_text = `
     <p>
       
-<a href="#mixer">Common mixer features</a><br>
-<a href="#modularmixer">Modular Mixer</a><br>
-<a href="#mixerstrips">Mixer Strips</a><br>
-
-<br>
-<br>
-<br>
-<br>
-
 <a name="mixer"></a><h2>Common mixer features</h2>
 
 
@@ -1899,20 +1890,18 @@ Note that you can assign keybinding to all buttons by right-clicking.
 
 </OL>
 
+`;
 
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
+g_pages.push(
+    {text : mixer_text,
+     name : "mixer",
+     menu : "mixer",
+     display : "Mixer"
+    }
+);
 
 
+const modular_mixer_text = `
     
 <a name="modularmixer"></a><h2>Modular Mixer</h2>
 
@@ -1999,6 +1988,18 @@ Note that you can assign keybinding to all buttons by right-clicking.
 <br>
 <br>
 <br>
+`;
+
+g_pages.push(
+    {text : modular_mixer_text,
+     name : "modular_mixer",
+     menu : "mixer",
+     display : "Modular mixer"
+    }
+);
+
+
+const mixer_strips_text = `
 
 <a name="mixerstrips"></a><h2>Mixer Strips</h2>
 
@@ -2063,7 +2064,7 @@ Q: Reset highest peak value in the box above the audio meter?<br>
 A: Just click the box.
 <p>
 Q: Create a new mixer strip?<br>
-A: You can't do that directly in a mixer strips window. You either have to create a new instrument in the modular mixer, add a new instrument to a track in the editor, or add a new audio seqtrack.
+A: You can&apos;t do that directly in a mixer strips window. You either have to create a new instrument in the modular mixer, add a new instrument to a track in the editor, or add a new audio seqtrack.
 <p>
 Q: Create a plugin or send?<br>
 A: Use the popup menu
@@ -2095,13 +2096,57 @@ A: Right-click a mixer strip, and select "Delete". Or shift-right-click the name
   `;
 
 g_pages.push(
-    {text : mixer_text,
-     name : "mixer",
+    {text : mixer_strips_text,
+     name : "mixer_strips",
      menu : "mixer",
-     display : "Mixer"
+     display : "Mixer strips"
     }
 );
 
+
+
+const mixer_faq_text = `
+    <h3>FAQ</h3>
+    <UL>
+
+      <LI><b>Q:</b> How do I set up a sidechain compression?<br>
+        <b>A:</b> It&apos;s a little bit more cumbersome than other DAWs, but you only have to set it up once:
+        <p>
+        <OL>
+          <LI> In the modular mixer, insert the compressor you want to use. For this example we&apos;re going to use the included SC3 LADSPA plugin:<p>
+            <img src="sc3_plugin_manager.png">
+          <LI> Create two "Patchbay8" modules and connect both outputs to the SC3 LADSPA plugin:<p>
+            <img src="sidechain1.png">
+          <LI> For clarity, we name the first patchbay8 module "Sidechain", and the second patchbay8 module "Compressor":<p>
+            <img src="sidechain2.png">
+          <LI> Configure the two patchbay8 modules.<p>
+            "Sidechain" looks like this:<p>
+            <img src="sidechain3.png"><p>
+            And "Compressor" looks like this:<p>
+            <img src="sidechain4.png">
+          <LI> Finished. To make this operation faster the next time, select all three modules, right-click, and select "Save multi-preset (.mrec)". Now you only have to select "From preset file" to create a new sidechain compressor.
+        </OL>
+        <p>
+          
+      <LI><b>Q:</b> How do I set volume higher than 6dB?<br>
+        <b>A:</b> In the mixer strips, left-click the volume-number positioned between the mute button and the volume slider:<p>
+          <img src="setvolume.png">
+        <p>
+          Then this dialog should pop up:<p>
+          <img src="setvolume2.png">        
+    </UL>
+`;
+
+
+g_pages.push(
+    {text : mixer_faq_text,
+     name : "mixer_faq",
+     menu : "mixer",
+     display : "FAQ"
+    }
+);
+
+    
 
 
 
@@ -2193,7 +2238,7 @@ const instrument_text = `
                 The sample player plays audio files.
 		<UL>
 		  <LI>The Sample Player can load XI intruments; Soundfonts, and all types of sample formats supported by libsndfile.
-		  <LI>WAV files are looped if they have loops defined in the "sampl" chunk, or they have "Loop Start" and "Loop End" cue id's.
+		  <LI>WAV files are looped if they have loops defined in the "sampl" chunk, or they have "Loop Start" and "Loop End" cue id&apos;s.
 		  <LI>SoundFonts (.sf2 files) often sound better when played with the FluidSynth instrument instead of the Sample Player. However, the Sample Player uses less memory, are faster to create, has sample-accurate note scheduling, supports pitch changes and polyphonic aftertouch (velocity can be changed while a note is playing), and has configurable options such as attack, decay, sustain, and release.
 		  <LI>There is currently no graphical sample editor to edit samples, a feature which traditionally are provided by trackers. This feature should be provided later though. Until then, external sample editors must be used instead, if needed.
 		  <LI>To record audio, either from outside the program or inside the program, click the red <font color="red">Record</font> button in the instrument widget header. A new audio file will be created automatically when recording. Recording will start when the new instrument receives a note, and it will stop recording when that note stops playing.
@@ -2260,7 +2305,7 @@ const instrument_sampler_text = `
 The sample player plays audio files.
 <UL>
   <LI>The Sample Player can load XI intruments; Soundfonts, and all types of sample formats supported by libsndfile.
-  <LI>WAV files are looped if they have loops defined in the "sampl" chunk, or they have "Loop Start" and "Loop End" cue id's.
+  <LI>WAV files are looped if they have loops defined in the "sampl" chunk, or they have "Loop Start" and "Loop End" cue id&apos;s.
   <LI>SoundFonts (.sf2 files) often sound better when played with the FluidSynth instrument instead of the Sample Player. However, the Sample Player uses less memory, are faster to create, has sample-accurate note scheduling, supports pitch changes and polyphonic aftertouch (velocity can be changed while a note is playing), and has configurable options such as attack, decay, sustain, and release.
   <LI>There is currently no graphical sample editor to edit samples, a feature which traditionally are provided by trackers. This feature should be provided later though. Until then, external sample editors must be used instead, if needed.
   <LI>To record audio, either from outside the program or inside the program, click the red <font color="red">Record</font> button in the instrument widget header. A new audio file will be created automatically when recording. Recording will start when the new instrument receives a note, and it will stop recording when that note stops playing.
@@ -2325,7 +2370,7 @@ After selecting this option, immediately turn a knob on your MIDI device. The kn
 
 <p>
   
-If it didn't work to assign a MIDI controller to this effect, make sure your MIDI device is added
+If it didn&apos;t work to assign a MIDI controller to this effect, make sure your MIDI device is added
 under "Input ports" in the "MIDI" tab in the preferences window:<br>
 <p>
   <img src="midiprefs.png" width=50%>
@@ -2469,8 +2514,8 @@ Timing is tempo and rhythm.
          <p>
            <img src="jack_transport.png">
          <p>
-           If the "Radium is the Jack Time Master" option is enabled under Edit -> Preferences -> Sequencer -> Jack Transport, Radium will send timing information to Jack Transport, meaning that other Jack Transport clients may use Radium's timing.<p>
-           Note that Radium always uses it's own timing. Radium never asks Jack Transport for timing.
+           If the "Radium is the Jack Time Master" option is enabled under Edit -> Preferences -> Sequencer -> Jack Transport, Radium will send timing information to Jack Transport, meaning that other Jack Transport clients may use Radium&apos;s timing.<p>
+           Note that Radium always uses it&apos;s own timing. Radium never asks Jack Transport for timing.
 </OL>
 <pre>
 </pre>
