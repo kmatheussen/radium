@@ -82,6 +82,34 @@ int getPianorollHighKey(int tracknum, int blocknum, int windownum){
   return wtrack->pianoroll_highkey;
 }
 
+void setPianorollRange(int minkey, int maxkey, int tracknum, int blocknum, int windownum){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+  if (wtrack==NULL)
+    return;
+  
+  int diff = maxkey - minkey;
+  if (diff < 5)
+    minkey = maxkey - 5;
+
+  if (minkey < 0) {
+    minkey = 0;
+    maxkey = 5;
+  }
+
+  if (maxkey > 127) {
+    minkey = 122;
+    maxkey = 127;
+  }
+  
+  wtrack->pianoroll_lowkey = minkey;
+  wtrack->pianoroll_highkey = maxkey;
+
+  UpdateWBlockCoordinates(window,wblock);
+  window->must_redraw=true;
+}
+  
 void setPianorollLowKey(int key, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
