@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "notes_proc.h"
 #include "swingtext_proc.h"
 #include "fxtext_proc.h"
+#include "visual_proc.h"
 
 #include "../api/api_proc.h"
 
@@ -552,18 +553,39 @@ void MinimizeTrack_CurrPos(
 }
 
 
-static bool WTRACK_allinside(struct Tracker_Windows *window, struct WBlocks *wblock){
+static bool WTRACK_allinside(struct Tracker_Windows *window, struct WBlocks *wblock, int width){
   struct WTracks *last = (struct WTracks *)ListLast1(&wblock->wtracks->l);
-  if (last->x2 <= wblock->t.x2)
+  if (last->x2 <= width)
     return true;
   else
     return false;
 }
 
 
+static int get_minimize_width(struct Tracker_Windows *window, struct WBlocks *wblock, bool not_too_wide){
+  if (!not_too_wide)
+    return wblock->t.x2;
+
+  int ret = wblock->swingarea.x2;
+
+  if (wblock->temponodetrackonoff==1)
+    ret += window->fontwidth*3;
+
+  int trackwidth = GFX_get_text_width(window, "0: (click me)  ");
+                     
+  struct WTracks *wtrack = wblock->wtracks;
+  while(wtrack != NULL) {
+    ret += trackwidth;
+    wtrack = NextWTrack(wtrack);
+  }
+  
+  return R_MAX(ret, wblock->t.x2);
+}
+
 void MinimizeBlock_CurrPos(
                            struct Tracker_Windows *window,
-                           struct WBlocks *wblock
+                           struct WBlocks *wblock,
+                           bool not_too_wide
 ){
 	struct WTracks *wtrack;
 	int notelength=3;
@@ -574,6 +596,8 @@ void MinimizeBlock_CurrPos(
 
         ADD_UNDO(Block_CurrPos(window));
 
+        const int width = get_minimize_width(window, wblock, not_too_wide);
+        
         wblock->skew_x = 0;
 
         if (wblock==window->wblock)
@@ -588,7 +612,7 @@ void MinimizeBlock_CurrPos(
 	}
 	UpdateWBlockCoordinates(window,wblock);
 
-	if(WTRACK_allinside(window, wblock)==false){
+	if(WTRACK_allinside(window, wblock, width)==false){
 		goto update;
 	}
 
@@ -603,7 +627,7 @@ void MinimizeBlock_CurrPos(
 	}
 	UpdateWBlockCoordinates(window,wblock);
 
-	if(WTRACK_allinside(window, wblock)==false){
+	if(WTRACK_allinside(window, wblock, width)==false){
 	  notelength=2;
 	  startinc=2;
 	  nummul=0;
@@ -619,7 +643,7 @@ void MinimizeBlock_CurrPos(
 	}
 	UpdateWBlockCoordinates(window,wblock);
 
-	if(WTRACK_allinside(window, wblock)==false){
+	if(WTRACK_allinside(window, wblock, width)==false){
 
 	  wtrack=wblock->wtracks;
 	  wblock->temponodearea.width=2;;
@@ -630,7 +654,7 @@ void MinimizeBlock_CurrPos(
 	  }
 	  UpdateWBlockCoordinates(window,wblock);
 
-	  if(WTRACK_allinside(window, wblock)==false){
+	  if(WTRACK_allinside(window, wblock, width)==false){
 	    notelength=2;
 	  }else{
 	    nummul=0;
@@ -651,7 +675,7 @@ void MinimizeBlock_CurrPos(
 			wtrack=NextWTrack(wtrack);
 		}
 		UpdateWBlockCoordinates(window,wblock);
-	}while(WTRACK_allinside(window, wblock)==true);
+	}while(WTRACK_allinside(window, wblock, width)==true);
 
 	wblock->temponodearea.width=(window->fontwidth*notelength*nummul)+inc-1;
 	wtrack=wblock->wtracks;
