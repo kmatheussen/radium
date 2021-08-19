@@ -52,81 +52,67 @@ extern struct Root *root;
 float TRACK_get_min_pitch(const struct Tracks *track){
   float min_pitch = 10000.0f;
 
-  int num_pitches = 0;
+  struct Notes *note = track->notes;
+
+  if (note==NULL)
+    return -1;
   
-  {
-    struct Notes *note = track->notes;
-    while(note!=NULL){
-      min_pitch = R_MIN(note->note, min_pitch);
-
-      if (note->pitch_end > 0)
-        min_pitch = R_MIN(note->pitch_end, min_pitch);
-        
-      num_pitches ++;
-
-      /*
+  while(note!=NULL){
+    min_pitch = R_MIN(note->note, min_pitch);
+    
+    if (note->pitch_end > 0.001)
+      min_pitch = R_MIN(note->pitch_end, min_pitch);
+    
+    /*
       struct Pitches *pitch = note->pitches;
       while(pitch != NULL){
-        min_pitch = R_MIN(pitch->note, min_pitch);
-        num_pitches ++;
-        pitch = NextPitch(pitch);
+      min_pitch = R_MIN(pitch->note, min_pitch);
+      num_pitches ++;
+      pitch = NextPitch(pitch);
       }
-      */
-      
-      r::PitchTimeData::Reader reader(note->_pitches);
-      for(const r::Pitch &pitch : reader){
-        min_pitch = R_MIN(pitch._val, min_pitch);
-        num_pitches ++;
-      }
-      
-      note = NextNote(note);
-    }
+    */
+    
+    r::PitchTimeData::Reader reader(note->_pitches);
+    for(const r::Pitch &pitch : reader)
+      min_pitch = R_MIN(pitch._val, min_pitch);
+    
+    note = NextNote(note);
   }
-
-  if (num_pitches==0)
-    return -1;
-  else
-    return min_pitch;
+  
+  return min_pitch;
 }
 
 float TRACK_get_max_pitch(const struct Tracks *track){
   float max_pitch = -1;
 
-  int num_pitches = 0;
+  struct Notes *note = track->notes;
   
-  {
-    struct Notes *note = track->notes;
-    while(note!=NULL){
-      max_pitch = R_MAX(note->note, max_pitch);
-
-      if (note->pitch_end > 0)
-        max_pitch = R_MAX(note->pitch_end, max_pitch);
-      
-      num_pitches ++;
-
-      /*
+  if (note==NULL)
+    return -1;
+  
+  while(note!=NULL){
+    max_pitch = R_MAX(note->note, max_pitch);
+    
+    if (note->pitch_end > 0)
+      max_pitch = R_MAX(note->pitch_end, max_pitch);
+    
+    /*
       struct Pitches *pitch = note->pitches;
       while(pitch != NULL){
-        max_pitch = R_MAX(pitch->note, max_pitch);
-        num_pitches ++;
-        pitch = NextPitch(pitch);
+      max_pitch = R_MAX(pitch->note, max_pitch);
+      num_pitches ++;
+      pitch = NextPitch(pitch);
       }
       */
 
-      r::PitchTimeData::Reader reader(note->_pitches);
-      for(const r::Pitch &pitch : reader){
-        max_pitch = R_MAX(pitch._val, max_pitch);
-        num_pitches ++;
-      }
-      
-      note = NextNote(note);
-    }
+    r::PitchTimeData::Reader reader(note->_pitches);
+    for(const r::Pitch &pitch : reader)
+      max_pitch = R_MAX(pitch._val, max_pitch);
+    
+    note = NextNote(note);
   }
-
-  if (num_pitches==0)
-    return -1;
-  else
-    return max_pitch;
+  
+  return max_pitch;
 }
 
 
