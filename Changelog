@@ -1,3 +1,89 @@
+Changes 6.9.94 -> 6.9.96:
+* Editor: Make pitch expand/shrink also work on pitch
+  changes, not just on the main pitch of notes.
+* Editor: Shorten the main popup menu a little bit.
+* Editor: Fix editing the value of a pitch change.
+  I.e. left alt + return when cursor is placed on
+  a pitch change for a note.
+* Playlist: Clean up popup menus a little bit.
+* Playlist: Make it possible to configure the color
+  of the border of current entries.
+* Playlist: Split the concept of current blocklist
+  position and the concept of current block, making
+  it convenient to change playlist while playing
+  song. I.e. current block is not always the same as
+  the current blocklist position anymore.
+* Playlist: Clean up various things.
+* Editor: Fix possible glitch in sound when cutting
+  the length of a note while playing.
+* Playlist: Make "C" keybinding change color of
+  highlighted block or audiofile if mouse pointer is
+  currently pointing inside a block or an audiofile,
+  also in the blocks browser in the playlist for
+  instance.
+* Playlist: Light up playlist entries when mouse is
+  above.
+* Playlist: Select current seqblock under mouse when
+  mouse is above a playlist entry. This is practical
+  when assigning keybinding to e.g. change block
+  color.
+* Playlist: Add popup menu option to set current
+  seqtrack.
+* Sequencer: Fix some unnecessary jumpingaroundness
+  when moving seqtracks up and down.
+* Sequencer: Fix changing timing mode
+  unintentionally when changing seqtrack order.
+* Sequencer: Don't create undo when changing
+  seqtrack order but ends up with the same order as
+  before.
+* Linux: Fix space and return key not working, for
+  some reason, on Ubuntu 20 and probably other
+  distributions.
+* Sequencer: Don't show error message when trying to
+  swap last seqtrack with next seqtrack.
+* Sequencer: Fix dragging seqtrack number up and
+  down when there are invisible seqtracks.
+* Modular mixer: add the "Mixer" submenu to the
+  bottom of the effects popup menu.
+* Mixer: Clean up the various "Insert plugin" menus.
+* Editor: Clean up the top of the "(click me)" menu.
+* Editor: Add the timing tracks popup menu submenu
+  to the bottom of the bars/beats popup menu.
+* Modular mixer: Fix module positioning when loading
+  .mrec files.
+* Ladspa: Include the name of the audio input and
+  output ports in the info box.
+* Sampler: Fix integer overflow problem in code to
+  generate waveforms. This fixes (rare) situations
+  with no waveforms in the editor
+* Mixer: Add "Create new bus" option to the top of
+  the list of buses you can send to when selecting
+  "Insert send".
+* Mixer: Add "New bus" option to the main popup menu
+  in the modular mixer.
+* Mixer: Tweak the "New sound object" / "New audio
+  instrument" menu.
+* Sequencer: Change "Set name" to "Rename" in the
+  popup menus.
+* Playlist: Fix block names not being updated when
+  editor blocks are renamed, and other situations.
+* New song: Hide signature track, tempo automation
+  track, and swing track.
+* Editor: Automatically (and continously) resize all
+  tracks to fill all available space for clean
+  projects.
+* API:
+  * New: getSeqtrackUuid,
+    setCurrEditorBlockUnderMouseForSequencer,
+    getCurrEditorBlockUnderMouseForSequencer,
+    setCurrSampleUnderMouseForSequencer,
+    getCurrSampleUnderMouseForSequencer,
+    getCurrBlocklistPos, setCurrBlocklistPos.
+  * setUsingSequencerTiming gets optional argument
+    'make_undo'.
+
+
+
 Changes 6.9.91 -> 6.9.94:
 * Instruments: Reorganize the "Insert new sound
   object" / "New audio instrument" menu.
