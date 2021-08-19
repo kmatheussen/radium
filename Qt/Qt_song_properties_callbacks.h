@@ -90,6 +90,7 @@ class song_properties : public RememberGeometryQDialog, public Ui::Song_properti
     num_bus_ch->setValue(song->default_num_bus_channels);
     
     include_pan_and_dry_in_wet->setChecked(includePanAndDryInWetSignal());
+    mute_system_buses_when_bypassed->setChecked(muteSystemBusesWhenBypassed());
 
     mute_plugin_MIDI->setChecked(song->RT_mute_plugin_MIDI_when_muted);
     send_plugin_MIDI_through->setChecked(song->RT_send_plugin_MIDI_through_when_bypassed);
@@ -246,6 +247,13 @@ public slots:
       return;
 
     setIncludePanAndDryInWetSignal(val);
+  }
+  
+  void on_mute_system_buses_when_bypassed_toggled(bool val){
+    if (_initing==true)
+      return;
+
+    setMuteSystemBusesWhenBypassed(val);
   }
   
   void on_mute_automation_toggled(bool val){

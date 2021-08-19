@@ -4161,6 +4161,17 @@ bool includePanAndDryInWetSignal(void){
   return root->song->include_pan_and_dry_in_wet_signal;
 }
 
+void setMuteSystemBusesWhenBypassed(bool val){
+  if(root->song->mute_system_buses_when_bypassed != val){
+    radium::PlayerLock lock;
+    root->song->mute_system_buses_when_bypassed = val;
+  }
+}
+  
+bool muteSystemBusesWhenBypassed(void){
+  return root->song->mute_system_buses_when_bypassed;
+}
+
 static bool g_enable_sample_seek_by_default = true;
 
 bool enableSampleSeekByDefault(void){

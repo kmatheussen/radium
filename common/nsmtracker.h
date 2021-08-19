@@ -3891,7 +3891,8 @@ struct Song{
         bool editor_should_swing_along;
 
         bool mixer_comments_visible;
-        bool include_pan_and_dry_in_wet_signal;
+        bool include_pan_and_dry_in_wet_signal; // Must hold player lock when writing.
+        bool mute_system_buses_when_bypassed; // Must hold player lock when writing.
         bool mute_editor_automation_when_track_is_muted;
         int default_num_bus_channels; // Must be 1 or higher. User interface allows values up to 99 channels.
 

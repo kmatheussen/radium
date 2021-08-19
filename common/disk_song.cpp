@@ -69,6 +69,7 @@ DC_start("SONG");
 
         DC_SSB("mixer_comments_visible", song->mixer_comments_visible);
         DC_SSB("include_pan_and_dry_in_wet_signal", song->include_pan_and_dry_in_wet_signal);
+        DC_SSB("mute_system_buses_when_bypassed", song->mute_system_buses_when_bypassed);
         DC_SSB("mute_editor_automation_when_track_is_muted", song->mute_editor_automation_when_track_is_muted);
         //DC_SSB("use_sequencer_timing", song->use_sequencer_tempos_and_signatures); // saved in sequencer state instead.
 
@@ -115,7 +116,7 @@ struct Song *LoadSong(void){
                 "SEQUENCER",
                 "COMMENT"
 	};
-	const char *vars[17]={
+	const char *vars[18]={
 		"num_blocks",
 		"length",
 		"songname",
@@ -129,6 +130,7 @@ struct Song *LoadSong(void){
                 "mixer_comments_visible",
                 "mute_editor_automation_when_track_is_muted",
                 "include_pan_and_dry_in_wet_signal",
+                "mute_system_buses_when_bypassed",
                 "mute_plugin_MIDI_when_muted",
                 "send_plugin_MIDI_through_when_bypassed",
                 "implicitly_mute_plugin_MIDI",
@@ -139,6 +141,7 @@ struct Song *LoadSong(void){
 
         song->mute_editor_automation_when_track_is_muted = false; // Compatibility with older songs.
         song->include_pan_and_dry_in_wet_signal = false; // Compatibility with older songs.
+        song->mute_system_buses_when_bypassed = false; // Compatibility with older songs.
         song->use_swinging_beats_in_sequencer = true;
         song->display_swinging_beats_in_seqblocks_in_sequencer = true;
 
@@ -169,7 +172,7 @@ struct Song *LoadSong(void){
 
         COMMENT_reset();
 
-        GENERAL_LOAD(7,17)
+        GENERAL_LOAD(7,18)
 
 obj0:
 	DC_ListAdd1(&song->tracker_windows,LoadWindow());
@@ -262,22 +265,25 @@ var12:
         goto start;
 
 var13:
-        song->RT_mute_plugin_MIDI_when_muted = DC_LoadB();
+        song->mute_system_buses_when_bypassed = DC_LoadB();
         goto start;
 
 var14:
-        song->RT_send_plugin_MIDI_through_when_bypassed = DC_LoadB();
+        song->RT_mute_plugin_MIDI_when_muted = DC_LoadB();
         goto start;
 
 var15:
+        song->RT_send_plugin_MIDI_through_when_bypassed = DC_LoadB();
+        goto start;
+
+var16:
         song->RT_implicitly_mute_plugin_MIDI = DC_LoadB();
         goto start;        
         
-var16:
+var17:
         song->default_num_bus_channels = DC_LoadI();
         BUS_set_num_channels(song->default_num_bus_channels);
         goto start;
-var17:
 var18:
 var19:
 var20:
