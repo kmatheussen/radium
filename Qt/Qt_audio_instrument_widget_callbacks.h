@@ -876,6 +876,14 @@ public:
       }
       
       drywet_slider->setEnabled(effects_are_on);
+
+      if (root->song->mute_system_buses_when_bypassed) {
+        bus1_widget->setEnabled(effects_are_on);
+        bus2_widget->setEnabled(effects_are_on);
+        bus3_widget->setEnabled(effects_are_on);
+        bus4_widget->setEnabled(effects_are_on);
+        bus5_widget->setEnabled(effects_are_on);
+      }
     }
 
     _comp_widget->update_gui();

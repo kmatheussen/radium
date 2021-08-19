@@ -394,13 +394,16 @@ public:
   }
 
   float RT_get_total_link_volume(void) const {
-    const SoundPlugin *source_plugin = SP_get_plugin(source);
-    
     if (!RT_is_enabled)
       return 0.0f;
     
+    const SoundPlugin *source_plugin = SP_get_plugin(source);
+    
     if (_is_bus_link){
-      
+
+      if (root->song->mute_system_buses_when_bypassed && !ATOMIC_GET(source_plugin->effects_are_on))
+        return 0.0f;
+        
       return source_plugin->bus_volume[_bus_num];
       
     } else {

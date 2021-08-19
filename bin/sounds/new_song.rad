@@ -14,7 +14,7 @@ INT_TYPE
 version_revision
 0
 INT_TYPE
-94
+96
 << HASH MAP V5 END
 
 \
@@ -97,6 +97,9 @@ SONG
 ?include_pan_and_dry_in_wet_signal
 1
 
+?mute_system_buses_when_bypassed
+1
+
 ?mute_editor_automation_when_track_is_muted
 1
 
@@ -115,7 +118,7 @@ SONG
 \
 COMMENT
 >> HASH MAP V5 BEGIN
-84
+85
 author
 0
 STRING_TYPE
@@ -446,6 +449,10 @@ comment
 79
 STRING_TYPE
 
+comment
+80
+STRING_TYPE
+
 show_after_loading
 0
 INT_TYPE
@@ -468,10 +475,10 @@ TRACKER_WINDOW
 0
 
 ?width
-1338
+1354
 
 ?height
-419
+400
 
 ?fontID
 0
@@ -483,10 +490,10 @@ TRACKER_WINDOW
 10
 
 ?fontheight
-15
+17
 
 ?org_fontheight
-15
+17
 
 ?curr_block
 0
@@ -531,7 +538,7 @@ WBLOCK
 0
 
 ?linenumarea
-30
+28
 
 ?lpbTypearea
 10
@@ -546,7 +553,7 @@ WBLOCK
 40
 
 ?temponodearea
-97
+139
 
 ?maxwtracksize
 0
@@ -602,7 +609,7 @@ WTRACK
 3
 
 ?fxwidth
-77
+119
 
 ?is_wide
 0
@@ -643,7 +650,7 @@ WTRACK
 3
 
 ?fxwidth
-77
+119
 
 ?is_wide
 0
@@ -684,7 +691,7 @@ WTRACK
 3
 
 ?fxwidth
-77
+119
 
 ?is_wide
 0
@@ -725,7 +732,7 @@ WTRACK
 3
 
 ?fxwidth
-77
+119
 
 ?is_wide
 0
@@ -766,7 +773,7 @@ WTRACK
 3
 
 ?fxwidth
-77
+119
 
 ?is_wide
 0
@@ -807,7 +814,7 @@ WTRACK
 3
 
 ?fxwidth
-77
+119
 
 ?is_wide
 0
@@ -848,7 +855,7 @@ WTRACK
 3
 
 ?fxwidth
-77
+119
 
 ?is_wide
 0
@@ -889,7 +896,7 @@ WTRACK
 3
 
 ?fxwidth
-77
+119
 
 ?is_wide
 0
@@ -3279,6 +3286,3620 @@ HASH_TYPE
 patch
 0
 INSTRUMENT_TYPE
+0
+plugin
+0
+HASH_TYPE
+>> HASH MAP V5 BEGIN
+10
+___radium_plugin_state_v3
+0
+INT_TYPE
+1
+ab
+0
+HASH_TYPE
+>> HASH MAP V5 BEGIN
+9
+curr_ab_num
+0
+INT_TYPE
+0
+is_valid
+0
+BOOL_TYPE
+0
+is_valid
+1
+BOOL_TYPE
+0
+is_valid
+2
+BOOL_TYPE
+0
+is_valid
+3
+BOOL_TYPE
+0
+is_valid
+4
+BOOL_TYPE
+0
+is_valid
+5
+BOOL_TYPE
+0
+is_valid
+6
+BOOL_TYPE
+0
+is_valid
+7
+BOOL_TYPE
+0
+<< HASH MAP V5 END
+auto_suspend_behavior
+0
+INT_TYPE
+0
+effects
+0
+HASH_TYPE
+>> HASH MAP V5 BEGIN
+95
+System Aux 1
+0
+FLOAT_TYPE
+0
+System Aux 2
+0
+FLOAT_TYPE
+0
+System Aux 3
+0
+FLOAT_TYPE
+0
+System Chance Voice 1
+0
+FLOAT_TYPE
+256
+System Chance Voice 2
+0
+FLOAT_TYPE
+256
+System Chance Voice 3
+0
+FLOAT_TYPE
+256
+System Chance Voice 4
+0
+FLOAT_TYPE
+256
+System Chance Voice 5
+0
+FLOAT_TYPE
+256
+System Chance Voice 6
+0
+FLOAT_TYPE
+256
+System Chance Voice 7
+0
+FLOAT_TYPE
+256
+System Chorus
+0
+FLOAT_TYPE
+0
+System Compression Attack
+0
+FLOAT_TYPE
+49.807373046875
+System Compression Makeup Gain
+0
+FLOAT_TYPE
+0
+System Compression On/Off
+0
+FLOAT_TYPE
+0
+System Compression Ratio
+0
+FLOAT_TYPE
+2
+System Compression Release
+0
+FLOAT_TYPE
+100.2368087768555
+System Compression Threshold
+0
+FLOAT_TYPE
+-20
+System Controls On/Off
+0
+FLOAT_TYPE
+1
+System Dry/Wet
+0
+FLOAT_TYPE
+1
+System Effects On/Off
+0
+FLOAT_TYPE
+1
+System Eq1 F.
+0
+FLOAT_TYPE
+399.1208801269531
+System Eq1 L.
+0
+FLOAT_TYPE
+0
+System Eq1 On/Off
+0
+FLOAT_TYPE
+0
+System Eq2 F.
+0
+FLOAT_TYPE
+1000.000366210938
+System Eq2 L.
+0
+FLOAT_TYPE
+0
+System Eq2 On/Off
+0
+FLOAT_TYPE
+0
+System Highpass On/Off
+0
+FLOAT_TYPE
+0
+System Hp F.
+0
+FLOAT_TYPE
+200
+System Hs F.
+0
+FLOAT_TYPE
+4499.01171875
+System Hs L.
+0
+FLOAT_TYPE
+0
+System Hs On/Off
+0
+FLOAT_TYPE
+0
+System In
+0
+FLOAT_TYPE
+0.9997119307518005
+System In On/Off
+0
+FLOAT_TYPE
+1
+System Length Voice 1
+0
+FLOAT_TYPE
+0
+System Length Voice 2
+0
+FLOAT_TYPE
+0
+System Length Voice 3
+0
+FLOAT_TYPE
+0
+System Length Voice 4
+0
+FLOAT_TYPE
+0
+System Length Voice 5
+0
+FLOAT_TYPE
+0
+System Length Voice 6
+0
+FLOAT_TYPE
+0
+System Length Voice 7
+0
+FLOAT_TYPE
+0
+System Lowpass On/Off
+0
+FLOAT_TYPE
+0
+System Lp F.
+0
+FLOAT_TYPE
+4999.34716796875
+System Ls F.
+0
+FLOAT_TYPE
+399.1208801269531
+System Ls L.
+0
+FLOAT_TYPE
+0
+System Ls On/Off
+0
+FLOAT_TYPE
+0
+System On/Off Voice 1
+0
+FLOAT_TYPE
+1
+System On/Off Voice 2
+0
+FLOAT_TYPE
+0
+System On/Off Voice 3
+0
+FLOAT_TYPE
+0
+System On/Off Voice 4
+0
+FLOAT_TYPE
+0
+System On/Off Voice 5
+0
+FLOAT_TYPE
+0
+System On/Off Voice 6
+0
+FLOAT_TYPE
+0
+System On/Off Voice 7
+0
+FLOAT_TYPE
+0
+System Out
+0
+FLOAT_TYPE
+0.9997119307518005
+System Out On/Off
+0
+FLOAT_TYPE
+1
+System Pan
+0
+FLOAT_TYPE
+0.5
+System Pan On/Off
+0
+FLOAT_TYPE
+0
+System Pan Voice 1
+0
+FLOAT_TYPE
+0
+System Pan Voice 2
+0
+FLOAT_TYPE
+0
+System Pan Voice 3
+0
+FLOAT_TYPE
+0
+System Pan Voice 4
+0
+FLOAT_TYPE
+0
+System Pan Voice 5
+0
+FLOAT_TYPE
+0
+System Pan Voice 6
+0
+FLOAT_TYPE
+0
+System Pan Voice 7
+0
+FLOAT_TYPE
+0
+System Pitch
+0
+FLOAT_TYPE
+0
+System Pitch type
+0
+FLOAT_TYPE
+0
+System Reverb
+0
+FLOAT_TYPE
+0
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
+System Show Compressor GUI
+0
+FLOAT_TYPE
+0
+System Show Equalizer GUI
+0
+FLOAT_TYPE
+1
+System Solo On/Off
+0
+FLOAT_TYPE
+0
+System Start Voice 1
+0
+FLOAT_TYPE
+0
+System Start Voice 2
+0
+FLOAT_TYPE
+0
+System Start Voice 3
+0
+FLOAT_TYPE
+0
+System Start Voice 4
+0
+FLOAT_TYPE
+0
+System Start Voice 5
+0
+FLOAT_TYPE
+0
+System Start Voice 6
+0
+FLOAT_TYPE
+0
+System Start Voice 7
+0
+FLOAT_TYPE
+0
+System Transpose Voice 1
+0
+FLOAT_TYPE
+0
+System Transpose Voice 2
+0
+FLOAT_TYPE
+12
+System Transpose Voice 3
+0
+FLOAT_TYPE
+19
+System Transpose Voice 4
+0
+FLOAT_TYPE
+24
+System Transpose Voice 5
+0
+FLOAT_TYPE
+-12
+System Transpose Voice 6
+0
+FLOAT_TYPE
+-24
+System Transpose Voice 7
+0
+FLOAT_TYPE
+0.25
+System Volume
+0
+FLOAT_TYPE
+0.9997119307518005
+System Volume On/Off
+0
+FLOAT_TYPE
+1
+System Volume Voice 1
+0
+FLOAT_TYPE
+0
+System Volume Voice 2
+0
+FLOAT_TYPE
+0
+System Volume Voice 3
+0
+FLOAT_TYPE
+0
+System Volume Voice 4
+0
+FLOAT_TYPE
+0
+System Volume Voice 5
+0
+FLOAT_TYPE
+0
+System Volume Voice 6
+0
+FLOAT_TYPE
+0
+System Volume Voice 7
+0
+FLOAT_TYPE
+0
+System Width
+0
+FLOAT_TYPE
+0.004999999888241291
+System Width On/Off
+0
+FLOAT_TYPE
+0
+<< HASH MAP V5 END
+enable_sample_seek
+0
+BOOL_TYPE
+1
+is_dpi_aware
+0
+BOOL_TYPE
+1
+name
+0
+STRING_TYPE
+Bus
+plugin_type_version
+0
+INT_TYPE
+0
+random_change
+0
+HASH_TYPE
+>> HASH MAP V5 BEGIN
+95
+System Aux 1
+0
+BOOL_TYPE
+0
+System Aux 2
+0
+BOOL_TYPE
+0
+System Aux 3
+0
+BOOL_TYPE
+0
+System Chance Voice 1
+0
+BOOL_TYPE
+0
+System Chance Voice 2
+0
+BOOL_TYPE
+0
+System Chance Voice 3
+0
+BOOL_TYPE
+0
+System Chance Voice 4
+0
+BOOL_TYPE
+0
+System Chance Voice 5
+0
+BOOL_TYPE
+0
+System Chance Voice 6
+0
+BOOL_TYPE
+0
+System Chance Voice 7
+0
+BOOL_TYPE
+0
+System Chorus
+0
+BOOL_TYPE
+0
+System Compression Attack
+0
+BOOL_TYPE
+0
+System Compression Makeup Gain
+0
+BOOL_TYPE
+0
+System Compression On/Off
+0
+BOOL_TYPE
+0
+System Compression Ratio
+0
+BOOL_TYPE
+0
+System Compression Release
+0
+BOOL_TYPE
+0
+System Compression Threshold
+0
+BOOL_TYPE
+0
+System Controls On/Off
+0
+BOOL_TYPE
+0
+System Dry/Wet
+0
+BOOL_TYPE
+0
+System Effects On/Off
+0
+BOOL_TYPE
+0
+System Eq1 F.
+0
+BOOL_TYPE
+0
+System Eq1 L.
+0
+BOOL_TYPE
+0
+System Eq1 On/Off
+0
+BOOL_TYPE
+0
+System Eq2 F.
+0
+BOOL_TYPE
+0
+System Eq2 L.
+0
+BOOL_TYPE
+0
+System Eq2 On/Off
+0
+BOOL_TYPE
+0
+System Highpass On/Off
+0
+BOOL_TYPE
+0
+System Hp F.
+0
+BOOL_TYPE
+0
+System Hs F.
+0
+BOOL_TYPE
+0
+System Hs L.
+0
+BOOL_TYPE
+0
+System Hs On/Off
+0
+BOOL_TYPE
+0
+System In
+0
+BOOL_TYPE
+0
+System In On/Off
+0
+BOOL_TYPE
+0
+System Length Voice 1
+0
+BOOL_TYPE
+0
+System Length Voice 2
+0
+BOOL_TYPE
+0
+System Length Voice 3
+0
+BOOL_TYPE
+0
+System Length Voice 4
+0
+BOOL_TYPE
+0
+System Length Voice 5
+0
+BOOL_TYPE
+0
+System Length Voice 6
+0
+BOOL_TYPE
+0
+System Length Voice 7
+0
+BOOL_TYPE
+0
+System Lowpass On/Off
+0
+BOOL_TYPE
+0
+System Lp F.
+0
+BOOL_TYPE
+0
+System Ls F.
+0
+BOOL_TYPE
+0
+System Ls L.
+0
+BOOL_TYPE
+0
+System Ls On/Off
+0
+BOOL_TYPE
+0
+System On/Off Voice 1
+0
+BOOL_TYPE
+0
+System On/Off Voice 2
+0
+BOOL_TYPE
+0
+System On/Off Voice 3
+0
+BOOL_TYPE
+0
+System On/Off Voice 4
+0
+BOOL_TYPE
+0
+System On/Off Voice 5
+0
+BOOL_TYPE
+0
+System On/Off Voice 6
+0
+BOOL_TYPE
+0
+System On/Off Voice 7
+0
+BOOL_TYPE
+0
+System Out
+0
+BOOL_TYPE
+0
+System Out On/Off
+0
+BOOL_TYPE
+0
+System Pan
+0
+BOOL_TYPE
+0
+System Pan On/Off
+0
+BOOL_TYPE
+0
+System Pan Voice 1
+0
+BOOL_TYPE
+0
+System Pan Voice 2
+0
+BOOL_TYPE
+0
+System Pan Voice 3
+0
+BOOL_TYPE
+0
+System Pan Voice 4
+0
+BOOL_TYPE
+0
+System Pan Voice 5
+0
+BOOL_TYPE
+0
+System Pan Voice 6
+0
+BOOL_TYPE
+0
+System Pan Voice 7
+0
+BOOL_TYPE
+0
+System Pitch
+0
+BOOL_TYPE
+0
+System Pitch type
+0
+BOOL_TYPE
+0
+System Reverb
+0
+BOOL_TYPE
+0
+System Sample Browser On/Off
+0
+BOOL_TYPE
+0
+System Show Compressor GUI
+0
+BOOL_TYPE
+0
+System Show Equalizer GUI
+0
+BOOL_TYPE
+0
+System Solo On/Off
+0
+BOOL_TYPE
+0
+System Start Voice 1
+0
+BOOL_TYPE
+0
+System Start Voice 2
+0
+BOOL_TYPE
+0
+System Start Voice 3
+0
+BOOL_TYPE
+0
+System Start Voice 4
+0
+BOOL_TYPE
+0
+System Start Voice 5
+0
+BOOL_TYPE
+0
+System Start Voice 6
+0
+BOOL_TYPE
+0
+System Start Voice 7
+0
+BOOL_TYPE
+0
+System Transpose Voice 1
+0
+BOOL_TYPE
+0
+System Transpose Voice 2
+0
+BOOL_TYPE
+0
+System Transpose Voice 3
+0
+BOOL_TYPE
+0
+System Transpose Voice 4
+0
+BOOL_TYPE
+0
+System Transpose Voice 5
+0
+BOOL_TYPE
+0
+System Transpose Voice 6
+0
+BOOL_TYPE
+0
+System Transpose Voice 7
+0
+BOOL_TYPE
+0
+System Volume
+0
+BOOL_TYPE
+0
+System Volume On/Off
+0
+BOOL_TYPE
+0
+System Volume Voice 1
+0
+BOOL_TYPE
+0
+System Volume Voice 2
+0
+BOOL_TYPE
+0
+System Volume Voice 3
+0
+BOOL_TYPE
+0
+System Volume Voice 4
+0
+BOOL_TYPE
+0
+System Volume Voice 5
+0
+BOOL_TYPE
+0
+System Volume Voice 6
+0
+BOOL_TYPE
+0
+System Volume Voice 7
+0
+BOOL_TYPE
+0
+System Width
+0
+BOOL_TYPE
+0
+System Width On/Off
+0
+BOOL_TYPE
+0
+<< HASH MAP V5 END
+type_name
+0
+STRING_TYPE
+Bus
+<< HASH MAP V5 END
+x
+0
+FLOAT_TYPE
+0
+y
+0
+FLOAT_TYPE
+-32
+<< HASH MAP V5 END
+
+1
+HASH_TYPE
+>> HASH MAP V5 BEGIN
+4
+patch
+0
+INSTRUMENT_TYPE
+23
+plugin
+0
+HASH_TYPE
+>> HASH MAP V5 BEGIN
+10
+___radium_plugin_state_v3
+0
+INT_TYPE
+1
+ab
+0
+HASH_TYPE
+>> HASH MAP V5 BEGIN
+9
+curr_ab_num
+0
+INT_TYPE
+0
+is_valid
+0
+BOOL_TYPE
+0
+is_valid
+1
+BOOL_TYPE
+0
+is_valid
+2
+BOOL_TYPE
+0
+is_valid
+3
+BOOL_TYPE
+0
+is_valid
+4
+BOOL_TYPE
+0
+is_valid
+5
+BOOL_TYPE
+0
+is_valid
+6
+BOOL_TYPE
+0
+is_valid
+7
+BOOL_TYPE
+0
+<< HASH MAP V5 END
+auto_suspend_behavior
+0
+INT_TYPE
+0
+effects
+0
+HASH_TYPE
+>> HASH MAP V5 BEGIN
+107
+0: Min delay
+0
+FLOAT_TYPE
+5
+10: Q
+0
+FLOAT_TYPE
+0.125
+11: Overlap
+0
+FLOAT_TYPE
+1
+1: Mod depth
+0
+FLOAT_TYPE
+6
+2: Modulation rate
+0
+FLOAT_TYPE
+0.499700665473938
+3: Stereo phase
+0
+FLOAT_TYPE
+180
+4: Voices
+0
+FLOAT_TYPE
+3.999500036239624
+5: Inter-voice phase
+0
+FLOAT_TYPE
+63.97200012207031
+6: Amount
+0
+FLOAT_TYPE
+2
+7: Dry Amount
+0
+FLOAT_TYPE
+1
+8: Center Frq 1
+0
+FLOAT_TYPE
+99.89689636230469
+9: Center Frq 2
+0
+FLOAT_TYPE
+4999.4501953125
+System Aux 1
+0
+FLOAT_TYPE
+0
+System Aux 2
+0
+FLOAT_TYPE
+0
+System Aux 3
+0
+FLOAT_TYPE
+0
+System Chance Voice 1
+0
+FLOAT_TYPE
+256
+System Chance Voice 2
+0
+FLOAT_TYPE
+256
+System Chance Voice 3
+0
+FLOAT_TYPE
+256
+System Chance Voice 4
+0
+FLOAT_TYPE
+256
+System Chance Voice 5
+0
+FLOAT_TYPE
+256
+System Chance Voice 6
+0
+FLOAT_TYPE
+256
+System Chance Voice 7
+0
+FLOAT_TYPE
+256
+System Chorus
+0
+FLOAT_TYPE
+0
+System Compression Attack
+0
+FLOAT_TYPE
+49.807373046875
+System Compression Makeup Gain
+0
+FLOAT_TYPE
+0
+System Compression On/Off
+0
+FLOAT_TYPE
+0
+System Compression Ratio
+0
+FLOAT_TYPE
+2
+System Compression Release
+0
+FLOAT_TYPE
+100.2368087768555
+System Compression Threshold
+0
+FLOAT_TYPE
+-20
+System Controls On/Off
+0
+FLOAT_TYPE
+1
+System Dry/Wet
+0
+FLOAT_TYPE
+1
+System Effects On/Off
+0
+FLOAT_TYPE
+1
+System Eq1 F.
+0
+FLOAT_TYPE
+399.1208801269531
+System Eq1 L.
+0
+FLOAT_TYPE
+0
+System Eq1 On/Off
+0
+FLOAT_TYPE
+0
+System Eq2 F.
+0
+FLOAT_TYPE
+1000.000366210938
+System Eq2 L.
+0
+FLOAT_TYPE
+0
+System Eq2 On/Off
+0
+FLOAT_TYPE
+0
+System Highpass On/Off
+0
+FLOAT_TYPE
+0
+System Hp F.
+0
+FLOAT_TYPE
+200
+System Hs F.
+0
+FLOAT_TYPE
+1499.337646484375
+System Hs L.
+0
+FLOAT_TYPE
+0
+System Hs On/Off
+0
+FLOAT_TYPE
+0
+System In
+0
+FLOAT_TYPE
+0.9997119307518005
+System In On/Off
+0
+FLOAT_TYPE
+1
+System Length Voice 1
+0
+FLOAT_TYPE
+0
+System Length Voice 2
+0
+FLOAT_TYPE
+0
+System Length Voice 3
+0
+FLOAT_TYPE
+0
+System Length Voice 4
+0
+FLOAT_TYPE
+0
+System Length Voice 5
+0
+FLOAT_TYPE
+0
+System Length Voice 6
+0
+FLOAT_TYPE
+0
+System Length Voice 7
+0
+FLOAT_TYPE
+0
+System Lowpass On/Off
+0
+FLOAT_TYPE
+0
+System Lp F.
+0
+FLOAT_TYPE
+4999.34716796875
+System Ls F.
+0
+FLOAT_TYPE
+399.1208801269531
+System Ls L.
+0
+FLOAT_TYPE
+0
+System Ls On/Off
+0
+FLOAT_TYPE
+0
+System On/Off Voice 1
+0
+FLOAT_TYPE
+1
+System On/Off Voice 2
+0
+FLOAT_TYPE
+0
+System On/Off Voice 3
+0
+FLOAT_TYPE
+0
+System On/Off Voice 4
+0
+FLOAT_TYPE
+0
+System On/Off Voice 5
+0
+FLOAT_TYPE
+0
+System On/Off Voice 6
+0
+FLOAT_TYPE
+0
+System On/Off Voice 7
+0
+FLOAT_TYPE
+0
+System Out
+0
+FLOAT_TYPE
+0.9997119307518005
+System Out On/Off
+0
+FLOAT_TYPE
+1
+System Pan
+0
+FLOAT_TYPE
+0.5
+System Pan On/Off
+0
+FLOAT_TYPE
+0
+System Pan Voice 1
+0
+FLOAT_TYPE
+0
+System Pan Voice 2
+0
+FLOAT_TYPE
+0
+System Pan Voice 3
+0
+FLOAT_TYPE
+0
+System Pan Voice 4
+0
+FLOAT_TYPE
+0
+System Pan Voice 5
+0
+FLOAT_TYPE
+0
+System Pan Voice 6
+0
+FLOAT_TYPE
+0
+System Pan Voice 7
+0
+FLOAT_TYPE
+0
+System Pitch
+0
+FLOAT_TYPE
+0
+System Pitch type
+0
+FLOAT_TYPE
+0
+System Reverb
+0
+FLOAT_TYPE
+0
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
+System Show Compressor GUI
+0
+FLOAT_TYPE
+0
+System Show Equalizer GUI
+0
+FLOAT_TYPE
+1
+System Solo On/Off
+0
+FLOAT_TYPE
+0
+System Start Voice 1
+0
+FLOAT_TYPE
+0
+System Start Voice 2
+0
+FLOAT_TYPE
+0
+System Start Voice 3
+0
+FLOAT_TYPE
+0
+System Start Voice 4
+0
+FLOAT_TYPE
+0
+System Start Voice 5
+0
+FLOAT_TYPE
+0
+System Start Voice 6
+0
+FLOAT_TYPE
+0
+System Start Voice 7
+0
+FLOAT_TYPE
+0
+System Transpose Voice 1
+0
+FLOAT_TYPE
+0
+System Transpose Voice 2
+0
+FLOAT_TYPE
+12
+System Transpose Voice 3
+0
+FLOAT_TYPE
+19
+System Transpose Voice 4
+0
+FLOAT_TYPE
+24
+System Transpose Voice 5
+0
+FLOAT_TYPE
+-12
+System Transpose Voice 6
+0
+FLOAT_TYPE
+-24
+System Transpose Voice 7
+0
+FLOAT_TYPE
+0.25
+System Volume
+0
+FLOAT_TYPE
+0.9997119307518005
+System Volume On/Off
+0
+FLOAT_TYPE
+1
+System Volume Voice 1
+0
+FLOAT_TYPE
+0
+System Volume Voice 2
+0
+FLOAT_TYPE
+0
+System Volume Voice 3
+0
+FLOAT_TYPE
+0
+System Volume Voice 4
+0
+FLOAT_TYPE
+0
+System Volume Voice 5
+0
+FLOAT_TYPE
+0
+System Volume Voice 6
+0
+FLOAT_TYPE
+0
+System Volume Voice 7
+0
+FLOAT_TYPE
+0
+System Width
+0
+FLOAT_TYPE
+0
+System Width On/Off
+0
+FLOAT_TYPE
+0
+<< HASH MAP V5 END
+enable_sample_seek
+0
+BOOL_TYPE
+0
+is_dpi_aware
+0
+BOOL_TYPE
+1
+name
+0
+STRING_TYPE
+Calf MultiChorus LADSPA
+plugin_type_version
+0
+INT_TYPE
+0
+random_change
+0
+HASH_TYPE
+>> HASH MAP V5 BEGIN
+107
+0: Min delay
+0
+BOOL_TYPE
+1
+10: Q
+0
+BOOL_TYPE
+1
+11: Overlap
+0
+BOOL_TYPE
+1
+1: Mod depth
+0
+BOOL_TYPE
+1
+2: Modulation rate
+0
+BOOL_TYPE
+1
+3: Stereo phase
+0
+BOOL_TYPE
+1
+4: Voices
+0
+BOOL_TYPE
+1
+5: Inter-voice phase
+0
+BOOL_TYPE
+1
+6: Amount
+0
+BOOL_TYPE
+1
+7: Dry Amount
+0
+BOOL_TYPE
+1
+8: Center Frq 1
+0
+BOOL_TYPE
+1
+9: Center Frq 2
+0
+BOOL_TYPE
+1
+System Aux 1
+0
+BOOL_TYPE
+0
+System Aux 2
+0
+BOOL_TYPE
+0
+System Aux 3
+0
+BOOL_TYPE
+0
+System Chance Voice 1
+0
+BOOL_TYPE
+0
+System Chance Voice 2
+0
+BOOL_TYPE
+0
+System Chance Voice 3
+0
+BOOL_TYPE
+0
+System Chance Voice 4
+0
+BOOL_TYPE
+0
+System Chance Voice 5
+0
+BOOL_TYPE
+0
+System Chance Voice 6
+0
+BOOL_TYPE
+0
+System Chance Voice 7
+0
+BOOL_TYPE
+0
+System Chorus
+0
+BOOL_TYPE
+0
+System Compression Attack
+0
+BOOL_TYPE
+0
+System Compression Makeup Gain
+0
+BOOL_TYPE
+0
+System Compression On/Off
+0
+BOOL_TYPE
+0
+System Compression Ratio
+0
+BOOL_TYPE
+0
+System Compression Release
+0
+BOOL_TYPE
+0
+System Compression Threshold
+0
+BOOL_TYPE
+0
+System Controls On/Off
+0
+BOOL_TYPE
+0
+System Dry/Wet
+0
+BOOL_TYPE
+0
+System Effects On/Off
+0
+BOOL_TYPE
+0
+System Eq1 F.
+0
+BOOL_TYPE
+0
+System Eq1 L.
+0
+BOOL_TYPE
+0
+System Eq1 On/Off
+0
+BOOL_TYPE
+0
+System Eq2 F.
+0
+BOOL_TYPE
+0
+System Eq2 L.
+0
+BOOL_TYPE
+0
+System Eq2 On/Off
+0
+BOOL_TYPE
+0
+System Highpass On/Off
+0
+BOOL_TYPE
+0
+System Hp F.
+0
+BOOL_TYPE
+0
+System Hs F.
+0
+BOOL_TYPE
+0
+System Hs L.
+0
+BOOL_TYPE
+0
+System Hs On/Off
+0
+BOOL_TYPE
+0
+System In
+0
+BOOL_TYPE
+0
+System In On/Off
+0
+BOOL_TYPE
+0
+System Length Voice 1
+0
+BOOL_TYPE
+0
+System Length Voice 2
+0
+BOOL_TYPE
+0
+System Length Voice 3
+0
+BOOL_TYPE
+0
+System Length Voice 4
+0
+BOOL_TYPE
+0
+System Length Voice 5
+0
+BOOL_TYPE
+0
+System Length Voice 6
+0
+BOOL_TYPE
+0
+System Length Voice 7
+0
+BOOL_TYPE
+0
+System Lowpass On/Off
+0
+BOOL_TYPE
+0
+System Lp F.
+0
+BOOL_TYPE
+0
+System Ls F.
+0
+BOOL_TYPE
+0
+System Ls L.
+0
+BOOL_TYPE
+0
+System Ls On/Off
+0
+BOOL_TYPE
+0
+System On/Off Voice 1
+0
+BOOL_TYPE
+0
+System On/Off Voice 2
+0
+BOOL_TYPE
+0
+System On/Off Voice 3
+0
+BOOL_TYPE
+0
+System On/Off Voice 4
+0
+BOOL_TYPE
+0
+System On/Off Voice 5
+0
+BOOL_TYPE
+0
+System On/Off Voice 6
+0
+BOOL_TYPE
+0
+System On/Off Voice 7
+0
+BOOL_TYPE
+0
+System Out
+0
+BOOL_TYPE
+0
+System Out On/Off
+0
+BOOL_TYPE
+0
+System Pan
+0
+BOOL_TYPE
+0
+System Pan On/Off
+0
+BOOL_TYPE
+0
+System Pan Voice 1
+0
+BOOL_TYPE
+0
+System Pan Voice 2
+0
+BOOL_TYPE
+0
+System Pan Voice 3
+0
+BOOL_TYPE
+0
+System Pan Voice 4
+0
+BOOL_TYPE
+0
+System Pan Voice 5
+0
+BOOL_TYPE
+0
+System Pan Voice 6
+0
+BOOL_TYPE
+0
+System Pan Voice 7
+0
+BOOL_TYPE
+0
+System Pitch
+0
+BOOL_TYPE
+0
+System Pitch type
+0
+BOOL_TYPE
+0
+System Reverb
+0
+BOOL_TYPE
+0
+System Sample Browser On/Off
+0
+BOOL_TYPE
+0
+System Show Compressor GUI
+0
+BOOL_TYPE
+0
+System Show Equalizer GUI
+0
+BOOL_TYPE
+0
+System Solo On/Off
+0
+BOOL_TYPE
+0
+System Start Voice 1
+0
+BOOL_TYPE
+0
+System Start Voice 2
+0
+BOOL_TYPE
+0
+System Start Voice 3
+0
+BOOL_TYPE
+0
+System Start Voice 4
+0
+BOOL_TYPE
+0
+System Start Voice 5
+0
+BOOL_TYPE
+0
+System Start Voice 6
+0
+BOOL_TYPE
+0
+System Start Voice 7
+0
+BOOL_TYPE
+0
+System Transpose Voice 1
+0
+BOOL_TYPE
+0
+System Transpose Voice 2
+0
+BOOL_TYPE
+0
+System Transpose Voice 3
+0
+BOOL_TYPE
+0
+System Transpose Voice 4
+0
+BOOL_TYPE
+0
+System Transpose Voice 5
+0
+BOOL_TYPE
+0
+System Transpose Voice 6
+0
+BOOL_TYPE
+0
+System Transpose Voice 7
+0
+BOOL_TYPE
+0
+System Volume
+0
+BOOL_TYPE
+0
+System Volume On/Off
+0
+BOOL_TYPE
+0
+System Volume Voice 1
+0
+BOOL_TYPE
+0
+System Volume Voice 2
+0
+BOOL_TYPE
+0
+System Volume Voice 3
+0
+BOOL_TYPE
+0
+System Volume Voice 4
+0
+BOOL_TYPE
+0
+System Volume Voice 5
+0
+BOOL_TYPE
+0
+System Volume Voice 6
+0
+BOOL_TYPE
+0
+System Volume Voice 7
+0
+BOOL_TYPE
+0
+System Width
+0
+BOOL_TYPE
+0
+System Width On/Off
+0
+BOOL_TYPE
+0
+<< HASH MAP V5 END
+type_name
+0
+STRING_TYPE
+Ladspa
+<< HASH MAP V5 END
+x
+0
+FLOAT_TYPE
+-120
+y
+0
+FLOAT_TYPE
+-64
+<< HASH MAP V5 END
+
+2
+HASH_TYPE
+>> HASH MAP V5 BEGIN
+4
+patch
+0
+INSTRUMENT_TYPE
+1
+plugin
+0
+HASH_TYPE
+>> HASH MAP V5 BEGIN
+11
+___radium_plugin_state_v3
+0
+INT_TYPE
+1
+ab
+0
+HASH_TYPE
+>> HASH MAP V5 BEGIN
+9
+curr_ab_num
+0
+INT_TYPE
+0
+is_valid
+0
+BOOL_TYPE
+0
+is_valid
+1
+BOOL_TYPE
+0
+is_valid
+2
+BOOL_TYPE
+0
+is_valid
+3
+BOOL_TYPE
+0
+is_valid
+4
+BOOL_TYPE
+0
+is_valid
+5
+BOOL_TYPE
+0
+is_valid
+6
+BOOL_TYPE
+0
+is_valid
+7
+BOOL_TYPE
+0
+<< HASH MAP V5 END
+auto_suspend_behavior
+0
+INT_TYPE
+0
+effects
+0
+HASH_TYPE
+>> HASH MAP V5 BEGIN
+95
+System Aux 1
+0
+FLOAT_TYPE
+0
+System Aux 2
+0
+FLOAT_TYPE
+0
+System Aux 3
+0
+FLOAT_TYPE
+0
+System Chance Voice 1
+0
+FLOAT_TYPE
+256
+System Chance Voice 2
+0
+FLOAT_TYPE
+256
+System Chance Voice 3
+0
+FLOAT_TYPE
+256
+System Chance Voice 4
+0
+FLOAT_TYPE
+256
+System Chance Voice 5
+0
+FLOAT_TYPE
+256
+System Chance Voice 6
+0
+FLOAT_TYPE
+256
+System Chance Voice 7
+0
+FLOAT_TYPE
+256
+System Chorus
+0
+FLOAT_TYPE
+0
+System Compression Attack
+0
+FLOAT_TYPE
+49.807373046875
+System Compression Makeup Gain
+0
+FLOAT_TYPE
+0
+System Compression On/Off
+0
+FLOAT_TYPE
+0
+System Compression Ratio
+0
+FLOAT_TYPE
+2
+System Compression Release
+0
+FLOAT_TYPE
+100.2368087768555
+System Compression Threshold
+0
+FLOAT_TYPE
+-20
+System Controls On/Off
+0
+FLOAT_TYPE
+1
+System Dry/Wet
+0
+FLOAT_TYPE
+1
+System Effects On/Off
+0
+FLOAT_TYPE
+1
+System Eq1 F.
+0
+FLOAT_TYPE
+399.1208801269531
+System Eq1 L.
+0
+FLOAT_TYPE
+0
+System Eq1 On/Off
+0
+FLOAT_TYPE
+0
+System Eq2 F.
+0
+FLOAT_TYPE
+1000.000366210938
+System Eq2 L.
+0
+FLOAT_TYPE
+0
+System Eq2 On/Off
+0
+FLOAT_TYPE
+0
+System Highpass On/Off
+0
+FLOAT_TYPE
+0
+System Hp F.
+0
+FLOAT_TYPE
+200
+System Hs F.
+0
+FLOAT_TYPE
+4499.01171875
+System Hs L.
+0
+FLOAT_TYPE
+0
+System Hs On/Off
+0
+FLOAT_TYPE
+0
+System In
+0
+FLOAT_TYPE
+0.9997119307518005
+System In On/Off
+0
+FLOAT_TYPE
+1
+System Length Voice 1
+0
+FLOAT_TYPE
+0
+System Length Voice 2
+0
+FLOAT_TYPE
+0
+System Length Voice 3
+0
+FLOAT_TYPE
+0
+System Length Voice 4
+0
+FLOAT_TYPE
+0
+System Length Voice 5
+0
+FLOAT_TYPE
+0
+System Length Voice 6
+0
+FLOAT_TYPE
+0
+System Length Voice 7
+0
+FLOAT_TYPE
+0
+System Lowpass On/Off
+0
+FLOAT_TYPE
+0
+System Lp F.
+0
+FLOAT_TYPE
+4999.34716796875
+System Ls F.
+0
+FLOAT_TYPE
+399.1208801269531
+System Ls L.
+0
+FLOAT_TYPE
+0
+System Ls On/Off
+0
+FLOAT_TYPE
+0
+System On/Off Voice 1
+0
+FLOAT_TYPE
+1
+System On/Off Voice 2
+0
+FLOAT_TYPE
+0
+System On/Off Voice 3
+0
+FLOAT_TYPE
+0
+System On/Off Voice 4
+0
+FLOAT_TYPE
+0
+System On/Off Voice 5
+0
+FLOAT_TYPE
+0
+System On/Off Voice 6
+0
+FLOAT_TYPE
+0
+System On/Off Voice 7
+0
+FLOAT_TYPE
+0
+System Out
+0
+FLOAT_TYPE
+0.9997119307518005
+System Out On/Off
+0
+FLOAT_TYPE
+1
+System Pan
+0
+FLOAT_TYPE
+0.5
+System Pan On/Off
+0
+FLOAT_TYPE
+0
+System Pan Voice 1
+0
+FLOAT_TYPE
+0
+System Pan Voice 2
+0
+FLOAT_TYPE
+0
+System Pan Voice 3
+0
+FLOAT_TYPE
+0
+System Pan Voice 4
+0
+FLOAT_TYPE
+0
+System Pan Voice 5
+0
+FLOAT_TYPE
+0
+System Pan Voice 6
+0
+FLOAT_TYPE
+0
+System Pan Voice 7
+0
+FLOAT_TYPE
+0
+System Pitch
+0
+FLOAT_TYPE
+0
+System Pitch type
+0
+FLOAT_TYPE
+0
+System Reverb
+0
+FLOAT_TYPE
+0
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
+System Show Compressor GUI
+0
+FLOAT_TYPE
+0
+System Show Equalizer GUI
+0
+FLOAT_TYPE
+1
+System Solo On/Off
+0
+FLOAT_TYPE
+0
+System Start Voice 1
+0
+FLOAT_TYPE
+0
+System Start Voice 2
+0
+FLOAT_TYPE
+0
+System Start Voice 3
+0
+FLOAT_TYPE
+0
+System Start Voice 4
+0
+FLOAT_TYPE
+0
+System Start Voice 5
+0
+FLOAT_TYPE
+0
+System Start Voice 6
+0
+FLOAT_TYPE
+0
+System Start Voice 7
+0
+FLOAT_TYPE
+0
+System Transpose Voice 1
+0
+FLOAT_TYPE
+0
+System Transpose Voice 2
+0
+FLOAT_TYPE
+12
+System Transpose Voice 3
+0
+FLOAT_TYPE
+19
+System Transpose Voice 4
+0
+FLOAT_TYPE
+24
+System Transpose Voice 5
+0
+FLOAT_TYPE
+-12
+System Transpose Voice 6
+0
+FLOAT_TYPE
+-24
+System Transpose Voice 7
+0
+FLOAT_TYPE
+0.25
+System Volume
+0
+FLOAT_TYPE
+0
+System Volume On/Off
+0
+FLOAT_TYPE
+1
+System Volume Voice 1
+0
+FLOAT_TYPE
+0
+System Volume Voice 2
+0
+FLOAT_TYPE
+0
+System Volume Voice 3
+0
+FLOAT_TYPE
+0
+System Volume Voice 4
+0
+FLOAT_TYPE
+0
+System Volume Voice 5
+0
+FLOAT_TYPE
+0
+System Volume Voice 6
+0
+FLOAT_TYPE
+0
+System Volume Voice 7
+0
+FLOAT_TYPE
+0
+System Width
+0
+FLOAT_TYPE
+0.004999999888241291
+System Width On/Off
+0
+FLOAT_TYPE
+0
+<< HASH MAP V5 END
+enable_sample_seek
+0
+BOOL_TYPE
+0
+is_dpi_aware
+0
+BOOL_TYPE
+1
+name
+0
+STRING_TYPE
+System Out
+plugin_state
+0
+HASH_TYPE
+>> HASH MAP V5 BEGIN
+2
+output_portname
+0
+STRING_TYPE
+system_out_left
+output_portname
+1
+STRING_TYPE
+system_out_right
+<< HASH MAP V5 END
+plugin_type_version
+0
+INT_TYPE
+0
+random_change
+0
+HASH_TYPE
+>> HASH MAP V5 BEGIN
+95
+System Aux 1
+0
+BOOL_TYPE
+0
+System Aux 2
+0
+BOOL_TYPE
+0
+System Aux 3
+0
+BOOL_TYPE
+0
+System Chance Voice 1
+0
+BOOL_TYPE
+0
+System Chance Voice 2
+0
+BOOL_TYPE
+0
+System Chance Voice 3
+0
+BOOL_TYPE
+0
+System Chance Voice 4
+0
+BOOL_TYPE
+0
+System Chance Voice 5
+0
+BOOL_TYPE
+0
+System Chance Voice 6
+0
+BOOL_TYPE
+0
+System Chance Voice 7
+0
+BOOL_TYPE
+0
+System Chorus
+0
+BOOL_TYPE
+0
+System Compression Attack
+0
+BOOL_TYPE
+0
+System Compression Makeup Gain
+0
+BOOL_TYPE
+0
+System Compression On/Off
+0
+BOOL_TYPE
+0
+System Compression Ratio
+0
+BOOL_TYPE
+0
+System Compression Release
+0
+BOOL_TYPE
+0
+System Compression Threshold
+0
+BOOL_TYPE
+0
+System Controls On/Off
+0
+BOOL_TYPE
+0
+System Dry/Wet
+0
+BOOL_TYPE
+0
+System Effects On/Off
+0
+BOOL_TYPE
+0
+System Eq1 F.
+0
+BOOL_TYPE
+0
+System Eq1 L.
+0
+BOOL_TYPE
+0
+System Eq1 On/Off
+0
+BOOL_TYPE
+0
+System Eq2 F.
+0
+BOOL_TYPE
+0
+System Eq2 L.
+0
+BOOL_TYPE
+0
+System Eq2 On/Off
+0
+BOOL_TYPE
+0
+System Highpass On/Off
+0
+BOOL_TYPE
+0
+System Hp F.
+0
+BOOL_TYPE
+0
+System Hs F.
+0
+BOOL_TYPE
+0
+System Hs L.
+0
+BOOL_TYPE
+0
+System Hs On/Off
+0
+BOOL_TYPE
+0
+System In
+0
+BOOL_TYPE
+0
+System In On/Off
+0
+BOOL_TYPE
+0
+System Length Voice 1
+0
+BOOL_TYPE
+0
+System Length Voice 2
+0
+BOOL_TYPE
+0
+System Length Voice 3
+0
+BOOL_TYPE
+0
+System Length Voice 4
+0
+BOOL_TYPE
+0
+System Length Voice 5
+0
+BOOL_TYPE
+0
+System Length Voice 6
+0
+BOOL_TYPE
+0
+System Length Voice 7
+0
+BOOL_TYPE
+0
+System Lowpass On/Off
+0
+BOOL_TYPE
+0
+System Lp F.
+0
+BOOL_TYPE
+0
+System Ls F.
+0
+BOOL_TYPE
+0
+System Ls L.
+0
+BOOL_TYPE
+0
+System Ls On/Off
+0
+BOOL_TYPE
+0
+System On/Off Voice 1
+0
+BOOL_TYPE
+0
+System On/Off Voice 2
+0
+BOOL_TYPE
+0
+System On/Off Voice 3
+0
+BOOL_TYPE
+0
+System On/Off Voice 4
+0
+BOOL_TYPE
+0
+System On/Off Voice 5
+0
+BOOL_TYPE
+0
+System On/Off Voice 6
+0
+BOOL_TYPE
+0
+System On/Off Voice 7
+0
+BOOL_TYPE
+0
+System Out
+0
+BOOL_TYPE
+0
+System Out On/Off
+0
+BOOL_TYPE
+0
+System Pan
+0
+BOOL_TYPE
+0
+System Pan On/Off
+0
+BOOL_TYPE
+0
+System Pan Voice 1
+0
+BOOL_TYPE
+0
+System Pan Voice 2
+0
+BOOL_TYPE
+0
+System Pan Voice 3
+0
+BOOL_TYPE
+0
+System Pan Voice 4
+0
+BOOL_TYPE
+0
+System Pan Voice 5
+0
+BOOL_TYPE
+0
+System Pan Voice 6
+0
+BOOL_TYPE
+0
+System Pan Voice 7
+0
+BOOL_TYPE
+0
+System Pitch
+0
+BOOL_TYPE
+0
+System Pitch type
+0
+BOOL_TYPE
+0
+System Reverb
+0
+BOOL_TYPE
+0
+System Sample Browser On/Off
+0
+BOOL_TYPE
+0
+System Show Compressor GUI
+0
+BOOL_TYPE
+0
+System Show Equalizer GUI
+0
+BOOL_TYPE
+0
+System Solo On/Off
+0
+BOOL_TYPE
+0
+System Start Voice 1
+0
+BOOL_TYPE
+0
+System Start Voice 2
+0
+BOOL_TYPE
+0
+System Start Voice 3
+0
+BOOL_TYPE
+0
+System Start Voice 4
+0
+BOOL_TYPE
+0
+System Start Voice 5
+0
+BOOL_TYPE
+0
+System Start Voice 6
+0
+BOOL_TYPE
+0
+System Start Voice 7
+0
+BOOL_TYPE
+0
+System Transpose Voice 1
+0
+BOOL_TYPE
+0
+System Transpose Voice 2
+0
+BOOL_TYPE
+0
+System Transpose Voice 3
+0
+BOOL_TYPE
+0
+System Transpose Voice 4
+0
+BOOL_TYPE
+0
+System Transpose Voice 5
+0
+BOOL_TYPE
+0
+System Transpose Voice 6
+0
+BOOL_TYPE
+0
+System Transpose Voice 7
+0
+BOOL_TYPE
+0
+System Volume
+0
+BOOL_TYPE
+0
+System Volume On/Off
+0
+BOOL_TYPE
+0
+System Volume Voice 1
+0
+BOOL_TYPE
+0
+System Volume Voice 2
+0
+BOOL_TYPE
+0
+System Volume Voice 3
+0
+BOOL_TYPE
+0
+System Volume Voice 4
+0
+BOOL_TYPE
+0
+System Volume Voice 5
+0
+BOOL_TYPE
+0
+System Volume Voice 6
+0
+BOOL_TYPE
+0
+System Volume Voice 7
+0
+BOOL_TYPE
+0
+System Width
+0
+BOOL_TYPE
+0
+System Width On/Off
+0
+BOOL_TYPE
+0
+<< HASH MAP V5 END
+type_name
+0
+STRING_TYPE
+Jack
+<< HASH MAP V5 END
+x
+0
+FLOAT_TYPE
+120
+y
+0
+FLOAT_TYPE
+-32
+<< HASH MAP V5 END
+
+3
+HASH_TYPE
+>> HASH MAP V5 BEGIN
+4
+patch
+0
+INSTRUMENT_TYPE
+7
+plugin
+0
+HASH_TYPE
+>> HASH MAP V5 BEGIN
+10
+___radium_plugin_state_v3
+0
+INT_TYPE
+1
+ab
+0
+HASH_TYPE
+>> HASH MAP V5 BEGIN
+9
+curr_ab_num
+0
+INT_TYPE
+0
+is_valid
+0
+BOOL_TYPE
+0
+is_valid
+1
+BOOL_TYPE
+0
+is_valid
+2
+BOOL_TYPE
+0
+is_valid
+3
+BOOL_TYPE
+0
+is_valid
+4
+BOOL_TYPE
+0
+is_valid
+5
+BOOL_TYPE
+0
+is_valid
+6
+BOOL_TYPE
+0
+is_valid
+7
+BOOL_TYPE
+0
+<< HASH MAP V5 END
+auto_suspend_behavior
+0
+INT_TYPE
+2
+effects
+0
+HASH_TYPE
+>> HASH MAP V5 BEGIN
+100
+HF Damping
+0
+FLOAT_TYPE
+3657.9599609375
+Input: In Delay
+0
+FLOAT_TYPE
+0
+LF X
+0
+FLOAT_TYPE
+199.9100036621094
+Low RT60
+0
+FLOAT_TYPE
+3.587199926376343
+Mid RT60
+0
+FLOAT_TYPE
+4.755499839782715
+System Aux 1
+0
+FLOAT_TYPE
+0
+System Aux 2
+0
+FLOAT_TYPE
+0
+System Aux 3
+0
+FLOAT_TYPE
+0
+System Chance Voice 1
+0
+FLOAT_TYPE
+256
+System Chance Voice 2
+0
+FLOAT_TYPE
+256
+System Chance Voice 3
+0
+FLOAT_TYPE
+256
+System Chance Voice 4
+0
+FLOAT_TYPE
+256
+System Chance Voice 5
+0
+FLOAT_TYPE
+256
+System Chance Voice 6
+0
+FLOAT_TYPE
+256
+System Chance Voice 7
+0
+FLOAT_TYPE
+256
+System Chorus
+0
+FLOAT_TYPE
+0
+System Compression Attack
+0
+FLOAT_TYPE
+49.807373046875
+System Compression Makeup Gain
+0
+FLOAT_TYPE
+0
+System Compression On/Off
+0
+FLOAT_TYPE
+0
+System Compression Ratio
+0
+FLOAT_TYPE
+2
+System Compression Release
+0
+FLOAT_TYPE
+100.2368087768555
+System Compression Threshold
+0
+FLOAT_TYPE
+-20
+System Controls On/Off
+0
+FLOAT_TYPE
+1
+System Dry/Wet
+0
+FLOAT_TYPE
+1
+System Effects On/Off
+0
+FLOAT_TYPE
+1
+System Eq1 F.
+0
+FLOAT_TYPE
+399.1208801269531
+System Eq1 L.
+0
+FLOAT_TYPE
+0
+System Eq1 On/Off
+0
+FLOAT_TYPE
+0
+System Eq2 F.
+0
+FLOAT_TYPE
+1000.000366210938
+System Eq2 L.
+0
+FLOAT_TYPE
+-5.243000030517578
+System Eq2 On/Off
+0
+FLOAT_TYPE
+1
+System Highpass On/Off
+0
+FLOAT_TYPE
+0
+System Hp F.
+0
+FLOAT_TYPE
+200
+System Hs F.
+0
+FLOAT_TYPE
+4499.01171875
+System Hs L.
+0
+FLOAT_TYPE
+9.638999938964844
+System Hs On/Off
+0
+FLOAT_TYPE
+0
+System In
+0
+FLOAT_TYPE
+0.9997119307518005
+System In On/Off
+0
+FLOAT_TYPE
+1
+System Length Voice 1
+0
+FLOAT_TYPE
+0
+System Length Voice 2
+0
+FLOAT_TYPE
+0
+System Length Voice 3
+0
+FLOAT_TYPE
+0
+System Length Voice 4
+0
+FLOAT_TYPE
+0
+System Length Voice 5
+0
+FLOAT_TYPE
+0
+System Length Voice 6
+0
+FLOAT_TYPE
+0
+System Length Voice 7
+0
+FLOAT_TYPE
+0
+System Lowpass On/Off
+0
+FLOAT_TYPE
+0
+System Lp F.
+0
+FLOAT_TYPE
+4999.34716796875
+System Ls F.
+0
+FLOAT_TYPE
+399.1208801269531
+System Ls L.
+0
+FLOAT_TYPE
+0
+System Ls On/Off
+0
+FLOAT_TYPE
+0
+System On/Off Voice 1
+0
+FLOAT_TYPE
+1
+System On/Off Voice 2
+0
+FLOAT_TYPE
+0
+System On/Off Voice 3
+0
+FLOAT_TYPE
+0
+System On/Off Voice 4
+0
+FLOAT_TYPE
+0
+System On/Off Voice 5
+0
+FLOAT_TYPE
+0
+System On/Off Voice 6
+0
+FLOAT_TYPE
+0
+System On/Off Voice 7
+0
+FLOAT_TYPE
+0
+System Out
+0
+FLOAT_TYPE
+0.9997119307518005
+System Out On/Off
+0
+FLOAT_TYPE
+1
+System Pan
+0
+FLOAT_TYPE
+0.5
+System Pan On/Off
+0
+FLOAT_TYPE
+0
+System Pan Voice 1
+0
+FLOAT_TYPE
+0
+System Pan Voice 2
+0
+FLOAT_TYPE
+0
+System Pan Voice 3
+0
+FLOAT_TYPE
+0
+System Pan Voice 4
+0
+FLOAT_TYPE
+0
+System Pan Voice 5
+0
+FLOAT_TYPE
+0
+System Pan Voice 6
+0
+FLOAT_TYPE
+0
+System Pan Voice 7
+0
+FLOAT_TYPE
+0
+System Pitch
+0
+FLOAT_TYPE
+0
+System Pitch type
+0
+FLOAT_TYPE
+0
+System Reverb
+0
+FLOAT_TYPE
+0
+System Sample Browser On/Off
+0
+FLOAT_TYPE
+1
+System Show Compressor GUI
+0
+FLOAT_TYPE
+0
+System Show Equalizer GUI
+0
+FLOAT_TYPE
+1
+System Solo On/Off
+0
+FLOAT_TYPE
+0
+System Start Voice 1
+0
+FLOAT_TYPE
+0
+System Start Voice 2
+0
+FLOAT_TYPE
+0
+System Start Voice 3
+0
+FLOAT_TYPE
+0
+System Start Voice 4
+0
+FLOAT_TYPE
+0
+System Start Voice 5
+0
+FLOAT_TYPE
+0
+System Start Voice 6
+0
+FLOAT_TYPE
+0
+System Start Voice 7
+0
+FLOAT_TYPE
+0
+System Transpose Voice 1
+0
+FLOAT_TYPE
+0
+System Transpose Voice 2
+0
+FLOAT_TYPE
+12
+System Transpose Voice 3
+0
+FLOAT_TYPE
+19
+System Transpose Voice 4
+0
+FLOAT_TYPE
+24
+System Transpose Voice 5
+0
+FLOAT_TYPE
+-12
+System Transpose Voice 6
+0
+FLOAT_TYPE
+-24
+System Transpose Voice 7
+0
+FLOAT_TYPE
+0.25
+System Volume
+0
+FLOAT_TYPE
+1.039322018623352
+System Volume On/Off
+0
+FLOAT_TYPE
+1
+System Volume Voice 1
+0
+FLOAT_TYPE
+0
+System Volume Voice 2
+0
+FLOAT_TYPE
+0
+System Volume Voice 3
+0
+FLOAT_TYPE
+0
+System Volume Voice 4
+0
+FLOAT_TYPE
+0
+System Volume Voice 5
+0
+FLOAT_TYPE
+0
+System Volume Voice 6
+0
+FLOAT_TYPE
+0
+System Volume Voice 7
+0
+FLOAT_TYPE
+0
+System Width
+0
+FLOAT_TYPE
+0.1899999976158142
+System Width On/Off
+0
+FLOAT_TYPE
+0
+<< HASH MAP V5 END
+enable_sample_seek
+0
+BOOL_TYPE
+0
+is_dpi_aware
+0
+BOOL_TYPE
+1
+name
+0
+STRING_TYPE
+Zita Reverb
+plugin_type_version
+0
+INT_TYPE
+0
+random_change
+0
+HASH_TYPE
+>> HASH MAP V5 BEGIN
+100
+HF Damping
+0
+BOOL_TYPE
+1
+Input: In Delay
+0
+BOOL_TYPE
+1
+LF X
+0
+BOOL_TYPE
+1
+Low RT60
+0
+BOOL_TYPE
+1
+Mid RT60
+0
+BOOL_TYPE
+1
+System Aux 1
+0
+BOOL_TYPE
+0
+System Aux 2
+0
+BOOL_TYPE
+0
+System Aux 3
+0
+BOOL_TYPE
+0
+System Chance Voice 1
+0
+BOOL_TYPE
+0
+System Chance Voice 2
+0
+BOOL_TYPE
+0
+System Chance Voice 3
+0
+BOOL_TYPE
+0
+System Chance Voice 4
+0
+BOOL_TYPE
+0
+System Chance Voice 5
+0
+BOOL_TYPE
+0
+System Chance Voice 6
+0
+BOOL_TYPE
+0
+System Chance Voice 7
+0
+BOOL_TYPE
+0
+System Chorus
+0
+BOOL_TYPE
+0
+System Compression Attack
+0
+BOOL_TYPE
+0
+System Compression Makeup Gain
+0
+BOOL_TYPE
+0
+System Compression On/Off
+0
+BOOL_TYPE
+0
+System Compression Ratio
+0
+BOOL_TYPE
+0
+System Compression Release
+0
+BOOL_TYPE
+0
+System Compression Threshold
+0
+BOOL_TYPE
+0
+System Controls On/Off
+0
+BOOL_TYPE
+0
+System Dry/Wet
+0
+BOOL_TYPE
+0
+System Effects On/Off
+0
+BOOL_TYPE
+0
+System Eq1 F.
+0
+BOOL_TYPE
+0
+System Eq1 L.
+0
+BOOL_TYPE
+0
+System Eq1 On/Off
+0
+BOOL_TYPE
+0
+System Eq2 F.
+0
+BOOL_TYPE
+0
+System Eq2 L.
+0
+BOOL_TYPE
+0
+System Eq2 On/Off
+0
+BOOL_TYPE
+0
+System Highpass On/Off
+0
+BOOL_TYPE
+0
+System Hp F.
+0
+BOOL_TYPE
+0
+System Hs F.
+0
+BOOL_TYPE
+0
+System Hs L.
+0
+BOOL_TYPE
+0
+System Hs On/Off
+0
+BOOL_TYPE
+0
+System In
+0
+BOOL_TYPE
+0
+System In On/Off
+0
+BOOL_TYPE
+0
+System Length Voice 1
+0
+BOOL_TYPE
+0
+System Length Voice 2
+0
+BOOL_TYPE
+0
+System Length Voice 3
+0
+BOOL_TYPE
+0
+System Length Voice 4
+0
+BOOL_TYPE
+0
+System Length Voice 5
+0
+BOOL_TYPE
+0
+System Length Voice 6
+0
+BOOL_TYPE
+0
+System Length Voice 7
+0
+BOOL_TYPE
+0
+System Lowpass On/Off
+0
+BOOL_TYPE
+0
+System Lp F.
+0
+BOOL_TYPE
+0
+System Ls F.
+0
+BOOL_TYPE
+0
+System Ls L.
+0
+BOOL_TYPE
+0
+System Ls On/Off
+0
+BOOL_TYPE
+0
+System On/Off Voice 1
+0
+BOOL_TYPE
+0
+System On/Off Voice 2
+0
+BOOL_TYPE
+0
+System On/Off Voice 3
+0
+BOOL_TYPE
+0
+System On/Off Voice 4
+0
+BOOL_TYPE
+0
+System On/Off Voice 5
+0
+BOOL_TYPE
+0
+System On/Off Voice 6
+0
+BOOL_TYPE
+0
+System On/Off Voice 7
+0
+BOOL_TYPE
+0
+System Out
+0
+BOOL_TYPE
+0
+System Out On/Off
+0
+BOOL_TYPE
+0
+System Pan
+0
+BOOL_TYPE
+0
+System Pan On/Off
+0
+BOOL_TYPE
+0
+System Pan Voice 1
+0
+BOOL_TYPE
+0
+System Pan Voice 2
+0
+BOOL_TYPE
+0
+System Pan Voice 3
+0
+BOOL_TYPE
+0
+System Pan Voice 4
+0
+BOOL_TYPE
+0
+System Pan Voice 5
+0
+BOOL_TYPE
+0
+System Pan Voice 6
+0
+BOOL_TYPE
+0
+System Pan Voice 7
+0
+BOOL_TYPE
+0
+System Pitch
+0
+BOOL_TYPE
+0
+System Pitch type
+0
+BOOL_TYPE
+0
+System Reverb
+0
+BOOL_TYPE
+0
+System Sample Browser On/Off
+0
+BOOL_TYPE
+0
+System Show Compressor GUI
+0
+BOOL_TYPE
+0
+System Show Equalizer GUI
+0
+BOOL_TYPE
+0
+System Solo On/Off
+0
+BOOL_TYPE
+0
+System Start Voice 1
+0
+BOOL_TYPE
+0
+System Start Voice 2
+0
+BOOL_TYPE
+0
+System Start Voice 3
+0
+BOOL_TYPE
+0
+System Start Voice 4
+0
+BOOL_TYPE
+0
+System Start Voice 5
+0
+BOOL_TYPE
+0
+System Start Voice 6
+0
+BOOL_TYPE
+0
+System Start Voice 7
+0
+BOOL_TYPE
+0
+System Transpose Voice 1
+0
+BOOL_TYPE
+0
+System Transpose Voice 2
+0
+BOOL_TYPE
+0
+System Transpose Voice 3
+0
+BOOL_TYPE
+0
+System Transpose Voice 4
+0
+BOOL_TYPE
+0
+System Transpose Voice 5
+0
+BOOL_TYPE
+0
+System Transpose Voice 6
+0
+BOOL_TYPE
+0
+System Transpose Voice 7
+0
+BOOL_TYPE
+0
+System Volume
+0
+BOOL_TYPE
+0
+System Volume On/Off
+0
+BOOL_TYPE
+0
+System Volume Voice 1
+0
+BOOL_TYPE
+0
+System Volume Voice 2
+0
+BOOL_TYPE
+0
+System Volume Voice 3
+0
+BOOL_TYPE
+0
+System Volume Voice 4
+0
+BOOL_TYPE
+0
+System Volume Voice 5
+0
+BOOL_TYPE
+0
+System Volume Voice 6
+0
+BOOL_TYPE
+0
+System Volume Voice 7
+0
+BOOL_TYPE
+0
+System Width
+0
+BOOL_TYPE
+0
+System Width On/Off
+0
+BOOL_TYPE
+0
+<< HASH MAP V5 END
+type_name
+0
+STRING_TYPE
+Faust
+<< HASH MAP V5 END
+x
+0
+FLOAT_TYPE
+-120
+y
+0
+FLOAT_TYPE
+-96
+<< HASH MAP V5 END
+
+4
+HASH_TYPE
+>> HASH MAP V5 BEGIN
+4
+patch
+0
+INSTRUMENT_TYPE
 22
 plugin
 0
@@ -4416,2762 +8037,14 @@ FLOAT_TYPE
 -128
 << HASH MAP V5 END
 
-1
+5
 HASH_TYPE
 >> HASH MAP V5 BEGIN
 4
 patch
 0
 INSTRUMENT_TYPE
-7
-plugin
-0
-HASH_TYPE
->> HASH MAP V5 BEGIN
-10
-___radium_plugin_state_v3
-0
-INT_TYPE
-1
-ab
-0
-HASH_TYPE
->> HASH MAP V5 BEGIN
-9
-curr_ab_num
-0
-INT_TYPE
-0
-is_valid
-0
-BOOL_TYPE
-0
-is_valid
-1
-BOOL_TYPE
-0
-is_valid
-2
-BOOL_TYPE
-0
-is_valid
-3
-BOOL_TYPE
-0
-is_valid
-4
-BOOL_TYPE
-0
-is_valid
-5
-BOOL_TYPE
-0
-is_valid
-6
-BOOL_TYPE
-0
-is_valid
-7
-BOOL_TYPE
-0
-<< HASH MAP V5 END
-auto_suspend_behavior
-0
-INT_TYPE
-2
-effects
-0
-HASH_TYPE
->> HASH MAP V5 BEGIN
-100
-HF Damping
-0
-FLOAT_TYPE
-3657.9599609375
-Input: In Delay
-0
-FLOAT_TYPE
-0
-LF X
-0
-FLOAT_TYPE
-199.9100036621094
-Low RT60
-0
-FLOAT_TYPE
-3.587199926376343
-Mid RT60
-0
-FLOAT_TYPE
-4.755499839782715
-System Aux 1
-0
-FLOAT_TYPE
-0
-System Aux 2
-0
-FLOAT_TYPE
-0
-System Aux 3
-0
-FLOAT_TYPE
-0
-System Chance Voice 1
-0
-FLOAT_TYPE
-256
-System Chance Voice 2
-0
-FLOAT_TYPE
-256
-System Chance Voice 3
-0
-FLOAT_TYPE
-256
-System Chance Voice 4
-0
-FLOAT_TYPE
-256
-System Chance Voice 5
-0
-FLOAT_TYPE
-256
-System Chance Voice 6
-0
-FLOAT_TYPE
-256
-System Chance Voice 7
-0
-FLOAT_TYPE
-256
-System Chorus
-0
-FLOAT_TYPE
-0
-System Compression Attack
-0
-FLOAT_TYPE
-49.807373046875
-System Compression Makeup Gain
-0
-FLOAT_TYPE
-0
-System Compression On/Off
-0
-FLOAT_TYPE
-0
-System Compression Ratio
-0
-FLOAT_TYPE
-2
-System Compression Release
-0
-FLOAT_TYPE
-100.2368087768555
-System Compression Threshold
-0
-FLOAT_TYPE
--20
-System Controls On/Off
-0
-FLOAT_TYPE
-1
-System Dry/Wet
-0
-FLOAT_TYPE
-1
-System Effects On/Off
-0
-FLOAT_TYPE
-1
-System Eq1 F.
-0
-FLOAT_TYPE
-399.1208801269531
-System Eq1 L.
-0
-FLOAT_TYPE
-0
-System Eq1 On/Off
-0
-FLOAT_TYPE
-0
-System Eq2 F.
-0
-FLOAT_TYPE
-1000.000366210938
-System Eq2 L.
-0
-FLOAT_TYPE
--5.243000030517578
-System Eq2 On/Off
-0
-FLOAT_TYPE
-1
-System Highpass On/Off
-0
-FLOAT_TYPE
-0
-System Hp F.
-0
-FLOAT_TYPE
-200
-System Hs F.
-0
-FLOAT_TYPE
-4499.01171875
-System Hs L.
-0
-FLOAT_TYPE
-9.638999938964844
-System Hs On/Off
-0
-FLOAT_TYPE
-0
-System In
-0
-FLOAT_TYPE
-0.9997119307518005
-System In On/Off
-0
-FLOAT_TYPE
-1
-System Length Voice 1
-0
-FLOAT_TYPE
-0
-System Length Voice 2
-0
-FLOAT_TYPE
-0
-System Length Voice 3
-0
-FLOAT_TYPE
-0
-System Length Voice 4
-0
-FLOAT_TYPE
-0
-System Length Voice 5
-0
-FLOAT_TYPE
-0
-System Length Voice 6
-0
-FLOAT_TYPE
-0
-System Length Voice 7
-0
-FLOAT_TYPE
-0
-System Lowpass On/Off
-0
-FLOAT_TYPE
-0
-System Lp F.
-0
-FLOAT_TYPE
-4999.34716796875
-System Ls F.
-0
-FLOAT_TYPE
-399.1208801269531
-System Ls L.
-0
-FLOAT_TYPE
-0
-System Ls On/Off
-0
-FLOAT_TYPE
-0
-System On/Off Voice 1
-0
-FLOAT_TYPE
-1
-System On/Off Voice 2
-0
-FLOAT_TYPE
-0
-System On/Off Voice 3
-0
-FLOAT_TYPE
-0
-System On/Off Voice 4
-0
-FLOAT_TYPE
-0
-System On/Off Voice 5
-0
-FLOAT_TYPE
-0
-System On/Off Voice 6
-0
-FLOAT_TYPE
-0
-System On/Off Voice 7
-0
-FLOAT_TYPE
-0
-System Out
-0
-FLOAT_TYPE
-0.9997119307518005
-System Out On/Off
-0
-FLOAT_TYPE
-1
-System Pan
-0
-FLOAT_TYPE
-0.5
-System Pan On/Off
-0
-FLOAT_TYPE
-0
-System Pan Voice 1
-0
-FLOAT_TYPE
-0
-System Pan Voice 2
-0
-FLOAT_TYPE
-0
-System Pan Voice 3
-0
-FLOAT_TYPE
-0
-System Pan Voice 4
-0
-FLOAT_TYPE
-0
-System Pan Voice 5
-0
-FLOAT_TYPE
-0
-System Pan Voice 6
-0
-FLOAT_TYPE
-0
-System Pan Voice 7
-0
-FLOAT_TYPE
-0
-System Pitch
-0
-FLOAT_TYPE
-0
-System Pitch type
-0
-FLOAT_TYPE
-0
-System Reverb
-0
-FLOAT_TYPE
-0
-System Sample Browser On/Off
-0
-FLOAT_TYPE
-1
-System Show Compressor GUI
-0
-FLOAT_TYPE
-0
-System Show Equalizer GUI
-0
-FLOAT_TYPE
-1
-System Solo On/Off
-0
-FLOAT_TYPE
-0
-System Start Voice 1
-0
-FLOAT_TYPE
-0
-System Start Voice 2
-0
-FLOAT_TYPE
-0
-System Start Voice 3
-0
-FLOAT_TYPE
-0
-System Start Voice 4
-0
-FLOAT_TYPE
-0
-System Start Voice 5
-0
-FLOAT_TYPE
-0
-System Start Voice 6
-0
-FLOAT_TYPE
-0
-System Start Voice 7
-0
-FLOAT_TYPE
-0
-System Transpose Voice 1
-0
-FLOAT_TYPE
-0
-System Transpose Voice 2
-0
-FLOAT_TYPE
-12
-System Transpose Voice 3
-0
-FLOAT_TYPE
-19
-System Transpose Voice 4
-0
-FLOAT_TYPE
-24
-System Transpose Voice 5
-0
-FLOAT_TYPE
--12
-System Transpose Voice 6
-0
-FLOAT_TYPE
--24
-System Transpose Voice 7
-0
-FLOAT_TYPE
-0.25
-System Volume
-0
-FLOAT_TYPE
-1.039322018623352
-System Volume On/Off
-0
-FLOAT_TYPE
-1
-System Volume Voice 1
-0
-FLOAT_TYPE
-0
-System Volume Voice 2
-0
-FLOAT_TYPE
-0
-System Volume Voice 3
-0
-FLOAT_TYPE
-0
-System Volume Voice 4
-0
-FLOAT_TYPE
-0
-System Volume Voice 5
-0
-FLOAT_TYPE
-0
-System Volume Voice 6
-0
-FLOAT_TYPE
-0
-System Volume Voice 7
-0
-FLOAT_TYPE
-0
-System Width
-0
-FLOAT_TYPE
-0.1899999976158142
-System Width On/Off
-0
-FLOAT_TYPE
-0
-<< HASH MAP V5 END
-enable_sample_seek
-0
-BOOL_TYPE
-0
-is_dpi_aware
-0
-BOOL_TYPE
-1
-name
-0
-STRING_TYPE
-Zita Reverb
-plugin_type_version
-0
-INT_TYPE
-0
-random_change
-0
-HASH_TYPE
->> HASH MAP V5 BEGIN
-100
-HF Damping
-0
-BOOL_TYPE
-1
-Input: In Delay
-0
-BOOL_TYPE
-1
-LF X
-0
-BOOL_TYPE
-1
-Low RT60
-0
-BOOL_TYPE
-1
-Mid RT60
-0
-BOOL_TYPE
-1
-System Aux 1
-0
-BOOL_TYPE
-0
-System Aux 2
-0
-BOOL_TYPE
-0
-System Aux 3
-0
-BOOL_TYPE
-0
-System Chance Voice 1
-0
-BOOL_TYPE
-0
-System Chance Voice 2
-0
-BOOL_TYPE
-0
-System Chance Voice 3
-0
-BOOL_TYPE
-0
-System Chance Voice 4
-0
-BOOL_TYPE
-0
-System Chance Voice 5
-0
-BOOL_TYPE
-0
-System Chance Voice 6
-0
-BOOL_TYPE
-0
-System Chance Voice 7
-0
-BOOL_TYPE
-0
-System Chorus
-0
-BOOL_TYPE
-0
-System Compression Attack
-0
-BOOL_TYPE
-0
-System Compression Makeup Gain
-0
-BOOL_TYPE
-0
-System Compression On/Off
-0
-BOOL_TYPE
-0
-System Compression Ratio
-0
-BOOL_TYPE
-0
-System Compression Release
-0
-BOOL_TYPE
-0
-System Compression Threshold
-0
-BOOL_TYPE
-0
-System Controls On/Off
-0
-BOOL_TYPE
-0
-System Dry/Wet
-0
-BOOL_TYPE
-0
-System Effects On/Off
-0
-BOOL_TYPE
-0
-System Eq1 F.
-0
-BOOL_TYPE
-0
-System Eq1 L.
-0
-BOOL_TYPE
-0
-System Eq1 On/Off
-0
-BOOL_TYPE
-0
-System Eq2 F.
-0
-BOOL_TYPE
-0
-System Eq2 L.
-0
-BOOL_TYPE
-0
-System Eq2 On/Off
-0
-BOOL_TYPE
-0
-System Highpass On/Off
-0
-BOOL_TYPE
-0
-System Hp F.
-0
-BOOL_TYPE
-0
-System Hs F.
-0
-BOOL_TYPE
-0
-System Hs L.
-0
-BOOL_TYPE
-0
-System Hs On/Off
-0
-BOOL_TYPE
-0
-System In
-0
-BOOL_TYPE
-0
-System In On/Off
-0
-BOOL_TYPE
-0
-System Length Voice 1
-0
-BOOL_TYPE
-0
-System Length Voice 2
-0
-BOOL_TYPE
-0
-System Length Voice 3
-0
-BOOL_TYPE
-0
-System Length Voice 4
-0
-BOOL_TYPE
-0
-System Length Voice 5
-0
-BOOL_TYPE
-0
-System Length Voice 6
-0
-BOOL_TYPE
-0
-System Length Voice 7
-0
-BOOL_TYPE
-0
-System Lowpass On/Off
-0
-BOOL_TYPE
-0
-System Lp F.
-0
-BOOL_TYPE
-0
-System Ls F.
-0
-BOOL_TYPE
-0
-System Ls L.
-0
-BOOL_TYPE
-0
-System Ls On/Off
-0
-BOOL_TYPE
-0
-System On/Off Voice 1
-0
-BOOL_TYPE
-0
-System On/Off Voice 2
-0
-BOOL_TYPE
-0
-System On/Off Voice 3
-0
-BOOL_TYPE
-0
-System On/Off Voice 4
-0
-BOOL_TYPE
-0
-System On/Off Voice 5
-0
-BOOL_TYPE
-0
-System On/Off Voice 6
-0
-BOOL_TYPE
-0
-System On/Off Voice 7
-0
-BOOL_TYPE
-0
-System Out
-0
-BOOL_TYPE
-0
-System Out On/Off
-0
-BOOL_TYPE
-0
-System Pan
-0
-BOOL_TYPE
-0
-System Pan On/Off
-0
-BOOL_TYPE
-0
-System Pan Voice 1
-0
-BOOL_TYPE
-0
-System Pan Voice 2
-0
-BOOL_TYPE
-0
-System Pan Voice 3
-0
-BOOL_TYPE
-0
-System Pan Voice 4
-0
-BOOL_TYPE
-0
-System Pan Voice 5
-0
-BOOL_TYPE
-0
-System Pan Voice 6
-0
-BOOL_TYPE
-0
-System Pan Voice 7
-0
-BOOL_TYPE
-0
-System Pitch
-0
-BOOL_TYPE
-0
-System Pitch type
-0
-BOOL_TYPE
-0
-System Reverb
-0
-BOOL_TYPE
-0
-System Sample Browser On/Off
-0
-BOOL_TYPE
-0
-System Show Compressor GUI
-0
-BOOL_TYPE
-0
-System Show Equalizer GUI
-0
-BOOL_TYPE
-0
-System Solo On/Off
-0
-BOOL_TYPE
-0
-System Start Voice 1
-0
-BOOL_TYPE
-0
-System Start Voice 2
-0
-BOOL_TYPE
-0
-System Start Voice 3
-0
-BOOL_TYPE
-0
-System Start Voice 4
-0
-BOOL_TYPE
-0
-System Start Voice 5
-0
-BOOL_TYPE
-0
-System Start Voice 6
-0
-BOOL_TYPE
-0
-System Start Voice 7
-0
-BOOL_TYPE
-0
-System Transpose Voice 1
-0
-BOOL_TYPE
-0
-System Transpose Voice 2
-0
-BOOL_TYPE
-0
-System Transpose Voice 3
-0
-BOOL_TYPE
-0
-System Transpose Voice 4
-0
-BOOL_TYPE
-0
-System Transpose Voice 5
-0
-BOOL_TYPE
-0
-System Transpose Voice 6
-0
-BOOL_TYPE
-0
-System Transpose Voice 7
-0
-BOOL_TYPE
-0
-System Volume
-0
-BOOL_TYPE
-0
-System Volume On/Off
-0
-BOOL_TYPE
-0
-System Volume Voice 1
-0
-BOOL_TYPE
-0
-System Volume Voice 2
-0
-BOOL_TYPE
-0
-System Volume Voice 3
-0
-BOOL_TYPE
-0
-System Volume Voice 4
-0
-BOOL_TYPE
-0
-System Volume Voice 5
-0
-BOOL_TYPE
-0
-System Volume Voice 6
-0
-BOOL_TYPE
-0
-System Volume Voice 7
-0
-BOOL_TYPE
-0
-System Width
-0
-BOOL_TYPE
-0
-System Width On/Off
-0
-BOOL_TYPE
-0
-<< HASH MAP V5 END
-type_name
-0
-STRING_TYPE
-Faust
-<< HASH MAP V5 END
-x
-0
-FLOAT_TYPE
--120
-y
-0
-FLOAT_TYPE
--96
-<< HASH MAP V5 END
-
-2
-HASH_TYPE
->> HASH MAP V5 BEGIN
-4
-patch
-0
-INSTRUMENT_TYPE
-1
-plugin
-0
-HASH_TYPE
->> HASH MAP V5 BEGIN
-11
-___radium_plugin_state_v3
-0
-INT_TYPE
-1
-ab
-0
-HASH_TYPE
->> HASH MAP V5 BEGIN
-9
-curr_ab_num
-0
-INT_TYPE
-0
-is_valid
-0
-BOOL_TYPE
-0
-is_valid
-1
-BOOL_TYPE
-0
-is_valid
-2
-BOOL_TYPE
-0
-is_valid
-3
-BOOL_TYPE
-0
-is_valid
-4
-BOOL_TYPE
-0
-is_valid
-5
-BOOL_TYPE
-0
-is_valid
-6
-BOOL_TYPE
-0
-is_valid
-7
-BOOL_TYPE
-0
-<< HASH MAP V5 END
-auto_suspend_behavior
-0
-INT_TYPE
-0
-effects
-0
-HASH_TYPE
->> HASH MAP V5 BEGIN
-95
-System Aux 1
-0
-FLOAT_TYPE
-0
-System Aux 2
-0
-FLOAT_TYPE
-0
-System Aux 3
-0
-FLOAT_TYPE
-0
-System Chance Voice 1
-0
-FLOAT_TYPE
-256
-System Chance Voice 2
-0
-FLOAT_TYPE
-256
-System Chance Voice 3
-0
-FLOAT_TYPE
-256
-System Chance Voice 4
-0
-FLOAT_TYPE
-256
-System Chance Voice 5
-0
-FLOAT_TYPE
-256
-System Chance Voice 6
-0
-FLOAT_TYPE
-256
-System Chance Voice 7
-0
-FLOAT_TYPE
-256
-System Chorus
-0
-FLOAT_TYPE
-0
-System Compression Attack
-0
-FLOAT_TYPE
-49.807373046875
-System Compression Makeup Gain
-0
-FLOAT_TYPE
-0
-System Compression On/Off
-0
-FLOAT_TYPE
-0
-System Compression Ratio
-0
-FLOAT_TYPE
-2
-System Compression Release
-0
-FLOAT_TYPE
-100.2368087768555
-System Compression Threshold
-0
-FLOAT_TYPE
--20
-System Controls On/Off
-0
-FLOAT_TYPE
-1
-System Dry/Wet
-0
-FLOAT_TYPE
-1
-System Effects On/Off
-0
-FLOAT_TYPE
-1
-System Eq1 F.
-0
-FLOAT_TYPE
-399.1208801269531
-System Eq1 L.
-0
-FLOAT_TYPE
-0
-System Eq1 On/Off
-0
-FLOAT_TYPE
-0
-System Eq2 F.
-0
-FLOAT_TYPE
-1000.000366210938
-System Eq2 L.
-0
-FLOAT_TYPE
-0
-System Eq2 On/Off
-0
-FLOAT_TYPE
-0
-System Highpass On/Off
-0
-FLOAT_TYPE
-0
-System Hp F.
-0
-FLOAT_TYPE
-200
-System Hs F.
-0
-FLOAT_TYPE
-4499.01171875
-System Hs L.
-0
-FLOAT_TYPE
-0
-System Hs On/Off
-0
-FLOAT_TYPE
-0
-System In
-0
-FLOAT_TYPE
-0.9997119307518005
-System In On/Off
-0
-FLOAT_TYPE
-1
-System Length Voice 1
-0
-FLOAT_TYPE
-0
-System Length Voice 2
-0
-FLOAT_TYPE
-0
-System Length Voice 3
-0
-FLOAT_TYPE
-0
-System Length Voice 4
-0
-FLOAT_TYPE
-0
-System Length Voice 5
-0
-FLOAT_TYPE
-0
-System Length Voice 6
-0
-FLOAT_TYPE
-0
-System Length Voice 7
-0
-FLOAT_TYPE
-0
-System Lowpass On/Off
-0
-FLOAT_TYPE
-0
-System Lp F.
-0
-FLOAT_TYPE
-4999.34716796875
-System Ls F.
-0
-FLOAT_TYPE
-399.1208801269531
-System Ls L.
-0
-FLOAT_TYPE
-0
-System Ls On/Off
-0
-FLOAT_TYPE
-0
-System On/Off Voice 1
-0
-FLOAT_TYPE
-1
-System On/Off Voice 2
-0
-FLOAT_TYPE
-0
-System On/Off Voice 3
-0
-FLOAT_TYPE
-0
-System On/Off Voice 4
-0
-FLOAT_TYPE
-0
-System On/Off Voice 5
-0
-FLOAT_TYPE
-0
-System On/Off Voice 6
-0
-FLOAT_TYPE
-0
-System On/Off Voice 7
-0
-FLOAT_TYPE
-0
-System Out
-0
-FLOAT_TYPE
-0.9997119307518005
-System Out On/Off
-0
-FLOAT_TYPE
-1
-System Pan
-0
-FLOAT_TYPE
-0.5
-System Pan On/Off
-0
-FLOAT_TYPE
-0
-System Pan Voice 1
-0
-FLOAT_TYPE
-0
-System Pan Voice 2
-0
-FLOAT_TYPE
-0
-System Pan Voice 3
-0
-FLOAT_TYPE
-0
-System Pan Voice 4
-0
-FLOAT_TYPE
-0
-System Pan Voice 5
-0
-FLOAT_TYPE
-0
-System Pan Voice 6
-0
-FLOAT_TYPE
-0
-System Pan Voice 7
-0
-FLOAT_TYPE
-0
-System Pitch
-0
-FLOAT_TYPE
-0
-System Pitch type
-0
-FLOAT_TYPE
-0
-System Reverb
-0
-FLOAT_TYPE
-0
-System Sample Browser On/Off
-0
-FLOAT_TYPE
-1
-System Show Compressor GUI
-0
-FLOAT_TYPE
-0
-System Show Equalizer GUI
-0
-FLOAT_TYPE
-1
-System Solo On/Off
-0
-FLOAT_TYPE
-0
-System Start Voice 1
-0
-FLOAT_TYPE
-0
-System Start Voice 2
-0
-FLOAT_TYPE
-0
-System Start Voice 3
-0
-FLOAT_TYPE
-0
-System Start Voice 4
-0
-FLOAT_TYPE
-0
-System Start Voice 5
-0
-FLOAT_TYPE
-0
-System Start Voice 6
-0
-FLOAT_TYPE
-0
-System Start Voice 7
-0
-FLOAT_TYPE
-0
-System Transpose Voice 1
-0
-FLOAT_TYPE
-0
-System Transpose Voice 2
-0
-FLOAT_TYPE
-12
-System Transpose Voice 3
-0
-FLOAT_TYPE
-19
-System Transpose Voice 4
-0
-FLOAT_TYPE
-24
-System Transpose Voice 5
-0
-FLOAT_TYPE
--12
-System Transpose Voice 6
-0
-FLOAT_TYPE
--24
-System Transpose Voice 7
-0
-FLOAT_TYPE
-0.25
-System Volume
-0
-FLOAT_TYPE
-0
-System Volume On/Off
-0
-FLOAT_TYPE
-1
-System Volume Voice 1
-0
-FLOAT_TYPE
-0
-System Volume Voice 2
-0
-FLOAT_TYPE
-0
-System Volume Voice 3
-0
-FLOAT_TYPE
-0
-System Volume Voice 4
-0
-FLOAT_TYPE
-0
-System Volume Voice 5
-0
-FLOAT_TYPE
-0
-System Volume Voice 6
-0
-FLOAT_TYPE
-0
-System Volume Voice 7
-0
-FLOAT_TYPE
-0
-System Width
-0
-FLOAT_TYPE
-0.004999999888241291
-System Width On/Off
-0
-FLOAT_TYPE
-0
-<< HASH MAP V5 END
-enable_sample_seek
-0
-BOOL_TYPE
-0
-is_dpi_aware
-0
-BOOL_TYPE
-1
-name
-0
-STRING_TYPE
-System Out
-plugin_state
-0
-HASH_TYPE
->> HASH MAP V5 BEGIN
-2
-output_portname
-0
-STRING_TYPE
-system_out_left
-output_portname
-1
-STRING_TYPE
-system_out_right
-<< HASH MAP V5 END
-plugin_type_version
-0
-INT_TYPE
-0
-random_change
-0
-HASH_TYPE
->> HASH MAP V5 BEGIN
-95
-System Aux 1
-0
-BOOL_TYPE
-0
-System Aux 2
-0
-BOOL_TYPE
-0
-System Aux 3
-0
-BOOL_TYPE
-0
-System Chance Voice 1
-0
-BOOL_TYPE
-0
-System Chance Voice 2
-0
-BOOL_TYPE
-0
-System Chance Voice 3
-0
-BOOL_TYPE
-0
-System Chance Voice 4
-0
-BOOL_TYPE
-0
-System Chance Voice 5
-0
-BOOL_TYPE
-0
-System Chance Voice 6
-0
-BOOL_TYPE
-0
-System Chance Voice 7
-0
-BOOL_TYPE
-0
-System Chorus
-0
-BOOL_TYPE
-0
-System Compression Attack
-0
-BOOL_TYPE
-0
-System Compression Makeup Gain
-0
-BOOL_TYPE
-0
-System Compression On/Off
-0
-BOOL_TYPE
-0
-System Compression Ratio
-0
-BOOL_TYPE
-0
-System Compression Release
-0
-BOOL_TYPE
-0
-System Compression Threshold
-0
-BOOL_TYPE
-0
-System Controls On/Off
-0
-BOOL_TYPE
-0
-System Dry/Wet
-0
-BOOL_TYPE
-0
-System Effects On/Off
-0
-BOOL_TYPE
-0
-System Eq1 F.
-0
-BOOL_TYPE
-0
-System Eq1 L.
-0
-BOOL_TYPE
-0
-System Eq1 On/Off
-0
-BOOL_TYPE
-0
-System Eq2 F.
-0
-BOOL_TYPE
-0
-System Eq2 L.
-0
-BOOL_TYPE
-0
-System Eq2 On/Off
-0
-BOOL_TYPE
-0
-System Highpass On/Off
-0
-BOOL_TYPE
-0
-System Hp F.
-0
-BOOL_TYPE
-0
-System Hs F.
-0
-BOOL_TYPE
-0
-System Hs L.
-0
-BOOL_TYPE
-0
-System Hs On/Off
-0
-BOOL_TYPE
-0
-System In
-0
-BOOL_TYPE
-0
-System In On/Off
-0
-BOOL_TYPE
-0
-System Length Voice 1
-0
-BOOL_TYPE
-0
-System Length Voice 2
-0
-BOOL_TYPE
-0
-System Length Voice 3
-0
-BOOL_TYPE
-0
-System Length Voice 4
-0
-BOOL_TYPE
-0
-System Length Voice 5
-0
-BOOL_TYPE
-0
-System Length Voice 6
-0
-BOOL_TYPE
-0
-System Length Voice 7
-0
-BOOL_TYPE
-0
-System Lowpass On/Off
-0
-BOOL_TYPE
-0
-System Lp F.
-0
-BOOL_TYPE
-0
-System Ls F.
-0
-BOOL_TYPE
-0
-System Ls L.
-0
-BOOL_TYPE
-0
-System Ls On/Off
-0
-BOOL_TYPE
-0
-System On/Off Voice 1
-0
-BOOL_TYPE
-0
-System On/Off Voice 2
-0
-BOOL_TYPE
-0
-System On/Off Voice 3
-0
-BOOL_TYPE
-0
-System On/Off Voice 4
-0
-BOOL_TYPE
-0
-System On/Off Voice 5
-0
-BOOL_TYPE
-0
-System On/Off Voice 6
-0
-BOOL_TYPE
-0
-System On/Off Voice 7
-0
-BOOL_TYPE
-0
-System Out
-0
-BOOL_TYPE
-0
-System Out On/Off
-0
-BOOL_TYPE
-0
-System Pan
-0
-BOOL_TYPE
-0
-System Pan On/Off
-0
-BOOL_TYPE
-0
-System Pan Voice 1
-0
-BOOL_TYPE
-0
-System Pan Voice 2
-0
-BOOL_TYPE
-0
-System Pan Voice 3
-0
-BOOL_TYPE
-0
-System Pan Voice 4
-0
-BOOL_TYPE
-0
-System Pan Voice 5
-0
-BOOL_TYPE
-0
-System Pan Voice 6
-0
-BOOL_TYPE
-0
-System Pan Voice 7
-0
-BOOL_TYPE
-0
-System Pitch
-0
-BOOL_TYPE
-0
-System Pitch type
-0
-BOOL_TYPE
-0
-System Reverb
-0
-BOOL_TYPE
-0
-System Sample Browser On/Off
-0
-BOOL_TYPE
-0
-System Show Compressor GUI
-0
-BOOL_TYPE
-0
-System Show Equalizer GUI
-0
-BOOL_TYPE
-0
-System Solo On/Off
-0
-BOOL_TYPE
-0
-System Start Voice 1
-0
-BOOL_TYPE
-0
-System Start Voice 2
-0
-BOOL_TYPE
-0
-System Start Voice 3
-0
-BOOL_TYPE
-0
-System Start Voice 4
-0
-BOOL_TYPE
-0
-System Start Voice 5
-0
-BOOL_TYPE
-0
-System Start Voice 6
-0
-BOOL_TYPE
-0
-System Start Voice 7
-0
-BOOL_TYPE
-0
-System Transpose Voice 1
-0
-BOOL_TYPE
-0
-System Transpose Voice 2
-0
-BOOL_TYPE
-0
-System Transpose Voice 3
-0
-BOOL_TYPE
-0
-System Transpose Voice 4
-0
-BOOL_TYPE
-0
-System Transpose Voice 5
-0
-BOOL_TYPE
-0
-System Transpose Voice 6
-0
-BOOL_TYPE
-0
-System Transpose Voice 7
-0
-BOOL_TYPE
-0
-System Volume
-0
-BOOL_TYPE
-0
-System Volume On/Off
-0
-BOOL_TYPE
-0
-System Volume Voice 1
-0
-BOOL_TYPE
-0
-System Volume Voice 2
-0
-BOOL_TYPE
-0
-System Volume Voice 3
-0
-BOOL_TYPE
-0
-System Volume Voice 4
-0
-BOOL_TYPE
-0
-System Volume Voice 5
-0
-BOOL_TYPE
-0
-System Volume Voice 6
-0
-BOOL_TYPE
-0
-System Volume Voice 7
-0
-BOOL_TYPE
-0
-System Width
-0
-BOOL_TYPE
-0
-System Width On/Off
-0
-BOOL_TYPE
-0
-<< HASH MAP V5 END
-type_name
-0
-STRING_TYPE
-Jack
-<< HASH MAP V5 END
-x
-0
-FLOAT_TYPE
-120
-y
-0
-FLOAT_TYPE
--32
-<< HASH MAP V5 END
-
-3
-HASH_TYPE
->> HASH MAP V5 BEGIN
-4
-patch
-0
-INSTRUMENT_TYPE
-23
-plugin
-0
-HASH_TYPE
->> HASH MAP V5 BEGIN
-10
-___radium_plugin_state_v3
-0
-INT_TYPE
-1
-ab
-0
-HASH_TYPE
->> HASH MAP V5 BEGIN
-9
-curr_ab_num
-0
-INT_TYPE
-0
-is_valid
-0
-BOOL_TYPE
-0
-is_valid
-1
-BOOL_TYPE
-0
-is_valid
-2
-BOOL_TYPE
-0
-is_valid
-3
-BOOL_TYPE
-0
-is_valid
-4
-BOOL_TYPE
-0
-is_valid
-5
-BOOL_TYPE
-0
-is_valid
-6
-BOOL_TYPE
-0
-is_valid
-7
-BOOL_TYPE
-0
-<< HASH MAP V5 END
-auto_suspend_behavior
-0
-INT_TYPE
-0
-effects
-0
-HASH_TYPE
->> HASH MAP V5 BEGIN
-107
-0: Min delay
-0
-FLOAT_TYPE
-5
-10: Q
-0
-FLOAT_TYPE
-0.125
-11: Overlap
-0
-FLOAT_TYPE
-1
-1: Mod depth
-0
-FLOAT_TYPE
-6
-2: Modulation rate
-0
-FLOAT_TYPE
-0.499700665473938
-3: Stereo phase
-0
-FLOAT_TYPE
-180
-4: Voices
-0
-FLOAT_TYPE
-3.999500036239624
-5: Inter-voice phase
-0
-FLOAT_TYPE
-63.97200012207031
-6: Amount
-0
-FLOAT_TYPE
-2
-7: Dry Amount
-0
-FLOAT_TYPE
-1
-8: Center Frq 1
-0
-FLOAT_TYPE
-99.89689636230469
-9: Center Frq 2
-0
-FLOAT_TYPE
-4999.4501953125
-System Aux 1
-0
-FLOAT_TYPE
-0
-System Aux 2
-0
-FLOAT_TYPE
-0
-System Aux 3
-0
-FLOAT_TYPE
-0
-System Chance Voice 1
-0
-FLOAT_TYPE
-256
-System Chance Voice 2
-0
-FLOAT_TYPE
-256
-System Chance Voice 3
-0
-FLOAT_TYPE
-256
-System Chance Voice 4
-0
-FLOAT_TYPE
-256
-System Chance Voice 5
-0
-FLOAT_TYPE
-256
-System Chance Voice 6
-0
-FLOAT_TYPE
-256
-System Chance Voice 7
-0
-FLOAT_TYPE
-256
-System Chorus
-0
-FLOAT_TYPE
-0
-System Compression Attack
-0
-FLOAT_TYPE
-49.807373046875
-System Compression Makeup Gain
-0
-FLOAT_TYPE
-0
-System Compression On/Off
-0
-FLOAT_TYPE
-0
-System Compression Ratio
-0
-FLOAT_TYPE
-2
-System Compression Release
-0
-FLOAT_TYPE
-100.2368087768555
-System Compression Threshold
-0
-FLOAT_TYPE
--20
-System Controls On/Off
-0
-FLOAT_TYPE
-1
-System Dry/Wet
-0
-FLOAT_TYPE
-1
-System Effects On/Off
-0
-FLOAT_TYPE
-1
-System Eq1 F.
-0
-FLOAT_TYPE
-399.1208801269531
-System Eq1 L.
-0
-FLOAT_TYPE
-0
-System Eq1 On/Off
-0
-FLOAT_TYPE
-0
-System Eq2 F.
-0
-FLOAT_TYPE
-1000.000366210938
-System Eq2 L.
-0
-FLOAT_TYPE
-0
-System Eq2 On/Off
-0
-FLOAT_TYPE
-0
-System Highpass On/Off
-0
-FLOAT_TYPE
-0
-System Hp F.
-0
-FLOAT_TYPE
-200
-System Hs F.
-0
-FLOAT_TYPE
-1499.337646484375
-System Hs L.
-0
-FLOAT_TYPE
-0
-System Hs On/Off
-0
-FLOAT_TYPE
-0
-System In
-0
-FLOAT_TYPE
-0.9997119307518005
-System In On/Off
-0
-FLOAT_TYPE
-1
-System Length Voice 1
-0
-FLOAT_TYPE
-0
-System Length Voice 2
-0
-FLOAT_TYPE
-0
-System Length Voice 3
-0
-FLOAT_TYPE
-0
-System Length Voice 4
-0
-FLOAT_TYPE
-0
-System Length Voice 5
-0
-FLOAT_TYPE
-0
-System Length Voice 6
-0
-FLOAT_TYPE
-0
-System Length Voice 7
-0
-FLOAT_TYPE
-0
-System Lowpass On/Off
-0
-FLOAT_TYPE
-0
-System Lp F.
-0
-FLOAT_TYPE
-4999.34716796875
-System Ls F.
-0
-FLOAT_TYPE
-399.1208801269531
-System Ls L.
-0
-FLOAT_TYPE
-0
-System Ls On/Off
-0
-FLOAT_TYPE
-0
-System On/Off Voice 1
-0
-FLOAT_TYPE
-1
-System On/Off Voice 2
-0
-FLOAT_TYPE
-0
-System On/Off Voice 3
-0
-FLOAT_TYPE
-0
-System On/Off Voice 4
-0
-FLOAT_TYPE
-0
-System On/Off Voice 5
-0
-FLOAT_TYPE
-0
-System On/Off Voice 6
-0
-FLOAT_TYPE
-0
-System On/Off Voice 7
-0
-FLOAT_TYPE
-0
-System Out
-0
-FLOAT_TYPE
-0.9997119307518005
-System Out On/Off
-0
-FLOAT_TYPE
-1
-System Pan
-0
-FLOAT_TYPE
-0.5
-System Pan On/Off
-0
-FLOAT_TYPE
-0
-System Pan Voice 1
-0
-FLOAT_TYPE
-0
-System Pan Voice 2
-0
-FLOAT_TYPE
-0
-System Pan Voice 3
-0
-FLOAT_TYPE
-0
-System Pan Voice 4
-0
-FLOAT_TYPE
-0
-System Pan Voice 5
-0
-FLOAT_TYPE
-0
-System Pan Voice 6
-0
-FLOAT_TYPE
-0
-System Pan Voice 7
-0
-FLOAT_TYPE
-0
-System Pitch
-0
-FLOAT_TYPE
-0
-System Pitch type
-0
-FLOAT_TYPE
-0
-System Reverb
-0
-FLOAT_TYPE
-0
-System Sample Browser On/Off
-0
-FLOAT_TYPE
-1
-System Show Compressor GUI
-0
-FLOAT_TYPE
-0
-System Show Equalizer GUI
-0
-FLOAT_TYPE
-1
-System Solo On/Off
-0
-FLOAT_TYPE
-0
-System Start Voice 1
-0
-FLOAT_TYPE
-0
-System Start Voice 2
-0
-FLOAT_TYPE
-0
-System Start Voice 3
-0
-FLOAT_TYPE
-0
-System Start Voice 4
-0
-FLOAT_TYPE
-0
-System Start Voice 5
-0
-FLOAT_TYPE
-0
-System Start Voice 6
-0
-FLOAT_TYPE
-0
-System Start Voice 7
-0
-FLOAT_TYPE
-0
-System Transpose Voice 1
-0
-FLOAT_TYPE
-0
-System Transpose Voice 2
-0
-FLOAT_TYPE
-12
-System Transpose Voice 3
-0
-FLOAT_TYPE
-19
-System Transpose Voice 4
-0
-FLOAT_TYPE
-24
-System Transpose Voice 5
-0
-FLOAT_TYPE
--12
-System Transpose Voice 6
-0
-FLOAT_TYPE
--24
-System Transpose Voice 7
-0
-FLOAT_TYPE
-0.25
-System Volume
-0
-FLOAT_TYPE
-0.9997119307518005
-System Volume On/Off
-0
-FLOAT_TYPE
-1
-System Volume Voice 1
-0
-FLOAT_TYPE
-0
-System Volume Voice 2
-0
-FLOAT_TYPE
-0
-System Volume Voice 3
-0
-FLOAT_TYPE
-0
-System Volume Voice 4
-0
-FLOAT_TYPE
-0
-System Volume Voice 5
-0
-FLOAT_TYPE
-0
-System Volume Voice 6
-0
-FLOAT_TYPE
-0
-System Volume Voice 7
-0
-FLOAT_TYPE
-0
-System Width
-0
-FLOAT_TYPE
-0
-System Width On/Off
-0
-FLOAT_TYPE
-0
-<< HASH MAP V5 END
-enable_sample_seek
-0
-BOOL_TYPE
-0
-is_dpi_aware
-0
-BOOL_TYPE
-1
-name
-0
-STRING_TYPE
-Calf MultiChorus LADSPA
-plugin_type_version
-0
-INT_TYPE
-0
-random_change
-0
-HASH_TYPE
->> HASH MAP V5 BEGIN
-107
-0: Min delay
-0
-BOOL_TYPE
-1
-10: Q
-0
-BOOL_TYPE
-1
-11: Overlap
-0
-BOOL_TYPE
-1
-1: Mod depth
-0
-BOOL_TYPE
-1
-2: Modulation rate
-0
-BOOL_TYPE
-1
-3: Stereo phase
-0
-BOOL_TYPE
-1
-4: Voices
-0
-BOOL_TYPE
-1
-5: Inter-voice phase
-0
-BOOL_TYPE
-1
-6: Amount
-0
-BOOL_TYPE
-1
-7: Dry Amount
-0
-BOOL_TYPE
-1
-8: Center Frq 1
-0
-BOOL_TYPE
-1
-9: Center Frq 2
-0
-BOOL_TYPE
-1
-System Aux 1
-0
-BOOL_TYPE
-0
-System Aux 2
-0
-BOOL_TYPE
-0
-System Aux 3
-0
-BOOL_TYPE
-0
-System Chance Voice 1
-0
-BOOL_TYPE
-0
-System Chance Voice 2
-0
-BOOL_TYPE
-0
-System Chance Voice 3
-0
-BOOL_TYPE
-0
-System Chance Voice 4
-0
-BOOL_TYPE
-0
-System Chance Voice 5
-0
-BOOL_TYPE
-0
-System Chance Voice 6
-0
-BOOL_TYPE
-0
-System Chance Voice 7
-0
-BOOL_TYPE
-0
-System Chorus
-0
-BOOL_TYPE
-0
-System Compression Attack
-0
-BOOL_TYPE
-0
-System Compression Makeup Gain
-0
-BOOL_TYPE
-0
-System Compression On/Off
-0
-BOOL_TYPE
-0
-System Compression Ratio
-0
-BOOL_TYPE
-0
-System Compression Release
-0
-BOOL_TYPE
-0
-System Compression Threshold
-0
-BOOL_TYPE
-0
-System Controls On/Off
-0
-BOOL_TYPE
-0
-System Dry/Wet
-0
-BOOL_TYPE
-0
-System Effects On/Off
-0
-BOOL_TYPE
-0
-System Eq1 F.
-0
-BOOL_TYPE
-0
-System Eq1 L.
-0
-BOOL_TYPE
-0
-System Eq1 On/Off
-0
-BOOL_TYPE
-0
-System Eq2 F.
-0
-BOOL_TYPE
-0
-System Eq2 L.
-0
-BOOL_TYPE
-0
-System Eq2 On/Off
-0
-BOOL_TYPE
-0
-System Highpass On/Off
-0
-BOOL_TYPE
-0
-System Hp F.
-0
-BOOL_TYPE
-0
-System Hs F.
-0
-BOOL_TYPE
-0
-System Hs L.
-0
-BOOL_TYPE
-0
-System Hs On/Off
-0
-BOOL_TYPE
-0
-System In
-0
-BOOL_TYPE
-0
-System In On/Off
-0
-BOOL_TYPE
-0
-System Length Voice 1
-0
-BOOL_TYPE
-0
-System Length Voice 2
-0
-BOOL_TYPE
-0
-System Length Voice 3
-0
-BOOL_TYPE
-0
-System Length Voice 4
-0
-BOOL_TYPE
-0
-System Length Voice 5
-0
-BOOL_TYPE
-0
-System Length Voice 6
-0
-BOOL_TYPE
-0
-System Length Voice 7
-0
-BOOL_TYPE
-0
-System Lowpass On/Off
-0
-BOOL_TYPE
-0
-System Lp F.
-0
-BOOL_TYPE
-0
-System Ls F.
-0
-BOOL_TYPE
-0
-System Ls L.
-0
-BOOL_TYPE
-0
-System Ls On/Off
-0
-BOOL_TYPE
-0
-System On/Off Voice 1
-0
-BOOL_TYPE
-0
-System On/Off Voice 2
-0
-BOOL_TYPE
-0
-System On/Off Voice 3
-0
-BOOL_TYPE
-0
-System On/Off Voice 4
-0
-BOOL_TYPE
-0
-System On/Off Voice 5
-0
-BOOL_TYPE
-0
-System On/Off Voice 6
-0
-BOOL_TYPE
-0
-System On/Off Voice 7
-0
-BOOL_TYPE
-0
-System Out
-0
-BOOL_TYPE
-0
-System Out On/Off
-0
-BOOL_TYPE
-0
-System Pan
-0
-BOOL_TYPE
-0
-System Pan On/Off
-0
-BOOL_TYPE
-0
-System Pan Voice 1
-0
-BOOL_TYPE
-0
-System Pan Voice 2
-0
-BOOL_TYPE
-0
-System Pan Voice 3
-0
-BOOL_TYPE
-0
-System Pan Voice 4
-0
-BOOL_TYPE
-0
-System Pan Voice 5
-0
-BOOL_TYPE
-0
-System Pan Voice 6
-0
-BOOL_TYPE
-0
-System Pan Voice 7
-0
-BOOL_TYPE
-0
-System Pitch
-0
-BOOL_TYPE
-0
-System Pitch type
-0
-BOOL_TYPE
-0
-System Reverb
-0
-BOOL_TYPE
-0
-System Sample Browser On/Off
-0
-BOOL_TYPE
-0
-System Show Compressor GUI
-0
-BOOL_TYPE
-0
-System Show Equalizer GUI
-0
-BOOL_TYPE
-0
-System Solo On/Off
-0
-BOOL_TYPE
-0
-System Start Voice 1
-0
-BOOL_TYPE
-0
-System Start Voice 2
-0
-BOOL_TYPE
-0
-System Start Voice 3
-0
-BOOL_TYPE
-0
-System Start Voice 4
-0
-BOOL_TYPE
-0
-System Start Voice 5
-0
-BOOL_TYPE
-0
-System Start Voice 6
-0
-BOOL_TYPE
-0
-System Start Voice 7
-0
-BOOL_TYPE
-0
-System Transpose Voice 1
-0
-BOOL_TYPE
-0
-System Transpose Voice 2
-0
-BOOL_TYPE
-0
-System Transpose Voice 3
-0
-BOOL_TYPE
-0
-System Transpose Voice 4
-0
-BOOL_TYPE
-0
-System Transpose Voice 5
-0
-BOOL_TYPE
-0
-System Transpose Voice 6
-0
-BOOL_TYPE
-0
-System Transpose Voice 7
-0
-BOOL_TYPE
-0
-System Volume
-0
-BOOL_TYPE
-0
-System Volume On/Off
-0
-BOOL_TYPE
-0
-System Volume Voice 1
-0
-BOOL_TYPE
-0
-System Volume Voice 2
-0
-BOOL_TYPE
-0
-System Volume Voice 3
-0
-BOOL_TYPE
-0
-System Volume Voice 4
-0
-BOOL_TYPE
-0
-System Volume Voice 5
-0
-BOOL_TYPE
-0
-System Volume Voice 6
-0
-BOOL_TYPE
-0
-System Volume Voice 7
-0
-BOOL_TYPE
-0
-System Width
-0
-BOOL_TYPE
-0
-System Width On/Off
-0
-BOOL_TYPE
-0
-<< HASH MAP V5 END
-type_name
-0
-STRING_TYPE
-Ladspa
-<< HASH MAP V5 END
-x
-0
-FLOAT_TYPE
--120
-y
-0
-FLOAT_TYPE
--64
-<< HASH MAP V5 END
-
-4
-HASH_TYPE
->> HASH MAP V5 BEGIN
-4
-patch
-0
-INSTRUMENT_TYPE
-0
+26
 plugin
 0
 HASH_TYPE
@@ -7315,7 +8188,7 @@ FLOAT_TYPE
 System Eq1 F.
 0
 FLOAT_TYPE
-399.1208801269531
+400.0001525878906
 System Eq1 L.
 0
 FLOAT_TYPE
@@ -7343,11 +8216,11 @@ FLOAT_TYPE
 System Hp F.
 0
 FLOAT_TYPE
-200
+200.0000610351563
 System Hs F.
 0
 FLOAT_TYPE
-4499.01171875
+1500.000732421875
 System Hs L.
 0
 FLOAT_TYPE
@@ -7359,7 +8232,7 @@ FLOAT_TYPE
 System In
 0
 FLOAT_TYPE
-0.9997119307518005
+1.000000476837158
 System In On/Off
 0
 FLOAT_TYPE
@@ -7399,11 +8272,11 @@ FLOAT_TYPE
 System Lp F.
 0
 FLOAT_TYPE
-4999.34716796875
+4999.99951171875
 System Ls F.
 0
 FLOAT_TYPE
-399.1208801269531
+400.0001525878906
 System Ls L.
 0
 FLOAT_TYPE
@@ -7443,7 +8316,7 @@ FLOAT_TYPE
 System Out
 0
 FLOAT_TYPE
-0.9997119307518005
+1.000000476837158
 System Out On/Off
 0
 FLOAT_TYPE
@@ -7571,873 +8444,7 @@ FLOAT_TYPE
 System Volume
 0
 FLOAT_TYPE
-0.9997119307518005
-System Volume On/Off
-0
-FLOAT_TYPE
-1
-System Volume Voice 1
-0
-FLOAT_TYPE
-0
-System Volume Voice 2
-0
-FLOAT_TYPE
-0
-System Volume Voice 3
-0
-FLOAT_TYPE
-0
-System Volume Voice 4
-0
-FLOAT_TYPE
-0
-System Volume Voice 5
-0
-FLOAT_TYPE
-0
-System Volume Voice 6
-0
-FLOAT_TYPE
-0
-System Volume Voice 7
-0
-FLOAT_TYPE
-0
-System Width
-0
-FLOAT_TYPE
-0.004999999888241291
-System Width On/Off
-0
-FLOAT_TYPE
-0
-<< HASH MAP V5 END
-enable_sample_seek
-0
-BOOL_TYPE
-1
-is_dpi_aware
-0
-BOOL_TYPE
-1
-name
-0
-STRING_TYPE
-Bus
-plugin_type_version
-0
-INT_TYPE
-0
-random_change
-0
-HASH_TYPE
->> HASH MAP V5 BEGIN
-95
-System Aux 1
-0
-BOOL_TYPE
-0
-System Aux 2
-0
-BOOL_TYPE
-0
-System Aux 3
-0
-BOOL_TYPE
-0
-System Chance Voice 1
-0
-BOOL_TYPE
-0
-System Chance Voice 2
-0
-BOOL_TYPE
-0
-System Chance Voice 3
-0
-BOOL_TYPE
-0
-System Chance Voice 4
-0
-BOOL_TYPE
-0
-System Chance Voice 5
-0
-BOOL_TYPE
-0
-System Chance Voice 6
-0
-BOOL_TYPE
-0
-System Chance Voice 7
-0
-BOOL_TYPE
-0
-System Chorus
-0
-BOOL_TYPE
-0
-System Compression Attack
-0
-BOOL_TYPE
-0
-System Compression Makeup Gain
-0
-BOOL_TYPE
-0
-System Compression On/Off
-0
-BOOL_TYPE
-0
-System Compression Ratio
-0
-BOOL_TYPE
-0
-System Compression Release
-0
-BOOL_TYPE
-0
-System Compression Threshold
-0
-BOOL_TYPE
-0
-System Controls On/Off
-0
-BOOL_TYPE
-0
-System Dry/Wet
-0
-BOOL_TYPE
-0
-System Effects On/Off
-0
-BOOL_TYPE
-0
-System Eq1 F.
-0
-BOOL_TYPE
-0
-System Eq1 L.
-0
-BOOL_TYPE
-0
-System Eq1 On/Off
-0
-BOOL_TYPE
-0
-System Eq2 F.
-0
-BOOL_TYPE
-0
-System Eq2 L.
-0
-BOOL_TYPE
-0
-System Eq2 On/Off
-0
-BOOL_TYPE
-0
-System Highpass On/Off
-0
-BOOL_TYPE
-0
-System Hp F.
-0
-BOOL_TYPE
-0
-System Hs F.
-0
-BOOL_TYPE
-0
-System Hs L.
-0
-BOOL_TYPE
-0
-System Hs On/Off
-0
-BOOL_TYPE
-0
-System In
-0
-BOOL_TYPE
-0
-System In On/Off
-0
-BOOL_TYPE
-0
-System Length Voice 1
-0
-BOOL_TYPE
-0
-System Length Voice 2
-0
-BOOL_TYPE
-0
-System Length Voice 3
-0
-BOOL_TYPE
-0
-System Length Voice 4
-0
-BOOL_TYPE
-0
-System Length Voice 5
-0
-BOOL_TYPE
-0
-System Length Voice 6
-0
-BOOL_TYPE
-0
-System Length Voice 7
-0
-BOOL_TYPE
-0
-System Lowpass On/Off
-0
-BOOL_TYPE
-0
-System Lp F.
-0
-BOOL_TYPE
-0
-System Ls F.
-0
-BOOL_TYPE
-0
-System Ls L.
-0
-BOOL_TYPE
-0
-System Ls On/Off
-0
-BOOL_TYPE
-0
-System On/Off Voice 1
-0
-BOOL_TYPE
-0
-System On/Off Voice 2
-0
-BOOL_TYPE
-0
-System On/Off Voice 3
-0
-BOOL_TYPE
-0
-System On/Off Voice 4
-0
-BOOL_TYPE
-0
-System On/Off Voice 5
-0
-BOOL_TYPE
-0
-System On/Off Voice 6
-0
-BOOL_TYPE
-0
-System On/Off Voice 7
-0
-BOOL_TYPE
-0
-System Out
-0
-BOOL_TYPE
-0
-System Out On/Off
-0
-BOOL_TYPE
-0
-System Pan
-0
-BOOL_TYPE
-0
-System Pan On/Off
-0
-BOOL_TYPE
-0
-System Pan Voice 1
-0
-BOOL_TYPE
-0
-System Pan Voice 2
-0
-BOOL_TYPE
-0
-System Pan Voice 3
-0
-BOOL_TYPE
-0
-System Pan Voice 4
-0
-BOOL_TYPE
-0
-System Pan Voice 5
-0
-BOOL_TYPE
-0
-System Pan Voice 6
-0
-BOOL_TYPE
-0
-System Pan Voice 7
-0
-BOOL_TYPE
-0
-System Pitch
-0
-BOOL_TYPE
-0
-System Pitch type
-0
-BOOL_TYPE
-0
-System Reverb
-0
-BOOL_TYPE
-0
-System Sample Browser On/Off
-0
-BOOL_TYPE
-0
-System Show Compressor GUI
-0
-BOOL_TYPE
-0
-System Show Equalizer GUI
-0
-BOOL_TYPE
-0
-System Solo On/Off
-0
-BOOL_TYPE
-0
-System Start Voice 1
-0
-BOOL_TYPE
-0
-System Start Voice 2
-0
-BOOL_TYPE
-0
-System Start Voice 3
-0
-BOOL_TYPE
-0
-System Start Voice 4
-0
-BOOL_TYPE
-0
-System Start Voice 5
-0
-BOOL_TYPE
-0
-System Start Voice 6
-0
-BOOL_TYPE
-0
-System Start Voice 7
-0
-BOOL_TYPE
-0
-System Transpose Voice 1
-0
-BOOL_TYPE
-0
-System Transpose Voice 2
-0
-BOOL_TYPE
-0
-System Transpose Voice 3
-0
-BOOL_TYPE
-0
-System Transpose Voice 4
-0
-BOOL_TYPE
-0
-System Transpose Voice 5
-0
-BOOL_TYPE
-0
-System Transpose Voice 6
-0
-BOOL_TYPE
-0
-System Transpose Voice 7
-0
-BOOL_TYPE
-0
-System Volume
-0
-BOOL_TYPE
-0
-System Volume On/Off
-0
-BOOL_TYPE
-0
-System Volume Voice 1
-0
-BOOL_TYPE
-0
-System Volume Voice 2
-0
-BOOL_TYPE
-0
-System Volume Voice 3
-0
-BOOL_TYPE
-0
-System Volume Voice 4
-0
-BOOL_TYPE
-0
-System Volume Voice 5
-0
-BOOL_TYPE
-0
-System Volume Voice 6
-0
-BOOL_TYPE
-0
-System Volume Voice 7
-0
-BOOL_TYPE
-0
-System Width
-0
-BOOL_TYPE
-0
-System Width On/Off
-0
-BOOL_TYPE
-0
-<< HASH MAP V5 END
-type_name
-0
-STRING_TYPE
-Bus
-<< HASH MAP V5 END
-x
-0
-FLOAT_TYPE
-0
-y
-0
-FLOAT_TYPE
--32
-<< HASH MAP V5 END
-
-5
-HASH_TYPE
->> HASH MAP V5 BEGIN
-4
-patch
-0
-INSTRUMENT_TYPE
-17
-plugin
-0
-HASH_TYPE
->> HASH MAP V5 BEGIN
-10
-___radium_plugin_state_v3
-0
-INT_TYPE
-1
-ab
-0
-HASH_TYPE
->> HASH MAP V5 BEGIN
-9
-curr_ab_num
-0
-INT_TYPE
-0
-is_valid
-0
-BOOL_TYPE
-0
-is_valid
-1
-BOOL_TYPE
-0
-is_valid
-2
-BOOL_TYPE
-0
-is_valid
-3
-BOOL_TYPE
-0
-is_valid
-4
-BOOL_TYPE
-0
-is_valid
-5
-BOOL_TYPE
-0
-is_valid
-6
-BOOL_TYPE
-0
-is_valid
-7
-BOOL_TYPE
-0
-<< HASH MAP V5 END
-auto_suspend_behavior
-0
-INT_TYPE
-0
-effects
-0
-HASH_TYPE
->> HASH MAP V5 BEGIN
-95
-System Aux 1
-0
-FLOAT_TYPE
-0
-System Aux 2
-0
-FLOAT_TYPE
-0
-System Aux 3
-0
-FLOAT_TYPE
-0
-System Chance Voice 1
-0
-FLOAT_TYPE
-256
-System Chance Voice 2
-0
-FLOAT_TYPE
-256
-System Chance Voice 3
-0
-FLOAT_TYPE
-256
-System Chance Voice 4
-0
-FLOAT_TYPE
-256
-System Chance Voice 5
-0
-FLOAT_TYPE
-256
-System Chance Voice 6
-0
-FLOAT_TYPE
-256
-System Chance Voice 7
-0
-FLOAT_TYPE
-256
-System Chorus
-0
-FLOAT_TYPE
-0
-System Compression Attack
-0
-FLOAT_TYPE
-49.807373046875
-System Compression Makeup Gain
-0
-FLOAT_TYPE
-0
-System Compression On/Off
-0
-FLOAT_TYPE
-0
-System Compression Ratio
-0
-FLOAT_TYPE
-2
-System Compression Release
-0
-FLOAT_TYPE
-100.2368087768555
-System Compression Threshold
-0
-FLOAT_TYPE
--20
-System Controls On/Off
-0
-FLOAT_TYPE
-1
-System Dry/Wet
-0
-FLOAT_TYPE
-1
-System Effects On/Off
-0
-FLOAT_TYPE
-1
-System Eq1 F.
-0
-FLOAT_TYPE
-399.1208801269531
-System Eq1 L.
-0
-FLOAT_TYPE
-0
-System Eq1 On/Off
-0
-FLOAT_TYPE
-0
-System Eq2 F.
-0
-FLOAT_TYPE
-1000.000366210938
-System Eq2 L.
-0
-FLOAT_TYPE
-0
-System Eq2 On/Off
-0
-FLOAT_TYPE
-0
-System Highpass On/Off
-0
-FLOAT_TYPE
-0
-System Hp F.
-0
-FLOAT_TYPE
-200
-System Hs F.
-0
-FLOAT_TYPE
-1499.337646484375
-System Hs L.
-0
-FLOAT_TYPE
-0
-System Hs On/Off
-0
-FLOAT_TYPE
-0
-System In
-0
-FLOAT_TYPE
-0.9997119307518005
-System In On/Off
-0
-FLOAT_TYPE
-1
-System Length Voice 1
-0
-FLOAT_TYPE
-0
-System Length Voice 2
-0
-FLOAT_TYPE
-0
-System Length Voice 3
-0
-FLOAT_TYPE
-0
-System Length Voice 4
-0
-FLOAT_TYPE
-0
-System Length Voice 5
-0
-FLOAT_TYPE
-0
-System Length Voice 6
-0
-FLOAT_TYPE
-0
-System Length Voice 7
-0
-FLOAT_TYPE
-0
-System Lowpass On/Off
-0
-FLOAT_TYPE
-0
-System Lp F.
-0
-FLOAT_TYPE
-1499.337646484375
-System Ls F.
-0
-FLOAT_TYPE
-399.1208801269531
-System Ls L.
-0
-FLOAT_TYPE
-0
-System Ls On/Off
-0
-FLOAT_TYPE
-0
-System On/Off Voice 1
-0
-FLOAT_TYPE
-1
-System On/Off Voice 2
-0
-FLOAT_TYPE
-0
-System On/Off Voice 3
-0
-FLOAT_TYPE
-0
-System On/Off Voice 4
-0
-FLOAT_TYPE
-0
-System On/Off Voice 5
-0
-FLOAT_TYPE
-0
-System On/Off Voice 6
-0
-FLOAT_TYPE
-0
-System On/Off Voice 7
-0
-FLOAT_TYPE
-0
-System Out
-0
-FLOAT_TYPE
-0.9997119307518005
-System Out On/Off
-0
-FLOAT_TYPE
-1
-System Pan
-0
-FLOAT_TYPE
-0.5
-System Pan On/Off
-0
-FLOAT_TYPE
-0
-System Pan Voice 1
-0
-FLOAT_TYPE
-0
-System Pan Voice 2
-0
-FLOAT_TYPE
-0
-System Pan Voice 3
-0
-FLOAT_TYPE
-0
-System Pan Voice 4
-0
-FLOAT_TYPE
-0
-System Pan Voice 5
-0
-FLOAT_TYPE
-0
-System Pan Voice 6
-0
-FLOAT_TYPE
-0
-System Pan Voice 7
-0
-FLOAT_TYPE
-0
-System Pitch
-0
-FLOAT_TYPE
-0
-System Pitch type
-0
-FLOAT_TYPE
-0
-System Reverb
-0
-FLOAT_TYPE
-0
-System Sample Browser On/Off
-0
-FLOAT_TYPE
-1
-System Show Compressor GUI
-0
-FLOAT_TYPE
-0
-System Show Equalizer GUI
-0
-FLOAT_TYPE
-1
-System Solo On/Off
-0
-FLOAT_TYPE
-0
-System Start Voice 1
-0
-FLOAT_TYPE
-0
-System Start Voice 2
-0
-FLOAT_TYPE
-0
-System Start Voice 3
-0
-FLOAT_TYPE
-0
-System Start Voice 4
-0
-FLOAT_TYPE
-0
-System Start Voice 5
-0
-FLOAT_TYPE
-0
-System Start Voice 6
-0
-FLOAT_TYPE
-0
-System Start Voice 7
-0
-FLOAT_TYPE
-0
-System Transpose Voice 1
-0
-FLOAT_TYPE
-0
-System Transpose Voice 2
-0
-FLOAT_TYPE
-12
-System Transpose Voice 3
-0
-FLOAT_TYPE
-19
-System Transpose Voice 4
-0
-FLOAT_TYPE
-24
-System Transpose Voice 5
-0
-FLOAT_TYPE
--12
-System Transpose Voice 6
-0
-FLOAT_TYPE
--24
-System Transpose Voice 7
-0
-FLOAT_TYPE
-0.25
-System Volume
-0
-FLOAT_TYPE
-0.9997119307518005
+1.000000476837158
 System Volume On/Off
 0
 FLOAT_TYPE
@@ -8490,7 +8497,7 @@ BOOL_TYPE
 name
 0
 STRING_TYPE
-Bus 2
+Bus 5
 plugin_type_version
 0
 INT_TYPE
@@ -8893,7 +8900,7 @@ FLOAT_TYPE
 y
 0
 FLOAT_TYPE
--64
+32
 << HASH MAP V5 END
 
 6
@@ -8903,7 +8910,7 @@ HASH_TYPE
 patch
 0
 INSTRUMENT_TYPE
-19
+25
 plugin
 0
 HASH_TYPE
@@ -9047,7 +9054,7 @@ FLOAT_TYPE
 System Eq1 F.
 0
 FLOAT_TYPE
-399.1208801269531
+400.0001525878906
 System Eq1 L.
 0
 FLOAT_TYPE
@@ -9075,11 +9082,11 @@ FLOAT_TYPE
 System Hp F.
 0
 FLOAT_TYPE
-200
+200.0000610351563
 System Hs F.
 0
 FLOAT_TYPE
-1499.337646484375
+1500.000732421875
 System Hs L.
 0
 FLOAT_TYPE
@@ -9091,7 +9098,7 @@ FLOAT_TYPE
 System In
 0
 FLOAT_TYPE
-0.9997119307518005
+1.000000476837158
 System In On/Off
 0
 FLOAT_TYPE
@@ -9131,11 +9138,11 @@ FLOAT_TYPE
 System Lp F.
 0
 FLOAT_TYPE
-4999.34716796875
+4999.99951171875
 System Ls F.
 0
 FLOAT_TYPE
-399.1208801269531
+400.0001525878906
 System Ls L.
 0
 FLOAT_TYPE
@@ -9175,7 +9182,7 @@ FLOAT_TYPE
 System Out
 0
 FLOAT_TYPE
-0.9997119307518005
+1.000000476837158
 System Out On/Off
 0
 FLOAT_TYPE
@@ -9303,7 +9310,7 @@ FLOAT_TYPE
 System Volume
 0
 FLOAT_TYPE
-0.9997119307518005
+1.000000476837158
 System Volume On/Off
 0
 FLOAT_TYPE
@@ -9356,7 +9363,7 @@ BOOL_TYPE
 name
 0
 STRING_TYPE
-Bus 1
+Bus 4
 plugin_type_version
 0
 INT_TYPE
@@ -9759,7 +9766,7 @@ FLOAT_TYPE
 y
 0
 FLOAT_TYPE
--96
+0
 << HASH MAP V5 END
 
 7
@@ -10635,7 +10642,7 @@ HASH_TYPE
 patch
 0
 INSTRUMENT_TYPE
-25
+19
 plugin
 0
 HASH_TYPE
@@ -10779,7 +10786,7 @@ FLOAT_TYPE
 System Eq1 F.
 0
 FLOAT_TYPE
-400.0001525878906
+399.1208801269531
 System Eq1 L.
 0
 FLOAT_TYPE
@@ -10807,11 +10814,11 @@ FLOAT_TYPE
 System Hp F.
 0
 FLOAT_TYPE
-200.0000610351563
+200
 System Hs F.
 0
 FLOAT_TYPE
-1500.000732421875
+1499.337646484375
 System Hs L.
 0
 FLOAT_TYPE
@@ -10823,7 +10830,7 @@ FLOAT_TYPE
 System In
 0
 FLOAT_TYPE
-1.000000476837158
+0.9997119307518005
 System In On/Off
 0
 FLOAT_TYPE
@@ -10863,11 +10870,11 @@ FLOAT_TYPE
 System Lp F.
 0
 FLOAT_TYPE
-4999.99951171875
+4999.34716796875
 System Ls F.
 0
 FLOAT_TYPE
-400.0001525878906
+399.1208801269531
 System Ls L.
 0
 FLOAT_TYPE
@@ -10907,7 +10914,7 @@ FLOAT_TYPE
 System Out
 0
 FLOAT_TYPE
-1.000000476837158
+0.9997119307518005
 System Out On/Off
 0
 FLOAT_TYPE
@@ -11035,7 +11042,7 @@ FLOAT_TYPE
 System Volume
 0
 FLOAT_TYPE
-1.000000476837158
+0.9997119307518005
 System Volume On/Off
 0
 FLOAT_TYPE
@@ -11088,7 +11095,7 @@ BOOL_TYPE
 name
 0
 STRING_TYPE
-Bus 4
+Bus 1
 plugin_type_version
 0
 INT_TYPE
@@ -11491,7 +11498,7 @@ FLOAT_TYPE
 y
 0
 FLOAT_TYPE
-0
+-96
 << HASH MAP V5 END
 
 9
@@ -11501,7 +11508,7 @@ HASH_TYPE
 patch
 0
 INSTRUMENT_TYPE
-26
+17
 plugin
 0
 HASH_TYPE
@@ -11645,7 +11652,7 @@ FLOAT_TYPE
 System Eq1 F.
 0
 FLOAT_TYPE
-400.0001525878906
+399.1208801269531
 System Eq1 L.
 0
 FLOAT_TYPE
@@ -11673,11 +11680,11 @@ FLOAT_TYPE
 System Hp F.
 0
 FLOAT_TYPE
-200.0000610351563
+200
 System Hs F.
 0
 FLOAT_TYPE
-1500.000732421875
+1499.337646484375
 System Hs L.
 0
 FLOAT_TYPE
@@ -11689,7 +11696,7 @@ FLOAT_TYPE
 System In
 0
 FLOAT_TYPE
-1.000000476837158
+0.9997119307518005
 System In On/Off
 0
 FLOAT_TYPE
@@ -11729,11 +11736,11 @@ FLOAT_TYPE
 System Lp F.
 0
 FLOAT_TYPE
-4999.99951171875
+1499.337646484375
 System Ls F.
 0
 FLOAT_TYPE
-400.0001525878906
+399.1208801269531
 System Ls L.
 0
 FLOAT_TYPE
@@ -11773,7 +11780,7 @@ FLOAT_TYPE
 System Out
 0
 FLOAT_TYPE
-1.000000476837158
+0.9997119307518005
 System Out On/Off
 0
 FLOAT_TYPE
@@ -11901,7 +11908,7 @@ FLOAT_TYPE
 System Volume
 0
 FLOAT_TYPE
-1.000000476837158
+0.9997119307518005
 System Volume On/Off
 0
 FLOAT_TYPE
@@ -11954,7 +11961,7 @@ BOOL_TYPE
 name
 0
 STRING_TYPE
-Bus 5
+Bus 2
 plugin_type_version
 0
 INT_TYPE
@@ -12357,7 +12364,7 @@ FLOAT_TYPE
 y
 0
 FLOAT_TYPE
-32
+-64
 << HASH MAP V5 END
 min_x_pos
 0
@@ -12385,67 +12392,7 @@ HASH_TYPE
 :connection-type
 0
 INT_TYPE
-1
-enabled
-0
-BOOL_TYPE
-1
-from_patch
-0
-INSTRUMENT_TYPE
-17
-gain
-0
-FLOAT_TYPE
-1
-is_event_connection
-0
-BOOL_TYPE
-0
-to_patch
-0
-INSTRUMENT_TYPE
-23
-<< HASH MAP V5 END
-
-1
-HASH_TYPE
->> HASH MAP V5 BEGIN
-6
-:connection-type
-0
-INT_TYPE
-1
-enabled
-0
-BOOL_TYPE
-1
-from_patch
-0
-INSTRUMENT_TYPE
-19
-gain
-0
-FLOAT_TYPE
-1
-is_event_connection
-0
-BOOL_TYPE
-0
-to_patch
-0
-INSTRUMENT_TYPE
-7
-<< HASH MAP V5 END
-
 2
-HASH_TYPE
->> HASH MAP V5 BEGIN
-6
-:connection-type
-0
-INT_TYPE
-0
 enabled
 0
 BOOL_TYPE
@@ -12453,7 +12400,7 @@ BOOL_TYPE
 from_patch
 0
 INSTRUMENT_TYPE
-23
+0
 gain
 0
 FLOAT_TYPE
@@ -12465,40 +12412,10 @@ BOOL_TYPE
 to_patch
 0
 INSTRUMENT_TYPE
-0
+1
 << HASH MAP V5 END
 
-3
-HASH_TYPE
->> HASH MAP V5 BEGIN
-6
-:connection-type
-0
-INT_TYPE
-0
-enabled
-0
-BOOL_TYPE
 1
-from_patch
-0
-INSTRUMENT_TYPE
-7
-gain
-0
-FLOAT_TYPE
-1
-is_event_connection
-0
-BOOL_TYPE
-0
-to_patch
-0
-INSTRUMENT_TYPE
-0
-<< HASH MAP V5 END
-
-4
 HASH_TYPE
 >> HASH MAP V5 BEGIN
 6
@@ -12528,14 +12445,14 @@ INSTRUMENT_TYPE
 0
 << HASH MAP V5 END
 
-5
+2
 HASH_TYPE
 >> HASH MAP V5 BEGIN
 6
 :connection-type
 0
 INT_TYPE
-2
+0
 enabled
 0
 BOOL_TYPE
@@ -12543,7 +12460,7 @@ BOOL_TYPE
 from_patch
 0
 INSTRUMENT_TYPE
-0
+7
 gain
 0
 FLOAT_TYPE
@@ -12555,7 +12472,97 @@ BOOL_TYPE
 to_patch
 0
 INSTRUMENT_TYPE
+0
+<< HASH MAP V5 END
+
+3
+HASH_TYPE
+>> HASH MAP V5 BEGIN
+6
+:connection-type
+0
+INT_TYPE
+0
+enabled
+0
+BOOL_TYPE
 1
+from_patch
+0
+INSTRUMENT_TYPE
+23
+gain
+0
+FLOAT_TYPE
+1
+is_event_connection
+0
+BOOL_TYPE
+0
+to_patch
+0
+INSTRUMENT_TYPE
+0
+<< HASH MAP V5 END
+
+4
+HASH_TYPE
+>> HASH MAP V5 BEGIN
+6
+:connection-type
+0
+INT_TYPE
+1
+enabled
+0
+BOOL_TYPE
+1
+from_patch
+0
+INSTRUMENT_TYPE
+19
+gain
+0
+FLOAT_TYPE
+1
+is_event_connection
+0
+BOOL_TYPE
+0
+to_patch
+0
+INSTRUMENT_TYPE
+7
+<< HASH MAP V5 END
+
+5
+HASH_TYPE
+>> HASH MAP V5 BEGIN
+6
+:connection-type
+0
+INT_TYPE
+1
+enabled
+0
+BOOL_TYPE
+1
+from_patch
+0
+INSTRUMENT_TYPE
+17
+gain
+0
+FLOAT_TYPE
+1
+is_event_connection
+0
+BOOL_TYPE
+0
+to_patch
+0
+INSTRUMENT_TYPE
+23
 << HASH MAP V5 END
 includes_audio
 0
