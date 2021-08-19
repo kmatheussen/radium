@@ -304,22 +304,33 @@
   )
 
 
-(define (FROM_C-set-pianoroll-autorange tracknum blocknum)
+(define (get-min/max-pitch tracknum blocknum)
   (define minkey (floor (<ra> :get-lowest-key tracknum blocknum)))
   (define maxkey (+ 1 (floor (<ra> :get-highest-key tracknum blocknum))))
-  (if (>= minkey 0)
+  (if (not (>= minkey 0))
+      (list 48 60)
       (let loop ((minkey minkey)
                  (maxkey maxkey))
         (if (>= (- maxkey minkey) 5)
-            (begin
-              (<ra> :set-pianoroll-low-key minkey tracknum blocknum)
-              (<ra> :set-pianoroll-high-key maxkey tracknum blocknum))
+            (list minkey maxkey)
             (loop (if (> minkey 0)
                       (- minkey 1)
                       minkey)
                   (if (< maxkey 127)
                       (+ maxkey 2)
                       maxkey))))))
+
+#!!
+(get-min/max-pitch 4 -1)
+!!#
+
+(define (FROM_C-set-pianoroll-autorange tracknum blocknum)
+  (define min/max (get-min/max-pitch tracknum blocknum))
+  (when min/max
+    (define minkey (car min/max))
+    (define maxkey (cadr min/max))
+    (<ra> :set-pianoroll-range minkey maxkey tracknum blocknum)))
+
   
 (def-area-subclass (<track-header-pianoroll> :gui :x1 :y1 :x2 :y2
                                              :tracknum
