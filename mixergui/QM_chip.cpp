@@ -1668,7 +1668,18 @@ static bool connection_is_implicitly_muted(SuperConnection *connection){
   if (connection->to==NULL || connection->from==NULL)
     return false;
 
-  return SP_get_link_implicitly_muted(connection->to->_sound_producer, connection->from->_sound_producer, NULL);
+  if (SP_get_link_implicitly_muted(connection->to->_sound_producer, connection->from->_sound_producer, NULL))
+    return true;
+  
+  if (!root->song->mute_system_buses_when_bypassed)
+    return false;
+
+  SoundPlugin *from_plugin = SP_get_plugin(connection->from->_sound_producer);
+  
+  if (!is_bypassed(from_plugin))
+    return false;
+  
+  return SP_get_bus_num(connection->to->_sound_producer) >= 0;
 }
 
 static float get_connection_color_alpha(SuperConnection *connection){

@@ -2540,9 +2540,39 @@ float getAudioConnectionGain(instrument_t source_id, instrument_t dest_id, bool 
     return 0.0;
 }
 
+bool getConnectionImplicitlyDisabled(instrument_t source_id, instrument_t dest_id){
+  if (!root->song->mute_system_buses_when_bypassed)
+    return false;
+  
+  struct Patch *patch_source = getAudioPatchFromNum(source_id);
+  if(patch_source==NULL)
+    return true;
+
+  struct SoundPlugin *plugin_source = (struct SoundPlugin*)patch_source->patchdata;
+  if (plugin_source==NULL){
+    handleError("getConnectionImplicitlyDisabled: Source instrument #%d has been closed", (int)source_id.id);
+    return true;
+  }
+
+  if (!is_bypassed(plugin_source))
+    return false;
+  
+  struct Patch *patch_dest = getAudioPatchFromNum(dest_id);
+  if(patch_dest==NULL)
+    return true;
+
+  struct SoundPlugin *plugin_dest = (struct SoundPlugin*)patch_dest->patchdata;
+  if (plugin_dest==NULL){
+    handleError("getNumInputChannels: Destination instrument #%d has been closed", (int)dest_id.id);
+    return true;
+  }
+
+  return PLUGIN_get_bus_num(plugin_dest->type) >= 0;
+}
+
 bool getConnectionEnabled(instrument_t source_id, instrument_t dest_id, bool show_error_if_not_connected){
   bool ret;
-  if (get_connection_gain_enabled("getConnectioEnabled", source_id, dest_id, NULL, &ret, show_error_if_not_connected))
+  if (get_connection_gain_enabled("getConnectionEnabled", source_id, dest_id, NULL, &ret, show_error_if_not_connected))
     return ret;
   else
     return false;

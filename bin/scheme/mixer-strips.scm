@@ -1018,7 +1018,8 @@
   (define (is-enabled?)
     ;;(c-display "INSTRUMENT:" instrument-name)
     (if is-send?
-        (<ra> :get-connection-enabled parent-instrument-id instrument-id #f) ;; #f means don"t show error if not connected. That might happen if redrawing before remaking after changing configuration.
+        (and (not (<ra> :get-connection-implicitly-disabled parent-instrument-id instrument-id))
+             (<ra> :get-connection-enabled parent-instrument-id instrument-id #f)) ;; #f means don"t show error if not connected. That might happen if redrawing before remaking after changing configuration.
         (>= (<ra> :get-instrument-effect instrument-id "System Effects On/Off") 0.5)))
   
   (define (is-grayed?)
