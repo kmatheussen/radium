@@ -1860,6 +1860,7 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, const int time,
       
     case EFFNUM_EFFECTS_ONOFF:
       SET_SMOOTH_ON_OFF(&plugin->drywet, plugin->effects_are_on, value, plugin->last_written_effect_values_native[plugin->type->num_effects + EFFNUM_DRYWET], 0.0f);
+      RT_schedule_mixer_strips_redraw();
       break;
 
       

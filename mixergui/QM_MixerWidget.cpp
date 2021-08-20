@@ -2481,9 +2481,11 @@ namespace{
                   if (chip->_last_updated_bypass != is_bypass){
                     chip->_last_updated_bypass = is_bypass;
                     chip->update();
+                    for(auto connection : chip->_output_audio_connections)
+                      connection->update_shape(true, true); // Update implitly disabled connection caused by bypass.
                   }
                   
-                  if (chip->_last_updated_recording != is_recording){
+                  if (chip->_last_updated_recording != is_recording) {
                     chip->_last_updated_recording = is_recording;
                     chip->update();
                   }

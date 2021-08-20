@@ -365,6 +365,7 @@ public:
         return 0;
       }
 #endif
+
       const SoundPluginType *type = plugin->type;      
       int effect_num = type->num_effects + EFFNUM_BUS1 + _bus_num;
       
@@ -401,7 +402,7 @@ public:
     
     if (_is_bus_link){
 
-      if (root->song->mute_system_buses_when_bypassed && !ATOMIC_GET(source_plugin->effects_are_on))
+      if (root->song->mute_system_buses_when_bypassed && is_bypassed(source_plugin))
         return 0.0f;
         
       return source_plugin->bus_volume[_bus_num];
@@ -2282,7 +2283,7 @@ public:
       
       // Input peaks
       if (_num_dry_sounds > 0){
-        bool do_bypass = !ATOMIC_GET(_plugin->effects_are_on); //_plugin->drywet.smoothing_is_necessary==false && _plugin->drywet.value==0.0f;
+        bool do_bypass = is_bypassed(_plugin); //_plugin->drywet.smoothing_is_necessary==false && _plugin->drywet.value==0.0f;
         
         float input_peaks[_num_dry_sounds];
         for(int ch=0;ch<_num_dry_sounds;ch++) {
