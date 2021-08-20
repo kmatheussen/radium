@@ -2454,29 +2454,51 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
               (if move-current-under-mouse
                   (<ra> :set-current-instrument-under-mouse res)))))
 
-(define (get-select-track-instrument-popup-entries tracknum)
-  (define midi-instruments (get-all-midi-instruments))
-  (define instruments-before (get-all-audio-instruments))
-  
-  (define (is-new-instrument? id-instrument)
-    (and (not (member id-instrument instruments-before))
-         (member id-instrument (get-all-audio-instruments))))
+
+(delafina (assign-instrument-for-track :tracknum
+                                       :get-instrument
+                                       :instruments-before (get-all-audio-instruments))
   
   (define (num-new-instruments)
     (- (length (get-all-audio-instruments))
        (length instruments-before)))
   
+  (define (is-new-instrument? id-instrument)
+    (and (not (member id-instrument instruments-before))
+         (member id-instrument (get-all-audio-instruments))))
+  
+  (undo-block
+   (lambda ()
+     (define id-instrument (get-instrument))
+     (when (and (instrument? id-instrument)
+                (<ra> :is-legal-instrument id-instrument))
+       (<ra> :set-instrument-for-track id-instrument tracknum)
+       (when (and (is-new-instrument? id-instrument)
+                  (= 1 (num-new-instruments)))
+         (<ra> :autoposition-instrument id-instrument)
+         (<ra> :connect-audio-instrument-to-main-pipe id-instrument))))))
+
+;; Note: Used for shortcut
+(delafina (assign-sampler-for-track :tracknum -1)
+  (assign-instrument-for-track tracknum
+                               (lambda ()
+                                 (<ra> :create-audio-instrument "Sample Player" "Sample Player"))))                                 
+  
+;; Note: Used for shortcut
+(delafina (assign-MIDI-instrument-for-track :tracknum -1)
+  (assign-instrument-for-track tracknum
+                               (lambda ()
+                                 (<ra> :create-midi-instrument "Unnamed"))))
+  
+(define (get-select-track-instrument-popup-entries tracknum)
+  (define midi-instruments (get-all-midi-instruments))
+  (define instruments-before (get-all-audio-instruments))
+  
   (define-macro (LOAD . code)
-    `(undo-block
-      (lambda ()
-        (define id-instrument (begin ,@code))
-        (when (and (instrument? id-instrument)
-                   (<ra> :is-legal-instrument id-instrument))
-          (<ra> :set-instrument-for-track id-instrument tracknum)
-          (when (and (is-new-instrument? id-instrument)
-                     (= 1 (num-new-instruments)))
-            (<ra> :autoposition-instrument id-instrument)
-            (<ra> :connect-audio-instrument-to-main-pipe id-instrument))))))
+    `(assign-instrument-for-track ,tracknum
+                                  (lambda ()
+                                    ,@code)
+                                  (list ,@instruments-before)))
 
   (define (get-instrument-entries only-if-used)
     (list
@@ -2508,8 +2530,10 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
   
   (list
    "----------Create a new instrument"
-   "New Sample Player" (lambda ()
-                         (LOAD (<ra> :create-audio-instrument "Sample Player" "Sample Player")))
+   (list "New Sample Player"
+         :shortcut assign-sampler-for-track
+         (lambda ()
+           (LOAD (<ra> :create-audio-instrument "Sample Player" "Sample Player"))))
   ;;"<New FluidSynth>" (lambda ()
    ;;                     (LOAD (<ra> :create-audio-instrument "FluidSynth" "FluidSynth")))
    ;;(if (<ra> :has-pure-data)
@@ -2526,8 +2550,10 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
    "From preset file (.rec/.mrec)" (lambda ()
                                      (request-select-instrument-preset -1 (<ra> :create-illegal-instrument) #t callback))
    "-----------------"
-   "New MIDI Instrument" (lambda ()
-                             (LOAD (<ra> :create-midi-instrument "Unnamed")))
+   (list "New MIDI Instrument"
+         :shortcut assign-MIDI-instrument-for-track
+         (lambda ()
+           (LOAD (<ra> :create-midi-instrument "Unnamed"))))
    "----------Use an existing instrument"
    "All" (get-instrument-entries #f)
    "----------Clone an existing instrument"
