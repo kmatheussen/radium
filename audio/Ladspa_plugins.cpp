@@ -1527,6 +1527,154 @@ static void init_menues(){
   init_uncategorized_menues();
 }
 
+static bool is_included_ladspa_plugins_path(QString dirname){
+  return dirname == STRING_get_qstring(OS_get_full_program_file_path("ladspa").id);
+}
+
+static QStringList get_included_ladspa_plugins_list(void){
+  const char *filenames = R""""(
+alias_1407.so
+allpass_1895.so
+ambisonic0.so
+ambisonic1.so
+ambisonic2.so
+ambisonic3.so
+amp_1181.so
+am_pitchshift_1433.so
+autowah.so
+bandpass_a_iir_1893.so
+bandpass_iir_1892.so
+blvco.so
+bode_shifter_1431.so
+bode_shifter_cv_1432.so
+butterworth_1902.so
+calf.so
+caps.so
+chebstortion_1430.so
+cmt.so
+comb_1190.so
+comb_1887.so
+comb_splitter_1411.so
+const_1909.so
+crossover_dist_1404.so
+cs_chorus.so
+cs_phaser.so
+dc_remove_1207.so
+decay_1886.so
+decimator_1202.so
+declip_1195.so
+delay_1898.so
+delayorama_1402.so
+diode_1185.so
+divider_1186.so
+dj_eq_1901.so
+dj_flanger_1438.so
+dyson_compress_1403.so
+fad_delay_1192.so
+fast_lookahead_limiter_1913.so
+filters.so
+flanger_1191.so
+foldover_1213.so
+foverdrive_1196.so
+freq_tracker_1418.so
+g2reverb.so
+gate_1410.so
+giant_flange_1437.so
+gong_1424.so
+gong_beater_1439.so
+gsm_1215.so
+gverb_1216.so
+hard_limiter_1413.so
+harmonic_gen_1220.so
+highpass_iir_1890.so
+hilbert_1440.so
+imp_1199.so
+impulse_1885.so
+inv_1429.so
+karaoke_1409.so
+latency_1914.so
+lcr_delay_1436.so
+lowpass_iir_1891.so
+ls_filter_1908.so
+matrix_ms_st_1421.so
+matrix_spatialiser_1422.so
+matrix_st_ms_1420.so
+mbeq_1197.so
+mod_delay_1419.so
+multivoice_chorus_1201.so
+mvchpf24.so
+mvclpf24.so
+notch_iir_1894.so
+phasers_1217.so
+pitch_scale_1193.so
+pitch_scale_1194.so
+plate_1423.so
+pointer_cast_1910.so
+rate_shifter_1417.so
+retro_flange_1208.so
+revdelay_1605.so
+ringmod_1188.so
+satan_maximiser_1408.so
+sc1_1425.so
+sc2_1426.so
+sc3_1427.so
+sc4_1882.so
+sc4m_1916.so
+se4_1883.so
+shaper_1187.so
+sifter_1210.so
+sin_cos_1881.so
+single_para_1203.so
+sinus_wavewrapper_1198.so
+smooth_decimate_1414.so
+split_1406.so
+step_muxer_1212.so
+stereo-plugins.so
+svf_1214.so
+tap_autopan.so
+tap_chorusflanger.so
+tap_deesser.so
+tap_doubler.so
+tap_dynamics_m.so
+tap_dynamics_st.so
+tap_echo.so
+tape_delay_1211.so
+tap_eqbw.so
+tap_eq.so
+tap_limiter.so
+tap_pinknoise.so
+tap_pitch.so
+tap_reflector.so
+tap_reverb.so
+tap_rotspeak.so
+tap_sigmoid.so
+tap_tremolo.so
+tap_tubewarmth.so
+tap_vibrato.so
+transient_1206.so
+triple_para_1204.so
+valve_1209.so
+valve_rect_1405.so
+vocoder_1337.so
+vynil_1905.so
+wave_terrain_1412.so
+xfade_1915.so
+zita-reverbs.so
+zm1_1428.so
+)"""";
+
+  const QStringList list = QString(filenames).split("\n");
+  QStringList ret;
+
+  for(int i = 0 ; i < list.size() ; i++){
+    QString l = list.at(i).trimmed();
+    if (!l.isEmpty())
+      ret << l;
+  }
+
+  return ret;
+}
+
 void create_ladspa_plugins(void){
   
   QStringList ladspa_path;
@@ -1565,18 +1713,27 @@ void create_ladspa_plugins(void){
   for(QString dirname : ladspa_path){
 
 #if 1
+
+    QStringList list;
     
-    QDir dir(dirname);
-
-    dir.setFilter(QDir::Files | QDir::NoDotAndDotDot);
-    dir.setSorting(QDir::Name);
-
-    QStringList list = dir.entryList();
-
+    if (is_included_ladspa_plugins_path(dirname)) {
+      
+      list = get_included_ladspa_plugins_list(); // Hopefully THIS will not trigger the builtin virus checker on windows (causing long startup tim). That virus thing on windows is really agressive...
+      
+    } else {
+    
+      QDir dir(dirname);
+      
+      dir.setFilter(QDir::Files | QDir::NoDotAndDotDot);
+      dir.setSorting(QDir::Name);
+      
+      list = dir.entryList();
+    }
+    
     for (QString filename : list)
       if(filename.endsWith(LIB_SUFFIX))
         add_ladspa_plugin_type(dirname + QDir::separator() + filename);
-    
+
 #else
 
     // no sorting
