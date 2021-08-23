@@ -81,6 +81,7 @@ GCC ?= gcc
 GPLUSPLUS ?= $(CCC)
 LINKER ?= g++
 
+
 CC2=./compile_to_tmp.sh $(CC)
 CCC2=./compile_to_tmp.sh $(CCC)
 GCC2=./compile_to_tmp.sh $(GCC)
@@ -201,7 +202,7 @@ FREETYPE_CFLAGS ?=
 
 VST_OPTS ?=
 
-BOOST_INCLUDE=-I${HOME}/boost_1_75_0 -I${HOME}/boost_1_70_0 -I${HOME}/boost_1_67_0 -I${HOME}/boost_1_63_0 
+BOOST_INCLUDE=-I${HOME}/boost_1_76_0 -I${HOME}/boost_1_75_0 -I${HOME}/boost_1_70_0 -I${HOME}/boost_1_67_0 -I${HOME}/boost_1_63_0 
 BOOST_FLAGS=$(WNO_CLASS_MEMACCESS) $(BOOST_INCLUDE)
 
 CRASHREPORTER_OPTS ?= 
@@ -315,7 +316,7 @@ else
 #		DEBUG_BUILD_OPTS += -Wshadow # gcc 4 has too many unnecessary positives
 #	endif	
 
-	CPUOPT += -Og	 # BEWARE: -Og DOES indeed very much destroy debug capabilites. (<optimized out>)
+#	CPUOPT += -Og	 # BEWARE: -Og DOES indeed very much destroy debug capabilites. (<optimized out>)
 endif
 
 ifneq (,$(findstring FOR_LINUX,$(OS_OPTS)))
@@ -850,12 +851,17 @@ start_bin.sh:
 	echo "LD_LIBRARY_PATH=../lib $(PYTHONEXE) start.py keybindings.conf $@" >>start_bin.sh
 	chmod a+rx start_bin.sh
 
+/tmp/run_preload:
+	time $(LINKER) -Xlinker --preload `cat buildtype.opt` $(OBJ) $(OS_OBJS) -o $(RADIUM_BIN) -g -lm $(VL_LDFLAGS) $(OS_LDFLAGS) $(JACK_LDFLAGS) $(QTLINKFLAGS) $(OS_LDFLAGS2)
+	touch /tmp/run_preload
+
 $(RADIUM_BIN): $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a bin/packages/libpd-master/libs/libpds.a $(OS_DEPS)
 	@echo
 	@echo "Changed ($(RADIUM_BIN)):"
 	@echo $?
 	@echo
-	$(LINKER) `cat buildtype.opt` $(OBJ) $(OS_OBJS) -o $(RADIUM_BIN) -g -lm $(VL_LDFLAGS) $(OS_LDFLAGS) $(JACK_LDFLAGS) $(QTLINKFLAGS) $(OS_LDFLAGS2)
+	time $(LINKER) `cat buildtype.opt` $(OBJ) $(OS_OBJS) -o $(RADIUM_BIN) -g -lm $(VL_LDFLAGS) $(OS_LDFLAGS) $(JACK_LDFLAGS) $(QTLINKFLAGS) $(OS_LDFLAGS2)
+
 #libqhttpserver.a
 # -lX11 -ldl -lpthread -lfreetype -lXext
 #$(LDFLAGS)

@@ -183,6 +183,11 @@ class Hepp2 : public Hepp{
 // Comment out line below. Always do this in debug mode since it's useful to catch wrong usage of 'new'.
 // #if defined(RADIUM_USES_ASAN)
 
+#if defined(__clang__) && defined(RADIUM_USES_ASAN)
+
+// clang+asan also overrides the new operator so it doesn't seem like we can't do that here unfortunately.
+
+#else
 void * operator new(decltype(sizeof(0)) size) noexcept(false)
 {
  void *mem = V_malloc(size);
@@ -191,7 +196,7 @@ void * operator new(decltype(sizeof(0)) size) noexcept(false)
   return mem;
 }
 
-// #endif // defined(RADIUM_USES_ASAN)
+#endif // defined(RADIUM_USES_ASAN)
 
 #endif
 
@@ -3896,6 +3901,8 @@ static int gc_has_static_roots_func(
 #endif
   else
     is_main_root = false;
+
+  //printf("dlpi_name: %s. p: %p, size: %d. Inside: %d, is_main_root: %d\n", dlpi_name, p, (int)size, is_inside, is_main_root);
   
 #if !defined(RELEASE)
   static int64_t total = 0;
@@ -3906,8 +3913,10 @@ static int gc_has_static_roots_func(
       abort();
     }
     if (!is_inside && !strcmp("", dlpi_name)){
-      fprintf(stderr, "2. start: %p, static: %p, end: %p, size: %d\n",start,&g_static_char,end,(int)size);
+      fprintf(stderr, "2. start: %p, static: %p, end: %p, size: %d. Name: \"%s\"\n",start,&g_static_char,end,(int)size, dlpi_name);
+#if !defined(RADIUM_USES_MOLD_OR_LDD) || RADIUM_USES_MOLD_OR_LDD==0  // The LDD linker adds another small library here. Don't know what it is. We only use ldd when debugging anyway.
       abort();
+#endif
     }
   #endif
   
@@ -3953,7 +3962,7 @@ static int gc_has_static_roots_func(
       if (!success) { //name.contains("/packages/libxcb-1.13/src/.libs/")){
         fprintf(stderr,
                 "\n\n%c[31mError. A too old version of libxcb has been dynamically linked into the program.\n"
-                "Something is wrong the installation of Radium since a replacement version of libxcb should have been used automatically by the startup script if this is the case.\n"
+                "Something is wrong in the installation of Radium since a replacement version of libxcb should have been used automatically by the startup script if this is the case.\n"
                 "Older versions of libxcb (probably before 1.11.1) are unstable with Radium.%c[0m\n\n",
                 0x1b, 0x1b);
         fprintf(stderr, "(\"%s\")\n", name.toUtf8().constData());
