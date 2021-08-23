@@ -160,8 +160,8 @@ extern struct SeqBlock *getAudioSeqblockFromNumA(int seqblocknum, int seqtracknu
 #ifdef __cplusplus
   extern struct SeqBlock *getSeqblockFromIdB(int64_t seqblock_id, struct SeqTrack **seqtrack, int &seqblocknum, int &seqtracknum, bool throw_error = true);
   extern struct SeqBlock *getGfxSeqblockFromIdB(int64_t seqblock_id, struct SeqTrack **seqtrack, int &seqblocknum, int &seqtracknum, bool throw_error = true);
+  extern struct SeqBlock *getSeqblockFromIdA(int64_t seqblock_id, struct SeqTrack **seqtrack, bool throw_error = true);
 #endif
-extern struct SeqBlock *getSeqblockFromIdA(int64_t seqblock_id, struct SeqTrack **seqtrack);
 extern struct SeqBlock *getGfxSeqblockFromIdA(int64_t seqblock_id, struct SeqTrack **seqtrack);
 extern struct SeqBlock *getSeqblockFromId(int64_t seqblock_id);
 extern struct SeqBlock *getGfxSeqblockFromId(int64_t seqblock_id);

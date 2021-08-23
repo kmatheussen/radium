@@ -4425,7 +4425,7 @@ int64_t getSeqblockInteriorEnd(int seqblocknum, int seqtracknum, bool use_gfx_if
 
 void deleteSeqblock(int64_t seqblockid, bool notify_listeners){
   struct SeqTrack *seqtrack;
-  struct SeqBlock *seqblock = getSeqblockFromIdA(seqblockid, &seqtrack);
+  struct SeqBlock *seqblock = getSeqblockFromIdA(seqblockid, &seqtrack, false); // don't throw error. Don't want error when pressing delete in the playlist and there are no seqblocks.
   if (seqblock==NULL)
     return;
 
