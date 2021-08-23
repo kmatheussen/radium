@@ -442,7 +442,7 @@ void NewSong_CurrPos(struct Tracker_Windows *window){
 
   {
     Undo_start_ignoring_undo_operations();
-    minimizeBlockTracks(-1,-1); // maximize track widths.
+    minimizeBlockTracks(-1, -1, false); // maximize track widths.
     Undo_stop_ignoring_undo_operations();
   }
 }

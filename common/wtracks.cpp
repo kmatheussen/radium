@@ -562,8 +562,8 @@ static bool WTRACK_allinside(struct Tracker_Windows *window, struct WBlocks *wbl
 }
 
 
-static int get_minimize_width(struct Tracker_Windows *window, struct WBlocks *wblock, bool not_too_wide){
-  if (!not_too_wide)
+static int get_minimize_width(struct Tracker_Windows *window, struct WBlocks *wblock, bool force){
+  if (force)
     return wblock->t.x2;
 
   int ret = wblock->swingarea.x2;
@@ -585,7 +585,7 @@ static int get_minimize_width(struct Tracker_Windows *window, struct WBlocks *wb
 void MinimizeBlock_CurrPos(
                            struct Tracker_Windows *window,
                            struct WBlocks *wblock,
-                           bool not_too_wide
+                           bool force
 ){
 	struct WTracks *wtrack;
 	int notelength=3;
@@ -596,7 +596,7 @@ void MinimizeBlock_CurrPos(
 
         ADD_UNDO(Block_CurrPos(window));
 
-        const int width = get_minimize_width(window, wblock, not_too_wide);
+        const int width = get_minimize_width(window, wblock, force);
         
         wblock->skew_x = 0;
 

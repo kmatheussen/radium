@@ -108,7 +108,7 @@ extern LANGSPEC void MinimizeTrack_CurrPos(
 extern LANGSPEC void MinimizeBlock_CurrPos(
                                            struct Tracker_Windows *window,
                                            struct WBlocks *wblock,
-                                           bool not_too_wide
+                                           bool force // if force is true, minimize as much as possible. If not, we only minimize approximately what seems reasonable.
                                            );
 
 extern LANGSPEC void SwapTrack_CurrPos(
