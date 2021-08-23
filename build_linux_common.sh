@@ -41,14 +41,14 @@ fi
 #fi
 
 export INCLUDE_FAUSTDEV="jadda"
-#export INCLUDE_FAUSTDEV_BUT_NOT_LLVM="jadda"
+export INCLUDE_FAUSTDEV_BUT_NOT_LLVM="jadda"
 
 # Always compile pddev. Most of it is placed in a dynamic library, so it doesn't contribute to higher link time or startup time.
 export INCLUDE_PDDEV="jadda"
 
 
 #if ! env |grep OPTIMIZE ; then
-export OPTIMIZE="-O2 -mfpmath=sse -msse2 $RADIUM_RELEASE_CFLAGS"
+export OPTIMIZE="-O2 -mfpmath=sse -msse2 $RADIUM_RELEASE_CFLAGS "
 
 # -flto 
 #fi
@@ -67,6 +67,8 @@ if ! env |grep RADIUM_USE_CLANG ; then
 fi
 
 #RADIUM_USE_CLANG=1
+RADIUM_USES_MOLD_OR_LDD=0
+RADIUM_USES_MOLD_PRELOAD=0
 
 if [[ $RADIUM_USE_CLANG == 1 ]] ; then
     export CLANG_PREFIX=$(dirname `which clang`)/../
@@ -75,7 +77,15 @@ if [[ $RADIUM_USE_CLANG == 1 ]] ; then
     if [[ $BUILDTYPE == RELEASE ]] ; then
         export LINKER="clang++"
     else
-        export LINKER="clang++" # --rtlib=compiler-rt -lgcc_s"
+        # mold: (probably faster than ldd if having more than 2 cores)
+        #export LINKER="clang++ -lgcc_s --rtlib=compiler-rt -fuse-ld=/home/kjetil/mold/mold" #-fuse-ld=gold" #-fuse-ld=/home/kjetil/mold/mold" -fuse-ld=lld  #
+        #RADIUM_USES_MOLD_PRELOAD=0 # set to 1 to speed up linking if having more than 2 cores.
+
+        # ldd
+        export LINKER="clang++ -lgcc_s --rtlib=compiler-rt -fuse-ld=lld"
+
+        # both mold and ldd
+        RADIUM_USES_MOLD_OR_LDD=1
     fi
 else
     export CCC="g++ -mfpmath=sse -msse2"
@@ -131,7 +141,7 @@ export RTMIDI_CFLAGS="-D__LINUX_ALSA__  -D__RTMIDI_DEBUG__"
 export RTMIDI_LDFLAGS="-lpthread -lasound -ljack"
 
 #export OS_OPTS="-DTEST_GC"
-export OS_OPTS="-Werror=array-bounds -msse2 -fomit-frame-pointer -DFOR_LINUX `$PKG --cflags Qt5X11Extras` " # -Ibin/packages/libxcb-1.13/"
+export OS_OPTS="-Werror=array-bounds -msse2 -fomit-frame-pointer -DFOR_LINUX `$PKG --cflags Qt5X11Extras` -DRADIUM_USES_MOLD_OR_LDD=$RADIUM_USES_MOLD_OR_LDD" # -Ibin/packages/libxcb-1.13/"
 
 
 #export OS_OPTS="-Werror=array-bounds -march=native"
@@ -248,6 +258,10 @@ make bin/radium_check_recent_libxcb --stop
 if [[ $1 == "test" ]] ; then
     make test_seqautomation
 else
+    if [[ $RADIUM_USES_MOLD_PRELOAD == 1 ]] ; then
+       rm -f /tmp/run_preload
+       make /tmp/run_preload
+    fi
     make radium $@ --stop
 fi
 
