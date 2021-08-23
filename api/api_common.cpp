@@ -841,9 +841,9 @@ extern struct SeqBlock *getGfxSeqblockFromIdB(int64_t seqblock_id, struct SeqTra
   return get_seqblock_from_id_a(seqblock_id, seqtrack, true, seqblocknum, seqtracknum, throw_error);
 }
 
-struct SeqBlock *getSeqblockFromIdA(int64_t seqblock_id, struct SeqTrack **seqtrack){
+struct SeqBlock *getSeqblockFromIdA(int64_t seqblock_id, struct SeqTrack **seqtrack, bool throw_error){
   int seqblocknum, seqtracknum;
-  return get_seqblock_from_id_a(seqblock_id, seqtrack, false, seqblocknum, seqtracknum);
+  return get_seqblock_from_id_a(seqblock_id, seqtrack, false, seqblocknum, seqtracknum, throw_error);
 }
 struct SeqBlock *getGfxSeqblockFromIdA(int64_t seqblock_id, struct SeqTrack **seqtrack){
   int seqblocknum, seqtracknum;
