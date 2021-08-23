@@ -2089,7 +2089,7 @@ void minimizeTrack(int windownum, int blocknum, int tracknum){
   MinimizeTrack_CurrPos(window, wblock, wtrack);
 }
 
-void minimizeBlockTracks(int windownum, int blocknum){
+void minimizeBlockTracks(int windownum, int blocknum, bool force){
   struct Tracker_Windows *window=NULL;
   struct WBlocks *wblock;
 
@@ -2101,7 +2101,7 @@ void minimizeBlockTracks(int windownum, int blocknum){
 
   if(wblock==NULL) return;
   
-  MinimizeBlock_CurrPos(window, wblock);
+  MinimizeBlock_CurrPos(window, wblock, force);
 }
 
 extern bool doquit;
