@@ -80,13 +80,13 @@ if [[ $RADIUM_USE_CLANG == 1 ]] ; then
     #RADIUM_USES_MOLD_PRELOAD=0 # set to 1 to speed up linking if having more than 2 cores.
     
     # ldd
-    export LINKER="clang++ -fuse-ld=lld"
+    export LINKER="clang++"
     
-    # both mold and ldd
-    RADIUM_USES_MOLD_OR_LDD=1
-
     if [[ $BUILDTYPE != RELEASE ]] ; then
-        export LINKER="$LINKER -lgcc_s --rtlib=compiler-rt"
+        # both mold and ldd
+        RADIUM_USES_MOLD_OR_LDD=1
+
+        export LINKER="$LINKER  -fuse-ld=lld -lgcc_s --rtlib=compiler-rt"
     fi
     
 else
