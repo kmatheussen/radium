@@ -101,6 +101,8 @@ private:
   JUCE_audio_device_callback _callback;
   void *_callback_data;
 
+  std::function<void(int,float)> _called_before_starting_audio;
+
 public:
 
   double _last_reported_samplerate = -1;
@@ -110,10 +112,11 @@ public:
   
   double _time_cycle_start = 0;
   //DEFINE_ATOMIC(double, _time_cycle_start) = 0;
-  
-  JucePlayer(JUCE_audio_device_callback callback, void *callback_data, const wchar_t *settings_string)
+
+  JucePlayer(JUCE_audio_device_callback callback, void *callback_data, const wchar_t *settings_string, std::function<void(int,float)> called_before_starting_audio)
     : _callback(callback)
     , _callback_data(callback_data)
+    , _called_before_starting_audio(called_before_starting_audio) 
   {
     _audio_device_manager.addChangeListener(this);
     
@@ -351,7 +354,7 @@ public:
     g_juce_num_output_audio_channels = totalNumOutputChannels;
     g_juce_output_audio_channels = outputChannelData;
 
-    _callback(numSamples, _samplerate, _callback_data);
+    _callback(numSamples, _callback_data);
     
     //printf("Fraction: %f\n", MIXER_get_curr_audio_block_cycle_fraction());
   }
@@ -432,6 +435,8 @@ public:
     
     _samplerate = sampleRate;
 
+    _called_before_starting_audio(buffer_size, _samplerate);
+    
     g_audio_system_input_latency = device->getInputLatencyInSamples();
     g_audio_system_output_latency = device->getOutputLatencyInSamples();
 
@@ -511,9 +516,9 @@ bool JUCE_audio_set_audio_thread_priority(radium_thread_t thread){
 
   param.sched_priority = R_BOUNDARIES(min_priority, scale(1,0,2,min_priority,max_priority), max_priority);
   
-  if (pthread_setschedparam(thread, policy, &param) == 0)
+  if (pthread_setschedparam(thread, policy, &param) == 0) {
     return true;
-  else
+  } else
     return false;
   
 #endif
@@ -551,7 +556,7 @@ bool JUCE_audio_set_normal_thread_priority(radium_thread_t thread){
     return false;
 #endif
 }
-
+  
 double JUCE_audio_get_sample_rate(void){
   return g_juce_player->_samplerate;
 }
@@ -596,12 +601,12 @@ void JUCE_audio_close_preferences_window(void){
     });
 }
 
-bool JUCE_init_audio_device(JUCE_audio_device_callback callback, void *callback_data){
+bool JUCE_init_audio_device(JUCE_audio_device_callback callback, void *callback_data, std::function<void(int,float)> called_before_starting_audio){
   const wchar_t *settings_string = SETTINGS_read_wchars("audio_device", L"");
 
   run_on_message_thread([&](){
-      g_juce_player = new radium::JucePlayer(callback, callback_data, settings_string);
-    });
+    g_juce_player = new radium::JucePlayer(callback, callback_data, settings_string, called_before_starting_audio);
+  });
   
   return g_juce_player->_is_running;
 }

@@ -4,7 +4,7 @@
 
 #include "../common/threading_lowlevel.h"
 
-typedef bool (*JUCE_audio_device_callback) (const int num_frames, const double samplerate, void *callback_data);
+typedef bool (*JUCE_audio_device_callback) (const int num_frames, void *callback_data);
 
 extern int g_juce_num_input_audio_channels;
 extern const float **g_juce_input_audio_channels;
@@ -23,7 +23,7 @@ extern int JUCE_get_num_xruns(void);
 extern void JUCE_audio_open_preferences_window(void);
 extern void JUCE_audio_close_preferences_window(void);
 
-extern bool JUCE_init_audio_device(JUCE_audio_device_callback callback, void *callback_data);
+extern bool JUCE_init_audio_device(JUCE_audio_device_callback callback, void *callback_data, std::function<void(int,float)> called_before_starting_audio);
 extern void JUCE_stop_audio_device(void);
 
 extern LANGSPEC bool JUCE_native_gui_grabs_keyboard(void);
