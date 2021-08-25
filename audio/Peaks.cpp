@@ -39,7 +39,7 @@ namespace{
 class DiskPeaksThread : public QThread{
 public:
   DiskPeaksThread(){
-    start();
+    setObjectName("DiskPeaksThread");
   }
 private:
   void run(void) override {
@@ -56,6 +56,10 @@ private:
 };
 
 static DiskPeaksThread g_disk_peaks_thread;
+}
+
+void DISKPEAKS_start(void){
+  g_disk_peaks_thread.start(); // Did start thread from the constructor earlier, but anything weird might happen during startup so we probably shouldn't. Instead we now wait til after QApplication has been inited.
 }
 
 // Note: Is called twice.
