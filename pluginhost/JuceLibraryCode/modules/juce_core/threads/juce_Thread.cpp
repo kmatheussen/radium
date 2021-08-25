@@ -84,8 +84,12 @@ void Thread::threadEntryPoint()
     if (threadName.isNotEmpty())
         setCurrentThreadName (threadName);
 
+#if 0
     jassert (getCurrentThreadId() == threadId.get());
-
+#else
+    threadId = getCurrentThreadId(); // Setthing threadId must be done here now.
+#endif
+    
     if (affinityMask != 0)
       setCurrentThreadAffinityMask (affinityMask);
 
