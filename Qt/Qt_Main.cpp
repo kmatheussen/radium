@@ -3503,7 +3503,7 @@ int radium_main(const char *arg){
   // Hide mixer widget at startup.
   GFX_showHideMixerWidget();
   
-                      
+
 #if USE_QT_VISUAL
  again:
   try{
@@ -4296,7 +4296,6 @@ int main(int argc, char **argv){
     clean_configuration2();
     CRASHREPORTER_dont_report();
     PLUGINHOST_shut_down();
-    DISKPEAKS_stop();
     return 0;
   }
   
@@ -4363,6 +4362,8 @@ int main(int argc, char **argv){
   }
 #endif
 
+  DISKPEAKS_start();
+  
   SCHEME_init1();
 
   GFX_ShowProgressMessage("Starting OpenGL", true);

@@ -719,6 +719,7 @@ private:
 
 }
 
+void DISKPEAKS_start(void);
 void DISKPEAKS_stop(void);
 radium::DiskPeaks *DISKPEAKS_get(filepath_t wfilename);
 void DISKPEAKS_remove(radium::DiskPeaks *diskpeaks);
