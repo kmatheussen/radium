@@ -1043,13 +1043,18 @@ struct Mixer{
 
     auto thread = std::thread([this](){
 
+#if defined(FOR_LINUX)
+        pthread_setname_np(pthread_self(), "juce_start_saving_soundfile_thread");
+#endif
+        
+
         // Note: RT_process_audio_block sets player thread type at every call (just in case), so it's not necessary to set it here.
         
         MULTICORE_disable_RT_priority();
         {
           
           while(!ATOMIC_GET(_juce_audio_stop_saving_soundfile))
-            RT_process_audio_block(g_soundcardblock_size, _sample_rate);
+            RT_process_audio_block(g_soundcardblock_size);
           
         }
         MULTICORE_enable_RT_priority();
@@ -1065,7 +1070,7 @@ struct Mixer{
     thread.detach();
   }
     
-  static bool juce_audio_device_callback(const int num_frames, const double samplerate, void *data){
+  static bool juce_audio_device_callback(const int num_frames, void *data){
     Mixer *mixer = static_cast<Mixer*>(data);
 
     if (ATOMIC_GET(mixer->_juce_audio_start_saving_soundfile)){
@@ -1080,18 +1085,29 @@ struct Mixer{
     R_ASSERT_NON_RELEASE(!MIXER_dummy_driver_is_running());
           
     if (!mixer->_is_saving_sound)
-      mixer->RT_process_audio_block(num_frames, samplerate);
+      mixer->RT_process_audio_block(num_frames);
     
     return true;
   }
 
   bool start_juce_audio(void) {
-    if (JUCE_init_audio_device(juce_audio_device_callback, this)==false)
+    
+    auto called_before_starting_audio = [this](int blocksize, float samplerate){
+      printf("Block: %d. Sample rate: %f\n", blocksize, samplerate);
+      _sample_rate = samplerate;
+      pc->pfreq = _sample_rate;
+    };
+    
+    if (JUCE_init_audio_device(juce_audio_device_callback, this, called_before_starting_audio)==false)
       return false;
 
-    _sample_rate = JUCE_audio_get_sample_rate();
-
-    pc->pfreq = _sample_rate; // bang!
+#if !defined(RELEASE)
+    {
+      radium::PlayerLock lock;
+      R_ASSERT(equal_floats(pc->pfreq,_sample_rate));
+      R_ASSERT(equal_floats(_sample_rate, JUCE_audio_get_sample_rate()));
+    }
+#endif
     
     return true;
   }
@@ -1180,10 +1196,13 @@ struct Mixer{
     }
   };
 #endif
+
+  // Instead, we just patched juce_linux_ALSA.cpp.
+  //radium::SimpleHandShake _about_to_stop_audio_process;
   
   DEFINE_ATOMIC(bool, _RT_process_has_inited) = false;
 
-  void RT_process_audio_block(int num_frames, const double samplerate) {
+  void RT_process_audio_block(int num_frames) {
 #if !defined(RELEASE)
     ScopedVisitors scoped_visitors(_num_visitors);
     if (_num_visitors != 1)
@@ -1196,11 +1215,18 @@ struct Mixer{
 
     R_ASSERT_NON_RELEASE(num_frames >= RADIUM_BLOCKSIZE);
 
-#if !defined(FOR_MACOSX)
+#if 0 //!defined(FOR_MACOSX)
     if (!_is_saving_sound){
       R_ASSERT_NON_RELEASE(THREADING_has_player_thread_priority());
     }
 #endif
+
+    /*
+    _about_to_stop_audio_process.B_check_signal_from_A_and_signal_back_immediately();
+      
+    if (_about_to_stop_audio_process.B_has_shaken())
+      THREADING_acquire_player_thread_priority();
+    */
     
     if (ATOMIC_GET_RELAXED(_RT_process_has_inited)==false || THREADING_init_player_thread_type()){
       AVOIDDENORMALS;
@@ -1405,6 +1431,11 @@ struct Mixer{
     
     // Call this one right before releasing lock and waiting for cycle. This function is allowed to run almost to the end of the jack cycle.
     RT_call_functions_scheduled_to_run_on_player_thread();
+
+    /*
+    if (_about_to_stop_audio_process.B_has_shaken())
+      THREADING_drop_player_thread_priority();
+    */
   }
 
   DEFINE_ATOMIC(bool, _dummy_driver_is_running) = false;
@@ -1419,6 +1450,10 @@ struct Mixer{
     
     _dummy_driver_thread = std::thread([this](){
 
+#if defined(FOR_LINUX)
+        pthread_setname_np(pthread_self(), "dummy_audio_driver");
+#endif
+        
         int blocksize = RADIUM_BLOCKSIZE;
         while(blocksize < 2048)
           blocksize += RADIUM_BLOCKSIZE;
@@ -1426,9 +1461,11 @@ struct Mixer{
         THREADING_acquire_player_thread_priority();
         
         while(ATOMIC_GET(_dummy_driver_is_running)){
-          RT_process_audio_block(blocksize, _sample_rate);
+          RT_process_audio_block(blocksize);
           QThread::msleep(frames_to_ms(blocksize));
         }
+
+        THREADING_drop_player_thread_priority();
         
       });
   }
@@ -1452,7 +1489,7 @@ struct Mixer{
   static int RT_jack_process(jack_nframes_t nframes, void *arg){
     Mixer *mixer = static_cast<Mixer*>(arg);
     if (!MIXER_dummy_driver_is_running())
-      mixer->RT_process_audio_block(nframes, mixer->_sample_rate);
+      mixer->RT_process_audio_block(nframes);
     return 0;
   }
   
@@ -1808,6 +1845,8 @@ bool MIXER_start(void){
       safeExec(msgBox, false);
 
       g_mixer->_sample_rate = JUCE_audio_get_sample_rate();
+      if (g_mixer->sample_rate < 500 || g_mixer->sample_rate > 500000)
+        g_mixer->_sample_rate = 44100;
       pc->pfreq = g_mixer->_sample_rate;
       
       MIXER_start_dummy_driver();
@@ -1845,10 +1884,23 @@ void MIXER_stop(void){
   SampleRecorder_shut_down();
 
   fprintf(stderr,"            MIXER STOP 2\n");
-  
-  if (g_mixer->_rjack_client != NULL)
-    jack_client_close(g_mixer->_rjack_client);
 
+  if (g_mixer->_rjack_client != NULL) {
+    
+    jack_client_close(g_mixer->_rjack_client);
+    
+  } else {
+
+    /*
+    if (!g_mixer->_about_to_stop_audio_process.A_signal_B_and_wait(2000)){ // 2s timeout
+#if !defined(RELEASE)
+      abort();
+#endif
+    }
+    */
+      
+  }
+  
   JUCE_stop_audio_device();
 
   if (MIXER_dummy_driver_is_running())
