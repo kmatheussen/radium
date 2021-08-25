@@ -913,6 +913,8 @@ public:
     , last_scroll_pos(-1.0f)
     , last_current_realline_while_playing(-1.0f)
   {
+    vlQt5::Qt5ThreadedWidget::setObjectName("MyQtThreadedWidget");
+            
     ATOMIC_SET(_main_window_is_exposed, false);
 
 #if 0 //!THREADED_OPENGL
@@ -2122,7 +2124,8 @@ public:
       // Schedule it to run a little bit later just to be safe. minimizeBlockTracks is doing a lot so it's hard to keep track at all times of whether it does Qt operations or not.
       QTimer::singleShot(1, []{
           radium::ScopedIgnoreUndo ignore;
-          minimizeBlockTracks(-1,-1); // maximize track widths.
+          //MinimizeBlock_CurrPos(window, wblock);
+          minimizeBlockTracks(-1, -1, false); // maximize track widths.
         });
     }
 
