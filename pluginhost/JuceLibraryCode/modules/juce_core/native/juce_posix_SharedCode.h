@@ -907,7 +907,7 @@ void Thread::launchThread()
     {
         pthread_detach (handle);
         threadHandle = (void*) handle;
-        threadId = (ThreadID) threadHandle.get();
+        threadId = (ThreadID) threadHandle.get(); // Theoretically this line is not necessary anymore. However, I'm not 100% if threadId is not used from this thread before waiting for the thread has started, so better leave it. (we'll probably get a tsan hit here as well, but that hit can probably be safely ignored)
     }
 
     if (attrPtr != nullptr)
