@@ -1845,7 +1845,7 @@ bool MIXER_start(void){
       safeExec(msgBox, false);
 
       g_mixer->_sample_rate = JUCE_audio_get_sample_rate();
-      if (g_mixer->sample_rate < 500 || g_mixer->sample_rate > 500000)
+      if (g_mixer->_sample_rate < 500 || g_mixer->_sample_rate > 500000)
         g_mixer->_sample_rate = 44100;
       pc->pfreq = g_mixer->_sample_rate;
       

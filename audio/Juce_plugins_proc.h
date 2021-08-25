@@ -23,7 +23,10 @@ extern int JUCE_get_num_xruns(void);
 extern void JUCE_audio_open_preferences_window(void);
 extern void JUCE_audio_close_preferences_window(void);
 
+#ifdef __cplusplus
 extern bool JUCE_init_audio_device(JUCE_audio_device_callback callback, void *callback_data, std::function<void(int,float)> called_before_starting_audio);
+#endif
+
 extern void JUCE_stop_audio_device(void);
 
 extern LANGSPEC bool JUCE_native_gui_grabs_keyboard(void);
