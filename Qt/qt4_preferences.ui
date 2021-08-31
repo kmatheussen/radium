@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1125</width>
-    <height>558</height>
+    <height>570</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>3</number>
+      <number>0</number>
      </property>
      <property name="elideMode">
       <enum>Qt::ElideNone</enum>
@@ -372,6 +372,39 @@
             </layout>
            </item>
           </layout>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_18">
+         <item>
+          <widget class="QGroupBox" name="groupBox_25">
+           <property name="title">
+            <string>Jack</string>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout_31">
+            <item>
+             <widget class="QCheckBox" name="use_jack_if_jack_server_is_running">
+              <property name="text">
+               <string>Use jack if jack server is running (requires restart)</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_6">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
          </item>
         </layout>
        </item>
@@ -5870,7 +5903,7 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
                <x>0</x>
                <y>0</y>
                <width>975</width>
-               <height>231</height>
+               <height>235</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="midi_input_layout">
@@ -9520,8 +9553,8 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>604</width>
-              <height>250</height>
+              <width>608</width>
+              <height>253</height>
              </rect>
             </property>
             <property name="sizePolicy">
