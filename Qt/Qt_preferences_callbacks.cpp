@@ -572,6 +572,8 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       case 8192: b8192->setChecked(true); break;
       }
 
+      use_jack_if_jack_server_is_running->setChecked(SETTINGS_read_bool("use_jack_if_jack_server_is_running", true));
+      
       {
         enable_latency_compensation->setChecked(latencyCompensationEnabled());
         
@@ -1200,6 +1202,11 @@ public slots:
   void on_b4096_toggled(bool val){ if (_initing==false)  SETTINGS_write_int("audio_block_size", 4096);  }
   void on_b8192_toggled(bool val){ if (_initing==false)  SETTINGS_write_int("audio_block_size", 8192);  }
 
+  void on_use_jack_if_jack_server_is_running_toggled(bool val){
+    if (_initing==false)
+      SETTINGS_write_bool("use_jack_if_jack_server_is_running", val);
+  }
+  
   void on_discard_loop_data_toggled(bool val){
     if (_initing==false && val)
       setKeepOldLoopWhenLoadingNewSample(false);

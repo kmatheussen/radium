@@ -826,6 +826,9 @@ struct Mixer{
   }
   
   bool start_jack(void){
+    if (SETTINGS_read_bool("use_jack_if_jack_server_is_running", true)==false)
+      return false;
+  
     if (have_libjack()!=0)
       return false;
       
