@@ -3756,25 +3756,28 @@ void PLUGIN_reset(SoundPlugin *plugin){
 }
 
 void PLUGIN_reset_one_effect(SoundPlugin *plugin, int effect_num){
+  R_ASSERT_RETURN_IF_FALSE(plugin!=NULL);
+  
   struct Patch *patch = plugin->patch;
   R_ASSERT_RETURN_IF_FALSE(patch!=NULL);
 
   int system_effect = effect_num - plugin->type->num_effects;
   
-  bool is_solo = system_effect == EFFNUM_SOLO_ONOFF;
-    
-  if (is_solo) {
-    if (plugin->patch != NULL){
-      setInstrumentSolo(false, plugin->patch->id);
-      return;
-    }else{
-      R_ASSERT_NON_RELEASE(false);
-    }    
+  if (system_effect == EFFNUM_SOLO_ONOFF) {
+    setInstrumentSolo(false, patch->id);
+    return;
   }
 
-  ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, effect_num, AE_NO_FLAGS));
+  float default_ = plugin->initial_effect_values_native[effect_num];
+  
+  bool new_stored = !equal_floats(default_, plugin->stored_effect_values_native[effect_num]);
+  bool new_last_written = !equal_floats(default_, plugin->last_written_effect_values_native[effect_num]);
 
-  PLUGIN_set_effect_value(plugin, 0, effect_num, plugin->initial_effect_values_native[effect_num], STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+  if (new_stored)
+    ADD_UNDO(AudioEffect_CurrPos(patch, effect_num, AE_NO_FLAGS));
+
+  if (new_stored || new_last_written)
+    PLUGIN_set_effect_value(plugin, 0, effect_num, default_, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
 }
 
 static float get_rand(void){
