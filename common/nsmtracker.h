@@ -3974,6 +3974,8 @@ extern DEFINE_ATOMIC(bool, is_starting_up);
 extern bool g_is_starting_up;
 extern bool g_is_replacing_main_pipe;
 
+extern bool g_mouse_is_pressed; // Should work for all widgets. If true, we can assume that we are inside a mouse cycle.
+
 extern bool g_embed_samples;
 extern bool g_curr_song_contains_embedded_samples;
 

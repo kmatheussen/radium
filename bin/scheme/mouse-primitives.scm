@@ -3,6 +3,7 @@
 (define-constant *left-button* 1) ;; TR_LEFTMOUSE
 (define-constant *middle-button* 3) ;; TR_MIDDLEMOUSE
 (define-constant *right-button* 5) ;; TR_RIGHTMOUSE
+(define-constant *delete-button* 15) ;; TR_DELETEMOUSEDOWN
 
 (define-constant *is-pressing* 1) ;; API_MOUSE_PRESSING
 (define-constant *is-moving* 2) ;; API_MOUSE_MOVING
@@ -10,11 +11,19 @@
 (define-constant *is-leaving* 4)  ;; API_MOUSE_LEAVING (mouse has left the qt widget)
 (define-constant *is-entering* 5)  ;; API_MOUSE_ENTERING (mouse has entered the qt widget)
 
+(define-constant *shift-right-mouse* "Shift + Right Mouse")
+
+
 (define (select-button? Button)
   (= *left-button* Button))
 
 (define (menu-button? Button)
   (= *right-button* Button))
+
+(define (delete-button? Button)
+  (or (= Button *delete-button*)
+      (and (=  Button *right-button*)
+           (<ra> :shift-pressed))))
 
 (define (left-or-right-button? Button)
   (or (= *left-button* Button)

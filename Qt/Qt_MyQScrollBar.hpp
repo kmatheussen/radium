@@ -65,7 +65,7 @@ struct Qt_MyQScrollBar : public QScrollBar, public radium::MouseCycleFix {
   const float b = 2;
 
   
-  void fix_mousePressEvent(radium::MouseCycleEvent &event) override{
+  bool fix_mousePressEvent(radium::MouseCycleEvent &event) override{
     event.accept();
     
     if (orientation()==Qt::Vertical)
@@ -79,6 +79,8 @@ struct Qt_MyQScrollBar : public QScrollBar, public radium::MouseCycleFix {
     
     _is_moving = true;
     update();
+
+    return true;
   }
   void fix_mouseMoveEvent(radium::MouseCycleEvent &event) override{
     event.accept();
@@ -109,13 +111,15 @@ struct Qt_MyQScrollBar : public QScrollBar, public radium::MouseCycleFix {
                );
     }
   }
-  void fix_mouseReleaseEvent(radium::MouseCycleEvent &event) override{    
+  bool fix_mouseReleaseEvent(radium::MouseCycleEvent &event) override{    
     event.accept();
     _is_moving = false;
     
     setCursor(Qt::OpenHandCursor);
     
     update();
+
+    return true;
   }
 
   MOUSE_CYCLE_CALLBACKS_FOR_QT;

@@ -57,13 +57,15 @@ struct MyQButton : public QToolButton, public radium::MouseCycleFix {
   int y1_border = 1;
   int y2_border = 1;
   
-  void fix_mousePressEvent(radium::MouseCycleEvent &qmouseevent) override {
+  bool fix_mousePressEvent(radium::MouseCycleEvent &qmouseevent) override {
     _is_hovered = true;
 
     auto *event = qmouseevent.get_qtevent();
     if (event)
       QToolButton::mousePressEvent(event);
     update();
+
+    return true;
   }
 
   void fix_mouseMoveEvent(radium::MouseCycleEvent &qmouseevent) override {
@@ -72,7 +74,7 @@ struct MyQButton : public QToolButton, public radium::MouseCycleFix {
       QToolButton::mouseMoveEvent(event);
   }
 
-  void fix_mouseReleaseEvent(radium::MouseCycleEvent &event) override{
+  bool fix_mouseReleaseEvent(radium::MouseCycleEvent &event) override{
     _is_hovered = false;
     
     auto *qevent = event.get_qtevent();
@@ -81,6 +83,8 @@ struct MyQButton : public QToolButton, public radium::MouseCycleFix {
       QToolButton::mouseReleaseEvent(qevent);
 
     update();
+
+    return true;
   }
   
   MOUSE_CYCLE_CALLBACKS_FOR_QT;

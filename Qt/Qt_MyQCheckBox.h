@@ -255,14 +255,14 @@ struct MyQCheckBox : public MyQCheckBox_OnlyCustomPainting, public radium::Mouse
     }
   }
 
-  void fix_mousePressEvent(radium::MouseCycleEvent &event) override {
+  bool fix_mousePressEvent(radium::MouseCycleEvent &event) override {
 
     _is_hovered = true;
     
     _last_pressed_button = event.button();
 
     if(_patch.data()!=NULL && _patch->instrument==get_audio_instrument() && _patch->patchdata == NULL) // temp fix
-      return;
+      return true;
 
     if (event.button() == Qt::LeftButton){
 
@@ -283,18 +283,18 @@ struct MyQCheckBox : public MyQCheckBox_OnlyCustomPainting, public radium::Mouse
     }else{
       
       if (_is_patchvoice_onoff_button==true)
-        return;
+        return true;
 
       //printf("patch: %p, patchdata: %p\n",_patch,_patch==NULL?NULL:_patch->patchdata);
       if(_patch.data()==NULL || _patch->instrument!=get_audio_instrument() || _patch->patchdata == NULL) {
         emit clicked();//rightClicked();
-        return;
+        return true;
       }
       
       event.accept();
 
-      if (shiftPressed()){
-        
+      if (event.button() == Qt::BackButton || shiftPressed()) {
+
         SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
         
         PLUGIN_reset_one_effect(plugin,_effect_num);
@@ -303,7 +303,7 @@ struct MyQCheckBox : public MyQCheckBox_OnlyCustomPainting, public radium::Mouse
       } else {
       
 #ifdef COMPILING_RADIUM
-
+        
         if (_patch->instrument==get_audio_instrument()) {
           
           SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
@@ -322,6 +322,8 @@ struct MyQCheckBox : public MyQCheckBox_OnlyCustomPainting, public radium::Mouse
       }
 
     }
+
+    return true;
   }
 
   void fix_mouseMoveEvent(radium::MouseCycleEvent &qmouseevent) override {
@@ -329,8 +331,8 @@ struct MyQCheckBox : public MyQCheckBox_OnlyCustomPainting, public radium::Mouse
     if (event)
       MyQCheckBox_OnlyCustomPainting::mouseMoveEvent(event);
   }
-
-  void fix_mouseReleaseEvent(radium::MouseCycleEvent &event) override{
+  
+  bool fix_mouseReleaseEvent(radium::MouseCycleEvent &event) override{
     _is_hovered = false;
     
     auto *qevent = event.get_qtevent();
@@ -339,6 +341,8 @@ struct MyQCheckBox : public MyQCheckBox_OnlyCustomPainting, public radium::Mouse
       MyQCheckBox_OnlyCustomPainting::mouseReleaseEvent(qevent);
 
     update();
+
+    return true;
   }
   
   MOUSE_CYCLE_CALLBACKS_FOR_QT;

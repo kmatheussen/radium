@@ -691,14 +691,17 @@ private:
         if (last_visible_seqtrack_num >= 0 && y < y2)
           break;
       }
-
+    
     //printf("==============CURR: %d\n", last_visible_seqtrack_num);
     setCurrSeqtrackUnderMouse(last_visible_seqtrack_num);
   }
+
+  bool _is_mouse_cycle = false;
+  bool _mouse_cycle_started_in_seqtracks_timeline = false;
   
 public:
   
-  void	fix_mousePressEvent(radium::MouseCycleEvent &event) override{
+  bool fix_mousePressEvent(radium::MouseCycleEvent &event) override{
     event.accept();
 
     /*
@@ -709,11 +712,14 @@ public:
     */
     
     //FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::SEQUENCER, true);
-      
+
+    _is_mouse_cycle = true;
+    _mouse_cycle_started_in_seqtracks_timeline = is_inside_seqtracks_timeline(event.x(), event.y());
+  
     if (_is_sequencer_widget) {
 
       if (API_run_mouse_press_event_for_custom_widget(SEQUENCER_getWidget(), event))
-        return;
+        return true;
     }
     
     _currentButton = getMouseButtonEventID(event);
@@ -727,58 +733,97 @@ public:
       } else {
         PlaySong(pos);
       }
-      return;
+      return true;
     }
 
-    SCHEME_mousepress(_currentButton, point.x(), point.y());
+    bool ret = false;
+    
+    if (_mouse_cycle_started_in_seqtracks_timeline)
+      ret = SCHEME_mousepress(_currentButton, point.x(), point.y());
     //printf("  Press. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
 
     if (_is_sequencer_widget)
       maybe_set_curr_seqtrack_num_under_mouse(event.x(), event.y());
+
+    return ret;
   }
+
+  bool _last_mouse_move_was_inside_seqtracks_timeline = false;
   
   void	fix_mouseMoveEvent(radium::MouseCycleEvent &event) override{
-    //printf("sequencer. mouseMove: %d,%d\n", event.x(), event.y());
+    //printf("sequencer. mouseMove: %d,%d. Inside timeline: %d\n", event.x(), event.y(), is_inside_seqtracks_timeline(event.x(), event.y()));
 
     FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::SEQUENCER, true);
     
     event.accept();
+
+    API_unregister_last_mouse_move_event();
+    
+    bool for_seqtracks_timeline;
+    if (_is_mouse_cycle)
+      for_seqtracks_timeline = _mouse_cycle_started_in_seqtracks_timeline;
+    else {
+      bool new_ = is_inside_seqtracks_timeline(event.x(), event.y());
+      //printf("   IS inside: %d\n", new_);
+      if (new_ != _last_mouse_move_was_inside_seqtracks_timeline) {
+        //API_unregister_last_mouse_move_event();
+        //printf("Unregistering\n");
+        _last_mouse_move_was_inside_seqtracks_timeline = new_;
+      }
+      for_seqtracks_timeline = new_;
+    }
     
     if (_is_sequencer_widget) {
 
       maybe_set_curr_seqtrack_num_under_mouse(event.x(), event.y());
-      
-      if (API_run_mouse_move_event_for_custom_widget(SEQUENCER_getWidget(), event))
-        return;
+
+      if (!for_seqtracks_timeline)
+        if (API_run_mouse_move_event_for_custom_widget(SEQUENCER_getWidget(), event))
+          return;
     }
     
     if (_is_standalone_navigator){
       return;
     }
 
-    QPoint point = mapToEditor(this, event.pos());
-    SCHEME_mousemove(_currentButton, point.x(), point.y());
-    //printf("    move. x: %d, y: %d. in_editor_window: %d\n", point.x(), point.y(), in_editor_window(this));
+    if (for_seqtracks_timeline) {
+      QPoint point = mapToEditor(this, event.pos());
+      SCHEME_mousemove(_currentButton, point.x(), point.y());
+      //printf("    move. x: %d, y: %d. in_editor_window: %d\n", point.x(), point.y(), in_editor_window(this));
+    }
   }
   
-  void fix_mouseReleaseEvent(radium::MouseCycleEvent &event) override{    
+  bool fix_mouseReleaseEvent(radium::MouseCycleEvent &event) override{    
     event.accept();
-    
-    if (_is_sequencer_widget)
-      if (API_run_mouse_release_event_for_custom_widget(SEQUENCER_getWidget(), event))
-        return;
 
+    bool for_seqtracks_timeline = _mouse_cycle_started_in_seqtracks_timeline;
+    
+    _is_mouse_cycle = false;
+    
+    if (_is_sequencer_widget) {
+      if (!for_seqtracks_timeline)
+        if (API_run_mouse_release_event_for_custom_widget(SEQUENCER_getWidget(), event))
+          return true;
+    }
+    
     if (_is_standalone_navigator){
-      return;
+      return false;
     }
 
-    QPoint point = mapToEditor(this, event.pos());
-    SCHEME_mouserelease(_currentButton, point.x(), point.y());
+    bool ret = false;
+    
+    if (for_seqtracks_timeline) {
+      QPoint point = mapToEditor(this, event.pos());
+      ret = SCHEME_mouserelease(_currentButton, point.x(), point.y());
+    }
+    
     _currentButton = 0;
     //printf("  Release. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
 
     if (_is_sequencer_widget)
       maybe_set_curr_seqtrack_num_under_mouse(event.x(), event.y());
+
+    return ret;
   }
 
   MOUSE_CYCLE_CALLBACKS_FOR_QT;

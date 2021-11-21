@@ -359,7 +359,7 @@ filepath_t OS_get_full_program_file_path(filepath_t filename){
   }
 }
 
-void MOUSE_CYCLE_schedule_unregister_all(void){
+void MOUSE_CYCLE_schedule_unregister_all(bool include_mouse_move){
 }
 
 QPointer<QMenu> g_curr_popup_qmenu;

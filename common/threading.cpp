@@ -476,12 +476,22 @@ priority_t THREADING_get_priority(void){
   return priority;
 }
 
+#if !defined(RELEASE)
+enum R_thread_is_RT __thread g_t_current_thread_is_RT = R_UNINITIALIZED;
+#endif
 
 
 void THREADING_set_priority(priority_t priority){
 
   // NOTE! This function is always used to set non-realtime priority. This is asserted in debug mode on linux.
-  
+
+#if !defined(RELEASE)
+  if (priority.policy==SCHED_OTHER)
+    g_t_current_thread_is_RT = R_IS_NOT_RT;
+  else
+    g_t_current_thread_is_RT = R_IS_RT;
+#endif
+
 #if !defined(RELEASE)
 #if defined(FOR_LINUX)
   R_ASSERT(priority.policy==SCHED_OTHER);

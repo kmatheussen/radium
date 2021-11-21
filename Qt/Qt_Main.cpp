@@ -174,20 +174,274 @@ class Hepp2 : public Hepp{
 }
 */
 
+namespace radium{
+bool g_is_first_move_after_release = false;
+}
+
+DEFINE_ATOMIC(bool, is_starting_up) = true;
+DEFINE_ATOMIC(bool, g_start_checking_allocated_memory) = false;
+bool g_program_has_ended = false;
+
+#define DEBUG_MEMORY_ALLOC_MORE 0
 
 #if !defined(RELEASE)
-
-// The address sanitizer (asan) tends to zero out all allocated memory, covering up bugs. 
-// This is a workaround.
 
 // Comment out line below. Always do this in debug mode since it's useful to catch wrong usage of 'new'.
 // #if defined(RADIUM_USES_ASAN)
 
-#if defined(__clang__) && defined(RADIUM_USES_ASAN)
 
-// clang+asan also overrides the new operator so it doesn't seem like we can't do that here unfortunately.
+#if defined(RADIUM_USES_ASAN)
+
+#include "sanitizer/asan_interface.h"
+
+static void handle_RT_malloc_free_error(bool is_alloc, const char *message, bool force_abort = false){
+  printf("\n\n\n==========================================================\n"
+         "  %s: %s.\n"
+         "==============================================================\n\n\n",
+         is_alloc ? "__sanitizer_malloc_hook" : "__sanitizer_free_hook",
+         message);
+
+  if (force_abort) {
+    abort();
+  } else {
+    //abort();
+    //printf("   (press return)\n");
+    //getchar();
+  }
+}
+
+
+#if DEBUG_MEMORY_ALLOC_MORE
+
+namespace{
+  struct ThreadData{
+    pthread_t thread;
+    bool is_alloc;
+    void *mem;
+    int size;
+    double time;
+    enum R_thread_is_RT is_RT;
+  };
+}
+static QHash<void*, ThreadData> g_allocated;
+static QVector<ThreadData> g_gakks;
+static QHash<QString, int> g_num_allocations_per_thread;
+static QHash<QString, int> g_total_allocated_per_thread;
+
+static radium::Mutex g_gakks_mutex;
+
+static __thread bool g_is_allocating_or_freeing = false;
+
+static pthread_t g_main_thread_thread;
+
+
+static int find_allocated(void *mem){
+  QHash<void*, ThreadData>::const_iterator i = g_allocated.find(mem);
+  if (i==g_allocated.end())
+    return 0;
+
+  int ret = i.value().size;
+
+  g_allocated.erase(i);
+
+  return ret;
+}
+
+static void check_thread_types_for_threads(void){
+  radium::ScopedMutex lock(g_gakks_mutex);
+
+  g_is_allocating_or_freeing = true;
+    
+  static int s_total_mem = 0;
+  static int s_num_allocations_since_last_time = 0;
+  
+  int i = 0;
+
+  s_num_allocations_since_last_time += g_gakks.size();
+  
+  for(ThreadData &td : g_gakks) {
+    
+    constexpr int NAME_LEN=50;
+    char thread_name[NAME_LEN + 10] = "MAIN";
+    if (td.thread != g_main_thread_thread)
+      pthread_getname_np(td.thread, thread_name, NAME_LEN);
+    
+    if (td.is_alloc) {
+      
+      g_allocated.insert(td.mem, td);
+      s_total_mem += td.size;
+
+      g_num_allocations_per_thread[thread_name]++;
+      g_total_allocated_per_thread[thread_name] += td.size;
+
+    } else {
+      
+      td.size = find_allocated(td.mem);
+      if (td.size==0){
+        printf("Error. Could not find mem for %p. I: %d. Thread name: \"%s\". RT: %d. Total mem: %d. Num current allocations: %d. Avg size: %f\n",
+               td.mem,
+               i, thread_name, td.is_RT,
+               s_total_mem, (int)g_allocated.size(),
+               (double)s_total_mem / (double)g_allocated.size()
+               );
+      }
+      s_total_mem -= td.size;
+
+      g_total_allocated_per_thread[thread_name] -= td.size;
+    }
+
+    priority_t priority;
+    
+    int success = pthread_getschedparam(td.thread, &priority.policy, &priority.param);
+    
+    if (success==0)
+      if (priority.policy!=SCHED_OTHER){
+        printf("   There might have been an allocation from a RT thread. Alloc: %d. Size: %d. Thread name: \"%s\". Total mem: %d\n(press return)\n", td.is_alloc, td.size, thread_name, s_total_mem);
+        //getchar();        
+      }
+
+    i++;
+  }
+
+
+  {
+    static double s_last_time = 0;
+    
+    if((TIME_get_ms() - s_last_time) > 1000){
+
+#if 0
+      printf("Total mem: %d. Num current allocations: %d. Avg size: %f. alloc/free since last time: %d\n",
+             s_total_mem, (int)g_allocated.size(),
+             (double)s_total_mem / (double)g_allocated.size(),
+             s_num_allocations_since_last_time
+             );
+
+      QHashIterator<QString, int> i(g_num_allocations_per_thread);
+      while (i.hasNext()) {
+        i.next();
+        printf("    %s: %d allocations since last time. Total: %d\n", i.key().toUtf8().constData(), i.value(), g_total_allocated_per_thread[i.key()]);
+      }
+#endif
+        
+      g_num_allocations_per_thread.clear();
+      //g_total_allocated_per_thread.clear();
+
+      s_num_allocations_since_last_time = 0;
+      s_last_time = TIME_get_ms();
+    }
+  }
+
+
+  g_gakks.clear();
+
+  g_is_allocating_or_freeing = false;
+}
+
+static void handle_RT_malloc_free(bool is_alloc, void *mem, int size){
+  if (!ATOMIC_GET(g_start_checking_allocated_memory))
+    return;
+
+  if (g_program_has_ended)
+    return;
+  
+  radium::ScopedMutex lock(g_gakks_mutex);
+
+  ThreadData td = {pthread_self(), is_alloc, mem, size, TIME_get_ms(), g_t_current_thread_is_RT};
+
+  g_gakks << td; // (If this call spawns a new thread, we'll probably get a deadlock.)
+
+  if (root!=NULL && !ATOMIC_GET(root->editonoff)){
+    //ATOMIC_SET(root->editonoff, true);
+    //printf("(press return)\n");
+    //getchar();
+    printf("%s\n", JUCE_get_backtrace());
+    ATOMIC_SET(root->editonoff, true);
+  }
+  // abort();
+}
+
+#endif // DEBUG_MEMORY_ALLOC_MORE
+
+
+extern "C" {
+
+__attribute__((weak))
+void __sanitizer_malloc_hook(const volatile void *ptr, size_t size){
+#if DEBUG_MEMORY_ALLOC_MORE
+  if (g_is_allocating_or_freeing)
+    return;
+  
+  g_is_allocating_or_freeing = true;
+#endif
+  
+  if (PLAYER_current_thread_has_lock())
+    handle_RT_malloc_free_error(true, "Current thread has player lock", true);
+  
+  if (THREADING_is_runner_thread())
+    handle_RT_malloc_free_error(true, "Current thread is runner thread", true);
+
+  if (g_t_current_thread_is_RT==R_IS_RT)
+    handle_RT_malloc_free_error(true, "Current thread is RT");
+
+#if DEBUG_MEMORY_ALLOC_MORE
+  handle_RT_malloc_free(true, (void*)ptr, size);
+  g_is_allocating_or_freeing = false;
+#endif
+  
+}
+
+__attribute__((weak))
+void __sanitizer_free_hook(const volatile void *ptr){
+#if DEBUG_MEMORY_ALLOC_MORE
+  if (g_is_allocating_or_freeing)
+    return;
+
+  g_is_allocating_or_freeing = true;
+#endif
+  
+  if (PLAYER_current_thread_has_lock())
+    handle_RT_malloc_free_error(false, "Current thread has player lock", true);
+  
+  if (THREADING_is_runner_thread())
+    handle_RT_malloc_free_error(false, "Current thread is runner thread", true);
+  
+  if (g_t_current_thread_is_RT==R_IS_RT)
+    handle_RT_malloc_free_error(true, "Current thread is RT");
+
+#if DEBUG_MEMORY_ALLOC_MORE
+  handle_RT_malloc_free(false, (void*)ptr, 0);
+  g_is_allocating_or_freeing = false;
+#endif  
+}
+}
+
+
+/*
+static void asan_lowlevel_allocate_callback(uptr mem, uptr size){
+  abort();
+}
+*/
+
+
+static void init_asan(void){
+#if DEBUG_MEMORY_ALLOC_MORE
+  g_main_thread_thread = pthread_self();
+#endif
+  ATOMIC_SET(g_start_checking_allocated_memory, true);
+}
+#endif
+
+
+#if defined(__clang__) && (defined(RADIUM_USES_ASAN) || defined(RADIUM_USES_TSAN) )
+
+// clang+asan also overrides the new operator so it doesn't seem like we can do that here unfortunately.
 
 #else
+
+// The address sanitizer (asan) tends to zero out all allocated memory, covering up bugs. 
+// This is a workaround.
+
+
 void * operator new(decltype(sizeof(0)) size) noexcept(false)
 {
  void *mem = V_malloc(size);
@@ -232,7 +486,7 @@ MyApplication *qapplication = NULL;
 QApplication *g_qapplication = NULL;
 //QSplashScreen *g_splashscreen = NULL;
 
-static bool g_mouse_is_pressed = false;
+bool g_mouse_is_pressed = false;
 
 static int g_last_pressed_key = EVENT_NO;
 
@@ -260,14 +514,12 @@ bool g_gc_is_incremental = false;
 QWidget *g_mixerstripparent = NULL;
 QHBoxLayout *g_mixerstriplayout = NULL;
 
-DEFINE_ATOMIC(bool, is_starting_up) = true;
 bool g_is_starting_up = true;
 bool g_qt_is_running = false;
 bool g_qtgui_has_started = false;
 DEFINE_ATOMIC(bool, g_qtgui_has_started_step2) = false;
 bool g_qtgui_exec_has_started = false;
 bool g_qtgui_has_stopped = false;
-bool g_program_has_ended = false;
 
 #define RTWIDGET_SIZE 50
 static QPointer<QWidget> *g_rtwidgets;
@@ -665,16 +917,19 @@ namespace{
     QPointer<QObject> widget;
     int64_t id;
     QPointF start_pos;
-    QPointF local_pos;
+    QPointF local_or_scene_pos;
     Qt::MouseButton button;
     Qt::MouseButtons buttons;
     Qt::KeyboardModifiers modifiers;
     bool has_moved;
+    bool for_scene;
   };
 }
 
 
 static MouseCycle g_curr_mouse_cycle;
+
+static QPointer<QObject> g_last_mouse_move_widget;
 
 Qt::MouseButtons MOUSE_CYCLE_get_mouse_buttons(void){
   if (g_curr_mouse_cycle.widget.data()==NULL)
@@ -684,19 +939,21 @@ Qt::MouseButtons MOUSE_CYCLE_get_mouse_buttons(void){
 }
 
   
-static void MOUSE_CYCLE_unregister_all(int64_t id);
+static void MOUSE_CYCLE_unregister_all(int64_t id, bool include_move);
 
 static void set_curr_mouse_cycle(QEvent *event, bool is_pressing){
-  g_curr_mouse_cycle.local_pos = get_localpos_from_qevent(event);
+  g_curr_mouse_cycle.local_or_scene_pos = dynamic_cast<QGraphicsSceneMouseEvent*>(event) != NULL ? get_scenepos_from_qevent(event) : get_localpos_from_qevent(event);
   
   if (is_pressing)
-    g_curr_mouse_cycle.start_pos = g_curr_mouse_cycle.local_pos;
+    g_curr_mouse_cycle.start_pos = g_curr_mouse_cycle.local_or_scene_pos;
 
   g_curr_mouse_cycle.button = get_button_from_qevent(event);
   g_curr_mouse_cycle.buttons = get_buttons_from_qevent(event);
   g_curr_mouse_cycle.modifiers = get_modifiers_from_qevent(event);
 
   g_curr_mouse_cycle.has_moved = is_pressing ? false : true;
+
+  g_curr_mouse_cycle.for_scene = dynamic_cast<QGraphicsSceneMouseEvent*>(event) != NULL;
 }
 
 bool MOUSE_CYCLE_register(QObject *widget, QEvent *event){
@@ -722,7 +979,7 @@ bool MOUSE_CYCLE_register(QObject *widget, QEvent *event){
     //R_ASSERT_NON_RELEASE(false); // Out of curiousity, want to know if this can happen. Yes, happens when double-right-clicking in a help window.
   }
   
-  MOUSE_CYCLE_unregister_all(g_curr_mouse_cycle.id); // The main call to MOUSE_CYCLE_unregister_all is delayed a little bit, so we could have an alive cycle.
+  MOUSE_CYCLE_unregister_all(g_curr_mouse_cycle.id, false); // The main call to MOUSE_CYCLE_unregister_all is delayed a little bit, so we could have an alive cycle.
     
   if(!same_widget) {  // widget==g_curr_mouse_cycle.widget.data() when subclass::mousePressEvent calls parent::mousePressEvent.
     g_curr_mouse_cycle.widget = widget;
@@ -750,7 +1007,7 @@ bool MOUSE_CYCLE_move(QObject *widget, QEvent *event){
     */
 
     if(event->buttons() != Qt::NoButton){
-      MOUSE_CYCLE_unregister_all(g_curr_mouse_cycle.id);
+      MOUSE_CYCLE_unregister_all(g_curr_mouse_cycle.id, false);
     }
     
     return g_curr_mouse_cycle.widget.data() == NULL;    
@@ -758,9 +1015,12 @@ bool MOUSE_CYCLE_move(QObject *widget, QEvent *event){
   
 #endif
 
+  //printf("        SETTING g_last_mouse_move_widget to %p\n", widget);
+  
+  g_last_mouse_move_widget = widget;
   
   if(get_buttons_from_qevent(event) == Qt::NoButton){
-    MOUSE_CYCLE_unregister_all(g_curr_mouse_cycle.id);
+    MOUSE_CYCLE_unregister_all(g_curr_mouse_cycle.id, false);
   }
     
   //printf("CYCLE: moving %p\n", widget);
@@ -768,6 +1028,59 @@ bool MOUSE_CYCLE_move(QObject *widget, QEvent *event){
   set_curr_mouse_cycle(event, false);
 
   return true;
+}
+
+bool MOUSE_CYCLE_delete_button_has_been_pressed(void){
+  if (MOUSE_CYCLE_is_inside_cycle())
+    return false;
+
+  auto *mouse_cycle_fix = dynamic_cast<radium::MouseCycleFix*>(g_last_mouse_move_widget.data());
+  
+  if (mouse_cycle_fix == NULL)
+    return false;
+
+  bool ret = false;
+  
+  {
+    QMouseEvent press_event(QEvent::MouseButtonRelease,
+                            g_curr_mouse_cycle.local_or_scene_pos,
+                            Qt::BackButton,
+                            Qt::BackButton,
+                            g_curr_mouse_cycle.modifiers);
+    
+    ret = mouse_cycle_fix->cycle_mouse_press_event(g_last_mouse_move_widget.data(), &press_event, false); 
+ }
+
+  if (g_last_mouse_move_widget.data() != NULL){ // Very often running the delete delete-button event above causes g_last_mouse_move_widget to be set to NULL , and then we don't run the release-button event. And, it might also happen that the delete-event deletes the widget, and we don't want to run the release event then either.
+    
+    R_ASSERT_NON_RELEASE(dynamic_cast<radium::MouseCycleFix*>(g_last_mouse_move_widget.data()) == mouse_cycle_fix); // Should not fail.
+    
+    if (dynamic_cast<radium::MouseCycleFix*>(g_last_mouse_move_widget.data()) == mouse_cycle_fix) {
+      
+      QMouseEvent release_event(QEvent::MouseButtonRelease,
+                                g_curr_mouse_cycle.local_or_scene_pos,
+                                Qt::BackButton,
+                                Qt::BackButton,
+                                g_curr_mouse_cycle.modifiers);
+      
+      if (mouse_cycle_fix->cycle_mouse_release_event(g_last_mouse_move_widget.data(), &release_event, false))
+        ret = true;
+    }
+
+    {
+      QMouseEvent move_event(QEvent::MouseMove,
+                             g_curr_mouse_cycle.local_or_scene_pos,
+                             Qt::NoButton,
+                             Qt::NoButton,
+                             g_curr_mouse_cycle.modifiers);
+      
+      mouse_cycle_fix->cycle_mouse_move_event(g_last_mouse_move_widget.data(), &move_event, false); 
+    }
+  }
+
+    //gui_rerunLastMouseEvent();
+  
+  return ret;
 }
 
 bool MOUSE_CYCLE_has_moved(void){
@@ -783,13 +1096,17 @@ bool MOUSE_CYCLE_unregister(QObject *widget){
     return false;
 
   if(g_curr_mouse_cycle.widget.data() != widget)
-    MOUSE_CYCLE_unregister_all(g_curr_mouse_cycle.id);
+    MOUSE_CYCLE_unregister_all(g_curr_mouse_cycle.id, false);
 
   g_curr_mouse_cycle.widget.clear();
   return true;
 }
 
-static void MOUSE_CYCLE_unregister_all(int64_t id){
+static void MOUSE_CYCLE_unregister_all(int64_t id, bool include_mouse_move){
+  if (include_mouse_move){
+    g_last_mouse_move_widget.clear();
+  }
+  
   QObject *w = g_curr_mouse_cycle.widget.data();
   if(w==NULL)
     return;
@@ -802,7 +1119,7 @@ static void MOUSE_CYCLE_unregister_all(int64_t id){
   }
   
   QMouseEvent e(QEvent::MouseButtonRelease,
-                g_curr_mouse_cycle.local_pos,
+                g_curr_mouse_cycle.local_or_scene_pos,
                 g_curr_mouse_cycle.button,
                 g_curr_mouse_cycle.buttons,
                 g_curr_mouse_cycle.modifiers);
@@ -821,7 +1138,11 @@ static void MOUSE_CYCLE_unregister_all(int64_t id){
 }
 
 
-void MOUSE_CYCLE_schedule_unregister_all(void){
+void MOUSE_CYCLE_schedule_unregister_all(bool include_mouse_move){
+  if (include_mouse_move){
+    g_last_mouse_move_widget.clear();
+  }
+  
   QObject *w = g_curr_mouse_cycle.widget.data();
   if(w==NULL)
     return;
@@ -838,10 +1159,14 @@ void MOUSE_CYCLE_schedule_unregister_all(void){
 #endif
 
     QTimer::singleShot(3, [id]{ // delay it a little bit since we might be called from a mouse event. (need to wait enough to make the callback be called in the next event, but not so long that the event is not unregistered soon enough)
-        MOUSE_CYCLE_unregister_all(id);
+      MOUSE_CYCLE_unregister_all(id, false);
       });
     
   }    
+}
+
+bool MOUSE_CYCLE_is_inside_cycle(void){
+  return g_curr_mouse_cycle.widget.data() != NULL;
 }
 
 
@@ -1539,17 +1864,28 @@ protected:
       break;
       
     case QEvent::MouseButtonPress:
+      //printf("-----------Mouse press\n");
       CancelMaybeNavigateMenus();
       g_mouse_is_pressed = true;
       break;
       
     case QEvent::MouseButtonRelease:
+      //printf("-----------Mouse release\n");
       CancelMaybeNavigateMenus();
       g_mouse_is_pressed = false;
       break;
 
     case QEvent::Enter:
+      //printf("--------------Enter event\n");
+      API_unregister_last_mouse_move_event();
+      g_last_mouse_move_widget.clear();
       g_mouse_is_pressed = false;
+      break;
+      
+    case QEvent::Leave:
+      //printf("--------------Leave event\n");
+      API_unregister_last_mouse_move_event();
+      g_last_mouse_move_widget.clear();
       break;
       
     case QEvent::Wheel:
@@ -1581,7 +1917,7 @@ protected:
 
     if (activation_changed){
       //static int counter = 0;  printf("   %d: Activation changed: activate: %d deactivate: %d\n", counter++, event->type() == QEvent::WindowActivate, event->type() == QEvent::WindowDeactivate);
-      MOUSE_CYCLE_schedule_unregister_all();
+      MOUSE_CYCLE_schedule_unregister_all(true);
     }
     
     return ret;
@@ -2081,6 +2417,13 @@ protected:
 
     g_main_timer_num_calls++; // Must be placed here since 'is_called_every_ms' depends on it.
 
+#if !defined(RELEASE)
+#if defined(RADIUM_USES_ASAN)
+#if DEBUG_MEMORY_ALLOC_MORE
+    check_thread_types_for_threads();
+#endif
+#endif
+#endif
 
 #if 0 // Not sure whether 0 or 1 is best. In theory 1 should be the best, but I can't see any difference compared to non-cpu friendly operation right now. However, I have seen that 0 has worked before, so I'm fairly confident 0 could work. Whether 1 may work remains to be seen.
     {
@@ -2621,7 +2964,8 @@ bool VerticalModifierPressed(void){
 }
                                
 bool AltPressed(void){
-  return QApplication::keyboardModifiers() & Qt::AltModifier;
+  // Note: "QApplication::keyboardModifiers() & Qt::AltModifier" didn't work for generalDelete.
+  return AnyAlt(tevent.keyswitch); //QApplication::keyboardModifiers() & Qt::AltModifier;
 }
 
 static void setCursor(int64_t guinum, const QCursor &cursor){
@@ -4121,7 +4465,15 @@ static void clean_configuration2(void){
 int main(int argc, char **argv){
 
   //return 0;
-  
+
+#if defined(RADIUM_USES_ASAN)
+#if defined(RELEASE)
+#  error "error"
+#else
+  init_asan();
+#endif
+#endif
+    
   bool clean_configuration = false;
   if (argc > 1 && !strcmp(argv[1], "--radium-clean-configuration")){
     clean_configuration = true;

@@ -268,6 +268,7 @@
      (set! curr-id #f)
      (if is-marker
          (<ra> :set-paint-vertical-markers-in-sequencer #f))
+
      (define entries (get-all-entries))
      ;;(c-display "Entries:" (pp entries))
      (let loop ((n 0))
@@ -526,6 +527,7 @@
                   (list "Remove tempo"
                         :enabled (and curr-tempo
                                       (<ra> :is-using-sequencer-timing))
+                        :shortcut ra:simulate-delete-mouse-button
                         (lambda ()
                           (area :remove-curr-entry!)))
                   (list "Set new tempo"

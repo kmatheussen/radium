@@ -111,6 +111,7 @@ namespace{
     DEFINE_ATOMIC(char *, gakk2) = NULL;
 
     MyThread(){
+      QThread::setObjectName("Check_for_updates_thread");
       QTimer::setInterval(1000);
       QTimer::start();
       QThread::start();

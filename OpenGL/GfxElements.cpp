@@ -248,7 +248,7 @@ private:
   
 public:
   
-  vl::Actor *render(vl::VectorGraphics *vg){
+  vl::Actor *render(vl::VectorGraphics *vg) {
       
     vl::Actor *actor = vg->fillTriangles(triangles);
 

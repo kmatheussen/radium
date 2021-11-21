@@ -194,6 +194,7 @@ static inline double monotonic_rdtsc_seconds(){
  
 
 double RT_TIME_get_ms(void){
+  //return TIME_get_ms();
   return monotonic_seconds() * 1000.0;
 }
 

@@ -164,6 +164,11 @@ static bool JackMachThread_AcquireRealTimeImp(pthread_t thread, /* int priority,
 }
 
 bool MACH_THREADS_jack_acquire_real_time_scheduling(pthread_t thread /* , int priority */){ // Note: priority is not actually used here.
+
+#if !defined(RELEASE)
+  g_t_current_thread_is_RT = R_IS_RT;
+#endif
+
   return JackMachThread_AcquireRealTimeImp(thread,
                                            /* priority, */
                                            fPeriod, // I guess this one must be how long time between each wakeup.
@@ -179,6 +184,9 @@ static bool JackMachThread_DropRealTimeImp(pthread_t thread)
 
 bool MACH_THREADS_jack_drop_real_time_scheduling(pthread_t thread)
 {
+#if !defined(RELEASE)
+  g_t_current_thread_is_RT = R_IS_NOT_RT;
+#endif
   return JackMachThread_DropRealTimeImp(thread);
 }
 

@@ -1233,6 +1233,10 @@
          :shortcut show-set-seqtrack/seqblock-name-requester
          (lambda ()
            (show-set-seqtrack/seqblock-name-requester seqtracknum)))
+   (list "Delete"
+         :shortcut *shift-right-mouse*
+         (lambda ()
+           (delete-seqtrack *current-seqtrack-num*)))
    (list
     "Visible"
     :shortcut switch-seqtrack-visible

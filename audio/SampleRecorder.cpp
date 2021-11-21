@@ -397,6 +397,7 @@ struct SampleRecorderThread : public QThread {
 public:
 
   SampleRecorderThread(){
+    setObjectName("SampleRecorderThread");
   }
 
   ~SampleRecorderThread(){

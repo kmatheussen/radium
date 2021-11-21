@@ -75,10 +75,6 @@ if [[ $RADIUM_USE_CLANG == 1 ]] ; then
     export CCC="clang++ -mfpmath=sse -msse2"
     export CC="clang -Wno-gnu-designator -mfpmath=sse -msse2 -Wenum-conversion "
 
-    # mold: (probably faster than ldd if having more than 2 cores)
-    #export LINKER="clang++ -lgcc_s --rtlib=compiler-rt -fuse-ld=/home/kjetil/mold/mold" #-fuse-ld=gold" #-fuse-ld=/home/kjetil/mold/mold" -fuse-ld=lld  #
-    #RADIUM_USES_MOLD_PRELOAD=0 # set to 1 to speed up linking if having more than 2 cores.
-    
     # ldd
     export LINKER="clang++"
     
@@ -86,13 +82,29 @@ if [[ $RADIUM_USE_CLANG == 1 ]] ; then
         # both mold and ldd
         RADIUM_USES_MOLD_OR_LDD=1
 
-        export LINKER="$LINKER  -fuse-ld=lld -lgcc_s --rtlib=compiler-rt"
+        # mold: (probably faster than ldd if having more than 2 cores)
+        #export LINKER="$LINKER -fuse-ld=/home/kjetil/mold/mold"
+        #RADIUM_USES_MOLD_PRELOAD=0 # set to 1 to speed up linking if having more than 2 cores.    
+
+        # ldd:
+        export LINKER="$LINKER -fuse-ld=lld"
+
+        # stuff
+        export LINKER="$LINKER -lgcc_s --rtlib=compiler-rt"
     fi
     
 else
     export CCC="g++ -mfpmath=sse -msse2"
     export CC="gcc -mfpmath=sse -msse2"
     export LINKER=g++
+
+    # Use the ldd linker instead. It's approx. 10x faster.
+    if [[ $BUILDTYPE != RELEASE ]] ; then
+        RADIUM_USES_MOLD_OR_LDD=1
+        # ldd:
+        #export LINKER="clang++ -fuse-ld=lld" #-B/home/kjetil/ldd_bin"
+        export LINKER="$LINKER -B/home/kjetil/ldd_bin"
+    fi
 fi
 
 export GCC="gcc -mfpmath=sse -msse2"

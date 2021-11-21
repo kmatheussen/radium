@@ -2,6 +2,7 @@
 
 (my-require 'gui.scm)
 
+
 ;; TOPIC: Should the pan slider work for the last instrument in the path?
 ;; In case, we need to copy pan values when deleting / removing plulgins.
 ;;
@@ -254,20 +255,22 @@
 
                                         (if hovered-callback
                                             (hovered-callback button state x y))
+
+                                        (cond ((and (= state *is-pressing*)
+                                                    (delete-button? button))
+                                               (if effect-name
+                                                   (<ra> :reset-instrument-effect instrument-id effect-name)
+                                                   (<ra> :delete-instrument instrument-id)))
+                                              ((and (= state *is-pressing*)
+                                                    (= button *right-button*))
+                                               (if strips-config
+                                                   (popup-menu (get-global-mixer-strips-popup-entries instrument-id strips-config :effect-name effect-name))))
+                                              ((and (= button *left-button*)
+                                                    (= state *is-pressing*))
+                                               (set! is-selected (not is-selected))
+                                               (value-changed is-selected)
+                                               (<gui> :update checkbox)))
                                         
-                                        (if (and (= button *right-button*)
-                                                 (= state *is-pressing*))
-                                            (if (<ra> :shift-pressed)
-                                                (if effect-name
-                                                    (<ra> :reset-instrument-effect instrument-id effect-name)
-                                                    (<ra> :delete-instrument instrument-id))
-                                                (if strips-config
-                                                    (popup-menu (get-global-mixer-strips-popup-entries instrument-id strips-config :effect-name effect-name)))))
-                                        (when (and (= button *left-button*)
-                                                   (= state *is-pressing*))
-                                          (set! is-selected (not is-selected))
-                                          (value-changed is-selected)
-                                          (<gui> :update checkbox))
                                         #t))
   
   (add-safe-paint-callback checkbox
@@ -713,6 +716,8 @@
   (define instruments-in-path (and is-minimized
                                    (get-all-instruments-used-in-mixer-strip instrument-id)))
   (define num-in-path (length instruments-in-path))
+
+  (define is-hovering #f)
   
   (add-safe-paint-callback label
          (lambda (width height)
@@ -720,8 +725,13 @@
            (define name (get-mixer-strip-name instrument-id strips-config))
            
            (define text-color (get-instrument-name-text-color instrument-id))
-           
-           (<gui> :filled-box label (get-instrument-name-background-color instrument-id) 0 0 width height)
+
+           (define background (get-instrument-name-background-color instrument-id))
+
+           (if is-hovering
+               (set! background (<gui> :make-color-lighter background 1.2)))
+
+           (<gui> :filled-box label background 0 0 width height)
            
            (if is-minimized
                (begin
@@ -759,23 +769,34 @@
   
   (add-safe-mouse-callback label (lambda (button state x y)
                                    (set-curr-instrument-in-mouse-callback instrument-id label :force-if-pressing-left-button #t)
+
+                                   (cond ((= state *is-entering*)
+                                          (c-display "SET_HOVERING true")
+                                          (<ra> :set-current-instrument-under-mouse instrument-id) ;; #t means also set delete callback.
+                                          (set! is-hovering #t)
+                                          (<gui> :update label))
+                                         ((= state *is-leaving*)
+                                          (c-display "SET_HOVERING false")
+                                          (set! is-hovering #f)
+                                          (<gui> :update label)))
+                                   
                                    (if (= state *is-pressing*)
-                                       (if (= button *right-button*)                                             
-                                           (if (<ra> :shift-pressed)
-                                               (<ra> :delete-instrument instrument-id)
-                                               (create-default-mixer-path-popup instrument-id strips-config label))
-                                           (when (= button *left-button*)
-                                             ;;(c-display "gakk")
-                                             (cond (is-current-mixer-strip
-                                                    (set! *current-mixer-strip-is-wide* is-minimized)
-                                                    (remake-mixer-strips instrument-id))
-                                                   ((<ra> :control-pressed)
-                                                    (<ra> :switch-instrument-is-selected instrument-id))
-                                                   ((not (equal? instrument-id (<ra> :get-current-instrument)))
-                                                    ;;(c-display "         SETTING CURRENT")
-                                                    (<ra> :set-current-instrument instrument-id #f #t)
-                                                    ;;(remake-mixer-strips instrument-id)
-                                                    )))))
+                                       (cond ((delete-button? button)
+                                              (<ra> :delete-instrument instrument-id))
+                                             ((= button *right-button*)
+                                              (create-default-mixer-path-popup instrument-id strips-config label))
+                                             ((= button *left-button*)
+                                              ;;(c-display "gakk")
+                                              (cond (is-current-mixer-strip
+                                                     (set! *current-mixer-strip-is-wide* is-minimized)
+                                                     (remake-mixer-strips instrument-id))
+                                                    ((<ra> :control-pressed)
+                                                     (<ra> :switch-instrument-is-selected instrument-id))
+                                                    ((not (equal? instrument-id (<ra> :get-current-instrument)))
+                                                     ;;(c-display "         SETTING CURRENT")
+                                                     (<ra> :set-current-instrument instrument-id #f #t)
+                                                     ;;(remake-mixer-strips instrument-id)
+                                                     )))))
                                    #t))
 
   label)
@@ -917,6 +938,7 @@
               
               (and effect-name
                    (list (<-> "Delete plugin \"" (<ra> :get-instrument-name instrument-id) "\"")
+                         :shortcut ra:general-delete
                          (lambda ()
                            (delete-func))))
                    ;;(delete-instrument-plugin parent-instrument-id instrument-id))))
@@ -937,6 +959,7 @@
                    (list (<-> "------------") ;;Send \"" (<ra> :get-instrument-name instrument-id) "\"")
                          (list (<-> "Delete send \"" (<ra> :get-instrument-name instrument-id) "\"")
                                :enabled (and is-send? delete-func)
+                               :shortcut ra:general-delete
                                (lambda ()
                                  (delete-func)))
                          (list (<-> "Replace send \"" (<ra> :get-instrument-name instrument-id) "\"")
@@ -1054,7 +1077,7 @@
   (define couldnt-fit-all-text #f)
 
   (define is-hovering #f)
-  
+
   (define (paint-slider x1-on/off width height)
     ;;(c-display "   Paint slider")
     (define value (get-scaled-value))
@@ -1194,25 +1217,26 @@
                                                 (set-tooltip-and-statusbar status-text)
                                                 (<ra> :set-statusbar-text status-text)
                                                 ))
-                                          (when (and (= button *right-button*)
-                                                     (= state *is-pressing*))
-                                            (if (<ra> :shift-pressed)
-                                                (delete-func)
-                                                (show-mixer-path-popup first-instrument-id
-                                                                       parent-instrument-id
-                                                                       instrument-id
-                                                                       strips-config
-                                                                       is-send?
-                                                                       is-sink?
-                                                                       is-bus?
-                                                                       delete-func
-                                                                       replace-func
-                                                                       (lambda ()
-                                                                         (make-undo)
-                                                                         (reset-func))
-                                                                       midi-learn-instrument-id
-                                                                       effect-name
-                                                                       widget)))
+                                          (cond ((and (= state *is-pressing*)
+                                                      (delete-button? button))
+                                                 (delete-func))
+                                                ((and (= state *is-pressing*)
+                                                      (= button *right-button*))
+                                                 (show-mixer-path-popup first-instrument-id
+                                                                        parent-instrument-id
+                                                                        instrument-id
+                                                                        strips-config
+                                                                        is-send?
+                                                                        is-sink?
+                                                                        is-bus?
+                                                                        delete-func
+                                                                        replace-func
+                                                                        (lambda ()
+                                                                          (make-undo)
+                                                                          (reset-func))
+                                                                        midi-learn-instrument-id
+                                                                        effect-name
+                                                                        widget)))
                                           #f))))
   
   (add-safe-double-click-callback widget (lambda (button x y)
@@ -1834,7 +1858,7 @@
 
   (define (enable! onoff)
     (pan-enable! instrument-id onoff))
-    
+
   (add-safe-mouse-callback
    slider
    (lambda (button state x y)
@@ -1846,6 +1870,7 @@
            ((= state *is-leaving*)
             (set! is-hovering #f)
             (<gui> :update slider)))
+
      (cond ((and (= button *left-button*)
                  (= state *is-pressing*))
             (set! has-made-undo #f)
@@ -1859,26 +1884,25 @@
                (<ra> :undo-instrument-effect instrument-id "System Pan")))
             (set! has-made-undo #t)
             #f)
+           ((and (= state *is-releasing*)
+                 (delete-button? button))
+            (reset-pan! instrument-id)
+            #t)
            ((and (= button *right-button*)
                  (= state *is-releasing*))
             (define pan-enabled (pan-enabled? instrument-id))
-            (if (<ra> :shift-pressed)
-                (undo-block
-                 (lambda ()                  
-                   (<ra> :reset-instrument-effect instrument-id "System Pan On/Off")
-                   (<ra> :reset-instrument-effect instrument-id "System Pan")))
-                (popup-menu ;(list "Reset" (lambda ()
+            (popup-menu ;(list "Reset" (lambda ()
                                         ;                (<ra> :undo-instrument-effect instrument-id "System Pan")
                                         ;                (<ra> :set-instrument-effect instrument-id "System Pan" 0.5)))
-                 (list "Pan Enabled"
-                       :check pan-enabled
-                       enable!)                 
-                 (get-effect-popup-entries instrument-id "System Pan"
-                                           :pre-undo-block-callback (lambda ()
-                                                                      (enable! #t)))
-                 "--------Instrument"
-                 (get-instrument-popup-entries instrument-id slider :put-in-submenu #t)
-                 (get-global-mixer-strips-popup-entries instrument-id strips-config :mixer-in-sub-menu #t)))
+             (list "Pan Enabled"
+                   :check pan-enabled
+                   enable!)                 
+             (get-effect-popup-entries instrument-id "System Pan"
+                                       :pre-undo-block-callback (lambda ()
+                                                                  (enable! #t)))
+             "--------Instrument"
+             (get-instrument-popup-entries instrument-id slider :put-in-submenu #t)
+             (get-global-mixer-strips-popup-entries instrument-id strips-config :mixer-in-sub-menu #t))
             #t)
            (else
             #f))))
@@ -2296,18 +2320,16 @@
                   (= state *is-moving*))
              (<ra> :undo-instrument-effect instrument-id effect-name)
              (set! has-made-undo #t))
+            ((and (= state *is-pressing*)
+                  (delete-button? button))
+             (cond ((and is-slider
+                         effect-name)
+                    (<ra> :reset-instrument-effect instrument-id effect-name))
+                   ((not is-slider)
+                    (reset-peak!))))
             ((and (= button *right-button*)
                   (= state *is-pressing*))
-             (cond ((and is-slider
-                         effect-name
-                         (<ra> :shift-pressed))
-                    (<ra> :reset-instrument-effect instrument-id effect-name))
-                   ((and (not is-slider)
-                         (<ra> :shift-pressed))
-                    (reset-peak!)
-                    )
-                   (else
-                    (popup-menu (get-global-mixer-strips-popup-entries instrument-id strips-config :effect-name effect-name))))))
+             (popup-menu (get-global-mixer-strips-popup-entries instrument-id strips-config :effect-name effect-name))))
       #f))
   
   (add-safe-mouse-callback volslider (create-vol-mouse-callback volslider #t))
@@ -2339,12 +2361,14 @@
                                       (set! voltext-is-hovering #f)
                                       (<gui> :update voltext)))
                                
-                               (cond ((and (= button *right-button*)
+                               (cond ((and (delete-button? button)
                                            (= state *is-pressing*))
-                                      (if (and effect-name
-                                               (<ra> :shift-pressed))
-                                          (<ra> :reset-instrument-effect instrument-id effect-name)
-                                          (popup-menu (get-global-mixer-strips-popup-entries instrument-id strips-config :effect-name effect-name)))
+                                      (if effect-name
+                                          (<ra> :reset-instrument-effect instrument-id effect-name))
+                                      #t)
+                                     ((and (= button *right-button*)
+                                           (= state *is-pressing*))
+                                      (popup-menu (get-global-mixer-strips-popup-entries instrument-id strips-config :effect-name effect-name))
                                       #t)
                                      ((and (= button *left-button*)
                                            (= state *is-pressing*))
@@ -2387,11 +2411,13 @@
                                       (set! peaktext-is-hovering #f)
                                       (<gui> :update peaktext)))
 
-                               (cond ((and (= button *right-button*)
+                               (cond ((and (delete-button? button)
                                            (= state *is-pressing*))
-                                      (if (<ra> :shift-pressed)
-                                          (reset-peak!)
-                                          (popup-menu (get-global-mixer-strips-popup-entries instrument-id strips-config :effect-name effect-name)))
+                                      (reset-peak!)
+                                      #t)
+                                     ((and (= button *right-button*)
+                                           (= state *is-pressing*))
+                                      (popup-menu (get-global-mixer-strips-popup-entries instrument-id strips-config :effect-name effect-name))
                                       #t)
                                      ((and (= button *left-button*)
                                            (= state *is-pressing*))
@@ -2666,13 +2692,16 @@
   
   (add-safe-mouse-callback mixer-strip-path-gui (lambda (button state x y)
                                                   (set-curr-instrument-in-mouse-callback instrument-id mixer-strip-path-gui)
-                                                    (if (and (= button *right-button*)
-                                                             (= state *is-pressing*))
-                                                        (begin (if (<ra> :shift-pressed)
-                                                                   (<ra> :delete-instrument instrument-id)
-                                                                   (create-default-mixer-path-popup instrument-id strips-config mixer-strip-path-gui))
-                                                               #t)
-                                                        #f)))
+                                                  (cond ((and (delete-button? button)
+                                                              (= state *is-pressing*))
+                                                         (<ra> :delete-instrument instrument-id)
+                                                         #t)
+                                                        ((and (= button *right-button*)
+                                                              (= state *is-pressing*))
+                                                         (create-default-mixer-path-popup instrument-id strips-config mixer-strip-path-gui)
+                                                         #t)
+                                                        (else
+                                                         #f))))
 
   ;; create path gui
   (define last-instrument-id-in-path (create-mixer-strip-path mixer-strip-path-gui instrument-id instrument-id strips-config))

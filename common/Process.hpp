@@ -241,8 +241,9 @@ private:
 
   void handle_error(double timeout, double start_time) {
     R_ASSERT_RETURN_IF_FALSE(get_qprocess() != NULL);
+#if !defined(RADIUM_USES_TSAN)
     R_ASSERT_NON_RELEASE(_error_occured==false);
-    
+#endif
     _error_occured = true;
     
     _proc_error = _process->error();

@@ -412,6 +412,7 @@ bool iterateDirectory(filepath_t daspath, bool async, func_t* callback){
         , _callback(callback)
         , _gc_protect_pos(s7extra_protect(callback))
       {
+        setObjectName("iterate_directory_thread");
         start();
         connect(this, SIGNAL(finished()), this, SLOT(deleteLater()));
       }

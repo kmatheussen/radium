@@ -394,8 +394,10 @@ static const struct NodeLine2 *create_nodelines2(
       ns->y2 = next->y1;
 
       if (ns->y2 < ns->y1) {
-        printf("\n\n\n3. y2 < y1: %f < %f",ns->y2,ns->y1);
-        R_ASSERT_NON_RELEASE(false);
+        if (fabs(ns->y2-ns->y1) > 0.001) { // Don't report if the error could have been caused by floating point rounding error.
+          printf("\n\n\n3. y2 < y1: %f < %f",ns->y2,ns->y1);
+          R_ASSERT_NON_RELEASE(false);
+        }
         ns->y2 = ns->y1;
       }
 

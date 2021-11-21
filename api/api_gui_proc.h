@@ -40,6 +40,9 @@ void API_run_paint_event_for_custom_widget(QWidget *widget, QPaintEvent *ev, con
 bool API_run_custom_gui_paint_function(QWidget *widget, QPainter *p, const QRegion *region, std::function<void(void)> func);
 #endif
 
+void API_register_last_mouse_move_event(int64_t guinum, int x, int y, func_t *func, bool is_main_mouse_move_handler);
+void API_unregister_last_mouse_move_event(void); // Note: Also cancels last delete callback.
+
 #ifdef RADIUM_QT_HELPERS
 bool API_run_mouse_press_event_for_custom_widget(QWidget *widget, radium::MouseCycleEvent &ev);
 bool API_run_mouse_move_event_for_custom_widget(QWidget *widget, radium::MouseCycleEvent &ev);

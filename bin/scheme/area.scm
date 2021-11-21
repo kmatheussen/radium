@@ -439,6 +439,7 @@
                         #f))))
      
      (define (add-hover-callback! callback)
+       (assert (not hovering-callback))
        (set! hovering-callback callback)
        (detect-hovering!))
      
@@ -1124,6 +1125,7 @@
                                :prepend-checked-marker #t
                                :gradient-background #f
                                :right-mouse-clicked-callback #f
+                               :delete-clicked-callback #f
                                :border-width 0.25
                                :box-rounding #f
                                )
@@ -1157,9 +1159,13 @@
           )))
 
   (add-mouse-cycle! (lambda (button x* y*)
-                      (cond ((and right-mouse-clicked-callback
+                      (cond ((and delete-clicked-callback
+                                  (delete-button? button))
+                             (delete-clicked-callback)
+                             #t)
+                            ((and right-mouse-clicked-callback
                                   (= button *right-button*)
-                                  ;;(not (<ra> :shift-pressed))
+                                  (not (<ra> :shift-pressed))
                                   )
                              (right-mouse-clicked-callback)
                              #t)
@@ -1181,6 +1187,7 @@
                                    :text-color "buttons_text"
                                    :selected-color #f ;; only used if paint-func is #f. If #f, use get-default-button-color
                                    :right-mouse-clicked-callback #f
+                                   :delete-clicked-callback #f
                                    :border-width 0.25
                                    :box-rounding #f
                                    )
@@ -1224,6 +1231,9 @@
                           :right-mouse-clicked-callback (and right-mouse-clicked-callback
                                                              (lambda ()
                                                                (right-mouse-clicked-callback num)))
+                          :delete-clicked-callback (and delete-clicked-callback
+                                                        (lambda ()
+                                                          (delete-clicked-callback num)))
                           :border-width border-width
                           :box-rounding box-rounding))
                  
@@ -1244,6 +1254,7 @@
                              :callback #f
                              :callback-release #f
                              :right-mouse-clicked-callback #f
+                             :delete-clicked-callback #f
                              :id #f)
 
   (define is-pressing #f)
@@ -1330,9 +1341,13 @@
 
   (add-mouse-cycle! (lambda (button x* y*)
                       ;;(c-display "BUTTON:" button)
-                      (cond ((and right-mouse-clicked-callback
+                      (cond ((and delete-clicked-callback
+                                  (delete-button? button))
+                             (delete-clicked-callback)
+                             'eat-mouse-cycle)
+                            ((and right-mouse-clicked-callback
                                   (= button *right-button*)
-                                  ;;(not (<ra> :shift-pressed))
+                                  (not (<ra> :shift-pressed))
                                   )
                              (right-mouse-clicked-callback)
                              'eat-mouse-cycle)

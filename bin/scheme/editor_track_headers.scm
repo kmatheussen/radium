@@ -468,7 +468,10 @@
                       ;;(c-display "hepp:" button x* y*)
                       (define tracknum (get-track-num x* y*))
                       (when (and tracknum
-                                 (>= tracknum 0))
+                                 (>= tracknum 0)
+                                 (or (= button *middle-button*)
+                                     (= button *left-button*)
+                                     (= button *right-button*)))
                         (<ra> :select-track tracknum)
                         (cond ((= button *right-button*)
                                (show-editor-track-popup-menu tracknum))

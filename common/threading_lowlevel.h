@@ -80,6 +80,16 @@ typedef struct{
 #endif // linux||osx
 
 
+#if !defined(RELEASE)
+enum R_thread_is_RT{
+                    R_UNINITIALIZED,
+                    R_IS_NOT_RT,
+                    R_IS_RT
+};
+             
+extern __thread enum R_thread_is_RT g_t_current_thread_is_RT; // Note: This value is the intended priority. I.e. the value is R_IS_RT even if trying to set it to RT failed.
+#endif
+
 extern LANGSPEC priority_t THREADING_get_priority(void);
 extern LANGSPEC void THREADING_set_priority(priority_t priority);
 

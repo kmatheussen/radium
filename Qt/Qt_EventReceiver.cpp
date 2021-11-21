@@ -472,11 +472,11 @@ static int g_currentButton = 0;
 static bool g_is_mousing_editor = false;
 
 #if 1
-void EditorWidget::handle_mouse_press(radium::MouseCycleEvent &event, float x, float y) const {
+bool EditorWidget::handle_mouse_press(radium::MouseCycleEvent &event, float x, float y) const {
   g_is_mousing_editor = true;
   
   if(g_is_starting_up==true)
-    return;
+    return false;
 
   //FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::EDITOR, true);
   
@@ -488,11 +488,11 @@ void EditorWidget::handle_mouse_press(radium::MouseCycleEvent &event, float x, f
 
   //printf("> Got mouse press %d %d\n",tevent.x,tevent.y);
 
-  if (SCHEME_mousepress(g_currentButton, tevent.x, tevent.y)==false) {
-
-    EventReciever(&tevent,this->window);
-
-  }
+  bool ret = SCHEME_mousepress(g_currentButton, tevent.x, tevent.y);
+  //printf("A 3: %d\n", ret);
+  
+  if (!ret)
+    EventReciever(&tevent,this->window); // This seems to be a no-op. Probably code left from when EventReceiver handled mouse.
 
   R_ASSERT(g_pausing_level==0);
 
@@ -506,6 +506,8 @@ void EditorWidget::handle_mouse_press(radium::MouseCycleEvent &event, float x, f
   */
   
   updateEditor();
+
+  return ret;
 }
 #endif
 
@@ -572,11 +574,11 @@ void EditorWidget::handle_mouse_move(Qt::MouseButton button, float x, float y) c
 }
 
 
-void EditorWidget::handle_mouse_release(Qt::MouseButton button, float x, float y) const {
+bool EditorWidget::handle_mouse_release(Qt::MouseButton button, float x, float y) const {
   g_is_mousing_editor = false;
 
   if(g_is_starting_up==true)
-    return;
+    return false;
 
   if(button==Qt::LeftButton){
     tevent.ID=TR_LEFTMOUSEUP;
@@ -592,14 +594,19 @@ void EditorWidget::handle_mouse_release(Qt::MouseButton button, float x, float y
   tevent.y = y;
 
   //printf("< Got mouse release %d %d\n",tevent.x,tevent.y);
-  if (SCHEME_mouserelease(g_currentButton, tevent.x, tevent.y)==false)
-    EventReciever(&tevent,this->window);
+
+  bool ret = SCHEME_mouserelease(g_currentButton, tevent.x, tevent.y);
+  
+  if (!ret)
+    EventReciever(&tevent,this->window); // This seems to be a no-op. Probably code left from when EventReceiver handled mouse.
 
   R_ASSERT(g_pausing_level==0);
   
   g_currentButton = 0;
 
   updateEditor();
+
+  return ret;
 }
 
 #endif // USE_QT_VISUAL

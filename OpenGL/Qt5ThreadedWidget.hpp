@@ -95,7 +95,7 @@ namespace vlQt5
       QAtomicInt widget_width;
       QAtomicInt widget_height;
 #endif
-      //QTime time;
+      //QTime _time;
 
       QSemaphore *wait_semaphore;
       
@@ -106,6 +106,8 @@ namespace vlQt5
         , widget_height(10)
 #endif
       {
+        QThread::setObjectName("Qt5ThreadedWidget");
+        //_time.start();
       }
 
       bool handle_events(){
@@ -223,6 +225,17 @@ namespace vlQt5
           dispatchRunEvent();
 #endif
 
+          /*
+          static int num_calls = 0;
+          num_calls++;
+          
+          if(_time.elapsed()>1000){
+            printf("Num calls: %d\n", num_calls);
+            num_calls=0;
+            _time.restart();
+          }
+          */
+          
           //printf("width/height: %d/%d\n",width(),height());
           
           //if(time.elapsed()>18)

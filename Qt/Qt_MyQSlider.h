@@ -81,6 +81,8 @@ struct MyQSlider : public QSlider, public radium::MouseCycleFix {
   bool _is_a_pd_slider;
 
   void init(){
+    setMouseTracking(true);
+    
     _has_mouse=false;
 
     _patch.set(NULL);
@@ -304,10 +306,10 @@ struct MyQSlider : public QSlider, public radium::MouseCycleFix {
 
   
   // mousePressEvent 
-  void fix_mousePressEvent (radium::MouseCycleEvent &event_ ) override
+  bool fix_mousePressEvent (radium::MouseCycleEvent &event_ ) override
   {
     if(_patch.data()!=NULL && _patch->instrument==get_audio_instrument() && _patch->patchdata == NULL) // temp fix
-      return;
+      return true;
     
     //printf("Got mouse pres event_ %d / %d\n",(int)event_->x(),(int)event_->y());
     if (event_.button() == Qt::LeftButton){
@@ -327,12 +329,12 @@ struct MyQSlider : public QSlider, public radium::MouseCycleFix {
       //handle_mouse_event_(event_);
       _has_mouse = true;
 
-    }else{
+    } else {
 
       if(_patch.data()==NULL || _patch->patchdata == NULL) //  _patch->instrument!=get_audio_instrument() 
-        return;
+        return true;
 
-      if (shiftPressed()){
+      if (event_.button() == Qt::BackButton || shiftPressed()){
 
         SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
         
@@ -365,6 +367,8 @@ struct MyQSlider : public QSlider, public radium::MouseCycleFix {
       
       event_.accept();
     }
+
+    return true;
   }
 
   void fix_mouseMoveEvent (radium::MouseCycleEvent &event_ ) override
@@ -378,7 +382,7 @@ struct MyQSlider : public QSlider, public radium::MouseCycleFix {
     }
   }
 
-  void fix_mouseReleaseEvent (radium::MouseCycleEvent &event_ ) override
+  bool fix_mouseReleaseEvent (radium::MouseCycleEvent &event_ ) override
   {
     //printf("Got mouse release event %d / %d\n",(int)event_->x(),(int)event_->y());
     if (_has_mouse){
@@ -399,6 +403,8 @@ struct MyQSlider : public QSlider, public radium::MouseCycleFix {
         //R_ASSERT_NON_RELEASE(false);
       }
     }
+
+    return true;
   }
 
   MOUSE_CYCLE_CALLBACKS_FOR_QT;

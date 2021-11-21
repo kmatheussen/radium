@@ -41,6 +41,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/Qt_PopupMenu_proc.h"
 
 #include "../api/api_common_proc.h"
+#include "../api/api_gui_proc.h"
 #include "../api/api_proc.h"
 
 
@@ -2539,6 +2540,13 @@ bool SCHEME_mousepress(int button, float x, float y){
   // [1] Not storing/reusing this value since 'find_scheme_value' is probably ligthing fast anyway, plus that it'll be possible to redefine radium-mouse-press from scheme this way.
 }
 
+bool SCHEME_mousemove_rerun(int button, float x, float y){
+  return S7CALL2(bool_int_float_float,"radium-mouse-move", // [1]
+                 button,x,y);
+  
+  // [1] Not storing/reusing this value since 'find_scheme_value' is probably ligthing fast anyway, plus that it'll be possible to redefine radium-mouse-press from scheme this way.
+}
+
 bool SCHEME_mousemove(int button, float x, float y){
   ScopedEvalTracker eval_tracker;
   
@@ -2551,11 +2559,10 @@ bool SCHEME_mousemove(int button, float x, float y){
 #endif
     return false;
   }
-  
- return S7CALL2(bool_int_float_float,"radium-mouse-move", // [1]
-                 button,x,y);
-  
-  // [1] Not storing/reusing this value since 'find_scheme_value' is probably ligthing fast anyway, plus that it'll be possible to redefine radium-mouse-press from scheme this way.
+
+  API_register_last_mouse_move_event(-1, x, y, NULL, true);
+
+  return SCHEME_mousemove_rerun(button, x, y);
 }
 
 bool SCHEME_mouserelease(int button, float x, float y){
