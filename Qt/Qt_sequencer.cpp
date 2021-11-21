@@ -171,6 +171,7 @@ static Sequencer_widget *g_sequencer_widget = NULL;
  static radium::KeyboardFocusFrame *g_sequencer_frame_widget = NULL;
 }
 
+static double get_timeline_y2(void);
 static double get_seqtrack_y1(int seqtracknum);
 static double get_seqtrack_y2(int seqtracknum);
 static double get_seqtrack_x1(void);
@@ -654,6 +655,28 @@ public:
   int _currentButton = 0;
 
 private:
+
+  bool is_inside_seqtracks_timeline(float x, float y) const {
+    if (!_is_sequencer_widget)
+      return false;
+
+    if (x < SEQUENCER_get_left_part_x2())
+      return false;
+
+    if (x >= get_seqtrack_x2())
+      return false;
+
+    //if (y >= get_seqtracks_y2())
+    //  return false;
+
+    if (y >= get_seqtracks_y1())
+      return true;
+
+    if (y < get_timeline_y2())
+      return true;
+
+    return false;
+  }
   
   void maybe_set_curr_seqtrack_num_under_mouse(float x, float y) {
     int last_visible_seqtrack_num = -1;
@@ -5643,11 +5666,15 @@ float SEQTIMELINE_get_y1(void){
   return mapToEditorY(g_sequencer_widget, g_sequencer_widget->_timeline_widget.t_y1);
 }
 
+static double get_timeline_y2(void){
+  return g_sequencer_widget->_timeline_widget.t_y2;
+}
+
 float SEQTIMELINE_get_y2(void){
   if(showBarsAndBeatsSequencerLane())
     return mapToEditorY(g_sequencer_widget, g_sequencer_widget->_bars_and_beats_widget.t_y2);
   else
-    return mapToEditorY(g_sequencer_widget, g_sequencer_widget->_timeline_widget.t_y2);
+    return mapToEditorY(g_sequencer_widget, get_timeline_y2());
 }
 
 
