@@ -1,0 +1,23 @@
+diff --git a/pluginhost/JuceLibraryCode/modules/juce_audio_devices/native/juce_linux_ALSA.cpp b/pluginhost/JuceLibraryCode/modules/juce_audio_devices/native/juce_linux_ALSA.cpp
+index 323fe13e4..cd9a189b1 100644
+--- a/pluginhost/JuceLibraryCode/modules/juce_audio_devices/native/juce_linux_ALSA.cpp
++++ b/pluginhost/JuceLibraryCode/modules/juce_audio_devices/native/juce_linux_ALSA.cpp
+@@ -20,6 +20,9 @@
+   ==============================================================================
+ */
+ 
++#define LANGSPEC "C"
++#include "../../../../../common/threading_lowlevel.h"
++
+ namespace juce
+ {
+ 
+@@ -750,6 +753,8 @@ public:
+             }
+         }
+ 
++        THREADING_drop_player_thread_priority();
++        
+         audioIoInProgress = false;
+     }
+ 
