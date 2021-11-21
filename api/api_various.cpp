@@ -1748,6 +1748,30 @@ void generalDelete(bool scroll_down, int windownum){
   g_downscroll = downscroll;
 }
 
+void simulateDeleteMouseButton(void){
+#if 0
+
+  /*
+    This code sends delete-key to the editor.
+    Disabled for now until I figure out how to avoid keybinding conflicts (i.e mistakenly deleting nodes etc. instead of deleting note or inserting "---".
+    For now, use shift + right mouse instead of delete in the editor.
+  */
+  
+  bool did_something = MOUSE_CYCLE_delete_button_has_been_pressed();
+  
+  if (!did_something && FOCUSFRAMES_has_focus(radium::KeyboardFocusFrameType::EDITOR))
+    generalDelete(scroll_down, -1);
+
+#else
+
+  //  if (FOCUSFRAMES_has_focus(radium::KeyboardFocusFrameType::EDITOR))
+  //   generalDelete(scroll_down, -1);
+  //  else
+    MOUSE_CYCLE_delete_button_has_been_pressed();
+  
+#endif
+}
+
 void insertLines(int toinsert,int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   

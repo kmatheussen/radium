@@ -385,6 +385,8 @@ public:
   ReadStdinThread(const QRect &rect)
     : _rect(rect)
   {
+    setObjectName("Progress_window_ReadStdinThread");
+    
     if (in.open(stdin, QIODevice::ReadOnly)==false){
       printf("Unable to open stdin\n");
     }else{

@@ -316,6 +316,7 @@ struct RecordingQueuePullThread : public QThread {
 public:
 
   RecordingQueuePullThread(){
+    setObjectName("RecordingQueuePullThread");
   }
   
   ~RecordingQueuePullThread(){

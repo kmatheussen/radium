@@ -142,9 +142,9 @@ class MyScene : public QGraphicsScene ,public radium::MouseCycleFix {
   void 	mouseReleaseEvent ( QGraphicsSceneMouseEvent * event ) override;
   */
   
-  void fix_mousePressEvent(radium::MouseCycleEvent &event) override;
+  bool fix_mousePressEvent(radium::MouseCycleEvent &event) override;
   void fix_mouseMoveEvent(radium::MouseCycleEvent &event) override;
-  void fix_mouseReleaseEvent(radium::MouseCycleEvent &event) override;
+  bool fix_mouseReleaseEvent(radium::MouseCycleEvent &event) override;
 
   MOUSE_SCENE_CYCLE_CALLBACKS_FOR_QT;
   
@@ -920,7 +920,7 @@ static void delete_instrument(struct Patch *patch){
 }
                         
 static bool mousepress_delete_chip(MyScene *scene, QGraphicsItem *item, float mouse_x, float mouse_y){
-  printf("Going to delete\n");
+  printf("Going to delete %p\n", item);
   Chip *chip = dynamic_cast<Chip*>(item);
   if(chip!=NULL){
     printf("Got chip\n");
@@ -1815,6 +1815,9 @@ static bool event_can_delete(radium::MouseCycleEvent &event){
   else if(event.modifiers() & Qt::ShiftModifier)
     return true;
 
+  else if (event.button()==Qt::BackButton)
+    return true;
+  
   else
     return false;
 }
@@ -1890,7 +1893,7 @@ static double g_startpos_scrollbar_y;
 
 static bool g_is_ctrl_clicking_this_cycle = false;
 
-void MyScene::fix_mousePressEvent(radium::MouseCycleEvent &event){
+bool MyScene::fix_mousePressEvent(radium::MouseCycleEvent &event){
   //FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::MIXER, true);
   
   //MOUSE_CYCLE_register(g_mixer_widget, get_qmouseevent(event));
@@ -1900,7 +1903,7 @@ void MyScene::fix_mousePressEvent(radium::MouseCycleEvent &event){
   _mouse_has_moved = false;
   
   if (g_is_pressed==true)
-    return;
+    return true;
 
   g_is_pressed = true;
 
@@ -1908,13 +1911,13 @@ void MyScene::fix_mousePressEvent(radium::MouseCycleEvent &event){
   
   EVENTLOG_add_event(talloc_format(">>>>  MyScene::mousePressEvent. has_undo: %d, runs_custom_exec: %d, _current_connection: %p, _current_econnection: %p, _moving_chips.size(): %d", (int)Undo_Is_Open(), (int)g_radium_runs_custom_exec, _current_connection, _current_econnection, (int)_moving_chips.size()));
 
-  RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();
+  RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2(false);
   
-  QPointF pos=event.scenePos();
-  float mouse_x = pos.x();
-  float mouse_y = pos.y();
+  const QPointF pos = event.localOrScenePos();
+  const float mouse_x = pos.x();
+  const float mouse_y = pos.y();
 
-  //printf("           SCENE press: %f %f\n", mouse_x, mouse_y);
+  printf("           SCENE press: %f %f\n", mouse_x, mouse_y);
   
   _start_mouse_pos = QCursor::pos(); //pos;
 
@@ -1927,11 +1930,10 @@ void MyScene::fix_mousePressEvent(radium::MouseCycleEvent &event){
     event.accept();
 
     g_mixer->view->viewport()->setCursor(Qt::OpenHandCursor);
-    return;
-    
+    return true;    
   }
   
-  QGraphicsItem *item = itemAt(event.scenePos(), QTransform());
+  QGraphicsItem *item = itemAt(pos, QTransform());
   
   //printf("mouse button: %d %d\n",event->button(),Qt::MiddleButton);
   
@@ -1947,21 +1949,20 @@ void MyScene::fix_mousePressEvent(radium::MouseCycleEvent &event){
 
     event.accept();
     
-    return;
+    return true;
   }
   
   bool ctrl_pressed = (event.modifiers() & Qt::ControlModifier);
-  
+
   if(event_can_delete(event)) {
-    
+
     if(mousepress_delete_chip(this,item,mouse_x,mouse_y)==true) {
       event.accept();
-      return;
+      return true;
     }
-    
+
     if(mousepress_delete_connection(this,event,item,mouse_x,mouse_y)==true)
-      return;
-    
+      return true;
   }
   
   if (event.button()==Qt::RightButton || (ctrl_pressed==false && event.button()==Qt::LeftButton && dynamic_cast<Chip*>(item)!=NULL && dynamic_cast<Chip*>(item)->get_hover_item()==Chip::HoverItem::NAME)){
@@ -1993,7 +1994,7 @@ void MyScene::fix_mousePressEvent(radium::MouseCycleEvent &event){
       EVENTLOG_add_event("start_moving_chips called from MyScene::mousePressEvent");
       start_moving_chips(this,event,chip,mouse_x,mouse_y);
       event.accept();
-      return;
+      return true;
     }
 
     //if(mousepress_select_chip(this,event,item,mouse_x,mouse_y,ctrl_pressed)==true) // select
@@ -2002,10 +2003,10 @@ void MyScene::fix_mousePressEvent(radium::MouseCycleEvent &event){
   } else if(event.button()==Qt::LeftButton) {
     
     if(ctrl_pressed==false && mousepress_start_connection(this,event,item,mouse_x,mouse_y)==true)
-      return;
+      return true;
 
     if(ctrl_pressed==true && mousepress_select_chip(this,event,item,mouse_x,mouse_y,ctrl_pressed)==true) // select
-      return;
+      return true;
 
     if (dynamic_cast<Chip*>(item) == NULL) {
       
@@ -2021,8 +2022,10 @@ void MyScene::fix_mousePressEvent(radium::MouseCycleEvent &event){
     }
     
   } 
-  if(event.button()!=Qt::RightButton)
+  if(event.button()!=Qt::RightButton && event.is_real_event())
     QGraphicsScene::mousePressEvent(event.get_qtscene_event());
+
+  return true;
 }
 
 static Chip *handle_temp_connection_chip(MyScene *myscene, bool is_output, SuperConnection *current_connection, int x1, int y1, int x2, int y2){
@@ -2085,6 +2088,8 @@ static Chip *handle_temp_connection_chip(MyScene *myscene, bool is_output, Super
 void MyScene::fix_mouseMoveEvent (radium::MouseCycleEvent &event){
   FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::MIXER, true);
 
+  API_unregister_last_mouse_move_event();
+  
   //printf("  2. MouseMove. Ctrl-clicking: %d\n", g_is_ctrl_clicking_this_cycle);
   
   if (g_is_ctrl_clicking_this_cycle){
@@ -2098,7 +2103,7 @@ void MyScene::fix_mouseMoveEvent (radium::MouseCycleEvent &event){
   
   RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();
 
-  QPointF pos=event.scenePos();
+  QPointF pos=event.localOrScenePos();
 
   //printf("           SCENE move: %f %f\n", pos.x(), pos.y());
   
@@ -2181,7 +2186,7 @@ void MyScene::fix_mouseMoveEvent (radium::MouseCycleEvent &event){
 
 }
 
-void MyScene::fix_mouseReleaseEvent(radium::MouseCycleEvent &event){
+bool MyScene::fix_mouseReleaseEvent(radium::MouseCycleEvent &event){
   //MOUSE_CYCLE_unregister(g_mixer_widget);
 
   //printf("  3. MouseRelease. Ctrl-clicking: %d\n", g_is_ctrl_clicking_this_cycle);
@@ -2194,7 +2199,7 @@ void MyScene::fix_mouseReleaseEvent(radium::MouseCycleEvent &event){
 
   root->song->tracker_windows->must_redraw = true; // why?
 
-  QPointF pos=event.scenePos();
+  QPointF pos=event.localOrScenePos();
   float mouse_x = pos.x();
   float mouse_y = pos.y();
 
@@ -2203,7 +2208,7 @@ void MyScene::fix_mouseReleaseEvent(radium::MouseCycleEvent &event){
   if (g_is_ctrl_clicking_this_cycle){
     g_is_ctrl_clicking_this_cycle = false;
     event.accept();
-    return;
+    return true;
   }
   
 
@@ -2322,11 +2327,11 @@ void MyScene::fix_mouseReleaseEvent(radium::MouseCycleEvent &event){
 
   if (must_accept){
     event.accept();
-    return;
+    return true;
   }
 
 
-  RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();
+  RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2(true);
 
   
   bool ctrl_pressed = (event.modifiers() & Qt::ControlModifier);
@@ -2351,12 +2356,12 @@ void MyScene::fix_mouseReleaseEvent(radium::MouseCycleEvent &event){
       }
       
       event.accept();
-      return;
+      return true;
     }
     
     if(mousepress_save_presets_etc(this,event,mouse_x,mouse_y)==true){
       event.accept();
-      return;
+      return true;
     }
     /*
       && mouserelease_replace_patch(this,mouse_x,mouse_y)==true) {
@@ -2369,6 +2374,8 @@ void MyScene::fix_mouseReleaseEvent(radium::MouseCycleEvent &event){
   auto *sevent = event.get_qtscene_event();
   if (sevent != NULL)
     QGraphicsScene::mouseReleaseEvent(sevent);
+
+  return true;
 }
 
 

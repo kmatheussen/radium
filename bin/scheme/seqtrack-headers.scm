@@ -403,13 +403,16 @@
     ;;    (draw-hovering-overlay gui x1 y1 x2 y2))
     )
 
-  
+
   (define start-mouse-value #f)
   
   (add-delta-mouse-cycle!
    (lambda (button x* y*)
      (set! has-made-undo #f)
-     (cond ((= button *right-button*)
+     (cond ((delete-button? button)
+            (<ra> :reset-instrument-effect instrument-id effect-name)
+            'eat-mouse-cycle)
+           ((= button *right-button*)
             (show-sequencer-header-popup-menu seqtracknum instrument-id "System Volume" gui)
             'eat-mouse-cycle)
            ((= button *left-button*)
@@ -420,7 +423,7 @@
             #t)
            (else
             #f)))
-   (lambda (button x* y* dx dy)
+   (lambda (button x* y* dx dy)     
      (assert start-mouse-value)
      (maybe-make-undo)
      (define slider-value (between 0 (+ start-mouse-value
@@ -440,7 +443,6 @@
   
   (add-statusbar-text-handler get-statusbar-text)
                                 
-
   '(define (mouse-callback button state x y)
     (if (and (>= x x1)
              (< x x2)
@@ -518,18 +520,24 @@
     ;;    (draw-hovering-overlay gui x1 y1 x2 y2))
     )
 
-  
+  (define (reset-seqtrack-note-gain!)
+    (when (not (= 1.0 (<ra> :get-seqtrack-note-gain seqtracknum)))
+      (<ra> :undo-seqtrack-note-gain seqtracknum)
+      (<ra> :set-seqtrack-note-gain 1.0 seqtracknum)
+      (update-me!)))
+
   (define start-mouse-value #f)
   
   (add-delta-mouse-cycle!
    (lambda (button x* y*)
      (set! has-made-undo #f)
-     (cond ((= button *right-button*)
+     (cond ((delete-button? button)
+            (reset-seqtrack-note-gain!)
+            'eat-mouse-cycle)
+           ((= button *right-button*)
             (popup-menu "Reset"
-                        (lambda ()
-                          (<ra> :undo-seqtrack-note-gain seqtracknum)
-                          (<ra> :set-seqtrack-note-gain 1.0 seqtracknum)
-                          (update-me!)))
+                        :shortcut ra:general-delete
+                        reset-seqtrack-note-gain!)
             'eat-mouse-cycle)
            ((= button *left-button*)
             (define gain (get-gain))
@@ -552,7 +560,7 @@
      ;;(c-display "release button/x/y" x* y*)
      #f
      ))
-  
+
   (define (get-statusbar-text)
     (<-> "Volume: "(get-volume-slider-text (get-gain))))
 
@@ -682,14 +690,11 @@
   (add-delta-mouse-cycle!
    (lambda (button x* y*)
      (set! has-made-undo #f)
-     (cond ((and (= button *right-button*)
-                 #t );;(not (<ra> :shift-pressed)))
-            (if (<ra> :shift-pressed)
-                (undo-block
-                 (lambda ()                  
-                   (<ra> :reset-instrument-effect instrument-id "System Pan On/Off")
-                   (<ra> :reset-instrument-effect instrument-id "System Pan")))
-                (show-popup))
+     (cond ((delete-button? button)
+            (reset-pan! instrument-id)
+            'eat-mouse-cycle)
+           ((eq? button *right-button*)
+            (show-popup)
             'eat-mouse-cycle)
            ((= button *left-button*)
             (define pan (get-pan))
@@ -732,6 +737,8 @@
                  (set! *hovering-seqtrack-number* seqtracknum)
                  (update-me!)
                  #t)
+   :move-func (lambda (button x y)
+                #t)
    :leave-func (lambda (button x y)
                  (if (not (has-mouse))
                      (set! *hovering-seqtrack-number* -1))
@@ -812,17 +819,22 @@
 
   (add-delta-mouse-cycle!
    (lambda (button x* y*)
-     (set-statusbar-text! (get-statusbar-text))
-     (set! has-made-undo #f)
-     (set! first-seqtrack-was-audio (<ra> :seqtrack-for-audiofiles 0))
-     (set! was-using-sequencer-timing (<ra> :is-using-sequencer-timing))
-     (set! order-before (get-seqtrack-order))
-     (if (= button *left-button*)
+     (if (delete-button? button)
          (begin
-           (set! *hovering-seqtrack-number* seqtracknum)
-           #t)
+           (delete-seqtrack seqtracknum)
+           'eat-mouse-cycle)
          (begin
-          #f)))
+           (set-statusbar-text! (get-statusbar-text))
+           (set! has-made-undo #f)
+           (set! first-seqtrack-was-audio (<ra> :seqtrack-for-audiofiles 0))
+           (set! was-using-sequencer-timing (<ra> :is-using-sequencer-timing))
+           (set! order-before (get-seqtrack-order))
+           (if (= button *left-button*)
+               (begin
+                 (set! *hovering-seqtrack-number* seqtracknum)
+                 #t)
+               (begin
+                 #f)))))
    (lambda (button x* y* dx dy)
      (define new-seqtracknum (get-new-seqtracknum y*))
      (cond ((< new-seqtracknum seqtracknum)
@@ -1045,8 +1057,7 @@
     (super:get-mouse-cycle button x* y*))
 
   (add-mouse-cycle! :press-func (lambda (button x* y*)
-                                  (if (and (= button *right-button*)
-                                           (<ra> :shift-pressed)
+                                  (if (and (delete-button? button)
                                            (> (<ra> :get-num-seqtracks) 1))
                                       (begin
                                         (delete-seqtrack)

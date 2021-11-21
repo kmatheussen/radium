@@ -80,7 +80,10 @@ struct SoundPlugin;
 #include "../Qt/Qt_colors_proc.h"
 #include "../Qt/Qt_mix_colors.h"
 
+#include "../embedded_scheme/s7extra_proc.h"
+
 #include "../api/api_proc.h"
+
 
 class AudioConnection;
 class EventConnection;
@@ -531,7 +534,7 @@ public:
   }
   
   void hoverEnterEvent ( QGraphicsSceneHoverEvent * event ) override {
-    //printf("hover enter\n");
+    //printf("-------------hover CONNECTION enter\n");
 
     /*
     QPen pen(Qt::gray,6);
@@ -564,10 +567,13 @@ public:
     _is_hovered_visible = true;
 
     SuperConnection::set_current_connection(this);
-    
+
     update();
   }
-
+  /*  
+  void hoverMoveEvent(QGraphicsSceneHoverEvent * event) override {
+  }
+  */
   void hoverLeaveEvent ( QGraphicsSceneHoverEvent * event ) override {
     //printf("hover leave\n");
 

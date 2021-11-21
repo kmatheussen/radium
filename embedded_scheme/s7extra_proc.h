@@ -404,8 +404,10 @@ namespace radium{
     
     
     void set(T new_val){
-      unprotect();
-      protect(new_val);
+      if (new_val != v) {
+        unprotect();
+        protect(new_val);
+      }
     }
     
     // Or just use ".v".

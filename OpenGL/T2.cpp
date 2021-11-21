@@ -281,6 +281,8 @@ namespace{
     
     T2_Thread(QOpenGLContext *widget_context){
 
+      setObjectName("T2_Thread");
+      
       _offscreen_context = new QOpenGLContext;
       
       _offscreen_context->setFormat(widget_context->format());//GL_get_qsurface()->format());

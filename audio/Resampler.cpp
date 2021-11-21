@@ -110,6 +110,8 @@ private:
     if (m_num_in_frames_left <= 0)
       return total_num_frames_produced;
 
+    //printf("m_in: %p\n", m_in);
+    
     int num_frames_consumed;    
     int num_frames_produced = m_interpolator.process(
                                                      actual_ratio,

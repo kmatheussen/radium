@@ -1691,9 +1691,11 @@ for .emacs:
 
 
 (define (undo-block block)
+  ;;(c-display "-------Undo block open")
   (<ra> :open-undo)
   (try-finally :try block
                :finally (lambda ()
+                          ;;(c-display "-------<<< Undo block CLOSE")
                           (<ra> :close-undo))))
 
 (define (ignore-undo-block block)

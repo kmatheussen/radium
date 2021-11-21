@@ -3639,7 +3639,7 @@ void setCurrentInstrumentUnderMouse(instrument_t instrument){
       
     }
 
-    API_call_me_when_current_instrument_under_mouse_has_been_changed();
+    API_call_me_when_current_instrument_under_mouse_has_been_changed();    
   }
 }
 

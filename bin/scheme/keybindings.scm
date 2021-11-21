@@ -417,6 +417,10 @@
 
   
 #!!
+(get-displayable-keybinding "ra:simulate-delete-mouse-button" '())
+(get-displayable-keybindings "ra.simulateDeleteMouseButton")
+(get-displayable-keybindings "ra:simulate-delete-mouse-button")
+
 (get-displayable-keybinding "ra.selectPrevSeqblock" '())
 (get-displayable-keybinding "ra:select-prev-seqblock" '())
 (get-displayable-keybindings "ra.selectPrevSeqblock")
@@ -478,6 +482,19 @@
        " : "
        (get-keybindings-command rafuncname args)))
 
+(define (get-shortest-keybinding keybindings)
+  (if (null? keybindings)
+      #f
+      (let ((first (car keybindings))
+            (rest (get-shortest-keybinding (cdr keybindings))))
+        (if (or (not rest)
+                (< (string-length first)
+                   (string-length rest)))
+            first
+            rest))))
+#!!
+(get-shortest-keybinding '("owie" "a"))
+!!#
 
 (delafina (get-displayable-keybinding :rafuncname
                                       :args
@@ -488,11 +505,11 @@
         (ra-funcname-is-in-python-format
          (let* ((command (get-keybindings-command rafuncname args))
                 (keybindings (get-displayable-keybindings command)))
-           ;;(c-display "command:" command)
-           ;;(c-display "keybindings:" keybindings)
+           (c-display "command:" command)
+           (c-display "keybindings:" keybindings)
            (if (null? keybindings)
                ""
-               (last keybindings))))
+               (get-shortest-keybinding keybindings))))
         ((string-starts-with? rafuncname "ra:")
          ;;(c-display "stuff:" (get-python-ra-funcname rafuncname) args)
          (let* ((command (get-keybindings-command (get-python-ra-funcname rafuncname) args))
@@ -501,7 +518,7 @@
            ;;(c-display "keybindings:" keybindings)
            (if (null? keybindings)
                ""
-               (last keybindings))))
+               (get-shortest-keybinding keybindings))))
         ((not (defined? (string->symbol rafuncname)))
          "")
         (else

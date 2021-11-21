@@ -1023,8 +1023,8 @@ private:
 public:
 
   // Main thread
-  void fix_mousePressEvent(radium::MouseCycleEvent &qmouseevent) override {
-    get_editorwidget()->handle_mouse_press(qmouseevent, qmouseevent.x(), qmouseevent.y() + root->song->tracker_windows->wblock->t.y1);
+  bool fix_mousePressEvent(radium::MouseCycleEvent &qmouseevent) override {
+    return get_editorwidget()->handle_mouse_press(qmouseevent, qmouseevent.x(), qmouseevent.y() + root->song->tracker_windows->wblock->t.y1);
   }
 
   // Main thread
@@ -1034,8 +1034,8 @@ public:
   }
 
   // Main thread
-  void fix_mouseReleaseEvent(radium::MouseCycleEvent &event) override{
-    get_editorwidget()->handle_mouse_release(event.button(), event.x(), event.y() + root->song->tracker_windows->wblock->t.y1);
+  bool fix_mouseReleaseEvent(radium::MouseCycleEvent &event) override{
+    return get_editorwidget()->handle_mouse_release(event.button(), event.x(), event.y() + root->song->tracker_windows->wblock->t.y1);
   }
   
   MOUSE_CYCLE_CALLBACKS_FOR_QT;
@@ -1148,7 +1148,7 @@ private:
                                                  (current_height - 0.5f) / g_opengl_scale_ratio, 
                                                  -1.0, +1.0);
 #endif
-} else {
+      } else {
 
         _rendering->camera()->setProjectionOrtho(-0.5f);
 

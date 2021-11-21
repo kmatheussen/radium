@@ -245,6 +245,7 @@ public:
   Runner(int cpunum)
     : _cpunum(cpunum)
   {
+    setObjectName("Runner_" + QString::number(cpunum));
     ATOMIC_SET(must_exit, false);
     QObject::connect(this, SIGNAL(finished()), this, SLOT(onFinished()));
     start(QThread::NormalPriority); //QThread::TimeCriticalPriority); // The priority shouldn't matter though since PLAYER_acquire_same_priority() is called inside run().

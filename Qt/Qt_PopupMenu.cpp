@@ -196,7 +196,7 @@ namespace{
       if (qmenu.data() != NULL)
         qmenu->close();
 
-      MOUSE_CYCLE_schedule_unregister_all(); // Actions are cached, so custom widgets are not deleted when menu is closed.
+      MOUSE_CYCLE_schedule_unregister_all(true); // Actions are cached, so custom widgets are not deleted when menu is closed.
 
       //if (callback.v==NULL && callback3==NULL)
       //  delete this;

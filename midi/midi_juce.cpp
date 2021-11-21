@@ -58,6 +58,11 @@ struct MidiInputPortOs : juce::MidiInputCallback{
     override
   {
 
+#if !defined(RELEASE)
+    if (g_t_current_thread_is_RT==R_UNINITIALIZED)
+      g_t_current_thread_is_RT=R_IS_RT;
+#endif
+    
     /*
       int64_t message_ms = message.timeStamp;
       int64_t now_ms = Time::getMillisecondCounter();

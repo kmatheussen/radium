@@ -885,6 +885,7 @@ currently_undoing = false;
 
 void Undo(void){
   undo_internal();
+  gui_rerunLastMouseEvent();
   API_call_me_right_after_undoing_or_redoing();
 }
 
@@ -908,6 +909,7 @@ void Redo(void){
 
         update_gfx();
 
+        gui_rerunLastMouseEvent();
         API_call_me_right_after_undoing_or_redoing();
 }
 

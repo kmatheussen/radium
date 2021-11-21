@@ -1091,7 +1091,6 @@
   (<ra> :change-audio-connections changes)) ;; Apply all changes simultaneously
 
 
-
 (define (FROM_C-set-solo-for-instruments instruments doit)
   (undo-block
    (lambda ()           
@@ -2588,6 +2587,12 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
               (ra:show-instrument-gui id parentgui))
           (show-async-message -2 (<-> "Instrument \"" (<ra> :get-instrument-name id) "\" doesn't have a GUI"))))))
 
+
+(define (reset-pan! instrument-id)
+  (undo-block
+   (lambda ()                  
+     (<ra> :reset-instrument-effect instrument-id "System Pan On/Off")
+     (<ra> :reset-instrument-effect instrument-id "System Pan"))))
 
 (define (pan-enabled? instrument-id)
   (>= (<ra> :get-instrument-effect instrument-id "System Pan On/Off") 0.5))

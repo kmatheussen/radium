@@ -154,7 +154,7 @@ struct FaustResultWebView
     }
   }
   
-  void fix_mousePressEvent(radium::MouseCycleEvent &event) override {
+  bool fix_mousePressEvent(radium::MouseCycleEvent &event) override {
 #if !USE_QWEBENGINE
     QWebFrame *frame = page()->mainFrame();
 
@@ -197,9 +197,11 @@ struct FaustResultWebView
       QWebView::mousePressEvent(qevent);
 #endif
     }
+
+    return true;
   }
 
-  void fix_mouseReleaseEvent(radium::MouseCycleEvent &event) override {
+  bool fix_mouseReleaseEvent(radium::MouseCycleEvent &event) override {
     is_dragging = false;
     
     if (was_dragging) {
@@ -216,6 +218,8 @@ struct FaustResultWebView
     }
 
     setPointer(event.pos());
+
+    return true;
   }
 
   MOUSE_CYCLE_CALLBACKS_FOR_QT;

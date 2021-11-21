@@ -147,23 +147,24 @@ static QPointer<QWidget> g_last_released_widget = NULL;
 
 
 #define MOUSE_OVERRIDERS(classname)                                     \
-  void fix_mousePressEvent(radium::MouseCycleEvent &event) override{                \
+  bool fix_mousePressEvent(radium::MouseCycleEvent &event) override{    \
     ScopedEventHandlerTracker event_handler_tracker;                    \
     g_last_pressed_widget = this;                                       \
     mousePressEvent_handle_double_click();                              \
     if (_mouse_callback.v==NULL){                                       \
       CALL_PARENT_MOUSEPRESS(classname);                                \
-      return;                                                           \
+      return true;                                                      \
     }                                                                   \
-    RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();                             \
+    RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2(true);                         \
     if (!Gui::mousePressEvent(event)){                                  \
       CALL_PARENT_MOUSEPRESS(classname);                                \
     }                                                                   \
+    return true;                                                        \
   }                                                                     \
                                                                         \
   void fix_mouseMoveEvent(radium::MouseCycleEvent &event) override{     \
     ScopedEventHandlerTracker event_handler_tracker;                    \
-    if (_mouse_callback.v==NULL){                                         \
+    if (_mouse_callback.v==NULL){                                       \
       CALL_PARENT_MOUSEMOVE(classname);                                 \
       return;                                                           \
     }                                                                   \
@@ -173,17 +174,18 @@ static QPointer<QWidget> g_last_released_widget = NULL;
     }                                                                   \
   }                                                                     \
                                                                         \
-  void fix_mouseReleaseEvent(radium::MouseCycleEvent &event) override { \
+  bool fix_mouseReleaseEvent(radium::MouseCycleEvent &event) override { \
     ScopedEventHandlerTracker event_handler_tracker;                    \
     g_last_released_widget = this;                                      \
-    if (_mouse_callback.v==NULL){                                         \
+    if (_mouse_callback.v==NULL){                                       \
       CALL_PARENT_MOUSERELEASE(classname);                              \
-      return;                                                           \
+      return true;                                                      \
     }                                                                   \
-    RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2();                             \
+    RETURN_IF_DATA_IS_INACCESSIBLE_SAFE2(true);                         \
     if (!Gui::mouseReleaseEvent(event)){                                \
       CALL_PARENT_MOUSERELEASE(classname);                              \
     }                                                                   \
+    return true;                                                        \
   }                                                                     \
                                                                         \
   MOUSE_CYCLE_CALLBACKS_FOR_QT;                                         \
@@ -419,7 +421,6 @@ static QHash<const FullScreenParent*, Gui*> g_gui_from_full_screen_widgets;
 
 static bool g_delayed_resizing_timer_active = false;
 static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one, if present. We could have used QPointer<Gui> instead, but that would make it harder to check if gui is already scheduled for later resizing.
-
 
   class VerticalAudioMeterPainter;
 
@@ -1719,7 +1720,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       _last_press_time = time;
     }
     
-    bool mousePressEvent(radium::MouseCycleEvent &event){
+    bool mousePressEvent(radium::MouseCycleEvent &event){      
       R_ASSERT_RETURN_IF_FALSE2(_mouse_callback.v!=NULL, false);
 
       double time = TIME_get_ms();
@@ -1739,7 +1740,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       int ret = S7CALL(bool_int_int_float_float,_mouse_callback.v, _currentButton, API_MOUSE_PRESSING, _last_mouse_pos.x(), _last_mouse_pos.y());
       if (g_scheme_failed==true && gui_isOpen(guinum))
         _mouse_event_failed = TIME_get_ms() + 5000;
-      
+
       return ret;
       
       //printf("  Press. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
@@ -1765,6 +1766,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       
       _currentButton = 0;
       //printf("  Release. x: %d, y: %d. This: %p\n", point.x(), point.y(), this);
+
       return ret;
     }
 
@@ -1781,6 +1783,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       _last_mouse_pos = event.pos();
       
       int64_t guinum = get_gui_num(); // gui might be closed when calling _mouse_callback
+
+      API_register_last_mouse_move_event(guinum, _last_mouse_pos.x(), _last_mouse_pos.y(), _mouse_callback.v, false);
       
       bool ret = S7CALL(bool_int_int_float_float,_mouse_callback.v, _currentButton, API_MOUSE_MOVING, _last_mouse_pos.x(), _last_mouse_pos.y());
       if (g_scheme_failed==true && gui_isOpen(guinum))
@@ -4739,6 +4743,140 @@ bool API_run_custom_gui_paint_function(QWidget *widget, QPainter *p, const QRegi
   p->setClipping(has_clipping);
   
   p->setFont(QFont()); // 'drawText' doesn't clean up font type afterwards.
+  
+  return ret;
+}
+
+static bool g_is_rerunning_last_mouse_move = false;
+static radium::ProtectedS7Extra<func_t*> g_last_mouse_move_callback = radium::ProtectedS7Extra<func_t*>("last_mouse_move_callback");
+static int64_t g_last_mouse_move_guinum = -100;
+static int g_last_mouse_move_x, g_last_mouse_move_y;
+static int64_t g_last_mouse_move_is_main_move_handler;
+
+void API_register_last_mouse_move_event(int64_t guinum, int x, int y, func_t *func, bool is_main_mouse_move_handler){
+  if (is_main_mouse_move_handler){
+    R_ASSERT_NON_RELEASE(func==NULL);
+    R_ASSERT_NON_RELEASE(guinum==-1);
+  }
+
+  R_ASSERT_NON_RELEASE(g_is_rerunning_last_mouse_move==false);
+  
+  g_last_mouse_move_guinum = guinum;
+  g_last_mouse_move_x = x;
+  g_last_mouse_move_y = y;
+
+  g_last_mouse_move_callback.set(func);
+
+  g_last_mouse_move_is_main_move_handler = is_main_mouse_move_handler;
+}
+
+void API_unregister_last_mouse_move_event(void){
+  if (g_is_rerunning_last_mouse_move){
+    printf("Warning: API_unregister_last_mouse_move_event called while currently rerunning\n");
+  }
+  
+  g_last_mouse_move_callback.set(NULL);
+  g_last_mouse_move_is_main_move_handler = false;
+}
+
+// FIX: Don't run if last moused widget is not g_last_mouse_move_guinum.
+// FiX: Should we register last move if in a cycle?
+bool gui_rerunLastMouseEvent(void){
+
+  printf("-----------gui_rerunLastMouseEvent called\n");
+  
+  static double s_time = 0;
+
+  if (g_is_rerunning_last_mouse_move){
+    R_ASSERT_NON_RELEASE(false);
+    return false;
+  }
+
+  double time = TIME_get_ms();
+
+  if ( (time - s_time) < 30) {
+    printf("Note: gui_rerunLastMouseEvent: Less than 30ms since last call to gui_rerunLastMouseEvent Now: %f. Then: %f. Not running last mouse event. Might be inside a never-ending loop.\n", time, s_time);
+    return false;
+  }
+  
+  if (g_mouse_is_pressed) {
+    printf("Note: gui_rerunLastMouseEvent: Can not rerun last move event since we are currently inside a cycle. (might risk neverending loop)\n");
+    return false;
+  }
+  
+  if (g_last_mouse_move_is_main_move_handler==false) {
+
+    if (g_last_mouse_move_guinum >= 0 && !gui_isOpen(g_last_mouse_move_guinum)){
+      printf("Note: gui_rerunLastMouseEvent: Gui #%d has been closed. Returning false.\n", (int)g_last_mouse_move_guinum);
+      return false;
+    }
+
+    if (g_last_mouse_move_callback.v==NULL){
+      printf("Note: gui_rerunLastMouseEvent: No move handler registered\n");
+      return false;
+    }
+  }
+
+  
+  printf("Rerunning\n");
+  
+  g_is_rerunning_last_mouse_move = true;
+
+  bool ret;
+
+  if (g_last_mouse_move_is_main_move_handler==false)
+    ret = S7CALL(bool_int_int_float_float, g_last_mouse_move_callback.v, 0, API_MOUSE_MOVING, g_last_mouse_move_x, g_last_mouse_move_y);
+  else
+    ret = SCHEME_mousemove_rerun(0, g_last_mouse_move_x, g_last_mouse_move_y);
+
+  g_is_rerunning_last_mouse_move = false;
+
+  s_time = time;
+
+  return ret;
+}
+
+
+bool API_run_mouse_press_delete(void){
+  if (MOUSE_CYCLE_is_inside_cycle()){
+    printf("API_run_mouse_press_delete: Won't run since we are currently inside a cycle\n");
+    return false;
+  }
+    
+  if (g_last_mouse_move_is_main_move_handler){
+    SCHEME_mousepress(TR_DELETEMOUSEDOWN, g_last_mouse_move_x, g_last_mouse_move_y);
+    return false;
+  }
+  
+  Gui *gui = get_gui(g_last_mouse_move_guinum);
+  
+  if (gui==NULL)
+    return false;
+
+  QWidget *widget = gui->_widget;
+
+  if (widget==NULL){
+    R_ASSERT_NON_RELEASE(false); // don't think this should happen though.
+    return false;
+  }
+  
+  if (gui->_mouse_callback.v == NULL)
+    return false;
+
+  QMouseEvent ev(QEvent::MouseButtonRelease,
+                 QPointF(g_last_mouse_move_x, g_last_mouse_move_y),
+                 Qt::BackButton,
+                 Qt::BackButton,
+                 Qt::NoModifier);
+
+  MOUSE_CYCLE_register(widget, &ev); // Note: Fake event. MOUSE_CYCLE might not handle these properly. However, we only do this if we are not inside an existing cycle alread.
+    
+  radium::MouseCycleEvent event(&ev, false);
+
+  bool ret = gui->mousePressEvent(event);
+  ret = gui->mouseReleaseEvent(event) || ret;
+
+  MOUSE_CYCLE_unregister(widget);
   
   return ret;
 }

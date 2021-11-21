@@ -3241,6 +3241,11 @@ static struct WBlocks *g_wblock;
 
 
 static void gl_create_thread(){
+
+#if defined(FOR_LINUX)
+  pthread_setname_np(pthread_self(), "gl_create_thread");
+#endif
+
   THREADING_init_main_thread_type(); // Can do this since the main thread is waiting for sem_finished while this thread does it's work.
     
   while(true){

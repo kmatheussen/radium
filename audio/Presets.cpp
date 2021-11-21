@@ -222,7 +222,7 @@ static instrument_t PRESET_load_multipreset(hash_t *state, const char *name, fil
   for(int i = 0 ; i < num_presets ; i++) {
     hash_t *patch_state = HASH_get_hash_at(patches_state, "patch", i);
     struct Patch *patch = PATCH_create_audio(NULL, NULL, name, patch_state, set_as_current ? i==0 : false, 0, 0);
-    //printf("name1: -%s-, name2: -%s-, name3: %s\n",name,patch->name,HASH_get_chars(patch_state,"name"));
+    //printf("i: %d. Org id: %d. New id: %d. name1: -%s-, name2: -%s-, name3: %s\n",i, (int)HASH_get_instrument(patch_state, "id").id, (int)patch->id.id, name,patch->name,HASH_get_chars(patch_state,"name"));
     //getchar();
     VECTOR_push_back(&patches, patch); // NULL values must be pushed as well.
 

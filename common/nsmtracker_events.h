@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define TR_MIDDLEMOUSEDOWN 3
 #define TR_MIDDLEMOUSEUP 4
 #define TR_RIGHTMOUSEDOWN 5
+#define TR_DELETEMOUSEDOWN 15
 #define TR_RIGHTMOUSEUP 6
 
 #define TR_KEYBOARD 7
@@ -136,6 +137,8 @@ static inline int getMouseButtonEventID2(Qt::MouseButton button, Qt::KeyboardMod
       return TR_RIGHTMOUSEDOWN;
   }else if(button==Qt::MiddleButton)
     return TR_MIDDLEMOUSEDOWN;
+  else if(button==Qt::BackButton)
+    return TR_DELETEMOUSEDOWN;
   else
     return 0;
 }

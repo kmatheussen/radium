@@ -761,6 +761,7 @@ class SampleProviderThread : public QThread {
 public:
 
   SampleProviderThread(){
+    setObjectName("SampleProviderThread");
   }
 
   int size(void){

@@ -123,7 +123,7 @@
               text-area)))
 
       (entry :add-hover-callback! (lambda (is-above)
-                                    (c-display is-above audiofile)
+                                    ;;(c-display is-above audiofile)
                                     (<ra> :set-curr-sample-under-mouse-for-sequencer (if is-above
                                                                                          audiofile
                                                                                          (<ra> :create-illegal-filepath)))))
@@ -186,8 +186,7 @@
 (define (doubleclick-or-shift-rightclick? gui button)
   (or (and (= button *left-button*)
            (<gui> :is-double-clicking gui))
-      (and (= button *right-button*)
-           (<ra> :shift-pressed))))
+      (delete-button? button)))
 
 (define *blocklist-has-been-overridden* (defined? '*blocklist-areas*))
 (define *blocklist-areas* (<new> :container '() eq?))
@@ -209,8 +208,7 @@
                  
                  (define (mouse-callback button x y . rest)
                    (<ra> :set-curr-blocklist-pos blocknum)
-                   (cond ((and (= button *right-button*)
-                               (<ra> :shift-pressed))
+                   (cond ((delete-button? button)
                           (<ra> :delete-block blocknum))
                          ((and (= button *left-button*)
                                (<gui> :is-double-clicking gui))
@@ -268,10 +266,10 @@
                            text-area))))
                  
                  (entry :add-hover-callback! (lambda (is-above)
-                                               ;;(c-display is-above blocknum)
                                                (<ra> :set-curr-editor-block-under-mouse-for-sequencer (if is-above
                                                                                                           blocknum
                                                                                                           -1))))
+
                  (entry :add-method! :is-current-blocklist-pos? (lambda ()
                                                                   is-current-blocklist-pos))
                  entry)
@@ -526,6 +524,18 @@
                       :light-up-when-hovered #t
                       ))
 
+  (define (delete-entry!)
+    (cond ((eq? (entry :type) 'pause)
+           (delete-pause-in-seqtrack -1 (entry :start-time)))
+          ((or (eq? (entry :type) 'block)
+               (eq? (entry :type) 'audiofile))
+           (<ra> :delete-seqblock (entry :seqblockid)))
+          ((eq? (entry :type) 'last)
+           #t)
+          (else
+           (assert #f)))
+    )
+
   (area :add-hover-callback! (lambda (is-hovering)
                                (if (and is-hovering
                                         (entry :seqblockid))
@@ -547,15 +557,7 @@
                             ;;      (parent-area :update-me!)
                             ;;      (area :update-me!)))
                             (if (doubleclick-or-shift-rightclick? gui button)
-                                (cond ((eq? (entry :type) 'pause)
-                                           (delete-pause-in-seqtrack -1 (entry :start-time)))
-                                          ((or (eq? (entry :type) 'block)
-                                               (eq? (entry :type) 'audiofile))
-                                           (<ra> :delete-seqblock (entry :seqblockid)))
-                                          ((eq? (entry :type) 'last)
-                                           #t)
-                                          (else
-                                           (assert #f)))
+                                (delete-entry!)
                                 (when (= button *right-button*)
                                   (if (entry :seqblockid)
                                       (show-playlist-popup-menu-for-seqblock (entry :seqblockid) x* y*)
@@ -605,8 +607,7 @@
     (car (area :get-sub-areas)))
   
   (area :add-mouse-cycle! (lambda (button x* y*)
-                            (and (not (<ra> :shift-pressed))
-                                 (= button *right-button*)
+                            (and (delete-button? button)
                                  (begin
                                    (FROM_C-show-playlist-popup-menu)
                                    #t))))
