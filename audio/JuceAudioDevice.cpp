@@ -495,6 +495,11 @@ public:
 static radium::JucePlayer *g_juce_player = NULL;
 
 bool JUCE_audio_set_audio_thread_priority(radium_thread_t thread){
+
+#if !defined(RELEASE)
+  g_t_current_thread_is_RT = R_IS_RT;
+#endif
+      
 #if defined(FOR_MACOSX)
   
   return MACH_THREADS_jack_acquire_real_time_scheduling(thread);
@@ -532,6 +537,11 @@ bool JUCE_audio_set_audio_thread_priority_of_current_thread(void){
 }
 
 bool JUCE_audio_set_normal_thread_priority(radium_thread_t thread){
+
+#if !defined(RELEASE)
+  g_t_current_thread_is_RT = R_IS_NOT_RT;
+#endif
+
 #if defined(FOR_MACOSX)
   
   return MACH_THREADS_jack_drop_real_time_scheduling(thread);
