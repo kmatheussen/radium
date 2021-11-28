@@ -2686,6 +2686,58 @@ void setAudioConnectionType(instrument_t source_id, instrument_t dest_id, int au
   remakeMixerStrips(make_instrument(-1));
 }
 
+/* Current connection under mouse */
+
+bool hasEventConnectionUnderMouse(void){
+  SuperConnection *connection =SuperConnection::get_current_connection();
+  return connection != NULL && connection->_is_event_connection;
+}
+
+instrument_t getEventConnectionUnderMouseSourceInstrument(void){
+  SuperConnection *connection = SuperConnection::get_current_connection();
+  if (connection==NULL || !connection->_is_event_connection || connection->_from==NULL){
+    handleError("getEventConnectionUnderMouseSourceInstrument: There is no event connection under mouse");
+    return createIllegalInstrument();
+  }
+  return CHIP_get_patch(connection->_from)->id;
+}
+
+instrument_t getEventConnectionUnderMouseDestInstrument(void){
+  SuperConnection *connection = SuperConnection::get_current_connection();
+  if (connection==NULL || !connection->_is_event_connection || connection->_to==NULL){
+    handleError("getEventConnectionUnderMouseSourceInstrument: There is no event connection under mouse");
+    return createIllegalInstrument();
+  }
+  return CHIP_get_patch(connection->_to)->id;
+}
+
+bool hasAudioConnectionUnderMouse(void){
+  SuperConnection *connection = SuperConnection::get_current_connection();
+  return connection != NULL && !connection->_is_event_connection;
+}
+
+instrument_t getAudioConnectionUnderMouseSourceInstrument(void){
+  SuperConnection *connection =SuperConnection::get_current_connection();
+  if (connection==NULL || connection->_is_event_connection || connection->_from==NULL){
+    handleError("getAudioConnectionUnderMouseSourceInstrument: There is no event connection under mouse");
+    return createIllegalInstrument();
+  }
+  return CHIP_get_patch(connection->_from)->id;
+}
+
+instrument_t getAudioConnectionUnderMouseDestInstrument(void){
+  SuperConnection *connection =SuperConnection::get_current_connection();
+  if (connection==NULL || connection->_is_event_connection || connection->_to==NULL){
+    handleError("geAudioConnectionUnderMouseSourceInstrument: There is no event connection under mouse");
+    return createIllegalInstrument();
+  }
+  return CHIP_get_patch(connection->_to)->id;
+}
+
+
+
+/* mixer config (a/b) */
+
 void setCurrMixerConfigNum(int num){
   if (num < 0 || num >= MW_NUM_AB) {
     handleError("setCurrMixerConfigNum: Wrong number: %d", num);
