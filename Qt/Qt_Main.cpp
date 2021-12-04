@@ -2721,10 +2721,22 @@ protected:
 
     {
       int gl_status = GL_maybe_notify_that_main_window_is_exposed(_interval);
-      if (gl_status>=1)
+      if (gl_status>=1){
         GL_maybe_estimate_vblank(static_cast<EditorWidget*>(window->os_visual.widget)->gl_widget);
+      }
     }
 
+    {
+      static bool has_set_global_dpi = false;
+
+      if (!has_set_global_dpi){
+        if (g_global_dpi > 0){
+          PLUGINHOST_set_global_dpi(g_global_dpi);
+          has_set_global_dpi = true;
+        }
+      }
+    }
+    
     #if 0
     static bool main_window_is_exposed = false;
     if (main_window_is_exposed==false){
