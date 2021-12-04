@@ -3152,6 +3152,16 @@ void PLUGINHOST_save_fxp(struct SoundPlugin *plugin, const wchar_t *filename){
 
 static JuceThread *g_juce_thread = NULL;
 
+void PLUGINHOST_set_global_dpi(float dpi){
+  run_on_message_thread([dpi](){
+#if 1 // JUCE_MAC
+                          juce::Desktop::getInstance().setGlobalScaleFactor(dpi / 96.0);
+#else
+                          juce::Desktop::getInstance().setGlobalScaleFactor(dpi / 72.0);
+#endif
+			});
+}
+ 
 void PLUGINHOST_init(void){
 #if TEST_GET_MAX_VAL
   testing();

@@ -56,6 +56,8 @@ void PLUGINHOST_load_fxbp(struct SoundPlugin *plugin, const wchar_t *filename);
 void PLUGINHOST_save_fxb(struct SoundPlugin *plugin, const wchar_t *filename);
 void PLUGINHOST_save_fxp(struct SoundPlugin *plugin, const wchar_t *filename);
 
+void PLUGINHOST_set_global_dpi(float dpi);
+
 void PLUGINHOST_init(void);
 void PLUGINHOST_shut_down(void);
 

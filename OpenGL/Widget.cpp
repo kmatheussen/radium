@@ -268,6 +268,8 @@ static void set_realtime(int type, int priority){
 }
 #endif
 
+float g_global_dpi = -1;
+
 static DEFINE_ATOMIC(bool, g_has_updated_at_least_once) = false;
 static DEFINE_ATOMIC(bool, g_has_resized_at_least_once) = false;
 
@@ -2376,6 +2378,8 @@ static double get_refresh_rate(void){
     
     QScreen *qscreen = qwindow->screen();
     if (qscreen!=NULL) {
+
+      g_global_dpi = qscreen->logicalDotsPerInch();
 
       maybe_start_t2_thread();
 
