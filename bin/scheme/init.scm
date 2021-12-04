@@ -12,6 +12,7 @@
 (set! (*s7* 'history-size) 80)
 
 
+
 (define *is-initializing* #t)
 ;;(define *all-files-loaded #f)
 
@@ -1034,6 +1035,23 @@ FROM_C-show-mixer-popup-menu-effect
   
   (set! *is-initializing* #f)
   ;;(set! *all-files-loaded #t)
+
+  ;; Hacks to fix space key
+  ;;
+  (<ra> :schedule 1000
+	(lambda ()
+	  (ra:reload-keybindings)
+	  #f))
+    
+  (<ra> :schedule 3000
+	(lambda ()
+	  (ra:reload-keybindings)
+	  #f))
+    
+  (<ra> :schedule 6000
+	(lambda ()
+	  (ra:reload-keybindings)
+	  #f))
   )
 
 
