@@ -3193,8 +3193,6 @@ void PLUGINHOST_init(void){
     juce::initialiseJuce_GUI();
 
   }
-  
-  //juce::Font::setDefaultSansSerifFont
 }
 
 void PLUGINHOST_shut_down(void){

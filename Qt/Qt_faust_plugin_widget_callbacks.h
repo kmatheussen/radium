@@ -85,6 +85,16 @@ public:
 
 #include "Qt_faust_plugin_widget.h"
 
+template <typename T>
+static float myZoomFactor(const T *view){
+  return view->zoomFactor() / (g_gfx_scale * 0.85);
+}
+
+template <typename T>
+static void mySetZoomFactor(T *view, float zoom){
+  view->setZoomFactor(zoom * g_gfx_scale * 0.85);
+}
+
 namespace{
   
 struct FaustResultWebView
@@ -231,7 +241,7 @@ struct FaustResultWebView
 
   void wheelEvent(QWheelEvent *qwheelevent) override {
     if (qwheelevent->modifiers() & Qt::ControlModifier){
-      float zoom = zoomFactor();      
+      float zoom = myZoomFactor(this);      
       float newzoom;
       if (qwheelevent->angleDelta().y() > 0)
         newzoom = zoom * 1.2;
@@ -245,7 +255,7 @@ struct FaustResultWebView
 #if USE_QWEBENGINE
         page()->setZoomFactor(newzoom);
 #else
-        page()->mainFrame()->setZoomFactor(newzoom);
+        mySetZoomFactor(page()->mainFrame(), newzoom);
 #endif
       }
     } else {
@@ -375,7 +385,7 @@ public:
 
 #if !USE_QWEBENGINE
     _last_web_frame = web->page()->mainFrame(); // Important that we do this after calling setUrl/setHtml
-    _last_web_frame->setZoomFactor(0.5);
+    mySetZoomFactor(_last_web_frame, 0.5);
     _last_web_frame->setScrollBarPolicy(Qt::Horizontal, Qt::ScrollBarAlwaysOn); // The faust editor always has a scroll bar, so it looks strange without it here as well.
 #else
     web->page()->setZoomFactor(0.5);
@@ -523,15 +533,15 @@ public:
       if (ready.svg_is_ready && ready.svg_succeeded) {
 
         if (showing_svg())
-          _svg_zoom_factor = web->zoomFactor();
+          _svg_zoom_factor = myZoomFactor(web);
         else
-          _error_zoom_factor = web->zoomFactor();
+          _error_zoom_factor = myZoomFactor(web);
         
         _web_text = "";
         
         web->setUrl(QUrl::fromLocalFile(QDir::fromNativeSeparators(FAUST_get_svg_path(plugin))));
         
-        web->setZoomFactor(_svg_zoom_factor);
+        mySetZoomFactor(web, _svg_zoom_factor);
         
         printf("    URL: -%s-. native: -%s-, org: -%s-\n",web->url().toString().toUtf8().constData(), QDir::fromNativeSeparators(FAUST_get_svg_path(plugin)).toUtf8().constData(), FAUST_get_svg_path(plugin).toUtf8().constData());
 #if !USE_QWEBENGINE
@@ -549,9 +559,9 @@ public:
       if (factory_failed || svg_failed){
 
         if (showing_svg())
-          _svg_zoom_factor = web->zoomFactor();
+          _svg_zoom_factor = myZoomFactor(web);
         else
-          _error_zoom_factor = web->zoomFactor();
+          _error_zoom_factor = myZoomFactor(web);
           
         //_last_web_frame->setScrollBarPolicy(Qt::Horizontal, Qt::ScrollBarAlwaysOff);
         _web_text = 
@@ -564,7 +574,7 @@ public:
           ;
         
         web->setHtml(_web_text);
-        web->setZoomFactor(_error_zoom_factor);
+        mySetZoomFactor(web, _error_zoom_factor);
 #if !USE_QWEBENGINE
         _last_web_frame = web->page()->mainFrame(); // Important that we do this after calling setUrl/setHtml
 #endif

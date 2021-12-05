@@ -91,7 +91,9 @@
   (define seqblockid #f)
   
   (define window (<gui> :vertical-layout))
-  (<gui> :set-size window 100 200)  
+  (<gui> :set-size window
+         (floor (* 100 (<gui> :get-gfx-scale)))
+         (floor (* 200 (<gui> :get-gfx-scale))))
 
   (define area (make-qtarea))
   

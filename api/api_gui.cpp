@@ -109,6 +109,9 @@ static QByteArray g_fontdialog_geometry;
 
 int g_num_running_resize_events = 0;
 
+bool g_has_resized_filedialog = false;
+
+
 // Keep track of code that might be waiting for callbacks. We could get strange error messages when a widget is closed then.
 namespace{
   namespace myprivate{
@@ -3914,6 +3917,10 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       setUrl(getUrl(url));
       //connect(page(),SIGNAL(downloadRequested(QNetworkRequest)),this,SLOT(download(QNetworkRequest)));
       connect(this,SIGNAL(urlChanged(const QUrl &)),this,SLOT(urlChanged(const QUrl &)));
+
+      mySetZoomFactor(1.0);
+
+      resize(5200,5200);//width() * g_gfx_scale, height() * g_gfx_scale);
     }
 
     /*
@@ -3970,8 +3977,16 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         findText(_last_search_text, QWebPage::FindWrapsAroundDocument);
     }
 
+    float myZoomFactor(void){
+      return zoomFactor() / (g_gfx_scale * 0.85);
+    }
+      
+    void mySetZoomFactor(float zoom){
+      setZoomFactor(zoom * g_gfx_scale * 0.85);
+    }
+    
     void zoom(bool zoom_in){
-      float zoom = zoomFactor();      
+      float zoom = myZoomFactor();      
       float newzoom;
       if (zoom_in)
         newzoom = zoom * 1.2;
@@ -3983,7 +3998,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       
       if (newzoom > 0.05)
         //page()->mainFrame()->setZoomFactor(newzoom);
-        setZoomFactor(newzoom);
+        mySetZoomFactor(newzoom);
     }
 
     void keyPressEvent(QKeyEvent *event) override{
@@ -8430,6 +8445,10 @@ bool gui_isActiveWindow(int64_t guinum){
     return false;
 
   return gui->_widget->isActiveWindow();
+}
+
+float gui_getGfxScale(void){
+  return g_gfx_scale;
 }
 
 ////////////

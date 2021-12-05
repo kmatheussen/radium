@@ -8,15 +8,26 @@
 
 
 extern QByteArray g_filedialog_geometry;
-  
+
+extern bool g_has_resized_filedialog;
+
 namespace radium{
 
   static inline void fixqfiledialog(QWidget *widget){
     //return; // checking.
     if (widget != NULL){
+      
       QComboBox *box = dynamic_cast<QComboBox*>(widget);
       if (box != NULL)
         box->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
+
+      QSplitter *splitter = dynamic_cast<QSplitter*>(widget);
+      if (splitter != NULL){
+        if (splitter->orientation()==Qt::Vertical){
+          splitter->setStretchFactor(0,1);
+          splitter->setStretchFactor(1,4);
+        }
+      }
       
       for(auto *c : widget->children())
         fixqfiledialog(dynamic_cast<QWidget*>(c));
@@ -84,6 +95,11 @@ namespace radium{
       }
       
       fixqfiledialog(this);
+
+      if (!g_has_resized_filedialog){
+        g_has_resized_filedialog = true;
+        resize(width()*g_gfx_scale*0.72, height()*g_gfx_scale*0.72);
+      }
     }
 
     ~FileRequester(){

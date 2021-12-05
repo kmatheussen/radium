@@ -6,8 +6,8 @@ font_style = Regular
 system_font = Lato,10,-1,5,87,0,0,0,0,0,Black
 system_font_style = Black
 
-bottom_slider_height = 14
-left_slider_width = 8
+bottom_slider_height = 0
+left_slider_width = 0
 
 override_default_qt_style = true
 
