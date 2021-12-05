@@ -92,8 +92,8 @@
   
   (define window (<gui> :vertical-layout))
   (<gui> :set-size window
-         (floor (* 100 (<gui> :get-gfx-scale)))
-         (floor (* 200 (<gui> :get-gfx-scale))))
+         (floor (<gui> :get-gfx-scale 100))
+         (floor (<gui> :get-gfx-scale 200)))
 
   (define area (make-qtarea))
   

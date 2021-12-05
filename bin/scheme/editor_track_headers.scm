@@ -265,7 +265,7 @@
   (define volume-slider-y2 y2)
 
   (define meter-x2 (if show-vam
-                       (+ x1 (* 9 (<gui> :get-gfx-scale)))
+                       (+ x1 (<gui> :get-gfx-scale 9))
                        x1))
   
   (define vam #f)
@@ -435,7 +435,7 @@
   (define vam #f)
     
   (define meter-x2 (if is-audio-instrument
-                       (+ x1 (* 9 (<gui> :get-gfx-scale)))
+                       (+ x1 (<gui> :get-gfx-scale 9))
                        x1))
 
   (define (get-text-area-background-color)

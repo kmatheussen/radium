@@ -953,12 +953,8 @@
          (<gui> :show gui)
          (if do-dpi-scale
              (<gui> :set-size gui
-                    (floor (* 0.85
-                              (<gui> :width gui)
-                              (<gui> :get-gfx-scale)))
-                    (floor (* 0.85
-                              (<gui> :height gui)
-                              (<gui> :get-gfx-scale)))))
+                    (floor (<gui> :get-gfx-scale (<gui> :width gui) 0.85))
+                    (floor (<gui> :get-gfx-scale (<gui> :height gui) 0.85))))
          (<gui> :move-to-parent-centre gui))
        (if changed-parent
            (begin

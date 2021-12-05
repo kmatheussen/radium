@@ -3919,8 +3919,6 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       connect(this,SIGNAL(urlChanged(const QUrl &)),this,SLOT(urlChanged(const QUrl &)));
 
       mySetZoomFactor(1.0);
-
-      resize(5200,5200);//width() * g_gfx_scale, height() * g_gfx_scale);
     }
 
     /*
@@ -3978,11 +3976,17 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     }
 
     float myZoomFactor(void){
-      return zoomFactor() / (g_gfx_scale * 0.85);
+      if (g_has_gfx_scale)
+        return zoomFactor() / (g_gfx_scale * 0.85);
+      else
+        return zoomFactor();
     }
       
     void mySetZoomFactor(float zoom){
-      setZoomFactor(zoom * g_gfx_scale * 0.85);
+      if (g_has_gfx_scale)
+        setZoomFactor(zoom * g_gfx_scale * 0.85);
+      else
+        setZoomFactor(zoom);
     }
     
     void zoom(bool zoom_in){
@@ -8447,8 +8451,11 @@ bool gui_isActiveWindow(int64_t guinum){
   return gui->_widget->isActiveWindow();
 }
 
-float gui_getGfxScale(void){
-  return g_gfx_scale;
+float gui_getGfxScale(float woh, float downscale){
+  if (g_has_gfx_scale)
+    return woh * R_MAX(1, downscale * g_gfx_scale);
+  else
+    return woh;
 }
 
 ////////////

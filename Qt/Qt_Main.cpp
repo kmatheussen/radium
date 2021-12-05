@@ -4466,6 +4466,7 @@ static void clean_configuration2(void){
 }
 
 float g_dpi = 96;
+bool g_has_gfx_scale = false;
 float g_gfx_scale = 1.0;
 
 static void determine_dpi_and_gfx_scale(void){
@@ -4480,6 +4481,10 @@ static void determine_dpi_and_gfx_scale(void){
     g_dpi = screen->logicalDotsPerInch();
     g_gfx_scale = R_MAX(1.0, g_dpi / 96.0);
     
+    if (g_gfx_scale < 1.2)
+      g_gfx_scale = 1.0;
+    else
+      g_has_gfx_scale = true;    
   }
 }
 
@@ -4669,7 +4674,8 @@ int main(int argc, char **argv){
 
   determine_dpi_and_gfx_scale();
 
-  PLUGINHOST_set_global_dpi(g_dpi);
+  if (g_has_gfx_scale)
+    PLUGINHOST_set_global_dpi(g_dpi);
   
   CRASHREPORTER_init();
   

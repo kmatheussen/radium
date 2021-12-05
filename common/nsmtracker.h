@@ -252,6 +252,7 @@ extern double g_last_time_mouse_pointer_was_moved_by_the_program; // Only used i
 
 extern float g_dpi;
 extern float g_gfx_scale;
+extern bool g_has_gfx_scale;
 
 
 #include "../crashreporter/crashreporter_proc.h"
