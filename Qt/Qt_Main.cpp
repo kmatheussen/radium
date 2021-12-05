@@ -2726,17 +2726,6 @@ protected:
       }
     }
 
-    {
-      static bool has_set_global_dpi = false;
-
-      if (!has_set_global_dpi){
-        if (g_global_dpi > 0){
-          PLUGINHOST_set_global_dpi(g_global_dpi);
-          has_set_global_dpi = true;
-        }
-      }
-    }
-    
     #if 0
     static bool main_window_is_exposed = false;
     if (main_window_is_exposed==false){
@@ -3376,7 +3365,9 @@ static void setup_SIGTERM_handler(void){
 void GFX_set_bottom_widget_height(int new_height){
   struct Tracker_Windows *window = root->song->tracker_windows;
   window->bottomslider_height = new_height;
+  
   EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
+  
   if(editor != NULL && editor->bottom_widget != NULL){
     editor->bottom_widget->setMinimumHeight(new_height);
     editor->bottom_widget->setMaximumHeight(new_height);
@@ -4474,6 +4465,24 @@ static void clean_configuration2(void){
 #endif
 }
 
+float g_dpi = 96;
+float g_gfx_scale = 1.0;
+
+static void determine_dpi_and_gfx_scale(void){
+  QScreen *screen = QApplication::screens().first();
+
+  if (screen==NULL){
+    
+    R_ASSERT_NON_RELEASE(false);
+    
+  } else {
+    
+    g_dpi = screen->logicalDotsPerInch();
+    g_gfx_scale = R_MAX(1.0, g_dpi / 96.0);
+    
+  }
+}
+
 int main(int argc, char **argv){
 
   //return 0;
@@ -4580,7 +4589,11 @@ int main(int argc, char **argv){
 #if QT_VERSION_MAJOR != 5 || QT_VERSION_MINOR != 15
   QCoreApplication::setAttribute(Qt::AA_X11InitThreads);
 #endif
-  
+
+  //QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling); 
+  //QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);  // what is this?
+  //QGuiApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::Ceil);
+ 
 #ifndef USE_QT5
   QTextCodec::setCodecForCStrings(QTextCodec::codecForName("UTF-8"));
 #endif
@@ -4654,6 +4667,10 @@ int main(int argc, char **argv){
   
   g_qt_is_running = true;
 
+  determine_dpi_and_gfx_scale();
+
+  PLUGINHOST_set_global_dpi(g_dpi);
+  
   CRASHREPORTER_init();
   
   if (clean_configuration){

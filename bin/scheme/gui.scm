@@ -942,7 +942,8 @@
 
 (delafina (reopen-gui-at-curr-pos :gui
                                   :parentgui -1
-                                  :parent-centre-gui #f)
+                                  :parent-centre-gui #f
+                                  :do-dpi-scale #f)
   (disable-gui-updates-block
    gui
    (lambda ()       
@@ -950,6 +951,14 @@
        (c-display "                  CHANGED-PARENT " changed-parent)
        (when (not (<gui> :is-visible gui))
          (<gui> :show gui)
+         (if do-dpi-scale
+             (<gui> :set-size gui
+                    (floor (* 0.85
+                              (<gui> :width gui)
+                              (<gui> :get-gfx-scale)))
+                    (floor (* 0.85
+                              (<gui> :height gui)
+                              (<gui> :get-gfx-scale)))))
          (<gui> :move-to-parent-centre gui))
        (if changed-parent
            (begin
@@ -1153,9 +1162,11 @@
   (if (not (<gui> :web-can-show-manual)) ;;string=? (<ra> :get-os-name) "macosx")
       (<ra> :open-external-web-browser filename)
       (let ()
+        (define is-new #t)
         (define web (if (*help-windows* filename)
                         (let ((web (*help-windows* filename)))
                           (<gui> :set-url web filename)
+                          (set! is-new #f)
                           web)
                         (let ((web (<gui> :web filename)))
                           (set! (*help-windows* filename) web)
@@ -1166,7 +1177,9 @@
         (reopen-gui-at-curr-pos web
                                 :parentgui (if (<ra> :help-window-is-child-of-main-window)
                                                -1
-                                               -3)))))
+                                               -3)
+                                :do-dpi-scale #t)
+        )))
 
 #!!
 (FROM-C-show-help-window "help/index.html?page=gakk")

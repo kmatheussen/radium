@@ -250,7 +250,8 @@ extern float g_mouse_dx, g_mouse_dy; // Only have valid values in windows.
 extern bool g_wants_delta_movements; // Only useful in windows.
 extern double g_last_time_mouse_pointer_was_moved_by_the_program; // Only used in windows.
 
-extern float g_global_dpi;
+extern float g_dpi;
+extern float g_gfx_scale;
 
 
 #include "../crashreporter/crashreporter_proc.h"

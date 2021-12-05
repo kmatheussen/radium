@@ -463,6 +463,10 @@ static QRect get_startup_rect(void){
     point = QPoint(400,400);
     
   } else {
+
+    float scale_factor = screen->logicalDotsPerInch() / 93.0;
+    height *= scale_factor;
+    width *= scale_factor;
     
     QRect parentRect = screen->availableGeometry();
     
@@ -590,6 +594,9 @@ static QRect get_rect(int fontsize){
   //int width = fontsize*600/8;
   int height = fontsize*300/8;
   int width = height * 1.779291553133515;
+
+  height *= g_gfx_scale;
+  width *= g_gfx_scale;
   
   QPoint point = getCentrePosition(g_main_window, width, height);
 

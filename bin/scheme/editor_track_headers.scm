@@ -238,7 +238,6 @@
   )
 
                                           
-
 (def-area-subclass (<track-header-lower-part> :gui :x1 :y1 :x2 :y2
                                               :tracknum
                                               :is-audio-instrument
@@ -266,7 +265,7 @@
   (define volume-slider-y2 y2)
 
   (define meter-x2 (if show-vam
-                       (+ x1 9) ;; Meter-bredde bør kanskje være oddetall.
+                       (+ x1 (* 9 (<gui> :get-gfx-scale)))
                        x1))
   
   (define vam #f)
@@ -436,7 +435,7 @@
   (define vam #f)
     
   (define meter-x2 (if is-audio-instrument
-                       (+ x1 9) ;; Meter-bredde bør kanskje være oddetall.
+                       (+ x1 (* 9 (<gui> :get-gfx-scale)))
                        x1))
 
   (define (get-text-area-background-color)

@@ -1164,7 +1164,7 @@ void MIXERSTRIP_call_regularly(void){
     EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
     int height = editor->editor_layout_widget->height();
 
-    int64_t new_guinum = gui_createSingleMixerStrip(PATCH_get_current()->id, 100, height);
+    int64_t new_guinum = gui_createSingleMixerStrip(PATCH_get_current()->id, 100*g_gfx_scale, height);
     //R_ASSERT(new_guinum != -1);
     
     if(new_guinum != -1){

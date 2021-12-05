@@ -98,12 +98,16 @@ static void init_g_colored_tracks_if_necessary(void){
   }
 }
 
+static float get_thickness(float thickness){
+  return thickness * R_MAX(1, g_gfx_scale * 0.55);
+  //return thickness;
+}
 
 static float get_pitchline_width(void){
   static float width = -1;
 
   if (width<0)
-    width = 1.2; //SETTINGS_read_double("gfx_pitchline_width", 1.2); // If changing this value, also change bin/config
+    width = get_thickness(1.2); //SETTINGS_read_double("gfx_pitchline_width", 1.2); // If changing this value, also change bin/config
 
   return width;
 }
@@ -195,7 +199,7 @@ static void draw_node_indicator(float x,
   
   float away1 = 1024;
   float away2 = 5;
-  float thickness = 0.8;
+  float thickness = get_thickness(0.8);
 
   // horizontal
   GE_line(c,
@@ -243,7 +247,7 @@ static void draw_skewed_box_doit(const struct Tracker_Windows *window,
   float x2 = x+minnodesize;
   float y1 = y-minnodesize;
   float y2 = y+minnodesize;
-  const float width = 1.2;
+  const float width = get_thickness(1.2);
 
   GE_Conf conf(Z_ABOVE(Z_ZERO), y, use_scissors);
 
@@ -309,8 +313,8 @@ static void create_double_border(
     GE_line(Black_color(y,use_scissors),x,y,x,y2,0.5);
     GE_line(GE_color(TRACK_SEPARATOR2B_COLOR_NUM,NOMASK_Y,use_scissors),x+1,y,x+1,y2,0.5);
   } else {
-    float black_width = 1.5f;
-    float white_width = 1.0f;
+    float black_width = get_thickness(1.5f);
+    float white_width = get_thickness(1.0f);
     float black_skew = black_width/2.0f;
     float white_skew = black_skew + black_width + -white_width/2.0f;
     GE_line(GE_color(TRACK_SEPARATOR2A_COLOR_NUM,NOMASK_Y,use_scissors),
@@ -331,7 +335,8 @@ static void create_single_border(
                           enum UseScissors use_scissors
                           )
 {
-  GE_line(GE_color(TRACK_SEPARATOR1_COLOR_NUM,NOMASK_Y,use_scissors),x,y,x,y2,0.5);
+  float thickness = get_thickness(0.5);
+  GE_line(GE_color(TRACK_SEPARATOR1_COLOR_NUM,NOMASK_Y,use_scissors),x,y,x,y2,thickness);
 }
 
 
@@ -340,13 +345,14 @@ static void create_single_linenum_border(
                                   enum UseScissors use_scissors
                                   )
 {
-  GE_line(GE_color_alpha(TRACK_SEPARATOR1_COLOR_NUM,0.5,NOMASK_Y,use_scissors),x,y,x,y2,0.5);
+  float thickness = get_thickness(0.5);
+  GE_line(GE_color_alpha(TRACK_SEPARATOR1_COLOR_NUM,0.5,NOMASK_Y,use_scissors),x,y,x,y2,thickness);
 }
 
 
 
 static void stipled_vertical_line(GE_Context *c, float x, float y1, float y2){
-  const float width = 0.3;
+  const float width = get_thickness(0.3);
   const float bit = 4 + 4 * (float)rand()/(float)RAND_MAX;
 
   for (float y = y1 ; y < y2 ; y += bit){
@@ -583,7 +589,7 @@ static void create_background_realline(const struct Tracker_Windows *window, con
     }
   }
 
-  float line_width = 0.6f;
+  float line_width = get_thickness(0.6f);
 
   // realline separator line
   if(1){
@@ -613,7 +619,7 @@ static void create_background_realline(const struct Tracker_Windows *window, con
             float y_ = scale(f, 0, 1, y1, y2);
             float x1_ = wblock->linenumarea.x;
             float x2_ = wblock->linenumarea.x2;
-            GE_line(c,x1_,y_,x2_,y_,2.3);
+            GE_line(c,x1_,y_,x2_,y_, get_thickness(2.3));
           }
 
       } else {
@@ -881,7 +887,7 @@ static const struct TempoGraph create_TempoGraph(const struct Tracker_Windows *w
 static void create_tempograph(const struct Tracker_Windows *window, const struct WBlocks *wblock){
   const TempoGraph tg = create_TempoGraph(window,wblock);
 
-  float width = 2.3;
+  float width = get_thickness(2.3);
 
   //printf("min/max: %d, %d\n",(int)min,(int)max);
 
@@ -1603,7 +1609,7 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
       GE_line(GE_color(TEXT_COLOR_NUM,y1),
               x1, y,
               x2, y,
-              0.8);
+              get_thickness(0.8));
     }
 
     bool highlight;
@@ -1797,7 +1803,7 @@ static void create_pianoroll_grid(const struct Tracker_Windows *window, const st
     int chroma = key % 12;
 
     if (chroma==0)
-      GE_line(octave_color,x,y1,x,y2,1.0);
+      GE_line(octave_color,x,y1,x,y2, get_thickness(1.0));
 
     float key_x1 = x;
     float key_x2 = x + note_width;
@@ -2066,22 +2072,25 @@ static void create_pianoroll_notes(const struct Tracker_Windows *window, const s
             GE_box(border_color,
                    nodelineBox.x1, nodelineBox.y1,
                    nodelineBox.x2, nodelineBox.y2,
-                   1.0
+                   get_thickness(1.0)
                    );
           else { 
             // box (without the x1,y2 -> x2,y2 line)
             GE_line(border_color,
                     nodelineBox.x1,nodelineBox.y1,
                     nodelineBox.x2,nodelineBox.y1,
-                    1.0);
+                    get_thickness(1.0)
+                    );
             GE_line(border_color,
                     nodelineBox.x2,nodelineBox.y1,
                     nodelineBox.x2,nodelineBox.y2,
-                    1.0);
+                    get_thickness(1.0)
+                    );
             GE_line(border_color,
                     nodelineBox.x1,nodelineBox.y1,
                     nodelineBox.x1,nodelineBox.y2,
-                    1.0);
+                    get_thickness(1.0)
+                    );
           }
 
           float notenum;
@@ -2118,7 +2127,7 @@ static void create_pianoroll_notes(const struct Tracker_Windows *window, const s
 
             float midpos = nodeline->x2;
 
-            float dx = 5;
+            float dx = get_thickness(5);
             
             float x1 = midpos - note_width/2; //nodelineBox.x1 - dx;
             float dx1 = x1 - dx;
@@ -2129,8 +2138,8 @@ static void create_pianoroll_notes(const struct Tracker_Windows *window, const s
             float dx2 = x2 + dx;
 
             float y0 = nodeline->y2;
-            float y1 = nodeline->y2 + 15;
-            float y2 = nodeline->y2 + 25;
+            float y1 = nodeline->y2 + get_thickness(15);
+            float y2 = nodeline->y2 + get_thickness(25);
           
             GE_filledBox(c,
                          x1, y0,
@@ -2149,39 +2158,39 @@ static void create_pianoroll_notes(const struct Tracker_Windows *window, const s
             GE_line(border_color,
                     x1, y0,
                     nodelineBox.x1, y0,
-                    1.0);            
+                    get_thickness(1.0));            
             GE_line(border_color,
                     x2, y0,
                     nodelineBox.x2, y0,
-                    1.0);
+                    get_thickness(1.0));
 
             GE_line(border_color,
                     x1, y0,
                     x1, y1,
-                    1.0);
+                    get_thickness(1.0));
             GE_line(border_color,
                     x2, y0,
                     x2, y1,
-                    1.0);
+                    get_thickness(1.0));
             
             
             // arrow
             GE_line(border_color,
                     dx1,y1,
                     x1,y1,
-                    1.0);
+                    get_thickness(1.0));
             GE_line(border_color,
                     x2,y1,
                     dx2,y1,
-                    1.0);
+                    get_thickness(1.0));
             GE_line(border_color,
                     dx1,y1,
                     x,y2,
-                    1.0);
+                    get_thickness(1.0));
             GE_line(border_color,
                     dx2,y1,
                     x,y2,
-                    1.0);
+                    get_thickness(1.0));
           }
         
         }
@@ -2641,7 +2650,7 @@ static void create_track_stops(const struct Tracker_Windows *window, const struc
     GE_line(c,
             wtrack->notearea.x, y,
             wtrack->x2, y,
-            1.2
+            get_thickness(1.2)
             );
   }
 #else
@@ -3053,7 +3062,7 @@ static void create_playcursor(const struct Tracker_Windows *window, const struct
     GE_line(c,
             x1, y,
             x2, y,
-            4.0
+            get_thickness(4.0)
             );
   }
 }

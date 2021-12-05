@@ -233,8 +233,7 @@ static QFont bs_font;
 void set_default_slider_height(void){
   bs_font.fromString("Cousine,11,-1,5,75,0,0,0,0,0");
   bs_font.setStyleName("Bold");
-  bs_font.setPointSize(QApplication::font().pointSize());
-  
+  bs_font.setPointSize(QApplication::font().pointSize() * g_gfx_scale);  
   g_default_slider_height = bs_font.pointSize()+4;
 }
 

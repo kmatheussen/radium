@@ -65,7 +65,7 @@ static void SelectLeftSliderWidth(
 	char temp[100];
 	int newwidth;
 
-	sprintf(temp,"New Width (now %d) >",window->leftslider.width);
+	sprintf(temp,"New Width (Now %d. Use 0 to set automatic value) >",window->leftslider.width);
 
 	newwidth=GFX_GetInteger(
 		window,
@@ -75,8 +75,9 @@ static void SelectLeftSliderWidth(
 		window->wblock->temponodearea.x2,
                 true
                                 );
-	if(newwidth<4) return;
-
+        if (window->leftslider.width<4)
+          window->leftslider.width = 8 * g_gfx_scale;
+        
 	window->leftslider.width=newwidth;
 
 	UpdateAllWBlockCoordinates(window);
