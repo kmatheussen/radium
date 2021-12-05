@@ -2602,7 +2602,7 @@
 
 ;; we call this each time we create mixer strips in case font size has changed.
 (define (set-minimum-mixer-strip-widths!)
-  (set! *min-mixer-strip-with-sends-width* (* (<gui> :get-gfx-scale) 100))
+  (set! *min-mixer-strip-with-sends-width* (<gui> :get-gfx-scale 100))
   (define base1 (<gui> :text-width " -14.2 -23.5 "))
   (define base2 (<gui> :text-width " Mute Solo "))
   

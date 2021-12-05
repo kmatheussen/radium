@@ -98,7 +98,8 @@ namespace radium{
 
       if (!g_has_resized_filedialog){
         g_has_resized_filedialog = true;
-        resize(width()*g_gfx_scale*0.72, height()*g_gfx_scale*0.72);
+        if (g_has_gfx_scale)
+          resize(width()*R_MAX(1, g_gfx_scale*0.72), height()*R_MAX(1, g_gfx_scale*0.72));
       }
     }
 

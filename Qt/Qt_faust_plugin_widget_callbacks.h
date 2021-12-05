@@ -87,12 +87,18 @@ public:
 
 template <typename T>
 static float myZoomFactor(const T *view){
-  return view->zoomFactor() / (g_gfx_scale * 0.85);
+  if (g_has_gfx_scale)
+    return view->zoomFactor() / (g_gfx_scale * 0.85);
+  else
+    return view->zoomFactor();
 }
 
 template <typename T>
 static void mySetZoomFactor(T *view, float zoom){
-  view->setZoomFactor(zoom * g_gfx_scale * 0.85);
+  if (g_has_gfx_scale)
+    view->setZoomFactor(zoom * g_gfx_scale * 0.85);
+  else
+    view->setZoomFactor(zoom);
 }
 
 namespace{

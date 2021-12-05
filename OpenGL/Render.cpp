@@ -99,7 +99,10 @@ static void init_g_colored_tracks_if_necessary(void){
 }
 
 static float get_thickness(float thickness){
-  return thickness * R_MAX(1, g_gfx_scale * 0.55);
+  if (!g_has_gfx_scale)
+    return thickness;
+  else
+    return thickness * R_MAX(1, g_gfx_scale * 0.55);
   //return thickness;
 }
 
