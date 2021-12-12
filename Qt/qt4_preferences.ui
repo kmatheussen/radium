@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1125</width>
+    <width>1085</width>
     <height>570</height>
    </rect>
   </property>
@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>8</number>
      </property>
      <property name="elideMode">
       <enum>Qt::ElideNone</enum>
@@ -149,7 +149,7 @@
              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
             </property>
             <property name="buttonSymbols">
-             <enum>QAbstractSpinBox::PlusMinus</enum>
+             <enum>QAbstractSpinBox::UpDownArrows</enum>
             </property>
             <property name="minimum">
              <number>1</number>
@@ -5902,7 +5902,7 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>975</width>
+               <width>935</width>
                <height>235</height>
               </rect>
              </property>
@@ -5950,146 +5950,131 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="faust_tab">
+     <widget class="QWidget" name="tab_7">
       <attribute name="title">
        <string>Faust</string>
       </attribute>
-      <widget class="QGroupBox" name="faust_gui_style_box">
-       <property name="geometry">
-        <rect>
-         <x>30</x>
-         <y>10</y>
-         <width>431</width>
-         <height>131</height>
-        </rect>
-       </property>
-       <property name="title">
-        <string>GUI Style</string>
-       </property>
-       <layout class="QVBoxLayout" name="verticalLayout_10">
-        <property name="spacing">
-         <number>0</number>
-        </property>
-        <property name="leftMargin">
-         <number>10</number>
-        </property>
-        <property name="topMargin">
-         <number>0</number>
-        </property>
-        <property name="rightMargin">
-         <number>10</number>
-        </property>
-        <property name="bottomMargin">
-         <number>0</number>
-        </property>
-        <item>
-         <widget class="QRadioButton" name="faust_blue_button">
-          <property name="text">
-           <string>Blue</string>
+      <layout class="QVBoxLayout" name="verticalLayout_32">
+       <item>
+        <widget class="QGroupBox" name="faust_gui_style_box">
+         <property name="title">
+          <string>GUI Style</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_10">
+          <property name="spacing">
+           <number>9</number>
           </property>
-          <attribute name="buttonGroup">
-           <string notr="true">buttonGroup_3</string>
-          </attribute>
-         </widget>
-        </item>
-        <item>
-         <widget class="QRadioButton" name="faust_salmon_button">
-          <property name="text">
-           <string>Salmon</string>
+          <property name="leftMargin">
+           <number>10</number>
           </property>
-          <attribute name="buttonGroup">
-           <string notr="true">buttonGroup_3</string>
-          </attribute>
-         </widget>
-        </item>
-        <item>
-         <widget class="QRadioButton" name="faust_grey_button">
-          <property name="text">
-           <string>Grey</string>
+          <property name="topMargin">
+           <number>9</number>
           </property>
-          <attribute name="buttonGroup">
-           <string notr="true">buttonGroup_3</string>
-          </attribute>
-         </widget>
-        </item>
-        <item>
-         <widget class="QRadioButton" name="faust_default_button">
-          <property name="text">
-           <string>Default</string>
+          <property name="rightMargin">
+           <number>10</number>
           </property>
-          <attribute name="buttonGroup">
-           <string notr="true">buttonGroup_3</string>
-          </attribute>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-      <widget class="QGroupBox" name="faust_llvm_opt_level_box">
-       <property name="geometry">
-        <rect>
-         <x>30</x>
-         <y>150</y>
-         <width>798</width>
-         <height>202</height>
-        </rect>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>9</pointsize>
-        </font>
-       </property>
-       <property name="title">
-        <string>LLVM Optimization level</string>
-       </property>
-       <layout class="QHBoxLayout" name="horizontalLayout_4">
-        <property name="spacing">
-         <number>0</number>
-        </property>
-        <property name="leftMargin">
-         <number>10</number>
-        </property>
-        <property name="topMargin">
-         <number>0</number>
-        </property>
-        <property name="rightMargin">
-         <number>10</number>
-        </property>
-        <property name="bottomMargin">
-         <number>0</number>
-        </property>
-        <item>
-         <widget class="QSpinBox" name="faust_optimization_level">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
+          <property name="bottomMargin">
+           <number>9</number>
           </property>
-          <property name="maximum">
-           <number>5</number>
+          <item>
+           <widget class="QRadioButton" name="faust_blue_button">
+            <property name="text">
+             <string>Blue</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QRadioButton" name="faust_salmon_button">
+            <property name="text">
+             <string>Salmon</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QRadioButton" name="faust_grey_button">
+            <property name="text">
+             <string>Grey</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QRadioButton" name="faust_default_button">
+            <property name="text">
+             <string>Default</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="faust_llvm_opt_level_box">
+         <property name="font">
+          <font>
+           <pointsize>9</pointsize>
+          </font>
+         </property>
+         <property name="title">
+          <string>LLVM Optimization level</string>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_4">
+          <property name="spacing">
+           <number>9</number>
           </property>
-         </widget>
-        </item>
-        <item>
-         <spacer name="horizontalSpacer_4">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
+          <property name="leftMargin">
+           <number>10</number>
           </property>
-          <property name="sizeType">
-           <enum>QSizePolicy::Fixed</enum>
+          <property name="topMargin">
+           <number>9</number>
           </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>20</height>
-           </size>
+          <property name="rightMargin">
+           <number>10</number>
           </property>
-         </spacer>
-        </item>
-        <item>
-         <widget class="QLabel" name="label_9">
-          <property name="text">
-           <string>0 = No optimization (&quot;-O0&quot;)
+          <property name="bottomMargin">
+           <number>9</number>
+          </property>
+          <item>
+           <widget class="QSpinBox" name="faust_optimization_level">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>40</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignCenter</set>
+            </property>
+            <property name="maximum">
+             <number>5</number>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_4">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeType">
+             <enum>QSizePolicy::Fixed</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLabel" name="label_9">
+            <property name="text">
+             <string>0 = No optimization (&quot;-O0&quot;)
 1 = Some optimization (&quot;-O1&quot;)
 2 = Some more optimization (&quot;-O2&quot;)
 3 = Even more optimization (&quot;-O3&quot;)
@@ -6100,11 +6085,39 @@ The difference in compilation time between level 0 and level 4 is usually insign
 
 Optimization level 5 may cause very long compilation time with no apparent benefit in performance.
 </string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer_23">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_36">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
      </widget>
      <widget class="QWidget" name="tab_3">
       <attribute name="title">
@@ -9102,48 +9115,6 @@ This option should be considered as a lightweight version of  &quot;Only show mo
               <property name="rightMargin">
                <number>9</number>
               </property>
-              <item row="0" column="2">
-               <widget class="QLabel" name="label_12">
-                <property name="text">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;
-Adjusts the amount of anti-aliasing. 4X should normally be a good value.&lt;br/&gt;
-If you experience slow graphical performance in the editor, it will help to lower&lt;br/&gt;
-or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                </property>
-               </widget>
-              </item>
-              <item row="0" column="1">
-               <spacer name="horizontalSpacer_11">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeType">
-                 <enum>QSizePolicy::Fixed</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>60</width>
-                  <height>20</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item row="0" column="3">
-               <spacer name="horizontalSpacer_2">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeType">
-                 <enum>QSizePolicy::Fixed</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>37</width>
-                  <height>84</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
               <item row="0" column="0">
                <widget class="QWidget" name="gridWidget" native="true">
                 <property name="sizePolicy">
@@ -9160,16 +9131,16 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                 <property name="maximumSize">
                  <size>
-                  <width>300</width>
+                  <width>16777215</width>
                   <height>16777215</height>
                  </size>
                 </property>
                 <layout class="QGridLayout" name="gridLayout_6">
                  <property name="leftMargin">
-                  <number>0</number>
+                  <number>9</number>
                  </property>
                  <property name="rightMargin">
-                  <number>0</number>
+                  <number>9</number>
                  </property>
                  <item row="0" column="0">
                   <widget class="QRadioButton" name="mma1">
@@ -9208,6 +9179,12 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </item>
                  <item row="1" column="2">
                   <widget class="QRadioButton" name="mma32">
+                   <property name="sizePolicy">
+                    <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                     <horstretch>0</horstretch>
+                     <verstretch>0</verstretch>
+                    </sizepolicy>
+                   </property>
                    <property name="text">
                     <string>32X</string>
                    </property>
@@ -9215,6 +9192,48 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </item>
                 </layout>
                </widget>
+              </item>
+              <item row="0" column="3">
+               <spacer name="horizontalSpacer_2">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeType">
+                 <enum>QSizePolicy::Fixed</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>37</width>
+                  <height>84</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item row="0" column="2">
+               <widget class="QLabel" name="label_12">
+                <property name="text">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;
+Adjusts the amount of anti-aliasing. 4X should normally be a good value.&lt;br/&gt;
+If you experience slow graphical performance in the editor, it will help to lower&lt;br/&gt;
+or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <spacer name="horizontalSpacer_11">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeType">
+                 <enum>QSizePolicy::Fixed</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>60</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
               </item>
              </layout>
             </widget>
@@ -9251,7 +9270,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                 <property name="sizePolicy">
                  <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
+                  <horstretch>1</horstretch>
                   <verstretch>0</verstretch>
                  </sizepolicy>
                 </property>
@@ -9263,7 +9282,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                 <property name="maximumSize">
                  <size>
-                  <width>300</width>
+                  <width>16777215</width>
                   <height>16777215</height>
                  </size>
                 </property>
@@ -9280,6 +9299,12 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </item>
               <item row="0" column="0">
                <widget class="QCheckBox" name="high_cpu_protection">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                  <horstretch>1</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
                 <property name="minimumSize">
                  <size>
                   <width>200</width>
@@ -9288,7 +9313,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                 <property name="maximumSize">
                  <size>
-                  <width>300</width>
+                  <width>16777215</width>
                   <height>16777215</height>
                  </size>
                 </property>
@@ -9553,7 +9578,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>608</width>
+              <width>568</width>
               <height>253</height>
              </rect>
             </property>

@@ -297,6 +297,11 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
     editor_follows_play_cursor_onoff->_show_popup_menu = [](){
       S7CALL2(void_void,"FROM_C-show-bottom-bar-switch-editor-follows-play-cursor-popup-menu");
     };
+
+    adjustWidthToFitText(signature, "16/16");
+    adjustWidthToFitText(lpb, "99");
+    adjustWidthToFitText(bpm, "999");
+    system_volume_slider->setMinimumWidth(120 * g_gfx_scale);
   }
 
   ~Bottom_bar_widget(){

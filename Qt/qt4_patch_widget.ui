@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>372</width>
-    <height>195</height>
+    <height>197</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -95,7 +95,7 @@
        <widget class="QCheckBox" name="through_onoff">
         <property name="maximumSize">
          <size>
-          <width>20</width>
+          <width>232344</width>
           <height>16777215</height>
          </size>
         </property>

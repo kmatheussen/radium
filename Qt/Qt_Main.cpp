@@ -4477,7 +4477,7 @@ static void determine_dpi_and_gfx_scale(void){
     R_ASSERT_NON_RELEASE(false);
     
   } else {
-    
+
     g_dpi = screen->logicalDotsPerInch();
     g_gfx_scale = R_MAX(1.0, g_dpi / 96.0);
     
@@ -4485,6 +4485,7 @@ static void determine_dpi_and_gfx_scale(void){
       g_gfx_scale = 1.0;
     else
       g_has_gfx_scale = true;    
+
   }
 }
 

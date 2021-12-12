@@ -1335,7 +1335,7 @@
            </property>
            <property name="maximumSize">
             <size>
-             <width>40</width>
+             <width>234234</width>
              <height>16777215</height>
             </size>
            </property>
@@ -1350,6 +1350,9 @@
            </property>
            <property name="frame">
             <bool>false</bool>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
            </property>
           </widget>
          </item>
@@ -1406,6 +1409,9 @@
            </property>
            <property name="frame">
             <bool>false</bool>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
            </property>
            <property name="buttonSymbols">
             <enum>QAbstractSpinBox::NoButtons</enum>
@@ -1472,6 +1478,9 @@
            </property>
            <property name="frame">
             <bool>false</bool>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
            </property>
            <property name="buttonSymbols">
             <enum>QAbstractSpinBox::NoButtons</enum>
@@ -4246,6 +4255,9 @@
         </property>
         <property name="frame">
          <bool>false</bool>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
         </property>
         <property name="buttonSymbols">
          <enum>QAbstractSpinBox::NoButtons</enum>
