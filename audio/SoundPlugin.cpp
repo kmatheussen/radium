@@ -744,8 +744,12 @@ int PLUGIN_get_num_visible_effects(SoundPlugin *plugin){
 int PLUGIN_get_effect_format(struct SoundPlugin *plugin, int effect_num){
   const struct SoundPluginType *plugin_type = plugin->type;
 
-  if(effect_num<plugin_type->num_effects)
-    return plugin_type->get_effect_format(plugin, effect_num);
+  if(effect_num<plugin_type->num_effects){
+    if (plugin_type->get_effect_format != NULL)
+      return plugin_type->get_effect_format(plugin, effect_num);
+    else
+      return EFFECT_FORMAT_FLOAT;
+  }
 
   int system_effect = effect_num - plugin_type->num_effects;
 
