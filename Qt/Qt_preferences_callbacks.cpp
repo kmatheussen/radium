@@ -60,6 +60,32 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_preferences.h"
 
 
+static void minimizeRecursively(QObject *object){
+
+  if (object==NULL)
+    return;
+  
+  QWidget *widget = dynamic_cast<QWidget*>(object);
+  
+  if (widget != NULL){
+    widget->resize(widget->width()+1, widget->height()+1);
+    widget->adjustSize();
+    widget->updateGeometry();
+
+  }
+  
+  for(auto *c : object->children()){
+    minimizeRecursively(c);
+  }
+  if (widget != NULL){
+    widget->resize(widget->width()+1, widget->height()+1);
+    widget->adjustSize();
+    widget->updateGeometry();
+
+  }
+  
+}
+
 
 extern struct Root *root;
 bool g_show_key_codes = false;
@@ -477,7 +503,16 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
         mma32->setChecked(true);
         break;
       }
-
+#if 0
+      QString w="999999999";
+      adjustWidthToFitText(mma1, w);
+      adjustWidthToFitText(mma2, w);
+      adjustWidthToFitText(mma4, w);
+      adjustWidthToFitText(mma8, w);
+      adjustWidthToFitText(mma16, w);
+      adjustWidthToFitText(mma32, w);
+#endif
+      
 #if USE_QT5
       eraseEstimatedVBlankInterval->hide();
       erase_vblank_group_box_layout->removeItem(erase_estimated_vblank_spacer);
@@ -816,10 +851,13 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
 
 #ifdef WITH_FAUST_DEV
       faust_optimization_level->setValue(getFaustOptimizationLevel());
+      adjustWidthToFitText(faust_optimization_level, "999999");
 #else
       faust_llvm_opt_level_box->hide();
 #endif
     }
+
+    minimizeRecursively(this->window());
     
     _is_updating_widgets = false;
   }

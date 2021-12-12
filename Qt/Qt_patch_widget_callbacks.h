@@ -291,11 +291,7 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
   void set_fixed_widget_width(QWidget *widget, QString text){
     QFont font;
     widget->setFont(font);
-    QFontMetrics fm(font);
-    int width = fm.boundingRect(text).width() + 2;
-    widget->setFixedWidth(width);
-    widget->setMinimumWidth(width);
-    widget->setMaximumWidth(width);
+    adjustWidthToFitText(widget, text);
   }
   
   MyQCheckBox *get_o(int i){

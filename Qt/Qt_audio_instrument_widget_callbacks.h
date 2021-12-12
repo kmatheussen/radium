@@ -226,7 +226,7 @@ public:
     // Add compressor
     {
       _comp_widget = new Compressor_widget(patch, this);
-      _comp_widget->setMinimumWidth(150);
+      _comp_widget->setMinimumWidth(150 * g_gfx_scale);
       effects_layout->insertWidget(effects_layout->count()-2, _comp_widget);
 
       // these widgets are only used in the standalone version

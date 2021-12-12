@@ -1503,7 +1503,14 @@ static inline void myFillRoundedRect(QPainter &p, const QRectF &rect, const QCol
 // returns true if all text was painted (in Qt_Sequencer.cpp)
 bool myDrawText(QPainter &p, QRectF rect, QString text, int flags = Qt::AlignLeft | Qt::AlignTop, bool wrap_lines = false, int rotate = 0, bool scale_font_size = false, bool cut_text_to_fit = false);
 
-
+static inline void adjustWidthToFitText(QWidget *widget, QString text){
+  QFontMetrics fm(widget->font());
+  
+  int width = fm.boundingRect(text).width() + 2;
+  widget->setFixedWidth(width);
+  widget->setMinimumWidth(width);
+  widget->setMaximumWidth(width);
+}
 
 struct GL_PauseCaller{
   GL_PauseCaller(){
