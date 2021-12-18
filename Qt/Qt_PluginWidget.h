@@ -39,7 +39,7 @@ class ParamWidget : public QWidget {
  public:
 
   radium::GcHolder<struct Patch> _patch; // Pointer to a patch never changes, but the patch's plugin might. That's why we store the patch and not the plugin, although we only use the plugin.
-  int _effect_num;
+  const int _effect_num;
   const SoundPluginType *_type;
 
   MyQCheckBox *_randomized_button;
@@ -48,7 +48,7 @@ class ParamWidget : public QWidget {
   MyQCheckBox *_check_button;
   bool _can_update_effect_value;
   QString _name;
-  int _tab_page_num;
+  const int _tab_page_num;
   
   ParamWidget(QWidget *parent, struct Patch *patch, int effect_num, int tab_page_num)
     : QWidget(parent)

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1085</width>
-    <height>570</height>
+    <width>1099</width>
+    <height>582</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -5902,8 +5902,8 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>935</width>
-               <height>235</height>
+               <width>949</width>
+               <height>247</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="midi_input_layout">
@@ -9276,7 +9276,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                 <property name="minimumSize">
                  <size>
-                  <width>200</width>
+                  <width>0</width>
                   <height>0</height>
                  </size>
                 </property>
@@ -9307,7 +9307,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                 <property name="minimumSize">
                  <size>
-                  <width>200</width>
+                  <width>0</width>
                   <height>0</height>
                  </size>
                 </property>
@@ -9578,8 +9578,8 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>568</width>
-              <height>253</height>
+              <width>582</width>
+              <height>265</height>
              </rect>
             </property>
             <property name="sizePolicy">
@@ -13319,6 +13319,5 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
  <connections/>
  <buttongroups>
   <buttongroup name="buttonGroup_2"/>
-  <buttongroup name="buttonGroup_3"/>
  </buttongroups>
 </ui>
