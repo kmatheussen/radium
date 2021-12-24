@@ -274,8 +274,10 @@ public:
     */
     size_t sizeInBytes() const noexcept
     {
+        JUCE_BEGIN_IGNORE_WARNINGS_MSVC (6387)
         jassert (data != nullptr);
         return strlen (data) + 1;
+        JUCE_END_IGNORE_WARNINGS_MSVC
     }
 
     /** Returns the number of bytes that would be needed to represent the given
@@ -447,7 +449,7 @@ public:
     }
 
     /** Returns true if the first character of this string is whitespace. */
-    bool isWhitespace() const noexcept          { const CharType c = *data; return c == ' ' || (c <= 13 && c >= 9); }
+    bool isWhitespace() const noexcept          { return CharacterFunctions::isWhitespace ((juce_wchar) *(*this)); }
     /** Returns true if the first character of this string is a digit. */
     bool isDigit() const noexcept               { const CharType c = *data; return c >= '0' && c <= '9'; }
     /** Returns true if the first character of this string is a letter. */
@@ -552,12 +554,14 @@ public:
     */
     static bool isByteOrderMark (const void* possibleByteOrder) noexcept
     {
+        JUCE_BEGIN_IGNORE_WARNINGS_MSVC (28182)
         jassert (possibleByteOrder != nullptr);
         auto c = static_cast<const uint8*> (possibleByteOrder);
 
         return c[0] == (uint8) byteOrderMark1
             && c[1] == (uint8) byteOrderMark2
             && c[2] == (uint8) byteOrderMark3;
+        JUCE_END_IGNORE_WARNINGS_MSVC
     }
 
 private:

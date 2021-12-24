@@ -84,26 +84,22 @@ void Thread::threadEntryPoint()
     if (threadName.isNotEmpty())
         setCurrentThreadName (threadName);
 
-#if 0
-    jassert (getCurrentThreadId() == threadId.get());
-#else
-    threadId = getCurrentThreadId(); // Setthing threadId must be done here now.
-#endif
-    
-    if (affinityMask != 0)
-      setCurrentThreadAffinityMask (affinityMask);
+    if (startSuspensionEvent.wait (10000))
+    {
+        jassert (getCurrentThreadId() == threadId.get());
 
-    setCurrentThreadPriority (threadPriority);
-    startSuspensionEvent.signal();
-    
-    try
-      {
-        run();
-      }
-    catch (...)
-      {
-        jassertfalse; // Your run() method mustn't throw any exceptions!
-      }
+        if (affinityMask != 0)
+            setCurrentThreadAffinityMask (affinityMask);
+
+        try
+        {
+            run();
+        }
+        catch (...)
+        {
+            jassertfalse; // Your run() method mustn't throw any exceptions!
+        }
+    }
 
     currentThreadHolder->value.releaseCurrentThreadStorage();
 
@@ -132,7 +128,8 @@ void Thread::startThread()
     if (threadHandle.get() == nullptr)
     {
         launchThread();
-        startSuspensionEvent.wait(10000);
+        setThreadPriority (threadHandle.get(), threadPriority);
+        startSuspensionEvent.signal();
     }
 }
 
@@ -142,16 +139,11 @@ void Thread::startThread (int priority)
 
     if (threadHandle.get() == nullptr)
     {
-        auto isRealtime = (priority == realtimeAudioPriority);
-
        #if JUCE_ANDROID
-        isAndroidRealtimeThread = isRealtime;
+        isAndroidRealtimeThread = (priority == realtimeAudioPriority);
        #endif
 
-        if (isRealtime)
-            priority = 9;
-
-        threadPriority = priority;
+        threadPriority = getAdjustedPriority (priority);
         startThread();
     }
     else
@@ -260,10 +252,7 @@ void Thread::removeListener (Listener* listener)
 //==============================================================================
 bool Thread::setPriority (int newPriority)
 {
-    bool isRealtime = (newPriority == realtimeAudioPriority);
-
-    if (isRealtime)
-        newPriority = 9;
+    newPriority = getAdjustedPriority (newPriority);
 
     // NB: deadlock possible if you try to set the thread prio from the thread itself,
     // so using setCurrentThreadPriority instead in that case.
@@ -273,6 +262,8 @@ bool Thread::setPriority (int newPriority)
     const ScopedLock sl (startStopLock);
 
    #if JUCE_ANDROID
+    bool isRealtime = (newPriority == realtimeAudioPriority);
+
     // you cannot switch from or to an Android realtime thread once the
     // thread is already running!
     jassert (isThreadRunning() && (isRealtime == isAndroidRealtimeThread));
@@ -291,12 +282,17 @@ bool Thread::setPriority (int newPriority)
 
 bool Thread::setCurrentThreadPriority (const int newPriority)
 {
-    return setThreadPriority ({}, newPriority);
+    return setThreadPriority ({}, getAdjustedPriority (newPriority));
 }
 
 void Thread::setAffinityMask (const uint32 newAffinityMask)
 {
     affinityMask = newAffinityMask;
+}
+
+int Thread::getAdjustedPriority (int newPriority)
+{
+    return jlimit (0, 10, newPriority == realtimeAudioPriority ? 9 : newPriority);
 }
 
 //==============================================================================

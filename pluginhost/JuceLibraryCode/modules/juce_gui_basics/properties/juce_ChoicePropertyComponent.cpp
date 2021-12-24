@@ -27,11 +27,11 @@ namespace juce
 {
 
 //==============================================================================
-class ChoicePropertyComponent::RemapperValueSource    : public Value::ValueSource,
-                                                        private Value::Listener
+class ChoiceRemapperValueSource  : public Value::ValueSource,
+                                   private Value::Listener
 {
 public:
-    RemapperValueSource (const Value& source, const Array<var>& map)
+    ChoiceRemapperValueSource (const Value& source, const Array<var>& map)
        : sourceValue (source),
          mappings (map)
     {
@@ -64,17 +64,17 @@ protected:
     void valueChanged (Value&) override    { sendChangeMessage (true); }
 
     //==============================================================================
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (RemapperValueSource)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ChoiceRemapperValueSource)
 };
 
 //==============================================================================
-class ChoicePropertyComponent::RemapperValueSourceWithDefault    : public Value::ValueSource,
-                                                                   private Value::Listener
+class ChoiceRemapperValueSourceWithDefault  : public Value::ValueSource,
+                                              private Value::Listener
 {
 public:
-    RemapperValueSourceWithDefault (ValueWithDefault* vwd, const Array<var>& map)
-        : valueWithDefault (vwd),
-          sourceValue (valueWithDefault->getPropertyAsValue()),
+    ChoiceRemapperValueSourceWithDefault (const ValueTreePropertyWithDefault& v, const Array<var>& map)
+        : value (v),
+          sourceValue (value.getPropertyAsValue()),
           mappings (map)
     {
         sourceValue.addListener (this);
@@ -82,50 +82,49 @@ public:
 
     var getValue() const override
     {
-        if (valueWithDefault == nullptr)
-            return {};
+        if (! value.isUsingDefault())
+        {
+            const auto target = sourceValue.getValue();
+            const auto equalsWithSameType = [&target] (const var& map) { return map.equalsWithSameType (target); };
 
-        if (valueWithDefault->isUsingDefault())
-            return -1;
+            auto iter = std::find_if (mappings.begin(), mappings.end(), equalsWithSameType);
 
-        auto targetValue = sourceValue.getValue();
+            if (iter == mappings.end())
+                iter = std::find (mappings.begin(), mappings.end(), target);
 
-        for (auto map : mappings)
-            if (map.equalsWithSameType (targetValue))
-                return mappings.indexOf (map) + 1;
+            if (iter != mappings.end())
+                return 1 + (int) std::distance (mappings.begin(), iter);
+        }
 
-        return mappings.indexOf (targetValue) + 1;
+        return -1;
     }
 
     void setValue (const var& newValue) override
     {
-        if (valueWithDefault == nullptr)
-            return;
-
         auto newValueInt = static_cast<int> (newValue);
 
         if (newValueInt == -1)
         {
-            valueWithDefault->resetToDefault();
+            value.resetToDefault();
         }
         else
         {
             auto remappedVal = mappings [newValueInt - 1];
 
             if (! remappedVal.equalsWithSameType (sourceValue))
-                *valueWithDefault = remappedVal;
+                value = remappedVal;
         }
     }
 
 private:
     void valueChanged (Value&) override { sendChangeMessage (true); }
 
-    WeakReference<ValueWithDefault> valueWithDefault;
+    ValueTreePropertyWithDefault value;
     Value sourceValue;
     Array<var> mappings;
 
     //==============================================================================
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (RemapperValueSourceWithDefault)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ChoiceRemapperValueSourceWithDefault)
 };
 
 //==============================================================================
@@ -143,9 +142,7 @@ ChoicePropertyComponent::ChoicePropertyComponent (const String& name,
 {
     // The array of corresponding values must contain one value for each of the items in
     // the choices array!
-    jassert (correspondingValues.size() == choices.size());
-
-    ignoreUnused (correspondingValues);
+    jassertquiet (correspondingValues.size() == choices.size());
 }
 
 ChoicePropertyComponent::ChoicePropertyComponent (const Value& valueToControl,
@@ -155,23 +152,23 @@ ChoicePropertyComponent::ChoicePropertyComponent (const Value& valueToControl,
     : ChoicePropertyComponent (name, choiceList, correspondingValues)
 {
     refreshChoices();
-    initialiseComboBox (Value (new RemapperValueSource (valueToControl, correspondingValues)));
+    initialiseComboBox (Value (new ChoiceRemapperValueSource (valueToControl, correspondingValues)));
 }
 
-ChoicePropertyComponent::ChoicePropertyComponent (ValueWithDefault& valueToControl,
+ChoicePropertyComponent::ChoicePropertyComponent (const ValueTreePropertyWithDefault& valueToControl,
                                                   const String& name,
                                                   const StringArray& choiceList,
                                                   const Array<var>& correspondingValues)
     : ChoicePropertyComponent (name, choiceList, correspondingValues)
 {
-    valueWithDefault = &valueToControl;
+    value = valueToControl;
 
-    auto getDefaultString = [this, correspondingValues] { return choices [correspondingValues.indexOf (valueWithDefault->getDefault())]; };
+    auto getDefaultString = [this, correspondingValues] { return choices [correspondingValues.indexOf (value.getDefault())]; };
 
     refreshChoices (getDefaultString());
-    initialiseComboBox (Value (new RemapperValueSourceWithDefault (valueWithDefault, correspondingValues)));
+    initialiseComboBox (Value (new ChoiceRemapperValueSourceWithDefault (value, correspondingValues)));
 
-    valueWithDefault->onDefaultChange = [this, getDefaultString]
+    value.onDefaultChange = [this, getDefaultString]
     {
         auto selectedId = comboBox.getSelectedId();
         refreshChoices (getDefaultString());
@@ -179,41 +176,33 @@ ChoicePropertyComponent::ChoicePropertyComponent (ValueWithDefault& valueToContr
     };
 }
 
-ChoicePropertyComponent::ChoicePropertyComponent (ValueWithDefault& valueToControl,
+ChoicePropertyComponent::ChoicePropertyComponent (const ValueTreePropertyWithDefault& valueToControl,
                                                   const String& name)
     : PropertyComponent (name),
       choices ({ "Enabled", "Disabled" })
 {
-    valueWithDefault = &valueToControl;
+    value = valueToControl;
 
-    auto getDefaultString = [this] { return valueWithDefault->getDefault() ? "Enabled" : "Disabled"; };
+    auto getDefaultString = [this] { return value.getDefault() ? "Enabled" : "Disabled"; };
 
     refreshChoices (getDefaultString());
-    initialiseComboBox (Value (new RemapperValueSourceWithDefault (valueWithDefault, { true, false })));
+    initialiseComboBox (Value (new ChoiceRemapperValueSourceWithDefault (value, { true, false })));
 
-    valueWithDefault->onDefaultChange = [this, getDefaultString]
+    value.onDefaultChange = [this, getDefaultString]
     {
         auto selectedId = comboBox.getSelectedId();
         refreshChoices (getDefaultString());
         comboBox.setSelectedId (selectedId);
     };
-}
-
-ChoicePropertyComponent::~ChoicePropertyComponent()
-{
-    if (valueWithDefault != nullptr)
-        valueWithDefault->onDefaultChange = nullptr;
 }
 
 //==============================================================================
 void ChoicePropertyComponent::initialiseComboBox (const Value& v)
 {
     if (v != Value())
-    {
         comboBox.setSelectedId (v.getValue(), dontSendNotification);
-        comboBox.getSelectedIdAsValue().referTo (v);
-    }
 
+    comboBox.getSelectedIdAsValue().referTo (v);
     comboBox.setEditableText (false);
     addAndMakeVisible (comboBox);
 }
@@ -222,10 +211,12 @@ void ChoicePropertyComponent::refreshChoices()
 {
     comboBox.clear();
 
-    for (auto choice : choices)
+    for (int i = 0; i < choices.size(); ++i)
     {
+        const auto& choice = choices[i];
+
         if (choice.isNotEmpty())
-            comboBox.addItem (choice, choices.indexOf (choice) + 1);
+            comboBox.addItem (choice, i + 1);
         else
             comboBox.addSeparator();
     }
