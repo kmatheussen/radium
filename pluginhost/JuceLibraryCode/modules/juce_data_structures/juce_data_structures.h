@@ -35,11 +35,12 @@
 
   ID:                 juce_data_structures
   vendor:             juce
-  version:            6.0.8
+  version:            6.1.4
   name:               JUCE data model helper classes
   description:        Classes for undo/redo management, and smart data structures.
   website:            http://www.juce.com/juce
   license:            GPL/Commercial
+  minimumCppStandard: 14
 
   dependencies:       juce_events
 
@@ -60,6 +61,6 @@
 #include "values/juce_ValueTree.h"
 #include "values/juce_ValueTreeSynchroniser.h"
 #include "values/juce_CachedValue.h"
-#include "values/juce_ValueWithDefault.h"
+#include "values/juce_ValueTreePropertyWithDefault.h"
 #include "app_properties/juce_PropertiesFile.h"
 #include "app_properties/juce_ApplicationProperties.h"

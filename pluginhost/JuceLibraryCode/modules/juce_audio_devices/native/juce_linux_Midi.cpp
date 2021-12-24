@@ -24,21 +24,6 @@ namespace juce
 {
 
 #if JUCE_ALSA
-  
-static void setLowestRealtimePriority(void)
-{
-  struct sched_param param = {0};
-  param.sched_priority=sched_get_priority_min(SCHED_RR);
-  pthread_setschedparam(pthread_self(), SCHED_RR, &param);
-}
-
-static void setNonrealtimePriority(void)
-{
-  struct sched_param param = {0};
-  param.sched_priority=sched_get_priority_min(SCHED_OTHER);
-  pthread_setschedparam(pthread_self(), SCHED_OTHER, &param);
-}
-  
 
 //==============================================================================
 class AlsaClient  : public ReferenceCountedObject
@@ -66,13 +51,13 @@ public:
         jassert (instance != nullptr);
         instance = nullptr;
 
-        if (handle != nullptr)
-            snd_seq_close (handle);
-
         jassert (activeCallbacks.get() == 0);
 
         if (inputThread)
             inputThread->stopThread (3000);
+
+        if (handle != nullptr)
+            snd_seq_close (handle);
     }
 
     static String getAlsaMidiName()
@@ -138,10 +123,10 @@ public:
 
         void enableCallback (bool enable)
         {
-            if (callbackEnabled != enable)
-            {
-                callbackEnabled = enable;
+            const auto oldValue = callbackEnabled.exchange (enable);
 
+            if (oldValue != enable)
+            {
                 if (enable)
                     client.registerCallback();
                 else
@@ -205,9 +190,6 @@ public:
         {
             if (auto seqHandle = client.get())
             {
-              
-                enableSubscription = true; // Make sure all connections and ports are shown (for instance in the qjackctl patchbay). Not showing them only creates confusion.
-                
                 const unsigned int caps =
                     isInput ? (SND_SEQ_PORT_CAP_WRITE | (enableSubscription ? SND_SEQ_PORT_CAP_SUBS_WRITE : 0))
                             : (SND_SEQ_PORT_CAP_READ  | (enableSubscription ? SND_SEQ_PORT_CAP_SUBS_READ : 0));
@@ -221,14 +203,20 @@ public:
 
         void handleIncomingMidiMessage (const MidiMessage& message) const
         {
-            callback->handleIncomingMidiMessage (midiInput, message);
+            if (callbackEnabled)
+                callback->handleIncomingMidiMessage (midiInput, message);
         }
 
         void handlePartialSysexMessage (const uint8* messageData, int numBytesSoFar, double timeStamp)
         {
-            callback->handlePartialSysexMessage (midiInput, messageData, numBytesSoFar, timeStamp);
+            if (callbackEnabled)
+                callback->handlePartialSysexMessage (midiInput, messageData, numBytesSoFar, timeStamp);
         }
 
+        int getPortId() const               { return portId; }
+        const String& getPortName() const   { return portName; }
+
+    private:
         AlsaClient& client;
 
         MidiInputCallback* callback = nullptr;
@@ -238,7 +226,8 @@ public:
         String portName;
 
         int maxEventSize = 4096, portId = -1;
-        bool callbackEnabled = false, isInput = false;
+        std::atomic<bool> callbackEnabled { false };
+        bool isInput = false;
     };
 
     static Ptr getInstance()
@@ -268,15 +257,18 @@ public:
 
     void handleIncomingMidiMessage (snd_seq_event* event, const MidiMessage& message)
     {
-        if (event->dest.port < ports.size() && ports[event->dest.port]->callbackEnabled)
-            ports[event->dest.port]->handleIncomingMidiMessage (message);
+        const ScopedLock sl (callbackLock);
+
+        if (auto* port = ports[event->dest.port])
+            port->handleIncomingMidiMessage (message);
     }
 
     void handlePartialSysexMessage (snd_seq_event* event, const uint8* messageData, int numBytesSoFar, double timeStamp)
     {
-        if (event->dest.port < ports.size()
-            && ports[event->dest.port]->callbackEnabled)
-            ports[event->dest.port]->handlePartialSysexMessage (messageData, numBytesSoFar, timeStamp);
+        const ScopedLock sl (callbackLock);
+
+        if (auto* port = ports[event->dest.port])
+            port->handlePartialSysexMessage (messageData, numBytesSoFar, timeStamp);
     }
 
     snd_seq_t* get() const noexcept     { return handle; }
@@ -284,16 +276,20 @@ public:
 
     Port* createPort (const String& name, bool forInput, bool enableSubscription)
     {
+        const ScopedLock sl (callbackLock);
+
         auto port = new Port (*this, forInput);
         port->createPort (name, enableSubscription);
-        ports.set (port->portId, port);
+        ports.set (port->getPortId(), port);
         incReferenceCount();
         return port;
     }
 
     void deletePort (Port* port)
     {
-        ports.set (port->portId, nullptr);
+        const ScopedLock sl (callbackLock);
+
+        ports.set (port->getPortId(), nullptr);
         decReferenceCount();
     }
 
@@ -331,8 +327,6 @@ private:
 
                 HeapBlock<uint8> buffer (maxEventSize);
 
-                setLowestRealtimePriority();
-            
                 while (! threadShouldExit())
                 {
                     if (poll (pfd, (nfds_t) numPfds, 100) > 0) // there was a "500" here which is a bit long when we exit the program and have to wait for a timeout on this poll call
@@ -363,8 +357,6 @@ private:
                     }
                 }
 
-                setNonrealtimePriority();
-                
                 snd_midi_event_free (midiParser);
             }
         }
@@ -410,28 +402,10 @@ static AlsaClient::Port* iterateMidiClient (const AlsaClient::Ptr& client,
             && (snd_seq_port_info_get_capability (portInfo)
                 & (forInput ? SND_SEQ_PORT_CAP_SUBS_READ : SND_SEQ_PORT_CAP_SUBS_WRITE)) != 0)
         {
-
-#if 1
-            const String clientName = snd_seq_client_info_get_name (clientInfo);
-            const String portName = snd_seq_port_info_get_name(portInfo);
-            auto portID = snd_seq_port_info_get_port (portInfo);
-            
-            String deviceName;
-            
-            if (clientName == portName)
-              deviceName = clientName;
-            else
-              deviceName = clientName + ": " + portName;
-
-            MidiDeviceInfo device (deviceName, getFormattedPortIdentifier (sourceClient, portID));
-            
-#else       
             String portName (snd_seq_port_info_get_name (portInfo));
             auto portID = snd_seq_port_info_get_port (portInfo);
-            
-            MidiDeviceInfo device (portName, getFormattedPortIdentifier (sourceClient, portID));
-#endif
 
+            MidiDeviceInfo device (portName, getFormattedPortIdentifier (sourceClient, portID));
             devices.add (device);
 
             if (deviceIdentifierToOpen.isNotEmpty() && deviceIdentifierToOpen == device.identifier)
@@ -532,7 +506,7 @@ std::unique_ptr<MidiInput> MidiInput::openDevice (const String& deviceIdentifier
 
     jassert (port->isValid());
 
-    std::unique_ptr<MidiInput> midiInput (new MidiInput (port->portName, deviceIdentifier));
+    std::unique_ptr<MidiInput> midiInput (new MidiInput (port->getPortName(), deviceIdentifier));
 
     port->setupInput (midiInput.get(), callback);
     midiInput->internal = std::make_unique<Pimpl> (port);
@@ -548,7 +522,7 @@ std::unique_ptr<MidiInput> MidiInput::createNewDevice (const String& deviceName,
     if (port == nullptr || ! port->isValid())
         return {};
 
-    std::unique_ptr<MidiInput> midiInput (new MidiInput (deviceName, getFormattedPortIdentifier (client->getId(), port->portId)));
+    std::unique_ptr<MidiInput> midiInput (new MidiInput (deviceName, getFormattedPortIdentifier (client->getId(), port->getPortId())));
 
     port->setupInput (midiInput.get(), callback);
     midiInput->internal = std::make_unique<Pimpl> (port);
@@ -563,7 +537,7 @@ StringArray MidiInput::getDevices()
     for (auto& d : getAvailableDevices())
         deviceNames.add (d.name);
 
-    deviceNames.appendNumbersToDuplicates (true, false);
+    deviceNames.appendNumbersToDuplicates (true, true);
 
     return deviceNames;
 }
@@ -629,7 +603,7 @@ std::unique_ptr<MidiOutput> MidiOutput::openDevice (const String& deviceIdentifi
     if (port == nullptr || ! port->isValid())
         return {};
 
-    std::unique_ptr<MidiOutput> midiOutput (new MidiOutput (port->portName, deviceIdentifier));
+    std::unique_ptr<MidiOutput> midiOutput (new MidiOutput (port->getPortName(), deviceIdentifier));
 
     port->setupOutput();
     midiOutput->internal = std::make_unique<Pimpl> (port);
@@ -645,7 +619,7 @@ std::unique_ptr<MidiOutput> MidiOutput::createNewDevice (const String& deviceNam
     if (port == nullptr || ! port->isValid())
         return {};
 
-    std::unique_ptr<MidiOutput> midiOutput (new MidiOutput (deviceName, getFormattedPortIdentifier (client->getId(), port->portId)));
+    std::unique_ptr<MidiOutput> midiOutput (new MidiOutput (deviceName, getFormattedPortIdentifier (client->getId(), port->getPortId())));
 
     port->setupOutput();
     midiOutput->internal = std::make_unique<Pimpl> (port);
@@ -660,7 +634,7 @@ StringArray MidiOutput::getDevices()
     for (auto& d : getAvailableDevices())
         deviceNames.add (d.name);
 
-    deviceNames.appendNumbersToDuplicates (true, false);
+    deviceNames.appendNumbersToDuplicates (true, true);
 
     return deviceNames;
 }
