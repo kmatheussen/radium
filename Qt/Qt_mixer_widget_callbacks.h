@@ -80,7 +80,7 @@ public:
 
     _zoom_value = val;
     
-    qreal scale = get_scale_from_zoom(val);
+    qreal scale = get_scale_from_zoom(val) * g_gfx_scale;
     
     QTransform matrix;
     matrix.scale(scale, scale);

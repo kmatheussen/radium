@@ -202,7 +202,7 @@ FREETYPE_CFLAGS ?=
 
 VST_OPTS ?=
 
-BOOST_INCLUDE=-I${HOME}/boost_1_76_0 -I${HOME}/boost_1_75_0 -I${HOME}/boost_1_70_0 -I${HOME}/boost_1_67_0 -I${HOME}/boost_1_63_0 
+BOOST_INCLUDE=-I${HOME}/boost_1_77_0 -I${HOME}/boost_1_76_0 -I${HOME}/boost_1_75_0 -I${HOME}/boost_1_70_0 -I${HOME}/boost_1_67_0 -I${HOME}/boost_1_63_0 
 BOOST_FLAGS=$(WNO_CLASS_MEMACCESS) $(BOOST_INCLUDE)
 
 CRASHREPORTER_OPTS ?= 
@@ -229,10 +229,15 @@ FULL_VERSION ?= 1
 
 WNO_DEPRECATED_DECLARATIONS=
 
-ifeq ($(GCC_MAJOR),10)
+ifeq ($(GCC_MAJOR),11)
 	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined # -fno-sanitize-recover
 	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
 	WNO_DEPRECATED_DECLARATIONS=-Wno-deprecated-declarations
+#	UNDEFINED_SANITIZE_OPTS=
+else ifeq ($(GCC_MAJOR),10)
+	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined # -fno-sanitize-recover
+	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
+	WNO_DEPRECATED_DECLARATIONS=-Wno-deprecated-declarationswQtWebKitWidgets/
 #	UNDEFINED_SANITIZE_OPTS=
 else ifeq ($(GCC_MAJOR),9)
 	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined -fno-sanitize-recover
@@ -504,6 +509,9 @@ endif
 ifeq ($(GCC_MAJOR),10)
 	VL_CFLAGS += -Wno-class-memaccess -Wno-deprecated-copy
 endif
+ifeq ($(GCC_MAJOR),11)
+	VL_CFLAGS += -Wno-class-memaccess -Wno-deprecated-copy
+endif
 
 
 #-------------------OBJECT DEFINITIONS-------------------------------
@@ -564,7 +572,7 @@ OBJ14=$(T)disk_midi_fx.o $(T)disk_midi_instrument.o $(T)midi_fx.o $(T)midi_instr
 OBJ_FAUST=$(T)zita_rev.o $(T)stk_flute.o $(T)stk_bowed.o $(T)stk_blow_bottle.o $(T)stk_bass.o $(T)stk_blow_hole.o $(T)stk_brass.o $(T)stk_clarinet.o $(T)stk_flute_stk.o $(T)stk_glass_harmonica.o $(T)stk_harpsi.o $(T)stk_modal_bar.o $(T)stk_NLF_eks.o $(T)stk_NLF_fm.o $(T)stk_piano.o $(T)stk_saxophony.o $(T)stk_sitar.o $(T)stk_tibetan_bowl.o $(T)stk_tuned_bar.o $(T)stk_uni_bar.o $(T)stk_voice_form.o $(T)faust_tapiir.o $(T)faust_system_eq.o $(T)faust_system_tremolo.o $(T)faust_system_lowpass.o $(T)faust_system_highpass.o $(T)faust_system_lowshelf.o $(T)faust_system_highshelf.o $(T)faust_multibandcomp.o
 
 #AUDIO
-OBJ_AUDIO=$(T)audio_instrument.o $(T)SoundProducer.o $(T)AudioBuffer.o $(T)Jack_plugin.o $(T)find_jack_library.o $(T)Faust_plugins.o $(T)Bus_plugins.o $(T)Timeskew_plugin.o $(T)Patchbay_plugin.o $(T)MidiMessages_plugin.o $(T)VST_plugins.o $(T)Ladspa_plugins.o $(T)Sampler_plugin.o $(T)SampleRecorder.o $(T)SampleReader.o $(T)Seqtrack_plugin.o $(T)FluidSynth_plugin.o $(T)Pd_plugin.o $(T)Modulator_plugin.o $(T)SendReceive_plugins.o $(T)SoundPluginRegistry.o $(T)SoundPlugin.o $(T)AudioMeterPeaks.o $(T)Peaks.o $(T)Mixer.o $(T)get_windows_commandlines.o $(T)Envelope.o $(T)Resampler.o $(T)SoundFonts.o $(T)Presets.o $(T)undo_audio_effect.o $(T)undo_connection_enabled.o $(T)undo_audio_connection_gain.o $(T)undo_pd_controllers.o $(T)undo_plugin_state.o $(T)SoundfileSaver.o $(T)system_compressor_wrapper.o $(T)KillJackd.o $(T)SF.o $(T)RIFF.o
+OBJ_AUDIO=$(T)audio_instrument.o $(T)SoundProducer.o $(T)AudioBuffer.o $(T)Jack_plugin.o $(T)find_jack_library.o $(T)Faust_plugins.o $(T)Bus_plugins.o $(T)Timeskew_plugin.o $(T)Patchbay_plugin.o $(T)MidiMessages_plugin.o $(T)VST_plugins.o $(T)Ladspa_plugins.o $(T)Sampler_plugin.o $(T)SampleRecorder.o $(T)SampleReader.o $(T)Seqtrack_plugin.o $(T)FluidSynth_plugin.o $(T)Pd_plugin.o $(T)Modulator_plugin.o $(T)SendReceive_plugins.o $(T)SoundPluginRegistry.o $(T)SoundPlugin.o $(T)AudioMeterPeaks.o $(T)Peaks.o $(T)Fade.o $(T)Mixer.o $(T)get_windows_commandlines.o $(T)Envelope.o $(T)Resampler.o $(T)SoundFonts.o $(T)Presets.o $(T)undo_audio_effect.o $(T)undo_connection_enabled.o $(T)undo_audio_connection_gain.o $(T)undo_pd_controllers.o $(T)undo_plugin_state.o $(T)SoundfileSaver.o $(T)system_compressor_wrapper.o $(T)KillJackd.o $(T)SF.o $(T)RIFF.o
  
 #MultiCore.o $(T)Smooth.o
 
@@ -811,8 +819,12 @@ test_smoothdelay:
 benchmark_smoothdelay:
 	@echo "first: make clean && BUILDTYPE=RELEASE ./build_linux.sh + ctrl-c"
 	@echo "to benchmark using clang: CC=clang CCC=clang++ make benchmark_smoothdelay"
-	$(CCC) -g -Wall -Werror test/test_smoothdelay.cpp $(QTOPT) -UNDEBUG -fPIC -DFOR_LINUX -DBENCHMARK_SMOOTHDELAY -O3 # -fopt-info-vec-optimized -fopt-info-vec-all
-	$(CCC) test_smoothdelay.o $(QT_LDFLAGS) $(QTLINKFLAGS) $(OS_LDFLAGS2) -lm -o test_smoothdelay
+	$(CCC) -g -Wall -Werror test/test_smoothdelay.cpp $(QTOPT) -UNDEBUG -fPIC -DFOR_LINUX -DBENCHMARK_SMOOTHDELAY -O3 # -ffast-math -fopt-info-vec-optimized -fopt-info-vec-all
+	$(CCC) -g -Wall -Werror audio/Fade.cpp $(CPPOPT) -UNDEBUG -fPIC -DFOR_LINUX -DBENCHMARK_SMOOTHDELAY -O3  -ffast-math -DMARCH_NATIVE_ALLOWED=1 -march=native  # -ffast-math -fopt-info-vec-optimized -fopt-info-vec-all
+#-march=native
+
+#-fno-signed-zeros 
+	$(CCC) test_smoothdelay.o Fade.o $(QT_LDFLAGS) $(QTLINKFLAGS) $(OS_LDFLAGS2) -lm -o test_smoothdelay
 	./test_smoothdelay
 	@rm test_smoothdelay
 
@@ -2482,6 +2494,9 @@ $(T)AudioMeterPeaks.o: audio/SoundPlugin.h audio/AudioMeterPeaks.cpp
 $(T)Peaks.o: audio/Peaks.cpp audio/Peaks.hpp
 	$(CCC2) audio/Peaks.cpp $(SNDFILEOPT) $(QTOPT) $(BOOST_INCLUDE)
 
+$(T)Fade.o: audio/Fade.cpp audio/Fade.hpp
+	$(CCC2) audio/Fade.cpp $(CPPOPT) -ffast-math
+
 $(T)Mixer.o: audio/Mixer.cpp audio/SoundProducer_proc.h Qt/helpers.h audio/SampleRecorder_proc.h audio/CpuUsage.hpp
 	$(CCC2) audio/Mixer.cpp  $(JACKOPT) $(QTOPT)  $(CPUOPT) -Wno-null-dereference $(NO_ANALYZER_MALLOC_LEAK)
 
@@ -2658,7 +2673,7 @@ bin/packages/sndlib/clm.c: bin/packages/sndlib.tar.gz bin/packages/sndlib.patch
 
 
 $(T)s7webserver.o: bin/s7webserver/s7webserver.h bin/s7webserver/s7webserver.cpp bin/s7webserver/moc_s7webserver.cpp bin/packages/s7/s7.c
-	$(CCC2) -c bin/s7webserver/s7webserver.cpp $(QT_CFLAGS) -Ibin/packages/s7 -g -Iembedded_scheme -Wall $(WERROR) -Wno-error=unused-variable -Wno-error=unused-function -std=gnu++14
+	$(CCC2) -c bin/s7webserver/s7webserver.cpp $(QTOPT) -Ibin/packages/s7 -g -Iembedded_scheme -Wall $(WERROR) -Wno-error=unused-variable -Wno-error=unused-function -std=gnu++14 -Wno-deprecated-declarations 
 
 bin/s7webserver/moc_s7webserver.cpp: bin/s7webserver/s7webserver.h
 	$(MOC) -DCOMPILING_S7WEBSERVER bin/s7webserver/s7webserver.h -o bin/s7webserver/moc_s7webserver.cpp

@@ -213,7 +213,7 @@ class Tools : public RememberGeometryQDialog, public Ui::Tools {
   
   void updateWidgets(){
     QPalette pal = palette();
-    pal.setColor(QPalette::Background, get_qcolor(LOW_BACKGROUND_COLOR_NUM)); // Default HIGH_BACKGROUND_COLOR is very dark.
+    pal.setColor(QPalette::Window, get_qcolor(LOW_BACKGROUND_COLOR_NUM)); // Default HIGH_BACKGROUND_COLOR is very dark.
     setPalette(pal);
   }
 

@@ -32,8 +32,8 @@ export G_DEBUG="fatal-warnings,gc-friendly"
 
 #ulimit -s 655360
 
-#DEBUGGER="gdb --args"
-DEBUGGER="lldb --"
+DEBUGGER="gdb --args"
+#DEBUGGER="lldb --"
 
 LD_LIBRARY_PATH=$LD_LIBRARY_PATH G_DEBUG="fatal-warnings,gc-friendly" $DEBUGGER bin/radium_linux.bin $@; killall -9 radium_progress_window ; killall -9 radium_crashreporter
 

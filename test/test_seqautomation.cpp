@@ -1,4 +1,4 @@
-
+#include <QList>
 
 
 #include "../common/nsmtracker.h"

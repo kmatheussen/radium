@@ -264,7 +264,7 @@ public:
 
 
     // set the scroll bar itself to size 10.
-    scrollArea->horizontalScrollBar()->setFixedHeight(10);
+    //    scrollArea->horizontalScrollBar()->setFixedHeight(10);
 #ifdef USE_QT5
     //scrollArea->verticalScrollBar()->hide();
 #endif

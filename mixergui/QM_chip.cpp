@@ -2123,6 +2123,12 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
 
   painter->setPen(QPen(border_color, 2));
 
+  QFont font = g_editor->main_window->font();
+  font.setPointSize(10);
+  font.setPixelSize(10);
+
+  painter->setFont(font);
+
   // slider
   {
     int x1,y1,x2,y2;
@@ -2170,11 +2176,14 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     QColor col = get_qcolor(TEXT_COLOR_NUM);
     col.setAlphaF((is_current_patch || is_input) ? 0.9 : 0.6);
     painter->setPen(col);
-    myDrawText(*painter, slider_rect.adjusted(4,3,0,0), buf, Qt::AlignLeft|Qt::AlignVCenter, false, 0, true, false);
+    myDrawText(*painter, slider_rect.adjusted(4,3,0,0), buf, Qt::AlignLeft|Qt::AlignVCenter, false, 0,
+               false,//true,
+               true//false
+               );
   }
 
 
-  QFont font = g_editor->main_window->font();
+  //QFont font = g_editor->main_window->font();
   font.setPointSize(12);
   font.setPixelSize(12);
 
@@ -2233,13 +2242,18 @@ void Chip::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWid
     }
     */
 
+    QRectF rect(x1, y1, x2-x1, y2-y1);
+    //float reduce_x = (rect.width() / g_gfx_scale) / 2.0;
+    //float reduce_y = (rect.height() / g_gfx_scale) / 2.0;
+      
     myDrawText(*painter,
-               QRectF(x1, y1, x2-x1, y2-y1),
+               //rect.adjusted(reduce_x,reduce_y,-reduce_x,-reduce_y),
+               rect,
                _name_text,
                Qt::AlignLeft|Qt::AlignVCenter,
                false, // wrap
                0, // rotate
-               true, // scale
+               false,//true, // scale
                true // cut_text_to_fit
                );
         

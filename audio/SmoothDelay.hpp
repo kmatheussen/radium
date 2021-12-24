@@ -2,9 +2,9 @@
 #ifndef _RADIUM_AUDIO_SMOOTHDELAY_HPP
 #define _RADIUM_AUDIO_SMOOTHDELAY_HPP
 
-#if TEST_SMOOTHDELAY
+#if BENCHMARK_SMOOTHDELAY
 static double g_benchmark_time = 0.0;
-static double g_fade_benchmark_time = 0.0;
+double g_fade_benchmark_time = 0.0;
 #endif
 
 
