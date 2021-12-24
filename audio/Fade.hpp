@@ -58,94 +58,14 @@ public:
     _is_fading_in = false;
   }
 
-  void RT_fade(int num_frames, float *__restrict__ data, const float *__restrict in = NULL, bool add = false){
-#if TEST_SMOOTHDELAY
-    double time = TIME_get_ms();
-#endif
-
-    int how_many = R_MIN(num_frames, _num_fade_frames_left);
-
-    {
-      float fade_mul = _fade_mul;
-
-      double d_how_many = how_many;
-
-      double d_fade_span = _inc_fade*d_how_many;
-
-
-#define USE_VECTORIZABLE_FADE_LOOP 1 // Approx. nine times faster in both gcc and clang! (clang 8.0.0 is ~11% faster than gcc 8.1.0 here)
-
-
-#if USE_VECTORIZABLE_FADE_LOOP
-
-      float fade_inc = d_fade_span / d_how_many;
-
-      if (in == NULL) {
-
-#if !defined(RADIUM_USES_UBSAN)
-        #pragma clang loop vectorize(enable) interleave(enable)
-#endif
-        for(int i=0;i<how_many;i++)
-          data[i] *= fade_mul + i*fade_inc;
-
-      } else {
-
-        if (add) {
-#if !defined(RADIUM_USES_UBSAN)
-          #pragma clang loop vectorize(enable) interleave(enable)
-#endif
-          for(int i=0;i<how_many;i++)
-            data[i] += in[i] * (fade_mul + i*fade_inc);
-
-         } else {
-#if !defined(RADIUM_USES_UBSAN)
-           #pragma clang loop vectorize(enable) interleave(enable)
-#endif
-           for(int i=0;i<how_many;i++)
-             data[i] = in[i] * (fade_mul + i*fade_inc);
-
-         }
-
-      }
-
-      // same as:
-      // for(int i=0;i<how_many;i++)
-      //   data[i] *= R_SCALE(i, 0, how_many, fade_mul, fade_mul+fade_span);
-
-#else
-
-      R_ASSERT(in == NULL);
-      R_ASSERT(add==false);
-
-      for(int i=0;i<how_many;i++){
-        data[i] *= fade_mul;
-        fade_mul += _inc_fade;
-      }
-
-#endif
-
-      _fade_mul += d_fade_span;
-    }
-
-#if TEST_SMOOTHDELAY
-    g_fade_benchmark_time += TIME_get_ms()-time;
-#endif
-
-    if (!_is_fading_in){
-      int extra = num_frames-how_many;
-      if(extra > 0)
-        memset(data + how_many, 0, extra*sizeof(float));
-    }
-
-    _num_fade_frames_left -= how_many;
-  }
-
-  void RT_fade_in(int num_frames, float *__restrict__ data){
+  void RT_fade(const int num_frames, float *__restrict__ data, const float *__restrict in = NULL, bool add = false);
+    
+  void RT_fade_in(const int num_frames, float *__restrict__ data){
     R_ASSERT_NON_RELEASE(is_fading_in());
     return RT_fade(num_frames, data);
   }
 
-  void RT_fade_out(int num_frames, float *__restrict__ data){
+  void RT_fade_out(const int num_frames, float *__restrict__ data){
     R_ASSERT_NON_RELEASE(!is_fading_in());
     return RT_fade(num_frames, data);
   }

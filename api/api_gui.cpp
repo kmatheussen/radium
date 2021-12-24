@@ -4856,6 +4856,7 @@ bool gui_rerunLastMouseEvent(void){
 }
 
 
+#if 0
 bool API_run_mouse_press_delete(void){
   if (MOUSE_CYCLE_is_inside_cycle()){
     printf("API_run_mouse_press_delete: Won't run since we are currently inside a cycle\n");
@@ -4899,6 +4900,7 @@ bool API_run_mouse_press_delete(void){
   
   return ret;
 }
+#endif
 
 
 bool API_run_mouse_press_event_for_custom_widget(QWidget *widget, radium::MouseCycleEvent &ev){

@@ -164,14 +164,14 @@ int main(){
     assert(x.a_slice_end==5);
     assert(x.r_slice_start==x.r_slice_end);
     assert(x.a_extra_slice_start==10);
-    assert(x.a_extra_slice_end=15);
+    assert(x.a_extra_slice_end==15);
   }
   {RemoveAdd x(5,10,0,15);
     assert(x.r_slice_start==0);
     assert(x.r_slice_end==5);
     assert(x.a_slice_start==x.a_slice_end);
     assert(x.r_extra_slice_start==10);
-    assert(x.r_extra_slice_end=15);
+    assert(x.r_extra_slice_end==15);
   }
 
   {RemoveAdd x(5,10,10,15);
