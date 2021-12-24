@@ -27,6 +27,11 @@
 LWSTDAPI IUnknown_GetWindow (IUnknown* punk, HWND* phwnd);
 #endif
 
+#if JUCE_MINGW
+LWSTDAPI IUnknown_GetWindow (IUnknown* punk, HWND* phwnd);
+#endif
+
+
 namespace juce
 {
 

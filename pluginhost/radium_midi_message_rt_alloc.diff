@@ -1,5 +1,5 @@
 diff --git a/pluginhost/JuceLibraryCode/modules/juce_audio_basics/midi/juce_MidiMessage.cpp b/pluginhost/JuceLibraryCode/modules/juce_audio_basics/midi/juce_MidiMessage.cpp
-index e1a215045..d92702e1c 100644
+index 1732ae91d..ed63050fc 100644
 --- a/pluginhost/JuceLibraryCode/modules/juce_audio_basics/midi/juce_MidiMessage.cpp
 +++ b/pluginhost/JuceLibraryCode/modules/juce_audio_basics/midi/juce_MidiMessage.cpp
 @@ -20,6 +20,9 @@
@@ -12,27 +12,26 @@ index e1a215045..d92702e1c 100644
  namespace juce
  {
  
-@@ -283,22 +286,20 @@ MidiMessage::MidiMessage (const void* srcData, int sz, int& numBytesUsed, const
- 
- MidiMessage& MidiMessage::operator= (const MidiMessage& other)
+@@ -285,23 +288,17 @@ MidiMessage& MidiMessage::operator= (const MidiMessage& other)
  {
-+  
      if (this != &other)
      {
++      
 +        if (isHeapAllocated())
 +              RT_free(packedData.allocatedData, "juce::MidiMessage::operator=");
-+          
++        
          if (other.isHeapAllocated())
          {
--            if (isHeapAllocated())
--                packedData.allocatedData = static_cast<uint8*> (std::realloc (packedData.allocatedData, (size_t) other.size));
--            else
--                packedData.allocatedData = static_cast<uint8*> (std::malloc ((size_t) other.size));
+-            auto* newStorage = static_cast<uint8*> (isHeapAllocated()
+-              ? std::realloc (packedData.allocatedData, (size_t) other.size)
+-              : std::malloc ((size_t) other.size));
 -
--            memcpy (packedData.allocatedData, other.packedData.allocatedData, (size_t) other.size);
+-            if (newStorage == nullptr)
+-                throw std::bad_alloc{}; // The midi message has not been adjusted at this point
+-
+-            packedData.allocatedData = newStorage;
 +            packedData.allocatedData = RT_alloc<uint8>(other.size, "juce::MidiMessage::operator=");
-+            
-+            memcpy (packedData.allocatedData, other.packedData.allocatedData, (size_t) other.size);            
+             memcpy (packedData.allocatedData, other.packedData.allocatedData, (size_t) other.size);
          }
          else
          {
@@ -42,7 +41,7 @@ index e1a215045..d92702e1c 100644
              packedData.allocatedData = other.packedData.allocatedData;
          }
  
-@@ -328,16 +329,16 @@ MidiMessage& MidiMessage::operator= (MidiMessage&& other) noexcept
+@@ -331,16 +328,16 @@ MidiMessage& MidiMessage::operator= (MidiMessage&& other) noexcept
  MidiMessage::~MidiMessage() noexcept
  {
      if (isHeapAllocated())
@@ -63,7 +62,7 @@ index e1a215045..d92702e1c 100644
  
      return packedData.asBytes;
 diff --git a/pluginhost/JuceLibraryCode/modules/juce_audio_basics/midi/juce_MidiMessage.h b/pluginhost/JuceLibraryCode/modules/juce_audio_basics/midi/juce_MidiMessage.h
-index 22ac79483..362675cb8 100644
+index 0384f553c..ef682069d 100644
 --- a/pluginhost/JuceLibraryCode/modules/juce_audio_basics/midi/juce_MidiMessage.h
 +++ b/pluginhost/JuceLibraryCode/modules/juce_audio_basics/midi/juce_MidiMessage.h
 @@ -20,6 +20,8 @@
@@ -75,7 +74,7 @@ index 22ac79483..362675cb8 100644
  namespace juce
  {
  
-@@ -137,6 +139,8 @@ public:
+@@ -138,6 +140,8 @@ public:
      */
      int getRawDataSize() const noexcept                 { return size; }
  
