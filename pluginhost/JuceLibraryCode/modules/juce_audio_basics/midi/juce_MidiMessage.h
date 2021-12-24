@@ -20,6 +20,8 @@
   ==============================================================================
 */
 
+#include "../../../../../common/RT_memory_allocator_proc.h"
+
 namespace juce
 {
 
@@ -138,6 +140,8 @@ public:
     */
     int getRawDataSize() const noexcept                 { return size; }
 
+    RT_Mem<uint8> *getRT_Mem() const noexcept { return isHeapAllocated() ? packedData.allocatedData : NULL; }
+              
     //==============================================================================
     /** Returns a human-readable description of the midi message as a string,
         for example "Note On C#3 Velocity 120 Channel 1".
@@ -969,8 +973,9 @@ private:
    #ifndef DOXYGEN
     union PackedData
     {
-        uint8* allocatedData;
-        uint8 asBytes[sizeof (uint8*)];
+        RT_Mem<uint8> *allocatedData;
+
+        uint8 asBytes[sizeof (RT_Mem<uint8>*)];
     };
 
     PackedData packedData;
@@ -979,7 +984,7 @@ private:
    #endif
 
     inline bool isHeapAllocated() const noexcept  { return size > (int) sizeof (packedData); }
-    inline uint8* getData() const noexcept        { return isHeapAllocated() ? packedData.allocatedData : (uint8*) packedData.asBytes; }
+    inline uint8* getData() const noexcept        { return isHeapAllocated() ? RT_data(packedData.allocatedData) : (uint8*) packedData.asBytes; }
     uint8* allocateSpace (int);
 };
 

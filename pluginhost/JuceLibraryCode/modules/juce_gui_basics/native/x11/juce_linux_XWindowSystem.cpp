@@ -187,7 +187,7 @@ XWindowSystemUtilities::XSettings::XSettings (::Display* d)
     settingsWindow = X11Symbols::getInstance()->xGetSelectionOwner (display,
                                                                     Atoms::getCreating (display, "_XSETTINGS_S0"));
 
-    jassert (settingsWindow != None);
+    //jassert (settingsWindow != None);
     update();
 }
 
