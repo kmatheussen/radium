@@ -57,6 +57,11 @@ public:
                          //juce::Colours::black,
                          true)
   {
+#if 0
+    juce::AffineTransform aff;
+    setTransform(aff.scaled(g_gfx_scale, g_gfx_scale, 0, 0));
+#endif
+    
     g_prefs_dialog = this;
 
     {
@@ -84,6 +89,16 @@ public:
   }
 #endif
   
+#if 0
+  void resized(void) override {
+    if (getContentComponent() != NULL){
+      juce::AffineTransform aff;
+      getContentComponent()->setTransform(aff.scaled(g_gfx_scale, g_gfx_scale));
+    }
+    ResizableWindow::resized();
+  }
+#endif
+    
   void closeButtonPressed() override
   {
     delete this;
@@ -377,8 +392,18 @@ public:
     // ...and show it in a DialogWindow...
     audioSettingsComp->setSize (400, 170);
 
+    {
+    }
+ 
+    //printf("Approximate: %f\n", juce::Component::getApproximateScaleFactorForComponent(audioSettingsComp));
+    //getchar();
+    
     g_prefs_dialog = new PrefsWindow();
-
+#if 0
+    juce::AffineTransform aff;
+    g_prefs_dialog->setTransform(aff.scaled(g_gfx_scale, g_gfx_scale));
+#endif
+    
     g_prefs_dialog->setOpaque(true);
     g_prefs_dialog->addToDesktop();
     g_prefs_dialog->setUsingNativeTitleBar(true);
@@ -386,6 +411,7 @@ public:
     g_prefs_dialog->setContentOwned(audioSettingsComp, true);
 
     g_prefs_dialog->centreWithSize(g_prefs_dialog->getWidth(), g_prefs_dialog->getHeight());
+    //g_prefs_dialog->centreWithSize(400*g_gfx_scale, 170*g_gfx_scale);//g_prefs_dialog->getWidth(), g_prefs_dialog->getHeight());
     g_prefs_dialog->setVisible(true);
     
     /*
