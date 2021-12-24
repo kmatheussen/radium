@@ -513,11 +513,13 @@ namespace{
     bool is_vst2(void){
       return ::is_vst2(audio_instance);
     }
-
-    bool is_vst3(void){
-      return ::is_vst3(audio_instance);
-    }
+    */
     
+    bool is_vst3(void){
+      return ::is_vst3(_plugin);
+    }
+
+    /*
     bool is_vst(void){
       return ::is_vst(audio_instance);
     }
@@ -838,7 +840,7 @@ namespace{
     }
 
     int get_button_height(void) const {
-      return root->song->tracker_windows->fontheight * 3 / 2;
+      return (root->song->tracker_windows->fontheight * 3 / 2) /  g_gfx_scale;
     }
     
     int get_keyboard_height(void) const {
@@ -921,17 +923,22 @@ namespace{
         int editor_height;
 
         if(try_to_resize_editor()){
+
+          R_ASSERT_NON_RELEASE(false);
           
           editor_width = main_component.getWidth();
           editor_height = main_component.getHeight() - get_button_height() - get_keyboard_height();
-          
+      
           editor->setSize(editor_width, editor_height);
           
         }else{
           
           editor_width = editor->getWidth();
           editor_height = editor->getHeight();
-        
+
+          editor_width /= g_gfx_scale;
+          editor_height /= g_gfx_scale;
+
           main_component.setSize(editor_width, editor_height + get_button_height() + get_keyboard_height());
           
         }
@@ -953,7 +960,10 @@ namespace{
       , parentgui(parentgui)
       , _show_dpi_button(show_dpi_button)
     {
-
+#if 0
+      juce::AffineTransform aff;
+      editor->setTransform(aff.scaled(g_gfx_scale, g_gfx_scale));
+#endif
       if (showVirtualMidiKeyboardBelowNativeGUIs() && data->audio_instance->acceptsMidi())
         midi_keyboard = new juce::MidiKeyboardComponent(data->keyboardState, juce::MidiKeyboardComponent::horizontalKeyboard);
 
@@ -969,6 +979,7 @@ namespace{
           s_lookandfeel = new juce::LookAndFeel_V3();
         
         this->setLookAndFeel(s_lookandfeel);
+        //grab_keyboard_button.setColour(juce::TextButton::buttonColourId, juce::Colour(0,255,0));
       }
       
       if(try_to_resize_editor())
@@ -985,9 +996,12 @@ namespace{
 
       R_ASSERT_NON_RELEASE(editor->getWidth() > 0);
       R_ASSERT_NON_RELEASE(editor->getHeight() > 0);
-      
-      int initial_width = R_MAX(100, editor->getWidth());
-      int initial_height = R_MAX(100, editor->getHeight() + button_height + keyboard_height);
+
+      int editor_width = editor->getWidth() / g_gfx_scale;
+      int editor_height = editor->getHeight() / g_gfx_scale;
+
+      int initial_width = R_MAX(100, editor_width);
+      int initial_height = R_MAX(100, editor_height + button_height + keyboard_height);
       
       this->setSize (initial_width, initial_height);
       this->setUsingNativeTitleBar(true);
@@ -1009,7 +1023,7 @@ namespace{
 #else
         grab_keyboard_button.setButtonText("Grab keyboard");
 #endif
-        
+
         grab_keyboard_button.setToggleState(g_vst_grab_keyboard, juce::NotificationType::dontSendNotification);
         grab_keyboard_button.setSize(400, button_height);
         grab_keyboard_button.changeWidthToFitText();
@@ -1102,21 +1116,34 @@ namespace{
 
       // add vst gui
       main_component.addChildComponent(editor);
+      
       if (dynamic_cast<juce::GenericAudioProcessorEditor*>(editor) != NULL)
         editor->setLookAndFeel(new juce::LookAndFeel_V4);
-      editor->setTopLeftPosition(0, button_height);
+
+      if (data->is_vst3()) // must be a bug in juce
+        editor->setTopLeftPosition(0, button_height * g_gfx_scale);
+      else
+        editor->setTopLeftPosition(0, button_height);
+      
       editor->setVisible(true);
+            
+      editor_width = editor->getWidth() / g_gfx_scale;
+      editor_height = editor->getHeight() / g_gfx_scale;
+
+      if (g_has_gfx_scale)
+        editor->setSize(editor_width, editor_height); // must be a bug in juce
       
       if (midi_keyboard != NULL) {
         main_component.addChildComponent(midi_keyboard);
-        midi_keyboard->setTopLeftPosition(0, button_height + editor->getHeight());
-        midi_keyboard->setSize(editor->getWidth(), keyboard_height);
+        midi_keyboard->setTopLeftPosition(0, button_height + editor_height);
+        midi_keyboard->setSize(editor_width, keyboard_height);
         midi_keyboard->setVisible(true);
       }
+
       
-      main_component.setSize(editor->getWidth(), editor->getHeight() + button_height + keyboard_height);
-          
-      position_components(editor->getWidth(), editor->getHeight());
+      main_component.setSize(editor_width, editor_height + button_height + keyboard_height);
+      
+      position_components(editor_width, editor_height);
 
       if(try_to_resize_editor())
         main_component.addComponentListener(this);
@@ -1855,9 +1882,9 @@ static bool show_gui(struct SoundPlugin *plugin, int64_t parentgui){
           }
           
           if (editor != NULL) {
-            
+
             ATOMIC_SET(data->window, new PluginWindow(V_strdup(title), data, editor, parentgui, vst_gui_always_on_top, show_dpi_button));
-            
+
             ret = true;
           }
           
@@ -3153,6 +3180,9 @@ void PLUGINHOST_save_fxp(struct SoundPlugin *plugin, const wchar_t *filename){
 static JuceThread *g_juce_thread = NULL;
 
 void PLUGINHOST_set_global_dpi(float dpi){
+  if (fabs(dpi-96) < 5)
+    return;
+  
   run_on_message_thread([dpi](){
 #if 1 // JUCE_MAC
                           juce::Desktop::getInstance().setGlobalScaleFactor(dpi / 96.0);
