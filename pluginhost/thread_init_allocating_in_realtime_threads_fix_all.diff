@@ -1,0 +1,94 @@
+diff -u b/pluginhost/JuceLibraryCode/modules/juce_core/native/juce_posix_SharedCode.h b/pluginhost/JuceLibraryCode/modules/juce_core/native/juce_posix_SharedCode.h
+--- b/pluginhost/JuceLibraryCode/modules/juce_core/native/juce_posix_SharedCode.h
++++ b/pluginhost/JuceLibraryCode/modules/juce_core/native/juce_posix_SharedCode.h
+@@ -849,7 +849,7 @@
+     {
+         juce_threadEntryPoint (myself);
+     }
+-
++    
+    #if JUCE_ANDROID
+     if (androidJNIJavaVM != nullptr)
+     {
+@@ -903,12 +903,11 @@
+         pthread_attr_setstacksize (attrPtr, threadStackSize);
+     }
+ 
+-
+     if (pthread_create (&handle, attrPtr, threadEntryProc, this) == 0)
+     {
+         pthread_detach (handle);
+         threadHandle = (void*) handle;
+-        threadId = (ThreadID) threadHandle.get();
++        threadId = (ThreadID) threadHandle.get(); // Theoretically this line is not necessary anymore. However, I'm not 100% if threadId is not used from this thread before waiting for the thread has started, so better leave it. (we'll probably get a tsan hit here as well, but that hit can probably be safely ignored)
+     }
+ 
+     if (attrPtr != nullptr)
+unchanged:
+--- b/pluginhost/JuceLibraryCode/modules/juce_core/threads/juce_Thread.cpp
++++ b/pluginhost/JuceLibraryCode/modules/juce_core/threads/juce_Thread.cpp
+@@ -84,22 +84,22 @@
+     if (threadName.isNotEmpty())
+         setCurrentThreadName (threadName);
+ 
+-    if (startSuspensionEvent.wait (10000))
+-    {
+-        jassert (getCurrentThreadId() == threadId.get());
++    jassert (getCurrentThreadId() == threadId.get());
+ 
+-        if (affinityMask != 0)
+-            setCurrentThreadAffinityMask (affinityMask);
++    if (affinityMask != 0)
++      setCurrentThreadAffinityMask (affinityMask);
+ 
+-        try
+-        {
+-            run();
+-        }
+-        catch (...)
+-        {
+-            jassertfalse; // Your run() method mustn't throw any exceptions!
+-        }
+-    }
++    setCurrentThreadPriority (threadPriority);
++    startSuspensionEvent.signal();
++    
++    try
++      {
++        run();
++      }
++    catch (...)
++      {
++        jassertfalse; // Your run() method mustn't throw any exceptions!
++      }
+ 
+     currentThreadHolder->value.releaseCurrentThreadStorage();
+ 
+@@ -128,8 +128,7 @@
+     if (threadHandle.get() == nullptr)
+     {
+         launchThread();
+-        setThreadPriority (threadHandle.get(), threadPriority);
+-        startSuspensionEvent.signal();
++        startSuspensionEvent.wait(10000);
+     }
+ }
+ 
+only in patch2:
+unchanged:
+--- a/pluginhost/JuceLibraryCode/modules/juce_core/threads/juce_Thread.cpp
++++ b/pluginhost/JuceLibraryCode/modules/juce_core/threads/juce_Thread.cpp
+@@ -84,8 +84,12 @@ void Thread::threadEntryPoint()
+     if (threadName.isNotEmpty())
+         setCurrentThreadName (threadName);
+ 
++#if 0
+     jassert (getCurrentThreadId() == threadId.get());
+-
++#else
++    threadId = getCurrentThreadId(); // Setthing threadId must be done here now.
++#endif
++    
+     if (affinityMask != 0)
+       setCurrentThreadAffinityMask (affinityMask);
+ 
