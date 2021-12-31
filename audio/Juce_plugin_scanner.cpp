@@ -32,6 +32,7 @@
   #endif
 #endif
 
+static int g_dpi;
 
 /*
 static bool container_descriptions_are_cached_on_disk(const wchar_t *container_filename){
@@ -43,15 +44,51 @@ static bool container_descriptions_are_cached_on_disk(const wchar_t *container_f
 
 static void show_alert(juce::String message){
   fprintf(stderr," show_alert: -%s-\n", message.toRawUTF8());
+  
 #if FOR_MACOSX
+  
   // AlertWindow::showMessageBox didn't work right out of the box on OSX. But this workaround is better anyway since it doesn't block the execution, and still there will only be maximum one message window open at the same time.
   juce::String command = "osascript -e 'tell application \"Finder\"' -e 'activate' -e 'display dialog \"Radium plugin scanner: " + message + "\" buttons {\"OK\"}' -e 'end tell'&"; // https://stackoverflow.com/questions/13484482/no-user-interaction-allowed-when-running-applescript-in-python
   system(command.toRawUTF8());
-#else
+  
+#elif 0
+
+  // Doesn't work on linux either now. Haven't checked windows.
+  
+  fprintf(stderr,"   A1\n");
+  
   juce::initialiseJuce_GUI();
+  fprintf(stderr,"   A1.5\n");
+  juce::Desktop::getInstance();
+  fprintf(stderr,"   A2\n");
+  juce::Desktop::getInstance().setGlobalScaleFactor(g_dpi / 96.0);
+  fprintf(stderr,"   A3\n");
   juce::AlertWindow::showMessageBox(juce::AlertWindow::AlertIconType::WarningIcon,
                                     "Radium plugin scanner",
                                     message);
+  fprintf(stderr,"   A4\n");
+  juce::MessageManager::getInstance()->runDispatchLoop();
+  fprintf(stderr,"   A5\n");
+
+#else
+
+  juce::String executable = juce::File::getSpecialLocation(juce::File::SpecialLocationType::currentExecutableFile)
+    .getChildFile("/home/kjetil/radium/bin/radium_error_message")
+    .getFullPathName();
+    
+  juce::StringArray args;
+  args.add(executable);
+  args.add(juce::Base64::toBase64("Radium plugin scanner:\n\n" + message));
+  args.add(juce::Base64::toBase64("Ok"));
+                        
+  juce::ChildProcess process;
+
+  if (process.start(args)==false){
+    fprintf(stderr, "Error: Unable to launch %s", executable.toRawUTF8());
+    return;
+  }
+
+  process.waitForProcessToFinish(1000*1000);
 #endif
 }
 
@@ -214,8 +251,8 @@ int main(int argc, char **argv){
     return 0;
   }
   
-  if (argc != 3){
-    show_alert(juce::String("Wrong number of arguments. Expected 2, found ") + juce::String::formatted("%d.", argc-1));
+  if (argc != 4){
+    show_alert(juce::String("Wrong number of arguments. Expected 3, found ") + juce::String::formatted("%d.", argc-1));
     return -3;
   }
   
@@ -230,6 +267,10 @@ int main(int argc, char **argv){
     show_alert(juce::String("Erroneous input arguments: \"") + juce::String(argv[1]) + "\", \"" + juce::String(argv[2]) + "\"");
     return -2;
   }
+
+  g_dpi = atoi(argv[3]);
+  if (g_dpi < 20)
+    g_dpi = 20;
 
   juce::String container_filename = a.toUTF8();
   juce::String description_filename = b.toUTF8();
