@@ -2602,7 +2602,8 @@ static enum PopulateContainerResult launch_program_calling_write_container_descr
   args.add(executable);
   args.add(juce::Base64::toBase64(juce::String(container_filename.id)));
   args.add(juce::Base64::toBase64(get_container_descriptions_filename(container_filename)));
-
+  args.add(juce::String(int(g_dpi)));
+                        
   juce::ChildProcess process;
 
   if (process.start(args)==false){
