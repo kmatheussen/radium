@@ -1022,13 +1022,13 @@ namespace{
       this->setUsingNativeTitleBar(true);
       //this->setUsingNativeTitleBar(false);
 
+      main_component.setSize(editor_width, editor_height + button_height + keyboard_height);
+
       if(try_to_resize_editor())
         this->setContentNonOwned(&main_component, false);
       else
         this->setContentNonOwned(&main_component, true);
       
-      main_component.setSize(initial_width, initial_height);
-
 #if defined(RELEASE) && FOR_LINUX
 #else
       // grab keyboard button
@@ -1131,9 +1131,6 @@ namespace{
 
       //fprintf(stderr, "EDITOR WIDTH/HEIGHT 4 %d %d %d %d\n", editor_width, editor_height, button_height, keyboard_height);
       
-      main_component.setSize(editor_width, editor_height + button_height + keyboard_height);
-      
-
       // add vst gui
       main_component.addChildComponent(editor);
       
@@ -3220,6 +3217,7 @@ void PLUGINHOST_set_global_gfx_scale(float gfx_scale){
   
   run_on_message_thread([gfx_scale](){
     juce::Desktop::getInstance().setGlobalScaleFactor(gfx_scale);
+    g_juce_gfx_scale = gfx_scale;
     g_has_juce_gfx_scale = true;
   });
 }
