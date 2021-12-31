@@ -43,7 +43,7 @@ namespace DirectWriteTypeLayout
         {
             JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wlanguage-extension-token")
 
-            if (refId == __uuidof (IDWritePixelSnapping))
+            if (refId == __uuidof2 (IDWritePixelSnapping))
                 return castToType<IDWritePixelSnapping> (result);
 
             return ComBaseClassHelper<IDWriteTextRenderer>::QueryInterface (refId, result);
