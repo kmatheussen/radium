@@ -87,7 +87,7 @@ public:
                 D2D1_FACTORY_OPTIONS options;
                 options.debugLevel = D2D1_DEBUG_LEVEL_NONE;
 
-                d2d1CreateFactory (D2D1_FACTORY_TYPE_SINGLE_THREADED, __uuidof (ID2D1Factory), &options,
+                d2d1CreateFactory (D2D1_FACTORY_TYPE_SINGLE_THREADED, __uuidof2 (ID2D1Factory), &options,
                                    (void**) d2dFactory.resetAndGetPointerAddress());
             }
         }
@@ -99,7 +99,7 @@ public:
 
             if (dWriteCreateFactory != nullptr)
             {
-                dWriteCreateFactory (DWRITE_FACTORY_TYPE_SHARED, __uuidof (IDWriteFactory),
+                dWriteCreateFactory (DWRITE_FACTORY_TYPE_SHARED, __uuidof2 (IDWriteFactory),
                                      (IUnknown**) directWriteFactory.resetAndGetPointerAddress());
 
                 if (directWriteFactory != nullptr)

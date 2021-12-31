@@ -574,7 +574,7 @@ private:
     void createSessionEventCallback()
     {
         deleteSessionEventCallback();
-        client->GetService (__uuidof (IAudioSessionControl),
+        client->GetService (__uuidof2 (IAudioSessionControl),
                             (void**) audioSessionControl.resetAndGetPointerAddress());
 
         if (audioSessionControl != nullptr)
@@ -600,7 +600,7 @@ private:
         ComSmartPtr<IAudioClient> newClient;
 
         if (device != nullptr)
-            logFailure (device->Activate (__uuidof (IAudioClient), CLSCTX_INPROC_SERVER,
+            logFailure (device->Activate (__uuidof2 (IAudioClient), CLSCTX_INPROC_SERVER,
                                           nullptr, (void**) newClient.resetAndGetPointerAddress()));
 
         return newClient;
@@ -875,7 +875,7 @@ public:
     bool open (double newSampleRate, const BigInteger& newChannels, int bufferSizeSamples)
     {
         return openClient (newSampleRate, newChannels, bufferSizeSamples)
-                && (numChannels == 0 || check (client->GetService (__uuidof (IAudioCaptureClient),
+                && (numChannels == 0 || check (client->GetService (__uuidof2 (IAudioCaptureClient),
                                                                    (void**) captureClient.resetAndGetPointerAddress())));
     }
 
@@ -1023,7 +1023,7 @@ public:
     bool open (double newSampleRate, const BigInteger& newChannels, int bufferSizeSamples)
     {
         return openClient (newSampleRate, newChannels, bufferSizeSamples)
-                && (numChannels == 0 || check (client->GetService (__uuidof (IAudioRenderClient),
+                && (numChannels == 0 || check (client->GetService (__uuidof2 (IAudioRenderClient),
                                                                    (void**) renderClient.resetAndGetPointerAddress())));
     }
 
@@ -1552,7 +1552,7 @@ private:
     {
         ComSmartPtr<IMMDeviceEnumerator> enumerator;
 
-        if (! check (enumerator.CoCreateInstance (__uuidof (MMDeviceEnumerator))))
+        if (! check (enumerator.CoCreateInstance (__uuidof2 (MMDeviceEnumerator))))
             return false;
 
         ComSmartPtr<IMMDeviceCollection> deviceCollection;
@@ -1788,7 +1788,7 @@ private:
     {
         if (enumerator == nullptr)
         {
-            if (! check (enumerator.CoCreateInstance (__uuidof (MMDeviceEnumerator))))
+            if (! check (enumerator.CoCreateInstance (__uuidof2 (MMDeviceEnumerator))))
                 return;
 
             notifyClient = new ChangeNotificationClient (this);
@@ -1902,12 +1902,12 @@ struct MMDeviceMasterVolume
     {
         ComSmartPtr<IMMDeviceEnumerator> enumerator;
 
-        if (check (enumerator.CoCreateInstance (__uuidof (MMDeviceEnumerator))))
+        if (check (enumerator.CoCreateInstance (__uuidof2 (MMDeviceEnumerator))))
         {
             ComSmartPtr<IMMDevice> device;
 
             if (check (enumerator->GetDefaultAudioEndpoint (eRender, eConsole, device.resetAndGetPointerAddress())))
-                check (device->Activate (__uuidof (IAudioEndpointVolume), CLSCTX_INPROC_SERVER, nullptr,
+                check (device->Activate (__uuidof2 (IAudioEndpointVolume), CLSCTX_INPROC_SERVER, nullptr,
                                          (void**) endpointVolume.resetAndGetPointerAddress()));
         }
     }

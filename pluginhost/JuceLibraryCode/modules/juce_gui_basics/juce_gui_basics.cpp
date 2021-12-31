@@ -412,8 +412,8 @@ bool juce::isWindowOnCurrentVirtualDesktop (void* x)
 
         class DECLSPEC_UUID("aa509086-5ca9-4c25-8f95-589d3c07b48a") juce_VirtualDesktopManager;
 
-        if (SUCCEEDED (CoCreateInstance (__uuidof (juce_VirtualDesktopManager), nullptr, CLSCTX_ALL, IID_PPV_ARGS (&result))))
-            return result;
+        //if (SUCCEEDED (CoCreateInstance (__uuidof2 (juce_VirtualDesktopManager), nullptr, CLSCTX_ALL, IID_PPV_ARGS (&result))))
+        //    return result;
 
         JUCE_END_IGNORE_WARNINGS_GCC_LIKE
 
