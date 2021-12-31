@@ -159,6 +159,9 @@ static int g_num_visible_plugin_windows = 0;
 static bool g_vst_grab_keyboard = true;
 static int g_num_data = 0;
 
+static bool g_has_juce_gfx_scale = false;
+static float g_juce_gfx_scale = 1.0f;
+
 static int RT_get_latency(const struct SoundPlugin *plugin);
 
 static void set_plugin_type_data(juce::AudioPluginInstance *audio_instance, SoundPluginType *plugin_type, int num_inputs, int num_outputs);
@@ -195,16 +198,20 @@ namespace{
   };
 
   
-  /*
   static bool is_au(const struct SoundPluginType *type) {
     return !strcmp(type->type_name, "AU");
   }
-  
+
+  static bool is_au(const SoundPlugin *plugin) {
+    return is_au(plugin->type);
+  }
+
+  /*
   static bool is_au(const struct SoundPlugin *plugin) {
     return is_au(plugin->type);
   }
   */
-
+  
   static bool is_vst2(const struct SoundPluginType *type) {
     return !strcmp(type->type_name, "VST");
   }
@@ -515,6 +522,10 @@ namespace{
     }
     */
     
+    bool is_au(void){
+      return ::is_au(_plugin);
+    }
+
     bool is_vst3(void){
       return ::is_vst3(_plugin);
     }
@@ -840,7 +851,7 @@ namespace{
     }
 
     int get_button_height(void) const {
-      return (root->song->tracker_windows->fontheight * 3 / 2) /  g_gfx_scale;
+      return (root->song->tracker_windows->fontheight * 3 / 2) /  g_juce_gfx_scale;
     }
     
     int get_keyboard_height(void) const {
@@ -912,7 +923,7 @@ namespace{
 
 
     void componentMovedOrResized(juce::Component &component, bool wasMoved, bool wasResized) override {
-
+      
       if (wasResized){
         
 #if !defined(RELEASE)
@@ -936,8 +947,10 @@ namespace{
           editor_width = editor->getWidth();
           editor_height = editor->getHeight();
 
-          editor_width /= g_gfx_scale;
-          editor_height /= g_gfx_scale;
+          editor_width /= g_juce_gfx_scale;
+          editor_height /= g_juce_gfx_scale;
+          
+          fprintf(stderr, "EDITOR WIDTH/HEIGHT 2b %d %d %d %d\n", editor_width, editor_height, get_button_height(), get_keyboard_height());
 
           main_component.setSize(editor_width, editor_height + get_button_height() + get_keyboard_height());
           
@@ -962,7 +975,7 @@ namespace{
     {
 #if 0
       juce::AffineTransform aff;
-      editor->setTransform(aff.scaled(g_gfx_scale, g_gfx_scale));
+      editor->setTransform(aff.scaled(g_juce_gfx_scale, g_juce_gfx_scale));
 #endif
       if (showVirtualMidiKeyboardBelowNativeGUIs() && data->audio_instance->acceptsMidi())
         midi_keyboard = new juce::MidiKeyboardComponent(data->keyboardState, juce::MidiKeyboardComponent::horizontalKeyboard);
@@ -997,23 +1010,25 @@ namespace{
       R_ASSERT_NON_RELEASE(editor->getWidth() > 0);
       R_ASSERT_NON_RELEASE(editor->getHeight() > 0);
 
-      int editor_width = editor->getWidth() / g_gfx_scale;
-      int editor_height = editor->getHeight() / g_gfx_scale;
+      int editor_width = editor->getWidth() / g_juce_gfx_scale;
+      int editor_height = editor->getHeight() / g_juce_gfx_scale;
 
       int initial_width = R_MAX(100, editor_width);
       int initial_height = R_MAX(100, editor_height + button_height + keyboard_height);
+
+      //fprintf(stderr, "EDITOR WIDTH/HEIGHT 3 %d %d %f\n", initial_width, initial_height, g_juce_gfx_scale);
       
       this->setSize (initial_width, initial_height);
       this->setUsingNativeTitleBar(true);
       //this->setUsingNativeTitleBar(false);
-
-      main_component.setSize(initial_width, initial_height);
 
       if(try_to_resize_editor())
         this->setContentNonOwned(&main_component, false);
       else
         this->setContentNonOwned(&main_component, true);
       
+      main_component.setSize(initial_width, initial_height);
+
 #if defined(RELEASE) && FOR_LINUX
 #else
       // grab keyboard button
@@ -1114,25 +1129,37 @@ namespace{
         }
       }
 
+      //fprintf(stderr, "EDITOR WIDTH/HEIGHT 4 %d %d %d %d\n", editor_width, editor_height, button_height, keyboard_height);
+      
+      main_component.setSize(editor_width, editor_height + button_height + keyboard_height);
+      
+
       // add vst gui
       main_component.addChildComponent(editor);
       
       if (dynamic_cast<juce::GenericAudioProcessorEditor*>(editor) != NULL)
         editor->setLookAndFeel(new juce::LookAndFeel_V4);
 
-      if (data->is_vst3()) // must be a bug in juce
-        editor->setTopLeftPosition(0, button_height * g_gfx_scale);
+#if !FOR_MACOSX
+      if (data->is_vst3()) // must be a bug in juce. It's only necessary for vst3 plugins on linux and windows.
+        editor->setTopLeftPosition(0, button_height * g_juce_gfx_scale);
       else
+#endif
         editor->setTopLeftPosition(0, button_height);
       
       editor->setVisible(true);
             
-      editor_width = editor->getWidth() / g_gfx_scale;
-      editor_height = editor->getHeight() / g_gfx_scale;
+      editor_width = editor->getWidth() / g_juce_gfx_scale;
+      editor_height = editor->getHeight() / g_juce_gfx_scale;
 
-      if (g_has_gfx_scale)
-        editor->setSize(editor_width, editor_height); // must be a bug in juce
+      //fprintf(stderr, "EDITOR WIDTH/HEIGHT 1 %d %d %f\n", editor_width, editor_height, g_juce_gfx_scale);
       
+      //if (!data->is_au())
+        if (g_has_juce_gfx_scale)
+          editor->setSize(editor_width, editor_height); // must be a bug in juce
+
+        //fprintf(stderr, "EDITOR WIDTH/HEIGHT 1b %d %d %f\n", editor->getWidth(), editor->getHeight(), g_juce_gfx_scale);
+
       if (midi_keyboard != NULL) {
         main_component.addChildComponent(midi_keyboard);
         midi_keyboard->setTopLeftPosition(0, button_height + editor_height);
@@ -1140,16 +1167,19 @@ namespace{
         midi_keyboard->setVisible(true);
       }
 
-      
-      main_component.setSize(editor_width, editor_height + button_height + keyboard_height);
+      //fprintf(stderr, "EDITOR WIDTH/HEIGHT 1c %d %d %f\n", editor->getWidth(), editor->getHeight(), g_juce_gfx_scale);
       
       position_components(editor_width, editor_height);
 
+      //fprintf(stderr, "EDITOR WIDTH/HEIGHT 1d %d %d %f\n", editor->getWidth(), editor->getHeight(), g_juce_gfx_scale);
+      
       if(try_to_resize_editor())
         main_component.addComponentListener(this);
       else
         editor->addComponentListener(this);
 
+      //fprintf(stderr, "EDITOR WIDTH/HEIGHT 1e %d %d %f\n", editor->getWidth(), editor->getHeight(), g_juce_gfx_scale);
+      
       {
         int num_x = data->xs.count(parentgui);
         int num_y = data->ys.count(parentgui);
@@ -1178,8 +1208,11 @@ namespace{
           this->setTopLeftPosition(x, y);
         }
 
+        //fprintf(stderr, "EDITOR WIDTH/HEIGHT 1f %d %d %f\n", editor->getWidth(), editor->getHeight(), g_juce_gfx_scale);
+        
         this->setVisible(true);
-         
+
+        //fprintf(stderr, "EDITOR WIDTH/HEIGHT 1g %d %d %f\n", editor->getWidth(), editor->getHeight(), g_juce_gfx_scale);
      }
 
 
@@ -3179,17 +3212,15 @@ void PLUGINHOST_save_fxp(struct SoundPlugin *plugin, const wchar_t *filename){
 
 static JuceThread *g_juce_thread = NULL;
 
-void PLUGINHOST_set_global_dpi(float dpi){
-  if (fabs(dpi-96) < 5)
-    return;
-  
-  run_on_message_thread([dpi](){
-#if 1 // JUCE_MAC
-                          juce::Desktop::getInstance().setGlobalScaleFactor(dpi / 96.0);
-#else
-                          juce::Desktop::getInstance().setGlobalScaleFactor(dpi / 72.0);
+void PLUGINHOST_set_global_gfx_scale(float gfx_scale){
+#if defined(FOR_MACOSX)
+  return; // doesn't seem to work.
 #endif
-			});
+  
+  run_on_message_thread([gfx_scale](){
+    juce::Desktop::getInstance().setGlobalScaleFactor(gfx_scale);
+    g_has_juce_gfx_scale = true;
+  });
 }
  
 void PLUGINHOST_init(void){
