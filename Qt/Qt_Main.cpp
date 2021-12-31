@@ -4470,6 +4470,7 @@ bool g_has_gfx_scale = false;
 float g_gfx_scale = 1.0;
 
 static void determine_dpi_and_gfx_scale(void){
+  
   QScreen *screen = QApplication::screens().first();
 
   if (screen==NULL){
@@ -4676,7 +4677,7 @@ int main(int argc, char **argv){
   determine_dpi_and_gfx_scale();
 
   if (g_has_gfx_scale)
-    PLUGINHOST_set_global_dpi(g_dpi);
+    PLUGINHOST_set_global_gfx_scale(g_gfx_scale);
   
   CRASHREPORTER_init();
   
@@ -4712,7 +4713,7 @@ int main(int argc, char **argv){
       
       int result = SYSTEM_show_message_menu(&v,
                                             "Radium for macOS is BETA software!\n"
-                                            "Radium is primarly developed for Windows and Linux.\n"
+                                            "Radium is primarily developed for Windows and Linux.\n"
                                             "\n"
                                             "On macOS there are both performance and stability problems. In addition you might experience various types of quirks and misbehavours. However, many people find the program useful anyway, and there is no plan to stop developing the program for Mac.\n"
                                             "\n"
