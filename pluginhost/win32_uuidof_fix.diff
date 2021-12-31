@@ -1,0 +1,750 @@
+diff --git a/Changelog b/Changelog
+index eb71e1837..92cce4ab9 100644
+--- a/Changelog
++++ b/Changelog
+@@ -1,3 +1,7 @@
++Removed libglib-2.0.so library from Linux binaries since it could cause 3rd party plugins to use conflicting versions of gdk/gtk libraries at the same time.
++Updated linux lib files.
++
++
+ Changes 6.9.94 -> 6.9.96:
+ * Editor: Make pitch expand/shrink also work on pitch
+   changes, not just on the main pitch of notes.
+diff --git a/Makefile.Qt b/Makefile.Qt
+index 09032ad28..9c7fceb59 100755
+--- a/Makefile.Qt
++++ b/Makefile.Qt
+@@ -2,7 +2,7 @@
+ # Users and packagers: Edit build_*.sh instead.
+ #
+ 
+-RADIUM_VERSION = 6.9.96
++RADIUM_VERSION = 6.9.97
+ 
+ 
+ SHELL := /bin/bash
+diff --git a/Qt/Qt_Main.cpp b/Qt/Qt_Main.cpp
+index c5db49284..810462012 100755
+--- a/Qt/Qt_Main.cpp
++++ b/Qt/Qt_Main.cpp
+@@ -194,6 +194,7 @@ bool g_program_has_ended = false;
+ 
+ #include "sanitizer/asan_interface.h"
+ 
++#if 0
+ static void handle_RT_malloc_free_error(bool is_alloc, const char *message, bool force_abort = false){
+   printf("\n\n\n==========================================================\n"
+          "  %s: %s.\n"
+@@ -209,6 +210,7 @@ static void handle_RT_malloc_free_error(bool is_alloc, const char *message, bool
+     //getchar();
+   }
+ }
++#endif
+ 
+ 
+ #if DEBUG_MEMORY_ALLOC_MORE
+@@ -362,6 +364,7 @@ static void handle_RT_malloc_free(bool is_alloc, void *mem, int size){
+ 
+ #endif // DEBUG_MEMORY_ALLOC_MORE
+ 
++#if 0
+ 
+ extern "C" {
+ 
+@@ -414,7 +417,7 @@ void __sanitizer_free_hook(const volatile void *ptr){
+ #endif  
+ }
+ }
+-
++#endif
+ 
+ /*
+ static void asan_lowlevel_allocate_callback(uptr mem, uptr size){
+@@ -4470,6 +4473,7 @@ bool g_has_gfx_scale = false;
+ float g_gfx_scale = 1.0;
+ 
+ static void determine_dpi_and_gfx_scale(void){
++  
+   QScreen *screen = QApplication::screens().first();
+ 
+   if (screen==NULL){
+@@ -4676,7 +4680,7 @@ int main(int argc, char **argv){
+   determine_dpi_and_gfx_scale();
+ 
+   if (g_has_gfx_scale)
+-    PLUGINHOST_set_global_dpi(g_dpi);
++    PLUGINHOST_set_global_gfx_scale(g_gfx_scale);
+   
+   CRASHREPORTER_init();
+   
+@@ -4712,7 +4716,7 @@ int main(int argc, char **argv){
+       
+       int result = SYSTEM_show_message_menu(&v,
+                                             "Radium for macOS is BETA software!\n"
+-                                            "Radium is primarly developed for Windows and Linux.\n"
++                                            "Radium is primarily developed for Windows and Linux.\n"
+                                             "\n"
+                                             "On macOS there are both performance and stability problems. In addition you might experience various types of quirks and misbehavours. However, many people find the program useful anyway, and there is no plan to stop developing the program for Mac.\n"
+                                             "\n"
+diff --git a/audio/Juce_plugins.cpp b/audio/Juce_plugins.cpp
+index 83a235342..536e1cee9 100644
+--- a/audio/Juce_plugins.cpp
++++ b/audio/Juce_plugins.cpp
+@@ -159,6 +159,9 @@ static int g_num_visible_plugin_windows = 0;
+ static bool g_vst_grab_keyboard = true;
+ static int g_num_data = 0;
+ 
++static bool g_has_juce_gfx_scale = false;
++static float g_juce_gfx_scale = 1.0f;
++
+ static int RT_get_latency(const struct SoundPlugin *plugin);
+ 
+ static void set_plugin_type_data(juce::AudioPluginInstance *audio_instance, SoundPluginType *plugin_type, int num_inputs, int num_outputs);
+@@ -195,16 +198,20 @@ namespace{
+   };
+ 
+   
+-  /*
+   static bool is_au(const struct SoundPluginType *type) {
+     return !strcmp(type->type_name, "AU");
+   }
+-  
++
++  static bool is_au(const SoundPlugin *plugin) {
++    return is_au(plugin->type);
++  }
++
++  /*
+   static bool is_au(const struct SoundPlugin *plugin) {
+     return is_au(plugin->type);
+   }
+   */
+-
++  
+   static bool is_vst2(const struct SoundPluginType *type) {
+     return !strcmp(type->type_name, "VST");
+   }
+@@ -515,6 +522,10 @@ namespace{
+     }
+     */
+     
++    bool is_au(void){
++      return ::is_au(_plugin);
++    }
++
+     bool is_vst3(void){
+       return ::is_vst3(_plugin);
+     }
+@@ -840,7 +851,7 @@ namespace{
+     }
+ 
+     int get_button_height(void) const {
+-      return (root->song->tracker_windows->fontheight * 3 / 2) /  g_gfx_scale;
++      return (root->song->tracker_windows->fontheight * 3 / 2) /  g_juce_gfx_scale;
+     }
+     
+     int get_keyboard_height(void) const {
+@@ -912,7 +923,7 @@ namespace{
+ 
+ 
+     void componentMovedOrResized(juce::Component &component, bool wasMoved, bool wasResized) override {
+-
++      
+       if (wasResized){
+         
+ #if !defined(RELEASE)
+@@ -936,8 +947,10 @@ namespace{
+           editor_width = editor->getWidth();
+           editor_height = editor->getHeight();
+ 
+-          editor_width /= g_gfx_scale;
+-          editor_height /= g_gfx_scale;
++          editor_width /= g_juce_gfx_scale;
++          editor_height /= g_juce_gfx_scale;
++          
++          fprintf(stderr, "EDITOR WIDTH/HEIGHT 2b %d %d %d %d\n", editor_width, editor_height, get_button_height(), get_keyboard_height());
+ 
+           main_component.setSize(editor_width, editor_height + get_button_height() + get_keyboard_height());
+           
+@@ -962,7 +975,7 @@ namespace{
+     {
+ #if 0
+       juce::AffineTransform aff;
+-      editor->setTransform(aff.scaled(g_gfx_scale, g_gfx_scale));
++      editor->setTransform(aff.scaled(g_juce_gfx_scale, g_juce_gfx_scale));
+ #endif
+       if (showVirtualMidiKeyboardBelowNativeGUIs() && data->audio_instance->acceptsMidi())
+         midi_keyboard = new juce::MidiKeyboardComponent(data->keyboardState, juce::MidiKeyboardComponent::horizontalKeyboard);
+@@ -997,23 +1010,25 @@ namespace{
+       R_ASSERT_NON_RELEASE(editor->getWidth() > 0);
+       R_ASSERT_NON_RELEASE(editor->getHeight() > 0);
+ 
+-      int editor_width = editor->getWidth() / g_gfx_scale;
+-      int editor_height = editor->getHeight() / g_gfx_scale;
++      int editor_width = editor->getWidth() / g_juce_gfx_scale;
++      int editor_height = editor->getHeight() / g_juce_gfx_scale;
+ 
+       int initial_width = R_MAX(100, editor_width);
+       int initial_height = R_MAX(100, editor_height + button_height + keyboard_height);
++
++      fprintf(stderr, "EDITOR WIDTH/HEIGHT 3 %d %d %f\n", initial_width, initial_height, g_juce_gfx_scale);
+       
+       this->setSize (initial_width, initial_height);
+       this->setUsingNativeTitleBar(true);
+       //this->setUsingNativeTitleBar(false);
+ 
+-      main_component.setSize(initial_width, initial_height);
+-
+       if(try_to_resize_editor())
+         this->setContentNonOwned(&main_component, false);
+       else
+         this->setContentNonOwned(&main_component, true);
+       
++      main_component.setSize(initial_width, initial_height);
++
+ #if defined(RELEASE) && FOR_LINUX
+ #else
+       // grab keyboard button
+@@ -1114,25 +1129,37 @@ namespace{
+         }
+       }
+ 
++      fprintf(stderr, "EDITOR WIDTH/HEIGHT 4 %d %d %d %d\n", editor_width, editor_height, button_height, keyboard_height);
++      
++      main_component.setSize(editor_width, editor_height + button_height + keyboard_height);
++      
++
+       // add vst gui
+       main_component.addChildComponent(editor);
+       
+       if (dynamic_cast<juce::GenericAudioProcessorEditor*>(editor) != NULL)
+         editor->setLookAndFeel(new juce::LookAndFeel_V4);
+ 
+-      if (data->is_vst3()) // must be a bug in juce
+-        editor->setTopLeftPosition(0, button_height * g_gfx_scale);
++#if !FOR_MACOSX
++      if (data->is_vst3()) // must be a bug in juce. It's only necessary for vst3 plugins on linux and windows.
++        editor->setTopLeftPosition(0, button_height * g_juce_gfx_scale);
+       else
++#endif
+         editor->setTopLeftPosition(0, button_height);
+       
+       editor->setVisible(true);
+             
+-      editor_width = editor->getWidth() / g_gfx_scale;
+-      editor_height = editor->getHeight() / g_gfx_scale;
++      editor_width = editor->getWidth() / g_juce_gfx_scale;
++      editor_height = editor->getHeight() / g_juce_gfx_scale;
+ 
+-      if (g_has_gfx_scale)
+-        editor->setSize(editor_width, editor_height); // must be a bug in juce
++      fprintf(stderr, "EDITOR WIDTH/HEIGHT 1 %d %d %f\n", editor_width, editor_height, g_juce_gfx_scale);
+       
++      //if (!data->is_au())
++        if (g_has_juce_gfx_scale)
++          editor->setSize(editor_width, editor_height); // must be a bug in juce
++
++        fprintf(stderr, "EDITOR WIDTH/HEIGHT 1b %d %d %f\n", editor->getWidth(), editor->getHeight(), g_juce_gfx_scale);
++
+       if (midi_keyboard != NULL) {
+         main_component.addChildComponent(midi_keyboard);
+         midi_keyboard->setTopLeftPosition(0, button_height + editor_height);
+@@ -1140,16 +1167,19 @@ namespace{
+         midi_keyboard->setVisible(true);
+       }
+ 
+-      
+-      main_component.setSize(editor_width, editor_height + button_height + keyboard_height);
++      fprintf(stderr, "EDITOR WIDTH/HEIGHT 1c %d %d %f\n", editor->getWidth(), editor->getHeight(), g_juce_gfx_scale);
+       
+       position_components(editor_width, editor_height);
+ 
++      fprintf(stderr, "EDITOR WIDTH/HEIGHT 1d %d %d %f\n", editor->getWidth(), editor->getHeight(), g_juce_gfx_scale);
++      
+       if(try_to_resize_editor())
+         main_component.addComponentListener(this);
+       else
+         editor->addComponentListener(this);
+ 
++      fprintf(stderr, "EDITOR WIDTH/HEIGHT 1e %d %d %f\n", editor->getWidth(), editor->getHeight(), g_juce_gfx_scale);
++      
+       {
+         int num_x = data->xs.count(parentgui);
+         int num_y = data->ys.count(parentgui);
+@@ -1178,8 +1208,11 @@ namespace{
+           this->setTopLeftPosition(x, y);
+         }
+ 
++        fprintf(stderr, "EDITOR WIDTH/HEIGHT 1f %d %d %f\n", editor->getWidth(), editor->getHeight(), g_juce_gfx_scale);
++        
+         this->setVisible(true);
+-         
++
++        fprintf(stderr, "EDITOR WIDTH/HEIGHT 1g %d %d %f\n", editor->getWidth(), editor->getHeight(), g_juce_gfx_scale);
+      }
+ 
+ 
+@@ -3179,17 +3212,15 @@ void PLUGINHOST_save_fxp(struct SoundPlugin *plugin, const wchar_t *filename){
+ 
+ static JuceThread *g_juce_thread = NULL;
+ 
+-void PLUGINHOST_set_global_dpi(float dpi){
+-  if (fabs(dpi-96) < 5)
+-    return;
+-  
+-  run_on_message_thread([dpi](){
+-#if 1 // JUCE_MAC
+-                          juce::Desktop::getInstance().setGlobalScaleFactor(dpi / 96.0);
+-#else
+-                          juce::Desktop::getInstance().setGlobalScaleFactor(dpi / 72.0);
++void PLUGINHOST_set_global_gfx_scale(float gfx_scale){
++#if defined(FOR_MACOSX)
++  return; // doesn't seem to work.
+ #endif
+-			});
++  
++  run_on_message_thread([gfx_scale](){
++    juce::Desktop::getInstance().setGlobalScaleFactor(gfx_scale);
++    g_has_juce_gfx_scale = true;
++  });
+ }
+  
+ void PLUGINHOST_init(void){
+diff --git a/audio/Juce_plugins_proc.h b/audio/Juce_plugins_proc.h
+index 2e2b637f5..5abde05d0 100644
+--- a/audio/Juce_plugins_proc.h
++++ b/audio/Juce_plugins_proc.h
+@@ -56,7 +56,7 @@ void PLUGINHOST_load_fxbp(struct SoundPlugin *plugin, const wchar_t *filename);
+ void PLUGINHOST_save_fxb(struct SoundPlugin *plugin, const wchar_t *filename);
+ void PLUGINHOST_save_fxp(struct SoundPlugin *plugin, const wchar_t *filename);
+ 
+-void PLUGINHOST_set_global_dpi(float dpi);
++void PLUGINHOST_set_global_gfx_scale(float gfx_scale);
+ 
+ void PLUGINHOST_init(void);
+ void PLUGINHOST_shut_down(void);
+diff --git a/bin/fonts/nimbus_sans_becker_l.zip b/bin/fonts/nimbus_sans_becker_l.zip
+deleted file mode 100644
+index e89f23d4d..000000000
+Binary files a/bin/fonts/nimbus_sans_becker_l.zip and /dev/null differ
+diff --git a/bin/keybindingsparser.pyc b/bin/keybindingsparser.pyc
+deleted file mode 100644
+index e3b6902a1..000000000
+Binary files a/bin/keybindingsparser.pyc and /dev/null differ
+diff --git a/bin/protoconfparser.pyc b/bin/protoconfparser.pyc
+deleted file mode 100644
+index 84cd4142c..000000000
+Binary files a/bin/protoconfparser.pyc and /dev/null differ
+diff --git a/bin/python-midi/src/__init__.pyc b/bin/python-midi/src/__init__.pyc
+index 6ff9fa5db..c5311e82a 100644
+Binary files a/bin/python-midi/src/__init__.pyc and b/bin/python-midi/src/__init__.pyc differ
+diff --git a/bin/python-midi/src/constants.pyc b/bin/python-midi/src/constants.pyc
+index bad1b8aef..b02c3f848 100644
+Binary files a/bin/python-midi/src/constants.pyc and b/bin/python-midi/src/constants.pyc differ
+diff --git a/bin/python-midi/src/containers.pyc b/bin/python-midi/src/containers.pyc
+index 8c5a22488..997c2ce14 100644
+Binary files a/bin/python-midi/src/containers.pyc and b/bin/python-midi/src/containers.pyc differ
+diff --git a/bin/python-midi/src/events.pyc b/bin/python-midi/src/events.pyc
+index 5d72577a1..cb3c2ae62 100644
+Binary files a/bin/python-midi/src/events.pyc and b/bin/python-midi/src/events.pyc differ
+diff --git a/bin/python-midi/src/fileio.pyc b/bin/python-midi/src/fileio.pyc
+index 07e67f27a..8a11a869c 100644
+Binary files a/bin/python-midi/src/fileio.pyc and b/bin/python-midi/src/fileio.pyc differ
+diff --git a/bin/python-midi/src/util.pyc b/bin/python-midi/src/util.pyc
+index ebe94061f..0910294b3 100644
+Binary files a/bin/python-midi/src/util.pyc and b/bin/python-midi/src/util.pyc differ
+diff --git a/bin/radium_linux_popup_killscript.sh b/bin/radium_linux_popup_killscript.sh
+index d007178d7..b8cb9593a 100755
+--- a/bin/radium_linux_popup_killscript.sh
++++ b/bin/radium_linux_popup_killscript.sh
+@@ -1,6 +1,6 @@
+ #!/bin/bash
+ 
+-# X often freezes if a program crash while a popup menu is open. (at least when running under gdb)
++# X often freezes if a program crashes while a popup menu is open. (at least when running under gdb)
+ 
+ 
+ echo $$ >/tmp/$1
+diff --git a/bin/scheme/init.scm b/bin/scheme/init.scm
+index 95b5a77a3..e67f2a3d7 100644
+--- a/bin/scheme/init.scm
++++ b/bin/scheme/init.scm
+@@ -975,12 +975,13 @@ FROM_C-show-mixer-popup-menu-effect
+ 
+ 
+ (define (FROM-C-assert-that-function-can-be-called-from-C funcname)
+-  (define sym (string->symbol funcname))
+-  (when (and (not (memq sym *functions-and-symbols-used-by-C*))
+-             (not (memq sym *functions-and-symbols-used-by-C-that-are-not-available-at-program-startup*)))
+-    (define message (string-append "The function \"" funcname "\" has not been added to the list of functions that can be called from C"))
+-    (display message)(newline)
+-    (ra:show-error message)))
++  (when #f
++    (define sym (string->symbol funcname))
++    (when (and (not (memq sym *functions-and-symbols-used-by-C*))
++               (not (memq sym *functions-and-symbols-used-by-C-that-are-not-available-at-program-startup*)))
++      (define message (string-append "The function \"" funcname "\" has not been added to the list of functions that can be called from C"))
++      (display message)(newline)
++      (ra:show-error message))))
+ 
+ (define (assert-functions-and-symbols-called-from-C)
+   (for-each (lambda (funcname)
+diff --git a/pluginhost/JuceLibraryCode/modules/juce_audio_devices/native/juce_win32_Midi.cpp b/pluginhost/JuceLibraryCode/modules/juce_audio_devices/native/juce_win32_Midi.cpp
+index 0ac9bfe53..df63919ac 100644
+--- a/pluginhost/JuceLibraryCode/modules/juce_audio_devices/native/juce_win32_Midi.cpp
++++ b/pluginhost/JuceLibraryCode/modules/juce_audio_devices/native/juce_win32_Midi.cpp
+@@ -805,7 +805,7 @@ private:
+             auto requestedProperties = [wrtWrapper]
+             {
+                 auto devicePicker = wrtWrapper->activateInstance<IDevicePicker> (&RuntimeClass_Windows_Devices_Enumeration_DevicePicker[0],
+-                                                                                 __uuidof (IDevicePicker));
++                                                                                 __uuidof2 (IDevicePicker));
+                 jassert (devicePicker != nullptr);
+ 
+                 IVector<HSTRING>* result;
+@@ -835,7 +835,7 @@ private:
+             }
+ 
+             ComSmartPtr<IIterable<HSTRING>> iter;
+-            auto hr = requestedProperties->QueryInterface (__uuidof (IIterable<HSTRING>), (void**) iter.resetAndGetPointerAddress());
++            auto hr = requestedProperties->QueryInterface (__uuidof2 (IIterable<HSTRING>), (void**) iter.resetAndGetPointerAddress());
+ 
+             if (FAILED (hr))
+             {
+@@ -925,7 +925,7 @@ private:
+         String getGUIDFromInspectable (IInspectable& inspectable)
+         {
+             ComSmartPtr<IReference<GUID>> guidRef;
+-            auto hr = inspectable.QueryInterface (__uuidof (IReference<GUID>),
++            auto hr = inspectable.QueryInterface (__uuidof2 (IReference<GUID>),
+                                                   (void**) guidRef.resetAndGetPointerAddress());
+ 
+             if (FAILED (hr))
+@@ -952,7 +952,7 @@ private:
+         bool getBoolFromInspectable (IInspectable& inspectable)
+         {
+             ComSmartPtr<IReference<bool>> boolRef;
+-            auto hr = inspectable.QueryInterface (__uuidof (IReference<bool>),
++            auto hr = inspectable.QueryInterface (__uuidof2 (IReference<bool>),
+                                                   (void**) boolRef.resetAndGetPointerAddress());
+ 
+             if (FAILED (hr))
+diff --git a/pluginhost/JuceLibraryCode/modules/juce_audio_devices/native/juce_win32_WASAPI.cpp b/pluginhost/JuceLibraryCode/modules/juce_audio_devices/native/juce_win32_WASAPI.cpp
+index 2ef57d8a3..161800523 100644
+--- a/pluginhost/JuceLibraryCode/modules/juce_audio_devices/native/juce_win32_WASAPI.cpp
++++ b/pluginhost/JuceLibraryCode/modules/juce_audio_devices/native/juce_win32_WASAPI.cpp
+@@ -574,7 +574,7 @@ private:
+     void createSessionEventCallback()
+     {
+         deleteSessionEventCallback();
+-        client->GetService (__uuidof (IAudioSessionControl),
++        client->GetService (__uuidof2 (IAudioSessionControl),
+                             (void**) audioSessionControl.resetAndGetPointerAddress());
+ 
+         if (audioSessionControl != nullptr)
+@@ -600,7 +600,7 @@ private:
+         ComSmartPtr<IAudioClient> newClient;
+ 
+         if (device != nullptr)
+-            logFailure (device->Activate (__uuidof (IAudioClient), CLSCTX_INPROC_SERVER,
++            logFailure (device->Activate (__uuidof2 (IAudioClient), CLSCTX_INPROC_SERVER,
+                                           nullptr, (void**) newClient.resetAndGetPointerAddress()));
+ 
+         return newClient;
+@@ -875,7 +875,7 @@ public:
+     bool open (double newSampleRate, const BigInteger& newChannels, int bufferSizeSamples)
+     {
+         return openClient (newSampleRate, newChannels, bufferSizeSamples)
+-                && (numChannels == 0 || check (client->GetService (__uuidof (IAudioCaptureClient),
++                && (numChannels == 0 || check (client->GetService (__uuidof2 (IAudioCaptureClient),
+                                                                    (void**) captureClient.resetAndGetPointerAddress())));
+     }
+ 
+@@ -1023,7 +1023,7 @@ public:
+     bool open (double newSampleRate, const BigInteger& newChannels, int bufferSizeSamples)
+     {
+         return openClient (newSampleRate, newChannels, bufferSizeSamples)
+-                && (numChannels == 0 || check (client->GetService (__uuidof (IAudioRenderClient),
++                && (numChannels == 0 || check (client->GetService (__uuidof2 (IAudioRenderClient),
+                                                                    (void**) renderClient.resetAndGetPointerAddress())));
+     }
+ 
+@@ -1552,7 +1552,7 @@ private:
+     {
+         ComSmartPtr<IMMDeviceEnumerator> enumerator;
+ 
+-        if (! check (enumerator.CoCreateInstance (__uuidof (MMDeviceEnumerator))))
++        if (! check (enumerator.CoCreateInstance (__uuidof2 (MMDeviceEnumerator))))
+             return false;
+ 
+         ComSmartPtr<IMMDeviceCollection> deviceCollection;
+@@ -1788,7 +1788,7 @@ private:
+     {
+         if (enumerator == nullptr)
+         {
+-            if (! check (enumerator.CoCreateInstance (__uuidof (MMDeviceEnumerator))))
++            if (! check (enumerator.CoCreateInstance (__uuidof2 (MMDeviceEnumerator))))
+                 return;
+ 
+             notifyClient = new ChangeNotificationClient (this);
+@@ -1902,12 +1902,12 @@ struct MMDeviceMasterVolume
+     {
+         ComSmartPtr<IMMDeviceEnumerator> enumerator;
+ 
+-        if (check (enumerator.CoCreateInstance (__uuidof (MMDeviceEnumerator))))
++        if (check (enumerator.CoCreateInstance (__uuidof2 (MMDeviceEnumerator))))
+         {
+             ComSmartPtr<IMMDevice> device;
+ 
+             if (check (enumerator->GetDefaultAudioEndpoint (eRender, eConsole, device.resetAndGetPointerAddress())))
+-                check (device->Activate (__uuidof (IAudioEndpointVolume), CLSCTX_INPROC_SERVER, nullptr,
++                check (device->Activate (__uuidof2 (IAudioEndpointVolume), CLSCTX_INPROC_SERVER, nullptr,
+                                          (void**) endpointVolume.resetAndGetPointerAddress()));
+         }
+     }
+diff --git a/pluginhost/JuceLibraryCode/modules/juce_core/native/juce_win32_ComSmartPtr.h b/pluginhost/JuceLibraryCode/modules/juce_core/native/juce_win32_ComSmartPtr.h
+index 3ba6e2a8f..51b2a2dfa 100644
+--- a/pluginhost/JuceLibraryCode/modules/juce_core/native/juce_win32_ComSmartPtr.h
++++ b/pluginhost/JuceLibraryCode/modules/juce_core/native/juce_win32_ComSmartPtr.h
+@@ -24,12 +24,14 @@ namespace juce
+ {
+ 
+ #if JUCE_MINGW || (! (defined (_MSC_VER) || defined (__uuidof)))
++  /*
+  #ifdef __uuidof
+-  #undef __uuidof
++#undef __uuidof
+  #endif
+-
++  */
++  
+  template <typename Type> struct UUIDGetter { static CLSID get() { jassertfalse; return {}; } };
+- #define __uuidof(x)  UUIDGetter<x>::get()
++ #define __uuidof2(x)  UUIDGetter<x>::get()
+ 
+  template <>
+  struct UUIDGetter<::IUnknown>
+@@ -120,7 +122,7 @@ public:
+ 
+     HRESULT CoCreateInstance (REFCLSID classUUID, DWORD dwClsContext = CLSCTX_INPROC_SERVER)
+     {
+-        auto hr = ::CoCreateInstance (classUUID, nullptr, dwClsContext, __uuidof (ComClass), (void**) resetAndGetPointerAddress());
++        auto hr = ::CoCreateInstance (classUUID, nullptr, dwClsContext, __uuidof2 (ComClass), (void**) resetAndGetPointerAddress());
+         jassert (hr != CO_E_NOTINITIALIZED); // You haven't called CoInitialize for the current thread!
+         return hr;
+     }
+@@ -137,7 +139,7 @@ public:
+     template <class OtherComClass>
+     HRESULT QueryInterface (ComSmartPtr<OtherComClass>& destObject) const
+     {
+-        return this->QueryInterface (__uuidof (OtherComClass), destObject);
++        return this->QueryInterface (__uuidof2 (OtherComClass), destObject);
+     }
+ 
+     template <class OtherComClass>
+@@ -175,7 +177,7 @@ protected:
+ 
+     JUCE_COMRESULT QueryInterface (REFIID refId, void** result)
+     {
+-        if (refId == __uuidof (IUnknown))
++        if (refId == __uuidof2 (IUnknown))
+             return castToType<First> (result);
+ 
+         *result = nullptr;
+@@ -207,7 +209,7 @@ public:
+     {
+         const std::tuple<IID, void*> bases[]
+         {
+-            std::make_tuple (__uuidof (ComClasses),
++            std::make_tuple (__uuidof2 (ComClasses),
+                              static_cast<void*> (static_cast<ComClasses*> (this)))...
+         };
+ 
+diff --git a/pluginhost/JuceLibraryCode/modules/juce_events/native/juce_win32_WinRTWrapper.h b/pluginhost/JuceLibraryCode/modules/juce_events/native/juce_win32_WinRTWrapper.h
+index a5b01d79b..ea252955e 100644
+--- a/pluginhost/JuceLibraryCode/modules/juce_events/native/juce_win32_WinRTWrapper.h
++++ b/pluginhost/JuceLibraryCode/modules/juce_events/native/juce_win32_WinRTWrapper.h
+@@ -61,7 +61,7 @@ public:
+             ScopedHString classID (runtimeClassID);
+ 
+             if (classID.get() != nullptr)
+-                roGetActivationFactory (classID.get(), __uuidof (ComClass), (void**) comPtr.resetAndGetPointerAddress());
++                roGetActivationFactory (classID.get(), __uuidof2 (ComClass), (void**) comPtr.resetAndGetPointerAddress());
+         }
+ 
+         return comPtr;
+diff --git a/pluginhost/JuceLibraryCode/modules/juce_graphics/native/juce_win32_DirectWriteTypeLayout.cpp b/pluginhost/JuceLibraryCode/modules/juce_graphics/native/juce_win32_DirectWriteTypeLayout.cpp
+index 1b194506d..fda8996af 100644
+--- a/pluginhost/JuceLibraryCode/modules/juce_graphics/native/juce_win32_DirectWriteTypeLayout.cpp
++++ b/pluginhost/JuceLibraryCode/modules/juce_graphics/native/juce_win32_DirectWriteTypeLayout.cpp
+@@ -43,7 +43,7 @@ namespace DirectWriteTypeLayout
+         {
+             JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wlanguage-extension-token")
+ 
+-            if (refId == __uuidof (IDWritePixelSnapping))
++            if (refId == __uuidof2 (IDWritePixelSnapping))
+                 return castToType<IDWritePixelSnapping> (result);
+ 
+             return ComBaseClassHelper<IDWriteTextRenderer>::QueryInterface (refId, result);
+diff --git a/pluginhost/JuceLibraryCode/modules/juce_graphics/native/juce_win32_DirectWriteTypeface.cpp b/pluginhost/JuceLibraryCode/modules/juce_graphics/native/juce_win32_DirectWriteTypeface.cpp
+index e4869ed0a..5853f8ebc 100644
+--- a/pluginhost/JuceLibraryCode/modules/juce_graphics/native/juce_win32_DirectWriteTypeface.cpp
++++ b/pluginhost/JuceLibraryCode/modules/juce_graphics/native/juce_win32_DirectWriteTypeface.cpp
+@@ -87,7 +87,7 @@ public:
+                 D2D1_FACTORY_OPTIONS options;
+                 options.debugLevel = D2D1_DEBUG_LEVEL_NONE;
+ 
+-                d2d1CreateFactory (D2D1_FACTORY_TYPE_SINGLE_THREADED, __uuidof (ID2D1Factory), &options,
++                d2d1CreateFactory (D2D1_FACTORY_TYPE_SINGLE_THREADED, __uuidof2 (ID2D1Factory), &options,
+                                    (void**) d2dFactory.resetAndGetPointerAddress());
+             }
+         }
+@@ -99,7 +99,7 @@ public:
+ 
+             if (dWriteCreateFactory != nullptr)
+             {
+-                dWriteCreateFactory (DWRITE_FACTORY_TYPE_SHARED, __uuidof (IDWriteFactory),
++                dWriteCreateFactory (DWRITE_FACTORY_TYPE_SHARED, __uuidof2 (IDWriteFactory),
+                                      (IUnknown**) directWriteFactory.resetAndGetPointerAddress());
+ 
+                 if (directWriteFactory != nullptr)
+diff --git a/pluginhost/JuceLibraryCode/modules/juce_gui_basics/juce_gui_basics.cpp b/pluginhost/JuceLibraryCode/modules/juce_gui_basics/juce_gui_basics.cpp
+index 50cafa82b..c094ea8e8 100644
+--- a/pluginhost/JuceLibraryCode/modules/juce_gui_basics/juce_gui_basics.cpp
++++ b/pluginhost/JuceLibraryCode/modules/juce_gui_basics/juce_gui_basics.cpp
+@@ -412,8 +412,8 @@ bool juce::isWindowOnCurrentVirtualDesktop (void* x)
+ 
+         class DECLSPEC_UUID("aa509086-5ca9-4c25-8f95-589d3c07b48a") juce_VirtualDesktopManager;
+ 
+-        if (SUCCEEDED (CoCreateInstance (__uuidof (juce_VirtualDesktopManager), nullptr, CLSCTX_ALL, IID_PPV_ARGS (&result))))
+-            return result;
++        //if (SUCCEEDED (CoCreateInstance (__uuidof2 (juce_VirtualDesktopManager), nullptr, CLSCTX_ALL, IID_PPV_ARGS (&result))))
++        //    return result;
+ 
+         JUCE_END_IGNORE_WARNINGS_GCC_LIKE
+ 
+diff --git a/pluginhost/JuceLibraryCode/modules/juce_gui_basics/native/accessibility/juce_win32_AccessibilityElement.cpp b/pluginhost/JuceLibraryCode/modules/juce_gui_basics/native/accessibility/juce_win32_AccessibilityElement.cpp
+index 1de454272..2ecf37d88 100644
+--- a/pluginhost/JuceLibraryCode/modules/juce_gui_basics/native/accessibility/juce_win32_AccessibilityElement.cpp
++++ b/pluginhost/JuceLibraryCode/modules/juce_gui_basics/native/accessibility/juce_win32_AccessibilityElement.cpp
+@@ -109,7 +109,7 @@ JUCE_COMRESULT AccessibilityNativeHandle::QueryInterface (REFIID refId, void** r
+     if (! isElementValid())
+         return (HRESULT) UIA_E_ELEMENTNOTAVAILABLE;
+ 
+-    if ((refId == __uuidof (IRawElementProviderFragmentRoot) && ! isFragmentRoot()))
++    if ((refId == __uuidof2 (IRawElementProviderFragmentRoot) && ! isFragmentRoot()))
+         return E_NOINTERFACE;
+ 
+     return ComBaseClassHelper::QueryInterface (refId, result);
+diff --git a/pluginhost/JuceLibraryCode/modules/juce_gui_basics/native/juce_win32_Windowing.cpp b/pluginhost/JuceLibraryCode/modules/juce_gui_basics/native/juce_win32_Windowing.cpp
+index ea0c256b2..d51e3615b 100644
+--- a/pluginhost/JuceLibraryCode/modules/juce_gui_basics/native/juce_win32_Windowing.cpp
++++ b/pluginhost/JuceLibraryCode/modules/juce_gui_basics/native/juce_win32_Windowing.cpp
+@@ -1389,7 +1389,7 @@ struct UWPUIViewSettings
+                 return;
+ 
+             JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wlanguage-extension-token")
+-            status = roGetActivationFactory (uwpClassId, __uuidof (IUIViewSettingsInterop),
++            status = roGetActivationFactory (uwpClassId, __uuidof2 (IUIViewSettingsInterop),
+                                              (void**) viewSettingsInterop.resetAndGetPointerAddress());
+             JUCE_END_IGNORE_WARNINGS_GCC_LIKE
+             deleteHString (uwpClassId);
+@@ -1411,7 +1411,7 @@ struct UWPUIViewSettings
+ 
+         JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wlanguage-extension-token")
+ 
+-        if (viewSettingsInterop->GetForWindow (hWnd, __uuidof (IUIViewSettings),
++        if (viewSettingsInterop->GetForWindow (hWnd, __uuidof2 (IUIViewSettings),
+                                                (void**) viewSettings.resetAndGetPointerAddress()) == S_OK
+              && viewSettings != nullptr)
+         {
+diff --git a/pluginhost/JuceLibraryCode/modules/juce_gui_extra/embedding/juce_ActiveXControlComponent.h b/pluginhost/JuceLibraryCode/modules/juce_gui_extra/embedding/juce_ActiveXControlComponent.h
+index 964b7b8b2..803aff172 100644
+--- a/pluginhost/JuceLibraryCode/modules/juce_gui_extra/embedding/juce_ActiveXControlComponent.h
++++ b/pluginhost/JuceLibraryCode/modules/juce_gui_extra/embedding/juce_ActiveXControlComponent.h
+@@ -59,7 +59,7 @@ public:
+         have included windows.h first, in which case IID wouldn't be defined.
+ 
+         e.g. @code
+-        const IID myIID = __uuidof (QTControl);
++        const IID myIID = __uuidof2 (QTControl);
+         myControlComp->createControl (&myIID);
+         @endcode
+     */
+@@ -82,7 +82,7 @@ public:
+         you should just pass a pointer to an IID.
+ 
+         e.g. @code
+-        const IID iid = __uuidof (IOleWindow);
++        const IID iid = __uuidof2 (IOleWindow);
+ 
+         IOleWindow* oleWindow = (IOleWindow*) myControlComp->queryInterface (&iid);
+ 
+diff --git a/pluginhost/JuceLibraryCode/modules/juce_gui_extra/native/juce_win32_ActiveXComponent.cpp b/pluginhost/JuceLibraryCode/modules/juce_gui_extra/native/juce_win32_ActiveXComponent.cpp
+index 54da2726f..be6420c7d 100644
+--- a/pluginhost/JuceLibraryCode/modules/juce_gui_extra/native/juce_win32_ActiveXComponent.cpp
++++ b/pluginhost/JuceLibraryCode/modules/juce_gui_extra/native/juce_win32_ActiveXComponent.cpp
+@@ -153,7 +153,7 @@ namespace ActiveXHelpers
+         {
+             JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wlanguage-extension-token")
+ 
+-            if (type == __uuidof (IOleInPlaceSite))
++            if (type == __uuidof2 (IOleInPlaceSite))
+             {
+                 inplaceSite->AddRef();
+                 *result = static_cast<IOleInPlaceSite*> (inplaceSite);
+@@ -191,7 +191,7 @@ namespace ActiveXHelpers
+         JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wlanguage-extension-token")
+ 
+         HWND hwnd = {};
+-        const IID iid = __uuidof (IOleWindow);
++        const IID iid = __uuidof2 (IOleWindow);
+ 
+         if (auto* window = (IOleWindow*) component->queryInterface (&iid))
+         {
+@@ -398,7 +398,7 @@ bool ActiveXControlComponent::createControl (const void* controlIID)
+ 
+         JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wlanguage-extension-token")
+ 
+-        HRESULT hr = OleCreate (*(const IID*) controlIID, __uuidof (IOleObject), 1 /*OLERENDER_DRAW*/, nullptr,
++        HRESULT hr = OleCreate (*(const IID*) controlIID, __uuidof2 (IOleObject), 1 /*OLERENDER_DRAW*/, nullptr,
+                                 newControl->clientSite, newControl->storage,
+                                 (void**) &(newControl->control));
+ 
+diff --git a/pluginhost/JuceLibraryCode/modules/juce_gui_extra/native/juce_win32_WebBrowserComponent.cpp b/pluginhost/JuceLibraryCode/modules/juce_gui_extra/native/juce_win32_WebBrowserComponent.cpp
+index 1f60aab38..39d26220d 100644
+--- a/pluginhost/JuceLibraryCode/modules/juce_gui_extra/native/juce_win32_WebBrowserComponent.cpp
++++ b/pluginhost/JuceLibraryCode/modules/juce_gui_extra/native/juce_win32_WebBrowserComponent.cpp
+@@ -84,17 +84,17 @@ public:
+     {
+         JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wlanguage-extension-token")
+ 
+-        auto webCLSID = __uuidof (WebBrowser);
++        auto webCLSID = __uuidof2 (WebBrowser);
+         createControl (&webCLSID);
+ 
+-        auto iidWebBrowser2              = __uuidof (IWebBrowser2);
+-        auto iidConnectionPointContainer = __uuidof (IConnectionPointContainer);
++        auto iidWebBrowser2              = __uuidof2 (IWebBrowser2);
++        auto iidConnectionPointContainer = __uuidof2 (IConnectionPointContainer);
+ 
+         browser = (IWebBrowser2*) queryInterface (&iidWebBrowser2);
+ 
+         if (auto connectionPointContainer = (IConnectionPointContainer*) queryInterface (&iidConnectionPointContainer))
+         {
+-            connectionPointContainer->FindConnectionPoint (__uuidof (DWebBrowserEvents2), &connectionPoint);
++            connectionPointContainer->FindConnectionPoint (__uuidof2 (DWebBrowserEvents2), &connectionPoint);
+ 
+             if (connectionPoint != nullptr)
+             {
+@@ -200,8 +200,8 @@ public:
+     {
+         JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wlanguage-extension-token")
+ 
+-        auto iidOleObject = __uuidof (IOleObject);
+-        auto iidOleWindow = __uuidof (IOleWindow);
++        auto iidOleObject = __uuidof2 (IOleObject);
++        auto iidOleWindow = __uuidof2 (IOleWindow);
+ 
+         if (auto oleObject = (IOleObject*) queryInterface (&iidOleObject))
+         {

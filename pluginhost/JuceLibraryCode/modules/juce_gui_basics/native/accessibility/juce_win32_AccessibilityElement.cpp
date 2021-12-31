@@ -109,7 +109,7 @@ JUCE_COMRESULT AccessibilityNativeHandle::QueryInterface (REFIID refId, void** r
     if (! isElementValid())
         return (HRESULT) UIA_E_ELEMENTNOTAVAILABLE;
 
-    if ((refId == __uuidof (IRawElementProviderFragmentRoot) && ! isFragmentRoot()))
+    if ((refId == __uuidof2 (IRawElementProviderFragmentRoot) && ! isFragmentRoot()))
         return E_NOINTERFACE;
 
     return ComBaseClassHelper::QueryInterface (refId, result);

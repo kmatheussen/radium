@@ -84,17 +84,17 @@ public:
     {
         JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wlanguage-extension-token")
 
-        auto webCLSID = __uuidof (WebBrowser);
+        auto webCLSID = __uuidof2 (WebBrowser);
         createControl (&webCLSID);
 
-        auto iidWebBrowser2              = __uuidof (IWebBrowser2);
-        auto iidConnectionPointContainer = __uuidof (IConnectionPointContainer);
+        auto iidWebBrowser2              = __uuidof2 (IWebBrowser2);
+        auto iidConnectionPointContainer = __uuidof2 (IConnectionPointContainer);
 
         browser = (IWebBrowser2*) queryInterface (&iidWebBrowser2);
 
         if (auto connectionPointContainer = (IConnectionPointContainer*) queryInterface (&iidConnectionPointContainer))
         {
-            connectionPointContainer->FindConnectionPoint (__uuidof (DWebBrowserEvents2), &connectionPoint);
+            connectionPointContainer->FindConnectionPoint (__uuidof2 (DWebBrowserEvents2), &connectionPoint);
 
             if (connectionPoint != nullptr)
             {
@@ -200,8 +200,8 @@ public:
     {
         JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wlanguage-extension-token")
 
-        auto iidOleObject = __uuidof (IOleObject);
-        auto iidOleWindow = __uuidof (IOleWindow);
+        auto iidOleObject = __uuidof2 (IOleObject);
+        auto iidOleWindow = __uuidof2 (IOleWindow);
 
         if (auto oleObject = (IOleObject*) queryInterface (&iidOleObject))
         {
