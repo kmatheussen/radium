@@ -24,12 +24,14 @@ namespace juce
 {
 
 #if JUCE_MINGW || (! (defined (_MSC_VER) || defined (__uuidof)))
+  /*
  #ifdef __uuidof
-  #undef __uuidof
+#undef __uuidof
  #endif
-
+  */
+  
  template <typename Type> struct UUIDGetter { static CLSID get() { jassertfalse; return {}; } };
- #define __uuidof(x)  UUIDGetter<x>::get()
+ #define __uuidof2(x)  UUIDGetter<x>::get()
 
  template <>
  struct UUIDGetter<::IUnknown>
@@ -120,7 +122,7 @@ public:
 
     HRESULT CoCreateInstance (REFCLSID classUUID, DWORD dwClsContext = CLSCTX_INPROC_SERVER)
     {
-        auto hr = ::CoCreateInstance (classUUID, nullptr, dwClsContext, __uuidof (ComClass), (void**) resetAndGetPointerAddress());
+        auto hr = ::CoCreateInstance (classUUID, nullptr, dwClsContext, __uuidof2 (ComClass), (void**) resetAndGetPointerAddress());
         jassert (hr != CO_E_NOTINITIALIZED); // You haven't called CoInitialize for the current thread!
         return hr;
     }
@@ -137,7 +139,7 @@ public:
     template <class OtherComClass>
     HRESULT QueryInterface (ComSmartPtr<OtherComClass>& destObject) const
     {
-        return this->QueryInterface (__uuidof (OtherComClass), destObject);
+        return this->QueryInterface (__uuidof2 (OtherComClass), destObject);
     }
 
     template <class OtherComClass>
@@ -175,7 +177,7 @@ protected:
 
     JUCE_COMRESULT QueryInterface (REFIID refId, void** result)
     {
-        if (refId == __uuidof (IUnknown))
+        if (refId == __uuidof2 (IUnknown))
             return castToType<First> (result);
 
         *result = nullptr;
@@ -207,7 +209,7 @@ public:
     {
         const std::tuple<IID, void*> bases[]
         {
-            std::make_tuple (__uuidof (ComClasses),
+            std::make_tuple (__uuidof2 (ComClasses),
                              static_cast<void*> (static_cast<ComClasses*> (this)))...
         };
 

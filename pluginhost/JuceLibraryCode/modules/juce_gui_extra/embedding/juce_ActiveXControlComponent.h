@@ -59,7 +59,7 @@ public:
         have included windows.h first, in which case IID wouldn't be defined.
 
         e.g. @code
-        const IID myIID = __uuidof (QTControl);
+        const IID myIID = __uuidof2 (QTControl);
         myControlComp->createControl (&myIID);
         @endcode
     */
@@ -82,7 +82,7 @@ public:
         you should just pass a pointer to an IID.
 
         e.g. @code
-        const IID iid = __uuidof (IOleWindow);
+        const IID iid = __uuidof2 (IOleWindow);
 
         IOleWindow* oleWindow = (IOleWindow*) myControlComp->queryInterface (&iid);
 

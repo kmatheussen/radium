@@ -1389,7 +1389,7 @@ struct UWPUIViewSettings
                 return;
 
             JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wlanguage-extension-token")
-            status = roGetActivationFactory (uwpClassId, __uuidof (IUIViewSettingsInterop),
+            status = roGetActivationFactory (uwpClassId, __uuidof2 (IUIViewSettingsInterop),
                                              (void**) viewSettingsInterop.resetAndGetPointerAddress());
             JUCE_END_IGNORE_WARNINGS_GCC_LIKE
             deleteHString (uwpClassId);
@@ -1411,7 +1411,7 @@ struct UWPUIViewSettings
 
         JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wlanguage-extension-token")
 
-        if (viewSettingsInterop->GetForWindow (hWnd, __uuidof (IUIViewSettings),
+        if (viewSettingsInterop->GetForWindow (hWnd, __uuidof2 (IUIViewSettings),
                                                (void**) viewSettings.resetAndGetPointerAddress()) == S_OK
              && viewSettings != nullptr)
         {

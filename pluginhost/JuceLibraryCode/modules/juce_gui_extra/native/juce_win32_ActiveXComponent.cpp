@@ -153,7 +153,7 @@ namespace ActiveXHelpers
         {
             JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wlanguage-extension-token")
 
-            if (type == __uuidof (IOleInPlaceSite))
+            if (type == __uuidof2 (IOleInPlaceSite))
             {
                 inplaceSite->AddRef();
                 *result = static_cast<IOleInPlaceSite*> (inplaceSite);
@@ -191,7 +191,7 @@ namespace ActiveXHelpers
         JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wlanguage-extension-token")
 
         HWND hwnd = {};
-        const IID iid = __uuidof (IOleWindow);
+        const IID iid = __uuidof2 (IOleWindow);
 
         if (auto* window = (IOleWindow*) component->queryInterface (&iid))
         {
@@ -398,7 +398,7 @@ bool ActiveXControlComponent::createControl (const void* controlIID)
 
         JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wlanguage-extension-token")
 
-        HRESULT hr = OleCreate (*(const IID*) controlIID, __uuidof (IOleObject), 1 /*OLERENDER_DRAW*/, nullptr,
+        HRESULT hr = OleCreate (*(const IID*) controlIID, __uuidof2 (IOleObject), 1 /*OLERENDER_DRAW*/, nullptr,
                                 newControl->clientSite, newControl->storage,
                                 (void**) &(newControl->control));
 
