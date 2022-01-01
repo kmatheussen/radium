@@ -1,0 +1,14 @@
+diff --git a/pluginhost/JuceLibraryCode/modules/juce_core/system/juce_PlatformDefs.h b/pluginhost/JuceLibraryCode/modules/juce_core/system/juce_PlatformDefs.h
+index 8da365521..f3d4f7729 100644
+--- a/pluginhost/JuceLibraryCode/modules/juce_core/system/juce_PlatformDefs.h
++++ b/pluginhost/JuceLibraryCode/modules/juce_core/system/juce_PlatformDefs.h
+@@ -149,7 +149,8 @@ namespace juce
+       It is only compiled in a debug build, (unless JUCE_LOG_ASSERTIONS is enabled for your build).
+       @see jassert
+   */
+-  #define jassertfalse                  JUCE_BLOCK_WITH_FORCED_SEMICOLON (JUCE_LOG_CURRENT_ASSERTION; if (juce::juce_isRunningUnderDebugger()) JUCE_BREAK_IN_DEBUGGER; JUCE_ANALYZER_NORETURN)
++#define jassertfalse JUCE_BLOCK_WITH_FORCED_SEMICOLON (JUCE_LOG_CURRENT_ASSERTION; abort();)
++//if (juce::juce_isRunningUnderDebugger()) JUCE_BREAK_IN_DEBUGGER; JUCE_ANALYZER_NORETURN)
+ 
+   //==============================================================================
+   /** Platform-independent assertion macro.
