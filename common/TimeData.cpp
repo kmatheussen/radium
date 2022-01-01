@@ -23,6 +23,9 @@ bool g_qtgui_has_stopped = false;
 #define CR_FORMATEVENT(a) "formt"
 */
 
+DEFINE_ATOMIC(bool, is_starting_up) = false;
+
+
 #if !defined(RELEASE)
 bool MIXER_is_saving(){
   return false;

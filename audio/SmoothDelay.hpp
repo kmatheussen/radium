@@ -222,7 +222,7 @@ public:
     R_ASSERT_NON_RELEASE(input!=output);
     R_ASSERT_NON_RELEASE(RT_is_finished_filling_buffer());
 
-#if TEST_SMOOTHDELAY
+#if BENCHMARK_SMOOTHDELAY
     double time = TIME_get_ms();
 #endif
 
@@ -255,7 +255,7 @@ public:
 
     }
 
-#if TEST_SMOOTHDELAY
+#if BENCHMARK_SMOOTHDELAY
     g_benchmark_time += TIME_get_ms()-time;
 #endif
   }
@@ -793,7 +793,14 @@ static void SMOOTHDELAY_test(void){
     }
   }
 
-  printf("\nTotal duration: %f. RT_fade duration: %f. RT_process_overwrite duration: %f\n",(TIME_get_ms()-time) / 1000.0, g_fade_benchmark_time/1000.0, g_benchmark_time/1000.0);
+  printf("\nTotal duration: %f. RT_fade duration: %f. RT_process_overwrite duration: %f\n",(TIME_get_ms()-time) / 1000.0,
+#if BENCHMARK_SMOOTHDELAY
+         g_fade_benchmark_time/1000.0, g_benchmark_time/1000.0
+#else
+    -1.0,-1.0
+#endif
+         );
+  
 }
 #endif
 
