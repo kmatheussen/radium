@@ -1,3 +1,98 @@
+* Linux: Removed libglib-2.0.so from the Linux
+  binaries since it sometimes caused 3rd party
+  plugins to fail loading. (Caused by conflicting
+  libraries)
+* Linux: Update included system library files.
+* GUI: Fix making Shift + Right mouse button reset
+  mute and solo in the sequencer.
+* Plugin scanner: Fix displaying error messages on
+  Linux and Windows.
+* JUCE: Update JUCE to 6.1.4. This might fix various
+  issues with VST3 on Linux and other things.
+* Plugins: Fix crash when selecting the "Set ..."
+  option in the effect popup menus.
+* GUI: Lots of high DPI fixes. The whole program
+  should look descent on high DPI screens now.
+* Audio preferences window: Support high DPI
+  screens. (Probably not working on macOS though...)
+* Plugins: Support high DPI screens for the GUI for
+  plugins. (Probably not working on macOS though...)
+* Keyboard: Workaround to fix space and return keys
+  not always working (especially on newer and faster
+  computers).
+* Startup: Fix custom python code added in the
+  keybinding configuration file sometimes not working
+  (especially on newer and faster computer).
+* Demo songs: Fix sweeping filter automation in the
+  main demo song.
+* GUI: Lots of mouse handling improvements.
+* GUI: Make the "ZL1" key (i.e. the key one step to
+  the left of "Z" on a QWERTY keyboard) behave the
+  same way as pressing Shift + Right mouse button.
+* GUI: Make the mouse "Back button" (for mice having
+  this button) behave the same way as pressing Shift
+  + Right mouse button.
+* Menus: If a function has more than one shortcut,
+  display the shortest of those shortcuts in popup
+  menus.
+* GUI: Improve various popup menus.
+* Instruments: Don't create a new undo entry when
+  resetting an effect and the effect already had the
+  default value.
+* Linux: Fix scheme listener not always starting
+  unless running on Ubuntu 18.
+* Preferences/Audio: Add option to not use JACK even
+  when JACK is running.
+* Audio: Fix possible problems when initializing JUCE
+  audio.
+* Playlist: Don't show error message if pressing the
+  delete key in an empty playlist.
+* Editor: Make it possible to assign keybindings to
+  the "New Sample Player" and "New MIDI Instrument"
+  options in track header menu.
+* LADSPA/Windows: Another attempt at preventing
+  windows from scanning the included ladspa plugins
+  during startup. It doesn't seem to always work
+  though. The built-in virus scanner in Windows seems
+  to be extremely aggressive. The LADSPA files are
+  never opened or read during initialization.
+* Demo song: Fix low pass filter automation.
+* Editor: In the pianoroll header, fix "A" button not
+  always behaving quite correctly. 
+* Audio: New song properties option for muting output
+  of the 5 system buses when a plugin is bypassed. By
+  default this option is ON for new songs and OFF for
+  old songs (to keep kompatibility).
+* Manual: Add recipe to the Mixer FAQ on how to
+  create a sidechain compressor.
+* Manual: Add how to set volume higher than 6db in
+  the mixer FAQ.
+* Editor: In the "(click me)" menu, display currently
+  used audio instruments before currently used MIDI
+  instruments.
+* Edit: Also expand/shrink end pitch value when
+  expanding/shrinking pitch.
+* Edit: Fix expand/shrink pitch. Last release wrongly
+  assumed end pitch always had a legal value.
+* Plugin Info box: Inform when a mono LADSPA plugin
+  has been automatically transformed into a stereo
+  plugin.
+* API:
+  * New: setMuteSystemBusesWhenBypassed,
+    muteSystemBusesWhenBypassed, setPianorollRange,
+    simulateDeleteMouseButton,
+    gui_rerunLastMouseEvent,
+    hasEventConnectionUnderMouse,
+    hasAudioConnectionUnderMouse,
+    getEventConnectionUnderMouseSourceInstrument,
+    getEventConnectionUnderMouseDestInstrument,
+    getAudioConnectionUnderMouseSourceInstrument,
+    getAudioConnectionUnderMouseDestInstrument,
+    gui_getGfxScale.
+  * minimizeBlockTracks: Optional argument "force".
+
+
+
 Changes 6.9.94 -> 6.9.96:
 * Editor: Make pitch expand/shrink also work on pitch
   changes, not just on the main pitch of notes.
