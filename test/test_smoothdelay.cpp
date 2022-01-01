@@ -16,6 +16,9 @@
 
 #include "../audio/SmoothDelay.hpp"
 
+DEFINE_ATOMIC(bool, is_starting_up) = false;
+
+
 static double get_ms(void){
   struct timeval now;
 

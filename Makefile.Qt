@@ -811,7 +811,8 @@ test_audiobuffer:
 
 test_smoothdelay:
 	$(CCC) -g -Wall -Werror test/test_smoothdelay.cpp $(QTOPT) -UNDEBUG $(ADDRESS_SANITIZE_OPTS) -fsanitize=undefined -fPIC -DFOR_LINUX
-	$(CCC) test_smoothdelay.o $(QT_LDFLAGS) $(QTLINKFLAGS) $(OS_LDFLAGS2) -lm $(ADDRESS_SANITIZE_OPTS) -fsanitize=undefined -o test_smoothdelay
+	$(CCC) -g -Wall -Werror audio/Fade.cpp $(CPPOPT) -UNDEBUG -fPIC -DFOR_LINUX -O3  -ffast-math
+	$(CCC) test_smoothdelay.o Fade.o $(QT_LDFLAGS) $(QTLINKFLAGS) $(OS_LDFLAGS2) -lm $(ADDRESS_SANITIZE_OPTS) -fsanitize=undefined -o test_smoothdelay
 	LSAN_OPTIONS=detect_leaks=0 gdb -ex='set confirm on' -ex=run -ex=quit ./test_smoothdelay
 	@echo "=== success: test_smoothdelay ==="
 	@rm test_smoothdelay

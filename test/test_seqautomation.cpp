@@ -6,6 +6,7 @@
 
 struct Root *root = NULL;
 
+DEFINE_ATOMIC(bool, is_starting_up) = false;
 
 // BUILDTYPE=DEBUG ./build_linux.sh test
 

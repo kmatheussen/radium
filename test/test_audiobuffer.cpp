@@ -4,6 +4,8 @@
 #define TEST_AUDIOBUFFER 1
 #include "../audio/AudioBuffer.cpp"
 
+DEFINE_ATOMIC(bool, is_starting_up) = false;
+
 bool PLAYER_current_thread_has_lock(void){
   return false;
 }
