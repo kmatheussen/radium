@@ -193,8 +193,13 @@ bool g_program_has_ended = false;
 #if defined(RADIUM_USES_ASAN)
 
 #include "sanitizer/asan_interface.h"
-#include "sanitizer/allocator_interface.h"
 
+#if 1 // Change to 0 in case allocator_interface.h is not available.
+  #include "sanitizer/allocator_interface.h"
+#else
+  extern "C" void __sanitizer_malloc_hook(const volatile void *ptr, size_t size);
+  extern "C" void __sanitizer_free_hook(const volatile void *ptr);
+#endif
 
 static void handle_RT_malloc_free_error(bool is_alloc, const char *message, bool force_abort = false){
   static __thread int s_num_visitors = 0;
