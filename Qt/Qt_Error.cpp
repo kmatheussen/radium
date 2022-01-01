@@ -55,6 +55,9 @@ extern "C"{
   }
 }
 
+static inline QSizePolicy::Policy get_grow_policy_from_bool(bool grow){
+  return grow ? QSizePolicy::MinimumExpanding : QSizePolicy::Fixed;
+}
 
 static int show_message(QString message, const QVector<QString> &menu_strings){
 
@@ -66,10 +69,20 @@ static int show_message(QString message, const QVector<QString> &menu_strings){
   QVector<QPushButton*> buttons;
   for(QString menu_string : menu_strings){
     QPushButton *button = msgBox->addButton(menu_string, QMessageBox::AcceptRole);
+    button->setStyleSheet( "QPushButton {padding: 5px;}" );
     buttons.push_back(button);
   }
 
   msgBox->show();
+
+  msgBox->layout()->setSizeConstraint(QLayout::SetMinimumSize);
+
+  
+  QSizePolicy policy = QSizePolicy(get_grow_policy_from_bool(true),
+                                   get_grow_policy_from_bool(true));
+
+  msgBox->setSizePolicy(policy);
+  
   adjustSizeAndMoveWindowToCentre(msgBox);
   msgBox->raise();
   msgBox->activateWindow();
@@ -164,6 +177,9 @@ int main(int argc, char **argv){
   for(int i=2 ; i<argc;i++)
     menu_strings.push_back(QByteArray::fromBase64(argv[i]));
 
+  //QCoreApplication::setAttribute(Qt::AA_Use96Dpi);
+  QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+  
   argv = getQApplicationConstructorArgs(argc, argv);
   QApplication app(argc, argv);
 
