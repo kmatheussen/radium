@@ -1,4 +1,4 @@
-Changes 6.9.94 -> 6.9.96:
+Changes 6.9.96 -> 6.9.97:
 * Linux: Removed libglib-2.0.so from the Linux
   binaries since it sometimes caused 3rd party
   plugins to fail loading. (Caused by conflicting
@@ -59,7 +59,7 @@ Changes 6.9.94 -> 6.9.96:
   never opened or read during initialization.
 * Demo song: Fix low pass filter automation.
 * Editor: In the pianoroll header, fix "A" button not
-  always behaving quite correctly. 
+  always behaving quite correctly.
 * Audio: New song properties option for muting output
   of the 5 system buses when a plugin is bypassed. By
   default this option is ON for new songs and OFF for
