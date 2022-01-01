@@ -11,7 +11,8 @@
 (define-constant *is-leaving* 4)  ;; API_MOUSE_LEAVING (mouse has left the qt widget)
 (define-constant *is-entering* 5)  ;; API_MOUSE_ENTERING (mouse has entered the qt widget)
 
-(define-constant *shift-right-mouse* "Shift + Right Mouse")
+(define-constant *shift-right-mouse* ra:simulate-delete-mouse-button)
+;;(define-constant *shift-right-mouse* "Shift + Right Mouse")
 
 
 (define (select-button? Button)

@@ -7078,7 +7078,11 @@
                     (not (<ra> :is-seqblock-selected seqblocknum seqtracknum)))
                (<ra> :select-seqblock #t seqblocknum seqtracknum))
            (<ra> :cut-selected-seqblocks)))
-   
+
+   (list "Delete"
+         :enabled (> num-selected-with-current 0)
+         ra:simulate-delete-mouse-button)
+         
    (list "Delete all selected"
          :enabled (> num-selected-with-current 1)
          :shortcut ra:delete-selected-seqblocks

@@ -217,7 +217,16 @@
                                                                                            (lambda ()
                                                                                              (<ra> :set-editor-seqtrack-muted #f seqtracknum)))))
                                                                           (else
-                                                                           (assert #f))))))
+                                                                           (assert #f))))
+                                    :delete-clicked-callback (lambda ()
+                                                               (if (or (eq? type 'solo)
+                                                                       (eq? type 'mute))
+                                                                   (<ra> :reset-instrument-effect
+                                                                         instrument-id
+                                                                         (if (eq? type 'solo)
+                                                                             "System Solo On/Off"
+                                                                             "System Volume On/Off"))))
+                                    ))
 
                  (if (eq? type 'height)
                      (box :override-method! :mouse-wheel-moved
@@ -536,7 +545,7 @@
             'eat-mouse-cycle)
            ((= button *right-button*)
             (popup-menu "Reset"
-                        :shortcut ra:general-delete
+                        :shortcut ra:simulate-delete-mouse-button
                         reset-seqtrack-note-gain!)
             'eat-mouse-cycle)
            ((= button *left-button*)
