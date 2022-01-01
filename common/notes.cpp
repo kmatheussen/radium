@@ -57,6 +57,11 @@ static int FindFirstFreePolyphony_num(const std::vector<Ratio> &end_places, cons
 }
 
 // Also sets the track->polyphony attribute.
+//
+// TODO: This function should always be called after changing a note (and not before we actually need note->polyphony_num or track->polyphony.
+// When called othervice, it should give an assertion hit if we need to change any of these two attributes.
+// FIX after changing notes to TimeData (probably much easier to do it then, for instance by adding a TimeData::writer_hook that calls this function.)
+//
 void SetNotePolyphonyAttributes(struct Tracks *track){
   R_ASSERT_RETURN_IF_FALSE(track!=NULL);
   R_ASSERT(THREADING_is_main_thread()); // This function is not thread safe.

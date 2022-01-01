@@ -1943,6 +1943,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                         
    (list "Reset"
          :enabled effect-name
+         :shortcut ra:simulate-delete-mouse-button
          (lambda ()
            (<ra> :reset-instrument-effect instrument-id effect-name)))
          

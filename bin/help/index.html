@@ -417,8 +417,16 @@ const gui_mouse_text = `
         </UL>
       <LI> <b>Delete</b> object under mouse:
         <UL>
-          <LI>Press <b>Shift</b> and click <b>Right mouse button</b>.<br>
-            <small>This works for automation node, sound object, plugin, track, block, note, etc.</small>
+          <LI>Either:
+            <OL>
+              <LI>Press <b>Shift</b> and click <b>Right mouse button</b> at the same time.<br>
+              <LI>Or, press <b>ZL1</b> (the key one step to the left of Z on a <a onclick="showHide('qwerty10')" href="#!">QWERTY</A> keyboard).<br>
+                <div id="qwerty10" style="display: none">
+                  <img src="900px-KB_Danish.svg.png" style="background-color:white;"/>
+                </div>
+                <small>(Note: <b>ZL1</b> can easily be reassigned by right-clicking a popup menu entry that has <b>ZL1</b> assigned to it.)</small><br>
+            </OL>
+            <small>This works for automation nodes, sound objects, plugins, tracks, blocks, seqblocks, notes, etc. It also works to reset instrument effects.</small>
         </UL>
       <LI> <b>Select/unselect</b> something:
         <UL>

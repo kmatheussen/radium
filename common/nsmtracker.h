@@ -467,6 +467,14 @@ extern LANGSPEC void msleep(int ms);
 
 
 #include "atomic.h"
+
+
+// These two variables contains the same value, but g_is_starting_up can only be accessed from the main thread.
+extern DEFINE_ATOMIC(bool, is_starting_up);
+extern bool g_is_starting_up;
+
+
+
 #include "debug_proc.h"
 #include "threading.h"
 #include "OS_Player_proc.h"
@@ -478,6 +486,7 @@ extern LANGSPEC void msleep(int ms);
 #include "keyboard_focus_proc.h"
 
 #include "validatemem_proc.h"
+
 
 static inline int bool_to_int(bool val){
   return val==true ? 1 : 0;
@@ -3973,9 +3982,6 @@ static inline float get_min_node_size(void) {
 }
 
 
-// these two contains the same value, but g_is_starting_up can only be accessed from the main thread.
-extern DEFINE_ATOMIC(bool, is_starting_up);
-extern bool g_is_starting_up;
 extern bool g_is_replacing_main_pipe;
 
 extern bool g_mouse_is_pressed; // Should work for all widgets. If true, we can assume that we are inside a mouse cycle.
