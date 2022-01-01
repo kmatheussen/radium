@@ -938,7 +938,7 @@
               
               (and effect-name
                    (list (<-> "Delete plugin \"" (<ra> :get-instrument-name instrument-id) "\"")
-                         :shortcut ra:general-delete
+                         :shortcut ra:simulate-delete-mouse-button
                          (lambda ()
                            (delete-func))))
                    ;;(delete-instrument-plugin parent-instrument-id instrument-id))))
@@ -959,7 +959,7 @@
                    (list (<-> "------------") ;;Send \"" (<ra> :get-instrument-name instrument-id) "\"")
                          (list (<-> "Delete send \"" (<ra> :get-instrument-name instrument-id) "\"")
                                :enabled (and is-send? delete-func)
-                               :shortcut ra:general-delete
+                               :shortcut ra:simulate-delete-mouse-button
                                (lambda ()
                                  (delete-func)))
                          (list (<-> "Replace send \"" (<ra> :get-instrument-name instrument-id) "\"")
