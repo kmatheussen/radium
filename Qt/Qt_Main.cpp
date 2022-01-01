@@ -193,21 +193,33 @@ bool g_program_has_ended = false;
 #if defined(RADIUM_USES_ASAN)
 
 #include "sanitizer/asan_interface.h"
+#include "sanitizer/allocator_interface.h"
+
 
 static void handle_RT_malloc_free_error(bool is_alloc, const char *message, bool force_abort = false){
-  printf("\n\n\n==========================================================\n"
-         "  %s: %s.\n"
-         "==============================================================\n\n\n",
-         is_alloc ? "__sanitizer_malloc_hook" : "__sanitizer_free_hook",
-         message);
+  static __thread int s_num_visitors = 0;
 
-  if (force_abort) {
-    abort();
-  } else {
-    //abort();
-    //printf("   (press return)\n");
-    //getchar();
+  s_num_visitors++;
+
+  if (s_num_visitors==1){ // If not, we end up in an endless recursive loop.
+    
+    printf("\n\n\n==========================================================\n"
+           "  %s: %s.\n"
+           "==============================================================\n\n\n",
+           is_alloc ? "__sanitizer_malloc_hook" : "__sanitizer_free_hook",
+           message);
+    
+    if (force_abort) {
+      //abort();
+    } else {
+      //abort();
+      //printf("   (press return)\n");
+      //getchar();
+    }
+    
   }
+  
+  s_num_visitors--;
 }
 
 
@@ -2359,6 +2371,7 @@ namespace{
     {
       register_modal_qwidget(this);
       setFocusPolicy( Qt::NoFocus );
+      layout()->setSizeConstraint(QLayout::SetMinimumSize); 
     }
     
     void keyPressEvent(QKeyEvent * event) override {
@@ -2403,6 +2416,9 @@ protected:
     rt_msgBox_ok = (QAbstractButton*)rt_msgBox->addButton("Ok",QMessageBox::AcceptRole);
     rt_msgBox->open();
     rt_msgBox->hide();
+
+    rt_msgBox->adjustSize();
+    rt_msgBox->updateGeometry();
   }
 
   void calledFromTimer(void) override {
@@ -2500,6 +2516,9 @@ protected:
 
         safeShow(rt_msgBox);
         //getchar();
+
+        rt_msgBox->adjustSize();
+        rt_msgBox->updateGeometry();
                                         
 #if 0 //def FOR_WINDOWS
         HWND wnd=(HWND)rt_msgBox->winId();
