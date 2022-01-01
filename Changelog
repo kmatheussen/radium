@@ -1,3 +1,4 @@
+Changes 6.9.94 -> 6.9.96:
 * Linux: Removed libglib-2.0.so from the Linux
   binaries since it sometimes caused 3rd party
   plugins to fail loading. (Caused by conflicting
