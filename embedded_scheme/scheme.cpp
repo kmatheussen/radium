@@ -2540,7 +2540,21 @@ bool SCHEME_mousepress(int button, float x, float y){
   // [1] Not storing/reusing this value since 'find_scheme_value' is probably ligthing fast anyway, plus that it'll be possible to redefine radium-mouse-press from scheme this way.
 }
 
-bool SCHEME_mousemove_rerun(int button, float x, float y){
+#include "../common/wtracks_proc.h"
+
+bool SCHEME_mousemove_rerun(int button, float x, float y){    
+
+  R_ASSERT_NON_RELEASE(Undo_Is_Currently_Undoing());
+
+  if (root!=NULL && root->song!=NULL && root->song->tracker_windows!=NULL){    
+    struct Tracker_Windows *window = root->song->tracker_windows;
+
+    if (window->wblock!=NULL){
+      ITERATE_VISIBLE_WTRACKS(window->wblock)
+        SetNotePolyphonyAttributes(wtrack->track);    // TODO/FIX: Remove this line when SetNotePolyphonyAttributes is called in a writer-hook instead of GL_create.
+    }
+  }
+
   return S7CALL2(bool_int_float_float,"radium-mouse-move", // [1]
                  button,x,y);
   
@@ -2562,7 +2576,10 @@ bool SCHEME_mousemove(int button, float x, float y){
 
   API_register_last_mouse_move_event(-1, x, y, NULL, true);
 
-  return SCHEME_mousemove_rerun(button, x, y);
+  return S7CALL2(bool_int_float_float,"radium-mouse-move", // [1]
+                 button,x,y);
+  
+  // [1] Not storing/reusing this value since 'find_scheme_value' is probably ligthing fast anyway, plus that it'll be possible to redefine radium-mouse-press from scheme this way.
 }
 
 bool SCHEME_mouserelease(int button, float x, float y){

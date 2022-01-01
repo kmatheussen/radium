@@ -1684,7 +1684,10 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
   if (!wtrack->centtext_on && wtrack->notesonoff==1 && !equal_doubles(cents_d, 0.0)) {
     if (wtrack->chancetext_on || wtrack->veltext_on || wtrack->fxtext_on){
       //printf("     %d: cents_d: %f\n",wtrack->l.num, cents_d);
+
+      // FIX: after changing notes to TimeData, this should be done in a writer-hook, not here.
       wtrack->centtext_on = true;
+      
       GFX_ScheduleCalculateCoordinates();
     }
   }
@@ -1718,7 +1721,7 @@ static float next_line_y1(const struct Tracker_Windows *window, float y){
     return ret;
 }
 
-static void create_pitches(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note, const struct NodeLine2 *nodelines){
+static void create_pitches(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note, const struct NodeLine2 *nodelines){
 
   //printf("\nPainting nodeline:\n");
   
@@ -2527,7 +2530,7 @@ static void create_velocities_gradient_background(
 }
 
 
-static void create_track_velocities(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct Notes *note, const struct NodeLine2 *pitch_nodelines, const r::PitchTimeData::Reader &reader, const float track_pitch_min, const float track_pitch_max) {
+static void create_track_velocities(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note, const struct NodeLine2 *pitch_nodelines, const r::PitchTimeData::Reader &reader, const float track_pitch_min, const float track_pitch_max) {
 
   //printf("Note: %s, pointer: %p, subtrack: %d\n",NotesTexts3[(int)note->note],note,note->subtrack);
   subtrack_x1 = GetNoteX1(wtrack,note);
@@ -2619,7 +2622,7 @@ static void create_track_velocities(const struct Tracker_Windows *window, const 
 }
 
 
-static void create_track_fxs(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack, const struct FXs *fxs){
+static void create_track_fxs(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct FXs *fxs){
   const struct NodeLine2 *nodelines = GetFxNodeLines(window, wblock, wtrack, fxs);
 
   bool is_current = wblock->mouse_track==wtrack->l.num && wblock->mouse_fxs==fxs;
@@ -2804,6 +2807,7 @@ static void create_track_fxtext(const struct Tracker_Windows *window, const stru
 static void create_track(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack){
   create_track_borders(window, wblock, wtrack);
 
+  // FIX: after changing notes to TimeData, SetNotePolyphonyAttributes should only assert that everything is already done.
   SetNotePolyphonyAttributes(wtrack->track);
   
   float track_pitch_min, track_pitch_max;

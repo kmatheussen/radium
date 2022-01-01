@@ -724,9 +724,6 @@ static void undo_internal(void){
 	if(undo==&UndoRoot) return;
 
         
-currently_undoing = true;
-
-
         struct Patch *current_patch = NULL;
 
         EVENTLOG_add_event("     Undoing Start");
@@ -878,14 +875,18 @@ currently_undoing = true;
          
        }
        
-currently_undoing = false;
-
  update_gfx();
 }
 
 void Undo(void){
+  currently_undoing = true;
+
   undo_internal();
   gui_rerunLastMouseEvent();
+
+  currently_undoing = false;
+
+  
   API_call_me_right_after_undoing_or_redoing();
 }
 
