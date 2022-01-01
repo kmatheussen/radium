@@ -49,7 +49,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 
 #if __tune_corei7__
-#error "Compiled with -mtune=native or -mtune=corei7"
+#  if !defined(MARCH_NATIVE_ALLOWED)
+#    error "Compiled with -mtune=native or -mtune=corei7"
+#  endif
 #endif
 
 #if !defined(RELEASE) && !defined(FOR_WINDOWS)
