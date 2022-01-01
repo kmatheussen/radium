@@ -57,7 +57,7 @@ static void show_alert(juce::String message){
   
   fprintf(stderr,"   A1\n");
   
-  juce::initialiseJuce_GUI();
+  //juce::initialiseJuce_GUI();
   fprintf(stderr,"   A1.5\n");
   juce::Desktop::getInstance();
   fprintf(stderr,"   A2\n");
@@ -184,7 +184,7 @@ static void testmidi(void){
   fflush(stdout);
   fflush(stderr);
 
-  juce::initialiseJuce_GUI();
+  //juce::initialiseJuce_GUI();
       
   auto *midi_input_callback = new MyMidiInputCallback();
 
@@ -232,13 +232,13 @@ int main(int argc, char **argv){
   char filename_data[1024] = {0};
   */
 
+  juce::ScopedJuceInitialiser_GUI juce_gui;
+
 #if 0
   
   testmidi();
   
 #else
-
-  juce::initialiseJuce_GUI();
 
   juce::MemoryOutputStream a(1024);
   juce::MemoryOutputStream b(1024);
