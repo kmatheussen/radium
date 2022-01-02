@@ -245,44 +245,44 @@ static void draw_skewed_box_doit(const struct Tracker_Windows *window,
                                  )
 {
  
-  float minnodesize = get_min_node_size();
+  float minnodesize = R_MAX(1, get_min_node_size() - 1);
   float x1 = x-minnodesize;
   float x2 = x+minnodesize;
   float y1 = y-minnodesize;
   float y2 = y+minnodesize;
-  const float width = get_thickness(1.2);
+  const float width = get_thickness(1.2*g_gfx_scale);
 
   GE_Conf conf(Z_ABOVE(Z_ZERO), y, use_scissors);
 
   if (is_current_node) {
     GE_filledBox(GE_mix_alpha_z(GE_get_rgb(color), White_rgb(), 300, 0.3, conf),
                  x1,y1,
-                 x2-1,y2
+                 x2-g_gfx_scale,y2-2*g_gfx_scale
                  );
   }
 
   // vertical left
-  GE_line(GE_mix_alpha_z(GE_get_rgb(color), White_rgb(), 100, 0.3, conf.copy(y1+1)),
-          x1+1, y1+1,
-          x1+2,y2-1,
+  GE_line(GE_mix_alpha_z(GE_get_rgb(color), White_rgb(), 100, 0.3, conf.copy(y1+g_gfx_scale)),
+          x1+g_gfx_scale, y1+g_gfx_scale,
+          x1+2*g_gfx_scale,y2-g_gfx_scale,
           width);
 
   // horizontal bottom
-  GE_line(GE_mix_alpha_z(GE_get_rgb(color), Black_rgb(), 300, 0.3, conf.copy(y2-1)),
-          x1+2,y2-1,
-          x2-1,y2-2,
+  GE_line(GE_mix_alpha_z(GE_get_rgb(color), Black_rgb(), 300, 0.3, conf.copy(y2-g_gfx_scale)),
+          x1+2*g_gfx_scale,y2-g_gfx_scale,
+          x2-g_gfx_scale,y2-2*g_gfx_scale,
           width);
 
   // vertical right
-  GE_line(GE_mix_alpha_z(GE_get_rgb(color), Black_rgb(), 400, 0.3, conf.copy(y1+2)),
-          x2-1,y2-2,
-          x2-2,y1+2,
+  GE_line(GE_mix_alpha_z(GE_get_rgb(color), Black_rgb(), 400, 0.3, conf.copy(y1+2*g_gfx_scale)),
+          x2-g_gfx_scale,y2-2*g_gfx_scale,
+          x2-2*g_gfx_scale,y1+2*g_gfx_scale,
           width);
 
   // horizontal top
-  GE_line(GE_mix_alpha_z(GE_get_rgb(color), White_rgb(), 300, 0.3, conf.copy(y1+1)),
-          x2-2,y1+2,
-          x1+1,y1+1,
+  GE_line(GE_mix_alpha_z(GE_get_rgb(color), White_rgb(), 300, 0.3, conf.copy(y1+g_gfx_scale)),
+          x2-2*g_gfx_scale,y1+2*g_gfx_scale,
+          x1+g_gfx_scale,y1+g_gfx_scale,
           width);
 }
 

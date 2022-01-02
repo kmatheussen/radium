@@ -202,7 +202,7 @@ struct SeqAutomationPainter : AutomationPainter{
   }
 
   void paint_node(QPainter *p, float x, float y, int nodenum, QColor color) const {
-    static float penwidth_d2 = 1.2;
+    static float penwidth_d2 = 1.2*g_gfx_scale;
     
     static QPen pen1,pen2,pen3,pen4;
     static QBrush fill_brush;
@@ -230,7 +230,7 @@ struct SeqAutomationPainter : AutomationPainter{
       has_inited=true;
     }
 
-    float minnodesize = get_min_node_size() - 1;
+    float minnodesize = R_MAX(1, get_min_node_size() - 1);
 
     //printf("penwidth: %f\n", penwidth);
     
@@ -239,42 +239,46 @@ struct SeqAutomationPainter : AutomationPainter{
     float y1 = y-minnodesize+penwidth_d2;
     float y2 = y+minnodesize-penwidth_d2;
 
+    float d1 = g_gfx_scale;
+    float d2 = 2*d1;
+    
     if (nodenum == _curr_nodenum) {
       p->setBrush(fill_brush);
       p->setPen(Qt::NoPen);
-      QRectF rect(x1,y1,x2-x1-1,y2-y1);
+      QRectF rect(x1+d1,y1+d1,
+                  x2-x1-d1-d2,y2-y1-d1-d2);
       p->drawRect(rect);
     }
     
     // vertical left
     {
       p->setPen(pen1);
-      QLineF line(x1+1, y1+1,
-                  x1+2,y2-1);
+      QLineF line(x1+d1, y1+d1,
+                  x1+d2, y2-d1);
       p->drawLine(line);
     }
     
     // horizontal bottom
     {
       p->setPen(pen2);
-      QLineF line(x1+2,y2-1,
-                  x2-1,y2-2);
+      QLineF line(x1+d2,y2-d1,
+                  x2-d1,y2-d2);
       p->drawLine(line);
     }
     
     // vertical right
     {
       p->setPen(pen3);
-      QLineF line(x2-1,y2-2,
-                  x2-2,y1+2);
+      QLineF line(x2-d1,y2-d2,
+                  x2-d2,y1+d2);
       p->drawLine(line);
     }
     
     // horizontal top
     {
       p->setPen(pen4);
-      QLineF line(x2-2,y1+2,
-                  x1+1,y1+1);
+      QLineF line(x2-d2,y1+d2,
+                  x1+d1,y1+d1);
       p->drawLine(line);
     }
   }
