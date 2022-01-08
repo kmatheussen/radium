@@ -890,42 +890,36 @@ $(RADIUM_BIN): $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-1.1.6/src/.libs/libflu
 bin/radium_plugin_scanner: $(PLUGINHOSTSCANNERLIB)
 	$(LINKER) $(PLUGINHOSTSCANNERLIB) -o bin/radium_plugin_scanner $(OS_JUCE_LDFLAGS) $(RADIUM_BFD_LDFLAGS) `$(PKG) --libs freetype2`
 
+ifeq ($(BUILD_DEBUG), YES)
+
+PLUGINHOSTOPTS = CONFIG=Debug
+LIBPLUGIN_SCANNER_OPTS = CONFIG=Debug
+
+else
+
+PLUGINHOSTOPTS = CONFIG=Release
+LIBPLUGIN_SCANNER_OPTS = CONFIG=Release
+
+endif
+
+
 # Adding "TARGET_ARCH=-g" to prevent juce from compiling with -march=native
-PLUGINHOSTOPTS = CXX="$(CCC) -DCOMPILING_JUCE_PLUGINS_O=1 -DDEBUG_ALLOWED -DJUCE_ALSA_MIDI_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_INPUT_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_OUTPUT_NAME=\\\"Radium\\\"" TARGET_ARCH="-g -fno-strict-aliasing"
+PLUGINHOSTOPTS += CXX="$(CCC) -DCOMPILING_JUCE_PLUGINS_O=1 -DDEBUG_ALLOWED -DJUCE_ALSA_MIDI_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_INPUT_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_OUTPUT_NAME=\\\"Radium\\\"" TARGET_ARCH="-g -fno-strict-aliasing"
 
-LIBPLUGIN_SCANNER_OPTS = CXX="$(CCC) -DCOMPILING_RADIUM_PLUGIN_SCANNER=1 -DDEBUG_ALLOWED -DJUCE_ALSA_MIDI_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_INPUT_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_OUTPUT_NAME=\\\"Radium\\\" " TARGET_ARCH="-g -fno-strict-aliasing" TARGET="libMyPluginHost_for_scanner.a"
-
+LIBPLUGIN_SCANNER_OPTS += CXX="$(CCC) -DCOMPILING_RADIUM_PLUGIN_SCANNER=1 -DDEBUG_ALLOWED -DJUCE_ALSA_MIDI_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_INPUT_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_OUTPUT_NAME=\\\"Radium\\\" " TARGET_ARCH="-g -fno-strict-aliasing" TARGET="libMyPluginHost_for_scanner.a"
 
 pluginhost/Builds/Linux/build/libMyPluginHost.a: pluginhost/Builds/Linux/build/libMyPluginHost_for_scanner.a audio/Juce_plugins.cpp midi/midi_juce.cpp flagopts.opt pluginhost/MyPluginHost.jucer common/Vector.hpp audio/Smooth.cpp audio/Smooth_proc.h audio/JuceAudioDevice.cpp
 	rm -f pluginhost/Builds/Linux/build/*/*/Juce_plugins_*.o pluginhost/Builds/Linux/build/*/*/Juce_plugin_scanner.o
 # dryrun
-	if [ $(BUILDTYPE) = DEBUG ] ; then \
-		cd pluginhost/Builds/Linux && CONFIG=Debug $(PLUGINHOSTOPTS)  $(MAKE)  -n ; \
-	else \
-		cd pluginhost/Builds/Linux && CONFIG=Release  $(PLUGINHOSTOPTS) $(MAKE)  -n ; \
-	fi
-# real thing
-	if [ $(BUILDTYPE) = DEBUG ] ; then \
-		cd pluginhost/Builds/Linux && CONFIG=Debug $(PLUGINHOSTOPTS)  $(MAKE)   -j4 ; \
-	else \
-		cd pluginhost/Builds/Linux && CONFIG=Release  $(PLUGINHOSTOPTS) $(MAKE)  -j4 ; \
-	fi
+	cd pluginhost/Builds/Linux && $(PLUGINHOSTOPTS) $(MAKE) -n
+	cd pluginhost/Builds/Linux && $(PLUGINHOSTOPTS) $(MAKE) -j4
 
 
 pluginhost/Builds/Linux/build/libMyPluginHost_for_scanner.a: audio/Juce_plugin_scanner.cpp flagopts.opt pluginhost/MyPluginHost.jucer
 	rm -f pluginhost/Builds/Linux/build/*/*/Juce_plugins_*.o pluginhost/Builds/Linux/build/*/*/Juce_plugin_scanner.o
 # dryrun
-	if [ $(BUILDTYPE) = DEBUG ] ; then \
-		cd pluginhost/Builds/Linux && CONFIG=Debug $(LIBPLUGIN_SCANNER_OPTS)  $(MAKE)  -n ; \
-	else \
-		cd pluginhost/Builds/Linux && CONFIG=Release  $(LIBPLUGIN_SCANNER_OPTS) $(MAKE)  -n ; \
-	fi
-# real thing
-	if [ $(BUILDTYPE) = DEBUG ] ; then \
-		cd pluginhost/Builds/Linux && CONFIG=Debug $(LIBPLUGIN_SCANNER_OPTS)  $(MAKE)   -j 4; \
-	else \
-		cd pluginhost/Builds/Linux && CONFIG=Release  $(LIBPLUGIN_SCANNER_OPTS) $(MAKE)  -j 4 ; \
-	fi
+	cd pluginhost/Builds/Linux && $(LIBPLUGIN_SCANNER_OPTS)  $(MAKE)  -n
+	cd pluginhost/Builds/Linux && $(LIBPLUGIN_SCANNER_OPTS)  $(MAKE)   -j 4
 
 
 $(CD)keyboard_sub_ids.h: bin/generate_keyboard_sub_ids.py bin/keysubids.py
