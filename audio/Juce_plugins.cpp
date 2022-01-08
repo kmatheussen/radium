@@ -153,6 +153,35 @@ namespace{
 #include "JuceAudioDevice.cpp"
 
 
+#if defined(RELEASE)
+
+  #ifndef DEB1UG
+    #error "DEB1UG should be defined"
+  #endif
+
+  #ifndef __OPTIMIZE__
+    #error "Missing -O2 or -O3 compiler option"
+  #endif
+
+  #ifdef _DEBUG
+    #error "_DEBUG should not be defined"
+  #endif
+
+#else
+
+  #ifdef DEB1UG
+    #error "DEB1UG should not be defined"
+  #endif
+
+  #ifndef _DEBUG
+    #error "_DEBUG should be defined"
+  #endif
+
+  #ifdef __OPTIMIZE__
+    #error "Missing -O0 compiler option"
+  #endif
+
+#endif
 
 
 static int g_num_visible_plugin_windows = 0;
@@ -3228,6 +3257,11 @@ void PLUGINHOST_init(void){
   exit(0);
 #endif
 
+#if defined(RELEASE)
+  jassert(false); // Check during startup that jassert is disabled in release mode.
+  jassertfalse;
+#endif
+  
 #if 0
   
   // Provoce a very hard crash inside juce:

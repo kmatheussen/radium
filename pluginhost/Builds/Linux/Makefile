@@ -11,7 +11,7 @@ endif
 AVAILABLES=
 #"-DJUCE_MODULE_AVAILABLE_juce_audio_basics=1" "-DJUCE_MODULE_AVAILABLE_juce_audio_devices=1" "-DJUCE_MODULE_AVAILABLE_juce_audio_formats=1" "-DJUCE_MODULE_AVAILABLE_juce_audio_processors=1" "-DJUCE_MODULE_AVAILABLE_juce_audio_utils=1" "-DJUCE_MODULE_AVAILABLE_juce_core=1 -DJUCE_MODULE_AVAILABLE_juce_data_structures=1" "-DJUCE_MODULE_AVAILABLE_juce_dsp=1" "-DJUCE_MODULE_AVAILABLE_juce_events=1" "-DJUCE_MODULE_AVAILABLE_juce_graphics=1" "-DJUCE_MODULE_AVAILABLE_juce_gui_basics=1" "-DJUCE_MODULE_AVAILABLE_juce_gui_extra=1"
 
-COMMONCPPFLAGS := $(DEPFLAGS) -D "LINUX=1" -D "_DEBUG=1" -D "JUCE_CHECK_MEMORY_LEAKS=0" -D "JUCER_LINUX_MAKE_7346DA2A=1" -D "JUCE_APP_VERSION=1.0.0" -D "JUCE_APP_VERSION_HEX=0x10000" $(AVAILABLES) -I /usr/include -I /usr/include/freetype2 -I../../JuceLibraryCode/modules/juce_audio_processors/format_types/VST3_SDK -I ../../JuceLibraryCode -I ../../JuceLibraryCode/modules -I ~/SDKs/vstsdk2.4 -DJUCE_APP_CONFIG_HEADER="\"AppConfig.h\"" -mfpmath=sse -msse2
+COMMONCPPFLAGS := $(DEPFLAGS) -D "LINUX=1" -D "JUCE_CHECK_MEMORY_LEAKS=0" -D "JUCER_LINUX_MAKE_7346DA2A=1" -D "JUCE_APP_VERSION=1.0.0" -D "JUCE_APP_VERSION_HEX=0x10000" $(AVAILABLES) -I /usr/include -I /usr/include/freetype2 -I../../JuceLibraryCode/modules/juce_audio_processors/format_types/VST3_SDK -I ../../JuceLibraryCode -I ../../JuceLibraryCode/modules -I ~/SDKs/vstsdk2.4 -DJUCE_APP_CONFIG_HEADER="\"AppConfig.h\"" -mfpmath=sse -msse2
 
 # -I~/SDKs/VST_SDK/VST3_SDK -I ~/SDKs/VST_SDK/VST2_SDK/ -I ~/SDKs/VST3\ SDK
 
@@ -26,7 +26,7 @@ ifeq ($(GCC_MAJOR),9)
 	COMMONCPPFLAGS += -Wno-deprecated-copy
 endif
 
-
+# DEBUG
 ifeq ($(CONFIG),Debug)
   BINDIR := build
   LIBDIR := build
@@ -37,7 +37,7 @@ ifeq ($(CONFIG),Debug)
     TARGET_ARCH := 
   endif
 
-  CPPFLAGS := $(COMMONCPPFLAGS) -D "DEBUG=1" 
+  CPPFLAGS := $(COMMONCPPFLAGS) -D_DEBUG=1
 
   CFLAGS += $(CPPFLAGS) $(TARGET_ARCH) -g -ggdb -O0 -I../../../Qt `cat ../../../flagopts.opt`
   CXXFLAGS += $(CFLAGS) -std=gnu++14
@@ -48,6 +48,7 @@ ifeq ($(CONFIG),Debug)
   CLEANCMD = rm -rf $(OUTDIR)/$(TARGET) $(OBJDIR)
 endif
 
+# RELEASE
 ifeq ($(CONFIG),Release)
   BINDIR := build
   LIBDIR := build
@@ -58,7 +59,7 @@ ifeq ($(CONFIG),Release)
     TARGET_ARCH := 
   endif
 
-  CPPFLAGS := $(COMMONCPPFLAGS) -D "DEB1UG=1"
+  CPPFLAGS := $(COMMONCPPFLAGS) -DDEB1UG=1
 
   CFLAGS += $(CPPFLAGS) $(TARGET_ARCH) -g -ggdb -I../../../Qt `cat ../../../flagopts.opt` -O3 
   CXXFLAGS += $(CFLAGS) -std=gnu++14
