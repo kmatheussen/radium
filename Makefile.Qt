@@ -5,7 +5,7 @@
 RADIUM_VERSION = 6.9.97
 
 
-SHELL := /bin/bash
+SHELL := /usr/bin/env bash
 
 
 #----------------USER SETTINGS-------------------------------
