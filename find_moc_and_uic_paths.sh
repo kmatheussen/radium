@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 if which $1 >/dev/null 2>/dev/null ; then
     if $1 -v 2>&1 | grep Qt\ $RADIUM_QT_VERSION >/dev/null ; then
