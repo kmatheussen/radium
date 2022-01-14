@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 if which python2 >/dev/null 2>/dev/null ; then
     which python2
