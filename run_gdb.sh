@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 if [ -z "$RADIUM_NSM_EXECUTABLE_NAME" ] ; then
         export RADIUM_NSM_EXECUTABLE_NAME=$(basename -- "$0")

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 export VISUAL="-DUSE_QT_VISUAL=0 -DUSE_GTK_VISUAL=1"
 
