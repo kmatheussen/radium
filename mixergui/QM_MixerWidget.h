@@ -200,7 +200,7 @@ extern LANGSPEC void MW_create_from_state(const hash_t *state, const vector_t *p
 #endif
 
 extern LANGSPEC hash_t *MW_get_connections_state(const vector_t *patches, bool include_audio, bool include_event, bool include_modulator_connections);
-extern LANGSPEC hash_t *MW_get_state(const vector_t *patches, bool include_ab);
+extern LANGSPEC hash_t *MW_get_state(const vector_t *patches, bool is_saving_song);
 extern LANGSPEC void MW_create_connections_from_state(const hash_t *connections);
 extern LANGSPEC void MW_create_connections_from_state_and_replace_patch(const hash_t *connections, int patch_id_old, int patch_id_new);
 extern LANGSPEC void MW_create_full_from_state(const hash_t *state, bool is_loading);
