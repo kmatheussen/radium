@@ -3225,21 +3225,78 @@ static SuperConnection *get_connection(int64_t id_from, int64_t id_to, bool is_e
 }
 */
 
+static QString get_plugin_type_key(const SoundPluginType *type){
+  return QString(type->type_name) + "/" + type->name;
+}
+
+static void set_instance_num(QString type_key, int num){
+  auto audio_instrument = get_audio_instrument();
+  auto patches = audio_instrument->patches;
+
+  VECTOR_FOR_EACH(struct Patch *, patch, &patches){
+    SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+    if (plugin==NULL)
+      R_ASSERT(false);
+    else if (get_plugin_type_key(plugin->type) ==  type_key){
+        plugin->type->instance_num = num;
+        return;
+    }
+  }END_VECTOR_FOR_EACH;
+
+  R_ASSERT_NON_RELEASE(false);
+}
+
+static void MW_apply_num_instances_state(const hash_t *state){
+  const dynvec_t dynvec = HASH_get_values(state);
+  const vector_t keys = HASH_get_keys(state);
+
+  for(int i = 0 ; i < dynvec.num_elements ; i++){
+    if (dynvec.elements[i].type==INT_TYPE)
+      set_instance_num((const char*)keys.elements[i], dynvec.elements[i].int_number);
+    else
+      R_ASSERT(false);
+  }
+
+}
+
+static hash_t *MW_get_num_instances_state(void){
+  auto audio_instrument = get_audio_instrument();
+  auto patches = audio_instrument->patches;
+
+  QSet<SoundPluginType*> has_set;
+  
+  hash_t *state = HASH_create(patches.num_elements);
+
+  VECTOR_FOR_EACH(struct Patch *, patch, &patches){
+    SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+    if (plugin==NULL)
+      R_ASSERT(false);
+    else if (!has_set.contains(plugin->type)){
+      HASH_put_int(state, get_plugin_type_key(plugin->type).toUtf8().constData(), plugin->type->instance_num);
+      has_set.insert(plugin->type);
+    }
+  }END_VECTOR_FOR_EACH;
+
+  return state;
+}
 
 // Only used when saving .rac and .mrec.
-hash_t *MW_get_state(const vector_t *patches, bool include_ab){
+hash_t *MW_get_state(const vector_t *patches, bool is_saving_song){
   hash_t *state = HASH_create(6);
 
   HASH_put_hash(state, "chips", MW_get_audio_patches_state(patches, true));
   HASH_put_hash(state, "connections", MW_get_connections_state(patches, true, true, true));
   
-  if (include_ab)
+  if (is_saving_song)
     HASH_put_hash(state, "ab_state", MW_get_ab_state());
 
   HASH_put_dyn(state, "mixer_strips_configuration", MW_get_mixer_strips_state());
 
   HASH_put_bool(state, "volume_applied_before_drywet", true);
 
+  if (is_saving_song)
+    HASH_put_hash(state, "num_instances_state", MW_get_num_instances_state());
+  
   return state;
 }
 
@@ -3487,6 +3544,9 @@ void MW_create_full_from_state(const hash_t *state, bool is_loading){
   
   AUDIO_update_all_permanent_ids();
 
+  if (HASH_has_key(state, "num_instances_state"))
+    MW_apply_num_instances_state(HASH_get_hash(state, "num_instances_state"));
+    
   GFX_update_all_instrument_widgets();
   MW_update_mixer_widget(true);
   
