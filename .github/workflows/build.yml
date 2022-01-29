@@ -25,6 +25,10 @@ jobs:
       uses: jurplel/install-qt-action@v2
       with:
         version: '5.15.2'
+    - name: VST 3 Audio Plug-Ins SDK
+      run: |
+          wget -q https://www.steinberg.net/vst3sdk
+          unzip vst3sdk -d ~/SDKs
     - name: make
       run: |
           export RADIUM_QT_VERSION=5
