@@ -27,7 +27,7 @@ jobs:
         version: '5.15.2'
     - name: VST 3 Audio Plug-Ins SDK
       run: |
-          wget -q https://www.steinberg.net/vst3sdk
+          wget -q https://www.steinberg.net/sdk_downloads/vstsdk367_03_03_2017_build_352.zip
           unzip vst3sdk -d ~/SDKs
     - name: make
       run: |
