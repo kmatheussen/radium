@@ -20,7 +20,7 @@ jobs:
         fftw3-dev guile-2.2-dev libxkbfile-dev x11-utils cmake libiberty-dev \
         libfreetype6-dev libxinerama-dev libxcursor-dev libxrandr-dev  \
         llvm-dev libboost-all-dev libssl-dev libncurses-dev libxcb-keysyms1-dev  \
-        libgmp-dev libgmp3-dev libmpfr-dev libmpc-dev
+        libgmp-dev libgmp3-dev libmpfr-dev libmpc-dev libsamplerate0-dev
     - name: Install Qt
       uses: jurplel/install-qt-action@v2
       with:
