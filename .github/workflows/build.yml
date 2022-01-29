@@ -27,11 +27,14 @@ jobs:
         version: '5.15.2'
     - name: VST 3 Audio Plug-Ins SDK
       run: |
-          wget -q https://www.steinberg.net/sdk_downloads/vstsdk367_03_03_2017_build_352.zip
+          wget -q https://www.steinberg.net/vst3sdk
+          wget -q https://web.archive.org/web/20190111193507/https://www.steinberg.net/sdk_downloads/vstsdk367_03_03_2017_build_352.zip
           unzip vst3sdk -d ~/SDKs
+          unzip vstsdk367_03_03_2017_build_352.zip -d ~/SDKs/v2
     - name: make
       run: |
           export RADIUM_QT_VERSION=5
+          export RADIUM_VST2SDK_PATH=~/SDKs/v2
           make packages
           BUILDTYPE=RELEASE ./build_linux.sh -j `nproc`
           QT_QPA_PLATFORM_PLUGIN_PATH=`$(./find_moc_and_uic_paths.sh qmake) -query QT_INSTALL_PLUGINS` bin/radium
