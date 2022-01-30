@@ -1,28 +1,33 @@
---- build/backends/most.cmake~	2020-12-23 22:09:06.000000000 +0100
-+++ build/backends/most.cmake	2020-12-27 17:54:35.345399165 +0100
-@@ -7,14 +7,14 @@
+--- build/backends/most.cmake~	2021-10-29 13:07:00.000000000 +0200
++++ build/backends/most.cmake	2022-01-28 18:50:46.931605804 +0100
+@@ -7,16 +7,17 @@
  #    DYNAMIC   embed the backend in the faust dynamic library
  #    WASM      embed the backend in the faust wasm library
  
 -set ( C_BACKEND      COMPILER STATIC DYNAMIC        CACHE STRING  "Include C backend"         FORCE )
 -set ( CPP_BACKEND    COMPILER STATIC DYNAMIC        CACHE STRING  "Include CPP backend"       FORCE )
+-set ( CSHARP_BACKEND COMPILER STATIC DYNAMIC        CACHE STRING  "Include CSharp backend"    FORCE )
+-set ( DLANG_BACKEND  COMPILER STATIC DYNAMIC        CACHE STRING  "Include DLANG backend"     FORCE )
 -set ( FIR_BACKEND    COMPILER STATIC DYNAMIC        CACHE STRING  "Include FIR backend"       FORCE )
 -set ( INTERP_BACKEND OFF                            CACHE STRING  "Include INTERPRETER backend" FORCE )
 -set ( JAVA_BACKEND   COMPILER STATIC DYNAMIC        CACHE STRING  "Include JAVA backend"      FORCE )
+-set ( JULIA_BACKEND  COMPILER STATIC DYNAMIC        CACHE STRING  "Include Julia backend"      FORCE )
 -set ( LLVM_BACKEND   COMPILER STATIC DYNAMIC        CACHE STRING  "Include LLVM backend"      FORCE )
 -set ( OLDCPP_BACKEND COMPILER STATIC DYNAMIC        CACHE STRING  "Include old CPP backend"   FORCE )
--set ( RUST_BACKEND   COMPILER STATIC DYNAMIC        CACHE STRING  "Include RUST backend"      FORCE )
+-set ( RUST_BACKEND   COMPILER STATIC DYNAMIC        CACHE STRING  "Include Rust backend"      FORCE )
 -set ( SOUL_BACKEND   COMPILER STATIC DYNAMIC        CACHE STRING  "Include SOUL backend"      FORCE )
 -set ( WASM_BACKEND   COMPILER STATIC DYNAMIC WASM   CACHE STRING  "Include WASM backend"      FORCE )
--set ( DLANG_BACKEND  COMPILER STATIC DYNAMIC        CACHE STRING  "Include DLANG backend"     FORCE )
 +set ( C_BACKEND      OFF                            CACHE STRING  "Include C backend"         FORCE )
 +set ( CPP_BACKEND    COMPILER STATIC                CACHE STRING  "Include CPP backend"       FORCE )
++set ( CSHARP_BACKEND OFF        CACHE STRING  "Include CSharp backend"    FORCE )
++set ( DLANG_BACKEND  OFF        CACHE STRING  "Include DLANG backend"     FORCE )
 +set ( FIR_BACKEND    OFF                            CACHE STRING  "Include FIR backend"       FORCE )
 +set ( INTERP_BACKEND STATIC                         CACHE STRING  "Include INTERPRETER backend" FORCE )
 +set ( JAVA_BACKEND   OFF             CACHE STRING  "Include JAVA backend"      FORCE )
++set ( JULIA_BACKEND  OFF       CACHE STRING  "Include Julia backend"      FORCE )
 +set ( LLVM_BACKEND   COMPILER STATIC CACHE STRING  "Include LLVM backend"      FORCE )
++#set ( LLVM_BACKEND   OFF CACHE STRING  "Include LLVM backend"      FORCE )
 +set ( OLDCPP_BACKEND OFF             CACHE STRING  "Include old CPP backend"   FORCE )
 +set ( RUST_BACKEND   OFF             CACHE STRING  "Include RUST backend"      FORCE )
 +set ( SOUL_BACKEND   OFF             CACHE STRING  "Include SOUL backend"      FORCE )
 +set ( WASM_BACKEND   OFF             CACHE STRING  "Include WASM backend"      FORCE )
-+set ( DLANG_BACKEND  OFF             CACHE STRING  "Include DLANG backend"     FORCE )
