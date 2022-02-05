@@ -41,7 +41,7 @@ fi
 #fi
 
 export INCLUDE_FAUSTDEV="jadda"
-export INCLUDE_FAUSTDEV_BUT_NOT_LLVM="jadda"
+#export INCLUDE_FAUSTDEV_BUT_NOT_LLVM="jadda"
 
 # Always compile pddev. Most of it is placed in a dynamic library, so it doesn't contribute to higher link time or startup time.
 export INCLUDE_PDDEV="jadda"

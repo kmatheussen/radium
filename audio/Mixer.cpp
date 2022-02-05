@@ -1232,7 +1232,7 @@ struct Mixer{
     */
     
     if (ATOMIC_GET_RELAXED(_RT_process_has_inited)==false || THREADING_init_player_thread_type()){
-      AVOIDDENORMALS;
+      RADIUM_AVOIDDENORMALS;
       
       THREADING_init_player_thread_type(); // This is a light operation. Just call it again in case "_RT_process_has_inited" was false above.
       R_ASSERT(THREADING_is_player_thread());

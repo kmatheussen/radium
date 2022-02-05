@@ -18,13 +18,13 @@
 // (Copied from faust)
 #ifdef __SSE__
     #ifdef __SSE2__
-        #define AVOIDDENORMALS _mm_setcsr(_mm_getcsr() | 0x8040)
+        #define RADIUM_AVOIDDENORMALS _mm_setcsr(_mm_getcsr() | 0x8040)
     #else
-        #define AVOIDDENORMALS _mm_setcsr(_mm_getcsr() | 0x8000)
+        #define RADIUM_AVOIDDENORMALS _mm_setcsr(_mm_getcsr() | 0x8000)
     #endif
 #else
-#   error "AVOIDDENORMALS is not defined"
-    #define AVOIDDENORMALS 
+#   error "RADIUM_AVOIDDENORMALS is not defined"
+    #define RADIUM_AVOIDDENORMALS 
 #endif
 
 extern LANGSPEC void THREADING_init_main_thread_type(void);
