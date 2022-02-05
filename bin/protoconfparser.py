@@ -412,7 +412,12 @@ class Proto:
                 else:
                     oh.write("="+arg.default)
             oh.write(";\n")
-        if not (len(self.proc.qualifiers)==1 and self.proc.qualifiers[len(self.proc.qualifiers)-1]=="void"):
+
+        return_type = self.proc.qualifiers[len(self.proc.qualifiers)-1]
+        
+        no_result = self.returns_dynvec or self.returns_dyn or self.returns_func or len(self.proc.qualifiers)==1 and return_type=="void"
+        
+        if not no_result:
             for lokke in range(len(self.proc.qualifiers)):
                 oh.write(self.proc.qualifiers[lokke]+" ")
             oh.write("result;\n")
@@ -482,7 +487,7 @@ class Proto:
         if ("menu" not in self.proc.varname) and ("Menu" not in self.proc.varname):
             oh.write("EVENTLOG_add_event(\"" + self.proc.varname + " [py]\");\n")
 
-        if not (len(self.proc.qualifiers)==1 and self.proc.qualifiers[len(self.proc.qualifiers)-1]=="void"):
+        if not no_result:
             oh.write("result=")
         oh.write(self.proc.varname+"(")
 
@@ -502,9 +507,7 @@ class Proto:
         oh.write("const char *error_message = pullErrorMessage();\n");
         oh.write("if(error_message!=NULL) { PyErr_SetString(PyExc_Exception, error_message); return NULL; }\n");
 
-        return_type = self.proc.qualifiers[len(self.proc.qualifiers)-1]
-            
-        if (self.returns_dynvec or self.returns_dyn or self.returns_func or len(self.proc.qualifiers)==1 and return_type=="void"):
+        if no_result:
             oh.write("Py_INCREF(Py_None);\n")
             oh.write("resultobj=Py_None;\n")
         else:

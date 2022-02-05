@@ -252,7 +252,7 @@ public:
   }
   //#define FOR_MACOSX
   void run() override {
-    AVOIDDENORMALS;
+    RADIUM_AVOIDDENORMALS;
 
     _thread_id = GET_CURRENT_THREAD();
       
