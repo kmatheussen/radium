@@ -136,11 +136,13 @@ build_qhttpserver() {
 
 #http://www.hpl.hp.com/personal/Hans_Boehm/gc/
 build_gc() {
-    rm -fr gc-7.4.16 libatomic_ops-7.4.14
-    tar xvzf gc-7.4.16.tar.gz
-    tar xvzf libatomic_ops-7.4.14.tar.gz
-    cd gc-7.4.16
-    ln -s ../libatomic_ops-7.4.14 libatomic_ops
+    GC_VERSION=7.4.16
+    #GC_VERSION=8.0.4
+#    rm -fr gc-$GC_VERSION libatomic_ops-$GC_VERSION
+    tar xvzf gc-$GC_VERSION.tar.gz
+#    tar xvzf libatomic_ops-$GC_VERSION.tar.gz
+    cd gc-$GC_VERSION
+#    ln -s ../libatomic_ops-$GC_VERSION libatomic_ops
     #echo 'void RADIUM_ensure_bin_packages_gc_is_used(void){ABORT("GC not configured properly");}' >>malloc.c
     echo 'void RADIUM_ensure_bin_packages_gc_is_used(void){}' >>malloc.c
     echo '#if defined(GC_ASSERTIONS) || !defined(NO_DEBUGGING)' >>malloc.c
