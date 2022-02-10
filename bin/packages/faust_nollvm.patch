@@ -1,11 +1,13 @@
---- build/backends/most.cmake~	2020-12-27 17:55:15.934022467 +0100
-+++ build/backends/most.cmake	2020-12-27 17:55:39.314389218 +0100
-@@ -12,7 +12,7 @@
- set ( FIR_BACKEND    OFF                            CACHE STRING  "Include FIR backend"       FORCE )
+--- build/backends/most.cmake_with_llvm	2022-01-30 12:51:27.107379922 +0100
++++ build/backends/most.cmake	2022-01-30 12:51:36.927397591 +0100
+@@ -15,8 +15,8 @@
  set ( INTERP_BACKEND STATIC                         CACHE STRING  "Include INTERPRETER backend" FORCE )
  set ( JAVA_BACKEND   OFF             CACHE STRING  "Include JAVA backend"      FORCE )
+ set ( JULIA_BACKEND  OFF       CACHE STRING  "Include Julia backend"      FORCE )
 -set ( LLVM_BACKEND   COMPILER STATIC CACHE STRING  "Include LLVM backend"      FORCE )
-+set ( LLVM_BACKEND   OFF             CACHE STRING  "Include LLVM backend"      FORCE )
+-#set ( LLVM_BACKEND   OFF CACHE STRING  "Include LLVM backend"      FORCE )
++#set ( LLVM_BACKEND   COMPILER STATIC CACHE STRING  "Include LLVM backend"      FORCE )
++set ( LLVM_BACKEND   OFF CACHE STRING  "Include LLVM backend"      FORCE )
  set ( OLDCPP_BACKEND OFF             CACHE STRING  "Include old CPP backend"   FORCE )
  set ( RUST_BACKEND   OFF             CACHE STRING  "Include RUST backend"      FORCE )
  set ( SOUL_BACKEND   OFF             CACHE STRING  "Include SOUL backend"      FORCE )
