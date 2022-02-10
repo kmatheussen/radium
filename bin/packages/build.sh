@@ -56,21 +56,21 @@ PREFIX=`dirname $PWD/$0`
 
 build_faust() {
     rm -fr faust
-    tar xvzf faust_2020-12-27.tar.gz 
-    mv faust-master-dev faust
+    tar xvzf faust-2.37.3.tar.gz
+    mv faust-2.37.3 faust
     cd faust
     rm -fr libraries
-    tar xvzf ../faustlibraries_2020-12-27.tar.gz 
-    mv faustlibraries-master libraries
-    
+    tar xvzf ../faustlibraries_2022_01_28.tar.gz
+    mv faustlibraries libraries
+
     patch -p0 <../faust.patch
     if env |grep INCLUDE_FAUSTDEV_BUT_NOT_LLVM ; then
         patch -p0 <../faust_nollvm.patch
     fi
-    patch -p1 <../faust_llvm10-11_fixes.patch
 
-    patch -p0 <../faust_interpreter_rt_alloc.patch
-    
+    cp compiler/generator/libfaust-signal.h architecture/faust/dsp/
+    cp compiler/generator/libfaust-box.h architecture/faust/dsp/
+
     # release build
     VERBOSE=1 CFLAGS="$CFLAGS" CXXFLAGS="$CXXFLAGS" CMAKEOPT="-DCMAKE_BUILD_TYPE=Release -DSELF_CONTAINED_LIBRARY=on -DCMAKE_CXX_COMPILER=`which $DASCXX` -DCMAKE_C_COMPILER=`which $DASCC` " make most
 

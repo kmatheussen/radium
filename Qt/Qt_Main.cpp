@@ -4310,6 +4310,8 @@ static int gc_has_static_roots_func(
   if(is_main_root)
     getchar();
   //abort();
+#else
+  (void)total;
 #endif
   
 #endif // !defined(RELEASE)
