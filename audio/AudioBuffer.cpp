@@ -186,12 +186,8 @@ void RT_AUDIOBUFFER_get_channels(radium::AudioBufferChannel **channels, int num_
 
 #include <assert.h>
 
-int g_audio_block_size = 64;
+extern bool g_rt_message_internal_is_error;
 
-void RT_message_internal(const char *fmt,...){
-  //abort();
-}
-  
 static void validate_channels(void){
 
   radium::AudioBufferChannel *it = g_audio_channels;
@@ -253,10 +249,15 @@ static void testrun(int num_elements){
     testrun2(num_elements);
 }
 
+extern __thread int g_thread_type;
 
 static void AUDIOBUFFERS_test(void){
+  
   AUDIOBUFFERS_init();
 
+  g_rt_message_internal_is_error = false;
+  g_thread_type = 1;
+  
   testrun(0);
   testrun(1);
   testrun(2);

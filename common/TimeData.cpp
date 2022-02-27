@@ -1,5 +1,4 @@
 
-
 #if defined(TEST_TIMEDATA_MAIN)
 
 #include <stdlib.h>
@@ -8,97 +7,47 @@
 #include <math.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include <atomic>
+#include <assert.h>
 
 #include "nsmtracker.h"
 
-
-bool g_qtgui_has_stopped = false;
-
 /*
-#define R_ASSERT(a) do{if(!(a))abort();}while(0)
-#define R_ASSERT_RETURN_IF_FALSE(a) R_ASSERT(a)
-#define R_ASSERT_RETURN_IF_FALSE2(a,b) R_ASSERT(a)
-#define R_ASSERT_NON_RELEASE(a) R_ASSERT(a)
-#define RError(...) abort()
-#define CR_FORMATEVENT(a) "formt"
-*/
-
-DEFINE_ATOMIC(bool, is_starting_up) = false;
-
-
-#if !defined(RELEASE)
-bool MIXER_is_saving(){
-  return false;
-}
-#endif
-
-void PLAYER_lock(){
-  abort();
-}
-  
-void PLAYER_unlock(){
-  abort();
-}
-
-static __thread int g_thread_type = -1;
-
-bool PLAYER_current_thread_has_lock(void){
-  return g_thread_type==1;
-}
-bool THREADING_is_main_thread(void){
-  return g_thread_type==0;
-}
-
-bool THREADING_is_player_or_runner_thread(void){
-  return !THREADING_is_main_thread();
-}
-
-bool THREADING_is_player_thread(void){
-  return !THREADING_is_main_thread();
-}
-
-#if !defined(RELEASE)
-#if !defined(FOR_MACOSX)
-bool THREADING_has_player_thread_priority(void){
-  return false;
-}
-#endif
-#endif
-
-bool THREADING_is_runner_thread(void){
-  return false;
-}
-
-/*
-bool RT_message(const char *a){
-  abort();
+__attribute__((no_sanitize("undefined"))) extern "C" __int128_t
+__muloti4(__int128_t a, __int128_t b, int* overflow) {
+  const int N = (int)(sizeof(__int128_t) * CHAR_BIT);
+  const __int128_t MIN = (__int128_t)1 << (N - 1);
+  const __int128_t MAX = ~MIN;
+  *overflow = 0;
+  __int128_t result = a * b;
+  if (a == MIN) {
+    if (b != 0 && b != 1)
+      *overflow = 1;
+    return result;
+  }
+  if (b == MIN) {
+    if (a != 0 && a != 1)
+      *overflow = 1;
+    return result;
+  }
+  __int128_t sa = a >> (N - 1);
+  __int128_t abs_a = (a ^ sa) - sa;
+  __int128_t sb = b >> (N - 1);
+  __int128_t abs_b = (b ^ sb) - sb;
+  if (abs_a < 2 || abs_b < 2)
+    return result;
+  if (sa == sb) {
+    if (abs_a > MAX / abs_b)
+      *overflow = 1;
+  } else {
+    if (abs_a > MIN / -abs_b)
+      *overflow = 1;
+  }
+  return result;
 }
 */
 
-void CRASHREPORTER_send_assert_message(Crash_Type tye, const char *message, ...){
-  abort();
-}
-void RError_internal(const char *fmt,...){
-  abort();
-}
-void RT_message_internal(const char *fmt,...){
-  abort();
-}
-void msleep(int ms){
-  usleep(1000*ms);
-}
-
-double TIME_get_ms(void){
-  struct timeval now;
-
-  int err = gettimeofday(&now, NULL);
-  if (err != 0)
-    abort();
-
-  return (double)now.tv_sec*1000.0 + (double)now.tv_usec/1000.0;
-}
-
-//#define ASSERT_NON_RT_NON_RELEASE() R_ASSERT(THREADING_is_main_thread())
+#include "../test/test_dummies.c"
 
 #include "atomic.h"
 # include "ratio_type.h"
@@ -220,28 +169,156 @@ const radium::FreeableList *FREEABLELIST_transfer_all(void){
 #include <thread>
 
 
-struct Gakk{
-  Ratio _time;
-
-  int _val;
-  int _logtype;
-    
-  Gakk(int64_t a, int64_t b, int val = 1, int logtype = LOGTYPE_LINEAR)
+struct Gakk1 : public r::TimeDataDataType<int>{
+  Gakk1(int64_t a, int64_t b, int val = 1, int logtype = LOGTYPE_LINEAR)
+    : TimeDataDataType(make_ratio(a,b), val, logtype)
   {
-    _time = make_ratio(a,b);
-    _val = val;
-    _logtype = logtype;
   }
 };
 
+int g_num_freed = 0;
+int g_num_allocated = 0;
 
-using GakkTimeData = r::TimeData<Gakk, r::RT_TimeData_Player_Cache<typeof(Gakk::_val)>>;
+struct Gakk2 : public r::TimeDataDataTypeRef<int>{
+  Gakk2(int64_t a, int64_t b, int val = 1, int logtype = LOGTYPE_LINEAR)
+    : TimeDataDataTypeRef<int>(make_ratio(a,b), val, logtype)
+  {
+    g_num_allocated++;
+  }
+};
+
+using GakkTimeData1 = r::TimeData<Gakk1, r::RT_TimeData_Player_Cache<typeof(Gakk1::_val)>>;
+
+using GakkTimeData2 = r::TimeData<r::TimeData_shared_ptr<Gakk2>, r::RT_TimeData_Player_Cache<typeof(Gakk2::_val)>>;
+
+#if TEST_SHARED_PTR
+
+using Gakk = Gakk2;
+using GakkTimeData = GakkTimeData2;
+
+static r::TimeData_shared_ptr<Gakk> make_gakk(int64_t a, int64_t b, int val = 1, int logtype = LOGTYPE_LINEAR){
+  r::TimeData_shared_ptr<Gakk> gakk(new Gakk(a,b,val,logtype));
+  if (chance(0.5))
+    return std::move(r::TimeData_shared_ptr<Gakk>(new Gakk(a,b,val,logtype)));
+  else
+    return gakk;
+}
+
+static Ratio get_time(const r::TimeData_shared_ptr<Gakk> &gakk){
+  return gakk->get_time();
+}
+
+#else
+
+using Gakk = Gakk1;
+using GakkTimeData = GakkTimeData1;
+
+static Gakk make_gakk(int64_t a, int64_t b, int val = 1, int logtype = LOGTYPE_LINEAR){
+  return Gakk1(a,b,val,logtype);
+}
+
+static Ratio get_time(const Gakk &gakk){
+  return gakk.get_time();
+}
+
+#endif
+
+//sjekk assigning av ny verdi til tidligere (altså sletta slot) i vector.
+
+//#include <QVector>
+
+static void test_refcount(void){
+  printf("  T1\n");
+  GakkTimeData2 refcountgakk;
+
+  printf("  T2\n");
+  
+  {
+    GakkTimeData2::Writer writer(&refcountgakk);
+    printf("  T3a\n");
+
+#if 1
+    //RefCountGakk<Gakk2> val(new Gakk2(2,6,979));
+    writer.add(new Gakk2(2,6,979));
+    //std::move(val));
+    
+#elif 1
+
+    radium::Vector<RefCountGakk<Gakk2>> ai;
+    RefCountGakk<Gakk2> val(new Gakk2(2,6,979));
+    ai.push_back2(std::move(val));
+
+#elif 0
+    std::vector<RefCountGakk<Gakk2>> ai;
+    RefCountGakk<Gakk2> val(new Gakk2(2,6,979));
+    ai.push_back(std::move(val));
+#elif 0
+    QVector<RefCountGakk<Gakk2>> ai;
+    RefCountGakk<Gakk2> val(new Gakk2(2,6,979));
+    ai.push_back(std::move(val));
+#endif
+    
+    printf("  T3b\n");
+    //-writer.add2(RefCountGakk(new Gakk2(3,6,980)));
+    writer.add2(new Gakk2(4,6,981));
+    writer.add2(new Gakk2(4,6,981));
+    writer.add2(new Gakk2(4,6,981));
+    printf("\n          Size1: %d\n", writer.size());
+    writer.remove_at_pos(0);
+    printf("          Size2: %d\n\n", writer.size());
+    writer.clear();
+    //writer.add2(RefCountGakk(new Gakk2(5,6,982)));
+  }
 
 
+  printf("  T4-1\n");
+  
+#if 1
+  {
+    GakkTimeData2::Writer writer(&refcountgakk);
+    printf("  T4-2\n");
+    //writer.add2(RefCountGakk(new Gakk2(5,6,982)));
+    writer.remove_at_pos(0);
+    printf("  T4-3\n");
+
+    writer.clear();
+    printf("  T4-4\n");
+    writer.add2(new Gakk2(4,6,1981));
+    printf("  T4-5\n");
+  }
+#endif
+
+#if 1
+    {
+      GakkTimeData2::Writer writer(&refcountgakk);
+      printf("  T4-2\n");
+      writer.remove_at_pos(0);
+      printf("  T4-3\n");
+      writer.clear();
+      writer.add2(new Gakk2(4,6,1982));
+    }
+    
+  printf("  T4-6\n");
+  
+  {
+    GakkTimeData2::Reader reader(&refcountgakk);
+    printf("  T5\n");
+    if (reader.size() > 0)
+      printf("     Reader val: %d\n", reader.at_ref(0)->_val);
+  }
+#endif
+  
+  printf("  T6\n");
+}
+
+
+
+/*
 static Gakk make_gakk(int64_t a, int64_t b, int val = 1, int logtype = LOGTYPE_LINEAR){
   Gakk gakk(a,b,val,logtype);
   return gakk;
 }
+*/
 
 #define TEST(a, b)                  do{         \
   if (a!=b)                                     \
@@ -254,19 +331,19 @@ static void test_get_value(void){
   
   {
     GakkTimeData::Writer writer(&gakk);
-    writer.add2(make_gakk(10,1,10)); // 0
-    writer.add2(make_gakk(20,1,20, LOGTYPE_HOLD)); // 1
-    writer.add2(make_gakk(30,1,30)); // 2
-    writer.add2(make_gakk(40,1,40)); // 3
-    writer.add2(make_gakk(40,1,50)); // 4
-    writer.add2(make_gakk(40,1,60)); // 5
-    writer.add2(make_gakk(40,1,70)); // 6
-    writer.add2(make_gakk(40,1,80)); // 7
-    writer.add2(make_gakk(40,1,90)); // 8
-    writer.add2(make_gakk(40,1,100)); // 9
-    writer.add2(make_gakk(40,1,110)); // 10
-    writer.add2(make_gakk(50,1,120)); // 11
-    writer.add2(make_gakk(60,1,130, LOGTYPE_HOLD)); // 12
+    writer.add(make_gakk(10,1,10)); // 0
+    writer.add(make_gakk(20,1,20, LOGTYPE_HOLD)); // 1
+    writer.add(make_gakk(30,1,30)); // 2
+    writer.add(make_gakk(40,1,40)); // 3
+    writer.add(make_gakk(40,1,50)); // 4
+    writer.add(make_gakk(40,1,60)); // 5
+    writer.add(make_gakk(40,1,70)); // 6
+    writer.add(make_gakk(40,1,80)); // 7
+    writer.add(make_gakk(40,1,90)); // 8
+    writer.add(make_gakk(40,1,100)); // 9
+    writer.add(make_gakk(40,1,110)); // 10
+    writer.add(make_gakk(50,1,120)); // 11
+    writer.add(make_gakk(60,1,130, LOGTYPE_HOLD)); // 12
   }
 
   GakkTimeData::Reader reader(&gakk);
@@ -372,8 +449,8 @@ static void test_get_value(void){
 }
 
 int main(void){
-  g_thread_type = 0;
-
+  double start_time = get_ms();
+  
   int seed = time(NULL);
   printf("Seed: %d\n", (int)seed);
   
@@ -381,7 +458,12 @@ int main(void){
   
   const int num_main_iterations = 75 + rand()%50;
   int total_num_elements = 0;
-
+  
+  test_refcount();
+#if defined(TEST_REFCOUNTTIMEDATA)
+  exit(0);
+#endif
+  
   test_get_value();
   
   GakkTimeData *gakk = new GakkTimeData;
@@ -403,7 +485,7 @@ int main(void){
       t[i] = std::thread([gakk, num_reader_iterations](){
 
           g_thread_type = 1;
-          
+
           msleep(rand() % 4);
 
           double ms = TIME_get_ms();
@@ -418,10 +500,10 @@ int main(void){
               
               for(auto gakk : reader){
                 
-                if (gakk._time < prev)
+                if (get_time(gakk) < prev)
                   abort();
                 
-                prev = gakk._time;
+                prev = get_time(gakk);
               }
             }
             
@@ -441,15 +523,14 @@ int main(void){
       
       if (total_num_elements==0 || rand()%10 > 3) {
         
-        Gakk gakk2(i2,i+1);
-        writer.add(gakk2);
+        writer.add(make_gakk(i2, i+1));
 
         total_num_elements++;
         
       } else {
 
         int pos = rand()%total_num_elements;
-        Ratio ratio = writer.at(pos)._time;
+        Ratio ratio = get_time(writer.at(pos));
         if (!writer.remove_at_time(ratio))
           abort();
         
@@ -486,8 +567,11 @@ int main(void){
     printf("Num unfreed TimeDataVectors: %d\n", g_num_timedata_vectors); // Extremely rarely, this actually fails. Might be a bug in the program, might be something else. However, since it's so extremely seldom, and it's just a minor memory leak, it doesn't seem important to fix.
     abort();
   }
-  
-  printf("Success.\n");
+
+  assert(g_num_allocated==g_num_freed);
+  assert(g_num_timedata_vectors==0);
+
+  printf("Success. Duration: %f ms\n", (get_ms()-start_time) / 1000.0);
   
   return 0;
 }

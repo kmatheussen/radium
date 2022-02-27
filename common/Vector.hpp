@@ -44,11 +44,7 @@ static inline constexpr int find_vector_preallocate_size(const int max_size){
 // Note:  PRESTACKALLOCATED_SIZE is number of bytes, not number of elements. Number of elements is rounded down, but there will always be room for at least one element.
 template <typename T, AllocatorType ALLOCATOR_TYPE = AllocatorType::STD, int PRESTACKALLOCATED_SIZE = 256>
 struct Vector{
-  
-  static_assert(std::is_trivially_destructible<T>::value,
-                "Not handled. Undefined behavior if calling destructor when adding memory to zero-ed memory. (how do we handle that? Use std::memcpy or std::move?"
-                );
-  
+
   static_assert(
                 ALLOCATOR_TYPE == AllocatorType::STD || std::is_trivially_copyable<T>::value,
                 "Doesn't have to be a problem. The assertion is just added because it seems likely to be an error in the code if this assertion fails."
@@ -211,9 +207,11 @@ private:
 
   void free_internal(T *elements, int size) const {
     if (!std::is_trivially_destructible<T>::value){
-      R_ASSERT_NON_RELEASE(false); // never tested
-      for(int i=0;i<size;i++)
+      //      R_ASSERT_NON_RELEASE(false); // never tested
+      for(int i=0;i<size;i++){
+        //printf("   radium::Vector::free_internal %d\n", i);
         elements[i].~T();
+      }
     }
 
     if (!is_preallocated(elements)) {
@@ -392,7 +390,7 @@ private:
     free_internal(old_elements, old_num_elements);
   }
   
-  void basic_push_back(T t){    
+  void basic_push_back(const T &t){
     R_ASSERT(_num_elements_max > 0);
 
     int new_num_elements = _num_elements.get() + 1;
@@ -400,50 +398,107 @@ private:
     if (new_num_elements > _num_elements_max) 
       reserve_internal(new_num_elements, false);
 
-    _elements[_num_elements.get()] = t;
+    //printf("111111111111. radium::Vector::basic_push_back %p -> %p\n", &t, &_elements[_num_elements.get()]);
+
+    if (std::is_trivial<T>::value)
+      _elements[_num_elements.get()] = t;
+    else
+      new (&_elements[_num_elements.get()]) T(t);
+    
+    //printf("22222222222. radium::Vector::basic_push_back %p -> %p\n", &t, &_elements[_num_elements.get()]);
     
     _num_elements.set(new_num_elements);
   }
 
-  void remove_pos_internal(int pos, bool keep_order){
-    int old_size = _num_elements.get();
+  void basic_push_back(T &&t){    
+    R_ASSERT(_num_elements_max > 0);
+
+    int new_num_elements = _num_elements.get() + 1;
+    
+    if (new_num_elements > _num_elements_max) 
+      reserve_internal(new_num_elements, false);
+
+    //printf("111111111111. radium::Vector::basic_push_back2 %p -> %p\n", &t, &_elements[_num_elements.get()]);
+    new (&_elements[_num_elements.get()]) T(std::move(t));
+    //printf("22222222222. radium::Vector::basic_push_back2 %p -> %p\n", &t, &_elements[_num_elements.get()]);
+    
+    _num_elements.set(new_num_elements);
+  }
+
+  void remove_pos_internal(const int pos, const bool keep_order){
+    const int old_size = _num_elements.get();
     
     R_ASSERT_RETURN_IF_FALSE(pos < old_size);
     R_ASSERT_RETURN_IF_FALSE(pos >= 0);
-
-    _num_elements.dec();
-
-    int old_last_pos = old_size-1;
     
-    if (keep_order) {
-      
-#if 0
-      // Don't work. std::copy don't work when overlapping. (std::copy works if they are NOT trivially copyable though).
-      std::copy(&this->_elements[pos], &this->_elements[old_last_pos], &this->_elements[pos+1]);
-#else
-      for(int i=pos;i<old_last_pos;i++)
-        this->_elements[i]=this->_elements[i+1];
-#endif
-      
-    } else {
+    _num_elements.dec();
+ 
+    const int old_last_pos = old_size-1;
+    
+    if (!std::is_trivially_destructible<T>::value)
+      _elements[pos].~T();
 
-      if (old_last_pos==0){
-        R_ASSERT(pos==0);
+    if (pos < old_last_pos) {
+      
+      if (keep_order) {
+        
+        if (std::is_trivially_copyable<T>::value) {
+
+          memmove((void*)&_elements[pos], (void*)&_elements[pos+1], (old_last_pos - pos) * sizeof(T));
+          
+        } else {
+          
+          new (&_elements[pos]) T(_elements[pos+1]);
+          
+          for(int i=pos+1;i<old_last_pos;i++) {
+#if 1
+            // Hopefully this one is correct. If not, the other version should be.
+            _elements[i] = std::move(_elements[i+1]);
+#else
+            if (!std::is_trivially_destructible<T>::value)
+              _elements[i].~T();
+            
+            new (&_elements[i]) T(_elements[i+1]);
+#endif
+          }
+          
+          if (!std::is_trivially_destructible<T>::value)
+            _elements[old_last_pos].~T();
+        }
+        
       } else {
-        _elements[pos] = _elements[old_last_pos];
+        
+        //printf("...............................assign3 To: %p. From: %p\n", &_elements[pos], &_elements[old_last_pos]);
+        
+        if (std::is_trivially_copyable<T>::value) {
+          
+          memcpy((void*)&_elements[pos], (void*)&_elements[old_last_pos], sizeof(T));
+          
+        } else {
+          
+#if 1
+          // Hopefully this is safe... (if not, the other version should be)
+          new (&_elements[pos]) T(std::move(_elements[old_last_pos]));
+#else
+          new (&_elements[pos]) T(_elements[old_last_pos]);
+          
+          if (!std::is_trivially_destructible<T>::value)
+            _elements[old_last_pos].~T();
+#endif
+        }
+        
+        //printf("++++++++++++++++++++...............................assign4\n");
       }
       
     }
-
-    if (std::is_trivially_copyable<T>::value)
-      memset((void*)&_elements[old_last_pos], 0, sizeof(T)); // for debugging
-    else if (!std::is_trivially_destructible<T>::value){
-      R_ASSERT_NON_RELEASE(false); // Never tested.
-      _elements[old_last_pos].~T();
-    }
+    
+    
+#if !defined(RELEASE)
+    memset((void*)&_elements[old_last_pos], 0, sizeof(T)); // for debugging
+#endif
   }
 
-  int find_pos_internal(const T t) const {
+  int find_pos_internal(const T &t) const {
     int pos;
     
     for(pos=0 ; pos<_num_elements.get() ; pos++)
@@ -462,7 +517,7 @@ public:
   //
   // This function can NOT be called in parallell with other functions
   //
-  void push_back(T t){
+  void push_back(const T &t){
     LOCKASSERTER_EXCLUSIVE_NON_RELEASE(&_lockAsserter);
 
     //R_ASSERT(_elements_ready_for_freeing == NULL); <-- Fails when we have preallocated for more than one element.
@@ -490,7 +545,42 @@ public:
       _next_elements = NULL;
       _next_num_elements_max = 0;
 
-      _elements[_num_elements.get()-1] = t;
+      if (std::is_trivial<T>::value)
+        _elements[_num_elements.get()-1] = t;
+      else
+        new (&_elements[_num_elements.get()-1]) T(t);
+    }
+  }
+
+  void push_back(T &&t){
+    LOCKASSERTER_EXCLUSIVE_NON_RELEASE(&_lockAsserter);
+
+    //R_ASSERT(_elements_ready_for_freeing == NULL); <-- Fails when we have preallocated for more than one element.
+
+    if (_next_elements == NULL) {
+
+      basic_push_back(std::move(t));
+      
+    } else {
+
+      if (!is_preallocated(_elements)) {
+        
+        _num_elements_ready_for_freeing = _num_elements.get();
+        _elements_ready_for_freeing = _elements;
+        
+      }
+      
+      _num_elements.inc();
+
+      R_ASSERT(_num_elements.get() <= _next_num_elements_max);
+
+      _elements = _next_elements;
+      _num_elements_max = _next_num_elements_max;
+      
+      _next_elements = NULL;
+      _next_num_elements_max = 0;
+
+      _elements[_num_elements.get()-1] = std::move(t);
     }
   }
 
@@ -499,7 +589,7 @@ public:
   // Convenience function. Must not be called from a realtime thread.
   //
   // Can not be mixed with parallel use of 'ensure_there_is_room_for_more_without_having_to_allocate_memory' or 'reserve_in_realtime_safe_manner'.
-  void push_back_in_realtime_safe_manner(T t){
+  void push_back_in_realtime_safe_manner(const T &t){
     R_ASSERT(PLAYER_current_thread_has_lock()==false);
 
     ensure_there_is_room_for_more_without_having_to_allocate_memory(1);
@@ -549,25 +639,43 @@ public:
   // NOT RT safe
   //
   // This function can NOT be called in parallell with other functions
-  void append(Vector<T> *ts){
+  void append(const Vector<T> *ts){
     LOCKASSERTER_EXCLUSIVE_NON_RELEASE(&_lockAsserter);
     
     R_ASSERT(_next_elements == NULL);
 
-    for (T t : *ts)
+#if 0
+    
+    for (const T &t : *ts)
       basic_push_back(t);
+    
+#else
+    
+    const int size = _num_elements.get();
+
+    const int new_size = size + ts->size();
+
+    if (new_size > _num_elements_max)
+      reserve_internal(new_size, false);
+    
+    int pos = size;
+    
+    for (const T &t : *ts)
+      if (std::is_trivial<T>::value)
+        _elements[pos++] = t;
+      else
+        new (&_elements[pos++]) T(t);
+
+    _num_elements.set(new_size);
+    
+#endif
   }
 
   // NOT RT safe
   //
   // This function can NOT be called in parallell with other functions
-  void append(Vector<T> &ts){
-    LOCKASSERTER_EXCLUSIVE_NON_RELEASE(&_lockAsserter);
-    
-    R_ASSERT(_next_elements == NULL);
-    
-    for (T t : ts)
-      basic_push_back(t);
+  void append(const Vector<T> &ts){
+    append(&ts);
   }
 
   Vector<T> intersection(const Vector<T> &ts) const {
@@ -588,7 +696,7 @@ public:
     return false;
   }
 
-  bool intersects(const Vector<T> &ts, bool (*equal)(const T, const T)) const {
+  bool intersects(const Vector<T> &ts, bool (*equal)(const T&, const T&)) const {
     for (const T &t1 : ts)
       for(int i = 0 ; i < _num_elements.get() ; i++)
         if (equal(_elements[i], t1))
@@ -597,7 +705,7 @@ public:
     return false;
   }
 
-  bool only_unique_elements(bool (*equal)(const T, const T)) const {
+  bool only_unique_elements(bool (*equal)(const T&, const T&)) const {
     for(int i1 = 0 ; i1 < _num_elements.get()-1 ; i1++)
       for(int i2 = i1+1 ; i2 < _num_elements.get() ; i2++){
         //printf("i1: %d, i2: %d\n", i1, i2);
@@ -609,20 +717,20 @@ public:
   }
   
   // This function can be called in parallell with the other const functions (i.e. the non-mutating ones).
-  int find_pos(const T t) const {
+  int find_pos(const T &t) const {
     LOCKASSERTER_SHARED_NON_RELEASE(&_lockAsserter);
 
     return find_pos_internal(t);
   }
 
-  bool contains(const T t) const {
+  bool contains(const T &t) const {
     return find_pos(t) >= 0;
   }
     
   // RT safe (except for the O(n) performance)
   //
   // This function can NOT be called in parallell with other functions
-  void remove(const T t, bool keep_order = false){
+  void remove(const T &t, bool keep_order = false){
     LOCKASSERTER_EXCLUSIVE_NON_RELEASE(&_lockAsserter);
     
     R_ASSERT(_next_elements == NULL);
@@ -688,7 +796,21 @@ public:
   void set_num_elements(int new_num_elements) {
     LOCKASSERTER_EXCLUSIVE_NON_RELEASE(&_lockAsserter);
 
+    R_ASSERT_NON_RELEASE(new_num_elements <= _num_elements.get());
     R_ASSERT(_next_elements == NULL);
+    
+    if (!std::is_trivially_destructible<T>::value){
+      const int old_num_elements = _num_elements.get();
+
+      //printf("   radium::Vector::set_num_elements New/Old: %d/%d\n", new_num_elements, old_num_elements);
+      
+      //      R_ASSERT_NON_RELEASE(false); // never tested
+      for(int i=new_num_elements; i < old_num_elements ; i++){
+        //printf("   radium::Vector::set_num_elements %d\n", i);
+        _elements[i].~T();
+      }
+    }
+
     _num_elements.set(new_num_elements);
   }
   

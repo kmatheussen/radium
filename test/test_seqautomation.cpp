@@ -4,10 +4,6 @@
 #include "../common/nsmtracker.h"
 #include "../common/SeqAutomation.hpp"
 
-struct Root *root = NULL;
-
-DEFINE_ATOMIC(bool, is_starting_up) = false;
-
 // BUILDTYPE=DEBUG ./build_linux.sh test
 
 // (g++ test_seqautomation.cpp -DTEST_MAIN -Wall -std=gnu++11 -g `pkg-config --libs --cflags QtGui` -Wunknown-pragmas && ./a.out)
@@ -15,6 +11,8 @@ DEFINE_ATOMIC(bool, is_starting_up) = false;
 
 #include <stdio.h>
 #include <assert.h>
+
+#include "test_dummies.c"
 
 
 namespace test{
@@ -35,24 +33,6 @@ static test::Node create_node(double time, double value = 2.91){
   return node;
 }
   
-
-void CRASHREPORTER_send_assert_message(enum Crash_Type crash_type, const char *fmt,...){
-  abort();
-}
-
-#if !defined(RELEASE)
-#if !defined(FOR_MACOSX)
-bool THREADING_has_player_thread_priority(void){
-  return false;
-}
-#endif
-#endif
-
-
-bool THREADING_is_runner_thread(void){
-  return false;
-}
-
 
 static void test_get_value(void){
   radium::SeqAutomation<test::Node> nodes;
@@ -132,6 +112,8 @@ static void test_get_value(void){
 }
 
 int main(){
+
+  g_thread_type = 1;
   
   test_get_value();
   

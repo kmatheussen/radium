@@ -178,9 +178,9 @@ void AddVelocityCurrPos(struct Tracker_Windows *window){
 
 
 static void increase_note_velocity(struct Notes *note, int inc){
-  int maxvelocity=MAX_VELOCITY;
+  int maxvelocity = MAX_VELOCITY;
   
-  note->velocity=R_BOUNDARIES(0,note->velocity+inc,maxvelocity);
+  note->velocity = R_BOUNDARIES(0,note->velocity+inc,maxvelocity);
 
   /*
   {
@@ -198,7 +198,7 @@ static void increase_note_velocity(struct Notes *note, int inc){
       velocity._val = R_BOUNDARIES(0,velocity._val+inc,maxvelocity);
   }
 
-  note->velocity_end=R_BOUNDARIES(0,note->velocity_end+inc,maxvelocity);
+  note->velocity_end = R_BOUNDARIES(0,note->velocity_end+inc,maxvelocity);
 }
 
 void IncreaseVelocityCurrPos(struct Tracker_Windows *window,int inc){

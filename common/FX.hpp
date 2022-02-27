@@ -38,21 +38,16 @@ struct FX{
 
 namespace r{
 
-struct FXNode : NodeId {
-  Ratio _time;
-  int _val;
-  int _logtype;
+struct FXNode : NodeId, TimeDataDataType<int> {
   FXNode(const struct FX &fx, Ratio time, int val, int logtype = LOGTYPE_LINEAR)
-    : _time(time)
-    , _val(R_BOUNDARIES(fx.min, val, fx.max))
-    , _logtype(logtype)
+    : TimeDataDataType<int>(time, R_BOUNDARIES(fx.min, val, fx.max), logtype)
   {}
 };
 
-  struct FXSeqBlock : RT_TimeData_Player_Cache<typeof(FXNode::_val)> {
-  };
+struct FXSeqBlock : RT_TimeData_Player_Cache<typeof(FXNode::_val)> {
+};
   
-  using FXTimeData = TimeData<FXNode, FXSeqBlock>;
+using FXTimeData = TimeData<FXNode, FXSeqBlock>;
 
 
 struct FXText {

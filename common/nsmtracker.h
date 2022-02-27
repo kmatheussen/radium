@@ -151,6 +151,7 @@ static_assert (sizeof(long long int) >= 8, "sizof(long long int) must be 8 or hi
 #ifdef __cplusplus
 #include <cmath>
 #include <limits>
+#include <atomic>
 #endif
 
 #if USE_QT4
@@ -1735,7 +1736,7 @@ public:
   friend struct RT_TimeData_Cache_Handler;
   
 private:
-#if defined(__GNUC__) && __GNUC__ < 8 // "friend" above doesn't work for gcc 7.
+#if defined(__GNUC__) && __GNUC__ < 8 // "friend struct RT_TimeData_Cache_Handler" above doesn't work for gcc 7.
  public:
 #endif
   
@@ -1892,9 +1893,89 @@ static inline float VELOCITY_get(int velocity){
 #ifdef __cplusplus
 namespace r{
 
+  struct TimeDataDataTypeNoVal {
+    using TType = int;
+    
+    Ratio _time;
+    
+    int get_logtype(void) const {
+      R_ASSERT_NON_RELEASE(false);
+      return 0;
+    }
+    
+    int get_val(void) const {
+      R_ASSERT_NON_RELEASE(false);
+      return 0;
+    }
+    
+    const Ratio &get_time(void) const {
+      return _time;
+    }
+
+    void set_time(const Ratio &time) {
+      _time = time;
+    }
+      
+    
+    TimeDataDataTypeNoVal(){
+    }
+    
+    TimeDataDataTypeNoVal(Ratio time)
+      : _time(time)
+    {
+    }  
+     
+  };
+
+  template <typename ValType>
+  struct TimeDataDataType {
+    using TType = ValType;
+    
+    Ratio _time;
+    ValType _val;
+    int _logtype;
+      
+    ValType get_val(void) const {
+      return _val;
+    }
+    
+    int get_logtype(void) const {
+      return _logtype;
+    }
+    
+    const Ratio &get_time(void) const {
+      return _time;
+    }
+
+    void set_time(const Ratio &time) {
+      _time = time;
+    }
+          
+    TimeDataDataType(){
+    }
+    
+    TimeDataDataType(Ratio time, ValType val, int logtype)
+      : _time(time)
+      , _val(val)
+      , _logtype(logtype)
+    {
+    }  
+     
+  };
+
+  template <typename ValType>
+  struct TimeDataDataTypeRef : TimeDataDataType<ValType> {
+    std::atomic<int> _num_references;
+
+    TimeDataDataTypeRef(const Ratio &ratio, ValType val, int logtype)
+      : TimeDataDataType<ValType>(ratio, val, logtype)
+      , _num_references(0)
+    {}
+  };
+    
   extern int64_t g_node_id;
   
-  struct NodeId{
+  struct NodeId {
     int64_t _id;
     NodeId()
       : _id(g_node_id++)
@@ -1903,15 +1984,9 @@ namespace r{
     }
   };
 
-
-  struct Velocity : NodeId {
-    Ratio _time;
-    int _val;
-    int _logtype;
+  struct Velocity : NodeId, TimeDataDataType<int> {
     Velocity(Ratio time, int val, int logtype = LOGTYPE_LINEAR)
-      : _time(time)
-      , _val(R_BOUNDARIES(0, val, MAX_VELOCITY))
-      , _logtype(logtype)
+      : TimeDataDataType<int>(time, R_BOUNDARIES(0, val, MAX_VELOCITY), logtype)
     {}    
   };
 
@@ -1947,27 +2022,21 @@ struct Pitches{
 
 namespace r{
 
-struct Pitch : NodeId {
-  Ratio _time;
-
-  float _val;
-  int _logtype;
-
+struct Pitch : NodeId, TimeDataDataType<float> {
   int _chance;
 
   Pitch(Ratio time, float pitch, int logtype = LOGTYPE_LINEAR, int chance = MAX_PATCHVOICE_CHANCE)
-    : _time(time)
-    , _val(pitch)
-    , _logtype(logtype)
+    : TimeDataDataType<float>(time, pitch, logtype)
     , _chance(chance)
   {}
 };
 
-  struct PitchSeqBlock : RT_TimeData_Player_Cache<typeof(Pitch::_val)> {
-    bool _enabled = true; // Can be false if pitch._chance < MAX_PATCHVOICE_CHANCE.
-  };
+struct PitchSeqBlock : RT_TimeData_Player_Cache<typeof(Pitch::_val)> {
+  bool _enabled = true; // Can be false if pitch._chance < MAX_PATCHVOICE_CHANCE.
+};
 
-  using PitchTimeData = TimeData<Pitch, PitchSeqBlock>;
+using PitchTimeData = TimeData<Pitch, PitchSeqBlock>;
+  
 }
 #endif
 
@@ -2321,12 +2390,10 @@ struct Instruments{
 #ifdef __cplusplus
 namespace r{
 
-struct Stop{
-  Ratio _time;
+struct Stop : public TimeDataDataTypeNoVal {
   Stop(Ratio time)
-    : _time(time)
+    : TimeDataDataTypeNoVal(time)
   {}
-  //int _val; // dummy
 };
 
   struct StopSeqBlock : RT_TimeData_Player_Cache<int> {
@@ -4188,8 +4255,4 @@ extern LANGSPEC void COMMENTDIALOG_open(void);
 extern LANGSPEC void UPDATECHECKER_doit(void);
 extern LANGSPEC void processEventsALittleBit(void);
 extern LANGSPEC void MONOTONIC_TIMER_init(void);
-
-
-
 #endif
-

@@ -19,28 +19,45 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 /*
   DESIGN
   ======
-  * Several readers (up to 128 simultaneous threads can read at the same time)
+  * Several readers (up to 128 simultaneous threads can read at the same time (see "MAX_NUM_READERS" in AtomicPointerStorage.hpp.))
   * One writer
   * The readers don't have to be synchronized.
-  * A reader can be a realtime thread.
-  * Writer thread is never a realtime thread.
-  * DataType must have this variable:
-    "Ratio _time;"
-    (TimeData can probably easily be extended to support any _time type, not just Ratio, by making Ratio a template type, if necessary)
-  * The underlying vector is sorted by _time.
-  * Accessing a random element (given time) is O(Log(n)) while accessing a sequential element is usually O(1) if cache_num >= 0 (i.e. when time is only a little bit higher than last call).
+  * Any reader can be a realtime thread, but it doesn't have to be.
+  * Writer thread can not be a realtime thread.
+  * DataType must provide the two methods 'get_time' and 'set_time' (and sometimes 'get_val'),
+    which is usually done by subclassing r::TimeDataDataType.
+    'get_time' and 'set_time' operates on 'Ratio', but other types can probably be supported by
+    using a template, if necessary, later.
+  * The underlying vector is sorted by the result of calling get_time().
+  * DataType should ideally be a trivial datatype (i.e. a POD). If that is not possible,
+    it's probably best to use r::TimeData_shared_ptr instead.
+    "r::TimeData_shared_ptr" is a special type of shared-pointer. The important differences, compared to std::shared_ptr, are:
+    1. r::TimeData_shared_ptr doesn't allocate or delete memory in a RT thread.
+    2. r::TimeData_shared_ptr implements 'get_time', 'set_time', and 'get_val'.
+    3. r::TimeData_shared_ptr requires the template type to include the field 'std::atomic<int> _num_references'.
+       (This field is used to avoid having to allocate an extra memory block for the reference counter (which complicates code).)
+  * Accessing a random element (given time) is O(Log(n)) while accessing a sequential element
+    is usually O(1) if cache_num >= 0 (i.e. when time is only a little bit higher than last call).
 
 
   HOW IT WORKS
   ============
   * We never modify the underlying vector.
     We only modify a COPY of the underlying vector, and when finished, the underlying vector is atomically replaced with the modified copy.
-  * To make sure making a copy of the underlying vector doesn't take too much time, the element type ("DataType") must not be too complicated.
-    If DataType is big, use pointers to instances instead of the instance itself.
+  * To make sure making a copy of the underlying vector doesn't take too much time, the element type ("DataType") should not be too big.
+    If DataType is very big, use r::RefCountTimeDate instead to store a shared-pointer to the actual data.
   * A Reader object is optimized to get data in a linear increasing fashion,
     i.e. starting with a low time and ending on a high time, always increasing time from call to call. (This is not a requirement, but when
-    time is not increasing, it's necessary to do a O(log N) binary search to find the new index.)
-    If cache_num >= 0, the index is also remembered in the TimeData object itself, further decreasing the need to do a binary search in the audio realtime thread.
+    time is not increasing, it's necessary to do a O(log N) binary search to find the new index. This can be important to avoid if
+    accessing from RT code.)
+    If cache_num >= 0, the index is also remembered in the TimeData object itself,
+    further decreasing the need to do a binary search in a realtime thread.
+
+
+
+  TESTS
+  =====
+  TimeData is tested by running "make test_refcounttimedata", "make test_radium_vector", and "make test_timedata".
 
 
   NOTES
@@ -92,6 +109,8 @@ extern const radium::FreeableList *FREEABLELIST_transfer_all(void);
 
 #if !defined(RELEASE) || defined(TEST_TIMEDATA_MAIN)
 extern int g_num_timedata_vectors;
+extern int g_num_allocated;
+extern int g_num_freed;
 #endif
 
 namespace r{
@@ -279,16 +298,168 @@ public:
 };
 
 template <typename ValType>
-struct TimeDataSimpleNode{
-  Ratio _time;
-  ValType _val;
-  int _logtype;
-  
+struct TimeDataSimpleNode : public TimeDataDataType<ValType> {
   TimeDataSimpleNode(Ratio time, ValType val, int logtype = LOGTYPE_LINEAR)
-    : _time(time)
-    , _val(val)
-    , _logtype(logtype)
+    : TimeDataDataType<ValType>(time, val, logtype)
   {}
+};
+
+
+template <class T>
+static inline void RT_schedule_to_delete(T *t)
+{
+  // Currently, we don't have to schedule anything since RT_schedule_to_delete is always called from non-rt code.
+  ASSERT_IS_NONRT_MAIN_THREAD_NON_RELEASE();
+
+#if !defined(RELEASE) || defined(TEST_TIMEDATA_MAIN)
+  g_num_freed++;
+#endif
+  
+  //static int s_num = 0; printf("   <<<<<<<<<<<< RT_schedule_to_delete: %p. Total: %d / %d\n", t, ++s_num, g_num_allocated);
+  delete t;
+}
+
+
+
+
+// Like shared_ptr, but can be used as datatype for TimeData.
+template <class T>
+struct TimeData_shared_ptr
+{
+  using TType = T;
+  using ValType = typeof(T::_val);
+  
+  static_assert(std::is_base_of<TimeDataDataTypeRef<ValType>, T>::value, "T must be a subclass of r::TimeDataDataTypeRef");
+  
+  T *_t;
+
+  int get_logtype(void) const {
+    return _t->get_logtype();
+  }
+  
+  ValType get_val(void) const {
+    return _t->get_val();
+  }
+  
+  const Ratio &get_time(void) const {
+    return _t->get_time();
+  }
+
+  void set_time(const Ratio &time) {
+    _t->set_time(time);
+  }
+
+#if 0
+  TimeData_shared_ptr()
+    : _t(NULL)
+  {
+  }
+#endif
+  
+  TimeData_shared_ptr(T *t)
+    : _t(t)
+  {
+    _t->_num_references++;
+    
+    //printf("    Constr: %d - %p (%p)\n", _t->_num_references.load(), _t, this);
+  }
+
+  // copy constructor
+  TimeData_shared_ptr(const TimeData_shared_ptr &other)
+    : _t(other._t)
+  {
+    _t->_num_references++;
+    
+    //printf("    Copy-constr: %d - %p. (%p -> %p)\n", _t->_num_references.load(), _t, &other, this);
+  }
+
+  // copy assignment
+  TimeData_shared_ptr& operator=(const TimeData_shared_ptr &other){
+    
+    this->_t = other._t;
+    
+    _t->_num_references++;
+
+    //printf("    Copy-assign: %d - %p. (%p -> %p)\n", _t->_num_references.load(), _t, &other, this);
+    
+    return *this;
+  }
+  
+  // move constructor
+  TimeData_shared_ptr(TimeData_shared_ptr&& other)
+  {
+    this->_t = other._t;
+
+    //printf("    Move-constr: %d - %p (%p -> %p)\n", this->_t->_num_references.load(), _t, &other, this);
+    
+    other._t = NULL;
+  }
+
+  // Move assignment
+  TimeData_shared_ptr& operator=(TimeData_shared_ptr&& a)
+  {
+    if (&a == this){
+      R_ASSERT_NON_RELEASE(false); // Interested in knowing when this happens.
+      return *this;
+    }
+    
+    if (_t != NULL){
+      //R_ASSERT_NON_RELEASE(false); // Interested in knowing when this happens.
+      //printf("                      Deleting %p in move assigment\n", _t);
+      cleanup();
+    }
+    
+    _t = a._t;
+    a._t = nullptr;
+
+    //printf("    Move-assign: %d - %p (%p -> %p)\n", this->_t->_num_references.load(), _t, &a, this);
+    
+    return *this;
+  }
+
+  
+  ~TimeData_shared_ptr()
+  {
+    cleanup();
+  }
+
+  
+private:
+  
+  void cleanup(void){
+    if (_t==NULL){
+      //      abort();
+      return; // (Happens after using move constructor)
+    }
+    
+    R_ASSERT(_t->_num_references > 0);
+    
+    //printf("    ~TimeData_shared_ptr: %d - %p (%p)\n", _t->_num_references.load()-1, _t, this);
+    
+    if ((--_t->_num_references)==0)
+      RT_schedule_to_delete(_t);
+  }
+
+  
+public:
+  
+  T *operator->() const {
+    return _t;
+  }
+  
+  T *get(void) const {
+    return _t;
+  }
+
+#if 0
+  bool operator==(const TimeData_shared_ptr &other) const{
+    return _t==other._t || ( (*_t)==(*other._t) );
+  }
+  
+  bool operator!=(const TimeData_shared_ptr &other) const{
+    return _t!=other._t;
+  }
+#endif
 };
 
 
@@ -300,12 +471,22 @@ struct TimeDataSimpleNode{
   Cache data must be seqblock-specific in order to correctly play the same block at the same time in more than one seqtrack.
   Maybe SeqBlockT should have been named SeqblockT_And_RT_Cache though, which would have been a clearer, but less correct, name.
 */
-  
+
 template <class T, class SeqBlockT>
 class TimeData {
 
-  //static_assert(sizeof(T) < sizeof(void*)*8, "T should be a pointer if too big. This to lower the time it takes to copy the underlying vector.");
-  static_assert(std::is_trivially_copyable<T>::value, "T should be a pointer if not trivially copyable. (don't want to copy all data every time we add a block for instance)");
+  static_assert(std::is_base_of<TimeData_shared_ptr<typename T::TType>, T>::value
+                ||
+                (  std::is_trivially_destructible<T>::value
+                   &&
+                   std::is_trivially_copyable<T>::value
+                   &&
+                   (  std::is_base_of<TimeDataDataType<typename T::TType>, T>::value
+                      ||
+                      std::is_base_of<TimeDataDataTypeNoVal, T>::value
+                   ) 
+                ),
+                "T must be either 1: r::TimeData_shared_ptr<T>, or 2: pretty trival and subclass of either r::TimeDataDataType or r::TimeDataDataTypeNoVal)");
 
 #if !defined(RELEASE)
   mutable int _binsearch=0;  
@@ -342,10 +523,23 @@ private:
 #endif
     }
 
+    void assert_sorted(void) const {
+#if !defined(RELEASE)
+      if (this->size() > 0){
+        Ratio prev = this->at_ref(0).get_time();
+        for(int i=1;i<this->size();i++){
+          if (this->at_ref(i).get_time() < prev)
+            abort();
+          prev = this->at_ref(i).get_time();
+        }
+      }
+#endif
+    }
+
     void print_all_times(void) const {
       printf("--------TimeData start. Size: %d\n", this->size());
       for(int i=0;i<this->size();i++)
-        printf("   %d: %f  (%d / %d)\n", i, make_double_from_ratio(this->at(i)._time), (int)this->at(i)._time.num, (int)this->at(i)._time.den);
+        printf("   %d: %f  (%d / %d)\n", i, make_double_from_ratio(this->at(i).get_time()), (int)this->at(i).get_time().num, (int)this->at(i).get_time().den);
       printf("--------TimeData end.\n\n");
     }
     
@@ -353,23 +547,16 @@ private:
       //printf("  Sorting. is_sorted: %d\n", _is_sorted);
       //printf("Before:\n");
       //print_all_times();
-      
+      //printf("  >>> ==== Sorting start >>>\n");
       this->sort([](const T &a, const T &b){
-          return a._time < b._time;
-        });
+        //printf("  COMP called %p %p\n", &a, &b);
+        return a.get_time() < b.get_time();
+      });
+      //printf("  <<< ===== Sorting end <<<\n");
       
       //printf("After:\n");
       //print_all_times();
-#if !defined(RELEASE)
-      if (this->size() > 0){
-        Ratio prev = this->at(0)._time;
-        for(int i=1;i<this->size();i++){
-          if (this->at(i)._time < prev)
-            abort();
-          prev = this->at(i)._time;
-        }
-      }
-#endif
+      assert_sorted();
     }
   
   };
@@ -454,7 +641,7 @@ private:
       }
       
       const int mid = (low + high) / 2;
-      const Ratio time = array[mid]._time;
+      const Ratio time = array[mid].get_time();
       
       if (time == ratio){
         found_exact = true;
@@ -485,7 +672,7 @@ private:
       
       while(low<high){
         const int mid = (low+high)/2;
-        const Ratio mid_time = array[mid]._time;
+        const Ratio mid_time = array[mid].get_time();
         if (mid_time > ratio)
           high = mid;
         else
@@ -535,8 +722,8 @@ private:
       int das_size = size();
       
       R_ASSERT_NON_RELEASE(das_size >= 2);
-      R_ASSERT_NON_RELEASE(ratio >= _vector->at_ref(0)._time);
-      R_ASSERT_NON_RELEASE(ratio < _vector->at_ref(das_size-1)._time);
+      R_ASSERT_NON_RELEASE(ratio >= _vector->at_ref(0).get_time());
+      R_ASSERT_NON_RELEASE(ratio < _vector->at_ref(das_size-1).get_time());
       
       int curr_pos = R_MAX(_curr_pos, 1);
         
@@ -544,9 +731,9 @@ private:
         
         R_ASSERT_NON_RELEASE(curr_pos>=0);
 
-        //printf(" F1. curr_pos: %d. ratio: %f. [curr_pos]._time: %f\n", curr_pos, make_double_from_ratio(ratio), make_double_from_ratio(_vector->at_ref(curr_pos)._time));
+        //printf(" F1. curr_pos: %d. ratio: %f. [curr_pos].get_time(): %f\n", curr_pos, make_double_from_ratio(ratio), make_double_from_ratio(_vector->at_ref(curr_pos).get_time()));
         
-        if (ratio >= _vector->at_ref(curr_pos-1)._time) {
+        if (ratio >= _vector->at_ref(curr_pos-1).get_time()) {
 
           //printf(" F2\n");
           // Hopefully the compiler is able to hyper-optimize this block.
@@ -560,7 +747,7 @@ private:
 
             //printf(" F3 %d\n", i);
             
-            if (ratio < next._time){
+            if (ratio < next.get_time()){
               _curr_pos = curr_pos;
               //printf(" F4 %d\n", _curr_pos);
               return _curr_pos;
@@ -641,7 +828,7 @@ private:
     
     bool has_element_between(const Ratio &begin, const Ratio &end) const {
       for(const T &t : *_vector)
-        if (t._time >= begin && t._time < end)
+        if (t.get_time() >= begin && t.get_time() < end)
           return true;
       return false;
     }
@@ -668,32 +855,32 @@ private:
       const T &t2 = at_ref(index);
       
 #if !defined(RELEASE)
-      if (ratio < t1._time)
+      if (ratio < t1.get_time())
         abort();
       
-      if (ratio > t2._time)
+      if (ratio > t2.get_time())
         abort();
 #endif
         
-      if (t1._logtype==LOGTYPE_HOLD){
+      if (t1.get_logtype()==LOGTYPE_HOLD){
 
-        return t1._val;
+        return t1.get_val();
         
       } else {
 
         /*
         printf("Value RAW. index: %d. Ratio: %f. times: %f / %f. Values: %d / %d\n", index, make_double_from_ratio(ratio),
-               make_double_from_ratio(t1._time), make_double_from_ratio(t2._time),
-               t1._val, t2._val);
+               make_double_from_ratio(t1.get_time()), make_double_from_ratio(t2.get_time()),
+               t1.get_val(), t2.get_val());
         */
         
-        if (t1._time==t2._time){  // Might happen at last node, not sure.
+        if (t1.get_time()==t2.get_time()){  // Might happen at last node, not sure.
           R_ASSERT_NON_RELEASE(false);
-          return t2._val;
+          return t2.get_val();
         }else
           return scale_double(make_double_from_ratio(ratio),
-                              make_double_from_ratio(t1._time), make_double_from_ratio(t2._time),
-                              t1._val, t2._val);
+                              make_double_from_ratio(t1.get_time()), make_double_from_ratio(t2.get_time()),
+                              t1.get_val(), t2.get_val());
       }
     }
 
@@ -706,12 +893,12 @@ private:
       
       const T &first_t = _vector->at_ref(0);
       
-      if (period._end < first_t._time)
+      if (period._end < first_t.get_time())
         return false;
       
       const T &last_t = _vector->at_ref(das_size-1);
       
-      if (period._start >= last_t._time)
+      if (period._start >= last_t.get_time())
         return false;
 
       return true;
@@ -751,7 +938,7 @@ private:
 
       // Find previous value
       {
-        if (period._start.num==0 || period._start < first_t._time) { // Note: period._start==0 when it's the first call to block.
+        if (period._start.num==0 || period._start < first_t.get_time()) { // Note: period._start==0 when it's the first call to block.
 
           prev_value = 0.0; // Not necessary. Only to silence compiler error. (Usually I have the opposite problem, that it won't give error when using uninitialized value. Sigh. Why don't the gcc and clang people prioritize to get this right? It seems far more important than minor optimizations for instance.)
           has_prev_value = false;
@@ -768,8 +955,8 @@ private:
             // even if this value is totally wrong, no one would probably notice, and if they did it would be extremely seldom.)
             Ratio ratio_prev = period._start - (period._end-period._start);
             
-            if (ratio_prev < first_t._time) {
-              prev_value = first_t._val;
+            if (ratio_prev < first_t.get_time()) {
+              prev_value = first_t.get_val();
             } else {
               prev_value = get_value_raw(ratio_prev, das_size);
             }
@@ -786,16 +973,16 @@ private:
 
       // Find value at period._start
       {
-        if (period._end >= last_t._time){
+        if (period._end >= last_t.get_time()){
 
-          value_time = get_seqblock_ratio_time2(seqblock, track, last_t._time);
-          value = last_t._val;
+          value_time = get_seqblock_ratio_time2(seqblock, track, last_t.get_time());
+          value = last_t.get_val();
           when = FX_end;
 
-        } else if (period._start.num==0 || period._start < first_t._time) { // Note: period._start==0 when it's the first call to block.
+        } else if (period._start.num==0 || period._start < first_t.get_time()) { // Note: period._start==0 when it's the first call to block.
 
-          value_time = get_seqblock_ratio_time2(seqblock, track, first_t._time);
-          value = first_t._val;
+          value_time = get_seqblock_ratio_time2(seqblock, track, first_t.get_time());
+          value = first_t.get_val();
           when = FX_start;
           _curr_pos = 1;
       
@@ -820,8 +1007,8 @@ private:
           printf("....1. %d: %f. When: %d. _curr_pos: %d\n", (int)value_time, (double)value / (double)fx->max, (int) when, _curr_pos);
           if (when==FX_middle){
           auto node = _vector->at_ref(_curr_pos-1);
-          auto value_time = get_seqblock_ratio_time2(seqblock, track, node._time);
-          printf("........ time last node: %d. Value last node: %f\n", (int)value_time, (double)node._val / (double)fx->max);
+          auto value_time = get_seqblock_ratio_time2(seqblock, track, node.get_time());
+          printf("........ time last node: %d. Value last node: %f\n", (int)value_time, (double)node.get_val() / (double)fx->max);
           }
           }
         */
@@ -838,26 +1025,26 @@ private:
 
 #if 0
           {
-            auto node_time = get_seqblock_ratio_time2(seqblock, track, node._time);
-            auto end_time = get_seqblock_ratio_time2(seqblock, track, node._time);
+            auto node_time = get_seqblock_ratio_time2(seqblock, track, node.get_time());
+            auto end_time = get_seqblock_ratio_time2(seqblock, track, node.get_time());
             printf("............(2) _curr_pos: %d. node(_curr_pos) time: %d. end_time: %d. node ratio: %d / %d. end ratio: %d / %d\n", _curr_pos, (int)node_time, (int)end_time,
-                   (int)node._time.num, (int)node._time.den, 
+                   (int)node.get_time().num, (int)node.get_time().den, 
                    (int)period._end.num, (int)period._end.den);
           }
 #endif
           
-          // (maybe) FIX: The correct test here is actually node._time >= period._end, and not node._time > period._end.
+          // (maybe) FIX: The correct test here is actually node.get_time() >= period._end, and not node.get_time() > period._end.
           // However, because of rounding errors, notes can be sent out in the block before an fx node at the same position.
           // And it's quite important that fx are sent out before note start, for instance if setting start position of a sample (common in MOD files).
           // Afters notes have been converted to TimeData, this test should probably be corrected.
-          if (node._time > period._end)
+          if (node.get_time() > period._end)
             break;
       
-          value = node._val;
+          value = node.get_val();
       
           FX_when when = _curr_pos == das_size-1 ? FX_end : FX_middle;
 
-          int64_t time = get_seqblock_ratio_time2(seqblock, track, node._time);
+          int64_t time = get_seqblock_ratio_time2(seqblock, track, node.get_time());
           //printf("....2. %d: %f. When: %d. _curr_pos: %d\n", (int)value, (double)value, (int) when, _curr_pos);
           callback.callback(seqtrack, seqblock, track, _curr_pos, value, time, when, true);
 
@@ -896,20 +1083,20 @@ private:
 
       double curr_value;
       
-      if (ratio > last_t._time)
+      if (ratio > last_t.get_time())
         return false;
 
-      if (ratio < first_t._time)
+      if (ratio < first_t.get_time())
         return false;
       
-      if (ratio == last_t._time){
+      if (ratio == last_t.get_time()){
         
-        curr_value = last_t._val;
+        curr_value = last_t.get_val();
         when = FX_end;
         
       } else {
 
-        if (ratio == first_t._time)
+        if (ratio == first_t.get_time())
           when = FX_start;
         else
           when = FX_middle;
@@ -938,7 +1125,7 @@ public:
     , public ReaderWriter<const TimeData, const TimeDataVector>
   {
     
-    // We can probably make this work, but if trying to copy a Reader, it's most likely (over 99% sure) an error.
+    // We can probably make this work, but if trying to copy a Reader, it's most likely an error.
     Reader(const Reader&) = delete;
     Reader& operator=(const Reader&) = delete;
 
@@ -1031,6 +1218,12 @@ public:
       this->_vector->sortit();
     }
     
+    void assert_sorted(void){
+#if !defined(RELEASE)
+      this->_vector->assert_sorted();
+#endif
+    }
+    
     void add(T &data){
       /*
       int pos = BinarySearch_Left(data.time);
@@ -1040,13 +1233,20 @@ public:
       sortit();
     }
 
+    void add(T &&data){
+      this->_vector->push_back(std::move(data));
+      sortit();
+    }
+
     void add2(T data){
-      add(data);
+      this->_vector->push_back(std::move(data));
+      sortit();
     }
 
     template<typename ... Args> 
     void add(Args ... args){
-      add2(T(args...));
+      this->_vector->push_back(std::move(T(args...)));
+      sortit();
     }
 
     // Moves node within MAX(0, previous node) and MIN(next node, max_pos)
@@ -1070,17 +1270,17 @@ public:
       if (num==0)
         min_pos = make_ratio(0,1);
       else
-        min_pos = at_ref(num-1)._time;
+        min_pos = at_ref(num-1).get_time();
 
       if (num < size-1)
-        max_pos = at_ref(num+1)._time;
+        max_pos = at_ref(num+1).get_time();
 
       if (new_pos < min_pos)
         new_pos = min_pos;
       else if (new_pos > max_pos)
         new_pos = max_pos;
 
-      at_ref(num)._time = new_pos;
+      at_ref(num).set_time(new_pos);
       return true;
     }
 
@@ -1102,11 +1302,19 @@ public:
       if (pos < 0 || pos >= dassize){
         return false;
       }
-      
-      this->_vector->remove_pos(pos);
 
-      if (pos < dassize-1)
-        sortit();
+#if 1
+      this->_vector->remove_pos(pos, true);
+#else
+      // Less efficient. Code is here for testing purposes.
+      this->_vector->remove_pos(pos, false);
+      sortit();
+  #if defined(RELEASE)
+    #error "error"
+  #endif
+#endif
+      
+      assert_sorted();
       
       return true;
     }
@@ -1186,12 +1394,12 @@ public:
 
         if (include_at) {
 
-          if (t._time >= time)
+          if (t.get_time() >= time)
             remove_at_pos(i);
           
         } else {
 
-          if (t._time > time)
+          if (t.get_time() > time)
             remove_at_pos(i);
 
         }
@@ -1210,18 +1418,18 @@ public:
         
         T &t = this->at_ref(i);
 
-        if (t._time >= where_to_start) {
+        if (t.get_time() >= where_to_start) {
           ret = true;
 
-          if (t._time < (where_to_start - how_much)) {
+          if (t.get_time() < (where_to_start - how_much)) {
 
             to_remove.push_back(i);
             
           } else {
 
-            t._time += how_much;
+            t.set_time(t.get_time() + how_much);
 
-            if (t._time.num < 0 || (last_legal_place.num>=0 && t._time > last_legal_place)){
+            if (t.get_time().num < 0 || (last_legal_place.num>=0 && t.get_time() > last_legal_place)){
 
               to_remove.push_back(i);
               
@@ -1249,23 +1457,23 @@ public:
         
         T &t = this->at_ref(i);
 
-        if (t._time > start) {
+        if (t.get_time() > start) {
 
           Ratio new_time;
         
-          if (t._time >= end) {
+          if (t.get_time() >= end) {
 
             if (new_end < end)
-              new_time = t._time - (end-new_end);
+              new_time = t.get_time() - (end-new_end);
             else
-              new_time = t._time + (new_end-end);
+              new_time = t.get_time() + (new_end-end);
             
           } else {
 
             if (start==end)
               new_time = (start+new_end)/2.0;
             else
-              new_time = scale_ratio(t._time, start, end, start, new_end);
+              new_time = scale_ratio(t.get_time(), start, end, start, new_end);
             
           }
            
@@ -1274,7 +1482,7 @@ public:
             new_time = last_legal_place;
           }
           
-          t._time = new_time;
+          t.set_time(new_time);
         }
 
       }
@@ -1291,7 +1499,7 @@ public:
     Writer to_writer(this, true);
     Writer from_reader(from);
 
-    for(T t : from_reader)
+    for(T &t : from_reader)
       to_writer.add(t);
   }
   
@@ -1299,7 +1507,7 @@ public:
     Writer to_writer(this, true);
     Writer from_writer(from);
 
-    for(T t : from_writer)
+    for(T &t : from_writer)
       to_writer.add(t);
 
     from_writer.clear();
