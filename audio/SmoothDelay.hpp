@@ -724,9 +724,9 @@ static void smoothdelaydelay_test(void){
   smoothdelaydelay_test2(2, 4);
 }
 
-int g_audio_block_size = 501;
-
 static void SMOOTHDELAY_test(void){
+  g_audio_block_size = 501;
+  
   pc->pfreq = 48000;
 
   printf("  testing copy_to_ringbuffer\n");

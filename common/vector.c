@@ -248,48 +248,8 @@ void RT_VECTOR_insert(vector_t *v, const void *element, int pos, const rt_vector
 #include <stdarg.h>
 #include <assert.h>
 
-void EndProgram(void){
-  printf("ENDPROGRAM called\n");
-}
+#include "../test/test_dummies.c"
 
-bool g_is_starting_up = false;
-
-
-void RError_internal(const char *fmt,...){
-  char message[1000];
-  va_list argp;
-  
-  va_start(argp,fmt);
-  /*	vfprintf(stderr,fmt,argp); */
-  vsnprintf(message,998,fmt,argp);
-  va_end(argp);
-
-  fprintf(stderr,"error: %s\n",message);
-}
-
-void RWarning_internal(const char *fmt,...){
-  abort();
-}
-
-bool THREADING_is_runner_thread(void){
-  return false;
-}
-
-bool THREADING_is_player_or_runner_thread(void){
-  return false;
-}
-
-bool PLAYER_current_thread_has_lock(void){
-  return false;
-}
-
-bool THREADING_is_main_thread(void){
-  return true;
-}
-
-void CRASHREPORTER_send_assert_message(enum Crash_Type crash_type, const char *fmt,...){
-  abort();
-}
 
 #define TESTCODE(MAKE,GET) {                    \
   vector_t v = {0};                             \

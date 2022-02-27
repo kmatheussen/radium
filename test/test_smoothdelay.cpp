@@ -15,56 +15,9 @@
 #include "../common/nsmtracker.h"
 
 #include "../audio/SmoothDelay.hpp"
+#include "../audio/Fade.cpp"
 
-DEFINE_ATOMIC(bool, is_starting_up) = false;
-
-
-static double get_ms(void){
-  struct timeval now;
-
-  int err = gettimeofday(&now, NULL);
-  if (err != 0)
-    abort();
-
-  return (double)now.tv_sec*1000.0 + (double)now.tv_usec/1000.0;
-}
-
-double TIME_get_ms(void){
-  return get_ms();
-}
-
-bool PLAYER_current_thread_has_lock(void){
-  return false;
-}
-
-bool THREADING_is_player_or_runner_thread(void){
-  return true;
-}
-
-void CRASHREPORTER_send_assert_message(enum Crash_Type crash_type, const char *fmt,...){
-  abort();
-}
-
-#if !defined(RELEASE)
-#if !defined(FOR_MACOSX)
-bool THREADING_has_player_thread_priority(void){
-  return false;
-}
-#endif
-#endif
-
-bool THREADING_is_runner_thread(void){
-  return false;
-}
-
-void JUCE_add_sound(float *dst, const float *src, int num_frames){
-  for(int i=0;i<num_frames;i++)
-    dst[i] += src[i];
-}
-
-void msleep(int ms){
-  QThread::msleep(ms);
-}
+#include "test_dummies.c"
 
 int main(void){
   SMOOTHDELAY_test();

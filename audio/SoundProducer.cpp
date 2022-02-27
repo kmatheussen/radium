@@ -298,9 +298,8 @@ public:
 
     return true;
   }
-  
-  // Why does gcc complain when the arguments are (const SoundProducerLink *a, const SoundProducerLink *b), and why doesn't it complain now?
-  static bool equal(SoundProducerLink *a, SoundProducerLink *b){
+
+  static bool equal(SoundProducerLink *const &a, SoundProducerLink *const &b){
     return a->equals(b);
   }
 

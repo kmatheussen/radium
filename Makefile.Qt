@@ -708,7 +708,7 @@ profile:
 #	operf $(RADIUM_BIN) && opreport -ca |more
 
 check: test
-test: test_vector test_placement test_notes test_path_resolver test_seqautomation test_audiobuffer test_smoothdelay test_threading test_samplereader test_ratio test_timedata test_rt_memory_allocator
+test: test_vector test_placement test_notes test_path_resolver test_seqautomation test_audiobuffer test_smoothdelay test_threading test_samplereader test_ratio test_refcounttimedata test_rt_memory_allocator test_radium_vector test_timedata
 	@echo
 	@echo " == All tests succeeded, apparently =="
 
@@ -716,22 +716,26 @@ TEST_TIMEDATA_OPTS=-DTEST_TIMEDATA_MAIN -Wall -Werror -g -lpthread  $(filter-out
 
 TEST_TIMEDATA_RUNNER=gdb -ex "set print thread-events off" -ex run -ex=quit ./a.out
 
+test_refcounttimedata:
+	$(CCC) common/TimeData.cpp $(TEST_TIMEDATA_OPTS) `$(PKGqt) --cflags Qt5Core --libs Qt5Core` -fPIC -O3 -DTEST_SHARED_PTR -DTEST_REFCOUNTTIMEDATA -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
+# --rtlib=compiler-rt
+
 test_timedata:
 	$(CCC) common/TimeData.cpp $(TEST_TIMEDATA_OPTS) -o a.out &&	$(TEST_TIMEDATA_RUNNER)
-	cd common && $(CCC) TimeData.cpp $(TEST_TIMEDATA_OPTS) -Ofast -o a.out &&	$(TEST_TIMEDATA_RUNNER)
+	cd common && $(CCC) TimeData.cpp $(TEST_TIMEDATA_OPTS) -DTEST_SHARED_PTR=1 -Ofast -o a.out &&	$(TEST_TIMEDATA_RUNNER)
 	cd common && $(CCC) TimeData.cpp $(TEST_TIMEDATA_OPTS) -Os -o a.out &&	$(TEST_TIMEDATA_RUNNER)
-	cd common && $(CCC) TimeData.cpp $(TEST_TIMEDATA_OPTS) -O3 -o a.out &&	$(TEST_TIMEDATA_RUNNER)
+	cd common && $(CCC) TimeData.cpp $(TEST_TIMEDATA_OPTS) -DTEST_SHARED_PTR=1 -O3 -o a.out &&	$(TEST_TIMEDATA_RUNNER)
 
 	cd common && $(CCC) TimeData.cpp -DRELEASE $(TEST_TIMEDATA_OPTS) -O2 -o a.out &&	$(TEST_TIMEDATA_RUNNER)
 
-	cd common && $(CCC) TimeData.cpp $(TEST_TIMEDATA_OPTS) -O3 -fsanitize=thread -o a.out && TSAN_OPTIONS="history_size=7,second_deadlock_stack=1,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
+	cd common && $(CCC) TimeData.cpp $(TEST_TIMEDATA_OPTS) -DTEST_SHARED_PTR=1 -O3 -fsanitize=thread -o a.out && TSAN_OPTIONS="history_size=7,second_deadlock_stack=1,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
 	cd common && $(CCC) TimeData.cpp $(TEST_TIMEDATA_OPTS) -O2 -fsanitize=undefined -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
-	cd common && $(CCC) TimeData.cpp $(TEST_TIMEDATA_OPTS) -O3 $(ADDRESS_SANITIZE_OPTS) -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
+	cd common && $(CCC) TimeData.cpp $(TEST_TIMEDATA_OPTS) -DTEST_SHARED_PTR=1 -O3 $(ADDRESS_SANITIZE_OPTS) -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
 	cd common && $(CCC) TimeData.cpp $(TEST_TIMEDATA_OPTS) -O2 $(UNDEFINED_SANITIZE_OPTS) $(ADDRESS_SANITIZE_OPTS) -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
 
-	cd common && $(CCC) TimeData.cpp -DRELEASE $(TEST_TIMEDATA_OPTS) -O2 -fsanitize=thread -o a.out && TSAN_OPTIONS="history_size=7,second_deadlock_stack=1,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
+	cd common && $(CCC) TimeData.cpp -DRELEASE $(TEST_TIMEDATA_OPTS) -DTEST_SHARED_PTR=1 -O2 -fsanitize=thread -o a.out && TSAN_OPTIONS="history_size=7,second_deadlock_stack=1,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
 	cd common && $(CCC) TimeData.cpp -DRELEASE $(TEST_TIMEDATA_OPTS) -O3 -fsanitize=undefined -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
-	cd common && $(CCC) TimeData.cpp -DRELEASE $(TEST_TIMEDATA_OPTS) -O2 $(ADDRESS_SANITIZE_OPTS) -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
+	cd common && $(CCC) TimeData.cpp -DRELEASE $(TEST_TIMEDATA_OPTS) -DTEST_SHARED_PTR=1 -O2 $(ADDRESS_SANITIZE_OPTS) -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
 	cd common && $(CCC) TimeData.cpp -DRELEASE $(TEST_TIMEDATA_OPTS) -O3 -fsanitize=undefined $(ADDRESS_SANITIZE_OPTS) -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
 
 test_timedata_gdb:
@@ -759,6 +763,10 @@ test_ratio:
 	cd common && ln -sf ratio_funcs.h test_ratio.cpp && g++ test_ratio.cpp -D__STDC_FORMAT_MACROS=1 -DTEST_MAIN -Wall -Werror -g -o a.out &&	./a.out
 #	cd common && ln -sf ratio_funcs.h test_ratio.cpp && g++ test_ratio.cpp -D__STDC_FORMAT_MACROS=1 -DTEST_MAIN -Wall -Werror -g -o a.out && gdb ./a.out
 
+test_radium_vector:
+	cd test && $(CCC) -Wall -Werror test_radium_vector.cpp -DTEST_RADIUM_VECTOR_MAIN -Wall -std=gnu++14 -g -D__STDC_FORMAT_MACROS=1 $(ADDRESS_SANITIZE_OPTS) $(UNDEFINED_SANITIZE_OPTS) -DFOR_LINUX -I../Qt -Wno-unused-function -O3 -o test_radium_vector
+	ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" gdb -ex='set confirm on' -ex=run -ex=quit test/test_radium_vector
+
 test_samplereader:
 	cd audio && $(CCC) SampleReader.cpp -DTEST_MAIN -Wall -std=gnu++14 -g && ./a.out
 
@@ -777,7 +785,7 @@ test_threading:
 
 
 test_vector:
-	$(CC) -g -Wall -Werror -D__STDC_FORMAT_MACROS=1 -DTEST_VECTOR  -DUSE_QT_REQTYPE=1 common/vector.c common/memory.c -IQt -I$(GCDIR)/include $(GCDIR)/.libs/libgc.a -lpthread $(ADDRESS_SANITIZE_OPTS) -fPIC -DFOR_LINUX -std=gnu99
+	$(CC) -g -Wall -Werror -D__STDC_FORMAT_MACROS=1 -DTEST_VECTOR -DUSE_QT_REQTYPE=1 common/vector.c common/memory.c -IQt -I$(GCDIR)/include $(GCDIR)/.libs/libgc.a -lpthread $(ADDRESS_SANITIZE_OPTS) -fPIC -DFOR_LINUX -std=gnu99
 #	valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
 #	ASAN_OPTIONS="detect_leaks=0,allocator_may_return_null=1,suppressions=SanitizerSuppr.txt,abort_on_error=1,new_delete_type_mismatch=0"
 	ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" ./a.out
@@ -814,8 +822,7 @@ test_audiobuffer:
 
 test_smoothdelay:
 	$(CCC) -g -Wall -Werror test/test_smoothdelay.cpp $(QTOPT) -UNDEBUG $(ADDRESS_SANITIZE_OPTS) -fsanitize=undefined -fPIC -DFOR_LINUX
-	$(CCC) -g -Wall -Werror audio/Fade.cpp $(CPPOPT) -UNDEBUG -fPIC -DFOR_LINUX -O3  -ffast-math
-	$(CCC) test_smoothdelay.o Fade.o $(QT_LDFLAGS) $(QTLINKFLAGS) $(OS_LDFLAGS2) -lm $(ADDRESS_SANITIZE_OPTS) -fsanitize=undefined -o test_smoothdelay
+	$(CCC) test_smoothdelay.o $(QT_LDFLAGS) $(QTLINKFLAGS) $(OS_LDFLAGS2) -lm $(ADDRESS_SANITIZE_OPTS) -fsanitize=undefined -o test_smoothdelay
 	LSAN_OPTIONS=detect_leaks=0 gdb -ex='set confirm on' -ex=run -ex=quit ./test_smoothdelay
 	@echo "=== success: test_smoothdelay ==="
 	@rm test_smoothdelay

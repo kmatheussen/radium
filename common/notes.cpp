@@ -1830,10 +1830,9 @@ void RT_notes_called_each_block(struct SeqTrack *seqtrack,
 
   for(struct Notes *note : playing_notes){
 
-    //printf("Handling velocities for note %f. Track %d\n", note->note, tracknum); 
+    //printf("Handling velocities and pitches for note %f. Track %d\n", note->note, tracknum); 
     RT_VELOCITIES_called_each_block_for_each_note(seqtrack, play_id, seqblock, track, seqtime_start, period, patch, note);
-    if (1)
-      RT_PITCHES_called_each_block_for_each_note(seqtrack, play_id, seqblock, track, seqtime_start, period, patch, note);
+    RT_PITCHES_called_each_block_for_each_note(seqtrack, play_id, seqblock, track, seqtime_start, period, patch, note);
                                      
   }
   

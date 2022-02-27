@@ -34,31 +34,6 @@ static inline int my_clock_gettime(struct timespec* t) {
     return 0;
 }
   
-  /*
-class MaybeQuickMutex{
-
-  DEFINE_ATOMIC(int, num_visitors);
-
-  Mutex mutex;
-  
-public:
-  
-  void lock(void){
-    if (ATOMIC_ADD_RETURN_OLD(num_visitors, 1) > 0)
-      mutex.lock(); 
-  }
-
-  void unlock(void){
-    if (ATOMIC_ADD_RETURN_OLD(num_visitors, -1) > 0)
-      mutex.unlock();
-  }
-
-  bool has_lock(void){
-    return ATOMIC_GET(num_visitors) > 0;
-  }
-  
-};
-  */
 
   
 struct AbstractMutex {
