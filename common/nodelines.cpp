@@ -605,6 +605,70 @@ const vector_t *GetPitchNodes2(const struct Tracker_Windows *window, const struc
 }
 
 
+const struct NodeLine2 *GetPitchNodeLines3(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const r::Note *note, const float track_pitch_min, const float track_pitch_max, const r::PitchTimeData::Reader &reader){
+    
+  double track_notearea_x1 = wtrack->notearea.x;
+  double track_notearea_x2 = wtrack->notearea.x2;
+
+  if (equal_floats(track_notearea_x1, track_notearea_x2)){
+    track_notearea_x1 = 0;
+    track_notearea_x2 = 1;
+  }
+
+  auto *ret = create_nodelines2(window,
+                                wblock,
+                                reader.size() + 2,
+                                [&reader, track_notearea_x1, track_notearea_x2, track_pitch_min, track_pitch_max, &note](int n, float &x, int &logtype, Ratio &time, int64_t &id) {
+
+                                  float val;
+                                  
+                                  if (n==0){
+                                    
+                                    val = note->get_val();
+                                    logtype = note->d._pitch_first_logtype;
+                                    time = note->get_time();
+                                    id = -1; // FIX
+                                    
+                                  } else if (n==reader.size()+1) {
+
+                                    if (note->d._pitch_end > 0)
+                                      val = note->d._pitch_end;
+                                    else
+                                      val = note->get_val();
+                                    
+                                    logtype = LOGTYPE_IRRELEVANT;
+                                    time = note->d._end;
+                                    id = -2; // FIX
+                                    
+                                  } else {
+                                  
+                                    const r::Pitch &node = reader.at_ref(n-1);
+                                    val = node._val;
+                                    
+                                    logtype = node._logtype;
+                                    time = node._time;
+                                    id = node._id;
+                                    
+                                  }
+
+                                  if (equal_floats(track_pitch_min, track_pitch_max)){
+                                    
+                                    R_ASSERT_NON_RELEASE(equal_floats(track_pitch_min, val));
+                                    x = (track_notearea_x1 + track_notearea_x2) / 2.0f;
+                                    
+                                  } else {
+
+                                    x = scale_double(val,
+                                                     track_pitch_min, track_pitch_max,
+                                                     track_notearea_x1, track_notearea_x2);
+                                  }
+                                  
+                                }
+                                );
+  return ret;
+}
+
+
 
 // pianoroll notes
 ///////////////////////////////////////////////////////////
@@ -668,7 +732,7 @@ const vector_t *GetPianorollNodes(const struct Tracker_Windows *window, const st
 }
 */
 
-const struct NodeLine2 *GetPianorollNodeLines2(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note, const r::PitchTimeData::Reader &reader){
+const struct NodeLine2 *GetPianorollNodeLines2(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const r::Note *note, const r::PitchTimeData::Reader &reader){
 
   float gfx_width = wtrack->pianoroll_area.x2 - wtrack->pianoroll_area.x;
   float notespan = wtrack->pianoroll_highkey - wtrack->pianoroll_lowkey;
@@ -683,20 +747,20 @@ const struct NodeLine2 *GetPianorollNodeLines2(const struct Tracker_Windows *win
                                   
                                   if (n==0){
                                     
-                                    val = note->note;
-                                    logtype = note->pitch_first_logtype;
-                                    time = ratio_from_place(note->l.p);
+                                    val = note->_val;
+                                    logtype = note->d._pitch_first_logtype;
+                                    time = note->get_time();
                                     id = -1; // FIX
                                     
                                   } else if (n==reader.size()+1) {
 
-                                    if (note->pitch_end > 0)
-                                      val = note->pitch_end;
+                                    if (note->d._pitch_end > 0)
+                                      val = note->d._pitch_end;
                                     else
-                                      val = note->note;
+                                      val = note->_val;
                                     
                                     logtype = LOGTYPE_IRRELEVANT;
-                                    time = note->end;
+                                    time = note->d._end;
                                     id = -2; // FIX
                                     
                                   } else {
@@ -762,8 +826,8 @@ const struct NodeLine *GetVelocityNodeLines(const struct Tracker_Windows *window
   last_velocity->logtype = LOGTYPE_IRRELEVANT;
   
   //printf("Note: %s, pointer: %p, subtrack: %d\n",NotesTexts3[(int)note->note],note,note->subtrack);
-  g_subtrack_x1 = GetNoteX1(wtrack,note);
-  g_subtrack_x2 = R_MAX(g_subtrack_x1+1, GetNoteX2(wtrack,note));
+  g_subtrack_x1 = GetNoteX1(wtrack,note->polyphony_num);
+  g_subtrack_x2 = R_MAX(g_subtrack_x1+1, GetNoteX2(wtrack,note->polyphony_num));
   
   return create_nodelines(window,
                           wblock,
@@ -776,8 +840,8 @@ const struct NodeLine *GetVelocityNodeLines(const struct Tracker_Windows *window
 
 const struct NodeLine2 *GetVelocityNodeLines2(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note){  
   //printf("Note: %s, pointer: %p, subtrack: %d\n",NotesTexts3[(int)note->note],note,note->subtrack);
-  double subtrack_x1 = GetNoteX1(wtrack,note);
-  double subtrack_x2 = R_MAX(subtrack_x1+1, GetNoteX2(wtrack,note));
+  double subtrack_x1 = GetNoteX1(wtrack,note->polyphony_num);
+  double subtrack_x2 = R_MAX(subtrack_x1+1, GetNoteX2(wtrack,note->polyphony_num));
 
   const r::VelocityTimeData::Reader reader(note->_velocities);
 
@@ -824,6 +888,58 @@ const vector_t *GetVelocityNodes(const struct Tracker_Windows *window, const str
   return get_nodeline_nodes2(GetVelocityNodeLines2(window, wblock, wtrack, note),
                              wblock->t.y1);
 }
+
+const struct NodeLine2 *GetVelocityNodeLines3(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const r::Note *note){  
+  //printf("Note: %s, pointer: %p, subtrack: %d\n",NotesTexts3[(int)note->note],note,note->subtrack);
+  double subtrack_x1 = GetNoteX1(wtrack,note->d._polyphony_num);
+  double subtrack_x2 = R_MAX(subtrack_x1+1, GetNoteX2(wtrack,note->d._polyphony_num));
+
+  const r::VelocityTimeData::Reader reader(&note->_velocities);
+
+  auto *ret = create_nodelines2(window,
+                                wblock,
+                                reader.size() + 2,
+                                [&reader, subtrack_x1, subtrack_x2, note](int n, float &x, int &logtype, Ratio &time, int64_t &id) {
+
+                                  int val;
+                                  
+                                  if (n==0){
+                                    
+                                    val = note->d._velocity;
+                                    logtype = note->d._velocity_first_logtype;
+                                    time = note->get_time();
+                                    id = -1; // FIX
+                                    
+                                  } else if (n==reader.size()+1) {
+                                    
+                                    val = note->d._velocity_end;
+                                    logtype = LOGTYPE_IRRELEVANT;
+                                    time = note->d._end;
+                                    id = -2; // FIX
+                                    
+                                  } else {
+                                  
+                                    const r::Velocity &node = reader.at_ref(n-1);
+                                    val = node._val;
+                                    
+                                    logtype = node._logtype;
+                                    time = node._time;
+                                    id = node._id;
+                                    
+                                  }
+
+                                  x = scale_double(val, 0, MAX_VELOCITY, subtrack_x1, subtrack_x2);
+                                  
+                                }
+                                );
+  return ret;
+}
+
+const vector_t *GetVelocityNodes3(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const r::Note *note){
+  return get_nodeline_nodes2(GetVelocityNodeLines3(window, wblock, wtrack, note),
+                             wblock->t.y1);
+}
+
 
 
 // fxs

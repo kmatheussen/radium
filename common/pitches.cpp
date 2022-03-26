@@ -84,6 +84,34 @@ int AddPitch(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTra
   return pos2;
 }
 
+int AddPitch2(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, r::NotePtr &note, const Ratio &ratio, float notenum){
+  
+  int pos2;
+  
+  {
+    r::PitchTimeData::Writer writer(&note->_pitches);
+    
+    if (!writer.has_element_at_ratio(ratio)) {
+      
+      writer.add2(r::Pitch(ratio, notenum));
+
+      pos2 = writer.find_element_at_ratio(ratio);
+      
+    } else {
+      
+      pos2 = -1;
+      
+    }
+
+  }
+
+  if(pos2 >= 0)
+    if (equal_floats(note->d._pitch_end, 0.0f))
+      note->d._pitch_end = notenum;
+
+  return pos2;
+}
+
 void DeletePitch(struct Tracks *track, struct Notes *note, int pitchnum){
   r::PitchTimeData::Writer writer(note->_pitches);
   if (!writer.remove_at_pos(pitchnum)){

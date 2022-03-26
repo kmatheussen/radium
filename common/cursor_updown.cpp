@@ -51,7 +51,7 @@ int getScrollMultiplication(void){
     return 1;
 }
 
-bool ScrollEditorDown(struct Tracker_Windows *window,int num_lines, const struct Notes *dont_play_this_note){
+bool ScrollEditorDown(struct Tracker_Windows *window,int num_lines, const int64_t dont_play_this_note){
 	struct WBlocks *wblock = window->wblock;
 
 	if(num_lines==0){
@@ -153,7 +153,7 @@ bool ScrollEditorDown(struct Tracker_Windows *window,int num_lines, const struct
 }
 
 
-bool MaybeScrollEditorDownAfterEditing(struct Tracker_Windows *window, const struct Notes *dont_play_this_note){
+bool MaybeScrollEditorDownAfterEditing(struct Tracker_Windows *window, const int64_t dont_play_this_note){
   if(!is_playing_current_block() || ATOMIC_GET(root->play_cursor_onoff)==true)
     return ScrollEditorDown(window,g_downscroll, dont_play_this_note);
   

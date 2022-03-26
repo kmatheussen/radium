@@ -2546,15 +2546,6 @@ bool SCHEME_mousemove_rerun(int button, float x, float y){
 
   R_ASSERT_NON_RELEASE(Undo_Is_Currently_Undoing());
 
-  if (root!=NULL && root->song!=NULL && root->song->tracker_windows!=NULL){    
-    struct Tracker_Windows *window = root->song->tracker_windows;
-
-    if (window->wblock!=NULL){
-      ITERATE_VISIBLE_WTRACKS(window->wblock)
-        SetNotePolyphonyAttributes(wtrack->track);    // TODO/FIX: Remove this line when SetNotePolyphonyAttributes is called in a writer-hook instead of GL_create.
-    }
-  }
-
   return S7CALL2(bool_int_float_float,"radium-mouse-move", // [1]
                  button,x,y);
   

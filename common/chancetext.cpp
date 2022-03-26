@@ -68,18 +68,18 @@ bool CHANCETEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock,
     if (key == EVENT_DEL){
 
       for (const TrackRealline2 &tr2 : trs){
-        struct Notes *note = tr2.note;
+        const r::NotePtr &note = tr2.note;
 
         switch(tr2.type){
           case TR2_NOTE_START:
-            safe_int_write(&note->chance, MAX_PATCHVOICE_CHANCE);
+            safe_int_write(&note->d._chance, MAX_PATCHVOICE_CHANCE);
             break;
           case TR2_NOTE_END:
             // no chance text for end-pitch.
             break;
           case TR2_PITCH:
             {
-              r::PitchTimeData::Writer writer(note->_pitches);
+              r::PitchTimeData::Writer writer(&note->_pitches);
               if (tr2.pitchnum < 0 || tr2.pitchnum >= writer.size())
                 R_ASSERT(false);
               else 
@@ -109,20 +109,20 @@ bool CHANCETEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock,
     // ONE ELEMENT
     
     const TrackRealline2 &tr2 = trs[0];
-    struct Notes *dasnote = tr2.note;
+    const r::NotePtr &dasnote = tr2.note;
   
     if (key == EVENT_DEL) {
 
       switch(tr2.type){
         case TR2_NOTE_START:
-          safe_int_write(&dasnote->chance, MAX_PATCHVOICE_CHANCE);
+          safe_int_write(&dasnote->d._chance, MAX_PATCHVOICE_CHANCE);
           break;
         case TR2_NOTE_END:
           UNDO_CANCEL_LAST_UNDO();
           return false;
         case TR2_PITCH:
           {
-            r::PitchTimeData::Writer writer(dasnote->_pitches);
+            r::PitchTimeData::Writer writer(&dasnote->_pitches);
             if (tr2.pitchnum < 0 || tr2.pitchnum >= writer.size())
               R_ASSERT(false);
             else 
@@ -140,14 +140,14 @@ bool CHANCETEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock,
 
       switch(tr2.type){
         case TR2_NOTE_START:
-          chance = dasnote->chance;
+          chance = dasnote->d._chance;
           break;
         case TR2_NOTE_END:
           UNDO_CANCEL_LAST_UNDO();
           return false;
         case TR2_PITCH:
           {
-            const r::PitchTimeData::Reader reader(dasnote->_pitches);
+            const r::PitchTimeData::Reader reader(&dasnote->_pitches);
             if (tr2.pitchnum < 0 || tr2.pitchnum >= reader.size()){
               R_ASSERT(false);
               return true;
@@ -176,14 +176,14 @@ bool CHANCETEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock,
 
       switch(tr2.type){
         case TR2_NOTE_START:
-          safe_int_write(&dasnote->chance, dat.value);
+          safe_int_write(&dasnote->d._chance, dat.value);
           break;
         case TR2_NOTE_END:
           R_ASSERT_NON_RELEASE(false);
           break;
         case TR2_PITCH:
           {
-            r::PitchTimeData::Writer writer(dasnote->_pitches);
+            r::PitchTimeData::Writer writer(&dasnote->_pitches);
             if (tr2.pitchnum < 0 || tr2.pitchnum >= writer.size())
               R_ASSERT(false);
             else 

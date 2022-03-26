@@ -18,7 +18,7 @@
 
 #include <boost/lockfree/stack.hpp>
 
-#if TEST_MAIN
+#if TEST_RT_MEMORY_ALLOCATOR
 #include <unistd.h>
 #include <sys/time.h>
 #include <stdarg.h>
@@ -68,7 +68,7 @@ double TIME_get_ms(void){
 #  error "RELEASE should not be defined"
 #endif
 
-#else // TEST_MAIN -> ! TEST_MAIN
+#else // TEST_RT_MEMORY_ALLOCATOR -> ! TEST_RT_MEMORY_ALLOCATOR
 
 #  if !defined(RELEASE)
 #    define ASSERT_MEMORY 1
@@ -114,7 +114,7 @@ namespace{
 
 
 
-#if TEST_MAIN
+#if TEST_RT_MEMORY_ALLOCATOR
 #  define TOTAL_MEM_SIZE (1024) // Use very low value to provoke calls to malloc.
 #else
 #  define TOTAL_MEM_SIZE (1024*1024)
@@ -122,7 +122,7 @@ namespace{
 
 #define NUM_POOLS 16
 
-#if TEST_MAIN
+#if TEST_RT_MEMORY_ALLOCATOR
 #  define MAX_POOL_SIZE 8 // Very low value to provoke RT_free to fail now and then (to check that it doesn't crash if rt_free fails)
 #else
 #  define MAX_POOL_SIZE 4096
@@ -313,13 +313,13 @@ static bool RT_maybe_free_to_global_mem(RT_mempool_data *data){
 #endif
 }
 
-#if TEST_MAIN
+#if TEST_RT_MEMORY_ALLOCATOR
 static DEFINE_ATOMIC(int, g_total_malloc) = 0;
 #endif
 
 static RT_Mem_internal *RT_alloc_using_malloc(int size, int pool_num, const char *who, int where, bool show_warning, bool we_know_for_sure_we_are_not_RT){
   
-#if TEST_MAIN
+#if TEST_RT_MEMORY_ALLOCATOR
   //printf("...RT_alloc failed. Who: \"%s\". Size: %d. Where: %d\n", who, size, where);
   ATOMIC_ADD(g_total_malloc, size);
 #else
@@ -565,7 +565,7 @@ void RT_free_raw(void *mem, const char *who){
         if (g_pools[i]->bounded_push(data))
           return;
 
-#if !TEST_MAIN
+#if !TEST_RT_MEMORY_ALLOCATOR
       RT_message("RT_free failed. Who: \"%s\". pool_num: %d. Size: %d.", who, pool_num, POOL_MEM_SIZE(pool_num));
 #endif
 
@@ -576,7 +576,7 @@ void RT_free_raw(void *mem, const char *who){
 }
 
 
-#ifdef TEST_MAIN
+#ifdef TEST_RT_MEMORY_ALLOCATOR
 
 #include <thread>
 

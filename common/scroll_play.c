@@ -49,10 +49,10 @@ static vector_t scrollplaying_notes[MAX_SCROLLPLAYTRACKS] = {{0}}; // [NO_STATIC
 
 
 static void Scroll_play_down3(
-                      struct WBlocks *wblock,
-                      const Place *p1,
-                      const Place *p2,
-                      const struct Notes *dont_play_this_note
+                              struct WBlocks *wblock,
+                              const Place *p1,
+                              const Place *p2,
+                              const int64_t dont_play_this_note
 ){
   struct Tracks *track = wblock->block->tracks;
 
@@ -67,7 +67,7 @@ static void Scroll_play_down3(
         struct Notes *note = track->notes;
         
         while(note != NULL){
-          if (note != dont_play_this_note){
+          if (note->id != dont_play_this_note){
             if (PlaceIsBetween2(&note->l.p, p1, p2))
               PATCH_play_note(patch, 
                               create_note_t(NULL,
@@ -188,7 +188,7 @@ static void Scroll_play_down2(
                              struct WBlocks *wblock,
                              int start_realline,
                              int end_realline,
-                             const struct Notes *dont_play_this_note
+                             const int64_t dont_play_this_note
 ){
   Place p1 = {0};
   Place p2 = {0};
@@ -216,7 +216,7 @@ void Scroll_play_down(
                       struct WBlocks *wblock,
                       int start_realline,
                       int end_realline,
-                      const struct Notes *dont_play_this_note
+                      const int64_t dont_play_this_note
 ){
   if(is_playing() || doScrollPlay()==false) return;
 

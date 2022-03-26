@@ -48,6 +48,9 @@ static void insert_place(Trs &trs, const TrackRealline2 &tr){
 }
 */
 
+#define USE_NEW 1
+
+#if !USE_NEW
 static void add_tr(const struct WBlocks *wblock, Trss &trss, const Place &place, TR2_Type type, struct Notes *note, int64_t node_id, float pitch, int chance, int pitchnum = -1, int realline_for_end = -1){
   TrackRealline2 tr = {};
   
@@ -88,11 +91,63 @@ static void add_tr(const struct WBlocks *wblock, Trss &trss, const Place &place,
 
   TRS_INSERT_PLACE(trss[realline], tr);
 }
-                   
+#endif                   
+
+#if USE_NEW
+static void add_tr2(const struct WBlocks *wblock, Trss &trss, const Place &place, TR2_Type type, r::NotePtr &note, int64_t node_id, float pitch, int chance, int pitchnum = -1, int realline_for_end = -1){
+  TrackRealline2 tr = {};
+  
+  tr.p = place;
+  tr.type = type;
+  
+  tr.note = note;
+  tr.pitchnum = pitchnum;
+  tr.node_id = node_id;
+  tr.pitch = pitch;
+  tr.chance = chance;
+  tr.pitchnum = pitchnum;
+
+  if (type!=TR2_STOP){
+    R_ASSERT(tr.note.get()!=NULL);
+  }
+  
+  if (type==TR2_PITCH){
+    
+    //R_ASSERT(tr.note->pitches != NULL);
+    R_ASSERT_NON_RELEASE(r::PitchTimeData::Reader(&note->_pitches).size()>0);
+    R_ASSERT(tr.pitchnum >= 0);
+    
+  }else{
+    
+    R_ASSERT_NON_RELEASE(tr.pitchnum==-1);
+    
+  }
+
+  int realline;
+
+  if (type==TR2_NOTE_END)
+    realline = find_realline_for_end_pitch(wblock, &tr.p);
+  else if (realline_for_end >= 0)
+    realline = R_MIN(realline_for_end, FindRealLineFor(wblock, 0, &tr.p));
+  else
+    realline = FindRealLineFor(wblock, 0, &tr.p);
+
+  TRS_INSERT_PLACE(trss[realline], tr);
+}
+#endif
+
+#if !USE_NEW
 static void add_pitch(const struct WBlocks *wblock, Trss &trss, struct Notes *note, const r::Pitch &pitch, int pitchnum, int realline_for_end){
   add_tr(wblock, trss, ratio2place(pitch._time), TR2_PITCH, note, pitch._id, pitch._val, pitch._chance, pitchnum, realline_for_end);
 }
+#else
 
+static void add_pitch2(const struct WBlocks *wblock, Trss &trss, r::NotePtr note, const r::Pitch &pitch, int pitchnum, int realline_for_end){
+  add_tr2(wblock, trss, ratio2place(pitch._time), TR2_PITCH, note, pitch._id, pitch._val, pitch._chance, pitchnum, realline_for_end);
+}
+#endif
+
+#if !USE_NEW
 static void add_note(const struct WBlocks *wblock, Trss &trss, struct Notes *note){
   add_tr(wblock, trss, note->l.p, TR2_NOTE_START, note, -1, note->note, note->chance);
 
@@ -120,9 +175,44 @@ static void add_note(const struct WBlocks *wblock, Trss &trss, struct Notes *not
   }
 }
 
+#else
+
+static void add_note2(const struct WBlocks *wblock, Trss &trss, r::NotePtr note){
+  add_tr2(wblock, trss, ratio2place(note->get_time()), TR2_NOTE_START, note, note->_id, note->get_val(), note->d._chance);
+
+  const Place end_place = ratio2place(note->d._end);
+  int realline_for_end = note->d._pitch_end <= 0 ? -1 : find_realline_for_end_pitch(wblock, &end_place);
+  
+  int pitchnum = 0;
+  r::PitchTimeData::Reader reader(&note->_pitches);
+  for(const r::Pitch &pitch : reader){
+    add_pitch2(wblock, trss, note, pitch, pitchnum, realline_for_end);
+    pitchnum++;
+  }
+
+  /*
+  struct Pitches *pitch = note->pitches;
+  while(pitch != NULL){
+    add_pitch(wblock, trss, note, pitch, pitchnum);
+    pitch = NextPitch(pitch);
+    pitchnum++;
+  }
+  */
+  
+  if (note->d._pitch_end > 0) {
+    add_tr2(wblock, trss, ratio2place(note->d._end), TR2_NOTE_END, note, note->_id, note->d._pitch_end, -1);
+  }
+}
+#endif
+
 #if 1
 static void add_stop(const struct WBlocks *wblock, Trss &trss, const r::Stop stop){
+#if USE_NEW
+  r::NotePtr note;
+  add_tr2(wblock, trss, ratio2place(stop._time), TR2_STOP, note, -1, NOTE_STP, -1);
+#else
   add_tr(wblock, trss, ratio2place(stop._time), TR2_STOP, NULL, -1, NOTE_STP, -1);
+#endif
 }
 #else
 static void add_stop(const struct WBlocks *wblock, Trss &trss, struct Stops *stop){
@@ -219,26 +309,30 @@ static void TRSS_print(const struct WBlocks *wblock, Trss &trss){
 
 // Returns a pointer to AN ARRAY of vectors (one vector for each realline), not a pointer to a vector.
 const Trss TRSS_get(const struct WBlocks *wblock, const struct WTracks *wtrack){
-  Trss trss;
+  ASSERT_IS_NONRT_MAIN_THREAD_NON_RELEASE(); // Must provide NoteTimeData::ReaderWriter& to use it outside the main thread (to ensure it's not deleted while using it).
   
+  Trss trss;
+
+#if !USE_NEW
   struct Notes *note = wtrack->track->gfx_notes!=NULL ? wtrack->track->gfx_notes : wtrack->track->notes;
   while(note!=NULL){
     add_note(wblock, trss, note);
     note = NextNote(note);
   }
-
-#if 1
-  r::StopTimeData::Reader reader(wtrack->track->stops2);
-  for(const r::Stop &stop : reader) {
-    add_stop(wblock, trss, stop);
-  }
 #else
-  struct Stops *stop = wtrack->track->stops;
-  while(stop!=NULL){
-    add_stop(wblock, trss, stop);
-    stop = NextStop(stop);
+  {
+    r::NoteTimeData::Reader reader(wtrack->track->gfx_notes!=NULL ? wtrack->track->_gfx_notes2 : wtrack->track->_notes2);
+    for(const r::NotePtr &note : reader)
+      add_note2(wblock, trss, note);
   }
 #endif
+
+  {
+    r::StopTimeData::Reader reader(wtrack->track->stops2);
+    for(const r::Stop &stop : reader) {
+      add_stop(wblock, trss, stop);
+    }
+  }
   
   spread_trackreallines(wblock, trss);
     
@@ -249,6 +343,8 @@ const Trss TRSS_get(const struct WBlocks *wblock, const struct WTracks *wtrack){
 }
 
 const Trs TRS_get(const struct WBlocks *wblock, const struct WTracks *wtrack, int realline){
+  ASSERT_IS_NONRT_MAIN_THREAD_NON_RELEASE(); // Must provide NoteTimeData::ReaderWriter& to use it outside the main thread (to ensure it's not deleted while using it).
+
   R_ASSERT(realline<wblock->num_reallines);
   R_ASSERT(realline>=0);
   Trss trss = TRSS_get(wblock, wtrack);

@@ -113,6 +113,29 @@ static int add_velocity(
   }
 }
 
+static int add_velocity2(
+                         int logtype,
+                         int velocityvelocity,
+                         const Ratio &ratio,
+                         r::Note *note
+                         )
+{
+  if (ratio <= note->get_time())
+    return -1;
+
+  if (ratio >= note->d._end)
+    return -1;
+  
+  {
+    r::VelocityTimeData::Writer writer(&note->_velocities);
+
+    if (!writer.has_element_at_ratio(ratio))    
+      writer.add2(r::Velocity(ratio, velocityvelocity, logtype));
+
+    return writer.find_element_at_ratio(ratio);
+  }
+}
+
 int AddVelocity3(
                  int logtype,
                  int velocityvelocity,
@@ -141,6 +164,14 @@ int AddVelocity(
                 struct Notes *note
 ){
   return add_velocity(LOGTYPE_LINEAR, velocityvelocity, placement, note);
+}
+
+int AddVelocity4(
+                 int velocityvelocity,
+                 const Ratio &ratio,
+                 r::Note *note
+){
+  return add_velocity2(LOGTYPE_LINEAR, velocityvelocity, ratio, note);
 }
 
 void AddVelocityCurrPos(struct Tracker_Windows *window){

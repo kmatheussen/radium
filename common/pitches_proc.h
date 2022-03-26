@@ -18,5 +18,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 //struct Notes *GetNextPitchNote(const struct Notes *note);
 extern LANGSPEC int AddPitch(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct Notes *note, const Place *place, float notenum);
+
+#ifdef __cplusplus
+extern int AddPitch2(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, r::NotePtr &note, const Ratio &ratio, float notenum);
+#endif
+
 extern LANGSPEC void DeletePitch(struct Tracks *track, struct Notes *note, int pitchnum);
 

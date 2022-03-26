@@ -446,6 +446,77 @@ struct Notes *getNoteFromNumA(int windownum,struct Tracker_Windows **window, int
   }
 }
 
+static const r::NotePtr getCurrNote2(int windownum, struct Tracker_Windows **window, int blocknum, int tracknum){
+  const r::NotePtr note = GetCurrNote(*window);
+  
+  if (!note)
+    handleError("Current note in track #%d in block #%d in window #%d does not exist",tracknum,blocknum,windownum);
+
+  return note;
+}
+
+const r::NotePtr getNoteFromNumA2(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, const r::NoteTimeData::Reader &reader, dyn_t dynnote){
+  if (dynnote.type==INT_TYPE){
+    int notenum = (int)dynnote.int_number;
+    if (notenum==-1)
+      return getCurrNote2(windownum, window, blocknum, tracknum);
+    
+    if (reader.size() <= notenum){
+      handleError("Note #%d in track #%d in block #%d does not exist",notenum,tracknum,blocknum);
+      return r::NotePtr();
+    }
+    
+    return reader.at_ref(notenum);
+    
+  } else if (dynnote.type==STRING_TYPE){
+    
+    const char *chars = STRING_get_chars(dynnote.string);
+    if (chars[0]==0)
+      return getCurrNote2(windownum, window, blocknum, tracknum);
+    
+    int64_t note_id = atoll(chars);
+    if (note_id==-1)
+      return getCurrNote2(windownum, window, blocknum, tracknum);
+    if (note_id < 0){
+      handleError("Illegal note id: \"%s\"", chars);
+      return r::NotePtr();
+    }
+    
+    for(const r::NotePtr &note : reader)
+      if (note->_id==note_id)
+        return note;
+    
+    handleError("Note with id %s in track #%d in block #%d note found",chars,tracknum,blocknum);
+    return r::NotePtr();
+     
+  } else {
+    handleError("Expected number or string for note, got %s", DYN_type_name(dynnote.type));
+    return r::NotePtr();
+  }
+}
+  
+const r::NotePtr getNoteFromNumA2(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, dyn_t dynnote){
+  
+    ASSERT_IS_NONRT_MAIN_THREAD_NON_RELEASE(); // Must provide NoteTimeData::ReaderWriter& to use it outside the main thread (to ensure it's not deleted while using it).
+    
+  (*wtrack) = getWTrackFromNumA(windownum, window, blocknum, wblock, tracknum);
+  if ((*wtrack)==NULL)
+    return r::NotePtr();
+
+  if(dynnote.type==UNINITIALIZED_TYPE){
+
+    return getCurrNote2(windownum, window, blocknum, tracknum);
+    
+  } else {
+    
+    struct Tracks *track = (*wtrack)->track;
+
+    const r::NoteTimeData::Reader reader(track->_notes2);
+     
+    return getNoteFromNumA2(windownum, window, blocknum, wblock, tracknum, reader, dynnote);
+  }
+}
+
 struct Notes *getNoteFromNum(int windownum,int blocknum,int tracknum,dyn_t dynnote){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
@@ -531,6 +602,39 @@ r::Velocity getVelocityFromNumA(int windownum,
 
   if (velocitynum==num_velocities-1)
     return r::Velocity(note->end, note->velocity_end);
+  
+  return reader.at(velocitynum-1);
+}
+
+r::Velocity getVelocityFromNumA2(int windownum,
+                                 struct Tracker_Windows **window,
+                                 int blocknum,
+                                 struct WBlocks **wblock,
+                                 int tracknum,
+                                 struct WTracks **wtrack,
+                                 dyn_t dynnote,
+                                 r::NotePtr &note,
+                                 int velocitynum)
+{
+  note = getNoteFromNumA2(windownum, window, blocknum, wblock, tracknum, wtrack, dynnote);
+  
+  if (!note)
+    return r::Velocity(make_ratio(0,1),1,1);
+  
+  const r::VelocityTimeData::Reader reader(&note->_velocities);
+  
+  int num_velocities = reader.size() + 2;
+
+  if (velocitynum < 0 || velocitynum >= num_velocities){
+    handleError("There is no velocity #%d in note with id \"%d\" in track #%d in block #%d",velocitynum,(int)note->_id,tracknum,blocknum);
+    return r::Velocity(make_ratio(0,1),1,1);
+  }
+
+  if (velocitynum==0)
+    return r::Velocity(note->get_time(), note->d._velocity, note->d._velocity_first_logtype);
+
+  if (velocitynum==num_velocities-1)
+    return r::Velocity(note->d._end, note->d._velocity_end);
   
   return reader.at(velocitynum-1);
 }
@@ -975,6 +1079,33 @@ static const Place getPrevLegalNotePlace(const struct Tracks *track, const struc
   return end;
 }
 
+static const Ratio getPrevLegalNoteRatio(const radium::Vector<r::NotePtr> &notes, const r::NotePtr &note){
+  Ratio end = make_ratio(0,1);
+
+  const r::NotePtr prev = FindPrevNoteOnSameSubTrack2(notes, note);
+  //printf("prev: %p. next(prev): %p, note: %p, next(note): %p\n",prev,prev!=NULL?NextNote(prev):NULL,note,NextNote(note));
+  
+  if (prev) {
+    end = prev->get_time();
+
+    {
+      const r::VelocityTimeData::Reader reader(&note->_velocities);
+      
+      if (reader.size() > 0)
+        end = reader.at_last()._time;
+    }
+
+    {
+      const r::PitchTimeData::Reader reader(&note->_pitches);
+
+      if (reader.size() > 0)
+        end = R_MAX(end, reader.at_last()._time);
+    }
+  }
+  
+  return end;
+}
+
 static const Place getNextLegalNotePlace(const struct Notes *note){
   Place end = ratio2place(note->end);
 
@@ -999,6 +1130,26 @@ static const Place getNextLegalNotePlace(const struct Notes *note){
   return end;
 }
 
+static const Ratio getNextLegalNoteRatio(const r::NotePtr &note){
+  Ratio end = note->d._end;
+
+  {
+    const r::VelocityTimeData::Reader reader(&note->_velocities);
+    
+    if (reader.size() > 0)
+      end = R_MIN(reader.at_first()._time, end);
+  }
+
+  {
+    const r::PitchTimeData::Reader reader(&note->_pitches);
+    
+    if (reader.size() > 0)
+      end = R_MIN(reader.at_first()._time, end);
+  }
+
+  return end;
+}
+
 
 const char* GetNoteIdAsCharString(int64_t note_id){
   return talloc_format("%" PRId64, note_id);
@@ -1010,6 +1161,14 @@ dyn_t GetNoteIdFromNoteId(int64_t note_id){
 
 dyn_t GetNoteId(struct Notes *note){
   return GetNoteIdFromNoteId(note->id);
+}
+
+static dyn_t GetNoteId2(const r::NotePtr &note){
+  return GetNoteIdFromNoteId(note->_id);
+}
+
+static dyn_t GetNoteId3(const r::Note *note){
+  return GetNoteIdFromNoteId(note->_id);
 }
 
 
@@ -1070,6 +1229,63 @@ void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes *note,
   R_ASSERT(note->end <= place2ratio(lastLegal));
 }
 
+void MoveEndNote2(struct Blocks *block, struct Tracks *track, r::NotePtr &note, const Ratio &place, bool last_legal_may_be_next_note){
+
+  r::NoteTimeData::Writer writer(track->_notes2);
+
+  if (!writer.contains(note)){
+    R_ASSERT(false); // at least at the time of writing, this would probably be an error.
+    return;
+  }
+
+  Ratio lastLegal = make_ratio(block->num_lines, 1);
+
+  if (last_legal_may_be_next_note && !ControlPressed()){
+
+    r::NotePtr next = FindNextNoteOnSameSubtrack2(writer.get_vector(), note);
+  
+    if (next)
+      lastLegal = next->get_time();
+  }
+
+  Ratio startPlace = note->get_time();
+
+  Ratio last_pitch;
+
+  {
+    const r::PitchTimeData::Reader pitch_reader(&note->_pitches);
+    int num_pitches = pitch_reader.size();
+    
+    if (num_pitches==0)
+      last_pitch = startPlace;
+    else
+      last_pitch = pitch_reader.at_last()._time;
+  }
+
+  Ratio last_velocity;
+
+  {
+    const r::VelocityTimeData::Reader velocity_reader(&note->_velocities);
+    int num_velocities = velocity_reader.size();
+    
+    if (num_velocities==0)
+      last_velocity = startPlace;
+    else
+      last_velocity = velocity_reader.at_last()._time;
+  }
+
+  Ratio firstLegal = R_MAX(last_pitch, last_velocity);
+
+  r::ModifyNote new_note(note);
+
+  if (place < firstLegal)
+    new_note->d._end = firstLegal;
+  else if (place > lastLegal)
+    new_note->d._end = lastLegal;
+  else
+    new_note->d._end = place;
+}
+
 dyn_t MoveNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Place *place, bool replace_note_ends){
   Place old_place = note->l.p;
 
@@ -1105,5 +1321,75 @@ dyn_t MoveNote(struct Blocks *block, struct Tracks *track, struct Notes *note, P
   }
 
   return GetNoteId(note);
+}
+
+dyn_t MoveNote2(struct Blocks *block, struct Tracks *track, r::NotePtr &note, Ratio ratio, bool replace_note_ends){
+
+  r::NoteTimeData::Writer writer(track->_notes2);
+  
+  Ratio old_start = note->get_time();
+
+  if (old_start == ratio)    
+    return GetNoteId2(note);
+
+
+  //printf("MoveNote. old: %f, new: %f\n", GetfloatFromPlace(&old_place), GetfloatFromPlace(place));
+         
+  if (ratio < old_start) {
+    
+    const Ratio prev_legal = getPrevLegalNoteRatio(writer.get_vector(), note);
+    //printf("prev_legal: %f\n",GetfloatFromPlace(prev_legal));
+    if (ratio <= prev_legal)
+      ratio = prev_legal;
+    
+  } else {
+    
+    const Ratio next_legal = getNextLegalNoteRatio(note);
+    if (ratio >= next_legal)
+      ratio = next_legal;
+    
+  }
+
+#if 0
+  {
+    SCOPED_PLAYER_LOCK_IF_PLAYING();
+    
+    ListRemoveElement3(&track->notes, &note->l);
+    note->l.p = *place;
+    
+    ListAddElement3_a(&track->notes, &note->l);
+    
+    if (replace_note_ends && !ControlPressed())
+      ReplaceNoteEnds(block, track, &old_place, place, note->polyphony_num);
+    
+    NOTE_validate(block, track, note);
+  }
+  
+#else
+
+  if (!writer.removeElement(note)){
+    R_ASSERT(false); // at least at the time of writing, this would probably be an error.
+    return GetNoteId2(note);
+  }
+
+  dyn_t ret;
+  
+  {
+    fprintf(stderr, "   About to make new note:\n");
+    r::ModifyNote new_note(note, r::ModifyNote::Type::CAN_MODIFY_TIME);
+    fprintf(stderr, "   .... 1. New note: %p\n", new_note.get());
+    new_note->set_time(ratio);
+    fprintf(stderr, "   .... 2. New note: %p\n", new_note.get());
+    ret = GetNoteId3(new_note.get());
+    fprintf(stderr, "api_common.cpp: Exit. Note: %p. New note: %p\n", note.get(), new_note.get());
+  } 
+  writer.sortit();
+  
+  if (replace_note_ends && !ControlPressed())
+    ReplaceNoteEnds2(block, track, writer, old_start, ratio, note->d._polyphony_num);
+
+  return ret;
+  
+#endif
 }
 

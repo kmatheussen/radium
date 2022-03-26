@@ -614,11 +614,12 @@ void setMouseNote(dyn_t dynnote, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
-  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
-  if (note==NULL)
+  r::NotePtr note = getNoteFromNumA2(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
+  if (!note)
     return;
-  else if (wblock->mouse_note != note){
-    wblock->mouse_note = note;
+  
+  if (wblock->mouse_note != note.get()){
+    wblock->mouse_note = note.get();
     window->must_redraw_editor = true;
     //printf("mouse note dirty\n");
   }
@@ -664,12 +665,6 @@ void unselectAllNotes(int tracknum, int blocknum, int windownum){
   }
 
   root->song->tracker_windows->must_redraw=true;
-}
-
-bool API_note_is_selected(const struct WBlocks *wblock, const struct Notes *note){
-  R_ASSERT_RETURN_IF_FALSE2(wblock!=NULL,false);
-  R_ASSERT_RETURN_IF_FALSE2(note!=NULL,false);
-  return note->pianonote_is_selected;
 }
 
 bool noteIsSelected(dyn_t dynnote, int tracknum, int blocknum, int windownum){

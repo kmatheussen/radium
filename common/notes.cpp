@@ -41,6 +41,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "OS_settings_proc.h"
 #include "range_proc.h"
 #include "notestext_proc.h"
+#include "scheduler_proc.h"
+
+#include "Note.hpp"
 
 #include "notes_proc.h"
 
@@ -48,56 +51,83 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef TEST_NOTES
 
 static int FindFirstFreePolyphony_num(const std::vector<Ratio> &end_places, const Ratio &ratio){
-  
-  for(int i=0 ; i < (int)end_places.size() ; i++)
-    if (ratio >= end_places[i])
-      return i;
 
+  int i = 0;
+  for(const Ratio &end_place : end_places)
+    if (ratio >= end_place)
+      return i;
+    else
+      i++;
+  
   return (int)end_places.size();
 }
 
-// Also sets the track->polyphony attribute.
-//
-// TODO: This function should always be called after changing a note (and not before we actually need note->polyphony_num or track->polyphony.
-// When called othervice, it should give an assertion hit if we need to change any of these two attributes.
-// FIX after changing notes to TimeData (probably much easier to do it then, for instance by adding a TimeData::writer_hook that calls this function.)
-//
-void SetNotePolyphonyAttributes(struct Tracks *track){
-  R_ASSERT_RETURN_IF_FALSE(track!=NULL);
+// Notes are also sorted by pitch (after first being sorted by time)
+// so that pitch order is always displayed from left to right in the editor for polyphonic notes.
+void r::NoteTimeData::sortit(TimeDataVector *vector){
+  vector->sort([](const NotePtr &a, const NotePtr &b){
+    //printf("  COMP called %p %p\n", &a, &b);
+    if (a.get_time() == b.get_time())
+      return a.get_val() < b.get_val();
+    else
+      return a.get_time() < b.get_time();
+  });
+}
+
+void r::NoteTimeData::writer_finalizer(Writer &writer){
+  
   R_ASSERT(THREADING_is_main_thread()); // This function is not thread safe.
  
   //printf("**************  Track: %d\n", track->l.num);
-  static std::vector<Ratio> end_places;
+  static std::vector<Ratio> s_end_places;
+  s_end_places.clear();
+  
+  _polyphony = 1;
 
-  end_places.clear();
-  
-  track->polyphony = 1;
-  
-  struct Notes *note = track->gfx_notes!=NULL ? track->gfx_notes : track->notes;
-  while(note != NULL){
+  for(r::NotePtr &note : writer){
     //printf("**************  Note at: %s\n", PlaceToString(&note->l.p));
-    int polyphony_num = FindFirstFreePolyphony_num(end_places, place2ratio(note->l.p));
-    note->polyphony_num = polyphony_num;
-    
-    if (polyphony_num+1 > track->polyphony)
-      track->polyphony = polyphony_num+1;
+    int polyphony_num = FindFirstFreePolyphony_num(s_end_places, note->get_time());
 
-    if (polyphony_num==(int)end_places.size())
-      end_places.push_back(note->end);
+    if (note->d._polyphony_num != polyphony_num){
+      r::ModifyNote new_note(note);
+      new_note->d._polyphony_num = polyphony_num;
+    }
+
+    if (polyphony_num+1 > _polyphony)
+      _polyphony = polyphony_num+1;
+
+    if (polyphony_num==(int)s_end_places.size())
+      s_end_places.push_back(note->d._end);
     else
-      end_places[polyphony_num] = note->end;
+      s_end_places[polyphony_num] = note->d._end;
+
+    if (note->_val<=0.0f){
+      RError("notenum<=0.0f: %f. Setting to 0.01",note->_val);
+      note->_val=0.01f;
+    }
+    else if(note->_val>=128.0f){
+      RError("notenum>=128.0f: %f. Setting to 127.99",note->_val);
+      note->_val=127.99;
+    }
+
+    if (note->get_time() < 0){
+      R_ASSERT(false);
+      note->set_time(make_ratio(0,1));
+    }
     
-    note = NextNote(note);
-  }
+    if (note->d._end < note->get_time()){
+      R_ASSERT(false);
+      note->d._end = note->get_time();
+    }
+
+  } 
 }
 
 int GetNoteSubtrack(const struct WTracks *wtrack, struct Notes *note){
-  SetNotePolyphonyAttributes(wtrack->track);
   return WTRACK_num_non_polyphonic_subtracks(wtrack) + note->polyphony_num;
 }
 
 int GetNumSubtracks(const struct WTracks *wtrack){
-  SetNotePolyphonyAttributes(wtrack->track);
   return WTRACK_num_subtracks(wtrack);
 }
 
@@ -105,14 +135,14 @@ int GetNumSubtracks(const struct WTracks *wtrack){
   FUNCTION
     Returns the current note (under the cursor).
 **************************************************************/
-struct Notes *GetCurrNote(struct Tracker_Windows *window){
+const r::NotePtr GetCurrNote(struct Tracker_Windows *window){
 	struct WBlocks       *wblock        = window->wblock;
 	struct WTracks       *wtrack        = wblock->wtrack;
 
         Trs trs = TRS_get(wblock, wtrack, wblock->curr_realline);
         
         if (trs.size()==0)
-          return NULL;
+          return r::NotePtr();
 
         const TrackRealline2 &tr2 = trs[0];
 
@@ -147,7 +177,6 @@ static void SetEndAttributes(
           nextnote=nextnote->next;
         }
 
-#if 1
         Place helper_p2;
         
         const r::StopTimeData::Reader reader(track->stops2);
@@ -158,17 +187,7 @@ static void SetEndAttributes(
             break;
           }            
         }
-#else
-        const struct ListHeader3 *stop= track->stops==NULL ? NULL : &track->stops->l;
-        while(stop!=NULL){
-          if(PlaceGreaterThan(&stop->p, earliest)){
-            p2 = &stop->p;
-            break;
-          }
-          stop=stop->next;
-        }
-#endif
-
+        
 	place=PlaceMin(p1,p2);
 
 	if(place!=NULL){
@@ -180,6 +199,64 @@ static void SetEndAttributes(
 
         //ValidatePlace(&note->end);
 }
+
+
+static void SetEndAttributes2(
+	const struct Blocks *block,
+	const struct Tracks *track,
+	r::Note *note
+){
+        const bool endSetEarlier = note->d._end.den>0 && note->d._end > note->get_time();
+        const Ratio earliest = endSetEarlier ? note->d._end : note->get_time();
+
+        bool has_r1 = false;
+        Ratio r1;
+
+        {
+          const r::NoteTimeData::Reader reader(track->_notes2);
+          
+          for(const r::NotePtr &note : reader) {
+            Ratio r = note.get_time();
+            if (r > earliest) {
+              r1 = r;
+              has_r1 = true;
+              break;
+            }
+          }
+        }
+        
+        bool has_r2 = false;
+        Ratio r2;
+
+        {
+          const r::StopTimeData::Reader reader(track->stops2);
+          
+          for(const r::Stop &stop : reader) {
+            Ratio r = stop.get_time();
+            if (r > earliest){
+              r2 = r;
+              has_r2 = true;
+              break;
+            }            
+          }
+        }
+        
+        if (has_r1 || has_r2) {
+          
+          if (has_r1 && has_r2)            
+            note->d._end = R_MIN(r1, r2);
+          else
+            note->d._end = has_r1 ? r1 : r2;
+          
+        } else {
+          
+          note->d._end = make_ratio(block->num_lines, 1);
+          note->d._noend = true;
+          
+        }
+}
+
+
 
 /**************************************************************
   FUNCTION
@@ -227,15 +304,50 @@ void StopAllNotesAtPlace(
 	}
 }
 
-static void NOTE_init(struct Notes *note){
+
+void StopAllNotesAtRatio(
+                         struct Blocks *block,
+                         struct Tracks *track,
+                         r::NoteTimeData::Writer &writer,
+                         const Ratio &ratio
+){
+  for(r::NotePtr &note : writer) {
+    if (note.get_time() >= ratio)
+      break;
+    
+    if (note->d._end > ratio) {
+      r::ModifyNote new_note(note);
+      
+      {
+        r::VelocityTimeData::Writer writer(&new_note->_velocities);
+        writer.remove_everything_after(ratio, true);
+      }
+      
+      {
+        r::PitchTimeData::Writer writer(&new_note->_pitches);
+        writer.remove_everything_after(ratio, true);
+      }
+      
+      new_note->d._end = ratio;
+    }
+  }
+}
+
+
+int64_t new_note_id(void){
   static int64_t curr_id = -1;
 
   if(curr_id==-1)
     curr_id = NotenumId(1024);
 
-  note->id = curr_id;
+  int64_t ret = curr_id;
   curr_id += NUM_PATCH_VOICES; // Temp hack. Maybe.
-  //printf("note->id: %d\n",(int)note->id);
+
+  return ret;
+}
+
+static void NOTE_init(struct Notes *note){
+  note->id = new_note_id();
 }
 
 static struct Notes *alloc_note(void){
@@ -257,6 +369,13 @@ struct Notes *NewNote(void){
   note->chance = MAX_PATCHVOICE_CHANCE;
 
   return note;
+}
+
+r::NotePtr NewNote2(const Ratio &time,
+                    float notenum,
+                    int velocity)
+{
+  return r::NotePtr(new r::Note(time, notenum, velocity));
 }
 
 struct Notes *CopyNote(const struct Notes *old_note){
@@ -327,6 +446,19 @@ struct Notes *NOTES_sort_by_pitch(struct Notes *notes){
 
   return notes;
 }
+
+/*
+void NOTES_sort_by_pitch(r::NoteTimeData::Writer &writer){
+  for(int i = 0 ; i < writer.size()-1){
+    const NotePtr &a = writer.at_ref(i);
+    const NotePtr &b = writer.at_ref(i+1);
+    if (a.get_time() == b.get_time()){
+      if (a->get_val() > b->get_val())
+        
+    }
+  }
+}
+*/
 
 static void set_new_position(struct Tracks *track, struct Notes *note, Place *start, Ratio *end){
 
@@ -467,6 +599,26 @@ static struct Notes *make_note(const struct Blocks *block,
   return note;
 }
 
+static r::NotePtr make_note2(const struct Blocks *block,
+                             const struct Tracks *track,
+                             const Ratio &time,
+                             const Place *end_placement,
+                             float notenum,
+                             int velocity)
+{
+  r::NotePtr note = NewNote2(time, notenum, velocity);
+
+  r::Note *note2 = note.get_mutable();
+  
+  if (end_placement != NULL)
+    note2->d._end = place2ratio(*end_placement);
+  else
+    SetEndAttributes2(block,track,note2);
+
+  return note;
+}
+
+
 // Note: GfxNotes are always polyphonic.
 struct Notes *InsertGfxNote(struct WBlocks *wblock,
                             struct WTracks *wtrack,
@@ -479,12 +631,18 @@ struct Notes *InsertGfxNote(struct WBlocks *wblock,
   struct Blocks *block=wblock->block;
   struct Tracks *track=wtrack->track;
 
-  struct Notes *note = make_note(block, track, placement, end_placement, notenum, velocity);
+  {
+    r::NoteTimeData::Writer writer(track->_gfx_notes2);
+    writer.add(make_note2(block, track, place2ratio(*placement), end_placement, notenum, velocity));
+  }
+  
+  {
+    struct Notes *note = make_note(block, track, placement, end_placement, notenum, velocity);
 
-  ListAddElement3(&track->gfx_notes,&note->l);
-
-  return note;
-}
+    ListAddElement3(&track->gfx_notes,&note->l);
+    return note;
+  }
+  }
 
 
 
@@ -500,22 +658,36 @@ struct Notes *InsertNote(
 	struct Blocks *block=wblock->block;
 	struct Tracks *track=wtrack->track;
 
-        struct Notes *note = make_note(block, track, placement, end_placement, notenum, velocity);
-
         {
-          SCOPED_PLAYER_LOCK_IF_PLAYING();
+          const Ratio ratio = place2ratio(*placement);
           
-          ListAddElement3(&track->notes,&note->l);
+          r::NoteTimeData::Writer writer(track->_notes2);
+          writer.add(make_note2(block, track, ratio, end_placement, notenum, velocity));
+          // TODO: Stopallnotesatplace etc. below.
 
           if(polyphonic==false)
-            StopAllNotesAtPlace(block,track,placement);
+            StopAllNotesAtRatio(block, track, writer, ratio);
 
-          track->notes = NOTES_sort_by_pitch(track->notes);
         }
 
-        NOTE_validate(block, NULL, note);
+        {
+          struct Notes *note = make_note(block, track, placement, end_placement, notenum, velocity);
+          
+          {
+            SCOPED_PLAYER_LOCK_IF_PLAYING();
+            
+            ListAddElement3(&track->notes,&note->l);
+            
+            if(polyphonic==false)
+              StopAllNotesAtPlace(block,track,placement);
+            
+            track->notes = NOTES_sort_by_pitch(track->notes);
+          }
+          
+          NOTE_validate(block, NULL, note);
 
-        return note;
+          return note;
+        }
 }
 
 bool drunk_velocity=false;
@@ -539,7 +711,7 @@ int NOTE_get_velocity(struct Tracks *track){
   return (int)new_velocity;
 }
 
-static bool maybe_scroll_down(struct Tracker_Windows *window, const struct Notes *dont_play_this_note){
+static bool maybe_scroll_down(struct Tracker_Windows *window, const int64_t dont_play_this_note){
   if(window->curr_track_sub==-1) 
     return MaybeScrollEditorDownAfterEditing(window, dont_play_this_note);
   else
@@ -574,34 +746,34 @@ bool InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyp
       case TR2_NOTE_START:
       case TR2_NOTE_END:
         {
-          R_ASSERT_RETURN_IF_FALSE2(tr2.note!=NULL, false);
+          R_ASSERT_RETURN_IF_FALSE2(tr2.note, false);
           
           // lock not necessary
           if (tr2.type==TR2_NOTE_END)
-            tr2.note->pitch_end = notenum;
+            tr2.note->d._pitch_end = notenum;
           else
-            tr2.note->note = notenum;
+            tr2.note->_val = notenum;
           
           if (org_velocity >= 0){
-            tr2.note->velocity = velocity;
-            if (r::VelocityTimeData::Reader(tr2.note->_velocities).size()==0)
-              tr2.note->velocity_end = velocity;
+            tr2.note->d._velocity = velocity;
+            if (r::VelocityTimeData::Reader(&tr2.note->_velocities).size()==0)
+              tr2.note->d._velocity_end = velocity;
           }
           
           window->must_redraw=true;
-          return maybe_scroll_down(window, tr2.note);
+          return maybe_scroll_down(window, tr2.note->_id);
         }
       case TR2_PITCH:
-        R_ASSERT_RETURN_IF_FALSE2(tr2.note!=NULL, false);
+        R_ASSERT_RETURN_IF_FALSE2(tr2.note, false);
         {
-          r::PitchTimeData::Writer writer(tr2.note->_pitches);
+          r::PitchTimeData::Writer writer(&tr2.note->_pitches);
           if (tr2.pitchnum < 0 || tr2.pitchnum >= writer.size())
             R_ASSERT(false);
           else        
             writer.at_ref(tr2.pitchnum)._val = notenum;
         }
         window->must_redraw=true;
-        return maybe_scroll_down(window, tr2.note);
+        return maybe_scroll_down(window, tr2.note->_id);
       case TR2_STOP:
         // Going to replace a stop with a note.
         r::StopTimeData::Writer writer(track->stops2);
@@ -624,7 +796,7 @@ bool InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyp
   //  UpdateAllWTracksCoordinates(window,wblock);
 
   if (!polyphonic)
-    return maybe_scroll_down(window, note);
+    return maybe_scroll_down(window, note->id);
 
   return false;
 }
@@ -652,10 +824,17 @@ static void InsertStop(
         }
         */
 
+#if 0
         {
           SCOPED_PLAYER_LOCK_IF_PLAYING();
           StopAllNotesAtPlace(block,track,placement);
         }
+#else
+        {
+          r::NoteTimeData::Writer writer(track->_notes2);
+          StopAllNotesAtRatio(block,track,writer, place2ratio(*placement));
+        }
+#endif
         
         r::Stop stop2(ratio_from_place(*placement));
         writer.add(stop2);
@@ -678,6 +857,23 @@ void LengthenNotesTo(
                   SetEndAttributes(block,track,note);
 		note=NextNote(note);
 	}
+}
+
+static void LengthenNotesTo2(
+                             struct Blocks *block,
+                             struct Tracks *track,
+                             r::NoteTimeData::Writer &writer,
+                             const Ratio &ratio
+){
+  for(r::NotePtr &note: writer) {
+    if (note->get_time() >= ratio)
+      break;
+
+    if (note->d._end == ratio){
+      r::ModifyNote new_note(note);
+      SetEndAttributes2(block, track, new_note.get());
+    }
+  }
 }
 
 /**********************************************************************
@@ -707,6 +903,29 @@ void ReplaceNoteEnds(
 	}
 }
 
+void ReplaceNoteEnds2(
+                      struct Blocks *block,
+                      struct Tracks *track,
+                      r::NoteTimeData::Writer &writer,
+                      const Ratio &old_ratio,
+                      const Ratio &new_ratio,
+                      int polyphony_num
+                      )
+{
+  for(r::NotePtr &note : writer) {
+    if (note->d._polyphony_num == polyphony_num) {
+      
+      if(note->get_time() > old_ratio)
+        break;
+      
+      if(note->d._end == old_ratio) {
+        r::ModifyNote new_note(note);
+        new_note->d._end = new_ratio;
+      }
+    }
+  }
+}
+
 void RemoveNote(
 	struct Blocks *block,
 	struct Tracks *track,
@@ -715,6 +934,21 @@ void RemoveNote(
   R_ASSERT(PLAYER_current_thread_has_lock() || is_playing()==false);
   ListRemoveElement3(&track->notes,&note->l);
   LengthenNotesTo(block,track,&note->l.p);
+}
+
+void RemoveNote2(
+                 struct Blocks *block,
+                 struct Tracks *track,
+                 const r::NotePtr &note
+                 )
+{
+  r::NoteTimeData::Writer writer(track->_notes2);
+
+  bool removed = writer.removeElement(note);
+  
+  R_ASSERT_NON_RELEASE(removed);
+  
+  LengthenNotesTo2(block,track,writer, note->get_time());
 }
 
 void RemoveNoteCurrPos(struct Tracker_Windows *window){
@@ -732,7 +966,7 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
   if (trs.size()==0) {
     InsertStop(block,track,&realline->l.p);
     window->must_redraw=true;
-    maybe_scroll_down(window, NULL);
+    maybe_scroll_down(window, -1);
     return;
   }
 
@@ -743,6 +977,7 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
     
     case TR2_NOTE_START:
       {
+#if 0
         if (track->notes!=NULL && isInList3(&track->notes->l, &tr2.note->l)) {
           EVENTLOG_add_event("RemoveNoteCurrPos 2");
           {
@@ -750,32 +985,61 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
             ListRemoveElement3(&track->notes,&tr2.note->l);
             LengthenNotesTo(block,track,&realline->l.p);
           }
-          SetNotePolyphonyAttributes(track);
           ValidateCursorPos(window);
           window->must_redraw=true;
           if (trs.size()==1)
-            maybe_scroll_down(window, NULL);
-        }    
+            maybe_scroll_down(window, -1);
+        }
+#else
+        bool was_removed = false;
+        {
+          r::NoteTimeData::Writer writer(track->_notes2);
+          
+          if (!writer.removeElement(tr2.note)){
+            R_ASSERT_NON_RELEASE(false);
+          } else {
+            LengthenNotesTo2(block, track, writer, place2ratio(realline->l.p));
+            was_removed = true;
+          }
+        }
+
+        if (was_removed){
+          ValidateCursorPos(window);
+        
+          window->must_redraw=true;
+          if (trs.size()==1)
+            maybe_scroll_down(window, -1);
+        }
+#endif
       }
       break;
       
     case TR2_NOTE_END:
       {
-        const r::PitchTimeData::Reader reader(tr2.note->_pitches);
+        const r::PitchTimeData::Reader reader(&tr2.note->_pitches);
         if (reader.size() > 0)
-          tr2.note->pitch_end = reader.at_last()._val;
+          tr2.note->d._pitch_end = reader.at_last()._val;
         else
-          tr2.note->pitch_end = 0;
+          tr2.note->d._pitch_end = 0;
       }
       break;
       
     case TR2_PITCH:
       {
         EVENTLOG_add_event("RemoveNoteCurrPos 1");
+
+#if 0
         DeletePitch(track, tr2.note, tr2.pitchnum);
+#else
+        r::PitchTimeData::Writer writer(&tr2.note->_pitches);
+        if (!writer.remove_at_pos(tr2.pitchnum)){
+          R_ASSERT_NON_RELEASE(false);
+        }
+#endif
+        
         window->must_redraw=true;
         if (trs.size()==1)
-          maybe_scroll_down(window, NULL);
+          maybe_scroll_down(window, -1);
       }
       break;
       
@@ -790,7 +1054,7 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
         window->must_redraw=true;
         
         if (trs.size()==1)
-          maybe_scroll_down(window, NULL);
+          maybe_scroll_down(window, -1);
       }
       break;
   }
@@ -809,6 +1073,21 @@ struct Notes *FindPrevNoteOnSameSubTrack(const struct Tracks *track, const struc
   return prev;
 }
 
+r::NotePtr FindPrevNoteOnSameSubTrack2(const radium::Vector<r::NotePtr> &notes, const r::NotePtr &note){
+
+  r::NotePtr ret;
+  
+  for(const r::NotePtr &note2 : notes) {
+    if (note2==note)
+      break;
+      
+    if (note2->d._polyphony_num == note->d._polyphony_num)
+      ret = note2;
+  }
+
+  return ret;
+}
+
 struct Notes *FindNextNoteOnSameSubtrack(struct Notes *note){
   int polyphony_num = note->polyphony_num;
 
@@ -822,26 +1101,59 @@ struct Notes *FindNextNoteOnSameSubtrack(struct Notes *note){
   return NULL;
 }
 
+r::NotePtr FindNextNoteOnSameSubtrack2(const radium::Vector<r::NotePtr> &notes, const r::NotePtr &note){
+
+  int polyphony_num = note->d._polyphony_num;
+
+  bool gotit = false;
+  
+  for(const r::NotePtr &note2 : notes)
+    if (!gotit){
+      if (note2==note)
+        gotit = true;
+    }else{
+      if (note2->d._polyphony_num==polyphony_num)
+        return note;
+    }
+
+  return r::NotePtr();
+}
+
 
 struct Notes *FindNoteOnSubTrack(
                                  const struct WTracks *wtrack,
                                  int subtrack,
                                  const Place *placement
 ){
-        SetNotePolyphonyAttributes(wtrack->track);
-  
         struct Notes *note = wtrack->track->notes;
         
         while (note != NULL) {
           Place p = ratio2place(note->end);
           if(PlaceIsBetween2(placement,&note->l.p,&p))
-            if (NOTE_subtrack(wtrack, note)==subtrack)
+            if (NOTE_subtrack2(wtrack, note->polyphony_num)==subtrack)
               return note;
           
           note = NextNote(note);
         }
 
         return NULL;
+}
+
+r::NotePtr FindNoteOnSubTrack2(const struct WTracks *wtrack,
+                               int subtrack,
+                               const Ratio &ratio
+                               )
+{
+  ASSERT_IS_NONRT_MAIN_THREAD_NON_RELEASE(); // Must provide NoteTimeData::ReaderWriter& to use it outside the main thread (to ensure it's not deleted while using it).
+  
+        const r::NoteTimeData::Reader reader(wtrack->track->_notes2);
+
+        for(const r::NotePtr &note : reader)
+          if (ratio >= note->get_time() && ratio < note->d._end)
+            if (NOTE_subtrack2(wtrack, note->d._polyphony_num)==subtrack)
+              return note;
+          
+        return r::NotePtr();
 }
 
 struct Notes *FindNote(
@@ -857,6 +1169,20 @@ struct Notes *FindNote(
     note = NextNote(note);
   }
   return note;
+}
+
+static r::NotePtr FindNote2(
+                            struct Tracks *track,
+                            const Ratio &ratio
+                            )
+{
+  const r::NoteTimeData::Reader reader(track->_notes2);
+          
+  for(const r::NotePtr &note : reader)
+    if (ratio >= note.get_time() && ratio < note->d._end)
+      return note;
+
+  return r::NotePtr();
 }
 
 vector_t FindAllNotes(
@@ -891,8 +1217,8 @@ struct Notes *FindNextNote(
   return note;
 }
 
-static bool is_at_last_line_of_note(const struct WBlocks *wblock, const struct Notes *note, int realline){
-  Place p = ratio2place(note->end);
+static bool is_at_last_line_of_note(const struct WBlocks *wblock, const r::NotePtr &note, int realline){
+  Place p = ratio2place(note->d._end);
   int last_note_line = FindRealLineFor(wblock, 0, &p);
   //printf("last_note_line/realline: %d %d\n",last_note_line,realline);
 
@@ -1234,38 +1560,39 @@ static float request_notenum(struct Tracker_Windows *window, const char *title, 
   return notenum;
 }
 
-static void r_add_pitch(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct Notes *note, const Place *p){
+static void r_add_pitch2(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, r::NotePtr &note, const Ratio &r){
   float notenum = request_notenum(window, "Add pitch", -1);
   if(notenum > 0.0f){
     ADD_UNDO(Notes_CurrPos(window));
-    if (AddPitch(window, wblock, wtrack, note, p, notenum) < 0)
+    if (AddPitch2(window, wblock, wtrack, note, r, notenum) < 0)
       UNDO_CANCEL_LAST_UNDO();
   }
 }
 
-static void r_add_last_pitch(struct Tracker_Windows *window, struct Notes *note){
+static void r_add_last_pitch2(struct Tracker_Windows *window, r::NotePtr &note){
   float notenum = request_notenum(window, "Add last pitch", -1);
   if(notenum > 0.0f){
     ADD_UNDO(Notes_CurrPos(window));
-    note->pitch_end = notenum;
+    note->d._pitch_end = notenum;
   }
 }
 
-static void r_add_note(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, const Place *p){
+static void r_add_note(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, const Ratio &r){
   float notenum = request_notenum(window, "New note", -1);
   
   if(notenum > 0.0f){
     ADD_UNDO(Notes_CurrPos(window));
-    InsertNote(wblock, wtrack, p, NULL, notenum, NOTE_get_velocity(wtrack->track), false);
+    Place place = ratio2place(r);
+    InsertNote(wblock, wtrack, &place, NULL, notenum, NOTE_get_velocity(wtrack->track), false);
   }
 }
 
-static void r_edit_pitch(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct Notes *note, int pitchnum) {
+static void r_edit_pitch(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, const r::NotePtr &note, int pitchnum) {
   R_ASSERT_RETURN_IF_FALSE(pitchnum >= 0);
     
   float notenum;
   {
-    const r::PitchTimeData::Reader reader(note->_pitches);
+    const r::PitchTimeData::Reader reader(&note->_pitches);
                               
     R_ASSERT_RETURN_IF_FALSE(pitchnum < reader.size());
 
@@ -1275,7 +1602,7 @@ static void r_edit_pitch(struct Tracker_Windows *window, struct WBlocks *wblock,
   if(notenum > 0.0f){
     ADD_UNDO(Notes_CurrPos(window));
     
-    r::PitchTimeData::Writer writer(note->_pitches);
+    r::PitchTimeData::Writer writer(&note->_pitches);
 
     R_ASSERT_RETURN_IF_FALSE(pitchnum < writer.size());
 
@@ -1283,21 +1610,21 @@ static void r_edit_pitch(struct Tracker_Windows *window, struct WBlocks *wblock,
   }
 }
 
-static void r_edit_end_pitch(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct Notes *note){
-  float notenum = request_notenum(window, "Edit last pitch", note->pitch_end);
+static void r_edit_end_pitch(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, const r::NotePtr &note){
+  float notenum = request_notenum(window, "Edit last pitch", note->d._pitch_end);
   
   if(notenum > 0.0f){
     ADD_UNDO(Notes_CurrPos(window));
-    note->pitch_end = notenum; // lock not necessary
+    note->d._pitch_end = notenum; // lock not necessary
   }
 }
 
-static void r_edit_note(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, struct Notes *note){
-  float notenum = request_notenum(window, "Edit note", note->note);
+static void r_edit_note(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, const r::NotePtr &note){
+  float notenum = request_notenum(window, "Edit note", note->get_val());
   
   if(notenum > 0.0f){
     ADD_UNDO(Notes_CurrPos(window));
-    note->note = notenum; // lock not necessary
+    note->_val = notenum; // lock not necessary
   }
 }
 
@@ -1312,16 +1639,20 @@ void EditNoteCurrPos(struct Tracker_Windows *window){
   if (trs.size()==0) {
 
     const struct LocalZooms *realline = wblock->reallines[curr_realline];
+    /*
     const Place             *p        = &realline->l.p;
-    struct Notes      *note     = FindNote(wtrack->track, p);
-      
-    if (note != NULL) {
+    struct Notes            *note     = FindNote(wtrack->track, p);
+    */
+    const Ratio &r = place2ratio(realline->l.p);
+    r::NotePtr note = FindNote2(wtrack->track, r);
+                                 
+    if (note) {
       if (is_at_last_line_of_note(wblock, note, wblock->curr_realline))
-        r_add_last_pitch(window, note);
+        r_add_last_pitch2(window, note);
       else        
-        r_add_pitch(window, wblock, wtrack, note, p);
+        r_add_pitch2(window, wblock, wtrack, note, r);
     } else
-      r_add_note(window, wblock, wtrack, p);
+      r_add_note(window, wblock, wtrack, r);
       
   } else {
 
@@ -1365,8 +1696,6 @@ void CutNoteAt(const struct Blocks *block, const struct Tracks *track,struct Not
     return;
   }
   
-  //CutListAt(&note->velocities,place);
-
   {
     r::VelocityTimeData::Writer writer(note->_velocities);
     writer.remove_everything_after(ratio_from_place(*place), true);
@@ -1377,9 +1706,36 @@ void CutNoteAt(const struct Blocks *block, const struct Tracks *track,struct Not
     writer.remove_everything_after(ratio_from_place(*place), true);
   }
 
-  //  CutListAt(&note->pitches,place);
-
   note->end = place2ratio(*place);
+}
+
+void CutNoteAt2(const struct Blocks *block, const struct Tracks *track, r::Note *note, const Ratio &ratio){
+
+  if (ratio >= note->d._end){
+    RError("Illegal argument for CutNoteAt 1. %f >= %f\n",make_double_from_ratio(ratio), make_double_from_ratio(note->d._end));
+    return;
+  }
+  
+  if (ratio <= note->get_time()){
+    RError("Illegal argument for CutNoteAt 2. %f <= %f\n",make_double_from_ratio(ratio), make_double_from_ratio(note->get_time()));
+    return;
+  }
+  
+  {
+    r::VelocityTimeData::Writer writer(&note->_velocities);
+    writer.remove_everything_after(ratio, true);
+  }
+
+  {
+    r::PitchTimeData::Writer writer(&note->_pitches);
+    writer.remove_everything_after(ratio, true);
+  }
+
+  // TODO/FIX: What do we do here? Make a copy of the note and replace in the writer?
+  {
+    r::NoteTimeData::Writer writer(track->_notes2);
+    note->d._end = ratio;
+  }
 }
 
 void StopVelocityCurrPos(struct Tracker_Windows *window,int noend){
@@ -1387,7 +1743,6 @@ void StopVelocityCurrPos(struct Tracker_Windows *window,int noend){
 	struct WTracks *wtrack;
 	int reallinerealline;
 	const struct LocalZooms *realline;
-	struct Notes *note;
 	int subtrack;
 
 	wblock=window->wblock;
@@ -1395,30 +1750,29 @@ void StopVelocityCurrPos(struct Tracker_Windows *window,int noend){
 	reallinerealline=wblock->curr_realline;
 	realline=wblock->reallines[reallinerealline];
 	subtrack=window->curr_track_sub;
-        
-	note=FindNoteOnSubTrack(wtrack,subtrack,&realline->l.p);
-	if(note==NULL)
-          return;
 
+        const Ratio ratio = place2ratio(realline->l.p);
+        
+        r::NotePtr note = FindNoteOnSubTrack2(wtrack,subtrack,ratio);
+	if(!note)
+          return;
+        
         ADD_UNDO(Notes_CurrPos(window));
 
         {
           
-          if(PlaceGreaterOrEqual(&note->l.p,&realline->l.p)){
+          if(note->get_time() >= ratio) {
             
-            SCOPED_PLAYER_LOCK_IF_PLAYING();
-            
-            RemoveNote(wblock->block,wtrack->track,note);
-            SetNotePolyphonyAttributes(wtrack->track);
+            RemoveNote2(wblock->block,wtrack->track,note);
             ValidateCursorPos(window);
             
           }else{
             
-            CutNoteAt(wblock->block, wtrack->track, note, &realline->l.p);
+            CutNoteAt2(wblock->block, wtrack->track, note.get_mutable(), ratio);
             
           }
 
-          note->noend = noend;
+          note->d._noend = noend;
           
         }
         
@@ -1447,8 +1801,16 @@ namespace{
       , _note(note)
     {}
 
-    void callback(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, const struct Tracks *track, int index, int val, int64_t time, FX_when when, bool is_new_node) const override {
-
+    void callback(struct SeqTrack *seqtrack,
+                  const struct SeqBlock *seqblock,
+                  const struct Tracks *track,
+                  int index,
+                  int val,
+                  int64_t time,
+                  FX_when when,
+                  bool is_new_node
+                  ) const override
+    {
       _note->curr_velocity = TRACK_get_velocity(track, val);
       _note->curr_velocity_time = time;
       

@@ -65,18 +65,18 @@ bool CENTTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, s
     if (key == EVENT_DEL){
 
       for(const TrackRealline2 &tr2 : trs){
-        struct Notes *note = tr2.note;
+        const r::NotePtr &note = tr2.note;
 
         switch(tr2.type){
           case TR2_NOTE_START:
-            safe_float_write(&note->note, floorf(note->note));
+            safe_float_write(&note->_val, floorf(note->_val));
             break;
           case TR2_NOTE_END:
-            safe_float_write(&note->pitch_end, floorf(note->pitch_end));
+            safe_float_write(&note->d._pitch_end, floorf(note->d._pitch_end));
             break;
           case TR2_PITCH:
             {
-              r::PitchTimeData::Writer writer(note->_pitches);
+              r::PitchTimeData::Writer writer(&note->_pitches);
               if (tr2.pitchnum < 0 || tr2.pitchnum >= writer.size())
                 R_ASSERT(false);
               else 
@@ -106,20 +106,20 @@ bool CENTTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, s
     // ONE ELEMENT
     
     const TrackRealline2 &tr2 = trs[0];
-    struct Notes *dasnote = tr2.note;
+    const r::NotePtr &dasnote = tr2.note;
 
     if (key == EVENT_DEL) {
 
       switch(tr2.type){
         case TR2_NOTE_START:
-          safe_float_write(&dasnote->note, floorf(dasnote->note));
+          safe_float_write(&dasnote->_val, floorf(dasnote->_val));
           break;
         case TR2_NOTE_END:
-          safe_float_write(&dasnote->pitch_end, floorf(dasnote->pitch_end));
+          safe_float_write(&dasnote->d._pitch_end, floorf(dasnote->d._pitch_end));
           break;
         case TR2_PITCH:
           {
-            r::PitchTimeData::Writer writer(dasnote->_pitches);
+            r::PitchTimeData::Writer writer(&dasnote->_pitches);
 
             //float bef = writer.at_ref(tr2.pitchnum)._val;
             
@@ -143,14 +143,14 @@ bool CENTTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, s
 
       switch(tr2.type){
         case TR2_NOTE_START:
-          note = dasnote->note;
+          note = dasnote->_val;
           break;
         case TR2_NOTE_END:
-          note = dasnote->pitch_end;
+          note = dasnote->d._pitch_end;
           break;
         case TR2_PITCH:
           {
-            const r::PitchTimeData::Reader reader(dasnote->_pitches);
+            const r::PitchTimeData::Reader reader(&dasnote->_pitches);
             if (tr2.pitchnum < 0 || tr2.pitchnum >= reader.size()){
               R_ASSERT(false);
               return true;
@@ -182,14 +182,14 @@ bool CENTTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, s
 
       switch(tr2.type){
         case TR2_NOTE_START:
-          safe_float_write(&dasnote->note, new_note);
+          safe_float_write(&dasnote->_val, new_note);
           break;
         case TR2_NOTE_END:
-          safe_float_write(&dasnote->pitch_end, new_note);
+          safe_float_write(&dasnote->d._pitch_end, new_note);
           break;
         case TR2_PITCH:
           {
-            r::PitchTimeData::Writer writer(dasnote->_pitches);
+            r::PitchTimeData::Writer writer(&dasnote->_pitches);
             if (tr2.pitchnum < 0 || tr2.pitchnum >= writer.size())
               R_ASSERT(false);
             else 

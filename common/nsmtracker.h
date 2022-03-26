@@ -491,6 +491,7 @@ extern bool g_is_starting_up;
 #include "validatemem_proc.h"
 
 
+
 static inline int bool_to_int(bool val){
   return val==true ? 1 : 0;
 }
@@ -1722,6 +1723,9 @@ static inline const char *get_FX_when_name(FX_when when){
   }  
 }
 
+
+
+
 #ifdef __cplusplus
 
 namespace r{
@@ -1745,8 +1749,9 @@ private:
 };
 
 
-  template <typename T, typename SeqBlockT> class TimeData;
+template <typename T, typename SeqBlockT> class TimeData;
 }
+
 #endif
 
 
@@ -1886,6 +1891,9 @@ struct Velocities{
 #define NextVelocity(a) ((struct Velocities *)((a)->l.next))
 */
 
+struct Tracks;
+
+
 static inline float VELOCITY_get(int velocity){
   return scale_double(velocity,0,MAX_VELOCITY,0,1);
 }
@@ -1967,12 +1975,171 @@ namespace r{
   struct TimeDataDataTypeRef : TimeDataDataType<ValType> {
     std::atomic<int> _num_references;
 
-    TimeDataDataTypeRef(const Ratio &ratio, ValType val, int logtype)
+    TimeDataDataTypeRef(const Ratio &ratio, ValType val, int logtype = LOGTYPE_LINEAR)
       : TimeDataDataType<ValType>(ratio, val, logtype)
       , _num_references(0)
     {}
   };
     
+  // Like shared_ptr, but can be used as datatype for TimeData.
+  template <class T>
+  struct TimeData_shared_ptr
+  {
+    using TType = T;
+    using ValType = typename T::TType;
+  
+    static_assert(std::is_base_of<TimeDataDataTypeRef<ValType>, T>::value, "T must be a subclass of r::TimeDataDataTypeRef");
+  
+    T *_t;
+
+    int get_logtype(void) const {
+      return _t->get_logtype();
+    }
+  
+    ValType get_val(void) const {
+      return _t->get_val();
+    }
+  
+    const Ratio &get_time(void) const {
+      return _t->get_time();
+    }
+
+    void set_time(const Ratio &time) {
+      _t->set_time(time);
+    }
+
+    TimeData_shared_ptr()
+      : _t(nullptr)
+    {
+    }
+
+    // todo: add non-null qualifier for t.
+    explicit TimeData_shared_ptr(T *t)
+      : _t(t)
+    {
+      if (_t)
+        _t->_num_references++;
+    
+      //printf("    Constr: %d - %p (%p)\n", _t->_num_references.load(), _t, this);
+    }
+
+    // copy constructor
+    TimeData_shared_ptr(const TimeData_shared_ptr &other)
+      : _t(other._t)
+    {
+      if (_t)
+        _t->_num_references++;
+    
+      //printf("    Copy-constr: %d - %p. (%p -> %p)\n", _t->_num_references.load(), _t, &other, this);
+    }
+
+    // copy assignment
+    TimeData_shared_ptr& operator=(const TimeData_shared_ptr &other){
+      
+      this->_t = other._t;
+
+      if (_t)
+        _t->_num_references++;
+
+      //printf("    Copy-assign: %d - %p. (%p -> %p)\n", _t->_num_references.load(), _t, &other, this);
+    
+      return *this;
+    }
+  
+    // move constructor
+    TimeData_shared_ptr(TimeData_shared_ptr&& other)
+    {
+      this->_t = other._t;
+
+      //printf("    Move-constr: %d - %p (%p -> %p)\n", this->_t->_num_references.load(), _t, &other, this);
+    
+      other._t = NULL;
+    }
+
+    // Move assignment
+    TimeData_shared_ptr& operator=(TimeData_shared_ptr&& a)
+    {
+      if (&a == this){
+        R_ASSERT_NON_RELEASE(false); // Interested in knowing when this happens.
+        return *this;
+      }
+    
+      if (_t != NULL){
+        //R_ASSERT_NON_RELEASE(false); // Interested in knowing when this happens.
+        //printf("                      Deleting %p in move assigment\n", _t);
+        fprintf(stderr, "           c1\n");
+        cleanup();
+      }
+    
+      _t = a._t;
+      a._t = nullptr;
+
+      //printf("    Move-assign: %d - %p (%p -> %p)\n", this->_t->_num_references.load(), _t, &a, this);
+    
+      return *this;
+    }
+
+  
+    ~TimeData_shared_ptr()
+    {
+      fprintf(stderr, "           c2\n");
+      cleanup();
+    }
+
+  
+  private:
+  
+    void cleanup(void){
+      if (_t==NULL){
+        //      abort();
+        return; // (Happens after using move constructor)
+      }
+    
+      R_ASSERT(_t->_num_references > 0);
+      
+      printf("    ~TimeData_shared_ptr: %d - %p (%p)\n", _t->_num_references.load()-1, _t, this);
+    
+      if ((--_t->_num_references)==0)
+        RT_schedule_to_delete(_t);
+    }
+
+  
+  public:
+    operator bool() const {
+      return _t != NULL;
+    }
+  
+    T *operator->() const {
+      return _t;
+    }
+  
+    const T *get(void) const {
+      return _t;
+    }
+
+    T *get_mutable(void) const {
+      return _t;
+    }
+
+    void reset(T *new_value) {
+      fprintf(stderr, "           c3\n");
+      cleanup();
+
+      if (new_value)
+        new_value->_num_references++;
+
+      _t = new_value;
+    }
+    
+    bool operator==(const TimeData_shared_ptr &other) const{
+      return _t==other._t;
+    }
+  
+    bool operator!=(const TimeData_shared_ptr &other) const{
+      return _t!=other._t;
+    }
+  };
+
   extern int64_t g_node_id;
   
   struct NodeId {
@@ -1995,6 +2162,9 @@ namespace r{
   
   using VelocityTimeData = TimeData<Velocity, VelocitySeqBlock>;
 }
+
+#include "TimeData.hpp"
+
 #endif
 
 
@@ -2114,14 +2284,167 @@ struct Notes{
 };
 #define NextNote(a) ((struct Notes *)((a)->l.next))
 
+#if __cplusplus
+
+extern int64_t new_note_id(void);
+
+namespace r{
+
+struct NoteData{
+  int _pitch_first_logtype;
+  
+  int _velocity;
+  int _velocity_first_logtype;
+  
+  Ratio _end;
+
+  int _velocity_end;
+
+  int _chance;
+  
+  float _pitch_end; // If pitch_end==0 and pitches==NULL, there's no pitch changes for this note.
+
+  int _polyphony_num; //subtrack;
+
+  bool _noend;
+
+  bool _has_sent_seqblock_volume_automation_this_block;
+#if !defined(RELEASE)
+  bool _has_automatically_sent_seqblock_volume_automation_this_block;
+#endif
+  bool _scheduler_may_send_velocity_next_block;
+  bool _scheduler_must_send_velocity_next_block; // Can only be set to true if sheduler_may_send_velocity_next_block==true.
+  float _curr_velocity; // Don't think this variable needs to be stored in seqblock->playing_notes. It seems to only contain note->velocity*track->volume*track->mute
+  int64_t _curr_velocity_time;
+  
+  bool _scheduler_may_send_pitch_next_block;
+  bool _scheduler_must_send_pitch_next_block; // Can only be set to true if sheduler_may_send_pitch_next_block==true.
+  float _curr_pitch;
+  int64_t _curr_pitch_time;
+
+  bool _pianonote_is_selected;
+};
+
+struct Note : NodeId, public r::TimeDataDataTypeRef<float> {
+
+  Note(Ratio time, float note, int velocity)
+    : TimeDataDataTypeRef<float>(time, note)
+    , _id(new_note_id())
+  {
+    memset(&d, 0, sizeof(NoteData));
+    
+    d._velocity = velocity;
+    d._velocity_end = velocity;
+    d._chance = MAX_PATCHVOICE_CHANCE;
+  }
+
+  Note(const Note *other, bool copy_velocities_and_pitches = true)
+    : TimeDataDataTypeRef<float>(other->get_time(), other->_val)
+    , _id(new_note_id())
+  {
+    d = other->d;
+
+    // TOPIC: Should we use shared_ptr for _velocities and _pitches instead of copying the content of them?
+    // (I guess copying doesn't take up that much time, so it's probably not worth the complication)
+    if (copy_velocities_and_pitches){
+      _velocities.copy_from(&other->_velocities);
+      _pitches.copy_from(&other->_pitches);
+    }
+  }
+      
+  Note(const Note &other)
+    : Note(&other)
+  {
+  }
+  
+  Note& operator=(const Note &other){
+    set_time(other.get_time());
+    _val = other.get_val();
+      
+    d = other.d;
+    
+    _id = new_note_id();
+    
+    return *this;
+  }
+
+  int64_t get_node_id(void) const {
+    return NodeId::_id;
+  }
+  
+  VelocityTimeData _velocities;
+  PitchTimeData _pitches;
+  
+  NoteData d;
+  
+  int64_t _id;
+};
+
+struct NoteSeqBlock : public RT_TimeData_Player_Cache<typeof(Note::_val)> {
+};
+
+
+using NotePtr = TimeData_shared_ptr<Note>;
+
+struct NoteTimeData : public TimeData<NotePtr, NoteSeqBlock>{
+  int _polyphony = 1;
+
+  // Sets _polyphony.
+  void writer_finalizer(Writer &writer) override;
+
+  void sortit(TimeDataVector *vector) override;
+};
+
+class ModifyNote {
+  NotePtr &_noteptr;
+
+  Note *_note;
+
+  Ratio _time;
+  
+public:
+
+  enum class Type{
+                  CAN_MODIFY_TIME,
+                  CAN_NOT_MODIFY_TIME
+  };
+  
+  const Type _type;
+  
+  ModifyNote(NotePtr &noteptr, Type type = Type::CAN_NOT_MODIFY_TIME)
+    : _noteptr(noteptr)
+    , _note(new Note(noteptr.get()))
+    , _time(noteptr->get_time())
+    , _type(type)
+  {
+  }
+
+  ~ModifyNote(){
+    printf("GAKK!\n");
+    printf("note id: %d\n",(int)_note->_id);
+    
+    R_ASSERT(_type==Type::CAN_MODIFY_TIME || _note->get_time() == _time);
+             
+    _noteptr.reset(_note);
+  }
+
+  Note *operator->() const {
+    return _note;
+  }
+
+  Note *get(void) const {
+    return _note;
+  }
+};
+}
+
+#endif
 
 
 
 /*********************************************************************
 	patch.h
 *********************************************************************/
-
-struct Tracks;
 
 struct Instruments;
 
@@ -2337,7 +2660,7 @@ enum{
 
 struct Tracker_Windows;
 struct Blocks;
-struct Tracks;
+
 struct Instruments{ 
 	struct ListHeader1 l;
 
@@ -2451,10 +2774,20 @@ enum WSwingType {
 /*********************************************************************
 	tracks.h
 *********************************************************************/
+
 struct Tracks{
 	struct ListHeader1 l;
 
+#ifdef __cplusplus
+	r::NoteTimeData *_notes2;
+	r::NoteTimeData *_gfx_notes2;
+#else
+	void *_notes2;
+	void *_gfx_notes2;
+#endif
+  
 	struct Notes *notes;
+
 #ifdef __cplusplus
         r::StopTimeData *stops2;
 #else
@@ -2484,8 +2817,9 @@ struct Tracks{
           int start_copyable_data;
           int onoff;
         };
-  
-        int polyphony;
+
+  // Use _notes2._polyphony instead.
+  //int polyphony;
   
 	int pan;
 	int volume;
@@ -2616,18 +2950,24 @@ enum TR2_Type{
   TR2_STOP
 };
 
+#  ifdef __cplusplus
 typedef struct{
   Place p;
   enum TR2_Type type;
 
+#if 0
   struct Notes *note;
-
+#else
+  r::NotePtr note;
+#endif
+  
   int64_t node_id;
   float pitch;
   int chance;
 
   int pitchnum;
 } TrackRealline2;
+#endif
 
 #if __cplusplus
 typedef struct{
@@ -3263,8 +3603,11 @@ struct WBlocks{
         int bot_realline; // only access from main thread.
 
         int mouse_track; // The track the mouse is currently above. -1 if not on a track.
-        struct Notes *mouse_note; // The note the mouse is currently above. NULL if mouse is not above a note.
-
+#if __cplusplus
+        const r::Note *mouse_note; // The note the mouse is currently above. NULL if mouse is not above a note. Note that this value should not be used for anything other than comparison. (It might have been freed.)
+#else
+        void *mouse_note;
+#endif
         struct FXs *mouse_fxs; // The fxs the mouse is currently above. NULL if mouse is not above an fx.
   
 	struct Blocks *block;			/* Only referenced. wblocknum=block->blocknum */

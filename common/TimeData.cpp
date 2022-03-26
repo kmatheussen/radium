@@ -223,8 +223,6 @@ static Ratio get_time(const Gakk &gakk){
 
 #endif
 
-//sjekk assigning av ny verdi til tidligere (altså sletta slot) i vector.
-
 //#include <QVector>
 
 static void test_refcount(void){

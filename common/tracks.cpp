@@ -207,8 +207,14 @@ static int g_num_live_tracks = 0;
 static void trackgcfinalizer(void *actual_mem_start, void *user_data){
   struct Tracks *track = (struct Tracks*)actual_mem_start;
   printf("    GC-ed TRACK %d. Num: %d\n", track->l.num, g_num_live_tracks);
-  
-  delete track->stops2; // Will probably convert the whole program to C++, and then we don't need this stuff.
+
+  // Will probably convert the whole program to C++, and then we don't need this stuff.
+  {
+    delete track->_notes2;
+    delete track->_gfx_notes2;
+
+    delete track->stops2;
+  }
   
   g_num_live_tracks--;
 }
@@ -258,6 +264,10 @@ static void InitTrack(struct Tracks *track){
 	track->volumeonoff=true;
         MIDI_init_track(track);
 
+        track->_notes2 = new r::NoteTimeData;
+        //track->_gfx_notes2 = new r::NoteTimeData;
+        track->_gfx_notes2 = NULL;
+        
         track->stops2 = new r::StopTimeData;
 
         g_num_live_tracks++;

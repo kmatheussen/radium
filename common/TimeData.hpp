@@ -80,7 +80,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Vector.hpp"
 #include "ratio_funcs.h"
-#include "sequencer_proc.h"
+//#include "sequencer_proc.h"
 #include "AtomicPointerStorage.hpp"
 
 
@@ -107,7 +107,7 @@ extern void FREEABLELIST_free_all(void);
 extern const radium::FreeableList *FREEABLELIST_transfer_all(void);
 */
 
-#if !defined(RELEASE) || defined(TEST_TIMEDATA_MAIN)
+#if defined(TEST_TIMEDATA_MAIN) || defined(TEST_RADIUM_VECTOR_MAIN)
 extern int g_num_timedata_vectors;
 extern int g_num_allocated;
 extern int g_num_freed;
@@ -311,7 +311,7 @@ static inline void RT_schedule_to_delete(T *t)
   // Currently, we don't have to schedule anything since RT_schedule_to_delete is always called from non-rt code.
   ASSERT_IS_NONRT_MAIN_THREAD_NON_RELEASE();
 
-#if !defined(RELEASE) || defined(TEST_TIMEDATA_MAIN)
+#if defined(TEST_TIMEDATA_MAIN) || defined(TEST_RADIUM_VECTOR_MAIN)
   g_num_freed++;
 #endif
   
@@ -321,146 +321,6 @@ static inline void RT_schedule_to_delete(T *t)
 
 
 
-
-// Like shared_ptr, but can be used as datatype for TimeData.
-template <class T>
-struct TimeData_shared_ptr
-{
-  using TType = T;
-  using ValType = typeof(T::_val);
-  
-  static_assert(std::is_base_of<TimeDataDataTypeRef<ValType>, T>::value, "T must be a subclass of r::TimeDataDataTypeRef");
-  
-  T *_t;
-
-  int get_logtype(void) const {
-    return _t->get_logtype();
-  }
-  
-  ValType get_val(void) const {
-    return _t->get_val();
-  }
-  
-  const Ratio &get_time(void) const {
-    return _t->get_time();
-  }
-
-  void set_time(const Ratio &time) {
-    _t->set_time(time);
-  }
-
-#if 0
-  TimeData_shared_ptr()
-    : _t(NULL)
-  {
-  }
-#endif
-  
-  TimeData_shared_ptr(T *t)
-    : _t(t)
-  {
-    _t->_num_references++;
-    
-    //printf("    Constr: %d - %p (%p)\n", _t->_num_references.load(), _t, this);
-  }
-
-  // copy constructor
-  TimeData_shared_ptr(const TimeData_shared_ptr &other)
-    : _t(other._t)
-  {
-    _t->_num_references++;
-    
-    //printf("    Copy-constr: %d - %p. (%p -> %p)\n", _t->_num_references.load(), _t, &other, this);
-  }
-
-  // copy assignment
-  TimeData_shared_ptr& operator=(const TimeData_shared_ptr &other){
-    
-    this->_t = other._t;
-    
-    _t->_num_references++;
-
-    //printf("    Copy-assign: %d - %p. (%p -> %p)\n", _t->_num_references.load(), _t, &other, this);
-    
-    return *this;
-  }
-  
-  // move constructor
-  TimeData_shared_ptr(TimeData_shared_ptr&& other)
-  {
-    this->_t = other._t;
-
-    //printf("    Move-constr: %d - %p (%p -> %p)\n", this->_t->_num_references.load(), _t, &other, this);
-    
-    other._t = NULL;
-  }
-
-  // Move assignment
-  TimeData_shared_ptr& operator=(TimeData_shared_ptr&& a)
-  {
-    if (&a == this){
-      R_ASSERT_NON_RELEASE(false); // Interested in knowing when this happens.
-      return *this;
-    }
-    
-    if (_t != NULL){
-      //R_ASSERT_NON_RELEASE(false); // Interested in knowing when this happens.
-      //printf("                      Deleting %p in move assigment\n", _t);
-      cleanup();
-    }
-    
-    _t = a._t;
-    a._t = nullptr;
-
-    //printf("    Move-assign: %d - %p (%p -> %p)\n", this->_t->_num_references.load(), _t, &a, this);
-    
-    return *this;
-  }
-
-  
-  ~TimeData_shared_ptr()
-  {
-    cleanup();
-  }
-
-  
-private:
-  
-  void cleanup(void){
-    if (_t==NULL){
-      //      abort();
-      return; // (Happens after using move constructor)
-    }
-    
-    R_ASSERT(_t->_num_references > 0);
-    
-    //printf("    ~TimeData_shared_ptr: %d - %p (%p)\n", _t->_num_references.load()-1, _t, this);
-    
-    if ((--_t->_num_references)==0)
-      RT_schedule_to_delete(_t);
-  }
-
-  
-public:
-  
-  T *operator->() const {
-    return _t;
-  }
-  
-  T *get(void) const {
-    return _t;
-  }
-
-#if 0
-  bool operator==(const TimeData_shared_ptr &other) const{
-    return _t==other._t || ( (*_t)==(*other._t) );
-  }
-  
-  bool operator!=(const TimeData_shared_ptr &other) const{
-    return _t!=other._t;
-  }
-#endif
-};
 
 
 /*
@@ -496,15 +356,13 @@ public:
   
   using RT_CacheHandler = RT_TimeData_Cache_Handler<SeqBlockT>;
   
-private:
-
   struct TimeDataVector : public radium::Vector<T> {
 
     TimeDataVector(TimeDataVector *vector)
       : radium::Vector<T>(vector)
     {
       R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
-#if !defined(RELEASE) || defined(TEST_TIMEDATA_MAIN)
+#if defined(TEST_TIMEDATA_MAIN) || defined(TEST_RADIUM_VECTOR_MAIN)
       g_num_timedata_vectors++;
 #endif
     }
@@ -516,7 +374,7 @@ private:
     
     ~TimeDataVector() {
       R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
-#if !defined(RELEASE) || defined(TEST_TIMEDATA_MAIN)
+#if defined(TEST_TIMEDATA_MAIN) || defined(TEST_RADIUM_VECTOR_MAIN)
       g_num_timedata_vectors--;
       //printf("                 FREEEING TimeDataVector %d\n", g_num_timedata_vectors);
       //getchar();
@@ -561,6 +419,9 @@ private:
   
   };
 
+
+private:
+
   TimeDataVector* _vector;
 
   mutable radium::AtomicPointerStorageMultipleReaders<const TimeDataVector> _atomic_pointer_storage;
@@ -578,8 +439,12 @@ public:
   }
 
   
-  ~TimeData(){
+  virtual ~TimeData(){
     R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
+  }
+
+  virtual void sortit(TimeDataVector *vector){
+    vector->sortit();
   }
   
 private:
@@ -796,6 +661,14 @@ private:
 
     }
 
+    const T* begin() const {
+      return this->_vector->begin();
+    }
+    
+    const T* end() const {
+      return this->_vector->end();
+    }
+
     /*
     ~ReaderWriter(){
       if (_is_player)
@@ -818,6 +691,14 @@ private:
       return _vector->size();
     }
 
+    bool contains(const T &element) {
+      for(int i=0;i<this->size();i++)
+        if (at_ref(i) == element)
+          return true;
+
+      return false;
+    }
+    
     int find_element_at_ratio(const Ratio &ratio) const {
       return find_pos_exact(ratio);
     }
@@ -1153,15 +1034,6 @@ public:
     const T &at_ref(int i) const {
       return this->_vector->at_ref(i);
     }
-
-    const T* begin() const {
-      return this->_vector->begin();
-    }
-    
-    const T* end() const {
-      return this->_vector->end();
-    }
-
   };
 
 
@@ -1185,6 +1057,9 @@ public:
     }
     
     ~Writer(){
+      if (!_has_cancelled)
+        this->_time_data->writer_finalizer(*this);
+
       if (_has_cancelled)
         delete this->_vector;
       else
@@ -1212,10 +1087,10 @@ public:
     T* end() const {
       return const_cast<T*>(this->_vector->end());
     }
-
+  
     void sortit(void){
       R_ASSERT_NON_RELEASE(_has_cancelled==false);
-      this->_vector->sortit();
+      this->_time_data->sortit(this->_vector);
     }
     
     void assert_sorted(void){
@@ -1319,11 +1194,12 @@ public:
       return true;
     }
 
-    void remove_at_positions(const std::vector<int> &positions){
+    // Note: return value isn't always correct. It might return true even if nothing was removed.
+    bool remove_at_positions(const std::vector<int> &positions){
       R_ASSERT_NON_RELEASE(_has_cancelled==false);
 
       if (positions.size()==0)
-        return;
+        return false;
       
 #if 1
       TimeDataVector *_new_vector = new TimeDataVector();
@@ -1343,7 +1219,8 @@ public:
 
       delete this->_vector;
       this->_vector = _new_vector;
-      
+
+      return true;
 #else
       
       // Make sure we iterate from last to first position.
@@ -1369,14 +1246,22 @@ public:
 #endif
     }
 
-    void remove(std::function<bool(int, T&)> remove_questionmark){
+    bool remove(std::function<bool(int, T&)> remove_questionmark){
       std::vector<int> to_remove;
       
       for(int i=0;i<this->size();i++)
         if (remove_questionmark(i, at_ref(i)))
           to_remove.push_back(i);
       
-      remove_at_positions(to_remove);      
+      return remove_at_positions(to_remove);      
+    }
+    
+    bool removeElement(const T &element) {
+      for(int i=0;i<this->size();i++)
+        if (at_ref(i) == element)
+          return remove_at_pos(i);
+
+      return false;
     }
     
     bool remove_at_time(Ratio ratio){
@@ -1495,11 +1380,15 @@ public:
     }
   };
 
+  // Called by ~Writer right before replacing the vector.
+  virtual void writer_finalizer(TimeData<T,SeqBlockT>::Writer &writer) {
+  }
+
   void copy_from(const TimeData<T,SeqBlockT> *from){
     Writer to_writer(this, true);
-    Writer from_reader(from);
+    Reader from_reader(from);
 
-    for(T &t : from_reader)
+    for(const T &t : from_reader)
       to_writer.add(t);
   }
   

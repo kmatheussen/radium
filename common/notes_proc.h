@@ -17,7 +17,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef RADIUM_COMMON_NOTES_PROC_H
 #define RADIUM_COMMON_NOTES_PROC_H
 
-extern LANGSPEC void SetNotePolyphonyAttributes(struct Tracks *track);
 extern LANGSPEC int GetNoteSubtrack(const struct WTracks *wtrack, struct Notes *note);
 extern LANGSPEC int GetNumSubtracks(const struct WTracks *wtrack);
 
@@ -27,13 +26,20 @@ extern void StopAllNotesAtPlace(
                                 struct Tracks *track,
                                 const Place *placement
                                 );
-#endif
 
-extern LANGSPEC struct Notes *GetCurrNote(struct Tracker_Windows *window);
+extern const r::NotePtr GetCurrNote(struct Tracker_Windows *window);
+
+#endif
 
 //extern LANGSPEC void NOTE_init(struct Notes *note);
 extern LANGSPEC struct Notes *NewNote(void);
 extern LANGSPEC struct Notes *CopyNote(const struct Notes *old_note);
+
+#if __cplusplus
+extern r::NotePtr NewNote2(const Ratio &time,
+                    float notenum,
+                    int velocity);
+#endif
 
 extern LANGSPEC bool NOTES_sorted_by_pitch_questionmark(struct Notes *notes);
 extern LANGSPEC struct Notes *NOTES_sort_by_pitch(struct Notes *notes);
@@ -76,22 +82,52 @@ extern LANGSPEC void ReplaceNoteEnds(
                     int subtrack
                     );
 
+#if __cplusplus
+void ReplaceNoteEnds2(
+                      struct Blocks *block,
+                      struct Tracks *track,
+                      r::NoteTimeData::Writer &writer,
+                      const Ratio &old_ratio,
+                      const Ratio &new_ratio,
+                      int polyphony_num
+                      );
+#endif
+
 extern LANGSPEC void CutNoteAt(const struct Blocks *block, const struct Tracks *track,struct Notes *note, const Place *place);
   
 extern LANGSPEC void RemoveNote(struct Blocks *block,
                 struct Tracks *track,
                 const struct Notes *note
                 );
+#if __cplusplus
+void RemoveNote2(
+                 struct Blocks *block,
+                 struct Tracks *track,
+                 const r::NotePtr &note
+                 );
+#endif
 
 extern LANGSPEC void RemoveNoteCurrPos(struct Tracker_Windows *window);
 
 extern LANGSPEC struct Notes *FindPrevNoteOnSameSubTrack(const struct Tracks *track, const struct Notes *note);
+
+#if __cplusplus
+r::NotePtr FindPrevNoteOnSameSubTrack2(const radium::Vector<r::NotePtr> &notes, const r::NotePtr &note);
+r::NotePtr FindNextNoteOnSameSubtrack2(const radium::Vector<r::NotePtr> &notes, const r::NotePtr &note);
+#endif
 
 extern LANGSPEC struct Notes *FindNoteOnSubTrack(
                                         const struct WTracks *wtrack,
                                         int subtrack,
                                         const Place *placement
 );
+
+#if __cplusplus
+r::NotePtr FindNoteOnSubTrack2(const struct WTracks *wtrack,
+                               int subtrack,
+                               const Ratio &ratio
+                               );
+#endif
 
 extern LANGSPEC struct Notes *FindNextNoteOnSameSubtrack(struct Notes *note);
 
@@ -124,6 +160,9 @@ extern LANGSPEC void StopVelocityCurrPos(struct Tracker_Windows *window,int noen
 #include "ratio_funcs.h"
 static inline bool note_continues_next_block(const struct Blocks *block, const struct Notes *note){
   return note->noend==1 && note->end >= place2ratio(p_Last_Pos(block));
+}
+static inline bool note_continues_next_block2(const struct Blocks *block, const r::Note *note){
+  return note->d._noend==1 && note->d._end >= place2ratio(p_Last_Pos(block));
 }
 #endif
 

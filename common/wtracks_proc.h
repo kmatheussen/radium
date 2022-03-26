@@ -23,12 +23,14 @@ static inline int WTRACK_fxtext_track_width(const int fontwidth){
 
 extern LANGSPEC int WTRACK_num_non_polyphonic_subtracks(const struct WTracks *wtrack);
 
-static inline int WTRACK_num_subtracks(const struct WTracks *wtrack){
-  return WTRACK_num_non_polyphonic_subtracks(wtrack) + wtrack->track->polyphony;
-}
+extern LANGSPEC int WTRACK_num_subtracks(const struct WTracks *wtrack);
 
 static inline int NOTE_subtrack(const struct WTracks *wtrack, const struct Notes *note){
   return WTRACK_num_non_polyphonic_subtracks(wtrack) + note->polyphony_num;
+}
+
+static inline int NOTE_subtrack2(const struct WTracks *wtrack, const int polyphony_num) {
+  return WTRACK_num_non_polyphonic_subtracks(wtrack) + polyphony_num;
 }
 
 

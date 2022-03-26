@@ -53,9 +53,9 @@ extern LANGSPEC int GetXSubTrack_B2(
 	int subtrack
 );
 
-extern LANGSPEC int GetNoteX1(const struct WTracks *wtrack, const struct Notes *note);
+extern LANGSPEC int GetNoteX1(const struct WTracks *wtrack, int polyphony_num);
 
-extern LANGSPEC int GetNoteX2(const struct WTracks *wtrack, const struct Notes *note);
+extern LANGSPEC int GetNoteX2(const struct WTracks *wtrack, int polyphony_num);
 
 //extern LANGSPEC int SubtrackBoundaries(const struct WTracks *wtrack,int subtrack,int x);
 

@@ -42,7 +42,7 @@ static int GetPolyX1(
 ){
   R_ASSERT_RETURN_IF_FALSE2(wtrack, 100);
 
-  return (wtrack->fxwidth*polyphony_num/wtrack->track->polyphony) + (polyphony_num>0 ? 1 : 0 ) ;
+  return (wtrack->fxwidth*polyphony_num/wtrack->track->_notes2->_polyphony) + (polyphony_num>0 ? 1 : 0 ) ;
 }
 
 /************************************************************************
@@ -147,7 +147,7 @@ static int GetPolyX2(
     
     int num_subtracks = GetNumSubtracks(wtrack);
     return
-      (wtrack->fxwidth*(polyphony_num+1)/wtrack->track->polyphony) -
+      (wtrack->fxwidth*(polyphony_num+1)/wtrack->track->_notes2->_polyphony) -
       (polyphony_num == num_subtracks-1 ? 0 : 1)
       ;
 }
@@ -324,15 +324,15 @@ int GetXSubTrack_B2(
 }
 
 
-int GetNoteX1(const struct WTracks *wtrack, const struct Notes *note){
+int GetNoteX1(const struct WTracks *wtrack, int polyphony_num){
   return GetXSubTrack1(wtrack,
-                       WTRACK_num_non_polyphonic_subtracks(wtrack) + note->polyphony_num
+                       WTRACK_num_non_polyphonic_subtracks(wtrack) + polyphony_num
                        );
 }
 
-int GetNoteX2(const struct WTracks *wtrack, const struct Notes *note){
+int GetNoteX2(const struct WTracks *wtrack, int polyphony_num){
   return GetXSubTrack2(wtrack,
-                       WTRACK_num_non_polyphonic_subtracks(wtrack) + note->polyphony_num
+                       WTRACK_num_non_polyphonic_subtracks(wtrack) + polyphony_num
                        );
 }
 

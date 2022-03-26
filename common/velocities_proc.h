@@ -38,6 +38,13 @@ extern LANGSPEC int AddVelocity(
                                 struct Notes *note
                                 );
 
+#ifdef __cplusplus
+extern int AddVelocity4(
+                        int velocityvelocity,
+                        const Ratio &ratio,
+                        r::Note *note);
+#endif
+                 
 extern LANGSPEC void AddVelocityCurrPos(struct Tracker_Windows *window);
 
 extern LANGSPEC void IncreaseVelocityCurrPos(struct Tracker_Windows *window,int inc);

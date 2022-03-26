@@ -1252,36 +1252,36 @@ static float get_pianonote_info(enum PianoNoteWhatToGet what_to_get, int pianono
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
-  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
-  if (note==NULL)
+  r::NotePtr note = getNoteFromNumA2(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
+  if (!note)
     return 0;
 
   if (what_to_get==PIANONOTE_INFO_VALUE){
     if (pianonotenum==0)
-      return note->note;
+      return note->_val;
 
-    const r::PitchTimeData::Reader reader(note->_pitches);
+    const r::PitchTimeData::Reader reader(&note->_pitches);
 
     if (pianonotenum >= reader.size()+1) {
 
       if (pianonotenum == reader.size()+1) {
-        if (pianonotenum==1 && equal_floats(note->pitch_end, 0))
-          return note->note;
+        if (pianonotenum==1 && equal_floats(note->d._pitch_end, 0))
+          return note->_val;
         else
-          return note->pitch_end;
+          return note->d._pitch_end;
       }
       
-      handleError("There is no pianonote #%d in note %d in track #%d in block #%d",pianonotenum,(int)note->id,tracknum,blocknum);
+      handleError("There is no pianonote #%d in note %d in track #%d in block #%d",pianonotenum,(int)note->_id,tracknum,blocknum);
       return 0;
     }
     
     return reader.at_ref(pianonotenum-1)._val;
   }
 
-  const r::PitchTimeData::Reader reader(note->_pitches);
+  const r::PitchTimeData::Reader reader(&note->_pitches);
   
   //const struct NodeLine *nodeline0 = GetPianorollNodeLines(window, wblock, wtrack, note);
-  const struct NodeLine2 *nodeline = GetPianorollNodeLines2(window, wblock, wtrack, note, reader);
+  const struct NodeLine2 *nodeline = GetPianorollNodeLines2(window, wblock, wtrack, note.get(), reader);
 
   int num = -1;
 
@@ -1296,7 +1296,7 @@ static float get_pianonote_info(enum PianoNoteWhatToGet what_to_get, int pianono
   }
 
   if (nodeline==NULL) {
-    handleError("There is no pianonote #%d in note %d in track #%d in block #%d",pianonotenum,(int)note->id,tracknum,blocknum);  
+    handleError("There is no pianonote #%d in note %d in track #%d in block #%d",pianonotenum,(int)note->_id,tracknum,blocknum);  
     return 0;
   }
 

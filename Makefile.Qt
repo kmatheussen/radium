@@ -745,15 +745,15 @@ test_timedata_gdb:
 	cd common && g++ TimeData.cpp $(TEST_TIMEDATA_OPTS) -O3 -fsanitize=undefined $(ADDRESS_SANITIZE_OPTS) -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" gdb -ex "set print thread-events off" ./a.out
 
 
-TEST_RT_MEMORY_ALLOCATOR_OPTS=$(BOOST_FLAGS) $(TEST_TIMEDATA_OPTS)
+TEST_RT_MEMORY_ALLOCATOR_OPTS=$(BOOST_FLAGS) $(TEST_TIMEDATA_OPTS) -DTEST_RT_MEMORY_ALLOCATOR
 
 test_rt_memory_allocator:
 	cd common && touch buildtype.opt flagopts.opt
-	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DTEST_MAIN -DRADIUM_USES_UBSAN -O3 -fsanitize=undefined $(ADDRESS_SANITIZE_OPTS)  -O0 -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
-	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DTEST_MAIN -DRADIUM_USES_UBSAN -O3 -fsanitize=undefined $(ADDRESS_SANITIZE_OPTS)  -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
-	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DTEST_MAIN -DRADIUM_USES_TSAN -O3 -fsanitize=thread -o a.out && TSAN_OPTIONS="history_size=7,second_deadlock_stack=1,abort_on_error=1,suppressions=../SanitizerSuppr.txt" $(TEST_TIMEDATA_RUNNER)
-	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DTEST_MAIN -O0 -o a.out && $(TEST_TIMEDATA_RUNNER)
-	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DTEST_MAIN -O3 -o a.out && $(TEST_TIMEDATA_RUNNER)
+	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DRADIUM_USES_UBSAN -O3 -fsanitize=undefined $(ADDRESS_SANITIZE_OPTS)  -O0 -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
+	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DRADIUM_USES_UBSAN -O3 -fsanitize=undefined $(ADDRESS_SANITIZE_OPTS)  -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
+	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DRADIUM_USES_TSAN -O3 -fsanitize=thread -o a.out && TSAN_OPTIONS="history_size=7,second_deadlock_stack=1,abort_on_error=1,suppressions=../SanitizerSuppr.txt" $(TEST_TIMEDATA_RUNNER)
+	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -O0 -o a.out && $(TEST_TIMEDATA_RUNNER)
+	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -O3 -o a.out && $(TEST_TIMEDATA_RUNNER)
 
 #mingw32:
 #i686-w64-mingw32.static-g++ -Wall -Wno-parentheses RT_memory_allocator.cpp -I/home/kjetil/boost_1_63_0 -DTEST_MAIN -DFOR_WINDOWS -D__STDC_FORMAT_MACROS=1 -O3 -msse2 -mfpmath=sse -I../Qt -std=gnu++17 -o a.out

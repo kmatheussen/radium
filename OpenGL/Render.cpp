@@ -65,7 +65,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "GfxElements.h"
 
 #include "../api/api_proc.h"
-#include "../api/api_noteedit_proc.h"
 
 #include "Render_proc.h"
 
@@ -1604,11 +1603,11 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
   if (wtrack->noteshowtype==TEXTTYPE && show_notes){
 
     // Paint THISNOTELINES
-    if(trs.size() < 2 && tr2.note!=NULL && tr2.note->polyphony_num>0) {
+    if(trs.size() < 2 && tr2.note && tr2.note->d._polyphony_num>0) {
       //printf("Gakk: %s (%s), %d, pointer: %p\n",NotesTexts[(int)notenum],NotesTexts[(int)note->note],note->subtrack,note);
       float y = (y1+y2) / 2.0f;
       float x1 = wtrack->notearea.x2;
-      float x2 = (GetNoteX1(wtrack,tr2.note) + GetNoteX2(wtrack,tr2.note)) / 2.0f;
+      float x2 = (GetNoteX1(wtrack,tr2.note->d._polyphony_num) + GetNoteX2(wtrack,tr2.note->d._polyphony_num)) / 2.0f;
       GE_line(GE_color(TEXT_COLOR_NUM,y1),
               x1, y,
               x2, y,
@@ -1620,7 +1619,7 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
     switch(tr2.type){
       case TR2_NOTE_START:
       case TR2_NOTE_END:
-        highlight = &tr2.note->l==g_current_node;
+        highlight = tr2.node_id==g_current_node_id;
         break;
       case TR2_PITCH:
         highlight = tr2.node_id==g_current_node_id;
@@ -1721,6 +1720,7 @@ static float next_line_y1(const struct Tracker_Windows *window, float y){
     return ret;
 }
 
+#if 0
 static void create_pitches(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note, const struct NodeLine2 *nodelines){
 
   //printf("\nPainting nodeline:\n");
@@ -1782,6 +1782,72 @@ static void create_pitches(const struct Tracker_Windows *window, const struct WB
       draw_node_indicator(node->x, node->y-wblock->t.y1, PITCH_LINE_COLOR_NUM);
     }    
   }
+}
+#endif
+
+static void create_pitches2(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const r::Note *note, const struct NodeLine2 *nodelines){
+
+  //printf("\nPainting nodeline:\n");
+  
+  // lines
+  {
+
+    GE_Context *line_color = NULL;
+
+    for(const struct NodeLine2 *nodeline=nodelines ; nodeline!=NULL ; nodeline=nodeline->next) {
+      bool vertical_line = equal_floats(nodeline->x1, nodeline->x2);
+      bool continues_next_block = nodeline->next==NULL && note_continues_next_block2(wblock->block, note);
+    
+      if(true || !vertical_line) {
+        int logtype = nodeline->logtype;
+        
+        float x1 = nodeline->x1;
+        float x2 = logtype==LOGTYPE_HOLD ? nodeline->x1 : nodeline->x2;
+        float y1 = nodeline->y1;
+        float y2 = nodeline->y2;
+
+        //printf("nodeline: %f,%f -> %f,%f\n", x1, y1, x2, y2);
+        if (vertical_line)
+          y1 = next_line_y1(window, y1);
+
+        line_color = line_color!=NULL ? GE_y(line_color, y1) : GE_color_alpha(PITCH_LINE_COLOR_NUM, 0.5, y1);
+
+        int width = get_pitchline_width();
+        //if (vertical_line)
+        width *= 2;
+        
+        if (y2 > y1 + 2){
+          GE_line(line_color, x1, y1, x2, y2, width);
+          
+          if (logtype==LOGTYPE_HOLD)
+            GE_line(line_color, x2, y2, nodeline->x2, y2, width);
+        }
+          
+        if (continues_next_block){
+          float y1 = nodeline->y2;
+          float y2 = nodeline->y2 + 25;
+          GE_line(line_color, nodeline->x2, y1, nodeline->x2, y2, width);
+          GE_line(line_color, nodeline->x2 - 5, y2 - 8, nodeline->x2, y2, width);
+          GE_line(line_color, nodeline->x2 + 5, y2 - 8, nodeline->x2, y2, width);
+        }
+      }
+
+    }
+
+  }
+
+#if DO_LATER
+  // indicator node
+  if (g_indicator_node == &note->l && g_indicator_pitch_num!=-1) {
+    const vector_t *nodes = get_nodeline_nodes2(nodelines, wblock->t.y1);
+    
+    if (g_indicator_pitch_num < nodes->num_elements) {
+      //printf("g_indicator_pitch_num: %d\n",g_indicator_pitch_num);
+      struct Node2 *node = (struct Node2 *)nodes->elements[g_indicator_pitch_num];
+      draw_node_indicator(node->x, node->y-wblock->t.y1, PITCH_LINE_COLOR_NUM);
+    }    
+  }
+#endif
 }
 
 static float get_pianoroll_note_width(const struct WTracks *wtrack){
@@ -1917,46 +1983,26 @@ static void create_pianoroll_notes(const struct Tracker_Windows *window, const s
   GE_Context *current_note_color = NULL;
   GE_Context *note_color = NULL;
 
-  const struct Notes *notes = wtrack->track->gfx_notes!=NULL ? wtrack->track->gfx_notes : wtrack->track->notes;
-  
-  const struct Notes *current_note = NULL;
-
-  if (wtrack->l.num==g_current_piano_note.tracknum){
-    const struct Notes *note = notes;
-    while(note != NULL){
-      bool is_current = note->id==g_current_piano_note.noteid;
-
-      if (is_current){
-        current_note = note;
-        break;
-      }
-      
-      note = NextNote(note);
-    }
-  }
-
   bool is_painting_ghost_note = false;
-  struct Notes ghost_note;
+  r::Note ghost_note(make_ratio(0,1), 64, MAX_VELOCITY / 2);
   
-  const struct Notes *note = notes;
-  
-  while(true) {
+  r::NoteTimeData::Reader note_reader(wtrack->track->_gfx_notes2 ? wtrack->track->_gfx_notes2 : wtrack->track->_notes2);
 
-    if (note == NULL) {
+  for(int i = 0 ; i <= note_reader.size() ; i++) {
+
+    const r::Note *note;
+    
+    if (i < note_reader.size()) {
+      
+      note = note_reader.at_ref(i).get();
+      
+    } else {
       
       if (is_painting_ghost_note==false && g_current_piano_ghost_note.tracknum==wtrack->l.num) {
-
-        static r::PitchTimeData *s_pitches = NULL;
         
-        if (s_pitches==NULL)
-          s_pitches = new r::PitchTimeData;
-        
-        memset(&ghost_note, 0, sizeof(struct Notes));
-        
-        ghost_note.note = g_current_piano_ghost_note.value;
-        ghost_note.l.p = g_current_piano_ghost_note.start;
-        ghost_note.end = place2ratio(g_current_piano_ghost_note.end);
-        ghost_note._pitches = s_pitches;
+        ghost_note._val = g_current_piano_ghost_note.value;
+        ghost_note._time = place2ratio(g_current_piano_ghost_note.start);
+        ghost_note.d._end = place2ratio(g_current_piano_ghost_note.end);
         
         note = &ghost_note;
         is_painting_ghost_note = true;
@@ -1964,18 +2010,17 @@ static void create_pianoroll_notes(const struct Tracker_Windows *window, const s
       } else {
         
         break;
-      
+        
       }
-
     }
 
-    r::PitchTimeData::Reader reader(note->_pitches);
+    r::PitchTimeData::Reader pitch_reader(&note->_pitches);
     
     const struct NodeLine2 *nodelines = GetPianorollNodeLines2(window,
                                                                wblock,
                                                                wtrack,
                                                                note,
-                                                               reader
+                                                               pitch_reader
                                                                );
 
     int pianonotenum = -1;
@@ -1985,7 +2030,7 @@ static void create_pianoroll_notes(const struct Tracker_Windows *window, const s
       bool is_continuing = false;
       
       if (nodeline->next==NULL)
-        if (note_continues_next_block(wblock->block, note))
+        if (note_continues_next_block2(wblock->block, note))
           is_continuing = true;
 
       if (nodeline->is_node)
@@ -1998,15 +2043,16 @@ static void create_pianoroll_notes(const struct Tracker_Windows *window, const s
       float y2 = nodeline->y2;
  
       border_color = border_color!=NULL ? GE_y(border_color, y1) : GE_color_z(PIANOROLL_NOTE_BORDER_COLOR_NUM, GE_Conf(Z_ABOVE(Z_ZERO), y1));
- 
 
-      bool is_current = note == current_note && pianonotenum==g_current_piano_note.pianonotenum;
+      const bool is_current_note = wtrack->l.num==g_current_piano_note.tracknum && note->_id==g_current_piano_note.noteid;
+
+      bool is_current = is_current_note && pianonotenum==g_current_piano_note.pianonotenum;
 
       if (!is_current && is_painting_ghost_note)
         is_current = true;
 
-      if (!is_current && current_note!=NULL && pianonotenum==g_current_piano_note.pianonotenum)
-        if (current_note->pianonote_is_selected && note->pianonote_is_selected)
+      if (!is_current && is_current_note && pianonotenum==g_current_piano_note.pianonotenum)
+        if (note->d._pianonote_is_selected && note->d._pianonote_is_selected)
           is_current = true;
 
       //printf("pianonotenum: %d, curr.pianonotenum: %d, is_current: %s\n",pianonotenum,g_current_piano_note.pianonotenum,is_current?"true":"false");
@@ -2033,7 +2079,7 @@ static void create_pianoroll_notes(const struct Tracker_Windows *window, const s
         c = note_color;
       }
 
-      bool is_selected = API_note_is_selected(wblock, note);
+      bool is_selected = note->d._pianonote_is_selected;
 
       if (is_painting_ghost_note)
         c = GE(GE_alpha(GE_get_rgb(c), 0.2), y1);
@@ -2102,11 +2148,11 @@ static void create_pianoroll_notes(const struct Tracker_Windows *window, const s
           float notenum;
 
           if (pianonotenum==0)
-            notenum = note->note;
-          else if (pianonotenum==reader.size()+1)
-            notenum = note->pitch_end;
+            notenum = note->_val;
+          else if (pianonotenum==pitch_reader.size()+1)
+            notenum = note->d._pitch_end;
           else
-            notenum = reader.at_ref(pianonotenum-1)._val;
+            notenum = pitch_reader.at_ref(pianonotenum-1)._val;
           
           float x_text = (nodeline->x1 + nodeline->x2) / 2;
           bool text_is_inside = (x_text > wtrack->pianoroll_area.x - 20) && (x_text < wtrack->pianoroll_area.x2 + 20);
@@ -2115,15 +2161,15 @@ static void create_pianoroll_notes(const struct Tracker_Windows *window, const s
             draw_pianonote_text(window, notenum, is_current, x_text, nodeline->y1);
 
             // pitch_end
-            if (nodeline->next==NULL && note->pitch_end > 0) {
-              //const r::Pitch &pitch = reader.at_ref(pianonotenum+1);
+            if (nodeline->next==NULL && note->d._pitch_end > 0) {
+              //const r::Pitch &pitch = pitch_reader.at_ref(pianonotenum+1);
               //struct Pitches *pitch = (struct Pitches*)nodeline->element2;
               float  notenum;
               
-              if (pianonotenum==reader.size())
-                notenum = note->pitch_end;
+              if (pianonotenum==pitch_reader.size())
+                notenum = note->d._pitch_end;
               else
-                notenum = reader.at_ref(pianonotenum)._val;
+                notenum = pitch_reader.at_ref(pianonotenum)._val;
 
               draw_pianonote_text(window, notenum, is_current, (nodeline->x1 + nodeline->x2) / 2, nodeline->y2);
             }
@@ -2207,8 +2253,6 @@ static void create_pianoroll_notes(const struct Tracker_Windows *window, const s
         GE_set_x_scissor(wtrack->pianoroll_area.x,
                          wtrack->pianoroll_area.x2+1);
     }
-
-    note = NextNote(note);
   }
 
   GE_unset_x_scissor();
@@ -2248,6 +2292,7 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
 
 static float subtrack_x1, subtrack_x2;
 
+#if 0
 static void create_track_peaks(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note, const struct NodeLine2 *nodelines){
   struct Patch *patch = wtrack->track->patch;
   STime note_time = Place2STime2(wblock->block, &note->l.p, wtrack->track);
@@ -2333,6 +2378,157 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
 
         PATCH_get_peaks(patch, 
                         note->note,
+                        ch,
+                        wtrack->track,
+                        reltempo_start_time,
+                        reltempo_end_time,
+                        &min,
+                        &max);
+
+        float velocity = (float)scale(n,
+                                      0,num_peaks-1,
+                                      velocity1, velocity2);
+
+        float bound_x1 = scale(scale(ch,
+                                     0,num_channels,
+                                     0.0f,velocity),
+                               0, 1,
+                               subtrack_x1, subtrack_x2);
+        float bound_x2 = scale(scale(ch+1,
+                                     0,num_channels,
+                                     0.0f,velocity),
+                               0, 1,
+                               subtrack_x1, subtrack_x2);
+
+        float x1 = scale(min*track_volume, -1,1, bound_x1, bound_x2);
+        float x2 = scale(max*track_volume, -1,1, bound_x1, bound_x2);
+          
+        //float y = y1 + n*NUM_LINES_PER_PEAK;
+        float y = scale(n,
+                        0, num_peaks-1,
+                        y1, y2);
+
+        //auto *old_c = c;
+
+        c = GE_y(c, y); // Optimization. Split waveforms into several slices.
+
+        /*
+        if (c != old_c){
+          printf("Changing C at %f\n", y);
+        }
+        */
+#if 0
+        printf("Adding %f,%f at %f. min/max: %f/%f. vel1/vel2: %f/%f. time1/time2: %f/%f\n",x1,x2,y,min,max,
+               scale(n,0,num_peaks,velocity1->velocity, velocity2->velocity),
+               scale(n+NUM_LINES_PER_PEAK,0,num_peaks,velocity1->velocity, velocity2->velocity),
+               scale(n,0,num_peaks,time1,time2) / reltempo,
+               scale(n+NUM_LINES_PER_PEAK,0,num_peaks,time1,time2) / reltempo);
+#endif
+
+        //printf("   tr.y: %f\n", y);
+        trianglestrip.add(c, R_MAX(subtrack_x1, x1-min_width), y); // Subtract a little bit (min_width) so that we see a thin line instead of nothing when there's no sound
+        trianglestrip.add(c, R_MIN(subtrack_x2, x2+min_width), y); // Same here.
+        
+        last_end_time = end_time;
+        
+      } // end num peaks iteration
+
+    } // end node iteration
+
+  } // end ch iteration
+}
+#endif
+
+static void create_track_peaks2(const struct Tracker_Windows *window,
+                                const struct WBlocks *wblock,
+                                const struct WTracks *wtrack,
+                                const r::Note *note,
+                                const struct NodeLine2 *nodelines)
+{
+  struct Patch *patch = wtrack->track->patch;
+  STime note_time = Ratio2STime2(wblock->block, note->get_time(), wtrack->track);
+
+  float track_volume =  wtrack->track->volumeonoff ? (float)wtrack->track->volume / MAXTRACKVOL : 1.0f;
+  //float velocity = scale(n,0,num_peaks, velocity1->velocity, velocity2->velocity);
+
+  const double reltempo = ATOMIC_DOUBLE_GET(wblock->block->reltempo);
+    
+  const int num_channels=PATCH_get_peaks(patch, 0,
+                                         -1,
+                                         wtrack->track,
+                                         0,0,
+                                         NULL,NULL
+                                         );
+    
+
+  const float min_width = R_MAX(0.5, (float)window->fontheight / 31.0f);
+  const float num_lines_per_peak = R_MAX(2.7, (float)window->systemfontheight / 6.5f);
+
+  GE_Context *c = NULL;
+  
+  //GE_Context *c = Black_color(); //GE_mix_alpha_z(GE_get_rgb(0), Black_rgb(), 100, 0.7, Z_ZERO);
+  //GE_Context *c = GE_mix_alpha_z(GE_get_rgb(0), GE_get_rgb(2), 250, 0.9, Z_ZERO);
+
+
+  for(int ch=0;ch<num_channels;ch++){
+
+    GE_ScopedTrianglestrip trianglestrip;
+
+    for(const struct NodeLine2 *ns = nodelines ; ns!=NULL ; ns=ns->next){
+      int logtype = ns->logtype;
+      float x1 = ns->x1;
+      float x2 = logtype==LOGTYPE_HOLD ? ns->x1 : ns->x2;
+      float y1 = ns->y1;
+      float y2 = ns->y2;
+
+      //printf("y1/y2: %f, %f\n", y1, y2);
+      
+      c = c!=NULL ? GE_y(c, y1) : GE_mix_color_z(GE_get_rgb(LOW_EDITOR_BACKGROUND_COLOR_NUM), GE_get_rgb(WAVEFORM_COLOR_NUM), 100, GE_Conf(Z_ABOVE(Z_ZERO), y1));
+
+      const STime time1 = Ratio2STime2(wblock->block, ns->time1, wtrack->track) - note_time;
+      const STime time2 = Ratio2STime2(wblock->block, ns->time2, wtrack->track) - note_time;
+
+      R_ASSERT_NON_RELEASE(time2 >= time1);
+      
+      if (time1>=time2)
+        continue;
+          
+      float velocity1 = scale(x1, subtrack_x1, subtrack_x2, 0, 1);
+      float velocity2 = scale(x2, subtrack_x1, subtrack_x2, 0, 1);
+      
+      int num_peaks = R_MAX(2, (y2-y1) / num_lines_per_peak); // Must have at least two points in time to draw a waveform.
+
+      int64_t last_end_time = time1;
+                                
+      for(int n=0; n < num_peaks ; n++){
+
+        float min,max;
+        
+        int64_t start_time = last_end_time;
+
+        int64_t end_time   = R_MIN(time2,
+                                   scale(n+1,
+                                         0, num_peaks-1+1,
+                                         time1, time2)
+                                   );
+        
+        
+        //printf("  %d/%d: %d -> %d (diff: %d) (full: %d -> %d)\n", n, num_peaks, (int)start_time, (int)end_time, (int)(end_time-start_time), (int)time1, (int)time2);
+
+        R_ASSERT_NON_RELEASE(end_time >= start_time);
+
+        int64_t reltempo_start_time = start_time / reltempo;
+        int64_t reltempo_end_time = end_time / reltempo;
+        
+        if (reltempo_start_time>=reltempo_end_time)
+          continue; // Playing too fast. No audio data. (note that the current value of 'last_end_time' is kept in the next iteration)
+        
+        //if (n==0)
+        //printf("start_time: %d, time1: %d. end_time: %d, time2: %d\n",(int)start_time, (int)time1, (int)end_time, (int)time2);
+        
+
+        PATCH_get_peaks(patch, 
+                        note->get_val(),
                         ch,
                         wtrack->track,
                         reltempo_start_time,
@@ -2529,12 +2725,12 @@ static void create_velocities_gradient_background(
   }
 }
 
-
+#if 0
 static void create_track_velocities(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note, const struct NodeLine2 *pitch_nodelines, const r::PitchTimeData::Reader &reader, const float track_pitch_min, const float track_pitch_max) {
 
   //printf("Note: %s, pointer: %p, subtrack: %d\n",NotesTexts3[(int)note->note],note,note->subtrack);
-  subtrack_x1 = GetNoteX1(wtrack,note);
-  subtrack_x2 = GetNoteX2(wtrack,note);
+  subtrack_x1 = GetNoteX1(wtrack,note->polyphony_num);
+  subtrack_x2 = GetNoteX2(wtrack,note->polyphony_num);
 
   if(equal_floats(subtrack_x1, subtrack_x2))
     return;
@@ -2619,6 +2815,103 @@ static void create_track_velocities(const struct Tracker_Windows *window, const 
     }
   }
 #endif
+}
+#endif
+
+static void create_track_velocities2(const struct Tracker_Windows *window,
+                                     const struct WBlocks *wblock,
+                                     const struct WTracks *wtrack,
+                                     const r::Note *note,
+                                     const struct NodeLine2 *pitch_nodelines,
+                                     const r::PitchTimeData::Reader &reader,
+                                     const float track_pitch_min,
+                                     const float track_pitch_max)
+{
+
+  //printf("Note: %s, pointer: %p, subtrack: %d\n",NotesTexts3[(int)note->note],note,note->subtrack);
+  subtrack_x1 = GetNoteX1(wtrack,note->d._polyphony_num);
+  subtrack_x2 = GetNoteX2(wtrack,note->d._polyphony_num);
+
+  if(equal_floats(subtrack_x1, subtrack_x2))
+    return;
+  
+  const struct NodeLine2 *nodelines = GetVelocityNodeLines3(window, wblock, wtrack, note);
+  const vector_t *nodes = get_nodeline_nodes2(nodelines, wblock->t.y1);
+
+  // background
+  {
+
+    const bool paint_vertical_velocity_gradient = false;
+    //const bool paint_vertical_velocity_gradient = true;
+
+    if(paint_vertical_velocity_gradient==false && reader.size()==0 && equal_floats(note->d._pitch_end, 0.0)) {
+
+      GE_ScopedTrianglestrip trianglestrip;
+    
+      for(const struct NodeLine2 *ns = nodelines ; ns!=NULL ; ns=ns->next){
+        int logtype = ns->logtype;
+        float x1 = ns->x1;
+        float x2 = logtype==LOGTYPE_HOLD ? ns->x1 : ns->x2;
+
+        GE_Context *c = get_note_background(note->get_val(), false, ns->y1);
+
+        trianglestrip.add(c, subtrack_x1, ns->y1);
+        trianglestrip.add(c, x1, ns->y1);
+        trianglestrip.add(c, subtrack_x1, ns->y2);
+        trianglestrip.add(c, x2, ns->y2);
+      }
+
+    }else{
+      
+      track_notearea_x1 = wtrack->notearea.x;
+      track_notearea_x2 = wtrack->notearea.x2;
+
+      create_velocities_gradient_background(
+                                            pitch_nodelines,
+                                            nodelines,
+                                            track_pitch_min, track_pitch_max
+                                            );
+    }
+  }
+
+  bool is_current = wblock->mouse_note==note;
+  
+  // border
+  {
+
+    GE_Context *c2 = drawNodeLines(window, nodelines, BLACK_COLOR_NUM, is_current, 0.3, 0.6, false);
+
+    // draw horizontal line where note starts, if it doesn't start on the start of a realline.
+    int realline = FindReallineForRatio(wblock, 0, note->get_time());
+    if (place2ratio(wblock->reallines[realline]->l.p) != note->get_time()){
+      GE_Context *c = GE_y(c2, nodelines->y1);
+      GE_line(c, subtrack_x1, nodelines->y1, nodelines->x1, nodelines->y1, get_nodeline_width(is_current));
+    }
+  }
+
+  // peaks
+  if(TRACK_has_peaks(wtrack->track))
+    create_track_peaks2(window, wblock, wtrack, note, nodelines);
+
+  // nodes
+  if (is_current || g_indicator_node_id!=-1)
+    VECTOR_FOR_EACH(const Node2 *, node, nodes){
+      if (is_current)
+        draw_skewed_box2(window, node->id, VELOCITY1_COLOR_NUM, node->x, node->y - wblock->t.y1, USE_SCISSORS);
+      if (node->id==g_indicator_node_id && g_indicator_node_id!=-1)
+        draw_node_indicator(node->x, node->y - wblock->t.y1, VELOCITY_TEXT_COLOR_NUM);
+    }END_VECTOR_FOR_EACH;
+
+  if (g_indicator_node_id == note->get_node_id() && g_indicator_velocity_num!=-1) {
+    if (g_indicator_velocity_num >= nodes->num_elements)
+      //RError("g_indicator_velocity_node_num(%d) >= nodes->num_elements(%d)",g_indicator_velocity_num,nodes->num_elements);
+      printf("g_indicator_velocity_node_num(%d) >= nodes->num_elements(%d)\n",g_indicator_velocity_num,nodes->num_elements); // TODO: Find out why this happens so often.
+    else {
+      struct Node2 *node = (struct Node2 *)nodes->elements[g_indicator_velocity_num];
+      draw_node_indicator(node->x, node->y-wblock->t.y1, VELOCITY_TEXT_COLOR_NUM);
+      //printf("  Drawing vel indicator. Note: %f. velnum: %d. x: %f. y: %f\n", note->note, g_indicator_velocity_num, node->x, node->y);
+    }
+  }
 }
 
 
@@ -2807,13 +3100,11 @@ static void create_track_fxtext(const struct Tracker_Windows *window, const stru
 static void create_track(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack){
   create_track_borders(window, wblock, wtrack);
 
-  // FIX: after changing notes to TimeData, SetNotePolyphonyAttributes should only assert that everything is already done.
-  SetNotePolyphonyAttributes(wtrack->track);
-  
   float track_pitch_min, track_pitch_max;
   TRACK_get_min_and_max_pitches(wtrack->track, &track_pitch_min, &track_pitch_max);
   
   // velocities and pitches
+#if 0
   {  
     const struct Notes *note=wtrack->track->gfx_notes!=NULL ? wtrack->track->gfx_notes : wtrack->track->notes;
     while(note != NULL){
@@ -2829,7 +3120,25 @@ static void create_track(const struct Tracker_Windows *window, const struct WBlo
       note = NextNote(note);
     }
   }
+#else
+  {
+    r::NoteTimeData::Reader reader(wtrack->track->_notes2);
+    for(const r::NotePtr &note : reader) {
 
+      const r::PitchTimeData::Reader pitch_reader(&note->_pitches);
+      
+      const struct NodeLine2 *pitch_nodelines = GetPitchNodeLines3(window, wblock, wtrack, note.get(), track_pitch_min, track_pitch_max, pitch_reader);
+
+      if (wtrack->notesonoff==1)
+        create_pitches2(window, wblock, wtrack, note.get(), pitch_nodelines);
+      
+      create_track_velocities2(window, wblock, wtrack, note.get(), pitch_nodelines, pitch_reader, track_pitch_min, track_pitch_max);
+      
+    }
+  }
+  
+#endif
+  
   // note/pitch names / cents
   if( (wtrack->notesonoff==1) || wtrack->centtext_on) {
 

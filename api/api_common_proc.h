@@ -124,9 +124,14 @@ extern struct Notes *getNoteFromNumA(int windownum,struct Tracker_Windows **wind
 
 #ifdef __cplusplus
 }
+
+const r::NotePtr getNoteFromNumA2(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, const r::NoteTimeData::Reader &reader, dyn_t dynnote);
+const r::NotePtr getNoteFromNumA2(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, dyn_t dynnote);
+  
 extern r::Pitch getPitchFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, dyn_t dynnote, struct Notes **note, int pitchnum);
 //extern struct Pitches *getPitchFromNum(int windownum,int blocknum,int tracknum,dyn_t dynnote,int pitchnum);
 extern r::Velocity getVelocityFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, dyn_t dynnote, struct Notes **note, int velocitynum);
+extern r::Velocity getVelocityFromNumA2(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, dyn_t dynnote, r::NotePtr &note, int velocitynum);
 //extern const r::Velocity *getVelocityFromNum(int windownum,int blocknum,int tracknum,dyn_t dynnote,int velocitynum);
 extern "C" {
 #endif
@@ -190,8 +195,14 @@ extern dyn_t GetNoteIdFromNoteId(int64_t note_id);
 extern dyn_t GetNoteId(struct Notes *note);
 
 extern void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes *note, const Place *place, bool last_legal_may_be_next_note);
+
 extern dyn_t MoveNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Place *place, bool replace_note_ends);
 
+#if __cplusplus
+extern void MoveEndNote2(struct Blocks *block, struct Tracks *track, r::NotePtr &note, const Ratio &place, bool last_legal_may_be_next_note);
+extern dyn_t MoveNote2(struct Blocks *block, struct Tracks *track, r::NotePtr &note, Ratio ratio, bool replace_note_ends);
+#endif
+  
 #ifdef __cplusplus
 }
 #endif
