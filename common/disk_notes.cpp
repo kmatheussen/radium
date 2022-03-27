@@ -63,13 +63,15 @@ SaveNotes(NextNote(note));
 }
 
 
+
 struct Notes *LoadNote(void){
         struct Notes *note = NewNote();
 
 	LoadPlace(&note->l.p);
         
 	note->note=DC_LoadF();
-        if (disk_load_version >= 0.775) note->pitch_first_logtype = LoadLogType();
+        if (disk_load_version >= 0.775)
+          note->pitch_first_logtype = LoadLogType();
 
 	DC_LoadI(); // cents
         
@@ -157,16 +159,21 @@ error:
 
 
 void DLoadNotes(const struct Root *newroot,struct Tracks *track, struct Notes *notes){
-  if(notes==NULL) return;
 
-  // Fix pitch_end for older songs.
-  if (equal_floats(notes->pitch_end, 0) && r::PitchTimeData::Reader(notes->_pitches).size() > 0){
-    struct Notes *next_note = NextNote(notes);
-    if (next_note==NULL)
-      next_note = track->notes;
-      
-    notes->pitch_end = next_note->note;
-  }
+  r::NoteTimeData::Writer writer(track->_notes2);
   
-  DLoadNotes(newroot, track, NextNote(notes));
+  while (notes != NULL){
+    // Fix pitch_end for older songs.
+    if (equal_floats(notes->pitch_end, 0) && r::PitchTimeData::Reader(notes->_pitches).size() > 0){
+      struct Notes *next_note = NextNote(notes);
+      if (next_note==NULL)
+        next_note = track->notes;
+      
+      notes->pitch_end = next_note->note;
+    }
+
+    writer.add(NewNoteFromOldNote(notes));
+    
+    notes = NextNote(notes);
+  }
 }

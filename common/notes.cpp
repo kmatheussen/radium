@@ -74,15 +74,12 @@ void r::NoteTimeData::sortit(TimeDataVector *vector){
   });
 }
 
-void r::NoteTimeData::writer_finalizer(Writer &writer){
-  
-  R_ASSERT(THREADING_is_main_thread()); // This function is not thread safe.
- 
+static void set_note_polyphony_num(r::NoteTimeData *notes, r::NoteTimeData::Writer &writer){
   //printf("**************  Track: %d\n", track->l.num);
   static std::vector<Ratio> s_end_places;
   s_end_places.clear();
   
-  _polyphony = 1;
+  notes->_polyphony = 1;
 
   for(r::NotePtr &note : writer){
     //printf("**************  Note at: %s\n", PlaceToString(&note->l.p));
@@ -93,8 +90,8 @@ void r::NoteTimeData::writer_finalizer(Writer &writer){
       new_note->d._polyphony_num = polyphony_num;
     }
 
-    if (polyphony_num+1 > _polyphony)
-      _polyphony = polyphony_num+1;
+    if (polyphony_num+1 > notes->_polyphony)
+      notes->_polyphony = polyphony_num+1;
 
     if (polyphony_num==(int)s_end_places.size())
       s_end_places.push_back(note->d._end);
@@ -121,6 +118,65 @@ void r::NoteTimeData::writer_finalizer(Writer &writer){
     }
 
   } 
+}
+
+static void set_note_min_max_pitch(r::NoteTimeData *notes, r::NoteTimeData::Writer &writer){
+  float min_pitch = 10000.0f;
+  float max_pitch = -1.0f;
+
+  int num_pitches = 0;
+  
+  // find min_pitch and max_pitch
+  for(const r::NotePtr &note : writer){
+    min_pitch = R_MIN(note->get_val(), min_pitch);
+    max_pitch = R_MAX(note->get_val(), max_pitch);
+    num_pitches ++;
+    if (note->d._pitch_end > 0){
+      min_pitch = R_MIN(note->d._pitch_end, min_pitch);
+      max_pitch = R_MAX(note->d._pitch_end, max_pitch);
+      num_pitches ++;
+    }
+
+    r::PitchTimeData::Reader reader(&note->_pitches);
+    for(const r::Pitch &pitch : reader){
+      min_pitch = R_MIN(pitch._val, min_pitch);
+      max_pitch = R_MAX(pitch._val, max_pitch);
+      num_pitches ++;
+    }
+  }
+
+  notes->_min_pitch = min_pitch;
+  notes->_max_pitch = max_pitch;
+
+  if (num_pitches <= 3) {
+    
+    notes->_min_display_pitch = 0;
+    notes->_max_display_pitch = 127;
+    
+  }else{
+    
+    float pitch_range = max_pitch - min_pitch;
+    
+    min_pitch = min_pitch - pitch_range/8.0f;
+    if(min_pitch < 0)
+      min_pitch = 0;
+    
+    max_pitch = max_pitch + pitch_range/8.0f;
+    if(max_pitch > 127)
+      max_pitch = 127;
+    
+    notes->_min_display_pitch = min_pitch;
+    notes->_max_display_pitch = max_pitch;
+  }
+}
+
+void r::NoteTimeData::writer_finalizer(Writer &writer){
+  
+  R_ASSERT(THREADING_is_main_thread()); // This function is not thread safe.
+
+  set_note_polyphony_num(this, writer);
+
+  set_note_min_max_pitch(this, writer);
 }
 
 int GetNoteSubtrack(const struct WTracks *wtrack, struct Notes *note){
@@ -376,6 +432,30 @@ r::NotePtr NewNote2(const Ratio &time,
                     int velocity)
 {
   return r::NotePtr(new r::Note(time, notenum, velocity));
+}
+
+
+r::NotePtr NewNoteFromOldNote(const struct Notes *note){
+  r::NotePtr new_note = NewNote2(place2ratio(note->l.p), note->note, note->velocity);
+
+  r::NoteData &d = new_note->d;
+  
+  d._pitch_first_logtype = note->pitch_first_logtype;
+  d._velocity_first_logtype = note->velocity_first_logtype;
+
+  d._end = note->end;
+
+  d._velocity_end = note->velocity_end;
+  d._pitch_end = note->pitch_end;
+
+  d._noend = note->noend;
+
+  d._chance = note->chance;
+
+  new_note->_velocities.copy_from(note->_velocities);
+  new_note->_pitches.copy_from(note->_pitches);
+  
+  return new_note;
 }
 
 struct Notes *CopyNote(const struct Notes *old_note){

@@ -443,6 +443,7 @@ public:
     R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
   }
 
+  // Overridden at least by Notes.
   virtual void sortit(TimeDataVector *vector){
     vector->sortit();
   }

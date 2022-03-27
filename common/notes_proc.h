@@ -39,6 +39,9 @@ extern LANGSPEC struct Notes *CopyNote(const struct Notes *old_note);
 extern r::NotePtr NewNote2(const Ratio &time,
                     float notenum,
                     int velocity);
+
+// Helper function while transitioning from "Notes" to "r::Note".
+r::NotePtr NewNoteFromOldNote(const struct Notes *note);
 #endif
 
 extern LANGSPEC bool NOTES_sorted_by_pitch_questionmark(struct Notes *notes);

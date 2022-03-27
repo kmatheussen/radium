@@ -382,14 +382,18 @@ struct WTracks *getWTrackFromNumA(
 }
 
 static struct Notes *getCurrNote(int windownum, struct Tracker_Windows **window, int blocknum, int tracknum){
+#if DO_LATER
   struct Notes *note = GetCurrNote(*window);
+#else
+  struct Notes *note = NULL;
+#endif
   if (note==NULL) {
     handleError("Current note in track #%d in block #%d in window #%d does not exist",tracknum,blocknum,windownum);
     return NULL;
   }else
     return note;
 }
-                             
+
 struct Notes *getNoteFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, dyn_t dynnote){
   (*wtrack) = getWTrackFromNumA(windownum, window, blocknum, wblock, tracknum);
   if ((*wtrack)==NULL)

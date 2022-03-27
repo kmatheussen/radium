@@ -2149,8 +2149,19 @@ namespace r{
     {
       R_ASSERT_NON_RELEASE(THREADING_is_main_thread()); // because of g_node_id. If needed, we can make g_node_id atomic.
     }
-  };
 
+    /*
+    void operator delete(void * p) {
+      NodeId *node = static_cast<NodeId*>(p);
+      
+      if (node==NULL)
+        return;
+      
+      ::operator delete(p);
+    }
+    */
+  };
+  
   struct Velocity : NodeId, TimeDataDataType<int> {
     Velocity(Ratio time, int val, int logtype = LOGTYPE_LINEAR)
       : TimeDataDataType<int>(time, R_BOUNDARIES(0, val, MAX_VELOCITY), logtype)
@@ -2389,7 +2400,13 @@ using NotePtr = TimeData_shared_ptr<Note>;
 struct NoteTimeData : public TimeData<NotePtr, NoteSeqBlock>{
   int _polyphony = 1;
 
-  // Sets _polyphony.
+  float _min_pitch = 0;
+  float _max_pitch = 128;
+  
+  float _min_display_pitch = 0;
+  float _max_display_pitch = 128;
+  
+  // Sets _polyphony, _min_pitch, _and max_pitch.
   void writer_finalizer(Writer &writer) override;
 
   void sortit(TimeDataVector *vector) override;

@@ -163,7 +163,7 @@ float getLowestKey(int tracknum, int blocknum, int windownum){
   if (wtrack==NULL)
     return -1;
 
-  return TRACK_get_min_pitch(wtrack->track);
+  return wtrack->track->_notes2->_min_pitch;
 }
 
 float getHighestKey(int tracknum, int blocknum, int windownum){
@@ -173,7 +173,7 @@ float getHighestKey(int tracknum, int blocknum, int windownum){
   if (wtrack==NULL)
     return -1;
 
-  return TRACK_get_max_pitch(wtrack->track);
+  return wtrack->track->_notes2->_max_pitch;
 }
 
 

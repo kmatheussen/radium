@@ -2823,8 +2823,8 @@ static struct Node2 *get_pitchnodeline(int pitchnum, int tracknum, int blocknum,
     note_pitchnum = pitchnum2 + 1; //ListPosition3(&note->pitches->l, &pitch->l) + 1;
 
 
-  float track_pitch_min, track_pitch_max;
-  TRACK_get_min_and_max_pitches(wtrack->track, &track_pitch_min, &track_pitch_max);
+  const float track_pitch_min = wtrack->track->_notes2->_min_display_pitch;
+  const float track_pitch_max = wtrack->track->_notes2->_max_display_pitch;
 
   const vector_t *nodes = GetPitchNodes2(window, wblock, wtrack, note, track_pitch_min, track_pitch_max);
 

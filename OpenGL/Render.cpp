@@ -1836,9 +1836,8 @@ static void create_pitches2(const struct Tracker_Windows *window, const struct W
 
   }
 
-#if DO_LATER
   // indicator node
-  if (g_indicator_node == &note->l && g_indicator_pitch_num!=-1) {
+  if (note->get_node_id()==g_indicator_node_id && g_indicator_node_id!=-1 && g_indicator_pitch_num!=-1) {
     const vector_t *nodes = get_nodeline_nodes2(nodelines, wblock->t.y1);
     
     if (g_indicator_pitch_num < nodes->num_elements) {
@@ -1847,7 +1846,6 @@ static void create_pitches2(const struct Tracker_Windows *window, const struct W
       draw_node_indicator(node->x, node->y-wblock->t.y1, PITCH_LINE_COLOR_NUM);
     }    
   }
-#endif
 }
 
 static float get_pianoroll_note_width(const struct WTracks *wtrack){
@@ -3100,8 +3098,8 @@ static void create_track_fxtext(const struct Tracker_Windows *window, const stru
 static void create_track(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack){
   create_track_borders(window, wblock, wtrack);
 
-  float track_pitch_min, track_pitch_max;
-  TRACK_get_min_and_max_pitches(wtrack->track, &track_pitch_min, &track_pitch_max);
+  const float track_pitch_min = wtrack->track->_notes2->_min_display_pitch;
+  const float track_pitch_max = wtrack->track->_notes2->_max_display_pitch;
   
   // velocities and pitches
 #if 0

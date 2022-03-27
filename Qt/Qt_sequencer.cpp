@@ -1198,10 +1198,9 @@ public:
     
 #endif
 
-    float track_pitch_min;
-    float track_pitch_max;
-    TRACK_get_min_and_max_pitches(track, &track_pitch_min, &track_pitch_max);
-    
+    const float track_pitch_min = track->_notes2->_min_display_pitch;
+    const float track_pitch_max = track->_notes2->_max_display_pitch;
+
     struct Notes *note = track->gfx_notes!=NULL ? track->gfx_notes : track->notes;
     while(note != NULL){
 

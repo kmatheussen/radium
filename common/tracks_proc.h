@@ -19,9 +19,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "nsmtracker.h"
 
-extern LANGSPEC float TRACK_get_min_pitch(const struct Tracks *track);
-extern LANGSPEC float TRACK_get_max_pitch(const struct Tracks *track);
-extern LANGSPEC bool TRACK_get_min_and_max_pitches(const struct Tracks *track, float *ret_min_pitch, float *ret_max_pitch);
 extern LANGSPEC bool TRACK_has_peaks(struct Tracks *track);
 extern LANGSPEC void CloseTrack(struct Blocks *block, NInt tracknum);
 extern LANGSPEC void CloseAllTracks(struct Blocks *block);
