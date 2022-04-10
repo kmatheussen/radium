@@ -71,6 +71,18 @@ protected:
     static AccessibilityTableInterface* getTableInterface (id self) noexcept  { return getInterface (self, &AccessibilityHandler::getTableInterface); }
     static AccessibilityCellInterface*  getCellInterface  (id self) noexcept  { return getInterface (self, &AccessibilityHandler::getCellInterface); }
 
+    template <typename MemberFn>
+    static auto getEnclosingInterface (AccessibilityHandler* handler, MemberFn fn) noexcept -> decltype ((std::declval<AccessibilityHandler>().*fn)())
+    {
+        if (handler == nullptr)
+            return nullptr;
+
+        if (auto* interface = (handler->*fn)())
+            return interface;
+
+        return getEnclosingInterface (handler->getParent(), fn);
+    }
+
     static bool hasEditableText (AccessibilityHandler& handler) noexcept
     {
         return handler.getRole() == AccessibilityRole::editableText
@@ -126,6 +138,10 @@ protected:
 
     static BOOL accessibilityPerformPress (id self, SEL)
     {
+        if (auto* handler = getHandler (self))
+            if (handler->getCurrentState().isCheckable() && handler->getActions().invoke (AccessibilityActionType::toggle))
+                return YES;
+
         return performActionIfSupported (self, AccessibilityActionType::press);
     }
 

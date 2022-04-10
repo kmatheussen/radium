@@ -153,7 +153,7 @@ namespace ActiveXHelpers
         {
             JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wlanguage-extension-token")
 
-            if (type == __uuidof2 (IOleInPlaceSite))
+            if (type == __uuidof (IOleInPlaceSite))
             {
                 inplaceSite->AddRef();
                 *result = static_cast<IOleInPlaceSite*> (inplaceSite);
@@ -191,7 +191,7 @@ namespace ActiveXHelpers
         JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wlanguage-extension-token")
 
         HWND hwnd = {};
-        const IID iid = __uuidof2 (IOleWindow);
+        const IID iid = __uuidof (IOleWindow);
 
         if (auto* window = (IOleWindow*) component->queryInterface (&iid))
         {
@@ -224,8 +224,8 @@ namespace ActiveXHelpers
                                         { (float) (GET_X_LPARAM (lParam) + activeXRect.left - peerRect.left),
                                           (float) (GET_Y_LPARAM (lParam) + activeXRect.top  - peerRect.top) },
                                         ComponentPeer::getCurrentModifiersRealtime(),
-                                        MouseInputSource::invalidPressure,
-                                        MouseInputSource::invalidOrientation,
+                                        MouseInputSource::defaultPressure,
+                                        MouseInputSource::defaultOrientation,
                                         getMouseEventTime());
                 break;
             }
@@ -398,7 +398,7 @@ bool ActiveXControlComponent::createControl (const void* controlIID)
 
         JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wlanguage-extension-token")
 
-        HRESULT hr = OleCreate (*(const IID*) controlIID, __uuidof2 (IOleObject), 1 /*OLERENDER_DRAW*/, nullptr,
+        HRESULT hr = OleCreate (*(const IID*) controlIID, __uuidof (IOleObject), 1 /*OLERENDER_DRAW*/, nullptr,
                                 newControl->clientSite, newControl->storage,
                                 (void**) &(newControl->control));
 
