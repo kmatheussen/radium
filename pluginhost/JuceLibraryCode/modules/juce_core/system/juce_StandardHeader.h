@@ -29,7 +29,7 @@
 */
 #define JUCE_MAJOR_VERSION      6
 #define JUCE_MINOR_VERSION      1
-#define JUCE_BUILDNUMBER        4
+#define JUCE_BUILDNUMBER        6
 
 /** Current JUCE version number.
 
@@ -55,15 +55,17 @@
 #include <limits>
 #include <list>
 #include <map>
-#include <unordered_map>
 #include <memory>
 #include <mutex>
 #include <numeric>
 #include <queue>
+#include <set>
 #include <sstream>
 #include <typeindex>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <set>
 
 //==============================================================================
 #include "juce_CompilerSupport.h"

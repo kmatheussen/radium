@@ -132,7 +132,9 @@
  #define STRICT 1
  #define WIN32_LEAN_AND_MEAN 1
  #if JUCE_MINGW
-  #define _WIN32_WINNT 0x0600
+  #if ! defined (_WIN32_WINNT)
+   #define _WIN32_WINNT 0x0600
+  #endif
  #else
   #define _WIN32_WINNT 0x0602
  #endif
@@ -152,7 +154,18 @@
  #include <winsock2.h>
  #include <ws2tcpip.h>
  #include <iphlpapi.h>
+
+ #if ! JUCE_CXX17_IS_AVAILABLE
+  #pragma push_macro ("WIN_NOEXCEPT")
+  #define WIN_NOEXCEPT
+ #endif
+
  #include <mapi.h>
+
+ #if ! JUCE_CXX17_IS_AVAILABLE
+  #pragma pop_macro ("WIN_NOEXCEPT")
+ #endif
+
  #include <float.h>
  #include <process.h>
  #include <shlobj.h>

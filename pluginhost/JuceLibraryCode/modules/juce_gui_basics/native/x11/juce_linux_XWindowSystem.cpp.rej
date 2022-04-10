@@ -1,0 +1,11 @@
+--- JuceLibraryCode/modules/juce_gui_basics/native/x11/juce_linux_XWindowSystem.cpp
++++ JuceLibraryCode/modules/juce_gui_basics/native/x11/juce_linux_XWindowSystem.cpp
+@@ -187,7 +187,7 @@ XWindowSystemUtilities::XSettings::XSettings (::Display* d)
+     settingsWindow = X11Symbols::getInstance()->xGetSelectionOwner (display,
+                                                                     Atoms::getCreating (display, "_XSETTINGS_S0"));
+ 
+-    jassert (settingsWindow != None);
++    //jassert (settingsWindow != None);
+     update();
+ }
+ 

@@ -758,6 +758,11 @@ public:
        #endif
     }
 
+    ~NativeDarkModeChangeDetectorImpl()
+    {
+        UnhookWindowsHookEx (hook);
+    }
+
     bool isDarkModeEnabled() const noexcept  { return darkModeEnabled; }
 
 private:
@@ -990,7 +995,9 @@ public:
 
     void initialiseBitmapData (Image::BitmapData& bitmap, int x, int y, Image::BitmapData::ReadWriteMode mode) override
     {
-        bitmap.data = imageData + x * pixelStride + y * lineStride;
+        const auto offset = (size_t) (x * pixelStride + y * lineStride);
+        bitmap.data = imageData + offset;
+        bitmap.size = (size_t) (lineStride * height) - offset;
         bitmap.pixelFormat = pixelFormat;
         bitmap.lineStride = lineStride;
         bitmap.pixelStride = pixelStride;
@@ -1133,7 +1140,6 @@ namespace IconConverters
 
         if (auto* dc = ::CreateCompatibleDC (deviceContext.dc))
         {
-            JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wfour-char-constants")
             BITMAPV5HEADER header = {};
             header.bV5Size = sizeof (BITMAPV5HEADER);
             header.bV5Width = bm.bmWidth;
@@ -1145,15 +1151,8 @@ namespace IconConverters
             header.bV5GreenMask = 0x0000FF00;
             header.bV5BlueMask = 0x000000FF;
             header.bV5AlphaMask = 0xFF000000;
-
-           #if JUCE_MINGW
-            header.bV5CSType = 'Win ';
-           #else
-            header.bV5CSType = LCS_WINDOWS_COLOR_SPACE;
-           #endif
-
+            header.bV5CSType = 0x57696E20; // 'Win '
             header.bV5Intent = LCS_GM_IMAGES;
-            JUCE_END_IGNORE_WARNINGS_GCC_LIKE
 
             uint32* bitmapImageData = nullptr;
 
@@ -1243,6 +1242,15 @@ JUCE_IUNKNOWNCLASS (ITipInvocation, "37c994e7-432b-4834-a2f7-dce1f13b834b")
 
     JUCE_COMCALL Toggle (HWND) = 0;
 };
+
+} // namespace juce
+
+#ifdef __CRT_UUID_DECL
+__CRT_UUID_DECL (juce::ITipInvocation, 0x37c994e7, 0x432b, 0x4834, 0xa2, 0xf7, 0xdc, 0xe1, 0xf1, 0x3b, 0x83, 0x4b)
+#endif
+
+namespace juce
+{
 
 struct OnScreenKeyboard   : public DeletedAtShutdown,
                             private Timer
@@ -1358,7 +1366,15 @@ JUCE_COMCLASS (IUIViewSettings, "c63657f6-8850-470d-88f8-455e16ea2c26")  : publi
     JUCE_COMCALL GetUserInteractionMode (UserInteractionMode*) = 0;
 };
 
+} // namespace juce
 
+#ifdef __CRT_UUID_DECL
+__CRT_UUID_DECL (juce::IUIViewSettingsInterop, 0x3694dbf9, 0x8f68, 0x44be, 0x8f, 0xf5, 0x19, 0x5c, 0x98, 0xed, 0xe8, 0xa6)
+__CRT_UUID_DECL (juce::IUIViewSettings,        0xc63657f6, 0x8850, 0x470d, 0x88, 0xf8, 0x45, 0x5e, 0x16, 0xea, 0x2c, 0x26)
+#endif
+
+namespace juce
+{
 struct UWPUIViewSettings
 {
     UWPUIViewSettings()
@@ -1389,7 +1405,7 @@ struct UWPUIViewSettings
                 return;
 
             JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wlanguage-extension-token")
-            status = roGetActivationFactory (uwpClassId, __uuidof2 (IUIViewSettingsInterop),
+            status = roGetActivationFactory (uwpClassId, __uuidof (IUIViewSettingsInterop),
                                              (void**) viewSettingsInterop.resetAndGetPointerAddress());
             JUCE_END_IGNORE_WARNINGS_GCC_LIKE
             deleteHString (uwpClassId);
@@ -1411,7 +1427,7 @@ struct UWPUIViewSettings
 
         JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wlanguage-extension-token")
 
-        if (viewSettingsInterop->GetForWindow (hWnd, __uuidof2 (IUIViewSettings),
+        if (viewSettingsInterop->GetForWindow (hWnd, __uuidof (IUIViewSettings),
                                                (void**) viewSettings.resetAndGetPointerAddress()) == S_OK
              && viewSettings != nullptr)
         {
@@ -1574,6 +1590,13 @@ public:
 
     void setBounds (const Rectangle<int>& bounds, bool isNowFullScreen) override
     {
+        // If we try to set new bounds while handling an existing position change,
+        // Windows may get confused about our current scale and size.
+        // This can happen when moving a window between displays, because the mouse-move
+        // generator in handlePositionChanged can cause the window to move again.
+        if (inHandlePositionChanged)
+            return;
+
         const ScopedValueSetter<bool> scope (shouldIgnoreModalDismiss, true);
 
         fullScreen = isNowFullScreen;
@@ -1599,7 +1622,7 @@ public:
         if (! hasMoved)    flags |= SWP_NOMOVE;
         if (! hasResized)  flags |= SWP_NOSIZE;
 
-        setWindowPos (hwnd, newBounds, flags, numInDpiChange == 0);
+        setWindowPos (hwnd, newBounds, flags, ! inDpiChange);
 
         if (hasResized && isValidPeer (this))
         {
@@ -1746,6 +1769,11 @@ public:
                                                                                        hwnd)));
 
         return w == hwnd || (trueIfInAChildWindow && (IsChild (hwnd, w) != 0));
+    }
+
+    OptionalBorderSize getFrameSizeIfPresent() const override
+    {
+        return ComponentPeer::OptionalBorderSize { windowBorder };
     }
 
     BorderSize<int> getFrameSize() const override
@@ -1972,8 +2000,9 @@ public:
     private:
         Point<float> getMousePos (POINTL mousePos) const
         {
-            return peer.getComponent().getLocalPoint (nullptr, convertPhysicalScreenPointToLogical (pointFromPOINT ({ mousePos.x, mousePos.y }),
-                                                                                                    (HWND) peer.getNativeHandle()).toFloat());
+            const auto originalPos = pointFromPOINT ({ mousePos.x, mousePos.y });
+            const auto logicalPos = convertPhysicalScreenPointToLogical (originalPos, peer.hwnd);
+            return ScalingHelpers::screenPosToLocalPos (peer.component, logicalPos.toFloat());
         }
 
         struct DroppedData
@@ -2116,7 +2145,7 @@ private:
    #endif
 
     double scaleFactor = 1.0;
-    int numInDpiChange = 0;
+    bool inDpiChange = 0, inHandlePositionChanged = 0;
 
     bool isAccessibilityActive = false;
 
@@ -2385,6 +2414,13 @@ private:
         }
         else
         {
+            TCHAR messageBuffer[256] = {};
+
+            FormatMessage (FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                           nullptr, GetLastError(), MAKELANGID (LANG_NEUTRAL, SUBLANG_DEFAULT),
+                           messageBuffer, (DWORD) numElementsInArray (messageBuffer) - 1, nullptr);
+
+            DBG (messageBuffer);
             jassertfalse;
         }
     }
@@ -2443,7 +2479,7 @@ private:
         if (! component.isCurrentlyModal() && (styleFlags & windowHasDropShadow) != 0
             && ((! hasTitleBar()) || SystemStats::getOperatingSystemType() < SystemStats::WinVista))
         {
-            shadower.reset (component.getLookAndFeel().createDropShadowerForComponent (&component));
+            shadower = component.getLookAndFeel().createDropShadowerForComponent (component);
 
             if (shadower != nullptr)
                 shadower->setOwner (&component);
@@ -2789,8 +2825,8 @@ private:
         if (now >= lastMouseTime + minTimeBetweenMouses)
         {
             lastMouseTime = now;
-            doMouseEvent (position, MouseInputSource::invalidPressure,
-                          MouseInputSource::invalidOrientation, modsToSend);
+            doMouseEvent (position, MouseInputSource::defaultPressure,
+                          MouseInputSource::defaultOrientation, modsToSend);
         }
     }
 
@@ -2816,7 +2852,7 @@ private:
 
             isDragging = true;
 
-            doMouseEvent (position, MouseInputSource::invalidPressure);
+            doMouseEvent (position, MouseInputSource::defaultPressure);
         }
     }
 
@@ -2843,7 +2879,7 @@ private:
         // NB: under some circumstances (e.g. double-clicking a native title bar), a mouse-up can
         // arrive without a mouse-down, so in that case we need to avoid sending a message.
         if (wasDragging)
-            doMouseEvent (position, MouseInputSource::invalidPressure);
+            doMouseEvent (position, MouseInputSource::defaultPressure);
     }
 
     void doCaptureChanged()
@@ -2865,7 +2901,7 @@ private:
         isMouseOver = false;
 
         if (! areOtherTouchSourcesActive())
-            doMouseEvent (getCurrentMousePos(), MouseInputSource::invalidPressure);
+            doMouseEvent (getCurrentMousePos(), MouseInputSource::defaultPressure);
     }
 
     ComponentPeer* findPeerUnderMouse (Point<float>& localPos)
@@ -2982,7 +3018,7 @@ private:
     }
 
     bool handleTouchInput (const TOUCHINPUT& touch, const bool isDown, const bool isUp,
-                           const float touchPressure = MouseInputSource::invalidPressure,
+                           const float touchPressure = MouseInputSource::defaultPressure,
                            const float orientation = 0.0f)
     {
         auto isCancel = false;
@@ -3059,9 +3095,9 @@ private:
                 return false;
 
             const auto pressure = touchInfo.touchMask & TOUCH_MASK_PRESSURE ? static_cast<float> (touchInfo.pressure)
-                                                                            : MouseInputSource::invalidPressure;
+                                                                            : MouseInputSource::defaultPressure;
             const auto orientation = touchInfo.touchMask & TOUCH_MASK_ORIENTATION ? degreesToRadians (static_cast<float> (touchInfo.orientation))
-                                                                                  : MouseInputSource::invalidOrientation;
+                                                                                  : MouseInputSource::defaultOrientation;
 
             if (! handleTouchInput (emulateTouchEventFromPointer (touchInfo.pointerInfo.ptPixelLocationRaw, wParam),
                                     isDown, isUp, pressure, orientation))
@@ -3074,7 +3110,7 @@ private:
             if (! getPointerPenInfo (GET_POINTERID_WPARAM (wParam), &penInfo))
                 return false;
 
-            const auto pressure = (penInfo.penMask & PEN_MASK_PRESSURE) ? (float) penInfo.pressure / 1024.0f : MouseInputSource::invalidPressure;
+            const auto pressure = (penInfo.penMask & PEN_MASK_PRESSURE) ? (float) penInfo.pressure / 1024.0f : MouseInputSource::defaultPressure;
 
             if (! handlePenInput (penInfo, globalToLocal (convertPhysicalScreenPointToLogical (pointFromPOINT (getPOINTFromLParam (lParam)), hwnd).toFloat()),
                                   pressure, isDown, isUp))
@@ -3105,9 +3141,9 @@ private:
         ModifierKeys modsToSend (ModifierKeys::currentModifiers);
         PenDetails penDetails;
 
-        penDetails.rotation = (penInfo.penMask & PEN_MASK_ROTATION) ? degreesToRadians (static_cast<float> (penInfo.rotation)) : MouseInputSource::invalidRotation;
-        penDetails.tiltX = (penInfo.penMask & PEN_MASK_TILT_X) ? (float) penInfo.tiltX / 90.0f : MouseInputSource::invalidTiltX;
-        penDetails.tiltY = (penInfo.penMask & PEN_MASK_TILT_Y) ? (float) penInfo.tiltY / 90.0f : MouseInputSource::invalidTiltY;
+        penDetails.rotation = (penInfo.penMask & PEN_MASK_ROTATION) ? degreesToRadians (static_cast<float> (penInfo.rotation)) : MouseInputSource::defaultRotation;
+        penDetails.tiltX = (penInfo.penMask & PEN_MASK_TILT_X) ? (float) penInfo.tiltX / 90.0f : MouseInputSource::defaultTiltX;
+        penDetails.tiltY = (penInfo.penMask & PEN_MASK_TILT_Y) ? (float) penInfo.tiltY / 90.0f : MouseInputSource::defaultTiltY;
 
         auto pInfoFlags = penInfo.pointerInfo.pointerFlags;
 
@@ -3122,7 +3158,7 @@ private:
 
             // this forces a mouse-enter/up event, in case for some reason we didn't get a mouse-up before.
             handleMouseEvent (MouseInputSource::InputSourceType::pen, pos, modsToSend.withoutMouseButtons(),
-                              pressure, MouseInputSource::invalidOrientation, time, penDetails);
+                              pressure, MouseInputSource::defaultOrientation, time, penDetails);
 
             if (! isValidPeer (this)) // (in case this component was deleted by the event)
                 return false;
@@ -3134,7 +3170,7 @@ private:
         }
 
         handleMouseEvent (MouseInputSource::InputSourceType::pen, pos, modsToSend, pressure,
-                          MouseInputSource::invalidOrientation, time, penDetails);
+                          MouseInputSource::defaultOrientation, time, penDetails);
 
         if (! isValidPeer (this)) // (in case this component was deleted by the event)
             return false;
@@ -3142,7 +3178,7 @@ private:
         if (isUp)
         {
             handleMouseEvent (MouseInputSource::InputSourceType::pen, MouseInputSource::offscreenMousePos, ModifierKeys::currentModifiers,
-                              pressure, MouseInputSource::invalidOrientation, time, penDetails);
+                              pressure, MouseInputSource::defaultOrientation, time, penDetails);
 
             if (! isValidPeer (this))
                 return false;
@@ -3439,8 +3475,10 @@ private:
 
         if (contains (pos.roundToInt(), false))
         {
+            const ScopedValueSetter<bool> scope (inHandlePositionChanged, true);
+
             if (! areOtherTouchSourcesActive())
-                doMouseEvent (pos, MouseInputSource::invalidPressure);
+                doMouseEvent (pos, MouseInputSource::defaultPressure);
 
             if (! isValidPeer (this))
                 return true;
@@ -3468,15 +3506,27 @@ private:
         scaleFactor = newScale;
 
         {
-            const ScopedValueSetter<int> setter (numInDpiChange, numInDpiChange + 1);
-            setBounds (windowBorder.subtractedFrom (convertPhysicalScreenRectangleToLogical (rectangleFromRECT (newRect), hwnd)), fullScreen);
+            const ScopedValueSetter<bool> setter (inDpiChange, true);
+            SetWindowPos (hwnd,
+                          nullptr,
+                          newRect.left,
+                          newRect.top,
+                          newRect.right  - newRect.left,
+                          newRect.bottom - newRect.top,
+                          SWP_NOZORDER | SWP_NOACTIVATE);
         }
 
         // This is to handle reentrancy. If responding to a DPI change triggers further DPI changes,
         // we should only notify listeners and resize windows once all of the DPI changes have
         // resolved.
-        if (numInDpiChange != 0)
+        if (inDpiChange)
+        {
+            // Danger! Re-entrant call to handleDPIChanging.
+            // Please report this issue on the JUCE forum, along with instructions
+            // so that a JUCE developer can reproduce the issue.
+            jassertfalse;
             return 0;
+        }
 
         updateShadower();
         InvalidateRect (hwnd, nullptr, FALSE);
@@ -4528,8 +4578,8 @@ class PreVistaMessageBox  : public WindowsMessageBoxBase
 public:
     PreVistaMessageBox (const MessageBoxOptions& opts,
                         UINT extraFlags,
-                        std::unique_ptr<ModalComponentManager::Callback>&& callback)
-        : WindowsMessageBoxBase (opts.getAssociatedComponent(), std::move (callback)),
+                        std::unique_ptr<ModalComponentManager::Callback>&& cb)
+        : WindowsMessageBoxBase (opts.getAssociatedComponent(), std::move (cb)),
           flags (extraFlags | getMessageBoxFlags (opts.getIconType())),
           title (opts.getTitle()), message (opts.getMessage())
     {
@@ -4581,8 +4631,8 @@ class WindowsTaskDialog  : public WindowsMessageBoxBase
 {
 public:
     WindowsTaskDialog (const MessageBoxOptions& opts,
-                       std::unique_ptr<ModalComponentManager::Callback>&& callback)
-        : WindowsMessageBoxBase (opts.getAssociatedComponent(), std::move (callback)),
+                       std::unique_ptr<ModalComponentManager::Callback>&& cb)
+        : WindowsMessageBoxBase (opts.getAssociatedComponent(), std::move (cb)),
           iconType (opts.getIconType()),
           title (opts.getTitle()), message (opts.getMessage()),
           button1 (opts.getButtonText (0)), button2 (opts.getButtonText (1)), button3 (opts.getButtonText (2))
@@ -4594,6 +4644,7 @@ public:
         TASKDIALOGCONFIG config{};
 
         config.cbSize         = sizeof (config);
+        config.hwndParent     = getParentHWND();
         config.pszWindowTitle = title.toWideCharPointer();
         config.pszContent     = message.toWideCharPointer();
         config.hInstance      = (HINSTANCE) Process::getCurrentModuleInstanceHandle();
@@ -5199,17 +5250,18 @@ private:
             if (iter != cursorsBySize.end())
                 return iter->second;
 
-            const auto img = info.image.getImage();
-            const auto imgW = jmax (1, img.getWidth());
-            const auto imgH = jmax (1, img.getHeight());
-
+            const auto logicalSize = info.image.getScaledBounds();
             const auto scale = (float) size / (float) unityCursorSize;
-            const auto scaleToUse = scale * jmin (1.0f, jmin ((float) unityCursorSize / (float) imgW,
-                                                              (float) unityCursorSize / (float) imgH)) / info.image.getScale();
-            const auto rescaled = img.rescaled (roundToInt (scaleToUse * (float) imgW),
-                                                roundToInt (scaleToUse * (float) imgH));
-            const auto hx = jlimit (0, rescaled.getWidth(),  roundToInt (scaleToUse * (float) info.hotspot.x));
-            const auto hy = jlimit (0, rescaled.getHeight(), roundToInt (scaleToUse * (float) info.hotspot.y));
+            const auto physicalSize = logicalSize * scale;
+
+            const auto& image = info.image.getImage();
+            const auto rescaled = image.rescaled (roundToInt ((float) physicalSize.getWidth()),
+                                                  roundToInt ((float) physicalSize.getHeight()));
+
+            const auto effectiveScale = rescaled.getWidth() / logicalSize.getWidth();
+
+            const auto hx = jlimit (0, rescaled.getWidth(),  roundToInt ((float) info.hotspot.x * effectiveScale));
+            const auto hy = jlimit (0, rescaled.getHeight(), roundToInt ((float) info.hotspot.y * effectiveScale));
 
             return cursorsBySize.emplace (size, IconConverters::createHICONFromImage (rescaled, false, hx, hy)).first->second;
         }

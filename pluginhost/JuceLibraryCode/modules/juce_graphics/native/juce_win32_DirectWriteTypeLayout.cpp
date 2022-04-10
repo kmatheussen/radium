@@ -43,7 +43,7 @@ namespace DirectWriteTypeLayout
         {
             JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wlanguage-extension-token")
 
-            if (refId == __uuidof2 (IDWritePixelSnapping))
+            if (refId == __uuidof (IDWritePixelSnapping))
                 return castToType<IDWritePixelSnapping> (result);
 
             return ComBaseClassHelper<IDWriteTextRenderer>::QueryInterface (refId, result);
@@ -201,6 +201,7 @@ namespace DirectWriteTypeLayout
 
             ComSmartPtr<IDWriteFont> dwFont;
             auto hr = fontCollection.GetFontFromFontFace (glyphRun.fontFace, dwFont.resetAndGetPointerAddress());
+            ignoreUnused (hr);
             jassert (dwFont != nullptr);
 
             ComSmartPtr<IDWriteFontFamily> dwFontFamily;
@@ -270,12 +271,22 @@ namespace DirectWriteTypeLayout
         format.SetWordWrapping (wrapType);
     }
 
-    void addAttributedRange (const AttributedString::Attribute& attr, IDWriteTextLayout& textLayout,
-                             const int textLen, ID2D1RenderTarget& renderTarget, IDWriteFontCollection& fontCollection)
+    void addAttributedRange (const AttributedString::Attribute& attr,
+                             IDWriteTextLayout& textLayout,
+                             CharPointer_UTF16 begin,
+                             CharPointer_UTF16 textPointer,
+                             const UINT32 textLen,
+                             ID2D1RenderTarget& renderTarget,
+                             IDWriteFontCollection& fontCollection)
     {
         DWRITE_TEXT_RANGE range;
-        range.startPosition = (UINT32) attr.range.getStart();
-        range.length = (UINT32) jmin (attr.range.getLength(), textLen - attr.range.getStart());
+        range.startPosition = (UINT32) (textPointer.getAddress() - begin.getAddress());
+
+        if (textLen <= range.startPosition)
+            return;
+
+        const auto wordEnd = jmin (textLen, (UINT32) ((textPointer + attr.range.getLength()).getAddress() - begin.getAddress()));
+        range.length = wordEnd - range.startPosition;
 
         {
             auto familyName = FontStyleHelpers::getConcreteFamilyName (attr.font);
@@ -289,6 +300,7 @@ namespace DirectWriteTypeLayout
 
             ComSmartPtr<IDWriteFontFamily> fontFamily;
             auto hr = fontCollection.GetFontFamily (fontIndex, fontFamily.resetAndGetPointerAddress());
+            ignoreUnused (hr);
 
             ComSmartPtr<IDWriteFont> dwFont;
             uint32 fontFacesCount = 0;
@@ -365,18 +377,28 @@ namespace DirectWriteTypeLayout
             hr = dwTextFormat->SetTrimming (&trimming, trimmingSign);
         }
 
-        auto textLen = text.getText().length();
+        const auto beginPtr = text.getText().toUTF16();
+        const auto textLen = (UINT32) (beginPtr.findTerminatingNull().getAddress() - beginPtr.getAddress());
 
-        hr = directWriteFactory.CreateTextLayout (text.getText().toWideCharPointer(), (UINT32) textLen, dwTextFormat,
-                                                  maxWidth, maxHeight, textLayout.resetAndGetPointerAddress());
+        hr = directWriteFactory.CreateTextLayout (beginPtr.getAddress(),
+                                                  textLen,
+                                                  dwTextFormat,
+                                                  maxWidth,
+                                                  maxHeight,
+                                                  textLayout.resetAndGetPointerAddress());
 
         if (FAILED (hr) || textLayout == nullptr)
             return false;
 
-        auto numAttributes = text.getNumAttributes();
+        const auto numAttributes = text.getNumAttributes();
+        auto rangePointer = beginPtr;
 
         for (int i = 0; i < numAttributes; ++i)
-            addAttributedRange (text.getAttribute (i), *textLayout, textLen, renderTarget, fontCollection);
+        {
+            const auto attribute = text.getAttribute (i);
+            addAttributedRange (attribute, *textLayout, beginPtr, rangePointer, textLen, renderTarget, fontCollection);
+            rangePointer += attribute.range.getLength();
+        }
 
         return true;
     }
@@ -394,6 +416,7 @@ namespace DirectWriteTypeLayout
 
         UINT32 actualLineCount = 0;
         auto hr = dwTextLayout->GetLineMetrics (nullptr, 0, &actualLineCount);
+        ignoreUnused (hr);
 
         layout.ensureStorageAllocated ((int) actualLineCount);
 
@@ -415,7 +438,7 @@ namespace DirectWriteTypeLayout
             line.stringRange = Range<int> (lastLocation, lastLocation + (int) dwLineMetrics[i].length);
             line.lineOrigin.y += yAdjustment;
             yAdjustment += extraLineSpacing;
-            lastLocation += dwLineMetrics[i].length;
+            lastLocation += (int) dwLineMetrics[i].length;
         }
     }
 
