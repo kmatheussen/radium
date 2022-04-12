@@ -148,36 +148,36 @@ JUCE_COMRESULT AccessibilityNativeHandle::GetPatternProvider (PATTERNID pId, IUn
 
             switch (pId)
             {
-                case ComTypes::UIA_WindowPatternId:
+                case UIA_WindowPatternId:
                 {
                     if (fragmentRoot)
                         return new UIAWindowProvider (this);
 
                     break;
                 }
-                case ComTypes::UIA_TransformPatternId:
+                case UIA_TransformPatternId:
                 {
                     if (fragmentRoot)
                         return new UIATransformProvider (this);
 
                     break;
                 }
-                case ComTypes::UIA_TextPatternId:
-                case ComTypes::UIA_TextPattern2Id:
+                case UIA_TextPatternId:
+                case UIA_TextPattern2Id:
                 {
                     if (accessibilityHandler.getTextInterface() != nullptr)
                         return new UIATextProvider (this);
 
                     break;
                 }
-                case ComTypes::UIA_ValuePatternId:
+                case UIA_ValuePatternId:
                 {
                     if (accessibilityHandler.getValueInterface() != nullptr)
                         return new UIAValueProvider (this);
 
                     break;
                 }
-                case ComTypes::UIA_RangeValuePatternId:
+                case UIA_RangeValuePatternId:
                 {
                     if (accessibilityHandler.getValueInterface() != nullptr
                         && accessibilityHandler.getValueInterface()->getRange().isValid())
@@ -187,7 +187,7 @@ JUCE_COMRESULT AccessibilityNativeHandle::GetPatternProvider (PATTERNID pId, IUn
 
                     break;
                 }
-                case ComTypes::UIA_TogglePatternId:
+                case UIA_TogglePatternId:
                 {
                     if (accessibilityHandler.getCurrentState().isCheckable()
                         && (accessibilityHandler.getActions().contains (AccessibilityActionType::toggle)
@@ -198,7 +198,7 @@ JUCE_COMRESULT AccessibilityNativeHandle::GetPatternProvider (PATTERNID pId, IUn
 
                     break;
                 }
-                case ComTypes::UIA_SelectionPatternId:
+                case UIA_SelectionPatternId:
                 {
                     if (role == AccessibilityRole::list
                         || role == AccessibilityRole::popupMenu
@@ -209,7 +209,7 @@ JUCE_COMRESULT AccessibilityNativeHandle::GetPatternProvider (PATTERNID pId, IUn
 
                     break;
                 }
-                case ComTypes::UIA_SelectionItemPatternId:
+                case UIA_SelectionItemPatternId:
                 {
                     auto state = accessibilityHandler.getCurrentState();
 
@@ -221,28 +221,28 @@ JUCE_COMRESULT AccessibilityNativeHandle::GetPatternProvider (PATTERNID pId, IUn
 
                     break;
                 }
-                case ComTypes::UIA_GridPatternId:
+                case UIA_GridPatternId:
                 {
                     if (accessibilityHandler.getTableInterface() != nullptr)
                         return new UIAGridProvider (this);
 
                     break;
                 }
-                case ComTypes::UIA_GridItemPatternId:
+                case UIA_GridItemPatternId:
                 {
                     if (accessibilityHandler.getCellInterface() != nullptr)
                         return new UIAGridItemProvider (this);
 
                     break;
                 }
-                case ComTypes::UIA_InvokePatternId:
+                case UIA_InvokePatternId:
                 {
                     if (accessibilityHandler.getActions().contains (AccessibilityActionType::press))
                         return new UIAInvokeProvider (this);
 
                     break;
                 }
-                case ComTypes::UIA_ExpandCollapsePatternId:
+                case UIA_ExpandCollapsePatternId:
                 {
                     if (accessibilityHandler.getActions().contains (AccessibilityActionType::showMenu)
                         && accessibilityHandler.getCurrentState().isExpandable())
@@ -313,7 +313,7 @@ JUCE_COMRESULT AccessibilityNativeHandle::GetPropertyValue (PROPERTYID propertyI
                     VariantHelpers::setBool (textInterface->isDisplayingProtectedText(), pRetVal);
 
                 break;
-            case ComTypes::UIA_IsPeripheralPropertyId:
+            case UIA_IsPeripheralPropertyId:
                 VariantHelpers::setBool (role == AccessibilityRole::tooltip
                                          || role == AccessibilityRole::popupMenu
                                          || role == AccessibilityRole::splashScreen,
