@@ -183,6 +183,32 @@ namespace{
 
 #endif
 
+#if !JUCE_32BIT && !JUCE_64BIT
+#error "somethings wrong"
+#endif
+
+#if defined(PLUGINHOST_BUILD_32BIT)
+#  if JUCE_64BIT
+#    error "wrong"
+#  endif
+#  if !JUCE_32BIT
+#    error "wrong"
+#  endif
+#endif
+
+#if defined(PLUGINHOST_BUILD_64BIT)
+#  if JUCE_32BIT
+#    error "wrong"
+#  endif
+#  if !JUCE_64BIT
+#    error "wrong"
+#  endif
+#endif
+
+#if !defined(PLUGINHOST_BUILD_32BIT) && !defined(PLUGINHOST_BUILD_64BIT)
+#  error "wrong"
+#endif
+
 
 static int g_num_visible_plugin_windows = 0;
 static bool g_vst_grab_keyboard = true;
