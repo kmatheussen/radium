@@ -90,7 +90,8 @@
                                           :instrument-color)
 
   (define (get-statusbar-text)
-    (<-> "Track volume: " (two-decimal-string (<ra> :get-track-volume tracknum))))
+    (if (tracknum < (<ra> :get-num-tracks))
+        (<-> "Track volume: " (two-decimal-string (<ra> :get-track-volume tracknum)))))
   
   (add-statusbar-text-handler get-statusbar-text)
   
