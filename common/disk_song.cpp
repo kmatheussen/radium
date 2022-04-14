@@ -66,6 +66,7 @@ DC_start("SONG");
         DC_SSB("use_swinging_beats_in_sequencer", song->use_swinging_beats_in_sequencer);
         DC_SSB("display_swinging_beats_in_seqblocks_in_sequencer", song->display_swinging_beats_in_seqblocks_in_sequencer);
         DC_SSB("editor_should_swing_along", song->editor_should_swing_along);
+        DC_SSI("glissando_behavior", song->glissando_behavior);
 
         DC_SSB("mixer_comments_visible", song->mixer_comments_visible);
         DC_SSB("include_pan_and_dry_in_wet_signal", song->include_pan_and_dry_in_wet_signal);
@@ -116,7 +117,7 @@ struct Song *LoadSong(void){
                 "SEQUENCER",
                 "COMMENT"
 	};
-	const char *vars[18]={
+	const char *vars[19]={
 		"num_blocks",
 		"length",
 		"songname",
@@ -134,7 +135,8 @@ struct Song *LoadSong(void){
                 "mute_plugin_MIDI_when_muted",
                 "send_plugin_MIDI_through_when_bypassed",
                 "implicitly_mute_plugin_MIDI",
-                "default_num_bus_channels"
+                "default_num_bus_channels",
+                "glissando_behavior"
                 //"use_sequencer_timing"
 	};
 	struct Song *song=SONG_create();
@@ -144,7 +146,7 @@ struct Song *LoadSong(void){
         song->mute_system_buses_when_bypassed = false; // Compatibility with older songs.
         song->use_swinging_beats_in_sequencer = true;
         song->display_swinging_beats_in_seqblocks_in_sequencer = true;
-
+        song->glissando_behavior = NEVER_DO_GLISSANDO; // compatibility with older songs
         song->RT_mute_plugin_MIDI_when_muted = false; // compatibility with older songs
         song->RT_send_plugin_MIDI_through_when_bypassed = false; // compatibility with older songs
         song->RT_implicitly_mute_plugin_MIDI = false; // compatibility with older songs
@@ -172,7 +174,7 @@ struct Song *LoadSong(void){
 
         COMMENT_reset();
 
-        GENERAL_LOAD(7,18)
+        GENERAL_LOAD(7,19)
 
 obj0:
 	DC_ListAdd1(&song->tracker_windows,LoadWindow());
@@ -285,6 +287,8 @@ var17:
         BUS_set_num_channels(song->default_num_bus_channels);
         goto start;
 var18:
+        song->glissando_behavior = DC_LoadI();
+        goto start;
 var19:
 var20:
  var21:
