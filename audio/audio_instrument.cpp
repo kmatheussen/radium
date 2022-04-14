@@ -315,7 +315,7 @@ static int64_t RT_scheduled_send_stop_note_to_plugin(struct SeqTrack *seqtrack, 
   return DONT_RESCHEDULE;
 }
 
-static void AUDIO_stopnote(struct SeqTrack *seqtrack, struct Patch *patch,note_t note,STime time){
+static void AUDIO_stopnote(struct SeqTrack *seqtrack, struct Patch *patch, note_t note, STime time){
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
 
   if(plugin==NULL || plugin->type->stop_note == NULL)
