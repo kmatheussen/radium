@@ -191,28 +191,33 @@ static int64_t RT_scheduled_send_note_pitch_to_plugin(struct SeqTrack *seqtrack,
   return DONT_RESCHEDULE;
 }
 
-static void AUDIO_changepitch(struct SeqTrack *seqtrack, struct Patch *patch,note_t note,STime time){
+static bool AUDIO_changepitch(struct SeqTrack *seqtrack, struct Patch *patch, note_t note, STime time){
   SoundPlugin *plugin = (SoundPlugin*) patch->patchdata;
 
   if(plugin==NULL || plugin->type->set_note_pitch == NULL)
-    return;
+    return false;
       
   RT_PLUGIN_touch(plugin);
     
   const int latency = RT_SP_get_input_latency(plugin->sp);
 
   if (latency == 0) {
+    
     plugin->type->set_note_pitch(plugin, PLAYER_get_block_delta_time(seqtrack, time), note); 
-    return;
+    
+  } else {
+
+    time += ((double)latency * get_note_reltempo(note));
+    
+    union SuperType args[8];
+    args[0].pointer = patch;
+    put_note_into_args(&args[1], note);
+    
+    SCHEDULER_add_event(seqtrack, time, RT_scheduled_send_note_pitch_to_plugin, &args[0], 8, SCHEDULER_PITCH_PRIORITY);
+
   }
 
-  time += ((double)latency * get_note_reltempo(note));
-
-  union SuperType args[8];
-  args[0].pointer = patch;
-  put_note_into_args(&args[1], note);
-  
-  SCHEDULER_add_event(seqtrack, time, RT_scheduled_send_note_pitch_to_plugin, &args[0], 8, SCHEDULER_PITCH_PRIORITY);
+  return true;
 }
 
 

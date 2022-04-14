@@ -1217,6 +1217,7 @@ static linked_note_t *find_linked_note(linked_note_t *root, int64_t id, const st
   return NULL;
 }
 
+/*
 static bool Patch_is_voice_playing_questionmark(struct Patch *patch, int64_t voice_id, const struct SeqBlock *seqblock){
   R_ASSERT_NON_RELEASE(PLAYER_current_thread_has_lock());
 
@@ -1225,6 +1226,7 @@ static bool Patch_is_voice_playing_questionmark(struct Patch *patch, int64_t voi
 
   return false;
 }
+*/
 
 static bool add_linked_note(linked_note_t **rootp, const note_t note, struct Notes *editor_note, struct SeqTrack *seqtrack){
   R_ASSERT_RETURN_IF_FALSE2(seqtrack!=NULL, false);
@@ -1705,11 +1707,14 @@ static void RT_change_voice_velocity(struct SeqTrack *seqtrack, struct Patch *pa
 #endif
 
   //printf("222. vel: %f\n",note.velocity);
+
+  linked_note_t *linked_note = find_linked_note(patch->playing_voices, note.id, note.seqblock);
   
-  if (Patch_is_voice_playing_questionmark(patch, note.id, note.seqblock)){
+  if (linked_note != NULL) {
     //printf("333. vel: %f\n",note.velocity);
 
-
+    linked_note->note.velocity = note.velocity; // Needed in case RT_change_voice_pitch calls patch->stopnote + patch->playnote.
+    
     patch->changevelocity(seqtrack,patch,note,time);
   }
 
@@ -1801,13 +1806,41 @@ void RT_PATCH_send_change_pitch_to_receivers(struct SeqTrack *seqtrack, struct P
   }
 }
 
-static void RT_change_voice_pitch(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, STime time){
+static void RT_change_voice_pitch(struct SeqTrack *seqtrack, struct Patch *patch, note_t note, STime time){
   if(note.pitch < 1 || note.pitch>127)
     return;
 
+  linked_note_t *linked_note = find_linked_note(patch->playing_voices, note.id, note.seqblock);
+
   //printf("Calling patch->changeptitch %d %f\n",notenum,pitch);
-  if (Patch_is_voice_playing_questionmark(patch, note.id, note.seqblock))
-    patch->changepitch(seqtrack, patch,note,time);
+  if (linked_note != NULL) {
+
+    //printf("   Sending changepitch. Old: %f. New: %f. Id: %d\n", linked_note->note.pitch, note.pitch, (int)note.id);
+
+    const int glissando_behavior = root->song->glissando_behavior;
+    
+    if (glissando_behavior==ALWAYS_DO_GLISSANDO || false==patch->changepitch(seqtrack, patch, note, time)) {
+
+      if (glissando_behavior != NEVER_DO_GLISSANDO) {
+
+        int old = linked_note->note.pitch;
+        int new_ = note.pitch;
+
+        if (old != new_) {
+
+          patch->stopnote(seqtrack, patch, linked_note->note, time);
+
+          linked_note->note.pitch = new_; // 'note' only contains new pitch and 'id'. The rest we get from the original note.
+          {
+            patch->playnote(seqtrack, patch, linked_note->note, time); // 'time' is not quite accurate here though (at least when note.pitch!=new), but it seems complicated to fix that.
+          }
+          linked_note->note.pitch = note.pitch;
+
+          ATOMIC_SET_RELAXED(patch->visual_note_intencity, MAX_NOTE_INTENCITY); // maybe
+        }
+      }
+    }
+  }
 
   if (RT_do_forward_events(patch))
     RT_PATCH_send_change_pitch_to_receivers(seqtrack, patch, note, time);
@@ -1888,9 +1921,14 @@ void RT_PATCH_send_change_pan_to_receivers(struct SeqTrack *seqtrack, struct Pat
 static void RT_change_voice_pan(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, STime time){
   //printf(" A 4: %f\n", note.pan);
   
-  //printf("Calling patch->changeptitch %d %f\n",notenum,pan);
-  if (Patch_is_voice_playing_questionmark(patch, note.id, note.seqblock))
-    patch->changepan(seqtrack, patch,note,time);
+  linked_note_t *linked_note = find_linked_note(patch->playing_voices, note.id, note.seqblock);
+  
+  if (linked_note != NULL) {
+
+    linked_note->note.pan = note.pan; // Needed in case RT_change_voice_pitch calls patch->stopnote + patch->playnote.
+    
+    patch->changepan(seqtrack, patch, note, time);
+  }
 
   if (RT_do_forward_events(patch))
     RT_PATCH_send_change_pan_to_receivers(seqtrack, patch, note, time);

@@ -84,6 +84,13 @@ class song_properties : public RememberGeometryQDialog, public Ui::Song_properti
     mute_automation->setChecked(song->mute_editor_automation_when_track_is_muted);
     swing_along->setChecked(song->editor_should_swing_along);
 
+    switch(song->glissando_behavior) {
+      case 0: glissando0->setChecked(true); break;
+      case 1: glissando1->setChecked(true); break;
+      case 2: glissando2->setChecked(true); break;
+      default: R_ASSERT_NON_RELEASE(false);
+    }
+    
     mixer_comments_visible->setChecked(mixerStripCommentsVisible());
     
     //two_channel_buses->setChecked(song->default_num_bus_channels==2);
@@ -296,6 +303,30 @@ public slots:
 
     root->song->editor_should_swing_along = val;
     root->song->tracker_windows->must_redraw_editor = true;
+  }
+  
+  void on_glissando0_toggled(bool val){
+    if (_initing==true || !val)
+      return;
+
+    radium::PlayerLock lock;
+    root->song->glissando_behavior = 0;
+  }
+  
+  void on_glissando1_toggled(bool val){
+    if (_initing==true || !val)
+      return;
+
+    radium::PlayerLock lock;
+    root->song->glissando_behavior = 1;
+  }
+  
+  void on_glissando2_toggled(bool val){
+    if (_initing==true || !val)
+      return;
+
+    radium::PlayerLock lock;
+    root->song->glissando_behavior = 2;
   }
   
   void on_buttonBox_clicked(QAbstractButton * button){

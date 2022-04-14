@@ -190,7 +190,8 @@ static void MIDIchangevelocity(struct SeqTrack *seqtrack,struct Patch *patch,not
 }
 
 
-static void MIDIchangepitch(struct SeqTrack *seqtrack,struct Patch *patch,note_t note,STime time){
+static bool MIDIchangepitch(struct SeqTrack *seqtrack,struct Patch *patch,note_t note,STime time){
+  return false;
 }
 
 static void MIDIchangepan(struct SeqTrack *seqtrack,struct Patch *patch,note_t note,STime time){
