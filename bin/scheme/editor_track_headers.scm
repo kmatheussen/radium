@@ -90,7 +90,7 @@
                                           :instrument-color)
 
   (define (get-statusbar-text)
-    (if (tracknum < (<ra> :get-num-tracks))
+    (if (< tracknum (<ra> :get-num-tracks))
         (<-> "Track volume: " (two-decimal-string (<ra> :get-track-volume tracknum)))))
   
   (add-statusbar-text-handler get-statusbar-text)
@@ -164,9 +164,10 @@
                                        :instrument-color)
 
   (define (get-degree-value)
-    (round (scale (<ra> :get-track-pan tracknum)
-                  -1 1
-                  -90 90)))
+    (if (< tracknum (<ra> :get-num-tracks))
+        (round (scale (<ra> :get-track-pan tracknum)
+                      -1 1
+                      -90 90))))
   
   (define (get-statusbar-text)
     (<-> "Track pan: " (get-degree-value)))
