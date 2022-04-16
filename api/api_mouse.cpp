@@ -108,9 +108,9 @@ void ensureCleanStateOutsideMouseCycle(void){
 
 
 void API_setCurrentNode(struct ListHeader3 *new_current_node){
-  if (g_current_node != new_current_node || g_current_node_id >= 0){
+  if (g_current_node != new_current_node || g_current_node_id != NODETYPE_NO_NODE) {
     g_current_node = new_current_node;
-    g_current_node_id = -1;
+    g_current_node_id = NODETYPE_NO_NODE;
     root->song->tracker_windows->must_redraw_editor = true;
     //printf("current node dirty\n");
   }
