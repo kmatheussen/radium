@@ -2675,6 +2675,12 @@ typedef QMap<int, VelText_trs> VelText_trss;
 	nodelinens.h
 *********************************************************************/
 
+enum NodeNodeType{
+  NODETYPE_FIRST = -1,
+  NODETYPE_LAST = -2,
+  NODETYPE_NO_NODE = -3  
+};
+  
 struct NodeLine{
   struct NodeLine *next;
 
