@@ -445,10 +445,10 @@ static void seqblockgcfinalizer(void *actual_mem_start, void *user_data){
 
 #if !defined(RELEASE)
       if (track_notes->size() > 0) {
-        printf("seqblockgcfinalizer: track_notes->size() != 0: %d. seqblock: %p. seqblock->playing_notes: %p",
-               track_notes->size(),
-               seqblock,
-               seqblock->playing_notes);
+        fprintf(stderr, "seqblockgcfinalizer: track_notes->size() != 0: %d. seqblock: %p. seqblock->playing_notes: %p",
+                track_notes->size(),
+                seqblock,
+                seqblock->playing_notes);
         abort();
       }
 #endif

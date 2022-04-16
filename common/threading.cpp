@@ -486,10 +486,14 @@ void THREADING_set_priority(priority_t priority){
   // NOTE! This function is always used to set non-realtime priority. This is asserted in debug mode on linux.
 
 #if !defined(RELEASE)
+#if defined(FOR_WINDOWS)
+  g_t_current_thread_is_RT = R_IS_NOT_RT;
+#else
   if (priority.policy==SCHED_OTHER)
     g_t_current_thread_is_RT = R_IS_NOT_RT;
   else
-    g_t_current_thread_is_RT = R_IS_RT;
+    g_t_current_thread_is_RT = R_IS_RT;  
+#endif
 #endif
 
 #if !defined(RELEASE)
