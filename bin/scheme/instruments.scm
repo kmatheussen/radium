@@ -1483,6 +1483,36 @@
                                      )))
 
 ;; Note: Used for shortcut
+(define (insert-new-plugin type-name plugin-name)
+  (define instrument-id (<ra> :get-current-instrument-under-mouse))
+  (if (<ra> :is-legal-instrument instrument-id)
+      (insert-new-instrument-between instrument-id
+                                     (get-instruments-connecting-from-instrument instrument-id)
+                                     #t
+                                     -2
+                                     (lambda (conf kont)
+                                       (define descr (<ra> :get-audio-instrument-description
+                                                           (<ra> :to-base64 "")
+                                                           (<ra> :to-base64 (get-keybinding-string type-name))
+                                                           (<ra> :to-base64 (get-keybinding-string plugin-name))))
+
+                                       (kont descr))
+                                     )))
+
+  
+;; Note: Used for shortcut
+(delafina (insert-plugin-for-instrument-from-favourites-menu :instrument-id (<ra> :get-current-instrument-under-mouse)
+                                                             :gui -2)
+  (if (<ra> :is-legal-instrument instrument-id)
+      (insert-new-instrument-between instrument-id
+                                     (get-instruments-connecting-from-instrument instrument-id)
+                                     #t
+                                     -2
+                                     (lambda (conf kont)
+                                       (show-favourites-menu :callback kont :shortcut-func insert-new-plugin))
+                                     )))
+
+;; Note: Used for shortcut
 (delafina (insert-plugin-for-instrument-from-plugin-manager :instrument-id (<ra> :get-current-instrument-under-mouse)
                                                             :gui -2)
   (if (<ra> :is-legal-instrument instrument-id)
@@ -1496,7 +1526,6 @@
                                      ;;  (pmg-start conf (lambda (instrument-description)
                                      ;;                    (kont instrument-description))))
                                      )))
-
 
 ;; Note: Used for shortcut
 (delafina (insert-plugin-for-instrument-from-preset-file :instrument-id (<ra> :get-current-instrument-under-mouse)
@@ -1623,6 +1652,11 @@
                :enabled enabled
                (lambda ()
                  (insert-plugin-for-instrument-from-popup-menu instrument-id parentgui)))
+         (list "From list of most frequently used instruments" ;;"From list of favourites"
+               :shortcut (and is-top-instrument
+                              insert-plugin-for-instrument-from-favourites-menu)
+               (lambda ()
+                 (insert-plugin-for-instrument-from-favourites-menu instrument-id parentgui)))
          "----------------"
          (list "From preset file (.rec/.mrec)"
                :shortcut (and is-top-instrument
@@ -1835,7 +1869,7 @@
                                   (c-display "selected:" descr))))
 !!#
 
-(define (create-instrument instrconf description)
+(define (create-instrument-from-description instrconf description)
   (undo-block
    (lambda ()
      (let ((instrument-id (<ra> :create-audio-instrument-from-description description "" (instrconf :x) (instrconf :y))))
@@ -1853,7 +1887,7 @@
 
 (define (create-instrument-popup-menu instrconf)
   (start-instrument-popup-menu instrconf (lambda (description)
-                                           (create-instrument instrconf description))))
+                                           (create-instrument-from-description instrconf description))))
 
                                  
 #!!
@@ -2490,6 +2524,14 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                                (lambda ()
                                  (<ra> :create-midi-instrument "Unnamed"))))
   
+;; Note: Used for shortcut
+(define (assign-new-instrument-for-track type-name plugin-name)
+  (assign-instrument-for-track -1
+                               (lambda ()
+                                 (<ra> :create-audio-instrument
+                                       (get-keybinding-string type-name)
+                                       (get-keybinding-string plugin-name)))))
+  
 (define (get-select-track-instrument-popup-entries tracknum)
   (define midi-instruments (get-all-midi-instruments))
   (define instruments-before (get-all-audio-instruments))
@@ -2546,6 +2588,10 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
    
    "From instrument/effect-menu" (lambda ()
                                    (start-instrument-popup-menu instr-conf callback))
+   ;;"From list of favourites" (lambda ()
+   ;;                            (show-favourites-menu :callback callback :shortcut-func assign-new-instrument-for-track))
+   "From list of most frequently used instruments" (lambda ()
+                               (show-favourites-menu :callback callback :shortcut-func assign-new-instrument-for-track))
    "----------------"
    "From preset file (.rec/.mrec)" (lambda ()
                                      (request-select-instrument-preset -1 (<ra> :create-illegal-instrument) #t callback))

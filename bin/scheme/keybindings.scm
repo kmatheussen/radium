@@ -13,7 +13,10 @@
 (define (keybinding-string->string kstring)
   (string-replace (symbol->string (keyword->symbol kstring)) "_space_" " "))
 
-
+(define (get-keybinding-string string-or-kstring)
+  (if (symbol? string-or-kstring)
+      (keybinding-string->string string-or-kstring)
+      string-or-kstring))
 
 (define (maybe-merge-two-keybindings-2 keybinding1 keybinding2 left right qualifier)
   (define (removeleftright keybinding)

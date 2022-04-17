@@ -768,3 +768,32 @@ filepath_t getSettingsF(const_char* key, filepath_t default_w_value){
   
   return make_filepath(SETTINGS_read_qstring(key, STRING_get_qstring(default_w_value.id)));
 }
+
+dyn_t getAllSettings(const_char* starting_with) {
+  const vector_t *lines = SETTINGS_get_all_lines_starting_with(starting_with);
+
+  hash_t *ret = HASH_create(lines->num_elements);
+  
+  VECTOR_FOR_EACH(const char *, line_c, lines){
+
+    QString line(line_c);
+
+    {
+      int pos = line.indexOf(QString("#"));
+      if (pos!=-1)
+        line.truncate(pos);
+    }
+
+    int pos = line.indexOf("=");
+    if (pos==-1)
+      continue;
+
+    QString key = line.left(pos).trimmed();
+    QString value = line.remove(0,pos+1).trimmed();
+
+    HASH_put_qstring(ret, key.toUtf8().constData(), value);
+    
+  }END_VECTOR_FOR_EACH;
+
+  return DYN_create_hash(ret);
+}

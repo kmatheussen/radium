@@ -511,18 +511,29 @@
 ;; string
 
 (define (string-split string* ch)
-  (if (string=? string* "")
-      '()
-      (let ((splitted (split-list (string->list string*)
-                                  (lambda (ch2)
-                                    (char=? ch ch2)))))
-        (cond ((null? (cadr splitted))
-               (list string*))
-              ((null? (car splitted))
-               (string-split (list->string (cdr (cadr splitted))) ch))
-              (else
-               (cons (list->string (car splitted))
-                     (string-split (list->string (cdr (cadr splitted))) ch)))))))
+  (cond ((string? ch)
+         (vector->list (<ra> :string-split string* ch)))
+        ((string=? string* "")
+         '())
+        (else
+         (let ((splitted (split-list (string->list string*)
+                                     (lambda (ch2)
+                                       (char=? ch ch2)))))
+           (cond ((null? (cadr splitted))
+                  (list string*))
+                 ((null? (car splitted))
+                  (string-split (list->string (cdr (cadr splitted))) ch))
+                 (else
+                  (cons (list->string (car splitted))
+                        (string-split (list->string (cdr (cadr splitted))) ch))))))))
+
+(***assert*** (string-split "a,c" #\,)
+              (list "a" "c"))
+
+(***assert*** (string-split "a,c" ",")
+              (list "a" "c"))
+
+;;(<ra> :string-split "a,c" ",")
 
 (define (string-take string* pos)
   (substring string* 0 pos))

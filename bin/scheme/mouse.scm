@@ -276,7 +276,7 @@
             (set! prev-x next-mouse-x)
             (set! prev-y next-mouse-y)
             (set! next-mouse-x #f))
-          (begin            
+          (begin
             (set! $x prev-x)
             (set! $y prev-y))))
 
