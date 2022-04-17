@@ -894,11 +894,13 @@ static const struct STimeChange *get_stimechange(const struct STimes *stimes, do
     R_ASSERT_NON_RELEASE(false);
     return stimes[0].tchanges;
   }
-  
+
   while(time_change->y2 < y){
     time_change = time_change + 1; // All changes in a block are allocated sequentially.
     //R_ASSERT_RETURN_IF_FALSE2(time_change->t1 > 0, (time_change-1)->t2); // Can happen, for instance if the second tempo node is crammed to the top of the block.
-
+    
+    //printf("y2: %f\n", time_change->y2);
+    
 #if !defined(RELEASE)
     if (equal_doubles(time_change->y2, 0.0))
       abort();
@@ -983,15 +985,46 @@ STime Place2STime2(
 }
 
 STime Ratio2STime2(
-                                 const struct Blocks *block,
-                                 Ratio ratio,
-                                 const struct Tracks *track
-                                 )
+                   const struct Blocks *block,
+                   Ratio ratio,
+                   const struct Tracks *track
+                   )
 {
-  return Place2STime_from_times2(track->times,
-                                 make_double_from_ratio(ratio)
-                                 );
-};
+  const struct STimes *times = track->times;
+  
+  const int num_lines = block->num_time_lines;
+
+  if (ratio.den == 1) {
+    
+    int64_t line = ratio.num;
+    
+    if (line <= 0) {
+      R_ASSERT_NON_RELEASE(line==0);
+      return 0;
+    }
+
+    if (line >= num_lines) {
+      R_ASSERT_NON_RELEASE(line==num_lines);
+      return times[num_lines].time;
+    }
+    
+    return times[line].time;
+  }
+  
+  const double y = make_double_from_ratio(ratio);
+
+  if (y <= 0) {
+    R_ASSERT_NON_RELEASE(false);
+    return 0;
+  }
+    
+  if (y >= num_lines){
+    R_ASSERT_NON_RELEASE(false);
+    return times[num_lines].time;
+  }
+    
+  return Place2STime_from_times2(times, y);
+}
 
 // Precalculate timing for all line starts. (optimization)
 static struct STimes *create_stimes_from_tchanges(int num_lines, const struct STimeChange *time_changes, int num_elements){//const struct STimeChange **tchanges){
