@@ -5097,3 +5097,13 @@ void API_call_very_often(void){
 #undef STDFUNC
 
 
+dynvec_t stringSplit(const_char* c_string, const_char* c_split, bool keep_empty_parts) {
+  dynvec_t ret = {};
+
+  const QStringList splitted = QString(c_string).split(c_split, keep_empty_parts ? Qt::KeepEmptyParts : Qt::SkipEmptyParts);
+
+  for(const QString &split : splitted)
+        DYNVEC_push_back(ret, DYN_create_string(split));
+  
+  return ret;
+}
