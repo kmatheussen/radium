@@ -1,3 +1,33 @@
+Changes 6.9.98 -> 6.9.99:
+* Editor: Make it possible to add keybinding for all
+  menu entries in the "(click me)" track header menu,
+  including opening the "(click me)" menu itself.
+  It's still not possible to configure keybinding for
+  currently used instruments though, but it's far
+  from straight forward how to such keybindings would
+  work.
+* GUI: Create different set of keybindings when
+  opening the "From instrument/effect" menu depending
+  on what the instrument is used for. For instance,
+  when opening the menu from the "(click me)" menu,
+  you also want to let the keybindings assign the
+  instrument to the current track, not just create
+  the instrument.
+* Timing: Fix rare crash that reportedly can happen
+  when drawing up the sequencer after inserting lines
+  in the editor, and possibly other situations. Bug
+  seems to have been introduced in V6.9.86.
+* GUI: Add entries to also select from the list of
+  most frequently used instruments in the various
+  insert-instrument menus (in addition to select
+  from plugin manager/preset/etc.)
+* Editor: Fix painting correct background for the
+  velocity nodes related to whether the nodes are
+  current or not. Bug probably introduced in
+  V6.9.80.
+
+
+
 Changes 6.9.97 -> 6.9.98:
 * Build: Upgraded Qt from 5.15.2 to 5.15.3.
 * Build: Upgraded lots of system libraries for
