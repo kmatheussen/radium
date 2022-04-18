@@ -42,6 +42,11 @@
               "-----------"
               (list "Keybindings"
                     (list
+                     "---------------Assign instrument to track (i.e. \"(click me)\")"
+                     (get-keybinding-configuration-popup-menu-entries :ra-funcname "select-track-instrument"
+                                                                      :args '()
+                                                                      :focus-keybinding "FOCUS_EDITOR")
+                     
                      "---------------Pan slider on/off"
                      (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:switch-track-pan-on-off"
                                                                       :args '()

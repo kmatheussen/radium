@@ -1309,8 +1309,11 @@
 
   
 ;; The callback is a function that takes an spr entry as argument
-(define (spr-entries->menu-entries entries instrconf callback level-down-func)
-
+(delafina (spr-entries->menu-entries :entries
+                                     :instrconf
+                                     :callback
+                                     :level-down-func
+                                     :shortcut-func)
   (let loop ((entries (to-list entries)))
     (if (null? entries)
         '()
@@ -1321,7 +1324,9 @@
                               (callback entry)))
 
           (define (get-entry-shortcut)
-            (list new-instrument-from-spr-entry (string->keybinding-string (entry :type-name)) (string->keybinding-string (entry :name))))
+            (list (or shortcut-func
+                      new-instrument-from-spr-entry)
+                  (string->keybinding-string (entry :type-name)) (string->keybinding-string (entry :name))))
           
           ;;(c-display "ENTRY" entry)
           (cond ((string=? type "NORMAL")
@@ -1351,7 +1356,8 @@
                  (define rest #f)
                  (define in-level-up (spr-entries->menu-entries (cdr entries) instrconf callback
                                                                 (lambda (dasrest)
-                                                                  (set! rest dasrest))))
+                                                                  (set! rest dasrest))
+                                                                shortcut-func))
                  ;;(c-display "  LEVEL_UP:" (entry :name) ".  CONTENTS:" in-level-up)
                  (if (null? in-level-up)
                      (loop rest)
@@ -1392,10 +1398,10 @@
                  (loop (cdr entries))))))))
 
 
-(define *popup-menu-args-cache-instrconf* #f)
-(define *popup-menu-args-cache-generation* -1)
-(define *popup-menu-args-cache-args* #f)
-(define *popup-menu-args-cache-preset-in-clipboard* #f)
+(define *popup-menu-args-cache-instrconf* (make-vector 3 #f))
+(define *popup-menu-args-cache-generation* (make-vector 3 -1))
+(define *popup-menu-args-cache-args* (make-vector 3 #f))
+(define *popup-menu-args-cache-preset-in-clipboard* (make-vector 3 #f))
 (define *popup-menu-curr-callback* #f)
 
 
@@ -1541,7 +1547,10 @@
                                      (get-instruments-connecting-from-instrument instrument-id)
                                      #t
                                      -2
-                                     start-instrument-popup-menu
+                                     (lambda (conf kont)
+                                       (start-instrument-popup-menu conf
+                                                                    kont
+                                                                    :shortcut-func insert-new-plugin))
                                      ;; Note: Last arg is the same as this:
                                      ;;(lambda (conf kont) 
                                      ;;  (start-instrument-popup-menu conf
@@ -1882,8 +1891,18 @@
               
 
 
-
-(define (get-instrument-popup-menu-args instrconf callback)
+(delafina (get-instrument-popup-menu-args :instrconf
+                                          :callback
+                                          :shortcut-func #f)
+  (define cache-num (cond ((not shortcut-func)
+                           0)
+                          ((equal? shortcut-func insert-new-plugin)
+                           1)
+                          (else
+                           (when (not (<ra> :release-mode))
+                             ;;(c-display "gakk: " shortcut-func)
+                             (assert (equal? shortcut-func assign-new-instrument-for-track)))
+                           2)))
   
   (define (my-callback entry)
     (*popup-menu-curr-callback* entry))
@@ -1891,19 +1910,21 @@
   (set! *popup-menu-curr-callback* callback) ;; Since there should never be more than one popup open at the same time, this should work, hopefully.
   
   (let ((curr-generation (<ra> :get-sound-plugin-registry-generation)))
-    (when (or ;;#t
-              (not (eq? *popup-menu-args-cache-preset-in-clipboard* (<ra> :instrument-preset-in-clipboard)))
-              (not (= curr-generation *popup-menu-args-cache-generation*))
-              (not (same-instrconf-with-regards-to-filtering? *popup-menu-args-cache-instrconf*
+    (when (or ;; #t
+              (not (eq? (*popup-menu-args-cache-preset-in-clipboard* cache-num) (<ra> :instrument-preset-in-clipboard)))
+              (not (= curr-generation (*popup-menu-args-cache-generation* cache-num)))
+              (not (same-instrconf-with-regards-to-filtering? (*popup-menu-args-cache-instrconf* cache-num)
                                                               instrconf))
-              (not (eq? (*popup-menu-args-cache-instrconf* :parentgui) ;; parentgui is used when openening new popup menues, plugin manager, file selector, etc.
-                        (instrconf :parentgui))))
+              (not (eqv? (*popup-menu-args-cache-instrconf* cache-num :parentgui) ;; parentgui is used when openening new popup menues, plugin manager, file selector, etc.
+                         (instrconf :parentgui))))
       
-      ;;(c-display "REGENERATING CACHE")
-      (set! *popup-menu-args-cache-instrconf* instrconf)
-      (set! *popup-menu-args-cache-generation* curr-generation)
-      (set! *popup-menu-args-cache-preset-in-clipboard* (<ra> :instrument-preset-in-clipboard))
-      (set! *popup-menu-args-cache-args*
+      (set! (*popup-menu-args-cache-instrconf* cache-num) instrconf)
+      ;;(c-display "REGENERATING CACHE "
+      ;;           (*popup-menu-args-cache-instrconf* cache-num :parentgui)
+      ;;           (instrconf :parentgui))
+      (set! (*popup-menu-args-cache-generation* cache-num) curr-generation)
+      (set! (*popup-menu-args-cache-preset-in-clipboard* cache-num) (<ra> :instrument-preset-in-clipboard))
+      (set! (*popup-menu-args-cache-args* cache-num)
             (get-popup-menu-args (append ;(list "Plugin Manager"
                                          ;      :shortcut new-instrument-from-plugin-manager
                                          ;      (lambda ()
@@ -1913,8 +1934,9 @@
                                                                     instrconf
                                                                     (lambda (entry)
                                                                       (spr-entry->instrument-description entry instrconf my-callback))
-                                                                    #f)))))
-    *popup-menu-args-cache-args*))
+                                                                    #f
+                                                                    shortcut-func)))))
+    (*popup-menu-args-cache-args* cache-num)))
 
 #!!
 (pretty-print (ra:get-sound-plugin-registry))
@@ -1926,8 +1948,12 @@
 !!#
 
 ;; async
-(define (start-instrument-popup-menu instrconf callback)
-  (popup-menu-from-args (get-instrument-popup-menu-args instrconf callback)))
+(delafina (start-instrument-popup-menu :instrconf
+                                       :callback
+                                       :shortcut-func #f)
+  (popup-menu-from-args (get-instrument-popup-menu-args instrconf
+                                                        callback
+                                                        shortcut-func)))
 
 #!!
 (for-each c-display (get-instrument-popup-menu-args (make-instrument-conf :connect-to-main-pipe #t
@@ -2599,6 +2625,50 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                                        (get-keybinding-string type-name)
                                        (get-keybinding-string plugin-name)))))
   
+;; Note: Used for shortcut
+(delafina (assign-instrument-for-track-from-plugin-manager :tracknum -1)
+  (define instruments-before (get-all-audio-instruments))
+  (pmg-start (make-instrument-conf :connect-to-main-pipe #t
+                                   :parentgui -1)
+             (lambda (descr)                          
+               (assign-instrument-for-track tracknum
+                                            (lambda ()
+                                              (<ra> :create-audio-instrument-from-description descr))
+                                            instruments-before))))
+  
+;; Note: Used for shortcut
+(delafina (assign-instrument-for-track-from-instrument/effect-menu :tracknum -1)
+  (define instruments-before (get-all-audio-instruments))
+  (start-instrument-popup-menu (make-instrument-conf :connect-to-main-pipe #t
+                                                     :parentgui -1)
+                               (lambda (descr)                          
+                                 (assign-instrument-for-track tracknum
+                                                              (lambda ()
+                                                                (<ra> :create-audio-instrument-from-description descr))
+                                                              instruments-before))))
+  
+;; Note: Used for shortcut
+(delafina (assign-instrument-for-track-from-most-frequently-used-instruments :tracknum -1)
+  (define instruments-before (get-all-audio-instruments))
+  (show-favourites-menu :callback (lambda (descr)
+                                    (assign-instrument-for-track tracknum
+                                                                 (lambda ()
+                                                                   (<ra> :create-audio-instrument-from-description descr))
+                                                                 instruments-before))
+                        :shortcut-func assign-new-instrument-for-track))
+  
+;; Note: Used for shortcut
+(delafina (assign-instrument-for-track-from-preset :tracknum -1)
+  (define instruments-before (get-all-audio-instruments))
+  (request-select-instrument-preset -1
+                                    (<ra> :create-illegal-instrument)
+                                    #t
+                                    (lambda (descr)
+                                      (assign-instrument-for-track tracknum
+                                                                   (lambda ()
+                                                                     (<ra> :create-audio-instrument-from-description descr))
+                                                                   instruments-before))))
+  
 (define (get-select-track-instrument-popup-entries tracknum)
   (define midi-instruments (get-all-midi-instruments))
   (define instruments-before (get-all-audio-instruments))
@@ -2615,7 +2685,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
      (map (lambda (num instrument-id)
             (and (or (not only-if-used)
                      (<ra> :instrument-has-been-used instrument-id))
-                 (list (<-> num ". " (<ra> :get-instrument-name instrument-id))                     
+                 (list (<-> num ". " (<ra> :get-instrument-name instrument-id))
                        (lambda ()
                          (LOAD instrument-id)))))
           (iota (length instruments-before))
@@ -2650,18 +2720,29 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
    ;;                                  (LOAD (<ra> :create-audio-instrument "Pd" "Simple Midi Synth"))))
    ;;    #f)
    "----------------" 
-   "From plugin manager" (lambda ()
-                           (pmg-start instr-conf callback))
+   (list "From plugin manager"
+         :shortcut assign-instrument-for-track-from-plugin-manager
+         (lambda ()
+           (pmg-start instr-conf callback)))
    
-   "From instrument/effect-menu" (lambda ()
-                                   (start-instrument-popup-menu instr-conf callback))
+   (list "From instrument/effect-menu"
+         :shortcut assign-instrument-for-track-from-instrument/effect-menu
+         (lambda ()
+           (start-instrument-popup-menu instr-conf callback assign-new-instrument-for-track)))
+   
    ;;"From list of favourites" (lambda ()
    ;;                            (show-favourites-menu :callback callback :shortcut-func assign-new-instrument-for-track))
-   "From list of most frequently used instruments" (lambda ()
-                               (show-favourites-menu :callback callback :shortcut-func assign-new-instrument-for-track))
+   (list "From list of most frequently used instruments"
+         :shortcut assign-instrument-for-track-from-most-frequently-used-instruments
+         (lambda ()
+           (show-favourites-menu :callback callback :shortcut-func assign-new-instrument-for-track)))
+   
    "----------------"
-   "From preset file (.rec/.mrec)" (lambda ()
-                                     (request-select-instrument-preset -1 (<ra> :create-illegal-instrument) #t callback))
+   (list "From preset file (.rec/.mrec)"
+         :shortcut assign-instrument-for-track-from-preset
+         (lambda ()
+           (request-select-instrument-preset -1 (<ra> :create-illegal-instrument) #t callback)))
+   
    "-----------------"
    (list "New MIDI Instrument"
          :shortcut assign-MIDI-instrument-for-track
@@ -2683,7 +2764,8 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
   )
 
 ;; async
-(define (select-track-instrument tracknum)
+;; Note: Used for shortcut
+(delafina (select-track-instrument :tracknum -1)
   (popup-menu (get-select-track-instrument-popup-entries tracknum)))
      
 #||
