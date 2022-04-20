@@ -1724,7 +1724,7 @@
   (define has-instrument (<ra> :is-legal-instrument instrument-id))
   ;;(c-display "tracknunm/instrument-id/has:" tracknum instrument-id has-instrument)
   (popup-menu (<-> "---------FX (track #" tracknum ")")
-              (list "New FX"
+              (list "New FX..."
                     :enabled has-instrument
                     :shortcut ra:request-fx
                     (lambda ()
@@ -1770,10 +1770,10 @@
               "Clear Track" :shortcut ra:clear-track (lambda ()
                                                        (<ra> :clear-track tracknum))
               "----------"
-              "Load Track (BETA!)" :shortcut ra:load-track (lambda ()
-                                                             (<ra> :load-track (<ra> :create-illegal-filepath) tracknum))
-              "Save Track" :shortcut ra:save-track (lambda ()
-                                                     (<ra> :save-track (<ra> :create-illegal-filepath) tracknum))
+              "Load Track... (BETA!)" :shortcut ra:load-track (lambda ()
+                                                                (<ra> :load-track (<ra> :create-illegal-filepath) tracknum))
+              "Save Track..." :shortcut ra:save-track (lambda ()
+                                                        (<ra> :save-track (<ra> :create-illegal-filepath) tracknum))
 
               "-----------"
               "Copy Track" :shortcut ra:copy-track (lambda ()
@@ -1811,12 +1811,12 @@
               
               (<-> "---------Instrument (track #" tracknum ")")
               (list (if has-instrument
-                        "Change instrument"
-                        "Set instrument")
+                        "Change instrument..."
+                        "Set instrument...")
                     :shortcut ra:select-instrument-for-track
                     (lambda ()
                       (select-track-instrument tracknum)))
-              (list "Configure instrument color"
+              (list "Configure instrument color..."
                     :enabled (<ra> :is-legal-instrument instrument-id)
                     :shortcut FROM_C-show-instrument-color-dialog
                     (lambda ()
@@ -1832,7 +1832,7 @@
                      (is-midi-instrument (and (<ra> :is-legal-instrument instrument-id)
                                               (string=? (<ra> :get-instrument-type-name instrument-id)
                                                         "MIDI"))))
-                (list (<-> "Set MIDI channel" (if is-midi-instrument "" (<-> " (now: " (1+ curr-midi-channel) ")")))
+                (list (<-> "Set MIDI channel..." (if is-midi-instrument "" (<-> " (now: " (1+ curr-midi-channel) ")")))
                       :enabled (not is-midi-instrument)
                       (lambda ()
                         ;;(c-display "CURETNTE TRSCKN NUM: " tracknum)
@@ -1841,10 +1841,10 @@
                                                 (c-display "channelnum2:" channelnum tracknum)
                                                 (<ra> :set-track-midi-channel channelnum tracknum))))))              
               "-------Edit"
-              (list "Quantization" ra:show-edit-quantitize-tab)
-              (list "Transpose" ra:show-edit-transpose-tab)
-              (list "Randomize/Skew/Shuffle" ra:show-edit-randomize-tab)
-              (list "Various" ra:show-edit-various-tab)
+              (list "Quantization..." ra:show-edit-quantitize-tab)
+              (list "Transpose..." ra:show-edit-transpose-tab)
+              (list "Randomize/Skew/Shuffle..." ra:show-edit-randomize-tab)
+              (list "Various..." ra:show-edit-various-tab)
               "-------Editor"
               (get-editor-editor-menu-entries)
               "-------Help"
@@ -7112,13 +7112,13 @@
    "------------------"
    
    (list
-    "Rename"
+    "Rename..."
     :enabled seqblock-info
     :shortcut show-set-seqtrack/seqblock-name-requester
     (lambda ()
       (show-set-seqtrack/seqblock-name-requester seqtracknum seqblockid)))
    
-   (list "Configure color"
+   (list "Configure color..."
          :enabled seqblock-info
          :shortcut configure-seqblock-color
          (lambda ()

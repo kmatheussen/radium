@@ -1052,8 +1052,8 @@ Examples:
   ;;(c-display "------------KEYBINDING:" keybinding)
   
   (list (if has-keybinding
-            (<-> "Change keybinding for \"" command "\". (Now: " keybinding ")")
-            (<-> "Add keybinding for \"" command "\""))
+            (<-> "Change keybinding for \"" command "\"... (Now: " keybinding ")")
+            (<-> "Add keybinding for \"" command "\"..."))
         (lambda ()
 
           (c-display "========================  focus-keybindign: " focus-keybinding)

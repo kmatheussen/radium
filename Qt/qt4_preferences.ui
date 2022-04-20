@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>8</number>
+      <number>5</number>
      </property>
      <property name="elideMode">
       <enum>Qt::ElideNone</enum>
@@ -5941,7 +5941,7 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
              <string/>
             </property>
             <property name="text">
-             <string>Add</string>
+             <string>Add...</string>
             </property>
            </widget>
           </item>

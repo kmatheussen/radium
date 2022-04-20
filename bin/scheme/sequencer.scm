@@ -1225,11 +1225,11 @@
          :shortcut swap-with-next-seqtrack
          (lambda ()
            (swap-with-next-seqtrack seqtracknum)))
-   (list "Set height"
+   (list "Set height..."
          :shortcut show-select-both-seqtrack-size-types-gui
          (lambda ()
            (show-select-both-seqtrack-size-types-gui seqtracknum)))
-   (list "Rename"
+   (list "Rename..."
          :shortcut show-set-seqtrack/seqblock-name-requester
          (lambda ()
            (show-set-seqtrack/seqblock-name-requester seqtracknum)))
@@ -1366,7 +1366,7 @@
                     (<ra> :show-sequencer)
                     (<ra> :hide-sequencer))))
         (list "Help" show-sequencer-help-window)
-        (list "Preferences" ra:open-sequencer-preferences-dialog)))
+        (list "Preferences..." ra:open-sequencer-preferences-dialog)))
 
 
 (define (FROM_C-jump-to-mark marknum)
@@ -1755,8 +1755,8 @@
    
    "-------------------Automation"
    
-   "New automation" :shortcut create-sequencer-automation (lambda ()
-                                                            (create-sequencer-automation seqtracknum X Y))
+   "New automation..." :shortcut create-sequencer-automation (lambda ()
+                                                               (create-sequencer-automation seqtracknum X Y))
    
    (list (<-> "Paste automation")
          :enabled *clipboard-seqtrack-automation*
@@ -1786,7 +1786,7 @@
            (insert-current-block-or-audiofile-in-sequencer seqtracknum X)))
         
         (list
-         "Insert block"
+         "Insert block..."
          :shortcut insert-existing-block-or-audiofile-in-sequencer
          (lambda ()
            (insert-existing-block-or-audiofile-in-sequencer seqtracknum X)))
@@ -1882,7 +1882,7 @@
 
 (define (get-main-sequencer-popup-menu-entries seqtracknum X Y)
   (list "---------------------Sequencer"
-        (<-> "Popup menu for seqtrack #" seqtracknum)
+        (<-> "Popup menu for seqtrack #" seqtracknum "...")
         :shortcut show-seqtrack-popup-menu
         (lambda ()
           (show-seqtrack-popup-menu seqtracknum X Y))))
@@ -2068,7 +2068,7 @@
   (define seqtracknum (<ra> :get-seqblock-seqtrack-num seqblock-id))
   (define seqblocknum (<ra> :get-seqblock-seqblock-num seqblock-id))
   (list
-   (<-> "Set gain (now: " (get-seqblock-gain-text seqblock-id) ")")
+   (<-> "Set gain... (now: " (get-seqblock-gain-text seqblock-id) ")")
    :shortcut set-seqblock-gain
    (lambda ()
      (set-seqblock-gain seqblock-id))))
@@ -2157,7 +2157,7 @@
            (<ra> :copy-filepath-to-clipboard (<ra> :get-seqblock-sample seqblocknum seqtracknum))
            #t))
    
-   (list "Settings"
+   (list "Settings..."
          :shortcut "Double-click"
          (lambda ()
            (create-audio-seqblock-gui seqblocknum seqtracknum)))))
@@ -2383,7 +2383,7 @@
                 :enabled (and blocknum seqblocknum)
                 ra:copy-seqblock-track-on-off-to-editor)
                    
-          (list "Configure block"
+          (list "Configure block..."
                 :enabled (and blocknum seqblock-info (not (<ra> :is-playing-song)))
                 :shortcut config-seqblock-block
                 (lambda ()

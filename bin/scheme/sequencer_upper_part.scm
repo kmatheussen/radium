@@ -516,7 +516,7 @@
                (lambda (x* curr-tempo pos)
                  (popup-menu
                   (list "----------Tempos")
-                  (list "Add tempo"
+                  (list "Add tempo..."
                         :enabled (and (not curr-tempo)
                                       (<ra> :is-using-sequencer-timing))
                         (lambda ()
@@ -530,7 +530,7 @@
                         :shortcut ra:simulate-delete-mouse-button
                         (lambda ()
                           (area :remove-curr-entry!)))
-                  (list "Set new tempo"
+                  (list "Set new tempo..."
                         :enabled (and curr-tempo
                                       (<ra> :is-using-sequencer-timing))
                         (lambda ()
@@ -610,7 +610,7 @@
                (lambda (x* curr-signature pos)
                  (popup-menu
                   (list "----------Signatures")
-                  (list "Add Signature"
+                  (list "Add Signature..."
                         :enabled (and (not curr-signature)
                                       (<ra> :is-using-sequencer-timing))
                         (lambda ()
@@ -623,7 +623,7 @@
                                       (<ra> :is-using-sequencer-timing))
                         (lambda ()
                           (area :remove-curr-entry!)))
-                  (list "Set new signature"
+                  (list "Set new signature..."
                         :enabled (and curr-signature
                                       (<ra> :is-using-sequencer-timing))
                         (lambda ()                                      
@@ -717,7 +717,7 @@
                (lambda (x* curr-marker pos)
                  (popup-menu
                   (list "----------Markers")
-                  (list "Add Marker"
+                  (list "Add Marker..."
                         :enabled (not curr-marker)
                         (lambda ()
                           (request-marker x* #f    
@@ -728,7 +728,7 @@
                         :enabled curr-marker
                         (lambda ()
                           (area :remove-curr-entry!)))
-                  (list "Set new marker"
+                  (list "Set new marker..."
                         :enabled curr-marker
                         (lambda ()                                      
                           (request-marker x* curr-marker

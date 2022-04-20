@@ -67,7 +67,7 @@
      <item>
       <widget class="QPushButton" name="configure_paths_button">
        <property name="text">
-        <string>VST Paths</string>
+        <string>VST Paths...</string>
        </property>
       </widget>
      </item>

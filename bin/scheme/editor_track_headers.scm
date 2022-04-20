@@ -21,7 +21,7 @@
                     )
               "-----------"
               (let ((instrument-id (<ra> :get-instrument-for-track tracknum)))
-                (list "Rename instrument"
+                (list "Rename instrument..."
                       :enabled (<ra> :is-legal-instrument instrument-id)
                       :shortcut (list ra:eval-scheme "(FROM_C-request-rename-instrument)")
                       (lambda ()

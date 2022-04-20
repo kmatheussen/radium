@@ -1716,25 +1716,25 @@
             "Insert plugin"
             (<-> "Insert plugin after " (<ra> :get-instrument-name instrument-id)))
         (list
-         (list "From plugin manager"                           
+         (list "From plugin manager..."                           
                :shortcut (and is-top-instrument
                               insert-plugin-for-instrument-from-plugin-manager)
                :enabled enabled
                (lambda ()
                  (insert-plugin-for-instrument-from-plugin-manager instrument-id parentgui)))
-         (list "From instrument/effect-menu"
+         (list "From instrument/effect-menu..."
                :shortcut (and is-top-instrument
                               insert-plugin-for-instrument-from-popup-menu)
                :enabled enabled
                (lambda ()
                  (insert-plugin-for-instrument-from-popup-menu instrument-id parentgui)))
-         (list "From list of most frequently used instruments" ;;"From list of favourites"
+         (list "From list of most frequently used instruments..." ;;"From list of favourites"
                :shortcut (and is-top-instrument
                               insert-plugin-for-instrument-from-favourites-menu)
                (lambda ()
                  (insert-plugin-for-instrument-from-favourites-menu instrument-id parentgui)))
          "----------------"
-         (list "From preset file (.rec/.mrec)"
+         (list "From preset file (.rec/.mrec)..."
                :shortcut (and is-top-instrument
                               insert-plugin-for-instrument-from-preset-file)
                :enabled enabled
@@ -1784,7 +1784,7 @@
           (get-insert-plugin-entry instrument-id))
 
      (and include-insert-plugin
-          (list "Insert send"
+          (list "Insert send..."
                 :enabled (> (<ra> :get-num-output-channels instrument-id) 0)
                 :shortcut insert-send-for-instrument
                 (lambda ()
@@ -1796,13 +1796,13 @@
            :shortcut ra:delete-instrument
            (lambda ()
              (<ra> :delete-instrument instrument-id)))
-     (list "Replace"
+     (list "Replace..."
            :enabled (and include-replace
                          (not (<ra> :instrument-is-permanent instrument-id)))
            :shortcut replace-instrument
            (lambda ()
              (replace-instrument instrument-id must-have-inputs must-have-outputs parentgui)))
-     (list "Rename"
+     (list "Rename..."
            :shortcut FROM_C-request-rename-instrument
            (lambda ()
              (FROM_C-request-rename-instrument instrument-id)))
@@ -1827,13 +1827,13 @@
      
      "-----------"
      
-     (list "Load Preset (.rec)" :enabled instrument-id
+     (list "Load Preset (.rec)..." :enabled instrument-id
            :enabled (and include-replace
                          (not (<ra> :instrument-is-permanent instrument-id)))
            :shortcut ra:request-load-instrument-preset
            (lambda ()
              (<ra> :request-load-instrument-preset instrument-id "" parentgui)))
-     (list "Save Preset (.rec)" :enabled instrument-id
+     (list "Save Preset (.rec)..." :enabled instrument-id
            :enabled (and include-replace
                          (not (<ra> :instrument-is-permanent instrument-id)))
            :shortcut (list ra:eval-scheme "(ra:save-instrument-preset)") ;; ra:save-instrument-preset is not available from python since it has a dynvec_t argument
@@ -1842,7 +1842,7 @@
      
      "------------------"
      
-     (list "Configure color"
+     (list "Configure color..."
            :shortcut FROM_C-show-instrument-color-dialog
            (lambda ()
              (FROM_C-show-instrument-color-dialog parentgui instrument-id)))
@@ -2087,7 +2087,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                                      (pre-undo-block-callback)
                                      (<ra> :remove-modulator instrument-id effect-name)
                                      (post-undo-block-callback)))))
-               (list (<-> "Replace modulator (" (<ra> :get-modulator-description instrument-id effect-name) ")")
+               (list (<-> "Replace modulator (" (<ra> :get-modulator-description instrument-id effect-name) ")...")
                      (lambda ()
                        (create-select-modulator-popup-menu
                         (lambda (modulator-id)
@@ -2099,7 +2099,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                                         (<ra> :replace-modulator instrument-id effect-name modulator-id)
                                         (post-undo-block-callback))))))))
          (list (list (or modulation-error-message
-                         "Assign modulator")
+                         "Assign modulator...")
                      :enabled (not automation-error-message)
                      (lambda ()
                        (create-select-modulator-popup-menu
@@ -2187,7 +2187,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                       :check (<ra> :get-instrument-bypass instrument-id)
                       ra:switch-bypass-for-selected-instruments))
                (else
-                (list (<-> "Set " effect-name)
+                (list (<-> "Set " effect-name "...")
                       :shortcut (list edit-instrument-effect (string->keyword (string-drop (string->keybinding-string effect-name) 1)))
                       (lambda ()
                         (c-display "GAKK: " (string->keyword (string-drop (string->keybinding-string effect-name) 1)))
@@ -2720,25 +2720,25 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
    ;;                                  (LOAD (<ra> :create-audio-instrument "Pd" "Simple Midi Synth"))))
    ;;    #f)
    "----------------" 
-   (list "From plugin manager"
+   (list "From plugin manager..."
          :shortcut assign-instrument-for-track-from-plugin-manager
          (lambda ()
            (pmg-start instr-conf callback)))
    
-   (list "From instrument/effect-menu"
+   (list "From instrument/effect-menu..."
          :shortcut assign-instrument-for-track-from-instrument/effect-menu
          (lambda ()
            (start-instrument-popup-menu instr-conf callback assign-new-instrument-for-track)))
    
    ;;"From list of favourites" (lambda ()
    ;;                            (show-favourites-menu :callback callback :shortcut-func assign-new-instrument-for-track))
-   (list "From list of most frequently used instruments"
+   (list "From list of most frequently used instruments..."
          :shortcut assign-instrument-for-track-from-most-frequently-used-instruments
          (lambda ()
            (show-favourites-menu :callback callback :shortcut-func assign-new-instrument-for-track)))
    
    "----------------"
-   (list "From preset file (.rec/.mrec)"
+   (list "From preset file (.rec/.mrec)..."
          :shortcut assign-instrument-for-track-from-preset
          (lambda ()
            (request-select-instrument-preset -1 (<ra> :create-illegal-instrument) #t callback)))
