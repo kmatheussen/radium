@@ -84,22 +84,26 @@ void Thread::threadEntryPoint()
     if (threadName.isNotEmpty())
         setCurrentThreadName (threadName);
 
-    if (startSuspensionEvent.wait (10000))
-    {
-        jassert (getCurrentThreadId() == threadId.get());
+#if 0
+    jassert (getCurrentThreadId() == threadId.get());
+#else
+    threadId = getCurrentThreadId(); // Setthing threadId must be done here now.
+#endif
+    
+    if (affinityMask != 0)
+      setCurrentThreadAffinityMask (affinityMask);
 
-        if (affinityMask != 0)
-            setCurrentThreadAffinityMask (affinityMask);
-
-        try
-        {
-            run();
-        }
-        catch (...)
-        {
-            jassertfalse; // Your run() method mustn't throw any exceptions!
-        }
-    }
+    setCurrentThreadPriority (threadPriority);
+    startSuspensionEvent.signal();
+    
+    try
+      {
+        run();
+      }
+    catch (...)
+      {
+        jassertfalse; // Your run() method mustn't throw any exceptions!
+      }
 
     currentThreadHolder->value.releaseCurrentThreadStorage();
 
@@ -128,8 +132,7 @@ void Thread::startThread()
     if (threadHandle.get() == nullptr)
     {
         launchThread();
-        setThreadPriority (threadHandle.get(), threadPriority);
-        startSuspensionEvent.signal();
+        startSuspensionEvent.wait(10000);
     }
 }
 
