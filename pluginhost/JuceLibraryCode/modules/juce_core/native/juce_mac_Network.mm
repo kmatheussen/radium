@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -393,7 +393,7 @@ JUCE_END_IGNORE_WARNINGS_GCC_LIKE
 #endif
 
 //==============================================================================
-class URLConnectionState   : public URLConnectionStateBase
+class API_AVAILABLE (macos (10.9)) URLConnectionState : public URLConnectionStateBase
 {
 public:
     URLConnectionState (NSURLRequest* req, const int maxRedirects)
