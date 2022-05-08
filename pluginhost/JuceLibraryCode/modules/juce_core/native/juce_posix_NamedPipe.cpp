@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -246,18 +246,23 @@ private:
 
 void NamedPipe::close()
 {
-    ScopedWriteLock sl (lock);
-
-    if (pimpl != nullptr)
     {
-        pimpl->stopReadOperation = true;
+        const ScopedReadLock sl (lock);
 
-        const char buffer[] { 0 };
-        const auto done = ::write (pimpl->pipeIn.get(), buffer, numElementsInArray (buffer));
-        ignoreUnused (done);
+        if (pimpl != nullptr)
+        {
+            pimpl->stopReadOperation = true;
+
+            const char buffer[] { 0 };
+            const auto done = ::write (pimpl->pipeIn.get(), buffer, numElementsInArray (buffer));
+            ignoreUnused (done);
+        }
     }
 
-    pimpl.reset();
+    {
+        const ScopedWriteLock sl (lock);
+        pimpl.reset();
+    }
 }
 
 bool NamedPipe::openInternal (const String& pipeName, bool createPipe, bool mustNotExist)

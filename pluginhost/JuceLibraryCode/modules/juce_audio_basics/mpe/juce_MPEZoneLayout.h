@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -41,7 +41,6 @@ struct MPEZone
     enum class Type { lower, upper };
 
     MPEZone() = default;
-    MPEZone (const MPEZone& other) = default;
 
     MPEZone (Type type, int memberChannels = 0, int perNotePitchbend = 48, int masterPitchbend = 2)
         : zoneType (type),

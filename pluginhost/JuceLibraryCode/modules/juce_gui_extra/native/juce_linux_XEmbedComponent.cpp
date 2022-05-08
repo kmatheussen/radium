@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -255,6 +248,11 @@ public:
         jassert (! clientInitiated);
 
         return host;
+    }
+
+    void updateEmbeddedBounds()
+    {
+        componentMovedOrResized (owner, true, true);
     }
 
 private:
@@ -612,7 +610,7 @@ private:
         if (auto* peer = owner.getPeer())
         {
             auto r = peer->getComponent().getLocalArea (&owner, owner.getLocalBounds());
-            return r * peer->getPlatformScaleFactor();
+            return r * peer->getPlatformScaleFactor() * peer->getComponent().getDesktopScaleFactor();
         }
 
         return owner.getLocalBounds();
@@ -687,6 +685,7 @@ void XEmbedComponent::focusLost   (FocusChangeType changeType)     { pimpl->focu
 void XEmbedComponent::broughtToFront()                             { pimpl->broughtToFront(); }
 unsigned long XEmbedComponent::getHostWindowID()                   { return pimpl->getHostWindowID(); }
 void XEmbedComponent::removeClient()                               { pimpl->setClient (0, true); }
+void XEmbedComponent::updateEmbeddedBounds()                       { pimpl->updateEmbeddedBounds(); }
 
 //==============================================================================
 bool juce_handleXEmbedEvent (ComponentPeer* p, void* e)

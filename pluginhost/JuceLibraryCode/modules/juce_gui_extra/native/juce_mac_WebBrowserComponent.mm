@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -32,7 +25,7 @@ namespace juce
 
 static NSURL* appendParametersToFileURL (const URL& url, NSURL* fileUrl)
 {
-    if (@available (macOS 10.9, *))
+    if (@available (macOS 10.10, *))
     {
         const auto parameterNames = url.getParameterNames();
         const auto parameterValues = url.getParameterValues();
@@ -263,7 +256,7 @@ private:
 JUCE_END_IGNORE_WARNINGS_GCC_LIKE
 #endif
 
-struct WebViewDelegateClass  : public ObjCClass<NSObject>
+struct API_AVAILABLE (macos (10.10)) WebViewDelegateClass  : public ObjCClass<NSObject>
 {
     WebViewDelegateClass()  : ObjCClass<NSObject> ("JUCEWebViewDelegate_")
     {
@@ -339,7 +332,7 @@ private:
     }
 
    #if WKWEBVIEW_OPENPANEL_SUPPORTED
-    JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wunguarded-availability", "-Wunguarded-availability-new")
+    API_AVAILABLE (macos (10.12))
     static void runOpenPanel (id, SEL, WKWebView*, WKOpenPanelParameters* parameters, WKFrameInfo*,
                               void (^completionHandler)(NSArray<NSURL*>*))
     {
@@ -402,7 +395,6 @@ private:
             delete wrapper;
         });
     }
-    JUCE_END_IGNORE_WARNINGS_GCC_LIKE
    #endif
 };
 
@@ -507,7 +499,7 @@ private:
 JUCE_END_IGNORE_WARNINGS_GCC_LIKE
 #endif
 
-class WKWebViewImpl  : public WebViewBase
+class API_AVAILABLE (macos (10.11)) WKWebViewImpl : public WebViewBase
 {
 public:
     WKWebViewImpl (WebBrowserComponent* owner)
@@ -587,7 +579,7 @@ class WebBrowserComponent::Pimpl
 public:
     Pimpl (WebBrowserComponent* owner)
     {
-        if (@available (macOS 10.10, *))
+        if (@available (macOS 10.11, *))
             webView = std::make_unique<WKWebViewImpl> (owner);
        #if JUCE_MAC
         else

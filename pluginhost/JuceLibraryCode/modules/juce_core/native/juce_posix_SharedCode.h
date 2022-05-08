@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -858,7 +858,7 @@ static void* threadEntryProc (void* userData)
     {
         juce_threadEntryPoint (myself);
     }
-    
+
    #if JUCE_ANDROID
     if (androidJNIJavaVM != nullptr)
     {
@@ -909,11 +909,12 @@ void Thread::launchThread()
         pthread_attr_setstacksize (attrPtr, threadStackSize);
     }
 
+
     if (pthread_create (&handle, attrPtr, threadEntryProc, this) == 0)
     {
         pthread_detach (handle);
         threadHandle = (void*) handle;
-        threadId = (ThreadID) threadHandle.get(); // Theoretically this line is not necessary anymore. However, I'm not 100% if threadId is not used from this thread before waiting for the thread has started, so better leave it. (we'll probably get a tsan hit here as well, but that hit can probably be safely ignored)
+        threadId = (ThreadID) threadHandle.get();
     }
 
     if (attrPtr != nullptr)

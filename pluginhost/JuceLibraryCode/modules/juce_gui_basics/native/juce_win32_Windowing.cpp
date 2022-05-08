@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -61,7 +54,7 @@ void* getUser32Function (const char*);
 
 #if JUCE_DEBUG
  int numActiveScopedDpiAwarenessDisablers = 0;
- bool isInScopedDPIAwarenessDisabler() { return numActiveScopedDpiAwarenessDisablers > 0; }
+ static bool isInScopedDPIAwarenessDisabler() { return numActiveScopedDpiAwarenessDisablers > 0; }
  extern HWND juce_messageWindowHandle;
 #endif
 
@@ -472,17 +465,18 @@ static bool isPerMonitorDPIAwareWindow (HWND nativeWindow)
    #endif
 }
 
-static bool isPerMonitorDPIAwareThread()
+static bool isPerMonitorDPIAwareThread (GetThreadDPIAwarenessContextFunc getThreadDPIAwarenessContextIn = getThreadDPIAwarenessContext,
+                                        GetAwarenessFromDpiAwarenessContextFunc getAwarenessFromDPIAwarenessContextIn = getAwarenessFromDPIAwarenessContext)
 {
    #if ! JUCE_WIN_PER_MONITOR_DPI_AWARE
     return false;
    #else
     setDPIAwareness();
 
-    if (getThreadDPIAwarenessContext != nullptr
-        && getAwarenessFromDPIAwarenessContext != nullptr)
+    if (getThreadDPIAwarenessContextIn != nullptr
+        && getAwarenessFromDPIAwarenessContextIn != nullptr)
     {
-        return (getAwarenessFromDPIAwarenessContext (getThreadDPIAwarenessContext())
+        return (getAwarenessFromDPIAwarenessContextIn (getThreadDPIAwarenessContextIn())
                   == DPI_Awareness::DPI_Awareness_Per_Monitor_Aware);
     }
 
@@ -576,12 +570,17 @@ ScopedThreadDPIAwarenessSetter::~ScopedThreadDPIAwarenessSetter() = default;
 
 ScopedDPIAwarenessDisabler::ScopedDPIAwarenessDisabler()
 {
-    if (! isPerMonitorDPIAwareThread())
+    static auto localGetThreadDpiAwarenessContext            = (GetThreadDPIAwarenessContextFunc)        getUser32Function ("GetThreadDpiAwarenessContext");
+    static auto localGetAwarenessFromDpiAwarenessContextFunc = (GetAwarenessFromDpiAwarenessContextFunc) getUser32Function ("GetAwarenessFromDpiAwarenessContext");
+
+    if (! isPerMonitorDPIAwareThread (localGetThreadDpiAwarenessContext, localGetAwarenessFromDpiAwarenessContextFunc))
         return;
 
-    if (setThreadDPIAwarenessContext != nullptr)
+    static auto localSetThreadDPIAwarenessContext = (SetThreadDPIAwarenessContextFunc) getUser32Function ("SetThreadDpiAwarenessContext");
+
+    if (localSetThreadDPIAwarenessContext != nullptr)
     {
-        previousContext = setThreadDPIAwarenessContext (DPI_AWARENESS_CONTEXT_UNAWARE);
+        previousContext = localSetThreadDPIAwarenessContext (DPI_AWARENESS_CONTEXT_UNAWARE);
 
        #if JUCE_DEBUG
         ++numActiveScopedDpiAwarenessDisablers;
@@ -593,7 +592,10 @@ ScopedDPIAwarenessDisabler::~ScopedDPIAwarenessDisabler()
 {
     if (previousContext != nullptr)
     {
-        setThreadDPIAwarenessContext ((DPI_AWARENESS_CONTEXT) previousContext);
+        static auto localSetThreadDPIAwarenessContext = (SetThreadDPIAwarenessContextFunc) getUser32Function ("SetThreadDpiAwarenessContext");
+
+        if (localSetThreadDPIAwarenessContext != nullptr)
+            localSetThreadDPIAwarenessContext ((DPI_AWARENESS_CONTEXT) previousContext);
 
        #if JUCE_DEBUG
         --numActiveScopedDpiAwarenessDisablers;
@@ -649,6 +651,7 @@ static Point<int> convertLogicalScreenPointToPhysical (Point<int> p, HWND h) noe
     return p;
 }
 
+JUCE_API double getScaleFactorForWindow (HWND h);
 JUCE_API double getScaleFactorForWindow (HWND h)
 {
     // NB. Using a local function here because we need to call this method from the plug-in wrappers
@@ -830,6 +833,7 @@ Desktop::DisplayOrientation Desktop::getCurrentOrientation() const
     return upright;
 }
 
+int64 getMouseEventTime();
 int64 getMouseEventTime()
 {
     static int64 eventTimeOffset = 0;
@@ -1102,7 +1106,7 @@ Image createSnapshotOfNativeWindow (void* nativeWindowHandle)
 //==============================================================================
 namespace IconConverters
 {
-    Image createImageFromHICON (HICON icon)
+    static Image createImageFromHICON (HICON icon)
     {
         if (icon == nullptr)
             return {};
@@ -1210,6 +1214,7 @@ namespace IconConverters
         return {};
     }
 
+    HICON createHICONFromImage (const Image& image, const BOOL isIcon, int hotspotX, int hotspotY);
     HICON createHICONFromImage (const Image& image, const BOOL isIcon, int hotspotX, int hotspotY)
     {
         auto nativeBitmap = new WindowsBitmapImage (Image::ARGB, image.getWidth(), image.getHeight(), true);
@@ -1233,7 +1238,7 @@ namespace IconConverters
         DeleteObject (mask);
         return hi;
     }
-}
+} // namespace IconConverters
 
 //==============================================================================
 JUCE_IUNKNOWNCLASS (ITipInvocation, "37c994e7-432b-4834-a2f7-dce1f13b834b")
@@ -1398,7 +1403,7 @@ struct UWPUIViewSettings
                 return;
 
             LPCWSTR uwpClassName = L"Windows.UI.ViewManagement.UIViewSettings";
-            HSTRING uwpClassId;
+            HSTRING uwpClassId = nullptr;
 
             if (createHString (uwpClassName, (::UINT32) wcslen (uwpClassName), &uwpClassId) != S_OK
                  || uwpClassId == nullptr)
@@ -1869,9 +1874,14 @@ public:
             OnScreenKeyboard::getInstance()->activate();
     }
 
-    void dismissPendingTextInput() override
+    void closeInputMethodContext() override
     {
         imeHandler.handleSetContext (hwnd, false);
+    }
+
+    void dismissPendingTextInput() override
+    {
+        closeInputMethodContext();
 
         if (uwpViewSettings.isTabletModeActivatedForWindow (hwnd))
             OnScreenKeyboard::getInstance()->deactivate();
@@ -4410,6 +4420,7 @@ ComponentPeer* Component::createNewPeer (int styleFlags, void* parentHWND)
     return new HWNDComponentPeer (*this, styleFlags, (HWND) parentHWND, false);
 }
 
+JUCE_API ComponentPeer* createNonRepaintingEmbeddedWindowsPeer (Component& component, void* parentHWND);
 JUCE_API ComponentPeer* createNonRepaintingEmbeddedWindowsPeer (Component& component, void* parentHWND)
 {
     return new HWNDComponentPeer (component, ComponentPeer::windowIgnoresMouseClicks,
@@ -4449,6 +4460,7 @@ bool KeyPress::isKeyCurrentlyDown (const int keyCode)
 }
 
 // (This internal function is used by the plugin client module)
+bool offerKeyMessageToJUCEWindow (MSG& m);
 bool offerKeyMessageToJUCEWindow (MSG& m)   { return HWNDComponentPeer::offerKeyMessageToJUCEWindow (m); }
 
 //==============================================================================

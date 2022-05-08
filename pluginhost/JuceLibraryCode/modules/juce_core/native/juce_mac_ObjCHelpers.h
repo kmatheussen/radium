@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -164,7 +164,7 @@ inline var nsDictionaryToVar (NSDictionary* dictionary)
     DynamicObject::Ptr dynamicObject (new DynamicObject());
 
     for (NSString* key in dictionary)
-        dynamicObject->setProperty (nsStringToJuce (key), nsObjectToVar (dictionary[key]));
+        dynamicObject->setProperty (nsStringToJuce (key), nsObjectToVar ([dictionary objectForKey: key]));
 
     return var (dynamicObject.get());
 }
@@ -305,6 +305,9 @@ public:
 
     bool operator== (const ObjCObjectHandle& other) const { return item == other.item; }
     bool operator!= (const ObjCObjectHandle& other) const { return ! (*this == other); }
+
+    bool operator== (std::nullptr_t) const { return item == nullptr; }
+    bool operator!= (std::nullptr_t) const { return ! (*this == nullptr); }
 
 private:
     void swap (ObjCObjectHandle& other) noexcept { std::swap (other.item, item); }
