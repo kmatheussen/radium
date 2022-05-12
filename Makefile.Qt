@@ -56,6 +56,9 @@ QHTTPSERVER_PATH ?= $(shell pwd)/bin/packages/qhttpserver-master
 
 LIBGIG_PATH ?= $(shell pwd)/bin/packages/libgig/src
 
+LV2_INCLUDE_PATH ?= $(shell pwd)/pluginhost/JuceLibraryCode/modules/juce_audio_processors/format_types/LV2_SDK/lv2
+LILV_INCLUDE_PATH ?= $(shell pwd)/pluginhost/JuceLibraryCode/modules/juce_audio_processors/format_types/LV2_SDK/lilv/
+
 #MIDIINC=-Imidi/rtmidi
 #MIDIINC=-Imidi/alsaseq
 
@@ -2117,7 +2120,7 @@ $(T)MidiMessages_plugin.o: audio/MidiMessages_plugin.c
 	$(CC2) audio/MidiMessages_plugin.c $(OPT)
 
 $(T)VST_plugins.o: audio/VST_plugins.cpp $(P)Qt_vst_paths_widget.h
-	$(CCC2) audio/VST_plugins.cpp $(QTOPT) #-Wno-error # uses some Qt stuff to open GUI window
+	$(CCC2) audio/VST_plugins.cpp $(QTOPT) -I$(LV2_INCLUDE_PATH) -I$(LILV_INCLUDE_PATH) #-Wno-error # uses some Qt stuff to open GUI window
 
 $(T)Ladspa_plugins.o: audio/Ladspa_plugins.cpp
 	$(CCC2) audio/Ladspa_plugins.cpp $(QTOPT) $(LRDFOPT) $(IS_LINUX_BINARY)

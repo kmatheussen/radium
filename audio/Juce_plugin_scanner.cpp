@@ -112,6 +112,9 @@ static void add_descriptions_from_plugin_file(juce::OwnedArray<juce::PluginDescr
   au_format.findAllTypesForFile(descriptions, description_filename);
 #endif
 
+  juce::LV2PluginFormat lv2_format;
+  lv2_format.findAllTypesForFile(descriptions, description_filename);
+
   //}CRASHREPORTER_do_report();
 }
 
