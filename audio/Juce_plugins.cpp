@@ -226,11 +226,11 @@ static void findMaxTotalChannels(juce::AudioProcessor* const filter,
 namespace{
 
 #if FOR_LINUX
-  static constexpr bool g_use_custom_mm_thread = true;
+  static constexpr bool g_use_custom_mm_thread = true; // Note: 'false' is supposedly supposed to work in juce7 I think, but it doesn't seem to work. ('true' is better anyway though, better interactivity)
 #elif FOR_WINDOWS  
-  static constexpr bool g_use_custom_mm_thread = false;
+  static constexpr bool g_use_custom_mm_thread = false; // ('true' doesn't work unfortunately)
 #elif FOR_MACOSX
-  static constexpr bool g_use_custom_mm_thread = false;
+  static constexpr bool g_use_custom_mm_thread = false; // ('true' doesn't work unfortunately)
 #else
   #error "unknown platform"
 #endif
@@ -2595,6 +2595,7 @@ static SoundPluginType *create_plugin_type(const juce::PluginDescription &descri
     : description.pluginFormatName=="VST3" ? "VST3"
     : description.pluginFormatName=="AudioUnit" ? "AU"
     : description.pluginFormatName=="AU" ? "AU"
+    : description.pluginFormatName=="LV2" ? "LV2"
     : NULL;
 
   if (plugin_type->type_name==NULL){
