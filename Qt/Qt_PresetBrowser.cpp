@@ -372,6 +372,9 @@ int PresetBrowser::selectedNote() {
 }
 
 void PresetBrowser::PlayPreset(const QModelIndex & index){
+  if (QGuiApplication::mouseButtons() != Qt::LeftButton)
+    return;
+
   startIgnoringUndo();
   if (playnote_id >= 0 && isLegalInstrument(presetDemoInstrument))
   {
