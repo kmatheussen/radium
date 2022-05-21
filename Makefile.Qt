@@ -69,7 +69,7 @@ MAKEFILE=Makefile.Qt
 MAX_NUM_UNDOS=800
 
 CD=common/
-T=/tmp/radium_objects/
+T ?= /tmp/radium_objects/
 
 PKG ?= pkg-config
 PKGqt ?= $(PKG)
