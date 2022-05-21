@@ -107,38 +107,7 @@ class BrowserQSortFilterProxyModel: public QSortFilterProxyModel
     if (currIndexData == "")
       return true;
 
-    //QModelIndex index0 = sourceModel()->index(sourceRow, 0, sourceParent);
-    qDebug() << "------------------------------------------------------------------------";
-    /*qDebug() << "filtr: " + sourceModel()->data(source_parent, (int)QFileSystemModel::FilePathRole).toString();
-    QString currIndexData = sourceModel()->data(source_parent, (int)QFileSystemModel::FilePathRole).toString(); 
-
-    if (currIndexData == "") {
-      qDebug() << "true";
-      return true;
-    }
-
-    if (presetFolder.startsWith(currIndexData))
-    {
-      qDebug() << "true";
-      return true;
-    }
-
-    if (currIndexData == presetFolder)
-    {
-      qDebug() << "true";
-      return true;
-    }*/
-
-    /*
-    if (currIndexData.contains(presetFolder, Qt::CaseInsensitive)) {
-      if (currIndexData.contains(word, Qt::CaseInsensitive))
-      {
-          qDebug() << "true";
-          return true;
-      }
-      // check childrens
-            
-    }*/
+    // qDebug() << "------------------------------------------------------------------------";
 
     // https://stackoverflow.com/questions/250890/using-qsortfilterproxymodel-with-a-tree-model
     // get source-model index for current row
@@ -147,7 +116,6 @@ class BrowserQSortFilterProxyModel: public QSortFilterProxyModel
     // check current index itself :
     if( source_index.isValid() ) {
       QString key = sourceModel()->data(source_index, (int)QFileSystemModel::FilePathRole).toString();
-      qDebug() << "key: " + key;
 
       if (presetFolder.startsWith(key))
         return true;
@@ -168,22 +136,16 @@ class BrowserQSortFilterProxyModel: public QSortFilterProxyModel
 
       // if any of children matches the filter, then current index matches the filter as well
       sourceModel()->fetchMore(source_index);
-      qDebug() << "childs start: " + key;
       int nb = sourceModel()->rowCount(source_index);
-      qDebug() << "rows count " << nb;
-      for ( int i=0; i<nb; ++i ) {
+      for ( int i = 0; i < nb; ++i ) {
         if ( filterAcceptsRow(i, source_index) ) {
-          qDebug() << "childs stop: " + key;
           return true ;
         }
       }
-      qDebug() << "childs stop: " + key;
     }
     else
       qDebug() << "something goes wrong -------------------------- ";
 
-
-    qDebug() << "false";
     return false;
   }
 
@@ -375,8 +337,8 @@ void PresetBrowser::SetFilter() {
 
 
 void PresetBrowser::UsePreset(const QModelIndex & index){
-  qDebug() << "activation";
-  qDebug() << "file path" + index.data(QFileSystemModel::FilePathRole).toString();
+  // qDebug() << "activation";
+  // qDebug() << "file path" + index.data(QFileSystemModel::FilePathRole).toString();
   QString filePath = index.data(QFileSystemModel::FilePathRole).toString();
   QString fileName = index.data(QFileSystemModel::FileNameRole).toString();
 
@@ -384,19 +346,6 @@ void PresetBrowser::UsePreset(const QModelIndex & index){
   QFileInfo fileInfo(ff);
   if (fileInfo.exists() && fileInfo.isFile()){
     QString fileName = fileInfo.baseName();
-    qDebug() << "dziłamy" << fileName;
-    /*ff.open(QIODevice::ReadOnly);
-    QString s;
-    QTextStream s1(&ff);
-    s.append(s1.readAll());
-    //qDebug() << s;
-    QByteArray ba = str1.toLocal8Bit();
-      const char *desc = ba.data();
-    int64_t patch_id = createAudioInstrumentFromDescription(desc, NULL, 1, 1);*/
-
-    //createAudioInstrumentFromPreset(filePath, "aha", 1, 1, true);
-    //PRESET_load(make_filepath(filePath), "aha", true, true, getCurrMixerSlotX(), getCurrMixerSlotY());
-    //createAudioInstrumentFromPreset(make_filepath(filePath), "", getCurrMixerSlotX(), getCurrMixerSlotY(), true);
     instrument_t ins = createAudioInstrumentFromPreset(make_filepath(filePath), "", 0, 0, true); // create instrument from preset
 
     setInstrumentForTrack(ins, currentTrack(currentBlock(0), 0), currentBlock(0),0); // add instrument to current track
@@ -438,17 +387,6 @@ void PresetBrowser::PlayPreset(const QModelIndex & index){
   if (fileInfo.exists() && fileInfo.isFile()){
     //qDebug() << "create preset demo instrument";
     presetDemoInstrument = createAudioInstrumentFromPreset(make_filepath(filePath), "PresetPlayer", 1, 1, false);
-
-    /*
-    std::string line,text;
-    std::ifstream in("test.txt");
-    while(std::getline(in, line)) {
-      text += line + "\n";
-    }
-            
-    const char* data = text.c_str();
-    requestLoadInstrumentPreset(presetDemoInstrument, data, gui_getEditorGui());
-    */
 
     //qDebug() << "connect preset instrument ";
     connectAudioInstrumentToMainPipe(presetDemoInstrument);
