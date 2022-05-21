@@ -90,6 +90,10 @@ struct EditorLayoutWidget : public radium::KeyboardFocusFrame{
     : radium::KeyboardFocusFrame(NULL, radium::KeyboardFocusFrameType::EDITOR, true)
   {
     set_widget_takes_care_of_painting_everything(this);
+    // set size policy to expanding with factor 10
+    QSizePolicy editorSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Minimum);
+    editorSizePolicy.setHorizontalStretch(10);
+    setSizePolicy(editorSizePolicy);
   }
 };
 

@@ -3618,6 +3618,19 @@ int radium_main(const char *arg){
 
       block_selector->resize(100,block_selector->height());
 
+      // resize browser at start - without this browser gets a lot of space
+      QList<int> sizes = xsplitter->sizes();
+      int browserIndex = xsplitter->indexOf(getPresetBrowserWidgetFrame());
+      int editorIndex = xsplitter->indexOf(editor->editor_layout_widget);
+
+      if (browserIndex != -1 && editorIndex != -1) {
+        int space = sizes.at(browserIndex) + sizes.at(editorIndex);
+
+        sizes[browserIndex] = space * 0.3;
+        sizes[editorIndex] = space - sizes.at(browserIndex);
+        xsplitter->setSizes(sizes);
+      }
+
       {
         SEQUENCER_WIDGET_initialize(main_window);
         createInstrumentsWidget();
