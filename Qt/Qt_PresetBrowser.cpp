@@ -397,5 +397,10 @@ QWidget *getPresetBrowserWidget(void){
   return g_presetbrowser_widget;
 }
 
+QWidget *getPresetBrowserWidgetFrame(void){
+  return g_presetbrowser_widget_frame;
+}
+
+
 #include "mQt_PresetBrowser.cpp"
 
