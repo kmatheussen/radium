@@ -118,6 +118,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_colors_proc.h"
 #include "Qt_AutoBackups_proc.h"
 #include "Qt_Bs_edit_proc.h"
+#include "Qt_PresetBrowser.h"
 
 #include "Timer.hpp"
 #include "mTimer.hpp"
@@ -3602,6 +3603,8 @@ int radium_main(const char *arg){
 
       if(xsplitter->_strip_on_left_side)
         xsplitter->add_mixer_strip();
+
+      xsplitter->addWidget(createPresetBrowserWidget());
 
       editor->editor_layout_widget = new EditorLayoutWidget();
       editor->editor_layout_widget->setMinimumWidth(550);
