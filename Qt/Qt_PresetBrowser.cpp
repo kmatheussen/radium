@@ -83,7 +83,9 @@ extern QApplication *qapplication;
 #include <QFileSystemModel>
 #include <QSortFilterProxyModel>
 #include <QVBoxLayout>
+#include <QHBoxLayout>
 #include <QDebug>
+#include <QButtonGroup>
 #include "../api/api_common_proc.h"
 
 #include <string>
@@ -210,18 +212,18 @@ class PresetBrowser : public QWidget
 
   public:
   PresetBrowser(QWidget *parent=NULL): QWidget(parent) {
+    // TODO: should be get from settings
+    presetFolder = "/home/and3md/akimaze/Radium/Presets";
+
     layout = new QVBoxLayout(this);
     layout->setSpacing(1);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setObjectName(QString::fromUtf8("vLayout"));
 
-    title = new QLabel("Presets", this);
+    title = new QLabel("Presets");
     layout->addWidget(title);
 
-    presetFolder = "/home/and3md/akimaze/Radium/Presets";
-
     model.setRootPath(presetFolder);
-    //filterModel.setRecursiveFilteringEnabled(true);
     filterModel.setSourceModel(&model);
     filterModel.setFilterRole((int)QFileSystemModel::FilePathRole);
     filterModel.setPresetFolder(presetFolder);
@@ -229,7 +231,6 @@ class PresetBrowser : public QWidget
     tree = new FocusSnifferQTreeView(this);
     tree->setModel(&filterModel);
     tree->setRootIndex(filterModel.mapFromSource(model.index(presetFolder)));
-    //tree->setRootIndex(filterModel.mapFromSource(model.index("")));
     tree->hideColumn(1);
     tree->hideColumn(2);
     tree->hideColumn(3);
@@ -237,10 +238,78 @@ class PresetBrowser : public QWidget
     layout->addWidget(tree);
 
     filterEdit = new FocusSnifferQLineEdit(this);
+    filterEdit->setPlaceholderText("Search");
     layout->addWidget(filterEdit);
 
-    presetDemoInstrument = createIllegalInstrument();
+    noteSharpButtonsLayout = new QHBoxLayout(this);
+    noteSharpButtonsLayout->setContentsMargins(0, 0, 0, 0);
+    layout->addLayout(noteSharpButtonsLayout);
 
+    noteButtonsLayout = new QHBoxLayout(this);
+    noteButtonsLayout->setContentsMargins(0, 0, 0, 0);
+    layout->addLayout(noteButtonsLayout);
+
+    noteC = new MyQCheckBox("C");
+    noteD = new MyQCheckBox("D");
+    noteE = new MyQCheckBox("E");
+    noteF = new MyQCheckBox("F");
+    noteG = new MyQCheckBox("G");
+    noteA = new MyQCheckBox("A");
+    noteB = new MyQCheckBox("B");
+
+    noteCSharp = new MyQCheckBox("C#");
+    noteDSharp = new MyQCheckBox("D#");
+    noteFSharp = new MyQCheckBox("F#");
+    noteGSharp = new MyQCheckBox("G#");
+    noteASharp = new MyQCheckBox("A#");
+
+    // play only one note at time maybe there should be chords button ;)
+    notesButtonGroup = new QButtonGroup(this);
+
+    notesButtonGroup->addButton(noteC);
+    noteC->setChecked(true);
+    notesButtonGroup->addButton(noteD);
+    notesButtonGroup->addButton(noteE);
+    notesButtonGroup->addButton(noteF);
+    notesButtonGroup->addButton(noteG);
+    notesButtonGroup->addButton(noteA);
+    notesButtonGroup->addButton(noteB);
+
+    notesButtonGroup->addButton(noteCSharp);
+    notesButtonGroup->addButton(noteDSharp);
+    notesButtonGroup->addButton(noteFSharp);
+    notesButtonGroup->addButton(noteGSharp);
+    notesButtonGroup->addButton(noteASharp);
+
+    // set id's
+    notesButtonGroup->setId(noteC, 0);
+    notesButtonGroup->setId(noteCSharp, 1);
+    notesButtonGroup->setId(noteD, 2);
+    notesButtonGroup->setId(noteDSharp, 3);
+    notesButtonGroup->setId(noteE, 4);
+    notesButtonGroup->setId(noteF, 5);
+    notesButtonGroup->setId(noteFSharp, 6);
+    notesButtonGroup->setId(noteG, 7);
+    notesButtonGroup->setId(noteGSharp, 8);
+    notesButtonGroup->setId(noteA, 9);
+    notesButtonGroup->setId(noteASharp, 10);
+    notesButtonGroup->setId(noteB, 11);
+
+    noteButtonsLayout->addWidget(noteC);
+    noteButtonsLayout->addWidget(noteD);
+    noteButtonsLayout->addWidget(noteE);
+    noteButtonsLayout->addWidget(noteF);
+    noteButtonsLayout->addWidget(noteG);
+    noteButtonsLayout->addWidget(noteA);
+    noteButtonsLayout->addWidget(noteB);
+
+    noteSharpButtonsLayout->addWidget(noteCSharp);
+    noteSharpButtonsLayout->addWidget(noteDSharp);
+    noteSharpButtonsLayout->addWidget(noteFSharp);
+    noteSharpButtonsLayout->addWidget(noteGSharp);
+    noteSharpButtonsLayout->addWidget(noteASharp);
+
+    presetDemoInstrument = createIllegalInstrument();
 
     connect(tree,SIGNAL(activated(const QModelIndex &)),this,SLOT(UsePreset(const QModelIndex &)));
     connect(tree,SIGNAL(pressed(const QModelIndex &)),this,SLOT(PlayPreset(const QModelIndex &)));
@@ -266,6 +335,8 @@ class PresetBrowser : public QWidget
     void StopPreset(const QModelIndex & index);
     void SetFilter();
 
+  protected:
+    int selectedNote();
   private:
     QLabel* title;
     FocusSnifferQLineEdit * filterEdit;
@@ -273,11 +344,29 @@ class PresetBrowser : public QWidget
     BrowserQSortFilterProxyModel filterModel;
 
     QVBoxLayout *layout;
+    QHBoxLayout *noteButtonsLayout;
+    QHBoxLayout *noteSharpButtonsLayout;
 
     FocusSnifferQTreeView *tree;
     instrument_t presetDemoInstrument;
     int playnote_id = -1;
+
     QString presetFolder;
+    QButtonGroup *notesButtonGroup;
+
+    MyQCheckBox *noteC;
+    MyQCheckBox *noteD;
+    MyQCheckBox *noteE;
+    MyQCheckBox *noteF;
+    MyQCheckBox *noteG;
+    MyQCheckBox *noteA;
+    MyQCheckBox *noteB;
+
+    MyQCheckBox *noteCSharp;
+    MyQCheckBox *noteDSharp;
+    MyQCheckBox *noteFSharp;
+    MyQCheckBox *noteGSharp;
+    MyQCheckBox *noteASharp;
 };
 
 void PresetBrowser::SetFilter() {
@@ -316,6 +405,13 @@ void PresetBrowser::UsePreset(const QModelIndex & index){
     setInstrumentName(fileName.toStdString().c_str(), ins); // set name to preset file name
     //showInstrumentGui(ins, gui_getEditorGui(), false); // show instrument gui
   }
+}
+
+int PresetBrowser::selectedNote() {
+  int note = notesButtonGroup->checkedId();
+  if (note < 0)
+    note = 0;
+  return note;   
 }
 
 void PresetBrowser::PlayPreset(const QModelIndex & index){
@@ -357,7 +453,7 @@ void PresetBrowser::PlayPreset(const QModelIndex & index){
     //qDebug() << "connect preset instrument ";
     connectAudioInstrumentToMainPipe(presetDemoInstrument);
 
-    int notenum = root->keyoct + 24; // default is 36 C2 
+    int notenum = root->keyoct + 24 + selectedNote(); // default is 36 C2 
     if(notenum>=0 && notenum<127)
       playnote_id = playNote(notenum, 120, 0, 0, presetDemoInstrument); // startuje granie nuty
   }
