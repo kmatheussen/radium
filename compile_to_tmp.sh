@@ -2,7 +2,7 @@
 
 set -eo pipefail
 
-mkdir -p /tmp/radium_objects
+mkdir -p $T
 
 for var in "$@"; do
     if [ -z ${var##*.c} ]; then
@@ -45,7 +45,7 @@ NC='\033[0m'
 printf "${GREEN}Compiling${LIGHT_CYAN} $sourcefile${NC}...\n"
 
 start=`date +%s`
-"$@" -o /tmp/radium_objects/$base.o
+"$@" -o $T/$base.o
 end=`date +%s`
 
 runtime=$((end-start))
