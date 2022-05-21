@@ -114,13 +114,20 @@ class BrowserQSortFilterProxyModel: public QSortFilterProxyModel
     QModelIndex source_index = sourceModel()->index(source_row, 0, source_parent);
 
     // check current index itself :
-    if( source_index.isValid() ) {
+    if(source_index.isValid()) {
       QString key = sourceModel()->data(source_index, (int)QFileSystemModel::FilePathRole).toString();
 
+      // add folders above our preset folder
       if (presetFolder.startsWith(key))
         return true;
 
       if (key.startsWith(presetFolder)) {
+
+        // check file extension
+        if (! dynamic_cast<QFileSystemModel *>(sourceModel())->isDir(source_index))
+          if (!key.endsWith(".rec", Qt::CaseInsensitive))
+            return false;
+
         // check words
         bool containsAll = true;
         for (int i = 0 ; i < words.size() ; i++)
@@ -132,15 +139,17 @@ class BrowserQSortFilterProxyModel: public QSortFilterProxyModel
         }
         if (containsAll)
           return true;
-      }
 
-      // if any of children matches the filter, then current index matches the filter as well
-      sourceModel()->fetchMore(source_index);
-      int nb = sourceModel()->rowCount(source_index);
-      for ( int i = 0; i < nb; ++i ) {
-        if ( filterAcceptsRow(i, source_index) ) {
-          return true ;
+        // if any of children matches the filter, then current index matches the filter as well
+        sourceModel()->fetchMore(source_index);
+        int nb = sourceModel()->rowCount(source_index);
+
+        for (int i = 0; i < nb; ++i) {
+          if (filterAcceptsRow(i, source_index)) {
+            return true ;
+          }
         }
+
       }
     }
     else
@@ -280,13 +289,12 @@ class PresetBrowser : public QWidget
     connect(filterEdit,SIGNAL(editingFinished()),this,SLOT(SetFilter()));
 
     // https://stackoverflow.com/questions/54930898/how-to-always-expand-items-in-qtreeview
-    connect(tree->model(), &QAbstractItemModel::rowsInserted,
+    connect(&filterModel, &QAbstractItemModel::rowsInserted,
       [this](const QModelIndex &parent, int first, int last)
       {
-        // New rows have been added to parent.  Make sure parent is fully expanded.
+        // New rows have been added to parent. Make sure parent is fully expanded.
         tree->expandRecursively(parent);
       });
-
   }
 
   virtual ~PresetBrowser() {};
