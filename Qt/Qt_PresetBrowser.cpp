@@ -92,7 +92,7 @@ extern QApplication *qapplication;
 #include <fstream>
 
 QWidget *g_presetbrowser_widget = nullptr;
-static radium::KeyboardFocusFrame *g_presetbrowser_widget_frame;
+static radium::KeyboardFocusFrame *g_presetbrowser_widget_frame = nullptr;
 
 
 class BrowserQSortFilterProxyModel: public QSortFilterProxyModel
@@ -446,6 +446,10 @@ QWidget *getPresetBrowserWidgetFrame(void){
   return g_presetbrowser_widget_frame;
 }
 
+void showHidePresetBrowser(void){
+  if (g_presetbrowser_widget_frame)
+    g_presetbrowser_widget_frame->setVisible(!g_presetbrowser_widget_frame->isVisible());
+}
 
 #include "mQt_PresetBrowser.cpp"
 
