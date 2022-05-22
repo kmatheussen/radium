@@ -14,70 +14,22 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#include "Qt_PresetBrowser.h"
+
 #define __STDC_FORMAT_MACROS 1
 #include <inttypes.h>
 
-
-#include <QSpinBox>
-
-#include <qstring.h>
-#include <qlineedit.h>
-#include <qsplitter.h>
-#include <qevent.h>
-#include <qtreeview.h>
-#include <qlistwidget.h>
-#include <QString>
-
 #define INCLUDE_SNDFILE_OPEN_FUNCTIONS 1
 #include "../common/nsmtracker.h"
-
-#include "../common/hashmap_proc.h"
-#include "../common/undo.h"
-#include "../common/player_proc.h"
-//#include "../mixergui/undo_chip_addremove_proc.h"
-#include "../mixergui/undo_mixer_connections_proc.h"
-#include "undo_instruments_widget_proc.h"
-//#include "../common/undo_patchlist_proc.h"
-#include "../common/undo_tracks_proc.h"
-#include "../common/visual_proc.h"
-#include "../common/settings_proc.h"
-#include "../audio/audio_instrument_proc.h"
-#include "../audio/Presets_proc.h"
-#include "../midi/midi_instrument.h"
-#include "../midi/midi_instrument_proc.h"
-#include "../midi/midi_i_input_proc.h"
-#include "../midi/OS_midigfx_proc.h"
-#include "../midi/OS_midi_proc.h"
 
 #include "Qt_MyQSlider.h"
 #include "Qt_MyQLabel.h"
 #include "Qt_MyQCheckBox.h"
 #include "Qt_MyQButton.h"
 #include "Qt_MyQSpinBox.h"
-
-#include "../mixergui/QM_MixerWidget.h"
-#include "../audio/SoundPluginRegistry_proc.h"
-#include "../audio/Mixer_proc.h"
-
-#include "../api/api_gui_proc.h"
-#include "../api/api_proc.h"
-
-
 #include "Qt_colors_proc.h"
-
-
-#include "Qt_instruments_proc.h"
-
-
-extern QApplication *qapplication;
-
-
-
 #include "FocusSniffers.h"
 
-#include "EditorWidget.h"
-#include "../GTK/GTK_visual_proc.h"
-#include "../OpenGL/Widget_proc.h"
 #include <QTreeView>
 #include <QFileSystemModel>
 #include <QSortFilterProxyModel>
@@ -85,10 +37,6 @@ extern QApplication *qapplication;
 #include <QHBoxLayout>
 #include <QDebug>
 #include <QButtonGroup>
-#include "../api/api_common_proc.h"
-
-#include <string>
-#include <fstream>
 
 QWidget *g_presetbrowser_widget = nullptr;
 static radium::KeyboardFocusFrame *g_presetbrowser_widget_frame = nullptr;
