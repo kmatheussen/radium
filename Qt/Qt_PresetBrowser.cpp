@@ -411,7 +411,6 @@ void setPresetBrowserRootFolder(const QString &folder) {
 void showHidePresetBrowser(void){
   if (g_presetbrowser_widget_frame)
     g_presetbrowser_widget_frame->setVisible(!g_presetbrowser_widget_frame->isVisible());
-  //setPresetBrowserRootFolder("/home/and3md/akimaze/Radium/Presets");
 }
 
 
