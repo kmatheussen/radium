@@ -19,10 +19,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 class QWidget;
-QWidget *createPresetBrowserWidget(void);
+class QString;
+
+QWidget *createPresetBrowserWidget(const QString &presetRootFolder);
 QWidget *getPresetBrowserWidget(void);
 QWidget *getPresetBrowserWidgetFrame(void);
 
 void showHidePresetBrowser(void);
+void setPresetBrowserRootFolder(const QString &folder);
 
 #endif

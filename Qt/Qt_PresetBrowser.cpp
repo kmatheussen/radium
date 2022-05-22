@@ -18,8 +18,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <inttypes.h>
 
 
-
-
 #include <QSpinBox>
 
 #include <qstring.h>
@@ -63,6 +61,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../api/api_gui_proc.h"
 #include "../api/api_proc.h"
+
 
 #include "Qt_colors_proc.h"
 
@@ -182,9 +181,9 @@ class PresetBrowser : public QWidget
   Q_OBJECT;
 
   public:
-  PresetBrowser(QWidget *parent=NULL): QWidget(parent) {
+  PresetBrowser(const QString &presetRootFolder, QWidget *parent=NULL): QWidget(parent) {
     // TODO: should be get from settings
-    presetFolder = "/home/and3md/akimaze/Radium/Presets";
+    presetFolder = presetRootFolder;
 
     layout = new QVBoxLayout(this);
     layout->setSpacing(1);
@@ -282,11 +281,11 @@ class PresetBrowser : public QWidget
 
     presetDemoInstrument = createIllegalInstrument();
 
-    connect(tree,SIGNAL(activated(const QModelIndex &)),this,SLOT(UsePreset(const QModelIndex &)));
-    connect(tree,SIGNAL(pressed(const QModelIndex &)),this,SLOT(PlayPreset(const QModelIndex &)));
-    connect(tree,SIGNAL(clicked(const QModelIndex &)),this,SLOT(StopPreset(const QModelIndex &)));
+    connect(tree,SIGNAL(activated(const QModelIndex &)),this,SLOT(usePreset(const QModelIndex &)));
+    connect(tree,SIGNAL(pressed(const QModelIndex &)),this,SLOT(playPreset(const QModelIndex &)));
+    connect(tree,SIGNAL(clicked(const QModelIndex &)),this,SLOT(stopPreset(const QModelIndex &)));
 
-    connect(filterEdit,SIGNAL(editingFinished()),this,SLOT(SetFilter()));
+    connect(filterEdit,SIGNAL(editingFinished()),this,SLOT(setFilter()));
 
     // https://stackoverflow.com/questions/54930898/how-to-always-expand-items-in-qtreeview
     connect(&filterModel, &QAbstractItemModel::rowsInserted,
@@ -300,10 +299,12 @@ class PresetBrowser : public QWidget
   virtual ~PresetBrowser() {};
 
   public slots:
-    void UsePreset(const QModelIndex & index);
-    void PlayPreset(const QModelIndex & index);
-    void StopPreset(const QModelIndex & index);
-    void SetFilter();
+    void usePreset(const QModelIndex & index);
+    void playPreset(const QModelIndex & index);
+    void stopPreset(const QModelIndex & index);
+    void setFilter();
+
+    void setPresetFolder(const QString &presetRootFolder);
 
   protected:
     int selectedNote();
@@ -339,12 +340,18 @@ class PresetBrowser : public QWidget
     MyQCheckBox *noteASharp;
 };
 
-void PresetBrowser::SetFilter() {
-    filterModel.setFilter(filterEdit->text());
+void PresetBrowser::setPresetFolder(const QString &presetRootFolder) {
+  presetFolder = presetRootFolder;
+  filterModel.setPresetFolder(presetFolder);
+  model.setRootPath(presetFolder);
+  tree->setRootIndex(filterModel.mapFromSource(model.index(presetFolder)));
 }
 
+void PresetBrowser::setFilter() {
+  filterModel.setFilter(filterEdit->text());
+}
 
-void PresetBrowser::UsePreset(const QModelIndex & index){
+void PresetBrowser::usePreset(const QModelIndex & index){
   // qDebug() << "activation";
   // qDebug() << "file path" + index.data(QFileSystemModel::FilePathRole).toString();
   QString filePath = index.data(QFileSystemModel::FilePathRole).toString();
@@ -371,7 +378,7 @@ int PresetBrowser::selectedNote() {
   return note;   
 }
 
-void PresetBrowser::PlayPreset(const QModelIndex & index){
+void PresetBrowser::playPreset(const QModelIndex & index){
   if (QGuiApplication::mouseButtons() != Qt::LeftButton)
     return;
 
@@ -410,7 +417,7 @@ void PresetBrowser::PlayPreset(const QModelIndex & index){
 }
 
 
-void PresetBrowser::StopPreset(const QModelIndex & index){
+void PresetBrowser::stopPreset(const QModelIndex & index){
   startIgnoringUndo();
   if (playnote_id >= 0 && isLegalInstrument(presetDemoInstrument)){
     stopNote(playnote_id, 0, presetDemoInstrument);
@@ -429,10 +436,10 @@ void PresetBrowser::StopPreset(const QModelIndex & index){
 }
 
 
-QWidget *createPresetBrowserWidget() {
+QWidget *createPresetBrowserWidget(const QString &presetRootFolder) {
   //g_presetbrowser_widget_frame = new radium::KeyboardFocusFrame(g_main_window, radium::KeyboardFocusFrameType::BROWSER, true);
   g_presetbrowser_widget_frame = new radium::KeyboardFocusFrame(g_main_window, radium::KeyboardFocusFrameType::EDITOR, true);
-  g_presetbrowser_widget = new PresetBrowser(g_presetbrowser_widget_frame);
+  g_presetbrowser_widget = new PresetBrowser(presetRootFolder, g_presetbrowser_widget_frame);
   g_presetbrowser_widget_frame->layout()->addWidget(g_presetbrowser_widget);
 
   return g_presetbrowser_widget_frame;
@@ -446,10 +453,19 @@ QWidget *getPresetBrowserWidgetFrame(void){
   return g_presetbrowser_widget_frame;
 }
 
+void setPresetBrowserRootFolder(const QString &folder) {
+  if (g_presetbrowser_widget) {
+    dynamic_cast<PresetBrowser *>(g_presetbrowser_widget)->setPresetFolder(folder);
+  }
+}
+
+
 void showHidePresetBrowser(void){
   if (g_presetbrowser_widget_frame)
     g_presetbrowser_widget_frame->setVisible(!g_presetbrowser_widget_frame->isVisible());
+  //setPresetBrowserRootFolder("/home/and3md/akimaze/Radium/Presets");
 }
+
 
 #include "mQt_PresetBrowser.cpp"
 
