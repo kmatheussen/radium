@@ -3604,7 +3604,7 @@ int radium_main(const char *arg){
       if(xsplitter->_strip_on_left_side)
         xsplitter->add_mixer_strip();
 
-      xsplitter->addWidget(createPresetBrowserWidget());
+      xsplitter->addWidget(createPresetBrowserWidget(SETTINGS_read_qstring("preset_root_folder", QDir::homePath() + QString::fromUtf8("/Radium Presets"))));
 
       editor->editor_layout_widget = new EditorLayoutWidget();
       editor->editor_layout_widget->setMinimumWidth(550);
