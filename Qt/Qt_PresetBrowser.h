@@ -23,4 +23,6 @@ QWidget *createPresetBrowserWidget(void);
 QWidget *getPresetBrowserWidget(void);
 QWidget *getPresetBrowserWidgetFrame(void);
 
+void showHidePresetBrowser(void);
+
 #endif
