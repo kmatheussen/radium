@@ -21,6 +21,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define INCLUDE_SNDFILE_OPEN_FUNCTIONS 1
 #include "../common/nsmtracker.h"
+#include "../audio/Presets_proc.h"
+#include "../audio/audio_instrument_proc.h"
+#include "../api/api_common_proc.h"
 
 #include "Qt_MyQSlider.h"
 #include "Qt_MyQLabel.h"
@@ -37,6 +40,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QHBoxLayout>
 #include <QDebug>
 #include <QButtonGroup>
+
+#include <thread>
+#include <chrono>
 
 QWidget *g_presetbrowser_widget = nullptr;
 static radium::KeyboardFocusFrame *g_presetbrowser_widget_frame = nullptr;
@@ -256,6 +262,8 @@ class PresetBrowser : public QWidget
 
   protected:
     int selectedNote();
+    void playSelectedNote();
+    void stopPlayingSelectedNote();
   private:
     QLabel* title;
     FocusSnifferQLineEdit * filterEdit;
@@ -268,6 +276,7 @@ class PresetBrowser : public QWidget
 
     FocusSnifferQTreeView *tree;
     instrument_t presetDemoInstrument;
+    QString lastPlayedPresetPath;
     int playnote_id = -1;
 
     QString presetFolder;
@@ -288,6 +297,7 @@ class PresetBrowser : public QWidget
     MyQCheckBox *noteASharp;
 };
 
+
 void PresetBrowser::setPresetFolder(const QString &presetRootFolder) {
   presetFolder = presetRootFolder;
   filterModel.setPresetFolder(presetFolder);
@@ -295,9 +305,11 @@ void PresetBrowser::setPresetFolder(const QString &presetRootFolder) {
   tree->setRootIndex(filterModel.mapFromSource(model.index(presetFolder)));
 }
 
+
 void PresetBrowser::setFilter() {
   filterModel.setFilter(filterEdit->text());
 }
+
 
 void PresetBrowser::usePreset(const QModelIndex & index){
   // qDebug() << "activation";
@@ -319,6 +331,7 @@ void PresetBrowser::usePreset(const QModelIndex & index){
   }
 }
 
+
 int PresetBrowser::selectedNote() {
   int note = notesButtonGroup->checkedId();
   if (note < 0)
@@ -326,40 +339,101 @@ int PresetBrowser::selectedNote() {
   return note;   
 }
 
+
+void PresetBrowser::playSelectedNote() {
+  int notenum = root->keyoct + 24 + selectedNote(); // default is 36 C2 
+  if(notenum>=0 && notenum<127)
+    playnote_id = playNote(notenum, 120, 0, 0, presetDemoInstrument);
+}
+
+
+void PresetBrowser::stopPlayingSelectedNote() {
+  if (playnote_id >= 0 && isLegalInstrument(presetDemoInstrument)) {
+    stopNote(playnote_id, 0, presetDemoInstrument);
+    playnote_id = -1;
+  }
+}
+
+
 void PresetBrowser::playPreset(const QModelIndex & index){
   if (QGuiApplication::mouseButtons() != Qt::LeftButton)
     return;
 
   startIgnoringUndo();
-  if (playnote_id >= 0 && isLegalInstrument(presetDemoInstrument))
-  {
-    stopNote(playnote_id, 0, presetDemoInstrument);
-    playnote_id = -1;
-    //qDebug() << "finish preset play 1";
-  }
-
-  if (isLegalInstrument(presetDemoInstrument))
-  {
-    instrument_t i = presetDemoInstrument;
-    presetDemoInstrument = createIllegalInstrument();
-    deleteAudioConnection(i, getMainPipeInstrument());
-    deleteInstrument(i);
-    //qDebug() << "delete preset 2";
-  }
+  stopPlayingSelectedNote();
 
   QString filePath = index.data(QFileSystemModel::FilePathRole).toString();
   QFile ff(filePath);
   QFileInfo fileInfo(ff);
   if (fileInfo.exists() && fileInfo.isFile()){
-    //qDebug() << "create preset demo instrument";
+
+    if (isLegalInstrument(presetDemoInstrument)) {
+      // the same preset again only play note
+      qDebug() << "the same preset";
+      if (lastPlayedPresetPath == filePath) {
+        playSelectedNote();
+        stopIgnoringUndo();
+        return;
+      }
+
+      // check is new preset using the same instrument then try modify instrument
+      struct Patch *patch = getPatchFromNum(presetDemoInstrument);
+
+      if (patch) {
+        SoundPlugin *plugin = (SoundPlugin *)patch->patchdata;
+        if (plugin) {
+          disk_t *file = DISK_open_for_reading(filePath);
+          if (file) {
+            hash_t * preset = HASH_load(file);
+            DISK_close_and_delete(file);
+
+            if (preset && HASH_has_key(preset, "audio")) {
+              hash_t* audio = HASH_get_hash(preset, "audio");
+
+              if (HASH_has_key(audio, "plugin_state")) {
+                hash_t* pluginState = HASH_get_hash(audio, "plugin_state");
+
+                const char * pluginName = HASH_get_chars(audio, "name");
+                const char * pluginType = HASH_get_chars(audio, "type_name");
+
+                if ((strcmp(plugin->type->type_name, pluginType) == 0) && (strcmp(plugin->type->name, pluginName) == 0))
+                {
+                  // the same instrument only reload plugin state
+                  qDebug() << "the same instrument, changing only state";
+                  PLUGIN_recreate_from_state(plugin, pluginState, false);
+
+                  // wait for lading plugin state
+                  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+                  playSelectedNote();
+                  lastPlayedPresetPath = filePath;
+
+                  // TODO: should we delete preset HASH here?  
+                  stopIgnoringUndo();
+                  return;
+                }
+              }
+            }
+          }
+        }
+      }
+      // TODO: should we delete preset HASH here?
+
+      // when trying to modify instrument fail delete it
+      instrument_t i = presetDemoInstrument;
+      presetDemoInstrument = createIllegalInstrument();
+      deleteAudioConnection(i, getMainPipeInstrument());
+      deleteInstrument(i);
+    }
+
+    // full create new instrument
+    qDebug() << "creating new instrument";
     presetDemoInstrument = createAudioInstrumentFromPreset(make_filepath(filePath), "PresetPlayer", 1, 1, false);
 
     //qDebug() << "connect preset instrument ";
     connectAudioInstrumentToMainPipe(presetDemoInstrument);
-
-    int notenum = root->keyoct + 24 + selectedNote(); // default is 36 C2 
-    if(notenum>=0 && notenum<127)
-      playnote_id = playNote(notenum, 120, 0, 0, presetDemoInstrument); // startuje granie nuty
+    playSelectedNote();
+    lastPlayedPresetPath = filePath;
   }
   stopIgnoringUndo();
 }
@@ -367,19 +441,7 @@ void PresetBrowser::playPreset(const QModelIndex & index){
 
 void PresetBrowser::stopPreset(const QModelIndex & index){
   startIgnoringUndo();
-  if (playnote_id >= 0 && isLegalInstrument(presetDemoInstrument)){
-    stopNote(playnote_id, 0, presetDemoInstrument);
-    playnote_id = -1;
-    //qDebug() << "finished 1";
-  }
-  if (isLegalInstrument(presetDemoInstrument))
-  {
-    instrument_t i = presetDemoInstrument;
-    presetDemoInstrument = createIllegalInstrument();
-    deleteAudioConnection(i, getMainPipeInstrument());
-    deleteInstrument(i);
-    //qDebug() << "delete 1";
-  }
+  stopPlayingSelectedNote();
   stopIgnoringUndo();
 }
 
