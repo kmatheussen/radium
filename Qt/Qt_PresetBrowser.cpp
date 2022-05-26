@@ -430,6 +430,7 @@ void PresetBrowser::playPreset(const QModelIndex & index){
     // full create new instrument
     qDebug() << "creating new instrument";
     presetDemoInstrument = createAudioInstrumentFromPreset(make_filepath(filePath), "PresetPlayer", 1, 1, false);
+    setInstrumentName("Preset Preview", presetDemoInstrument);
 
     //qDebug() << "connect preset instrument ";
     connectAudioInstrumentToMainPipe(presetDemoInstrument);
