@@ -369,7 +369,7 @@ void PresetBrowser::playPreset(const QModelIndex & index){
 
     if (isLegalInstrument(presetDemoInstrument)) {
       // the same preset again only play note
-      qDebug() << "the same preset";
+      //qDebug() << "the same preset";
       if (lastPlayedPresetPath == filePath) {
         playSelectedNote();
         stopIgnoringUndo();
@@ -399,7 +399,7 @@ void PresetBrowser::playPreset(const QModelIndex & index){
                 if ((strcmp(plugin->type->type_name, pluginType) == 0) && (strcmp(plugin->type->name, pluginName) == 0))
                 {
                   // the same instrument only reload plugin state
-                  qDebug() << "the same instrument, changing only state";
+                  //qDebug() << "the same instrument, changing only state";
                   PLUGIN_recreate_from_state(plugin, pluginState, false);
 
                   // wait for loading plugin state
@@ -428,7 +428,7 @@ void PresetBrowser::playPreset(const QModelIndex & index){
     }
 
     // full create new instrument
-    qDebug() << "creating new instrument";
+    //qDebug() << "creating new instrument";
     presetDemoInstrument = createAudioInstrumentFromPreset(make_filepath(filePath), "PresetPlayer", 1, 1, false);
     setInstrumentName("Preset Preview", presetDemoInstrument);
 
