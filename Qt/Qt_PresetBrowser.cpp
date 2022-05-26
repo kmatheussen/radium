@@ -402,7 +402,8 @@ void PresetBrowser::playPreset(const QModelIndex & index){
                   qDebug() << "the same instrument, changing only state";
                   PLUGIN_recreate_from_state(plugin, pluginState, false);
 
-                  // wait for lading plugin state
+                  // wait for loading plugin state
+                  // TODO: Find a better solution
                   std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
                   playSelectedNote();
