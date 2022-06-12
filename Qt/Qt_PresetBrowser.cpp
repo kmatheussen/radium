@@ -1,4 +1,4 @@
-/* Copyright 2012 Kjetil S. Matheussen
+/* Copyright 2022 Kjetil S. Matheussen
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -359,7 +359,7 @@ void PresetBrowser::playPreset(const QModelIndex & index){
   if (QGuiApplication::mouseButtons() != Qt::LeftButton)
     return;
 
-  startIgnoringUndo();
+  radium::ScopedIgnoreUndo ignore_undo;
   stopPlayingSelectedNote();
 
   QString filePath = index.data(QFileSystemModel::FilePathRole).toString();
@@ -372,7 +372,6 @@ void PresetBrowser::playPreset(const QModelIndex & index){
       //qDebug() << "the same preset";
       if (lastPlayedPresetPath == filePath) {
         playSelectedNote();
-        stopIgnoringUndo();
         return;
       }
 
@@ -409,8 +408,7 @@ void PresetBrowser::playPreset(const QModelIndex & index){
                   playSelectedNote();
                   lastPlayedPresetPath = filePath;
 
-                  // TODO: should we delete preset HASH here?  
-                  stopIgnoringUndo();
+                  // HASH is garbage-collected using BDW-GC, no need to delete it 
                   return;
                 }
               }
@@ -418,8 +416,6 @@ void PresetBrowser::playPreset(const QModelIndex & index){
           }
         }
       }
-      // TODO: should we delete preset HASH here?
-
       // when trying to modify instrument fail delete it
       instrument_t i = presetDemoInstrument;
       presetDemoInstrument = createIllegalInstrument();
@@ -437,14 +433,12 @@ void PresetBrowser::playPreset(const QModelIndex & index){
     playSelectedNote();
     lastPlayedPresetPath = filePath;
   }
-  stopIgnoringUndo();
 }
 
 
 void PresetBrowser::stopPreset(const QModelIndex & index){
-  startIgnoringUndo();
+  radium::ScopedIgnoreUndo ignore_undo;
   stopPlayingSelectedNote();
-  stopIgnoringUndo();
 }
 
 
