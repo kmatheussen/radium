@@ -2420,17 +2420,20 @@ namespace{
     }
 
     void timerCallback() override {
-      if (downcount > 7 || (g_waiting_to_shut_down==false && downcount > 0)) {
-        
-        fprintf(stderr, "    DelayDeleteData: Downcounting %d\n", downcount);
-        downcount--;
-        startTimer(500);
-        
+      if (downcount > 7
+          || (g_waiting_to_shut_down==false && downcount > 0)
+          || !JUCE_show_hide_gui_lock.trylock()
+          )
+      {
+          
+          fprintf(stderr, "    DelayDeleteData: Downcounting %d\n", downcount);
+          downcount--;
+          startTimer(500);
+          
       } else {
-        radium::ScopedMutex lock(JUCE_show_hide_gui_lock);
-        
         fprintf(stderr, "    DelayDeleteData: Deleting.\n");
-        delete this;
+
+        JUCE_show_hide_gui_lock.unlock();
       }
     }
   };
