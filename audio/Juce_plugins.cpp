@@ -2433,6 +2433,8 @@ namespace{
       } else {
         fprintf(stderr, "    DelayDeleteData: Deleting.\n");
 
+        delete this;
+        
         JUCE_show_hide_gui_lock.unlock();
       }
     }
