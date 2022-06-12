@@ -321,7 +321,7 @@ void PresetBrowser::usePreset(const QModelIndex & index){
   QFileInfo fileInfo(ff);
   if (fileInfo.exists() && fileInfo.isFile()){
     QString fileName = fileInfo.baseName();
-    instrument_t ins = createAudioInstrumentFromPreset(make_filepath(filePath), "", 0, 0, true); // create instrument from preset
+    instrument_t ins = createAudioInstrumentFromPreset(make_filepath(filePath), "", 0, 0, true, true); // create instrument from preset
 
     setInstrumentForTrack(ins, currentTrack(currentBlock(0), 0), currentBlock(0),0); // add instrument to current track
     connectAudioInstrumentToMainPipe(ins);
@@ -425,7 +425,7 @@ void PresetBrowser::playPreset(const QModelIndex & index){
 
     // full create new instrument
     //qDebug() << "creating new instrument";
-    presetDemoInstrument = createAudioInstrumentFromPreset(make_filepath(filePath), "PresetPlayer", 1, 1, false);
+    presetDemoInstrument = createAudioInstrumentFromPreset(make_filepath(filePath), "PresetPlayer", 1, 1, false, false);
     setInstrumentName("Preset Preview", presetDemoInstrument);
 
     //qDebug() << "connect preset instrument ";
