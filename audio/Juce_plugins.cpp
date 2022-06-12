@@ -2463,8 +2463,8 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
 #endif
       
       // Then schedule deletion in 5 seconds.
-#if 1
-      //delete data->audio_instance;
+#if 0
+      delete data->audio_instance;
       delete data;
 #else
       new DelayDeleteData(data);
