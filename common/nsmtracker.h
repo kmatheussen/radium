@@ -2288,6 +2288,8 @@ struct Patch{
   DEFINE_ATOMIC(bool, is_recording);
 
   DEFINE_ATOMIC(bool, always_receive_midi_input);
+
+  bool is_visible;
 };
 #define PATCH_FAILED 0
 #define PATCH_SUCCESS 1

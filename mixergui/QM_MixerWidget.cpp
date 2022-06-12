@@ -3459,7 +3459,7 @@ static void create_missing_busses(hash_t *bus_chips_state){
   int num_chips = HASH_get_int32(bus_chips_state, "num_chips");
   printf("num_chips: %d\n",num_chips);
   for(int busnum=num_chips;busnum<NUM_BUSES;busnum++) {
-    createAudioInstrument(talloc_strdup("Bus"), talloc_format("Bus %d", busnum+1), talloc_format("Aux %d Bus", busnum-num_chips+1), 0, 0, false);
+    createAudioInstrument(talloc_strdup("Bus"), talloc_format("Bus %d", busnum+1), talloc_format("Aux %d Bus", busnum-num_chips+1), 0, 0, false, true);
   }
 }
 

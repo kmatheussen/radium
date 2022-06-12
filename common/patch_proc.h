@@ -47,7 +47,7 @@ extern LANGSPEC struct Patch *PATCH_alloc(void);
 extern LANGSPEC void PATCH_set_name2(struct Patch *patch, const char *name, bool update_send_receive_plugin_names);
 extern LANGSPEC void PATCH_set_name(struct Patch *patch, const char *name); // same as calling PATCH_set_name(patch, name, true)
 extern LANGSPEC struct Patch *PATCH_create_main_pipe(void);
-extern LANGSPEC struct Patch *PATCH_create_audio(const char *type_name, const char *plugin_name, const char *name, hash_t *state, bool set_as_current, float x, float y);
+extern LANGSPEC struct Patch *PATCH_create_audio(const char *type_name, const char *plugin_name, const char *name, hash_t *state, bool set_as_current, bool is_visible, float x, float y);
 extern LANGSPEC struct Patch *PATCH_create_midi(const char *name);
 extern LANGSPEC void PATCH_make_inactive(struct Patch *patch);
 extern LANGSPEC void PATCH_force_make_inactive(struct Patch *patch);

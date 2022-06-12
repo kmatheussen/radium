@@ -447,13 +447,13 @@ void handleDropEvent(QString filename, float x){
       LoadSong_CurrPos(window, make_filepath(filename));
     
     else if (filename.endsWith(".rec"))
-      instrument_id = createAudioInstrumentFromPreset(make_filepath(filename), NULL, 0, 0, true);
+      instrument_id = createAudioInstrumentFromPreset(make_filepath(filename), NULL, 0, 0, true, true);
     
     else if (filename.endsWith(".mrec"))
-      instrument_id = createAudioInstrumentFromPreset(make_filepath(filename), NULL, 0, 0, true);
+      instrument_id = createAudioInstrumentFromPreset(make_filepath(filename), NULL, 0, 0, true, true);
     
     else if (file_could_be_a_sample(filename) || filename.endsWith(".sf2")){
-      struct Patch *patch = PATCH_create_audio("Sample Player", "Sample Player", NULL, NULL, true, 0, 0);
+      struct Patch *patch = PATCH_create_audio("Sample Player", "Sample Player", NULL, NULL, true, true, 0, 0);
       instrument_id = patch->id;
       SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
       SAMPLER_set_new_sample(plugin, make_filepath(filename), 0);

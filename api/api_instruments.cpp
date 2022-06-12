@@ -581,13 +581,13 @@ instrument_t createMIDIInstrument(const_char *name) {
 }
 
 // There was a good reason for the 'name' parameter. Think it had something to do with replace instrument, and whether to use old name or autogenerate new one.
-instrument_t createAudioInstrument(const_char *type_name, const_char *plugin_name, const_char *name, float x, float y, bool set_as_current) {
+instrument_t createAudioInstrument(const_char *type_name, const_char *plugin_name, const_char *name, float x, float y, bool set_as_current, bool is_visible) {
   printf("createAudioInstrument called\n");
   
   if (name!=NULL && strlen(name)==0)
     name = NULL;
 
-  struct Patch *patch = PATCH_create_audio(type_name, plugin_name, name, NULL, set_as_current, x, y);
+  struct Patch *patch = PATCH_create_audio(type_name, plugin_name, name, NULL, set_as_current, is_visible, x, y);
   if (patch==NULL)
     return createIllegalInstrument();
 
@@ -601,8 +601,12 @@ instrument_t createAudioInstrument(const_char *type_name, const_char *plugin_nam
   return patch->id;
 }
 
-instrument_t createAudioInstrumentFromPreset(filepath_t filename, const_char *name, float x, float y, bool set_as_current) {
-  return PRESET_load(filename, name, false, set_as_current, x, y);
+instrument_t createAudioInstrumentFromPreset(filepath_t filename, const_char *name, float x, float y, bool set_as_current, bool is_visible) {
+  if (set_as_current){
+    R_ASSERT_NON_RELEASE(is_visible);
+  }
+  
+  return PRESET_load(filename, name, false, set_as_current, is_visible, x, y);
 }
 
 const char *getAudioInstrumentDescription(const_char* container_name, const_char* type_name, const_char* plugin_name){
@@ -642,7 +646,7 @@ static bool get_type_name_from_description(const char *instrument_description, c
   return false;
 }
   
-instrument_t createAudioInstrumentFromDescription(const char *instrument_description, const_char *name, float x, float y, bool set_as_current){
+instrument_t createAudioInstrumentFromDescription(const char *instrument_description, const_char *name, float x, float y, bool set_as_current, bool is_visible){
   radium::ScopedUndo scoped_undo;
   
   if (strlen(instrument_description)==0)
@@ -662,14 +666,14 @@ instrument_t createAudioInstrumentFromDescription(const char *instrument_descrip
     if (strlen(container_name) > 0)
       PR_ensure_container_is_populated(container_name, type_name); // Might fail, but we let createAudioInstrument print error message.
 
-    return createAudioInstrument(type_name, plugin_name, name, x, y, set_as_current);
+    return createAudioInstrument(type_name, plugin_name, name, x, y, set_as_current, is_visible);
     
   } else if (instrument_description[0]=='2'){
     
     const wchar_t *filename = STRING_fromBase64(STRING_create(&instrument_description[1]));
     //printf("filename: %s\n",filename);
 
-    return PRESET_load(make_filepath(filename), name, true, set_as_current, x, y);
+    return PRESET_load(make_filepath(filename), name, true, set_as_current, is_visible, x, y);
     
   } else if (instrument_description[0]=='3'){
 
@@ -690,7 +694,7 @@ instrument_t cloneAudioInstrument(instrument_t instrument_id, float x, float y, 
   
   hash_t *state = PATCH_get_state(old_patch);
 
-  struct Patch *new_patch = PATCH_create_audio(NULL, NULL, talloc_format("Clone of %s",old_patch->name), state, set_as_current, x, y);
+  struct Patch *new_patch = PATCH_create_audio(NULL, NULL, talloc_format("Clone of %s",old_patch->name), state, set_as_current, true, x, y);
   if (new_patch==NULL)
     return createIllegalInstrument();
 
@@ -2870,7 +2874,7 @@ void setIncludeSystemVolumeInMixerConfig(bool doit){
 instrument_t createModulator(void){
   //struct Patch *curr_patch = PATCH_get_current();
   
-  instrument_t instrument_id = createAudioInstrument(MODULATOR_NAME, MODULATOR_NAME, "", 0, 0, false);
+  instrument_t instrument_id = createAudioInstrument(MODULATOR_NAME, MODULATOR_NAME, "", 0, 0, false, true);
   if (!isLegalInstrument(instrument_id)){
     //printf("\n\n NOT FOUND\n\n");
     //getchar();
@@ -3244,6 +3248,14 @@ bool instrumentIsOpenAndAudio(instrument_t instrument_id){
 
 bool instrumentIsOpen(instrument_t instrument_id){
   return (instrument_id.id==-1 ? PATCH_get_current() : PATCH_get_from_id(instrument_id)) != NULL;
+}
+
+bool instrumentIsVisible(instrument_t instrument_id){
+  const struct Patch *patch = instrument_id.id==-1 ? PATCH_get_current() : PATCH_get_from_id(instrument_id);
+  if (patch==NULL)
+    return false;
+
+  return patch->is_visible;  
 }
 
 filepath_t getSampleBookmarks(int num, filepath_t default_path){
@@ -4195,6 +4207,16 @@ void redrawMixerStrips(bool immediately){
 }
 
 void remakeMixerStrips(instrument_t id){
+  if (id.id >= 0) {
+    
+    struct Patch *patch = PATCH_get_from_id(id);
+    if(patch==NULL)
+      return;
+    
+    if (!patch->is_visible)
+      return;
+  }
+  
   RT_schedule_mixer_strips_remake(id); // We don't want to redraw immediately in case we remake when a connection is being deleted or created, and we don't want to remake several times in a row either, or too often.
 }
 

@@ -277,7 +277,7 @@ static struct Patch *create_seqtrack_patch(bool is_bus, int seqtracknum){
 
   const char *plugin_name = is_bus ? SEQTRACKPLUGIN_BUS_NAME : SEQTRACKPLUGIN_NAME;
     
-  instrument_t patch_id = createAudioInstrument(is_bus ? "Bus" : SEQTRACKPLUGIN_NAME, plugin_name, name, 0, 0, true);
+  instrument_t patch_id = createAudioInstrument(is_bus ? "Bus" : SEQTRACKPLUGIN_NAME, plugin_name, name, 0, 0, true, true);
   R_ASSERT_RETURN_IF_FALSE2(patch_id.id >= 0, NULL);
   
   struct Patch *patch = PATCH_get_from_id(patch_id);
