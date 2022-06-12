@@ -250,7 +250,9 @@ class PresetBrowser : public QWidget
       });
   }
 
-  virtual ~PresetBrowser() {};
+  virtual ~PresetBrowser() {
+    deletePresetDemoInstrument();
+  };
 
   public slots:
     void usePreset(const QModelIndex & index);
@@ -259,6 +261,8 @@ class PresetBrowser : public QWidget
     void setFilter();
 
     void setPresetFolder(const QString &presetRootFolder);
+
+    void deletePresetDemoInstrument();
 
   protected:
     int selectedNote();
@@ -297,6 +301,14 @@ class PresetBrowser : public QWidget
     MyQCheckBox *noteASharp;
 };
 
+void PresetBrowser::deletePresetDemoInstrument() {
+  if (isLegalInstrument(presetDemoInstrument)) {
+    instrument_t i = presetDemoInstrument;
+    presetDemoInstrument = createIllegalInstrument();
+    deleteAudioConnection(i, getMainPipeInstrument());
+    deleteInstrument(i);
+  }
+}
 
 void PresetBrowser::setPresetFolder(const QString &presetRootFolder) {
   presetFolder = presetRootFolder;
@@ -417,10 +429,7 @@ void PresetBrowser::playPreset(const QModelIndex & index){
         }
       }
       // when trying to modify instrument fail delete it
-      instrument_t i = presetDemoInstrument;
-      presetDemoInstrument = createIllegalInstrument();
-      deleteAudioConnection(i, getMainPipeInstrument());
-      deleteInstrument(i);
+      deletePresetDemoInstrument();
     }
 
     // full create new instrument
