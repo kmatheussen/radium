@@ -2953,9 +2953,10 @@
   (strips-config :scan-instruments!)
 
   (define enabled-audio-instruments (keep (lambda (id)
-                                            (strips-config :is-enabled id))
+                                            (and (strips-config :is-enabled id)
+                                                 (<ra> :instrument-is-visible id)))
                                           (get-all-audio-instruments)))
-
+  
   (for-each c-display
             (map ra:get-instrument-name
                  enabled-audio-instruments))
@@ -3007,7 +3008,8 @@
            (create-stored-mixer-strip instrument-id
                                       mixer-strip))
          (keep (lambda (id)
-                 (strips-config :is-enabled id))
+                 (and (strips-config :is-enabled id)
+                      (<ra> :instrument-is-visible id)))
                id-instruments)))
 
   (define cat-instruments (<new> :get-cat-instruments))

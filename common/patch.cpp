@@ -429,6 +429,8 @@ struct Patch *PATCH_alloc(void){
   patch->comment = "Comment";
   patch->wide_mixer_strip = true;
 
+  patch->is_visible = true;
+  
   PATCH_init_voices(patch);
 
   return patch;
@@ -702,19 +704,25 @@ void PATCH_init_audio_when_loading_song(struct Patch *patch, hash_t *state) {
 }
 
 // Either type_name and plugin_name is NULL, or state==NULL
-static struct Patch *create_audio_patch(const char *type_name, const char *plugin_name, const char *name, hash_t *state, float x, float y, bool is_main_pipe, bool set_as_current) {
+static struct Patch *create_audio_patch(const char *type_name, const char *plugin_name, const char *name, hash_t *state, float x, float y, bool is_main_pipe, bool set_as_current, bool is_visible) {
   printf("PATCH_create_audio called\n");
-  
+
+  if (set_as_current){
+    R_ASSERT_NON_RELEASE(is_visible);
+  }
+
   struct Patch *patch = create_new_patch(name, is_main_pipe);
 
   patch->instrument=get_audio_instrument();
 
+  patch->is_visible = is_visible;
+  
   if (PATCH_make_active_audio(patch, type_name, plugin_name, state, set_as_current, x, y)==false)
     return NULL;
 
   printf("       PATCH create audio\n");
 
-  if(!g_is_loading) {
+  if(!g_is_loading && is_visible) {
 
     remakeMixerStrips(patch->id);
 
@@ -725,11 +733,15 @@ static struct Patch *create_audio_patch(const char *type_name, const char *plugi
 
 struct Patch *PATCH_create_main_pipe(void) {
   R_ASSERT(g_is_loading);
-  return create_audio_patch(talloc_strdup("Pipe"), talloc_strdup("Pipe"), talloc_strdup("Main Pipe"), NULL, 0, 0, true, false);
+  return create_audio_patch(talloc_strdup("Pipe"), talloc_strdup("Pipe"), talloc_strdup("Main Pipe"), NULL, 0, 0, true, false, true);
 }
   
-struct Patch *PATCH_create_audio(const char *type_name, const char *plugin_name, const char *name, hash_t *state, bool set_as_current, float x, float y) {
-  return create_audio_patch(type_name, plugin_name, name, state, x, y, false, set_as_current);
+struct Patch *PATCH_create_audio(const char *type_name, const char *plugin_name, const char *name, hash_t *state, bool set_as_current, bool is_visible, float x, float y) {
+  if (set_as_current){
+    R_ASSERT_NON_RELEASE(is_visible);
+  }
+
+  return create_audio_patch(type_name, plugin_name, name, state, x, y, false, set_as_current, is_visible);
 }
 
 struct Patch *PATCH_create_midi(const char *name){
