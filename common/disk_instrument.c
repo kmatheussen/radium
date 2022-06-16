@@ -15,10 +15,17 @@
 void SaveInstrument(struct Instruments *instrument){
 DC_start("INSTRUMENT");
 
-	DC_SSS("instrumentname",instrument->instrumentname);
-	DC_SSI("num_patches",instrument->patches.num_elements);
+ int num_visible_instruments = 0;
 
-	SavePatches(&instrument->patches);
+ VECTOR_FOR_EACH(struct Patch *patch, &instrument->patches){
+   if (patch->is_visible)
+     num_visible_instruments++;
+  }END_VECTOR_FOR_EACH;
+ 
+ DC_SSS("instrumentname",instrument->instrumentname);
+ DC_SSI("num_patches",instrument->patches.num_elements);
+ 
+ SavePatches(&instrument->patches);
 
 DC_end();
 }

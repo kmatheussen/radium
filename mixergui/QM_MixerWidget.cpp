@@ -3051,6 +3051,9 @@ static void get_patches_min_x_y(const vector_t *patches, float &min_x, float &mi
     if(chip!=NULL) {
       
       const struct Patch *patch = CHIP_get_patch(chip);
+
+      if (!patch->is_visible)
+        continue;
       
       if (patches==NULL || VECTOR_is_in_vector(patches, patch)){
         
@@ -3106,7 +3109,10 @@ static hash_t *MW_get_audio_patches_state(const vector_t *patches, bool put_in_a
     if(chip!=NULL) {
       
       const struct Patch *patch = CHIP_get_patch(chip);
-      
+
+      if (!patch->is_visible)
+        continue;
+
       if (patches==NULL || VECTOR_is_in_vector(patches, patch)){
         
         hash_t *state = AUDIO_get_audio_patch_state(patch);
@@ -3165,6 +3171,7 @@ static bool connection_is_in_patches(SuperConnection *connection, const vector_t
   return false;
 }
 
+// Does not return connections to hidden (i.e. temporary) instruments.
 static QVector<SuperConnection*> get_connections(bool include_audio, bool include_event){ 
   QVector<SuperConnection*> ret;
   
@@ -3172,7 +3179,7 @@ static QVector<SuperConnection*> get_connections(bool include_audio, bool includ
   
   for (int i = 0; i < das_items.size(); ++i) {
     SuperConnection *connection = dynamic_cast<SuperConnection*>(das_items.at(i));
-    if (connection!=NULL)
+    if (connection!=NULL && !connection->_is_connected_to_hidden_instrument)
       if ((include_event && connection->_is_event_connection) || (include_audio && !connection->_is_event_connection))
         if (connection->from!=NULL && connection->to!=NULL) // ongoing connections are not real connections.
           ret.push_back(connection);
@@ -3268,19 +3275,21 @@ static hash_t *MW_get_num_instances_state(void){
   hash_t *state = HASH_create(patches.num_elements);
 
   VECTOR_FOR_EACH(struct Patch *, patch, &patches){
-    SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
-    if (plugin==NULL)
-      R_ASSERT(false);
-    else if (!has_set.contains(plugin->type)){
-      HASH_put_int(state, get_plugin_type_key(plugin->type).toUtf8().constData(), plugin->type->instance_num);
-      has_set.insert(plugin->type);
+    if (patch->is_visible) {
+      SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+      if (plugin==NULL)
+        R_ASSERT(false);
+      else if (!has_set.contains(plugin->type)){
+        HASH_put_int(state, get_plugin_type_key(plugin->type).toUtf8().constData(), plugin->type->instance_num);
+        has_set.insert(plugin->type);
+      }
     }
   }END_VECTOR_FOR_EACH;
 
   return state;
 }
 
-// Only used when saving .rac and .mrec.
+// Only used when saving .rad and .mrec.
 hash_t *MW_get_state(const vector_t *patches, bool is_saving_song){
   hash_t *state = HASH_create(6);
 
