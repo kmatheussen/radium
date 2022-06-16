@@ -23,7 +23,7 @@ DC_start("INSTRUMENT");
   }END_VECTOR_FOR_EACH;
  
  DC_SSS("instrumentname",instrument->instrumentname);
- DC_SSI("num_patches",instrument->patches.num_elements);
+ DC_SSI("num_patches",num_visible_instruments);
  
  SavePatches(&instrument->patches);
 
