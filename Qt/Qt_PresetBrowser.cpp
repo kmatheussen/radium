@@ -152,7 +152,7 @@ class PresetBrowser : public QWidget
     filterModel.setFilterRole((int)QFileSystemModel::FilePathRole);
     filterModel.setPresetFolder(presetFolder);
 
-    tree = new FocusSnifferQTreeView(this);
+    tree = new QTreeView(this);
     tree->setModel(&filterModel);
     tree->setRootIndex(filterModel.mapFromSource(model.index(presetFolder)));
     tree->hideColumn(1);
@@ -278,7 +278,7 @@ class PresetBrowser : public QWidget
     QHBoxLayout *noteButtonsLayout;
     QHBoxLayout *noteSharpButtonsLayout;
 
-    FocusSnifferQTreeView *tree;
+    QTreeView *tree;
     instrument_t presetDemoInstrument;
     QString lastPlayedPresetPath;
     int playnote_id = -1;
