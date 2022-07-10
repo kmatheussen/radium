@@ -480,6 +480,11 @@ void showHidePresetBrowser(void){
     g_presetbrowser_widget_frame->setVisible(!g_presetbrowser_widget_frame->isVisible());
 }
 
+void deletePresetBrowserInstrument(void){
+  if (g_presetbrowser_widget) {
+    dynamic_cast<PresetBrowser *>(g_presetbrowser_widget)->deletePresetDemoInstrument();
+  }
+}
 
 #include "mQt_PresetBrowser.cpp"
 
