@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1099</width>
-    <height>582</height>
+    <height>589</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>5</number>
+      <number>2</number>
      </property>
      <property name="elideMode">
       <enum>Qt::ElideNone</enum>
@@ -3126,6 +3126,48 @@
        </item>
       </layout>
      </widget>
+     <widget class="QWidget" name="Browser">
+      <property name="focusPolicy">
+       <enum>Qt::NoFocus</enum>
+      </property>
+      <attribute name="title">
+       <string>Preset Browser</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_34">
+       <item>
+        <widget class="QGroupBox" name="groupBox_26">
+         <property name="title">
+          <string/>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_33">
+          <item>
+           <widget class="QLabel" name="label_2">
+            <property name="text">
+             <string>Preset folder</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="presetBrowserRootFolder"/>
+          </item>
+          <item>
+           <spacer name="verticalSpacer_37">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </widget>
+       </item>
+      </layout>
+     </widget>
      <widget class="QWidget" name="sequencer">
       <attribute name="title">
        <string>Sequencer</string>
@@ -5902,8 +5944,8 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>949</width>
-               <height>247</height>
+               <width>942</width>
+               <height>245</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="midi_input_layout">
@@ -9578,8 +9620,8 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>582</width>
-              <height>265</height>
+              <width>553</width>
+              <height>263</height>
              </rect>
             </property>
             <property name="sizePolicy">

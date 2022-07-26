@@ -340,6 +340,7 @@ static bool Load_CurrPos_org(struct Tracker_Windows *window, filepath_t filename
 	if(isIllegalFilepath(filename))
           goto exit;
 
+        deletePresetBrowserInstrument();
         g_is_loading = true;
 
         

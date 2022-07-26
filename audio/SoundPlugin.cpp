@@ -1491,7 +1491,7 @@ static void add_eud_undo(QVector<EffectUndoData> &s_euds, QHash<instrument_t, QS
       
       struct Patch *patch = PATCH_get_from_id(eud.patch_id);
       
-      if (patch != NULL) {
+      if (patch != NULL && patch->is_visible) {
         //printf("    EUD undo %d: %f\n", eud.effect_num, eud.effect_value);
         ADD_UNDO(AudioEffect_CurrPos2(patch, eud.effect_num, eud.effect_value, AE_ALWAYS_CREATE_SOLO_AND_BYPASS_UNDO));
       }
