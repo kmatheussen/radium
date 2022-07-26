@@ -2571,6 +2571,16 @@ protected:
         if(num_calls_at_this_point<150/_interval)
           updateWidgetRecursively(g_main_window);
         
+        // Show mixer briefly to workaround a Qt quirk/bug causing SceneRect size to be calculated from invisible items when the scene hasn't been shown yet.
+        // (Fixes extremely large Mixer scene rect if previewing preset before opening the mixer for the first time)
+        {
+          if(num_calls_at_this_point==50/_interval)
+            GFX_ShowMixer();
+
+          if(num_calls_at_this_point==70/_interval)
+            GFX_HideMixer();
+        }
+
         // Force full keyboard focus to the main window after startup. This seems to be the only reliable way. (if you think this is unnecessary, see if left alt works to start navigating menues after startup while using the fvwm window manager)
         {
           static QPointer<MyQMessageBox> gakkbox = NULL; // gakkbox could, perhaps, be deleted by itself if radium finds a strange parent. (got a crash once where gakkbox was deleted before explicitly calling delete below.)
@@ -3891,6 +3901,10 @@ int radium_main(const char *arg){
   GFX_showHideMixerWidget();
   
 
+  // Hide preset browser at startup.
+  showHidePresetBrowser();
+
+  
 #if USE_QT_VISUAL
  again:
   try{
