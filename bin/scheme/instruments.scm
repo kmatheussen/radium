@@ -1285,6 +1285,7 @@
                 (popup-menu (spr-entries->menu-entries new-entries instrconf
                                                        (lambda (entry)
                                                          (spr-entry->instrument-description entry instrconf callback))
+                                                       #f
                                                        #f)))))
             ;;;(else
             ;;; (<ra> :show-message (<-> "The \"" (entry :name) "\" plugin container didn't contain any plugins"))))) ;; The populate function shows error message for this.
