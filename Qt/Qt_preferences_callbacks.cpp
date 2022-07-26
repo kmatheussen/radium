@@ -1373,6 +1373,16 @@ public slots:
       setLinenumbersVisible(val);
   }
 
+  void on_presetBrowserRootFolder_editingFinished(){
+    SETTINGS_write_string("preset_root_folder", presetBrowserRootFolder->text());
+      
+    set_editor_focus();
+
+    GL_lock();{
+      presetBrowserRootFolder->clearFocus();
+    }GL_unlock();
+  }
+
 
   // sequencer
   //
