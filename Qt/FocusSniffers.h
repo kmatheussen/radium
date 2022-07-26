@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QTableWidgetItem>
 #include <QKeyEvent>
 #include <QComboBox>
+#include <QTreeView>
 //#include <QFileDialog>
 
 #include "helpers.h"
@@ -80,6 +81,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 //MakeFocusSnifferClass(QSpinBox);
 //MakeFocusSnifferClass(QDoubleSpinBox);
 MakeFocusSnifferClass(QLineEdit);
+MakeFocusSnifferClass(QTreeView);
 //MakeFocusSnifferClass(QComboBox);
 //MakeFocusSnifferClass(QFileDialog);
 //MakeFocusSnifferClass(QTextEdit);

@@ -118,6 +118,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_colors_proc.h"
 #include "Qt_AutoBackups_proc.h"
 #include "Qt_Bs_edit_proc.h"
+#include "Qt_PresetBrowser.h"
 
 #include "Timer.hpp"
 #include "mTimer.hpp"
@@ -3603,6 +3604,8 @@ int radium_main(const char *arg){
       if(xsplitter->_strip_on_left_side)
         xsplitter->add_mixer_strip();
 
+      xsplitter->addWidget(createPresetBrowserWidget(SETTINGS_read_qstring("preset_root_folder", QDir::homePath() + QString::fromUtf8("/Radium Presets"))));
+
       editor->editor_layout_widget = new EditorLayoutWidget();
       editor->editor_layout_widget->setMinimumWidth(550);
       editor->editor_layout_widget->setMinimumHeight(100);
@@ -3614,6 +3617,19 @@ int radium_main(const char *arg){
       block_selector->move(main_window->width()-100,0);
 
       block_selector->resize(100,block_selector->height());
+
+      // resize browser at start - without this browser gets a lot of space
+      QList<int> sizes = xsplitter->sizes();
+      int browserIndex = xsplitter->indexOf(getPresetBrowserWidgetFrame());
+      int editorIndex = xsplitter->indexOf(editor->editor_layout_widget);
+
+      if (browserIndex != -1 && editorIndex != -1) {
+        int space = sizes.at(browserIndex) + sizes.at(editorIndex);
+
+        sizes[browserIndex] = space * 0.3;
+        sizes[editorIndex] = space - sizes.at(browserIndex);
+        xsplitter->setSizes(sizes);
+      }
 
       {
         SEQUENCER_WIDGET_initialize(main_window);

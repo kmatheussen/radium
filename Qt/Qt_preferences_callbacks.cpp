@@ -719,6 +719,11 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
         showBarsAndBeats->setChecked(true);
     }
 
+    // Preset Browser
+    {
+      presetBrowserRootFolder->setText(SETTINGS_read_qstring("preset_root_folder", QDir::homePath() + QString::fromUtf8("/Radium Presets")));
+    }
+
     // Sequencer
     {
 
