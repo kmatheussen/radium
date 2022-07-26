@@ -10,6 +10,7 @@
 #include "../common/nsmtracker.h"
 #include "../common/hashmap_proc.h"
 #include "../common/patch_proc.h"
+#include "../common/settings_proc.h"
 
 #include "../embedded_scheme/s7extra_proc.h"
 
@@ -51,8 +52,9 @@ void PRESET_set_last_used_filename(filepath_t wfilename){
 }
 
 filepath_t PRESET_get_current_preset_dir(void){
-  if (g_last_preset_path=="")
-    return make_filepath(QCoreApplication::applicationDirPath());
+  if (g_last_preset_path==""){    
+    return make_filepath(SETTINGS_read_qstring("preset_root_folder", QDir::homePath() + QString::fromUtf8("/Radium Presets")));
+  }
   else
     return make_filepath(g_last_preset_path);  
 }
