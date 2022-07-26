@@ -332,6 +332,9 @@ void PresetBrowser::usePreset(const QModelIndex & index){
   QFile ff(filePath);
   QFileInfo fileInfo(ff);
   if (fileInfo.exists() && fileInfo.isFile()){
+
+    radium::ScopedUndo undo;
+    
     QString fileName = fileInfo.baseName();
     instrument_t ins = createAudioInstrumentFromPreset(make_filepath(filePath), "", 0, 0, true, true); // create instrument from preset
 
