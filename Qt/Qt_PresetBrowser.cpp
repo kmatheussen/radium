@@ -478,9 +478,19 @@ void setPresetBrowserRootFolder(const QString &folder) {
 }
 
 
+void hidePresetBrowserAtStartup(void){
+  if (g_presetbrowser_widget_frame){
+    R_ASSERT(!SETTINGS_read_bool("preset_browser_visible", false));
+    g_presetbrowser_widget_frame->setVisible(false);
+  }
+}
+
 void showHidePresetBrowser(void){
-  if (g_presetbrowser_widget_frame)
-    g_presetbrowser_widget_frame->setVisible(!g_presetbrowser_widget_frame->isVisible());
+  if (g_presetbrowser_widget_frame){
+    const bool new_value = !g_presetbrowser_widget_frame->isVisible();
+    g_presetbrowser_widget_frame->setVisible(new_value);
+    SETTINGS_write_bool("preset_browser_visible", new_value);
+  }
 }
 
 void deletePresetBrowserInstrument(void){

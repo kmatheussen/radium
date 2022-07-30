@@ -27,4 +27,7 @@ QWidget *getPresetBrowserWidgetFrame(void);
 
 void setPresetBrowserRootFolder(const QString &folder);
 
+void hidePresetBrowserAtStartup(void);
+
+
 #endif
