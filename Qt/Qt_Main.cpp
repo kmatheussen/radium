@@ -3902,7 +3902,8 @@ int radium_main(const char *arg){
   
 
   // Hide preset browser at startup.
-  showHidePresetBrowser();
+  if (SETTINGS_read_bool("preset_browser_visible", false)==false)
+    hidePresetBrowserAtStartup();
 
   
 #if USE_QT_VISUAL
