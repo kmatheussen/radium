@@ -1270,7 +1270,7 @@ namespace{
         {
           editor_width = editor->getWidth() / g_juce_gfx_scale;
           editor_height = editor->getHeight() / g_juce_gfx_scale;
-          full_height = editor_height + button_height + keyboard_height;
+          int full_height = editor_height + button_height + keyboard_height;
           this->setSize(editor_width, full_height);
           main_component.setSize(editor_width, full_height);
         }
