@@ -1198,19 +1198,31 @@ namespace{
       else
 #endif
         editor->setTopLeftPosition(0, button_height);
-      
+
       editor->setVisible(true);
-            
+
+      // Some plugins returns size 1,1 before editor is visible and added to main component for example https://lsp-plug.in/
+      // Maybe this should be only for linux.
+      bool set_size_again = (editor_width < 2 || editor_height < 2);
+
       editor_width = editor->getWidth() / g_juce_gfx_scale;
       editor_height = editor->getHeight() / g_juce_gfx_scale;
 
       //fprintf(stderr, "EDITOR WIDTH/HEIGHT 1 %d %d %f\n", editor_width, editor_height, g_juce_gfx_scale);
       
       //if (!data->is_au())
-        if (g_has_juce_gfx_scale)
+        if (g_has_juce_gfx_scale || set_size_again)
           editor->setSize(editor_width, editor_height); // must be a bug in juce
 
         //fprintf(stderr, "EDITOR WIDTH/HEIGHT 1b %d %d %f\n", editor->getWidth(), editor->getHeight(), g_juce_gfx_scale);
+
+      // Some plugins returns size 1,1 before editor is visible and added to main component for example https://lsp-plug.in/
+      // Maybe this should be only for linux.
+      if (set_size_again) {
+        int full_height = editor_height + button_height + keyboard_height;
+        this->setSize(editor_width, full_height);
+        main_component.setSize(editor_width, full_height);
+      }
 
       if (midi_keyboard != NULL) {
         main_component.addChildComponent(midi_keyboard);
@@ -1261,20 +1273,9 @@ namespace{
         }
 
         //fprintf(stderr, "EDITOR WIDTH/HEIGHT 1f %d %d %f\n", editor->getWidth(), editor->getHeight(), g_juce_gfx_scale);
-        
+
         this->setVisible(true);
-      
-        // Some plugins returns size 0,0 before window is visible for example https://lsp-plug.in/
-        // Maybe this should be only for linux.
-        if (editor_width < 1.0 || editor_height < 1.0 )
-        {
-          editor_width = editor->getWidth() / g_juce_gfx_scale;
-          editor_height = editor->getHeight() / g_juce_gfx_scale;
-          int full_height = editor_height + button_height + keyboard_height;
-          this->setSize(editor_width, full_height);
-          main_component.setSize(editor_width, full_height);
-        }
-        
+
         //fprintf(stderr, "EDITOR WIDTH/HEIGHT 1g %d %d %f\n", editor->getWidth(), editor->getHeight(), g_juce_gfx_scale);
      }
 
