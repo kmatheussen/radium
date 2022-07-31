@@ -1264,18 +1264,18 @@ namespace{
         
         this->setVisible(true);
       
-      // Some plugins returns size 0,0 before window is visible for example https://lsp-plug.in/
-      // Maybe this should be only for linux.
-      if (editor_width < 1.0 || editor_height < 1.0 )
-      {
-        editor_width = editor->getWidth() / g_juce_gfx_scale;
-        editor_height = editor->getHeight() / g_juce_gfx_scale;
-        full_height = editor_height + button_height + keyboard_height;
-        this->setSize(editor_width, full_height);
-        main_component.setSize(editor_width, full_height);
-      }
+        // Some plugins returns size 0,0 before window is visible for example https://lsp-plug.in/
+        // Maybe this should be only for linux.
+        if (editor_width < 1.0 || editor_height < 1.0 )
+        {
+          editor_width = editor->getWidth() / g_juce_gfx_scale;
+          editor_height = editor->getHeight() / g_juce_gfx_scale;
+          full_height = editor_height + button_height + keyboard_height;
+          this->setSize(editor_width, full_height);
+          main_component.setSize(editor_width, full_height);
+        }
         
-      // fprintf(stderr, "EDITOR WIDTH/HEIGHT 1g %d %d %f\n", editor->getWidth(), editor->getHeight(), g_juce_gfx_scale);
+        //fprintf(stderr, "EDITOR WIDTH/HEIGHT 1g %d %d %f\n", editor->getWidth(), editor->getHeight(), g_juce_gfx_scale);
      }
 
 
