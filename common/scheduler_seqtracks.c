@@ -322,6 +322,7 @@ void start_seqtrack_song_scheduling(const player_start_data_t *startdata, int pl
 struct SeqBlock g_block_seqtrack_seqblock = {0};
 
 void start_seqtrack_block_scheduling(struct Blocks *block, const Place place, int playtype){
+  R_ASSERT(playtype==PLAYBLOCK);
   
   static Place static_place;
 
