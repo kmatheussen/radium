@@ -155,7 +155,6 @@ extern PlayerClass *pc;
 //playtypes:
 #define PLAYSONG 0
 #define PLAYBLOCK 1
-#define PLAYRANGE 2 // Must never be set. We set pc->is_playing_range to true instead.
 
 extern int g_assert_not_stopping_player;
 extern RSemaphore *g_player_stopped_semaphore;
