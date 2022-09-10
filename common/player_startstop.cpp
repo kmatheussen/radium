@@ -311,7 +311,6 @@ static void start_player(int playtype, double abstime, int64_t absabstime, const
     
   } else {
 
-    R_ASSERT(playtype==PLAYBLOCK);
     R_ASSERT(equal_doubles(abstime, 0));
     R_ASSERT(seqtrack==NULL);
     R_ASSERT(seqblock==NULL);
