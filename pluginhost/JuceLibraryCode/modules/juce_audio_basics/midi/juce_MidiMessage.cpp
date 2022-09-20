@@ -20,9 +20,6 @@
   ==============================================================================
 */
 
-#include "../../../../../common/RT_memory_allocator_proc.h"
-
-
 namespace juce
 {
 
@@ -288,17 +285,23 @@ MidiMessage& MidiMessage::operator= (const MidiMessage& other)
 {
     if (this != &other)
     {
-      
-        if (isHeapAllocated())
-              RT_free(packedData.allocatedData, "juce::MidiMessage::operator=");
-        
         if (other.isHeapAllocated())
         {
-            packedData.allocatedData = RT_alloc<uint8>(other.size, "juce::MidiMessage::operator=");
+            auto* newStorage = static_cast<uint8*> (isHeapAllocated()
+              ? std::realloc (packedData.allocatedData, (size_t) other.size)
+              : std::malloc ((size_t) other.size));
+
+            if (newStorage == nullptr)
+                throw std::bad_alloc{}; // The midi message has not been adjusted at this point
+
+            packedData.allocatedData = newStorage;
             memcpy (packedData.allocatedData, other.packedData.allocatedData, (size_t) other.size);
         }
         else
         {
+            if (isHeapAllocated())
+                std::free (packedData.allocatedData);
+
             packedData.allocatedData = other.packedData.allocatedData;
         }
 
@@ -328,16 +331,16 @@ MidiMessage& MidiMessage::operator= (MidiMessage&& other) noexcept
 MidiMessage::~MidiMessage() noexcept
 {
     if (isHeapAllocated())
-        RT_free(packedData.allocatedData, "juce::MidiMessage::~MidiMessage"); //std::free (packedData.allocatedData);
+        std::free (packedData.allocatedData);
 }
 
 uint8* MidiMessage::allocateSpace (int bytes)
 {
     if (bytes > (int) sizeof (packedData))
     {
-        auto d = RT_alloc<uint8>(bytes, "juce::MidiMessage::allocateSpace"); //std::malloc ((size_t) bytes));
+        auto d = static_cast<uint8*> (std::malloc ((size_t) bytes));
         packedData.allocatedData = d;
-        return getData();
+        return d;
     }
 
     return packedData.asBytes;

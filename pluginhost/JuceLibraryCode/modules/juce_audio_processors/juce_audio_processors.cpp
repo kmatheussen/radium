@@ -1,13 +1,20 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE 7 technical preview.
+   This file is part of the JUCE library.
    Copyright (c) 2022 - Raw Material Software Limited
 
-   You may use this code under the terms of the GPL v3
-   (see www.gnu.org/licenses).
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   For the technical preview this file cannot be licensed commercially.
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
+
+   End User License Agreement: www.juce.com/juce-7-licence
+   Privacy Policy: www.juce.com/juce-privacy-policy
+
+   Or: You may also use this code under the terms of the GPL v3 (see
+   www.gnu.org/licenses).
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -33,7 +40,6 @@
 
 #include "juce_audio_processors.h"
 #include <juce_gui_extra/juce_gui_extra.h>
-#include <juce_core/containers/juce_Optional.h>
 
 //==============================================================================
 #if (JUCE_PLUGINHOST_VST || JUCE_PLUGINHOST_VST3) && (JUCE_LINUX || JUCE_BSD)
@@ -148,21 +154,19 @@ private:
         }
     }
 
-    struct FlippedNSView : public ObjCClass<NSView>
+    struct InnerNSView : public ObjCClass<NSView>
     {
-        FlippedNSView()
-            : ObjCClass ("JuceFlippedNSView_")
+        InnerNSView()
+            : ObjCClass ("JuceInnerNSView_")
         {
             addIvar<NSViewComponentWithParent*> ("owner");
 
-            addMethod (@selector (isFlipped),      isFlipped);
             addMethod (@selector (isOpaque),       isOpaque);
             addMethod (@selector (didAddSubview:), didAddSubview);
 
             registerClass();
         }
 
-        static BOOL isFlipped (id, SEL) { return YES; }
         static BOOL isOpaque  (id, SEL) { return YES; }
 
         static void nudge (id self)
@@ -172,15 +176,12 @@ private:
                     owner->triggerAsyncUpdate();
         }
 
-        static void viewDidUnhide (id self, SEL)               { nudge (self); }
         static void didAddSubview (id self, SEL, NSView*)      { nudge (self); }
-        static void viewDidMoveToSuperview (id self, SEL)      { nudge (self); }
-        static void viewDidMoveToWindow (id self, SEL)         { nudge (self); }
     };
 
-    static FlippedNSView& getViewClass()
+    static InnerNSView& getViewClass()
     {
-        static FlippedNSView result;
+        static InnerNSView result;
         return result;
     }
 };
@@ -199,10 +200,12 @@ private:
 #include "processors/juce_AudioProcessorGraph.cpp"
 #include "processors/juce_GenericAudioProcessorEditor.cpp"
 #include "processors/juce_PluginDescription.cpp"
+#include "format_types/juce_ARACommon.cpp"
 #include "format_types/juce_LADSPAPluginFormat.cpp"
 #include "format_types/juce_VSTPluginFormat.cpp"
 #include "format_types/juce_VST3PluginFormat.cpp"
 #include "format_types/juce_AudioUnitPluginFormat.mm"
+#include "format_types/juce_ARAHosting.cpp"
 #include "scanning/juce_KnownPluginList.cpp"
 #include "scanning/juce_PluginDirectoryScanner.cpp"
 #include "scanning/juce_PluginListComponent.cpp"
@@ -217,10 +220,16 @@ private:
 #include "utilities/juce_AudioProcessorValueTreeState.cpp"
 #include "utilities/juce_PluginHostType.cpp"
 #include "utilities/juce_NativeScaleFactorNotifier.cpp"
+#include "utilities/ARA/juce_ARA_utils.cpp"
 
 #include "format_types/juce_LV2PluginFormat.cpp"
 
 #if JUCE_UNIT_TESTS
- #include "format_types/juce_VST3PluginFormat_test.cpp"
- #include "format_types/juce_LV2PluginFormat_test.cpp"
+ #if JUCE_PLUGINHOST_VST3
+  #include "format_types/juce_VST3PluginFormat_test.cpp"
+ #endif
+
+ #if JUCE_PLUGINHOST_LV2 && (! (JUCE_ANDROID || JUCE_IOS))
+  #include "format_types/juce_LV2PluginFormat_test.cpp"
+ #endif
 #endif

@@ -1,13 +1,20 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE 7 technical preview.
+   This file is part of the JUCE library.
    Copyright (c) 2022 - Raw Material Software Limited
 
-   You may use this code under the terms of the GPL v3
-   (see www.gnu.org/licenses).
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   For the technical preview this file cannot be licensed commercially.
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
+
+   End User License Agreement: www.juce.com/juce-7-licence
+   Privacy Policy: www.juce.com/juce-privacy-policy
+
+   Or: You may also use this code under the terms of the GPL v3 (see
+   www.gnu.org/licenses).
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -85,8 +92,8 @@ public:
     /** Returns the current caret position. */
     CodeDocument::Position getCaretPos() const                  { return caretPos; }
 
-    /** Returns the position of the caret, relative to the editor's origin. */
-    Rectangle<int> getCaretRectangle() override;
+    /** Returns the total number of codepoints in the string. */
+    int getTotalNumChars() const override                       { return document.getNumCharacters(); }
 
     /** Moves the caret.
         If selecting is true, the section of the document between the current
@@ -113,6 +120,26 @@ public:
 
     /** Enables or disables the line-number display in the gutter. */
     void setLineNumbersShown (bool shouldBeShown);
+
+    /** Returns the number of characters from the beginning of the document to the caret. */
+    int getCaretPosition() const override       { return getCaretPos().getPosition(); }
+
+    /** @see getPositionAt */
+    int getCharIndexForPoint (Point<int> point) const override;
+
+    /** Returns the bounds of the caret at a particular location in the text. */
+    Rectangle<int> getCaretRectangleForCharIndex (int index) const override
+    {
+        return getCharacterBounds ({ document, index });
+    }
+
+    /** Returns the bounding box for a range of text in the editor. As the range may span
+        multiple lines, this method returns a RectangleList.
+
+        The bounds are relative to the component's top-left and may extend beyond the bounds
+        of the component if the text is long and word wrapping is disabled.
+    */
+    RectangleList<int> getTextBounds (Range<int> textRange) const override;
 
     //==============================================================================
     bool moveCaretLeft (bool moveInWholeWordSteps, bool selecting);

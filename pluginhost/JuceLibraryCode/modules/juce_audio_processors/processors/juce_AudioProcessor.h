@@ -1,13 +1,20 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE 7 technical preview.
+   This file is part of the JUCE library.
    Copyright (c) 2022 - Raw Material Software Limited
 
-   You may use this code under the terms of the GPL v3
-   (see www.gnu.org/licenses).
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   For the technical preview this file cannot be licensed commercially.
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
+
+   End User License Agreement: www.juce.com/juce-7-licence
+   Privacy Policy: www.juce.com/juce-privacy-policy
+
+   Or: You may also use this code under the terms of the GPL v3 (see
+   www.gnu.org/licenses).
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -69,6 +76,12 @@ public:
     {
         singlePrecision,
         doublePrecision
+    };
+
+    enum class Realtime
+    {
+        no,
+        yes
     };
 
     using ChangeDetails = AudioProcessorListener::ChangeDetails;
@@ -916,6 +929,21 @@ public:
     */
     bool isNonRealtime() const noexcept                                 { return nonRealtime; }
 
+    /** Returns no if the processor is being run in an offline mode for rendering.
+
+        If the processor is being run live on realtime signals, this returns yes.
+        If the mode is unknown, this will assume it's realtime and return yes.
+
+        This value may be unreliable until the prepareToPlay() method has been called,
+        and could change each time prepareToPlay() is called.
+
+        @see setNonRealtime()
+    */
+    Realtime isRealtime() const noexcept
+    {
+        return isNonRealtime() ? Realtime::no : Realtime::yes;
+    }
+
     /** Called by the host to tell this processor whether it's being used in a non-realtime
         capacity for offline rendering or bouncing.
     */
@@ -1124,51 +1152,6 @@ public:
         it is no longer being used.
     */
     virtual void setPlayHead (AudioPlayHead* newPlayHead);
-
-    //==============================================================================
-    /** Hosts may call this function to supply the system time corresponding to the
-        current audio buffer.
-
-        If you want to set a valid time, pass a pointer to a uint64_t holding the current time. The
-        value will be copied into the AudioProcessor instance without any allocation/deallocation.
-
-        If you want to clear any stored host time, pass nullptr.
-
-        Calls to this function must be synchronised (i.e. not simultaneous) with the audio callback.
-
-        @code
-        const auto currentHostTime = computeHostTimeNanos();
-        processor.setHostTimeNanos (&currentHostTime);  // Set a valid host time
-        // ...call processBlock etc.
-        processor.setHostTimeNanos (nullptr);           // Clear host time
-        @endcode
-    */
-    void setHostTimeNanos (const uint64_t* hostTimeIn)
-    {
-        hasHostTime = hostTimeIn != nullptr;
-        hostTime = hasHostTime ? *hostTimeIn : 0;
-    }
-
-    /** The plugin may call this function inside the processBlock function (and only there!)
-        to find the timestamp associated with the current audio block.
-
-        If a timestamp is available, this will return a pointer to that timestamp. You should
-        immediately copy the pointed-to value and use that in any following code. Do *not* free
-        any pointer returned by this function.
-
-        If no timestamp is provided, this will return nullptr.
-
-        @code
-        void processBlock (AudioBuffer<float>&, MidiBuffer&) override
-        {
-            if (auto* timestamp = getHostTimeNs())
-            {
-                // Use *timestamp here to compensate for callback jitter etc.
-            }
-        }
-        @endcode
-    */
-    const uint64_t* getHostTimeNs() const             { return hasHostTime ? &hostTime : nullptr; }
 
     //==============================================================================
     /** This is called by the processor to specify its details before being played. Use this
@@ -1523,9 +1506,6 @@ private:
 
     AudioProcessorParameterGroup parameterTree;
     Array<AudioProcessorParameter*> flatParameterList;
-
-    uint64_t hostTime = 0;
-    bool hasHostTime = false;
 
     AudioProcessorParameter* getParamChecked (int) const;
 

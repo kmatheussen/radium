@@ -1,13 +1,20 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE 7 technical preview.
+   This file is part of the JUCE library.
    Copyright (c) 2022 - Raw Material Software Limited
 
-   You may use this code under the terms of the GPL v3
-   (see www.gnu.org/licenses).
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   For the technical preview this file cannot be licensed commercially.
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
+
+   End User License Agreement: www.juce.com/juce-7-licence
+   Privacy Policy: www.juce.com/juce-privacy-policy
+
+   Or: You may also use this code under the terms of the GPL v3 (see
+   www.gnu.org/licenses).
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -1257,93 +1264,6 @@ __CRT_UUID_DECL (juce::ITipInvocation, 0x37c994e7, 0x432b, 0x4834, 0xa2, 0xf7, 0
 namespace juce
 {
 
-struct OnScreenKeyboard   : public DeletedAtShutdown,
-                            private Timer
-{
-    void activate()
-    {
-        shouldBeActive = true;
-        startTimer (10);
-    }
-
-    void deactivate()
-    {
-        shouldBeActive = false;
-        startTimer (10);
-    }
-
-    JUCE_DECLARE_SINGLETON_SINGLETHREADED (OnScreenKeyboard, false)
-
-private:
-    OnScreenKeyboard()
-    {
-        tipInvocation.CoCreateInstance (ITipInvocation::getCLSID(), CLSCTX_INPROC_HANDLER | CLSCTX_LOCAL_SERVER);
-    }
-
-    ~OnScreenKeyboard() override
-    {
-        clearSingletonInstance();
-    }
-
-    void timerCallback() override
-    {
-        stopTimer();
-
-        if (reentrant || tipInvocation == nullptr)
-            return;
-
-        const ScopedValueSetter<bool> setter (reentrant, true, false);
-
-        auto isActive = isKeyboardVisible();
-
-        if (isActive != shouldBeActive)
-        {
-            if (! isActive)
-            {
-                tipInvocation->Toggle (GetDesktopWindow());
-            }
-            else
-            {
-                if (auto hwnd = FindWindow (L"IPTip_Main_Window", nullptr))
-                    PostMessage (hwnd, WM_SYSCOMMAND, (int) SC_CLOSE, 0);
-            }
-        }
-    }
-
-    bool isVisible()
-    {
-        if (auto hwnd = FindWindowEx (nullptr, nullptr, L"ApplicationFrameWindow", nullptr))
-            return FindWindowEx (hwnd, nullptr, L"Windows.UI.Core.CoreWindow", L"Microsoft Text Input Application") != nullptr;
-
-        return false;
-    }
-
-    bool isVisibleLegacy()
-    {
-        if (auto hwnd = FindWindow (L"IPTip_Main_Window", nullptr))
-        {
-            auto style = GetWindowLong (hwnd, GWL_STYLE);
-            return (style & WS_DISABLED) == 0 && (style & WS_VISIBLE) != 0;
-        }
-
-        return false;
-    }
-
-    bool isKeyboardVisible()
-    {
-        if (isVisible())
-            return true;
-
-        // isVisible() may fail on Win10 versions < 1709 so try the old method too
-        return isVisibleLegacy();
-    }
-
-    bool shouldBeActive = false, reentrant = false;
-    ComSmartPtr<ITipInvocation> tipInvocation;
-};
-
-JUCE_IMPLEMENT_SINGLETON (OnScreenKeyboard)
-
 //==============================================================================
 struct HSTRING_PRIVATE;
 typedef HSTRING_PRIVATE* HSTRING;
@@ -1423,30 +1343,6 @@ struct UWPUIViewSettings
         }
     }
 
-    bool isTabletModeActivatedForWindow (::HWND hWnd) const
-    {
-        if (viewSettingsInterop == nullptr)
-            return false;
-
-        ComSmartPtr<IUIViewSettings> viewSettings;
-
-        JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wlanguage-extension-token")
-
-        if (viewSettingsInterop->GetForWindow (hWnd, __uuidof (IUIViewSettings),
-                                               (void**) viewSettings.resetAndGetPointerAddress()) == S_OK
-             && viewSettings != nullptr)
-        {
-            IUIViewSettings::UserInteractionMode mode;
-
-            if (viewSettings->GetUserInteractionMode (&mode) == S_OK)
-                return mode == IUIViewSettings::Touch;
-        }
-
-        JUCE_END_IGNORE_WARNINGS_GCC_LIKE
-
-        return false;
-    }
-
 private:
     //==============================================================================
     struct ComBaseModule
@@ -1477,7 +1373,251 @@ private:
 };
 
 //==============================================================================
+static HMONITOR getMonitorFromOutput (ComSmartPtr<IDXGIOutput> output)
+{
+    DXGI_OUTPUT_DESC desc = {};
+    return (FAILED (output->GetDesc (&desc)) || ! desc.AttachedToDesktop)
+        ? nullptr
+        : desc.Monitor;
+}
+
+struct VBlankListener
+{
+    virtual void onVBlank() = 0;
+};
+
+//==============================================================================
+class VSyncThread : private Thread,
+                    private AsyncUpdater
+{
+public:
+    VSyncThread (ComSmartPtr<IDXGIOutput> out,
+                 HMONITOR mon,
+                 VBlankListener& listener)
+        : Thread ("VSyncThread"),
+          output (out),
+          monitor (mon)
+    {
+        listeners.push_back (listener);
+        startThread (10);
+    }
+
+    ~VSyncThread() override
+    {
+        stopThread (-1);
+        cancelPendingUpdate();
+    }
+
+    void updateMonitor()
+    {
+        monitor = getMonitorFromOutput (output);
+    }
+
+    HMONITOR getMonitor() const noexcept { return monitor; }
+
+    void addListener (VBlankListener& listener)
+    {
+        listeners.push_back (listener);
+    }
+
+    bool removeListener (const VBlankListener& listener)
+    {
+        auto it = std::find_if (listeners.cbegin(),
+                                listeners.cend(),
+                                [&listener] (const auto& l) { return &(l.get()) == &listener; });
+
+        if (it != listeners.cend())
+        {
+            listeners.erase (it);
+            return true;
+        }
+
+        return false;
+    }
+
+    bool hasNoListeners() const noexcept
+    {
+        return listeners.empty();
+    }
+
+    bool hasListener (const VBlankListener& listener) const noexcept
+    {
+        return std::any_of (listeners.cbegin(),
+                            listeners.cend(),
+                            [&listener] (const auto& l) { return &(l.get()) == &listener; });
+    }
+
+private:
+    //==============================================================================
+    void run() override
+    {
+        while (! threadShouldExit())
+        {
+            if (output->WaitForVBlank() == S_OK)
+                triggerAsyncUpdate();
+            else
+                Thread::sleep (1);
+        }
+    }
+
+    void handleAsyncUpdate() override
+    {
+        for (auto& listener : listeners)
+            listener.get().onVBlank();
+    }
+
+    //==============================================================================
+    ComSmartPtr<IDXGIOutput> output;
+    HMONITOR monitor = nullptr;
+    std::vector<std::reference_wrapper<VBlankListener>> listeners;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (VSyncThread)
+    JUCE_DECLARE_NON_MOVEABLE (VSyncThread)
+};
+
+//==============================================================================
+class VBlankDispatcher : public DeletedAtShutdown
+{
+public:
+    void updateDisplay (VBlankListener& listener, HMONITOR monitor)
+    {
+        if (monitor == nullptr)
+        {
+            removeListener (listener);
+            return;
+        }
+
+        auto threadWithListener = threads.end();
+        auto threadWithMonitor  = threads.end();
+
+        for (auto it = threads.begin(); it != threads.end(); ++it)
+        {
+            if ((*it)->hasListener (listener))
+                threadWithListener = it;
+
+            if ((*it)->getMonitor() == monitor)
+                threadWithMonitor = it;
+
+            if (threadWithListener != threads.end()
+                && threadWithMonitor != threads.end())
+            {
+                if (threadWithListener == threadWithMonitor)
+                    return;
+
+                (*threadWithMonitor)->addListener (listener);
+
+                // This may invalidate iterators, so be careful!
+                removeListener (threadWithListener, listener);
+                return;
+            }
+        }
+
+        if (threadWithMonitor != threads.end())
+        {
+            (*threadWithMonitor)->addListener (listener);
+            return;
+        }
+
+        if (threadWithListener != threads.end())
+            removeListener (threadWithListener, listener);
+
+        for (auto adapter : adapters)
+        {
+            UINT i = 0;
+            ComSmartPtr<IDXGIOutput> output;
+
+            while (adapter->EnumOutputs (i, output.resetAndGetPointerAddress()) != DXGI_ERROR_NOT_FOUND)
+            {
+                if (getMonitorFromOutput (output) == monitor)
+                {
+                    threads.emplace_back (std::make_unique<VSyncThread> (output, monitor, listener));
+                    return;
+                }
+
+                ++i;
+            }
+        }
+    }
+
+    void removeListener (const VBlankListener& listener)
+    {
+        for (auto it = threads.begin(); it != threads.end(); ++it)
+            if (removeListener (it, listener))
+                return;
+    }
+
+    void reconfigureDisplays()
+    {
+        adapters.clear();
+
+        ComSmartPtr<IDXGIFactory> factory;
+        JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wlanguage-extension-token")
+        CreateDXGIFactory (__uuidof (IDXGIFactory), (void**)factory.resetAndGetPointerAddress());
+        JUCE_END_IGNORE_WARNINGS_GCC_LIKE
+
+        UINT i = 0;
+        ComSmartPtr<IDXGIAdapter> adapter;
+
+        while (factory->EnumAdapters (i, adapter.resetAndGetPointerAddress()) != DXGI_ERROR_NOT_FOUND)
+        {
+            adapters.push_back (adapter);
+            ++i;
+        }
+
+        for (auto& thread : threads)
+            thread->updateMonitor();
+
+        threads.erase (std::remove_if (threads.begin(),
+                                       threads.end(),
+                                       [] (const auto& thread) { return thread->getMonitor() == nullptr; }),
+                       threads.end());
+    }
+
+    JUCE_DECLARE_SINGLETON_SINGLETHREADED (VBlankDispatcher, false)
+
+private:
+    //==============================================================================
+    using Threads = std::vector<std::unique_ptr<VSyncThread>>;
+
+    VBlankDispatcher()
+    {
+        reconfigureDisplays();
+    }
+
+    ~VBlankDispatcher() override
+    {
+        threads.clear();
+        clearSingletonInstance();
+    }
+
+    // This may delete the corresponding thread and invalidate iterators,
+    // so be careful!
+    bool removeListener (Threads::iterator it, const VBlankListener& listener)
+    {
+        if ((*it)->removeListener (listener))
+        {
+            if ((*it)->hasNoListeners())
+                threads.erase (it);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    //==============================================================================
+    std::vector<ComSmartPtr<IDXGIAdapter>> adapters;
+    Threads threads;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (VBlankDispatcher)
+    JUCE_DECLARE_NON_MOVEABLE (VBlankDispatcher)
+};
+
+JUCE_IMPLEMENT_SINGLETON (VBlankDispatcher)
+
+//==============================================================================
 class HWNDComponentPeer  : public ComponentPeer,
+                           private VBlankListener,
                            private Timer
                           #if JUCE_MODULE_AVAILABLE_juce_audio_plugin_client
                            , public ModifierKeyReceiver
@@ -1502,8 +1642,6 @@ public:
         setTitle (component.getName());
         updateShadower();
 
-        OnScreenKeyboard::getInstance();
-
         getNativeRealtimeModifiers = []
         {
             HWNDComponentPeer::updateKeyModifiers();
@@ -1517,10 +1655,15 @@ public:
 
             return ModifierKeys::currentModifiers;
         };
+
+        if (updateCurrentMonitor())
+            VBlankDispatcher::getInstance()->updateDisplay (*this, currentMonitor);
     }
 
     ~HWNDComponentPeer() override
     {
+        VBlankDispatcher::getInstance()->removeListener (*this);
+
         // do this first to avoid messages arriving for this window before it's destroyed
         JuceWindowIdentifier::setAsJUCEWindow (hwnd, false);
 
@@ -1862,16 +2005,22 @@ public:
     void textInputRequired (Point<int>, TextInputTarget&) override
     {
         if (! hasCreatedCaret)
+            hasCreatedCaret = CreateCaret (hwnd, (HBITMAP) 1, 0, 0);
+
+        if (hasCreatedCaret)
         {
-            hasCreatedCaret = true;
-            CreateCaret (hwnd, (HBITMAP) 1, 0, 0);
+            SetCaretPos (0, 0);
+            ShowCaret (hwnd);
         }
 
-        ShowCaret (hwnd);
-        SetCaretPos (0, 0);
+        ImmAssociateContext (hwnd, nullptr);
 
-        if (uwpViewSettings.isTabletModeActivatedForWindow (hwnd))
-            OnScreenKeyboard::getInstance()->activate();
+        // MSVC complains about the nullptr argument, but the docs for this
+        // function say that the second argument is ignored when the third
+        // argument is IACE_DEFAULT.
+        JUCE_BEGIN_IGNORE_WARNINGS_MSVC (6387)
+        ImmAssociateContextEx (hwnd, nullptr, IACE_DEFAULT);
+        JUCE_END_IGNORE_WARNINGS_MSVC
     }
 
     void closeInputMethodContext() override
@@ -1883,20 +2032,34 @@ public:
     {
         closeInputMethodContext();
 
-        if (uwpViewSettings.isTabletModeActivatedForWindow (hwnd))
-            OnScreenKeyboard::getInstance()->deactivate();
+        ImmAssociateContext (hwnd, nullptr);
+
+        if (std::exchange (hasCreatedCaret, false))
+            DestroyCaret();
     }
 
     void repaint (const Rectangle<int>& area) override
     {
-        auto r = RECTFromRectangle ((area.toDouble() * getPlatformScaleFactor()).getSmallestIntegerContainer());
-        InvalidateRect (hwnd, &r, FALSE);
+        deferredRepaints.add ((area.toDouble() * getPlatformScaleFactor()).getSmallestIntegerContainer());
+    }
+
+    void dispatchDeferredRepaints()
+    {
+        for (auto deferredRect : deferredRepaints)
+        {
+            auto r = RECTFromRectangle (deferredRect);
+            InvalidateRect (hwnd, &r, FALSE);
+        }
+
+        deferredRepaints.clear();
     }
 
     void performAnyPendingRepaintsNow() override
     {
         if (component.isVisible())
         {
+            dispatchDeferredRepaints();
+
             WeakReference<Component> localRef (&component);
             MSG m;
 
@@ -1904,6 +2067,12 @@ public:
                 if (localRef != nullptr) // (the PeekMessage call can dispatch messages, which may delete this comp)
                     handlePaintMessage();
         }
+    }
+
+    //==============================================================================
+    void onVBlank() override
+    {
+        dispatchDeferredRepaints();
     }
 
     //==============================================================================
@@ -2156,6 +2325,7 @@ private:
 
     double scaleFactor = 1.0;
     bool inDpiChange = 0, inHandlePositionChanged = 0;
+    HMONITOR currentMonitor = nullptr;
 
     bool isAccessibilityActive = false;
 
@@ -3479,6 +3649,12 @@ private:
         return 0;
     }
 
+    bool updateCurrentMonitor()
+    {
+        auto monitor = MonitorFromWindow (hwnd, MONITOR_DEFAULTTONULL);
+        return std::exchange (currentMonitor, monitor) != monitor;
+    }
+
     bool handlePositionChanged()
     {
         auto pos = getCurrentMousePos();
@@ -3495,6 +3671,9 @@ private:
         }
 
         handleMovedOrResized();
+
+        if (updateCurrentMonitor())
+            VBlankDispatcher::getInstance()->updateDisplay (*this, currentMonitor);
 
         return ! dontRepaint; // to allow non-accelerated openGL windows to draw themselves correctly.
     }
@@ -3649,6 +3828,11 @@ private:
             setWindowPos (hwnd, ScalingHelpers::scaledScreenPosToUnscaled (component, Desktop::getInstance().getDisplays()
                                                                                               .getDisplayForRect (component.getScreenBounds())->userArea),
                           SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOZORDER | SWP_NOSENDCHANGING);
+
+        auto* dispatcher = VBlankDispatcher::getInstance();
+        dispatcher->reconfigureDisplays();
+        updateCurrentMonitor();
+        dispatcher->updateDisplay (*this, currentMonitor);
     }
 
     //==============================================================================
@@ -4112,13 +4296,18 @@ private:
         {
             if (compositionInProgress && ! windowIsActive)
             {
-                compositionInProgress = false;
-
                 if (HIMC hImc = ImmGetContext (hWnd))
                 {
                     ImmNotifyIME (hImc, NI_COMPOSITIONSTR, CPS_COMPLETE, 0);
                     ImmReleaseContext (hWnd, hImc);
                 }
+
+                // If the composition is still in progress, calling ImmNotifyIME may call back
+                // into handleComposition to let us know that the composition has finished.
+                // We need to set compositionInProgress *after* calling handleComposition, so that
+                // the text replaces the current selection, rather than being inserted after the
+                // caret.
+                compositionInProgress = false;
             }
         }
 
@@ -4407,6 +4596,8 @@ private:
     SharedResourcePointer<TopLevelModalDismissBroadcaster> modalDismissBroadcaster;
     IMEHandler imeHandler;
     bool shouldIgnoreModalDismiss = false;
+
+    RectangleList<int> deferredRepaints;
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (HWNDComponentPeer)

@@ -342,6 +342,12 @@ public:
     */
     bool hasWriteAccess() const;
 
+    /** Checks whether a file can be read.
+
+        @returns    true if it's possible to read this file.
+    */
+    bool hasReadAccess() const;
+
     /** Changes the write-permission of a file or directory.
 
         @param shouldBeReadOnly     whether to add or remove write-permission
@@ -510,9 +516,11 @@ public:
 
     /** Copies a file.
 
-        Tries to copy a file to a different location.
-        If the target file already exists, this will attempt to delete it first, and
-        will fail if this can't be done.
+        Tries to copy a file to a different location. If the target file already exists,
+        this will attempt to delete it first, and will fail if this can't be done.
+
+        Note that the target file isn't the directory to put it in, it's the actual
+        filename that you want the new file to have.
 
         @returns    true if the operation succeeds
     */
