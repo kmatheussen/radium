@@ -633,8 +633,8 @@ very_clean: clean
 	cd bin/packages && ./buildclean.sh
 
 clean:
-	echo "Run ./build_clean.sh"
-	false
+	@echo -e "\033[0;31mRun ./build_clean.sh instead\033[0m"
+	@false
 
 clean_pluginhost:
 	cd pluginhost/Builds/Linux && $(MAKE) clean && rm -fr build
