@@ -1,13 +1,20 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE 7 technical preview.
+   This file is part of the JUCE library.
    Copyright (c) 2022 - Raw Material Software Limited
 
-   You may use this code under the terms of the GPL v3
-   (see www.gnu.org/licenses).
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   For the technical preview this file cannot be licensed commercially.
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
+
+   End User License Agreement: www.juce.com/juce-7-licence
+   Privacy Policy: www.juce.com/juce-privacy-policy
+
+   Or: You may also use this code under the terms of the GPL v3 (see
+   www.gnu.org/licenses).
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -164,6 +171,8 @@ void AudioProcessorPlayer::setProcessor (AudioProcessor* const processorToPlay)
     if (processor == processorToPlay)
         return;
 
+    sampleCount = 0;
+
     if (processorToPlay != nullptr && sampleRate > 0 && blockSize > 0)
     {
         defaultProcessorChannels = NumChannels { processorToPlay->getBusesLayout() };
@@ -260,15 +269,48 @@ void AudioProcessorPlayer::audioDeviceIOCallbackWithContext (const float** const
 
         const ScopedLock sl2 (processor->getCallbackLock());
 
-        processor->setHostTimeNanos (context.hostTimeNs);
-
-        struct AtEndOfScope
+        class PlayHead : private AudioPlayHead
         {
-            ~AtEndOfScope() { proc.setHostTimeNanos (nullptr); }
-            AudioProcessor& proc;
+        public:
+            PlayHead (AudioProcessor& proc,
+                      Optional<uint64_t> hostTimeIn,
+                      uint64_t sampleCountIn,
+                      double sampleRateIn)
+                : processor (proc),
+                  hostTimeNs (hostTimeIn),
+                  sampleCount (sampleCountIn),
+                  seconds ((double) sampleCountIn / sampleRateIn)
+            {
+                processor.setPlayHead (this);
+            }
+
+            ~PlayHead() override
+            {
+                processor.setPlayHead (nullptr);
+            }
+
+        private:
+            Optional<PositionInfo> getPosition() const override
+            {
+                PositionInfo info;
+                info.setHostTimeNs (hostTimeNs);
+                info.setTimeInSamples ((int64_t) sampleCount);
+                info.setTimeInSeconds (seconds);
+                return info;
+            }
+
+            AudioProcessor& processor;
+            Optional<uint64_t> hostTimeNs;
+            uint64_t sampleCount;
+            double seconds;
         };
 
-        const AtEndOfScope scope { *processor };
+        PlayHead playHead { *processor,
+                            context.hostTimeNs != nullptr ? makeOptional (*context.hostTimeNs) : nullopt,
+                            sampleCount,
+                            sampleRate };
+
+        sampleCount += (uint64_t) numSamples;
 
         if (! processor->isSuspended())
         {

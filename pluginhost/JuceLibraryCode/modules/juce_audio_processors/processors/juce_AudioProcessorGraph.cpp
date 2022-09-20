@@ -1,13 +1,20 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE 7 technical preview.
+   This file is part of the JUCE library.
    Copyright (c) 2022 - Raw Material Software Limited
 
-   You may use this code under the terms of the GPL v3
-   (see www.gnu.org/licenses).
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   For the technical preview this file cannot be licensed commercially.
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
+
+   End User License Agreement: www.juce.com/juce-7-licence
+   Privacy Policy: www.juce.com/juce-privacy-policy
+
+   Or: You may also use this code under the terms of the GPL v3 (see
+   www.gnu.org/licenses).
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -30,18 +37,15 @@ static void updateOnMessageThread (AsyncUpdater& updater)
 template <typename FloatType>
 struct GraphRenderSequence
 {
-    GraphRenderSequence() {}
-
     struct Context
     {
         FloatType** audioBuffers;
         MidiBuffer* midiBuffers;
         AudioPlayHead* audioPlayHead;
-        Optional<uint64_t> hostTimeNs;
         int numSamples;
     };
 
-    void perform (AudioBuffer<FloatType>& buffer, MidiBuffer& midiMessages, AudioPlayHead* audioPlayHead, Optional<uint64_t> hostTimeNs)
+    void perform (AudioBuffer<FloatType>& buffer, MidiBuffer& midiMessages, AudioPlayHead* audioPlayHead)
     {
         auto numSamples = buffer.getNumSamples();
         auto maxSamples = renderingBuffer.getNumSamples();
@@ -60,7 +64,7 @@ struct GraphRenderSequence
 
                 // Splitting up the buffer like this will cause the play head and host time to be
                 // invalid for all but the first chunk...
-                perform (audioChunk, midiChunk, audioPlayHead, hostTimeNs);
+                perform (audioChunk, midiChunk, audioPlayHead);
 
                 chunkStartSample += maxSamples;
             }
@@ -75,7 +79,7 @@ struct GraphRenderSequence
         currentMidiOutputBuffer.clear();
 
         {
-            const Context context { renderingBuffer.getArrayOfWritePointers(), midiBuffers.begin(), audioPlayHead, hostTimeNs, numSamples };
+            const Context context { renderingBuffer.getArrayOfWritePointers(), midiBuffers.begin(), audioPlayHead, numSamples };
 
             for (auto* op : renderOps)
                 op->perform (context);
@@ -260,7 +264,6 @@ private:
         void perform (const Context& c) override
         {
             processor.setPlayHead (c.audioPlayHead);
-            processor.setHostTimeNanos (c.hostTimeNs.hasValue() ? &(*c.hostTimeNs) : nullptr);
 
             for (int i = 0; i < totalChans; ++i)
                 audioChannels[i] = c.audioBuffers[audioChannelsToUse.getUnchecked (i)];
@@ -282,8 +285,6 @@ private:
                 buffer.clear();
             else
                 callProcess (buffer, c.midiBuffers[midiBufferToUse]);
-
-            processor.setHostTimeNanos (nullptr);
         }
 
         void callProcess (AudioBuffer<float>& buffer, MidiBuffer& midiMessages)
@@ -1395,14 +1396,6 @@ static void processBlockForBuffer (AudioBuffer<FloatType>& buffer, MidiBuffer& m
                                    std::unique_ptr<SequenceType>& renderSequence,
                                    std::atomic<bool>& isPrepared)
 {
-    const auto getHostTime = [&]() -> Optional<uint64_t>
-    {
-        if (auto* nanos = graph.getHostTimeNs())
-            return *nanos;
-
-        return nullopt;
-    };
-
     if (graph.isNonRealtime())
     {
         while (! isPrepared)
@@ -1411,7 +1404,7 @@ static void processBlockForBuffer (AudioBuffer<FloatType>& buffer, MidiBuffer& m
         const ScopedLock sl (graph.getCallbackLock());
 
         if (renderSequence != nullptr)
-            renderSequence->perform (buffer, midiMessages, graph.getPlayHead(), getHostTime());
+            renderSequence->perform (buffer, midiMessages, graph.getPlayHead());
     }
     else
     {
@@ -1420,7 +1413,7 @@ static void processBlockForBuffer (AudioBuffer<FloatType>& buffer, MidiBuffer& m
         if (isPrepared)
         {
             if (renderSequence != nullptr)
-                renderSequence->perform (buffer, midiMessages, graph.getPlayHead(), getHostTime());
+                renderSequence->perform (buffer, midiMessages, graph.getPlayHead());
         }
         else
         {

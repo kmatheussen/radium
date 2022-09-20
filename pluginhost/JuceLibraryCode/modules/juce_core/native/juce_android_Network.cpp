@@ -200,14 +200,6 @@ DECLARE_JNI_CLASS_WITH_BYTECODE (HTTPStream, "com/rmsl/juce/JuceHTTPStream", 16,
 
 //==============================================================================
 #define JNI_CLASS_MEMBERS(METHOD, STATICMETHOD, FIELD, STATICFIELD, CALLBACK) \
- METHOD (close,     "close",     "()V") \
- METHOD (read,      "read",      "([BII)I") \
-
-DECLARE_JNI_CLASS (AndroidInputStream, "java/io/InputStream")
-#undef JNI_CLASS_MEMBERS
-
-//==============================================================================
-#define JNI_CLASS_MEMBERS(METHOD, STATICMETHOD, FIELD, STATICFIELD, CALLBACK) \
   METHOD (acquire, "acquire", "()V") \
   METHOD (release, "release", "()V") \
 
@@ -365,7 +357,8 @@ public:
 
         if (isContentURL)
         {
-            auto inputStream = AndroidContentUriResolver::getStreamForContentUri (url, true);
+            GlobalRef urlRef { urlToUri (url) };
+            auto inputStream = AndroidStreamHelpers::createStream (urlRef, AndroidStreamHelpers::StreamKind::input);
 
             if (inputStream != nullptr)
             {

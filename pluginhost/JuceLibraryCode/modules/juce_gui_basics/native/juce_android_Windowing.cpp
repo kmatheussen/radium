@@ -1,13 +1,20 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE 7 technical preview.
+   This file is part of the JUCE library.
    Copyright (c) 2022 - Raw Material Software Limited
 
-   You may use this code under the terms of the GPL v3
-   (see www.gnu.org/licenses).
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   For the technical preview this file cannot be licensed commercially.
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
+
+   End User License Agreement: www.juce.com/juce-7-licence
+   Privacy Policy: www.juce.com/juce-privacy-policy
+
+   Or: You may also use this code under the terms of the GPL v3 (see
+   www.gnu.org/licenses).
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -119,12 +126,18 @@ static const uint8 javaComponentPeerView[] =
 
 //==============================================================================
 #if JUCE_PUSH_NOTIFICATIONS && JUCE_MODULE_AVAILABLE_juce_gui_extra
- extern bool juce_handleNotificationIntent (void*);
- extern void juce_firebaseDeviceNotificationsTokenRefreshed (void*);
- extern void juce_firebaseRemoteNotificationReceived (void*);
- extern void juce_firebaseRemoteMessagesDeleted();
- extern void juce_firebaseRemoteMessageSent(void*);
- extern void juce_firebaseRemoteMessageSendError (void*, void*);
+ bool juce_handleNotificationIntent (void*);
+ void juce_firebaseDeviceNotificationsTokenRefreshed (void*);
+ void juce_firebaseRemoteNotificationReceived (void*);
+ void juce_firebaseRemoteMessagesDeleted();
+ void juce_firebaseRemoteMessageSent(void*);
+ void juce_firebaseRemoteMessageSendError (void*, void*);
+#endif
+
+#if JUCE_IN_APP_PURCHASES && JUCE_MODULE_AVAILABLE_juce_product_unlocking
+ void juce_handleOnResume();
+#else
+ static void juce_handleOnResume() {}
 #endif
 
 //==============================================================================
@@ -151,9 +164,23 @@ DECLARE_JNI_CLASS (AndroidWindowManagerLayoutParams, "android/view/WindowManager
 #undef JNI_CLASS_MEMBERS
 
 #define JNI_CLASS_MEMBERS(METHOD, STATICMETHOD, FIELD, STATICFIELD, CALLBACK) \
- METHOD (getDisplayCutout,     "getDisplayCutout", "()Landroid/view/DisplayCutout;")
+ FIELD  (layoutInDisplayCutoutMode, "layoutInDisplayCutoutMode", "I")
 
- DECLARE_JNI_CLASS_WITH_MIN_SDK (AndroidWindowInsets, "android/view/WindowInsets", 28)
+DECLARE_JNI_CLASS_WITH_MIN_SDK (AndroidWindowManagerLayoutParams28, "android/view/WindowManager$LayoutParams", 28)
+#undef JNI_CLASS_MEMBERS
+
+#define JNI_CLASS_MEMBERS(METHOD, STATICMETHOD, FIELD, STATICFIELD, CALLBACK) \
+ METHOD (getDisplayCutout, "getDisplayCutout", "()Landroid/view/DisplayCutout;") \
+ METHOD (consumeDisplayCutout, "consumeDisplayCutout", "()Landroid/view/WindowInsets;")
+
+ DECLARE_JNI_CLASS_WITH_MIN_SDK (AndroidWindowInsets28, "android/view/WindowInsets", 28)
+#undef JNI_CLASS_MEMBERS
+
+#define JNI_CLASS_MEMBERS(METHOD, STATICMETHOD, FIELD, STATICFIELD, CALLBACK) \
+ METHOD (getInsets, "getInsets", "(I)Landroid/graphics/Insets;") \
+ STATICFIELD (CONSUMED, "CONSUMED", "Landroid/view/WindowInsets;")
+
+ DECLARE_JNI_CLASS_WITH_MIN_SDK (AndroidWindowInsets30, "android/view/WindowInsets", 30)
 #undef JNI_CLASS_MEMBERS
 
 #define JNI_CLASS_MEMBERS(METHOD, STATICMETHOD, FIELD, STATICFIELD, CALLBACK) \
@@ -163,6 +190,22 @@ DECLARE_JNI_CLASS (AndroidWindowManagerLayoutParams, "android/view/WindowManager
  METHOD (getSafeInsetTop,    "getSafeInsetTop",    "()I")
 
  DECLARE_JNI_CLASS_WITH_MIN_SDK (AndroidDisplayCutout, "android/view/DisplayCutout", 28)
+#undef JNI_CLASS_MEMBERS
+
+#define JNI_CLASS_MEMBERS(METHOD, STATICMETHOD, FIELD, STATICFIELD, CALLBACK) \
+ FIELD (bottom, "bottom", "I") \
+ FIELD (left, "left", "I") \
+ FIELD (right, "right", "I") \
+ FIELD (top, "top", "I")
+
+ DECLARE_JNI_CLASS_WITH_MIN_SDK (AndroidGraphicsInsets, "android/graphics/Insets", 29)
+#undef JNI_CLASS_MEMBERS
+
+#define JNI_CLASS_MEMBERS(METHOD, STATICMETHOD, FIELD, STATICFIELD, CALLBACK) \
+ STATICMETHOD (ime, "ime", "()I") \
+ STATICMETHOD (displayCutout, "displayCutout", "()I")
+
+ DECLARE_JNI_CLASS_WITH_MIN_SDK (AndroidWindowInsetsType, "android/view/WindowInsets$Type", 30)
 #undef JNI_CLASS_MEMBERS
 
 //==============================================================================
@@ -192,20 +235,81 @@ static bool supportsDisplayCutout()
 
 static BorderSize<int> androidDisplayCutoutToBorderSize (LocalRef<jobject> displayCutout, double displayScale)
 {
-    if (displayCutout.get() == nullptr)
+    if (displayCutout == nullptr)
         return {};
 
     auto* env = getEnv();
 
-    auto getInset = [&] (jmethodID methodID)
+    const auto getInset = [&] (jmethodID methodID)
     {
-        return roundToInt (env->CallIntMethod (displayCutout.get(), methodID) / displayScale);
+        return roundToInt (env->CallIntMethod (displayCutout, methodID) / displayScale);
     };
 
     return { getInset (AndroidDisplayCutout.getSafeInsetTop),
              getInset (AndroidDisplayCutout.getSafeInsetLeft),
              getInset (AndroidDisplayCutout.getSafeInsetBottom),
              getInset (AndroidDisplayCutout.getSafeInsetRight) };
+}
+
+static BorderSize<int> androidInsetsToBorderSize (LocalRef<jobject> insets, double displayScale)
+{
+    if (insets == nullptr)
+        return {};
+
+    auto* env = getEnv();
+
+    const auto getInset = [&] (jfieldID fieldID)
+    {
+        return roundToInt (env->GetIntField (insets, fieldID) / displayScale);
+    };
+
+    return { getInset (AndroidGraphicsInsets.top),
+             getInset (AndroidGraphicsInsets.left),
+             getInset (AndroidGraphicsInsets.bottom),
+             getInset (AndroidGraphicsInsets.right) };
+}
+
+class JuceInsets
+{
+    template <typename Display>
+    static auto tieDisplay (Display& d) { return std::tie (d.safeAreaInsets, d.keyboardInsets); }
+
+public:
+    BorderSize<int> displayCutout, keyboard;
+
+    static auto tie (      Displays::Display& d) { return tieDisplay (d); }
+    static auto tie (const Displays::Display& d) { return tieDisplay (d); }
+
+    auto tie() const { return std::tie (displayCutout, keyboard); }
+};
+
+static JuceInsets getInsetsFromAndroidWindowInsets (LocalRef<jobject> windowInsets, double scale)
+{
+    auto* env = getEnv();
+
+    if (windowInsets == nullptr)
+        return {};
+
+    const auto displayCutout = [&]() -> BorderSize<int>
+    {
+        if (AndroidWindowInsets28.getDisplayCutout == nullptr)
+            return {};
+
+        const LocalRef<jobject> insets { env->CallObjectMethod (windowInsets, AndroidWindowInsets28.getDisplayCutout) };
+        return androidDisplayCutoutToBorderSize (insets, scale);
+    }();
+
+    const auto keyboard = [&]() -> BorderSize<int>
+    {
+        if (AndroidWindowInsetsType.ime == nullptr || AndroidWindowInsets30.getInsets == nullptr)
+            return {};
+
+        const auto mask = env->CallStaticIntMethod (AndroidWindowInsetsType, AndroidWindowInsetsType.ime);
+        const LocalRef<jobject> insets { env->CallObjectMethod (windowInsets, AndroidWindowInsets30.getInsets, mask) };
+        return androidInsetsToBorderSize (insets, scale);
+    }();
+
+    return { displayCutout, keyboard };
 }
 
 /* The usage of the KeyPress class relies on its keyCode member having the standard ASCII values
@@ -404,14 +508,8 @@ public:
 
             if (supportsDisplayCutout())
             {
-                jfieldID layoutInDisplayCutoutModeFieldId = env->GetFieldID (AndroidWindowManagerLayoutParams,
-                                                                             "layoutInDisplayCutoutMode",
-                                                                             "I");
-
-                if (layoutInDisplayCutoutModeFieldId != nullptr)
-                    env->SetIntField (windowLayoutParams.get(),
-                                      layoutInDisplayCutoutModeFieldId,
-                                      LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS);
+                if (const auto fieldID = AndroidWindowManagerLayoutParams28.layoutInDisplayCutoutMode)
+                    env->SetIntField (windowLayoutParams, fieldID, LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS);
             }
 
             if (Desktop::getInstance().getKioskModeComponent() != nullptr)
@@ -428,14 +526,13 @@ public:
 
         if (supportsDisplayCutout())
         {
-            jmethodID setOnApplyWindowInsetsListenerMethodId = env->GetMethodID (AndroidView,
-                                                                                 "setOnApplyWindowInsetsListener",
-                                                                                 "(Landroid/view/View$OnApplyWindowInsetsListener;)V");
-
-            if (setOnApplyWindowInsetsListenerMethodId != nullptr)
-                env->CallVoidMethod (view.get(), setOnApplyWindowInsetsListenerMethodId,
+            if (const auto methodID = AndroidView23.setOnApplyWindowInsetsListener)
+            {
+                env->CallVoidMethod (view,
+                                     methodID,
                                      CreateJavaInterface (new ViewWindowInsetsListener,
                                                           "android/view/View$OnApplyWindowInsetsListener").get());
+            }
         }
 
         if (isFocused())
@@ -743,11 +840,11 @@ public:
                 {
                     case ACTION_HOVER_ENTER:
                     case ACTION_HOVER_MOVE:
-                        sendAccessibilityEventImpl (*virtualHandler, TYPE_VIEW_HOVER_ENTER, 0);
+                        AccessibilityNativeHandle::sendAccessibilityEventImpl (*virtualHandler, TYPE_VIEW_HOVER_ENTER, 0);
                         break;
 
                     case ACTION_HOVER_EXIT:
-                        sendAccessibilityEventImpl (*virtualHandler, TYPE_VIEW_HOVER_EXIT, 0);
+                        AccessibilityNativeHandle::sendAccessibilityEventImpl (*virtualHandler, TYPE_VIEW_HOVER_EXIT, 0);
                         break;
                 }
             }
@@ -782,9 +879,7 @@ public:
 
             if (activity != nullptr)
             {
-                jmethodID finishMethod = env->GetMethodID (AndroidActivity, "finish", "()V");
-
-                if (finishMethod != nullptr)
+                if (const auto finishMethod = AndroidActivity.finish)
                     env->CallVoidMethod (activity.get(), finishMethod);
             }
         }
@@ -929,6 +1024,8 @@ public:
 
     void dismissPendingTextInput() override
     {
+        closeInputMethodContext();
+
         view.callVoidMethod (ComponentPeerView.showKeyboard, javaString ("").get());
 
         if (! isTimerRunning())
@@ -1115,35 +1212,23 @@ private:
     }
 
     //==============================================================================
-    struct ViewWindowInsetsListener  : public juce::AndroidInterfaceImplementer
+    class ViewWindowInsetsListener  : public juce::AndroidInterfaceImplementer
     {
-        jobject onApplyWindowInsets (LocalRef<jobject> v, LocalRef<jobject> insets)
+    public:
+        jobject onApplyWindowInsets (LocalRef<jobject>, LocalRef<jobject> insets)
         {
             auto* env = getEnv();
 
-            LocalRef<jobject> displayCutout (env->CallObjectMethod (insets.get(), AndroidWindowInsets.getDisplayCutout));
+            const auto& mainDisplay = *Desktop::getInstance().getDisplays().getPrimaryDisplay();
+            const auto newInsets = getInsetsFromAndroidWindowInsets (insets, mainDisplay.scale);
 
-            if (displayCutout != nullptr)
-            {
-                const auto& mainDisplay = *Desktop::getInstance().getDisplays().getPrimaryDisplay();
-                auto newSafeAreaInsets = androidDisplayCutoutToBorderSize (displayCutout, mainDisplay.scale);
+            if (newInsets.tie() != JuceInsets::tie (mainDisplay))
+                forceDisplayUpdate();
 
-                if (newSafeAreaInsets != mainDisplay.safeAreaInsets)
-                    forceDisplayUpdate();
+            if (const auto fieldId = AndroidWindowInsets30.CONSUMED)
+                return env->GetStaticObjectField (AndroidWindowInsets30, fieldId);
 
-                auto* fieldId = env->GetStaticFieldID (AndroidWindowInsets, "CONSUMED", "Landroid/view/WindowInsets");
-                jassert (fieldId != nullptr);
-
-                return env->GetStaticObjectField (AndroidWindowInsets, fieldId);
-            }
-
-            jmethodID onApplyWindowInsetsMethodId = env->GetMethodID (AndroidView,
-                                                                      "onApplyWindowInsets",
-                                                                      "(Landroid/view/WindowInsets;)Landroid/view/WindowInsets;");
-
-            jassert (onApplyWindowInsetsMethodId != nullptr);
-
-            return env->CallObjectMethod (v.get(), onApplyWindowInsetsMethodId, insets.get());
+            return env->CallObjectMethod (insets, AndroidWindowInsets28.consumeDisplayCutout);
         }
 
     private:
@@ -1837,16 +1922,14 @@ void Displays::findDisplays (float masterScale)
     LocalRef<jstring> windowServiceString (javaString ("window"));
     LocalRef<jobject> displayMetrics (env->NewObject (AndroidDisplayMetrics, AndroidDisplayMetrics.create));
     LocalRef<jobject> windowManager (env->CallObjectMethod (getAppContext().get(), AndroidContext.getSystemService, windowServiceString.get()));
-    LocalRef <jobject> display (env->CallObjectMethod (windowManager, AndroidWindowManager.getDefaultDisplay));
+    LocalRef<jobject> display (env->CallObjectMethod (windowManager, AndroidWindowManager.getDefaultDisplay));
 
-    jmethodID getRealMetricsMethod = env->GetMethodID (AndroidDisplay, "getRealMetrics", "(Landroid/util/DisplayMetrics;)V");
-
-    if (getRealMetricsMethod != nullptr)
-        env->CallVoidMethod (display.get(), getRealMetricsMethod, displayMetrics.get());
+    if (const auto getRealMetricsMethod = AndroidDisplay17.getRealMetrics)
+        env->CallVoidMethod (display, getRealMetricsMethod, displayMetrics.get());
     else
-        env->CallVoidMethod (display.get(), AndroidDisplay.getMetrics, displayMetrics.get());
+        env->CallVoidMethod (display, AndroidDisplay.getMetrics, displayMetrics.get());
 
-    env->CallVoidMethod (display.get(), AndroidDisplay.getSize, usableSize.get());
+    env->CallVoidMethod (display, AndroidDisplay.getSize, usableSize.get());
 
     Display d;
 
@@ -1882,24 +1965,10 @@ void Displays::findDisplays (float masterScale)
             if (! activityArea.isEmpty())
                 d.userArea = activityArea / d.scale;
 
-            if (supportsDisplayCutout())
+            if (const auto getRootWindowInsetsMethodId = AndroidView23.getRootWindowInsets)
             {
-                jmethodID getRootWindowInsetsMethodId = env->GetMethodID (AndroidView,
-                                                                          "getRootWindowInsets",
-                                                                          "()Landroid/view/WindowInsets;");
-
-                if (getRootWindowInsetsMethodId != nullptr)
-                {
-                    LocalRef<jobject> insets (env->CallObjectMethod (contentView.get(), getRootWindowInsetsMethodId));
-
-                    if (insets != nullptr)
-                    {
-                        LocalRef<jobject> displayCutout (env->CallObjectMethod (insets.get(), AndroidWindowInsets.getDisplayCutout));
-
-                        if (displayCutout.get() != nullptr)
-                            d.safeAreaInsets = androidDisplayCutoutToBorderSize (displayCutout, d.scale);
-                    }
-                }
+                LocalRef<jobject> insets (env->CallObjectMethod (contentView.get(), getRootWindowInsetsMethodId));
+                JuceInsets::tie (d) = getInsetsFromAndroidWindowInsets (insets, d.scale).tie();
             }
 
             static bool hasAddedMainActivityListener = false;
@@ -2084,7 +2153,8 @@ const int KeyPress::rewindKey               = extendedKeyModifier + 72;
  struct JuceActivityNewIntentListener
  {
      #define JNI_CLASS_MEMBERS(METHOD, STATICMETHOD, FIELD, STATICFIELD, CALLBACK) \
-      CALLBACK (appNewIntent, "appNewIntent", "(Landroid/content/Intent;)V")
+      CALLBACK (appNewIntent, "appNewIntent", "(Landroid/content/Intent;)V") \
+      CALLBACK (appOnResume,  "appOnResume",  "()V")
 
       DECLARE_JNI_CLASS (JavaActivity, JUCE_PUSH_NOTIFICATIONS_ACTIVITY)
      #undef JNI_CLASS_MEMBERS
@@ -2092,6 +2162,11 @@ const int KeyPress::rewindKey               = extendedKeyModifier + 72;
      static void JNICALL appNewIntent (JNIEnv*, jobject /*activity*/, jobject intentData)
      {
          juce_handleNotificationIntent (static_cast<void*> (intentData));
+     }
+
+     static void JNICALL appOnResume (JNIEnv*, jobject)
+     {
+         juce_handleOnResume();
      }
  };
 

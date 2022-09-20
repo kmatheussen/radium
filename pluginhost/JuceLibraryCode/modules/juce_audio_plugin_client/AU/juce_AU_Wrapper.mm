@@ -1,13 +1,20 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE 7 technical preview.
+   This file is part of the JUCE library.
    Copyright (c) 2022 - Raw Material Software Limited
 
-   You may use this code under the terms of the GPL v3
-   (see www.gnu.org/licenses).
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   For the technical preview this file cannot be licensed commercially.
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
+
+   End User License Agreement: www.juce.com/juce-7-licence
+   Privacy Policy: www.juce.com/juce-privacy-policy
+
+   Or: You may also use this code under the terms of the GPL v3 (see
+   www.gnu.org/licenses).
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -58,6 +65,14 @@ JUCE_END_IGNORE_WARNINGS_GCC_LIKE
 #include <juce_audio_processors/format_types/juce_LegacyAudioParameter.cpp>
 #include <juce_audio_processors/format_types/juce_AU_Shared.h>
 
+#if JucePlugin_Enable_ARA
+ #include <juce_audio_processors/utilities/ARA/juce_AudioProcessor_ARAExtensions.h>
+ #include <ARA_API/ARAAudioUnit.h>
+ #if ARA_SUPPORT_VERSION_1
+  #error "Unsupported ARA version - only ARA version 2 and onward are supported by the current JUCE ARA implementation"
+ #endif
+#endif
+
 //==============================================================================
 using namespace juce;
 
@@ -88,7 +103,6 @@ struct AudioProcessorHolder
 class JuceAU   : public AudioProcessorHolder,
                  public MusicDeviceBase,
                  public AudioProcessorListener,
-                 public AudioPlayHead,
                  public AudioProcessorParameter::Listener
 {
 public:
@@ -125,7 +139,6 @@ public:
         totalInChannels  = juceFilter->getTotalNumInputChannels();
         totalOutChannels = juceFilter->getTotalNumOutputChannels();
 
-        juceFilter->setPlayHead (this);
         juceFilter->addListener (this);
 
         addParameters();
@@ -425,6 +438,17 @@ public:
                     outWritable = false;
                     return noErr;
 
+               #if JucePlugin_Enable_ARA
+                case ARA::kAudioUnitProperty_ARAFactory:
+                    outWritable = false;
+                    outDataSize = sizeof (ARA::ARAAudioUnitFactory);
+                    return noErr;
+                case ARA::kAudioUnitProperty_ARAPlugInExtensionBindingWithRoles:
+                    outWritable = false;
+                    outDataSize = sizeof (ARA::ARAAudioUnitPlugInExtensionBinding);
+                    return noErr;
+               #endif
+
                 default: break;
             }
         }
@@ -465,6 +489,33 @@ public:
                     // Failed to find a group corresponding to the clump ID.
                     jassertfalse;
                     break;
+
+                    //==============================================================================
+               #if JucePlugin_Enable_ARA
+                case ARA::kAudioUnitProperty_ARAFactory:
+                {
+                    auto auFactory = static_cast<ARA::ARAAudioUnitFactory*> (outData);
+                    if (auFactory->inOutMagicNumber != ARA::kARAAudioUnitMagic)
+                        return kAudioUnitErr_InvalidProperty;   // if the magic value isn't found, the property ID is re-used outside the ARA context with different, unsupported sematics
+
+                    auFactory->outFactory = createARAFactory();
+                    return noErr;
+                }
+
+                case ARA::kAudioUnitProperty_ARAPlugInExtensionBindingWithRoles:
+                {
+                    auto binding = static_cast<ARA::ARAAudioUnitPlugInExtensionBinding*> (outData);
+                    if (binding->inOutMagicNumber != ARA::kARAAudioUnitMagic)
+                        return kAudioUnitErr_InvalidProperty;   // if the magic value isn't found, the property ID is re-used outside the ARA context with different, unsupported sematics
+
+                    AudioProcessorARAExtension* araAudioProcessorExtension = dynamic_cast<AudioProcessorARAExtension*> (juceFilter.get());
+                    binding->outPlugInExtension = araAudioProcessorExtension->bindToARA (binding->inDocumentControllerRef, binding->knownRoles, binding->assignedRoles);
+                    if (binding->outPlugInExtension == nullptr)
+                        return kAudioUnitErr_CannotDoInCurrentContext;  // bindToARA() returns null if binding is already established
+
+                    return noErr;
+                }
+               #endif
 
                 case juceFilterObjectPropertyID:
                     ((void**) outData)[0] = (void*) static_cast<AudioProcessor*> (juceFilter.get());
@@ -633,14 +684,15 @@ public:
                             const ScopedLock sl (juceFilter->getCallbackLock());
 
                             juceFilter->setNonRealtime (shouldBeOffline);
-                            juceFilter->prepareToPlay (getSampleRate(), (int) GetMaxFramesPerSlice());
+
+                            if (prepared)
+                                juceFilter->prepareToPlay (getSampleRate(), (int) GetMaxFramesPerSlice());
                         }
                     }
 
                     return noErr;
                 }
 
-               #if defined (MAC_OS_X_VERSION_10_12)
                 case kAudioUnitProperty_AUHostIdentifier:
                 {
                     if (inDataSize < sizeof (AUHostVersionIdentifier))
@@ -651,7 +703,6 @@ public:
 
                     return noErr;
                 }
-               #endif
 
                 default: break;
             }
@@ -1028,83 +1079,109 @@ public:
     {
         const double rate = getSampleRate();
         jassert (rate > 0);
+       #if JucePlugin_Enable_ARA
+        jassert (juceFilter->getLatencySamples() == 0 || ! dynamic_cast<AudioProcessorARAExtension*> (juceFilter.get())->isBoundToARA());
+       #endif
         return rate > 0 ? juceFilter->getLatencySamples() / rate : 0;
     }
 
-    //==============================================================================
-    bool getCurrentPosition (AudioPlayHead::CurrentPositionInfo& info) override
+    class ScopedPlayHead : private AudioPlayHead
     {
-        info.timeSigNumerator = 0;
-        info.timeSigDenominator = 0;
-        info.editOriginTime = 0;
-        info.ppqPositionOfLastBarStart = 0;
-        info.isRecording = false;
-
-        info.frameRate = [this]
+    public:
+        explicit ScopedPlayHead (JuceAU& juceAudioUnit)
+            : audioUnit (juceAudioUnit)
         {
-            switch (lastTimeStamp.mSMPTETime.mType)
+            audioUnit.juceFilter->setPlayHead (this);
+        }
+
+        ~ScopedPlayHead() override
+        {
+            audioUnit.juceFilter->setPlayHead (nullptr);
+        }
+
+    private:
+        Optional<PositionInfo> getPosition() const override
+        {
+            PositionInfo info;
+
+            info.setFrameRate ([this]() -> Optional<FrameRate>
             {
-                case kSMPTETimeType2398:        return FrameRate().withBaseRate (24).withPullDown();
-                case kSMPTETimeType24:          return FrameRate().withBaseRate (24);
-                case kSMPTETimeType25:          return FrameRate().withBaseRate (25);
-                case kSMPTETimeType30Drop:      return FrameRate().withBaseRate (30).withDrop();
-                case kSMPTETimeType30:          return FrameRate().withBaseRate (30);
-                case kSMPTETimeType2997:        return FrameRate().withBaseRate (30).withPullDown();
-                case kSMPTETimeType2997Drop:    return FrameRate().withBaseRate (30).withPullDown().withDrop();
-                case kSMPTETimeType60:          return FrameRate().withBaseRate (60);
-                case kSMPTETimeType60Drop:      return FrameRate().withBaseRate (60).withDrop();
-                case kSMPTETimeType5994:        return FrameRate().withBaseRate (60).withPullDown();
-                case kSMPTETimeType5994Drop:    return FrameRate().withBaseRate (60).withPullDown().withDrop();
-                case kSMPTETimeType50:          return FrameRate().withBaseRate (50);
-                default:                        break;
+                switch (audioUnit.lastTimeStamp.mSMPTETime.mType)
+                {
+                    case kSMPTETimeType2398:        return FrameRate().withBaseRate (24).withPullDown();
+                    case kSMPTETimeType24:          return FrameRate().withBaseRate (24);
+                    case kSMPTETimeType25:          return FrameRate().withBaseRate (25);
+                    case kSMPTETimeType30Drop:      return FrameRate().withBaseRate (30).withDrop();
+                    case kSMPTETimeType30:          return FrameRate().withBaseRate (30);
+                    case kSMPTETimeType2997:        return FrameRate().withBaseRate (30).withPullDown();
+                    case kSMPTETimeType2997Drop:    return FrameRate().withBaseRate (30).withPullDown().withDrop();
+                    case kSMPTETimeType60:          return FrameRate().withBaseRate (60);
+                    case kSMPTETimeType60Drop:      return FrameRate().withBaseRate (60).withDrop();
+                    case kSMPTETimeType5994:        return FrameRate().withBaseRate (60).withPullDown();
+                    case kSMPTETimeType5994Drop:    return FrameRate().withBaseRate (60).withPullDown().withDrop();
+                    case kSMPTETimeType50:          return FrameRate().withBaseRate (50);
+                    default:                        break;
+                }
+
+                return {};
+            }());
+
+            double ppqPosition = 0.0;
+            double bpm = 0.0;
+
+            if (audioUnit.CallHostBeatAndTempo (&ppqPosition, &bpm) == noErr)
+            {
+                info.setPpqPosition (ppqPosition);
+                info.setBpm (bpm);
             }
 
-            return FrameRate();
-        }();
+            UInt32 outDeltaSampleOffsetToNextBeat;
+            double outCurrentMeasureDownBeat;
+            float num;
+            UInt32 den;
 
-        if (CallHostBeatAndTempo (&info.ppqPosition, &info.bpm) != noErr)
-        {
-            info.ppqPosition = 0;
-            info.bpm = 0;
+            if (audioUnit.CallHostMusicalTimeLocation (&outDeltaSampleOffsetToNextBeat,
+                                                       &num,
+                                                       &den,
+                                                       &outCurrentMeasureDownBeat) == noErr)
+            {
+                info.setTimeSignature (TimeSignature { (int) num, (int) den });
+                info.setPpqPositionOfLastBarStart (outCurrentMeasureDownBeat);
+            }
+
+            double outCurrentSampleInTimeLine = 0, outCycleStartBeat = 0, outCycleEndBeat = 0;
+            Boolean playing = false, looping = false, playchanged;
+
+            if (audioUnit.CallHostTransportState (&playing,
+                                                  &playchanged,
+                                                  &outCurrentSampleInTimeLine,
+                                                  &looping,
+                                                  &outCycleStartBeat,
+                                                  &outCycleEndBeat) == noErr)
+            {
+                info.setIsPlaying (playing);
+                info.setTimeInSamples ((int64) (outCurrentSampleInTimeLine + 0.5));
+                info.setTimeInSeconds (*info.getTimeInSamples() / audioUnit.getSampleRate());
+                info.setIsLooping (looping);
+                info.setLoopPoints (LoopPoints { outCycleStartBeat, outCycleEndBeat });
+            }
+            else
+            {
+                // If the host doesn't support this callback, then use the sample time from lastTimeStamp:
+                outCurrentSampleInTimeLine = audioUnit.lastTimeStamp.mSampleTime;
+            }
+
+            info.setHostTimeNs ((audioUnit.lastTimeStamp.mFlags & kAudioTimeStampHostTimeValid) != 0
+                                ? makeOptional (audioUnit.timeConversions.hostTimeToNanos (audioUnit.lastTimeStamp.mHostTime))
+                                : nullopt);
+
+            return info;
         }
 
-        UInt32 outDeltaSampleOffsetToNextBeat;
-        double outCurrentMeasureDownBeat;
-        float num;
-        UInt32 den;
+        JuceAU& audioUnit;
+    };
 
-        if (CallHostMusicalTimeLocation (&outDeltaSampleOffsetToNextBeat, &num, &den,
-                                         &outCurrentMeasureDownBeat) == noErr)
-        {
-            info.timeSigNumerator   = (int) num;
-            info.timeSigDenominator = (int) den;
-            info.ppqPositionOfLastBarStart = outCurrentMeasureDownBeat;
-        }
-
-        double outCurrentSampleInTimeLine, outCycleStartBeat = 0, outCycleEndBeat = 0;
-        Boolean playing = false, looping = false, playchanged;
-
-        if (CallHostTransportState (&playing,
-                                    &playchanged,
-                                    &outCurrentSampleInTimeLine,
-                                    &looping,
-                                    &outCycleStartBeat,
-                                    &outCycleEndBeat) != noErr)
-        {
-            // If the host doesn't support this callback, then use the sample time from lastTimeStamp:
-            outCurrentSampleInTimeLine = lastTimeStamp.mSampleTime;
-        }
-
-        info.isPlaying = playing;
-        info.timeInSamples = (int64) (outCurrentSampleInTimeLine + 0.5);
-        info.timeInSeconds = info.timeInSamples / getSampleRate();
-        info.isLooping = looping;
-        info.ppqLoopStart = outCycleStartBeat;
-        info.ppqLoopEnd = outCycleEndBeat;
-
-        return true;
-    }
-
+    //==============================================================================
     void sendAUEvent (const AudioUnitEventType type, const int juceParamIndex)
     {
         if (restoringState)
@@ -1247,22 +1324,6 @@ public:
                             const UInt32 nFrames) override
     {
         lastTimeStamp = inTimeStamp;
-
-        jassert (! juceFilter->getHostTimeNs());
-
-        if ((inTimeStamp.mFlags & kAudioTimeStampHostTimeValid) != 0)
-        {
-            const auto timestamp = timeConversions.hostTimeToNanos (inTimeStamp.mHostTime);
-            juceFilter->setHostTimeNanos (&timestamp);
-        }
-
-        struct AtEndOfScope
-        {
-            ~AtEndOfScope() { proc.setHostTimeNanos (nullptr); }
-            AudioProcessor& proc;
-        };
-
-        const AtEndOfScope scope { *juceFilter };
 
         // prepare buffers
         {
@@ -1696,7 +1757,14 @@ public:
             {
                 if (AudioProcessor* filter = static_cast<AudioProcessor*> (pointers[0]))
                     if (AudioProcessorEditor* editorComp = filter->createEditorIfNeeded())
+                    {
+                       #if JucePlugin_Enable_ARA
+                        jassert (dynamic_cast<AudioProcessorEditorARAExtension*> (editorComp) != nullptr);
+                        // for proper view embedding, ARA plug-ins must be resizable
+                        jassert (editorComp->isResizable());
+                       #endif
                         return EditorCompHolder::createViewFor (filter, static_cast<JuceAU*> (pointers[1]), editorComp);
+                    }
             }
 
             return nil;
@@ -1887,6 +1955,7 @@ private:
     void processBlock (juce::AudioBuffer<float>& buffer, MidiBuffer& midiBuffer) noexcept
     {
         const ScopedLock sl (juceFilter->getCallbackLock());
+        const ScopedPlayHead playhead { *this };
 
         if (juceFilter->isSuspended())
         {

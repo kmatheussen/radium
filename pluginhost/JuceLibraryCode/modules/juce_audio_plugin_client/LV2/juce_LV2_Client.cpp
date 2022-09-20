@@ -1,13 +1,20 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE 7 technical preview.
+   This file is part of the JUCE library.
    Copyright (c) 2022 - Raw Material Software Limited
 
-   You may use this code under the terms of the GPL v3
-   (see www.gnu.org/licenses).
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   For the technical preview this file cannot be licensed commercially.
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
+
+   End User License Agreement: www.juce.com/juce-7-licence
+   Privacy Policy: www.juce.com/juce-privacy-policy
+
+   Or: You may also use this code under the terms of the GPL v3 (see
+   www.gnu.org/licenses).
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -16,7 +23,7 @@
   ==============================================================================
 */
 
-#if JucePlugin_Build_LV2
+#if JucePlugin_Build_LV2 && (! (JUCE_ANDROID || JUCE_IOS))
 
 #ifndef _SCL_SECURE_NO_WARNINGS
  #define _SCL_SECURE_NO_WARNINGS
@@ -106,9 +113,18 @@ public:
         processor.removeListener (this);
     }
 
-    static String getUri (const AudioProcessorParameter& param)
+    /*  This is the string that will be used to uniquely identify the parameter.
+
+        This string will be written into the plugin's manifest as an IRI, so it must be
+        syntactically valid.
+
+        We escape this string rather than writing the user-defined parameter ID directly to avoid
+        writing a malformed manifest in the case that user IDs contain spaces or other reserved
+        characters. This should allow users to keep the same param IDs for all plugin formats.
+    */
+    static String getIri (const AudioProcessorParameter& param)
     {
-        return LegacyAudioParameter::getParamID (&param, false);
+        return URL::addEscapeChars (LegacyAudioParameter::getParamID (&param, false), true);
     }
 
     void setValueFromHost (LV2_URID urid, float value) noexcept
@@ -196,7 +212,7 @@ private:
         {
             jassert ((size_t) param->getParameterIndex() == result.size());
 
-            const auto uri  = JucePlugin_LV2URI + String (uriSeparator) + getUri (*param);
+            const auto uri  = JucePlugin_LV2URI + String (uriSeparator) + getIri (*param);
             const auto urid = mapFeature.map (mapFeature.handle, uri.toRawUTF8());
             result.push_back (urid);
         }
@@ -251,15 +267,9 @@ public:
     PlayHead (LV2_URID_Map mapFeatureIn, double sampleRateIn)
         : parser (mapFeatureIn), sampleRate (sampleRateIn)
     {
-        info.frameRate                  = fpsUnknown;
-        info.isLooping                  = false;
-        info.isRecording                = false;
-        info.ppqLoopEnd                 = 0;
-        info.ppqLoopStart               = 0;
-        info.ppqPositionOfLastBarStart  = 0;
     }
 
-    void invalidate() { valid = false; }
+    void invalidate() { info = nullopt; }
 
     void readNewInfo (const LV2_Atom_Event* event)
     {
@@ -273,6 +283,7 @@ public:
 
         const LV2_Atom* atomFrame          = nullptr;
         const LV2_Atom* atomSpeed          = nullptr;
+        const LV2_Atom* atomBar            = nullptr;
         const LV2_Atom* atomBeat           = nullptr;
         const LV2_Atom* atomBeatUnit       = nullptr;
         const LV2_Atom* atomBeatsPerBar    = nullptr;
@@ -280,6 +291,7 @@ public:
 
         LV2_Atom_Object_Query query[] { { mLV2_TIME__frame,             &atomFrame },
                                         { mLV2_TIME__speed,             &atomSpeed },
+                                        { mLV2_TIME__bar,               &atomBar },
                                         { mLV2_TIME__beat,              &atomBeat },
                                         { mLV2_TIME__beatUnit,          &atomBeatUnit },
                                         { mLV2_TIME__beatsPerBar,       &atomBeatsPerBar },
@@ -288,37 +300,38 @@ public:
 
         lv2_atom_object_query (object, query);
 
-        const auto setTimeInFrames = [&] (int64_t value)
-        {
-            info.timeInSamples = value;
-            info.timeInSeconds = (double) info.timeInSamples / sampleRate;
-        };
+        info.emplace();
 
         // Carla always seems to give us an integral 'beat' even though I'd expect
         // it to be a floating-point value
 
-        if (   lv2_shared::withValue (parser.parseNumericAtom<float>   (atomBeatsPerMinute), [&] (float value)   { info.bpm = value; })
-            && lv2_shared::withValue (parser.parseNumericAtom<float>   (atomBeatsPerBar),    [&] (float value)   { info.timeSigNumerator = (int) value; })
-            && lv2_shared::withValue (parser.parseNumericAtom<int32_t> (atomBeatUnit),       [&] (int32_t value) { info.timeSigDenominator = value; })
-            && lv2_shared::withValue (parser.parseNumericAtom<double>  (atomBeat),           [&] (double value)  { info.ppqPosition = value; })
-            && lv2_shared::withValue (parser.parseNumericAtom<float>   (atomSpeed),          [&] (float value)   { info.isPlaying = value != 0.0f; })
-            && lv2_shared::withValue (parser.parseNumericAtom<int64_t> (atomFrame),          setTimeInFrames))
+        const auto numerator   = parser.parseNumericAtom<float>   (atomBeatsPerBar);
+        const auto denominator = parser.parseNumericAtom<int32_t> (atomBeatUnit);
+
+        if (numerator.hasValue() && denominator.hasValue())
+            info->setTimeSignature (TimeSignature { (int) *numerator, (int) *denominator });
+
+        info->setBpm (parser.parseNumericAtom<float> (atomBeatsPerMinute));
+        info->setPpqPosition (parser.parseNumericAtom<double> (atomBeat));
+        info->setIsPlaying (parser.parseNumericAtom<float> (atomSpeed).orFallback (0.0f) != 0.0f);
+        info->setBarCount (parser.parseNumericAtom<int64_t> (atomBar));
+
+        if (const auto parsed = parser.parseNumericAtom<int64_t> (atomFrame))
         {
-            valid = true;
+            info->setTimeInSamples (*parsed);
+            info->setTimeInSeconds ((double) *parsed / sampleRate);
         }
     }
 
-    bool getCurrentPosition (CurrentPositionInfo& result) override
+    Optional<PositionInfo> getPosition() const override
     {
-        result = info;
-        return valid;
+        return info;
     }
 
 private:
     lv2_shared::NumericAtomParser parser;
-    CurrentPositionInfo info;
+    Optional<PositionInfo> info;
     double sampleRate;
-    bool valid = false;
 
    #define X(str) const LV2_URID m##str = parser.map (str);
     X (LV2_ATOM__Blank)
@@ -330,6 +343,7 @@ private:
     X (LV2_TIME__beatsPerMinute)
     X (LV2_TIME__frame)
     X (LV2_TIME__speed)
+    X (LV2_TIME__bar)
    #undef X
 
     JUCE_LEAK_DETECTOR (PlayHead)
@@ -978,7 +992,7 @@ private:
         const auto parameterVisitor = [&] (const String& symbol,
                                            const AudioProcessorParameter& param)
         {
-            os << "plug:" << ParameterStorage::getUri (param) << "\n"
+            os << "plug:" << ParameterStorage::getIri (param) << "\n"
                   "\ta lv2:Parameter ;\n"
                   "\trdfs:label \"" << param.getName (1024) << "\" ;\n";
 
@@ -1136,7 +1150,7 @@ private:
 
                 for (const auto* param : legacyParameters)
                 {
-                    os << (isFirst ? "" : " ,") << "\n\t\tplug:" << ParameterStorage::getUri (*param);
+                    os << (isFirst ? "" : " ,") << "\n\t\tplug:" << ParameterStorage::getIri (*param);
                     isFirst = false;
                 }
 

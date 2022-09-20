@@ -120,14 +120,9 @@
 #undef check
 
 //==============================================================================
-#ifndef    JUCE_STANDALONE_APPLICATION
- JUCE_COMPILER_WARNING ("Please re-save your project with the latest Projucer version to avoid this warning")
- #define   JUCE_STANDALONE_APPLICATION 0
-#endif
-
-//==============================================================================
 #include "containers/juce_AbstractFifo.cpp"
 #include "containers/juce_ArrayBase.cpp"
+#include "containers/juce_ListenerList.cpp"
 #include "containers/juce_NamedValueSet.cpp"
 #include "containers/juce_OwnedArray.cpp"
 #include "containers/juce_PropertySet.cpp"
@@ -248,6 +243,9 @@
 
 #endif
 
+#include "files/juce_common_MimeTypes.h"
+#include "files/juce_common_MimeTypes.cpp"
+#include "native/juce_android_AndroidDocument.cpp"
 #include "threads/juce_HighResolutionTimer.cpp"
 #include "threads/juce_WaitableEvent.cpp"
 #include "network/juce_URL.cpp"
@@ -262,7 +260,6 @@
 #if JUCE_UNIT_TESTS
  #include "containers/juce_HashMap_test.cpp"
 
- #include "containers/juce_Optional.h"
  #include "containers/juce_Optional_test.cpp"
 #endif
 

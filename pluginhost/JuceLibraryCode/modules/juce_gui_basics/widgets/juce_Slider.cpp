@@ -1,13 +1,20 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE 7 technical preview.
+   This file is part of the JUCE library.
    Copyright (c) 2022 - Raw Material Software Limited
 
-   You may use this code under the terms of the GPL v3
-   (see www.gnu.org/licenses).
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   For the technical preview this file cannot be licensed commercially.
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
+
+   End User License Agreement: www.juce.com/juce-7-licence
+   Privacy Policy: www.juce.com/juce-privacy-policy
+
+   Or: You may also use this code under the terms of the GPL v3 (see
+   www.gnu.org/licenses).
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -18,6 +25,14 @@
 
 namespace juce
 {
+
+static double getStepSize (const Slider& slider)
+{
+    const auto interval = slider.getInterval();
+
+    return interval != 0.0 ? interval
+                           : slider.getRange().getLength() * 0.01;
+}
 
 class Slider::Pimpl   : public AsyncUpdater, // this needs to be public otherwise it will cause an
                                              // error when JUCE_DLL_BUILD=1
@@ -107,20 +122,34 @@ public:
         return 0.0f;
     }
 
+    void setNumDecimalPlacesToDisplay (int decimalPlacesToDisplay)
+    {
+        fixedNumDecimalPlaces = jmax (0, decimalPlacesToDisplay);
+        numDecimalPlaces = fixedNumDecimalPlaces;
+    }
+
+    int getNumDecimalPlacesToDisplay() const
+    {
+        return fixedNumDecimalPlaces == -1 ? numDecimalPlaces : fixedNumDecimalPlaces;
+    }
+
     void updateRange()
     {
-        // figure out the number of DPs needed to display all values at this
-        // interval setting.
-        numDecimalPlaces = 7;
-
-        if (normRange.interval != 0.0)
+        if (fixedNumDecimalPlaces == -1)
         {
-            int v = std::abs (roundToInt (normRange.interval * 10000000));
+            // figure out the number of DPs needed to display all values at this
+            // interval setting.
+            numDecimalPlaces = 7;
 
-            while ((v % 10) == 0 && numDecimalPlaces > 0)
+            if (normRange.interval != 0.0)
             {
-                --numDecimalPlaces;
-                v /= 10;
+                int v = std::abs (roundToInt (normRange.interval * 10000000));
+
+                while ((v % 10) == 0 && numDecimalPlaces > 0)
+                {
+                    --numDecimalPlaces;
+                    v /= 10;
+                }
             }
         }
 
@@ -984,6 +1013,38 @@ public:
         popupDisplay.reset();
     }
 
+    bool keyPressed (const KeyPress& key)
+    {
+        if (key.getModifiers().isAnyModifierKeyDown())
+            return false;
+
+        const auto getInterval = [this]
+        {
+            if (auto* accessibility = owner.getAccessibilityHandler())
+                if (auto* valueInterface = accessibility->getValueInterface())
+                    return valueInterface->getRange().getInterval();
+
+            return getStepSize (owner);
+        };
+
+        const auto valueChange = [&]
+        {
+            if (key == KeyPress::rightKey || key == KeyPress::upKey)
+                return getInterval();
+
+            if (key == KeyPress::leftKey || key == KeyPress::downKey)
+                return -getInterval();
+
+            return 0.0;
+        }();
+
+        if (valueChange == 0.0)
+            return false;
+
+        setValue (getValue() + valueChange, sendNotificationSync);
+        return true;
+    }
+
     void showPopupDisplay()
     {
         if (style == IncDecButtons)
@@ -1252,6 +1313,7 @@ public:
     TextEntryBoxPosition textBoxPos;
     String textSuffix;
     int numDecimalPlaces = 7;
+    int fixedNumDecimalPlaces = -1;
     int textBoxWidth = 80, textBoxHeight = 20;
     IncDecButtonMode incDecButtonMode = incDecButtonsNotDraggable;
     ModifierKeys::Flags modifierToSwapModes = ModifierKeys::ctrlAltCommandModifiers;
@@ -1611,11 +1673,14 @@ double Slider::snapValue (double attemptedValue, DragMode)
     return attemptedValue;
 }
 
-int Slider::getNumDecimalPlacesToDisplay() const noexcept   { return pimpl->numDecimalPlaces; }
+int Slider::getNumDecimalPlacesToDisplay() const noexcept
+{
+    return pimpl->getNumDecimalPlacesToDisplay();
+}
 
 void Slider::setNumDecimalPlacesToDisplay (int decimalPlacesToDisplay)
 {
-    pimpl->numDecimalPlaces = decimalPlacesToDisplay;
+    pimpl->setNumDecimalPlacesToDisplay (decimalPlacesToDisplay);
     updateText();
 }
 
@@ -1653,6 +1718,9 @@ void Slider::mouseExit (const MouseEvent&)      { pimpl->mouseExit(); }
 // If popup display is enabled and set to show on mouse hover, this makes sure
 // it is shown when dragging the mouse over a slider and releasing
 void Slider::mouseEnter (const MouseEvent&)     { pimpl->mouseMove(); }
+
+/** @internal */
+bool Slider::keyPressed (const KeyPress& k)     { return pimpl->keyPressed (k); }
 
 void Slider::modifierKeysChanged (const ModifierKeys& modifiers)
 {
@@ -1727,18 +1795,10 @@ private:
         AccessibleValueRange getRange() const override
         {
             return { { slider.getMinimum(), slider.getMaximum() },
-                     getStepSize() };
+                     getStepSize (slider) };
         }
 
     private:
-        double getStepSize() const
-        {
-            auto interval = slider.getInterval();
-
-            return interval != 0.0 ? interval
-                                   : slider.getRange().getLength() * 0.01;
-        }
-
         Slider& slider;
         const bool useMaxValue;
 

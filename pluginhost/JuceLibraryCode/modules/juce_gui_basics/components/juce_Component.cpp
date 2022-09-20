@@ -1,13 +1,20 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE 7 technical preview.
+   This file is part of the JUCE library.
    Copyright (c) 2022 - Raw Material Software Limited
 
-   You may use this code under the terms of the GPL v3
-   (see www.gnu.org/licenses).
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   For the technical preview this file cannot be licensed commercially.
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
+
+   End User License Agreement: www.juce.com/juce-7-licence
+   Privacy Policy: www.juce.com/juce-privacy-policy
+
+   Or: You may also use this code under the terms of the GPL v3 (see
+   www.gnu.org/licenses).
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -320,7 +327,7 @@ struct Component::ComponentHelpers
     static bool hitTest (Component& comp, Point<float> localPoint)
     {
         const auto intPoint = localPoint.roundToInt();
-        return Rectangle<int> { comp.getWidth(), comp.getHeight() }.toFloat().contains (localPoint)
+        return Rectangle<int> { comp.getWidth(), comp.getHeight() }.contains (intPoint)
                && comp.hitTest (intPoint.x, intPoint.y);
     }
 
@@ -745,6 +752,16 @@ void Component::addToDesktop (int styleWanted, void* nativeWindowToAttachTo)
             peer->setConstrainer (currentConstrainer);
 
             repaint();
+
+           #if JUCE_LINUX
+            // Creating the peer Image on Linux will change the reported position of the window. If
+            // the Image creation is interleaved with the coming configureNotifyEvents the window
+            // will appear in the wrong position. To avoid this, we force the Image creation here,
+            // before handling any of the configureNotifyEvents. The Linux implementation of
+            // performAnyPendingRepaintsNow() will force update the peer position if necessary.
+            peer->performAnyPendingRepaintsNow();
+           #endif
+
             internalHierarchyChanged();
 
             if (auto* handler = getAccessibilityHandler())
@@ -2926,6 +2943,11 @@ void Component::takeKeyboardFocus (FocusChangeType cause)
             return;
 
         WeakReference<Component> componentLosingFocus (currentlyFocusedComponent);
+
+        if (auto* losingFocus = componentLosingFocus.get())
+            if (auto* otherPeer = losingFocus->getPeer())
+                otherPeer->closeInputMethodContext();
+
         currentlyFocusedComponent = this;
 
         Desktop::getInstance().triggerFocusCallback();
@@ -2991,6 +3013,9 @@ void Component::giveAwayKeyboardFocusInternal (bool sendFocusLossEvent)
     {
         if (auto* componentLosingFocus = currentlyFocusedComponent)
         {
+            if (auto* otherPeer = componentLosingFocus->getPeer())
+                otherPeer->closeInputMethodContext();
+
             currentlyFocusedComponent = nullptr;
 
             if (sendFocusLossEvent && componentLosingFocus != nullptr)
@@ -3283,6 +3308,18 @@ AccessibilityHandler* Component::getAccessibilityHandler()
         || accessibilityHandler->getTypeIndex() != std::type_index (typeid (*this)))
     {
         accessibilityHandler = createAccessibilityHandler();
+
+        // On Android, notifying that an element was created can cause the system to request
+        // the accessibility node info for the new element. If we're not careful, this will lead
+        // to recursive calls, as each time an element is created, new node info will be requested,
+        // causing an element to be created, causing a new info request...
+        // By assigning the accessibility handler before notifying the system that an element was
+        // created, the if() predicate above should evaluate to false on recursive calls,
+        // terminating the recursion.
+        if (accessibilityHandler != nullptr)
+            notifyAccessibilityEventInternal (*accessibilityHandler, InternalAccessibilityEvent::elementCreated);
+        else
+            jassertfalse; // createAccessibilityHandler must return non-null
     }
 
     return accessibilityHandler.get();

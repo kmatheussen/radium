@@ -1,13 +1,20 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE 7 technical preview.
+   This file is part of the JUCE library.
    Copyright (c) 2022 - Raw Material Software Limited
 
-   You may use this code under the terms of the GPL v3
-   (see www.gnu.org/licenses).
+   JUCE is an open source library subject to commercial or open-source
+   licensing.
 
-   For the technical preview this file cannot be licensed commercially.
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
+
+   End User License Agreement: www.juce.com/juce-7-licence
+   Privacy Policy: www.juce.com/juce-privacy-policy
+
+   Or: You may also use this code under the terms of the GPL v3 (see
+   www.gnu.org/licenses).
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -20,6 +27,18 @@
 
 #include "juce_VST3Headers.h"
 #include "juce_VST3Common.h"
+#include "juce_ARACommon.h"
+
+#if JUCE_PLUGINHOST_ARA && (JUCE_MAC || JUCE_WINDOWS || JUCE_LINUX)
+#include <ARA_API/ARAVST3.h>
+
+namespace ARA
+{
+DEF_CLASS_IID (IMainFactory)
+DEF_CLASS_IID (IPlugInEntryPoint)
+DEF_CLASS_IID (IPlugInEntryPoint2)
+}
+#endif
 
 namespace juce
 {
@@ -74,6 +93,12 @@ static int warnOnFailureIfImplemented (int result) noexcept
  #define warnOnFailure(x) x
  #define warnOnFailureIfImplemented(x) x
 #endif
+
+enum class Direction { input, output };
+enum class MediaKind { audio, event };
+
+static Vst::MediaType toVstType (MediaKind x) { return x == MediaKind::audio ? Vst::kAudio : Vst::kEvent; }
+static Vst::BusDirection toVstType (Direction x) { return x == Direction::input ? Vst::kInput : Vst::kOutput; }
 
 static std::vector<Vst::ParamID> getAllParamIDs (Vst::IEditController& controller)
 {
@@ -192,58 +217,53 @@ static void createPluginDescription (PluginDescription& description,
 }
 
 static int getNumSingleDirectionBusesFor (Vst::IComponent* component,
-                                           bool checkInputs,
-                                           bool checkAudioChannels)
+                                          MediaKind kind,
+                                          Direction direction)
 {
     jassert (component != nullptr);
-
-    return (int) component->getBusCount (checkAudioChannels ? Vst::kAudio : Vst::kEvent,
-                                         checkInputs ? Vst::kInput : Vst::kOutput);
+    JUCE_ASSERT_MESSAGE_THREAD
+    return (int) component->getBusCount (toVstType (kind), toVstType (direction));
 }
 
 /** Gives the total number of channels for a particular type of bus direction and media type */
-static int getNumSingleDirectionChannelsFor (Vst::IComponent* component,
-                                             bool checkInputs,
-                                             bool checkAudioChannels)
+static int getNumSingleDirectionChannelsFor (Vst::IComponent* component, Direction busDirection)
 {
     jassert (component != nullptr);
+    JUCE_ASSERT_MESSAGE_THREAD
 
-    const Vst::BusDirections direction  = checkInputs ? Vst::kInput : Vst::kOutput;
-    const Vst::MediaTypes mediaType     = checkAudioChannels ? Vst::kAudio : Vst::kEvent;
-    const Steinberg::int32 numBuses     = component->getBusCount (mediaType, direction);
+    const auto direction = toVstType (busDirection);
+    const Steinberg::int32 numBuses = component->getBusCount (Vst::kAudio, direction);
 
     int numChannels = 0;
 
     for (Steinberg::int32 i = numBuses; --i >= 0;)
     {
         Vst::BusInfo busInfo;
-        warnOnFailure (component->getBusInfo (mediaType, direction, i, busInfo));
+        warnOnFailure (component->getBusInfo (Vst::kAudio, direction, i, busInfo));
         numChannels += ((busInfo.flags & Vst::BusInfo::kDefaultActive) != 0 ? (int) busInfo.channelCount : 0);
     }
 
     return numChannels;
 }
 
-static void setStateForAllBusesOfType (Vst::IComponent* component,
-                                       bool state,
-                                       bool activateInputs,
-                                       bool activateAudioChannels)
+static void setStateForAllEventBuses (Vst::IComponent* component,
+                                      bool state,
+                                      Direction busDirection)
 {
     jassert (component != nullptr);
+    JUCE_ASSERT_MESSAGE_THREAD
 
-    const Vst::BusDirections direction  = activateInputs ? Vst::kInput : Vst::kOutput;
-    const Vst::MediaTypes mediaType     = activateAudioChannels ? Vst::kAudio : Vst::kEvent;
-    const Steinberg::int32 numBuses     = component->getBusCount (mediaType, direction);
+    const auto direction = toVstType (busDirection);
+    const Steinberg::int32 numBuses = component->getBusCount (Vst::kEvent, direction);
 
     for (Steinberg::int32 i = numBuses; --i >= 0;)
-        warnOnFailure (component->activateBus (mediaType, direction, i, state));
+        warnOnFailure (component->activateBus (Vst::kEvent, direction, i, state));
 }
 
 //==============================================================================
 static void toProcessContext (Vst::ProcessContext& context,
                               AudioPlayHead* playHead,
-                              double sampleRate,
-                              const uint64_t* hostTimeNs)
+                              double sampleRate)
 {
     jassert (sampleRate > 0.0); //Must always be valid, as stated by the VST3 SDK
 
@@ -251,59 +271,71 @@ static void toProcessContext (Vst::ProcessContext& context,
 
     zerostruct (context);
     context.sampleRate = sampleRate;
-    auto& fr = context.frameRate;
 
-    if (playHead != nullptr)
+    const auto position = playHead != nullptr ? playHead->getPosition()
+                                              : nullopt;
+
+    if (position.hasValue())
     {
-        AudioPlayHead::CurrentPositionInfo position;
-        playHead->getCurrentPosition (position);
+        if (const auto timeInSamples = position->getTimeInSamples())
+            context.projectTimeSamples = *timeInSamples;
+        else
+            jassertfalse; // The time in samples *must* be valid.
 
-        context.projectTimeSamples  = position.timeInSamples; // Must always be valid, as stated by the VST3 SDK
-        context.projectTimeMusic    = position.ppqPosition;   // Does not always need to be valid...
-        context.tempo               = position.bpm;
-        context.timeSigNumerator    = position.timeSigNumerator;
-        context.timeSigDenominator  = position.timeSigDenominator;
-        context.barPositionMusic    = position.ppqPositionOfLastBarStart;
-        context.cycleStartMusic     = position.ppqLoopStart;
-        context.cycleEndMusic       = position.ppqLoopEnd;
+        if (const auto tempo = position->getBpm())
+        {
+            context.state |= ProcessContext::kTempoValid;
+            context.tempo = *tempo;
+        }
 
-        context.frameRate.framesPerSecond = (Steinberg::uint32) position.frameRate.getBaseRate();
-        context.frameRate.flags = (Steinberg::uint32) ((position.frameRate.isDrop()     ? FrameRate::kDropRate     : 0)
-                                                     | (position.frameRate.isPullDown() ? FrameRate::kPullDownRate : 0));
+        if (const auto loop = position->getLoopPoints())
+        {
+            context.state |= ProcessContext::kCycleValid;
+            context.cycleStartMusic     = loop->ppqStart;
+            context.cycleEndMusic       = loop->ppqEnd;
+        }
 
-        if (position.isPlaying)     context.state |= ProcessContext::kPlaying;
-        if (position.isRecording)   context.state |= ProcessContext::kRecording;
-        if (position.isLooping)     context.state |= ProcessContext::kCycleActive;
-    }
-    else
-    {
-        context.tempo               = 120.0;
-        context.timeSigNumerator    = 4;
-        context.timeSigDenominator  = 4;
-        fr.framesPerSecond          = 30;
-        fr.flags                    = 0;
-    }
+        if (const auto sig = position->getTimeSignature())
+        {
+            context.state |= ProcessContext::kTimeSigValid;
+            context.timeSigNumerator    = sig->numerator;
+            context.timeSigDenominator  = sig->denominator;
+        }
 
-    if (context.projectTimeMusic >= 0.0)        context.state |= ProcessContext::kProjectTimeMusicValid;
-    if (context.barPositionMusic >= 0.0)        context.state |= ProcessContext::kBarPositionValid;
-    if (context.tempo > 0.0)                    context.state |= ProcessContext::kTempoValid;
-    if (context.frameRate.framesPerSecond > 0)  context.state |= ProcessContext::kSmpteValid;
+        if (const auto pos = position->getPpqPosition())
+        {
+            context.state |= ProcessContext::kProjectTimeMusicValid;
+            context.projectTimeMusic = *pos;
+        }
 
-    if (context.cycleStartMusic >= 0.0
-         && context.cycleEndMusic > 0.0
-         && context.cycleEndMusic > context.cycleStartMusic)
-    {
-        context.state |= ProcessContext::kCycleValid;
-    }
+        if (const auto barStart = position->getPpqPositionOfLastBarStart())
+        {
+            context.state |= ProcessContext::kBarPositionValid;
+            context.barPositionMusic = *barStart;
+        }
 
-    if (context.timeSigNumerator > 0 && context.timeSigDenominator > 0)
-        context.state |= ProcessContext::kTimeSigValid;
+        if (const auto frameRate = position->getFrameRate())
+        {
+            if (const auto offset = position->getEditOriginTime())
+            {
+                context.state |= ProcessContext::kSmpteValid;
+                context.smpteOffsetSubframes = (Steinberg::int32) (80.0 * *offset * frameRate->getEffectiveRate());
+                context.frameRate.framesPerSecond = (Steinberg::uint32) frameRate->getBaseRate();
+                context.frameRate.flags = (Steinberg::uint32) ((frameRate->isDrop()     ? FrameRate::kDropRate     : 0)
+                                                             | (frameRate->isPullDown() ? FrameRate::kPullDownRate : 0));
+            }
+        }
 
-    if (hostTimeNs != nullptr)
-    {
-        context.systemTime = (int64_t) *hostTimeNs;
-        jassert (context.systemTime >= 0);
-        context.state |= ProcessContext::kSystemTimeValid;
+        if (const auto hostTime = position->getHostTimeNs())
+        {
+            context.state |= ProcessContext::kSystemTimeValid;
+            context.systemTime = (int64_t) *hostTime;
+            jassert (context.systemTime >= 0);
+        }
+
+        if (position->getIsPlaying())     context.state |= ProcessContext::kPlaying;
+        if (position->getIsRecording())   context.state |= ProcessContext::kRecording;
+        if (position->getIsLooping())     context.state |= ProcessContext::kCycleActive;
     }
 }
 
@@ -804,6 +836,20 @@ struct DescriptionFactory
 
         auto numClasses = factory->countClasses();
 
+        // Every ARA::IMainFactory must have a matching Steinberg::IComponent.
+        // The match is determined by the two classes having the same name.
+        std::unordered_set<String> araMainFactoryClassNames;
+
+       #if JUCE_PLUGINHOST_ARA && (JUCE_MAC || JUCE_WINDOWS || JUCE_LINUX)
+        for (Steinberg::int32 i = 0; i < numClasses; ++i)
+        {
+            PClassInfo info;
+            factory->getClassInfo (i, &info);
+            if (std::strcmp (info.category, kARAMainFactoryClass) == 0)
+                araMainFactoryClassNames.insert (info.name);
+        }
+       #endif
+
         for (Steinberg::int32 i = 0; i < numClasses; ++i)
         {
             PClassInfo info;
@@ -848,8 +894,8 @@ struct DescriptionFactory
                 {
                     if (component->initialize (vst3HostContext->getFUnknown()) == kResultOk)
                     {
-                        auto numInputs  = getNumSingleDirectionChannelsFor (component, true, true);
-                        auto numOutputs = getNumSingleDirectionChannelsFor (component, false, true);
+                        auto numInputs  = getNumSingleDirectionChannelsFor (component, Direction::input);
+                        auto numOutputs = getNumSingleDirectionChannelsFor (component, Direction::output);
 
                         createPluginDescription (desc, file, companyName, name,
                                                  info, info2.get(), infoW.get(), numInputs, numOutputs);
@@ -866,6 +912,9 @@ struct DescriptionFactory
                     jassertfalse;
                 }
             }
+
+            if (araMainFactoryClassNames.find (name) != araMainFactoryClassNames.end())
+                desc.hasARAExtension = true;
 
             if (desc.uniqueId != 0)
                 result = performOnDescription (desc);
@@ -1330,6 +1379,72 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (VST3ModuleHandle)
 };
 
+template <typename Type, size_t N>
+static int compareWithString (Type (&charArray)[N], const String& str)
+{
+    return std::strncmp (str.toRawUTF8(),
+                         charArray,
+                         std::min (str.getNumBytesAsUTF8(), (size_t) numElementsInArray (charArray)));
+}
+
+template <typename Callback>
+static void forEachARAFactory (IPluginFactory* pluginFactory, Callback&& cb)
+{
+   #if JUCE_PLUGINHOST_ARA && (JUCE_MAC || JUCE_WINDOWS || JUCE_LINUX)
+    const auto numClasses = pluginFactory->countClasses();
+    for (Steinberg::int32 i = 0; i < numClasses; ++i)
+    {
+        PClassInfo info;
+        pluginFactory->getClassInfo (i, &info);
+
+        if (std::strcmp (info.category, kARAMainFactoryClass) == 0)
+        {
+            const bool keepGoing = cb (info);
+            if (! keepGoing)
+                break;
+        }
+    }
+   #else
+    ignoreUnused (pluginFactory, cb);
+   #endif
+}
+
+static std::shared_ptr<const ARA::ARAFactory> getARAFactory (Steinberg::IPluginFactory* pluginFactory, const String& pluginName)
+{
+    std::shared_ptr<const ARA::ARAFactory> factory;
+
+   #if JUCE_PLUGINHOST_ARA && (JUCE_MAC || JUCE_WINDOWS || JUCE_LINUX)
+    forEachARAFactory (pluginFactory,
+                       [&pluginFactory, &pluginName, &factory] (const auto& pcClassInfo)
+                       {
+                           if (compareWithString (pcClassInfo.name, pluginName) == 0)
+                           {
+                               ARA::IMainFactory* source;
+                               if (pluginFactory->createInstance (pcClassInfo.cid, ARA::IMainFactory::iid, (void**) &source)
+                                   == Steinberg::kResultOk)
+                               {
+                                   factory = getOrCreateARAFactory (source->getFactory(),
+                                                                    [source]() { source->release(); });
+                                   return false;
+                               }
+                               jassert (source == nullptr);
+                           }
+
+                           return true;
+                       });
+   #else
+    ignoreUnused (pluginFactory, pluginName);
+   #endif
+
+    return factory;
+}
+
+static std::shared_ptr<const ARA::ARAFactory> getARAFactory (VST3ModuleHandle& module)
+{
+    auto* pluginFactory = module.getPluginFactory();
+    return getARAFactory (pluginFactory, module.getName());
+}
+
 //==============================================================================
 struct VST3PluginWindow : public AudioProcessorEditor,
                           private ComponentMovementWatcher,
@@ -1678,6 +1793,27 @@ private:
 JUCE_BEGIN_IGNORE_WARNINGS_MSVC (4996) // warning about overriding deprecated methods
 
 //==============================================================================
+static bool hasARAExtension (IPluginFactory* pluginFactory, const String& pluginClassName)
+{
+    bool result = false;
+
+    forEachARAFactory (pluginFactory,
+                       [&pluginClassName, &result] (const auto& pcClassInfo)
+                       {
+                           if (compareWithString (pcClassInfo.name, pluginClassName) == 0)
+                           {
+                               result = true;
+
+                               return false;
+                           }
+
+                           return true;
+                       });
+
+    return result;
+}
+
+//==============================================================================
 struct VST3ComponentHolder
 {
     VST3ComponentHolder (const VST3ModuleHandle::Ptr& m)  : module (m)
@@ -1689,9 +1825,6 @@ struct VST3ComponentHolder
     {
         terminate();
     }
-
-    // transfers ownership to the plugin instance!
-    AudioPluginInstance* createPluginInstance();
 
     bool isIComponentAlsoIEditController() const
     {
@@ -1786,12 +1919,12 @@ struct VST3ComponentHolder
             Vst::BusInfo bus;
             int totalNumInputChannels = 0, totalNumOutputChannels = 0;
 
-            int n = component->getBusCount(Vst::kAudio, Vst::kInput);
+            int n = component->getBusCount (Vst::kAudio, Vst::kInput);
             for (int i = 0; i < n; ++i)
                 if (component->getBusInfo (Vst::kAudio, Vst::kInput, i, bus) == kResultOk)
                     totalNumInputChannels += ((bus.flags & Vst::BusInfo::kDefaultActive) != 0 ? bus.channelCount : 0);
 
-            n = component->getBusCount(Vst::kAudio, Vst::kOutput);
+            n = component->getBusCount (Vst::kAudio, Vst::kOutput);
             for (int i = 0; i < n; ++i)
                 if (component->getBusInfo (Vst::kAudio, Vst::kOutput, i, bus) == kResultOk)
                     totalNumOutputChannels += ((bus.flags & Vst::BusInfo::kDefaultActive) != 0 ? bus.channelCount : 0);
@@ -1801,6 +1934,8 @@ struct VST3ComponentHolder
                                      info, info2.get(), infoW.get(),
                                      totalNumInputChannels,
                                      totalNumOutputChannels);
+
+            description.hasARAExtension = hasARAExtension (factory, description.name);
 
             return;
         }
@@ -2176,22 +2311,21 @@ public:
         const Steinberg::int32 vstParamIndex;
         const Steinberg::Vst::ParamID paramID;
         const bool automatable;
-        const bool discrete = getNumSteps() != AudioProcessor::getDefaultNumParameterSteps();
         const int numSteps = [&]
         {
             auto stepCount = getParameterInfo().stepCount;
             return stepCount == 0 ? AudioProcessor::getDefaultNumParameterSteps()
                                   : stepCount + 1;
         }();
+        const bool discrete = getNumSteps() != AudioProcessor::getDefaultNumParameterSteps();
     };
 
     //==============================================================================
-    VST3PluginInstance (VST3ComponentHolder* componentHolder)
+    explicit VST3PluginInstance (std::unique_ptr<VST3ComponentHolder> componentHolder)
         : AudioPluginInstance (getBusProperties (componentHolder->component)),
-          holder (componentHolder),
-          midiInputs (new MidiEventList()),
-          midiOutputs (new MidiEventList())
+          holder (std::move (componentHolder))
     {
+        jassert (holder->isComponentInitialised);
         holder->host->setPlugin (this);
     }
 
@@ -2280,7 +2414,8 @@ public:
 
     void getExtensions (ExtensionsVisitor& visitor) const override
     {
-        struct Extensions : public ExtensionsVisitor::VST3Client
+        struct Extensions :  public ExtensionsVisitor::VST3Client,
+                             public ExtensionsVisitor::ARAClient
         {
             explicit Extensions (const VST3PluginInstance* instanceIn) : instance (instanceIn) {}
 
@@ -2293,10 +2428,21 @@ public:
                 return instance->setStateFromPresetFile (rawData);
             }
 
+            void createARAFactoryAsync (std::function<void (ARAFactoryWrapper)> cb) const noexcept override
+            {
+                cb (ARAFactoryWrapper { ::juce::getARAFactory (*(instance->holder->module)) });
+            }
+
             const VST3PluginInstance* instance = nullptr;
         };
 
-        visitor.visitVST3Client (Extensions { this });
+        Extensions extensions { this };
+        visitor.visitVST3Client (extensions);
+
+        if (::juce::getARAFactory (*(holder->module)))
+        {
+            visitor.visitARAClient (extensions);
+        }
     }
 
     void* getPlatformSpecificData() override   { return holder->component; }
@@ -2644,12 +2790,9 @@ public:
         // call releaseResources first!
         jassert (! isActive);
 
-        bool result = syncBusLayouts (layouts);
-
-        // didn't succeed? Make sure it's back in its original state
-        if (! result)
-            syncBusLayouts (getBusesLayout());
-
+        const auto previousLayout = getBusesLayout();
+        const auto result = syncBusLayouts (layouts);
+        syncBusLayouts (previousLayout);
         return result;
     }
 
@@ -2714,14 +2857,15 @@ public:
     };
 
     //==============================================================================
-    String getChannelName (int channelIndex, bool forInput, bool forAudioChannel) const
+    String getChannelName (int channelIndex, Direction direction) const
     {
-        auto numBuses = getNumSingleDirectionBusesFor (holder->component, forInput, forAudioChannel);
+        auto numBuses = getNumSingleDirectionBusesFor (holder->component, MediaKind::audio, direction);
+
         int numCountedChannels = 0;
 
         for (int i = 0; i < numBuses; ++i)
         {
-            auto busInfo = getBusInfo (forInput, forAudioChannel, i);
+            auto busInfo = getBusInfo (MediaKind::audio, direction, i);
 
             numCountedChannels += busInfo.channelCount;
 
@@ -2732,25 +2876,25 @@ public:
         return {};
     }
 
-    const String getInputChannelName  (int channelIndex) const override   { return getChannelName (channelIndex, true, true); }
-    const String getOutputChannelName (int channelIndex) const override   { return getChannelName (channelIndex, false, true); }
+    const String getInputChannelName  (int channelIndex) const override   { return getChannelName (channelIndex, Direction::input); }
+    const String getOutputChannelName (int channelIndex) const override   { return getChannelName (channelIndex, Direction::output); }
 
     bool isInputChannelStereoPair (int channelIndex) const override
     {
         int busIdx;
         return getOffsetInBusBufferForAbsoluteChannelIndex (true, channelIndex, busIdx) >= 0
-                 && getBusInfo (true, true, busIdx).channelCount == 2;
+                 && getBusInfo (MediaKind::audio, Direction::input, busIdx).channelCount == 2;
     }
 
     bool isOutputChannelStereoPair (int channelIndex) const override
     {
         int busIdx;
         return getOffsetInBusBufferForAbsoluteChannelIndex (false, channelIndex, busIdx) >= 0
-                 && getBusInfo (false, true, busIdx).channelCount == 2;
+                 && getBusInfo (MediaKind::audio, Direction::output, busIdx).channelCount == 2;
     }
 
-    bool acceptsMidi() const override    { return getNumSingleDirectionBusesFor (holder->component, true,  false) > 0; }
-    bool producesMidi() const override   { return getNumSingleDirectionBusesFor (holder->component, false, false) > 0; }
+    bool acceptsMidi() const override    { return hasMidiInput; }
+    bool producesMidi() const override   { return hasMidiOutput; }
 
     //==============================================================================
     AudioProcessorParameter* getBypassParameter() const override         { return bypassParam; }
@@ -3048,9 +3192,11 @@ private:
     CachedParamValues cachedParamValues;
     VSTComSmartPtr<ParameterChanges> inputParameterChanges  { new ParameterChanges };
     VSTComSmartPtr<ParameterChanges> outputParameterChanges { new ParameterChanges };
-    VSTComSmartPtr<MidiEventList> midiInputs, midiOutputs;
+    VSTComSmartPtr<MidiEventList> midiInputs { new MidiEventList }, midiOutputs { new MidiEventList };
     Vst::ProcessContext timingInfo; //< Only use this in processBlock()!
     bool isControllerInitialised = false, isActive = false, lastProcessBlockCallWasBypass = false;
+    const bool hasMidiInput  = getNumSingleDirectionBusesFor (holder->component, MediaKind::event, Direction::input) > 0,
+               hasMidiOutput = getNumSingleDirectionBusesFor (holder->component, MediaKind::event, Direction::output) > 0;
     VST3Parameter* bypassParam = nullptr;
 
     //==============================================================================
@@ -3107,7 +3253,7 @@ private:
             if ((paramInfo.flags & Vst::ParameterInfo::kIsBypass) != 0)
                 bypassParam = param;
 
-            std::function<AudioProcessorParameterGroup*(Vst::UnitID)> findOrCreateGroup;
+            std::function<AudioProcessorParameterGroup* (Vst::UnitID)> findOrCreateGroup;
             findOrCreateGroup = [&groupMap, &infoMap, &findOrCreateGroup] (Vst::UnitID groupID)
             {
                 auto existingGroup = groupMap.find (groupID);
@@ -3185,8 +3331,8 @@ private:
 
     void setStateForAllMidiBuses (bool newState)
     {
-        setStateForAllBusesOfType (holder->component, newState, true, false);   // Activate/deactivate MIDI inputs
-        setStateForAllBusesOfType (holder->component, newState, false, false);  // Activate/deactivate MIDI outputs
+        setStateForAllEventBuses (holder->component, newState, Direction::input);
+        setStateForAllEventBuses (holder->component, newState, Direction::output);
     }
 
     std::vector<ChannelMapping> createChannelMappings (bool isInput) const
@@ -3252,11 +3398,11 @@ private:
     }
 
     //==============================================================================
-    Vst::BusInfo getBusInfo (bool forInput, bool forAudio, int index = 0) const
+    Vst::BusInfo getBusInfo (MediaKind kind, Direction direction, int index = 0) const
     {
         Vst::BusInfo busInfo;
-        busInfo.mediaType = forAudio ? Vst::kAudio : Vst::kEvent;
-        busInfo.direction = forInput ? Vst::kInput : Vst::kOutput;
+        busInfo.mediaType = toVstType (kind);
+        busInfo.direction = toVstType (direction);
         busInfo.channelCount = 0;
 
         holder->component->getBusInfo (busInfo.mediaType, busInfo.direction,
@@ -3331,7 +3477,7 @@ private:
 
     void updateTimingInformation (Vst::ProcessData& destination, double processSampleRate)
     {
-        toProcessContext (timingInfo, getPlayHead(), processSampleRate, getHostTimeNs());
+        toProcessContext (timingInfo, getPlayHead(), processSampleRate);
         destination.processContext = &timingInfo;
     }
 
@@ -3433,17 +3579,6 @@ private:
 };
 
 JUCE_END_IGNORE_WARNINGS_MSVC
-
-//==============================================================================
-AudioPluginInstance* VST3ComponentHolder::createPluginInstance()
-{
-    if (! initialise())
-        return nullptr;
-
-    auto* plugin = new VST3PluginInstance (this);
-    host->setPlugin (plugin);
-    return plugin;
-}
 
 //==============================================================================
 tresult VST3HostContext::beginEdit (Vst::ParamID paramID)
@@ -3669,38 +3804,64 @@ void VST3PluginFormat::findAllTypesForFile (OwnedArray<PluginDescription>& resul
     }
 }
 
+void VST3PluginFormat::createARAFactoryAsync (const PluginDescription& description, ARAFactoryCreationCallback callback)
+{
+    if (! description.hasARAExtension)
+    {
+        jassertfalse;
+        callback ({ {}, "The provided plugin does not support ARA features" });
+    }
+
+    File file (description.fileOrIdentifier);
+    VSTComSmartPtr<IPluginFactory> pluginFactory (
+        DLLHandleCache::getInstance()->findOrCreateHandle (file.getFullPathName()).getPluginFactory());
+    const auto* pluginName = description.name.toRawUTF8();
+
+    callback ({ ARAFactoryWrapper { ::juce::getARAFactory (pluginFactory, pluginName) }, {} });
+}
+
+static std::unique_ptr<AudioPluginInstance> createVST3Instance (VST3PluginFormat& format,
+                                                                const PluginDescription& description)
+{
+    if (! format.fileMightContainThisPluginType (description.fileOrIdentifier))
+        return nullptr;
+
+    const File file { description.fileOrIdentifier };
+
+    struct ScopedWorkingDirectory
+    {
+        ~ScopedWorkingDirectory() { previousWorkingDirectory.setAsCurrentWorkingDirectory(); }
+        File previousWorkingDirectory = File::getCurrentWorkingDirectory();
+    };
+
+    const ScopedWorkingDirectory scope;
+    file.getParentDirectory().setAsCurrentWorkingDirectory();
+
+    const VST3ModuleHandle::Ptr module { VST3ModuleHandle::findOrCreateModule (file, description) };
+
+    if (module == nullptr)
+        return nullptr;
+
+    auto holder = std::make_unique<VST3ComponentHolder> (module);
+
+    if (! holder->initialise())
+        return nullptr;
+
+    auto instance = std::make_unique<VST3PluginInstance> (std::move (holder));
+
+    if (! instance->initialise())
+        return nullptr;
+
+    return instance;
+}
+
 void VST3PluginFormat::createPluginInstance (const PluginDescription& description,
                                              double, int, PluginCreationCallback callback)
 {
-    std::unique_ptr<VST3PluginInstance> result;
+    auto result = createVST3Instance (*this, description);
 
-    if (fileMightContainThisPluginType (description.fileOrIdentifier))
-    {
-        File file (description.fileOrIdentifier);
-
-        auto previousWorkingDirectory = File::getCurrentWorkingDirectory();
-        file.getParentDirectory().setAsCurrentWorkingDirectory();
-
-        if (const VST3ModuleHandle::Ptr module = VST3ModuleHandle::findOrCreateModule (file, description))
-        {
-            std::unique_ptr<VST3ComponentHolder> holder (new VST3ComponentHolder (module));
-
-            if (holder->initialise())
-            {
-                result.reset (new VST3PluginInstance (holder.release()));
-
-                if (! result->initialise())
-                    result.reset();
-            }
-        }
-
-        previousWorkingDirectory.setAsCurrentWorkingDirectory();
-    }
-
-    String errorMsg;
-
-    if (result == nullptr)
-        errorMsg = TRANS ("Unable to load XXX plug-in file").replace ("XXX", "VST-3");
+    const auto errorMsg = result == nullptr ? TRANS ("Unable to load XXX plug-in file").replace ("XXX", "VST-3")
+                                            : String();
 
     callback (std::move (result), errorMsg);
 }
