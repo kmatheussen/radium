@@ -632,7 +632,7 @@ very_clean: clean
 	cd pluginhost/Builds/Linux && $(MAKE) clean && cd ../../../
 	cd bin/packages && ./buildclean.sh
 
-clean: clean_pluginhost
+clean:
 	echo "Run ./build_clean.sh"
 	false
 
