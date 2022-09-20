@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -157,13 +150,10 @@ struct AudioUnitHelpers
 
         AudioBuffer<float>& getBuffer (UInt32 frames) noexcept
         {
-           #if JUCE_DEBUG
-            for (int i = 0; i < (int) channels.size(); ++i)
-                jassert (channels[(size_t) i] != nullptr);
-           #endif
+            jassert (std::none_of (channels.begin(), channels.end(), [] (auto* x) { return x == nullptr; }));
 
-            if (! channels.empty())
-                mutableBuffer.setDataToReferTo (channels.data(), (int) channels.size(), static_cast<int> (frames));
+            const auto channelPtr = channels.empty() ? scratch.getArrayOfWritePointers() : channels.data();
+            mutableBuffer.setDataToReferTo (channelPtr, (int) channels.size(), static_cast<int> (frames));
 
             return mutableBuffer;
         }

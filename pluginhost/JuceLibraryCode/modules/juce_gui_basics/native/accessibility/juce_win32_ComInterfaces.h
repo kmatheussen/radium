@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -120,7 +113,6 @@ enum WindowInteractionState
     WindowInteractionState_NotResponding = 4
 };
 
-#if 0
 const long UIA_InvokePatternId = 10000;
 const long UIA_SelectionPatternId = 10001;
 const long UIA_ValuePatternId = 10002;
@@ -128,16 +120,13 @@ const long UIA_RangeValuePatternId = 10003;
 const long UIA_ExpandCollapsePatternId = 10005;
 const long UIA_GridPatternId = 10006;
 const long UIA_GridItemPatternId = 10007;
- 
 const long UIA_WindowPatternId = 10009;
 const long UIA_SelectionItemPatternId = 10010;
 const long UIA_TextPatternId = 10014;
 const long UIA_TogglePatternId = 10015;
 const long UIA_TransformPatternId = 10016;
 const long UIA_TextPattern2Id = 10024;
- #endif
 const long UIA_StructureChangedEventId = 20002;
-
 const long UIA_MenuOpenedEventId = 20003;
 const long UIA_AutomationFocusChangedEventId = 20005;
 const long UIA_MenuClosedEventId = 20007;
@@ -148,8 +137,7 @@ const long UIA_Text_TextSelectionChangedEventId = 20014;
 const long UIA_Text_TextChangedEventId = 20015;
 const long UIA_Window_WindowOpenedEventId = 20016;
 const long UIA_Window_WindowClosedEventId = 20017;
-//const long UIA_IsPeripheralPropertyId = 30150;
-
+const long UIA_IsPeripheralPropertyId = 30150;
 const long UIA_IsReadOnlyAttributeId = 40015;
 const long UIA_CaretPositionAttributeId = 40038;
 const long UIA_ButtonControlTypeId = 50000;
@@ -178,7 +166,6 @@ const long UIA_HeaderControlTypeId = 50034;
 const long UIA_HeaderItemControlTypeId = 50035;
 const long UIA_TableControlTypeId = 50036;
 
- 
 interface IRawElementProviderFragmentRoot;
 interface IRawElementProviderFragment;
 

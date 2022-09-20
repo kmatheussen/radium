@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -49,13 +42,12 @@ namespace AccessibilityTextHelpers
     {
         const auto numCharacters = textInterface.getTotalNumCharacters();
         const auto isForwards = (direction == Direction::forwards);
-
-        const auto offsetWithDirecton = [isForwards] (int input) { return isForwards ? input : -input; };
+        const auto offsetWithDirection = [isForwards] (auto num) { return isForwards ? num : -num; };
 
         switch (boundary)
         {
             case BoundaryType::character:
-                return jlimit (0, numCharacters, isForwards ? currentPosition + 1 : currentPosition);
+                return jlimit (0, numCharacters, currentPosition + offsetWithDirection (1));
 
             case BoundaryType::word:
             case BoundaryType::line:
@@ -96,7 +88,7 @@ namespace AccessibilityTextHelpers
                 auto tokens = (boundary == BoundaryType::line ? StringArray::fromLines (text)
                                                               : StringArray::fromTokens (text, false));
 
-                return currentPosition + offsetWithDirecton (tokens[0].length());
+                return currentPosition + offsetWithDirection (tokens[0].length());
             }
 
             case BoundaryType::document:

@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -528,8 +528,9 @@ void File::addToDock() const
 
 File File::getContainerForSecurityApplicationGroupIdentifier (const String& appGroup)
 {
-    if (auto* url = [[NSFileManager defaultManager] containerURLForSecurityApplicationGroupIdentifier: juceStringToNS (appGroup)])
-        return File (nsStringToJuce ([url path]));
+    if (@available (macOS 10.8, *))
+        if (auto* url = [[NSFileManager defaultManager] containerURLForSecurityApplicationGroupIdentifier: juceStringToNS (appGroup)])
+            return File (nsStringToJuce ([url path]));
 
     return File();
 }

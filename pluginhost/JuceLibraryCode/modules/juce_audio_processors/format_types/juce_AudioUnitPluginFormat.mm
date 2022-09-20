@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -35,12 +28,9 @@ JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wdeprecated-declarations")
 
 #include <CoreMIDI/MIDIServices.h>
 
-#if JUCE_SUPPORT_CARBON
- #include <AudioUnit/AudioUnitCarbonView.h>
-#endif
-
 #include <CoreAudioKit/AUViewController.h>
 
+#include <juce_audio_basics/native/juce_mac_CoreAudioTimeConversions.h>
 #include <juce_audio_basics/native/juce_mac_CoreAudioLayouts.h>
 #include <juce_audio_basics/midi/juce_MidiDataConcatenator.h>
 #include "juce_AU_Shared.h"
@@ -216,13 +206,40 @@ namespace AudioUnitFormatHelpers
                 if (manuString != nullptr && CFGetTypeID (manuString) == CFStringGetTypeID())
                     manufacturer = String::fromCFString ((CFStringRef) manuString);
 
-                const ResFileRefNum resFileId = CFBundleOpenBundleResourceMap (bundleRef.get());
-                UseResFile (resFileId);
+                class ScopedBundleResourceMap final
+                {
+                public:
+                    explicit ScopedBundleResourceMap (CFBundleRef refIn) : ref (refIn),
+                                                                           resFileId (CFBundleOpenBundleResourceMap (ref)),
+                                                                           valid (resFileId != -1)
+                    {
+                        if (valid)
+                            UseResFile (resFileId);
+                    }
+
+                    ~ScopedBundleResourceMap()
+                    {
+                        if (valid)
+                            CFBundleCloseBundleResourceMap (ref, resFileId);
+                    }
+
+                    bool isValid() const noexcept
+                    {
+                        return valid;
+                    }
+
+                private:
+                    const CFBundleRef ref;
+                    const ResFileRefNum resFileId;
+                    const bool valid;
+                };
+
+                const ScopedBundleResourceMap resourceMap { bundleRef.get() };
 
                 const OSType thngType = stringToOSType ("thng");
                 auto numResources = Count1Resources (thngType);
 
-                if (numResources > 0)
+                if (resourceMap.isValid() && numResources > 0)
                 {
                     for (ResourceIndex i = 1; i <= numResources; ++i)
                     {
@@ -260,7 +277,7 @@ namespace AudioUnitFormatHelpers
                     NSBundle* bundle = [[NSBundle alloc] initWithPath: (NSString*) fileOrIdentifier.toCFString()];
 
                     NSArray* audioComponents = [bundle objectForInfoDictionaryKey: @"AudioComponents"];
-                    NSDictionary* dict = audioComponents[0];
+                    NSDictionary* dict = [audioComponents objectAtIndex: 0];
 
                     desc.componentManufacturer = stringToOSType (nsStringToJuce ((NSString*) [dict valueForKey: @"manufacturer"]));
                     desc.componentType         = stringToOSType (nsStringToJuce ((NSString*) [dict valueForKey: @"type"]));
@@ -268,8 +285,6 @@ namespace AudioUnitFormatHelpers
 
                     [bundle release];
                 }
-
-                CFBundleCloseBundleResourceMap (bundleRef.get(), resFileId);
             }
         }
 
@@ -314,39 +329,25 @@ namespace AudioUnitFormatHelpers
   #endif
 
     template <typename Value>
-    struct BasicOptional
-    {
-        BasicOptional() = default;
-
-        explicit constexpr BasicOptional (Value&& v) : value (std::move (v)), isValid (true) {}
-        explicit constexpr BasicOptional (const Value& v) : value (v), isValid (true) {}
-
-        explicit constexpr operator bool() const noexcept { return isValid; }
-
-        Value value;
-        bool isValid { false };
-    };
-
-    template <typename Value>
-    static BasicOptional<Value> tryGetProperty (AudioUnit inUnit,
-                                                AudioUnitPropertyID inID,
-                                                AudioUnitScope inScope,
-                                                AudioUnitElement inElement)
+    static Optional<Value> tryGetProperty (AudioUnit inUnit,
+                                           AudioUnitPropertyID inID,
+                                           AudioUnitScope inScope,
+                                           AudioUnitElement inElement)
     {
         Value data;
         auto size = (UInt32) sizeof (Value);
 
         if (AudioUnitGetProperty (inUnit, inID, inScope, inElement, &data, &size) == noErr)
-            return BasicOptional<Value> (data);
+            return data;
 
-        return BasicOptional<Value>();
+        return {};
     }
 
     static UInt32 getElementCount (AudioUnit comp, AudioUnitScope scope) noexcept
     {
         const auto count = tryGetProperty<UInt32> (comp, kAudioUnitProperty_ElementCount, scope, 0);
-        jassert (count.isValid);
-        return count.value;
+        jassert (count);
+        return *count;
     }
 
     /*  The plugin may expect its channels in a particular order, reported to the host
@@ -372,8 +373,8 @@ namespace AudioUnitFormatHelpers
 
                 if (const auto layout = tryGetProperty<AudioChannelLayout> (comp, kAudioUnitProperty_AudioChannelLayout, scope, busIndex))
                 {
-                    const auto juceChannelOrder = CoreAudioLayouts::fromCoreAudio (layout.value);
-                    const auto auChannelOrder   = CoreAudioLayouts::getCoreAudioLayoutChannels (layout.value);
+                    const auto juceChannelOrder = CoreAudioLayouts::fromCoreAudio (*layout);
+                    const auto auChannelOrder   = CoreAudioLayouts::getCoreAudioLayoutChannels (*layout);
 
                     for (auto juceChannelIndex = 0; juceChannelIndex < juceChannelOrder.size(); ++juceChannelIndex)
                         busMap.push_back ((size_t) auChannelOrder.indexOf (juceChannelOrder.getTypeOfChannel (juceChannelIndex)));
@@ -411,10 +412,17 @@ namespace AudioUnitFormatHelpers
         */
         std::vector<size_t> channels;
     };
+
+    static bool isPluginAUv3 (const AudioComponentDescription& desc)
+    {
+        if (@available (macOS 10.11, *))
+            return (desc.componentFlags & kAudioComponentFlag_IsV3AudioUnit) != 0;
+
+        return false;
+    }
 }
 
 //==============================================================================
-class AudioUnitPluginWindowCarbon;
 class AudioUnitPluginWindowCocoa;
 
 //==============================================================================
@@ -631,7 +639,7 @@ public:
 
         AudioComponentGetDescription (auComponent, &componentDesc);
 
-        isAUv3 = ((componentDesc.componentFlags & kAudioComponentFlag_IsV3AudioUnit) != 0);
+        isAUv3 = AudioUnitFormatHelpers::isPluginAUv3 (componentDesc);
 
         wantsMidiMessages = componentDesc.componentType == kAudioUnitType_MusicDevice
                          || componentDesc.componentType == kAudioUnitType_MusicEffect
@@ -823,7 +831,7 @@ public:
                 layoutHasChanged = true;
 
                 err = AudioUnitSetProperty (audioUnit, kAudioUnitProperty_ElementCount, scope, 0, &newCount, sizeof (newCount));
-                jassert (err == noErr);
+                jassertquiet (err == noErr);
             }
 
             for (int i = 0; i < n; ++i)
@@ -1072,7 +1080,7 @@ public:
 
             zerostruct (timeStamp);
             timeStamp.mSampleTime = 0;
-            timeStamp.mHostTime = GetCurrentHostTime (0, newSampleRate, isAUv3);
+            timeStamp.mHostTime = mach_absolute_time();
             timeStamp.mFlags = kAudioTimeStampSampleTimeValid | kAudioTimeStampHostTimeValid;
 
             wasPlaying = false;
@@ -1130,6 +1138,17 @@ public:
 
     void processAudio (AudioBuffer<float>& buffer, MidiBuffer& midiMessages, bool processBlockBypassedCalled)
     {
+        if (const auto* hostTimeNs = getHostTimeNs())
+        {
+            timeStamp.mHostTime = *hostTimeNs;
+            timeStamp.mFlags |= kAudioTimeStampHostTimeValid;
+        }
+        else
+        {
+            timeStamp.mHostTime = 0;
+            timeStamp.mFlags &= ~kAudioTimeStampHostTimeValid;
+        }
+
         // If these are hit, we might allocate in the process block!
         jassert (buffer.getNumChannels() <= preparedChannels);
         jassert (buffer.getNumSamples()  <= preparedSamples);
@@ -1138,7 +1157,7 @@ public:
         // to the following bus.
         inputBuffer.makeCopyOf (buffer, true);
 
-        auto numSamples = buffer.getNumSamples();
+        const auto numSamples = buffer.getNumSamples();
 
         if (auSupportsBypass)
         {
@@ -1152,8 +1171,6 @@ public:
 
         if (prepared)
         {
-            timeStamp.mHostTime = GetCurrentHostTime (numSamples, getSampleRate(), isAUv3);
-
             const auto numOutputBuses = getBusCount (false);
 
             for (int i = 0; i < numOutputBuses; ++i)
@@ -1593,9 +1610,10 @@ public:
 
 private:
     //==============================================================================
-    friend class AudioUnitPluginWindowCarbon;
     friend class AudioUnitPluginWindowCocoa;
     friend class AudioUnitPluginFormat;
+
+    CoreAudioTimeConversions timeConversions;
 
     AudioComponentDescription componentDesc;
     AudioComponent auComponent;
@@ -2146,29 +2164,6 @@ private:
     }
 
     //==============================================================================
-    static UInt64 GetCurrentHostTime (int numSamples, double sampleRate, bool isAUv3) noexcept
-    {
-     #if ! JUCE_IOS
-       if (! isAUv3)
-           return AudioGetCurrentHostTime();
-     #else
-        ignoreUnused (isAUv3);
-     #endif
-
-        UInt64 currentTime = mach_absolute_time();
-        static mach_timebase_info_data_t sTimebaseInfo = { 0, 0 };
-
-        if (sTimebaseInfo.denom == 0)
-            mach_timebase_info (&sTimebaseInfo);
-
-        auto bufferNanos = static_cast<double> (numSamples) * 1.0e9 / sampleRate;
-        auto bufferTicks = static_cast<UInt64> (std::ceil (bufferNanos * (static_cast<double> (sTimebaseInfo.denom)
-                                                                          / static_cast<double> (sTimebaseInfo.numer))));
-        currentTime += bufferTicks;
-
-        return currentTime;
-    }
-
     bool isBusCountWritable (bool isInput) const noexcept
     {
         UInt32 countSize;
@@ -2552,7 +2547,10 @@ private:
     {
         const auto viewSize = [&controller]
         {
-            auto size = [controller preferredContentSize];
+            auto size = CGSizeZero;
+
+            if (@available (macOS 10.11, *))
+                size = [controller preferredContentSize];
 
             if (size.width == 0 || size.height == 0)
                 size = controller.view.frame.size;
@@ -2590,162 +2588,12 @@ private:
     }
 };
 
-#if JUCE_SUPPORT_CARBON
-
-//==============================================================================
-class AudioUnitPluginWindowCarbon   : public AudioProcessorEditor
-{
-public:
-    AudioUnitPluginWindowCarbon (AudioUnitPluginInstance& p)
-        : AudioProcessorEditor (&p),
-          plugin (p),
-          audioComponent (nullptr),
-          viewComponent (nullptr)
-    {
-        innerWrapper.reset (new InnerWrapperComponent (*this));
-        addAndMakeVisible (innerWrapper.get());
-
-        setOpaque (true);
-        setVisible (true);
-        setSize (400, 300);
-
-        UInt32 propertySize;
-        if (AudioUnitGetPropertyInfo (plugin.audioUnit, kAudioUnitProperty_GetUIComponentList,
-                                      kAudioUnitScope_Global, 0, &propertySize, NULL) == noErr
-             && propertySize > 0)
-        {
-            HeapBlock<AudioComponentDescription> views (propertySize / sizeof (AudioComponentDescription));
-
-            if (AudioUnitGetProperty (plugin.audioUnit, kAudioUnitProperty_GetUIComponentList,
-                                      kAudioUnitScope_Global, 0, &views[0], &propertySize) == noErr)
-            {
-                audioComponent = AudioComponentFindNext (nullptr, &views[0]);
-            }
-        }
-    }
-
-    ~AudioUnitPluginWindowCarbon()
-    {
-        innerWrapper = nullptr;
-
-        if (isValid())
-            plugin.editorBeingDeleted (this);
-    }
-
-    bool isValid() const noexcept           { return audioComponent != nullptr; }
-
-    //==============================================================================
-    void paint (Graphics& g) override
-    {
-        g.fillAll (Colours::black);
-    }
-
-    void resized() override
-    {
-        if (innerWrapper != nullptr)
-            innerWrapper->setSize (getWidth(), getHeight());
-    }
-
-    //==============================================================================
-    bool keyStateChanged (bool) override         { return false; }
-    bool keyPressed (const KeyPress&) override   { return false; }
-
-    //==============================================================================
-    AudioUnit getAudioUnit() const      { return plugin.audioUnit; }
-
-    AudioUnitCarbonView getViewComponent()
-    {
-        if (viewComponent == nullptr && audioComponent != nullptr)
-            AudioComponentInstanceNew (audioComponent, &viewComponent);
-
-        return viewComponent;
-    }
-
-    void closeViewComponent()
-    {
-        if (viewComponent != nullptr)
-        {
-            JUCE_AU_LOG ("Closing AU GUI: " + plugin.getName());
-
-            AudioComponentInstanceDispose (viewComponent);
-            viewComponent = nullptr;
-        }
-    }
-
-private:
-    //==============================================================================
-    AudioUnitPluginInstance& plugin;
-    AudioComponent audioComponent;
-    AudioUnitCarbonView viewComponent;
-
-    //==============================================================================
-    class InnerWrapperComponent   : public CarbonViewWrapperComponent
-    {
-    public:
-        InnerWrapperComponent (AudioUnitPluginWindowCarbon& w)  : owner (w)  {}
-
-        ~InnerWrapperComponent()
-        {
-            deleteWindow();
-        }
-
-        HIViewRef attachView (WindowRef windowRef, HIViewRef rootView) override
-        {
-            JUCE_AU_LOG ("Opening AU GUI: " + owner.plugin.getName());
-
-            AudioUnitCarbonView carbonView = owner.getViewComponent();
-
-            if (carbonView == 0)
-                return 0;
-
-            Float32Point pos = { 0, 0 };
-            Float32Point size = { 250, 200 };
-            HIViewRef pluginView = 0;
-
-            AudioUnitCarbonViewCreate (carbonView, owner.getAudioUnit(), windowRef, rootView,
-                                       &pos, &size, (ControlRef*) &pluginView);
-
-            return pluginView;
-        }
-
-        void removeView (HIViewRef) override
-        {
-            owner.closeViewComponent();
-        }
-
-    private:
-        AudioUnitPluginWindowCarbon& owner;
-
-        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (InnerWrapperComponent)
-    };
-
-    friend class InnerWrapperComponent;
-    std::unique_ptr<InnerWrapperComponent> innerWrapper;
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioUnitPluginWindowCarbon)
-};
-
-#endif
-
 //==============================================================================
 AudioProcessorEditor* AudioUnitPluginInstance::createEditor()
 {
     std::unique_ptr<AudioProcessorEditor> w (new AudioUnitPluginWindowCocoa (*this, false));
 
     if (! static_cast<AudioUnitPluginWindowCocoa*> (w.get())->isValid())
-        w.reset();
-
-   #if JUCE_SUPPORT_CARBON
-    if (w == nullptr)
-    {
-        w.reset (new AudioUnitPluginWindowCarbon (*this));
-
-        if (! static_cast<AudioUnitPluginWindowCarbon*> (w.get())->isValid())
-            w.reset();
-    }
-   #endif
-
-    if (w == nullptr)
         w.reset (new AudioUnitPluginWindowCocoa (*this, true)); // use AUGenericView as a fallback
 
     return w.release();
@@ -2861,12 +2709,15 @@ void AudioUnitPluginFormat::createPluginInstance (const PluginDescription& desc,
 
         auto callbackBlock = new AUAsyncInitializationCallback (rate, blockSize, std::move (callback));
 
-        if ((componentDesc.componentFlags & kAudioComponentFlag_IsV3AudioUnit) != 0)
+        if (AudioUnitFormatHelpers::isPluginAUv3 (componentDesc))
         {
-            AudioComponentInstantiate (auComponent, kAudioComponentInstantiation_LoadOutOfProcess,
-                                       callbackBlock->getBlock());
+            if (@available (macOS 10.11, *))
+            {
+                AudioComponentInstantiate (auComponent, kAudioComponentInstantiation_LoadOutOfProcess,
+                                           callbackBlock->getBlock());
 
-            return;
+                return;
+            }
         }
 
         AudioComponentInstance audioUnit;
@@ -2890,8 +2741,10 @@ bool AudioUnitPluginFormat::requiresUnblockedMessageThreadDuringCreation (const 
                                                                 pluginName, version, manufacturer))
     {
         if (AudioComponent auComp = AudioComponentFindNext (nullptr, &componentDesc))
+        {
             if (AudioComponentGetDescription (auComp, &componentDesc) == noErr)
-                return ((componentDesc.componentFlags & kAudioComponentFlag_IsV3AudioUnit) != 0);
+                return AudioUnitFormatHelpers::isPluginAUv3 (componentDesc);
+        }
     }
 
     return false;
@@ -2923,11 +2776,7 @@ StringArray AudioUnitPluginFormat::searchPathsForPlugins (const FileSearchPath&,
              || desc.componentType == kAudioUnitType_Mixer
              || desc.componentType == kAudioUnitType_MIDIProcessor)
         {
-            ignoreUnused (allowPluginsWhichRequireAsynchronousInstantiation);
-
-            const auto isAUv3 = ((desc.componentFlags & kAudioComponentFlag_IsV3AudioUnit) != 0);
-
-            if (allowPluginsWhichRequireAsynchronousInstantiation || ! isAUv3)
+            if (allowPluginsWhichRequireAsynchronousInstantiation || ! AudioUnitFormatHelpers::isPluginAUv3 (desc))
                 result.add (AudioUnitFormatHelpers::createPluginIdentifier (desc));
         }
     }
