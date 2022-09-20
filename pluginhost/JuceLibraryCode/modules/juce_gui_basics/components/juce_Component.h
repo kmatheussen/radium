@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -615,7 +608,7 @@ public:
     /** Returns the approximate scale factor for a given component by traversing its parent hierarchy
         and applying each transform and finally scaling this by the global scale factor.
     */
-    static float JUCE_CALLTYPE getApproximateScaleFactorForComponent (Component* targetComponent);
+    static float JUCE_CALLTYPE getApproximateScaleFactorForComponent (const Component* targetComponent);
 
     //==============================================================================
     /** Returns a proportion of the component's width.
@@ -1113,10 +1106,10 @@ public:
         number of simple components being rendered, and where they are guaranteed never to do any drawing
         beyond their own boundaries, setting this to true will reduce the overhead involved in clipping
         the graphics context that gets passed to the component's paint() callback.
+
         If you enable this mode, you'll need to make sure your paint method doesn't call anything like
         Graphics::fillAll(), and doesn't draw beyond the component's bounds, because that'll produce
-        artifacts. Your component also can't have any child components that may be placed beyond its
-        bounds.
+        artifacts. This option will have no effect on components that contain any child components.
     */
     void setPaintingIsUnclipped (bool shouldPaintWithoutClipping) noexcept;
 

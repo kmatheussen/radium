@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -144,7 +137,7 @@ private:
 };
 
 //==============================================================================
-std::array<uint32, 4> getNormalisedTUID (const TUID& tuid) noexcept
+static std::array<uint32, 4> getNormalisedTUID (const TUID& tuid) noexcept
 {
     const FUID fuid { tuid };
     return { { fuid.getLong1(), fuid.getLong2(), fuid.getLong3(), fuid.getLong4() } };
@@ -247,7 +240,10 @@ static void setStateForAllBusesOfType (Vst::IComponent* component,
 }
 
 //==============================================================================
-static void toProcessContext (Vst::ProcessContext& context, AudioPlayHead* playHead, double sampleRate)
+static void toProcessContext (Vst::ProcessContext& context,
+                              AudioPlayHead* playHead,
+                              double sampleRate,
+                              const uint64_t* hostTimeNs)
 {
     jassert (sampleRate > 0.0); //Must always be valid, as stated by the VST3 SDK
 
@@ -302,6 +298,13 @@ static void toProcessContext (Vst::ProcessContext& context, AudioPlayHead* playH
 
     if (context.timeSigNumerator > 0 && context.timeSigDenominator > 0)
         context.state |= ProcessContext::kTimeSigValid;
+
+    if (hostTimeNs != nullptr)
+    {
+        context.systemTime = (int64_t) *hostTimeNs;
+        jassert (context.systemTime >= 0);
+        context.state |= ProcessContext::kSystemTimeValid;
+    }
 }
 
 //==============================================================================
@@ -1330,7 +1333,6 @@ private:
 //==============================================================================
 struct VST3PluginWindow : public AudioProcessorEditor,
                           private ComponentMovementWatcher,
-                          private ComponentPeer::ScaleFactorListener,
                           private IPlugFrame
 {
     VST3PluginWindow (AudioPluginInstance* owner, IPlugView* pluginView)
@@ -1356,8 +1358,6 @@ struct VST3PluginWindow : public AudioProcessorEditor,
     {
         if (scaleInterface != nullptr)
             scaleInterface->release();
-
-        removeScaleFactorListener();
 
         #if JUCE_LINUX || JUCE_BSD
          embeddedComponent.removeClient();
@@ -1418,16 +1418,19 @@ struct VST3PluginWindow : public AudioProcessorEditor,
 
 private:
     //==============================================================================
-    void componentPeerChanged() override
-    {
-        removeScaleFactorListener();
-        currentPeer = getTopLevelComponent()->getPeer();
+    void componentPeerChanged() override {}
 
-        if (currentPeer != nullptr)
-        {
-            currentPeer->addScaleFactorListener (this);
-            nativeScaleFactor = (float) currentPeer->getPlatformScaleFactor();
-        }
+    /*  Convert from the component's coordinate system to the hosted VST3's coordinate system. */
+    ViewRect componentToVST3Rect (Rectangle<int> r) const
+    {
+        const auto physical = localAreaToGlobal (r) * nativeScaleFactor * getDesktopScaleFactor();
+        return { 0, 0, physical.getWidth(), physical.getHeight() };
+    }
+
+    /*  Convert from the hosted VST3's coordinate system to the component's coordinate system. */
+    Rectangle<int> vst3ToComponentRect (const ViewRect& vr) const
+    {
+        return getLocalArea (nullptr, Rectangle<int> { vr.right, vr.bottom } / (nativeScaleFactor * getDesktopScaleFactor()));
     }
 
     void componentMovedOrResized (bool, bool wasResized) override
@@ -1435,44 +1438,34 @@ private:
         if (recursiveResize || ! wasResized || getTopLevelComponent()->getPeer() == nullptr)
             return;
 
-        ViewRect rect;
-
         if (view->canResize() == kResultTrue)
         {
-            rect.right  = (Steinberg::int32) roundToInt ((float) getWidth()  * nativeScaleFactor);
-            rect.bottom = (Steinberg::int32) roundToInt ((float) getHeight() * nativeScaleFactor);
-
+            auto rect = componentToVST3Rect (getLocalBounds());
             view->checkSizeConstraint (&rect);
 
             {
                 const ScopedValueSetter<bool> recursiveResizeSetter (recursiveResize, true);
 
-                setSize (roundToInt ((float) rect.getWidth()  / nativeScaleFactor),
-                         roundToInt ((float) rect.getHeight() / nativeScaleFactor));
+                const auto logicalSize = vst3ToComponentRect (rect);
+                setSize (logicalSize.getWidth(), logicalSize.getHeight());
             }
 
-           #if JUCE_WINDOWS
-            setPluginWindowPos (rect);
-           #else
             embeddedComponent.setBounds (getLocalBounds());
-           #endif
 
             view->onSize (&rect);
         }
         else
         {
+            ViewRect rect;
             warnOnFailure (view->getSize (&rect));
 
-           #if JUCE_WINDOWS
-            setPluginWindowPos (rect);
-           #else
-            resizeWithRect (embeddedComponent, rect, nativeScaleFactor);
-           #endif
+            resizeWithRect (embeddedComponent, rect);
         }
 
         // Some plugins don't update their cursor correctly when mousing out the window
         Desktop::getInstance().getMainMouseSource().forceMouseCursorUpdate();
     }
+
     using ComponentMovementWatcher::componentMovedOrResized;
 
     void componentVisibilityChanged() override
@@ -1481,20 +1474,14 @@ private:
         resizeToFit();
         componentMovedOrResized (true, true);
     }
-    using ComponentMovementWatcher::componentVisibilityChanged;
 
-    void nativeScaleFactorChanged (double newScaleFactor) override
-    {
-        nativeScaleFactor = (float) newScaleFactor;
-        updatePluginScale();
-        componentMovedOrResized (false, true);
-    }
+    using ComponentMovementWatcher::componentVisibilityChanged;
 
     void resizeToFit()
     {
         ViewRect rect;
         warnOnFailure (view->getSize (&rect));
-        resizeWithRect (*this, rect, nativeScaleFactor);
+        resizeWithRect (*this, rect);
     }
 
     tresult PLUGIN_API resizeView (IPlugView* incomingView, ViewRect* newSize) override
@@ -1503,34 +1490,28 @@ private:
 
         if (incomingView != nullptr && newSize != nullptr && incomingView == view)
         {
-            auto scaleToViewRect = [this] (int dimension)
-            {
-                return (Steinberg::int32) roundToInt ((float) dimension * nativeScaleFactor);
-            };
-
-            auto oldWidth  = scaleToViewRect (getWidth());
-            auto oldHeight = scaleToViewRect (getHeight());
-
-            resizeWithRect (embeddedComponent, *newSize, nativeScaleFactor);
+            const auto oldPhysicalSize = componentToVST3Rect (getLocalBounds());
+            const auto logicalSize = vst3ToComponentRect (*newSize);
+            setSize (logicalSize.getWidth(), logicalSize.getHeight());
+            embeddedComponent.setSize (logicalSize.getWidth(), logicalSize.getHeight());
 
            #if JUCE_WINDOWS
-            setPluginWindowPos (*newSize);
+            embeddedComponent.updateHWNDBounds();
+           #elif JUCE_LINUX || JUCE_BSD
+            embeddedComponent.updateEmbeddedBounds();
            #endif
-
-            setSize (embeddedComponent.getWidth(), embeddedComponent.getHeight());
 
             // According to the VST3 Workflow Diagrams, a resizeView from the plugin should
             // always trigger a response from the host which confirms the new size.
-            ViewRect rect { 0, 0,
-                            scaleToViewRect (getWidth()),
-                            scaleToViewRect (getHeight()) };
+            auto currentPhysicalSize = componentToVST3Rect (getLocalBounds());
 
-            if (rect.right != oldWidth || rect.bottom != oldHeight
+            if (currentPhysicalSize.getWidth() != oldPhysicalSize.getWidth()
+                || currentPhysicalSize.getHeight() != oldPhysicalSize.getHeight()
                 || ! isInOnSize)
             {
                 // Guard against plug-ins immediately calling resizeView() with the same size
                 const ScopedValueSetter<bool> inOnSizeSetter (isInOnSize, true);
-                view->onSize (&rect);
+                view->onSize (&currentPhysicalSize);
             }
 
             return kResultTrue;
@@ -1541,10 +1522,11 @@ private:
     }
 
     //==============================================================================
-    static void resizeWithRect (Component& comp, const ViewRect& rect, float scaleFactor)
+    void resizeWithRect (Component& comp, const ViewRect& rect) const
     {
-        comp.setSize (jmax (10, std::abs (roundToInt ((float) rect.getWidth()  / scaleFactor))),
-                      jmax (10, std::abs (roundToInt ((float) rect.getHeight() / scaleFactor))));
+        const auto logicalSize = vst3ToComponentRect (rect);
+        comp.setSize (jmax (10, logicalSize.getWidth()),
+                      jmax (10, logicalSize.getHeight()));
     }
 
     void attachPluginWindow()
@@ -1552,19 +1534,16 @@ private:
         if (pluginHandle == HandleFormat{})
         {
             #if JUCE_WINDOWS
-             if (auto* topComp = getTopLevelComponent())
-             {
-                 peer.reset (embeddedComponent.createNewPeer (0, topComp->getWindowHandle()));
-                 pluginHandle = (HandleFormat) peer->getNativeHandle();
-             }
-            #else
+             pluginHandle = static_cast<HWND> (embeddedComponent.getHWND());
+            #endif
+
              embeddedComponent.setBounds (getLocalBounds());
              addAndMakeVisible (embeddedComponent);
-             #if JUCE_MAC
-              pluginHandle = (HandleFormat) embeddedComponent.getView();
-             #elif JUCE_LINUX || JUCE_BSD
-              pluginHandle = (HandleFormat) embeddedComponent.getHostWindowID();
-             #endif
+
+            #if JUCE_MAC
+             pluginHandle = (HandleFormat) embeddedComponent.getView();
+            #elif JUCE_LINUX || JUCE_BSD
+             pluginHandle = (HandleFormat) embeddedComponent.getHostWindowID();
             #endif
 
             if (pluginHandle == HandleFormat{})
@@ -1583,16 +1562,6 @@ private:
         }
     }
 
-    void removeScaleFactorListener()
-    {
-        if (currentPeer == nullptr)
-            return;
-
-         for (int i = 0; i < ComponentPeer::getNumPeers(); ++i)
-             if (ComponentPeer::getPeer (i) == currentPeer)
-                 currentPeer->removeScaleFactorListener (this);
-    }
-
     void updatePluginScale()
     {
         if (scaleInterface != nullptr)
@@ -1605,7 +1574,7 @@ private:
     {
         if (scaleInterface != nullptr)
         {
-            const auto result = scaleInterface->setContentScaleFactor ((Steinberg::IPlugViewContentScaleSupport::ScaleFactor) nativeScaleFactor);
+            const auto result = scaleInterface->setContentScaleFactor ((Steinberg::IPlugViewContentScaleSupport::ScaleFactor) getEffectiveScale());
             ignoreUnused (result);
 
            #if ! JUCE_MAC
@@ -1614,38 +1583,49 @@ private:
         }
     }
 
+    void setScaleFactor (float s) override
+    {
+        userScaleFactor = s;
+        setContentScaleFactor();
+        resizeToFit();
+    }
+
+    float getEffectiveScale() const
+    {
+        return nativeScaleFactor * userScaleFactor;
+    }
+
     //==============================================================================
     Atomic<int> refCount { 1 };
     VSTComSmartPtr<IPlugView> view;
 
    #if JUCE_WINDOWS
-    struct ChildComponent  : public Component
-    {
-        ChildComponent() { setOpaque (true); }
-        void paint (Graphics& g) override  { g.fillAll (Colours::cornflowerblue); }
-        using Component::createNewPeer;
+    using HandleFormat = HWND;
 
-        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ChildComponent)
+    struct ViewComponent : public HWNDComponent
+    {
+        ViewComponent()
+        {
+            setOpaque (true);
+            inner.addToDesktop (0);
+
+            if (auto* peer = inner.getPeer())
+                setHWND (peer->getNativeHandle());
+        }
+
+        void paint (Graphics& g) override { g.fillAll (Colours::black); }
+
+    private:
+        struct Inner : public Component
+        {
+            Inner() { setOpaque (true); }
+            void paint (Graphics& g) override { g.fillAll (Colours::black); }
+        };
+
+        Inner inner;
     };
 
-    void setPluginWindowPos (ViewRect rect)
-    {
-        if (auto* topComp = getTopLevelComponent())
-        {
-            auto pos = (topComp->getLocalPoint (this, Point<int>()) * nativeScaleFactor).roundToInt();
-
-            ScopedThreadDPIAwarenessSetter threadDpiAwarenessSetter { pluginHandle };
-
-            SetWindowPos (pluginHandle, nullptr,
-                          pos.x, pos.y,
-                          rect.getWidth(), rect.getHeight(),
-                          isVisible() ? SWP_SHOWWINDOW : SWP_HIDEWINDOW);
-        }
-    }
-
-    ChildComponent embeddedComponent;
-    std::unique_ptr<ComponentPeer> peer;
-    using HandleFormat = HWND;
+    ViewComponent embeddedComponent;
    #elif JUCE_MAC
     NSViewComponentWithParent embeddedComponent;
     using HandleFormat = NSView*;
@@ -1661,9 +1641,35 @@ private:
     HandleFormat pluginHandle = {};
     bool recursiveResize = false, isInOnSize = false, attachedCalled = false;
 
-    ComponentPeer* currentPeer = nullptr;
     Steinberg::IPlugViewContentScaleSupport* scaleInterface = nullptr;
     float nativeScaleFactor = 1.0f;
+    float userScaleFactor = 1.0f;
+
+    struct ScaleNotifierCallback
+    {
+        VST3PluginWindow& window;
+
+        void operator() (float platformScale) const
+        {
+            MessageManager::callAsync ([ref = Component::SafePointer<VST3PluginWindow> (&window), platformScale]
+            {
+                if (auto* r = ref.getComponent())
+                {
+                    r->nativeScaleFactor = platformScale;
+                    r->setContentScaleFactor();
+                    r->resizeToFit();
+
+                   #if JUCE_WINDOWS
+                    r->embeddedComponent.updateHWNDBounds();
+                   #elif JUCE_LINUX || JUCE_BSD
+                    r->embeddedComponent.updateEmbeddedBounds();
+                   #endif
+                }
+            });
+        }
+    };
+
+    NativeScaleFactorNotifier scaleNotifier { this, ScaleNotifierCallback { *this } };
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (VST3PluginWindow)
@@ -2076,18 +2082,6 @@ public:
         void setValue (float newValue) override
         {
             pluginInstance.cachedParamValues.set (vstParamIndex, newValue);
-            pluginInstance.parameterDispatcher.push (vstParamIndex, newValue);
-        }
-
-        /*  If the editor set the value, there's no need to notify it that the parameter
-            value changed. Instead, we set the cachedValue (which will be read by the
-            processor during the next processBlock) and notify listeners that the parameter
-            has changed.
-        */
-        void setValueFromEditor (float newValue)
-        {
-            pluginInstance.cachedParamValues.set (vstParamIndex, newValue);
-            sendValueChangedMessageToListeners (newValue);
         }
 
         /*  If we're syncing the editor to the processor, the processor won't need to
@@ -2203,32 +2197,7 @@ public:
 
     ~VST3PluginInstance() override
     {
-        struct VST3Deleter : public CallbackMessage
-        {
-            VST3Deleter (VST3PluginInstance& inInstance, WaitableEvent& inEvent)
-                : vst3Instance (inInstance), completionSignal (inEvent)
-            {}
-
-            void messageCallback() override
-            {
-                vst3Instance.cleanup();
-                completionSignal.signal();
-            }
-
-            VST3PluginInstance& vst3Instance;
-            WaitableEvent& completionSignal;
-        };
-
-        if (MessageManager::getInstance()->isThisTheMessageThread())
-        {
-            cleanup();
-        }
-        else
-        {
-            WaitableEvent completionEvent;
-            (new VST3Deleter (*this, completionEvent))->post();
-            completionEvent.wait();
-        }
+        callOnMessageThread ([this] { cleanup(); });
     }
 
     void cleanup()
@@ -2435,7 +2404,9 @@ public:
             warnOnFailure (holder->component->activateBus (Vst::kAudio, Vst::kOutput, i, getBus (false, i)->isEnabled() ? 1 : 0));
 
         setLatencySamples (jmax (0, (int) processor->getLatencySamples()));
-        cachedBusLayouts = getBusesLayout();
+
+        inputBusMap .prepare (createChannelMappings (true));
+        outputBusMap.prepare (createChannelMappings (false));
 
         setStateForAllMidiBuses (true);
 
@@ -2454,13 +2425,13 @@ public:
 
         isActive = false;
 
-        setStateForAllMidiBuses (false);
-
         if (processor != nullptr)
             warnOnFailureIfImplemented (processor->setProcessing (false));
 
         if (holder->component != nullptr)
             warnOnFailure (holder->component->setActive (false));
+
+        setStateForAllMidiBuses (false);
     }
 
     bool supportsDoublePrecisionProcessing() const override
@@ -2576,6 +2547,11 @@ public:
             inputParameterChanges->set (cachedParamValues.getParamID (index), value);
         });
 
+        inputParameterChanges->forEach ([&] (Steinberg::int32 index, float value)
+        {
+            parameterDispatcher.push (index, value);
+        });
+
         processor->process (data);
 
         outputParameterChanges->forEach ([&] (Steinberg::int32 index, float value)
@@ -2670,7 +2646,7 @@ public:
 
         bool result = syncBusLayouts (layouts);
 
-        // didn't succeed? Make sure it's back in it's original state
+        // didn't succeed? Make sure it's back in its original state
         if (! result)
             syncBusLayouts (getBusesLayout());
 
@@ -2983,7 +2959,6 @@ public:
         ignoreUnused (data, sizeInBytes);
     }
 
-
 private:
     //==============================================================================
    #if JUCE_LINUX || JUCE_BSD
@@ -3017,9 +2992,7 @@ private:
         even if there aren't enough channels to process,
         as very poorly specified by the Steinberg SDK
     */
-    VST3FloatAndDoubleBusMapComposite inputBusMap, outputBusMap;
-    Array<Vst::AudioBusBuffers> inputBuses, outputBuses;
-    AudioProcessor::BusesLayout cachedBusLayouts;
+    HostBufferMapper inputBusMap, outputBusMap;
 
     StringArray programNames;
     Vst::ParamID programParameterID = (Vst::ParamID) -1;
@@ -3044,7 +3017,9 @@ private:
         {
             Steinberg::MemoryStream stream;
 
-            if (object->getState (&stream) == kResultTrue)
+            const auto result = object->getState (&stream);
+
+            if (result == kResultTrue)
             {
                 MemoryBlock info (stream.getData(), (size_t) stream.getSize());
                 head.createNewChildElement (identifier)->addTextElement (info.toBase64Encoding());
@@ -3214,6 +3189,17 @@ private:
         setStateForAllBusesOfType (holder->component, newState, false, false);  // Activate/deactivate MIDI outputs
     }
 
+    std::vector<ChannelMapping> createChannelMappings (bool isInput) const
+    {
+        std::vector<ChannelMapping> result;
+        result.reserve ((size_t) getBusCount (isInput));
+
+        for (auto i = 0; i < getBusCount (isInput); ++i)
+            result.emplace_back (*getBus (isInput, i));
+
+        return result;
+    }
+
     void setupIO()
     {
         setStateForAllMidiBuses (true);
@@ -3226,7 +3212,8 @@ private:
 
         warnOnFailure (processor->setupProcessing (setup));
 
-        cachedBusLayouts = getBusesLayout();
+        inputBusMap .prepare (createChannelMappings (true));
+        outputBusMap.prepare (createChannelMappings (false));
         setRateAndBufferSizeDetails (setup.sampleRate, (int) setup.maxSamplesPerBlock);
     }
 
@@ -3303,7 +3290,7 @@ private:
     /** @note An IPlugView, when first created, should start with a ref-count of 1! */
     IPlugView* tryCreatingView() const
     {
-        JUCE_ASSERT_MESSAGE_THREAD
+        JUCE_ASSERT_MESSAGE_MANAGER_IS_LOCKED
 
         IPlugView* v = editController->createView (Vst::ViewType::kEditor);
 
@@ -3317,11 +3304,8 @@ private:
     template <typename FloatType>
     void associateWith (Vst::ProcessData& destination, AudioBuffer<FloatType>& buffer)
     {
-        VST3BufferExchange<FloatType>::mapBufferToBuses (inputBuses,  inputBusMap.get<FloatType>(),  cachedBusLayouts.inputBuses,  buffer);
-        VST3BufferExchange<FloatType>::mapBufferToBuses (outputBuses, outputBusMap.get<FloatType>(), cachedBusLayouts.outputBuses, buffer);
-
-        destination.inputs  = inputBuses.getRawDataPointer();
-        destination.outputs = outputBuses.getRawDataPointer();
+        destination.inputs  = inputBusMap .getVst3LayoutForJuceBuffer (buffer);
+        destination.outputs = outputBusMap.getVst3LayoutForJuceBuffer (buffer);
     }
 
     void associateWith (Vst::ProcessData& destination, MidiBuffer& midiBuffer)
@@ -3333,8 +3317,12 @@ private:
         {
             MidiEventList::hostToPluginEventList (*midiInputs,
                                                   midiBuffer,
-                                                  destination.inputParameterChanges,
-                                                  storedMidiMapping);
+                                                  storedMidiMapping,
+                                                  [this] (const auto controlID, const auto paramValue)
+                                                  {
+                                                      if (auto* param = this->getParameterForID (controlID))
+                                                          param->setValueNotifyingHost ((float) paramValue);
+                                                  });
         }
 
         destination.inputEvents = midiInputs;
@@ -3343,7 +3331,7 @@ private:
 
     void updateTimingInformation (Vst::ProcessData& destination, double processSampleRate)
     {
-        toProcessContext (timingInfo, getPlayHead(), processSampleRate);
+        toProcessContext (timingInfo, getPlayHead(), processSampleRate, getHostTimeNs());
         destination.processContext = &timingInfo;
     }
 
@@ -3479,7 +3467,7 @@ tresult VST3HostContext::performEdit (Vst::ParamID paramID, Vst::ParamValue valu
 
     if (auto* param = plugin->getParameterForID (paramID))
     {
-        param->setValueFromEditor ((float) valueNormalised);
+        param->setValueNotifyingHost ((float) valueNormalised);
 
         // did the plug-in already update the parameter internally
         if (plugin->editController->getParamNormalized (paramID) != (float) valueNormalised)

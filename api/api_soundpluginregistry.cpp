@@ -238,20 +238,25 @@ static hash_t *get_container_disk_hash(const SoundPluginTypeContainer *container
 
   {
     QFileInfo info(STRING_get_qstring(container->filename.id));
-    if (info.exists()==false){
-      GFX_Message(NULL, "Error: Plugin file %S does not seem to exist anymore.", container->filename.id);
-      return NULL;
+
+    bool is_lv2 = !strcmp(container->type_name, "LV2");
+    
+    if (!is_lv2){
+      if (info.exists()==false){
+        GFX_Message(NULL, "Error: Plugin file %S does not seem to exist anymore.", container->filename.id);
+        return NULL;
+      }
     }
 
     int64_t filesize = info.size();
-    if (filesize==0){
+    if (!is_lv2 && filesize==0){
       //GFX_addMessage("Error: Plugin file %s seems to have size 0.", STRING_get_chars(container->filename));
       printf("Error: Plugin file %S seems to have size 0.", container->filename.id);
       //return NULL;  // No need to fail.
     }
     
     QDateTime datetime = info.lastModified();
-    if (datetime.isValid()==false)
+    if (!is_lv2 && datetime.isValid()==false)
       printf("Warning: plugin %S does not have a valid write time", container->filename.id); // Could perhaps happen on some filesystems.
     
     int64_t writetime = datetime.isValid() ? datetime.toUTC().toMSecsSinceEpoch() : 0;

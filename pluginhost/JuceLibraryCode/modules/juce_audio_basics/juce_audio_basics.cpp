@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -30,6 +30,8 @@
 #endif
 
 #include "juce_audio_basics.h"
+
+#include <juce_core/containers/juce_Optional.h>
 
 #if JUCE_MINGW && ! defined (alloca)
  #define alloca __builtin_alloca
@@ -95,5 +97,5 @@
 
 #if JUCE_UNIT_TESTS
  #include "utilities/juce_ADSR_test.cpp"
- #include "midi/ump/juce_UMPTests.cpp"
+ #include "midi/ump/juce_UMP_test.cpp"
 #endif

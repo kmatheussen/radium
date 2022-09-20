@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -40,31 +33,6 @@ namespace juce
 #if defined (__IPHONE_11_0) && __IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_11_0
  #define JUCE_IOS_CONTAINER_API_AVAILABLE 1
 #endif
-
-JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wunguarded-availability", "-Wunguarded-availability-new")
-
-constexpr auto juceUIAccessibilityContainerTypeNone =
-                   #if JUCE_IOS_CONTAINER_API_AVAILABLE
-                    UIAccessibilityContainerTypeNone;
-                   #else
-                    0;
-                   #endif
-
-constexpr auto juceUIAccessibilityContainerTypeDataTable =
-                   #if JUCE_IOS_CONTAINER_API_AVAILABLE
-                    UIAccessibilityContainerTypeDataTable;
-                   #else
-                    1;
-                   #endif
-
-constexpr auto juceUIAccessibilityContainerTypeList =
-                   #if JUCE_IOS_CONTAINER_API_AVAILABLE
-                    UIAccessibilityContainerTypeList;
-                   #else
-                    2;
-                   #endif
-
-JUCE_END_IGNORE_WARNINGS_GCC_LIKE
 
 #define JUCE_NATIVE_ACCESSIBILITY_INCLUDED 1
 
@@ -164,7 +132,12 @@ private:
             if (auto* handler = getHandler (self))
             {
                 if (handler->getTableInterface() != nullptr)
-                    return juceUIAccessibilityContainerTypeDataTable;
+                {
+                    if (@available (iOS 11.0, *))
+                        return UIAccessibilityContainerTypeDataTable;
+
+                    return 1; // UIAccessibilityContainerTypeDataTable
+                }
 
                 const auto role = handler->getRole();
 
@@ -172,11 +145,17 @@ private:
                     || role == AccessibilityRole::list
                     || role == AccessibilityRole::tree)
                 {
-                    return juceUIAccessibilityContainerTypeList;
+                    if (@available (iOS 11.0, *))
+                        return UIAccessibilityContainerTypeList;
+
+                    return 2; // UIAccessibilityContainerTypeList
                 }
             }
 
-            return juceUIAccessibilityContainerTypeNone;
+            if (@available (iOS 11.0, *))
+                return UIAccessibilityContainerTypeNone;
+
+            return 0; // UIAccessibilityContainerTypeNone
         }
     };
 

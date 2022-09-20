@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -23,6 +16,7 @@
   ==============================================================================
 */
 
+API_AVAILABLE (macos (10.10))
 static void juceFreeAccessibilityPlatformSpecificData (NSAccessibilityElement<NSAccessibility>*)  {}
 
 namespace juce
@@ -35,16 +29,17 @@ namespace juce
 
 #define JUCE_NATIVE_ACCESSIBILITY_INCLUDED 1
 
-JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wunguarded-availability", "-Wunguarded-availability-new")
-
 //==============================================================================
 class AccessibilityHandler::AccessibilityNativeImpl
 {
 public:
     explicit AccessibilityNativeImpl (AccessibilityHandler& handler)
-        : accessibilityElement (AccessibilityElement::create (handler))
-    {}
+    {
+        if (@available (macOS 10.10, *))
+            accessibilityElement = AccessibilityElement::create (handler);
+    }
 
+    API_AVAILABLE (macos (10.10))
     NSAccessibilityElement<NSAccessibility>* getAccessibilityElement() const noexcept
     {
         return accessibilityElement.get();
@@ -52,7 +47,7 @@ public:
 
 private:
     //==============================================================================
-    class AccessibilityElement  : public AccessibleObjCClass<NSAccessibilityElement<NSAccessibility>>
+    class API_AVAILABLE (macos (10.10)) AccessibilityElement  : public AccessibleObjCClass<NSAccessibilityElement<NSAccessibility>>
     {
     public:
         static Holder create (AccessibilityHandler& handler)
@@ -278,7 +273,7 @@ private:
             if (auto* handler = getHandler (self))
             {
                 if (handler->getCurrentState().isCheckable())
-                    return handler->getCurrentState().isChecked() ? @(1) : @(0);
+                    return juceStringToNS (handler->getCurrentState().isChecked() ? TRANS ("On") : TRANS ("Off"));
 
                 return getAccessibilityValueFromInterfaces (*handler);
             }
@@ -830,6 +825,7 @@ private:
     };
 
     //==============================================================================
+    API_AVAILABLE (macos (10.10))
     AccessibilityElement::Holder accessibilityElement;
 
     //==============================================================================
@@ -839,7 +835,10 @@ private:
 //==============================================================================
 AccessibilityNativeHandle* AccessibilityHandler::getNativeImplementation() const
 {
-    return (AccessibilityNativeHandle*) nativeImpl->getAccessibilityElement();
+    if (@available (macOS 10.10, *))
+        return (AccessibilityNativeHandle*) nativeImpl->getAccessibilityElement();
+
+    return nullptr;
 }
 
 static bool areAnyAccessibilityClientsActive()
@@ -873,12 +872,15 @@ static void sendHandlerNotification (const AccessibilityHandler& handler,
     if (! areAnyAccessibilityClientsActive() || notification == NSAccessibilityNotificationName{})
         return;
 
-    if (id accessibilityElement = (id) handler.getNativeImplementation())
+    if (@available (macOS 10.9, *))
     {
-        sendAccessibilityEvent (accessibilityElement, notification,
-                                (notification == NSAccessibilityLayoutChangedNotification
-                                   ? @{ NSAccessibilityUIElementsKey: @[ accessibilityElement ] }
-                                   : nil));
+        if (id accessibilityElement = (id) handler.getNativeImplementation())
+        {
+            sendAccessibilityEvent (accessibilityElement, notification,
+                                    (notification == NSAccessibilityLayoutChangedNotification
+                                         ? @{ NSAccessibilityUIElementsKey: @[ accessibilityElement ] }
+                                         : nil));
+        }
     }
 }
 
@@ -937,10 +939,13 @@ void AccessibilityHandler::postAnnouncement (const String& announcementString, A
     if (! areAnyAccessibilityClientsActive())
         return;
 
-     if (@available (macOS 10.10, *))
-     {
+    if (@available (macOS 10.9, *))
+    {
         auto nsPriority = [priority]
         {
+            // The below doesn't get noticed by the @available check above
+            JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wunguarded-availability")
+
             switch (priority)
             {
                 case AnnouncementPriority::low:    return NSAccessibilityPriorityLow;
@@ -950,6 +955,8 @@ void AccessibilityHandler::postAnnouncement (const String& announcementString, A
 
             jassertfalse;
             return NSAccessibilityPriorityLow;
+
+            JUCE_END_IGNORE_WARNINGS_GCC_LIKE
         }();
 
         sendAccessibilityEvent ((id) [NSApp mainWindow],
@@ -958,7 +965,5 @@ void AccessibilityHandler::postAnnouncement (const String& announcementString, A
                                    NSAccessibilityPriorityKey:     @(nsPriority) });
      }
 }
-
-JUCE_END_IGNORE_WARNINGS_GCC_LIKE
 
 } // namespace juce
