@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -44,10 +37,11 @@ struct GraphRenderSequence
         FloatType** audioBuffers;
         MidiBuffer* midiBuffers;
         AudioPlayHead* audioPlayHead;
+        Optional<uint64_t> hostTimeNs;
         int numSamples;
     };
 
-    void perform (AudioBuffer<FloatType>& buffer, MidiBuffer& midiMessages, AudioPlayHead* audioPlayHead)
+    void perform (AudioBuffer<FloatType>& buffer, MidiBuffer& midiMessages, AudioPlayHead* audioPlayHead, Optional<uint64_t> hostTimeNs)
     {
         auto numSamples = buffer.getNumSamples();
         auto maxSamples = renderingBuffer.getNumSamples();
@@ -64,7 +58,9 @@ struct GraphRenderSequence
                 midiChunk.clear();
                 midiChunk.addEvents (midiMessages, chunkStartSample, chunkSize, -chunkStartSample);
 
-                perform (audioChunk, midiChunk, audioPlayHead);
+                // Splitting up the buffer like this will cause the play head and host time to be
+                // invalid for all but the first chunk...
+                perform (audioChunk, midiChunk, audioPlayHead, hostTimeNs);
 
                 chunkStartSample += maxSamples;
             }
@@ -79,7 +75,7 @@ struct GraphRenderSequence
         currentMidiOutputBuffer.clear();
 
         {
-            const Context context { renderingBuffer.getArrayOfWritePointers(), midiBuffers.begin(), audioPlayHead, numSamples };
+            const Context context { renderingBuffer.getArrayOfWritePointers(), midiBuffers.begin(), audioPlayHead, hostTimeNs, numSamples };
 
             for (auto* op : renderOps)
                 op->perform (context);
@@ -264,16 +260,30 @@ private:
         void perform (const Context& c) override
         {
             processor.setPlayHead (c.audioPlayHead);
+            processor.setHostTimeNanos (c.hostTimeNs.hasValue() ? &(*c.hostTimeNs) : nullptr);
 
             for (int i = 0; i < totalChans; ++i)
                 audioChannels[i] = c.audioBuffers[audioChannelsToUse.getUnchecked (i)];
 
-            AudioBuffer<FloatType> buffer (audioChannels, totalChans, c.numSamples);
+            auto numAudioChannels = [this]
+            {
+                if (const auto* proc = node->getProcessor())
+                    if (proc->getTotalNumInputChannels() == 0 && proc->getTotalNumOutputChannels() == 0)
+                        return 0;
+
+                return totalChans;
+            }();
+
+            AudioBuffer<FloatType> buffer (audioChannels, numAudioChannels, c.numSamples);
+
+            const ScopedLock lock (processor.getCallbackLock());
 
             if (processor.isSuspended())
                 buffer.clear();
             else
                 callProcess (buffer, c.midiBuffers[midiBufferToUse]);
+
+            processor.setHostTimeNanos (nullptr);
         }
 
         void callProcess (AudioBuffer<float>& buffer, MidiBuffer& midiMessages)
@@ -1385,6 +1395,14 @@ static void processBlockForBuffer (AudioBuffer<FloatType>& buffer, MidiBuffer& m
                                    std::unique_ptr<SequenceType>& renderSequence,
                                    std::atomic<bool>& isPrepared)
 {
+    const auto getHostTime = [&]() -> Optional<uint64_t>
+    {
+        if (auto* nanos = graph.getHostTimeNs())
+            return *nanos;
+
+        return nullopt;
+    };
+
     if (graph.isNonRealtime())
     {
         while (! isPrepared)
@@ -1393,7 +1411,7 @@ static void processBlockForBuffer (AudioBuffer<FloatType>& buffer, MidiBuffer& m
         const ScopedLock sl (graph.getCallbackLock());
 
         if (renderSequence != nullptr)
-            renderSequence->perform (buffer, midiMessages, graph.getPlayHead());
+            renderSequence->perform (buffer, midiMessages, graph.getPlayHead(), getHostTime());
     }
     else
     {
@@ -1402,7 +1420,7 @@ static void processBlockForBuffer (AudioBuffer<FloatType>& buffer, MidiBuffer& m
         if (isPrepared)
         {
             if (renderSequence != nullptr)
-                renderSequence->perform (buffer, midiMessages, graph.getPlayHead());
+                renderSequence->perform (buffer, midiMessages, graph.getPlayHead(), getHostTime());
         }
         else
         {

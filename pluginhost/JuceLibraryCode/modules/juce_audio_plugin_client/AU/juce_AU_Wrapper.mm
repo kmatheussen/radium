@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -28,11 +21,6 @@
 #include "../utility/juce_CheckSettingMacros.h"
 
 #if JucePlugin_Build_AU
-
-#if __LP64__
- #undef JUCE_SUPPORT_CARBON
- #define JUCE_SUPPORT_CARBON 0
-#endif
 
 JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wshorten-64-to-32",
                                      "-Wunused-parameter",
@@ -59,31 +47,14 @@ JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wshorten-64-to-32",
 #include <QuartzCore/QuartzCore.h>
 #include "CoreAudioUtilityClasses/MusicDeviceBase.h"
 
-/** The BUILD_AU_CARBON_UI flag lets you specify whether old-school carbon hosts are supported as
-    well as ones that can open a cocoa view. If this is enabled, you'll need to also add the AUCarbonBase
-    files to your project.
-*/
-#if ! (defined (BUILD_AU_CARBON_UI) || JUCE_64BIT)
- #define BUILD_AU_CARBON_UI 1
-#endif
-
-#ifdef __LP64__
- #undef BUILD_AU_CARBON_UI  // (not possible in a 64-bit build)
-#endif
-
-#if BUILD_AU_CARBON_UI
- #include "CoreAudioUtilityClasses/AUCarbonViewBase.h"
-#endif
-
 JUCE_END_IGNORE_WARNINGS_GCC_LIKE
 
-#define JUCE_MAC_WINDOW_VISIBITY_BODGE 1
 #define JUCE_CORE_INCLUDE_OBJC_HELPERS 1
 
 #include "../utility/juce_IncludeModuleHeaders.h"
-#include "../utility/juce_CarbonVisibility.h"
 
 #include <juce_audio_basics/native/juce_mac_CoreAudioLayouts.h>
+#include <juce_audio_basics/native/juce_mac_CoreAudioTimeConversions.h>
 #include <juce_audio_processors/format_types/juce_LegacyAudioParameter.cpp>
 #include <juce_audio_processors/format_types/juce_AU_Shared.h>
 
@@ -102,13 +73,7 @@ struct AudioProcessorHolder
     AudioProcessorHolder (bool initialiseGUI)
     {
         if (initialiseGUI)
-        {
-           #if BUILD_AU_CARBON_UI
-            NSApplicationLoad();
-           #endif
-
             initialiseJuce_GUI();
-        }
 
         juceFilter.reset (createPluginFilterOfType (AudioProcessor::wrapperType_AudioUnit));
 
@@ -730,6 +695,8 @@ public:
 
     ComponentResult RestoreState (CFPropertyListRef inData) override
     {
+        const ScopedValueSetter<bool> scope { restoringState, true };
+
         {
             // Remove the data entry from the state to prevent the superclass loading the parameters
             CFUniquePtr<CFMutableDictionaryRef> copyWithoutData (CFDictionaryCreateMutableCopy (nullptr, 0, (CFDictionaryRef) inData));
@@ -1065,23 +1032,6 @@ public:
     }
 
     //==============================================================================
-   #if BUILD_AU_CARBON_UI
-    int GetNumCustomUIComponents() override
-    {
-        return getHostType().isDigitalPerformer() ? 0 : 1;
-    }
-
-    void GetUIComponentDescs (ComponentDescription* inDescArray) override
-    {
-        inDescArray[0].componentType = kAudioUnitCarbonViewComponentType;
-        inDescArray[0].componentSubType = JucePlugin_AUSubType;
-        inDescArray[0].componentManufacturer = JucePlugin_AUManufacturerCode;
-        inDescArray[0].componentFlags = 0;
-        inDescArray[0].componentFlagsMask = 0;
-    }
-   #endif
-
-    //==============================================================================
     bool getCurrentPosition (AudioPlayHead::CurrentPositionInfo& info) override
     {
         info.timeSigNumerator = 0;
@@ -1157,6 +1107,9 @@ public:
 
     void sendAUEvent (const AudioUnitEventType type, const int juceParamIndex)
     {
+        if (restoringState)
+            return;
+
         auEvent.mEventType = type;
         auEvent.mArgument.mParameter.mParameterID = getAUParameterIDForIndex (juceParamIndex);
         AUEventListenerNotify (nullptr, nullptr, &auEvent);
@@ -1192,7 +1145,8 @@ public:
     // this will only ever be called by the bypass parameter
     void parameterValueChanged (int, float) override
     {
-        PropertyChanged (kAudioUnitProperty_BypassEffect, kAudioUnitScope_Global, 0);
+        if (! restoringState)
+            PropertyChanged (kAudioUnitProperty_BypassEffect, kAudioUnitScope_Global, 0);
     }
 
     void parameterGestureChanged (int, bool) override {}
@@ -1293,6 +1247,22 @@ public:
                             const UInt32 nFrames) override
     {
         lastTimeStamp = inTimeStamp;
+
+        jassert (! juceFilter->getHostTimeNs());
+
+        if ((inTimeStamp.mFlags & kAudioTimeStampHostTimeValid) != 0)
+        {
+            const auto timestamp = timeConversions.hostTimeToNanos (inTimeStamp.mHostTime);
+            juceFilter->setHostTimeNanos (&timestamp);
+        }
+
+        struct AtEndOfScope
+        {
+            ~AtEndOfScope() { proc.setHostTimeNanos (nullptr); }
+            AudioProcessor& proc;
+        };
+
+        const AtEndOfScope scope { *juceFilter };
 
         // prepare buffers
         {
@@ -1801,7 +1771,7 @@ private:
     //==============================================================================
     AudioUnitHelpers::CoreAudioBufferList audioBuffer;
     MidiBuffer midiEvents, incomingEvents;
-    bool prepared = false, isBypassed = false;
+    bool prepared = false, isBypassed = false, restoringState = false;
 
     //==============================================================================
    #if JUCE_FORCE_USE_LEGACY_PARAM_IDS
@@ -1812,14 +1782,18 @@ private:
 
     //==============================================================================
     LegacyAudioParametersWrapper juceParameters;
-    HashMap<int32, AudioProcessorParameter*> paramMap;
+    std::unordered_map<int32, AudioProcessorParameter*> paramMap;
     Array<AudioUnitParameterID> auParamIDs;
     Array<const AudioProcessorParameterGroup*> parameterGroups;
+
+    // Stores the parameter IDs in the order that they will be reported to the host.
+    std::vector<AudioUnitParameterID> cachedParameterList;
 
     //==============================================================================
     // According to the docs, this is the maximum size of a MIDIPacketList.
     static constexpr UInt32 packetListBytes = 65536;
 
+    CoreAudioTimeConversions timeConversions;
     AudioUnitEvent auEvent;
     mutable Array<AUPreset> presetsArray;
     CriticalSection incomingMidiLock;
@@ -2037,6 +2011,40 @@ private:
         return { {}, {}, {}, kAudioUnitErr_InvalidElement };
     }
 
+    OSStatus GetParameterList (AudioUnitScope inScope, AudioUnitParameterID* outParameterList, UInt32& outNumParameters) override
+    {
+        if (forceUseLegacyParamIDs || inScope != kAudioUnitScope_Global)
+            return MusicDeviceBase::GetParameterList (inScope, outParameterList, outNumParameters);
+
+        outNumParameters = (UInt32) juceParameters.size();
+
+        if (outParameterList == nullptr)
+            return noErr;
+
+        if (cachedParameterList.empty())
+        {
+            struct ParamInfo
+            {
+                AudioUnitParameterID identifier;
+                int versionHint;
+            };
+
+            std::vector<ParamInfo> vec;
+            vec.reserve (juceParameters.size());
+
+            for (const auto* param : juceParameters)
+                vec.push_back ({ generateAUParameterID (*param), param->getVersionHint() });
+
+            std::sort        (vec.begin(), vec.end(), [] (auto a, auto b) { return a.identifier  < b.identifier; });
+            std::stable_sort (vec.begin(), vec.end(), [] (auto a, auto b) { return a.versionHint < b.versionHint; });
+            std::transform   (vec.begin(), vec.end(), std::back_inserter (cachedParameterList), [] (auto x) { return x.identifier; });
+        }
+
+        std::copy (cachedParameterList.begin(), cachedParameterList.end(), outParameterList);
+
+        return noErr;
+    }
+
     //==============================================================================
     void addParameters()
     {
@@ -2053,14 +2061,14 @@ private:
         {
             for (auto* param : juceParameters)
             {
-                const AudioUnitParameterID auParamID = generateAUParameterID (param);
+                const AudioUnitParameterID auParamID = generateAUParameterID (*param);
 
                 // Consider yourself very unlucky if you hit this assertion. The hash codes of your
                 // parameter ids are not unique.
-                jassert (! paramMap.contains (static_cast<int32> (auParamID)));
+                jassert (paramMap.find (static_cast<int32> (auParamID)) == paramMap.end());
 
                 auParamIDs.add (auParamID);
-                paramMap.set (static_cast<int32> (auParamID), param);
+                paramMap.emplace (static_cast<int32> (auParamID), param);
                 Globals()->SetParameter (auParamID, param->getValue());
             }
         }
@@ -2119,9 +2127,9 @@ private:
     }
 
     //==============================================================================
-    AudioUnitParameterID generateAUParameterID (AudioProcessorParameter* param) const
+    static AudioUnitParameterID generateAUParameterID (const AudioProcessorParameter& param)
     {
-        const String& juceParamID = LegacyAudioParameter::getParamID (param, forceUseLegacyParamIDs);
+        const String& juceParamID = LegacyAudioParameter::getParamID (&param, forceUseLegacyParamIDs);
         AudioUnitParameterID paramHash = static_cast<AudioUnitParameterID> (juceParamID.hashCode());
 
        #if JUCE_USE_STUDIO_ONE_COMPATIBLE_PARAMETERS
@@ -2141,9 +2149,13 @@ private:
 
     AudioProcessorParameter* getParameterForAUParameterID (AudioUnitParameterID address) const noexcept
     {
-        auto index = static_cast<int32> (address);
-        return forceUseLegacyParamIDs ? juceParameters.getParamForIndex (index)
-                                      : paramMap[index];
+        const auto index = static_cast<int32> (address);
+
+        if (forceUseLegacyParamIDs)
+            return juceParameters.getParamForIndex (index);
+
+        const auto iter = paramMap.find (index);
+        return iter != paramMap.end() ? iter->second : nullptr;
     }
 
     //==============================================================================
@@ -2363,243 +2375,6 @@ private:
 };
 
 //==============================================================================
-#if BUILD_AU_CARBON_UI
-
-class JuceAUView  : public AUCarbonViewBase
-{
-public:
-    JuceAUView (AudioUnitCarbonView auview)
-      : AUCarbonViewBase (auview),
-        juceFilter (nullptr)
-    {
-    }
-
-    ~JuceAUView()
-    {
-        deleteUI();
-    }
-
-    ComponentResult CreateUI (Float32 /*inXOffset*/, Float32 /*inYOffset*/) override
-    {
-        JUCE_AUTORELEASEPOOL
-        {
-            if (juceFilter == nullptr)
-            {
-                void* pointers[2];
-                UInt32 propertySize = sizeof (pointers);
-
-                AudioUnitGetProperty (GetEditAudioUnit(),
-                                      juceFilterObjectPropertyID,
-                                      kAudioUnitScope_Global,
-                                      0,
-                                      pointers,
-                                      &propertySize);
-
-                juceFilter = (AudioProcessor*) pointers[0];
-            }
-
-            if (juceFilter != nullptr)
-            {
-                deleteUI();
-
-                if (AudioProcessorEditor* editorComp = juceFilter->createEditorIfNeeded())
-                {
-                    editorComp->setOpaque (true);
-                    windowComp.reset (new ComponentInHIView (editorComp, mCarbonPane));
-                }
-            }
-            else
-            {
-                jassertfalse; // can't get a pointer to our effect
-            }
-        }
-
-        return noErr;
-    }
-
-    AudioUnitCarbonViewEventListener getEventListener() const   { return mEventListener; }
-    void* getEventListenerUserData() const                      { return mEventListenerUserData; }
-
-private:
-    //==============================================================================
-    AudioProcessor* juceFilter;
-    std::unique_ptr<Component> windowComp;
-
-    void deleteUI()
-    {
-        if (windowComp != nullptr)
-        {
-            PopupMenu::dismissAllActiveMenus();
-
-            /* This assertion is triggered when there's some kind of modal component active, and the
-               host is trying to delete our plugin.
-               If you must use modal components, always use them in a non-blocking way, by never
-               calling runModalLoop(), but instead using enterModalState() with a callback that
-               will be performed on completion. (Note that this assertion could actually trigger
-               a false alarm even if you're doing it correctly, but is here to catch people who
-               aren't so careful) */
-            jassert (Component::getCurrentlyModalComponent() == nullptr);
-
-            if (JuceAU::EditorCompHolder* editorCompHolder = dynamic_cast<JuceAU::EditorCompHolder*> (windowComp->getChildComponent(0)))
-                if (AudioProcessorEditor* audioProcessEditor = dynamic_cast<AudioProcessorEditor*> (editorCompHolder->getChildComponent(0)))
-                    juceFilter->editorBeingDeleted (audioProcessEditor);
-
-            windowComp = nullptr;
-        }
-    }
-
-    //==============================================================================
-    // Uses a child NSWindow to sit in front of a HIView and display our component
-    class ComponentInHIView  : public Component
-    {
-    public:
-        ComponentInHIView (AudioProcessorEditor* ed, HIViewRef parentHIView)
-            : parentView (parentHIView),
-              editor (ed),
-              recursive (false)
-        {
-            JUCE_AUTORELEASEPOOL
-            {
-                jassert (ed != nullptr);
-                addAndMakeVisible (editor);
-                setOpaque (true);
-                setVisible (true);
-                setBroughtToFrontOnMouseClick (true);
-
-                setSize (editor.getWidth(), editor.getHeight());
-                SizeControl (parentHIView, (SInt16) editor.getWidth(), (SInt16) editor.getHeight());
-
-                WindowRef windowRef = HIViewGetWindow (parentHIView);
-                hostWindow = [[NSWindow alloc] initWithWindowRef: windowRef];
-
-                // not really sure why this is needed in older OS X versions
-                // but JUCE plug-ins crash without it
-                if ((SystemStats::getOperatingSystemType() & 0xff) < 12)
-                    [hostWindow retain];
-
-                [hostWindow setCanHide: YES];
-                [hostWindow setReleasedWhenClosed: YES];
-
-                updateWindowPos();
-
-               #if ! JucePlugin_EditorRequiresKeyboardFocus
-                addToDesktop (ComponentPeer::windowIsTemporary | ComponentPeer::windowIgnoresKeyPresses);
-                setWantsKeyboardFocus (false);
-               #else
-                addToDesktop (ComponentPeer::windowIsTemporary);
-                setWantsKeyboardFocus (true);
-               #endif
-
-                setVisible (true);
-                toFront (false);
-
-                addSubWindow();
-
-                NSWindow* pluginWindow = [((NSView*) getWindowHandle()) window];
-                [pluginWindow setNextResponder: hostWindow];
-
-                attachWindowHidingHooks (this, (WindowRef) windowRef, hostWindow);
-            }
-        }
-
-        ~ComponentInHIView()
-        {
-            JUCE_AUTORELEASEPOOL
-            {
-                removeWindowHidingHooks (this);
-
-                NSWindow* pluginWindow = [((NSView*) getWindowHandle()) window];
-                [hostWindow removeChildWindow: pluginWindow];
-                removeFromDesktop();
-
-                [hostWindow release];
-                hostWindow = nil;
-            }
-        }
-
-        void updateWindowPos()
-        {
-            HIPoint f;
-            f.x = f.y = 0;
-            HIPointConvert (&f, kHICoordSpaceView, parentView, kHICoordSpaceScreenPixel, 0);
-            setTopLeftPosition ((int) f.x, (int) f.y);
-        }
-
-        void addSubWindow()
-        {
-            NSWindow* pluginWindow = [((NSView*) getWindowHandle()) window];
-            [pluginWindow setExcludedFromWindowsMenu: YES];
-            [pluginWindow setCanHide: YES];
-
-            [hostWindow addChildWindow: pluginWindow
-                               ordered: NSWindowAbove];
-            [hostWindow orderFront: nil];
-            [pluginWindow orderFront: nil];
-        }
-
-        void resized() override
-        {
-            if (Component* const child = getChildComponent (0))
-                child->setBounds (getLocalBounds());
-        }
-
-        void paint (Graphics&) override {}
-
-        void childBoundsChanged (Component*) override
-        {
-            if (! recursive)
-            {
-                recursive = true;
-
-                const int w = jmax (32, editor.getWidth());
-                const int h = jmax (32, editor.getHeight());
-
-                SizeControl (parentView, (SInt16) w, (SInt16) h);
-
-                if (getWidth() != w || getHeight() != h)
-                    setSize (w, h);
-
-                editor.repaint();
-
-                updateWindowPos();
-                addSubWindow(); // (need this for AULab)
-
-                recursive = false;
-            }
-        }
-
-        bool keyPressed (const KeyPress& kp) override
-        {
-            if (! kp.getModifiers().isCommandDown())
-            {
-                // If we have an unused keypress, move the key-focus to a host window
-                // and re-inject the event..
-                static NSTimeInterval lastEventTime = 0; // check we're not recursively sending the same event
-                NSTimeInterval eventTime = [[NSApp currentEvent] timestamp];
-
-                if (lastEventTime != eventTime)
-                {
-                    lastEventTime = eventTime;
-
-                    [[hostWindow parentWindow] makeKeyWindow];
-                    repostCurrentNSEvent();
-                }
-            }
-
-            return false;
-        }
-
-    private:
-        HIViewRef parentView;
-        NSWindow* hostWindow;
-        JuceAU::EditorCompHolder editor;
-        bool recursive;
-    };
-};
-
-#endif
-
-//==============================================================================
 #define JUCE_COMPONENT_ENTRYX(Class, Name, Suffix) \
     extern "C" __attribute__((visibility("default"))) ComponentResult Name ## Suffix (ComponentParameters* params, Class* obj); \
     extern "C" __attribute__((visibility("default"))) ComponentResult Name ## Suffix (ComponentParameters* params, Class* obj) \
@@ -2634,10 +2409,6 @@ JUCE_COMPONENT_ENTRY (JuceAU, JucePlugin_AUExportPrefix, Entry)
 
 #if ! JUCE_DISABLE_AU_FACTORY_ENTRY  // (You might need to disable this for old Xcode 3 builds)
 JUCE_FACTORY_ENTRY   (JuceAU, JucePlugin_AUExportPrefix)
-#endif
-
-#if BUILD_AU_CARBON_UI
- JUCE_COMPONENT_ENTRY (JuceAUView, JucePlugin_AUExportPrefix, ViewEntry)
 #endif
 
 #if ! JUCE_DISABLE_AU_FACTORY_ENTRY

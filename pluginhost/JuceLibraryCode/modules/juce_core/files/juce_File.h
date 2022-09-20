@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -20,16 +20,12 @@
   ==============================================================================
 */
 
-#if ! defined (DOXYGEN) && (JUCE_MAC || JUCE_IOS)
- #if __LP64__
-  using OSType = unsigned int;
- #else
-  using OSType = unsigned long;
- #endif
-#endif
-
 namespace juce
 {
+
+#if ! DOXYGEN && (JUCE_MAC || JUCE_IOS)
+ using OSType = unsigned int;
+#endif
 
 //==============================================================================
 /**
@@ -381,21 +377,21 @@ public:
     //==============================================================================
     /** Returns the last modification time of this file.
 
-        @returns    the time, or an invalid time if the file doesn't exist.
+        @returns    the time, or the Unix Epoch if the file doesn't exist.
         @see setLastModificationTime, getLastAccessTime, getCreationTime
     */
     Time getLastModificationTime() const;
 
     /** Returns the last time this file was accessed.
 
-        @returns    the time, or an invalid time if the file doesn't exist.
+        @returns    the time, or the Unix Epoch if the file doesn't exist.
         @see setLastAccessTime, getLastModificationTime, getCreationTime
     */
     Time getLastAccessTime() const;
 
     /** Returns the time that this file was created.
 
-        @returns    the time, or an invalid time if the file doesn't exist.
+        @returns    the time, or the Unix Epoch if the file doesn't exist.
         @see getLastModificationTime, getLastAccessTime
     */
     Time getCreationTime() const;

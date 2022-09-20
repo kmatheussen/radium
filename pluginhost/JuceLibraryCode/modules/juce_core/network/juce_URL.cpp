@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -789,10 +789,6 @@ std::unique_ptr<InputStream> URL::createInputStream (const InputStreamOptions& o
     return std::move (webInputStream);
     JUCE_END_IGNORE_WARNINGS_GCC_LIKE
 }
-
-#if JUCE_ANDROID
-OutputStream* juce_CreateContentURIOutputStream (const URL&);
-#endif
 
 std::unique_ptr<OutputStream> URL::createOutputStream() const
 {

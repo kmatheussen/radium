@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -154,12 +147,12 @@ public:
 
     Point<float> localToGlobal (Point<float> relativePosition) override
     {
-        return relativePosition + getScreenPosition (false).toFloat();
+        return localToGlobal (*this, relativePosition);
     }
 
     Point<float> globalToLocal (Point<float> screenPosition) override
     {
-        return screenPosition - getScreenPosition (false).toFloat();
+        return globalToLocal (*this, screenPosition);
     }
 
     using ComponentPeer::localToGlobal;
@@ -238,8 +231,11 @@ public:
             if (! c->isVisible())
                 continue;
 
-            if (auto* peer = c->getPeer())
-                if (peer->contains (localPos + bounds.getPosition() - peer->getBounds().getPosition(), true))
+            auto* otherPeer = c->getPeer();
+            jassert (otherPeer == nullptr || dynamic_cast<LinuxComponentPeer*> (c->getPeer()) != nullptr);
+
+            if (auto* peer = static_cast<LinuxComponentPeer*> (otherPeer))
+                if (peer->contains (globalToLocal (*peer, localToGlobal (*this, localPos.toFloat())).roundToInt(), true))
                     return false;
         }
 
@@ -480,6 +476,19 @@ private:
 
         JUCE_DECLARE_NON_COPYABLE (LinuxRepaintManager)
     };
+
+    //==============================================================================
+    template <typename This>
+    static Point<float> localToGlobal (This& t, Point<float> relativePosition)
+    {
+        return relativePosition + t.getScreenPosition (false).toFloat();
+    }
+
+    template <typename This>
+    static Point<float> globalToLocal (This& t, Point<float> screenPosition)
+    {
+        return screenPosition - t.getScreenPosition (false).toFloat();
+    }
 
     //==============================================================================
     void settingChanged (const XWindowSystemUtilities::XSetting& settingThatHasChanged) override
@@ -899,12 +908,14 @@ Image juce_createIconForFile (const File&)
     return {};
 }
 
+void juce_LinuxAddRepaintListener (ComponentPeer* peer, Component* dummy);
 void juce_LinuxAddRepaintListener (ComponentPeer* peer, Component* dummy)
 {
     if (auto* linuxPeer = dynamic_cast<LinuxComponentPeer*> (peer))
         linuxPeer->addOpenGLRepaintListener (dummy);
 }
 
+void juce_LinuxRemoveRepaintListener (ComponentPeer* peer, Component* dummy);
 void juce_LinuxRemoveRepaintListener (ComponentPeer* peer, Component* dummy)
 {
     if (auto* linuxPeer = dynamic_cast<LinuxComponentPeer*> (peer))

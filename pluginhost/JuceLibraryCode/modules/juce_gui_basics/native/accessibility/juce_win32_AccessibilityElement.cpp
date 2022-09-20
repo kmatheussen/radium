@@ -1,20 +1,13 @@
 /*
   ==============================================================================
 
-   This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   This file is part of the JUCE 7 technical preview.
+   Copyright (c) 2022 - Raw Material Software Limited
 
-   JUCE is an open source library subject to commercial or open-source
-   licensing.
+   You may use this code under the terms of the GPL v3
+   (see www.gnu.org/licenses).
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
-
-   End User License Agreement: www.juce.com/juce-6-licence
-   Privacy Policy: www.juce.com/juce-privacy-policy
-
-   Or: You may also use this code under the terms of the GPL v3 (see
-   www.gnu.org/licenses).
+   For the technical preview this file cannot be licensed commercially.
 
    JUCE IS PROVIDED "AS IS" WITHOUT ANY WARRANTY, AND ALL WARRANTIES, WHETHER
    EXPRESSED OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR PURPOSE, ARE
@@ -148,36 +141,36 @@ JUCE_COMRESULT AccessibilityNativeHandle::GetPatternProvider (PATTERNID pId, IUn
 
             switch (pId)
             {
-                case UIA_WindowPatternId:
+                case ComTypes::UIA_WindowPatternId:
                 {
                     if (fragmentRoot)
                         return new UIAWindowProvider (this);
 
                     break;
                 }
-                case UIA_TransformPatternId:
+                case ComTypes::UIA_TransformPatternId:
                 {
                     if (fragmentRoot)
                         return new UIATransformProvider (this);
 
                     break;
                 }
-                case UIA_TextPatternId:
-                case UIA_TextPattern2Id:
+                case ComTypes::UIA_TextPatternId:
+                case ComTypes::UIA_TextPattern2Id:
                 {
                     if (accessibilityHandler.getTextInterface() != nullptr)
                         return new UIATextProvider (this);
 
                     break;
                 }
-                case UIA_ValuePatternId:
+                case ComTypes::UIA_ValuePatternId:
                 {
                     if (accessibilityHandler.getValueInterface() != nullptr)
                         return new UIAValueProvider (this);
 
                     break;
                 }
-                case UIA_RangeValuePatternId:
+                case ComTypes::UIA_RangeValuePatternId:
                 {
                     if (accessibilityHandler.getValueInterface() != nullptr
                         && accessibilityHandler.getValueInterface()->getRange().isValid())
@@ -187,7 +180,7 @@ JUCE_COMRESULT AccessibilityNativeHandle::GetPatternProvider (PATTERNID pId, IUn
 
                     break;
                 }
-                case UIA_TogglePatternId:
+                case ComTypes::UIA_TogglePatternId:
                 {
                     if (accessibilityHandler.getCurrentState().isCheckable()
                         && (accessibilityHandler.getActions().contains (AccessibilityActionType::toggle)
@@ -198,7 +191,7 @@ JUCE_COMRESULT AccessibilityNativeHandle::GetPatternProvider (PATTERNID pId, IUn
 
                     break;
                 }
-                case UIA_SelectionPatternId:
+                case ComTypes::UIA_SelectionPatternId:
                 {
                     if (role == AccessibilityRole::list
                         || role == AccessibilityRole::popupMenu
@@ -209,7 +202,7 @@ JUCE_COMRESULT AccessibilityNativeHandle::GetPatternProvider (PATTERNID pId, IUn
 
                     break;
                 }
-                case UIA_SelectionItemPatternId:
+                case ComTypes::UIA_SelectionItemPatternId:
                 {
                     auto state = accessibilityHandler.getCurrentState();
 
@@ -221,28 +214,28 @@ JUCE_COMRESULT AccessibilityNativeHandle::GetPatternProvider (PATTERNID pId, IUn
 
                     break;
                 }
-                case UIA_GridPatternId:
+                case ComTypes::UIA_GridPatternId:
                 {
                     if (accessibilityHandler.getTableInterface() != nullptr)
                         return new UIAGridProvider (this);
 
                     break;
                 }
-                case UIA_GridItemPatternId:
+                case ComTypes::UIA_GridItemPatternId:
                 {
                     if (accessibilityHandler.getCellInterface() != nullptr)
                         return new UIAGridItemProvider (this);
 
                     break;
                 }
-                case UIA_InvokePatternId:
+                case ComTypes::UIA_InvokePatternId:
                 {
                     if (accessibilityHandler.getActions().contains (AccessibilityActionType::press))
                         return new UIAInvokeProvider (this);
 
                     break;
                 }
-                case UIA_ExpandCollapsePatternId:
+                case ComTypes::UIA_ExpandCollapsePatternId:
                 {
                     if (accessibilityHandler.getActions().contains (AccessibilityActionType::showMenu)
                         && accessibilityHandler.getCurrentState().isExpandable())
@@ -313,7 +306,7 @@ JUCE_COMRESULT AccessibilityNativeHandle::GetPropertyValue (PROPERTYID propertyI
                     VariantHelpers::setBool (textInterface->isDisplayingProtectedText(), pRetVal);
 
                 break;
-            case UIA_IsPeripheralPropertyId:
+            case ComTypes::UIA_IsPeripheralPropertyId:
                 VariantHelpers::setBool (role == AccessibilityRole::tooltip
                                          || role == AccessibilityRole::popupMenu
                                          || role == AccessibilityRole::splashScreen,

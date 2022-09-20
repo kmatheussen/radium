@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -261,6 +261,9 @@
 //==============================================================================
 #if JUCE_UNIT_TESTS
  #include "containers/juce_HashMap_test.cpp"
+
+ #include "containers/juce_Optional.h"
+ #include "containers/juce_Optional_test.cpp"
 #endif
 
 //==============================================================================
