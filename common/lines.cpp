@@ -69,38 +69,46 @@ static void InsertLines_notes(
 //	p2.line-=toinsert;
 
 	//	printf("toinsert: %d, note->end.line: %d, p2->line: %d\n",toinsert,note->end.line,p2.line);
-	if(ratio2place(note->end).line>=line){
+	//if(ratio2place(note->end).line>=line){
+        
+        if (note->end > make_ratio(line,1)) {
+          
 //		printf("block: %d, note->end.line: %d, p2->line: %d\n",block->l.num,note->end.line,p2.line);
 
           if(note->end >= place2ratio(p2) && note->l.p.line<line){
-
-			PlaceSetLastPos(block,&p2);
-			note->end = place2ratio(p2);
-			note->noend=1;
-		}else{
-                  Ratio new_end = note->end + toinsert;
-                  if (new_end > make_ratio(block->num_lines, 1))
-                    note->end = make_ratio(block->num_lines, 1);
-                  note->end = new_end;
-		}
+            
+            PlaceSetLastPos(block,&p2);
+            note->end = place2ratio(p2);
+            note->noend=1;
+            
+          }else{
+            
+            Ratio new_end = note->end + toinsert;
+            
+            if (new_end > make_ratio(block->num_lines, 1))
+              note->end = make_ratio(block->num_lines, 1);
+            
+            note->end = new_end;
+            
+          }
           /*
-                if(note->velocities!=NULL) // need check to avoid ubsan/asan hit
-                  List_InsertLines3(&note->velocities,&note->velocities->l,line,toinsert,NULL);
+            if(note->velocities!=NULL) // need check to avoid ubsan/asan hit
+            List_InsertLines3(&note->velocities,&note->velocities->l,line,toinsert,NULL);
           */
           
-                {
-                  r::VelocityTimeData::Writer writer(note->_velocities);
-                  writer.insert_lines(make_ratio(line, 1), make_ratio(toinsert, 1));
-                }
-
-                {
-                  r::PitchTimeData::Writer writer(note->_pitches);
-                  writer.insert_lines(make_ratio(line, 1), make_ratio(toinsert, 1));
-                }
-
-                
-                //if(note->pitches!=NULL) // need check to avoid ubsan/asan hit
-                //  List_InsertLines3(&note->pitches,&note->pitches->l,line,toinsert,NULL);
+          {
+            r::VelocityTimeData::Writer writer(note->_velocities);
+            writer.insert_lines(make_ratio(line, 1), make_ratio(toinsert, 1));
+          }
+          
+          {
+            r::PitchTimeData::Writer writer(note->_pitches);
+            writer.insert_lines(make_ratio(line, 1), make_ratio(toinsert, 1));
+          }
+          
+          
+          //if(note->pitches!=NULL) // need check to avoid ubsan/asan hit
+          //  List_InsertLines3(&note->pitches,&note->pitches->l,line,toinsert,NULL);
 	}
 }
 
