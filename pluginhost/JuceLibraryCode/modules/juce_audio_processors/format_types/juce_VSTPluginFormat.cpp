@@ -67,8 +67,8 @@ JUCE_BEGIN_IGNORE_WARNINGS_MSVC (4355)
   #define WM_APPCOMMAND 0x0319
  #endif
 
- extern "C" void _fpreset();
- extern "C" void _clearfp();
+//extern "C" void _fpreset();
+// extern "C" void _clearfp();
 #elif ! JUCE_WINDOWS
  static void _fpreset() {}
  static void _clearfp() {}
@@ -3480,7 +3480,8 @@ void VSTPluginFormat::findAllTypesForFile (OwnedArray<PluginDescription>& result
         // Normal plugin...
         results.add (new PluginDescription (desc));
 
-        instance->dispatch (Vst2::effOpen, 0, 0, nullptr, 0);
+        // ??
+        //instance->dispatch (Vst2::effOpen, 0, 0, nullptr, 0);
     }
     else
     {

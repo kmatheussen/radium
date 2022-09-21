@@ -69,7 +69,7 @@
  #include <commctrl.h>
  #include <UIAutomation.h>
  #include <sapi.h>
- #include <Dxgi.h>
+ #include <dxgi.h>
 
  #if JUCE_WEB_BROWSER
   #include <exdisp.h>

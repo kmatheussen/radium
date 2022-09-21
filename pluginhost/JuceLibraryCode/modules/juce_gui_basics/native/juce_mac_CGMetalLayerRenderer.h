@@ -233,10 +233,12 @@ private:
     class GpuTexturePool
     {
     public:
-        GpuTexturePool (id<MTLDevice> metalDevice, MTLTextureDescriptor* descriptor)
+        GpuTexturePool (id<MTLDevice> metalDevice, void* descriptor)
         {
+          /*
             for (auto& t : textureCache)
                 t.reset ([metalDevice newTextureWithDescriptor: descriptor]);
+          */
         }
 
         id<MTLTexture> take() const
@@ -273,6 +275,7 @@ private:
                                                                 #endif
                                                     deallocator: nullptr]);
 
+            /*
             auto* textureDesc = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat: layer.pixelFormat
                                                                                    width: (NSUInteger) layer.drawableSize.width
                                                                                   height: (NSUInteger) layer.drawableSize.height
@@ -284,11 +287,12 @@ private:
                                       MTLStorageModeShared;
                                      #endif
             textureDesc.usage = MTLTextureUsageShaderRead;
-
+            */
+            /*
             sharedTexture.reset ([buffer.get() newTextureWithDescriptor: textureDesc
                                                                  offset: 0
                                                             bytesPerRow: bytesPerRow]);
-
+            */
             cgContext.reset (CGBitmapContextCreate (cpuRenderMemory.get(),
                                                     (size_t) layer.drawableSize.width,
                                                     (size_t) layer.drawableSize.height,
@@ -300,8 +304,8 @@ private:
             CGContextTranslateCTM (cgContext.get(), 0, layer.drawableSize.height);
             CGContextScaleCTM (cgContext.get(), layer.contentsScale, -layer.contentsScale);
 
-            textureDesc.storageMode = MTLStorageModePrivate;
-            gpuTexturePool = std::make_unique<GpuTexturePool> (metalDevice, textureDesc);
+            //textureDesc.storageMode = MTLStorageModePrivate;
+            //gpuTexturePool = std::make_unique<GpuTexturePool> (metalDevice, NULL); //textureDesc);
         }
 
         CGContextRef getCGContext() const noexcept       { return cgContext.get(); }
