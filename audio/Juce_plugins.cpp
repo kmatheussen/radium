@@ -56,36 +56,37 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
   
 
 #if JUCE_LINUX
+
   #define FOR_LINUX 1
   #if defined(_WIN32)
     #error "error"
   #endif
-  #if defined(_MAC)
+  #if defined(__APPLE__)
     #error "error"
   #endif
   #if !defined(__linux__)
     #error "error"
   #endif
-#endif
 
-#if JUCE_WINDOWS
-#define FOR_WINDOWS 1
+#elif JUCE_WINDOWS
+
+  #define FOR_WINDOWS 1
   #ifdef FOR_LINUX
     #error "gakk"
   #endif
   #if !defined(_WIN32)
     #error "error"
   #endif
-  #if defined(_MAC)
+  #if defined(__APPLE__)
     #error "error"
   #endif
   #if defined(__linux__)
     #error "error"
   #endif
-#endif
 
-#if JUCE_MAC
-#define FOR_MACOSX 1
+#elif JUCE_MAC
+
+  #define FOR_MACOSX 1
   #ifdef FOR_LINUX
     #error "gakk"
   #endif
@@ -95,12 +96,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
   #if defined(_WIN32)
     #error "error"
   #endif
-  #if !defined(_MAC)
+  #if !defined(__APPLE__)
     #error "error"
   #endif
   #if defined(__linux__)
     #error "error"
   #endif
+
+#else
+
+  #error "UNKNOWN"
+
 #endif
 
 #define Slider Radium_Slider
