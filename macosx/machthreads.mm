@@ -20,6 +20,8 @@ But it's not easy to understand. Instead we just use the jack code.
 #include <mach/thread_act.h>
 #include <CoreAudio/CoreAudio.h>
 
+#define LANGSPEC "C"
+#include "../common/threading_lowlevel.h"
 
 #include "machthreads_proc.h"
 
