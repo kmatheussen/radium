@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <qfontdialog.h>
 #include <qapplication.h>
+#include <QTextStream>
 
 #include "../common/nsmtracker.h"
 #include "../common/settings_proc.h"
@@ -57,28 +58,36 @@ static bool can_fit(const QFont &font, const QString &text, int flags, int width
 }
 
 QFont GFX_getFittingFont(const QString &text, int flags, int width, int height){
-  static QFont font;
+#if 0
+  using IntPair = QPair<int, int>;
+  using ThreeInts = QPair<int, IntPair>;
+
+  using Key = QPair<QString, ThreeInts>;
   
-  auto key = QPair<QString,
-                   QPair<int,
-                         QPair<int,int>
-                         >
-                   >
-    (text,QPair<int,QPair<int,int>>(flags, QPair<int,int>(width,height))); // good code
+  const Key key = Key(text,ThreeInts(flags, IntPair(width,height)));
+#else
+  using Key = QString;
 
-  static QHash< QPair< QString , QPair< int, QPair<int,int> > > , QFont> fonts;
+  Key key;
 
-  if (font != qApp->font()){
-    font = qApp->font();
-    fonts.clear();
+  QTextStream(&key) << width << "/" << height << "/" << flags << ":" << text;
+#endif
+  
+  static QHash<Key, QFont> s_fonts;
+
+  static QFont s_font;
+
+  if (s_font != qApp->font()){
+    s_font = qApp->font();
+    s_fonts.clear();
   }
 
-  if (fonts.contains(key))
-    return fonts.value(key);
+  if (s_fonts.contains(key))
+    return s_fonts.value(key);
 
-  int pointSize = font.pointSize();
+  int pointSize = s_font.pointSize();
 
-  QFont the_font(font);
+  QFont the_font(s_font);
 
   //return the_font;
   
@@ -90,8 +99,10 @@ QFont GFX_getFittingFont(const QString &text, int flags, int width, int height){
       break;
   }
 
-  fonts[key] = the_font;
+  s_fonts[key] = the_font;
 
+  //printf("Another fitting for %s: %d / %d / %d\n", text.toUtf8().constData(), flags, width, height);
+  
   return the_font;
 }
 

@@ -57,12 +57,30 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #if JUCE_LINUX
   #define FOR_LINUX 1
+  #if defined(_WIN32)
+    #error "error"
+  #endif
+  #if defined(_MAC)
+    #error "error"
+  #endif
+  #if !defined(__linux__)
+    #error "error"
+  #endif
 #endif
 
 #if JUCE_WINDOWS
 #define FOR_WINDOWS 1
   #ifdef FOR_LINUX
     #error "gakk"
+  #endif
+  #if !defined(_WIN32)
+    #error "error"
+  #endif
+  #if defined(_MAC)
+    #error "error"
+  #endif
+  #if defined(__linux__)
+    #error "error"
   #endif
 #endif
 
@@ -73,6 +91,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
   #endif
   #ifdef FOR_WINDOWS
     #error "gakk2"
+  #endif
+  #if defined(_WIN32)
+    #error "error"
+  #endif
+  #if !defined(_MAC)
+    #error "error"
+  #endif
+  #if defined(__linux__)
+    #error "error"
   #endif
 #endif
 
@@ -177,8 +204,10 @@ namespace{
     #error "_DEBUG should be defined"
   #endif
 
-  #ifdef __OPTIMIZE__
-    #error "Missing -O0 compiler option"
+  #if JUCE_LINUX
+    #ifdef __OPTIMIZE__
+      #error "Missing -O0 compiler option"
+    #endif
   #endif
 
 #endif
@@ -372,8 +401,8 @@ namespace{
     juce::String _plugin_name;
     struct SoundPlugin *_plugin;  // Set to NULL when SoundPlugin *plugin is deleted. (we can still be alive though, since the deletion of juce plugins are delayed)
     
-    double positionOfLastLastBarStart = 0.0;
-    bool positionOfLastLastBarStart_is_valid = false;
+    mutable double positionOfLastLastBarStart = 0.0;
+    mutable bool positionOfLastLastBarStart_is_valid = false;
 
     double lastLastBarStart = 0.0; // only used for debugging.
         
@@ -389,26 +418,28 @@ namespace{
     
     // From JUCE documenation: You can ONLY call this from your processBlock() method!
     // I.e. it will only be called from the player thread or a multicore thread.
-    bool getCurrentPosition (CurrentPositionInfo &result) override {
-      memset(&result, 0, sizeof(CurrentPositionInfo));
-
+    juce::Optional<juce::AudioPlayHead::PositionInfo> getPosition (void) const override {
+       
       if (THREADING_is_main_thread()){
         RT_message("Error in plugin \"%s\": Asked for timing information from the main thread. Please contact the plugin vendor to fix this bug.\n", _plugin_name.toRawUTF8());
-        return false;
+        return juce::nullopt;
       }
       
       if (false==PLAYER_someone_has_player_lock()){ // Could complicate things by checking if process() is called specifically for this plugin, but this check probably fires if a plugin misbehaves anyway.
         RT_message("Error in plugin \"%s\": Asked for timing information outside process(). Please contact the plugin vendor to fix this bug.\n", _plugin_name.toRawUTF8());
-        return false;
+        return juce::nullopt;
       }
       
       if (ATOMIC_GET(is_starting_up))
-        return false;
+        return juce::nullopt;
 
       if (_plugin==NULL) // This situation is probably picked up by the two RT_message cases above though.
-        return false;
+        return juce::nullopt;
         
       //RT_PLUGIN_touch(_plugin); // If the plugin needs timing data, it should probably not be autopaused.
+
+      juce::AudioPlayHead::PositionInfo result;
+      //memset(&result, 0, sizeof(CurrentPositionInfo));
 
       bool isplaying = is_really_playing();
 
@@ -420,64 +451,80 @@ namespace{
         seqtrack = (struct SeqTrack *)root->song->seqtracks.elements[0]; // FIX.
 
 
-      result.bpm = RT_LPB_get_current_BPM(seqtrack);
-      //printf("result.bpm: %f\n",result.bpm);
-
-      if (result.bpm==0){
+      double bpm = RT_LPB_get_current_BPM(seqtrack);
+      if (bpm < 1){
         //R_ASSERT_NON_RELEASE(false); // Note: BPM is supposed to b 0 when playing very slowly so it's not impossible to get a false positive.
-        result.bpm = 1; // Never set bpm to 0. At least one vst plugin crashes if bpm is 0.
+        bpm = 1; // Never set bpm to 0. At least one vst plugin crashes if bpm is 0.
       }
       
+      result.setBpm(bpm);
+      
+      //printf("result.bpm: %f\n",result.bpm);
+
       StaticRatio signature = RT_Signature_get_current_Signature(seqtrack);
+      juce::AudioPlayHead::TimeSignature signature2;
+      signature2.numerator = signature.numerator;
+      signature2.denominator = signature.denominator;
+      result.setTimeSignature(signature2);
+
+      /*
       result.timeSigNumerator = signature.numerator;
       result.timeSigDenominator = signature.denominator;
+      */
       //printf("%d/%d\n",signature.numerator,signature.denominator);
 
       const int latency = RT_SP_get_input_latency(_plugin->sp);
 
-      const double latency_beats = ((double)latency / (double)pc->pfreq) * result.bpm / 60.0;
+      const double latency_beats = ((double)latency / (double)pc->pfreq) * bpm / 60.0;
 
       if (!isplaying){
               
-        result.timeInSamples = -latency;
-        result.timeInSeconds = (double)-latency / (double)pc->pfreq;
+        result.setTimeInSamples(-latency); 
+        result.setTimeInSeconds((double)-latency / (double)pc->pfreq);
 
-        result.ppqPosition               = -latency_beats;
-        result.ppqPositionOfLastBarStart = -latency_beats;
+        result.setPpqPosition(-latency_beats);
+        result.setPpqPositionOfLastBarStart(-latency_beats);
 
         positionOfLastLastBarStart_is_valid = false;      
 
       } else {
+
+        const int64_t time_in_samples = pc->absabstime - latency;
         
-        result.timeInSamples = pc->absabstime - latency;
-        result.timeInSeconds = result.timeInSamples / (double)pc->pfreq;
+        result.setTimeInSamples(time_in_samples);
+        result.setTimeInSeconds(time_in_samples / (double)pc->pfreq);
 
         //if(ATOMIC_GET(root->editonoff))
         //  printf("timeInSeconds: %f\n", result.timeInSeconds);
 
-        bool using_sequencer_timing = root->song->use_sequencer_tempos_and_signatures;
+        const bool using_sequencer_timing = root->song->use_sequencer_tempos_and_signatures;
 
-        // Note: If changing ppqPositionOfLastBarStart, we might also have to change pos->bar_start_tick in Mixer.cpp/RT_rjack_timebase. (note that we dsubtract "latency_beats" here.)
-        result.ppqPosition               = RT_LPB_get_beat_position(seqtrack) - latency_beats;
-        result.ppqPositionOfLastBarStart = (using_sequencer_timing ? g_rt_sequencer_ppq_of_last_bar_start-latency_beats : seqtrack->beat_iterator.beat_position_of_last_bar_start);
+        const double ppq_position = RT_LPB_get_beat_position(seqtrack) - latency_beats;
+        const double ppq_position_of_last_bar_start = using_sequencer_timing ? g_rt_sequencer_ppq_of_last_bar_start-latency_beats : seqtrack->beat_iterator.beat_position_of_last_bar_start;
         
-        if (result.ppqPosition < result.ppqPositionOfLastBarStart) {
+        // Note: If changing ppqPositionOfLastBarStart, we might also have to change pos->bar_start_tick in Mixer.cpp/RT_rjack_timebase. (note that we dsubtract "latency_beats" here.)
+        result.setPpqPosition(ppq_position);
+        result.setPpqPositionOfLastBarStart(ppq_position_of_last_bar_start);
+        
+        if (ppq_position < ppq_position_of_last_bar_start) {
 
-          if (positionOfLastLastBarStart_is_valid)            
-            result.ppqPositionOfLastBarStart = positionOfLastLastBarStart;
-          else {
+          if (positionOfLastLastBarStart_is_valid) {
+            
+            result.setPpqPositionOfLastBarStart(positionOfLastLastBarStart);
+            
+          } else {
 
             // I.e. when starting to play we don't have a previous last bar start value.
             
-            double bar_length = 4.0 * (double)signature.numerator / (double)signature.denominator;
+            const double bar_length = 4.0 * (double)signature.numerator / (double)signature.denominator;
 
 #if 1
             R_ASSERT_NON_RELEASE(bar_length!=0);
 
-            double num_bars_to_subtract = ceil( (result.ppqPositionOfLastBarStart - result.ppqPosition) /
+            const double num_bars_to_subtract = ceil( (ppq_position_of_last_bar_start - ppq_position) /
                                                 bar_length
                                                 );
-            result.ppqPositionOfLastBarStart -= (bar_length * num_bars_to_subtract);
+            result.setPpqPositionOfLastBarStart(ppq_position_of_last_bar_start - (bar_length * num_bars_to_subtract));
               
 #else
             // This version is cleaner, but it can freeze the program if we have a value that is out of the ordinary.
@@ -488,7 +535,7 @@ namespace{
           }
           
         } else {
-          positionOfLastLastBarStart = result.ppqPositionOfLastBarStart;
+          positionOfLastLastBarStart = ppq_position_of_last_bar_start;
           positionOfLastLastBarStart_is_valid = true;
         }
       
@@ -512,7 +559,7 @@ namespace{
              result.timeInSeconds);
 #endif
       
-      result.isPlaying = isplaying;
+      result.setIsPlaying(isplaying);
 #if 0
       result.isRecording = false;
       
@@ -522,7 +569,7 @@ namespace{
       result.isLooping = false; //pc->playtype==PLAYBLOCK || pc->playtype==PLAYRANGE; (same here)
 #endif
 
-      return true;
+      return result;
     }
   };
 
@@ -3022,12 +3069,16 @@ bool JUCE_current_thread_is_message_thread(void){
 static juce::String g_backtrace;
 
 const char *JUCE_get_backtrace(void){
+#if FOR_WINDOWS
+  return "(backtrace not implemented on windows)";
+#else
   static int num=0;
   printf("Getting backtrace %d\n", num);
   g_backtrace = juce::SystemStats::getStackBacktrace();
   printf("Got backtrace %d\n", num);
   num++;
   return g_backtrace.toRawUTF8();
+#endif
 }
 
 bool JUCE_open_external_web_browser(const char *urlstring){
