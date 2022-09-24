@@ -1019,7 +1019,12 @@ STime Ratio2STime2(
   }
     
   if (y >= num_lines){
-    R_ASSERT_NON_RELEASE(false);
+
+    // Commented out. It's very common. Code might be pointlessly ugly if we don't allow this.
+    //R_ASSERT_NON_RELEASE(false);
+
+    R_ASSERT_NON_RELEASE(y < num_lines+1);
+    
     return times[num_lines].time;
   }
     

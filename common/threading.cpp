@@ -558,10 +558,14 @@ void THREADING_set_priority(priority_t priority){
 bool THREADING_has_player_thread_priority(void){
   priority_t priority = THREADING_get_priority();
 #if defined(FOR_WINDOWS)
-  return priority.priority==THREAD_PRIORITY_TIME_CRITICAL;
+  
+  return priority.priority==THREAD_PRIORITY_TIME_CRITICAL || GetPriorityClass(GetCurrentThread())==REALTIME_PRIORITY_CLASS;
+
 #else
+          
   //printf("----policy: %d. RR: %d. FIFO: %d. priority: %d\n", priority.policy, SCHED_RR, SCHED_FIFO, priority.param.sched_priority);
   return (priority.policy==SCHED_RR || priority.policy==SCHED_FIFO);
+          
 #endif
 }
 #endif
