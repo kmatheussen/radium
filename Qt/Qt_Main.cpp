@@ -4769,15 +4769,30 @@ int main(int argc, char **argv){
       int dont_show = VECTOR_push_back(&v,"Don't show this message again");
       
       int result = SYSTEM_show_message_menu(&v,
-                                            "Radium for macOS is BETA software!\n"
-                                            "Radium is primarily developed for Windows and Linux.\n"
-                                            "\n"
-                                            "On macOS there are both performance and stability problems. In addition you might experience various types of quirks and misbehavours. However, many people find the program useful anyway, and there is no plan to stop developing the program for Mac.\n"
-                                            "\n"
-                                            "The most serious problems on macOS are caused by Apple's poor support for OpenGL. "
+                                            "<p>"
+                                            "<b>Radium for macOS is BETA software!</b>"
+                                            "</p><p>"
+                                            "Radium is primarily developed for <b>Windows</b> and <b>Linux</b>.\n"
+                                            "</p><p>"
+                                            "On <b>macOS</b> there are both <b>performance</b> and <b>stability</b> problems. "
+                                            "In addition you might experience various types of <b>quirks</b> and <b>misbehavours</b>. "
+                                            "However, many people find the program useful anyway, and there is no plan to stop developing the program for Mac.\n"
+                                            "</p><p>"
+                                            "Earlier, the most serious problems on macOS were caused by Apple's poor support for <b>OpenGL</b>. "
                                             "If Radium crashes right after startup, it's probably Apple's OpenGL library that crashes. "
-                                            "Fortunately, the bug is usually hit only during startup, and not every time.",
-                                            10*60*1000-1 // 10 minutes
+                                            "Fortunately, the bug is usually hit only during startup, and not every time. "
+                                            "However, after the release of <b>Big Sur</b>, this problem doesn't seem to appear very often anymore, if at all. "
+                                            "(OpenGL performance is still likely to be worse than on Windows and Linux though.)\n"
+                                            "</p><p>"
+                                            "Now, the <b>biggest problem</b> on <b>macOS</b> seems to be strange behaviors with the <b>keyboard</b>, apparently related to the <b>modifier keys</b>. "
+                                            "Currently it's unknown what's causing this. Normally you can fix it by simply pressing the <b>caps lock</b> key, "
+                                            "but if that's not enough, you can force resetting the keyboard by <b>temporarily switching keyboard "
+                                            "focus</b> to another program. After switching focus back to Radium, the keyboard should work normally again.\n"
+                                            "</p><p>"
+                                            "Note that the keyboard problem can also cause strange behaviour with the <b>mouse</b> since the program has the wrong "
+                                            "information about which modifier keys are currently pressed. Again, the simplest <b>workaround</b> is to <b>temporarily "
+                                            "switch keyboard focus</b> to another program when this happens."
+                                            , 10*60*1000-1 // 10 minutes
                                             );
       if (result==dont_show)
         SETTINGS_write_string(confname, QSysInfo::productVersion());
