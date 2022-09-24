@@ -1468,7 +1468,7 @@ $(T)error.o:  $(BUILD_DEPENDENCIES) $(CD)error.c
 	$(CC2) $(CD)error.c $(OPT) -Wno-null-dereference
 
 $(T)threading.o:  $(BUILD_DEPENDENCIES)  $(CD)threading.cpp common/threading.h
-	$(CCC2)  $(CD)threading.cpp $(JACKOPT) $(QTOPT) $(BOOST_INCLUDE)
+	$(CCC2)  $(CD)threading.cpp $(JACKOPT) $(QTOPT) $(BOOST_INCLUDE) # -O0
 
 $(T)Semaphores.o: $(BUILD_DEPENDENCIES) $(CD)/Semaphores.cpp $(CD)/sema.h common/Semaphores.hpp common/OS_Semaphores.h
 	$(CCC2) $(CD)Semaphores.cpp $(QTOPT)

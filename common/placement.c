@@ -351,12 +351,12 @@ void PlaceSetReallinePlace(
 }
 
 
+#if USE_OLD_LAST_POS
 /**********************************************************
   FUNCTION
     Puts 'p' as near as possible 'tp' such that p<tp.
 **********************************************************/
 void PlaceTilLimit(Place *p, const Place *tp){
-
   if(0==tp->counter){
     p->line=tp->line-1;
     p->counter=MAX_UINT32-1;
@@ -377,8 +377,10 @@ void PlaceTilLimit(Place *p, const Place *tp){
     p->dividor=MAX_UINT32;
   }
 }
+#endif
 
 
+#if USE_OLD_LAST_POS
 /**********************************************************
   FUNCTION
     Puts 'p' as near as possible 'tp' such that p>tp.
@@ -400,6 +402,8 @@ void PlaceFromLimit(Place *p, const Place *tp){
     p->dividor = MAX_UINT32;
   }
 }
+#endif
+
 
 const char* PlaceToString(const Place *a){
   return talloc_format("%d + %d/%d",(a)->line,(a)->counter,(a)->dividor);
