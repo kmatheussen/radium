@@ -420,7 +420,7 @@ namespace{
     mutable double _position_of_last_last_bar_start = 0.0;
     mutable bool _position_of_last_last_bar_start_is_valid = false;
 
-#define DEBUG_LAST_BAR_START 1
+#define DEBUG_LAST_BAR_START 0
 
 #if defined(RELEASE)
     #if DEBUG_LAST_BAR
