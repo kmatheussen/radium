@@ -4775,7 +4775,7 @@ int main(int argc, char **argv){
                                             "Radium is primarily developed for <b>Windows</b> and <b>Linux</b>.\n"
                                             "</p><p>"
                                             "On <b>macOS</b> there are both <b>performance</b> and <b>stability</b> problems. "
-                                            "In addition you might experience various types of <b>quirks</b> and <b>misbehavours</b>. "
+                                            "In addition you might experience various types of <b>quirks</b> and <b>misbehavours</b> in addition to a <b>very high CPU usage</b>. "
                                             "However, many people find the program useful anyway, and there is no plan to stop developing the program for Mac.\n"
                                             "</p><p>"
                                             "Earlier, the most serious problems on macOS were caused by Apple's poor support for <b>OpenGL</b>. "
@@ -4984,7 +4984,8 @@ int main(int argc, char **argv){
     //exit(0);
   }
 
-  qapplication->setWindowIcon(QIcon(STRING_get_qstring(OS_get_full_program_file_path("radium_256x256x32.png").id)));
+  qapplication->setWindowIcon(QIcon(STRING_get_qstring(OS_get_full_program_file_path("graphics/radium_logo_256x256_colorized.png").id)));
+  
   {
     // Add fonts in the "fonts" directory
     {
