@@ -1086,7 +1086,7 @@ namespace{
           editor_width /= g_juce_gfx_scale;
           editor_height /= g_juce_gfx_scale;
           
-          fprintf(stderr, "EDITOR WIDTH/HEIGHT 2b %d %d %d %d\n", editor_width, editor_height, get_button_height(), get_keyboard_height());
+          //fprintf(stderr, "EDITOR WIDTH/HEIGHT 2b %d %d %d %d\n", editor_width, editor_height, get_button_height(), get_keyboard_height());
 
           main_component.setSize(editor_width, editor_height + get_button_height() + get_keyboard_height());
           
@@ -3369,15 +3369,22 @@ void PLUGINHOST_save_fxp(struct SoundPlugin *plugin, const wchar_t *filename){
 static JuceThread *g_juce_thread = NULL;
 
 void PLUGINHOST_set_global_gfx_scale(float gfx_scale){
-#if defined(FOR_MACOSX)
-  return; // doesn't seem to work.
-#endif
+
+#if 1 // defined(FOR_MACOSX)
+
+  // After JUCE 7, we don't seem to need this for Windows or Linux either.
+  
+  return;
+  
+#else
   
   run_on_message_thread([gfx_scale](){
     juce::Desktop::getInstance().setGlobalScaleFactor(gfx_scale);
     g_juce_gfx_scale = gfx_scale;
     g_has_juce_gfx_scale = true;
   });
+  
+#endif
 }
  
 void PLUGINHOST_init(void){
