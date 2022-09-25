@@ -3236,6 +3236,10 @@ static QString get_plugin_type_key(const SoundPluginType *type){
   return QString(type->type_name) + "/" + type->name;
 }
 
+#if !defined(RELEASE)
+bool g_has_found_all_plugins = true;
+#endif
+
 static void set_instance_num(QString type_key, int num){
   auto audio_instrument = get_audio_instrument();
   auto patches = audio_instrument->patches;
@@ -3250,7 +3254,10 @@ static void set_instance_num(QString type_key, int num){
     }
   }END_VECTOR_FOR_EACH;
 
-  R_ASSERT_NON_RELEASE(false);
+#if !defined(RELEASE)
+  if (g_has_found_all_plugins)
+    R_ASSERT(false);
+#endif
 }
 
 static void MW_apply_num_instances_state(const hash_t *state){
