@@ -123,6 +123,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/threading.h"
 #include "../common/threading_lowlevel.h"
 #include "../common/sequencer_timing_proc.h"
+#include "../common/LockAsserter.hpp"
 
 #include "../Qt/Qt_instruments_proc.h"
 
@@ -361,6 +362,15 @@ namespace{
       printf("   JUCE listener: parm %d changed to %f. has_inited: %d. is_shutting_down: %d\n",parameterIndex, newValue, ATOMIC_GET(_plugin->MT_has_initialized), ATOMIC_GET(_plugin->is_shutting_down));
 #endif
 
+      // Deletion of SoundPlugin instances are delayed, but the listener is removed in cleanup_plugin_data, so that shouldn't matter.
+      // We check for '_plugin->is_shutting_down' anyway though. I don't why it was initially done so (there should have been a comment about it here),
+      // but perhaps it's because of this line in SoundPlugin.cpp:
+      //
+      // "while(PLUGIN_remove_midi_learn(plugin, -1, false)==true)".
+      //
+      // ...which seems unlikely, so it's probably safe removing the check...
+      // Also note: We can't assert that '_plugin_is_shutting_down==false' here since _plugin->is_shutting_down is set to false before the call to 'cleanup_plugin_data'.
+      //
       if (ATOMIC_GET(_plugin->MT_has_initialized) && !ATOMIC_GET(_plugin->is_shutting_down))
         PLUGIN_call_me_when_an_effect_value_has_changed(_plugin,
                                                         parameterIndex,
@@ -404,14 +414,23 @@ namespace{
   
   struct MyAudioPlayHead : public juce::AudioPlayHead{
 
-    juce::String _plugin_name;
-    struct SoundPlugin *_plugin;  // Set to NULL when SoundPlugin *plugin is deleted. (we can still be alive though, since the deletion of juce plugins are delayed)
+    const juce::String _plugin_name;
+    const struct SoundPlugin *_plugin;  // Set to NULL when SoundPlugin *plugin is deleted. (we can still be alive though, since the deletion of juce plugins are delayed)
     
-    mutable double positionOfLastLastBarStart = 0.0;
-    mutable bool positionOfLastLastBarStart_is_valid = false;
+    mutable double _position_of_last_last_bar_start = 0.0;
+    mutable bool _position_of_last_last_bar_start_is_valid = false;
 
-    double lastLastBarStart = 0.0; // only used for debugging.
-        
+#define DEBUG_LAST_BAR_START 1
+
+#if defined(RELEASE)
+    #if DEBUG_LAST_BAR
+      #error "error"
+    #endif
+#endif
+    
+#if DEBUG_LAST_BAR_START
+    mutable double _last_last_bar_start = 0.0; // only used for debugging.
+#endif   
 
     MyAudioPlayHead(juce::String plugin_name, struct SoundPlugin *plugin)
       : _plugin_name(plugin_name)
@@ -421,11 +440,15 @@ namespace{
     void plugin_will_be_deleted(void){
       _plugin = NULL;
     }
-    
+
+#if !defined(RELEASE)
+    radium::LockAsserter _lockAsserter;
+#endif
+
     // From JUCE documenation: You can ONLY call this from your processBlock() method!
     // I.e. it will only be called from the player thread or a multicore thread.
     juce::Optional<juce::AudioPlayHead::PositionInfo> getPosition (void) const override {
-       
+      
       if (THREADING_is_main_thread()){
         RT_message("Error in plugin \"%s\": Asked for timing information from the main thread. Please contact the plugin vendor to fix this bug.\n", _plugin_name.toRawUTF8());
         return juce::nullopt;
@@ -441,7 +464,11 @@ namespace{
 
       if (_plugin==NULL) // This situation is probably picked up by the two RT_message cases above though.
         return juce::nullopt;
-        
+
+      // Assert that we are single-threaded. If not, we need to make access to '_position_of_last_last_bar_start' and '_position_of_last_last_bar_start_is_valid' multithread-safe.
+      // (it's most likely a bug if we hit this assertion though. I don't think it should happen.)
+      LOCKASSERTER_EXCLUSIVE_NON_RELEASE(&_lockAsserter);
+      
       //RT_PLUGIN_touch(_plugin); // If the plugin needs timing data, it should probably not be autopaused.
 
       juce::AudioPlayHead::PositionInfo result;
@@ -491,7 +518,7 @@ namespace{
         result.setPpqPosition(-latency_beats);
         result.setPpqPositionOfLastBarStart(-latency_beats);
 
-        positionOfLastLastBarStart_is_valid = false;      
+        _position_of_last_last_bar_start_is_valid = false;      
 
       } else {
 
@@ -514,9 +541,9 @@ namespace{
         
         if (ppq_position < ppq_position_of_last_bar_start) {
 
-          if (positionOfLastLastBarStart_is_valid) {
+          if (_position_of_last_last_bar_start_is_valid) {
             
-            result.setPpqPositionOfLastBarStart(positionOfLastLastBarStart);
+            result.setPpqPositionOfLastBarStart(_position_of_last_last_bar_start);
             
           } else {
 
@@ -541,8 +568,8 @@ namespace{
           }
           
         } else {
-          positionOfLastLastBarStart = ppq_position_of_last_bar_start;
-          positionOfLastLastBarStart_is_valid = true;
+          _position_of_last_last_bar_start = ppq_position_of_last_bar_start;
+          _position_of_last_last_bar_start_is_valid = true;
         }
       
       }
@@ -552,17 +579,18 @@ namespace{
 #endif
 
 
-#if 0
-      //if (result.ppqPositionOfLastBarStart != lastLastBarStart)
+#if DEBUG_LAST_BAR_START
+      //if (result.ppqPositionOfLastBarStart != _last_last_bar_start)
       //  printf("  ppq: %f,  ppqlast: %f, extra: %f. Latency: %d\n",result.ppqPosition,result.ppqPositionOfLastBarStart,latency_beats,latency);
       
-      lastLastBarStart = result.ppqPositionOfLastBarStart;
+      _last_last_bar_start = result.getPpqPositionOfLastBarStart().orFallback(-500);
         
       printf("ppq: %f, ppqlast: %f. playing: %d. time: %f\n",
-             result.ppqPosition,
-             result.ppqPositionOfLastBarStart,
+             result.getPpqPosition().orFallback(599),
+             _last_last_bar_start,
              isplaying,
-             result.timeInSeconds);
+             result.getTimeInSeconds().orFallback(-777)
+             );
 #endif
       
       result.setIsPlaying(isplaying);
