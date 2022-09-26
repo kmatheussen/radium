@@ -1,3 +1,54 @@
+Changes 6.9.99 -> 7.0.00:
+* Qt: Updated Qt to 5.15.6 on Windows and Mac.
+* Qt: Updated Qt to qtbase-kde (5.15.6++) on Linux.
+* JUCE: Update JUCE from 6.1.6 to 7.0.2:
+  * VST3 plugins should work better on Linux.
+  * LV2 plugins are supported. (Only enabled on
+    Linux for now.)
+* GUI: Significantly less CPU when drawing text.
+* GUI: Use new logo designed by Andrzej "akimaze"
+  Kilijański.
+* Instruments/Editor: New "Window" called
+  "Preset browser" to quickly try out and organize
+  instrument presets. See
+  https://github.com/kmatheussen/radium/pull/1383
+  for more info. Show it by Selecting Help ->
+  Beat features -> Preset browser. (akimaze)
+* Mac: Replace the "Radium reset.app" with a
+  "Radium reset.command" clickable shell script
+  since the "Radium reset.app" app didn't always
+  work on Macos Sierra or later.
+* Load: Don't ask for plugin file when loading song
+  and plugin is not available.
+* Mac: Update startup warning message. The biggest
+  problem on Mac seems to be issues with the keyboard
+  now, not with OpenGL.
+* Editor: Fix Left Alt + Up. For many release this
+  function has been deleting previous note if that
+  note ended on the current line.
+* Editor: Fix backspace. For many release this
+  function has been deleting previous note if that
+  note ended on the current line.
+* Export: Don't display assertion reporter when
+  exporting single block. (akimaze)
+* VST/VL2: Fix "LSP Plugins" and other plugins not
+  returning the real size before window is visible.
+  (akimaze)
+* VST/AU/LV2: Fix deadlock sometimes happening if
+  deleting and creating VST/AU/LV2 plugins very fast.
+* GUI: Append "..." to the name of all menu entries
+  and buttons that opens a new GUI (except if the
+  name starts with "show " or similar).
+* API:
+  * New: getPresedBrowserFrame, stringSplit,
+    getAllSettings, instrumentIsVisible.
+  * Add optional argument "is_visible" to
+    createAudioInstrument,
+    createAudioInstrumentFromPreset,
+    and createAudioInstrumentFromDescription.
+
+
+
 Changes 6.9.98 -> 6.9.99:
 * Editor: Make it possible to add keybinding for all
   menu entries in the "(click me)" track header menu,
