@@ -986,8 +986,14 @@ namespace{
       //this->setAlwaysOnTop(vstGuiIsAlwaysOnTop());
     }
 
+    mutable int _button_height = 0;
+    
     int get_button_height(void) const {
-      return (root->song->tracker_windows->fontheight * 3 / 2) /  g_juce_gfx_scale;
+      if (_button_height <= 0)
+        _button_height = juce::Font().getHeight() * 5 / 3;
+
+      return _button_height;
+      //return (root->song->tracker_windows->fontheight * 3 / 2) /  g_juce_gfx_scale;
     }
     
     int get_keyboard_height(void) const {
@@ -3370,18 +3376,20 @@ static JuceThread *g_juce_thread = NULL;
 
 void PLUGINHOST_set_global_gfx_scale(float gfx_scale){
 
-#if 1 // defined(FOR_MACOSX)
+#if defined(FOR_MACOSX)
 
-  // After JUCE 7, we don't seem to need this for Windows or Linux either.
-  
+  // On mac, gfx scaling seems to be done automatically.
   return;
   
 #else
   
   run_on_message_thread([gfx_scale](){
     juce::Desktop::getInstance().setGlobalScaleFactor(gfx_scale);
-    g_juce_gfx_scale = gfx_scale;
-    g_has_juce_gfx_scale = true;
+
+    // After JUCE 7, it doesn't seem necessary anymore to manually change size of the editor component if global scale factor != 1.
+
+    //g_juce_gfx_scale = gfx_scale;
+    //g_has_juce_gfx_scale = true;
   });
   
 #endif
