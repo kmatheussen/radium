@@ -2786,6 +2786,8 @@ void RT_SEQBLOCK_add_playing_note(struct SeqBlock *seqblock,
                                   const struct Tracks *track,
                                   struct Notes *note)
 {
+  abort();
+  
   int tracknum = track->l.num;
 
   RT_SEQBLOCK_reserve_playing_notes_tracks(seqblock, tracknum + 1);
@@ -2958,8 +2960,9 @@ static void RT_handle_editor_seqblocks_each_block(struct SeqTrack *seqtrack){
     if (pc->playtype==PLAYBLOCK){
       //R_ASSERT(seqtrack==root->song->block_seqtrack); // hmm. sometimes fails.
       
-      if (seqtrack==root->song->block_seqtrack)
+      if (seqtrack==root->song->block_seqtrack){
         RT_EDITSEQBLOCK_call_each_block(seqtrack, &g_block_seqtrack_seqblock, seqtrack->start_time, seqtrack->end_time);
+      }
       
     }else if (seqtrack!=root->song->block_seqtrack && !seqtrack->for_audiofiles) {
       

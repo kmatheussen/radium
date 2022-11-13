@@ -331,20 +331,35 @@ bool noteContinuesNextBlock(dyn_t dynnote, int tracknum, int blocknum, int windo
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
+#if 0
   struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
   if (note==NULL)
     return false;
 
   return note_continues_next_block(wblock->block, note);
+#else
+  const r::NotePtr note = getNoteFromNumA2(windownum,&window,blocknum,&wblock,tracknum,&wtrack,dynnote);
+  if (note.get()==NULL)
+    return "";
+  
+  return note_continues_next_block2(wblock->block, note.get());
+#endif
 }
 
 void setNoteContinueNextBlock(bool continuenextblock, dyn_t dynnote, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
+#if 0
   struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
   if (note==NULL)
     return;
+  
+#else
+  const r::NotePtr note = getNoteFromNumA2(windownum,&window,blocknum,&wblock,tracknum,&wtrack,dynnote);
+  if (note.get()==NULL)
+    return;
+#endif
   
   ADD_UNDO(Notes(window,
                  wblock->block,
@@ -353,7 +368,7 @@ void setNoteContinueNextBlock(bool continuenextblock, dyn_t dynnote, int tracknu
                  )
            );
 
-  note->noend = continuenextblock?1:0;
+  note->d._noend = continuenextblock?1:0;
 }
 
 int addNote(float notevalue,
@@ -519,11 +534,19 @@ void undoNotes(int tracknum, int blocknum){
 }
 
 const_char* getNoteId(int notenum, int tracknum, int blocknum, int windownum){
+#if 0
   struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,DYN_create_int(notenum));
   if (note==NULL)
     return "";
   
   return GetNoteIdAsCharString(note->id);
+#else
+  const r::NotePtr note = getNoteFromNum2(windownum,blocknum,tracknum,DYN_create_int(notenum));
+  if (note.get()==NULL)
+    return "";
+  
+  return GetNoteIdAsCharString(note->_id);
+#endif
 }
 
 int getNoteNum(dyn_t dynnote, int tracknum, int blocknum, int windownum){

@@ -1734,14 +1734,15 @@ template <typename ValType>
 class RT_TimeData_Player_Cache{
 
 public:
-    int _curr_pos = 0; // vector pos.
+  int _curr_pos = 0; // vector pos.
 
   template <class SeqBlockT>
   friend struct RT_TimeData_Cache_Handler;
   
+#if defined(__GNUC__) && __GNUC__ < 8
+public: // "friend struct RT_TimeData_Cache_Handler" above doesn't work for gcc 7.
+#else
 private:
-#if defined(__GNUC__) && __GNUC__ < 8 // "friend struct RT_TimeData_Cache_Handler" above doesn't work for gcc 7.
- public:
 #endif
   
   ValType _last_value = 0; // last value returned from TimeData::get_value();
@@ -2082,7 +2083,7 @@ namespace r{
   
     ~TimeData_shared_ptr()
     {
-      fprintf(stderr, "           c2\n");
+      //fprintf(stderr, "           c2\n");
       cleanup();
     }
 
@@ -2097,7 +2098,7 @@ namespace r{
     
       R_ASSERT(_t->_num_references > 0);
       
-      printf("    ~TimeData_shared_ptr: %d - %p (%p)\n", _t->_num_references.load()-1, _t, this);
+      //printf("    ~TimeData_shared_ptr: %d - %p (%p)\n", _t->_num_references.load()-1, _t, this);
     
       if ((--_t->_num_references)==0)
         RT_schedule_to_delete(_t);
@@ -2397,6 +2398,8 @@ struct NoteSeqBlock : public RT_TimeData_Player_Cache<typeof(Note::_val)> {
 
 using NotePtr = TimeData_shared_ptr<Note>;
 
+using LineNotes = radium::Vector<r::Note*, radium::AllocatorType::STD, 1>;
+  
 struct NoteTimeData : public TimeData<NotePtr, NoteSeqBlock>{
   int _polyphony = 1;
 
@@ -2405,13 +2408,39 @@ struct NoteTimeData : public TimeData<NotePtr, NoteSeqBlock>{
   
   float _min_display_pitch = 0;
   float _max_display_pitch = 128;
+
+  // Vector of vector of r::Note pointers.
+  // Line number is used for indexing the elements of the outer vector.
+  // The inner vectors contains pointer to all notes playing at that line.
+  // (Note that the size of the vector is equal to the last line (plus 1) that a note is playing at,
+  //  and NOT the number of lines in the block.)
+  //
+  // Used by the player and gfx renderer.
+  //
+  // Updated in the writer_finalizer method.
+  //
+  // (TODO/FIX: Are the indinvidual elements in the vector (the LineNotes*s) freed?)
+  //
+  radium::Vector<LineNotes*> _line_notes;
+
+  // Number of _valid_ elements in _line_notes. (size of the vector might be larger, but those elements are not valid)
+  int _num_valid_elements_in_line_notes;
   
-  // Sets _polyphony, _min_pitch, _and max_pitch.
+  // Sets _polyphony, _min_pitch, _max_pitch, and _line_notes.
   void writer_finalizer(Writer &writer) override;
 
   void sortit(TimeDataVector *vector) override;
 };
 
+  /*
+    ModifyNote is used to make it easier to modify a current note in a track.
+
+    The reason for using this class is that we can NOT modify a note in a track directly
+    since the note might be used by the player (or something else) in a different thread at the same time.
+    Therefore we first have to make a copy, and afterwards replace the old note with the new one in the Writer.
+
+    This is magically taken care of here.
+   */
 class ModifyNote {
   NotePtr &_noteptr;
 
@@ -2427,12 +2456,25 @@ public:
   };
   
   const Type _type;
+
+public:
   
+  // Note: This constructor can only be used if 'noteptr' is already a reference to an element in a Writer.
   ModifyNote(NotePtr &noteptr, Type type = Type::CAN_NOT_MODIFY_TIME)
     : _noteptr(noteptr)
     , _note(new Note(noteptr.get()))
     , _time(noteptr->get_time())
     , _type(type)
+  {
+    R_ASSERT(_noteptr.get() == noteptr.get());
+  }
+
+  ModifyNote(const r::NoteTimeData::Writer &writer, NotePtr &noteptr, Type type = Type::CAN_NOT_MODIFY_TIME)
+    : ModifyNote(writer.find([&noteptr](const r::NotePtr &maybe)
+                   {
+                     return maybe.get()==noteptr.get();
+                   }),
+                 type)
   {
   }
 
@@ -4040,6 +4082,7 @@ namespace radium{
 #include "Vector.hpp"
 namespace radium{
   using RT_NoteVector = radium::Vector<struct Notes*, radium::AllocatorType::RT>;
+  using RT_NoteVector2 = radium::Vector<r::NotePtr, radium::AllocatorType::RT>;
 }
 #endif
 
@@ -4104,8 +4147,10 @@ struct SeqBlock{
 
 #if SEQBLOCK_USING_VECTOR
   radium::Vector< radium::RT_NoteVector*, radium::AllocatorType::RT > *playing_notes;
+  //radium::Vector< radium::RT_NoteVector2*, radium::AllocatorType::RT > *playing_notes2;
 #else
   void *playing_notes;
+  //void *playing_notes2;
 #endif
   
   /*
@@ -4256,6 +4301,13 @@ struct SeqTrack{
   bool use_custom_recording_config;
   struct SeqtrackRecordingConfig custom_recording_config;
   int recording_generation; // Used in audio/Seqtrack_plugin.cpp
+
+#if SEQBLOCK_USING_VECTOR
+  radium::Vector< radium::RT_NoteVector2*, radium::AllocatorType::RT > *hanging_notes;
+#else
+  void *hanging_notes;
+#endif
+
 };
 
 

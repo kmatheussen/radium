@@ -56,11 +56,16 @@ static void RT_schedule_new_seqblock(struct SeqTrack *seqtrack,
     seqblock->t.time2 = seqblock->t.time + duration;
 
     R_ASSERT_NON_RELEASE(seqtrack==root->song->block_seqtrack);
-    
-    // Need to call RT_EDITSEQBLOCK_call_each_block again here since last call to it hadn't updated t.time/t.time2 values.
-    if (seqtrack==root->song->block_seqtrack)
-      RT_EDITSEQBLOCK_call_each_block(seqtrack, &g_block_seqtrack_seqblock, seqtrack->start_time, seqtrack->end_time);
 
+    // Need to call RT_EDITSEQBLOCK_call_each_block again here since last call to it hadn't updated t.time/t.time2 values.
+    if (seqtrack==root->song->block_seqtrack){
+      // FIX: Only call if seqtrack->start_time != last time. (Called twice at beginning for instance, double up notes.)
+
+      // Commented out for now. Need fix to avoid double-up.
+      //printf("   Call 1\n");
+      //RT_EDITSEQBLOCK_call_each_block(seqtrack, &g_block_seqtrack_seqblock, seqtrack->start_time, seqtrack->end_time);
+    }
+    
   } else {
 
     if (place_pointer==NULL)

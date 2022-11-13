@@ -252,7 +252,7 @@ static void scroll_next(struct Tracker_Windows *window, struct WBlocks *wblock, 
 	int curr_realline=wblock->curr_realline;
 
         if(curr_realline==wblock->num_reallines-1){ // last line
-          ScrollEditorDown(window,1,NULL);
+          ScrollEditorDown(window,1,-1);
           return;
         }
 
@@ -262,7 +262,7 @@ static void scroll_next(struct Tracker_Windows *window, struct WBlocks *wblock, 
           if (trss.contains(new_realline))
             break;
 
-	ScrollEditorDown(window,new_realline-curr_realline,NULL);
+	ScrollEditorDown(window,new_realline-curr_realline,-1);
 }
 
 template <class T>
@@ -464,7 +464,7 @@ void ScrollEditorToRealLine(
 			ScrollEditorDown(
 				window,
 				till_curr_realline - curr_realline,
-                                NULL
+                                -1
 			);
 		}
 	}

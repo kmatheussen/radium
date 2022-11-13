@@ -131,6 +131,22 @@ void DYNVEC_save(disk_t *file, const dynvec_t dynvec){
   DISK_write(file,"<< DYNVEC END\n");
 }
 
+const wchar_t *DYN_to_string(const dyn_t dyn){
+  disk_t *file = DISK_open_for_writing_to_text();
+
+  if (file==NULL){
+    R_ASSERT(false);
+    return L"";
+  }
+
+  DYN_save(file, dyn);
+
+  const wchar_t *ret = DISK_get_string(file);
+  
+  DISK_close_for_writing_to_text(file);
+
+  return ret;
+}
 
 static const wchar_t *das_read_line(disk_t *file){
 

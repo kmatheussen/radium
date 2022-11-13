@@ -35,6 +35,12 @@ extern LANGSPEC disk_t *DISK_open_binary_for_writing(filepath_t wfilename);
 extern LANGSPEC disk_t *DISK_open_temp_for_writing(void);
 extern LANGSPEC const wchar_t *DISK_close_temp_for_writing(disk_t *disk);
 
+extern LANGSPEC disk_t *DISK_open_for_writing_to_text(void); // No need to call open() for this one.
+extern LANGSPEC void DISK_close_for_writing_to_text(disk_t *disk);
+
+// Returns what's been written so far. Only useful for "for_writing" or "for_writing_to_text" types.
+extern LANGSPEC const wchar_t *DISK_get_string(disk_t *disk);
+
 // If disk==NULL, then return reason file couldn't be opened.
 // else, Returns NULL if there is no error.
 extern LANGSPEC const char* DISK_get_error(disk_t *disk);

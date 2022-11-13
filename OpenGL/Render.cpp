@@ -2050,7 +2050,7 @@ static void create_pianoroll_notes(const struct Tracker_Windows *window, const s
         is_current = true;
 
       if (!is_current && is_current_note && pianonotenum==g_current_piano_note.pianonotenum)
-        if (note->d._pianonote_is_selected && note->d._pianonote_is_selected)
+        if (note->d._pianonote_is_selected) // && note->d._pianonote_is_selected)
           is_current = true;
 
       //printf("pianonotenum: %d, curr.pianonotenum: %d, is_current: %s\n",pianonotenum,g_current_piano_note.pianonotenum,is_current?"true":"false");

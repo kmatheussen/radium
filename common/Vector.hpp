@@ -41,15 +41,17 @@ static inline constexpr int find_vector_preallocate_size(const int max_size){
   }
 }
   
-// Note:  PRESTACKALLOCATED_SIZE is number of bytes, not number of elements. Number of elements is rounded down, but there will always be room for at least one element.
-template <typename T, AllocatorType ALLOCATOR_TYPE = AllocatorType::STD, int PRESTACKALLOCATED_SIZE = 256>
+// Note:  PREALLOCATED_SIZE is number of bytes, not number of elements. Number of elements is rounded down, but there will always be room for at least one element.
+template <typename T, AllocatorType ALLOCATOR_TYPE = AllocatorType::STD, int PREALLOCATED_SIZE = 256>
 struct Vector{
 
+  /*
   static_assert(
                 ALLOCATOR_TYPE == AllocatorType::STD || std::is_trivially_copyable<T>::value,
                 "Doesn't have to be a problem. The assertion is just added because it seems likely to be an error in the code if this assertion fails."
                 );
-
+  */
+  
 private:
   int _num_elements_max;
 
@@ -103,48 +105,52 @@ public:
 
 private:
 
-  char  _pre_allocated_memory[find_vector_preallocate_size<T>(PRESTACKALLOCATED_SIZE)] __attribute__((aligned(std::alignment_of<T>::value)));
+  char  _pre_allocated_memory[find_vector_preallocate_size<T>(PREALLOCATED_SIZE)] __attribute__((aligned(std::alignment_of<T>::value)));
 
 public:
   
-  Vector(const Vector *vector = NULL) {
+  Vector() {
     LOCKASSERTER_EXCLUSIVE_NON_RELEASE(&_lockAsserter);
 
     constexpr int num_preallocated_elements = sizeof(_pre_allocated_memory) / sizeof(T);
+    static_assert(num_preallocated_elements==std::max(1, int(PREALLOCATED_SIZE / sizeof(T))), "?");
 
-    static_assert(num_preallocated_elements==std::max(1, int(PRESTACKALLOCATED_SIZE / sizeof(T))), "?");
+    _num_elements_max = num_preallocated_elements;
 
+    _elements = (T*)_pre_allocated_memory;
+ 
+    R_ASSERT_NON_RELEASE(_num_elements_max > 0);
+    R_ASSERT_NON_RELEASE(_elements!=NULL);
+  }
+
+  Vector(const Vector *vector)
+    : Vector()
+  {
     if (vector != NULL && vector->size()>0) {
 
       int size = vector->size();
 
-      if (size <= num_preallocated_elements) {
-        
-        _num_elements_max = num_preallocated_elements;
-        _elements = (T*)_pre_allocated_memory;
-        
-      } else if (ALLOCATOR_TYPE == AllocatorType::RT) {
+      constexpr int num_preallocated_elements = sizeof(_pre_allocated_memory) / sizeof(T);
+      static_assert(num_preallocated_elements==std::max(1, int(PREALLOCATED_SIZE / sizeof(T))), "?");
 
-        _num_elements_max = vector->_num_elements_max;
-        _elements = RT_alloc_raw2<T>(_num_elements_max, _num_elements_max, "Vector.hpp");
+      if (size > num_preallocated_elements) {
         
-      } else {
+        if (ALLOCATOR_TYPE == AllocatorType::RT) {
 
-        _num_elements_max = vector->_num_elements_max;
-        _elements = (T*)V_calloc(_num_elements_max, sizeof(T));
-
+          _num_elements_max = vector->_num_elements_max;
+          _elements = RT_alloc_raw2<T>(_num_elements_max, _num_elements_max, "Vector.hpp");
+          
+        } else {
+          
+          _num_elements_max = vector->_num_elements_max;
+          _elements = (T*)V_calloc(_num_elements_max, sizeof(T));
+          
+        }
       }
       
       std::copy(&vector->_elements[0], &vector->_elements[size], _elements);
       
       _num_elements.set(size);
-      
-    } else {
-
-      _num_elements_max = num_preallocated_elements;
-
-      _elements = (T*)_pre_allocated_memory;
-      
     }
  
     R_ASSERT_NON_RELEASE(_num_elements_max > 0);
@@ -513,6 +519,15 @@ private:
 
 public:
 
+  void replace(int i, const T &t){
+    LOCKASSERTER_EXCLUSIVE_NON_RELEASE(&_lockAsserter);
+
+    R_ASSERT_RETURN_IF_FALSE(i>=0);
+    R_ASSERT_RETURN_IF_FALSE(i<_num_elements.get());
+
+    _elements[i] = t;
+  }
+  
   // Only RT safe if ensure_there_is_room_for_one_more_without_having_to_allocate_memory is called first AND post_add is called afterwards.
   //
   // This function can NOT be called in parallell with other functions

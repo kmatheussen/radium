@@ -170,6 +170,76 @@ static void set_note_min_max_pitch(r::NoteTimeData *notes, r::NoteTimeData::Writ
   }
 }
 
+static void update_line_notes(r::NoteTimeData *notetimedata, r::NoteTimeData::Writer &writer){
+  int last_used_line = -1;
+  
+  for(const r::NotePtr &note : writer){
+    int line_start = note->_time.num / note->_time.den;
+    int line_end = note->d._end.num / note->d._end.den;
+
+    printf("  (%d). %d->%d. Sizeof(r::LineNotes): %d\n", last_used_line, line_start, line_end, (int)sizeof(r::LineNotes));
+
+    for(int i = last_used_line+1 ; i < line_start ; i++) {
+      
+      if (i >= notetimedata->_line_notes.size()) {
+        
+        notetimedata->_line_notes.push_back(NULL);
+
+      } else {
+        
+        r::LineNotes *notes = notetimedata->_line_notes.at_ref(i);
+        if (notes != NULL)
+          notes->clear();
+
+      }
+      
+    }
+    
+    for(int i = line_start ; i <= line_end ; i++){
+
+      r::LineNotes *notes;
+
+      if (i >= notetimedata->_line_notes.size()) {
+
+        R_ASSERT_NON_RELEASE(i == notetimedata->_line_notes.size());
+        
+        notes = new r::LineNotes();
+        notetimedata->_line_notes.push_back(notes);
+        
+      } else {
+        
+        notes = notetimedata->_line_notes.at_ref(i);
+
+        if (notes == NULL) {
+          
+          notes = new r::LineNotes();
+          notetimedata->_line_notes.replace(i, notes);
+          
+        } else if (i > last_used_line) {
+          
+          notes->clear();
+          
+        }
+
+      }
+      
+      notes->push_back(note.get_mutable());
+    }
+
+    last_used_line = line_end;
+  }
+
+  notetimedata->_num_valid_elements_in_line_notes = last_used_line + 1;
+
+#if !defined(RELEASE)
+  for(int i = 0 ; i < notetimedata->_num_valid_elements_in_line_notes ; i++) {
+    const auto *notes = notetimedata->_line_notes.at_ref(i);
+    if (notes && notes->size() > 0)
+      printf("%d: %d\n", i, notes->size());
+  }
+#endif
+}
+
 void r::NoteTimeData::writer_finalizer(Writer &writer){
   
   R_ASSERT(THREADING_is_main_thread()); // This function is not thread safe.
@@ -177,6 +247,8 @@ void r::NoteTimeData::writer_finalizer(Writer &writer){
   set_note_polyphony_num(this, writer);
 
   set_note_min_max_pitch(this, writer);
+
+  update_line_notes(this, writer);
 }
 
 int GetNoteSubtrack(const struct WTracks *wtrack, struct Notes *note){
@@ -361,7 +433,7 @@ void StopAllNotesAtPlace(
 }
 
 
-void StopAllNotesAtRatio(
+static void StopAllNotesAtRatio(
                          struct Blocks *block,
                          struct Tracks *track,
                          r::NoteTimeData::Writer &writer,
@@ -1789,7 +1861,7 @@ void CutNoteAt(const struct Blocks *block, const struct Tracks *track,struct Not
   note->end = place2ratio(*place);
 }
 
-void CutNoteAt2(const struct Blocks *block, const struct Tracks *track, r::Note *note, const Ratio &ratio){
+static void CutNoteAt2(const struct Blocks *block, const struct Tracks *track, r::Note *note, const Ratio &ratio){
 
   if (ratio >= note->d._end){
     RError("Illegal argument for CutNoteAt 1. %f >= %f\n",make_double_from_ratio(ratio), make_double_from_ratio(note->d._end));
@@ -1915,6 +1987,54 @@ namespace{
 
   };
 
+  class VelocityIterateCallback2 : public r::IterateCallback<int> {
+
+    struct Patch *_patch;
+    r::Note *_note;
+
+    static_assert(std::is_same<int, typeof(_note->d._velocity)>::value, "wrong template type for r::VelocityIterateCallback2");
+
+  public:
+    
+    VelocityIterateCallback2(struct Patch *patch, r::Note *note)
+      : _patch(patch)
+      , _note(note)
+    {}
+
+    void callback(struct SeqTrack *seqtrack,
+                  const struct SeqBlock *seqblock,
+                  const struct Tracks *track,
+                  int index,
+                  int val,
+                  int64_t time,
+                  FX_when when,
+                  bool is_new_node
+                  ) const override
+    {
+      _note->d._curr_velocity = TRACK_get_velocity(track, val);
+      _note->d._curr_velocity_time = time;
+      
+      //printf("Velocity: %f. Time: %d\n", _note->curr_velocity, (int)time);
+
+      _note->d._has_sent_seqblock_volume_automation_this_block = true;
+
+      RT_PATCH_change_velocity(seqtrack,
+                               _patch,
+                               create_note_t(seqblock,
+                                             _note->_id,
+                                             _note->get_val(),
+                                             _note->d._curr_velocity * seqblock->curr_gain * seqtrack->note_gain * seqtrack->note_gain_muted,
+                                             0,
+                                             ATOMIC_GET(track->midi_channel),
+                                             0,
+                                             0
+                                             ),
+                               time
+                               );
+    }
+
+  };
+
   class PitchIterateCallback : public r::IterateCallback<float> {
 
     struct Patch *_patch;
@@ -1990,6 +2110,86 @@ namespace{
       RT_PATCH_change_pitch(seqtrack,
                             _patch,
                             create_note_t2(seqblock, _note->id, _note->curr_pitch),
+                            time);
+    }
+
+  };
+
+  class PitchIterateCallback2 : public r::IterateCallback<float> {
+
+    struct Patch *_patch;
+    r::Note *_note;
+    const r::PitchTimeData::Reader &_reader;
+    r::PitchSeqBlock *_pitch_seqblock;
+    
+    static_assert(std::is_same<float, typeof(_note->_val)>::value, "wrong template type for r::IterateCallback2");
+
+  public:
+    
+    PitchIterateCallback2(struct Patch *patch, r::Note *note, const r::PitchTimeData::Reader &reader)
+      : _patch(patch)
+      , _note(note)
+      , _reader(reader)
+      , _pitch_seqblock(reader.get_player_cache())
+    {}
+
+    int rnd(int max) const {
+      return std::rand() % max;
+    }
+
+    bool get_enabled(const r::Pitch &pitch) const {
+      bool enabled;
+
+      if (pitch._chance==0){
+        
+        enabled = _patch->last_chance_decision_value;
+        
+      } else {
+        
+        if (pitch._chance==MAX_PATCHVOICE_CHANCE)
+          enabled = true;
+        else if (pitch._chance > rnd(MAX_PATCHVOICE_CHANCE))
+          enabled = true;
+        else
+          enabled = false;
+        
+        _patch->last_chance_decision_value = enabled;
+        
+      }
+      
+      return enabled;
+    }
+
+    void callback(struct SeqTrack *seqtrack, const struct SeqBlock *seqblock, const struct Tracks *track, int index, float val, int64_t time, FX_when when, bool is_new_node) const override {
+
+      R_ASSERT_NON_RELEASE(_pitch_seqblock != NULL);
+      
+      if (_pitch_seqblock != NULL) {
+        
+        if (is_new_node && index >= 0)
+          _pitch_seqblock->_enabled = get_enabled(_reader.at_ref(index));
+        
+        if (!_pitch_seqblock->_enabled)
+          return;        
+      }
+      
+      _note->d._curr_pitch = val;
+      _note->d._curr_pitch_time = time;
+
+      /*
+      printf("Pitch: %s. Cents: %d. Time: %d. When: \"%s\". Is new node: %d. _pitch_seqblock: %p. Index: %d\n",
+             get_notename(NotesTexts3, val),
+             (int)R_BOUNDARIES(0,round((val - (int)val)*100.0),99),
+             (int)time,
+             get_FX_when_name(when),
+             is_new_node,
+             _pitch_seqblock,
+             index);
+      */
+      
+      RT_PATCH_change_pitch(seqtrack,
+                            _patch,
+                            create_note_t2(seqblock, _note->_id, _note->d._curr_pitch),
                             time);
     }
 
@@ -2176,6 +2376,33 @@ static void RT_VELOCITIES_called_each_block_for_each_note(struct SeqTrack *seqtr
                           );
 }
 
+static void RT_VELOCITIES_called_each_block_for_each_note2(struct SeqTrack *seqtrack,
+                                                           const int play_id,
+                                                           const struct SeqBlock *seqblock,
+                                                           const struct Tracks *track,
+                                                           const int64_t seqtime_start,
+                                                           const r::RatioPeriod &track_period,
+                                                           struct Patch *patch,
+                                                           struct r::Note *note
+                                                           )
+{
+
+  VelocityIterateCallback2 callback(patch, note);
+
+  const r::VelocityTimeData::Reader reader(&note->_velocities, seqblock->cache_num);
+      
+  reader.iterate_extended(seqtrack,
+                          seqblock,
+                          track,
+                          play_id,
+                          seqtime_start,
+                          track_period,
+                          callback,
+                          r::TimeDataSimpleNode<typeof(note->d._velocity)>(note->get_time(), note->d._velocity, note->d._velocity_first_logtype),
+                          r::TimeDataSimpleNode<typeof(note->d._velocity)>(note->d._end, note->d._velocity_end)
+                          );
+}
+
 
 
 static void RT_PITCHES_called_each_block_for_each_note(struct SeqTrack *seqtrack,
@@ -2218,6 +2445,275 @@ static void RT_PITCHES_called_each_block_for_each_note(struct SeqTrack *seqtrack
                           );
 }
 
+static void RT_PITCHES_called_each_block_for_each_note2(struct SeqTrack *seqtrack,
+                                                       const int play_id,
+                                                        const struct SeqBlock *seqblock,
+                                                        const struct Tracks *track,
+                                                        const int64_t seqtime_start,
+                                                        const r::RatioPeriod &track_period,
+                                                        struct Patch *patch,
+                                                        struct r::Note *note
+                                                        )
+{
+  
+  const r::PitchTimeData::Reader reader(&note->_pitches, seqblock->cache_num);
+
+  PitchIterateCallback2 callback(patch, note, reader);
+
+  int first_logtype;
+  if (reader.size()==0 && equal_floats(note->d._pitch_end, 0.0))
+    first_logtype = LOGTYPE_HOLD;
+  else
+    first_logtype = note->d._pitch_first_logtype;
+
+#if 0
+  printf("first logtype: %d\n", first_logtype);
+  if (reader.size() > 0){
+    printf("second logtype: %d\n", reader.at_ref(0)._logtype);
+  }
+#endif
+  
+  reader.iterate_extended(seqtrack,
+                          seqblock,
+                          track,
+                          play_id,
+                          seqtime_start,
+                          track_period,
+                          callback,
+                          r::TimeDataSimpleNode<typeof(note->_val)>(note->get_time(), note->get_val(), first_logtype),
+                          r::TimeDataSimpleNode<typeof(note->_val)>(note->d._end, note->d._pitch_end)
+                          );
+}
+
+static bool note_continues_next_seqblock(const struct SeqBlock *seqblock, const r::Note *note){
+  if (note->d._noend==0)
+    return false;
+  
+  const struct Blocks *block = seqblock->block;
+
+  if (p_Equal(seqblock->t.end_place, p_Absolute_Last_Pos(block)))
+    return note_continues_next_block2(block, note);
+      
+  return note->get_time() > place2ratio(seqblock->t.end_place);
+}
+
+
+static int rnd(int max){
+  return rand() % max;
+}
+
+static void RT_start_note(struct SeqTrack *seqtrack,
+                          const struct SeqBlock *seqblock,
+                          const struct Tracks *track,
+                          r::Note *note,
+                          int64_t note_time,
+                          int64_t sample_pos
+                          )
+{
+  R_ASSERT_NON_RELEASE(sample_pos >= 0);
+  
+  struct Patch *patch = track->patch;
+
+  bool doit;  // Set this here, and not in RT_schedule_note, since note->chance might change between RT_schedule_note and RT_scheduled_note.
+
+  if (patch==NULL){
+    
+    doit = true;
+
+  } else if (note->d._chance==0){
+
+    doit = patch->last_chance_decision_value;
+    //printf("   track: %d. Using last decision %d\n", track->l.num, doit);
+
+  } else {
+
+    if (note->d._chance==MAX_PATCHVOICE_CHANCE)
+      doit = true;
+    else if (note->d._chance > rnd(MAX_PATCHVOICE_CHANCE))
+      doit = true;
+    else
+      doit = false;
+
+    patch->last_chance_decision_value = doit;
+    //printf("   track: %d. Setting last decision to %d\n", track->l.num, doit);
+  }
+
+  if(doit && track->onoff==1 && patch!=NULL){
+
+    // TODO/FIX: Check that this one is correct.
+    if (pc->playtype != PLAYSONG && sample_pos != 0){
+      double reltempo = ATOMIC_DOUBLE_GET(seqblock->block->reltempo);
+      if (fabs(reltempo-1.0) > 0.00001){
+        double new_sample_pos = sample_pos;
+        new_sample_pos /= reltempo;
+        sample_pos = new_sample_pos;
+      }
+    }
+    
+    note->d._curr_velocity = TRACK_get_velocity(track,note->d._velocity); // The logical behavior would be to use note->velocity, but we don't have access to track in the function 'RT_PATCH_voice_volume_has_changed.
+    note->d._curr_velocity_time = note_time;
+
+    note->d._curr_pitch = note->get_val();
+    note->d._curr_pitch_time = note_time;
+
+    note->d._scheduler_may_send_velocity_next_block = false;
+    note->d._scheduler_may_send_pitch_next_block = false;
+
+    printf("   Vol: %f. Sample_pos: %d\n", note->d._curr_velocity, (int)sample_pos);
+    note_t note2 = create_note_t(seqblock,
+                                 note->_id,
+                                 note->d._curr_pitch,
+                                 note->d._curr_velocity,
+                                 TRACK_get_pan(track),
+                                 ATOMIC_GET(track->midi_channel),
+                                 0,
+                                 sample_pos
+                                 );
+
+    // Note: envelope volume is applied in RT_PATCH_play_note, not here. (Not quite sure why, but it's probably complicated)
+
+    note->d._has_sent_seqblock_volume_automation_this_block = true;
+    
+    RT_PATCH_play_note2(seqtrack, patch, note2, note_time);
+
+    if (note_continues_next_seqblock(seqblock, note)){
+      printf("TODO/FIX: Put note into seqtrack->hanging_notes. (now the note will just hang)\n");
+    }
+  }
+}
+
+static void RT_stop_all_hanging_notes_for_track(struct SeqTrack *seqtrack,
+                                                const struct Tracks *track,
+                                                int64_t stop_time)
+{
+#if 0
+  // TODO/IMPLEMENT.
+  
+  R_ASSERT_RETURN_IF_FALSE(seqtrack->hanging_notes != NULL);
+
+  int tracknum = track->l.num;
+
+  if( tracknum >= seqtrack->hanging_notes->size())
+    return; // The seqblock->playing_notes vector is not expanded to cover all tracks unless there are playing notes on all tracks.
+
+  radium::RT_NoteVector2 &playing_notes = *seqblock->playing_notes2->at_ref(track->l.num);
+
+  for(const r::NotePtr &note : playing_notes){
+    note_t note2 = create_note_t3(seqblock,
+                                  note->_id,
+                                  note->get_val(),
+                                  ATOMIC_GET(track->midi_channel)
+                                  );
+    
+    note->d._curr_velocity_time = 0;
+    note->d._curr_pitch_time = 0;
+    RT_PATCH_stop_note(seqtrack, patch, note2, stop_time);
+  }
+#endif
+}
+
+static void handle2(struct SeqTrack *seqtrack,
+                    const int play_id,
+                    const struct SeqBlock *seqblock,
+                    const struct Tracks *track,
+                    const int64_t seqtime_start,
+                    const int64_t seqtime_end,
+                    const r::RatioPeriod &period
+                    )
+{
+  R_ASSERT_NON_RELEASE(period._end >= period._start);
+    
+  struct Patch *patch = track->patch;
+  if (patch==NULL)
+    return;
+
+  int line_start = period._start.num / period._start.den;
+  int line_end = period._end.num / period._end.den;
+
+  for(int line = line_start ; line <= line_end ; line++){
+    
+    //printf("line: %d\n", line);
+    
+    if (line >= track->_notes2->_num_valid_elements_in_line_notes)
+      break;
+
+    r::LineNotes *notes = track->_notes2->_line_notes.at_ref(line);
+
+    int num_notes = 0;
+    if (notes != NULL)
+      for(r::Note *note : *notes){
+        (void)note;
+        num_notes++;
+      }
+
+    if (num_notes > 0)
+      printf("Num notes at line %d: %d. \n", line, num_notes);
+    
+    if (notes != NULL)
+      for(r::Note *note : *notes){
+
+        printf("note: %f/%f. Period: %f -> %f. Id: %d.\n",
+               ratio2double(note->get_time()), ratio2double(note->d._end),
+               ratio2double(period._start), ratio2double(period._end),
+               (int)note->_id);
+
+        int64_t time = seqtime_start;
+        
+        if (period.is_inside(note->get_time())){
+          
+          int64_t time = get_seqblock_ratio_time2(seqblock, track, note->get_time());
+          
+          printf("  --Starting note: %f. Line: %d. Note start: %f\n", note->get_val(), line, ratio2double(note->get_time()));
+
+          RT_stop_all_hanging_notes_for_track(seqtrack, track, time);
+
+          RT_start_note(seqtrack, seqblock, track, note, time, 0);
+
+#if 0 // might be necessary
+          // Set velocity and pitch cache values to prevent the same values from being sent out unnecessarily right after starting to play the note.
+          {
+            r::VelocityTimeData::Reader reader(note->_velocities, seqblock->cache_num);
+            r::VelocityTimeData::RT_CacheHandler cache(reader.get_player_cache(), play_id);
+            cache.update_value(note->velocity);
+          }
+          {
+            r::PitchTimeData::Reader reader(note->_pitches, seqblock->cache_num);
+            r::PitchTimeData::RT_CacheHandler cache(reader.get_player_cache(), play_id);
+            cache.update_value(note->note);
+          }
+#endif
+
+        } else {
+          
+          time = seqtime_start;
+          
+        }
+
+        // I'm not 100% sure, but I think TimeDatea handles period._end > note.d._end correctly...
+        //
+        RT_VELOCITIES_called_each_block_for_each_note2(seqtrack, play_id, seqblock, track, time, period, patch, note);
+        RT_PITCHES_called_each_block_for_each_note2(seqtrack, play_id, seqblock, track, time, period, patch, note);
+
+        if (period.is_inside(note->d._end)) {
+          
+          const int64_t stop_time = get_seqblock_ratio_time2(seqblock, track, note->d._end);
+            
+          printf("     --Stopping note: %f. Line: %d. Note end: %f\n", note->get_val(), line, ratio2double(note->d._end));
+          
+          note_t note2 = create_note_t3(seqblock,
+                                        note->_id,
+                                        note->get_val(),
+                                        ATOMIC_GET(track->midi_channel)
+                                        );
+          
+          note->d._curr_velocity_time = 0;
+          note->d._curr_pitch_time = 0;
+          RT_PATCH_stop_note(seqtrack, patch, note2, stop_time);
+        }
+      }
+  }
+}
+
 void RT_notes_called_each_block(struct SeqTrack *seqtrack,
                                 const int play_id,
                                 const struct SeqBlock *seqblock,
@@ -2227,6 +2723,11 @@ void RT_notes_called_each_block(struct SeqTrack *seqtrack,
                                 const r::RatioPeriod &period
                                 )
 {
+  if (true){
+    handle2(seqtrack, play_id, seqblock, track, seqtime_start, seqtime_end, period);
+    return;
+  }
+  
   R_ASSERT_NON_RELEASE(period._end >= period._start);
 
   struct Patch *patch = track->patch;
@@ -2237,7 +2738,6 @@ void RT_notes_called_each_block(struct SeqTrack *seqtrack,
 
   if( tracknum >= seqblock->playing_notes->size())
     return; // The seqblock->playing_notes vector is not expanded to cover all tracks unless there are playing notes on all tracks.
-
 
   const radium::RT_NoteVector &playing_notes = *seqblock->playing_notes->at_ref(tracknum);
 

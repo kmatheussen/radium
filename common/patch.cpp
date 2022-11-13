@@ -1381,7 +1381,7 @@ static int64_t RT_scheduled_play_voice(struct SeqTrack *seqtrack, int64_t time, 
 
   note_t note = create_note_from_args(&args[1]);
 
-  //printf("playing scheduled play note: %d. time: %d, velocity: %d\n",notenum,(int)time,velocity);
+  //printf("playing scheduled play note: %f. time: %d, velocity: %f\n",note.pitch,(int)time,note.velocity);
   //return;
 
   //printf("___RT_scheduled_play_voice. time: %d\n", (int)time);
@@ -1449,6 +1449,69 @@ int64_t RT_PATCH_play_note(struct SeqTrack *seqtrack, struct Patch *patch, const
   if (!Patch_addPlayingNote(patch, note, editor_note, seqtrack))
     return note.id;
 
+  float sample_rate = pc->pfreq;
+
+  union SuperType args[8];
+  args[0].pointer = patch;
+  put_note_into_args(&args[1], note);
+
+  int64_t midi_latency = get_midi_latency(patch);
+  
+  for(int i=0;i<NUM_PATCH_VOICES;i++){
+    const struct PatchVoice &voice = patch->voices[i];
+
+    if(voice.is_on==true && (equal_floats(voice.chance, MAX_PATCHVOICE_CHANCE) || voice.chance > rnd(MAX_PATCHVOICE_CHANCE))){
+
+      float voice_notenum = note.pitch + voice.transpose;
+      if (voice_notenum > 0) {
+        float voice_velocity = note.velocity * curr_gain;
+        int64_t voice_id = note.id + i;
+        
+        args[1].float_num = voice_notenum;
+        args[2].int_num = voice_id;
+        args[3].float_num = voice_velocity;
+        args[4].float_num = apply_pan_to_pan(note.pan, scale(voice.pan, MIN_PATCHVOICE_PAN, MAX_PATCHVOICE_PAN, -1, 1));
+       
+        // voicenum
+        args[5].int_num &= ~(0xff);
+        args[5].int_num |= i;
+
+        int64_t new_start_time = time + voice.start*sample_rate/1000 + midi_latency;
+        
+        // voice ON
+        //printf("___RT_PATCH_play_note. time: %d (%d)\n", (int)time, (int)(time + voice.start*sample_rate/1000));
+        
+        //printf("  add %d at %d\n", (int)voice_id, (int)((int64_t)time + voice.start*sample_rate/1000));
+        SCHEDULER_add_event(seqtrack, new_start_time, RT_scheduled_play_voice, &args[0], 8, SCHEDULER_NOTE_ON_PRIORITY);
+        
+        // voice OFF
+        if(voice.length>0.001) // The voice decides when to stop by itself.
+          SCHEDULER_add_event(seqtrack, new_start_time + (voice.length)*sample_rate/1000, RT_scheduled_stop_voice, &args[0], 8, SCHEDULER_NOTE_OFF_PRIORITY);
+      }
+    }
+  }
+
+  return note.id;
+}
+
+// DOES add envelope volume
+int64_t RT_PATCH_play_note2(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, STime time){
+  //printf("\n\nRT_PATCH_PLAY_NOTE. ___Starting note %f, time: %d, id: %d. block_reltempo: %f\n\n",note.pitch,(int)time,(int)note.id,note.block_reltempo);
+
+  float curr_gain = 1.0;
+
+  if (note.seqblock != NULL){
+    curr_gain = note.seqblock->curr_gain * seqtrack->note_gain * seqtrack->note_gain_muted;
+  }else
+    R_ASSERT(false);
+    
+  //printf("RT_PATCH_play_note. curr_gain: %f (%f)\n", curr_gain, note.seqblock==NULL ? -1000 : note.seqblock->curr_gain);
+
+  /*
+  if (!Patch_addPlayingNote(patch, note, editor_note, seqtrack))
+    return note.id;
+  */
+  
   float sample_rate = pc->pfreq;
 
   union SuperType args[8];

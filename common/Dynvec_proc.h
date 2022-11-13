@@ -22,9 +22,11 @@ static inline const dyn_t* end(const dynvec_t *v) {
 #endif
 
 
-extern void DYN_save(disk_t *file, const dyn_t dyn);
-extern dyn_t DYN_load(disk_t *file, bool *success);
+extern LANGSPEC void DYN_save(disk_t *file, const dyn_t dyn);
+extern LANGSPEC dyn_t DYN_load(disk_t *file, bool *success);
 
+extern LANGSPEC const wchar_t *DYN_to_string(const dyn_t dyn);
+                               
 static inline dyn_t DYN_copy(const dyn_t a);
 
 static inline dynvec_t DYNVEC_create(int num_elements){

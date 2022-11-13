@@ -75,6 +75,9 @@ static inline Ratio make_ratio_from_double_internal(double val, const int num_bi
 static inline Ratio make_ratio_from_double(double val, const int num_bits = 60){
   return make_ratio_from_double_internal(val, num_bits);
 }
+static inline Ratio double2ratio(double val, const int num_bits = 60){
+  return make_ratio_from_double_internal(val, num_bits);
+}
 #else
 static inline Ratio make_ratio_from_double(double val){
   return make_ratio_from_double_internal(val, 60);
@@ -82,6 +85,10 @@ static inline Ratio make_ratio_from_double(double val){
 #endif
   
 static inline double make_double_from_ratio(Ratio r){
+  return (double)r.num / (double)r.den;
+}
+
+static inline double ratio2double(Ratio r){
   return (double)r.num / (double)r.den;
 }
 
@@ -405,6 +412,10 @@ namespace r{
       R_ASSERT_NON_RELEASE(_end >= _start);
     }
     RatioPeriod(){
+    }
+
+    bool is_inside(const Ratio &ratio) const {
+      return ratio >= _start && ratio < _end;
     }
   };
 }

@@ -116,7 +116,7 @@ int getVelocityLogtype(int velocitynum, dyn_t dynnote, int tracknum, int blocknu
   return velocity._logtype;
 }
 
-int get_num_velocities(const r::NotePtr &note){
+static int get_num_velocities(const r::NotePtr &note){
   return r::VelocityTimeData::Reader(&note->_velocities).size() + 2;
 }
 
@@ -228,7 +228,7 @@ dyn_t setVelocity(float value, Place place, int velocitynum, dyn_t dynnote, int 
     if (!p_is_same_place(place)){
       if(place.line < 0){handleError("Negative place");return dynnote;}
       auto ret = MoveNote2(block, track, note, ratio, true);
-      fprintf(stderr, "api_velocities.cpp: Exit. Note: %p\n", note.get());
+      fprintf(stderr, "api_velocities.cpp: Exit. Note: %p. id: %S\n", note.get(), DYN_to_string(ret));
       return ret;
     }
     
@@ -325,12 +325,7 @@ void deleteVelocity(int velocitynum, dyn_t dynnote, int tracknum, int blocknum, 
 
     r::NoteTimeData::Writer writer(wtrack->track->_notes2);
 
-    if (!writer.contains(note)){
-      R_ASSERT(false); // at least at the time of writing, this would probably be an error.
-      return;
-    }
-        
-    r::ModifyNote new_note(note);
+    r::ModifyNote new_note(writer, note);
     
     {
       r::VelocityTimeData::Writer writer(&note->_velocities);
@@ -359,6 +354,9 @@ void deleteVelocity(int velocitynum, dyn_t dynnote, int tracknum, int blocknum, 
 }
 
 void setVelocityLogtype(int logtype, int velocitynum, dyn_t dynnote, int tracknum, int blocknum, int windownum){
+#if 0
+  // DO_LATER
+  
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
@@ -390,12 +388,52 @@ void setVelocityLogtype(int logtype, int velocitynum, dyn_t dynnote, int tracknu
   } else {
 
     r::VelocityTimeData::Writer writer(note->_velocities);
-    R_ASSERT_RETURN_IF_FALSE(writer.size() > 0);
+    R_ASSERT_RETURN_IF_FALSE(velocitynum < writer.size());
     writer.at_ref(velocitynum-1)._logtype = logtype;
-  
   }
 
   window->must_redraw_editor = true;
+
+#else
+  
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  const r::NotePtr note = getNoteFromNumA2(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
+  
+  if (!note)
+    return;
+
+  int num_velocities = get_num_velocities(note);
+  
+  if (velocitynum < 0 || velocitynum>=num_velocities) {
+    handleError("There is no velocity #%d in note %d in track #%d in block #%d",velocitynum, (int)note->_id, tracknum, blocknum);
+    return;
+  }
+
+  bool is_first                      = velocitynum==0;
+  bool is_last                       = velocitynum==num_velocities-1;
+
+  if (is_last) {
+    handleError("Can not set logtype for last velocity (doesn't make any sense)");
+    return;
+  }
+
+  if (is_first) {
+    
+    note->d._velocity_first_logtype = logtype;
+    
+  } else {
+
+    r::VelocityTimeData::Writer writer(&note->_velocities);
+    R_ASSERT_RETURN_IF_FALSE(velocitynum-1 < writer.size());
+    writer.at_ref(velocitynum-1)._logtype = logtype;
+    
+  }
+
+  window->must_redraw_editor = true;
+
+#endif
 }
   
 

@@ -340,6 +340,8 @@ void RT_schedule_notes_newblock(struct SeqTrack *seqtrack,
                                 int64_t start_time,
                                 Place start_place)
 {
+  return;
+  
   struct Tracks *track=seqblock->block->tracks;
 
   while(track!=NULL){

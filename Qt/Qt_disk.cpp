@@ -311,14 +311,17 @@ static const char *g_last_error = "";
 
 
 struct _radium_os_disk {
-  enum Type{
+  enum class Type{
     READ,
     WRITE
   };
 
   QString filename;
-
+  bool is_write_string;
+  
 private:
+
+  QString write_string_string;
   
   QFile *read_file;
   QSaveFile *save_file; //temporary_write_file;
@@ -332,8 +335,9 @@ public:
 
   bool has_set_pos_without_reading = false;
   
-  _radium_os_disk(QString filename, enum Type type, bool is_binary=false)
+  _radium_os_disk(QString filename, enum Type type, bool is_binary=false, bool is_write_string = false)
     : filename(filename)
+    , is_write_string(is_write_string)
     , read_file(NULL)
     , save_file(NULL)
     , type(type)
@@ -352,7 +356,7 @@ public:
   }
 
   QFileDevice *file(void){
-    if (type==WRITE){
+    if (type==Type::WRITE){
       R_ASSERT(save_file!=NULL);
       return save_file;
     } else {
@@ -365,33 +369,52 @@ public:
     R_ASSERT(save_file==NULL);
     R_ASSERT(read_file==NULL);
     
-    if (type==WRITE) {
-      
-      save_file = new QSaveFile(filename);
+    switch(type){
 
-      if (is_binary) {
-        if (save_file->open(QIODevice::WriteOnly)==false)
-          goto failed;
-      } else {
-        if (save_file->open(QIODevice::WriteOnly | QIODevice::Text)==false)
-          goto failed;
+      case Type::WRITE:{
+
+        if (!is_write_string){
+          save_file = new QSaveFile(filename);
+          
+          if (is_binary) {
+            if (save_file->open(QIODevice::WriteOnly)==false)
+              goto failed;
+          } else {
+            if (save_file->open(QIODevice::WriteOnly | QIODevice::Text)==false)
+              goto failed;
+          }
+        }
+
+        break;
       }
 
-    } else {
-      
-      read_file = new QFile(filename);
+      case Type::READ:{
+        
+        read_file = new QFile(filename);
+        
+        if (is_binary) {
+          if (read_file->open(QIODevice::ReadOnly)==false)
+            goto failed;
+        } else {
+          if (read_file->open(QIODevice::ReadOnly | QIODevice::Text)==false)
+            goto failed;
+        }
 
-      if (is_binary) {
-        if (read_file->open(QIODevice::ReadOnly)==false)
-          goto failed;
-      } else {
-        if (read_file->open(QIODevice::ReadOnly | QIODevice::Text)==false)
-          goto failed;
-      }      
+        break;
+      }
+
+      default:
+        R_ASSERT(false);
+        break;
     }
-
+        
     if (is_binary==false){
-      stream = new QTextStream(file());
+      
+      if (is_write_string)
+        stream = new QTextStream(&write_string_string);
+      else
+        stream = new QTextStream(file());
+      
       stream->setCodec("UTF-8");
     }
 
@@ -420,7 +443,7 @@ public:
   }
 
   bool transfer_temporary_file_to_file(void){
-    R_ASSERT(type==WRITE);
+    R_ASSERT(type==Type::WRITE);
     R_ASSERT(save_file != NULL);
 
 #if SUPPORT_TEMP_WRITING_FUNCTIONS
@@ -489,25 +512,39 @@ public:
   bool close(void){
     bool ret = true;
 
-    if (type==READ) {
+    if (type==Type::READ) {
 
       file()->close();
 
       const char *error = get_error();
       if (error != NULL){
-        GFX_Message(NULL, "Error %s file %S: %s",type==WRITE ? "writing to" : "reading from", STRING_create(filename), error);
+        GFX_Message(NULL, "Error %s file %S: %s",type==Type::WRITE ? "writing to" : "reading from", STRING_create(filename), error);
         ret = false;
       }
 
-    } else {
+    } else if (type==Type::WRITE) {
 
+      if (is_write_string)
+        return true;
+      
       bool copyret = transfer_temporary_file_to_file();
       if (copyret==false)
         ret = false;
 
     }
-
+    
     return ret;
+  }
+
+  QString get_string(void) const
+  {
+    if (stream==NULL){
+      R_ASSERT(false);
+      return "";
+    }
+      
+    stream->flush();
+    return stream->readAll();
   }
   
   bool set_pos(int64_t pos){
@@ -530,7 +567,7 @@ public:
 static disk_t *open_for_writing(QString filename, bool is_binary){
   ASSERT_NON_RT_NON_RELEASE();
   
-  disk_t *disk = new disk_t(filename, disk_t::WRITE, is_binary);
+  disk_t *disk = new disk_t(filename, disk_t::Type::WRITE, is_binary);
   
   if (disk->open()==false){
     delete disk;
@@ -572,7 +609,7 @@ disk_t *DISK_open_temp_for_writing(void){
   
   GFX_Message(NULL, "Warning, never tested");
     
-  disk_t *disk = new disk_t("", disk_t::WRITE);
+  disk_t *disk = new disk_t("", disk_t::Type::WRITE);
   
   if (disk->open()==false){
     delete disk;
@@ -602,7 +639,7 @@ const wchar_t *DISK_close_temp_for_writing(disk_t *disk){
 disk_t *DISK_open_for_reading(QString filename){
   ASSERT_NON_RT_NON_RELEASE();
   
-  disk_t *disk = new disk_t(filename, disk_t::READ);
+  disk_t *disk = new disk_t(filename, disk_t::Type::READ);
 
   if (disk->open()==false){
     delete disk;
@@ -624,7 +661,7 @@ disk_t *DISK_open_binary_for_reading(filepath_t wfilename){
   
   QString filename = STRING_get_qstring(wfilename.id);
   
-  disk_t *disk = new disk_t(filename, disk_t::READ, true);
+  disk_t *disk = new disk_t(filename, disk_t::Type::READ, true);
 
   if (disk->open()==false){
     delete disk;
@@ -634,6 +671,26 @@ disk_t *DISK_open_binary_for_reading(filepath_t wfilename){
   return disk;
 }
 
+disk_t *DISK_open_for_writing_to_text(void){
+  ASSERT_NON_RT_NON_RELEASE();
+
+  auto ret = new disk_t("", disk_t::Type::WRITE, false, true);
+
+  ret->open();
+
+  return ret;
+}
+
+void DISK_close_for_writing_to_text(disk_t *disk){
+  ASSERT_NON_RT_NON_RELEASE();
+
+  delete disk;
+}
+
+const wchar_t *DISK_get_string(disk_t *disk){
+  return STRING_create(disk->get_string());
+}
+  
 const char* DISK_get_error(disk_t *disk){
   ASSERT_NON_RT_NON_RELEASE();
   
@@ -655,7 +712,7 @@ bool DISK_write_qstring(disk_t *disk, QString s){
   R_ASSERT_RETURN_IF_FALSE2(disk!=NULL, false);
   
   R_ASSERT(disk->is_binary==false);
-  R_ASSERT(disk->type==disk_t::WRITE);
+  R_ASSERT(disk->type==disk_t::Type::WRITE);
 
 #if 0
   int64_t pos = disk->stream->pos();
@@ -697,7 +754,7 @@ int DISK_get_curr_read_line(disk_t *disk){
   ASSERT_NON_RT_NON_RELEASE();
   
   R_ASSERT(disk->is_binary==false);
-  R_ASSERT(disk->type==disk_t::READ);
+  R_ASSERT(disk->type==disk_t::Type::READ);
 
   return disk->curr_read_line;
 }
@@ -712,7 +769,7 @@ QString DISK_read_qstring_line(disk_t *disk){
   ASSERT_NON_RT_NON_RELEASE();
   
   R_ASSERT(disk->is_binary==false);
-  R_ASSERT(disk->type==disk_t::READ);
+  R_ASSERT(disk->type==disk_t::Type::READ);
 
   disk->curr_read_line++;
   
@@ -785,7 +842,7 @@ int64_t DISK_read_binary(disk_t *disk, void *destination, int64_t num_bytes){
   ASSERT_NON_RT_NON_RELEASE();
   
   R_ASSERT_RETURN_IF_FALSE2(disk->is_binary==true, -1);
-  R_ASSERT_RETURN_IF_FALSE2(disk->type==disk_t::READ, -1);
+  R_ASSERT_RETURN_IF_FALSE2(disk->type==disk_t::Type::READ, -1);
 
   disk->has_set_pos_without_reading = false;
   
@@ -806,7 +863,7 @@ bool DISK_write_binary(disk_t *disk, const void *source, int64_t num_bytes){
   R_ASSERT_RETURN_IF_FALSE2(disk!=NULL, false);
   
   R_ASSERT_RETURN_IF_FALSE2(disk->is_binary==true, -1);
-  R_ASSERT_RETURN_IF_FALSE2(disk->type==disk_t::WRITE, -1);
+  R_ASSERT_RETURN_IF_FALSE2(disk->type==disk_t::Type::WRITE, -1);
 
   int64_t ret = disk->file()->write((const char*)source, num_bytes);
   

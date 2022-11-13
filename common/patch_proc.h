@@ -75,6 +75,7 @@ extern LANGSPEC bool Patch_addPlayingVoice(linked_note_t **rootp, const note_t n
 extern LANGSPEC void Patch_removePlayingVoice(linked_note_t **rootp, int64_t note_id, struct SeqTrack *seqtrack, const struct SeqBlock *seqblock);
 
 extern LANGSPEC int64_t RT_PATCH_play_note(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, struct Notes *editor_note, STime time);
+extern LANGSPEC int64_t RT_PATCH_play_note2(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note, STime time);
 extern LANGSPEC void RT_PATCH_stop_note(struct SeqTrack *seqtrack, struct Patch *patch, const note_t note,STime time);
 extern LANGSPEC void RT_PATCH_change_velocity(struct SeqTrack *seqtrack, struct Patch *patch,const note_t note,STime time);
 extern LANGSPEC void RT_PATCH_change_pitch(struct SeqTrack *seqtrack, struct Patch *patch,const note_t note,STime time);

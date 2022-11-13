@@ -36,8 +36,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
     2. r::TimeData_shared_ptr implements 'get_time', 'set_time', and 'get_val'.
     3. r::TimeData_shared_ptr requires the template type to include the field 'std::atomic<int> _num_references'.
        (This field is used to avoid having to allocate an extra memory block for the reference counter (which complicates code).)
-  * Accessing a random element (given time) is O(Log(n)) while accessing a sequential element
-    is usually O(1) if cache_num >= 0 (i.e. when time is only a little bit higher than last call).
+  * Accessing a random element (given time) is O(Log(n)). However, when accessing a sequential element,
+    which we usually do, looup is usually O(1), even more ofter if cache_num >= 0.
 
 
   HOW IT WORKS
@@ -47,9 +47,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
   * To make sure making a copy of the underlying vector doesn't take too much time, the element type ("DataType") should not be too big.
     If DataType is very big, use r::RefCountTimeDate instead to store a shared-pointer to the actual data.
   * A Reader object is optimized to get data in a linear increasing fashion,
-    i.e. starting with a low time and ending on a high time, always increasing time from call to call. (This is not a requirement, but when
-    time is not increasing, it's necessary to do a O(log N) binary search to find the new index. This can be important to avoid if
-    accessing from RT code.)
+    i.e. starting with a low time and ending on a high time, always increasing time from call to call. (This is not a requirement though, but when
+    time is not increasing, it's necessary to do a O(log N) binary search to find the new index. This can be important to avoid in RT code.)
     If cache_num >= 0, the index is also remembered in the TimeData object itself,
     further decreasing the need to do a binary search in a realtime thread.
 
@@ -65,8 +64,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
   * Writing is a heavy operation since it recreates the underlying vector. Therefore, nothing is actually written until the Writer
     object is deleted, and it makes sense to create as few writer objects as possible.
   * TimeData is very similar to SeqAutomation. Both datatypes support multithreaded reading and writing. Differences:
-    1. TimeData supports 128 simultaneous readers, all of them can be RT. SeqAutomation only supports one RT reader
-       and one main thread reader (i.e. the writer can also be used as a reader).
+    1. TimeData supports 128 simultaneous readers, all of them can be RT. SeqAutomation only supports 1 RT reader
+       and 1 main thread reader (i.e. the writer can also be used as a reader).
     2. TimeData uses Ratio as time type. SeqAutomation uses double.
     3. TimeData provides a wrapper around radium::Vector for writing, while SeqAutomation provides a wrapper around QVector.
     4. TimeData uses radium::Vector also for reading (in fact the same vector used for writing), while SeqAutomation only uses a plain array for reading.
@@ -699,7 +698,7 @@ private:
 
       return false;
     }
-    
+
     int find_element_at_ratio(const Ratio &ratio) const {
       return find_pos_exact(ratio);
     }
@@ -965,13 +964,15 @@ private:
 
       double curr_value;
       
-      if (ratio > last_t.get_time())
+      if (ratio > last_t.get_time()) {
+        
         return false;
 
-      if (ratio < first_t.get_time())
+      } else if (ratio < first_t.get_time()) {
+        
         return false;
       
-      if (ratio == last_t.get_time()){
+      } else if (ratio == last_t.get_time()){
         
         curr_value = last_t.get_val();
         when = FX_end;
@@ -1089,6 +1090,14 @@ public:
       return const_cast<T*>(this->_vector->end());
     }
   
+    T &find(std::function<bool(T&)> func) const {
+      for(T &t : *this)
+        if (func(t))
+          return t;
+      
+      return at_first();
+    }
+    
     void sortit(void){
       R_ASSERT_NON_RELEASE(_has_cancelled==false);
       this->_time_data->sortit(this->_vector);

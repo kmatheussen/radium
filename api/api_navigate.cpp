@@ -45,7 +45,7 @@ void cursorDown(int numlines,int windownum){
 
         window->must_redraw = false;
 
-	ScrollEditorDown(window,numlines * getScrollMultiplication(),NULL);
+	ScrollEditorDown(window,numlines * getScrollMultiplication(), -1);
 }
 
 void cursorUp(int numlines,int windownum){

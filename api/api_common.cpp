@@ -450,6 +450,14 @@ struct Notes *getNoteFromNumA(int windownum,struct Tracker_Windows **window, int
   }
 }
 
+struct Notes *getNoteFromNum(int windownum,int blocknum,int tracknum,dyn_t dynnote){
+  struct Tracker_Windows *window;
+  struct WBlocks *wblock;
+  struct WTracks *wtrack;
+  return getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
+}
+
+
 static const r::NotePtr getCurrNote2(int windownum, struct Tracker_Windows **window, int blocknum, int tracknum){
   const r::NotePtr note = GetCurrNote(*window);
   
@@ -459,7 +467,11 @@ static const r::NotePtr getCurrNote2(int windownum, struct Tracker_Windows **win
   return note;
 }
 
-const r::NotePtr getNoteFromNumA2(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, const r::NoteTimeData::Reader &reader, dyn_t dynnote){
+const r::NotePtr getNoteFromNumA2(int windownum, struct Tracker_Windows **window,
+                                  int blocknum, struct WBlocks **wblock,
+                                  int tracknum,
+                                  const r::NoteTimeData::Reader &reader,
+                                  dyn_t dynnote){
   if (dynnote.type==INT_TYPE){
     int notenum = (int)dynnote.int_number;
     if (notenum==-1)
@@ -499,9 +511,12 @@ const r::NotePtr getNoteFromNumA2(int windownum,struct Tracker_Windows **window,
   }
 }
   
-const r::NotePtr getNoteFromNumA2(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, dyn_t dynnote){
+const r::NotePtr getNoteFromNumA2(int windownum,struct Tracker_Windows **window,
+                                  int blocknum, struct WBlocks **wblock, int tracknum,
+                                  struct WTracks **wtrack,
+                                  dyn_t dynnote){
   
-    ASSERT_IS_NONRT_MAIN_THREAD_NON_RELEASE(); // Must provide NoteTimeData::ReaderWriter& to use it outside the main thread (to ensure it's not deleted while using it).
+  ASSERT_IS_NONRT_MAIN_THREAD_NON_RELEASE(); // Must provide NoteTimeData::ReaderWriter& to use it outside the main thread (to ensure it's not deleted while using it).
     
   (*wtrack) = getWTrackFromNumA(windownum, window, blocknum, wblock, tracknum);
   if ((*wtrack)==NULL)
@@ -521,12 +536,13 @@ const r::NotePtr getNoteFromNumA2(int windownum,struct Tracker_Windows **window,
   }
 }
 
-struct Notes *getNoteFromNum(int windownum,int blocknum,int tracknum,dyn_t dynnote){
+const r::NotePtr getNoteFromNum2(int windownum,int blocknum,int tracknum,dyn_t dynnote){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
-  return getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
+  return getNoteFromNumA2(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
 }
+
 
 r::Pitch getPitchFromNumA(int windownum,
                           struct Tracker_Windows **window,
@@ -1371,22 +1387,29 @@ dyn_t MoveNote2(struct Blocks *block, struct Tracks *track, r::NotePtr &note, Ra
   
 #else
 
+  /*
   if (!writer.removeElement(note)){
     R_ASSERT(false); // at least at the time of writing, this would probably be an error.
     return GetNoteId2(note);
   }
+  */
 
   dyn_t ret;
   
   {
     fprintf(stderr, "   About to make new note:\n");
-    r::ModifyNote new_note(note, r::ModifyNote::Type::CAN_MODIFY_TIME);
+    r::ModifyNote new_note(writer, note, r::ModifyNote::Type::CAN_MODIFY_TIME);
     fprintf(stderr, "   .... 1. New note: %p\n", new_note.get());
     new_note->set_time(ratio);
     fprintf(stderr, "   .... 2. New note: %p\n", new_note.get());
     ret = GetNoteId3(new_note.get());
-    fprintf(stderr, "api_common.cpp: Exit. Note: %p. New note: %p\n", note.get(), new_note.get());
-  } 
+    fprintf(stderr, "api_common.cpp: Exit. Note: %p. New note: %p.. Id: %S\n", note.get(), new_note.get(), DYN_to_string(ret));
+  }
+
+  for(const r::NotePtr &note : writer){
+    printf("   NOTE AFT: %d. %p -> %p\n", (int)note.get()->_id, &note, note.get());
+  }
+  
   writer.sortit();
   
   if (replace_note_ends && !ControlPressed())

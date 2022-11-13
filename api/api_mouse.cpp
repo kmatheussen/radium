@@ -1345,11 +1345,17 @@ float getPianonoteValue(int num, dyn_t dynnote, int tracknum, int blocknum, int 
 }
 
 int getNumPianonotes(dyn_t dynnote, int tracknum, int blocknum, int windownum){
+#if 0
   struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,dynnote);
   if (note==NULL)
     return 0;
-
-  return 1 + r::PitchTimeData::Reader(note->_pitches).size();
+#else
+  const r::NotePtr note=getNoteFromNum2(windownum,blocknum,tracknum,dynnote);
+  if (note.get()==NULL)
+    return 0;
+#endif
+  
+  return 1 + r::PitchTimeData::Reader(&note->_pitches).size();
   //return 1 + ListFindNumElements3((struct ListHeader3*)note->pitches);
 }
 
@@ -1683,8 +1689,8 @@ int getPianonoteLogtype(int pianonotenum, dyn_t dynnote, int tracknum, int block
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
-  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
-  if (note==NULL)
+  struct r::NotePtr note = getNoteFromNumA2(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
+  if (note.get()==NULL)
     return LOGTYPE_LINEAR;
 
   struct Tracks *track = wtrack->track;
@@ -1885,19 +1891,25 @@ void deletePianonote(int pianonotenum, dyn_t dynnote, int tracknum, int blocknum
 void setCurrentPianonote(int num, dyn_t dynnote, int tracknum){
   if (tracknum==-1)
     tracknum = currentTrack(-1,-1);
-  
+
+#if 0
   struct Notes *note=getNoteFromNum(-1, -1, tracknum, dynnote);
   if (note==NULL)
     return;
-
+#else
+  const r::NotePtr note=getNoteFromNum2(-1, -1, tracknum, dynnote);
+  if (note.get()==NULL)
+    return;
+#endif
+  
   if (
       g_current_piano_note.tracknum != tracknum ||
-      g_current_piano_note.noteid != note->id || 
+      g_current_piano_note.noteid != note->_id || 
       g_current_piano_note.pianonotenum != num
       )
     {  
       g_current_piano_note.tracknum = tracknum;
-      g_current_piano_note.noteid = note->id;
+      g_current_piano_note.noteid = note->_id;
       g_current_piano_note.pianonotenum = num;
       root->song->tracker_windows->must_redraw_editor = true;
     }
@@ -3106,6 +3118,7 @@ int addPitchnumF(float value, float floatplace, int tracknum, int blocknum, int 
 }
 
 bool portamentoEnabled(dyn_t dynnote, int tracknum, int blocknum, int windownum){
+#if 0
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
@@ -3117,6 +3130,13 @@ bool portamentoEnabled(dyn_t dynnote, int tracknum, int blocknum, int windownum)
   //  return false;
 
   return note->pitch_end > 0;
+#else
+  const r::NotePtr note=getNoteFromNum2(windownum,blocknum,tracknum,dynnote);
+  if (note.get()==NULL)
+    return false;
+  else
+    return note->d._pitch_end;
+#endif
 }
 
 void setNoteEndPitch(float value, dyn_t dynnote, int tracknum, int blocknum, int windownum){
