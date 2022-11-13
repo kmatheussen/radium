@@ -1689,7 +1689,7 @@ int getPianonoteLogtype(int pianonotenum, dyn_t dynnote, int tracknum, int block
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
-  struct r::NotePtr note = getNoteFromNumA2(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
+  r::NotePtr note = getNoteFromNumA2(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
   if (note.get()==NULL)
     return LOGTYPE_LINEAR;
 
