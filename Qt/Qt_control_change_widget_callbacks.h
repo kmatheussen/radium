@@ -49,7 +49,7 @@ public slots:
     if(value_slider->value()!=val)
       value_slider->setValue(val);
     
-    patchdata->ccvalues[this->ccnum] = val;
+    patchdata->ccvalues[this->ccnum] = (char)val;
     printf("num: %d, value: %d\n",patchdata->cc[this->ccnum],val);
 
     MIDI_send3(patchdata,
@@ -85,7 +85,7 @@ public slots:
 
   void on_cctype_activated( int val)
   {
-    patchdata->cc[this->ccnum] = val;
+    patchdata->cc[this->ccnum] = (char)val;
     patchdata->ccnames[this->ccnum] = talloc_strdup(get_ccnames()[val]);
     
     value_slider->_effect_num = patchdata->cc[ccnum];

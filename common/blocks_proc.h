@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-#ifndef _RADIUM_COMMON_BLOCKS_PROC_H
-#define _RADIUM_COMMON_BLOCKS_PROC_H
+#pragma once
+
 
 extern LANGSPEC struct Blocks *BLOCK_create(void); // Must use this function to allocate memory for a struct Blocks.
 
@@ -36,6 +36,4 @@ extern LANGSPEC bool BLOCKS_has_tempo_multiplier_midi_learn(void);
 extern LANGSPEC void BLOCKS_called_very_often(void);
 extern LANGSPEC hash_t *BLOCKS_get_state(void);
 extern LANGSPEC void BLOCKS_create_from_state(hash_t *state);
-
-#endif
 

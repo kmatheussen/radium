@@ -35,6 +35,40 @@ static inline float db2linear(float db, float y1, float y2){
   }
 }
 
+static inline double db2linear_double(double db, double y1, double y2){
+
+  if(db<MIN_DB)
+    return y2;
+
+  else if(db>6)
+    return y1;
+
+  else if (db < -30) {
+    double pos_m_30 = scale_double(0.9, 0, 1, y1, y2);
+    return scale_double(db, -30, MIN_DB, pos_m_30, y2);
+
+  } else if (db < -20) {
+    double pos_m_20 = scale_double(0.8, 0, 1, y1, y2);
+    double pos_m_30 = scale_double(0.9, 0, 1, y1, y2);
+    return scale_double(db, -20, -30, pos_m_20, pos_m_30);
+
+  } else if (db < -10) {
+    double pos_m_10 = scale_double(0.6, 0, 1, y1, y2);
+    double pos_m_20 = scale_double(0.8, 0, 1, y1, y2);
+    return scale_double(db, -10, -20, pos_m_10, pos_m_20);
+
+  } else if (db < 0) {
+    double pos_0  = scale_double(0.3, 0, 1, y1, y2);
+    double pos_m_10 = scale_double(0.6, 0, 1, y1, y2);
+    return scale_double(db, 0, -10, pos_0, pos_m_10);
+
+  } else {
+    double pos_0  = scale_double(0.3, 0, 1, y1, y2);
+    double pos_6  = y1;
+    return scale_double(db, 6, 0, pos_6, pos_0);
+  }
+}
+
 
 /*
   what_to_update:

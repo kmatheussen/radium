@@ -227,7 +227,7 @@ static QString get_legalized_message_before_displaying(QString message){
       message += QString("\nHome path contains non-ascii character: -") + c + "-\n";
     } else if (false==c.isLetterOrNumber()) {
       if(
-#if FOR_WINDOWS
+#ifdef FOR_WINDOWS
          c!='\\'
 #else
          c!='/'
@@ -244,7 +244,7 @@ static QString get_legalized_message_before_displaying(QString message){
       message += QString("\nProgram path contains non-ascii character: -") + c + "-\n";
     } else if (false==c.isLetterOrNumber()) {
       if(
-#if FOR_WINDOWS
+#ifdef FOR_WINDOWS
          c!='\\'
 #else
          c!='/'
@@ -366,7 +366,7 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
       bool dosave = emergency_save_filename!=QString(NOEMERGENCYSAVE);
       
       text2.setText(QString(
-                                   #if FOR_LINUX
+                                   #ifdef FOR_LINUX
                                    "Linux users: Please don't report bugs caused by a non-properly compiled, or old, version of Radium. "
                                    "If you have compiled Radium yourself, or you are using a version of Radium "
                                    "distributed by a third party, please try the official binaries first. "
@@ -596,7 +596,7 @@ extern "C"{
 
 int main(int argc, char **argv){
 
-#if FOR_LINUX
+#ifdef FOR_LINUX
   bool faulty_installation = false;
   if(getenv("QT_QPA_PLATFORM_PLUGIN_PATH")==NULL){
     faulty_installation = true;
@@ -618,7 +618,7 @@ int main(int argc, char **argv){
   argv = getQApplicationConstructorArgs(argc, argv);
   QApplication app(argc, argv);
 
-#if FOR_LINUX
+#ifdef FOR_LINUX
   if(faulty_installation){
     QMessageBox msgBox;
     msgBox.setIcon(QMessageBox::Critical);

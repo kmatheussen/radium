@@ -190,7 +190,7 @@ extern LANGSPEC void GFX_HideMixer(void);
 extern LANGSPEC bool GFX_InstrumentWindowIsVisible(void);
 
 //extern LANGSPEC void GFX_ConfigColors(struct Tracker_Windows *tvisual);
-#if USE_QT4
+#ifdef USE_QT4
 #ifdef QFONT_H
 extern void GFX_SetSystemFont(QFont font);
 #endif

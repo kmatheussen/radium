@@ -51,7 +51,7 @@ static inline void apply_brightness(QColor &color, float brightness){
 }
 */
 
-static inline void apply_saturation_and_brightness(QColor &color, float saturation, float brightness){
+static inline void apply_saturation_and_brightness(QColor &color, double saturation, double brightness){
   bool do_saturation = saturation < 0.4999 || saturation > 0.5001;
   bool do_brightness = brightness < 0.4999 || brightness > 0.5001;
   if (!do_saturation && !do_brightness)
@@ -62,27 +62,27 @@ static inline void apply_saturation_and_brightness(QColor &color, float saturati
 
   if(do_saturation){
     if (saturation < 0.5)    
-      s = scale(saturation, 0, 0.5, 0, s);
+      s = scale_double(saturation, 0, 0.5, 0, s);
     else
-      s = scale(saturation, 0.5, 1.0, s, 1);
+      s = scale_double(saturation, 0.5, 1.0, s, 1);
   }
 
   if(do_brightness){
     if (brightness < 0.5)    
-      l = scale(brightness, 0, 0.5, 0, l);
+      l = scale_double(brightness, 0, 0.5, 0, l);
     else
-      l = scale(brightness, 0.5, 1.0, l, 1);
+      l = scale_double(brightness, 0.5, 1.0, l, 1);
   }
   
   color.setHslF(h, s, l, a);
 }
 
 static inline void apply_instrument_colorization(QColor &color){
-  apply_saturation_and_brightness(color, getInstrumentSaturation(), getInstrumentBrightness());
+  apply_saturation_and_brightness(color, (double)getInstrumentSaturation(), (double)getInstrumentBrightness());
 }
   
 static inline void apply_instrument_in_editor_colorization(QColor &color){
-  apply_saturation_and_brightness(color, getInstrumentSaturationInEditor(), getInstrumentBrightnessInEditor());
+  apply_saturation_and_brightness(color, (double)getInstrumentSaturationInEditor(), (double)getInstrumentBrightnessInEditor());
 }
   
 static inline QColor get_displayed_instrument_color(const struct Patch *patch){
@@ -104,7 +104,7 @@ static inline QColor get_displayed_instrument_color_in_editor(const struct Patch
 
 
 static inline void apply_block_colorization(QColor &color){
-  apply_saturation_and_brightness(color, getBlockSaturation(),  getBlockBrightness());
+  apply_saturation_and_brightness(color, (double)getBlockSaturation(),  (double)getBlockBrightness());
 }
   
 static inline QColor get_displayed_block_color(const struct Blocks *block){

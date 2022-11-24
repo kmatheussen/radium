@@ -58,7 +58,7 @@ extern LANGSPEC void SAMPLEREADER_set_sample_color(filepath_t filename, unsigned
 
 
 
-#if __cplusplus
+#ifdef __cplusplus
 
 namespace radium{
   class FutureSignalTrackingSemaphore;

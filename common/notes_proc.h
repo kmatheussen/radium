@@ -35,7 +35,7 @@ extern const r::NotePtr GetCurrNote(struct Tracker_Windows *window);
 extern LANGSPEC struct Notes *NewNote(void);
 extern LANGSPEC struct Notes *CopyNote(const struct Notes *old_note);
 
-#if __cplusplus
+#ifdef __cplusplus
 extern r::NotePtr NewNote2(const Ratio &time,
                     float notenum,
                     int velocity);
@@ -85,7 +85,7 @@ extern LANGSPEC void ReplaceNoteEnds(
                     int subtrack
                     );
 
-#if __cplusplus
+#ifdef __cplusplus
 void ReplaceNoteEnds2(
                       struct Blocks *block,
                       struct Tracks *track,
@@ -114,7 +114,7 @@ extern LANGSPEC void RemoveNoteCurrPos(struct Tracker_Windows *window);
 
 extern LANGSPEC struct Notes *FindPrevNoteOnSameSubTrack(const struct Tracks *track, const struct Notes *note);
 
-#if __cplusplus
+#ifdef __cplusplus
 r::NotePtr FindPrevNoteOnSameSubTrack2(const radium::Vector<r::NotePtr> &notes, const r::NotePtr &note);
 r::NotePtr FindNextNoteOnSameSubtrack2(const radium::Vector<r::NotePtr> &notes, const r::NotePtr &note);
 #endif
@@ -125,7 +125,7 @@ extern LANGSPEC struct Notes *FindNoteOnSubTrack(
                                         const Place *placement
 );
 
-#if __cplusplus
+#ifdef __cplusplus
 r::NotePtr FindNoteOnSubTrack2(const struct WTracks *wtrack,
                                int subtrack,
                                const Ratio &ratio
@@ -158,7 +158,7 @@ extern LANGSPEC void EditNoteCurrPos(struct Tracker_Windows *window);
 
 extern LANGSPEC void StopVelocityCurrPos(struct Tracker_Windows *window,int noend);
 
-#if __cplusplus
+#ifdef __cplusplus
 #include "placement_proc.h"
 #include "ratio_funcs.h"
 static inline bool note_continues_next_block(const struct Blocks *block, const struct Notes *note){
@@ -169,7 +169,7 @@ static inline bool note_continues_next_block2(const struct Blocks *block, const 
 }
 #endif
 
-#if __cplusplus
+#ifdef __cplusplus
 void RT_notes_called_each_block(struct SeqTrack *seqtrack,
                                 const int play_id,
                                 const struct SeqBlock *seqblock,

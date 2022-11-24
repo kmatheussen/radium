@@ -20,7 +20,7 @@ extern LANGSPEC struct WLPBs *WLPBs_get(
                                         const struct WBlocks *wblock
                                         );
 
-#if USE_QT4
+#ifdef USE_QT4
 QVector<LPBs*> LPBs_get(const struct WBlocks *wblock, int realline);
 #endif
   

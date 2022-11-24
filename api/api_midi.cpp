@@ -151,7 +151,7 @@ void sendMidiSysex(int64_t port_id, dynvec_t bytes){
 
     }
 
-    data[i] = b;
+    data[i] = (uint8_t)b;
     
     i++;
   }

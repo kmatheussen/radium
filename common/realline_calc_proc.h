@@ -79,7 +79,7 @@ static inline int get_realline_y2(const struct Tracker_Windows *window, int real
 }
 
 static inline float get_realline_y(const struct Tracker_Windows *window, float reallineF){
-  return window->fontheight*reallineF;
+  return (float)window->fontheight*reallineF;
 }
 
 #ifdef __cplusplus
@@ -89,6 +89,6 @@ static inline int FindReallineForRatio(const struct WBlocks *wblock, int reallin
 }
 static inline float FindReallineForRatioF(const struct WBlocks *wblock, int realline, const Ratio &ratio){
   Place place = ratio2place(ratio);
-  return FindReallineForF(wblock, realline, &place);
+  return FindReallineForF(wblock, (float)realline, &place);
 }
 #endif

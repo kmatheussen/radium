@@ -111,7 +111,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "VST_plugins_proc.h"
 
 #if 1 // no more vestige. why did I ever bother with it?
-#  if FOR_LINUX
+#  ifdef FOR_LINUX
 #    undef PRAGMA_ALIGN_SUPPORTED
 #    define __cdecl
 #  endif
@@ -199,11 +199,11 @@ static void findMaxTotalChannels(juce::AudioProcessor* const filter,
 
 namespace{
 
-#if FOR_LINUX
+#if defined(FOR_LINUX)
   static constexpr bool g_use_custom_mm_thread = true;
-#elif FOR_WINDOWS  
+#elif defined(FOR_WINDOWS  )
   static constexpr bool g_use_custom_mm_thread = false;
-#elif FOR_MACOSX
+#elif defined(FOR_MACOSX)
   static constexpr bool g_use_custom_mm_thread = false;
 #else
   #error "unknown platform"
@@ -1062,7 +1062,7 @@ namespace{
 #else
       // grab keyboard button
       {
-#if FOR_LINUX
+#ifdef FOR_LINUX
         grab_keyboard_button.setButtonText("Grab keyboard (not functional on Linux)");
 #else
         grab_keyboard_button.setButtonText("Grab keyboard");
@@ -1263,7 +1263,7 @@ namespace{
 #endif
       }                                          
 
-#if FOR_WINDOWS
+#ifdef FOR_WINDOWS
       {
         //OS_WINDOWS_set_always_on_top(this->getWindowHandle());
         void *parent = API_get_native_gui_handle(parentgui);
@@ -2646,7 +2646,7 @@ static juce::String get_container_descriptions_filename(filepath_t container_fil
 }
 
 static juce::String get_plugin_scanner_executable_filename(void){
-#if FOR_WINDOWS
+#ifdef FOR_WINDOWS
   juce::String executable = juce::String(OS_get_full_program_file_path(STRING_create("radium_plugin_scanner.exe")).id); // Don't need to surround string with " and " with juce. You need to do that in Qt.
 #else
   juce::String executable = juce::String(OS_get_full_program_file_path(STRING_create("radium_plugin_scanner")).id);

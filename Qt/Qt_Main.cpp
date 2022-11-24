@@ -23,13 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <dlfcn.h>
 #endif
 
-
-#include <boost/version.hpp>
-#if (BOOST_VERSION < 100000) || ((BOOST_VERSION / 100 % 1000) < 63)
-  #error "Boost too old. Need at least 1.58.\n Quick fix: cd $HOME ; wget http://downloads.sourceforge.net/project/boost/boost/1.63.0/boost_1_63_0.tar.bz2 ; tar xvjf boost_1_63_0.tar.bz2 (that's it!)"
-#endif
-#include <boost/lockfree/queue.hpp>
-
+#include "../common/include_boost.h"
 
 
 #include <signal.h>
@@ -906,7 +900,7 @@ static bool handle_qt_keyboard(QKeyEvent *event, bool is_key_down){
   }
 #undef S
 
-#if FOR_LINUX
+#ifdef FOR_LINUX
   const int sub=8;
 #else
   const int sub=0;
@@ -1844,7 +1838,7 @@ protected:
     
     bool activation_changed = event->type() == QEvent::WindowDeactivate || event->type() == QEvent::WindowActivate;
 
-#if FOR_LINUX
+#ifdef FOR_LINUX
 
     if (activation_changed){ //event->type()==QEvent::FocusAboutToChange){
       //if (event->type()==QEvent::FocusAboutToChange){
@@ -1982,9 +1976,9 @@ protected:
 public slots:
   void applicationStateChanged(Qt::ApplicationState state){
     //printf("   *** applicationStateChanged called: %s.\n", state==Qt::ApplicationHidden ? "HIDDEN" :  state==Qt::ApplicationInactive ? "INACTIVE" : state==Qt::ApplicationActive ? "ACTIVE" : "WHAT?");
-#if FOR_MACOSX
+#ifdef FOR_MACOSX
     OS_OSX_clear_modifiers();
-#elif FOR_LINUX
+#elifdef FOR_LINUX
     //OS_SYSTEM_ResetKeysUpDowns();
 #endif
   }
@@ -2196,11 +2190,11 @@ int OS_get_main_window_height(void){
 // Or: Use effectWinId() instead of winId().
 //
 static bool maybe_got_key_window(QWindow *window){
-#if FOR_MACOSX
+#ifdef FOR_MACOSX
   return OS_OSX_is_key_window((void*)window->winId());
-#elif FOR_WINDOWS
+#elifdef FOR_WINDOWS
   return OS_WINDOWS_is_key_window((void*)window->winId());
-#elif FOR_LINUX
+#elifdef FOR_LINUX
   //return g_qapplication->focusWidget()!=NULL && window==g_qapplication->focusWidget()->window(); //activeWindow();
   QWidget *topwindow = QApplication::topLevelAt(QCursor::pos());
   if (topwindow==NULL)
@@ -2226,7 +2220,7 @@ bool a_radium_window_has_focus(void){
   if(g_is_starting_up==true)
     return false;
 
-#if FOR_LINUX
+#ifdef FOR_LINUX
   
   return g_qapplication->activeWindow() != NULL;
   
@@ -2950,7 +2944,7 @@ bool ShiftPressed(void){
 
 /*
 bool Control2Pressed(Qt::KeyboardModifiers modifiers){
-#if FOR_MACOSX
+#ifdef FOR_MACOSX
   return modifiers & Qt::AltModifier;
 #else
   return modifiers & Qt::MetaModifier;
@@ -3063,7 +3057,7 @@ void MovePointer(struct Tracker_Windows *tvisual, float x, float y){
   int i_x = R_BOUNDARIES(minpos.x(), pos.x(), maxpos.x());
   int i_y = R_BOUNDARIES(minpos.y(), pos.y(), maxpos.y());
               
-#if FOR_MACOSX
+#ifdef FOR_MACOSX
   OS_OSX_set_cursorpos(i_x, i_y); // https://bugreports.qt.io/browse/QTBUG-33959
 #else
   QCursor::setPos(QPoint(i_x, i_y));
@@ -3073,7 +3067,7 @@ void MovePointer(struct Tracker_Windows *tvisual, float x, float y){
 void MoveAbsPointer(struct Tracker_Windows *tvisual, float x, float y){
   g_last_time_mouse_pointer_was_moved_by_the_program = TIME_get_ms(); // Important to set it as soon as possible before doing the actual movement. (at least not after)
 
-#if FOR_MACOSX
+#ifdef FOR_MACOSX
   OS_OSX_set_cursorpos(x,y); // https://bugreports.qt.io/browse/QTBUG-33959
 #else
   if (tvisual==NULL)
@@ -3333,7 +3327,7 @@ void assertRadiumInHomeDirectory(void){
 #include <gtkstyle.h>
 #endif
 
-#if USE_QT4
+#ifdef USE_QT4
 //#include <QCleanlooksStyle>
 //#include <QOxygenStyle>
 #ifndef USE_QT5
@@ -4046,7 +4040,7 @@ static void qunsetenv(const char *varName)
     unsetenv(varName);
 #endif
     
-#if FOR_WINDOWS
+#ifdef FOR_WINDOWS
     {
       // On mingw, putenv("var=") removes "var" from the environment
       QByteArray buffer(varName);
@@ -4130,7 +4124,7 @@ static void myMessageOutput(QtMsgType type, const char *localMsg)
 void MONOTONIC_TIMER_init(void);
 
 
-#if FOR_MACOSX
+#ifdef FOR_MACOSX
 #include <mach-o/dyld.h> 
 static char *get_macosx_executable_path(void){
   uint32_t size = 1024;
@@ -4243,7 +4237,7 @@ static int gc_has_static_roots_func(
   char *start = (char*)p;
   char *end = start + size;
 
-#if FOR_MACOSX
+#ifdef FOR_MACOSX
   static char *executable_path = get_macosx_executable_path();
 #endif
 
@@ -4278,7 +4272,7 @@ static int gc_has_static_roots_func(
 #if !defined(RELEASE)
   static int64_t total = 0;
 
-  #if FOR_LINUX
+  #ifdef FOR_LINUX
     if (is_inside && strcmp("", dlpi_name)){
       fprintf(stderr, "1. start: %p, static: %p, end: %p, size: %d\n",start,&g_static_char,end,(int)size);
       abort();
@@ -4882,7 +4876,7 @@ int main(int argc, char **argv){
     }
   }
 
-#if __WIN64
+#ifdef __WIN64
   Py_SetPythonHome(V_strdup("python2.7")); //V_strdup(pythonlibpath.toLocal8Bit().constData()));
 #endif
 #endif
@@ -4890,7 +4884,7 @@ int main(int argc, char **argv){
   //Py_SetProgramName(QString(python
   //Py_SetPythonHome(V_strdup(OS_get_full_program_file_path("").toLocal8Bit().constData()));
 
-#if __WIN64
+#ifdef __WIN64
   // Py_SetPath(".;Lib") // Py_SetPath doesn't seem available. Perhaps it's Python 3.0 only. As a workaround we call sys.path.append in python2.7/Lib/site.py
 #endif
     

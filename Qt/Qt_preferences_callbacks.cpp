@@ -143,7 +143,7 @@ public:
     setOption(QColorDialog::NoButtons); // Avoid crash on macos sierra. (https://bugreports.qt.io/browse/QTBUG-56448)
   }
 
-#if FOR_MACOSX && !USE_QT5
+#if defined(FOR_MACOSX) && !defined(USE_QT5)
   void closeEvent(QCloseEvent *event) override {
     hide();
     event->ignore(); // Only hide the window, dont close it.
@@ -247,7 +247,7 @@ public:
 
     g_current_colornum = colornum;
     color_dialog->setCurrentColor(get_qcolor(colornum));
-#if FOR_MACOSX && !USE_QT5
+#if defined(FOR_MACOSX) && !defined(USE_QT5)
     color_dialog->myshow();
 #endif
     
@@ -354,8 +354,8 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
     // Colors
     {
       _color_dialog.setOption(QColorDialog::NoButtons, true);
-      
-#if FOR_MACOSX && !USE_QT5
+
+#if defined(FOR_MACOSX) && !defined(USE_QT5)
       //_color_dialog.hide();
       _color_dialog.setOption(QColorDialog::DontUseNativeDialog, true);
       
@@ -441,8 +441,8 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
     RememberGeometryQDialog::setVisible(visible);
   }
 
-  
-#if FOR_MACOSX && !USE_QT5
+
+#if defined(FOR_MACOSX) && !defined(USE_QT5)
   void hideEvent(QHideEvent *event) override {
     _color_dialog.close();
     release_keyboard_focus();
@@ -513,7 +513,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       adjustWidthToFitText(mma32, w);
 #endif
       
-#if USE_QT5
+#ifdef USE_QT5
       eraseEstimatedVBlankInterval->hide();
       erase_vblank_group_box_layout->removeItem(erase_estimated_vblank_spacer);
 #else
@@ -766,7 +766,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       mixer_window_is_child_of_main_window->setChecked(mixerWindowIsChildOfMainWindow());
       help_window_is_child_of_main_window->setChecked(helpWindowIsChildOfMainWindow());
 
-#if FOR_MACOSX
+#ifdef FOR_MACOSX
       swap_ctrl_and_cmd->setChecked(swapCtrlAndCmd());
 #else      
       line_swap_ctrl_and_cmd->hide();      
@@ -777,7 +777,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       tab_bar_height->setValue(getTabBarHeight());
       
       modal_windows->setChecked(doModalWindows());
-#if FOR_WINDOWS
+#ifdef FOR_WINDOWS
       native_file_requesters->hide();
 #else
       native_file_requesters->setChecked(useNativeFileRequesters());
@@ -874,7 +874,7 @@ public slots:
   }
 
   void on_eraseEstimatedVBlankInterval_clicked(){
-#if !USE_QT5
+#ifndef USE_QT5
     if (_initing==false){
       printf("erasing\n");
       GL_erase_estimated_vblank();
@@ -884,7 +884,7 @@ public slots:
   
   void on_vsyncOnoff_toggled(bool val){
     if (_initing==false){
-#if !USE_QT5
+#ifndef USE_QT5
       if (!_is_updating_widgets)
         GL_erase_estimated_vblank(); // makes sense
 #endif
@@ -1441,7 +1441,7 @@ public slots:
   }
 
   void current_tab_changed(int tabnum){
-#if FOR_MACOSX && !USE_QT5
+#if defined(FOR_MACOSX) && !defined(USE_QT5)
     printf("   CHangeEvent called %d\n",tabnum);
     if (tabWidget->currentWidget() != colors)
       _color_dialog.close();

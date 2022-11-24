@@ -849,6 +849,9 @@ struct MouseCycleFix{
 
   QPointer<QObject> _widget;
   bool _is_ctrl_clicking = false;
+
+  virtual ~MouseCycleFix(){
+  }
   
   virtual bool fix_mousePressEvent(radium::MouseCycleEvent &event) = 0;
   virtual void fix_mouseMoveEvent(radium::MouseCycleEvent &event) = 0;
@@ -1423,7 +1426,7 @@ static inline QBrush API_get_gradient(int gradient_num, const QRectF &rect, cons
 
 
 
-static inline void myFillRectHorizontalGradient(QPainter &p, const QRectF &rect, const QColor &color, bool do_gradient = true, float how_much_gradient = 0.15){
+static inline void myFillRectHorizontalGradient(QPainter &p, const QRectF &rect, const QColor &color, bool do_gradient = true, qreal how_much_gradient = 0.15){
   QPen pen = p.pen();
   p.setPen(Qt::NoPen);
   
@@ -1456,7 +1459,7 @@ static inline void myFillRectHorizontalGradient(QPainter &p, const QRectF &rect,
   p.setPen(pen);
 }
 
-static inline void myFillRect(QPainter &p, const QRectF &rect, const QColor &color, bool do_gradient = true, float how_much_gradient = 0.10){
+static inline void myFillRect(QPainter &p, const QRectF &rect, const QColor &color, bool do_gradient = true, qreal how_much_gradient = 0.10){
   QPen pen = p.pen();
   p.setPen(Qt::NoPen);
   
@@ -1481,7 +1484,7 @@ static inline void myFillRect(QPainter &p, const QRectF &rect, const QColor &col
   p.setBrush(Qt::NoBrush);
   p.setPen(pen);
 }
-static inline void myFillRoundedRect(QPainter &p, const QRectF &rect, const QColor &color, float rounding, bool do_gradient = true){
+static inline void myFillRoundedRect(QPainter &p, const QRectF &rect, const QColor &color, qreal rounding, bool do_gradient = true){
   QPen pen = p.pen();
   p.setPen(Qt::NoPen);
   if (do_gradient){

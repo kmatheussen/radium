@@ -444,7 +444,7 @@ static void lock_player_from_nonrt_thread(void){
 // Only called from PLAYER_maybe_pause_lock_a_little_bit and PLAYER_unlock
 static void unlock_player_from_nonrt_thread(int iteration){
 
-#if !defined(RELEASE) && !RADIUM_USES_TSAN
+#if !defined(RELEASE) && !defined(RADIUM_USES_TSAN)
   float elapsed = g_player_lock_timer.elapsed();
 #endif
 
@@ -466,7 +466,7 @@ static void unlock_player_from_nonrt_thread(int iteration){
   
 #endif
 
-#if !defined(RELEASE) && !RADIUM_USES_TSAN
+#if !defined(RELEASE) && !defined(RADIUM_USES_TSAN)
   //printf("Elapsed: %f. (%d)\n", elapsed, iteration);
   if(elapsed > MAX_LOCK_DURATION_TO_REPORT_ABOUT_MS){  // The lock is realtime safe, but we can't hold it a long time.
 
@@ -633,7 +633,7 @@ void RT_pause_plugins(void){
   ATOMIC_SET(g_request_to_pause_plugins, true);
 }
 
-#if FOR_WINDOWS
+#ifdef FOR_WINDOWS
 extern "C" {
   static void my_silent_jack_error_callback(const char *desc){
   }
@@ -953,7 +953,7 @@ struct Mixer{
 
     //jack_set_error_function(my_silent_jack_error_callback);
 
-#if FOR_WINDOWS // Noise from jack on windows when changing thread priority
+#ifdef FOR_WINDOWS // Noise from jack on windows when changing thread priority
     jack_set_info_function(my_silent_jack_error_callback);
 #endif
     
@@ -2290,7 +2290,7 @@ static bool fill_in_time_position2(time_position_t *time_position){
     return false;
 #endif
   
-  time_position->blocknum = block->l.num;
+  time_position->blocknum = (int16_t)block->l.num;
   time_position->blocktime = accurate_block_time;
 
   //printf("...............blocktime: %d\n", (int)accurate_block_time);
@@ -2308,7 +2308,7 @@ bool MIXER_fill_in_time_position(time_position_t *time_position){
   
   R_ASSERT_RETURN_IF_FALSE2(ATOMIC_GET(root->song_state_is_locked), false);
 
-  time_position->tracknum = ATOMIC_READ(window->curr_track);
+  time_position->tracknum = (int16_t)ATOMIC_READ(window->curr_track);
 
   return fill_in_time_position2(time_position);
 }

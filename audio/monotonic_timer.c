@@ -12,7 +12,7 @@
 
 #include <stdint.h>
 
-#if FOR_WINDOWS
+#ifdef FOR_WINDOWS
 #include <windows.h>
 static inline void sleep_1second(void){
   Sleep(MSECS_PER_SEC);

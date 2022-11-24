@@ -66,6 +66,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #ifdef USE_QT4
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Winconsistent-missing-destructor-override"
+#pragma clang diagnostic ignored "-Wused-but-marked-unused"
+
 #include <QGraphicsSceneMouseEvent>
 #include <QUrl>
 #include <QMimeData>
@@ -73,6 +77,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 //#include <QtGui/qwidget.h>
 #include <QGraphicsScene>
 //#include <QtGui/QGraphicsItem>
+
+#pragma clang diagnostic pop
+
 
 #include "../Qt/helpers.h"
 #include "QM_chip.h"
@@ -123,7 +130,7 @@ extern LANGSPEC void MW_set_rotate(float rotate);
 extern LANGSPEC void MW_update_mixer_widget(bool update_current_button);
 extern LANGSPEC void MW_disable_include_instrument_checkbox(void);
 extern LANGSPEC void MW_enable_include_instrument_checkbox(void);
-#if USE_QT4
+#ifdef USE_QT4
 #include "../Qt/Qt_instruments_proc.h"
 #include <QWidget>
 extern void MW_instrument_widget_set_size(QWidget *audio_widget, SizeType old_size_type, SizeType new_size_type);

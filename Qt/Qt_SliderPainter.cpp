@@ -98,8 +98,8 @@ public:
     return *value;
   }
   
-  float requested_pos;
-  float last_drawn_pos;
+  qreal requested_pos;
+  qreal last_drawn_pos;
 
   float last_value;
   
@@ -295,39 +295,39 @@ struct SliderPainter{
 
       if (!equal_floats(value, data->last_value) || _last_num_channels!=num_channels) {
 
-        float gain;
+        double gain;
 
         if(data->is_automation) {
-          gain = value;
+          gain = (double)value;
         } else{
-          float db = value; //gain2db(value);
-          if(db>4.0f)
+          double db = (double)value; //gain2db(value);
+          if(db>4.0)
             data->color = PEAKS_4DB_COLOR_NUM;
-          else if(db>0.0f)
+          else if(db>0.0)
             data->color = PEAKS_0DB_COLOR_NUM;
           else
             data->color = PEAKS_COLOR_NUM;
           
-          gain = db2linear(db, 1, 0);
+          gain = db2linear_double(db, 1, 0);
         }
 
         if (data->single_line_style)
-          data->requested_pos = scale(gain,0.0f,1.0f,
-                                      0.0f,(float)width()-2)
-                                - 1;
+          data->requested_pos = scale_double(gain,0.0,1.0,
+                                             0.0,(double)width()-2)
+            - 1;
         else
-          data->requested_pos = scale(gain,0.0f,1.0f,
-                                      0.0f,(float)width());
-          
+          data->requested_pos = scale_double(gain,0.0,1.0,
+                                             0.0,(double)width());
         
-        if(!equal_floats(data->last_drawn_pos, data->requested_pos) || _last_num_channels!=num_channels){
+        
+        if(!equal_doubles(data->last_drawn_pos, data->requested_pos) || _last_num_channels!=num_channels){
           
           //printf("Painting. Last drawn: %d. requested: %d\n",data->last_drawn_pos,data->requested_pos);
 
-          float y1 = DATA_get_y1(data,height(),num_channels);
+          double y1 = DATA_get_y1(data,height(),num_channels);
           y1 = floor(y1);
           
-          float y2 = DATA_get_y2(data,height(),num_channels);
+          double y2 = DATA_get_y2(data,height(),num_channels);
           y2 = ceil(y2);
           
           int height = R_MAX(1, y2-y1);
@@ -344,8 +344,8 @@ struct SliderPainter{
             
           } else {
             
-            float x1 = R_MIN(data->last_drawn_pos-1, data->requested_pos-1);
-            float x2 = R_MAX(data->last_drawn_pos-1+6, data->requested_pos-1+6);
+            double x1 = R_MIN(data->last_drawn_pos-1, data->requested_pos-1);
+            double x2 = R_MAX(data->last_drawn_pos-1+6, data->requested_pos-1+6);
             update(x1,    y1,
                    x2-x1, height+1);
           }
@@ -407,14 +407,14 @@ struct SliderPainter{
     }
   }
 
-  void paint_peaks_non_single_line_style(QPainter *p, AutomationOrPeakData *data, float y1, float y2, float peak_height){
-    float x1 = 0.0f;
-    float x4 = width();
+  void paint_peaks_non_single_line_style(QPainter *p, AutomationOrPeakData *data, qreal y1, qreal y2, qreal peak_height){
+    qreal x1 = 0.0;
+    qreal x4 = width();
     
-    float x2 = db2linear(0.0f, x4, x1);
-    float x3 = db2linear(4.0f, x4, x1);
+    qreal x2 = db2linear_double(0.0, x4, x1);
+    qreal x3 = db2linear_double(4.0, x4, x1);
 
-    float x = data->requested_pos;
+    qreal x = data->requested_pos;
 
     if (peak_height < 1) {
       y2 = y1 + 1;
@@ -458,9 +458,9 @@ struct SliderPainter{
         
         //printf("%s: sp: %p, i: %d, size: %d (%d/%d)\n",_display_string.toUtf8().constData(),this,(int)i,(int)_data.size(),sizeof(float),sizeof(float*));
         
-        float y1 = DATA_get_y1(data,height(), _last_num_channels);
-        float y2 = DATA_get_y2(data,height(), _last_num_channels);
-        float height = y2-y1;
+        qreal y1 = DATA_get_y1(data,height(), _last_num_channels);
+        qreal y2 = DATA_get_y2(data,height(), _last_num_channels);
+        qreal height = y2-y1;
 
         if (data->single_line_style) {
           QRectF f(data->requested_pos+1, y1+1,
@@ -508,7 +508,7 @@ struct SliderPainter{
 
     SLIDERPAINTERPAINTER_paint(&mp,0,0,width(),height(),
                                isEnabled(),
-                               scale_double(value(),minimum(),maximum(),0.0f,1.0f),
+                               scale_double(value(),minimum(),maximum(),0.0,1.0),
                                _display_string.toStdString(),
                                _alternative_color,
                                _is_hovered && (_qslider==NULL || _qslider->isEnabled())

@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-#ifndef _RADIUM_API_API_COMMON_PROC_H
-#define _RADIUM_API_API_COMMON_PROC_H
+#pragma once
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -196,20 +196,29 @@ extern const char* GetNoteIdAsCharString(int64_t note_id);
 extern dyn_t GetNoteIdFromNoteId(int64_t note_id);
 extern dyn_t GetNoteId(struct Notes *note);
 
+#ifdef __cplusplus
+static inline dyn_t GetNoteId2(const r::NotePtr &note){
+  return GetNoteIdFromNoteId(note->_id);
+}
+static inline dyn_t GetNoteId3(const r::Note *note){
+  return GetNoteIdFromNoteId(note->_id);
+}
+#endif
+  
 extern void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes *note, const Place *place, bool last_legal_may_be_next_note);
 
 extern dyn_t MoveNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Place *place, bool replace_note_ends);
 
-#if __cplusplus
-extern void MoveEndNote2(struct Blocks *block, struct Tracks *track, r::NotePtr &note, const Ratio &place, bool last_legal_may_be_next_note);
-extern dyn_t MoveNote2(struct Blocks *block, struct Tracks *track, r::NotePtr &note, Ratio ratio, bool replace_note_ends);
+#ifdef __cplusplus
+[[nodiscard]] extern int64_t MoveEndNote2(struct Blocks *block, struct Tracks *track, r::NotePtr &note, const Ratio &ratio, bool last_legal_may_be_next_note);
+[[nodiscard]] extern int64_t MoveNote2(struct Blocks *block, struct Tracks *track, r::NotePtr &note, Ratio ratio, bool replace_note_ends);
 #endif
   
 #ifdef __cplusplus
 }
 #endif
 
-#if USE_QT4
+#ifdef USE_QT4
 
 template <typename T>
 static inline bool num_is_valid(T &reader, int num, const char *type){
@@ -244,7 +253,5 @@ static inline const char* path_to_w_path(const wchar_t *path){
   const QByteArray path2_base64 = path2.toUtf8().toBase64();
   return talloc_strdup(path2_base64.constData());
 }
-
-#endif
 
 #endif

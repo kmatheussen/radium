@@ -62,7 +62,7 @@ struct Qt_MyQScrollBar : public QScrollBar, public radium::MouseCycleFix {
   int _start_pos;
   int _start_val;
 
-  const float b = 2;
+  const double b = 2.0;
 
   
   bool fix_mousePressEvent(radium::MouseCycleEvent &event) override{
@@ -154,26 +154,26 @@ struct Qt_MyQScrollBar : public QScrollBar, public radium::MouseCycleFix {
     p.setPen(foreground);
     p.drawRect(0, 0, width()-b/2, height()-b/2);
     
-    float x1 = b;
-    float x2 = width()-b;
-    float y1 = b;
-    float y2 = height()-b;
+    qreal x1 = b;
+    qreal x2 = width()-b;
+    qreal y1 = b;
+    qreal y2 = height()-b;
 
-    float xy1 = orientation()==Qt::Vertical ? y1 : x1;
-    float xy2 = orientation()==Qt::Vertical ? y2 : x2;
+    qreal xy1 = orientation()==Qt::Vertical ? y1 : x1;
+    qreal xy2 = orientation()==Qt::Vertical ? y2 : x2;
 
     if(max_val+page_step-min_val==0){
       printf("gakk1: %d\n",max_val+page_step-min_val);
       return;
     }
     
-    const float slider_xy1 = scale(val,
-                                   min_val, max_val+page_step,
-                                   xy1, xy2);
-    const float slider_xy2 = scale(val + page_step,
-                                   min_val, max_val+page_step,
-                                   xy1, xy2);
-
+    const qreal slider_xy1 = scale_double(val,
+                                          min_val, max_val+page_step,
+                                          xy1, xy2);
+    const qreal slider_xy2 = scale_double(val + page_step,
+                                          min_val, max_val+page_step,
+                                          xy1, xy2);
+    
     if (_is_moving)
       foreground = mix_colors(QColor(0,0,0), foreground, 0.4);
 

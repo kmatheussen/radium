@@ -15,7 +15,7 @@ static inline T *RT_alloc_raw2(const int minimum_num_elements, int &actual_num_e
 
 static inline void *RT_alloc_clean_raw(const int size, const char *who){
   void *ret = RT_alloc_raw(size, who);
-  memset(ret, 0, size);
+  memset(ret, 0, (size_t)size);
   return ret;
 }
 

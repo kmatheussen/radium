@@ -17,6 +17,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <math.h>
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wundef"
+#pragma clang diagnostic ignored "-Wnon-virtual-dtor"
+
 #if __GNUC__ >= 5
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wsuggest-override"
@@ -31,6 +35,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #if __GNUC__ >= 5
 #  pragma GCC diagnostic pop
 #endif
+
+#pragma clang diagnostic pop
+
 
 #include "../common/nsmtracker.h"
 #include "../common/TimeData.hpp"

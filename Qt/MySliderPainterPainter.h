@@ -38,8 +38,8 @@ namespace cvs{
       col1b = MyColor(SLIDER2_COLOR_NUM).lighter(100);
     }else{
       int col1num = SLIDER_DISABLED_COLOR_NUM;
-      col1 =  mix_mycolors(MyColor(col1num),              gray, 0.8f);
-      col1b = mix_mycolors(MyColor(col1num).lighter(110), gray, 0.8f);
+      col1 =  mix_mycolors(MyColor(col1num),              gray, 0.8);
+      col1b = mix_mycolors(MyColor(col1num).lighter(110), gray, 0.8);
     }
     
     if(alternative_color==true)

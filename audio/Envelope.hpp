@@ -189,13 +189,13 @@ public:
       const Point &point1 = curve1.at(i);
       const Point &point2 = curve2.at(i);
 
-      float v1 = gain2db(point1.y);
-      float v2 = gain2db(point2.y);
+      double v1 = gain2db_double((double)point1.y);
+      double v2 = gain2db_double((double)point2.y);
       
       double interp = v1 * ( 1.0-( (double)i / (double)size) );
       interp += v2 * ( (double)i / (double)size );
       
-      interp = db2gain(interp);
+      interp = db2gain_double(interp);
       dst.push_back(Point(point1.x, interp));
     }
 
@@ -243,7 +243,7 @@ public:
       case FADE_CONSTANT_POWER:
         env.push_back(Point(0.0, GAIN_COEFF_SMALL));
         for (int i = 1; i < num_steps; ++i) {
-          const float dist = (float)i / (num_steps + 1.f);
+          const double dist = (double)i / (num_steps + 1.);
           env.push_back(Point(length * dist, sin (dist * M_PI / 2.0)));
         }
         env.push_back(Point(length, GAIN_COEFF_UNITY));
@@ -260,8 +260,8 @@ public:
           const double breakpoint = 0.7;  //linear for first 70%
 
           for (int i = 2; i < 9; ++i) {
-            const float coeff = (1.f - breakpoint) * powf (0.5, i);
-            env.push_back(Point(length * (breakpoint + ((GAIN_COEFF_UNITY - breakpoint) * (double)i / (double)9)), coeff));
+            const double coeff = (1.0 - breakpoint) * pow (0.5, i);
+            env.push_back(Point(length * (breakpoint + (((double)GAIN_COEFF_UNITY - breakpoint) * (double)i / (double)9)), coeff));
           }
 
           env.push_back(Point(length, GAIN_COEFF_SMALL));
@@ -312,8 +312,8 @@ public:
       QPointF points[num_points+2];
       
       for(int i=0;i<num_points;i++){
-        points[i].setX(scale(xs[i], 0, 1, 0, width));
-        points[i].setY(scale(ys[i], 0, 1, height, 0));
+        points[i].setX(scale_double((double)xs[i], 0, 1, 0, width));
+        points[i].setY(scale_double((double)ys[i], 0, 1, height, 0));
       }
 
       points[num_points].setX(width);

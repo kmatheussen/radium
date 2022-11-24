@@ -76,7 +76,7 @@ public slots:
 
     //fprintf(stderr,"Volume: %d. channel: %d\n",val,patchdata->channel);
     
-    patchdata->volume = val;
+    patchdata->volume = (char)val;
 
     MIDI_send3(patchdata,
                0xb0|patchdata->channel,
@@ -153,7 +153,7 @@ public slots:
       panning_slider->setValue(val);
     //printf("Pan %d\n",val);
     
-    patchdata->pan = val + 63;
+    patchdata->pan = (char)(val + 63);
 
     MIDI_send3(patchdata,
                0xb0|patchdata->channel,
@@ -195,7 +195,7 @@ public slots:
 
   void on_msb_valueChanged( int val)
   {
-    patchdata->MSB = val;
+    patchdata->MSB = (signed char)val;
     //set_editor_focus();
   }
 
@@ -206,7 +206,7 @@ public slots:
 
   void on_lsb_valueChanged( int val)
   {
-    patchdata->LSB = val;
+    patchdata->LSB = (signed char)val;
     //set_editor_focus();
   }
 
@@ -219,7 +219,7 @@ public slots:
   {
     printf("activated preset %d\n",num-1);
     
-    patchdata->preset = num-1;    
+    patchdata->preset = (signed char)(num-1);
     set_editor_focus();
   }
 

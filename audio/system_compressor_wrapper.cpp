@@ -357,12 +357,12 @@ void *COMPRESSOR_create(float sample_rate){
 }
 
 
-#if COMPILING_STANDALONE
+#ifdef COMPILING_STANDALONE
 extern char *g_shared_mem_key;
 #endif
 
 void COMPRESSOR_delete(void *das_wrapper){
-#if COMPILING_STANDALONE
+#ifdef COMPILING_STANDALONE
   if(g_shared_mem_key!=NULL){
     COMPRESSOR_delete_ladspa(das_wrapper);
     return;
@@ -381,7 +381,7 @@ void COMPRESSOR_delete(void *das_wrapper){
 }
 
 float COMPRESSOR_get_parameter(void *das_wrapper,int num){
-#if COMPILING_STANDALONE
+#ifdef COMPILING_STANDALONE
 #ifdef USING_SHARED_MEM
 if(g_shared_mem_key!=NULL)
   return COMPRESSOR_get_ladspa_parameter(das_wrapper,num);
@@ -393,7 +393,7 @@ if(g_shared_mem_key!=NULL)
 }
 
 void COMPRESSOR_set_parameter(void *das_wrapper,int num,float value){
-#if COMPILING_STANDALONE
+#ifdef COMPILING_STANDALONE
 #ifdef USING_SHARED_MEM
   if(g_shared_mem_key!=NULL){
     COMPRESSOR_set_ladspa_parameter(das_wrapper,num,value);
@@ -408,7 +408,7 @@ void COMPRESSOR_set_parameter(void *das_wrapper,int num,float value){
 }
 
 float COMPRESSOR_get_graph_value(void *das_wrapper, int num){
-#if COMPILING_STANDALONE
+#ifdef COMPILING_STANDALONE
 if(g_shared_mem_key!=NULL)
   return COMPRESSOR_get_ladspa_graph_value(das_wrapper,num);
 #endif

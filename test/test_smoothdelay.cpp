@@ -1,5 +1,5 @@
 
-#if BENCHMARK_SMOOTHDELAY
+#ifdef BENCHMARK_SMOOTHDELAY
 #if !defined(RELEASE)
 #error "hmm"
 #endif

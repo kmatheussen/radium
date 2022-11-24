@@ -476,7 +476,7 @@ static void EditorFollowsPlayCursorLoop(void){
 
 // Lock editor graphics while stopping and playing to avoid some jumpiness.
 // However, I can't see the jumpiness anymore, plus that I can provoke deadlock if playing a range very fast, so set it to 0.
-#define DO_LOCK_DRAW_LOCK 0
+#define DO_USE_DRAW_LOCK 0
 
 static void maybe_draw_lock(bool *got_lock){
   if(*got_lock==false){

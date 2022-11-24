@@ -14,6 +14,9 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wimplicit-int-conversion"
+
 #include <math.h>
 
 #include <qwidget.h>
@@ -26,6 +29,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <qtimer.h>
 #include <qfile.h>
 
+#pragma clang diagnostic pop
+
+
 #include "../common/nsmtracker.h"
 #include "FocusSniffers.h"
 
@@ -36,6 +42,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wshorten-64-to-32"
+#pragma clang diagnostic ignored "-Wimplicit-int-conversion"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
@@ -618,7 +625,7 @@ unsigned int GFX_get_color(enum ColorNums colornum){
 }
 
 unsigned int GFX_get_color_from_colorname(const char *colorname){
-#if DEBUG_COLORS
+#ifdef DEBUG_COLORS
   return GFX_MakeRandomColor();
 #endif
   
@@ -627,7 +634,7 @@ unsigned int GFX_get_color_from_colorname(const char *colorname){
 }
 
 const char *GFX_get_colorname_from_color(unsigned int colornum){
-#if DEBUG_COLORS
+#ifdef DEBUG_COLORS
   return talloc_strdup(QColor(GFX_MakeRandomColor()).name(QColor::HexArgb).toUtf8());
 #endif
   
@@ -938,7 +945,7 @@ QColor get_custom_qcolor(int colornum){
 }
 
 QColor get_qcolor(enum ColorNums colornum){
-#if DEBUG_COLORS
+#ifdef DEBUG_COLORS
   return GFX_MakeRandomColor();
 #endif
   

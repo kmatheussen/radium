@@ -1,7 +1,5 @@
 
-
-#ifndef _RADIUM_COMMON_SEQTRACK_PROC_H
-#define _RADIUM_COMMON_SEQTRACK_PROC_H
+#pragma once
 
 
 #include <math.h>
@@ -44,7 +42,7 @@ static inline int64_t seqtime_to_blocktime(const struct SeqBlock *seqblock, int6
   if(equal_doubles(seqblock->t.stretch, 1.0))
     return seqtime;
   else
-    return round((double)seqtime / seqblock->t.stretch);
+    return (int64_t)round((double)seqtime / seqblock->t.stretch);
 }
 
 static inline double blocktime_to_seqtime_double(const double stretch, const double blocktime){
@@ -58,7 +56,7 @@ static inline int64_t blocktime_to_seqtime2(const double stretch, const int64_t 
   if(equal_doubles(stretch, 1.0))
     return blocktime;
   else
-    return round((double)blocktime * stretch);
+    return (int64_t)round((double)blocktime * stretch);
 }
 
 static inline int64_t blocktime_to_seqtime(const struct SeqBlock *seqblock, const int64_t blocktime){
@@ -68,9 +66,9 @@ static inline int64_t blocktime_to_seqtime(const struct SeqBlock *seqblock, cons
 #ifdef __cplusplus
 static inline int64_t blocktime_to_seqtime2(const double stretch, const double blocktime){
   if(equal_doubles(stretch, 1.0))
-    return blocktime;
+    return (int64_t)blocktime;
   else
-    return round(blocktime * stretch);
+    return (int64_t)round(blocktime * stretch);
 }
 
 static inline int64_t blocktime_to_seqtime(const struct SeqBlock *seqblock, const double blocktime){
@@ -131,13 +129,14 @@ struct SoundPlugin;
 
 static inline double get_seqblock_noninterior_start(const struct SeqBlock *seqblock){
   const struct SeqBlockTimings *timing = &seqblock->t;
-    
-  double t1 = timing->time;
-  double i1 = timing->interior_start;
-  
-  if (equal_doubles(i1, 0.0))
-    return t1;
 
+  double t1 = (double)timing->time;
+
+  if (timing->interior_start==0)
+    return t1;
+    
+  double i1 = (double)timing->interior_start;
+  
   double stretch = timing->stretch * timing->speed;
 
   if (equal_doubles(stretch, 1.0))
@@ -150,8 +149,8 @@ static inline double get_seqblock_noninterior_start(const struct SeqBlock *seqbl
 static inline double get_seqblock_noninterior_end(const struct SeqBlock *seqblock){
   const struct SeqBlockTimings *timing = &seqblock->t;
   
-  double t2 = timing->time2;
-  double i2 = timing->default_duration - timing->interior_end;
+  double t2 = (double)timing->time2;
+  double i2 = (double)(timing->default_duration - timing->interior_end);
 
   if(equal_doubles(i2,0.0))
     return t2;
@@ -186,7 +185,19 @@ extern LANGSPEC int SEQUENCER_get_indicator_type(void);
 
 // sequencer gfx
 #ifdef USE_QT4
+#include "../common/includepython.h"
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wsign-conversion"
+#pragma clang diagnostic ignored "-Wused-but-marked-unused"
+#pragma clang diagnostic ignored "-Winconsistent-missing-destructor-override"
+#pragma clang diagnostic ignored "-Wenum-enum-conversion"
+
 #include <QWidget>
+
+#pragma clang diagnostic pop
+
+
 extern QWidget *SEQUENCER_getWidget_r0(void); // does not throw assertion if sequencer widget hasn't been created yet.
 extern QWidget *SEQUENCER_getWidget(void);
 extern QWidget *SEQUENCER_getFrameWidget(void);
@@ -318,7 +329,7 @@ extern LANGSPEC float SEQBLOCK_get_y2(int seqblocknum, int seqtracknum);
 extern LANGSPEC float SEQBLOCK_get_header_height(void); // name of block, etc.
 extern LANGSPEC const char* SEQBLOCK_get_color(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock);
 
-#if __cplusplus
+#ifdef __cplusplus
 float SEQBLOCK_get_x1(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock);
 float SEQBLOCK_get_x2(const struct SeqTrack *seqtrack, const struct SeqBlock *seqblock);
 #endif
@@ -708,7 +719,7 @@ static inline QString get_seqblock_name(const struct SeqTrack *seqtrack, const s
     
     if (right_justify){
 #ifdef __cplusplus
-      int justify_blocklist = ::log10(root->song->num_blocks) + 1;
+      int justify_blocklist = (int)::log10(root->song->num_blocks) + 1;
 #else
       int justify_blocklist = log10(root->song->num_blocks) + 1;
 #endif
@@ -752,6 +763,3 @@ static inline struct SeqtrackRecordingConfig *get_seqtrack_recording_config(stru
   else
     return &root->song->default_recording_config;
 }
-
-#endif
-

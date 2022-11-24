@@ -155,7 +155,7 @@ static void sendnoteon(Data *data, int chan, short key, int velocity, unsigned i
   fluid_event_clear(data->event);
   fluid_event_set_source(data->event, -1);
   fluid_event_set_dest(data->event, data->synth_seq_ID);
-  fluid_event_noteon(data->event, chan, key, velocity);
+  fluid_event_noteon(data->event, chan, key, (short)velocity);
   fluid_res = fluid_sequencer_send_at(data->sequencer, data->event, get_fluidsynth_time(data,time), 1);
   
   if(fluid_res==FLUID_FAILED)
@@ -187,7 +187,7 @@ static void sendcontrolchange(Data *data, int chan, int cc, int val, int time)
   fluid_event_clear(data->event);
   fluid_event_set_source(data->event, -1);
   fluid_event_set_dest(data->event, data->synth_seq_ID);
-  fluid_event_control_change(data->event, chan, cc, val);
+  fluid_event_control_change(data->event, chan, (short)cc, (short)val);
   fluid_res = fluid_sequencer_send_at(data->sequencer, data->event, get_fluidsynth_time(data,time), 1);
   
   if(fluid_res==FLUID_FAILED)
@@ -212,7 +212,7 @@ static void play_note(struct SoundPlugin *plugin, int time, note_t note){
   Data *data = (Data*)plugin->data;
 
   //fluid_synth_noteon(data->synth, 0, note_num, volume*127);
-  sendnoteon(data, 0, (int)note.pitch, note.velocity*127, (unsigned int)(data->time + time));
+  sendnoteon(data, 0, note.pitch, note.velocity*127, (unsigned int)(data->time + time));
   //printf("Sending out note at time %d. Time now: %d. Delta: %d\n",(int)get_fluidsynth_time(data,data->time+time),(int)get_fluidsynth_time(data,data->time),(int)get_fluidsynth_time(data,time));
 }
 

@@ -5,11 +5,7 @@
 
 #include <functional>
 
-#include <boost/version.hpp>
-#if (BOOST_VERSION < 100000) || ((BOOST_VERSION / 100 % 1000) < 58)
-  #error "Boost too old. Need at least 1.58.\n Quick fix: cd $HOME ; wget http://downloads.sourceforge.net/project/boost/boost/1.63.0/boost_1_63_0.tar.bz2 ; tar xvjf boost_1_63_0.tar.bz2 (that's it!)"
-#endif
-#include <boost/lockfree/queue.hpp>
+#include "include_boost.h"
 
 
 #include <QHash>

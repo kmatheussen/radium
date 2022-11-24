@@ -121,7 +121,7 @@ struct TempoNodes *AddTempoNode(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	const Place *p,
-	float reltempo
+	double reltempo
 ){
 	struct Blocks *block=wblock->block;
 	struct TempoNodes *temponode;

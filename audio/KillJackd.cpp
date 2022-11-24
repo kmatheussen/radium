@@ -310,7 +310,7 @@ static void kill_jackd(void){
 bool KILLJACKD_kill_jackd_if_unresponsive(void){
   radium::Process process;
 
-#if FOR_WINDOWS  
+#ifdef FOR_WINDOWS  
   process.start(STRING_get_qstring(OS_get_full_program_file_path("radium_check_jack_status.exe").id), {});
 #else
   process.start(STRING_get_qstring(OS_get_full_program_file_path("radium_check_jack_status").id), {});

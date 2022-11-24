@@ -2,7 +2,7 @@
 #include <stdarg.h>
 #include <unistd.h>
 
-#if __cplusplus
+#ifdef __cplusplus
 #include <mutex>
 #endif
 
@@ -66,7 +66,7 @@ bool THREADING_is_player_thread(void){
   return !THREADING_is_main_thread();
 }
 
-#if __cplusplus
+#ifdef __cplusplus
 static std::mutex g_player_lock;
 void PLAYER_lock(void){
   g_player_lock.lock();

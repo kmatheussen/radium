@@ -43,7 +43,7 @@ static inline void SMOOTH_print(const char *s, const Smooth *smooth){
   printf("%p: %s[0]: %f -> [%d]: %f. pos: %d. num_values: %d. smooth_length: %d\n",
          smooth,
          s,
-         smooth->values[0], RADIUM_BLOCKSIZE-1, smooth->values[RADIUM_BLOCKSIZE-1],
+         (double)smooth->values[0], RADIUM_BLOCKSIZE-1, (double)smooth->values[RADIUM_BLOCKSIZE-1],
          smooth->pos,
          64, //smooth->num_values,
          smooth->smooth_length);
@@ -52,7 +52,7 @@ static inline void SMOOTH_print(const char *s, const Smooth *smooth){
 // If this function returns true, we can call SMOOTH_force_target_value(smooth, 0.0) instead of SMOOTH_set_target_value(smooth, 0.0). I.e. no need to fade out.
 // 'peak' is usually the peak of last buffer, and the peak should have been generated from a buffer of at least 64 frames or something like that.
 static inline bool SMOOTH_peak_is_below_lowest_fade_value(float peak){
-  R_ASSERT_NON_RELEASE(peak>-0.0001);
+  R_ASSERT_NON_RELEASE(peak>-0.0001f);
 
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wfloat-equal"
@@ -74,7 +74,7 @@ typedef struct{
 static inline Panvals get_pan_vals_vector(float pan, int num_source_channels){
   Panvals p;
 
-  const float sqrt2              = 1.414213562373095;
+  const float sqrt2              = 1.414213562373095f;
   const float pan_scaleval       = 2.0f-(2*sqrt2);
 
   if(num_source_channels==1){

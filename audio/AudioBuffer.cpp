@@ -182,7 +182,7 @@ void RT_AUDIOBUFFER_get_channels(radium::AudioBufferChannel **channels, int num_
   }
 }
 
-#if TEST_AUDIOBUFFER
+#ifdef TEST_AUDIOBUFFER
 
 #include <assert.h>
 

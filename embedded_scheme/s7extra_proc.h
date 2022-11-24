@@ -1,6 +1,5 @@
 
-#ifndef _RADIUM_EMBEDDED_SCHEME_S7EXTRA_PROC_H
-#define _RADIUM_EMBEDDED_SCHEME_S7EXTRA_PROC_H
+#pragma once
 
 #define DEBUG_GC_PROTECT 0
 
@@ -623,7 +622,5 @@ namespace radium{
 
 #endif // QVECTOR_H
   
-
-#endif
 
 #endif

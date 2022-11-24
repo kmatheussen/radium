@@ -1,6 +1,5 @@
+#pragma once
 
-#ifndef _RADIUM_QT_GETQAPPLICATIONCONSTRUCTORARGS_HPP
-#define _RADIUM_QT_GETQAPPLICATIONCONSTRUCTORARGS_HPP
 
 static inline char **getQApplicationConstructorArgs(int &argc, char **argv){
   
@@ -30,5 +29,3 @@ static inline char **getQApplicationConstructorArgs(int &argc, char **argv){
 
 #endif
 }
-
-#endif

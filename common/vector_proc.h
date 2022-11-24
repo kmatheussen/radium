@@ -80,7 +80,13 @@ static inline int VECTOR_push_back_internal(vector_t *v, const void *element){
 
   const int num_elements = v->num_elements;
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wcast-qual"
+
   v->elements[num_elements] = (void*)element;
+
+#pragma clang diagnostic pop
+  
   v->num_elements = num_elements+1;
   
   return num_elements;
@@ -122,8 +128,13 @@ static inline void VECTOR_insert_internal(vector_t *v, const void *element, int 
     
     if(pos>0)
       memcpy(v->elements, old_elements, pos*(int)sizeof(void*));
-    
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wcast-qual"
+
     v->elements[pos] = (void*)element;
+
+#pragma clang diagnostic pop
     
     memcpy(&v->elements[pos+1], &old_elements[pos], sizeof(void*)*(num_elements - pos));
 
@@ -132,8 +143,13 @@ static inline void VECTOR_insert_internal(vector_t *v, const void *element, int 
   } else {
     
     memmove(&v->elements[pos+1], &v->elements[pos], sizeof(void*)*(num_elements - pos));
-    
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wcast-qual"
+
     v->elements[pos] = (void*)element;
+
+#pragma clang diagnostic pop
     
     v->num_elements = num_elements+1;
     
@@ -216,8 +232,13 @@ static void *g_sort_arg;
 
 static inline int VECTOR_sort_comp(const void *a, const void *b){
   void *arg = g_sort_arg;
+  
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wcast-qual"
   const struct SeqBlock *s1 = ((const struct SeqBlock **)a)[0];
   const struct SeqBlock *s2 = ((const struct SeqBlock **)b)[0];
+#pragma clang diagnostic pop
+  
   vector_sort_callback_t callback = (vector_sort_callback_t)arg;
   return callback(s1, s2);
 }
@@ -230,7 +251,7 @@ static inline void VECTOR_sort(vector_t *v, vector_sort_callback_t comp){
 
   g_sort_arg = (void*)comp;
   
-  qsort(v->elements, v->num_elements, sizeof(void*), VECTOR_sort_comp);
+  qsort(v->elements, (size_t)v->num_elements, sizeof(void*), VECTOR_sort_comp);
 }
 
 // Might be more efficient if there's a good chance v is sorted already, depending on the implementation of qsort.

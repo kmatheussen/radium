@@ -37,7 +37,7 @@ char *OS_get_config_filename(void){
   return talloc_format("%s/.radium/config",getenv("HOME"));
 #endif // __linux__
 
-#if FOR_WINDOWS
+#ifdef FOR_WINDOWS
   return talloc_strdup("config");
 #endif
 }

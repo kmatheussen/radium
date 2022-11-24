@@ -30,7 +30,7 @@ S7WebServer::S7WebServer(s7_scheme *s7, int portnumber)
   connect(server, SIGNAL(newRequest(QHttpRequest*, QHttpResponse*)),
           this, SLOT(handleRequest(QHttpRequest*, QHttpResponse*)));
   
-  has_started = server->listen(QHostAddress::Any, portnumber);
+  has_started = server->listen(QHostAddress::Any, (quint16)portnumber);
 }
 
 

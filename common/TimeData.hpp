@@ -285,6 +285,9 @@ struct RT_TimeData_Cache_Handler{
 template <typename ValType>
 class IterateCallback {
 public:
+
+  virtual ~IterateCallback(){
+  }
   
   virtual void callback(struct SeqTrack *seqtrack,
                         const struct SeqBlock *seqblock,
@@ -787,7 +790,7 @@ private:
 
     SeqBlockT *get_player_cache(void) const {
       return _cache_num < 0 ? NULL : &_time_data->_player_caches[_cache_num];
-    };
+    }
 
     // Same as calling get_value, sort of, but also makes sure all values positioned at nodes inside 'period' are sent out.
     template <typename ValType>
@@ -923,7 +926,7 @@ private:
       
           value = node.get_val();
       
-          FX_when when = _curr_pos == das_size-1 ? FX_end : FX_middle;
+          when = (_curr_pos == das_size-1) ? FX_end : FX_middle;
 
           int64_t time = get_seqblock_ratio_time2(seqblock, track, node.get_time());
           //printf("....2. %d: %f. When: %d. _curr_pos: %d\n", (int)value, (double)value, (int) when, _curr_pos);

@@ -1,6 +1,5 @@
 
-#ifndef _RADIUM_API_API_REQUESTERS_PROC_H
-#define _RADIUM_API_API_REQUESTERS_PROC_H
+#pragma once
 
 extern LANGSPEC void closeRequester(void);
 
@@ -9,5 +8,3 @@ int64_t API_simplePopupMenu(const char *texts, std::function<void(int,bool)> cal
 #endif
 
 extern LANGSPEC void API_call_me_when_a_popup_menu_has_been_closed(void);
-
-#endif

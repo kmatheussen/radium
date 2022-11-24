@@ -182,7 +182,7 @@ static void HandlePreset(radium::MidiOutputPort *midi_port,
                             MSB
                             );
         
-        midi_port->_MSB[channel] = MSB;
+        midi_port->_MSB[channel] = (char)MSB;
       }
 
       MIDI_OS_sendMessage(midi_port->_os_port,
@@ -191,7 +191,7 @@ static void HandlePreset(radium::MidiOutputPort *midi_port,
                           LSB
                           );
 
-      midi_port->_LSB[channel] = LSB;
+      midi_port->_LSB[channel] = (char)LSB;
 
       set_preset = true;
 
@@ -209,7 +209,7 @@ static void HandlePreset(radium::MidiOutputPort *midi_port,
                           0
                           );
       
-      midi_port->_preset[channel] = preset;
+      midi_port->_preset[channel] = (char)preset;
 
     }
 }

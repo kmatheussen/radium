@@ -2,7 +2,7 @@
 #ifndef _RADIUM_COMMON_SWING_PROC_H
 #define _RADIUM_COMMON_SWING_PROC_H
 
-#if USE_QT4
+#ifdef USE_QT4
 QVector<Swing*> Swings_get(const struct WBlocks *wblock, const struct Tracks *track, int realline);
 #endif
 

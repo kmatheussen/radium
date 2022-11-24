@@ -1,6 +1,12 @@
 
 // Must always be included first.
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wreserved-id-macro"
+#pragma clang diagnostic ignored "-Wpadded"
+#pragma clang diagnostic ignored "-Wc++98-compat-pedantic"
+
+
 #ifdef _POSIX_C_SOURCE
 #  undef _POSIX_C_SOURCE
 #endif
@@ -13,14 +19,17 @@
 #endif
 #endif
 
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include <Python.h>
-
-#define RADIUM_PYTHON_IS_DEFINED 1
   
+#pragma clang diagnostic pop
+  
+#define RADIUM_PYTHON_IS_DEFINED 1
+
 #ifdef __cplusplus
 }
 #endif

@@ -604,7 +604,6 @@ const vector_t *GetPitchNodes2(const struct Tracker_Windows *window, const struc
                              wblock->t.y1);
 }
 
-
 const struct NodeLine2 *GetPitchNodeLines3(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const r::Note *note, const float track_pitch_min, const float track_pitch_max, const r::PitchTimeData::Reader &reader){
     
   double track_notearea_x1 = wtrack->notearea.x;

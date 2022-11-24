@@ -573,12 +573,12 @@ socket_type_t GTK_CreateVisual(socket_type_t socket_id){
 
 // Only used for windows
 void GTK_SetPlugSize(int width, int height){
-#if FOR_WINDOWS
+#ifdef FOR_WINDOWS
   gtk_window_resize((GtkWindow*)plug,width,height);
   MoveWindow(GDK_WINDOW_HWND(plug->window), 0, 0, width, height, true);
   SetFocus(GDK_WINDOW_HWND(plug->window));
 #endif
-#if FOR_MACOSX
+#ifdef FOR_MACOSX
   gtk_window_resize((GtkWindow*)plug,width,height);
   cocoa_set_nsview_size(plug->window,width,height);
 #endif
@@ -690,7 +690,7 @@ void GTK_SetSize(int width, int height){
                      0,0,
                      width,height);
 
-#if FOR_WINDOWS
+#ifdef FOR_WINDOWS
   SetFocus(GDK_WINDOW_HWND(plug->window));
 #endif
 }
@@ -1235,7 +1235,7 @@ void GTK_Init(int argc, char **argv){
 
 #if USE_GTK_VISUAL
 
-#  if FOR_WINDOWS
+#  ifdef FOR_WINDOWS
   const int timeout = 20;
 #  endif
 

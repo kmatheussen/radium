@@ -67,7 +67,7 @@ extern LANGSPEC void HASH_put_place(hash_t *hash, const char *key, const Place p
 extern LANGSPEC void HASH_put_hash(hash_t *hash, const char *key, hash_t *val);
 extern LANGSPEC void HASH_put_array(hash_t *hash, const char *key, const dynvec_t dynvec);
 
-#if USE_QT4
+#ifdef USE_QT4
 static inline void HASH_put_string(hash_t *hash, const char *key, const QString &val){
   HASH_put_string(hash, key, STRING_create(val));
 }
@@ -90,10 +90,40 @@ extern LANGSPEC Place HASH_get_place(hash_t *hash, const char *key);
 extern LANGSPEC hash_t *HASH_get_hash(const hash_t *hash, const char *key);
 extern LANGSPEC double HASH_get_number(const hash_t *hash, const char *key); // Same as HASH_get_float, but if element is an integer, convert integer to double and return value.
 extern LANGSPEC dynvec_t HASH_get_array(const hash_t *hash, const char *key);
-static inline int HASH_get_int32(const hash_t *hash, const char *key){
-  return (int)HASH_get_int(hash, key);
+
+static inline uint32_t HASH_get_uint32(const hash_t *hash, const char *key){
+  int64_t ret = HASH_get_int(hash, key);
+  
+  R_ASSERT(ret <= UINT32_MAX && ret >= 0);
+  
+  return (uint32_t)ret;
 }
-#if USE_QT4
+
+static inline int32_t HASH_get_int32(const hash_t *hash, const char *key){
+   int64_t ret = HASH_get_int(hash, key);
+
+   R_ASSERT(ret <= INT32_MAX && ret >= INT32_MIN);
+   
+   return (int32_t)ret;
+}
+
+static inline int8_t HASH_get_int8(const hash_t *hash, const char *key){
+  int64_t ret = HASH_get_int(hash, key);
+
+  R_ASSERT(ret <= INT8_MAX && ret >= INT8_MIN);
+  
+  return (int8_t)ret;
+}
+
+static inline uint8_t HASH_get_uint8(const hash_t *hash, const char *key){
+  int64_t ret = HASH_get_int(hash, key);
+
+  R_ASSERT(ret <= UINT8_MAX && ret >= 0);
+  
+  return (uint8_t)ret;
+}
+
+#ifdef USE_QT4
 static inline QString HASH_get_qstring(const hash_t *hash, const char *key){
   return STRING_get_qstring(HASH_get_string(hash, key));
 }

@@ -242,7 +242,7 @@ float getYFromPlace(Place place, int blocknum, int windownum) {
 static double get_gridded_abs_y(struct Tracker_Windows *window, float abs_y){
   double grid = (double)root->grid_numerator / (double)root->grid_denominator;
 
-  float abs_realline = abs_y / window->fontheight;
+  double abs_realline = (double)abs_y / window->fontheight;
   
   double rounded = round(abs_realline / grid);
     
@@ -270,7 +270,7 @@ Place getPlaceInGridFromY(float y, int blocknum, int windownum) {
 static double get_next_gridded_abs_y(struct Tracker_Windows *window, float abs_y){
   double grid = (double)root->grid_numerator / (double)root->grid_denominator;
 
-  float abs_realline = abs_y / window->fontheight;
+  double abs_realline = (double)abs_y / window->fontheight;
   
   double rounded = round(abs_realline / grid) + 1.0;
     
@@ -354,7 +354,7 @@ int getReallineFromY(float y, int blocknum, int windownum){
   if (wblock==NULL)
     return 0;
 
-  return ( (y-wblock->t.y1) /(float)window->fontheight) + wblock->top_realline;
+  return int( (y-wblock->t.y1) / (float)window->fontheight) + wblock->top_realline;
 }
 
 int getTopRealline(int blocknum, int windownum){
@@ -396,7 +396,7 @@ float getReltempoSliderY2(void){
 double getReltempo(int blocknum, int windownum){
   struct WBlocks *wblock = getWBlockFromNum(windownum, blocknum);
   if (wblock==NULL)
-    return 0.0f;
+    return 0.0;
   else
     return ATOMIC_DOUBLE_GET(wblock->block->reltempo);
 }
@@ -417,9 +417,9 @@ void setReltempo(double reltempo, int blocknum, int windownum){
     return;
   
   double new_reltempo = R_BOUNDARIES(
-    MINBLOCKRELTIME,
-    reltempo,
-    MAXBLOCKRELTIME
+                                     (double)MINBLOCKRELTIME,
+                                     reltempo,
+                                     (double)MAXBLOCKRELTIME
   );
   
   ATOMIC_DOUBLE_SET(wblock->block->reltempo, new_reltempo);
@@ -505,7 +505,7 @@ void setTrackSliderPos(float pos, int blocknum, int windownum){
   if(wblock==NULL)
     return;
 
-  int visible_width = getTrackSliderX2(blocknum, windownum) - getTrackSliderX1(blocknum, windownum);
+  int visible_width = (int)floor(getTrackSliderX2(blocknum, windownum) - getTrackSliderX1(blocknum, windownum));
   int total_width = WTRACKS_getWidth(window, wblock);
   //printf("      total_width: %d\n", total_width);
   
@@ -515,7 +515,7 @@ void setTrackSliderPos(float pos, int blocknum, int windownum){
     return;
   }
 
-  wblock->skew_x = scale(pos, 0, 1, 0, -total_width);
+  wblock->skew_x = (int)scale(pos, 0, 1, 0, -total_width);
   if (wblock->skew_x > 0)
     wblock->skew_x = 0;
 
@@ -1317,6 +1317,7 @@ static float get_pianonote_info(enum PianoNoteWhatToGet what_to_get, int pianono
     return box.x2;
   case PIANONOTE_INFO_Y2:
     return wblock->t.y1 + box.y2 - get_scroll_pos();
+  case PIANONOTE_INFO_VALUE:
   default:
     handleError("Internal error");
     return 0;

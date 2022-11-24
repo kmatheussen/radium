@@ -121,6 +121,9 @@ public:
       _mytimer_timer.start();
   }
 
+  virtual ~Timer(){
+  }
+  
   bool is_running(void) const {
     return _mytimer_timer.isActive();
   }

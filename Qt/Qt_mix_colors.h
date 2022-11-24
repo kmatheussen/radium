@@ -21,35 +21,35 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QColor>
 
-static inline QColor mix_colors(const QColor &c1, const QColor &c2, float how_much){
+static inline QColor mix_colors(const QColor &c1, const QColor &c2, double how_much){
 
-  float a1 = how_much;
-  float a2 = 1.0f-a1;
+  double a1 = how_much;
+  double a2 = 1.0-a1;
 
-  float red1 = c1.redF();
-  float green1 = c1.greenF();
-  float blue1 = c1.blueF();
-  float alpha1 = c1.alphaF();
+  double red1 = c1.redF();
+  double green1 = c1.greenF();
+  double blue1 = c1.blueF();
+  double alpha1 = c1.alphaF();
 
-  float red2 = c2.redF();
-  float green2 = c2.greenF();
-  float blue2 = c2.blueF();
-  float alpha2 = c2.alphaF();
+  double red2 = c2.redF();
+  double green2 = c2.greenF();
+  double blue2 = c2.blueF();
+  double alpha2 = c2.alphaF();
 
-  float a = a1 * alpha1 + a2 * alpha2;
+  double a = a1 * alpha1 + a2 * alpha2;
 
   if(c1.red()==0 && c1.green()==0 && c1.blue()==0){ // some of the black lines doesn't look look very good.
     
-    float r = 0.3*a1 + c2.red()*a2;
-    float g = 0.3*a1 + c2.green()*a2;
-    float b = 0.3*a1 + c2.blue()*a2;
+    double r = 0.3*a1 + c2.red()*a2;
+    double g = 0.3*a1 + c2.green()*a2;
+    double b = 0.3*a1 + c2.blue()*a2;
     return QColor::fromRgbF(r,g,b,a);
     
   }else{
 
-    float r = sqrtf(red1*red1*a1 + red2*red2*a2);
-    float g = sqrtf(green1*green1*a1 + green2*green2*a2);
-    float b = sqrtf(blue1*blue1*a1 + blue2*blue2*a2);
+    double r = sqrt(red1*red1*a1 + red2*red2*a2);
+    double g = sqrt(green1*green1*a1 + green2*green2*a2);
+    double b = sqrt(blue1*blue1*a1 + blue2*blue2*a2);
 
     return QColor::fromRgbF(r,g,b,a);
   }

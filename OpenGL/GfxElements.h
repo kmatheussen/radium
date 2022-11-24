@@ -88,7 +88,7 @@ static inline GE_Rgb GE_rgba(unsigned char r, unsigned char g, unsigned char b, 
 GE_Rgb GE_mix(const GE_Rgb c1, const GE_Rgb c2, float how_much);
 static inline GE_Rgb GE_alpha(const GE_Rgb c, float alpha){
   GE_Rgb ret = c;
-  ret.a = alpha*255.0f;  
+  ret.a = (unsigned char)(alpha*255.0f);
   return ret;
 }
 
@@ -294,7 +294,7 @@ void GE_trianglestrip_start(void);
 void GE_trianglestrip_add(GE_Context *c, float x, float y);
 void GE_trianglestrip_end(GE_Context *c);
 
-#if __cplusplus
+#ifdef __cplusplus
 namespace{
   class GE_ScopedTrianglestrip{
 

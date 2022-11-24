@@ -53,7 +53,7 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
     for(auto *element : list){
 
 #if USE_QT5
-#if FOR_WINDOWS // Why can't qt make widgets look the same on all platform?
+#ifdef FOR_WINDOWS // Why can't qt make widgets look the same on all platform?
       QHBoxLayout *h = dynamic_cast<QHBoxLayout*>(element);
       if (h != NULL)
         h->setSpacing(0);
@@ -83,7 +83,7 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
     setupUi(this);
 
 #ifdef USE_QT5
-#if FOR_WINDOWS // %!$%!#$
+#ifdef FOR_WINDOWS // %!$%!#$
     main_vertical_layout->setSpacing(3);
 #endif
 #endif

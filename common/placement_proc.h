@@ -36,8 +36,8 @@ static inline Place p_Create(int line, int counter, int dividor) {
 
   Place place;
   place.line = line;
-  place.counter = counter;
-  place.dividor = dividor;
+  place.counter = (uint32_t)counter;
+  place.dividor = (uint32_t)dividor;
   return place;
 }
 
@@ -90,7 +90,7 @@ static inline Place place_from_64(int64_t line, int64_t num, int64_t den){
   Place ret;
   
   if (den > MAX_UINT32) {
-    int counter = scale_double(num, 0, den, 0, MAX_UINT32);
+    int counter = (int)scale_double((double)num, 0, (double)den, 0, MAX_UINT32);
     int dividor = MAX_UINT32;
 
     if (counter >= dividor)
@@ -228,12 +228,12 @@ static inline void Double2Placement(double f,Place *p){
   p->line = (int)f;
   f -= p->line;
 
-  p->counter = f * MAX_UINT32;
+  p->counter = (uint32_t)(f * MAX_UINT32);
   p->dividor = MAX_UINT32;
 }
 
 static inline void Float2Placement(float f,Place *p){
-  Double2Placement(f,p);
+  Double2Placement((double)f,p);
 }
 
 static inline Place *PlaceCreate2(float f){
@@ -463,7 +463,7 @@ static inline void TrustedPlaceSub(const Place *p1,  const Place *p2, Place *res
   int64_t counter = counter1-counter2;
   R_ASSERT(counter < INT_MAX);
     
-  result->counter = (int)counter;
+  result->counter = (uint32_t)counter;
 
   // todo: 
 }

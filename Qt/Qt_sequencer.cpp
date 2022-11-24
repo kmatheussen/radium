@@ -2326,7 +2326,10 @@ struct LightWidget{
 
   QRectF t_rect;
   QRect t_rect_aligned;
-  
+
+  virtual ~LightWidget(){
+  }
+    
   virtual void position_widgets(double x1, double y1, double x2, double y2){
     t_x1 = x1;
     t_y1 = y1;
@@ -2362,6 +2365,9 @@ public:
   {
   }
 
+  virtual ~Seqtracks_widget(){
+  }
+  
   void set_seqblocks_is_selected(const QRect &selection_rect){
     VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
       Seqblocks_widget seqblocks_widget = get_seqblocks_widget(iterator666, false);

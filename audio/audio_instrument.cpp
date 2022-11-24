@@ -1327,7 +1327,7 @@ hash_t *AUDIO_get_audio_patch_state(const struct Patch *patch){
    * If changing the state format, the 'state_only_contains_plugin' function above must be updated. (test by adding instrument and undo + redo)
    *
   */
-#if !RELEASE
+#if !defined(RELEASE)
   if (CHIP_get_pos_x(patch) < -80000 || CHIP_get_pos_y(patch) < -80000)
     abort();
 #endif

@@ -1,5 +1,4 @@
-#ifndef _RADIUM_COMMON_RATIO_TYPE_H
-#define _RADIUM_COMMON_RATIO_TYPE_H
+#pragma once
 
 typedef struct {
   int64_t num;
@@ -32,7 +31,9 @@ typedef struct {
 } StaticRatio;
 
 
-#if !defined(R_ASSERT_NON_RELEASE)
+#if defined(R_ASSERT_NON_RELEASE)
+#  define CUSTOM_R_ASSERT 0
+#else
 #  define CUSTOM_R_ASSERT 1
 #  define R_ASSERT_NON_RELEASE(a)
 #endif
@@ -205,8 +206,3 @@ extern QString STATIC_RATIO_as_qstring(const StaticRatio ratio);
 #if CUSTOM_R_ASSERT
 #  undef R_ASSERT_NON_RELEASE
 #endif
-
-
-
-#endif
-

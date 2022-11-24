@@ -41,12 +41,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #    if USE_QT3
 #      include "qtxembed-1.3-free/src/qtxembed.h"
 #    endif
-#    if USE_QT4
+#    ifdef USE_QT4
 #      include <QX11EmbedContainer>
 #      define EditorWidgetParent QX11EmbedContainer
 #    endif
 #  else
-#    if FOR_MACOSX
+#    ifdef FOR_MACOSX
 //#      include  <QMacNativeWidget>
 //#      define EditorWidgetParent QMacNativeWidget 
 #      define EditorWidgetParent QWidget
@@ -126,7 +126,7 @@ bool g_user_interaction_enabled = true;
 
 #if USE_GTK_VISUAL
 
-#if FOR_WINDOWS
+#ifdef FOR_WINDOWS
 static bool sat=false;
 #endif
 
@@ -149,7 +149,7 @@ public:
     EditorWidgetParent::paintEvent(e);
 
 #if 1
-#if FOR_WINDOWS
+#ifdef FOR_WINDOWS
     if(gtk_hwnd!=NULL && sat==false){
       //SetParent((HWND)gtk_hwnd,(HWND)g_embed_container->nativeParentWidget());
       SetParent((HWND)gtk_hwnd,g_embed_container->winId());
@@ -244,7 +244,7 @@ EditorWidget::EditorWidget(QWidget *parent, const char *name )
 #endif
 
 #if __linux__
-#if USE_QT4
+#ifdef USE_QT4
     g_embed_container->show();
     if(0) //getenv("KDE_FULL_SESSION")!=NULL)
       g_embed_container->embedClient(GTK_CreateVisual(g_embed_container->winId()));
@@ -253,14 +253,14 @@ EditorWidget::EditorWidget(QWidget *parent, const char *name )
 #endif
 #endif
 
-#if FOR_WINDOWS
+#ifdef FOR_WINDOWS
     gtk_hwnd = (HWND)GTK_CreateVisual(g_embed_container->winId());
     //gtk_hwnd = (HWND)GTK_CreateVisual(g_embed_container->nativeParentWidget());
     //gtk_hwnd = (HWND)GTK_CreateVisual(g_embed_container->effectiveWinId());
     g_embed_container->show();
 #endif
 
-#if FOR_MACOSX
+#ifdef FOR_MACOSX
     //g_embed_container->show();
     //g_embed_container->show();
     GTK_CreateVisual((void*)g_embed_container->winId());
@@ -283,7 +283,7 @@ EditorWidget::EditorWidget(QWidget *parent, const char *name )
 #endif
 
 #if 1
-#if FOR_WINDOWS
+#ifdef FOR_WINDOWS
     g_embed_container->show();
     //SetParent((HWND)gtk_hwnd,g_embed_container->winId());
     //SetParent((HWND)gtk_hwnd,g_embed_container->effectiveWinId());
@@ -486,7 +486,7 @@ class MyQMainWindow : public QWidget{
 public:
   MyQMainWindow(){
     setAcceptDrops(true);
-#if FOR_MACOSX
+#ifdef FOR_MACOSX
     setWindowFlags(windowFlags () | Qt::WindowFullscreenButtonHint); // F11 doesn't work in sierra. Setting this flag probably doesn't work though.
 #endif
     raise();
@@ -710,7 +710,7 @@ void SetupMainWindow(void){
 
   
 #if 0
-#if FOR_MACOSX
+#ifdef FOR_MACOSX
   //qt_mac_set_native_menubar(false);
   //menubar->show();
   main_window->setMenuBar(menubar);

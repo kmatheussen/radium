@@ -116,7 +116,7 @@ public:
     _process->setProcessEnvironment(env);
 #endif
 
-#if FOR_WINDOWS
+#ifdef FOR_WINDOWS
     _process->start("\"" + program + "\"", args); // The surrounding """"  are necessary if path contains spaces.
 #else
     _process->start(program, args);

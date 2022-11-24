@@ -1,5 +1,6 @@
-#ifndef _RADIUM_QT_KEYBOARDFOCUS_FRAME_HPP
-#define _RADIUM_QT_KEYBOARDFOCUS_FRAME_HPP 1
+
+#pragma once
+
 
 #include <QFrame>
 #include <QVBoxLayout>
@@ -182,5 +183,3 @@ struct KeyboardFocusFrame : public QFrame{
 };
 
 }
-
-#endif

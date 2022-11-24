@@ -27,7 +27,7 @@ enum ValueType{
 };
 */
 
-#if USE_QT4
+#ifdef USE_QT4
 #include "../common/threading.h"
 
 namespace radium{
@@ -166,7 +166,7 @@ extern LANGSPEC float PLUGIN_get_effect_value(struct SoundPlugin *plugin,
 
 extern LANGSPEC void PLUGIN_recreate_from_state(SoundPlugin *plugin, hash_t *state, bool is_loading);
 
-#if USE_QT4
+#ifdef USE_QT4
 extern bool PLUGIN_apply_ab_state(SoundPlugin *plugin, hash_t *new_state, hash_t *old_state, radium::Scheduled_RT_functions &rt_functions, radium::SoloChanges &solo_changes);
 #endif
 

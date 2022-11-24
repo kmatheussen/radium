@@ -30,10 +30,10 @@ enum class AllocatorType{
 template <typename T>
 static inline constexpr int find_vector_preallocate_size(const int max_size){
   
-  int ret = sizeof(T);
+  int ret = (int)sizeof(T);
   
   for(;;){
-    int maybe = ret + sizeof(T);
+    int maybe = ret + (int)sizeof(T);
     if (maybe > max_size)
       return ret;
     else
@@ -112,8 +112,8 @@ public:
   Vector() {
     LOCKASSERTER_EXCLUSIVE_NON_RELEASE(&_lockAsserter);
 
-    constexpr int num_preallocated_elements = sizeof(_pre_allocated_memory) / sizeof(T);
-    static_assert(num_preallocated_elements==std::max(1, int(PREALLOCATED_SIZE / sizeof(T))), "?");
+    constexpr int num_preallocated_elements = (int)sizeof(_pre_allocated_memory) / (int)sizeof(T);
+    static_assert(num_preallocated_elements==std::max(1, int(PREALLOCATED_SIZE / (int)sizeof(T))), "?");
 
     _num_elements_max = num_preallocated_elements;
 
@@ -130,8 +130,8 @@ public:
 
       int size = vector->size();
 
-      constexpr int num_preallocated_elements = sizeof(_pre_allocated_memory) / sizeof(T);
-      static_assert(num_preallocated_elements==std::max(1, int(PREALLOCATED_SIZE / sizeof(T))), "?");
+      constexpr int num_preallocated_elements = (int)sizeof(_pre_allocated_memory) / (int)sizeof(T);
+      static_assert(num_preallocated_elements==std::max(1, int(PREALLOCATED_SIZE / (int)sizeof(T))), "?");
 
       if (size > num_preallocated_elements) {
         
@@ -143,7 +143,7 @@ public:
         } else {
           
           _num_elements_max = vector->_num_elements_max;
-          _elements = (T*)V_calloc(_num_elements_max, sizeof(T));
+          _elements = (T*)V_calloc((size_t)_num_elements_max, sizeof(T));
           
         }
       }
@@ -345,7 +345,7 @@ private:
     if (ALLOCATOR_TYPE == AllocatorType::RT)
       new_elements = RT_alloc_raw2<T>(new_num_elements_max, new_num_elements_max, "Vector.hpp");
     else
-      new_elements = (T*) V_calloc(sizeof(T), new_num_elements_max);
+      new_elements = (T*) V_calloc(sizeof(T), (size_t)new_num_elements_max);
     
     int size = _num_elements.get();
 
@@ -450,7 +450,7 @@ private:
         
         if (std::is_trivially_copyable<T>::value) {
 
-          memmove((void*)&_elements[pos], (void*)&_elements[pos+1], (old_last_pos - pos) * sizeof(T));
+          memmove((void*)&_elements[pos], (void*)&_elements[pos+1], (size_t)(old_last_pos - pos) * sizeof(T));
           
         } else {
           

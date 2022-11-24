@@ -20,7 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 // why doesn't LANGSPEC work here?
 extern LANGSPEC int SYSTEM_show_error_message(const char *message); // Used before and after Qt is running
 
-#if __cplusplus
+#ifdef __cplusplus
 extern int SYSTEM_show_message_menu(const struct vector_t_ *options, const char *message, int ms_timeout = 20000); // Used when it's not safe, or possible, to run qt exec. Note that it might return -1.
 #endif
 

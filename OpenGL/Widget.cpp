@@ -31,12 +31,20 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <math.h>
 #include <stdio.h>
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wundef"
+#pragma clang diagnostic ignored "-Wnon-virtual-dtor"
+#pragma clang diagnostic ignored "-Wimplicit-int-conversion"
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
 #include <vlCore/VisualizationLibrary.hpp>
 #include <vlVG/VectorGraphics.hpp>
 #include <vlGraphics/Rendering.hpp>
 #pragma GCC diagnostic pop
+
+#pragma clang diagnostic pop
+
 
 /*
   Note: !THREADED_OPENGL should compile and run (at least without too many modifications), but it hasn't been tested much.
@@ -248,7 +256,7 @@ SUMMARY: AddressSanitizer: new-delete-type-mismatch ../../.././libsanitizer/asan
 */
 
 
-#if FOR_LINUX
+#ifdef FOR_LINUX
 static int set_pthread_priority(pthread_t pthread,int policy,int priority,const char *message,const char *name){
   struct sched_param par={};
   par.sched_priority=priority;
@@ -999,7 +1007,7 @@ public:
     //printf("FLAGS: %d\n",QGLFormat::openGLVersionFlags());
     //gets(NULL);
 
-#if FOR_LINUX
+#ifdef FOR_LINUX
     if(0)set_realtime(SCHED_FIFO,1); // TODO: Add priority inheritance to all locks. Setting the OpenGL thread to a higher priority might not make a difference because of priority inversion.
 #endif
   }
@@ -1940,7 +1948,7 @@ public:
     }
 #endif
 
-#if FOR_MACOSX
+#ifdef FOR_MACOSX
     if (maybe_dont_swap_right_now()) // Have to do this before doing anything on OSX to avoid crash.
       return;
 #endif
@@ -2166,7 +2174,7 @@ public:
     //
     // For each time this variable is decremented, we also wait 15ms, so spent_time(10) is effectively between 15ms*10 and 30ms*10 = 150-300ms. (on OSX the value is much much closer to 150ms than 300ms)
 
-#if FOR_MACOSX
+#ifdef FOR_MACOSX
     _dont_swap_right_now_downcount = 10;
 #else
     _dont_swap_right_now_downcount = 10;
@@ -2687,7 +2695,7 @@ static void init_widget2(void){
 
 #endif
 
-#if FOR_LINUX
+#ifdef FOR_LINUX
 
     if (s_renderer.contains("Gallium") && s_renderer.contains("AMD")) {
       if (SETTINGS_read_bool("show_gallium_gfx_message_during_startup", true)) {
@@ -2734,7 +2742,7 @@ static void init_widget2(void){
 #endif
     
 
-#if FOR_LINUX
+#ifdef FOR_LINUX
     if (s_vendor.contains("nouveau", Qt::CaseInsensitive)) {
       GFX_Message(NULL,
                   "Warning!"
@@ -2757,7 +2765,7 @@ static void init_widget2(void){
     }
 #endif
 
-#if FOR_LINUX
+#ifdef FOR_LINUX
     if (s_vendor.contains("Intel")) {      
       if (SETTINGS_read_bool("show_intel_gfx_message2_during_startup", true)) {
         vector_t v = {};
@@ -2959,7 +2967,7 @@ bool GL_check_compatibility(void){
     return false;
   }
 
-#if !RADIUM_USES_TSAN
+#if !defined(RADIUM_USES_TSAN)
   if (CHECKOPENGL_checkit()==true)
     return false;
 #endif

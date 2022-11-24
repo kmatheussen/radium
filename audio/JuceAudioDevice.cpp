@@ -426,7 +426,7 @@ public:
     */
 
 #if !KEEP_PREFS_WINDOW_ON_TOP_REGULARLY
-#if FOR_WINDOWS
+#ifdef FOR_WINDOWS
     {
       void *parent = API_get_native_gui_handle(-1);
       if (parent != NULL)

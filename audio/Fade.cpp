@@ -11,14 +11,14 @@
 
 #include "Fade.hpp"
 
-#if BENCHMARK_SMOOTHDELAY
+#ifdef BENCHMARK_SMOOTHDELAY
 extern double g_fade_benchmark_time;
 #endif
 
 namespace radium{
 
 void Fade::RT_fade(const int num_frames, float *__restrict__ data, const float *__restrict in, bool add){
-#if BENCHMARK_SMOOTHDELAY
+#ifdef BENCHMARK_SMOOTHDELAY
     const double time = TIME_get_ms();
 #endif
 
@@ -86,7 +86,7 @@ void Fade::RT_fade(const int num_frames, float *__restrict__ data, const float *
       _fade_mul += d_fade_span;
     }
 
-#if BENCHMARK_SMOOTHDELAY
+#ifdef BENCHMARK_SMOOTHDELAY
     g_fade_benchmark_time += TIME_get_ms()-time;
 #endif
 

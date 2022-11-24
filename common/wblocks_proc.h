@@ -14,25 +14,25 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-#ifndef _RADIUM_COMMON_WBLOCKS_PROC_H
-#define _RADIUM_COMMON_WBLOCKS_PROC_H
+#pragma once
+
 
 static inline float get_scrollbar_x1(const struct Tracker_Windows *window){
-  return 0.0;
+  return 0.0f;
 }
 
 // Returns y coordinate for the opengl widget, not the editor widget.
 static inline float get_scrollbar_y1(const struct Tracker_Windows *window, const struct WBlocks *wblock){
-  return 2.0;
+  return 2.0f;
 }
 
 static inline float get_scrollbar_x2(const struct Tracker_Windows *window){
-  return window->leftslider.width;
+  return (float)window->leftslider.width;
 }
 
 // Returns y coordinate for the opengl widget, not the editor widget.
 static inline float get_scrollbar_y2(const struct Tracker_Windows *window, const struct WBlocks *wblock){
-  return wblock->t.y2 - wblock->t.y1;
+  return (float)(wblock->t.y2 - wblock->t.y1);
 }
 
 // Is also called from the OpenGL thread, where we don't have access to a Tracker_Windows instance.
@@ -40,7 +40,7 @@ static inline float get_scrollbar_y2(const struct Tracker_Windows *window, const
 static inline float get_scrollbar_scroller_y1(float realline, float num_reallines, float scrollbar_height, float scrollbar_scroller_height){
   return scale(realline,
                0, num_reallines,
-               2.5, (scrollbar_height - scrollbar_scroller_height)
+               2.5f, (scrollbar_height - scrollbar_scroller_height)
                );
 }
 
@@ -94,5 +94,3 @@ extern LANGSPEC void UpdateWBlocks(struct Tracker_Windows *window);
 extern LANGSPEC struct Blocks *AppendWBlock(struct Tracker_Windows *window);
 
 extern LANGSPEC void AppendWBlock_spes(struct Tracker_Windows *window,int num_lines,NInt num_tracks);
-
-#endif

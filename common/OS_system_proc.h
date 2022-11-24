@@ -1,7 +1,7 @@
 // operating system system
 
-#ifndef _RADIUM_COMMON_OS_SYSTEM_PROC_H
-#define _RADIUM_COMMON_OS_SYSTEM_PROC_H
+#pragma once
+
 
 extern LANGSPEC void OS_OSX_show_icon_in_dock(void);
 
@@ -82,5 +82,3 @@ extern LANGSPEC uint32_t OS_SYSTEM_add_mouse_keyswitches(uint32_t keyswitch);
   
 //extern LANGSPEC bool OS_SYSTEM_KeyboardFilter(void *focused_widget, void *event);
 extern LANGSPEC void OS_SYSTEM_ResetKeysUpDowns(void);
-
-#endif

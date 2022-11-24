@@ -20,6 +20,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern LANGSPEC void LegalizeFXlines(struct Blocks *block, struct Tracks *track);
 
-#if __cplusplus
+#ifdef __cplusplus
 [[nodiscard]] bool LegalizeFXlines2(int num_lines, const struct FX *fx, r::FXTimeData::Writer &writer);
 #endif

@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-#ifndef _RADIUM_COMMON_WTRACKS_PROC_H
-#define _RADIUM_COMMON_WTRACKS_PROC_H
+#pragma once
+
 
 static inline int WTRACK_fxtext_track_width(const int fontwidth){
   return (3 * fontwidth) + 2;
@@ -177,5 +177,3 @@ static inline const struct WTracks *get_first_not_visible_wtrack(const struct WB
   const struct WTracks *_____end_wtrack = get_first_not_visible_wtrack(wblock, wtrack); \
   for( ; wtrack != _____end_wtrack ; wtrack = NextWTrack(wtrack))
 
-
-#endif

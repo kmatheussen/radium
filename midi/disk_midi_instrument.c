@@ -68,14 +68,14 @@ void MIDI_apply_state_to_patchdata(void *pd, const hash_t *state){
   patchdata->midi_port = MIDIgetPort(NULL,NULL,NULL,clustername,false);
 
   patchdata->channel = HASH_get_int(state, "channel");
-  patchdata->preset = HASH_get_int(state, "preset");
-  patchdata->LSB = HASH_get_int(state, "LSB");
-  patchdata->MSB = HASH_get_int(state, "MSB");
+  patchdata->preset = HASH_get_uint8(state, "preset");
+  patchdata->LSB = HASH_get_uint8(state, "LSB");
+  patchdata->MSB = HASH_get_uint8(state, "MSB");
 
   patchdata->volumeonoff = HASH_get_bool(state, "volumeonoff");
-  patchdata->volume = HASH_get_int(state, "volume");
+  patchdata->volume = HASH_get_int8(state, "volume");
   patchdata->panonoff = HASH_get_bool(state, "panonoff");
-  patchdata->pan = HASH_get_int(state, "pan");
+  patchdata->pan = HASH_get_int8(state, "pan");
 
   const dynvec_t *vec = HASH_get_dyn(state, "controlchange").array;
   
@@ -84,8 +84,8 @@ void MIDI_apply_state_to_patchdata(void *pd, const hash_t *state){
     
     patchdata->ccnames[num] = HASH_get_chars(cc, "name");
     patchdata->ccsonoff[num]= HASH_get_bool(cc, "onoff");
-    patchdata->cc[num] = HASH_get_int(cc, "cc");
-    patchdata->ccvalues[num] = HASH_get_int(cc, "value");
+    patchdata->cc[num] = HASH_get_int8(cc, "cc");
+    patchdata->ccvalues[num] = HASH_get_int8(cc, "value");
   }
 }
 
@@ -154,26 +154,26 @@ var1:
           patchdata->channel = 15; // Fix for bug in previous version.
 	goto start;
 var2:
-	patchdata->preset=DC_LoadI();
+	patchdata->preset=(signed char)DC_LoadI();
 	goto start;
 var3:
-	patchdata->LSB=DC_LoadI();
+	patchdata->LSB=(signed char)DC_LoadI();
 	goto start;
 var4:
-	patchdata->MSB=DC_LoadI();
+	patchdata->MSB=(signed char)DC_LoadI();
 	goto start;
 
 var5:
         patchdata->volumeonoff=DC_LoadB();
         goto start;
 var6:
-        patchdata->volume=DC_LoadI();
+        patchdata->volume=(char)DC_LoadI();
         goto start;
 var7:
         patchdata->panonoff=DC_LoadB();
         goto start;
 var8:
-        patchdata->pan=DC_LoadI();
+        patchdata->pan=(char)DC_LoadI();
         goto start;
 var9:
         {
@@ -181,8 +181,8 @@ var9:
           for(num=0;num<8;num++){
             patchdata->ccnames[num]=DC_LoadS();
             patchdata->ccsonoff[num]=DC_LoadB();
-            patchdata->cc[num]=DC_LoadI();
-            patchdata->ccvalues[num]=DC_LoadI();
+            patchdata->cc[num]=(char)DC_LoadI();
+            patchdata->ccvalues[num]=(char)DC_LoadI();
           }
         }
         goto start;

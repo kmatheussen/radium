@@ -14,8 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-#ifndef _RADIUM_COMMON_WINDOWS_PROC_H
-#define _RADIUM_COMMON_WINDOWS_PROC_H
+#pragma once
 
 
 extern LANGSPEC void UpdateTrackerWindow(struct Tracker_Windows *window);
@@ -38,9 +37,14 @@ static inline int getBottomSliderX2(struct Tracker_Windows *window){
 
 #ifdef USE_QT4
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wsign-conversion"
+#pragma clang diagnostic ignored "-Wused-but-marked-unused"
+#pragma clang diagnostic ignored "-Winconsistent-missing-destructor-override"
+#pragma clang diagnostic ignored "-Wenum-enum-conversion"
+
 #include "../Qt/EditorWidget.h"
 
-#endif
-
+#pragma clang diagnostic pop
 
 #endif

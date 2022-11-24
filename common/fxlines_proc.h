@@ -36,11 +36,11 @@ extern LANGSPEC void AddFXNodeLineCurrMousePos(struct Tracker_Windows *window);
 extern LANGSPEC void AddFXNodeLineCurrPos(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack);
 
 //extern LANGSPEC void DeleteFxNodeLine(struct Tracker_Windows *window, struct WTracks *wtrack, struct FXs *fxs, struct FXNodeLines *fxnodeline);
-#if __cplusplus
+#ifdef __cplusplus
 extern void DeleteFxNodes(struct Tracker_Windows *window, struct WTracks *wtrack, struct FXs *fxs, const std::vector<int> &fxnodenums);
 extern void DeleteFxNode(struct Tracker_Windows *window, struct WTracks *wtrack, struct FXs *fxs, int fxnodenum);
 
-#if defined(_RADIUM_COMMON_RATIO_FUNCS_H)
+#if defined(RADIUM_COMMON_RATIO_FUNCS_H)
 extern void RT_fxline_called_each_block(struct SeqTrack *seqtrack,
                                         const int play_id,
                                         const struct SeqBlock *seqblock,

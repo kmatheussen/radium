@@ -105,7 +105,7 @@ static inline uint32_t read_be32uint(disk_t *file){
 static inline uint16_t get_be_u16 (unsigned char *src)
 {
 #if IS_LITTLE_ENDIAN
-    return (src[1] << 0) + (src[0] << 8);
+  return (uint16_t)((src[1] << 0) + (src[0] << 8));
 #else
     return *(uint16_t*)src;
 #endif

@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-#if USE_QT4
+#ifdef USE_QT4
 QFont GFX_getFittingFont(const QString &text, const int flags, const int width, const int height);
 QString GFX_getFittingText(const QFont &font, const QString &text, const int flags, bool wrap_lines, const int width, const int height);
 #endif

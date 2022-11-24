@@ -6,7 +6,7 @@ struct SoundPlugin;
 extern LANGSPEC float *FAUST_get_peak_value_pointer(struct SoundPlugin *plugin, int effect_num);
 extern LANGSPEC void FAUST_change_qtguistyle(const char *style_name);
 
-#if USE_QT4
+#ifdef USE_QT4
 namespace radium{
   struct FAUST_calledRegularlyByParentReply{
     bool has_new_data = false;

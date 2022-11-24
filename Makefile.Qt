@@ -353,13 +353,18 @@ COMMONOPT = -D__STDC_FORMAT_MACROS=1 -c `cat buildtype.opt` -I$(GCDIR)/include -
 #-fdelete-null-pointer-checks 
 # -Werror
 
+# TODO: Add -Wdouble-promotion
+
+
 #-Wstrict-overflow=4 -Wsuggest-attribute=format -Wstringop-overflow=4
 #-Wsuggest-final-types -Wsuggest-final-methods
 
 ifeq (,$(findstring clang,$(CC)))
-	COMMONOPT += -Wduplicated-cond -Wduplicated-branches -Wlogical-op -Wrestrict -fmax-errors=5 
+#gcc:
+	COMMONOPT += -Wduplicated-cond -Wduplicated-branches -Wlogical-op -Wrestrict -fmax-errors=5
 else
-        COMMONOPT += -Wno-deprecated-register -Wlogical-op-parentheses # -Wunused-member-function (isn't there a warning to warn about unused variables only, not methods?)
+#clang:
+        COMMONOPT += -Wno-deprecated-register -Wlogical-op-parentheses -Wimplicit-int-conversion -Wundef -Wmacro-redefined -Wnon-virtual-dtor # -I/home/kjetil/site/include/c++/5.3.0/ -I/home/kjetil/site/include/c++/5.3.0/x86_64-unknown-linux-gnu/ # -Wunused-member-function (isn't there a warning to warn about unused variables only, not methods?)
 endif
 
 #ifeq ($(GCC_MAJOR),7)
@@ -1535,7 +1540,8 @@ $(P)EditorWidget.h: $(BUILD_DEPENDENCIES)
 $(T)Qt_Main.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_instruments_proc.h $(QM)QM_MixerWidget.h Qt/helpers.h audio/SampleRecorder_proc.h common/nag.h Qt/KeyboardFocusFrame.hpp common/Process.hpp Qt/Timer.hpp
 	$(MOC) Qt/Qt_Main.cpp > Qt/mQt_Main.cpp
 	cd Qt && $(MOC) -DFOR_LINUX Timer.hpp > mTimer.hpp
-	$(CCC2) $(P)Qt_Main.cpp $(QTOPT) $(SNDFILEOPT) $(IS_LINUX_BINARY) $(BOOST_INCLUDE) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" -Wno-null-dereference # -Wno-deprecated-declarations -Wno-shadow 
+	$(CCC2) $(P)Qt_Main.cpp $(QTOPT) $(SNDFILEOPT) $(IS_LINUX_BINARY) $(BOOST_INCLUDE) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" -Wno-null-dereference -D_GNU_SOURCE=1
+ # -Wno-deprecated-declarations -Wno-shadow 
 
 $(T)KeyboardFocus.o:  $(BUILD_DEPENDENCIES) Qt/KeyboardFocus.cpp Qt/KeyboardFocusFrame.hpp
 	$(CCC2) $(P)KeyboardFocus.cpp $(QTOPT)
@@ -1827,7 +1833,7 @@ $(T)Qt_AutoBackups.o: $(BUILD_DEPENDENCIES) $(P)Qt_AutoBackups.cpp audio/SampleR
 	$(CCC2) $(P)Qt_AutoBackups.cpp $(QTOPT)
 
 $(T)flowlayout.o: $(BUILD_DEPENDENCIES) $(P)flowlayout.cpp $(P)flowlayout.h
-	$(CCC2) $(P)flowlayout.cpp $(QTOPT)
+	$(CCC2) $(P)flowlayout.cpp $(QTOPT) -Wno-implicit-int-conversion
 
 $(T)posix_settings.o:  $(BUILD_DEPENDENCIES) posix/posix_settings.c
 	$(CC2) posix/posix_settings.c $(OPT)
@@ -1920,7 +1926,7 @@ $(T)api_undo.o:  $(BUILD_DEPENDENCIES)  $(API)api_undo.cpp  embedded_scheme/s7ex
 	$(CCC2)  $(API)api_undo.cpp $(QTOPT)
 
 $(T)api_various.o:  $(BUILD_DEPENDENCIES)  $(API)api_various.cpp bin/packages/s7/s7.c $(P)EditorWidget.h embedded_scheme/s7extra_proc.h Qt/KeyboardFocusFrame.hpp audio/CpuUsage.hpp
-	$(CCC2)  $(API)api_various.cpp $(QTOPT) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\"  -Wno-null-dereference $(NO_ANALYZER)
+	$(CCC2)  $(API)api_various.cpp $(QTOPT) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\"  -Wno-null-dereference $(NO_ANALYZER) $(S7OPTS)
 
 $(T)api_instruments.o:  $(BUILD_DEPENDENCIES)  $(API)api_instruments.cpp  $(API)api_instruments_proc.h embedded_scheme/s7extra_proc.h mixergui/QM_chip.h mixergui/QM_MixerWidget.h
 	$(CCC2)  $(API)api_instruments.cpp $(QTOPT)
@@ -1966,7 +1972,7 @@ ifeq (,$(findstring clang,$(CC)))
 endif
 
 $(T)radium_wrap.o:  $(BUILD_DEPENDENCIES)  $(API)radium_wrap.c 
-	$(CC2) $(API)radium_wrap.c $(OPT) -Wno-unused-function $(NOUNUSEDBUTSETVARIABLEWARNING) -Wno-missing-field-initializers -Wno-write-strings
+	$(CC2) $(API)radium_wrap.c $(OPT) -Wno-unused-function $(NOUNUSEDBUTSETVARIABLEWARNING) -Wno-missing-field-initializers -Wno-write-strings -Wno-implicit-int-conversion
 
 $(API)radium_wrap.c: $(BUILD_DEPENDENCIES) $(API)protos.conf bin/protoconfparser.py $(API)/radium_wrap/radium_wrap_1.c $(API)/radium_wrap/radium_wrap_3.c $(API)makeradiumwrap_c.sh $(API)makeradiumwrap_c.sh
 	cd $(API) ; bash makeradiumwrap_c.sh $(PYTHONEXE) ; cd ..
@@ -2156,7 +2162,7 @@ $(T)Pitchshift_plugin.o: audio/Pitchshift_plugin.cpp
 
 FAUST_DEPENDENCIES = audio/Faust_plugins_template.cpp audio/Faust_plugins_template1.cpp audio/Faust_plugins_template2.cpp audio/mfaustqt2.cpp
 FAUST_OPTS1 = $(QTOPT) $(WNO_SUGGEST_OVERRIDE) -Wno-overloaded-virtual $(NO_SANITIZE_SIGNED_INTEGER_OVERFLOW) -Wno-unused-function -Wno-missing-declarations -Wno-deprecated-declarations -fno-sanitize=vptr $(CPUOPT) 
-FAUST_OPTS = $(FAUST_OPTS1) -I$(FAUSTDIR)/architecture
+FAUST_OPTS = $(FAUST_OPTS1) -I$(FAUSTDIR)/architecture -Wno-implicit-int-conversion
 FAUST_OPTS2 = $(FAUST_OPTS) -Wno-float-equal
 # -Ibin/packages/faust2/architecture 
 
@@ -2628,9 +2634,7 @@ ifeq ($(BUILDTYPE), DEBUG)
 	endif
 endif
 
-S7OPTS += -DS7_ALIGNED -g
-
-#S7OPTS += -DWITH_GMP
+S7OPTS += -DS7_ALIGNED -g -DWITH_GMP=0 -DDISABLE_DEPRECATED=0
 
 bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o: bin/packages/s7/s7.c
 	$(CC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o `cat buildtype.opt` -Wno-error -Wno-float-equal -Iembedded_scheme $(S7OPTS) $(S7AlignmentSanitize) -DWITH_C_LOADER=0 -DWITH_HISTORY=1
@@ -2678,13 +2682,13 @@ bin/packages/sndlib/clm.c: bin/packages/sndlib.tar.gz bin/packages/sndlib.patch
 
 
 $(T)s7webserver.o: bin/s7webserver/s7webserver.h bin/s7webserver/s7webserver.cpp bin/s7webserver/moc_s7webserver.cpp bin/packages/s7/s7.c
-	$(CCC2) -c bin/s7webserver/s7webserver.cpp $(QTOPT) -Ibin/packages/s7 -g -Iembedded_scheme -Wall $(WERROR) -Wno-error=unused-variable -Wno-error=unused-function -std=gnu++14 -Wno-deprecated-declarations 
+	$(CCC2) -c bin/s7webserver/s7webserver.cpp $(QTOPT) -Ibin/packages/s7 -g -Iembedded_scheme -Wall $(WERROR) -Wno-error=unused-variable -Wno-error=unused-function -std=gnu++14 -Wno-deprecated-declarations  $(S7OPTS)
 
 bin/s7webserver/moc_s7webserver.cpp: bin/s7webserver/s7webserver.h
-	$(MOC) -DCOMPILING_S7WEBSERVER bin/s7webserver/s7webserver.h -o bin/s7webserver/moc_s7webserver.cpp
+	$(MOC) -DCOMPILING_S7WEBSERVER bin/s7webserver/s7webserver.h -o bin/s7webserver/moc_s7webserver.cpp 
 
 $(T)scheme.o: embedded_scheme/scheme.cpp  bin/packages/s7/s7.c embedded_scheme/s7extra_proc.h
-	$(CCC2) -c embedded_scheme/scheme.cpp $(QTOPT) -I$(QHTTPSERVER_PATH)/src -Ibin/packages/s7
+	$(CCC2) -c embedded_scheme/scheme.cpp $(QTOPT) -I$(QHTTPSERVER_PATH)/src -Ibin/packages/s7 $(S7OPTS)
 
 QHTTPSERVERFLAGS= $(CPPOPT) $(QT_CFLAGS) $(NOSHORTEN64TO32FLAG) -I$(QHTTPSERVER_PATH)/http-parser -I$(QHTTPSERVER_PATH)/build -Wno-null-dereference -D_REENTRANT  #-fno-sanitize=undefined
 
@@ -2740,7 +2744,7 @@ $(LIBGIG_PATH)/SF.cpp: bin/packages/libgig-4.2.0.tar.bz2
 	cd bin/packages && rm -fr libgig && tar xvjf libgig-4.2.0.tar.bz2 && mv libgig-4.2.0 libgig && touch $(LIBGIG_PATH)/SF.cpp
 
 $(T)radium_s7_wrap.o: api/radium_s7_wrap.c 
-	$(CC2) api/radium_s7_wrap.c $(OPT) -Ibin/packages/s7
+	$(CC2) api/radium_s7_wrap.c $(OPT) -Ibin/packages/s7 $(S7OPTS)
 
 api/radium_s7_wrap.c: bin/protoconfparser.py api/protos.conf bin/packages/s7/s7.c api/s7_types_code.c api/s7_types_code_init.c
 	cd api && $(PYTHONEXE) ../bin/protoconfparser.py radium_s7_wrap.c >radium_s7_wrap.c

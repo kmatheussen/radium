@@ -1,6 +1,5 @@
+#pragma once
 
-#ifndef _RADIUM_AUDIO_MIXER_PROC_H
-#define _RADIUM_AUDIO_MIXER_PROC_H 1
 
 #ifdef MEMORY_DEBUG
 extern LANGSPEC void PLAYER_memory_debug_wake_up(void);
@@ -123,5 +122,3 @@ extern LANGSPEC struct Patch *MIXER_get_bus(int bus_num);
 extern LANGSPEC void MIXER_called_regularly_by_main_thread(void);
 
 extern LANGSPEC void MIXER_set_all_plugins_to_not_recording(void);
-
-#endif

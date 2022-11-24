@@ -1,5 +1,4 @@
-#ifndef _RADIUM_COMMON_DYN_TYPE_H
-#define _RADIUM_COMMON_DYN_TYPE_H
+#pragma once
 
 #include <wchar.h>
 
@@ -73,5 +72,3 @@ extern const dyn_t g_dyn_false;
 extern const dyn_t g_dyn_true;
 
 extern const dyn_t g_dyn_minus_one;
-
-#endif

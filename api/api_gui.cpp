@@ -362,7 +362,7 @@ static QColor getQColor(const_char* colorname){
   }
 #endif
 
-#if DEBUG_COLORS
+#ifdef DEBUG_COLORS
   return QColor(generateNewColor(1.0));
 #endif
   
@@ -7141,7 +7141,7 @@ void gui_setFullScreen(int64_t guinum, bool enable){
       return;
 
 #if 0    
-#if FOR_WINDOWS
+#ifdef FOR_WINDOWS
     gui->_widget->hide(); // To prevent a warning in Windows about illegal geometry. (must be called before calling the FullScreenParent constructor) (doesn't really work)
 #endif
 #endif
@@ -7250,7 +7250,7 @@ const_char* gui_getBackgroundColor(int64_t guinum){
   if (gui==NULL)
     return "black";
 
-#if DEBUG_COLORS
+#ifdef DEBUG_COLORS
   return generateNewColor(1.0);
 #endif
 

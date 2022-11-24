@@ -14,8 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-#ifndef _RADIUM_COMMON_PLAYER_PROC_H
-#define _RADIUM_COMMON_PLAYER_PROC_H
+#pragma once
 
 extern LANGSPEC void PlayerTask(double reltime, bool can_not_start_playing_right_now_because_we_have_told_jack_transport_that_we_are_not_ready_yet, float max_audio_cycle_fraction);
 extern LANGSPEC void PlayBlockFromStart(struct Tracker_Windows *window,bool do_loop);
@@ -38,5 +37,3 @@ extern LANGSPEC void PLAYER_set_song_pos(int64_t pos, int64_t absabstime, bool c
 
 extern STime g_last_seq_time_converted_to_delta_time; // This one can be used since calls to patch->playnote, patch->stopnote, etc. are single threaded.
 extern LANGSPEC int PLAYER_get_block_delta_time(struct SeqTrack *seqtrack, STime time);
-
-#endif

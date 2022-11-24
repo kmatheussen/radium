@@ -167,7 +167,7 @@ const char **get_ccnames(void){
 }
 
 //#define protected public
-#if USE_QT3
+#ifdef USE_QT3
 #include "Qt_instruments_widget.cpp"
 #include "Qt_control_change_widget.cpp"
 #include "Qt_midi_instrument_widget.cpp"
@@ -175,7 +175,7 @@ const char **get_ccnames(void){
 //#include "Qt_no_instrument_widget.cpp"
 #endif
 
-#if USE_QT4
+#ifdef USE_QT4
 #include "mQt_control_change_widget_callbacks.h"
 #include "mQt_patch_widget_callbacks.h"
 #include "mQt_midi_instrument_widget_callbacks.h"
@@ -538,7 +538,7 @@ static void set_widget_height(int height){
   EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
   QSplitter *splitter = editor->ysplitter;
 
-#if USE_QT4
+#ifdef USE_QT4
 #  define QValueList QList
 #endif
   //printf("set_widghet_height. main_window->height(): %d, splitter: %p\n",main_window->height(),splitter);
@@ -546,7 +546,7 @@ static void set_widget_height(int height){
   currentSizes[0] = main_window->height() - height;
   currentSizes[1] = height;
   splitter->setSizes(currentSizes);
-#if USE_QT4
+#ifdef USE_QT4
 #  undef QValueList
 #endif
 

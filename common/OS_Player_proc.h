@@ -233,9 +233,9 @@ struct PlayerLockOnlyIfNeeded{
   PlayerLockOnlyIfNeeded& operator=(const PlayerLockOnlyIfNeeded&) = delete;
 
   
-  PlayerLockOnlyIfNeeded(bool do_lock = true)
+  PlayerLockOnlyIfNeeded(bool do_lock_ = true)
     : has_lock(PLAYER_current_thread_has_lock())
-    , do_lock(has_lock==false && do_lock)
+    , do_lock(has_lock==false && do_lock_)
   {
     R_ASSERT_NON_RELEASE(has_lock==false);
   }

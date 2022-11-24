@@ -167,7 +167,7 @@ namespace{
       connect(_close_button, &QToolButton::released, this, [this]()
               {
                 //printf("HERE\n");                
-#if FOR_MACOSX
+#ifdef FOR_MACOSX
                 //showMinimized doesn't work for frameless windows on OSX. Workaround:
                 setWindowFlags(_org_flags | Qt::WindowMinMaxButtonsHint); // https://bugreports.qt.io/browse/QTBUG-64994
                 _close_button->hide(); // Don"t need it since the min/max buttons are visible now.
@@ -628,7 +628,7 @@ void GFX_OpenProgress2(const wchar_t *message){
 
   g_process = new QProcess;
 
-#if FOR_WINDOWS
+#ifdef FOR_WINDOWS
   QString program = STRING_get_qstring(OS_get_full_program_file_path("radium_progress_window.exe").id);
 #else
   QString program = STRING_get_qstring(OS_get_full_program_file_path("radium_progress_window").id);

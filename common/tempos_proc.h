@@ -15,8 +15,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-#ifndef _RADIUM_COMMON_TEMPOS_PROC_H
-#define _RADIUM_COMMON_TEMPOS_PROC_H
+#pragma once
 
 
 extern LANGSPEC struct WBPMs *WBPMs_get(
@@ -24,7 +23,7 @@ extern LANGSPEC struct WBPMs *WBPMs_get(
                                         const struct WBlocks *wblock
                                         );
 
-#if USE_QT4
+#ifdef USE_QT4
 QVector<Tempos*> BPMs_get(const struct WBlocks *wblock, int realline);
 #endif
 
@@ -44,5 +43,3 @@ extern LANGSPEC void SetTempoCurrPos(struct Tracker_Windows *window);
 
 extern LANGSPEC void RemoveTempo(struct Blocks *block,const struct Tempos *tempo);
 extern LANGSPEC void RemoveTemposCurrPos(struct Tracker_Windows *window);
-
-#endif

@@ -137,7 +137,7 @@ bool fileExists(filepath_t path){
 
 extern QStringList get_sample_name_filters(void);
 
-#if FOR_WINDOWS
+#ifdef FOR_WINDOWS
 extern Q_CORE_EXPORT int qt_ntfs_permission_lookup;
 #endif
 
@@ -162,13 +162,13 @@ dyn_t getFileInfo(filepath_t w_path){
   
   /*
     Commented out. We never want to return g_uninitialized or any other non-hashtable value.
-#if FOR_WINDOWS
+#ifdef FOR_WINDOWS
   qt_ntfs_permission_lookup++;
 #endif
 
   bool is_readable =  info.isReadable();
 
-#if FOR_WINDOWS
+#ifdef FOR_WINDOWS
   qt_ntfs_permission_lookup--;
 #endif
 
@@ -379,17 +379,17 @@ bool iterateDirectory(filepath_t daspath, bool async, func_t* callback){
     return false;
   }
 
-#if FOR_WINDOWS
+#ifdef FOR_WINDOWS
   qt_ntfs_permission_lookup++;
 #endif
 
-#if FOR_WINDOWS
+#ifdef FOR_WINDOWS
   bool is_readable = true; // isReadable() returns false for network disks on windows, even when the network disk is actually readable.
 #else
   bool is_readable = info.isReadable();
 #endif
   
-#if FOR_WINDOWS
+#ifdef FOR_WINDOWS
   qt_ntfs_permission_lookup--;
 #endif
 

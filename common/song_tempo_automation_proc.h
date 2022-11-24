@@ -26,7 +26,7 @@ extern LANGSPEC float TEMPOAUTOMATION_get_node_x(int nodenum);
 extern LANGSPEC float TEMPOAUTOMATION_get_node_y(int nodenum);
 
 
-#if USE_QT4
+#ifdef USE_QT4
 class QPainter;
 void TEMPOAUTOMATION_paint(QPainter *p, float x1, float y1, float x2, float y2, double start_time, double end_time);
 #endif

@@ -152,7 +152,7 @@ int main(int argc, char **argv){
   }
   */
   
-#if FOR_LINUX
+#ifdef FOR_LINUX
   bool faulty_installation = false;
   if(getenv("QT_QPA_PLATFORM_PLUGIN_PATH")==NULL){
     faulty_installation = true;
@@ -192,7 +192,7 @@ int main(int argc, char **argv){
   }
   */
 
-#if FOR_LINUX
+#ifdef FOR_LINUX
   if(faulty_installation){
     QMessageBox msgBox;
     msgBox.setIcon(QMessageBox::Critical);
@@ -234,7 +234,7 @@ int SYSTEM_show_message_menu(const struct vector_t_ *options, const char *messag
   //radium::ScopedExec scopedExec(false, false); // We could run from another thread here.
     
 
-#if FOR_WINDOWS
+#ifdef FOR_WINDOWS
   QString program = OS_get_full_program_file_path2("radium_error_message.exe");
 #else
   QString program = OS_get_full_program_file_path2("radium_error_message");

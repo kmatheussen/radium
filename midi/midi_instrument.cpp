@@ -268,13 +268,13 @@ void MIDISetPatchData(struct Patch *patch, const char *key, const char *value, b
     getPatchData(patch)->channel = atoi(value);
 
   }else if(!strcasecmp(key,"LSB")){
-    getPatchData(patch)->LSB = atoi(value);
+    getPatchData(patch)->LSB = (signed char)atoi(value);
 
   }else if(!strcasecmp(key,"MSB")){
-    getPatchData(patch)->MSB = atoi(value);
+    getPatchData(patch)->MSB = (signed char)atoi(value);
 
   }else if(!strcasecmp(key,"preset")){
-    getPatchData(patch)->preset = atoi(value);
+    getPatchData(patch)->preset = (signed char)atoi(value);
 
   } else
     GFX_Message2(NULL, program_state_is_valid, "MIDISetPatchData: Unknown key \"%s\" for midi instrument", key);

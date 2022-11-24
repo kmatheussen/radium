@@ -18,12 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef _RADIUM_COMMON_QUEUES_HPP
 #define _RADIUM_COMMON_QUEUES_HPP
 
-
-#include <boost/version.hpp>
-#if (BOOST_VERSION < 100000) || ((BOOST_VERSION / 100 % 1000) < 58)
-  #error "Boost too old. Need at least 1.58.\n Quick fix: cd $HOME ; wget http://downloads.sourceforge.net/project/boost/boost/1.63.0/boost_1_63_0.tar.bz2 ; tar xvjf boost_1_63_0.tar.bz2 (that's it!)"
-#endif
-#include <boost/lockfree/queue.hpp>
+#include "include_boost.h"
 
 #include "Semaphores.hpp"
 #include "spinlock.h"
@@ -56,6 +51,9 @@ private:
   
 public:
 
+  virtual ~BaseQueueStack(){
+  }
+    
   // sets success to false if failed, true if succeeded. Return value is undefined if "success" is false.
   T tryGet(bool &success){
     T ret = 0;

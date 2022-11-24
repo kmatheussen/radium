@@ -48,7 +48,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #error "SSE2 math is missing (i.e. -fpmath=sse is lacking)"
 #endif
 
-#if __tune_corei7__
+#if defined(__tune_corei7__) && __tune_corei7__
 #  if !defined(MARCH_NATIVE_ALLOWED)
 #    error "Compiled with -mtune=native or -mtune=corei7"
 #  endif
@@ -87,21 +87,21 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 
 #ifdef FOR_WINDOWS
-#if FOR_WINDOWS
+#ifdef FOR_WINDOWS
 #else
 #error "oops"
 #endif
 #endif
 
 #ifdef FOR_LINUX
-#if FOR_LINUX
+#ifdef FOR_LINUX
 #else
 #error "oops"
 #endif
 #endif
 
 #ifdef FOR_MACOSX
-#if FOR_MACOSX
+#ifdef FOR_MACOSX
 #else
 #error "oops"
 #endif
@@ -133,7 +133,6 @@ static_assert (sizeof(long long int) >= 8, "sizof(long long int) must be 8 or hi
   OS_*_proc.h files are not.
 ******************************************************************/
 
-
 #if !USE_GTK_VISUAL && !USE_GTK_REQTYPE && !USE_GTK_MENU
 #  define GTK_IS_USED 0
 #else
@@ -154,7 +153,7 @@ static_assert (sizeof(long long int) >= 8, "sizof(long long int) must be 8 or hi
 #include <atomic>
 #endif
 
-#if USE_QT4
+#ifdef USE_QT4
 #if !defined(__clang__)
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wsuggest-attribute=const"
@@ -283,11 +282,13 @@ extern bool g_has_gfx_scale;
 static inline bool sane_isnormal_FLOAT(float x) {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
+  
 #ifdef __cplusplus
   return x==0.0f || std::isnormal(x);
 #else
   return x==0.0f || isnormal(x);
 #endif
+
 #pragma GCC diagnostic pop
 }
 
@@ -302,15 +303,34 @@ static inline bool sane_isnormal_DOUBLE(double x) {
 #pragma GCC diagnostic pop
 }
 
+#ifdef __cplusplus
+template <typename T>
+static inline bool sane_isnormal(T x){
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdouble-promotion"
+
+  if (sizeof (x) == sizeof (float))
+    return sane_isnormal_FLOAT(x);
+  else
+    return sane_isnormal_DOUBLE(x);
+#pragma clang diagnostic pop
+}
+#else
 #define sane_isnormal(x) (sizeof (x) == sizeof (float) ? sane_isnormal_FLOAT(x) : sane_isnormal_DOUBLE(x))
+#endif
 
 #ifdef __cplusplus
 static inline bool equal_floats(float x, float y) {
 #if !defined(RELEASE)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdouble-promotion"
+
   if(!sane_isnormal(x) || !sane_isnormal(y)){
     fprintf(stderr, "equal_floats(): Calling abort(). x: %f. y: %f. sane x: %d. sane y: %d\n", x, y, sane_isnormal(x), sane_isnormal(y));
     abort();
   }
+#pragma clang diagnostic pop
+
 #endif
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
@@ -335,8 +355,13 @@ static inline bool equal_doubles(double x, double y) {
 extern float g_float_epsilon;
 static inline bool equal_floats(float x, float y) {
 #if !defined(RELEASE)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdouble-promotion"
+
   if(!sane_isnormal(x) || !sane_isnormal(y))
     abort();
+#pragma clang diagnostic pop
+  
 #endif
 #pragma GCC diagnostic ignored "-Wfloat-equal"
   if(x==y)
@@ -551,10 +576,11 @@ static inline float scale(const float x, const float x1, const float x2, const f
   float diff = x2-x1;
   
 #if !defined(RELEASE)
-  if(!sane_isnormal(x) || !sane_isnormal(12) || !sane_isnormal(x2) || !sane_isnormal(y1) || !sane_isnormal(y2) || !sane_isnormal(diff)){
+  if(!sane_isnormal_FLOAT(x) || !sane_isnormal_FLOAT(x1) || !sane_isnormal_FLOAT(x2) || !sane_isnormal_FLOAT(y1) || !sane_isnormal_FLOAT(y2) || !sane_isnormal_FLOAT(diff)){
 
-    fprintf(stderr, "scale(): Calling abort(). x/x1/x2/y1/y2: %f %f %f %f %f ---- %d %d %d %d %d %d\n", x,x1,x2,y1,y2,
-            sane_isnormal(x), sane_isnormal(12), sane_isnormal(x2), sane_isnormal(y1), sane_isnormal(y2), sane_isnormal(diff));
+    fprintf(stderr, "scale(): Calling abort(). x/x1/x2/y1/y2: %f %f %f %f %f ---- %d %d %d %d %d %d\n",
+            (double)x,(double)x1,(double)x2,(double)y1,(double)y2,
+            (int)sane_isnormal_FLOAT(x), (int)sane_isnormal_FLOAT(12), (int)sane_isnormal_FLOAT(x2), (int)sane_isnormal_FLOAT(y1), (int)sane_isnormal_FLOAT(y2), (int)sane_isnormal_FLOAT(diff));
 
     if (isfinite(x) && isfinite(x1) && isfinite(x2) && isfinite(y1) && isfinite(y2) && isfinite(diff))
       fprintf(stderr, "   ....Aborting call to abort. None of the numbers where inf or nan.\n");
@@ -688,7 +714,7 @@ namespace radium{
 
 #include "nsmtracker_time.h"
 
-#if USE_QT4
+#ifdef USE_QT4
 #include <QString>
 
 namespace radium{
@@ -1343,7 +1369,7 @@ static inline bool doubles_are_equal(double x, double y){
 
   if (diff <= eps)
     return(true);
-#if __cplusplus
+#ifdef __cplusplus
   if ((std::isnan(x)) || (std::isnan(y)))
     return((std::isnan(x)) && (std::isnan(y)));
 #else
@@ -1417,7 +1443,7 @@ static inline bool DYN_equal(const dyn_t a1, const dyn_t a2){
         R_ASSERT_NON_RELEASE(false); // Not sure.
         return false;
       }else
-        return 0==memcmp(a1.blub->data, a2.blub->data, a1.blub->size);
+        return 0==memcmp(a1.blub->data, a2.blub->data, (size_t)a1.blub->size);
     case BOOL_TYPE:
       return a1.bool_number==a2.bool_number;
   }
@@ -1441,7 +1467,7 @@ static inline dyn_t DYN_create_string(const wchar_t *string){
   return DYN_create_string_dont_copy(STRING_copy(string));
 }
 
-#if USE_QT4
+#ifdef USE_QT4
 static inline dyn_t DYN_create_string(QString string){
   return DYN_create_string_dont_copy(STRING_create(string));
 }
@@ -1466,7 +1492,7 @@ static inline dyn_t DYN_create_symbol(const char *symbol){
   return DYN_create_symbol_dont_copy(talloc_strdup(symbol));
 }
 
-#if USE_QT4
+#ifdef USE_QT4
 static inline dyn_t DYN_create_symbol(QString symbol){
   return DYN_create_symbol(symbol.toUtf8().constData());
 }
@@ -1538,7 +1564,7 @@ static inline dyn_t DYN_create_blub_with_data(int size){
 }
 
 static inline dyn_t DYN_create_blub_and_copy_data(int size, void *data){
-  return DYN_create_blub(size, tcopy2_atomic(data, size));
+  return DYN_create_blub(size, tcopy2_atomic(data, (size_t)size));
 }
 
 /*
@@ -1582,14 +1608,14 @@ static inline bool DYN_is_number(const dyn_t a){
 static inline double DYN_get_double_from_number(const dyn_t a){
   R_ASSERT_NON_RELEASE(DYN_is_number(a));
   if (a.type==INT_TYPE)
-    return a.int_number;
+    return (double)a.int_number;
   if (a.type==FLOAT_TYPE)
     return a.float_number;
   if (a.type==RATIO_TYPE)
     return (double)a.ratio->num / (double)a.ratio->den;
 
   RError("DYN_get_double_from_number: 'a' is not a number, but a %s", DYN_type_name(a.type));
-  return 0;
+  return 0.0;
 }
 
 static inline int64_t DYN_get_int64_from_number(const dyn_t a){
@@ -1597,9 +1623,9 @@ static inline int64_t DYN_get_int64_from_number(const dyn_t a){
   if (a.type==INT_TYPE)
     return a.int_number;
   if (a.type==FLOAT_TYPE)
-    return a.float_number;
+    return (int64_t)a.float_number;
   if (a.type==RATIO_TYPE)
-    return (double)a.ratio->num / (double)a.ratio->den;
+    return (int64_t)((double)a.ratio->num / (double)a.ratio->den);
 
   RError("DYN_get_double_from_number: 'a' is not a number, but a %s", DYN_type_name(a.type));
   return 0;
@@ -1613,7 +1639,7 @@ static inline dyn_t DYN_create_ratio(const Ratio ratio){
 }
 
 static inline dyn_t DYN_create_place(const Place place){
-  return DYN_create_ratio(RATIO_minimize(make_ratio(place.counter + place.line*place.dividor, place.dividor)));
+  return DYN_create_ratio(RATIO_minimize(make_ratio((int)place.counter + place.line*(int)place.dividor, (int)place.dividor)));
 }
 
 static inline bool DYN_is_ratio(const dyn_t a){
@@ -1634,7 +1660,7 @@ static inline StaticRatio DYN_get_static_ratio(const dyn_t dyn){
     return make_static_ratio_from_ratio(*dyn.ratio);
 
   else if (dyn.type==FLOAT_TYPE)
-    return make_static_ratio(dyn.float_number*1000, 1000);
+    return make_static_ratio((int)(dyn.float_number*1000), 1000);
 
   else if (dyn.type==STRING_TYPE)
     return STATIC_RATIO_from_string(dyn.string);
@@ -1770,7 +1796,7 @@ template <typename T, typename SeqBlockT> class TimeData;
 #include <sndfile.h>
 
 extern LANGSPEC SNDFILE *radium_sf_open(filepath_t filename, int mode, SF_INFO *sfinfo);
-#if USE_QT4
+#ifdef USE_QT4
 extern SNDFILE *radium_sf_open(QString filename, int mode, SF_INFO *sfinfo);
 #endif
 
@@ -1805,7 +1831,11 @@ static inline const symbol_t *get_symbol(const char *name){
 static inline void set_symbol_name(const symbol_t *symbol, const char *new_name){
   R_ASSERT_RETURN_IF_FALSE(new_name != NULL);
   free((void*)symbol->name);
+#ifdef __cplusplus
+  const_cast<symbol_t*>(symbol)->name = strdup(new_name);
+#else
   ((symbol_t*)symbol)->name = strdup(new_name);
+#endif
 }
                                    
 
@@ -1895,7 +1925,7 @@ struct Velocities{
 struct Tracks;
 
 
-static inline float VELOCITY_get(int velocity){
+static inline double VELOCITY_get(int velocity){
   return scale_double(velocity,0,MAX_VELOCITY,0,1);
 }
 
@@ -2014,8 +2044,7 @@ namespace r{
     {
     }
 
-    // todo: add non-null qualifier for t.
-    explicit TimeData_shared_ptr(T *t)
+    explicit TimeData_shared_ptr(T *t)  __attribute__((__nonnull__))
       : _t(t)
     {
       if (_t)
@@ -2106,7 +2135,7 @@ namespace r{
 
   
   public:
-    operator bool() const {
+    explicit operator bool() const {
       return _t != NULL;
     }
   
@@ -2296,7 +2325,7 @@ struct Notes{
 };
 #define NextNote(a) ((struct Notes *)((a)->l.next))
 
-#if __cplusplus
+#ifdef __cplusplus
 
 extern int64_t new_note_id(void);
 
@@ -2388,8 +2417,13 @@ struct Note : NodeId, public r::TimeDataDataTypeRef<float> {
   PitchTimeData _pitches;
   
   NoteData d;
-  
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wshadow-field"
+
   int64_t _id;
+
+#pragma clang diagnostic pop
 };
 
 struct NoteSeqBlock : public RT_TimeData_Player_Cache<typeof(Note::_val)> {
@@ -2587,8 +2621,8 @@ static inline bool is_note(note_t note, int64_t id, const struct SeqBlock *seqbl
 }
 
 #define NOTE_ID_RESOLUTION 256 // i.e. 256 id's per note.
-static inline int64_t NotenumId(float notenum){
-  int64_t n = notenum*NOTE_ID_RESOLUTION;
+static inline int64_t NotenumId(double notenum){
+  int64_t n = (int64_t)(notenum * (double)(NOTE_ID_RESOLUTION));
   return n*NUM_PATCH_VOICES;
 }
 
@@ -2895,20 +2929,20 @@ struct Tracks{
 
 static inline float TRACK_get_pan(const struct Tracks *track){
   if(track->panonoff)
-    return scale(track->pan, -MAXTRACKPAN, MAXTRACKPAN, -1.0, 1.0);
+    return scale((float)track->pan, -MAXTRACKPAN, MAXTRACKPAN, -1.0f, 1.0f);
   else
     return 0.0f;
 }
 
 static inline float TRACK_get_volume(const struct Tracks *track){
   if(track->volumeonoff)
-    return scale(track->volume, 0, MAXTRACKVOL, 0, 1);
+    return scale((float)track->volume, 0, MAXTRACKVOL, 0.0f, 1.0f);
   else
     return 1.0f;
 }
 
-static inline float TRACK_get_velocity(const struct Tracks *track, int velocity){
-  return TRACK_get_volume(track) * VELOCITY_get(velocity);
+static inline double TRACK_get_velocity(const struct Tracks *track, int velocity){
+  return (double)TRACK_get_volume(track) * VELOCITY_get(velocity);
 }
 
 #define FOR_EACH_TRACK()                                                \
@@ -3028,7 +3062,7 @@ typedef struct{
 } TrackRealline2;
 #endif
 
-#if __cplusplus
+#ifdef __cplusplus
 typedef struct{
   Place p;
   struct Notes *note;
@@ -3043,7 +3077,7 @@ typedef struct{
 #endif
 
 
-#if USE_QT4
+#ifdef USE_QT4
 typedef QList<TrackRealline2> Trs;
 typedef QMap<int, Trs> Trss;
 
@@ -3278,9 +3312,9 @@ static inline NodelineBox GetPianoNoteBox(const struct WTracks *wtrack, const st
 */
 
 static inline NodelineBox GetPianoNoteBox2(const struct WTracks *wtrack, const struct NodeLine2 *nodeline){
-  const float gfx_width  = wtrack->pianoroll_area.x2 - wtrack->pianoroll_area.x;
-  const float notespan   = wtrack->pianoroll_highkey - wtrack->pianoroll_lowkey;
-  const float note_width = gfx_width / notespan;
+  const int gfx_width  = wtrack->pianoroll_area.x2 - wtrack->pianoroll_area.x;
+  const int notespan   = wtrack->pianoroll_highkey - wtrack->pianoroll_lowkey;
+  const float note_width = (float)gfx_width / (float)notespan;
 
   float x_min = R_MIN(nodeline->x1, nodeline->x2);
   float x_max = R_MAX(nodeline->x1, nodeline->x2);
@@ -3293,6 +3327,9 @@ static inline NodelineBox GetPianoNoteBox2(const struct WTracks *wtrack, const s
   while(next!=NULL){
     if (next->is_node)
       break;
+    
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wshadow"
 
     x_min = R_MIN(x_min, R_MIN(next->x1, next->x2));
     x_max = R_MAX(x_max, R_MAX(next->x1, next->x2));
@@ -3300,6 +3337,8 @@ static inline NodelineBox GetPianoNoteBox2(const struct WTracks *wtrack, const s
     y_min = R_MIN(y_min, R_MIN(next->y1, next->y2));
     y_max = R_MAX(y_max, R_MAX(next->y1, next->y2));
 
+#pragma clang diagnostic pop
+    
     next = next->next;
   }
 
@@ -3337,7 +3376,7 @@ struct Signatures{
 #define NextSignature(a) (struct Signatures *)((a)->l.next)
 #define NextConstSignature(a) (const struct Signatures *)((a)->l.next)
 
-#if USE_QT4
+#ifdef USE_QT4
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wshorten-64-to-32"
@@ -4027,7 +4066,8 @@ static inline const char *sat_to_string(enum Seqblock_Automation_Type sat){
       return "Stretch";
     case SAT_SPEED:
       return "Speed";
-    default:
+    case NUM_SATS:
+    default:      
       R_ASSERT(false);
       return "Unknown";
   }
@@ -4067,7 +4107,7 @@ struct AutomationPainter{
 }
 #endif
 
-#if __cplusplus
+#ifdef __cplusplus
 namespace radium{
   class Envelope;
 }
@@ -4078,7 +4118,7 @@ namespace radium{
 */
 #endif
 
-#if SEQBLOCK_USING_VECTOR
+#ifdef SEQBLOCK_USING_VECTOR
 #include "Vector.hpp"
 namespace radium{
   using RT_NoteVector = radium::Vector<struct Notes*, radium::AllocatorType::RT>;
@@ -4111,7 +4151,7 @@ struct SeqBlock{
   double fadein; // value between 0 and 1
   double fadeout; // value between 0 and 1
 
-#if __cplusplus
+#ifdef __cplusplus
   radium::Envelope *fade_in_envelope;
   radium::Envelope *fade_out_envelope;
 #else
@@ -4145,7 +4185,7 @@ struct SeqBlock{
   int cache_num;
 #endif
 
-#if SEQBLOCK_USING_VECTOR
+#ifdef SEQBLOCK_USING_VECTOR
   radium::Vector< radium::RT_NoteVector*, radium::AllocatorType::RT > *playing_notes;
   //radium::Vector< radium::RT_NoteVector2*, radium::AllocatorType::RT > *playing_notes2;
 #else
@@ -4179,7 +4219,7 @@ static inline int SEQBLOCK_num_automations(const struct SeqBlock *seqblock){
 
 static inline double get_note_reltempo(note_t note){
   if (note.seqblock==NULL)
-    return 1.0f;
+    return 1.0;
   else
     return ATOMIC_DOUBLE_GET(note.seqblock->block->reltempo);
 }
@@ -4232,6 +4272,7 @@ static inline const char *get_string_from_seqtrack_height_type(enum SeqtrackHeig
   case SHT_2ROWS: return "2 rows";
   case SHT_3ROWS: return "3 rows";
   case SHT_UNLIMITED: return "unlimited";
+  case NUM_SHTs:
   default:{
     R_ASSERT(false);
     return "1 row";
@@ -4302,7 +4343,7 @@ struct SeqTrack{
   struct SeqtrackRecordingConfig custom_recording_config;
   int recording_generation; // Used in audio/Seqtrack_plugin.cpp
 
-#if SEQBLOCK_USING_VECTOR
+#ifdef SEQBLOCK_USING_VECTOR
   radium::Vector< radium::RT_NoteVector2*, radium::AllocatorType::RT > *hanging_notes;
 #else
   void *hanging_notes;
@@ -4317,7 +4358,7 @@ static inline double get_seqtrack_reltempo(struct SeqTrack *seqtrack){
   
   struct SeqBlock *seqblock = seqtrack->curr_seqblock;
   if (seqblock==NULL)
-    return 1.0f; // <--- NOTE: Changed this value from 0.0f to 1.0f. Seems wrong that it should be 0.0f.
+    return 1.0; // <--- NOTE: Changed this value from 0.0f to 1.0f. Seems wrong that it should be 0.0f.
 
   if (seqblock->block==NULL)
     return 1.0;
@@ -4458,7 +4499,7 @@ static inline int get_system_fontheight(void){
 }
 
 // Both width and height of automation nodes are get_min_node_size()*2
-static inline float get_min_node_size(void) {
+static inline double get_min_node_size(void) {
   return root->song->tracker_windows->fontheight / 1.5;
 }
 
@@ -4572,10 +4613,10 @@ static inline note_t create_note_t_plain(const struct SeqBlock *seqblock,
   //R_ASSERT(pan <= 1);
 #endif
   
-  midi_channel = R_BOUNDARIES(0,midi_channel, 15);
+  midi_channel = R_BOUNDARIES(0, midi_channel, 15);
   
   if(note_id<=-1)
-    note_id = NotenumId(pitch);
+    note_id = NotenumId((double)pitch);
 
   note_t note = {
     .id = note_id,
@@ -4584,8 +4625,8 @@ static inline note_t create_note_t_plain(const struct SeqBlock *seqblock,
     .velocity =velocity,
     .pan = pan,
     .sample_pos = sample_pos,
-    .midi_channel = midi_channel,
-    .voicenum = voicenum
+    .midi_channel = (char)midi_channel,
+    .voicenum = (char)voicenum
   };
   
   return note;  
@@ -4596,8 +4637,8 @@ static inline note_t create_note_t(const struct SeqBlock *seqblock,
                                    float pitch,
                                    float velocity,
                                    float pan,
-                                   char midi_channel,
-                                   char voicenum,
+                                   int midi_channel,
+                                   int voicenum,
                                    int64_t sample_pos
                                    )
 {
@@ -4615,7 +4656,7 @@ static inline note_t create_note_t2(const struct SeqBlock *seqblock,
 static inline note_t create_note_t3(const struct SeqBlock *seqblock,
                                     int64_t note_id,
                                     float pitch,
-                                    char midi_channel
+                                    int midi_channel
                                     )
 {
   return create_note_t(seqblock, note_id, pitch, 0, 0, midi_channel, 0, 0);

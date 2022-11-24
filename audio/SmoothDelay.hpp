@@ -2,7 +2,7 @@
 #ifndef _RADIUM_AUDIO_SMOOTHDELAY_HPP
 #define _RADIUM_AUDIO_SMOOTHDELAY_HPP
 
-#if BENCHMARK_SMOOTHDELAY
+#ifdef BENCHMARK_SMOOTHDELAY
 static double g_benchmark_time = 0.0;
 double g_fade_benchmark_time = 0.0;
 #endif
@@ -222,7 +222,7 @@ public:
     R_ASSERT_NON_RELEASE(input!=output);
     R_ASSERT_NON_RELEASE(RT_is_finished_filling_buffer());
 
-#if BENCHMARK_SMOOTHDELAY
+#ifdef BENCHMARK_SMOOTHDELAY
     double time = TIME_get_ms();
 #endif
 
@@ -255,7 +255,7 @@ public:
 
     }
 
-#if BENCHMARK_SMOOTHDELAY
+#ifdef BENCHMARK_SMOOTHDELAY
     g_benchmark_time += TIME_get_ms()-time;
 #endif
   }
@@ -588,7 +588,7 @@ public:
 }
 
 
-#if TEST_SMOOTHDELAY
+#ifdef TEST_SMOOTHDELAY
 
 // Run: make test_smoothdelay
 
@@ -748,7 +748,7 @@ static void SMOOTHDELAY_test(void){
   radium::SmoothDelay delay(max_delay_size);
   delay.setSize(1);
 
-#if !BENCHMARK_SMOOTHDELAY
+#if !defined(BENCHMARK_SMOOTHDELAY)
   float prev = 0.0;
 #endif
 
@@ -757,7 +757,7 @@ static void SMOOTHDELAY_test(void){
   double time = TIME_get_ms();
 
   for(int testnum0 = 0 ; testnum0 < 100 ; testnum0++){
-#if !BENCHMARK_SMOOTHDELAY
+#if !defined(BENCHMARK_SMOOTHDELAY)
     printf("%d ", testnum0);fflush(stdout);
 #endif
     for(int testnum = 0 ; testnum < 10000 ; testnum++){
@@ -784,7 +784,7 @@ static void SMOOTHDELAY_test(void){
       if (false==delay.RT_process(num_frames, input, output))
         memcpy(output, input, sizeof(float)*num_frames);
 
-#if !BENCHMARK_SMOOTHDELAY
+#if !defined(BENCHMARK_SMOOTHDELAY)
       for(int i=0;i<num_frames;i++){
         assert(fabsf(output[i]-prev) < 0.003);
         prev = output[i];
@@ -794,7 +794,7 @@ static void SMOOTHDELAY_test(void){
   }
 
   printf("\nTotal duration: %f. RT_fade duration: %f. RT_process_overwrite duration: %f\n",(TIME_get_ms()-time) / 1000.0,
-#if BENCHMARK_SMOOTHDELAY
+#ifdef BENCHMARK_SMOOTHDELAY
          g_fade_benchmark_time/1000.0, g_benchmark_time/1000.0
 #else
     -1.0,-1.0

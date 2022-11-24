@@ -23,8 +23,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QMap>
 
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wundef"
+#pragma clang diagnostic ignored "-Wnon-virtual-dtor"
+#pragma clang diagnostic ignored "-Wimplicit-int-conversion"
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
+
 #include <vlCore/VisualizationLibrary.hpp>
 #include <vlGraphics/OpenGLContext.hpp>
 #include <vlVG/VectorGraphics.hpp>
@@ -32,7 +38,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <vlVG/SceneManagerVectorGraphics.hpp>
 #include <vlGraphics/Effect.hpp>
 #include <vlGraphics/GLSL.hpp>
+
 #pragma GCC diagnostic pop
+#pragma clang diagnostic pop
+
 
 #define USE_FREETYPE 0
 #define RADIUM_DRAW_FONTS_DIRECTLY 0

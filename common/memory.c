@@ -250,7 +250,7 @@ void *talloc_atomic__(int size, const char *filename, int linenumber){
         if (ret != NULL){
           unsigned char *chars = (unsigned char *)ret;
           for(int i=0;i<size;i++){
-            chars[i] = rand() % 256;            
+            chars[i] = (unsigned char)(rand() % 256);
           }
         }
 #endif

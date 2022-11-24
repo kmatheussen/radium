@@ -45,6 +45,9 @@ protected:
 
 public:
 
+  virtual ~AudioPickuper(){
+  }
+  
   void reset(void){
     _there_is_more_data_to_pick_up = true;
   }

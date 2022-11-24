@@ -69,7 +69,7 @@ struct FXText {
 
 }
 
-#if USE_QT4
+#ifdef USE_QT4
 typedef QList<r::FXText> FXText_trs;
 typedef QMap<int, FXText_trs> FXText_trss;
 #endif

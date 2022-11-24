@@ -37,7 +37,7 @@ struct SoundProducer;
 #include "../common/Vector.hpp"
 
 
-#if USE_QT4
+#ifdef USE_QT4
 
 class Chip;
 

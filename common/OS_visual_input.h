@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-#ifndef _RADIUM_COMMON_OS_VISUAL_INPUT_H
-#define _RADIUM_COMMON_OS_VISUAL_INPUT_H
+#pragma once
+
 
 #include "visual_proc.h"
 
@@ -35,7 +35,7 @@ extern LANGSPEC const char *GFX_GetEditorFont(void);
 
 extern LANGSPEC void CancelMaybeNavigateMenus(void);
 
-#if USE_QT4
+#ifdef USE_QT4
 class QWidget;
 void RT_RTWIDGET_mark_needing_update(int pos);
 int RTWIDGET_allocate_slot(QWidget *widget);
@@ -218,5 +218,3 @@ extern void MIDILEARN_PREFS_remove(struct radium::MidiLearn *midi_learn);
 #endif
 
 extern LANGSPEC void TOOLS_open(void);
-
-#endif

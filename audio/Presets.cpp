@@ -110,7 +110,7 @@ static void request_load_preset_filename_from_requester(int64_t parentgui, func_
                                             parentWidget,
                                             "Load Effect configuration",
                                             g_last_preset_path,
-#if FOR_WINDOWS
+#ifdef FOR_WINDOWS
                                             "*.rec *.mrec ;; *.rec ;; *.mrec ;; All files (*)",
 #else
                                             "Radium Effect Configuration (*.rec *.mrec) ;; Radium Single Effect Configuration (*.rec) ;; Radium Multi Effect Configuration (*.mrec) ;; All files (*)",
@@ -438,7 +438,7 @@ void PRESET_save(const vector_t *patches, bool save_button_pressed, int64_t pare
                                             parentWidget,
                                             "Save Effect configuration",
                                             g_last_preset_path,
-#if FOR_WINDOWS
+#ifdef FOR_WINDOWS
                                             is_multipreset
                                              ? "*.mrec ;; All files (*)"
                                              : "*.rec ;; All files (*)",

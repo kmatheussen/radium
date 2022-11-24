@@ -25,6 +25,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <unistd.h>
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wundef"
+#pragma clang diagnostic ignored "-Wnon-virtual-dtor"
+#pragma clang diagnostic ignored "-Wimplicit-int-conversion"
+
 #if __GNUC__ >= 5
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wsuggest-override"
@@ -37,6 +42,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #if __GNUC__ >= 5
 #  pragma GCC diagnostic pop
 #endif
+
+#pragma clang diagnostic pop
+
 
 #include <QThread>
 #include <QGLContext>
@@ -169,7 +177,7 @@ T2_data::~T2_data(){
 #include <QOpenGLContext>
 #include <QWindow>
 
-#if FOR_WINDOWS
+#ifdef FOR_WINDOWS
 #include <QtPlatformHeaders/QWGLNativeContext>
 #endif
 

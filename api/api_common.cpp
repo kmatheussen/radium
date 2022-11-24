@@ -382,7 +382,7 @@ struct WTracks *getWTrackFromNumA(
 }
 
 static struct Notes *getCurrNote(int windownum, struct Tracker_Windows **window, int blocknum, int tracknum){
-#if DO_LATER
+#ifdef DO_LATER
   struct Notes *note = GetCurrNote(*window);
 #else
   struct Notes *note = NULL;

@@ -69,7 +69,10 @@ const int kVstMaxParamStrLen = 8;
 
 #else //  USE_VESTIGE
 
-#if FOR_LINUX
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wundef"
+
+#ifdef FOR_LINUX
   #  undef PRAGMA_ALIGN_SUPPORTED
   #  define __cdecl
 #endif
@@ -77,6 +80,8 @@ const int kVstMaxParamStrLen = 8;
 #  include <pluginterfaces/vst2.x/aeffectx.h>
 
 #endif //  USE_VESTIGE
+
+#pragma clang diagnostic pop
 
 
 #include <QApplication>
@@ -1343,7 +1348,7 @@ static int create_vst_plugins_recursively(const QString main_path, const QString
       }
     }
 
-#if FOR_MACOSX
+#ifdef FOR_MACOSX
     
     QDir dir(file_info.absoluteFilePath() + "/Contents/MacOS/");
     if (dir.exists()) {
@@ -1442,7 +1447,7 @@ void create_vst_plugins(bool is_juce_plugin){
   
   int num_paths = SETTINGS_read_int("num_vst_paths", 0);
 
-#if FOR_LINUX
+#ifdef FOR_LINUX
   PR_add_menu_entry(PluginMenuEntry::level_up("VST"));
 #else
   PR_add_menu_entry(PluginMenuEntry::level_up("VST/VST3"));

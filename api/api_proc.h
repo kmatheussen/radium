@@ -8,7 +8,8 @@ extern "C" {
 
 #ifndef RADIUM_PYTHON_IS_DEFINED
 #ifdef __cplusplus
-  struct PyObject;
+  typedef struct _object PyObject;
+  //struct PyObject;
 #else
   typedef struct PyObject_ PyObject;
 #endif

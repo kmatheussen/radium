@@ -155,7 +155,7 @@ static void play_note(struct SoundPlugin *plugin, int time, note_t note){
     
   Data *data = (Data*)plugin->data;
 
-  note.midi_channel = data->values[CHANNEL];
+  note.midi_channel = (char)data->values[CHANNEL];
   
   RT_PATCH_send_play_note_to_receivers(g_RT_curr_scheduling_seqtrack, (struct Patch*)plugin->patch, note, g_last_seq_time_converted_to_delta_time);
 }
@@ -166,7 +166,7 @@ static void set_note_volume(struct SoundPlugin *plugin, int time, note_t note){
       
   Data *data = (Data*)plugin->data;
 
-  note.midi_channel = data->values[CHANNEL];
+  note.midi_channel = (char)data->values[CHANNEL];
   
   RT_PATCH_send_change_velocity_to_receivers(g_RT_curr_scheduling_seqtrack, (struct Patch*)plugin->patch, note, g_last_seq_time_converted_to_delta_time);
 }
@@ -177,7 +177,7 @@ static void stop_note(struct SoundPlugin *plugin, int time, note_t note){
       
   Data *data = (Data*)plugin->data;
 
-  note.midi_channel = data->values[CHANNEL];
+  note.midi_channel = (char)data->values[CHANNEL];
   
   RT_PATCH_send_stop_note_to_receivers(g_RT_curr_scheduling_seqtrack, (struct Patch*)plugin->patch, note, g_last_seq_time_converted_to_delta_time);
 }

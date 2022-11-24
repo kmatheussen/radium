@@ -23,6 +23,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QFile>
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wundef"
+
 #if __GNUC__ >= 5
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wsuggest-override"
@@ -31,6 +34,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #if __GNUC__ >= 5
 #  pragma GCC diagnostic pop
 #endif
+
+#pragma clang diagnostic pop
+
 
 #define DEBUG_ALLOWED 1 // <- SF.h sets DEBUG to 0
 #include "../common/nsmtracker.h"

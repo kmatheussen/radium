@@ -69,7 +69,7 @@ namespace radium{
       
       setOption(QFileDialog::DontUseCustomDirectoryIcons, true); // Sometimes make windows crawl if I remember correctly.
     
-#if FOR_MACOSX
+#ifdef FOR_MACOSX
       // Reasons for never using native dialog on OSX:
       //
       // 1. There doesn't seem to be a way to remove filtered-out files. They are drawn in a grayer color though, but that's just messy.

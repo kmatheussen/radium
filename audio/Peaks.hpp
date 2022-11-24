@@ -24,7 +24,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <inttypes.h>
 #include <math.h>
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wimplicit-int-conversion"
+
 #include <QFloat16>
+
+#pragma clang diagnostic pop
+
 
 #include "Juce_plugins_proc.h"
 #include "../common/Mutex.hpp"

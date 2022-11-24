@@ -63,7 +63,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #if USE_GTK_VISUAL
 #  ifdef __linux__
-#    if USE_QT4
+#    ifdef USE_QT4
 #      include <QX11EmbedContainer>
 #      define QtXEmbedContainer QX11EmbedContainer
 #    endif
@@ -511,7 +511,7 @@ bool EditorWidget::handle_mouse_press(radium::MouseCycleEvent &event, float x, f
 }
 #endif
 
-#if FOR_WINDOWS
+#ifdef FOR_WINDOWS
 void MouseMoveRelative(float x, float y, float dx, float dy) {
 #if 1
   

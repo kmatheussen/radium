@@ -16,7 +16,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/nsmtracker.h"
 
-#if FOR_WINDOWS
+#ifdef FOR_WINDOWS
 #  include <windows.h>
 #  include "../windows/W_Keyboard_proc.h"
 #endif
@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 void OS_EndProgram(void){}
 void OS_EndProgram2(void){
-#if FOR_WINDOWS
+#ifdef FOR_WINDOWS
   W_KeyboardHandlerShutDown();
 #endif
 }

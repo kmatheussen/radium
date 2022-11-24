@@ -24,7 +24,7 @@ extern LANGSPEC int find_realline_for_end_pitch(const struct WBlocks *wblock, co
 //extern LANGSPEC vector_t *TRS_get(const struct WBlocks *wblock, const struct WTracks *wtrack);
 //extern LANGSPEC vector_t *TR_get(const struct WBlocks *wblock, const struct WTracks *wtrack, int realline);
 
-#if USE_QT4
+#ifdef USE_QT4
 const Trss TRSS_get(const struct WBlocks *wblock, const struct WTracks *wtrack);
 const Trs TRS_get(const struct WBlocks *wblock, const struct WTracks *wtrack, int realline);
 #endif

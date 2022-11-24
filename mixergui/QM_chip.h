@@ -68,11 +68,19 @@ struct SoundPlugin;
 #include <stdio.h>
 #include <vector>
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Winconsistent-missing-destructor-override"
+#pragma clang diagnostic ignored "-Wused-but-marked-unused"
+#pragma clang diagnostic ignored "-Wsign-conversion"
+
 #include <QColor>
 #include <QGraphicsItem>
 #include <QGraphicsScene>
 #include <QStyleOptionGraphicsItem>
 #include <QPainter>
+
+#pragma clang diagnostic pop
+
 
 #include "../audio/SoundProducer_proc.h"
 #include "../audio/SoundPlugin_proc.h"
@@ -108,7 +116,7 @@ public:
   void init_new_plugin(void);
   
   Chip(QGraphicsScene *scene, SoundProducer *sound_producer, float x, float y);
-  ~Chip();
+  ~Chip() override;
 
   QRectF boundingRect() const override;
   QPainterPath shape() const override;
@@ -224,13 +232,19 @@ public:
   bool input_audio_port_is_operational(void) const;
   
   void mySetSelected(bool selected);
-  
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmissing-noreturn"
+
   void setSelected(bool selected){
     fprintf(stderr, "Error: Use MySetSelected instead\n");
 #if !defined(RELEASE)
     abort();
 #endif
   }
+
+#pragma clang diagnostic pop
+  
 };
 
 static inline struct SoundProducer *CHIP_get_soundproducer(const Chip *chip){
@@ -256,7 +270,7 @@ public:
   bool _is_event_connection;
   enum ColorNums _color_num;
 
-  float _last_displayed_db_peak = 0.0f;
+  double _last_displayed_db_peak = 0.0;
   
   Chip *_from; // Note: If we ever need to set this variable after constructor (we currently don't), we also need to ensure that the new from-chip doesn't have more than one PLUGIN connection.
   Chip *_to;
@@ -341,19 +355,19 @@ public:
       
       if (plugin->type->num_outputs > 0){
         
-        float db = _last_displayed_db_peak;
+        double db = _last_displayed_db_peak;
         
-        if(db>=4.0f)
+        if(db>=4.0)
           
-          col = mix_colors(get_qcolor(PEAKS_4DB_COLOR_NUM), QColor("410000"), ::scale(db, 4, MAX_DB, 1, 0));
+          col = mix_colors(get_qcolor(PEAKS_4DB_COLOR_NUM), QColor("410000"), ::scale_double(db, 4, MAX_DB, 1, 0));
         
-        if(db>=0.0f)
+        if(db>=0.0)
           
-          col = mix_colors(get_qcolor(PEAKS_0DB_COLOR_NUM), get_qcolor(PEAKS_4DB_COLOR_NUM), ::scale(db, 0, 4, 1, 0));
+          col = mix_colors(get_qcolor(PEAKS_0DB_COLOR_NUM), get_qcolor(PEAKS_4DB_COLOR_NUM), ::scale_double(db, 0, 4, 1, 0));
         
-        else if(db>=-30.0f)
+        else if(db>=-30.0)
           
-          col = mix_colors(get_qcolor(PEAKS_COLOR_NUM), get_qcolor(PEAKS_0DB_COLOR_NUM), ::scale(db, -30, 0, 1, 0));
+          col = mix_colors(get_qcolor(PEAKS_COLOR_NUM), get_qcolor(PEAKS_0DB_COLOR_NUM), ::scale_double(db, -30, 0, 1, 0));
         
         else
           
@@ -367,9 +381,9 @@ public:
       return mix_colors(Qt::white, col,
                         intencity < (MAX_NOTE_INTENCITY * 4.0 / 5.0)
                         ? 0.0
-                        : ::scale(intencity,  // divide by 10 to make it 10 times faster.
-                                  MAX_NOTE_INTENCITY, MAX_NOTE_INTENCITY * 4.0 / 5.0,
-                                  1.0, 0.0));
+                        : ::scale_double(intencity,  // divide by 10 to make it 10 times faster.
+                                         MAX_NOTE_INTENCITY, MAX_NOTE_INTENCITY * 4.0 / 5.0,
+                                         1.0, 0.0));
 
     return col;
     /*
@@ -390,13 +404,13 @@ public:
     else
       c.setAlpha(140);
 
-    float pen_width = 1.0; //intencity < (MAX_NOTE_INTENCITY * 4.0 / 5.0)
+    double pen_width = 1.0; //intencity < (MAX_NOTE_INTENCITY * 4.0 / 5.0)
     //      ? 1.0
     //                             : ::scale(intencity,  // divide by 10 to make it 10 times faster.
       //                                      MAX_NOTE_INTENCITY, MAX_NOTE_INTENCITY * 4.0 / 5.0,
     //                                    1.0, 2.0);
 
-    float db = _last_displayed_db_peak;
+    double db = _last_displayed_db_peak;
     /*    
     if(db>=4.0f)
       
@@ -416,7 +430,7 @@ public:
     */
 
     if (db >= -35)
-      pen_width *= ::scale(db, -35, MAX_DB, 0.3, 10);
+      pen_width *= ::scale_double(db, -35, MAX_DB, 0.3, 10);
     else
       pen_width *= 0.3;
     
@@ -462,7 +476,7 @@ public:
     setAcceptHoverEvents(true);
 
     {
-      QPen pen = getPen();
+      pen = getPen();
       
       _visible_line.setPen(pen);
       parent->addItem(&_visible_line);
@@ -484,7 +498,7 @@ public:
   }
   */
   
-  ~SuperConnection(){
+  virtual ~SuperConnection() override {
 
     // Workaround. Can't use a QPointer<SuperConnection> variable without some hackery.
     if (SuperConnection::get_current_connection()==this)

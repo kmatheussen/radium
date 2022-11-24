@@ -420,9 +420,9 @@ void MIDI_OS_AddInputPortIfNotAlreadyAdded(const char *portname){
 
 #ifdef FOR_LINUX
   enum RtMidi::Api api = RtMidi::LINUX_ALSA;
-#elif FOR_WINDOWS
+#elifdef FOR_WINDOWS
   enum RtMidi::Api api = RtMidi::WINDOWS_MM;
-#elif FOR_MACOSX
+#elifdef FOR_MACOSX
   enum RtMidi::Api api = RtMidi::MACOSX_CORE;
 #else
 # error "unknwond archihtilher"
@@ -529,7 +529,7 @@ void MIDI_OS_SetInputPort(const char *portname){
 
     }
 
-#elif FOR_WINDOWS
+#elifdef FOR_WINDOWS
 
     if(portnum==-1)
       GFX_Message(NULL,"Unknown port %s",portname);
@@ -559,7 +559,7 @@ void MIDI_OS_SetInputPort(const char *portname){
       }
     }
 
-#elif FOR_MACOSX
+#elifdef FOR_MACOSX
     
     {
 

@@ -1,6 +1,4 @@
-
-#if !defined(_RADIUM_COMMON_DYNVEC_PROC_H)
-#define _RADIUM_COMMON_DYNVEC_PROC_H
+#pragma once
 
 
 #ifdef __cplusplus
@@ -169,5 +167,3 @@ static inline void DYNVEC_set(dynvec_t &v, int pos, const dyn_t element){
 
 #endif
 
-
-#endif

@@ -1,6 +1,5 @@
 
-#ifndef _RADIUM_AUDIO_MODULATOR_PLUGIN_PROC_H
-#define _RADIUM_AUDIO_MODULATOR_PLUGIN_PROC_H
+#pragma once
 
 enum ModulatorEnabledTypes{
   MET_DISABLED,
@@ -36,6 +35,3 @@ void MODULATORS_apply_connections_state(const dyn_t dynstate, const QHash<instru
 #endif
 
 extern LANGSPEC void MODULATORS_apply_connections_state(const dyn_t state);
-
-#endif
-

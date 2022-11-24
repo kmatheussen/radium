@@ -94,7 +94,7 @@ static inline note_t create_note_from_args(const union SuperType *args){
   float   velocity     = args[2].float_num;
   float   pan          = args[3].float_num;
   int     channel      = (int)args[4].int_num;
-  char    midi_channel = channel >> 8;
+  char    midi_channel = (char)(channel >> 8);
   char    voicenum     = channel & 0xff;
   const struct SeqBlock *seqblock = (struct SeqBlock*)args[5].const_pointer;
   int64_t sample_pos   = args[6].int_num;

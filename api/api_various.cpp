@@ -4108,13 +4108,13 @@ void cancelGrabKeybinding(void){
 }
 
 const_char* getQualifierName(const_char *qualifier){
-#if FOR_LINUX
+#ifdef FOR_LINUX
   const char *g_left_meta = "Left Meta";
   const char *g_right_meta = "Right Meta";
-#elif FOR_WINDOWS
+#elif defined(FOR_WINDOWS)
   const char *g_left_meta = "Left Win";
   const char *g_right_meta = "Right Win";
-#elif FOR_MACOSX
+#elif defined(FOR_MACOSX)
   const char *g_left_meta = "Left Cmd";
   const char *g_right_meta = "Right Cmd";
 #endif
@@ -4147,7 +4147,7 @@ const_char* getQualifierName(const_char *qualifier){
   C("SHIFT","Shift");
   
   C("ALT_L","Left Alt");
-#if FOR_MACOSX
+#ifdef FOR_MACOSX
   C("ALT_R","Right Alt");
 #else
   C("ALT_R","AltGr");
@@ -4379,7 +4379,7 @@ void setLockJuceWhenSwappingOpenGL(bool doit){
 static bool g_native_file_requesters;
 
 bool useNativeFileRequesters(void){
-#if FOR_WINDOWS
+#ifdef FOR_WINDOWS
 
   return true;  // Workaround. non-native QFileDialog freezes on windows.
 

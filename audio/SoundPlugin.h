@@ -65,18 +65,39 @@ static inline float gain2db(float gain){
     
     return 0.0;
     
-  } else if (gain <= THRESHOLD_GAIN) {
+  } else if (gain <= (float)THRESHOLD_GAIN) {
 
     if(gain<=0.0f)
       return MIN_DB;
 
     // We need to do linear conversion below MIN_DB_THRESHOLD here in order to convert back and forth between gain2db and db2gain correctly. (that's probably the only reason)
     
-    return scale(gain, 0, THRESHOLD_GAIN, MIN_DB, MIN_DB_THRESHOLD);
+    return scale(gain, 0, (float)THRESHOLD_GAIN, (float)MIN_DB, (float)MIN_DB_THRESHOLD);
     
   } else {
     
-    return 20*log10(gain);
+    return 20.0f*log10f(gain);
+    
+  }
+}
+
+static inline double gain2db_double(double gain){
+  if (equal_doubles(gain, 1.0)) { // Common situation, but also to ensure correct conversion (not sure if log10(1.0) always returns exactly 0.0, although it probably does).
+    
+    return 0.0;
+    
+  } else if (gain <= THRESHOLD_GAIN) {
+
+    if(gain<=0.0)
+      return MIN_DB;
+
+    // We need to do linear conversion below MIN_DB_THRESHOLD here in order to convert back and forth between gain2db and db2gain correctly. (that's probably the only reason)
+    
+    return scale_double(gain, 0, THRESHOLD_GAIN, MIN_DB, MIN_DB_THRESHOLD);
+    
+  } else {
+    
+    return 20.0*log10(gain);
     
   }
 }
@@ -93,7 +114,7 @@ static inline float db2gain(float db){
     
     // do linear scale down to zero when db is less than -35 (if not, we won't get 0 gain)
     
-    return scale(db, MIN_DB, MIN_DB_THRESHOLD, 0, THRESHOLD_GAIN);
+    return scale(db, MIN_DB, MIN_DB_THRESHOLD, 0, (float)THRESHOLD_GAIN);
     
   }else{
     
@@ -104,13 +125,36 @@ static inline float db2gain(float db){
   }
 }
 
+static inline double db2gain_double(double db){
+  if (equal_doubles(db, 0.0)) {  // Common situation, but also to ensure correct conversion (not sure if powf(10, 0) always returns exactly 0.0, although it probably does).
+    
+    return 1.0;
+    
+  } else if (db <= MIN_DB_THRESHOLD){
+
+    if (db <= MIN_DB)
+      return 0.0;
+    
+    // do linear scale down to zero when db is less than -35 (if not, we won't get 0 gain)
+    
+    return scale_double(db, MIN_DB, MIN_DB_THRESHOLD, 0, THRESHOLD_GAIN);
+    
+  }else{
+    
+    if (db > MAX_DB)
+      db = MAX_DB;
+    
+    return pow(10.0, db / 20.0);
+  }
+}
+
 static inline void set_db_display(char *buffer, int buffersize, float db){
   if(db<=MIN_DB)
-    snprintf(buffer,buffersize-1,"-inf dB");
-  else if (db>-0.01 && db<0.01)
-    snprintf(buffer,buffersize-1,"0.00 dB");
+    snprintf(buffer,(size_t)buffersize-1,"-inf dB");
+  else if (db>-0.01f && db<0.01f)
+    snprintf(buffer,(size_t)buffersize-1,"0.00 dB");
   else
-    snprintf(buffer,buffersize-1,"%s%.2f dB", db<0.0f?"":"+", db);
+    snprintf(buffer,(size_t)buffersize-1,"%s%.2f dB", db<0.0f?"":"+", (double)db);
 }
 
   

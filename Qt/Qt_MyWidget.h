@@ -75,7 +75,7 @@ namespace cvs{
     }
   };
 
-  static inline MyColor mix_mycolors(const MyColor &c1, const MyColor &c2, float how_much){
+  static inline MyColor mix_mycolors(const MyColor &c1, const MyColor &c2, double how_much){
     return MyColor(mix_colors(c1.col,c2.col,how_much));
   }
 
@@ -286,6 +286,9 @@ namespace cvs{
       : w(new MyQWidget2(static_cast<QWidget*>(parent),this))
     {}
 
+    virtual ~MyWidget(){
+    }
+
     void update(int x1,int y1,int x2,int y2){
       w->update(x1,y1,x2-x1,y2-y1);
     }
@@ -346,7 +349,7 @@ namespace cvs{
       qtimer->stop(); // Is it okay to call this one without first calling start?
     }
     
-    ~MyTimer(){
+    virtual ~MyTimer(){
       prepare_for_deletion();
     }
     

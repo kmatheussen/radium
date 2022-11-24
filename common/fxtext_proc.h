@@ -11,7 +11,7 @@ extern LANGSPEC bool FXTEXT_keypress(struct Tracker_Windows *window, struct WBlo
 
 #include "FX.hpp"
 
-#if USE_QT4
+#ifdef USE_QT4
 const FXText_trss FXTEXTS_get(const struct WBlocks *wblock, const struct WTracks *wtrack, const struct FXs *fxs);
 #endif
 

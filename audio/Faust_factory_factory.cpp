@@ -434,15 +434,15 @@ namespace{
                                      opts.code.toUtf8().constData(),
                                      args.get_argc(),
                                      args.get_argv(),
-#if FOR_WINDOWS
+#ifdef FOR_WINDOWS
   #if _WIN64
                                      "x86_64-w64-windows-gnu", // clang -target $P -v 2>&1 | grep Target
   #else
                                      "i686-w64-windows-gnu",
   #endif
-#elif FOR_LINUX
+#elifdef FOR_LINUX
                                      "x86_64-pc-linux-gnu",
-#elif FOR_MACOSX
+#elifdef FOR_MACOSX
                                      "x86_64-apple-darwin17",
                                      //"x86_64-apple-darwin21",
 #else

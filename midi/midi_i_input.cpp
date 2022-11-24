@@ -17,12 +17,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <unistd.h>
 
-
-#include <boost/version.hpp>
-#if (BOOST_VERSION < 100000) || ((BOOST_VERSION / 100 % 1000) < 58)
-  #error "Boost too old. Need at least 1.58.\n Quick fix: cd $HOME ; wget http://downloads.sourceforge.net/project/boost/boost/1.63.0/boost_1_63_0.tar.bz2 ; tar xvjf boost_1_63_0.tar.bz2 (that's it!)"
-#endif
-#include <boost/lockfree/queue.hpp>
+#include "../common/include_boost.h"
 
 #include <QThread>
 #include <QSet>
@@ -959,7 +954,7 @@ void RT_MIDI_handle_play_buffer(void){
     
     if(through_patch!=NULL || num_playing_patches > 0){
 
-      uint8_t byte1 = MIDI_msg_byte1(msg);
+      uint8_t byte1 = (uint8_t)MIDI_msg_byte1(msg);
       if (byte1 < 0xf0 && ATOMIC_GET(g_use_track_channel_for_midi_input)){
         byte1 &= 0xf0;
         byte1 |= ATOMIC_GET(g_curr_midi_channel);

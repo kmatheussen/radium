@@ -1,5 +1,5 @@
-#ifndef _RADIUM_COMMON_RATIO_FUNCS_H
-#define _RADIUM_COMMON_RATIO_FUNCS_H
+#ifndef RADIUM_COMMON_RATIO_FUNCS_H
+#define RADIUM_COMMON_RATIO_FUNCS_H
 
 #if !defined(__STDC_FORMAT_MACROS)
 #define __STDC_FORMAT_MACROS 1
@@ -24,8 +24,8 @@
 
 #include <math.h>
 
-#if __MINGW32__
-#  if __MINGW64__
+#ifdef __MINGW32__
+#  ifdef __MINGW64__
 #    define USE_RATIO128 1
 #  else
 #    define USE_RATIO128 0
@@ -55,7 +55,7 @@ static inline Ratio make_ratio_from_double_internal(double val, const int num_bi
 #endif
 
   int64_t den = (2LL << num_bits) / (1 + (int64_t)val);
-  int64_t num = round((double)den * val);
+  int64_t num = (int64_t)(round((double)den * val));
   //printf("num: %d\n",(int)num);
 
   if (den == 0){

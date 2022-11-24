@@ -1,5 +1,5 @@
 
-#if USE_QT4
+#ifdef USE_QT4
 
 #include <QString>
 #include <QFont>

@@ -18,7 +18,7 @@
 #include "Qt_MyQScrollBar.hpp"
 
 
-#if TEST_MAIN
+#ifdef TEST_MAIN
 #include <QMouseEvent>
 #include <QPushButton>
 namespace radium{
