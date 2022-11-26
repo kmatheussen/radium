@@ -1978,7 +1978,7 @@ public slots:
     //printf("   *** applicationStateChanged called: %s.\n", state==Qt::ApplicationHidden ? "HIDDEN" :  state==Qt::ApplicationInactive ? "INACTIVE" : state==Qt::ApplicationActive ? "ACTIVE" : "WHAT?");
 #ifdef FOR_MACOSX
     OS_OSX_clear_modifiers();
-#elifdef FOR_LINUX
+#elif defined(FOR_LINUX)
     //OS_SYSTEM_ResetKeysUpDowns();
 #endif
   }
@@ -2190,11 +2190,12 @@ int OS_get_main_window_height(void){
 // Or: Use effectWinId() instead of winId().
 //
 static bool maybe_got_key_window(QWindow *window){
+  
 #ifdef FOR_MACOSX
   return OS_OSX_is_key_window((void*)window->winId());
-#elifdef FOR_WINDOWS
+#elif defined(FOR_WINDOWS)
   return OS_WINDOWS_is_key_window((void*)window->winId());
-#elifdef FOR_LINUX
+#elif defined(FOR_LINUX)
   //return g_qapplication->focusWidget()!=NULL && window==g_qapplication->focusWidget()->window(); //activeWindow();
   QWidget *topwindow = QApplication::topLevelAt(QCursor::pos());
   if (topwindow==NULL)
@@ -2204,7 +2205,7 @@ static bool maybe_got_key_window(QWindow *window){
   return window==topwindow->window()->windowHandle();
   //->isActiveWindow();
 #else
-  RError("Unknown platform");
+#error "Unknown platform"
   return true;
 #endif
 }

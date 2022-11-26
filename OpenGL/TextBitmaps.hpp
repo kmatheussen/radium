@@ -33,6 +33,9 @@ struct MyIMutex : public vl::IMutex{
 
   bool is_obtained = false;
 
+  virtual ~MyIMutex(){
+  }
+  
   void lock () override {
     _lock.lock();
     is_obtained = true;

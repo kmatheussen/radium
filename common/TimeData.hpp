@@ -1039,6 +1039,16 @@ public:
     const T &at_ref(int i) const {
       return this->_vector->at_ref(i);
     }
+
+    const T &find(std::function<bool(const T&)> func) const {
+      for(const T &t : *this)
+        if (func(t))
+          return t;
+
+      R_ASSERT_NON_RELEASE(false);
+      
+      return at_first();
+    }
   };
 
 
@@ -1097,6 +1107,8 @@ public:
       for(T &t : *this)
         if (func(t))
           return t;
+
+      R_ASSERT_NON_RELEASE(false);
       
       return at_first();
     }

@@ -21,6 +21,8 @@ extern LANGSPEC int GetNoteSubtrack(const struct WTracks *wtrack, struct Notes *
 extern LANGSPEC int GetNumSubtracks(const struct WTracks *wtrack);
 
 #ifdef __cplusplus
+extern int GetNoteSubtrack2(const struct WTracks *wtrack, const r::NotePtr &note);
+
 extern void StopAllNotesAtPlace(
                                 struct Blocks *block,
                                 struct Tracks *track,
@@ -57,7 +59,8 @@ extern LANGSPEC struct Notes *InsertGfxNote(struct WBlocks *wblock,
                                             int velocity
                                             );
 
-extern LANGSPEC struct Notes *InsertNote(
+// returns id.
+extern LANGSPEC int64_t InsertNote(
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
 	const Place *placement,
@@ -97,15 +100,20 @@ void ReplaceNoteEnds2(
 #endif
 
 extern LANGSPEC void CutNoteAt(const struct Blocks *block, const struct Tracks *track,struct Notes *note, const Place *place);
-  
+
+#ifdef __cplusplus
+extern void CutNoteAt2(const struct Blocks *block, const struct Tracks *track, r::ModifyNote &note, const Ratio &ratio);
+#endif
+
 extern LANGSPEC void RemoveNote(struct Blocks *block,
                 struct Tracks *track,
                 const struct Notes *note
                 );
-#if __cplusplus
+#ifdef __cplusplus
 void RemoveNote2(
                  struct Blocks *block,
                  struct Tracks *track,
+                 r::NoteTimeData::Writer &writer,
                  const r::NotePtr &note
                  );
 #endif

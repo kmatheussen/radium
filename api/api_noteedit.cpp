@@ -311,20 +311,27 @@ int getNoteScrollLength(void){
 /****************** notes **********************/
 
 int getNoteVolume(int windownum,int blocknum,int tracknum,dyn_t dynnote){
+#if 0
 	struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,dynnote);
 
 	if(note==NULL) return -1;
 
-  return note->velocity;
+        return note->velocity;
+#else
+        const r::NotePtr note = getNoteFromNum2(windownum,blocknum,tracknum,dynnote);
+        if (note.get()==NULL)
+          return -1;
+  
+        return note->d._velocity;
+#endif
 }
 
 int getNumNotes(int tracknum,int blocknum,int windownum){
 	struct WTracks *wtrack=getWTrackFromNum(windownum,blocknum,tracknum);
 
 	if(wtrack==NULL) return 0;
-	if(wtrack->track->notes==NULL) return 0;
 
-	return ListFindNumElements3((struct ListHeader3*)wtrack->track->notes);
+        return r::NoteTimeData::Reader(wtrack->track->_notes2).size();
 }
 
 bool noteContinuesNextBlock(dyn_t dynnote, int tracknum, int blocknum, int windownum){
@@ -416,17 +423,28 @@ int addNote(float notevalue,
     return -1;
   }
 
-  struct Notes *note = InsertNote(wblock,
-                                  wtrack,
-                                  &start,
-                                  &end,
-                                  notevalue,
-                                  MAX_VELOCITY*velocity,
-                                  true);
-
+  int64_t id = InsertNote(wblock,
+                          wtrack,
+                          &start,
+                          &end,
+                          notevalue,
+                          MAX_VELOCITY*velocity,
+                          true);
+  
   window->must_redraw=true; // must use must_redraw and not must_redraw_editor since polyphony might have changed.
 
-  return ListFindElementPos3(&wtrack->track->notes->l,&note->l);
+  const r::NoteTimeData::Reader reader(wtrack->track->_notes2);
+
+  int num = 0;
+  for(const r::NotePtr &note2 : reader)
+    if (note2->_id == id)
+      return num;
+    else
+      num++;
+
+  R_ASSERT(false);
+  
+  return -1;
 }
 
 int addNote3(float notevalue,float velocity,
@@ -445,6 +463,7 @@ void cutNote(Place place, dyn_t dynnote, int tracknum, int blocknum, int windown
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
+#if 0
   struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
   if (note==NULL)
     return;
@@ -456,6 +475,25 @@ void cutNote(Place place, dyn_t dynnote, int tracknum, int blocknum, int windown
     return;
 
   CutNoteAt(wblock->block, wtrack->track, note, &place);
+#else
+  r::NotePtr note = getNoteFromNumA2(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
+  if (!note)
+    return;
+
+  const Ratio ratio = place2ratio(place);
+  
+  if (ratio >= note->d._end)
+    return;
+  
+  if (ratio <= note->get_time())
+    return;
+
+  r::NoteTimeData::Writer writer(wtrack->track->_notes2);
+
+  r::ModifyNote mnote(writer, note);
+  
+  CutNoteAt2(wblock->block, wtrack->track, mnote, ratio);
+#endif
 }
 
 void deleteNote(dyn_t dynnote, int tracknum, int blocknum, int windownum){
@@ -555,7 +593,21 @@ int getNoteNum(dyn_t dynnote, int tracknum, int blocknum, int windownum){
   struct WTracks *wtrack = getWTrackFromNumA(-1, &window, blocknum, &wblock, tracknum);
   if(wtrack==NULL)
     return -1;
-  
+
+#if 1
+  const r::NotePtr note = getNoteFromNum2(windownum,blocknum,tracknum,dynnote);
+  if (note.get()==NULL)
+    return -1;
+
+  int i = 0;
+  const r::NoteTimeData::Reader reader(wtrack->track->_notes2);
+  for(const r::NotePtr &note2 : reader)
+    if (note2 == note)
+      return i;
+    else
+      i++;
+    
+#else
   struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,dynnote);
   if (note==NULL)
     return -1;
@@ -568,56 +620,97 @@ int getNoteNum(dyn_t dynnote, int tracknum, int blocknum, int windownum){
     i++;
     notes = NextNote(notes);
   }
-
+#endif
+  
   handleError("getNoteNum: Note not found in track");
   return -1;
 }
 
 Place getNoteStart(dyn_t dynnote, int tracknum, int blocknum, int windownum){
+#if 0  
   struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,dynnote);
 
   if(note==NULL)
     return p_Create(0,0,1);
 
   return note->l.p;
+#else
+  const r::NotePtr note = getNoteFromNum2(windownum,blocknum,tracknum,dynnote);
+  if (!note)
+    return p_Create(0,0,1);
+
+  return ratio2place(note->get_time());
+#endif
 }
 
 Place getNoteEnd(dyn_t dynnote, int tracknum, int blocknum, int windownum){
+#if 0
   struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,dynnote);
 
   if(note==NULL)
     return p_Create(1,0,1);
 
   return ratio2place(note->end);
+#else
+  const r::NotePtr note = getNoteFromNum2(windownum,blocknum,tracknum,dynnote);
+  if (!note)
+    return p_Create(1,0,1);
+
+  return ratio2place(note->d._end);
+#endif
 }
 
 float getNoteValue(dyn_t dynnote, int tracknum, int blocknum, int windownum){
+#if 0
   struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,dynnote);
 
   if(note==NULL)
     return 64.0f;
 
   return note->note;
+#else
+  const r::NotePtr note = getNoteFromNum2(windownum,blocknum,tracknum,dynnote);
+  if (!note)
+    return 64.0f;
+
+  return note->_val;
+#endif
 }
 
 float getNoteEndPitch(dyn_t dynnote, int tracknum, int blocknum, int windownum){
+#if 0
   struct Notes *note=getNoteFromNum(windownum,blocknum,tracknum,dynnote);
 
   if(note==NULL)
     return 0;
 
   return note->pitch_end;
+#else
+  const r::NotePtr note = getNoteFromNum2(windownum,blocknum,tracknum,dynnote);
+  if (!note)
+    return 0;
+
+  return note->d._pitch_end;  
+#endif
 }
 
 int getNoteSubtrack(dyn_t dynnote, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
+#if 0
   struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
   if (note==NULL)
     return 0;
 
   return GetNoteSubtrack(wtrack, note);
+#else
+  const r::NotePtr note = getNoteFromNumA2(windownum,&window,blocknum,&wblock,tracknum,&wtrack,dynnote);
+  if (!note)
+    return 0;
+
+  return GetNoteSubtrack2(wtrack, note);
+#endif
 }
 
 void setNoMouseNote(int blocknum, int windownum){
@@ -626,8 +719,8 @@ void setNoMouseNote(int blocknum, int windownum){
   if(wblock==NULL)
     return;
   
-  if (wblock->mouse_note != NULL){
-    wblock->mouse_note = NULL;
+  if (wblock->mouse_note_id != 0){
+    wblock->mouse_note_id = 0;
     window->must_redraw_editor = true;
     //printf("no mouse note dirty\n");
   }
@@ -641,8 +734,8 @@ void setMouseNote(dyn_t dynnote, int tracknum, int blocknum, int windownum){
   if (!note)
     return;
   
-  if (wblock->mouse_note != note.get()){
-    wblock->mouse_note = note.get();
+  if (wblock->mouse_note_id != note->_id){
+    wblock->mouse_note_id = note->_id;
     window->must_redraw_editor = true;
     //printf("mouse note dirty\n");
   }
@@ -660,11 +753,17 @@ dynvec_t getAllNotes(int tracknum, int blocknum, int windownum){
   const struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
   if (wtrack!=NULL){
 
+#if 0
     struct Notes *note = wtrack->track->notes;
     while(note != NULL){
       DYNVEC_push_back(&ret, GetNoteId(note));
       note = NextNote(note);
     }
+#else
+    const r::NoteTimeData::Reader reader(wtrack->track->_notes2);
+    for(const r::NotePtr &note : reader)
+      DYNVEC_push_back(&ret, GetNoteId2(note));
+#endif
   }
   
   return ret;
@@ -681,12 +780,10 @@ void unselectAllNotes(int tracknum, int blocknum, int windownum){
   if (wtrack==NULL)
     return;
 
-  struct Notes *notes = wtrack->track->notes;
-  while(notes!=NULL){
-    notes->pianonote_is_selected = false;
-    notes = NextNote(notes);
-  }
-
+  const r::NoteTimeData::Reader reader(wtrack->track->_notes2);
+  for(const r::NotePtr &note : reader)
+    note->d._pianonote_is_selected = false;
+  
   root->song->tracker_windows->must_redraw=true;
 }
 
@@ -694,11 +791,11 @@ bool noteIsSelected(dyn_t dynnote, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
-  const struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
-  if (note==NULL)
+  const r::NotePtr note = getNoteFromNumA2(windownum,&window,blocknum,&wblock,tracknum,&wtrack,dynnote);
+  if (note.get()==NULL)
     return false;
 
-  return note->pianonote_is_selected;
+  return note->d._pianonote_is_selected;
   //return API_note_is_selected(wblock, note);
 }
 
@@ -706,14 +803,14 @@ void selectNote(dyn_t dynnote, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
-  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
-  if (note==NULL)
+  const r::NotePtr note = getNoteFromNumA2(windownum,&window,blocknum,&wblock,tracknum,&wtrack,dynnote);
+  if (note.get()==NULL)
     return;
   
-  if (note->pianonote_is_selected==true)
+  if (note->d._pianonote_is_selected==true)
     return;
   
-  note->pianonote_is_selected = true;
+  note->d._pianonote_is_selected = true;
   
   window->must_redraw=true;
 }
@@ -722,14 +819,14 @@ void unselectNote(dyn_t dynnote, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
-  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
-  if (note==NULL)
+  const r::NotePtr note = getNoteFromNumA2(windownum,&window,blocknum,&wblock,tracknum,&wtrack,dynnote);
+  if (note.get()==NULL)
     return;
 
-  if (note->pianonote_is_selected==false)
+  if (note->d._pianonote_is_selected==false)
     return;
   
-  note->pianonote_is_selected = false;
+  note->d._pianonote_is_selected = false;
 
   window->must_redraw=true;
 }
@@ -740,12 +837,11 @@ dynvec_t getSelectedNotes(int tracknum, int blocknum, int windownum){
   const struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
   if (wtrack!=NULL){
 
-    struct Notes *note = wtrack->track->notes;
-    while(note != NULL){
-      if (note->pianonote_is_selected)
-        DYNVEC_push_back(&ret, GetNoteId(note));
-      note = NextNote(note);
-    }
+    const r::NoteTimeData::Reader reader(wtrack->track->_notes2);
+          
+    for(const r::NotePtr &note : reader)
+      if (note->d._pianonote_is_selected)
+        DYNVEC_push_back(&ret, GetNoteId2(note));
   }
   
   return ret;
@@ -755,13 +851,11 @@ bool hasSelectedNotes(int tracknum, int blocknum, int windownum){
   const struct WTracks *wtrack = getWTrackFromNum(windownum, blocknum, tracknum);
   if (wtrack!=NULL){
 
-    struct Notes *note = wtrack->track->notes;
-    while(note != NULL){
-      if (note->pianonote_is_selected)
+    const r::NoteTimeData::Reader reader(wtrack->track->_notes2);
+          
+    for(const r::NotePtr &note : reader)
+      if (note->d._pianonote_is_selected)
         return true;
-
-      note = NextNote(note);
-    }
   }
   
   return false;

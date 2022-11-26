@@ -668,6 +668,16 @@ const struct NodeLine2 *GetPitchNodeLines3(const struct Tracker_Windows *window,
 }
 
 
+const vector_t *GetPitchNodes3(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const r::NotePtr &note, const float track_pitch_min, const float track_pitch_max){
+
+  const r::PitchTimeData::Reader pitch_reader(&note->_pitches);
+  
+  return get_nodeline_nodes2(GetPitchNodeLines3(window, wblock, wtrack, note.get(), track_pitch_min, track_pitch_max, pitch_reader),
+                             wblock->t.y1);
+}
+
+
+
 
 // pianoroll notes
 ///////////////////////////////////////////////////////////

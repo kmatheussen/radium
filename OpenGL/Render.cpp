@@ -2780,7 +2780,7 @@ static void create_track_velocities(const struct Tracker_Windows *window, const 
   }
 
   
-  bool is_current = wblock->mouse_note==note;
+  bool is_current = wblock->mouse_note_id==note->_id;
 
   // border
   {
@@ -2879,7 +2879,7 @@ static void create_track_velocities2(const struct Tracker_Windows *window,
     }
   }
 
-  bool is_current = wblock->mouse_note==note;
+  bool is_current = wblock->mouse_note_id==note->_id;
   
   // border
   {

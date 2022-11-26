@@ -1055,7 +1055,9 @@
                                            :note-ids #f)
   (set! note-ids (or note-ids
                      (get-note-ids-for-mouse-to-operate-on tracknum blocknum)))
+  
   (FROM_C-copy-selected-pianonotes tracknum blocknum note-ids)
+
   (FROM_C-delete-selected-pianonotes! tracknum blocknum note-ids))
 
 

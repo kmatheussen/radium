@@ -42,6 +42,8 @@ extern const struct NodeLine2 *GetPitchNodeLines2(const struct Tracker_Windows *
 
 extern LANGSPEC const vector_t *GetPitchNodes2(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note, const float track_pitch_min, const float track_pitch_max);
 
+const vector_t *GetPitchNodes3(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const r::NotePtr &note, const float track_pitch_min, const float track_pitch_max);
+
 const struct NodeLine2 *GetPitchNodeLines3(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const r::Note *note, const float track_pitch_min, const float track_pitch_max, const r::PitchTimeData::Reader &reader);
 
 //extern LANGSPEC const struct NodeLine *GetVelocityNodeLines(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note);

@@ -426,7 +426,7 @@ extern LANGSPEC bool GFX_is_showing_message(void);
   #define R_ASSERT_NON_RELEASE(a) do{}while(0)
   #define R_ASSERT_NON_RELEASE2(a, returnvalue) do{}while(0)
 #else
-  #define R_ASSERT_NON_RELEASE(a) R_ASSERT(a)
+  #define R_ASSERT_NON_RELEASE(a) do{if(!(a))abort();}while(0)
   #define R_ASSERT_NON_RELEASE2(a, returnvalue) R_ASSERT_RETURN_IF_FALSE2(a, returnvalue)
 #endif
 
@@ -2366,12 +2366,27 @@ struct NoteData{
   bool _pianonote_is_selected;
 };
 
+#if !defined(RELEASE)
+  struct Note;
+  extern int g_num_allocated_notes;
+  void debug_note_added(const r::Note *note, const char *where);
+  void debug_note_removed(const r::Note *note);
+#endif
+  
 struct Note : NodeId, public r::TimeDataDataTypeRef<float> {
 
+  /*
+  Note(){
+        debug_note_added(this, "Empty");
+  }
+  */
+  
   Note(Ratio time, float note, int velocity)
     : TimeDataDataTypeRef<float>(time, note)
     , _id(new_note_id())
   {
+    debug_note_added(this, "A");
+    
     memset(&d, 0, sizeof(NoteData));
     
     d._velocity = velocity;
@@ -2383,6 +2398,8 @@ struct Note : NodeId, public r::TimeDataDataTypeRef<float> {
     : TimeDataDataTypeRef<float>(other->get_time(), other->_val)
     , _id(new_note_id())
   {
+    debug_note_added(this, "B");
+    
     d = other->d;
 
     // TOPIC: Should we use shared_ptr for _velocities and _pitches instead of copying the content of them?
@@ -2396,9 +2413,12 @@ struct Note : NodeId, public r::TimeDataDataTypeRef<float> {
   Note(const Note &other)
     : Note(&other)
   {
+    debug_note_added(this, "C");
   }
   
   Note& operator=(const Note &other){
+    debug_note_added(this, "D");
+    
     set_time(other.get_time());
     _val = other.get_val();
       
@@ -2409,6 +2429,13 @@ struct Note : NodeId, public r::TimeDataDataTypeRef<float> {
     return *this;
   }
 
+#if !defined(RELEASE)
+  ~Note()
+  {
+    debug_note_removed(this);
+  }
+#endif
+  
   int64_t get_node_id(void) const {
     return NodeId::_id;
   }
@@ -2474,6 +2501,8 @@ struct NoteTimeData : public TimeData<NotePtr, NoteSeqBlock>{
     Therefore we first have to make a copy, and afterwards replace the old note with the new one in the Writer.
 
     This is magically taken care of here.
+
+    Also note that the id is reused in the new note (for practical reasons), so the old raw note (NOT the noteptr) must always be discarded afterwards.
    */
 class ModifyNote {
   NotePtr &_noteptr;
@@ -2500,10 +2529,12 @@ public:
     , _time(noteptr->get_time())
     , _type(type)
   {
+    _note->_id = noteptr->_id; // Very ugly, but it's probably fine. Fishing out the id of a modified note is very cumbersome.
+    
     R_ASSERT(_noteptr.get() == noteptr.get());
   }
 
-  ModifyNote(const r::NoteTimeData::Writer &writer, NotePtr &noteptr, Type type = Type::CAN_NOT_MODIFY_TIME)
+  ModifyNote(const r::NoteTimeData::Writer &writer, const NotePtr &noteptr, Type type = Type::CAN_NOT_MODIFY_TIME)
     : ModifyNote(writer.find([&noteptr](const r::NotePtr &maybe)
                    {
                      return maybe.get()==noteptr.get();
@@ -2527,6 +2558,10 @@ public:
 
   Note *get(void) const {
     return _note;
+  }
+
+  NotePtr &get_noteptr(void) const {
+    return _noteptr;
   }
 };
 }
@@ -3701,11 +3736,9 @@ struct WBlocks{
         int bot_realline; // only access from main thread.
 
         int mouse_track; // The track the mouse is currently above. -1 if not on a track.
-#if __cplusplus
-        const r::Note *mouse_note; // The note the mouse is currently above. NULL if mouse is not above a note. Note that this value should not be used for anything other than comparison. (It might have been freed.)
-#else
-        void *mouse_note;
-#endif
+
+        int64_t mouse_note_id; // id of the note the mouse is currently above. Is 0 is not a note.
+  
         struct FXs *mouse_fxs; // The fxs the mouse is currently above. NULL if mouse is not above an fx.
   
 	struct Blocks *block;			/* Only referenced. wblocknum=block->blocknum */
@@ -4597,8 +4630,8 @@ static inline note_t create_note_t_plain(const struct SeqBlock *seqblock,
                                          float pitch,
                                          float velocity,
                                          float pan,
-                                         char midi_channel,
-                                         char voicenum,
+                                         int midi_channel,
+                                         int voicenum,
                                          int64_t sample_pos
                                          )
 {

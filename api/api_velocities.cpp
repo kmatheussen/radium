@@ -227,9 +227,10 @@ dyn_t setVelocity(float value, Place place, int velocitynum, dyn_t dynnote, int 
     note->d._velocity = value2;
     if (!p_is_same_place(place)){
       if(place.line < 0){handleError("Negative place");return dynnote;}
-      auto ret = MoveNote2(block, track, note, ratio, true);
-      fprintf(stderr, "api_velocities.cpp: Exit. Note: %p. id: %S\n", note.get(), DYN_to_string(ret));
-      return ret;
+      int64_t id = MoveNote2(block, track, note, ratio, true);
+      fprintf(stderr, "api_velocities.cpp: Exit. Note: %p. id: %d\n", note.get(), int(id));
+      if (id >= 0)
+        return GetNoteIdFromNoteId(id);
     }
     
   } else if (velocitynum==num_velocities-1) {
@@ -237,7 +238,9 @@ dyn_t setVelocity(float value, Place place, int velocitynum, dyn_t dynnote, int 
     note->d._velocity_end = value2;
     if (!p_is_same_place(place)){
       if(place.line < 0){handleError("Negative place");return dynnote;}
-      MoveEndNote2(block, track, note, ratio, true);
+      int64_t id = MoveEndNote2(block, track, note, ratio, true);
+      if (id >= 0)
+        return GetNoteIdFromNoteId(id);
     }
     
   } else {
@@ -316,8 +319,8 @@ void deleteVelocity(int velocitynum, dyn_t dynnote, int tracknum, int blocknum, 
 
   if (is_first || (is_last && no_velocities)){
 
-    SCOPED_PLAYER_LOCK_IF_PLAYING();
-    RemoveNote2(block, track, note);
+    r::NoteTimeData::Writer writer(wtrack->track->_notes2);
+    RemoveNote2(block, track, writer, r::ModifyNote(writer, note).get_noteptr()); // We use ModifyNote here as a quick way to get reference to noteptr inside writer.
 
   } else if (velocitynum==num_velocities-1) {
     int new_last_velocity;

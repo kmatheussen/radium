@@ -2631,7 +2631,7 @@
             noteid
             tracknum blocknum)))
 
-  (setit noteid main-delta-Place)
+  (define noteid (setit noteid main-delta-Place))
 
   (when note-is-selected
 
@@ -2643,7 +2643,9 @@
     (for-each (lambda (dasnoteid)
                 (if (not (equal? dasnoteid noteid))
                     (setit dasnoteid resulting-delta-Place)))
-              (<ra> :get-selected-notes tracknum blocknum))))
+              (<ra> :get-selected-notes tracknum blocknum)))
+
+  noteid)
 
 
 #!!
@@ -2850,17 +2852,17 @@
                                                          note-place)
                                                      (set! move-type *pianonote-move-all*))))
 
-                                           (move-pianonote pianonotenum
-                                                           move-type
-                                                           (if (<ra> :control-pressed)
-                                                               Value
-                                                               (round Value))
-                                                           Place
-                                                           (pianonote-info :noteid)
-                                                           (pianonote-info :tracknum)
-                                                           (pianonote-info :blocknum)
-                                                           )
-                                           
+                                           (define note-id (move-pianonote pianonotenum
+                                                                           move-type
+                                                                           (if (<ra> :control-pressed)
+                                                                               Value
+                                                                               (round Value))
+                                                                           Place
+                                                                           (pianonote-info :noteid)
+                                                                           (pianonote-info :tracknum)
+                                                                           (pianonote-info :blocknum)
+                                                                           ))
+
                                            (define playing-note-id (pianonote-info :playing-note-id))
                                            (define playing-note-pitch (pianonote-info :playing-note-pitch))
                                            
@@ -2887,8 +2889,9 @@
                                                                  playing-note-id
                                                                  midi-channel
                                                                  instrument-id))))))
-                                           
+
                                            (<copy-pianonote-info> pianonote-info
+                                                                  :noteid note-id
                                                                   :playing-note-id playing-note-id
                                                                   :playing-note-pitch playing-note-pitch
                                                                   :mouse-has-been-moved #t)

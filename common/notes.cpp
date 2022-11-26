@@ -47,7 +47,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "notes_proc.h"
 
-
 #ifndef TEST_NOTES
 
 static int FindFirstFreePolyphony_num(const std::vector<Ratio> &end_places, const Ratio &ratio){
@@ -244,15 +243,43 @@ void r::NoteTimeData::writer_finalizer(Writer &writer){
   
   R_ASSERT(THREADING_is_main_thread()); // This function is not thread safe.
 
+  {
+    for(const auto &note : writer)
+      printf("\n. 1111 Note: %d.\n", (int)note->_id);
+    printf("\n");
+  }
+
   set_note_polyphony_num(this, writer);
+
+  {
+    for(const auto &note : writer)
+      printf("\n. 2222 Note: %d.\n", (int)note->_id);
+    printf("\n");
+  }
 
   set_note_min_max_pitch(this, writer);
 
+  {
+    for(const auto &note : writer)
+      printf("\n. 3333 Note: %d.\n", (int)note->_id);
+    printf("\n");
+  }
+  
   update_line_notes(this, writer);
+
+  {
+    for(const auto &note : writer)
+      printf("\n. 4444 Note: %d.\n", (int)note->_id);
+    printf("\n");
+  }
 }
 
 int GetNoteSubtrack(const struct WTracks *wtrack, struct Notes *note){
   return WTRACK_num_non_polyphonic_subtracks(wtrack) + note->polyphony_num;
+}
+
+int GetNoteSubtrack2(const struct WTracks *wtrack, const r::NotePtr &note){
+  return WTRACK_num_non_polyphonic_subtracks(wtrack) + note->d._polyphony_num;
 }
 
 int GetNumSubtracks(const struct WTracks *wtrack){
@@ -794,11 +821,18 @@ struct Notes *InsertGfxNote(struct WBlocks *wblock,
     ListAddElement3(&track->gfx_notes,&note->l);
     return note;
   }
-  }
+}
 
 
+  
+#if !defined(RELEASE)
+static void test(
+                 struct Blocks *block,
+                 struct Tracks *track
+                 );
+#endif
 
-struct Notes *InsertNote(
+int64_t InsertNote(
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
 	const Place *placement,
@@ -807,21 +841,32 @@ struct Notes *InsertNote(
 	int velocity,
 	bool polyphonic
 ){
+    
 	struct Blocks *block=wblock->block;
 	struct Tracks *track=wtrack->track;
 
+#if !defined(RELEASE)
+        test(block, track);
+#endif
+
+        int64_t id;
+        
         {
           const Ratio ratio = place2ratio(*placement);
+
+          auto note = make_note2(block, track, ratio, end_placement, notenum, velocity);
+
+          id = note->_id;
           
           r::NoteTimeData::Writer writer(track->_notes2);
-          writer.add(make_note2(block, track, ratio, end_placement, notenum, velocity));
-          // TODO: Stopallnotesatplace etc. below.
+          writer.add(std::move(note));
+
 
           if(polyphonic==false)
             StopAllNotesAtRatio(block, track, writer, ratio);
 
         }
-
+          
         {
           struct Notes *note = make_note(block, track, placement, end_placement, notenum, velocity);
           
@@ -837,9 +882,9 @@ struct Notes *InsertNote(
           }
           
           NOTE_validate(block, NULL, note);
-
-          return note;
         }
+
+        return id;
 }
 
 bool drunk_velocity=false;
@@ -936,11 +981,11 @@ bool InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyp
 
   const struct LocalZooms *realline = wblock->reallines[curr_realline];
   
-  struct Notes *note = InsertNote(
-                                  wblock,wtrack,&realline->l.p,NULL,notenum,
-                                  velocity,
-                                  polyphonic
-                                  );
+  int64_t id = InsertNote(
+                          wblock,wtrack,&realline->l.p,NULL,notenum,
+                          velocity,
+                          polyphonic
+                          );
 
   window->must_redraw=true;
   
@@ -948,7 +993,7 @@ bool InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyp
   //  UpdateAllWTracksCoordinates(window,wblock);
 
   if (!polyphonic)
-    return maybe_scroll_down(window, note->id);
+    return maybe_scroll_down(window, id);
 
   return false;
 }
@@ -1091,16 +1136,20 @@ void RemoveNote(
 void RemoveNote2(
                  struct Blocks *block,
                  struct Tracks *track,
+                 r::NoteTimeData::Writer &writer,
                  const r::NotePtr &note
                  )
 {
-  r::NoteTimeData::Writer writer(track->_notes2);
+  R_ASSERT_RETURN_IF_FALSE(note);
 
+  printf("About to remove note with id %d\n", (int)note->_id);
+  Ratio time = note->get_time();
+  
   bool removed = writer.removeElement(note);
   
   R_ASSERT_NON_RELEASE(removed);
   
-  LengthenNotesTo2(block,track,writer, note->get_time());
+  LengthenNotesTo2(block,track,writer, time);
 }
 
 void RemoveNoteCurrPos(struct Tracker_Windows *window){
@@ -1424,9 +1473,7 @@ struct Notes *FindNoteCurrPos(struct Tracker_Windows *window){
 /******************/
 
 static int get_chroma(char chromachar){
-  chromachar = tolower(chromachar);
-
-  switch(chromachar){
+  switch(tolower(chromachar)){
   case 'c':
     return 0;
   case 'd':
@@ -1481,9 +1528,7 @@ static const char *chroma_to_string(int chroma){
 
 
 static int get_octave(char octavechar){
-  octavechar = tolower(octavechar);
-
-  switch(octavechar){
+  switch(tolower(octavechar)){
   case '0':
     return 0;
   case '1':
@@ -1828,6 +1873,7 @@ void EditNoteCurrPos(struct Tracker_Windows *window){
 }
 
 
+
   /******************************/
  /* Not General RETURN anymore */
 /******************************/
@@ -1861,7 +1907,7 @@ void CutNoteAt(const struct Blocks *block, const struct Tracks *track,struct Not
   note->end = place2ratio(*place);
 }
 
-static void CutNoteAt2(const struct Blocks *block, const struct Tracks *track, r::Note *note, const Ratio &ratio){
+void CutNoteAt2(const struct Blocks *block, const struct Tracks *track, r::ModifyNote &note, const Ratio &ratio){
 
   if (ratio >= note->d._end){
     RError("Illegal argument for CutNoteAt 1. %f >= %f\n",make_double_from_ratio(ratio), make_double_from_ratio(note->d._end));
@@ -1883,11 +1929,7 @@ static void CutNoteAt2(const struct Blocks *block, const struct Tracks *track, r
     writer.remove_everything_after(ratio, true);
   }
 
-  // TODO/FIX: What do we do here? Make a copy of the note and replace in the writer?
-  {
-    r::NoteTimeData::Writer writer(track->_notes2);
-    note->d._end = ratio;
-  }
+  note->d._end = ratio;
 }
 
 void StopVelocityCurrPos(struct Tracker_Windows *window,int noend){
@@ -1905,22 +1947,26 @@ void StopVelocityCurrPos(struct Tracker_Windows *window,int noend){
 
         const Ratio ratio = place2ratio(realline->l.p);
         
-        r::NotePtr note = FindNoteOnSubTrack2(wtrack,subtrack,ratio);
-	if(!note)
+        r::NotePtr read_note = FindNoteOnSubTrack2(wtrack,subtrack,ratio);
+	if(!read_note)
           return;
-        
+
         ADD_UNDO(Notes_CurrPos(window));
 
+        r::NoteTimeData::Writer writer(wtrack->track->_notes2);
+        
+        r::ModifyNote note(writer, read_note);
+        
         {
           
           if(note->get_time() >= ratio) {
             
-            RemoveNote2(wblock->block,wtrack->track,note);
+            RemoveNote2(wblock->block,wtrack->track,writer,note.get_noteptr());
             ValidateCursorPos(window);
             
           }else{
             
-            CutNoteAt2(wblock->block, wtrack->track, note.get_mutable(), ratio);
+            CutNoteAt2(wblock->block, wtrack->track, note, ratio);
             
           }
 
@@ -1933,6 +1979,92 @@ void StopVelocityCurrPos(struct Tracker_Windows *window,int noend){
 
 
 
+/*********** Some testing ************************/
+
+#if !defined(RELEASE)
+
+namespace r{
+int g_num_allocated_notes = 0;
+  void debug_note_added(const r::Note *note, const char *where){
+    static int s_counter = 0;
+    g_num_allocated_notes++;
+
+    s_counter++;
+      
+    if (!(s_counter%1024))
+      printf("   (ADD: note %p / %d from \"%s\". Size now: %d)\n", note, (int)note->_id, where, g_num_allocated_notes);
+  }
+
+  void debug_note_removed(const r::Note *note){
+    g_num_allocated_notes--;
+    //printf("   (DEC: note %p / %d. Size now: %d)\n", note, (int)note->_id, g_num_allocated_notes);
+  }
+}
+
+static void test(struct Blocks *block,
+                 struct Tracks *track)
+{
+  static bool s_has_tested = false;
+  if (s_has_tested)
+    return;
+
+  s_has_tested = true;
+
+  R_ASSERT_NON_RELEASE(r::g_num_allocated_notes == 0);
+  
+  printf("-1. g_num_allocated_notes: %d\n", r::g_num_allocated_notes);
+  
+  {
+    r::NotePtr note = NewNote2(make_ratio(0,1), 64, 100);
+
+    R_ASSERT_NON_RELEASE(r::g_num_allocated_notes == 1);
+    printf("0. g_num_allocated_notes: %d\n", r::g_num_allocated_notes);
+  }
+
+  R_ASSERT_NON_RELEASE(r::g_num_allocated_notes == 0);
+  printf("1. g_num_allocated_notes: %d\n", r::g_num_allocated_notes);
+
+  {
+    r::NoteTimeData::Writer writer(track->_notes2);
+    
+    printf("2. g_num_allocated_notes: %d\n", r::g_num_allocated_notes);
+    
+        
+    r::NotePtr note = NewNote2(make_ratio(0,1), 64, 100);
+    note->d._end = make_ratio(1,1);
+
+    R_ASSERT_NON_RELEASE(r::g_num_allocated_notes == 1);
+    
+    printf("3. g_num_allocated_notes: %d\n", r::g_num_allocated_notes);
+    
+    writer.add(note);
+
+    printf("4. g_num_allocated_notes: %d\n", r::g_num_allocated_notes);
+    
+    r::ModifyNote(writer, note);
+
+    R_ASSERT_NON_RELEASE(r::g_num_allocated_notes == 2);
+    printf("5. g_num_allocated_notes: %d\n", r::g_num_allocated_notes);
+  }
+
+  R_ASSERT_NON_RELEASE(r::g_num_allocated_notes == 1);
+  printf("6. g_num_allocated_notes: %d\n", r::g_num_allocated_notes);
+
+  {
+    r::NoteTimeData::Writer writer(track->_notes2);
+    writer.clear();
+  }
+
+  R_ASSERT_NON_RELEASE(r::g_num_allocated_notes == 0);
+  printf("7. g_num_allocated_notes: %d\n", r::g_num_allocated_notes);
+  
+  //getchar();
+}
+
+
+
+#endif // !defined(RELEASE)
+
 
 /*********** RT playing notes ************************/
 
@@ -1943,7 +2075,7 @@ namespace{
 
     struct Patch *_patch;
     struct Notes *_note;
-
+    
     static_assert(std::is_same<int, typeof(_note->velocity)>::value, "wrong template type for r::IterateCallback");
 
   public:

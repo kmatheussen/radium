@@ -25,7 +25,7 @@ extern LANGSPEC struct TempoNodes *AddTempoNode(
 	struct Tracker_Windows *window,
 	struct WBlocks *wblock,
 	const Place *p,
-	float reltempo
+	double gakk
 );
 
 extern LANGSPEC void AddTempoNodeCurrPos(struct Tracker_Windows *window,float reltempo);
@@ -38,12 +38,10 @@ extern LANGSPEC void FreeAllWTempoNodes(
 
 extern LANGSPEC float FindHighestTempoNodeVal(struct Blocks *block);
 
-static inline void adjust_reltempomax(struct WBlocks *wblock, float new_value){
-  if ( (new_value+1) > wblock->reltempomax) {
+static inline void adjust_reltempomax(struct WBlocks *wblock, double new_value){
+  if ( (new_value+1.0) > wblock->reltempomax) {
     wblock->reltempomax = new_value+1;      
-  } else if ( (new_value-1) < -wblock->reltempomax) {
-    wblock->reltempomax = -1*(new_value -1);
+  } else if ( (new_value-1.0) < -wblock->reltempomax) {
+    wblock->reltempomax = -1.0*(new_value -1.0);
   }
 }
-
-#endif

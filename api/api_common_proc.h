@@ -130,6 +130,8 @@ const r::NotePtr getNoteFromNumA2(int windownum,struct Tracker_Windows **window,
 const r::NotePtr getNoteFromNum2(int windownum,int blocknum,int tracknum,dyn_t dynnote);
   
 extern r::Pitch getPitchFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, dyn_t dynnote, struct Notes **note, int pitchnum);
+extern r::Pitch getPitchFromNumA2(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, dyn_t dynnote, r::NotePtr &note, int pitchnum);
+
 //extern struct Pitches *getPitchFromNum(int windownum,int blocknum,int tracknum,dyn_t dynnote,int pitchnum);
 extern r::Velocity getVelocityFromNumA(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, dyn_t dynnote, struct Notes **note, int velocitynum);
 extern r::Velocity getVelocityFromNumA2(int windownum,struct Tracker_Windows **window, int blocknum, struct WBlocks **wblock, int tracknum, struct WTracks **wtrack, dyn_t dynnote, r::NotePtr &note, int velocitynum);

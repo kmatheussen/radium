@@ -440,9 +440,9 @@ namespace{
   #else
                                      "i686-w64-windows-gnu",
   #endif
-#elifdef FOR_LINUX
+#elif defined(FOR_LINUX)
                                      "x86_64-pc-linux-gnu",
-#elifdef FOR_MACOSX
+#elif defined(FOR_MACOSX)
                                      "x86_64-apple-darwin17",
                                      //"x86_64-apple-darwin21",
 #else

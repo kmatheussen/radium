@@ -145,7 +145,7 @@ struct KeyboardFocusFrame : public QFrame{
       QTimer::singleShot(1,[this]
                          {
                            _last_fontheight = root->song->tracker_windows->systemfontheight;
-                           setLineWidth(R_MAX(1, _last_fontheight  / (_type==KeyboardFocusFrameType::EDITOR ? 7.8 : 4.8)));
+                           setLineWidth((int)R_MAX(1, _last_fontheight  / (_type==KeyboardFocusFrameType::EDITOR ? 7.8 : 4.8)));
                          }
                          );
     }

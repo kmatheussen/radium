@@ -21,13 +21,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 static inline Place p_Create(int line, int counter, int dividor) {
   // Uncomment here. p_Create() is used more for calculation
-  /*
-  R_ASSERT(line >= 0);
-  R_ASSERT(counter >= 0);
-  R_ASSERT(counter < dividor);
-  R_ASSERT(dividor > 0);
-  R_ASSERT(dividor <= MAX_UINT32);
-  */
+
+  R_ASSERT_NON_RELEASE(line >= 0);
+  R_ASSERT_NON_RELEASE(counter >= 0);
+  //R_ASSERT_NON_RELEASE(counter < dividor); (we use place for signatures as well.)
+  R_ASSERT_NON_RELEASE(dividor > 0);
+  R_ASSERT_NON_RELEASE(dividor <= MAX_UINT32);
 
   if(dividor==0){
     R_ASSERT(false);
@@ -202,14 +201,19 @@ static inline Place ratio2place(const Ratio ratio){
 }
 
 static inline Place *PlaceCreate(int line, int counter, int dividor) {
+  R_ASSERT_NON_RELEASE(line >= 0);
+  R_ASSERT_NON_RELEASE(counter >= 0);
+  R_ASSERT_NON_RELEASE(counter < dividor);
+  R_ASSERT_NON_RELEASE(dividor > 0);
+  R_ASSERT_NON_RELEASE(dividor <= MAX_UINT32);
   if (dividor==0){
     R_ASSERT(false);
     dividor=1;
   }
   Place *place=(Place*)talloc(sizeof(Place));  
   place->line = line;
-  place->counter = counter;
-  place->dividor = dividor;
+  place->counter = (uint32_t)counter;
+  place->dividor = (uint32_t)dividor;
   return place;
 }
 

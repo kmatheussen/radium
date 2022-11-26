@@ -580,6 +580,38 @@ r::Pitch getPitchFromNumA(int windownum,
   return reader.at(pitchnum-1);
 }
 
+r::Pitch getPitchFromNumA2(int windownum,
+                           struct Tracker_Windows **window,
+                           int blocknum,
+                           struct WBlocks **wblock,
+                           int tracknum,
+                           struct WTracks **wtrack,
+                           dyn_t dynnote,
+                           r::NotePtr &note,
+                           int pitchnum)
+{
+  note = getNoteFromNumA2(windownum, window, blocknum, wblock, tracknum, wtrack, dynnote);
+  if (!note)
+    return r::Pitch(make_ratio(0,1),1,1);
+  
+  const r::PitchTimeData::Reader reader(&note->_pitches);
+  
+  int num_pitches = reader.size() + 2;
+
+  if (pitchnum < 0 || pitchnum >= num_pitches){
+    handleError("There is no pitch #%d in note with id \"%d\" in track #%d in block #%d",pitchnum,(int)note->_id,tracknum,blocknum);
+    return r::Pitch(make_ratio(0,1),1,1);
+  }
+
+  if (pitchnum==0)
+    return r::Pitch(note->get_time(), note->_val, note->d._pitch_first_logtype, note->d._chance);
+
+  if (pitchnum==num_pitches-1)
+    return r::Pitch(note->d._end, note->d._pitch_end);
+  
+  return reader.at(pitchnum-1);
+}
+
  /*
 struct Pitches *getPitchFromNum(int windownum,int blocknum,int tracknum,dyn_t dynnote,int pitchnum){
   struct Tracker_Windows *window;
@@ -1183,15 +1215,6 @@ dyn_t GetNoteId(struct Notes *note){
   return GetNoteIdFromNoteId(note->id);
 }
 
-static dyn_t GetNoteId2(const r::NotePtr &note){
-  return GetNoteIdFromNoteId(note->_id);
-}
-
-static dyn_t GetNoteId3(const r::Note *note){
-  return GetNoteIdFromNoteId(note->_id);
-}
-
-
 void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes *note, const Place *place, bool last_legal_may_be_next_note){
   Place firstLegal, lastLegal;
 
@@ -1249,13 +1272,13 @@ void MoveEndNote(struct Blocks *block, struct Tracks *track, struct Notes *note,
   R_ASSERT(note->end <= place2ratio(lastLegal));
 }
 
-void MoveEndNote2(struct Blocks *block, struct Tracks *track, r::NotePtr &note, const Ratio &place, bool last_legal_may_be_next_note){
+int64_t MoveEndNote2(struct Blocks *block, struct Tracks *track, r::NotePtr &note, const Ratio &place, bool last_legal_may_be_next_note){
 
   r::NoteTimeData::Writer writer(track->_notes2);
 
   if (!writer.contains(note)){
     R_ASSERT(false); // at least at the time of writing, this would probably be an error.
-    return;
+    return -1;
   }
 
   Ratio lastLegal = make_ratio(block->num_lines, 1);
@@ -1304,6 +1327,8 @@ void MoveEndNote2(struct Blocks *block, struct Tracks *track, r::NotePtr &note, 
     new_note->d._end = lastLegal;
   else
     new_note->d._end = place;
+
+  return new_note->_id;
 }
 
 dyn_t MoveNote(struct Blocks *block, struct Tracks *track, struct Notes *note, Place *place, bool replace_note_ends){
@@ -1343,14 +1368,14 @@ dyn_t MoveNote(struct Blocks *block, struct Tracks *track, struct Notes *note, P
   return GetNoteId(note);
 }
 
-dyn_t MoveNote2(struct Blocks *block, struct Tracks *track, r::NotePtr &note, Ratio ratio, bool replace_note_ends){
+int64_t MoveNote2(struct Blocks *block, struct Tracks *track, r::NotePtr &note, Ratio ratio, bool replace_note_ends){
 
   r::NoteTimeData::Writer writer(track->_notes2);
   
   Ratio old_start = note->get_time();
 
   if (old_start == ratio)    
-    return GetNoteId2(note);
+    return note->_id;
 
 
   //printf("MoveNote. old: %f, new: %f\n", GetfloatFromPlace(&old_place), GetfloatFromPlace(place));
@@ -1394,7 +1419,7 @@ dyn_t MoveNote2(struct Blocks *block, struct Tracks *track, r::NotePtr &note, Ra
   }
   */
 
-  dyn_t ret;
+  int64_t ret;
   
   {
     fprintf(stderr, "   About to make new note:\n");
@@ -1402,8 +1427,8 @@ dyn_t MoveNote2(struct Blocks *block, struct Tracks *track, r::NotePtr &note, Ra
     fprintf(stderr, "   .... 1. New note: %p\n", new_note.get());
     new_note->set_time(ratio);
     fprintf(stderr, "   .... 2. New note: %p\n", new_note.get());
-    ret = GetNoteId3(new_note.get());
-    fprintf(stderr, "api_common.cpp: Exit. Note: %p. New note: %p.. Id: %S\n", note.get(), new_note.get(), DYN_to_string(ret));
+    ret = new_note->_id;
+    fprintf(stderr, "api_common.cpp: Exit. Note: %p. New note: %p.. Id: %d\n", note.get(), new_note.get(), int(ret));
   }
 
   for(const r::NotePtr &note : writer){

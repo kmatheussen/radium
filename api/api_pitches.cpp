@@ -25,11 +25,11 @@ float getPitchValue(int pitchnum, dyn_t dynnote, int tracknum, int blocknum, int
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
-  struct Notes *note = NULL;
+  r::NotePtr note;
 
-  const r::Pitch pitch = getPitchFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote, &note, pitchnum);
+  const r::Pitch pitch = getPitchFromNumA2(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote, note, pitchnum);
 
-  if (note==NULL)
+  if (!note)
     return 0;
   
   return pitch._val;
@@ -39,11 +39,11 @@ Place getPitchPlace(int pitchnum, dyn_t dynnote, int tracknum, int blocknum, int
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
-  struct Notes *note = NULL;
+  r::NotePtr note;
 
-  const r::Pitch pitch = getPitchFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote, &note, pitchnum);
+  const r::Pitch pitch = getPitchFromNumA2(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote, note, pitchnum);
 
-  if (note==NULL)
+  if (!note)
     return p_Create(0,0,1);
 
   return ratio2place(pitch._time);
@@ -53,11 +53,11 @@ int getPitchLogtype(int pitchnum, dyn_t dynnote, int tracknum, int blocknum, int
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
-  struct Notes *note = NULL;
+  r::NotePtr note;
 
-  const r::Pitch pitch = getPitchFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote, &note, pitchnum);
+  const r::Pitch pitch = getPitchFromNumA2(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote, note, pitchnum);
 
-  if (note==NULL)
+  if (!note)
     return 0;
 
   return pitch._logtype;
@@ -67,11 +67,11 @@ float getPitchChance(int pitchnum, dyn_t dynnote, int tracknum, int blocknum, in
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
-  struct Notes *note = NULL;
+  r::NotePtr note;
 
-  const r::Pitch pitch = getPitchFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote, &note, pitchnum);
+  const r::Pitch pitch = getPitchFromNumA2(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote, note, pitchnum);
 
-  if (note==NULL)
+  if (!note)
     return 0;
 
   return (double)pitch._chance / 256.0;
@@ -81,11 +81,12 @@ int getNumPitches(dyn_t dynnote, int tracknum, int blocknum, int windownum){
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
-  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
-  if (note==NULL)
+
+  r::NotePtr note = getNoteFromNumA2(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
+  if (!note)
     return 0;
 
-  return 2+r::PitchTimeData::Reader(note->_pitches).size(); //ListFindNumElements3((struct ListHeader3*)note->pitches);
+  return 2+r::PitchTimeData::Reader(&note->_pitches).size(); //ListFindNumElements3((struct ListHeader3*)note->pitches);
 }
 
 int addPitch(float value, Place place, dyn_t dynnote, int tracknum, int blocknum, int windownum){
@@ -93,22 +94,24 @@ int addPitch(float value, Place place, dyn_t dynnote, int tracknum, int blocknum
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
-  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
-  if (note==NULL)
+  r::NotePtr note = getNoteFromNumA2(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
+  if (!note)
     return -1;
 
-  if (PlaceLessOrEqual(&place, &note->l.p)) {
+  const Ratio ratio = place2ratio(place);
+  
+  if (ratio <= note->get_time()) {
     //if (dynnote>0)
-    handleError("addPitch: placement before note start for note. pitch: %s. note: %s", p_ToString(place), p_ToString(note->l.p));
+    handleError("addPitch: placement before note start for note. pitch: %s. note: %s", ratio_to_string(ratio), ratio_to_string(note->get_time()));
     return -1;
   }
 
-  if (place2ratio(place) > note->end) {
-    handleError("addPitch: placement after note end for note. pitch: %s. note end: %s", p_ToString(place), p_ToString(ratio2place(note->end)));
+  if (ratio > note->d._end) {
+    handleError("addPitch: placement after note end for note. pitch: %s. note end: %s", ratio_to_string(ratio), ratio_to_string(note->get_time()));
     return -1;
   }
 
-  int pos = AddPitch(window, wblock, wtrack, note, &place, value);
+  int pos = AddPitch2(window, wblock, wtrack, note, ratio, value);
   if (pos < 0) {
     handleError("addPitch: Can not create new pitch with the same position as another pitch");
     return -1;
@@ -135,8 +138,8 @@ dyn_t setPitch(float value, Place place, int pitchnum, dyn_t dynnote, int trackn
   struct Tracker_Windows *window;
   struct WBlocks *wblock;
   struct WTracks *wtrack;
-  struct Notes *note = getNoteFromNumA(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
-  if (note==NULL)
+  r::NotePtr note = getNoteFromNumA2(windownum, &window, blocknum, &wblock, tracknum, &wtrack, dynnote);
+  if (!note)
     return dynnote;
 
   struct Blocks *block = wblock->block;
@@ -156,10 +159,10 @@ dyn_t setPitch(float value, Place place, int pitchnum, dyn_t dynnote, int trackn
       return dynnote;
     }
       
-  int num_pitches = r::PitchTimeData::Reader(note->_pitches).size() + 2;
+  int num_pitches = r::PitchTimeData::Reader(&note->_pitches).size() + 2;
     
   if (pitchnum < 0 || pitchnum >= num_pitches) {
-    handleError("There is no pitch #%d in note %d in track #%d in block #%d",pitchnum, (int)note->id, tracknum, blocknum);
+    handleError("There is no pitch #%d in note %d in track #%d in block #%d",pitchnum, (int)note->_id, tracknum, blocknum);
     return dynnote;
   }
 
@@ -167,26 +170,32 @@ dyn_t setPitch(float value, Place place, int pitchnum, dyn_t dynnote, int trackn
 
   //printf("pitchnum==%d. floatplace: %f\n",pitchnum,floatplace);
 
+  Ratio ratio = place2ratio(place);
+  
   if (pitchnum==0) {
     
-    note->note = value;
-    if (!p_is_same_place(place))
-      return MoveNote(block, track, note, &place, true);
+    note->_val = value;
+    if (!p_is_same_place(place)){      
+      int64_t id = MoveNote2(block, track, note, ratio, true);
+      if (id >= 0)
+        return GetNoteIdFromNoteId(id);
+    }
     
   } else if (pitchnum==num_pitches-1) {
     
-    note->pitch_end = value;
-    if (!p_is_same_place(place))
-      MoveEndNote(block, track, note, &place, true);
+    note->d._pitch_end = value;
+    if (!p_is_same_place(place)){
+      int64_t id = MoveEndNote2(block, track, note, ratio, true);
+      if (id >= 0)
+        return GetNoteIdFromNoteId(id);
+    }
     
   } else {
 
-    r::PitchTimeData::Writer writer(note->_pitches);
+    r::PitchTimeData::Writer writer(&note->_pitches);
 
     writer.at_ref(pitchnum-1)._val = value;
 
-    Ratio ratio = place2ratio(place);
-      
     if (ratio < 0) {
       
       handleError("Position before start of block");
@@ -198,7 +207,7 @@ dyn_t setPitch(float value, Place place, int pitchnum, dyn_t dynnote, int trackn
     } else {
         
       writer.constraint_move(pitchnum-1,
-                             R_BOUNDARIES(place2ratio(note->l.p), ratio, note->end),
+                             R_BOUNDARIES(note->get_time(), ratio, note->d._end),
                              wblock->block->num_lines
                              );
       
