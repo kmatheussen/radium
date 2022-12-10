@@ -37,7 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
     3. r::TimeData_shared_ptr requires the template type to include the field 'std::atomic<int> _num_references'.
        (This field is used to avoid having to allocate an extra memory block for the reference counter (which complicates code).)
   * Accessing a random element (given time) is O(Log(n)). However, when accessing a sequential element,
-    which we usually do, looup is usually O(1), even more ofter if cache_num >= 0.
+    which we usually do, lookup is usually O(1), and it's also sped up more if cache_num >= 0.
 
 
   HOW IT WORKS
@@ -1213,9 +1213,9 @@ public:
     #error "error"
   #endif
 #endif
-      
+
       assert_sorted();
-      
+
       return true;
     }
 
@@ -1282,10 +1282,10 @@ public:
     }
     
     bool removeElement(const T &element) {
-      for(int i=0;i<this->size();i++)
+      for(int i=0;i<this->size();i++){
         if (at_ref(i) == element)
           return remove_at_pos(i);
-
+      }
       return false;
     }
     

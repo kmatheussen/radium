@@ -2004,36 +2004,19 @@ void deletePianonote(int pianonotenum, dyn_t dynnote, int tracknum, int blocknum
     return;
 
   if (pianonotenum==0) {
+    
     window->must_redraw_editor=true;
 
-    printf("     DELETING SOMETHIGN\n");
-    {
-      const r::NoteTimeData::Reader reader(wtrack->track->_notes2);
+    r::NoteTimeData::Writer writer(wtrack->track->_notes2);
+      
+    RemoveNote2(wblock->block, wtrack->track, writer, note);
+    
+  }else{
 
-      int i = 0;
-      for(const r::NotePtr &note2 : reader)
-        printf(" Bef %d: %p / %p. Id: %d. Place: %s\n", i, note.get(), note2.get(), (int)note2->_id, ratio_to_string(note2->get_time()));
-    }
-    
-    {
-      r::NoteTimeData::Writer writer(wtrack->track->_notes2);
-      RemoveNote2(wblock->block, wtrack->track, writer, r::ModifyNote(writer, note).get_noteptr()); // We use ModifyNote here as a quick way to get reference to noteptr inside writer.
-    }
-    
-    {
-      const r::NoteTimeData::Reader reader(wtrack->track->_notes2);
+    int pitchnum = getPitchNumFromPianonoteNum(pianonotenum, dynnote, tracknum,  blocknum, windownum);
 
-      int i = 0;
-      for(const r::NotePtr &note2 : reader)
-        printf(" Aft %d: %p / %p. Id: %d. Place: %s\n", i, note.get(), note2.get(), (int)note2->_id, ratio_to_string(note2->get_time()));
-    }
-    
-    return;
+    deletePitchnum(pitchnum, tracknum, blocknum);
   }
-
-  int pitchnum = getPitchNumFromPianonoteNum(pianonotenum, dynnote, tracknum,  blocknum, windownum);
-
-  deletePitchnum(pitchnum, tracknum, blocknum);      
 }
 
 
@@ -3701,12 +3684,8 @@ int addFx(float value, Place place, const char* fx_name, int tracknum, instrumen
       return -1;
     }
 
-    printf("  1. p.line: %d, p.c: %d, p.d: %d\n",place.line,place.counter,place.dividor);
-
     AddFXNodeLineCustomFxAndPos(window, wblock, wtrack, fx, &place, value);
 
-    printf("  2. p.line: %d, p.c: %d, p.d: %d\n",place.line,place.counter,place.dividor);
-        
     int num = 0;
 
     VECTOR_FOR_EACH(struct FXs *, fxs, &wtrack->track->fxs){

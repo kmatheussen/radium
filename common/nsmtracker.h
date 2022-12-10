@@ -2366,7 +2366,7 @@ struct NoteData{
   bool _pianonote_is_selected;
 };
 
-#if !defined(RELEASE)
+#if !defined(RELEASE) || defined(TEST_TIMEDATA_MAIN)
   struct Note;
   extern int g_num_allocated_notes;
   void debug_note_added(const r::Note *note, const char *where);
@@ -2544,9 +2544,6 @@ public:
   }
 
   ~ModifyNote(){
-    printf("GAKK!\n");
-    printf("note id: %d\n",(int)_note->_id);
-    
     R_ASSERT(_type==Type::CAN_MODIFY_TIME || _note->get_time() == _time);
              
     _noteptr.reset(_note);

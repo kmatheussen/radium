@@ -19,7 +19,6 @@
 
 extern bool g_qtgui_has_stopped;
 
-
 namespace radium{
 
 enum class AllocatorType{
@@ -453,14 +452,14 @@ private:
           memmove((void*)&_elements[pos], (void*)&_elements[pos+1], (size_t)(old_last_pos - pos) * sizeof(T));
           
         } else {
-          
+
           new (&_elements[pos]) T(_elements[pos+1]);
-          
+
           for(int i=pos+1;i<old_last_pos;i++) {
 #if 1
             // Hopefully this one is correct. If not, the other version should be.
             _elements[i] = std::move(_elements[i+1]);
-#else
+#else            
             if (!std::is_trivially_destructible<T>::value)
               _elements[i].~T();
             
@@ -468,8 +467,9 @@ private:
 #endif
           }
           
-          if (!std::is_trivially_destructible<T>::value)
+          if (!std::is_trivially_destructible<T>::value){
             _elements[old_last_pos].~T();
+          }
         }
         
       } else {
@@ -477,7 +477,7 @@ private:
         //printf("...............................assign3 To: %p. From: %p\n", &_elements[pos], &_elements[old_last_pos]);
         
         if (std::is_trivially_copyable<T>::value) {
-          
+
           memcpy((void*)&_elements[pos], (void*)&_elements[old_last_pos], sizeof(T));
           
         } else {

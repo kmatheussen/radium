@@ -258,9 +258,9 @@ static void test_refcount(void){
     
     printf("  T3b\n");
     //-writer.add2(RefCountGakk(new Gakk2(3,6,980)));
-    writer.add2(new Gakk2(4,6,981));
-    writer.add2(new Gakk2(4,6,981));
-    writer.add2(new Gakk2(4,6,981));
+    writer.add2(r::TimeData_shared_ptr<Gakk2>(new Gakk2(4,6,981)));
+    writer.add2(r::TimeData_shared_ptr<Gakk2>(new Gakk2(4,6,981)));
+    writer.add2(r::TimeData_shared_ptr<Gakk2>(new Gakk2(4,6,981)));
     printf("\n          Size1: %d\n", writer.size());
     writer.remove_at_pos(0);
     printf("          Size2: %d\n\n", writer.size());
@@ -281,7 +281,7 @@ static void test_refcount(void){
 
     writer.clear();
     printf("  T4-4\n");
-    writer.add2(new Gakk2(4,6,1981));
+    writer.add2(r::TimeData_shared_ptr<Gakk2>(new Gakk2(4,6,1981)));
     printf("  T4-5\n");
   }
 #endif
@@ -293,7 +293,7 @@ static void test_refcount(void){
       writer.remove_at_pos(0);
       printf("  T4-3\n");
       writer.clear();
-      writer.add2(new Gakk2(4,6,1982));
+      writer.add2(r::TimeData_shared_ptr<Gakk2>(new Gakk2(4,6,1982)));
     }
     
   printf("  T4-6\n");

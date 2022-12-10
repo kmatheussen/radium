@@ -1142,11 +1142,11 @@ void RemoveNote2(
 {
   R_ASSERT_RETURN_IF_FALSE(note);
 
-  printf("About to remove note with id %d\n", (int)note->_id);
+  printf("!!!!! About to remove note with id %d\n", (int)note->_id);
   Ratio time = note->get_time();
   
   bool removed = writer.removeElement(note);
-  
+
   R_ASSERT_NON_RELEASE(removed);
   
   LengthenNotesTo2(block,track,writer, time);
