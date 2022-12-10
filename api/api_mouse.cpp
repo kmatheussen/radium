@@ -2655,7 +2655,7 @@ void deletePitchnum(int pitchnum, int tracknum, int blocknum){
 
     if (pitchnum==num) {
       r::NoteTimeData::Writer writer(wtrack->track->_notes2);
-      RemoveNote2(block, track, writer, r::ModifyNote(writer, note).get_noteptr()); // We use ModifyNote here as a quick way to get reference to the noteptr in writer.
+      RemoveNote2(block, track, writer, note);
       goto gotit;
     }
     

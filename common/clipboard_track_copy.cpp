@@ -104,10 +104,12 @@ struct WTracks *internal_copy_track(
             *only_one_fxs_was_copied = false;
           
         } else{
+          
           vector_t fxss = {};
           VECTOR_push_back(&fxss, fxs);
           CopyRange_fxs(wblock->block->num_lines, &totrack->fxs,&fxss, make_ratio(0,1), make_ratio(wblock->block->num_lines, 1));
           *only_one_fxs_was_copied = true;
+          
         }
         
 	return towtrack;

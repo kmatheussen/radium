@@ -320,7 +320,7 @@ void deleteVelocity(int velocitynum, dyn_t dynnote, int tracknum, int blocknum, 
   if (is_first || (is_last && no_velocities)){
 
     r::NoteTimeData::Writer writer(wtrack->track->_notes2);
-    RemoveNote2(block, track, writer, r::ModifyNote(writer, note).get_noteptr()); // We use ModifyNote here as a quick way to get reference to noteptr inside writer.
+    RemoveNote2(block, track, writer, note);
 
   } else if (velocitynum==num_velocities-1) {
     int new_last_velocity;
@@ -331,14 +331,14 @@ void deleteVelocity(int velocitynum, dyn_t dynnote, int tracknum, int blocknum, 
     r::ModifyNote new_note(writer, note);
     
     {
-      r::VelocityTimeData::Writer writer(&note->_velocities);
+      r::VelocityTimeData::Writer writer(&new_note->_velocities);
       new_last_velocity = writer.at_last()._val;
       new_last_ratio = writer.at_last()._time;
       writer.remove_at_pos(velocitynum-2);
     }
     
-    note->d._end = new_last_ratio;
-    note->d._velocity_end = new_last_velocity;
+    new_note->d._end = new_last_ratio;
+    new_note->d._velocity_end = new_last_velocity;
 
   } else {
     r::VelocityTimeData::Writer writer(&note->_velocities);

@@ -2060,7 +2060,7 @@ namespace r{
       if (_t)
         _t->_num_references++;
     
-      //printf("    Copy-constr: %d - %p. (%p -> %p)\n", _t->_num_references.load(), _t, &other, this);
+      //printf("    Copy-constr: %d - %p. (%p -> %p / %p -> %p)\n", _t->_num_references.load(), _t, &other, this, other._t, _t);
     }
 
     // copy assignment
