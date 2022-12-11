@@ -100,11 +100,13 @@ static void AUDIO_playnote(struct SeqTrack *seqtrack, struct Patch *patch, note_
   const int latency = RT_SP_get_input_latency(plugin->sp);
 
   if (latency == 0) {
+
     if (!Patch_addPlayingVoice(&plugin->playing_voices, note, seqtrack))
       return;
 
-    if (note.sample_pos==0 || ATOMIC_GET(plugin->enable_sample_seek))
+    if (note.sample_pos==0 || ATOMIC_GET(plugin->enable_sample_seek)){
       plugin->type->play_note(plugin, PLAYER_get_block_delta_time(seqtrack, time), note);
+    }
     
     return;
   }

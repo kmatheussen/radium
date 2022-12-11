@@ -411,11 +411,23 @@ namespace r{
     {
       R_ASSERT_NON_RELEASE(_end >= _start);
     }
+    RatioPeriod(const int line_start, const int line_end)
+      : RatioPeriod(make_ratio(line_start, 1), make_ratio(line_end, 1))
+    {
+      R_ASSERT_NON_RELEASE(_end >= _start);
+    }
     RatioPeriod(){
     }
 
     bool is_inside(const Ratio &ratio) const {
       return ratio >= _start && ratio < _end;
+    }
+
+    // Careful, not thread safe.
+    const char *to_string(void) const {
+      static char ret[1024];
+      sprintf(ret, "%f -> %f", ratio2double(_start), ratio2double(_end));
+      return ret;
     }
   };
 }

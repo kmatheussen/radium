@@ -2004,13 +2004,15 @@ int g_num_allocated_notes = 0;
 static void test(struct Blocks *block,
                  struct Tracks *track)
 {
+  return;
+  
   static bool s_has_tested = false;
   if (s_has_tested)
     return;
 
   s_has_tested = true;
 
-  R_ASSERT_NON_RELEASE(r::g_num_allocated_notes == 0);
+  //R_ASSERT_NON_RELEASE(r::g_num_allocated_notes == 0);
   
   printf("-1. g_num_allocated_notes: %d\n", r::g_num_allocated_notes);
   
@@ -2419,11 +2421,12 @@ void r::TimeData<T,SeqBlockT>::ReaderWriter<TimeData, TimeDataVector>::iterate_e
   }
 
   /*
-  printf("period start/end: %d/%d - %d/%d.\n",
+  printf("Velocities. period start/end: %d/%d - %d/%d.\n",
          (int)track_period._start.num, (int)track_period._start.den,
          (int)track_period._end.num, (int)track_period._end.den
          );
   */
+  
   RT_CacheHandler cache(get_player_cache(), play_id);
 
   const int das_size = size();
@@ -2691,7 +2694,7 @@ static void RT_start_note(struct SeqTrack *seqtrack,
     note->d._scheduler_may_send_velocity_next_block = false;
     note->d._scheduler_may_send_pitch_next_block = false;
 
-    printf("   Vol: %f. Sample_pos: %d\n", note->d._curr_velocity, (int)sample_pos);
+    //printf("   Vol: %f. Sample_pos: %d\n", note->d._curr_velocity, (int)sample_pos);
     note_t note2 = create_note_t(seqblock,
                                  note->_id,
                                  note->d._curr_pitch,
@@ -2759,9 +2762,13 @@ static void handle2(struct SeqTrack *seqtrack,
   if (patch==NULL)
     return;
 
-  int line_start = period._start.num / period._start.den;
-  int line_end = period._end.num / period._end.den;
+  const int line_start = period._start.num / period._start.den;
+  const int line_end = period._end.num / period._end.den;
 
+  const bool period_spans_only_one_line = line_end==line_start;
+
+  //printf("--------\n");
+  
   for(int line = line_start ; line <= line_end ; line++){
     
     //printf("line: %d\n", line);
@@ -2771,6 +2778,7 @@ static void handle2(struct SeqTrack *seqtrack,
 
     r::LineNotes *notes = track->_notes2->_line_notes.at_ref(line);
 
+    /*
     int num_notes = 0;
     if (notes != NULL)
       for(r::Note *note : *notes){
@@ -2780,23 +2788,32 @@ static void handle2(struct SeqTrack *seqtrack,
 
     if (num_notes > 0)
       printf("Num notes at line %d: %d. \n", line, num_notes);
+    */
     
     if (notes != NULL)
       for(r::Note *note : *notes){
 
+        bool note_has_started_or_ended = false;
+        
+        /*
         printf("note: %f/%f. Period: %f -> %f. Id: %d.\n",
                ratio2double(note->get_time()), ratio2double(note->d._end),
                ratio2double(period._start), ratio2double(period._end),
                (int)note->_id);
-
-        int64_t time = seqtime_start;
+        */
         
-        if (period.is_inside(note->get_time())){
+        if (period.is_inside(note->get_time())
+            && (period_spans_only_one_line || r::RatioPeriod(line, line+1).is_inside(note->get_time()))) { // The check for period_spans_only_one_line is just an optimization.
+
+          note_has_started_or_ended = true;
           
           int64_t time = get_seqblock_ratio_time2(seqblock, track, note->get_time());
           
-          printf("  --Starting note: %f. Line: %d. Note start: %f\n", note->get_val(), line, ratio2double(note->get_time()));
-
+          printf("  --Starting note: %f. Line: %d. Note start: %f. Period: %s. Seqtime: %d -> %d\n",
+                 note->get_val(), line, ratio2double(note->get_time()),
+                 period.to_string(),
+                 (int)seqtime_start, (int)seqtime_end);
+          
           RT_stop_all_hanging_notes_for_track(seqtrack, track, time);
 
           RT_start_note(seqtrack, seqblock, track, note, time, 0);
@@ -2815,22 +2832,18 @@ static void handle2(struct SeqTrack *seqtrack,
           }
 #endif
 
-        } else {
-          
-          time = seqtime_start;
-          
         }
 
-        // I'm not 100% sure, but I think TimeDatea handles period._end > note.d._end correctly...
-        //
-        RT_VELOCITIES_called_each_block_for_each_note2(seqtrack, play_id, seqblock, track, time, period, patch, note);
-        RT_PITCHES_called_each_block_for_each_note2(seqtrack, play_id, seqblock, track, time, period, patch, note);
+        if (period.is_inside(note->d._end)
+            && (period_spans_only_one_line || r::RatioPeriod(line, line+1).is_inside(note->d._end))) { // The check for period_spans_only_one_line is just an optimization.
 
-        if (period.is_inside(note->d._end)) {
+          note_has_started_or_ended = true;
           
           const int64_t stop_time = get_seqblock_ratio_time2(seqblock, track, note->d._end);
             
-          printf("     --Stopping note: %f. Line: %d. Note end: %f\n", note->get_val(), line, ratio2double(note->d._end));
+          printf("     --Stopping note: %f. Line: %d. Note end: %f. Period: %s. Seqtime: %d -> %d\n",
+                 note->get_val(), line, ratio2double(note->d._end), period.to_string(),
+                 (int)seqtime_start, (int)seqtime_end);
           
           note_t note2 = create_note_t3(seqblock,
                                         note->_id,
@@ -2842,6 +2855,33 @@ static void handle2(struct SeqTrack *seqtrack,
           note->d._curr_pitch_time = 0;
           RT_PATCH_stop_note(seqtrack, patch, note2, stop_time);
         }
+
+        if (line == line_end) {
+          
+          bool handle_velocities_and_pitches = !note_has_started_or_ended && period_spans_only_one_line;
+
+          if (!handle_velocities_and_pitches && !note_has_started_or_ended) {
+          
+            R_ASSERT(!period_spans_only_one_line);
+            
+            if (true
+                && !r::RatioPeriod(line_start, line_end).is_inside(note->get_time())
+                && !r::RatioPeriod(line_start, line_end).is_inside(note->d._end)
+                )
+              handle_velocities_and_pitches = true;
+          }
+        
+          if (handle_velocities_and_pitches) {
+            
+            // 1. Not for notes started or ended here.
+            // 2. Only one time per note (in case the period spans several notes)
+
+            RT_VELOCITIES_called_each_block_for_each_note2(seqtrack, play_id, seqblock, track, seqtime_start, period, patch, note);
+            RT_PITCHES_called_each_block_for_each_note2(seqtrack, play_id, seqblock, track, seqtime_start, period, patch, note);
+            
+          }
+        }
+        
       }
   }
 }

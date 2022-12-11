@@ -87,7 +87,7 @@ struct WTracks *internal_copy_track(
 	PlaceSetLastPos(wblock->block,&p2);
 
 	totrack->notes = NULL;
-        totrack->swings=NULL;
+        totrack->swings = NULL;
         memset(&totrack->fxs, 0, sizeof(vector_t));
 
         struct FXs *fxs;
