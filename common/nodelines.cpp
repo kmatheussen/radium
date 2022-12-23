@@ -756,17 +756,9 @@ const struct NodeLine2 *GetPianorollNodeLines2(const struct Tracker_Windows *win
                                   
                                   if (n==0){
                                     
-<<<<<<< HEAD
                                     val = note->_val;
-                                    logtype = note->d._pitch_first_logtype;
                                     time = note->get_time();
-                                    id = -1; // FIX
-=======
-                                    val = note->note;
-                                    logtype = note->pitch_first_logtype;
-                                    time = ratio_from_place(note->l.p);
                                     id = NODETYPE_FIRST;
->>>>>>> master
                                     
                                   } else if (n==reader.size()+1) {
 
@@ -776,13 +768,8 @@ const struct NodeLine2 *GetPianorollNodeLines2(const struct Tracker_Windows *win
                                       val = note->_val;
                                     
                                     logtype = LOGTYPE_IRRELEVANT;
-<<<<<<< HEAD
                                     time = note->d._end;
-                                    id = -2; // FIX
-=======
-                                    time = note->end;
                                     id = NODETYPE_LAST;
->>>>>>> master
                                     
                                   } else {
                                   

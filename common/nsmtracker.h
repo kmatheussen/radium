@@ -1467,13 +1467,8 @@ static inline dyn_t DYN_create_string(const wchar_t *string){
   return DYN_create_string_dont_copy(STRING_copy(string));
 }
 
-<<<<<<< HEAD
 #ifdef USE_QT4
-static inline dyn_t DYN_create_string(QString string){
-=======
-#if USE_QT4
 static inline dyn_t DYN_create_string(const QString &string){
->>>>>>> master
   return DYN_create_string_dont_copy(STRING_create(string));
 }
 #endif

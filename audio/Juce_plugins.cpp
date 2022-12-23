@@ -261,21 +261,12 @@ static void findMaxTotalChannels(juce::AudioProcessor* const filter,
 
 namespace{
 
-<<<<<<< HEAD
 #if defined(FOR_LINUX)
-  static constexpr bool g_use_custom_mm_thread = true;
-#elif defined(FOR_WINDOWS  )
-  static constexpr bool g_use_custom_mm_thread = false;
-#elif defined(FOR_MACOSX)
-  static constexpr bool g_use_custom_mm_thread = false;
-=======
-#if FOR_LINUX
   static constexpr bool g_use_custom_mm_thread = true; // Note: 'false' is supposedly supposed to work in juce7 I think, but it doesn't seem to work. ('true' is better anyway though, better interactivity)
-#elif FOR_WINDOWS  
+#elif defined(FOR_WINDOWS  )
   static constexpr bool g_use_custom_mm_thread = false; // ('true' doesn't work unfortunately)
-#elif FOR_MACOSX
+#elif defined(FOR_MACOSX)
   static constexpr bool g_use_custom_mm_thread = false; // ('true' doesn't work unfortunately)
->>>>>>> master
 #else
   #error "unknown platform"
 #endif
