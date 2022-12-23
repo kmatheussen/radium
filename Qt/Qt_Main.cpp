@@ -112,6 +112,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_colors_proc.h"
 #include "Qt_AutoBackups_proc.h"
 #include "Qt_Bs_edit_proc.h"
+#include "Qt_PresetBrowser.h"
 
 #include "Timer.hpp"
 #include "mTimer.hpp"
@@ -2565,6 +2566,16 @@ protected:
         if(num_calls_at_this_point<150/_interval)
           updateWidgetRecursively(g_main_window);
         
+        // Show mixer briefly to workaround a Qt quirk/bug causing SceneRect size to be calculated from invisible items when the scene hasn't been shown yet.
+        // (Fixes extremely large Mixer scene rect if previewing preset before opening the mixer for the first time)
+        {
+          if(num_calls_at_this_point==50/_interval)
+            GFX_ShowMixer();
+
+          if(num_calls_at_this_point==70/_interval)
+            GFX_HideMixer();
+        }
+
         // Force full keyboard focus to the main window after startup. This seems to be the only reliable way. (if you think this is unnecessary, see if left alt works to start navigating menues after startup while using the fvwm window manager)
         {
           static QPointer<MyQMessageBox> gakkbox = NULL; // gakkbox could, perhaps, be deleted by itself if radium finds a strange parent. (got a crash once where gakkbox was deleted before explicitly calling delete below.)
@@ -3598,6 +3609,8 @@ int radium_main(const char *arg){
       if(xsplitter->_strip_on_left_side)
         xsplitter->add_mixer_strip();
 
+      xsplitter->addWidget(createPresetBrowserWidget(SETTINGS_read_qstring("preset_root_folder", QDir::homePath() + QString::fromUtf8("/Radium Presets"))));
+
       editor->editor_layout_widget = new EditorLayoutWidget();
       editor->editor_layout_widget->setMinimumWidth(550);
       editor->editor_layout_widget->setMinimumHeight(100);
@@ -3609,6 +3622,19 @@ int radium_main(const char *arg){
       block_selector->move(main_window->width()-100,0);
 
       block_selector->resize(100,block_selector->height());
+
+      // resize browser at start - without this browser gets a lot of space
+      QList<int> sizes = xsplitter->sizes();
+      int browserIndex = xsplitter->indexOf(getPresetBrowserWidgetFrame());
+      int editorIndex = xsplitter->indexOf(editor->editor_layout_widget);
+
+      if (browserIndex != -1 && editorIndex != -1) {
+        int space = sizes.at(browserIndex) + sizes.at(editorIndex);
+
+        sizes[browserIndex] = space * 0.3;
+        sizes[editorIndex] = space - sizes.at(browserIndex);
+        xsplitter->setSizes(sizes);
+      }
 
       {
         SEQUENCER_WIDGET_initialize(main_window);
@@ -3870,6 +3896,11 @@ int radium_main(const char *arg){
   GFX_showHideMixerWidget();
   
 
+  // Hide preset browser at startup.
+  if (SETTINGS_read_bool("preset_browser_visible", false)==false)
+    hidePresetBrowserAtStartup();
+
+  
 #if USE_QT_VISUAL
  again:
   try{
@@ -4733,15 +4764,30 @@ int main(int argc, char **argv){
       int dont_show = VECTOR_push_back(&v,"Don't show this message again");
       
       int result = SYSTEM_show_message_menu(&v,
-                                            "Radium for macOS is BETA software!\n"
-                                            "Radium is primarily developed for Windows and Linux.\n"
-                                            "\n"
-                                            "On macOS there are both performance and stability problems. In addition you might experience various types of quirks and misbehavours. However, many people find the program useful anyway, and there is no plan to stop developing the program for Mac.\n"
-                                            "\n"
-                                            "The most serious problems on macOS are caused by Apple's poor support for OpenGL. "
+                                            "<p>"
+                                            "<b>Radium for macOS is BETA software!</b>"
+                                            "</p><p>"
+                                            "Radium is primarily developed for <b>Windows</b> and <b>Linux</b>.\n"
+                                            "</p><p>"
+                                            "On <b>macOS</b> there are both <b>performance</b> and <b>stability</b> problems. "
+                                            "In addition you might experience various types of <b>quirks</b> and <b>misbehavours</b> in addition to <b>slow graphics</b> and <b>high CPU usage</b>. "
+                                            "However, many people find the program useful anyway, and there is no plan to stop developing the program for Mac.\n"
+                                            "</p><p>"
+                                            "Earlier, the most serious problems on macOS were caused by Apple's poor support for <b>OpenGL</b>. "
                                             "If Radium crashes right after startup, it's probably Apple's OpenGL library that crashes. "
-                                            "Fortunately, the bug is usually hit only during startup, and not every time.",
-                                            10*60*1000-1 // 10 minutes
+                                            "Fortunately, the bug is usually hit only during startup, and not every time. "
+                                            "However, after the release of <b>Big Sur</b>, this problem doesn't seem to appear very often anymore, if at all. "
+                                            "(OpenGL performance is still likely to be worse than on Windows and Linux though.)\n"
+                                            "</p><p>"
+                                            "Now, the <b>biggest problem</b> on <b>macOS</b> seems to be strange behaviors with the <b>keyboard</b>, apparently related to the <b>modifier keys</b>. "
+                                            "Currently it's unknown what's causing this. Sometimes you can fix it by simply pressing the <b>caps lock</b> key, "
+                                            "but if that's not enough, you can force resetting the keyboard by <b>temporarily switching keyboard "
+                                            "focus</b> to another program. After switching focus back to Radium, the keyboard should work normally again.\n"
+                                            "</p><p>"
+                                            "Note that the keyboard problem can also cause strange behaviour with the <b>mouse</b> since the program has the wrong "
+                                            "information about which modifier keys are currently pressed. Again, the simplest <b>workaround</b> is to <b>temporarily "
+                                            "switch keyboard focus</b> to another program when this happens."
+                                            , 10*60*1000-1 // 10 minutes
                                             );
       if (result==dont_show)
         SETTINGS_write_string(confname, QSysInfo::productVersion());
@@ -4933,7 +4979,8 @@ int main(int argc, char **argv){
     //exit(0);
   }
 
-  qapplication->setWindowIcon(QIcon(STRING_get_qstring(OS_get_full_program_file_path("radium_256x256x32.png").id)));
+  qapplication->setWindowIcon(QIcon(STRING_get_qstring(OS_get_full_program_file_path("graphics/radium_logo_256x256_colorized.png").id)));
+  
   {
     // Add fonts in the "fonts" directory
     {

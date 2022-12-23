@@ -99,21 +99,21 @@ if [[ $RADIUM_USE_CLANG == 1 ]] ; then
 else
     export CCC="g++ -mfpmath=sse -msse2"
     export CC="gcc -mfpmath=sse -msse2"
-    export LINKER=g++
+    export LINKER="g++"
 
     # Use the ldd linker instead. It's approx. 10x faster.
     if [[ $BUILDTYPE != RELEASE ]] ; then
         RADIUM_USES_MOLD_OR_LDD=1
         # ldd:
         #export LINKER="clang++ -fuse-ld=lld" #-B/home/kjetil/ldd_bin"
-        export LINKER="$LINKER -B/home/kjetil/ldd_bin"
+        export LINKER="$LINKER -fuse-ld=gold" #-B/home/kjetil/ldd_bin"
+        #export LINKER="clang++ -lgcc_s --rtlib=compiler-rt"
     fi
 fi
 
 export GCC="gcc -mfpmath=sse -msse2"
 export GPLUSPLUS="g++ -mfpmath=sse -msse2"
 export CLANGCC="clang++ -mfpmath=sse -msse2"
-
 export FPIC="-fPIC"
 
 export TARGET_OS=linux

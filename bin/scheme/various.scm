@@ -723,7 +723,7 @@
 
    (get-delete-all-pauses-menu-entry (<ra> :get-curr-seqtrack))
 
-   "Set current seqtrack"
+   "Set current seqtrack..."
    show-set-current-seqtrack-menu
 
    "Show blocklist"
@@ -739,7 +739,7 @@
      
      (<-> "-------" blocknum ": \"" (<ra> :get-block-name blocknum) "\"")
      
-     (list "Rename"
+     (list "Rename..."
            (lambda ()
              (define old-name (<ra> :get-block-name blocknum))
              (define new-name (<ra> :request-string "New name:" #t old-name))
@@ -749,7 +749,7 @@
                (<ra> :add-undo-block blocknum)
                (<ra> :set-block-name new-name blocknum))))
 
-     (list "Configure color"
+     (list "Configure color..."
            (lambda ()
              (if blocknum
                  (<ra> :color-dialog (<ra> :get-block-color blocknum -1 #f) -1
@@ -775,10 +775,10 @@
      
      "---------------"
      
-     "Load Block (BETA!)"
+     "Load Block... (BETA!)"
      ra:load-block
      
-     "Save Block"
+     "Save Block..."
      ra:save-block
 
      "---------------"
@@ -792,7 +792,7 @@
   
 (define (get-audiofile-entries filename)
   (list
-   "Add new audio file(s)"
+   "Add new audio file(s)..."
    (lambda ()
      (create-file-requester "Choose audio file(s)" (<ra> :create-illegal-filepath) "audio files" (<ra> :get-audiofile-postfixes) #t "" #t #f -1
                             (lambda (filenames)
@@ -802,7 +802,7 @@
                                           (<ra> :add-audiofile filename))
                                         filenames))))
    
-   (list "Configure color"
+   (list "Configure color..."
          :enabled filename
          (lambda ()
            (<ra> :color-dialog (<ra> :get-audiofile-color filename #f) -1
@@ -1050,7 +1050,7 @@
                                                     '()
                                                     "")
    "-------------"
-   "Set current instrument" show-set-current-instrument-popup-menu
+   "Set current instrument..." show-set-current-instrument-popup-menu
    "-------------"
    "Help keybindings" show-keybinding-help-window
    ))

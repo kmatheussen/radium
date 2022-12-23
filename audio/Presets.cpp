@@ -10,6 +10,7 @@
 #include "../common/nsmtracker.h"
 #include "../common/hashmap_proc.h"
 #include "../common/patch_proc.h"
+#include "../common/settings_proc.h"
 
 #include "../embedded_scheme/s7extra_proc.h"
 
@@ -51,8 +52,9 @@ void PRESET_set_last_used_filename(filepath_t wfilename){
 }
 
 filepath_t PRESET_get_current_preset_dir(void){
-  if (g_last_preset_path=="")
-    return make_filepath(QCoreApplication::applicationDirPath());
+  if (g_last_preset_path==""){    
+    return make_filepath(SETTINGS_read_qstring("preset_root_folder", QDir::homePath() + QString::fromUtf8("/Radium Presets")));
+  }
   else
     return make_filepath(g_last_preset_path);  
 }
@@ -209,7 +211,7 @@ static hash_t *get_preset_state_from_filename(QString filename){
   return state;
 }
 
-static instrument_t PRESET_load_multipreset(hash_t *state, const char *name, filepath_t filename, bool inc_usage_number, bool set_as_current, float x, float y){
+static instrument_t PRESET_load_multipreset(hash_t *state, const char *name, filepath_t filename, bool inc_usage_number, bool set_as_current, bool is_visible, float x, float y){
 
   QHash<instrument_t, instrument_t> patch_id_mapper;
   
@@ -221,7 +223,7 @@ static instrument_t PRESET_load_multipreset(hash_t *state, const char *name, fil
   
   for(int i = 0 ; i < num_presets ; i++) {
     hash_t *patch_state = HASH_get_hash_at(patches_state, "patch", i);
-    struct Patch *patch = PATCH_create_audio(NULL, NULL, name, patch_state, set_as_current ? i==0 : false, 0, 0);
+    struct Patch *patch = PATCH_create_audio(NULL, NULL, name, patch_state, set_as_current ? i==0 : false, is_visible, 0, 0);
     //printf("i: %d. Org id: %d. New id: %d. name1: -%s-, name2: -%s-, name3: %s\n",i, (int)HASH_get_instrument(patch_state, "id").id, (int)patch->id.id, name,patch->name,HASH_get_chars(patch_state,"name"));
     //getchar();
     VECTOR_push_back(&patches, patch); // NULL values must be pushed as well.
@@ -262,8 +264,13 @@ static instrument_t PRESET_load_multipreset(hash_t *state, const char *name, fil
     return first_patch->id;
 }
 
-static instrument_t PRESET_load_singlepreset(hash_t *state, const_char *name, filepath_t filename, bool inc_usage_number, bool set_as_current, float x, float y){
-  struct Patch *patch = PATCH_create_audio(NULL, NULL, name, state, set_as_current, x, y);
+static instrument_t PRESET_load_singlepreset(hash_t *state, const_char *name, filepath_t filename, bool inc_usage_number, bool set_as_current, bool is_visible, float x, float y){
+
+  if (set_as_current){
+    R_ASSERT_NON_RELEASE(is_visible);
+  }
+
+  struct Patch *patch = PATCH_create_audio(NULL, NULL, name, state, set_as_current, is_visible, x, y);
   if (patch==NULL)
     return createIllegalInstrument();
 
@@ -285,20 +292,30 @@ static instrument_t PRESET_load_singlepreset(hash_t *state, const_char *name, fi
   return patch->id;
 }
 
-static instrument_t insert_preset_into_program(hash_t *state, const_char *name, filepath_t filename, bool inc_usage_number, bool set_as_current, float x, float y){
+static instrument_t insert_preset_into_program(hash_t *state, const_char *name, filepath_t filename, bool inc_usage_number, bool set_as_current, bool is_visible, float x, float y){
+
+  if (set_as_current){
+    R_ASSERT_NON_RELEASE(is_visible);
+  }
+
   bool is_multipreset = HASH_has_key(state, "multipreset_presets") && HASH_get_bool(state, "multipreset_presets");
   
   if (is_multipreset)
-    return PRESET_load_multipreset(state, name, filename, inc_usage_number, set_as_current, x, y);
+    return PRESET_load_multipreset(state, name, filename, inc_usage_number, set_as_current, is_visible, x, y);
   else
-    return PRESET_load_singlepreset(state, name, filename, inc_usage_number, set_as_current, x, y);
+    return PRESET_load_singlepreset(state, name, filename, inc_usage_number, set_as_current, is_visible, x, y);
 }
 
 // Note that this is the general preset loading function, and not the one that is directly called when pressing the "Load" button. (there we also have to delete the old instrument and reconnect connections)
 //
 // A less confusing name could perhaps be PRESET_add_instrument
 //
-instrument_t PRESET_load(filepath_t wfilename, const_char *patchname, bool inc_usage_number, bool set_as_current, float x, float y) {
+instrument_t PRESET_load(filepath_t wfilename, const_char *patchname, bool inc_usage_number, bool set_as_current, bool is_visible, float x, float y) {
+
+  if (set_as_current){
+    R_ASSERT_NON_RELEASE(is_visible);
+  }
+
   if (patchname!=NULL && strlen(patchname)==0)
     patchname = NULL;
 
@@ -314,12 +331,12 @@ instrument_t PRESET_load(filepath_t wfilename, const_char *patchname, bool inc_u
   
   PRESET_set_last_used_filename(filename);
 
-  return insert_preset_into_program(state, patchname, make_filepath(filename), inc_usage_number, set_as_current, x, y);
+  return insert_preset_into_program(state, patchname, make_filepath(filename), inc_usage_number, set_as_current, is_visible, x, y);
 }
 
 instrument_t PRESET_paste(float x, float y){
   if (g_preset_clipboard != NULL)
-    return insert_preset_into_program(g_preset_clipboard, NULL, HASH_get_filepath(g_preset_clipboard, "filename"), true, true, x, y);
+    return insert_preset_into_program(g_preset_clipboard, NULL, HASH_get_filepath(g_preset_clipboard, "filename"), true, true, true, x, y);
   else
     return make_instrument(-1);
 }

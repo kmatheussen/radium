@@ -1,0 +1,26 @@
+diff --git a/pluginhost/JuceLibraryCode/modules/juce_core/native/juce_win32_ComSmartPtr.h b/pluginhost/JuceLibraryCode/modules/juce_core/native/juce_win32_ComSmartPtr.h
+index ce5f14159..001e6d31f 100644
+--- a/pluginhost/JuceLibraryCode/modules/juce_core/native/juce_win32_ComSmartPtr.h
++++ b/pluginhost/JuceLibraryCode/modules/juce_core/native/juce_win32_ComSmartPtr.h
+@@ -23,7 +23,7 @@
+ namespace juce
+ {
+ 
+-#if (JUCE_MINGW && JUCE_32BIT) || (! defined (_MSC_VER) && ! defined (__uuidof))
++#if 0 //(JUCE_MINGW && JUCE_32BIT) || (! defined (_MSC_VER) && ! defined (__uuidof))
+  #ifdef __uuidof
+   #undef __uuidof
+  #endif
+diff --git a/pluginhost/JuceLibraryCode/modules/juce_gui_basics/juce_gui_basics.cpp b/pluginhost/JuceLibraryCode/modules/juce_gui_basics/juce_gui_basics.cpp
+index 50553e409..773bc444c 100644
+--- a/pluginhost/JuceLibraryCode/modules/juce_gui_basics/juce_gui_basics.cpp
++++ b/pluginhost/JuceLibraryCode/modules/juce_gui_basics/juce_gui_basics.cpp
+@@ -69,7 +69,7 @@
+  #include <commctrl.h>
+  #include <UIAutomation.h>
+  #include <sapi.h>
+- #include <Dxgi.h>
++ #include <dxgi.h>
+ 
+  #if JUCE_WEB_BROWSER
+   #include <exdisp.h>

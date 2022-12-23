@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <qfontdialog.h>
 #include <qapplication.h>
+#include <QTextStream>
 
 #include "../common/nsmtracker.h"
 #include "../common/settings_proc.h"
@@ -36,7 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_Fonts_proc.h"
 
 static bool can_fit(const QFont &font, const QString &text, int flags, int width, int height){
-  
+    
   QFontMetrics fm(font);
 
   // Not an optimization. Seems like this test sometimes returns true even if the code below returns false.
@@ -57,41 +58,57 @@ static bool can_fit(const QFont &font, const QString &text, int flags, int width
 }
 
 QFont GFX_getFittingFont(const QString &text, int flags, int width, int height){
-  static QFont font;
+#if 0
+  using IntPair = QPair<int, int>;
+  using ThreeInts = QPair<int, IntPair>;
+
+  using Key = QPair<QString, ThreeInts>;
   
-  auto key = QPair<QString,
-                   QPair<int,
-                         QPair<int,int>
-                         >
-                   >
-    (text,QPair<int,QPair<int,int>>(flags, QPair<int,int>(width,height))); // good code
+  const Key key = Key(text,ThreeInts(flags, IntPair(width,height)));
+#else
+  using Key = QString;
 
-  static QHash< QPair< QString , QPair< int, QPair<int,int> > > , QFont> fonts;
+  Key key;
 
-  if (font != qApp->font()){
-    font = qApp->font();
-    fonts.clear();
+  QTextStream(&key) << width << "/" << height << "/" << flags << ":" << text;
+#endif
+  
+  static QHash<Key, QFont> s_cache;
+
+  static QFont s_font;
+
+  if (s_font != qApp->font()){
+    
+    s_font = qApp->font();
+    s_cache.clear();
+    
+  } else {
+
+    auto it = s_cache.constFind(key);
+    
+    if (it != s_cache.constEnd())
+      return it.value();
+
   }
+  
+  int pointSize = s_font.pointSize();
 
-  if (fonts.contains(key))
-    return fonts.value(key);
-
-  int pointSize = font.pointSize();
-
-  QFont the_font(font);
+  QFont the_font(s_font);
 
   //return the_font;
   
   for(int size = pointSize; size > 3; size--){
-    if(size!=pointSize)
+    if(size != pointSize)
       the_font.setPointSize(size);
 
     if (can_fit(the_font, text, flags, width, height))
       break;
   }
 
-  fonts[key] = the_font;
+  s_cache[key] = the_font;
 
+  //printf("Another fitting for %s: %d / %d / %d\n", text.toUtf8().constData(), flags, width, height);
+  
   return the_font;
 }
 
@@ -122,7 +139,7 @@ static QString split_text_by_lineshift(QString text, int num_splits, int num_pos
   return text;
 }
 
-QString GFX_getFittingText(const QFont &font, const QString &text, const int flags, bool wrap_lines, const int width, const int height){
+static QString getFittingText_raw(const QFont &font, const QString &text, const int flags, bool wrap_lines, const int width, const int height){
 
   if (can_fit(font, text, flags, width, height))
     return text;
@@ -179,6 +196,24 @@ QString GFX_getFittingText(const QFont &font, const QString &text, const int fla
   return ret;
 }
 
+QString GFX_getFittingText(const QFont &font, const QString &text, const int flags, bool wrap_lines, const int width, const int height){
+  using Key = QPair<QFont,QString>;
+
+  static QHash<Key,QString> s_cache;
+
+  Key key = Key(font, QString::number(flags) + "/" + QString::number(width) + "/" + QString::number(height) + (wrap_lines ? "/" : ":") + text);
+
+  auto it = s_cache.constFind(key);
+
+  if (it != s_cache.constEnd())
+    return it.value();
+
+  QString ret = getFittingText_raw(font, text, flags, wrap_lines, width, height);
+
+  s_cache.insert(key, ret);
+
+  return ret;
+}
 
 void setFontValues(struct Tracker_Windows *tvisual){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;

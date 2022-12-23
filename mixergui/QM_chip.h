@@ -283,6 +283,8 @@ private:
   
 public:
 
+  bool _is_connected_to_hidden_instrument = false;
+  
   bool set_enabled(bool is_enabled, const char **error){
     //printf("set enabled1 %d -> %d: is_enabled: %d. _is_enabled: %d, is_implicitly_enabled: %d\n", (int)CHIP_get_patch(_from)->id, (int)CHIP_get_patch(_to)->id, is_enabled, _is_enabled, _is_implicitly_enabled);
 
@@ -461,6 +463,15 @@ public:
     , _arrow(this)
   {
 
+    {
+      Patch *from_patch = _from ? CHIP_get_patch(_from) : NULL;
+      Patch *to_patch = to ? CHIP_get_patch(_to) : NULL;
+
+      if (from_patch && to_patch)
+        if (!from_patch->is_visible || !to_patch->is_visible)
+          _is_connected_to_hidden_instrument = true;
+    }
+    
     QColor c(get_qcolor(color_num));//30,25,70,0);
     c.setAlpha(100); // hovered color
 
@@ -542,6 +553,9 @@ public:
 #endif
 
   void setVisibility(bool show){
+    if (_is_connected_to_hidden_instrument)
+      show = false;
+    
     _visible_line.setVisible(show);
     _arrow.setVisible(show);
     setVisible(show);

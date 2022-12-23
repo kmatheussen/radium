@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -393,7 +393,7 @@ JUCE_END_IGNORE_WARNINGS_GCC_LIKE
 #endif
 
 //==============================================================================
-class URLConnectionState   : public URLConnectionStateBase
+class API_AVAILABLE (macos (10.9)) URLConnectionState : public URLConnectionStateBase
 {
 public:
     URLConnectionState (NSURLRequest* req, const int maxRedirects)
@@ -969,6 +969,7 @@ public:
 
         if (! connection->start (owner, webInputListener))
         {
+            const auto errorCode = connection->getErrorCode();
             connection.reset();
 
             if (@available (macOS 10.10, *))
@@ -976,7 +977,7 @@ public:
 
             // Workaround for macOS versions below 10.10 where HTTPS POST requests with keep-alive
             // fail with the NSURLErrorNetworkConnectionLost error code.
-            if (numRetries == 0 && connection->getErrorCode() == NSURLErrorNetworkConnectionLost)
+            if (numRetries == 0 && errorCode == NSURLErrorNetworkConnectionLost)
                 return connect (webInputListener, ++numRetries);
 
             return false;

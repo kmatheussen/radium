@@ -21,7 +21,7 @@
                     )
               "-----------"
               (let ((instrument-id (<ra> :get-instrument-for-track tracknum)))
-                (list "Rename instrument"
+                (list "Rename instrument..."
                       :enabled (<ra> :is-legal-instrument instrument-id)
                       :shortcut (list ra:eval-scheme "(FROM_C-request-rename-instrument)")
                       (lambda ()
@@ -42,6 +42,11 @@
               "-----------"
               (list "Keybindings"
                     (list
+                     "---------------Assign instrument to track (i.e. \"(click me)\")"
+                     (get-keybinding-configuration-popup-menu-entries :ra-funcname "select-track-instrument"
+                                                                      :args '()
+                                                                      :focus-keybinding "FOCUS_EDITOR")
+                     
                      "---------------Pan slider on/off"
                      (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:switch-track-pan-on-off"
                                                                       :args '()
@@ -90,7 +95,8 @@
                                           :instrument-color)
 
   (define (get-statusbar-text)
-    (<-> "Track volume: " (two-decimal-string (<ra> :get-track-volume tracknum))))
+    (if (< tracknum (<ra> :get-num-tracks))
+        (<-> "Track volume: " (two-decimal-string (<ra> :get-track-volume tracknum)))))
   
   (add-statusbar-text-handler get-statusbar-text)
   
@@ -163,9 +169,10 @@
                                        :instrument-color)
 
   (define (get-degree-value)
-    (round (scale (<ra> :get-track-pan tracknum)
-                  -1 1
-                  -90 90)))
+    (if (< tracknum (<ra> :get-num-tracks))
+        (round (scale (<ra> :get-track-pan tracknum)
+                      -1 1
+                      -90 90))))
   
   (define (get-statusbar-text)
     (<-> "Track pan: " (get-degree-value)))

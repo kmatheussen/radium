@@ -2,15 +2,15 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
 
-   End User License Agreement: www.juce.com/juce-6-licence
+   End User License Agreement: www.juce.com/juce-7-licence
    Privacy Policy: www.juce.com/juce-privacy-policy
 
    Or: You may also use this code under the terms of the GPL v3 (see
@@ -23,6 +23,8 @@
   ==============================================================================
 */
 
+#ifndef DOXYGEN
+
 // This macro can be set if you need to override this internal name for some reason..
 #ifndef JUCE_STATE_DICTIONARY_KEY
  #define JUCE_STATE_DICTIONARY_KEY   "jucePluginState"
@@ -31,29 +33,24 @@
 namespace juce
 {
 
-#ifndef DOXYGEN
-
 struct AudioUnitHelpers
 {
     class ChannelRemapper
     {
     public:
-        ChannelRemapper (AudioProcessor& p) : processor (p), inputLayoutMap (nullptr), outputLayoutMap (nullptr) {}
-        ~ChannelRemapper() {}
-
-        void alloc()
+        void alloc (AudioProcessor& processor)
         {
             const int numInputBuses  = AudioUnitHelpers::getBusCount (processor, true);
             const int numOutputBuses = AudioUnitHelpers::getBusCount (processor, false);
 
-            initializeChannelMapArray (true, numInputBuses);
-            initializeChannelMapArray (false, numOutputBuses);
+            initializeChannelMapArray (processor, true, numInputBuses);
+            initializeChannelMapArray (processor, false, numOutputBuses);
 
             for (int busIdx = 0; busIdx < numInputBuses; ++busIdx)
-                fillLayoutChannelMaps (true, busIdx);
+                fillLayoutChannelMaps (processor, true, busIdx);
 
             for (int busIdx = 0; busIdx < numOutputBuses; ++busIdx)
-                fillLayoutChannelMaps (false, busIdx);
+                fillLayoutChannelMaps (processor, false, busIdx);
         }
 
         void release()
@@ -69,14 +66,13 @@ struct AudioUnitHelpers
 
     private:
         //==============================================================================
-        AudioProcessor& processor;
         HeapBlock<int*> inputLayoutMapPtrStorage, outputLayoutMapPtrStorage;
         HeapBlock<int>  inputLayoutMapStorage, outputLayoutMapStorage;
-        int** inputLayoutMap;
-        int** outputLayoutMap;
+        int** inputLayoutMap  = nullptr;
+        int** outputLayoutMap = nullptr;
 
         //==============================================================================
-        void initializeChannelMapArray (bool isInput, const int numBuses)
+        void initializeChannelMapArray (AudioProcessor& processor, bool isInput, const int numBuses)
         {
             HeapBlock<int*>& layoutMapPtrStorage = isInput ? inputLayoutMapPtrStorage : outputLayoutMapPtrStorage;
             HeapBlock<int>& layoutMapStorage = isInput ? inputLayoutMapStorage : outputLayoutMapStorage;
@@ -88,7 +84,7 @@ struct AudioUnitHelpers
             layoutMapPtrStorage.calloc (static_cast<size_t> (numBuses));
             layoutMapStorage.calloc (static_cast<size_t> (isInput ? totalInChannels : totalOutChannels));
 
-            layoutMap  = layoutMapPtrStorage. get();
+            layoutMap = layoutMapPtrStorage.get();
 
             int ch = 0;
             for (int busIdx = 0; busIdx < numBuses; ++busIdx)
@@ -98,7 +94,7 @@ struct AudioUnitHelpers
             }
         }
 
-        void fillLayoutChannelMaps (bool isInput, int busNr)
+        void fillLayoutChannelMaps (AudioProcessor& processor, bool isInput, int busNr)
         {
             int* layoutMap = (isInput ? inputLayoutMap : outputLayoutMap)[busNr];
             auto channelFormat = processor.getChannelLayoutOfBus (isInput, busNr);
@@ -161,12 +157,11 @@ struct AudioUnitHelpers
 
         AudioBuffer<float>& getBuffer (UInt32 frames) noexcept
         {
-           #if JUCE_DEBUG
-            for (int i = 0; i < (int) channels.size(); ++i)
-                jassert (channels[(size_t) i] != nullptr);
-           #endif
+            jassert (std::none_of (channels.begin(), channels.end(), [] (auto* x) { return x == nullptr; }));
 
-            mutableBuffer.setDataToReferTo (channels.data(), (int) channels.size(), static_cast<int> (frames));
+            const auto channelPtr = channels.empty() ? scratch.getArrayOfWritePointers() : channels.data();
+            mutableBuffer.setDataToReferTo (channelPtr, (int) channels.size(), static_cast<int> (frames));
+
             return mutableBuffer;
         }
 
@@ -217,25 +212,31 @@ struct AudioUnitHelpers
             }
         }
 
-        void clearInputBus (int index)
+        void clearInputBus (int index, int bufferLength)
         {
             if (isPositiveAndBelow (index, inputBusOffsets.size() - 1))
-                clearChannels (inputBusOffsets[(size_t) index], inputBusOffsets[(size_t) (index + 1)]);
+                clearChannels ({ inputBusOffsets[(size_t) index], inputBusOffsets[(size_t) (index + 1)] }, bufferLength);
         }
 
-        void clearUnusedChannels()
+        void clearUnusedChannels (int bufferLength)
         {
             jassert (! inputBusOffsets .empty());
             jassert (! outputBusOffsets.empty());
 
-            clearChannels (inputBusOffsets.back(), outputBusOffsets.back());
+            clearChannels ({ inputBusOffsets.back(), outputBusOffsets.back() }, bufferLength);
         }
 
     private:
-        void clearChannels (int begin, int end)
+        void clearChannels (Range<int> range, int bufferLength)
         {
-            for (auto i = begin; i < end; ++i)
-                zeromem (scratch.getWritePointer (i), sizeof (float) * (size_t) scratch.getNumSamples());
+            jassert (bufferLength <= scratch.getNumSamples());
+
+            if (range.getEnd() <= (int) channels.size())
+            {
+                std::for_each (channels.begin() + range.getStart(),
+                               channels.begin() + range.getEnd(),
+                               [bufferLength] (float* ptr) { zeromem (ptr, sizeof (float) * (size_t) bufferLength); });
+            }
         }
 
         float* uniqueBuffer (int idx, float* buffer) noexcept
@@ -559,6 +560,6 @@ struct AudioUnitHelpers
     }
 };
 
-#endif
-
 } // namespace juce
+
+#endif

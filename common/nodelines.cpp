@@ -174,7 +174,7 @@ static void insert_nonnode_nodeline2(struct NodeLine2 *nodelines,
 
       struct NodeLine2 *n = (struct NodeLine2 *)talloc(sizeof(struct NodeLine2));
       //n->element1 = element;
-      n->id1 = -1;
+      n->id1 = NODETYPE_FIRST;
       n->y1 = y;
 
       Ratio time1 = nodelines->time1 < 0 ? make_ratio(0,1) : nodelines->time1;
@@ -555,7 +555,7 @@ const struct NodeLine2 *GetPitchNodeLines2(const struct Tracker_Windows *window,
                                     val = note->note;
                                     logtype = note->pitch_first_logtype;
                                     time = ratio_from_place(note->l.p);
-                                    id = -1; // FIX
+                                    id = NODETYPE_FIRST;
                                     
                                   } else if (n==reader.size()+1) {
 
@@ -566,7 +566,7 @@ const struct NodeLine2 *GetPitchNodeLines2(const struct Tracker_Windows *window,
                                     
                                     logtype = LOGTYPE_IRRELEVANT;
                                     time = note->end;
-                                    id = -2; // FIX
+                                    id = NODETYPE_LAST;
                                     
                                   } else {
                                   
@@ -756,10 +756,17 @@ const struct NodeLine2 *GetPianorollNodeLines2(const struct Tracker_Windows *win
                                   
                                   if (n==0){
                                     
+<<<<<<< HEAD
                                     val = note->_val;
                                     logtype = note->d._pitch_first_logtype;
                                     time = note->get_time();
                                     id = -1; // FIX
+=======
+                                    val = note->note;
+                                    logtype = note->pitch_first_logtype;
+                                    time = ratio_from_place(note->l.p);
+                                    id = NODETYPE_FIRST;
+>>>>>>> master
                                     
                                   } else if (n==reader.size()+1) {
 
@@ -769,8 +776,13 @@ const struct NodeLine2 *GetPianorollNodeLines2(const struct Tracker_Windows *win
                                       val = note->_val;
                                     
                                     logtype = LOGTYPE_IRRELEVANT;
+<<<<<<< HEAD
                                     time = note->d._end;
                                     id = -2; // FIX
+=======
+                                    time = note->end;
+                                    id = NODETYPE_LAST;
+>>>>>>> master
                                     
                                   } else {
                                   
@@ -866,14 +878,14 @@ const struct NodeLine2 *GetVelocityNodeLines2(const struct Tracker_Windows *wind
                                     val = note->velocity;
                                     logtype = note->velocity_first_logtype;
                                     time = ratio_from_place(note->l.p);
-                                    id = -1; // FIX
+                                    id = NODETYPE_FIRST;
                                     
                                   } else if (n==reader.size()+1) {
                                     
                                     val = note->velocity_end;
                                     logtype = LOGTYPE_IRRELEVANT;
                                     time = note->end;
-                                    id = -2; // FIX
+                                    id = NODETYPE_LAST;
                                     
                                   } else {
                                   

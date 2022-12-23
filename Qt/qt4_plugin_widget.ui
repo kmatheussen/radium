@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1858</width>
-    <height>42</height>
+    <width>1902</width>
+    <height>44</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -318,6 +318,15 @@
              </color>
             </brush>
            </colorrole>
+           <colorrole role="PlaceholderText">
+            <brush brushstyle="NoBrush">
+             <color alpha="128">
+              <red>84</red>
+              <green>84</green>
+              <blue>84</blue>
+             </color>
+            </brush>
+           </colorrole>
           </active>
           <inactive>
            <colorrole role="WindowText">
@@ -473,6 +482,15 @@
              </color>
             </brush>
            </colorrole>
+           <colorrole role="PlaceholderText">
+            <brush brushstyle="NoBrush">
+             <color alpha="128">
+              <red>84</red>
+              <green>84</green>
+              <blue>84</blue>
+             </color>
+            </brush>
+           </colorrole>
           </inactive>
           <disabled>
            <colorrole role="WindowText">
@@ -625,6 +643,15 @@
               <red>92</red>
               <green>92</green>
               <blue>92</blue>
+             </color>
+            </brush>
+           </colorrole>
+           <colorrole role="PlaceholderText">
+            <brush brushstyle="NoBrush">
+             <color alpha="128">
+              <red>84</red>
+              <green>84</green>
+              <blue>84</blue>
              </color>
             </brush>
            </colorrole>
@@ -791,6 +818,15 @@
              </color>
             </brush>
            </colorrole>
+           <colorrole role="PlaceholderText">
+            <brush brushstyle="NoBrush">
+             <color alpha="128">
+              <red>0</red>
+              <green>0</green>
+              <blue>0</blue>
+             </color>
+            </brush>
+           </colorrole>
           </active>
           <inactive>
            <colorrole role="WindowText">
@@ -922,6 +958,15 @@
            <colorrole role="ToolTipText">
             <brush brushstyle="SolidPattern">
              <color alpha="255">
+              <red>0</red>
+              <green>0</green>
+              <blue>0</blue>
+             </color>
+            </brush>
+           </colorrole>
+           <colorrole role="PlaceholderText">
+            <brush brushstyle="NoBrush">
+             <color alpha="128">
               <red>0</red>
               <green>0</green>
               <blue>0</blue>
@@ -1065,6 +1110,15 @@
              </color>
             </brush>
            </colorrole>
+           <colorrole role="PlaceholderText">
+            <brush brushstyle="NoBrush">
+             <color alpha="128">
+              <red>0</red>
+              <green>0</green>
+              <blue>0</blue>
+             </color>
+            </brush>
+           </colorrole>
           </disabled>
          </palette>
         </property>
@@ -1146,7 +1200,7 @@
          <string>Load Faust source code</string>
         </property>
         <property name="text">
-         <string>Load</string>
+         <string>Load...</string>
         </property>
        </widget>
       </item>
@@ -1162,7 +1216,7 @@
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Save Faust source code&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
-         <string>Save</string>
+         <string>Save...</string>
         </property>
        </widget>
       </item>
@@ -1203,7 +1257,7 @@ Example:
 &quot;</string>
         </property>
         <property name="text">
-         <string>Opts.</string>
+         <string>Opts..</string>
         </property>
        </widget>
       </item>
@@ -1418,7 +1472,7 @@ Example:
          </sizepolicy>
         </property>
         <property name="text">
-         <string>Replace</string>
+         <string>Replace...</string>
         </property>
        </widget>
       </item>
@@ -1434,7 +1488,7 @@ Example:
          <string>Load Preset</string>
         </property>
         <property name="text">
-         <string>Load</string>
+         <string>Load...</string>
         </property>
        </widget>
       </item>
@@ -1476,7 +1530,7 @@ Example:
          <string>Save Preset</string>
         </property>
         <property name="text">
-         <string>Save</string>
+         <string>Save...</string>
         </property>
        </widget>
       </item>
@@ -1492,7 +1546,7 @@ Example:
          <string>Load or Save VST FXB (bank) or FXP (preset) file.</string>
         </property>
         <property name="text">
-         <string>FXB/FXP</string>
+         <string>FXB/FXP...</string>
         </property>
        </widget>
       </item>
@@ -1560,7 +1614,7 @@ Example:
          <string>Set instrument program</string>
         </property>
         <property name="text">
-         <string>Trumpet</string>
+         <string>Trumpet...</string>
         </property>
        </widget>
       </item>
@@ -1807,6 +1861,15 @@ Example:
           </color>
          </brush>
         </colorrole>
+        <colorrole role="PlaceholderText">
+         <brush brushstyle="NoBrush">
+          <color alpha="128">
+           <red>84</red>
+           <green>84</green>
+           <blue>84</blue>
+          </color>
+         </brush>
+        </colorrole>
        </active>
        <inactive>
         <colorrole role="WindowText">
@@ -1962,6 +2025,15 @@ Example:
           </color>
          </brush>
         </colorrole>
+        <colorrole role="PlaceholderText">
+         <brush brushstyle="NoBrush">
+          <color alpha="128">
+           <red>84</red>
+           <green>84</green>
+           <blue>84</blue>
+          </color>
+         </brush>
+        </colorrole>
        </inactive>
        <disabled>
         <colorrole role="WindowText">
@@ -2114,6 +2186,15 @@ Example:
            <red>92</red>
            <green>92</green>
            <blue>92</blue>
+          </color>
+         </brush>
+        </colorrole>
+        <colorrole role="PlaceholderText">
+         <brush brushstyle="NoBrush">
+          <color alpha="128">
+           <red>84</red>
+           <green>84</green>
+           <blue>84</blue>
           </color>
          </brush>
         </colorrole>

@@ -66,7 +66,7 @@ static bool InsertRatio_notes_extra(
   struct Notes *note=(struct Notes *)l;
   Ratio endratio = note->end;
   
-  if(endratio >= ratio){
+  if(endratio > ratio){
     
     if (RATIO_greater_than_zero(endratio+toratio)){
       

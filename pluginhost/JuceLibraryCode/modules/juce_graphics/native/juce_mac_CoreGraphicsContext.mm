@@ -2,15 +2,15 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
 
-   End User License Agreement: www.juce.com/juce-6-licence
+   End User License Agreement: www.juce.com/juce-7-licence
    Privacy Policy: www.juce.com/juce-privacy-policy
 
    Or: You may also use this code under the terms of the GPL v3 (see
@@ -41,12 +41,10 @@ public:
 
         auto numComponents = (size_t) lineStride * (size_t) jmax (1, height);
 
-       # if JUCE_MAC && defined (MAC_OS_X_VERSION_10_14) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_14
-        // This version of the SDK intermittently requires a bit of extra space
+        // SDK version 10.14+ intermittently requires a bit of extra space
         // at the end of the image data. This feels like something has gone
         // wrong in Apple's code.
         numComponents += (size_t) lineStride;
-       #endif
 
         imageData->data.allocate (numComponents, clearImage);
 
@@ -71,7 +69,9 @@ public:
 
     void initialiseBitmapData (Image::BitmapData& bitmap, int x, int y, Image::BitmapData::ReadWriteMode mode) override
     {
-        bitmap.data = imageData->data + x * pixelStride + y * lineStride;
+        const auto offset = (size_t) (x * pixelStride + y * lineStride);
+        bitmap.data = imageData->data + offset;
+        bitmap.size = (size_t) (lineStride * height) - offset;
         bitmap.pixelFormat = pixelFormat;
         bitmap.lineStride = lineStride;
         bitmap.pixelStride = pixelStride;
@@ -111,32 +111,29 @@ public:
     static CGImageRef createImage (const Image& juceImage, CGColorSpaceRef colourSpace)
     {
         const Image::BitmapData srcData (juceImage, Image::BitmapData::readOnly);
-        detail::DataProviderPtr provider;
 
-        if (auto* cgim = dynamic_cast<CoreGraphicsPixelData*> (juceImage.getPixelData()))
+        const auto provider = [&]
         {
-            provider = detail::DataProviderPtr { CGDataProviderCreateWithData (new ImageDataContainer::Ptr (cgim->imageData),
+            if (auto* cgim = dynamic_cast<CoreGraphicsPixelData*> (juceImage.getPixelData()))
+            {
+                return detail::DataProviderPtr { CGDataProviderCreateWithData (new ImageDataContainer::Ptr (cgim->imageData),
                                                                                srcData.data,
-                                                                               (size_t) srcData.lineStride * (size_t) srcData.height,
+                                                                               srcData.size,
                                                                                [] (void * __nullable info, const void*, size_t) { delete (ImageDataContainer::Ptr*) info; }) };
-        }
-        else
-        {
-            CFUniquePtr<CFDataRef> data (CFDataCreate (nullptr,
-                                                       (const UInt8*) srcData.data,
-                                                       (CFIndex) ((size_t) srcData.lineStride * (size_t) srcData.height)));
-            provider = detail::DataProviderPtr { CGDataProviderCreateWithCFData (data.get()) };
-        }
+            }
 
-        CGImageRef imageRef = CGImageCreate ((size_t) srcData.width,
-                                             (size_t) srcData.height,
-                                             8,
-                                             (size_t) srcData.pixelStride * 8,
-                                             (size_t) srcData.lineStride,
-                                             colourSpace, getCGImageFlags (juceImage.getFormat()), provider.get(),
-                                             nullptr, true, kCGRenderingIntentDefault);
+            const auto usableSize = jmin ((size_t) srcData.lineStride * (size_t) srcData.height, srcData.size);
+            CFUniquePtr<CFDataRef> data (CFDataCreate (nullptr, (const UInt8*) srcData.data, (CFIndex) usableSize));
+            return detail::DataProviderPtr { CGDataProviderCreateWithCFData (data.get()) };
+        }();
 
-        return imageRef;
+        return CGImageCreate ((size_t) srcData.width,
+                              (size_t) srcData.height,
+                              8,
+                              (size_t) srcData.pixelStride * 8,
+                              (size_t) srcData.lineStride,
+                              colourSpace, getCGImageFlags (juceImage.getFormat()), provider.get(),
+                              nullptr, true, kCGRenderingIntentDefault);
     }
 
     //==============================================================================
@@ -512,7 +509,7 @@ void CoreGraphicsContext::drawImage (const Image& sourceImage, const AffineTrans
 
     auto colourSpace = sourceImage.getFormat() == Image::PixelFormat::SingleChannel ? greyColourSpace.get()
                                                                                     : rgbColourSpace.get();
-    auto image = detail::ImagePtr { CoreGraphicsPixelData::getCachedImageRef (sourceImage, colourSpace) };
+    detail::ImagePtr image { CoreGraphicsPixelData::getCachedImageRef (sourceImage, colourSpace) };
 
     ScopedCGContextState scopedState (context.get());
     CGContextSetAlpha (context.get(), state->fillType.getOpacity());

@@ -11,7 +11,13 @@ endif
 AVAILABLES=
 #"-DJUCE_MODULE_AVAILABLE_juce_audio_basics=1" "-DJUCE_MODULE_AVAILABLE_juce_audio_devices=1" "-DJUCE_MODULE_AVAILABLE_juce_audio_formats=1" "-DJUCE_MODULE_AVAILABLE_juce_audio_processors=1" "-DJUCE_MODULE_AVAILABLE_juce_audio_utils=1" "-DJUCE_MODULE_AVAILABLE_juce_core=1 -DJUCE_MODULE_AVAILABLE_juce_data_structures=1" "-DJUCE_MODULE_AVAILABLE_juce_dsp=1" "-DJUCE_MODULE_AVAILABLE_juce_events=1" "-DJUCE_MODULE_AVAILABLE_juce_graphics=1" "-DJUCE_MODULE_AVAILABLE_juce_gui_basics=1" "-DJUCE_MODULE_AVAILABLE_juce_gui_extra=1"
 
-COMMONCPPFLAGS := $(DEPFLAGS) -D "LINUX=1" -D "JUCE_CHECK_MEMORY_LEAKS=0" -D "JUCER_LINUX_MAKE_7346DA2A=1" -D "JUCE_APP_VERSION=1.0.0" -D "JUCE_APP_VERSION_HEX=0x10000" $(AVAILABLES) -I /usr/include -I /usr/include/freetype2 -I../../JuceLibraryCode/modules/juce_audio_processors/format_types/VST3_SDK -I ../../JuceLibraryCode -I ../../JuceLibraryCode/modules -I ~/SDKs/vstsdk2.4 -DJUCE_APP_CONFIG_HEADER="\"AppConfig.h\"" -mfpmath=sse -msse2
+PWD=$(shell pwd)
+
+JUCE_MODULES=$(PWD)/../../JuceLibraryCode/modules/
+
+LV2FLAGS=-I$(JUCE_MODULES)juce_audio_processors/format_types/LV2_SDK -I$(JUCE_MODULES)juce_audio_processors/format_types/LV2_SDK/lv2  -I$(JUCE_MODULES)juce_audio_processors/format_types/LV2_SDK/lilv/src -I$(JUCE_MODULES)juce_audio_processors/format_types/LV2_SDK/lilv -I$(JUCE_MODULES)juce_audio_processors/format_types/LV2_SDK/sratom -I$(JUCE_MODULES)juce_audio_processors/format_types/LV2_SDK/sord/src -I$(JUCE_MODULES)juce_audio_processors/format_types/LV2_SDK/sord -I$(JUCE_MODULES)juce_audio_processors/format_types/LV2_SDK/serd -I$(JUCE_MODULES)juce_audio_processors/format_types/LV2_SDK/lv2 -I$(JUCE_MODULES)juce_audio_processors/format_types/LV2_SDK
+
+COMMONCPPFLAGS := $(DEPFLAGS) -D "LINUX=1" -D "JUCE_CHECK_MEMORY_LEAKS=0" -D "JUCER_LINUX_MAKE_7346DA2A=1" -D "JUCE_APP_VERSION=1.0.0" -D "JUCE_APP_VERSION_HEX=0x10000" $(AVAILABLES) -I /usr/include -I /usr/include/freetype2 -I$(JUCE_MODULES)/.. -I$(JUCE_MODULES) -I$(JUCE_MODULES)juce_audio_processors/format_types/VST3_SDK $(LV2FLAGS) -I $(JUCE_MODULES)JuceLibraryCode -I $(JUCE_MODULES)JuceLibraryCode/modules -I ~/SDKs/vstsdk2.4 -DJUCE_APP_CONFIG_HEADER="\"AppConfig.h\"" -mfpmath=sse -msse2 -DPLUGINHOST_BUILD_64BIT
 
 # -I~/SDKs/VST_SDK/VST3_SDK -I ~/SDKs/VST_SDK/VST2_SDK/ -I ~/SDKs/VST3\ SDK
 
@@ -78,6 +84,7 @@ OBJECTS := \
   $(OBJDIR)/juce_audio_devices_a4c8a728.o \
   $(OBJDIR)/juce_audio_formats_d349f0c8.o \
   $(OBJDIR)/juce_audio_processors_44a134a2.o \
+  $(OBJDIR)/include_juce_audio_processors_lv2_libs_12bdca08.o \
   $(OBJDIR)/juce_core_aff681cc.o \
   $(OBJDIR)/juce_data_structures_bdd6d488.o \
   $(OBJDIR)/juce_events_79b2840.o \
@@ -139,6 +146,11 @@ $(OBJDIR)/juce_audio_processors_44a134a2.o: ../../JuceLibraryCode/modules/juce_a
 	-@mkdir -p $(OBJDIR)
 	@echo "Compiling juce_audio_processors.cpp"
 	@$(CXX) $(CXXFLAGS) -o "$@" -c "$<"
+
+$(OBJDIR)/include_juce_audio_processors_lv2_libs_12bdca08.o: ../../JuceLibraryCode/include_juce_audio_processors_lv2_libs.cpp
+	-@mkdir -p $(JUCE_OBJDIR)
+	@echo "Compiling include_juce_audio_processors_lv2_libs.cpp"
+	$(CXX) $(CXXFLAGS) -I../../JuceLibraryCode/modules/ $(JUCE_CPPFLAGS_APP) $(JUCE_CFLAGS_APP) -o "$@" -c "$<"
 
 $(OBJDIR)/juce_core_aff681cc.o: ../../JuceLibraryCode/modules/juce_core/juce_core.cpp
 	-@mkdir -p $(OBJDIR)

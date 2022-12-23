@@ -240,7 +240,7 @@ const struct ListHeader3 *g_indicator_node = NULL;
 int g_indicator_velocity_num = -1;
 int g_indicator_pitch_num = -1;
 
-int64_t g_current_node_id = -1;
+int64_t g_current_node_id = NODETYPE_NO_NODE;
 int64_t g_indicator_node_id = -1;
 
 static void draw_skewed_box_doit(const struct Tracker_Windows *window,
@@ -2799,27 +2799,30 @@ static void create_track_velocities(const struct Tracker_Windows *window, const 
   if(TRACK_has_peaks(wtrack->track))
     create_track_peaks(window, wblock, wtrack, note, nodelines);
 
+  //if (wtrack->l.num==0)
+  //  printf("  is current: %d. indicator node id: %d\n", is_current, (int)g_indicator_node_id);
+
+  int currvelnum = -1;
+  if (g_indicator_node == &note->l) {
+    if (g_indicator_velocity_num >= nodes->num_elements)
+      printf("g_indicator_velocity_node_num(%d) >= nodes->num_elements(%d)\n",g_indicator_velocity_num,nodes->num_elements); // TODO: Find out why this happens so often.
+    else
+      currvelnum = g_indicator_velocity_num;
+  }
+  
   // nodes
-  if (is_current || g_indicator_node_id!=-1)
+  if (is_current || g_indicator_node_id!=NODETYPE_NO_NODE)
     VECTOR_FOR_EACH(const Node2 *, node, nodes){
+      
+      //printf("%d: %d\n", iterator666, (int)node->id);
+      
       if (is_current)
         draw_skewed_box2(window, node->id, VELOCITY1_COLOR_NUM, node->x, node->y - wblock->t.y1, USE_SCISSORS);
-      if (node->id==g_indicator_node_id && g_indicator_node_id!=-1)
+      
+      if (currvelnum == iterator666 || (node->id==g_indicator_node_id && g_indicator_node_id!=-1))
         draw_node_indicator(node->x, node->y - wblock->t.y1, VELOCITY_TEXT_COLOR_NUM);
+      
     }END_VECTOR_FOR_EACH;
-
-#if 1
-  if (g_indicator_node == &note->l && g_indicator_velocity_num!=-1) {
-    if (g_indicator_velocity_num >= nodes->num_elements)
-      //RError("g_indicator_velocity_node_num(%d) >= nodes->num_elements(%d)",g_indicator_velocity_num,nodes->num_elements);
-      printf("g_indicator_velocity_node_num(%d) >= nodes->num_elements(%d)\n",g_indicator_velocity_num,nodes->num_elements); // TODO: Find out why this happens so often.
-    else {
-      struct Node2 *node = (struct Node2 *)nodes->elements[g_indicator_velocity_num];
-      draw_node_indicator(node->x, node->y-wblock->t.y1, VELOCITY_TEXT_COLOR_NUM);
-      //printf("  Drawing vel indicator. Note: %f. velnum: %d. x: %f. y: %f\n", note->note, g_indicator_velocity_num, node->x, node->y);
-    }
-  }
-#endif
 }
 #endif
 

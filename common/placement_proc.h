@@ -509,18 +509,39 @@ static inline void PlaceCopy(Place *to, const Place *from){
 
 #define GetfloatFromCounterDividor(a,b) ((a)==0 ? 0.0f : (float)((float)(a)/(float)(b)))
 
+// USE_OLD_LAST_POS is going to be set to 1 sometime after the release of 7.0.
+// It might even be less buggy setting USE_OLD_LAST_POS to 0 already now,
+// but I'm not taking the chance right before a big release.
+#define USE_OLD_LAST_POS 1
+
+#if USE_OLD_LAST_POS
 #define PlaceSetLastPos(a,b) do{   \
     (b)->line = (a)->num_lines-1;  \
     (b)->counter = MAX_UINT32-1;   \
     (b)->dividor = MAX_UINT32;     \
   }while(0)
+#else
+#define PlaceSetLastPos(a,b) do{   \
+    (b)->line = (a)->num_lines;    \
+    (b)->counter = 0;              \
+    (b)->dividor = 1;              \
+  }while(0)
+#endif
 
 static inline Place *PlaceGetLastPos(const struct Blocks *block){
+#if USE_OLD_LAST_POS
   return PlaceCreate(block->num_lines-1, MAX_UINT32-1, MAX_UINT32);
+#else
+  return PlaceCreate(block->num_lines, 0, 1);
+#endif
 }
 
 static inline Place p_Last_Pos(const struct Blocks *block){
+#if USE_OLD_LAST_POS
   return p_Create(block->num_lines-1, MAX_UINT32-1, MAX_UINT32);
+#else
+  return p_Create(block->num_lines, 0, 1);
+#endif
 }
 
 #define SetAbsoluteLastPlace(place, block) do{        \

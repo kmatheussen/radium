@@ -51,6 +51,7 @@
 
 (define (FROM_C-show-mixer-config-settings-menu)
   (popup-menu
+   "----------A/B settings"
    (map (lambda (base)
           (define base2 (cons "include" (append base (list "in" "mixer" "config"))))
           (list (string-join (cons "Include" base) " ")
@@ -372,14 +373,14 @@
              ra:delete-selected-mixer-objects)
        "-----------"
        (list (if (> num-selected-instruments 1)
-                 "Save multi preset (.mrec)"
-                 "Save preset (.rec)")
+                 "Save multi preset... (.mrec)"
+                 "Save preset... (.rec)")
              :enabled enabled
              save-preset-for-instruments)
        (list "Show mixer strips window"
              :enabled enabled
              show-mixer-strips-for-instruments)
-       (list "Configure color"
+       (list "Configure color..."
              :enabled enabled
              show-instrument-color-dialog-for-all-selected-instruments)
        (list "Generate new color"
@@ -485,6 +486,10 @@
           :shortcut insert-new-sound-object-in-mixer
           (lambda ()
             (insert-new-sound-object-in-mixer x y)))
+    (list "From list of most frequently used instruments" ;;"From list of favourites"
+          :shortcut show-favourites-menu
+          (lambda ()
+            (show-favourites-menu x y)))
     "---------------"
     (list "From preset file (.rec/.mrec)"
           :shortcut new-instrument-from-preset

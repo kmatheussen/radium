@@ -141,10 +141,7 @@ void CopyRange_notes(
                      const Place *p1,
                      const Place *p2
 ){
-
-	if(fromnote==NULL){
-		return;
-	}
+  while(fromnote != NULL) {
 
         R_ASSERT_RETURN_IF_FALSE(*tonote != fromnote);
 
@@ -173,7 +170,8 @@ void CopyRange_notes(
 	//CopyRange_pitches(&note->pitches,fromnote->pitches,p1,p2);
 	CopyRange_pitches2(note->_pitches,fromnote->_pitches,p1,p2);
 
-	CopyRange_notes(tonote,NextNote(fromnote),p1,p2);
+	fromnote = NextNote(fromnote);
+  }
 }
 
 

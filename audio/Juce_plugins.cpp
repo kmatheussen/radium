@@ -56,24 +56,57 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
   
 
 #if JUCE_LINUX
-  #define FOR_LINUX 1
-#endif
 
-#if JUCE_WINDOWS
-#define FOR_WINDOWS 1
+  #define FOR_LINUX 1
+  #if defined(_WIN32)
+    #error "error"
+  #endif
+  #if defined(__APPLE__)
+    #error "error"
+  #endif
+  #if !defined(__linux__)
+    #error "error"
+  #endif
+
+#elif JUCE_WINDOWS
+
+  #define FOR_WINDOWS 1
   #ifdef FOR_LINUX
     #error "gakk"
   #endif
-#endif
+  #if !defined(_WIN32)
+    #error "error"
+  #endif
+  #if defined(__APPLE__)
+    #error "error"
+  #endif
+  #if defined(__linux__)
+    #error "error"
+  #endif
 
-#if JUCE_MAC
-#define FOR_MACOSX 1
+#elif JUCE_MAC
+
+  #define FOR_MACOSX 1
   #ifdef FOR_LINUX
     #error "gakk"
   #endif
   #ifdef FOR_WINDOWS
     #error "gakk2"
   #endif
+  #if defined(_WIN32)
+    #error "error"
+  #endif
+  #if !defined(__APPLE__)
+    #error "error"
+  #endif
+  #if defined(__linux__)
+    #error "error"
+  #endif
+
+#else
+
+  #error "UNKNOWN"
+
 #endif
 
 #define Slider Radium_Slider
@@ -90,6 +123,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/threading.h"
 #include "../common/threading_lowlevel.h"
 #include "../common/sequencer_timing_proc.h"
+#include "../common/LockAsserter.hpp"
 
 #include "../Qt/Qt_instruments_proc.h"
 
@@ -177,10 +211,38 @@ namespace{
     #error "_DEBUG should be defined"
   #endif
 
-  #ifdef __OPTIMIZE__
-    #error "Missing -O0 compiler option"
+  #if JUCE_LINUX
+    #ifdef __OPTIMIZE__
+      #error "Missing -O0 compiler option"
+    #endif
   #endif
 
+#endif
+
+#if !JUCE_32BIT && !JUCE_64BIT
+#error "somethings wrong"
+#endif
+
+#if defined(PLUGINHOST_BUILD_32BIT)
+#  if JUCE_64BIT
+#    error "wrong"
+#  endif
+#  if !JUCE_32BIT
+#    error "wrong"
+#  endif
+#endif
+
+#if defined(PLUGINHOST_BUILD_64BIT)
+#  if JUCE_32BIT
+#    error "wrong"
+#  endif
+#  if !JUCE_64BIT
+#    error "wrong"
+#  endif
+#endif
+
+#if !defined(PLUGINHOST_BUILD_32BIT) && !defined(PLUGINHOST_BUILD_64BIT)
+#  error "wrong"
 #endif
 
 
@@ -199,12 +261,21 @@ static void findMaxTotalChannels(juce::AudioProcessor* const filter,
 
 namespace{
 
+<<<<<<< HEAD
 #if defined(FOR_LINUX)
   static constexpr bool g_use_custom_mm_thread = true;
 #elif defined(FOR_WINDOWS  )
   static constexpr bool g_use_custom_mm_thread = false;
 #elif defined(FOR_MACOSX)
   static constexpr bool g_use_custom_mm_thread = false;
+=======
+#if FOR_LINUX
+  static constexpr bool g_use_custom_mm_thread = true; // Note: 'false' is supposedly supposed to work in juce7 I think, but it doesn't seem to work. ('true' is better anyway though, better interactivity)
+#elif FOR_WINDOWS  
+  static constexpr bool g_use_custom_mm_thread = false; // ('true' doesn't work unfortunately)
+#elif FOR_MACOSX
+  static constexpr bool g_use_custom_mm_thread = false; // ('true' doesn't work unfortunately)
+>>>>>>> master
 #else
   #error "unknown platform"
 #endif
@@ -300,6 +371,15 @@ namespace{
       printf("   JUCE listener: parm %d changed to %f. has_inited: %d. is_shutting_down: %d\n",parameterIndex, newValue, ATOMIC_GET(_plugin->MT_has_initialized), ATOMIC_GET(_plugin->is_shutting_down));
 #endif
 
+      // Deletion of SoundPlugin instances are delayed, but the listener is removed in cleanup_plugin_data, so that shouldn't matter.
+      // We check for '_plugin->is_shutting_down' anyway though. I don't why it was initially done so (there should have been a comment about it here),
+      // but perhaps it's because of this line in SoundPlugin.cpp:
+      //
+      // "while(PLUGIN_remove_midi_learn(plugin, -1, false)==true)".
+      //
+      // ...which seems unlikely, so it's probably safe removing the check...
+      // Also note: We can't assert that '_plugin_is_shutting_down==false' here since _plugin->is_shutting_down is set to false before the call to 'cleanup_plugin_data'.
+      //
       if (ATOMIC_GET(_plugin->MT_has_initialized) && !ATOMIC_GET(_plugin->is_shutting_down))
         PLUGIN_call_me_when_an_effect_value_has_changed(_plugin,
                                                         parameterIndex,
@@ -343,14 +423,23 @@ namespace{
   
   struct MyAudioPlayHead : public juce::AudioPlayHead{
 
-    juce::String _plugin_name;
-    struct SoundPlugin *_plugin;  // Set to NULL when SoundPlugin *plugin is deleted. (we can still be alive though, since the deletion of juce plugins are delayed)
+    const juce::String _plugin_name;
+    const struct SoundPlugin *_plugin;  // Set to NULL when SoundPlugin *plugin is deleted. (we can still be alive though, since the deletion of juce plugins are delayed)
     
-    double positionOfLastLastBarStart = 0.0;
-    bool positionOfLastLastBarStart_is_valid = false;
+    mutable double _position_of_last_last_bar_start = 0.0;
+    mutable bool _position_of_last_last_bar_start_is_valid = false;
 
-    double lastLastBarStart = 0.0; // only used for debugging.
-        
+#define DEBUG_LAST_BAR_START 0
+
+#if defined(RELEASE)
+    #if DEBUG_LAST_BAR
+      #error "error"
+    #endif
+#endif
+    
+#if DEBUG_LAST_BAR_START
+    mutable double _last_last_bar_start = 0.0; // only used for debugging.
+#endif   
 
     MyAudioPlayHead(juce::String plugin_name, struct SoundPlugin *plugin)
       : _plugin_name(plugin_name)
@@ -360,29 +449,39 @@ namespace{
     void plugin_will_be_deleted(void){
       _plugin = NULL;
     }
-    
+
+#if !defined(RELEASE)
+    radium::LockAsserter _lockAsserter;
+#endif
+
     // From JUCE documenation: You can ONLY call this from your processBlock() method!
     // I.e. it will only be called from the player thread or a multicore thread.
-    bool getCurrentPosition (CurrentPositionInfo &result) override {
-      memset(&result, 0, sizeof(CurrentPositionInfo));
-
+    juce::Optional<juce::AudioPlayHead::PositionInfo> getPosition (void) const override {
+      
       if (THREADING_is_main_thread()){
         RT_message("Error in plugin \"%s\": Asked for timing information from the main thread. Please contact the plugin vendor to fix this bug.\n", _plugin_name.toRawUTF8());
-        return false;
+        return juce::nullopt;
       }
       
       if (false==PLAYER_someone_has_player_lock()){ // Could complicate things by checking if process() is called specifically for this plugin, but this check probably fires if a plugin misbehaves anyway.
         RT_message("Error in plugin \"%s\": Asked for timing information outside process(). Please contact the plugin vendor to fix this bug.\n", _plugin_name.toRawUTF8());
-        return false;
+        return juce::nullopt;
       }
       
       if (ATOMIC_GET(is_starting_up))
-        return false;
+        return juce::nullopt;
 
       if (_plugin==NULL) // This situation is probably picked up by the two RT_message cases above though.
-        return false;
-        
+        return juce::nullopt;
+
+      // Assert that we are single-threaded. If not, we need to make access to '_position_of_last_last_bar_start' and '_position_of_last_last_bar_start_is_valid' multithread-safe.
+      // (it's most likely a bug if we hit this assertion though. I don't think it should happen.)
+      LOCKASSERTER_EXCLUSIVE_NON_RELEASE(&_lockAsserter);
+      
       //RT_PLUGIN_touch(_plugin); // If the plugin needs timing data, it should probably not be autopaused.
+
+      juce::AudioPlayHead::PositionInfo result;
+      //memset(&result, 0, sizeof(CurrentPositionInfo));
 
       bool isplaying = is_really_playing();
 
@@ -394,64 +493,80 @@ namespace{
         seqtrack = (struct SeqTrack *)root->song->seqtracks.elements[0]; // FIX.
 
 
-      result.bpm = RT_LPB_get_current_BPM(seqtrack);
-      //printf("result.bpm: %f\n",result.bpm);
-
-      if (result.bpm==0){
+      double bpm = RT_LPB_get_current_BPM(seqtrack);
+      if (bpm < 1){
         //R_ASSERT_NON_RELEASE(false); // Note: BPM is supposed to b 0 when playing very slowly so it's not impossible to get a false positive.
-        result.bpm = 1; // Never set bpm to 0. At least one vst plugin crashes if bpm is 0.
+        bpm = 1; // Never set bpm to 0. At least one vst plugin crashes if bpm is 0.
       }
       
+      result.setBpm(bpm);
+      
+      //printf("result.bpm: %f\n",result.bpm);
+
       StaticRatio signature = RT_Signature_get_current_Signature(seqtrack);
+      juce::AudioPlayHead::TimeSignature signature2;
+      signature2.numerator = signature.numerator;
+      signature2.denominator = signature.denominator;
+      result.setTimeSignature(signature2);
+
+      /*
       result.timeSigNumerator = signature.numerator;
       result.timeSigDenominator = signature.denominator;
+      */
       //printf("%d/%d\n",signature.numerator,signature.denominator);
 
       const int latency = RT_SP_get_input_latency(_plugin->sp);
 
-      const double latency_beats = ((double)latency / (double)pc->pfreq) * result.bpm / 60.0;
+      const double latency_beats = ((double)latency / (double)pc->pfreq) * bpm / 60.0;
 
       if (!isplaying){
               
-        result.timeInSamples = -latency;
-        result.timeInSeconds = (double)-latency / (double)pc->pfreq;
+        result.setTimeInSamples(-latency); 
+        result.setTimeInSeconds((double)-latency / (double)pc->pfreq);
 
-        result.ppqPosition               = -latency_beats;
-        result.ppqPositionOfLastBarStart = -latency_beats;
+        result.setPpqPosition(-latency_beats);
+        result.setPpqPositionOfLastBarStart(-latency_beats);
 
-        positionOfLastLastBarStart_is_valid = false;      
+        _position_of_last_last_bar_start_is_valid = false;      
 
       } else {
+
+        const int64_t time_in_samples = pc->absabstime - latency;
         
-        result.timeInSamples = pc->absabstime - latency;
-        result.timeInSeconds = result.timeInSamples / (double)pc->pfreq;
+        result.setTimeInSamples(time_in_samples);
+        result.setTimeInSeconds(time_in_samples / (double)pc->pfreq);
 
         //if(ATOMIC_GET(root->editonoff))
         //  printf("timeInSeconds: %f\n", result.timeInSeconds);
 
-        bool using_sequencer_timing = root->song->use_sequencer_tempos_and_signatures;
+        const bool using_sequencer_timing = root->song->use_sequencer_tempos_and_signatures;
 
-        // Note: If changing ppqPositionOfLastBarStart, we might also have to change pos->bar_start_tick in Mixer.cpp/RT_rjack_timebase. (note that we dsubtract "latency_beats" here.)
-        result.ppqPosition               = RT_LPB_get_beat_position(seqtrack) - latency_beats;
-        result.ppqPositionOfLastBarStart = (using_sequencer_timing ? g_rt_sequencer_ppq_of_last_bar_start-latency_beats : seqtrack->beat_iterator.beat_position_of_last_bar_start);
+        const double ppq_position = RT_LPB_get_beat_position(seqtrack) - latency_beats;
+        const double ppq_position_of_last_bar_start = using_sequencer_timing ? g_rt_sequencer_ppq_of_last_bar_start-latency_beats : seqtrack->beat_iterator.beat_position_of_last_bar_start;
         
-        if (result.ppqPosition < result.ppqPositionOfLastBarStart) {
+        // Note: If changing ppqPositionOfLastBarStart, we might also have to change pos->bar_start_tick in Mixer.cpp/RT_rjack_timebase. (note that we dsubtract "latency_beats" here.)
+        result.setPpqPosition(ppq_position);
+        result.setPpqPositionOfLastBarStart(ppq_position_of_last_bar_start);
+        
+        if (ppq_position < ppq_position_of_last_bar_start) {
 
-          if (positionOfLastLastBarStart_is_valid)            
-            result.ppqPositionOfLastBarStart = positionOfLastLastBarStart;
-          else {
+          if (_position_of_last_last_bar_start_is_valid) {
+            
+            result.setPpqPositionOfLastBarStart(_position_of_last_last_bar_start);
+            
+          } else {
 
             // I.e. when starting to play we don't have a previous last bar start value.
             
-            double bar_length = 4.0 * (double)signature.numerator / (double)signature.denominator;
+            const double bar_length = 4.0 * (double)signature.numerator / (double)signature.denominator;
 
 #if 1
             R_ASSERT_NON_RELEASE(bar_length!=0);
 
-            double num_bars_to_subtract = ceil( (result.ppqPositionOfLastBarStart - result.ppqPosition) /
+            const double num_bars_to_subtract = ceil( (ppq_position_of_last_bar_start - ppq_position) /
                                                 bar_length
                                                 );
-            result.ppqPositionOfLastBarStart -= (bar_length * num_bars_to_subtract);
+            result.setPpqPositionOfLastBarStart(ppq_position_of_last_bar_start - (bar_length * num_bars_to_subtract));
               
 #else
             // This version is cleaner, but it can freeze the program if we have a value that is out of the ordinary.
@@ -462,8 +577,8 @@ namespace{
           }
           
         } else {
-          positionOfLastLastBarStart = result.ppqPositionOfLastBarStart;
-          positionOfLastLastBarStart_is_valid = true;
+          _position_of_last_last_bar_start = ppq_position_of_last_bar_start;
+          _position_of_last_last_bar_start_is_valid = true;
         }
       
       }
@@ -473,20 +588,21 @@ namespace{
 #endif
 
 
-#if 0
-      //if (result.ppqPositionOfLastBarStart != lastLastBarStart)
+#if DEBUG_LAST_BAR_START
+      //if (result.ppqPositionOfLastBarStart != _last_last_bar_start)
       //  printf("  ppq: %f,  ppqlast: %f, extra: %f. Latency: %d\n",result.ppqPosition,result.ppqPositionOfLastBarStart,latency_beats,latency);
       
-      lastLastBarStart = result.ppqPositionOfLastBarStart;
+      _last_last_bar_start = result.getPpqPositionOfLastBarStart().orFallback(-500);
         
       printf("ppq: %f, ppqlast: %f. playing: %d. time: %f\n",
-             result.ppqPosition,
-             result.ppqPositionOfLastBarStart,
+             result.getPpqPosition().orFallback(599),
+             _last_last_bar_start,
              isplaying,
-             result.timeInSeconds);
+             result.getTimeInSeconds().orFallback(-777)
+             );
 #endif
       
-      result.isPlaying = isplaying;
+      result.setIsPlaying(isplaying);
 #if 0
       result.isRecording = false;
       
@@ -496,7 +612,7 @@ namespace{
       result.isLooping = false; //pc->playtype==PLAYBLOCK || pc->playtype==PLAYRANGE; (same here)
 #endif
 
-      return true;
+      return result;
     }
   };
 
@@ -879,8 +995,14 @@ namespace{
       //this->setAlwaysOnTop(vstGuiIsAlwaysOnTop());
     }
 
+    mutable int _button_height = 0;
+    
     int get_button_height(void) const {
-      return (root->song->tracker_windows->fontheight * 3 / 2) /  g_juce_gfx_scale;
+      if (_button_height <= 0)
+        _button_height = juce::Font().getHeight() * 5 / 3;
+
+      return _button_height;
+      //return (root->song->tracker_windows->fontheight * 3 / 2) /  g_juce_gfx_scale;
     }
     
     int get_keyboard_height(void) const {
@@ -979,7 +1101,7 @@ namespace{
           editor_width /= g_juce_gfx_scale;
           editor_height /= g_juce_gfx_scale;
           
-          fprintf(stderr, "EDITOR WIDTH/HEIGHT 2b %d %d %d %d\n", editor_width, editor_height, get_button_height(), get_keyboard_height());
+          //fprintf(stderr, "EDITOR WIDTH/HEIGHT 2b %d %d %d %d\n", editor_width, editor_height, get_button_height(), get_keyboard_height());
 
           main_component.setSize(editor_width, editor_height + get_button_height() + get_keyboard_height());
           
@@ -1172,19 +1294,31 @@ namespace{
       else
 #endif
         editor->setTopLeftPosition(0, button_height);
-      
+
       editor->setVisible(true);
-            
+
+      // Some plugins returns size 1,1 before editor is visible and added to main component for example https://lsp-plug.in/
+      // Maybe this should be only for linux.
+      bool set_size_again = (editor_width < 2 || editor_height < 2);
+
       editor_width = editor->getWidth() / g_juce_gfx_scale;
       editor_height = editor->getHeight() / g_juce_gfx_scale;
 
       //fprintf(stderr, "EDITOR WIDTH/HEIGHT 1 %d %d %f\n", editor_width, editor_height, g_juce_gfx_scale);
       
       //if (!data->is_au())
-        if (g_has_juce_gfx_scale)
+        if (g_has_juce_gfx_scale || set_size_again)
           editor->setSize(editor_width, editor_height); // must be a bug in juce
 
         //fprintf(stderr, "EDITOR WIDTH/HEIGHT 1b %d %d %f\n", editor->getWidth(), editor->getHeight(), g_juce_gfx_scale);
+
+      // Some plugins returns size 1,1 before editor is visible and added to main component for example https://lsp-plug.in/
+      // Maybe this should be only for linux.
+      if (set_size_again) {
+        int full_height = editor_height + button_height + keyboard_height;
+        this->setSize(editor_width, full_height);
+        main_component.setSize(editor_width, full_height);
+      }
 
       if (midi_keyboard != NULL) {
         main_component.addChildComponent(midi_keyboard);
@@ -1235,7 +1369,7 @@ namespace{
         }
 
         //fprintf(stderr, "EDITOR WIDTH/HEIGHT 1f %d %d %f\n", editor->getWidth(), editor->getHeight(), g_juce_gfx_scale);
-        
+
         this->setVisible(true);
 
         //fprintf(stderr, "EDITOR WIDTH/HEIGHT 1g %d %d %f\n", editor->getWidth(), editor->getHeight(), g_juce_gfx_scale);
@@ -2394,17 +2528,22 @@ namespace{
     }
 
     void timerCallback() override {
-      if (downcount > 7 || (g_waiting_to_shut_down==false && downcount > 0)) {
-        
-        fprintf(stderr, "    DelayDeleteData: Downcounting %d\n", downcount);
-        downcount--;
-        startTimer(500);
-        
+      if (downcount > 7
+          || (g_waiting_to_shut_down==false && downcount > 0)
+          || !JUCE_show_hide_gui_lock.trylock()
+          )
+      {
+          
+          fprintf(stderr, "    DelayDeleteData: Downcounting %d\n", downcount);
+          downcount--;
+          startTimer(500);
+          
       } else {
-        radium::ScopedMutex lock(JUCE_show_hide_gui_lock);
-        
         fprintf(stderr, "    DelayDeleteData: Deleting.\n");
+
         delete this;
+        
+        JUCE_show_hide_gui_lock.unlock();
       }
     }
   };
@@ -2569,6 +2708,7 @@ static SoundPluginType *create_plugin_type(const juce::PluginDescription &descri
     : description.pluginFormatName=="VST3" ? "VST3"
     : description.pluginFormatName=="AudioUnit" ? "AU"
     : description.pluginFormatName=="AU" ? "AU"
+    : description.pluginFormatName=="LV2" ? "LV2"
     : NULL;
 
   if (plugin_type->type_name==NULL){
@@ -2978,12 +3118,16 @@ bool JUCE_current_thread_is_message_thread(void){
 static juce::String g_backtrace;
 
 const char *JUCE_get_backtrace(void){
+#if FOR_WINDOWS
+  return "(backtrace not implemented on windows)";
+#else
   static int num=0;
   printf("Getting backtrace %d\n", num);
   g_backtrace = juce::SystemStats::getStackBacktrace();
   printf("Got backtrace %d\n", num);
   num++;
   return g_backtrace.toRawUTF8();
+#endif
 }
 
 bool JUCE_open_external_web_browser(const char *urlstring){
@@ -3240,15 +3384,24 @@ void PLUGINHOST_save_fxp(struct SoundPlugin *plugin, const wchar_t *filename){
 static JuceThread *g_juce_thread = NULL;
 
 void PLUGINHOST_set_global_gfx_scale(float gfx_scale){
+
 #if defined(FOR_MACOSX)
-  return; // doesn't seem to work.
-#endif
+
+  // On mac, gfx scaling seems to be done automatically.
+  return;
+  
+#else
   
   run_on_message_thread([gfx_scale](){
     juce::Desktop::getInstance().setGlobalScaleFactor(gfx_scale);
-    g_juce_gfx_scale = gfx_scale;
-    g_has_juce_gfx_scale = true;
+
+    // After JUCE 7, it doesn't seem necessary anymore to manually change size of the editor component if global scale factor != 1.
+
+    //g_juce_gfx_scale = gfx_scale;
+    //g_has_juce_gfx_scale = true;
   });
+  
+#endif
 }
  
 void PLUGINHOST_init(void){

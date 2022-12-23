@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -33,7 +33,7 @@ JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wlanguage-extension-token")
 namespace WasapiClasses
 {
 
-void logFailure (HRESULT hr)
+static void logFailure (HRESULT hr)
 {
     ignoreUnused (hr);
     jassert (hr != (HRESULT) 0x800401f0); // If you hit this, it means you're trying to call from
@@ -89,7 +89,7 @@ void logFailure (HRESULT hr)
 
 #undef check
 
-bool check (HRESULT hr)
+static bool check (HRESULT hr)
 {
     logFailure (hr);
     return SUCCEEDED (hr);
@@ -336,11 +336,32 @@ JUCE_IUNKNOWNCLASS (IAudioSessionControl, "F4B1A599-7266-4319-A8CA-E70ACB11E8CD"
     JUCE_COMCALL UnregisterAudioSessionNotification (IAudioSessionEvents*) = 0;
 };
 
+} // namespace juce
+
+#ifdef __CRT_UUID_DECL
+__CRT_UUID_DECL (juce::IPropertyStore,        0x886d8eeb, 0x8cf2, 0x4446, 0x8d, 0x02, 0xcd, 0xba, 0x1d, 0xbd, 0xcf, 0x99)
+__CRT_UUID_DECL (juce::IMMDevice,             0xD666063F, 0x1587, 0x4E43, 0x81, 0xF1, 0xB9, 0x48, 0xE8, 0x07, 0x36, 0x3F)
+__CRT_UUID_DECL (juce::IMMEndpoint,           0x1BE09788, 0x6894, 0x4089, 0x85, 0x86, 0x9A, 0x2A, 0x6C, 0x26, 0x5A, 0xC5)
+__CRT_UUID_DECL (juce::IMMNotificationClient, 0x7991EEC9, 0x7E89, 0x4D85, 0x83, 0x90, 0x6C, 0x70, 0x3C, 0xEC, 0x60, 0xC0)
+__CRT_UUID_DECL (juce::IMMDeviceEnumerator,   0xA95664D2, 0x9614, 0x4F35, 0xA7, 0x46, 0xDE, 0x8D, 0xB6, 0x36, 0x17, 0xE6)
+__CRT_UUID_DECL (juce::MMDeviceEnumerator,    0xBCDE0395, 0xE52F, 0x467C, 0x8E, 0x3D, 0xC4, 0x57, 0x92, 0x91, 0x69, 0x2E)
+__CRT_UUID_DECL (juce::IAudioClient,          0x1CB9AD4C, 0xDBFA, 0x4c32, 0xB1, 0x78, 0xC2, 0xF5, 0x68, 0xA7, 0x03, 0xB2)
+__CRT_UUID_DECL (juce::IAudioClient2,         0x726778CD, 0xF60A, 0x4eda, 0x82, 0xDE, 0xE4, 0x76, 0x10, 0xCD, 0x78, 0xAA)
+__CRT_UUID_DECL (juce::IAudioClient3,         0x1CB9AD4C, 0xDBFA, 0x4c32, 0xB1, 0x78, 0xC2, 0xF5, 0x68, 0xA7, 0x03, 0xB2)
+__CRT_UUID_DECL (juce::IAudioCaptureClient,   0xC8ADBD64, 0xE71E, 0x48a0, 0xA4, 0xDE, 0x18, 0x5C, 0x39, 0x5C, 0xD3, 0x17)
+__CRT_UUID_DECL (juce::IAudioRenderClient,    0xF294ACFC, 0x3146, 0x4483, 0xA7, 0xBF, 0xAD, 0xDC, 0xA7, 0xC2, 0x60, 0xE2)
+__CRT_UUID_DECL (juce::IAudioEndpointVolume,  0x5CDF2C82, 0x841E, 0x4546, 0x97, 0x22, 0x0C, 0xF7, 0x40, 0x78, 0x22, 0x9A)
+__CRT_UUID_DECL (juce::IAudioSessionEvents,   0x24918ACC, 0x64B3, 0x37C1, 0x8C, 0xA9, 0x74, 0xA6, 0x6E, 0x99, 0x57, 0xA8)
+__CRT_UUID_DECL (juce::IAudioSessionControl,  0xF4B1A599, 0x7266, 0x4319, 0xA8, 0xCA, 0xE7, 0x0A, 0xCB, 0x11, 0xE8, 0xCD)
+#endif
+
 //==============================================================================
+namespace juce
+{
 namespace WasapiClasses
 {
 
-String getDeviceID (IMMDevice* device)
+static String getDeviceID (IMMDevice* device)
 {
     String s;
     WCHAR* deviceId = nullptr;
@@ -574,7 +595,7 @@ private:
     void createSessionEventCallback()
     {
         deleteSessionEventCallback();
-        client->GetService (__uuidof2 (IAudioSessionControl),
+        client->GetService (__uuidof (IAudioSessionControl),
                             (void**) audioSessionControl.resetAndGetPointerAddress());
 
         if (audioSessionControl != nullptr)
@@ -600,7 +621,7 @@ private:
         ComSmartPtr<IAudioClient> newClient;
 
         if (device != nullptr)
-            logFailure (device->Activate (__uuidof2 (IAudioClient), CLSCTX_INPROC_SERVER,
+            logFailure (device->Activate (__uuidof (IAudioClient), CLSCTX_INPROC_SERVER,
                                           nullptr, (void**) newClient.resetAndGetPointerAddress()));
 
         return newClient;
@@ -655,9 +676,7 @@ private:
 
     void querySupportedSampleRates (WAVEFORMATEXTENSIBLE format, ComSmartPtr<IAudioClient>& audioClient)
     {
-        for (auto rate : { 8000, 11025, 16000, 22050, 32000,
-                           44100, 48000, 88200, 96000, 176400,
-                           192000, 352800, 384000, 705600, 768000 })
+        for (auto rate : SampleRateHelpers::getAllSampleRates())
         {
             if (rates.contains (rate))
                 continue;
@@ -674,7 +693,7 @@ private:
                                                                                         : &nearestFormat)))
             {
                 if (nearestFormat != nullptr)
-                    rate = (int) nearestFormat->nSamplesPerSec;
+                    rate = (double) nearestFormat->nSamplesPerSec;
 
                 if (! rates.contains (rate))
                     rates.addUsingDefaultSort (rate);
@@ -875,7 +894,7 @@ public:
     bool open (double newSampleRate, const BigInteger& newChannels, int bufferSizeSamples)
     {
         return openClient (newSampleRate, newChannels, bufferSizeSamples)
-                && (numChannels == 0 || check (client->GetService (__uuidof2 (IAudioCaptureClient),
+                && (numChannels == 0 || check (client->GetService (__uuidof (IAudioCaptureClient),
                                                                    (void**) captureClient.resetAndGetPointerAddress())));
     }
 
@@ -1023,7 +1042,7 @@ public:
     bool open (double newSampleRate, const BigInteger& newChannels, int bufferSizeSamples)
     {
         return openClient (newSampleRate, newChannels, bufferSizeSamples)
-                && (numChannels == 0 || check (client->GetService (__uuidof2 (IAudioRenderClient),
+                && (numChannels == 0 || check (client->GetService (__uuidof (IAudioRenderClient),
                                                                    (void**) renderClient.resetAndGetPointerAddress())));
     }
 
@@ -1496,8 +1515,12 @@ public:
                 const ScopedTryLock sl (startStopLock);
 
                 if (sl.isLocked() && isStarted)
-                    callback->audioDeviceIOCallback (const_cast<const float**> (inputBuffers), numInputBuffers,
-                                                     outputBuffers, numOutputBuffers, bufferSize);
+                    callback->audioDeviceIOCallbackWithContext (const_cast<const float**> (inputBuffers),
+                                                                numInputBuffers,
+                                                                outputBuffers,
+                                                                numOutputBuffers,
+                                                                bufferSize,
+                                                                {});
                 else
                     outs.clear();
             }
@@ -1552,7 +1575,7 @@ private:
     {
         ComSmartPtr<IMMDeviceEnumerator> enumerator;
 
-        if (! check (enumerator.CoCreateInstance (__uuidof2 (MMDeviceEnumerator))))
+        if (! check (enumerator.CoCreateInstance (__uuidof (MMDeviceEnumerator))))
             return false;
 
         ComSmartPtr<IMMDeviceCollection> deviceCollection;
@@ -1788,7 +1811,7 @@ private:
     {
         if (enumerator == nullptr)
         {
-            if (! check (enumerator.CoCreateInstance (__uuidof2 (MMDeviceEnumerator))))
+            if (! check (enumerator.CoCreateInstance (__uuidof (MMDeviceEnumerator))))
                 return;
 
             notifyClient = new ChangeNotificationClient (this);
@@ -1902,12 +1925,12 @@ struct MMDeviceMasterVolume
     {
         ComSmartPtr<IMMDeviceEnumerator> enumerator;
 
-        if (check (enumerator.CoCreateInstance (__uuidof2 (MMDeviceEnumerator))))
+        if (check (enumerator.CoCreateInstance (__uuidof (MMDeviceEnumerator))))
         {
             ComSmartPtr<IMMDevice> device;
 
             if (check (enumerator->GetDefaultAudioEndpoint (eRender, eConsole, device.resetAndGetPointerAddress())))
-                check (device->Activate (__uuidof2 (IAudioEndpointVolume), CLSCTX_INPROC_SERVER, nullptr,
+                check (device->Activate (__uuidof (IAudioEndpointVolume), CLSCTX_INPROC_SERVER, nullptr,
                                          (void**) endpointVolume.resetAndGetPointerAddress()));
         }
     }

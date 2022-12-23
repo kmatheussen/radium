@@ -236,9 +236,12 @@ void PlayStop_from_jack_transport(void){
 }
 
 
-static void start_player(int playtype, double abstime, int64_t absabstime, const Place *place, struct Blocks *block, struct SeqTrack *seqtrack, struct SeqBlock *seqblock){
+static void start_player(int playtype, bool do_loop, double abstime, int64_t absabstime, const Place *place, struct Blocks *block, struct SeqTrack *seqtrack, struct SeqBlock *seqblock){
   R_ASSERT(ATOMIC_GET(pc->player_state)==PLAYER_STATE_STOPPED);
-
+  
+  if (playtype==PLAYSONG)
+    R_ASSERT(!do_loop);
+    
   if (abstime<0)
     R_ASSERT(absabstime>=0);
   else if (absabstime<0)
@@ -343,13 +346,7 @@ static void PlayBlock(
 	const Place *place,
         bool do_loop
 ){
-  int playtype;
-  if(do_loop==true)
-    playtype=PLAYBLOCK;
-  else
-    playtype=PLAYBLOCK_NONLOOP;
-
-  start_player(playtype, 0.0, -1, place, block, NULL, NULL);
+  start_player(PLAYBLOCK, do_loop, 0.0, -1, place, block, NULL, NULL);
 }
 
 void PlayBlockFromStart(struct Tracker_Windows *window,bool do_loop){
@@ -595,7 +592,7 @@ static void play_song(double abstime, int64_t absabstime, bool called_from_jack_
 
   pc->is_playing_range = false;
   
-  start_player(PLAYSONG, abstime, absabstime, NULL, NULL, NULL, NULL);
+  start_player(PLAYSONG, false, abstime, absabstime, NULL, NULL, NULL, NULL);
 
   // GC isn't used in the player thread, but the player thread sometimes holds pointers to gc-allocated memory.
 #if STOP_GC_WHILE_PLAYING

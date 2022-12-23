@@ -454,9 +454,21 @@ void setCurrentVelocityNode(int velocitynum, dyn_t dynnote, int tracknum, int bl
     return;
   }
 
+<<<<<<< HEAD
   if (velocitynum > 0 && velocitynum < num_velocities-1) {
     const r::VelocityTimeData::Reader reader(&note->_velocities);
+=======
+  if (velocitynum <= 0) {
+    R_ASSERT_NON_RELEASE(velocitynum == 0);
+    API_setCurrentNode2(NODETYPE_FIRST);
+  } else if (velocitynum < num_velocities-1) {
+    const r::VelocityTimeData::Reader reader(note->_velocities);
+>>>>>>> master
     API_setCurrentNode2(reader.at_ref(velocitynum-1)._id);
+  }
+  else {
+    R_ASSERT_NON_RELEASE(velocitynum == num_velocities -1);
+    API_setCurrentNode2(NODETYPE_LAST);
   }
 
 }

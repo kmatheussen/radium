@@ -719,6 +719,11 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
         showBarsAndBeats->setChecked(true);
     }
 
+    // Preset Browser
+    {
+      presetBrowserRootFolder->setText(SETTINGS_read_qstring("preset_root_folder", QDir::homePath() + QString::fromUtf8("/Radium Presets")));
+    }
+
     // Sequencer
     {
 
@@ -1366,6 +1371,16 @@ public slots:
   void on_showLineNumbers_toggled(bool val){
     if (_initing==false)
       setLinenumbersVisible(val);
+  }
+
+  void on_presetBrowserRootFolder_editingFinished(){
+    SETTINGS_write_string("preset_root_folder", presetBrowserRootFolder->text());
+      
+    set_editor_focus();
+
+    GL_lock();{
+      presetBrowserRootFolder->clearFocus();
+    }GL_unlock();
   }
 
 

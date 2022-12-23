@@ -482,10 +482,14 @@ void THREADING_set_priority(priority_t priority){
   // NOTE! This function is always used to set non-realtime priority. This is asserted in debug mode on linux.
 
 #if !defined(RELEASE)
+#if defined(FOR_WINDOWS)
+  g_t_current_thread_is_RT = R_IS_NOT_RT;
+#else
   if (priority.policy==SCHED_OTHER)
     g_t_current_thread_is_RT = R_IS_NOT_RT;
   else
-    g_t_current_thread_is_RT = R_IS_RT;
+    g_t_current_thread_is_RT = R_IS_RT;  
+#endif
 #endif
 
 #if !defined(RELEASE)
@@ -550,10 +554,14 @@ void THREADING_set_priority(priority_t priority){
 bool THREADING_has_player_thread_priority(void){
   priority_t priority = THREADING_get_priority();
 #if defined(FOR_WINDOWS)
-  return priority.priority==THREAD_PRIORITY_TIME_CRITICAL;
+  
+  return priority.priority==THREAD_PRIORITY_TIME_CRITICAL || GetPriorityClass(GetCurrentThread())==REALTIME_PRIORITY_CLASS;
+
 #else
+          
   //printf("----policy: %d. RR: %d. FIFO: %d. priority: %d\n", priority.policy, SCHED_RR, SCHED_FIFO, priority.param.sched_priority);
   return (priority.policy==SCHED_RR || priority.policy==SCHED_FIFO);
+          
 #endif
 }
 #endif

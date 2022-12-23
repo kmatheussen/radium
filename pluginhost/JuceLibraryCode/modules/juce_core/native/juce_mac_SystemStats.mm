@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -95,14 +95,12 @@ static String getOSXVersion()
         {
             const String systemVersionPlist ("/System/Library/CoreServices/SystemVersion.plist");
 
-           #if defined (MAC_OS_X_VERSION_10_13) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_13
             if (@available (macOS 10.13, *))
             {
                 NSError* error = nullptr;
                 return [NSDictionary dictionaryWithContentsOfURL: createNSURLFromFile (systemVersionPlist)
                                                            error: &error];
             }
-           #endif
 
             return [NSDictionary dictionaryWithContentsOfFile: juceStringToNS (systemVersionPlist)];
         }();

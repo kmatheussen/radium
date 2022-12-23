@@ -75,21 +75,7 @@ static int64_t RT_scheduled_realline(struct SeqTrack *seqtrack, int64_t time, un
 
   const int next_realline = realline+1;
 
-  if(pc->playtype==PLAYRANGE){ // This never happens. Instead playtype is PLAYBLOCK, and pc->is_playing_range is true;
-    R_ASSERT(false);
-    /*
-    if(next_realline>=wblock->rangey2){
-      next_realline=wblock->rangey1;
-    }
-
-    // sanity checks to avoid crash. May happen if editing next_reallines while playing.
-    if (next_realline>=wblock->num_next_reallines) // If outside range, first try to set next_realline to rangey1
-      next_realline = wblock->rangey1;
-
-    if (next_realline>=wblock->num_next_reallines) // that didn't work, set next_realline to 0
-      next_realline = 0;
-    */
-  } else if (pc->playtype==PLAYBLOCK && pc->is_playing_range == true){
+  if (pc->playtype==PLAYBLOCK && pc->is_playing_range == true){
 
     if (next_realline>=num_reallines || p_Greater_Than(wblock->reallines[next_realline]->l.p, wblock->range.y2)){
 

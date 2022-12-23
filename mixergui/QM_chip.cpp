@@ -974,8 +974,16 @@ static bool CONNECTIONS_apply_changes(QGraphicsScene *scene, const changes::Audi
         
       } else {
 
-        mixerstrips_to_remake.insert(CHIP_get_patch(parm._from));
-        mixerstrips_to_remake.insert(CHIP_get_patch(parm._to));
+        Patch *from_patch = CHIP_get_patch(parm._from);
+        Patch *to_patch = CHIP_get_patch(parm._to);
+        
+        //if (from_patch->is_visible && to_patch->is_visible) {
+        if (from_patch->is_visible)
+          mixerstrips_to_remake.insert(from_patch);
+
+        if (to_patch->is_visible)
+          mixerstrips_to_remake.insert(to_patch);
+          //}
         
         AudioConnection *connection = new AudioConnection(scene, parm._from, parm._to, parm._connection_type, parm.get_enable_type()!=radium::EnableType::DISABLE);
         scene->addItem(connection);
@@ -984,9 +992,8 @@ static bool CONNECTIONS_apply_changes(QGraphicsScene *scene, const changes::Audi
           int bus_num = SP_get_bus_num(parm._to->_sound_producer);
           
           if (bus_num >= 0){
-            struct Patch *patch = CHIP_get_patch(parm._from);
-            if (patch==PATCH_get_current())
-              GFX_PP_Update(patch, false);
+            if (from_patch==PATCH_get_current())
+              GFX_PP_Update(from_patch, false);
           }
         }
 
@@ -1002,9 +1009,20 @@ static bool CONNECTIONS_apply_changes(QGraphicsScene *scene, const changes::Audi
       if (connection==NULL)
         R_ASSERT(false);
       else {
-        mixerstrips_to_remake.insert(CHIP_get_patch(parm._from));
-        mixerstrips_to_remake.insert(CHIP_get_patch(parm._to));
+        
+        Patch *from_patch = CHIP_get_patch(parm._from);
+        Patch *to_patch = CHIP_get_patch(parm._to);
+        
+        //if (from_patch->is_visible && to_patch->is_visible) {
 
+        if (from_patch->is_visible)
+          mixerstrips_to_remake.insert(from_patch);
+
+        if (to_patch->is_visible)
+          mixerstrips_to_remake.insert(to_patch);
+          
+        //}
+        
         CONNECTION_delete_an_audio_connection_where_all_links_have_been_removed(connection);
       }
     }
@@ -1853,8 +1871,23 @@ Chip::Chip(QGraphicsScene *scene, SoundProducer *sound_producer, float x, float 
   , _last_updated_autosuspending(false)
   , _slider_being_edited(0)
 {
-  
+   bool is_visible = true;
+   
+   struct Patch *patch = CHIP_get_patch(this);
+   if (!patch)
+     R_ASSERT(false);
+   else if (!patch->is_visible)
+     is_visible = false;
+
+   if (!is_visible) {
+     setVisible(false);
+     x = 100000;
+     y = 100000;
+   }
+
+
    setPos(QPointF(x,y));
+     
    //MW_move_chip_to_slot(this, x, y); // unfortunately, this function very often moves the chip to the right unnecessarily.
 
    scene->addItem(this);
@@ -1876,7 +1909,11 @@ Chip::Chip(QGraphicsScene *scene, SoundProducer *sound_producer, float x, float 
    
    init_new_plugin();
 
-   MW_set_selected_chip(this); // To unselect previously selected chip.
+   if (is_visible)
+     MW_set_selected_chip(this); // To unselect previously selected chip.
+
+   if (!is_visible)
+     setVisible(false);
 
    printf("New Chip. Inputs: %d, Ouptuts: %d\n",_num_inputs,_num_outputs);
 }
@@ -3017,7 +3054,10 @@ void Chip::mySetSelected(bool selected) {
   SoundPlugin *plugin = SP_get_plugin(_sound_producer);
   if (plugin!=NULL){
     plugin->is_selected = selected;
-    redrawMixerStrips(false);
+
+    if (plugin->patch == NULL || plugin->patch->is_visible)
+      redrawMixerStrips(false);
+    
     //remakeMixerStrips();
   }
 }

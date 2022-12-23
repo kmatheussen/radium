@@ -1467,8 +1467,13 @@ static inline dyn_t DYN_create_string(const wchar_t *string){
   return DYN_create_string_dont_copy(STRING_copy(string));
 }
 
+<<<<<<< HEAD
 #ifdef USE_QT4
 static inline dyn_t DYN_create_string(QString string){
+=======
+#if USE_QT4
+static inline dyn_t DYN_create_string(const QString &string){
+>>>>>>> master
   return DYN_create_string_dont_copy(STRING_create(string));
 }
 #endif
@@ -2699,7 +2704,7 @@ struct Patch{
 
   void (*playnote)(struct SeqTrack *seqtrack, struct Patch *patch,note_t note,STime time);
   void (*changevelocity)(struct SeqTrack *seqtrack, struct Patch *patch,note_t note,STime time);
-  void (*changepitch)(struct SeqTrack *seqtrack, struct Patch *patch,note_t note,STime time);
+  bool (*changepitch)(struct SeqTrack *seqtrack, struct Patch *patch,note_t note,STime time); // Returns false if instrument wasn't able to change pitch.
   void (*changepan)(struct SeqTrack *seqtrack, struct Patch *patch,note_t note,STime time);
   void (*sendrawmidimessage)(struct SeqTrack *seqtrack, struct Patch *patch,uint32_t msg,STime time,double block_reltempo); // note on, note off, and polyphonic aftertouch are/should not be sent using sendmidimessage. sysex is not supported either.
   void (*stopnote)(struct SeqTrack *seqtrack, struct Patch *patch,note_t note,STime time);
@@ -2736,6 +2741,8 @@ struct Patch{
   DEFINE_ATOMIC(bool, is_recording);
 
   DEFINE_ATOMIC(bool, always_receive_midi_input);
+
+  bool is_visible;
 };
 #define PATCH_FAILED 0
 #define PATCH_SUCCESS 1
@@ -3140,6 +3147,12 @@ typedef QMap<int, VelText_trs> VelText_trss;
 	nodelinens.h
 *********************************************************************/
 
+enum NodeNodeType{
+  NODETYPE_FIRST = -1,
+  NODETYPE_LAST = -2,
+  NODETYPE_NO_NODE = -3  
+};
+  
 struct NodeLine{
   struct NodeLine *next;
 
@@ -4423,6 +4436,13 @@ struct LoopingOrPunching{
   DEFINE_ATOMIC(int64_t, end);
 };
 
+// These numbers are saved to disk, so they can not be changed.
+enum GlissandBehavior{
+  NEVER_DO_GLISSANDO = 0,
+  DO_GLISSANDO_WHEN_INSTRUMENT_DOESNT_SUPPORT_CHANGING_PITCH = 1,
+  ALWAYS_DO_GLISSANDO = 2
+};
+
 struct Song{
 	struct Tracker_Windows *tracker_windows;
 	struct Blocks *blocks;
@@ -4455,6 +4475,8 @@ struct Song{
         bool display_swinging_beats_in_seqblocks_in_sequencer;
         bool editor_should_swing_along;
 
+        int glissando_behavior; // Must hold player lock when writing.
+  
         bool mixer_comments_visible;
         bool include_pan_and_dry_in_wet_signal; // Must hold player lock when writing.
         bool mute_system_buses_when_bypassed; // Must hold player lock when writing.

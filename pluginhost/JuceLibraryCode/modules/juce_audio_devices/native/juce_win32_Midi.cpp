@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -805,7 +805,7 @@ private:
             auto requestedProperties = [wrtWrapper]
             {
                 auto devicePicker = wrtWrapper->activateInstance<IDevicePicker> (&RuntimeClass_Windows_Devices_Enumeration_DevicePicker[0],
-                                                                                 __uuidof2 (IDevicePicker));
+                                                                                 __uuidof (IDevicePicker));
                 jassert (devicePicker != nullptr);
 
                 IVector<HSTRING>* result;
@@ -835,7 +835,7 @@ private:
             }
 
             ComSmartPtr<IIterable<HSTRING>> iter;
-            auto hr = requestedProperties->QueryInterface (__uuidof2 (IIterable<HSTRING>), (void**) iter.resetAndGetPointerAddress());
+            auto hr = requestedProperties->QueryInterface (__uuidof (IIterable<HSTRING>), (void**) iter.resetAndGetPointerAddress());
 
             if (FAILED (hr))
             {
@@ -925,7 +925,7 @@ private:
         String getGUIDFromInspectable (IInspectable& inspectable)
         {
             ComSmartPtr<IReference<GUID>> guidRef;
-            auto hr = inspectable.QueryInterface (__uuidof2 (IReference<GUID>),
+            auto hr = inspectable.QueryInterface (__uuidof (IReference<GUID>),
                                                   (void**) guidRef.resetAndGetPointerAddress());
 
             if (FAILED (hr))
@@ -952,7 +952,7 @@ private:
         bool getBoolFromInspectable (IInspectable& inspectable)
         {
             ComSmartPtr<IReference<bool>> boolRef;
-            auto hr = inspectable.QueryInterface (__uuidof2 (IReference<bool>),
+            auto hr = inspectable.QueryInterface (__uuidof (IReference<bool>),
                                                   (void**) boolRef.resetAndGetPointerAddress());
 
             if (FAILED (hr))

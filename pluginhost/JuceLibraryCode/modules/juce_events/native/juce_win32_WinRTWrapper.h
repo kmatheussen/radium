@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -61,7 +61,7 @@ public:
             ScopedHString classID (runtimeClassID);
 
             if (classID.get() != nullptr)
-                roGetActivationFactory (classID.get(), __uuidof2 (ComClass), (void**) comPtr.resetAndGetPointerAddress());
+                roGetActivationFactory (classID.get(), __uuidof (ComClass), (void**) comPtr.resetAndGetPointerAddress());
         }
 
         return comPtr;

@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -69,9 +69,14 @@ public:
     CallbackHandler (AudioDeviceManager& adm) noexcept  : owner (adm) {}
 
 private:
-    void audioDeviceIOCallback (const float** ins, int numIns, float** outs, int numOuts, int numSamples) override
+    void audioDeviceIOCallbackWithContext (const float** ins,
+                                           int numIns,
+                                           float** outs,
+                                           int numOuts,
+                                           int numSamples,
+                                           const AudioIODeviceCallbackContext& context) override
     {
-        owner.audioDeviceIOCallbackInt (ins, numIns, outs, numOuts, numSamples);
+        owner.audioDeviceIOCallbackInt (ins, numIns, outs, numOuts, numSamples, context);
     }
 
     void audioDeviceAboutToStart (AudioIODevice* device) override
@@ -715,11 +720,7 @@ String AudioDeviceManager::setAudioDeviceSetup (const AudioDeviceSetup& newSetup
         currentDeviceType = currentAudioDevice->getTypeName();
 
         currentAudioDevice->start (callbackHandler.get());
-
-        currentSetup.sampleRate     = currentAudioDevice->getCurrentSampleRate();
-        currentSetup.bufferSize     = currentAudioDevice->getCurrentBufferSizeSamples();
-        currentSetup.inputChannels  = currentAudioDevice->getActiveInputChannels();
-        currentSetup.outputChannels = currentAudioDevice->getActiveOutputChannels();
+        updateCurrentSetup();
 
         for (int i = 0; i < availableDeviceTypes.size(); ++i)
             if (availableDeviceTypes.getUnchecked (i)->getTypeName() == currentDeviceType)
@@ -904,7 +905,8 @@ void AudioDeviceManager::audioDeviceIOCallbackInt (const float** inputChannelDat
                                                    int numInputChannels,
                                                    float** outputChannelData,
                                                    int numOutputChannels,
-                                                   int numSamples)
+                                                   int numSamples,
+                                                   const AudioIODeviceCallbackContext& context)
 {
     const ScopedLock sl (audioCallbackLock);
 
@@ -916,15 +918,23 @@ void AudioDeviceManager::audioDeviceIOCallbackInt (const float** inputChannelDat
 
         tempBuffer.setSize (jmax (1, numOutputChannels), jmax (1, numSamples), false, false, true);
 
-        callbacks.getUnchecked(0)->audioDeviceIOCallback (inputChannelData, numInputChannels,
-                                                          outputChannelData, numOutputChannels, numSamples);
+        callbacks.getUnchecked(0)->audioDeviceIOCallbackWithContext (inputChannelData,
+                                                                     numInputChannels,
+                                                                     outputChannelData,
+                                                                     numOutputChannels,
+                                                                     numSamples,
+                                                                     context);
 
         auto** tempChans = tempBuffer.getArrayOfWritePointers();
 
         for (int i = callbacks.size(); --i > 0;)
         {
-            callbacks.getUnchecked(i)->audioDeviceIOCallback (inputChannelData, numInputChannels,
-                                                              tempChans, numOutputChannels, numSamples);
+            callbacks.getUnchecked(i)->audioDeviceIOCallbackWithContext (inputChannelData,
+                                                                         numInputChannels,
+                                                                         tempChans,
+                                                                         numOutputChannels,
+                                                                         numSamples,
+                                                                         context);
 
             for (int chan = 0; chan < numOutputChannels; ++chan)
             {
@@ -965,6 +975,8 @@ void AudioDeviceManager::audioDeviceAboutToStartInt (AudioIODevice* const device
     loadMeasurer.reset (device->getCurrentSampleRate(),
                         device->getCurrentBufferSizeSamples());
 
+    updateCurrentSetup();
+
     {
         const ScopedLock sl (audioCallbackLock);
 
@@ -972,7 +984,6 @@ void AudioDeviceManager::audioDeviceAboutToStartInt (AudioIODevice* const device
             callbacks.getUnchecked(i)->audioDeviceAboutToStart (device);
     }
 
-    updateCurrentSetup();
     sendChangeMessage();
 }
 
@@ -1077,6 +1088,7 @@ void AudioDeviceManager::setDefaultMidiOutputDevice (const String& identifier)
 {
     if (defaultMidiOutputDeviceInfo.identifier != identifier)
     {
+        std::unique_ptr<MidiOutput> oldMidiPort;
         Array<AudioIODeviceCallback*> oldCallbacks;
 
         {
@@ -1088,7 +1100,7 @@ void AudioDeviceManager::setDefaultMidiOutputDevice (const String& identifier)
             for (int i = oldCallbacks.size(); --i >= 0;)
                 oldCallbacks.getUnchecked (i)->audioDeviceStopped();
 
-        defaultMidiOutput.reset();
+        std::swap (oldMidiPort, defaultMidiOutput);
 
         if (identifier.isNotEmpty())
             defaultMidiOutput = MidiOutput::openDevice (identifier);
@@ -1108,7 +1120,7 @@ void AudioDeviceManager::setDefaultMidiOutputDevice (const String& identifier)
         }
 
         updateXml();
-        sendChangeMessage();
+        sendSynchronousChangeMessage();
     }
 }
 
@@ -1444,6 +1456,48 @@ public:
             enableInputChannels                     (manager);
             closeDeviceByRequestingEmptyNames       (manager);
         }
+
+        beginTest ("AudioDeviceManager updates its current settings before notifying callbacks when device restarts itself");
+        {
+            AudioDeviceManager manager;
+            auto deviceType = std::make_unique<MockDeviceType> ("foo",
+                                                                StringArray { "foo in a", "foo in b" },
+                                                                StringArray { "foo out a", "foo out b" });
+            auto* ptr = deviceType.get();
+            manager.addAudioDeviceType (std::move (deviceType));
+
+            AudioDeviceManager::AudioDeviceSetup setup;
+            setup.sampleRate = 48000.0;
+            setup.bufferSize = 256;
+            setup.inputDeviceName = "foo in a";
+            setup.outputDeviceName = "foo out a";
+            setup.useDefaultInputChannels = true;
+            setup.useDefaultOutputChannels = true;
+            manager.setAudioDeviceSetup (setup, true);
+
+            const auto currentSetup = manager.getAudioDeviceSetup();
+            expectEquals (currentSetup.sampleRate, setup.sampleRate);
+            expectEquals (currentSetup.bufferSize, setup.bufferSize);
+
+            MockCallback callback;
+            manager.addAudioCallback (&callback);
+
+            constexpr auto newSr = 10000.0;
+            constexpr auto newBs = 1024;
+            auto numCalls = 0;
+
+            // Compilers disagree about whether newSr and newBs need to be captured
+            callback.aboutToStart = [&]
+            {
+                ++numCalls;
+                const auto current = manager.getAudioDeviceSetup();
+                expectEquals (current.sampleRate, newSr);
+                expectEquals (current.bufferSize, newBs);
+            };
+
+            ptr->restartDevices (newSr, newBs);
+            expectEquals (numCalls, 1);
+        }
     }
 
 private:
@@ -1608,11 +1662,26 @@ private:
     const String mockBName = "mockB";
     const String emptyName = "empty";
 
-    class MockDevice : public AudioIODevice
+    struct Restartable
+    {
+        virtual ~Restartable() = default;
+        virtual void restart (double newSr, int newBs) = 0;
+    };
+
+    class MockDevice : public AudioIODevice,
+                       private Restartable
     {
     public:
-        MockDevice (String typeNameIn, String outNameIn, String inNameIn)
-            : AudioIODevice ("mock", typeNameIn), outName (outNameIn), inName (inNameIn) {}
+        MockDevice (ListenerList<Restartable>& l, String typeNameIn, String outNameIn, String inNameIn)
+            : AudioIODevice ("mock", typeNameIn), listeners (l), outName (outNameIn), inName (inNameIn)
+        {
+            listeners.add (this);
+        }
+
+        ~MockDevice() override
+        {
+            listeners.remove (this);
+        }
 
         StringArray getOutputChannelNames() override { return { "o1", "o2", "o3" }; }
         StringArray getInputChannelNames()  override { return { "i1", "i2", "i3" }; }
@@ -1634,8 +1703,19 @@ private:
         void close() override { on = false; }
         bool isOpen() override { return on; }
 
-        void start (AudioIODeviceCallback*) override { playing = true; }
-        void stop() override { playing = false; }
+        void start (AudioIODeviceCallback* c) override
+        {
+            callback = c;
+            callback->audioDeviceAboutToStart (this);
+            playing = true;
+        }
+
+        void stop() override
+        {
+            playing = false;
+            callback->audioDeviceStopped();
+        }
+
         bool isPlaying() override { return playing; }
 
         String getLastError() override { return {}; }
@@ -1650,6 +1730,16 @@ private:
         int getInputLatencyInSamples() override { return 0; }
 
     private:
+        void restart (double newSr, int newBs) override
+        {
+            stop();
+            close();
+            open (inChannels, outChannels, newSr, newBs);
+            start (callback);
+        }
+
+        ListenerList<Restartable>& listeners;
+        AudioIODeviceCallback* callback = nullptr;
         String outName, inName;
         BigInteger outChannels, inChannels;
         double sampleRate = 0.0;
@@ -1667,6 +1757,12 @@ private:
             : AudioIODeviceType (std::move (kind)),
               inNames (std::move (inputNames)),
               outNames (std::move (outputNames)) {}
+
+        ~MockDeviceType() override
+        {
+            // A Device outlived its DeviceType!
+            jassert (listeners.isEmpty());
+        }
 
         void scanForDevices() override {}
 
@@ -1687,15 +1783,37 @@ private:
         AudioIODevice* createDevice (const String& outputName, const String& inputName) override
         {
             if (inNames.contains (inputName) || outNames.contains (outputName))
-                return new MockDevice (getTypeName(), outputName, inputName);
+                return new MockDevice (listeners, getTypeName(), outputName, inputName);
 
             return nullptr;
+        }
+
+        // Call this to emulate the device restarting itself with new settings.
+        // This might happen e.g. when a user changes the ASIO settings.
+        void restartDevices (double newSr, int newBs)
+        {
+            listeners.call ([&] (auto& l) { return l.restart (newSr, newBs); });
         }
 
     private:
         const StringArray& getNames (bool isInput) const { return isInput ? inNames : outNames; }
 
         const StringArray inNames, outNames;
+        ListenerList<Restartable> listeners;
+    };
+
+    class MockCallback : public AudioIODeviceCallback
+    {
+    public:
+        std::function<void()> callback;
+        std::function<void()> aboutToStart;
+        std::function<void()> stopped;
+        std::function<void()> error;
+
+        void audioDeviceIOCallback (const float**, int, float**, int, int) override { NullCheckedInvocation::invoke (callback); }
+        void audioDeviceAboutToStart (AudioIODevice*)                      override { NullCheckedInvocation::invoke (aboutToStart); }
+        void audioDeviceStopped()                                          override { NullCheckedInvocation::invoke (stopped); }
+        void audioDeviceError (const String&)                              override { NullCheckedInvocation::invoke (error); }
     };
 
     void initialiseManager (AudioDeviceManager& manager)

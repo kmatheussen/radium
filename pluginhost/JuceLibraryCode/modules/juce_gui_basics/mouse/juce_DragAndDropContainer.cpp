@@ -2,15 +2,15 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
 
-   End User License Agreement: www.juce.com/juce-6-licence
+   End User License Agreement: www.juce.com/juce-7-licence
    Privacy Policy: www.juce.com/juce-privacy-policy
 
    Or: You may also use this code under the terms of the GPL v3 (see
@@ -59,6 +59,7 @@ public:
         startTimer (200);
 
         setInterceptsMouseClicks (false, false);
+        setWantsKeyboardFocus (true);
         setAlwaysOnTop (true);
     }
 
@@ -137,6 +138,8 @@ public:
 
         setVisible (newTarget == nullptr || newTarget->shouldDrawDragImageWhenOver());
 
+        maintainKeyboardFocusWhenPossible();
+
         if (newTargetComp != currentlyOverComp)
         {
             if (auto* lastTarget = getCurrentlyOver())
@@ -200,7 +203,12 @@ public:
     {
         if (key == KeyPress::escapeKey)
         {
-            dismissWithAnimation (true);
+            const auto wasVisible = isVisible();
+            setVisible (false);
+
+            if (wasVisible)
+                dismissWithAnimation (true);
+
             deleteSelf();
             return true;
         }
@@ -227,6 +235,16 @@ private:
     Time lastTimeOverTarget;
     int originalInputSourceIndex;
     MouseInputSource::InputSourceType originalInputSourceType;
+    bool canHaveKeyboardFocus = false;
+
+    void maintainKeyboardFocusWhenPossible()
+    {
+        const auto newCanHaveKeyboardFocus = isVisible();
+
+        if (std::exchange (canHaveKeyboardFocus, newCanHaveKeyboardFocus) != newCanHaveKeyboardFocus)
+            if (canHaveKeyboardFocus)
+                grabKeyboardFocus();
+    }
 
     void updateSize()
     {
@@ -466,8 +484,7 @@ void DragAndDropContainer::startDragging (const var& sourceDescription,
             dragImageComponent->setOpaque (true);
 
         dragImageComponent->addToDesktop (ComponentPeer::windowIgnoresMouseClicks
-                                          | ComponentPeer::windowIsTemporary
-                                          | ComponentPeer::windowIgnoresKeyPresses);
+                                          | ComponentPeer::windowIsTemporary);
     }
     else
     {

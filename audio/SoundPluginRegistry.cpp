@@ -379,6 +379,10 @@ static SoundPluginType *PR_get_plugin_type_by_name2(const char *container_name, 
   return NULL;
 }
 
+#if !defined(RELEASE)
+extern bool g_has_found_all_plugins;
+#endif
+
 SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const char *type_name, const char *plugin_name){
 
   // Compatibility with older songs
@@ -400,7 +404,9 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const ch
     return PR_get_plugin_type_by_name(plugin_name,type_name,plugin_name);
   }
 
-  if(!strcmp(type_name,"VST") || !strcmp(type_name,"VST3") || !strcmp(type_name,"AudioUnit")){
+  // Disable asking for plugin file. It's very hacky, and it's probably not much point either since it doesn't work replacing it with a different type of plugin (which would have been nice).
+  if(false && (!strcmp(type_name,"VST") || !strcmp(type_name,"VST3") || !strcmp(type_name,"AudioUnit"))){
+    R_ASSERT_NON_RELEASE(false);
     while(true){
       vector_t v = {}; // c++ way of zero-initialization without getting missing-field-initializers warning.
 
@@ -455,6 +461,10 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const ch
 
   }else{
 
+#if !defined(RELEASE)
+    g_has_found_all_plugins = false;
+#endif
+    
     QString message = "Plugin " + QString(type_name) + " / " + QString(plugin_name) + " not found. Replacing with a Pipe.";
   
     addMessage(message.toUtf8().constData());

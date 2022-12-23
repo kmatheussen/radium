@@ -39,6 +39,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <vector>
 
+#include "lilv/lilv.h"
+
+
 #if 0 //defined(USE_VESTIGE) && USE_VESTIGE
 
 #warning
@@ -1393,6 +1396,52 @@ static int create_vst_plugins_recursively(const QString main_path, const QString
   return ret;
 }
 
+#if defined(FOR_LINUX)
+static void add_lv2_plugins(void){
+
+  LilvWorld* world = lilv_world_new();
+  if (world==NULL)
+    return;
+
+  lilv_world_load_all(world);
+  const LilvPlugins* plugins = lilv_world_get_all_plugins(world);
+
+  if (plugins==NULL)
+    return;
+  
+   LILV_FOREACH (plugins, i, plugins) {
+     const LilvPlugin* p = lilv_plugins_get(plugins, i);
+
+     if (p != NULL) {
+       LilvNode* n = lilv_plugin_get_name(p);
+       
+       if (n != NULL) {
+         
+         if (true /* && lilv_node_is_uri(n) */ ) { // Strange, lilve_node_is_uri seems to always return false.
+
+           /*
+             printf("%s\n", lilv_node_as_string(n));
+             printf("%s\n", lilv_node_as_uri(lilv_plugin_get_uri(p)));
+             printf("%s\n\n", lilv_file_uri_parse(lilv_node_as_uri(lilv_plugin_get_bundle_uri(p)), NULL));
+           */
+           
+           add_juce_plugin_type(lilv_node_as_string(n),
+                                STRING_create(lilv_node_as_uri(lilv_plugin_get_uri(p))),
+                                STRING_create(lilv_node_as_uri(lilv_plugin_get_uri(p))),
+                                "LV2");
+         }
+         
+         lilv_node_free(n);
+
+       }
+
+     }
+
+   }
+  
+  lilv_world_free(world);
+}
+#endif
 
 void create_vst_plugins(bool is_juce_plugin){
 
@@ -1419,7 +1468,7 @@ void create_vst_plugins(bool is_juce_plugin){
     create_vst_plugins_recursively("/Library/Audio/Plug-Ins/Components/", "/Library/Audio/Plug-Ins/Components/", &time, is_juce_plugin, "AU", continuing);
   }PR_add_menu_entry(PluginMenuEntry::level_down());
   
-  #if 0
+#if 0
   QDir dir("/Library/Audio/Plug-Ins/VST/");
   //Digits.vst/Contents/MacOS/Digits 
 
@@ -1470,6 +1519,15 @@ void create_vst_plugins(bool is_juce_plugin){
         PR_add_menu_entry(PluginMenuEntry::separator());
     }    
   }PR_add_menu_entry(PluginMenuEntry::level_down());
+
+  
+#if FOR_LINUX
+  PR_add_menu_entry(PluginMenuEntry::level_up("LV2"));
+  {
+    add_lv2_plugins();
+  }PR_add_menu_entry(PluginMenuEntry::level_down());
+#endif
+
   
 #endif // !defined(FOR_MACOSX)
 }

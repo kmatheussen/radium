@@ -2226,7 +2226,8 @@ namespace{
         if (!_pitch_seqblock->_enabled)
           return;        
       }
-      
+
+      //printf("Setting new pitch. Old: %f. New: %f\n", _note->curr_pitch, val);
       _note->curr_pitch = val;
       _note->curr_pitch_time = time;
 

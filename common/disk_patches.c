@@ -209,11 +209,13 @@ end:
 }
 
 void SavePatches(vector_t *v){
-  int i;
 
-  for(i=0;i<v->num_elements;i++){
+  for(int i=0;i<v->num_elements;i++){
     struct Patch *patch=v->elements[i];
 
+    if (!patch->is_visible)
+      continue;
+    
 #if SAVE_NEW_FORMAT
     
     DC_start("PATCH_V2");

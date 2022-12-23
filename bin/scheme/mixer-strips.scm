@@ -146,14 +146,14 @@
      "----------"
      
      (and (not is-standalone)
-          (list "Configure mixer strips on/off" :enabled strips-config
+          (list "Configure mixer strips on/off..." :enabled strips-config
                 :shortcut mixer-strip-show-strips-config
                 (lambda ()
                   (strips-config :show-config-gui))))
      
      (get-forced-as-current-instrument-menu-entry instrument-id)
      
-     (list "Set current instrument"
+     (list "Set current instrument..."
            show-set-current-instrument-popup-menu)
      
      "----------"
@@ -871,7 +871,8 @@
                                        parentgui)
               (list (<-> "Insert send for " (if is-send?
                                                 (<ra> :get-instrument-name parent-instrument-id)
-                                                (<ra> :get-instrument-name instrument-id)))
+                                                (<ra> :get-instrument-name instrument-id))
+                         "...")
                     :enabled (> (<ra> :get-num-output-channels first-instrument-id) 0)
                     :shortcut (and is-top-instrument
                                    insert-send-for-instrument)
@@ -962,7 +963,7 @@
                                :shortcut ra:simulate-delete-mouse-button
                                (lambda ()
                                  (delete-func)))
-                         (list (<-> "Replace send \"" (<ra> :get-instrument-name instrument-id) "\"")
+                         (list (<-> "Replace send \"" (<ra> :get-instrument-name instrument-id) "\"...")
                                :enabled (and is-send? replace-func)
                                (lambda ()
                                  (replace-func)))
@@ -2952,9 +2953,10 @@
   (strips-config :scan-instruments!)
 
   (define enabled-audio-instruments (keep (lambda (id)
-                                            (strips-config :is-enabled id))
+                                            (and (strips-config :is-enabled id)
+                                                 (<ra> :instrument-is-visible id)))
                                           (get-all-audio-instruments)))
-
+  
   (for-each c-display
             (map ra:get-instrument-name
                  enabled-audio-instruments))
@@ -3006,7 +3008,8 @@
            (create-stored-mixer-strip instrument-id
                                       mixer-strip))
          (keep (lambda (id)
-                 (strips-config :is-enabled id))
+                 (and (strips-config :is-enabled id)
+                      (<ra> :instrument-is-visible id)))
                id-instruments)))
 
   (define cat-instruments (<new> :get-cat-instruments))

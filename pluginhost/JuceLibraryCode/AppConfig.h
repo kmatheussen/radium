@@ -133,6 +133,10 @@
  #define   JUCE_PLUGINHOST_LADSPA 0
 #endif
 
+#ifndef JUCE_PLUGINHOST_LV2
+ #define JUCE_PLUGINHOST_LV2 1
+#endif
+
 //==============================================================================
 // juce_core flags:
 

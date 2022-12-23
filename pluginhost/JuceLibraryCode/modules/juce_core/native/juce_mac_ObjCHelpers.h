@@ -2,7 +2,7 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
@@ -164,7 +164,7 @@ inline var nsDictionaryToVar (NSDictionary* dictionary)
     DynamicObject::Ptr dynamicObject (new DynamicObject());
 
     for (NSString* key in dictionary)
-        dynamicObject->setProperty (nsStringToJuce (key), nsObjectToVar (dictionary[key]));
+        dynamicObject->setProperty (nsStringToJuce (key), nsObjectToVar ([dictionary objectForKey: key]));
 
     return var (dynamicObject.get());
 }
@@ -306,6 +306,9 @@ public:
     bool operator== (const ObjCObjectHandle& other) const { return item == other.item; }
     bool operator!= (const ObjCObjectHandle& other) const { return ! (*this == other); }
 
+    bool operator== (std::nullptr_t) const { return item == nullptr; }
+    bool operator!= (std::nullptr_t) const { return ! (*this == nullptr); }
+
 private:
     void swap (ObjCObjectHandle& other) noexcept { std::swap (other.item, item); }
 
@@ -339,6 +342,15 @@ namespace detail
     {
         return joinCompileTimeStr (v, makeCompileTimeStr (others...));
     }
+
+    template <typename Functor, typename Return, typename... Args>
+    static constexpr auto toFnPtr (Functor functor, Return (Functor::*) (Args...) const)
+    {
+        return static_cast<Return (*) (Args...)> (functor);
+    }
+
+    template <typename Functor>
+    static constexpr auto toFnPtr (Functor functor) { return toFnPtr (functor, &Functor::operator()); }
 } // namespace detail
 
 //==============================================================================
@@ -382,6 +394,9 @@ struct ObjCClass
         BOOL b = class_addIvar (cls, name, sizeof (Type), (uint8_t) rint (log2 (sizeof (Type))), @encode (Type));
         jassert (b); ignoreUnused (b);
     }
+
+    template <typename Fn>
+    void addMethod (SEL selector, Fn callbackFn) { addMethod (selector, detail::toFnPtr (callbackFn)); }
 
     template <typename Result, typename... Args>
     void addMethod (SEL selector, Result (*callbackFn) (id, SEL, Args...))
@@ -499,10 +514,63 @@ public:
     bool operator!= (const void* ptr) const  { return ((const void*) block != ptr); }
     ~ObjCBlock() { if (block != nullptr) [block release]; }
 
-    operator BlockType() { return block; }
+    operator BlockType() const { return block; }
 
 private:
     BlockType block;
+};
+
+//==============================================================================
+class ScopedNotificationCenterObserver
+{
+public:
+    ScopedNotificationCenterObserver() = default;
+
+    ScopedNotificationCenterObserver (id observerIn, SEL selector, NSNotificationName nameIn, id objectIn)
+        : observer (observerIn), name (nameIn), object (objectIn)
+    {
+        [[NSNotificationCenter defaultCenter] addObserver: observer
+                                                 selector: selector
+                                                     name: name
+                                                   object: object];
+    }
+
+    ~ScopedNotificationCenterObserver()
+    {
+        if (observer != nullptr && name != nullptr)
+        {
+            [[NSNotificationCenter defaultCenter] removeObserver: observer
+                                                            name: name
+                                                          object: object];
+        }
+    }
+
+    ScopedNotificationCenterObserver (ScopedNotificationCenterObserver&& other) noexcept
+    {
+        swap (other);
+    }
+
+    ScopedNotificationCenterObserver& operator= (ScopedNotificationCenterObserver&& other) noexcept
+    {
+        auto moved = std::move (other);
+        swap (moved);
+        return *this;
+    }
+
+    ScopedNotificationCenterObserver (const ScopedNotificationCenterObserver&) = delete;
+    ScopedNotificationCenterObserver& operator= (const ScopedNotificationCenterObserver&) = delete;
+
+private:
+    void swap (ScopedNotificationCenterObserver& other) noexcept
+    {
+        std::swap (other.observer, observer);
+        std::swap (other.name, name);
+        std::swap (other.object, object);
+    }
+
+    id observer = nullptr;
+    NSNotificationName name = nullptr;
+    id object = nullptr;
 };
 
 } // namespace juce

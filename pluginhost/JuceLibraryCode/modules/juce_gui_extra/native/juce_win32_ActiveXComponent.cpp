@@ -2,15 +2,15 @@
   ==============================================================================
 
    This file is part of the JUCE library.
-   Copyright (c) 2020 - Raw Material Software Limited
+   Copyright (c) 2022 - Raw Material Software Limited
 
    JUCE is an open source library subject to commercial or open-source
    licensing.
 
-   By using JUCE, you agree to the terms of both the JUCE 6 End-User License
-   Agreement and JUCE Privacy Policy (both effective as of the 16th June 2020).
+   By using JUCE, you agree to the terms of both the JUCE 7 End-User License
+   Agreement and JUCE Privacy Policy.
 
-   End User License Agreement: www.juce.com/juce-6-licence
+   End User License Agreement: www.juce.com/juce-7-licence
    Privacy Policy: www.juce.com/juce-privacy-policy
 
    Or: You may also use this code under the terms of the GPL v3 (see
@@ -153,7 +153,7 @@ namespace ActiveXHelpers
         {
             JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wlanguage-extension-token")
 
-            if (type == __uuidof2 (IOleInPlaceSite))
+            if (type == __uuidof (IOleInPlaceSite))
             {
                 inplaceSite->AddRef();
                 *result = static_cast<IOleInPlaceSite*> (inplaceSite);
@@ -191,7 +191,7 @@ namespace ActiveXHelpers
         JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wlanguage-extension-token")
 
         HWND hwnd = {};
-        const IID iid = __uuidof2 (IOleWindow);
+        const IID iid = __uuidof (IOleWindow);
 
         if (auto* window = (IOleWindow*) component->queryInterface (&iid))
         {
@@ -224,8 +224,8 @@ namespace ActiveXHelpers
                                         { (float) (GET_X_LPARAM (lParam) + activeXRect.left - peerRect.left),
                                           (float) (GET_Y_LPARAM (lParam) + activeXRect.top  - peerRect.top) },
                                         ComponentPeer::getCurrentModifiersRealtime(),
-                                        MouseInputSource::invalidPressure,
-                                        MouseInputSource::invalidOrientation,
+                                        MouseInputSource::defaultPressure,
+                                        MouseInputSource::defaultOrientation,
                                         getMouseEventTime());
                 break;
             }
@@ -398,7 +398,7 @@ bool ActiveXControlComponent::createControl (const void* controlIID)
 
         JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wlanguage-extension-token")
 
-        HRESULT hr = OleCreate (*(const IID*) controlIID, __uuidof2 (IOleObject), 1 /*OLERENDER_DRAW*/, nullptr,
+        HRESULT hr = OleCreate (*(const IID*) controlIID, __uuidof (IOleObject), 1 /*OLERENDER_DRAW*/, nullptr,
                                 newControl->clientSite, newControl->storage,
                                 (void**) &(newControl->control));
 
@@ -485,6 +485,7 @@ intptr_t ActiveXControlComponent::offerEventToActiveXControlStatic (void* ptr)
     return S_FALSE;
 }
 
+LRESULT juce_offerEventToActiveXControl (::MSG& msg);
 LRESULT juce_offerEventToActiveXControl (::MSG& msg)
 {
     if (msg.message >= WM_KEYFIRST && msg.message <= WM_KEYLAST)
