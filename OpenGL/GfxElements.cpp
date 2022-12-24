@@ -25,6 +25,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
+#if __GNUC__ >= 11
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wdeprecated-copy"
+#endif
 #include <vlCore/VisualizationLibrary.hpp>
 #include <vlGraphics/OpenGLContext.hpp>
 #include <vlVG/VectorGraphics.hpp>
@@ -32,6 +36,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <vlVG/SceneManagerVectorGraphics.hpp>
 #include <vlGraphics/Effect.hpp>
 #include <vlGraphics/GLSL.hpp>
+#if __GNUC__ >= 11
+#  pragma GCC diagnostic pop
+#endif
 #pragma GCC diagnostic pop
 
 #define USE_FREETYPE 0

@@ -9326,7 +9326,7 @@
                               minseqtracknum
                               (- seqtracknum 1)))))))))
 
-  (c-display "org-topmost:" org-topmost "new-topmost:" new-topmost "dy:" dy)
+  ;;(c-display "org-topmost:" org-topmost "new-topmost:" new-topmost "dy:" dy)
   (<ra> :set-topmost-visible-seqtrack new-topmost))
   
   

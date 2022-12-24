@@ -468,6 +468,16 @@ void * operator new(decltype(sizeof(0)) size) noexcept(false)
   return mem;
 }
 
+void operator delete(void *mem) noexcept(false)
+{
+  V_free(mem);
+}
+
+void operator delete(void *mem, std::size_t size) noexcept(false)
+{
+  V_free(mem);
+}
+
 #endif // defined(RADIUM_USES_ASAN)
 
 #endif

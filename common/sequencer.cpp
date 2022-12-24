@@ -3830,6 +3830,8 @@ void SONG_init(void){
   const rt_vector_t *rt_seqtracks_vector = VECTOR_create_rt_vector(&root->song->seqtracks, 1);
     
   struct SeqBlock *seqblock = SEQBLOCK_create_block(seqtrack, root->song->blocks, NULL, -1, -1);
+  R_ASSERT_RETURN_IF_FALSE(seqblock!=NULL);
+  
   g_curr_seqblock_id = seqblock->id;
   
   SEQUENCER_init(root->song);

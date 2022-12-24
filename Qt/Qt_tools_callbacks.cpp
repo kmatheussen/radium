@@ -18,8 +18,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/includepython.h"
 
+#if __GNUC__ >= 11 && __GNUC__ < 12
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wnull-dereference"
+#endif
 
 #include "mQt_tools_callbacks.h"
+
+#if __GNUC__ >= 11 && __GNUC__ < 12
+#  pragma GCC diagnostic pop
+#endif
+
+
 
 //#include "../common/nsmtracker.h"
 
@@ -42,13 +52,16 @@ void MIDILEARN_PREFS_open(void){
   safeShowOrExec(midilearn_prefs_widget.data(), true);
 }
 
+
 void MIDILEARN_PREFS_add(radium::MidiLearn *midi_learn){
   ensure_open();
+  R_ASSERT_RETURN_IF_FALSE(midi_learn != NULL);
   midilearn_prefs_widget->add(midi_learn);
 }
 
 void MIDILEARN_PREFS_remove(radium::MidiLearn *midi_learn){
   ensure_open();
+  R_ASSERT_RETURN_IF_FALSE(midi_learn != NULL);
   midilearn_prefs_widget->remove(midi_learn);
 }
 

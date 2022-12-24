@@ -20,6 +20,15 @@ Blog post from another guy doing backtraces and catching exceptions in lin/mingw
 #include <string.h>
 #include <stdbool.h>
 
+#if defined(bfd_get_section_flags)
+#define OLD_BFD_VERSION 1
+#define NEW_BFD_VERSION 0
+#else
+#define OLD_BFD_VERSION 0
+#define NEW_BFD_VERSION 1
+#endif
+
+
 // cpuid.cpp 
 // processor: x86, x64
 // Use the __cpuid intrinsic to get information about a CPU
@@ -398,13 +407,22 @@ lookup_section(bfd *abfd, asection *sec, void *opaque_data)
 	if (data->func)
 		return;
 
+#if NEW_BFD_VERSION
+	if (!(bfd_section_flags(sec) & SEC_ALLOC)) 
+		return;
+
+	bfd_vma vma = bfd_section_vma(sec);
+	if (data->counter < vma || vma + bfd_section_size(sec) <= data->counter) 
+		return;
+#else
 	if (!(bfd_get_section_flags(abfd, sec) & SEC_ALLOC)) 
 		return;
 
 	bfd_vma vma = bfd_get_section_vma(abfd, sec);
 	if (data->counter < vma || vma + bfd_get_section_size(sec) <= data->counter) 
 		return;
-
+#endif
+        
 	bfd_find_nearest_line(abfd, sec, data->symbol, data->counter - vma, &(data->file), &(data->func), &(data->line));
 }
 

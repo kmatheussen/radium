@@ -153,6 +153,7 @@ firstline:
 
 	if(localzoom==NULL || localzoom->uplevel!=org){
 		localzoom=FindLocalZoomRootTheHardWay(wblock,wblock->localzooms,org);
+                R_ASSERT_RETURN_IF_FALSE2(localzoom!=NULL, localzoom);
 		*realline=localzoom->realline-1;
 	}
 
