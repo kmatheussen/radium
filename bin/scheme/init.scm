@@ -975,12 +975,13 @@ FROM_C-show-mixer-popup-menu-effect
 
 
 (define (FROM-C-assert-that-function-can-be-called-from-C funcname)
-  (define sym (string->symbol funcname))
-  (when (and (not (memq sym *functions-and-symbols-used-by-C*))
-             (not (memq sym *functions-and-symbols-used-by-C-that-are-not-available-at-program-startup*)))
-    (define message (string-append "The function \"" funcname "\" has not been added to the list of functions that can be called from C"))
-    (display message)(newline)
-    (ra:show-error message)))
+  (when #f ;; Disabled for now. It's a very good idea to do this assertion, but it's also very frustrating to keep the list of functions up-to-date.
+    (define sym (string->symbol funcname))
+    (when (and (not (memq sym *functions-and-symbols-used-by-C*))
+               (not (memq sym *functions-and-symbols-used-by-C-that-are-not-available-at-program-startup*)))
+      (define message (string-append "The function \"" funcname "\" has not been added to the list of functions that can be called from C"))
+      (display message)(newline)
+      (ra:show-error message))))
 
 (define (assert-functions-and-symbols-called-from-C)
   (for-each (lambda (funcname)
