@@ -33,9 +33,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
+#if __GNUC__ >= 11
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wdeprecated-copy"
+#endif
 #include <vlCore/VisualizationLibrary.hpp>
 #include <vlVG/VectorGraphics.hpp>
 #include <vlGraphics/Rendering.hpp>
+#if __GNUC__ >= 11
+#  pragma GCC diagnostic pop
+#endif
 #pragma GCC diagnostic pop
 
 /*

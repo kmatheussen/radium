@@ -213,8 +213,8 @@ extern LANGSPEC void MIDILEARN_PREFS_open(void);
 namespace radium{
   struct MidiLearn;
 }
-extern void MIDILEARN_PREFS_add(struct radium::MidiLearn *midi_learn);
-extern void MIDILEARN_PREFS_remove(struct radium::MidiLearn *midi_learn);
+extern void MIDILEARN_PREFS_add(struct radium::MidiLearn *midi_learn) __attribute__((nonnull));
+extern void MIDILEARN_PREFS_remove(struct radium::MidiLearn *midi_learn) __attribute__((nonnull));
 #endif
 
 extern LANGSPEC void TOOLS_open(void);

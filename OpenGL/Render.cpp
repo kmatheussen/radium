@@ -22,11 +22,20 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #  pragma GCC diagnostic ignored "-Wsuggest-override"
 #endif
 
+#if __GNUC__ >= 11
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wdeprecated-copy"
+#endif
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
 #include <vlCore/VisualizationLibrary.hpp>
 #include <vlGraphics/OpenGLContext.hpp>
 #pragma GCC diagnostic pop
+
+#if __GNUC__ >= 11
+#  pragma GCC diagnostic pop
+#endif
 
 #if __GNUC__ >= 5
 #  pragma GCC diagnostic pop
