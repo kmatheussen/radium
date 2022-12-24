@@ -43,7 +43,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "notestext_proc.h"
 #include "scheduler_proc.h"
 
-#include "Note.hpp"
+//#include "Note.hpp"
 
 #include "notes_proc.h"
 
