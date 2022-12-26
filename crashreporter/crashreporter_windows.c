@@ -1,33 +1,15 @@
 #ifdef FOR_WINDOWS
 
-/*
-Links to check out:
-https://bitbucket.org/edd/dbg/commits/all
-https://github.com/rainers/cv2pdb
-https://github.com/jrfonseca/drmingw
-
-Blog post from another guy doing backtraces and catching exceptions in lin/mingw/osx: https://spin.atomicobject.com/2013/01/13/exceptions-stack-traces-c/
-*/
-
 #include <windows.h>
 #include <excpt.h>
 #include <imagehlp.h>
-#include <bfd.h>
 #include <psapi.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
 #include <stdbool.h>
-
-#if defined(bfd_get_section_flags)
-#define OLD_BFD_VERSION 1
-#define NEW_BFD_VERSION 0
-#else
-#define OLD_BFD_VERSION 0
-#define NEW_BFD_VERSION 1
-#endif
-
+#include <stdint.h>
 
 // cpuid.cpp 
 // processor: x86, x64
@@ -36,7 +18,6 @@ Blog post from another guy doing backtraces and catching exceptions in lin/mingw
 #include <stdio.h>
 #include <string.h>
 #include <intrin.h>
-
 
 #include "crashreporter_proc.h"
 #include "../common/nsmtracker_time.h"
@@ -323,52 +304,11 @@ static void print_osinfo(struct output_buffer *ob){
 }
 
 
-/*
-
-  Backtrace code mostly written by Cloud Wu. Original copyright message:
- */
-
-
-/* 
- 	Copyright (c) 2010 ,
- 		Cloud Wu . All rights reserved.
- 
- 		http://www.codingnow.com
- 
- 	Use, modification and distribution are subject to the "New BSD License"
- 	as listed at <url: http://www.opensource.org/licenses/bsd-license.php >.
- 
-   filename: backtrace.c
-
-   compiler: gcc 3.4.5 (mingw-win32)
-
-   build command: gcc -O2 -shared -Wall -o backtrace.dll backtrace.c -lbfd -liberty -limagehlp 
-
-   how to use: Call LoadLibraryA("backtrace.dll"); at beginning of your program .
-
-  */
-
-
 #define BUFFER_MAX (16*1024)
 
-struct bfd_ctx {
-	bfd * handle;
-	asymbol ** symbol;
-};
 
-struct bfd_set {
-	char * name;
-	struct bfd_ctx * bc;
-	struct bfd_set *next;
-};
+// output_* stuff is code left from old backtrace written by Cloud Wu, that doesn't work anymore, for some reason. Kept the output_* stuff though.
 
-struct find_info {
-	asymbol **symbol;
-	bfd_vma counter;
-	const char *file;
-	const char *func;
-	unsigned line;
-};
 
 struct output_buffer {
 	char *buf;
@@ -399,328 +339,135 @@ output_print(struct output_buffer *ob, const char * format, ...)
 	ob->ptr = strlen(ob->buf + ob->ptr) + ob->ptr;
 }
 
-static void 
-lookup_section(bfd *abfd, asection *sec, void *opaque_data)
-{
-	struct find_info *data = opaque_data;
+// Returns NULL if module is radium.bin.exe.
+// Returns module name if it isn't.
+static wchar_t *get_module_name_unless_radum_bin_exe(HINSTANCE module_base){
+  static wchar_t module_name[1024*8];
 
-	if (data->func)
-		return;
+  if (!GetModuleFileNameW(module_base, module_name, 1024*8-10))
+    return NULL; // Shouldn't happen, but if it does, return NULL so that backtrace_pcinfo can try instead.
+  
+  const int len = wcslen(module_name);
 
-#if NEW_BFD_VERSION
-	if (!(bfd_section_flags(sec) & SEC_ALLOC)) 
-		return;
+  const int radium_bin_exe_len = 15;
 
-	bfd_vma vma = bfd_section_vma(sec);
-	if (data->counter < vma || vma + bfd_section_size(sec) <= data->counter) 
-		return;
+  if (len <= radium_bin_exe_len)
+    return module_name;
+  
+  wchar_t *maybe_radium_bin_exe = module_name + len - radium_bin_exe_len + 1;
+  
+  printf("       MAYBE: \"%S\"\n", maybe_radium_bin_exe);
+
+  if (!wcscmp(maybe_radium_bin_exe, L"radium.bin.exe"))
+    return NULL;
+  
+  return module_name;
+}
+
+
+#if defined(_WIN64)
+  #define GET_PC_OFFSET(Context) (Context)->Rip
 #else
-	if (!(bfd_get_section_flags(abfd, sec) & SEC_ALLOC)) 
-		return;
-
-	bfd_vma vma = bfd_get_section_vma(abfd, sec);
-	if (data->counter < vma || vma + bfd_get_section_size(sec) <= data->counter) 
-		return;
-#endif
-        
-	bfd_find_nearest_line(abfd, sec, data->symbol, data->counter - vma, &(data->file), &(data->func), &(data->line));
-}
-
-static void
-find(struct bfd_ctx * b, DWORD offset, const char **file, const char **func, unsigned *line)
-{
-	struct find_info data;
-	data.func = NULL;
-	data.symbol = b->symbol;
-	data.counter = offset;
-	data.file = NULL;
-	data.func = NULL;
-	data.line = 0;
-
-	bfd_map_over_sections(b->handle, &lookup_section, &data);
-	if (file) {
-		*file = data.file;
-	}
-	if (func) {
-		*func = data.func;
-	}
-	if (line) {
-		*line = data.line;
-	}
-}
-#if 0
-static int
-init_bfd_ctx(struct bfd_ctx *bc, const char * procname, struct output_buffer *ob)
-{
-	bc->handle = NULL;
-	bc->symbol = NULL;
-
-	bfd *b = bfd_openr(procname, 0);
-	if (!b) {
-          output_print(ob,"Failed to open bfd from (%s) (%s)\n" , procname, strerror(errno));
-          return 1;
-	}
-
-        // from addr2line. Don't know what it does. Didn't fix the problem.
-        b->flags |= BFD_DECOMPRESS;
-        
-	int r1 = bfd_check_format(b, bfd_object);
-	int r2 = bfd_check_format_matches(b, bfd_object, NULL);
-	int r3 = bfd_get_file_flags(b) & HAS_SYMS;
-
-	if (!(r1 && r2 && r3)) {
-		bfd_close(b);
-		output_print(ob,"Failed to init bfd from (%s) %d,%d,%d.\n", procname,r1,r2,r3);
-		return 1;
-	}
-        
-	void *symbol_table;
-
-	unsigned dummy = 0;
-	if (bfd_read_minisymbols(b, FALSE, &symbol_table, &dummy) == 0) {
-		if (bfd_read_minisymbols(b, TRUE, &symbol_table, &dummy) < 0) {
-			free(symbol_table);
-			bfd_close(b);
-			output_print(ob,"Failed to read symbols from (%s)\n", procname);
-			return 1;
-		}
-	}
-
-	bc->handle = b;
-	bc->symbol = symbol_table;
-
-	return 0;
-}
+  #define GET_PC_OFFSET(Context) (Context)->Eip
 #endif
 
-static void
-close_bfd_ctx(struct bfd_ctx *bc)
-{
-	if (bc) {
-		if (bc->symbol) {
-			free(bc->symbol);
-		}
-		if (bc->handle) {
-			bfd_close(bc->handle);
-		}
-	}
-}
+static void do_the_backtrace(CONTEXT *context, struct output_buffer *ob){
 
-#if 0
-// Using addr2line instead.
-static struct bfd_ctx *
-get_bc(struct output_buffer *ob , struct bfd_set *set , const wchar_t *procname)
-{
-	while(set->name) {
-		if (strcmp(set->name , procname) == 0) {
-			return set->bc;
-		}
-		set = set->next;
-	}
-	struct bfd_ctx bc;
-	if (init_bfd_ctx(&bc, procname , ob)) {
-		return NULL;
-	}
-	set->next = calloc(1, sizeof(*set));
-	set->bc = malloc(sizeof(struct bfd_ctx));
-	memcpy(set->bc, &bc, sizeof(bc));
-	set->name = strdup(procname);
+  printf("do_the1\n");
 
-	return set->bc;
-}
-#endif
-
-static void
-release_set(struct bfd_set *set)
-{
-	while(set) {
-		struct bfd_set * temp = set->next;
-		free(set->name);
-		close_bfd_ctx(set->bc);
-		free(set);
-		set = temp;
-	}
-}
-
-
-// Can not get more than one trace back in Windows XP. 
-//
-// This function is based on code from http://src.chromium.org/svn/trunk/src/base/debug/stack_trace_win.cc
-static int stacktrace(LPCONTEXT context, DWORD *trace_, int num_traces){
-  // When walking an exception stack, we need to use StackWalk64().
-  int count_ = 0;
-  // Initialize stack walking.
+  HANDLE process = GetCurrentProcess();
+  
+  printf("do_the2\n");
+  
   STACKFRAME64 stack_frame;
   memset(&stack_frame, 0, sizeof(stack_frame));
+  
 #if defined(_WIN64)
   int machine_type = IMAGE_FILE_MACHINE_AMD64;
-  stack_frame.AddrPC.Offset = context->Rip;
   stack_frame.AddrFrame.Offset = context->Rbp;
   stack_frame.AddrStack.Offset = context->Rsp;
 #else
   int machine_type = IMAGE_FILE_MACHINE_I386;
-  stack_frame.AddrPC.Offset = context->Eip;
   stack_frame.AddrFrame.Offset = context->Ebp;
   stack_frame.AddrStack.Offset = context->Esp;
 #endif
+  
+  stack_frame.AddrPC.Offset = GET_PC_OFFSET(context);
   stack_frame.AddrPC.Mode = AddrModeFlat;
   stack_frame.AddrFrame.Mode = AddrModeFlat;
   stack_frame.AddrStack.Mode = AddrModeFlat;
 
+  printf("do_the3\n");
 
-  while (StackWalk64(machine_type,
-                     GetCurrentProcess(),
-                     GetCurrentThread(),
-                     &stack_frame,
-                     context,
-                     NULL,
-                     &SymFunctionTableAccess64,
-                     &SymGetModuleBase64,
-                     NULL) &&
-         count_ < num_traces) {
-    trace_[count_++] = stack_frame.AddrPC.Offset;
+  int num_pc_offsets = 0;
+  int64_t pc_offsets[NUM_BACKTRACE+5];
+
+  {
+    while (num_pc_offsets < NUM_BACKTRACE && GET_PC_OFFSET(context) > 0) {
+      
+      pc_offsets[num_pc_offsets++] = GET_PC_OFFSET(context);
+      
+      if (!StackWalk64(machine_type,
+                       process,
+                       GetCurrentThread(),
+                       &stack_frame,
+                       context,
+                       NULL,
+                       &SymFunctionTableAccess64,
+                       &SymGetModuleBase64,
+                       NULL))
+        {
+          printf("do_the6: %d\n", num_pc_offsets);
+          
+          break;
+        }
+    }
   }
 
-  int i;
-  for (i = count_; i < num_traces; ++i)
-    trace_[i] = 0;
+  for(int i = 0 ; i < num_pc_offsets ; i++) {
 
-  return count_;
-}
+    int64_t pc_offset = pc_offsets[i];
+    
+    DWORD64 module_base = SymGetModuleBase64(process, pc_offset);
 
+    wchar_t *module_name = get_module_name_unless_radum_bin_exe((HINSTANCE)module_base);
 
-static void
-_backtrace(struct output_buffer *ob, struct bfd_set *set, int depth , LPCONTEXT context)
-{
-	char procname[MAX_PATH];
-	GetModuleFileNameA(NULL, procname, sizeof procname);
-	HANDLE process = GetCurrentProcess();
+    if (i > 0)
+      output_print(ob, "%d: ", i);
 
-        DWORD stack[NUM_BACKTRACE];
-        int num_frames = stacktrace(context, stack, NUM_BACKTRACE);
+    printf("%d: %S : %llx\n", i, module_name, pc_offset);
+    
+    wchar_t temp[1024];
+    swprintf(temp, 1022, L"%llx", pc_offset);
+    
+    const wchar_t *stuff = DISK_run_program_that_writes_to_temp_file(L"radium_pcinfo.exe", module_name == NULL ? L"radium.bin.exe" : module_name, temp, L"");
 
-	char symbol_buffer[sizeof(IMAGEHLP_SYMBOL) + 255];
-	wchar_t module_name_raw[MAX_PATH];
-
-        int i = 0;
-
-        int lokke;
-        for(lokke=0;lokke<num_frames;lokke++){
-          
-                DWORD offset = stack[lokke];
-
-		--depth;
-		if (depth < 0)
-			break;
-
-		IMAGEHLP_SYMBOL *symbol = (IMAGEHLP_SYMBOL *)symbol_buffer;
-		symbol->SizeOfStruct = (sizeof *symbol) + 255;
-		symbol->MaxNameLength = 254;
-#ifdef _WIN64
-		DWORD64 module_base = SymGetModuleBase64(process, offset);
-#else
-		DWORD module_base = SymGetModuleBase(process, offset);
-#endif                
-                struct bfd_ctx *bc = NULL;
-
-		const wchar_t * module_name = L"[unknown module]";
-		if (module_base && 
-                    GetModuleFileNameW((HINSTANCE)module_base, module_name_raw, MAX_PATH)
-                    ) 
-                  {
-                    module_name = module_name_raw;
-#if 0
-                    if(false) // Using addr2line instead. Don't know exactly why addr2line works, but this file doesn't, but there's some indication that bfd doesn't work if the executable is too big.
-                      bc = get_bc(ob, set, module_name);
-#endif
-                  }
-
-		const char * file = NULL;
-		const char * func = NULL;
-		unsigned line = 0;
-
-		if (bc) {
-			find(bc,offset,&file,&func,&line);
-		}
-
-		if (file == NULL) {
-#ifdef _WIN64
-                  DWORD64 dummy = 0;
-#else
-                  DWORD dummy = 0;
-#endif
-			if (
-#ifdef _WIN64
-                            SymGetSymFromAddr64(process, offset, &dummy, symbol)
-#else
-                            SymGetSymFromAddr(process, offset, &dummy, symbol)
-#endif                       
-                            ) {
-                          
-				file = symbol->Name;
-			}
-			else {
-				file = "[unknown file]";
-			}
-		}
-                
-                {
-                  wchar_t temp[1024];
-                  /*
-                    sprintf(temp,"addr2line.exe -e %s 0x%x\n",module_name,(unsigned int)offset);
-                    fprintf(stderr,"Running -%s-\n",temp);
-                    system(temp);
-                  */
-                  swprintf(temp, 1022, L"0x%x", (unsigned int)offset);
-                  
-                  const wchar_t *stuff = DISK_run_program_that_writes_to_temp_file(L"radium_addr2line.exe", L"-e", module_name, temp);
-                  output_print(ob, "%d: %S. 0x%x : %S\n", i, stuff, (unsigned int)offset, module_name);
-                  printf("   stuff: -%S-\n", stuff);
-                }
-/*
-		if (func == NULL) {
-			output_print(ob,"%d: 0x%x : %s : %s\n", 
-                                     i,
-                                     offset,
-                                     module_name,
-                                     file);
-		}
-		else {
-			output_print(ob,"%d: 0x%x : %s : %s (%d) : in function (%s)\n", 
-                                     i,
-                                     offset,
-                                     module_name,
-                                     file,
-                                     line,
-                                     func);
-		}
-*/
-                i++;
-	}
+    //const wchar_t *stuff = L"aiai";
+      
+    output_print(ob, "%S\n", stuff);
+    
+    printf("   stuff: -%S-\n", stuff);
+  }
 }
 
 static char *crash_buffer = NULL;
 
 static void send_message_with_backtrace(LPCONTEXT c, const char *additional_information, enum Crash_Type crash_type, double time){
   struct output_buffer ob;
-  ob.buf = crash_type==CT_CRASH ? crash_buffer : calloc(1, BUFFER_MAX);
-
+  
+  ob.buf = crash_type==CT_CRASH ? crash_buffer : (char*)calloc(1, BUFFER_MAX);
+  
   output_init(&ob, BUFFER_MAX);
 
   if (!SymInitialize(GetCurrentProcess(), 0, TRUE)) {
+    
     output_print(&ob,"Failed to init symbol context\n");
 
   } else {
-
-    bfd_init();
-
-    struct bfd_set *set = calloc(1,sizeof(*set));
-    _backtrace(&ob , set , 128 , c);
-
-    release_set(set);
+    
+    do_the_backtrace(c, &ob);
 
     SymCleanup(GetCurrentProcess());
-    
   }
 
   print_cpuinfo(&ob);
@@ -846,7 +593,7 @@ static void
 backtrace_register(void)
 {
   if (crash_buffer==NULL){
-    crash_buffer = calloc(1,BUFFER_MAX);
+    crash_buffer = (char*)calloc(1,BUFFER_MAX);
     g_prev = SetUnhandledExceptionFilter(exception_filter);
 #if USE_VECTORED_EXCEPTION_HANDLER
     vectored_exception_handler = AddVectoredExceptionHandler(0, VectoredExceptionHandler);

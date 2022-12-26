@@ -86,6 +86,15 @@ int get_file_size(const char *filename){
 //#include "bucomm.h"
 //#include "elf-bfd.h"
 
+#if defined(bfd_get_section_flags)
+#define OLD_BFD_VERSION 1
+#define NEW_BFD_VERSION 0
+#else
+#define OLD_BFD_VERSION 0
+#define NEW_BFD_VERSION 1
+#endif
+
+
 void
 set_default_bfd_target (void)
 {
@@ -245,6 +254,18 @@ find_address_in_section (bfd *abfd, asection *section,
   if (found)
     return;
 
+#if NEW_BFD_VERSION
+  if ((bfd_section_flags (section) & SEC_ALLOC) == 0)
+    return;
+
+  vma = bfd_section_vma (section);
+  if (pc < vma)
+    return;
+
+  size = bfd_section_size (section);
+  if (pc >= vma + size)
+    return;
+#else
   if ((bfd_get_section_flags (abfd, section) & SEC_ALLOC) == 0)
     return;
 
@@ -255,7 +276,8 @@ find_address_in_section (bfd *abfd, asection *section,
   size = bfd_get_section_size (section);
   if (pc >= vma + size)
     return;
-
+#endif
+  
   found = bfd_find_nearest_line_discriminator (abfd, section, syms, pc - vma,
                                                &filename, &functionname,
                                                &line, &discriminator);
@@ -271,13 +293,22 @@ find_offset_in_section (bfd *abfd, asection *section)
   if (found)
     return;
 
+#if NEW_BFD_VERSION
+  if ((bfd_section_flags (section) & SEC_ALLOC) == 0)
+    return;
+
+  size = bfd_section_size (section);
+  if (pc >= size)
+    return;
+#else
   if ((bfd_get_section_flags (abfd, section) & SEC_ALLOC) == 0)
     return;
 
   size = bfd_get_section_size (section);
   if (pc >= size)
     return;
-
+#endif
+  
   found = bfd_find_nearest_line_discriminator (abfd, section, syms, pc,
                                                &filename, &functionname,
                                                &line, &discriminator);
