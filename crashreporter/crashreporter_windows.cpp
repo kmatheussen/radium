@@ -339,29 +339,32 @@ output_print(struct output_buffer *ob, const char * format, ...)
 	ob->ptr = strlen(ob->buf + ob->ptr) + ob->ptr;
 }
 
+#define MAX_MODULE_NAME (1024*8)
+
+static wchar_t *g_module_name;
+
 // Returns NULL if module is radium.bin.exe.
 // Returns module name if it isn't.
 static wchar_t *get_module_name_unless_radum_bin_exe(HINSTANCE module_base){
-  static wchar_t module_name[1024*8];
 
-  if (!GetModuleFileNameW(module_base, module_name, 1024*8-10))
+  if (!GetModuleFileNameW(module_base, g_module_name, MAX_MODULE_NAME-10))
     return NULL; // Shouldn't happen, but if it does, return NULL so that backtrace_pcinfo can try instead.
   
-  const int len = wcslen(module_name);
+  const int len = wcslen(g_module_name);
 
   const int radium_bin_exe_len = 15;
 
   if (len <= radium_bin_exe_len)
-    return module_name;
+    return g_module_name;
   
-  wchar_t *maybe_radium_bin_exe = module_name + len - radium_bin_exe_len + 1;
+  wchar_t *maybe_radium_bin_exe = g_module_name + len - radium_bin_exe_len + 1;
   
   printf("       MAYBE: \"%S\"\n", maybe_radium_bin_exe);
 
   if (!wcscmp(maybe_radium_bin_exe, L"radium.bin.exe"))
     return NULL;
   
-  return module_name;
+  return g_module_name;
 }
 
 
@@ -638,6 +641,7 @@ DllMain(HANDLE hinstDLL, DWORD dwReason, LPVOID lpvReserved)
 
 
 void CRASHREPORTER_windows_init(void){
+  g_module_name = calloc(sizeof(wchar_t), MAX_MODULE_NAME);
   backtrace_register();
 }
 
