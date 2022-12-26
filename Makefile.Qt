@@ -2576,8 +2576,8 @@ bin/radium_crashreporter: crashreporter/crashreporter.cpp common/Process.hpp
 	$(LINKER) `cat buildtype.opt` /tmp/crashbin.o -o bin/radium_crashreporter $(QT_GUI_LDFLAGS) $(QT_NETWORK_LDFLAGS)
 	rm /tmp/crashbin.o
 
-bin/radium_addr2line.exe: crashreporter/radium_addr2line.c
-	$(CC_STATIC) crashreporter/radium_addr2line.c -Wall $(ADDR2LINEOPTS) -DPACKAGE -o bin/radium_addr2line.exe -mwindows
+bin/radium_pcinfo.exe: crashreporter/radium_pcinfo.cpp
+	$(CCC) crashreporter/radium_pcinfo.cpp -Wall $(RADIUM_PCINFO_CFLAGS) $(RADIUM_PCINFO_LDFLAGS) -o bin/radium_pcinfo.exe -mwindows
 
 
 ifeq ($(GCC_MAJOR),9)
@@ -2598,7 +2598,8 @@ $(T)crashreporter_posix.o: crashreporter/crashreporter_posix.c crashreporter/bac
 	fi
 
 $(T)crashreporter_windows.o: crashreporter/crashreporter_windows.c
-	$(CC_STATIC2) crashreporter/crashreporter_windows.c $(OPT) -O0 -DPACKAGE
+	$(CCC2) crashreporter/crashreporter_windows.c $(CPPOPT) -O0 $(CRASHREPORTER_WINDOWS_CFLAGS)
+#	$(CC_STATIC2) crashreporter/crashreporter_windows.c $(OPT) -O0 -DPACKAGE  $(CRASHREPORTER_WINDOWS_CFLAGS)
 #	$(CC2) crashreporter/crashreporter_windows.c $(OPT) -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/bfd -DPACKAGE -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/include -O0
 
 $(T)GfxElements.o: OpenGL/GfxElements.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp OpenGL/FreeType.hpp common/Mutex.hpp OpenGL/T2.hpp common/spinlock.h

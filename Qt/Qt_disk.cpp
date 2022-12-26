@@ -974,7 +974,7 @@ const wchar_t *DISK_run_program_that_writes_to_temp_file(const wchar_t *program,
 
   if(_wspawnl(_P_WAIT, p, p1, a1, a2, a3, a4, NULL)==-1){
     wchar_t *temp = (wchar_t*)malloc(1024);
-    swprintf(temp, 1022, L"Couldn't launch %S: \"%S\"\n",program,arg1);
+    swprintf(temp, 1022, L"Couldn't launch %S: \"%S\". Errno: %d: %s\n",program,arg1, errno, strerror(errno));
     fprintf(stderr, "%S", temp);
     //SYSTEM_show_message(strdup(temp));
     //Sleep(3000);
