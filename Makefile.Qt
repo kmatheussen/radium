@@ -2597,8 +2597,8 @@ $(T)crashreporter_posix.o: crashreporter/crashreporter_posix.c crashreporter/bac
 		exit -1 ; \
 	fi
 
-$(T)crashreporter_windows.o: crashreporter/crashreporter_windows.c
-	$(CCC2) crashreporter/crashreporter_windows.c $(CPPOPT) -O0 $(CRASHREPORTER_WINDOWS_CFLAGS)
+$(T)crashreporter_windows.o: crashreporter/crashreporter_windows.cpp
+	$(CCC2) crashreporter/crashreporter_windows.cpp $(CPPOPT) -O0 $(CRASHREPORTER_WINDOWS_CFLAGS)
 #	$(CC_STATIC2) crashreporter/crashreporter_windows.c $(OPT) -O0 -DPACKAGE  $(CRASHREPORTER_WINDOWS_CFLAGS)
 #	$(CC2) crashreporter/crashreporter_windows.c $(OPT) -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/bfd -DPACKAGE -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/include -O0
 
