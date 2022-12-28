@@ -93,7 +93,7 @@ compressor(i) = effect.bypass2(bypass,compressor_stereo_demo) with {
 
     gainview = compression_gain_mono(ratio,threshold,attack,release)
     : *(0.5)
-    : hbargraph("Band %i:[6][1] Input Gain [tooltip: dummy tooltip]",
+    : hbargraph("Band %i:[6][1] Input Gain bargraph [tooltip: dummy tooltip]",
                 0.0, 1.0);
 
     ingain = hslider("Band %i:[6][2] Input Gain [unit:dB]  [tooltip: The compressed-signal output level is increased by this amount (in dB) to make up for the level lost due to compression]",
