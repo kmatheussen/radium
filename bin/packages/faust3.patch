@@ -1,0 +1,13 @@
+--- architecture/faust/dsp/dsp.h~	2022-12-17 11:41:42.000000000 +0100
++++ architecture/faust/dsp/dsp.h	2022-12-28 19:12:31.965902920 +0100
+@@ -34,8 +34,8 @@
+ #define FAUSTFLOAT float
+ #endif
+ 
+-struct FAUST_API UI;
+-struct FAUST_API Meta;
++struct UI;
++struct Meta;
+ 
+ /**
+  * DSP memory manager.
