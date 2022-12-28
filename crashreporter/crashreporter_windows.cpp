@@ -369,30 +369,35 @@ static wchar_t *get_module_name_unless_radum_bin_exe(HINSTANCE module_base){
 
 
 #if defined(_WIN64)
-  #define GET_PC_OFFSET(Context) (Context)->Rip
+  #define GET_PC_OFFSET(Context) (Context).Rip
 #else
-  #define GET_PC_OFFSET(Context) (Context)->Eip
+  #define GET_PC_OFFSET(Context) (Context).Eip
 #endif
 
-static void do_the_backtrace(CONTEXT *context, struct output_buffer *ob){
+static void do_the_backtrace(CONTEXT *context_org, struct output_buffer *ob){
 
   printf("do_the1\n");
 
   HANDLE process = GetCurrentProcess();
   
   printf("do_the2\n");
-  
+
+  // On x64, StackWalk64 modifies the context record, that could
+  // cause crashes, so we create a copy to prevent it
+  CONTEXT context;
+  memcpy(&context, context_org, sizeof(CONTEXT));
+
   STACKFRAME64 stack_frame;
   memset(&stack_frame, 0, sizeof(stack_frame));
   
 #if defined(_WIN64)
   int machine_type = IMAGE_FILE_MACHINE_AMD64;
-  stack_frame.AddrFrame.Offset = context->Rbp;
-  stack_frame.AddrStack.Offset = context->Rsp;
+  stack_frame.AddrFrame.Offset = context.Rbp;
+  stack_frame.AddrStack.Offset = context.Rsp;
 #else
   int machine_type = IMAGE_FILE_MACHINE_I386;
-  stack_frame.AddrFrame.Offset = context->Ebp;
-  stack_frame.AddrStack.Offset = context->Esp;
+  stack_frame.AddrFrame.Offset = context.Ebp;
+  stack_frame.AddrStack.Offset = context.Esp;
 #endif
   
   stack_frame.AddrPC.Offset = GET_PC_OFFSET(context);
@@ -414,7 +419,7 @@ static void do_the_backtrace(CONTEXT *context, struct output_buffer *ob){
                        process,
                        GetCurrentThread(),
                        &stack_frame,
-                       context,
+                       &context,
                        NULL,
                        &SymFunctionTableAccess64,
                        &SymGetModuleBase64,
@@ -427,12 +432,62 @@ static void do_the_backtrace(CONTEXT *context, struct output_buffer *ob){
     }
   }
 
+  #if 1
   for(int i = 0 ; i < num_pc_offsets ; i++) {
 
     int64_t pc_offset = pc_offsets[i];
-    
-    DWORD64 module_base = SymGetModuleBase64(process, pc_offset);
 
+    char buffer[sizeof(SYMBOL_INFO) + MAX_SYM_NAME * sizeof(TCHAR)];
+    PSYMBOL_INFO symbol = (PSYMBOL_INFO)buffer;
+    symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+    symbol->MaxNameLen = MAX_SYM_NAME;
+    
+    DWORD64 displacement = 0;
+    
+    if (SymFromAddr(process, pc_offset, &displacement, symbol)) {
+
+      IMAGEHLP_MODULE64 moduleInfo = {};
+      moduleInfo.SizeOfStruct = sizeof (moduleInfo);
+
+      const char *modulename = "";
+
+      if (SymGetModuleInfo64 (process, symbol->ModBase, &moduleInfo))
+        modulename = moduleInfo.ModuleName;
+
+      int LineNumber = 0;
+      const char *FileName = "";
+ 
+      DWORD  dwDisplacement = 0;
+      IMAGEHLP_LINE64 help_line;
+
+      if (SymGetLineFromAddr64(process, pc_offset, &dwDisplacement, &help_line)){
+        LineNumber = help_line.LineNumber;
+        FileName = help_line.FileName;
+      }
+        
+      
+      printf  (    "[%i] %s. %s : %d. PC: %llx. Disp: %lld/%d (%s)\n", i, symbol->Name, FileName, LineNumber, pc_offset, displacement, (int)dwDisplacement, modulename);
+      printf_s(ob, "[%i] %s. %s : %d. PC: %llx. Disp: %lld/%d (%s)\n", i, symbol->Name, FileName, LineNumber, pc_offset, displacement, (int)dwDisplacement, modulename);
+      
+    } else {
+
+      DWORD64 module_base = SymGetModuleBase64(process, pc_offset);
+      wchar_t *module_name = get_module_name_unless_radum_bin_exe((HINSTANCE)module_base);
+      printf_s(ob, "[%i] ???. PC: %llx. Disp: %d. Module: %S\n", i, pc_offset, (int)displacement, module_name==NULL ? L"radium.bin.exe" : module_name);
+      
+    }
+    
+  }
+  
+  #else
+  for(int i = 0 ; i < num_pc_offsets ; i++) {
+
+    DWORD64 module_base = SymGetModuleBase64(process, pc_offsets[i]);
+
+    printf("MODULE_BASE: %lld\n", module_base);
+    
+    int64_t pc_offset = pc_offsets[i];// - module_base;
+    
     wchar_t *module_name = get_module_name_unless_radum_bin_exe((HINSTANCE)module_base);
 
     if (i > 0)
@@ -451,6 +506,7 @@ static void do_the_backtrace(CONTEXT *context, struct output_buffer *ob){
     
     printf("   stuff: -%S-\n", stuff);
   }
+  #endif
 }
 
 static char *crash_buffer = NULL;
@@ -462,6 +518,8 @@ static void send_message_with_backtrace(LPCONTEXT c, const char *additional_info
   
   output_init(&ob, BUFFER_MAX);
 
+  SymSetOptions(SYMOPT_LOAD_LINES);
+  
   if (!SymInitialize(GetCurrentProcess(), 0, TRUE)) {
     
     output_print(&ob,"Failed to init symbol context\n");
@@ -490,7 +548,8 @@ void CRASHREPORTER_send_message_with_backtrace(const char *additional_informatio
   LPCONTEXT c = &context;
 
 #if defined(_WIN64)
-  
+
+  context.ContextFlags = CONTEXT_FULL;
   RtlCaptureContext(&context);
   
 #else
@@ -641,7 +700,7 @@ DllMain(HANDLE hinstDLL, DWORD dwReason, LPVOID lpvReserved)
 
 
 void CRASHREPORTER_windows_init(void){
-  g_module_name = calloc(sizeof(wchar_t), MAX_MODULE_NAME);
+  g_module_name = (wchar_t*)calloc(sizeof(wchar_t), MAX_MODULE_NAME);
   backtrace_register();
 }
 
