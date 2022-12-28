@@ -1,3 +1,19 @@
+Changes 7.0.00 -> 7.0.01:
+* Windows: Updated Qt to 5.15.7.
+* Windows: Compile with GCC 11, and updated all
+  included dlls.
+* Windows: Fix crashreporter not including source
+  files and line numbers. Use SymGetModuleInfo64
+  and friends instead of libbfd.
+* Manual: Remove some external links that could
+  make the web browser crash. (qtwebkit must be
+  patched manually to prevent it from trying to
+  load plugins, it's easier just removing links
+  to external web pages.
+* S7: Updated 10.0 / 9-Dec-2021.
+
+
+
 Changes 6.9.99 -> 7.0.00:
 * Qt: Updated Qt to 5.15.6 on Windows and Mac.
 * Qt: Updated Qt to qtbase-kde (5.15.6++) on Linux.
