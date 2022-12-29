@@ -439,7 +439,7 @@ bool JUCE_CALLTYPE Process::openDocument (const String& fileName, const String& 
                 [paramArray addObject: juceStringToNS (params[i])];
 
            #if defined (MAC_OS_X_VERSION_10_15) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_15
-            if (@available (macOS 10.15, *))
+            if (true) //@available (macOS 10.15, *))
             {
                 auto config = [NSWorkspaceOpenConfiguration configuration];
                 [config setCreatesNewApplicationInstance: YES];
@@ -524,7 +524,7 @@ void File::addToDock() const
 
 File File::getContainerForSecurityApplicationGroupIdentifier (const String& appGroup)
 {
-    if (@available (macOS 10.8, *))
+  if (true) //@available (macOS 10.8, *))
         if (auto* url = [[NSFileManager defaultManager] containerURLForSecurityApplicationGroupIdentifier: juceStringToNS (appGroup)])
             return File (nsStringToJuce ([url path]));
 

@@ -1,0 +1,50 @@
+commit 50c7538bc5d7c4311198467bde92b913aec3e718
+Author: Kjetil Matheussen <k.s.matheussen@notam02.no>
+Date:   Thu Dec 29 18:35:25 2022 +0100
+
+    JUCE: Fix compiling for clang 15 / macos 11.1
+
+diff --git a/pluginhost/JuceLibraryCode/modules/juce_audio_devices/native/juce_mac_CoreMidi.mm b/pluginhost/JuceLibraryCode/modules/juce_audio_devices/native/juce_mac_CoreMidi.mm
+index 7e1511de3..48323ab1c 100644
+--- a/pluginhost/JuceLibraryCode/modules/juce_audio_devices/native/juce_mac_CoreMidi.mm
++++ b/pluginhost/JuceLibraryCode/modules/juce_audio_devices/native/juce_mac_CoreMidi.mm
+@@ -297,7 +297,7 @@ namespace CoreMidiHelpers
+     private:
+         static std::unique_ptr<SenderBase> makeImpl (MIDIEndpointRef ep)
+         {
+-            if (@available (macOS 11, iOS 14, *))
++          if (true) //@available (macOS 11, iOS 14, *))
+                 return std::make_unique<Sender<ImplementationStrategy::onlyNew>> (ep);
+ 
+             return std::make_unique<Sender<ImplementationStrategy::onlyOld>> (ep);
+@@ -966,7 +966,7 @@ namespace CoreMidiHelpers
+     private:
+         static CreatorFunctionPointers getCreatorFunctionPointers()
+         {
+-            if (@available (macOS 11, iOS 14, *))
++          if (true) //@available (macOS 11, iOS 14, *))
+                 return CreatorFunctions<ImplementationStrategy::onlyNew>::getCreatorFunctionPointers();
+ 
+             return CreatorFunctions<ImplementationStrategy::onlyOld>::getCreatorFunctionPointers();
+diff --git a/pluginhost/JuceLibraryCode/modules/juce_core/native/juce_mac_Files.mm b/pluginhost/JuceLibraryCode/modules/juce_core/native/juce_mac_Files.mm
+index dcee53f11..6dfb52a5f 100644
+--- a/pluginhost/JuceLibraryCode/modules/juce_core/native/juce_mac_Files.mm
++++ b/pluginhost/JuceLibraryCode/modules/juce_core/native/juce_mac_Files.mm
+@@ -439,7 +439,7 @@ bool JUCE_CALLTYPE Process::openDocument (const String& fileName, const String&
+                 [paramArray addObject: juceStringToNS (params[i])];
+ 
+            #if defined (MAC_OS_X_VERSION_10_15) && MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_15
+-            if (@available (macOS 10.15, *))
++            if (true) //@available (macOS 10.15, *))
+             {
+                 auto config = [NSWorkspaceOpenConfiguration configuration];
+                 [config setCreatesNewApplicationInstance: YES];
+@@ -524,7 +524,7 @@ void File::addToDock() const
+ 
+ File File::getContainerForSecurityApplicationGroupIdentifier (const String& appGroup)
+ {
+-    if (@available (macOS 10.8, *))
++  if (true) //@available (macOS 10.8, *))
+         if (auto* url = [[NSFileManager defaultManager] containerURLForSecurityApplicationGroupIdentifier: juceStringToNS (appGroup)])
+             return File (nsStringToJuce ([url path]));
+ 

@@ -297,7 +297,7 @@ namespace CoreMidiHelpers
     private:
         static std::unique_ptr<SenderBase> makeImpl (MIDIEndpointRef ep)
         {
-            if (@available (macOS 11, iOS 14, *))
+          if (true) //@available (macOS 11, iOS 14, *))
                 return std::make_unique<Sender<ImplementationStrategy::onlyNew>> (ep);
 
             return std::make_unique<Sender<ImplementationStrategy::onlyOld>> (ep);
@@ -966,7 +966,7 @@ namespace CoreMidiHelpers
     private:
         static CreatorFunctionPointers getCreatorFunctionPointers()
         {
-            if (@available (macOS 11, iOS 14, *))
+          if (true) //@available (macOS 11, iOS 14, *))
                 return CreatorFunctions<ImplementationStrategy::onlyNew>::getCreatorFunctionPointers();
 
             return CreatorFunctions<ImplementationStrategy::onlyOld>::getCreatorFunctionPointers();
