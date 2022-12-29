@@ -46,7 +46,7 @@ ifeq ($(CONFIG),Debug)
   CPPFLAGS := $(COMMONCPPFLAGS) -D_DEBUG=1
 
   CFLAGS += $(CPPFLAGS) $(TARGET_ARCH) -g -ggdb -O0 -I../../../Qt `cat ../../../flagopts.opt`
-  CXXFLAGS += $(CFLAGS) -std=gnu++14
+  CXXFLAGS += $(CFLAGS) -std=gnu++17
   LDFLAGS += $(TARGET_ARCH) -L$(BINDIR) -L$(LIBDIR) -L/usr/X11R6/lib/ -lX11 -lXext -lXinerama -lasound -ldl -lfreetype -lpthread -lrt 
 
   TARGET ?= libMyPluginHost.a
@@ -68,7 +68,7 @@ ifeq ($(CONFIG),Release)
   CPPFLAGS := $(COMMONCPPFLAGS) -DDEB1UG=1
 
   CFLAGS += $(CPPFLAGS) $(TARGET_ARCH) -g -ggdb -I../../../Qt `cat ../../../flagopts.opt` -O3 
-  CXXFLAGS += $(CFLAGS) -std=gnu++14
+  CXXFLAGS += $(CFLAGS) -std=gnu++17
   LDFLAGS += $(TARGET_ARCH) -L$(BINDIR) -L$(LIBDIR) -L/usr/X11R6/lib/ -lX11 -lXext -lXinerama -lasound -ldl -lfreetype -lpthread -lrt 
 
   TARGET ?= libMyPluginHost.a
