@@ -4808,13 +4808,15 @@ int main(int argc, char **argv){
         SETTINGS_write_string(confname, QSysInfo::productVersion());
     }      
   }
-  
-  if (QOperatingSystemVersion::current() > QOperatingSystemVersion::MacOSBigSur){
+
+  /*
+  if (QOperatingSystemVersion::current() >= QOperatingSystemVersion::MacOSMonterey){
     SYSTEM_show_message_menu(NULL,
-                             "Radium has not been tested on this version of macOS. Latest supported version of macOS is 11.0. Radium might now freeze, crash, or misbehave in subtle ways. Please report your experience running Radium on this operating system to the forum, the mailing list, or to k.s.matheussen@notam02.no.",
+                             "Radium has not been tested on this version of macOS. Latest supported version of macOS is 11. Radium might now freeze, crash, or misbehave in subtle ways. Please report your experience running Radium on this operating system to the forum, the mailing list, or to k.s.matheussen@notam02.no.",
                              10*60*1000-1 // 10 minutes
                              );    
   }
+  */
 #endif
 
   //GFX_Message(NULL, "hello");
