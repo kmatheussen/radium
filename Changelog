@@ -1,3 +1,16 @@
+Changes 7.0.01 -> 7.1.86
+* Macos: Don't warn during startup if operating
+  system is too new to have been tested.
+* Crashreporter: Make it clearer that a plugin
+  most likely caused the crash if a plugin was
+  processing when the crash happened.
+* Macos: Compile with clang 15.
+* Macos: Update LLVM from 10.0.1 to 15.0.6.
+* JUCE: Update from 7.0.2 to 7.0.3.
+* Upgrade faust 2.37.3 -> 2.54.9.
+
+
+
 Changes 7.0.00 -> 7.0.01:
 * Windows: Updated Qt to 5.15.7.
 * Windows: Compile with GCC 11, and updated all
