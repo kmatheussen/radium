@@ -67,9 +67,19 @@
  #include <vfw.h>
  #include <commdlg.h>
  #include <commctrl.h>
- #include <UIAutomation.h>
  #include <sapi.h>
  #include <dxgi.h>
+
+ #if JUCE_MINGW
+  // Some MinGW headers use 'new' as a parameter name
+  JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wkeyword-macro")
+  #define new new_
+  JUCE_END_IGNORE_WARNINGS_GCC_LIKE
+ #endif
+
+ #include <uiautomation.h>
+
+ #undef new
 
  #if JUCE_WEB_BROWSER
   #include <exdisp.h>
@@ -253,6 +263,7 @@ namespace juce
 #include "windows/juce_ThreadWithProgressWindow.cpp"
 #include "windows/juce_TooltipWindow.cpp"
 #include "windows/juce_TopLevelWindow.cpp"
+#include "windows/juce_VBlankAttachement.cpp"
 #include "commands/juce_ApplicationCommandInfo.cpp"
 #include "commands/juce_ApplicationCommandManager.cpp"
 #include "commands/juce_ApplicationCommandTarget.cpp"
@@ -290,6 +301,7 @@ namespace juce
 
  #else
   #include "native/accessibility/juce_mac_Accessibility.mm"
+  #include "native/juce_mac_PerScreenDisplayLinks.h"
   #include "native/juce_mac_NSViewComponentPeer.mm"
   #include "native/juce_mac_Windowing.mm"
   #include "native/juce_mac_MainMenu.mm"

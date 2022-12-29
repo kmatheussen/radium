@@ -35,12 +35,12 @@
 
   ID:                 juce_audio_plugin_client
   vendor:             juce
-  version:            7.0.2
+  version:            7.0.3
   name:               JUCE audio plugin wrapper classes
   description:        Classes for building VST, VST3, AU, AUv3 and AAX plugins.
   website:            http://www.juce.com/juce
   license:            GPL/Commercial
-  minimumCppStandard: 14
+  minimumCppStandard: 17
 
   dependencies:       juce_audio_processors
 

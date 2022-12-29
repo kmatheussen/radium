@@ -412,13 +412,15 @@ JUCE_BEGIN_IGNORE_WARNINGS_GCC_LIKE ("-Wdeprecated-declarations")
 class WebViewImpl  : public WebViewBase
 {
 public:
-    WebViewImpl (WebBrowserComponent* owner)
+    WebViewImpl (WebBrowserComponent* owner, const String& userAgent)
     {
         static WebViewKeyEquivalentResponder<WebView> webviewClass;
 
         webView.reset ([webviewClass.createInstance() initWithFrame: NSMakeRect (0, 0, 100.0f, 100.0f)
                                                           frameName: nsEmptyString()
                                                           groupName: nsEmptyString()]);
+
+        webView.get().customUserAgent = juceStringToNS (userAgent);
 
         static DownloadClickDetectorClass cls;
         clickListener.reset ([cls.createInstance() init]);
@@ -497,22 +499,29 @@ JUCE_END_IGNORE_WARNINGS_GCC_LIKE
 class API_AVAILABLE (macos (10.11)) WKWebViewImpl : public WebViewBase
 {
 public:
-    WKWebViewImpl (WebBrowserComponent* owner)
+    WKWebViewImpl (WebBrowserComponent* owner, const String& userAgent)
     {
-        #if JUCE_MAC
-         static WebViewKeyEquivalentResponder<WKWebView> webviewClass;
+       #if JUCE_MAC
+        static WebViewKeyEquivalentResponder<WKWebView> webviewClass;
 
-         webView.reset ([webviewClass.createInstance() initWithFrame: NSMakeRect (0, 0, 100.0f, 100.0f)]);
-        #else
-         webView.reset ([[WKWebView alloc] initWithFrame: CGRectMake (0, 0, 100.0f, 100.0f)]);
-        #endif
+        webView.reset ([webviewClass.createInstance() initWithFrame: NSMakeRect (0, 0, 100.0f, 100.0f)]);
+       #else
+        webView.reset ([[WKWebView alloc] initWithFrame: CGRectMake (0, 0, 100.0f, 100.0f)]);
+       #endif
 
-         static WebViewDelegateClass cls;
-         webViewDelegate.reset ([cls.createInstance() init]);
-         WebViewDelegateClass::setOwner (webViewDelegate.get(), owner);
+        if (userAgent.isNotEmpty())
+            webView.get().customUserAgent = juceStringToNS (userAgent);
 
-         [webView.get() setNavigationDelegate: webViewDelegate.get()];
-         [webView.get() setUIDelegate:         webViewDelegate.get()];
+        static WebViewDelegateClass cls;
+        webViewDelegate.reset ([cls.createInstance() init]);
+        WebViewDelegateClass::setOwner (webViewDelegate.get(), owner);
+
+        [webView.get() setNavigationDelegate: webViewDelegate.get()];
+        [webView.get() setUIDelegate:         webViewDelegate.get()];
+
+       #if JUCE_DEBUG
+        [[[webView.get() configuration] preferences] setValue: @(true) forKey: @"developerExtrasEnabled"];
+       #endif
     }
 
     ~WKWebViewImpl() override
@@ -572,19 +581,19 @@ class WebBrowserComponent::Pimpl
                                    #endif
 {
 public:
-    Pimpl (WebBrowserComponent* owner)
+    Pimpl (WebBrowserComponent* owner, const String& userAgent)
     {
         if (@available (macOS 10.11, *))
-            webView = std::make_unique<WKWebViewImpl> (owner);
+            webView = std::make_unique<WKWebViewImpl> (owner, userAgent);
        #if JUCE_MAC
         else
-            webView = std::make_unique<WebViewImpl> (owner);
+            webView = std::make_unique<WebViewImpl> (owner, userAgent);
        #endif
 
         setView (webView->getWebView());
     }
 
-    ~Pimpl()
+    ~Pimpl() override
     {
         webView = nullptr;
         setView (nil);
@@ -608,11 +617,11 @@ private:
 };
 
 //==============================================================================
-WebBrowserComponent::WebBrowserComponent (bool unloadWhenHidden)
-    : unloadPageWhenHidden (unloadWhenHidden)
+WebBrowserComponent::WebBrowserComponent (const Options& options)
+    : unloadPageWhenHidden (! options.keepsPageLoadedWhenBrowserIsHidden())
 {
     setOpaque (true);
-    browser.reset (new Pimpl (this));
+    browser.reset (new Pimpl (this, options.getUserAgent()));
     addAndMakeVisible (browser.get());
 }
 
@@ -732,6 +741,12 @@ void WebBrowserComponent::clearCookies()
     }
 
     [[NSUserDefaults standardUserDefaults] synchronize];
+}
+
+//==============================================================================
+bool WebBrowserComponent::areOptionsSupported (const Options& options)
+{
+    return (options.getBackend() == Options::Backend::defaultBackend);
 }
 
 } // namespace juce
