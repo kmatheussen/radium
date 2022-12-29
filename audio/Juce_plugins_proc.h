@@ -7,10 +7,10 @@
 typedef bool (*JUCE_audio_device_callback) (const int num_frames, void *callback_data);
 
 extern int g_juce_num_input_audio_channels;
-extern const float **g_juce_input_audio_channels;
+extern const float *const* g_juce_input_audio_channels;
 
 extern int g_juce_num_output_audio_channels;  
-extern float **g_juce_output_audio_channels;
+extern float *const* g_juce_output_audio_channels;
 
 extern bool JUCE_audio_set_audio_thread_priority(radium_thread_t thread);
 extern bool JUCE_audio_set_audio_thread_priority_of_current_thread(void);

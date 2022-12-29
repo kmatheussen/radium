@@ -28,10 +28,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 int g_juce_num_input_audio_channels = 0;
-const float **g_juce_input_audio_channels = NULL;
+const float *const* g_juce_input_audio_channels = NULL;
 
 int g_juce_num_output_audio_channels = 0;
-float **g_juce_output_audio_channels = NULL;
+float *const* g_juce_output_audio_channels = NULL;
 
   
 namespace radium{
@@ -104,6 +104,7 @@ public:
     delete this;
   }
 };
+
 
 class JucePlayer : public juce::AudioIODeviceCallback, public juce::ChangeListener {
 
@@ -286,12 +287,13 @@ public:
   bool _has_set_realtime_priority = false;
 #endif
 
-  void audioDeviceIOCallback(const float **inputChannelData, 
-			     int 	totalNumInputChannels, 
-			     float ** 	outputChannelData, 
-			     int 	totalNumOutputChannels, 
-			     int 	numSamples
-			     )
+  void audioDeviceIOCallbackWithContext(const float *const* inputChannelData, 
+                                        int 	totalNumInputChannels, 
+                                        float *const* 	outputChannelData, 
+                                        int 	totalNumOutputChannels, 
+                                        int 	numSamples,
+                                        const juce::AudioIODeviceCallbackContext &context
+                                        )
     override
   {    
     if (numSamples < RADIUM_BLOCKSIZE || MIXER_dummy_driver_is_running()){

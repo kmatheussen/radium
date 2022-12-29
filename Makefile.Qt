@@ -765,23 +765,23 @@ test_ratio:
 #	cd common && ln -sf ratio_funcs.h test_ratio.cpp && g++ test_ratio.cpp -D__STDC_FORMAT_MACROS=1 -DTEST_MAIN -Wall -Werror -g -o a.out && gdb ./a.out
 
 test_radium_vector:
-	cd test && $(CCC) -Wall -Werror test_radium_vector.cpp -DTEST_RADIUM_VECTOR_MAIN -Wall -std=gnu++14 -g -D__STDC_FORMAT_MACROS=1 $(ADDRESS_SANITIZE_OPTS) $(UNDEFINED_SANITIZE_OPTS) -DFOR_LINUX -I../Qt -Wno-unused-function -O3 -o test_radium_vector
+	cd test && $(CCC) -Wall -Werror test_radium_vector.cpp -DTEST_RADIUM_VECTOR_MAIN -Wall -std=gnu++17 -g -D__STDC_FORMAT_MACROS=1 $(ADDRESS_SANITIZE_OPTS) $(UNDEFINED_SANITIZE_OPTS) -DFOR_LINUX -I../Qt -Wno-unused-function -O3 -o test_radium_vector
 	ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" gdb -ex='set confirm on' -ex=run -ex=quit test/test_radium_vector
 
 test_samplereader:
-	cd audio && $(CCC) SampleReader.cpp -DTEST_MAIN -Wall -std=gnu++14 -g && ./a.out
+	cd audio && $(CCC) SampleReader.cpp -DTEST_MAIN -Wall -std=gnu++17 -g && ./a.out
 
 test_threading:
 	$(CCC) common/threading.cpp -DTEST_THREADING -Wall $(QTOPT) $(BOOST_FLAGS) -fPIC -DFOR_LINUX
 	mv threading.o test_threading.o
-	$(CCC) test_threading.o $(QT_LDFLAGS) $(BOOST_FLAGS) -lpthread $(ADDRESS_SANITIZE_OPTS) -fsanitize=undefined  -std=gnu++14
+	$(CCC) test_threading.o $(QT_LDFLAGS) $(BOOST_FLAGS) -lpthread $(ADDRESS_SANITIZE_OPTS) -fsanitize=undefined  -std=gnu++17
 	./a.out
 #	rm -f test_threading.o
 #	echo "GGGGGGGGGGG"
 #	clang++ common/threading.cpp -DTEST_THREADING -Wall $(QTOPT) -fPIC -DFOR_LINUX
 #       mv threading.o test_threading.o
 #	echo "HHHHHHHHH"
-#	clang++ threading.o $(QT_LDFLAGS) -lpthread $(ADDRESS_SANITIZE_OPTS) -fsanitize=undefined  -std=gnu++14
+#	clang++ threading.o $(QT_LDFLAGS) -lpthread $(ADDRESS_SANITIZE_OPTS) -fsanitize=undefined  -std=gnu++17
 #	./a.out
 
 
@@ -797,13 +797,13 @@ test_placement:
 	valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
 
 test_notes:
-	$(CCC) -g -Wall -Werror -DTEST_NOTES -D__STDC_FORMAT_MACROS=1  -DUSE_OPENGL -DUSE_QT_REQTYPE=1 common/notes.cpp common/memory.c -lm -IQt -I$(GCDIR)/include $(GCDIR)/.libs/libgc.a -lpthread -fPIC -DFOR_LINUX -std=gnu++14
+	$(CCC) -g -Wall -Werror -DTEST_NOTES -D__STDC_FORMAT_MACROS=1  -DUSE_OPENGL -DUSE_QT_REQTYPE=1 common/notes.cpp common/memory.c -lm -IQt -I$(GCDIR)/include $(GCDIR)/.libs/libgc.a -lpthread -fPIC -DFOR_LINUX -std=gnu++17
 #	gdb ./a.out
 	valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
 
 # Commented out. Too many link errors.
 test_path_resolver:
-#	$(CCC) -g -Wall -Werror -DTEST_PATH_RESOLVER  -DUSE_OPENGL -DUSE_QT_REQTYPE=1 -DUSE_QT4 Qt/Qt_path_resolver.cpp -lm -IQt $(QT_CFLAGS) $(QT_LDFLAGS) $(GCDIR)/.libs/libgc.a -lpthread -fPIC  -DFOR_LINUX -std=gnu++14 -Wno-error=unknown-pragmas -DUSE_QT5 $(SNDFILEOPT) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" -lsndfile
+#	$(CCC) -g -Wall -Werror -DTEST_PATH_RESOLVER  -DUSE_OPENGL -DUSE_QT_REQTYPE=1 -DUSE_QT4 Qt/Qt_path_resolver.cpp -lm -IQt $(QT_CFLAGS) $(QT_LDFLAGS) $(GCDIR)/.libs/libgc.a -lpthread -fPIC  -DFOR_LINUX -std=gnu++17 -Wno-error=unknown-pragmas -DUSE_QT5 $(SNDFILEOPT) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" -lsndfile
 #	./a.out
 #	valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
 
@@ -1815,12 +1815,12 @@ bin/radium_progress_window: $(P)Qt_progresswindow.cpp
 	rm radium_progress_window.o
 
 bin/radium_check_jack_status: audio/KillJackd.cpp $(T)Jack_plugin.o $(T)find_jack_library.o # Jack_plugin.o depends on all the weakjack things
-	$(CCC) -Wall $(WERROR) audio/KillJackd.cpp $(CPPOPT) $(QT_CFLAGS) $(JACKOPT) $(OS_OPTS) -std=gnu++14 -DCOMPILE_EXECUTABLE -Wno-error=deprecated-declarations -o $(T)radium_check_jack_status.o -Wno-missing-declarations
+	$(CCC) -Wall $(WERROR) audio/KillJackd.cpp $(CPPOPT) $(QT_CFLAGS) $(JACKOPT) $(OS_OPTS) -std=gnu++17 -DCOMPILE_EXECUTABLE -Wno-error=deprecated-declarations -o $(T)radium_check_jack_status.o -Wno-missing-declarations
 	$(LINKER) `cat buildtype.opt` $(T)radium_check_jack_status.o $(T)find_jack_library.o $(JACK_LDFLAGS) `$(PKGqt) --libs Qt5Core` $(QT_SYSTEM_CFLAGS) -o bin/radium_check_jack_status $(FPIC)
 	rm $(T)radium_check_jack_status.o
 
 bin/radium_check_opengl: OpenGL/CheckOpenGL.cpp common/Process.hpp
-	$(CCC) -Wall $(WERROR) OpenGL/CheckOpenGL.cpp $(CPPOPT) $(QT_CFLAGS) $(OS_OPTS) -std=gnu++14 -DCOMPILE_EXECUTABLE -o radium_check_opengl.o $(WNO_DEPRECATED_DECLARATIONS)
+	$(CCC) -Wall $(WERROR) OpenGL/CheckOpenGL.cpp $(CPPOPT) $(QT_CFLAGS) $(OS_OPTS) -std=gnu++17 -DCOMPILE_EXECUTABLE -o radium_check_opengl.o $(WNO_DEPRECATED_DECLARATIONS)
 	$(LINKER) `cat buildtype.opt` radium_check_opengl.o -o bin/radium_check_opengl $(QT_GUI_LDFLAGS) `$(PKGqt) --libs Qt5OpenGL`
 	rm radium_check_opengl.o
 
@@ -2693,7 +2693,7 @@ bin/packages/sndlib/clm.c: bin/packages/sndlib.tar.gz bin/packages/sndlib.patch
 
 
 $(T)s7webserver.o: bin/s7webserver/s7webserver.h bin/s7webserver/s7webserver.cpp bin/s7webserver/moc_s7webserver.cpp bin/packages/s7/s7.c
-	$(CCC2) -c bin/s7webserver/s7webserver.cpp $(QTOPT) -Ibin/packages/s7 -g -Iembedded_scheme -Wall $(WERROR) -Wno-error=unused-variable -Wno-error=unused-function -std=gnu++14 -Wno-deprecated-declarations 
+	$(CCC2) -c bin/s7webserver/s7webserver.cpp $(QTOPT) -Ibin/packages/s7 -g -Iembedded_scheme -Wall $(WERROR) -Wno-error=unused-variable -Wno-error=unused-function -std=gnu++17 -Wno-deprecated-declarations 
 
 bin/s7webserver/moc_s7webserver.cpp: bin/s7webserver/s7webserver.h
 	$(MOC) -DCOMPILING_S7WEBSERVER bin/s7webserver/s7webserver.h -o bin/s7webserver/moc_s7webserver.cpp
