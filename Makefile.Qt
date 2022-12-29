@@ -2,7 +2,7 @@
 # Users and packagers: Edit build_*.sh instead.
 #
 
-RADIUM_VERSION = 7.0.01
+RADIUM_VERSION = 7.1.86
 
 
 SHELL := /usr/bin/env bash
@@ -377,8 +377,10 @@ endif
 # -Wunused-parameter
 
 # OPT is C flags
-OBJC_OPT=$(COMMONOPT) -Wstrict-prototypes -Wmissing-prototypes -nostdinc++ # Note: "-Wmissing-prototypes" is only valid for C files. The equivilant C++ option is "-Wmissing-declarations". However, "-Wmissing-declarations" doesn't always seem to work, don't know why.
-OPT=$(OBJC_OPT) -std=gnu99
+
+OPT=$(COMMONOPT) -Wstrict-prototypes -Wmissing-prototypes -std=gnu99  # Note: "-Wmissing-prototypes" is only valid for C files. The equivilant C++ option is "-Wmissing-declarations". However, "-Wmissing-declarations" doesn't always seem to work, don't know why.
+
+OBJC_OPT=$(COMMONOPT) -nostdinc++
 
 # -D_FORTIFY_SOURCE=2 -O2
 
