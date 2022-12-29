@@ -365,30 +365,31 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
       
       bool dosave = emergency_save_filename!=QString(NOEMERGENCYSAVE);
       
-      text2.setText(QString(
-                                   #if FOR_LINUX
-                                   "Linux users: Please don't report bugs caused by a non-properly compiled, or old, version of Radium. "
-                                   "If you have compiled Radium yourself, or you are using a version of Radium "
-                                   "distributed by a third party, please try the official binaries first. "
-                                   "At least execute a \"make very_clean\" command to see if the bug disappears. Thank you!\n"
-                                   "\n"
-                                   #endif
-                                   "This %0 will be automatically reported when you press \"SEND\".\n"
-                                   "\n"
-                                   "The report is sent anonymously, and will only be seen by the author of Radium.\n"
-                                   "\n"
-                                   "Only the information in \"Show details\" is sent. You can also edit this text if there is anything you don't want to send.\n"
-                                   "\n"
-                                   "Please don't report the same %0 more than two or three times for the same version of Radium.\n"
-                                   ).arg(crash_type==CT_CRASH ? "crash" : crash_type==CT_ERROR ? "error" : "warning")
-                           + ( (is_crash && plugin_names != NOPLUGINNAMES)
-                               ? QString("\nPlease note that the following third party plugins: \"" + plugin_names + "\" was/were currently processing audio. It/they might be responsible for the crash.\n")
-                               : QString())
-                           + (crash_type==CT_ERROR ? "\nAfterwards, you should save your work and start the program again.\n\nIf this window just pops up again immediately after closing it, just hide it instead." : "")
-                           + (dosave ? "\nAn emergency version of your song has been saved as\n\""+emergency_save_filename+"\".\nHowever, this file should not be trusted. It could be malformed.\n(The file is most likely okay though)" : "")
-                           + "\n"
-                           );
-    
+      text2.setText(QString("<br>"
+#if FOR_LINUX
+                            "Linux users: Please don't report bugs caused by a non-properly compiled, or old, version of Radium. "
+                            "If you have compiled Radium yourself, or you are using a version of Radium "
+                            "distributed by a third party, please try the official binaries first. "
+                            "At least execute a \"make very_clean\" command to see if the bug disappears. Thank you!"
+                            "<p>"
+#endif
+                            "This %0 will be automatically reported when you press \"SEND\"."
+                            "<p>"
+                            "The report is sent anonymously, and will only be seen by the author of Radium."
+                            "<p>"
+                            "Only the information in \"Show details\" is sent. You can also edit this text if there is anything you don't want to send."
+                            "<p>"
+                            "Please don't report the same %0 more than two or three times for the same version of Radium."
+                            ).arg(crash_type==CT_CRASH ? "crash" : crash_type==CT_ERROR ? "error" : "warning")
+                    + ( (is_crash && plugin_names != NOPLUGINNAMES)
+                        ? QString("<p>Please note that the following 3rd party plugins were running: <b>" + plugin_names + "</b>.<br>"
+                                  "<b>Most likely, one of these 3rd party plugins caused the crash!</b>")
+                        : QString())
+                    + (crash_type==CT_ERROR ? "<p>Afterwards, you should save your work and start the program again.\n<br>\n<br>If this window just pops up again immediately after closing it, just hide it instead." : "")
+                    + (dosave ? "<p>An emergency version of your song has been saved as\n<br>\""+emergency_save_filename+"\".\n<br>However, this file should not be trusted. It could be malformed.\n<br>(The file is most likely okay though)" : "")
+                    + "<p>"
+                    );
+      
       text2.setWordWrap(true);
       //text2.setMaximumWidth(600);
       
@@ -475,7 +476,7 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
       
       layout.addWidget(&space2);
       
-      text_edit.setText("<Please add recipe and/or email address here>\n");
+      text_edit.setText("<Please add recipe and/or email address here>\n<br>");
       //text_edit.setMinimumWidth(1000000);
       //text_edit.setSizePolicy(QSizePolicy(QSizePolicy::Minimum,QSizePolicy::Minimum));
       layout.addWidget(&text_edit);
@@ -534,7 +535,7 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
       data.append(s, (int)strlen(s)-1);
       //free(s);
       data.remove(0,1);
-      data.append("\n");
+      data.append("\n<br>");
       data.append(text_edit.toPlainText().toUtf8());
       
       QNetworkAccessManager nam;
