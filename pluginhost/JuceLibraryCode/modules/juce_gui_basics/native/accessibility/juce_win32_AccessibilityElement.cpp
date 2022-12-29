@@ -96,46 +96,48 @@ static String getAutomationId (const AccessibilityHandler& handler)
 
 static auto roleToControlTypeId (AccessibilityRole roleType)
 {
+    using namespace ComTypes::Constants;
+
     switch (roleType)
     {
         case AccessibilityRole::popupMenu:
         case AccessibilityRole::dialogWindow:
         case AccessibilityRole::splashScreen:
-        case AccessibilityRole::window:        return ComTypes::UIA_WindowControlTypeId;
+        case AccessibilityRole::window:        return UIA_WindowControlTypeId;
 
         case AccessibilityRole::label:
-        case AccessibilityRole::staticText:    return ComTypes::UIA_TextControlTypeId;
+        case AccessibilityRole::staticText:    return UIA_TextControlTypeId;
 
         case AccessibilityRole::column:
-        case AccessibilityRole::row:           return ComTypes::UIA_ListItemControlTypeId;
+        case AccessibilityRole::row:           return UIA_ListItemControlTypeId;
 
-        case AccessibilityRole::button:        return ComTypes::UIA_ButtonControlTypeId;
-        case AccessibilityRole::toggleButton:  return ComTypes::UIA_CheckBoxControlTypeId;
-        case AccessibilityRole::radioButton:   return ComTypes::UIA_RadioButtonControlTypeId;
-        case AccessibilityRole::comboBox:      return ComTypes::UIA_ComboBoxControlTypeId;
-        case AccessibilityRole::image:         return ComTypes::UIA_ImageControlTypeId;
-        case AccessibilityRole::slider:        return ComTypes::UIA_SliderControlTypeId;
-        case AccessibilityRole::editableText:  return ComTypes::UIA_EditControlTypeId;
-        case AccessibilityRole::menuItem:      return ComTypes::UIA_MenuItemControlTypeId;
-        case AccessibilityRole::menuBar:       return ComTypes::UIA_MenuBarControlTypeId;
-        case AccessibilityRole::table:         return ComTypes::UIA_TableControlTypeId;
-        case AccessibilityRole::tableHeader:   return ComTypes::UIA_HeaderControlTypeId;
-        case AccessibilityRole::cell:          return ComTypes::UIA_DataItemControlTypeId;
-        case AccessibilityRole::hyperlink:     return ComTypes::UIA_HyperlinkControlTypeId;
-        case AccessibilityRole::list:          return ComTypes::UIA_ListControlTypeId;
-        case AccessibilityRole::listItem:      return ComTypes::UIA_ListItemControlTypeId;
-        case AccessibilityRole::tree:          return ComTypes::UIA_TreeControlTypeId;
-        case AccessibilityRole::treeItem:      return ComTypes::UIA_TreeItemControlTypeId;
-        case AccessibilityRole::progressBar:   return ComTypes::UIA_ProgressBarControlTypeId;
-        case AccessibilityRole::group:         return ComTypes::UIA_GroupControlTypeId;
-        case AccessibilityRole::scrollBar:     return ComTypes::UIA_ScrollBarControlTypeId;
-        case AccessibilityRole::tooltip:       return ComTypes::UIA_ToolTipControlTypeId;
+        case AccessibilityRole::button:        return UIA_ButtonControlTypeId;
+        case AccessibilityRole::toggleButton:  return UIA_CheckBoxControlTypeId;
+        case AccessibilityRole::radioButton:   return UIA_RadioButtonControlTypeId;
+        case AccessibilityRole::comboBox:      return UIA_ComboBoxControlTypeId;
+        case AccessibilityRole::image:         return UIA_ImageControlTypeId;
+        case AccessibilityRole::slider:        return UIA_SliderControlTypeId;
+        case AccessibilityRole::editableText:  return UIA_EditControlTypeId;
+        case AccessibilityRole::menuItem:      return UIA_MenuItemControlTypeId;
+        case AccessibilityRole::menuBar:       return UIA_MenuBarControlTypeId;
+        case AccessibilityRole::table:         return UIA_TableControlTypeId;
+        case AccessibilityRole::tableHeader:   return UIA_HeaderControlTypeId;
+        case AccessibilityRole::cell:          return UIA_DataItemControlTypeId;
+        case AccessibilityRole::hyperlink:     return UIA_HyperlinkControlTypeId;
+        case AccessibilityRole::list:          return UIA_ListControlTypeId;
+        case AccessibilityRole::listItem:      return UIA_ListItemControlTypeId;
+        case AccessibilityRole::tree:          return UIA_TreeControlTypeId;
+        case AccessibilityRole::treeItem:      return UIA_TreeItemControlTypeId;
+        case AccessibilityRole::progressBar:   return UIA_ProgressBarControlTypeId;
+        case AccessibilityRole::group:         return UIA_GroupControlTypeId;
+        case AccessibilityRole::scrollBar:     return UIA_ScrollBarControlTypeId;
+        case AccessibilityRole::tooltip:       return UIA_ToolTipControlTypeId;
 
         case AccessibilityRole::ignored:
         case AccessibilityRole::unspecified:   break;
     };
 
-    return ComTypes::UIA_CustomControlTypeId;
+    return UIA_CustomControlTypeId;
 }
 
 //==============================================================================
@@ -205,6 +207,8 @@ JUCE_COMRESULT AccessibilityNativeHandle::GetPatternProvider (PATTERNID pId, IUn
 
                 return false;
             };
+
+            using namespace ComTypes::Constants;
 
             switch (pId)
             {
@@ -283,20 +287,18 @@ JUCE_COMRESULT AccessibilityNativeHandle::GetPatternProvider (PATTERNID pId, IUn
                 case UIA_TablePatternId:
                 case UIA_GridPatternId:
                 {
-                  /*
                     if (accessibilityHandler.getTableInterface() != nullptr
                         && (pId == UIA_GridPatternId || accessibilityHandler.getRole() == AccessibilityRole::table))
-                      return static_cast<IGridProvider*> (new UIAGridProvider (this));
-                  */
+                        return static_cast<ComTypes::IGridProvider*> (new UIAGridProvider (this));
+
                     break;
                 }
                 case UIA_TableItemPatternId:
                 case UIA_GridItemPatternId:
                 {
-                  /*
                     if (isListOrTableCell (accessibilityHandler))
-                        return static_cast<IGridItemProvider*> (new UIAGridItemProvider (this));
-                  */
+                        return static_cast<ComTypes::IGridItemProvider*> (new UIAGridItemProvider (this));
+
                     break;
                 }
                 case UIA_InvokePatternId:
@@ -346,6 +348,8 @@ JUCE_COMRESULT AccessibilityNativeHandle::GetPropertyValue (PROPERTYID propertyI
         const auto role    = accessibilityHandler.getRole();
         const auto state   = accessibilityHandler.getCurrentState();
         const auto ignored = accessibilityHandler.isIgnored();
+
+        using namespace ComTypes::Constants;
 
         switch (propertyId)
         {

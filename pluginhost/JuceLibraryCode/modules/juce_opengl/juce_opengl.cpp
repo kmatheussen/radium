@@ -215,7 +215,9 @@ static void checkGLError (const char* file, const int line)
 
 static void clearGLError() noexcept
 {
+   #if JUCE_DEBUG
     while (glGetError() != GL_NO_ERROR) {}
+   #endif
 }
 
 struct OpenGLTargetSaver
@@ -239,6 +241,22 @@ private:
 
     OpenGLTargetSaver& operator= (const OpenGLTargetSaver&);
 };
+
+static bool contextRequiresTexture2DEnableDisable()
+{
+   #if JUCE_OPENGL_ES
+    return false;
+   #else
+    clearGLError();
+    GLint mask = 0;
+    glGetIntegerv (GL_CONTEXT_PROFILE_MASK, &mask);
+
+    if (glGetError() == GL_INVALID_ENUM)
+        return true;
+
+    return (mask & (GLint) GL_CONTEXT_CORE_PROFILE_BIT) == 0;
+   #endif
+}
 
 } // namespace juce
 

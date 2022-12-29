@@ -484,7 +484,7 @@ public:
     template<typename UnaryFunction>
     static void iterateAudioBuffer (AudioBuffer<float>& ab, UnaryFunction fn)
     {
-        float** sampleData = ab.getArrayOfWritePointers();
+        float* const* sampleData = ab.getArrayOfWritePointers();
 
         for (int c = ab.getNumChannels(); --c >= 0;)
             for (int s = ab.getNumSamples(); --s >= 0;)
@@ -799,20 +799,19 @@ struct RecallFeature
         const auto processor = LV2PluginInstance::createProcessorInstance();
         const File absolutePath { CharPointer_UTF8 { libraryPath } };
 
-        processor->enableAllBuses();
+        const auto writers = { writeManifestTtl, writeDspTtl, writeUiTtl };
 
-        for (auto* fn : { writeManifestTtl, writeDspTtl, writeUiTtl })
+        const auto wroteSuccessfully = [&processor, &absolutePath] (auto* fn)
         {
             const auto result = fn (*processor, absolutePath);
 
-            if (result.wasOk())
-                continue;
+            if (! result.wasOk())
+                std::cerr << result.getErrorMessage() << '\n';
 
-            std::cerr << result.getErrorMessage() << '\n';
-            return 1;
-        }
+            return result.wasOk();
+        };
 
-        return 0;
+        return std::all_of (writers.begin(), writers.end(), wroteSuccessfully) ? 0 : 1;
     };
 
 private:
