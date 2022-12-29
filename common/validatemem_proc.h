@@ -130,10 +130,14 @@ static inline void assert_allowed_to_alloc(void){
   R_ASSERT(!PLAYER_current_thread_has_lock());
   R_ASSERT(!THREADING_is_runner_thread());
 
-#if !defined(FOR_MACOSX)
-  R_ASSERT(!THREADING_has_player_thread_priority());
-#endif
-  
+  #if 0
+    #if !defined(FOR_MACOSX)
+      #if defined(COMPILING_RADIUM)
+  if (!ATOMIC_GET(is_starting_up)) // turn off check for now. @#$@#$ juce.
+      #endif
+    R_ASSERT(!THREADING_has_player_thread_priority());
+    #endif
+  #endif
 #endif
 }
 
