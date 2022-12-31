@@ -68,7 +68,7 @@ build_faust() {
         patch -p0 <../faust_nollvm.patch
     fi
 
-    patch -p0 < ../faust2.patch
+    patch -p0 < ../faust3.patch
     
     #cp compiler/generator/libfaust-signal.h architecture/faust/dsp/
     #cp compiler/generator/libfaust-box.h architecture/faust/dsp/
