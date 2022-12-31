@@ -114,10 +114,10 @@ static void slurp_symtab(bfd * abfd)
 	if ((bfd_get_file_flags(abfd) & HAS_SYMS) == 0)
 		return;
 
-	symcount = bfd_read_minisymbols(abfd, false, (PTR) & syms, &size);
+	symcount = bfd_read_minisymbols(abfd, false, (void **) & syms, &size);
 	if (symcount == 0)
 		symcount = bfd_read_minisymbols(abfd, true /* dynamic */ ,
-						(PTR) & syms, &size);
+						(void **) & syms, &size);
 
 	if (symcount < 0)
 		bfd_fatal(bfd_get_filename(abfd));
@@ -184,7 +184,7 @@ static void translate_addresses(bfd * abfd, char (*addr)[PTRSTR_LEN], int naddr)
 
 		found = false;
 		bfd_map_over_sections(abfd, find_address_in_section,
-		(PTR) NULL);
+		(void **) NULL);
 
 		if (!found) {
 			printf("[%s] \?\?() \?\?:0\n",addr[naddr-1]);
@@ -244,7 +244,7 @@ static char** translate_addresses_buf(bfd * abfd, bfd_vma *addr, int naddr)
 
 		found = false;
 		bfd_map_over_sections(abfd, find_address_in_section,
-		(PTR) NULL);
+		(void **) NULL);
 
 		if (!found) {
 			total += snprintf(buf, len, "[0x%llx] \?\?() \?\?:0",(long long unsigned int) addr[naddr-1]) + 1;
