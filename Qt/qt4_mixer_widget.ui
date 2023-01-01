@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1199</width>
+    <width>1240</width>
     <height>491</height>
    </rect>
   </property>
@@ -232,7 +232,7 @@
       <item>
        <widget class="QCheckBox" name="include_sequencer_widget">
         <property name="toolTip">
-         <string>Show instrument widget inside the mixer</string>
+         <string>Show sequencer widget inside the mixer</string>
         </property>
         <property name="text">
          <string>S</string>
