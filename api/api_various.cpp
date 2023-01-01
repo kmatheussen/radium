@@ -704,7 +704,7 @@ void showHideUpperPartOfMainWindow(void){
 }
 
 
-static int g_max_submenues = 200;
+static int g_max_submenues = 100;
 
 int getMaxSubmenuEntries(void){
   static bool has_inited = false;
