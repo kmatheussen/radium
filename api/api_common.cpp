@@ -947,32 +947,13 @@ struct SeqBlock *getGfxGfxSeqblockFromNumA(int seqblocknum, int seqtracknum, str
 // NOTES
 
 static const Place getPrevLegalNotePlace(const struct Tracks *track, const struct Notes *note){
-  Place end = *PlaceGetFirstPos(); // small bug here, cant move pitch to first position, only almost to first position.
-
   struct Notes *prev = FindPrevNoteOnSameSubTrack(track, note);
-  //printf("prev: %p. next(prev): %p, note: %p, next(note): %p\n",prev,prev!=NULL?NextNote(prev):NULL,note,NextNote(note));
+  //printf("prev: %p (Place: %f). next(prev): %p, note: %p, next(note): %p\n",prev,prev==NULL ? -1 : GetfloatFromPlace(&prev->l.p), prev!=NULL?NextNote(prev):NULL,note,NextNote(note));
   
-  if (prev != NULL) {
-    end = prev->l.p;
-
-    {
-      const r::VelocityTimeData::Reader reader(note->_velocities);
-      
-      if (reader.size() > 0)
-        end = ratio2place(reader.at_last()._time);
-    }
-
-    {
-      const r::PitchTimeData::Reader reader(note->_pitches);
-
-      if (reader.size() > 0){
-        Place p = ratio2place(reader.at_last()._time);
-        end = *PlaceMax(&end, &p);
-      }
-    }
-  }
-  
-  return end;
+  if (prev != NULL)
+    return ratio2place(prev->end);
+  else
+    return p_Create(0,0,1);
 }
 
 static const Place getNextLegalNotePlace(const struct Notes *note){
@@ -1078,10 +1059,17 @@ dyn_t MoveNote(struct Blocks *block, struct Tracks *track, struct Notes *note, P
     //printf("MoveNote. old: %f, new: %f\n", GetfloatFromPlace(&old_place), GetfloatFromPlace(place));
          
     if (PlaceLessThan(place, &old_place)) {
-      const Place prev_legal = getPrevLegalNotePlace(track, note);
-      //printf("prev_legal: %f\n",GetfloatFromPlace(prev_legal));
+      
+      Place prev_legal;
+      
+      if (shiftPressed())
+        prev_legal = p_Create(0,0,1);
+      else
+        prev_legal = getPrevLegalNotePlace(track, note);
+      
       if (PlaceLessOrEqual(place, &prev_legal))
         PlaceFromLimit(place, &prev_legal);
+
     } else {
       const Place next_legal = getNextLegalNotePlace(note);
       if (PlaceGreaterOrEqual(place, &next_legal))
