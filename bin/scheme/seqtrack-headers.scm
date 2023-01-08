@@ -876,7 +876,8 @@
      (update-me-and-all-parents-and-siblings!) ;; Update hovered background color of all numbers. (this area might not correspond to the area of the actual current seqtrack anymore)
 
      (cond ((equal-seqtrack-order? order-before (get-seqtrack-order))
-            (<ra> :undo)) ;; This not only reverts an unnecesarry undo, but it can also revert an unintended timing mode change.
+            (if has-made-undo
+                (<ra> :undo))) ;; This not only reverts an unnecesarry undo, but it can also revert an unintended timing mode change.
            ((and (not was-using-sequencer-timing)
                  (not first-seqtrack-was-audio)
                  (<ra> :seqtrack-for-audiofiles 0))
