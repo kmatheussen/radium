@@ -131,14 +131,17 @@
 
 ;; Note! This function is called from the error handler.
 (define (to-displayable-string a)
+  ;;(display "AAA0")(display a)(newline)
   (cond ((keyword? a)
+         ;;(display "AAA")(newline)
          (string-append "#:" (to-displayable-string (keyword->symbol a))))
         ((symbol? a)
+         ;;(display "AAA2")(newline)
          (string-append "'" (symbol->string a)))
         ((string? a)
          a)
         ((char? a)
-         a)
+         (string a))
         ((number? a)
          (number->string a))
         ((equal? #t a)
@@ -511,19 +514,26 @@
 ;; string
 
 (define (string-split string* ch)
+  ;;(c-display "...string-split called: " string* ch)
   (cond ((string? ch)
          (vector->list (<ra> :string-split string* ch)))
         ((string=? string* "")
          '())
         (else
+         ;;(c-display "a1")
          (let ((splitted (split-list (string->list string*)
                                      (lambda (ch2)
+                                       ;;(c-display "a1b: " ch "/" ch2)
                                        (char=? ch ch2)))))
+           ;;(c-display "a2")
            (cond ((null? (cadr splitted))
+                  ;;(c-display "a3")
                   (list string*))
                  ((null? (car splitted))
+                  ;;(c-display "a4")
                   (string-split (list->string (cdr (cadr splitted))) ch))
                  (else
+                  ;;(c-display "a4")
                   (cons (list->string (car splitted))
                         (string-split (list->string (cdr (cadr splitted))) ch))))))))
 
