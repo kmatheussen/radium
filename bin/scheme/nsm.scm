@@ -280,7 +280,8 @@
 
 (define (get-nsm-executable-name)
   (define maybe (getenv "RADIUM_NSM_EXECUTABLE_NAME"))
-  (if (string=? "" maybe)
+  (if (or (not maybe)
+          (string=? "" maybe))
       (<ra> :get-argv0)
       maybe))
 
@@ -334,7 +335,8 @@
     
 
 (define (create-nsm-osc-server)
-  (if (string=? *nsm-url* "")
+  (if (or (not *nsm-url*)
+          (string=? *nsm-url* ""))
       (begin
         (set! *nsm-has-inited* #t)
         #f)
