@@ -76,7 +76,7 @@ QStringList get_sample_name_filters(void){
 
 bool file_could_be_a_sample(QString filename){
   for(auto filter : get_sample_name_filters())
-    if (filename.endsWith(filter.mid(1)))
+    if (filename.toLower().endsWith(filter.mid(1)))
       return true;
 
   return false;
