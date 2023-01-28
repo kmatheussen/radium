@@ -126,20 +126,22 @@ static QString get_sample_filename_display_string(QFileInfo file_info, int width
     //printf("Trying to open %s\n",file_info.absoluteFilePath().toUtf8().constData());
     SNDFILE *sndfile = radium_sf_open(full_filename, SFM_READ, &sf_info);
     
-    if(sndfile==NULL)
-      return QString();
+    if(sndfile==NULL){
+      num_channels = -1;
+    }else{
+      num_channels = sf_info.channels;
 
-    num_channels = sf_info.channels;
-
-    sf_close(sndfile);
+      sf_close(sndfile);
+    }
   }
 
   int64_t num_bytes = file_info.size();
 
   //const QFontMetrics fn = QFontMetrics(font);
-  QString ret =
-    file_info.fileName().leftJustified(k_filename_len-2,'.') +
-    ".." + QString::number(num_channels)+"ch,";
+  QString ret = file_info.fileName().leftJustified(k_filename_len-2,'.');
+
+  if (num_channels >= 0)
+    ret += ".." + QString::number(num_channels)+"ch,";
 
   {
     QString size_string;
