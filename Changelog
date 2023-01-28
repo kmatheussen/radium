@@ -1,3 +1,24 @@
+Changes 7.1.86 -> 7.1.87
+* NSM: Fix if "getenv" returns #f instead of empty
+  string.
+* Scheme: Fix converting character to string, which
+  suddenly stopped working.
+* Editor: Fix moving first velocity node, which
+  sometimes behaved very strange.
+* Editor: Fix holding shift not working to circumvent
+  other notes limiting where a can be placed.  
+* Sequencer: Fix clicking the seqtrack number
+  creating an undo.
+* GUI: Reduce default maximum number of menu elements
+  that can be shown at once, from 200 to 100. 200 might
+  fill up the screen and sometimes even freeze the
+  program, at least if using fvwm.
+* Fix tooltip for sequencer button in mixer. (akimaze)
+* Fix compilation on systems with newer binutils dev
+  files (yzzyx)
+
+
+
 Changes 7.0.01 -> 7.1.86
 * Macos: Don't warn during startup if operating
   system is too new to have been tested.
