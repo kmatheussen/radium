@@ -1,3 +1,16 @@
+Changes 7.1.87 -> 7.1.88
+* Instrument menu: Add "Assign to current editor track"
+  option.
+* Editor: Fix double-playing notes when scrolling up
+  and down repeatedly on the same line and possibly
+  other situations.
+* Sample requesters: Also show files with mixed lower
+  and upper case in file suffix, e.g. "sample.Wav"
+* Sampler: Fix XI instruments not displayed in the
+  embedded file browser.
+
+
+
 Changes 7.1.86 -> 7.1.87
 * NSM: Fix if "getenv" returns #f instead of empty
   string.
