@@ -548,7 +548,9 @@ struct GradientTrianglesCollection {
     
     GradientTriangles *gradient = used_gradient_triangles;
 
+#if DEBUG_PRINT
     int numa=0,numb=0;
+#endif
     
     while(gradient!=NULL){
       GradientTriangles *next = gradient->next;
@@ -562,13 +564,16 @@ struct GradientTrianglesCollection {
         if (new_free==NULL)
           last_new_free = gradient;
         new_free = gradient;
+#if DEBUG_PRINT
         numa++;
+#endif
       } else {
         gradient->next = new_used;
         new_used = gradient;
       }
-
+#if DEBUG_PRINT
       numb++;
+#endif
       
       gradient = next;
     }

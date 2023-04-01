@@ -518,7 +518,7 @@ ifeq ($(GCC_MAJOR),11)
 	VL_CFLAGS += -Wno-class-memaccess -Wno-deprecated-copy
 endif
 
-ifeq ($(CLANG_MAJOR),13)
+ifneq (,$(findstring clang,$(CC)))
 	VL_CFLAGS+=-Wno-null-pointer-subtraction
 endif
 

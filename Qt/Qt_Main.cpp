@@ -468,7 +468,12 @@ void * operator new(decltype(sizeof(0)) size) noexcept(false)
   return mem;
 }
 
-void operator delete(void *mem) noexcept(false)
+void operator delete(void *mem)
+#if defined(__clang__) && FOR_LINUX
+  _GLIBCXX_USE_NOEXCEPT
+#else
+noexcept(false)
+#endif
 {
   V_free(mem);
 }

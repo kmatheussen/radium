@@ -550,7 +550,7 @@ static void add_ppq_to_tempos(QVector<TempoAutomationNode> &tempos){
   double last_time = 0;
   double last_num_quarters = 0;
 
-  int nodenum = 0;
+  //int nodenum = 0;
   for(TempoAutomationNode &node : tempos){
 
     double time = node.time;
@@ -566,7 +566,7 @@ static void add_ppq_to_tempos(QVector<TempoAutomationNode> &tempos){
     last_time = time;
     last_num_quarters = num_quarters;
 
-    nodenum++;
+    //nodenum++;
   }
 }
 

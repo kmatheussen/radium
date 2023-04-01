@@ -23,12 +23,6 @@ COMMONCPPFLAGS := $(DEPFLAGS) -D "LINUX=1" -D "JUCE_CHECK_MEMORY_LEAKS=0" -D "JU
 
 ifeq (,$(findstring clang,$(CXX)))
 	COMMONCPPFLAGS += -Wno-class-memaccess 
-endif
-
-GCC_VERSION:=$(shell $(GCC) -dumpversion)
-GCC_MAJOR:=$(shell echo $(GCC_VERSION) | cut -d'.' -f1)
-
-ifeq ($(GCC_MAJOR),9)
 	COMMONCPPFLAGS += -Wno-deprecated-copy
 endif
 
