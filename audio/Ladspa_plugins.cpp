@@ -1737,10 +1737,15 @@ void create_ladspa_plugins(void){
 
       i++;
 
-      GFX_ShowProgressMessage(QString("Adding LADSPA plugins %1 / %2").arg(i).arg(size).toUtf8().constData(), true);
-      
-      if(filename.endsWith(LIB_SUFFIX))
-        add_ladspa_plugin_type(dirname + QDir::separator() + filename);
+      const QString fullpath = dirname + QDir::separator() + filename;
+            
+      if(filename.endsWith(LIB_SUFFIX)) {
+        GFX_ShowProgressMessage(QString("Adding LADSPA plugin %1 / %2: \"%3\".").arg(i).arg(size).arg(fullpath).toUtf8().constData(), true);
+
+        //msleep(300);
+
+        add_ladspa_plugin_type(fullpath);
+      }
       
     }
     
