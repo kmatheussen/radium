@@ -44,9 +44,20 @@ extern struct Root *root;
 
 #define MAX_SCROLLPLAYTRACKS 128
 
-static vector_t scrollplaying_notes[MAX_SCROLLPLAYTRACKS] = {{0}}; // [NO_STATIC_ARRAY_WARNING]
+static vector_t g_scrollplaying_up_notes[MAX_SCROLLPLAYTRACKS] = {{0}}; // [NO_STATIC_ARRAY_WARNING]
 
+#if 0
+static bool up_note_is_playing(const struct Notes *note, int tracknum)
+{
+  VECTOR_FOR_EACH(struct Notes *maybe_note, &g_scrollplaying_up_notes[tracknum]){
+    if (note==maybe_note)
+      return true;
+    
+  }END_VECTOR_FOR_EACH;
 
+  return false;
+}
+#endif
 
 static void Scroll_play_down3(
                       struct WBlocks *wblock,
@@ -67,8 +78,25 @@ static void Scroll_play_down3(
         struct Notes *note = track->notes;
         
         while(note != NULL){
+          
           if (note != dont_play_this_note){
-            if (PlaceIsBetween2(&note->l.p, p1, p2))
+            
+            if (PlaceIsBetween2(&note->l.p, p1, p2)) {
+
+              // Stop the note if it was playing. This happens if we scroll up and down on the same line.
+              // (Calling PATCH_stop_note on a non-playing note should be a dummy operation.)
+              PATCH_stop_note(patch,
+                              create_note_t(NULL,
+                                            note->id,
+                                            note->note,
+                                            0,
+                                            TRACK_get_pan(track),
+                                            ATOMIC_GET(track->midi_channel),
+                                            0,
+                                              0
+                                            )
+                              );
+                  
               PATCH_play_note(patch, 
                               create_note_t(NULL,
                                             note->id,
@@ -79,8 +107,10 @@ static void Scroll_play_down3(
                                             0,
                                             0)
                               );
+            }
 
             Place endplace = ratio2place(note->end);
+            
             if (PlaceIsBetween2(&endplace, p1, p2))
               PATCH_stop_note(patch,
                               create_note_t(NULL,
@@ -113,7 +143,7 @@ static void stop_all_notes_in_track(struct Tracks *track){
 
     if (patch!=NULL) {
             
-      VECTOR_FOR_EACH(struct Notes *note, &scrollplaying_notes[tracknum]){
+      VECTOR_FOR_EACH(struct Notes *note, &g_scrollplaying_up_notes[tracknum]){
         PATCH_stop_note(patch,create_note_t(NULL,
                                             note->id,
                                             note->note,
@@ -127,7 +157,7 @@ static void stop_all_notes_in_track(struct Tracks *track){
       
     }
 
-    VECTOR_clean(&scrollplaying_notes[tracknum]);
+    VECTOR_clean(&g_scrollplaying_up_notes[tracknum]);
   }
 }
 
@@ -171,7 +201,7 @@ static void Scroll_play_up3(
                                           0
                                           )
                             );
-            VECTOR_push_back(&scrollplaying_notes[track->l.num], note);
+            VECTOR_push_back(&g_scrollplaying_up_notes[track->l.num], note);
           }
           
           note = NextNote(note);
