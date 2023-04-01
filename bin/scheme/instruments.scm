@@ -1813,9 +1813,7 @@
      (list "Assign to current editor track"
            :shortcut assign-instrument-to-current-editor-track
            (lambda ()
-             (assign-instrument-for-track (<ra> :get-current-track)
-                                          (lambda ()
-                                            instrument-id))))
+             (assign-instrument-to-current-editor-track instrument-id)))
              
      (and include-insert-plugin
           "------------------")
