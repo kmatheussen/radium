@@ -2870,8 +2870,15 @@ static const r::RatioPeriod get_ratio_period(const struct SeqBlock *seqblock,
 {
   const struct Blocks *block = seqblock->block;
     
-  const Ratio ratio_start = STime2Place4(block, seqtime_to_blocktime(seqblock, seqtime_start-seqblock->t.time), times);  
-  const Ratio ratio_end = STime2Place4(block, seqtime_to_blocktime(seqblock, seqtime_end-seqblock->t.time), times);
+  const Ratio ratio_start = STime2Place4(block,
+                                         seqtime_to_blocktime(seqblock,
+                                                              seqtime_start - seqblock->t.time),
+                                         times);
+  
+  const Ratio ratio_end = STime2Place4(block,
+                                       seqtime_to_blocktime(seqblock,
+                                                            seqtime_end - seqblock->t.time),
+                                       times);
 
   return r::RatioPeriod(ratio_start, ratio_end);
 }
@@ -2889,6 +2896,8 @@ void RT_EDITSEQBLOCK_call_each_block(struct SeqTrack *seqtrack,
   struct Tracks *track = block->tracks;
 
   const struct STimes *block_times = get_stimes_from_swinging_mode(block, PLUGINS_AND_JACK_TRANSPORT_SWINGING_MODE);
+
+  //printf("   SEQTIME_START/END: %d / %d\n", (int)seqtime_start, (int)seqtime_end);
   
   const r::RatioPeriod block_period = get_ratio_period(seqblock,
                                                        block_times,                                                 
@@ -2960,8 +2969,47 @@ static void RT_handle_editor_seqblocks_each_block(struct SeqTrack *seqtrack){
     if (pc->playtype==PLAYBLOCK){
       //R_ASSERT(seqtrack==root->song->block_seqtrack); // hmm. sometimes fails.
       
-      if (seqtrack==root->song->block_seqtrack){
-        RT_EDITSEQBLOCK_call_each_block(seqtrack, &g_block_seqtrack_seqblock, seqtrack->start_time, seqtrack->end_time);
+      if (seqtrack==root->song->block_seqtrack) {
+
+        static const int64_t num_frames = seqtrack->end_time - seqtrack->start_time;
+
+        int64_t next_end = R_MIN(seqtrack->end_time, g_block_seqtrack_seqblock.t.time2);
+
+        RT_EDITSEQBLOCK_call_each_block(seqtrack,
+                                        &g_block_seqtrack_seqblock,
+                                        seqtrack->start_time,
+                                        next_end);
+
+        // The code below is to:
+        //
+        // 1. Ensure all notes placed in the beginning of the block are played.
+        // 2. Ensure all notes are played if the length of the block is smaller than the audio block size. (not very likely situation, but it should probably be handled properly)
+        //
+        // TODO:
+        //
+        // 1. Check seqblock->t.stretch!=1.0.
+        // 2. Check that things are played properly if the length of the block is smaller than the audio block size.
+        //
+        // This is probably not the best place to handle these things, but it'll do for now.
+        //
+        int64_t num_frames_left = num_frames - (next_end - seqtrack->start_time);
+
+        while(num_frames_left > 0) {
+
+          int64_t num_frames = seqtrack->end_time - g_block_seqtrack_seqblock.t.time2;
+
+          if (num_frames > num_frames_left)
+            num_frames = num_frames_left;
+          
+          RT_EDITSEQBLOCK_call_each_block(seqtrack,
+                                          &g_block_seqtrack_seqblock,
+                                          g_block_seqtrack_seqblock.t.time,
+                                          g_block_seqtrack_seqblock.t.time + num_frames);
+
+          num_frames_left -= num_frames;
+        }
+
+        R_ASSERT(num_frames_left == 0);
       }
       
     }else if (seqtrack!=root->song->block_seqtrack && !seqtrack->for_audiofiles) {

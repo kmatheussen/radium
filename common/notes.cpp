@@ -2796,13 +2796,17 @@ static void handle2(struct SeqTrack *seqtrack,
 
         bool note_has_started_or_ended = false;
         
-        /*
-        printf("note: %f/%f. Period: %f -> %f. Id: %d.\n",
+
+        printf("note: %f/%f. Period: %f -> %f. is_inside: %d. only_one_line: %d. other_thing: %d. Id: %d.\n",
                ratio2double(note->get_time()), ratio2double(note->d._end),
                ratio2double(period._start), ratio2double(period._end),
+               period.is_inside(note->get_time()), period_spans_only_one_line, r::RatioPeriod(line, line+1).is_inside(note->get_time()),
                (int)note->_id);
-        */
-        
+
+
+        //
+        // 1. START NOTE
+        //
         if (period.is_inside(note->get_time())
             && (period_spans_only_one_line || r::RatioPeriod(line, line+1).is_inside(note->get_time()))) { // The check for period_spans_only_one_line is just an optimization.
 
@@ -2810,9 +2814,12 @@ static void handle2(struct SeqTrack *seqtrack,
           
           int64_t time = get_seqblock_ratio_time2(seqblock, track, note->get_time());
           
-          printf("  --Starting note: %f. Line: %d. Note start: %f. Period: %s. Seqtime: %d -> %d\n",
-                 note->get_val(), line, ratio2double(note->get_time()),
+          printf("  --Starting note: %f (id: %d). Line: %d. Note start: %f. Period: %s. Time: %d. Seqtime: %d -> %d\n",
+                 note->get_val(),
+                 (int)note->_id,
+                 line, ratio2double(note->get_time()),
                  period.to_string(),
+                 (int)time,
                  (int)seqtime_start, (int)seqtime_end);
           
           RT_stop_all_hanging_notes_for_track(seqtrack, track, time);
@@ -2835,6 +2842,24 @@ static void handle2(struct SeqTrack *seqtrack,
 
         }
 
+
+        //
+        // 2. Send velocity and pitch messages.
+        // 
+        
+        // Note: 'RT_VELOCITIES_called_each_block_for_each_note2' and 'RT_PITCHES_called_each_block_for_each_note2'
+        // never sends out velocity or pitch messages before a note has started or after a note has ended.
+        // In other words: we don't have to ensure that the 'time' argument is valid for these two functions.
+        //
+        RT_VELOCITIES_called_each_block_for_each_note2(seqtrack, play_id, seqblock, track, seqtime_start, period, patch, note);
+        RT_PITCHES_called_each_block_for_each_note2(seqtrack, play_id, seqblock, track, seqtime_start, period, patch, note);
+
+
+
+        //
+        // 3. Stop note.
+        //
+        
         if (period.is_inside(note->d._end)
             && (period_spans_only_one_line || r::RatioPeriod(line, line+1).is_inside(note->d._end))) { // The check for period_spans_only_one_line is just an optimization.
 
@@ -2842,8 +2867,9 @@ static void handle2(struct SeqTrack *seqtrack,
           
           const int64_t stop_time = get_seqblock_ratio_time2(seqblock, track, note->d._end);
             
-          printf("     --Stopping note: %f. Line: %d. Note end: %f. Period: %s. Seqtime: %d -> %d\n",
+          printf("     --Stopping note: %f. Line: %d. Note end: %f. Period: %s. Stop time: %d. Seqtime: %d -> %d\n",
                  note->get_val(), line, ratio2double(note->d._end), period.to_string(),
+                 (int)stop_time,
                  (int)seqtime_start, (int)seqtime_end);
           
           note_t note2 = create_note_t3(seqblock,
@@ -2857,6 +2883,10 @@ static void handle2(struct SeqTrack *seqtrack,
           RT_PATCH_stop_note(seqtrack, patch, note2, stop_time);
         }
 
+        if(0)
+          printf("%d\n", note_has_started_or_ended);
+        
+#if 0
         if (line == line_end) {
           
           bool handle_velocities_and_pitches = !note_has_started_or_ended && period_spans_only_one_line;
@@ -2882,7 +2912,7 @@ static void handle2(struct SeqTrack *seqtrack,
             
           }
         }
-        
+#endif   
       }
   }
 }
