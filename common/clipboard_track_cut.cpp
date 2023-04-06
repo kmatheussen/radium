@@ -75,7 +75,7 @@ void CB_ClearTrack_Force(
           track->notes=NULL;
           //track->stops=NULL;
 
-          r::NoteTimeData::Writer notes_cleaner(track->_notes2, true);
+          r::NoteTimeData::Writer notes_cleaner(track->_notes2, r::KeepOldData::USE_CLEAN_DATA);
 
           if (track->swings != NULL){
             track->swings=NULL;
@@ -84,7 +84,7 @@ void CB_ClearTrack_Force(
           
         }
 
-        r::StopTimeData::Writer stops_cleaner(track->stops2, true);
+        r::StopTimeData::Writer stops_cleaner(track->stops2, r::KeepOldData::USE_CLEAN_DATA);
         
         VECTOR_FOR_EACH(struct FXs *, fxs, &track->fxs){
           (*fxs->fx->closeFX)(fxs->fx,track);

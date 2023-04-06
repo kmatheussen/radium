@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 struct Undo_NotesAndFXs : radium::GC_able{
 	struct Notes *notes;
+        r::NoteTimeData notes2;
         r::StopTimeData stops;
         vector_t fxss;
 	void *midi_instrumentdata;
@@ -65,6 +66,7 @@ static void ADD_UNDO_FUNC(
 
 	CopyRange_stops(&undo_notesandfxs->stops,track->stops2,p1,&p2);
 	CopyRange_notes(&undo_notesandfxs->notes,track->notes,p1,&p2);
+        CopyRange_notes2(&undo_notesandfxs->notes2,track->_notes2,p1,&p2);
 	CopyRange_fxs(block->num_lines, &undo_notesandfxs->fxss,&track->fxs, make_ratio(0,1), make_ratio(block->num_lines, 1));
         
 	if(track->midi_instrumentdata!=NULL){
@@ -118,16 +120,8 @@ static void *Undo_Do_NotesAndFXs(
 	undo_notesandfxs->fxss=*temp;
 	undo_notesandfxs->midi_instrumentdata=midi_instrumentdata;
 
-        {
-          r::StopTimeData stops_temp;
-          
-          stops_temp.move_from(track->stops2);
-          
-          track->stops2->move_from(&undo_notesandfxs->stops);
-           
-          undo_notesandfxs->stops.move_from(&stops_temp);
-
-        }
+        track->stops2->swap(&undo_notesandfxs->stops);
+        track->_notes2->swap(&undo_notesandfxs->notes2);
         
 	return undo_notesandfxs;
 }

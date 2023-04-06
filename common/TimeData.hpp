@@ -323,6 +323,11 @@ static inline void RT_schedule_to_delete(T *t)
 
 
 
+enum class KeepOldData {
+  KEEP_OLD_DATA,
+  USE_CLEAN_DATA
+};
+    
 
 
 /*
@@ -452,11 +457,10 @@ public:
   
 private:
 
-  
   // When finished, we must always call 'replace_vector' or delete, on the return value.
-  TimeDataVector *get_write_vector(bool get_clean){
+  TimeDataVector *get_write_vector(KeepOldData keep){
     R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
-    return new TimeDataVector(get_clean ? NULL : _vector);
+    return new TimeDataVector(keep==KeepOldData::USE_CLEAN_DATA ? NULL : _vector);
   }
 
   // Called by the writer.
@@ -1066,8 +1070,8 @@ public:
     
   public:
     
-    Writer(TimeData *time_data, bool get_clean = false)
-      : ReaderWriter<TimeData, TimeDataVector>(time_data, time_data->get_write_vector(get_clean), -1)
+    Writer(TimeData *time_data, KeepOldData keep = KeepOldData::KEEP_OLD_DATA)
+      : ReaderWriter<TimeData, TimeDataVector>(time_data, time_data->get_write_vector(keep), -1)
     {
       R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
       R_ASSERT_NON_RELEASE(!PLAYER_current_thread_has_lock());
@@ -1419,7 +1423,7 @@ public:
     }
     
     void replace_with(const TimeData<T,SeqBlockT> *from){
-      clear();
+      R_ASSERT(this->is_empty());
       
       Reader from_reader(from);
       
@@ -1428,7 +1432,7 @@ public:
     }
 
     void replace_with_and_clear_source(TimeData<T,SeqBlockT> *from){
-      clear();
+      R_ASSERT(this->is_empty());
       
       Writer from_writer(from);
       
@@ -1450,38 +1454,32 @@ public:
   }
 
   void replace_with(const TimeData<T,SeqBlockT> *from){
-    Writer to_writer(this, true);
+    Writer to_writer(this, KeepOldData::USE_CLEAN_DATA);
 
     to_writer.replace_with(from);
   }
 
   void replace_with_and_clear_source(TimeData<T,SeqBlockT> *from){
-    Writer to_writer(this, true);
+    Writer to_writer(this, KeepOldData::USE_CLEAN_DATA);
 
     to_writer.replace_with_and_clear_source(from);
   }
 
-  void swap(TimeData<T,SeqBlockT> *other){
-    radium::Vector<T> temp;
-
-    Writer this_writer(this);
-    Writer other_writer(this);
+  // This one can be optimized, but not sure if it's any point.
+  // Probably have to copy at least 10ns of thousands of non-trivial elements
+  // to notice any difference.
+  //
+  void swap(TimeData<T,SeqBlockT> *other){    
+    TimeData<T,SeqBlockT> temp;
 
     // 1. this -> temp
-    for(const T &t : this_writer)
-      temp.push_back(t);
+    temp.replace_with(this);
 
-    // 2. other -> this    
-    this_writer.clear();
-    
-    for(const T &t : other_writer)
-      this_writer.add(t);
+    // 2. other -> this
+    replace_with(other);
 
     // 3. temp -> other;
-    other_writer.clear();
-
-    for(const T &t : temp)
-      other_writer.add(t);
+    other->replace_with(&temp);
   }
 };
 

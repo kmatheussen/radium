@@ -69,7 +69,7 @@ static void CopyRange_velocities2(
 {
   const r::VelocityTimeData::Reader reader(from);
 
-  r::VelocityTimeData::Writer writer(to, true);
+  r::VelocityTimeData::Writer writer(to, r::KeepOldData::USE_CLEAN_DATA);
   
   Ratio start = place2ratio(*p1);
   Ratio end = place2ratio(*p2);
@@ -118,7 +118,7 @@ static void CopyRange_pitches2(
 {
   const r::PitchTimeData::Reader reader(from);
 
-  r::PitchTimeData::Writer writer(to, true);
+  r::PitchTimeData::Writer writer(to, r::KeepOldData::USE_CLEAN_DATA);
   
   Ratio start = place2ratio(*p1);
   Ratio end = place2ratio(*p2);
@@ -183,7 +183,7 @@ void CopyRange_notes2(
 {
   const r::NoteTimeData::Reader reader(from_notes);
 
-  r::NoteTimeData::Writer writer(to_notes, true);
+  r::NoteTimeData::Writer writer(to_notes, r::KeepOldData::USE_CLEAN_DATA);
 
   Ratio start = place2ratio(*p1);
   Ratio end = place2ratio(*p2);
@@ -225,7 +225,7 @@ void CopyRange_stops(
 
   const r::StopTimeData::Reader reader(from_stop);
 
-  r::StopTimeData::Writer writer(to_stop, true);
+  r::StopTimeData::Writer writer(to_stop, r::KeepOldData::USE_CLEAN_DATA);
 
   Ratio start = place2ratio(*p1);
   Ratio end = place2ratio(*p2);

@@ -76,7 +76,7 @@ static void PasteRange_velocities2(
   
   Ratio ratio = ratio_from_place(*place);
   
-  r::VelocityTimeData::Writer writer(to, true);
+  r::VelocityTimeData::Writer writer(to, r::KeepOldData::USE_CLEAN_DATA);
   
   for(r::Velocity velocity : reader){
     
@@ -173,7 +173,7 @@ static void PasteRange_pitches2(
   
   Ratio ratio = ratio_from_place(*place);
   
-  r::PitchTimeData::Writer writer(to, true);
+  r::PitchTimeData::Writer writer(to, r::KeepOldData::USE_CLEAN_DATA);
   
   for(r::Pitch pitch : reader){
     
