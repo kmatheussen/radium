@@ -26,6 +26,16 @@ extern LANGSPEC void CopyRange_notes(
                             const Place *p2
 );
 
+#if __cplusplus
+void CopyRange_notes2(
+                      r::NoteTimeData *to_notes,
+                      const r::NoteTimeData *from_stop,
+                      const Place *p1,
+                      const Place *p2
+                      );
+#endif
+
+
 /*
 extern LANGSPEC void CopyRange_stops(
 	struct Stops **tostop,

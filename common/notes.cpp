@@ -551,8 +551,8 @@ r::NotePtr NewNoteFromOldNote(const struct Notes *note){
 
   d._chance = note->chance;
 
-  new_note->_velocities.copy_from(note->_velocities);
-  new_note->_pitches.copy_from(note->_pitches);
+  new_note->_velocities.replace_with(note->_velocities);
+  new_note->_pitches.replace_with(note->_pitches);
   
   return new_note;
 }
@@ -1249,8 +1249,11 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
         EVENTLOG_add_event("RemoveNoteCurrPos 3");
         r::StopTimeData::Writer writer(track->stops2);
         if (writer.remove_at_time(place2ratio(tr2.p))){
-          SCOPED_PLAYER_LOCK_IF_PLAYING();
-          LengthenNotesTo(block,track,&realline->l.p);
+          //SCOPED_PLAYER_LOCK_IF_PLAYING();
+
+          r::NoteTimeData::Writer writer(track->_notes2);
+          
+          LengthenNotesTo2(block, track, writer, place2ratio(realline->l.p));
         }        
         window->must_redraw=true;
         

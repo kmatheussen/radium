@@ -25,6 +25,14 @@ extern LANGSPEC void ClearRange_notes(
                                       const Place *p2
                                       );
 
+#if __cplusplus
+void ClearRange_notes2(
+                       r::NoteTimeData *notes,
+                       const Place *p1,
+                       const Place *p2
+                       );
+#endif
+  
 extern LANGSPEC void ClearRange(
                      struct Blocks *block,
                      NInt starttrack,

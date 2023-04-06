@@ -63,8 +63,8 @@ struct WTracks *internal_copy_track(
                                     bool *only_one_fxs_was_copied
                                     )
 {
-  if (!always_copy_all_fxs)
-    R_ASSERT(only_one_fxs_was_copied!=NULL);
+	if (!always_copy_all_fxs)
+          R_ASSERT(only_one_fxs_was_copied!=NULL);
   
 	struct WTracks *towtrack;
 	struct Tracks *totrack;
@@ -76,7 +76,13 @@ struct WTracks *internal_copy_track(
 	towtrack->track = totrack = TRACK_create(track->l.num);
         {
           auto *stops = totrack->stops2;
+          auto *notes = totrack->_notes2;
+          auto *gfx_notes = totrack->_gfx_notes2;
+          
           memcpy(totrack,track,sizeof(struct Tracks));
+          
+          totrack->_gfx_notes2 = gfx_notes;
+          totrack->_notes2 = notes;
           totrack->stops2 = stops;
         }
         
@@ -96,9 +102,10 @@ struct WTracks *internal_copy_track(
         if (always_copy_all_fxs || subsubtrack==-1) {
           
           CopyRange_notes(&totrack->notes,track->notes,p1,&p2);
+          CopyRange_notes2(totrack->_notes2,track->_notes2,p1,&p2);
           CopyRange_stops(totrack->stops2,track->stops2,p1,&p2);
           totrack->swings = CB_CopySwings(track->swings, &p2);
-          CopyRange_fxs(wblock->block->num_lines, &totrack->fxs,&track->fxs, make_ratio(0,1), make_ratio(wblock->block->num_lines, 1));
+          CopyRange_fxs(wblock->block->num_lines, &totrack->fxs, &track->fxs, make_ratio(0,1), make_ratio(wblock->block->num_lines, 1));
           
           if (only_one_fxs_was_copied != NULL)
             *only_one_fxs_was_copied = false;
@@ -107,8 +114,10 @@ struct WTracks *internal_copy_track(
           
           vector_t fxss = {};
           VECTOR_push_back(&fxss, fxs);
-          CopyRange_fxs(wblock->block->num_lines, &totrack->fxs,&fxss, make_ratio(0,1), make_ratio(wblock->block->num_lines, 1));
-          *only_one_fxs_was_copied = true;
+
+          CopyRange_fxs(wblock->block->num_lines, &totrack->fxs, &fxss, make_ratio(0,1), make_ratio(wblock->block->num_lines, 1));          
+          if (only_one_fxs_was_copied != NULL)
+            *only_one_fxs_was_copied = true;
           
         }
         

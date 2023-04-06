@@ -240,6 +240,7 @@ static bool paste_track(
 	PlaceSetLastPos(wblock->block,&p2);
 
 	CopyRange_notes(&totrack->notes,track->notes,p1,&p2);
+        CopyRange_notes2(totrack->_notes2,track->_notes2,p1,&p2);
         
 	CopyRange_stops(totrack->stops2,track->stops2,p1,&p2);
         

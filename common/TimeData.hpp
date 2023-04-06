@@ -694,6 +694,10 @@ private:
       return _vector->size();
     }
 
+    bool is_empty(void) const {
+      return _vector->is_empty();
+    }
+
     bool contains(const T &element) {
       for(int i=0;i<this->size();i++)
         if (at_ref(i) == element)
@@ -1317,6 +1321,22 @@ public:
       }
     }
 
+    // 'end' is not including.
+    void remove_between(const Ratio start, const Ratio end) {
+      for(int i = this->size()-1 ; i >= 0 ; i--){
+        
+        T &t = this->at_ref(i);
+
+        const Ratio time = t.get_time();
+
+        if (time < start)
+          return;
+        
+        if (time < end)
+          remove_at_pos(i);
+      }
+    }
+
     // equiv. to List_InsertRatioLen3.
     bool insert_ratio(const Ratio &where_to_start, const Ratio &how_much, const Ratio last_legal_place = make_ratio(-1,1)){
       
@@ -1398,6 +1418,26 @@ public:
       }
     }
     
+    void replace_with(const TimeData<T,SeqBlockT> *from){
+      clear();
+      
+      Reader from_reader(from);
+      
+      for(const T &t : from_reader)
+        add(t);
+    }
+
+    void replace_with_and_clear_source(TimeData<T,SeqBlockT> *from){
+      clear();
+      
+      Writer from_writer(from);
+      
+      for(const T &t : from_writer)
+        add(t);
+
+      from_writer.clear();
+    }
+    
     void cancel(void){
       R_ASSERT_NON_RELEASE(_has_cancelled==false);
       
@@ -1409,22 +1449,39 @@ public:
   virtual void writer_finalizer(TimeData<T,SeqBlockT>::Writer &writer) {
   }
 
-  void copy_from(const TimeData<T,SeqBlockT> *from){
+  void replace_with(const TimeData<T,SeqBlockT> *from){
     Writer to_writer(this, true);
-    Reader from_reader(from);
 
-    for(const T &t : from_reader)
-      to_writer.add(t);
+    to_writer.replace_with(from);
   }
-  
-  void move_from(TimeData<T,SeqBlockT> *from){
+
+  void replace_with_and_clear_source(TimeData<T,SeqBlockT> *from){
     Writer to_writer(this, true);
-    Writer from_writer(from);
 
-    for(T &t : from_writer)
-      to_writer.add(t);
+    to_writer.replace_with_and_clear_source(from);
+  }
 
-    from_writer.clear();
+  void swap(TimeData<T,SeqBlockT> *other){
+    radium::Vector<T> temp;
+
+    Writer this_writer(this);
+    Writer other_writer(this);
+
+    // 1. this -> temp
+    for(const T &t : this_writer)
+      temp.push_back(t);
+
+    // 2. other -> this    
+    this_writer.clear();
+    
+    for(const T &t : other_writer)
+      this_writer.add(t);
+
+    // 3. temp -> other;
+    other_writer.clear();
+
+    for(const T &t : temp)
+      other_writer.add(t);
   }
 };
 

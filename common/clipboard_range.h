@@ -30,8 +30,10 @@ struct RangeClip{
 	struct Notes **notes;
 #ifdef __cplusplus
         r::StopTimeData **stops;
+        r::NoteTimeData **notes2;
 #else
         void **stops;
+        void **notes2;
 #endif
 
   //struct Stops **stops;

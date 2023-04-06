@@ -69,18 +69,22 @@ void CB_ClearTrack_Force(
 
         swings_have_changed = false;
   
-        if (track->notes != NULL || track->swings!=NULL){
+        if (!r::NoteTimeData::Reader(track->_notes2).is_empty() || track->notes != NULL || track->swings!=NULL) {
+          
           pause_player.need_it();
           track->notes=NULL;
           //track->stops=NULL;
+
+          r::NoteTimeData::Writer notes_cleaner(track->_notes2, true);
 
           if (track->swings != NULL){
             track->swings=NULL;
             swings_have_changed = true;
           }
+          
         }
 
-        r::StopTimeData::Writer writer(track->stops2, true);
+        r::StopTimeData::Writer stops_cleaner(track->stops2, true);
         
         VECTOR_FOR_EACH(struct FXs *, fxs, &track->fxs){
           (*fxs->fx->closeFX)(fxs->fx,track);

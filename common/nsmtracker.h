@@ -2405,8 +2405,8 @@ struct Note : NodeId, public r::TimeDataDataTypeRef<float> {
     // TOPIC: Should we use shared_ptr for _velocities and _pitches instead of copying the content of them?
     // (I guess copying doesn't take up that much time, so it's probably not worth the complication)
     if (copy_velocities_and_pitches){
-      _velocities.copy_from(&other->_velocities);
-      _pitches.copy_from(&other->_pitches);
+      _velocities.replace_with(&other->_velocities);
+      _pitches.replace_with(&other->_pitches);
     }
   }
       

@@ -33,8 +33,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 namespace{
   
 struct Undo_Notes : radium::GC_able{
-	struct Notes *notes;
-        r::StopTimeData stops;
+  struct Notes *notes;
+  r::StopTimeData stops;
+  r::NoteTimeData notes2;
 };
  
 }
@@ -72,6 +73,7 @@ void ADD_UNDO_FUNC(
 
 	CopyRange_stops(&undo_notes->stops,track->stops2,p1,&p2);
 	CopyRange_notes(&undo_notes->notes,track->notes,p1,&p2);
+	CopyRange_notes2(&undo_notes->notes2,track->_notes2,p1,&p2);
 
 	Undo_Add_dont_stop_playing(
                  window->l.num,
@@ -118,17 +120,10 @@ static void *Undo_Do_Notes(
           
           undo_notes->notes=ntemp;
         }
-        
-        {
-          r::StopTimeData stops_temp;
-          
-          stops_temp.move_from(track->stops2);
-          
-          track->stops2->move_from(&undo_notes->stops);
-           
-          undo_notes->stops.move_from(&stops_temp);
-        }
-        
+
+        track->stops2->swap(&undo_notes->stops);
+        track->_notes2->swap(&undo_notes->notes2);
+                
 	return undo_notes;
 }
 

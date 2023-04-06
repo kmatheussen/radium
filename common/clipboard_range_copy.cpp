@@ -174,6 +174,45 @@ void CopyRange_notes(
   }
 }
 
+void CopyRange_notes2(
+                      r::NoteTimeData *to_notes,
+                      const r::NoteTimeData *from_notes,
+                      const Place *p1,
+                      const Place *p2
+                      )
+{
+  const r::NoteTimeData::Reader reader(from_notes);
+
+  r::NoteTimeData::Writer writer(to_notes, true);
+
+  Ratio start = place2ratio(*p1);
+  Ratio end = place2ratio(*p2);
+
+  R_ASSERT_NON_RELEASE(end>=start);
+
+  for(r::NotePtr note : reader){
+    
+    Ratio time = note->get_time();
+    
+    if (time >= start) {      
+      if (time >= end)
+        break;
+      
+      time -= start;
+
+      r::Note *new_note = new r::Note(note.get(), false);
+
+      new_note->set_time(time);
+      
+      CopyRange_velocities2(&new_note->_velocities,&note->_velocities,p1,p2);
+      CopyRange_pitches2(&new_note->_pitches,&note->_pitches,p1,p2);
+
+      writer.add(new_note);
+      
+    }
+  }
+}
+
 
 void CopyRange_stops(
                      r::StopTimeData *to_stop,
@@ -434,8 +473,10 @@ void CopyRange(
         
 	//struct RangeClip *range_clip=(struct RangeClip *)talloc(sizeof(struct RangeClip));
         struct RangeClip *range_clip=talloc_with_finalizer<struct RangeClip>([](struct RangeClip *range_clip){
-          for(int i=0;i<range_clip->num_tracks;i++)
+          for(int i=0;i<range_clip->num_tracks;i++) {
             delete range_clip->stops[i];
+            delete range_clip->notes2[i];
+          }
         });
 
         range_clip->rangenum = rangenum;
@@ -445,6 +486,7 @@ void CopyRange(
 	range_clip->num_tracks = num_tracks = range.x2-range.x1+1;
 
 	range_clip->notes=(struct Notes **)talloc((int)sizeof(struct Notes *)*num_tracks);
+        range_clip->notes2=(r::NoteTimeData**)talloc((int)sizeof(r::NoteTimeData *)*num_tracks);
         range_clip->stops=(r::StopTimeData**)talloc((int)sizeof(r::StopTimeData *)*num_tracks);
 
 	//range_clip->instruments=talloc((size_t)(sizeof(struct Instruments *)*num_tracks));
@@ -459,6 +501,9 @@ void CopyRange(
           //range_clip->instruments[lokke]=track->instrument;
           CopyRange_notes(&range_clip->notes[lokke], track->notes, &range.y1, &range.y2);
           
+          range_clip->notes2[lokke] = new r::NoteTimeData;
+          CopyRange_notes2(range_clip->notes2[lokke], track->_notes2, &range.y1, &range.y2);
+
           range_clip->stops[lokke] = new r::StopTimeData;
           CopyRange_stops(range_clip->stops[lokke], track->stops2, &range.y1, &range.y2);
 

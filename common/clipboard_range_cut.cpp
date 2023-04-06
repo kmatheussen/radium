@@ -58,6 +58,19 @@ void ClearRange_notes(
 }
 
 
+void ClearRange_notes2(
+                       r::NoteTimeData *notes,
+                       const Place *p1,
+                       const Place *p2
+                       )
+{
+  Ratio start = place2ratio(*p1);
+  Ratio end = place2ratio(*p2);
+  
+  r::NoteTimeData::Writer(notes).remove_between(start, end);
+}
+
+
 static void ClearRange_stops(
                              r::StopTimeData *stops,
                              const Place *p1,
@@ -122,6 +135,7 @@ void ClearRange(
 
           for(lokke=0;lokke<=endtrack-starttrack;lokke++){
             ClearRange_notes(&track->notes,track->notes,p1,p2);
+            ClearRange_notes2(track->_notes2,p1,p2);
             ClearRange_stops(track->stops2,p1,p2);
             track=NextTrack(track);
             if(track==NULL) break;
