@@ -1446,7 +1446,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 static void play_note(struct SoundPlugin *plugin, int time, note_t note2){
   Data *data = (Data*)plugin->data;
 
-  //printf("  Sampler_plugin.cpp: Request to play note %f. Id: %d\n", note2.pitch, (int)note2.id);
+  //printf("  Sampler_plugin.cpp: Request to play note %f. Id: %d. Vel: %f\n", note2.pitch, (int)note2.id, note2.velocity);
   //printf("  Sampler_plugin.cpp: Request to play note %d at %d\n", (int)note2.id, time);
 
   R_ASSERT_NON_RELEASE(time>=0);

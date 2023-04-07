@@ -1339,14 +1339,23 @@ dyn_t MoveNote(struct Blocks *block, struct Tracks *track, struct Notes *note, P
     //printf("MoveNote. old: %f, new: %f\n", GetfloatFromPlace(&old_place), GetfloatFromPlace(place));
          
     if (PlaceLessThan(place, &old_place)) {
-      const Place prev_legal = getPrevLegalNotePlace(track, note);
-      //printf("prev_legal: %f\n",GetfloatFromPlace(prev_legal));
+      
+      Place prev_legal;
+      
+      if (shiftPressed())
+        prev_legal = p_Create(0,0,1);
+      else
+        prev_legal = getPrevLegalNotePlace(track, note);
+      
       if (PlaceLessOrEqual(place, &prev_legal))
         PlaceFromLimit(place, &prev_legal);
+      
     } else {
+      
       const Place next_legal = getNextLegalNotePlace(note);
       if (PlaceGreaterOrEqual(place, &next_legal))
         PlaceTilLimit(place, &next_legal);
+      
     }
     
     {

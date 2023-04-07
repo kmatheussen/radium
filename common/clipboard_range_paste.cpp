@@ -79,6 +79,8 @@ static void PasteRange_velocities2(
   r::VelocityTimeData::Writer writer(to, r::KeepOldData::USE_CLEAN_DATA);
   
   for(r::Velocity velocity : reader){
+
+    velocity.gen_new_id();
     
     velocity._time += ratio;
     
@@ -176,6 +178,8 @@ static void PasteRange_pitches2(
   r::PitchTimeData::Writer writer(to, r::KeepOldData::USE_CLEAN_DATA);
   
   for(r::Pitch pitch : reader){
+
+    pitch.gen_new_id();
     
     pitch._time += ratio;
     
@@ -225,6 +229,44 @@ static void PasteRange_notes(
 }
 
 
+static void PasteRange_notes2(
+	struct Blocks *block,
+        r::NoteTimeData *to_notes,
+        const r::NoteTimeData *from_notes,
+	//struct Tracks *track,
+	//struct Stops *fromstop,
+	const Place *place
+){
+
+        Ratio lastplace = place2ratio(p_Last_Pos(block));
+
+        r::NoteTimeData::Reader reader(from_notes);
+
+        r::NoteTimeData::Writer writer(to_notes);
+
+        Ratio how_much = place2ratio(*place);
+
+        for(r::NotePtr note : reader) {
+    
+          Ratio time = note->get_time();
+
+          time += how_much;
+
+          if (time >= lastplace)
+            break;
+
+          r::Note *new_note = new r::Note(note.get(), false);
+
+          new_note->set_time(time);
+
+          PasteRange_velocities2(block,&new_note->_velocities,&note->_velocities,place);
+          //PasteRange_pitches(block,&note->pitches,fromnote->pitches,place);
+          PasteRange_pitches2(block,&new_note->_pitches,&note->_pitches,place);
+
+          writer.add(new_note);
+        }
+}
+
 static void PasteRange_stops(
 	struct Blocks *block,
         r::StopTimeData *to_stop,
@@ -244,6 +286,7 @@ static void PasteRange_stops(
         Ratio how_much = place2ratio(*place);
         
         for(r::Stop stop : reader){
+
           stop._time += how_much;
           
           if (stop._time >= lastplace)
@@ -280,6 +323,9 @@ void PasteRange(
               StopAllNotesAtPlace(block,track,place);
 
             PasteRange_notes(block,track,range_clip->notes[lokke],place);
+
+            if (range_clip->notes2[lokke] != NULL)
+              PasteRange_notes2(block,track->_notes2,range_clip->notes2[lokke],place);
 
             if (range_clip->stops[lokke] != NULL)
               PasteRange_stops(block,track->stops2,(const r::StopTimeData *)range_clip->stops[lokke],place);

@@ -2180,6 +2180,17 @@ namespace r{
       R_ASSERT_NON_RELEASE(THREADING_is_main_thread()); // because of g_node_id. If needed, we can make g_node_id atomic.
     }
 
+    // We could have changed the code so that it wouldn't be necessary to call 'gen_new_id' (for instance by almost always
+    // setting a unique id for the node in TimeData::Writer::add. However, we don't need to call this function very often, it's just
+    // for the clipboard and perhaps a few other places, so it's probably best to do it manually.
+    NodeId &gen_new_id(void)
+    {
+      R_ASSERT_NON_RELEASE(THREADING_is_main_thread()); // because of g_node_id. If needed, we can make g_node_id atomic.
+      _id = g_node_id++;
+
+      return *this;
+    }
+    
     /*
     void operator delete(void * p) {
       NodeId *node = static_cast<NodeId*>(p);

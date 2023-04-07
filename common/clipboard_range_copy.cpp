@@ -80,7 +80,11 @@ static void CopyRange_velocities2(
     if (velocity._time >= start) {
       if (velocity._time >= end)
         break;
+
+      velocity.gen_new_id();
+      
       velocity._time -= start;
+
       writer.add(velocity);
     }
   }
@@ -129,6 +133,9 @@ static void CopyRange_pitches2(
     if (pitch._time >= start) {
       if (pitch._time >= end)
         break;
+
+      pitch.gen_new_id();
+      
       pitch._time -= start;
       writer.add(pitch);
     }
@@ -236,6 +243,7 @@ void CopyRange_stops(
     if (stop._time >= start) {
       if (stop._time >= end)
         break;
+
       stop._time -= start;
       writer.add(stop);
     }
@@ -279,6 +287,8 @@ static void add_fxnodeline2(r::FXTimeData::Writer &writer,
                             r::FXNode node,
                             const Ratio &subtract)
 {
+  node.gen_new_id();
+  
   node._time = node._time - subtract;
   writer.add(node);
 }
@@ -313,6 +323,7 @@ static void add_scaled_fxnodeline2(const struct FX &fx,
                                    )
 {
   r::FXNode node = node1;
+
   node._time = time;
   
   R_ASSERT(time >= node1._time);
