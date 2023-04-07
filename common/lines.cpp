@@ -198,12 +198,16 @@ static void InsertLines2(
           TIME_block_num_lines_have_changed(block);
 
           while(track!=NULL){
+            
             if(track->notes!=NULL) // need check to avoid ubsan/asan hit
               List_InsertLines3(&track->notes,&track->notes->l,line,toinsert,InsertLines_notes);
+            
             LegalizeNotes(block,track);
 
             const Ratio rlines = make_ratio(line, 1);
             const Ratio rtoinsert = make_ratio(toinsert, 1);
+
+            r::NoteTimeData::Writer(track->_notes2).insert_lines(rlines, rtoinsert);
             
             r::StopTimeData::Writer(track->stops2).insert_lines(rlines, rtoinsert);
             
@@ -320,6 +324,9 @@ static bool last_line_contains_something(struct WBlocks *wblock){
       note = NextNote(note);
     }
 
+    if (r::NoteTimeData::Reader(track->_notes2).has_element_between(rlast_line, rnum_lines))
+      return true;
+    
     if (r::StopTimeData::Reader(track->stops2).has_element_between(rlast_line, rnum_lines))
       return true;
     
