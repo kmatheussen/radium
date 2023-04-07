@@ -97,6 +97,24 @@ static bool InsertRatio_notes(
                               Ratio toratio
                               )
 {
+  bool ret;
+
+  {
+    r::NoteTimeData::Writer writer(track->_notes2);
+
+    ret = writer.insert_ratio(ratio, toratio, make_ratio(block->num_lines, 1));
+
+    if (ret)
+      for(r::NotePtr note : writer) {
+        
+        if (r::VelocityTimeData::Writer(&note->_velocities).insert_ratio(ratio, toratio, make_ratio(block->num_lines, 1)))
+          ret = true;
+        
+        if (r::PitchTimeData::Writer(&note->_pitches).insert_ratio(ratio, toratio, make_ratio(block->num_lines, 1)))
+          ret = true;      
+      }
+  }
+
   if (List_InsertRatioLen3(
                            block,
                            &track->notes,
@@ -107,10 +125,10 @@ static bool InsertRatio_notes(
                            ))
     {
       LegalizeNotes(block,track);
-      return true;
+      ret = true;
     }
 
-  return false;
+  return ret;
 }
 
 static bool InsertRatio_fxs(
