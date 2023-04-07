@@ -26,7 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "glissando_proc.h"
 
-
+#if 0
 static void Glissando(
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
@@ -91,15 +91,86 @@ static void Glissando(
 	}
 
 }
+#endif
+
+static void Glissando2(
+	struct WBlocks *wblock,
+	struct WTracks *wtrack,
+	const r::NotePtr &note1,
+        const r::NotePtr &note2
+){
+	const int pitch1 = note1->get_val();
+	const int pitch2 = note2->get_val();
+  
+	const int notediff = R_ABS(pitch2 - pitch1);
+        
+	if(notediff==0 || notediff==1)
+          return;
+
+        const Ratio f1 = note1->get_time();
+        const Ratio f2 = note2->get_time();
+        
+        const bool up = pitch2 > pitch1;
+
+	for(int notenote = pitch1;;){
+
+          if (up)
+            notenote++;
+          else
+            notenote--;
+          
+          if (up){
+            if (notenote>=pitch2)
+              break;
+          } else {
+            if (notenote<=pitch2)
+              break;
+          }
+
+          Ratio f = scale_ratio(make_ratio(notenote, 1),
+                                make_ratio(pitch1, 1), make_ratio(pitch2, 1),
+                                f1, f2);
+          /*                          
+          Ratio f = f1 + (
+                          make_ratio(R_ABS(pitch1 - notenote), 1) * (f2-f1)
+                          /
+                          make_ratio(notediff, 1)
+                          );
+          */
+          if (f < 0)
+            f=make_ratio(0,1);
+          
+          if (f >= wblock->block->num_lines)
+            break;
+
+          const double velocity = scale_double(ratio2double(f),
+                                               ratio2double(f1), ratio2double(f2),
+                                               note1->d._velocity, note2->d._velocity);
+          
+          Place p = ratio2place(f);
+
+          InsertNote(
+                     wblock,
+                     wtrack,
+                     &p,NULL,
+                     notenote,
+                     (int)velocity,
+                     false
+                     );
+          
+	}
+
+}
 
 void Glissando_CurrPos(struct Tracker_Windows *window){
 	struct WBlocks *wblock=window->wblock;
 	struct WTracks *wtrack=wblock->wtrack;
-	struct Notes *note=wtrack->track->notes;
-	struct Notes *nextnote;
         int realline = wblock->curr_realline;
 	const Place *p=&wblock->reallines[realline]->l.p;
 
+#if 0
+	struct Notes *note=wtrack->track->notes;
+	struct Notes *nextnote;
         while(note!=NULL){
           nextnote=NextNote(note);
           if(nextnote==NULL) return;
@@ -115,11 +186,27 @@ void Glissando_CurrPos(struct Tracker_Windows *window){
                                                           wtrack->l.num
                                                           );
             */
-            return;
+            break;
           }
           note=nextnote;
         }
+#endif
+        
+        const Ratio ratio = ratio_from_place(*p);
+        
+        r::NoteTimeData::Reader reader(wtrack->track->_notes2);
 
+        for(int i = 0 ; i < reader.size()-1 ; i++) {
+
+          const r::NotePtr &note1 = reader.at_ref(i);
+          const r::NotePtr &note2 = reader.at_ref(i+1);
+
+          if (ratio >= note1->get_time() && ratio < note2->get_time()) {
+            ADD_UNDO(Notes(window, wblock->block, wtrack->track, realline));
+            Glissando2(wblock, wtrack, note1, note2);
+            break;
+          }
+        }
 }
 
 

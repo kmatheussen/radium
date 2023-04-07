@@ -1883,8 +1883,8 @@ $(T)block_split.o:  $(BUILD_DEPENDENCIES)  $(CD)block_split.c
 $(T)undo_block_mergesplit.o:  $(BUILD_DEPENDENCIES)  $(CD)undo_block_mergesplit.c
 	$(CC2)  $(CD)undo_block_mergesplit.c $(OPT)
 
-$(T)glissando.o:  $(BUILD_DEPENDENCIES)  $(CD)new/glissando.c
-	$(CC2)  $(CD)new/glissando.c $(OPT)
+$(T)glissando.o:  $(BUILD_DEPENDENCIES)  $(CD)new/glissando.cpp
+	$(CCC2)  $(CD)new/glissando.cpp $(CPPOPT)
 
 $(T)pitchexpand.o:  $(BUILD_DEPENDENCIES)  $(CD)new/pitchexpand.cpp
 	$(CCC2)  $(CD)new/pitchexpand.cpp $(CPPOPT)
