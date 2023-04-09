@@ -64,7 +64,9 @@ class SampleReaderCallback : public GranResamplerCallback{
 ////////////////////////
 
 #define GRANRESAMPLER_BUFFER_SIZE 64
- 
+
+extern float *g_empty_granresampler_block;
+  
 class GranResampler : public GranResamplerCallback{
 
 protected:
@@ -81,14 +83,16 @@ private:
 protected:
   
   float *call_callback(const int ch, int &num_frames) {
+
+    R_ASSERT_NON_RELEASE(radium::g_empty_granresampler_block != NULL);
+
     if (_callback==NULL){
       
       R_ASSERT(false);
       
-      static float temp[64] = {};
       num_frames = 64;
-      
-      return temp;
+
+      return radium::g_empty_granresampler_block;
       
     } else {
       

@@ -565,7 +565,7 @@ extern "C"{
       
       if (plugin == NULL){
         
-        static float nullfloats[2] = {0.0f, 0.0f};
+        static float nullfloats[2] = {0.0f, 0.0f}; // [NO_STATIC_ARRAY_WARNING]
         SLIDERPAINTER_set_peak_value_pointers(system_volume_slider->_painter, 2, nullfloats, true);
         
       } else {
