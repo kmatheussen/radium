@@ -120,9 +120,14 @@ static inline Ratio RATIO_div(const Ratio r1, const Ratio r2){
     R_ASSERT(false);
     return r1;
   }
-  
-  Ratio r2_2 = {r2.den, r2.num};
-  return RATIO_mul(r1, r2_2);
+
+  if (r2.num < 0) {
+    Ratio r2_inverted{-r2.den, -r2.num};
+    return RATIO_mul(r1, r2_inverted);
+  } else {
+    Ratio r2_inverted{r2.den, r2.num};
+    return RATIO_mul(r1, r2_inverted);
+  }
 }
 
 static inline Ratio RATIO_add(const Ratio r1, const Ratio r2){
@@ -389,7 +394,7 @@ static inline Ratio scale_ratio(const Ratio &x, const Ratio &x1, const Ratio &x2
   if (diff.num<=0)
     abort();
 #else
-  R_ASSERT_RETURN_IF_FALSE2(diff.num>0, y1);
+  R_ASSERT_RETURN_IF_FALSE2(diff.num!=0, y1);
 #endif
   
   return y1 + ( ((x-x1)*(y2-y1))
@@ -451,6 +456,8 @@ static inline char *ratio_to_string(const Ratio ratio){
 
 
 #ifdef TEST_MAIN                
+
+#include <assert.h>
 
 /*
 ln -sf ratio_funcs.h test_ratio.cpp
@@ -577,6 +584,23 @@ int main(){
       abort();
   }
 
+  // Test negative num and den combinations
+  {
+    Ratio a = make_ratio(2,1);
+    Ratio b = make_ratio(-2,1);
+    //Ratio c = make_ratio(2,-1);
+    //Ratio d = make_ratio(-2,-1);
+
+    assert(a > b);
+    //assert(a > c);
+    //assert(a == c);
+
+    //assert(b == c);
+    //assert(b > d);
+
+    //assert (c > d);
+  }
+  
   printf("Success\n");
   
   return 0;
