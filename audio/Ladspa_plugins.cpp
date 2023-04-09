@@ -1729,11 +1729,26 @@ void create_ladspa_plugins(void){
       
       list = dir.entryList();
     }
-    
-    for (QString filename : list)
-      if(filename.endsWith(LIB_SUFFIX))
-        add_ladspa_plugin_type(dirname + QDir::separator() + filename);
 
+    int i = 0;
+    const int size = list.size();
+    
+    for (QString filename : list) {
+
+      i++;
+
+      const QString fullpath = dirname + QDir::separator() + filename;
+            
+      if(filename.endsWith(LIB_SUFFIX)) {
+        GFX_ShowProgressMessage(QString("Adding LADSPA plugin %1 / %2: \"%3\".").arg(i).arg(size).arg(fullpath).toUtf8().constData(), true);
+
+        //msleep(300);
+
+        add_ladspa_plugin_type(fullpath);
+      }
+      
+    }
+    
 #else
 
     // no sorting

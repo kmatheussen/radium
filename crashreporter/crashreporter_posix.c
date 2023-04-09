@@ -160,8 +160,11 @@ static void crash(int sig, siginfo_t *siginfo, void *secret) {
   CRASHREPORTER_close();
 
 #if defined(FOR_LINUX)
-  
+   
   _Exit(1); // We don't get system crashlog on OSX when doing this.
+
+  if (0)
+    msleep(num_crash_reports); // fix compilation error, clang 15
 
 #else
   

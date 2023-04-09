@@ -2207,11 +2207,15 @@ static bool fill_in_time_position2(time_position_t *time_position){
   //int playlistpos;
   //int playlistpos_numfromcurrent = 0;
 
+#if 0
   int num_tries = 0;
+#endif
   
   int generation;
   do{
+#if 0
     num_tries++;
+#endif
     generation = audioblock_variables_protector.read_start();
     
     audioblock_cycle_start_time2 = ATOMIC_GET(audioblock_cycle_start_time);
