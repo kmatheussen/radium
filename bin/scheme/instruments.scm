@@ -1522,6 +1522,13 @@
         (<ra> :connect-audio-instrument-to-main-pipe instrument-id))))
 
 
+;; Note: Used for shortcut
+(delafina (assign-instrument-to-current-editor-track :instrument-id (<ra> :get-current-instrument-under-mouse))
+  (assign-instrument-for-track (<ra> :get-current-track)
+                               (lambda ()
+                                 instrument-id)))
+
+
 (define (get-sample-player-mixer-popup-menu-entries instruments)
   (if (not (any? (lambda (id)
                    (string=? "Sample Player" (<ra> :get-instrument-type-name id)))
@@ -1684,6 +1691,30 @@
                                  (create-send-func 0 '())))))
 
 
+(delafina (assign-instrument-for-track :tracknum
+                                       :get-instrument
+                                       :instruments-before (get-all-audio-instruments))
+  
+  (define (num-new-instruments)
+    (- (length (get-all-audio-instruments))
+       (length instruments-before)))
+  
+  (define (is-new-instrument? id-instrument)
+    (and (not (member id-instrument instruments-before))
+         (member id-instrument (get-all-audio-instruments))))
+  
+  (undo-block
+   (lambda ()
+     (define id-instrument (get-instrument))
+     (when (and (instrument? id-instrument)
+                (<ra> :is-legal-instrument id-instrument))
+       (<ra> :set-instrument-for-track id-instrument tracknum)
+       (when (and (is-new-instrument? id-instrument)
+                  (= 1 (num-new-instruments)))
+         (<ra> :autoposition-instrument id-instrument)
+         (<ra> :connect-audio-instrument-to-main-pipe id-instrument))))))
+
+
 ;; Note: used for shortcut
 (delafina (switch-force-as-current-instrument :instrument-id (<ra> :get-current-instrument-under-mouse))
   (define is-forced (and (<ra> :is-current-instrument-locked)
@@ -1779,6 +1810,11 @@
 
      (get-forced-as-current-instrument-menu-entry instrument-id)     
                          
+     (list "Assign to current editor track"
+           :shortcut assign-instrument-to-current-editor-track
+           (lambda ()
+             (assign-instrument-to-current-editor-track instrument-id)))
+             
      (and include-insert-plugin
           "------------------")
      (and include-insert-plugin
@@ -2582,29 +2618,6 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
               (if move-current-under-mouse
                   (<ra> :set-current-instrument-under-mouse res)))))
 
-
-(delafina (assign-instrument-for-track :tracknum
-                                       :get-instrument
-                                       :instruments-before (get-all-audio-instruments))
-  
-  (define (num-new-instruments)
-    (- (length (get-all-audio-instruments))
-       (length instruments-before)))
-  
-  (define (is-new-instrument? id-instrument)
-    (and (not (member id-instrument instruments-before))
-         (member id-instrument (get-all-audio-instruments))))
-  
-  (undo-block
-   (lambda ()
-     (define id-instrument (get-instrument))
-     (when (and (instrument? id-instrument)
-                (<ra> :is-legal-instrument id-instrument))
-       (<ra> :set-instrument-for-track id-instrument tracknum)
-       (when (and (is-new-instrument? id-instrument)
-                  (= 1 (num-new-instruments)))
-         (<ra> :autoposition-instrument id-instrument)
-         (<ra> :connect-audio-instrument-to-main-pipe id-instrument))))))
 
 ;; Note: Used for shortcut
 (delafina (assign-sampler-for-track :tracknum -1)
