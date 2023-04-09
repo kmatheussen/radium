@@ -94,11 +94,12 @@ static void Glissando(
 #endif
 
 static void Glissando2(
-	struct WBlocks *wblock,
-	struct WTracks *wtrack,
-	const r::NotePtr &note1,
-        const r::NotePtr &note2
-){
+                       struct WBlocks *wblock,
+                       struct WTracks *wtrack,
+                       const r::NotePtr &note1,
+                       const r::NotePtr &note2
+                       )
+{
 	const int pitch1 = note1->get_val();
 	const int pitch2 = note2->get_val();
   
@@ -112,42 +113,41 @@ static void Glissando2(
         
         const bool up = pitch2 > pitch1;
 
-	for(int notenote = pitch1;;){
+        const int inc = up ? 1 : -1;
+        
+	for(int notenote = pitch1 + inc ; notenote != pitch2; notenote += inc){
 
-          if (up)
-            notenote++;
-          else
-            notenote--;
-          
           if (up){
-            if (notenote>=pitch2)
+            if (notenote > pitch2) {
+              R_ASSERT(false);
               break;
+            }
           } else {
-            if (notenote<=pitch2)
+            if (notenote < pitch2) {
+              R_ASSERT(false);
               break;
+            }
           }
 
-          Ratio f = scale_ratio(make_ratio(notenote, 1),
-                                make_ratio(pitch1, 1), make_ratio(pitch2, 1),
-                                f1, f2);
-          /*                          
-          Ratio f = f1 + (
-                          make_ratio(R_ABS(pitch1 - notenote), 1) * (f2-f1)
-                          /
-                          make_ratio(notediff, 1)
-                          );
-          */
-          if (f < 0)
-            f=make_ratio(0,1);
+          const Ratio f = scale_ratio(make_ratio(notenote, 1),
+                                      make_ratio(pitch1, 1), make_ratio(pitch2, 1),
+                                      f1, f2);
           
-          if (f >= wblock->block->num_lines)
+          if (f < 0) {
+            R_ASSERT(false);
+            continue;
+          }
+          
+          if (f >= wblock->block->num_lines) {
+            R_ASSERT(false);            
             break;
+          }
 
           const double velocity = scale_double(ratio2double(f),
                                                ratio2double(f1), ratio2double(f2),
                                                note1->d._velocity, note2->d._velocity);
           
-          Place p = ratio2place(f);
+          const Place p = ratio2place(f);
 
           InsertNote(
                      wblock,
