@@ -4324,6 +4324,10 @@ static void init_plugin_type(void){
  plugin_type.data                     = NULL;
 };
 
+namespace radium {
+float *g_empty_granresampler_block = NULL;
+}
+
 static SoundPluginType click_type;
 
 void create_sample_plugin(bool is_click){
@@ -4332,6 +4336,8 @@ void create_sample_plugin(bool is_click){
 
   if (has_inited==false) {
 
+    radium::g_empty_granresampler_block = (float*)calloc(sizeof(float), 64);
+    
     init_granulator_pool();
     
     init_plugin_type();

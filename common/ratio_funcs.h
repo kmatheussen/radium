@@ -152,7 +152,7 @@ static inline Ratio RATIO_add(const Ratio r1, const Ratio r2){
 }
 
 static inline Ratio RATIO_sub(const Ratio r1, const Ratio r2){
-  Ratio r3 = {-r2.num, r2.den};
+  const Ratio r3 = {-r2.num, r2.den};
   return RATIO_add(r1, r3);
 }
 
@@ -405,6 +405,17 @@ namespace r{
       R_ASSERT_NON_RELEASE(_end >= _start);
     }
     RatioPeriod(){
+    }
+
+    bool is_inside(const Ratio &ratio) const {
+      return ratio >= _start && ratio < _end;
+    }
+
+    // Careful, not thread safe.
+    const char *to_string(void) const {
+      static char *ret = (char*)malloc(1024);
+      sprintf(ret, "%f -> %f", ratio2double(_start), ratio2double(_end));
+      return ret;
     }
   };
 }

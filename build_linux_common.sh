@@ -292,7 +292,7 @@ ln -sf $RADIUM_BIN bin/
 ln -sf `pwd`/bin/* /tmp/radium_bin/ || true
 
 echo
-if grep static\  */*.c */*.cpp */*.m */*/*.c */*/*.cpp | grep "\[" | grep -v "\[\]"|grep -v static\ void |grep -v unused_files |grep -v GTK |grep -v test\/ |grep -v X11\/ |grep -v amiga |grep -v faust-examples|grep -v temp\/ |grep -v "\[NO_STATIC_ARRAY_WARNING\]" |grep -v backup |grep -v mingw |grep -v Dropbox ; then
+if grep static\  */*.h */*.hpp */*/*.hpp */*/*/*/*.hpp */*/*.h */*/*/*/*.h */*/*.cpp */*.c */*.cpp */*.m */*/*.c */*/*.cpp | grep "\[" | grep -v "\[\]"|grep -v static\ void |grep -v unused_files |grep -v GTK |grep -v test\/ |grep -v X11\/ |grep -v amiga |grep -v faust-examples|grep -v temp\/ |grep -v "\[NO_STATIC_ARRAY_WARNING\]" |grep -v backup |grep -v mingw |grep -v Dropbox ; then
     echo
     echo "ERROR in line(s) above. Static arrays may decrease GC performance notably.";
     echo
