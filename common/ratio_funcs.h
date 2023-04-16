@@ -85,6 +85,10 @@ static inline double make_double_from_ratio(Ratio r){
   return (double)r.num / (double)r.den;
 }
 
+static inline double ratio2double(Ratio r){
+  return (double)r.num / (double)r.den;
+}
+
 #include "overflow_funcs.h"
 
 static inline Ratio RATIO_mul(const Ratio r1, const Ratio r2){
