@@ -119,10 +119,10 @@ static inline Ratio RATIO_div(const Ratio r1, const Ratio r2){
   }
 
   if (r2.num < 0) {
-    Ratio r2_inverted{-r2.den, -r2.num};
+    Ratio r2_inverted = {-r2.den, -r2.num};
     return RATIO_mul(r1, r2_inverted);
   } else {
-    Ratio r2_inverted{r2.den, r2.num};
+    Ratio r2_inverted = {r2.den, r2.num};
     return RATIO_mul(r1, r2_inverted);
   }
 }
