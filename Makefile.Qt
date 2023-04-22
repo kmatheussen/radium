@@ -519,8 +519,14 @@ ifeq ($(GCC_MAJOR),11)
 endif
 
 ifneq (,$(findstring clang,$(CC)))
-	VL_CFLAGS+=-Wno-null-pointer-subtraction
+	ifeq ($(shell test $(CLANG_MAJOR) -gt 12; echo $$?),0)
+		VL_CFLAGS+=-Wno-null-pointer-subtraction
+	endif
 endif
+
+#ifeq ($(BUILD_DEBUG), YES)
+#	VL_CFLAGS+=-U _GLIBCXX_SANITIZE_VECTOR -U _GLIBCXX_DEBUG
+#endif
 
 #-------------------OBJECT DEFINITIONS-------------------------------
 
