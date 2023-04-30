@@ -258,138 +258,139 @@ public slots:
   }
   
   void on_buttonBox_clicked(QAbstractButton * button){
-    
-    if(button->text().contains(QString("Save"))){
-      printf("Save\n");
+
+    if (buttonBox->buttonRole(button)!=QDialogButtonBox::AcceptRole)
+      return;
+      
+    printf("Save\n");
 
 #if FULL_VERSION==0
 
-      GFX_Message2(NULL,
-                   true,
-                   "Soundfile export is only available to subscribers.<p>"
-                   "Subscribe <a href=\"http://users.notam02.no/~kjetism/radium/download.php\">here</a>."
-                   );
+    GFX_Message2(NULL,
+                 true,
+                 "Soundfile export is only available to subscribers.<p>"
+                 "Subscribe <a href=\"http://users.notam02.no/~kjetism/radium/download.php\">here</a>."
+                 );
 
 #else // FULL_VERSION==0
 
-      bool save_multi = many_soundfiles->isChecked();
+    bool save_multi = many_soundfiles->isChecked();
 
-      if (GFX_OS_get_system_out() == NULL) {
-        GFX_Message2(NULL, true, "No \"System Out\" instrument found in the mixer.");
-        return;
-      }
+    if (GFX_OS_get_system_out() == NULL) {
+      GFX_Message2(NULL, true, "No \"System Out\" instrument found in the mixer.");
+      return;
+    }
 
-      if(filename_edit->text()==QString("")){
+    if(filename_edit->text()==QString("")){
+      GFX_Message2(NULL,
+                   true,
+                   "%s was not specified.",
+                   save_multi ? "Directory" : "Filename"
+                   );
+      return;
+    }
+
+    const filepath_t filepath = make_filepath(filename_edit->text());
+      
+    if (!save_multi && DISK_file_exists(filepath)){
+        
+      if (SAMPLEREADER_has_file(filepath)){
         GFX_Message2(NULL,
                      true,
-                     "%s was not specified.",
-                     save_multi ? "Directory" : "Filename"
-                    );
+                     "Can not save to \"%S\" because the file already exists and is currently used in the program.",
+                     filepath.id);
+        return;
+      }
+                              
+      vector_t options = {};
+      int yes = VECTOR_push_back(&options, "Yes");
+      VECTOR_push_back(&options, "No");
+        
+      if (GFX_Message2(&options,
+                       true,
+                       "File \%S\" already exists. Overwrite file?",
+                       filepath.id
+                       )
+          !=yes)
+        return;
+    }
+      
+    delete msgBox;
+    msgBox = MyQMessageBox::create(false, g_main_window);  // ensure clickedButton()==NULL.
+
+
+    msgBox->setStandardButtons(QMessageBox::Cancel);
+            
+    ATOMIC_SET(_timer.async_message, NULL);
+
+    plugins_to_save.clear(); // In case we were interrupted earlier.
+      
+    if (save_multi){
+
+      QFileInfo info(filename_edit->text());
+
+      if (info.isFile()){
+        GFX_Message2(NULL,
+                     true,
+                     "Can not save. \"%S\" is a file, and not a directory", filepath.id
+                     );
         return;
       }
 
-      const filepath_t filepath = make_filepath(filename_edit->text());
-      
-      if (!save_multi && DISK_file_exists(filepath)){
+      QDir dir(filename_edit->text());
+      QString dirname = dir.absolutePath();
         
-        if (SAMPLEREADER_has_file(filepath)){
-          GFX_Message2(NULL,
-                       true,
-                       "Can not save to \"%S\" because the file already exists and is currently used in the program.",
-                       filepath.id);
-          return;
-        }
-                              
+      if (dir.exists()){
         vector_t options = {};
-        int yes = VECTOR_push_back(&options, "Yes");
+        VECTOR_push_back(&options, "Yes");
         VECTOR_push_back(&options, "No");
-        
+          
         if (GFX_Message2(&options,
                          true,
-                         "File \%S\" already exists. Overwrite file?",
-                         filepath.id
+                         "Directory \%S\" already exists. Overwrite files in that directory?",
+                         STRING_create(dirname.toUtf8().constData())
                          )
-            !=yes)
+            ==1)
           return;
-      }
-      
-      delete msgBox;
-      msgBox = MyQMessageBox::create(false, g_main_window);  // ensure clickedButton()==NULL.
-
-
-      msgBox->setStandardButtons(QMessageBox::Cancel);
-            
-      ATOMIC_SET(_timer.async_message, NULL);
-
-      plugins_to_save.clear(); // In case we were interrupted earlier.
-      
-      if (save_multi){
-
-        QFileInfo info(filename_edit->text());
-
-        if (info.isFile()){
-          GFX_Message2(NULL,
-                       true,
-                       "Can not save. \"%S\" is a file, and not a directory", filepath.id
-                       );
-          return;
-        }
-
-        QDir dir(filename_edit->text());
-        QString dirname = dir.absolutePath();
-        
-        if (dir.exists()){
-          vector_t options = {};
-          VECTOR_push_back(&options, "Yes");
-          VECTOR_push_back(&options, "No");
-          
-          if (GFX_Message2(&options,
-                           true,
-                           "Directory \%S\" already exists. Overwrite files in that directory?",
-                           STRING_create(dirname.toUtf8().constData())
-                           )
-              ==1)
-            return;
-        } else {
-
-          if(QDir::root().mkpath(dirname)==false){ // why on earth isn't mkpath a static function?
-            GFX_Message2(NULL, true, "Unable to create directory \"%S\".", STRING_create(dirname));
-            return;
-          }
-          
-        }
-        
-        const radium::Vector<SoundProducer*> &sp_all = MIXER_get_all_SoundProducers();
-        for (auto sp : sp_all){
-          SoundPlugin *plugin = SP_get_plugin(sp);
-          
-          if (!SP_has_input_links(sp) && SP_has_output_links(sp) && !SP_is_bus(sp) && strcmp(plugin->type->type_name, "Pipe")){
-            bool doit = true;
-            
-            if (!strcmp(plugin->type->name, g_click_name) && !strcmp("Sample Player", plugin->type->type_name))
-              doit = metronomeEnabled();
-                
-            if (doit)
-              plugins_to_save.push_back(plugin);
-          }
-        }
-        
-        safeShow(msgBox);
-
-        save_next();
-
       } else {
 
-        safeShow(msgBox);
-
-        save(filename_edit->text());
-
+        if(QDir::root().mkpath(dirname)==false){ // why on earth isn't mkpath a static function?
+          GFX_Message2(NULL, true, "Unable to create directory \"%S\".", STRING_create(dirname));
+          return;
+        }
+          
       }
+        
+      const radium::Vector<SoundProducer*> &sp_all = MIXER_get_all_SoundProducers();
+      for (auto sp : sp_all){
+        SoundPlugin *plugin = SP_get_plugin(sp);
+          
+        if (!SP_has_input_links(sp) && SP_has_output_links(sp) && !SP_is_bus(sp) && strcmp(plugin->type->type_name, "Pipe")){
+          bool doit = true;
+            
+          if (!strcmp(plugin->type->name, g_click_name) && !strcmp("Sample Player", plugin->type->type_name))
+            doit = metronomeEnabled();
+                
+          if (doit)
+            plugins_to_save.push_back(plugin);
+        }
+      }
+        
+      safeShow(msgBox);
 
-      close();
+      save_next();
+
+    } else {
+
+      safeShow(msgBox);
+
+      save(filename_edit->text());
+
+    }
+
+    close();
       
 #endif //FULL_VERSION==0
-    }
   }
 
   void on_post_silence_spin_editingFinished(){
