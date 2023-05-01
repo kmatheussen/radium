@@ -4583,6 +4583,8 @@ int main(int argc, char **argv){
     clean_configuration = true;
   }
 
+  QLocale::setDefault(QLocale::c());
+  
 #if defined(FOR_MACOSX)
   if (QOperatingSystemVersion::current() >= QOperatingSystemVersion::MacOSBigSur){
 #if 0
