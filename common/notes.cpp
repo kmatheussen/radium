@@ -42,6 +42,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "range_proc.h"
 #include "notestext_proc.h"
 #include "scheduler_proc.h"
+#include "instruments_proc.h"
 
 //#include "Note.hpp"
 
@@ -2585,7 +2586,7 @@ static void RT_PITCHES_called_each_block_for_each_note(struct SeqTrack *seqtrack
 }
 
 static void RT_PITCHES_called_each_block_for_each_note2(struct SeqTrack *seqtrack,
-                                                       const int play_id,
+                                                        const int play_id,
                                                         const struct SeqBlock *seqblock,
                                                         const struct Tracks *track,
                                                         const int64_t seqtime_start,

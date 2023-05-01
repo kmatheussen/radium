@@ -127,9 +127,14 @@ void CRASHREPORTER_send_message_with_backtrace(const char *additional_informatio
 
 //static void crash(int sig){
 static void crash(int sig, siginfo_t *siginfo, void *secret) {
+  static bool s_is_crashing = false;
 
+  if (s_is_crashing) // Prevent endless recursion.
+    return;
+  
+  s_is_crashing = true;
+  
   //fprintf(stderr,"\n\nCrashreporter got signal %d. genpid: %d, this pid: %d. Sending message to external process\n\n",sig,(int)siginfo->si_pid,(int)getpid());
-
   
   static int num_crash_reports=0;
 

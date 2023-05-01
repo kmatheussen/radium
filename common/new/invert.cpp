@@ -60,6 +60,53 @@ static void Invert_notes(
 }
 
 
+static void Invert_notes2(
+                          struct Tracks *track,
+                          const Ratio r1,
+                          const Ratio r2
+){
+  bool firsttime = true;
+
+  int last_org_note;
+  int last_inverted_note;
+  
+  r::NoteTimeData::Writer writer(track->_notes2, r::KeepOldData::KEEP_OLD_DATA);
+  
+  for(r::NotePtr &note : writer){
+    const Ratio time = note->get_time();
+    
+    if (time >= r2)
+      break;
+    
+    const int noteval = note->get_val();
+    
+    if (time >= r1) {
+      
+      if (firsttime) {
+        
+        firsttime = false;
+        last_inverted_note = noteval;
+        
+      } else {
+        
+        r::ModifyNote new_note(note);
+        
+        const int delta = noteval - last_org_note;
+        
+        last_inverted_note = R_BOUNDARIES(1, last_inverted_note - delta, 127);
+
+        //printf("Delta: %d. Old: %d. New: %d\n", delta, noteval, last_inverted_note);
+        
+        new_note->_val = last_inverted_note;
+        
+      }
+    }
+    
+    last_org_note = noteval;                      
+  }
+}
+
+
 static void InvertRange(
 	struct WBlocks *wblock
 ){
@@ -75,6 +122,7 @@ static void InvertRange(
 
 	for(lokke=0;lokke<=wblock->range.x2-wblock->range.x1;lokke++){
                 Invert_notes(track->notes,p1,p2,true,0,0);
+                Invert_notes2(track, place2ratio(*p1), place2ratio(*p2));
 		track=NextTrack(track);
 	}
 
@@ -90,6 +138,8 @@ static void InvertTrack(
 	PlaceSetLastPos(block,&p2);
 
 	Invert_notes(track->notes,&p1,&p2,true,0,0);
+
+        Invert_notes2(track, make_ratio(0,1), make_ratio(block->num_lines, 1));
 }
 
 static void InvertBlock(

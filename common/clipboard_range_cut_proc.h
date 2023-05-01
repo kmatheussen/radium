@@ -25,7 +25,7 @@ extern LANGSPEC void ClearRange_notes(
                                       const Place *p2
                                       );
 
-#if __cplusplus
+#ifdef __cplusplus
 void ClearRange_notes2(
                        r::NoteTimeData *notes,
                        const Place *p1,

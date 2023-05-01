@@ -26,7 +26,7 @@ extern LANGSPEC void CopyRange_notes(
                             const Place *p2
 );
 
-#if __cplusplus
+#ifdef __cplusplus
 void CopyRange_notes2(
                       r::NoteTimeData *to_notes,
                       const r::NoteTimeData *from_stop,

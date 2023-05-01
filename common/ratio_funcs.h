@@ -122,10 +122,10 @@ static inline Ratio RATIO_div(const Ratio r1, const Ratio r2){
   }
 
   if (r2.num < 0) {
-    Ratio r2_inverted{-r2.den, -r2.num};
+    Ratio r2_inverted = {-r2.den, -r2.num};
     return RATIO_mul(r1, r2_inverted);
   } else {
-    Ratio r2_inverted{r2.den, r2.num};
+    Ratio r2_inverted = {r2.den, r2.num};
     return RATIO_mul(r1, r2_inverted);
   }
 }
@@ -157,10 +157,11 @@ static inline Ratio RATIO_add(const Ratio r1, const Ratio r2){
     goto overflow_fallback;
 
   return make_ratio(a, b);
-
+#endif
+  
  overflow_fallback:
   R_ASSERT_NON_RELEASE(false);
-  return make_ratio_from_double(make_double_from_ratio(r1) + make_double_from_ratio(r2));
+  return double2ratio(ratio2double(r1) + ratio2double(r2));
 }
 
 static inline Ratio RATIO_sub(const Ratio r1, const Ratio r2){
@@ -426,6 +427,10 @@ namespace r{
 
     bool is_inside(const Ratio &ratio) const {
       return ratio >= _start && ratio < _end;
+    }
+
+    bool is_inside_inclusive(const Ratio &ratio) const {
+      return ratio >= _start && ratio <= _end;
     }
 
     // Careful, not thread safe.
