@@ -104,7 +104,7 @@ static void BackWardsRange(
 	const Place *p1=&wblock->range.y1;
 	const Place *p2=&wblock->range.y2;
 
-	wtrack=ListFindElement1(&wblock->wtracks->l,wblock->range.x1);
+	wtrack = (struct WTracks*)ListFindElement1(&wblock->wtracks->l,wblock->range.x1);
 
 	for(lokke=0;lokke<=wblock->range.x2-wblock->range.x1;lokke++){
 		BackWards_notes(window,wblock,wtrack,p1,p2);

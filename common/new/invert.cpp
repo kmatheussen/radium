@@ -71,7 +71,7 @@ static void InvertRange(
 	const Place *p1=&wblock->range.y1;
 	const Place *p2=&wblock->range.y2;
 
-	track=ListFindElement1(&wblock->block->tracks->l,wblock->range.x1);
+	track = (struct Tracks*)ListFindElement1(&wblock->block->tracks->l,wblock->range.x1);
 
 	for(lokke=0;lokke<=wblock->range.x2-wblock->range.x1;lokke++){
                 Invert_notes(track->notes,p1,p2,true,0,0);

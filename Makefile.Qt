@@ -1457,11 +1457,11 @@ $(T)undo_block_insertdelete.o:  $(BUILD_DEPENDENCIES) $(CD)undo_block_insertdele
 $(T)track_onoff.o:  $(BUILD_DEPENDENCIES) $(CD)track_onoff.c
 	$(CC2) $(CD)track_onoff.c $(OPT)
 
-$(T)backwards.o:  $(BUILD_DEPENDENCIES) $(CD)new/backwards.c
-	$(CC2) $(CD)new/backwards.c $(OPT)
+$(T)backwards.o:  $(BUILD_DEPENDENCIES) $(CD)new/backwards.cpp
+	$(CCC2) $(CD)new/backwards.cpp $(CPPOPT)
 
-$(T)invert.o:  $(BUILD_DEPENDENCIES) $(CD)new/invert.c
-	$(CC2) $(CD)new/invert.c $(OPT)
+$(T)invert.o:  $(BUILD_DEPENDENCIES) $(CD)new/invert.cpp
+	$(CCC2) $(CD)new/invert.cpp $(CPPOPT)
 
 $(T)gfx_slider.o:  $(BUILD_DEPENDENCIES) $(CD)gfx_slider.c
 	$(CC2) $(CD)gfx_slider.c $(OPT)
