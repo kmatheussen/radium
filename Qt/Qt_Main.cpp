@@ -3539,11 +3539,15 @@ int radium_main(const char *arg){
 
   printf("starting\n");
   if(InitProgram()==false)
-    return 0;
+      return 0;
+
   printf("ending\n");
 
   if (g_has_added_system_pitchshift==false) {
     SYSTEM_show_error_message("Could not find the AM pitchshift LADSPA plugin. Radium can not start.");
+#if !defined(FOR_LINUX) || !defined(IS_LINUX_BINARY)
+    CRASHREPORTER_dont_report();
+#endif
     return 0;
   }
   
