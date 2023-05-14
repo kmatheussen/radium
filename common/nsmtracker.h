@@ -188,6 +188,9 @@ static_assert (sizeof(long long int) >= 8, "sizof(long long int) must be 8 or hi
   #define FORMAT_ATTRIBUTE(A,B) __attribute__((format(gnu_printf, A, B)))
 #endif
 
+#if defined(__cplusplus)
+#include "RT_memory_allocator_proc.h"
+#endif
 
 
 /* Unfortunately, AmigaOS has one absolute address that is legal to
@@ -2010,6 +2013,33 @@ namespace r{
       : TimeDataDataType<ValType>(ratio, val, logtype)
       , _num_references(0)
     {}
+
+    void *operator new(size_t size){
+      //void *ret = malloc(size);
+      void *ret = RT_alloc_raw(size, "TimeDataDataTypeRef::new");
+      printf("ALLOCING2 %p. Size: %d\n", ret, (int)size);
+      return ret;
+    }
+    
+    void *operator new[](size_t size) {
+      //void *ret = malloc(size);
+      void *ret = RT_alloc_raw(size, "TimeDataDataTypeRef::new");
+      printf("ALLOCING2[] %p. Size: %d\n", ret, (int)size);
+      return ret;
+    }
+    
+    void operator delete(void *ptr) noexcept {
+      printf("DELETING2 %p\n", ptr);
+      //free(ptr);
+      RT_free_raw(ptr, "TimeDataDataTypeRef::delete");
+    };
+    
+    void operator delete[](void *ptr) noexcept {
+      printf("DELETING2[] %p\n", ptr);
+      //free(ptr);
+      RT_free_raw(ptr, "TimeDataDataTypeRef::delete");
+    }
+
   };
     
   // Like shared_ptr, but can be used as datatype for TimeData.
@@ -2129,8 +2159,9 @@ namespace r{
       
       //printf("    ~TimeData_shared_ptr: %d - %p (%p)\n", _t->_num_references.load()-1, _t, this);
     
-      if ((--_t->_num_references)==0)
-        RT_schedule_to_delete(_t);
+      if ((--_t->_num_references)==0){
+        delete _t; // Note: typeof(_t)==TimeDataDataTypeRef, and TimeDataDataTypeRef objects can be allocated and deleted in RT.
+      }
     }
 
   
@@ -2446,7 +2477,7 @@ struct Note : NodeId, public r::TimeDataDataTypeRef<float> {
     debug_note_removed(this);
   }
 #endif
-  
+
   int64_t get_node_id(void) const {
     return NodeId::_id;
   }
