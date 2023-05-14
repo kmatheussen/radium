@@ -129,6 +129,7 @@ static inline void assert_allowed_to_alloc(void){
   
   R_ASSERT(!PLAYER_current_thread_has_lock());
   R_ASSERT(!THREADING_is_runner_thread());
+  R_ASSERT(!THREADING_is_player_thread());
 
 #if !defined(FOR_MACOSX)
   R_ASSERT(!THREADING_has_player_thread_priority());

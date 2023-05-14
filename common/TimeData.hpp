@@ -82,7 +82,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 //#include "sequencer_proc.h"
 #include "AtomicPointerStorage.hpp"
 
-
 #define MAX_NUM_PARALLEL_TIMEDATAS 64 // If using more than this, caching is disabled for the extra timedatas, and performance will be slightly worse for those.
 
 /*

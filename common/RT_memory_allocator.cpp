@@ -247,11 +247,11 @@ static RT_Mem_internal *RT_alloc_from_global_mem(int size, int pool_num){
   size = ALIGN_UP(size, ALIGN_MAX); // We need to do this to ensure g_curr_mem_size continues to be properly aligned also for the next call to this function.
     
   int pos = ATOMIC_ADD_RETURN_OLD(g_curr_mem_size, size);
-
+  
   //printf("---Allocating global. pos: %d. size: %d\n", size, pos);
   
   if (pos + size > TOTAL_MEM_SIZE){
-    ATOMIC_ADD_RETURN_OLD(g_curr_mem_size, -size);
+    ATOMIC_ADD(g_curr_mem_size, -size);
     return NULL;
   }
 
@@ -319,7 +319,7 @@ static bool RT_maybe_free_to_global_mem(RT_mempool_data *data){
 static DEFINE_ATOMIC(int, g_total_malloc) = 0;
 #endif
 
-static RT_Mem_internal *RT_alloc_using_malloc(int size, int pool_num, const char *who, int where, bool show_warning, bool we_know_for_sure_we_are_not_RT){
+static RT_Mem_internal *RT_alloc_using_malloc(const int size, const int pool_num, const char *who, const int where, const bool show_warning, const bool we_know_for_sure_we_are_not_RT){
   
 #ifdef TEST_RT_MEMORY_ALLOCATOR
   //printf("...RT_alloc failed. Who: \"%s\". Size: %d. Where: %d\n", who, size, where);
@@ -378,12 +378,12 @@ void *RT_alloc_raw_internal(const int minimum_num_elements, const int element_si
   int size = minimum_num_elements * element_size;
   
   void *ret;
-  
+
   if (size > g_max_mem_size) {
 
     actual_num_elements = minimum_num_elements;
     ret = RT_alloc_using_malloc(size, -1, who, 1, true, false);
-
+    
   } else {
     
     int pool_num;
@@ -397,31 +397,31 @@ void *RT_alloc_raw_internal(const int minimum_num_elements, const int element_si
     ret = RT_alloc_from_pool(pool, pool_num);
 
     if (ret != NULL) {
-
+      
       actual_num_elements = size / element_size;
 
     } else {
 
       actual_num_elements = minimum_num_elements;
 
-      if (!THREADING_is_runner_thread() && !PLAYER_current_thread_has_lock())
-      {
+      if (!THREADING_is_RT()) {
 
         ret = RT_alloc_using_malloc(size, pool_num, who, 2, false, true);
         
       } else {
 
         ret = RT_alloc_from_global_mem(size, pool_num);
-
-        if (ret == NULL)
+        
+        if (ret == NULL){
           ret = RT_alloc_using_malloc(size, pool_num, who, 2, true, false);
-
+        }
       }
 
     }
 
   }
 
+  
   ASAN_UNPOISON_MEMORY_REGION(ret, size);
 
 #if defined(RADIUM_USES_ASAN)
@@ -536,6 +536,7 @@ void RT_free_raw(void *mem, const char *who){
     ASAN_UNPOISON_MEMORY_REGION(mem, g_offset_of_data);
     
     free(mem);
+
     
   } else {
 
@@ -555,8 +556,8 @@ void RT_free_raw(void *mem, const char *who){
       if (g_pools[pool_num]->bounded_push(data))
         return;
 
-      const bool can_free = !data_is_in_global_mem(data) && !THREADING_is_runner_thread() && !PLAYER_current_thread_has_lock();
-
+      const bool can_free = !data_is_in_global_mem(data) && !THREADING_is_RT();
+      
       if (can_free) {
         ASAN_UNPOISON_MEMORY_REGION(data, g_offset_of_data + POOL_MEM_SIZE(pool_num));
         V_free(data);

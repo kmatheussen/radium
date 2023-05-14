@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string.h>
+
 extern void RT_mempool_init(void);
 extern void RT_inc_ref_raw(void *mem); // Reference counting. (Use RT_free() to decrement). Note that this function is quite efficient.
 extern void RT_free_raw(void *mem, const char *who);

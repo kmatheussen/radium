@@ -2860,12 +2860,12 @@ bool SP_is_plugin_running(const SoundPlugin *plugin){
 }
 
 int RT_SP_get_input_latency(const SoundProducer *sp){
-  R_ASSERT_NON_RELEASE(THREADING_is_runner_thread() || PLAYER_current_thread_has_lock());
+  R_ASSERT_NON_RELEASE(THREADING_is_RT());
   return sp->_highest_input_link_latency;
 }
 
 int RT_SP_get_latency(const SoundProducer *sp){
-  R_ASSERT_NON_RELEASE(THREADING_is_runner_thread() || PLAYER_current_thread_has_lock());
+  R_ASSERT_NON_RELEASE(THREADING_is_RT());
   return sp->_latency;
 }
 

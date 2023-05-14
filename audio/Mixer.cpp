@@ -299,6 +299,7 @@ static void lock_player(void){
   R_ASSERT_NON_RELEASE(g_player_locks_initialized==true);
   
   LOCK_LOCK(player_lock);
+  THREADING_inc_RT();
   g_current_thread_has_player_lock = true;
   g_someone_has_player_lock = true;
 }
@@ -307,9 +308,9 @@ static void unlock_player(void){
   R_ASSERT_RETURN_IF_FALSE(PLAYER_current_thread_has_lock());
 
   R_ASSERT_NON_RELEASE(g_player_locks_initialized==true);
-    
   g_someone_has_player_lock = false;
   g_current_thread_has_player_lock = false;
+  THREADING_dec_RT();
   LOCK_UNLOCK(player_lock);
 }
 

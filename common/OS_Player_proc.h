@@ -83,32 +83,23 @@ extern LANGSPEC void RT_request_to_continue_playing_block(void);
 extern LANGSPEC void RT_request_to_stop_playing(void);
 extern LANGSPEC void RT_pause_plugins(void);
 
+/*
+// Use THREADING_is_RT() instead.
 
 static inline bool is_doing_RT(void){
   return THREADING_is_player_or_runner_thread() || PLAYER_current_thread_has_lock();
 }
+*/
 
 #define ASSERT_IS_NONRT_MAIN_THREAD() R_ASSERT(THREADING_is_main_thread() && !PLAYER_current_thread_has_lock());
 
 #define ASSERT_IS_NONRT_MAIN_THREAD_NON_RELEASE() R_ASSERT_NON_RELEASE(THREADING_is_main_thread() && !PLAYER_current_thread_has_lock());
 
-#define ASSERT_NON_RT()                                                 \
-  do{                                                                   \
-    R_ASSERT(!THREADING_is_player_or_runner_thread());                  \
-    R_ASSERT(!PLAYER_current_thread_has_lock());                        \
-  }while(0)
+#define ASSERT_NON_RT() R_ASSERT(!THREADING_is_RT())
 
-#define ASSERT_NON_RT_NON_RELEASE()                                     \
-  do{                                                                   \
-    R_ASSERT_NON_RELEASE(!THREADING_is_player_or_runner_thread());      \
-    R_ASSERT_NON_RELEASE(!PLAYER_current_thread_has_lock());            \
-  }while(0)
+#define ASSERT_NON_RT_NON_RELEASE() R_ASSERT_NON_RELEASE(!THREADING_is_RT())
 
-#define ASSERT_NON_RT_NON_RELEASE2(ret)                                     \
-  do{                                                                   \
-    R_ASSERT_NON_RELEASE2(!THREADING_is_player_or_runner_thread(),ret);    \
-    R_ASSERT_NON_RELEASE2(!PLAYER_current_thread_has_lock(),ret);          \
-  }while(0)
+#define ASSERT_NON_RT_NON_RELEASE2(ret) R_ASSERT_NON_RELEASE2(!THREADING_is_RT(), ret)
 
 
 

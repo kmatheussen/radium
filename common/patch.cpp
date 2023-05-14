@@ -1653,26 +1653,25 @@ void RT_PATCH_stop_note(struct SeqTrack *seqtrack, struct Patch *patch, const no
 
   Patch_removePlayingNote(patch, note.id, seqtrack, note.seqblock);
 
-  float sample_rate = MIXER_get_sample_rate();
+  const float sample_rate = MIXER_get_sample_rate();
 
   union SuperType args[8];
   args[0].pointer = patch;
   put_note_into_args(&args[1], note);
 
-  int64_t midi_latency = get_midi_latency(patch);
+  const int64_t midi_latency = get_midi_latency(patch);
 
-  int i;
-  for(i=0;i<NUM_PATCH_VOICES;i++){
+  for(int i=0 ; i<NUM_PATCH_VOICES ; i++){
     const struct PatchVoice &voice = patch->voices[i];
 
     if(voice.is_on==true){
 
       if(voice.length<=0.001) { // i.e. this voice does not use a stopping time defined in the editor.
 
-        float voice_notenum = note.pitch + voice.transpose;
+        const float voice_notenum = note.pitch + voice.transpose;
 
         if (voice_notenum > 0) {
-          int64_t voice_id = note.id + i;
+          const int64_t voice_id = note.id + i;
           
           //printf("RT_PATCH_stop_note. voice_id: %d. voice_is_playing: %d\n",(int)voice_id,(int)voice_is_playing);
           

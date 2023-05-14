@@ -4331,7 +4331,6 @@ float *g_empty_granresampler_block = NULL;
 static SoundPluginType click_type;
 
 void create_sample_plugin(bool is_click){
-
   static bool has_inited = false;
 
   if (has_inited==false) {

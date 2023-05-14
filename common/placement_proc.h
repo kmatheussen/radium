@@ -184,7 +184,8 @@ static inline Place ratio2place(const Ratio ratio){
                                   0, r2.den,
                                   0, r2.num);
       
-      place.dividor = MAX_UINT32;    
+      place.dividor = MAX_UINT32;
+      
     }
 
     return place;

@@ -249,7 +249,7 @@ static void testrun(int num_elements){
     testrun2(num_elements);
 }
 
-extern __thread int g_thread_type;
+extern __thread int g_thread_type; // (Note: This test code.)
 
 static void AUDIOBUFFERS_test(void){
   

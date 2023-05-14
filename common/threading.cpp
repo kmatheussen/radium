@@ -7,7 +7,6 @@
 
 #include "include_boost.h"
 
-
 #include <QHash>
 
 #if defined(FOR_MACOSX)
@@ -61,12 +60,15 @@ enum ThreadType{
   OTHER_THREAD,
   MAIN_THREAD,
   PLAYER_THREAD,
-  JUCE_THREAD,
+  JUCE_THREAD, // juce dispatcher thread.
   RUNNER_THREAD
 };
 
+// Note: From the assembler output, it looks faster to put __thread variables into static variables (and access
+// them indirectly through functions), than to declaring them "extern" and accessing them direcctly.
+//
 static __thread ThreadType g_thread_type = OTHER_THREAD;
-
+static __thread int g_is_RT = 0;
 
 void THREADING_init_main_thread_type(void) {
   R_ASSERT_NON_RELEASE(g_thread_type==OTHER_THREAD);
@@ -77,14 +79,22 @@ void THREADING_init_main_thread_type(void) {
 bool THREADING_init_player_thread_type(void) {
   if (g_thread_type == PLAYER_THREAD)
     return false;
-  
+
   g_thread_type = PLAYER_THREAD;
+  
+  R_ASSERT_NON_RELEASE(g_is_RT==0);
+  g_is_RT++;
+  
   return true;
 }
 
 void THREADING_init_runner_thread_type(void) {
   R_ASSERT_NON_RELEASE(g_thread_type==OTHER_THREAD);
+  
   g_thread_type = RUNNER_THREAD;
+
+  R_ASSERT_NON_RELEASE(g_is_RT==0);
+  g_is_RT++;
 }
 
 void THREADING_init_juce_thread_type(void) {
@@ -113,6 +123,35 @@ bool THREADING_is_juce_thread(void){
   return g_thread_type==JUCE_THREAD;
 }
 
+bool THREADING_is_RT(void){
+#if !defined(RELEASE)
+  if (g_is_RT == 0) {
+    R_ASSERT(!THREADING_is_player_or_runner_thread());
+    R_ASSERT(!PLAYER_current_thread_has_lock());
+    R_ASSERT(!THREADING_has_player_thread_priority());
+  }else{  
+    R_ASSERT(PLAYER_current_thread_has_lock() || THREADING_is_player_or_runner_thread());
+#if FOR_LINUX
+    if (THREADING_is_player_or_runner_thread()){
+      R_ASSERT(THREADING_has_player_thread_priority());
+    }
+#else
+    R_ASSERT(THREADING_has_player_thread_priority());
+#endif
+  }
+#endif
+  
+  return g_is_RT > 0;
+}
+
+void THREADING_inc_RT(void){
+  g_is_RT++;
+}
+
+void THREADING_dec_RT(void){
+  R_ASSERT_NON_RELEASE(g_is_RT > 0);
+  g_is_RT--;
+}
 
 #ifndef TEST_THREADING
 

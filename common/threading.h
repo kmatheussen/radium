@@ -37,6 +37,11 @@ extern LANGSPEC bool THREADING_is_player_thread(void);
 extern LANGSPEC bool THREADING_is_runner_thread(void);
 extern LANGSPEC bool THREADING_is_player_or_runner_thread(void);
 extern LANGSPEC bool THREADING_is_juce_thread(void);
+extern LANGSPEC bool THREADING_is_RT(void); // Returns true if current thread runs with realtime priority or holds the player lock. (same as (THREADING_is_player_or_runner_thread || PLAYER_current_thread_has_lock(), but faster).
+
+extern LANGSPEC void THREADING_inc_RT(void); // called before obtaining player lock, or before setting realtime priority
+extern LANGSPEC void THREADING_dec_RT(void); // called afterwards.
+
 
 #ifdef __cplusplus
 #include <functional>
