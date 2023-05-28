@@ -50,6 +50,9 @@ extern "C"{
 
   void CRASHREPORTER_send_assert_message(enum Crash_Type crash_type, const char *fmt,...);
 
+  bool CRASHREPORTER_is_currently_sending(void);
+
+
   // Add a "printf" call to make the C compiler show warning/error if using wrong arguments for FMT.
   /*
   // got strange compilation error. Not important anyway.

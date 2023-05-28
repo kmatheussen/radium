@@ -53,6 +53,10 @@ extern "C"{
   void CRASHREPORTER_send_assert_message(Crash_Type tye, const char *message, ...){
     abort();
   }
+
+  bool CRASHREPORTER_is_currently_sending(void) {
+    return false;
+  }
 }
 
 static inline QSizePolicy::Policy get_grow_policy_from_bool(bool grow){

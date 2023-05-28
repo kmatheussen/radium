@@ -592,6 +592,9 @@ extern "C"{
   void CRASHREPORTER_send_assert_message(Crash_Type tye, const char *message, ...){
     abort();
   }
+  bool CRASHREPORTER_is_currently_sending(void) {
+    return false;
+  }
 }
 
 int main(int argc, char **argv){
@@ -1064,9 +1067,13 @@ void CRASHREPORTER_send_message_with_backtrace(const char *additional_informatio
 #endif
 #endif
 
-void CRASHREPORTER_send_assert_message(Crash_Type crash_type, const char *fmt,...){
-  static DEFINE_ATOMIC(bool, is_currently_sending);
+static DEFINE_ATOMIC(bool, is_currently_sending);
 
+bool CRASHREPORTER_is_currently_sending(void) {
+  return ATOMIC_GET(is_currently_sending);
+}
+
+void CRASHREPORTER_send_assert_message(Crash_Type crash_type, const char *fmt,...){
   if (ATOMIC_SET_RETURN_OLD(is_currently_sending, true)==true) {
     // already sending
     return;

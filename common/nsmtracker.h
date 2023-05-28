@@ -400,6 +400,7 @@ extern LANGSPEC int GFX_Message2_internal(vector_t *buttons, bool program_state_
 extern LANGSPEC bool GFX_is_showing_message(void);
 
 
+
 #define R_ASSERT_MESSAGE(a)                                             \
   do{                                                                   \
     if(!(a))                                                            \
@@ -429,7 +430,7 @@ extern LANGSPEC bool GFX_is_showing_message(void);
   #define R_ASSERT_NON_RELEASE(a) do{}while(0)
   #define R_ASSERT_NON_RELEASE2(a, returnvalue) do{}while(0)
 #else
-  #define R_ASSERT_NON_RELEASE(a) do{if(!(a))abort();}while(0)
+  #define R_ASSERT_NON_RELEASE(a) do{if(!(a) && !CRASHREPORTER_is_currently_sending())abort();}while(0)
   #define R_ASSERT_NON_RELEASE2(a, returnvalue) R_ASSERT_RETURN_IF_FALSE2(a, returnvalue)
 #endif
 
