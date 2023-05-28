@@ -12,17 +12,19 @@ namespace{
   };
 }
 
-static radium::Queue<Element, 8000> g_queue;
+static radium::Queue<Element, 8000> *g_queue;
 
 
 void RT_memory_freer_init(void){
 
+  g_queue = new radium::Queue<Element, 8000>;
+  
   std::thread([](){
 
     THREADING_init_deleter_thread_type();
     
     while(true){
-      Element element = g_queue.get();
+      Element element = g_queue->get();
 
       if (element.is_deletable) {
 
@@ -47,7 +49,7 @@ void RT_memory_freer_init(void){
 bool RT_free(void *mem){
   Element element{false,mem};
   
-  bool ret = g_queue.tryPut(element);
+  bool ret = g_queue->tryPut(element);
 
   R_ASSERT_NON_RELEASE(ret);
 
@@ -59,7 +61,7 @@ bool RT_free(radium::Deletable *mem){
 
   printf("Queuing Deltable %p\n", mem);
   
-  bool ret = g_queue.tryPut(element);
+  bool ret = g_queue->tryPut(element);
 
   R_ASSERT_NON_RELEASE(ret);
 
