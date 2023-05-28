@@ -126,6 +126,7 @@ static void dummyfree(void *data){
 }
 
 static void gcfinalizer(void *actual_mem_start, void *user_data){
+
   ASSERT_IS_NONRT_MAIN_THREAD_NON_RELEASE()
   
   //printf("gcfinalizer called for %p\n",actual_mem_start);
@@ -135,7 +136,9 @@ static void gcfinalizer(void *actual_mem_start, void *user_data){
 
 #endif
 
-void *tracker_alloc__(int size,void *(*AllocFunction)(size_t size2), const char *filename, int linenumber){
+static void *tracker_alloc__(int size,void *(*AllocFunction)(size_t size2), const char *filename, int linenumber) __attribute__((malloc)) __attribute__((returns_nonnull));
+
+static void *tracker_alloc__(int size,void *(*AllocFunction)(size_t size2), const char *filename, int linenumber){
 	allocated+=size;
 
         if (THREADING_is_RT())

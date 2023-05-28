@@ -33,7 +33,7 @@ extern LANGSPEC void tfree(void *element);
 
 //extern LANGSPEC void *tracker_alloc_clean(int size,void *(*AllocFunction)(int size2));
 
-extern LANGSPEC void *tracker_alloc__(int size,void *(*AllocFunction)(size_t size2), const char *filename, int linenumber) __attribute__((malloc)) __attribute__((returns_nonnull));
+//extern LANGSPEC void *tracker_alloc__(int size,void *(*AllocFunction)(size_t size2), const char *filename, int linenumber) __attribute__((malloc)) __attribute__((returns_nonnull));
 
 extern LANGSPEC void *tralloc__(int size, const char *filename, int linenumber) __attribute__((malloc)) __attribute__((returns_nonnull));
 

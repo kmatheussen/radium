@@ -2625,6 +2625,35 @@ static void RT_PITCHES_called_each_block_for_each_note2(struct SeqTrack *seqtrac
                           );
 }
 
+static void RT_SEQTRACK_reserve_hanging_notes_tracks(struct SeqTrack *seqtrack,
+                                                     int num_tracks)
+{
+  for(int i=seqtrack->hanging_notes->size() ; i < num_tracks ; i++){
+    //void *mem = malloc(sizeof(radium::RT_NoteVector)); //
+    void *mem = RT_alloc_raw(sizeof(radium::RT_HangingNoteVector), "RT_SEQTRACK_reserve_hanging_notes_tracks");
+    seqtrack->hanging_notes->push_back(new(mem) radium::RT_HangingNoteVector);
+  }
+}
+
+
+static void RT_SEQTRACK_add_hanging_note(struct SeqTrack *seqtrack,
+                                         const struct SeqBlock *seqblock,
+                                         const struct Tracks *track,
+                                         struct Patch *patch,
+                                         r::Note *note)
+{
+  int tracknum = track->l.num;
+
+  RT_SEQTRACK_reserve_hanging_notes_tracks(seqtrack, tracknum + 1);
+  
+  auto *pn = seqtrack->hanging_notes->at_ref(track->l.num);
+      
+  pn->push_back(radium::HangingNote({r::NotePtr(note), // Note: the reference counter variable is placed in r::Note, not in r::NotePtr.
+                                     patch,
+                                     seqblock,
+                                     ATOMIC_GET(track->midi_channel)}));
+}
+
 static bool note_continues_next_seqblock(const struct SeqBlock *seqblock, const r::Note *note){
   if (note->d._noend==0)
     return false;
