@@ -527,7 +527,7 @@ endif
 
 #-------------------OBJECT DEFINITIONS-------------------------------
 
-OBJ1= $(T)windows.o $(T)window_config.o $(T)list.o $(T)vector.o $(T)hashmap.o $(T)Dynvec.o $(T)TimeData.o $(T)song.o $(T)blocks.o $(T)block_insert.o $(T)block_split.o $(T)block_delete.o $(T)block_properties.o $(T)tracks.o $(T)localzooms.o $(T)control.o $(T)lines.o $(T)font.o $(T)track_insert.o $(T)track_onoff.o $(T)settings.o $(T)mmd2load.o $(T)RT_memory_allocator.o
+OBJ1= $(T)windows.o $(T)window_config.o $(T)list.o $(T)vector.o $(T)hashmap.o $(T)Dynvec.o $(T)TimeData.o $(T)song.o $(T)blocks.o $(T)block_insert.o $(T)block_split.o $(T)block_delete.o $(T)block_properties.o $(T)tracks.o $(T)localzooms.o $(T)control.o $(T)lines.o $(T)font.o $(T)track_insert.o $(T)track_onoff.o $(T)settings.o $(T)mmd2load.o $(T)RT_memory_allocator.o $(T)RT_memory_freer.o
 
 OBJ2= $(T)notes.o $(T)notes_legalize.o $(T)pitches.o $(T)wblocks.o $(T)wtracks.o $(T)sliders.o $(T)common.o
 
@@ -970,6 +970,9 @@ $(T)TimeData.o: $(BUILD_DEPENDENCIES) $(CD)TimeData.cpp $(CD)TimeData.hpp
 
 $(T)RT_memory_allocator.o: $(BUILD_DEPENDENCIES) $(CD)RT_memory_allocator.cpp
 	$(CCC2) $(CD)RT_memory_allocator.cpp $(CPPOPT) $(BOOST_FLAGS)
+
+$(T)RT_memory_freer.o: $(BUILD_DEPENDENCIES) $(CD)RT_memory_freer.cpp
+	$(CCC2) $(CD)RT_memory_freer.cpp $(CPPOPT) $(BOOST_FLAGS)
 
 
 $(T)song.o:  $(BUILD_DEPENDENCIES) $(CD)song.c 
