@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "seqtrack_automation_proc.h"
 #include "instruments_proc.h"
 #include "seqblock_automation_proc.h"
+#include "notes_proc.h"
 
 #include "../api/api_proc.h"
 
@@ -116,6 +117,8 @@ void PlayerTask(double reltime, bool can_not_start_playing_right_now_because_jac
         bool is_finished = true;
         
         RT_SEQBLOCK_AUTOMATION_called_before_scheduler();
+
+        RT_NOTES_called_before_scheduler();
         
         ALL_SEQTRACKS_FOR_EACH(){
 

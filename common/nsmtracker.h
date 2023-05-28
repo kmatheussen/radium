@@ -189,7 +189,8 @@ static_assert (sizeof(long long int) >= 8, "sizof(long long int) must be 8 or hi
 #endif
 
 #if defined(__cplusplus)
-#include "RT_memory_allocator_proc.h"
+//#include "RT_memory_allocator_proc.h"
+#include "RT_memory_freer_proc.h"
 #endif
 
 
@@ -2007,43 +2008,17 @@ namespace r{
   };
 
   template <typename ValType>
-  struct TimeDataDataTypeRef : TimeDataDataType<ValType> {
+  struct TimeDataDataTypeRef : TimeDataDataType<ValType>, radium::Deletable {
     std::atomic<int> _num_references;
 
     TimeDataDataTypeRef(const Ratio &ratio, ValType val, int logtype = LOGTYPE_LINEAR)
       : TimeDataDataType<ValType>(ratio, val, logtype)
       , _num_references(0)
     {}
-
-    void *operator new(size_t size){
-      //void *ret = malloc(size);
-      void *ret = RT_alloc_raw(size, "TimeDataDataTypeRef::new");
-      printf("ALLOCING2 %p. Size: %d\n", ret, (int)size);
-      return ret;
-    }
-    
-    void *operator new[](size_t size) {
-      //void *ret = malloc(size);
-      void *ret = RT_alloc_raw(size, "TimeDataDataTypeRef::new");
-      printf("ALLOCING2[] %p. Size: %d\n", ret, (int)size);
-      return ret;
-    }
-    
-    void operator delete(void *ptr) noexcept {
-      printf("DELETING2 %p\n", ptr);
-      //free(ptr);
-      RT_free_raw(ptr, "TimeDataDataTypeRef::delete");
-    };
-    
-    void operator delete[](void *ptr) noexcept {
-      printf("DELETING2[] %p\n", ptr);
-      //free(ptr);
-      RT_free_raw(ptr, "TimeDataDataTypeRef::delete");
-    }
-
   };
     
   // Like shared_ptr, but can be used as datatype for TimeData.
+  //
   template <class T>
   struct TimeData_shared_ptr
   {
@@ -2161,7 +2136,23 @@ namespace r{
       //printf("    ~TimeData_shared_ptr: %d - %p (%p)\n", _t->_num_references.load()-1, _t, this);
     
       if ((--_t->_num_references)==0){
-        delete _t; // Note: typeof(_t)==TimeDataDataTypeRef, and TimeDataDataTypeRef objects can be allocated and deleted in RT.
+
+#if defined(TEST_TIMEDATA_MAIN) || defined(TEST_RADIUM_VECTOR_MAIN)
+        g_num_freed++;
+#endif
+
+        if (THREADING_is_main_thread()) {
+          
+          delete _t;
+          
+        } else {
+          
+          R_ASSERT_NON_RELEASE(THREADING_is_RT()); // If not, something unusual has happened.
+          
+          RT_free(_t);
+          
+        }
+        
       }
     }
 
@@ -2415,7 +2406,7 @@ struct NoteData{
   void debug_note_added(const r::Note *note, const char *where);
   void debug_note_removed(const r::Note *note);
 #endif
-  
+
 struct Note : NodeId, public r::TimeDataDataTypeRef<float> {
 
   /*
@@ -4203,7 +4194,14 @@ namespace radium{
 #include "Vector.hpp"
 namespace radium{
   using RT_NoteVector = radium::Vector<struct Notes*, radium::AllocatorType::RT>;
-  using RT_NoteVector2 = radium::Vector<r::NotePtr, radium::AllocatorType::RT>;
+
+  struct HangingNote{
+    r::NotePtr note;
+    Patch *patch;
+    const struct SeqBlock *seqblock;
+    int midi_channel;
+  };
+  using RT_HangingNoteVector = radium::Vector<HangingNote, radium::AllocatorType::RT>;
 }
 #endif
 
@@ -4425,7 +4423,7 @@ struct SeqTrack{
   int recording_generation; // Used in audio/Seqtrack_plugin.cpp
 
 #ifdef SEQBLOCK_USING_VECTOR
-  radium::Vector< radium::RT_NoteVector2*, radium::AllocatorType::RT > *hanging_notes;
+  radium::Vector< radium::RT_HangingNoteVector*, radium::AllocatorType::RT > *hanging_notes;
 #else
   void *hanging_notes;
 #endif

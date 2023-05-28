@@ -177,6 +177,8 @@ static inline bool note_continues_next_block2(const struct Blocks *block, const 
 }
 #endif
 
+extern LANGSPEC void RT_NOTES_called_before_scheduler(void);
+
 #ifdef __cplusplus
 void RT_notes_called_each_block(struct SeqTrack *seqtrack,
                                 const int play_id,

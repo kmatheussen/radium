@@ -5,28 +5,61 @@
 
 #include "QueueStack.hpp"
 
+namespace{
+  struct Element {
+    bool is_deletable;
+    void *mem;
+  };
+}
 
-
-static radium::Queue<void*, 8000> g_queue;
+static radium::Queue<Element, 8000> g_queue;
 
 
 void RT_memory_freer_init(void){
 
   std::thread([](){
+
+    THREADING_init_deleter_thread_type();
     
     while(true){
-      void *mem = g_queue.get();
+      Element element = g_queue.get();
 
-      printf("RT_FREED %p\n", mem);
+      if (element.is_deletable) {
+
+        radium::Deletable *deletable = static_cast<radium::Deletable*>(element.mem);
+        
+        THREADING_run_on_main_thread_async([deletable](void) {
+          printf("RT_DELETE %p\n", deletable);
+          delete deletable;
+        });
+        
+      } else {
       
-      V_free(mem);
+        printf("RT_FREED %p\n", element.mem);
+      
+        V_free(element.mem);
+      }
     }
       
   }).detach();
 }
 
 bool RT_free(void *mem){
-  bool ret = g_queue.tryPut(mem);
+  Element element{false,mem};
+  
+  bool ret = g_queue.tryPut(element);
+
+  R_ASSERT_NON_RELEASE(ret);
+
+  return ret;
+}
+
+bool RT_free(radium::Deletable *mem){
+  Element element{true,(void*)mem};
+
+  printf("Queuing Deltable %p\n", mem);
+  
+  bool ret = g_queue.tryPut(element);
 
   R_ASSERT_NON_RELEASE(ret);
 

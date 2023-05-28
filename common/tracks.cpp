@@ -139,7 +139,7 @@ static void InitTrack(struct Tracks *track){
         track->stops2 = new r::StopTimeData;
 
         g_num_live_tracks++;
-        GC_register_finalizer(track, trackgcfinalizer, NULL, NULL, NULL);
+        GC_register_finalizer_ignore_self(track, trackgcfinalizer, NULL, NULL, NULL);
 
         printf("--------------------------------NUM live tracks: %d-------------------------\n", g_num_live_tracks);
 }

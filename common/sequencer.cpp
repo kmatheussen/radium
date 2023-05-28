@@ -1680,6 +1680,8 @@ static void seqtrackgcfinalizer(void *actual_mem_start, void *user_data){
   //getchar();
   //abort();
   SEQTRACK_AUTOMATION_free(seqtrack->seqtrackautomation);
+
+  delete seqtrack->hanging_notes;
 }
 
 static int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t seqtime, int64_t end_seqtime);
@@ -1819,8 +1821,10 @@ struct SeqTrack *SEQTRACK_create(const hash_t *automation_state, int seqtracknum
   seqtrack->note_gain_muted = 1.0;
 
   seqtrack->is_visible = true;
+
+  seqtrack->hanging_notes = new radium::Vector< radium::RT_HangingNoteVector*, radium::AllocatorType::RT>;
   
-  GC_register_finalizer(seqtrack, seqtrackgcfinalizer, NULL, NULL, NULL);
+  GC_register_finalizer_ignore_self(seqtrack, seqtrackgcfinalizer, NULL, NULL, NULL);
   
   return seqtrack;
 }

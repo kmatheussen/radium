@@ -61,7 +61,8 @@ enum ThreadType{
   MAIN_THREAD,
   PLAYER_THREAD,
   JUCE_THREAD, // juce dispatcher thread.
-  RUNNER_THREAD
+  RUNNER_THREAD,
+  DELETER_THREAD
 };
 
 // Note: From the assembler output, it looks faster to put __thread variables into static variables (and access
@@ -101,6 +102,10 @@ void THREADING_init_juce_thread_type(void) {
   R_ASSERT_NON_RELEASE(g_thread_type==OTHER_THREAD);
   g_thread_type = JUCE_THREAD;
 }
+void THREADING_init_deleter_thread_type(void) {
+  R_ASSERT_NON_RELEASE(g_thread_type==OTHER_THREAD);
+  g_thread_type = DELETER_THREAD;
+}
 
 bool THREADING_is_main_thread(void){
   return g_thread_type==MAIN_THREAD;
@@ -121,6 +126,10 @@ bool THREADING_is_player_or_runner_thread(void){
 
 bool THREADING_is_juce_thread(void){
   return g_thread_type==JUCE_THREAD;
+}
+
+bool THREADING_is_deleter_thread(void){
+  return g_thread_type==DELETER_THREAD;
 }
 
 bool THREADING_is_RT(void){

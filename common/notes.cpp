@@ -2744,41 +2744,111 @@ static void RT_start_note(struct SeqTrack *seqtrack,
     note->d._has_sent_seqblock_volume_automation_this_block = true;
     
     RT_PATCH_play_note2(seqtrack, patch, note2, note_time);
-
-    if (note_continues_next_seqblock(seqblock, note)){
-      printf("TODO/FIX: Put note into seqtrack->hanging_notes. (now the note will just hang)\n");
-    }
   }
 }
+
+
+static vector_t g_RT_audio_patches;
+static vector_t g_RT_midi_patches;
+
+void RT_NOTES_called_before_scheduler(void){
+  
+  // Note: RT-lock is held when changing Instrument::patches->elements.
+  
+  g_RT_audio_patches = get_audio_instrument()->patches;
+  g_RT_midi_patches = get_MIDI_instrument()->patches;
+}
+
+#if 0
+// not important.
+void RT_prepare_patches_after_rt_usage(void){
+  memset(&g_RT_audio_patches, 0, sizeof(vector_t));
+  memset(&g_RT_midi_patches, 0, sizeof(vector_t));
+}
+#endif
 
 static void RT_stop_all_hanging_notes_for_track(struct SeqTrack *seqtrack,
                                                 const struct Tracks *track,
                                                 int64_t stop_time)
 {
-#if 0
-  // TODO/IMPLEMENT.
-  
   R_ASSERT_RETURN_IF_FALSE(seqtrack->hanging_notes != NULL);
 
+  // 1. memcpy audio/midi_instrument->patches->elements to global area, where GC can find them.
+  //    (we only have to do this once in the start of the RT-block)
+  // 2. iterate those instead, it won't disappear.
+  // 3. clean that area after usage (end of RT-block).
+  
   int tracknum = track->l.num;
 
-  if( tracknum >= seqtrack->hanging_notes->size())
+  if (tracknum >= seqtrack->hanging_notes->size())
     return; // The seqblock->playing_notes vector is not expanded to cover all tracks unless there are playing notes on all tracks.
 
-  radium::RT_NoteVector2 &playing_notes = *seqblock->playing_notes2->at_ref(track->l.num);
+  radium::RT_HangingNoteVector *hanging_notes = seqtrack->hanging_notes->at_ref(track->l.num);
 
-  for(const r::NotePtr &note : playing_notes){
-    note_t note2 = create_note_t3(seqblock,
-                                  note->_id,
-                                  note->get_val(),
-                                  ATOMIC_GET(track->midi_channel)
-                                  );
-    
-    note->d._curr_velocity_time = 0;
-    note->d._curr_pitch_time = 0;
-    RT_PATCH_stop_note(seqtrack, patch, note2, stop_time);
+  if (hanging_notes == NULL){
+    R_ASSERT(false);
+    return;
   }
-#endif
+  
+  for(const radium::HangingNote &hanging_note : *hanging_notes) {
+    r::Note *note = hanging_note.note.get_mutable();
+
+    // Check that seqblock is still alive
+    //
+    if (&g_block_seqtrack_seqblock == hanging_note.seqblock)
+      goto got_seqblock;
+    
+    VECTOR_FOR_EACH(const struct SeqBlock *, seqblock, &seqtrack->seqblocks){
+      if (seqblock == hanging_note.seqblock)
+        goto got_seqblock;
+    }END_VECTOR_FOR_EACH;
+
+    //R_ASSERT_NON_RELEASE(false); // don't think it should happen actually...
+    
+    continue;
+    
+  got_seqblock:
+
+    // Check that patch is still alive (can we iterate patches in a non-main-thread? Doesn't seem like we can...)
+    // Must find out when an instrument is deleted.
+    //
+    VECTOR_FOR_EACH(struct Patch *, maybe, &g_RT_audio_patches){
+      if (maybe == hanging_note.patch)
+        goto got_patch;
+    }END_VECTOR_FOR_EACH;
+    
+    VECTOR_FOR_EACH(struct Patch *, maybe, &g_RT_midi_patches){
+      if (maybe == hanging_note.patch)
+        goto got_patch;
+    }END_VECTOR_FOR_EACH;
+
+    R_ASSERT_NON_RELEASE(false); // don't think it should happen actually...
+    
+    continue;
+    
+  got_patch:
+
+    R_ASSERT(hanging_note.patch != NULL);
+
+    if (hanging_note.patch != NULL) {
+      note_t note2 = create_note_t3(hanging_note.seqblock,
+                                    note->_id,
+                                    note->get_val(),
+                                    hanging_note.midi_channel
+                                    );
+      
+      note->d._curr_velocity_time = 0;
+      note->d._curr_pitch_time = 0;
+      
+      printf("     --Hang-Stopping note: %f\n", note->get_val());
+      RT_PATCH_stop_note(seqtrack, hanging_note.patch, note2, stop_time);
+    }else{
+      R_ASSERT(false);
+    }
+  }
+
+
+  hanging_notes->clear();  
 }
 
 static void handle2(struct SeqTrack *seqtrack,
@@ -2829,13 +2899,13 @@ static void handle2(struct SeqTrack *seqtrack,
 
         bool note_has_started_or_ended = false;
         
-
-        printf("note: %f/%f. Period: %f -> %f. is_inside: %d. only_one_line: %d. other_thing: %d. Id: %d.\n",
+#if 0
+        printf("note: %f -> %f. Period: %f -> %f. is_inside: %d. only_one_line: %d. other_thing: %d. Id: %d.\n",
                ratio2double(note->get_time()), ratio2double(note->d._end),
                ratio2double(period._start), ratio2double(period._end),
                period.is_inside(note->get_time()), period_spans_only_one_line, r::RatioPeriod(line, line+1).is_inside(note->get_time()),
                (int)note->_id);
-
+#endif
 
         //
         // 1. START NOTE
@@ -2847,6 +2917,8 @@ static void handle2(struct SeqTrack *seqtrack,
           
           int64_t time = get_seqblock_ratio_time2(seqblock, track, note->get_time());
           
+          RT_stop_all_hanging_notes_for_track(seqtrack, track, time);
+
           printf("  --Starting note: %f (id: %d). Line: %d. Note start: %f. Period: %s. Time: %d. Seqtime: %d -> %d\n",
                  note->get_val(),
                  (int)note->_id,
@@ -2855,27 +2927,9 @@ static void handle2(struct SeqTrack *seqtrack,
                  (int)time,
                  (int)seqtime_start, (int)seqtime_end);
           
-          RT_stop_all_hanging_notes_for_track(seqtrack, track, time);
-
           RT_start_note(seqtrack, seqblock, track, note, time, 0);
-
-#if 0 // might be necessary
-          // Set velocity and pitch cache values to prevent the same values from being sent out unnecessarily right after starting to play the note.
-          {
-            r::VelocityTimeData::Reader reader(note->_velocities, seqblock->cache_num);
-            r::VelocityTimeData::RT_CacheHandler cache(reader.get_player_cache(), play_id);
-            cache.update_value(note->velocity);
-          }
-          {
-            r::PitchTimeData::Reader reader(note->_pitches, seqblock->cache_num);
-            r::PitchTimeData::RT_CacheHandler cache(reader.get_player_cache(), play_id);
-            cache.update_value(note->note);
-          }
-#endif
-
         }
-
-
+          
         //
         // 2. Send velocity and pitch messages.
         // 
@@ -2892,60 +2946,37 @@ static void handle2(struct SeqTrack *seqtrack,
         //
         // 3. Stop note.
         //
-        
-        if (period.is_inside(note->d._end)
+
+        if (period.is_inside_inclusive(note->d._end) // Fix: only inclusive if note->d._end is at block end.
             && (period_spans_only_one_line || r::RatioPeriod(line, line+1).is_inside(note->d._end))) { // The check for period_spans_only_one_line is just an optimization.
 
           note_has_started_or_ended = true;
           
-          const int64_t stop_time = get_seqblock_ratio_time2(seqblock, track, note->d._end);
+          if (note_continues_next_seqblock(seqblock, note)) {
             
-          printf("     --Stopping note: %f. Line: %d. Note end: %f. Period: %s. Stop time: %d. Seqtime: %d -> %d\n",
-                 note->get_val(), line, ratio2double(note->d._end), period.to_string(),
-                 (int)stop_time,
-                 (int)seqtime_start, (int)seqtime_end);
-          
-          note_t note2 = create_note_t3(seqblock,
-                                        note->_id,
-                                        note->get_val(),
-                                        ATOMIC_GET(track->midi_channel)
-                                        );
-          
-          note->d._curr_velocity_time = 0;
-          note->d._curr_pitch_time = 0;
-          RT_PATCH_stop_note(seqtrack, patch, note2, stop_time);
-        }
+            RT_SEQTRACK_add_hanging_note(seqtrack, seqblock, track, patch, note);
+            
+          } else {
+            
+            const int64_t stop_time = get_seqblock_ratio_time2(seqblock, track, note->d._end);
+            
+            printf("     --Stopping note: %f. Line: %d. Note end: %f. Period: %s. Stop time: %d. Seqtime: %d -> %d\n",
+                   note->get_val(), line, ratio2double(note->d._end), period.to_string(),
+                   (int)stop_time,
+                   (int)seqtime_start, (int)seqtime_end);
+            
+            note_t note2 = create_note_t3(seqblock,
+                                          note->_id,
+                                          note->get_val(),
+                                          ATOMIC_GET(track->midi_channel)
+                                          );
+            
+            note->d._curr_velocity_time = 0;
+            note->d._curr_pitch_time = 0;
 
-        if(0)
-          printf("%d\n", note_has_started_or_ended);
-        
-#if 0
-        if (line == line_end) {
-          
-          bool handle_velocities_and_pitches = !note_has_started_or_ended && period_spans_only_one_line;
-
-          if (!handle_velocities_and_pitches && !note_has_started_or_ended) {
-          
-            R_ASSERT(!period_spans_only_one_line);
-            
-            if (true
-                && !r::RatioPeriod(line_start, line_end).is_inside(note->get_time())
-                && !r::RatioPeriod(line_start, line_end).is_inside(note->d._end)
-                )
-              handle_velocities_and_pitches = true;
-          }
-        
-          if (handle_velocities_and_pitches) {
-            
-            // 1. Not for notes started or ended here.
-            // 2. Only one time per note (in case the period spans several notes)
-
-            RT_VELOCITIES_called_each_block_for_each_note2(seqtrack, play_id, seqblock, track, seqtime_start, period, patch, note);
-            RT_PITCHES_called_each_block_for_each_note2(seqtrack, play_id, seqblock, track, seqtime_start, period, patch, note);
-            
+            RT_PATCH_stop_note(seqtrack, patch, note2, stop_time);
           }
         }
-#endif   
       }
   }
 }

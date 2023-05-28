@@ -305,23 +305,6 @@ struct TimeDataSimpleNode : public TimeDataDataType<ValType> {
   {}
 };
 
-
-template <class T>
-static inline void RT_schedule_to_delete(T *t)
-{
-  // Currently, we don't have to schedule anything since RT_schedule_to_delete is always called from non-rt code.
-  ASSERT_IS_NONRT_MAIN_THREAD_NON_RELEASE();
-
-#if defined(TEST_TIMEDATA_MAIN) || defined(TEST_RADIUM_VECTOR_MAIN)
-  g_num_freed++;
-#endif
-  
-  //static int s_num = 0; printf("   <<<<<<<<<<<< RT_schedule_to_delete: %p. Total: %d / %d\n", t, ++s_num, g_num_allocated);
-  delete t;
-}
-
-
-
 enum class KeepOldData {
   KEEP_OLD_DATA,
   USE_CLEAN_DATA

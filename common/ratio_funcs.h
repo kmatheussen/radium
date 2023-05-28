@@ -75,9 +75,11 @@ static inline Ratio make_ratio_from_double_internal(double val, const int num_bi
 static inline Ratio make_ratio_from_double(double val, const int num_bits = 60){
   return make_ratio_from_double_internal(val, num_bits);
 }
+/*
 static inline Ratio double2ratio(double val, const int num_bits = 60){
   return make_ratio_from_double_internal(val, num_bits);
 }
+*/
 #else
 static inline Ratio make_ratio_from_double(double val){
   return make_ratio_from_double_internal(val, 60);
@@ -90,6 +92,10 @@ static inline double make_double_from_ratio(Ratio r){
 
 static inline double ratio2double(Ratio r){
   return (double)r.num / (double)r.den;
+}
+
+static inline Ratio double2ratio(double val){
+  return make_ratio_from_double_internal(val, 60);
 }
 
 #include "overflow_funcs.h"
