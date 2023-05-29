@@ -81,32 +81,46 @@ static DEFINE_ATOMIC(int, num_sp_left) = 0;
 #if 0
 
 // 1. The original Queue type.
-static radium::Queue< SoundProducer* , MAX_NUM_SP > soundproducer_queue;
+using Queue = radium::Queue< SoundProducer* , MAX_NUM_SP >;
 #define GET_NEXT_SP_DIRECTLY 1
 #define LET_MAIN_THREAD_TAKE_FIRST_SP 1
 
 #elif 0
 
 // 2. Lighter. A little bit faster than 1.
-static radium::LinkedListStack< SoundProducer*> soundproducer_queue;
+using Queue = radium::LinkedListStack< SoundProducer* , MAX_NUM_SP >;
 #define GET_NEXT_SP_DIRECTLY 1
 #define LET_MAIN_THREAD_TAKE_FIRST_SP 1
 
 #elif 1
 
 // 3. Same as 2, but stored in a vector. Probably less cache misses when queue has many elements.
-static radium::VectorStack< SoundProducer*, MAX_NUM_SP > soundproducer_queue;
+using Queue = radium::VectorStack< SoundProducer* , MAX_NUM_SP >;
 #define GET_NEXT_SP_DIRECTLY 1
 #define LET_MAIN_THREAD_TAKE_FIRST_SP 1
 
 #else
 
 // 3. Tries to be smart. Should in theory work better than the others, but the implementation of SameCpuQueue isn't finished.
-static radium::SameCpuQueue< SoundProducer*> soundproducer_queue;
+using Queue = radium::SameCpuQueue< SoundProducer*>;
 #define GET_NEXT_SP_DIRECTLY 0
 #define LET_MAIN_THREAD_TAKE_FIRST_SP 0
 
 #endif
+
+
+static Queue *g_soundproducer_queue;
+
+namespace
+{
+  struct InitQueue{
+    InitQueue(){
+      g_soundproducer_queue = new Queue;
+    }
+  } g_init_buffer;
+}
+
+
 
 static void avoid_lockup(int counter){
   if ((counter % (1024*64)) == 0){
@@ -136,7 +150,7 @@ static void dec_sp_dependency(const SoundProducer *parent, SoundProducer *sp, So
       next = sp;
     else
 #endif
-      soundproducer_queue.put(sp);
+      g_soundproducer_queue->put(sp);
   }
 }
 
@@ -278,7 +292,7 @@ public:
 
 #ifdef FOR_MACOSX
     //bool started = false;
-    //printf("  Trying to call soundproducer_queue.get();\n");
+    //printf("  Trying to call g_soundproducer_queue->get();\n");
 #endif
 
     while(true){
@@ -292,10 +306,10 @@ public:
 	  
 	  if (ATOMIC_GET_RELAXED(g_num_blocks_pausing_buzylooping) <= 0) {
 	    
-	    if (soundproducer_queue.buzyGetEnabled()) {
+	    if (g_soundproducer_queue->buzyGetEnabled()) {
 	      
 	      bool gotit;
-	      sp = soundproducer_queue.tryGet(gotit);
+	      sp = g_soundproducer_queue->tryGet(gotit);
 	      if (gotit)
 		break;
 	      else
@@ -303,13 +317,13 @@ public:
             
 	    } else {
 	      
-	      soundproducer_queue.waitUntilBuzyGetIsEnabled();
+	      g_soundproducer_queue->waitUntilBuzyGetIsEnabled();
 	      
 	    }
 	    
 	  } else {
 	    
-	    sp = soundproducer_queue.get();
+	    sp = g_soundproducer_queue->get();
 	    break;
 	    
 	  }
@@ -320,7 +334,7 @@ public:
       } else {
 
 	// not buzy-getting
-	sp = soundproducer_queue.get();
+	sp = g_soundproducer_queue->get();
 
       }
       
@@ -333,7 +347,7 @@ public:
 #endif
 
       if (ATOMIC_GET(must_exit)) {
-        soundproducer_queue.put(sp);
+        g_soundproducer_queue->put(sp);
         break;
       }
 
@@ -358,7 +372,7 @@ private slots:
 static void process_single_core(int64_t time, int num_frames, bool process_plugins){
   while( ATOMIC_GET_RELAXED(num_sp_left) > 0 ) {
     // R_ASSERT(sp_ready.numSignallers()>0); // This assert can sometimes fail if there are still running runners with must_exit==true.
-    SoundProducer *sp = soundproducer_queue.get();    
+    SoundProducer *sp = g_soundproducer_queue->get();    
     process_soundproducer(0, sp, time, num_frames, process_plugins);
   }
 
@@ -391,13 +405,13 @@ void MULTICORE_disable_RT_priority(void){
 void MULTICORE_start_block(void){
   if (g_use_buzy_get){
     ATOMIC_SET(g_start_block_time, (int) (1000*monotonic_seconds()));
-    soundproducer_queue.enableBuzyGet();
+    g_soundproducer_queue->enableBuzyGet();
   }
 }
 
 void MULTICORE_end_block(void){
   if (g_use_buzy_get){
-    soundproducer_queue.disableBuzyGet();
+    g_soundproducer_queue->disableBuzyGet();
 
     int num_blocks_left = ATOMIC_GET(g_num_blocks_pausing_buzylooping);
     if (num_blocks_left > 0)
@@ -407,7 +421,7 @@ void MULTICORE_end_block(void){
 
 static SoundProducer *tryget_next_sp_in_main_thread(void){
   bool gotit;
-  auto *ret = soundproducer_queue.tryGet(gotit);
+  auto *ret = g_soundproducer_queue->tryGet(gotit);
   if (!gotit)
     return NULL;
   else
@@ -486,9 +500,9 @@ void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t tim
         //fprintf(stderr,"Scheduling %p: %s\n",sp,sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name);
         //fflush(stderr);
 #if START_ALL_RUNNERS_SIMULTANEOUSLY
-        soundproducer_queue.putWithoutSignal(sp);
+        g_soundproducer_queue->putWithoutSignal(sp);
 #else
-        soundproducer_queue.put(sp);
+        g_soundproducer_queue->put(sp);
 #endif
       }
     }
@@ -500,7 +514,7 @@ void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t tim
 
 #if START_ALL_RUNNERS_SIMULTANEOUSLY
   if(num_ready_sp > 0)
-    soundproducer_queue.signal(num_ready_sp); // signal everyone at once to try to lower number of semaphore waits. Doesn't seem to make a difference on my machine though.
+    g_soundproducer_queue->signal(num_ready_sp); // signal everyone at once to try to lower number of semaphore waits. Doesn't seem to make a difference on my machine though.
 #endif
 
   if (g_num_runners==0) {
