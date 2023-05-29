@@ -196,6 +196,11 @@ void RT_mempool_init(void){
 
   for(int i=0;i<NUM_POOLS;i++)
     g_pools[i] = new POOL(MAX_POOL_SIZE);
+
+#if !defined(RELEASE)
+  void *mem = RT_alloc_raw(g_max_mem_size + 100, "test");
+  RT_free_raw(mem, "testfree");
+#endif
 }
 
 // Note: Also sets size and pool_num
@@ -512,7 +517,7 @@ void RT_free_raw(void *mem, const char *who){
     pool_num = data->_pool_num;
 
     R_ASSERT_RETURN_IF_FALSE(pool_num < NUM_POOLS);  
-    R_ASSERT_NON_RELEASE(pool_num >= 0);
+    R_ASSERT_NON_RELEASE(pool_num >= -1);
 
     R_ASSERT_NON_RELEASE(ATOMIC_GET(data->_num_users) > 0);
     if (ATOMIC_ADD_RETURN_NEW(data->_num_users, -1) > 0)
@@ -520,7 +525,7 @@ void RT_free_raw(void *mem, const char *who){
   }
 
 #if ASSERT_MEMORY
-  {
+  if (pool_num >= 0){
     char *m = (char*)&data->_mem;
     for(int i3=0 ; i3 < POOL_MEM_SIZE(pool_num) ; i3 ++)
       m[i3] = 0x3e;
@@ -533,7 +538,7 @@ void RT_free_raw(void *mem, const char *who){
 
     ASAN_UNPOISON_MEMORY_REGION(mem, g_offset_of_data);
     
-    free(mem);
+    free(data);
     
   } else {
 
