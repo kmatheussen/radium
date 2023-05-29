@@ -869,7 +869,17 @@ typedef struct {
   uint32_t msg;
 } play_buffer_event_t;
 
-static boost::lockfree::queue<play_buffer_event_t, boost::lockfree::capacity<8000> > g_play_buffer;
+static boost::lockfree::queue<play_buffer_event_t, boost::lockfree::capacity<8000> > *g_play_buffer;
+
+namespace
+{
+  struct InitBuffer{
+    InitBuffer(){
+      g_play_buffer = new boost::lockfree::queue<play_buffer_event_t, boost::lockfree::capacity<8000>>;
+    }
+  } g_init_buffer;
+}
+
 
 void radium::MidiLearn::RT_maybe_use_forall(instrument_t instrument_id, const symbol_t *port_name, uint32_t msg){
   for (auto midi_learn : g_midi_learns) {
@@ -912,7 +922,7 @@ void RT_MIDI_handle_play_buffer(void){
   struct Patch *through_patch = NULL; // set to NULL to silence false compiler warning.
   double seqtrack_starttime = 0.0; // set to 0.0 to silence false compiler warning.
 
-  while(g_play_buffer.pop(event)==true){
+  while(g_play_buffer->pop(event)==true){
 
     uint32_t msg = event.msg;
 
@@ -984,7 +994,7 @@ static void add_event_to_play_buffer(const symbol_t *port_name, uint32_t msg){
   event.deltatime = 0;
   event.msg = msg;
 
-  if (!g_play_buffer.bounded_push(event))
+  if (!g_play_buffer->bounded_push(event))
     RT_message("Midi play buffer full.\nMost likely the player can not keep up because it uses too much CPU.\nIf that is not the case, please report this incident.");
 }
 

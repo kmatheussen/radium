@@ -408,7 +408,17 @@ namespace radium{
 
 static QVector<radium::Ready_To_Run_Scheduled_RT_functions*> g_alive_functions_to_run_on_player_thread;
 
-static boost::lockfree::queue< radium::Ready_To_Run_Scheduled_RT_functions* , boost::lockfree::capacity<256> > g_functions_to_run_on_player_thread_queue;
+static boost::lockfree::queue< radium::Ready_To_Run_Scheduled_RT_functions* , boost::lockfree::capacity<256> > *g_functions_to_run_on_player_thread_queue;
+
+namespace
+{
+  struct InitBuffer{
+    InitBuffer(){
+      g_functions_to_run_on_player_thread_queue = new boost::lockfree::queue< radium::Ready_To_Run_Scheduled_RT_functions* , boost::lockfree::capacity<256> >;
+    }
+  } g_init_buffer;
+}
+
 
 
 void RT_call_functions_scheduled_to_run_on_player_thread(void){
@@ -420,7 +430,7 @@ void RT_call_functions_scheduled_to_run_on_player_thread(void){
   while(true){
 
     if (curr_rt_functions==NULL)
-      if (!g_functions_to_run_on_player_thread_queue.pop(curr_rt_functions)){
+      if (!g_functions_to_run_on_player_thread_queue->pop(curr_rt_functions)){
         if (have_run_something)
           GFX_ScheduleCurrentInstrumentRedraw();
         break;
@@ -446,7 +456,7 @@ radium::Ready_To_Run_Scheduled_RT_functions *radium::Scheduled_RT_functions::sch
   radium::Ready_To_Run_Scheduled_RT_functions *ready_to_run = new radium::Ready_To_Run_Scheduled_RT_functions(this);
   g_alive_functions_to_run_on_player_thread.push_back(ready_to_run);
   
-  while(!g_functions_to_run_on_player_thread_queue.bounded_push(ready_to_run)){
+  while(!g_functions_to_run_on_player_thread_queue->bounded_push(ready_to_run)){
     printf("THREADING_schedule_on_player_thread: Thread full. Waiting...\n");
     msleep(100);
     safety++;

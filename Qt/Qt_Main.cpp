@@ -586,11 +586,21 @@ static void RTWIDGET_call_often(void){
   }
 }
   
-static boost::lockfree::queue<int64_t, boost::lockfree::capacity<64> > g_mixer_strips_needing_remake;
+static boost::lockfree::queue<int64_t, boost::lockfree::capacity<64> > *g_mixer_strips_needing_remake;
+
+namespace
+{
+  struct InitBuffer{
+    InitBuffer(){
+      g_mixer_strips_needing_remake = new boost::lockfree::queue<int64_t, boost::lockfree::capacity<64> >;
+    }
+  } g_init_buffer;
+}
+
 
 DEFINE_ATOMIC(bool, g_all_mixer_strips_needs_remake) = false;
 void RT_schedule_mixer_strips_remake(instrument_t id){
-  if (id.id==-1 || g_mixer_strips_needing_remake.bounded_push(id.id)==false)
+  if (id.id==-1 || g_mixer_strips_needing_remake->bounded_push(id.id)==false)
     ATOMIC_SET(g_all_mixer_strips_needs_remake, true);
 }
 
@@ -2788,19 +2798,19 @@ protected:
 
         {  // clear queue. (boost should add a clear/reset function. Maybe initialize() does that? 'initialize' is not documented though.)
           int64_t id;
-          while(g_mixer_strips_needing_remake.pop(id)==true);
+          while(g_mixer_strips_needing_remake->pop(id)==true);
         }
 
         //printf("          (remake called from qt main)\n");
         S7CALL2(void_void,"remake-mixer-strips");
 
-      } else if (g_mixer_strips_needing_remake.empty()==false) {
+      } else if (g_mixer_strips_needing_remake->empty()==false) {
         
         QSet<int64_t> remake_ids;
 
         while(true){
           int64_t id;
-          if (g_mixer_strips_needing_remake.pop(id)==false)
+          if (g_mixer_strips_needing_remake->pop(id)==false)
             break;
           remake_ids.insert(id);
         }

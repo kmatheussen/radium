@@ -352,7 +352,7 @@ namespace radium{
 
   
 class DiskPeaks;
-extern radium::Queue<DiskPeaks*, 1024> g_disk_peaks_queue;
+extern radium::Queue<DiskPeaks*, 1024> *g_disk_peaks_queue;
 
   
 class DiskPeaks {
@@ -401,7 +401,7 @@ public:
     //printf("... Has valid: %d\n", has_valid_peaks_on_disk());
 
     ATOMIC_ADD(num_visitors, 1); // ensure it's not deleted while reading peaks.
-    g_disk_peaks_queue.put(this);
+    g_disk_peaks_queue->put(this);
   }
 
   // Use DISKPEAKS_remove instead.
