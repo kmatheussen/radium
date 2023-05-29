@@ -201,7 +201,17 @@ static void FAUST_handle_new_svg_dir(struct SoundPlugin *plugin, MyQTemporaryDir
 static bool FAUST_handle_fff_reply(struct SoundPlugin *plugin, const FFF_Reply &reply, bool is_initializing);
 
 
-static radium::Queue<Request*,1024> g_queue;
+static radium::Queue<Request*,1024> *g_queue;
+
+namespace
+{
+  struct InitBuffer{
+    InitBuffer(){
+      g_queue = new radium::Queue<Request*,1024>;
+    }
+  } g_init_buffer;
+}
+
 
 static void add_factory_ready(Devdata *devdata, bool success){
   R_ASSERT(THREADING_is_main_thread());
@@ -671,7 +681,7 @@ namespace{
 
         // 1. First collect compilation requests. Here we only keep the newest compilation requests for each plugin, i.e. ensure that we only compile latest version.
         do{
-          Request *request = g_queue.get();
+          Request *request = g_queue->get();
           if (request->please_stop==true)   // Program exit.
             return;
 
@@ -680,7 +690,7 @@ namespace{
           
           code_requests[request->patch_id] = request;
           
-        }while(g_queue.size() > 0);
+        }while(g_queue->size() > 0);
 
         
         // 2. Then do the compilation
@@ -731,7 +741,7 @@ void FFF_shut_down(void){
     Request *request = new Request(make_instrument(-1), CompileOptions("", "", 0, false));
     request->please_stop = true;
     
-    g_queue.put(request);
+    g_queue->put(request);
     
     g_fff_thread.wait();
   }
@@ -759,7 +769,7 @@ static void FFF_request_reply(instrument_t patch_id, const CompileOptions &opts)
   
   Request *request = new Request(patch_id, opts);
     
-  g_queue.put(request);
+  g_queue->put(request);
 }
 
 // We don't call delete_dsps_and_data1 here since this function is called when cleaning up, and then the widgets have already been deleted.

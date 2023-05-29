@@ -31,7 +31,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 namespace radium{
-  radium::Queue<DiskPeaks*, 1024> g_disk_peaks_queue;
+  radium::Queue<DiskPeaks*, 1024> *g_disk_peaks_queue;
+
+  namespace
+  {
+    struct InitBuffer{
+      InitBuffer(){
+        g_disk_peaks_queue = new radium::Queue<DiskPeaks*, 1024>;
+      }
+    } g_init_buffer;
+  }
 }
 
 
@@ -44,7 +53,7 @@ public:
 private:
   void run(void) override {
     while(true){      
-      radium::DiskPeaks *disk_peaks = radium::g_disk_peaks_queue.get();
+      radium::DiskPeaks *disk_peaks = radium::g_disk_peaks_queue->get();
       if (isInterruptionRequested()==true)
         break;
       if (disk_peaks==NULL)
@@ -66,7 +75,7 @@ void DISKPEAKS_start(void){
 void DISKPEAKS_stop(void){
   if (g_disk_peaks_thread.isRunning()){
     g_disk_peaks_thread.requestInterruption();
-    radium::g_disk_peaks_queue.put(NULL);
+    radium::g_disk_peaks_queue->put(NULL);
     g_disk_peaks_thread.wait(10000);
   }  
 }
