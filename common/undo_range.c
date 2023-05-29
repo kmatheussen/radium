@@ -50,7 +50,7 @@ void ADD_UNDO_FUNC(Range(
 
   UNDO_OPEN();
 
-  for(int i=starttrack;i<R_MIN(wblock->num_reallines, endtrack);i++){
+  for(int i=starttrack;i<R_MIN(wblock->block->num_tracks, endtrack);i++){
     CALL_ADD_UNDO_FUNC(Track(window,
                              wblock,
                              wblock->wtrack,
