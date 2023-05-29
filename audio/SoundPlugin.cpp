@@ -1481,7 +1481,16 @@ namespace{
   };
 }
 
-static boost::lockfree::queue<EffectUndoData, boost::lockfree::capacity<8000> > g_effect_undo_data_buffer;
+static boost::lockfree::queue<EffectUndoData, boost::lockfree::capacity<8000> > *g_effect_undo_data_buffer;
+
+namespace
+{
+  struct InitBuffer{
+    InitBuffer(){
+      g_effect_undo_data_buffer = new boost::lockfree::queue<EffectUndoData, boost::lockfree::capacity<8000>>;
+    }
+  } g_init_buffer;
+}
 
 static void add_eud_undo(QVector<EffectUndoData> &s_euds, QHash<instrument_t, QSet<int>> &s_stored_effect_nums, double curr_time, double &s_last_time, int &s_last_undo_num){
   {
@@ -1528,7 +1537,7 @@ void PLUGIN_call_me_very_often_from_main_thread(void){
 
   {
     EffectUndoData eud;
-    while(g_effect_undo_data_buffer.pop(eud)==true){
+    while(g_effect_undo_data_buffer->pop(eud)==true){
 
       /*
        * Not much point. And, if two different midi patches have midi learn, we end up with a lot of undo entries.
@@ -1604,7 +1613,7 @@ void PLUGIN_call_me_when_an_effect_value_has_changed(struct SoundPlugin *plugin,
           eud.effect_value = old_native_value;
 
           //printf(" ..... Adding eud %f.\n", eud.effect_value);
-          if (!g_effect_undo_data_buffer.bounded_push(eud)){
+          if (!g_effect_undo_data_buffer->bounded_push(eud)){
 #if !defined(RELEASE)
             RT_message("g_effect_undo_data buffer full\n");
 #endif
