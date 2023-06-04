@@ -170,7 +170,7 @@ static void set_note_min_max_pitch(r::NoteTimeData *notes, r::NoteTimeData::Writ
   }
 }
 
-static void update_line_notes(r::NoteTimeData *notetimedata, r::NoteTimeData::Writer &writer){
+static void update_line_notes(r::NoteTimeData *notetimedata, const r::NoteTimeData::Writer &writer){
   int last_used_line = -1;
   
   for(const r::NotePtr &note : writer){
@@ -179,6 +179,7 @@ static void update_line_notes(r::NoteTimeData *notetimedata, r::NoteTimeData::Wr
 
     printf("  (%d). %d->%d. Sizeof(r::LineNotes): %d\n", last_used_line, line_start, line_end, (int)sizeof(r::LineNotes));
 
+    // Push empty lines. (i.e. delete old notes from last call to 'update_line_notes')
     for(int i = last_used_line+1 ; i < line_start ; i++) {
       
       if (i >= notetimedata->_line_notes.size()) {
@@ -194,7 +195,8 @@ static void update_line_notes(r::NoteTimeData *notetimedata, r::NoteTimeData::Wr
       }
       
     }
-    
+
+    // Push lines for this note.
     for(int i = line_start ; i <= line_end ; i++){
 
       r::LineNotes *notes;
@@ -222,11 +224,12 @@ static void update_line_notes(r::NoteTimeData *notetimedata, r::NoteTimeData::Wr
         }
 
       }
-      
+
+      //printf(".....pushing note %f to line %d\n", note->get_val(), i);
       notes->push_back(note.get_mutable());
     }
 
-    last_used_line = line_end;
+    last_used_line = R_MAX(last_used_line, line_end);
   }
 
   notetimedata->_num_valid_elements_in_line_notes = last_used_line + 1;
