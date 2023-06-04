@@ -186,7 +186,8 @@ void RT_notes_called_each_block(struct SeqTrack *seqtrack,
                                 const struct Tracks *track,
                                 const int64_t seqtime_start,
                                 const int64_t seqtime_end,
-                                const r::RatioPeriod &period
+                                const r::RatioPeriod &period,
+                                const bool is_enabled
                                 );
 #endif
 

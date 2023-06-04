@@ -2860,15 +2860,33 @@ static void handle2(struct SeqTrack *seqtrack,
                     const struct Tracks *track,
                     const int64_t seqtime_start,
                     const int64_t seqtime_end,
-                    const r::RatioPeriod &period
+                    const r::RatioPeriod &period,
+                    bool is_enabled
                     )
 {
   R_ASSERT_NON_RELEASE(period._end >= period._start);
     
   struct Patch *patch = track->patch;
   if (patch==NULL)
-    return;
+    is_enabled = false;
 
+  // Check if we can exit early if track is disabled and there are no hanging notes.
+  if (!is_enabled) {
+
+    if (track->l.num >= seqtrack->hanging_notes->size())
+      return;
+
+    radium::RT_HangingNoteVector *hanging_notes = seqtrack->hanging_notes->at_ref(track->l.num);
+
+    if (hanging_notes == NULL){
+      R_ASSERT(false);
+      return;
+    }
+
+    if (hanging_notes->is_empty())
+      return;
+  }
+  
   const int line_start = period._start.num / period._start.den;
   const int line_end = period._end.num / period._end.den;
 
@@ -2878,7 +2896,7 @@ static void handle2(struct SeqTrack *seqtrack,
   
   for(int line = line_start ; line <= line_end ; line++){
     
-    //printf("line: %d\n", line);
+    printf("line: %d. Num valid: %d\n", line, track->_notes2->_num_valid_elements_in_line_notes);
     
     if (line >= track->_notes2->_num_valid_elements_in_line_notes)
       break;
@@ -2929,10 +2947,16 @@ static void handle2(struct SeqTrack *seqtrack,
                  period.to_string(),
                  (int)time,
                  (int)seqtime_start, (int)seqtime_end);
-          
-          RT_start_note(seqtrack, seqblock, track, note, time, 0);
+
+          if (is_enabled)
+            RT_start_note(seqtrack, seqblock, track, note, time, 0);
         }
-          
+
+        
+        if (!is_enabled)
+          continue;
+
+        
         //
         // 2. Send velocity and pitch messages.
         // 
@@ -2990,11 +3014,12 @@ void RT_notes_called_each_block(struct SeqTrack *seqtrack,
                                 const struct Tracks *track,
                                 const int64_t seqtime_start,
                                 const int64_t seqtime_end,
-                                const r::RatioPeriod &period
+                                const r::RatioPeriod &period,
+                                const bool is_enabled
                                 )
 {
   if (true){
-    handle2(seqtrack, play_id, seqblock, track, seqtime_start, seqtime_end, period);
+    handle2(seqtrack, play_id, seqblock, track, seqtime_start, seqtime_end, period, is_enabled);
     return;
   }
   

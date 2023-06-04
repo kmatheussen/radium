@@ -2887,6 +2887,8 @@ static const r::RatioPeriod get_ratio_period(const struct SeqBlock *seqblock,
   return r::RatioPeriod(ratio_start, ratio_end);
 }
 
+
+
 void RT_EDITSEQBLOCK_call_each_block(struct SeqTrack *seqtrack,
                                      const struct SeqBlock *seqblock,
                                      const int64_t seqtime_start,
@@ -2920,13 +2922,13 @@ void RT_EDITSEQBLOCK_call_each_block(struct SeqTrack *seqtrack,
 
     int tracknum = track->l.num;
 
-    bool enabled = track->onoff==1 || root->song->mute_editor_automation_when_track_is_muted==false;
+    const bool enabled = track->onoff==1 || root->song->mute_editor_automation_when_track_is_muted==false;
     
-    bool doit = seqblock->track_is_disabled==NULL  // i.e. playing block
+    const bool doit = seqblock->track_is_disabled==NULL  // i.e. playing block
       || tracknum >= MAX_DISABLED_SEQBLOCK_TRACKS
       || !seqblock->track_is_disabled[tracknum];
 
-    if (enabled && doit){
+    if (true) { // (enabled && doit))
 
       // TODO: Optimize by taking latency into account here instead of rescheduling in audio_instrument.cpp.
       // (It's a bigger optimization doing it when notes have been converted to TimeData though.)
@@ -2947,8 +2949,10 @@ void RT_EDITSEQBLOCK_call_each_block(struct SeqTrack *seqtrack,
       }
 #endif
 
-      RT_fxline_called_each_block(seqtrack, play_id, seqblock, track, seqtime_start, seqtime_end, track_period);
-      RT_notes_called_each_block(seqtrack, play_id, seqblock, track, seqtime_start, seqtime_end, track_period);
+      if (enabled && doit)
+        RT_fxline_called_each_block(seqtrack, play_id, seqblock, track, seqtime_start, seqtime_end, track_period);
+      
+      RT_notes_called_each_block(seqtrack, play_id, seqblock, track, seqtime_start, seqtime_end, track_period, enabled && doit);
     }
     
     track=NextTrack(track);   
@@ -3001,7 +3005,7 @@ static void RT_handle_editor_seqblocks_each_block(struct SeqTrack *seqtrack){
         while(num_frames_left > 0) {
 
           int64_t num_frames = seqtrack->end_time - g_block_seqtrack_seqblock.t.time2;
-
+          
           if (num_frames > num_frames_left)
             num_frames = num_frames_left;
           
