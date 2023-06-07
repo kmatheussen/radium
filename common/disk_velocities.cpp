@@ -48,6 +48,22 @@ DC_end();
 }
 
 
+void SaveVelocities2(const r::NotePtr &note){
+DC_start("VELOCITIES2");
+
+ const r::VelocityTimeData::Reader reader(&note->_velocities);
+ 
+ for(const r::Velocity &velocity : reader){
+   DC_SaveRatio(velocity._time);
+   
+   DC_SaveI(velocity._val);
+   SaveLogType(velocity._logtype);
+ }
+
+DC_end();
+}
+
+
 void LoadVelocities(struct Notes *note){
 
   r::VelocityTimeData::Writer writer(note->_velocities);
@@ -111,6 +127,32 @@ DC_start("PITCHES");
 #endif
         
         const r::PitchTimeData::Reader reader(note->_pitches);
+ 
+        for(const r::Pitch &pitch : reader){
+          DC_SaveRatio(pitch._time);
+          
+          DC_SaveF(pitch._val);
+          SaveLogType(pitch._logtype);
+          DC_SaveI(pitch._chance);
+        }
+
+DC_end();
+}
+
+void SavePitches2(const r::NotePtr &note){
+DC_start("PITCHES");
+
+ #if 0
+	while(pitch!=NULL){
+		SavePlace(&pitch->l.p);
+		DC_SaveF(pitch->note);
+                SaveLogType(pitch->logtype);
+                DC_SaveI(pitch->chance);
+		pitch=NextPitch(pitch);
+	}
+#endif
+        
+        const r::PitchTimeData::Reader reader(&note->_pitches);
  
         for(const r::Pitch &pitch : reader){
           DC_SaveRatio(pitch._time);

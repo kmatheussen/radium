@@ -20,7 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-extern LANGSPEC void SaveNotes(struct Notes *note);
+extern LANGSPEC void SaveNotes(const struct Tracks *track);
 extern LANGSPEC struct Notes *LoadNote(void);
 extern LANGSPEC void DLoadNotes(const struct Root *newroot,struct Tracks *track, struct Notes *notes);
 

@@ -64,7 +64,7 @@ DC_start("TRACK");
 
 //	DC_SSN("instrument",track->instrument->l.num);
 
-	SaveNotes(track->notes);
+	SaveNotes(track);
 	SaveStops(track);
 	SaveFXs(&track->fxs,track);
         SaveSwings(track->swings);

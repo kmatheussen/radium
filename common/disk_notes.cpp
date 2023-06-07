@@ -33,33 +33,38 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-void SaveNotes(struct Notes *note){
-if(note==NULL) return;
-DC_start("NOTE");
+void SaveNotes(const struct Tracks *track){
+  
+  const r::NoteTimeData::Reader reader(track->_notes2);
 
-	SavePlace(&note->l.p);
+  for(const r::NotePtr &note : reader) {
+    DC_start("NOTE");
+  
+    const Place p = ratio2place(note.get_time());
+    SavePlace(&p);
 
-	DC_SaveF(note->note);
-        SaveLogType(note->pitch_first_logtype);
-        
-	DC_SaveI(0); // cents (never used, inserted into pitch instead)
-        
-	DC_SaveI(note->velocity);
-        SaveLogType(note->velocity_first_logtype);
-        
-        DC_SaveRatio(note->end);
-        
-	DC_SaveI(note->velocity_end);
-        DC_SaveF(note->pitch_end);
-	DC_SaveI(note->noend);
-
-        DC_SaveI(note->chance);
-        
-	SaveVelocities(note);
-	SavePitches(note);
-
-DC_end();
-SaveNotes(NextNote(note));
+    DC_SaveF(note.get_val());
+    
+    SaveLogType(note->d._pitch_first_logtype);
+    
+    DC_SaveI(0); // cents (never used, inserted into pitch instead)
+    
+    DC_SaveI(note->d._velocity);
+    SaveLogType(note->d._velocity_first_logtype);
+    
+    DC_SaveRatio(note->d._end);
+    
+    DC_SaveI(note->d._velocity_end);
+    DC_SaveF(note->d._pitch_end);
+    DC_SaveI(note->d._noend);
+    
+    DC_SaveI(note->d._chance);
+    
+    SaveVelocities2(note);
+    SavePitches2(note);
+    
+    DC_end();
+  }
 }
 
 

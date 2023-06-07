@@ -20,10 +20,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 extern LANGSPEC void SaveVelocities(const struct Notes *note);
+
+#if __cplusplus
+extern void SaveVelocities2(const r::NotePtr &note);
+#endif
+  
 extern LANGSPEC void LoadVelocities_oldformat(struct Notes *note);
 extern LANGSPEC void LoadVelocities(struct Notes *note);
 
 extern LANGSPEC void SavePitches(const struct Notes *note);
+#if __cplusplus
+extern void SavePitches2(const r::NotePtr &note);
+#endif
+
 extern LANGSPEC void LoadPitches(struct Notes *note);
 extern LANGSPEC void LoadPitches_oldformat(struct Notes *note);
 
