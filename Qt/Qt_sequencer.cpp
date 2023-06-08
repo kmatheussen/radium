@@ -1201,10 +1201,11 @@ public:
     const float track_pitch_min = track->_notes2->_min_display_pitch;
     const float track_pitch_max = track->_notes2->_max_display_pitch;
 
-    struct Notes *note = track->gfx_notes!=NULL ? track->gfx_notes : track->notes;
-    while(note != NULL){
+    const r::NoteTimeData::Reader reader(track->_gfx_notes2 != NULL ? track->_gfx_notes2 : track->_notes2);
 
-      const r::PitchTimeData::Reader reader(note->_pitches);
+    for(const r::NotePtr &note : reader) {
+
+      const r::PitchTimeData::Reader reader(&note->_pitches);
 
       /*
       struct Pitches last_pitch;
@@ -1220,8 +1221,8 @@ public:
       
       //struct Pitches *pitch = &first_pitch;
 
-      r::Pitch first_pitch(place2ratio(note->l.p), note->note, note->pitch_first_logtype);
-      r::Pitch last_pitch(note->end, note->pitch_end);
+      r::Pitch first_pitch(note.get_time(), note.get_val(), note->d._pitch_first_logtype);
+      r::Pitch last_pitch(note->d._end, note->d._pitch_end);
       
       const double init_last_y = -10000;
       double last_y = init_last_y;
@@ -1258,7 +1259,7 @@ public:
         if(equal_floats(track_pitch_max, track_pitch_min))
           n_y2 = (y1+y2)/2.0;
         else if (is_last && equal_floats(next_pitch._val, 0.0f))
-          n_y2 = scale_double(note->note+0.5, track_pitch_max, track_pitch_min, y1, y2);
+          n_y2 = scale_double(note->get_val()+0.5, track_pitch_max, track_pitch_min, y1, y2);
         else if (pitch._logtype==LOGTYPE_HOLD)
           n_y2 = n_y1;
         else
@@ -1303,8 +1304,6 @@ public:
       }
       
 #undef SHOW_BARS
-      
-      note = NextNote(note);
     }
 
     if (track->l.num < MAX_DISABLED_SEQBLOCK_TRACKS){
