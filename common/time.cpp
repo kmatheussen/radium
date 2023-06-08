@@ -1004,7 +1004,7 @@ STime Ratio2STime2(
     }
 
     if (line >= num_lines) {
-      R_ASSERT_NON_RELEASE(line==num_lines);
+      //R_ASSERT_NON_RELEASE(line==num_lines); // No, that's fine now.
       return times[num_lines].time;
     }
     
