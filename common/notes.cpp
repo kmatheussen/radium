@@ -113,7 +113,8 @@ static void set_note_polyphony_num(r::NoteTimeData *notes, r::NoteTimeData::Writ
     }
     
     if (note->d._end < note->get_time()){
-      R_ASSERT(false);
+      RError("  Note: %s -> %s\n", ratio_to_string(note->get_time()), ratio_to_string(note->d._end));
+      //getchar();
       note->d._end = note->get_time();
     }
 

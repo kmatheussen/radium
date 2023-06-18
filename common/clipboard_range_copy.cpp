@@ -210,7 +210,10 @@ void CopyRange_notes2(
       r::Note *new_note = new r::Note(note.get(), false);
 
       new_note->set_time(time);
-      
+
+      R_ASSERT(new_note->d._end == note->d._end);
+      new_note->d._end -= start;
+        
       CopyRange_velocities2(&new_note->_velocities,&note->_velocities,p1,p2);
       CopyRange_pitches2(&new_note->_pitches,&note->_pitches,p1,p2);
 

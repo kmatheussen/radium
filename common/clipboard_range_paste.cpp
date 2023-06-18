@@ -259,6 +259,8 @@ static void PasteRange_notes2(
 
           new_note->set_time(time);
 
+          new_note->d._end += how_much;
+          
           PasteRange_velocities2(block,&new_note->_velocities,&note->_velocities,place);
           //PasteRange_pitches(block,&note->pitches,fromnote->pitches,place);
           PasteRange_pitches2(block,&new_note->_pitches,&note->_pitches,place);
