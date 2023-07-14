@@ -198,7 +198,7 @@ void RT_mempool_init(void){
     g_pools[i] = new POOL(MAX_POOL_SIZE);
 
 #if !defined(RELEASE)
-  void *mem = RT_alloc_raw(g_max_mem_size + 100, "test");
+  void *mem = RT_alloc_raw(g_max_mem_size + 100, "test_gmax_mem_size");
   RT_free_raw(mem, "testfree");
 #endif
 }
@@ -328,12 +328,15 @@ static RT_Mem_internal *RT_alloc_using_malloc(int size, int pool_num, const char
   //printf("...RT_alloc failed. Who: \"%s\". Size: %d. Where: %d\n", who, size, where);
   ATOMIC_ADD(g_total_malloc, size);
 #else
-  if (show_warning) {
+  if (show_warning) {    
 #if !defined(RELEASE)
-    fprintf(stderr, "-----------RT_alloc failed. Who: \"%s\". Size: %d. Where: %d", who, size, where);
-    getchar();
+    if (strcmp(who, "test_gmax_mem_size")){
+      fprintf(stderr, "-----------RT_alloc failed. Who: \"%s\". Size: %d. Where: %d", who, size, where);
+      getchar();
+    }
+    if (strcmp(who, "test_gmax_mem_size"))
 #endif
-    RT_message("RT_alloc failed. Who: \"%s\". Size: %d. Where: %d", who, size, where);
+      RT_message("RT_alloc failed. Who: \"%s\". Size: %d. Where: %d", who, size, where);
   }
 #endif
 
