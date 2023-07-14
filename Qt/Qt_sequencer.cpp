@@ -2789,7 +2789,7 @@ struct SongTempoAutomation_widget  : public LightWidget {
     
     if(workingQRegionIntersects(update_region, t_rect)){
   
-      myFillRect(p, t_rect.adjusted(1,1,-2,-1), get_qcolor(SEQUENCER_LANES_BACKGROUND_COLOR_NUM));
+      myFillRect(p, t_rect.adjusted(1,0,-2,-1), get_qcolor(SEQUENCER_LANES_BACKGROUND_COLOR_NUM));
     
       //printf("height: %d\n",height());
       TEMPOAUTOMATION_paint(&p, t_x1, t_y1, t_x2, t_y2, _start_time, _end_time);
