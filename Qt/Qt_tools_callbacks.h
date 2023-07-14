@@ -38,6 +38,7 @@ struct MidiLearnItem : public QWidget {
   
   QCheckBox *enabled;
   QPushButton *delete_button;
+  QCheckBox *incremental;
 
 public:
 
@@ -58,6 +59,11 @@ public:
     delete_button = new QPushButton("Delete", this);
     layout->addWidget(delete_button, 0);
     connect(delete_button, SIGNAL(released()), this, SLOT(delete_released()));
+
+    incremental = new QCheckBox("Incremental mode", this);
+    incremental->setChecked(false);
+    layout->addWidget(incremental, 0);
+    connect(incremental, SIGNAL(toggled(bool)), this, SLOT(incremental_toggled(bool)));
 
     source = new QLabel("", this);
     dest = new QLabel("", this);
@@ -90,6 +96,12 @@ public slots:
   void delete_released(){
     midi_learn->delete_me();
   }
+
+  void incremental_toggled(bool val){
+    ATOMIC_SET(midi_learn->is_incremental, val);
+    update_midi_learn_gui_things();
+  }
+  
 };
  
 class MidiLearnPrefs : public RememberGeometryQDialog {

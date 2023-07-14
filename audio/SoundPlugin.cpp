@@ -3560,6 +3560,26 @@ bool PLUGIN_has_midi_learn(SoundPlugin *plugin, int effect_num){
   return false;
 }
 
+bool PLUGIN_midi_learn_is_incremental(SoundPlugin *plugin, int effect_num){
+  for(auto *maybe_this_midi_learn : *plugin->midi_learns)
+    if (effect_num==-1 || maybe_this_midi_learn->effect_num == effect_num)
+      return ATOMIC_GET(maybe_this_midi_learn->is_incremental);
+
+  R_ASSERT_NON_RELEASE(false);
+  
+  return false;
+}
+
+void PLUGIN_set_midi_learn_is_incremental(SoundPlugin *plugin, int effect_num, bool is_incremental){
+  for(auto *maybe_this_midi_learn : *plugin->midi_learns)
+    if (effect_num==-1 || maybe_this_midi_learn->effect_num == effect_num) {
+      ATOMIC_SET(maybe_this_midi_learn->is_incremental, is_incremental);
+      return;
+    }
+
+  R_ASSERT_NON_RELEASE(false);
+}
+
 bool PLUGIN_is_recording_automation(const SoundPlugin *plugin, const int effect_num){
   return ATOMIC_GET_ARRAY(plugin->is_recording_automation, effect_num);
 }
