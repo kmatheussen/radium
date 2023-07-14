@@ -3697,8 +3697,8 @@
                                        (define Place (get-maybe-gridded-delta-place (velocity-info :place) delta-Place))
                                        ;;(c-display "velocitynum:" velocitynum "val/place:" Value Place "delta-Place:" delta-Place)
                                        ;;(if (not (symbol? delta-Place))
-                                       ;;    (c-display "Place:" (* 1.0 (+ (velocity-info :place) delta-Place)) Place (velocity-info :place) delta-Place)
-                                       ;;    (c-display "Place:" Place (velocity-info :place) delta-Place))
+                                       ;;    (c-display "Place:" (velocity-info :place) " -> " (* 1.0 (+ (velocity-info :place) delta-Place)) Place ". Delta: " (* 1.0 delta-Place))
+                                       ;;    (c-display "Place:" (velocity-info :place) " -> " Place (velocity-info :place) ". Delta: " delta-Place))
                                        ;;(c-display "Value:" Value)
                                        (set! notenum (<ra> :set-velocity Value Place velocitynum notenum (velocity-info :tracknum))))
 
@@ -5570,7 +5570,9 @@
                                                        (<ra> :set-seqtempo-max-tempo new))))
                                            
                                            
-                                           (get-sequencer-conf-menues)
+                                           "----Sequencer"
+                                           (list "Sequencer"
+                                                 (get-sequencer-conf-menues))
                                            )))
                        #t)))))
 
