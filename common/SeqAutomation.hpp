@@ -646,8 +646,10 @@ public:
 
       const int num_nodes = rt->num_nodes;
 
-      if (num_nodes==0) {
+      if (num_nodes<=0) {
 
+        R_ASSERT_NON_RELEASE(num_nodes==0);
+        
         return SeqAutomationReturnType::NO_VALUES;
 
       } else if (time >= rt->nodes[num_nodes-1].time){

@@ -1364,6 +1364,52 @@ void removeInstrumentEffectMidiLearn(instrument_t instrument_id, const_char* eff
   PLUGIN_remove_midi_learn(plugin, effect_num, true);
 }
 
+bool instrumentEffectMidiLearnIsIncremental(instrument_t instrument_id, const_char* effect_name){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return false;
+  
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("removeInstrumentEffectMidiLearn: Instrument #%d has been closed", (int)instrument_id.id);
+    return false;
+  }
+
+  int effect_num = get_effect_num(patch, effect_name);
+  if(effect_num==-1)
+    return false;
+
+  if (false == PLUGIN_has_midi_learn(plugin, effect_num)){
+    handleError("removeInstrumentEffectMidiLearn: %s / %s doesn't have MIDI learn", plugin->patch->name, effect_name);
+    return false;
+  }
+  
+  return PLUGIN_midi_learn_is_incremental(plugin, effect_num);
+}
+
+void setInstrumentEffectMidiLearnIsIncremental(instrument_t instrument_id, const_char* effect_name, bool is_incremental){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return;
+  
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("removeInstrumentEffectMidiLearn: Instrument #%d has been closed", (int)instrument_id.id);
+    return;
+  }
+
+  int effect_num = get_effect_num(patch, effect_name);
+  if(effect_num==-1)
+    return;
+
+  if (false == PLUGIN_has_midi_learn(plugin, effect_num)){
+    handleError("removeInstrumentEffectMidiLearn: %s / %s doesn't have MIDI learn", plugin->patch->name, effect_name);
+    return;
+  }
+  
+  return PLUGIN_set_midi_learn_is_incremental(plugin, effect_num, is_incremental);
+}
+
 
 
 bool addAutomationToCurrentEditorTrack(instrument_t instrument_id, const_char* effect_name){

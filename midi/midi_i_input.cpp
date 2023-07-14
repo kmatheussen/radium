@@ -114,36 +114,66 @@ static bool msg_is_note_off(const uint32_t msg){
     return false;
 }
 
-static float get_msg_fx_value(uint32_t msg){
+// Used by incremental mode
+static int get_integer_fx_value(uint32_t msg){
   int d1 = MIDI_msg_byte1(msg);
   int d2 = MIDI_msg_byte2(msg);
   int d3 = MIDI_msg_byte3(msg);
+  
+  if (d1 < 0xc0)
+    return d3;
+  else
+    return d3<<7 | d2;
+}
 
-  if (d1 < 0xc0) {
+static int get_max_value(uint32_t msg){
+  int d1 = MIDI_msg_byte1(msg);
+  if (d1 < 0xc0)
+    return 127;
+  else
+    return 0x3fff;
+}
 
-    // cc
-    
-    return d3 / 127.0;
-      
-    
-  } else {
+// Returns -1 if lowering, 0 if same, and 1 if increasing
+static int get_incremental_value(uint32_t msg){
+  int val = get_integer_fx_value(msg);
+  int d1 = MIDI_msg_byte1(msg);
 
-    // pitch bend
+  int mid;
+  
+  if (d1 < 0xc0)
+    mid = 64;
+  else
+    mid = 0x2000;
 
-      int val = d3<<7 | d2;
-      //printf("     d2: %x, d3: %x, %x\n", d2,d3, d3<<7 | d2);
-      
-      if (val < 0x2000)
-        return scale(val,
-                     0, 0x2000,
-                     0, 0.5
-                     );
-      else
-        return scale(val,
-                     0x2000,   0x3fff,
-                     0.5,      1.0
-                     );
-  }
+  if (val < mid)
+    return -1;
+  else if (val > mid)
+    return 1;
+  else
+    return 0;
+}
+
+static float get_msg_float_value_from_integer_value(uint32_t msg, int integer_value) {
+  int d1 = MIDI_msg_byte1(msg);
+
+  if (d1 < 0xc0)
+    return integer_value / 127.0;
+
+  if (integer_value < 0x2000)
+    return scale(integer_value,
+                 0, 0x2000,
+                 0, 0.5
+                 );
+  else
+    return scale(integer_value,
+                 0x2000,   0x3fff,
+                 0.5,      1.0
+                 );
+}
+
+static float get_msg_fx_value(uint32_t msg){
+  return get_msg_float_value_from_integer_value(msg, get_integer_fx_value(msg));
 }
 
 
@@ -785,9 +815,10 @@ void MIDI_remove_midi_learn(radium::MidiLearn *midi_learn, bool show_error_if_no
  ****************************************************************************/
 
 hash_t* radium::MidiLearn::create_state(void){
-  hash_t *state = HASH_create(5);
+  hash_t *state = HASH_create(7);
   HASH_put_bool(state, "is_enabled", ATOMIC_GET(is_enabled));
   HASH_put_bool(state, "is_learning", ATOMIC_GET(is_learning));
+  HASH_put_bool(state, "is_incremental", ATOMIC_GET(is_incremental));
   const symbol_t *port_name_symbol = ATOMIC_GET(port_name);
   HASH_put_chars(state, "port_name", port_name_symbol==NULL ? "" : port_name_symbol->name);
   HASH_put_int(state, "byte1", ATOMIC_GET(byte1));
@@ -801,6 +832,8 @@ void radium::MidiLearn::init_from_state(hash_t *state){
   ATOMIC_SET(port_name, get_symbol(HASH_get_chars(state, "port_name")));
   ATOMIC_SET(is_learning, HASH_get_bool(state, "is_learning"));
   ATOMIC_SET(is_enabled, HASH_get_bool(state, "is_enabled"));
+  if (HASH_has_key(state, "is_incremental"))
+    ATOMIC_SET(is_incremental, HASH_get_bool(state, "is_incremental"));
 }
 
 bool radium::MidiLearn::RT_matching(const symbol_t *port_name, uint32_t msg){
@@ -825,6 +858,11 @@ bool radium::MidiLearn::RT_matching(const symbol_t *port_name, uint32_t msg){
   if (ATOMIC_GET(is_learning)){
     ATOMIC_SET(byte1, d1);
     ATOMIC_SET(byte2, d2);
+
+    R_ASSERT_NON_RELEASE(ATOMIC_GET(last_value)==-1);
+    
+    ATOMIC_SET(last_value, get_integer_fx_value(msg));
+    
     ATOMIC_SET(this->port_name, port_name);
     ATOMIC_SET(is_learning, false);
   }
@@ -859,7 +897,37 @@ bool radium::MidiLearn::RT_maybe_use(const symbol_t *port_name, uint32_t msg){
   if (RT_matching(port_name, msg)==false)
     return false;
 
-  float value = get_msg_fx_value(msg);
+  float value;
+  
+  if (ATOMIC_GET(is_incremental)) {
+    int old_value = ATOMIC_GET(last_value);
+
+    if (old_value < 0) {
+      R_ASSERT_NON_RELEASE(false);
+      return false;
+    }
+        
+    int inc_value = get_incremental_value(msg);
+
+    if (inc_value == 0)
+      return false;
+
+    int new_value = old_value + inc_value;
+
+    if (new_value < 0)
+      return false;
+
+    int max_value = get_max_value(msg);
+
+    if (new_value > max_value)
+      return false;
+    
+    ATOMIC_SET(last_value, new_value);
+    value = get_msg_float_value_from_integer_value(msg, new_value);
+    
+  } else {
+    value = get_msg_fx_value(msg);
+  }
 
   //printf("....Value: %f\n", value);
   

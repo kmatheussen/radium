@@ -2031,10 +2031,14 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
   (if (and effect-name
            (<ra> :instrument-effect-has-midi-learn instrument-id effect-name))
       (list
-       (list "Remove MIDI Learn"
+       (list "MIDI Learn: Incremental mode"
+             :check (<ra> :instrument-effect-midi-learn-is-incremental instrument-id effect-name)
+             (lambda (ison)
+               (<ra> :set-instrument-effect-midi-learn-is-incremental instrument-id effect-name ison)))
+       (list "MIDI Learn: Remove"
              (lambda ()
                (<ra> :remove-instrument-effect-midi-learn instrument-id effect-name)))
-       (list "MIDI relearn"
+       (list "MIDI Learn: Relearn"
              (lambda ()
                (<ra> :remove-instrument-effect-midi-learn instrument-id effect-name)
                (<ra> :add-instrument-effect-midi-learn instrument-id effect-name))))

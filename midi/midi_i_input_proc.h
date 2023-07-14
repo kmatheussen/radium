@@ -64,6 +64,7 @@ namespace radium{
 struct MidiLearn{
 
   DEFINE_ATOMIC(bool, is_enabled);
+  DEFINE_ATOMIC(bool, is_incremental);
 
 private:
   
@@ -71,6 +72,8 @@ private:
   DEFINE_ATOMIC(const symbol_t*, port_name);
   DEFINE_ATOMIC(int, byte1);
   DEFINE_ATOMIC(int, byte2);
+
+  DEFINE_ATOMIC(int, last_value); // used in incremental mode
   
 public:
 
@@ -81,10 +84,13 @@ public:
   {
     ATOMIC_SET(is_enabled, true);
     ATOMIC_SET(is_learning, true);
+    ATOMIC_SET(is_incremental, false);
 
     ATOMIC_SET(port_name, NULL);
     ATOMIC_SET(byte1, 0);
     ATOMIC_SET(byte2, 0);
+
+    ATOMIC_SET(last_value, -1);
   }
 
   virtual ~MidiLearn() = default; // Crazy c++ stuff. https://www.securecoding.cert.org/confluence/display/cplusplus/OOP52-CPP.+Do+not+delete+a+polymorphic+object+without+a+virtual+destructor

@@ -194,6 +194,8 @@ extern LANGSPEC const char *PLUGIN_generate_new_patchname(SoundPlugin *plugin);
 extern LANGSPEC void PLUGIN_add_midi_learn(SoundPlugin *plugin, int effect_num);
 extern LANGSPEC bool PLUGIN_remove_midi_learn(SoundPlugin *plugin, int effect_num, bool show_error_if_not_here);
 extern LANGSPEC bool PLUGIN_has_midi_learn(SoundPlugin *plugin, int _effect_num);
+extern LANGSPEC bool PLUGIN_midi_learn_is_incremental(SoundPlugin *plugin, int _effect_num);
+extern LANGSPEC void PLUGIN_set_midi_learn_is_incremental(SoundPlugin *plugin, int _effect_num, bool is_incremental);
 
 extern LANGSPEC bool PLUGIN_is_recording_automation(const SoundPlugin *plugin, const int effect_num);
 extern LANGSPEC void PLUGIN_set_recording_automation(SoundPlugin *plugin, int effect_num, bool is_recording);
