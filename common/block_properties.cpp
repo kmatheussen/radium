@@ -63,7 +63,6 @@ void Block_Set_num_lines2(
 	struct WBlocks *wblock;
 	struct LocalZooms *localzoom;
 	struct Tracks *track=block->tracks;
-	struct Notes *note;
 	int org_num_lines=block->num_lines;
 	int lokke;
 
@@ -91,8 +90,9 @@ void Block_Set_num_lines2(
             ListAddElement3(&block->temponodes,&block->lasttemponode->l);
 
             while(track!=NULL){
+#if 0
               CutListAt_a(&track->notes,&lastplace);
-              note=track->notes;
+              struct Notes *note=track->notes;
               while(note!=NULL){
                 //CutListAt(&note->velocities,&lastplace);
                 r::VelocityTimeData::Writer(note->_velocities).remove_everything_after(rlastplace);
@@ -107,6 +107,28 @@ void Block_Set_num_lines2(
                 note=NextNote(note);
               }
               LegalizeNotes(block,track);
+#else
+              r::NoteTimeData::Writer writer(track->_notes2);
+
+              writer.remove_everything_after(rlastplace);
+
+              for(r::NotePtr &note : writer) {
+                
+                R_ASSERT_NON_RELEASE(note->get_time() < rlastplace);
+                
+                if (note->d._end > rlastplace) {                  
+                  r::ModifyNote new_note(note);
+
+                  r::VelocityTimeData::Writer(&new_note->_velocities).remove_everything_after(rlastplace);
+                
+                  //CutListAt(&note->pitches,&lastplace);
+                  r::PitchTimeData::Writer(&new_note->_pitches).remove_everything_after(rlastplace);
+
+                  new_note->d._end = rlastplace;
+                }
+              }
+              
+#endif
               
               r::StopTimeData::Writer(track->stops2).remove_everything_after(rlastplace);
               //              CutListAt_a(&track->stops,&lastplace);
@@ -128,16 +150,19 @@ void Block_Set_num_lines2(
               
               track=NextTrack(track);
             }
+            
             while(window!=NULL){
               wblock=(struct WBlocks*)ListFindElement1(&window->wblocks->l,block->l.num);
               CutListAt_a(&wblock->localzooms,&lastplace);
               window=NextWindow(window);
             }
+            
           }else{
 
             PlaceSetLastPos(block,&block->lasttemponode->l.p);
 
             while(track!=NULL){
+#if 0
               note=track->notes;
               while(note!=NULL){
                 if(note->end>=place2ratio(lastplace)) { // && note->noend==1){
@@ -146,6 +171,17 @@ void Block_Set_num_lines2(
                 note=NextNote(note);
               }
               LegalizeNotes(block,track);
+#else
+              r::NoteTimeData::Writer writer(track->_notes2);
+
+              for(r::NotePtr &note : writer) {
+                
+                if (note->d._end >= org_num_lines) {
+                  r::ModifyNote new_note(note);
+                  new_note->d._end = make_ratio(num_lines, 1);
+                }
+              }
+#endif
               track=NextTrack(track);
             }
             while(window!=NULL){
