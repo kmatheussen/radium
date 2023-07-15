@@ -37,15 +37,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "scroll_play_proc.h"
 
 
-extern PlayerClass *pc;
-extern struct Root *root;
-
-
-
 #define MAX_SCROLLPLAYTRACKS 128
 
-static vector_t scrollplaying_notes[MAX_SCROLLPLAYTRACKS] = {{0}}; // [NO_STATIC_ARRAY_WARNING]
+static vector_t *g_scrollplaying_notes;
 
+
+__attribute__((constructor)) static void initialize_g_scrollplaing_notes(void) {
+  g_scrollplaying_notes = (vector_t *)calloc(sizeof(vector_t), MAX_SCROLLPLAYTRACKS);
+}
 
 
 static void Scroll_play_down3(
@@ -113,7 +112,7 @@ static void stop_all_notes_in_track(struct Tracks *track){
 
     if (patch!=NULL) {
             
-      VECTOR_FOR_EACH(struct Notes *note, &scrollplaying_notes[tracknum]){
+      VECTOR_FOR_EACH(struct Notes *, note, &g_scrollplaying_notes[tracknum]){
         PATCH_stop_note(patch,create_note_t(NULL,
                                             note->id,
                                             note->note,
@@ -127,7 +126,7 @@ static void stop_all_notes_in_track(struct Tracks *track){
       
     }
 
-    VECTOR_clean(&scrollplaying_notes[tracknum]);
+    VECTOR_clean(&g_scrollplaying_notes[tracknum]);
   }
 }
 
@@ -171,7 +170,7 @@ static void Scroll_play_up3(
                                           0
                                           )
                             );
-            VECTOR_push_back(&scrollplaying_notes[track->l.num], note);
+            VECTOR_push_back(&g_scrollplaying_notes[track->l.num], note);
           }
           
           note = NextNote(note);
@@ -190,8 +189,8 @@ static void Scroll_play_down2(
                              int end_realline,
                              const int64_t dont_play_this_note
 ){
-  Place p1 = {0};
-  Place p2 = {0};
+  Place p1 = {};
+  Place p2 = {};
 
   set_p1_and_p2(wblock, start_realline, end_realline, &p1, &p2);
   
@@ -203,8 +202,8 @@ static void Scroll_play_up2(
                            int start_realline,
                            int end_realline
 ){
-  Place p1 = {0};
-  Place p2 = {0};
+  Place p1 = {};
+  Place p2 = {};
 
   set_p1_and_p2(wblock, start_realline, end_realline, &p1, &p2);
   

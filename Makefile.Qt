@@ -1877,8 +1877,8 @@ $(T)gfx_shrink.o:  $(BUILD_DEPENDENCIES)  $(CD)gfx_shrink.c
 $(T)gfx_shrink_t.o:  $(BUILD_DEPENDENCIES)  $(CD)gfx_shrink_t.c
 	$(CC2)  $(CD)gfx_shrink_t.c $(OPT)
 
-$(T)scroll_play.o:  $(BUILD_DEPENDENCIES)  $(CD)scroll_play.c
-	$(CC2)  $(CD)scroll_play.c $(OPT)
+$(T)scroll_play.o:  $(BUILD_DEPENDENCIES)  $(CD)scroll_play.cpp
+	$(CCC2)  $(CD)scroll_play.cpp $(CPPOPT)
 
 $(T)block_split.o:  $(BUILD_DEPENDENCIES)  $(CD)block_split.c
 	$(CC2)  $(CD)block_split.c $(OPT)
