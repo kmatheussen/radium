@@ -315,6 +315,8 @@ void ScrollEditorPrevNote(struct Tracker_Windows *window, struct WBlocks *wblock
 
 static Waveform_trss get_waveform_trss(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, int polyphony_num){
   Waveform_trss trss;
+
+#if 0
   
   struct Notes *note = wtrack->track->notes;
   
@@ -327,7 +329,37 @@ static Waveform_trss get_waveform_trss(struct Tracker_Windows *window, struct WB
     }
     note = NextNote(note);
   }
+  
+#else
+  
+  const r::NoteTimeData::Reader reader(wtrack->track->_notes2);
 
+  for(const r::NotePtr &note : reader) {
+    
+    if (note->get_time() >= wblock->block->num_lines)
+      break;
+    
+    if (note->d._polyphony_num == polyphony_num) {
+      int realline = FindReallineForRatio(wblock, 0, note->get_time());
+      
+      if (realline < 0) {
+        R_ASSERT(false);
+        break;
+      }
+      
+      trss[realline] = true;
+      
+      int realline2 = FindReallineForRatio(wblock, 0, note->d._end);
+
+      if (realline2 < 0)
+        realline2 = wblock->num_reallines;
+      
+      trss[realline2] = true;
+    }
+  }
+    
+#endif
+  
   return trss;
 }
 
