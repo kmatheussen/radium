@@ -56,14 +56,14 @@ void Fade::RT_fade(const int num_frames, float *__restrict__ data, const float *
           for(int i=0;i<how_many;i++)
             data[i] += in[i] * (fade_mul + i*fade_inc);
 
-         } else {
+        } else {
 #if !defined(RADIUM_USES_UBSAN)
            #pragma clang loop vectorize(enable) interleave(enable)
 #endif
-           for(int i=0;i<how_many;i++)
-             data[i] = in[i] * (fade_mul + i*fade_inc);
-
-         }
+          for(int i=0;i<how_many;i++)
+            data[i] = in[i] * (fade_mul + i*fade_inc);
+          
+        }
 
       }
 

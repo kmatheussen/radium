@@ -14,7 +14,6 @@ namespace{
 
 static radium::Queue<Element, 8000> *g_queue;
 
-
 void RT_memory_freer_init(void){
 
   g_queue = new radium::Queue<Element, 8000>;

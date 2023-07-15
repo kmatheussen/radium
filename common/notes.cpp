@@ -74,6 +74,26 @@ void r::NoteTimeData::sortit(TimeDataVector *vector){
   });
 }
 
+bool r::NoteTimeData::insert_ratio(Writer &writer, const Ratio &where_to_start, const Ratio &how_much){
+  return writer.insert_ratio(where_to_start, how_much, make_ratio(-1, 1), [where_to_start, how_much](NotePtr &note)
+  {
+    
+    r::ModifyNote new_note(note);
+    
+    new_note->d._end += how_much;
+
+    {
+      r::VelocityTimeData::Writer writer(&new_note->_velocities);
+      writer.insert_ratio(where_to_start, how_much);
+    }
+    
+    {
+      r::PitchTimeData::Writer writer(&new_note->_pitches);
+      writer.insert_ratio(where_to_start, how_much);
+    }
+  });
+}
+
 static void set_note_polyphony_num(r::NoteTimeData *notes, r::NoteTimeData::Writer &writer){
   //printf("**************  Track: %d\n", track->l.num);
   static std::vector<Ratio> s_end_places;

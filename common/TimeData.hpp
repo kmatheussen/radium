@@ -1324,8 +1324,8 @@ public:
     }
 
     // equiv. to List_InsertRatioLen3.
-    bool insert_ratio(const Ratio &where_to_start, const Ratio &how_much, const Ratio last_legal_place = make_ratio(-1,1)){
-      
+    bool insert_ratio(const Ratio &where_to_start, const Ratio &how_much, const Ratio last_legal_place = make_ratio(-1,1), std::function<void(T &t)> modify_func = nullptr){
+
       std::vector<int> to_remove;
       
       bool ret = false;
@@ -1337,6 +1337,9 @@ public:
         if (t.get_time() >= where_to_start) {
           ret = true;
 
+          if (modify_func)
+            modify_func(t);
+            
           if (t.get_time() < (where_to_start - how_much)) {
 
             to_remove.push_back(i);
@@ -1351,6 +1354,7 @@ public:
               
             }
           }
+
         }
 
       }

@@ -207,8 +207,9 @@ static void InsertLines2(
             const Ratio rlines = make_ratio(line, 1);
             const Ratio rtoinsert = make_ratio(toinsert, 1);
 
-            r::NoteTimeData::Writer(track->_notes2).insert_lines(rlines, rtoinsert);
-            
+            r::NoteTimeData::Writer notewriter(track->_notes2);
+            track->_notes2->insert_ratio(notewriter, rlines, rtoinsert);
+
             r::StopTimeData::Writer(track->stops2).insert_lines(rlines, rtoinsert);
             
             /*

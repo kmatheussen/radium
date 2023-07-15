@@ -75,8 +75,8 @@ float FindReallineForF(
   FUNCTION
     Returns the realline the placement is placed on. The function start
     searching at realline 'realline', and the placement must be below
-    or on that realline. The placement can not be below last realline
-    in the wblock.
+    or on that realline. <strike>The placement can not be below last realline
+    in the wblock.</strike> Returns -1 if placement is below end of block.
 *******************************************************************/
 int FindRealLineFor(
                     const struct WBlocks *wblock,
@@ -111,8 +111,8 @@ int FindRealLineFor(
         realline--;
 
         if (realline >= wblock->num_reallines){
-          R_ASSERT_NON_RELEASE(false);
-          return wblock->num_reallines-1;
+          //R_ASSERT_NON_RELEASE(false);
+          return -1; //wblock->num_reallines-1;
         }
 
 	return realline;

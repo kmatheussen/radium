@@ -2525,6 +2525,8 @@ struct NoteTimeData : public TimeData<NotePtr, NoteSeqBlock>{
   void writer_finalizer(Writer &writer) override;
 
   void sortit(TimeDataVector *vector) override;
+
+  bool insert_ratio(Writer &writer, const Ratio &where_to_start, const Ratio &how_much);
 };
 
   /*
