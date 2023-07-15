@@ -37,20 +37,27 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "scroll_play_proc.h"
 
 
-#define MAX_SCROLLPLAYTRACKS 128
+//#define MAX_SCROLLPLAYTRACKS 128
 
-static vector_t *g_scrollplaying_notes;
-
-
-__attribute__((constructor)) static void initialize_g_scrollplaing_notes(void) {
-  g_scrollplaying_notes = (vector_t *)calloc(sizeof(vector_t), MAX_SCROLLPLAYTRACKS);
+namespace{
+struct IdAndNoteVal{
+  int64_t _id;
+  float _val;
+};
 }
 
+static std::vector<std::vector<IdAndNoteVal>*> g_scrollplaying_notes;
+
+/*
+__attribute__((constructor)) static void initialize_g_scrollplaing_notes(void) {
+  g_scrollplaying_notes = new std::vector<IdAndNoteVal>[MAX_SCROLLPLAYTRACKS]; //(vector_t *)calloc(sizeof(vector_t), MAX_SCROLLPLAYTRACKS);
+}
+*/
 
 static void Scroll_play_down3(
                               struct WBlocks *wblock,
-                              const Place *p1,
-                              const Place *p2,
+                              const Ratio r1, //Place *p1,
+                              const Ratio r2, //Place *p2,
                               const int64_t dont_play_this_note
 ){
   struct Tracks *track = wblock->block->tracks;
@@ -62,7 +69,8 @@ static void Scroll_play_down3(
       struct Patch *patch=track->patch;
       
       if (patch != NULL){
-        
+
+#if 0
         struct Notes *note = track->notes;
         
         while(note != NULL){
@@ -96,6 +104,45 @@ static void Scroll_play_down3(
           
           note = NextNote(note);
         }
+#else
+        const r::NoteTimeData::Reader reader(track->_notes2);
+
+        for(const r::NotePtr &note : reader) { 
+          if (note->_id != dont_play_this_note){
+
+            const Ratio time = note->get_time();
+            
+            if (time > r2)
+              break;
+
+            if (time >= r1 && time < r2)
+              PATCH_play_note(patch, 
+                              create_note_t(NULL,
+                                            note->_id,
+                                            note->_val,
+                                            VELOCITY_get(note->d._velocity),
+                                            TRACK_get_pan(track),
+                                            ATOMIC_GET(track->midi_channel),
+                                            0,
+                                            0)
+                              );
+
+            //Place endplace = ratio2place(note->d._end);
+            if (note->d._end >= r1 &&  note->d._end < r2) //PlaceIsBetween2(&endplace, p1, p2))
+              PATCH_stop_note(patch,
+                              create_note_t(NULL,
+                                            note->_id,
+                                            note->_val,
+                                            0,
+                                            TRACK_get_pan(track),
+                                            ATOMIC_GET(track->midi_channel),
+                                            0,
+                                            0
+                                            )
+                              );
+            }
+        }
+#endif
       }
     }
     
@@ -104,40 +151,37 @@ static void Scroll_play_down3(
 }
 
 static void stop_all_notes_in_track(struct Tracks *track){
-  int tracknum = track->l.num;
+  const int tracknum = track->l.num;
 
-  if (tracknum < MAX_SCROLLPLAYTRACKS) {
-
+  if (tracknum < (int)g_scrollplaying_notes.size()) {
+    
     struct Patch *patch=track->patch;
 
-    if (patch!=NULL) {
-            
-      VECTOR_FOR_EACH(struct Notes *, note, &g_scrollplaying_notes[tracknum]){
+    if (patch!=NULL)      
+      for(const auto &note : *g_scrollplaying_notes[tracknum]){
         PATCH_stop_note(patch,create_note_t(NULL,
-                                            note->id,
-                                            note->note,
+                                            note._id,
+                                            note._val,
                                             0,
                                             0,
                                             ATOMIC_GET(track->midi_channel),
                                             0,
                                             0
                                             ));
-      }END_VECTOR_FOR_EACH;
-      
-    }
-
-    VECTOR_clean(&g_scrollplaying_notes[tracknum]);
+      }
+    
+    g_scrollplaying_notes[tracknum]->clear();
   }
 }
 
 static void Scroll_play_up3(
                      struct WBlocks *wblock,
-                     const Place *p1,
-                     const Place *p2
+                     const Ratio &r1,
+                     const Ratio &r2
 ){
   struct Tracks *track = wblock->block->tracks;
 
-  while(track != NULL && track->l.num < MAX_SCROLLPLAYTRACKS) {
+  while(track != NULL) {
 
     if (track->onoff==1){
       
@@ -145,6 +189,7 @@ static void Scroll_play_up3(
       
       if (patch != NULL){
         
+#if 0        
         struct Notes *note = track->notes;
         
         // First stop previously playing notes on this track, if any.
@@ -174,7 +219,44 @@ static void Scroll_play_up3(
           }
           
           note = NextNote(note);
-        }      
+        }
+#else
+        const r::NoteTimeData::Reader reader(track->_notes2);
+
+        bool is_first = true;
+        
+        for(const r::NotePtr &note : reader.get_iterator_left(r1)) {
+          const Ratio time = note->get_time();
+
+          if (time >= r1 && time < r2) {
+            
+            if (is_first) {
+              stop_all_notes_in_track(track);
+              is_first = false;
+            }
+
+            PATCH_play_note(patch,
+                            create_note_t(NULL,
+                                          note->_id,
+                                          note->_val,
+                                          VELOCITY_get(note->d._velocity),
+                                          TRACK_get_pan(track),
+                                          ATOMIC_GET(track->midi_channel),
+                                          0,
+                                          0
+                                          )
+                            );
+
+            int i = 0;
+            while(track->l.num >= (int)g_scrollplaying_notes.size() && i++ < 10000)
+              g_scrollplaying_notes.push_back(new std::vector<IdAndNoteVal>);
+
+            if (i < 9999)
+              g_scrollplaying_notes[track->l.num]->push_back({note->_id, note->_val});
+           }
+        }
+
+#endif
       }
 
     }
@@ -189,12 +271,10 @@ static void Scroll_play_down2(
                              int end_realline,
                              const int64_t dont_play_this_note
 ){
-  Place p1 = {};
-  Place p2 = {};
+  Ratio r1,r2;
 
-  set_p1_and_p2(wblock, start_realline, end_realline, &p1, &p2);
-  
-  Scroll_play_down3(wblock, &p1, &p2, dont_play_this_note);
+  if (set_r1_and_r2(wblock, start_realline, end_realline, r1, r2))
+    Scroll_play_down3(wblock, r1, r2, dont_play_this_note);
 }
 
 static void Scroll_play_up2(
@@ -202,12 +282,19 @@ static void Scroll_play_up2(
                            int start_realline,
                            int end_realline
 ){
+#if 0
   Place p1 = {};
   Place p2 = {};
-
+  
   set_p1_and_p2(wblock, start_realline, end_realline, &p1, &p2);
   
   Scroll_play_up3(wblock, &p1, &p2);
+#else
+  Ratio r1,r2;
+  
+  if (set_r1_and_r2(wblock, start_realline, end_realline, r1, r2))
+    Scroll_play_up3(wblock, r1, r2);
+#endif
 }
 
 

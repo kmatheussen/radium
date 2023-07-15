@@ -546,7 +546,37 @@ private:
       
       return BinarySearch_Rightmost(_vector->get_array(), ratio, low, high);
     }
+
+    // Returns index at, or before, there is an element at 'ratio'
+    // Note: Due to the nature of binary search, we should not trust the returned value
+    // to be optimal (because we don't want a headache thinking through whether the functions
+    // are behaving 100% correct all the time). Only trust that the returned value
+    // is lower or equal to the index of the first element that has a ratio of at least 'ratio'.
+    // (in other words, only use this function as an optimization, but don't expect the result to be optimal.)
+    int find_pos_left(const Ratio &ratio) const {
+      if (is_empty()){
+        R_ASSERT_NON_RELEASE(false);
+        return 0;
+      }
+      
+      bool found_exact;
+      int ret = BinarySearch_Left_exact(ratio, found_exact);
+
+      if (ret > 0)
+        ret--;
+      
+      if (ret >= size()) {
+        R_ASSERT(false);
+        return size()-1;
+      }
+
+      R_ASSERT_NON_RELEASE(at(ret).get_time() <= ratio);
+      R_ASSERT_NON_RELEASE(ret==0 || at(ret-1).get_time() < ratio);
+      
+      return ret;
+    }
     
+      
   protected:
 
     // returns -1 if not found.
@@ -656,6 +686,37 @@ private:
     
     const T* end() const {
       return this->_vector->end();
+    }
+
+    struct ConstIterator{
+
+      T *_begin;
+      T *_end;
+      
+      ConstIterator(T *begin, T *end)
+        : _begin(begin)
+        , _end(end)
+      {
+      }
+      
+      const T* begin() const {
+        return _begin;
+      }
+
+      const T* end() const {
+        return _end;
+      }
+    };
+
+    // (The comment for 'find_pos_left' applies to this function as well)
+    ConstIterator get_iterator_left(const Ratio &ratio) const {
+      T *end = const_cast<T*>(this->_vector->end());
+      
+      if (is_empty())
+        return ConstIterator(end, end);
+      
+      int pos = find_pos_left(ratio);
+      return ConstIterator(&this->_vector->at_ref(pos), end);
     }
 
     /*
