@@ -323,7 +323,10 @@ const Trss TRSS_get(const struct WBlocks *wblock, const struct WTracks *wtrack){
   {
     r::NoteTimeData::Reader reader(wtrack->track->gfx_notes!=NULL ? wtrack->track->_gfx_notes2 : wtrack->track->_notes2);
     for(const r::NotePtr &note : reader)
-      add_note2(wblock, trss, note);
+      if (note->get_time() >= wblock->block->num_lines)
+        break;
+      else
+        add_note2(wblock, trss, note);
   }
 #endif
 

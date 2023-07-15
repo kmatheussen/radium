@@ -35,6 +35,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 static void add_fxtext(const struct WBlocks *wblock, FXText_trss &fxtexts, const struct FX *fx, const r::FXNode &fxnode, int fxnodenum){
 
   int realline = FindReallineForRatio(wblock, 0, fxnode._time);
+  if (realline < 0)
+    return;
+  
   FXText_trs &v = fxtexts[realline];
 
   r::FXText fxtext(fxnode);
@@ -53,7 +56,10 @@ static void add_fxtext(const struct WBlocks *wblock, FXText_trss &fxtexts, const
 #else
 static void add_fxtext(const struct WBlocks *wblock, FXText_trss &fxtexts, const struct FX *fx, struct FXNodeLines *fxnodeline){
 
-  int realline = FindRealLineFor(wblock, 0, &fxnodeline->l.p);      
+  int realline = FindRealLineFor(wblock, 0, &fxnodeline->l.p);
+  if (realline < 0)
+    break;
+
   FXText_trs &v = fxtexts[realline];
 
   r::FXText fxtext = {};

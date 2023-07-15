@@ -56,7 +56,7 @@ float FindReallineForF(
         }
 
         if (realline>wblock->num_reallines){
-          RError("realline>wblock->num_reallines: %d > %d. place: %s",realline,wblock->num_reallines,PlaceToString(place));
+          //RError("realline>wblock->num_reallines: %d > %d. place: %s",realline,wblock->num_reallines,PlaceToString(place));
           return wblock->num_reallines;
         }
         
@@ -93,7 +93,7 @@ int FindRealLineFor(
 		RError("\n\nError In the function \"FindReallineFor\" in the file \"realline_calc.c\"\n"
                        "Input parameter 'realline' is below last realline.\n\n");
 #endif
-		return wblock->num_reallines-1;
+		return -1; //wblock->num_reallines-1;
 	}
 
         if (wblock->num_expand_lines>0)

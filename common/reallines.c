@@ -277,8 +277,12 @@ static void set_curr_realline_from_place(const struct Tracker_Windows *window, s
     const Place *curr_place2 = &wblock->reallines[wblock->curr_realline]->l.p;
     if (PlaceEqual(curr_place, curr_place2))
       return;
+
+    int new = roundf(FindReallineForF(wblock, 0, curr_place));
+    if (new==-1)
+      new=wblock->num_reallines-1;
     
-    set_curr_realline(wblock, roundf(FindReallineForF(wblock, 0, curr_place)));
+    set_curr_realline(wblock, new);
   }
 }
 
@@ -618,9 +622,15 @@ static void LineZoomBlock_internal(struct Tracker_Windows *window, struct WBlock
 
   wblock->num_expand_lines = num_lines;
 
-  if (update_curr_realline)
-    set_curr_realline(wblock, (int)floorf(FindReallineForF(wblock, 0, &curr_place)));
+  if (update_curr_realline) {
+    
+    int new = roundf(FindReallineForF(wblock, 0, &curr_place));
+    if (new==-1)
+      new=wblock->num_reallines-1;    
 
+    set_curr_realline(wblock, new);
+  }
+      
   if (wblock->curr_realline <= wblock->num_reallines-2)
     if (wblock->reallines[wblock->curr_realline]->l.p.counter < curr_place.counter)
       if (wblock->reallines[wblock->curr_realline]->l.p.line == wblock->reallines[wblock->curr_realline+1]->l.p.line) {

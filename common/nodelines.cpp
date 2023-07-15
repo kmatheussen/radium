@@ -360,7 +360,11 @@ static const struct NodeLine2 *create_nodelines2(
       struct NodeLine2 *nodeline = (struct NodeLine2 *)talloc(sizeof(struct NodeLine2));
 
       get_node_info(i, nodeline->x1, nodeline->logtype, nodeline->time1, nodeline->id1);
-      
+
+      // Optimize. The remaining nodes are placed after the block. Nah.
+      //if (i > 0 && nodeline->time1 >= make_ratio(wblock->block->num_lines, 1))
+      //  break;
+
       //nodeline->x1 = get_x(wblock, node, &nodeline->logtype);
       reallineF = FindReallineForRatioF(wblock, reallineF, nodeline->time1);
       nodeline->y1 = get_realline_y(window, reallineF);
@@ -1111,6 +1115,12 @@ void MakeNodeLines(
   int realline1=FindRealLineFor(wblock,p1->line,p1);
   int realline2=FindRealLineFor(wblock,R_MAX(realline1,p2->line),p2);
 
+  if (realline1<0)
+    return;
+
+  if (realline2<0)
+    realline2 = wblock->num_reallines;
+  
   float ry1,ry2;
 
   //printf("x1: %f, x2: %f, minx: %f, maxx: %f\n", x1,x2,minx,maxx);

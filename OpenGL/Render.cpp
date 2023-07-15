@@ -1995,13 +1995,24 @@ static void create_pianoroll_notes(const struct Tracker_Windows *window, const s
 
   for(int i = 0 ; i <= note_reader.size() ; i++) {
 
+    bool is_last = false;
+    
     const r::Note *note;
     
     if (i < note_reader.size()) {
       
       note = note_reader.at_ref(i).get();
-      
+
+      if (note->get_time() >= wblock->block->num_lines)
+        is_last = true;
+
     } else {
+
+      is_last = true;
+
+    }
+
+    if (is_last) {
       
       if (is_painting_ghost_note==false && g_current_piano_ghost_note.tracknum==wtrack->l.num) {
         
@@ -2258,6 +2269,9 @@ static void create_pianoroll_notes(const struct Tracker_Windows *window, const s
         GE_set_x_scissor(wtrack->pianoroll_area.x,
                          wtrack->pianoroll_area.x2+1);
     }
+
+    if (is_last)
+      break;
   }
 
   GE_unset_x_scissor();
@@ -2789,7 +2803,8 @@ static void create_track_velocities(const struct Tracker_Windows *window, const 
 
     // draw horizontal line where note starts, if it doesn't start on the start of a realline.
     int realline = FindRealLineForNote(wblock, 0, note);
-    if (PlaceNotEqual(&wblock->reallines[realline]->l.p, &note->l.p)) {
+    
+    if (realline >= 0 && PlaceNotEqual(&wblock->reallines[realline]->l.p, &note->l.p)) {
       GE_Context *c = GE_y(c2, nodelines->y1);
       GE_line(c, subtrack_x1, nodelines->y1, nodelines->x1, nodelines->y1, get_nodeline_width(is_current));
     }
@@ -2891,7 +2906,8 @@ static void create_track_velocities2(const struct Tracker_Windows *window,
 
     // draw horizontal line where note starts, if it doesn't start on the start of a realline.
     int realline = FindReallineForRatio(wblock, 0, note->get_time());
-    if (place2ratio(wblock->reallines[realline]->l.p) != note->get_time()){
+
+    if (realline >= 0 && place2ratio(wblock->reallines[realline]->l.p) != note->get_time()){
       GE_Context *c = GE_y(c2, nodelines->y1);
       GE_line(c, subtrack_x1, nodelines->y1, nodelines->x1, nodelines->y1, get_nodeline_width(is_current));
     }
@@ -2952,6 +2968,9 @@ static void create_track_stops(const struct Tracker_Windows *window, const struc
   for(const r::Stop &stop : reader) {
     Place place = ratio2place(stop._time);
     reallineF = FindReallineForF(wblock, reallineF, &place);
+    if (reallineF < 0)
+      break;
+    
     float y = get_realline_y(window, reallineF); 
     GE_Context *c = GE_color_alpha(TEXT_COLOR_NUM, 0.19, y);
     GE_line(c,
@@ -2965,6 +2984,7 @@ static void create_track_stops(const struct Tracker_Windows *window, const struc
   
   while(stops != NULL){
     reallineF = FindReallineForF(wblock, reallineF, &stops->l.p);
+
     float y = get_realline_y(window, reallineF); 
     GE_Context *c = GE_color_alpha(TEXT_COLOR_NUM, 0.19, y);
     GE_line(c,
@@ -3132,6 +3152,8 @@ static void create_track(const struct Tracker_Windows *window, const struct WBlo
   {
     r::NoteTimeData::Reader reader(wtrack->track->_notes2);
     for(const r::NotePtr &note : reader) {
+      if (note->get_time() >= wblock->block->num_lines)
+        break;
 
       const r::PitchTimeData::Reader pitch_reader(&note->_pitches);
       
@@ -3251,6 +3273,7 @@ static void create_range(const struct Tracker_Windows *window, const struct WBlo
 
   float realline1 = FindReallineForF(wblock, 0, &wblock->range.y1);
   float realline2 = FindReallineForF(wblock, realline1, &wblock->range.y2);
+
   int y1 = get_realline_y(window, realline1);
   int y2 = get_realline_y(window, realline2)-1;
 
