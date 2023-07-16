@@ -546,24 +546,28 @@ private:
       
       return BinarySearch_Rightmost(_vector->get_array(), ratio, low, high);
     }
+    
+  protected:
 
     // Returns index at, or before, there is an element at 'ratio'
+    // If there isn't any elements before 'ratio', the function will return 0.
+    //
     // Note: Due to the nature of binary search, we should not trust the returned value
     // to be optimal (because we don't want a headache thinking through whether the functions
     // are behaving 100% correct all the time). Only trust that the returned value
     // is lower or equal to the index of the first element that has a ratio of at least 'ratio'.
     // (in other words, only use this function as an optimization, but don't expect the result to be optimal.)
     int find_pos_left(const Ratio &ratio) const {
-      if (is_empty()){
-        R_ASSERT_NON_RELEASE(false);
+      if (is_empty())
         return 0;
-      }
       
       bool found_exact;
       int ret = BinarySearch_Left_exact(ratio, found_exact);
 
-      if (ret > 0)
-        ret--;
+      if (ret == 0)
+        return 0;
+      
+      ret--;
       
       if (ret >= size()) {
         R_ASSERT(false);
@@ -577,8 +581,6 @@ private:
     }
     
       
-  protected:
-
     // returns -1 if not found.
     int find_pos_exact(const Ratio &ratio) const {
       R_ASSERT(_cache_num==-1);
@@ -1369,7 +1371,7 @@ public:
     }
 
     // 'end' is not including.
-    void remove_between(const Ratio start, const Ratio end) {
+    void remove_between(const Ratio start, const Ratio end) {      
       for(int i = this->size()-1 ; i >= 0 ; i--){
         
         T &t = this->at_ref(i);
@@ -1383,7 +1385,7 @@ public:
           remove_at_pos(i);
       }
     }
-
+  
     // equiv. to List_InsertRatioLen3.
     bool insert_ratio(const Ratio &where_to_start, const Ratio &how_much, const Ratio last_legal_place = make_ratio(-1,1), std::function<void(T &t)> modify_func = nullptr){
 
@@ -1391,11 +1393,12 @@ public:
       
       bool ret = false;
       
-      for(int i=0;i<this->size();i++){
+      for(int i=this->find_pos_left(where_to_start);i<this->size();i++){
         
         T &t = this->at_ref(i);
 
         if (t.get_time() >= where_to_start) {
+          
           ret = true;
 
           if (modify_func)
@@ -1431,15 +1434,23 @@ public:
     }
 
     // equiv. to expand_list3
-    void expand(const Ratio &start, const Ratio &end, const Ratio &new_end, const Ratio &last_legal_place){
+    void expand(const Ratio &start,
+                const Ratio &end,
+                const Ratio &new_end,
+                const Ratio &last_legal_place,
+                std::function<void(T &t)> modify_func = nullptr){
+      
       R_ASSERT_NON_RELEASE(_has_cancelled==false);
       
-      for(int i=0;i<this->size();i++){
+      for(int i=this->find_pos_left(start);i<this->size();i++){
         
         T &t = this->at_ref(i);
 
         if (t.get_time() > start) {
 
+          if (modify_func)
+            modify_func(t);
+          
           Ratio new_time;
         
           if (t.get_time() >= end) {

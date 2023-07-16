@@ -71,6 +71,7 @@ static void expand_list3(struct ListHeader3 *l, const Place start, const Place e
   }
 }
 
+#if 0
 static void expand_note(struct Notes *note, const Place start, const Place end, const Place new_end, const Place last_place){
   note->l.p = expand_place(note->l.p, start, end, new_end, last_place);
   note->end = place2ratio(expand_place(ratio2place(note->end), start, end, new_end, last_place));
@@ -90,15 +91,30 @@ static void expand_note(struct Notes *note, const Place start, const Place end, 
     writer.expand(ratio_from_place(start), ratio_from_place(end), ratio_from_place(new_end), ratio_from_place(last_place));
   }
 }
+#endif
 
 static void expand_track(struct Tracks *track, const Place start, const Place end, const Place new_end, const Place last_place){
 
-  struct Notes *note = track->notes;
-  while(note!=NULL){
-    expand_note(note, start, end, new_end, last_place);
-    note = NextNote(note);
-  }
+  r::NoteTimeData::Writer writer(track->_notes2);
 
+  writer.expand(ratio_from_place(start), ratio_from_place(end), ratio_from_place(new_end), ratio_from_place(last_place),
+                [&](r::NotePtr &note_)
+                {
+                  r::ModifyNote note(note_);
+                  
+                  note->d._end = place2ratio(expand_place(ratio2place(note->d._end), start, end, new_end, last_place));
+
+                  {
+                    r::VelocityTimeData::Writer writer(&note->_velocities);
+                    writer.expand(ratio_from_place(start), ratio_from_place(end), ratio_from_place(new_end), ratio_from_place(last_place));
+                  }
+                  
+                  {
+                    r::PitchTimeData::Writer writer(&note->_pitches);
+                    writer.expand(ratio_from_place(start), ratio_from_place(end), ratio_from_place(new_end), ratio_from_place(last_place));
+                  }
+                });
+                
   if(track->swings!=NULL)
     expand_list3(&track->swings->l, start, end, new_end, last_place);
 

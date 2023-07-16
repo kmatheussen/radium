@@ -1023,7 +1023,8 @@ STime Ratio2STime2(
     // Commented out. It's very common. Code might be pointlessly ugly if we don't allow this.
     //R_ASSERT_NON_RELEASE(false);
 
-    R_ASSERT_NON_RELEASE(y < num_lines+1);
+    // Commented out too. We allow notes below end of block now.
+    //R_ASSERT_NON_RELEASE(y < num_lines+1);
     
     return times[num_lines].time;
   }
