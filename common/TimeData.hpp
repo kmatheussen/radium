@@ -690,35 +690,35 @@ private:
       return this->_vector->end();
     }
 
-    struct ConstIterator{
+    struct Iterator{
 
       T *_begin;
       T *_end;
       
-      ConstIterator(T *begin, T *end)
+      Iterator(T *begin, T *end)
         : _begin(begin)
         , _end(end)
       {
       }
       
-      const T* begin() const {
+      T* begin() const {
         return _begin;
       }
 
-      const T* end() const {
+      T* end() const {
         return _end;
       }
     };
 
     // (The comment for 'find_pos_left' applies to this function as well)
-    ConstIterator get_iterator_left(const Ratio &ratio) const {
+    Iterator get_iterator_left(const Ratio &ratio) const {
       T *end = const_cast<T*>(this->_vector->end());
       
       if (is_empty())
-        return ConstIterator(end, end);
+        return Iterator(end, end);
       
       int pos = find_pos_left(ratio);
-      return ConstIterator(&this->_vector->at_ref(pos), end);
+      return Iterator(&this->_vector->at_ref(pos), end);
     }
 
     /*
