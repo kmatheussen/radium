@@ -485,14 +485,8 @@ void CopyRange(
 
         R_ASSERT_RETURN_IF_FALSE(rangenum >= 0 && rangenum < NUM_RANGES);
         
-	//struct RangeClip *range_clip=(struct RangeClip *)talloc(sizeof(struct RangeClip));
-        struct RangeClip *range_clip=talloc_with_finalizer<struct RangeClip>([](struct RangeClip *range_clip){
-          for(int i=0;i<range_clip->num_tracks;i++) {
-            delete range_clip->stops[i];
-            delete range_clip->notes2[i];
-          }
-        });
-
+	struct RangeClip *range_clip=(struct RangeClip *)talloc(sizeof(struct RangeClip));
+        
         range_clip->rangenum = rangenum;
         
         g_range_clips[rangenum] = range_clip;
@@ -500,9 +494,19 @@ void CopyRange(
 	range_clip->num_tracks = num_tracks = range.x2-range.x1+1;
 
 	range_clip->notes=(struct Notes **)talloc((int)sizeof(struct Notes *)*num_tracks);
-        range_clip->notes2=(r::NoteTimeData**)talloc((int)sizeof(r::NoteTimeData *)*num_tracks);
-        range_clip->stops=(r::StopTimeData**)talloc((int)sizeof(r::StopTimeData *)*num_tracks);
 
+        range_clip->notes2=(r::NoteTimeData**)talloc_array_with_finalizer<r::NoteTimeData*>(num_tracks,[num_tracks](r::NoteTimeData **notes2){
+          for(int i=0;i<num_tracks;i++) {
+            delete notes2[i];
+          }
+        });
+        
+        range_clip->stops=(r::StopTimeData**)talloc_array_with_finalizer<r::StopTimeData*>(num_tracks,[num_tracks](r::StopTimeData** stops){
+          for(int i=0;i<num_tracks;i++) {
+            delete stops[i];
+          }
+        });
+        
 	//range_clip->instruments=talloc((size_t)(sizeof(struct Instruments *)*num_tracks));
 	range_clip->fxs=(vector_t*)talloc(sizeof(vector_t)*num_tracks);
 
