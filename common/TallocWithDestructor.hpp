@@ -37,6 +37,17 @@ extern void talloc_with_destructor_gc_finalizer(void *actual_mem_start, void *us
 extern void gc_able_gc_finalizer(void *actual_mem_start, void *user_data);
 
 template<typename T> 
+static inline T *talloc_array_with_finalizer(int num_elements, std::function<void(T*)> finalizer){
+  T *ret = (T*)talloc(num_elements * sizeof(T));
+  
+  radium::TallocWithDestructor<T> *gakkgakk = new radium::TallocWithDestructor<T>(ret, finalizer);
+  
+  GC_register_finalizer_ignore_self(ret, talloc_with_destructor_gc_finalizer, gakkgakk, NULL, NULL);
+  
+  return ret;
+}
+
+template<typename T> 
 static inline T *talloc_with_finalizer(std::function<void(T*)> finalizer){
   T *ret = (T*)talloc(sizeof(T));
   
