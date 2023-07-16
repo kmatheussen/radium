@@ -103,6 +103,8 @@ quantitize_options_t Quantitize_get_default_options(void){
   return options;
 }
 
+#if 0
+
 static bool Quantitize_Note(
                             struct Blocks *block,
                             struct Notes **notes,
@@ -173,6 +175,45 @@ static bool Quantitize_track(
           return false;
 }
 
+#else
+
+static bool Quantitize_track(
+                             struct Blocks *block,
+                             struct Tracks *track,
+                             bool only_selected_notes
+                             )
+{
+        bool ret = false;
+
+        std::vector<r::NotePtr> to_remove;
+        
+        r::NoteTimeData::Writer writer(track->_notes2);
+
+        for(r::NotePtr &note : writer) {
+          
+          if (note->d._pianonote_is_selected || !only_selected_notes) {
+
+            bool was_changed;
+  
+            if (quantitize_note2(block, note, &was_changed)) {
+              if (was_changed)
+                ret = true;
+            } else {
+              to_remove.push_back(note);
+              ret = true;
+            }
+          }
+	}
+
+        for(r::NotePtr &note : to_remove)
+          writer.removeElement(note);
+
+        writer.sortit();
+        
+        return ret;
+}
+#endif
+
 static bool Quantitize_selected_notes(
                       struct Tracker_Windows *window,
                       struct WBlocks *wblock
@@ -180,6 +221,7 @@ static bool Quantitize_selected_notes(
   return Quantitize_track(wblock->block, wblock->wtrack->track, true);
 }
 
+#if 0
 static bool Quantitize_range(
                              struct Tracker_Windows *window,
                              struct WBlocks *wblock
@@ -228,6 +270,59 @@ static bool Quantitize_range(
         return ret;
 
 }
+#else
+static bool Quantitize_range(
+                             struct Tracker_Windows *window,
+                             struct WBlocks *wblock
+                             )
+{
+	if( ! wblock->range.enabled)
+          return Quantitize_selected_notes(window,wblock);
+
+        const Ratio r1 = place2ratio(wblock->range.y1);
+        const Ratio r2 = place2ratio(wblock->range.y2);
+        
+        bool ret = false;
+        
+        struct Tracks *track = (struct Tracks *)ListFindElement1(&wblock->block->tracks->l,wblock->range.x1);
+
+        int tracknum;
+	for(tracknum=0;tracknum<=wblock->range.x2-wblock->range.x1;tracknum++){
+
+          std::vector<r::NotePtr> to_remove;
+        
+          r::NoteTimeData::Writer writer(track->_notes2);
+
+          for(r::NotePtr &note : writer.get_iterator_left(r1)) {
+          
+            if (note->get_time() >= r1) {
+              if (note->get_time() >= r2)
+                break;
+
+              bool was_changed;
+              
+              if (quantitize_note2(wblock->block, note, &was_changed)) {
+                if (was_changed)
+                  ret = true;
+              } else {
+                to_remove.push_back(note);
+                ret = true;
+              }
+            }
+          }
+
+          for(r::NotePtr &note : to_remove)
+            writer.removeElement(note);
+
+          writer.sortit();
+
+          track=NextTrack(track);
+	}
+
+        return ret;
+
+}
+#endif
 
 static bool Quantitize_block(
 	struct Blocks *block

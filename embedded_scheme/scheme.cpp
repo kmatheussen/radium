@@ -2273,6 +2273,7 @@ Place p_Scale(const Place x, const Place x1, const Place x2, const Place y1, con
   }
 }
 
+#if 0
 bool quantitize_note(const struct Blocks *block, struct Notes *note, bool *was_changed) {
   ScopedEvalTracker eval_tracker;
 
@@ -2318,6 +2319,55 @@ bool quantitize_note(const struct Blocks *block, struct Notes *note, bool *was_c
 
   if (note->end != new_end) {
     note->end = new_end;
+    *was_changed = true;
+  }
+
+  return true;
+}
+#endif
+
+bool quantitize_note2(const struct Blocks *block, r::NotePtr &note, bool *was_changed) {
+  ScopedEvalTracker eval_tracker;
+
+  *was_changed = false;
+
+  s7_pointer scheme_func = find_scheme_value(s7, "quantitize-note");
+  
+  Place last_place = p_Last_Pos(block);
+
+  s7extra_add_history(__func__, CR_FORMATEVENT("========== s7callling quantitize-note"));
+
+  Ratio quant =
+    make_ratio_from_static_ratio(root->quantitize_options.quant)
+    /
+    DYN_get_ratio(getLineZoomBlockRatio(block->l.num, -1));
+
+  s7_pointer result = catch_call(s7,
+                                 S7_LIST(s7,
+                                         scheme_func,
+                                         s7_make_ratio(s7, note->get_time().num, note->get_time().den),
+                                         s7_make_ratio(s7, note->d._end.num, note->d._end.den),
+                                         s7_make_ratio(s7, quant.num, quant.den),
+                                         place_to_ratio(&last_place),
+                                         s7_make_integer(s7, root->quantitize_options.type)
+                                         )
+                                 );
+  
+  if (s7_is_boolean(result))
+    return false;
+
+  if (!s7_is_pair(result)) {
+    RError("Unknown result after call to quantitize-note");
+    return false;
+  }
+
+  Ratio new_start = place2ratio(number_to_place(s7, s7_car(result), NULL));
+  Ratio new_end = place2ratio(number_to_place(s7, s7_cdr(result), NULL));
+
+  if (new_start != note->get_time() || note->d._end != new_end) {
+    r::ModifyNote new_note(note, r::ModifyNote::Type::CAN_MODIFY_TIME);
+    new_note->set_time(new_start);
+    new_note->d._end = new_end;
     *was_changed = true;
   }
 

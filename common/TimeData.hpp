@@ -1478,6 +1478,8 @@ public:
         }
 
       }
+
+      sortit();
     }
     
     void replace_with(const TimeData<T,SeqBlockT> *from){

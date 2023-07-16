@@ -7,6 +7,10 @@ extern bool g_scheme_has_inited2;
 
 extern LANGSPEC bool quantitize_note(const struct Blocks *block, struct Notes *note, bool *was_changed); // 'was_changed' must point to a bool. If note was changed, the value will be true.
 
+#if __cplusplus
+extern bool quantitize_note2(const struct Blocks *block, r::NotePtr &note, bool *was_changed);
+#endif
+
 extern LANGSPEC void SCHEME_throw_catch(const char *symbol, const char *message); // Call this one to display backtrace into the message log. It throws, but it also catches its own exception. In practice, it jdoes the same as GFX_addMessage(SCHEME_get_history()), but in a different way, and less efficiently.
 extern LANGSPEC void SCHEME_throw(const char *symbol, const char *message);
 extern LANGSPEC const char *SCHEME_get_history(void); // The returned value should be freed with call to free().
