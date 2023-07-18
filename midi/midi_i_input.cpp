@@ -79,6 +79,13 @@ extern const char *NotesTexts3[131];
 static radium::Mutex g_midi_learns_mutex;
 static radium::Vector<radium::MidiLearn*> g_midi_learns;
 
+static bool msg_is_cc(const uint32_t msg){
+  const int d1 = MIDI_msg_byte1(msg);
+
+  return d1 >= 0xb0 && d1 < 0xc0;
+
+}
+
 static bool msg_is_fx(const uint32_t msg){
   int cc0 = MIDI_msg_byte1_remove_channel(msg);
   if (cc0==0xb0 || cc0==0xe0)
@@ -136,19 +143,13 @@ static int get_max_value(uint32_t msg){
 
 // Returns -1 if lowering, 0 if same, and 1 if increasing
 static int get_incremental_value(uint32_t msg){
-  int val = get_integer_fx_value(msg);
-  int d1 = MIDI_msg_byte1(msg);
-
-  int mid;
+  R_ASSERT_NON_RELEASE(msg_is_cc(msg));
   
-  if (d1 < 0xc0)
-    mid = 64;
-  else
-    mid = 0x2000;
+  int val = MIDI_msg_byte3(msg);
 
-  if (val < mid)
+  if (val < 64)
     return -1;
-  else if (val > mid)
+  else if (val > 64)
     return 1;
   else
     return 0;
@@ -171,6 +172,7 @@ static float get_msg_float_value_from_integer_value(uint32_t msg, int integer_va
                  0.5,      1.0
                  );
 }
+
 
 static float get_msg_fx_value(uint32_t msg){
   return get_msg_float_value_from_integer_value(msg, get_integer_fx_value(msg));
@@ -861,8 +863,6 @@ bool radium::MidiLearn::RT_matching(const symbol_t *port_name, uint32_t msg){
 
     R_ASSERT_NON_RELEASE(ATOMIC_GET(last_value)==-1);
     
-    ATOMIC_SET(last_value, get_integer_fx_value(msg));
-    
     ATOMIC_SET(this->port_name, port_name);
     ATOMIC_SET(is_learning, false);
   }
@@ -891,47 +891,47 @@ bool radium::MidiLearn::RT_matching(const symbol_t *port_name, uint32_t msg){
   return false;
 }
 
+// Only call once per message!
+int radium::MidiLearn::RT_get_value_for_incremental_mode(uint32_t msg){
+
+  R_ASSERT_NON_RELEASE(msg_is_cc(msg));
+  R_ASSERT_NON_RELEASE(ATOMIC_GET(is_incremental));
+
+  int old_value = ATOMIC_GET(last_value);
+  
+  if (old_value < 0) {
+    const int value = MIDI_msg_byte3(msg);
+    ATOMIC_SET(last_value, value);
+    return value;
+  }
+        
+  int inc_value = get_incremental_value(msg);
+
+  if (inc_value == 0)
+    return -1;
+
+  int new_value = old_value + inc_value;
+  
+  if (new_value < 0)
+    return -1;
+  
+  int max_value = get_max_value(msg);
+  
+  if (new_value > max_value)
+    return -1;
+  
+  ATOMIC_SET(last_value, new_value);
+  
+  return new_value;
+}
+  
 bool radium::MidiLearn::RT_maybe_use(const symbol_t *port_name, uint32_t msg){
   //printf("RT_MAYBE_USE: %x\n", msg);
   
   if (RT_matching(port_name, msg)==false)
     return false;
 
-  float value;
-  
-  if (ATOMIC_GET(is_incremental)) {
-    int old_value = ATOMIC_GET(last_value);
-
-    if (old_value < 0) {
-      R_ASSERT_NON_RELEASE(false);
-      return false;
-    }
-        
-    int inc_value = get_incremental_value(msg);
-
-    if (inc_value == 0)
-      return false;
-
-    int new_value = old_value + inc_value;
-
-    if (new_value < 0)
-      return false;
-
-    int max_value = get_max_value(msg);
-
-    if (new_value > max_value)
-      return false;
-    
-    ATOMIC_SET(last_value, new_value);
-    value = get_msg_float_value_from_integer_value(msg, new_value);
-    
-  } else {
-    value = get_msg_fx_value(msg);
-  }
-
-  //printf("....Value: %f\n", value);
-  
-  RT_callback(value);
+  RT_callback(get_msg_fx_value(msg));
   
   return true;
 }
@@ -957,7 +957,7 @@ namespace
 void radium::MidiLearn::RT_maybe_use_forall(instrument_t instrument_id, const symbol_t *port_name, uint32_t msg){
   for (auto midi_learn : g_midi_learns) {
     bool may_use = false;
-
+    
     if (instrument_id == make_instrument(-1))
       may_use = true;
     else {
@@ -965,7 +965,7 @@ void radium::MidiLearn::RT_maybe_use_forall(instrument_t instrument_id, const sy
       if (id2==make_instrument(-1) || id2==instrument_id)
         may_use = true;
     }
-
+    
     if (may_use)
       midi_learn->RT_maybe_use(port_name, msg);
   }
@@ -973,28 +973,28 @@ void radium::MidiLearn::RT_maybe_use_forall(instrument_t instrument_id, const sy
 
 // Called from the player thread
 void RT_MIDI_handle_play_buffer(void){
-
+  
   play_buffer_event_t event;
-
+  
   bool has_set_midi_receive_time = false;
 
   struct Instruments *midi_instrument = get_MIDI_instrument();
   struct Instruments *audio_instrument = get_audio_instrument();
-
+  
   if (midi_instrument==NULL || audio_instrument==NULL){ // happens during init
     R_ASSERT(midi_instrument==NULL && audio_instrument==NULL);
     return;
   }
   
   struct Patch *playing_patches[midi_instrument->patches.num_elements + audio_instrument->patches.num_elements + 1]; // add 1 to avoid ubsan hit if there are no instruments.
-
+  
   bool has_inited = false;
   int num_playing_patches = 0;
-
+  
   struct SeqTrack *seqtrack = NULL; // set to NULL to silence false compiler warning.
   struct Patch *through_patch = NULL; // set to NULL to silence false compiler warning.
   double seqtrack_starttime = 0.0; // set to 0.0 to silence false compiler warning.
-
+  
   while(g_play_buffer->pop(event)==true){
 
     uint32_t msg = event.msg;
@@ -1031,12 +1031,12 @@ void RT_MIDI_handle_play_buffer(void){
           }
         }
       }END_VECTOR_FOR_EACH;
-
+      
       has_inited = true;
     }
     
     if(through_patch!=NULL || num_playing_patches > 0){
-
+      
       uint8_t byte1 = MIDI_msg_byte1(msg);
       if (byte1 < 0xf0 && ATOMIC_GET(g_use_track_channel_for_midi_input)){
         byte1 &= 0xf0;
@@ -1048,10 +1048,10 @@ void RT_MIDI_handle_play_buffer(void){
         g_last_midi_receive_time = TIME_get_ms();
         has_set_midi_receive_time = true;
       }
-
+      
       if (through_patch != NULL)
         RT_MIDI_send_msg_to_patch(seqtrack, (struct Patch*)through_patch, byte, 3, seqtrack_starttime);
-
+      
       for(int i=0;i<num_playing_patches;i++)
         RT_MIDI_send_msg_to_patch(seqtrack, playing_patches[i], byte, 3, seqtrack_starttime);
     }
@@ -1062,11 +1062,11 @@ void RT_MIDI_handle_play_buffer(void){
 // Called from a MIDI input thread
 static void add_event_to_play_buffer(const symbol_t *port_name, uint32_t msg){
   play_buffer_event_t event;
-
+  
   event.port_name = port_name;
   event.deltatime = 0;
   event.msg = msg;
-
+  
   if (!g_play_buffer->bounded_push(event))
     RT_message("Midi play buffer full.\nMost likely the player can not keep up because it uses too much CPU.\nIf that is not the case, please report this incident.");
 }
@@ -1087,6 +1087,37 @@ struct Patch *MIDI_GetThroughPatch(void){
  **       Got MIDI from the outside. Entry point.       **
  *********************************************************
  *********************************************************/
+
+
+// Fixes incremental mode values.
+// Returns false if message should be thrown away.
+static bool maybe_fix_incremental_mode_for_msg(const symbol_t *port_name, uint32_t &msg){
+  
+  if (!msg_is_cc(msg)) // Only support incremental mode for control change.
+    return true;
+  
+  radium::ScopedMutex lock(g_midi_learns_mutex); // Note: Timing can be slightly inaccurate if adding/removing midi learn while recording, since MIDI_add/remove_midi_learn obtains the player lock while holding the g_midi_learns_mutex. Hopefully not a problem...
+  
+  for (auto midi_learn : g_midi_learns) {
+    
+    if (ATOMIC_GET(midi_learn->is_incremental) && midi_learn->RT_matching(port_name, msg)){
+      
+      const int value = midi_learn->RT_get_value_for_incremental_mode(msg);
+      
+      if (value < 0)
+        return false;
+      
+      const int d1 = MIDI_msg_byte1(msg);
+      const int d2 = MIDI_msg_byte2(msg);
+      
+      msg = MIDI_msg_pack3(d1, d2, value);
+      
+      return true;
+    }
+  }
+
+  return true;
+}
 
 // Can be called from any thread
 void MIDI_editor_and_midi_learn_InputMessageHasBeenReceived(const symbol_t *port_name, int cc,int data1,int data2){
@@ -1119,6 +1150,9 @@ void MIDI_editor_and_midi_learn_InputMessageHasBeenReceived(const symbol_t *port
   if (len<1 || len>3)
     return;
 
+  if (!maybe_fix_incremental_mode_for_msg(port_name, msg))
+    return;
+  
   add_event_to_play_buffer(port_name, msg);
 
   if (g_record_accurately_while_playing && isplaying) {
