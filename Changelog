@@ -1,3 +1,41 @@
+Changes 7.1.89 -> 7.1.90:
+* Editor: Fix sligthly wrong memory handling. Might
+  have led to crashes sometimes after copying a
+  range that contains stops, but only after the
+  second time or later, and probably only in very
+  rare cases. Bug introduced in V6.6.77.
+* Midi Learn: Rough implementation of
+  "incremental mode". The feature is likely to
+  require some tweaking though.
+* Sequencer: Make the song tempo automation popup
+  menu less confusing.
+* Sequencer: Fix gfx garbage in uppermost pixel row
+  when song tempo automation is visible.
+* Editor: Fix a possible, but if so, probably
+  extremely rare, crash when creating undo for range.
+  The bug seems to have always been there.
+* Internal: Fix memory leak if trying to allocate
+  very large memory blocks in realtime code.
+* GUI: Attempt to fix Qt sometimes translating
+  strings. (That's not supposed to happen since
+  Radium is an English-only program.)
+* Linux: Turn off crash reporter if radium couldn't
+  start because of missing AM pitch shift plugin
+  during startup. Only for custom builds though.
+* Soundfile saver: Fix pressing "Save" if Qt
+  has decided to translate the text "Save" to
+  another language. Qt is not supposed to
+  translate anything, but reportedly it has.
+* Internal: Fix a bug in a function that divides two
+  ratio numbers. The bug could in theory have caused
+  all kinds of errors, but probably not.
+* GUI: Decrease memory garbage collection time
+  somewhat.
+* API: instrumentEffectMidiLearnIsIncremental,
+  setInstrumentEffectMidiLearnIsIncremental.
+
+
+
 Changes 7.1.88 -> 7.1.89:
 * Demo songs: Added "Test Automation" made by mward25.
 * Sequencer: Fix moving seqblocks (and probably other
