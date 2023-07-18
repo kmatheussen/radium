@@ -2524,7 +2524,7 @@ $(T)Peaks.o: audio/Peaks.cpp audio/Peaks.hpp
 $(T)Fade.o: audio/Fade.cpp audio/Fade.hpp
 	$(CCC2) audio/Fade.cpp $(CPPOPT) -ffast-math
 
-$(T)Mixer.o: audio/Mixer.cpp audio/SoundProducer_proc.h Qt/helpers.h audio/SampleRecorder_proc.h audio/CpuUsage.hpp
+$(T)Mixer.o: audio/Mixer.cpp audio/SoundProducer_proc.h Qt/helpers.h audio/SampleRecorder_proc.h audio/CpuUsage.hpp weakjack/weak_libjack.h
 	$(CCC2) audio/Mixer.cpp  $(JACKOPT) $(QTOPT)  $(CPUOPT) -Wno-null-dereference $(NO_ANALYZER_MALLOC_LEAK)
 
 $(T)get_windows_commandlines.o: audio/get_windows_commandlines.c
