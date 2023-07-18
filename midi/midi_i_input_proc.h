@@ -101,6 +101,9 @@ public:
   
   bool RT_matching(const symbol_t *port_name, uint32_t msg);
 
+  // Only call once per message!
+  int RT_get_value_for_incremental_mode(uint32_t msg);
+  
 private:
 
   bool RT_maybe_use(const symbol_t *port_name, uint32_t msg);
