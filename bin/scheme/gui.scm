@@ -1056,7 +1056,7 @@
             
             (<gui> :set-size gui
                    (floor (<gui> :text-width "Could not find..... Plugin file. asdf  wefawe3451345 13451345 oiwaefoajefoijaowepijaeporgijpoaghjto#$#$% 2q3e4tERTQERT paerjgoijaerpoiporegi"))
-                   (floor (<gui> :text-width "Could not find..... Plugin file. asdf  wefawe3451345 13451345")))
+                   (floor (<gui> :text-width "Could not find..... Plugin file. asdf  wefawe3451345 13451345 owfji;aoirjgfo;arjefowefwefwefwefw")))
 
             (<gui> :add-close-callback gui
                    (lambda (radium-runs-custom-exec)
