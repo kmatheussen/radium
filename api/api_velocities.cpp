@@ -121,18 +121,23 @@ static int addVelocity2(float value, Place place, dyn_t dynnote, int tracknum, i
     return -1;
   }
 
+  /*
+
+  // Remove these two checks. The new player shouldn't have any trouble tackling this.
+
   if (PlaceEqual(&place, &note->l.p)) {
     if (show_errors)
       handleError("addVelocity: placement at note start for note. velocity: %s. note: %s", p_ToString(place), p_ToString(note->l.p));
     return -1;
   }
-
+  
   if (place2ratio(place)==note->end){
     if (show_errors)
       handleError("addVelocity: placement at note end for note. velocity: %s. note end: %s", p_ToString(place), p_ToString(ratio2place(note->end)));
     return -1;
   }
-
+  */
+  
   if (place2ratio(place) > note->end) {
     handleError("addVelocity: placement after note end for note. velocity: %s. note end: %s", p_ToString(place), p_ToString(ratio2place(note->end)));
     return -1;

@@ -949,8 +949,15 @@
                (reverse (cdr (butlast pitches))))
           (list first-pitch)))
 
-(define (reverse-note note length*)
-  (let ((duration (get-note-duration note)))
+(define (reverse-note uncut-note length*)
+  (let* ((note (if (> (+ (uncut-note :place)
+                         (get-note-duration uncut-note))
+                      length*)
+                   (cut-note-keep-start uncut-note length*)
+                   uncut-note))
+         (duration (get-note-duration note)))
+    ;;(pretty-print (list ":dur" duration
+    ;;                    ":note" note))
     (<copy-note> note
                  :place (scale (get-note-end note) 0 length* length* 0)
                  :pitches (reverse-pitches (note :pitches) duration)
@@ -962,36 +969,48 @@
                          (area :start-place)))
   (map (lambda (tracknotes)
          (map (lambda (note)
-                (reverse-note note area-length))
+                (if (>= (note :place) 0)
+                    (reverse-note note area-length)
+                    note))
               (reverse tracknotes)))
        (get-area-notes area)))
               
 
-(delafina (reverse-block! :blocknum -1)
-  (define area (get-block-editor-area blocknum))
+(define (reverse-area! area)
+  (undo-editor-area area)
   (replace-notes! (get-reversed-notes area)
                   area))
+  
+(delafina (FROM_C-reverse-block! :blocknum -1)
+  (reverse-area! (get-block-editor-area blocknum)))
               
-(delafina (reverse-track! :tracknum -1
+(delafina (FROM_C-reverse-track! :tracknum -1
                           :blocknum -1)
-  (define area (get-track-editor-area tracknum blocknum))
-  (replace-notes! (get-reversed-notes area)
-                  area))
-              
-(delafina (reverse-range! :blocknum -1)
-  (define area (get-ranged-editor-area blocknum))
-  (replace-notes! (get-reversed-notes area)
-                  area))
+  (reverse-area! (get-track-editor-area tracknum blocknum)))
 
-#||
+(delafina (FROM_C-reverse-range! :blocknum -1)
+  (reverse-area! (get-ranged-editor-area blocknum)))
 
-(reverse-range!)
+#!!
 
-(reverse-track!)
+(c-display "GAKK")
 
-(pretty-print (get-reversed-range))
+(pretty-print (get-area-notes (get-ranged-editor-area)))
+
+(FROM_C-reverse-range!)
+
+(pretty-print (cut-note-keep-start (caar (get-area-notes (get-ranged-editor-area -1)))
+                                   6))
+
+(pretty-print (get-area-notes (get-ranged-editor-area -1)))
+
+(pretty-print (get-reversed-notes (get-ranged-editor-area -1)))
+
+
 (pretty-print (get-reversed-track -1 0))
 
+(FROM_C-reverse-track!)
+(FROM_C-reverse-block!)
 
 (let ((tracknum 0))
   (set-notes! (reverse-track 0 tracknum) 0 tracknum))
@@ -1003,7 +1022,7 @@
 
 (<ra> :delete-note 1)
 
-||#
+!!#
 
 
 

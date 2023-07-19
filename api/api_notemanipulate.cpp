@@ -24,10 +24,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/transpose_proc.h"
 #include "../common/quantitize_proc.h"
 #include "../common/fxtext_proc.h"
-#include "../common/new/backwards_proc.h"
+//#include "../common/new/backwards_proc.h"
 #include "../common/new/invert_proc.h"
 #include "../common/new/pitchexpand_proc.h"
 #include "../common/new/glissando_proc.h"
+
+#include "../embedded_scheme/scheme_proc.h"
 
 #include "api_common_proc.h"
 
@@ -132,27 +134,36 @@ void pexpandRange(int f,int windownum){
 /************** Backwards ******************/
 
 void backwardsTrack(int windownum){
+  SCHEME_eval("(FROM_C-reverse-track!)");
+/*  
   struct Tracker_Windows *window=getWindowFromNum(windownum);
   if(window==NULL) return;
 
   BackWardsTrack_CurrPos(window);
   window->must_redraw = true; // polyphony might have changed
+*/
 }
 
 void backwardsBlock(int windownum){
+  SCHEME_eval("(FROM_C-reverse-block!)");
+/*
   struct Tracker_Windows *window=getWindowFromNum(windownum);
   if(window==NULL) return;
 
   BackWardsBlock_CurrPos(window);
   window->must_redraw = true; // polyphony might have changed
+*/
 }
 
 void backwardsRange(int windownum){
+  SCHEME_eval("(FROM_C-reverse-range!)");
+/*
   struct Tracker_Windows *window=getWindowFromNum(windownum);
   if(window==NULL) return;
 
   BackWardsRange_CurrPos(window);
   window->must_redraw = true; // polyphony might have changed
+*/
 }
 
 
