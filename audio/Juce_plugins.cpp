@@ -3077,6 +3077,10 @@ void GFX_CloseProgress(void){
 
 #endif
 
+char *JUCE_get_JUCE_version(void){
+  return talloc_strdup(juce::SystemStats::getJUCEVersion().toRawUTF8());
+}
+ 
 void *JUCE_lock(void){
   return new juce::MessageManagerLock; // Can not use MMLock here.
 }
