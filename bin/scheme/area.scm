@@ -2632,6 +2632,8 @@
                      (+ y1 tab-bar-height)
                      y1))
 
+  (define hovered-tab-num -1)
+  
   (define-optional-func tab-area (key . rest))
 
   (define tab-states (make-vector num-tabs #f))
@@ -2639,7 +2641,7 @@
   (define-override (get-state)
     (set! (tab-states curr-tab-num) (tab-area :get-state))
     (hash-table :curr-tab-num curr-tab-num
-                 :tab-states tab-states))
+                :tab-states tab-states))
 
   (define-override (apply-state! state)
     (set! curr-tab-num (state :curr-tab-num))
@@ -2651,7 +2653,8 @@
                    is-horizontal
                    tab-names
                    curr-tab-num
-                   ;;:background-color (<gui> :mix-colors (<gui> :get-background-color gui) "red" 0.95)
+                   #f ;;:background-color (<gui> :mix-colors (<gui> :get-background-color gui) "red" 0.95)
+                   hovered-tab-num
                    ))
 
   (define (recreate-areas!)
@@ -2664,27 +2667,43 @@
     (add-sub-area-plain! tab-area)
     (update-me!))
 
+  (define (get-tab-num x* y*)
+    (call-with-exit
+     (lambda (return)
+       (for-each (lambda (tab-num)
+                   (get-tab-coords is-horizontal tab-num num-tabs x1 y1 tab-bar-x2 tab-bar-y2
+                                   (lambda (x1 y1 x2 y2)
+                                     ;;(c-display "x*/y*:" x* y* ". x1/y1/x2/y2:" x1 y1 x2 y2)
+                                     (if (and (>= x* x1)
+                                              (< x* x2)
+                                              (>= y* y1)
+                                              (< y* y2))
+                                         (return tab-num)))))
+                 (iota num-tabs))
+       -1)))
+  
   (add-mouse-pointerhandler ra:set-normal-mouse-pointer)
+  
+  (add-raw-mouse-cycle!
+   :move-func (lambda (button x* y*)
+                (define tab-num (get-tab-num x* y*))
+                (when (not (= tab-num hovered-tab-num))
+                  (set! hovered-tab-num tab-num)
+                  (update-me!))
+                #f))
   
   (add-mouse-cycle! :press-func (lambda (button x* y*)
                                   (and (= button *left-button*)
-                                       (call-with-exit
-                                        (lambda (return)
-                                          (for-each (lambda (tab-num)
-                                                      (get-tab-coords is-horizontal tab-num num-tabs x1 y1 tab-bar-x2 tab-bar-y2
-                                                                      (lambda (x1 y1 x2 y2)
-                                                                        ;;(c-display "x*/y*:" x* y* ". x1/y1/x2/y2:" x1 y1 x2 y2)
-                                                                        (when (and (>= x* x1)
-                                                                                   (< x* x2)
-                                                                                   (>= y* y1)
-                                                                                   (< y* y2))
-                                                                          (when (not (= tab-num curr-tab-num))
-                                                                            (set! (tab-states curr-tab-num) (tab-area :get-state))
-                                                                            (set! curr-tab-num tab-num)
-                                                                            (recreate-areas!))
-                                                                          (return #t)))))
-                                                    (iota num-tabs))
-                                          #f)))))
+                                       (let ((tab-num (get-tab-num x* y*)))
+                                         (if (>= tab-num 0)
+                                             (begin
+                                               (when (not (= tab-num curr-tab-num))
+                                                 (set! (tab-states curr-tab-num) (tab-area :get-state))
+                                                 (set! curr-tab-num tab-num)
+                                                 (recreate-areas!))
+                                               #t)
+                                             #f)))))
+  
   
   ;;(c-display "STATE:" state)
   (if state
