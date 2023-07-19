@@ -54632,7 +54632,7 @@ HASH_TYPE
 filename
 0
 FILEPATH_TYPE
-/tmp/radium_bin/sounds/test_automation.rad_embedded_samples/243749__unfa__metronome-1khz-weak-pulse.flac
+test_automation.rad_embedded_samples/243749__unfa__metronome-1khz-weak-pulse.flac
 instrument_number
 0
 INT_TYPE
@@ -59390,7 +59390,7 @@ HASH_TYPE
 filename
 0
 FILEPATH_TYPE
-/tmp/radium_bin/sounds/test_automation.rad_embedded_samples/STACKER.XI
+test_automation.rad_embedded_samples/STACKER.XI
 instrument_number
 0
 INT_TYPE
@@ -60534,7 +60534,7 @@ HASH_TYPE
 filename
 0
 FILEPATH_TYPE
-/tmp/radium_bin/sounds/test_automation.rad_embedded_samples/clarinet.xi
+test_automation.rad_embedded_samples/clarinet.xi
 instrument_number
 0
 INT_TYPE
@@ -61678,7 +61678,7 @@ HASH_TYPE
 filename
 0
 FILEPATH_TYPE
-/tmp/radium_bin/sounds/test_automation.rad_embedded_samples/brassy.xi
+test_automation.rad_embedded_samples/brassy.xi
 instrument_number
 0
 INT_TYPE
@@ -62822,7 +62822,7 @@ HASH_TYPE
 filename
 0
 FILEPATH_TYPE
-/tmp/radium_bin/sounds/test_automation.rad_embedded_samples/synping2.xi
+test_automation.rad_embedded_samples/synping2.xi
 instrument_number
 0
 INT_TYPE
@@ -73881,7 +73881,7 @@ HASH_TYPE
 filename
 0
 FILEPATH_TYPE
-/tmp/radium_bin/sounds/test_automation.rad_embedded_samples/243749__unfa__metronome-1khz-weak-pulse.flac
+test_automation.rad_embedded_samples/243749__unfa__metronome-1khz-weak-pulse.flac
 instrument_number
 0
 INT_TYPE
@@ -81773,7 +81773,7 @@ HASH_TYPE
 filename
 0
 FILEPATH_TYPE
-/tmp/radium_bin/sounds/test_automation.rad_embedded_samples/STACKER.XI
+test_automation.rad_embedded_samples/STACKER.XI
 instrument_number
 0
 INT_TYPE
@@ -83304,7 +83304,7 @@ HASH_TYPE
 filename
 0
 FILEPATH_TYPE
-/tmp/radium_bin/sounds/test_automation.rad_embedded_samples/clarinet.xi
+test_automation.rad_embedded_samples/clarinet.xi
 instrument_number
 0
 INT_TYPE
@@ -84835,7 +84835,7 @@ HASH_TYPE
 filename
 0
 FILEPATH_TYPE
-/tmp/radium_bin/sounds/test_automation.rad_embedded_samples/brassy.xi
+test_automation.rad_embedded_samples/brassy.xi
 instrument_number
 0
 INT_TYPE
@@ -86366,7 +86366,7 @@ HASH_TYPE
 filename
 0
 FILEPATH_TYPE
-/tmp/radium_bin/sounds/test_automation.rad_embedded_samples/synping2.xi
+test_automation.rad_embedded_samples/synping2.xi
 instrument_number
 0
 INT_TYPE
