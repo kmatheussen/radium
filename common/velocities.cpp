@@ -84,8 +84,8 @@ static int add_velocity(
 
   Place endplace = ratio2place(note->end);
   
-  if(PlaceLessOrEqual(placement, &note->l.p)) return -1;
-  if(PlaceGreaterOrEqual(placement, &endplace)) return -1;
+  if(PlaceLessThan(placement, &note->l.p)) return -1;
+  if(PlaceGreaterThan(placement, &endplace)) return -1;
 
 #if 0
   struct Velocities *velocity=(struct Velocities*)talloc(sizeof(struct Velocities));
