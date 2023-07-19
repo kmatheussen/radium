@@ -1200,7 +1200,8 @@
                          :is-horizontal
                          :tab-names
                          :current-tab-num
-                         :background-color #f)
+                         :background-color #f
+                         :hovered-tab-num -1)
 
     ;; vertical: The height we get from the paint callback is wrong
     ;; When resizing, the paint callback is callled with the old height,
@@ -1226,9 +1227,21 @@
               (get-tab-coords is-horizontal i num-tabs x1 y1 x2 y2
                               (lambda (x1 y1 x2 y2)
                                 ;;(c-display i "y1/y2:" (floor y1) (floor y2) "x1/x2" (floor x1) (floor x2))
-                                (if (= i current-tab-num)
-                                    (<gui> :filled-box gui curr-tab-background x1 y1 x2 y2 5 5))
-                                ;;(<gui> :draw-box gui "#202020" x1 y1 x2 y2 1.0 2 2)
+                                (define new-background-color
+                                  (cond ((= i current-tab-num)
+                                         curr-tab-background)
+                                        ((= i hovered-tab-num)
+                                         background-color)
+                                        (else
+                                         #f)))
+                                  
+                                (if new-background-color
+                                    (let ((color (if (= i hovered-tab-num)
+                                                     (<gui> :make-color-lighter new-background-color
+                                                            1.25)
+                                                     new-background-color)))
+                                      (<gui> :filled-box gui color x1 y1 x2 y2 5 5)))
+                                
                                 (<gui> :my-draw-text gui *text-color* tab-name x1 y1 x2 y2 #t #f #f (if is-horizontal 0 270))
                                 (<gui> :draw-box gui "black" x1 y1 x2 y2 0.5)
                                 )))
@@ -1250,6 +1263,8 @@
   
   (define tab-bar (<gui> :get-tab-bar tabs))
 
+  (define hovered-tab -1)
+  
   (define background-color (<gui> :get-background-color tabs))
 
   (define (get-index-from-x-y x y)
@@ -1270,19 +1285,27 @@
     (paint-tab-bar gui 0 0 width height horizontal
                    (map (lambda (tabnum) (<gui> :tab-name tabs tabnum))
                         (iota (<gui> :num-tabs tabs)))
-                   (<gui> :current-tab tabs)))
+                   (<gui> :current-tab tabs)
+                   #f
+                   hovered-tab))
 ;;                   background-color))
 
   (<gui> :add-paint-callback tab-bar
          (lambda (width height)           
            (my-paint-tab-bar tab-bar)))
-
+  
   (<gui> :add-mouse-callback tab-bar
          (lambda (button state x y)
+           (define i (if (= state *is-leaving*)
+                         -1
+                         (get-index-from-x-y x y)))
+           (when (not (= i hovered-tab))
+             (set! hovered-tab i)
+             (<gui> :update tab-bar))
            (if (and (= state *is-pressing*)
                     (= button *left-button*))
                (begin
-                 (<gui> :set-current-tab tabs (get-index-from-x-y x y))
+                 (<gui> :set-current-tab tabs i)
                  #t)
                #f)))
 

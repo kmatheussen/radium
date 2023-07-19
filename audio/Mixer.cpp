@@ -1166,7 +1166,7 @@ struct Mixer{
       } else {
         RT_message("Error!\n"
                    "\n"
-                   "Audio using too much CPU. Pausing audio generation for 5 seconds to avoid locking up the computer.%s",
+                   "Audio using too much CPU. Pausing audio processing for 5 seconds to avoid locking up the computer.%s",
                    MULTICORE_get_num_threads()>1 ? "" : "\n\nTip: Turning on Multi CPU processing might help."
                    );
         printf("stop processing plugins\n");
