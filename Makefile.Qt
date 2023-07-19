@@ -531,7 +531,7 @@ OBJ1= $(T)windows.o $(T)window_config.o $(T)list.o $(T)vector.o $(T)hashmap.o $(
 
 OBJ2= $(T)notes.o $(T)notes_legalize.o $(T)pitches.o $(T)wblocks.o $(T)wtracks.o $(T)sliders.o $(T)common.o
 
-OBJ3= $(T)eventreciever.o $(T)scancodes.o $(T)reallines.o $(T)notestext.o $(T)trackreallines2.o $(T)signaturetext.o $(T)lpbtext.o $(T)bpmtext.o $(T)swingtext.o $(T)centtext.o $(T)chancetext.o $(T)veltext.o $(T)fxtext.o $(T)data_as_text.o $(T)clipboard_range.o $(T)clipboard_range_calc.o $(T)clipboard_range_copy.o $(T)clipboard_range_paste.o $(T)clipboard_range_cut.o $(T)transpose.o $(T)backwards.o $(T)invert.o $(T)glissando.o $(T)pitchexpand.o $(T)expand.o $(T)clipboard_track_copy.o $(T)clipboard_track_paste.o $(T)clipboard_track_cut.o $(T)clipboard_tempos_copy.o $(T)clipboard_localzooms.o $(T)clipboard_block_copy.o $(T)clipboard_block_paste.o $(T)quantitize.o
+OBJ3= $(T)eventreciever.o $(T)scancodes.o $(T)reallines.o $(T)notestext.o $(T)trackreallines2.o $(T)signaturetext.o $(T)lpbtext.o $(T)bpmtext.o $(T)swingtext.o $(T)centtext.o $(T)chancetext.o $(T)veltext.o $(T)fxtext.o $(T)data_as_text.o $(T)clipboard_range.o $(T)clipboard_range_calc.o $(T)clipboard_range_copy.o $(T)clipboard_range_paste.o $(T)clipboard_range_cut.o $(T)transpose.o $(T)invert.o $(T)glissando.o $(T)pitchexpand.o $(T)expand.o $(T)clipboard_track_copy.o $(T)clipboard_track_paste.o $(T)clipboard_track_cut.o $(T)clipboard_tempos_copy.o $(T)clipboard_localzooms.o $(T)clipboard_block_copy.o $(T)clipboard_block_paste.o $(T)quantitize.o
 
 OBJ4 = $(T)tbox.o $(T)area.o $(T)range.o $(T)nodelines.o
 
@@ -1460,8 +1460,8 @@ $(T)undo_block_insertdelete.o:  $(BUILD_DEPENDENCIES) $(CD)undo_block_insertdele
 $(T)track_onoff.o:  $(BUILD_DEPENDENCIES) $(CD)track_onoff.c
 	$(CC2) $(CD)track_onoff.c $(OPT)
 
-$(T)backwards.o:  $(BUILD_DEPENDENCIES) $(CD)new/backwards.cpp
-	$(CCC2) $(CD)new/backwards.cpp $(CPPOPT)
+#$(T)backwards.o:  $(BUILD_DEPENDENCIES) $(CD)new/backwards.c
+#	$(CC2) $(CD)new/backwards.c $(OPT)
 
 $(T)invert.o:  $(BUILD_DEPENDENCIES) $(CD)new/invert.cpp
 	$(CCC2) $(CD)new/invert.cpp $(CPPOPT)

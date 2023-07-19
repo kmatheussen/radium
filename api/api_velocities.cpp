@@ -147,18 +147,6 @@ static int addVelocity2(float value, Place place, dyn_t dynnote, int tracknum, i
     return -1;
   }
 
-  if (ratio == note.get_time()) {
-    if (show_errors)
-      handleError("addVelocity: placement at note start for note. velocity: %s. note: %s", p_ToString(place), p_ToString(ratio2place(note->get_time())));
-    return -1;
-  }
-
-  if (ratio == note->d._end) {
-    if (show_errors)
-      handleError("addVelocity: placement at note end for note. velocity: %s. note end: %s", p_ToString(place), p_ToString(ratio2place(note->d._end)));
-    return -1;
-  }
-
   if (ratio > note->d._end) {
     handleError("addVelocity: placement after note end for note. velocity: %s. note end: %s", p_ToString(place), p_ToString(ratio2place(note->d._end)));
     return -1;
