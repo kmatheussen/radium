@@ -2199,6 +2199,7 @@ void openAboutWindow(void){
               "OpenGL version: \"%s\"<br>"
               "OpenGL flags: %x<br>"
               "Qt version: \"%s\"<br>"
+              "JUCE version: \"%s\"<br>"
               "C/C++ compiler version: " __VERSION__ "<br>"
               "S7 version: " S7_VERSION " / " S7_DATE
               "<p>"
@@ -2217,6 +2218,7 @@ void openAboutWindow(void){
               ATOMIC_GET(GE_version_string)==NULL ? "(null)" : ATOMIC_GET(GE_version_string),
               ATOMIC_GET(GE_opengl_version_flags),
               GFX_qVersion(),
+              JUCE_get_JUCE_version(),
               (int)MIXER_get_sample_rate(), frames_to_ms(ATOMIC_GET(g_soundcardblock_size)),
               vblank < 0 ? "Refresh rate not detected" : talloc_format("%.2f", 1000.0 / vblank),
               SCHEME_get_webserver_port(),

@@ -31,6 +31,8 @@ extern void JUCE_stop_audio_device(void);
 
 extern LANGSPEC bool JUCE_native_gui_grabs_keyboard(void);
 
+extern LANGSPEC char *JUCE_get_JUCE_version(void);
+
 extern LANGSPEC void *JUCE_lock(void);
 extern LANGSPEC void JUCE_unlock(void *lock);
 
