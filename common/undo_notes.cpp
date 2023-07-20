@@ -45,7 +45,7 @@ static void *Undo_Do_Notes(
 	struct WBlocks *wblock,
 	struct WTracks *wtrack,
 	int realline,
-	void *pointer
+	void *pointer 
 );
 
 void ADD_UNDO_FUNC(
