@@ -515,7 +515,7 @@ void undoNotes(int tracknum, int blocknum){
   struct WTracks *wtrack = getWTrackFromNumA(-1, &window, blocknum, &wblock, tracknum);
   if(wtrack==NULL)
     return;
-  ADD_UNDO(Notes(window,window->wblock->block,wtrack->track,window->wblock->curr_realline));
+  ADD_UNDO(Notes(window,wblock->block,wtrack->track,wblock->curr_realline));
 }
 
 const_char* getNoteId(int notenum, int tracknum, int blocknum, int windownum){
