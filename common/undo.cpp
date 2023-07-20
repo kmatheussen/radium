@@ -756,7 +756,7 @@ static void undo_internal(void){
                 wtrack=wblock->wtracks;
               }else{
                 wtrack=(struct WTracks *)ListFindElement1_r0(&wblock->wtracks->l,entry->tracknum);
-                R_ASSERT_NON_RELEASE(wtrack!=NULL): // need to investigate this...
+                R_ASSERT_NON_RELEASE(wtrack!=NULL); // need to investigate this...
               }
               if(wtrack!=NULL){
                 ATOMIC_WRITE(wblock->wtrack, wtrack);
