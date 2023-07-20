@@ -155,6 +155,10 @@ void backwardsBlock(int windownum){
 */
 }
 
+void backwardsSong(void){
+  SCHEME_eval("(FROM_C-reverse-song!)");
+}
+
 void backwardsRange(int windownum){
   SCHEME_eval("(FROM_C-reverse-range!)");
 /*

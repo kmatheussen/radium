@@ -173,7 +173,7 @@
       (undo-block
        (lambda ()
          (for-each (lambda (tracknum)
-                     (c-display "Creating undo for track " tracknum)
+                     (c-display "Creating undo for track " tracknum ". Block:" (area :blocknum))
                      (<ra> :undo-notes tracknum (area :blocknum)))
                    (integer-range (area :start-track) (1- (area :end-track))))))))
              
@@ -981,15 +981,22 @@
   (replace-notes! (get-reversed-notes area)
                   area))
   
-(delafina (FROM_C-reverse-block! :blocknum -1)
-  (reverse-area! (get-block-editor-area blocknum)))
-              
 (delafina (FROM_C-reverse-track! :tracknum -1
                           :blocknum -1)
   (reverse-area! (get-track-editor-area tracknum blocknum)))
 
 (delafina (FROM_C-reverse-range! :blocknum -1)
   (reverse-area! (get-ranged-editor-area blocknum)))
+
+(delafina (FROM_C-reverse-block! :blocknum -1)
+  (reverse-area! (get-block-editor-area blocknum)))
+              
+(delafina (FROM_C-reverse-song!)
+  (undo-block
+   (lambda ()
+     (for-each (lambda (blocknum)
+                 (FROM_C-reverse-block! blocknum))
+               (iota (<ra> :get-num-blocks))))))
 
 #!!
 
@@ -998,6 +1005,7 @@
 (pretty-print (get-area-notes (get-ranged-editor-area)))
 
 (FROM_C-reverse-range!)
+(FROM_C-reverse-song!)
 
 (pretty-print (cut-note-keep-start (caar (get-area-notes (get-ranged-editor-area -1)))
                                    6))

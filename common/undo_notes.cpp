@@ -80,7 +80,7 @@ void ADD_UNDO_FUNC(
                  realline,
                  undo_notes,
                  Undo_Do_Notes,
-                 "Track notes and stops"
+                 talloc_format("Track notes and stops. B: %d. T: %d", block->l.num, track->l.num)
                  );
 }
 
@@ -103,6 +103,11 @@ static void *Undo_Do_Notes(
 
 	struct Undo_Notes *undo_notes=(struct Undo_Notes *)pointer;
 
+        if (wtrack==NULL) {
+          R_ASSERT(false);
+          return undo_notes;
+        }
+        
 	struct Tracks *track=wtrack->track;
 
         {

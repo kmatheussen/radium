@@ -777,7 +777,8 @@
   
   (define backwards-layout (create-notem-layout (create-keybinding-button (notem-group-name "Range" "EXTRA_L") "ra:backwards-range" :ensure-range-from-selection #t)
                                                 (create-keybinding-button (notem-group-name "Track" "ALT_L") "ra:backwards-track")
-                                                (create-keybinding-button (notem-group-name "Block" "CTRL_L")  "ra:backwards-block")))
+                                                (create-keybinding-button (notem-group-name "Block" "CTRL_L")  "ra:backwards-block")
+                                                (create-keybinding-button (notem-group-name "Song" "")  "ra:backwards-song")))
   
   (define glissando-layout (create-notem-layout (create-keybinding-button "Apply glissando between two notes" "ra:glissando")))
   
