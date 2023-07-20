@@ -831,7 +831,8 @@ test_audiobuffer:
 
 test_smoothdelay:
 	$(CCC) -g -Wall -Werror test/test_smoothdelay.cpp $(QTOPT) -UNDEBUG $(ADDRESS_SANITIZE_OPTS) -fsanitize=undefined -fPIC -DFOR_LINUX
-	$(CCC) test_smoothdelay.o $(QT_LDFLAGS) $(QTLINKFLAGS) $(OS_LDFLAGS2) -lm $(ADDRESS_SANITIZE_OPTS) -fsanitize=undefined -o test_smoothdelay
+	$(CCC) -g -Wall -Werror audio/Fade.cpp $(CPPOPT) -UNDEBUG -fPIC -DFOR_LINUX -DTEST_SMOOTHDELAY -O3  -ffast-math -DMARCH_NATIVE_ALLOWED=1 # -march=native  # -ffast-math -fopt-info-vec-optimized -fopt-info-vec-all
+	$(CCC) test_smoothdelay.o Fade.o $(QT_LDFLAGS) $(QTLINKFLAGS) $(OS_LDFLAGS2) -lm $(ADDRESS_SANITIZE_OPTS) -fsanitize=undefined -o test_smoothdelay
 	LSAN_OPTIONS=detect_leaks=0 gdb -ex='set confirm on' -ex=run -ex=quit ./test_smoothdelay
 	@echo "=== success: test_smoothdelay ==="
 	@rm test_smoothdelay
@@ -839,8 +840,8 @@ test_smoothdelay:
 benchmark_smoothdelay:
 	@echo "first: ./build_clean.sh && BUILDTYPE=RELEASE ./build_linux.sh + ctrl-c"
 	@echo "to benchmark using clang: CC=clang CCC=clang++ make benchmark_smoothdelay"
-	$(CCC) -g -Wall -Werror test/test_smoothdelay.cpp $(QTOPT) -UNDEBUG -fPIC -DFOR_LINUX -DBENCHMARK_SMOOTHDELAY -O3 # -ffast-math -fopt-info-vec-optimized -fopt-info-vec-all
-	$(CCC) -g -Wall -Werror audio/Fade.cpp $(CPPOPT) -UNDEBUG -fPIC -DFOR_LINUX -DBENCHMARK_SMOOTHDELAY -O3  -ffast-math -DMARCH_NATIVE_ALLOWED=1 -march=native  # -ffast-math -fopt-info-vec-optimized -fopt-info-vec-all
+	$(CCC) -g -Wall -Werror test/test_smoothdelay.cpp $(QTOPT) -UNDEBUG -fPIC -DFOR_LINUX -DBENCHMARK_SMOOTHDELAY -O3  #--fast-math #-ffast-math -fopt-info-vec-optimized -fopt-info-vec-all
+	$(CCC) -g -Wall -Werror audio/Fade.cpp $(CPPOPT) -UNDEBUG -fPIC -DFOR_LINUX -DBENCHMARK_SMOOTHDELAY -O3  -ffast-math -DMARCH_NATIVE_ALLOWED=1 # -march=native  # -ffast-math -fopt-info-vec-optimized -fopt-info-vec-all
 #-march=native
 
 #-fno-signed-zeros 
