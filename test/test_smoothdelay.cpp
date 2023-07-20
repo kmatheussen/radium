@@ -15,7 +15,8 @@
 #include "../common/nsmtracker.h"
 
 #include "../audio/SmoothDelay.hpp"
-#include "../audio/Fade.cpp"
+
+//#include "../audio/Fade.cpp"
 
 #include "test_dummies.c"
 

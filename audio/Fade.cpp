@@ -6,13 +6,33 @@
   If only using "-ffast-math", clang++12 is slightly faster than g++10.
  */
 
+#if defined(RADIUM_AUDIO_FADE_CPP)
+  #error "error. File included twice"
+#endif
+
+#define RADIUM_AUDIO_FADE_CPP 1
+
 
 #include "../common/nsmtracker.h"
 
 #include "Fade.hpp"
 
-#if BENCHMARK_SMOOTHDELAY
+#if BENCHMARK_SMOOTHDELAY or defined(TEST_SMOOTHDELAY)
 extern double g_fade_benchmark_time;
+#endif
+
+#if 0
+// For looking at in godbolt.
+void fade_in(const float _inc_fade, const float fade_mul, const int num_frames, float *__restrict__ data, const float *__restrict in){
+
+  const double d_fade_span = _inc_fade*num_frames;
+
+  const float fade_inc = d_fade_span / num_frames;
+      
+  for(int i=0;i<how_many;i++)
+    data[i] += in[i] * (fade_mul + i*fade_inc);
+
+}
 #endif
 
 namespace radium{
@@ -56,14 +76,14 @@ void Fade::RT_fade(const int num_frames, float *__restrict__ data, const float *
           for(int i=0;i<how_many;i++)
             data[i] += in[i] * (fade_mul + i*fade_inc);
 
-         } else {
+        } else {
 #if !defined(RADIUM_USES_UBSAN)
            #pragma clang loop vectorize(enable) interleave(enable)
 #endif
-           for(int i=0;i<how_many;i++)
-             data[i] = in[i] * (fade_mul + i*fade_inc);
-
-         }
+          for(int i=0;i<how_many;i++)
+            data[i] = in[i] * (fade_mul + i*fade_inc);
+          
+        }
 
       }
 
