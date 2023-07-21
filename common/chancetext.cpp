@@ -79,7 +79,7 @@ bool CHANCETEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock,
             break;
           case TR2_PITCH:
             {
-              r::PitchTimeData::Writer writer(&note->_pitches);
+              r::PitchTimeData::Writer writer(&note->_pitches, wtrack->track->_notes2);
               if (tr2.pitchnum < 0 || tr2.pitchnum >= writer.size())
                 R_ASSERT(false);
               else 
@@ -122,7 +122,7 @@ bool CHANCETEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock,
           return false;
         case TR2_PITCH:
           {
-            r::PitchTimeData::Writer writer(&dasnote->_pitches);
+            r::PitchTimeData::Writer writer(&dasnote->_pitches, wtrack->track->_notes2);
             if (tr2.pitchnum < 0 || tr2.pitchnum >= writer.size())
               R_ASSERT(false);
             else 
@@ -183,7 +183,7 @@ bool CHANCETEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock,
           break;
         case TR2_PITCH:
           {
-            r::PitchTimeData::Writer writer(&dasnote->_pitches);
+            r::PitchTimeData::Writer writer(&dasnote->_pitches, wtrack->track->_notes2);
             if (tr2.pitchnum < 0 || tr2.pitchnum >= writer.size())
               R_ASSERT(false);
             else 

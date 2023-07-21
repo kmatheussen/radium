@@ -19,12 +19,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "clipboard_range.h"
 
+/*
 extern LANGSPEC void CopyRange_notes(
                             struct Notes **tonote,
                             const struct Notes *fromnote,
                             const Place *p1,
                             const Place *p2
 );
+*/
 
 #ifdef __cplusplus
 void CopyRange_notes2(

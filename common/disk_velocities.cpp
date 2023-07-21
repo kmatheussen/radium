@@ -168,7 +168,7 @@ DC_end();
 
 void LoadPitches(struct Notes *note){
 
-  r::PitchTimeData::Writer writer(note->_pitches);
+  r::PitchTimeData::Writer writer(note->_pitches, g_dummy_notes);
     
   while(dc.success){
     DC_fgets();
@@ -187,7 +187,7 @@ void LoadPitches(struct Notes *note){
 
 void LoadPitches_oldformat(struct Notes *note) {
 
-        r::PitchTimeData::Writer writer(note->_pitches);
+  r::PitchTimeData::Writer writer(note->_pitches, g_dummy_notes);
 
         /*
         struct Pitches **to = &note->pitches;

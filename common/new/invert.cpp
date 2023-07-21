@@ -67,8 +67,8 @@ static void Invert_notes2(
 ){
   bool firsttime = true;
 
-  int last_org_note;
-  int last_inverted_note;
+  int last_org_note = 0; // Set to a value to silence wrong warning about uninitialized value in older versions of gcc.
+  int last_inverted_note = 0; // Same here.
   
   r::NoteTimeData::Writer writer(track->_notes2, r::KeepOldData::KEEP_OLD_DATA);
   

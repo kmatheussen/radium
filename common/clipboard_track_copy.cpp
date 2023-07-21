@@ -101,7 +101,7 @@ struct WTracks *internal_copy_track(
 
         if (always_copy_all_fxs || subsubtrack==-1) {
           
-          CopyRange_notes(&totrack->notes,track->notes,p1,&p2);
+          //CopyRange_notes(&totrack->notes,track->notes,p1,&p2);
           CopyRange_notes2(totrack->_notes2,track->_notes2,p1,&p2);
           CopyRange_stops(totrack->stops2,track->stops2,p1,&p2);
           totrack->swings = CB_CopySwings(track->swings, &p2);

@@ -55,8 +55,8 @@ static void Transpose_note(
     pitch = NextPitch(pitch);
   }
   */
-  
-  r::PitchTimeData::Writer writer(note->_pitches);
+
+  r::PitchTimeData::Writer writer(note->_pitches, g_dummy_notes);
   for(auto &pitch : writer)
     pitch._val = getTransposed(pitch._val, trans);
 }

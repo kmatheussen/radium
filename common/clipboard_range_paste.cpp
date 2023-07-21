@@ -162,6 +162,7 @@ static void PasteRange_pitches(
 */
 
 static void PasteRange_pitches2(
+                                r::NoteTimeData *to_notes2,
                                 const struct Blocks *block,
                                 r::PitchTimeData *to,
                                 const r::PitchTimeData *from,
@@ -175,7 +176,7 @@ static void PasteRange_pitches2(
   
   Ratio ratio = ratio_from_place(*place);
   
-  r::PitchTimeData::Writer writer(to, r::KeepOldData::USE_CLEAN_DATA);
+  r::PitchTimeData::Writer writer(to, to_notes2, r::KeepOldData::USE_CLEAN_DATA);
   
   for(r::Pitch pitch : reader){
 
@@ -190,7 +191,7 @@ static void PasteRange_pitches2(
   }
 }
 
-
+/*
 static void PasteRange_notes(
                       const struct Blocks *block,
                       struct Tracks *track,
@@ -227,7 +228,7 @@ static void PasteRange_notes(
 
 	PasteRange_notes(block,track,NextNote(fromnote),place);
 }
-
+*/
 
 static void PasteRange_notes2(
 	struct Blocks *block,
@@ -263,7 +264,7 @@ static void PasteRange_notes2(
           
           PasteRange_velocities2(block,&new_note->_velocities,&note->_velocities,place);
           //PasteRange_pitches(block,&note->pitches,fromnote->pitches,place);
-          PasteRange_pitches2(block,&new_note->_pitches,&note->_pitches,place);
+          PasteRange_pitches2(to_notes, block,&new_note->_pitches,&note->_pitches,place);
 
           writer.add(new_note);
         }
@@ -324,7 +325,7 @@ void PasteRange(
             if (doRangePasteCut())
               StopAllNotesAtPlace(block,track,place);
 
-            PasteRange_notes(block,track,range_clip->notes[lokke],place);
+            //PasteRange_notes(block,track,range_clip->notes[lokke],place);
 
             if (range_clip->notes2[lokke] != NULL)
               PasteRange_notes2(block,track->_notes2,range_clip->notes2[lokke],place);

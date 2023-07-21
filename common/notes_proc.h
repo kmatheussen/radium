@@ -17,6 +17,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifndef RADIUM_COMMON_NOTES_PROC_H
 #define RADIUM_COMMON_NOTES_PROC_H
 
+extern LANGSPEC void NOTES_init(void);
+
 extern LANGSPEC int GetNoteSubtrack(const struct WTracks *wtrack, struct Notes *note);
 extern LANGSPEC int GetNumSubtracks(const struct WTracks *wtrack);
 

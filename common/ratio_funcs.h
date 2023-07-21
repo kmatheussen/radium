@@ -163,7 +163,6 @@ static inline Ratio RATIO_add(const Ratio r1, const Ratio r2){
     goto overflow_fallback;
 
   return make_ratio(a, b);
-#endif
   
  overflow_fallback:
   R_ASSERT_NON_RELEASE(false);
@@ -463,7 +462,7 @@ static inline char *ratio_to_string(const Ratio ratio){
 #endif
 #endif
 
-#endif
+#endif // RADIUM_COMMON_RATIO_FUNCS_H
 
 
 #ifdef TEST_MAIN                

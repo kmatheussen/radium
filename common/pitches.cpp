@@ -28,6 +28,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "pitches_proc.h"
 
+void r::PitchTimeData::writer_finalizer_after(const Writer &writer, r::PitchWriterFinalizerArguments &args){
+  if (args._notes==NULL){
+    R_ASSERT_NON_RELEASE(false);
+    return;
+  }
+
+  if (args._notes == g_dummy_notes)
+    return;
+  
+  r::NoteTimeData::Reader reader(args._notes);
+  args._notes->set_note_min_max_pitch(reader);
+}
+  
 /*
 struct Notes *GetNextPitchNote(const struct Notes *note){
   R_ASSERT(note->pitches != NULL);
@@ -60,7 +73,7 @@ int AddPitch(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTra
   int pos2;
   
   {
-    r::PitchTimeData::Writer writer(note->_pitches);
+    r::PitchTimeData::Writer writer(note->_pitches, wtrack->track->_notes2);
     
     Ratio ratio = ratio_from_place(*place);
     if (!writer.has_element_at_ratio(ratio)) {
@@ -89,7 +102,7 @@ int AddPitch2(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTr
   int pos2;
   
   {
-    r::PitchTimeData::Writer writer(&note->_pitches);
+    r::PitchTimeData::Writer writer(&note->_pitches, wtrack->track->_notes2);
     
     if (!writer.has_element_at_ratio(ratio)) {
       
@@ -113,7 +126,7 @@ int AddPitch2(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTr
 }
 
 void DeletePitch(struct Tracks *track, struct Notes *note, int pitchnum){
-  r::PitchTimeData::Writer writer(note->_pitches);
+  r::PitchTimeData::Writer writer(note->_pitches, track->_notes2);
   if (!writer.remove_at_pos(pitchnum)){
     R_ASSERT_NON_RELEASE(false);
   }

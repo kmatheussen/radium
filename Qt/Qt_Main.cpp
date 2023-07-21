@@ -99,6 +99,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/data_as_text_proc.h"
 #include "../common/sequencer_proc.h"
 #include "../common/Process.hpp"
+#include "../common/notes_proc.h"
 
 #include "../api/api_proc.h"
 #include "../api/api_gui_proc.h"
@@ -3426,6 +3427,8 @@ int radium_main(const char *arg){
 
   TIME_init();
 
+  NOTES_init();  
+  
 #if 0
   QApplication::setStyle( new QPlatinumStyle() );
   QApplication::setStyle( new QCDEStyle() );

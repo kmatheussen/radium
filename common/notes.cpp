@@ -50,6 +50,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #ifndef TEST_NOTES
 
+r::NoteTimeData *g_dummy_notes = NULL;
+
+void NOTES_init(void) {
+  g_dummy_notes = new r::NoteTimeData;
+}
+
 static int FindFirstFreePolyphony_num(const std::vector<Ratio> &end_places, const Ratio &ratio){
 
   int i = 0;
@@ -88,7 +94,7 @@ bool r::NoteTimeData::insert_ratio(Writer &writer, const Ratio &where_to_start, 
     }
     
     {
-      r::PitchTimeData::Writer writer(&new_note->_pitches);
+      r::PitchTimeData::Writer writer(&new_note->_pitches, g_dummy_notes);
       writer.insert_ratio(where_to_start, how_much);
     }
   });
@@ -141,55 +147,11 @@ static void set_note_polyphony_num(r::NoteTimeData *notes, r::NoteTimeData::Writ
   } 
 }
 
-static void set_note_min_max_pitch(r::NoteTimeData *notes, r::NoteTimeData::Writer &writer){
-  float min_pitch = 10000.0f;
-  float max_pitch = -1.0f;
-
-  int num_pitches = 0;
-  
-  // find min_pitch and max_pitch
-  for(const r::NotePtr &note : writer){
-    min_pitch = R_MIN(note->get_val(), min_pitch);
-    max_pitch = R_MAX(note->get_val(), max_pitch);
-    num_pitches ++;
-    if (note->d._pitch_end > 0){
-      min_pitch = R_MIN(note->d._pitch_end, min_pitch);
-      max_pitch = R_MAX(note->d._pitch_end, max_pitch);
-      num_pitches ++;
-    }
-
-    r::PitchTimeData::Reader reader(&note->_pitches);
-    for(const r::Pitch &pitch : reader){
-      min_pitch = R_MIN(pitch._val, min_pitch);
-      max_pitch = R_MAX(pitch._val, max_pitch);
-      num_pitches ++;
-    }
-  }
-
-  notes->_min_pitch = min_pitch;
-  notes->_max_pitch = max_pitch;
-
-  if (num_pitches <= 3) {
-    
-    notes->_min_display_pitch = 0;
-    notes->_max_display_pitch = 127;
-    
-  }else{
-    
-    float pitch_range = max_pitch - min_pitch;
-    
-    min_pitch = min_pitch - pitch_range/8.0f;
-    if(min_pitch < 0)
-      min_pitch = 0;
-    
-    max_pitch = max_pitch + pitch_range/8.0f;
-    if(max_pitch > 127)
-      max_pitch = 127;
-    
-    notes->_min_display_pitch = min_pitch;
-    notes->_max_display_pitch = max_pitch;
-  }
+/*
+template <class Iterator>
+void r::NoteTimeData::set_note_min_max_pitch(Iterator &iterator){
 }
+*/
 
 static void update_line_notes(r::NoteTimeData *notetimedata, const r::NoteTimeData::Writer &writer){
   int last_used_line = -1;
@@ -264,7 +226,7 @@ static void update_line_notes(r::NoteTimeData *notetimedata, const r::NoteTimeDa
 #endif
 }
 
-void r::NoteTimeData::writer_finalizer(Writer &writer){
+void r::NoteTimeData::writer_finalizer_before(Writer &writer, r::DefaultWriterFinalizerArguments &){
   
   R_ASSERT(THREADING_is_main_thread()); // This function is not thread safe.
 
@@ -282,7 +244,7 @@ void r::NoteTimeData::writer_finalizer(Writer &writer){
     printf("\n");
   }
 
-  set_note_min_max_pitch(this, writer);
+  set_note_min_max_pitch(writer);
 
   {
     for(const auto &note : writer)
@@ -471,7 +433,7 @@ void StopAllNotesAtPlace(
                           }
 
                           {
-                            r::PitchTimeData::Writer writer(temp->_pitches);
+                            r::PitchTimeData::Writer writer(temp->_pitches, track->_notes2);
                             writer.remove_everything_after(ratio_from_place(*placement), true);
                           }
                         }
@@ -504,7 +466,7 @@ static void StopAllNotesAtRatio(
       }
       
       {
-        r::PitchTimeData::Writer writer(&new_note->_pitches);
+        r::PitchTimeData::Writer writer(&new_note->_pitches, track->_notes2);
         writer.remove_everything_after(ratio, true);
       }
       
@@ -577,7 +539,7 @@ r::NotePtr NewNoteFromOldNote(const struct Notes *note){
   d._chance = note->chance;
 
   new_note->_velocities.replace_with(note->_velocities);
-  new_note->_pitches.replace_with(note->_pitches);
+  new_note->_pitches.replace_with(note->_pitches, g_dummy_notes);
   
   return new_note;
 }
@@ -988,7 +950,7 @@ bool InsertNoteCurrPos(struct Tracker_Windows *window, float notenum, bool polyp
       case TR2_PITCH:
         R_ASSERT_RETURN_IF_FALSE2(tr2.note, false);
         {
-          r::PitchTimeData::Writer writer(&tr2.note->_pitches);
+          r::PitchTimeData::Writer writer(&tr2.note->_pitches, track->_notes2);
           if (tr2.pitchnum < 0 || tr2.pitchnum >= writer.size())
             R_ASSERT(false);
           else        
@@ -1257,7 +1219,7 @@ void RemoveNoteCurrPos(struct Tracker_Windows *window){
 #if 0
         DeletePitch(track, tr2.note, tr2.pitchnum);
 #else
-        r::PitchTimeData::Writer writer(&tr2.note->_pitches);
+        r::PitchTimeData::Writer writer(&tr2.note->_pitches, track->_notes2);
         if (!writer.remove_at_pos(tr2.pitchnum)){
           R_ASSERT_NON_RELEASE(false);
         }
@@ -1827,7 +1789,7 @@ static void r_edit_pitch(struct Tracker_Windows *window, struct WBlocks *wblock,
   if(notenum > 0.0f){
     ADD_UNDO(Notes_CurrPos(window));
     
-    r::PitchTimeData::Writer writer(&note->_pitches);
+    r::PitchTimeData::Writer writer(&note->_pitches, wtrack->track->_notes2);
 
     R_ASSERT_RETURN_IF_FALSE(pitchnum < writer.size());
 
@@ -1928,7 +1890,7 @@ void CutNoteAt(const struct Blocks *block, const struct Tracks *track,struct Not
   }
 
   {
-    r::PitchTimeData::Writer writer(note->_pitches);
+    r::PitchTimeData::Writer writer(note->_pitches, track->_notes2);
     writer.remove_everything_after(ratio_from_place(*place), true);
   }
 
@@ -1953,7 +1915,7 @@ void CutNoteAt2(const struct Blocks *block, const struct Tracks *track, r::Modif
   }
 
   {
-    r::PitchTimeData::Writer writer(&note->_pitches);
+    r::PitchTimeData::Writer writer(&note->_pitches, track->_notes2);
     writer.remove_everything_after(ratio, true);
   }
 
@@ -2418,22 +2380,22 @@ static void call_callback_between_nodes(struct SeqTrack *seqtrack,
 }
 
 
-template <class T, class SeqBlockT>
+template <class T, class SeqBlockT, class WriterFinalizerArguments>
 template <typename TimeData, typename TimeDataVector>
 template <typename ValType>
-void r::TimeData<T,SeqBlockT>::ReaderWriter<TimeData, TimeDataVector>::iterate_extended(struct SeqTrack *seqtrack,
-                                                                                        const struct SeqBlock *seqblock,
-                                                                                        const struct Tracks *track,
-                                                                                        int play_id,
-                                                                                        
-                                                                                        const int64_t seqtime_start,
-                                                                                        const r::RatioPeriod &track_period, // Note: track_period._start corresponds to seqtime_start
-                                                                                        
-                                                                                        const r::IterateCallback<ValType> &callback,
-                                                                                        
-                                                                                        const r::TimeDataSimpleNode<ValType> &node_start,
-                                                                                        const r::TimeDataSimpleNode<ValType> &node_end
-                                                                                        ) const
+void r::TimeData<T,SeqBlockT,WriterFinalizerArguments>::ReaderWriter<TimeData, TimeDataVector>::iterate_extended(struct SeqTrack *seqtrack,
+                                                                                                                 const struct SeqBlock *seqblock,
+                                                                                                                 const struct Tracks *track,
+                                                                                                                 int play_id,
+                                                                                                                 
+                                                                                                                 const int64_t seqtime_start,
+                                                                                                                 const r::RatioPeriod &track_period, // Note: track_period._start corresponds to seqtime_start
+                                                                                                                 
+                                                                                                                 const r::IterateCallback<ValType> &callback,
+                                                                                                                 
+                                                                                                                 const r::TimeDataSimpleNode<ValType> &node_start,
+                                                                                                                 const r::TimeDataSimpleNode<ValType> &node_end
+                                                                                                                 ) const
 {
 
   if (track_period._start < node_start._time) {
@@ -2939,7 +2901,7 @@ static void handle2(struct SeqTrack *seqtrack,
     if (notes != NULL)
       for(r::Note *note : *notes){
 
-        bool note_has_started_or_ended = false;
+        //bool note_has_started_or_ended = false;
         
 #if 0
         printf("note: %f -> %f. Period: %f -> %f. is_inside: %d. only_one_line: %d. other_thing: %d. Id: %d.\n",
@@ -2955,7 +2917,7 @@ static void handle2(struct SeqTrack *seqtrack,
         if (period.is_inside(note->get_time())
             && (period_spans_only_one_line || r::RatioPeriod(line, line+1).is_inside(note->get_time()))) { // The check for period_spans_only_one_line is just an optimization.
 
-          note_has_started_or_ended = true;
+          //note_has_started_or_ended = true;
           
           int64_t time = get_seqblock_ratio_time2(seqblock, track, note->get_time());
           
@@ -2998,7 +2960,7 @@ static void handle2(struct SeqTrack *seqtrack,
         if (period.is_inside_inclusive(note->d._end) // Fix: only inclusive if note->d._end is at block end.
             && (period_spans_only_one_line || r::RatioPeriod(line, line+1).is_inside(note->d._end))) { // The check for period_spans_only_one_line is just an optimization.
 
-          note_has_started_or_ended = true;
+          //note_has_started_or_ended = true;
           
           if (note_continues_next_seqblock(seqblock, note)) {
             

@@ -192,7 +192,7 @@ dyn_t setPitch(float value, Place place, int pitchnum, dyn_t dynnote, int trackn
     
   } else {
 
-    r::PitchTimeData::Writer writer(&note->_pitches);
+    r::PitchTimeData::Writer writer(&note->_pitches, track->_notes2);
 
     writer.at_ref(pitchnum-1)._val = value;
 

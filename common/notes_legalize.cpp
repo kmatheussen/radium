@@ -133,7 +133,7 @@ bool LegalizeNotes(struct Blocks *block,struct Tracks *track){
 		p2=&endnote;
 
                 {
-                  r::PitchTimeData::Writer writer(note->_pitches);
+                  r::PitchTimeData::Writer writer(note->_pitches, track->_notes2);
                   Ratio r1 = ratio_from_place(*p1);
                   Ratio r2 = ratio_from_place(*p2);
                   writer.remove([r1, r2, &ret](int i, r::Pitch &pitch){

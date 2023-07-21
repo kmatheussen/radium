@@ -98,7 +98,7 @@ void Block_Set_num_lines2(
                 r::VelocityTimeData::Writer(note->_velocities).remove_everything_after(rlastplace);
                 
                 //CutListAt(&note->pitches,&lastplace);
-                r::PitchTimeData::Writer(note->_pitches).remove_everything_after(rlastplace);
+                r::PitchTimeData::Writer(note->_pitches, track->_notes2).remove_everything_after(rlastplace);
                 
                 if(note->end >= place2ratio(lastplace)) { // && note->noend==1){
                   note->end = place2ratio(lastplace);
@@ -122,7 +122,7 @@ void Block_Set_num_lines2(
                   r::VelocityTimeData::Writer(&new_note->_velocities).remove_everything_after(rlastplace);
                 
                   //CutListAt(&note->pitches,&lastplace);
-                  r::PitchTimeData::Writer(&new_note->_pitches).remove_everything_after(rlastplace);
+                  r::PitchTimeData::Writer(&new_note->_pitches, track->_notes2).remove_everything_after(rlastplace);
 
                   new_note->d._end = rlastplace;
                 }

@@ -72,7 +72,7 @@ void ADD_UNDO_FUNC(
 	PlaceSetLastPos(block,&p2);
 
 	CopyRange_stops(&undo_notes->stops,track->stops2,p1,&p2);
-	CopyRange_notes(&undo_notes->notes,track->notes,p1,&p2);
+	//CopyRange_notes(&undo_notes->notes,track->notes,p1,&p2);
 	CopyRange_notes2(&undo_notes->notes2,track->_notes2,p1,&p2);
 
 	Undo_Add_dont_stop_playing(
@@ -126,7 +126,3 @@ static void *Undo_Do_Notes(
                 
 	return undo_notes;
 }
-
-
-
-

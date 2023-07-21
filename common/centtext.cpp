@@ -76,7 +76,7 @@ bool CENTTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, s
             break;
           case TR2_PITCH:
             {
-              r::PitchTimeData::Writer writer(&note->_pitches);
+              r::PitchTimeData::Writer writer(&note->_pitches, wtrack->track->_notes2);
               if (tr2.pitchnum < 0 || tr2.pitchnum >= writer.size())
                 R_ASSERT(false);
               else 
@@ -119,7 +119,7 @@ bool CENTTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, s
           break;
         case TR2_PITCH:
           {
-            r::PitchTimeData::Writer writer(&dasnote->_pitches);
+            r::PitchTimeData::Writer writer(&dasnote->_pitches, wtrack->track->_notes2);
 
             //float bef = writer.at_ref(tr2.pitchnum)._val;
             
@@ -189,7 +189,7 @@ bool CENTTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, s
           break;
         case TR2_PITCH:
           {
-            r::PitchTimeData::Writer writer(&dasnote->_pitches);
+            r::PitchTimeData::Writer writer(&dasnote->_pitches, wtrack->track->_notes2);
             if (tr2.pitchnum < 0 || tr2.pitchnum >= writer.size())
               R_ASSERT(false);
             else 

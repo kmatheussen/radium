@@ -130,7 +130,7 @@ static void PExpand_DoIt(
 
       note->_val = expandit(note->_val, scalefactor);
 
-      r::PitchTimeData::Writer pitch_writer(&note->_pitches);
+      r::PitchTimeData::Writer pitch_writer(&note->_pitches, track->_notes2);
       for(r::Pitch &pitch : pitch_writer){
 
         if(pitch._time >= r2)

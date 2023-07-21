@@ -65,7 +65,7 @@ static void ADD_UNDO_FUNC(
 	PlaceSetLastPos(block,&p2);
 
 	CopyRange_stops(&undo_notesandfxs->stops,track->stops2,p1,&p2);
-	CopyRange_notes(&undo_notesandfxs->notes,track->notes,p1,&p2);
+	//CopyRange_notes(&undo_notesandfxs->notes,track->notes,p1,&p2);
         CopyRange_notes2(&undo_notesandfxs->notes2,track->_notes2,p1,&p2);
 	CopyRange_fxs(block->num_lines, &undo_notesandfxs->fxss,&track->fxs, make_ratio(0,1), make_ratio(block->num_lines, 1));
         

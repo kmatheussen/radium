@@ -305,6 +305,7 @@ struct TimeDataSimpleNode : public TimeDataDataType<ValType> {
   {}
 };
 
+  
 enum class KeepOldData {
   KEEP_OLD_DATA,
   USE_CLEAN_DATA
@@ -321,7 +322,7 @@ enum class KeepOldData {
   Maybe SeqBlockT should have been named SeqblockT_And_RT_Cache though, which would have been a clearer, but less correct, name.
 */
 
-template <class T, class SeqBlockT>
+template <class T, class SeqBlockT, class WriterFinalizerArguments = DefaultWriterFinalizerArguments>
 class TimeData {
 
   static_assert(std::is_base_of<TimeData_shared_ptr<typename T::TType>, T>::value
@@ -1104,7 +1105,6 @@ public:
     }
   };
 
-
   class Writer : public ReaderWriter<TimeData, TimeDataVector>{
 
     // We can probably make this work, but if trying to copy a Writer, it's most likely (over 99% sure) an error.
@@ -1112,26 +1112,37 @@ public:
     Writer& operator=(const Writer&) = delete;
 
     bool _has_cancelled = false;
-    
+
+    WriterFinalizerArguments _finalizer_arguments;
+      
   public:
     
-    Writer(TimeData *time_data, KeepOldData keep = KeepOldData::KEEP_OLD_DATA)
+    Writer(TimeData *time_data, WriterFinalizerArguments finalizer_arguments, KeepOldData keep = KeepOldData::KEEP_OLD_DATA)
       : ReaderWriter<TimeData, TimeDataVector>(time_data, time_data->get_write_vector(keep), -1)
+      , _finalizer_arguments(finalizer_arguments)
     {
       R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
       R_ASSERT_NON_RELEASE(!PLAYER_current_thread_has_lock());
 
       //printf("New writer\n");
     }
+
+    Writer(TimeData *time_data, KeepOldData keep = KeepOldData::KEEP_OLD_DATA)
+      : Writer(time_data, WriterFinalizerArguments(), keep)
+    {
+    }
     
     ~Writer(){
-      if (!_has_cancelled)
-        this->_time_data->writer_finalizer(*this);
-
-      if (_has_cancelled)
+      if (_has_cancelled) {
         delete this->_vector;
-      else
-        this->_time_data->replace_vector(this->_vector);
+        return;
+      }
+      
+      this->_time_data->writer_finalizer_before(*this, _finalizer_arguments);
+
+      this->_time_data->replace_vector(this->_vector);
+
+      this->_time_data->writer_finalizer_after(*this, _finalizer_arguments);
 
       //printf("...New writer created: %d\n", !_has_cancelled);
     }
@@ -1481,8 +1492,8 @@ public:
 
       sortit();
     }
-    
-    void replace_with(const TimeData<T,SeqBlockT> *from){
+  
+    void replace_with(const TimeData<T,SeqBlockT,WriterFinalizerArguments> *from){
       R_ASSERT(this->is_empty());
       
       Reader from_reader(from);
@@ -1491,10 +1502,10 @@ public:
         add(t);
     }
 
-    void replace_with_and_clear_source(TimeData<T,SeqBlockT> *from){
+    void replace_with_and_clear_source(TimeData<T,SeqBlockT,WriterFinalizerArguments> *from, WriterFinalizerArguments finalizer_arguments = WriterFinalizerArguments()){
       R_ASSERT(this->is_empty());
       
-      Writer from_writer(from);
+      Writer from_writer(from, finalizer_arguments);
       
       for(const T &t : from_writer)
         add(t);
@@ -1508,19 +1519,23 @@ public:
       _has_cancelled = true;
     }
   };
-
+  
   // Called by ~Writer right before replacing the vector.
-  virtual void writer_finalizer(TimeData<T,SeqBlockT>::Writer &writer) {
+  virtual void writer_finalizer_before(TimeData<T,SeqBlockT,WriterFinalizerArguments>::Writer &writer, WriterFinalizerArguments &args) {
   }
 
-  void replace_with(const TimeData<T,SeqBlockT> *from){
-    Writer to_writer(this, KeepOldData::USE_CLEAN_DATA);
+  // Called by ~Writer right after replacing the vector.
+  virtual void writer_finalizer_after(const TimeData<T,SeqBlockT,WriterFinalizerArguments>::Writer &writer, WriterFinalizerArguments &args) {
+  }
+
+  void replace_with(const TimeData<T,SeqBlockT,WriterFinalizerArguments> *from, WriterFinalizerArguments finalizer_arguments = WriterFinalizerArguments()){
+    Writer to_writer(this, finalizer_arguments, KeepOldData::USE_CLEAN_DATA);
 
     to_writer.replace_with(from);
   }
 
-  void replace_with_and_clear_source(TimeData<T,SeqBlockT> *from){
-    Writer to_writer(this, KeepOldData::USE_CLEAN_DATA);
+  void replace_with_and_clear_source(TimeData<T,SeqBlockT,WriterFinalizerArguments> *from, WriterFinalizerArguments finalizer_arguments = WriterFinalizerArguments()){
+    Writer to_writer(this, finalizer_arguments, KeepOldData::USE_CLEAN_DATA);
 
     to_writer.replace_with_and_clear_source(from);
   }
@@ -1529,8 +1544,8 @@ public:
   // Probably have to copy at least 10ns of thousands of non-trivial elements
   // to notice any difference.
   //
-  void swap(TimeData<T,SeqBlockT> *other){    
-    TimeData<T,SeqBlockT> temp;
+  void swap(TimeData<T,SeqBlockT,WriterFinalizerArguments> *other){    
+    TimeData<T,SeqBlockT,WriterFinalizerArguments> temp;
 
     // 1. this -> temp
     temp.replace_with(this);

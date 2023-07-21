@@ -1781,7 +1781,10 @@ private:
 };
 
 
-template <typename T, typename SeqBlockT> class TimeData;
+struct DefaultWriterFinalizerArguments {
+};
+
+template <class T, class SeqBlockT, typename WriterFinalizerArguments> class TimeData;
 }
 
 #endif
@@ -2235,7 +2238,7 @@ namespace r{
   struct VelocitySeqBlock : public RT_TimeData_Player_Cache<typeof(Velocity::_val)> {
   };
   
-  using VelocityTimeData = TimeData<Velocity, VelocitySeqBlock>;
+  using VelocityTimeData = TimeData<Velocity, VelocitySeqBlock, DefaultWriterFinalizerArguments>;
 }
 
 #include "TimeData.hpp"
@@ -2266,6 +2269,12 @@ struct Pitches{
 #ifdef __cplusplus
 
 namespace r{
+struct NoteTimeData;
+}
+
+extern r::NoteTimeData *g_dummy_notes;
+
+namespace r{
 
 struct Pitch : NodeId, TimeDataDataType<float> {
   int _chance;
@@ -2280,9 +2289,28 @@ struct PitchSeqBlock : RT_TimeData_Player_Cache<typeof(Pitch::_val)> {
   bool _enabled = true; // Can be false if pitch._chance < MAX_PATCHVOICE_CHANCE.
 };
 
-using PitchTimeData = TimeData<Pitch, PitchSeqBlock>;
+struct PitchWriterFinalizerArguments {
+  NoteTimeData *_notes;
+
+  PitchWriterFinalizerArguments()
+  {
+    R_ASSERT_NON_RELEASE(false); // TIP: If it's not necessary to find pitchmin/pitchmax in a track after changing the pitch, use 'g_dummy_notes' as writer finalizer argument.
+  }
   
-}
+  PitchWriterFinalizerArguments(NoteTimeData *notes)
+    : _notes(notes)
+  {
+  }
+};
+
+struct PitchTimeData : public TimeData<Pitch, PitchSeqBlock, PitchWriterFinalizerArguments>{
+  
+  // Sets _min_pitch, and _max_pitch;
+  void writer_finalizer_after(const Writer &writer, PitchWriterFinalizerArguments &args) override;
+};
+
+} // namespace r
+
 #endif
 
 
@@ -2440,7 +2468,8 @@ struct Note : NodeId, public r::TimeDataDataTypeRef<float> {
     // (I guess copying doesn't take up that much time, so it's probably not worth the complication)
     if (copy_velocities_and_pitches){
       _velocities.replace_with(&other->_velocities);
-      _pitches.replace_with(&other->_pitches);
+
+      _pitches.replace_with(&other->_pitches, g_dummy_notes);
     }
   }
       
@@ -2520,10 +2549,61 @@ struct NoteTimeData : public TimeData<NotePtr, NoteSeqBlock>{
 
   // Number of _valid_ elements in _line_notes. (size of the vector might be larger, but those elements are not valid)
   int _num_valid_elements_in_line_notes;
-  
-  // Sets _polyphony, _min_pitch, _max_pitch, and _line_notes.
-  void writer_finalizer(Writer &writer) override;
 
+  template <class Iterator>
+  void set_note_min_max_pitch(const Iterator &iterator){
+      float min_pitch = 10000.0f;
+      float max_pitch = -1.0f;
+
+      int num_pitches = 0;
+  
+      // find min_pitch and max_pitch
+      for(const r::NotePtr &note : iterator){
+        min_pitch = R_MIN(note->get_val(), min_pitch);
+        max_pitch = R_MAX(note->get_val(), max_pitch);
+        num_pitches ++;
+        if (note->d._pitch_end > 0){
+          min_pitch = R_MIN(note->d._pitch_end, min_pitch);
+          max_pitch = R_MAX(note->d._pitch_end, max_pitch);
+          num_pitches ++;
+        }
+
+        r::PitchTimeData::Reader reader(&note->_pitches);
+        for(const r::Pitch &pitch : reader){
+          min_pitch = R_MIN(pitch._val, min_pitch);
+          max_pitch = R_MAX(pitch._val, max_pitch);
+          num_pitches ++;
+        }
+      }
+
+      _min_pitch = min_pitch;
+      _max_pitch = max_pitch;
+
+      if (num_pitches <= 3) {
+    
+        _min_display_pitch = 0;
+        _max_display_pitch = 127;
+    
+      }else{
+    
+        float pitch_range = max_pitch - min_pitch;
+    
+        min_pitch = min_pitch - pitch_range/8.0f;
+        if(min_pitch < 0)
+          min_pitch = 0;
+    
+        max_pitch = max_pitch + pitch_range/8.0f;
+        if(max_pitch > 127)
+          max_pitch = 127;
+    
+        _min_display_pitch = min_pitch;
+        _max_display_pitch = max_pitch;
+      }
+  }
+    
+  // Sets _polyphony, _min_pitch, _max_pitch, and _line_notes.
+  void writer_finalizer_before(Writer &writer, DefaultWriterFinalizerArguments &args) override;
+  
   void sortit(TimeDataVector *vector) override;
 
   bool insert_ratio(Writer &writer, const Ratio &where_to_start, const Ratio &how_much);

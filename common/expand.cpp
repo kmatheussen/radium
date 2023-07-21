@@ -87,7 +87,7 @@ static void expand_note(struct Notes *note, const Place start, const Place end, 
   }
     
   {
-    r::PitchTimeData::Writer writer(note->_pitches);
+    r::PitchTimeData::Writer writer(note->_pitches, track->_notes2);
     writer.expand(ratio_from_place(start), ratio_from_place(end), ratio_from_place(new_end), ratio_from_place(last_place));
   }
 }
@@ -110,7 +110,7 @@ static void expand_track(struct Tracks *track, const Place start, const Place en
                   }
                   
                   {
-                    r::PitchTimeData::Writer writer(&note->_pitches);
+                    r::PitchTimeData::Writer writer(&note->_pitches, track->_notes2);
                     writer.expand(ratio_from_place(start), ratio_from_place(end), ratio_from_place(new_end), ratio_from_place(last_place));
                   }
                 });

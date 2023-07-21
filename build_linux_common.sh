@@ -321,6 +321,13 @@ if [ -d .git ] ; then
         exit -1
     fi            
 
+    if git grep r::PitchTimeData::Writer|grep -v _notes2|grep -v g_dummy_notes |grep -v build_linux_common.sh ; then
+        echo
+        echo "ERROR in line(s) above. Seems like the r::PitchTimeData::Writer argument doesn't have an explicit WriterFinalizerArgument argument.";
+        echo
+        exit -1
+    fi            
+
 
 
 fi

@@ -1375,7 +1375,7 @@ static void MOVE_PLACE2(Place *place, const Ratio diff){
 }
 */
 
-static void setPianoNoteValues(float value, int pianonotenum, r::NotePtr &note){
+static void setPianoNoteValues(struct Tracks *track, float value, int pianonotenum, r::NotePtr &note){
 
   // 1. Find delta
   //
@@ -1420,7 +1420,7 @@ static void setPianoNoteValues(float value, int pianonotenum, r::NotePtr &note){
     note->d._pitch_end = R_BOUNDARIES(1, note->d._pitch_end + delta, 127);
 
   {
-    r::PitchTimeData::Writer writer(&note->_pitches);
+    r::PitchTimeData::Writer writer(&note->_pitches, track->_notes2);
     for(r::Pitch &pitch : writer)
       pitch._val = R_BOUNDARIES(1, pitch._val + delta, 127);
   }
@@ -1604,7 +1604,7 @@ static dyn_t moveNote(struct Blocks *block, struct Tracks *track, struct Notes *
     const r::PitchTimeData::Reader pitch_reader(note->_pitches);
     const r::VelocityTimeData::Reader velocity_reader(note->_velocities);
     
-    r::PitchTimeData::Writer pitch_writer(new_note->_pitches);
+    r::PitchTimeData::Writer pitch_writer(new_note->_pitches, track->_notes2);
     r::VelocityTimeData::Writer velocity_writer(new_note->_velocities);
     
     for(r::Pitch pitch : pitch_reader){
@@ -1663,7 +1663,7 @@ static dyn_t moveNote2(struct Blocks *block, struct Tracks *track, r::NotePtr &n
     const r::PitchTimeData::Reader pitch_reader(&note->_pitches);
     const r::VelocityTimeData::Reader velocity_reader(&note->_velocities);
     
-    r::PitchTimeData::Writer pitch_writer(&new_note->_pitches);
+    r::PitchTimeData::Writer pitch_writer(&new_note->_pitches, track->_notes2);
     r::VelocityTimeData::Writer velocity_writer(&new_note->_velocities);
     
     for(r::Pitch pitch : pitch_reader){
@@ -1692,7 +1692,7 @@ dyn_t movePianonote(int pianonotenum, float value, Place place, dyn_t dynnote, i
 
   struct Blocks *block = wblock->block;
   
-  setPianoNoteValues(value, pianonotenum, note);
+  setPianoNoteValues(wtrack->track, value, pianonotenum, note);
 
   window->must_redraw_editor = true;
 
@@ -2665,7 +2665,7 @@ void deletePitchnum(int pitchnum, int tracknum, int blocknum){
 
     for(int n = 0 ; n < reader.size() ; n++) {
       if (pitchnum==num) {
-        r::PitchTimeData::Writer writer(&note->_pitches);
+        r::PitchTimeData::Writer writer(&note->_pitches, wtrack->track->_notes2);
         writer.remove_at_pos(n);
         goto gotit;
       }
@@ -2704,7 +2704,7 @@ void deletePitchnum(int pitchnum, int tracknum, int blocknum){
 
     for(int n = 0 ; n < reader.size() ; n++) {
       if (pitchnum==num) {
-        r::PitchTimeData::Writer writer(notes->_pitches);
+        r::PitchTimeData::Writer writer(notes->_pitches, track->_notes2);
         writer.remove_at_pos(n);
         goto gotit;
       }
@@ -2947,7 +2947,7 @@ static void setPitchnumLogtype2(int logtype, int pitchnum, struct Tracks *track,
   if (pitchnum2 < 0)
     note->d._pitch_first_logtype = logtype;
   else {
-    r::PitchTimeData::Writer writer(&note->_pitches);
+    r::PitchTimeData::Writer writer(&note->_pitches, track->_notes2);
     R_ASSERT_RETURN_IF_FALSE(pitchnum2 < writer.size());
     r::Pitch &pitch = writer.at_ref(pitchnum2);
     pitch._logtype = logtype;
@@ -3241,7 +3241,7 @@ static int setPitchnum2(int num, float value, Place place, int tracknum, int blo
 
     R_ASSERT_NON_RELEASE(pitchnum2 >= 0);
     
-    r::PitchTimeData::Writer writer(&note->_pitches);
+    r::PitchTimeData::Writer writer(&note->_pitches, track->_notes2);
 
     R_ASSERT_RETURN_IF_FALSE2(pitchnum2 < writer.size(), num);
 
@@ -3497,7 +3497,7 @@ void disablePortamento(dyn_t dynnote, int tracknum, int blocknum, int windownum)
     return;
 
   {
-    r::PitchTimeData::Writer writer(&note->_pitches);
+    r::PitchTimeData::Writer writer(&note->_pitches, wtrack->track->_notes2);
     writer.clear();
     note->d._pitch_end = 0;
   }

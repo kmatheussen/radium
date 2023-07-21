@@ -1550,7 +1550,7 @@ static void general_transpose(radium::GeneralTranspose gt){
                                        if (!general_transform3<int>(gt, place2ratio(note->l.p), note->chance, is_changed, TransposeChance))
                                          break;
                                        
-                                       r::PitchTimeData::Writer writer(note->_pitches);
+                                       r::PitchTimeData::Writer writer(note->_pitches, track->_notes2);
                                        
                                        for(r::Pitch &pitch : writer)
                                          if (!general_transform3<int>(gt, pitch._time, pitch._chance, is_changed, TransposeChance))
@@ -1581,7 +1581,7 @@ static void general_transpose(radium::GeneralTranspose gt){
                                        if (!general_transform3<float>(gt, place2ratio(note->l.p), note->note, is_changed, TransposeCent))
                                          break;
                                        
-                                       r::PitchTimeData::Writer writer(note->_pitches);
+                                       r::PitchTimeData::Writer writer(note->_pitches, track->_notes2);
                                        
                                        for(r::Pitch &pitch : writer)
                                          if (!general_transform3<float>(gt, pitch._time, pitch._val, is_changed, TransposeCent))
@@ -1649,7 +1649,7 @@ static void general_transpose(radium::GeneralTranspose gt){
                                        if (!general_transform3<float>(gt, place2ratio(note->l.p), note->note, is_changed, TransposePitch4))
                                          break;
                                        
-                                       r::PitchTimeData::Writer writer(note->_pitches);
+                                       r::PitchTimeData::Writer writer(note->_pitches, track->_notes2);
                                        
                                        for(r::Pitch &pitch : writer)
                                          if (!general_transform3<float>(gt, pitch._time, pitch._val, is_changed, TransposePitch4))

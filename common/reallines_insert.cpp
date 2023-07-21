@@ -81,7 +81,7 @@ static bool InsertRatio_notes_extra(
       if (r::VelocityTimeData::Writer(note->_velocities).insert_ratio(ratio, toratio, make_ratio(block->num_lines, 1)))
         ret = true;
 
-      if (r::PitchTimeData::Writer(note->_pitches).insert_ratio(ratio, toratio, make_ratio(block->num_lines, 1)))
+      if (r::PitchTimeData::Writer(note->_pitches, g_dummy_notes).insert_ratio(ratio, toratio, make_ratio(block->num_lines, 1)))
         ret = true;
     }
   }

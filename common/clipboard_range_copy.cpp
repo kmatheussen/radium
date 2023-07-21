@@ -114,6 +114,7 @@ static void CopyRange_pitches(
 */
 
 static void CopyRange_pitches2(
+                               r::NoteTimeData *to_notes2,
                                r::PitchTimeData *to,
                                const r::PitchTimeData *from,
                                const Place *p1,
@@ -122,7 +123,7 @@ static void CopyRange_pitches2(
 {
   const r::PitchTimeData::Reader reader(from);
 
-  r::PitchTimeData::Writer writer(to, r::KeepOldData::USE_CLEAN_DATA);
+  r::PitchTimeData::Writer writer(to, to_notes2, r::KeepOldData::USE_CLEAN_DATA);
   
   Ratio start = place2ratio(*p1);
   Ratio end = place2ratio(*p2);
@@ -142,6 +143,7 @@ static void CopyRange_pitches2(
   }
 }
 
+#if 0
 void CopyRange_notes(
                      struct Notes **tonote,
                      const struct Notes *fromnote,
@@ -180,6 +182,7 @@ void CopyRange_notes(
 	fromnote = NextNote(fromnote);
   }
 }
+#endif
 
 void CopyRange_notes2(
                       r::NoteTimeData *to_notes,
@@ -215,7 +218,7 @@ void CopyRange_notes2(
       new_note->d._end -= start;
         
       CopyRange_velocities2(&new_note->_velocities,&note->_velocities,p1,p2);
-      CopyRange_pitches2(&new_note->_pitches,&note->_pitches,p1,p2);
+      CopyRange_pitches2(to_notes, &new_note->_pitches,&note->_pitches,p1,p2);
 
       writer.add(new_note);
       
@@ -517,7 +520,7 @@ void CopyRange(
 	for(lokke=0;lokke<=range.x2-range.x1;lokke++){
           
           //range_clip->instruments[lokke]=track->instrument;
-          CopyRange_notes(&range_clip->notes[lokke], track->notes, &range.y1, &range.y2);
+          //CopyRange_notes(&range_clip->notes[lokke], track->notes, &range.y1, &range.y2);
           
           range_clip->notes2[lokke] = new r::NoteTimeData;
           CopyRange_notes2(range_clip->notes2[lokke], track->_notes2, &range.y1, &range.y2);

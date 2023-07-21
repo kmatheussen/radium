@@ -51,8 +51,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "lines_proc.h"
 
 
-
-extern struct Root *root;
 struct Blocks *blocktobelongtoforinsertlines_notes_a_terrible_hack;
 
 static void InsertLines_notes(
@@ -102,7 +100,7 @@ static void InsertLines_notes(
           }
           
           {
-            r::PitchTimeData::Writer writer(note->_pitches);
+            r::PitchTimeData::Writer writer(note->_pitches, g_dummy_notes);
             writer.insert_lines(make_ratio(line, 1), make_ratio(toinsert, 1));
           }
           
@@ -111,7 +109,6 @@ static void InsertLines_notes(
           //  List_InsertLines3(&note->pitches,&note->pitches->l,line,toinsert,NULL);
 	}
 }
-
 
 static void InsertLines_localzooms(
 	void *tolocalzoom,
