@@ -1,3 +1,20 @@
+Changes 7.1.90 -> 7.1.92:
+* Editor: Include the main editor-popup-menu into the
+  bottom of the track-header popup menu.
+* Edit: Button to "reverse song" (i.e. all reverse
+  all blocks). 
+* Edit: Fix the functions to reverse notes. They
+  weren't very good before.
+* GUI: Highlight tab elements when mouse hovers
+  above.
+* GUI: Add JUCE version to the About-window.
+* GUI: Increase default height of message window
+  somewhat.
+* MIDI learn: Fix incremental mode when recording
+  automation to editor.
+* API: backwardsSong.
+
+
 Changes 7.1.89 -> 7.1.90:
 * Editor: Fix sligthly wrong memory handling. Might
   have led to crashes sometimes after copying a
