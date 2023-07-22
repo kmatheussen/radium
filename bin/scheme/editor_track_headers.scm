@@ -6,7 +6,7 @@
 (define *editor-track-background-color* "high_editor")
 
          
-(define (show-editor-track-popup-menu tracknum)
+(define (show-editor-track-popup-menu tracknum X Y)
   (popup-menu (<-> "---------Track " tracknum ":")
               (list "Pan slider"
                     :check (<ra> :get-track-pan-on-off tracknum)
@@ -84,8 +84,13 @@
                                                                       :args (list tracknum)
                                                                       :focus-keybinding "FOCUS_EDITOR")
                      "-------------"
-                     "Help keybindings" show-keybinding-help-window)))
-  )
+                     "Help keybindings" show-keybinding-help-window))
+              "--------"
+              (list (<-> "Editor")
+                    (list
+                     (get-track-configuration-menu-entries tracknum X Y)))
+  
+              ))
 
                       
 (def-area-subclass (<track-volume-slider> :gui :x1 :y1 :x2 :y2
@@ -480,7 +485,7 @@
                                      (= button *right-button*)))
                         (<ra> :select-track tracknum)
                         (cond ((= button *right-button*)
-                               (show-editor-track-popup-menu tracknum))
+                               (show-editor-track-popup-menu tracknum x* y*))
                               ((= button *left-button*)
                                (<ra> :select-instrument-for-track tracknum))))
                       #f))
