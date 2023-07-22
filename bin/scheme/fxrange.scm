@@ -9,7 +9,7 @@
   ...)
 
 (define (logtype-holding? logtype)
-  (= (<ra> :get-logtype-hold) logtype))
+  (= *logtype-hold* logtype))
 
 (define (scale-logtype logtype x x1 x2 y1 y2)
   (if (logtype-holding? logtype)
@@ -71,8 +71,6 @@
               fx
               (loop (cdr fxs)))))))
 
-(assq 'b '((a 9)))
-
 (define (remove-fx fxs name)
   (if (null? fxs)
       '()
@@ -119,7 +117,7 @@
                              fxnode)))
                 
                 ((= place startplace)
-                 (cons (<copy-fxnode> fxnode :logtype (<ra> :get-logtype-hold))
+                 (cons (<copy-fxnode> fxnode :logtype *logtype-hold*)
                        (loop (cdr fxnodes)
                              fxnode)))
 
@@ -131,7 +129,7 @@
                                                           startplace
                                                           last-place place
                                                           (last-fxnode :value) (fxnode :value))
-                                           (<ra> :get-logtype-hold)))
+                                           *logtype-hold*))
                        (second (make-fxnode endplace
                                             (scale-logtype (last-fxnode :logtype)
                                                            endplace
@@ -150,7 +148,7 @@
                                                                       startplace
                                                                       last-place place
                                                                       (last-fxnode :value) (fxnode :value))
-                                                       (<ra> :get-logtype-hold))))
+                                                       *logtype-hold*)))
                    (cons startplace-fxnode
                          (loop fxnodes
                                startplace-fxnode))))
@@ -204,7 +202,7 @@
                                             5 8)
               (lists->fxnodes `((1 10 0)
                                (2 11 0)
-                               (5 12 ,(<ra> :get-logtype-hold)))))
+                               (5 12 ,*logtype-hold*))))
 
 ;; On last line
 (***assert*** (scissor-fxnodes-keep-outside (lists->fxnodes '((8 10 0)
@@ -223,7 +221,7 @@
                                             5 8)
               (lists->fxnodes `((1 10 0)
                                (2 11 0)
-                               (5 12 ,(<ra> :get-logtype-hold)))))
+                               (5 12 ,*logtype-hold*))))
 
 
 ;; Before and inside
@@ -233,21 +231,21 @@
                                             5 8)
               (lists->fxnodes `((1 10 0)
                                (2 11 0)
-                               (5 ,(scale 5 2 6 11 13) ,(<ra> :get-logtype-hold)))))
+                               (5 ,(scale 5 2 6 11 13) ,*logtype-hold*))))
 
 
 ;; Before(hold) and inside
-(***assert*** (scissor-fxnodes-keep-outside (lists->fxnodes `((2 11 ,(<ra> :get-logtype-hold))
+(***assert*** (scissor-fxnodes-keep-outside (lists->fxnodes `((2 11 ,*logtype-hold*)
                                                              (6 13 0)))
                                             5 8)
-              (lists->fxnodes `((2 11 ,(<ra> :get-logtype-hold))
-                               (5 11 ,(<ra> :get-logtype-hold)))))
+              (lists->fxnodes `((2 11 ,*logtype-hold*)
+                               (5 11 ,*logtype-hold*))))
 
 ;; On first line and inside
 (***assert*** (scissor-fxnodes-keep-outside (lists->fxnodes '((5 11 0)
                                                              (6 13 0)))
                                             5 8)
-              (lists->fxnodes `((5 11 ,(<ra> :get-logtype-hold)))))
+              (lists->fxnodes `((5 11 ,*logtype-hold*))))
 
 ;; Inside
 (***assert*** (scissor-fxnodes-keep-outside (lists->fxnodes '((6 11 0)
@@ -278,10 +276,10 @@
                                (9 14 0))))
 
 ;; Inside(hold) and after
-(***assert*** (scissor-fxnodes-keep-outside (lists->fxnodes `((6 11 ,(<ra> :get-logtype-hold))
+(***assert*** (scissor-fxnodes-keep-outside (lists->fxnodes `((6 11 ,*logtype-hold*)
                                                              (9 14 0)))
                                             5 8)
-              (lists->fxnodes `((8 11 ,(<ra> :get-logtype-hold))
+              (lists->fxnodes `((8 11 ,*logtype-hold*)
                                (9 14 0))))
 
 ;; Before, on first line, inside, on last line, after
@@ -292,7 +290,7 @@
                                                              (9 15 0)))
                                             5 8)
               (lists->fxnodes `((4 11 0)
-                               (5 12 ,(<ra> :get-logtype-hold))
+                               (5 12 ,*logtype-hold*)
                                (8 14 0)
                                (9 15 0))))
 
@@ -303,7 +301,7 @@
                                                              (9 15 0)))
                                             5 8)
               (lists->fxnodes `((4 11 0)
-                               (5 ,(scale 5 4 6 11 13) ,(<ra> :get-logtype-hold))
+                               (5 ,(scale 5 4 6 11 13) ,*logtype-hold*)
                                (8 ,(scale 8 6 9 13 15) 0)
                                (9 15 0))))
 
@@ -312,18 +310,18 @@
                                                              (9 15 0)))
                                             5 8)
               (lists->fxnodes `((4 11 0)
-                               (5 ,(scale 5 4 9 11 15) ,(<ra> :get-logtype-hold))
+                               (5 ,(scale 5 4 9 11 15) ,*logtype-hold*)
                                (8 ,(scale 8 4 9 11 15) 0)
                                (9 15 0))))
 
 
 ;; Before(hold) and after
-(***assert*** (scissor-fxnodes-keep-outside (lists->fxnodes `((4 11 ,(<ra> :get-logtype-hold))
+(***assert*** (scissor-fxnodes-keep-outside (lists->fxnodes `((4 11 ,*logtype-hold*)
                                                              (9 15 0)))
                                             5 8)
-              (lists->fxnodes `((4 11 ,(<ra> :get-logtype-hold))
-                               (5 11 ,(<ra> :get-logtype-hold))
-                               (8 11 ,(<ra> :get-logtype-hold))
+              (lists->fxnodes `((4 11 ,*logtype-hold*)
+                               (5 11 ,*logtype-hold*)
+                               (8 11 ,*logtype-hold*)
                                (9 15 0))))
 
 
@@ -446,10 +444,10 @@
                                (6 13 0))))
 
 ;; Before(hold) and inside
-(***assert*** (scissor-fxnodes-keep-inside (lists->fxnodes `((2 11 ,(<ra> :get-logtype-hold))
+(***assert*** (scissor-fxnodes-keep-inside (lists->fxnodes `((2 11 ,*logtype-hold*)
                                                             (6 13 0)))
                                            5 8)
-              (lists->fxnodes `((5 11 ,(<ra> :get-logtype-hold))
+              (lists->fxnodes `((5 11 ,*logtype-hold*)
                                (6 13 0))))
 
 ;; On first line and inside
@@ -490,11 +488,11 @@
                                (8 ,(scale 8 6 9 11 14) 0))))
 
 ;; Inside(hold and after
-(***assert*** (scissor-fxnodes-keep-inside (lists->fxnodes `((6 11 ,(<ra> :get-logtype-hold))
+(***assert*** (scissor-fxnodes-keep-inside (lists->fxnodes `((6 11 ,*logtype-hold*)
                                                              (9 14 0)))
                                            5 8)
-              (lists->fxnodes `((6 11 ,(<ra> :get-logtype-hold))
-                               (8 11 ,(<ra> :get-logtype-hold)))))
+              (lists->fxnodes `((6 11 ,*logtype-hold*)
+                               (8 11 ,*logtype-hold*))))
 
 ;; Before, on first line, inside, on last line, after
 (***assert*** (scissor-fxnodes-keep-inside (lists->fxnodes '((4 11 0)
@@ -526,11 +524,11 @@
 
 
 ;; Before(hold) and after
-(***assert*** (scissor-fxnodes-keep-inside (lists->fxnodes `((4 11 ,(<ra> :get-logtype-hold))
+(***assert*** (scissor-fxnodes-keep-inside (lists->fxnodes `((4 11 ,*logtype-hold*)
                                                             (9 15 0)))
                                            5 8)
-              (lists->fxnodes `((5 11 ,(<ra> :get-logtype-hold))
-                               (8 11 ,(<ra> :get-logtype-hold)))))
+              (lists->fxnodes `((5 11 ,*logtype-hold*)
+                               (8 11 ,*logtype-hold*))))
 
 
 
@@ -615,7 +613,9 @@
 ||#
 
 
-
+;; Note: The function name is a bit misleading, it's more a selection and not a merge.
+;; The function basically returns 'range-nodes' excepts for the areas 'range-nodes' doesn't cover.
+;; For areas where 'range-nodes' doesn't cover, 'track-nodes' are used instead.
 (define (merge-fx-nodes track-nodes range-nodes)
   (cond ((null? track-nodes)
          range-nodes)
@@ -662,12 +662,12 @@
 
                ((< last-track-place first-range-place)
                 (append (butlast track-nodes)
-                        (list (<copy-fxnode> last-track-node :logtype (<ra> :get-logtype-hold)))
+                        (list (<copy-fxnode> last-track-node :logtype *logtype-hold*))
                         range-nodes))
 
                ((> first-track-place last-range-place)
                 (append (butlast range-nodes)
-                        (list (<copy-fxnode> last-range-node :logtype (<ra> :get-logtype-hold)))
+                        (list (<copy-fxnode> last-range-node :logtype *logtype-hold*))
                         track-nodes))
 
                (else
@@ -734,7 +734,7 @@
                               (lists->fxnodes '((5 20 0)
                                                (6 22 0))))
               (lists->fxnodes `((2 11 0)
-                               (3 12 ,(<ra> :get-logtype-hold))
+                               (3 12 ,*logtype-hold*)
                                (5 20 0)
                                (6 22 0))))
 
@@ -771,7 +771,7 @@
                                                (6 22 0)
                                                (7 24 0))))
               (lists->fxnodes `((2 11 0)
-                               (3 12 ,(<ra> :get-logtype-hold))
+                               (3 12 ,*logtype-hold*)
                                (5 20 0)
                                (6 22 0)
                                (7 24 0))))

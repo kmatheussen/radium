@@ -1717,13 +1717,12 @@
                (<ra> :show-editor)
                (<ra> :hide-editor))))))
 
-(define (track-configuration-popup-async X Y)
+(define (get-track-configuration-menu-entries tracknum X Y)
   ;;(c-display "TRACK " *current-track-num*)
-  (define tracknum *current-track-num*)
   (define instrument-id (<ra> :get-instrument-for-track tracknum))
   (define has-instrument (<ra> :is-legal-instrument instrument-id))
   ;;(c-display "tracknunm/instrument-id/has:" tracknum instrument-id has-instrument)
-  (popup-menu (<-> "---------FX (track #" tracknum ")")
+  (list (<-> "---------FX (track #" tracknum ")")
               (list "New FX..."
                     :enabled has-instrument
                     :shortcut ra:request-fx
@@ -1857,6 +1856,9 @@
               ;(cadr (velocitytext-popup-elements))
               ;(cadr (fxtext-popup-elements))
               ))
+
+(define (track-configuration-popup-async X Y)
+  (popup-menu (get-track-configuration-menu-entries *current-track-num* X Y)))
 
 #||        
   (popup-menu "Show/hide Velocity text" (lambda ()
