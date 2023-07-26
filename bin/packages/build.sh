@@ -69,6 +69,8 @@ build_faust() {
     fi
 
     patch -p0 < ../faust3.patch
+
+    sed -i '1s/^/#include \<cstdint> /' architecture/faust/dsp/dsp.h
     
     #cp compiler/generator/libfaust-signal.h architecture/faust/dsp/
     #cp compiler/generator/libfaust-box.h architecture/faust/dsp/
