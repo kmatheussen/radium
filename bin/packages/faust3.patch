@@ -1,6 +1,12 @@
---- architecture/faust/dsp/dsp.h~	2022-12-17 11:41:42.000000000 +0100
-+++ architecture/faust/dsp/dsp.h	2022-12-28 19:12:31.965902920 +0100
-@@ -34,8 +34,8 @@
+--- architecture/faust/dsp/dsp.h	2023-05-13 23:37:17.053765247 +0200
++++ architecture/faust/dsp/dsp.h	2023-05-13 23:37:51.057097756 +0200
+@@ -29,13 +29,14 @@
+ #include <vector>
+ 
+ #include "faust/export.h"
++#include <cstdint>
+ 
+ #ifndef FAUSTFLOAT
  #define FAUSTFLOAT float
  #endif
  

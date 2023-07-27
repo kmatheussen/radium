@@ -1,8 +1,8 @@
 Changes 7.1.90 -> 7.1.92:
 * Editor: Include the main editor-popup-menu into the
   bottom of the track-header popup menu.
-* Edit: Button to "reverse song" (i.e. all reverse
-  all blocks). 
+* Edit: Button to "reverse song" (i.e. reverse all
+  blocks). 
 * Edit: Fix the functions to reverse notes. They
   weren't very good before.
 * GUI: Highlight tab elements when mouse hovers
