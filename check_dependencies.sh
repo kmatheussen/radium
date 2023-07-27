@@ -52,13 +52,13 @@ if [[ $4 == "test_build" ]] ; then
         exit 5
     fi
 
-    if $MOC -v 2>&1 |grep Qt\ 3 ; then
+    if $MOC -v 2>&1 |grep "Qt 3" ; then
         echo $MOC "is for QT3. Need moc for QT$RADIUM_QT_VERSION. Make sure MOC is set correctly in the Makefile."
         echo
         exit 5
     fi
 
-    if $UIC -v 2>&1 |grep Qt\ 3 ; then
+    if $UIC -v 2>&1 |grep "Qt 3" ; then
         echo $UIC "is for QT3. Need uic for QT$RADIUM_QT_VERSION. Make sure UIC is set correctly in the Makefile."
         echo
         exit 5
@@ -72,7 +72,7 @@ do
     if [[ "$line" == \#* ]] ; then
         true
     else       
-        if echo "$line" | grep -e "\ \*" ; then
+        if echo "$line" | grep -e " \*" ; then
             echo "This line in api/protos.conf is wrongly formatted. Must use \"<type>*\", not \"<type> *\""
             echo
             exit 5
@@ -81,31 +81,31 @@ do
 done < "$input"
 
 
-if grep int\ seqblockid api/protos.conf ; then
+if grep "int seqblockid" api/protos.conf ; then
     echo "The above line(s) in api/protos.conf is/are wrong. seqblock id is 64 bit"
     echo
     exit 5
 fi
 
-if grep int\ seqblock_id api/protos.conf ; then
+if grep "int seqblock_id" api/protos.conf ; then
     echo "The above line(s) in api/protos.conf is/are wrong. seqblock id is 64 bit"
     echo
     exit 5
 fi
 
-if grep int\ instrument_id api/protos.conf ; then
+if grep "int instrument_id" api/protos.conf ; then
     echo "The above line(s) in api/protos.conf is/are wrong. instrument id is 64 bit"
     echo
     exit 5
 fi
 
-if grep int\ guinum api/protos.conf ; then
+if grep "int guinum" api/protos.conf ; then
     echo "The above line(s) in api/protos.conf is/are wrong. guinum is 64 bit"
     echo
     exit 5
 fi
 
-if grep int\ id api/protos.conf ; then
+if grep "int id" api/protos.conf ; then
     echo "The above line(s) in api/protos.conf is/are wrong. id has so far been 64 bit"
     echo
     exit 5
@@ -245,13 +245,6 @@ if ! pkg-config --cflags glib-2.0 >/dev/null 2>/dev/null ; then
     echo "glib-2.0 not found"
     exit 5
 fi
-
-if [[ ! -f ~/SDKs/vstsdk2.4/pluginterfaces/vst2.x/aeffect.h && ! -f ~/SDKs/"VST3 SDK"/pluginterfaces/vst2.x/aeffect.h && ! -f ~/SDKs/VST_SDK/VST2_SDK/pluginterfaces/vst2.x/aeffect.h ]] ; then
-    echo 'Steinberg VST headers not found. (Missing "~/SDKs/vstsdk2.4/pluginterfaces/vst2.x/aeffect.h or "~/SDKs/VST3 SDK/pluginterfaces/vst2.x/aeffect.h" or "~/SDKs/VST_SDK/VST2_SDK/pluginterfaces/vst2.x/aeffect.h")'
-    echo 'You should find these files in the "VST Audio Plug-Ins SDK" from http://www.steinberg.net/en/company/developers.html . Unless Steinberg has changed the directory structure again, it should enough to unzip the file into your ~/SDKs directory.'
-    exit 5
-fi
-
 
 if [[ $4 == "test_build" ]] ; then
     if [ `uname` == "Linux" ] ; then
