@@ -2714,17 +2714,10 @@ $(T)scheme.o: embedded_scheme/scheme.cpp  bin/packages/s7/s7.c embedded_scheme/s
 
 QHTTPSERVERFLAGS= $(CPPOPT) $(QT_CFLAGS) $(NOSHORTEN64TO32FLAG) -I$(QHTTPSERVER_PATH)/http-parser -I$(QHTTPSERVER_PATH)/build -Wno-null-dereference -D_REENTRANT  #-fno-sanitize=undefined
 
-ifeq ($(GCC_MAJOR),10)
+ifeq ($(shell test $(GCC_MAJOR) -gt 6; echo $$?),0)
 	QHTTPCONNECTIONFLAGS=-fno-sanitize=vptr # <- Workaround. Couldn't find real bug. TODO: Update to qhttp.
 	HTTPPARSERFLAGS=-Wno-implicit-fallthrough
-else ifeq ($(GCC_MAJOR),9)
-	QHTTPCONNECTIONFLAGS= -fno-sanitize=vptr # <- Workaround. Couldn't find real bug. TODO: Update to qhttp.
-	HTTPPARSERFLAGS=-Wno-implicit-fallthrough
-else ifeq ($(GCC_MAJOR),8)
-	QHTTPCONNECTIONFLAGS= -fno-sanitize=vptr # <- Workaround. Couldn't find real bug. TODO: Update to qhttp.
-	HTTPPARSERFLAGS=-Wno-implicit-fallthrough
-else ifeq ($(GCC_MAJOR),7)
-	QHTTPCONNECTIONFLAGS= -fno-sanitize=vptr # <- Workaround. Couldn't find real bug. TODO: Update to qhttp.
+else ifeq ($(shell test $(CLANG_MAJOR) -gt 14; echo $$?),0)
 	HTTPPARSERFLAGS=-Wno-implicit-fallthrough
 else
 	QHTTPCONNECTIONFLAGS=
