@@ -186,9 +186,9 @@ build_libgig () {
 
 build_qscintilla() {
     # QScintilla
-    rm -fr QScintilla_gpl-2.10.8
-    tar xvzf QScintilla_gpl-2.10.8.tar.gz
-    cd QScintilla_gpl-2.10.8/Qt4Qt5/
+    rm -fr QScintilla_gpl-2.10.8 QScintilla_src-2.14.0
+    tar xvzf QScintilla_src-2.14.0.tar.gz 
+    cd QScintilla_src-2.14.0/src
     echo "CONFIG += staticlib" >> qscintilla.pro
     `../../../../find_moc_and_uic_paths.sh qmake`
     patch -p0 <../../qscintilla.patch
