@@ -44,8 +44,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wsuggest-override"
 #endif
-#include "../bin/packages/QScintilla_gpl-2.10.8/Qt4Qt5/Qsci/qscilexerjava.h"
-#include "../bin/packages/QScintilla_gpl-2.10.8/Qt4Qt5/Qsci/qscilexercpp.h"
+#include <Qsci/qscilexerjava.h>
+#include <Qsci/qscilexercpp.h>
 #if __GNUC__ >= 5
 #  pragma GCC diagnostic pop
 #endif

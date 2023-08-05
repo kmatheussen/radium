@@ -3,7 +3,7 @@
 #include "../common/OS_disk_proc.h"
 
 #include "FocusSniffers.h"
-#include "../bin/packages/QScintilla_gpl-2.10.8/Qt4Qt5/Qsci/qscilexerproperties.h"
+#include <Qsci/qscilexerproperties.h>
 
 
 namespace radium{
