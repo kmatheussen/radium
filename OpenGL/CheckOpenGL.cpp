@@ -95,6 +95,8 @@ bool CHECKOPENGL_checkit(void){
     
     if (hmmm==exit_)
       return true;
+
+    CRASHREPORTER_do_report();
   }
 
   return false;
