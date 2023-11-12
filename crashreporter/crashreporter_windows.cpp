@@ -32,7 +32,6 @@ static void output_print(struct output_buffer *ob, const char * format, ...);
 
 /*
   Code for extracting CPU info is written by microsoft: http://msdn.microsoft.com/en-us/library/hskdteyh(v=vs.80).aspx
-  Code for backtracing is written by Cloud Wu: http://code.google.com/p/backtrace-mingw/source/browse/trunk/backtrace.c?r=2
 */
 
 
@@ -307,7 +306,7 @@ static void print_osinfo(struct output_buffer *ob){
 #define BUFFER_MAX (16*1024)
 
 
-// output_* stuff is code left from old backtrace written by Cloud Wu, that doesn't work anymore, for some reason. Kept the output_* stuff though.
+// output_* stuff is code left from old backtrace written by Cloud Wu, that for some reason doesn't work anymore. Kept the output_* stuff though.
 
 
 struct output_buffer {

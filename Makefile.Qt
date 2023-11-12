@@ -2660,10 +2660,10 @@ S7OPTS += -DS7_ALIGNED -g
 #S7OPTS += -DWITH_GMP
 
 bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o: bin/packages/s7/s7.c
-	$(CC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o `cat buildtype.opt` -Wno-error -Wno-float-equal -Iembedded_scheme $(S7OPTS) $(S7AlignmentSanitize) -DWITH_C_LOADER=0 -DWITH_HISTORY=1
+	$(CC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o `cat buildtype.opt` -Wno-error -Wno-float-equal -Iembedded_scheme $(S7OPTS) $(S7AlignmentSanitize) -DWITH_C_LOADER=0 -DWITH_HISTORY=1 -fPIC
 
 bin/packages/s7/s7.c: bin/packages/s7.tar.gz
-	cd bin/packages && rm -fr s7 && tar xvzf s7.tar.gz && touch s7/s7.c
+	cd bin/packages && rm -fr s7 && tar xvzf s7.tar.gz && touch s7/s7.c && mv s7/s7webserver s7/s7webserver_org # Note: renaming s7webserver to avoid mistakenly using it instead of bin/s7webserver
 
 
 # -Wno-absolute-value

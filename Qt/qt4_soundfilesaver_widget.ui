@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>795</width>
-    <height>385</height>
+    <height>398</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -171,9 +171,6 @@ changing resampler type.</string>
            </widget>
           </item>
          </layout>
-        </item>
-        <item>
-         <layout class="QVBoxLayout" name="verticalLayout_3"/>
         </item>
        </layout>
       </widget>

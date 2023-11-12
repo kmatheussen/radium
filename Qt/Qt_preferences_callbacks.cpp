@@ -583,6 +583,11 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       {
         nsm_switch_enabled->setChecked(supportsSwitchNsmCapability());
       }
+
+      // Remote access
+      {
+        enable_remote_control->setChecked(controlPortOpenForRemoteConnections());
+      }
     }
 
     // Audio
@@ -1066,6 +1071,12 @@ public slots:
     //printf("val: %d\n",val);
     if (_initing==false)
       setSupportsSwitchNsmCapability(val);
+  }
+
+  void on_enable_remote_control_toggled(bool val){
+    //printf("val: %d\n",val);
+    if (_initing==false)
+      setControlPortOpenForRemoteConnections(val);
   }
 
   void on_mma1_toggled(bool val){

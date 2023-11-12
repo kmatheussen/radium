@@ -103,6 +103,12 @@ make clean
 rm -f libpds.o
 cd "$THIS_DIR/bin"
 
+# ladspa
+if [ ! -d "$TARGET/ladspa" ]
+then
+    mkdir $TARGET/ladspa
+fi
+
 # libxcb
 if [[ $RADIUM_INSTALL_LIBXCB != 0 ]]
 then

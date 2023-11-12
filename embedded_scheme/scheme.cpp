@@ -19,7 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <unistd.h>
 
 #include "s7.h"
-#include "s7webserver/s7webserver.h"
+#include "../bin/s7webserver/s7webserver.h"
 
 #include <QCoreApplication>
 #include <QRegExp>
@@ -2680,7 +2680,7 @@ void SCHEME_init1(void){
   
   g_eat_errors_failed = find_and_protect_scheme_value("*eat-errors-failed-return-value*");
 
-  s7webserver = s7webserver_create(s7, 5080, true);  
+  s7webserver = s7webserver_create2(s7, 5080, controlPortOpenForRemoteConnections(), true);
   s7webserver_set_verbose(s7webserver, true);
 #if !defined(RELEASE)
   s7webserver_set_very_verbose(s7webserver, true);

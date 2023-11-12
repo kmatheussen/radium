@@ -96,7 +96,8 @@ bool CHECKOPENGL_checkit(void){
     if (hmmm==exit_)
       return true;
 
-    CRASHREPORTER_do_report();
+    // No. Don't enable crash reporter. OpenGL is likely to crash now and we don't want those reports.
+    //CRASHREPORTER_do_report();
   }
 
   return false;

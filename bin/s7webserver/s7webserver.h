@@ -45,7 +45,7 @@ struct S7WebServer : public QObject
   Q_OBJECT
 
 public:
-  S7WebServer(s7_scheme *s7, int portnumber);
+  S7WebServer(s7_scheme *s7, int portnumber, bool enable_remote_connections);
   s7_scheme *s7;
   int portnumber;
   bool verbose;
@@ -89,7 +89,8 @@ extern "C" {
 
 typedef struct S7WebServer s7webserver_t;
 
-s7webserver_t *s7webserver_create(s7_scheme *s7, int portnumber, bool find_first_free_portnum);
+s7webserver_t *s7webserver_create(s7_scheme *s7, int portnumber, bool find_first_free_portnum); // Same as calling s7webserver_create2 with enable_remote_connections==true.
+s7webserver_t *s7webserver_create2(s7_scheme *s7, int portnumber, bool enable_remote_connections, bool find_first_free_portnum);
 void s7webserver_set_verbose(s7webserver_t *s7server, bool verbose); // default is false
 void s7webserver_set_very_verbose(s7webserver_t *s7webserver, bool very_verbose); // default is false
 int s7webserver_get_portnumber(s7webserver_t *s7webserver);
