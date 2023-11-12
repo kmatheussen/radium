@@ -3601,7 +3601,7 @@ bool useCPUFriendlyAudiometerUpdates(void){
 
 void setUseCPUFriendlyAudiometerUpdates(bool val){
   g_cpu_friendly_audio_meter_updates = val;
-  SETTINGS_write_bool("g_cpu_friendly_audio_meter_updates", val);
+  SETTINGS_write_bool("cpu_friendly_audio_meter_updates", val);
 }
 
 
