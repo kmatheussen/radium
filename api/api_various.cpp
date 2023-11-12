@@ -3605,6 +3605,25 @@ void setUseCPUFriendlyAudiometerUpdates(bool val){
 }
 
 
+static bool g_controlPortOpenForRemoteConnections = false;
+
+bool controlPortOpenForRemoteConnections(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_controlPortOpenForRemoteConnections = SETTINGS_read_bool("control_port_open_for_remote_connections", g_controlPortOpenForRemoteConnections);
+    has_inited = true;
+  }
+
+  return g_cpu_friendly_audio_meter_updates;
+}
+
+void setControlPortOpenForRemoteConnections(bool val){
+  g_controlPortOpenForRemoteConnections = val;
+  SETTINGS_write_bool("control_port_open_for_remote_connections", val);
+}
+
+
 bool recordAccuratelyFromMidi(void){
   return MIDI_get_record_accurately();
 }

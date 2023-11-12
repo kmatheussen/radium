@@ -48,6 +48,8 @@ extern struct Root *root;
 
 extern bool g_player_was_stopped_because_it_reached_sequencer_loop_end;
 
+// Called at each audio block before processing audio.
+//
 void PlayerTask(double reltime, bool can_not_start_playing_right_now_because_jack_transport_is_not_ready_yet, float max_audio_cycle_fraction){
         if (ATOMIC_GET(is_starting_up))
           return;

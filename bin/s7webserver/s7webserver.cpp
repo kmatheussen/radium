@@ -20,7 +20,7 @@
 #include <qhttpresponse.h>
 
 
-S7WebServer::S7WebServer(s7_scheme *s7, int portnumber)
+S7WebServer::S7WebServer(s7_scheme *s7, int portnumber, bool enable_remote_connections)
   : s7(s7)
   , portnumber(portnumber)
   , verbose(false)
@@ -30,7 +30,7 @@ S7WebServer::S7WebServer(s7_scheme *s7, int portnumber)
   connect(server, SIGNAL(newRequest(QHttpRequest*, QHttpResponse*)),
           this, SLOT(handleRequest(QHttpRequest*, QHttpResponse*)));
   
-  has_started = server->listen(QHostAddress::Any, portnumber);
+  has_started = server->listen(enable_remote_connections ? QHostAddress::Any : QHostAddress::LocalHost, portnumber);
 }
 
 
@@ -223,14 +223,14 @@ void S7WebServerResponder::reply()
 }
 
 
-S7WebServer *s7webserver_create(s7_scheme *s7, int portnum, bool find_first_free_portnum){
+S7WebServer *s7webserver_create2(s7_scheme *s7, int portnum, bool enable_remote_connections, bool find_first_free_portnum){
   s7_define_variable(s7, "s7webserver-current-responder", s7_make_c_pointer(s7, NULL));
   
   s7_set_current_output_port(s7, s7_open_output_function(s7, my_print));
 
  try_again:
   
-  S7WebServer *s7webserver = new S7WebServer(s7, portnum); 
+  S7WebServer *s7webserver = new S7WebServer(s7, portnum, enable_remote_connections); 
 
   if (s7webserver->has_started==false) {
     delete s7webserver;
@@ -246,6 +246,9 @@ S7WebServer *s7webserver_create(s7_scheme *s7, int portnum, bool find_first_free
   return s7webserver;
 }
 
+S7WebServer *s7webserver_create(s7_scheme *s7, int portnum, bool find_first_free_portnum){
+  return s7webserver_create2(s7, portnum, true, find_first_free_portnum);
+}
 
 void s7webserver_set_verbose(S7WebServer *s7webserver, bool verbose) {
   s7webserver->verbose = verbose;
