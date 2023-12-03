@@ -1,0 +1,269 @@
+diff --git a/Qt/Qt_Main.cpp b/Qt/Qt_Main.cpp
+index b2bb86824..cf5b7ac45 100755
+--- a/Qt/Qt_Main.cpp
++++ b/Qt/Qt_Main.cpp
+@@ -195,7 +195,7 @@ bool g_program_has_ended = false;
+ 
+ #include "sanitizer/asan_interface.h"
+ 
+-#if 1 // Change to 0 in case allocator_interface.h is not available.
++#if 0 // Change to 0 in case allocator_interface.h is not available.
+   #include "sanitizer/allocator_interface.h"
+ #else
+   extern "C" void __sanitizer_malloc_hook(const volatile void *ptr, size_t size);
+diff --git a/audio/SoundProducer.cpp b/audio/SoundProducer.cpp
+index 089ff36d9..49dfb78f2 100644
+--- a/audio/SoundProducer.cpp
++++ b/audio/SoundProducer.cpp
+@@ -2699,7 +2699,7 @@ static void SP_RT_process(SoundProducer *producer, int64_t time, int num_frames,
+ #if !defined(RELEASE)
+ #if !defined(FOR_MACOSX)
+   if (!MIXER_is_saving()){
+-    R_ASSERT_NON_RELEASE(THREADING_has_player_thread_priority());
++    //    R_ASSERT_NON_RELEASE(THREADING_has_player_thread_priority());
+   }
+ #endif
+ #endif
+diff --git a/bin/keybindingsparser.pyc b/bin/keybindingsparser.pyc
+index e3b6902a1..f93f0e01e 100644
+Binary files a/bin/keybindingsparser.pyc and b/bin/keybindingsparser.pyc differ
+diff --git a/bin/packages/build.sh b/bin/packages/build.sh
+index de3bc7013..f9e424ef1 100755
+--- a/bin/packages/build.sh
++++ b/bin/packages/build.sh
+@@ -9,9 +9,12 @@ unset CPPFLAGS
+ unset LDFLAGS
+ unset CXXFLAGS
+ 
+-export CFLAGS="-mtune=generic -msse2 -mfpmath=sse -Wno-misleading-indentation -fPIC -fno-strict-aliasing "
+-export CPPFLAGS="-mtune=generic -msse2 -mfpmath=sse -fPIC -fno-strict-aliasing "
+-export CXXFLAGS="-mtune=generic -msse2 -mfpmath=sse -fPIC -fno-strict-aliasing -fmax-errors=5 -I/home/kjetil/site_clang10/include "
++#CPUFLAGS=-mtune=generic -msse2 -mfpmath=sse 
++CPUFLAGS=
++
++export CFLAGS="$CPUFLAGFS -Wno-misleading-indentation -fPIC -fno-strict-aliasing "
++export CPPFLAGS="$CPUFLAGS -fPIC -fno-strict-aliasing "
++export CXXFLAGS="$CPUFLAGS -fPIC -fno-strict-aliasing -fmax-errors=5 -I/home/kjetil/site_clang10/include "
+ 
+ DASCC=gcc
+ DASCXX=g++
+@@ -113,7 +116,7 @@ build_libpds() {
+     sed -i 's/k_cext$//' make.scm
+     sed -i 's/oscx //' make.scm
+     sed -i 's/gcc -O3/gcc -fcommon -O3/' make.scm
+-    #sed -i 's/#define fsqrt/\/\/#define fsqrt/g' pure-data/extra/fiddle~/fiddle~.c
++    sed -i 's/#define fsqrt/\/\/#define fsqrt/g' pure-data/extra/fiddle~/fiddle~.c
+     make clean
+     make -j`nproc`
+     cd ..
+@@ -142,7 +145,7 @@ build_qhttpserver() {
+ #http://www.hpl.hp.com/personal/Hans_Boehm/gc/
+ build_gc() {
+     GC_VERSION=7.4.16
+-    #GC_VERSION=8.0.4
++    #GC_VERSION=8.2.4
+ #    rm -fr gc-$GC_VERSION libatomic_ops-$GC_VERSION
+     tar xvzf gc-$GC_VERSION.tar.gz
+ #    tar xvzf libatomic_ops-$GC_VERSION.tar.gz
+@@ -154,8 +157,8 @@ build_gc() {
+     echo "#error "nope"" >>malloc.c
+     echo "#endif" >>malloc.c
+     #patch -p1 <../gcdiff.patch
+-    CFLAGS="-mtune=generic -msse2 -mfpmath=sse -g -O2" ./configure --enable-static --disable-shared --disable-gc-debug --disable-gc-assertions
+-    CFLAGS="-mtune=generic -msse2 -mfpmath=sse -g -O2" make -j`nproc`
++    CFLAGS="$CPUFLAGS -g -O2" ./configure --enable-static --disable-shared --disable-gc-debug --disable-gc-assertions
++    CFLAGS="$CPUFLAGS -g -O2" make -j`nproc`
+     cd ..
+ }
+ 
+@@ -234,14 +237,14 @@ build_xcb() {
+ }
+ 
+ 
+-build_faust
+-build_Visualization-Library
++#build_faust
++#build_Visualization-Library
+ build_libpds
+-build_qhttpserver
+-build_gc
+-build_fluidsynth
++#build_qhttpserver
++#build_gc
++#build_fluidsynth
+ #build_libgig
+-build_qscintilla
+-build_xcb
++#build_qscintilla
++#build_xcb
+ 
+ touch deletemetorebuild
+diff --git a/bin/protoconfparser.pyc b/bin/protoconfparser.pyc
+index 84cd4142c..e530bdd96 100644
+Binary files a/bin/protoconfparser.pyc and b/bin/protoconfparser.pyc differ
+diff --git a/build_linux_common.sh b/build_linux_common.sh
+index 47cd66923..59e388e28 100755
+--- a/build_linux_common.sh
++++ b/build_linux_common.sh
+@@ -48,7 +48,8 @@ export INCLUDE_PDDEV="jadda"
+ 
+ 
+ #if ! env |grep OPTIMIZE ; then
+-export OPTIMIZE="-O2 -mfpmath=sse -msse2 $RADIUM_RELEASE_CFLAGS "
++export RADIUM_CPUFLAGS="$RADIUM_CPUFLAGS "
++export OPTIMIZE="-O2 $RADIUM_CPUFLAGS $RADIUM_RELEASE_CFLAGS "
+ 
+ # -flto 
+ #fi
+@@ -75,8 +76,8 @@ RADIUM_USES_MOLD_PRELOAD=0
+ 
+ if [[ $RADIUM_USE_CLANG == 1 ]] ; then
+     export CLANG_PREFIX=$(dirname `which clang`)/../
+-    export CCC="clang++ -mfpmath=sse -msse2"
+-    export CC="clang -Wno-gnu-designator -mfpmath=sse -msse2 -Wenum-conversion "
++    export CCC="clang++ $RADIUM_CPUFLAGS"
++    export CC="clang -Wno-gnu-designator $RADIUM_CPUFLAGS -Wenum-conversion "
+ 
+     # ldd
+     export LINKER="clang++"
+@@ -97,8 +98,8 @@ if [[ $RADIUM_USE_CLANG == 1 ]] ; then
+     fi
+     
+ else
+-    export CCC="g++ -mfpmath=sse -msse2"
+-    export CC="gcc -mfpmath=sse -msse2"
++    export CCC="g++ $RADIUM_CPUFLAGS"
++    export CC="gcc $RADIUM_CPUFLAGS"
+     export LINKER="g++"
+ 
+     # Use the ldd linker instead. It's approx. 10x faster.
+@@ -111,9 +112,9 @@ else
+     fi
+ fi
+ 
+-export GCC="gcc -mfpmath=sse -msse2"
+-export GPLUSPLUS="g++ -mfpmath=sse -msse2"
+-export CLANGCC="clang++ -mfpmath=sse -msse2"
++export GCC="gcc $RADIUM_CPUFLAGS"
++export GPLUSPLUS="g++ $RADIUM_CPUFLAGS"
++export CLANGCC="clang++ $RADIUM_CPUFLAGS"
+ export FPIC="-fPIC"
+ 
+ export TARGET_OS=linux
+@@ -158,7 +159,7 @@ export RTMIDI_CFLAGS="-D__LINUX_ALSA__  -D__RTMIDI_DEBUG__"
+ export RTMIDI_LDFLAGS="-lpthread -lasound -ljack"
+ 
+ #export OS_OPTS="-DTEST_GC"
+-export OS_OPTS="-Werror=array-bounds -msse2 -fomit-frame-pointer -DFOR_LINUX `$PKG --cflags Qt5X11Extras` -DRADIUM_USES_MOLD_OR_LDD=$RADIUM_USES_MOLD_OR_LDD" # -Ibin/packages/libxcb-1.13/"
++export OS_OPTS="-Werror=array-bounds $RADIUM_CPUFLAGS -fomit-frame-pointer -DFOR_LINUX `$PKG --cflags Qt5X11Extras` -DRADIUM_USES_MOLD_OR_LDD=$RADIUM_USES_MOLD_OR_LDD" # -Ibin/packages/libxcb-1.13/"
+ 
+ 
+ #export OS_OPTS="-Werror=array-bounds -march=native"
+@@ -185,7 +186,7 @@ export QSCINTILLA_PATH=`pwd`/bin/packages/QScintilla_src-2.14.0/src
+ 
+ 
+ if env |grep INCLUDE_FAUSTDEV= ; then
+-    FAUSTLDFLAGS="`pwd`/bin/packages/faust/build/lib/libfaust.a -lcrypto -lncurses"
++    FAUSTLDFLAGS="`pwd`/bin/packages/faust/build/lib/libfaust.a" # -lcrypto -lncurses"
+     if env |grep INCLUDE_FAUSTDEV_BUT_NOT_LLVM= ; then
+         export OS_OPTS="$OS_OPTS -DWITHOUT_LLVM_IN_FAUST_DEV"
+     else
+diff --git a/common/Mutex.hpp b/common/Mutex.hpp
+index 4c84185c1..07f4f57bb 100644
+--- a/common/Mutex.hpp
++++ b/common/Mutex.hpp
+@@ -245,6 +245,7 @@ struct ScopedMutex{
+   }
+ };
+ 
++  #if 0
+ // Class written by Timur Doumler. Code copied from https://timur.audio/using-locks-in-real-time-audio-processing-safely
+ // (I assume it is public domain)
+ struct AudioSpinMutex : public AbstractMutex{
+@@ -300,7 +301,7 @@ struct AudioSpinMutex : public AbstractMutex{
+ private:
+   std::atomic_flag flag = ATOMIC_FLAG_INIT;
+ };
+-
++#endif
+   
+ struct CondWait {
+ 
+diff --git a/common/nsmtracker.h b/common/nsmtracker.h
+index 6ce24cef9..4b4f22934 100755
+--- a/common/nsmtracker.h
++++ b/common/nsmtracker.h
+@@ -41,11 +41,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
+ 
+   
+ #ifndef __SSE2__
+-#error "SSE2 is missing (i.e. -msse2 is lacking)"
++//#error "SSE2 is missing (i.e. -msse2 is lacking)"
+ #endif
+ 
+ #ifndef __SSE2_MATH__
+-#error "SSE2 math is missing (i.e. -fpmath=sse is lacking)"
++//#error "SSE2 math is missing (i.e. -fpmath=sse is lacking)"
+ #endif
+ 
+ #if __tune_corei7__
+@@ -4167,7 +4167,8 @@ static inline note_t create_note_t_plain(const struct SeqBlock *seqblock,
+                                          )
+ {
+ #if !defined(RELEASE)
+-  R_ASSERT(midi_channel>=0 && midi_channel <= 15);
++  //R_ASSERT(midi_channel>=0 && midi_channel <= 15);
++  R_ASSERT(midi_channel <= 15);
+   R_ASSERT(note_id >= -1);
+   
+   //R_ASSERT(pitch < 150); // approx. This assert might give false positives.
+diff --git a/common/threading.h b/common/threading.h
+index 51a56729f..67d499fea 100644
+--- a/common/threading.h
++++ b/common/threading.h
+@@ -4,8 +4,8 @@
+ 
+ 
+ 
+-#ifndef DOESNT_HAVE_SSE
+-#  include <xmmintrin.h>
++#if !defined(DOESNT_HAVE_SSE)
++//#  include <xmmintrin.h>
+ #endif
+ 
+ 
+@@ -23,7 +23,7 @@
+         #define RADIUM_AVOIDDENORMALS _mm_setcsr(_mm_getcsr() | 0x8000)
+     #endif
+ #else
+-#   error "RADIUM_AVOIDDENORMALS is not defined"
++//#   error "RADIUM_AVOIDDENORMALS is not defined"
+     #define RADIUM_AVOIDDENORMALS 
+ #endif
+ 
+diff --git a/midi/midi_instrument.h b/midi/midi_instrument.h
+index d2ed3f3ea..5e69ec0f7 100755
+--- a/midi/midi_instrument.h
++++ b/midi/midi_instrument.h
+@@ -37,7 +37,7 @@ struct PatchData{
+ 
+ 	bool ccsonoff[8];
+ 	const char *ccnames[8];
+-        char cc[8];
++        signed char cc[8];
+ 	char ccvalues[8];
+ };
+ 
+diff --git a/pluginhost/Builds/Linux/Makefile b/pluginhost/Builds/Linux/Makefile
+index 1f3d525a3..4a3f3204d 100644
+--- a/pluginhost/Builds/Linux/Makefile
++++ b/pluginhost/Builds/Linux/Makefile
+@@ -19,7 +19,7 @@ LV2FLAGS=-I$(JUCE_MODULES)juce_audio_processors/format_types/LV2_SDK -I$(JUCE_MO
+ 
+ RADIUM_VST2SDK_PATH ?= ${HOME}/SDKs/vstsdk2.4
+ 
+-COMMONCPPFLAGS := $(DEPFLAGS) -D "LINUX=1" -D "JUCE_CHECK_MEMORY_LEAKS=0" -D "JUCER_LINUX_MAKE_7346DA2A=1" -D "JUCE_APP_VERSION=1.0.0" -D "JUCE_APP_VERSION_HEX=0x10000" $(AVAILABLES) -I /usr/include -I /usr/include/freetype2 -I$(JUCE_MODULES)/.. -I$(JUCE_MODULES) -I$(JUCE_MODULES)juce_audio_processors/format_types/VST3_SDK $(LV2FLAGS) -I $(JUCE_MODULES)JuceLibraryCode -I $(JUCE_MODULES)JuceLibraryCode/modules -I$(RADIUM_VST2SDK_PATH) -DJUCE_APP_CONFIG_HEADER="\"AppConfig.h\"" -mfpmath=sse -msse2 -DPLUGINHOST_BUILD_64BIT -fPIC
++COMMONCPPFLAGS := $(DEPFLAGS) -D "LINUX=1" -D "JUCE_CHECK_MEMORY_LEAKS=0" -D "JUCER_LINUX_MAKE_7346DA2A=1" -D "JUCE_APP_VERSION=1.0.0" -D "JUCE_APP_VERSION_HEX=0x10000" $(AVAILABLES) -I /usr/include -I /usr/include/freetype2 -I$(JUCE_MODULES)/.. -I$(JUCE_MODULES) -I$(JUCE_MODULES)juce_audio_processors/format_types/VST3_SDK $(LV2FLAGS) -I $(JUCE_MODULES)JuceLibraryCode -I $(JUCE_MODULES)JuceLibraryCode/modules -I$(RADIUM_VST2SDK_PATH) -DJUCE_APP_CONFIG_HEADER="\"AppConfig.h\""  -DPLUGINHOST_BUILD_64BIT -fPIC
+ 
+ # -I~/SDKs/VST_SDK/VST3_SDK -I ~/SDKs/VST_SDK/VST2_SDK/ -I ~/SDKs/VST3\ SDK
+ 
