@@ -76,28 +76,6 @@ index de3bc7013..f9e424ef1 100755
      cd ..
  }
  
-@@ -234,14 +237,14 @@ build_xcb() {
- }
- 
- 
--build_faust
--build_Visualization-Library
-+#build_faust
-+#build_Visualization-Library
- build_libpds
--build_qhttpserver
--build_gc
--build_fluidsynth
-+#build_qhttpserver
-+#build_gc
-+#build_fluidsynth
- #build_libgig
--build_qscintilla
--build_xcb
-+#build_qscintilla
-+#build_xcb
- 
- touch deletemetorebuild
 diff --git a/bin/protoconfparser.pyc b/bin/protoconfparser.pyc
 index 84cd4142c..e530bdd96 100644
 Binary files a/bin/protoconfparser.pyc and b/bin/protoconfparser.pyc differ
