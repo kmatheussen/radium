@@ -2,30 +2,68 @@
 #define RADIUM_COMMON_THREADING_H
 
 
+#include <float.h>
 
+// (Denormal handling code copied from faust)
 
-#ifndef DOESNT_HAVE_SSE
+#if !defined (__arm64__) && !defined (__aarch64__)
+  #if !defined (__SSE2__)
+    #error __SSE2__ not defined.
+  #endif
 #  include <xmmintrin.h>
 #endif
 
 
-#include <float.h>
+static inline void setFpStatusRegister(intptr_t fpsr_aux) noexcept
+{
+#if defined (__arm64__) || defined (__aarch64__)
+	asm volatile("msr fpcr, %0" : : "ri" (fpsr_aux));
+#elif defined (__SSE__)
+	// The volatile keyword here is needed to workaround a bug in AppleClang 13.0
+	// which aggressively optimises away the variable otherwise
+	volatile uint32_t fpsr_w = static_cast<uint32_t>(fpsr_aux);
+	_mm_setcsr(fpsr_w);
+#endif
+}
 
+static inline intptr_t getFpStatusRegister() noexcept
+{
+	intptr_t fpsr;
+	
+#if defined (__arm64__) || defined (__aarch64__)
+	asm volatile("mrs %0, fpcr" : "=r" (fpsr));
+#elif defined (__SSE__)
+	fpsr = static_cast<intptr_t>(_mm_getcsr());
+#endif
+
+	return fpsr;
+}
+
+static inline void avoiddenormals(void){
+
+#if defined (__arm64__) || defined (__aarch64__)
+	intptr_t mask = (1 << 24 /* FZ */);
+#elif defined (__SSE__)
+#if defined (__SSE2__)
+	intptr_t mask = 0x8040;
+#else
+	intptr_t mask = 0x8000;
+#endif
+#else
+	intptr_t mask = 0x0000;
+#endif
+	auto fpsr = getFpStatusRegister();
+	setFpStatusRegister(fpsr | mask);
+}
+	
 //#pragma fenv_access (on)
 
 // On Intel set FZ (Flush to Zero) and DAZ (Denormals Are Zero)
 // flags to avoid costly denormals
 // (Copied from faust)
-#ifdef __SSE__
-    #ifdef __SSE2__
-        #define RADIUM_AVOIDDENORMALS _mm_setcsr(_mm_getcsr() | 0x8040)
-    #else
-        #define RADIUM_AVOIDDENORMALS _mm_setcsr(_mm_getcsr() | 0x8000)
-    #endif
-#else
-#   error "RADIUM_AVOIDDENORMALS is not defined"
-    #define RADIUM_AVOIDDENORMALS 
-#endif
+
+#define RADIUM_AVOIDDENORMALS avoiddenormals()
+
 
 extern LANGSPEC void THREADING_init_main_thread_type(void);
 extern LANGSPEC void THREADING_init_player_locks(void);
