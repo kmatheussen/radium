@@ -266,6 +266,24 @@ void setCustomMidiInstrumentLatency(double ms){
 }
 
 
+bool getCheckAbnormalSignals(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    ATOMIC_SET(g_check_abnormal_signals, SETTINGS_read_bool("check_abnormal_signals", ATOMIC_GET(g_check_abnormal_signals)));
+    has_inited = true;
+  }
+
+  return ATOMIC_GET(g_check_abnormal_signals);
+}
+
+void setCheckAbnormalSignals(bool new_val){
+  ATOMIC_SET(g_check_abnormal_signals, new_val);
+  SETTINGS_write_bool("check_abnormal_signals", ATOMIC_GET(g_check_abnormal_signals));
+}
+
+
+
 static bool g_undo_solo = false;
 
 bool doUndoSolo(void){
