@@ -613,7 +613,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       }
 
       use_jack_if_jack_server_is_running->setChecked(SETTINGS_read_bool("use_jack_if_jack_server_is_running", true));
-      
+
       {
         enable_latency_compensation->setChecked(latencyCompensationEnabled());
         
@@ -668,7 +668,8 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
         discard_loop_data->setChecked(true);
         
       }
-            
+
+      check_abnormal_signals->setChecked(getCheckAbnormalSignals());
     }
 
     /*
@@ -1259,6 +1260,11 @@ public slots:
   void on_use_jack_if_jack_server_is_running_toggled(bool val){
     if (_initing==false)
       SETTINGS_write_bool("use_jack_if_jack_server_is_running", val);
+  }
+  
+  void on_check_abnormal_signals_toggled(bool val){
+    if (_initing==false)
+      setCheckAbnormalSignals(val);
   }
   
   void on_discard_loop_data_toggled(bool val){

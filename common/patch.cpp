@@ -1152,6 +1152,7 @@ void PATCH_init(void){
   {
     getMidiInstrumentLatencyType();
     getCustomMidiInstrumentLatency();
+    getCheckAbnormalSignals();
   }
   
   PATCH_reset();

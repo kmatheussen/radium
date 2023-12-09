@@ -68,7 +68,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "SoundProducer_proc.h"
 
-
+DEFINE_ATOMIC(bool, g_check_abnormal_signals) = true;
 
 #if 0
 faust conversions:
@@ -684,6 +684,9 @@ static void RT_fade_out2(float *__restrict__ sound, int pos, int num_frames){
 static const char *RT_check_abnormal_signal(const SoundPlugin *plugin, int num_frames, float **__restrict__ outputs){
   R_ASSERT_NON_RELEASE(num_frames==RADIUM_BLOCKSIZE);
 
+  if (!ATOMIC_GET_RELAXED(g_check_abnormal_signals))
+    return NULL;
+  
   const int num_channels = plugin->type->num_outputs;
   float sum=0.0f;
   
