@@ -18,6 +18,8 @@
 
 #include <boost/lockfree/stack.hpp>
 
+#include <thread>
+
 #if TEST_MAIN
 #include <unistd.h>
 #include <sys/time.h>
@@ -194,8 +196,26 @@ void RT_mempool_init(void){
 
   ASAN_POISON_MEMORY_REGION(g_mem, TOTAL_MEM_SIZE);  
 
+  int64_t start = TIME_get_ms();
+
+  std::thread t[NUM_POOLS];
+  
   for(int i=0;i<NUM_POOLS;i++)
-    g_pools[i] = new POOL(MAX_POOL_SIZE);
+  {
+	  // Allocate each pool in it's own thread. Workaround for really slow memory allocation performance on Macos.
+	  t[i] = std::thread([i, start](){	  
+		  g_pools[i] = new POOL(MAX_POOL_SIZE);
+		  printf("I: %d. Dur: %d. Size: %d\n", i, (int)(TIME_get_ms() - start), (int)sizeof(POOL));
+	  });
+  }
+
+  for(int i=0;i<NUM_POOLS;i++)
+	  t[i].join();
+  
+  int64_t dur = TIME_get_ms() - start;
+
+  printf("DUR: %d\n",(int)dur);
+  //getchar();
 
 #if !defined(RELEASE)
   void *mem = RT_alloc_raw(g_max_mem_size + 100, "test_gmax_mem_size");
