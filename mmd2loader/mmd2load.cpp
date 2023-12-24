@@ -393,7 +393,7 @@ static const char *MMD_GetInstrumentName(disk_t *file,NInt num){
 	if(strlen(temp)<2) return "NN";
 
 	name=(char*)talloc_atomic((int)strlen(temp)+1);
-	snprintf(name,strlen(temp),"%s",temp);
+	snprintf(name,strlen(temp)-1,"%s",temp);
 
 	return name;
 }
