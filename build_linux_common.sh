@@ -47,8 +47,12 @@ export INCLUDE_FAUSTDEV="jadda"
 export INCLUDE_PDDEV="jadda"
 
 
+if ! arch |grep arm ; then
+    export CPUOPTS="-msse2 -mfpmath=sse"
+fi
+
 #if ! env |grep OPTIMIZE ; then
-export OPTIMIZE="-O2 -mfpmath=sse -msse2 $RADIUM_RELEASE_CFLAGS "
+export OPTIMIZE="-O2 $CPUOPTS $RADIUM_RELEASE_CFLAGS "
 
 # -flto 
 #fi
@@ -75,8 +79,8 @@ RADIUM_USES_MOLD_PRELOAD=0
 
 if [[ $RADIUM_USE_CLANG == 1 ]] ; then
     export CLANG_PREFIX=$(dirname `which clang`)/../
-    export CCC="clang++ -mfpmath=sse -msse2"
-    export CC="clang -Wno-gnu-designator -mfpmath=sse -msse2 -Wenum-conversion "
+    export CCC="clang++ $CPUOPTS "
+    export CC="clang -Wno-gnu-designator $CPUOPTS -Wenum-conversion "
 
     # ldd
     export LINKER="clang++"
@@ -97,8 +101,8 @@ if [[ $RADIUM_USE_CLANG == 1 ]] ; then
     fi
     
 else
-    export CCC="g++ -mfpmath=sse -msse2"
-    export CC="gcc -mfpmath=sse -msse2"
+    export CCC="g++ $CPUOPTS "
+    export CC="gcc $CPUOPTS "
     export LINKER="g++"
 
     # Use the ldd linker instead. It's approx. 10x faster.
@@ -111,9 +115,9 @@ else
     fi
 fi
 
-export GCC="gcc -mfpmath=sse -msse2"
-export GPLUSPLUS="g++ -mfpmath=sse -msse2"
-export CLANGCC="clang++ -mfpmath=sse -msse2"
+export GCC="gcc $CPUOPTS"
+export GPLUSPLUS="g++ $CPUOPTS"
+export CLANGCC="clang++ $CPUOPTS"
 export FPIC="-fPIC"
 
 export TARGET_OS=linux
@@ -158,7 +162,7 @@ export RTMIDI_CFLAGS="-D__LINUX_ALSA__  -D__RTMIDI_DEBUG__"
 export RTMIDI_LDFLAGS="-lpthread -lasound -ljack"
 
 #export OS_OPTS="-DTEST_GC"
-export OS_OPTS="-Werror=array-bounds -msse2 -fomit-frame-pointer -DFOR_LINUX `$PKG --cflags Qt5X11Extras` -DRADIUM_USES_MOLD_OR_LDD=$RADIUM_USES_MOLD_OR_LDD" # -Ibin/packages/libxcb-1.13/"
+export OS_OPTS="-Werror=array-bounds $CPUOPTS -fomit-frame-pointer -DFOR_LINUX `$PKG --cflags Qt5X11Extras` -DRADIUM_USES_MOLD_OR_LDD=$RADIUM_USES_MOLD_OR_LDD" # -Ibin/packages/libxcb-1.13/"
 
 
 #export OS_OPTS="-Werror=array-bounds -march=native"
