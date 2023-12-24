@@ -1999,7 +1999,7 @@ public:
 #endif
 #endif
 
-    double overridden_vblank_value = ATOMIC_DOUBLE_GET(override_vblank_value);
+    const double overridden_vblank_value = ATOMIC_DOUBLE_GET(override_vblank_value);
     
 #if USE_QT5
     time_estimator.set_vblank(overridden_vblank_value);    
@@ -2346,6 +2346,7 @@ static bool maybe_start_t2_thread(void){
       
       T1_start_t2_thread(openglcontext);
       g_has_started_t2_thread = true;
+      
       return true;
     }
   }
@@ -2394,8 +2395,38 @@ static double get_refresh_rate(void){
   return -1;
 }
 
+
 static DEFINE_ATOMIC(bool, g_has_found_refresh_rate) = false;
 static DEFINE_ATOMIC(double, g_vblank) = 1000 / 60.0;
+
+static void setup_screen_changed_callback(void){
+  QWindow *qwindow = widget->windowHandle();
+  R_ASSERT(qwindow != NULL);
+
+  if (qwindow==NULL)
+    return;
+
+  qwindow->connect(qwindow, &QWindow::screenChanged, [](QScreen *screen){
+
+    R_ASSERT(screen != NULL);
+    
+    if (screen==NULL)
+      return;
+    
+    double refresh_rate = screen->refreshRate();
+
+    printf("  NEW REFRESH RATE: %f\n", refresh_rate);
+    
+    if (refresh_rate >= 0.5) {
+      widget->set_vblank(1000.0 / refresh_rate);
+      ATOMIC_DOUBLE_SET(g_vblank, 1000.0 / refresh_rate);
+    }
+    
+  });
+
+}
+  
+
 double GL_get_vblank(void){
   if (ATOMIC_GET(g_has_found_refresh_rate)==false)
     return -1;
@@ -2431,6 +2462,9 @@ int GL_maybe_notify_that_main_window_is_exposed(int interval){
         ATOMIC_DOUBLE_SET(g_vblank, 1000.0 / refresh_rate);
         ATOMIC_SET(g_has_found_refresh_rate, true);
         downcounter = 200 * 1000 / interval; // Check refresh rate every 200 seconds.
+
+        setup_screen_changed_callback();
+        
       }else{
         printf("Warning: Unable to find screen refresh rate\n");
         downcounter = 500 / interval; // Check again in 0.5 seconds
