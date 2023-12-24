@@ -81,13 +81,13 @@ namespace vlQt5
       dispatchDestroyEvent();
     }
 
-    void dragEnterEvent(QDragEnterEvent *ev) 
+    void dragEnterEvent(QDragEnterEvent *ev) override	    
     { 
       if (ev->mimeData()->hasUrls()) 
         ev->acceptProposedAction(); 
     }
 
-    void dropEvent(QDropEvent* ev)
+    void dropEvent(QDropEvent* ev) override
     {
       if ( ev->mimeData()->hasUrls() )
       {
