@@ -344,7 +344,7 @@ wchar_t *talloc_wcsdup__(const wchar_t *input, const char *filename, int linenum
 
 char *talloc_numberstring__(int number, const char *filename, int linenumber){
   char s[1000];
-  sprintf(s,"%d",number);
+  snprintf(s,999,"%d",number);
   return talloc_strdup__(s, filename, linenumber);
 }
 

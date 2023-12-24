@@ -143,7 +143,7 @@ static void crash(int sig, siginfo_t *siginfo, void *secret) {
 
     if(fork()==0){
       char temp[64];
-      sprintf(temp,"signum: %d\n", sig);
+      snprintf(temp,63,"signum: %d\n", sig);
       CRASHREPORTER_send_message_with_backtrace(temp, CT_CRASH,now_time);
       num_crash_reports++;
 

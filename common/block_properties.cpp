@@ -309,18 +309,18 @@ void Block_Properties_CurrPos(struct Blocks *block){
         
 	reqtype=GFX_OpenReq(window,33,5,"Edit block properties. Press return to keep old value");
 
-	sprintf(seltext,"Number of tracks (now %d): ",block->num_tracks);
+	snprintf(seltext,499,"Number of tracks (now %d): ",block->num_tracks);
 	num_tracks=GFX_GetInteger(window,reqtype,seltext,1,200,true);
 	if(num_tracks==0) num_tracks=block->num_tracks;
 
         if (g_reqtype_cancelled==false){
-          sprintf(seltext,"Number of lines (now %d): ",block->num_lines);
+          snprintf(seltext,499,"Number of lines (now %d): ",block->num_lines);
           num_lines=GFX_GetInteger(window,reqtype,seltext,2,2000,true);
           if(num_lines==1) num_lines=block->num_lines;
         }
 
         if (g_reqtype_cancelled==false){
-          sprintf(seltext,"Name (now: '%s'): ",block->name);
+          snprintf(seltext,499,"Name (now: '%s'): ",block->name);
           const char *blockname=GFX_GetString(window,reqtype,seltext,true);
           
           if(blockname!=NULL){

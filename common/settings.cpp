@@ -449,7 +449,7 @@ void SETTINGS_write_int(const char* key, int64_t val){
 
 void SETTINGS_write_double(const char* key, double val){
   char temp[500];
-  sprintf(temp,"%s",OS_get_string_from_double(val));
+  snprintf(temp,499,"%s",OS_get_string_from_double(val));
   SETTINGS_put(key,temp);
 }
 

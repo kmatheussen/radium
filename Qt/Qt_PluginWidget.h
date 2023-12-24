@@ -214,7 +214,7 @@ class ParamWidget : public QWidget {
         char buf[64]={0};
 
         if (_check_button != NULL)
-          sprintf(buf, "%s", "");
+		snprintf(buf, 63, "%s", "");
         else
           PLUGIN_get_display_value_string(plugin, _effect_num, buf, 64);
         

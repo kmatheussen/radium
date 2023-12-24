@@ -943,7 +943,7 @@ static void create_signature(const struct Tracker_Windows *window, const struct 
     const StaticRatio &signature = wsignature.signature;
     
     char temp[50];
-    sprintf(temp, "%d/%d", signature.numerator, signature.denominator);
+    snprintf(temp, 49, "%d/%d", signature.numerator, signature.denominator);
     
     GE_text(GE_textcolor_z(TEXT_COLOR_NUM, GE_Conf(Z_ZERO, y, NO_SCISSORS)),
             temp,
@@ -1667,9 +1667,9 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
       else {
         char temp[32];
         if (wtrack->is_wide)
-          sprintf(temp,"%s.%d",notestext,cents);
+		snprintf(temp,31,"%s.%d",notestext,cents);
         else
-          sprintf(temp,"%s %d",notestext,cents);
+		snprintf(temp,31,"%s %d",notestext,cents);
         GE_text(foreground, temp, wtrack->notearea.x, y1); 
       }
       
@@ -1685,7 +1685,7 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
 
     if (cents != 0){
       char centtext[16];
-      sprintf(centtext,"%s%d",cents<10?" ":"",cents); // Never remembers the short syntax for this.
+      snprintf(centtext,15,"%s%d",cents<10?" ":"",cents); // Never remembers the short syntax for this.
       GE_text(foreground, centtext, wtrack->centtextarea.x, y1);
     }
   }
@@ -1710,9 +1710,9 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
 
       char chancetext[16];
       if (chance==-2)
-        sprintf(chancetext, "xx");
+	      snprintf(chancetext, 15,"xx");
       else
-        sprintf(chancetext,"%s%x",chance<0x10?" ":"",chance); // Never remembers the short syntax for this.
+	      snprintf(chancetext,15,"%s%x",chance<0x10?" ":"",chance); // Never remembers the short syntax for this.
         
       GE_text(foreground, chancetext, wtrack->chancetextarea.x, y1);
     }
@@ -1851,7 +1851,7 @@ static void draw_pianonote_text(const struct Tracker_Windows *window, float note
   char temp[32];
   
   if (cents!=0){
-    sprintf(temp,"%s.%d",get_notename(NotesTexts3, notenum),cents);
+	  snprintf(temp,31,"%s.%d",get_notename(NotesTexts3, notenum),cents);
     text = &temp[0];
   }
   

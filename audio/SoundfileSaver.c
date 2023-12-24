@@ -100,16 +100,16 @@ static bool stop_writing(bool is_cancelled){
     ret= false;
 
   if (is_cancelled)
-    sprintf(temp,"Cancelled");
+	  snprintf(temp,1023,"Cancelled");
   
   else if(ret==false)
-    sprintf(temp,"Unable to save \"%S\": \"%s\".", g_filename, sf_error_number(close_result));
+    snprintf(temp,1023,"Unable to save \"%S\": \"%s\".", g_filename, sf_error_number(close_result));
 
   else if(g_saving_was_successful==false)
-    sprintf(temp,"\"%S\" was saved, but with errors.", g_filename);
+    snprintf(temp,1023,"\"%S\" was saved, but with errors.", g_filename);
 
   else
-    sprintf(temp,"\"%S\" saved successfully.", g_filename);
+    snprintf(temp,1023,"\"%S\" saved successfully.", g_filename);
     
 
   SOUNDFILESAVERGUI_stop(temp);

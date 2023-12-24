@@ -44,7 +44,7 @@ void expandBlock(int blocknum){
 
   int num_lines_before = wblock->block->num_lines;
   char temp[1024];
-  sprintf(temp, "Num lines (now %d) >",num_lines_before);
+  snprintf(temp, 1023,"Num lines (now %d) >",num_lines_before);
   int num_lines_after = GFX_GetInteger(window,NULL,temp, 1, 100000,true);
   if (num_lines_after<1)
     return;
@@ -74,7 +74,7 @@ void expandRange(int blocknum, int windownum){
   //printf("line1: %d, line2: %d, num_lines_before: %d\n",line1,line2,num_lines_before);
 
   char temp[1024];
-  sprintf(temp, "Num lines in range (now %f) >",num_lines_before);
+  snprintf(temp, 1023,"Num lines in range (now %f) >",num_lines_before);
   float num_lines_after = GFX_GetFloat(window,NULL,temp, 0.1, 100000,true);
   if (num_lines_after<=0)
     return;

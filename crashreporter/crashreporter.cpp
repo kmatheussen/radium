@@ -729,11 +729,12 @@ static void run_program(QString program, QString arg1, QString arg2, QString arg
   
   int ret = _wspawnl(wait_until_finished ? _P_WAIT :  _P_DETACH, p, p1, a1, a2, a3, a4, NULL);
   if(ret==-1){
-    char *temp = (char*)malloc(program.size()+arg1.size()+1024);
-    sprintf(temp, "Couldn't launch crashreporter: \"%S\" \"%S\". errno: %d. E2BIG: %d EINVAL: %d. ENOENT: %d. ENOEXEC: %d. ENOMEM: %d\n",p, a1, errno, E2BIG, EINVAL, ENOENT, ENOEXEC, ENOMEM);
-    fprintf(stderr,temp);
-    SYSTEM_show_error_message(strdup(temp));
-    Sleep(3000);
+	  const int size = program.size()+arg1.size()+1024;
+	  char *temp = (char*)malloc(size);
+	  snprintf(temp, size-1, "Couldn't launch crashreporter: \"%S\" \"%S\". errno: %d. E2BIG: %d EINVAL: %d. ENOENT: %d. ENOEXEC: %d. ENOMEM: %d\n",p, a1, errno, E2BIG, EINVAL, ENOENT, ENOEXEC, ENOMEM);
+	  fprintf(stderr,temp);
+	  SYSTEM_show_error_message(strdup(temp));
+	  Sleep(3000);
   }
 
 #elif defined(FOR_LINUX) || defined(FOR_MACOSX)
@@ -751,9 +752,10 @@ static void run_program(QString program, QString arg1, QString arg2, QString arg
   fprintf(stderr, "Executing -%s-\n",full_command.toUtf8().constData());
   const char *command = strdup(full_command.toUtf8().constData());
   if(system(command)==-1) {
-    char *temp = (char*)malloc(strlen(command)+10);
-    sprintf(temp, "Couldn't start crashreporter. command: -%s-\n",command);
-    SYSTEM_show_error_message(strdup(temp));
+	  const int size = strlen(command)+10;
+	  char *temp = (char*)malloc(size);
+	  snprintf(temp, size, "Couldn't start crashreporter. command: -%s-\n",command);
+	  SYSTEM_show_error_message(strdup(temp));
   }
 
 #else

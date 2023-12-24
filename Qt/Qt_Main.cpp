@@ -469,16 +469,29 @@ void * operator new(decltype(sizeof(0)) size) noexcept(false)
 }
 
 void operator delete(void *mem)
-#if defined(__clang__) && FOR_LINUX
-  _GLIBCXX_USE_NOEXCEPT
+#if defined(__clang__)
+  #if FOR_LINUX
+    _GLIBCXX_USE_NOEXCEPT
+  #else
+    _NOEXCEPT
+  #endif
 #else
-noexcept(false)
+  noexcept(false)
 #endif
 {
   V_free(mem);
 }
 
-void operator delete(void *mem, std::size_t size) noexcept(false)
+void operator delete(void *mem, std::size_t size)
+#if defined(__clang__)
+  #if FOR_LINUX
+    _GLIBCXX_USE_NOEXCEPT
+  #else
+    _NOEXCEPT
+  #endif
+#else
+  noexcept(false)
+#endif
 {
   V_free(mem);
 }
@@ -4985,10 +4998,10 @@ int main(int argc, char **argv){
 
 #if 0
     //#if defined(FOR_WINDOWS)
-    sprintf(temp,"sys.g_program_path = \"\"");
+    snprintf(temp,499,"sys.g_program_path = \"\"");
 #else
     // This doesn't work on mingw. Could be a wine problem only.
-    sprintf(temp,"sys.g_program_path = os.path.abspath(os.path.dirname(\"%S\"))", OS_get_full_program_file_path(L"start.py").id);
+    snprintf(temp,499,"sys.g_program_path = os.path.abspath(os.path.dirname(\"%S\"))", OS_get_full_program_file_path(L"start.py").id);
 #endif
     PyRun_SimpleString(temp);
 
@@ -5000,7 +5013,7 @@ int main(int argc, char **argv){
     PyRun_SimpleString("print \"hepp sys.path:\",sys.path,24");
     
     // Set sys.argv[0]
-    sprintf(temp,"sys.argv=[\"%s\",\"%s\", \"%s\"]",
+    snprintf(temp,499,"sys.argv=[\"%s\",\"%s\", \"%s\"]",
             argv[0],
 #if defined(FOR_WINDOWS)
             "keybindings.conf",

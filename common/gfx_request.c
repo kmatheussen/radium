@@ -177,7 +177,7 @@ int GFX_ReqTypeMenu(
   }
 
   for(lokke=0;lokke<v.num_elements;lokke++){
-    sprintf(temp,"%d. %s\n",lokke+1,(char*)v.elements[lokke]);
+	  snprintf(temp,499,"%d. %s\n",lokke+1,(char*)v.elements[lokke]);
     GFX_WriteString(reqtype,temp);
   }
   //  GFX_WriteString(reqtype,"\n");

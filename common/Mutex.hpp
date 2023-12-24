@@ -245,6 +245,7 @@ struct ScopedMutex{
   }
 };
 
+  #if 0
 // Class written by Timur Doumler. Code copied from https://timur.audio/using-locks-in-real-time-audio-processing-safely
 // (I assume it is public domain)
 struct AudioSpinMutex : public AbstractMutex{
@@ -300,7 +301,7 @@ struct AudioSpinMutex : public AbstractMutex{
 private:
   std::atomic_flag flag = ATOMIC_FLAG_INIT;
 };
-
+#endif
   
 struct CondWait {
 

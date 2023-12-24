@@ -1297,7 +1297,7 @@ static void menu_descend(const char * uri,
       /* get the sub menu */
           const char * label = lrdf_get_label (uris->items[i]);
           char newbase[500];
-          sprintf (newbase, "%s/%s", base, label);
+          snprintf (newbase, 499,"%s/%s", base, label);
           
           menu_descend (uris->items[i], label); //newbase);
     }

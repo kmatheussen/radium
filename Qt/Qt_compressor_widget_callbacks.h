@@ -230,7 +230,7 @@ void on_enable_checkbox_toggled(bool val){
     float attack = get_exp_value(val,1000,0,max_attack_release);
     set_compressor_parameter(_patch.data(), COMP_EFF_ATTACK,attack);
     char temp[512];
-    sprintf(temp,"Attack: %.2fms",attack);
+    snprintf(temp,511,"Attack: %.2fms",attack);
     SLIDERPAINTER_set_string(attack_slider->_painter, temp);
   }
 
@@ -238,7 +238,7 @@ void on_enable_checkbox_toggled(bool val){
     float release = get_exp_value(val,1000,0,max_attack_release);
     set_compressor_parameter(_patch.data(), COMP_EFF_RELEASE,release);
     char temp[512];
-    sprintf(temp,"Release: %.2fms",release);
+    snprintf(temp,511,"Release: %.2fms",release);
     SLIDERPAINTER_set_string(release_slider->_painter, temp);
   }
 

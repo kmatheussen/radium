@@ -699,7 +699,7 @@ void SetupMainWindow(void){
   }
 #endif
 
-
+  
   QApplication::instance()->setAttribute(Qt::AA_DontUseNativeMenuBar);
 
   QMenuBar *menubar = new QMenuBar(0);
