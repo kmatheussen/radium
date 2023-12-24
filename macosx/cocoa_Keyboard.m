@@ -292,7 +292,7 @@ static void init_keymaps(void){
   keymap_qwerty[kVK_ANSI_Backslash] = EVENT_LR3;
 
   // row 5
-  //keymap_qwerty[kVK_ANSI_Grave]    = EVENT_ZL1; // Correct if using an iso keyboard, but ovverrides the 11L1 key if using an apple keyboard. Most likely, the user is using an apple keyboard.
+  keymap_qwerty[kVK_ANSI_Grave]    = EVENT_ZL1; // Correct if using an iso keyboard, but ovverrides the 11L1 key if using an apple keyboard. Most likely, the user is using an apple keyboard. No, it seems to be correct if using an apple keyboard as well...
   keymap_qwerty[kVK_ANSI_Comma]  = EVENT_MR1;
   keymap_qwerty[kVK_ANSI_Period] = EVENT_MR2;
   keymap_qwerty[kVK_ANSI_Slash]      = EVENT_MR3;
