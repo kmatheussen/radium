@@ -930,10 +930,10 @@ static void set_plugin_type_data(AEffect *aeffect, SoundPluginType *plugin_type)
     aeffect->dispatcher(aeffect,effGetParamName,i, 0, (void *) params[i].name, 0.0f);
 
     if(params[i].name[0]==0)
-      sprintf(params[i].name,"%s",params[i].label);
+      snprintf(params[i].name,"%s",params[i].label);
 
     if(params[i].name[0]==0)
-      sprintf(params[i].name,"<no name>");
+      snprintf(params[i].name,"<no name>");
 
     params[i].default_value = aeffect->getParameter(aeffect,i);
     

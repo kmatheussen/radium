@@ -71,9 +71,9 @@ static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *clie
     char temp[500];
 
     if(input_portnames[i] != NULL)
-      sprintf(temp, "%s", input_portnames[i]);
+	    snprintf(temp,499, "%s", input_portnames[i]);
     else
-      sprintf(temp, "in_%d",++n);
+	    snprintf(temp,499, "in_%d",++n);
 
     if (client==NULL){
     

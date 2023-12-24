@@ -65,7 +65,7 @@ static void SelectLeftSliderWidth(
 	char temp[100];
 	int newwidth;
 
-	sprintf(temp,"New Width (Now %d. Use 0 to set automatic value) >",window->leftslider.width);
+	snprintf(temp,99,"New Width (Now %d. Use 0 to set automatic value) >",window->leftslider.width);
 
 	newwidth=GFX_GetInteger(
 		window,
@@ -97,7 +97,7 @@ static void SelectBottomSliderHeight(
 	char temp[100];
 	int newwidth;
 
-	sprintf(temp,"New Height (Now: %d. Use 0 to set automatic value) >",window->bottomslider_height);
+	snprintf(temp,99,"New Height (Now: %d. Use 0 to set automatic value) >",window->bottomslider_height);
 
 	newwidth=GFX_GetInteger(
 		window,
@@ -129,7 +129,7 @@ static void SetBeatOpacity(
 	char temp[1000];
 	int new_opacity;
 
-	sprintf(temp,"New Beat Opacity (0-1000) (now %d) >",g_beat_opacity);
+	snprintf(temp,999,"New Beat Opacity (0-1000) (now %d) >",g_beat_opacity);
 
         new_opacity = GFX_GetInteger(
 		window,
@@ -158,7 +158,7 @@ static void SetFirstBeatOpacity(
 	char temp[1000];
 	int new_opacity;
 
-	sprintf(temp,"New First Beat Opacity (0-1000) (now %d) >",g_bar_opacity);
+	snprintf(temp,999,"New First Beat Opacity (0-1000) (now %d) >",g_bar_opacity);
 
         new_opacity = GFX_GetInteger(
 		window,
@@ -187,7 +187,7 @@ static void SetLineOpacity(
 	char temp[1000];
 	int new_opacity;
 
-	sprintf(temp,"New Line Opacity (0-1000) (now %d) >",g_line_opacity);
+	snprintf(temp,999,"New Line Opacity (0-1000) (now %d) >",g_line_opacity);
 
         new_opacity = GFX_GetInteger(
 		window,
@@ -216,7 +216,7 @@ void SelectMinNodeSize(
 	char temp[100];
 	int newwidth;
 
-	sprintf(temp,"New Size (now %d) >",window->minnodesize);
+	snprintf(temp,999,"New Size (now %d) >",window->minnodesize);
 
 	newwidth=GFX_GetInteger(
 		window,

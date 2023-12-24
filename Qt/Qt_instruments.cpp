@@ -363,13 +363,13 @@ static MIDI_instrument_widget *create_midi_instrument_widget(const char *name, s
             if(patchdata!=NULL)
               for(int ip=0;ip<8;ip++)
                 if (patchdata->cc[ip] == i) {
-                  sprintf(temp, "%3d: %s", i, patchdata->ccnames[ip]);
+			snprintf(temp, 499, "%3d: %s", i, patchdata->ccnames[ip]);
                   is_set = true;
                   break;
                 }
 
             if (is_set==false)
-              sprintf(temp, "%3d: %s", i, ccnames[i]==NULL?"":ccnames[i]);
+		    snprintf(temp, 499, "%3d: %s", i, ccnames[i]==NULL?"":ccnames[i]);
             
             cc->cctype->addItem(temp);
           }
@@ -397,7 +397,7 @@ static MIDI_instrument_widget *create_midi_instrument_widget(const char *name, s
     {
       for(int i=0;i<128;i++) {
         char temp[500];
-        sprintf(temp,"%3d:  %s", i+1, gm_names[i]);
+        snprintf(temp, 499, "%3d:  %s", i+1, gm_names[i]);
         instrument->preset->addItem(temp);
       }
     }

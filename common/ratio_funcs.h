@@ -423,7 +423,7 @@ namespace r{
     // Careful, not thread safe.
     const char *to_string(void) const {
       static char *ret = (char*)malloc(1024);
-      sprintf(ret, "%f -> %f", ratio2double(_start), ratio2double(_end));
+      snprintf(ret, 1023, "%f -> %f", ratio2double(_start), ratio2double(_end));
       return ret;
     }
   };

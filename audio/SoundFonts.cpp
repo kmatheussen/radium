@@ -335,7 +335,7 @@ static hash_t *get_menu(hash_t *info){
 
     char bank_display[512];
     {
-      sprintf(bank_display,"Bank %d",bank_num);
+	    snprintf(bank_display,511,"Bank %d",bank_num);
 
       if(HASH_has_key(menu,bank_display)==false){
         HASH_put_hash(menu,bank_display,HASH_create(num_presets));
@@ -347,7 +347,7 @@ static hash_t *get_menu(hash_t *info){
     {
       char preset_display[512];
       //sprintf(filename,"%s.%0*d.wav",base_filename,leading_zeros+1,0);
-      sprintf(preset_display,"%03d. %s",preset_num,preset_name);
+      snprintf(preset_display,511,"%03d. %s",preset_num,preset_name);
       HASH_put_hash(bank,preset_display,preset);
     }
   }
@@ -403,7 +403,7 @@ hash_t *SF2_get_displayable_preset_names(hash_t *info){
     hash_t *preset = HASH_get_hash_at(presets,"",i);
     char display[512];
     //sprintf(filename,"%s.%0*d.wav",base_filename,leading_zeros+1,0);
-    sprintf(display,"%03d. %s",(int)HASH_get_int(preset,"num"),HASH_get_chars(preset,"name"));
+    snprintf(display,511,"%03d. %s",(int)HASH_get_int(preset,"num"),HASH_get_chars(preset,"name"));
     HASH_put_chars_at(displayable_names,"",i,display);
   }
 

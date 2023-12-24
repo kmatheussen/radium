@@ -127,7 +127,7 @@ build_qhttpserver() {
     cd qhttpserver-master/
     echo "CONFIG += staticlib" >> src/src.pro
     `../../../find_moc_and_uic_paths.sh qmake`
-    make -j`nproc` # necessary to create the moc files.
+    make -j8 # necessary to create the moc files.
     cd ..
 }
 
@@ -167,7 +167,7 @@ build_fluidsynth() {
     make clean
     CFLAGS="-fPIC -fno-strict-aliasing -O3 -DDEFAULT_SOUNDFONT=\\\"\\\"" CPPFLAGS="-fPIC -fno-strict-aliasing -O3" CXXFLAGS="-fPIC -fno-strict-aliasing -O3" ./configure --enable-static --disable-aufile-support --disable-pulse-support --disable-alsa-support --disable-libsndfile-support --disable-portaudio-support --disable-oss-support --disable-midishare --disable-jack-support --disable-coreaudio --disable-coremidi --disable-dart --disable-lash --disable-ladcca --disable-aufile-support --disable-dbus-support --without-readline
     # --enable-debug
-    make -j`nproc`
+    make -j8
     cd ..
 }
 
@@ -179,7 +179,7 @@ build_libgig () {
     cd libgig
     make clean
     CFLAGS="-O3 -fno-strict-aliasing" CPPFLAGS="-O3 -fno-strict-aliasing" CXXFLAGS="-O3 -fno-strict-aliasing" CC=$DASCC CXX=$DASCXX ./configure
-    CFLAGS="$CFLAGS" CPPFLAGS="$CPPFLAGS" CPPFLAGS="$CXXFLAGS" make -j`nproc`
+    CFLAGS="$CFLAGS" CPPFLAGS="$CPPFLAGS" CPPFLAGS="$CXXFLAGS" make -j8
     cd ..
 }
 
@@ -192,7 +192,7 @@ build_qscintilla() {
     echo "CONFIG += staticlib" >> qscintilla.pro
     `../../../../find_moc_and_uic_paths.sh qmake`
     patch -p0 <../../qscintilla.patch
-    make -j`nproc`
+    make -j8
     cd ../..
 }
 
@@ -217,7 +217,7 @@ build_xcb() {
         cd xcb-proto-1.13/
         mkdir install
         ./configure --prefix=`pwd`/install PYTHON=`which python2`
-        make -j`proc`
+        make -j8
         make install
         cd ..
         

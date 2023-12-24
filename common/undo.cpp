@@ -246,8 +246,9 @@ bool Undo_NSM_are_you_sure_questionmark(void){
       char temp[200];
       const char *ret=NULL;
       
-      sprintf(
+      snprintf(
               temp,
+	      199,
               "%d change%s been made to file since song was saved.\n"
               "<p>\n"
               "<center><u>Your current project will be saved automatically by NSM if you answer yes now.</u></center>\n"
@@ -314,8 +315,9 @@ bool Undo_are_you_sure_questionmark(void){
       char temp[200];
       const char *ret=NULL;
       
-      sprintf(
+      snprintf(
               temp,
+	      199,
               "%d change%s been made to file since song was saved.\nAre you sure? (yes/no) > ",
               num_undos,
               num_undos>1 ? "s have" : " has"
@@ -361,8 +363,9 @@ bool Undo_are_you_sure_questionmark(void){
           
           char temp[200];
           const char *ret=NULL;
-          sprintf(
+          snprintf(
                   temp,
+		  199,
                   "There %s %d unused/unsaved recording take%s. Do you want to delete %s file%s? (yes/no) > ",
                   num_deletable_audio_files==1 ? "is" : "are",
                   num_deletable_audio_files,
@@ -924,7 +927,7 @@ void SetMaxUndos(struct Tracker_Windows *window){
 	int newmax=0;
 	char seltext[50];
 
-	sprintf(seltext,"Max Undos (0=unlimited) (now: %d): ",max_num_undos);
+	snprintf(seltext,49,"Max Undos (0=unlimited) (now: %d): ",max_num_undos);
 	while(newmax==1 || newmax==2)
           newmax=GFX_GetInteger(window,NULL,seltext,0,2000000,true);
 	if(newmax==-1) return;

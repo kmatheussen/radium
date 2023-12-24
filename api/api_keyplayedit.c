@@ -127,7 +127,7 @@ void switchEditOnOff(void){
 	struct Tracker_Windows *window=getWindowFromNum(-1);
 	ATOMIC_SET(root->editonoff, ATOMIC_GET(root->editonoff)?false:true);
         char temp[1000];
-        sprintf(temp,"Edit %s",ATOMIC_GET(root->editonoff)?"On":"Off");
+        snprintf(temp,999,"Edit %s",ATOMIC_GET(root->editonoff)?"On":"Off");
         GFX_SetStatusBar(temp);
         window->must_redraw=true;
 }
