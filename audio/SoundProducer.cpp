@@ -2702,7 +2702,7 @@ static void SP_RT_process(SoundProducer *producer, int64_t time, int num_frames,
 #if !defined(RELEASE)
 #if !defined(FOR_MACOSX)
   if (!MIXER_is_saving()){
-    R_ASSERT_NON_RELEASE(THREADING_has_player_thread_priority());
+	  R_ASSERT_NON_RELEASE(THREADING_has_player_thread_priority());
   }
 #endif
 #endif

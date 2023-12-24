@@ -1391,7 +1391,7 @@ static int create_vst_plugins_recursively(const QString main_path, const QString
   return ret;
 }
 
-#if defined(FOR_LINUX)
+#if defined(FOR_LINUX) || defined(FOR_MACOSX)
 static void add_lv2_plugins(void){
 
   LilvWorld* world = lilv_world_new();
@@ -1515,16 +1515,14 @@ void create_vst_plugins(bool is_juce_plugin){
     }    
   }PR_add_menu_entry(PluginMenuEntry::level_down());
 
-  
-#if FOR_LINUX
+#endif // !defined(FOR_MACOSX)
+
+#if defined(FOR_LINUX) || defined(FOR_MACOSX)
   PR_add_menu_entry(PluginMenuEntry::level_up("LV2"));
   {
     add_lv2_plugins();
   }PR_add_menu_entry(PluginMenuEntry::level_down());
 #endif
-
-  
-#endif // !defined(FOR_MACOSX)
 }
 
 
