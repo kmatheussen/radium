@@ -1154,6 +1154,7 @@
                          :paint-implicit-border #f
                          :implicit-border-width border-width
                          :box-rounding box-rounding
+                         :paint-black-border #t
                          )
           ;;(<gui> :draw-box gui "black" x1 y1 x2 y2 1.1 3 3)
           )))

@@ -4445,6 +4445,19 @@ const_char* gui_makeColorDarker(const_char* color, float how_much){
   return talloc_strdup(col1.name(QColor::HexArgb).toUtf8().constData());
 }
 
+double gui_colorDistance(const_char* color1, const_char* color2){
+
+  const QColor e1 = getQColor(color1);
+  const QColor e2 = getQColor(color2);
+
+  // copied from https://stackoverflow.com/questions/9018016/how-to-compare-two-colors-for-similarity-difference
+  const double rmean = (e1.redF() + e2.redF()) / 2;
+  const double r = e1.redF() - e2.redF();
+  const double g = e1.greenF() - e2.greenF();
+  const double b = e1.blueF() - e2.blueF();
+ 
+  return sqrt((((512.0+rmean)*r*r)/256.0) + 4.0*g*g + (((767.0-rmean)*b*b)/256.0));
+}
 
 static Gui *get_gui_maybeclosed(int64_t guinum){
   if (guinum < 0 || guinum > g_highest_guinum){

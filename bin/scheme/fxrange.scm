@@ -709,14 +709,13 @@
                     (append before-nodes
                             range-nodes)))))))
 
-               
 
 (***assert*** (merge-fx-nodes (lists->fxnodes '((2 11 0)
                                                (3 12 0)))
                               (lists->fxnodes '((13 20 0)
                                                (16 22 0))))
               (lists->fxnodes `((2 11 0)
-                               (3 12 ,(<ra> :get-logtype-hold))
+                               (3 12 ,*logtype-hold*)
                                (13 20 0)
                                (16 22 0))))
 

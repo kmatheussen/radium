@@ -27,7 +27,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QThread>
 #include <QSet>
 
-
 #include "../api/api_proc.h"
 
 #include "nsmtracker.h"
@@ -603,6 +602,7 @@ static bool insert_recorded_midi_events(bool is_gfx){
   {
     radium::ScopedUndo scoped_undo(!is_gfx);
 
+    
     for(int i = 0 ; i < (int)midi_events.size(); i++) {
       
       auto midi_event = midi_events[i];
