@@ -750,7 +750,9 @@
                        :gradient-background #t
                        :paint-implicit-border #f ;; used by the mute buttons (when implicitly muted by someone else solo-ing)
                        :implicit-border-width 2
-                       :box-rounding #f) ;; if #f, rounding will be set automatically based on checkbox size.
+                       :box-rounding #f ;; if #f, rounding will be set automatically based on checkbox size.
+                       :paint-black-border #f
+                       )
 
   (if (not box-rounding)
       (set! box-rounding (if (and #f (> (string-length text) 1))
@@ -768,11 +770,22 @@
                (set! background-color (<gui> :mix-colors background-color "red" 0.1))))
         (cond ((string=? text "Mute")
                (set! selected-color (<gui> :mix-colors background-color "#44ff44" 0.55)))
+              ;((string=? text "M")
+              ; (set! selected-color (<gui> :mix-colors background-color "#44ff44" 0.55)))
               ((string=? text "Solo")
                (set! selected-color (<gui> :mix-colors background-color "yellow" 0.75)))
               ((string=? text "Bypass")
                (set! selected-color (<gui> :mix-colors background-color "zoomline_text1" 0.6))))))
 
+  (when (or (string=? text "Mute")
+            (string=? text "M"))
+    (define i 0)
+    (while (and (< (<gui> :color-distance background-color selected-color) 0.8)
+                (< i 10))
+      ;;(c-display "DIST: " (<gui> :color-distance background-color selected-color))
+      (set! i (+ 1 i))
+      (set! selected-color (<gui> :make-color-lighter selected-color 1.1))))
+  
   ;;(if (string=? text "Solo")
   ;;    (c-display "Solo. Bc:" background-color ". is-selected:" is-selected ". selected-color:" selected-color))
   
@@ -862,7 +875,11 @@
                         1.0)
                     box-rounding box-rounding))))
   ;(<gui> :draw-box gui "black" x1 y1 x2 y2 1.1 3 3)
-  ;(<gui> :draw-box gui "black" x1 y1 x2 y2 1.1 box-rounding box-rounding)
+  ;;(<gui> :draw-box gui "black" x1 y1 x2 y2 1.1 box-rounding box-rounding)
+
+  (if (and paint-black-border
+           (not paint-implicit-border))
+      (<gui> :draw-box gui "black" x1 y1 x2 y2 1 0 0))
   
   '(let ((b 0.5))
      (<gui> :draw-box gui "#60000000" (+ x1 b) (+ y1 b) (- x2 b) (- y2 b) 1.2 box-rounding box-rounding))
