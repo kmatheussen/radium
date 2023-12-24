@@ -243,12 +243,12 @@ bool Undo_NSM_are_you_sure_questionmark(void){
     reqtype = GFX_OpenReq(root->song->tracker_windows, 200, 100, "");
     
     if(num_undos>0){
-      char temp[200];
+      char temp[401];
       const char *ret=NULL;
       
       snprintf(
               temp,
-	      199,
+	      399,
               "%d change%s been made to file since song was saved.\n"
               "<p>\n"
               "<center><u>Your current project will be saved automatically by NSM if you answer yes now.</u></center>\n"
