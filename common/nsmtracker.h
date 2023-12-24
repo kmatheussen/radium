@@ -39,20 +39,23 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #  error "Need at least clang 3.4 or gcc 5 (you can uncomment this line to make the program run, but swing, and perhaps other things as well, might be unstable.)"
 #endif
 
-  
-#ifndef __SSE2__
-#error "SSE2 is missing (i.e. -msse2 is lacking)"
-#endif
+#if !defined(__aarch64__)
 
-#ifndef __SSE2_MATH__
-#error "SSE2 math is missing (i.e. -fpmath=sse is lacking)"
-#endif
+  #ifndef __SSE2__
+    #error "SSE2 is missing (i.e. -msse2 is lacking)"
+  #endif
 
-#if __tune_corei7__
-#  if !defined(MARCH_NATIVE_ALLOWED)
-#    error "Compiled with -mtune=native or -mtune=corei7"
-#  endif
-#endif
+  #ifndef __SSE2_MATH__
+    #error "SSE2 math is missing (i.e. -fpmath=sse is lacking)"
+  #endif
+
+  #if __tune_corei7__
+  #  if !defined(MARCH_NATIVE_ALLOWED)
+  #    error "Compiled with -mtune=native or -mtune=corei7"
+  #  endif
+  #endif
+
+#endif // !defined(__aarch64__)
 
 #if !defined(RELEASE) && !defined(FOR_WINDOWS)
 #  include <sanitizer/common_interface_defs.h>

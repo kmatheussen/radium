@@ -37,7 +37,11 @@ struct PatchData{
 
 	bool ccsonoff[8];
 	const char *ccnames[8];
-        char cc[8];
+#if defined(__aarch64__)
+        signed char cc[8];
+#else
+	char cc[8];
+#endif
 	char ccvalues[8];
 };
 

@@ -3,18 +3,30 @@
 set -e
 set -x
 
+#export INCLUDE_FAUSTDEV_BUT_NOT_LLVM="jadda"
+export RADIUM_QT_VERSION=5
+#export RADIUM_USE_CLANG=1
+
 unset CFLAGS
 unset CFLAGS
 unset CPPFLAGS
 unset LDFLAGS
 unset CXXFLAGS
 
-export CFLAGS="-mtune=generic -msse2 -mfpmath=sse -Wno-misleading-indentation -fPIC -fno-strict-aliasing "
-export CPPFLAGS="-mtune=generic -msse2 -mfpmath=sse -fPIC -fno-strict-aliasing "
-export CXXFLAGS="-mtune=generic -msse2 -mfpmath=sse -fPIC -fno-strict-aliasing -fmax-errors=5 -I/home/kjetil/site_clang10/include "
+export CFLAGS="$QT_CPPFLAGS -mtune=generic -Wno-misleading-indentation -fPIC -fno-strict-aliasing "
+export CPPFLAGS="$QT_CPPFLAGS -mtune=generic -fPIC -fno-strict-aliasing "
+export CXXFLAGS="$QT_CPPFLAGS -mtune=generic -fPIC -fno-strict-aliasing -fmax-errors=5 -I/home/kjetil/site_clang10/include "
+export LDFLAGS="$QT_LDFLAGS"
+
+if ! arch |grep arm ; then
+    export CFLAGS="$CFLAGS -msse2 -mfpmath=sse"
+    export CPPFLAGS="$CPPFLAGS -msse2 -mfpmath=sse"
+    export CXXFLAGS="$CPPFLAGS -msse2 -mfpmath=sse"
+fi
 
 DASCC=gcc
 DASCXX=g++
+
 
 if [[ $RADIUM_USE_CLANG == 1 ]]
 then
