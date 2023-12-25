@@ -155,8 +155,7 @@ build_qhttpserver() {
 build_gc() {
     GC_VERSION=8.2.4
     LIBATOMIC_VERSION=7.8.0
-    #GC_VERSION=8.0.4
-#    rm -fr gc-$GC_VERSION libatomic_ops-$GC_VERSION
+    rm -fr gc-$GC_VERSION libatomic_ops-$LIBATOMIC_VERSION
     tar xvzf gc-$GC_VERSION.tar.gz
     tar xvzf libatomic_ops-$LIBATOMIC_VERSION.tar.gz
     cd gc-$GC_VERSION
