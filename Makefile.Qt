@@ -50,7 +50,7 @@ PYTHONEXE ?= `which python2`
 # Packagers: Don't change anything below here unless things don't work.
 
 
-GCDIR ?= bin/packages/gc-7.4.16
+GCDIR ?= bin/packages/gc-8.2.4
 
 QHTTPSERVER_PATH ?= $(shell pwd)/bin/packages/qhttpserver-master
 

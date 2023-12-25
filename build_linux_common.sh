@@ -154,7 +154,7 @@ export VL_LIBS="$VL_PATH/src/vlVG/lib/libVLVG.a $VL_PATH/src/vlGraphics/lib/libV
 
 #$VL_PATH/src/vlGraphics/plugins/freetype/lib/libFreeType.a 
 
-export GCDIR="bin/packages/gc-7.4.16"
+export GCDIR="bin/packages/gc-8.2.4"
 
 # jack midi not working very well since the player is now run inside the jack audio thread.
 #export RTMIDI_CFLAGS="-D__UNIX_JACK__ -D__LINUX_ALSA__  -D__RTMIDI_DEBUG__"
