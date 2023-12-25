@@ -33,6 +33,10 @@ ifeq ($(DAS_OS),Linux)
 	COMMONCPPFLAGS += -D "LINUX=1"
 endif
 
+ifeq ($(DAS_OS),Darwin)
+	COMMONCPPFLAGS += -mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET}
+endif
+
 # -I~/SDKs/VST_SDK/VST3_SDK -I ~/SDKs/VST_SDK/VST2_SDK/ -I ~/SDKs/VST3\ SDK
 
 ifeq (,$(findstring clang,$(CXX)))
