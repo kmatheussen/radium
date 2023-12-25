@@ -13,16 +13,28 @@ unset CPPFLAGS
 unset LDFLAGS
 unset CXXFLAGS
 
-export CFLAGS="$QT_CPPFLAGS -mtune=generic -Wno-misleading-indentation -fPIC -fno-strict-aliasing "
-export CPPFLAGS="$QT_CPPFLAGS -mtune=generic -fPIC -fno-strict-aliasing "
-export CXXFLAGS="$QT_CPPFLAGS -mtune=generic -fPIC -fno-strict-aliasing -fmax-errors=5 -I/home/kjetil/site_clang10/include "
-export LDFLAGS="$QT_LDFLAGS"
+export COMMON_CFLAGS="-mtune=generic -fPIC -fno-strict-aliasing -Wno-misleading-indentation "
 
-if ! arch |grep arm ; then
-    export CFLAGS="$CFLAGS -msse2 -mfpmath=sse"
-    export CPPFLAGS="$CPPFLAGS -msse2 -mfpmath=sse"
-    export CXXFLAGS="$CXXFLAGS -msse2 -mfpmath=sse"
+if uname -s |grep Darwin ; then
+    if [[ -z "${MACOSX_DEPLOYMENT_TARGET}" ]]; then
+	echo "MACOSX_DEPLOYMENT_TARGET not set"
+	exit -1
+    fi
+    export COMMON_CFLAGS="$COMMON_CFLAGS -mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET}"
 fi
+   
+if ! arch |grep arm ; then
+    export COMMON_CFLAGS="$COMMON_CFLAGS -msse2 -mfpmath=sse "
+fi
+
+if [[ -z "${RADIUM_USE_CLANG}" ]]; then
+    export COMMON_CFLAGS="$COMMON_CFLAGS -fmax-errors=5 "
+fi
+
+export CFLAGS="$COMMON_CFLAGS "
+export CPPFLAGS="$QT_CPPFLAGS $COMMON_CFLAGS  "
+export CXXFLAGS="$QT_CPPFLAGS $COMMON_CFLAGS -I/home/kjetil/site_clang10/include "
+export LDFLAGS="$QT_LDFLAGS"
 
 DASCC=gcc
 DASCXX=g++
@@ -102,17 +114,18 @@ build_Visualization-Library() {
     tar xvzf Visualization-Library-master.tar.gz 
     cd Visualization-Library-master/
     patch -p1 <../visualization.patch
+    patch <../visualization2.patch
     #sed -i s/"VL_ACTOR_USER_DATA 0"/"VL_ACTOR_USER_DATA 1"/ src/vlCore/config.hpp
-    export MYFLAGS="-std=gnu++11 $CPPFLAGS -fPIC -g  -Wno-c++11-narrowing" #  -D_GLIBCXX_USE_CXX11_ABI=0
-    MYFLAGS="-std=gnu++11 $CPPFLAGS -fPIC -g -Wno-c++11-narrowing" #  -D_GLIBCXX_USE_CXX11_ABI=0
+    export MYFLAGS="-std=gnu++11 $CPPFLAGS -fPIC -g  -Wno-c++11-narrowing -Wno-deprecated-declarations -Wno-implicit-function-declaration `pkg-config --cflags freetype2` " #  -D_GLIBCXX_USE_CXX11_ABI=0
+    MYFLAGS="-std=gnu++11 $CPPFLAGS -fPIC -g -Wno-c++11-narrowing -Wno-deprecated-declarations -Wno-implicit-function-declaration `pkg-config --cflags freetype2` " #  -D_GLIBCXX_USE_CXX11_ABI=0
     echo 'set(CMAKE_CXX_FLAGS "$MYFLAGS")' >>CMakeLists.txt
     # previously used build type: RelWithDebInfo. Unfortunately, this one enable _DEBUG and various runtime checks.
 
     #CFLAGS="$CPPFLAGS -fPIC -g" CPPFLAGS="$MYFLAGS" CC="clang" CXX="clang++ $MYFLAGS" cmake -DCMAKE_CXX_FLAGS="$MYFLAGS" CMAKE_CXX_COMPILER="clang++ $MYFLAGS" -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON SUPPORT=ON -DVL_DYNAMIC_LINKING=OFF -DVL_IO_2D_PNG=OFF -DVL_IO_2D_TIFF=OFF -DVL_IO_2D_JPG=OFF -DVL_IO_2D_TGA=OFF -DVL_IO_2D_BMP=OFF .
     
-    CFLAGS="$CPPFLAGS -fPIC -g" CPPFLAGS="$MYFLAGS" CC="$DASCC" CXX="$DASCXX $MYFLAGS" cmake -DCMAKE_CXX_FLAGS="$MYFLAGS" CMAKE_CXX_COMPILER="$DASCXX $MYFLAGS" -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON SUPPORT=ON -DVL_DYNAMIC_LINKING=OFF -DVL_IO_2D_PNG=OFF -DVL_IO_2D_TIFF=OFF -DVL_IO_2D_JPG=OFF -DVL_IO_2D_TGA=OFF -DVL_IO_2D_BMP=OFF .
+    CFLAGS="$CPPFLAGS -fPIC -g" CPPFLAGS="$MYFLAGS" CC="$DASCC" CXX="$DASCXX $MYFLAGS" cmake -DCMAKE_CXX_FLAGS="$MYFLAGS" CMAKE_CXX_COMPILER="$DASCXX $MYFLAGS" -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON SUPPORT=ON -DVL_DYNAMIC_LINKING=OFF -DVL_IO_2D_PNG=OFF -DVL_IO_2D_TIFF=OFF -DVL_IO_2D_JPG=OFF -DVL_IO_2D_TGA=OFF -DVL_IO_2D_BMP=OFF -DVL_IO_FREETYPE=OFF .
     
-    VERBOSE=1 make -j`nproc`
+    VERBOSE=1 make -j8
     cd ..
 }
 
@@ -246,14 +259,17 @@ build_xcb() {
 }
 
 
+build_Visualization-Library # Note: Linking fails on Mac for "Visualization Library", but that's not important. Just comment out this line and run build.sh again.
 build_faust
-build_Visualization-Library
-build_libpds
 build_qhttpserver
 build_gc
 build_fluidsynth
-#build_libgig
-build_qscintilla
-build_xcb
+build_qscintilla # Note: Linking fails on Mac. Just ignore it.
+
+if uname -s |grep Linux ; then
+    build_libpds
+    build_xcb
+fi
+
 
 touch deletemetorebuild
