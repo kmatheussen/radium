@@ -21,7 +21,7 @@ export LDFLAGS="$QT_LDFLAGS"
 if ! arch |grep arm ; then
     export CFLAGS="$CFLAGS -msse2 -mfpmath=sse"
     export CPPFLAGS="$CPPFLAGS -msse2 -mfpmath=sse"
-    export CXXFLAGS="$CPPFLAGS -msse2 -mfpmath=sse"
+    export CXXFLAGS="$CXXFLAGS -msse2 -mfpmath=sse"
 fi
 
 DASCC=gcc
@@ -153,21 +153,22 @@ build_qhttpserver() {
 
 #http://www.hpl.hp.com/personal/Hans_Boehm/gc/
 build_gc() {
-    GC_VERSION=7.4.16
+    GC_VERSION=8.2.4
+    LIBATOMIC_VERSION=7.8.0
     #GC_VERSION=8.0.4
 #    rm -fr gc-$GC_VERSION libatomic_ops-$GC_VERSION
     tar xvzf gc-$GC_VERSION.tar.gz
-#    tar xvzf libatomic_ops-$GC_VERSION.tar.gz
+    tar xvzf libatomic_ops-$LIBATOMIC_VERSION.tar.gz
     cd gc-$GC_VERSION
-#    ln -s ../libatomic_ops-$GC_VERSION libatomic_ops
+    ln -s ../libatomic_ops-$LIBATOMIC_VERSION libatomic_ops
     #echo 'void RADIUM_ensure_bin_packages_gc_is_used(void){ABORT("GC not configured properly");}' >>malloc.c
     echo 'void RADIUM_ensure_bin_packages_gc_is_used(void){}' >>malloc.c
     echo '#if defined(GC_ASSERTIONS) || !defined(NO_DEBUGGING)' >>malloc.c
     echo "#error "nope"" >>malloc.c
     echo "#endif" >>malloc.c
     #patch -p1 <../gcdiff.patch
-    CFLAGS="-mtune=generic -msse2 -mfpmath=sse -g -O2" ./configure --enable-static --disable-shared --disable-gc-debug --disable-gc-assertions
-    CFLAGS="-mtune=generic -msse2 -mfpmath=sse -g -O2" make -j`nproc`
+    CFLAGS="-mtune=generic -g -O2" ./configure --enable-static --disable-shared --disable-gc-debug --disable-gc-assertions
+    CFLAGS="-mtune=generic -g -O2" make -j8
     cd ..
 }
 
