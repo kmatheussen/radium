@@ -114,7 +114,7 @@ build_Visualization-Library() {
     tar xvzf Visualization-Library-master.tar.gz 
     cd Visualization-Library-master/
     patch -p1 <../visualization.patch
-    patch <../visualization2.patch
+    sed -i 's/add_subdirectory("freetype")//' src/vlGraphics/plugins/CMakeLists.txt
     #sed -i s/"VL_ACTOR_USER_DATA 0"/"VL_ACTOR_USER_DATA 1"/ src/vlCore/config.hpp
     export MYFLAGS="-std=gnu++11 $CPPFLAGS -fPIC -g  -Wno-c++11-narrowing -Wno-deprecated-declarations -Wno-implicit-function-declaration `pkg-config --cflags freetype2` " #  -D_GLIBCXX_USE_CXX11_ABI=0
     MYFLAGS="-std=gnu++11 $CPPFLAGS -fPIC -g -Wno-c++11-narrowing -Wno-deprecated-declarations -Wno-implicit-function-declaration `pkg-config --cflags freetype2` " #  -D_GLIBCXX_USE_CXX11_ABI=0
@@ -259,7 +259,8 @@ build_xcb() {
 }
 
 
-build_Visualization-Library # Note: Linking fails on Mac for "Visualization Library", but that's not important. Just comment out this line and run build.sh again.
+build_Visualization-Library # Note: Linking fails for "Visualization Library", but that's not important. Just comment out this line and run build.sh again.
+
 build_faust
 build_qhttpserver
 build_gc

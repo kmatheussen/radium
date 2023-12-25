@@ -8,7 +8,7 @@ HOW TO MAKE IT RUN
 
           "
           export RADIUM_QT_VERSION=5
-          make packages
+          make packages # Note: Linking fails first run. See comment in bin/packages/build.sh about Visualization Library.
           BUILDTYPE=RELEASE ./build_linux.sh -j `nproc`
           QT_QPA_PLATFORM_PLUGIN_PATH=`$(./find_moc_and_uic_paths.sh qmake) -query QT_INSTALL_PLUGINS` bin/radium
           "
@@ -49,7 +49,7 @@ IF YOU ARE DEVELOPING RADIUM
         # Debug build. Lots of assertions. Very slow. Don't build this version if you are just testing the program.
         export RADIUM_QT_VERSION=5
         export QT_QPA_PLATFORM_PLUGIN_PATH=`$(./find_moc_and_uic_paths.sh qmake) -query QT_INSTALL_PLUGINS`
-        make packages # Only necessary one time.
+        make packages # Only necessary one time.  Note: Linking fails first run. See comment in bin/packages/build.sh about Visualization Library.
         BUILDTYPE=DEBUG_FAST ./build_linux.sh -j`nproc` && ./run_gdb.sh
 
      There are three types of BUILD_TYPE:
