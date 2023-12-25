@@ -1,0 +1,11 @@
+--- src/vlGraphics/plugins/CMakeLists.txt~	2017-07-05 11:46:22
++++ src/vlGraphics/plugins/CMakeLists.txt	2023-12-10 15:11:42
+@@ -16,7 +16,7 @@
+ ################################################################################
+ 
+ # VLGraphics requires FreeType (not really a plugin, it's here for convenience)
+-add_subdirectory("freetype")
++#add_subdirectory("freetype")
+ 
+ # List of "3D IO" plugins
+ set(VLGRAPHICS_PLUGINS "VLX" "3DS" "AC3D" "MD2" "OBJ" "PLY" "STL")
