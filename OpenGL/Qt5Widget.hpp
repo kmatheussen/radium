@@ -271,20 +271,20 @@ namespace vlQt5
       return true;
     }
 
-    virtual void setContinuousUpdate(bool continuous)
+    virtual void setContinuousUpdate(bool continuous) override
     {
       mContinuousUpdate = continuous;
       if (continuous)
       {
-        disconnect(&mUpdateTimer, SIGNAL(timeout()), this, SLOT(updateGL()));
-        connect(&mUpdateTimer, SIGNAL(timeout()), this, SLOT(updateGL()));
-        mUpdateTimer.setSingleShot(false);
-        mUpdateTimer.start(0);
+	      disconnect(&mUpdateTimer, SIGNAL(timeout()), this, SLOT(updateGL()));
+	      connect(&mUpdateTimer, SIGNAL(timeout()), this, SLOT(updateGL()));
+	      mUpdateTimer.setSingleShot(false);
+	      mUpdateTimer.start(0);
       }
       else
       {
-        disconnect(&mUpdateTimer, SIGNAL(timeout()), this, SLOT(updateGL()));
-        mUpdateTimer.stop();
+	      disconnect(&mUpdateTimer, SIGNAL(timeout()), this, SLOT(updateGL()));
+	      mUpdateTimer.stop();
       }
     }
 
@@ -303,28 +303,27 @@ namespace vlQt5
       dispatchInitEvent();
     }
 
-    void resizeGL(int width, int height)
+    void resizeGL(int width, int height) override
     {
       dispatchResizeEvent(width, height);
     }
 
-    void paintGL()
+    void paintGL() override
     {
-      dispatchRunEvent();
+	    dispatchRunEvent();
     }
 
-    void update()
+    void update() override
     {
-      QGLWidget::update();
-      // QGLWidget::updateGL();
+	    QGLWidget::update();
     }
 
-    virtual void setWindowTitle(const vl::String& title)
+    virtual void setWindowTitle(const vl::String& title) override
     {
       QGLWidget::setWindowTitle( QString::fromStdString(title.toStdString()) );
     }
 
-    virtual bool setFullscreen(bool fullscreen)
+    virtual bool setFullscreen(bool fullscreen) override
     {
       mFullscreen = fullscreen;
       if (fullscreen)
@@ -334,33 +333,33 @@ namespace vlQt5
       return true;
     }
 
-    virtual void quitApplication()
+    virtual void quitApplication() override
     {
       eraseAllEventListeners();
       QApplication::quit();
     }
 
-    virtual void show()
+    virtual void show() override
     {
       QGLWidget::show();
     }
 
-    virtual void hide()
+    virtual void hide() override
     {
       QGLWidget::hide();
     }
 
-    virtual void setPosition(int x, int y)
+    virtual void setPosition(int x, int y) override
     {
       QGLWidget::move(x,y);
     }
 
-    virtual vl::ivec2 position() const
+    virtual vl::ivec2 position() const override
     {
       return vl::ivec2(QGLWidget::pos().x(), QGLWidget::pos().y());
     }
 
-    virtual void setSize(int w, int h)
+    virtual void setSize(int w, int h) override
     {
       // this already excludes the window's frame so it's ok for Visualization Library standards
       QGLWidget::resize(w,h);
@@ -372,29 +371,29 @@ namespace vlQt5
       return vl::ivec2(QGLWidget::size().width(), QGLWidget::size().height());
     }
 
-    void swapBuffers()
+    void swapBuffers() override
     {
       QGLWidget::swapBuffers();
     }
 
-    void makeCurrent()
+    void makeCurrent() override
     {
       QGLWidget::makeCurrent();
     }
 
-    void setMousePosition(int x, int y)
+    void setMousePosition(int x, int y) override
     {
       QCursor::setPos( mapToGlobal(QPoint(x,y)) );
     }
 
-    void mouseMoveEvent(QMouseEvent* ev)
+    void mouseMoveEvent(QMouseEvent* ev) override
     {
       if (!mIgnoreNextMouseMoveEvent)
         dispatchMouseMoveEvent(ev->x(), ev->y());
       mIgnoreNextMouseMoveEvent = false;
     }
 
-    void mousePressEvent(QMouseEvent* ev)
+    void mousePressEvent(QMouseEvent* ev) override
     {
       vl::EMouseButton bt = vl::NoButton;
       switch(ev->button())
@@ -408,7 +407,7 @@ namespace vlQt5
       dispatchMouseDownEvent(bt, ev->x(), ev->y());
     }
 
-    void mouseReleaseEvent(QMouseEvent* ev)
+    void mouseReleaseEvent(QMouseEvent* ev) override
     {
       vl::EMouseButton bt = vl::NoButton;
       switch(ev->button())
@@ -422,12 +421,12 @@ namespace vlQt5
       dispatchMouseUpEvent(bt, ev->x(), ev->y());
     }
 
-    void wheelEvent(QWheelEvent* ev)
+    void wheelEvent(QWheelEvent* ev) override
     {
       dispatchMouseWheelEvent(ev->delta() / 120);
     }
 
-    void keyPressEvent(QKeyEvent* ev)
+    void keyPressEvent(QKeyEvent* ev) override
     {
       unsigned short unicode_ch = 0;
       vl::EKey key = vl::Key_None;
@@ -435,7 +434,7 @@ namespace vlQt5
       dispatchKeyPressEvent(unicode_ch, key);
     }
 
-    void keyReleaseEvent(QKeyEvent* ev)
+    void keyReleaseEvent(QKeyEvent* ev) override
     {
       unsigned short unicode_ch = 0;
       vl::EKey key = vl::Key_None;
@@ -443,7 +442,7 @@ namespace vlQt5
       dispatchKeyReleaseEvent(unicode_ch, key);
     }
 
-    virtual void setMouseVisible(bool visible)
+    virtual void setMouseVisible(bool visible) override
     {
       mMouseVisible=visible;
       if (visible)
@@ -452,7 +451,7 @@ namespace vlQt5
         QGLWidget::setCursor(Qt::BlankCursor);
     }
 
-    virtual void getFocus()
+    virtual void getFocus() override
     {
       QGLWidget::setFocus(Qt::OtherFocusReason);
     }
