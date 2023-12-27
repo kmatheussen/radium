@@ -20,6 +20,12 @@ class QWidget;
   extern "C" {
 #endif
 
+#if THREADED_OPENGL
+	static inline void GL_update(void){}
+#else
+ 	extern void GL_update(void);
+#endif
+
 extern double GL_get_vblank(void);
 
 extern bool GL_should_do_modal_windows(void);

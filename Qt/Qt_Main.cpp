@@ -2520,13 +2520,21 @@ protected:
         
         AUDIOMETERPEAKS_call_very_often(-1);
 
+	GL_update();
+	
         // I think all of the tings below depends om audiometerpeaks being updated first.
         
         API_gui_call_regularly();
 
+	GL_update();
+	
         MW_call_each_16ms(duration); //interval);
-        
+
+	GL_update();
+	
         RTWIDGET_call_often();
+
+	GL_update();
       }
     }
 #endif
@@ -2681,17 +2689,24 @@ protected:
 #endif
       
     }
-
+ 
+    GL_update();
     
     MIDI_HandleInputMessage();
 
+    GL_update();
+    
     //if (qapplication->activeWindow() != NULL)
     //  printf("   active window\n");
     
     MIXER_call_very_often();
+
+    GL_update();
     
     PLUGIN_call_me_very_often_from_main_thread();
-        
+
+    GL_update();
+    
     {
       int64_t absabstime = ATOMIC_GET(g_request_from_jack_transport_to_start_playing);
       if(absabstime >= 0){
@@ -2718,6 +2733,8 @@ protected:
 
     P2MUpdateSongPosCallBack();
 
+    GL_update();
+    
     {
       struct Tracks *track = window->wblock->wtrack->track;
       ATOMIC_SET(g_curr_midi_channel, ATOMIC_GET(track->midi_channel));
@@ -2725,23 +2742,36 @@ protected:
     
     PlayCallVeryOften();
 
+    GL_update();
+    
     SampleRecorder_called_regularly();
+
+    GL_update();
     
     if (is_called_every_ms(15)){ // 50ms == 3*1000ms/60 (each third frame)
       static_cast<EditorWidget*>(window->os_visual.widget)->updateEditor(); // Calls EditorWidget::updateEditor(), which is a light function      
     }
+
+    GL_update();
     
     if (is_called_every_ms(15)){
       API_instruments_call_regularly();
     }
+
+    GL_update();
     
     if(doquit==true) {
       QApplication::quit();
     }
 
     PATCH_call_very_often();
+
+    GL_update();
+    
     BACKUP_call_very_often();
 
+    GL_update();
+    
     if (window->message_duration_left > 0){
       //printf("message dur: %d\n",window->message_duration_left);
       window->message_duration_left -= _interval;
@@ -2812,9 +2842,15 @@ protected:
     }
     #endif
 
+    GL_update();
+    
     SEQUENCER_WIDGET_call_very_often();
 
+    GL_update();
+    
     BS_call_very_often();
+
+    GL_update();
     
     //MIXER_called_regularly_by_main_thread();
 
@@ -2836,6 +2872,8 @@ protected:
         //printf("          (remake called from qt main)\n");
         S7CALL2(void_void,"remake-mixer-strips");
 
+	GL_update();
+
       } else if (g_mixer_strips_needing_remake->empty()==false) {
         
         QSet<int64_t> remake_ids;
@@ -2852,19 +2890,25 @@ protected:
           code += " " + QString::number(id);
         
         code += ")";
-
+       
         evalScheme(code.toUtf8().constData());
+
+	GL_update();
       }
 
       // Redraw
       if(ATOMIC_COMPARE_AND_SET_BOOL(g_mixer_strips_needs_redraw, true, false)){ // 
         //printf("          (redraw called from qt main)\n");
         redrawMixerStrips(true);
+
+	GL_update();
       }
     }
 
     BLOCKS_called_very_often();
 
+    GL_update();
+    
     if (num_calls_at_this_point < 100) {
       if (is_called_every_ms(30))
         MIXERSTRIP_call_regularly();
@@ -2872,24 +2916,44 @@ protected:
       if (is_called_every_ms(105))
         MIXERSTRIP_call_regularly();
     }
+
+    GL_update();
     
     API_call_very_often();
+
+    GL_update();
+    
     API_MIDI_called_regularly();
 
+    GL_update();
+    
     THREADING_call_very_often();
+
+    GL_update();
+    
     THREADING_schedule_on_player_thread_call_very_often();
-  
+
+    GL_update();
+    
     SEQTRACK_call_me_very_often();
+
+    GL_update();
+    
     if (is_called_every_ms(1005))
       DISKPEAKS_call_very_often();
 
+    GL_update();
+    
     if (MIDI_insert_recorded_midi_gfx_events()){
       window->must_redraw_editor = true;
       SEQUENCER_update(SEQUPDATE_TIME);
+      GL_update();
     }
 
     if (is_called_every_ms(45))
       SAMPLEREADER_call_very_often();
+
+    GL_update();
     
 #if 0
     // Update graphics when playing
@@ -4617,6 +4681,12 @@ int main(int argc, char **argv){
     setenv("QT_MAC_WANTS_LAYER", "1", 1);
 #endif
   }
+  
+#if !defined(IS_MACOS_BINARY)
+  setenv("QT_QPA_PLATFORM", "cocoa", 1);
+  setenv("QT_QPA_PLATFORM_PLUGIN_PATH", "/opt/local/libexec/qt5/plugins/platforms", 1);
+#endif
+  
 #endif
   
   //  testme();
@@ -4823,12 +4893,16 @@ int main(int argc, char **argv){
                                             "However, many people find the program useful anyway, and there is no plan to stop developing the program for Mac.\n"
                                             "</p><p>"
                                             "Earlier, the most serious problems on macOS were caused by Apple's poor support for <b>OpenGL</b>. "
+#if THREADED_OPENGL
                                             "If Radium crashes right after startup, it's probably Apple's OpenGL library that crashes. "
                                             "Fortunately, the bug is usually hit only during startup, and not every time. "
                                             "However, after the release of <b>Big Sur</b>, this problem doesn't seem to appear very often anymore, if at all. "
                                             "(OpenGL performance is still likely to be worse than on Windows and Linux though.)\n"
                                             "</p><p>"
-                                            "Now, the <b>biggest problem</b> on <b>macOS</b> seems to be strange behaviors with the <b>keyboard</b>, apparently related to the <b>modifier keys</b>. "
+#else
+					    "OpenGL performance is still very bad, but now, "
+#endif
+                                            "the <b>biggest problem</b> on <b>macOS</b> seems to be strange behaviors with the <b>keyboard</b>, apparently related to the <b>modifier keys</b>. "
                                             "Currently it's unknown what's causing this. Sometimes you can fix it by simply pressing the <b>caps lock</b> key, "
                                             "but if that's not enough, you can force resetting the keyboard by <b>temporarily switching keyboard "
                                             "focus</b> to another program. After switching focus back to Radium, the keyboard should work normally again.\n"
@@ -4934,10 +5008,30 @@ int main(int argc, char **argv){
 #endif
 
 #if defined(FOR_MACOSX)
-  QString pythonlibpath = STRING_get_qstring(OS_get_full_program_file_path(QString("python2.7/lib")).id);
-  setenv("PYTHONHOME",V_strdup(pythonlibpath.toLocal8Bit().constData()),1);
-  setenv("PYTHONPATH",V_strdup(pythonlibpath.toLocal8Bit().constData()),1);
-#endif
+
+  {
+    #if defined (__arm64__) || defined (__aarch64__)
+      #if defined(IS_MACOS_BINARY)
+        QString pythonhome = STRING_get_qstring(OS_get_full_program_file_path(QString("python2.7")).id);
+      #else
+        QString pythonhome = "/opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7";
+      #endif
+	
+      QString pythonpath = pythonhome + ":" + pythonhome + "/lib-dynload";
+      
+    #else // arm -> x86
+      
+      QString pythonhome = STRING_get_qstring(OS_get_full_program_file_path(QString("python2.7/lib")).id);
+      QString pythonpath = pythonhome;
+      
+    #endif // x86
+
+    setenv("PYTHONHOME",V_strdup(pythonhome.toLocal8Bit().constData()),1);
+    setenv("PYTHONPATH",V_strdup(pythonpath.toLocal8Bit().constData()),1);
+  }
+  
+#endif // FOR_MACOSX
+
   
 #if defined(FOR_WINDOWS)
 #if 0 //__WIN64

@@ -52,7 +52,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 static double g_last_resize_time = -1;
 
-#if defined(FOR_MACOSX)
+#if defined(FOR_MACOSX) && THREADED_OPENGL
 #define USE_LAYOUT_COVER 1
 #else
 #define USE_LAYOUT_COVER 0
@@ -129,12 +129,12 @@ static double g_last_resize_time = -1;
 #    endif
 #    define USE_COVER 1
 #  else
-#  if USE_QOPENGL
-#    include "Qt6Widget.hpp" // Note Q_OBJECT must be removed from Qt6Widget
-#  else
-#    include "Qt5Widget.hpp" // Note Q_OBJECT must be removed from Qt5Widget
-#    include <gui/vlQt5/Qt5Widget.cpp>
-#  endif
+#    if USE_QOPENGL
+#      include "Qt6Widget.hpp" // Note Q_OBJECT must be removed from Qt6Widget
+#    else
+#      include "Qt5Widget.hpp" // Note Q_OBJECT must be removed from Qt5Widget
+#      include "../bin/packages/Visualization-Library-master/src/vlQt5/Qt5Widget.cpp"
+#    endif
 #    define USE_COVER 0
 //#    error "what?"
 #  endif
@@ -151,6 +151,15 @@ static double g_last_resize_time = -1;
 
 #include "Widget_proc.h"
 
+#if !THREADED_OPENGL
+static int64_t g_last_gl_update_enter_time = 0;
+static int64_t g_last_gl_update_leave_time = 0;
+#define UPDATE_ENTER_TIME() g_last_gl_update_enter_time = TIME_get_ms()
+#define UPDATE_LEAVE_TIME() g_last_gl_update_leave_time = TIME_get_ms()
+#else
+#define UPDATE_ENTER_TIME()
+#define UPDATE_LEAVE_TIME()
+#endif
 
 /*
 Example on how to use threaded QOpenGLWidget instead of QGLWidget:
@@ -716,7 +725,7 @@ namespace{
         });
     }
      
-    void paintEvent( QPaintEvent *e ){
+    void paintEvent( QPaintEvent *e ) override {
       TRACK_PAINT();
       QPainter p(this);
 
@@ -744,6 +753,10 @@ namespace{
 static bool g_cover_is_visible = false;
 
 static void show_layout_cover(void){
+#if !THREADED_OPENGL
+	return;
+#endif
+		
   if (g_cover_is_visible)
     return;
   g_cover_is_visible = true;
@@ -776,6 +789,10 @@ static void show_layout_cover(void){
 }
 
 static void hide_layout_cover(void){
+#if !THREADED_OPENGL
+	return;
+#endif
+		
   if (!g_cover_is_visible)
     return;
   g_cover_is_visible = false;
@@ -920,8 +937,10 @@ public:
     , last_scroll_pos(-1.0f)
     , last_current_realline_while_playing(-1.0f)
   {
+#if THREADED_OPENGL
     vlQt5::Qt5ThreadedWidget::setObjectName("MyQtThreadedWidget");
-            
+#endif
+    
     ATOMIC_SET(_main_window_is_exposed, false);
 
 #if 0 //!THREADED_OPENGL
@@ -942,7 +961,6 @@ public:
     setAttribute(Qt::WA_OpaquePaintEvent);
     
     _update_event_counter_timer.start();
-
   }
 
   // Main thread
@@ -955,9 +973,9 @@ public:
 
   // OpenGL thread
   void init_vl(vl::OpenGLContext *glContext)
-#if THREADED_OPENGL
+  //#if THREADED_OPENGL
     override
-#endif
+  //#endif
   {
 
     printf("init_vl\n");
@@ -1552,31 +1570,35 @@ private:
     // Swap to the newly rendered buffer
     if (openglContext()->hasDoubleBuffer()) {
 
-#if USE_JUCE_CPU_PROTECTION_LOGIC
+#if USE_JUCE_CPU_PROTECTION_LOGIC && !defined(FOR_MACOSX)
       double now;
 #endif
 
       //printf("Swapping\n");
 
       if (juce_lock==NULL){
-        radium::ScopedMutex lock(JUCE_show_hide_gui_lock);
-#if USE_JUCE_CPU_PROTECTION_LOGIC
-        now = monotonic_seconds() * 1000.0;
+	      radium::ScopedMutex lock(JUCE_show_hide_gui_lock);
+#if USE_JUCE_CPU_PROTECTION_LOGIC && !defined(FOR_MACOSX)
+	      now = monotonic_seconds() * 1000.0;
 #endif
-        
-        if(!maybe_dont_swap_right_now()) // Check again in case it was set to false in the meantime.
-          openglContext()->swapBuffers();
-
+	      
+	      if(!maybe_dont_swap_right_now()) // Check again in case it was set to false in the meantime.
+		      openglContext()->swapBuffers();
+	      
       }else{
-#if USE_JUCE_CPU_PROTECTION_LOGIC
-        now = monotonic_seconds() * 1000.0;
+#if USE_JUCE_CPU_PROTECTION_LOGIC && !defined(FOR_MACOSX)
+	      now = monotonic_seconds() * 1000.0;
 #endif
-        if(!maybe_dont_swap_right_now()) // Check again in case it was set to false in the meantime.
-          openglContext()->swapBuffers();
+	      if(!maybe_dont_swap_right_now()) // Check again in case it was set to false in the meantime.
+		      openglContext()->swapBuffers();
+	      
+	      
       }
-
+      //printf("Swap time: %fms. Cycle: %dms\n", s_timer.nsecsElapsed() / 1000000.0, (int)dur);
+      
       //printf("update: %fms\n", time_estimator.get_vblank());
-
+      
+      
 #if !defined(FOR_MACOSX)
       if (doHighCpuOpenGlProtection()) {
         double vblank = GL_get_vblank();
@@ -1645,6 +1667,7 @@ private:
     */
     //assertHealthyVBlank();
   }
+
 
 #if USE_COVER
   
@@ -1872,7 +1895,7 @@ private:
 
     if (_cover == NULL){
 
-      _cover = new Cover(this, size());
+	    _cover = new Cover(this, QWidget::size());
 
 #if 0
       if (_cover->_widget != NULL)
@@ -1904,7 +1927,7 @@ private:
 
             radium::ScopedMutex lock(_cover_mutex);
             if (_cover!=NULL && _cover->_widget != NULL){
-              _cover->_widget->resize(size());
+		    _cover->_widget->resize(QWidget::size());
             }
 
             if (_cover!=NULL && _cover->_widget != NULL)
@@ -1918,12 +1941,21 @@ private:
 
 public:
 
+	//radium::MovingAverage _utimer_moving_average{10};
+	//QElapsedTimer _utimer;
+	
   /** Event generated when the bound OpenGLContext does not have any other message to process 
       and OpenGLContext::continuousUpdate() is set to \p true or somebody calls OpenGLContext::update(). */
   // OpenGL thread
   void updateEvent() override {
-    //{static double last_time = 0; static int counter =0; double nowtime = TIME_get_ms(); printf("   Counter: %d. Time: %f\n", counter++, nowtime-last_time);last_time = nowtime;}
+    //{static double last_time = 0; static int counter =0; double nowtime = TIME_get_ms(); printf("   Counter: %d. Time: %f\n", counter++, nowtime-last_time);last_time = nowtime;}	  
 
+	  UPDATE_ENTER_TIME();
+    
+
+	  //const int utime = _utimer.restart();
+	  //printf("_utimer: %d. Avg: %f\n", utime, _utimer_moving_average.get(utime));
+	  
 #if !defined(RELEASE)
     if (Q_QL_Widget::context()->isValid()==false){
       // hmm.
@@ -1933,6 +1965,7 @@ public:
     
 #if THREADED_OPENGL
     const bool handle_current = true;
+    //const bool handle_current = false;
 #endif
     
 #if USE_COVER
@@ -1940,8 +1973,9 @@ public:
       radium::ScopedMutex lock(_cover_mutex);
       if (_cover != NULL){
         if(_cover->maybe_grab_frame_buffer(this)){
-          msleep(15);
-          return;
+		msleep(15);
+		UPDATE_LEAVE_TIME();
+		return;
         }
       }
     }
@@ -1949,12 +1983,14 @@ public:
 
 #if FOR_MACOSX
     if (maybe_dont_swap_right_now()) // Have to do this before doing anything on OSX to avoid crash.
-      return;
+    {
+	    UPDATE_LEAVE_TIME();
+	    return;
+    }
 #endif
     
     radium::ScopedMutex lock(make_current_mutex);
 #if THREADED_OPENGL
-    
     if (handle_current)
       Q_QL_Widget::makeCurrent();  // Not sure about this. updateEvent() is called immediately again after it returns.
 #endif
@@ -1975,9 +2011,9 @@ public:
     ATOMIC_SET(g_is_currently_pausing, false);
     
     if (ATOMIC_GET_RELAXED(GE_version_string)==NULL) {
-      ATOMIC_SET(GE_vendor_string, V_strdup((const char*)glGetString(GL_VENDOR)));
-      ATOMIC_SET(GE_renderer_string, V_strdup((const char*)glGetString(GL_RENDERER)));
-      ATOMIC_SET(GE_version_string, V_strdup((const char*)glGetString(GL_VERSION)));
+	    ATOMIC_SET(GE_vendor_string, V_strdup((const char*)glGetString(GL_VENDOR)));
+	    ATOMIC_SET(GE_renderer_string, V_strdup((const char*)glGetString(GL_RENDERER)));
+	    ATOMIC_SET(GE_version_string, V_strdup((const char*)glGetString(GL_VERSION)));
       printf("vendor: %s, renderer: %s, version: %s \n",(const char*)ATOMIC_GET(GE_vendor_string),(const char*)ATOMIC_GET(GE_renderer_string),(const char*)ATOMIC_GET(GE_version_string));
       
       ATOMIC_SET(GE_opengl_version_flags, QGLFormat::openGLVersionFlags());
@@ -1994,6 +2030,10 @@ public:
         Q_QL_Widget::doneCurrent();
       //printf("hepp1\n");
       lock.wait_and_pause_lock(200);
+          
+
+      UPDATE_LEAVE_TIME();
+      
       return;
     }
 #endif
@@ -2083,6 +2123,8 @@ public:
     if (handle_current)
       Q_QL_Widget::doneCurrent();
 #endif
+
+    UPDATE_LEAVE_TIME();
   }
 
   // Main thread
@@ -2103,9 +2145,11 @@ public:
     radium::ScopedResizeEventTracker resize_event_tracker;
 
     show_cover();
-    
-    ATOMIC_SET(_dont_swap_right_now, true);
 
+#if THREADED_OPENGL
+    ATOMIC_SET(_dont_swap_right_now, true);
+#endif
+    
 #if USE_LAYOUT_COVER
     show_layout_cover();
 #endif    
@@ -2173,6 +2217,8 @@ public:
     //
     // For each time this variable is decremented, we also wait 15ms, so spent_time(10) is effectively between 15ms*10 and 30ms*10 = 150-300ms. (on OSX the value is much much closer to 150ms than 300ms)
 
+#if THREADED_OPENGL
+    
 #if FOR_MACOSX
     _dont_swap_right_now_downcount = 10;
 #else
@@ -2180,7 +2226,8 @@ public:
 #endif
 
       ATOMIC_SET(_dont_swap_right_now, false);
-
+#endif // THREADED_OPENGL
+      
       GFX_ScheduleEditorRedraw();
 
       ATOMIC_SET(g_has_resized_at_least_once, true);
@@ -2295,6 +2342,39 @@ QSurfaceFormat GL_get_qsurface_format(void){
 }
 */
 
+static DEFINE_ATOMIC(double, g_vblank) = 1000 / 60.0;
+
+
+#if !THREADED_OPENGL
+
+
+void GL_update(void)
+{
+	//static int64_t s_last_ms = 0;
+	static int s_n = 0;
+	
+	if (widget)
+	{
+		int64_t time = TIME_get_ms();
+		int64_t dur_enter = time - g_last_gl_update_enter_time;
+		int64_t dur_leave = time - g_last_gl_update_leave_time;
+
+		double vblank = ATOMIC_DOUBLE_GET(g_vblank);
+		
+		if (ATOMIC_GET(root->editonoff) && dur_enter > vblank && dur_leave > vblank/2) //since_last > 16 && ms > 4.0)
+		{
+#if !defined(RELEASE)
+			printf(" --------------- Updating manually %d. Dur_enter: %dms, dur_leave: %dms. vblank: %f\n", s_n++, (int)dur_enter, (int)dur_leave, vblank);
+#endif
+			//widget->paintGL();
+			//widget->updateGL();
+			//widget->update();
+			widget->updateEvent();
+		}
+	}
+}
+#endif
+
 #if !USE_QT5
 static bool use_estimated_vblank_questionmark(){
   return SETTINGS_read_bool("use_estimated_vblank", false);
@@ -2397,7 +2477,6 @@ static double get_refresh_rate(void){
 
 
 static DEFINE_ATOMIC(bool, g_has_found_refresh_rate) = false;
-static DEFINE_ATOMIC(double, g_vblank) = 1000 / 60.0;
 
 static void setup_screen_changed_callback(void){
   QWindow *qwindow = widget->windowHandle();
@@ -3091,9 +3170,11 @@ void GL_stop_widget(QWidget *widget){
 #if THREADED_OPENGL
   MyQtThreadedWidget *mywidget = static_cast<MyQtThreadedWidget*>(widget);
 #endif
-  
-  T1_stop_t2();
 
+#if THREADED_OPENGL
+  T1_stop_t2(); // FIX! 
+#endif
+  
 #if THREADED_OPENGL
   mywidget->stop();
 #endif
