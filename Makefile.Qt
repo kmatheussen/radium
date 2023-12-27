@@ -193,6 +193,13 @@ ifeq ($(shell test $(CLANG_MAJOR) -gt 9; echo $$?),0)
 #	QT_CFLAGS +=  $(WNO_DEPRECATED_COPY_CLANG) # Only necessary for qt 5.12 or older.
 endif
 
+
+WNO_DEPRECATED_COPY_WITH_USER_PROVIDED_COPY=
+ifeq ($(shell test $(CLANG_MAJOR) -gt 14; echo $$?),1)
+	WNO_DEPRECATED_COPY_WITH_USER_PROVIDED_COPY=-Wno-deprecated-copy-with-user-provided-copy
+endif
+
+
 WNO_CLASS_MEMACCESS=
 ifeq (,$(findstring clang,$(CC)))
 	WNO_CLASS_MEMACCESS=-Wno-class-memaccess
@@ -348,6 +355,8 @@ OS_OBJS ?=
 RADIUM_BFD_CFLAGS ?=
 RADIUM_BFD_LDFLAGS ?=
 
+RADIUM_THREADED_OPENGL ?= 1
+
 REQTYPE_TYPE = -DUSE_QT_REQTYPE=1 -DUSE_GTK_REQTYPE=0
 MENU_TYPE = -DUSE_QT_MENU=1 -DUSE_GTK_MENU=0
 
@@ -355,7 +364,7 @@ FLAGOPTS = $(DEFINES) -DGUIISQT -DFULL_VERSION=$(FULL_VERSION) -DIS_LITTLE_ENDIA
 
 RADIUM_VST2SDK_PATH ?= ${HOME}/SDKs/vstsdk2.4
 
-COMMONOPT = -D__STDC_FORMAT_MACROS=1 -c `cat buildtype.opt` -I$(GCDIR)/include -I$(P) $(PYOPTS) `cat flagopts.opt` $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -I ~/SDKs/VST_SDK/VST2_SDK/ -I ${RADIUM_VST2SDK_PATH} -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wno-unknown-pragmas -fno-strict-aliasing -Wmissing-field-initializers -Wnull-dereference -Wwrite-strings -DTHREADED_OPENGL=1
+COMMONOPT = -D__STDC_FORMAT_MACROS=1 -c `cat buildtype.opt` -I$(GCDIR)/include -I$(P) $(PYOPTS) `cat flagopts.opt` $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -I ~/SDKs/VST_SDK/VST2_SDK/ -I ${RADIUM_VST2SDK_PATH} -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wno-unknown-pragmas -fno-strict-aliasing -Wmissing-field-initializers -Wnull-dereference -Wwrite-strings -DTHREADED_OPENGL=$(RADIUM_THREADED_OPENGL)  $(IS_LINUX_BINARY) $(IS_MACOS_BINARY)
 #-fdelete-null-pointer-checks 
 # -Werror
 
@@ -935,14 +944,14 @@ pluginhost/Builds/Linux/build/libMyPluginHost.a: pluginhost/Builds/Linux/build/l
 	rm -f pluginhost/Builds/Linux/build/*/*/Juce_plugins_*.o pluginhost/Builds/Linux/build/*/*/Juce_plugin_scanner.o
 # dryrun
 	cd pluginhost/Builds/Linux && $(PLUGINHOSTOPTS) $(MAKE) -n
-	cd pluginhost/Builds/Linux && $(PLUGINHOSTOPTS) $(MAKE) -j4
+	cd pluginhost/Builds/Linux && $(PLUGINHOSTOPTS) $(MAKE)
 
 
 pluginhost/Builds/Linux/build/libMyPluginHost_for_scanner.a: audio/Juce_plugin_scanner.cpp flagopts.opt pluginhost/MyPluginHost.jucer
 	rm -f pluginhost/Builds/Linux/build/*/*/Juce_plugins_*.o pluginhost/Builds/Linux/build/*/*/Juce_plugin_scanner.o
 # dryrun
 	cd pluginhost/Builds/Linux && $(LIBPLUGIN_SCANNER_OPTS)  $(MAKE)  -n
-	cd pluginhost/Builds/Linux && $(LIBPLUGIN_SCANNER_OPTS)  $(MAKE)   -j 4
+	cd pluginhost/Builds/Linux && $(LIBPLUGIN_SCANNER_OPTS)  $(MAKE)
 
 
 $(CD)keyboard_sub_ids.h: bin/generate_keyboard_sub_ids.py bin/keysubids.py
@@ -1548,7 +1557,7 @@ $(P)EditorWidget.h: $(BUILD_DEPENDENCIES)
 $(T)Qt_Main.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_instruments_proc.h $(QM)QM_MixerWidget.h Qt/helpers.h audio/SampleRecorder_proc.h common/nag.h Qt/KeyboardFocusFrame.hpp common/Process.hpp Qt/Timer.hpp
 	$(MOC) Qt/Qt_Main.cpp > Qt/mQt_Main.cpp
 	cd Qt && $(MOC) -DFOR_LINUX Timer.hpp > mTimer.hpp
-	$(CCC2) $(P)Qt_Main.cpp $(QTOPT) $(SNDFILEOPT) $(IS_LINUX_BINARY) $(BOOST_INCLUDE) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" -Wno-null-dereference # -Wno-deprecated-declarations -Wno-shadow 
+	$(CCC2) $(P)Qt_Main.cpp $(QTOPT) $(SNDFILEOPT) $(BOOST_INCLUDE) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" -Wno-null-dereference # -Wno-deprecated-declarations -Wno-shadow 
 
 $(T)KeyboardFocus.o:  $(BUILD_DEPENDENCIES) Qt/KeyboardFocus.cpp Qt/KeyboardFocusFrame.hpp
 	$(CCC2) $(P)KeyboardFocus.cpp $(QTOPT)
@@ -2146,7 +2155,7 @@ $(T)VST_plugins.o: audio/VST_plugins.cpp $(P)Qt_vst_paths_widget.h
 	$(CCC2) audio/VST_plugins.cpp $(QTOPT) -I$(LV2_INCLUDE_PATH) -I$(LILV_INCLUDE_PATH) #-Wno-error # uses some Qt stuff to open GUI window
 
 $(T)Ladspa_plugins.o: audio/Ladspa_plugins.cpp
-	$(CCC2) audio/Ladspa_plugins.cpp $(QTOPT) $(LRDFOPT) $(IS_LINUX_BINARY)
+	$(CCC2) audio/Ladspa_plugins.cpp $(QTOPT) $(LRDFOPT)
 
 $(T)Sampler_plugin.o: audio/Sampler_plugin.cpp audio/Sampler_plugin_wav_parse.c audio/Sampler_plugin_xi_load.c audio/Sampler_plugin_sf2_load.c audio/SoundFonts_proc.h audio/Peaks.hpp audio/SampleRecorder_proc.h common/OS_string_proc.h audio/Granulator.hpp  audio/GranResampler.hpp audio/Fade.hpp
 	$(CCC2) $(QTOPT) audio/Sampler_plugin.cpp $(SNDFILEOPT) $(SAMPLERATEOPT) $(OPTIMIZE_O3) $(NO_ANALYZER) $(BOOST_INCLUDE) #  $(CPUOPT) 
@@ -2181,7 +2190,7 @@ $(T)Pitchshift_plugin.o: audio/Pitchshift_plugin.cpp
 
 
 FAUST_DEPENDENCIES = audio/Faust_plugins_template.cpp audio/Faust_plugins_template1.cpp audio/Faust_plugins_template2.cpp audio/mfaustqt2.cpp
-FAUST_OPTS1 = $(QTOPT) $(WNO_SUGGEST_OVERRIDE) -Wno-overloaded-virtual $(NO_SANITIZE_SIGNED_INTEGER_OVERFLOW) -Wno-unused-function -Wno-missing-declarations -Wno-deprecated-declarations -fno-sanitize=vptr $(CPUOPT) 
+FAUST_OPTS1 = $(QTOPT) $(WNO_SUGGEST_OVERRIDE) -Wno-overloaded-virtual $(NO_SANITIZE_SIGNED_INTEGER_OVERFLOW) -Wno-unused-function -Wno-missing-declarations -Wno-deprecated-declarations -fno-sanitize=vptr $(CPUOPT) -DMACOS_LLVM_TARGET=\"$(MACOS_LLVM_TARGET)\"
 FAUST_OPTS = $(FAUST_OPTS1) -I$(FAUSTDIR)/architecture
 FAUST_OPTS2 = $(FAUST_OPTS) -Wno-float-equal
 # -Ibin/packages/faust2/architecture 
@@ -2584,7 +2593,7 @@ bin/radium_crashreporter: crashreporter/crashreporter.cpp common/Process.hpp
 	@echo "Changed (bin/radium_crashreporter):"
 	@echo $?
 	@echo
-	$(CCC) -Wall crashreporter/crashreporter.cpp $(RADIUM_BFD_CFLAGS) $(CPPOPT) -DCRASHREPORTER_BIN -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" $(QT_GUI_CFLAGS) $(QT_NETWORK_CFLAGS) $(OS_OPTS) $(IS_LINUX_BINARY) $(WNO_DEPRECATED_DECLARATIONS) $(WNO_DEPRECATED_COPY) $(WNO_DEPRECATED_COPY_CLANG) -o /tmp/crashbin.o
+	$(CCC) -Wall crashreporter/crashreporter.cpp $(RADIUM_BFD_CFLAGS) $(CPPOPT) -DCRASHREPORTER_BIN -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" $(QT_GUI_CFLAGS) $(QT_NETWORK_CFLAGS) $(OS_OPTS) $(WNO_DEPRECATED_DECLARATIONS) $(WNO_DEPRECATED_COPY) $(WNO_DEPRECATED_COPY_CLANG) -o /tmp/crashbin.o
 	$(LINKER) `cat buildtype.opt` /tmp/crashbin.o -o bin/radium_crashreporter $(QT_GUI_LDFLAGS) $(QT_NETWORK_LDFLAGS)
 	rm /tmp/crashbin.o
 
@@ -2601,7 +2610,7 @@ $(T)crashreporter.o: crashreporter/crashreporter.cpp common/Process.hpp
 	@echo "Changed (crashreporter.o):"
 	@echo $?
 	@echo
-	$(CCC2) crashreporter/crashreporter.cpp $(QTOPT) $(CRASHREPORTER_OPTS) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" $(IS_LINUX_BINARY) $(NO_ANALYZER_MALLOC_LEAK) $(WNO_DEPRECATED_COPY_CLANG)
+	$(CCC2) crashreporter/crashreporter.cpp $(QTOPT) $(CRASHREPORTER_OPTS) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" $(NO_ANALYZER_MALLOC_LEAK) $(WNO_DEPRECATED_COPY_CLANG)
 
 $(T)crashreporter_posix.o: crashreporter/crashreporter_posix.c crashreporter/backtrace-symbols.c
 	if ! $(CC2) $(RADIUM_BFD_CFLAGS) crashreporter/crashreporter_posix.c $(OPT) $(CRASHREPORTER_POSIX_OPTS) ; then \

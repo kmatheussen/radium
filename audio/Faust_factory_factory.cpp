@@ -453,7 +453,8 @@ namespace{
 #elif FOR_LINUX
                                      "x86_64-pc-linux-gnu",
 #elif FOR_MACOSX
-                                     "x86_64-apple-darwin17",
+				     MACOS_LLVM_TARGET ,
+                                     //"x86_64-apple-darwin17",
                                      //"x86_64-apple-darwin21",
 #else
 #error "error"
