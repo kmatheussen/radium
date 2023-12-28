@@ -1,3 +1,45 @@
+Changes 7.1.92 -> 7.2.87:
+* Macos: Always enable incremental GC when running
+  ARM. May improve scrolling performance in the
+  editor.
+* Sequencer: Fix "Delete" entry in seqblock popup
+  menu.
+* Build: Update bdw-gc from 7.4.16 to 8.2.4.
+* Macos: Fix the ZL1 key again.
+* Macos: Add support for LV2 plugins.
+* Startup/Mac: Fix long startup time on Macos.
+* OpenGL: Fix laggy editor interface after moving
+  the main window to a screen with a different
+  refresh rate.
+* GUI: Paint thin black border around all
+  checkboxes.
+* GUI: Make the color of Mute buttons lighter if
+  background color is too similar to the default
+  mute color.
+* Preferences: Option to turn off checking for
+  abnormal signals. Might shave off a few CPU
+  cycles.
+* Add support for aarch64 CPUs, i.e. 64 bit ARM.
+* Remote control: Disable access from other computers
+  by default, i.e. only allow requests from
+  localhost. Access from other computers can be
+  enabled in preferences if needed.
+* GUI/Preferences: Fix program not remembering
+  "CPU friendly audio meter updates" between
+  sessions.
+* Demo songs: "Poptikus" by Nil Geissweiller /
+  A-Lin (Europe). All instruments in this song are
+  made with the FaustDev instrument.
+* Build: Upgrade QScintilla from 2.10.8 to 2.14.0.
+* Build: Fix build with gcc>=11 and clang >= 15.
+* Build: Various patches from Arch Linux.
+* Build: Fix for building faust on Manjaro Linux.
+* API: controlPortOpenForRemoteConnections,
+  setControlPortOpenForRemoteConnections,
+  getCheckAbnormalSignals, setCheckAbnormalSignals,
+  gui_colorDistance
+
+
 Changes 7.1.90 -> 7.1.92:
 * Editor: Include the main editor-popup-menu into the
   bottom of the track-header popup menu.
