@@ -4886,6 +4886,20 @@ const_char *getOsName(void){
 #endif
 }
 
+const_char *getArchitectureName(void){
+#if  (defined (__arm64__) || defined (__aarch64__))
+  return "aarch64";
+#elif FOR_WINDOWS
+  #if _WIN64
+    return "x64";
+  #else
+    return "i686";
+  #endif
+#else
+  return "x64"
+#endif
+}
+
 const_char* getProgramLog(void){
   return EVENTLOG_get();
 }

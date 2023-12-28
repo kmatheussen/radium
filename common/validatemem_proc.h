@@ -77,11 +77,11 @@ static inline void* my_calloc(size_t size1,size_t size2) {
 
   char*  ret  = (char*)malloc(size);
   if (ret==NULL){
-    R_ASSERT(false);
-#if !defined(TEST_TIMEDATA_MAIN)
-    msleep(10000);
-#endif
-    return calloc(1,size); // return calloc(1,size) instead of NULL to avoid null-reference warning.
+    char temp[128];
+    snprintf(temp, 127, "Program has run out of memory (%d*%d). Expect program to crash", (int)size1, (int)size2);
+    SYSTEM_show_error_message(temp);
+    //RWarning(temp); // Don't show assertion reporter since this will block a crash reporter from being displayed.
+    return ret; //calloc(1, size2);
   }
   
   // 2. Ensure the memory is physically available.

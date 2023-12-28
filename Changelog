@@ -31,7 +31,7 @@ Changes 7.1.92 -> 7.2.87:
   A-Lin (Europe). All instruments in this song are
   made with the FaustDev instrument.
 * Build: Upgrade QScintilla from 2.10.8 to 2.14.0.
-* Build: Fix build with gcc>=11 and clang >= 15.
+* Build: Fix build with gcc >= 11 and clang >= 15.
 * Build: Various patches from Arch Linux.
 * Build: Fix for building faust on Manjaro Linux.
 * API: controlPortOpenForRemoteConnections,
