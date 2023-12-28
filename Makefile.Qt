@@ -2,7 +2,7 @@
 # Users and packagers: Edit build_*.sh instead.
 #
 
-RADIUM_VERSION = 7.1.92
+RADIUM_VERSION = 7.2.87
 
 
 SHELL := /usr/bin/env bash
@@ -213,7 +213,7 @@ FREETYPE_CFLAGS ?=
 
 VST_OPTS ?=
 
-BOOST_INCLUDE=-I${HOME}/boost_1_83_0 -I${HOME}/boost_1_77_0 -I${HOME}/boost_1_76_0 -I${HOME}/boost_1_75_0 -I${HOME}/boost_1_70_0 -I${HOME}/boost_1_67_0 -I${HOME}/boost_1_63_0 
+BOOST_INCLUDE=-I${HOME}/boost_1_83_0 -I${HOME}/boost_1_77_0 -I${HOME}/boost_1_76_0 -I${HOME}/boost_1_75_0 -I${HOME}/boost_1_70_0 -I${HOME}/boost_1_67_0 -I${HOME}/boost_1_63_0 -Wno-deprecated-builtins
 BOOST_FLAGS=$(WNO_CLASS_MEMACCESS) $(BOOST_INCLUDE)
 
 CRASHREPORTER_OPTS ?= 
