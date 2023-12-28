@@ -23,7 +23,7 @@
       <enum>QTabWidget::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>4</number>
+      <number>0</number>
      </property>
      <property name="elideMode">
       <enum>Qt::ElideNone</enum>
@@ -309,7 +309,7 @@
                 <item>
                  <widget class="QCheckBox" name="enable_latency_compensation">
                   <property name="text">
-                   <string>Enable</string>
+                   <string>Enable (Note: The value is always enabled again after program startup)</string>
                   </property>
                  </widget>
                 </item>
@@ -6514,8 +6514,8 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>949</width>
-               <height>254</height>
+               <width>100</width>
+               <height>30</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="midi_input_layout">
@@ -10190,8 +10190,8 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>582</width>
-              <height>272</height>
+              <width>398</width>
+              <height>28</height>
              </rect>
             </property>
             <property name="sizePolicy">

@@ -560,9 +560,13 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       // gc
       {
         gcOnOff->setChecked(true);
-        
+
+#if defined(FOR_MACOSX) && (defined (__arm64__) || defined (__aarch64__))
+	bool incremental_gc = true;
+#else
         bool incremental_gc = SETTINGS_read_bool("incremental_gc",false);
-        
+#endif
+	
         incrementalGcNextTime->setChecked(false);
         
         incrementalGc->setChecked(incremental_gc);
@@ -572,6 +576,13 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
         
         if (incremental_gc)
           incrementalGcNextTime->setDisabled(true);
+	
+#if defined(FOR_MACOSX) && (defined (__arm64__) || defined (__aarch64__))
+	R_ASSERT(incremental_gc);
+	gcOnOff->setDisabled(true);
+	incrementalGcNextTime->setDisabled(true);
+	incrementalGc->setDisabled(true);
+#endif// macos(arm) -> !macos(arm)
       }
 
       // audio meter update
