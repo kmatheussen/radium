@@ -39,7 +39,44 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <vector>
 
-#include "lilv/lilv.h"
+#if defined(FOR_LINUX)
+  #define JUCE_LINUX 1
+#elif defined(FOR_WINDOWS)
+  #define JUCE_WINDOWS 1
+#elif defined(FOR_MACOSX)
+  #define JUCE_MAC 1
+#else
+  #error "error"
+#endif
+
+
+// LV2 enabled for Linux and Macos, but not on Windows.
+//
+// Windows: I can't get any LV2 plugin to behave properly.
+// Most (possibly all) LV2 plugins I've tried on Windows crashes,
+// and none of them display GUIs properly on a high DPI screen.
+// Whether it's the plugins, JUCE, or Radium, that misbehaves, I don't know.
+//
+// Linux: LV2 plugins seem to work fine.
+//
+// Macos: LV2 plugins seem to work fine, but I've only tried two plugins.
+// One of those LV2 plugins actually crashed when showing the GUI
+// though (x42), but the crash seemed happened inside apple's OpenGL library
+// if I remember correctly. OpenGL doesn't work very well on Macos, so
+// that crash was probably not caused a systemic error exclusively related to LV2.
+//
+#if defined(FOR_LINUX) || defined(FOR_MACOSX)
+  #define ENABLE_LV2 1
+#elif defined(FOR_WINDOWS)
+  #define ENABLE_LV2 0
+#else
+  #error error
+#endif
+
+#if ENABLE_VLV2
+  #include <../juce_lv2_config.h>
+  #include <lilv/lilv.h>
+#endif
 
 
 #if 0 //defined(USE_VESTIGE) && USE_VESTIGE
@@ -70,16 +107,17 @@ const int effShellGetNextPlugin = 70;
 
 const int kVstMaxParamStrLen = 8;
 
-#else //  USE_VESTIGE
+#else // USE_VESTIGE -> !USE_VESTIGE
 
-#if FOR_LINUX
-  #  undef PRAGMA_ALIGN_SUPPORTED
-  #  define __cdecl
-#endif
-#  define VST_FORCE_DEPRECATED 0
-#  include <pluginterfaces/vst2.x/aeffectx.h>
+  #if FOR_LINUX
+    #undef PRAGMA_ALIGN_SUPPORTED
+    #define __cdecl
+  #endif
 
-#endif //  USE_VESTIGE
+  #define VST_FORCE_DEPRECATED 0
+  #include <pluginterfaces/vst2.x/aeffectx.h>
+
+#endif // !USE_VESTIGE
 
 
 #include <QApplication>
@@ -1391,7 +1429,7 @@ static int create_vst_plugins_recursively(const QString main_path, const QString
   return ret;
 }
 
-#if defined(FOR_LINUX) || defined(FOR_MACOSX)
+#if ENABLE_VLV2
 static void add_lv2_plugins(void){
 
   LilvWorld* world = lilv_world_new();
@@ -1517,7 +1555,7 @@ void create_vst_plugins(bool is_juce_plugin){
 
 #endif // !defined(FOR_MACOSX)
 
-#if defined(FOR_LINUX) || defined(FOR_MACOSX)
+#if ENABLE_VLV2
   PR_add_menu_entry(PluginMenuEntry::level_up("LV2"));
   {
     add_lv2_plugins();
