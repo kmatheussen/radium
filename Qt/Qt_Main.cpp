@@ -1088,12 +1088,12 @@ bool MOUSE_CYCLE_move(QObject *widget, QEvent *event){
 
 bool MOUSE_CYCLE_delete_button_has_been_pressed(void){
   if (MOUSE_CYCLE_is_inside_cycle())
-    return false;
-
+	  return false;
+    
   auto *mouse_cycle_fix = dynamic_cast<radium::MouseCycleFix*>(g_last_mouse_move_widget.data());
   
   if (mouse_cycle_fix == NULL)
-    return false;
+	  return false;
 
   bool ret = false;
   
@@ -1104,7 +1104,7 @@ bool MOUSE_CYCLE_delete_button_has_been_pressed(void){
                             Qt::BackButton,
                             g_curr_mouse_cycle.modifiers);
     
-    ret = mouse_cycle_fix->cycle_mouse_press_event(g_last_mouse_move_widget.data(), &press_event, false); 
+    ret = mouse_cycle_fix->cycle_mouse_press_event(g_last_mouse_move_widget.data(), &press_event, false);
  }
 
   if (g_last_mouse_move_widget.data() != NULL){ // Very often running the delete delete-button event above causes g_last_mouse_move_widget to be set to NULL , and then we don't run the release-button event. And, it might also happen that the delete-event deletes the widget, and we don't want to run the release event then either.
@@ -4861,18 +4861,30 @@ int main(int argc, char **argv){
   
   SETTINGS_init();
 
+  
+#if defined(FOR_MACOSX) && (defined (__arm64__) || defined (__aarch64__))
+  
+  GC_enable_incremental(); // Always incremental under macos(arm)
+
+  g_gc_is_incremental = true;
+    
+#else // macos(arm) -> !macos(arm)
+    
   bool try_incremental_gc = SETTINGS_read_bool("try_incremental_gc",false);
   if (try_incremental_gc || SETTINGS_read_bool("incremental_gc",false)) {
     if (try_incremental_gc)
       SETTINGS_write_bool("try_incremental_gc",false); // Set back before calling 'GC_enable_incremental' in case 'GC_enable_incremental' crashes.
     
-#if defined(RELEASE) // incremental crashes under gdb
+  #if defined(RELEASE) // incremental crashes under gdb
     GC_enable_incremental();
-#endif
+  #endif
     
     g_gc_is_incremental = true;
   }
-
+  
+#endif // !macos(arm)
+  
+  
 #if defined(FOR_MACOSX)
 
   {

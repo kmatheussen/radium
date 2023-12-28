@@ -94,6 +94,8 @@ rm -fr "$TARGET/packages/faust/architecture/teensy"
 rm -fr "$TARGET/packages/faust/architecture/unity"
 rm -fr "$TARGET/packages/faust/architecture/unsupported-arch"
 
+rm -fr "$TARGET/python-midi/src/sequencer_osx"
+
 
 
 # pure data
