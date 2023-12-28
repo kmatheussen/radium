@@ -134,7 +134,11 @@
 #endif
 
 #ifndef JUCE_PLUGINHOST_LV2
- #define JUCE_PLUGINHOST_LV2 1
+  #if defined(WIN32) || defined(_WIN32)
+    #define JUCE_PLUGINHOST_LV2 0
+  #else
+    #define JUCE_PLUGINHOST_LV2 1
+  #endif
 #endif
 
 //==============================================================================
