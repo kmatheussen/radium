@@ -1,3 +1,14 @@
+Changes 7.2.87 -> 7.2.89:
+* Demo song: "Locrans Shop" made by Trumpetrespas.
+* Editor: Add "Drums" to the "(click me)" menu.
+* Fluidsynth: Replaced the default soundfont
+  Orgue.sf2 with FluidR3_GM_drums.sf2. FluidR3_GM is
+  made by Frank Wen. Trumpetrespas stripped it down
+  to only include drums.
+* Audio: Fix LV2 plugins (bug introduced in 7.2.87).
+* Build: Fix having to run "make packages" twice/etc.
+
+
 Changes 7.1.92 -> 7.2.87:
 * Macos: Always enable incremental GC when running
   ARM. May improve scrolling performance in the
