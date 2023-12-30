@@ -125,7 +125,9 @@ build_Visualization-Library() {
     
     CFLAGS="$CPPFLAGS -fPIC -g" CPPFLAGS="$MYFLAGS" CC="$DASCC" CXX="$DASCXX $MYFLAGS" cmake -DCMAKE_CXX_FLAGS="$MYFLAGS" CMAKE_CXX_COMPILER="$DASCXX $MYFLAGS" -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON SUPPORT=ON -DVL_DYNAMIC_LINKING=OFF -DVL_IO_2D_PNG=OFF -DVL_IO_2D_TIFF=OFF -DVL_IO_2D_JPG=OFF -DVL_IO_2D_TGA=OFF -DVL_IO_2D_BMP=OFF -DVL_IO_FREETYPE=OFF .
     
-    VERBOSE=1 make -j8
+    VERBOSE=1 make VLCore -j8
+    VERBOSE=1 make VLVG/fast -j8
+    VERBOSE=1 make VLGraphics/fast -j8
     cd ..
 }
 
@@ -259,7 +261,7 @@ build_xcb() {
 }
 
 
-build_Visualization-Library # Note: Linking fails for "Visualization Library", but that's not important. Just comment out this line and run build.sh again.
+build_Visualization-Library
 
 build_faust
 build_qhttpserver
@@ -270,6 +272,7 @@ build_qscintilla # Note: Linking fails on Mac. Just ignore it.
 if uname -s |grep Linux ; then
     build_libpds
     build_xcb
+    echo "finished compiling libpds and xcb" # need this line to avoid script failing if the two lines above are commented out.
 fi
 
 
