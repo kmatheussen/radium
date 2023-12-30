@@ -73,7 +73,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
   #error error
 #endif
 
-#if ENABLE_VLV2
+#if ENABLE_LV2
   #include <../juce_lv2_config.h>
   #include <lilv/lilv.h>
 #endif
@@ -1429,7 +1429,7 @@ static int create_vst_plugins_recursively(const QString main_path, const QString
   return ret;
 }
 
-#if ENABLE_VLV2
+#if ENABLE_LV2
 static void add_lv2_plugins(void){
 
   LilvWorld* world = lilv_world_new();
@@ -1555,7 +1555,7 @@ void create_vst_plugins(bool is_juce_plugin){
 
 #endif // !defined(FOR_MACOSX)
 
-#if ENABLE_VLV2
+#if ENABLE_LV2
   PR_add_menu_entry(PluginMenuEntry::level_up("LV2"));
   {
     add_lv2_plugins();
