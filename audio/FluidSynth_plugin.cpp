@@ -481,12 +481,12 @@ static Data *create_data(filepath_t filename, float samplerate){
 
 static void *create_plugin_data(const SoundPluginType *plugin_type, struct SoundPlugin *plugin, hash_t *state, float samplerate, int block_size, bool is_loading){
   //Data *data = create_data("/home/kjetil/SGM-V2.01.sf2",samplerate);
-  filepath_t default_sound_filename = OS_get_full_program_file_path(STRING_create("sounds/Orgue.sf2"));
+  filepath_t default_sound_filename = OS_get_full_program_file_path(STRING_create("sounds/FluidR3_GM_drums.sf2"));
   
   Data *data = create_data(default_sound_filename, samplerate);
   
   if(data!=NULL){
-    fluid_synth_bank_select(data->synth,0,0);
+    fluid_synth_bank_select(data->synth,0,128);
     fluid_synth_program_change(data->synth,0,0);
   }
 
