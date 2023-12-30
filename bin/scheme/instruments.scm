@@ -2727,12 +2727,12 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
   
   (list
    "----------Create a new instrument"
-   (list "New Sample Player"
+   (list "Sample Player"
          :shortcut assign-sampler-for-track
          (lambda ()
            (LOAD (<ra> :create-audio-instrument "Sample Player" "Sample Player"))))
-  ;;"<New FluidSynth>" (lambda ()
-   ;;                     (LOAD (<ra> :create-audio-instrument "FluidSynth" "FluidSynth")))
+   "Drums" (lambda ()
+             (LOAD (<ra> :create-audio-instrument "FluidSynth" "FluidSynth")))
    ;;(if (<ra> :has-pure-data)
    ;;    (list "<New Pd Instrument>" (lambda ()
    ;;                                  (LOAD (<ra> :create-audio-instrument "Pd" "Simple Midi Synth"))))
