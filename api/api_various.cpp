@@ -4896,7 +4896,7 @@ const_char *getArchitectureName(void){
     return "i686";
   #endif
 #else
-  return "x64"
+  return "x64";
 #endif
 }
 
