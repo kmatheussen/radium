@@ -8993,7 +8993,7 @@ Optimization level 5 may cause very long compilation time with no apparent benef
              </property>
             </widget>
            </item>
-           <item row="16" column="0">
+           <item row="17" column="0">
             <spacer name="verticalSpacer_25">
              <property name="orientation">
               <enum>Qt::Vertical</enum>
@@ -9543,6 +9543,13 @@ Optimization level 5 may cause very long compilation time with no apparent benef
             <widget class="QCheckBox" name="help_window_is_child_of_main_window">
              <property name="text">
               <string>Manual: Let manual window be a child of the main window (always on top, etc.)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="16" column="0">
+            <widget class="QCheckBox" name="alt_as_horizonal_scroll_modifier">
+             <property name="text">
+              <string>Use Alt key as a horizontal scroll modifier instead of Windows (Super/Meta) key</string>
              </property>
             </widget>
            </item>
