@@ -3077,6 +3077,13 @@ bool Control2Pressed(void){
 }
 */
 
+Qt::KeyboardModifier HorizontalModifier() {
+  if (SETTINGS_read_bool("alt_as_horizonal_scroll_modifier", false))
+    return Qt::AltModifier;
+  else
+    return Qt::MetaModifier;
+}
+
 bool MetaPressed(void){
 #if defined(FOR_WINDOWS)
   return W_windows_key_down(); // We have to go pretty low-level (WH_KEYBOARD_LL hook) to check if a win key is pressed.
@@ -3086,11 +3093,21 @@ bool MetaPressed(void){
 }
 
 bool HorizontalModifierPressed(Qt::KeyboardModifiers modifiers){
-  return MetaPressed();
+  if (HorizontalModifier() == Qt::MetaModifier)
+    return MetaPressed();
+  else
+    return QApplication::keyboardModifiers() & HorizontalModifier();
 }
 
 bool HorizontalModifierPressed(void){
   return HorizontalModifierPressed(QApplication::keyboardModifiers());
+}
+
+int HorizontalModifierAngleDelta(QWheelEvent *e) {
+  if ( HorizontalModifier()  == Qt::MetaModifier )
+    return e->angleDelta().y();
+  else
+    return e->angleDelta().x();
 }
                                
 bool VerticalModifierPressed(Qt::KeyboardModifiers modifiers){
