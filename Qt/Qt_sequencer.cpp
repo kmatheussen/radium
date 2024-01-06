@@ -921,8 +921,8 @@ static void handle_wheel_event(QWidget *widget, QWheelEvent *e, int x1, int x2, 
     
   } else if (HorizontalModifierPressed(e->modifiers())) {
 
-    SEQUENCER_zoom_or_move_leftright(false, (e->angleDelta().y() > 0) ? 1 : -1);;
-    
+    SEQUENCER_zoom_or_move_leftright(false, (HorizontalModifierAngleDelta(e) > 0) ? 1 : -1);
+
   } else {
 
     bool do_playstop = sequencerMouseScrollWheelStartsStopsPlaying();
