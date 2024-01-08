@@ -1,0 +1,11 @@
+--- faust/build/Make.llvm.static.orig	2024-01-08 11:41:29.165552145 +0100
++++ faust/build/Make.llvm.static	2024-01-08 11:42:55.881550946 +0100
+@@ -18,7 +18,7 @@
+ NCURSES_BACKUP2_PREFIX := /opt/local
+ LIBNCURSES_PATH ?= $(shell find $(NCURSES_PRIMARY_PREFIX) -name libncurses.a 2>/dev/null || find $(NCURSES_BACKUP1_PREFIX) -name libncurses.a 2>/dev/null || find $(NCURSES_BACKUP2_PREFIX) -name libncurses.a 2>/dev/null)
+ else
+-LIBNCURSES_PATH ?= $(shell find /usr -name libncurses.a)
++LIBNCURSES_PATH ?= $(shell find /usr -name libncursesw_g.a)
+ endif
+ 
+ ifdef LLVM_LIB_DIR

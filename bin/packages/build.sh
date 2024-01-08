@@ -80,14 +80,17 @@ PREFIX=`dirname $PWD/$0`
 
 build_faust() {
     rm -fr faust
-    tar xvzf faust-2.54.9.tar.gz
-    mv faust-2.54.9 faust
-    cd faust
+    tar xvzf faust-2.70.3.tar.gz
+    mv faust-2.70.3 faust
+   	cd faust
     rm -fr libraries
     tar xvzf ../faustlibraries_2022_12_28.tar.gz
     mv faustlibraries libraries
 
-    patch -p0 <../faust.patch
+    patch -p0 <../faust_most.cmake.patch
+    patch -p1 <../faust_cmakelist.patch
+		### this patch is needed for artix to build
+    #patch -p1 <../faust_make.llvm.static.patch
     if env |grep INCLUDE_FAUSTDEV_BUT_NOT_LLVM ; then
         patch -p0 <../faust_nollvm.patch
     fi
@@ -140,11 +143,7 @@ build_libpds() {
     sed -i 's/k_cext$//' make.scm
     sed -i 's/oscx //' make.scm
     sed -i 's/gcc -O3/gcc -fcommon -O3/' make.scm
-    GLIBCVERSION=`ldd --version | head -n 1 | awk '{print $NF}'`
-    if [[ $GLIBCVERSION > 2.34 ]] ; then
-        sed -i 's/#define fsqrt/\/\/#define fsqrt/g' pure-data/extra/fiddle~/fiddle~.c
-    fi
-
+    sed -i 's/#define fsqrt/\/\/#define fsqrt/g' pure-data/extra/fiddle~/fiddle~.c
     make clean
     make -j`nproc`
     cd ..
