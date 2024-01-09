@@ -82,14 +82,14 @@ build_faust() {
     rm -fr faust
     tar xvzf faust-2.70.3.tar.gz
     mv faust-2.70.3 faust
-   	cd faust
+    cd faust
     rm -fr libraries
-    tar xvzf ../faustlibraries_2022_12_28.tar.gz
+    tar xvzf ../faustlibraries_2024_01_05.tar.gz
     mv faustlibraries libraries
 
     patch -p0 <../faust_most.cmake.patch
     patch -p1 <../faust_cmakelist.patch
-		### this patch is needed for artix to build
+    ### this patch is needed to build on artix
     #patch -p1 <../faust_make.llvm.static.patch
     if env |grep INCLUDE_FAUSTDEV_BUT_NOT_LLVM ; then
         patch -p0 <../faust_nollvm.patch
