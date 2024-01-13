@@ -472,6 +472,16 @@ void PRESET_save(const vector_t *patches, bool save_button_pressed, int64_t pare
   if(filename=="")
     return;
 
+  QFileInfo fileInfo(filename);
+  QString extension = fileInfo.suffix();
+
+  if (extension.isEmpty()) {
+    if (is_multipreset)
+      filename += ".mrec";
+    else
+      filename += ".rec";
+  }
+
   disk_t *file = DISK_open_for_writing(filename);
   
   if(file==NULL){
