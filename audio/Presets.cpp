@@ -475,10 +475,11 @@ void PRESET_save(const vector_t *patches, bool save_button_pressed, int64_t pare
   QFileInfo fileInfo(filename);
   QString extension = fileInfo.suffix();
 
-  if (extension.isEmpty()) {
-    if (is_multipreset)
+  if (is_multipreset) {
+    if (extension != "mrec")
       filename += ".mrec";
-    else
+  } else {
+    if (extension != "rec")
       filename += ".rec";
   }
 
