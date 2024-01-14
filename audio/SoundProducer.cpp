@@ -528,6 +528,12 @@ static float RT_get_max_val(const float *array, const int num_elements){
 
 #define RT_get_max_val JUCE_get_max_val
 
+#if 0
+static float RT_get_max_val2(const float *array, const int num_elements){
+  return 1.0;
+}
+#endif
+
 #endif
 
 
@@ -2171,7 +2177,7 @@ public:
       
       link->_last_buffer_was_silent = true;
       
-    }
+    }    
   }
 
   // This function is called while processing link->source. "this" is link->target.
@@ -2374,16 +2380,28 @@ public:
       
       for(int ch=0;ch<_num_outputs;ch++) {
 
-        const float out_peak = RT_get_max_val(output_sound[ch],num_frames);
-        volume_peaks[ch] = out_peak;
+	      const float out_peak = RT_get_max_val(output_sound[ch],num_frames);
+	      volume_peaks[ch] = out_peak;
 
-        _curr_output_is_silent[ch] = SMOOTH_peak_is_below_lowest_fade_value(out_peak);
-        
-        if(false==is_touched && out_peak > MIN_AUTOSUSPEND_PEAK)
-          is_touched = true;
-
+#if 1
+	      if (out_peak <= MIN_AUTOSUSPEND_PEAK)
+	      {
+		      _curr_output_is_silent[ch] = true;
+	      }
+	      else
+	      {
+		      _curr_output_is_silent[ch] = false;
+		      if (false==is_touched)
+			      is_touched = true;
+	      }
+#else
+	      _curr_output_is_silent[ch] = SMOOTH_peak_is_below_lowest_fade_value(out_peak);
+	      
+	      if(false==is_touched && out_peak > MIN_AUTOSUSPEND_PEAK)
+		      is_touched = true;
+#endif
       }
-
+      
       if(is_touched)
         RT_PLUGIN_touch(_plugin);
         
