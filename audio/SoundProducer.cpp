@@ -2384,7 +2384,7 @@ public:
 	      volume_peaks[ch] = out_peak;
 
 #if 1
-	      if (out_peak <= MIN_AUTOSUSPEND_PEAK)
+	      if (out_peak <= MIN_NONSILENT_PEAK)
 	      {
 		      _curr_output_is_silent[ch] = true;
 	      }
