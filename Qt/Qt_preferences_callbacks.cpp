@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/hashmap_proc.h"
 #include "../common/OS_string_proc.h"
 #include "../common/OS_settings_proc.h"
+#include "../common/OS_visual_input.h"
 #include "../common/settings_proc.h"
 #include "../common/window_config_proc.h"
 #include "../OpenGL/Widget_proc.h"
@@ -772,6 +773,8 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
         sequencer_scroll_wheel_starts_stops_playing->setChecked(true);
       else
         sequencer_scroll_wheel_scrolls_up_down->setChecked(true);
+
+      alt_as_horizonal_scroll_modifier->setChecked(SETTINGS_read_bool("alt_as_horizonal_scroll_modifier", false));
     }
 
     // Windows
@@ -1470,6 +1473,11 @@ public slots:
   void on_sequencer_scroll_wheel_starts_stops_playing_toggled(bool val){
     if (_initing==false)
       setSequencerMouseScrollWheelStartsStopsPlaying(val);
+  }
+
+  void on_alt_as_horizonal_scroll_modifier_toggled(bool val){
+    if (_initing==false)
+      SETTINGS_write_bool("alt_as_horizonal_scroll_modifier", val);
   }
   
   // colors

@@ -94,6 +94,7 @@ static HWND gtk_hwnd = NULL;
 #include "Qt_MyQLabel.h"
 #include "Qt_MyQSlider.h"
 #include "Qt_MyQCheckBox.h"
+#include "Qt_PresetBrowser.h"
 
 
 class Bottom_bar_widget;
@@ -106,7 +107,7 @@ static QVector<Bottom_bar_widget*> g_bottom_bars; // need to be defined here sin
 #include "../api/api_proc.h"
 
 
-
+#include <QMainWindow>
 #include "Qt_MainWindow_proc.h"
 
 
@@ -438,7 +439,17 @@ void handleDropEvent(QString filename, float x){
 
   RETURN_IF_DATA_IS_INACCESSIBLE();
 
-  int tracknum = get_track_from_x(x);
+  QMainWindow *main_window = static_cast<QMainWindow*>(root->song->tracker_windows->os_visual.main_window);
+  int spaceBeforeEditor = main_window->geometry().x();
+
+  QWidget* presetFrame = getPresetBrowserWidgetFrame();
+  if (presetFrame->isVisible())
+    spaceBeforeEditor += presetFrame->width() * 2;
+
+  if (g_mixerstripparent->isVisible() && SETTINGS_read_bool("show_mixer_strip_on_left_side", true))
+    spaceBeforeEditor += g_mixerstripparent->width() * 2;
+
+  int tracknum = get_track_from_x(x - spaceBeforeEditor);
   instrument_t instrument_id = make_instrument(-1);
 
   UNDO_OPEN();{

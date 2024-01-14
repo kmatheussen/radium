@@ -1,0 +1,10 @@
+--- faust/build/CMakeLists.txt.orig	2024-01-08 11:31:56.133560069 +0100
++++ faust/build/CMakeLists.txt	2024-01-08 11:32:16.209559791 +0100
+@@ -65,6 +65,7 @@
+ 	${SRCDIR}/generator/rust
+ 	${SRCDIR}/generator/cmajor
+ 	${SRCDIR}/generator/vhdl
++	${SRCDIR}/generator/c
+ 	${SRCDIR}/normalize ${SRCDIR}/parallelize ${SRCDIR}/parser
+ 	${SRCDIR}/patternmatcher ${SRCDIR}/propagate ${SRCDIR}/signals
+ 	${SRCDIR}/tlib ${SRCDIR}/transform ${SRCDIR}/utils
