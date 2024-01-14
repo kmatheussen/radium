@@ -143,7 +143,12 @@ build_libpds() {
     sed -i 's/k_cext$//' make.scm
     sed -i 's/oscx //' make.scm
     sed -i 's/gcc -O3/gcc -fcommon -O3/' make.scm
-    sed -i 's/#define fsqrt/\/\/#define fsqrt/g' pure-data/extra/fiddle~/fiddle~.c
+
+    GLIBCVERSION=`ldd --version | head -n 1 | awk '{print $NF}'`
+    if [[ $GLIBCVERSION > 2.34 ]] ; then
+        sed -i 's/#define fsqrt/\/\/#define fsqrt/g' pure-data/extra/fiddle~/fiddle~.c
+    fi
+
     make clean
     make -j`nproc`
     cd ..
