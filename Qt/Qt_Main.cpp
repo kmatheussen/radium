@@ -30,6 +30,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 #include <boost/lockfree/queue.hpp>
 
+#ifndef USE_QWEBENGINE
+#error error
+#endif
 
 
 #include <signal.h>
@@ -41,7 +44,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QPluginLoader>
 #endif
 
+#if !USE_QWEBENGINE
 #include <QtWebKitWidgets/QWebView>
+#endif
 
 #define TEST_CRASHREPORTER 0
 
@@ -4818,9 +4823,11 @@ int main(int argc, char **argv){
   
   qapplication->setAttribute(Qt::AA_DontCreateNativeWidgetSiblings); // Fix splitter handlers on OSX. Seems like a good flag to set in general. Seems like a hack qt has added to workaround bugs in qt. https://bugreports.qt.io/browse/QTBUG-33479
 
+#if !USE_QWEBENGINE
   QWebSettings::globalSettings()->setAttribute(QWebSettings::PluginsEnabled, false);
-#if !defined(RELEASE)
-  QWebSettings::globalSettings()->setAttribute(QWebSettings::DeveloperExtrasEnabled, true);
+  #if !defined(RELEASE)
+    QWebSettings::globalSettings()->setAttribute(QWebSettings::DeveloperExtrasEnabled, true);
+  #endif
 #endif
   
   init_weak_jack();
