@@ -196,7 +196,7 @@ public:
       
       QScrollBar *scrollbar = horizontalScrollBar();
       if(scrollbar!=NULL){
-        if (e->angleDelta().y() > 0)
+        if (HorizontalModifierAngleDelta(e) > 0)
           scrollbar->setValue(scrollbar->value()+70);
         else
           scrollbar->setValue(scrollbar->value()-70);
