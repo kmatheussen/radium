@@ -7093,7 +7093,7 @@
       ;;     (set! *current-seqblock-info* #f)))
          
    (list "Delete all selected"
-         :enabled (> num-selected-with-current 1)
+         :enabled (> num-selected-with-current 0)
          :shortcut ra:delete-selected-seqblocks
          (lambda ()
            (if (and seqblocknum
