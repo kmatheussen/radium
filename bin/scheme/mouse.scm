@@ -7083,14 +7083,14 @@
                (<ra> :select-seqblock #t seqblocknum seqtracknum))
            (<ra> :cut-selected-seqblocks)))
 
-   (list "Delete"
-         ;;:enabled (> num-selected-with-current 0)
-	 :enabled seqblock-info
-         :shortcut ra:simulate-delete-mouse-button
-	 (lambda ()
-           (set! *current-seqblock-info* #f)
-           (<ra> :delete-seqblock seqblockid)
-           (set! *current-seqblock-info* #f)))
+   ;;(list "Delete"
+    ;;     ;;:enabled (> num-selected-with-current 0)
+	;; :enabled seqblock-info
+        ;; :shortcut ra:simulate-delete-mouse-button
+;;	 (lambda ()
+  ;;         (set! *current-seqblock-info* #f)
+    ;;       (<ra> :delete-seqblock seqblockid)
+      ;;     (set! *current-seqblock-info* #f)))
          
    (list "Delete all selected"
          :enabled (> num-selected-with-current 1)
