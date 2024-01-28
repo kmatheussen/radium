@@ -1232,7 +1232,10 @@ public slots:
                 printf("I'm here, actually\n");
                 
                 if (num == num_programs+1) {
-                  const char *new_name = GFX_GetString(NULL, NULL, "new name: ", true);
+                  ReqType reqtype=GFX_OpenReq(NULL,33,5,"Ask plugin to rename current preset. Note that the pluging might not support this.");
+                  const char *new_name = GFX_GetString(NULL, reqtype, "New name: ", true);
+                  GFX_CloseReq(NULL,reqtype);
+                  
                   if (new_name != NULL){
                     type->set_program_name(plugin, type->get_current_program(plugin), new_name);
                     update_widget();
