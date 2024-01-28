@@ -92,7 +92,7 @@ build_faust() {
     ### this patch is needed to build on artix
     #patch -p1 <../faust_make.llvm.static.patch
     if env |grep INCLUDE_FAUSTDEV_BUT_NOT_LLVM ; then
-        patch -p0 <../faust_nollvm.patch
+        sed -i 's/LLVM_BACKEND   \tCOMPILER STATIC/LLVM_BACKEND OFF/' build/backends/most.cmake
     fi
 
     patch -p0 < ../faust3.patch
