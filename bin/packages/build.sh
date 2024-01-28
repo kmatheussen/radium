@@ -13,6 +13,8 @@ unset CPPFLAGS
 unset LDFLAGS
 unset CXXFLAGS
 
+
+
 export COMMON_CFLAGS="-mtune=generic -fPIC -fno-strict-aliasing -Wno-misleading-indentation "
 
 if uname -s |grep Darwin ; then
@@ -93,6 +95,14 @@ build_faust() {
     #patch -p1 <../faust_make.llvm.static.patch
     if env |grep INCLUDE_FAUSTDEV_BUT_NOT_LLVM ; then
         sed -i 's/LLVM_BACKEND   \tCOMPILER STATIC/LLVM_BACKEND OFF/' build/backends/most.cmake
+        if grep LLVM_BACKEND build/backends/most.cmake | grep COMPILER ; then
+            echo "sed failed"
+            exit -1
+        fi
+        if grep LLVM_BACKEND build/backends/most.cmake | grep STATIC ; then
+            echo "sed failed"
+            exit -1
+        fi
     fi
 
     patch -p0 < ../faust3.patch
