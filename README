@@ -44,6 +44,11 @@ IF YOU ARE DEVELOPING RADIUM
      
         export INCLUDE_FAUSTDEV_BUT_NOT_LLVM="jadda"
         
+     If you don't want to bother with installing qt-webkit, but instead use the lesser supported qt-webengine (which is included with Qt),
+     run this line first:
+          
+        export USE_QWEBENGINE=1
+        
      Then run these lines:
      
         # Debug build. Lots of assertions. Very slow. Don't build this version if you are just testing the program.

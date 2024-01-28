@@ -27,13 +27,26 @@ static float linear2db(float val){
 }
 #endif
 
+#define MIN_LINEAR_VELOCITY 0.1
+static float g_min_linear_gain = 0.001995; // = powf(10, R_SCALE(MIN_LINEAR_VELOCITY, 0.0, 1.0 ,-40, 20) / 20.0f) / 10.0f;
+
 // input is between 0 and 1.
 // output is between 0 and 1.
 static float velocity2gain(float val){
+#if 0
+	g_min_linear_gain = powf(10, R_SCALE(MIN_LINEAR_VELOCITY, 0.0, 1.0 ,-40, 20) / 20.0f) / 10.0f;
+	printf("%f\n",g_min_linear_gain);
+	getchar();
+#endif
+	
   if(val<=0.0f)
     return 0.0f;
   else if(val>=1.0f)
     return 1.0f;
+  else if (val < MIN_LINEAR_VELOCITY)
+	  return scale(val,
+		       0, MIN_LINEAR_VELOCITY,
+		       0, g_min_linear_gain);
   else
     return powf(10, scale(val,0.0, 1.0 ,-40, 20) / 20.0f) / 10.0f;
 }

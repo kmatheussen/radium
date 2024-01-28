@@ -194,8 +194,8 @@ static void process_soundproducer(int cpunum, SoundProducer *sp, int64_t time, i
 
       for(int ch=0;ch<sp->_num_outputs;ch++)
         if (false == sp->_curr_output_is_silent[ch]){
-          R_ASSERT_NON_RELEASE(false);
-          sp->_curr_output_is_silent[ch] = true;
+		R_ASSERT_NON_RELEASE(false);
+		sp->_curr_output_is_silent[ch] = true;
         }
           
       /*

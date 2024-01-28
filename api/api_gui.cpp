@@ -59,9 +59,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QMouseEvent>
 
 #include <QDesktopServices>
-#include <QtWebKitWidgets/QWebView>
-#include <QtWebKitWidgets/QWebFrame>
 
+#ifndef USE_QWEBENGINE
+#error error
+#endif
+
+#if USE_QWEBENGINE
+  #include <QWebEngineView>
+  #include <QWebEnginePage>
+#else
+  #include <QtWebKitWidgets/QWebView>
+  #include <QtWebKitWidgets/QWebFrame>
+#endif
 
 #include "../common/nsmtracker.h"
 #include "../common/patch_proc.h"
@@ -3857,7 +3866,11 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
   };
 
 
+#if USE_QWEBENGINE
+//MakeFocusSnifferClass(QWebEngineView);
+#else
   MakeFocusSnifferClass(QWebView);
+#endif
 
   static std::tuple<QString,QString, bool> getAbsoluteUrl(QString stringurl){
     if (stringurl.startsWith("http:") || stringurl.startsWith("https:") || stringurl.startsWith("file:")) {
@@ -3884,7 +3897,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       return {ret, query, true};
     }
   }
-  
+
+#if !USE_QWEBENGINE
   static QUrl getUrl(QString stringurl){
     auto [absoluteurl, query, is_local_file] = getAbsoluteUrl(stringurl);
     
@@ -3902,8 +3916,18 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       
     }
   }
-  
-  struct Web : FocusSnifferQWebView, Gui, public radium::MouseCycleFix {
+#endif
+
+  struct Web :
+#if USE_QWEBENGINE
+		
+		//FocusSnifferQWebEngineView,
+		QWidget,
+		Gui
+#else
+		FocusSnifferQWebView, Gui
+#endif
+		, public radium::MouseCycleFix {
     Q_OBJECT;
     
   public:
@@ -3911,6 +3935,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     Web(QString url)
       : Gui(this)
     {
+#if !USE_QWEBENGINE
       //QWebView::settings()->setAttribute(QWebSettings::PluginsEnabled, false);
 
       //setWindowTitle(url);
@@ -3919,8 +3944,13 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       connect(this,SIGNAL(urlChanged(const QUrl &)),this,SLOT(urlChanged(const QUrl &)));
 
       mySetZoomFactor(1.0);
+#else
+      R_ASSERT(false);
+#endif
     }
 
+#if !USE_QWEBENGINE
+	  
     /*
     QSize sizeHint() const override {
       return QSize(-1,-1);
@@ -3933,6 +3963,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     }
 #endif
     
+#if !USE_QWEBENGINE
     // https://forum.qt.io/topic/23736/qwebview-qwebpage-need-help-with-context-menu/4
     void contextMenuEvent(QContextMenuEvent * ev) override {
       ScopedEventHandlerTracker event_handler_tracker;
@@ -3943,10 +3974,14 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       auto hit_url = hit_test.linkUrl();
       if(hit_url.isEmpty()){
         //printf("NOT LINK URL\n");
+#if USE_QWEBENGINE
+	FocusSnifferQWebEngineView::contextMenuEvent(ev);
+#else
         FocusSnifferQWebView::contextMenuEvent(ev);
+#endif
         return;
       }
-
+      
       int64_t parentgui = -1;
       QWidget *parent_widget = parentWidget();
       if (parent_widget!=NULL)
@@ -3967,10 +4002,11 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       //printf("Evaling -%s-\n", code);
       evalScheme(code);
     }
+#endif
     
     QString _last_search_text;
 
-    void searchForward(void){
+    void searchForward(void){	    
       if(_last_search_text != "")
         findText(_last_search_text, QWebPage::FindWrapsAroundDocument);
     }
@@ -4110,15 +4146,19 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       }
     }
 
+#if !USE_QWEBENGINE
     // Implement "Open link in new window"
     QWebView *createWindow(QWebPage::WebWindowType type) override{
       auto *ret = new Web("");
       ret->show();
       return ret;
     }
+#endif
                      
     OVERRIDERS_WITHOUT_KEY_AND_MOUSE_WHEEL(FocusSnifferQWebView);
 
+#endif
+								
   public slots:
     
     void urlChanged(const QUrl &url){
@@ -4130,9 +4170,8 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     void download(const QNetworkRequest &request){
       qDebug()<<"Download Requested: "<<request.url();
     } 
-    */   
+    */
   };
-
 
   struct FileRequester : radium::FileRequester, Gui, public radium::MouseCycleFix {
     Q_OBJECT;
@@ -5488,10 +5527,15 @@ int64_t gui_floatText(double min, double curr, double max, int num_decimals, dou
 }
 
 int64_t gui_web(const_char* stringurl){
+#if !USE_QWEBENGINE
   return (new Web(stringurl))->get_gui_num();
+#else
+  return -1;
+#endif
 }
 
 void gui_setUrl(int64_t guinum, const_char* url){
+#if !USE_QWEBENGINE
   Gui *web_gui = get_gui(guinum);
   if (web_gui==NULL)
     return;
@@ -5504,14 +5548,20 @@ void gui_setUrl(int64_t guinum, const_char* url){
     if (web->url() != dasurl)
       web->setUrl(dasurl);
   }
+#endif
 }
 
 bool gui_webCanShowManual(void){
+#if USE_QWEBENGINE
+	return false;
+#else
   int major = qWebKitVersion().split(".")[0].toInt();
 
   //printf("Version: %s. Major: %d\n", qWebKitVersion().toUtf8().constData(), major);
-
+  //getchar();
+  
   return major >= 600;
+#endif
 }
 
 void openExternalWebBrowser(const_char *charstringurl){
