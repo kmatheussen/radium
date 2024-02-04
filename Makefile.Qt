@@ -586,7 +586,7 @@ OBJ11= $(T)undo.o $(T)undo_notes.o $(T)undo_fxs.o $(T)undo_temponodes.o $(T)undo
 #OBJ12= $(T)X11_visual.o $(T)X11_error.o $(T)X11_Ptask2Mtask.o $(T)X11_Bs_edit.o $(T)X11_Main.o $(T)X11_endprogram.o $(T)X11_disk.o $(T)X11_Player.o $(T)X11_memory.o $(T)X11_ReqType.o $(T)X11_keyboard.o $(T)X11_MidiProperties.o
 
 #Qt Spesific
-OBJ12= $(T)Qt_instruments.o $(T)Qt_visual.o $(T)GTK_visual.o $(T)Qt_Main.o $(T)KeyboardFocus.o $(T)Qt_endprogram.o $(T)Qt_EventReceiver.o $(T)Qt_colors.o $(T)Qt_Menues.o $(T)Qt_Fonts.o $(T)Qt_ReqType.o $(T)Qt_PopupMenu.o $(T)Qt_Bs_edit.o $(T)Qt_PluginWidget.o $(T)Qt_SliderPainter.o $(T)Qt_memory.o $(T)Qt_path_resolver.o $(T)Qt_settings.o $(T)Qt_disk.o $(T)Qt_MainWindow.o $(T)Qt_Time.o $(T)Qt_sequencer.o $(T)GTK_ReqType.o $(T)GTK_PopupMenu.o $(T)Qt_soundfilesaver_widget_callbacks.o $(T)Qt_comment_dialog.o $(T)Qt_song_properties.o $(T)Qt_preferences_callbacks.o $(T)Qt_tools_callbacks.o $(T)Qt_Error.o $(T)Qt_progresswindow.o $(T)Qt_check_for_updates.o $(T)Rational.o $(T)Qt_AutoBackups.o $(T)flowlayout.o $(T)Qt_PresetBrowser.o
+OBJ12= $(T)Qt_instruments.o $(T)Qt_visual.o $(T)GTK_visual.o $(T)Qt_Main.o $(T)KeyboardFocus.o $(T)Qt_endprogram.o $(T)Qt_EventReceiver.o $(T)Qt_colors.o $(T)Qt_Menues.o $(T)Qt_Fonts.o $(T)Qt_ReqType.o $(T)Qt_PopupMenu.o $(T)Qt_Bs_edit.o $(T)Qt_PluginWidget.o $(T)Qt_SliderPainter.o $(T)Qt_memory.o $(T)Qt_path_resolver.o $(T)Qt_settings.o $(T)Qt_disk.o $(T)Qt_MainWindow.o $(T)Qt_Time.o $(T)Qt_sequencer.o $(T)GTK_ReqType.o $(T)GTK_PopupMenu.o $(T)Qt_soundfilesaver_widget_callbacks.o $(T)Qt_comment_dialog.o $(T)Qt_song_properties.o $(T)Qt_preferences_callbacks.o $(T)Qt_tools_callbacks.o $(T)Qt_Error.o $(T)Qt_progresswindow.o $(T)Qt_check_for_updates.o $(T)Rational.o $(T)Qt_AutoBackups.o $(T)flowlayout.o $(T)Qt_PresetBrowser.o $(T)Qt_SaveRestoreWindows.o
 
 #X11_MidiProperties.o $(T)X11_ClientMessages.o $(T)
 #Qt_Bs_edit.o $(T)
@@ -1567,10 +1567,13 @@ bin/radium_check_recent_libxcb: X11/check_recent_libxcb.c
 
 $(P)EditorWidget.h: $(BUILD_DEPENDENCIES)
 
-$(T)Qt_Main.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_instruments_proc.h $(P)Qt_SaveRestoreWindows.h $(QM)QM_MixerWidget.h Qt/helpers.h audio/SampleRecorder_proc.h common/nag.h Qt/KeyboardFocusFrame.hpp common/Process.hpp Qt/Timer.hpp
+$(T)Qt_Main.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_instruments_proc.h $(QM)QM_MixerWidget.h Qt/helpers.h audio/SampleRecorder_proc.h common/nag.h Qt/KeyboardFocusFrame.hpp common/Process.hpp Qt/Timer.hpp
 	$(MOC) Qt/Qt_Main.cpp > Qt/mQt_Main.cpp
 	cd Qt && $(MOC) -DFOR_LINUX Timer.hpp > mTimer.hpp
 	$(CCC2) $(P)Qt_Main.cpp $(QTOPT) $(SNDFILEOPT) $(BOOST_INCLUDE) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" -Wno-null-dereference # -Wno-deprecated-declarations -Wno-shadow 
+
+$(T)Qt_SaveRestoreWindows.o:  $(BUILD_DEPENDENCIES) Qt/Qt_SaveRestoreWindows.cpp
+	$(CCC2) $(P)Qt_SaveRestoreWindows.cpp $(QTOPT)
 
 $(T)KeyboardFocus.o:  $(BUILD_DEPENDENCIES) Qt/KeyboardFocus.cpp Qt/KeyboardFocusFrame.hpp
 	$(CCC2) $(P)KeyboardFocus.cpp $(QTOPT)
@@ -1677,7 +1680,6 @@ $(T)Qt_PresetBrowser.o: $(BUILD_DEPENDENCIES) $(P)Qt_PresetBrowser.cpp $(INSTRUM
 	else \
 		$(CCC2) $(P)Qt_PresetBrowser.cpp $(QTOPT) $(SNDFILEOPT) -O0 -Wno-null-dereference $(NO_ANALYZER) ; \
 	fi
-
 
 $(P)mQt_instruments_widget_callbacks.h: $(BUILD_DEPENDENCIES) $(P)qt4_instruments_widget.ui $(P)create_source_from_ui.sh $(P)Qt_instruments_widget_callbacks.h
 	cd $(P) && ./create_source_from_ui.sh $(UIC) $(MOC) instruments_widget
