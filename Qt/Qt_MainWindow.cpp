@@ -505,26 +505,6 @@ public:
     activateWindow();
   }
 
-  void loadWindowsState() {
-
-    // // sequnecer window  
-    // bool inOwnWindow = SETTINGS_read_bool("sequencer_in_own_window", false);
-    // if (inOwnWindow)
-    // {
-    //   configureSequencerWidget(true, sequencerInMainTabs());
-    //   bool maximized = SETTINGS_read_bool("sequencer_window_state", false);
-    //   int x = SETTINGS_read_int("sequencer_window_x", 0);
-    //   int y = SETTINGS_read_int("sequencer_window_y", 0);
-    //   int width = SETTINGS_read_int("sequencer_window_width", 1024);
-    //   int height = SETTINGS_read_int("sequencer_window_height", 550);
-    //   printf("Loaded settings: %d, %d, %d, %d \n", x, y, width, height);
-    //   QWidget * sequencerWindow = SEQUENCER_getWidget()->window();
-    //   sequencerWindow->setGeometry(x, y, width, height);
-    //   if (maximized)
-    //     sequencerWindow->showMaximized();
-    // }
-  }
-
   void closeEvent(QCloseEvent *ce) override{
     CancelMaybeNavigateMenus();
     ce->ignore();
@@ -800,8 +780,6 @@ void SetupMainWindow(void){
 #endif // USE_QT_VISUAL
 
   g_editor = editor;
-
-  main_window->loadWindowsState();
 }
 
 void GFX_SetMinimumWindowWidth(struct Tracker_Windows *tvisual, int width){
