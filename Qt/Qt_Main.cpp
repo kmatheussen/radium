@@ -3974,11 +3974,15 @@ int radium_main(const char *arg){
 
   updateWidgetRecursively(g_main_window);
 
-  //main_window->adjustSize(); // that shrink window
-  main_window->updateGeometry();
-  //main_window->resize(main_window->width()+100, main_window->height()+100); // that changes window size
-  
-  //moveWindowToCentre(main_window, g_startup_rect); // that changes window position
+  if (!SETTINGS_read_bool("windows_settings_saved", false))
+  {
+    // default main window size/pos when settings was not saved yet
+    main_window->adjustSize(); 
+    main_window->updateGeometry();
+    main_window->resize(main_window->width()+100, main_window->height()+100);
+    moveWindowToCentre(main_window, g_startup_rect); // that changes window position
+  }
+
   main_window->show();
   main_window->raise();
   main_window->activateWindow();
