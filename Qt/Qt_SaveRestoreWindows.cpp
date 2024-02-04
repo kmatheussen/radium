@@ -51,6 +51,9 @@ void saveWindowsState(QWidget * mainWindow) {
       SETTINGS_write_int("main_mixer_window_height", mixerWindow->size().height());
       printf("Saved mixer settings: %d, %d, %d, %d \n", mixerWindow->pos().x(), mixerWindow->pos().y(), mixerWindow->size().width(), mixerWindow->size().height());
     }
+
+    SETTINGS_write_bool("edit_gui_visible", editGuiIsVisible());
+    SETTINGS_write_bool("instrument_window_visible", GFX_InstrumentWindowIsVisible());
 }
 
 void restoreWindowsState(QWidget * mainWindow) {
@@ -109,4 +112,17 @@ void restoreWindowsState(QWidget * mainWindow) {
   mainWindow->setGeometry(x, y, width, height);
   if (maximized)
     mainWindow->showMaximized();
+
+
+  // show/hide editor gui 
+  if (SETTINGS_read_bool("edit_gui_visible", true))
+    showEditGui();
+  else
+    hideEditGui();
+
+  // instrument widget
+  if (SETTINGS_read_bool("instrument_window_visible", false))
+    GFX_InstrumentWindowToFront();
+  else
+    GFX_InstrumentWindowToBack();
 }
