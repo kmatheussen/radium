@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QCloseEvent>
 #pragma GCC diagnostic pop
 
+#include <QWindow>
 #include <QStatusBar>
 #include <QMenuBar>
 #include <QUrl>
@@ -95,7 +96,7 @@ static HWND gtk_hwnd = NULL;
 #include "Qt_MyQSlider.h"
 #include "Qt_MyQCheckBox.h"
 #include "Qt_PresetBrowser.h"
-
+#include "Qt_SaveRestoreWindows.h"
 
 class Bottom_bar_widget;
 static QVector<Bottom_bar_widget*> g_bottom_bars; // need to be defined here since it's used by the upperleft widget.
@@ -123,7 +124,7 @@ struct MyQMenuBar : QMenuBar {
 */
 
 bool g_user_interaction_enabled = true;
-
+extern bool doquit;
 
 #if USE_GTK_VISUAL
 
@@ -504,10 +505,32 @@ public:
     activateWindow();
   }
 
+  void loadWindowsState() {
+
+    // // sequnecer window  
+    // bool inOwnWindow = SETTINGS_read_bool("sequencer_in_own_window", false);
+    // if (inOwnWindow)
+    // {
+    //   configureSequencerWidget(true, sequencerInMainTabs());
+    //   bool maximized = SETTINGS_read_bool("sequencer_window_state", false);
+    //   int x = SETTINGS_read_int("sequencer_window_x", 0);
+    //   int y = SETTINGS_read_int("sequencer_window_y", 0);
+    //   int width = SETTINGS_read_int("sequencer_window_width", 1024);
+    //   int height = SETTINGS_read_int("sequencer_window_height", 550);
+    //   printf("Loaded settings: %d, %d, %d, %d \n", x, y, width, height);
+    //   QWidget * sequencerWindow = SEQUENCER_getWidget()->window();
+    //   sequencerWindow->setGeometry(x, y, width, height);
+    //   if (maximized)
+    //     sequencerWindow->showMaximized();
+    // }
+  }
+
   void closeEvent(QCloseEvent *ce) override{
     CancelMaybeNavigateMenus();
     ce->ignore();
     quit();
+    if(doquit==true) 
+      saveWindowsState(this);
   }
 
 #if 0
@@ -600,7 +623,7 @@ QWidget *g_main_window = NULL;
 void SetupMainWindow(void){
 
   //QMainWindow *main_window = new QMainWindow(NULL, "Radium", Qt::WStyle_Customize | Qt::WStyle_NoBorder);// | Qt::WStyle_Dialog);
-  QWidget *main_window = new MyQMainWindow();//NULL, "Radium");
+  MyQMainWindow *main_window = new MyQMainWindow();//NULL, "Radium");
   g_main_window = main_window;
   g_static_toplevel_widgets.push_back(main_window);
 
@@ -777,6 +800,8 @@ void SetupMainWindow(void){
 #endif // USE_QT_VISUAL
 
   g_editor = editor;
+
+  main_window->loadWindowsState();
 }
 
 void GFX_SetMinimumWindowWidth(struct Tracker_Windows *tvisual, int width){
