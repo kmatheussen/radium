@@ -124,6 +124,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_AutoBackups_proc.h"
 #include "Qt_Bs_edit_proc.h"
 #include "Qt_PresetBrowser.h"
+#include "Qt_SaveRestoreWindows.h"
 
 #include "Timer.hpp"
 #include "mTimer.hpp"
@@ -2624,13 +2625,14 @@ protected:
         
         // Show mixer briefly to workaround a Qt quirk/bug causing SceneRect size to be calculated from invisible items when the scene hasn't been shown yet.
         // (Fixes extremely large Mixer scene rect if previewing preset before opening the mixer for the first time)
-        {
+        // This breaks opening mixer window at startup form configuration - don't know needed anymore I do not see any difference when commented
+        /*{
           if(num_calls_at_this_point==50/_interval)
             GFX_ShowMixer();
 
           if(num_calls_at_this_point==70/_interval)
             GFX_HideMixer();
-        }
+        }*/
 
         // Force full keyboard focus to the main window after startup. This seems to be the only reliable way. (if you think this is unnecessary, see if left alt works to start navigating menues after startup while using the fvwm window manager)
         {
@@ -3972,11 +3974,15 @@ int radium_main(const char *arg){
 
   updateWidgetRecursively(g_main_window);
 
-  main_window->adjustSize();
-  main_window->updateGeometry();
-  main_window->resize(main_window->width()+100, main_window->height()+100);
-  
-  moveWindowToCentre(main_window, g_startup_rect);
+  if (!SETTINGS_read_bool("windows_settings_saved", false))
+  {
+    // default main window size/pos when settings was not saved yet
+    main_window->adjustSize(); 
+    main_window->updateGeometry();
+    main_window->resize(main_window->width()+100, main_window->height()+100);
+    moveWindowToCentre(main_window, g_startup_rect); // that changes window position
+  }
+
   main_window->show();
   main_window->raise();
   main_window->activateWindow();
@@ -4028,11 +4034,11 @@ int radium_main(const char *arg){
   // Hide mixer widget at startup.
   GFX_showHideMixerWidget();
   
-
   // Hide preset browser at startup.
   if (SETTINGS_read_bool("preset_browser_visible", false)==false)
     hidePresetBrowserAtStartup();
 
+  restoreWindowsState(main_window);
   
 #if USE_QT_VISUAL
  again:
