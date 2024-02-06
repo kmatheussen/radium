@@ -482,6 +482,10 @@ static unsigned int oat_hash(const char *key, int i_i)
   return h;
 }
 
+unsigned int get_hash_hash(const char *key)
+{
+  return oat_hash(key, 0);
+}
 
 typedef struct _hash_element_t{
   const char *key;
