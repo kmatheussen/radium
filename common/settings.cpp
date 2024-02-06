@@ -326,6 +326,8 @@ static void SETTINGS_put(const char* key, QString val){
 
 // Warning, called before GC_init, so it cannot allocate with talloc or talloc_atomic.
 static QString SETTINGS_get(const char* key){
+  printf("SEtTING_get called for \"%s\"\n", key);
+
   QVector<QString> lines = get_lines(key);
   if(lines.size()==0)
     return not_found;
@@ -358,8 +360,78 @@ void SETTINGS_unset_custom_configfile(void){
   custom_configuration_filename="";
 }
 
+
+namespace{ 
+template <typename T>
+struct Cache{
+  QHash<unsigned int, QPair<T, bool>> _cache;
+
+  T get(const char *key, T def, std::function<T(const char*)> get_val){
+    R_ASSERT(THREADING_is_main_thread());
+
+    const unsigned int hash = get_hash_hash(key);
+    
+    auto it = _cache.find(hash);
+    
+    if (it == _cache.end()) {
+
+      const char* string_val = SETTINGS_get_chars(key);
+
+      if (string_val == NULL) {
+        
+        _cache.insert(hash, {def, false});
+        
+        return def;
+        
+      } else {
+
+        T val = get_val(string_val);
+
+        _cache.insert(hash, {val, true});
+
+        return val;
+      }
+
+    }else if (!it.value().second) {
+      
+      return def;
+      
+    } else {
+      
+      return it.value().first;
+      
+    }
+  }
+
+  void put(const char *key, T val, const QString &stringval) {
+    R_ASSERT(THREADING_is_main_thread());
+
+    const unsigned int hash = get_hash_hash(key);
+    
+    auto it = _cache.find(hash);
+    
+    if (it==_cache.end())
+      _cache.insert(hash, {val, true});
+    else
+      it.value() = {val, true};
+    
+    SETTINGS_put(key, stringval);
+  }
+};
+}
+
+static Cache<bool> g_bools;
+
 bool SETTINGS_read_bool(const char* key, bool def){
-  return SETTINGS_read_string(key, def==true?"true":"false")[0] == 't';
+  return g_bools.get(key, def, [](const char *string_val)
+  {
+    R_ASSERT(!strcmp(string_val, "true") || !strcmp(string_val, "false"));
+    return string_val[0] == 't';
+  });
+}
+
+void SETTINGS_write_bool(const char* key, bool val){
+  g_bools.put(key, val, val==true?"true":"false");
 }
 
 int64_t SETTINGS_read_int(const char* key, int64_t def){
@@ -431,10 +503,6 @@ vector_t *SETTINGS_get_all_lines_starting_with(const char *prefix){
   }
 
   return ret;
-}
-
-void SETTINGS_write_bool(const char* key, bool val){
-  SETTINGS_write_string(key, val==true?"true":"false");
 }
 
 void SETTINGS_write_int(const char* key, int64_t val){

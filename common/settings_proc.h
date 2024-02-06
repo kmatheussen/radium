@@ -35,12 +35,12 @@ namespace radium{
 extern LANGSPEC bool SETTINGS_has_key(const char *key);
 
 extern LANGSPEC bool SETTINGS_read_bool(const char *key, bool def);
-extern LANGSPEC int64_t SETTINGS_read_int(const char *key, int64_t def);
-extern LANGSPEC int SETTINGS_read_int32(const char *key, int def);
-extern LANGSPEC double SETTINGS_read_double(const char *key, double def);
-extern LANGSPEC const char *SETTINGS_read_string(const char *key, const char *def);
+extern LANGSPEC int64_t SETTINGS_read_int(const char *key, int64_t def); // Warning, not cached yet!
+extern LANGSPEC int SETTINGS_read_int32(const char *key, int def); // Warning, not cached yet!
+extern LANGSPEC double SETTINGS_read_double(const char *key, double def); // Warning, not cached yet!
+extern LANGSPEC const char *SETTINGS_read_string(const char *key, const char *def); // Warning, not cached yet!
 
-extern LANGSPEC const wchar_t* SETTINGS_read_wchars(const char* key, const wchar_t* def);
+extern LANGSPEC const wchar_t* SETTINGS_read_wchars(const char* key, const wchar_t* def); // Warning, not cached yet!
 extern LANGSPEC void SETTINGS_write_wchars(const char* key, const wchar_t *wchars);
 
 extern LANGSPEC vector_t *SETTINGS_get_all_lines_starting_with(const char *prefix);

@@ -26,6 +26,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 // A key can not contain lineshift since lineshifts are used as delimiter character when loading/saving.
 
+extern LANGSPEC unsigned int get_hash_hash(const char *key);
+  
 extern LANGSPEC void HASH_clear(hash_t *hash);
 extern LANGSPEC int HASH_get_version(const hash_t *hash); // TODO: remove. Make HASH_is_compatible function instead.
 
