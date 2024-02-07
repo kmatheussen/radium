@@ -434,6 +434,39 @@ void SETTINGS_write_bool(const char* key, bool val){
   g_bools.put(key, val, val==true?"true":"false");
 }
 
+#if 0 // Untested code below. Probably works though.
+
+static Cache<int64_t> g_ints;
+
+int64_t SETTINGS_read_int(const char* key, int64_t def){
+  return g_ints.get(key, def, [](const char *string_val)
+  {
+    return atoll(string_val);
+  });
+}
+
+void SETTINGS_write_int(const char* key, int64_t val){
+  g_ints.put(key, val, QString::number(val);
+}
+
+int SETTINGS_read_int32(const char* key, int def){
+    return (int)SETTINGS_read_int(key, def);
+}
+
+static Cache<double> g_doubles;
+
+double SETTINGS_read_double(const char* key, double def){
+  return g_doubles.get(key, def, [](const char *string_val)
+  {
+    return OS_get_double_from_string(string_val);
+  });
+}
+
+void SETTINGS_write_double(const char* key, double val){
+  g_doubles.put(key, val, OS_get_string_from_double(val));
+}
+#endif
+ 
 int64_t SETTINGS_read_int(const char* key, int64_t def){
   const char* val = SETTINGS_get_chars(key);
 
