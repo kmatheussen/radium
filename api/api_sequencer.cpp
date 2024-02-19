@@ -578,7 +578,7 @@ static void setCurrSeqtrack2(int seqtracknum, bool called_from_set_curr_seqblock
   if(change_curr_instrument){
     struct Patch *patch = seqtrack->patch;
     if(patch!=NULL)
-      patch->instrument->PP_Update(patch->instrument, patch, false);
+      patch->instrument->PP_Update( patch->instrument, patch, false, false );
   }
 
   if (seqtracknum != old) {

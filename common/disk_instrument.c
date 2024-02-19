@@ -133,6 +133,6 @@ void DLoadInstrument(struct Instruments *instrument){
 void DLoadInstrumentGUI(struct Instruments *instrument){
   // Pretty sure this is not necessary.
   VECTOR_FOR_EACH(struct Patch *patch, &instrument->patches)
-    instrument->PP_Update(instrument, patch, true);
+    instrument->PP_Update( instrument, patch, true, false );
   END_VECTOR_FOR_EACH;
 }

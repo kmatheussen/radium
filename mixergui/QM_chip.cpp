@@ -993,7 +993,7 @@ static bool CONNECTIONS_apply_changes(QGraphicsScene *scene, const changes::Audi
           
           if (bus_num >= 0){
             if (from_patch==PATCH_get_current())
-              GFX_PP_Update(from_patch, false);
+              GFX_PP_Update( from_patch, false, false );
           }
         }
 
@@ -2713,7 +2713,7 @@ void Chip::mousePressEvent(QGraphicsSceneMouseEvent *event)
 
     //printf("Pressed. %f / %f\n",pos.x(),pos.y());
     struct Instruments *instrument = get_audio_instrument();
-    instrument->PP_Update(instrument,(struct Patch*)patch,false);
+    instrument->PP_Update( instrument, ( struct Patch* )patch, false, false );
 
     // solo onoff
     if(in_solo_button(pos)){

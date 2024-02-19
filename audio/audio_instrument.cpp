@@ -1172,13 +1172,14 @@ static void AUDIO_RT_StopPlaying(struct Instruments *instrument){
   }END_VECTOR_FOR_EACH;
 }
 
-static void AUDIO_PP_Update(struct Instruments *instrument,struct Patch *patch, bool is_loading){
-  if(patch->patchdata==NULL){
-    RError("plugin==NULL for %s\n",patch->name);
+static void AUDIO_PP_Update( struct Instruments *instrument, struct Patch *patch, bool is_loading, bool even_if_locked )
+{
+  if( patch->patchdata == NULL )
+	{
+    RError( "plugin==NULL for %s\n", patch->name );
     return;
   }
-
-  GFX_PP_Update(patch, is_loading);
+  GFX_PP_Update( patch, is_loading, even_if_locked );
 }
 
 static void *AUDIO_CopyInstrumentData(const struct Tracks *track){

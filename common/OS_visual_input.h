@@ -195,7 +195,8 @@ extern LANGSPEC struct Patch *GFX_OS_get_system_out(void);
 
 extern LANGSPEC void GFX_update_all_instrument_widgets(void);
 
-extern LANGSPEC void GFX_PP_Update(struct Patch *patch, bool is_loading);
+//extern LANGSPEC void GFX_PP_Update(struct Patch *patch, bool is_loading);
+extern LANGSPEC void GFX_PP_Update( struct Patch *patch, bool is_loading, bool even_if_locked );
 extern LANGSPEC void GFX_PP_Update_even_if_locked(struct Patch *patch, bool is_loading);
 
 extern LANGSPEC void *OS_GFX_get_native_main_window(void);

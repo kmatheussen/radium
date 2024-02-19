@@ -514,7 +514,7 @@ void setInstrumentForTrack(instrument_t instrument_id, int tracknum, int blocknu
   
   wblock->block->is_dirty = true;
 
-  (*new_patch->instrument->PP_Update)(new_patch->instrument,new_patch,false);
+  ( *new_patch->instrument->PP_Update )( new_patch->instrument, new_patch, false, false );
 }
 
 void replaceUseOfInstrument(instrument_t old_instrument_id, instrument_t new_instrument_id){
@@ -594,7 +594,7 @@ void setSendMidiInputToCurrentInstrument(bool doit){
 
 instrument_t createMIDIInstrument(const_char *name) {
   struct Patch *patch = PATCH_create_midi(name);
-  GFX_PP_Update(patch,false);
+  GFX_PP_Update( patch, false, false );
   return patch->id;
 }
 
@@ -1537,7 +1537,7 @@ void setInstrumentEffectChangesValueWhenPressingRandom(instrument_t instrument_i
 
   PLUGIN_set_random_behavior(plugin, effect_num, doit);
   
-  (*patch->instrument->PP_Update)(patch->instrument,patch,false);
+  ( *patch->instrument->PP_Update )( patch->instrument, patch, false, false );
 }
 
 bool getInstrumentEffectChangesValueWhenPressingRandom(instrument_t instrument_id, const_char* effect_name){
@@ -1863,7 +1863,7 @@ void setInstrumentData(instrument_t instrument_id, const_char *key, const_char *
 
   patch->instrument->setPatchData(patch, key, value, true);
 
-  (*patch->instrument->PP_Update)(patch->instrument,patch,false);
+  ( *patch->instrument->PP_Update )( patch->instrument, patch, false, false );
 }
 
 const_char *getInstrumentData(instrument_t instrument_id, const_char *key) {
@@ -3041,7 +3041,7 @@ void removeModulator(instrument_t instrument_id, const char *effect_name){
   MODULATOR_remove_target(modulator_id, patch, effect_num);
 
   if(patch==PATCH_get_current())
-    patch->instrument->PP_Update(patch->instrument, patch, false);
+    patch->instrument->PP_Update( patch->instrument, patch, false, false );
 }
 
 static const char *get_modulator_patch_description(const struct Patch *modulator_patch){
@@ -3560,7 +3560,7 @@ bool showInstrumentGui(instrument_t instrument_id, int64_t parentgui, bool show_
     GFX_InstrumentWindowToFront();
 
   struct Instruments *instrument = get_audio_instrument();
-  instrument->PP_Update(instrument,patch,false);
+  instrument->PP_Update( instrument, patch, false, false );
   
   struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
   if (plugin != NULL){
@@ -3808,7 +3808,7 @@ void setCurrentInstrument(instrument_t instrument_id, bool show_instrument_windo
     GFX_InstrumentWindowToFront();
 
   if (only_change_if_unlocked)
-    GFX_PP_Update(patch, false);
+    GFX_PP_Update( patch, false, false );
   else
     GFX_PP_Update_even_if_locked(patch, false);
 
@@ -3849,7 +3849,7 @@ void setCurrentInstrumentDown(bool set_current_instrument, bool set_current_inst
   S7CALL2(void_bool_bool,"FROM_C-move-current-instrument-down", set_current_instrument, set_current_instrument_under_mouse);
 }
 
-static bool g_curr_instrument_is_locked = false;// = createIllegalInstrument();
+static bool g_curr_instrument_is_locked = true;// = createIllegalInstrument();
 
 void setCurrentInstrumentLocked(bool lockit){
   if (lockit==g_curr_instrument_is_locked)
