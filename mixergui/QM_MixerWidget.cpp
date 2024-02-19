@@ -547,7 +547,7 @@ static void draw_slot(MyScene *myscene, float x, float y){
 
     struct Instruments *instrument = get_audio_instrument();
     printf("Calling pp_update\n");
-    instrument->PP_Update(instrument,(struct Patch*)patch,false);
+    instrument->PP_Update( instrument, (struct Patch*)patch, false, false );
     MW_set_selected_chip(chip);
   }
 #endif
@@ -956,7 +956,7 @@ static bool mousepress_start_connection(MyScene *scene, radium::MouseCycleEvent 
     SoundPlugin *plugin = SP_get_plugin(chip->_sound_producer);
     volatile struct Patch *patch = plugin->patch;
     R_ASSERT_RETURN_IF_FALSE2(patch!=NULL,false);
-    instrument->PP_Update(instrument,(struct Patch*)patch,false);
+    instrument->PP_Update( instrument, ( struct Patch*)patch, false, false );
     MW_set_selected_chip(chip);
 
     // connection
@@ -1064,7 +1064,7 @@ static bool mousepress_select_chip(MyScene *scene, radium::MouseCycleEvent &even
     
     struct Instruments *instrument = get_audio_instrument();
     //printf("Calling pp_update\n");
-    instrument->PP_Update(instrument,(struct Patch*)patch,false);
+    instrument->PP_Update( instrument, ( struct Patch* )patch, false, false );
 
     //printf("                                                         ^^^^^^^^   mousepress_select_chip\n");
     EVENTLOG_add_event("start_moving_chips called from mousepress_select_chip");
@@ -1987,7 +1987,8 @@ bool MyScene::fix_mousePressEvent(radium::MouseCycleEvent &event){
         if(patch==NULL)
           R_ASSERT(false);
         else
-          instrument->PP_Update(instrument,(struct Patch*)patch,false);
+          //instrument->PP_Update(instrument,(struct Patch*)patch,false);
+          instrument->PP_Update( instrument, ( struct Patch* )patch, false, true );
       }
 
       //printf("                                                    ^^^^^^^^^^^^ 222 mousepress_select_chip\n");

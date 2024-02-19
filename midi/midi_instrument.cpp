@@ -655,8 +655,8 @@ static void MIDI_remove_patchdata(struct Patch *patch){
   }PLAYER_unlock();
 }
 
-static void MIDI_PP_Update(struct Instruments *instrument,struct Patch *patch, bool is_loading){
-  GFX_PP_Update(patch,is_loading);
+static void MIDI_PP_Update(struct Instruments *instrument,struct Patch *patch, bool is_loading, bool even_if_locked ){
+  GFX_PP_Update( patch, is_loading, even_if_locked );
 }
 
 #define APP_GetVars()                                            \

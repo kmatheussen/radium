@@ -454,7 +454,7 @@ void InstrumentWidget_create_audio_instrument_widget(struct Patch *patch, bool s
     QTimer::singleShot(g_set_current_delay + 3,[patch_id]{
         struct Patch *patch = PATCH_get_from_id(patch_id);
         if(patch != NULL)
-          GFX_PP_Update(patch,false);
+          GFX_PP_Update( patch, false, false );
       });
     
   }
@@ -915,9 +915,14 @@ static void GFX_PP_Update_internal(struct Patch *patch, bool is_loading, bool op
   called_from_pp_update = false;
 }
 
-void GFX_PP_Update(struct Patch *patch, bool is_loading){
-  GFX_PP_Update_internal(patch, is_loading, false);
+void GFX_PP_Update( struct Patch *patch, bool is_loading, bool even_if_locked )
+{
+  GFX_PP_Update_internal( patch, is_loading, even_if_locked );
 }
+
+//void GFX_PP_Update(struct Patch *patch, bool is_loading){
+//  GFX_PP_Update_internal(patch, is_loading, false);
+//}
 
 void GFX_PP_Update_even_if_locked(struct Patch *patch, bool is_loading){
   GFX_PP_Update_internal(patch, is_loading, true);
@@ -956,7 +961,7 @@ void InstrumentWidget_delete(struct Patch *patch){
   if (!g_is_starting_up && !g_is_loading){
     struct Patch *patch = PATCH_get_current();
     if (patch!=NULL)
-      GFX_PP_Update(patch, false);
+      GFX_PP_Update( patch, false, false );
   }
 }
 
@@ -965,9 +970,7 @@ void GFX_update_instrument_patch_gui(struct Patch *patch){
   if(patch!=NULL && patch->patchdata!=NULL){
     R_ASSERT_RETURN_IF_FALSE(patch->instrument != NULL);
     if (patch->instrument->PP_Update!=NULL)
-      patch->instrument->PP_Update(patch->instrument,
-                                   patch,
-                                   false);
+      patch->instrument->PP_Update( patch->instrument, patch, false, false );
   }
 #if 0
   if(wblock->wtrack->track->patch!=NULL && wblock->wtrack->track->patch->instrument->PP_Update!=NULL)

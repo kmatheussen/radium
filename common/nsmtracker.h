@@ -2366,7 +2366,8 @@ struct Instruments{
 	void (*CloseInstrument)(struct Instruments *instrument);
 	void (*StopPlaying)(struct Instruments *instrument);
         void (*RT_StopPlaying)(struct Instruments *instrument); // Called from the player thread. StopPlaying is called from the main thread, and only if it apparently wasn't playing before. This function is always called right after the player has set player_state to PLAYER_STATE_STOPPED
-        void (*PP_Update)(struct Instruments *instrument,struct Patch *patch, bool is_loading);
+        //void (*PP_Update)(struct Instruments *instrument,struct Patch *patch, bool is_loading);
+        void (*PP_Update)(struct Instruments *instrument,struct Patch *patch, bool is_loading, bool even_if_locked );
 	void *(*CopyInstrumentData)(const struct Tracks *track);		//Necesarry for undo.
 
         void (*PlaySongHook)(struct Instruments *instrument, int64_t abstime);
