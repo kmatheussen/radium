@@ -794,7 +794,7 @@
                                                      (<ra> :switch-instrument-is-selected instrument-id))
                                                     ((not (equal? instrument-id (<ra> :get-current-instrument)))
                                                      ;;(c-display "         SETTING CURRENT")
-                                                     (<ra> :set-current-instrument instrument-id #f #t)
+                                                     (<ra> :set-current-instrument instrument-id #f #f)
                                                      ;;(remake-mixer-strips instrument-id)
                                                      )))))
                                    #t))
