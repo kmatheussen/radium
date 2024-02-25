@@ -319,7 +319,7 @@ void requestCursorMove(void){
     
     int tracknum = atoi(trackstring);
     if (tracknum >= 0)
-      setCurrentTrack(tracknum, -2, window->l.num);
+	    setCurrentTrack(tracknum, -2, window->l.num, true);
   }
 
   if (strlen(line) > 0) {
@@ -375,10 +375,10 @@ void selectPrevPlaylistBlock(void){
 }
 
 void selectTrack(int tracknum,int windownum){
-  setCurrentTrack(tracknum, -2, windownum);
+	setCurrentTrack(tracknum, -2, windownum, false);
 }
 
-void setCurrentTrack(int tracknum, int subtrack, int windownum){
+void setCurrentTrack(int tracknum, int subtrack, int windownum, bool switch_instrument_even_if_locked){
   struct Tracker_Windows *window=getWindowFromNum(windownum);
   if(window==NULL) return;
 
@@ -445,7 +445,7 @@ void setCurrentTrack(int tracknum, int subtrack, int windownum){
   }
 
   GFX_adjust_skew_x(window, wblock, prevcurrtrack);
-  GFX_update_instrument_patch_gui(wtrack->track->patch);
+  GFX_update_instrument_patch_gui(wtrack->track->patch, switch_instrument_even_if_locked);
   GFX_show_curr_track_in_statusbar(window, wblock);
   
   window->must_redraw = true;
@@ -637,7 +637,7 @@ void cursorRight(int windownum){
         if (!canCursorMoveToTrack(tracknum, subtracknum, -1, windownum))
           return;
 
-        setCurrentTrack(tracknum, subtracknum, windownum);
+        setCurrentTrack(tracknum, subtracknum, windownum, true);
 }
 
 void cursorNextTrack(int windownum){
@@ -687,7 +687,7 @@ void cursorNextTrack(int windownum){
             subtracknum = num_subtracks -1;
         }
         
-        setCurrentTrack(tracknum, subtracknum, windownum);
+        setCurrentTrack(tracknum, subtracknum, windownum, true);
 }
 
 static int get_previous_legal_track(int tracknum, int windownum){
@@ -776,7 +776,7 @@ void cursorLeft(int windownum){
         if (!canCursorMoveToTrack(tracknum, subtracknum, -1, windownum))
           return;
 
-        setCurrentTrack(tracknum, subtracknum, windownum);
+        setCurrentTrack(tracknum, subtracknum, windownum, true);
 }
 
 void cursorPrevTrack(int windownum){
@@ -823,7 +823,7 @@ void cursorPrevTrack(int windownum){
             subtracknum = num_subtracks -1;
         }
         
-        setCurrentTrack(tracknum, subtracknum, windownum);
+        setCurrentTrack(tracknum, subtracknum, windownum, true);
 }
 
 

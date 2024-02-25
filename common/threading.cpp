@@ -487,7 +487,7 @@ priority_t THREADING_get_priority(void){
 }
 
 #if !defined(RELEASE)
-enum R_thread_is_RT __thread g_t_current_thread_is_RT = R_UNINITIALIZED;
+enum R_thread_is_RT __thread g_t_current_thread_is_RT = R_UNINITIALIZED; // Inefficient way store thread-local variables, but only used in DEBUG mode.
 #endif
 
 

@@ -368,7 +368,7 @@ static bool Load_CurrPos_org(struct Tracker_Windows *window, filepath_t filename
             GFX_EditorWindowToFront(root->song->tracker_windows);
             
             struct WBlocks *wblock = root->song->tracker_windows->wblock;
-            GFX_update_instrument_patch_gui(wblock->wtrack->track->patch);
+            GFX_update_instrument_patch_gui(wblock->wtrack->track->patch, false);
 
             root->song->tracker_windows->must_redraw = true;
             

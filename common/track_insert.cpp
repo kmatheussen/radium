@@ -164,8 +164,8 @@ void InsertTracks_CurrPos(
 		curr_track=wblock->block->num_tracks-1;
 	}
 
-        setCurrentTrack(0, -1, window->l.num);
-        setCurrentTrack(curr_track, -1, window->l.num);
+        setCurrentTrack(0, -1, window->l.num, false);
+        setCurrentTrack(curr_track, -1, window->l.num, false);
           
 	window->must_redraw = true;
 }

@@ -483,7 +483,7 @@ void handleDropEvent(QString filename, float x){
       if (tracknum != -1)
         setInstrumentForTrack(instrument_id, tracknum, -1, -1);
 
-      GFX_update_instrument_patch_gui(PATCH_get_from_id(instrument_id));
+      GFX_update_instrument_patch_gui(PATCH_get_from_id(instrument_id), true);
     }
 
   }UNDO_CLOSE();

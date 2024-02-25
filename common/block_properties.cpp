@@ -217,7 +217,7 @@ void Block_Set_num_tracks(
             wblock=(struct WBlocks *)ListFindElement1(&window->wblocks->l,block->l.num);
 
             if (wblock==window->wblock)            
-              setCurrentTrack(num_tracks-1, -1, window->l.num);
+		    setCurrentTrack(num_tracks-1, -1, window->l.num, false);
           }
           CutListAt1(&block->tracks,num_tracks);
           while(window!=NULL){

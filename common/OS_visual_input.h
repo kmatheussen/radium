@@ -184,7 +184,7 @@ extern LANGSPEC void OS_GFX_NumUndosHaveChanged(int num_undos, bool redos_are_av
 extern LANGSPEC void OS_GFX_SetVolume(int value);
 extern LANGSPEC void OS_GFX_IncVolume(int how_much);
 
-extern LANGSPEC void GFX_update_instrument_patch_gui(struct Patch *patch);
+extern LANGSPEC void GFX_update_instrument_patch_gui(struct Patch *patch, bool even_if_locked);
 extern LANGSPEC void GFX_remove_patch_gui(struct Patch *patch); // Also deletes the audio object itself. (yes, it's messy)
 
 struct SoundPlugin;

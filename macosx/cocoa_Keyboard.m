@@ -167,7 +167,7 @@ int OS_SYSTEM_get_modifier(void *void_event){
     //case 54: // Right Command (we don't use this one anymore, it's usually not available, and the "menu" key is a bit work to turn into a modifier key)
     //return EVENT_EXTRA_R;
   case 54: // Right Command (we don't use this one anymore, it's usually not available, and the "menu" key is a bit work to turn into a modifier key)
-    return EVENT_CTRL_R; // We always map left Cmd into left Ctrl since left Ctrl is not always available on mac.
+    return EVENT_CTRL_R; // We always map right Cmd into right Ctrl since right Ctrl is not always available on mac.
   case 55: // Left Command
     if (swapCtrlAndCmd())
       return EVENT_CTRL_L;
