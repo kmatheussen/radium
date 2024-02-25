@@ -594,7 +594,7 @@ static int get_next_legal_track(int tracknum, int num_tracks, int windownum){
 }
 
 
-void cursorRight(int windownum){
+void cursorRight(int windownum, bool switch_instrument_even_if_locked){
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 	if(window==NULL) return;
 
@@ -637,10 +637,10 @@ void cursorRight(int windownum){
         if (!canCursorMoveToTrack(tracknum, subtracknum, -1, windownum))
           return;
 
-        setCurrentTrack(tracknum, subtracknum, windownum, true);
+        setCurrentTrack(tracknum, subtracknum, windownum, switch_instrument_even_if_locked);
 }
 
-void cursorNextTrack(int windownum){
+void cursorNextTrack(int windownum, bool switch_instrument_even_if_locked){
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 	if(window==NULL) return;
 
@@ -687,7 +687,7 @@ void cursorNextTrack(int windownum){
             subtracknum = num_subtracks -1;
         }
         
-        setCurrentTrack(tracknum, subtracknum, windownum, true);
+        setCurrentTrack(tracknum, subtracknum, windownum, switch_instrument_even_if_locked);
 }
 
 static int get_previous_legal_track(int tracknum, int windownum){
@@ -702,7 +702,7 @@ static int get_previous_legal_track(int tracknum, int windownum){
   }
 }
 
-void cursorLeft(int windownum){
+void cursorLeft(int windownum, bool switch_instrument_even_if_locked){
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 	if(window==NULL) return;
 
@@ -776,10 +776,10 @@ void cursorLeft(int windownum){
         if (!canCursorMoveToTrack(tracknum, subtracknum, -1, windownum))
           return;
 
-        setCurrentTrack(tracknum, subtracknum, windownum, true);
+        setCurrentTrack(tracknum, subtracknum, windownum, switch_instrument_even_if_locked);
 }
 
-void cursorPrevTrack(int windownum){
+void cursorPrevTrack(int windownum, bool switch_instrument_even_if_locked){
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 	if(window==NULL) return;
 
@@ -823,7 +823,7 @@ void cursorPrevTrack(int windownum){
             subtracknum = num_subtracks -1;
         }
         
-        setCurrentTrack(tracknum, subtracknum, windownum, true);
+        setCurrentTrack(tracknum, subtracknum, windownum, switch_instrument_even_if_locked);
 }
 
 

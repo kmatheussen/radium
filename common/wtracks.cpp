@@ -738,7 +738,7 @@ void SwapTrack_CurrPos(
 
         window->must_redraw = true;
 
-        cursorNextTrack(window->l.num);
+        cursorNextTrack(window->l.num, false);
 }
 
 
