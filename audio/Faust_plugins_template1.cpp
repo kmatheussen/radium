@@ -28,7 +28,7 @@ static float linear2db(float val){
 #endif
 
 #define MIN_LINEAR_VELOCITY 0.1
-static float g_min_linear_gain = 0.001995; // = powf(10, R_SCALE(MIN_LINEAR_VELOCITY, 0.0, 1.0 ,-40, 20) / 20.0f) / 10.0f;
+static constexpr float g_min_linear_gain = 0.001995; // = powf(10, R_SCALE(MIN_LINEAR_VELOCITY, 0.0, 1.0 ,-40, 20) / 20.0f) / 10.0f;
 
 // input is between 0 and 1.
 // output is between 0 and 1.

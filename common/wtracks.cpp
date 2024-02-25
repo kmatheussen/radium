@@ -601,7 +601,7 @@ void MinimizeBlock_CurrPos(
         wblock->skew_x = 0;
 
         if (wblock==window->wblock)
-          setCurrentTrack(0, -1, window->l.num);
+		setCurrentTrack(0, -1, window->l.num, false);
 
 	wblock->temponodearea.width=2;
 	wtrack=wblock->wtracks;
@@ -708,7 +708,7 @@ update:
 	window->must_redraw = true;
 
 	if( ! is_playing()){
-          GFX_update_instrument_patch_gui(wblock->wtrack->track->patch);
+		GFX_update_instrument_patch_gui(wblock->wtrack->track->patch, false);
 	}
 }
 

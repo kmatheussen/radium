@@ -868,8 +868,8 @@ static void undo_internal(void){
          }
          
          if(current_patch!=NULL){
-           GFX_update_instrument_patch_gui(current_patch);
-           GFX_update_instrument_widget(current_patch);
+		 GFX_update_instrument_patch_gui(current_patch, false);
+		 GFX_update_instrument_widget(current_patch);
          }
 
          window->must_redraw = true; // We do this instead of calling GE_set_curr_realline. GE_set_curr_realline can also cause flickering if editor is redrawn at the same time.

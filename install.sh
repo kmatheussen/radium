@@ -112,10 +112,12 @@ then
 fi
 
 # libxcb
-if [[ $RADIUM_INSTALL_LIBXCB != 0 ]]
-then
-    cp -a packages/libxcb-1.13 "$TARGET/packages/"
-    cd "$TARGET/packages/libxcb-1.13/src"
-    rm -f ./*.o
-    cd "$THIS_DIR/bin"
+if uname -s |grep Linux ; then
+    if [[ $RADIUM_INSTALL_LIBXCB != 0 ]]
+    then
+	cp -a packages/libxcb-1.13 "$TARGET/packages/"
+	cd "$TARGET/packages/libxcb-1.13/src"
+	rm -f ./*.o
+	cd "$THIS_DIR/bin"
+    fi
 fi

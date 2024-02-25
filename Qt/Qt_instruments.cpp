@@ -847,6 +847,15 @@ static bool patch_used_in_current_editor_block(struct Patch *patch){
 static void GFX_PP_Update_internal(struct Patch *patch, bool is_loading, bool open_even_if_locked){
   //printf("GFX_PP_Update %s\n", patch==NULL?"(null)":patch->name);
 
+#if 0
+	if (open_even_if_locked){
+		if (isPlaying()){
+			printf("Gakk gakk!\n");
+			printf("hmm\n");
+		}
+	}
+#endif
+	
   struct Patch *old_current = PATCH_get_current();
 
   if (old_current != NULL && g_is_loading==false && open_even_if_locked==false && isCurrentInstrumentLocked())
@@ -965,12 +974,12 @@ void InstrumentWidget_delete(struct Patch *patch){
   }
 }
 
-void GFX_update_instrument_patch_gui(struct Patch *patch){
+void GFX_update_instrument_patch_gui(struct Patch *patch, bool even_if_locked){
   //printf("Called GFX_update_instrument_patch_gui for patch \"%s\"\n",patch==NULL?"<>":patch->name);
   if(patch!=NULL && patch->patchdata!=NULL){
     R_ASSERT_RETURN_IF_FALSE(patch->instrument != NULL);
     if (patch->instrument->PP_Update!=NULL)
-      patch->instrument->PP_Update( patch->instrument, patch, false, false );
+      patch->instrument->PP_Update( patch->instrument, patch, false, even_if_locked);
   }
 #if 0
   if(wblock->wtrack->track->patch!=NULL && wblock->wtrack->track->patch->instrument->PP_Update!=NULL)

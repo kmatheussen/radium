@@ -506,7 +506,7 @@ void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock, bool fo
       ATOMIC_WRITE(window->curr_track, newcurrtrack);
 
       if (window->wblock==wblock)
-        setCurrentTrack(newcurrtrack, newcurrtracksub, window->l.num);
+	      setCurrentTrack(newcurrtrack, newcurrtracksub, window->l.num, false);
       
       //if (SetCursorPosConcrete(window,wblock,newcurrtrack,newcurrtracksub)==false)
       //  ATOMIC_WRITE(window->curr_track, 0);
@@ -527,7 +527,7 @@ void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock, bool fo
       
       if(false==is_playing() && false==PlayerIsCurrentlyPlayingLoop()){
         R_ASSERT_RETURN_IF_FALSE(wblock->wtrack->track != NULL);
-        GFX_update_instrument_patch_gui(wblock->wtrack->track->patch);
+        GFX_update_instrument_patch_gui(wblock->wtrack->track->patch, false);
       }
       
       //window->must_redraw = false;
