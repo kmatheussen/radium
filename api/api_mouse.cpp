@@ -539,7 +539,7 @@ void setTrackSliderPos(float pos, int blocknum, int windownum){
       break;
 
     if (window->wblock==wblock)
-      cursorRight(window->l.num);
+	    cursorRight(window->l.num, false);
 
     if (track==window->curr_track && subtrack==window->curr_track_sub)
       break;
@@ -564,7 +564,7 @@ void setTrackSliderPos(float pos, int blocknum, int windownum){
       break;
     
     if (window->wblock==wblock)
-      cursorLeft(window->l.num);
+	    cursorLeft(window->l.num, false);
 
     if (track==window->curr_track && subtrack==window->curr_track_sub)
       break;
