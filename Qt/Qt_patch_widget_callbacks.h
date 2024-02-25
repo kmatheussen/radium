@@ -373,8 +373,8 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
     header->setMinimumHeight(header_height);
     header->setMaximumHeight(header_height);
 
-    locked_instrument->setMinimumWidth(header_height);
-    locked_instrument->setMaximumWidth(header_height);
+    select_instrument->setMinimumWidth(header_height);
+    select_instrument->setMaximumWidth(header_height);
     
     for(int i=0;i<NUM_PATCH_VOICES;i++){
       const PatchVoice &voice=_patch->voices[i];
@@ -412,27 +412,30 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
     adjust_labels();
 
     {
-      QFont font;
-      locked_instrument->setFont(font); // don't know why
+	    //QFont font;
+	    //select_instrument->setFont(font); // don't know why
 
-      if (isCurrentInstrumentLocked())
-        locked_instrument->setText("locked.svg");
-      else
-        locked_instrument->setText("unlocked.svg");
+      //if (isCurrentInstrumentLocked())
+	      //locked_instrument->setText("locked.svg");
+	      select_instrument->setText("arrow-down-filled-triangle-svgrepo-com.svg");
+	      //else
+	      //locked_instrument->setText("unlocked.svg");
 
-      locked_instrument->_show_enabled_marker = false;
+	      //locked_instrument->_show_enabled_marker = false;
 
       /*
       const QFontMetrics fn = QFontMetrics(font);
       float width = 1.5 * fn.boundingRect("L").width();
       */
       
-      locked_instrument->setChecked(isCurrentInstrumentLocked());
+	      //locked_instrument->setChecked(isCurrentInstrumentLocked());
 
+#if 0
       locked_instrument->_show_popup_menu = [](){
         S7CALL2(void_void,"FROM_C-show-lock-instrument-popup-menu");
       };
-
+#endif
+      
     }
     
     _called_from_update = false;
@@ -585,11 +588,17 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
   
 public slots:
 
+	void on_select_instrument_clicked(void){
+		S7CALL2(void_void, "FROM_C-show-set-current-instrument-popup-menu");
+	}
+	
+#if 0
   void on_locked_instrument_toggled(bool val){
     if (!_called_from_update)
       setCurrentInstrumentLocked(val);
   }
-  
+#endif
+	
   void on_o1_toggled(bool val){onoff_toggled(0,val);}
   void on_o2_toggled(bool val){onoff_toggled(1,val);}
   void on_o3_toggled(bool val){onoff_toggled(2,val);}

@@ -66,7 +66,7 @@
        <number>0</number>
       </property>
       <item>
-       <widget class="QCheckBox" name="locked_instrument">
+       <widget class="QToolButton" name="select_instrument">
         <property name="toolTip">
          <string/>
         </property>
