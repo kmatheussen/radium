@@ -201,6 +201,7 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
     
     setup_popup_menus_and_stuff();
 
+#if 0
     IsAlive is_alive(this);
     
     locked_instrument->_hovered_callback = [is_alive](bool do_enter){
@@ -228,6 +229,7 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
         }
       }
     };
+#endif
     
     updateWidgets();
     initing = false;
