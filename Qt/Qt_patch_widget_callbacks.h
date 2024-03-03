@@ -201,33 +201,35 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
     
     setup_popup_menus_and_stuff();
 
+#if 0
     IsAlive is_alive(this);
     
-    //locked_instrument->_hovered_callback = [is_alive](bool do_enter){
-    //  if (is_alive){
-    //    if (do_enter){
-    //      
-    //      QString settings_key, default_dir;
-    //      QString path =
-    //      "Select whether Radium is allowed to change to a different instrument by itself.<br>"
-    //      "<p>Right-click to configure keybinding and change current instrument.";
-    //      
-    //      //QToolTip::showText(QCursor::pos(),path + "gakk",NULL,QRect()); // QToolTip tries to be smart, but does of course fail. Why not let the programmer decide how things should behave instead? (shold probably make a custom tooltip function to avoid alle these workarounds)
-    //      QToolTip::showText(QCursor::pos(),path,NULL,QRect());
+    locked_instrument->_hovered_callback = [is_alive](bool do_enter){
+      if (is_alive){
+        if (do_enter){
+          
+          QString settings_key, default_dir;
+          QString path =
+          "Select whether Radium is allowed to change to a different instrument by itself.<br>"
+          "<p>Right-click to configure keybinding and change current instrument.";
+          
+          //QToolTip::showText(QCursor::pos(),path + "gakk",NULL,QRect()); // QToolTip tries to be smart, but does of course fail. Why not let the programmer decide how things should behave instead? (shold probably make a custom tooltip function to avoid alle these workarounds)
+          QToolTip::showText(QCursor::pos(),path,NULL,QRect());
 
-    //      if (isCurrentInstrumentLocked())
-    //        GFX_SetStatusBar("Current instrument locked");
-    //      else
-    //        GFX_SetStatusBar("Current instrument unlocked");
-    //      
-    //    } else {
-    //      
-    //      QToolTip::hideText();
-    //      GFX_SetStatusBar("");
-    //      
-    //    }
-    //  }
-    //};
+          if (isCurrentInstrumentLocked())
+            GFX_SetStatusBar("Current instrument locked");
+          else
+            GFX_SetStatusBar("Current instrument unlocked");
+          
+        } else {
+          
+          QToolTip::hideText();
+          GFX_SetStatusBar("");
+          
+        }
+      }
+    };
+#endif
     
     updateWidgets();
     initing = false;
@@ -430,11 +432,9 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
       
 	      //locked_instrument->setChecked(isCurrentInstrumentLocked());
 
-#if 0
-      locked_instrument->_show_popup_menu = [](){
-        S7CALL2(void_void,"FROM_C-show-lock-instrument-popup-menu");
+      select_instrument->_show_popup_menu = [](){
+	      S7CALL2(void_void,"FROM_C-show-select-instrument-right-click");
       };
-#endif
       
     }
     

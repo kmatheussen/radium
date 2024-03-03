@@ -2308,6 +2308,16 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
 (define (FROM_C-show-set-current-audio-or-midi-instrument-popup-menu)
   (show-set-current-audio-or-midi-instrument-popup-menu))
 
+
+(define (FROM_C-show-select-instrument-right-click)
+  (popup-menu
+   "-------Keybindings"
+   (get-keybinding-configuration-popup-menu-entries "FROM_C-show-set-current-audio-or-midi-instrument-popup-menu")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
+
+
 (define (delete-all-unused-MIDI-instruments)
   (define used-instruments (<new> :container '() equal?))
   (define unused-MIDI-instruments '())
