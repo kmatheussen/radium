@@ -4892,7 +4892,7 @@ int main(int argc, char **argv){
   SETTINGS_init();
 
   
-#if defined(FOR_MACOSX) && (defined (__arm64__) || defined (__aarch64__))
+#if 0 // defined(FOR_MACOSX) && (defined (__arm64__) || defined (__aarch64__))
   
   GC_enable_incremental(); // Always incremental under macos(arm)
 
