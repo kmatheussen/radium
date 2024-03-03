@@ -151,7 +151,7 @@
                 (lambda ()
                   (strips-config :show-config-gui))))
      
-     (get-forced-as-current-instrument-menu-entry instrument-id)
+     ;;(get-forced-as-current-instrument-menu-entry instrument-id)
      
      (list "Set current instrument..."
            show-set-current-instrument-popup-menu)

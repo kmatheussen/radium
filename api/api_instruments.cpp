@@ -3849,8 +3849,9 @@ void setCurrentInstrumentDown(bool set_current_instrument, bool set_current_inst
   S7CALL2(void_bool_bool,"FROM_C-move-current-instrument-down", set_current_instrument, set_current_instrument_under_mouse);
 }
 
-static bool g_curr_instrument_is_locked = true;// = createIllegalInstrument();
+//static bool g_curr_instrument_is_locked = true;// = createIllegalInstrument();
 
+#if 0
 void setCurrentInstrumentLocked(bool lockit){
   if (lockit==g_curr_instrument_is_locked)
     return;
@@ -3867,7 +3868,9 @@ void setCurrentInstrumentLocked(bool lockit){
     g_curr_locked_instrument = createIllegalInstrument();
   */
 }
+#endif
 
+#if 0
 bool isCurrentInstrumentLocked(void){
   return g_curr_instrument_is_locked;
   /*
@@ -3877,7 +3880,9 @@ bool isCurrentInstrumentLocked(void){
     return PATCH_get_from_id(g_curr_locked_instrument) != NULL;
   */
 }
+#endif
 
+#if 0
 void switchSetCurrentInstrumentLocked(void){
   setCurrentInstrumentLocked(!isCurrentInstrumentLocked());
 
@@ -3888,7 +3893,7 @@ void switchSetCurrentInstrumentLocked(void){
     g_curr_locked_instrument = createIllegalInstrument();
   */
 }
-
+#endif
 
 static radium::ProtectedS7FuncVector g_current_instrument_changed_callbacks(true);
 
