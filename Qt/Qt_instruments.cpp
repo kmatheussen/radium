@@ -858,7 +858,7 @@ static void GFX_PP_Update_internal(struct Patch *patch, bool is_loading, bool op
 	
   struct Patch *old_current = PATCH_get_current();
 
-  if (old_current != NULL && g_is_loading==false && open_even_if_locked==false && isCurrentInstrumentLocked())
+  if (old_current != NULL && g_is_loading==false && open_even_if_locked==false)
     return;
   
   called_from_pp_update = true;{

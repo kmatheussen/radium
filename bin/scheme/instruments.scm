@@ -1716,26 +1716,26 @@
 
 
 ;; Note: used for shortcut
-(delafina (switch-force-as-current-instrument :instrument-id (<ra> :get-current-instrument-under-mouse))
-  (define is-forced (and (<ra> :is-current-instrument-locked)
-                         (equal? instrument-id (<ra> :get-current-instrument-under-mouse))))
-  (if is-forced
-      (<ra> :set-current-instrument-locked #f)
-      (begin
-        (<ra> :set-current-instrument-locked #t)
-        (<ra> :set-current-instrument instrument-id))))
+;;(delafina (switch-force-as-current-instrument :instrument-id (<ra> :get-current-instrument-under-mouse))
+;;  (define is-forced (and (<ra> :is-current-instrument-locked)
+;;                         (equal? instrument-id (<ra> :get-current-instrument-under-mouse))))
+;;  (if is-forced
+;;      (<ra> :set-current-instrument-locked #f)
+;;      (begin
+;;        (<ra> :set-current-instrument-locked #t)
+;;        (<ra> :set-current-instrument instrument-id))))
 
-(define (get-forced-as-current-instrument-menu-entry instrument-id)
-  (list "Forced as current instrument"
-        :check (and (<ra> :is-current-instrument-locked)
-                    (equal? instrument-id (<ra> :get-current-instrument)))
-        :shortcut switch-force-as-current-instrument
-        (lambda (setit)
-          (if setit
-              (begin
-                (<ra> :set-current-instrument-locked #t)
-                (<ra> :set-current-instrument instrument-id))
-              (<ra> :set-current-instrument-locked #f)))))
+;;(define (get-forced-as-current-instrument-menu-entry instrument-id)
+;;  (list "Forced as current instrument"
+;;        :check (and (<ra> :is-current-instrument-locked)
+;;                    (equal? instrument-id (<ra> :get-current-instrument)))
+;;        :shortcut switch-force-as-current-instrument
+;;        (lambda (setit)
+;;          (if setit
+;;              (begin
+;;                (<ra> :set-current-instrument-locked #t)
+;;                (<ra> :set-current-instrument instrument-id))
+;;              (<ra> :set-current-instrument-locked #f)))))
 
 (delafina (get-insert-plugin-entry :instrument-id
                                    :enabled #t
@@ -1808,7 +1808,7 @@
            (lambda (doit)
              (switch-connect-instrument-to-main-pipe instrument-id)))
 
-     (get-forced-as-current-instrument-menu-entry instrument-id)     
+     ;;(get-forced-as-current-instrument-menu-entry instrument-id)     
                          
      (list "Assign to current editor track"
            :shortcut assign-instrument-to-current-editor-track

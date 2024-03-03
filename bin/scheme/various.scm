@@ -1044,16 +1044,16 @@
 ;; Instruments
   
 
-(define (FROM_C-show-lock-instrument-popup-menu) 
-  (popup-menu
-   (get-keybinding-configuration-popup-menu-entries "ra:switch-set-current-instrument-locked"
-                                                    '()
-                                                    "")
-   "-------------"
-   "Set current instrument..." show-set-current-instrument-popup-menu
-   "-------------"
-   "Help keybindings" show-keybinding-help-window
-   ))
+;;(define (FROM_C-show-lock-instrument-popup-menu) 
+;;  (popup-menu
+;;   (get-keybinding-configuration-popup-menu-entries "ra:switch-set-current-instrument-locked"
+;;                                                    '()
+;;                                                    "")
+;;   "-------------"
+;;   "Set current instrument..." show-set-current-instrument-popup-menu
+;;   "-------------"
+;;   "Help keybindings" show-keybinding-help-window
+;;   ))
  
 
 
