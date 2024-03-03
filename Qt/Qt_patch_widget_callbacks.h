@@ -589,7 +589,7 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
 public slots:
 
 	void on_select_instrument_clicked(void){
-		S7CALL2(void_void, "FROM_C-show-set-current-instrument-popup-menu");
+		S7CALL2(void_void, "FROM_C-show-set-current-audio-or-midi-instrument-popup-menu");
 	}
 	
 #if 0
