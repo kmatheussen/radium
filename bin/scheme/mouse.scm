@@ -5135,6 +5135,9 @@
                      (inside-box? (<ra> :get-box editor) X Y)
                      *current-track-num*
                      (<ra> :select-track *current-track-num*)
+		     (let ((instrument (<ra> :get-instrument-for-track *current-track-num*)))
+		       (if (<ra> :is-legal-instrument instrument)
+			   (<ra> :set-current-instrument instrument)))
                      #t))))
 
 (define (show-global-swing-track-popup-menu)
