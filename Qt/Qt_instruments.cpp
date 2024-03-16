@@ -454,7 +454,7 @@ void InstrumentWidget_create_audio_instrument_widget(struct Patch *patch, bool s
     QTimer::singleShot(g_set_current_delay + 3,[patch_id]{
         struct Patch *patch = PATCH_get_from_id(patch_id);
         if(patch != NULL)
-          GFX_PP_Update( patch, false, false );
+          GFX_PP_Update(patch, false, true);
       });
     
   }
@@ -847,6 +847,11 @@ static bool patch_used_in_current_editor_block(struct Patch *patch){
 static void GFX_PP_Update_internal(struct Patch *patch, bool is_loading, bool open_even_if_locked){
   //printf("GFX_PP_Update %s\n", patch==NULL?"(null)":patch->name);
 
+  if (open_even_if_locked == false){
+    printf("Gakk\n");
+    //open_even_if_locked = true;
+  }
+  
 #if 0
 	if (open_even_if_locked){
 		if (isPlaying()){

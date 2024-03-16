@@ -514,7 +514,7 @@ void setInstrumentForTrack(instrument_t instrument_id, int tracknum, int blocknu
   
   wblock->block->is_dirty = true;
 
-  ( *new_patch->instrument->PP_Update )( new_patch->instrument, new_patch, false, false );
+  (*new_patch->instrument->PP_Update)(new_patch->instrument, new_patch, false, true);
 }
 
 void replaceUseOfInstrument(instrument_t old_instrument_id, instrument_t new_instrument_id){
