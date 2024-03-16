@@ -1296,7 +1296,7 @@
 (define (FROM_C-call-me-after-curr-seqblock-under-mouse-has-been-called seqblockid)
   (when (or (not *current-seqblock-info*)
             (not (= (*current-seqblock-info* :id) seqblockid)))
-    ;;(c-display "SETTING CURR SEQBLOCK")
+    ;;(c-display "SETTING CURR SEQBLOCK 1. ID: " seqblockid ". seqblocknum: " (<ra> :get-seqblock-seqblock-num seqblockid) ". seqtracknum: " (<ra> :get-seqblock-seqtrack-num seqblockid))
     (set! *current-seqblock-info* (make-seqblock-info3 seqblockid))))
 
 ;; Currently only called from the mouse-move handler below.
@@ -1321,12 +1321,15 @@
            ;;                          -1
            ;;                          (<ra> :get-seqblock-color id))
            ;;(c-display "     2. maybe cancelling CURR SEQBLOCK")
+	   ;;(c-display "SETTING CURR SEQBLOCK 2. ID: " id)
            (set! *current-seqblock-info* new) ;; set this one first, so we don't have to create seqblock-info twice.
            ;;(<ra> :set-curr-seqblock-under-mouse id)
            (<ra> :set-curr-seqblock id)
            ) ;; ...because this one calls FROM_C-call-me-after-curr-seqblock-under-mouse-has-been-called.
           (else
-           ;;(c-display "old/new:" (if old #t #f) (if new #t #f))
+           ;;(c-display "old/new:" (if old #t #f) (if new #t #f) ". current seqtracknum:" *current-seqtrack-num*)
+	   ;;(c-display "old: " old)
+	   ;;(c-display "new: " new)
            (if *current-seqtrack-num*
                (maybe-autoselect-curr-seqtrack *current-seqtrack-num*))
            #f))))
@@ -5339,6 +5342,7 @@
                                                            (*clicked-seqblock* :time))
                                                         (<ra> :get-double-click-interval)))
                                                 (begin
+						  ;;(c-display "clicked:" *clicked-seqblock*)
                                                   ;;(c-display "double-clicked " seqtracknum)
                                                   ;;(<ra> :set-curr-seqtrack seqtracknum #f #t)
                                                   (set! *clicked-seqblock* #f)
@@ -7045,6 +7049,9 @@
 
 (define (get-seqblock-popup-menu-entries seqblock-infos seqblocknum seqtracknum seqblockid X Y)
   (define seqblock-info *current-seqblock-info*)
+  
+  ;;(c-display "seqblocknum: " seqblocknum ". seqtracknum: " + seqtracknum ". seqblock-info: " *current-seqblock-info*)
+  
   (define blocknum (and seqblock-info
                         (<ra> :seqblock-holds-block seqblocknum seqtracknum)
                         (<ra> :get-seqblock-blocknum seqblocknum seqtracknum)))
@@ -7197,6 +7204,9 @@
          *current-seqblock-info*
          (let ((seqblock-infos (get-selected-seqblock-infos))
                (seqblock-info *current-seqblock-info*))
+
+	   (assert (= seqtracknum (seqblock-info :seqtracknum)))
+	   
            (define for-audiofiles (<ra> :seqtrack-for-audiofiles seqtracknum))
            (define for-blocks (not for-audiofiles))
            (define seqblocknum (seqblock-info :seqblocknum))
@@ -7468,7 +7478,7 @@
        (for-each (lambda (seqblock)
                    (<ra> :unmark-seqblock-available (seqblock :id)))
                  marked-as-available)
-    
+
        ;; Keep *current-seqblock-info* up to date since it is used to auto-call :cancel-gfx-seqblocks if anything goes wrong.
        (set! *current-seqblock-info* (copy-seqblock-info *current-seqblock-info*
                                                          :seqtracknum seqtracknum
