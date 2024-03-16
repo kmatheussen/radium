@@ -3084,7 +3084,7 @@ bool Control2Pressed(void){
 }
 */
 
-Qt::KeyboardModifier HorizontalModifier() {
+static Qt::KeyboardModifier HorizontalModifier() {
   if (SETTINGS_read_bool("alt_as_horizonal_scroll_modifier", false))
     return Qt::AltModifier;
   else
