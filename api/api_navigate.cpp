@@ -375,7 +375,7 @@ void selectPrevPlaylistBlock(void){
 }
 
 void selectTrack(int tracknum,int windownum){
-	setCurrentTrack(tracknum, -2, windownum, false);
+  setCurrentTrack(tracknum, -2, windownum, true);
 }
 
 void setCurrentTrack(int tracknum, int subtrack, int windownum, bool switch_instrument_even_if_locked){
