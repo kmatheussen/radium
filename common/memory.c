@@ -231,6 +231,8 @@ void *talloc_atomic__(int size, const char *filename, int linenumber){
 #  endif
 
 #endif
+	EVENTLOG_add_event("Out of memory");
+
         RWarning("Out of memory. I'll try to continue by allocating a different way, but you should save and quit now.\n");
 
         ret = calloc(1,size);
