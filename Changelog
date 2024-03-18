@@ -1,3 +1,49 @@
+Changes 7.2.89 -> 7.3.84:
+* MacOS: Don't crash when loading files with
+  certain non-ascii characters (e.g. Japanese) in
+  their filename. (Possibly only a problem in very
+  recent versions of MacOS.)
+* Demo songs: New song called "Night comes" by Nay.
+* MacOS: Workaround for strange trackpad behavior
+  causing two-finger-touching a seqblock not always
+  working.
+* Instrument: Remove the "locked instrument" concept.
+  (Yustin / Kmatheussen)
+* Instrument: Never automatically change instrument
+  when playing song when the cursor is moved to a new
+  editor track. (Yustin / Kmatheussen)
+* Instrument: Replace the "locked" checkbox with
+  a "select" button.
+* GUI: Remember window positions and so forth between
+  sessions. (Akimaze) 
+* Instruments Clarify what the "set new name" option
+  does.
+* Sequencer: Enable "Delete all selected" also when
+  only one seqblock is selected.
+* Sequencer: Remove the "Delete" popup menu entry
+  since it was too similar to "Delete current".
+  (It only differered for the behavior of assigned
+  keybindings.)
+* Automatically add extension to preset names if
+  missing. (Akimaze)
+* Faust: Use linear velocity->gain conversion for
+  very low velocities so that gain can reach zero.
+* Audio: Fix pops/scratches/clicks for quite silent
+  sounds in the graph that were volume-boosted up
+  later in the DSP graph. (Even the "Demo song" demo
+  song suffered from this.)
+* Build: Add option to use qwebengine instead of
+  qtwebkit. (qwebengine has some shortcomings, but
+  it can be convenient to use to avoid having to
+  compile up qtwebkit.)
+* Editor: Fixed coordinate calculation when dropping
+  a file. (Akimaze)
+* GUI: Option to use the alt key as a horizontal
+  scroll modifier (in sequencer and mixer). (Akimaze)
+* Faust: Update Faust 2.54.9 -> 2.70.3. (Yustin)
+
+
+
 Changes 7.2.87 -> 7.2.89:
 * Demo song: "Locrans Shop" made by Trumpetrespas.
 * Editor: Add "Drums" to the "(click me)" menu.
@@ -7,6 +53,7 @@ Changes 7.2.87 -> 7.2.89:
   to only include drums.
 * Audio: Fix LV2 plugins (bug introduced in 7.2.87).
 * Build: Fix having to run "make packages" twice/etc.
+
 
 
 Changes 7.1.92 -> 7.2.87:
