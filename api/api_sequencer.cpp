@@ -1336,7 +1336,7 @@ static int add_seq_automation(int64_t time1, float value1, int64_t time2, float 
     return -1;
   }
 
-  if (time1<0 || time2 <= time1){
+  if (time1<0 || time2 < time1){
     handleError("addSeqAutomation: Illegal time values. time1: %d. time2: %d", (int)time1, (int)time2);
     return -1;
   }
