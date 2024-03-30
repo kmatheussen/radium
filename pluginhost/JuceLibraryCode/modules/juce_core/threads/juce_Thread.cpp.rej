@@ -1,0 +1,65 @@
+--- JuceLibraryCode/modules/juce_core/threads/juce_Thread.cpp
++++ JuceLibraryCode/modules/juce_core/threads/juce_Thread.cpp
+@@ -84,22 +84,22 @@
+     if (threadName.isNotEmpty())
+         setCurrentThreadName (threadName);
+ 
+-    if (startSuspensionEvent.wait (10000))
+-    {
+-        jassert (getCurrentThreadId() == threadId.get());
++    jassert (getCurrentThreadId() == threadId.get());
+ 
+-        if (affinityMask != 0)
+-            setCurrentThreadAffinityMask (affinityMask);
++    if (affinityMask != 0)
++      setCurrentThreadAffinityMask (affinityMask);
+ 
+-        try
+-        {
+-            run();
+-        }
+-        catch (...)
+-        {
+-            jassertfalse; // Your run() method mustn't throw any exceptions!
+-        }
+-    }
++    setCurrentThreadPriority (threadPriority);
++    startSuspensionEvent.signal();
++    
++    try
++      {
++        run();
++      }
++    catch (...)
++      {
++        jassertfalse; // Your run() method mustn't throw any exceptions!
++      }
+ 
+     currentThreadHolder->value.releaseCurrentThreadStorage();
+ 
+@@ -128,8 +128,7 @@
+     if (threadHandle.get() == nullptr)
+     {
+         launchThread();
+-        setThreadPriority (threadHandle.get(), threadPriority);
+-        startSuspensionEvent.signal();
++        startSuspensionEvent.wait(10000);
+     }
+ }
+ 
+--- JuceLibraryCode/modules/juce_core/threads/juce_Thread.cpp
++++ JuceLibraryCode/modules/juce_core/threads/juce_Thread.cpp
+@@ -84,8 +84,12 @@ void Thread::threadEntryPoint()
+     if (threadName.isNotEmpty())
+         setCurrentThreadName (threadName);
+ 
++#if 0
+     jassert (getCurrentThreadId() == threadId.get());
+-
++#else
++    threadId = getCurrentThreadId(); // Setthing threadId must be done here now.
++#endif
++    
+     if (affinityMask != 0)
+       setCurrentThreadAffinityMask (affinityMask);
+ 

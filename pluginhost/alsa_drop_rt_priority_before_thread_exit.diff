@@ -1,7 +1,7 @@
 diff --git a/pluginhost/JuceLibraryCode/modules/juce_audio_devices/native/juce_linux_ALSA.cpp b/pluginhost/JuceLibraryCode/modules/juce_audio_devices/native/juce_linux_ALSA.cpp
 index 323fe13e4..cd9a189b1 100644
---- a/pluginhost/JuceLibraryCode/modules/juce_audio_devices/native/juce_linux_ALSA.cpp
-+++ b/pluginhost/JuceLibraryCode/modules/juce_audio_devices/native/juce_linux_ALSA.cpp
+--- a/pluginhost/JuceLibraryCode/modules/juce_audio_devices/native/juce_ALSA_linux.cpp
++++ b/pluginhost/JuceLibraryCode/modules/juce_audio_devices/native/juce_ALSA_linux.cpp
 @@ -20,6 +20,9 @@
    ==============================================================================
  */
