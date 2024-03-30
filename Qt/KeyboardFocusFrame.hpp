@@ -139,15 +139,21 @@ struct KeyboardFocusFrame : public QFrame{
   }
   
   void maybe_update_width(void){
-    if (_last_fontheight != root->song->tracker_windows->systemfontheight){
-      // schedule to run later since we may have been called from paintEvent()
-      QTimer::singleShot(1,[this]
-                         {
-                           _last_fontheight = root->song->tracker_windows->systemfontheight;
-                           setLineWidth(R_MAX(1, _last_fontheight  / (_type==KeyboardFocusFrameType::EDITOR ? 7.8 : 4.8)));
-                         }
-                         );
-    }
+	  if (root==NULL || root->song==NULL || root->song->tracker_windows==NULL)
+		  return;
+	  
+	  if (_last_fontheight != root->song->tracker_windows->systemfontheight){
+		  // schedule to run later since we may have been called from paintEvent()
+		  QTimer::singleShot(1,[this]
+			  {
+				  if (root==NULL || root->song==NULL || root->song->tracker_windows==NULL)
+					  return;
+				  
+				  _last_fontheight = root->song->tracker_windows->systemfontheight;
+				  setLineWidth(R_MAX(1, _last_fontheight  / (_type==KeyboardFocusFrameType::EDITOR ? 7.8 : 4.8)));
+			  }
+			  );
+	  }
   }
 
   void paintEvent ( QPaintEvent * ev ) override {    
