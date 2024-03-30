@@ -20,8 +20,6 @@
   ==============================================================================
 */
 
-#include "../../../../../common/RT_memory_allocator_proc.h"
-
 namespace juce
 {
 
@@ -140,8 +138,6 @@ public:
     */
     int getRawDataSize() const noexcept                 { return size; }
 
-    RT_Mem<uint8> *getRT_Mem() const noexcept { return isHeapAllocated() ? packedData.allocatedData : NULL; }
-              
     //==============================================================================
     /** Returns a human-readable description of the midi message as a string,
         for example "Note On C#3 Velocity 120 Channel 1".
@@ -221,6 +217,13 @@ public:
         @see getSysExData
     */
     int getSysExDataSize() const noexcept;
+
+    /** Returns a span that bounds the sysex body bytes contained in this message. */
+    Span<const std::byte> getSysExDataSpan() const noexcept
+    {
+        return { reinterpret_cast<const std::byte*> (getSysExData()),
+                 (size_t) getSysExDataSize() };
+    }
 
     //==============================================================================
     /** Returns true if this message is a 'key-down' event.
@@ -859,6 +862,10 @@ public:
     static MidiMessage createSysExMessage (const void* sysexData,
                                            int dataSize);
 
+    /** Creates a system-exclusive message.
+        The data passed in is wrapped with header and tail bytes of 0xf0 and 0xf7.
+    */
+    static MidiMessage createSysExMessage (Span<const std::byte> data);
 
     //==============================================================================
    #ifndef DOXYGEN
@@ -973,9 +980,8 @@ private:
    #ifndef DOXYGEN
     union PackedData
     {
-        RT_Mem<uint8> *allocatedData;
-
-        uint8 asBytes[sizeof (RT_Mem<uint8>*)];
+        uint8* allocatedData;
+        uint8 asBytes[sizeof (uint8*)];
     };
 
     PackedData packedData;
@@ -984,7 +990,7 @@ private:
    #endif
 
     inline bool isHeapAllocated() const noexcept  { return size > (int) sizeof (packedData); }
-    inline uint8* getData() const noexcept        { return isHeapAllocated() ? RT_data(packedData.allocatedData) : (uint8*) packedData.asBytes; }
+    inline uint8* getData() const noexcept        { return isHeapAllocated() ? packedData.allocatedData : (uint8*) packedData.asBytes; }
     uint8* allocateSpace (int);
 };
 

@@ -1,0 +1,11 @@
+--- JuceLibraryCode/modules/juce_gui_basics/juce_gui_basics.cpp
++++ JuceLibraryCode/modules/juce_gui_basics/juce_gui_basics.cpp
+@@ -69,7 +69,7 @@
+  #include <commctrl.h>
+  #include <UIAutomation.h>
+  #include <sapi.h>
+- #include <Dxgi.h>
++ #include <dxgi.h>
+ 
+  #if JUCE_WEB_BROWSER
+   #include <exdisp.h>

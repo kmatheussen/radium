@@ -46,6 +46,9 @@ class JUCE_API  WebBrowserComponent  : public Component
 {
 public:
     //==============================================================================
+    /**
+        Options to configure WebBrowserComponent.
+    */
     class JUCE_API Options
     {
     public:
@@ -63,9 +66,9 @@ public:
                 of IE. To change this behaviour, you either need to add the following html element into your page's
                 head section:
 
-                <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+                    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 
-                or you need to change windows registry values for your application.  More infromation on the latter
+                or you need to change windows registry values for your application.  More information on the latter
                 can be found here:
 
                 https://learn.microsoft.com/en-us/previous-versions/windows/internet-explorer/ie-developer/general-info/ee330730(v=vs.85)?redirectedfrom=MSDN#browser-emulation
@@ -93,7 +96,7 @@ public:
             handy to stop the browser using resources in the background when it's not
             actually being used.
         */
-        [[nodiscard]] Options withKeepPageLoadedWhenBrowserIsHidden () const   { return withMember (*this, &Options::keepPageLoadedWhenBrowserIsHidden, true); }
+        [[nodiscard]] Options withKeepPageLoadedWhenBrowserIsHidden() const   { return withMember (*this, &Options::keepPageLoadedWhenBrowserIsHidden, true); }
 
         /**
             Use a specific user agent string when requesting web pages.
@@ -179,12 +182,6 @@ public:
     /** Creates a WebBrowserComponent.
 
         Once it's created and visible, send the browser to a URL using goToURL().
-
-        @param unloadPageWhenBrowserIsHidden  if this is true, then when the browser
-                            component is taken offscreen, it'll clear the current page
-                            and replace it with a blank page - this can be handy to stop
-                            the browser using resources in the background when it's not
-                            actually being used.
     */
     explicit WebBrowserComponent (const Options& options);
 
@@ -232,10 +229,10 @@ public:
         tries to go to a particular URL. To allow the operation to carry on,
         return true, or return false to stop the navigation happening.
     */
-    virtual bool pageAboutToLoad (const String& newURL)             { ignoreUnused (newURL); return true; }
+    virtual bool pageAboutToLoad (const String& newURL);
 
     /** This callback happens when the browser has finished loading a page. */
-    virtual void pageFinishedLoading (const String& url)            { ignoreUnused (url); }
+    virtual void pageFinishedLoading (const String& url);
 
     /** This callback happens when a network error was encountered while
         trying to load a page.
@@ -247,18 +244,18 @@ public:
         The errorInfo contains some platform dependent string describing the
         error.
     */
-    virtual bool pageLoadHadNetworkError (const String& errorInfo)  { ignoreUnused (errorInfo); return true; }
+    virtual bool pageLoadHadNetworkError (const String& errorInfo);
 
     /** This callback occurs when a script or other activity in the browser asks for
         the window to be closed.
     */
-    virtual void windowCloseRequest()                               {}
+    virtual void windowCloseRequest();
 
     /** This callback occurs when the browser attempts to load a URL in a new window.
         This won't actually load the window but gives you a chance to either launch a
         new window yourself or just load the URL into the current window with goToURL().
      */
-    virtual void newWindowAttemptingToLoad (const String& newURL)   { ignoreUnused (newURL); }
+    virtual void newWindowAttemptingToLoad (const String& newURL);
 
     //==============================================================================
     /** @internal */
@@ -270,12 +267,17 @@ public:
     /** @internal */
     void visibilityChanged() override;
     /** @internal */
-    void focusGained (FocusChangeType) override;
+    void focusGainedWithDirection (FocusChangeType, FocusChangeDirection) override;
 
     /** @internal */
     class Pimpl;
 
 private:
+    std::unique_ptr<AccessibilityHandler> createAccessibilityHandler() override
+    {
+        return std::make_unique<AccessibilityHandler> (*this, AccessibilityRole::group);
+    }
+
     //==============================================================================
     std::unique_ptr<Pimpl> browser;
     bool blankPageShown = false, unloadPageWhenHidden;
@@ -288,6 +290,7 @@ private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (WebBrowserComponent)
 };
+
 #endif
 
 } // namespace juce
