@@ -24,6 +24,21 @@ namespace juce
 {
 
 #if JUCE_ALSA
+  
+static void setLowestRealtimePriority(void)
+{
+  struct sched_param param = {0};
+  param.sched_priority=sched_get_priority_min(SCHED_RR);
+  pthread_setschedparam(pthread_self(), SCHED_RR, &param);
+}
+
+static void setNonrealtimePriority(void)
+{
+  struct sched_param param = {0};
+  param.sched_priority=sched_get_priority_min(SCHED_OTHER);
+  pthread_setschedparam(pthread_self(), SCHED_OTHER, &param);
+}
+  
 
 //==============================================================================
 class AlsaClient
@@ -173,6 +188,9 @@ public:
         {
             if (auto seqHandle = client->get())
             {
+              
+                enableSubscription = true; // Make sure all connections and ports are shown (for instance in the qjackctl patchbay). Not showing them only creates confusion.
+                
                 const unsigned int caps =
                     isInput ? (SND_SEQ_PORT_CAP_WRITE | (enableSubscription ? SND_SEQ_PORT_CAP_SUBS_WRITE : 0))
                             : (SND_SEQ_PORT_CAP_READ  | (enableSubscription ? SND_SEQ_PORT_CAP_SUBS_READ : 0));
@@ -367,6 +385,9 @@ private:
 
                 std::vector<uint8> buffer (maxEventSize);
 
+                setLowestRealtimePriority();
+                const ScopeGuard callSetNnonrealtimePriority { [] { setNonrealtimePriority() } };
+ 
                 while (! shouldStop)
                 {
                     // This timeout shouldn't be too long, so that the program can exit in a timely manner
@@ -459,10 +480,28 @@ static AlsaClient::Port* iterateMidiClient (AlsaClient& client,
             && (snd_seq_port_info_get_capability (portInfo)
                 & (forInput ? SND_SEQ_PORT_CAP_SUBS_READ : SND_SEQ_PORT_CAP_SUBS_WRITE)) != 0)
         {
+
+#if 1
+            const String clientName = snd_seq_client_info_get_name (clientInfo);
+            const String portName = snd_seq_port_info_get_name(portInfo);
+            auto portID = snd_seq_port_info_get_port (portInfo);
+            
+            String deviceName;
+            
+            if (clientName == portName)
+              deviceName = clientName;
+            else
+              deviceName = clientName + ": " + portName;
+
+            MidiDeviceInfo device (deviceName, getFormattedPortIdentifier (sourceClient, portID));
+            
+#else       
             String portName (snd_seq_port_info_get_name (portInfo));
             auto portID = snd_seq_port_info_get_port (portInfo);
-
+            
             MidiDeviceInfo device (portName, getFormattedPortIdentifier (sourceClient, portID));
+#endif
+
             devices.add (device);
 
             if (deviceIdentifierToOpen.isNotEmpty() && deviceIdentifierToOpen == device.identifier)
@@ -597,7 +636,7 @@ StringArray MidiInput::getDevices()
     for (auto& d : getAvailableDevices())
         deviceNames.add (d.name);
 
-    deviceNames.appendNumbersToDuplicates (true, true);
+    deviceNames.appendNumbersToDuplicates (true, false);
 
     return deviceNames;
 }
@@ -694,7 +733,7 @@ StringArray MidiOutput::getDevices()
     for (auto& d : getAvailableDevices())
         deviceNames.add (d.name);
 
-    deviceNames.appendNumbersToDuplicates (true, true);
+    deviceNames.appendNumbersToDuplicates (true, false);
 
     return deviceNames;
 }
