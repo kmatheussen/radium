@@ -248,7 +248,7 @@ std::unique_ptr<ScopedMessageBoxInterface> ScopedMessageBoxInterface::create (co
         }
 
     private:
-      static LRESULT CALLBACK pfCallback(HWND hwnd, UINT msg, WPARAM, LPARAM, LONG_PTR lpRefData)
+      static HRESULT pfCallback(HWND hwnd, UINT msg, WPARAM, LPARAM, LONG_PTR lpRefData)
       {
         if (auto* t = reinterpret_cast<WindowsTaskDialog*> (lpRefData))
           {
@@ -267,7 +267,7 @@ std::unique_ptr<ScopedMessageBoxInterface> ScopedMessageBoxInterface::create (co
         
         return S_OK;
       }
-        
+
         std::function<int()> getShowMessageBoxForParent (const HWND parent) override
         {
             JUCE_ASSERT_MESSAGE_THREAD
