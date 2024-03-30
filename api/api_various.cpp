@@ -20,6 +20,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <gc.h>
 
+#include "../bin/packages/faust/architecture/faust/dsp/interpreter-dsp-c.h"
+
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wshorten-64-to-32"
 #include <QVector> // Shortening warning in the QVector header. Temporarily turned off by the surrounding pragmas.
@@ -2201,7 +2203,8 @@ void openAboutWindow(void){
               "Qt version: \"%s\"<br>"
               "JUCE version: \"%s\"<br>"
               "C/C++ compiler version: " __VERSION__ "<br>"
-              "S7 version: " S7_VERSION " / " S7_DATE
+              "S7 version: " S7_VERSION " / " S7_DATE "<br>"
+              "Faust version: \"%s\"<br>"
               "<p>"
               "<A href=\"https://users.notam02.no/~kjetism/radium/documentation.php#acknowledgment\">Credits</A>"
               "<p>"
@@ -2219,6 +2222,7 @@ void openAboutWindow(void){
               ATOMIC_GET(GE_opengl_version_flags),
               GFX_qVersion(),
               JUCE_get_JUCE_version(),
+              getCLibFaustVersion(),
               (int)MIXER_get_sample_rate(), frames_to_ms(ATOMIC_GET(g_soundcardblock_size)),
               vblank < 0 ? "Refresh rate not detected" : talloc_format("%.2f", 1000.0 / vblank),
               SCHEME_get_webserver_port(),
