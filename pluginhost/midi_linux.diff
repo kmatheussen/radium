@@ -1,7 +1,7 @@
-diff --git a/pluginhost/JuceLibraryCode/modules/juce_audio_devices/native/juce_linux_Midi.cpp b/pluginhost/JuceLibraryCode/modules/juce_audio_devices/native/juce_linux_Midi.cpp
-index 6fa0fbebe..337f92f63 100644
---- a/pluginhost/JuceLibraryCode/modules/juce_audio_devices/native/juce_linux_Midi.cpp
-+++ b/pluginhost/JuceLibraryCode/modules/juce_audio_devices/native/juce_linux_Midi.cpp
+diff --git a/pluginhost/JuceLibraryCode/modules/juce_audio_devices/native/juce_Midi_linux.cpp b/pluginhost/JuceLibraryCode/modules/juce_audio_devices/native/juce_Midi_linux.cpp
+index c06726f70..82344d881 100644
+--- a/pluginhost/JuceLibraryCode/modules/juce_audio_devices/native/juce_Midi_linux.cpp
++++ b/pluginhost/JuceLibraryCode/modules/juce_audio_devices/native/juce_Midi_linux.cpp
 @@ -24,6 +24,21 @@ namespace juce
  {
  
@@ -23,10 +23,10 @@ index 6fa0fbebe..337f92f63 100644
 +  
  
  //==============================================================================
- class AlsaClient  : public ReferenceCountedObject
-@@ -190,6 +205,9 @@ public:
+ class AlsaClient
+@@ -173,6 +188,9 @@ public:
          {
-             if (auto seqHandle = client.get())
+             if (auto seqHandle = client->get())
              {
 +              
 +                enableSubscription = true; // Make sure all connections and ports are shown (for instance in the qjackctl patchbay). Not showing them only creates confusion.
@@ -34,25 +34,17 @@ index 6fa0fbebe..337f92f63 100644
                  const unsigned int caps =
                      isInput ? (SND_SEQ_PORT_CAP_WRITE | (enableSubscription ? SND_SEQ_PORT_CAP_SUBS_WRITE : 0))
                              : (SND_SEQ_PORT_CAP_READ  | (enableSubscription ? SND_SEQ_PORT_CAP_SUBS_READ : 0));
-@@ -313,6 +331,8 @@ private:
+@@ -367,6 +385,9 @@ private:
  
-                 HeapBlock<uint8> buffer (maxEventSize);
+                 std::vector<uint8> buffer (maxEventSize);
  
 +                setLowestRealtimePriority();
-+            
-                 while (! threadShouldExit())
++                const ScopeGuard callSetNnonrealtimePriority { [] { setNonrealtimePriority() } };
++ 
+                 while (! shouldStop)
                  {
-                     if (poll (pfd, (nfds_t) numPfds, 100) > 0) // there was a "500" here which is a bit long when we exit the program and have to wait for a timeout on this poll call
-@@ -343,6 +363,8 @@ private:
-                     }
-                 }
- 
-+                setNonrealtimePriority();
-+                
-                 snd_midi_event_free (midiParser);
-             }
-         }
-@@ -388,10 +410,28 @@ static AlsaClient::Port* iterateMidiClient (const AlsaClient::Ptr& client,
+                     // This timeout shouldn't be too long, so that the program can exit in a timely manner
+@@ -459,10 +480,28 @@ static AlsaClient::Port* iterateMidiClient (AlsaClient& client,
              && (snd_seq_port_info_get_capability (portInfo)
                  & (forInput ? SND_SEQ_PORT_CAP_SUBS_READ : SND_SEQ_PORT_CAP_SUBS_WRITE)) != 0)
          {
@@ -82,7 +74,7 @@ index 6fa0fbebe..337f92f63 100644
              devices.add (device);
  
              if (deviceIdentifierToOpen.isNotEmpty() && deviceIdentifierToOpen == device.identifier)
-@@ -523,7 +563,7 @@ StringArray MidiInput::getDevices()
+@@ -597,7 +636,7 @@ StringArray MidiInput::getDevices()
      for (auto& d : getAvailableDevices())
          deviceNames.add (d.name);
  
@@ -91,7 +83,7 @@ index 6fa0fbebe..337f92f63 100644
  
      return deviceNames;
  }
-@@ -620,7 +660,7 @@ StringArray MidiOutput::getDevices()
+@@ -694,7 +733,7 @@ StringArray MidiOutput::getDevices()
      for (auto& d : getAvailableDevices())
          deviceNames.add (d.name);
  
