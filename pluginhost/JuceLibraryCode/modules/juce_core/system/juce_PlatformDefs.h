@@ -87,7 +87,7 @@ namespace juce
 
 #if JUCE_CLANG && defined (__has_feature) && ! defined (JUCE_ANALYZER_NORETURN)
  #if __has_feature (attribute_analyzer_noreturn)
-  inline void __attribute__((analyzer_noreturn)) juce_assert_noreturn() {}
+  inline void __attribute__ ((analyzer_noreturn)) juce_assert_noreturn() {}
   #define JUCE_ANALYZER_NORETURN juce::juce_assert_noreturn();
  #endif
 #endif
@@ -149,8 +149,7 @@ namespace juce
       It is only compiled in a debug build, (unless JUCE_LOG_ASSERTIONS is enabled for your build).
       @see jassert
   */
-#define jassertfalse JUCE_BLOCK_WITH_FORCED_SEMICOLON (JUCE_LOG_CURRENT_ASSERTION; abort();)
-//if (juce::juce_isRunningUnderDebugger()) JUCE_BREAK_IN_DEBUGGER; JUCE_ANALYZER_NORETURN)
+  #define jassertfalse                  JUCE_BLOCK_WITH_FORCED_SEMICOLON (JUCE_LOG_CURRENT_ASSERTION; if (juce::juce_isRunningUnderDebugger()) JUCE_BREAK_IN_DEBUGGER; JUCE_ANALYZER_NORETURN)
 
   //==============================================================================
   /** Platform-independent assertion macro.
@@ -164,9 +163,7 @@ namespace juce
 
   /** Platform-independent assertion macro which suppresses ignored-variable
       warnings in all build modes. You should probably use a plain jassert()
-      by default, and only replace it with jassertquiet() once you've
-      convinced yourself that any unused-variable warnings emitted by the
-      compiler are harmless.
+      and [[maybe_unused]] by default.
   */
   #define jassertquiet(expression)      JUCE_BLOCK_WITH_FORCED_SEMICOLON (if (! (expression)) jassertfalse;)
 
@@ -175,7 +172,7 @@ namespace juce
   // If debugging is disabled, these dummy debug and assertion macros are used..
 
   #define DBG(textToWrite)
-  #define jassertfalse                  JUCE_BLOCK_WITH_FORCED_SEMICOLON (JUCE_LOG_CURRENT_ASSERTION)
+  #define jassertfalse                  JUCE_BLOCK_WITH_FORCED_SEMICOLON (JUCE_LOG_CURRENT_ASSERTION;)
 
   #if JUCE_LOG_ASSERTIONS
    #define jassert(expression)          JUCE_BLOCK_WITH_FORCED_SEMICOLON (if (! (expression)) jassertfalse;)
@@ -286,7 +283,7 @@ namespace juce
   #if JUCE_MSVC
    #define forcedinline       __forceinline
   #else
-   #define forcedinline       inline __attribute__((always_inline))
+   #define forcedinline       inline __attribute__ ((always_inline))
   #endif
 #endif
 
@@ -309,7 +306,7 @@ namespace juce
 
 //==============================================================================
 #if JUCE_GCC || JUCE_CLANG
- #define JUCE_PACKED __attribute__((packed))
+ #define JUCE_PACKED __attribute__ ((packed))
 #elif ! defined (DOXYGEN)
  #define JUCE_PACKED
 #endif
@@ -318,7 +315,7 @@ namespace juce
 #if JUCE_GCC || DOXYGEN
  /** This can be appended to a function declaration to tell gcc to disable associative
      math optimisations which break some floating point algorithms. */
- #define JUCE_NO_ASSOCIATIVE_MATH_OPTIMISATIONS   __attribute__((__optimize__("no-associative-math")))
+ #define JUCE_NO_ASSOCIATIVE_MATH_OPTIMISATIONS   __attribute__ ((__optimize__ ("no-associative-math")))
 #else
  #define JUCE_NO_ASSOCIATIVE_MATH_OPTIMISATIONS
 #endif
