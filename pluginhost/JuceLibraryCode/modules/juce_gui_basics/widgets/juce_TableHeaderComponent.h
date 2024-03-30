@@ -418,6 +418,8 @@ public:
     void mouseUp (const MouseEvent&) override;
     /** @internal */
     MouseCursor getMouseCursor() override;
+    /** @internal */
+    std::unique_ptr<AccessibilityHandler> createAccessibilityHandler() override;
 
     /** Can be overridden for more control over the pop-up menu behaviour. */
     virtual void showColumnChooserMenu (int columnIdClicked);
@@ -442,7 +444,6 @@ private:
     int columnIdBeingResized = 0, columnIdBeingDragged = 0, initialColumnWidth = 0;
     int columnIdUnderMouse = 0, draggingColumnOffset = 0, draggingColumnOriginalIndex = 0, lastDeliberateWidth = 0;
 
-    std::unique_ptr<AccessibilityHandler> createAccessibilityHandler() override;
     ColumnInfo* getInfoForId (int columnId) const;
     int visibleIndexToTotalIndex (int visibleIndex) const;
     void sendColumnsChanged();
@@ -453,6 +454,7 @@ private:
     void updateColumnUnderMouse (const MouseEvent&);
     void setColumnUnderMouse (int columnId);
     void resizeColumnsToFit (int firstColumnIndex, int targetTotalWidth);
+    void drawColumnHeader (Graphics&, LookAndFeel&, const ColumnInfo&);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TableHeaderComponent)
 };

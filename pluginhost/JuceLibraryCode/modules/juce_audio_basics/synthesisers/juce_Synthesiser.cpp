@@ -153,7 +153,7 @@ void Synthesiser::setMinimumRenderingSubdivisionSize (int numSamples, bool shoul
 //==============================================================================
 void Synthesiser::setCurrentPlaybackSampleRate (const double newRate)
 {
-    if (sampleRate != newRate)
+    if (! approximatelyEqual (sampleRate, newRate))
     {
         const ScopedLock sl (lock);
         allNotesOff (0, false);
@@ -171,7 +171,7 @@ void Synthesiser::processNextBlock (AudioBuffer<floatType>& outputAudio,
                                     int numSamples)
 {
     // must set the sample rate before using this!
-    jassert (sampleRate != 0);
+    jassert (! exactlyEqual (sampleRate, 0.0));
     const int targetChannels = outputAudio.getNumChannels();
 
     auto midiIterator = midiData.findNextSamplePosition (startSample);
@@ -482,15 +482,14 @@ void Synthesiser::handleSostenutoPedal (int midiChannel, bool isDown)
     }
 }
 
-void Synthesiser::handleSoftPedal (int midiChannel, bool /*isDown*/)
+void Synthesiser::handleSoftPedal ([[maybe_unused]] int midiChannel, bool /*isDown*/)
 {
-    ignoreUnused (midiChannel);
     jassert (midiChannel > 0 && midiChannel <= 16);
 }
 
-void Synthesiser::handleProgramChange (int midiChannel, int programNumber)
+void Synthesiser::handleProgramChange ([[maybe_unused]] int midiChannel,
+                                       [[maybe_unused]] int programNumber)
 {
-    ignoreUnused (midiChannel, programNumber);
     jassert (midiChannel > 0 && midiChannel <= 16);
 }
 

@@ -25,7 +25,11 @@ namespace juce
 
 class AudioIODevice;
 
-/** Additional information that may be passed to the AudioIODeviceCallback. */
+/**
+    Additional information that may be passed to the AudioIODeviceCallback.
+
+    @tags{Audio}
+*/
 struct AudioIODeviceCallbackContext
 {
     /** If the host provides this information, this field will be set to point to
@@ -98,10 +102,7 @@ public:
                                                    float* const* outputChannelData,
                                                    int numOutputChannels,
                                                    int numSamples,
-                                                   const AudioIODeviceCallbackContext& context)
-    {
-        ignoreUnused (inputChannelData, numInputChannels, outputChannelData, numOutputChannels, numSamples, context);
-    }
+                                                   const AudioIODeviceCallbackContext& context);
 
     /** Called to indicate that the device is about to start calling back.
 
@@ -128,7 +129,6 @@ public:
     */
     virtual void audioDeviceError (const String& errorMessage);
 };
-
 
 //==============================================================================
 /**
@@ -173,6 +173,21 @@ public:
         To find out which of these are currently in use, call getActiveInputChannels().
     */
     virtual StringArray getInputChannelNames() = 0;
+
+    //==============================================================================
+    /** For devices that support a default layout, returns the channels that are enabled in the
+        default layout.
+
+        Returns nullopt if the device doesn't supply a default layout.
+    */
+    virtual std::optional<BigInteger> getDefaultOutputChannels() const { return {}; }
+
+    /** For devices that support a default layout, returns the channels that are enabled in the
+        default layout.
+
+        Returns nullopt if the device doesn't supply a default layout.
+    */
+    virtual std::optional<BigInteger> getDefaultInputChannels()  const { return {}; }
 
     //==============================================================================
     /** Returns the set of sample-rates this device supports.
@@ -292,6 +307,8 @@ public:
     */
     virtual int getInputLatencyInSamples() = 0;
 
+    /** Returns the workgroup for this device. */
+    virtual AudioWorkgroup getWorkgroup() const { return {}; }
 
     //==============================================================================
     /** True if this device can show a pop-up control panel for editing its settings.

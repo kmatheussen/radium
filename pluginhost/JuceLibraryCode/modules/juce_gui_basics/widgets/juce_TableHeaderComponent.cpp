@@ -26,7 +26,7 @@
 namespace juce
 {
 
-class TableHeaderComponent::DragOverlayComp   : public Component
+class TableHeaderComponent::DragOverlayComp final : public Component
 {
 public:
     DragOverlayComp (const Image& i) : image (i)
@@ -325,7 +325,7 @@ void TableHeaderComponent::resizeColumnsToFit (int firstColumnIndex, int targetT
 
     for (int i = firstColumnIndex; i < columns.size(); ++i)
     {
-        auto* ci = columns.getUnchecked(i);
+        auto* ci = columns.getUnchecked (i);
 
         if (ci->isVisible())
             sor.addItem (ci->lastDeliberateWidth, ci->minimumWidth, ci->maximumWidth);
@@ -336,7 +336,7 @@ void TableHeaderComponent::resizeColumnsToFit (int firstColumnIndex, int targetT
 
     for (int i = firstColumnIndex; i < columns.size(); ++i)
     {
-        auto* ci = columns.getUnchecked(i);
+        auto* ci = columns.getUnchecked (i);
 
         if (ci->isVisible())
         {
@@ -500,6 +500,33 @@ void TableHeaderComponent::reactToMenuItem (const int menuReturnId, const int /*
         setColumnVisible (menuReturnId, ! isColumnVisible (menuReturnId));
 }
 
+void TableHeaderComponent::drawColumnHeader (Graphics& g, LookAndFeel& lf, const ColumnInfo& ci)
+{
+    // Only paint columns that are visible
+    if (! ci.isVisible())
+        return;
+
+    // If this column is being dragged, it shouldn't be drawn in the table header
+    if (ci.id == columnIdBeingDragged && dragOverlayComp != nullptr && dragOverlayComp->isVisible())
+        return;
+
+    // There's no point drawing this column header if no part of it is visible
+    if (! g.getClipBounds()
+           .getHorizontalRange()
+           .intersects (Range<int>::withStartAndLength (ci.getX(), ci.width)))
+        return;
+
+    Graphics::ScopedSaveState ss (g);
+
+    g.setOrigin (ci.getX(), ci.getY());
+    g.reduceClipRegion (0, 0, ci.width, ci.getHeight());
+
+    lf.drawTableHeaderColumn (g, *this, ci.getTitle(), ci.id, ci.width, getHeight(),
+                              ci.id == columnIdUnderMouse,
+                              ci.id == columnIdUnderMouse && isMouseButtonDown(),
+                              ci.propertyFlags);
+}
+
 void TableHeaderComponent::paint (Graphics& g)
 {
     auto& lf = getLookAndFeel();
@@ -507,48 +534,18 @@ void TableHeaderComponent::paint (Graphics& g)
     lf.drawTableHeaderBackground (g, *this);
 
     for (auto* ci : columns)
-    {
-        if (ci->isVisible() && ci->getWidth() > 0)
-        {
-            Graphics::ScopedSaveState ss (g);
-
-            g.setOrigin (ci->getX(), ci->getY());
-            g.reduceClipRegion (0, 0, ci->getWidth(), ci->getHeight());
-
-            lf.drawTableHeaderColumn (g, *this, ci->getTitle(), ci->id, ci->width, getHeight(),
-                                      ci->id == columnIdUnderMouse,
-                                      ci->id == columnIdUnderMouse && isMouseButtonDown(),
-                                      ci->propertyFlags);
-        }
-    }
+        drawColumnHeader (g, lf, *ci);
 }
 
 void TableHeaderComponent::resized()
 {
-    auto clip = getBounds();
-
     int x = 0;
 
     for (auto* ci : columns)
-        ci->setBounds (0, 0, 0, 0);
-
-    for (auto* ci : columns)
     {
-        if (ci->isVisible())
-        {
-            if (x + ci->width > clip.getX()
-                && (ci->id != columnIdBeingDragged
-                    || dragOverlayComp == nullptr
-                    || ! dragOverlayComp->isVisible()))
-            {
-                ci->setBounds (x, 0, ci->width, getHeight());
-            }
-
-            x += ci->width;
-
-            if (x >= clip.getRight())
-                break;
-        }
+        const auto widthToUse = ci->isVisible() ? ci->width : 0;
+        ci->setBounds (x, 0, widthToUse, getHeight());
+        x += widthToUse;
     }
 }
 
@@ -721,7 +718,7 @@ void TableHeaderComponent::beginDrag (const MouseEvent& e)
 
             for (int i = listeners.size(); --i >= 0;)
             {
-                listeners.getUnchecked(i)->tableColumnDraggingChanged (this, columnIdBeingDragged);
+                listeners.getUnchecked (i)->tableColumnDraggingChanged (this, columnIdBeingDragged);
                 i = jmin (i, listeners.size() - 1);
             }
         }
@@ -740,7 +737,7 @@ void TableHeaderComponent::endDrag (const int finalIndex)
 
         for (int i = listeners.size(); --i >= 0;)
         {
-            listeners.getUnchecked(i)->tableColumnDraggingChanged (this, 0);
+            listeners.getUnchecked (i)->tableColumnDraggingChanged (this, 0);
             i = jmin (i, listeners.size() - 1);
         }
     }
@@ -793,7 +790,7 @@ int TableHeaderComponent::visibleIndexToTotalIndex (const int visibleIndex) cons
 
     for (int i = 0; i < columns.size(); ++i)
     {
-        if (columns.getUnchecked(i)->isVisible())
+        if (columns.getUnchecked (i)->isVisible())
         {
             if (n == visibleIndex)
                 return i;
@@ -829,7 +826,7 @@ void TableHeaderComponent::handleAsyncUpdate()
     {
         for (int i = listeners.size(); --i >= 0;)
         {
-            listeners.getUnchecked(i)->tableSortOrderChanged (this);
+            listeners.getUnchecked (i)->tableSortOrderChanged (this);
             i = jmin (i, listeners.size() - 1);
         }
     }
@@ -838,7 +835,7 @@ void TableHeaderComponent::handleAsyncUpdate()
     {
         for (int i = listeners.size(); --i >= 0;)
         {
-            listeners.getUnchecked(i)->tableColumnsChanged (this);
+            listeners.getUnchecked (i)->tableColumnsChanged (this);
             i = jmin (i, listeners.size() - 1);
         }
     }
@@ -847,7 +844,7 @@ void TableHeaderComponent::handleAsyncUpdate()
     {
         for (int i = listeners.size(); --i >= 0;)
         {
-            listeners.getUnchecked(i)->tableColumnsResized (this);
+            listeners.getUnchecked (i)->tableColumnsResized (this);
             i = jmin (i, listeners.size() - 1);
         }
     }
