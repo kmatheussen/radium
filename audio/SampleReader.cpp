@@ -282,9 +282,14 @@ static SliceBuffer *STP_create_SliceBuffer_rec(SliceBuffer *slicebuffer, int num
     new_slicebuffer = (SliceBuffer*)V_calloc(1, sizeof(SliceBuffer)); // Using V_calloc to allocate to avoid getting copy-on-write memory and other types of lazily allocated memory.
   else
     g_slicebuffers = g_slicebuffers->next;
-  
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnull-dereference" // We don't bother trying to handle V_calloc possibly returning NULL.
+
   new_slicebuffer->next = slicebuffer;
 
+#pragma GCC diagnostic pop
+  
   return STP_create_SliceBuffer_rec(new_slicebuffer, num_ch_left-1);
 }
 
