@@ -28,7 +28,7 @@ index 6310cfb05..b8798f17f 100644
  
      private:
 +      
-+        static HRESULT callWndProc (int nCode, WPARAM wParam, LPARAM lParam)
++        static HRESULT CALLBACK callWndProc (int nCode, WPARAM wParam, LPARAM lParam)
 +        {
 +          auto* params = reinterpret_cast<CWPSTRUCT*> (lParam);
 +          
