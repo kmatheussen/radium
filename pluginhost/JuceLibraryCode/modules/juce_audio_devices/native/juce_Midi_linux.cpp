@@ -386,7 +386,7 @@ private:
                 std::vector<uint8> buffer (maxEventSize);
 
                 setLowestRealtimePriority();
-                const ScopeGuard callSetNnonrealtimePriority { [] { setNonrealtimePriority() } };
+                const ScopeGuard callSetNnonrealtimePriority { [] { setNonrealtimePriority(); } };
  
                 while (! shouldStop)
                 {
