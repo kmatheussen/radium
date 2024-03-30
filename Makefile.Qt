@@ -935,7 +935,6 @@ $(RADIUM_BIN): $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-1.1.6/src/.libs/libflu
 
 bin/radium_plugin_scanner: $(PLUGINHOSTSCANNERLIB)
 	$(LINKER) $(PLUGINHOSTSCANNERLIB) -o bin/radium_plugin_scanner $(OS_JUCE_LDFLAGS) $(RADIUM_BFD_LDFLAGS) `$(PKG) --libs freetype2`
-	$(STRIPPER) bin/radium_plugin_scanner
 
 ifeq ($(BUILD_DEBUG), YES)
 
