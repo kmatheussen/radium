@@ -288,7 +288,15 @@ else
     make radium $@ --stop
 fi
 
-
+if [[ $BUILDTYPE == RELEASE ]] ; then
+    strip bin/radium_crashreporter
+    strip bin/radium_error_message
+    strip bin/radium_progress_window
+    strip bin/radium_check_jack_status
+    strip bin/radium_check_opengl
+    strip bin/radium_plugin_scanner
+fi
+    
 #make pluginhost/Builds/Linux/build/libMyPluginHost.a
 
 cp -f bin/run_radium_linux.sh bin/radium
