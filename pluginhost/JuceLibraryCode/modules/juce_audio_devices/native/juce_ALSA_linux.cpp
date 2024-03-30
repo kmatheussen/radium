@@ -20,6 +20,9 @@
   ==============================================================================
 */
 
+#define LANGSPEC "C"
+#include "../../../../../common/threading_lowlevel.h"
+
 namespace juce
 {
 
@@ -749,6 +752,8 @@ public:
             }
         }
 
+        THREADING_drop_player_thread_priority();
+        
         audioIoInProgress = false;
     }
 

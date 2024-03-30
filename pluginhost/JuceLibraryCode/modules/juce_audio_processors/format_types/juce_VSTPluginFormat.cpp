@@ -3507,7 +3507,8 @@ void VSTPluginFormat::findAllTypesForFile (OwnedArray<PluginDescription>& result
         // Normal plugin...
         results.add (new PluginDescription (desc));
 
-        instance->dispatch (Vst2::effOpen, 0, 0, nullptr, 0);
+        // ??
+        //instance->dispatch (Vst2::effOpen, 0, 0, nullptr, 0);
     }
     else
     {
