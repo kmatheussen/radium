@@ -38,6 +38,11 @@ namespace juce::detail
      )
 #endif
 
+  static std::map<DWORD, void*> g_map;
+  static std::mutex g_mapMutex;
+
+
+
 std::unique_ptr<ScopedMessageBoxInterface> ScopedMessageBoxInterface::create (const MessageBoxOptions& options)
 {
     class WindowsMessageBoxBase : public ScopedMessageBoxInterface
@@ -97,7 +102,7 @@ std::unique_ptr<ScopedMessageBoxInterface> ScopedMessageBoxInterface::create (co
 
             'this' is guaranteed to be alive when the returned function is called.
         */
-        virtual std::function<int()> getShowMessageBoxForParent (HWND parent) = 0;
+        virtual std::function<int()> getShowMessageBoxForParent (const HWND parent) = 0;
 
         Component::SafePointer<Component> associatedComponent;
         std::atomic<HWND> windowHandle { nullptr };
@@ -115,49 +120,53 @@ std::unique_ptr<ScopedMessageBoxInterface> ScopedMessageBoxInterface::create (co
               title (opts.getTitle()), message (opts.getMessage()) {}
 
     private:
+      
+        static LRESULT CALLBACK callWndProc (int nCode, WPARAM wParam, LPARAM lParam)
+        {
+          auto* params = reinterpret_cast<CWPSTRUCT*> (lParam);
+          
+          if (nCode >= 0
+              && params != nullptr
+              && (params->message == WM_INITDIALOG || params->message == WM_DESTROY))
+            {
+              const auto callbackThreadId = GetCurrentThreadId();
+              
+              const std::scoped_lock scope { g_mapMutex };
+              
+              if (const auto iter = g_map.find (callbackThreadId); iter != g_map.cend())
+                ((PreVistaMessageBox*)iter->second)->setDialogWindowHandle (params->message == WM_INITDIALOG ? params->hwnd : nullptr);
+            }
+          
+          return CallNextHookEx ({}, nCode, wParam, lParam);
+        }
+      
         std::function<int()> getShowMessageBoxForParent (const HWND parent) override
         {
             JUCE_ASSERT_MESSAGE_THREAD
-
-            static std::map<DWORD, PreVistaMessageBox*> map;
-            static std::mutex mapMutex;
 
             return [this, parent]
             {
                 const auto threadId = GetCurrentThreadId();
 
                 {
-                    const std::scoped_lock scope { mapMutex };
-                    map.emplace (threadId, this);
+                    const std::scoped_lock scope { g_mapMutex };
+                    g_map.emplace (threadId, this);
                 }
 
                 const ScopeGuard eraseFromMap { [threadId]
                 {
-                    const std::scoped_lock scope { mapMutex };
-                    map.erase (threadId);
+                    const std::scoped_lock scope { g_mapMutex };
+                    g_map.erase (threadId);
                 } };
 
+                /*
                 const auto hookCallback = [] (int nCode, const WPARAM wParam, const LPARAM lParam)
                 {
-                    auto* params = reinterpret_cast<CWPSTRUCT*> (lParam);
-
-                    if (nCode >= 0
-                        && params != nullptr
-                        && (params->message == WM_INITDIALOG || params->message == WM_DESTROY))
-                    {
-                        const auto callbackThreadId = GetCurrentThreadId();
-
-                        const std::scoped_lock scope { mapMutex };
-
-                        if (const auto iter = map.find (callbackThreadId); iter != map.cend())
-                            iter->second->setDialogWindowHandle (params->message == WM_INITDIALOG ? params->hwnd : nullptr);
-                    }
-
-                    return CallNextHookEx ({}, nCode, wParam, lParam);
                 };
-
+                */
+                
                 const auto hook = SetWindowsHookEx (WH_CALLWNDPROC,
-                                                    hookCallback,
+                                                    callWndProc,
                                                     (HINSTANCE) juce::Process::getCurrentModuleInstanceHandle(),
                                                     threadId);
                 const ScopeGuard removeHook { [hook] { UnhookWindowsHookEx (hook); } };
@@ -199,6 +208,7 @@ std::unique_ptr<ScopedMessageBoxInterface> ScopedMessageBoxInterface::create (co
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PreVistaMessageBox)
     };
 
+
     class WindowsTaskDialog final : public WindowsMessageBoxBase
     {
         static auto getTaskDialogFunc()
@@ -238,6 +248,26 @@ std::unique_ptr<ScopedMessageBoxInterface> ScopedMessageBoxInterface::create (co
         }
 
     private:
+      static HRESULT CALLBACK pfCallback(HWND hwnd, UINT msg, WPARAM, LPARAM, LONG_PTR lpRefData)
+      {
+        if (auto* t = reinterpret_cast<WindowsTaskDialog*> (lpRefData))
+          {
+            switch (msg)
+              {
+              case TDN_CREATED:
+              case TDN_DIALOG_CONSTRUCTED:
+                t->setDialogWindowHandle (hwnd);
+                break;
+                
+              case TDN_DESTROYED:
+                t->setDialogWindowHandle (nullptr);
+                break;
+              }
+          }
+        
+        return S_OK;
+      }
+
         std::function<int()> getShowMessageBoxForParent (const HWND parent) override
         {
             JUCE_ASSERT_MESSAGE_THREAD
@@ -252,25 +282,7 @@ std::unique_ptr<ScopedMessageBoxInterface> ScopedMessageBoxInterface::create (co
                 config.pszContent     = message.toWideCharPointer();
                 config.hInstance      = (HINSTANCE) Process::getCurrentModuleInstanceHandle();
                 config.lpCallbackData = reinterpret_cast<LONG_PTR> (this);
-                config.pfCallback     = [] (HWND hwnd, UINT msg, WPARAM, LPARAM, LONG_PTR lpRefData)
-                {
-                    if (auto* t = reinterpret_cast<WindowsTaskDialog*> (lpRefData))
-                    {
-                        switch (msg)
-                        {
-                            case TDN_CREATED:
-                            case TDN_DIALOG_CONSTRUCTED:
-                                t->setDialogWindowHandle (hwnd);
-                                break;
-
-                            case TDN_DESTROYED:
-                                t->setDialogWindowHandle (nullptr);
-                                break;
-                        }
-                    }
-
-                    return S_OK;
-                };
+                config.pfCallback     = pfCallback;
 
                 if (iconType == MessageBoxIconType::QuestionIcon)
                 {

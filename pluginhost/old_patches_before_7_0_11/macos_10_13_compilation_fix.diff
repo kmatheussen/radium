@@ -1,7 +1,7 @@
 diff --git a/pluginhost/JuceLibraryCode/modules/juce_gui_basics/native/juce_mac_CGMetalLayerRenderer.h b/pluginhost/JuceLibraryCode/modules/juce_gui_basics/native/juce_mac_CGMetalLayerRenderer.h
 index 791379c77..d14190775 100644
---- a/pluginhost/JuceLibraryCode/modules/juce_gui_basics/native/juce_mac_CGMetalLayerRenderer.h
-+++ b/pluginhost/JuceLibraryCode/modules/juce_gui_basics/native/juce_mac_CGMetalLayerRenderer.h
+--- a/pluginhost/JuceLibraryCode/modules/juce_gui_basics/native/juce_CGMetalLayerRenderer_mac.h
++++ b/pluginhost/JuceLibraryCode/modules/juce_gui_basics/native/juce_CGMetalLayerRenderer_mac.h
 @@ -233,10 +233,12 @@ private:
      class GpuTexturePool
      {
@@ -52,8 +52,8 @@ index 791379c77..d14190775 100644
          CGContextRef getCGContext() const noexcept       { return cgContext.get(); }
 diff --git a/pluginhost/JuceLibraryCode/modules/juce_gui_basics/native/juce_mac_MainMenu.mm b/pluginhost/JuceLibraryCode/modules/juce_gui_basics/native/juce_mac_MainMenu.mm
 index c77a92a9b..c9a361d80 100644
---- a/pluginhost/JuceLibraryCode/modules/juce_gui_basics/native/juce_mac_MainMenu.mm
-+++ b/pluginhost/JuceLibraryCode/modules/juce_gui_basics/native/juce_mac_MainMenu.mm
+--- a/pluginhost/JuceLibraryCode/modules/juce_gui_basics/native/juce_MainMenu_mac.mm
++++ b/pluginhost/JuceLibraryCode/modules/juce_gui_basics/native/juce_MainMenu_mac.mm
 @@ -455,7 +455,7 @@ private:
              {
                  addMethod (menuItemInvokedSelector,       menuItemInvoked);
