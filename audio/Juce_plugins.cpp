@@ -1155,6 +1155,12 @@ namespace{
       int editor_width = editor->getWidth() / g_juce_gfx_scale;
       int editor_height = editor->getHeight() / g_juce_gfx_scale;
 
+      if (editor_width <= 0)
+	      editor_width = 10;
+      
+      if (editor_height <= 0)
+	      editor_height = 10;
+      
       int initial_width = R_MAX(100, editor_width);
       int initial_height = R_MAX(100, editor_height + button_height + keyboard_height);
 
@@ -1290,10 +1296,16 @@ namespace{
 
       // Some plugins returns size 1,1 before editor is visible and added to main component for example https://lsp-plug.in/
       // Maybe this should be only for linux.
-      bool set_size_again = (editor_width < 2 || editor_height < 2);
+      const bool set_size_again = (editor_width < 20 || editor_height < 20);
 
       editor_width = editor->getWidth() / g_juce_gfx_scale;
       editor_height = editor->getHeight() / g_juce_gfx_scale;
+
+      if (editor_width <= 0)
+	      editor_width = 10;
+      
+      if (editor_height <= 0)
+	      editor_height = 10;
 
       //fprintf(stderr, "EDITOR WIDTH/HEIGHT 1 %d %d %f\n", editor_width, editor_height, g_juce_gfx_scale);
       
