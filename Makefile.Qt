@@ -935,7 +935,6 @@ $(RADIUM_BIN): $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-1.1.6/src/.libs/libflu
 
 bin/radium_plugin_scanner: $(PLUGINHOSTSCANNERLIB)
 	$(LINKER) $(PLUGINHOSTSCANNERLIB) -o bin/radium_plugin_scanner $(OS_JUCE_LDFLAGS) $(RADIUM_BFD_LDFLAGS) `$(PKG) --libs freetype2`
-	$(STRIPPER) bin/radium_plugin_scanner
 
 ifeq ($(BUILD_DEBUG), YES)
 
@@ -1972,7 +1971,7 @@ $(T)api_undo.o:  $(BUILD_DEPENDENCIES)  $(API)api_undo.cpp  embedded_scheme/s7ex
 	$(CCC2)  $(API)api_undo.cpp $(QTOPT)
 
 $(T)api_various.o:  $(BUILD_DEPENDENCIES)  $(API)api_various.cpp bin/packages/s7/s7.c $(P)EditorWidget.h embedded_scheme/s7extra_proc.h Qt/KeyboardFocusFrame.hpp audio/CpuUsage.hpp
-	$(CCC2)  $(API)api_various.cpp $(QTOPT) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\"  -Wno-null-dereference $(NO_ANALYZER)
+	$(CCC2)  $(API)api_various.cpp $(QTOPT) -I$(FAUSTDIR)/architecture -DRADIUM_VERSION=\"$(RADIUM_VERSION)\"  -Wno-null-dereference $(NO_ANALYZER)
 
 $(T)api_instruments.o:  $(BUILD_DEPENDENCIES)  $(API)api_instruments.cpp  $(API)api_instruments_proc.h embedded_scheme/s7extra_proc.h mixergui/QM_chip.h mixergui/QM_MixerWidget.h
 	$(CCC2)  $(API)api_instruments.cpp $(QTOPT)
