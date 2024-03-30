@@ -940,9 +940,11 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
   tosend += "\n\n";
 
   if (crash_type!=CT_CRASH && THREADING_is_main_thread()){
-    const char *history = SCHEME_get_history();
-    tosend += QString(history) + "\n\n";
-    free((void*)history);
+
+	  const char *history = SCHEME_get_history();
+
+	  tosend += QString(history) + "\n\n";
+	  free((void*)history);
   }
   
 
@@ -1067,10 +1069,14 @@ void CRASHREPORTER_send_message_with_backtrace(const char *additional_informatio
 #endif
 #endif
 
-void CRASHREPORTER_send_assert_message(Crash_Type crash_type, const char *fmt,...){
-  static DEFINE_ATOMIC(bool, is_currently_sending);
+static DEFINE_ATOMIC(bool, g_is_currently_sending);
 
-  if (ATOMIC_SET_RETURN_OLD(is_currently_sending, true)==true) {
+bool CRASHREPORTER_is_currently_sending_assert_message(void){
+	return ATOMIC_GET(g_is_currently_sending);
+}
+
+void CRASHREPORTER_send_assert_message(Crash_Type crash_type, const char *fmt,...){
+  if (ATOMIC_SET_RETURN_OLD(g_is_currently_sending, true)==true) {
     // already sending
     return;
   }
@@ -1138,7 +1144,7 @@ void CRASHREPORTER_send_assert_message(Crash_Type crash_type, const char *fmt,..
 #endif
   
  exit:
-  ATOMIC_SET(is_currently_sending, false);
+  ATOMIC_SET(g_is_currently_sending, false);
 }
 
 // We don't want the crashreporter to pop up when program exits, or we scan plugins.

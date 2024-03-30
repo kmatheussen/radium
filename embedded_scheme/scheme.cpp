@@ -2479,6 +2479,13 @@ void SCHEME_throw(const char *symbol, const char *message){
 }
 
 
+static DEFINE_ATOMIC(bool, g_is_currently_getting_history);
+
+bool SCHEME_is_currently_getting_scheme_history(void){
+	return ATOMIC_GET(g_is_currently_getting_history);
+}
+
+
 const char *SCHEME_get_history(void){
   ScopedEvalTracker eval_tracker;
   
@@ -2487,10 +2494,15 @@ const char *SCHEME_get_history(void){
   if (s7 == NULL)
     return strdup("");
   
+  ATOMIC_SET(g_is_currently_getting_history, true);
+	  
   const char *funcname = "safe-history-ow!";
   
   if (!s7_is_defined(s7, funcname))
-    return strdup("");
+  {
+	  ATOMIC_SET(g_is_currently_getting_history, false);
+	  return strdup("");
+  }
 
   s7extra_disable_history();
 
@@ -2503,9 +2515,16 @@ const char *SCHEME_get_history(void){
   s7extra_enable_history();
 
   if (!s7_is_string(s7s))
-    return strdup("...Unable to run 'safe-history-ow!'...");
+  {
+	  ATOMIC_SET(g_is_currently_getting_history, false);
+	  return strdup("...Unable to run 'safe-history-ow!'...");
+  }
   
-  return strdup(s7_string(s7s));
+  auto *ret = strdup(s7_string(s7s));
+
+  ATOMIC_SET(g_is_currently_getting_history, false);
+
+  return ret;
 }
 
 

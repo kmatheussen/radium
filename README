@@ -8,7 +8,7 @@ HOW TO MAKE IT RUN
 
           "
           export RADIUM_QT_VERSION=5
-          make packages # Note: Linking fails first run. See comment in bin/packages/build.sh about Visualization Library.
+          make packages
           BUILDTYPE=RELEASE ./build_linux.sh -j `nproc`
           QT_QPA_PLATFORM_PLUGIN_PATH=`$(./find_moc_and_uic_paths.sh qmake) -query QT_INSTALL_PLUGINS` bin/radium
           "
@@ -16,6 +16,8 @@ HOW TO MAKE IT RUN
           If you want to use clang instead of gcc, first run this line before running "make packages":
           export RADIUM_USE_CLANG=1
 
+          Note: There is an install.sh script, and it works. But you don't need it to run the program.
+	  
 
 IF YOU GOT THE SOURCE FROM GIT
 
