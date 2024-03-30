@@ -364,7 +364,10 @@ static RT_Mem_internal *RT_alloc_using_malloc(int size, int pool_num, const char
   if (we_know_for_sure_we_are_not_RT)
     data = (RT_mempool_data *)V_calloc(1, g_offset_of_data + size); // V_calloc makes sure data is in cache.
   else
-    data = (RT_mempool_data *)malloc(g_offset_of_data + size);
+    data = (RT_mempool_data *)malloc(g_offset_of_data + size); // Shouldn't we have called V_calloc here, and malloc in the other branch?
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnull-dereference" // We don't bother trying to handle V_calloc or malloc possibly returning NULL.
 
   data->_pool_num = pool_num;
   ATOMIC_NAME(data->_num_users) = 1;
@@ -391,6 +394,8 @@ static RT_Mem_internal *RT_alloc_using_malloc(int size, int pool_num, const char
   ASAN_POISON_MEMORY_REGION(data, g_offset_of_data + size);
 
   return &data->_mem;
+
+#pragma GCC diagnostic pop
 }
 
 #if !defined(RELEASE)
