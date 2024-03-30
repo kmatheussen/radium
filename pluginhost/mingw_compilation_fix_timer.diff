@@ -1,0 +1,27 @@
+diff --git a/pluginhost/JuceLibraryCode/modules/juce_core/native/juce_PlatformTimer_windows.cpp b/pluginhost/JuceLibraryCode/modules/juce_core/native/juce_PlatformTimer_windows.cpp
+index 13d3ead17..516fe8fa0 100644
+--- a/pluginhost/JuceLibraryCode/modules/juce_core/native/juce_PlatformTimer_windows.cpp
++++ b/pluginhost/JuceLibraryCode/modules/juce_core/native/juce_PlatformTimer_windows.cpp
+@@ -29,16 +29,16 @@ public:
+     explicit PlatformTimer (PlatformTimerListener& ptl)
+         : listener { ptl } {}
+ 
++    static void STDMETHODCALLTYPE callbackFunction (UINT, UINT, DWORD_PTR context, DWORD_PTR, DWORD_PTR)
++    {
++      reinterpret_cast<PlatformTimerListener*> (context)->onTimerExpired();
++    }
++  
+     void startTimer (int newIntervalMs)
+     {
+         jassert (newIntervalMs > 0);
+ 
+-        const auto callback = [] (UINT, UINT, DWORD_PTR context, DWORD_PTR, DWORD_PTR)
+-        {
+-            reinterpret_cast<PlatformTimerListener*> (context)->onTimerExpired();
+-        };
+-
+-        timerId = timeSetEvent ((UINT) newIntervalMs, 1, callback, (DWORD_PTR) &listener, TIME_PERIODIC | TIME_CALLBACK_FUNCTION);
++        timerId = timeSetEvent ((UINT) newIntervalMs, 1, callbackFunction, (DWORD_PTR) &listener, TIME_PERIODIC | TIME_CALLBACK_FUNCTION);
+         intervalMs = timerId != 0 ? newIntervalMs : 0;
+     }
+ 
