@@ -101,6 +101,8 @@ static double g_last_resize_time = -1;
 #include "../common/player_proc.h"
 #include "../common/visual_proc.h"
 
+#include "../embedded_scheme/scheme_proc.h"
+
 #include "../mixergui/QM_MixerWidget.h"
 
 #include "../Qt/Qt_Bs_edit_proc.h"
@@ -2349,10 +2351,14 @@ static DEFINE_ATOMIC(double, g_vblank) = 1000 / 60.0;
 
 
 void GL_update(void)
-{
-	//static int64_t s_last_ms = 0;
-	static int s_n = 0;
+{	
+	if (SCHEME_is_currently_getting_scheme_history()) // Avoid deadlock when assertion reporter is showing.
+		return;
 	
+#if !defined(RELEASE)
+	//static int64_t s_last_ms = 0;
+	//static int s_n = 0;
+#endif
 	if (widget)
 	{
 		int64_t time = TIME_get_ms();
