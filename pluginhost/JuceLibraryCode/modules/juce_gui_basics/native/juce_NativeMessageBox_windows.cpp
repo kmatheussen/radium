@@ -248,7 +248,7 @@ std::unique_ptr<ScopedMessageBoxInterface> ScopedMessageBoxInterface::create (co
         }
 
     private:
-      static HRESULT pfCallback(HWND hwnd, UINT msg, WPARAM, LPARAM, LONG_PTR lpRefData)
+      static HRESULT CALLBACK pfCallback(HWND hwnd, UINT msg, WPARAM, LPARAM, LONG_PTR lpRefData)
       {
         if (auto* t = reinterpret_cast<WindowsTaskDialog*> (lpRefData))
           {
