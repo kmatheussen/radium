@@ -1,3 +1,21 @@
+Changes 7.3.84 -> 7.4.76:
+* Instruments: Fix current instrument changing
+  automatically when playing song and switching
+  between blocks. This was only a bug in the offical
+  binary releases of Radium 7.3.84.
+* Help: Minor fix
+* About: Include Faust version in the about window.
+* Mac/ARM: Fix deadlock happening when showing
+  assertion reporter.
+* Gui: Fix crash when exiting program and waiting for
+  a plugins to finish running.
+* JUCE: 7.0.3 -> 7.0.11
+* Sequencer: Don't throw error if pasting automation
+  from the clipboard where the two first nodes had
+  the same time values.
+
+  
+
 Changes 7.2.89 -> 7.3.84:
 * MacOS: Don't crash when loading files with
   certain non-ascii characters (e.g. Japanese) in
