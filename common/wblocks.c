@@ -525,7 +525,7 @@ void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock, bool fo
       
       BS_SelectBlock(wblock->block);
       
-      if (!isPlayingSong()){
+      if (!isPlayingSong() && !isSeqlooping()){
         R_ASSERT_RETURN_IF_FALSE(wblock->wtrack->track != NULL);
         GFX_update_instrument_patch_gui(wblock->wtrack->track->patch, true);
       }
