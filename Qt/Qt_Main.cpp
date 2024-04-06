@@ -4943,7 +4943,7 @@ int main(int argc, char **argv){
                                             "(OpenGL performance is still likely to be worse than on Windows and Linux though.)\n"
                                             "</p><p>"
 #else
-					    "OpenGL performance is still very bad, but now, "
+					    "OpenGL performance is still very bad, and it still crashes now and then, but now, "
 #endif
                                             "the <b>biggest problem</b> on <b>macOS</b> seems to be strange behaviors with the <b>keyboard</b>, apparently related to the <b>modifier keys</b>. "
                                             "Currently it's unknown what's causing this. Sometimes you can fix it by simply pressing the <b>caps lock</b> key, "
