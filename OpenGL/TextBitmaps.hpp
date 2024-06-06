@@ -262,8 +262,9 @@ struct TextBitmaps{
 
   // called from Main thread
   void addCharBoxes(const char *text, float x, float y){
-    for(int i=0;i<(int)strlen(text);i++)
-      x = addCharBox(text[i], x, y);
+	  const int num_chars = strlen(text);
+	  for(int i=0;i<num_chars;i++)
+		  x = addCharBox(text[i], x, y);
   }
 
   // called from Main thread

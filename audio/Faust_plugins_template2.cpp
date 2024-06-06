@@ -347,11 +347,21 @@ static void RT_remove_voice(Voice **root, Voice *voice){
     voice->next->prev = voice->prev;
 }
 
-static bool RT_is_silent(float *sound, int num_frames){
-  for(int i=0;i<num_frames;i++)
-    if(sound[i]>0.05f)
-      return false;
-  return true;
+static bool RT_is_silent(float *sound, int num_frames, const bool use_old_buggy_behavior){
+	if (use_old_buggy_behavior)
+	{
+		for(int i=0;i<num_frames;i++)
+			if(sound[i]>0.05f)
+				return false;
+	}
+	else
+	{
+		for(int i=0;i<num_frames;i++)
+			if(sound[i]>0.0005f || sound[i]<-0.0005f)
+				return false;
+	}
+	
+	return true;
 }
 
 enum VoiceOp{
@@ -389,13 +399,22 @@ static VoiceOp RT_play_voice(Data *data, Voice *voice, int num_frames, float **i
 
     *start_process = 0;
 
-    if( equal_floats(*(voice->myUI._gate_control), 0.0f)){
-      if(false
-         || RT_is_silent(outputs[0],num_frames)
-         || voice->frames_since_stop > data->samplerate) // Safety mechanism. Force voice to stop after about 1 second.
-        return VOICE_REMOVE;
+    if(equal_floats(*(voice->myUI._gate_control), 0.0f)){
+	    
+	    const bool use_old_buggy_behavior = root->song->RT_use_old_buggy_faust_note_release_behavior;
 
-      voice->frames_since_stop += num_frames;
+	    const int num_seconds_safety = use_old_buggy_behavior ? 1 : 5;
+		    
+	    if(false
+	       || RT_is_silent(outputs[0], num_frames, use_old_buggy_behavior)
+	       || voice->frames_since_stop > data->samplerate*num_seconds_safety) // Safety mechanism. Force voice to stop after about 5 second.
+	    {
+		    //printf("----removing voice: %d %d\n", RT_is_silent(outputs[0], num_frames), voice->frames_since_stop > data->samplerate);
+		    
+		    return VOICE_REMOVE;
+	    }
+	    
+	    voice->frames_since_stop += num_frames;
     }
 
   }else if(delta_pos_at_start>0 && delta_pos_at_end==-1){
@@ -410,7 +429,8 @@ static VoiceOp RT_play_voice(Data *data, Voice *voice, int num_frames, float **i
 
     RT_process_between(voice, inputs, outputs, delta_pos_at_start, delta_pos_at_end);
     {
-      *(voice->myUI._gate_control)=0.0f;
+	    //printf("---Setting gate to 0\n");
+	    *(voice->myUI._gate_control)=0.0f;
     }
     RT_process_between(voice, inputs, outputs, delta_pos_at_end, num_frames);
 
@@ -441,12 +461,16 @@ static void RT_process_instrument2(int num_outputs, Data *data, int64_t time, in
     Voice *next = voice->next;
     int start_process;
 
-    if(RT_play_voice(data,voice,num_frames,inputs,tempsounds,&start_process)==VOICE_REMOVE){
-      RT_remove_voice(&data->voices_playing, voice);
-      RT_add_voice(&data->voices_not_playing, voice);
-
-      for(int ch=0;ch<num_outputs;ch++)
-        RT_fade_out(tempsounds[ch], num_frames-start_process);
+    if(RT_play_voice(data,voice,num_frames,inputs,tempsounds,&start_process)==VOICE_REMOVE)
+    {
+	    
+	    RT_remove_voice(&data->voices_playing, voice);
+	    RT_add_voice(&data->voices_not_playing, voice);
+	    
+	    R_ASSERT_NON_RELEASE(start_process == 0);
+	    
+	    for(int ch=0;ch<num_outputs;ch++)
+		    RT_fade_out(tempsounds[ch], num_frames-start_process);
     }
 
     for(int ch=0;ch<num_outputs;ch++){
@@ -501,7 +525,7 @@ static void play_note(struct SoundPlugin *plugin, int time, note_t note){
 
 static void set_note_volume2(Data *data, int time, note_t note){
   Voice *voice = data->voices_playing;
-  //printf("Setting volume %f / %f\n",volume,velocity2gain(volume));
+  //printf("Setting volume %f / %f\n",note.velocity,velocity2gain(note.velocity));
   while(voice!=NULL){
     if(is_note(note, voice->note_id, voice->seqblock))
       *(voice->myUI._gain_control) = velocity2gain(note.velocity);

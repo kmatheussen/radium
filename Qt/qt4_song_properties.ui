@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1055</width>
-    <height>526</height>
+    <width>1081</width>
+    <height>560</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -278,6 +278,22 @@
            <widget class="QCheckBox" name="embed_samples">
             <property name="text">
              <string>Embed audio files in song file</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="groupBox_10">
+         <property name="title">
+          <string>Faust instruments</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_7">
+          <item>
+           <widget class="QCheckBox" name="faust_old_buggy_release">
+            <property name="text">
+             <string>Use old/buggy note-release behavior (for compatibility with old songs)</string>
             </property>
            </widget>
           </item>
