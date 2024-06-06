@@ -875,6 +875,7 @@ static QString get_qt_environment_variables(void){
   return ret;
 }
 
+
 #define TEST_NOUVEAU 0
 
 void CRASHREPORTER_send_message(const char *additional_information, const char **messages, int num_messages, Crash_Type crash_type, double time){

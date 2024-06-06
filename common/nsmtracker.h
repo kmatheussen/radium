@@ -4005,6 +4005,8 @@ struct Song{
         bool RT_send_plugin_MIDI_through_when_bypassed; // must hold player lock when writing.
         bool RT_implicitly_mute_plugin_MIDI; // must hold player lock when writing.
 
+	bool RT_use_old_buggy_faust_note_release_behavior; // must hold player lock when writing.
+	
         bool includeAudioConnectionsInMixerConfig;
         bool includeEventConnectionsInMixerConfig;
         bool includeVolumeInMixerConfig;

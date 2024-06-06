@@ -78,6 +78,8 @@ DC_start("SONG");
         DC_SSB("send_plugin_MIDI_through_when_bypassed", song->RT_send_plugin_MIDI_through_when_bypassed);
         DC_SSB("implicitly_mute_plugin_MIDI", song->RT_implicitly_mute_plugin_MIDI);
 
+	DC_SSB("use_old_buggy_faust_note_release_behavior", song->RT_use_old_buggy_faust_note_release_behavior);
+
         DC_SSI("default_num_bus_channels", song->default_num_bus_channels);
         
         DC_start("COMMENT");{
@@ -117,7 +119,7 @@ struct Song *LoadSong(void){
                 "SEQUENCER",
                 "COMMENT"
 	};
-	const char *vars[19]={
+	const char *vars[20]={
 		"num_blocks",
 		"length",
 		"songname",
@@ -136,7 +138,8 @@ struct Song *LoadSong(void){
                 "send_plugin_MIDI_through_when_bypassed",
                 "implicitly_mute_plugin_MIDI",
                 "default_num_bus_channels",
-                "glissando_behavior"
+                "glissando_behavior",
+		"use_old_buggy_faust_note_release_behavior"
                 //"use_sequencer_timing"
 	};
 	struct Song *song=SONG_create();
@@ -150,7 +153,9 @@ struct Song *LoadSong(void){
         song->RT_mute_plugin_MIDI_when_muted = false; // compatibility with older songs
         song->RT_send_plugin_MIDI_through_when_bypassed = false; // compatibility with older songs
         song->RT_implicitly_mute_plugin_MIDI = false; // compatibility with older songs
-        
+
+	song->RT_use_old_buggy_faust_note_release_behavior = true; // compatibility with older songs
+	
         MIDI_SetThroughPatch(NULL);
           
         MW_cleanup(true);
@@ -174,7 +179,7 @@ struct Song *LoadSong(void){
 
         COMMENT_reset();
 
-        GENERAL_LOAD(7,19)
+        GENERAL_LOAD(7,20)
 
 obj0:
 	DC_ListAdd1(&song->tracker_windows,LoadWindow());
@@ -290,6 +295,8 @@ var18:
         song->glissando_behavior = DC_LoadI();
         goto start;
 var19:
+	song->RT_use_old_buggy_faust_note_release_behavior = DC_LoadB();
+	goto start;
 var20:
  var21:
         

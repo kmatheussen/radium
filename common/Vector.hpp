@@ -41,8 +41,8 @@ static inline constexpr int find_vector_preallocate_size(const int max_size){
   }
 }
   
-// Note:  PRESTACKALLOCATED_SIZE is number of bytes, not number of elements. Number of elements is rounded down, but there will always be room for at least one element.
-template <typename T, AllocatorType ALLOCATOR_TYPE = AllocatorType::STD, int PRESTACKALLOCATED_SIZE = 256>
+// Note:  PREALLOCATED_SIZE is number of bytes, not number of elements. Number of elements is rounded down, but there will always be room for at least one element.
+template <typename T, AllocatorType ALLOCATOR_TYPE = AllocatorType::STD, int PREALLOCATED_SIZE = 256>
 struct Vector{
 
   static_assert(
@@ -103,7 +103,7 @@ public:
 
 private:
 
-  char  _pre_allocated_memory[find_vector_preallocate_size<T>(PRESTACKALLOCATED_SIZE)] __attribute__((aligned(std::alignment_of<T>::value)));
+  char  _pre_allocated_memory[find_vector_preallocate_size<T>(PREALLOCATED_SIZE)] __attribute__((aligned(std::alignment_of<T>::value)));
 
 public:
   
@@ -112,7 +112,7 @@ public:
 
     constexpr int num_preallocated_elements = sizeof(_pre_allocated_memory) / sizeof(T);
 
-    static_assert(num_preallocated_elements==std::max(1, int(PRESTACKALLOCATED_SIZE / sizeof(T))), "?");
+    static_assert(num_preallocated_elements==std::max(1, int(PREALLOCATED_SIZE / sizeof(T))), "?");
 
     if (vector != NULL && vector->size()>0) {
 

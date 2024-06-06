@@ -71,6 +71,8 @@ struct Song *SONG_create(void){
   song->RT_send_plugin_MIDI_through_when_bypassed = true;
   song->RT_implicitly_mute_plugin_MIDI = true;
 
+  song->RT_use_old_buggy_faust_note_release_behavior = false;
+
   // Set all mixer config variables to true to be compatible with older songs. New songs only have a few of these set to true by default.
   // These variables are saved in MW_get_ab_state() and not in SaveSong().
   song->includeAudioConnectionsInMixerConfig = true;

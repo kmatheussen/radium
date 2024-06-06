@@ -104,6 +104,8 @@ class song_properties : public RememberGeometryQDialog, public Ui::Song_properti
     implicitly_mute_MIDI->setChecked(song->RT_implicitly_mute_plugin_MIDI);
     
     embed_samples->setChecked(g_curr_song_contains_embedded_samples);
+
+    faust_old_buggy_release->setChecked(song->RT_use_old_buggy_faust_note_release_behavior);
   }
   
   void set_linear_accelerando_and_ritardando(bool linear_accelerando, bool linear_ritardando){
@@ -227,7 +229,7 @@ public slots:
     root->song->default_num_bus_channels = val;
   }
   
-  void on_num_bus_ch_editingFinished(int val){
+  void on_num_bus_ch_editingFinished(){
     set_editor_focus();
     GL_lock();{
       num_bus_ch->clearFocus();
@@ -370,6 +372,19 @@ public slots:
   void on_embed_samples_toggled(bool val){
     g_curr_song_contains_embedded_samples = val;
   }
+
+  void on_faust_old_buggy_release_toggled(bool val){
+    if (_initing==true)
+      return;
+    
+    {
+      radium::PlayerLock lock;
+      root->song->RT_use_old_buggy_faust_note_release_behavior = val;
+    }
+    
+    SP_call_me_after_solo_has_changed();
+  }
+  
 };
 
 }

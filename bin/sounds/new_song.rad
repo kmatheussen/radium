@@ -6,15 +6,15 @@ RADIUM SONG
 version_major
 0
 INT_TYPE
-6
+7
 version_minor
 0
 INT_TYPE
-9
+4
 version_revision
 0
 INT_TYPE
-98
+76
 << HASH MAP V5 END
 
 \
@@ -115,13 +115,16 @@ SONG
 ?implicitly_mute_plugin_MIDI
 1
 
+?use_old_buggy_faust_note_release_behavior
+0
+
 ?default_num_bus_channels
 2
 
 \
 COMMENT
 >> HASH MAP V5 BEGIN
-86
+90
 author
 0
 STRING_TYPE
@@ -458,6 +461,22 @@ STRING_TYPE
 
 comment
 81
+STRING_TYPE
+
+comment
+82
+STRING_TYPE
+
+comment
+83
+STRING_TYPE
+
+comment
+84
+STRING_TYPE
+
+comment
+85
 STRING_TYPE
 
 show_after_loading
