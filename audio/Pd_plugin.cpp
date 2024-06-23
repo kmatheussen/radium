@@ -695,7 +695,7 @@ static void RT_add_controller(SoundPlugin *plugin, Data *data, const char *contr
   controller->value = value;
   controller->max_value = max_value;  
 
-  strncpy(controller->name, controller_name, PD_NAME_LENGTH-1);
+  strlcpy(controller->name, controller_name, PD_NAME_LENGTH-1);
   snprintf(controller->fx_when_start_name, PD_FX_WHEN_NAME_LENGTH-1, "%s-fx_start", controller_name);
   snprintf(controller->fx_when_middle_name, PD_FX_WHEN_NAME_LENGTH-1, "%s-fx_middle", controller_name);
   snprintf(controller->fx_when_end_name, PD_FX_WHEN_NAME_LENGTH-1, "%s-fx_end", controller_name);
@@ -1238,7 +1238,7 @@ const wchar_t *PD_set_controller_name(SoundPlugin *plugin, int n, const wchar_t 
   ADD_UNDO(PdControllers_CurrPos(const_cast<struct Patch*>(plugin->patch)));
 
   PLAYER_lock();{
-    strncpy(controller->name, name, PD_NAME_LENGTH-1);
+    strlcpy(controller->name, name, PD_NAME_LENGTH-1);
 
     if(controller->pd_binding != NULL)
       libpds_unbind(data->pd, controller->pd_binding);
@@ -1275,7 +1275,7 @@ void PD_recreate_controllers_from_state(SoundPlugin *plugin, const hash_t *state
       if(name==NULL || !strcmp(name,""))
         controller->name[0] = 0;
       else
-        strncpy(controller->name, name, PD_NAME_LENGTH-1);
+        strlcpy(controller->name, name, PD_NAME_LENGTH-1);
     }
     
     controller->type      = HASH_get_int_at(state, "type", i);

@@ -152,7 +152,7 @@ static const char *get_effect_name(const struct SoundPlugin *plugin, int effect_
   SoundPluginType *type = plugin->type;
 
   if(type->data==NULL)
-    type->data = calloc(sizeof(char*), type->num_effects);
+	  type->data = calloc(type->num_effects, sizeof(char*));
   
   char **names = (char**)type->data;
 

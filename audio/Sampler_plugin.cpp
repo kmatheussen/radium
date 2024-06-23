@@ -4336,17 +4336,17 @@ void create_sample_plugin(bool is_click){
 
   if (has_inited==false) {
 
-    radium::g_empty_granresampler_block = (float*)calloc(sizeof(float), 64);
+	  radium::g_empty_granresampler_block = (float*)calloc(64, sizeof(float));
     
-    init_granulator_pool();
-    
-    init_plugin_type();
-
-    click_type = plugin_type;
-
-    click_type.name = g_click_name;
-
-    has_inited = true;
+	  init_granulator_pool();
+	  
+	  init_plugin_type();
+	  
+	  click_type = plugin_type;
+	  
+	  click_type.name = g_click_name;
+	  
+	  has_inited = true;
   }
 
   if (is_click)
