@@ -92,7 +92,7 @@ SONG
 1
 
 ?glissando_behavior
-1
+2
 
 ?mixer_comments_visible
 0
@@ -501,10 +501,10 @@ TRACKER_WINDOW
 0
 
 ?width
-1293
+1425
 
 ?height
-363
+511
 
 ?fontID
 0
@@ -513,13 +513,13 @@ TRACKER_WINDOW
 0
 
 ?fontwidth
-10
+8
 
 ?fontheight
-17
+13
 
 ?org_fontheight
-17
+13
 
 ?curr_block
 0
@@ -564,28 +564,28 @@ WBLOCK
 0
 
 ?linenumarea
-28
+24
 
 ?lpbTypearea
-10
+8
 
 ?lpbarea
-20
+16
 
 ?tempoTypearea
-10
+8
 
 ?tempoarea
-40
+32
 
 ?temponodearea
-131
+152
 
 ?maxwtracksize
 0
 
 ?curr_realline
-0
+2
 
 ?num_reallines
 64
@@ -635,7 +635,7 @@ WTRACK
 3
 
 ?fxwidth
-111
+136
 
 ?is_wide
 0
@@ -676,7 +676,7 @@ WTRACK
 3
 
 ?fxwidth
-111
+136
 
 ?is_wide
 0
@@ -717,7 +717,7 @@ WTRACK
 3
 
 ?fxwidth
-111
+136
 
 ?is_wide
 0
@@ -758,7 +758,7 @@ WTRACK
 3
 
 ?fxwidth
-111
+136
 
 ?is_wide
 0
@@ -799,7 +799,7 @@ WTRACK
 3
 
 ?fxwidth
-111
+136
 
 ?is_wide
 0
@@ -840,7 +840,7 @@ WTRACK
 3
 
 ?fxwidth
-111
+136
 
 ?is_wide
 0
@@ -881,7 +881,7 @@ WTRACK
 3
 
 ?fxwidth
-111
+136
 
 ?is_wide
 0
@@ -922,7 +922,7 @@ WTRACK
 3
 
 ?fxwidth
-111
+136
 
 ?is_wide
 0
@@ -3898,7 +3898,7 @@ HASH_TYPE
 filename
 0
 FILEPATH_TYPE
-243749__unfa__metronome-1khz-weak-pulse.flac
+/private/tmp/radium_bin/sounds/243749__unfa__metronome-1khz-weak-pulse.flac
 instrument_number
 0
 INT_TYPE
@@ -18349,7 +18349,7 @@ HASH_TYPE
 filename
 0
 FILEPATH_TYPE
-243749__unfa__metronome-1khz-weak-pulse.flac
+/private/tmp/radium_bin/sounds/243749__unfa__metronome-1khz-weak-pulse.flac
 instrument_number
 0
 INT_TYPE
