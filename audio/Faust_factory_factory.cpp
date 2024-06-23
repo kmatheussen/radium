@@ -87,7 +87,7 @@ namespace{
     void create(){
       free_argv();
       argc = args.size();
-      argv = (const char**)calloc(sizeof(char*), argc);
+      argv = (const char**)calloc(argc, sizeof(char*));
       for(int i=0;i<argc;i++)
         argv[i] = strdup(args[i].toUtf8().constData());
       is_dirty = false;

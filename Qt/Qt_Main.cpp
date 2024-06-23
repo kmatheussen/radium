@@ -579,7 +579,7 @@ static bool *g_widgets_needing_update;
 
 __attribute__((constructor)) static void initialize_g_widgets(void) {
   g_rtwidgets = new QPointer<QWidget>[RTWIDGET_SIZE];
-  g_widgets_needing_update = (bool*)calloc(sizeof(bool), RTWIDGET_SIZE);
+  g_widgets_needing_update = (bool*)calloc(RTWIDGET_SIZE, sizeof(bool));
 }
 
 void RT_RTWIDGET_mark_needing_update(int pos){
@@ -736,7 +736,7 @@ bool tevent_autorepeat = false;
 static bool *g_up_downs;
 
 __attribute__((constructor)) static void initialize_g_up_downs(void) {
-  g_up_downs = (bool*)calloc(sizeof(bool), EVENT_DASMAX);
+	g_up_downs = (bool*)calloc(EVENT_DASMAX, sizeof(bool));
 }
 
 static bool maybe_got_key_window(QWindow *window);
@@ -2304,7 +2304,6 @@ bool a_radium_window_has_focus(void){
 #endif
 }
 
-
 extern "C" void run_main_loop(void);
 void run_main_loop(void){
   g_qapplication->exec();
@@ -2403,7 +2402,7 @@ static const int rt_message_length = 1024;
 static char *rt_message;
 
 __attribute__((constructor)) static void initialize_rt_message(void) {
-  rt_message = (char*)calloc(sizeof(char), rt_message_length);
+	rt_message = (char*)calloc(rt_message_length, sizeof(char));
 }
 
 

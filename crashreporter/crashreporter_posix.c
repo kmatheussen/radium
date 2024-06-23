@@ -77,7 +77,7 @@ static bool crash_already_reported(void){
     return true;
   
   if (reported_threads == NULL){
-    reported_threads = calloc(sizeof(pthread_t), 100);
+	  reported_threads = calloc(100, sizeof(pthread_t));
   }  
   
   pthread_t this_thread = pthread_self();

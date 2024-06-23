@@ -65,7 +65,7 @@ static PyObject **Lists_py;
 static void init_pyobjects(void){
 	int lokke;
 
-        Integers_py = calloc(sizeof(PyObject*), EVENT_DASMAX);
+        Integers_py = calloc(EVENT_DASMAX, sizeof(PyObject*));
         
 	for(lokke=0;lokke<EVENT_DASMAX;lokke++){
 		Integers_py[lokke]=PyInt_FromLong((long)lokke);
@@ -73,7 +73,7 @@ static void init_pyobjects(void){
 		Py_INCREF(Integers_py[lokke]);
 	}
 
-        Lists_py = calloc(sizeof(PyObject*), 12);
+        Lists_py = calloc(12, sizeof(PyObject*));
 
 	for(lokke=0;lokke<12;lokke++){
 		Lists_py[lokke]=PyList_New(lokke);

@@ -81,15 +81,19 @@ CCC ?= g++
 CC ?= gcc
 CC_STATIC ?= $(CC)
 GCC ?= gcc
+CLANG ?= clang
+CLANGPLUSPLUS ?= clang++
 GPLUSPLUS ?= $(CCC)
 LINKER ?= g++
 STRIPPER ?= strip
 
+GGDB_OPT ?= -ggdb3
 
 CC2=./compile_to_tmp.sh $(CC)
 CCC2=./compile_to_tmp.sh $(CCC)
 GCC2=./compile_to_tmp.sh $(GCC)
 GPLUSPLUS2=./compile_to_tmp.sh $(GPLUSPLUS)
+CLANGPLUSPLUS2=./compile_to_tmp.sh $(CLANGPLUSPLUS)
 CC_STATIC2=./compile_to_tmp.sh $(CC_STATIC)
 
 
@@ -254,31 +258,70 @@ FULL_VERSION ?= 1
 
 WNO_DEPRECATED_DECLARATIONS=
 
-ifeq ($(GCC_MAJOR),11)
+NO_ANALYZER=
+NO_ANALYZER_MALLOC_LEAK=
+WNO_CLASS_MEMACCESS=
+WNO_PARENTHESIS=
+WNO_TEMPLATE_ID_CDTOR=
+
+ifeq ($(GCC_MAJOR),14)
 	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined # -fno-sanitize-recover
 	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
 	WNO_DEPRECATED_DECLARATIONS=-Wno-deprecated-declarations
+	WNO_CLASS_MEMACCESS=-Wno-class-memaccess
+	WNO_PARENTHESIS=-Wno-parentheses
+	WNO_TEMPLATE_ID_CDTOR=-Wno-template-id-cdtor
+	QT_CFLAGS += $(WNO_TEMPLATE_ID_CDTOR)
+#	UNDEFINED_SANITIZE_OPTS=
+else ifeq ($(GCC_MAJOR),13)
+	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined # -fno-sanitize-recover
+	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
+	WNO_DEPRECATED_DECLARATIONS=-Wno-deprecated-declarations
+	WNO_CLASS_MEMACCESS=-Wno-class-memaccess
+	WNO_PARENTHESIS=-Wno-parentheses
+#	UNDEFINED_SANITIZE_OPTS=
+else ifeq ($(GCC_MAJOR),12)
+	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined # -fno-sanitize-recover
+	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
+	WNO_DEPRECATED_DECLARATIONS=-Wno-deprecated-declarations
+	WNO_CLASS_MEMACCESS=-Wno-class-memaccess
+	WNO_PARENTHESIS=-Wno-parentheses
+#	UNDEFINED_SANITIZE_OPTS=
+else ifeq ($(GCC_MAJOR),11)
+	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined # -fno-sanitize-recover
+	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
+	WNO_DEPRECATED_DECLARATIONS=-Wno-deprecated-declarations
+	WNO_CLASS_MEMACCESS=-Wno-class-memaccess
+	WNO_PARENTHESIS=-Wno-parentheses
 #	UNDEFINED_SANITIZE_OPTS=
 else ifeq ($(GCC_MAJOR),10)
 	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined # -fno-sanitize-recover
 	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
 	WNO_DEPRECATED_DECLARATIONS=-Wno-deprecated-declarations
+	WNO_CLASS_MEMACCESS=-Wno-class-memaccess
+	WNO_PARENTHESIS=-Wno-parentheses
 #	UNDEFINED_SANITIZE_OPTS=
 else ifeq ($(GCC_MAJOR),9)
 	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined -fno-sanitize-recover
 	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
 #	UNDEFINED_SANITIZE_OPTS=
 	WNO_DEPRECATED_DECLARATIONS=-Wno-deprecated-declarations
+	WNO_CLASS_MEMACCESS=-Wno-class-memaccess
+	WNO_PARENTHESIS=-Wno-parentheses
 else ifeq ($(GCC_MAJOR),8)
 	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined -fno-sanitize-recover
 	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
 	WNO_DEPRECATED_DECLARATIONS=-Wno-deprecated-declarations
 #	UNDEFINED_SANITIZE_OPTS=
+	WNO_CLASS_MEMACCESS=-Wno-class-memaccess
+	WNO_PARENTHESIS=-Wno-parentheses
 else ifeq ($(GCC_MAJOR),7)
 	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined -fno-sanitize-recover
 	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
 	WNO_DEPRECATED_DECLARATIONS=-Wno-deprecated-declarations
 #	UNDEFINED_SANITIZE_OPTS=
+	WNO_CLASS_MEMACCESS=-Wno-class-memaccess
+	WNO_PARENTHESIS=-Wno-parentheses
 else ifneq (,$(findstring clang,$(CC)))
 	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
 	WNO_DEPRECATED_DECLARATIONS=-Wno-deprecated-declarations
@@ -287,8 +330,12 @@ else
 	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=
 endif
 
-UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow -fno-sanitize-recover=undefined -DRADIUM_USES_UBSAN # ,integer ,integer
+UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow -fno-sanitize-recover=undefined -DRADIUM_USES_UBSAN  # ,integer ,integer
 #UNDEFINED_SANITIZE_OPTS=
+
+ifneq (,$(findstring clang,$(CC)))
+	UNDEFINED_SANITIZE_OPTS += -fno-sanitize=function -fno-sanitize=vptr 
+endif
 
 # -fsanitize-thread sometimes require: "export __GL_THREADED_OPTIMIZATIONS=0"
 # "-Og" very often destroys debugging (although it's not supposed to), but without it things are too slow (well, it's already too slow, but -Og helps a lot).
@@ -305,8 +352,9 @@ MEMORY_SANITIZE_OPTS=
 
 
 # Note that "./build_clean.sh" must be run if changing DEBUG_BUILD_OPTS or changing from RELEASE to DEBUG build.
-OS_DEBUG_BUILD_OPTS ?= $(UNDEFINED_SANITIZE_OPTS) $(THREAD_SANITIZE_OPTS) $(ADDRESS_SANITIZE_OPTS) $(MEMORY_SANITIZE_OPTS)  # -fanalyzer 
-DEBUG_BUILD_OPTS = -Werror -Wfloat-equal -Wall -ggdb3 -fno-optimize-sibling-calls $(OS_DEBUG_BUILD_OPTS)
+OS_DEBUG_BUILD_OPTS ?= $(UNDEFINED_SANITIZE_OPTS) $(THREAD_SANITIZE_OPTS) $(ADDRESS_SANITIZE_OPTS) $(MEMORY_SANITIZE_OPTS) -mbranch-protection=standard -fno-sanitize-trap=all
+#-flto -fvisibility=hidden -fsanitize=cfi -fno-sanitize-trap=all # -fanalyzer 
+DEBUG_BUILD_OPTS = -Werror -Wfloat-equal -Wall $(GGDB_OPT) -fno-optimize-sibling-calls $(OS_DEBUG_BUILD_OPTS)
 
 BUILD_DEBUG=NO
 BUILD_OPTIMIZED=YES
@@ -406,7 +454,7 @@ endif
 
 OPT=$(COMMONOPT) -Wstrict-prototypes -Wmissing-prototypes -std=gnu99  # Note: "-Wmissing-prototypes" is only valid for C files. The equivilant C++ option is "-Wmissing-declarations". However, "-Wmissing-declarations" doesn't always seem to work, don't know why.
 
-OBJC_OPT=$(COMMONOPT) -nostdinc++
+OBJC_OPT=$(COMMONOPT) # -nostdinc++
 
 # -D_FORTIFY_SOURCE=2 -O2
 
@@ -438,24 +486,6 @@ CPPOPT = $(COMMONOPT) -Wmissing-declarations -DNDEBUG # NDEBUG must be defined t
 # -Wno-deprecated-declarations added because of Qt
 # -Wno-deprecated-copy added because of Qt
 
-NO_ANALYZER=
-NO_ANALYZER_MALLOC_LEAK=
-
-ifeq ($(GCC_MAJOR),8)
-	CPPOPT += -Wno-class-memaccess  -Wno-parentheses
-endif
-
-ifeq ($(GCC_MAJOR),9)
-	CPPOPT += -Wno-class-memaccess  -Wno-parentheses
-endif
-
-ifeq ($(GCC_MAJOR),10)
-#	CPPOPT += -Wno-class-memaccess  -Wno-parentheses -Wno-deprecated-declarations -Wno-deprecated-copy
-	CPPOPT += -Wno-parentheses -Wno-deprecated-declarations 
-	NO_ANALYZER=-fno-analyzer
-	NO_ANALYZER_MALLOC_LEAK=-Wno-analyzer-malloc-leak
-endif
-
 
 QT_VERSION:=$(shell $(MOC) --version)
 QT_MAJOR:=$(shell echo $(QT_VERSION) | cut -d'.' -f1)
@@ -477,6 +507,8 @@ ifeq ($(BUILDTYPE), DEBUG)
 endif
 
 CPPOPT += -Wno-register
+
+OBJCPP_OPT=$(CPPOPT) # -nostdinc++
 
 WNO_DUPLICATED_BRANCHES=
 ifeq (,$(findstring clang,$(CC)))
@@ -1527,11 +1559,11 @@ $(T)W_Error.o:  $(BUILD_DEPENDENCIES) windows/W_Error.c
 $(T)W_Keyboard.o:  $(BUILD_DEPENDENCIES) windows/W_Keyboard.c 
 	$(CC2) windows/W_Keyboard.c $(OPT)
 
-$(T)cocoa_Keyboard.o:  $(BUILD_DEPENDENCIES) macosx/cocoa_Keyboard.m
-	$(CC2) macosx/cocoa_Keyboard.m $(OBJC_OPT)
+$(T)cocoa_Keyboard.o:  $(BUILD_DEPENDENCIES) macosx/cocoa_Keyboard.mm
+	$(CLANGPLUSPLUS2) macosx/cocoa_Keyboard.mm $(OBJCPP_OPT)
 
 $(T)machthreads.o:  $(BUILD_DEPENDENCIES) macosx/machthreads.mm
-	$(CC2) macosx/machthreads.mm $(OBJC_OPT)
+	$(CLANGPLUSPLUS2) macosx/machthreads.mm $(OBJC_OPT)
 
 $(T)X11_Ptask2Mtask.o:  $(BUILD_DEPENDENCIES) X11/X11_Ptask2Mtask.c 
 	$(CC2) X11/X11_Ptask2Mtask.c $(OPT)
@@ -1666,7 +1698,7 @@ $(T)Qt_instruments.o: $(BUILD_DEPENDENCIES) $(P)Qt_instruments.cpp $(INSTRUMENTS
 	fi
 	 # ^ It takes forever to compile this file with -Og
 
-#	$(CLANGCC) $(P)Qt_instruments.cpp $(QTOPT)
+#	$(CLANGPLUSPLUS) $(P)Qt_instruments.cpp $(QTOPT)
 # clang++ $(P)Qt_instruments.cpp $(QTOPT)
 
 
@@ -2438,7 +2470,7 @@ audio/faust_tapiir.cpp: audio/faust-examples/tapiir.dsp $(FAUST_DEPENDENCIES)
 
 
 $(T)faust_multibandcomp.o: audio/faust_multibandcomp.cpp
-	$(CCC2) audio/faust_multibandcomp.cpp $(FAUST_OPTS2) -DCLASSNAME=Multibandcomp_dsp -DDSP_NAME=\"Multiband\ Compressor\" -DCREATE_NAME=create_faust_multibandcomp_plugin -DFAUST_THAT_ONE $(NO_ANALYZER)
+	$(CCC2) audio/faust_multibandcomp.cpp $(FAUST_OPTS2) -DCLASSNAME=Multibandcomp_dsp -DDSP_NAME=\"Multiband\ Compressor\" -DCREATE_NAME=create_faust_multibandcomp_plugin -DFAUST_THAT_ONE $(NO_ANALYZER) $(NOUNUSEDBUTSETVARIABLEWARNING)
 
 audio/faust_multibandcomp.cpp: audio/faust_multibandcomp.dsp $(FAUST_DEPENDENCIES) audio/filter_smoothing.lib
 	cd audio && $(FAUST) -vec -cn Multibandcomp_dsp -a Faust_plugins_template.cpp faust_multibandcomp.dsp -o faust_multibandcomp.cpp
@@ -2639,17 +2671,19 @@ $(T)crashreporter_windows.o: crashreporter/crashreporter_windows.cpp
 #	$(CC_STATIC2) crashreporter/crashreporter_windows.c $(OPT) -O0 -DPACKAGE  $(CRASHREPORTER_WINDOWS_CFLAGS)
 #	$(CC2) crashreporter/crashreporter_windows.c $(OPT) -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/bfd -DPACKAGE -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/include -O0
 
+VISUALIZATION_OPTIONS=$(WNO_SUGGEST_OVERRIDE) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC) $(NO_ANALYZER)  $(WNO_DEPRECATED_COPY_CLANG) $(WNO_DEPRECATED_DECLARATIONS) $(WNO_MISLEADING_INDENTATION_CLANG) $(WNO_CLASS_MEMACCESS)
+
 $(T)GfxElements.o: OpenGL/GfxElements.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp OpenGL/FreeType.hpp common/Mutex.hpp OpenGL/T2.hpp common/spinlock.h
-	$(CCC2) OpenGL/GfxElements.cpp $(QTOPT) $(FREETYPE_CFLAGS) $(WNO_SUGGEST_OVERRIDE) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC) $(NO_ANALYZER)  $(WNO_DEPRECATED_COPY_CLANG) $(WNO_DEPRECATED_DECLARATIONS) $(BOOST_INCLUDE) $(VL_CFLAGS) $(WNO_MISLEADING_INDENTATION_CLANG) 
+	$(CCC2) OpenGL/GfxElements.cpp $(QTOPT) $(VISUALIZATION_OPTIONS) $(FREETYPE_CFLAGS) $(BOOST_INCLUDE) $(VL_CFLAGS)  
 
 $(T)T2.o: OpenGL/T2.cpp OpenGL/T2.hpp OpenGL/SharedVariables.hpp common/QueueStack.hpp OpenGL/GfxElements.h 
-	$(CCC2) OpenGL/T2.cpp $(QTOPT) $(BOOST_INCLUDE) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC) $(WNO_DEPRECATED_COPY_CLANG) $(WNO_DEPRECATED_DECLARATIONS) $(VL_CFLAGS) $(WNO_MISLEADING_INDENTATION_CLANG) 
+	$(CCC2) OpenGL/T2.cpp $(QTOPT) $(BOOST_INCLUDE) $(VISUALIZATION_OPTIONS) $(VL_CFLAGS)
 
 $(T)Render.o: OpenGL/Render.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp common/spinlock.h common/time_proc.h common/Beats_proc.h common/TimeData.hpp
-	$(CCC2) OpenGL/Render.cpp $(QTOPT) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC) $(WNO_DEPRECATED_COPY_CLANG) $(WNO_MISLEADING_INDENTATION_CLANG) $(VL_CFLAGS) 
+	$(CCC2) OpenGL/Render.cpp $(QTOPT) $(VISUALIZATION_OPTIONS) $(VL_CFLAGS) 
 
 $(T)Widget.o: OpenGL/Widget.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/Timing.hpp OpenGL/SharedVariables.hpp common/Mutex.hpp OpenGL/T2.hpp common/spinlock.h common/MovingAverage.hpp OpenGL/Qt5ThreadedWidget.hpp common/Vector.hpp Qt/Timer.hpp
-	$(CCC2) OpenGL/Widget.cpp $(QTOPT)  $(WNO_SUGGEST_OVERRIDE) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC) $(NO_SANITIZE_SIGNED_INTEGER_OVERFLOW) $(NO_ANALYZER) $(WNO_DEPRECATED_DECLARATIONS) $(WNO_DEPRECATED_COPY_CLANG) $(VL_CFLAGS) $(WNO_MISLEADING_INDENTATION_CLANG) 
+	$(CCC2) OpenGL/Widget.cpp $(QTOPT) $(VISUALIZATION_OPTIONS) $(VL_CFLAGS)
 
 $(T)CheckOpenGL.o: OpenGL/CheckOpenGL.cpp common/Process.hpp
 	$(CCC2) OpenGL/CheckOpenGL.cpp $(QTOPT) $(WNO_DEPRECATED_DECLARATIONS)

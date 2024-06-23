@@ -141,10 +141,10 @@ static DEFINE_ATOMIC(int, g_event_pos) = 0;
 
 static void init_log(void){
   if (g_event_log==NULL){
-    g_event_log = (const char**)calloc(sizeof(const char*), NUM_EVENTS);
-    g_time_log = (double*)calloc(sizeof(double), NUM_EVENTS);
-    for(int i=0;i<NUM_EVENTS;i++)
-      g_event_log[i] = "";
+	  g_event_log = (const char**)calloc(NUM_EVENTS, sizeof(const char*));
+	  g_time_log = (double*)calloc(NUM_EVENTS, sizeof(double));
+	  for(int i=0;i<NUM_EVENTS;i++)
+		  g_event_log[i] = "";
   }  
 }
 
@@ -667,11 +667,11 @@ static DEFINE_ATOMIC(const char **, g_plugin_names);
 //static QString g_plugin_name=g_no_plugin_name;
 
 __attribute__((constructor)) static void initialize_g_plugin_names() {
-  ATOMIC_NAME(g_plugin_names) = (const char**)calloc(sizeof(const char*), MAX_NUM_PLUGIN_NAMES);
+	ATOMIC_NAME(g_plugin_names) = (const char**)calloc(MAX_NUM_PLUGIN_NAMES, sizeof(const char*));
   
-  for(int i=0;i<MAX_NUM_PLUGIN_NAMES;i++){
-    ATOMIC_SET_ARRAY(g_plugin_names, i, g_no_plugin_name);
-  }
+	for(int i=0;i<MAX_NUM_PLUGIN_NAMES;i++){
+		ATOMIC_SET_ARRAY(g_plugin_names, i, g_no_plugin_name);
+	}
 }
 
 

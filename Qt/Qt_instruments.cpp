@@ -127,43 +127,43 @@ static Faust_Plugin_widget *AUDIOWIDGET_get_faust_plugin_widget(Audio_instrument
 #endif
 
 const char **get_ccnames(void){
-  static const char **ccnames = NULL;
+	static const char **ccnames = NULL;
 
-  if (ccnames == NULL) {
-    ccnames = (const char**)calloc(sizeof(char*), 128);
+	if (ccnames == NULL) {
+		ccnames = (const char**)calloc(128, sizeof(char*));
     
-    for(int i=0;i<128;i++)
-      ccnames[i] = "";
+		for(int i=0;i<128;i++)
+			ccnames[i] = "";
 
-    {
-      ccnames[01] = "Modulation Wheel";
-      ccnames[02] = "Breath Controller";
-      ccnames[04] = "Foot Controller";
-      ccnames[05] = "Portamento Time";
-      ccnames[06] = "Data Entry MSB";
-      ccnames[07] = "Volume";
-      ccnames[10] = "Pan";
-      ccnames[11] = "Expression";
-      ccnames[16] = "Foot Controller";
-      ccnames[28] = "Data Entry LSB";
-      ccnames[64] = "Sustain Switch";
-      ccnames[65] = "Portamento Switch";
-      ccnames[66] = "Sostenuto";
-      ccnames[67] = "Soft Pedal";
-      ccnames[84] = "Portamento";
-      ccnames[94] = "Variation Depth";
-      ccnames[120] = "All Sounds Off";
-      ccnames[121] = "Reset All Controllers";
-      ccnames[123] = "All Notes Off";
-      ccnames[124] = "Omni Mode Off";
-      ccnames[125] = "Omni Mode On";
-      ccnames[126] = "Mono Mode";
-      ccnames[127] = "Poly Mode";
-    }
+		{
+			ccnames[01] = "Modulation Wheel";
+			ccnames[02] = "Breath Controller";
+			ccnames[04] = "Foot Controller";
+			ccnames[05] = "Portamento Time";
+			ccnames[06] = "Data Entry MSB";
+			ccnames[07] = "Volume";
+			ccnames[10] = "Pan";
+			ccnames[11] = "Expression";
+			ccnames[16] = "Foot Controller";
+			ccnames[28] = "Data Entry LSB";
+			ccnames[64] = "Sustain Switch";
+			ccnames[65] = "Portamento Switch";
+			ccnames[66] = "Sostenuto";
+			ccnames[67] = "Soft Pedal";
+			ccnames[84] = "Portamento";
+			ccnames[94] = "Variation Depth";
+			ccnames[120] = "All Sounds Off";
+			ccnames[121] = "Reset All Controllers";
+			ccnames[123] = "All Notes Off";
+			ccnames[124] = "Omni Mode Off";
+			ccnames[125] = "Omni Mode On";
+			ccnames[126] = "Mono Mode";
+			ccnames[127] = "Poly Mode";
+		}
 
-  }
+	}
 
-  return ccnames;
+	return ccnames;
 }
 
 //#define protected public

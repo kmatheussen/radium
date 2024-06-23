@@ -13,9 +13,9 @@ ordinary scan codes: http://www.win.tue.nl/~aeb/linux/kbd/scancodes-1.html
 static int *scancode;
 
 __attribute__((constructor)) static void initialize_scancode(void) {
-  scancode = calloc(sizeof(int), 0x100);
-  for(int i=0;i<0x100;i++)
-    scancode[i] = EVENT_NO;
+	scancode = calloc(0x100, sizeof(int));
+	for(int i=0;i<0x100;i++)
+		scancode[i] = EVENT_NO;
 }
 
 static void init_scancodes(void){

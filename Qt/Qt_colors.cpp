@@ -807,7 +807,7 @@ static QColor get_replacement_color(enum ColorNums colornum){
 static QColor **g_config_colors;
 
 __attribute__((constructor)) static void initialize_g_config_colors(void) {
-  g_config_colors = (QColor**)calloc(sizeof(QColor*), END_CONFIG_COLOR_NUM);
+	g_config_colors = (QColor**)calloc(END_CONFIG_COLOR_NUM, sizeof(QColor*));
 }
   
 
@@ -1016,9 +1016,9 @@ static void updatePalette(EditorWidget *my_widget, QWidget *widget, QPalette &pa
 #endif
     }
 
-    pal.setColor( QPalette::Active, QPalette::Background, b);
-    pal.setColor( QPalette::Inactive, QPalette::Background, b);
-    pal.setColor( QPalette::Disabled, QPalette::Background, b.lighter(95));
+    pal.setColor( QPalette::Active, QPalette::Window, b);
+    pal.setColor( QPalette::Inactive, QPalette::Window, b);
+    pal.setColor( QPalette::Disabled, QPalette::Window, b.lighter(95));
 
     pal.setColor( QPalette::Active, QPalette::Button, c);
     pal.setColor( QPalette::Inactive, QPalette::Button, c);
@@ -1058,13 +1058,13 @@ static void updatePalette(EditorWidget *my_widget, QWidget *widget, QPalette &pa
     c.setAlpha(180);
     //black.setAlpha(108);
 
-    pal.setColor(QPalette::Active, QPalette::Foreground, c);
-    pal.setColor(QPalette::Inactive, QPalette::Foreground, c.lighter(93));
-    pal.setColor(QPalette::Disabled, QPalette::Foreground, c.lighter(80));
+    pal.setColor(QPalette::Active, QPalette::WindowText, c);
+    pal.setColor(QPalette::Inactive, QPalette::WindowText, c.lighter(93));
+    pal.setColor(QPalette::Disabled, QPalette::WindowText, c.lighter(80));
 
-    pal.setColor(QPalette::Active, QPalette::Foreground, c);
-    pal.setColor(QPalette::Inactive, QPalette::Foreground, c.lighter(93));
-    pal.setColor(QPalette::Disabled, QPalette::Foreground, c.lighter(80));
+    pal.setColor(QPalette::Active, QPalette::WindowText, c);
+    pal.setColor(QPalette::Inactive, QPalette::WindowText, c.lighter(93));
+    pal.setColor(QPalette::Disabled, QPalette::WindowText, c.lighter(80));
 
     pal.setColor(QPalette::Active, QPalette::ButtonText, c);
     pal.setColor(QPalette::Inactive, QPalette::ButtonText, c.lighter(93));

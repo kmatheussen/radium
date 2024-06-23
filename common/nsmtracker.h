@@ -19,12 +19,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define RADIUM_COMMON_NSMTRACKER_H 1
 
 #ifndef __STDC_FORMAT_MACROS
-#error "what?"
-#define __STDC_FORMAT_MACROS 1
+#  error "what?"
+#  define __STDC_FORMAT_MACROS 1
 #endif
 
 #ifdef LANGSPEC
-#error "LANGSPEC already defined"
+#  error "LANGSPEC already defined"
 #endif
 
 #  ifdef __cplusplus
@@ -57,16 +57,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #endif // !defined(__aarch64__)
 
-#if !defined(RELEASE) && !defined(FOR_WINDOWS)
-#  include <sanitizer/common_interface_defs.h>
-#  if defined(RADIUM_USES_ASAN)
-#    if !__has_feature(address_sanitizer) && !defined(__SANITIZE_ADDRESS__)
-#      error "Error. Check usage of ASAN_POISON_MEMORY_REGION / ASAN_UNPOISON_MEMORY_REGION macros"
+#if !defined(__clang__) && defined(FOR_MACOSX)
+#else
+#  if !defined(RELEASE) && !defined(FOR_WINDOWS)
+#    include <sanitizer/common_interface_defs.h>
+#    if defined(RADIUM_USES_ASAN)
+#      if !__has_feature(address_sanitizer) && !defined(__SANITIZE_ADDRESS__)
+#        error "Error. Check usage of ASAN_POISON_MEMORY_REGION / ASAN_UNPOISON_MEMORY_REGION macros"
+#      endif
 #    endif
-#  endif
-#  if __has_feature(address_sanitizer) || defined(__SANITIZE_ADDRESS__)
-#    if !defined(RADIUM_USES_ASAN)
-#      error "Error. RADIUM_USES_ASAN macro not defined"
+#    if __has_feature(address_sanitizer) || defined(__SANITIZE_ADDRESS__)
+#      if !defined(RADIUM_USES_ASAN)
+#        error "Error. RADIUM_USES_ASAN macro not defined"
+#      endif
 #    endif
 #  endif
 #endif

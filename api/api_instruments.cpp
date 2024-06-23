@@ -3372,8 +3372,8 @@ static int64_t *playnote_ids;
 static float *initial_pitches;
 
 __attribute__((constructor)) static void initialize_playnote_ids_and_initial_pitches() {
-  playnote_ids = (int64_t*)calloc(sizeof(int64_t), NUM_IDS);
-  initial_pitches = (float*)calloc(sizeof(float), NUM_IDS);
+	playnote_ids = (int64_t*)calloc(NUM_IDS, sizeof(int64_t));
+	initial_pitches = (float*)calloc(NUM_IDS, sizeof(float));
 };
 
 

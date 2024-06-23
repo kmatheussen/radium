@@ -7300,7 +7300,7 @@ void gui_setBackgroundColor(int64_t guinum, const_char* color){
   } else {
     
     QPalette pal = w->palette();
-    pal.setColor(QPalette::Background, c);
+    pal.setColor(QPalette::Window, c);
     pal.setColor(QPalette::Base, c);
     //gui->_widget->setAutoFillBackground(true);
     w->setPalette(pal);
@@ -8388,7 +8388,7 @@ namespace{
       resize(width,height);
       QColor c = Qt::transparent;
     QPalette pal = palette();
-    pal.setColor(QPalette::Background, c);
+    pal.setColor(QPalette::Window, c);
     pal.setColor(QPalette::Base, c);
     //gui->_widget->setAutoFillBackground(true);
     setPalette(pal);

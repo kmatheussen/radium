@@ -164,7 +164,7 @@ static inline void *V_calloc(size_t n, size_t size){
 
 
 #ifndef __clang__
-#include <malloc.h>
+#include <stdlib.h>
 #endif
 
 static inline void V_free(void *ptr){
