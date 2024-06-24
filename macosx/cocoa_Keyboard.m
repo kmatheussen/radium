@@ -19,7 +19,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #import <Cocoa/Cocoa.h>
 #import <Carbon/Carbon.h>
+#import <AppKit/AppKit.h>
+#import <Foundation/Foundation.h>
 
+#include <stdint>
 
 #undef EVENT_H
 
@@ -82,32 +85,64 @@ void OS_OSX_clear_modifiers(void){
   clear_modifiers();
 }
 
+#if 0
+#endif
+
+static void print_modifier_flags(const NSEvent *event)
+{
+	if ( ([event modifierFlags] & NSCommandKeyMask))
+		printf("Command/");
+	
+	if (([event modifierFlags] & NSAlphaShiftKeyMask))
+		printf("AlphaShift/");
+
+	if (([event modifierFlags] & NSShiftKeyMask))
+		printf("Shift/");
+		
+	if (([event modifierFlags] & NSAlternateKeyMask))
+		printf("Alt/");
+	
+	if (([event modifierFlags] & NSControlKeyMask))
+		printf("Ctrl/");
+
+	if (([event modifierFlags] & NSFunctionKeyMask))
+		printf("Fn/");
+
+	printf("\n");
+}
+
 // https://developer.apple.com/library/mac/documentation/Cocoa/Reference/ApplicationKit/Classes/NSEvent_Class
 
 int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
   NSEvent *event = (NSEvent *)void_event;
   NSEventType type = [event type];
   int ret = -1;
+
+  static int n = 0;
   
   if(type==NSEventTypeFlagsChanged || type==NSEventTypeKeyDown || type==NSEventTypeKeyUp){
 
 #if 0
-    if (type==NSEventTypeFlagsChanged)
-      printf("type: %d. keycode: %d. modifiers: %d. Ignore autorepeat: %d\n",(int)type, [event keyCode],(int)[event modifierFlags], ignore_autorepeat);
-    else
-      printf("type: %d. keycode: %d. modifiers: %d. autorepeat: %d, ignore autorepeat: %d\n",(int)type, [event keyCode], (int)[event modifierFlags], [event isARepeat], ignore_autorepeat);
+	  print_modifier_flags(event);
+	  
+	  if (type==NSEventTypeFlagsChanged)
+		  printf("%d: type: %d. keycode: %d. modifiers: %d. Ignore autorepeat: %d\n",n++, (int)type, [event keyCode],(int)[event modifierFlags], ignore_autorepeat);
+	  else
+		  printf("%d: type: %d. keycode: %d. modifiers: %d. autorepeat: %d, ignore autorepeat: %d\n",n++, (int)type, [event keyCode], (int)[event modifierFlags], [event isARepeat], ignore_autorepeat);
+	  
+	  printf("\n");
 #endif
 
-    if(type==NSEventTypeFlagsChanged){
-      int keycode = [event keyCode];
-      
-      if (g_modifiers[keycode])
-        ret = TR_KEYBOARDUP;
-      else
-        ret = TR_KEYBOARD;
-
-      //printf("  M: 1\n");
-      g_modifiers[keycode] = !g_modifiers[keycode]; // This seems a bit fragile, so all modifiers are also reset when modifierFlags is 0 for all the osx modifiers. (see below)
+	  if(type==NSEventTypeFlagsChanged){
+		  int keycode = [event keyCode];
+		  
+		  if (g_modifiers[keycode])
+			  ret = TR_KEYBOARDUP;
+		  else
+			  ret = TR_KEYBOARD;
+		  
+		  //printf("  M: 1\n");
+		  g_modifiers[keycode] = !g_modifiers[keycode]; // This seems a bit fragile, so all modifiers are also reset when modifierFlags is 0 for all the osx modifiers. (see below)
       
       //printf("   modifier is %s\n",(ret==TR_KEYBOARDUP)?"released":"pressed");
       
@@ -130,8 +165,11 @@ int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
       }
     }
 
-    
-#if 0 // Disabled. If not, shift is not released after shift+right clicking something (shift was just an example).
+
+    // 2024-06-21: Enabled again. Disabling this block caused some strange behaviors with keyboard modifiers. Also, I couldn't
+    // reproduce the problem described below that shift was not released after shift-clicking something.
+    //
+#if 1 // <strike>Disabled. If not, shift is not released after shift+right clicking something (shift was just an example).</strike>
     
     // Probably not necessary, but just in case, in case things get out sync (see above)
     // WARNING: [event modifierFlags] is resetted when clicking mouse.
@@ -639,12 +677,24 @@ int OS_SYSTEM_get_qwerty_keynum(void *void_event){
   return keymap_qwerty[keycode];
 }
 
+void MACOS_setup_keyboard_event_monitor(void)
+{
+	auto event_monitor = [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskKeyDown
+		handler:^NSEvent *(NSEvent *event)
+	{
+		printf("Keycode: %d\n", (int)[event keyCode]);
+		
+		return event;
+	}];
+
+	(void)event_monitor;
+}
 
 void OS_SYSTEM_init_keyboard(void){
   static bool has_inited = false;
   if (has_inited==false){
     init_keymaps();
-    printf(" Clear mod 3\n");
+    //printf(" Clear mod 3\n");
     clear_modifiers();
     has_inited=true;
   }
