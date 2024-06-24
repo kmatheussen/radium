@@ -2223,7 +2223,7 @@ $(T)FluidSynth_plugin.o: audio/FluidSynth_plugin.cpp
 #`$(PKG) --cflags fluidsynth`
 
 $(T)Pd_plugin.o: audio/Pd_plugin.cpp
-	$(CCC2) -Ibin/packages/fluidsynth-1.1.6/include $(QTOPT) audio/Pd_plugin.cpp -Ibin/packages/libpd-master/libpds -Ibin/packages/libpd-master/libpd_wrapper -Ibin/packages/libpd-master/pure-data/src
+	$(CCC2) -Ibin/packages/fluidsynth-1.1.6/include $(QTOPT) `$(PKG) --cflags glib-2.0` audio/Pd_plugin.cpp -Ibin/packages/libpd-master/libpds -Ibin/packages/libpd-master/libpd_wrapper -Ibin/packages/libpd-master/pure-data/src
 
 
 $(T)Modulator_plugin.o: audio/Modulator_plugin.cpp audio/Delay.hpp
