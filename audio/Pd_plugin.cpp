@@ -264,6 +264,11 @@ $1 = (SoundPlugin *) 0x0
 
 #include <libpds.h>
 
+#if defined(FOR_LINUX)
+#  include <glib.h>
+#  define strlcpy g_strlcpy
+#endif
+
 #include <QTemporaryFile>
 #include <QFile>
 #include <QFileInfo>
