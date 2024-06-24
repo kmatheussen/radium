@@ -1625,8 +1625,9 @@ const centtext_text = `
       <LI>To remove a cent text (same as setting cent to 0), press <b>DEL</b>.
       <LI>Cents are <b>not</b> supported by:
         <UL>
-          <LI>VST instruments
+          <LI>VST/VST3 instruments
           <LI>AU instruments
+          <LI>LV2 instruments
           <LI>The FluidSynth instrument
           <LI>The MIDI instrument.
         </UL>
@@ -2114,7 +2115,8 @@ const mixer_faq_text = `
     <UL>
 
       <LI><b>Q:</b> How do I set up a sidechain compression?<br>
-        <b>A:</b> It&apos;s a little bit more cumbersome than other DAWs, but you only have to set it up once:
+        <b>A:</b> It&apos;s a little bit more cumbersome than other DAWs, but you only have to set it up once:<br>
+	<small>(after setting it up you can save it as a preset)</small>
         <p>
         <OL>
           <LI> For this example we&apos;re going to use the included SC3 LADSPA plugin.<p>
@@ -2205,9 +2207,6 @@ const sequencer_text = `
 <UL>
   <LI> The quickest way to <b>start and stop playing</b> is to use the <b>mouse scroll wheel</b>. Scroll up to play, scroll down to stop.
   <LI> The quickest way to <b>scroll the seqtracks up or down</b> is to hold <b>shift</b> and use the <b>mouse scroll wheel</b>. You can also use the mouse scroll wheel inside the track headers, without having to press shift.
-  <LI> To <b>prevent</b> radium from <b>automatically changing the current block</b> in the editor when the mouse pointer is above an editor seqblock, enable the padlock checkbox in the lower left corner of the editor:<br> <IMG SRC="force_current_block.png" ALT="Sequencer" style="border:10px solid transparent">.<br>
-    Another way to enable this option is to right-click an editor seqblock and enable "Forced as current block".
-
 </UL>
   `;
 

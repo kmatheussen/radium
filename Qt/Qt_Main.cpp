@@ -4930,28 +4930,35 @@ int main(int argc, char **argv){
                                             "</p><p>"
                                             "Radium is primarily developed for <b>Windows</b> and <b>Linux</b>.\n"
                                             "</p><p>"
-                                            "On <b>macOS</b> there are both <b>performance</b> and <b>stability</b> problems. "
-                                            "In addition you might experience various types of <b>quirks</b> and <b>misbehavours</b> in addition to <b>slow graphics</b> and <b>high CPU usage</b>. "
+					    "First of all, you should use a 3-button wheel mouse. Apple trackpads are very inconvenient/impossible to use with Radium."
+					    "<p></p>"
+                                            "Then you should know that on <b>macOS</b>, there are both <b>performance</b> and <b>stability</b> problems. "
+                                            "In addition, you might experience various types of <b>quirks</b> and <b>misbehavours</b> in addition to <b>slow graphics</b> (for sure) and <b>high CPU usage</b> (perhaps). "
                                             "However, many people find the program useful anyway, and there is no plan to stop developing the program for Mac.\n"
                                             "</p><p>"
-                                            "Earlier, the most serious problems on macOS were caused by Apple's poor support for <b>OpenGL</b>. "
+                                            "In the past, the most serious problems on macOS were caused by Apple's poor support for <b>OpenGL</b>. "
 #if THREADED_OPENGL
                                             "If Radium crashes right after startup, it's probably Apple's OpenGL library that crashes. "
                                             "Fortunately, the bug is usually hit only during startup, and not every time. "
                                             "However, after the release of <b>Big Sur</b>, this problem doesn't seem to appear very often anymore, if at all. "
                                             "(OpenGL performance is still likely to be worse than on Windows and Linux though.)\n"
-                                            "</p><p>"
 #else
-					    "OpenGL performance is still very bad, and it still crashes now and then, but now, "
+					    "OpenGL performance is still very bad, and it still crashes now and then, but the crashes are so seldom now that those shouldn't be a big problem anymore..."
 #endif
-                                            "the <b>biggest problem</b> on <b>macOS</b> seems to be strange behaviors with the <b>keyboard</b>, apparently related to the <b>modifier keys</b>. "
-                                            "Currently it's unknown what's causing this. Sometimes you can fix it by simply pressing the <b>caps lock</b> key, "
-                                            "but if that's not enough, you can force resetting the keyboard by <b>temporarily switching keyboard "
+
+#if 0
+					    "</p><p>"
+                                            "Now the <b>biggest problem</b> on <b>macOS</b> seems to be strange behaviors with the <b>keyboard</b>, apparently related to the <b>modifier keys</b>. "
+                                            "It's unknown what's causing this, but the workaround is to <b>temporarily switch keyboard "
                                             "focus</b> to another program. After switching focus back to Radium, the keyboard should work normally again.\n"
                                             "</p><p>"
                                             "Note that the keyboard problem can also cause strange behaviour with the <b>mouse</b> since the program has the wrong "
                                             "information about which modifier keys are currently pressed. Again, the simplest <b>workaround</b> is to <b>temporarily "
                                             "switch keyboard focus</b> to another program when this happens."
+#else
+					    "</p><p>"
+					    "The previous problems with the modifier keys (Radium V7.4.76 and earlier) seems to have been solved."
+#endif
                                             , 10*60*1000-1 // 10 minutes
                                             );
       if (result==dont_show)

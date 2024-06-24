@@ -293,7 +293,7 @@
           <item>
            <widget class="QCheckBox" name="faust_old_buggy_release">
             <property name="text">
-             <string>Use old/buggy note-release behavior (for compatibility with old songs)</string>
+             <string>Use old/buggy note-release behavior for compatibility with old songs</string>
             </property>
            </widget>
           </item>
