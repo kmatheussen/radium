@@ -209,6 +209,8 @@ ifeq ($(CLANG_MAJOR),18)
 	WNO_MISLEADING_INDENTATION_CLANG=-Wno-misleading-indentation
 	WNO_DEPRECATED_COPY_WITH_USER_PROVIDED_COPY=-Wno-deprecated-copy-with-user-provided-copy
 	WNO_EXTERN_C_COMPAT=-Wno-extern-c-compat
+	WNO_VLA_CXX_EXTENSION=-Wno-vla-cxx-extension
+	WNO_NAN_INFINITY_DISABLED=Wno-nan-infinity-disabled
 else ifeq ($(CLANG_MAJOR),17)
 	WNO_DEPRECATED_COPY_CLANG=-Wno-deprecated-copy
 	WNO_MISLEADING_INDENTATION_CLANG=-Wno-misleading-indentation
@@ -244,12 +246,15 @@ else
 	WNO_MISLEADING_INDENTATION_CLANG=
 	WNO_DEPRECATED_COPY_WITH_USER_PROVIDED_COPY=
 	WNO_EXTERN_C_COMPAT=
+	WNO_VLA_CXX_EXTENSION=
+	WNO_NAN_INFINITY_DISABLED=
 endif
 
 WNO_CLASS_MEMACCESS=
 ifeq (,$(findstring clang,$(CC)))
 	WNO_CLASS_MEMACCESS=-Wno-class-memaccess
 endif
+
 
 GTK_CFLAGS ?= `$(PKG) --cflags gtk+-2.0`
 GTK_LDFLAGS ?= `$(PKG) --libs gtk+-2.0`
@@ -383,7 +388,7 @@ MEMORY_SANITIZE_OPTS=
 OS_DEBUG_BUILD_OPTS ?= $(UNDEFINED_SANITIZE_OPTS) $(THREAD_SANITIZE_OPTS) $(ADDRESS_SANITIZE_OPTS) $(MEMORY_SANITIZE_OPTS)
 #-mbranch-protection=standard -fno-sanitize-trap=all
 #-flto -fvisibility=hidden -fsanitize=cfi -fno-sanitize-trap=all # -fanalyzer 
-DEBUG_BUILD_OPTS = -Werror -Wfloat-equal -Wall $(GGDB_OPT) -fno-optimize-sibling-calls $(OS_DEBUG_BUILD_OPTS)
+DEBUG_BUILD_OPTS = -Werror -Wfloat-equal -Wall $(GGDB_OPT) -fno-optimize-sibling-calls $(OS_DEBUG_BUILD_OPTS) $(WNO_NAN_INFINITY_DISABLED)
 
 BUILD_DEBUG=NO
 BUILD_OPTIMIZED=YES
@@ -455,7 +460,7 @@ FLAGOPTS = $(DEFINES) -DGUIISQT -DFULL_VERSION=$(FULL_VERSION) -DIS_LITTLE_ENDIA
 
 RADIUM_VST2SDK_PATH ?= ${HOME}/SDKs/vstsdk2.4
 
-COMMONOPT = -D__STDC_FORMAT_MACROS=1 -c `cat buildtype.opt` -I$(GCDIR)/include -I$(P) $(PYOPTS) `cat flagopts.opt` $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -I ~/SDKs/VST_SDK/VST2_SDK/ -I ${RADIUM_VST2SDK_PATH} -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wno-unknown-pragmas -fno-strict-aliasing -Wmissing-field-initializers -Wnull-dereference -Wwrite-strings -DTHREADED_OPENGL=$(RADIUM_THREADED_OPENGL)  $(IS_LINUX_BINARY) $(IS_MACOS_BINARY)
+COMMONOPT = -D__STDC_FORMAT_MACROS=1 -c `cat buildtype.opt` -I$(GCDIR)/include -I$(P) $(PYOPTS) `cat flagopts.opt` $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -I ~/SDKs/VST_SDK/VST2_SDK/ -I ${RADIUM_VST2SDK_PATH} -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wno-unknown-pragmas -fno-strict-aliasing -Wmissing-field-initializers -Wnull-dereference -Wwrite-strings $(WNO_VLA_CXX_EXTENSION) -DTHREADED_OPENGL=$(RADIUM_THREADED_OPENGL)  $(IS_LINUX_BINARY) $(IS_MACOS_BINARY)
 #-fdelete-null-pointer-checks 
 # -Werror
 
