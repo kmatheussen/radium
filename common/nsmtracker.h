@@ -155,9 +155,9 @@ static_assert (sizeof(long long int) >= 8, "sizof(long long int) must be 8 or hi
 #include <math.h>
 
 #ifdef __cplusplus
-#include <cmath>
-#include <limits>
-#include <atomic>
+#  include <cmath>
+#  include <limits>
+#  include <atomic>
 #endif
 
 #if USE_QT4
@@ -1348,7 +1348,7 @@ static inline bool doubles_are_equal(double x, double y){
 
   if (diff <= eps)
     return(true);
-#if __cplusplus
+#ifdef __cplusplus
   if ((std::isnan(x)) || (std::isnan(y)))
     return((std::isnan(x)) && (std::isnan(y)));
 #else
@@ -2638,7 +2638,7 @@ typedef struct{
   int pitchnum;
 } TrackRealline2;
 
-#if __cplusplus
+#ifdef __cplusplus
 typedef struct{
   Place p;
   struct Notes *note;
@@ -3680,7 +3680,7 @@ struct AutomationPainter{
 }
 #endif
 
-#if __cplusplus
+#ifdef __cplusplus
 namespace radium{
   class Envelope;
 }
@@ -3723,7 +3723,7 @@ struct SeqBlock{
   double fadein; // value between 0 and 1
   double fadeout; // value between 0 and 1
 
-#if __cplusplus
+#ifdef __cplusplus
   radium::Envelope *fade_in_envelope;
   radium::Envelope *fade_out_envelope;
 #else
