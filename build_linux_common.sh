@@ -94,7 +94,7 @@ if [[ $RADIUM_USE_CLANG == 1 ]] ; then
         #RADIUM_USES_MOLD_PRELOAD=0 # set to 1 to speed up linking if having more than 2 cores.    
 
         # ldd:
-        export LINKER="$LINKER -fuse-ld=lld"
+        export LINKER="$LINKER -lsframe -fuse-ld=lld"
 
         # stuff
         export LINKER="$LINKER -lgcc_s --rtlib=compiler-rt"
