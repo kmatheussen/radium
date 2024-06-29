@@ -126,6 +126,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 
 
+#pragma clang diagnostic ignored "-Wvla-cxx-extension"
+
+#if !defined(RELEASE)
+#  pragma clang diagnostic ignored "-Wnan-infinity-disabled"
+#endif
+
+
 #ifdef __cplusplus
 static_assert (sizeof(long long int) >= 8, "sizof(long long int) must be 8 or higher (the assertion is here because the function llabs is used on int64_t)");
 #endif
