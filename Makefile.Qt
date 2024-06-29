@@ -203,20 +203,48 @@ ifeq ($(GCC_MAJOR),9)
 endif
 
 
-WNO_DEPRECATED_COPY_CLANG=
-WNO_MISLEADING_INDENTATION_CLANG=
-ifeq ($(shell test $(CLANG_MAJOR) -gt 9; echo $$?),0)
+
+ifeq ($(CLANG_MAJOR),18)
 	WNO_DEPRECATED_COPY_CLANG=-Wno-deprecated-copy
 	WNO_MISLEADING_INDENTATION_CLANG=-Wno-misleading-indentation
-#	QT_CFLAGS +=  $(WNO_DEPRECATED_COPY_CLANG) # Only necessary for qt 5.12 or older.
-endif
-
-
-WNO_DEPRECATED_COPY_WITH_USER_PROVIDED_COPY=
-ifeq ($(shell test $(CLANG_MAJOR) -gt 14; echo $$?),1)
 	WNO_DEPRECATED_COPY_WITH_USER_PROVIDED_COPY=-Wno-deprecated-copy-with-user-provided-copy
+	WNO_EXTERN_C_COMPAT=-Wno-extern-c-compat
+else ifeq ($(CLANG_MAJOR),17)
+	WNO_DEPRECATED_COPY_CLANG=-Wno-deprecated-copy
+	WNO_MISLEADING_INDENTATION_CLANG=-Wno-misleading-indentation
+	WNO_DEPRECATED_COPY_WITH_USER_PROVIDED_COPY=-Wno-deprecated-copy-with-user-provided-copy
+else ifeq ($(CLANG_MAJOR),16)
+	WNO_DEPRECATED_COPY_CLANG=-Wno-deprecated-copy
+	WNO_MISLEADING_INDENTATION_CLANG=-Wno-misleading-indentation
+	WNO_DEPRECATED_COPY_WITH_USER_PROVIDED_COPY=-Wno-deprecated-copy-with-user-provided-copy
+else ifeq ($(CLANG_MAJOR),15)
+	WNO_DEPRECATED_COPY_CLANG=-Wno-deprecated-copy
+	WNO_MISLEADING_INDENTATION_CLANG=-Wno-misleading-indentation
+	WNO_DEPRECATED_COPY_WITH_USER_PROVIDED_COPY=-Wno-deprecated-copy-with-user-provided-copy
+else ifeq ($(CLANG_MAJOR),14)
+	WNO_DEPRECATED_COPY_CLANG=-Wno-deprecated-copy
+	WNO_MISLEADING_INDENTATION_CLANG=-Wno-misleading-indentation
+else ifeq ($(CLANG_MAJOR),13)
+	WNO_DEPRECATED_COPY_CLANG=-Wno-deprecated-copy
+	WNO_MISLEADING_INDENTATION_CLANG=-Wno-misleading-indentation
+else ifeq ($(CLANG_MAJOR),12)
+	WNO_DEPRECATED_COPY_CLANG=-Wno-deprecated-copy
+	WNO_MISLEADING_INDENTATION_CLANG=-Wno-misleading-indentation
+else ifeq ($(CLANG_MAJOR),11)
+	WNO_DEPRECATED_COPY_CLANG=-Wno-deprecated-copy
+	WNO_MISLEADING_INDENTATION_CLANG=-Wno-misleading-indentation
+else ifeq ($(CLANG_MAJOR),10)
+	WNO_DEPRECATED_COPY_CLANG=-Wno-deprecated-copy
+	WNO_MISLEADING_INDENTATION_CLANG=-Wno-misleading-indentation
+else ifeq ($(CLANG_MAJOR),9)
+	WNO_DEPRECATED_COPY_CLANG=-Wno-deprecated-copy
+	WNO_MISLEADING_INDENTATION_CLANG=-Wno-misleading-indentation
+else
+	WNO_DEPRECATED_COPY_CLANG=
+	WNO_MISLEADING_INDENTATION_CLANG=
+	WNO_DEPRECATED_COPY_WITH_USER_PROVIDED_COPY=
+	WNO_EXTERN_C_COMPAT=
 endif
-
 
 WNO_CLASS_MEMACCESS=
 ifeq (,$(findstring clang,$(CC)))
@@ -231,7 +259,7 @@ FREETYPE_CFLAGS ?=
 
 VST_OPTS ?=
 
-BOOST_INCLUDE=-I${HOME}/boost_1_83_0 -I${HOME}/boost_1_77_0 -I${HOME}/boost_1_76_0 -I${HOME}/boost_1_75_0 -I${HOME}/boost_1_70_0 -I${HOME}/boost_1_67_0 -I${HOME}/boost_1_63_0 -Wno-deprecated-builtins
+BOOST_INCLUDE=-I${HOME}/boost_1_85_0 -I${HOME}/boost_1_83_0 -I${HOME}/boost_1_77_0 -I${HOME}/boost_1_76_0 -I${HOME}/boost_1_75_0 -I${HOME}/boost_1_70_0 -I${HOME}/boost_1_67_0 -I${HOME}/boost_1_63_0 -Wno-deprecated-builtins
 BOOST_FLAGS=$(WNO_CLASS_MEMACCESS) $(BOOST_INCLUDE)
 
 CRASHREPORTER_OPTS ?= 
@@ -352,7 +380,8 @@ MEMORY_SANITIZE_OPTS=
 
 
 # Note that "./build_clean.sh" must be run if changing DEBUG_BUILD_OPTS or changing from RELEASE to DEBUG build.
-OS_DEBUG_BUILD_OPTS ?= $(UNDEFINED_SANITIZE_OPTS) $(THREAD_SANITIZE_OPTS) $(ADDRESS_SANITIZE_OPTS) $(MEMORY_SANITIZE_OPTS) -mbranch-protection=standard -fno-sanitize-trap=all
+OS_DEBUG_BUILD_OPTS ?= $(UNDEFINED_SANITIZE_OPTS) $(THREAD_SANITIZE_OPTS) $(ADDRESS_SANITIZE_OPTS) $(MEMORY_SANITIZE_OPTS)
+#-mbranch-protection=standard -fno-sanitize-trap=all
 #-flto -fvisibility=hidden -fsanitize=cfi -fno-sanitize-trap=all # -fanalyzer 
 DEBUG_BUILD_OPTS = -Werror -Wfloat-equal -Wall $(GGDB_OPT) -fno-optimize-sibling-calls $(OS_DEBUG_BUILD_OPTS)
 
@@ -2003,7 +2032,7 @@ $(T)api_undo.o:  $(BUILD_DEPENDENCIES)  $(API)api_undo.cpp  embedded_scheme/s7ex
 	$(CCC2)  $(API)api_undo.cpp $(QTOPT)
 
 $(T)api_various.o:  $(BUILD_DEPENDENCIES)  $(API)api_various.cpp bin/packages/s7/s7.c $(P)EditorWidget.h embedded_scheme/s7extra_proc.h Qt/KeyboardFocusFrame.hpp audio/CpuUsage.hpp
-	$(CCC2)  $(API)api_various.cpp $(QTOPT) -I$(FAUSTDIR)/architecture -DRADIUM_VERSION=\"$(RADIUM_VERSION)\"  -Wno-null-dereference $(NO_ANALYZER)
+	$(CCC2)  $(API)api_various.cpp $(QTOPT) -I$(FAUSTDIR)/architecture -DRADIUM_VERSION=\"$(RADIUM_VERSION)\"  -Wno-null-dereference $(WNO_EXTERN_C_COMPAT) $(NO_ANALYZER)
 
 $(T)api_instruments.o:  $(BUILD_DEPENDENCIES)  $(API)api_instruments.cpp  $(API)api_instruments_proc.h embedded_scheme/s7extra_proc.h mixergui/QM_chip.h mixergui/QM_MixerWidget.h
 	$(CCC2)  $(API)api_instruments.cpp $(QTOPT)
@@ -2223,7 +2252,7 @@ $(T)FluidSynth_plugin.o: audio/FluidSynth_plugin.cpp
 #`$(PKG) --cflags fluidsynth`
 
 $(T)Pd_plugin.o: audio/Pd_plugin.cpp
-	$(CCC2) -Ibin/packages/fluidsynth-1.1.6/include $(QTOPT) audio/Pd_plugin.cpp -Ibin/packages/libpd-master/libpds -Ibin/packages/libpd-master/libpd_wrapper -Ibin/packages/libpd-master/pure-data/src
+	$(CCC2) -Ibin/packages/fluidsynth-1.1.6/include $(QTOPT) `$(PKG) --cflags glib-2.0` audio/Pd_plugin.cpp -Ibin/packages/libpd-master/libpds -Ibin/packages/libpd-master/libpd_wrapper -Ibin/packages/libpd-master/pure-data/src
 
 
 $(T)Modulator_plugin.o: audio/Modulator_plugin.cpp audio/Delay.hpp
@@ -2674,16 +2703,16 @@ $(T)crashreporter_windows.o: crashreporter/crashreporter_windows.cpp
 VISUALIZATION_OPTIONS=$(WNO_SUGGEST_OVERRIDE) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC) $(NO_ANALYZER)  $(WNO_DEPRECATED_COPY_CLANG) $(WNO_DEPRECATED_DECLARATIONS) $(WNO_MISLEADING_INDENTATION_CLANG) $(WNO_CLASS_MEMACCESS)
 
 $(T)GfxElements.o: OpenGL/GfxElements.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp OpenGL/FreeType.hpp common/Mutex.hpp OpenGL/T2.hpp common/spinlock.h
-	$(CCC2) OpenGL/GfxElements.cpp $(QTOPT) $(VISUALIZATION_OPTIONS) $(FREETYPE_CFLAGS) $(BOOST_INCLUDE) $(VL_CFLAGS)  
+	$(CCC2) OpenGL/GfxElements.cpp $(QTOPT) $(FREETYPE_CFLAGS) $(BOOST_INCLUDE) $(VL_CFLAGS) $(VISUALIZATION_OPTIONS)
 
-$(T)T2.o: OpenGL/T2.cpp OpenGL/T2.hpp OpenGL/SharedVariables.hpp common/QueueStack.hpp OpenGL/GfxElements.h 
-	$(CCC2) OpenGL/T2.cpp $(QTOPT) $(BOOST_INCLUDE) $(VISUALIZATION_OPTIONS) $(VL_CFLAGS)
+$(T)T2.o: OpenGL/T2.cpp OpenGL/T2.hpp OpenGL/SharedVariables.hpp common/QueueStack.hpp OpenGL/GfxElements.h
+	$(CCC2) OpenGL/T2.cpp $(QTOPT) $(BOOST_INCLUDE) $(VL_CFLAGS) $(VISUALIZATION_OPTIONS) 
 
 $(T)Render.o: OpenGL/Render.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp common/spinlock.h common/time_proc.h common/Beats_proc.h common/TimeData.hpp
-	$(CCC2) OpenGL/Render.cpp $(QTOPT) $(VISUALIZATION_OPTIONS) $(VL_CFLAGS) 
+	$(CCC2) OpenGL/Render.cpp $(QTOPT) $(VL_CFLAGS) $(VISUALIZATION_OPTIONS)
 
 $(T)Widget.o: OpenGL/Widget.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/Timing.hpp OpenGL/SharedVariables.hpp common/Mutex.hpp OpenGL/T2.hpp common/spinlock.h common/MovingAverage.hpp OpenGL/Qt5ThreadedWidget.hpp common/Vector.hpp Qt/Timer.hpp
-	$(CCC2) OpenGL/Widget.cpp $(QTOPT) $(VISUALIZATION_OPTIONS) $(VL_CFLAGS)
+	$(CCC2) OpenGL/Widget.cpp $(QTOPT) $(VL_CFLAGS) $(VISUALIZATION_OPTIONS) 
 
 $(T)CheckOpenGL.o: OpenGL/CheckOpenGL.cpp common/Process.hpp
 	$(CCC2) OpenGL/CheckOpenGL.cpp $(QTOPT) $(WNO_DEPRECATED_DECLARATIONS)
