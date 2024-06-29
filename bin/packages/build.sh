@@ -14,8 +14,8 @@ unset LDFLAGS
 unset CXXFLAGS
 
 
-
 export COMMON_CFLAGS="-mtune=generic -fPIC -fno-strict-aliasing -Wno-misleading-indentation "
+    
 
 if uname -s |grep Darwin ; then
     if [[ -z "${MACOSX_DEPLOYMENT_TARGET}" ]]; then
@@ -146,21 +146,24 @@ build_Visualization-Library() {
 
 build_libpds() {
 
+    NOWARNS="-Wno-return-mismatch -Wno-implicit-function-declaration -Wno-int-conversion -Wno-implicit-int"
+    
     rm -fr libpd-master
     tar xvzf libpd-master.tar.gz
     cd libpd-master/
-    sed -i '/define CFLAGS/ s|")| -I/usr/include/tirpc ")|' make.scm
+    sed -i "/define CFLAGS/ s|\")| -I/usr/include/tirpc $NOWARNS\")|" make.scm
     sed -i 's/k_cext$//' make.scm
     sed -i 's/oscx //' make.scm
-    sed -i 's/gcc -O3/gcc -fcommon -O3/' make.scm
+    sed -i "s/gcc -O3/gcc -fcommon -O3 $NOWARNS/" make.scm
 
     GLIBCVERSION=`ldd --version | head -n 1 | awk '{print $NF}'`
     if [[ $GLIBCVERSION > 2.34 ]] ; then
-        sed -i 's/#define fsqrt/\/\/#define fsqrt/g' pure-data/extra/fiddle~/fiddle~.c
+	sed -i 's/#define fsqrt sqrt/#include <math.h>\nstatic float fsqrt(float val){return sqrt(val);}/g' pure-data/extra/fiddle~/fiddle~.c
+	sed -i 's/fsqrt/myfsqrt/g' pure-data/extra/fiddle~/fiddle~.c
     fi
-
+    
     make clean
-    make -j`nproc`
+    CPPFLAGS="$CFLAGS $NOWARNS" make -j`nproc`
     cd ..
 }
 
