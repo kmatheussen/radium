@@ -77,46 +77,56 @@ struct Data{
 
  
 class QLibraryHolder{
-  QString _filename;
-  QLibrary *_qlibrary = NULL;
-  bool _is_loaded = false; // Need to keep local track. Seems like QLibrary::isLoaded() also returns true if the library was loaded in the system, not just inside the QLibrary.
+	QString _filename;
+	QLibrary *_qlibrary = NULL;
+	bool _is_loaded = false; // Need to keep local track. Seems like QLibrary::isLoaded() also returns true if the library was loaded in the system, not just inside the QLibrary.
 
 public:
   
-  QLibraryHolder(QString filename)
-    : _filename(filename)
-  {}
+	QLibraryHolder(QString filename)
+		: _filename(filename)
+	{}
 
-  QLibrary *get(void){
-    if (!is_loaded()) {
-      R_ASSERT_NON_RELEASE(false);
-      load();
-    }
+	QLibrary *get(void)
+	{
+		if (!is_loaded()) {
+			R_ASSERT_NON_RELEASE(false);
+			load();
+		}
     
-    return _qlibrary;
-  }
+		return _qlibrary;
+	}
 
-  bool has_library(void){
-    return _qlibrary != NULL;
-  }
+	bool has_library(void)
+	{
+		return _qlibrary != NULL;
+	}
 
-  bool is_loaded(void){
-    return _qlibrary!=NULL && _is_loaded;
-  }
+	bool is_loaded(void)
+	{
+		return _qlibrary!=NULL && _is_loaded;
+	}
 
-  void load(void){
-    if (_qlibrary==NULL)
-      _qlibrary = new QLibrary(_filename);
+	void load(void)
+	{
+		if (_qlibrary==NULL)
+			_qlibrary = new QLibrary(_filename);
     
-    _qlibrary->load();
-    _is_loaded = true;
-  }
+		_qlibrary->load();
+		_is_loaded = true;
+	}
   
-  void maybe_unload(void){
-    if (_qlibrary != NULL)
-      _qlibrary->unload();
-    _is_loaded = false;
-  }
+	void maybe_unload(void)
+	{
+		if (_qlibrary != NULL)
+			_qlibrary->unload();
+		_is_loaded = false;
+	}
+
+	QString get_filename(void) const
+	{
+		return _filename;
+	}
 };
  
 
@@ -230,6 +240,10 @@ public:
     }
   }
 
+	QString get_qfilename(void) const
+	{
+		return _qlibrary.get_filename();
+	}
 };
  
 
@@ -947,33 +961,59 @@ static bool maybe_fill_in_cached_plugin(TypeData *type_data, SoundPluginType *pl
   //return false; // uncomment to regenerate all cache files.
   
   if (!is_radium_internal_file(make_filepath(library->filename)))
-    return false;
+  {
+	  GFX_ShowProgressMessage(QString("(Internal: !is_radium_internal_file(%1)").arg(library->get_qfilename()).toUtf8().constData(), true);
+	  return false;
+  }
 
   filepath_t filename = get_instance_cache_filename(library, index);
-  if (!DISK_file_exists(filename)){
-    //abort();
-    return false;
+  if (!DISK_file_exists(filename))
+  {
+	  //abort();
+	  GFX_ShowProgressMessage(QString("(Internal: !DISK_file_exists(%1)").arg(library->get_qfilename()).toUtf8().constData(), true);
+	  return false;
   }
   
   radium::ScopedReadFile file(filename);
 
   if (file._file==NULL)
-    return false;
+  {
+	  GFX_ShowProgressMessage(QString("(Internal: file._file==NULL for %1").arg(library->get_qfilename()).toUtf8().constData(), true);
+	  return false;
+  }
   
   hash_t *state = HASH_load2(file._file, true);
   if (state==NULL)
-    return false;
+  {
+	  GFX_ShowProgressMessage(QString("(Internal: state==NULL for %1").arg(library->get_qfilename()).toUtf8().constData(), true);
+	  return false;
+  }
 
   if (!HASH_has_key(state, "UniqueID"))
-    return false;
+  {
+	  GFX_ShowProgressMessage(QString("(Internal: !HASH_has_key(state, \"UniqueID\") for %1").arg(library->get_qfilename()).toUtf8().constData(), true);
+	  return false;
+  }
   if (!HASH_has_key(state, "Name"))
-    return false;
+  {
+	  GFX_ShowProgressMessage(QString("(Internal: !HASH_has_key(state, \"Name\") for %1").arg(library->get_qfilename()).toUtf8().constData(), true);
+	  return false;
+  }
   if (!HASH_has_key(state, "plugin_type_state"))
-    return false;  
+  {
+	  GFX_ShowProgressMessage(QString("(Internal: !HASH_has_key(state, \"plugin_type_state\") for %1").arg(library->get_qfilename()).toUtf8().constData(), true);
+	  return false;
+  }
   if (!HASH_has_key(state, "index"))
-    return false;  
+  {
+	  GFX_ShowProgressMessage(QString("(Internal: !HASH_has_key(state, \"index\") for %1").arg(library->get_qfilename()).toUtf8().constData(), true);
+	  return false;
+  }    
   if (!HASH_has_key(state, "uses_two_handles"))
-    return false;  
+  {
+	  GFX_ShowProgressMessage(QString("(Internal: !HASH_has_key(state, \"uses_two_handles\") for %1").arg(library->get_qfilename()).toUtf8().constData(), true);
+	  return false;  
+  }
   
   type_data->UniqueID = HASH_get_int(state, "UniqueID");
   type_data->Name = V_strdup(HASH_get_chars(state, "Name"));
@@ -984,8 +1024,11 @@ static bool maybe_fill_in_cached_plugin(TypeData *type_data, SoundPluginType *pl
   type_data->uses_two_handles = HASH_get_bool(state, "uses_two_handles");
   
   if (!PLUGINTYPE_maybe_apply_state(plugin_type, HASH_get_hash(state, "plugin_type_state")))
-    return false;
-
+  {
+	  GFX_ShowProgressMessage(QString("(Internal: !PLUGINTYPE_maybe_apply_state(plugin_type, HASH_get_hash(state, \"plugin_type_state\")) for %1").arg(library->get_qfilename()).toUtf8().constData(), true);
+	  return false;
+  }
+  
   return true;
 }
 
@@ -1730,23 +1773,23 @@ void create_ladspa_plugins(void){
       list = dir.entryList();
     }
 
-    int i = 0;
-    const int size = list.size();
+    //int i = 0;
+    //const int size = list.size();
     
-    for (QString filename : list) {
-
-      i++;
-
-      const QString fullpath = dirname + QDir::separator() + filename;
+    for (QString filename : list)
+    {
+	    //i++;
+	    
+	    const QString fullpath = dirname + QDir::separator() + filename;
             
-      if(filename.endsWith(LIB_SUFFIX)) {
-        GFX_ShowProgressMessage(QString("Adding LADSPA plugin %1 / %2: \"%3\".").arg(i).arg(size).arg(fullpath).toUtf8().constData(), true);
-
-        //msleep(300);
-
-        add_ladspa_plugin_type(fullpath);
-      }
-      
+	    if(filename.endsWith(LIB_SUFFIX))
+	    {
+		    //GFX_ShowProgressMessage(QString("Adding LADSPA plugin %1 / %2: \"%3\".").arg(i).arg(size).arg(fullpath).toUtf8().constData(), true);
+		    
+		    //msleep(300);
+		    
+		    add_ladspa_plugin_type(fullpath);
+	    }
     }
     
 #else
