@@ -3948,7 +3948,7 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
             <item>
              <widget class="QRadioButton" name="sequencer_scroll_wheel_scrolls_up_down">
               <property name="text">
-               <string>Scroll wheel scrolls seqtracks up/down (press left shit to swap behavior)</string>
+               <string>Scroll wheel scrolls seqtracks up/down (press left shift to swap behavior)</string>
               </property>
              </widget>
             </item>
