@@ -4,8 +4,9 @@ if [ -z "$RADIUM_NSM_EXECUTABLE_NAME" ] ; then
         export RADIUM_NSM_EXECUTABLE_NAME=$(basename -- "$0")
 fi
 
-export LSAN_OPTIONS=suppressions=`pwd`/SanitizerSuppr.txt
-export ASAN_OPTIONS="detect_leaks=0,abort_on_error=1,max_malloc_fill_size=1048576,detect_odr_violation=2,detect_container_overflow=0,suppressions=SanitizerSupprAddr.txt"
+PWD=`pwd`
+export LSAN_OPTIONS=suppressions=$PWD/SanitizerSuppr.txt
+export ASAN_OPTIONS="detect_leaks=0,abort_on_error=1,max_malloc_fill_size=1048576,detect_odr_violation=2,detect_container_overflow=0,suppressions=$PWD/SanitizerSupprAddr.txt"
 #
 # earlier we also had these ASAN_OPTIONS:
 #
@@ -15,7 +16,7 @@ export ASAN_OPTIONS="detect_leaks=0,abort_on_error=1,max_malloc_fill_size=104857
 
 export UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1"
 #suppressions=`pwd`/SanitizerSuppr.txt:
-export TSAN_OPTIONS="history_size=7,second_deadlock_stack=1,print_stacktrace=1:abort_on_error=1,suppressions=SanitizerSuppr.txt"
+export TSAN_OPTIONS="history_size=7,second_deadlock_stack=1,print_stacktrace=1:abort_on_error=1,suppressions=$PWD/SanitizerSuppr.txt"
 
 
 THIS_DIR=$(dirname $(readlink -f $0))
