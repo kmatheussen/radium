@@ -210,7 +210,7 @@ ifeq ($(CLANG_MAJOR),18)
 	WNO_DEPRECATED_COPY_WITH_USER_PROVIDED_COPY=-Wno-deprecated-copy-with-user-provided-copy
 	WNO_EXTERN_C_COMPAT=-Wno-extern-c-compat
 	WNO_VLA_CXX_EXTENSION=-Wno-vla-cxx-extension
-	WNO_NAN_INFINITY_DISABLED=Wno-nan-infinity-disabled
+	WNO_NAN_INFINITY_DISABLED=-Wno-nan-infinity-disabled
 else ifeq ($(CLANG_MAJOR),17)
 	WNO_DEPRECATED_COPY_CLANG=-Wno-deprecated-copy
 	WNO_MISLEADING_INDENTATION_CLANG=-Wno-misleading-indentation
