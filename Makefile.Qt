@@ -2272,7 +2272,7 @@ $(T)Pitchshift_plugin.o: audio/Pitchshift_plugin.cpp
 
 
 FAUST_DEPENDENCIES = audio/Faust_plugins_template.cpp audio/Faust_plugins_template1.cpp audio/Faust_plugins_template2.cpp audio/mfaustqt2.cpp
-FAUST_OPTS1 = $(QTOPT) $(WNO_SUGGEST_OVERRIDE) -Wno-overloaded-virtual $(NO_SANITIZE_SIGNED_INTEGER_OVERFLOW) -Wno-unused-function -Wno-missing-declarations -Wno-deprecated-declarations -fno-sanitize=vptr $(CPUOPT) -DMACOS_LLVM_TARGET=\"$(MACOS_LLVM_TARGET)\"
+FAUST_OPTS1 = $(QTOPT) $(WNO_SUGGEST_OVERRIDE) -Wno-overloaded-virtual $(NO_SANITIZE_SIGNED_INTEGER_OVERFLOW) -Wno-unused-function -Wno-missing-declarations -Wno-deprecated-declarations -fno-sanitize=vptr $(CPUOPT) -DMACOS_LLVM_TARGET=\"$(MACOS_LLVM_TARGET)\" $(SNDFILEOPT)
 FAUST_OPTS = $(FAUST_OPTS1) -I$(FAUSTDIR)/architecture
 FAUST_OPTS2 = $(FAUST_OPTS) -Wno-float-equal
 # -Ibin/packages/faust2/architecture 
