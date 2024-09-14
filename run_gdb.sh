@@ -5,7 +5,14 @@ if [ -z "$RADIUM_NSM_EXECUTABLE_NAME" ] ; then
 fi
 
 export LSAN_OPTIONS=suppressions=`pwd`/SanitizerSuppr.txt
-export ASAN_OPTIONS="detect_leaks=0,allocator_may_return_null=1,abort_on_error=1,new_delete_type_mismatch=0,alloc_dealloc_mismatch=0,max_malloc_fill_size=1048576,detect_odr_violation=2" # new_delete_type_mismatch=0 because of qt5. alloc_dealloc_mismatch because of various vst plugins. detect_stack_use_after_return=1 sounds nice, but is very slow.
+export ASAN_OPTIONS="detect_leaks=0,abort_on_error=1,max_malloc_fill_size=1048576,detect_odr_violation=2,detect_container_overflow=0,suppressions=SanitizerSupprAddr.txt"
+#
+# earlier we also had these ASAN_OPTIONS:
+#
+# allocator_may_return_null=1,  # Don't know why it was added...
+# new_delete_type_mismatch=0,   # Because of Qt, but seems to have been fixed now.
+# alloc_dealloc_mismatch=0,     # Because of various Vst plugins.
+
 export UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1"
 #suppressions=`pwd`/SanitizerSuppr.txt:
 export TSAN_OPTIONS="history_size=7,second_deadlock_stack=1,print_stacktrace=1:abort_on_error=1,suppressions=SanitizerSuppr.txt"
@@ -32,10 +39,20 @@ export G_DEBUG="fatal-warnings,gc-friendly"
 
 #ulimit -s 655360
 
-DEBUGGER="gdb --args"
-#DEBUGGER="lldb --"
+#DEBUGGER="gdb --args"
+DEBUGGER="lldb --"
+#DEBUGGER=
 
-LD_LIBRARY_PATH=$LD_LIBRARY_PATH G_DEBUG="fatal-warnings,gc-friendly" USE=libedit/readline $DEBUGGER bin/radium_linux.bin $@; killall -9 radium_progress_window ; killall -9 radium_crashreporter
+unameOut="$(uname -s)"
+case "${unameOut}" in
+    Linux*)     EXECUTABLE="bin/radium_linux.bin";;
+    Darwin*)    EXECUTABLE="/tmp/radium_bin/radium_macos.bin";;
+    *)          EXECUTABLE="where_is_radium_for_\"${unameOut}\"?_(change_these_lines_in_run_gdb.sh_to_fix_this)";;
+esac
+
+
+
+LD_LIBRARY_PATH=$LD_LIBRARY_PATH G_DEBUG="fatal-warnings,gc-friendly" USE=libedit/readline $DEBUGGER $EXECUTABLE $@; killall -9 radium_progress_window ; killall -9 radium_crashreporter
 
 # without gdb:
 #LD_LIBRARY_PATH=$LD_LIBRARY_PATH G_DEBUG="fatal-warnings,gc-friendly" bin/radium_linux.bin $@; killall -9 radium_progress_window ; killall -9 radium_crashreporter
