@@ -1097,8 +1097,12 @@ struct Mixer{
     
     auto called_before_starting_audio = [this](int blocksize, float samplerate){
       printf("Block: %d. Sample rate: %f\n", blocksize, samplerate);
-      _sample_rate = samplerate;
-      pc->pfreq = _sample_rate;
+
+      {
+	      radium::PlayerLock lock;
+	      _sample_rate = samplerate;
+	      pc->pfreq = _sample_rate;
+      }
     };
     
     if (JUCE_init_audio_device(juce_audio_device_callback, this, called_before_starting_audio)==false)
@@ -1464,8 +1468,16 @@ struct Mixer{
         THREADING_acquire_player_thread_priority();
         
         while(ATOMIC_GET(_dummy_driver_is_running)){
+		
           RT_process_audio_block(blocksize);
-          QThread::msleep(frames_to_ms(blocksize));
+
+	  double ms_to_sleep;
+	  {
+		  PlayerLock_Local player_lock;
+		  ms_to_sleep = frames_to_ms(blocksize);
+	  }
+	  
+	  QThread::msleep(ms_to_sleep);
         }
 
         THREADING_drop_player_thread_priority();
