@@ -385,10 +385,10 @@ MEMORY_SANITIZE_OPTS=
 
 
 # Note that "./build_clean.sh" must be run if changing DEBUG_BUILD_OPTS or changing from RELEASE to DEBUG build.
-OS_DEBUG_BUILD_OPTS ?= $(UNDEFINED_SANITIZE_OPTS) $(THREAD_SANITIZE_OPTS) $(ADDRESS_SANITIZE_OPTS) $(MEMORY_SANITIZE_OPTS)
+OS_DEBUG_BUILD_OPTS ?= 
 #-mbranch-protection=standard -fno-sanitize-trap=all
 #-flto -fvisibility=hidden -fsanitize=cfi -fno-sanitize-trap=all # -fanalyzer 
-DEBUG_BUILD_OPTS = -Werror -Wfloat-equal -Wall $(GGDB_OPT) -fno-optimize-sibling-calls $(OS_DEBUG_BUILD_OPTS) $(WNO_NAN_INFINITY_DISABLED)
+DEBUG_BUILD_OPTS = -Werror -Wfloat-equal -Wall $(GGDB_OPT) -fno-optimize-sibling-calls $(UNDEFINED_SANITIZE_OPTS) $(THREAD_SANITIZE_OPTS) $(ADDRESS_SANITIZE_OPTS) $(MEMORY_SANITIZE_OPTS) $(WNO_NAN_INFINITY_DISABLED) $(OS_DEBUG_BUILD_OPTS)
 
 BUILD_DEBUG=NO
 BUILD_OPTIMIZED=YES

@@ -52,7 +52,10 @@ if ! arch |grep arm ; then
 fi
 
 #if ! env |grep OPTIMIZE ; then
-export OPTIMIZE="-O2 $CPUOPTS $RADIUM_RELEASE_CFLAGS "
+export OPTIMIZE="-O2 $CPUOPTS $RADIUM_RELEASE_CFLAGS -fomit-frame-pointer "
+
+export OS_DEBUG_BUILD_OPTS="-fno-omit-frame-pointer"
+
 
 # -flto 
 #fi
@@ -162,7 +165,7 @@ export RTMIDI_CFLAGS="-D__LINUX_ALSA__  -D__RTMIDI_DEBUG__"
 export RTMIDI_LDFLAGS="-lpthread -lasound -ljack"
 
 #export OS_OPTS="-DTEST_GC"
-export OS_OPTS="-Werror=array-bounds $CPUOPTS -fomit-frame-pointer -DFOR_LINUX `$PKG --cflags Qt5X11Extras` -DRADIUM_USES_MOLD_OR_LDD=$RADIUM_USES_MOLD_OR_LDD" # -Ibin/packages/libxcb-1.13/"
+export OS_OPTS="-Werror=array-bounds $CPUOPTS -DFOR_LINUX `$PKG --cflags Qt5X11Extras` -DRADIUM_USES_MOLD_OR_LDD=$RADIUM_USES_MOLD_OR_LDD" # -Ibin/packages/libxcb-1.13/"
 
 
 #export OS_OPTS="-Werror=array-bounds -march=native"
@@ -310,8 +313,8 @@ echo "...finished"
 echo
 
 
-if [ $(($RANDOM % 20)) -eq 0 ]; then
-
+do_source_sanity_checks() {
+    
     echo "IN approx. 1 in 20 builds we're going to some source checks. This might take around 5 seconds or thereabout...."
 
     if grep static\  */*.h */*.hpp */*/*.hpp */*/*/*.hpp */*/*/*/*.hpp */*/*.h */*/*/*/*.h */*/*.cpp */*.c */*.cpp */*.m */*/*.c */*/*.cpp */*/*/*.c */*/*/*/*.c */*/*/*.cpp 2>&1 | grep "\[" | grep -v "\[\]"|grep -v static\ void |grep -v unused_files |grep -v GTK |grep -v test\/ |grep -v X11\/ |grep -v amiga |grep -v faust-examples|grep -v temp\/ |grep -v "\[NO_STATIC_ARRAY_WARNING\]" |grep -v backup |grep -v mingw |grep -v Dropbox |grep -v bin/packages |grep -v python-midi |grep -v "No such file or directory" ; then
@@ -343,6 +346,12 @@ if [ $(($RANDOM % 20)) -eq 0 ]; then
             exit -1
 	fi            
     fi
+}
+
+if [[ $BUILDTYPE == RELEASE ]] ; then
+    do_source_sanity_checks
+elif [ $(($RANDOM % 20)) -eq 0 ]; then
+    do_source_sanity_checks
 fi
 
 echo "Build finished."
