@@ -1155,10 +1155,12 @@ private:
 
       auto viewport = _rendering->camera()->viewport();
 
-      viewport->setWidth(current_width * g_opengl_scale_ratio);
-      viewport->setHeight(current_height * g_opengl_scale_ratio);
+      const double scale_ratio = safe_double_read(&g_opengl_scale_ratio);
+      
+      viewport->setWidth(current_width * scale_ratio);
+      viewport->setHeight(current_height * scale_ratio);
 
-      if(!equal_doubles(g_opengl_scale_ratio, 1.0)){
+      if(!equal_doubles(scale_ratio, 1.0)){
 
 #if 1
         // I think this is correct. Not sure.
@@ -1169,10 +1171,10 @@ private:
                                                  -1.0, +1.0);
 #else
         // Alternative way. Might be better. Don't know.
-        _rendering->camera()->setProjectionOrtho(-0.5f / g_opengl_scale_ratio, 
-                                                 (current_width - 0.5f) / g_opengl_scale_ratio, 
-                                                 -0.5f / g_opengl_scale_ratio, 
-                                                 (current_height - 0.5f) / g_opengl_scale_ratio, 
+        _rendering->camera()->setProjectionOrtho(-0.5f / scale_ratio, 
+                                                 (current_width - 0.5f) / scale_ratio, 
+                                                 -0.5f / scale_ratio, 
+                                                 (current_height - 0.5f) / scale_ratio, 
                                                  -1.0, +1.0);
 #endif
       } else {
@@ -2459,7 +2461,7 @@ static double get_refresh_rate(void){
       }
       */
       
-      g_opengl_scale_ratio = ratio;
+	    safe_double_write(&g_opengl_scale_ratio, ratio);
       
       // Make sure editor font is scaled.
       if(root!=NULL && root->song!=NULL && root->song->tracker_windows!=NULL){

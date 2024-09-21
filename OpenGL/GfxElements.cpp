@@ -45,7 +45,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define RADIUM_DRAW_FONTS_DIRECTLY 0
 #define INCLUDE_SHADERS 1
 
-extern double g_opengl_scale_ratio;
+double g_opengl_scale_ratio = 1.0;
 
 struct PaintingData;
 static void setActorEnableMask(vl::Actor *actor, const PaintingData *painting_data);
@@ -76,9 +76,9 @@ static void setActorEnableMask(vl::Actor *actor, const PaintingData *painting_da
 #define NUM_PREDEFINED_COLORS 16
 
 
-double g_opengl_scale_ratio = 1.0;
+static float g_height = 512; // Only access from main thread
 
-static float g_height = 512;
+static float g_height_t2_thread = 512; // Only access from t2 thread
 
 // Called from vl::Widget::resizeEvent
 void GE_set_height(int height){
@@ -263,11 +263,13 @@ public:
     
       actor->setEffect(this);
 
+      const double scale_ratio = safe_double_read(&g_opengl_scale_ratio);
+      
       uniform_color1->setUniform(color1);
       uniform_color2->setUniform(color2);
       if (type==GradientType::VELOCITY)
-        uniform_height->setUniformF(height*g_opengl_scale_ratio);
-      uniform_x->setUniformF(x*g_opengl_scale_ratio);
+	      uniform_height->setUniformF(height*scale_ratio);
+      uniform_x->setUniformF(x*scale_ratio);
       uniform_width->setUniformF(width);
       
       if (type==GradientType::VELOCITY)
@@ -285,7 +287,7 @@ public:
   // OpenGL thread, except when initializing. During initialization, it's T3 thread.
   void set_y_offset(float y_offset){
     if (glsl_is_valid && type==GradientType::VELOCITY)
-      uniform_y->setUniformF((y + y_offset)*g_opengl_scale_ratio);
+	    uniform_y->setUniformF((y + y_offset)*safe_double_read(&g_opengl_scale_ratio));
   }
 };
 
@@ -711,10 +713,11 @@ public:
     if (_scissor.get()==NULL){
       //static int num = 0; printf("num: %d\n", num++);
       const SharedVariables *shared_variables = GE_get_shared_variables(painting_data);
-      _scissor = new vl::Scissor(shared_variables->wtracks_scissor_x1 * g_opengl_scale_ratio,
+      const double scale_ratio = safe_double_read(&g_opengl_scale_ratio);
+      _scissor = new vl::Scissor(shared_variables->wtracks_scissor_x1 * scale_ratio,
                                  0,
-                                 (shared_variables->wtracks_scissor_x2 - shared_variables->wtracks_scissor_x1) * g_opengl_scale_ratio,
-                                 g_height*g_opengl_scale_ratio
+                                 (shared_variables->wtracks_scissor_x2 - shared_variables->wtracks_scissor_x1) * scale_ratio,
+                                 g_height_t2_thread*scale_ratio
                                  );
     }
 
@@ -727,21 +730,22 @@ public:
   }
 #endif
 
-  static float y(float y){
-    float height = safe_volatile_float_read(&g_height);
-    float ret = scale(y,
-                      0,height,
-                      height,0
-                      );
-
-    //if (g_opengl_scale_ratio > 1.0)
-    //  ret -= height/g_opengl_scale_ratio;
-    //else if (g_opengl_scale_ratio < 1.0)
-    //  ret += height/2.0;
-
-    return ret;
-  }
-
+	static float y(float y)
+	{
+		float height = g_height;
+		float ret = scale(y,
+				  0,height,
+				  height,0
+			);
+		
+		//if (g_opengl_scale_ratio > 1.0)
+		//  ret -= height/g_opengl_scale_ratio;
+		//else if (g_opengl_scale_ratio < 1.0)
+		//  ret += height/2.0;
+		
+		return ret;
+	}
+	
   vl::Transform *get_transform(T2_data *t2_data, bool &is_scroll_transform) const {
     is_scroll_transform = false;
     if (Z_IS_STATIC_X(_conf.z)){
@@ -775,18 +779,18 @@ GE_Rgb GE_get_rgb(const GE_Context *c){
 /* Drawing */
 
 static void setActorEnableMask(vl::Actor *actor, const PaintingData *painting_data){
-  int height = safe_volatile_float_read(&g_height);// * g_opengl_scale_ratio;
+	int height = g_height_t2_thread;
 
-  int y1 = scale(actor->boundingBox().maxCorner().y(),
-                 height, 0,
-                 0, height);
-  int y2 = scale(actor->boundingBox().minCorner().y(),
-                 height, 0,
-                 0, height
-                 );
-
-  //printf("  y1: %d, y2: %d. mask: %x\n",y1,y2,getMask(y1,y2));
-  actor->setEnableMask(getMask(y1, y2, GE_get_slice_size(painting_data)));
+	int y1 = scale(actor->boundingBox().maxCorner().y(),
+		       height, 0,
+		       0, height);
+	int y2 = scale(actor->boundingBox().minCorner().y(),
+		       height, 0,
+		       0, height
+		);
+	
+	//printf("  y1: %d, y2: %d. mask: %x\n",y1,y2,getMask(y1,y2));
+	actor->setEnableMask(getMask(y1, y2, GE_get_slice_size(painting_data)));
 }
 
 static void setScrollTransform(const GE_Context *c, vl::Actor *actor, T2_data *t2_data){
@@ -877,7 +881,7 @@ void GE_start_writing(int full_height, bool block_is_visible){
   T1_ensure_t2_is_initialized();
   
   g_painting_data = new PaintingData(full_height, block_is_visible);
-  GE_fill_in_shared_variables(&g_painting_data->shared_variables);
+  GE_fill_in_shared_variables(&g_painting_data->shared_variables, g_height);
 
   T1_prepare_gradients2_for_new_rendering();
   T1_collect_gradients1_garbage();
@@ -949,8 +953,12 @@ void GE_draw_vl(T2_data *t2_data){
   //GL_draw_lock();
 
   PaintingData *painting_data = t2_data->painting_data;
+
+  g_height_t2_thread = painting_data->shared_variables.opengl_widget_height;
+	  
   vl::VectorGraphics *vg = t2_data->vg.get();
 
+  
   vg->startDrawing(); {
 
 #if RADIUM_DRAW_FONTS_DIRECTLY
