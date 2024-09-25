@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 #include <boost/lockfree/queue.hpp>
 
+#include "Vector.hpp"
 #include "Semaphores.hpp"
 #include "spinlock.h"
 
@@ -58,21 +59,24 @@ public:
 
   // sets success to false if failed, true if succeeded. Return value is undefined if "success" is false.
   T tryGet(bool &success){
-    T ret = 0;
+	  T ret = 0;
     
-    if (ready.tryWait()) {
+	  if (ready.tryWait())
+	  {
+#if defined(RELEASE)
+		  pop(ret);
+#else
+		  R_ASSERT(pop(ret));
+#endif
+      
+		  success = true;
+	  }
+	  else
+	  {
+		  success = false;
+	  }
     
-      R_ASSERT(pop(ret));
-
-      success = true;
-
-    } else {
-
-      success = false;
-
-    }
-    
-    return ret;
+	  return ret;
   }
 
   
@@ -85,12 +89,16 @@ private:  // Rather not expose this messy (and unsafe) API unless it's needed.
 
   // Must NOT be called without first calling wait()
   T get_withoutWaiting(){
-    T ret;
-    memset(&ret, 0, sizeof(T)); // why?
+	  T ret;
+	  memset(&ret, 0, sizeof(T)); // why?
     
-    R_ASSERT(pop(ret));
-
-    return ret;
+#if defined(RELEASE)
+	  pop(ret);
+#else
+	  R_ASSERT(pop(ret));
+#endif
+	  
+	  return ret;
   }
 
   // Must NOT be called without first calling wait().
@@ -161,15 +169,39 @@ public:
     return false;
   }
 
+	// returns false if no one was waiting or queue was full.
+	// (It's probably not a good idea using "Semaphore::trySignal" since push() can also fail.)
+	bool tryPut_but_only_if_someones_waiting(T t)
+	{
+		if (!someonesWaiting())
+			return false;
+		
+		if (push(t))
+		{
+			ready.signal();
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+
   // If queue is full, buzy-waits until space is available. Same as calling while(!tryPut(t));
   // (it's simple to create a put which waits on a semaphore instead of buzy-looping, but that functionality hasn't been needed in Radium so far)
   void put(T t){
     while(!tryPut(t));
   }
 
-  int size(void){
-    return ready.numSignallers();
-  }
+	int size(void) const {
+		return ready.numSignallers();
+		//return ready.approxCount();
+	}
+	
+	bool someonesWaiting(void) const
+		{
+			return ready.numWaiters() > 0;
+	}
 };
 
 // RT safe.
@@ -227,7 +259,7 @@ template <typename T> class LinkedListStack : public BaseQueueStack<T>{
 // RT safe, but all threads must run with the same priority to avoid priority inversion.
 template <typename T, int SIZE> class VectorStack : public BaseQueueStack<T>{
 
-  radium::Spinlock _lock;
+	radium::Spinlock _lock;
   int _pos = 0;
 
   T _elements[SIZE];
@@ -235,8 +267,8 @@ template <typename T, int SIZE> class VectorStack : public BaseQueueStack<T>{
   //int size=0;
 
   bool pop(T &ret) override{
-    radium::ScopedSpinlock lock(_lock);
-
+	  radium::ScopedSpinlock lock(_lock);
+    
     if (_pos==0)
       return false;
 
@@ -250,7 +282,7 @@ template <typename T, int SIZE> class VectorStack : public BaseQueueStack<T>{
   }
 
   bool push(T &t) override{
-    radium::ScopedSpinlock lock(_lock);
+	  radium::ScopedSpinlock lock(_lock);
 
     //size++;   printf("        >> Push %p. Size: %d\n", t, size);
 
@@ -343,6 +375,89 @@ public:
   }
 
 };
+
+// RT safe queue that only holds one element.
+template <typename T> class SingleElementQueue : public BaseQueueStack<T>
+{
+	const T _non_element;
+	
+	DEFINE_ATOMIC(T, _element);
+
+public:
+
+	SingleElementQueue(const T non_element) // "non_element" must be a value that you are not going to push, for instance NULL.
+		: _non_element(non_element)
+		, ATOMIC_NAME(_element)(_non_element)
+	{
+	}
+			
+	bool pop(T &ret) override
+	{
+		ret = ATOMIC_GET(_element);
+		
+		if (ret == _non_element)
+			return false;
+
+		return atomic_compare_and_set_pointer(reinterpret_cast<void**>(&ATOMIC_NAME(_element)), ret, _non_element);
+	}
+
+	bool push(T &t) override
+	{
+		R_ASSERT_NON_RELEASE(t != _non_element);
+		
+		return atomic_compare_and_set_pointer(reinterpret_cast<void**>(&ATOMIC_NAME(_element)), _non_element, t);
+	}
+};
+
+
+// Lockfree vector queue. Does not keep order. (probably quite horrible worst-case performance...)
+// Broken, but keep code so that I won't write it again.
+template <typename T, const int SIZE> class LockfreeVector : public BaseQueueStack<T>
+{
+	DEFINE_ATOMIC(T*, _array) = {};
+	
+public:
+
+	LockfreeVector(void)
+	{
+		ATOMIC_NAME(_array) = (T*)V_calloc(sizeof(T*), SIZE);
+	}
+
+	// Don't use, broken: Another thread might insert at the same time before 'i'.
+	bool pop(T &ret) override
+	{
+		for(int i=0;i<SIZE;i++)
+		{
+			T maybe = ATOMIC_GET_ARRAY(_array, i);
+
+			if (maybe != NULL)
+				if(atomic_compare_and_set_pointer(reinterpret_cast<void**>(&ATOMIC_NAME(_array)[i]), maybe, NULL))
+				{
+					if (i > 2)
+						printf("Pop: %d\n", i);
+					ret = maybe;
+					return true;
+				}
+		}
+		
+		return false;
+	}
+	
+	bool push(T &t) override
+	{
+		for(int i=0;i<SIZE;i++)
+			if(atomic_compare_and_set_pointer(reinterpret_cast<void**>(&ATOMIC_NAME(_array)[i]), NULL, t))
+			{
+				if (i > 2)
+					printf("Push: %d\n", i);
+
+				return true;
+			}
+
+		return false;
+	}
+};
+
 
 static inline int get_curr_cpu(void){
 #if defined(FOR_WINDOWS)
@@ -576,8 +691,8 @@ public:
   }
 
   void T1_wait_for_T2_to_pick_up(void){
-    T1_ready.wait();
-    R_ASSERT(!has_data);
+	  T1_ready.wait();
+	  R_ASSERT_NON_RELEASE(!has_data);
   }
   
 };
