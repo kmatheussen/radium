@@ -1,5 +1,8 @@
 // This file is not compiled directly, but #included into SoundProducer.cpp
 
+//
+// Note: "main thread" in this file refers to the main audio thread (i.e. the mixer thread), and not the main app thread.
+//
 
 #include <QThread>
 
@@ -30,49 +33,9 @@ static volatile bool something_is_wrong = false;
 
 static const char *settings_key = "num_cpus";
 
-static bool g_use_buzy_get = false;
-
-
 static DEFINE_ATOMIC(int, g_start_block_time) = 0;
 const int g_num_blocks_to_pause_buzylooping = 400; // Should be some seconds
 static DEFINE_ATOMIC(int, g_num_blocks_pausing_buzylooping) = 0;
-
-namespace{
-  struct All_Sp_Finished{
-    radium::SpinlockSemaphore all_sp_finished_spin;
-    radium::Semaphore all_sp_finished;
-
-    void signal(void){
-      if (g_use_buzy_get)
-	all_sp_finished_spin.signal();
-      else
-	all_sp_finished.signal();
-    }
-
-    void wait(void){
-      if (g_use_buzy_get)
-	all_sp_finished_spin.wait();
-      else
-	all_sp_finished.wait();
-    }
-
-    bool tryWaitLightly(void){
-#if !defined(RELEASE)
-      R_ASSERT(g_use_buzy_get);
-#endif
-      return all_sp_finished_spin.tryWaitLightly();
-    }
-
-    int numSignallers(void){
-      if (g_use_buzy_get)
-	return all_sp_finished_spin.numSignallers();
-      else
-	return all_sp_finished.numSignallers();
-    }
-  };
-
-  All_Sp_Finished all_sp_finished;
-}
 
 static DEFINE_ATOMIC(int, num_sp_left) = 0;
 
@@ -99,9 +62,16 @@ using Queue = radium::VectorStack< SoundProducer* , MAX_NUM_SP >;
 #define GET_NEXT_SP_DIRECTLY 1
 #define LET_MAIN_THREAD_TAKE_FIRST_SP 1
 
+#elif 0
+
+// 4. Using quickly home-made lock-free vector. (buggy, and most likely bad average performance and catastrophic worst-case performance)
+using Queue = radium::LockfreeVector< SoundProducer* , MAX_NUM_SP >;
+#define GET_NEXT_SP_DIRECTLY 1
+#define LET_MAIN_THREAD_TAKE_FIRST_SP 1
+
 #else
 
-// 3. Tries to be smart. Should in theory work better than the others, but the implementation of SameCpuQueue isn't finished.
+// 5. Tries to be smart. Should in theory work better than the others, but the implementation of SameCpuQueue isn't finished.
 using Queue = radium::SameCpuQueue< SoundProducer*>;
 #define GET_NEXT_SP_DIRECTLY 0
 #define LET_MAIN_THREAD_TAKE_FIRST_SP 0
@@ -111,17 +81,23 @@ using Queue = radium::SameCpuQueue< SoundProducer*>;
 
 static Queue *g_soundproducer_queue;
 
+using MainQueue = radium::SingleElementQueue<SoundProducer*>;
+static MainQueue *g_main_thread_soundproducer_queue;
+
+
 namespace
 {
   struct InitQueue{
     InitQueue(){
       g_soundproducer_queue = new Queue;
+      g_main_thread_soundproducer_queue = new MainQueue((SoundProducer*)-1);
     }
   } g_init_buffer;
 }
 
 
 
+#if 0
 static void avoid_lockup(int counter){
   if ((counter % (1024*64)) == 0){
     int time_now = (int)(1000*monotonic_seconds());
@@ -141,20 +117,41 @@ static void avoid_lockup(int counter){
     }
   }
 }
-
-static void dec_sp_dependency(const SoundProducer *parent, SoundProducer *sp, SoundProducer *&next){
-  
-  if (ATOMIC_ADD_RETURN_NEW(sp->_num_active_input_links_left, -1) == 0) {
-#if GET_NEXT_SP_DIRECTLY
-    if (next == NULL)
-      next = sp;
-    else
 #endif
-      g_soundproducer_queue->put(sp);
-  }
+
+static void dec_sp_dependency(const SoundProducer *parent, SoundProducer *sp, SoundProducer *&next, const bool is_running_single_core){
+  
+	if (ATOMIC_ADD_RETURN_NEW(sp->_num_active_input_links_left, -1) == 0)
+	{
+#if GET_NEXT_SP_DIRECTLY
+		if (next == NULL)
+		{
+			next = sp;
+		}
+		else
+#endif
+		{
+			if (is_running_single_core)
+			{
+				g_soundproducer_queue->put(sp);
+				return;
+			}
+
+			if (g_main_thread_soundproducer_queue->tryPut_but_only_if_someones_waiting(sp))
+				return;
+
+			if (g_soundproducer_queue->tryPut_but_only_if_someones_waiting(sp))
+				return;
+
+			if (g_main_thread_soundproducer_queue->tryPut(sp))
+				return;
+			
+			g_soundproducer_queue->put(sp);
+		}
+	}
 }
 
-static void process_soundproducer(int cpunum, SoundProducer *sp, int64_t time, int num_frames, bool process_plugins){
+static void process_soundproducer(int cpunum, SoundProducer *sp, int64_t time, int num_frames, bool process_plugins, const bool is_running_single_core){
 
   R_ASSERT(sp!=NULL);
 
@@ -169,9 +166,10 @@ static void process_soundproducer(int cpunum, SoundProducer *sp, int64_t time, i
 #if !defined(RELEASE)
     //  fprintf(stderr,"   Processing %p: %s %d\n",sp,sp->_plugin->patch==NULL?"<null>":sp->_plugin->patch->name,int(sp->is_processed));
     //fflush(stderr);
-
-    bool old = ATOMIC_SET_RETURN_OLD(sp->is_processed, true);
-    R_ASSERT(old==false);
+	  {
+		  bool old = ATOMIC_SET_RETURN_OLD(sp->is_processed, true);
+		  R_ASSERT(old==false);
+	  }
 #endif
 
     //printf("Running %s\n", sp->_plugin->patch->name);
@@ -217,13 +215,13 @@ static void process_soundproducer(int cpunum, SoundProducer *sp, int64_t time, i
     SoundProducer *next = NULL;
 
     for(SoundProducerLink *link : sp->_output_links)
-      if (link->RT_is_active)
-        dec_sp_dependency(link->source, link->target, next);
+	    if (link->RT_is_active)
+		    dec_sp_dependency(link->source, link->target, next, is_running_single_core);
 
     // Important that we decrease 'num_sp_left' AFTER scheduling other soundproducers for processing. (i.e. calling when 'dec_sp_dependency')
     if (ATOMIC_ADD_RETURN_NEW(num_sp_left, -1) == 0) {
       R_ASSERT(next==NULL);
-      all_sp_finished.signal();
+      g_main_thread_soundproducer_queue->put(NULL);
       return;
     }
 
@@ -237,15 +235,13 @@ namespace{
 
   
 struct Runner : public QThread {
-  Q_OBJECT
-
   
   Runner(const Runner&) = delete;
   Runner& operator=(const Runner&) = delete;
 
 
 public:
-  radium::Semaphore can_start_main_loop;
+	radium::Semaphore can_start_main_loop;
   DEFINE_ATOMIC(bool, must_exit);
 
   radium_thread_t _thread_id;
@@ -260,10 +256,14 @@ public:
     : _cpunum(cpunum)
   {
     setObjectName("Runner_" + QString::number(cpunum));
+    
     ATOMIC_SET(must_exit, false);
-    QObject::connect(this, SIGNAL(finished()), this, SLOT(onFinished()));
+    
+    QObject::connect(this, &QThread::finished, this, &QThread::deleteLater); //[this]{delete this;});
+    
     start(QThread::NormalPriority); //QThread::TimeCriticalPriority); // The priority shouldn't matter though since PLAYER_acquire_same_priority() is called inside run().
   }
+	
   //#define FOR_MACOSX
   void run() override {
     RADIUM_AVOIDDENORMALS;
@@ -297,47 +297,7 @@ public:
 
     while(true){
 
-      SoundProducer *sp;
-
-      if(g_use_buzy_get) {
-
-	for(;;){
-	  int counter = 0;
-	  
-	  if (ATOMIC_GET_RELAXED(g_num_blocks_pausing_buzylooping) <= 0) {
-	    
-	    if (g_soundproducer_queue->buzyGetEnabled()) {
-	      
-	      bool gotit;
-	      sp = g_soundproducer_queue->tryGet(gotit);
-	      if (gotit)
-		break;
-	      else
-		avoid_lockup(counter++);
-            
-	    } else {
-	      
-	      g_soundproducer_queue->waitUntilBuzyGetIsEnabled();
-	      
-	    }
-	    
-	  } else {
-	    
-	    sp = g_soundproducer_queue->get();
-	    break;
-	    
-	  }
-	  
-	}
-
-
-      } else {
-
-	// not buzy-getting
-	sp = g_soundproducer_queue->get();
-
-      }
-      
+      SoundProducer *sp = g_soundproducer_queue->get();
 
 #ifdef FOR_MACOSX
       //if (started==false){
@@ -347,44 +307,46 @@ public:
 #endif
 
       if (ATOMIC_GET(must_exit)) {
-        g_soundproducer_queue->put(sp);
-        break;
+	      g_soundproducer_queue->put(sp);
+	      break;
       }
 
-      process_soundproducer(_cpunum, sp, time, num_frames, process_plugins);
+      process_soundproducer(_cpunum, sp, time, num_frames, process_plugins, false);
     }
 
 
     THREADING_drop_player_thread_priority();    
   }
 
+#if 0
 private slots:
   void onFinished(){
     //printf("\n\n\n ***************** FINISHED ****************** \n\n\n\n");
     delete this;
   }
-
+#endif
 };
 #include "mMultiCore.cpp"
 }
 
 
-static void process_single_core(int64_t time, int num_frames, bool process_plugins){
-  while( ATOMIC_GET_RELAXED(num_sp_left) > 0 ) {
-    // R_ASSERT(sp_ready.numSignallers()>0); // This assert can sometimes fail if there are still running runners with must_exit==true.
-    SoundProducer *sp = g_soundproducer_queue->get();    
-    process_soundproducer(0, sp, time, num_frames, process_plugins);
-  }
+static void process_single_core(int64_t time, int num_frames, bool process_plugins)
+{
+	while( ATOMIC_GET_RELAXED(num_sp_left) > 0 ) {
+		// R_ASSERT(sp_ready.numSignallers()>0); // This assert can sometimes fail if there are still running runners with must_exit==true.
+		SoundProducer *sp = g_soundproducer_queue->get();    
+		process_soundproducer(0, sp, time, num_frames, process_plugins, true);
+	}
 
-  R_ASSERT_RETURN_IF_FALSE(all_sp_finished.numSignallers()==1);
-
-  all_sp_finished.wait();
+	SoundProducer *sp = g_main_thread_soundproducer_queue->get();
+	
+	R_ASSERT(sp==NULL);
 }
 
 
 
-static int g_num_runners = 0;
-static Runner **g_runners = NULL;
+static int g_num_runners = 0; // Writing protected by the player lock
+static Runner **g_runners = NULL; // Writing protected by the player lock
 
 
 void MULTICORE_enable_RT_priority(void){
@@ -403,30 +365,11 @@ void MULTICORE_disable_RT_priority(void){
 
 // Called for each sound card block, not for each radium block
 void MULTICORE_start_block(void){
-  if (g_use_buzy_get){
-    ATOMIC_SET(g_start_block_time, (int) (1000*monotonic_seconds()));
-    g_soundproducer_queue->enableBuzyGet();
-  }
 }
 
 void MULTICORE_end_block(void){
-  if (g_use_buzy_get){
-    g_soundproducer_queue->disableBuzyGet();
-
-    int num_blocks_left = ATOMIC_GET(g_num_blocks_pausing_buzylooping);
-    if (num_blocks_left > 0)
-      ATOMIC_SET(g_num_blocks_pausing_buzylooping, num_blocks_left-1);
-  }
 }
 
-static SoundProducer *tryget_next_sp_in_main_thread(void){
-  bool gotit;
-  auto *ret = g_soundproducer_queue->tryGet(gotit);
-  if (!gotit)
-    return NULL;
-  else
-    return ret;
-}
 
 void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t time, int num_frames, bool process_plugins){
 
@@ -529,39 +472,25 @@ void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t tim
     R_ASSERT(sp_in_main_thread!=NULL);
 #endif
 
-    if (g_use_buzy_get){
+    // 4. Use main thread as another runner.
 
-      // 4. Use main thread as another runner.
-
-      process_soundproducer(0, sp_in_main_thread, time, num_frames, process_plugins);
-            
-      int counter = 0;
-      
-      while(all_sp_finished.tryWaitLightly()==false){
-	
-        sp_in_main_thread = tryget_next_sp_in_main_thread();
-        if (sp_in_main_thread)
-	  process_soundproducer(0, sp_in_main_thread, time, num_frames, process_plugins);
-	else
-	  avoid_lockup(counter++);      
-      }
-
-    } else {
-
-      // 4. process as much as we can in the main thread
-      
-      while(sp_in_main_thread != NULL){
-	process_soundproducer(0, sp_in_main_thread, time, num_frames, process_plugins);
-
-        sp_in_main_thread = tryget_next_sp_in_main_thread(); // This is not perfect. It's likely that we fail to get a soundproducer before everything is done.
-      }
-      
-      // 5. wait.
-      all_sp_finished.wait();
-
+    while(sp_in_main_thread != NULL)
+    {
+    again:
+	    process_soundproducer(0, sp_in_main_thread, time, num_frames, process_plugins, false);
+	    
+	    bool gotit;
+	    
+	    sp_in_main_thread = g_main_thread_soundproducer_queue->tryGet(gotit);
+	    if (gotit)
+		    continue; // sp_in_main_thread may be NULL here, and then we can't call "goto again"
+	    
+	    sp_in_main_thread = g_soundproducer_queue->tryGet(gotit);
+	    if (gotit)
+		    goto again; // sp_in_main_thread is not NULL here so we can skip testing if it is NULL.
+	    
+	    sp_in_main_thread = g_main_thread_soundproducer_queue->get();
     }
-
-
   }
   
   //int num_waits_end = int(g_num_waits);
@@ -668,12 +597,6 @@ void MULTICORE_init(void){
 
   R_ASSERT(g_num_runners==0);
 
-  bool do_buzy_get = doAudioBuzyLoop();
-
-  PLAYER_lock(); { // Lock to avoid tsan hit.
-    g_use_buzy_get = do_buzy_get;
-  } PLAYER_unlock();
-  
   int num_new_cpus = get_num_cpus_from_config();
 
   MULTICORE_set_num_threads(num_new_cpus);
