@@ -8,9 +8,44 @@
 
 #include <cassert>
 
+#if defined(__aarch64__) && defined(__MACH__)
+#  define USE_STD_COUNTING_SEMAPHORE 1 // Mostly because of TSAN, since TSAN doesn't support mach semaphores (semaphore_t). But it might also be faster.
+#else
+#  define USE_STD_COUNTING_SEMAPHORE 0
+#endif
 
 
-#if defined(_WIN32)
+#if USE_STD_COUNTING_SEMAPHORE
+#  include <semaphore>
+namespace cpp11onmulticore{
+  
+class Semaphore
+{
+private:
+	std::counting_semaphore<10000000> m_sema;
+
+	Semaphore(const Semaphore& other) = delete;
+	Semaphore& operator=(const Semaphore& other) = delete;
+
+public:
+	Semaphore(int initialCount = 0)
+		: m_sema(initialCount)
+	{
+	}
+
+	void wait()
+	{
+		m_sema.acquire();
+	}
+
+	void signal(int count = 1)
+	{
+		m_sema.release(count);
+	}
+};
+}
+
+#elif defined(_WIN32)
 //---------------------------------------------------------
 // Semaphore (Windows)
 //---------------------------------------------------------
@@ -58,7 +93,6 @@ public:
 // Semaphore (Apple iOS and OSX)
 // Can't use POSIX semaphores due to http://lists.apple.com/archives/darwin-kernel/2009/Apr/msg00010.html
 //---------------------------------------------------------
-
 #include <mach/mach.h>
 
 namespace cpp11onmulticore{
@@ -115,6 +149,7 @@ public:
 }
 
 #elif defined(__unix__)
+
 //---------------------------------------------------------
 // Semaphore (POSIX, Linux)
 //---------------------------------------------------------
