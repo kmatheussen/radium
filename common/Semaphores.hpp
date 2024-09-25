@@ -13,13 +13,12 @@
  */
 
 
-
 #include "sema.h"
 
 
 namespace radium{
 
-  
+
 class Semaphore{
 
   private:
@@ -44,12 +43,12 @@ class Semaphore{
       //m_count = n;
     }
 
-    int numSignallers(void) {
+    int numSignallers(void) const {
       return ATOMIC_GET(m_count);
       //return int(m_count);
     }
 
-    int numWaiters(void){
+    int numWaiters(void) const {
       return -numSignallers();
     }
   
@@ -89,7 +88,30 @@ class Semaphore{
       while(n--)
         wait();
     }
-  
+
+#if 0 // Not tested that much. Also, I have a feeling that there is something wrong with the design of the code if using this one.
+	bool trySignal(void)
+	{
+		for(int i = 0 ; i < 100 ; i++)
+		{
+			int count = ATOMIC_GET(m_count);
+			
+			if (count >= 0)
+				return false;
+			
+			if (ATOMIC_COMPARE_AND_SET_INT(m_count, count, count+1))
+			{
+				m_sema.signal();
+				return true;
+			}
+		}
+
+		R_ASSERT_NON_RELEASE(false); // That's strange...
+		
+		return false;
+	}
+#endif
+	
     void signal(void)
     {
       if (ATOMIC_ADD_RETURN_OLD(m_count, 1) < 0)
@@ -121,6 +143,7 @@ class Semaphore{
         signal();
     }
 };
+
 
 // Same as Semaphore, except that it keeps track of the number of times signal() is going to be called in the future
 // with the function 'is_going_to_be_signalled_another_time_in_the_future'.
@@ -219,7 +242,6 @@ struct RequestAcknowledge {
 };
 #endif
   
-
 }
 
 #endif
