@@ -511,9 +511,13 @@ bool FLUIDSYNTH_set_new_preset(SoundPlugin *plugin, filepath_t sf2_file, int ban
 
     if(SP_is_plugin_running(plugin)){
 
-      ATOMIC_SET(data->new_data, new_data);
+	  ATOMIC_SET(plugin->auto_suspend_suspended, true); // Prevent rare deadlock.
+	  {
+		  ATOMIC_SET(data->new_data, new_data);
 
-      RSEMAPHORE_wait(data->signal_from_RT,1);
+		  RSEMAPHORE_wait(data->signal_from_RT,1);
+	  }
+	  ATOMIC_SET(plugin->auto_suspend_suspended, false);
 
     } else{
 

@@ -3727,11 +3727,15 @@ static bool set_new_sample(struct SoundPlugin *plugin,
   if(SP_is_plugin_running(plugin)){
 
     //fprintf(stderr, "    *************** 11111. plugin IS running **********\n");
-    
-    ATOMIC_SET(old_data->new_data, data);
 
-    RSEMAPHORE_wait(old_data->signal_from_RT,1);
+	  ATOMIC_SET(plugin->auto_suspend_suspended, true); // Prevent rare deadlock.
+	  {
+		  ATOMIC_SET(old_data->new_data, data);
 
+		  RSEMAPHORE_wait(old_data->signal_from_RT,1);
+	  }
+	  ATOMIC_SET(plugin->auto_suspend_suspended, false);
+	  
   } else {
 
     //fprintf(stderr, "    *************** 0000. plugin is NOT running **********\n");
