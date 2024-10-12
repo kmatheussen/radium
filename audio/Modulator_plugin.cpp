@@ -1170,12 +1170,31 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
     break;
     
   case EFF_MIN:
-    modulator->_parms.min = R_BOUNDARIES(0, value, modulator->_parms.max);
-    break;
-    
+  {
+	  const bool was_inverted = modulator->_parms.min > modulator->_parms.max;
+	  
+	  modulator->_parms.min = R_BOUNDARIES(0, value, 1 /*modulator->_parms.max*/);
+	  
+	  const bool is_inverted = modulator->_parms.min > modulator->_parms.max;
+
+	  if (was_inverted != is_inverted)
+		  GFX_ScheduleInstrumentRedraw(plugin->patch);
+	  
+	  break;
+  } 
   case EFF_MAX:
-    modulator->_parms.max = R_BOUNDARIES(modulator->_parms.min, value, 1);
-    break;
+  {
+	  const bool was_inverted = modulator->_parms.min > modulator->_parms.max;
+
+	  modulator->_parms.max = R_BOUNDARIES(0 /*modulator->_parms.min*/, value, 1);
+	  
+	  const bool is_inverted = modulator->_parms.min > modulator->_parms.max;
+
+	  if (was_inverted != is_inverted)
+		  GFX_ScheduleInstrumentRedraw(plugin->patch);
+
+	  break;
+  }
 
   case EFF_MANUAL_INPUT:
     modulator->set_manual_parameter_input(value);
@@ -1320,12 +1339,12 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
     break;
     
   case EFF_MIN:
-    snprintf(buffer, buffersize-1, "%f", modulator->_parms.min);
-    break;
+	  snprintf(buffer, buffersize-1, "%f%s", modulator->_parms.min, modulator->_parms.min > modulator->_parms.max ? " (inversion)" : "");
+	  break;
     
   case EFF_MAX:
-    snprintf(buffer, buffersize-1, "%f", modulator->_parms.max);
-    break;
+	  snprintf(buffer, buffersize-1, "%f%s", modulator->_parms.max, modulator->_parms.min > modulator->_parms.max ? " (inversion)" : "");
+	  break;
 
   case EFF_MANUAL_INPUT:
     snprintf(buffer, buffersize-1, "%f", modulator->get_manual_parameter_input());
