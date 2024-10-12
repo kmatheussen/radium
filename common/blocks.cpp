@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "blocks_proc.h"
 
+
 struct Blocks *BLOCK_create(void){
   struct Blocks *block = talloc_with_finalizer<struct Blocks>([](struct Blocks *block){
       delete block->cache_num_holder;

@@ -2,12 +2,15 @@
 
 set -e
 
-export PYTHONEXE=`./find_python_path.sh`
+
+source configuration.sh
+
 
 export RADIUM_BIN="/tmp/radium_bin/radium_linux.bin"
 
 mkdir -p /tmp/radium_bin
 mkdir -p /tmp/radium_objects
+
 
 
 # find_moc_and_uic_path.sh has been tested on fedora 11, fedora 17, ubuntu 12, and mint 13.
@@ -40,11 +43,11 @@ fi
 #    fi
 #fi
 
-export INCLUDE_FAUSTDEV="jadda"
+#export INCLUDE_FAUSTDEV="jadda"
 #export INCLUDE_FAUSTDEV_BUT_NOT_LLVM="jadda"
 
 # Always compile pddev. Most of it is placed in a dynamic library, so it doesn't contribute to higher link time or startup time.
-export INCLUDE_PDDEV="jadda"
+#export INCLUDE_PDDEV="jadda"
 
 
 if ! arch |grep arm ; then
@@ -125,7 +128,6 @@ export FPIC="-fPIC"
 
 export TARGET_OS=linux
 
-export PKG=`which pkg-config`
 export PYPATH=`$PYTHONEXE -c "import sys;print sys.prefix+'/include/python'+sys.version[:3]"`
 export PYOPTS="-I $PYPATH"
 
@@ -196,16 +198,16 @@ if env |grep INCLUDE_FAUSTDEV= ; then
     if env |grep INCLUDE_FAUSTDEV_BUT_NOT_LLVM= ; then
         export OS_OPTS="$OS_OPTS -DWITHOUT_LLVM_IN_FAUST_DEV"
     else
-        LLVM_OPTS=`llvm-config --cppflags`
+        LLVM_OPTS=`$LLVM_PATH/bin/llvm-config --cppflags`
         
-        MAYBELLVM=`llvm-config --libdir`/libLLVM-`llvm-config --version`.so
+        MAYBELLVM=`$LLVM_PATH/bin/llvm-config --libdir`/libLLVM-`$LLVM_PATH/bin/llvm-config --version`.so
         if [ -f $MAYBELLVM ]; then
-            LLVMLIBS=-lLLVM-`llvm-config --version`
+            LLVMLIBS=-lLLVM-`$LLVM_PATH/bin/llvm-config --version`
         else
-            LLVMLIBS=`llvm-config --libs`
+            LLVMLIBS=`$LLVM_PATH/bin/llvm-config --libs`
         fi
         
-        FAUSTLDFLAGS="$FAUSTLDFLAGS `$PKG --libs uuid` `llvm-config --ldflags` $LLVMLIBS -ltinfo"
+        FAUSTLDFLAGS="$FAUSTLDFLAGS `$PKG --libs uuid` `$LLVM_PATH/bin/llvm-config --ldflags` $LLVMLIBS -ltinfo"
     fi
 fi
 # _debug

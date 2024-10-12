@@ -3,9 +3,8 @@
 set -e
 set -x
 
-#export INCLUDE_FAUSTDEV_BUT_NOT_LLVM="jadda"
-export RADIUM_QT_VERSION=5
-#export RADIUM_USE_CLANG=1
+source ../../configuration.sh
+
 
 unset CFLAGS
 unset CFLAGS
@@ -49,7 +48,7 @@ then
 fi
 
 if ! env |grep RADIUM_QT_VERSION ; then
-    echo "Must define RADIUM_QT_VERSION to either 4 or 5. For instance: \"RADIUM_QT_VERSION=5 make packages\""
+    echo "Must define RADIUM_QT_VERSION to 5. (It should have been set in configuration.sh....)"
     exit -1
 fi
 
@@ -81,6 +80,22 @@ PREFIX=`dirname $PWD/$0`
 
 
 build_faust() {
+
+    if env |grep FAUST_USES_LLVM ; then
+	if ! env |grep LLVM_PATH ; then
+	    RED='\033[1;31m'
+	    NC='\033[0m'
+	    printf "${RED}LLVM_PATH not set${NC} (../../common_build.variables.sh not included?)\n"
+	fi
+	
+	if [ ! -f $LLVM_PATH/bin/llvm-config ] ; then
+	    RED='\033[1;31m'
+	    NC='\033[0m'
+	    printf "${RED}Error: \"${LLVM_PATH}\" doesn't seem to be valid...${NC}\n"
+	    exit -1
+	fi
+    fi
+
     rm -fr faust
     tar xvzf faust-2.70.3.tar.gz
     mv faust-2.70.3 faust
@@ -93,7 +108,8 @@ build_faust() {
     patch -p1 <../faust_cmakelist.patch
     ### this patch is needed to build on artix
     #patch -p1 <../faust_make.llvm.static.patch
-    if env |grep INCLUDE_FAUSTDEV_BUT_NOT_LLVM ; then
+    
+    if ! env |grep FAUST_USES_LLVM ; then
         sed -i 's/LLVM_BACKEND   \tCOMPILER STATIC/LLVM_BACKEND OFF/' build/backends/most.cmake
         if grep LLVM_BACKEND build/backends/most.cmake | grep COMPILER ; then
             echo "sed failed"
@@ -107,14 +123,25 @@ build_faust() {
 
     patch -p0 < ../faust3.patch
 
-    sed -i '1s/^/#include \<cstdint> /' architecture/faust/dsp/dsp.h
+    #sed -i '1s/^/#include \<cstdint> /' architecture/faust/dsp/dsp.h
     
     #cp compiler/generator/libfaust-signal.h architecture/faust/dsp/
     #cp compiler/generator/libfaust-box.h architecture/faust/dsp/
 
+    if env |grep FAUST_USES_LLVM ; then
+	export ORGTEMPPATH=$PATH
+	export PATH=$LLVM_PATH/bin:$PATH
+    fi
+    
     # release build
     VERBOSE=1 CFLAGS="$CFLAGS" CXXFLAGS="$CXXFLAGS" CMAKEOPT="-DCMAKE_BUILD_TYPE=Release -DSELF_CONTAINED_LIBRARY=on -DCMAKE_CXX_COMPILER=`which $DASCXX` -DCMAKE_C_COMPILER=`which $DASCC` " make most
 
+    if env |grep FAUST_USES_LLVM ; then
+	export PATH=$ORGTEMPPATH
+	unset ORGTEMPPATH
+    fi
+    
+    
     # debug build
     #VERBOSE=1 CFLAGS="$CFLAGS" CXXFLAGS="$CXXFLAGS" CMAKEOPT="-DCMAKE_BUILD_TYPE=Debug -DSELF_CONTAINED_LIBRARY=on -DCMAKE_CXX_COMPILER=`which $DASCXX` -DCMAKE_C_COMPILER=`which $DASCC` " make most
     

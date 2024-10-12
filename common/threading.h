@@ -2,7 +2,7 @@
 #define RADIUM_COMMON_THREADING_H
 
 
-#if __cplusplus
+#ifdef __cplusplus
 
 #include <float.h>
 

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source configuration.sh
+
 if [ -z "$RADIUM_NSM_EXECUTABLE_NAME" ] ; then
         export RADIUM_NSM_EXECUTABLE_NAME=$(basename -- "$0")
 fi
@@ -7,6 +9,7 @@ fi
 PWD=`pwd`
 export LSAN_OPTIONS=suppressions=$PWD/SanitizerSuppr.txt
 export ASAN_OPTIONS="detect_leaks=0,abort_on_error=1,max_malloc_fill_size=1048576,detect_odr_violation=2,detect_container_overflow=0,suppressions=$PWD/SanitizerSupprAddr.txt"
+
 #
 # earlier we also had these ASAN_OPTIONS:
 #
@@ -20,11 +23,16 @@ export TSAN_OPTIONS="history_size=7,second_deadlock_stack=1,print_stacktrace=1:a
 
 
 THIS_DIR=$(dirname $(readlink -f $0))
-XCB_LIB_DIR=$THIS_DIR/bin/packages/libxcb-1.13/src/.libs
 
-if ! file $XCB_LIB_DIR ; then
-    echo "Unable to find directory $XCB_LIB_DIR"
-    exit -1
+if uname -s |grep Linux ; then
+    XCB_LIB_DIR=$THIS_DIR/bin/packages/libxcb-1.13/src/.libs
+    
+    if ! file $XCB_LIB_DIR ; then
+	echo "Unable to find directory $XCB_LIB_DIR"
+	exit -1
+    fi
+
+    export LD_LIBRARY_PATH=$XCB_LIB_DIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
 fi
 
 # To avoid buggy qt plugins from crashing radium (very common).
@@ -35,13 +43,12 @@ unset QT_PLUGIN_PATH
 # To avoid freezing X
 export USE_SAFE_POPUP="1"
 
-export LD_LIBRARY_PATH=$XCB_LIB_DIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
 export G_DEBUG="fatal-warnings,gc-friendly"
 
 #ulimit -s 655360
 
 #DEBUGGER="gdb --args"
-DEBUGGER="lldb --"
+DEBUGGER="lldb -O 'env DYLD_LIBRARY_PATH=$LLVM_PATH/lib' --"
 #DEBUGGER=
 
 unameOut="$(uname -s)"
@@ -51,9 +58,15 @@ case "${unameOut}" in
     *)          EXECUTABLE="where_is_radium_for_\"${unameOut}\"?_(change_these_lines_in_run_gdb.sh_to_fix_this)";;
 esac
 
+rm -f /tmp/runradiumgdb*.sh
 
+exename=/tmp/runradiumgdb$$.sh
 
-LD_LIBRARY_PATH=$LD_LIBRARY_PATH G_DEBUG="fatal-warnings,gc-friendly" USE=libedit/readline exec $DEBUGGER $EXECUTABLE $@; killall -9 radium_progress_window ; killall -9 radium_crashreporter
+echo "DYLD_LIBRARY_PATH=$LLVM_PATH/lib G_DEBUG="fatal-warnings,gc-friendly" USE=libedit/readline exec $DEBUGGER $EXECUTABLE $@; killall -9 radium_progress_window ; killall -9 radium_crashreporter"  > $exename
+
+chmod a+rx $exename
+
+exec $exename
 
 # without gdb:
 #LD_LIBRARY_PATH=$LD_LIBRARY_PATH G_DEBUG="fatal-warnings,gc-friendly" bin/radium_linux.bin $@; killall -9 radium_progress_window ; killall -9 radium_crashreporter

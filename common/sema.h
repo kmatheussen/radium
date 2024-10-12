@@ -210,7 +210,7 @@ public:
 
 #else
 
-#error Unsupported platform!
+#error Unsupported platform! (try to set USE_STD_COUNTING_SEMAPHORE=1)
 
 #endif
 

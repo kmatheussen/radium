@@ -236,9 +236,9 @@ class Argument:
             sys.stderr.write("varname:"+self.varname+"\n")
             raise Exception("Unknown type '"+self.type_string+"'")
 
-    # keyDownPlay -> r-key-down-play
-    # keyDownBPM -> r-key-down-bpm
-    # KeyDownP   -> r-key-down-p
+    # keyDownPlay -> ra:key-down-play
+    # keyDownBPM -> ra:key-down-bpm
+    # KeyDownP   -> ra:key-down-p
     # playLPBAi  -> play-lpb-ai
     def get_scheme_varname(self):
         def loop(current, name, previous_was_capitol):
