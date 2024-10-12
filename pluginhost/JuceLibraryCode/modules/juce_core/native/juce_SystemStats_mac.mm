@@ -409,6 +409,8 @@ bool SystemStats::isAppSandboxEnabled()
 
     return result;
 }
+#else
+#error "GAKK! Wrong"
 #endif
 
 } // namespace juce

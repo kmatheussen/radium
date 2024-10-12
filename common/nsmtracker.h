@@ -40,7 +40,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 
 #if !defined(__aarch64__)
-
   #ifndef __SSE2__
     #error "SSE2 is missing (i.e. -msse2 is lacking)"
   #endif

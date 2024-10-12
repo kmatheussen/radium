@@ -102,7 +102,8 @@ TARGET_OS ?= any
 S7OPTS ?=
 
 FAUSTDIR = $(shell pwd)/bin/packages/faust
-WHICHFAUST = $(FAUSTDIR)/build/bin/faust
+FAUST_LD_LIB_PATH ?=
+WHICHFAUST = $(FAUST_LD_LIB_PATH) $(FAUSTDIR)/build/bin/faust
 FAUST = $(WHICHFAUST) -I $(FAUSTDIR)/libraries/old # -I /home/kjetil/faust/architecture  
 
 # Get lots of warnings
@@ -721,7 +722,7 @@ all:
 	@echo
 
 
-radium: $(BUILD_DEPENDENCIES) $(PROGRAM_MODULES) Makefile.Qt
+radium: CCC_OK.touch $(BUILD_DEPENDENCIES) $(PROGRAM_MODULES) Makefile.Qt
 	@echo
 	@echo "Compilation OK."
 	@echo
@@ -739,6 +740,8 @@ clean:
 clean_pluginhost:
 	cd pluginhost/Builds/Linux && $(MAKE) clean && rm -fr build
 
+CCC_OK.touch: $(ALL_SHELL_SCRIPTS) Makefile.Qt
+	bash check_CCC_OK.sh
 
 dependencies_ok: check_dependencies.sh #Makefile
 	bash check_dependencies.sh `./find_python_path.sh` $(MOC) $(UIC) test_build
@@ -977,7 +980,7 @@ start_bin.sh:
 	chmod a+rx start_bin.sh
 
 /tmp/run_preload:
-	time $(LINKER) -Xlinker --preload `cat buildtype.opt` $(OBJ) $(OS_OBJS) -o $(RADIUM_BIN) -g -lm $(VL_LDFLAGS) $(OS_LDFLAGS) $(JACK_LDFLAGS) $(QTLINKFLAGS) $(OS_LDFLAGS2)
+	time $(LINKER) -Xlinker --preload `cat buildtype.opt` $(OBJ) $(OS_OBJS) -o $(RADIUM_BIN) -g $(VL_LDFLAGS) $(OS_LDFLAGS) $(JACK_LDFLAGS) $(QTLINKFLAGS) $(OS_LDFLAGS2)
 	touch /tmp/run_preload
 
 $(RADIUM_BIN): $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a $(OS_DEPS)
@@ -985,7 +988,7 @@ $(RADIUM_BIN): $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-1.1.6/src/.libs/libflu
 	@echo "Changed ($(RADIUM_BIN)):"
 	@echo $?
 	@echo
-	time $(LINKER) `cat buildtype.opt` $(OBJ) $(OS_OBJS) -o $(RADIUM_BIN) -g -lm $(VL_LDFLAGS) $(OS_LDFLAGS) $(JACK_LDFLAGS) $(QTLINKFLAGS) $(OS_LDFLAGS2)
+	time $(LINKER) `cat buildtype.opt` $(OBJ) $(OS_OBJS) -o $(RADIUM_BIN) -g $(VL_LDFLAGS) $(OS_LDFLAGS) $(JACK_LDFLAGS) $(QTLINKFLAGS) $(OS_LDFLAGS2)
 
 #libqhttpserver.a
 # -lX11 -ldl -lpthread -lfreetype -lXext

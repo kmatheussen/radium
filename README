@@ -4,19 +4,17 @@ HOW TO MAKE IT RUN
 
           1. Install dependencies. See "BUILD DEPENDENCIES, *" below in this file.
 
-          2. Do this:
+	  2. Inspect the file "configuration.sh" and see if you want to change anything.
+	  
+          3. Do this:
 
           "
-          export RADIUM_QT_VERSION=5
           make packages
           BUILDTYPE=RELEASE ./build_linux.sh -j `nproc`
           QT_QPA_PLATFORM_PLUGIN_PATH=`$(./find_moc_and_uic_paths.sh qmake) -query QT_INSTALL_PLUGINS` bin/radium
           "
 
-          If you want to use clang instead of gcc, first run this line before running "make packages":
-          export RADIUM_USE_CLANG=1
-
-          Note: There is an install.sh script, and it works. But you don't need it to run the program.
+          Note: There is an install.sh script, and it works, but you don't need it to run the program.
 	  
 
 IF YOU GOT THE SOURCE FROM GIT
@@ -38,23 +36,12 @@ IF YOU GOT THE SOURCE FROM GIT
 
 
 IF YOU ARE DEVELOPING RADIUM
-     If you want to use clang instead of gcc, first run this line before running "make packages" and "build_linux.sh":
-     
-        export RADIUM_USE_CLANG=1
 
-     If you don't want to include the llvm backend for the faustdev instrument (for instance if you don't have llvm), run this line first:
-     
-        export INCLUDE_FAUSTDEV_BUT_NOT_LLVM="jadda"
-        
-     If you don't want to bother with installing qt-webkit, but instead use the lesser supported qt-webengine (which is included with Qt),
-     run this line first:
-          
-        export USE_QWEBENGINE=1
-        
+     First inspect the file "configuration.sh" and see if you want to change anything.
+	  
      Then run these lines:
      
         # Debug build. Lots of assertions. Very slow. Don't build this version if you are just testing the program.
-        export RADIUM_QT_VERSION=5
         export QT_QPA_PLATFORM_PLUGIN_PATH=`$(./find_moc_and_uic_paths.sh qmake) -query QT_INSTALL_PLUGINS`
         make packages # Only necessary one time.  Note: Linking fails first run. See comment in bin/packages/build.sh about Visualization Library.
         BUILDTYPE=DEBUG_FAST ./build_linux.sh -j`nproc` && ./run_gdb.sh
