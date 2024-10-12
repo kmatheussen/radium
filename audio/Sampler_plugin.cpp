@@ -136,7 +136,7 @@ static void update_editor_graphics(SoundPlugin *plugin){
 #endif
 
 #if USE_OPENGL
-  GFX_ScheduleEditorRedrawIfPatchIsCurrentlyVisible(const_cast<Patch*>(plugin->patch));
+  GFX_ScheduleEditorRedrawIfPatchIsCurrentlyVisible(plugin->patch);
 
 #else
   if(plugin->patch!=NULL)

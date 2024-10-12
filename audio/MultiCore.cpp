@@ -143,10 +143,10 @@ static void dec_sp_dependency(const SoundProducer *parent, SoundProducer *sp, So
 			if (g_soundproducer_queue->tryPut_but_only_if_someones_waiting(sp))
 				return;
 
-			if (g_main_thread_soundproducer_queue->tryPut(sp))
+			if (g_main_thread_soundproducer_queue->tryPut(sp)) // Pushes if there's room in the queue (I.e. it doesn't necessarily mean that someones waiting).
 				return;
 			
-			g_soundproducer_queue->put(sp);
+			g_soundproducer_queue->put(sp); // Waits until there's room in the queue, and then pushes.
 		}
 	}
 }
@@ -218,7 +218,7 @@ static void process_soundproducer(int cpunum, SoundProducer *sp, int64_t time, i
 	    if (link->RT_is_active)
 		    dec_sp_dependency(link->source, link->target, next, is_running_single_core);
 
-    // Important that we decrease 'num_sp_left' AFTER scheduling other soundproducers for processing. (i.e. calling when 'dec_sp_dependency')
+    // Important that we decrease 'num_sp_left' AFTER scheduling other soundproducers for processing.
     if (ATOMIC_ADD_RETURN_NEW(num_sp_left, -1) == 0) {
       R_ASSERT(next==NULL);
       g_main_thread_soundproducer_queue->put(NULL);

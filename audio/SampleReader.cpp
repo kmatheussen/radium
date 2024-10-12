@@ -831,7 +831,14 @@ public:
     if (isRunning()==false)
       return true;
 
-    Command command = {SampleProviderThread::Command::Type::SHUT_DOWN, NULL, -1, -1, NULL};
+    Command command = {
+	    SampleProviderThread::Command::Type::SHUT_DOWN,
+	    NULL,
+	    -1,
+	    -1,
+	    NULL
+    };
+    
     _queue.put(command);
 
 #if defined(RELEASE)
@@ -848,10 +855,18 @@ public:
     R_ASSERT_NON_RELEASE(slice_end>slice_start);
     R_ASSERT_NON_RELEASE(slice_end<=client->_provider->_num_slices);
     
-    Command command = {SampleProviderThread::Command::Type::OBTAIN, client, slice_start, slice_end, gotit};
+    Command command = {
+	    SampleProviderThread::Command::Type::OBTAIN,
+	    client,
+	    slice_start,
+	    slice_end,
+	    gotit
+    };
+    
 #if DO_DEBUG_PRINTING
     printf("..........Req.Obtain %p (%d -> %d)\n", command.client, (int)command.slice_start, (int)command.slice_end);
 #endif
+    
     return _queue.tryPut(command);
   }
 
@@ -877,12 +892,26 @@ public:
     //printf("Req clear_cache %p\n", client);
     R_ASSERT_RETURN_IF_FALSE2(gotit!=NULL, true);
 
-    Command command = {SampleProviderThread::Command::Type::CLOSE_SNDFILE_, client, -1, -1, gotit};
+    Command command = {
+	    SampleProviderThread::Command::Type::CLOSE_SNDFILE_,
+	    client,
+	    -1,
+	    -1,
+	    gotit
+    };
+    
     return _queue.tryPut(command);
   }
 
   bool RT_request_delete(SampleProviderClient *client){
-    Command command = {SampleProviderThread::Command::Type::DELETE_, client, -1, -1, NULL};
+    Command command = {
+	    SampleProviderThread::Command::Type::DELETE_,
+	    client,
+	    -1,
+	    -1,
+	    NULL
+    };
+    
     return _queue.tryPut(command);
   }
 };
