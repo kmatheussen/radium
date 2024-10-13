@@ -1190,10 +1190,12 @@ static int get_effect_format(struct SoundPlugin *plugin, int effect_num){
 static const char *get_effect_name(const struct SoundPlugin *plugin, int effect_num){
   static char **notused_names = NULL;
 
-  if(notused_names==NULL){
-    notused_names = (char**)calloc(sizeof(char*), NUM_PD_CONTROLLERS);
-    for(int i=0;i<NUM_PD_CONTROLLERS;i++)
-      notused_names[i] = strdup(talloc_format(" %d",i));
+  if(notused_names==NULL)
+  {
+	  notused_names = (char**)calloc(NUM_PD_CONTROLLERS, sizeof(char*));
+	  
+	  for(int i=0;i<NUM_PD_CONTROLLERS;i++)
+		  notused_names[i] = strdup(talloc_format(" %d",i));
   }
 
   Data *data = (Data*)plugin->data;

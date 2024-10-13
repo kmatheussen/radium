@@ -29,13 +29,13 @@
 
 
 
-static volatile bool something_is_wrong = false;
+static bool something_is_wrong = false;
 
 static const char *settings_key = "num_cpus";
 
-static DEFINE_ATOMIC(int, g_start_block_time) = 0;
-const int g_num_blocks_to_pause_buzylooping = 400; // Should be some seconds
-static DEFINE_ATOMIC(int, g_num_blocks_pausing_buzylooping) = 0;
+//static DEFINE_ATOMIC(int, g_start_block_time) = 0;
+//const int g_num_blocks_to_pause_buzylooping = 400; // Should be some seconds
+//static DEFINE_ATOMIC(int, g_num_blocks_pausing_buzylooping) = 0;
 
 static DEFINE_ATOMIC(int, num_sp_left) = 0;
 
