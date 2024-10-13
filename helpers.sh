@@ -9,53 +9,63 @@ print_error_and_exit()
     exit -1
 }
 
-check_if_exists()
+check_if_file_exists()
 {
     if [ ! -f $1 ] ; then
-	print_error_and_exit "\"${1}\" doesn't seem to exist..."
+	print_error_and_exit "\"${1}\" doesn't seem to exist... $FUNCNAME"
     fi
 }
 
 
 
-is_set(){
+is_empty()
+{
+    [ -z $1 ]
+}
+
+# same as "has_value", except that it also returns true for empty variables.
+is_defined()
+{
     [ -v $1 ]
 }
 
-#export GAKK=""
-#if is_set GAKK ; then
-#    echo SET
-#else
-#    echo NOT
-#fi
-#exit
+# returns true if defined and not empty
+is_set()
+{
+    is_defined $1 && ! is_empty $1
+}
+
+
 
 # Sets a variable unless already set.
 #
 # Behavior:
-#   * If the variable was already set, we use that value instead and ignore the second argument.
-#   Then:
-#   * If the value is different than 0 (even empty), the function will set the value to 1.
-#   * If the value is 0, the function will unset the value.
+#   * If the variable was already set, we use that value instead
+#     and ignore the second argument. Othervice we set it to the
+#     value of the second argument.
+#   Afterwards
+#   * If the value is empty, we set the variable to 1.
+#   * If the value is 0, we unset the variable.
 #
 set_var()
 {
-    if ! is_set $1 ; then
+    if [ "$#" -ne 2 ]; then
+	echo "${FUNCNAME}: Illegal number of arguments: \"set_var $@\""
+	exit -1
+    fi
+	
+    if ! is_defined $1 ; then
 	export $1=$2
     fi
 
-    local val=${!1}
+    local val="${!1}"
 
-    # Are the two first tests below doing exactly the same?
+    #echo "1: -${1}- 2: -${2}- val: ${val}"
 
-    if [ "${val}" -eq "0" ] ; then
-	echo "A"
-	unset $1
-    elif [ ${val} -eq 0 ] ; then
-	echo "B"
-	unset $1
-    else
+    if is_empty $val ; then
 	export $1=1
+    elif [ "${val}" = "0" ] ; then
+	unset $1
     fi
 }
 

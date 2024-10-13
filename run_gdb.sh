@@ -40,6 +40,9 @@ unset QT_QPA_PLATFORMTHEME
 unset QT_QPA_PLATFORM
 unset QT_PLUGIN_PATH
 
+# Need this one though
+export QT_QPA_PLATFORM_PLUGIN_PATH=`$(./find_moc_and_uic_paths.sh qmake) -query QT_INSTALL_PLUGINS`
+
 # To avoid freezing X
 export USE_SAFE_POPUP="1"
 
@@ -48,7 +51,7 @@ export G_DEBUG="fatal-warnings,gc-friendly"
 #ulimit -s 655360
 
 #DEBUGGER="gdb --args"
-DEBUGGER="lldb -O 'env DYLD_LIBRARY_PATH=$LLVM_PATH/lib' --"
+DEBUGGER="lldb -O 'env $FAUST_LD_LIB_PATH' --"
 #DEBUGGER=
 
 unameOut="$(uname -s)"
@@ -62,7 +65,7 @@ rm -f /tmp/runradiumgdb*.sh
 
 exename=/tmp/runradiumgdb$$.sh
 
-echo "DYLD_LIBRARY_PATH=$LLVM_PATH/lib G_DEBUG="fatal-warnings,gc-friendly" USE=libedit/readline exec $DEBUGGER $EXECUTABLE $@; killall -9 radium_progress_window ; killall -9 radium_crashreporter"  > $exename
+echo "G_DEBUG="fatal-warnings,gc-friendly" USE=libedit/readline exec $DEBUGGER $EXECUTABLE $@; killall -9 radium_progress_window ; killall -9 radium_crashreporter"  > $exename
 
 chmod a+rx $exename
 
