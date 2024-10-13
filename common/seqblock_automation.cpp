@@ -528,7 +528,7 @@ public:
     if (_sat==SAT_VOLUME)
       fill_color = QColor(80,20,200,50);
 
-    QColor color = get_qcolor((enum ColorNums)(AUTOMATION1_COLOR_NUM + _sat));
+    QColor color = get_qcolor((enum ColorNums)(AUTOMATION1_COLOR_NUM + (int)_sat));
 
     return _automation.get_painter(x1, y1, x2, y2, 0, 1, color, SeqblockAutomation::get_node_y_callback, SeqblockAutomation::get_node_x_callback, this, fill_color, seqblock_x1, seqblock_x2);
   }
