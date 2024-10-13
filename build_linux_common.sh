@@ -292,8 +292,8 @@ else
     fi
     make radium $@ --stop
 
-    if ldd -r $RADIUM_BIN |grep -i bfd ; then
-	echo "\033[1;31mError? Is bfd linked dynamically?\033[0m"
+    if ldd -r $RADIUM_BIN | sed 's/0x.*//' |grep -i bfd ; then
+	printf "\033[1;31mError? Is bfd linked dynamically?\033[0m"
 	exit -1
     fi
 
@@ -322,9 +322,11 @@ echo
 
 
 do_source_sanity_checks() {
-    
-    echo "IN approx. 1 in 20 builds we're going to some source checks. This might take around 5 seconds or thereabout...."
 
+    echo
+    echo "Doing some source sanity checks. This might take a few seconds...."
+    echo
+    
     if grep static\  */*.h */*.hpp */*/*.hpp */*/*/*.hpp */*/*/*/*.hpp */*/*.h */*/*/*/*.h */*/*.cpp */*.c */*.cpp */*.m */*/*.c */*/*.cpp */*/*/*.c */*/*/*/*.c */*/*/*.cpp 2>&1 | grep "\[" | grep -v "\[\]"|grep -v static\ void |grep -v unused_files |grep -v GTK |grep -v test\/ |grep -v X11\/ |grep -v amiga |grep -v faust-examples|grep -v temp\/ |grep -v "\[NO_STATIC_ARRAY_WARNING\]" |grep -v backup |grep -v mingw |grep -v Dropbox |grep -v bin/packages |grep -v python-midi |grep -v "No such file or directory" ; then
 	echo
 	echo "ERROR in line(s) above. Static arrays may decrease GC performance notably.";
