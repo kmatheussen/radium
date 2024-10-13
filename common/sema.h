@@ -8,17 +8,24 @@
 
 #include <cassert>
 
-#if defined(__aarch64__) && defined(__MACH__)
-#  define USE_STD_COUNTING_SEMAPHORE 1 // Mostly because of TSAN, since TSAN doesn't support mach semaphores (semaphore_t). But it might also be faster.
+#if defined(__cpp_lib_semaphore)
+#  define USE_STD_COUNTING_SEMAPHORE 1
 #else
 #  define USE_STD_COUNTING_SEMAPHORE 0
 #endif
 
+/*
+#if defined(__aarch64__) && defined(__MACH__)
+#  define USE_STD_COUNTING_SEMAPHORE 1 // Mostly because of TSAN, since TSAN doesn't support mach semaphores (semaphore_t). But it might also be faster.
+#elif
+#  define USE_STD_COUNTING_SEMAPHORE 0
+#endif
+*/
 
 #if USE_STD_COUNTING_SEMAPHORE
 #  include <semaphore>
 namespace cpp11onmulticore{
-  
+
 class Semaphore
 {
 private:
@@ -222,7 +229,7 @@ public:
 
 #else
 
-#error Unsupported platform! (try to set USE_STD_COUNTING_SEMAPHORE=1)
+#error Unsupported platform
 
 #endif
 
