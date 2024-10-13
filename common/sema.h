@@ -124,12 +124,24 @@ public:
         if (rc==KERN_SUCCESS)
           break;
         
-        fprintf(stderr, "rc: %d\n", (int)rc);
-                
-        if(rc!=KERN_ABORTED)
-          RError("RC: %d\n", (int)rc);
-
-        msleep(1000);
+	if (ATOMIC_GET(g_program_has_ended))
+	{
+		while(true)
+		{
+			msleep(1000); // Wait it out until the thread has been killed.
+		}
+	}
+	else
+	{
+#if !defined(RELEASE)
+		fprintf(stderr, "rc: %d\n", (int)rc);
+		abort();
+#endif
+		
+		if(rc!=KERN_ABORTED && rc!=KERN_TERMINATED)
+			RError("RC: %d\n", (int)rc); // Codes here: https://opensource.apple.com/source/xnu/xnu-1228/osfmk/mach/kern_return.h.auto.html
+		
+	}
       }
     }
 
