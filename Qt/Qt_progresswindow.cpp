@@ -695,7 +695,6 @@ void GFX_OpenProgress(const char *message){
 
   
 static void send_string(QString message){
-  
   printf("-______ sending string %s\n",message.toUtf8().constData());
 
 #ifdef RADIUM_USES_TSAN // get broken pipe in waitForBytesWritten when using tsan.

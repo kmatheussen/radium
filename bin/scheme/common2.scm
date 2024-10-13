@@ -723,6 +723,7 @@ Also note that the :finally thunk doesn't have an important purpose. It's just s
 (<declare-variable> *undefined-var*)
 (<declare-variable> *undefined-var2*)
 
+
 ;; Test failure in 'try'. Returns #f by default.
 (let ((is-finalized #f))
   (define result (eat-errors :try (lambda ()
