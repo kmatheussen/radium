@@ -75,11 +75,7 @@ export CPUOPT=
 branch=$(git branch | sed -n -e 's/^\* \(.*\)/\1/p')
 export T=/tmp/radium_objects_$branch/
 
-if ! env |grep RADIUM_USE_CLANG ; then
-    RADIUM_USE_CLANG=0
-fi
 
-#RADIUM_USE_CLANG=1
 RADIUM_USES_MOLD_OR_LDD=0
 RADIUM_USES_MOLD_PRELOAD=0
 
@@ -177,11 +173,11 @@ export OS_OPTS="-Werror=array-bounds $CPUOPTS -DFOR_LINUX `$PKGqt --cflags Qt5X1
 #VERBOSE=1 CMAKEOPT="-DCMAKE_BUILD_TYPE=Debug -DSELF_CONTAINED_LIBRARY=on -DCMAKE_CXX_COMPILER=`which clang++` -DCMAKE_C_COMPILER=`which clang`" make most
 #VERBOSE=1 CMAKEOPT="-DCMAKE_BUILD_TYPE=Release -DSELF_CONTAINED_LIBRARY=on -DCMAKE_CXX_COMPILER=`which g++` -DCMAKE_C_COMPILER=`which gcc`" make most
 
-if env |grep INCLUDE_FAUSTDEV= ; then
+if [[ $INCLUDE_FAUSTDEV == 1 ]] ; then
     export OS_OPTS="$OS_OPTS -DWITH_FAUST_DEV"
 fi
 
-if env |grep INCLUDE_PDDEV ; then
+if [[ $INCLUDE_PDDEV == 1 ]] ; then
     export OS_OPTS="$OS_OPTS -DWITH_PD"
 fi
 
@@ -193,9 +189,9 @@ PYTHONLIBNAME=`$PYTHONEXE -c "import sys;print '-lpython'+sys.version[:3]"`
 export QSCINTILLA_PATH=`pwd`/bin/packages/QScintilla_src-2.14.0/src
 
 
-if env |grep INCLUDE_FAUSTDEV= ; then
+if [[ $INCLUDE_FAUSTDEV == 1 ]] ; then
     FAUSTLDFLAGS="`pwd`/bin/packages/faust/build/lib/libfaust.a -lcrypto -lncurses"
-    if env |grep INCLUDE_FAUSTDEV_BUT_NOT_LLVM= ; then
+    if [[ $INCLUDE_FAUSTDEV_BUT_NOT_LLVM == 1 ]] ; then
         export OS_OPTS="$OS_OPTS -DWITHOUT_LLVM_IN_FAUST_DEV"
     else
         LLVM_OPTS=`$LLVM_PATH/bin/llvm-config --cppflags`
@@ -212,8 +208,7 @@ if env |grep INCLUDE_FAUSTDEV= ; then
 fi
 # _debug
 
-
-if env |grep INCLUDE_PDDEV ; then
+if [[ $INCLUDE_PDDEV == 1 ]] ; then
     PDLDFLAGS="bin/packages/libpd-master/libs/libpds.a"
 else    
     PDLDFLAGS=""

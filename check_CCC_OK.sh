@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-if env | grep RADIUM_USE_CLANG ; then
+source configuration.sh
+
+if [[ $RADIUM_USE_CLANG == 1 ]] ; then
     export FULL_CCC_PATH_NOW=`which clang++`
 else
     export FULL_CCC_PATH_NOW=`which g++`
