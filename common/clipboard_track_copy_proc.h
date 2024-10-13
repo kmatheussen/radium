@@ -22,8 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern LANGSPEC struct WTracks *internal_copy_track(
                                     const struct WBlocks *wblock,
                                     const struct WTracks *wtrack,
-                                    bool always_copy_all_fxs,
-                                    bool *only_one_fxs_was_copied
+				    const bool only_copy_current_fx_if_possible
                                     );
 
 extern LANGSPEC struct WTracks *CB_CopyTrack(

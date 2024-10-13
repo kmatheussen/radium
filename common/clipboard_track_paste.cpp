@@ -306,7 +306,7 @@ bool co_CB_PasteTrack(
         return ret;
 }
 
-static void remove_fxs_from_fxss(vector_t *fxss, struct FXs *fxs){
+static void maybe_remove_fxs_from_fxss(vector_t *fxss, struct FXs *fxs){
   VECTOR_FOR_EACH(struct FXs *, maybe, fxss){
     if (maybe->fx->patch==fxs->fx->patch && maybe->fx->effect_num==fxs->fx->effect_num){
       VECTOR_remove(fxss, maybe);
@@ -398,57 +398,66 @@ void CB_PasteTrack_CurrPos(struct Tracker_Windows *window){
                           printf("curr_track_sub: %d\n",window->curr_track_sub);
                           ADD_UNDO(Track_CurrPos(wblock->l.num, wtrack->l.num));
                           
-                          if(window->curr_track_sub==-1 && cb_wtrack_only_contains_one_fxs==false){
-
-                            // copy all
-                            
-                            printf("aaa\n");
-                            if(co_CB_PasteTrack(wblock,cb_wtrack,wtrack)){
-                              window->must_redraw = true;
-                            }else{
+                          if(window->curr_track_sub==-1 && cb_wtrack->cb_wtrack_only_contains_one_fxs==false)
+			  {
+				  // copy all
+				  
+				  if(co_CB_PasteTrack(wblock,cb_wtrack,wtrack)){
+					  window->must_redraw = true;
+				  }else{
 #if !USE_OPENGL
-                              UpdateAndClearSomeTrackReallinesAndGfxWTracks(
-                                                                            window,
-                                                                            wblock,
-                                                                            window->curr_track,
-                                                                            window->curr_track
-                                                                            );
+					  UpdateAndClearSomeTrackReallinesAndGfxWTracks(
+						  window,
+						  wblock,
+						  window->curr_track,
+						  window->curr_track
+						  );
 #endif
-                            }
-                          }else{
-                            printf("bbb\n");
-
+				  }
+                          }
+			  else
+			  {
                             // only copy fx
                             
                             struct WTracks *fromwtrack = cb_wtrack;
                                                                                     
-                            if (cb_wtrack_only_contains_one_fxs==true){
+                            if (fromwtrack->cb_wtrack_only_contains_one_fxs==true)
+			    {
 
-                              // only copy one fx
-                              
-                              R_ASSERT(cb_wtrack->track->fxs.num_elements==1);
+				    // only copy one fx
 
-                              struct FXs *fxs = (struct FXs *)cb_wtrack->track->fxs.elements[0];
-                              
-                              vector_t *fxss = VECTOR_copy(&wtrack->track->fxs);
-                              remove_fxs_from_fxss(fxss, fxs);
-                              
-                              VECTOR_push_back(fxss, fxs);
-                              
-                              fromwtrack = CB_CopyTrack(wblock, cb_wtrack);
-                              fromwtrack->track->fxs = *VECTOR_copy(fxss);
+				    const int num_fxs = cb_wtrack->track->fxs.num_elements;
+				    
+				    R_ASSERT(num_fxs==1);
+
+				    if (num_fxs >= 1)
+				    {
+				    
+					    struct FXs *fxs = (struct FXs *)cb_wtrack->track->fxs.elements[0];
+					    
+					    vector_t *fxss = VECTOR_copy(&wtrack->track->fxs);
+					    maybe_remove_fxs_from_fxss(fxss, fxs);
+					    
+					    VECTOR_push_back(fxss, fxs);
+					    
+					    fromwtrack = CB_CopyTrack(wblock, cb_wtrack);
+					    fromwtrack->track->fxs = *VECTOR_copy(fxss);
+				    }
                             }
                             
-                            if(co_CB_PasteTrackFX(wblock, fromwtrack, wtrack, pause_player)){
-                              window->must_redraw = true;
-                            }else{
+                            if(co_CB_PasteTrackFX(wblock, fromwtrack, wtrack, pause_player))
+			    {
+				    window->must_redraw = true;
+                            }
+			    else
+			    {
 #if !USE_OPENGL
-                              UpdateAndClearSomeTrackReallinesAndGfxWTracks(
-                                                                            window,
-                                                                            wblock,
-                                                                            window->curr_track,
-                                                                            window->curr_track
-                                                                            );
+				    UpdateAndClearSomeTrackReallinesAndGfxWTracks(
+					    window,
+					    wblock,
+					    window->curr_track,
+					    window->curr_track
+					    );
 #endif
                             }
                           }

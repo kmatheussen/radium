@@ -100,9 +100,8 @@ private:
       abort();
     _is_used2 = false;
 #endif
-    
+
     if(!atomic_compare_and_set_pointer(reinterpret_cast<void**>(&ATOMIC_NAME(_pointer)), NULL, pointer)){ // The void**-cast is a workaround for compiler error. Strange.
-      
       // I.e. the storage got new data since we obtained the pointer.
       
 #if !defined(RELEASE)

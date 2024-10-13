@@ -123,31 +123,31 @@ int FXTEXT_subsubtrack(const struct Tracker_Windows *window, const struct WTrack
   if (wtrack->fxtext_on == false)
     return -1;
 
-  int subsubtrack = window->curr_track_sub;
+  int curr_subsubtrack = window->curr_track_sub;
 
   if (wtrack->swingtext_on == true)
-    subsubtrack -= 3;
+    curr_subsubtrack -= 3;
   
   if (wtrack->centtext_on == true)
-    subsubtrack -= 2;
+    curr_subsubtrack -= 2;
   
   if (wtrack->chancetext_on == true)
-    subsubtrack -= 2;
+    curr_subsubtrack -= 2;
   
   if (wtrack->veltext_on == true)
-    subsubtrack -= 3;
+    curr_subsubtrack -= 3;
 
-  if (subsubtrack < 0)
+  if (curr_subsubtrack < 0)
     return -1;
 
   VECTOR_FOR_EACH(struct FXs *, fxs, &wtrack->track->fxs){
-    if (subsubtrack == 0 || subsubtrack == 1 || subsubtrack == 2){
+    if (curr_subsubtrack == 0 || curr_subsubtrack == 1 || curr_subsubtrack == 2){
       if (to_fxs!=NULL)
         *to_fxs = fxs;
-      return subsubtrack;
+      return curr_subsubtrack;
     }
     
-    subsubtrack -= 3;
+    curr_subsubtrack -= 3;
   }END_VECTOR_FOR_EACH;
   
   return -1;

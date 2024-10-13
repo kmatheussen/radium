@@ -103,7 +103,7 @@ static inline bool atomic_compare_and_set_uint32(uint32_t *variable, uint32_t ol
 }
 
 static inline bool atomic_compare_and_set_pointer(void **variable, void *old_value, void *new_value){
-  return __atomic_compare_exchange_n (variable, &old_value, new_value, true, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+	return __atomic_compare_exchange_n (variable, &old_value, new_value, true, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
 }
 
 #ifdef __cplusplus
