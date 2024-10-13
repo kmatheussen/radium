@@ -15,10 +15,7 @@
 #  convenient e.g if you want to create different
 #  scripts for building different versions of Radium,
 #  or you don't want to risk accidentally pusing changes
-#  in this file to the repository. You might want also
-#  to do something like this if you're creating
-#  a build to create a Radium package for a distribution.
-#
+#  in this file to the repository.
 #
 ########################################################
 
@@ -86,8 +83,8 @@ set_var USE_QWEBENGINE 0
 # 1. "Export soundfile(s)" in the file menu is disabled.
 # 2. Only two VST/VST3/AU/LV2 plugins can run at
 #    the same time in a song. (Note: There are no
-#    restrictions on the number of Ladspa plugis or
-#    built-in plugins in the demo version.
+#    restrictions on the number of Ladspa plugins or
+#    built-in plugins.)
 # 3. A "nag" window requesting you to buy the program
 #    shows up at program startup and after each time
 #    you save a song.
@@ -96,10 +93,6 @@ set_var USE_QWEBENGINE 0
 # distribution such as Ubuntu; Or, if you want to
 # include Radium in Homebrew or Macports on macOS:
 # I would kindly request that you set this value to 0.
-# However, if your choice is between distributing
-# the demo version, or not distributing Radium at all,
-# it's better if you distribute the full version.
-#
 #
 set_var FULL_VERSION 1
 
@@ -110,7 +103,7 @@ set_var FULL_VERSION 1
 # A directory where qt5 is installed.
 # If not set, we will try to find it automatically.
 # Note that you might also have to set the
-# PKGqt variable as well, pointing to a pkg-config
+# PKGqt variable, pointing to a pkg-config binary
 # that points to this version of Qt.
 #
 set_var RADIUM_QTDIR "/opt/local/libexec/qt5"
@@ -120,7 +113,7 @@ set_var PKGqt "/opt/local/bin/pkg-config"
 
 ########################################################
 # Set to the minimum Macos version you want the program
-# to run on.
+# to run on. (Obviously ignored on the other platforms)
 #
 if uname -s |grep Darwin ; then    
     set_var MACOSX_DEPLOYMENT_TARGET 12.0
@@ -192,7 +185,7 @@ fi
 #
 ########################################################
 
-# (Currently no point set it another value than 5.)
+# (Currently no point setting it another value than 5.)
 export RADIUM_QT_VERSION=5
 
 
@@ -206,10 +199,12 @@ if ! uname -s |grep Linux ; then
     unset INCLUDE_PDDEV
 fi
 
-if ! is_set FULL_VERSION ; then
-    export FULL_VERSION=0
-elif ! [ "${FULL_VERSION}" -eq "1" ] ; then
-    print_error_and_exit "Strange value for FULL_VERSION: ${FULL_VERSION}"
+if [ "${FULL_VERSION}" -eq "0" ] ; then
+    true
+elif [ "${FULL_VERSION}" -eq "1" ] ; then
+    true
+else
+    print_error_and_exit "FULL_VERSION must be 0 or 1: ${FULL_VERSION}"
 fi
 
 # Used by the makefile
