@@ -37,7 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-bool cb_wtrack_only_contains_one_fxs = false;
+//bool cb_wtrack_only_contains_one_fxs = false; // (moved into struct WTracks to avoid keeping track of whether the value is valid all the time)
 struct WTracks *cb_wtrack=NULL;
 
 extern struct Swing *cb_swing;
@@ -57,15 +57,11 @@ struct FXs *CB_CopyFX(
 
 // Also used in clipboard_track_cut.c
 struct WTracks *internal_copy_track(
-                                    const struct WBlocks *wblock,
-                                    const struct WTracks *wtrack,
-                                    bool always_copy_all_fxs,
-                                    bool *only_one_fxs_was_copied
-                                    )
+	const struct WBlocks *wblock,
+	const struct WTracks *wtrack,
+	const bool only_copy_current_fx_if_possible
+	)
 {
-  if (!always_copy_all_fxs)
-    R_ASSERT(only_one_fxs_was_copied!=NULL);
-  
 	struct WTracks *towtrack;
 	struct Tracks *totrack;
 	struct Tracks *track=wtrack->track;
@@ -90,24 +86,35 @@ struct WTracks *internal_copy_track(
         totrack->swings=NULL;
         memset(&totrack->fxs, 0, sizeof(vector_t));
 
-        struct FXs *fxs;
-        int subsubtrack = FXTEXT_subsubtrack(root->song->tracker_windows, wtrack, &fxs);
+        struct FXs *fxs = NULL;
+        int subsubtrack = -1;
 
-        if (always_copy_all_fxs || subsubtrack==-1) {
-          
-          CopyRange_notes(&totrack->notes,track->notes,p1,&p2);
-          CopyRange_stops(totrack->stops2,track->stops2,p1,&p2);
-          totrack->swings = CB_CopySwings(track->swings, &p2);
-          CopyRange_fxs(wblock->block->num_lines, &totrack->fxs,&track->fxs, make_ratio(0,1), make_ratio(wblock->block->num_lines, 1));
-          
-          if (only_one_fxs_was_copied != NULL)
-            *only_one_fxs_was_copied = false;
-          
-        } else{
-          vector_t fxss = {};
-          VECTOR_push_back(&fxss, fxs);
-          CopyRange_fxs(wblock->block->num_lines, &totrack->fxs,&fxss, make_ratio(0,1), make_ratio(wblock->block->num_lines, 1));
-          *only_one_fxs_was_copied = true;
+	if (only_copy_current_fx_if_possible)
+	{
+		subsubtrack = FXTEXT_subsubtrack(root->song->tracker_windows, wtrack, &fxs);
+
+		if (subsubtrack >= 0)
+			R_ASSERT(fxs != NULL);
+		else
+			R_ASSERT(fxs == NULL);
+	}
+	
+        if (fxs==NULL)
+	{
+		// When !only_copy_current_fx_if_possible or subsubtrack < 0.
+		
+		CopyRange_notes(&totrack->notes,track->notes,p1,&p2);
+		CopyRange_stops(totrack->stops2,track->stops2,p1,&p2);
+		totrack->swings = CB_CopySwings(track->swings, &p2);
+		CopyRange_fxs(wblock->block->num_lines, &totrack->fxs,&track->fxs, make_ratio(0,1), make_ratio(wblock->block->num_lines, 1));
+	}
+	else
+	{
+		vector_t fxss = {};
+		VECTOR_push_back(&fxss, fxs);
+		CopyRange_fxs(wblock->block->num_lines, &totrack->fxs,&fxss, make_ratio(0,1), make_ratio(wblock->block->num_lines, 1));
+		
+		towtrack->cb_wtrack_only_contains_one_fxs = true;
         }
         
 	return towtrack;
@@ -118,18 +125,19 @@ struct WTracks *CB_CopyTrack(
                              const struct WTracks *wtrack
                              )
 {
-  struct WTracks *ret = internal_copy_track(wblock, wtrack, true, NULL);
-  return ret;
+	struct WTracks *ret = internal_copy_track(wblock, wtrack, false);
+	return ret;
 }
 
 void CB_CopyTrack_CurrPos(
                           const struct Tracker_Windows *window
 ){
-  const struct WBlocks *wblock=window->wblock;
-  const struct Blocks *block=wblock->block;
-  const struct WTracks *wtrack=wblock->wtrack;
+	const struct WBlocks *wblock=window->wblock;
+	const struct Blocks *block=wblock->block;
+	const struct WTracks *wtrack=wblock->wtrack;
 
-	switch(window->curr_track){
+	switch(window->curr_track)
+	{
 		case SWINGTRACK:
                         cb_swing=CB_CopySwings(block->swings, NULL);
 			break;
@@ -146,14 +154,13 @@ void CB_CopyTrack_CurrPos(
 			cb_temponode=CB_CopyTempoNodes(block->temponodes);
 			break;
 		default:
-                  if (SWINGTEXT_subsubtrack(window, wtrack) != -1){
-                    cb_swing = CB_CopySwings(wtrack->track->swings,NULL);
-                  } else {
-                    cb_wtrack=internal_copy_track(wblock, wtrack, false, &cb_wtrack_only_contains_one_fxs);
-                  }
-                  break;
+			if (SWINGTEXT_subsubtrack(window, wtrack) != -1){
+				cb_swing = CB_CopySwings(wtrack->track->swings,NULL);
+			} else {
+				cb_wtrack=internal_copy_track(wblock, wtrack, true);
+			}
+			break;
 	}
 }
-
 
 

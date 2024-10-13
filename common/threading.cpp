@@ -15,7 +15,7 @@
 #include <QHash>
 
 #if defined(FOR_MACOSX)
-#include "../weakjack/weak_libjack.h"
+#  include "../weakjack/weak_libjack.h"
 #endif
 
 #include "nsmtracker.h"
@@ -472,7 +472,7 @@ priority_t THREADING_get_priority(void){
     priority.priority = THREAD_PRIORITY_NORMAL;
   }
   
-#elif defined(__linux__) || defined(FOR_MACOSX)
+#elif defined(__linux__) || defined(__MACH__)
 
   int success = pthread_getschedparam(pthread_self(), &priority.policy, &priority.param);
   if (success!=0) {
@@ -520,12 +520,12 @@ void THREADING_set_priority(priority_t priority){
     GFX_Message(NULL, "SetThreadPriority failed: %d", success);
   }
   
-#elif defined(__linux__) || defined(FOR_MACOSX)
+#elif defined(__linux__) || defined(__MACH__)
 
   // Maybe try to use native thread api on osx. This actually fails (!) on osx 10.12 .
   // Example: https://github.com/SchwartzNU/DataAcquisition/blob/47d728c34bd9db1787bbb3f7805aff60484104d0/Stage/Externals/matlab-priority/setNormalPriority.c
 
-#if defined(FOR_MACOSX)
+#if defined(__MACH__)
   // Workaround for 10.12
   if (true || priority.policy==SCHED_OTHER){
     int success = jack_drop_real_time_scheduling(GET_CURRENT_THREAD());

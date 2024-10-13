@@ -118,10 +118,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #if defined(FOR_LINUX)
+  #if !defined(__linux__) || defined(__MACH__) || defined(WIN32) || defined(_WIN32)
+     #error
+  #endif
 #elif defined(FOR_MACOSX)
+  #if defined(__linux__) || !defined(__MACH__) || defined(WIN32) || defined(_WIN32)
+     #error
+  #endif
 #elif defined(FOR_WINDOWS)
+  #if defined(__linux__) || defined(__MACH__) || !defined(WIN32)
+     #error
+  #endif
 #else
-#error "unknown architecture"
+  #error "unknown architecture"
 #endif
 
 
@@ -186,7 +195,7 @@ static_assert (sizeof(long long int) >= 8, "sizof(long long int) must be 8 or hi
 #if !defined(__clang__)
 #  pragma GCC diagnostic pop
 #endif
-#endif
+#endif // USE_QT4
 
 #if defined(__clang__)
   #define FORMAT_ATTRIBUTE(A,B)
@@ -343,6 +352,7 @@ static inline bool equal_floats(float x, float y) {
   if(!sane_isnormal(x) || !sane_isnormal(y))
     abort();
 #endif
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
   if(x==y)
     return true;
@@ -355,6 +365,7 @@ static inline bool equal_doubles(double x, double y) {
   if(!sane_isnormal(x) || !sane_isnormal(y))
     abort();
 #endif
+#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
   if(x==y)
     return true;
@@ -2815,7 +2826,10 @@ struct WTracks{
 
         int pianoroll_width; // not necessary
         Area pianoroll_area;
-  
+
+	// If this track is the clipboard track, this value is true if only the current fx was copied. (used when cutting/copying/pasting single fx)
+	bool cb_wtrack_only_contains_one_fxs;
+	
         //int num_vel;						/* Max number of velocity lines showed simultaniously. (I.e the number of subtracks)*/
 
   /*
@@ -2989,7 +3003,7 @@ static inline bool WSIGNATURE_is_first_beat(const WSignature &signature){
   return signature.beat_num==1;
 }
 
-#endif
+#endif // USE_QT4
 
 
 

@@ -107,40 +107,53 @@ static struct WTracks *cut_track(
                                  struct Tracker_Windows *window,
                                  struct WBlocks *wblock,
                                  struct WTracks *wtrack,
-                                 bool always_cut_all_fxs,
-                                 bool *only_one_fxs_was_cut,
+				 const bool only_cut_current_fx_if_possible,
                                  radium::PlayerPauseOnlyIfNeeded &pause_player,
-                                 bool &swings_have_changed
-){
+                                 bool &swings_have_changed)
+{
+	struct WTracks *ret = internal_copy_track(wblock, wtrack, only_cut_current_fx_if_possible);
+	
+	if (!only_cut_current_fx_if_possible || ret->cb_wtrack_only_contains_one_fxs==false)
+	{
+		if (!only_cut_current_fx_if_possible)
+			R_ASSERT(ret->cb_wtrack_only_contains_one_fxs==false);
+		
+		CB_ClearTrack_Force(wblock->block, wtrack->track, pause_player, swings_have_changed);
+	}
+	else
+	{
+		R_ASSERT(ret->cb_wtrack_only_contains_one_fxs==true);
+		
+		if (ret->track->fxs.num_elements != 1)
+		{
+			R_ASSERT(false);
+		}
+		else
+		{
+			struct FXs *fxs = (struct FXs*)ret->track->fxs.elements[0];
+			bool gotit = false;
 
-  if (!always_cut_all_fxs)
-    R_ASSERT(only_one_fxs_was_cut!=NULL);
-  
-  struct WTracks *ret;
-  
-    ret = internal_copy_track(wblock, wtrack, always_cut_all_fxs, only_one_fxs_was_cut);
+			{
+				SCOPED_PLAYER_LOCK_IF_PLAYING();
+				
+				VECTOR_FOR_EACH(struct FXs *, maybe, &wtrack->track->fxs)
+				{
+					if (maybe->fx->patch==fxs->fx->patch && maybe->fx->effect_num==fxs->fx->effect_num)
+					{
+						(*maybe->fx->closeFX)(maybe->fx,wtrack->track);
+						VECTOR_remove(&wtrack->track->fxs, maybe);
+						gotit = true;
+						break;
+					}
+				}
+				END_VECTOR_FOR_EACH;
+			}
 
-    if (always_cut_all_fxs || (*only_one_fxs_was_cut)==false) {
-      
-      CB_ClearTrack_Force(wblock->block, wtrack->track, pause_player, swings_have_changed);
-  
-    } else {
-
-      SCOPED_PLAYER_LOCK_IF_PLAYING();
-      
-      struct FXs *fxs = (struct FXs*)ret->track->fxs.elements[0];
-      
-      VECTOR_FOR_EACH(struct FXs *, maybe, &wtrack->track->fxs){
-        if (maybe->fx->patch==fxs->fx->patch && maybe->fx->effect_num==fxs->fx->effect_num){
-          (*maybe->fx->closeFX)(maybe->fx,wtrack->track);
-          VECTOR_remove(&wtrack->track->fxs, maybe);
-          break;
-        }
-      }END_VECTOR_FOR_EACH;
-      
-    }
-
-  return ret;
+			R_ASSERT(gotit==true);
+		}
+	}
+    
+	return ret;
 }
 
 struct WTracks *CB_CutTrack(
@@ -151,7 +164,7 @@ struct WTracks *CB_CutTrack(
   radium::PlayerPauseOnlyIfNeeded pause_player;
   bool swings_have_changed = false;
 
-  struct WTracks *ret = cut_track(window, wblock, wtrack, true, NULL, pause_player, swings_have_changed);
+  struct WTracks *ret = cut_track(window, wblock, wtrack, false, pause_player, swings_have_changed);
 
   if (swings_have_changed)
     TIME_block_swings_have_changed(wblock->block);
@@ -240,7 +253,7 @@ static void CB_ClearOrCutTrack_CurrPos(
                           
                         bool swings_have_changed = false;
 			if (do_cut)
-                          cb_wtrack = cut_track(window, wblock, wtrack, false, &cb_wtrack_only_contains_one_fxs, pause_player, swings_have_changed);
+                          cb_wtrack = cut_track(window, wblock, wtrack, true, pause_player, swings_have_changed);
                         else
                           CB_ClearTrack_Force(wblock->block, wtrack->track, pause_player, swings_have_changed);
 
