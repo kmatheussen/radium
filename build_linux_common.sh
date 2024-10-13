@@ -222,7 +222,12 @@ if ! env |grep RADIUM_BFD_LDFLAGS ; then
     if [[ $RADIUM_USE_CLANG == 1 ]] && [ -f "$CLANG_PREFIX/lib/libbfd.a" ]; then
         export RADIUM_BFD_LDFLAGS="$CLANG_PREFIX/lib/libbfd.a"
     else
-        export RADIUM_BFD_LDFLAGS="-Wl,-Bstatic -lbfd -Wl,-Bdynamic"
+	GCC_MAJOR=$(gcc -dumpversion | cut -d'.' -f1)
+	if [ $GCC_MAJOR -gt 13 ] ; then
+	    export RADIUM_BFD_LDFLAGS="-lbfd" # seems like gcc is able to link static version of bfd by itself now...
+	else
+            export RADIUM_BFD_LDFLAGS="-Wl,-Bstatic -lbfd -Wl,-Bdynamic"
+	fi
     fi
 fi
 
@@ -286,6 +291,12 @@ else
        make /tmp/run_preload
     fi
     make radium $@ --stop
+
+    if ldd -r $RADIUM_BIN |grep -i bfd ; then
+	echo "\033[1;31mError? Is bfd linked dynamically?\033[0m"
+	exit -1
+    fi
+
 fi
 
 if [[ $BUILDTYPE == RELEASE ]] ; then
