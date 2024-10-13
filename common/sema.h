@@ -12,6 +12,10 @@
 #  error "error" // Should have been set in the Makefile.
 #endif
 
+#if !USE_STD_COUNTING_SEMAPHORE
+#  error Something's wrong. Add this test as well to be 100% we're not mixing semaphore types.
+#endif
+
 /*
 #if defined(__aarch64__) && defined(__MACH__)
 #  define USE_STD_COUNTING_SEMAPHORE 1 // Mostly because of TSAN, since TSAN doesn't support mach semaphores (semaphore_t). But it might also be faster.
