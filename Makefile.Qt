@@ -74,6 +74,7 @@ T ?= /tmp/radium_objects/
 
 STD_C=gnu99
 STD_CPP=gnu++20
+USE_STD_COUNTING_SEMAPHORE=1 # Probably have to change to 0, if stdc < c++20.
 
 PKG ?= pkg-config
 PKGqt ?= $(PKG)
@@ -534,7 +535,7 @@ QT_SUB:=$(shell echo $(QT_VERSION) | cut -d'.' -f3)
 
 WNO_SUGGEST_OVERRIDE=
 
-CPPOPT += -std=$(STD_CPP)
+CPPOPT += -std=$(STD_CPP) -DUSE_STD_COUNTING_SEMAPHORE=$(USE_STD_COUNTING_SEMAPHORE)
 
 ifeq ($(BUILDTYPE), DEBUG)
 	CPPOPT += -Woverloaded-virtual

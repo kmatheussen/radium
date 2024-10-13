@@ -8,10 +8,8 @@
 
 #include <cassert>
 
-#if defined(__cpp_lib_semaphore)
-#  define USE_STD_COUNTING_SEMAPHORE 1
-#else
-#  define USE_STD_COUNTING_SEMAPHORE 0
+#if !defined(USE_STD_COUNTING_SEMAPHORE)
+#  error "error" // Should have been set in the Makefile.
 #endif
 
 /*
