@@ -106,8 +106,8 @@ set_var FULL_VERSION 1
 # PKGqt variable, pointing to a pkg-config binary
 # that points to this version of Qt.
 #
-set_var RADIUM_QTDIR "/opt/local/libexec/qt5"
-set_var PKGqt "/opt/local/bin/pkg-config"
+#set_var RADIUM_QTDIR "/opt/local/libexec/qt5"
+#set_var PKGqt "/opt/local/bin/pkg-config"
 
 
 
