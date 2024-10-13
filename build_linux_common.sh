@@ -111,8 +111,8 @@ else
     if [[ $BUILDTYPE != RELEASE ]] ; then
         RADIUM_USES_MOLD_OR_LDD=1
         # ldd:
-        #export LINKER="clang++ -fuse-ld=lld" #-B/home/kjetil/ldd_bin"
-        export LINKER="$LINKER -fuse-ld=gold" #-B/home/kjetil/ldd_bin"
+        export LINKER="$LINKER -fuse-ld=lld" #-B/home/kjetil/ldd_bin"
+        #export LINKER="$LINKER -fuse-ld=gold" #-B/home/kjetil/ldd_bin"
         #export LINKER="clang++ -lgcc_s --rtlib=compiler-rt"
     fi
 fi
