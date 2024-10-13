@@ -77,8 +77,8 @@ extern PlayerClass *pc;
 static RSemaphore *g_saving_sound_has_started = NULL;
 
 // these four variables can only be written to in the audio thread.
-static volatile int g_num_allocated_click_plugins = 0;
-static volatile int g_num_click_plugins = 0;
+static int g_num_allocated_click_plugins = 0;
+static int g_num_click_plugins = 0;
 static SoundPlugin **g_click_plugins = NULL;
 static Patch **g_click_patches = NULL; // only written to in RT_MIXER_get_all_click_patches.
 
