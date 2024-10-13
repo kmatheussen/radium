@@ -2180,12 +2180,11 @@ void s7extra_unprotect(void *v){
 }
 */
 
-extern bool g_program_has_ended;
 
 void s7extra_unprotect(void *v, int64_t pos){
 #if !defined(RELEASE)
   //printf("             2. s7extra unprotecting2 %p. pos: %d\n", v, (int)pos);
-  if (g_program_has_ended==false){ // Can't access Qt stuff after program has ended since various destructors could have run then.
+  if (ATOMIC_GET(g_program_has_ended)==false){ // Can't access Qt stuff after program has ended since various destructors could have run then.
     R_ASSERT(g_used_pos.contains(pos)==true);
     if (g_used_pos[pos] !=v ){
       printf("   POS: %d. Actual: %p. Supposed: %p\n", (int)pos, g_used_pos[pos], v);

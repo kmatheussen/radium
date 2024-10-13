@@ -492,6 +492,7 @@ extern LANGSPEC void msleep(int ms);
 extern DEFINE_ATOMIC(bool, is_starting_up);
 extern bool g_is_starting_up;
 
+extern DEFINE_ATOMIC(bool, g_program_has_ended);
 
 
 #include "debug_proc.h"

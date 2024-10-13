@@ -187,7 +187,7 @@ bool g_is_first_move_after_release = false;
 
 DEFINE_ATOMIC(bool, is_starting_up) = true;
 DEFINE_ATOMIC(bool, g_start_checking_allocated_memory) = false;
-bool g_program_has_ended = false;
+DEFINE_ATOMIC(bool, g_program_has_ended) = false;
 
 #define DEBUG_MEMORY_ALLOC_MORE 0
 
@@ -365,7 +365,7 @@ static void handle_RT_malloc_free(bool is_alloc, void *mem, int size){
   if (!ATOMIC_GET(g_start_checking_allocated_memory))
     return;
 
-  if (g_program_has_ended)
+  if (ATOMIC_GET(g_program_has_ended))
     return;
   
   radium::ScopedMutex lock(g_gakks_mutex);
@@ -5281,7 +5281,7 @@ int main(int argc, char **argv){
   kill(getpid(), SIGKILL);
 #endif
 
-  g_program_has_ended = true;
+  ATOMIC_SET(g_program_has_ended, true);
 
   //RError("hepp");
   return 0;
