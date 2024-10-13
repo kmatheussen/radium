@@ -12,8 +12,9 @@
 #  error "error" // Should have been set in the Makefile.
 #endif
 
+// Add this test as well to be 100% sure we're not mixing semaphore types.
 #if !USE_STD_COUNTING_SEMAPHORE
-#  error Something's wrong. Add this test as well to be 100% we're not mixing semaphore types.
+#  error Somethings wrong.
 #endif
 
 /*
