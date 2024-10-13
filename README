@@ -52,7 +52,7 @@ IF YOU ARE DEVELOPING RADIUM
         DEBUG      - Compiled with -O0/-ggdb + asan/etc + various assertions. Very slow if your
 		     computer is from around 2013 or older. If so it's usually
                      better to use DEBUG_FAST and temporarily add -O0 to the Makefile for those files
-                     where you need better debug info, and recompile those files.
+                     where you need better debug info.
 
 
 

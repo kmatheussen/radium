@@ -5,17 +5,20 @@ print_error_and_exit()
     RED='\033[1;31m'
     LIGHT_CYAN='\033[0;36m'
     NC='\033[0m'
-    printf "${RED}Error: ${LIGHT_CYAN}${1}${NC} (in configuration.sh)\n"
+    printf "${RED}Error: ${LIGHT_CYAN}${1}${NC}\n"
     exit -1
 }
 
-check_if_file_exists()
+assert_env_path_exists()
 {
-    if [ ! -f $1 ] ; then
-	print_error_and_exit "\"${1}\" doesn't seem to exist... $FUNCNAME"
+    if is_empty ${!1} ; then
+	print_error_and_exit "\"${1}\" must be set to a path"
+    fi
+    
+    if [ ! -f ${!1} ] ; then
+	print_error_and_exit "\"${!1}\" doesn't seem to exist. (As value for ${1})"
     fi
 }
-
 
 
 is_empty()

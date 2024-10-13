@@ -49,7 +49,7 @@ public:
   struct Timer : public QTimer{
     Pd_Plugin_widget *_pd_plugin_widget;
     int _last_cleared_generation;
-    volatile int _clearing_generation;
+    std::atomic<int> _clearing_generation;
     bool _last_sent_gui_is_visible;
 
     void timerEvent(QTimerEvent * e) override {
@@ -58,7 +58,7 @@ public:
       SoundPlugin *plugin = (SoundPlugin*)_pd_plugin_widget->_patch->patchdata;
       if(plugin!=NULL) { // dont think plugin can be NULL here though.
 
-        int clearing_generation = _clearing_generation;
+	int clearing_generation = _clearing_generation.load();
         if(_last_cleared_generation != clearing_generation){
           _last_cleared_generation = clearing_generation;
           _pd_plugin_widget->clear();
@@ -213,9 +213,10 @@ void PDGUI_clear(void *gui){
   }
 }
 
+// Called from an audio thread
 void PDGUI_schedule_clearing(void *gui){
   if(gui!=NULL){
     Pd_Plugin_widget *pw = (Pd_Plugin_widget *)gui;
-    pw->_timer._clearing_generation++; // Only called from the player thread, so we dont need atomic update.
+    pw->_timer._clearing_generation++;
   }
 }

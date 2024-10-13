@@ -28,13 +28,13 @@ if ! arch |grep arm ; then
     export COMMON_CFLAGS="$COMMON_CFLAGS -msse2 -mfpmath=sse "
 fi
 
-if [[ -z "${RADIUM_USE_CLANG}" ]]; then
+if [[ $RADIUM_USE_CLANG == 0 ]] ; then
     export COMMON_CFLAGS="$COMMON_CFLAGS -fmax-errors=5 "
 fi
 
 export CFLAGS="$COMMON_CFLAGS "
-export CPPFLAGS="$QT_CPPFLAGS $COMMON_CFLAGS  "
-export CXXFLAGS="$QT_CPPFLAGS $COMMON_CFLAGS -I/home/kjetil/site_clang10/include "
+export CPPFLAGS="$QT_CPPFLAGS $COMMON_CFLAGS "
+export CXXFLAGS="$QT_CPPFLAGS $COMMON_CFLAGS "
 export LDFLAGS="$QT_LDFLAGS"
 
 DASCC=gcc

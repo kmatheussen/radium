@@ -29,9 +29,9 @@ source helpers.sh
 
 
 ########################################################
-# If enabled, use clang/clang++ instead of gcc/g++
+# If set to 1, use clang/clang++ instead of gcc/g++
 #
-set_var RADIUM_USE_CLANG 1
+set_var RADIUM_USE_CLANG 0
 
 
 
@@ -106,8 +106,8 @@ set_var FULL_VERSION 1
 # PKGqt variable, pointing to a pkg-config binary
 # that points to this version of Qt.
 #
-#set_var RADIUM_QTDIR "/opt/local/libexec/qt5"
-#set_var PKGqt "/opt/local/bin/pkg-config"
+set_var RADIUM_QTDIR 0
+set_var PKGqt 0
 
 
 
@@ -130,16 +130,16 @@ fi
 
 
 set_var PYTHONEXE `./find_python_path.sh`
-check_if_file_exists $PYTHONEXE
+assert_env_path_exists PYTHONEXE
 
 set_var PKG `which pkg-config`
-check_if_file_exists $PKG
+assert_env_path_exists PKG
 
 if ! is_set PKGqt ; then
     export PKGqt=$PKG
 fi
 
-check_if_file_exists $PKGqt
+assert_env_path_exists PKGqt
 
 if is_set INCLUDE_FAUSTDEV ; then
     if ! is_set INCLUDE_FAUSTDEV_BUT_NOT_LLVM ; then
@@ -151,7 +151,7 @@ fi
 if is_set FAUST_USES_LLVM ; then
     
     set_var LLVM_CONFIG_BIN `which llvm-config`
-    check_if_file_exists $LLVM_CONFIG_BIN
+    assert_env_path_exists LLVM_CONFIG_BIN
     
     if uname -s |grep Linux ; then
 	
@@ -189,7 +189,7 @@ fi
 export RADIUM_QT_VERSION=5
 
 
-if is_set RADIUM_USE_CLANG ; then
+if [[ $RADIUM_USE_CLANG == 1 ]] ; then
     export FULL_CCC_PATH=`which clang++`
 else
     export FULL_CCC_PATH=`which g++`
