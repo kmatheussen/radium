@@ -4252,7 +4252,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
 
       connect(
               this, &QsciScintilla::textChanged,
-              [=](){
+              [this](){
                 S7CALL(void_void,_text_changed_callback.v);
               }
               );

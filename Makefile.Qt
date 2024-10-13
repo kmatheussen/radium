@@ -205,6 +205,7 @@ endif
 
 
 ifeq ($(CLANG_MAJOR),18)
+	WNO_DEPRECATED_ENUM_ENUM_CONVERSION=-Wno-deprecated-enum-enum-conversion
 	WNO_DEPRECATED_COPY_CLANG=-Wno-deprecated-copy
 	WNO_MISLEADING_INDENTATION_CLANG=-Wno-misleading-indentation
 	WNO_DEPRECATED_COPY_WITH_USER_PROVIDED_COPY=-Wno-deprecated-copy-with-user-provided-copy
@@ -212,6 +213,7 @@ ifeq ($(CLANG_MAJOR),18)
 	WNO_VLA_CXX_EXTENSION=-Wno-vla-cxx-extension
 	WNO_NAN_INFINITY_DISABLED=-Wno-nan-infinity-disabled
 else ifeq ($(CLANG_MAJOR),17)
+	WNO_DEPRECATED_ENUM_ENUM_CONVERSION=-Wno-deprecated-enum-enum-conversion
 	WNO_DEPRECATED_COPY_CLANG=-Wno-deprecated-copy
 	WNO_MISLEADING_INDENTATION_CLANG=-Wno-misleading-indentation
 	WNO_DEPRECATED_COPY_WITH_USER_PROVIDED_COPY=-Wno-deprecated-copy-with-user-provided-copy
@@ -528,16 +530,10 @@ QT_SUB:=$(shell echo $(QT_VERSION) | cut -d'.' -f3)
 
 WNO_SUGGEST_OVERRIDE=
 
-CPPOPT += -std=gnu++17
+CPPOPT += -std=gnu++20
 
 ifeq ($(BUILDTYPE), DEBUG)
 	CPPOPT += -Woverloaded-virtual
-	ifneq (,$(findstring g++,$(CCC)))
-		ifeq ($(shell test $(QT_MINOR) -gt 8; echo $$?),0)  # Turn off suggest-override if using Qt before 5.9. Almost all c++ files uses qt now.
-#			CPPOPT += -Wsuggest-override
-#			WNO_SUGGEST_OVERRIDE += -Wno-suggest-override
-		endif
-	endif
 endif
 
 CPPOPT += -Wno-register
@@ -586,7 +582,7 @@ QTLINKFLAGS = $(QT_LDFLAGS)
 #QTLINKFLAGS = `pkg-config --libs qt-mt` `pkg-config --libs gtk+-2.0`
 
 #QTLINKFLAGS = $(QT_LDFLAGS) -static `pkg-config --static --libs gtk+-2.0`
-#QTLINKFLAGS = $(QT_LDFLAGS) /tmp/radium/lib/libgtk-x11-2.0.a /tmp/radium/lib/libgdk-x11-2.0.a -L/tmp/radium/lib -latk-1.0 -lpangocairo-1.0 -lXext -lXrender -lXinerama -lXrandr -lXcursor -lXcomposite -lXdamage -lgdk_pixbuf-2.0 -lpangoft2-1.0 -lgio-2.0 -lXfixes -lcairo -lX11 -lpango-1.0 -lm -lfreetype -lfontconfig -lgobject-2.0 -lglib-2.0
+#QTLINKFLAGS = $(QT_LDFLAGS) /tmp/radium/lib/libgtk-x11-2.0.a /tmp/radium/lib/libgdk-x11-2.0.a -L/tmp/radium/lib -latk-1.0 -lpangocairo-1.0 -lXext -lXrender -lXinerama -lXrandr -lXcursor -lXcomposite -lXdamage -lgdk_pixbuf-2.0 -lpangoft2-1.0 -lgio-2.0 -lXfixes -lcairo -lX11 -lpango-1.0  -lfreetype -lfontconfig -lgobject-2.0 -lglib-2.0
 
 #/home/kjetil/site/src/qt-x11-free-3.3.8b/lib/libqt.a 
 
@@ -995,9 +991,9 @@ $(RADIUM_BIN): $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-1.1.6/src/.libs/libflu
 #$(LDFLAGS)
 
 # `$(PKG) --libs fluidsynth`
-#	$(LINKER) $(OBJ) $(GCDIR)/.libs/libgc.a -o $(RADIUM_BIN) -g -lm -lpython2.6 -lpthread $(QTLINKFLAGS) $(LDFLAGS) $(FPIC)
+#	$(LINKER) $(OBJ) $(GCDIR)/.libs/libgc.a -o $(RADIUM_BIN) -g  -lpython2.6 -lpthread $(QTLINKFLAGS) $(LDFLAGS) $(FPIC)
 
-#	$(LINKER) -shared $(OBJ) $(GCDIR)/.libs/libgc.a -o bin/radiummodule.so -g -lm -lasound -L/home/kjetil/site/lib `pkg-config --libs Qt3Support` -lprofiler
+#	$(LINKER) -shared $(OBJ) $(GCDIR)/.libs/libgc.a -o bin/radiummodule.so -g  -lasound -L/home/kjetil/site/lib `pkg-config --libs Qt3Support` -lprofiler
 # -pg 
 #  -lasound
 
@@ -2704,7 +2700,7 @@ $(T)crashreporter_windows.o: crashreporter/crashreporter_windows.cpp
 #	$(CC_STATIC2) crashreporter/crashreporter_windows.c $(OPT) -O0 -DPACKAGE  $(CRASHREPORTER_WINDOWS_CFLAGS)
 #	$(CC2) crashreporter/crashreporter_windows.c $(OPT) -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/bfd -DPACKAGE -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/include -O0
 
-VISUALIZATION_OPTIONS=$(WNO_SUGGEST_OVERRIDE) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC) $(NO_ANALYZER)  $(WNO_DEPRECATED_COPY_CLANG) $(WNO_DEPRECATED_DECLARATIONS) $(WNO_MISLEADING_INDENTATION_CLANG) $(WNO_CLASS_MEMACCESS)
+VISUALIZATION_OPTIONS=$(WNO_SUGGEST_OVERRIDE) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC) $(NO_ANALYZER)  $(WNO_DEPRECATED_COPY_CLANG) $(WNO_DEPRECATED_DECLARATIONS) $(WNO_MISLEADING_INDENTATION_CLANG) $(WNO_CLASS_MEMACCESS) $(WNO_DEPRECATED_ENUM_ENUM_CONVERSION)
 
 $(T)GfxElements.o: OpenGL/GfxElements.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp OpenGL/FreeType.hpp common/Mutex.hpp OpenGL/T2.hpp common/spinlock.h
 	$(CCC2) OpenGL/GfxElements.cpp $(QTOPT) $(FREETYPE_CFLAGS) $(BOOST_INCLUDE) $(VL_CFLAGS) $(VISUALIZATION_OPTIONS)
