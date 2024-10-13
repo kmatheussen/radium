@@ -75,11 +75,7 @@ export CPUOPT=
 branch=$(git branch | sed -n -e 's/^\* \(.*\)/\1/p')
 export T=/tmp/radium_objects_$branch/
 
-if ! env |grep RADIUM_USE_CLANG ; then
-    RADIUM_USE_CLANG=0
-fi
 
-#RADIUM_USE_CLANG=1
 RADIUM_USES_MOLD_OR_LDD=0
 RADIUM_USES_MOLD_PRELOAD=0
 
@@ -115,8 +111,8 @@ else
     if [[ $BUILDTYPE != RELEASE ]] ; then
         RADIUM_USES_MOLD_OR_LDD=1
         # ldd:
-        #export LINKER="clang++ -fuse-ld=lld" #-B/home/kjetil/ldd_bin"
-        export LINKER="$LINKER -fuse-ld=gold" #-B/home/kjetil/ldd_bin"
+        export LINKER="$LINKER -fuse-ld=lld" #-B/home/kjetil/ldd_bin"
+        #export LINKER="$LINKER -fuse-ld=gold" #-B/home/kjetil/ldd_bin"
         #export LINKER="clang++ -lgcc_s --rtlib=compiler-rt"
     fi
 fi
@@ -177,11 +173,11 @@ export OS_OPTS="-Werror=array-bounds $CPUOPTS -DFOR_LINUX `$PKGqt --cflags Qt5X1
 #VERBOSE=1 CMAKEOPT="-DCMAKE_BUILD_TYPE=Debug -DSELF_CONTAINED_LIBRARY=on -DCMAKE_CXX_COMPILER=`which clang++` -DCMAKE_C_COMPILER=`which clang`" make most
 #VERBOSE=1 CMAKEOPT="-DCMAKE_BUILD_TYPE=Release -DSELF_CONTAINED_LIBRARY=on -DCMAKE_CXX_COMPILER=`which g++` -DCMAKE_C_COMPILER=`which gcc`" make most
 
-if env |grep INCLUDE_FAUSTDEV= ; then
+if [[ $INCLUDE_FAUSTDEV == 1 ]] ; then
     export OS_OPTS="$OS_OPTS -DWITH_FAUST_DEV"
 fi
 
-if env |grep INCLUDE_PDDEV ; then
+if [[ $INCLUDE_PDDEV == 1 ]] ; then
     export OS_OPTS="$OS_OPTS -DWITH_PD"
 fi
 
@@ -193,9 +189,9 @@ PYTHONLIBNAME=`$PYTHONEXE -c "import sys;print '-lpython'+sys.version[:3]"`
 export QSCINTILLA_PATH=`pwd`/bin/packages/QScintilla_src-2.14.0/src
 
 
-if env |grep INCLUDE_FAUSTDEV= ; then
+if [[ $INCLUDE_FAUSTDEV == 1 ]] ; then
     FAUSTLDFLAGS="`pwd`/bin/packages/faust/build/lib/libfaust.a -lcrypto -lncurses"
-    if env |grep INCLUDE_FAUSTDEV_BUT_NOT_LLVM= ; then
+    if [[ $INCLUDE_FAUSTDEV_BUT_NOT_LLVM == 1 ]] ; then
         export OS_OPTS="$OS_OPTS -DWITHOUT_LLVM_IN_FAUST_DEV"
     else
         LLVM_OPTS=`$LLVM_PATH/bin/llvm-config --cppflags`
@@ -212,8 +208,7 @@ if env |grep INCLUDE_FAUSTDEV= ; then
 fi
 # _debug
 
-
-if env |grep INCLUDE_PDDEV ; then
+if [[ $INCLUDE_PDDEV == 1 ]] ; then
     PDLDFLAGS="bin/packages/libpd-master/libs/libpds.a"
 else    
     PDLDFLAGS=""
@@ -227,7 +222,12 @@ if ! env |grep RADIUM_BFD_LDFLAGS ; then
     if [[ $RADIUM_USE_CLANG == 1 ]] && [ -f "$CLANG_PREFIX/lib/libbfd.a" ]; then
         export RADIUM_BFD_LDFLAGS="$CLANG_PREFIX/lib/libbfd.a"
     else
-        export RADIUM_BFD_LDFLAGS="-Wl,-Bstatic -lbfd -Wl,-Bdynamic"
+	GCC_MAJOR=$(gcc -dumpversion | cut -d'.' -f1)
+	if [ $GCC_MAJOR -gt 13 ] ; then
+	    export RADIUM_BFD_LDFLAGS="-lbfd" # seems like gcc is able to link static version of bfd by itself now...
+	else
+            export RADIUM_BFD_LDFLAGS="-Wl,-Bstatic -lbfd -Wl,-Bdynamic"
+	fi
     fi
 fi
 
@@ -291,6 +291,12 @@ else
        make /tmp/run_preload
     fi
     make radium $@ --stop
+
+    if ldd -r $RADIUM_BIN | sed 's/0x.*//' |grep -i bfd ; then
+	printf "\033[1;31mError? Is bfd linked dynamically?\033[0m"
+	exit -1
+    fi
+
 fi
 
 if [[ $BUILDTYPE == RELEASE ]] ; then
@@ -316,9 +322,11 @@ echo
 
 
 do_source_sanity_checks() {
-    
-    echo "IN approx. 1 in 20 builds we're going to some source checks. This might take around 5 seconds or thereabout...."
 
+    echo
+    echo "Doing some source sanity checks. This might take a few seconds...."
+    echo
+    
     if grep static\  */*.h */*.hpp */*/*.hpp */*/*/*.hpp */*/*/*/*.hpp */*/*.h */*/*/*/*.h */*/*.cpp */*.c */*.cpp */*.m */*/*.c */*/*.cpp */*/*/*.c */*/*/*/*.c */*/*/*.cpp 2>&1 | grep "\[" | grep -v "\[\]"|grep -v static\ void |grep -v unused_files |grep -v GTK |grep -v test\/ |grep -v X11\/ |grep -v amiga |grep -v faust-examples|grep -v temp\/ |grep -v "\[NO_STATIC_ARRAY_WARNING\]" |grep -v backup |grep -v mingw |grep -v Dropbox |grep -v bin/packages |grep -v python-midi |grep -v "No such file or directory" ; then
 	echo
 	echo "ERROR in line(s) above. Static arrays may decrease GC performance notably.";
