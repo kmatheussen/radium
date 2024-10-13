@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 
-source configuration.sh >/dev/null
+source $(dirname $0)/configuration.sh >/dev/null
+
+if is_set RADIUM_QTDIR ; then
+    echo $RADIUM_QTDIR/bin/$1
+    exit 0
+fi
+
+#echo `which $1`
 
 if which $1 >/dev/null 2>/dev/null ; then
     if $1 -v 2>&1 | grep Qt\ $RADIUM_QT_VERSION >/dev/null ; then

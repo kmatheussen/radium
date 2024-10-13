@@ -159,7 +159,7 @@ namespace{
     int32_t _pool_num;
     DEFINE_ATOMIC(int32_t, _num_users);
 
-    // This makes RT_mempool_data blocks at least 32 bytes long on x86-64 CPUs since both max alignment and MIN_MEMPOOL_SIZE are 16 bytes each;
+    // This makes RT_mempool_data-blocks at least 32 bytes long on x86-64 CPUs since both max alignment and MIN_MEMPOOL_SIZE are 16 bytes each;
     // There are probably ways to lower the overhead, but it might not be worth it.
     struct RT_Mem_internal _mem __attribute__((aligned(std::alignment_of<std::max_align_t>::value)));
   };

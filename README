@@ -42,7 +42,6 @@ IF YOU ARE DEVELOPING RADIUM
      Then run these lines:
      
         # Debug build. Lots of assertions. Very slow. Don't build this version if you are just testing the program.
-        export QT_QPA_PLATFORM_PLUGIN_PATH=`$(./find_moc_and_uic_paths.sh qmake) -query QT_INSTALL_PLUGINS`
         make packages # Only necessary one time.
         BUILDTYPE=DEBUG_FAST ./build_linux.sh -j`nproc` && ./run_gdb.sh
 

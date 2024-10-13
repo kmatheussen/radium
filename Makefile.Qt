@@ -17,13 +17,11 @@ bindir ?= $(PREFIX)/bin
 libdir ?= $(PREFIX)/lib
 
 
-# 2. Where moc and uic for QT4 is installed.
+# 2. Where moc and uic for QT5 is installed.
 #
 MOC ?= "`$(shell pwd)/find_moc_and_uic_paths.sh moc`"
 UIC ?= "`$(shell pwd)/find_moc_and_uic_paths.sh uic`"
 #RCC ?= "`./find_moc_and_uic_paths.sh rcc`"
-
-
 
 # 4. Release buid or Debug build
 #
@@ -128,7 +126,19 @@ QT_SYSTEM_CFLAGS ?=
 QSCINTILLA_PATH ?= $(shell pwd)/bin/packages/QScintilla_src-2.14.0/src
 #QScintilla_gpl-2.10.8
 
-ifeq (,$(findstring clang,$(CC)))
+ifneq '' '$(findstring clang,$(CC))'
+	CLANG_VERSION:= $(shell $(CC) --version|grep version |& sed "s/.*version \([0-9]*\.[0-9]*\.[0-9]*\\).*/\1/")
+	CLANG_MAJOR:=$(shell echo $(CLANG_VERSION) | cut -d'.' -f1)
+	CLANG_MINOR:=$(shell echo $(CLANG_VERSION) | cut -d'.' -f2)
+	CLANG_SUB:=$(shell echo $(CLANG_VERSION) | cut -d'.' -f3)
+
+	GCC_VERSION:=-1
+	GCC_MAJOR:=-1
+	GCC_MINOR:=-1
+	GCC_SUB:=-1
+
+else
+
 	CLANG_VERSION:=-1
 	CLANG_MAJOR:=-1
 	CLANG_MINOR:=-1
@@ -139,17 +149,6 @@ ifeq (,$(findstring clang,$(CC)))
 	GCC_MINOR:=$(shell echo $(GCC_VERSION) | cut -d'.' -f2)
 	GCC_SUB:=$(shell echo $(GCC_VERSION) | cut -d'.' -f3)
 
-else
-
-	CLANG_VERSION:= $(shell $(CC) --version|grep version |& sed "s/.*version \([0-9]*\.[0-9]*\.[0-9]*\\).*/\1/")
-	CLANG_MAJOR:=$(shell echo $(CLANG_VERSION) | cut -d'.' -f1)
-	CLANG_MINOR:=$(shell echo $(CLANG_VERSION) | cut -d'.' -f2)
-	CLANG_SUB:=$(shell echo $(CLANG_VERSION) | cut -d'.' -f3)
-
-	GCC_VERSION:=-1
-	GCC_MAJOR:=-1
-	GCC_MINOR:=-1
-	GCC_SUB:=-1
 endif
 
 
@@ -468,10 +467,10 @@ COMMONOPT = -D__STDC_FORMAT_MACROS=1 -c `cat buildtype.opt` -I$(GCDIR)/include -
 #-Wstrict-overflow=4 -Wsuggest-attribute=format -Wstringop-overflow=4
 #-Wsuggest-final-types -Wsuggest-final-methods
 
-ifeq (,$(findstring clang,$(CC)))
-	COMMONOPT += -Wduplicated-cond -Wduplicated-branches -Wlogical-op -Wrestrict -fmax-errors=5 
-else
+ifneq '' '$(findstring clang,$(CC))'
         COMMONOPT += -Wno-deprecated-register -Wlogical-op-parentheses # -Wunused-member-function (isn't there a warning to warn about unused variables only, not methods?)
+else
+	COMMONOPT += -Wduplicated-cond -Wduplicated-branches -Wlogical-op -Wrestrict -fmax-errors=5 
 endif
 
 #ifeq ($(GCC_MAJOR),7)
@@ -493,7 +492,7 @@ OBJC_OPT=$(COMMONOPT) # -nostdinc++
 
 # -D_FORTIFY_SOURCE=2 -O2
 
-ifneq (,$(findstring clang,$(CC)))
+ifneq '' '$(findstring clang,$(CC))'
 	OPT += -Wno-missing-field-initializers # TODO: Check if there's a better way ("{0}" again).
 endif
 
@@ -547,13 +546,14 @@ OBJCPP_OPT=$(CPPOPT) # -nostdinc++
 
 WNO_DUPLICATED_BRANCHES=
 ifeq (,$(findstring clang,$(CC)))
- WNO_DUPLICATED_BRANCHES += -Wno-duplicated-branches
+#gcc
+	WNO_DUPLICATED_BRANCHES=-Wno-duplicated-branches
 endif
 
 
 WNO_NULL_POINTER_ARITHMETIC=
 ifneq (,$(findstring clang,$(CC)))
-
+#clang
   ifeq ($(shell test $(CLANG_MAJOR) -gt 5; echo $$?),0)
      WNO_NULL_POINTER_ARITHMETIC += -Wno-null-pointer-arithmetic
   endif
@@ -1703,13 +1703,8 @@ $(T)Qt_MainWindow.o:  $(BUILD_DEPENDENCIES) $(P)Qt_MainWindow.cpp $(P)mQt_bottom
 $(T)Qt_Time.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Time.cpp
 	$(CCC2) $(P)Qt_Time.cpp $(QTOPT)
 
-QT_SEQUENCER_OPT=
-ifeq (,$(findstring clang,$(CC)))
- QT_SEQUENCER_OPT += -Wno-duplicated-branches
-endif
-
 $(T)Qt_sequencer.o:  $(BUILD_DEPENDENCIES) $(P)Qt_sequencer.cpp Qt/helpers.h audio/Envelope.hpp audio/Peaks.hpp common/seqblock_automation_proc.h Qt/KeyboardFocusFrame.hpp Qt/Qt_MyQCheckBox.h
-	$(CCC2) $(P)Qt_sequencer.cpp $(QTOPT) $(SNDFILEOPT) $(QT_SEQUENCER_OPT)  $(BOOST_INCLUDE) 
+	$(CCC2) $(P)Qt_sequencer.cpp $(QTOPT) $(SNDFILEOPT) $(WNO_DUPLICATED_BRANCHES) $(BOOST_INCLUDE) 
 
 #QD = /home/kjetil/site/src/qt-x11-free-3.3.8b/src/dialogs/
 QD = $(P)
@@ -2278,6 +2273,7 @@ FAUST_DEPENDENCIES = audio/Faust_plugins_template.cpp audio/Faust_plugins_templa
 FAUST_OPTS1 = $(QTOPT) $(WNO_SUGGEST_OVERRIDE) -Wno-overloaded-virtual $(NO_SANITIZE_SIGNED_INTEGER_OVERFLOW) -Wno-unused-function -Wno-missing-declarations -Wno-deprecated-declarations -fno-sanitize=vptr $(CPUOPT) -DMACOS_LLVM_TARGET=\"$(MACOS_LLVM_TARGET)\" $(SNDFILEOPT)
 FAUST_OPTS = $(FAUST_OPTS1) -I$(FAUSTDIR)/architecture
 FAUST_OPTS2 = $(FAUST_OPTS) -Wno-float-equal
+#-Wno-extern-c-compat
 # -Ibin/packages/faust2/architecture 
 
 $(T)Faust_plugins.o: audio/Faust_plugins.cpp audio/Faust_factory_factory.cpp $(FAUST_DEPENDENCIES) audio/Faust_plugins_template.cpp audio/Faust_plugins_template1.cpp audio/Faust_plugins_template2.cpp audio/mfaustqt2.cpp
