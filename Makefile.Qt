@@ -72,6 +72,9 @@ MAX_NUM_UNDOS=800
 CD=common/
 T ?= /tmp/radium_objects/
 
+STD_C=gnu99
+STD_CPP=gnu++20
+
 PKG ?= pkg-config
 PKGqt ?= $(PKG)
 
@@ -489,7 +492,7 @@ endif
 
 # OPT is C flags
 
-OPT=$(COMMONOPT) -Wstrict-prototypes -Wmissing-prototypes -std=gnu99  # Note: "-Wmissing-prototypes" is only valid for C files. The equivilant C++ option is "-Wmissing-declarations". However, "-Wmissing-declarations" doesn't always seem to work, don't know why.
+OPT=$(COMMONOPT) -Wstrict-prototypes -Wmissing-prototypes -std=$(STD_C)  # Note: "-Wmissing-prototypes" is only valid for C files. The equivilant C++ option is "-Wmissing-declarations". However, "-Wmissing-declarations" doesn't always seem to work, don't know why.
 
 OBJC_OPT=$(COMMONOPT) # -nostdinc++
 
@@ -531,7 +534,7 @@ QT_SUB:=$(shell echo $(QT_VERSION) | cut -d'.' -f3)
 
 WNO_SUGGEST_OVERRIDE=
 
-CPPOPT += -std=gnu++20
+CPPOPT += -std=$(STD_CPP)
 
 ifeq ($(BUILDTYPE), DEBUG)
 	CPPOPT += -Woverloaded-virtual
@@ -1913,12 +1916,12 @@ bin/radium_progress_window: $(P)Qt_progresswindow.cpp
 	rm radium_progress_window.o
 
 bin/radium_check_jack_status: audio/KillJackd.cpp $(T)Jack_plugin.o $(T)find_jack_library.o # Jack_plugin.o depends on all the weakjack things
-	$(CCC) -Wall $(WERROR) audio/KillJackd.cpp $(CPPOPT) $(QT_CFLAGS) $(JACKOPT) $(OS_OPTS) -std=gnu++17 -DCOMPILE_EXECUTABLE -Wno-error=deprecated-declarations -o $(T)radium_check_jack_status.o -Wno-missing-declarations
+	$(CCC) -Wall $(WERROR) audio/KillJackd.cpp $(CPPOPT) $(QT_CFLAGS) $(JACKOPT) $(OS_OPTS) -std=$(STD_CPP) -DCOMPILE_EXECUTABLE -Wno-error=deprecated-declarations -o $(T)radium_check_jack_status.o -Wno-missing-declarations
 	$(LINKER) `cat buildtype.opt` $(T)radium_check_jack_status.o $(T)find_jack_library.o $(JACK_LDFLAGS) `$(PKGqt) --libs Qt5Core` $(QT_SYSTEM_CFLAGS) -o bin/radium_check_jack_status $(FPIC)
 	rm $(T)radium_check_jack_status.o
 
 bin/radium_check_opengl: OpenGL/CheckOpenGL.cpp common/Process.hpp
-	$(CCC) -Wall $(WERROR) OpenGL/CheckOpenGL.cpp $(CPPOPT) $(QT_CFLAGS) $(OS_OPTS) -std=gnu++17 -DCOMPILE_EXECUTABLE -o radium_check_opengl.o $(WNO_DEPRECATED_DECLARATIONS)
+	$(CCC) -Wall $(WERROR) OpenGL/CheckOpenGL.cpp $(CPPOPT) $(QT_CFLAGS) $(OS_OPTS) -std=$(STD_CPP) -DCOMPILE_EXECUTABLE -o radium_check_opengl.o $(WNO_DEPRECATED_DECLARATIONS)
 	$(LINKER) `cat buildtype.opt` radium_check_opengl.o -o bin/radium_check_opengl $(QT_GUI_LDFLAGS) `$(PKGqt) --libs Qt5OpenGL`
 	rm radium_check_opengl.o
 
@@ -2794,7 +2797,7 @@ bin/packages/sndlib/clm.c: bin/packages/sndlib.tar.gz bin/packages/sndlib.patch
 
 
 $(T)s7webserver.o: bin/s7webserver/s7webserver.h bin/s7webserver/s7webserver.cpp bin/s7webserver/moc_s7webserver.cpp bin/packages/s7/s7.c
-	$(CCC2) -c bin/s7webserver/s7webserver.cpp $(QTOPT) -Ibin/packages/s7 -g -Iembedded_scheme -Wall $(WERROR) -Wno-error=unused-variable -Wno-error=unused-function -std=gnu++17 -Wno-deprecated-declarations 
+	$(CCC2) -c bin/s7webserver/s7webserver.cpp $(QTOPT) -Ibin/packages/s7 -g -Iembedded_scheme -Wall $(WERROR) -Wno-error=unused-variable -Wno-error=unused-function -std=$(STD_CPP) -Wno-deprecated-declarations 
 
 bin/s7webserver/moc_s7webserver.cpp: bin/s7webserver/s7webserver.h
 	$(MOC) -DCOMPILING_S7WEBSERVER bin/s7webserver/s7webserver.h -o bin/s7webserver/moc_s7webserver.cpp
