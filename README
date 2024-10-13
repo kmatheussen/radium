@@ -43,14 +43,15 @@ IF YOU ARE DEVELOPING RADIUM
      
         # Debug build. Lots of assertions. Very slow. Don't build this version if you are just testing the program.
         export QT_QPA_PLATFORM_PLUGIN_PATH=`$(./find_moc_and_uic_paths.sh qmake) -query QT_INSTALL_PLUGINS`
-        make packages # Only necessary one time.  Note: Linking fails first run. See comment in bin/packages/build.sh about Visualization Library.
+        make packages # Only necessary one time.
         BUILDTYPE=DEBUG_FAST ./build_linux.sh -j`nproc` && ./run_gdb.sh
 
      There are three types of BUILD_TYPE:
      
         RELEASE    - Compiled with -O2/-O3 and without various assertions.
         DEBUG_FAST - Same as DEBUG + -O2/-O3. Quite slow, but usually acceptable.
-        DEBUG      - Compiled with -O0/-ggdb + asan/etc + various assertions. Very slow, it's usually
+        DEBUG      - Compiled with -O0/-ggdb + asan/etc + various assertions. Very slow if your
+		     computer is from around 2013 or older. If so it's usually
                      better to use DEBUG_FAST and temporarily add -O0 to the Makefile for those files
                      where you need better debug info, and recompile those files.
 

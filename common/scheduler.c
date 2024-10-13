@@ -385,7 +385,7 @@ bool SCHEDULER_all_is_clear(void){
 void SCHEDULER_set_seqtrack_timing(struct SeqTrack *seqtrack, double start_time, double end_time){
   seqtrack->start_time = start_time;
   seqtrack->end_time = end_time;
-  
+
   ATOMIC_DOUBLE_SET_RELAXED(seqtrack->start_time_nonrealtime, start_time);
   //ATOMIC_DOUBLE_SET(seqtrack->end_time_nonrealtime, end_time);
 }

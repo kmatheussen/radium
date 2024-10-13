@@ -7,6 +7,9 @@ UIC=$3
 set -e
 #set -x
 
+source configuration.sh
+
+
 mywhich() {
     if which $1 ; then
         echo $1 found
