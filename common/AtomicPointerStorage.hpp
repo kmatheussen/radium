@@ -55,27 +55,15 @@ private:
   DEFINE_ATOMIC(T *, _pointer) = NULL;
   DEFINE_ATOMIC(T *, _old_pointer_to_be_freed) = NULL;
 
-  std::function<void(T*)> _free_pointer_function = NULL;
-  //void (*_free_pointer_function)(T *);
+  std::function<void(T*)> _free_pointer_function;
   
-  void maybe_free_something(T *a, T *b){
-    if (_free_pointer_function) {
-      
-      if (a!=NULL)
-        _free_pointer_function(a);
-      
-      if (b!=NULL)
-        _free_pointer_function(b);
-      
-    } else {
-      
-      if (a!=NULL)
-        delete a;
-      
-      if (b!=NULL)
-        delete b;
-      
-    }
+  void maybe_free_something(T *a, T *b)
+  {
+	  if (a!=NULL)
+		  _free_pointer_function(a);
+	  
+	  if (b!=NULL)
+		  _free_pointer_function(b);
   }
   
   
@@ -121,17 +109,18 @@ private:
   
 public:
   
-  AtomicPointerStorage(void (*free_pointer_function)(T *) = NULL)
-    : _free_pointer_function(free_pointer_function)
-  {
+  AtomicPointerStorage(std::function<void(T*)> free_pointer_function) __attribute__((nonnull))
+	  : _free_pointer_function(free_pointer_function)
+  {	  
   }
   
-  ~AtomicPointerStorage(){
-    maybe_free_something(ATOMIC_GET(_pointer), ATOMIC_GET(_old_pointer_to_be_freed));
+  ~AtomicPointerStorage()
+  {
+	  maybe_free_something(ATOMIC_GET(_pointer), ATOMIC_GET(_old_pointer_to_be_freed));
   }
 
   void set_new_pointer(T *new_pointer) {
-    R_ASSERT(new_pointer != NULL); // NULL not supported. If neaded, NULL can be replaced by a ((T*)-1) value or something to indicate an unused slot instead of NULL.
+    R_ASSERT(new_pointer != NULL); // NULL not supported. If needed, NULL can be replaced by a ((T*)-1) value or something to indicate an unused slot instead of NULL.
     
     T *old_pointer_to_be_freed = ATOMIC_SET_RETURN_OLD(_old_pointer_to_be_freed, NULL);
 
@@ -172,11 +161,11 @@ public:
   }
 };
 
-
+extern void check_wheather(void);
 
   
 #define MAX_NUM_READERS 128
-  
+
 // Same as AtomicPointerStorage, but this one also supports up to MAX_NUM_READERS readers at the same time.
 //
 // If using more readers than MAX_NUM_READERS, the code should not produce the wrong result or crash, but the
@@ -192,50 +181,47 @@ class AtomicPointerStorageMultipleReaders {
 
   template <typename T2> friend class RT_AtomicPointerStorageMultipleReaders_ScopedUsage;
 
-  // It's possible to use std::shared_ptr instead of this class, I think, but I don't know if the std::shared_ptr.get() method is guaranteed to be 100% RT safe.
-  struct RefcountT{
+  // Also holds the actual pointer. It's basically a shared-pointer.
+  // (To avoid const-errors, we don't put '_num_references' in T.)
+  struct RefCounter
+  {
+	  T *_t;
+	  int _num_references = MAX_NUM_READERS;
 
-    T *_t;
-
-    //std::function<void(T*)> _free_pointer_function;
-    
-    RefcountT(T *t)
-      : _t(t)
-    {}
-    
-    int _num_users = MAX_NUM_READERS;
-
-    void operator delete(void *p) {
-      RefcountT *dasthis = static_cast<RefcountT*>(p);
-
-      //printf("        NUM_USERS: %d. Freeing %p\n", dasthis->_num_users, p);
-      R_ASSERT_NON_RELEASE(dasthis==dynamic_cast<RefcountT*>(dasthis));
-      R_ASSERT_NON_RELEASE(dasthis->_num_users > 0 && dasthis->_num_users <= MAX_NUM_READERS);
-      
-      dasthis->_num_users--;
-      if (dasthis->_num_users==0){
-
-        /*
-        if (free_pointer_function != NULL)
-          free_pointer_function(dasthis->_t);
-        else
-        */
-        delete dasthis->_t;
-        
-        ::delete dasthis;
-      }      
-    }
+	  RefCounter(T *t)
+		  : _t(t)
+	  {
+	  }
   };
-    
-  struct AtomicPointerStorage2 : public AtomicPointerStorage<RefcountT>{  
-    DEFINE_ATOMIC(bool, _is_used) = false;
+
+  static void dec_references(RefCounter *ref_counter)
+  {
+	  R_ASSERT_NON_RELEASE(THREADING_is_main_thread()); // If not, '_num_references' must be atomic, which it currently isn't.
+	  
+	  ref_counter->_num_references--;
+	    
+	  if (ref_counter->_num_references==0)
+	  {
+		  delete ref_counter->_t;
+		  delete ref_counter;
+	  }
+  }
+
+  struct AtomicPointerStorage2 : public AtomicPointerStorage<RefCounter>{
+
+	  DEFINE_ATOMIC(bool, _is_used) = false;
+
+	  AtomicPointerStorage2()
+		  : AtomicPointerStorage<RefCounter>(dec_references)
+	  {
+	  }
   };
 
   AtomicPointerStorage2 _storage[MAX_NUM_READERS];
 
 public:
 
-  AtomicPointerStorageMultipleReaders(void /* void (*free_pointer_function)(T *) = NULL */)
+  AtomicPointerStorageMultipleReaders(void)
   {
 #if !defined(RELEASE)
     for(int i = 0 ; i < MAX_NUM_READERS ; i++){
@@ -244,15 +230,19 @@ public:
 #endif
   }
 
-  void set_new_pointer(T *new_pointer) {
-    R_ASSERT(new_pointer != NULL); // NULL not supported now. If NULL is needed, we can use ((T*)-1) (or something similar) in AtomicPointerStorage to indicate a used slot instead of NULL.
-    
-    RefcountT *refcount_t = new RefcountT(new_pointer);
-    
-    for(int i=0;i<MAX_NUM_READERS;i++){
-      //printf("I: %d\n", i);
-      _storage[i].set_new_pointer(refcount_t);
-    }
+  void set_new_pointer(T *new_pointer)
+  {
+	  R_ASSERT(new_pointer != NULL); // NULL not supported now. If NULL is needed, we can use ((T*)-1) (or something similar) in AtomicPointerStorage to indicate a used slot instead of NULL.
+
+	  R_ASSERT_NON_RELEASE(THREADING_is_main_thread()); //  // If not '_num_references' must be atomic, which it currently isn't.
+	  
+	  RefCounter *ref_counter = new RefCounter(new_pointer);
+	  
+	  for(int i=0;i<MAX_NUM_READERS;i++)
+	  {
+		  //printf("I: %d\n", i);
+		  _storage[i].set_new_pointer(ref_counter);
+	  }
   }
 
 private:
@@ -286,9 +276,9 @@ private:
     return _storage[num];
   }
 
-  void RT_release_storage(AtomicPointerStorage2 &storage2, RefcountT *pointer) {
+  void RT_release_storage(AtomicPointerStorage2 &storage2, RefCounter *ref_counter) {
     R_ASSERT_NON_RELEASE(ATOMIC_GET(storage2._is_used));
-    storage2.RT_release_pointer(pointer);
+    storage2.RT_release_pointer(ref_counter);
     ATOMIC_SET(storage2._is_used, false);
   }
 
@@ -304,7 +294,7 @@ class RT_AtomicPointerStorageMultipleReaders_ScopedUsage{
 
   AtomicPointerStorageMultipleReaders<T> &_storage;
   struct AtomicPointerStorageMultipleReaders<T>::AtomicPointerStorage2 &_storage2;
-  struct AtomicPointerStorageMultipleReaders<T>::RefcountT *_refcount_t;
+  struct AtomicPointerStorageMultipleReaders<T>::RefCounter *_ref_counter;
   T *_pointer;
 
   RT_AtomicPointerStorageMultipleReaders_ScopedUsage(const RT_AtomicPointerStorageMultipleReaders_ScopedUsage&) = delete;
@@ -319,13 +309,13 @@ public:
   RT_AtomicPointerStorageMultipleReaders_ScopedUsage(AtomicPointerStorageMultipleReaders<T> &storage)
     : _storage(storage)
     , _storage2(storage.RT_obtain_storage2())
-    , _refcount_t(_storage2.RT_obtain_pointer())
-    , _pointer(_refcount_t->_t)
+    , _ref_counter(_storage2.RT_obtain_pointer())
+    , _pointer(_ref_counter->_t)
   {
   }
     
   ~RT_AtomicPointerStorageMultipleReaders_ScopedUsage(){
-    _storage.RT_release_storage(_storage2, _refcount_t);
+    _storage.RT_release_storage(_storage2, _ref_counter);
   }
 };
 

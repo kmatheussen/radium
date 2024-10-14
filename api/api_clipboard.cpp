@@ -146,6 +146,7 @@ void cutRange2(Place p1, Place p2, int start_track, int end_track, int rangetype
                  window->wblock->curr_realline
                  ));
 
+    
   CutRange(wblock->block, range, rangetype);
 
   window->must_redraw = true;
