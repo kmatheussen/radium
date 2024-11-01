@@ -2000,10 +2000,9 @@ void MIXER_TRANSPORT_play(double abstime){
 }
 
 void MIXER_TRANSPORT_stop(void){
-  R_ASSERT_NON_RELEASE(g_jack_client!=NULL);
-  
   if (g_jack_client==NULL)
     return;
+  
   if (jack_transport_query(g_jack_client,NULL) != JackTransportStopped)
     jack_transport_stop(g_jack_client);
 }

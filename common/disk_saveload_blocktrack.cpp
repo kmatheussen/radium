@@ -85,8 +85,10 @@ void SaveBlockToDisk(filepath_t filename, const struct WBlocks *wblock){
   if (isIllegalFilepath(filename))
     return;
 
+  filepath_t org_filename = dc.filename;
+  
   if (Save_Initialize(filename, "RADIUM BLOCK")==false)
-    return;
+	  goto exit;
   
   DC_SSF("blockdiskversion",BLOCKDISKVERSION);
   
@@ -99,6 +101,9 @@ void SaveBlockToDisk(filepath_t filename, const struct WBlocks *wblock){
   }
   
   DISK_close_and_delete(dc.file);
+
+exit:
+  dc.filename = org_filename;
 }
 
 static void remove_all_patches_and_fxs_from_loaded_block(struct Blocks *block){
