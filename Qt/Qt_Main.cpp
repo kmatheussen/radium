@@ -469,7 +469,15 @@ static void init_asan(void){
 void * operator new(decltype(sizeof(0)) size) noexcept(false)
 {
  void *mem = V_malloc(size);
-  if (size > 1048576) // If changing 1048576, also change 1048576 in run_gdb.sh
+  if (size > 1048576) // If changing 1048576, also change 1048576 in run_gdb.sh and function below
+    memset(mem, rand(), size);
+  return mem;
+}
+
+void * operator new(unsigned long size, std::nothrow_t const&)
+{
+ void *mem = V_malloc(size);
+  if (size > 1048576) // If changing 1048576, also change 1048576 in run_gdb.sh and function above
     memset(mem, rand(), size);
   return mem;
 }

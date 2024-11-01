@@ -183,6 +183,8 @@ void CutRange_CurrPos(
                        window->wblock->curr_realline
                        ));
 
+	radium::ScopedIgnoreUndo scoped_ignore_undo;
+
         CutRange(wblock->block, wblock->range, rangenum);
 
         wblock->range.enabled = false;
