@@ -22,7 +22,7 @@
 
 # (do some stuff first)
 ORG_PWD=`pwd`
-cd $(dirname $0)
+cd $(dirname ${BASH_SOURCE[0]})
 source helpers.sh
 
 
