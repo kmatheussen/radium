@@ -31,15 +31,25 @@ END
     tar xvzf Python-$version.tgz
 
     cd Python-$version
-    
-    for file in $patchfiles ; do
-	patch -p0 < ../python27_macport_patches/$file
-    done
 
-    patch -p1 <../python27_disable.patch
-    
-    #exit -1
+    if uname |grep Darwin > /dev/null ; then
+	for file in $patchfiles ; do
+	    echo "FILE: $file"
+	    if [ ! -f ../python27_macport_patches/$file ] ; then
+		echo "File not found: -" ../python27_macport_patches/$file + "-"
+		exit -1
+	    fi
+	    patch -p0 < ../python27_macport_patches/$file
+	done
 
+	patch -p1 <../python27_disable.patch
+
+    else
+	
+	patch -p0 <../python27_disable_linux.patch
+	
+    fi
+    
     CC=clang
     CXX=clang++
     CFLAGS=-Wno-implicit-function-declaration
