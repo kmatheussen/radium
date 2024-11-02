@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-source configuration.sh >/dev/null
+source configuration.sh #>/dev/null
 
-if [ -z "$RADIUM_NSM_EXECUTABLE_NAME" ] ; then
+if [ -v RADIUM_NSM_EXECUTABLE_NAME ] ; then
         export RADIUM_NSM_EXECUTABLE_NAME=$(basename -- "$0")
 fi
 
