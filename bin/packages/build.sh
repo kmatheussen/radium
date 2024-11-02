@@ -324,7 +324,7 @@ build_faust
 build_qhttpserver
 build_gc
 build_fluidsynth
-#build_python27
+build_python27
 build_qscintilla # Note: Linking fails on Mac. Just ignore it.
 
 if uname -s |grep Linux ; then
