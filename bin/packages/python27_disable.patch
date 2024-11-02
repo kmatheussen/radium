@@ -1,0 +1,11 @@
+--- setup.py~	2024-10-29 23:38:27
++++ setup.py	2024-10-29 23:43:17
+@@ -34,7 +34,7 @@
+ COMPILED_WITH_PYDEBUG = ('--with-pydebug' in sysconfig.get_config_var("CONFIG_ARGS"))
+ 
+ # This global variable is used to hold the list of modules to be disabled.
+-disabled_module_list = ['_tkinter', 'gdbm']
++disabled_module_list = ['_tkinter', 'gdbm', '_ctypes']
+ 
+ def add_dir_to_list(dirlist, dir):
+     """Add the directory 'dir' to the list 'dirlist' (at the front) if

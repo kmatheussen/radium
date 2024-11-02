@@ -1,10 +1,11 @@
 #!/bin/bash
 
-set -e
+set -eEu
 set -x
 
-source ../../configuration.sh
-
+pushd ../../
+source configuration.sh
+popd
 
 unset CFLAGS
 unset CFLAGS
@@ -30,6 +31,13 @@ fi
 
 if [[ $RADIUM_USE_CLANG == 0 ]] ; then
     export COMMON_CFLAGS="$COMMON_CFLAGS -fmax-errors=5 "
+fi
+
+if ! is_set QT_CPPFLAGS ; then
+    QT_CPPFLAGS=""
+fi
+if ! is_set QT_LDFLAGS ; then
+    QT_LDFLAGS=""
 fi
 
 export CFLAGS="$COMMON_CFLAGS "
@@ -308,6 +316,7 @@ build_xcb() {
     fi
 }
 
+source ./build_python27.sh
 
 build_Visualization-Library
 
@@ -315,6 +324,7 @@ build_faust
 build_qhttpserver
 build_gc
 build_fluidsynth
+#build_python27
 build_qscintilla # Note: Linking fails on Mac. Just ignore it.
 
 if uname -s |grep Linux ; then
