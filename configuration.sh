@@ -1,3 +1,8 @@
+set -eEu
+
+source bash_setup.sh
+
+
 
 ########################################################
 #
@@ -6,9 +11,14 @@
 #
 #  You might want to edit this file if building Radium.
 #
-#  But if developing Radium it's probably better to create
+#  If developing Radium, it's probably better to create
 #  a script that sets your values and let that script
-#  start the build process.
+#  start "./build_linux.sh".
+#
+#  You can also compile Radium with custom values
+#  like this:
+#
+#  RADIUM_USE_CLANG=1 ./build_linux.sh
 #
 #  Variables are not overwritten in this file, they
 #  only provide the default values. This can be
@@ -23,6 +33,7 @@
 # (do some stuff first)
 ORG_PWD=`pwd`
 cd $(dirname ${BASH_SOURCE[0]})
+
 source helpers.sh
 
 
@@ -100,14 +111,18 @@ set_var FULL_VERSION 1
 
 
 ########################################################
-# A directory where qt5 is installed.
-# If not set, we will try to find it automatically.
-# Note that you might also have to set the
-# PKGqt variable, pointing to a pkg-config binary
-# that points to this version of Qt.
+# RADIUM_QTDIR is the directory where qt5 is installed.
+# If set to 0, we will try to find it automatically.
+# Note that if settings RADIUM_QTDIR you might also have
+# to set either the PKGqt variable or the
+# QT_PKG_CONFIGURATION_PATH as well, so that we don't
+# mix Qt version. (The build system checks this for
+# you, and will tell you if you need to set either
+# of these variables.)
 #
-set_var RADIUM_QTDIR 0
-set_var PKGqt 0
+set_var RADIUM_QTDIR 0 # This is the directory where we find bin/qmake, bin/uic, and bin/moc.
+set_var PKGqt 0 # Can be set to another pkg-config than is not first in PATH.
+set_var QT_PKG_CONFIGURATION_PATH 0 # PKG_CONFIG_PATH will be set to this value.
 
 
 
@@ -126,9 +141,7 @@ set_var WARNINGS_AS_ERRORS 1
 # Set to the minimum Macos version you want the program
 # to run on. (Obviously ignored on the other platforms)
 #
-if uname -s |grep Darwin ; then    
-    set_var MACOSX_DEPLOYMENT_TARGET 12.0
-fi
+set_var MACOSX_DEPLOYMENT_TARGET 12.0
 
 
 
@@ -141,23 +154,66 @@ fi
 
 
 set_var PYTHONEXE `./find_python_path.sh`
-assert_env_path_exists PYTHONEXE
+assert_env_path_exists $PYTHONEXE
 
 set_var PKG `which pkg-config`
-assert_env_path_exists PKG
+assert_env_path_exists $PKG
 
-if ! is_set PKGqt ; then
+set_var RADIUM_RELEASE_CFLAGS ""
+
+if ! is_0 $PKGqt ; then
+    assert_env_path_exists $PKGqt
+else
     export PKGqt=$PKG
 fi
 
-assert_env_path_exists PKGqt
+if ! is_0 $QT_PKG_CONFIGURATION_PATH ; then
+    assert_env_path_exists $QT_PKG_CONFIGURATION_PATH
+    export PKGqt="PKG_CONFIG_PATH=$QT_PKG_CONFIGURATION_PATH $PKGqt"
+fi
+
+
+QMAKE=$(./find_moc_and_uic_paths.sh qmake)
+
+assert_env_path_exists $QMAKE
+
+echo "MAYBE_ERE"
+assert_env_path_exists $(./find_moc_and_uic_paths.sh uic)
+
+echo "MAYBE_ERE2"
+assert_env_path_exists $(./find_moc_and_uic_paths.sh moc)
+
+echo "MAYBE_ERE3"
+
+if ${QMAKE} -query QT_VERSION | grep -v '^5.1' ; then
+    
+    echo "MAYBE_ERE3.5"
+
+    handle_failure "Seems like it's the wrong qt version. We need Qt newer than 5.10. Set RADIUM_QTDIR to correct directory to fix".
+fi
+
+
+if [ "$($PKGqt --libs-only-L Qt5Core)" != "" ] ; then
+    echo "aiai1b. QMAKE $QMAKE"
+    echo "AIAI2; ${PKGqt} $($QMAKE -query QT_INSTALL_PREFIX)"
+    if [ "$($PKGqt --libs-only-L Qt5Core)" != "$($QMAKE -query QT_INSTALL_PREFIX)" ] ; then
+	handle_failure "$PKGqt and $QMAKE doesn't seem to point to the same Qt:" \
+		       "PKG: \"$($PKGqt --libs-only-L Qt5Core)\"." \
+		       "${QMAKE}: '\"$($QMAKE -query QT_INSTALL_PREFIX)\""
+    fi
+else
+    echo "AIAI3"
+    if [ "$($QMAKE -query QT_INSTALL_PREFIX)" != "/usr" ] ; then
+	handle_failure "\"$PKGqt --libs-only-L Qt5Core\" gave no output. It's assumed that qt is installed in /usr, but it's not. it's installed in \"$(QMAKE -query QT_INSTALL_PREFIX)\". This is only an indication that something is wrong. If you think it is, just comment out this line and try again. (please also provide patch)"
+    fi
+fi
+echo "AIAI4"
 
 if is_set INCLUDE_FAUSTDEV ; then
     if ! is_set INCLUDE_FAUSTDEV_BUT_NOT_LLVM ; then
 	export FAUST_USES_LLVM="jadda"
     fi
 fi
-
 
 if is_set FAUST_USES_LLVM ; then
     
@@ -197,14 +253,11 @@ fi
 
 
 
+
 ########################################################
 # Values below here should normally not be edited.
 #
 ########################################################
-
-# (Currently no point setting it another value than 5.)
-export RADIUM_QT_VERSION=5
-
 
 if [[ $RADIUM_USE_CLANG == 1 ]] ; then
     export FULL_CCC_PATH=`which clang++`
@@ -216,12 +269,12 @@ if ! uname -s |grep Linux ; then
     unset INCLUDE_PDDEV
 fi
 
-if [ "${FULL_VERSION}" -eq "0" ] ; then
+if [ ${FULL_VERSION} -eq 0 ] ; then
     true
-elif [ "${FULL_VERSION}" -eq "1" ] ; then
+elif [ ${FULL_VERSION} -eq 1 ] ; then
     true
 else
-    print_error_and_exit "FULL_VERSION must be 0 or 1: ${FULL_VERSION}"
+    handle_failure "FULL_VERSION must be 0 or 1: ${FULL_VERSION}"
 fi
 
 # Used by the makefile

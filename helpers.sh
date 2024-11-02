@@ -1,25 +1,21 @@
 
 
-print_error_and_exit()
-{
-    RED='\033[1;31m'
-    LIGHT_CYAN='\033[0;36m'
-    NC='\033[0m'
-    printf "${RED}Error: ${LIGHT_CYAN}${1}${NC}\n"
-    exit -1
-}
 
+
+source $(dirname "${0}")/bash_setup.sh
+#source $(dirname "${0}")/bash_setup.sh
+#./bash_setup.sh
+
+#echo "almost finished" |grep SFEFEF
+#wefwef
+
+#exit 0
 assert_env_path_exists()
 {
-    if is_empty ${!1} ; then
-	print_error_and_exit "\"${1}\" must be set to a path"
-    fi
-    
-    if [ ! -f ${!1} ] ; then
-	print_error_and_exit "\"${!1}\" doesn't seem to exist. (As value for ${1})"
+    if [ ! -f "${1}" ] ; then
+	handle_failure "\"${1}\" doesn't seem to exist."
     fi
 }
-
 
 is_empty()
 {
@@ -27,6 +23,8 @@ is_empty()
 }
 
 # same as "has_value", except that it also returns true for empty variables.
+# Note: call like this: is_defined VAR_NAME
+# Not like this: is_defined $VAR_NAME
 is_defined()
 {
     [ -v $1 ]
@@ -44,6 +42,21 @@ is_set_and_equals()
     is_defined $1 && [[ "${!1}" == "$2" ]]
 }
 
+is_0()
+{
+    [ "${1}" == "0" ]
+}
+
+#trap 'handle_failure' ERR
+
+assert_var_value()
+{
+    if [ "${!1}" != "$2" ] ; then
+	handle_failure "\"${1}\" should have the value \"$2\". Instead it has the value \"${!1}\""
+    fi	
+}
+
+
 
 
 
@@ -60,22 +73,22 @@ is_set_and_equals()
 set_var()
 {
     if [ "$#" -ne 2 ]; then
-	echo "${FUNCNAME}: Illegal number of arguments: \"set_var $@\""
-	exit -1
+	handle_failure "${FUNCNAME}: Illegal number of arguments: \"set_var $@\""
     fi
 	
     if ! is_defined $1 ; then
 	export $1=$2
     fi
-
+    return
+    
     local val="${!1}"
 
-    #echo "1: -${1}- 2: -${2}- val: ${val}"
+    echo "1: -${1}- 2: -${2}- val: ${val}"
 
     if is_empty $val ; then
 	export $1=1
-    elif [ "${val}" = "0" ] ; then
-	unset $1
+    elif [ "${val}" != "0" ] ; then	
+	uns $1
     fi
 }
 
@@ -83,3 +96,4 @@ set_var()
 #set_var GAKK 4
 #echo "GAKK: -${GAKK}-"
 #exit
+

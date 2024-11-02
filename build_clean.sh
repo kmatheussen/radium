@@ -1,5 +1,9 @@
 #!/bin/sh
 
+#set -x
+
+source $(dirname "${0}")/bash_setup.sh
+
 branch=$(git branch | sed -n -e 's/^\* \(.*\)/\1/p')
 T=/tmp/radium_objects_$branch/
 

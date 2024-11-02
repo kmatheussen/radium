@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <math.h>
 
-#include <QThread>
+//#include <QThread>
 
 #define TEST_SMOOTHDELAY 1
 

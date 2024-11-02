@@ -48,6 +48,11 @@ void RWarning_internal(const char *fmt,...){
   abort();
 }
 
+int SYSTEM_show_error_message(const char *message){
+	fprintf(stderr, "Error: %s\n", message);
+	abort();
+	return 0;
+}
 
 __thread int g_thread_type = 0;
 
