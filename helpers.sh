@@ -38,6 +38,13 @@ is_set()
     is_defined $1 && ! is_empty $1
 }
 
+# E.g "is_set_and_equals GAKK 5"
+is_set_and_equals()
+{
+    is_defined $1 && [[ "${!1}" == "$2" ]]
+}
+
+
 
 
 # Sets a variable unless already set.

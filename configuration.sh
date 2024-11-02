@@ -6,7 +6,7 @@
 #
 #  You might want to edit this file if building Radium.
 #
-#  If developing Radium it's probably better to create
+#  But if developing Radium it's probably better to create
 #  a script that sets your values and let that script
 #  start the build process.
 #
@@ -111,6 +111,17 @@ set_var PKGqt 0
 
 
 
+
+########################################################
+# When developing Radium, this value should proabably
+# be set to 1. If you just want to compile the program,
+# set it to 0.
+#
+set_var WARNINGS_AS_ERRORS 1
+
+
+
+
 ########################################################
 # Set to the minimum Macos version you want the program
 # to run on. (Obviously ignored on the other platforms)
@@ -153,13 +164,19 @@ if is_set FAUST_USES_LLVM ; then
     set_var LLVM_CONFIG_BIN `which llvm-config`
     assert_env_path_exists LLVM_CONFIG_BIN
     
+    old_path=""
+    
+    if is_set LD_LIBRARY_PATH ; then
+	old_path=":$LD_LIBRARY"
+    fi
+    
     if uname -s |grep Linux ; then
 	
-	set_var FAUST_LD_LIB_PATH "LD_LIBRARY_PATH=`${LLVM_CONFIG_BIN} --libdir`:$LD_LIBRARY_PATH"
+	set_var FAUST_LD_LIB_PATH "LD_LIBRARY_PATH=`${LLVM_CONFIG_BIN} --libdir`$old_path"
 	
     elif uname -s |grep Darwin ; then
 
-	set_var FAUST_LD_LIB_PATH "DYLD_LIBRARY_PATH=`${LLVM_CONFIG_BIN} --libdir`:$DYLD_LIBRARY_PATH"
+	set_var FAUST_LD_LIB_PATH "DYLD_LIBRARY_PATH=`${LLVM_CONFIG_BIN} --libdir`$old_path"
 
     else
 	print_error_and_exit "unknown architecture"
