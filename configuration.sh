@@ -177,18 +177,11 @@ QMAKE=$(./find_moc_and_uic_paths.sh qmake)
 
 assert_env_path_exists $QMAKE
 
-echo "MAYBE_ERE"
 assert_env_path_exists $(./find_moc_and_uic_paths.sh uic)
 
-echo "MAYBE_ERE2"
 assert_env_path_exists $(./find_moc_and_uic_paths.sh moc)
 
-echo "MAYBE_ERE3"
-
 if ${QMAKE} -query QT_VERSION | grep -v '^5.1' ; then
-    
-    echo "MAYBE_ERE3.5"
-
     handle_failure "Seems like it's the wrong qt version. We need Qt newer than 5.10. Set RADIUM_QTDIR to correct directory to fix".
 fi
 
@@ -202,12 +195,10 @@ if [ "$($PKGqt --libs-only-L Qt5Core)" != "" ] ; then
 		       "${QMAKE}: '\"$($QMAKE -query QT_INSTALL_PREFIX)\""
     fi
 else
-    echo "AIAI3"
     if [ "$($QMAKE -query QT_INSTALL_PREFIX)" != "/usr" ] ; then
 	handle_failure "\"$PKGqt --libs-only-L Qt5Core\" gave no output. It's assumed that qt is installed in /usr, but it's not. it's installed in \"$(QMAKE -query QT_INSTALL_PREFIX)\". This is only an indication that something is wrong. If you think it is, just comment out this line and try again. (please also provide patch)"
     fi
 fi
-echo "AIAI4"
 
 if is_set INCLUDE_FAUSTDEV ; then
     if ! is_set INCLUDE_FAUSTDEV_BUT_NOT_LLVM ; then
@@ -226,16 +217,16 @@ if is_set FAUST_USES_LLVM ; then
 	old_path=":$LD_LIBRARY"
     fi
     
-    if uname -s |grep Linux ; then
+    if uname -s |grep Linux > /dev/null ; then
 	
 	set_var FAUST_LD_LIB_PATH "LD_LIBRARY_PATH=`${LLVM_CONFIG_BIN} --libdir`$old_path"
 	
-    elif uname -s |grep Darwin ; then
+    elif uname -s |grep Darwin > /dev/null ; then
 
 	set_var FAUST_LD_LIB_PATH "DYLD_LIBRARY_PATH=`${LLVM_CONFIG_BIN} --libdir`$old_path"
 
     else
-	print_error_and_exit "unknown architecture"
+	handle_failure "unknown architecture"
     fi
     
 fi
@@ -265,7 +256,7 @@ else
     export FULL_CCC_PATH=`which g++`
 fi
 
-if ! uname -s |grep Linux ; then
+if ! uname -s |grep Linux > /dev/null ; then
     unset INCLUDE_PDDEV
 fi
 
