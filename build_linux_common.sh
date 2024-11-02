@@ -49,14 +49,17 @@ fi
 #export INCLUDE_PDDEV="jadda"
 
 
-if ! arch |grep arm ; then
+if arch |grep arm ; then
+    export CPUOPTS=""
+else
     export CPUOPTS="-msse2 -mfpmath=sse"
 fi
 
 #if ! env |grep OPTIMIZE ; then
 export OPTIMIZE="-O2 $CPUOPTS $RADIUM_RELEASE_CFLAGS -fomit-frame-pointer "
 
-export OS_DEBUG_BUILD_OPTS="-fno-omit-frame-pointer"
+#export OS_DEBUG_BUILD_OPTS="-fno-omit-frame-pointer"
+export OS_DEBUG_BUILD_OPTS="-fomit-frame-pointer"
 
 
 # -flto 

@@ -17,7 +17,7 @@ rm -f audio/zita_rev.cpp audio/stk_flute.cpp audio/stk_bowed.cpp audio/stk_blow_
 
 export GCC=gcc
 
-make -f Makefile.Qt clean_pluginhost
+cd pluginhost/Builds/Linux && make clean && rm -fr build
 
 
 #	cd $T && rm -f *.o
