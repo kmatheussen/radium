@@ -41,12 +41,16 @@ PYTHONEXE ?= `which python2`
 
 
 
+UNAME := $(shell uname)
+
 
 
 #----------------DEFININTIONS----------------------
 
 # Packagers: Don't change anything below here unless things don't work.
 
+
+RADIUM_QT_VERSION=5
 
 GCDIR ?= bin/packages/gc-8.2.4
 
@@ -295,6 +299,32 @@ FULL_VERSION ?= 1
 #UNDEFINED_SANITIZE_OPTS= -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow -fsanitize=bounds -fsanitize=object-size -fsanitize=vptr -fno-sanitize-recover
 #  -fsanitize=alignment
 
+
+BUILD_DEBUG=NO
+BUILD_OPTIMIZED=YES
+OPTIMIZE ?= -O2 -flto
+
+ifeq ($(BUILDTYPE), DEBUG)
+	BUILD_DEBUG=YES
+	BUILD_OPTIMIZED=NO
+        OPTIMIZE=
+endif
+ifeq ($(BUILDTYPE), DEBUG_FAST)
+	BUILD_DEBUG=YES
+endif
+
+
+WARNINGS_AS_ERRORS ?= 1
+
+WERROR=""
+
+ifeq ($(WARNINGS_AS_ERRORS), 1)
+	WERROR = -Werror
+endif
+
+
+
+
 WNO_DEPRECATED_DECLARATIONS=
 
 NO_ANALYZER=
@@ -395,27 +425,8 @@ MEMORY_SANITIZE_OPTS=
 OS_DEBUG_BUILD_OPTS ?= 
 #-mbranch-protection=standard -fno-sanitize-trap=all
 #-flto -fvisibility=hidden -fsanitize=cfi -fno-sanitize-trap=all # -fanalyzer 
-DEBUG_BUILD_OPTS = -Werror -Wfloat-equal -Wall $(GGDB_OPT) -fno-optimize-sibling-calls $(UNDEFINED_SANITIZE_OPTS) $(THREAD_SANITIZE_OPTS) $(ADDRESS_SANITIZE_OPTS) $(MEMORY_SANITIZE_OPTS) $(WNO_NAN_INFINITY_DISABLED) $(OS_DEBUG_BUILD_OPTS)
+DEBUG_BUILD_OPTS = $(WERROR) -Wfloat-equal -Wall $(GGDB_OPT) -fno-optimize-sibling-calls $(UNDEFINED_SANITIZE_OPTS) $(THREAD_SANITIZE_OPTS) $(ADDRESS_SANITIZE_OPTS) $(MEMORY_SANITIZE_OPTS) $(WNO_NAN_INFINITY_DISABLED) $(OS_DEBUG_BUILD_OPTS)
 
-BUILD_DEBUG=NO
-BUILD_OPTIMIZED=YES
-OPTIMIZE ?= -O2 -flto
-
-ifeq ($(BUILDTYPE), DEBUG)
-	BUILD_DEBUG=YES
-	BUILD_OPTIMIZED=NO
-        OPTIMIZE=
-endif
-ifeq ($(BUILDTYPE), DEBUG_FAST)
-	BUILD_DEBUG=YES
-endif
-
-
-
-WERROR=
-ifeq ($(BUILD_DEBUG), YES)
-	WERROR = -Werror
-endif
 
 NOSHORTEN64TO32FLAG=
 ifneq (,$(findstring clang,$(CC)))
@@ -469,7 +480,7 @@ RADIUM_VST2SDK_PATH ?= ${HOME}/SDKs/vstsdk2.4
 
 COMMONOPT = -D__STDC_FORMAT_MACROS=1 -c `cat buildtype.opt` -I$(GCDIR)/include -I$(P) $(PYOPTS) `cat flagopts.opt` $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -I ~/SDKs/VST_SDK/VST2_SDK/ -I ${RADIUM_VST2SDK_PATH} -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wno-unknown-pragmas -fno-strict-aliasing -Wmissing-field-initializers -Wnull-dereference -Wwrite-strings $(WNO_VLA_CXX_EXTENSION) -DTHREADED_OPENGL=$(RADIUM_THREADED_OPENGL)  $(IS_LINUX_BINARY) $(IS_MACOS_BINARY)
 #-fdelete-null-pointer-checks 
-# -Werror
+# $(WERROR)
 
 #-Wstrict-overflow=4 -Wsuggest-attribute=format -Wstringop-overflow=4
 #-Wsuggest-final-types -Wsuggest-final-methods
@@ -817,9 +828,18 @@ test: test_vector test_placement test_notes test_path_resolver test_seqautomatio
 	@echo
 	@echo " == All tests succeeded, apparently =="
 
-TEST_TIMEDATA_OPTS=-DTEST_TIMEDATA_MAIN -Wall -Werror -g -lpthread  $(filter-out -c, $(CPPOPT)) -DFOR_LINUX -I. -I../Qt -Wno-error=parentheses
 
-TEST_TIMEDATA_RUNNER=gdb -ex "set print thread-events off" -ex run -ex=quit ./a.out
+
+TEST_ARCH=-DFOR_LINUX
+ifeq ($(UNAME), Darwin)
+	TEST_ARCH_DEF=-DFOR_MACOSX
+endif
+
+
+TEST_TIMEDATA_OPTS=-DTEST_TIMEDATA_MAIN -Wall $(WERROR) -g -lpthread  $(filter-out -c, $(CPPOPT)) $(TEST_ARCH_DEF) -I. -I../Qt -Wno-error=parentheses
+
+#TEST_TIMEDATA_RUNNER=gdb -ex "set print thread-events off" -ex run -ex=quit ./a.out
+TEST_TIMEDATA_RUNNER=lldb -o run -f ./a.out
 
 test_refcounttimedata:
 	$(CCC) common/TimeData.cpp $(TEST_TIMEDATA_OPTS) `$(PKGqt) --cflags Qt5Core --libs Qt5Core` -fPIC -O3 -DTEST_SHARED_PTR -DTEST_REFCOUNTTIMEDATA -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
@@ -848,100 +868,113 @@ test_timedata_gdb:
 #	cd common && g++ TimeData.cpp $(TEST_TIMEDATA_OPTS) -O3 -o a.out &&	gdb -ex "set print thread-events off" $(TEST_TIMEDATA_RUNNER)
 #	cd common && g++ TimeData.cpp $(TEST_TIMEDATA_OPTS) -O3 -fsanitize=thread -o a.out &&	gdb -ex "set print thread-events off" TSAN_OPTIONS="history_size=7,second_deadlock_stack=1,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
 	cd common && g++ TimeData.cpp $(TEST_TIMEDATA_OPTS) -O3 -fsanitize=undefined $(ADDRESS_SANITIZE_OPTS) -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" gdb -ex "set print thread-events off" ./a.out
+	cd common && g++ TimeData.cpp $(TEST_TIMEDATA_OPTS) -O3 -fsanitize=undefined $(ADDRESS_SANITIZE_OPTS) -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" ./a.out
 
 
 TEST_RT_MEMORY_ALLOCATOR_OPTS=$(BOOST_FLAGS) $(TEST_TIMEDATA_OPTS)
 
 test_rt_memory_allocator:
+	echo
+	printf "\033[0;36mTo use clang: CC=clang CCC=clang++ make test_rt_memory_allocator\033[0m\n"
+	echo
 	cd common && touch buildtype.opt flagopts.opt
 	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DTEST_MAIN -DRADIUM_USES_UBSAN -O3 -fsanitize=undefined $(ADDRESS_SANITIZE_OPTS)  -O0 -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
 	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DTEST_MAIN -DRADIUM_USES_UBSAN -O3 -fsanitize=undefined $(ADDRESS_SANITIZE_OPTS)  -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
-	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DTEST_MAIN -DRADIUM_USES_TSAN -O3 -fsanitize=thread -o a.out && TSAN_OPTIONS="history_size=7,second_deadlock_stack=1,abort_on_error=1,suppressions=../SanitizerSuppr.txt" $(TEST_TIMEDATA_RUNNER)
+	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DTEST_MAIN -DRADIUM_USES_TSAN -O0 -fsanitize=thread -o a.out && TSAN_OPTIONS="history_size=7,second_deadlock_stack=1,abort_on_error=1,suppressions=../SanitizerSuppr.txt" $(TEST_TIMEDATA_RUNNER)
+	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DTEST_MAIN -DRADIUM_USES_TSAN -O1 -fsanitize=thread -o a.out && TSAN_OPTIONS="history_size=7,second_deadlock_stack=1,abort_on_error=1,suppressions=../SanitizerSuppr.txt" $(TEST_TIMEDATA_RUNNER)
+	#FIX! it fails!
+	#cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DTEST_MAIN -DRADIUM_USES_TSAN -O3 -fsanitize=thread -o a.out && TSAN_OPTIONS="history_size=7,second_deadlock_stack=1,abort_on_error=1,suppressions=../SanitizerSuppr.txt" $(TEST_TIMEDATA_RUNNER)
 	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DTEST_MAIN -O0 -o a.out && $(TEST_TIMEDATA_RUNNER)
 	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DTEST_MAIN -O3 -o a.out && $(TEST_TIMEDATA_RUNNER)
 
 #mingw32:
-#i686-w64-mingw32.static-g++ -Wall -Wno-parentheses RT_memory_allocator.cpp -I/home/kjetil/boost_1_63_0 -DTEST_MAIN -DFOR_WINDOWS -D__STDC_FORMAT_MACROS=1 -O3 -msse2 -mfpmath=sse -I../Qt -std=gnu++17 -o a.out
+#i686-w64-mingw32.static-g++ -Wall -Wno-parentheses RT_memory_allocator.cpp -I/home/kjetil/boost_1_63_0 -DTEST_MAIN -DFOR_WINDOWS -D__STDC_FORMAT_MACROS=1 -O3 -msse2 -mfpmath=sse -I../Qt -std=$(STD_CPP) -o a.out
 
 
 test_ratio:
-	cd common && ln -sf ratio_funcs.h test_ratio.cpp && g++ test_ratio.cpp -D__STDC_FORMAT_MACROS=1 -DTEST_MAIN -Wall -Werror -g -o a.out &&	./a.out
-#	cd common && ln -sf ratio_funcs.h test_ratio.cpp && g++ test_ratio.cpp -D__STDC_FORMAT_MACROS=1 -DTEST_MAIN -Wall -Werror -g -o a.out && gdb ./a.out
+	cd common && ln -sf ratio_funcs.h test_ratio.cpp && g++ test_ratio.cpp -D__STDC_FORMAT_MACROS=1 -DTEST_MAIN -Wall $(WERROR) -Wno-unused-function -g -o a.out &&	./a.out
+#	cd common && ln -sf ratio_funcs.h test_ratio.cpp && g++ test_ratio.cpp -D__STDC_FORMAT_MACROS=1 -DTEST_MAIN -Wall $(WERROR) -g -o a.out && gdb ./a.out
 
 test_radium_vector:
-	cd test && $(CCC) -Wall -Werror test_radium_vector.cpp -DTEST_RADIUM_VECTOR_MAIN -Wall -std=gnu++17 -g -D__STDC_FORMAT_MACROS=1 $(ADDRESS_SANITIZE_OPTS) $(UNDEFINED_SANITIZE_OPTS) -DFOR_LINUX -I../Qt -Wno-unused-function -O3 -o test_radium_vector
+	cd test && $(CCC) -Wall $(WERROR) test_radium_vector.cpp -DTEST_RADIUM_VECTOR_MAIN -Wall -std=$(STD_CPP) -g -D__STDC_FORMAT_MACROS=1 $(ADDRESS_SANITIZE_OPTS) $(UNDEFINED_SANITIZE_OPTS) $(TEST_ARCH_DEF) -I../Qt -Wno-unused-function -O3 -o test_radium_vector
 	ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" gdb -ex='set confirm on' -ex=run -ex=quit test/test_radium_vector
+	ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" test/test_radium_vector
 
 test_samplereader:
-	cd audio && $(CCC) SampleReader.cpp -DTEST_MAIN -Wall -std=gnu++17 -g && ./a.out
+	cd audio && $(CCC) SampleReader.cpp -DTEST_MAIN -Wall -std=$(STD_CPP) -g && ./a.out
 
 test_threading:
-	$(CCC) common/threading.cpp -DTEST_THREADING -Wall $(QTOPT) $(BOOST_FLAGS) -fPIC -DFOR_LINUX
+	$(CCC) common/threading.cpp -DTEST_THREADING -Wall $(QTOPT) $(BOOST_FLAGS) -fPIC $(TEST_ARCH_DEF) $(JACKOPT) -Wno-deprecated-declarations
 	mv threading.o test_threading.o
-	$(CCC) test_threading.o $(QT_LDFLAGS) $(BOOST_FLAGS) -lpthread $(ADDRESS_SANITIZE_OPTS) -fsanitize=undefined  -std=gnu++17
+	$(CCC) test_threading.o $(QT_LDFLAGS) $(BOOST_FLAGS) -lpthread $(ADDRESS_SANITIZE_OPTS) -fsanitize=undefined  -std=$(STD_CPP)
 	./a.out
 #	rm -f test_threading.o
 #	echo "GGGGGGGGGGG"
-#	clang++ common/threading.cpp -DTEST_THREADING -Wall $(QTOPT) -fPIC -DFOR_LINUX
+#	clang++ common/threading.cpp -DTEST_THREADING -Wall $(QTOPT) -fPIC $(TEST_ARCH_DEF)
 #       mv threading.o test_threading.o
 #	echo "HHHHHHHHH"
-#	clang++ threading.o $(QT_LDFLAGS) -lpthread $(ADDRESS_SANITIZE_OPTS) -fsanitize=undefined  -std=gnu++17
+#	clang++ threading.o $(QT_LDFLAGS) -lpthread $(ADDRESS_SANITIZE_OPTS) -fsanitize=undefined  -std=$(STD_CPP)
 #	./a.out
 
 
 test_vector:
-	$(CC) -g -Wall -Werror -D__STDC_FORMAT_MACROS=1 -DTEST_VECTOR -DUSE_QT_REQTYPE=1 common/vector.c common/memory.c -IQt -I$(GCDIR)/include $(GCDIR)/.libs/libgc.a -lpthread $(ADDRESS_SANITIZE_OPTS) -fPIC -DFOR_LINUX -std=gnu99
+	$(CC) -g -Wall $(WERROR) -D__STDC_FORMAT_MACROS=1 -DTEST_VECTOR -DUSE_QT_REQTYPE=1 common/vector.c common/memory.c -IQt -I$(GCDIR)/include $(GCDIR)/.libs/libgc.a -lpthread $(ADDRESS_SANITIZE_OPTS) -fPIC $(TEST_ARCH_DEF) -std=$(STD_C)
 #	valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
 #	ASAN_OPTIONS="detect_leaks=0,allocator_may_return_null=1,suppressions=SanitizerSuppr.txt,abort_on_error=1,new_delete_type_mismatch=0"
 	ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" ./a.out
 
 test_placement:
-	$(CC) -g -Wall -Werror -DTEST_PLACEMENT -D__STDC_FORMAT_MACROS=1  -DUSE_QT_REQTYPE=1 common/placement.c common/memory.c -IQt -I$(GCDIR)/include $(GCDIR)/.libs/libgc.a -lpthread -fPIC -DFOR_LINUX -std=gnu99 -lm
+	$(CC) -g -Wall $(WERROR) -DTEST_PLACEMENT -D__STDC_FORMAT_MACROS=1  -DUSE_QT_REQTYPE=1 common/placement.c common/memory.c -IQt -I$(GCDIR)/include $(GCDIR)/.libs/libgc.a -lpthread -fPIC $(TEST_ARCH_DEF) -std=$(STD_C) 
 #	gdb ./a.out
 	valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
 
 test_notes:
-	$(CCC) -g -Wall -Werror -DTEST_NOTES -D__STDC_FORMAT_MACROS=1  -DUSE_OPENGL -DUSE_QT_REQTYPE=1 common/notes.cpp common/memory.c -lm -IQt -I$(GCDIR)/include $(GCDIR)/.libs/libgc.a -lpthread -fPIC -DFOR_LINUX -std=gnu++17
+	$(CCC) -g -Wall $(WERROR) -DTEST_NOTES -D__STDC_FORMAT_MACROS=1  -DUSE_OPENGL -DUSE_QT_REQTYPE=1 common/notes.cpp common/memory.c -IQt -I$(GCDIR)/include $(GCDIR)/.libs/libgc.a -lpthread -fPIC $(TEST_ARCH_DEF) -std=$(STD_CPP) -Wno-deprecated
 #	gdb ./a.out
 	valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
 
 # Commented out. Too many link errors.
 test_path_resolver:
-#	$(CCC) -g -Wall -Werror -DTEST_PATH_RESOLVER  -DUSE_OPENGL -DUSE_QT_REQTYPE=1 -DUSE_QT4 Qt/Qt_path_resolver.cpp -lm -IQt $(QT_CFLAGS) $(QT_LDFLAGS) $(GCDIR)/.libs/libgc.a -lpthread -fPIC  -DFOR_LINUX -std=gnu++17 -Wno-error=unknown-pragmas -DUSE_QT5 $(SNDFILEOPT) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" -lsndfile
+#	$(CCC) -g -Wall $(WERROR) -DTEST_PATH_RESOLVER  -DUSE_OPENGL -DUSE_QT_REQTYPE=1 -DUSE_QT4 Qt/Qt_path_resolver.cpp -IQt $(QT_CFLAGS) $(QT_LDFLAGS) $(GCDIR)/.libs/libgc.a -lpthread -fPIC  $(TEST_ARCH_DEF) -std=$(STD_CPP) -Wno-error=unknown-pragmas -DUSE_QT5 $(SNDFILEOPT) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" -lsndfile
 #	./a.out
 #	valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
 
 test_seqautomation:
-	$(CCC) -g -Wall -Wextra -Werror test/test_seqautomation.cpp -lm $(QTOPT) -UNDEBUG $(ADDRESS_SANITIZE_OPTS) -fsanitize=undefined  -DUSE_QT4 -DUSE_QT5 -fPIC -DFOR_LINUX -DTEST_SEQAUTOMATION_MAIN
-	$(CCC) test_seqautomation.o $(QT_LDFLAGS) $(QTLINKFLAGS) $(OS_LDFLAGS2) $(ADDRESS_SANITIZE_OPTS) -fsanitize=undefined -o test_seqautomation
-	./test_seqautomation
+	$(CCC) -g -Wall -Wextra $(WERROR) test/test_seqautomation.cpp  $(QTOPT) -UNDEBUG $(ADDRESS_SANITIZE_OPTS) -fsanitize=undefined  -DUSE_QT4 -DUSE_QT5 -fPIC $(TEST_ARCH_DEF) -DTEST_SEQAUTOMATION_MAIN
+	$(CCC) test_seqautomation.o $(QT_LDFLAGS) $(QTLINKFLAGS) $(OS_LDFLAGS2) $(ADDRESS_SANITIZE_OPTS) -fsanitize=undefined -o test_seqautomation.bin
+	./test_seqautomation.bin
 	@echo "=== success: test_seqautomation ==="
-	@rm test_seqautomation
+	@rm test_seqautomation.bin
 
 test_audiobuffer:
-	$(CCC) -g -Wall -Werror test/test_audiobuffer.cpp -lm $(QTOPT) -UNDEBUG $(ADDRESS_SANITIZE_OPTS) -fsanitize=undefined -fPIC -DFOR_LINUX  -DUSE_QT4 -DUSE_QT5
-	$(CCC) test_audiobuffer.o $(QT_LDFLAGS) $(QTLINKFLAGS) $(OS_LDFLAGS2) $(ADDRESS_SANITIZE_OPTS) -fsanitize=undefined -o test_audiobuffer
-	LSAN_OPTIONS=detect_leaks=0 gdb -ex='set confirm on' -ex=run -ex=quit ./test_audiobuffer
+	$(CCC) -g -Wall $(WERROR) test/test_audiobuffer.cpp $(QTOPT) -UNDEBUG $(ADDRESS_SANITIZE_OPTS) -fsanitize=undefined -fPIC $(TEST_ARCH_DEF)  -DUSE_QT4 -DUSE_QT5
+	$(CCC) test_audiobuffer.o $(QT_LDFLAGS) $(QTLINKFLAGS) $(OS_LDFLAGS2) $(ADDRESS_SANITIZE_OPTS) -fsanitize=undefined -o test_audiobuffer.bin
+	LSAN_OPTIONS=detect_leaks=0 gdb -ex='set confirm on' -ex=run -ex=quit ./test_audiobuffer.bin
+	LSAN_OPTIONS=detect_leaks=0 ./test_audiobuffer.bin
 	@echo "=== success: test_audiobuffer ==="
-	@rm test_audiobuffer
+	@rm test_audiobuffer.bin
 
 test_smoothdelay:
-	$(CCC) -g -Wall -Werror test/test_smoothdelay.cpp $(QTOPT) -UNDEBUG $(ADDRESS_SANITIZE_OPTS) -fsanitize=undefined -fPIC -DFOR_LINUX
-	$(CCC) -g -Wall -Werror audio/Fade.cpp $(CPPOPT) -UNDEBUG -fPIC -DFOR_LINUX -DTEST_SMOOTHDELAY -O3  -ffast-math -DMARCH_NATIVE_ALLOWED=1 # -march=native  # -ffast-math -fopt-info-vec-optimized -fopt-info-vec-all
-	$(CCC) test_smoothdelay.o Fade.o $(QT_LDFLAGS) $(QTLINKFLAGS) $(OS_LDFLAGS2) -lm $(ADDRESS_SANITIZE_OPTS) -fsanitize=undefined -o test_smoothdelay
+	$(CCC) -g -Wall $(WERROR) test/test_smoothdelay.cpp $(CPPOPT) -UNDEBUG $(ADDRESS_SANITIZE_OPTS) -fsanitize=undefined -fPIC $(TEST_ARCH_DEF)
+	$(CCC) -g -Wall $(WERROR) audio/Fade.cpp $(CPPOPT) -UNDEBUG -fPIC $(TEST_ARCH_DEF) -DTEST_SMOOTHDELAY -O3  -ffast-math -DMARCH_NATIVE_ALLOWED=1 # -march=native  # -ffast-math -fopt-info-vec-optimized -fopt-info-vec-all
+	$(CCC) test_smoothdelay.o Fade.o $(OS_LDFLAGS2)  $(ADDRESS_SANITIZE_OPTS) -fsanitize=undefined -o test_smoothdelay
 	LSAN_OPTIONS=detect_leaks=0 gdb -ex='set confirm on' -ex=run -ex=quit ./test_smoothdelay
+	LSAN_OPTIONS=detect_leaks=0 ./test_smoothdelay
 	@echo "=== success: test_smoothdelay ==="
 	@rm test_smoothdelay
 
+#SMOOTHDELAY_OPTS=-Rpass-analysis=loop-vectorize -Rpass=loop-vectorize -Rpass-missed=loop-vectorize
 benchmark_smoothdelay:
-	@echo "first: ./build_clean.sh && BUILDTYPE=RELEASE ./build_linux.sh + ctrl-c"
-	@echo "to benchmark using clang: CC=clang CCC=clang++ make benchmark_smoothdelay"
-	$(CCC) -g -Wall -Werror test/test_smoothdelay.cpp $(QTOPT) -UNDEBUG -fPIC -DFOR_LINUX -DBENCHMARK_SMOOTHDELAY -O3  #--fast-math #-ffast-math -fopt-info-vec-optimized -fopt-info-vec-all
-	$(CCC) -g -Wall -Werror audio/Fade.cpp $(CPPOPT) -UNDEBUG -fPIC -DFOR_LINUX -DBENCHMARK_SMOOTHDELAY -O3  -ffast-math -DMARCH_NATIVE_ALLOWED=1 # -march=native  # -ffast-math -fopt-info-vec-optimized -fopt-info-vec-all
+	@echo
+	@printf "\033[0;36m!!!! First: ./build_clean.sh && BUILDTYPE=RELEASE ./build_linux.sh + ctrl-c.\n"
+	@printf "!!!! To benchmark using clang: CC=clang CCC=clang++ make benchmark_smoothdelay.\033[0m\n"
+	@echo
+	$(CCC) -g -Wall $(WERROR) test/test_smoothdelay.cpp $(CPPOPT) -UNDEBUG -fPIC $(TEST_ARCH_DEF) -DBENCHMARK_SMOOTHDELAY -O3 $(SMOOTHDELAY_OPTS) -ffast-math -ffast-math #-fopt-info-vec-optimized -fopt-info-vec-all
+	$(CCC) -g -Wall $(WERROR) audio/Fade.cpp $(CPPOPT) -UNDEBUG -fPIC $(TEST_ARCH_DEF) -DBENCHMARK_SMOOTHDELAY -O3  $(SMOOTHDELAY_OPTS) -DMARCH_NATIVE_ALLOWED=1 -march=native -ffast-math #-fopt-info-vec-optimized -fopt-info-vec-all
 #-march=native
 
 #-fno-signed-zeros 
-	$(CCC) test_smoothdelay.o Fade.o $(QT_LDFLAGS) $(QTLINKFLAGS) $(OS_LDFLAGS2) -lm -o test_smoothdelay
+	$(CCC) test_smoothdelay.o Fade.o $(OS_LDFLAGS2)  -o test_smoothdelay
 	./test_smoothdelay
 	@rm test_smoothdelay
 
