@@ -152,7 +152,11 @@ set_var MACOSX_DEPLOYMENT_TARGET 12.0
 #
 ########################################################
 
-
+# Note: Run-scripts have not been updated to use
+# other pythons than the one included with Radium,
+# so setting this value to something else might
+# lead to unexpected behaviors.
+#
 set_var PYTHONEXE `./find_python_path.sh`
 assert_env_path_exists $PYTHONEXE
 

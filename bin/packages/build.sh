@@ -237,6 +237,7 @@ build_gc() {
     echo "#error "nope"" >>malloc.c
     echo "#endif" >>malloc.c
     #patch -p1 <../gcdiff.patch
+    #./autogen.sh
     CFLAGS="-mtune=generic -g -O2" ./configure --enable-static --disable-shared --disable-gc-debug --disable-gc-assertions
     CFLAGS="-mtune=generic -g -O2" make -j8
     cd ..
