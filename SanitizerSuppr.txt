@@ -39,6 +39,3 @@ race:boost::lockfree::stack<RT_mempool_data*>::bounded_push
 race:pop<(anonymous namespace)::RT_mempool_data*>
 race:link_nodes_atomic
 #race:pop
-
-addr:llvm::DebugCounter::addCounter
-addr:llvm::DebugCounter::registerCounter

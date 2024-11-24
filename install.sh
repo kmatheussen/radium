@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -e
+set -eEu
 set -x
 
 THIS_DIR="$(dirname "$(readlink -f "$0")")"
@@ -105,15 +105,17 @@ make clean
 rm -f libpds.o
 cd "$THIS_DIR/bin"
 
+echo "A1"
 # ladspa
-if [ ! -d "$TARGET/ladspa" ]
+if [ ! -d "$TARGET/ladspa" ] && [ ! -L "$TARGET/ladspa" ] 
 then
+    echo "A2"
     mkdir $TARGET/ladspa
 fi
 
 # libxcb
 if uname -s |grep Linux ; then
-    if [[ $RADIUM_INSTALL_LIBXCB != 0 ]]
+    if [ -v  RADIUM_INSTALL_LIBXCB ] && [[ $RADIUM_INSTALL_LIBXCB != 0 ]]
     then
 	cp -a packages/libxcb-1.13 "$TARGET/packages/"
 	cd "$TARGET/packages/libxcb-1.13/src"
@@ -121,3 +123,7 @@ if uname -s |grep Linux ; then
 	cd "$THIS_DIR/bin"
     fi
 fi
+
+
+# python27
+cp -a packages/python27_install  "$TARGET/packages/"
