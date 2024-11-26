@@ -52,6 +52,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <FocusSniffers.h>
 #include "helpers.h"
 #include "Qt_sequencer_proc.h"
+#include "Qt_SaveRestoreWindows_proc.h"
 
 #include "Qt_colors_proc.h"
 
@@ -779,6 +780,8 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
 
     // Windows
     {
+	    use_previous_window_positions_during_startup->setChecked(getDoSaveRestoreWindows());
+	    
       show_playlist_during_startup->setChecked(showPlaylistDuringStartup());
       show_mixer_strip_during_startup->setChecked(showMixerStripDuringStartup());
 
@@ -1017,6 +1020,12 @@ public slots:
     GL_lock();{
       bar_opacity->clearFocus();
     }GL_unlock();
+  }
+
+  void on_use_previous_window_positions_during_startup_toggled(bool val)
+  {
+	  if (_initing==false)
+		  setDoSaveRestoreWindows(val);
   }
 
   void on_show_playlist_during_startup_toggled(bool val){

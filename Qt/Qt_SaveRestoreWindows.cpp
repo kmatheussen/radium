@@ -1,10 +1,9 @@
-#include "Qt_SaveRestoreWindows.h"
-
 #include "../common/nsmtracker.h"
+
 #include "../common/sequencer_proc.h"
 #include "../common/settings_proc.h"
 #include "../common/visual_proc.h"
-#include "Qt_sequencer_proc.h"
+
 #include "../api/api_proc.h"
 #include "../api/api_gui_proc.h"
 #include "../api/api_various_proc.h"
@@ -12,7 +11,34 @@
 #include "../api/api_midi_proc.h"
 #include "../api/api_common_proc.h"
 
-void saveWindowsState(QWidget * mainWindow) {
+#include "Qt_sequencer_proc.h"
+
+#include "Qt_SaveRestoreWindows_proc.h"
+
+
+static bool g_save_restore_windows = false;
+
+bool getDoSaveRestoreWindows(void)
+{
+	static bool s_has_inited = false;
+
+	if (!s_has_inited)
+	{
+		g_save_restore_windows = SETTINGS_read_bool("use_previous_window_positions_during_startup",
+							    false);
+		s_has_inited = true;
+	}
+
+	return g_save_restore_windows;
+}
+
+void setDoSaveRestoreWindows(const bool doit)
+{
+	g_save_restore_windows = doit;
+	SETTINGS_write_bool("use_previous_window_positions_during_startup", doit);
+}
+
+void saveWindowsState(const QWidget * mainWindow) {
     printf("\n ***Saving windows state*** \n");
     SETTINGS_write_bool("windows_settings_saved", true);
 
@@ -57,6 +83,13 @@ void saveWindowsState(QWidget * mainWindow) {
 }
 
 void restoreWindowsState(QWidget * mainWindow) {
+
+	if (!getDoSaveRestoreWindows())
+	{
+		R_ASSERT_NON_RELEASE(false);
+		return;
+	}
+	
   if (!SETTINGS_read_bool("windows_settings_saved", false))
     return;
 
