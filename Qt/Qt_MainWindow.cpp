@@ -96,7 +96,7 @@ static HWND gtk_hwnd = NULL;
 #include "Qt_MyQSlider.h"
 #include "Qt_MyQCheckBox.h"
 #include "Qt_PresetBrowser.h"
-#include "Qt_SaveRestoreWindows.h"
+#include "Qt_SaveRestoreWindows_proc.h"
 
 class Bottom_bar_widget;
 static QVector<Bottom_bar_widget*> g_bottom_bars; // need to be defined here since it's used by the upperleft widget.
