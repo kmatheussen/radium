@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -eEu
+
 source configuration.sh
 
 if [[ $RADIUM_USE_CLANG == 1 ]] ; then

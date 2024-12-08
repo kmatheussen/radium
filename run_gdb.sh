@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 
-source configuration.sh >/dev/null
+set -ueE
+#set -x
 
-if [ -z "$RADIUM_NSM_EXECUTABLE_NAME" ] ; then
+source configuration.sh #>/dev/null
+
+if [ -v RADIUM_NSM_EXECUTABLE_NAME ] ; then
         export RADIUM_NSM_EXECUTABLE_NAME=$(basename -- "$0")
 fi
 
@@ -24,16 +27,18 @@ export TSAN_OPTIONS="history_size=7,second_deadlock_stack=1,print_stacktrace=1:a
 
 THIS_DIR=$(dirname $(readlink -f $0))
 
-if uname -s |grep Linux ; then
+if uname -s |grep Linux > /dev/null ; then
     XCB_LIB_DIR=$THIS_DIR/bin/packages/libxcb-1.13/src/.libs
     
-    if ! file $XCB_LIB_DIR ; then
+    if ! file $XCB_LIB_DIR >/dev/null ; then
 	echo "Unable to find directory $XCB_LIB_DIR"
 	exit -1
     fi
 
     export LD_LIBRARY_PATH=$XCB_LIB_DIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
 fi
+
+export LD_LIBRARY_PATH="$PWD/bin/packages/python27_install/lib"${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
 
 # To avoid buggy qt plugins from crashing radium (very common).
 unset QT_QPA_PLATFORMTHEME
@@ -50,13 +55,23 @@ export G_DEBUG="fatal-warnings,gc-friendly"
 
 #ulimit -s 655360
 
-#DEBUGGER="gdb --args"
-DEBUGGER="lldb -O 'env $FAUST_LD_LIB_PATH' --"
-#DEBUGGER=
+# One of these three:
+#
+#
+# 1. GDB
+DEBUGGER="gdb --args"
+#
+# 2. LLDB
+#DEBUGGER="lldb --"
+#
+# 3. LLDB + FAUST/LLVM
+#DEBUGGER="lldb -O 'env $FAUST_LD_LIB_PATH' --" # lldb when using faust
+
+
 
 unameOut="$(uname -s)"
 case "${unameOut}" in
-    Linux*)     EXECUTABLE="bin/radium_linux.bin";;
+    Linux*)     EXECUTABLE="/tmp/radium_bin/radium_linux.bin";;
     Darwin*)    EXECUTABLE="/tmp/radium_bin/radium_macos.bin";;
     *)          EXECUTABLE="where_is_radium_for_\"${unameOut}\"?_(change_these_lines_in_run_gdb.sh_to_fix_this)";;
 esac

@@ -161,7 +161,6 @@ public:
   }
 };
 
-extern void check_wheather(void);
 
   
 #define MAX_NUM_READERS 128

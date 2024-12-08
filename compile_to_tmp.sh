@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 
-set -eo pipefail
+# we don't include bash_setup.sh here since this command is called very often.
+
+set -u
+set -eEo pipefail
 
 mkdir -p $T
 

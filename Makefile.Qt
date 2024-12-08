@@ -210,7 +210,9 @@ ifeq ($(GCC_MAJOR),9)
 #	QT_CFLAGS += $(WNO_DEPRECATED_COPY) # probably only necessary for qt 5.12 or older
 endif
 
-
+ifneq '' '$(findstring clang,$(CC))'
+	WNO_DEPRECATED_BUILTINS=-Wno-deprecated-builtins
+endif
 
 ifeq ($(CLANG_MAJOR),18)
 	WNO_DEPRECATED_ENUM_ENUM_CONVERSION=-Wno-deprecated-enum-enum-conversion
@@ -274,7 +276,7 @@ FREETYPE_CFLAGS ?=
 
 VST_OPTS ?=
 
-BOOST_INCLUDE=-I${HOME}/boost_1_85_0 -I${HOME}/boost_1_83_0 -I${HOME}/boost_1_77_0 -I${HOME}/boost_1_76_0 -I${HOME}/boost_1_75_0 -I${HOME}/boost_1_70_0 -I${HOME}/boost_1_67_0 -I${HOME}/boost_1_63_0 -Wno-deprecated-builtins
+BOOST_INCLUDE=-I${HOME}/boost_1_85_0 -I${HOME}/boost_1_83_0 -I${HOME}/boost_1_77_0 -I${HOME}/boost_1_76_0 -I${HOME}/boost_1_75_0 -I${HOME}/boost_1_70_0 -I${HOME}/boost_1_67_0 -I${HOME}/boost_1_63_0 $(WNO_DEPRECATED_BUILTINS)
 BOOST_FLAGS=$(WNO_CLASS_MEMACCESS) $(BOOST_INCLUDE)
 
 CRASHREPORTER_OPTS ?= 
@@ -750,7 +752,9 @@ clean:
 	@false
 
 clean_pluginhost:
+	echo "Cleaning pluginhost..."
 	cd pluginhost/Builds/Linux && $(MAKE) clean && rm -fr build
+	echo "Cleaning pluginhost finished..."
 
 CCC_OK.touch: $(ALL_SHELL_SCRIPTS) Makefile.Qt
 	bash check_CCC_OK.sh
@@ -956,7 +960,7 @@ test_audiobuffer:
 
 test_smoothdelay:
 	$(CCC) -g -Wall $(WERROR) test/test_smoothdelay.cpp $(CPPOPT) -UNDEBUG $(ADDRESS_SANITIZE_OPTS) -fsanitize=undefined -fPIC $(TEST_ARCH_DEF)
-	$(CCC) -g -Wall $(WERROR) audio/Fade.cpp $(CPPOPT) -UNDEBUG -fPIC $(TEST_ARCH_DEF) -DTEST_SMOOTHDELAY -O3  -ffast-math -DMARCH_NATIVE_ALLOWED=1 # -march=native  # -ffast-math -fopt-info-vec-optimized -fopt-info-vec-all
+	$(CCC) -g -Wall $(WERROR) audio/Fade.cpp $(CPPOPT) -UNDEBUG -fPIC $(TEST_ARCH_DEF) -DTEST_SMOOTHDELAY -O3  -ffast-math -DMARCH_NATIVE_ALLOWED=1 # -march=native  # -ffast-math -fopt-info-vec-optimized -fopt-info-vec-all (maybe use QTOPT instead of CPPOPT...)
 	$(CCC) test_smoothdelay.o Fade.o $(OS_LDFLAGS2)  $(ADDRESS_SANITIZE_OPTS) -fsanitize=undefined -o test_smoothdelay
 	LSAN_OPTIONS=detect_leaks=0 gdb -ex='set confirm on' -ex=run -ex=quit ./test_smoothdelay
 	LSAN_OPTIONS=detect_leaks=0 ./test_smoothdelay
@@ -1473,7 +1477,7 @@ $(T)fxlines_legalize.o:  $(BUILD_DEPENDENCIES) $(CD)fxlines_legalize.cpp
 $(T)reallines_insert.o:  $(BUILD_DEPENDENCIES) $(CD)reallines_insert.cpp
 	$(CCC2) $(CD)reallines_insert.cpp $(CPPOPT)
 
-$(T)block_properties.o:  $(BUILD_DEPENDENCIES) $(CD)block_properties.cpp
+$(T)block_properties.o:  $(BUILD_DEPENDENCIES) $(CD)block_properties.cpp common/AtomicPointerStorage.hpp
 	$(CCC2) $(CD)block_properties.cpp $(CPPOPT)
 
 $(T)clipboard_tempos_copy.o:  $(BUILD_DEPENDENCIES) $(CD)clipboard_tempos_copy.c

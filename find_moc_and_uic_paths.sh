@@ -1,8 +1,15 @@
 #!/usr/bin/env bash
 
-source $(dirname $0)/configuration.sh >/dev/null
+set -ueE
+#set -x
 
-if is_set RADIUM_QTDIR ; then
+source $(dirname "${0}")/helpers.sh
+
+if ! is_set RADIUM_QTDIR ; then
+   source $(dirname $0)/configuration.sh
+fi
+
+if [ ! $RADIUM_QTDIR -eq 0 ] ; then
     echo $RADIUM_QTDIR/bin/$1
     exit 0
 fi

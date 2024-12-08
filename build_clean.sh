@@ -1,5 +1,9 @@
 #!/bin/sh
 
+#set -x
+
+source $(dirname "${0}")/bash_setup.sh
+
 branch=$(git branch | sed -n -e 's/^\* \(.*\)/\1/p')
 T=/tmp/radium_objects_$branch/
 
@@ -13,7 +17,7 @@ rm -f audio/zita_rev.cpp audio/stk_flute.cpp audio/stk_bowed.cpp audio/stk_blow_
 
 export GCC=gcc
 
-make -f Makefile.Qt clean_pluginhost
+cd pluginhost/Builds/Linux && make clean && rm -fr build
 
 
 #	cd $T && rm -f *.o
