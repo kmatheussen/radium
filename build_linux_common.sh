@@ -1,17 +1,17 @@
-#!/usr/bin/env bash
+##!/usr/bin/env bash
 
-set -e
+set -eEu
 
-
-source configuration.sh
-
+echo "B1_"
+source $(dirname "${0}")/bash_setup.sh
+echo "B2_"
+source $(dirname "${0}")/configuration.sh
+echo "B3_"
 
 export RADIUM_BIN="/tmp/radium_bin/radium_linux.bin"
 
 mkdir -p /tmp/radium_bin
 mkdir -p /tmp/radium_objects
-
-
 
 # find_moc_and_uic_path.sh has been tested on fedora 11, fedora 17, ubuntu 12, and mint 13.
 #export MOC="`./find_moc_and_uic_paths.sh moc`"
@@ -23,14 +23,13 @@ mkdir -p /tmp/radium_objects
 export JACKOPT="-DNO_JACK_METADATA"
 export JACK_LDFLAGS="-ljack -ldl"
 
-if ! env |grep RADIUM_QT_VERSION ; then
-    echo "Must define RADIUM_QT_VERSION to either 4 or 5. For instance: \"BUILDTYPE=RELEASE RADIUM_QT_VERSION=5 ./build_linux.sh -j7\""
-    exit -1
-fi
+assert_env_path_exists $PYTHONEXE
+
+assert_var_value RADIUM_QT_VERSION 5
+#exit -1
 
 if ! env |grep BUILDTYPE ; then
-    echo "Must define BUILDTYPE to DEBUG, DEBUG_FAST, or RELEASE. For instance: \"BUILDTYPE=RELEASE RADIUM_QT_VERSION=5 ./build_linux.sh -j7\""
-    exit -1
+    print_error_and_exit "Must define BUILDTYPE to DEBUG, DEBUG_FAST, or RELEASE. For instance: \"BUILDTYPE=RELEASE ./build_linux.sh -j7\""
 fi
 
 
@@ -50,14 +49,17 @@ fi
 #export INCLUDE_PDDEV="jadda"
 
 
-if ! arch |grep arm ; then
+if arch |grep arm ; then
+    export CPUOPTS=""
+else
     export CPUOPTS="-msse2 -mfpmath=sse"
 fi
 
 #if ! env |grep OPTIMIZE ; then
 export OPTIMIZE="-O2 $CPUOPTS $RADIUM_RELEASE_CFLAGS -fomit-frame-pointer "
 
-export OS_DEBUG_BUILD_OPTS="-fno-omit-frame-pointer"
+#export OS_DEBUG_BUILD_OPTS="-fno-omit-frame-pointer"
+export OS_DEBUG_BUILD_OPTS="-fomit-frame-pointer"
 
 
 # -flto 
@@ -283,14 +285,14 @@ make api/radium_proc.h --stop
 make common/keyboard_sub_ids.h --stop
 make bin/radium_check_recent_libxcb --stop
 
-if [[ $1 == "test" ]] ; then
+if [[ $# -ge 1 ]] && [[ $1 == "test" ]] ; then
     make test_seqautomation
 else
     if [[ $RADIUM_USES_MOLD_PRELOAD == 1 ]] ; then
        rm -f /tmp/run_preload
        make /tmp/run_preload
     fi
-    make radium $@ --stop
+    exec make radium $@ --stop
 
     if ldd -r $RADIUM_BIN | sed 's/0x.*//' |grep -i bfd ; then
 	printf "\033[1;31mError? Is bfd linked dynamically?\033[0m"

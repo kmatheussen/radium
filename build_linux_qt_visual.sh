@@ -1,21 +1,26 @@
 #!/usr/bin/env bash
 
-#set -e 
+#set -x
+set -eEu
+
+source $(dirname "${0}")/bash_setup.sh
+
 
 export VISUAL="-DUSE_QT_VISUAL=1 -DUSE_GTK_VISUAL=0"
 
 export GTK_CFLAGS=""
 export GTK_LDFLAGS=""
 
-GREEN='\033[0;32m'
-LIGHT_CYAN='\033[0;36m'
-YELLOW='\033[0;33m'
-NC='\033[0m'
 printf "${GREEN}Compiling${LIGHT_CYAN} Radium${NC}...\n"
 
 start=`date +%s`
 
-./build_linux_common.sh $@
+#trap 'handle_failure' ERR
+
+#source owijoiwef.h
+echo "AAA"
+source build_linux_common.sh $@
+echo "BBB"
 ret=$?
 
 end=`date +%s`
