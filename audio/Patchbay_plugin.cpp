@@ -21,10 +21,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <math.h>
 
 #include "../common/nsmtracker.h"
+
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
-
 #include "SoundPluginRegistry_proc.h"
+#include "Juce_plugins_proc.h"
+
 
 #define MAX_NUM_CHANNELS 32
 
@@ -47,7 +49,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 
   int out_ch;
 
-  for(out_ch=0;out_ch<type->num_outputs;out_ch++){
+  for(out_ch=0 ; out_ch<type->num_outputs ; out_ch++){
     
     bool touched = false;
     int in_ch;
@@ -59,19 +61,20 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
       
       int onoff = data->routes[array_pos];
       
-      if(onoff==1){
-        float *in=inputs[in_ch];
-        
-        if(touched==false){
-          memcpy(out, in, sizeof(float)*num_frames);
-          touched=true;
-        }else{
-          int i;
-          for(i=0;i<num_frames;i++)
-            out[i] += in[i];
-        }
+      if(onoff==1)
+      {
+	      float *in = inputs[in_ch];
+	      
+	      if(touched==false)
+	      {
+		      memcpy(out, in, sizeof(float)*num_frames);
+		      touched = true;
+	      }
+	      else
+	      {
+		      JUCE_add_sound(out, in, num_frames);
+	      }
       }
-      
     }
     
     if(touched==false)
