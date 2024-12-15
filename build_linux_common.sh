@@ -292,8 +292,8 @@ else
        rm -f /tmp/run_preload
        make /tmp/run_preload
     fi
-    exec make radium $@ --stop
-
+    make radium $@ --stop # Can not use "exec make" here. Compilation stopped here I think, whether it succeeded or not.
+    
     if ldd -r $RADIUM_BIN | sed 's/0x.*//' |grep -i bfd ; then
 	printf "\033[1;31mError? Is bfd linked dynamically?\033[0m"
 	exit -1
