@@ -17,8 +17,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <string.h>
 
-#include "pa_memorybarrier.h"
-
 #define INCLUDE_SNDFILE_OPEN_FUNCTIONS 1
 
 #include "../common/nsmtracker.h"
@@ -58,7 +56,7 @@ enum SaveState{
   AFTER_WRITING
 };
 
-static volatile enum SaveState g_save_state;
+static DEFINE_ATOMIC(enum SaveState, g_save_state);
 static int g_num_times_waiting_for_player_to_start = 0;
 
 static DEFINE_ATOMIC(bool, stop_requested) = false;
@@ -116,7 +114,7 @@ static bool stop_writing(bool is_cancelled){
 
   MIXER_set_all_non_realtime(false);
 
-  g_save_state=AFTER_WRITING;
+  ATOMIC_SET(g_save_state, AFTER_WRITING);
 
   return ret;
 }
@@ -127,7 +125,6 @@ void SOUNDFILESAVER_request_stop(void){
 }
 
 bool SOUNDFILESAVER_write(float **outputs, int num_ch, int num_frames){
- PaUtil_FullMemoryBarrier();
 
  if (ATOMIC_GET(stop_requested)){
    ATOMIC_SET(stop_requested, false);
@@ -135,18 +132,18 @@ bool SOUNDFILESAVER_write(float **outputs, int num_ch, int num_frames){
    return false;
  }
 
-  if(g_save_state==BEFORE_STARTING_PLAYER && is_playing()==false)
+ if(ATOMIC_GET(g_save_state)==BEFORE_STARTING_PLAYER && is_playing()==false)
     return true;
 
-  if(g_save_state==WAITING_FOR_PLAYER_TO_START){
+ if(ATOMIC_GET(g_save_state)==WAITING_FOR_PLAYER_TO_START){
     if (is_playing()==false && g_num_times_waiting_for_player_to_start < 5*44100/RADIUM_BLOCKSIZE){
       g_num_times_waiting_for_player_to_start++;
       return true;
     }else
-      g_save_state=IS_WRITING;
+	    ATOMIC_SET(g_save_state, IS_WRITING);
   }
  
-  if(g_save_state==AFTER_WRITING)
+ if(ATOMIC_GET(g_save_state)==AFTER_WRITING)
     return true;
 
   bool ret=true;
@@ -169,13 +166,13 @@ bool SOUNDFILESAVER_write(float **outputs, int num_ch, int num_frames){
     ret = false;
   }
 
-  if(g_save_state==IS_WRITING){
+  if(ATOMIC_GET(g_save_state)==IS_WRITING){
     if(is_playing()==false){
-      g_save_state=POST_WRITING;
+	    ATOMIC_SET(g_save_state, POST_WRITING);
     }
   }
 
-  if(g_save_state==POST_WRITING){
+  if(ATOMIC_GET(g_save_state)==POST_WRITING){
     g_post_writing_left -= (float)num_frames/MIXER_get_sample_rate();
     if(g_post_writing_left <= 0.0f){
       stop_writing(false);
@@ -219,7 +216,7 @@ bool SOUNDFILESAVER_save(filepath_t filename, enum SOUNDFILESAVER_what what_to_s
   MIXER_set_all_non_realtime(true);
   
 
-  g_save_state=BEFORE_STARTING_PLAYER; PaUtil_FullMemoryBarrier();
+  ATOMIC_SET(g_save_state, BEFORE_STARTING_PLAYER);
   {
     MIXER_start_saving_soundfile();
     if(what_to_save==SAVE_SONG)
@@ -230,7 +227,7 @@ bool SOUNDFILESAVER_save(filepath_t filename, enum SOUNDFILESAVER_what what_to_s
       PlayRangeFromStart(root->song->tracker_windows);
     g_num_times_waiting_for_player_to_start = 0;
   }
-  PaUtil_FullMemoryBarrier(); g_save_state=WAITING_FOR_PLAYER_TO_START;
+  ATOMIC_SET(g_save_state, WAITING_FOR_PLAYER_TO_START);
 
   return true;
 }
