@@ -52,7 +52,7 @@ UNAME := $(shell uname)
 
 RADIUM_QT_VERSION=5
 
-GCDIR ?= bin/packages/gc-8.2.6
+GCDIR ?= bin/packages/gc-8.2.8
 
 QHTTPSERVER_PATH ?= $(shell pwd)/bin/packages/qhttpserver-master
 
