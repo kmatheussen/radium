@@ -834,7 +834,7 @@ test: test_vector test_placement test_notes test_path_resolver test_seqautomatio
 
 
 
-TEST_ARCH=-DFOR_LINUX
+TEST_ARCH_DEF=-DFOR_LINUX
 ifeq ($(UNAME), Darwin)
 	TEST_ARCH_DEF=-DFOR_MACOSX
 endif
