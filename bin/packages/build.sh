@@ -224,10 +224,11 @@ build_qhttpserver() {
 
 #http://www.hpl.hp.com/personal/Hans_Boehm/gc/
 build_gc() {
-    GC_VERSION=8.2.4
+    GC_VERSION=8.2.6
     LIBATOMIC_VERSION=7.8.0
     rm -fr gc-$GC_VERSION libatomic_ops-$LIBATOMIC_VERSION
     tar xvzf gc-$GC_VERSION.tar.gz
+    #mv bdwgc-$GC_VERSION gc-$GC_VERSION
     tar xvzf libatomic_ops-$LIBATOMIC_VERSION.tar.gz
     cd gc-$GC_VERSION
     ln -s ../libatomic_ops-$LIBATOMIC_VERSION libatomic_ops
