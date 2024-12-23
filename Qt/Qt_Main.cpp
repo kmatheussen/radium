@@ -468,7 +468,7 @@ static void init_asan(void){
 
 void * operator new(decltype(sizeof(0)) size) noexcept(false)
 {
- void *mem = V_malloc(size);
+  void *mem = V_malloc(size);
   if (size > 1048576) // If changing 1048576, also change 1048576 in run_gdb.sh and function below
     memset(mem, rand(), size);
   return mem;
@@ -476,7 +476,7 @@ void * operator new(decltype(sizeof(0)) size) noexcept(false)
 
 void * operator new(unsigned long size, std::nothrow_t const&)
 {
- void *mem = V_malloc(size);
+  void *mem = V_malloc(size);
   if (size > 1048576) // If changing 1048576, also change 1048576 in run_gdb.sh and function above
     memset(mem, rand(), size);
   return mem;
@@ -497,6 +497,20 @@ void operator delete(void *mem)
 }
 
 void operator delete(void *mem, std::size_t size)
+#if defined(__clang__)
+  #if FOR_LINUX
+    _GLIBCXX_USE_NOEXCEPT
+  #else
+    _NOEXCEPT
+  #endif
+#else
+  noexcept(false)
+#endif
+{
+  V_free(mem);
+}
+
+void operator delete(void *mem, std::nothrow_t const&)
 #if defined(__clang__)
   #if FOR_LINUX
     _GLIBCXX_USE_NOEXCEPT
