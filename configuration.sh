@@ -194,8 +194,8 @@ fi
 
 if [ "$($PKGqt --libs-only-L Qt5Core)" != "" ] ; then
     A=$($PKGqt --libs-only-L Qt5Core)
-    B="-L$($QMAKE -query QT_INSTALL_PREFIX)"
-    if ["$A" != "$B" ] ; then
+    B="-L$($QMAKE -query QT_INSTALL_PREFIX)/lib"
+    if [ "$A" != "$B" ] ; then
 	handle_failure "$PKGqt and $QMAKE doesn't seem to point to the same Qt:\n" \
 		       "PKG: \"$A\".\n" \
 		       "${QMAKE}: \"$B\""
