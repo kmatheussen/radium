@@ -5070,84 +5070,12 @@ int main(int argc, char **argv){
   }
 #endif
   
-#if defined(IS_LINUX_BINARY)
-#if 0  
-  setenv("PYTHONHOME","temp/dist",1);
-  setenv("PYTHONPATH","temp/dist",1);
-#else
-  QString pythonlibpath = STRING_get_qstring(OS_get_full_program_file_path(QString("python2.7/lib")).id);
+
+  QString pythonlibpath = STRING_get_qstring(OS_get_full_program_file_path(QString("packages/python27_install/lib/python2.7")).id);
   setenv("PYTHONHOME",V_strdup(pythonlibpath.toLocal8Bit().constData()),1);
   setenv("PYTHONPATH",V_strdup(pythonlibpath.toLocal8Bit().constData()),1);
 
-#endif
-#endif
-
-#if defined(FOR_MACOSX)
-
-  {
-    #if defined (__arm64__) || defined (__aarch64__)
-      #if defined(IS_MACOS_BINARY)
-        QString pythonhome = STRING_get_qstring(OS_get_full_program_file_path(QString("python2.7")).id);
-      #else
-        QString pythonhome = "/opt/local/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7";
-      #endif
-	
-      QString pythonpath = pythonhome + ":" + pythonhome + "/lib-dynload";
-      
-    #else // arm -> x86
-      
-      QString pythonhome = STRING_get_qstring(OS_get_full_program_file_path(QString("python2.7/lib")).id);
-      QString pythonpath = pythonhome;
-      
-    #endif // x86
-
-    setenv("PYTHONHOME",V_strdup(pythonhome.toLocal8Bit().constData()),1);
-    setenv("PYTHONPATH",V_strdup(pythonpath.toLocal8Bit().constData()),1);
-  }
   
-#endif // FOR_MACOSX
-
-  
-#if defined(FOR_WINDOWS)
-#if 0 //__WIN64
-
-  //QString pythonlibpath = QCoreApplication::applicationDirPath() + QDir::separator() + "python2.7" + QDir::separator() + "lib"; // + QDir::separator() + "lib" + QDir::separator() + "python2.7";
-#if 1 //__WIN64
-  QString pythonlibpath = OS_get_full_program_file_path("python2.7"); // + QDir::separator() + "lib" + QDir::separator() + "python2.7";
-#else
-  QString pythonlibpath = OS_get_full_program_file_path("colors"); // + QDir::separator() + "lib" + QDir::separator() + "python2.7";
-#endif
-  //putenv(strdup(QString("PYTHONHOME="+pythonlibpath).toLocal8Bit().constData()));
-  //putenv(strdup(QString("PYTHONPATH="+pythonlibpath).toLocal8Bit().constData()));
-  printf("pythonlibpath: -%s-\n",pythonlibpath.toLocal8Bit().constData());
-  //Py_SetPythonHome(V_strdup(pythonlibpath.toLocal8Bit().constData()));
-
-  if (STRING_is_local8Bit_compatible(pythonlibpath)==false){
-    printf("   String is not compatible %d %d %d\n", STRING_is_local8Bit_compatible(pythonlibpath), STRING_is_local8Bit_compatible("hello"), STRING_is_local8Bit_compatible("helloø"));
-    vector_t v={};
-    VECTOR_push_back(&v,"Try to run anywyay"); // (but please don't send a bug report if Radium crashes)");
-    int quit = VECTOR_push_back(&v,"Quit");
-    
-    int res = GFX_Message(&v,
-                          "Error. The path \"%s\" is not compatible with the local 8 bit charset.\n"
-                          "\n"
-                          "In order to run Radium, you most move the program to a different directory.\n"
-                          "\n"
-                          "(This problem is caused by a 3rd party library which can't be replaced or fixed easily. The problem only exist on Windows. Sorry for the inconvenience.)\n",
-                          pythonlibpath.toUtf8().constData()
-                          );
-    
-    if (res==quit){
-      exit(-1);
-      abort();
-    }
-  }
-
-#if __WIN64
-  Py_SetPythonHome(V_strdup("python2.7")); //V_strdup(pythonlibpath.toLocal8Bit().constData()));
-#endif
-#endif
-#endif
   //Py_SetProgramName(QString(python
   //Py_SetPythonHome(V_strdup(OS_get_full_program_file_path("").toLocal8Bit().constData()));
 
