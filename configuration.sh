@@ -158,8 +158,10 @@ set_var MACOSX_DEPLOYMENT_TARGET 12.0
 # lead to unexpected behaviors.
 #
 set_var PYTHONEXE `./find_python_path.sh`
-assert_env_path_exists $PYTHONEXE
-
+if ! env |grep PYTHONEXE_NOT_AVAILABLE_YET ; then
+    assert_env_path_exists $PYTHONEXE
+fi
+   
 set_var PKG `which pkg-config`
 assert_env_path_exists $PKG
 
@@ -191,12 +193,12 @@ fi
 
 
 if [ "$($PKGqt --libs-only-L Qt5Core)" != "" ] ; then
-    echo "aiai1b. QMAKE $QMAKE"
-    echo "AIAI2; ${PKGqt} $($QMAKE -query QT_INSTALL_PREFIX)"
-    if [ "$($PKGqt --libs-only-L Qt5Core)" != "$($QMAKE -query QT_INSTALL_PREFIX)" ] ; then
-	handle_failure "$PKGqt and $QMAKE doesn't seem to point to the same Qt:" \
-		       "PKG: \"$($PKGqt --libs-only-L Qt5Core)\"." \
-		       "${QMAKE}: '\"$($QMAKE -query QT_INSTALL_PREFIX)\""
+    A=$($PKGqt --libs-only-L Qt5Core)
+    B="-L$($QMAKE -query QT_INSTALL_PREFIX)"
+    if ["$A" != "$B" ] ; then
+	handle_failure "$PKGqt and $QMAKE doesn't seem to point to the same Qt:\n" \
+		       "PKG: \"$A\".\n" \
+		       "${QMAKE}: \"$B\""
     fi
 else
     if [ "$($QMAKE -query QT_INSTALL_PREFIX)" != "/usr" ] ; then

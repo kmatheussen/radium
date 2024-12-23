@@ -3,6 +3,8 @@
 set -eEu
 set -x
 
+export PYTHONEXE_NOT_AVAILABLE_YET=1
+
 pushd ../../
 source configuration.sh
 popd
