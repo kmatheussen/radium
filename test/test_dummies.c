@@ -37,6 +37,10 @@ double TIME_get_ms(void){
 }
 
 
+void EVENTLOG_add_event(const char *log_entry)
+{
+}
+
 #if !defined(RELEASE)
 bool MIXER_is_saving(){
   return false;
@@ -54,13 +58,16 @@ int SYSTEM_show_error_message(const char *message){
 	return 0;
 }
 
-__thread int g_thread_type = 0;
+#define CURRENT_THREAD_HAS_LOCK 1
+#define CURRENT_THREAD_DOES_NOT_HAVE_LOCK 0
+
+__thread int g_thread_type = CURRENT_THREAD_DOES_NOT_HAVE_LOCK;
 
 bool PLAYER_current_thread_has_lock(void){
-  return g_thread_type==1;
+  return g_thread_type==CURRENT_THREAD_HAS_LOCK;
 }
 bool THREADING_is_main_thread(void){
-  return g_thread_type==0;
+  return g_thread_type==CURRENT_THREAD_DOES_NOT_HAVE_LOCK;
 }
 
 bool THREADING_is_player_or_runner_thread(void){
@@ -138,7 +145,9 @@ void JUCE_add_sound(float *dst, const float *src, int num_frames){
     dst[i] += src[i];
 }
 
-void EndProgram(void);
+#if __cplusplus
+extern "C" void EndProgram(void);
+#endif
 
 void EndProgram(void){
   printf("ENDPROGRAM called\n");

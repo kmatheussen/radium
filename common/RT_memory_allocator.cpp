@@ -26,43 +26,7 @@
 #include <stdarg.h>
 #include "nsmtracker.h"
 
-void CRASHREPORTER_send_assert_message(Crash_Type tye, const char *message, ...){
-  abort();
-}
-void RError_internal(const char *fmt,...){
-  abort();
-}
-void RT_message_internal(const char *fmt,...){
-  va_list argp;
-  va_start(argp,fmt);
-  vfprintf(stderr,fmt,argp);
-  fprintf(stderr, "\n");
-  //vsnprintf(rt_message,rt_message_length-1,fmt,argp);
-  va_end(argp);
-}
-void msleep(int ms){
-  usleep(1000*ms);
-}
-
-#if !defined(RELEASE)
-#if !defined(FOR_MACOSX)
-bool THREADING_has_player_thread_priority(void){
-  return false;
-}
-#endif
-#endif
-
-double TIME_get_ms(void){
-  struct timeval now;
-
-  int err = gettimeofday(&now, NULL);
-  if (err != 0){
-    fprintf(stderr, "============ err: %d ==========\n", err);
-    //abort();
-  }
-
-  return (double)now.tv_sec*1000.0 + (double)now.tv_usec/1000.0;
-}
+#include "../test/test_dummies.c"
 
 #  define ASSERT_MEMORY 1
 
@@ -668,8 +632,7 @@ static void test_memory_alignment(void){
 }
 
 
-#define CURRENT_THREAD_HAS_LOCK 1
-#define CURRENT_THREAD_DOES_NOT_HAVE_LOCK 0
+#if 0
 
 static __thread int g_thread_type = -1;
 
@@ -680,6 +643,8 @@ bool PLAYER_current_thread_has_lock(void){
 bool THREADING_is_runner_thread(void){
   return false;
 }
+#endif
+
 
 static DEFINE_ATOMIC(int, g_highest_allocated) = 0;
 static DEFINE_ATOMIC(int, g_allocated_total) = 0;
