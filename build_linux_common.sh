@@ -20,7 +20,7 @@ mkdir -p /tmp/radium_objects
 export JACKOPT="-DNO_JACK_METADATA"
 export JACK_LDFLAGS="-ljack -ldl"
 
-assert_env_path_exists $PYTHONEXE
+assert_bin_exists $PYTHONEXE
 
 assert_var_value RADIUM_QT_VERSION 5
 #exit -1
