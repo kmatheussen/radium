@@ -475,6 +475,15 @@ void * operator new(decltype(sizeof(0)) size) noexcept(false)
 }
 
 void * operator new(size_t size, std::nothrow_t const&)
+#if defined(__clang__)
+  #if FOR_LINUX
+    _GLIBCXX_USE_NOEXCEPT
+  #else
+    _NOEXCEPT
+  #endif
+#else
+  noexcept(false)
+#endif
 {
   void *mem = V_malloc(size);
   if (size > 1048576) // If changing 1048576, also change 1048576 in run_gdb.sh and function above
