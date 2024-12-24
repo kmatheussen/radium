@@ -225,6 +225,10 @@ fi
 
 
 if [ "$($PKGqt --libs-only-L Qt5Core)" != "" ] ; then
+    if env |grep QMAKE_LIBS_ONLY_L_SHOULD_BE_EMPTY ; then
+        handle_failure "Not empty"
+    fi
+        
     A=$($PKGqt --libs-only-L Qt5Core | xargs)
     B="-L$($QMAKE -query QT_INSTALL_PREFIX)/lib"
     if [ "$A" != "$B" ] ; then
@@ -233,8 +237,10 @@ if [ "$($PKGqt --libs-only-L Qt5Core)" != "" ] ; then
 		       "${QMAKE}: \"$B\""
     fi
 else
-    if [ "$($QMAKE -query QT_INSTALL_PREFIX)" != "/usr" ] ; then
-	handle_failure "\"$PKGqt --libs-only-L Qt5Core\" gave no output. It's assumed that qt is installed in /usr, but it's not. it's installed in \"$(QMAKE -query QT_INSTALL_PREFIX)\". This is only an indication that something is wrong. If you think it is, just comment out this line and try again. (please also provide patch)"
+    if ! env |grep QMAKE_LIBS_ONLY_L_SHOULD_BE_EMPTY ; then
+        if [ "$($QMAKE -query QT_INSTALL_PREFIX)" != "/usr" ] ; then
+	    handle_failure "\"$PKGqt --libs-only-L Qt5Core\" gave no output. It's assumed that qt is installed in /usr, but it's not. it's installed in \"$($QMAKE -query QT_INSTALL_PREFIX)\". If this is correct, then simply set QMAKE_LIBS_ONLY_L_SHOULD_BE_EMPTY=1 in your build script."
+        fi
     fi
 fi
 
