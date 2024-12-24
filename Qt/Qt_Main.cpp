@@ -474,7 +474,7 @@ void * operator new(decltype(sizeof(0)) size) noexcept(false)
   return mem;
 }
 
-void * operator new(unsigned long size, std::nothrow_t const&)
+void * operator new(size_t size, std::nothrow_t const&)
 {
   void *mem = V_malloc(size);
   if (size > 1048576) // If changing 1048576, also change 1048576 in run_gdb.sh and function above
@@ -5072,9 +5072,31 @@ int main(int argc, char **argv){
   
 
   QString pythonlibpath = STRING_get_qstring(OS_get_full_program_file_path(QString("packages/python27_install/lib/python2.7")).id);
+#if FOR_WINDOWS
+  putenv(strdup(QString("PYTHONHOME="+pythonlibpath).toLocal8Bit().constData()));
+  putenv(strdup(QString("PYTHONPATH="+pythonlibpath).toLocal8Bit().constData()));
+#else
   setenv("PYTHONHOME",V_strdup(pythonlibpath.toLocal8Bit().constData()),1);
   setenv("PYTHONPATH",V_strdup(pythonlibpath.toLocal8Bit().constData()),1);
+#endif
+  
+#if 0
+#if defined(FOR_MACOSX)
+  {
+    #if !defined (__arm64__) || defined (__aarch64__)
+      
+    #else // arm -> x86
+      
+      QString pythonhome = STRING_get_qstring(OS_get_full_program_file_path(QString("python2.7/lib")).id);
+      QString pythonpath = pythonhome;
 
+      setenv("PYTHONHOME",V_strdup(pythonhome.toLocal8Bit().constData()),1);
+      setenv("PYTHONPATH",V_strdup(pythonpath.toLocal8Bit().constData()),1);
+
+    #endif // x86
+  }   
+#endif // FOR_MACOSX
+#endif
   
   //Py_SetProgramName(QString(python
   //Py_SetPythonHome(V_strdup(OS_get_full_program_file_path("").toLocal8Bit().constData()));
