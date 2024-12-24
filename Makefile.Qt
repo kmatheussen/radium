@@ -842,8 +842,8 @@ endif
 
 TEST_TIMEDATA_OPTS=-DTEST_TIMEDATA_MAIN -Wall $(WERROR) -g -lpthread  $(filter-out -c, $(CPPOPT)) $(TEST_ARCH_DEF) -I. -I../Qt -Wno-error=parentheses
 
-#TEST_TIMEDATA_RUNNER=gdb -ex "set print thread-events off" -ex run -ex=quit ./a.out
-TEST_TIMEDATA_RUNNER=lldb -o run -f ./a.out
+TEST_TIMEDATA_RUNNER=gdb -ex "set print thread-events off" -ex run -ex=quit ./a.out
+#TEST_TIMEDATA_RUNNER=lldb -o run -f ./a.out
 
 test_refcounttimedata:
 	$(CCC) common/TimeData.cpp $(TEST_TIMEDATA_OPTS) `$(PKGqt) --cflags Qt5Core --libs Qt5Core` -fPIC -O3 -DTEST_SHARED_PTR -DTEST_REFCOUNTTIMEDATA -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
@@ -871,7 +871,7 @@ test_timedata_gdb:
 #	cd common && g++ TimeData.cpp $(TEST_TIMEDATA_OPTS) -o a.out &&	gdb -ex "set print thread-events off" $(TEST_TIMEDATA_RUNNER)
 #	cd common && g++ TimeData.cpp $(TEST_TIMEDATA_OPTS) -O3 -o a.out &&	gdb -ex "set print thread-events off" $(TEST_TIMEDATA_RUNNER)
 #	cd common && g++ TimeData.cpp $(TEST_TIMEDATA_OPTS) -O3 -fsanitize=thread -o a.out &&	gdb -ex "set print thread-events off" TSAN_OPTIONS="history_size=7,second_deadlock_stack=1,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
-	cd common && g++ TimeData.cpp $(TEST_TIMEDATA_OPTS) -O3 -fsanitize=undefined $(ADDRESS_SANITIZE_OPTS) -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" gdb -ex "set print thread-events off" ./a.out
+	cd common && g++ TimeData.cpp $(TEST_TIMEDATA_OPTS) -O3 -fsanitize=undefined $(ADDRESS_SANITIZE_OPTS) -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" gdb -ex "set print thread-events off" -ex=quit ./a.out
 	cd common && g++ TimeData.cpp $(TEST_TIMEDATA_OPTS) -O3 -fsanitize=undefined $(ADDRESS_SANITIZE_OPTS) -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" ./a.out
 
 
