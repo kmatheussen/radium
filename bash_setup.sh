@@ -7,6 +7,8 @@ fi
 
 RADIUM_BASH_SETUP_HAS_BEEN_SETUP=1
 
+export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
+
 #set -o verbose
 
 set -u # error if using an unset variable

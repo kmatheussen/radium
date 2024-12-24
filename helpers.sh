@@ -3,16 +3,11 @@
 
 
 source $(dirname "${0}")/bash_setup.sh
-#source $(dirname "${0}")/bash_setup.sh
-#./bash_setup.sh
 
-#echo "almost finished" |grep SFEFEF
-#wefwef
 
-#exit 0
-assert_env_path_exists()
+assert_bin_exists()
 {
-    if [ ! -f "${1}" ] ; then
+    if [ ! -f $(which "${1}") ] ; then
 	handle_failure "\"${1}\" doesn't seem to exist."
     fi
 }

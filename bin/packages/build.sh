@@ -211,7 +211,7 @@ build_qhttpserver() {
     tar xvzf qhttpserver-master.tar.gz
     cd qhttpserver-master/
     echo "CONFIG += staticlib" >> src/src.pro
-    `../../../find_moc_and_uic_paths.sh qmake`
+    $QMAKE
     make -j8 # necessary to create the moc files.
     cd ..
 }
@@ -277,7 +277,7 @@ build_qscintilla() {
     tar xvzf QScintilla_src-2.14.0.tar.gz 
     cd QScintilla_src-2.14.0/src
     echo "CONFIG += staticlib" >> qscintilla.pro
-    `../../../../find_moc_and_uic_paths.sh qmake`
+    $QMAKE
     patch -p0 <../../qscintilla.patch
     make -j8
     cd ../..
