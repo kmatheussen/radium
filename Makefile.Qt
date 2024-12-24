@@ -510,6 +510,8 @@ OPT=$(COMMONOPT) -Wstrict-prototypes -Wmissing-prototypes -std=$(STD_C)  # Note:
 
 OBJC_OPT=$(COMMONOPT) # -nostdinc++
 
+OBJCPP_OPT ?=
+
 # -D_FORTIFY_SOURCE=2 -O2
 
 ifneq '' '$(findstring clang,$(CC))'
@@ -555,8 +557,6 @@ ifeq ($(BUILDTYPE), DEBUG)
 endif
 
 CPPOPT += -Wno-register
-
-OBJCPP_OPT=$(CPPOPT) # -nostdinc++
 
 WNO_DUPLICATED_BRANCHES=
 ifeq (,$(findstring clang,$(CC)))
@@ -1635,7 +1635,7 @@ $(T)W_Keyboard.o:  $(BUILD_DEPENDENCIES) windows/W_Keyboard.c
 	$(CC2) windows/W_Keyboard.c $(OPT)
 
 $(T)cocoa_Keyboard.o:  $(BUILD_DEPENDENCIES) macosx/cocoa_Keyboard.mm
-	$(CLANGPLUSPLUS2) macosx/cocoa_Keyboard.mm $(OBJCPP_OPT)
+	$(CLANGPLUSPLUS2) macosx/cocoa_Keyboard.mm $(CPPOPT) $(OBJCPP_OPT)
 
 $(T)machthreads.o:  $(BUILD_DEPENDENCIES) macosx/machthreads.mm
 	$(CLANGPLUSPLUS2) macosx/machthreads.mm $(OBJC_OPT)
