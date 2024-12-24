@@ -7,29 +7,30 @@ set -eEo pipefail
 
 mkdir -p $T
 
+#echo "-ARGS: $@-"
 for var in "$@"; do
-    if [ -z ${var##*.c} ]; then
+    if [[ -z ${var##*.c} ]] ; then
         sourcefile=$var
         base=${var##*/}
         base=${base%.*}
         #echo "YES1: $var"
         break
     fi
-    if [ -z ${var##*.cpp} ]; then
+    if [[ -z ${var##*.cpp} ]] ; then
         sourcefile=$var
         base=${var##*/}
         base=${base%.*}
         #echo "YES2: $var"
         break
     fi
-    if [ -z ${var##*.m} ]; then
+    if [[ -z ${var##*.m} ]] ; then
         sourcefile=$var
         base=${var##*/}
         base=${base%.*}
         #echo "YES2: $var"
         break
     fi
-    if [ -z ${var##*.mm} ]; then
+    if [[ -z ${var##*.mm} ]] ; then
         sourcefile=$var
         base=${var##*/}
         base=${base%.*}
