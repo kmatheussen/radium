@@ -19,9 +19,9 @@ libdir ?= $(PREFIX)/lib
 
 # 2. Where moc and uic for QT5 is installed.
 #
-MOC ?= "`$(shell pwd)/find_moc_and_uic_paths.sh moc`"
-UIC ?= "`$(shell pwd)/find_moc_and_uic_paths.sh uic`"
-#RCC ?= "`./find_moc_and_uic_paths.sh rcc`"
+MOC ?= moc
+UIC ?= uic
+#RCC ?= rcc
 
 # 4. Release buid or Debug build
 #

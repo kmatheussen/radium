@@ -13,9 +13,6 @@ export RADIUM_BIN="/tmp/radium_bin/radium_linux.bin"
 mkdir -p /tmp/radium_bin
 mkdir -p /tmp/radium_objects
 
-# find_moc_and_uic_path.sh has been tested on fedora 11, fedora 17, ubuntu 12, and mint 13.
-#export MOC="`./find_moc_and_uic_paths.sh moc`"
-#export UIC="`./find_moc_and_uic_paths.sh uic`"
 
 # Uncomment next line for debug build.
 #export BUILDTYPE=RELEASE
@@ -134,10 +131,9 @@ export PYOPTS="-I $PYPATH"
 #export QT_CFLAGS="-DQT_STATIC -DQT3_SUPPORT -I$RQTDIR/include/Qt3Support -I$RQTDIR/include/QtCore -I$RQTDIR/include/QtGui -I$RQTDIR/include/QtNetwork -I$RQTDIR/include/QtSql -I$RQTDIR/include/QtOpenGL -Ibin/packages/qhttpserver-master/src"
 #export QT_LDFLAGS="$RQTDIR/lib/libQt3Support.a $RQTDIR/lib/libQtSql.a $RQTDIR/lib/libQtOpenGL.a $RQTDIR/lib/libQtGui.a $RQTDIR/lib/libQtNetwork.a $RQTDIR/lib/libQtCore.a -lSM -lICE -lfreetype -lfontconfig -lXrender -lpng -lglib-2.0 -lgobject-2.0"
 
-QT_QMAKE_BIN_PATH=`./find_moc_and_uic_paths.sh qmake`
-QT_INCLUDE_PATH=`$QT_QMAKE_BIN_PATH -query QT_INSTALL_HEADERS`
+QT_INCLUDE_PATH=`$QMAKE -query QT_INSTALL_HEADERS`
 export QT_UI_CFLAGS="-I $QT_INCLUDE_PATH/QtUiTools" # Doing this instead of using pkg since there are bugs in the dependencies of the pkg file in some versions of Qt. (same with the lib file below)
-export QT_UI_LDFLAGS="`$QT_QMAKE_BIN_PATH -query QT_INSTALL_LIBS`/libQt5UiTools.a"
+export QT_UI_LDFLAGS="`$QMAKE -query QT_INSTALL_LIBS`/libQt5UiTools.a"
 
 
 #One of these:

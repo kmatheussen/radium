@@ -147,78 +147,78 @@ if [ `uname` == "Linux" ] ; then
     rm temp$$.c
 fi
 
-if $(./find_moc_and_uic_paths.sh qmake) --version|grep "5\.0\." ; then
+if $QMAKE --version|grep "5\.0\." ; then
     echo "Qt is too old. Need at least 5.14"
     exit 5
 fi
 
-if $(./find_moc_and_uic_paths.sh qmake) --version|grep "5\.1\." ; then
+if $QMAKE --version|grep "5\.1\." ; then
     echo "Qt is too old. Need at least 5.14"
     exit 5
 fi
 
-if $(./find_moc_and_uic_paths.sh qmake) --version|grep "5\.2\." ; then
+if $QMAKE --version|grep "5\.2\." ; then
     echo "Qt is too old. Need at least 5.14"
     exit 5
 fi
 
-if $(./find_moc_and_uic_paths.sh qmake) --version|grep "5\.3\." ; then
+if $QMAKE --version|grep "5\.3\." ; then
     echo "Qt is too old. Need at least 5.14"
     exit 5
 fi
 
-if $(./find_moc_and_uic_paths.sh qmake) --version|grep "5\.4\." ; then
+if $QMAKE --version|grep "5\.4\." ; then
     echo "Qt is too old. Need at least 5.14"
     exit 5
 fi
 
-if $(./find_moc_and_uic_paths.sh qmake) --version|grep "5\.5\." ; then
+if $QMAKE --version|grep "5\.5\." ; then
     echo "Qt is too old. Need at least 5.14"
     exit 5
 fi
 
-if $(./find_moc_and_uic_paths.sh qmake) --version|grep "5\.6\." ; then
+if $QMAKE --version|grep "5\.6\." ; then
     echo "Qt is too old. Need at least 5.14"
     exit 5
 fi
 
-if $(./find_moc_and_uic_paths.sh qmake) --version|grep "5\.7\." ; then
+if $QMAKE --version|grep "5\.7\." ; then
     echo "Qt is too old. Need at least 5.14"
     exit 5
 fi
 
-if $(./find_moc_and_uic_paths.sh qmake) --version|grep "5\.8\." ; then
+if $QMAKE --version|grep "5\.8\." ; then
     echo "Qt is too old. Need at least 5.14"
     exit 5
 fi
 
-if $(./find_moc_and_uic_paths.sh qmake) --version|grep "5\.9\." ; then
+if $QMAKE --version|grep "5\.9\." ; then
     echo "Qt is too old. Need at least 5.14"
     exit 5
 fi
 
-if $(./find_moc_and_uic_paths.sh qmake) --version|grep "5\.10\." ; then
+if $QMAKE --version|grep "5\.10\." ; then
     echo "Qt is too old. Need at least 5.14"
     exit 5
 fi
 
-if $(./find_moc_and_uic_paths.sh qmake) --version|grep "5\.11\." ; then
+if $QMAKE --version|grep "5\.11\." ; then
     echo "Qt is too old. Need at least 5.14"
     exit 5
 fi
 
-if $(./find_moc_and_uic_paths.sh qmake) --version|grep "5\.12\." ; then
+if $QMAKE --version|grep "5\.12\." ; then
     echo "Qt is too old. Need at least 5.14"
     exit 5
 fi
 
-if $(./find_moc_and_uic_paths.sh qmake) --version|grep "5\.13\." ; then
+if $QMAKE --version|grep "5\.13\." ; then
     echo "Qt is too old. Need at least 5.14"
     exit 5
 fi
 
-if $(./find_moc_and_uic_paths.sh qmake) --version|grep "5\.5\." ; then
-    QT_QPA_PLATFORM_PLUGIN_PATH=`$(./find_moc_and_uic_paths.sh qmake) -query QT_INSTALL_PLUGINS`
+if $QMAKE --version|grep "5\.5\." ; then
+    QT_QPA_PLATFORM_PLUGIN_PATH=`$QMAKE -query QT_INSTALL_PLUGINS`
     if grep -r kf5deprecatedwidgets.so $QT_QPA_PLATFORM_PLUGIN_PATH ; then
         echo
         echo "The file $QT_QPA_PLATFORM_PLUGIN_PATH/*/kf5deprecatedwidgets.so in Qt 5.5 makes Radium (and other programs) misbehave. You should delete this file or use a different version of Qt."
