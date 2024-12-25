@@ -43,7 +43,7 @@ IF YOU ARE DEVELOPING RADIUM
      
         # Debug build. Lots of assertions. Very slow. Don't build this version if you are just testing the program.
         make packages # Only necessary one time.
-        BUILDTYPE=DEBUG_FAST ./build_linux.sh -j`nproc` && ./run_gdb.sh
+        BUILDTYPE=DEBUG ./build_linux.sh -j`nproc` && ./run_gdb.sh
 
      There are three types of BUILD_TYPE:
      

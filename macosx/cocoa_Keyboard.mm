@@ -84,7 +84,6 @@ void OS_OSX_clear_modifiers(void){
 }
 
 #if 0
-#endif
 
 static void print_modifier_flags(const NSEvent *event)
 {
@@ -108,6 +107,7 @@ static void print_modifier_flags(const NSEvent *event)
 
 	printf("\n");
 }
+#endif
 
 // https://developer.apple.com/library/mac/documentation/Cocoa/Reference/ApplicationKit/Classes/NSEvent_Class
 
@@ -116,7 +116,7 @@ int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
   NSEventType type = [event type];
   int ret = -1;
 
-  static int n = 0;
+  //static int n = 0;
   
   if(type==NSEventTypeFlagsChanged || type==NSEventTypeKeyDown || type==NSEventTypeKeyUp){
 
@@ -675,6 +675,7 @@ int OS_SYSTEM_get_qwerty_keynum(void *void_event){
   return keymap_qwerty[keycode];
 }
 
+#if 0
 void MACOS_setup_keyboard_event_monitor(void)
 {
 	auto event_monitor = [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskKeyDown
@@ -687,6 +688,7 @@ void MACOS_setup_keyboard_event_monitor(void)
 
 	(void)event_monitor;
 }
+#endif
 
 void OS_SYSTEM_init_keyboard(void){
   static bool has_inited = false;

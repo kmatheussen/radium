@@ -1,5 +1,6 @@
 set -eEu
 
+
 source bash_setup.sh
 
 
@@ -111,18 +112,13 @@ set_var FULL_VERSION 1
 
 
 ########################################################
-# RADIUM_QTDIR is the directory where qt5 is installed.
-# If set to 0, we will try to find it automatically.
-# Note that if settings RADIUM_QTDIR you might also have
-# to set either the PKGqt variable or the
-# QT_PKG_CONFIGURATION_PATH as well, so that we don't
-# mix Qt version. (The build system checks this for
-# you, and will tell you if you need to set either
-# of these variables.)
+# qt5
 #
-set_var RADIUM_QTDIR 0 # This is the directory where we find bin/qmake, bin/uic, and bin/moc.
 set_var PKGqt 0 # Can be set to another pkg-config than is not first in PATH.
 set_var QT_PKG_CONFIGURATION_PATH 0 # PKG_CONFIG_PATH will be set to this value.
+set_var QMAKE 0
+set_var UIC 0
+set_var MOC 0
 
 
 
@@ -152,55 +148,99 @@ set_var MACOSX_DEPLOYMENT_TARGET 12.0
 #
 ########################################################
 
+if [ -v RADIUM_CONFIGURATION_HAS_BEEN_SETUP ] ; then
+    echo "Something is wrong. configuration.sh should not include itself."
+    exit -1
+fi
+
+RADIUM_CONFIGURATION_HAS_BEEN_SETUP=1
+
+
 # Note: Run-scripts have not been updated to use
 # other pythons than the one included with Radium,
 # so setting this value to something else might
 # lead to unexpected behaviors.
 #
 set_var PYTHONEXE `./find_python_path.sh`
-assert_env_path_exists $PYTHONEXE
-
+if ! env |grep PYTHONEXE_NOT_AVAILABLE_YET ; then
+    assert_bin_exists $PYTHONEXE
+fi
+   
 set_var PKG `which pkg-config`
-assert_env_path_exists $PKG
+assert_bin_exists $PKG
 
 set_var RADIUM_RELEASE_CFLAGS ""
 
-if ! is_0 $PKGqt ; then
-    assert_env_path_exists $PKGqt
-else
+if is_0 $PKGqt ; then
     export PKGqt=$PKG
 fi
 
+assert_bin_exists $PKGqt
+
 if ! is_0 $QT_PKG_CONFIGURATION_PATH ; then
-    assert_env_path_exists $QT_PKG_CONFIGURATION_PATH
+    assert_bin_exists $QT_PKG_CONFIGURATION_PATH
     export PKGqt="PKG_CONFIG_PATH=$QT_PKG_CONFIGURATION_PATH $PKGqt"
 fi
 
+if is_0 $QMAKE ; then
+    if which qmake-qt5 ; then
+        export QMAKE=$(which qmake-qt5)
+    else
+        export QMAKE=$(which qmake)
+    fi
+fi
 
-QMAKE=$(./find_moc_and_uic_paths.sh qmake)
+if is_0 $UIC ; then
+    if which uic-qt5 ; then
+        export UIC=$(which uic-qt5)
+    else
+        export UIC=$(which uic)
+    fi
+fi
 
-assert_env_path_exists $QMAKE
+if is_0 $MOC ; then
+    if which moc-qt5 ; then
+        export MOC=$(which moc-qt5)
+    else
+        export MOC=$(which moc)
+    fi
+fi
 
-assert_env_path_exists $(./find_moc_and_uic_paths.sh uic)
 
-assert_env_path_exists $(./find_moc_and_uic_paths.sh moc)
+assert_bin_exists $QMAKE
+assert_bin_exists $UIC
+assert_bin_exists $MOC
 
 if ${QMAKE} -query QT_VERSION | grep -v '^5.1' ; then
-    handle_failure "Seems like it's the wrong qt version. We need Qt newer than 5.10. Set RADIUM_QTDIR to correct directory to fix".
+    handle_failure "Seems like qmake has the wrong version. We need Qt newer than 5.10, but not Qt6. Set QMAKE to correct path to fix".
+fi
+
+if ${UIC} --version | grep -v '^uic 5.1' ; then
+    handle_failure "Seems like uic has the wrong version. We need Qt newer than 5.10, but not Qt6. Set UIC to correct path to fix".
+fi
+
+if ${MOC} --version | grep -v '^moc 5.1' ; then
+    handle_failure "Seems like moc has the wrong version. We need Qt newer than 5.10, but not Qt6. Set MOC to correct path to fix".
 fi
 
 
 if [ "$($PKGqt --libs-only-L Qt5Core)" != "" ] ; then
-    echo "aiai1b. QMAKE $QMAKE"
-    echo "AIAI2; ${PKGqt} $($QMAKE -query QT_INSTALL_PREFIX)"
-    if [ "$($PKGqt --libs-only-L Qt5Core)" != "$($QMAKE -query QT_INSTALL_PREFIX)" ] ; then
-	handle_failure "$PKGqt and $QMAKE doesn't seem to point to the same Qt:" \
-		       "PKG: \"$($PKGqt --libs-only-L Qt5Core)\"." \
-		       "${QMAKE}: '\"$($QMAKE -query QT_INSTALL_PREFIX)\""
+    if env |grep QMAKE_LIBS_ONLY_L_SHOULD_BE_EMPTY ; then
+        handle_failure "Not empty"
+    fi
+        
+    A=$($PKGqt --libs-only-L Qt5Core | xargs)
+    B="-L$($QMAKE -query QT_INSTALL_PREFIX)/lib"
+    if [ "$A" != "$B" ] ; then
+	handle_failure "$PKGqt and $QMAKE doesn't seem to point to the same Qt:\n" \
+		       "PKG: \"$A\".\n" \
+		       "${QMAKE}: \"$B\""
     fi
 else
-    if [ "$($QMAKE -query QT_INSTALL_PREFIX)" != "/usr" ] ; then
-	handle_failure "\"$PKGqt --libs-only-L Qt5Core\" gave no output. It's assumed that qt is installed in /usr, but it's not. it's installed in \"$(QMAKE -query QT_INSTALL_PREFIX)\". This is only an indication that something is wrong. If you think it is, just comment out this line and try again. (please also provide patch)"
+    if ! env |grep QMAKE_LIBS_ONLY_L_SHOULD_BE_EMPTY ; then
+        if [ "$($QMAKE -query QT_INSTALL_PREFIX)" != "/usr" ] ; then
+	    handle_failure "\"$PKGqt --libs-only-L Qt5Core\" gave no output. It's assumed that qt is installed in /usr, but it's not. it's installed in \"$($QMAKE -query QT_INSTALL_PREFIX)\". If this is correct, then simply set QMAKE_LIBS_ONLY_L_SHOULD_BE_EMPTY=1 in your build script."
+        fi
     fi
 fi
 
@@ -213,7 +253,7 @@ fi
 if is_set FAUST_USES_LLVM ; then
     
     set_var LLVM_CONFIG_BIN `which llvm-config`
-    assert_env_path_exists LLVM_CONFIG_BIN
+    assert_bin_exists $LLVM_CONFIG_BIN
     
     old_path=""
     

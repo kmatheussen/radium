@@ -7,6 +7,8 @@ fi
 
 RADIUM_BASH_SETUP_HAS_BEEN_SETUP=1
 
+export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
+
 #set -o verbose
 
 set -u # error if using an unset variable
@@ -16,11 +18,13 @@ set -o errtrace # same as "set -E". When enabled, $LINENO has the correct value 
 source $(dirname "${0}")/vars.sh
 
 print_error_and_exit () {
-    	for line in "$@" ; do
-	    printf "${RED}Error: ${LIGHT_CYAN}${line}${NC}\n"
-	done
+    local newStr=$(echo $@ |sed 's/\\n/@@/g')
+    IFS='@@'
+    for line in $newStr ; do
+	printf "${RED}Error: ${LIGHT_CYAN}${line}${NC}\n"
+    done
 	
-	exit -1
+    exit -1
 }
 
 

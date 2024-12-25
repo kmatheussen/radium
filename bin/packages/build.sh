@@ -3,6 +3,8 @@
 set -eEu
 set -x
 
+export PYTHONEXE_NOT_AVAILABLE_YET=1
+
 pushd ../../
 source configuration.sh
 popd
@@ -209,7 +211,7 @@ build_qhttpserver() {
     tar xvzf qhttpserver-master.tar.gz
     cd qhttpserver-master/
     echo "CONFIG += staticlib" >> src/src.pro
-    `../../../find_moc_and_uic_paths.sh qmake`
+    $QMAKE
     make -j8 # necessary to create the moc files.
     cd ..
 }
@@ -224,10 +226,11 @@ build_qhttpserver() {
 
 #http://www.hpl.hp.com/personal/Hans_Boehm/gc/
 build_gc() {
-    GC_VERSION=8.2.4
+    GC_VERSION=8.2.8
     LIBATOMIC_VERSION=7.8.0
     rm -fr gc-$GC_VERSION libatomic_ops-$LIBATOMIC_VERSION
     tar xvzf gc-$GC_VERSION.tar.gz
+    #mv bdwgc-$GC_VERSION gc-$GC_VERSION
     tar xvzf libatomic_ops-$LIBATOMIC_VERSION.tar.gz
     cd gc-$GC_VERSION
     ln -s ../libatomic_ops-$LIBATOMIC_VERSION libatomic_ops
@@ -274,7 +277,7 @@ build_qscintilla() {
     tar xvzf QScintilla_src-2.14.0.tar.gz 
     cd QScintilla_src-2.14.0/src
     echo "CONFIG += staticlib" >> qscintilla.pro
-    `../../../../find_moc_and_uic_paths.sh qmake`
+    $QMAKE
     patch -p0 <../../qscintilla.patch
     make -j8
     cd ../..

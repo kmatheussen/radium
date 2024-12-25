@@ -30,6 +30,8 @@ sys.path = [os.path.abspath(os.path.dirname(sys.argv[0]))] + sys.path
 #    sys.path = [sys.path[0], os.path.join(sys.path[0],"python2.7")]
 #    sys.path = sys.path + [os.path.join(sys.path[1],"lib-dynload")]
 
+sys.path = sys.path + [os.path.join(sys.g_program_path,"packages/python27_install/lib/python2.7/lib-dynload")]
+
 print "sys.path now:",sys.path
 #import platform
 #print "platform:",platform.system()
