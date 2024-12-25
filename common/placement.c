@@ -355,27 +355,40 @@ void PlaceSetReallinePlace(
 /**********************************************************
   FUNCTION
     Puts 'p' as near as possible 'tp' such that p<tp.
+    Except: If tp==0, then p==0 as well.
 **********************************************************/
 void PlaceTilLimit(Place *p, const Place *tp){
-  if(0==tp->counter){
-    p->line=tp->line-1;
-    p->counter=MAX_UINT32-1;
-    p->dividor=MAX_UINT32;
+	if (0==tp->counter)
+	{
+		if (tp->line <= 0)
+		{
+			R_ASSERT(tp->line==0);
+			p->line = 0;
+			p->counter = 0;
+			p->dividor = 1;
+		}
+		else
+		{
+			p->line=tp->line-1;
+			p->counter=MAX_UINT32-1;
+			p->dividor=MAX_UINT32;
+		}
+	}
+	else
+	{
 
-    R_ASSERT(p->line>=0);
-
-  }else{
-
-    p->line=tp->line;
+		p->line=tp->line;
     
-    uint32_t new_counter = scale_double(tp->counter, // first scale it up as much as possible
-                                        0,tp->dividor,
-                                        0,MAX_UINT32);
-    new_counter--; // then subtract one.
-    
-    p->counter=new_counter;
-    p->dividor=MAX_UINT32;
-  }
+		uint32_t new_counter = scale_double(tp->counter, // first scale it up as much as possible
+						    0,tp->dividor,
+						    0,MAX_UINT32);
+		new_counter--; // then subtract one.
+		
+		p->counter=new_counter;
+		p->dividor=MAX_UINT32;
+	}
+
+	R_ASSERT(p->line>=0);
 }
 #endif
 
@@ -502,43 +515,11 @@ gcc -Wall -Werror -DTEST_PLACEMENT -DDEBUG -DUSE_QT_REQTYPE=1 common/placement.c
 #include <stdarg.h>
 #include <assert.h>
 
-void EndProgram(void){
-  printf("ENDPROGRAM called\n");
-}
 
-void CRASHREPORTER_send_assert_message(enum Crash_Type crash_type, const char *fmt,...){
-  abort();
-}
+#include "../test/test_dummies.c"
 
-void RWarning_internal(const char *fmt,...){
-  abort();
-}
-
-bool THREADING_is_main_thread(void){
-  return true;
-}
-
-bool PLAYER_current_thread_has_lock(void){
-  return false;
-}
-
-bool THREADING_is_runner_thread(void){
-  return false;
-}
 
 bool g_is_starting_up = false;
-
-void RError_internal(const char *fmt,...){
-  char message[1000];
-  va_list argp;
-  
-  va_start(argp,fmt);
-  /*	vfprintf(stderr,fmt,argp); */
-  vsnprintf(message,998,fmt,argp);
-  va_end(argp);
-
-  fprintf(stderr,"error: %s\n",message);
-}
 
 #define VALIDATE(_p, _line, _counter, _dividor)  do{ \
     assert(_p->line==_line);                       \

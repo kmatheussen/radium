@@ -1854,41 +1854,9 @@ void RT_notes_called_each_block(struct SeqTrack *seqtrack,
 
 bool g_is_starting_up = false;
 
+#include "../test/test_dummies.c"
 
-extern "C"{
-void CRASHREPORTER_send_assert_message(enum Crash_Type crash_type, const char *fmt,...){
-  abort();
-}
-void EndProgram(void){
-  printf("ENDPROGRAM called\n");
-}
 
-bool THREADING_is_main_thread(void){
-  return true;
-}
-
-void RWarning_internal(const char *fmt,...){
-  abort();
-}
-void RError_internal(const char *fmt,...){
-  char message[1000];
-  va_list argp;
-  
-  va_start(argp,fmt);
-  /*	vfprintf(stderr,fmt,argp); */
-  vsnprintf(message,998,fmt,argp);
-  va_end(argp);
-
-  fprintf(stderr,"error: %s\n",message);
-}
-bool PLAYER_current_thread_has_lock(void){
-  return false;
-}
-bool THREADING_is_runner_thread(void){
-  return false;
-}
-
-}
 
 static void cmp(const char *text, float value){
   fprintf(stderr,"\n\nComparing \"%s\" against %f\n",text,value);

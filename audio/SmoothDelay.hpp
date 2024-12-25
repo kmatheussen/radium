@@ -205,20 +205,9 @@ public:
     _num_samples_in_buffer += num_frames; //R_MIN(_delay_size, _num_samples_in_buffer + num_frames);
   }
 
-  bool can_memcpy(int num_frames, const T *input, T *output) const {
-    if (_delay_size < num_frames)
-      return false;
-    
-    int frames_left = _delay_size - IOTA;
-    if (num_frames > frames_left)
-      return false;
-
-    return true;
-  }
-
 
   // overwrites output (plain delay)
-  void RT_process_overwrite(int num_frames, const T *__restrict__ input, T *__restrict__ output) {
+  void RT_process_overwrite(const int num_frames, const T *__restrict__ input, T *__restrict__ output) {
     R_ASSERT_NON_RELEASE(input!=output);
     R_ASSERT_NON_RELEASE(RT_is_finished_filling_buffer());
 
@@ -226,40 +215,70 @@ public:
     double time = TIME_get_ms();
 #endif
 
-    if (can_memcpy(num_frames, input, output)){
-
-      // Improves performance by around 75% (Larger delay line means larger improvement, but even for delay lines below 100 frames, there is a 10% improvement)
-
-      memcpy(output, _buffer + IOTA, num_frames*sizeof(T));
-      memcpy(_buffer + IOTA, input, num_frames*sizeof(T));
-      IOTA += num_frames;
-      if (IOTA >= _delay_size) // Don't need to use 'while' here since 'can_memcpy' returns false if _delay_size < num_frames.
-        IOTA -= _delay_size;
-
-    } else {
-
-      for(int i=0;i<num_frames;i++){
-        
-        output[i] = _buffer[IOTA];
-        _buffer[IOTA] = input[i];
-        
-        // Using the and-trick will probably usually _lower_ performance significantly, and not increase performance.
-        // In large programs, minimizing memory usage (to lower the number of cache misses) seems more important than optimizing inner loops.
-        IOTA++;
-        
-        if(IOTA==_delay_size)
-          IOTA=0;
-
-        R_ASSERT_NON_RELEASE(IOTA < _delay_size);      
-      }
-
+    if (_delay_size >= num_frames)
+    {
+	    int io_pos = 0;
+	    
+	    while(true)
+	    {
+		    bool do_continue = false;
+		    
+		    int num_to_copy = num_frames - io_pos;
+		    const int max_to_copy = _delay_size - IOTA;
+		    
+		    R_ASSERT_NON_RELEASE(max_to_copy > 0);
+		    
+		    if (num_to_copy > max_to_copy)
+		    {
+			    num_to_copy = max_to_copy;
+			    do_continue = true;
+		    }
+		    
+		    memcpy(output + io_pos,    _buffer + IOTA,     num_to_copy*sizeof(T));
+		    memcpy(_buffer + IOTA,     input + io_pos,     num_to_copy*sizeof(T));
+			    
+		    IOTA += num_to_copy;
+		    
+		    if (IOTA >= _delay_size)
+		    {
+			    R_ASSERT_NON_RELEASE(IOTA==_delay_size);
+			    IOTA = 0;
+		    }
+		    
+		    io_pos += num_to_copy;
+		    
+		    if (!do_continue)
+			    break;
+	    }
+	    
+	    R_ASSERT_NON_RELEASE(io_pos == num_frames);
     }
+    else
+    {
+	    for(int i=0;i<num_frames;i++)
+	    {
+		    output[i] = _buffer[IOTA];
+		    _buffer[IOTA] = input[i];
+			    
+		    // Using the and-trick will probably usually _lower_ performance significantly, and not increase performance.
+		    // In large programs, minimizing memory usage (to lower the number of cache misses) seems more important than optimizing inner loops.
+		    IOTA++;
+		    
+		    if(IOTA==_delay_size)
+			    IOTA=0;
+		    
+	    }
+    }
+
+    R_ASSERT_NON_RELEASE(IOTA < _delay_size);
+    
 
 #if BENCHMARK_SMOOTHDELAY
     g_benchmark_time += TIME_get_ms()-time;
 #endif
   }
 
+	
   void RT_process_overwrite_fade_in(int num_frames, const T *__restrict__ input, T *__restrict__ output){
     R_ASSERT_NON_RELEASE(_state==State::FADE_IN_DELAY || _state==State::CROSSFADE);
     R_ASSERT_NON_RELEASE(_is_fading_in);
@@ -268,6 +287,7 @@ public:
     _fade_in.RT_fade(num_frames, output);
   }
 
+	
   void RT_process_overwrite_fade_out(int num_frames, const T *__restrict__ input, T *__restrict__ output){
     R_ASSERT_NON_RELEASE(_state==State::FADE_OUT_DELAY || _state==State::CROSSFADE);
     R_ASSERT_NON_RELEASE(!_is_fading_in);
@@ -276,6 +296,7 @@ public:
     _fade_out.RT_fade(num_frames, output);
   }
 
+	
   void RT_process_add_fade_in(int num_frames, const T *__restrict__ input, T *__restrict__ output){
     R_ASSERT_NON_RELEASE(_state==State::FADE_IN_DELAY || _state==State::CROSSFADE);
     R_ASSERT_NON_RELEASE(_is_fading_in);
@@ -288,6 +309,7 @@ public:
     JUCE_add_sound(output, temp_output, num_frames);
   }
 
+	
   void RT_process_add_fade_out(int num_frames, const T *__restrict__ input, T *__restrict__ output){
     R_ASSERT_NON_RELEASE(_state==State::FADE_OUT_DELAY || _state==State::CROSSFADE);
     R_ASSERT_NON_RELEASE(!_is_fading_in);
@@ -300,6 +322,7 @@ public:
     JUCE_add_sound(output, temp_output, num_frames);
   }
 
+	
   bool RT_is_finished_fading_in(void) const {
     R_ASSERT_NON_RELEASE(_state==State::FADE_IN_DELAY || _state==State::CROSSFADE);
     R_ASSERT_NON_RELEASE(_is_fading_in);
@@ -311,7 +334,6 @@ public:
     R_ASSERT_NON_RELEASE(!_is_fading_in);
     return _fade_out.RT_is_finished_fading();
   }
-
 };
 
 
@@ -754,9 +776,10 @@ static void SMOOTHDELAY_test(void){
 
 #define M_PI2 (2.0*M_PI)
 
+  double gendata_time = 0;
   double time = TIME_get_ms();
 
-  for(int testnum0 = 0 ; testnum0 < 100 ; testnum0++){
+  for(int testnum0 = 0 ; testnum0 < 500 ; testnum0++){
 #if !BENCHMARK_SMOOTHDELAY
     printf("%d ", testnum0);fflush(stdout);
 #endif
@@ -767,14 +790,17 @@ static void SMOOTHDELAY_test(void){
         num_frames *= 2;
       //printf("num_frames: %d\n", num_frames);
 
-      float input[num_frames];
+      float input[num_frames]; // hmm.....
       float output[num_frames];
-      
-      for(int i=0;i<num_frames;i++){
-        input[i] = sin(phase);
-        phase += phase_add;
-        phase = fmod(phase, M_PI2);
+
+      double time5 = TIME_get_ms();
+      for(int i=0;i<num_frames;i++)
+      {
+	      input[i] = sinf(phase);
+	      phase += phase_add;
+	      phase = fmodf(phase, M_PI2);
       }
+      gendata_time += TIME_get_ms() - time5;
       
       if(random.get_next() < 0.1)
         delay.setSize(0);
@@ -793,11 +819,13 @@ static void SMOOTHDELAY_test(void){
     }
   }
 
-  printf("\nTotal duration: %f. RT_fade duration: %f. RT_process_overwrite duration: %f\n",(TIME_get_ms()-time) / 1000.0,
+  printf("\nTotal duration: %f. (Generating sine: %f.) RT_fade duration: %f. RT_process_overwrite duration: %f\n",
+	 (TIME_get_ms()-time-gendata_time) / 1000.0,
+	 gendata_time / 1000.0,
 #if BENCHMARK_SMOOTHDELAY
          g_fade_benchmark_time/1000.0, g_benchmark_time/1000.0
 #else
-    -1.0,-1.0
+	 -1.0,-1.0
 #endif
          );
   

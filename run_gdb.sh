@@ -46,7 +46,7 @@ unset QT_QPA_PLATFORM
 unset QT_PLUGIN_PATH
 
 # Need this one though
-export QT_QPA_PLATFORM_PLUGIN_PATH=`$(./find_moc_and_uic_paths.sh qmake) -query QT_INSTALL_PLUGINS`
+export QT_QPA_PLATFORM_PLUGIN_PATH=`$QMAKE -query QT_INSTALL_PLUGINS`
 
 # To avoid freezing X
 export USE_SAFE_POPUP="1"
