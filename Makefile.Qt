@@ -50,8 +50,6 @@ UNAME := $(shell uname)
 # Packagers: Don't change anything below here unless things don't work.
 
 
-RADIUM_QT_VERSION=5
-
 GCDIR ?= bin/packages/gc-8.2.8
 
 QHTTPSERVER_PATH ?= $(shell pwd)/bin/packages/qhttpserver-master
@@ -160,49 +158,35 @@ else
 endif
 
 
-# qt4
-ifeq ($(RADIUM_QT_VERSION),4)
-	QT_GUI_CFLAGS ?=`$(PKGqt) --cflags QtGui`
-	QT_GUI_LDFLAGS ?= `$(PKGqt) --libs QtGui`
-	QT_NETWORK_CFLAGS ?=`$(PKGqt) --cflags QtNetwork`
-	QT_NETWORK_LDFLAGS ?= `$(PKGqt) --libs QtNetwork`
-	QT_CFLAGS ?= `$(PKGqt) --cflags QtGui --cflags QtNetwork --cflags QtOpenGL --cflags QtWebKit` -I$(QHTTPSERVER_PATH)/src -I$(QSCINTILLA_PATH) -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) 
-	QT_LDFLAGS ?= `$(PKGqt) --libs QtGui --libs QtOpenGL --libs QtNetwork --libs QtWebKit`
-endif
-
-
-# qt5
-ifeq ($(RADIUM_QT_VERSION),5)
-	QT_GUI_CFLAGS ?=`$(PKGqt) --cflags Qt5Gui --cflags Qt5Widgets` $(FPIC)
-	QT_GUI_LDFLAGS ?= `$(PKGqt) --libs Qt5Gui --libs Qt5Widgets` $(FPIC)
-	QT_NETWORK_CFLAGS ?=`$(PKGqt) --cflags Qt5Network` $(FPIC)
-	QT_NETWORK_LDFLAGS ?= `$(PKGqt) --libs Qt5Network` $(FPIC)
-	QT_UI_CFLAGS ?= `$(PKGqt) --cflags Qt5UiTools` $(FPIC)
-	QT_UI_LDFLAGS ?= `$(PKGqt) --libs Qt5UiTools` $(FPIC)
-	QT_SVG_CFLAGS ?= `$(PKGqt) --cflags Qt5Svg` $(FPIC)
-	QT_SVG_LDFLAGS ?= `$(PKGqt) --libs Qt5Svg` $(FPIC)
+QT_GUI_CFLAGS ?=`$(PKGqt) --cflags Qt5Gui --cflags Qt5Widgets` $(FPIC)
+QT_GUI_LDFLAGS ?= `$(PKGqt) --libs Qt5Gui --libs Qt5Widgets` $(FPIC)
+QT_NETWORK_CFLAGS ?=`$(PKGqt) --cflags Qt5Network` $(FPIC)
+QT_NETWORK_LDFLAGS ?= `$(PKGqt) --libs Qt5Network` $(FPIC)
+QT_UI_CFLAGS ?= `$(PKGqt) --cflags Qt5UiTools` $(FPIC)
+QT_UI_LDFLAGS ?= `$(PKGqt) --libs Qt5UiTools` $(FPIC)
+QT_SVG_CFLAGS ?= `$(PKGqt) --cflags Qt5Svg` $(FPIC)
+QT_SVG_LDFLAGS ?= `$(PKGqt) --libs Qt5Svg` $(FPIC)
 
 #	If using QtWebEngine: (Not recommended, dragging doesn't work using it)
 #	QT_CFLAGS ?= `$(PKGqt) --cflags Qt5Gui --cflags Qt5Network --cflags Qt5OpenGL --cflags Qt5Widgets --cflags Qt5WebEngineWidgets` -Ibin/packages/qhttpserver-master/src -Ibin/packages/QScintilla_gpl-2.10.8 -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) -DUSE_QT5
 #	QT_LDFLAGS ?= `$(PKGqt) --libs Qt5Gui --libs Qt5OpenGL --libs Qt5Network --libs Qt5Widgets --libs Qt5WebEngineWidgets`
 
 #	If using QtWebKit:
-	QT_CFLAGS ?= `$(PKGqt) --cflags Qt5Gui --cflags Qt5Network --cflags Qt5OpenGL --cflags Qt5Widgets --cflags Qt5Concurrent` -I$(QHTTPSERVER_PATH)/src -I$(QSCINTILLA_PATH) -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) $(FPIC)
-	QT_LDFLAGS ?=  $(QT_UI_LDFLAGS) $(QT_SVG_LDFLAGS) `$(PKGqt) --libs Qt5Gui --libs Qt5OpenGL --libs Qt5Widgets --libs Qt5Network ` $(FPIC)
+QT_CFLAGS ?= `$(PKGqt) --cflags Qt5Gui --cflags Qt5Network --cflags Qt5OpenGL --cflags Qt5Widgets --cflags Qt5Concurrent` -I$(QHTTPSERVER_PATH)/src -I$(QSCINTILLA_PATH) -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) $(FPIC)
+QT_LDFLAGS ?=  $(QT_UI_LDFLAGS) $(QT_SVG_LDFLAGS) `$(PKGqt) --libs Qt5Gui --libs Qt5OpenGL --libs Qt5Widgets --libs Qt5Network ` $(FPIC)
 
-	ifeq ($(USE_QWEBENGINE),1)
-		USE_QWEBENGINE_CFLAGS = -D USE_QWEBENGINE=1
-		QT_CFLAGS += `$(PKGqt) --cflags Qt5WebEngine --cflags Qt5WebEngineCore  --cflags Qt5WebEngineWidgets` 
-		QT_LDFLAGS += `$(PKGqt) --libs Qt5WebEngine --libs Qt5WebEngineCore  --libs Qt5WebEngineWidgets`
-	else
-		USE_QWEBENGINE_CFLAGS = -D USE_QWEBENGINE=0
-		QT_CFLAGS += `$(PKGqt) --cflags Qt5WebKitWidgets --cflags Qt5WebKit`
-		QT_LDFLAGS += `$(PKGqt) --libs Qt5WebKitWidgets --libs Qt5WebKit`
-	endif
-
-	QT_CFLAGS += $(USE_QWEBENGINE_CFLAGS)
-
+ifeq ($(USE_QWEBENGINE),1)
+	USE_QWEBENGINE_CFLAGS = -D USE_QWEBENGINE=1
+	QT_CFLAGS += `$(PKGqt) --cflags Qt5WebEngine --cflags Qt5WebEngineCore  --cflags Qt5WebEngineWidgets` 
+	QT_LDFLAGS += `$(PKGqt) --libs Qt5WebEngine --libs Qt5WebEngineCore  --libs Qt5WebEngineWidgets`
+else
+	USE_QWEBENGINE_CFLAGS = -D USE_QWEBENGINE=0
+	QT_CFLAGS += `$(PKGqt) --cflags Qt5WebKitWidgets --cflags Qt5WebKit`
+	QT_LDFLAGS += `$(PKGqt) --libs Qt5WebKitWidgets --libs Qt5WebKit`
 endif
+
+QT_CFLAGS += $(USE_QWEBENGINE_CFLAGS)
+
 
 WNO_DEPRECATED_COPY=
 ifeq ($(GCC_MAJOR),9)
@@ -497,9 +481,8 @@ endif
 #	COMMONOPT += -fstrong-eval-order # Remove this one until all recent compilers support -fstrong-eval-order
 #endif	
 
-ifeq ($(RADIUM_QT_VERSION),5)
-	COMMONOPT += -DUSE_QT5
-endif
+COMMONOPT += -DUSE_QT5
+
 
 #$(CFLAGS)
 # -Wunused-parameter
@@ -704,13 +687,7 @@ OBJ_MIXER=$(T)QM_view.o $(T)QM_chip.o $(T)QM_MixerWidget.o $(T)undo_mixer.o $(T)
 
 #OpenGL
 OBJ_VL=$(T)GfxElements.o $(T)T2.o $(T)Render.o $(T)Widget.o $(T)CheckOpenGL.o
-# Qt${RADIUM_QT_VERSION}Widget.o $(T)moc_Qt${RADIUM_QT_VERSION}Widget.o
 
-# Not using sndlib anymore, but will perhaps in the future.
-#
-#SNDLIBFILES=sndlib_objectfiles/headers.o $(T)sndlib_objectfiles/audio.o $(T)sndlib_objectfiles/io.o $(T)sndlib_objectfiles/sound.o $(T)sndlib_objectfiles/xen.o $(T)sndlib_objectfiles/vct.o $(T)sndlib_objectfiles/clm.o $(T)sndlib_objectfiles/sndlib2xen.o $(T)sndlib_objectfiles/clm2xen.o
-#
-SNDLIBFILES=
 
 #Embedded scheme
 OBJ_ES=$(T)scheme.o bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o $(SNDLIBFILES) $(T)s7webserver.o $(T)radium_s7_wrap.o $(T)qhttpconnection.o $(T)moc_qhttpconnection.o $(T)qhttprequest.o $(T)moc_qhttprequest.o $(T)qhttpresponse.o $(T)moc_qhttpresponse.o $(T)qhttpserver.o $(T)moc_qhttpserver.o $(T)http_parser.o
@@ -1662,7 +1639,7 @@ $(T)X11_instrument.o:  $(BUILD_DEPENDENCIES) X11/X11_instrument.c
 	$(CC2) X11/X11_instrument.c $(OPT)
 
 $(T)X11_keyboard.o:  $(BUILD_DEPENDENCIES) X11/X11_keyboard.cpp
-	$(CCC2) X11/X11_keyboard.cpp $(QTOPT) -DUSE_QT$(RADIUM_QT_VERSION)
+	$(CCC2) X11/X11_keyboard.cpp $(QTOPT)
 
 bin/radium_check_recent_libxcb: X11/check_recent_libxcb.c
 	$(CC) -Wall $(WERROR) X11/check_recent_libxcb.c -ldl -o bin/radium_check_recent_libxcb
@@ -2762,12 +2739,6 @@ $(T)CheckOpenGL.o: OpenGL/CheckOpenGL.cpp common/Process.hpp
 do.o:  $(BUILD_DEPENDENCIES) OpenGL/do.m
 	$(CC) OpenGL/do.m $(OPT)
 
-#Qt${RADIUM_QT_VERSION}Widget.o: bin/packages/Visualization-Library-master/src/vlQt${RADIUM_QT_VERSION}/Qt${RADIUM_QT_VERSION}Widget.cpp bin/packages/Visualization-Library-master/src/vlQt${RADIUM_QT_VERSION}/Qt${RADIUM_QT_VERSION}Widget.hpp
-#	$(CCC2) bin/packages/Visualization-Library-master/src/vlQt${RADIUM_QT_VERSION}/Qt${RADIUM_QT_VERSION}Widget.cpp $(VL_CFLAGS) $(QTOPT)
-
-#moc_Qt${RADIUM_QT_VERSION}Widget.o: bin/packages/Visualization-Library-master/src/vlQt${RADIUM_QT_VERSION}/Qt${RADIUM_QT_VERSION}Widget.hpp
-#	$(MOC) bin/packages/Visualization-Library-master/src/vlQt${RADIUM_QT_VERSION}/Qt${RADIUM_QT_VERSION}Widget.hpp >moc_Qt${RADIUM_QT_VERSION}Widget.cpp
-#	$(CCC2) moc_Qt${RADIUM_QT_VERSION}Widget.cpp $(VL_CFLAGS) $(QTOPT)
 
 # embedded scheme
 
@@ -2779,13 +2750,20 @@ S7AlignmentSanitize=
 endif
 
 ifeq ($(BUILDTYPE), DEBUG)
-	S7OPTS += -DS7_DEBUGGING=1 -DWITH_MULTITHREAD_CHECKS=1 -DS7_ALIGNED # -DWITH_PROFILE=1 
+	S7OPTS += -DS7_DEBUGGING=1 -DS7_ALIGNED # -DWITH_PROFILE=1 
 	ifneq (,$(findstring clang,$(CC)))
 		S7OPTS +=  -fno-sanitize=integer
 	endif
+	ifeq ($(TARGET_OS),linux)
+		S7OPTS += -DWITH_MULTITHREAD_CHECKS=1 # Only enabled on Linux. The cleanup function is not called as often as it should on clang/macos.
+	endif
 endif
 
-S7OPTS += -DS7_ALIGNED -g
+S7OPTS += -DS7_ALIGNED -g # -O0 is REALLY slow on mac, for some reason.
+
+ifneq ($(TARGET_OS),linux)
+	S7OPTS += -O2  # -O0 is REALLY slow on mac, for some reason.
+endif
 
 #S7OPTS += -DWITH_GMP
 

@@ -55,14 +55,14 @@ if [[ $4 == "test_build" ]] ; then
         exit 5
     fi
 
-    if $MOC -v 2>&1 |grep "Qt 3" ; then
-        echo $MOC "is for QT3. Need moc for QT$RADIUM_QT_VERSION. Make sure MOC is set correctly in the Makefile."
+    if $MOC -v 2>&1 |grep "Qt 6" ; then
+        echo $MOC "is for QT6. Need moc for QT5. Make sure MOC is set correctly in the Makefile."
         echo
         exit 5
     fi
 
-    if $UIC -v 2>&1 |grep "Qt 3" ; then
-        echo $UIC "is for QT3. Need uic for QT$RADIUM_QT_VERSION. Make sure UIC is set correctly in the Makefile."
+    if $UIC -v 2>&1 |grep "Qt 6" ; then
+        echo $UIC "is for QT6. Need uic for QT5. Make sure UIC is set correctly in the Makefile."
         echo
         exit 5
     fi

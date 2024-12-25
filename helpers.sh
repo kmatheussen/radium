@@ -57,35 +57,14 @@ assert_var_value()
 
 # Sets a variable unless already set.
 #
-# Behavior:
-#   * If the variable was already set, we use that value instead
-#     and ignore the second argument. Othervice we set it to the
-#     value of the second argument.
-#   Afterwards
-#   * If the value is empty, we set the variable to 1.
-#   * If the value is 0, we unset the variable.
-#
 set_var()
 {
     if [ "$#" -ne 2 ]; then
 	handle_failure "${FUNCNAME}: Illegal number of arguments: \"set_var $@\""
     fi
 
-    if ! is_0 "$2" ; then
-	if ! is_defined $1 ; then
-	    export $1="$2"
-	fi
-    fi
-    return
-    
-    local val="${!1}"
-
-    echo "1: -${1}- 2: -${2}- val: ${val}"
-
-    if is_empty $val ; then
-	export $1=1
-    elif [ "${val}" != "0" ] ; then	
-	uns $1
+    if ! is_defined $1 ; then
+	export $1="$2"
     fi
 }
 

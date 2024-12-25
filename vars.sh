@@ -4,7 +4,7 @@ if [ -v RADIUM_BASH_VARS_HAS_BEEN_SETUP ] ; then
     return 0
 fi
 
-RADIUM_BASH_VARS_HAS_BEEN_SETUP=1
+export RADIUM_BASH_VARS_HAS_BEEN_SETUP=1
 
 export RED='\033[1;31m'
 export LIGHT_CYAN='\033[0;36m'
@@ -22,5 +22,3 @@ export DO_LOG_TO_FILE=1
 
 export TRACENUM_PLACEHOLDER="_"
 
-# (Currently no point setting it another value than 5.)
-export RADIUM_QT_VERSION=5

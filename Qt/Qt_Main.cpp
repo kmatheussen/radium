@@ -4927,13 +4927,13 @@ int main(int argc, char **argv){
   SETTINGS_init();
 
   
-#if 0 // defined(FOR_MACOSX) && (defined (__arm64__) || defined (__aarch64__))
-  
-  GC_enable_incremental(); // Always incremental under macos(arm)
+#if defined(FOR_MACOSX) && (defined (__arm64__) || defined (__aarch64__))
+
+  GC_enable_incremental(); // Always incremental under macos(arm) (opengl runs in main thread, so incremental mode probably decreases stuttering)
 
   g_gc_is_incremental = true;
     
-#else // macos(arm) -> !macos(arm)
+#else // macos(arm) -> ...
     
   bool try_incremental_gc = SETTINGS_read_bool("try_incremental_gc",false);
   if (try_incremental_gc || SETTINGS_read_bool("incremental_gc",false)) {
