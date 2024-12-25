@@ -5078,42 +5078,45 @@ int main(int argc, char **argv){
       g_songfile_from_commandline = strdup(argv[1]);
   }
 #endif
-  
 
-  QString pythonlibpath = STRING_get_qstring(OS_get_full_program_file_path(QString("packages/python27_install/lib/python2.7")).id);
-#if FOR_WINDOWS
-  putenv(strdup(QString("PYTHONHOME="+pythonlibpath).toLocal8Bit().constData()));
-  putenv(strdup(QString("PYTHONPATH="+pythonlibpath).toLocal8Bit().constData()));
+
+  
+  // Set PYTHOHOME and PYTHONPATH
+  ////////////////////////////////
+  
+#if defined (__arm64__) || defined (__aarch64__)
+#  define IS_ARM 1
 #else
+#  define IS_ARM 0
+#endif
+  
+#if defined(FOR_LINUX) || (defined(FOR_MACOSX) && IS_ARM)
+  
+  QString pythonlibpath = STRING_get_qstring(OS_get_full_program_file_path(QString("packages/python27_install/lib/python2.7")).id);
   setenv("PYTHONHOME",V_strdup(pythonlibpath.toLocal8Bit().constData()),1);
   setenv("PYTHONPATH",V_strdup(pythonlibpath.toLocal8Bit().constData()),1);
-#endif
   
-#if 0
-#if defined(FOR_MACOSX)
-  {
-    #if !defined (__arm64__) || defined (__aarch64__)
-      
-    #else // arm -> x86
-      
-      QString pythonhome = STRING_get_qstring(OS_get_full_program_file_path(QString("python2.7/lib")).id);
-      QString pythonpath = pythonhome;
+#elif defined(FOR_MACOSX) && !IS_ARM
 
-      setenv("PYTHONHOME",V_strdup(pythonhome.toLocal8Bit().constData()),1);
-      setenv("PYTHONPATH",V_strdup(pythonpath.toLocal8Bit().constData()),1);
+  QString pythonhome = STRING_get_qstring(OS_get_full_program_file_path(QString("python2.7/lib")).id);
+  QString pythonpath = pythonhome;
 
-    #endif // x86
-  }   
-#endif // FOR_MACOSX
+  setenv("PYTHONHOME",V_strdup(pythonhome.toLocal8Bit().constData()),1);
+  setenv("PYTHONPATH",V_strdup(pythonpath.toLocal8Bit().constData()),1);
+
+#elif defined(FOR_WINDOWS)
+
+  //putenv(strdup(QString("PYTHONHOME="+pythonlibpath).toLocal8Bit().constData()));
+  //putenv(strdup(QString("PYTHONPATH="+pythonlibpath).toLocal8Bit().constData()));
+
 #endif
-  
-  //Py_SetProgramName(QString(python
-  //Py_SetPythonHome(V_strdup(OS_get_full_program_file_path("").toLocal8Bit().constData()));
 
-#if __WIN64
-  // Py_SetPath(".;Lib") // Py_SetPath doesn't seem available. Perhaps it's Python 3.0 only. As a workaround we call sys.path.append in python2.7/Lib/site.py
-#endif
-    
+
+
+  // Initialize python
+  ////////////////////////////////
+
+
   Py_Initialize();
 
   {
@@ -5158,6 +5161,8 @@ int main(int argc, char **argv){
     //exit(0);
   }
 
+
+  
   qapplication->setWindowIcon(QIcon(STRING_get_qstring(OS_get_full_program_file_path("graphics/radium_logo_256x256_colorized.png").id)));
   
   {
