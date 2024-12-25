@@ -12,15 +12,6 @@ source bash_setup.sh
 #
 #  You might want to edit this file if building Radium.
 #
-#  If developing Radium, it's probably better to create
-#  a script that sets your values and let that script
-#  start "./build_linux.sh".
-#
-#  You can also compile Radium with custom values
-#  like this:
-#
-#  RADIUM_USE_CLANG=1 ./build_linux.sh
-#
 #  Variables are not overwritten in this file, they
 #  only provide the default values. This can be
 #  convenient e.g if you want to create different
@@ -237,20 +228,23 @@ if [ "$($PKGqt --libs-only-L Qt5Core)" != "" ] ; then
 		       "${QMAKE}: \"$B\""
     fi
 else
-    if ! env |grep QMAKE_LIBS_ONLY_L_SHOULD_BE_EMPTY ; then
+    if ! is_set QMAKE_LIBS_ONLY_L_SHOULD_BE_EMPTY ; then
         if [ "$($QMAKE -query QT_INSTALL_PREFIX)" != "/usr" ] ; then
 	    handle_failure "\"$PKGqt --libs-only-L Qt5Core\" gave no output. It's assumed that qt is installed in /usr, but it's not. it's installed in \"$($QMAKE -query QT_INSTALL_PREFIX)\". If this is correct, then simply set QMAKE_LIBS_ONLY_L_SHOULD_BE_EMPTY=1 in your build script."
         fi
     fi
 fi
 
-if is_set INCLUDE_FAUSTDEV ; then
-    if ! is_set INCLUDE_FAUSTDEV_BUT_NOT_LLVM ; then
-	export FAUST_USES_LLVM="jadda"
+if ! is_0 $INCLUDE_FAUSTDEV ; then
+    if is_0 $INCLUDE_FAUSTDEV_BUT_NOT_LLVM ; then
+	export FAUST_USES_LLVM=1
     fi
 fi
 
-if is_set FAUST_USES_LLVM ; then
+
+set_var FAUST_USES_LLVM 0
+
+if ! is_0 $FAUST_USES_LLVM ; then
     
     set_var LLVM_CONFIG_BIN `which llvm-config`
     assert_bin_exists $LLVM_CONFIG_BIN
@@ -278,7 +272,7 @@ fi
 
 if uname -s |grep Darwin ; then
     
-    if is_set FAUST_USES_LLVM ; then
+    if ! is_0 $FAUST_USES_LLVM ; then
 	export MACOS_LLVM_TARGET=`${LLVM_CONFIG_BIN} --host-target`
     else
 	export MACOS_LLVM_TARGET="Thiscodeisnotsupposedtobecompiled"

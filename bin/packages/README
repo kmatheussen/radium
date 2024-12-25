@@ -46,12 +46,12 @@ Because that's how most builds handle included packages, although one step has s
 But I guess keeping piece is more important. Anyway, if you are making a Radium package for a Linux distribution,
 it shouldn't be too hard without getting angry. Just do the following:
 
-BUILDTYPE=RELEASE RADIUM_QT_VERSION=5 make packages
-BUILDTYPE=RELEASE RADIUM_QT_VERSION=5 ./build_linux.sh -j `nproc`
+BUILDTYPE=RELEASE make packages
+BUILDTYPE=RELEASE ./build_linux.sh -j `nproc`
 ./install.sh /opt
 TARGET=/usr/bin/radium
 echo "#!/bin/env bash" > $TARGET
-echo "QT_QPA_PLATFORM_PLUGIN_PATH=\"$($(RADIUM_QT_VERSION=5 ./find_moc_and_uic_paths.sh qmake) -query QT_INSTALL_PLUGINS)\" /opt/radium/radium \"\$@\"" >> $TARGET
+echo "QT_QPA_PLATFORM_PLUGIN_PATH=\"$($(./find_moc_and_uic_paths.sh qmake) -query QT_INSTALL_PLUGINS)\" /opt/radium/radium \"\$@\"" >> $TARGET
 chmod a+rx $TARGET
 
 And if "make packages" or "./build_linux.sh" fail, at least send me a bug report before complaining publicly about the build system of Radium.

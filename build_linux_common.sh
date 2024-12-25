@@ -22,9 +22,6 @@ export JACK_LDFLAGS="-ljack -ldl"
 
 assert_bin_exists $PYTHONEXE
 
-assert_var_value RADIUM_QT_VERSION 5
-#exit -1
-
 if ! env |grep BUILDTYPE ; then
     print_error_and_exit "Must define BUILDTYPE to DEBUG, DEBUG_FAST, or RELEASE. For instance: \"BUILDTYPE=RELEASE ./build_linux.sh -j7\""
 fi

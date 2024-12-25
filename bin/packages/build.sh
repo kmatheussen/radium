@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 set -eEu
 set -x
@@ -35,12 +35,8 @@ if [[ $RADIUM_USE_CLANG == 0 ]] ; then
     export COMMON_CFLAGS="$COMMON_CFLAGS -fmax-errors=5 "
 fi
 
-if ! is_set QT_CPPFLAGS ; then
-    QT_CPPFLAGS=""
-fi
-if ! is_set QT_LDFLAGS ; then
-    QT_LDFLAGS=""
-fi
+set_var QT_CPPFLAGS ""
+set_var QT_LDFLAGS ""
 
 export CFLAGS="$COMMON_CFLAGS "
 export CPPFLAGS="$QT_CPPFLAGS $COMMON_CFLAGS "
@@ -51,16 +47,11 @@ DASCC=gcc
 DASCXX=g++
 
 
-if [[ $RADIUM_USE_CLANG == 1 ]]
-then
+if ! is_0 $RADIUM_USE_CLANG ; then
     DASCC=clang
     DASCXX=clang++
 fi
 
-if ! env |grep RADIUM_QT_VERSION ; then
-    echo "Must define RADIUM_QT_VERSION to 5. (It should have been set in configuration.sh....)"
-    exit -1
-fi
 
 
 
@@ -296,9 +287,8 @@ build_qscintilla() {
 
 build_xcb() {
     
-    if [[ $RADIUM_QT_VERSION == 5 && $RADIUM_BUILD_LIBXCB != 0 ]]
-    then
-
+    if ! is_0 $RADIUM_BUILD_LIBXCB ; then
+	
         rm -fr xcb-proto-1.13/
         tar xvjf xcb-proto-1.13.tar.bz2
         cd xcb-proto-1.13/

@@ -1,11 +1,17 @@
 # Something like this should be included in the top of all the other bash scripts:
 # source $(dirname "${0}")/bash_setup.sh
 
+if ((BASH_VERSINFO[0] < 4)) ; then
+    echo "BASH IS TOO OLD"
+    exit -1
+fi
+
+
 if [ -v RADIUM_BASH_SETUP_HAS_BEEN_SETUP ] ; then
     true ; return
 fi
 
-RADIUM_BASH_SETUP_HAS_BEEN_SETUP=1
+export RADIUM_BASH_SETUP_HAS_BEEN_SETUP=1
 
 export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
 

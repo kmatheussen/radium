@@ -3,6 +3,7 @@
 set -ueE
 #set -x
 
+
 source configuration.sh #>/dev/null
 
 if [ -v RADIUM_NSM_EXECUTABLE_NAME ] ; then
