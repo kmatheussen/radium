@@ -75,9 +75,11 @@ set_var()
     if [ "$#" -ne 2 ]; then
 	handle_failure "${FUNCNAME}: Illegal number of arguments: \"set_var $@\""
     fi
-	
-    if ! is_defined $1 ; then
-	export $1=$2
+
+    if ! is_0 "$2" ; then
+	if ! is_defined $1 ; then
+	    export $1="$2"
+	fi
     fi
     return
     
