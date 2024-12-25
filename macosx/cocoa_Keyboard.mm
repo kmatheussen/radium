@@ -87,22 +87,22 @@ void OS_OSX_clear_modifiers(void){
 
 static void print_modifier_flags(const NSEvent *event)
 {
-	if ( ([event modifierFlags] & NSCommandKeyMask))
+	if ( ([event modifierFlags] & NSEventModifierFlagCommand))
 		printf("Command/");
 	
-	if (([event modifierFlags] & NSAlphaShiftKeyMask))
+	if (([event modifierFlags] & NSEventModifierFlagCapsLock))
 		printf("AlphaShift/");
 
-	if (([event modifierFlags] & NSShiftKeyMask))
+	if (([event modifierFlags] & NSEventModifierFlagShift))
 		printf("Shift/");
 		
-	if (([event modifierFlags] & NSAlternateKeyMask))
+	if (([event modifierFlags] & NSEventModifierFlagOption))
 		printf("Alt/");
 	
-	if (([event modifierFlags] & NSControlKeyMask))
+	if (([event modifierFlags] & NSEventModifierFlagControl))
 		printf("Ctrl/");
 
-	if (([event modifierFlags] & NSFunctionKeyMask))
+	if (([event modifierFlags] & NSEventModifierFlagFunction))
 		printf("Fn/");
 
 	printf("\n");
@@ -116,13 +116,29 @@ int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
   NSEventType type = [event type];
   int ret = -1;
 
-  //static int n = 0;
-  
+#if 0
+  // Commented out. First of all, it shouldn't be necessary (it was added just in case),
+  // and secondly, it causes this:
+  // 1. Press left shift (don't release)
+  // 2. Move mouse to another window
+  // 3. Move mouse back
+  // 4. Add note. (while left shift is still pressed)
+  // 5. Note is not added polyphonically, as would be expected.
+  if ([event type] == NSEventTypeMouseEntered || [event type] == NSEventTypeMouseExited)
+  {
+	  printf("CLEAR3\n");
+	  clear_modifiers();
+	  return -1;
+  }
+#endif
+
   if(type==NSEventTypeFlagsChanged || type==NSEventTypeKeyDown || type==NSEventTypeKeyUp){
 
 #if 0
 	  print_modifier_flags(event);
 	  
+	  static int n = 0;
+
 	  if (type==NSEventTypeFlagsChanged)
 		  printf("%d: type: %d. keycode: %d. modifiers: %d. Ignore autorepeat: %d\n",n++, (int)type, [event keyCode],(int)[event modifierFlags], ignore_autorepeat);
 	  else
@@ -131,16 +147,17 @@ int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
 	  printf("\n");
 #endif
 
-	  if(type==NSEventTypeFlagsChanged){
-		  int keycode = [event keyCode];
-		  
-		  if (g_modifiers[keycode])
-			  ret = TR_KEYBOARDUP;
-		  else
-			  ret = TR_KEYBOARD;
-		  
-		  //printf("  M: 1\n");
-		  g_modifiers[keycode] = !g_modifiers[keycode]; // This seems a bit fragile, so all modifiers are also reset when modifierFlags is 0 for all the osx modifiers. (see below)
+    if(type==NSEventTypeFlagsChanged){
+      int keycode = [event keyCode];
+      
+      if (g_modifiers[keycode])
+        ret = TR_KEYBOARDUP;
+      else
+        ret = TR_KEYBOARD;
+
+      // Workaround for horrible NSEvent API. (doesn't seem to be a way to detect whether key is pressed or released)
+      // This is VERY fragile, so all modifiers are also reset when modifierFlags is 0 for all the osx modifiers. (see below)
+      g_modifiers[keycode] = !g_modifiers[keycode];
       
       //printf("   modifier is %s\n",(ret==TR_KEYBOARDUP)?"released":"pressed");
       
@@ -171,12 +188,12 @@ int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
     
     // Probably not necessary, but just in case, in case things get out sync (see above)
     // WARNING: [event modifierFlags] is resetted when clicking mouse.
-    if ( ([event modifierFlags] & NSCommandKeyMask) == 0 &&
-         ([event modifierFlags] & NSAlphaShiftKeyMask) == 0 &&
-         ([event modifierFlags] & NSShiftKeyMask) == 0 &&
-         ([event modifierFlags] & NSAlternateKeyMask) == 0 &&
-         ([event modifierFlags] & NSControlKeyMask) == 0 &&
-         ([event modifierFlags] & NSFunctionKeyMask) == 0
+    if ( ([event modifierFlags] & NSEventModifierFlagCommand) == 0 &&
+         //([event modifierFlags] & NSEventModifierFlagCapsLock) == 0 && // (caps-lock is not relevant)
+         ([event modifierFlags] & NSEventModifierFlagShift) == 0 &&
+         ([event modifierFlags] & NSEventModifierFlagOption) == 0 &&
+         ([event modifierFlags] & NSEventModifierFlagControl) == 0
+	 //&& ([event modifierFlags] & NSEventModifierFlagFunction) == 0 // ("fn" is added automatically for various keys, e.g. arrow up, even when the "fn" key is not explicitly pressed.)
          )
       {
         //printf("****** No modifiers. Resetting\n");
@@ -185,6 +202,28 @@ int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
         clear_modifiers();
       }
 #endif
+
+  }
+  else
+  {
+	  // Not necessary. We only have to clear flags before handing a keyboard event, which we do above.
+	  
+	  /*
+    if ( ([event modifierFlags] & NSEventModifierFlagCommand) == 0 &&
+         //([event modifierFlags] & NSEventModifierFlagCapsLock) == 0 &&
+         ([event modifierFlags] & NSEventModifierFlagShift) == 0 &&
+         ([event modifierFlags] & NSEventModifierFlagOption) == 0 &&
+         ([event modifierFlags] & NSEventModifierFlagControl) == 0
+	 //&& ([event modifierFlags] & NSEventModifierFlagFunction) == 0
+         )
+      {
+        //printf("****** No modifiers. Resetting\n");
+        // Since modifierFlags are resetted when clicking mouse, perhaps it's better not to do this. (no, tried it, didn't work)
+        //printf(" Clear mod 2\n");
+        clear_modifiers();
+      }
+	  */
+    
   }
 
   return ret;
@@ -676,6 +715,7 @@ int OS_SYSTEM_get_qwerty_keynum(void *void_event){
 }
 
 #if 0
+// Unable to prepass qt event handler. Doesn't seem to need it anyway though.
 void MACOS_setup_keyboard_event_monitor(void)
 {
 	auto event_monitor = [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskKeyDown
@@ -721,8 +761,13 @@ void OS_SYSTEM_EventPreHandler(void *void_event){
 
   OS_SYSTEM_init_keyboard();
 
-  //printf("Got event. type: %u\n",(unsigned int)type);
-
+  if (0 && true &&
+      [event type] != NSEventTypeMouseMoved)
+  {
+	  static int n=0;
+	  printf("%d: Got event. type: %u\n",n++, (unsigned int)type);
+  }
+  
   static void *oldHotKeyMode = NULL;
   if(type==NSEventTypeAppKitDefined || type==NSEventTypeSystemDefined || type==NSEventTypeApplicationDefined){ // These three events are received when losing focus. Haven't found a better time to clear modifiers.
     //printf("      DAS EVENT: %x\n",(unsigned int)type);
