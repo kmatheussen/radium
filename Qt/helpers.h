@@ -74,11 +74,32 @@ typedef QPointer<QObject> IsAlive;
 extern QPoint mapFromEditor(QWidget *widget, QPoint point); // Defined in Qt_sequencer.cpp
 extern QPoint mapToEditor(QWidget *widget, QPoint point); // Defined in Qt_sequencer.cpp
 
+// Qt swaps the alt and meta keys on Mac for some reason.
+static inline Qt::KeyboardModifier get_alt_modifier(void)
+{
+#if defined(FOR_MACOSX)
+	return Qt::MetaModifier;
+#else
+	return Qt::AltModifier;
+#endif
+}
+
+// Qt swaps the alt and meta keys on Mac for some reason.
+static inline Qt::KeyboardModifier get_extra_modifier(void)
+{
+#if defined(FOR_MACOSX)
+	return Qt::AltModifier;
+#else
+	return Qt::MetaModifier;
+#endif
+}
+
+
 static inline Qt::KeyboardModifier get_modifier_may_causing_rightclick(void){
   if (swapCtrlAndCmd())
-    return Qt::MetaModifier;
+	  return Qt::MetaModifier; // Don't think we should use get_extra_modifier() here...
   else
-    return Qt::ControlModifier;
+	  return Qt::ControlModifier;
 }
 
 static inline void send_key_up(QObject *where, int how_many){

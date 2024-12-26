@@ -4044,7 +4044,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     void keyPressEvent(QKeyEvent *event) override{
 
       // back / forward
-      if (event->modifiers() & Qt::AltModifier){
+      if (event->modifiers() & get_alt_modifier()) {
         if (event->key()==Qt::Key_Left){
           back();
           event->accept();

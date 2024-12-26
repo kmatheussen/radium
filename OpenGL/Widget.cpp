@@ -2369,10 +2369,16 @@ void GL_update(void)
 
 		double vblank = ATOMIC_DOUBLE_GET(g_vblank);
 		
-		if (ATOMIC_GET(root->editonoff) && dur_enter > vblank && dur_leave > vblank/2) //since_last > 16 && ms > 4.0)
+		if (
+			true
+#if !defined(RELEASE)
+			&& ATOMIC_GET(root->editonoff)
+#endif
+			&& dur_enter > vblank*9/10 && dur_leave > vblank/2
+			)
 		{
 #if !defined(RELEASE)
-			printf(" --------------- Updating manually %d. Dur_enter: %dms, dur_leave: %dms. vblank: %f\n", s_n++, (int)dur_enter, (int)dur_leave, vblank);
+			//printf(" --------------- Updating manually %d. Dur_enter: %dms, dur_leave: %dms. vblank: %f\n", s_n++, (int)dur_enter, (int)dur_leave, vblank);
 #endif
 			//widget->paintGL();
 			//widget->updateGL();
