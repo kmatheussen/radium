@@ -37,7 +37,6 @@ source helpers.sh
 set_var RADIUM_USE_CLANG 0
 
 
-
 ########################################################
 # If enabled, include the Pd instrument
 # Only Linux. Other platforms ignore this variable.
@@ -51,7 +50,6 @@ set_var INCLUDE_PDDEV 1
 # If enabled, include the FaustDev instrument.
 #
 set_var INCLUDE_FAUSTDEV 1
-
 
 
 
