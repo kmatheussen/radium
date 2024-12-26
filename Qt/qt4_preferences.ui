@@ -7415,7 +7415,7 @@ Optimization level 5 may cause very long compilation time with no apparent benef
            <item row="15" column="0">
             <widget class="QCheckBox" name="swap_ctrl_and_cmd">
              <property name="text">
-              <string>Swap Ctrl and Cmd. (Note: For keybindings, right Cmd is always interpreted as right Ctrl, whether this option is enabled or not.)</string>
+              <string>Swap Ctrl and Cmd.</string>
              </property>
             </widget>
            </item>
