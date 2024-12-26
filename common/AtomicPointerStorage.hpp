@@ -167,13 +167,25 @@ public:
 
 // Same as AtomicPointerStorage, but this one also supports up to MAX_NUM_READERS readers at the same time.
 //
-// If using more readers than MAX_NUM_READERS, the code should not produce the wrong result or crash, but the
-// RT_AtomicPointerStorage_ScopedUsage constructor might sleep and an assertion will pop up.
+// If using more readers than MAX_NUM_READERS, the RT_AtomicPointerStorage_ScopedUsage constructor
+// will sleep and retry for about 5 seconds, and if there's still no free reader,
+// it will return a used reader instead. A realtime error message will pop up if this happens.
+//
+// (Note: 128 readers should be plenty enough considering that there doesn't seem to
+// exist personal computers with more than 32 processors on a personal computer (written in 2024).
+// Also note that lowering this number will only lower memory usage, and not lower CPU usage
+// unless several AtomicPointerStorageMultipleReaders are stored in memory in a way that
+// would lower cache hits (e.g. array of AtomicPointerStorageMultipleReaders. However, if
+// calling set_new_pointer very often, there might be problems with the cache, but if
+// so, it's probably the wrong storage type.)
 //
 // Performance should be approximately the same as AtomicPointerStorage, but this one uses a lot more memory (approx. 4k).
 // However, most of the memory will never be CPU-fetched, so CPU cache should not be affected.
 //
-// (AtomicPointerStorageMultipleReaders::set_new_pointer is approx. 128 times slower than AtomicPointerStorage:set_new_pointer, but this should never matter.)
+// Also, AtomicPointerStorageMultipleReaders::set_new_pointer is approx. 128 times slower than
+// AtomicPointerStorage:set_new_pointer, but this should not make a practical difference.
+// (Writing to AtomicPointerStorageMultipleReaders should only be done when the user edits data,
+// which is extremely seldom in computer terms, at least that's the use case this class has been designed for.)
 //
 template <typename T>
 class AtomicPointerStorageMultipleReaders {
