@@ -237,13 +237,15 @@ int OS_SYSTEM_get_scancode(void *void_event){
 int OS_SYSTEM_get_modifier(void *void_event){
 
   NSEvent *event = (NSEvent *)void_event;
+
+  //printf("Keycode: %d\n",(int)[event keyCode]);
   
   switch ([event keyCode]) {
     //case 54: // Right Command (we don't use this one anymore, it's usually not available, and the "menu" key is a bit work to turn into a modifier key)
     //return EVENT_EXTRA_R;
   case 54: // Right Command (we don't use this one anymore, it's usually not available, and the "menu" key is a bit work to turn into a modifier key)
-	  //return EVENT_CTRL_R; // We always map right Cmd into right Ctrl since right Ctrl is not always available on mac.
-    return EVENT_ALT_R; // We always map right Cmd into right Ctrl since right Ctrl is not always available on mac.
+	  //printf("Right Command\n");
+	 return EVENT_CTRL_R; // We always map right Cmd into right Ctrl since right Ctrl is not always available on mac.
   case 55: // Left Command
     if (swapCtrlAndCmd())
       return EVENT_CTRL_L;
@@ -257,15 +259,17 @@ int OS_SYSTEM_get_modifier(void *void_event){
     return EVENT_SHIFT_R;
   case 58: // Left Alt
     return EVENT_ALT_L;
-  case 61: // Right Alt
-    return EVENT_ALT_R;
+  case 61: // Right Ctrl
+	  //printf("Right Ctrl\n");
+	  return EVENT_CTRL_R;
   case 59: // Left Ctrl
     if (swapCtrlAndCmd())
       return EVENT_EXTRA_L;
     else
       return EVENT_CTRL_L;
-  case 62: // Right Ctrl
-    return EVENT_CTRL_R;
+  case 62: // Right Alt
+	  //printf("Right Alt\n");
+    return EVENT_ALT_R;
     //case 63: // Function
   default:
     return EVENT_NO;
