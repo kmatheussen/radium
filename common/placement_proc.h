@@ -75,13 +75,15 @@ static inline Place place_from_64(int64_t line, int64_t num, int64_t den){
   R_ASSERT(den > 0);
 
   while(num > den) {
-    line++;
-    num -= den;
+	  R_ASSERT_NON_RELEASE(false);
+	  line++;
+	  num -= den;
   }
 
   while(num < 0){
-    line--;
-    num += den;
+	  R_ASSERT_NON_RELEASE(false);
+	  line--;
+	  num += den;
   }
 
   R_ASSERT(line >= 0);

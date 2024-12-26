@@ -20,7 +20,7 @@ mkdir -p /tmp/radium_objects
 export JACKOPT="-DNO_JACK_METADATA"
 export JACK_LDFLAGS="-ljack -ldl"
 
-assert_bin_exists $PYTHONEXE
+assert_exe_exists $PYTHONEXE
 
 if ! env |grep BUILDTYPE ; then
     print_error_and_exit "Must define BUILDTYPE to DEBUG, DEBUG_FAST, or RELEASE. For instance: \"BUILDTYPE=RELEASE ./build_linux.sh -j7\""
