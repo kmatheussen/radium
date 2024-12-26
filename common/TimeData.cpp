@@ -199,7 +199,7 @@ using GakkTimeData = GakkTimeData2;
 static r::TimeData_shared_ptr<Gakk> make_gakk(int64_t a, int64_t b, int val = 1, int logtype = LOGTYPE_LINEAR){
   r::TimeData_shared_ptr<Gakk> gakk(new Gakk(a,b,val,logtype));
   if (chance(0.5))
-    return std::move(r::TimeData_shared_ptr<Gakk>(new Gakk(a,b,val,logtype)));
+    return r::TimeData_shared_ptr<Gakk>(new Gakk(a,b,val,logtype));
   else
     return gakk;
 }
