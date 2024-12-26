@@ -3082,11 +3082,7 @@ void RT_request_to_stop_playing(void){
 
 
 bool ControlPressed(void){
-#if 0 //FOR_MACOSX
-  return QApplication::keyboardModifiers() & Qt::MetaModifier;
-#else
   return QApplication::keyboardModifiers() & Qt::ControlModifier;
-#endif
 }
 
 static bool ShiftPressed(Qt::KeyboardModifiers modifiers){
@@ -3117,22 +3113,22 @@ bool Control2Pressed(void){
 */
 
 static Qt::KeyboardModifier HorizontalModifier() {
-  if (SETTINGS_read_bool("alt_as_horizonal_scroll_modifier", false))
-    return Qt::AltModifier;
-  else
-    return Qt::MetaModifier;
+	if (SETTINGS_read_bool("alt_as_horizonal_scroll_modifier", false))
+		return get_alt_modifier();
+	else
+		return get_extra_modifier();
 }
 
 bool MetaPressed(void){
 #if defined(FOR_WINDOWS)
   return W_windows_key_down(); // We have to go pretty low-level (WH_KEYBOARD_LL hook) to check if a win key is pressed.
 #else
-  return QApplication::keyboardModifiers() & Qt::MetaModifier;
+  return QApplication::keyboardModifiers() & get_extra_modifier();
 #endif
 }
 
 bool HorizontalModifierPressed(Qt::KeyboardModifiers modifiers){
-  if (HorizontalModifier() == Qt::MetaModifier)
+  if (HorizontalModifier() == get_extra_modifier())
     return MetaPressed();
   else
     return QApplication::keyboardModifiers() & HorizontalModifier();
@@ -3143,7 +3139,7 @@ bool HorizontalModifierPressed(void){
 }
 
 int HorizontalModifierAngleDelta(QWheelEvent *e) {
-  if ( HorizontalModifier()  == Qt::MetaModifier )
+  if ( HorizontalModifier()  == get_extra_modifier() )
     return e->angleDelta().y();
   else
     return e->angleDelta().x();
