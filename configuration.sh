@@ -152,11 +152,11 @@ RADIUM_CONFIGURATION_HAS_BEEN_SETUP=1
 #
 set_var PYTHONEXE `./find_python_path.sh`
 if ! env |grep PYTHONEXE_NOT_AVAILABLE_YET ; then
-    assert_bin_exists $PYTHONEXE
+    assert_exe_exists $PYTHONEXE
 fi
    
 set_var PKG `which pkg-config`
-assert_bin_exists $PKG
+assert_exe_exists $PKG
 
 set_var RADIUM_RELEASE_CFLAGS ""
 
@@ -164,10 +164,10 @@ if is_0 $PKGqt ; then
     export PKGqt=$PKG
 fi
 
-assert_bin_exists $PKGqt
+assert_exe_exists $PKGqt
 
 if ! is_0 $QT_PKG_CONFIGURATION_PATH ; then
-    assert_bin_exists $QT_PKG_CONFIGURATION_PATH
+    assert_exe_exists $QT_PKG_CONFIGURATION_PATH
     export PKGqt="PKG_CONFIG_PATH=$QT_PKG_CONFIGURATION_PATH $PKGqt"
 fi
 
@@ -196,9 +196,9 @@ if is_0 $MOC ; then
 fi
 
 
-assert_bin_exists $QMAKE
-assert_bin_exists $UIC
-assert_bin_exists $MOC
+assert_exe_exists $QMAKE
+assert_exe_exists $UIC
+assert_exe_exists $MOC
 
 if ${QMAKE} -query QT_VERSION | grep -v '^5.1' ; then
     handle_failure "Seems like qmake has the wrong version. We need Qt newer than 5.10, but not Qt6. Set QMAKE to correct path to fix".
@@ -245,7 +245,7 @@ set_var FAUST_USES_LLVM 0
 if ! is_0 $FAUST_USES_LLVM ; then
     
     set_var LLVM_CONFIG_BIN `which llvm-config`
-    assert_bin_exists $LLVM_CONFIG_BIN
+    assert_exe_exists $LLVM_CONFIG_BIN
     
     old_path=""
     
