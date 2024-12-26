@@ -5159,7 +5159,8 @@ int main(int argc, char **argv){
 
 
   
-  qapplication->setWindowIcon(QIcon(STRING_get_qstring(OS_get_full_program_file_path("graphics/radium_logo_256x256_colorized.png").id)));
+  //qapplication->setWindowIcon(QIcon(STRING_get_qstring(OS_get_full_program_file_path("graphics/radium_logo_256x256_colorized.png").id)));
+  qapplication->setWindowIcon(QIcon(STRING_get_qstring(OS_get_full_program_file_path("graphics/radium_dog_logo_256x256_colorized.png").id)));
   
   {
     // Add fonts in the "fonts" directory
