@@ -28,6 +28,7 @@
 #if USE_STD_COUNTING_SEMAPHORE
 
 #if !defined(__clang__)
+#  error "Not sure, but probably best not to use std::counting_semaphore with gcc for now. Might be more problems with it than the obvious deadlock (which is check for below.)"
 #  if __GNUC__ < 11
 #    error "This version of gcc deadlocks when using std::counting_semaphore"
 #  endif
