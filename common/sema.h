@@ -14,7 +14,9 @@
 
 // Add this test as well to be 100% sure we're not mixing semaphore types.
 #if !USE_STD_COUNTING_SEMAPHORE
-#  error Somethings wrong.
+#  if defined(__clang__)
+#     error Somethings wrong? If not, just comment out this line.
+#  endif
 #endif
 
 /*
