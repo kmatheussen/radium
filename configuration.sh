@@ -250,7 +250,7 @@ if ! is_0 $FAUST_USES_LLVM ; then
     old_path=""
     
     if is_set LD_LIBRARY_PATH ; then
-	old_path=":$LD_LIBRARY"
+	old_path=":$LD_LIBRARY_PATH"
     fi
     
     if uname -s |grep Linux > /dev/null ; then

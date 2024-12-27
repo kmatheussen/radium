@@ -36,9 +36,7 @@ extern LANGSPEC const char *OS_get_program_path(void);
 extern LANGSPEC filepath_t OS_get_program_path2(void);
 extern LANGSPEC const wchar_t *OS_get_dot_radium_path(bool use_gc_alloc);
 
-static inline bool is_radium_internal_file(filepath_t filename){
-  return STRING_starts_with2(STRING_to_upper(filename.id), STRING_to_upper(OS_get_program_path2().id));
-}
+extern LANGSPEC bool is_radium_internal_file(const filepath_t filename);
 
 
 extern LANGSPEC bool OS_config_key_is_color(const char *key);
