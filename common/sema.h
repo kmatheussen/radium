@@ -14,7 +14,9 @@
 
 // Add this test as well to be 100% sure we're not mixing semaphore types.
 #if !USE_STD_COUNTING_SEMAPHORE
-#  error Somethings wrong.
+#  if defined(__clang__)
+#     error Somethings wrong? If not, just comment out this line.
+#  endif
 #endif
 
 /*
@@ -26,7 +28,28 @@
 */
 
 #if USE_STD_COUNTING_SEMAPHORE
-#  include <semaphore>
+
+#if !defined(__clang__)
+#  error "Not sure, but probably best not to use std::counting_semaphore with gcc for now. Might be more problems with it than the obvious deadlock (which is check for below.)"
+#  if __GNUC__ < 11
+#    error "This version of gcc deadlocks when using std::counting_semaphore"
+#  endif
+#  if (__GNUC__==11) && (__GNUC_MINOR__ < 5)
+#    error "This version of gcc deadlocks when using std::counting_semaphore"
+#  endif
+#  if (__GNUC__==12) && (__GNUC_MINOR__ < 4)
+#    error "This version of gcc deadlocks when using std::counting_semaphore"
+#  endif
+#  if (__GNUC__==13) && (__GNUC_MINOR__ < 3)
+#    error "This version of gcc deadlocks when using std::counting_semaphore"
+#  endif
+#  if (__GNUC__==14) && (__GNUC_MINOR__ < 1)
+#    error "This version of gcc deadlocks when using std::counting_semaphore"
+#  endif
+#endif // !defined(__clang__)
+
+#include <semaphore>
+
 namespace cpp11onmulticore{
 
 class Semaphore
