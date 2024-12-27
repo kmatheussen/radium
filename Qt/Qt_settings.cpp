@@ -160,12 +160,20 @@ const char* STRING_get_utf8_chars(const char* s){
 
 bool STRING_starts_with2(const wchar_t *string, const wchar_t *endswith){
   QString s = STRING_get_qstring(string);
+  //printf("\n\nStarts_with2. string: \"%S\". endswith: \"%S\"\n", string, endswith);
   return s.startsWith(STRING_get_qstring(endswith));
 }
 
 bool STRING_starts_with(const wchar_t *string, const char *endswith){  
   QString s = STRING_get_qstring(string);
   return s.startsWith(endswith);
+}
+
+bool is_radium_internal_file(const filepath_t filename){
+  QString qfilename = QDir::fromNativeSeparators(STRING_get_qstring(filename.id)).toUpper();
+  QString program_path = QCoreApplication::applicationDirPath().toUpper();
+
+  return qfilename.startsWith(program_path);
 }
 
 const wchar_t *STRING_remove_starts_with(const wchar_t *string, const char *startswith){

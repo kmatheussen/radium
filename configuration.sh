@@ -205,11 +205,15 @@ if ${QMAKE} -query QT_VERSION | grep -v '^5.1' ; then
 fi
 
 if ${UIC} --version | grep -v '^uic 5.1' ; then
-    handle_failure "Seems like uic has the wrong version. We need Qt newer than 5.10, but not Qt6. Set UIC to correct path to fix".
+    if ${UIC} --version | grep -v '^uic-qt5 5.1' ; then
+	handle_failure "Seems like uic has the wrong version. We need Qt newer than 5.10, but not Qt6. Set UIC to correct path to fix".
+    fi
 fi
 
 if ${MOC} --version | grep -v '^moc 5.1' ; then
-    handle_failure "Seems like moc has the wrong version. We need Qt newer than 5.10, but not Qt6. Set MOC to correct path to fix".
+    if ${MOC} --version | grep -v '^moc-qt5 5.1' ; then
+	handle_failure "Seems like moc has the wrong version. We need Qt newer than 5.10, but not Qt6. Set MOC to correct path to fix".
+    fi
 fi
 
 
@@ -250,7 +254,7 @@ if ! is_0 $FAUST_USES_LLVM ; then
     old_path=""
     
     if is_set LD_LIBRARY_PATH ; then
-	old_path=":$LD_LIBRARY"
+	old_path=":$LD_LIBRARY_PATH"
     fi
     
     if uname -s |grep Linux > /dev/null ; then
