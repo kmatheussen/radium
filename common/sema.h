@@ -26,7 +26,27 @@
 */
 
 #if USE_STD_COUNTING_SEMAPHORE
-#  include <semaphore>
+
+#if !defined(__clang__)
+#  if __GNUC__ < 11
+#    error "This version of gcc deadlocks when using std::counting_semaphore"
+#  endif
+#  if (__GNUC__==11) && (__GNUC_MINOR__ < 5)
+#    error "This version of gcc deadlocks when using std::counting_semaphore"
+#  endif
+#  if (__GNUC__==12) && (__GNUC_MINOR__ < 4)
+#    error "This version of gcc deadlocks when using std::counting_semaphore"
+#  endif
+#  if (__GNUC__==13) && (__GNUC_MINOR__ < 3)
+#    error "This version of gcc deadlocks when using std::counting_semaphore"
+#  endif
+#  if (__GNUC__==14) && (__GNUC_MINOR__ < 1)
+#    error "This version of gcc deadlocks when using std::counting_semaphore"
+#  endif
+#endif // !defined(__clang__)
+
+#include <semaphore>
+
 namespace cpp11onmulticore{
 
 class Semaphore
