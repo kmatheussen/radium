@@ -103,6 +103,8 @@ else
     export CC="gcc $CPUOPTS "
     export LINKER="g++"
 
+    export USE_STD_COUNTING_SEMAPHORE=0 # for now, the gcc implementation of std::counting_semaphore doesn't seem to have been tested very much.
+    
     # Use the ldd linker instead. It's approx. 10x faster.
     if [[ $BUILDTYPE != RELEASE ]] ; then
         RADIUM_USES_MOLD_OR_LDD=1
