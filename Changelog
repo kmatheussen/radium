@@ -1,3 +1,72 @@
+Changes 7.4.76 -> 7.5.71:
+* Windows: Finally fix unnecessary loading of LADSPA
+  plugins during startup,  sometimes causing very
+  long startup time.
+* Gui: Put a dog on the logo.
+* Mac: Swap the "option" and "command" keys. "option"
+  is now mapped to "Extra" and "command" is now
+  mapped to "Alt". We do this to make the keyboard
+  behave the same on all three platforms.
+* Mac: Map the "Fn" key to "Left Ctrl". (I.e. map
+  both those keys to CTRL_LEFT,.
+* Mac: Fix Right Alt and Right Ctrl keys.
+* Keybindings: By default, make both "Alt" keys +
+  Space play song from start, not just the right
+  Alt key.
+* Linux: Update BDWGC from 8.2.4 to 8.2.8.
+* Audio: Optimize Smoothdelay some more. Smoothdelay
+  is used all the time, so this might reduce general
+  CPU usage in the DSP graph a little bit.
+* Editor: Fix assertion reporter popping up if the
+  two first velocities for a note are placed at the
+  top of the block, and afterwards trying to move the
+  start position of the note.
+* Audio: Optimize patchbay plugin a little bit.
+* Gui: Make it optional whether to position GUI
+  elements to the last used configuration.
+* Add NSM desktop keys to .desktop file. (grammoboy2)
+* Editor: Fix too may entries inserted into the undo
+  log when cutting range.
+* Save: Fix saving song overwriting the last saved
+  block instead of the current song.
+* Fix various potential memory corruptions found by
+  the thread sanitizer.
+* Mac: Handle audio better in case of failure.
+* Editor: Fix crash in some situation when first
+  copying an FX subtrack, then copying a different
+  track not having any FX, and finally pasting that
+  track into an FX subtrack.
+* Audio/Modulator: Allow lower bound to be higher
+  than the upper bound, and vice versa. When we allow
+  this, the signal is just inverted automatically,
+  which can be handy.
+* Audio: Fix deadlock in the Sampler and the
+  Fluidsynth instruments when the system is extremely
+  busy and the user tries to change instrument.
+* Audio: Optimized the multi core scheduler. It now
+  utilizes the last core better, plus some minor
+  other optimizations.
+* Audio: Removed buzy-looping. TODO: Remove the
+  buzy-looping options from the preferences GUI as
+  well.
+* NSM: Fix sending correct pid to NSM.
+* Preferences GUI: Add missing character "f" to the
+  word "shift" (it was a typo!).
+* Help: Minor fixes.
+* Mac: Fix problems with the modifier keys stopping
+  to work now and then.
+* Faust: Fix note-release not working properly. Also
+  added a compatibility mode to the song properties
+  window, using the old behavior. Old songs will use
+  the compatibility mode by default to ensure they
+  sound the same.
+* Faust: Fix some minor things.
+* Mac/ARM: Put back note to the startup message that
+  Apple's OpenGL library still crashes now and then,
+  although far less often than before.
+
+
+
 Changes 7.3.84 -> 7.4.76:
 * Instruments: Fix current instrument changing
   automatically when playing song and switching
