@@ -7,8 +7,14 @@
     <x>0</x>
     <y>0</y>
     <width>1099</width>
-    <height>589</height>
+    <height>570</height>
    </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
   </property>
   <property name="windowTitle">
    <string>Preferences</string>
@@ -77,29 +83,6 @@
             </property>
            </widget>
           </item>
-          <item row="2" column="2">
-           <spacer name="horizontalSpacer_15">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeType">
-             <enum>QSizePolicy::Fixed</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item row="2" column="1">
-           <widget class="QCheckBox" name="buzy_looping">
-            <property name="text">
-             <string/>
-            </property>
-           </widget>
-          </item>
           <item row="1" column="2">
            <spacer name="horizontalSpacer">
             <property name="orientation">
@@ -115,6 +98,13 @@
              </size>
             </property>
            </spacer>
+          </item>
+          <item row="1" column="3">
+           <widget class="QLabel" name="label_4">
+            <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Note that a higher number of CPUs causes a higher CPU usage overall. If you have slow graphical performance,&lt;br&gt; or low interactivity, it might help to reduce this number. If not, it should be set to the number of CPU cores on&lt;br&gt; your computer for best audio performance.&lt;/span&gt;  (No need for restart)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+           </widget>
           </item>
           <item row="1" column="1">
            <widget class="QSpinBox" name="numCPUs">
@@ -159,27 +149,6 @@
             </property>
             <property name="value">
              <number>1</number>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="0">
-           <widget class="QLabel" name="label_15">
-            <property name="text">
-             <string>Use buzy-looping:</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="3">
-           <widget class="QLabel" name="label_4">
-            <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Note that a higher number of CPUs causes a higher CPU usage overall. If you have slow graphical performance,&lt;br&gt; or low interactivity, it might help to reduce this number. If not, it should be set to the number of CPU cores on&lt;br&gt; your computer for best audio performance.&lt;/span&gt;  (No need for restart)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="3">
-           <widget class="QLabel" name="label_16">
-            <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;May make audio performance scale better if using several CPUs. But it can also cause CPU spikes if there are&lt;br&gt; plugins doing multi-threaded audio processing.&lt;/span&gt; (Restart required)&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
@@ -6514,8 +6483,8 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>100</width>
-               <height>30</height>
+               <width>949</width>
+               <height>235</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="midi_input_layout">
@@ -9505,7 +9474,7 @@ Optimization level 5 may cause very long compilation time with no apparent benef
            <item row="3" column="0">
             <widget class="QCheckBox" name="use_previous_window_positions_during_startup">
              <property name="text">
-              <string>Use previously used window positions during startup (might have minor bugs)</string>
+              <string>Restore previously used window positions during startup (might have minor bugs)</string>
              </property>
             </widget>
            </item>
@@ -10716,8 +10685,8 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>398</width>
-              <height>28</height>
+              <width>582</width>
+              <height>253</height>
              </rect>
             </property>
             <property name="sizePolicy">
