@@ -963,6 +963,10 @@ static bool maybe_fill_in_cached_plugin(TypeData *type_data, SoundPluginType *pl
   if (!is_radium_internal_file(make_filepath(library->filename)))
   {
 	  GFX_ShowProgressMessage(QString("(Internal: !is_radium_internal_file(%1)").arg(library->get_qfilename()).toUtf8().constData(), true);
+          /*
+          printf("Program path: \"%S\"\n", OS_get_program_path2().id);
+          getchar();
+          */
 	  return false;
   }
 

@@ -2,7 +2,7 @@
 # Users and packagers: Edit build_*.sh instead.
 #
 
-RADIUM_VERSION = 7.4.76
+RADIUM_VERSION = 7.5.71
 
 
 SHELL := /usr/bin/env bash
@@ -2689,7 +2689,7 @@ bin/radium_crashreporter: crashreporter/crashreporter.cpp common/Process.hpp
 	@echo "Changed (bin/radium_crashreporter):"
 	@echo $?
 	@echo
-	$(CCC) -Wall crashreporter/crashreporter.cpp $(RADIUM_BFD_CFLAGS) $(CPPOPT) -DCRASHREPORTER_BIN -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" $(QT_GUI_CFLAGS) $(QT_NETWORK_CFLAGS) $(OS_OPTS) $(WNO_DEPRECATED_DECLARATIONS) $(WNO_DEPRECATED_COPY) $(WNO_DEPRECATED_COPY_CLANG) -o /tmp/crashbin.o
+	$(CCC) -Wall crashreporter/crashreporter.cpp $(RADIUM_BFD_CFLAGS) $(CPPOPT) -DCRASHREPORTER_BIN -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" $(QT_GUI_CFLAGS) $(QT_NETWORK_CFLAGS) $(OS_OPTS) $(WNO_DEPRECATED_DECLARATIONS) $(WNO_DEPRECATED_COPY) $(WNO_DEPRECATED_COPY_CLANG) $(QT_SYSTEM_CFLAGS) -o /tmp/crashbin.o
 	$(LINKER) `cat buildtype.opt` /tmp/crashbin.o -o bin/radium_crashreporter $(QT_GUI_LDFLAGS) $(QT_NETWORK_LDFLAGS)
 	rm /tmp/crashbin.o
 

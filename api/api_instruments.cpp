@@ -80,30 +80,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-extern struct Root *root;
-
-
-
-static bool g_audio_buzy_loop = false;
-
-bool doAudioBuzyLoop(void){
-  static bool has_inited = false;
-
-  if (has_inited==false){
-    g_audio_buzy_loop = SETTINGS_read_bool("audio_buzy_loop", g_audio_buzy_loop);
-    has_inited = true;
-  }
-
-  return g_audio_buzy_loop;
-}
-
-void setAudioBuzyLoop(bool doit){
-  g_audio_buzy_loop = doit;
-  SETTINGS_write_bool("audio_buzy_loop", doit);
-}
-
-//
-
 DEFINE_ATOMIC(bool, g_enable_autobypass) = false;
 DEFINE_ATOMIC(int, g_autobypass_delay) = 500;
 
