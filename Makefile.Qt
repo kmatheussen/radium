@@ -2687,7 +2687,7 @@ $(T)system_compressor_wrapper.o: audio/system_compressor_wrapper.cpp audio/syste
 	$(CCC2) $(FAUST_OPTS2) audio/system_compressor_wrapper.cpp
 
 audio/system_compressor.cpp: audio/system_compressor.dsp
-	$(FAUST) $(FAUST_BIN_OPTS) -I `pwd`/audio -vec -cn Faust_system_compressor audio/system_compressor.dsp -o audio/system_compressor.cpp
+	$(FAUST) -I `pwd`/audio -vec -cn Faust_system_compressor audio/system_compressor.dsp -o audio/system_compressor.cpp
 	./fix_faust_code.sh Faust_system_compressor $@
 
 bin/radium_crashreporter: crashreporter/crashreporter.cpp common/Process.hpp
