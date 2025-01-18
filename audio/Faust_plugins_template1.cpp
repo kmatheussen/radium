@@ -62,45 +62,47 @@ static inline float min(int a,float b){return a<b ? a : b;}
 static inline float max(int a,float b){return a>b ? a : b;}
 #endif
 
-inline int 	max (unsigned int a, unsigned int b) { return (a>b) ? a : b; }
-inline int 	max (int a, int b)		{ return (a>b) ? a : b; }
+static inline int 	max (unsigned int a, unsigned int b) { return (a>b) ? a : b; }
+static inline int 	max (int a, int b)		{ return (a>b) ? a : b; }
 
-inline long 	max (long a, long b) 		{ return (a>b) ? a : b; }
-inline long 	max (int a, long b) 		{ return (a>b) ? a : b; }
-inline long 	max (long a, int b) 		{ return (a>b) ? a : b; }
+static inline long 	max (long a, long b) 		{ return (a>b) ? a : b; }
+static inline long 	max (int a, long b) 		{ return (a>b) ? a : b; }
+static inline long 	max (long a, int b) 		{ return (a>b) ? a : b; }
 
-inline float 	max (float a, float b) 		{ return (a>b) ? a : b; }
-inline float 	max (int a, float b) 		{ return (a>b) ? a : b; }
-inline float 	max (float a, int b) 		{ return (a>b) ? a : b; }
-inline float 	max (long a, float b) 		{ return (a>b) ? a : b; }
-inline float 	max (float a, long b) 		{ return (a>b) ? a : b; }
+static inline float 	max (float a, float b) 		{ return (a>b) ? a : b; }
+static inline float 	max (int a, float b) 		{ return (a>b) ? a : b; }
+static inline float 	max (float a, int b) 		{ return (a>b) ? a : b; }
+static inline float 	max (long a, float b) 		{ return (a>b) ? a : b; }
+static inline float 	max (float a, long b) 		{ return (a>b) ? a : b; }
 
-inline double 	max (double a, double b) 	{ return (a>b) ? a : b; }
-inline double 	max (int a, double b) 		{ return (a>b) ? a : b; }
-inline double 	max (double a, int b) 		{ return (a>b) ? a : b; }
-inline double 	max (long a, double b) 		{ return (a>b) ? a : b; }
-inline double 	max (double a, long b) 		{ return (a>b) ? a : b; }
-inline double 	max (float a, double b) 	{ return (a>b) ? a : b; }
-inline double 	max (double a, float b) 	{ return (a>b) ? a : b; }
+static inline double 	max (double a, double b) 	{ return (a>b) ? a : b; }
+static inline double 	max (int a, double b) 		{ return (a>b) ? a : b; }
+static inline double 	max (double a, int b) 		{ return (a>b) ? a : b; }
+static inline double 	max (long a, double b) 		{ return (a>b) ? a : b; }
+static inline double 	max (double a, long b) 		{ return (a>b) ? a : b; }
+static inline double 	max (float a, double b) 	{ return (a>b) ? a : b; }
+static inline double 	max (double a, float b) 	{ return (a>b) ? a : b; }
 
 
-inline int	min (int a, int b)		{ return (a<b) ? a : b; }
+static inline int	min (int a, int b)		{ return (a<b) ? a : b; }
 
-inline long 	min (long a, long b) 		{ return (a<b) ? a : b; }
-inline long 	min (int a, long b) 		{ return (a<b) ? a : b; }
-inline long 	min (long a, int b) 		{ return (a<b) ? a : b; }
+static inline long 	min (long a, long b) 		{ return (a<b) ? a : b; }
+static inline long 	min (int a, long b) 		{ return (a<b) ? a : b; }
+static inline long 	min (long a, int b) 		{ return (a<b) ? a : b; }
 
-inline float 	min (float a, float b) 		{ return (a<b) ? a : b; }
-inline float 	min (int a, float b) 		{ return (a<b) ? a : b; }
-inline float 	min (float a, int b) 		{ return (a<b) ? a : b; }
-inline float 	min (long a, float b) 		{ return (a<b) ? a : b; }
-inline float 	min (float a, long b) 		{ return (a<b) ? a : b; }
+static inline float 	min (float a, float b) 		{ return (a<b) ? a : b; }
+static inline float 	min (int a, float b) 		{ return (a<b) ? a : b; }
+static inline float 	min (float a, int b) 		{ return (a<b) ? a : b; }
+static inline float 	min (long a, float b) 		{ return (a<b) ? a : b; }
+static inline float 	min (float a, long b) 		{ return (a<b) ? a : b; }
 
-inline double 	min (double a, double b) 	{ return (a<b) ? a : b; }
-inline double 	min (int a, double b) 		{ return (a<b) ? a : b; }
-inline double 	min (double a, int b) 		{ return (a<b) ? a : b; }
-inline double 	min (long a, double b) 		{ return (a<b) ? a : b; }
-inline double 	min (double a, long b) 		{ return (a<b) ? a : b; }
-inline double 	min (float a, double b) 	{ return (a<b) ? a : b; }
-inline double 	min (double a, float b) 	{ return (a<b) ? a : b; }
+static inline double 	min (double a, double b) 	{ return (a<b) ? a : b; }
+static inline double 	min (int a, double b) 		{ return (a<b) ? a : b; }
+static inline double 	min (double a, int b) 		{ return (a<b) ? a : b; }
+static inline double 	min (long a, double b) 		{ return (a<b) ? a : b; }
+static inline double 	min (double a, long b) 		{ return (a<b) ? a : b; }
+static inline double 	min (float a, double b) 	{ return (a<b) ? a : b; }
+static inline double 	min (double a, float b) 	{ return (a<b) ? a : b; }
 
+namespace
+{
