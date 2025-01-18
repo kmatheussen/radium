@@ -1,3 +1,5 @@
+} // end. anon. namespace
+
 #include <QList>
 #include <QMap>
 #include <QString>
