@@ -104,5 +104,3 @@ static inline double 	min (double a, long b) 		{ return (a<b) ? a : b; }
 static inline double 	min (float a, double b) 	{ return (a<b) ? a : b; }
 static inline double 	min (double a, float b) 	{ return (a<b) ? a : b; }
 
-namespace
-{
