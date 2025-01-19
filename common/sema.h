@@ -88,7 +88,10 @@ public:
 #undef max
 
 namespace cpp11onmulticore{
-  
+
+#define USE_WAIT_FOR_SINGLE_OBJECT 1 // If set to 0, use WaitOnAddress instead, which should be much faster.
+
+#if USE_WAIT_FOR_SINGLE_OBJECT
 class Semaphore
 {
 private:
@@ -119,6 +122,93 @@ public:
         ReleaseSemaphore(m_hSema, count, NULL);
     }
 };
+
+#else // USE_WAIT_FOR_SINGLE_OBJECT -> USE_WAIT_ON_ADDRESS
+
+// Performance analysis seems to show that Radium uses significant time in WaitForSingleObject on Windows.
+// This implementation uses WaitOnAddress instead, which should be much faster. However,
+// it's not available in Windows 7 or older, so I'm not quite sure what to do about that yet.
+// But either support for Windows 7 will be dropped, or I'll check at runtime which Semaphore implementation
+// to use, probably the latter.
+//
+// Implemented by looking at this code: https://devblogs.microsoft.com/oldnewthing/20170612-00/?p=96375
+//
+class Semaphore
+{
+    using CounterType = int;
+
+private:
+    DEFINE_ATOMIC(CounterType, _counter) = 0;
+
+#if !defined(RELEASE)
+    DEFINE_ATOMIC(CounterType, _waiters) = 0;
+#endif
+
+    Semaphore(const Semaphore& other) = delete;
+    Semaphore& operator=(const Semaphore& other) = delete;
+
+public:
+    Semaphore(CounterType initialCount = 0)
+        : ATOMIC_NAME(_counter)(initialCount)
+    {
+        R_ASSERT_NON_RELEASE(initialCount >= 0);
+    }
+
+    ~Semaphore()
+    {
+        R_ASSERT_NON_RELEASE(ATOMIC_GET(_waiters) == 0);
+    }
+
+    int get_value(void) const
+    {
+        return ATOMIC_GET(_counter);
+    }
+
+    void wait()
+    {
+#if !defined(RELEASE)
+        ATOMIC_ADD(_waiters, 1);
+#endif
+        for (;;)
+        {
+            int org_count = ATOMIC_GET(_counter);
+
+            while (org_count == 0)
+            {
+                WaitOnAddress(&ATOMIC_NAME(_counter),
+                          &org_count,
+                          sizeof(CounterType),
+                          INFINITE);
+
+                org_count = ATOMIC_GET(_counter);
+            }
+
+            if (ATOMIC_COMPARE_AND_SET_INT(_counter, org_count, org_count-1))
+                break;
+        }
+#if !defined(RELEASE)
+        ATOMIC_ADD(_waiters, -1);
+#endif
+    }
+
+    void signal(const int count = 1)
+    {
+        if (count <= 0)
+        {
+            R_ASSERT_NON_RELEASE(false);
+            return;
+        }
+
+        ATOMIC_ADD(_counter, count);
+
+        if (count == 1)
+            WakeByAddressSingle(&ATOMIC_NAME(_counter));
+        else
+            WakeByAddressAll(&ATOMIC_NAME(_counter));
+    }
+};
+#endif // USE_WAIT_ON_ADDRESS
+
 }
 
 #elif defined(__MACH__)
