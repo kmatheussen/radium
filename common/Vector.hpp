@@ -131,7 +131,7 @@ public:
       } else {
 
         _num_elements_max = vector->_num_elements_max;
-        _elements = (T*)V_calloc(_num_elements_max, sizeof(T));
+        _elements = (T*)V_calloc_nomemtypechecks(_num_elements_max, sizeof(T));
 
       }
       
@@ -214,11 +214,12 @@ private:
       }
     }
 
-    if (!is_preallocated(elements)) {
-      if (ALLOCATOR_TYPE == AllocatorType::RT)
-        RT_free_raw(elements, "Vector.hpp");
-      else
-        V_free(elements);
+    if (!is_preallocated(elements))
+    {
+	    if (ALLOCATOR_TYPE == AllocatorType::RT)
+		    RT_free_raw(elements, "Vector.hpp");
+	    else
+		    V_free((void*)elements); // casting to void* to avoid type-assertion in DEBUG mode. (we have manually run the constructors and destructors, so it's legal to use malloc/free here for non-trivial types.)
     }
   }
   
@@ -339,7 +340,7 @@ private:
     if (ALLOCATOR_TYPE == AllocatorType::RT)
       new_elements = RT_alloc_raw2<T>(new_num_elements_max, new_num_elements_max, "Vector.hpp");
     else
-      new_elements = (T*) V_calloc(sizeof(T), new_num_elements_max);
+      new_elements = (T*) V_calloc_nomemtypechecks(sizeof(T), new_num_elements_max);
     
     int size = _num_elements.get();
 

@@ -26,9 +26,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <qtimer.h>
 #include <qfile.h>
 
-#include "../common/nsmtracker.h"
-#include "FocusSniffers.h"
-
 #if __GNUC__ >= 5
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wsuggest-override"
@@ -47,6 +44,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #if __GNUC__ >= 5
 #  pragma GCC diagnostic pop
 #endif
+
+
+#include "../common/nsmtracker.h"
+#include "FocusSniffers.h"
 
 #ifdef USE_QT3
 #include <qobjectlist.h>

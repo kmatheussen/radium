@@ -37,9 +37,6 @@ struct Meta
 
 #else
 
-  #include "../common/nsmtracker.h"
-  #include "../Qt/FocusSniffers.h"
-
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wshorten-64-to-32"
 
@@ -52,6 +49,11 @@ struct Meta
 #pragma clang diagnostic pop
 
 #endif
+
+
+#include "../common/nsmtracker.h"
+#include "../Qt/FocusSniffers.h"
+
 
 #if __GNUC__ >= 5
 #  pragma GCC diagnostic pop

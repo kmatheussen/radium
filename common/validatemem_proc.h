@@ -104,10 +104,12 @@ static inline void* my_calloc(size_t size1,size_t size2) {
 #    define V_strdup(s) strdup(s)
 #    define V_wcsdup(s) wcsdup(s)
 #    define V_calloc(n, size) my_calloc(n, size)
+#    define V_calloc_nomemtypechecks(n, size) V_calloc(n, size)
 #    define V_free(ptr) free((void*)ptr)
 #    define V_free_function free
 #    define V_realloc(ptr, size) realloc(ptr, size);
-#  else
+
+#  else // RELEASE -> !RELEASE
 
 #    define V_free_function V_free
 
@@ -125,7 +127,7 @@ static inline void assert_allowed_to_alloc(void){
     abort();
 #endif
   
-#else
+#else // 0 -> !0
   
   R_ASSERT(!PLAYER_current_thread_has_lock());
   R_ASSERT(!THREADING_is_runner_thread());
@@ -138,7 +140,7 @@ static inline void assert_allowed_to_alloc(void){
     R_ASSERT(!THREADING_has_player_thread_priority());
     #endif
   #endif
-#endif
+#endif // !0
 }
 
 static inline void *V_malloc(size_t size){
@@ -155,9 +157,9 @@ static inline wchar_t *V_wcsdup(const wchar_t *s){
 }
 
 
-static inline void *V_calloc(size_t n, size_t size)  __attribute__((returns_nonnull));
+static inline void *V_calloc_nomemtypechecks(size_t n, size_t size)  __attribute__((returns_nonnull));
 
-static inline void *V_calloc(size_t n, size_t size){
+static inline void *V_calloc_nomemtypechecks(size_t n, size_t size){
   assert_allowed_to_alloc();
   return my_calloc(n,size);
 }
@@ -190,12 +192,32 @@ static inline void *V_realloc(void *ptr, size_t size){
   return realloc(ptr, size);
 }
 
-#  endif
+#  ifdef __cplusplus
+
+#    define V_malloc(a) AllocTypeCheckerHelperHack1<size_t>(V_malloc, a)
+#    define V_calloc(n,size) AllocTypeCheckerHelperHack2<size_t,size_t>(V_calloc_nomemtypechecks, n, size)
+#    define V_realloc(ptr,size) AllocTypeCheckerHelperHack2<void*,size_t>(V_realloc, ptr, size)
+
+template <typename T>
+static inline void safe_V_free(T* ptr) {
+	static_assert(std::is_same<T,void>::value || std::is_trivial<T>::value, "V_free on non-trivial type");
+	V_free(ptr);
+}
+
+#define V_free(Ptr) safe_V_free(Ptr)
+
+#  else // __cplusplus -> !__cplusplus
+
+#    define V_calloc(n,size) V_calloc_nomemtypechecks(n, size)
+
+#  endif // !__cplusplus
+
+#  endif // !RELEASE
 
 static inline void V_shutdown(void){
 }
   
-#else
+#else // !defined(VALIDATE_MEM) -> defined(VALIDATE_MEM)
 
 #  define V_malloc(size) V_malloc__(size, __FILE__, __LINE__)
 #  define V_strdup(s) V_strdup__(s, __FILE__, __LINE__)
@@ -241,4 +263,5 @@ extern "C" {
 #endif
 
   
-#endif
+#endif // defined(VALIDATE_MEM)
+

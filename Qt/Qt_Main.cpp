@@ -4946,7 +4946,7 @@ int main(int argc, char **argv){
 #endif // !macos(arm)
   
   
-#if defined(FOR_MACOSX)
+#if defined(FOR_MACOSX) && defined(RELEASE)
 
   {
     const char *confname = "show_macos_warning_during_startup_v" RADIUM_VERSION;
