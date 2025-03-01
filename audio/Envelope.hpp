@@ -85,8 +85,8 @@ public:
   
   Envelope(int num_points, const float *xs, const float *ys)
     : _num_points(num_points)
-    , _xs((float*)memcpy(malloc(num_points*sizeof(float)), xs, num_points*sizeof(float)))
-    , _ys((float*)memcpy(malloc(num_points*sizeof(float)), ys, num_points*sizeof(float)))
+    , _xs((float*)memcpy((void*)malloc(num_points*sizeof(float)), xs, num_points*sizeof(float)))
+    , _ys((float*)memcpy((void*)malloc(num_points*sizeof(float)), ys, num_points*sizeof(float)))
     , _shape(FADE_CUSTOM)
     , _is_fade_in(true)
   {

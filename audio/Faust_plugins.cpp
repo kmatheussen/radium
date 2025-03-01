@@ -28,6 +28,12 @@
 #  pragma GCC diagnostic pop
 #endif
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+#include "mfaustqt2.cpp"
+#pragma GCC diagnostic pop
+
+
 #include "../common/nsmtracker.h"
 
 #include "../api/api_gui_proc.h"
@@ -48,11 +54,6 @@
 #if __GNUC__ >= 5
 #  pragma GCC diagnostic pop
 #endif
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wfloat-equal"
-#include "mfaustqt2.cpp"
-#pragma GCC diagnostic pop
 
 std::list<GUI*>  GUI::fGuiList;
 

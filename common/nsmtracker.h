@@ -203,6 +203,8 @@ static_assert (sizeof(long long int) >= 8, "sizof(long long int) must be 8 or hi
 #endif
 
 
+#include "mem_type_assertions.h"
+
 
 /* Unfortunately, AmigaOS has one absolute address that is legal to
    read from; 4, which often makes MuForce not to report reading
@@ -1111,6 +1113,7 @@ static inline T replace_gc_root(T old_root, T new_root){
 }
 
 namespace radium{
+
   template <typename T>
   struct GcHolder{
 
@@ -1154,6 +1157,7 @@ namespace radium{
     {}
   };
 }
+
 
 #else
 

@@ -108,7 +108,7 @@ private:  // Rather not expose this messy (and unsafe) API unless it's needed.
 
 public:
   
-  // Waits until available. Never returns NULL. Same as calling wait() and get_withoutWaiting() in a row
+  // Waits until available. Never returns NULL. Same as {wait() ; return get_withoutWaiting()}
   T get(void){
     wait();
     return get_withoutWaiting();

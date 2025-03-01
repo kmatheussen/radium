@@ -44,7 +44,7 @@ namespace{
         lpb = next;
         return get_lpb_at_place(p);
       }
-      
+
       return lpb->lpb;
     }
   };
