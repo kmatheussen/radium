@@ -411,9 +411,9 @@ const char *system_effect_names[NUM_SYSTEM_EFFECTS] = {
 
 static void init_system_filter2(SystemFilter *filter, int num_channels, const char *type_name, const char *plugin_name, bool is_loading){
   int ch;
-  filter->plugins=(SoundPlugin**)V_calloc(sizeof(SoundPlugin*),num_channels);
+  filter->plugins=V_calloc(sizeof(SoundPlugin*),num_channels);
   for(ch=0;ch<num_channels;ch++){
-    filter->plugins[ch] = (SoundPlugin*)V_calloc(1, sizeof(SoundPlugin));
+    filter->plugins[ch] = V_calloc(1, sizeof(SoundPlugin));
     filter->plugins[ch]->type = PR_get_plugin_type_by_name(NULL, type_name, plugin_name);
     R_ASSERT(!strcmp(filter->plugins[ch]->type->type_name, type_name));
     R_ASSERT(!strcmp(filter->plugins[ch]->type->name, plugin_name));

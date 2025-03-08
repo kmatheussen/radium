@@ -3468,12 +3468,12 @@ static bool load_sample(Data *data, filepath_t filename, int instrument_number, 
 }
 
 static SoundPlugin *create_tremolo(bool is_loading){
-  SoundPlugin *ret = (SoundPlugin*)V_calloc(1, sizeof(SoundPlugin));
+	SoundPlugin *ret = V_calloc(1, sizeof(SoundPlugin));
   
-  ret->type = PR_get_plugin_type_by_name(NULL, "Faust", "System Tremolo");
-  ret->data = ret->type->create_plugin_data(ret->type, ret, NULL, MIXER_get_sample_rate(), MIXER_get_buffer_size(), is_loading);
-  
-  return ret;
+	ret->type = PR_get_plugin_type_by_name(NULL, "Faust", "System Tremolo");
+	ret->data = ret->type->create_plugin_data(ret->type, ret, NULL, MIXER_get_sample_rate(), MIXER_get_buffer_size(), is_loading);
+	
+	return ret;
 }
 
 static void free_tremolo(SoundPlugin *tremolo){

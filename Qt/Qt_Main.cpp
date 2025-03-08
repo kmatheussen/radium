@@ -2656,7 +2656,7 @@ protected:
         // Show mixer briefly to workaround a Qt quirk/bug causing SceneRect size to be calculated from invisible items when the scene hasn't been shown yet.
         // (Fixes extremely large Mixer scene rect if previewing preset before opening the mixer for the first time)
         // This breaks opening mixer window at startup form configuration - don't know needed anymore I do not see any difference when commented
-
+	//
 	if (!getDoSaveRestoreWindows())
 	{
 		if(num_calls_at_this_point==50/_interval)
