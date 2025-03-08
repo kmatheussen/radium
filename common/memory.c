@@ -14,8 +14,16 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-
 #include <stdlib.h>
+
+#if !defined(__clang__) // special workaround for gcc, don't know why.
+extern void safe_free(void *ptr);
+void safe_free(void *ptr)
+{
+	free(ptr);
+}
+#endif
+
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
