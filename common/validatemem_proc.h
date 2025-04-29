@@ -185,8 +185,10 @@ static inline void V_free(void *ptr){
 #endif
 #endif
 #endif
+
   free(ptr);
 }
+
 static inline void *V_realloc(void *ptr, size_t size){
   assert_allowed_to_alloc();
   return realloc(ptr, size);
