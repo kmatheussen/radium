@@ -4163,14 +4163,17 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
     SEQTRACKS_apply_config_state(HASH_get_hash(state, "seqtrack_config"));
 
   if (g_is_loading) {
-    
-    QTimer::singleShot(100, []{
+
+	  // 2025-05-01: Commented out the QTimer::singleShot call and run this block directly. Not sure why it was scheduled
+	  // to run 100ms later, but it caused slightly buggy loading of graphics in the sequencer right after loading (not a big bug, after 100ms it would be fine again).
+	  
+	  //QTimer::singleShot(100, []{
         SEQUENCER_update(SEQUPDATE_TRACKCOORDINATES);
         setTopmostVisibleSeqtrack(0);
         setCurrSeqtrack(0, true, false);
         SEQUENCER_update(SEQUPDATE_EVERYTHING);    
-      });
-    
+		//});
+
   } else {
 
     int new_curr_seqtracknum = HASH_has_key(state, "curr_seqtracknum") ? HASH_get_int32(state, "curr_seqtracknum") : 0;
