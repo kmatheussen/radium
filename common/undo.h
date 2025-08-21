@@ -92,7 +92,7 @@ extern LANGSPEC UndoFunction Undo_get_last_function(void);
 #endif
 
 extern LANGSPEC bool Undo_Currently_Adding_Undo(void);
-extern LANGSPEC void Undo_Start_Adding_Undo(const struct source_pos_t source_pos);
+extern LANGSPEC void Undo_Start_Adding_Undo(const source_pos_t source_pos);
 extern LANGSPEC void Undo_End_Adding_Undo(void);
 
 
