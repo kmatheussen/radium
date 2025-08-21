@@ -319,7 +319,17 @@ WNO_CLASS_MEMACCESS=
 WNO_PARENTHESIS=
 WNO_TEMPLATE_ID_CDTOR=
 
-ifeq ($(GCC_MAJOR),14)
+ifeq ($(GCC_MAJOR),15)
+	WNO_DEPRECATED_ENUM_ENUM_CONVERSION=-Wno-deprecated-enum-enum-conversion
+	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined # -fno-sanitize-recover
+	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
+	WNO_DEPRECATED_DECLARATIONS=-Wno-deprecated-declarations
+	WNO_CLASS_MEMACCESS=-Wno-class-memaccess
+	WNO_PARENTHESIS=-Wno-parentheses
+	WNO_TEMPLATE_ID_CDTOR=-Wno-template-id-cdtor
+	QT_CFLAGS += $(WNO_TEMPLATE_ID_CDTOR)
+#	UNDEFINED_SANITIZE_OPTS=
+else ifeq ($(GCC_MAJOR),14)
 	WNO_DEPRECATED_ENUM_ENUM_CONVERSION=-Wno-deprecated-enum-enum-conversion
 	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined # -fno-sanitize-recover
 	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
