@@ -420,7 +420,7 @@ bool Undo_are_you_sure_questionmark(void){
 }
 
 static bool g_is_adding_undo = false;
-static struct source_pos_t g_curr_source_pos = {};
+static source_pos_t g_curr_source_pos = {};
 
 bool Undo_Currently_Adding_Undo(void){
   return g_is_adding_undo;
