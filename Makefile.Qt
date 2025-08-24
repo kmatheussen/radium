@@ -4,7 +4,6 @@
 
 RADIUM_VERSION = 7.5.71
 
-
 SHELL := /usr/bin/env bash
 
 
@@ -35,7 +34,7 @@ IS_LINUX_BINARY ?=
 #
 PYTHONEXE ?= `which python2`
 
-
+export CPLUS_INCLUDE_PATH := $(VSTSDK)/VST2_SDK:$(VSTSDK)/VST3_SDK
 
 #----------------END USER SETTINGS---------------------------
 
@@ -472,9 +471,9 @@ MENU_TYPE = -DUSE_QT_MENU=1 -DUSE_GTK_MENU=0
 
 FLAGOPTS = $(DEFINES) -DGUIISQT -DFULL_VERSION=$(FULL_VERSION) -DIS_LITTLE_ENDIAN=1 -DUSE_OPENGL=1 $(VISUAL) $(REQTYPE_TYPE) $(MENU_TYPE)
 
-RADIUM_VST2SDK_PATH ?= ${HOME}/SDKs/vstsdk2.4
+RADIUM_VST2SDK_PATH ?= ~/SDKs/VST_SDK/VST2_SDK/
 
-COMMONOPT = -D__STDC_FORMAT_MACROS=1 -c `cat buildtype.opt` -I$(GCDIR)/include -I$(P) $(PYOPTS) `cat flagopts.opt` $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -I ~/SDKs/VST_SDK/VST2_SDK/ -I ${RADIUM_VST2SDK_PATH} -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wno-unknown-pragmas -fno-strict-aliasing -Wmissing-field-initializers -Wnull-dereference -Wwrite-strings $(WNO_VLA_CXX_EXTENSION) -DTHREADED_OPENGL=$(RADIUM_THREADED_OPENGL)  $(IS_LINUX_BINARY) $(IS_MACOS_BINARY)
+COMMONOPT = -D__STDC_FORMAT_MACROS=1 -c `cat buildtype.opt` -I$(GCDIR)/include -I$(P) $(PYOPTS) `cat flagopts.opt` $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wno-unknown-pragmas -fno-strict-aliasing -Wmissing-field-initializers -Wnull-dereference -Wwrite-strings $(WNO_VLA_CXX_EXTENSION) -DTHREADED_OPENGL=$(RADIUM_THREADED_OPENGL)  $(IS_LINUX_BINARY) $(IS_MACOS_BINARY) -I ${RADIUM_VST2SDK_PATH}
 #-fdelete-null-pointer-checks 
 # $(WERROR)
 
