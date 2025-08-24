@@ -305,9 +305,11 @@ else
 fi
 
 if ! uname -s |grep Linux > /dev/null ; then
+    unset INCLUDE_PDDEV
     set_var INCLUDE_PDDEV 0
 fi
 if arch |grep -e arm -e aarch64 ; then
+    unset INCLUDE_PDDEV
     set_var INCLUDE_PDDEV 0
 fi
 

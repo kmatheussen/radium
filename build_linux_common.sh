@@ -18,7 +18,7 @@ mkdir -p /tmp/radium_objects
 #export BUILDTYPE=RELEASE
 
 export JACKOPT="-DNO_JACK_METADATA"
-export JACK_LDFLAGS="$(pkg-config --libs jack)"
+export JACK_LDFLAGS="$(pkg-config --libs jack)" # needed for building with pipewire-jack-audio-connection-kit
 
 assert_exe_exists $PYTHONEXE
 
