@@ -39,9 +39,9 @@ set_var RADIUM_USE_CLANG 0
 
 ########################################################
 # If enabled, include the Pd instrument
-# Only Linux. Other platforms ignore this variable.
+# Only Linux-x86. Other platforms ignore this variable.
 #
-set_var INCLUDE_PDDEV 0
+set_var INCLUDE_PDDEV 1
 
 
 
@@ -305,6 +305,9 @@ else
 fi
 
 if ! uname -s |grep Linux > /dev/null ; then
+    unset INCLUDE_PDDEV
+fi
+if arch |grep -e arm -e aarch64 ; then
     unset INCLUDE_PDDEV
 fi
 
