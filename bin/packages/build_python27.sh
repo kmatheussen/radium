@@ -65,6 +65,8 @@ END
     CC=clang CXX=clang++ CFLAGS=-Wno-implicit-function-declaration CPPCFLAGS=-Wno-implicit-function-declaration make -j`nproc`
 
     make install
+    export LD_LIBRARY_PATH="$(realpath `pwd`/../python27_install/lib)"${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
+    cd ..
 }
 
 #build_python27

@@ -22,7 +22,6 @@ mywhich() {
 echo
 echo "Checking dependencies: "
 mywhich sed
-mywhich $PYTHONEXE
 #which guile-1.8
 mywhich guile
 
@@ -32,13 +31,6 @@ fi
 
 if [[ $4 == "test_build" ]] ; then
     echo "testing build"
-fi
-
-if $1 -c "import sys ; sys.exit(sys.version[:1] == \"2\")" ; then
-    echo "Only Python 2 is supported:"
-    $1 --version
-    echo
-    exit 5
 fi
 
 if [[ $4 == "test_build" ]] ; then
