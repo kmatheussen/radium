@@ -82,20 +82,20 @@ PREFIX=`dirname $PWD/$0`
 
 build_faust() {
 
-    if env |grep FAUST_USES_LLVM ; then
-	if ! env |grep LLVM_PATH ; then
-	    RED='\033[1;31m'
-	    NC='\033[0m'
-	    printf "${RED}LLVM_PATH not set${NC} (../../common_build.variables.sh not included?)\n"
-	    LLVM_PATH="" # use /bin/llvm-config from root directory
-	fi
-	
-	if [ ! -f $LLVM_PATH/bin/llvm-config ] ; then
-	    RED='\033[1;31m'
-	    NC='\033[0m'
-	    printf "${RED}Error: \"${LLVM_PATH}\" doesn't seem to be valid...${NC}\n"
-	    exit -1
-	fi
+	if ! is_0 $FAUST_USES_LLVM ; then
+		if ! env |grep LLVM_PATH ; then
+			RED='\033[1;31m'
+			NC='\033[0m'
+			printf "${RED}LLVM_PATH not set${NC} (../../common_build.variables.sh not included?)\n"
+			LLVM_PATH="" # use /bin/llvm-config from root directory
+		fi
+		
+		if [ ! -f $LLVM_PATH/bin/llvm-config ] ; then
+			RED='\033[1;31m'
+			NC='\033[0m'
+			printf "${RED}Error: \"${LLVM_PATH}\" doesn't seem to be valid...${NC}\n"
+			exit -1
+		fi
     fi
 
     rm -fr faust
@@ -109,8 +109,8 @@ build_faust() {
     patch -p0 <../faust_most.cmake.patch
     ### this line is needed to build on artix
     #export LIBNCURSES_PATH=$(shell find /usr -name libncursesw_g.a)
-    
-    if ! env |grep FAUST_USES_LLVM ; then
+
+	if is_0 $FAUST_USES_LLVM ; then
         sed -i 's/LLVM_BACKEND   \tCOMPILER STATIC/LLVM_BACKEND OFF/' build/backends/most.cmake
         if grep LLVM_BACKEND build/backends/most.cmake | grep COMPILER ; then
             echo "sed failed"
@@ -120,19 +120,17 @@ build_faust() {
             echo "sed failed"
             exit -1
         fi
+	else
+		export ORGTEMPPATH=$PATH
+		export PATH=$LLVM_PATH/bin:$PATH
     fi
 
-    if env |grep FAUST_USES_LLVM ; then
-	export ORGTEMPPATH=$PATH
-	export PATH=$LLVM_PATH/bin:$PATH
-    fi
-    
     # release build
-    VERBOSE=1 CFLAGS="$CFLAGS" CXXFLAGS="$CXXFLAGS" CMAKEOPT="-DCMAKE_BUILD_TYPE=Release -DSELF_CONTAINED_LIBRARY=on -DCMAKE_CXX_COMPILER=`which $DASCXX` -DCMAKE_C_COMPILER=`which $DASCC` " make most
+    VERBOSE=1 CFLAGS="$CFLAGS" CXXFLAGS="$CXXFLAGS" CMAKEOPT="-DCMAKE_BUILD_TYPE=Release -DSELF_CONTAINED_LIBRARY=on -DCMAKE_CXX_COMPILER=`which $DASCXX` -DCMAKE_C_COMPILER=`which $DASCC` " make most -j `nproc`
 
-    if env |grep FAUST_USES_LLVM ; then
-	export PATH=$ORGTEMPPATH
-	unset ORGTEMPPATH
+	if ! is_0 $FAUST_USES_LLVM ; then
+		export PATH=$ORGTEMPPATH
+		unset ORGTEMPPATH
     fi
     
     
