@@ -5,6 +5,7 @@ set -eEu
 
 source $(dirname "${0}")/bash_setup.sh
 
+export LD_LIBRARY_PATH=$(dirname "$(realpath $0)")/bin/packages/python27_install/lib/${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
 
 export VISUAL="-DUSE_QT_VISUAL=1 -DUSE_GTK_VISUAL=0"
 
