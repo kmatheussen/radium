@@ -18,7 +18,7 @@ mkdir -p /tmp/radium_objects
 #export BUILDTYPE=RELEASE
 
 export JACKOPT="-DNO_JACK_METADATA"
-export JACK_LDFLAGS="-ljack -ldl"
+export JACK_LDFLAGS="$(pkg-config --libs jack)" # needed for building with pipewire-jack-audio-connection-kit
 
 assert_exe_exists $PYTHONEXE
 
@@ -43,10 +43,10 @@ fi
 #export INCLUDE_PDDEV="jadda"
 
 
-if arch |grep arm ; then
-    export CPUOPTS=""
+if arch |grep -e arm -e aarch64 ; then
+  export CPUOPTS=""
 else
-    export CPUOPTS="-msse2 -mfpmath=sse"
+  export CPUOPTS="-msse2 -mfpmath=sse"
 fi
 
 #if ! env |grep OPTIMIZE ; then
@@ -152,7 +152,7 @@ export VL_LIBS="$VL_PATH/src/vlVG/lib/libVLVG.a $VL_PATH/src/vlGraphics/lib/libV
 
 #$VL_PATH/src/vlGraphics/plugins/freetype/lib/libFreeType.a 
 
-export GCDIR="bin/packages/gc-8.2.4"
+export GCDIR="bin/packages/gc-8.2.8"
 
 # jack midi not working very well since the player is now run inside the jack audio thread.
 #export RTMIDI_CFLAGS="-D__UNIX_JACK__ -D__LINUX_ALSA__  -D__RTMIDI_DEBUG__"
@@ -191,6 +191,7 @@ if [[ $INCLUDE_FAUSTDEV == 1 ]] ; then
     if [[ $INCLUDE_FAUSTDEV_BUT_NOT_LLVM == 1 ]] ; then
         export OS_OPTS="$OS_OPTS -DWITHOUT_LLVM_IN_FAUST_DEV"
     else
+        LLVM_PATH=${LLVM_PATH:-} # use /bin/llvm-config from root directory if empty
         LLVM_OPTS=`$LLVM_PATH/bin/llvm-config --cppflags`
         
         MAYBELLVM=`$LLVM_PATH/bin/llvm-config --libdir`/libLLVM-`$LLVM_PATH/bin/llvm-config --version`.so

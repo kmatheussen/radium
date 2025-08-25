@@ -27,7 +27,7 @@ if uname -s |grep Darwin ; then
     export COMMON_CFLAGS="$COMMON_CFLAGS -mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET}"
 fi
    
-if ! arch |grep arm ; then
+if ! arch |grep -e arm -e aarch64 ; then
     export COMMON_CFLAGS="$COMMON_CFLAGS -msse2 -mfpmath=sse "
 fi
 
@@ -87,6 +87,7 @@ build_faust() {
 	    RED='\033[1;31m'
 	    NC='\033[0m'
 	    printf "${RED}LLVM_PATH not set${NC} (../../common_build.variables.sh not included?)\n"
+	    LLVM_PATH="" # use /bin/llvm-config from root directory
 	fi
 	
 	if [ ! -f $LLVM_PATH/bin/llvm-config ] ; then
@@ -98,17 +99,16 @@ build_faust() {
     fi
 
     rm -fr faust
-    tar xvzf faust-2.70.3.tar.gz
-    mv faust-2.70.3 faust
+    tar xvzf faust-2.81.2.tar.gz
+    mv faust-2.81.2 faust
     cd faust
     rm -fr libraries
     tar xvzf ../faustlibraries_2024_01_05.tar.gz
     mv faustlibraries libraries
 
     patch -p0 <../faust_most.cmake.patch
-    patch -p1 <../faust_cmakelist.patch
-    ### this patch is needed to build on artix
-    #patch -p1 <../faust_make.llvm.static.patch
+    ### this line is needed to build on artix
+    #export LIBNCURSES_PATH=$(shell find /usr -name libncursesw_g.a)
     
     if ! env |grep FAUST_USES_LLVM ; then
         sed -i 's/LLVM_BACKEND   \tCOMPILER STATIC/LLVM_BACKEND OFF/' build/backends/most.cmake
@@ -121,13 +121,6 @@ build_faust() {
             exit -1
         fi
     fi
-
-    patch -p0 < ../faust3.patch
-
-    #sed -i '1s/^/#include \<cstdint> /' architecture/faust/dsp/dsp.h
-    
-    #cp compiler/generator/libfaust-signal.h architecture/faust/dsp/
-    #cp compiler/generator/libfaust-box.h architecture/faust/dsp/
 
     if env |grep FAUST_USES_LLVM ; then
 	export ORGTEMPPATH=$PATH
@@ -287,13 +280,13 @@ build_qscintilla() {
 
 build_xcb() {
     
-    if ! is_0 $RADIUM_BUILD_LIBXCB ; then
+    if ! is_0 ${RADIUM_BUILD_LIBXCB:-1} ; then
 	
         rm -fr xcb-proto-1.13/
         tar xvjf xcb-proto-1.13.tar.bz2
         cd xcb-proto-1.13/
         mkdir install
-        ./configure --prefix=`pwd`/install PYTHON=`which python2`
+        ./configure --prefix=`pwd`/install PYTHON=$PYTHONEXE
         make -j8
         make install
         cd ..
@@ -302,8 +295,9 @@ build_xcb() {
         tar xvjf libxcb-1.13.tar.bz2 
         cd libxcb-1.13
         #patch -p1 <../libxcb-1.12.patch
-        export PKG_CONFIG_PATH=`pwd`/../xcb-proto-1.13/install/lib/pkgconfig:$PKG_CONFIG_PATH
-        CFLAGS="$CFLAGS" CPPFLAGS="$CPPFLAGS" CPPFLAGS="$CXXFLAGS" ./configure PYTHON=`which python2`
+        export XCBPROTO_LIBS=`pwd`/../xcb-proto-1.13/install/lib # don't append to PKG_CONFIG_PATH because of set -u (or use default args)
+        export XCBPROTO_CFLAGS="$CFLAGS"
+        CFLAGS="$CFLAGS" CPPFLAGS="$CPPFLAGS" CPPFLAGS="$CXXFLAGS" ./configure PYTHON=$PYTHONEXE
         CFLAGS="$CFLAGS" CPPFLAGS="$CPPFLAGS" CPPFLAGS="$CXXFLAGS" make -j`nproc`
         cd ..
     
@@ -322,7 +316,9 @@ build_python27
 build_qscintilla # Note: Linking fails on Mac. Just ignore it.
 
 if uname -s |grep Linux ; then
-    build_libpds
+    if ! arch |grep -e arm -e aarch64 ; then
+        build_libpds
+    fi
     build_xcb
     echo "finished compiling libpds and xcb" # need this line to avoid script failing if the two lines above are commented out.
 fi
