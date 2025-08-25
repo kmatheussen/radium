@@ -21,7 +21,9 @@ JUCE_MODULES=$(PWD)/../../JuceLibraryCode/modules/
 
 LV2FLAGS=-I$(JUCE_MODULES)juce_audio_processors/format_types/LV2_SDK -I$(JUCE_MODULES)juce_audio_processors/format_types/LV2_SDK/lv2  -I$(JUCE_MODULES)juce_audio_processors/format_types/LV2_SDK/lilv/src -I$(JUCE_MODULES)juce_audio_processors/format_types/LV2_SDK/lilv -I$(JUCE_MODULES)juce_audio_processors/format_types/LV2_SDK/sratom -I$(JUCE_MODULES)juce_audio_processors/format_types/LV2_SDK/sord/src -I$(JUCE_MODULES)juce_audio_processors/format_types/LV2_SDK/sord -I$(JUCE_MODULES)juce_audio_processors/format_types/LV2_SDK/serd -I$(JUCE_MODULES)juce_audio_processors/format_types/LV2_SDK/lv2 -I$(JUCE_MODULES)juce_audio_processors/format_types/LV2_SDK
 
-COMMONCPPFLAGS := $(DEPFLAGS) -D "JUCE_CHECK_MEMORY_LEAKS=0" -D "JUCER_LINUX_MAKE_7346DA2A=1" -D "JUCE_APP_VERSION=1.0.0" -D "JUCE_APP_VERSION_HEX=0x10000" $(AVAILABLES) -I /usr/include -I /usr/include/freetype2 -I$(JUCE_MODULES)/.. -I$(JUCE_MODULES) -I$(JUCE_MODULES)juce_audio_processors/format_types/VST3_SDK -I $(JUCE_MODULES)JuceLibraryCode -I $(JUCE_MODULES)JuceLibraryCode/modules -DJUCE_APP_CONFIG_HEADER="\"AppConfig.h\"" -DPLUGINHOST_BUILD_64BIT -fPIC $(LV2FLAGS)
+RADIUM_VST2SDK_PATH ?= ${HOME}/SDKs/vstsdk2.4
+
+COMMONCPPFLAGS := $(DEPFLAGS) -D "JUCE_CHECK_MEMORY_LEAKS=0" -D "JUCER_LINUX_MAKE_7346DA2A=1" -D "JUCE_APP_VERSION=1.0.0" -D "JUCE_APP_VERSION_HEX=0x10000" $(AVAILABLES) -I /usr/include -I /usr/include/freetype2 -I$(JUCE_MODULES)/.. -I$(JUCE_MODULES) -I$(JUCE_MODULES)juce_audio_processors/format_types/VST3_SDK -I $(JUCE_MODULES)JuceLibraryCode -I $(JUCE_MODULES)JuceLibraryCode/modules -I $(RADIUM_VST2SDK_PATH) -DJUCE_APP_CONFIG_HEADER="\"AppConfig.h\"" -DPLUGINHOST_BUILD_64BIT -fPIC $(LV2FLAGS)
 
 ifeq ($(DAS_ARCH),x86_64)
 	COMMONCPPFLAGS += -msse2 -mfpmath=sse
