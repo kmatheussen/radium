@@ -5949,14 +5949,35 @@
   
   (define seqblocks (get-data-for-seqblock-moving seqblock-infos inc-time inc-track)) ;; Must do this before deleting the old seqblocks.
 
+  ;;(c-display "\n\n=====start=================")
   (undo-block
-   (lambda ()     
-     (for-each (lambda (seqblock)
-                 (when seqblock
-                   (<ra> :delete-seqblock (seqblock :id) #f)
-                   (<ra> :create-seqblock-from-state seqblock)))
-               ;;(apply-seqblock seqblock)))
-               seqblocks))))
+   (lambda ()
+	 (<ra> :undo-sequencer)
+	 (ignore-undo-block
+	  (lambda ()
+		(for-each (lambda (seqblock)
+					(when seqblock
+					  (<ra> :delete-seqblock (seqblock :id) #f)))
+				  seqblocks)
+		(for-each (lambda (seqblock)
+					(when seqblock
+					  ;;(c-display seqblock)
+					  (<ra> :create-seqblock-from-state seqblock)))
+				  seqblocks)))))
+
+  (when #f
+	(let ((test-seqtracknum 0))
+  
+	  (for-each (lambda (seqblocknum)
+				  (c-display "AFT :seqtrack" test-seqtracknum
+							 :seqblock seqblocknum
+							 :blocknum (<ra> :get-seqblock-blocknum seqblocknum test-seqtracknum)
+						   :time (* 1.0 (/ (<ra> :get-seqblock-start-time seqblocknum test-seqtracknum) 44100))
+						   :frames (<ra> :get-seqblock-start-time seqblocknum test-seqtracknum)))
+				(iota (<ra> :get-num-seqblocks test-seqtracknum)))
+	
+	  (c-display "=============end=========\n\n")))
+  )
 
 (define (get-sequencer-pixels-per-value-unit)
   (/ (- (<ra> :get-sequencer-x2)
