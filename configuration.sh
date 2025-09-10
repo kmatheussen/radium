@@ -63,6 +63,15 @@ set_var INCLUDE_FAUSTDEV_BUT_NOT_LLVM 0
 
 
 
+########################################################
+# By default, we use the first llvm-config in path,
+# but this variable can be set to something else if ncessary, e.g
+# /usr/local/llvm-90/bin/llvm-config
+#
+set_var LLVM_CONFIG_BIN 0
+
+
+
 
 ########################################################
 # If enabled, use QWebEngine instead of QtWebKit
@@ -247,7 +256,7 @@ fi
 
 if ! is_0 $INCLUDE_FAUSTDEV ; then
     if is_0 $INCLUDE_FAUSTDEV_BUT_NOT_LLVM ; then
-	export FAUST_USES_LLVM=1
+		export FAUST_USES_LLVM=1
     fi
 fi
 
@@ -255,14 +264,21 @@ fi
 set_var FAUST_USES_LLVM 0
 
 if ! is_0 $FAUST_USES_LLVM ; then
-    
-    set_var LLVM_CONFIG_BIN `which llvm-config`
+
+	if is_0 $LLVM_CONFIG_BIN ; then
+		if ! which llvm-config ; then
+			handle_failure "llvm-config not found"
+		fi
+	
+		export LLVM_CONFIG_BIN=`which llvm-config`
+	fi
+		
     assert_exe_exists $LLVM_CONFIG_BIN
     
     old_path=""
     
     if is_set LD_LIBRARY_PATH ; then
-	old_path=":$LD_LIBRARY_PATH"
+		old_path=":$LD_LIBRARY_PATH"
     fi
     
     if uname -s |grep Linux > /dev/null ; then
@@ -274,7 +290,7 @@ if ! is_0 $FAUST_USES_LLVM ; then
 	set_var FAUST_LD_LIB_PATH "DYLD_LIBRARY_PATH=`${LLVM_CONFIG_BIN} --libdir`$old_path"
 
     else
-	handle_failure "unknown architecture"
+		handle_failure "unknown architecture"
     fi
     
 fi

@@ -8,7 +8,7 @@ source $(dirname "${0}")/bash_setup.sh
 assert_exe_exists()
 {
     if [ ! -f $(which "${1}") ] ; then
-	handle_failure "\"${1}\" doesn't seem to exist."
+		handle_failure "\"${1}\" doesn't seem to exist."
     fi
 }
 

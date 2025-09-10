@@ -82,22 +82,6 @@ PREFIX=`dirname $PWD/$0`
 
 build_faust() {
 
-	if ! is_0 $FAUST_USES_LLVM ; then
-		if ! env |grep LLVM_PATH ; then
-			RED='\033[1;31m'
-			NC='\033[0m'
-			printf "${RED}LLVM_PATH not set${NC} (../../common_build.variables.sh not included?)\n"
-			LLVM_PATH="" # use /bin/llvm-config from root directory
-		fi
-		
-		if [ ! -f $LLVM_PATH/bin/llvm-config ] ; then
-			RED='\033[1;31m'
-			NC='\033[0m'
-			printf "${RED}Error: \"${LLVM_PATH}\" doesn't seem to be valid...${NC}\n"
-			exit -1
-		fi
-    fi
-
     rm -fr faust
     tar xvzf faust-2.81.2.tar.gz
     mv faust-2.81.2 faust
@@ -111,7 +95,7 @@ build_faust() {
     #export LIBNCURSES_PATH=$(shell find /usr -name libncursesw_g.a)
 
 	if is_0 $FAUST_USES_LLVM ; then
-        sed -i 's/LLVM_BACKEND   \tCOMPILER STATIC/LLVM_BACKEND OFF/' build/backends/most.cmake
+        sed -i.backup 's/LLVM_BACKEND   \tCOMPILER STATIC/LLVM_BACKEND OFF/' build/backends/most.cmake
         if grep LLVM_BACKEND build/backends/most.cmake | grep COMPILER ; then
             echo "sed failed"
             exit -1
@@ -122,11 +106,17 @@ build_faust() {
         fi
 	else
 		export ORGTEMPPATH=$PATH
-		export PATH=$LLVM_PATH/bin:$PATH
+		export PATH=$(dirname $LLVM_CONFIG_BIN):$PATH
+		#echo "PATH: $PATH"
     fi
 
+	# Use all CPUs when building faust.
+	JOBS=$(nproc)
+	#sed -i.backup "s/(BUILDLOCATION)$/(BUILDLOCATION) -j${JOBS}/" Makefile
+	#exit -1
+	
     # release build
-    VERBOSE=1 CFLAGS="$CFLAGS" CXXFLAGS="$CXXFLAGS" CMAKEOPT="-DCMAKE_BUILD_TYPE=Release -DSELF_CONTAINED_LIBRARY=on -DCMAKE_CXX_COMPILER=`which $DASCXX` -DCMAKE_C_COMPILER=`which $DASCC` " make most -j `nproc`
+    BUILDOPT="--config Release -j${JOBS}" VERBOSE=1 CFLAGS="$CFLAGS" CXXFLAGS="$CXXFLAGS" CMAKEOPT="-DCMAKE_BUILD_TYPE=Release -DSELF_CONTAINED_LIBRARY=on -DCMAKE_CXX_COMPILER=`which $DASCXX` -DCMAKE_C_COMPILER=`which $DASCC` " make most
 
 	if ! is_0 $FAUST_USES_LLVM ; then
 		export PATH=$ORGTEMPPATH
@@ -146,7 +136,7 @@ build_Visualization-Library() {
     tar xvzf Visualization-Library-master.tar.gz 
     cd Visualization-Library-master/
     patch -p1 <../visualization.patch
-    sed -i 's/add_subdirectory("freetype")//' src/vlGraphics/plugins/CMakeLists.txt
+    sed -i.backup 's/add_subdirectory("freetype")//' src/vlGraphics/plugins/CMakeLists.txt
     #sed -i s/"VL_ACTOR_USER_DATA 0"/"VL_ACTOR_USER_DATA 1"/ src/vlCore/config.hpp
     export MYFLAGS="-std=gnu++11 $CPPFLAGS -fPIC -g  -Wno-c++11-narrowing -Wno-deprecated-declarations -Wno-implicit-function-declaration `pkg-config --cflags freetype2` " #  -D_GLIBCXX_USE_CXX11_ABI=0
     MYFLAGS="-std=gnu++11 $CPPFLAGS -fPIC -g -Wno-c++11-narrowing -Wno-deprecated-declarations -Wno-implicit-function-declaration `pkg-config --cflags freetype2` " #  -D_GLIBCXX_USE_CXX11_ABI=0
@@ -170,15 +160,15 @@ build_libpds() {
     rm -fr libpd-master
     tar xvzf libpd-master.tar.gz
     cd libpd-master/
-    sed -i "/define CFLAGS/ s|\")| -I/usr/include/tirpc $NOWARNS\")|" make.scm
-    sed -i 's/k_cext$//' make.scm
-    sed -i 's/oscx //' make.scm
-    sed -i "s/gcc -O3/gcc -fcommon -O3 $NOWARNS/" make.scm
+    sed -i.backup "/define CFLAGS/ s|\")| -I/usr/include/tirpc $NOWARNS\")|" make.scm
+    sed -i.backup 's/k_cext$//' make.scm
+    sed -i.backup 's/oscx //' make.scm
+    sed -i.backup "s/gcc -O3/gcc -fcommon -O3 $NOWARNS/" make.scm
 
     GLIBCVERSION=`ldd --version | head -n 1 | awk '{print $NF}'`
     if [[ $GLIBCVERSION > 2.34 ]] ; then
-	sed -i 's/#define fsqrt sqrt/#include <math.h>\nstatic float fsqrt(float val){return sqrt(val);}/g' pure-data/extra/fiddle~/fiddle~.c
-	sed -i 's/fsqrt/myfsqrt/g' pure-data/extra/fiddle~/fiddle~.c
+	sed -i.backup 's/#define fsqrt sqrt/#include <math.h>\nstatic float fsqrt(float val){return sqrt(val);}/g' pure-data/extra/fiddle~/fiddle~.c
+	sed -i.backup 's/fsqrt/myfsqrt/g' pure-data/extra/fiddle~/fiddle~.c
     fi
     
     make clean

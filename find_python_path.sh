@@ -10,6 +10,14 @@
 echo $(readlink -f $(dirname "${0}"))/bin/packages/python27_install/bin/python
 exit 0
 
+PWD=$(dirname $0)
+MAYBE="$PWD/bin/packages/python27_install/bin/python"
+
+if [ -f $MAYBE ] ; then
+   realpath $MAYBE
+   exit 0
+fi
+
 if which python2 >/dev/null 2>/dev/null ; then
     which python2
 elif which python >/dev/null 2>/dev/null ; then
