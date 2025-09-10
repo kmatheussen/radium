@@ -610,13 +610,13 @@ static inline double midi_to_hz(double midi){
 }
 #endif
 
-typedef struct{
+typedef struct
+{
   const char *filename;
   const char *function_name;
-  const int linenum;
+  int linenum;
   const char *extra_info;
 } source_pos_t;
-
 
 #define LOC() ({                                          \
       source_pos_t sp = {__FILE__,  __FUNCTION__, __LINE__,NULL};   \

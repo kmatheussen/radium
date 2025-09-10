@@ -419,18 +419,17 @@ bool Undo_are_you_sure_questionmark(void){
   return boolret;
 }
 
-
-
 static bool g_is_adding_undo = false;
 static source_pos_t g_curr_source_pos = {};
 
 bool Undo_Currently_Adding_Undo(void){
   return g_is_adding_undo;
 }
-void Undo_Start_Adding_Undo(source_pos_t source_pos){
-  memcpy(static_cast<void*>(&g_curr_source_pos), &source_pos, sizeof(source_pos_t));
-  R_ASSERT(g_is_adding_undo==false);
-  g_is_adding_undo = true;
+void Undo_Start_Adding_Undo(const source_pos_t source_pos){
+	memcpy(&g_curr_source_pos, &source_pos, sizeof(source_pos_t));
+	//g_curr_source_pos = source_pos;
+	R_ASSERT(g_is_adding_undo==false);
+	g_is_adding_undo = true;
 }
 
 void Undo_End_Adding_Undo(void){
