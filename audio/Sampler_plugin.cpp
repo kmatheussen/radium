@@ -3472,7 +3472,7 @@ static SoundPlugin *create_tremolo(bool is_loading){
   
   ret->type = PR_get_plugin_type_by_name(NULL, "Faust", "System Tremolo");
   ret->data = ret->type->create_plugin_data(ret->type, ret, NULL, MIXER_get_sample_rate(), MIXER_get_buffer_size(), is_loading);
-  
+	
   return ret;
 }
 

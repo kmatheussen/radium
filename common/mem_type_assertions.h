@@ -195,19 +195,9 @@ public:
 };
 }
 
-#define malloc(Size) AllocTypeCheckerHelperHack1<size_t>(malloc, Size)
-
-#define calloc(A,B) AllocTypeCheckerHelperHack2<size_t, size_t>(calloc, A, B)
-
-/*
-template <typename T>
-static inline void safe_fwMem_Free(T* ptr) {
-	static_assert(std::is_same<T,void>::value || std::is_trivial<T>::value, "fwMem_Free on non-trivial type");
-	fwMem_Free(ptr);
-}
-
-#define fwMem_Free(Ptr) safe_fwMem_Free(Ptr)
-*/
-
+#if defined(__clang__) // These don't compile under gcc, don't know why.
+#  define malloc(Size) AllocTypeCheckerHelperHack1<size_t>(malloc, Size)
+#  define calloc(A,B) AllocTypeCheckerHelperHack2<size_t, size_t>(calloc, A, B)
+#endif
 
 #endif // !defined(RELEASE) && defined(__cplusplus)

@@ -474,7 +474,7 @@ void * operator new(decltype(sizeof(0)) size) noexcept(false)
   return mem;
 }
 
-void * operator new(size_t size, std::nothrow_t const&)
+void * operator new(std::size_t size, std::nothrow_t const&)
 #if defined(__clang__)
   #if FOR_LINUX
     _GLIBCXX_USE_NOEXCEPT
@@ -482,7 +482,11 @@ void * operator new(size_t size, std::nothrow_t const&)
     _NOEXCEPT
   #endif
 #else
-  noexcept(false)
+  #if __GNUC__ >= 15
+ 	noexcept
+  #else
+    noexcept(false)
+  #endif
 #endif
 {
   void *mem = V_malloc(size);
@@ -499,7 +503,11 @@ void operator delete(void *mem)
     _NOEXCEPT
   #endif
 #else
-  noexcept(false)
+  #if __GNUC__ >= 15
+ 	noexcept
+  #else
+    noexcept(false)
+  #endif
 #endif
 {
   V_free(mem);
@@ -513,7 +521,11 @@ void operator delete(void *mem, std::size_t size)
     _NOEXCEPT
   #endif
 #else
-  noexcept(false)
+  #if __GNUC__ >= 15
+ 	noexcept
+  #else
+    noexcept(false)
+  #endif
 #endif
 {
   V_free(mem);
@@ -527,7 +539,11 @@ void operator delete(void *mem, std::nothrow_t const&)
     _NOEXCEPT
   #endif
 #else
-  noexcept(false)
+  #if __GNUC__ >= 15
+ 	noexcept
+  #else
+    noexcept(false)
+  #endif
 #endif
 {
   V_free(mem);
@@ -2656,7 +2672,7 @@ protected:
         // Show mixer briefly to workaround a Qt quirk/bug causing SceneRect size to be calculated from invisible items when the scene hasn't been shown yet.
         // (Fixes extremely large Mixer scene rect if previewing preset before opening the mixer for the first time)
         // This breaks opening mixer window at startup form configuration - don't know needed anymore I do not see any difference when commented
-
+	//
 	if (!getDoSaveRestoreWindows())
 	{
 		if(num_calls_at_this_point==50/_interval)

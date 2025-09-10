@@ -996,18 +996,26 @@ static int64_t find_closest_grid_start_start_time(const struct SeqTrack *seqtrac
 static int64_t find_closest_grid_start(int64_t goal_seqtime, GridType what){
   if (what==NO_GRID)
     return goal_seqtime;
-  
-  const struct SeqTrack *seqtrack = find_closest_seqtrack_with_grid_start(0);
-  if(seqtrack->for_audiofiles)
-    return goal_seqtime;
 
-  if(seqtrack->seqblocks.num_elements==0)
-    return goal_seqtime;
+  int64_t start_time = 0;
   
+  if (!root->song->use_sequencer_tempos_and_signatures)
   {
-    const struct SeqBlock *first_seqblock = (struct SeqBlock*)seqtrack->seqblocks.elements[0];
-    if (goal_seqtime <= first_seqblock->t.time)
-      return goal_seqtime;
+	  const struct SeqTrack *seqtrack = find_closest_seqtrack_with_grid_start(0);
+	  
+	  if(seqtrack->for_audiofiles)
+		  return goal_seqtime;
+	  
+	  if(seqtrack->seqblocks.num_elements==0)
+		  return goal_seqtime;
+	  
+	  {
+		  const struct SeqBlock *first_seqblock = (struct SeqBlock*)seqtrack->seqblocks.elements[0];
+		  if (goal_seqtime <= first_seqblock->t.time)
+			  return goal_seqtime;
+	  }
+
+	  start_time = find_closest_grid_start_start_time(seqtrack, goal_seqtime);
   }
   
   int64_t ret = goal_seqtime;
@@ -1025,8 +1033,8 @@ static int64_t find_closest_grid_start(int64_t goal_seqtime, GridType what){
 
       return seqtime < goal_seqtime;
     };
-  
-  SEQUENCER_iterate_time(find_closest_grid_start_start_time(seqtrack, goal_seqtime),
+
+  SEQUENCER_iterate_time(start_time,
                          //SONG_get_length()*pc->pfreq,
                          R_MAX(SEQUENCER_get_visible_end_time(), SONG_get_length()*pc->pfreq) + int64_t(pc->pfreq)*60*60*100,
                          what,
@@ -4155,14 +4163,17 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
     SEQTRACKS_apply_config_state(HASH_get_hash(state, "seqtrack_config"));
 
   if (g_is_loading) {
-    
-    QTimer::singleShot(100, []{
+
+	  // 2025-05-01: Commented out the QTimer::singleShot call and run this block directly. Not sure why it was scheduled
+	  // to run 100ms later, but it caused slightly buggy loading of graphics in the sequencer right after loading (not a big bug, after 100ms it would be fine again).
+	  
+	  //QTimer::singleShot(100, []{
         SEQUENCER_update(SEQUPDATE_TRACKCOORDINATES);
         setTopmostVisibleSeqtrack(0);
         setCurrSeqtrack(0, true, false);
         SEQUENCER_update(SEQUPDATE_EVERYTHING);    
-      });
-    
+		//});
+
   } else {
 
     int new_curr_seqtracknum = HASH_has_key(state, "curr_seqtracknum") ? HASH_get_int32(state, "curr_seqtracknum") : 0;

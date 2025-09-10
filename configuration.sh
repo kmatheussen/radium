@@ -39,7 +39,7 @@ set_var RADIUM_USE_CLANG 0
 
 ########################################################
 # If enabled, include the Pd instrument
-# Only Linux. Other platforms ignore this variable.
+# Only Linux-x86. Other platforms ignore this variable.
 #
 set_var INCLUDE_PDDEV 1
 
@@ -109,6 +109,12 @@ set_var QMAKE 0
 set_var UIC 0
 set_var MOC 0
 
+# Alternative: Add the Qt5 bin directory to path,
+# The directory can be different on your system,
+# adjust as needed:
+#
+#export PATH="/usr/lib64/qt5/bin:/usr/lib/qt5/bin"${PATH:+:$PATH} 
+
 
 
 
@@ -154,7 +160,9 @@ set_var PYTHONEXE `./find_python_path.sh`
 if ! env |grep PYTHONEXE_NOT_AVAILABLE_YET ; then
     assert_exe_exists $PYTHONEXE
 fi
-   
+
+set_var VSTSDK "$HOME/SDKs/VST_SDK"
+
 set_var PKG `which pkg-config`
 assert_exe_exists $PKG
 
@@ -298,6 +306,11 @@ fi
 
 if ! uname -s |grep Linux > /dev/null ; then
     unset INCLUDE_PDDEV
+    set_var INCLUDE_PDDEV 0
+fi
+if arch |grep -e arm -e aarch64 ; then
+    unset INCLUDE_PDDEV
+    set_var INCLUDE_PDDEV 0
 fi
 
 if [ ${FULL_VERSION} -eq 0 ] ; then

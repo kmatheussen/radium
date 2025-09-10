@@ -490,7 +490,7 @@ enum SoundPluginPitchType{
   
 typedef struct SoundPlugin{
 
-#ifdef __cplusplus
+#if 0 //def __cplusplus
   SoundPlugin(const SoundPlugin&) = delete;
   SoundPlugin& operator=(const SoundPlugin&) = delete;
 #endif
