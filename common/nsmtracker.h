@@ -531,19 +531,26 @@ static inline bool int_to_bool(int value){
 
 static inline int64_t scale_int64(const int64_t x, const int64_t x1, const int64_t x2, const int64_t y1, const int64_t y2){
 
-  int64_t diff = x2-x1;
+	int64_t diff = x2-x1;
   
 #if !defined(RELEASE)
-  R_ASSERT(diff!=0);
+	R_ASSERT(diff!=0);
 #endif
-  
-  if (diff==0) // this is never supposed to happen, but to avoid integer divide-by-zero, we sacrifice some cycles here.
-    return (y1+y2)/2;
-  else
-    return y1 + ( ((x-x1)*(y2-y1))
-                  /
-                  diff
-                  );
+	
+	if (diff==0)
+	{
+#ifdef __cplusplus
+		[[unlikely]] // this is never supposed to happen, but to avoid integer divide-by-zero, we sacrifice some cycles here.
+#endif
+		return (y1+y2)/2;
+	}
+	else
+	{
+		return y1 + ( ((x-x1)*(y2-y1))
+			      /
+			      diff
+			);
+	}
 }
 
 static inline double scale_double(const double x, const double x1, const double x2, const double y1, const double y2){
