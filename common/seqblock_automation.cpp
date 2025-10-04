@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "player_pause_proc.h"
 #include "instruments_proc.h"
 #include "Vector.hpp"
-#include "Array.hpp"
+//#include "Array.hpp"
 #include "../Qt/Qt_mix_colors.h"
 #include "../Qt/Qt_colors_proc.h"
 #include "SeqAutomation.hpp"

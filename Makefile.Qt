@@ -194,8 +194,11 @@ ifeq ($(GCC_MAJOR),9)
 #	QT_CFLAGS += $(WNO_DEPRECATED_COPY) # probably only necessary for qt 5.12 or older
 endif
 
+WNO_GNU_FOLDING_CONSTANT=
+
 ifneq '' '$(findstring clang,$(CC))'
 	WNO_DEPRECATED_BUILTINS=-Wno-deprecated-builtins
+    WNO_GNU_FOLDING_CONSTANT=-Wno-gnu-folding-constant
 endif
 
 ifeq ($(CLANG_MAJOR),18)
@@ -1260,7 +1263,7 @@ $(T)seqblock_stretchspeed.o:  $(BUILD_DEPENDENCIES) $(CD)seqblock_stretchspeed.c
 	$(CCC2) $(CD)seqblock_stretchspeed.cpp $(QTOPT) $(SEQBLOCK_STRETCHSPEED_OPT)
 
 $(T)time.o:  $(BUILD_DEPENDENCIES) $(CD)time.cpp common/time_proc.h
-	$(CCC2) $(CD)time.cpp $(CPPOPT)
+	$(CCC2) $(CD)time.cpp $(QTOPT)
 
 $(T)reltempo.o:  $(BUILD_DEPENDENCIES) $(CD)reltempo.c
 	$(CC2) $(CD)reltempo.c $(OPT)
@@ -1293,10 +1296,11 @@ $(T)scheduler_notes.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_notes.cpp $(CD)sche
 #	$(CC2) $(CD)scheduler_fxs.c $(OPT)
 
 $(T)scheduler_reallines.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_reallines.c $(CD)scheduler_proc.h
-	$(CC2) $(CD)scheduler_reallines.c $(OPT)
+	$(CC2) $(CD)scheduler_reallines.c $(OPT) $(WNO_GNU_FOLDING_CONSTANT)
 
 $(T)scheduler_LPB.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_LPB.c $(CD)scheduler_proc.h
-	$(CC2) $(CD)scheduler_LPB.c $(OPT)
+	$(CC2) $(CD)scheduler_LPB.c $(OPT) $(WNO_GNU_FOLDING_CONSTANT)
+
 
 $(T)scheduler_Beats.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_Beats.cpp $(CD)scheduler_proc.h
 	$(CCC2) $(CD)scheduler_Beats.cpp $(CPPOPT)
@@ -2106,7 +2110,7 @@ ifeq (,$(findstring clang,$(CC)))
 endif
 
 $(T)radium_wrap.o:  $(BUILD_DEPENDENCIES)  $(API)radium_wrap.c 
-	$(CC2) $(API)radium_wrap.c $(OPT) -Wno-unused-function $(NOUNUSEDBUTSETVARIABLEWARNING) -Wno-missing-field-initializers -Wno-write-strings
+	$(CC2) $(API)radium_wrap.c $(OPT) -Wno-unused-function $(NOUNUSEDBUTSETVARIABLEWARNING) -Wno-missing-field-initializers -Wno-write-strings -Wno-cast-function-type-mismatch
 
 $(API)radium_wrap.c: $(BUILD_DEPENDENCIES) $(API)protos.conf bin/protoconfparser.py $(API)/radium_wrap/radium_wrap_1.c $(API)/radium_wrap/radium_wrap_3.c $(API)makeradiumwrap_c.sh $(API)makeradiumwrap_c.sh
 	cd $(API) ; bash makeradiumwrap_c.sh $(PYTHONEXE) ; cd ..

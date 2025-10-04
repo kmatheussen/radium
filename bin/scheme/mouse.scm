@@ -5955,10 +5955,19 @@
 	 (<ra> :undo-sequencer)
 	 (ignore-undo-block
 	  (lambda ()
+		;; Do it in two steps:
+		;; 1. Remove all existing blocks we're moving.
+		;;
 		(for-each (lambda (seqblock)
 					(when seqblock
 					  (<ra> :delete-seqblock (seqblock :id) #f)))
 				  seqblocks)
+		;; And:
+		;; 2. Create new blocks at the new positions.
+		;;
+		;; (If we move them one by one we can get problems with blocks automatically being force-moved
+		;;  to avoid blocks overlapping on the same seqtracks, which are currently not allowed (unfortunately).)
+		;;
 		(for-each (lambda (seqblock)
 					(when seqblock
 					  ;;(c-display seqblock)

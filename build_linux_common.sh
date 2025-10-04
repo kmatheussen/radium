@@ -170,13 +170,16 @@ export OS_OPTS="-Werror=array-bounds $CPUOPTS -DFOR_LINUX `$PKGqt --cflags Qt5X1
 #VERBOSE=1 CMAKEOPT="-DCMAKE_BUILD_TYPE=Debug -DSELF_CONTAINED_LIBRARY=on -DCMAKE_CXX_COMPILER=`which clang++` -DCMAKE_C_COMPILER=`which clang`" make most
 #VERBOSE=1 CMAKEOPT="-DCMAKE_BUILD_TYPE=Release -DSELF_CONTAINED_LIBRARY=on -DCMAKE_CXX_COMPILER=`which g++` -DCMAKE_C_COMPILER=`which gcc`" make most
 
-if [[ $INCLUDE_FAUSTDEV == 1 ]] ; then
+if ! is_0 $INCLUDE_FAUSTDEV ; then
     export OS_OPTS="$OS_OPTS -DWITH_FAUST_DEV"
 fi
 
-if [[ $INCLUDE_PDDEV == 1 ]] ; then
+if ! is_0 $INCLUDE_PDDEV ; then
     export OS_OPTS="$OS_OPTS -DWITH_PD"
 fi
+
+echo "222==QHTAT??"
+exit -1
 
 PYTHONLIBPATH=`$PYTHONEXE -c "import sys;print '-L'+sys.prefix+'/lib'"`
 PYTHONLIBNAME=`$PYTHONEXE -c "import sys;print '-lpython'+sys.version[:3]"`
@@ -186,7 +189,7 @@ PYTHONLIBNAME=`$PYTHONEXE -c "import sys;print '-lpython'+sys.version[:3]"`
 export QSCINTILLA_PATH=`pwd`/bin/packages/QScintilla_src-2.14.0/src
 
 
-if [[ $INCLUDE_FAUSTDEV == 1 ]] ; then
+if ! is_0 $INCLUDE_FAUSTDEV ; then
     FAUSTLDFLAGS="`pwd`/bin/packages/faust/build/lib/libfaust.a -lcrypto -lncurses"
     if [[ $INCLUDE_FAUSTDEV_BUT_NOT_LLVM == 1 ]] ; then
         export OS_OPTS="$OS_OPTS -DWITHOUT_LLVM_IN_FAUST_DEV"
@@ -206,7 +209,7 @@ if [[ $INCLUDE_FAUSTDEV == 1 ]] ; then
 fi
 # _debug
 
-if [[ $INCLUDE_PDDEV == 1 ]] ; then
+if ! is_0 $INCLUDE_PDDEV ; then
     PDLDFLAGS="bin/packages/libpd-master/libs/libpds.a"
 else    
     PDLDFLAGS=""

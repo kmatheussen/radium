@@ -173,10 +173,10 @@ struct LatencyCompensatorDelay {
     : _delay(ms_to_frames(MAX_COMPENSATED_LATENCY))
   {
     if (g_empty_sound==NULL){
-      g_empty_sound = (float*)V_calloc(sizeof(float), RADIUM_BLOCKSIZE);
+		g_empty_sound = (float*)V_calloc(sizeof(float), RADIUM_BLOCKSIZE); // Note: RADIUM_BLOCKSIZE can not change value after program startup.
     }
   }
-  
+	
   ~LatencyCompensatorDelay(){
   }
 
@@ -752,12 +752,12 @@ static void PLUGIN_RT_process(SoundPlugin *plugin, int64_t time, int num_frames,
 
 #if !defined(RELEASE)
     // assert that inputs and outputs are not changed by the plugin. (is there any way to mark the first layer of a 2d array as const, but not the second layer)
-    float *inputs_check[R_MAX(1, plugin->type->num_inputs)];
-    float *outputs_check[R_MAX(1, plugin->type->num_outputs)];
-    for(int i=0;i<plugin->type->num_inputs;i++)
-      inputs_check[i]=inputs[i];
-    for(int i=0;i<plugin->type->num_outputs;i++)
-      outputs_check[i]=outputs[i];
+	  float **inputs_check = RT_ALLOC_ARRAY_STACK(float*, R_MAX(1, plugin->type->num_inputs));
+	  float **outputs_check = RT_ALLOC_ARRAY_STACK(float*, R_MAX(1, plugin->type->num_outputs));
+	  for(int i=0;i<plugin->type->num_inputs;i++)
+		  inputs_check[i]=inputs[i];
+	  for(int i=0;i<plugin->type->num_outputs;i++)
+		  outputs_check[i]=outputs[i];
 #endif
 
     plugin->type->RT_process(plugin, time, num_frames, inputs, outputs);
@@ -1795,7 +1795,7 @@ public:
         return;
       }else if(num_channels==1){
         float *s[2];
-        float temp_ch2[num_frames];
+        float *temp_ch2 = RT_ALLOC_ARRAY_STACK(float, num_frames);
         s[0] = input[0];
         s[1] = temp_ch2;
         memset(s[1],0,sizeof(float)*num_frames);
@@ -1821,8 +1821,8 @@ public:
     if(ATOMIC_GET(filter->is_on)==false && filter->was_on==false)
       return;
 
-    float *s[R_MAX(1, num_channels)];
-    float filter_sound[R_MAX(1, num_channels*num_frames)];
+    float **s = RT_ALLOC_ARRAY_STACK(float*, R_MAX(1, num_channels));
+    float *filter_sound = RT_ALLOC_ARRAY_STACK(float, R_MAX(1, num_channels*num_frames));
     for(int ch=0;ch<num_channels;ch++)
       s[ch] = &filter_sound[ch*num_frames];
 
@@ -1880,13 +1880,14 @@ public:
           if (filter->plugins != NULL){
             SoundPlugin *plugin = filter->plugins[0];
             int latency = plugin->type->RT_get_latency!=NULL ? plugin->type->RT_get_latency(plugin) : 0;
-            if (latency > 0){
-              float *empty[num_channels];
-              for(int ch=0;ch<num_channels;ch++)
-                empty[ch] = (float*)g_empty_sound;
-              
-              for(int i=0;i<ceil(latency/RADIUM_BLOCKSIZE);i++)
-                RT_apply_system_filter2(filter, empty, s, num_channels, RADIUM_BLOCKSIZE, process_plugins);
+            if (latency > 0)
+			{
+				float ** empty = RT_ALLOC_ARRAY_STACK(float*, num_channels);
+				for(int ch=0;ch<num_channels;ch++)
+					empty[ch] = (float*)g_empty_sound;
+				
+				for(int i=0;i<ceil(latency/RADIUM_BLOCKSIZE);i++)
+					RT_apply_system_filter2(filter, empty, s, num_channels, RADIUM_BLOCKSIZE, process_plugins);
             }
           }
         }
@@ -1896,7 +1897,8 @@ public:
   }
 
   bool RT_is_autosuspending(void) const{
-    return ATOMIC_NAME(_plugin->_RT_is_autosuspending);
+	  return ATOMIC_NAME(_plugin->_RT_is_autosuspending);
+	  //return ATOMIC_GET_RELAXED(_plugin->_RT_is_autosuspending);
   }
   
   // Called by main mixer thread before starting multicore, and before RT_called_for_each_soundcard_block2.
@@ -2154,7 +2156,7 @@ public:
     
     //const float *input_producer_sound = link->source->_output_buffer.get_channel(link->source_ch);
     
-    float latency_sound_sound[num_frames];
+    float *latency_sound_sound = RT_ALLOC_ARRAY_STACK(float, num_frames);
     const float *latency_compensated_input_producer_sound;
     
     if (source_output_sound==NULL)
@@ -2224,43 +2226,46 @@ public:
     }
   }
   
-  void RT_process(int64_t time, int num_frames, bool process_plugins) {
-
-    int dry_sound_sound_size = _num_dry_sounds*num_frames*sizeof(float);
+  void RT_process(int64_t time, int num_frames, bool process_plugins)
+  {
+    float *dry_sound_sound = RT_ALLOC_ARRAY_STACK(float, _num_dry_sounds*num_frames);
     
-    float *dry_sound_sound = (float*)alloca(dry_sound_sound_size); // using alloca since clang didn't like dynamically sized array here, for some reason.
-    
-    float *dry_sound[R_MAX(1,_num_dry_sounds)]; // r_max to avoid ubsan hit
+    float **dry_sound = RT_ALLOC_ARRAY_STACK(float*, R_MAX(1,_num_dry_sounds)); // r_max to avoid ubsan hit
     for(int ch=0;ch<_num_dry_sounds;ch++)
-      dry_sound[ch] = &dry_sound_sound[ch*num_frames];
+		dry_sound[ch] = &dry_sound_sound[ch*num_frames];
 
     R_ASSERT(has_run(time)==false);
     _last_time = time;
 
     if (_num_inputs > 0){
       
-      bool has_set[_num_inputs];
-      memset(has_set, 0, sizeof(bool)*_num_inputs);
-      
-      for(auto *buffer : _input_buffers){
-        if (buffer->has_channels()){
-          
-          for(int ch=0;ch<_num_inputs;ch++){
-            if (has_set[ch]) {
-              JUCE_add_sound(dry_sound[ch], buffer->get_channel(ch), num_frames);
-            } else {
-              memcpy(dry_sound[ch], buffer->get_channel(ch), sizeof(float)*num_frames);
-              has_set[ch] = true;
-            }
-          }
+		bool *has_set = RT_ALLOC_ARRAY_STACK(bool, _num_inputs);
+		memset(has_set, 0, sizeof(bool)*_num_inputs);
+		
+		for(auto *buffer : _input_buffers)
+		{
+			if (buffer->has_channels())
+			{
+				for(int ch=0;ch<_num_inputs;ch++)
+				{
+					if (has_set[ch])
+					{
+						JUCE_add_sound(dry_sound[ch], buffer->get_channel(ch), num_frames);
+					}
+					else
+					{
+						memcpy(dry_sound[ch], buffer->get_channel(ch), sizeof(float)*num_frames);
+						has_set[ch] = true;
+					}
+				}
 
-          buffer->RT_release_channels(radium::NeedsLock::YES);
-        }
-      }
+				buffer->RT_release_channels(radium::NeedsLock::YES);
+			}
+		}
 
-      for(int ch=0;ch<_num_inputs;ch++)
-        if (!has_set[ch])
-          memset(dry_sound[ch], 0, sizeof(float)*num_frames);
+		for(int ch=0;ch<_num_inputs;ch++)
+			if (!has_set[ch])
+				memset(dry_sound[ch], 0, sizeof(float)*num_frames);
     }
     
     PLUGIN_update_smooth_values(_plugin);
@@ -2268,18 +2273,18 @@ public:
     
     // Note: output_sound and wet_sound is actually the same variable (optimization)
     
-    float output_sound_sound[R_MAX(1, _num_outputs)*num_frames];
-    float *output_sound[R_MAX(1, _num_outputs)];
+    float *output_sound_sound = RT_ALLOC_ARRAY_STACK(float, R_MAX(1, _num_outputs)*num_frames);
+    float **output_sound = RT_ALLOC_ARRAY_STACK(float*, R_MAX(1, _num_outputs));
     for(int ch=0;ch<_num_outputs;ch++)
       output_sound[ch] = &output_sound_sound[ch*num_frames];
 
     float **wet_sound = output_sound;
 
     {
-      float temp_sound_sound[R_MAX(1, _num_inputs)*num_frames];
-      float *temp_sound[R_MAX(1, _num_inputs)];
-      for(int ch=0;ch<_num_inputs;ch++)
-        temp_sound[ch] = &temp_sound_sound[ch*num_frames];
+		float *temp_sound_sound = RT_ALLOC_ARRAY_STACK(float, R_MAX(1, _num_inputs)*num_frames);
+		float **temp_sound = RT_ALLOC_ARRAY_STACK(float*, R_MAX(1, _num_inputs));
+		for(int ch=0;ch<_num_inputs;ch++)
+			temp_sound[ch] = &temp_sound_sound[ch*num_frames];
       
       
       bool is_a_generator = _num_inputs==0;
@@ -2293,7 +2298,7 @@ public:
       if (_num_dry_sounds > 0){
         bool do_bypass = is_bypassed(_plugin); //_plugin->drywet.smoothing_is_necessary==false && _plugin->drywet.value==0.0f;
         
-        float input_peaks[_num_dry_sounds];
+        float *input_peaks = RT_ALLOC_ARRAY_STACK(float, _num_dry_sounds);
         for(int ch=0;ch<_num_dry_sounds;ch++) {
           
           float dry_peak = RT_get_max_val(dry_sound[ch],num_frames);
@@ -2353,15 +2358,19 @@ public:
       RT_process_pan_width_and_pitch(wet_sound, num_frames, process_plugins);
 
     {
-      float latency_dry_sound_sound[R_MAX(1,_num_dry_sounds)][num_frames]; // Using 'R_MAX' since array[0] is undefined behavior. (ubsan fix only, most likely nothing bad would happen)
-      const float *latency_dry_sound[R_MAX(1,_num_dry_sounds)];
-      for(int ch=0;ch<_num_dry_sounds;ch++)        
-        latency_dry_sound[ch] = _dry_sound_latencycompensator_delays[ch].RT_process(dry_sound[ch], latency_dry_sound_sound[ch], num_frames); // Usually a no-op. If the plugin has no latency, latency_dry_sound[ch] will just be set to dry_sound[ch].
-
-      RT_apply_dry_wet(latency_dry_sound, _num_dry_sounds, // dry
-                       wet_sound, _num_outputs,        // wet (-> becomes output sound)
-                       num_frames,
-                       &_plugin->drywet);
+		float *latency_dry_sound_sound = RT_ALLOC_ARRAY_STACK(float, R_MAX(1,_num_dry_sounds)*num_frames); // Using 'R_MAX' since array[0] is undefined behavior. (ubsan fix only, most likely nothing bad would happen)
+		const float **latency_dry_sound = RT_ALLOC_ARRAY_STACK(const float*, R_MAX(1,_num_dry_sounds));
+	  
+		for(int ch=0;ch<_num_dry_sounds;ch++)
+			// Usually a no-op. If the plugin has no latency, latency_dry_sound[ch] will just be set to dry_sound[ch].
+			latency_dry_sound[ch] = _dry_sound_latencycompensator_delays[ch].RT_process(dry_sound[ch],
+																						&latency_dry_sound_sound[ch*num_frames],
+																						num_frames);
+		
+		RT_apply_dry_wet(latency_dry_sound, _num_dry_sounds, // dry
+						 wet_sound, _num_outputs,        // wet (-> becomes output sound)
+						 num_frames,
+						 &_plugin->drywet);
     }
 
 
@@ -2375,37 +2384,38 @@ public:
     bool is_touched = false;
     
     // Output peaks
-    if (_num_outputs > 0) {
-      float volume_peaks[_num_outputs];
+    if (_num_outputs > 0)
+	{
+		float *volume_peaks = RT_ALLOC_ARRAY_STACK(float, _num_outputs);
       
-      for(int ch=0;ch<_num_outputs;ch++) {
+		for(int ch=0;ch<_num_outputs;ch++) {
 
-	      const float out_peak = RT_get_max_val(output_sound[ch],num_frames);
-	      volume_peaks[ch] = out_peak;
+			const float out_peak = RT_get_max_val(output_sound[ch],num_frames);
+			volume_peaks[ch] = out_peak;
 
 #if 1
-	      if (out_peak <= MIN_NONSILENT_PEAK)
-	      {
-		      _curr_output_is_silent[ch] = true;
-	      }
-	      else
-	      {
-		      _curr_output_is_silent[ch] = false;
-		      if (false==is_touched)
-			      is_touched = true;
-	      }
+			if (out_peak <= MIN_NONSILENT_PEAK)
+			{
+				_curr_output_is_silent[ch] = true;
+			}
+			else
+			{
+				_curr_output_is_silent[ch] = false;
+				if (false==is_touched)
+					is_touched = true;
+			}
 #else
-	      _curr_output_is_silent[ch] = SMOOTH_peak_is_below_lowest_fade_value(out_peak);
-	      
-	      if(false==is_touched && out_peak > MIN_AUTOSUSPEND_PEAK)
-		      is_touched = true;
+			_curr_output_is_silent[ch] = SMOOTH_peak_is_below_lowest_fade_value(out_peak);
+			
+			if(false==is_touched && out_peak > MIN_AUTOSUSPEND_PEAK)
+				is_touched = true;
 #endif
-      }
+		}
       
-      if(is_touched)
-        RT_PLUGIN_touch(_plugin);
+		if(is_touched)
+			RT_PLUGIN_touch(_plugin);
         
-      RT_set_output_peak_values(volume_peaks, output_sound);
+		RT_set_output_peak_values(volume_peaks, output_sound);
     }
     
     RT_iterate_output_links_after_process(time, num_frames, is_touched ? output_sound : NULL);

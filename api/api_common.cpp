@@ -777,7 +777,7 @@ static QHash<const int64_t, QPair<int,int>> g_seqblock_ids_hash;
 static void add_to_ids_hash(int64_t seqblock_id, int seqtracknum, int seqblocknum){
 
 #if !defined(RELEASE)
-  printf("add_to_ids_hash[%d]: <%d,%d>. Contains: %d. size: %d\n", (int)seqblock_id, seqtracknum, seqblocknum, g_seqblock_ids_hash.contains(seqblock_id), g_seqblock_ids_hash.size());
+	//printf("add_to_ids_hash[%d]: <%d,%d>. Contains: %d. size: %d\n", (int)seqblock_id, seqtracknum, seqblocknum, g_seqblock_ids_hash.contains(seqblock_id), g_seqblock_ids_hash.size());
 #endif
   
   // First check if we should clear the hash table if it hasn grown a lot.

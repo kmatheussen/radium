@@ -10,6 +10,8 @@
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
 
+#include "Juce_plugins_proc.h"
+
 #include "Mixer_proc.h"
 #include "SoundPluginRegistry_proc.h"
 
@@ -369,23 +371,26 @@ enum VoiceOp{
   VOICE_REMOVE
 };
 
-static void RT_process_between(Voice *voice, float **inputs, float **outputs, int start, int end){
-  if(end==start)
-    return;
+static void RT_process_between(Voice *voice, float **inputs, float **outputs, int start, int end)
+{
+	if(end==start)
+		return;
 
-  int num_inputs = voice->dsp_instance->getNumInputs();
-  float *offsetted_inputs[R_MAX(1, num_inputs)];
-  for(int ch=0;ch<num_inputs; ch++)
-    offsetted_inputs[ch] = &inputs[ch][start];
+	int num_inputs = voice->dsp_instance->getNumInputs();
+	int num_outputs = voice->dsp_instance->getNumOutputs();
+	
+	float **offsetted_inputs = RT_ALLOC_ARRAY_STACK(float*, R_MAX(1, num_inputs));
+	float **offsetted_outputs = RT_ALLOC_ARRAY_STACK(float*, R_MAX(1, num_outputs));
+	
+	for(int ch=0;ch<num_inputs; ch++)
+		offsetted_inputs[ch] = &inputs[ch][start];
+	
+	for(int ch=0;ch<num_outputs; ch++)
+		offsetted_outputs[ch] = &outputs[ch][start];
 
-  int num_outputs = voice->dsp_instance->getNumOutputs();
-  float *offsetted_outputs[R_MAX(1, num_outputs)];
-  for(int ch=0;ch<num_outputs; ch++)
-    offsetted_outputs[ch] = &outputs[ch][start];
-
-  //printf("Computing Delta start / end: %d / %d\n",start,end);
-
-  voice->dsp_instance->compute(end-start, offsetted_inputs, offsetted_outputs);
+	//printf("Computing Delta start / end: %d / %d\n",start,end);
+	
+	voice->dsp_instance->compute(end-start, offsetted_inputs, offsetted_outputs);
 }
 
 static VoiceOp RT_play_voice(Data *data, Voice *voice, int num_frames, float **inputs, float **outputs, int *start_process){
@@ -393,53 +398,58 @@ static VoiceOp RT_play_voice(Data *data, Voice *voice, int num_frames, float **i
   int delta_pos_at_start = voice->delta_pos_at_start;
   int delta_pos_at_end = voice->delta_pos_at_end;
 
-  if(delta_pos_at_start==0 && delta_pos_at_end==-1){
+  //printf("Play. Deltas: %d -> %d\n", delta_pos_at_start, delta_pos_at_end);
+	 
+  if( /*delta_pos_at_start==0 &&*/ delta_pos_at_end==-1)
+  {
+	  voice->dsp_instance->compute(num_frames, inputs, outputs);
+	  
+	  *start_process = 0;
+	  
+	  if(equal_floats(*(voice->myUI._gate_control), 0.0f)){
+		  
+		  const bool use_old_buggy_behavior = root->song->RT_use_old_buggy_faust_note_release_behavior;
+		  
+		  const int num_seconds_safety = use_old_buggy_behavior ? 1 : 5;
+		  
+		  if(false
+		     || RT_is_silent(outputs[0], num_frames, use_old_buggy_behavior)
+		     || voice->frames_since_stop > data->samplerate*num_seconds_safety) // Safety mechanism. Force voice to stop after about 5 second.
+		  {
+			  //printf("----removing voice: %d %d\n", RT_is_silent(outputs[0], num_frames), voice->frames_since_stop > data->samplerate);
+			  
+			  return VOICE_REMOVE;
+		  }
+		  
+		  voice->frames_since_stop += num_frames;
+	  }
+  }
+  else if(delta_pos_at_start>0 && delta_pos_at_end==-1)
+  {
+	  //printf("Start: Delta start / end: %d / %d\n",delta_pos_at_start,delta_pos_at_end);
+	  
+	  RT_process_between(voice, inputs, outputs, delta_pos_at_start, num_frames);
+	  //voice->dsp_instance->compute(num_frames - delta_pos_at_start, inputs, outputs);
+		  
+	  *start_process = delta_pos_at_start;
+	  voice->delta_pos_at_start = 0;
+  }
+  else
+  {
+	  //printf("End:   Delta start / end: %d / %d\n",delta_pos_at_start,delta_pos_at_end);
 
-    voice->dsp_instance->compute(num_frames, inputs, outputs);
-
-    *start_process = 0;
-
-    if(equal_floats(*(voice->myUI._gate_control), 0.0f)){
-	    
-	    const bool use_old_buggy_behavior = root->song->RT_use_old_buggy_faust_note_release_behavior;
-
-	    const int num_seconds_safety = use_old_buggy_behavior ? 1 : 5;
-		    
-	    if(false
-	       || RT_is_silent(outputs[0], num_frames, use_old_buggy_behavior)
-	       || voice->frames_since_stop > data->samplerate*num_seconds_safety) // Safety mechanism. Force voice to stop after about 5 second.
-	    {
-		    //printf("----removing voice: %d %d\n", RT_is_silent(outputs[0], num_frames), voice->frames_since_stop > data->samplerate);
-		    
-		    return VOICE_REMOVE;
-	    }
-	    
-	    voice->frames_since_stop += num_frames;
-    }
-
-  }else if(delta_pos_at_start>0 && delta_pos_at_end==-1){
-
-    RT_process_between(voice, inputs, outputs, delta_pos_at_start, num_frames);
-
-    *start_process = delta_pos_at_start;
-    voice->delta_pos_at_start = 0;
-
-  }else{
-    //printf("Delta start / end: %d / %d\n",delta_pos_at_start,delta_pos_at_end);
-
-    RT_process_between(voice, inputs, outputs, delta_pos_at_start, delta_pos_at_end);
-    {
-	    //printf("---Setting gate to 0\n");
-	    *(voice->myUI._gate_control)=0.0f;
-    }
-    RT_process_between(voice, inputs, outputs, delta_pos_at_end, num_frames);
-
-    voice->frames_since_stop = num_frames-delta_pos_at_end;
-
-    *start_process = delta_pos_at_start;
-    voice->delta_pos_at_start = 0;
-    voice->delta_pos_at_end = -1;
-
+	  RT_process_between(voice, inputs, outputs, delta_pos_at_start, delta_pos_at_end);
+	  {
+		  //printf("---Setting gate to 0\n");
+		  *(voice->myUI._gate_control)=0.0f;
+	  }
+	  RT_process_between(voice, inputs, outputs, delta_pos_at_end, num_frames);
+	  
+	  voice->frames_since_stop = num_frames-delta_pos_at_end;
+	  
+	  *start_process = delta_pos_at_start;
+	  voice->delta_pos_at_start = 0;
+	  voice->delta_pos_at_end = -1;
   }
 
   return VOICE_KEEP;
@@ -449,38 +459,45 @@ static void RT_process_instrument2(int num_outputs, Data *data, int64_t time, in
   for(int i=0;i<num_outputs;i++)
     memset(outputs[i],0,num_frames*sizeof(float));
 
-  float *tempsounds[num_outputs];
-  float tempdata[num_outputs][num_frames];
+  float** tempsounds = RT_ALLOC_ARRAY_STACK(float*, num_outputs);
+  float *tempdata = RT_ALLOC_ARRAY_STACK(float, num_outputs*num_frames);
+  //radium::RT_Array_maybe_stack<float> tempdata(num_outputs*num_frames);
+  
   for(int i=0;i<num_outputs;i++)
-    tempsounds[i] = &tempdata[i][0];
+	  tempsounds[i] = &tempdata[i*num_frames];
 
   Voice *voice = data->voices_playing;
   //printf("Voices? %s\n",voice==NULL?"No":"Yes");
 
-  while(voice!=NULL){
-    Voice *next = voice->next;
-    int start_process;
-
-    if(RT_play_voice(data,voice,num_frames,inputs,tempsounds,&start_process)==VOICE_REMOVE)
-    {
+  while(voice!=NULL)
+  {
+	  Voice *next = voice->next;
+	  int start_process;
+	  
+	  if(RT_play_voice(data,voice,num_frames,inputs,tempsounds,&start_process)==VOICE_REMOVE)
+	  {
+		  
+		  RT_remove_voice(&data->voices_playing, voice);
+		  RT_add_voice(&data->voices_not_playing, voice);
+		  
+		  R_ASSERT_NON_RELEASE(start_process == 0);
 	    
-	    RT_remove_voice(&data->voices_playing, voice);
-	    RT_add_voice(&data->voices_not_playing, voice);
-	    
-	    R_ASSERT_NON_RELEASE(start_process == 0);
-	    
-	    for(int ch=0;ch<num_outputs;ch++)
-		    RT_fade_out(tempsounds[ch], num_frames-start_process);
-    }
-
-    for(int ch=0;ch<num_outputs;ch++){
-      float *source = tempsounds[ch];
-      float *target = outputs[ch];
-      for(int i=start_process;i<num_frames;i++)
-        target[i] += source[i];
-    }
-
-    voice=next;
+		  for(int ch=0;ch<num_outputs;ch++)
+			  RT_fade_out(tempsounds[ch], num_frames-start_process);
+	  }
+	  
+	  //if (start_process > 0)
+	  //	  printf("..... start_process: %d\n", start_process);
+	  
+	  for(int ch=0;ch<num_outputs;ch++)
+	  {
+		  const float *source = tempsounds[ch];
+		  float *target = outputs[ch];
+		  
+		  JUCE_add_sound(target + start_process, source + start_process, num_frames - start_process);
+	  }
+	  
+	  voice=next;
   }
 }
 

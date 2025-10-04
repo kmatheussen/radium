@@ -77,6 +77,16 @@ extern LANGSPEC char *talloc_floatstring__(float number, const char *filename, i
 
 #  define talloc_atomic_clean(a) talloc_atomic_clean__(a,__FILE__,__LINE__)
 
+#  define RT_ALLOC_ARRAY_STACK(Type, num_elements)	\
+	(Type*)alloca(sizeof(Type)*(num_elements))
+
+#  define R_ALLOC_ARRAY_GC(Type, num_elements)		\
+	(Type*)talloc(sizeof(Type)*(num_elements))
+
+#  define R_ALLOC_ARRAY_ATOMIC_GC(Type, num_elements)		\
+	(Type*)talloc_atomic(sizeof(Type)*(num_elements))
+
+
 #else
 
 // DEBUG + C++
@@ -108,8 +118,22 @@ static inline void safe_tfree(T* ptr) {
 
 #define tfree(Ptr) safe_tfree(Ptr)
 
+//extern void assert_rt_alloc_array_stack(void *data, size_t size);
 
-#endif
+// TODO: Various assertions in debug mode for this one + check that it's an RT thread.
+#define RT_ALLOC_ARRAY_STACK(Type, num_elements)		\
+	(Type*)alloca(sizeof(Type)*(num_elements))
+
+// TODO: Assert Type is pointer
+#define R_ALLOC_ARRAY_GC(Type, num_elements)		\
+	(Type*)talloc(sizeof(Type)*(num_elements))
+
+// TODO: Assert type is not pointer
+#define R_ALLOC_ARRAY_ATOMIC_GC(Type, num_elements)		\
+	(Type*)talloc_atomic(sizeof(Type)*(num_elements))
+
+#endif // !RELEASE
+
 
 #define talloc_strdup(a) talloc_strdup__(a,__FILE__,__LINE__)
 #define talloc_numberstring(a) talloc_numberstring__(a,__FILE__,__LINE__)

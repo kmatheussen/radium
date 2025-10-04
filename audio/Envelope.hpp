@@ -288,7 +288,7 @@ public:
     free(_ys);
   }
 
-  void myFilledPolygon(QPainter &p, QPointF *points, int num_points, const QColor &color) const {
+  void myFilledPolygon(QPainter &p, const QPointF *points, int num_points, const QColor &color) const {
     QPen pen = p.pen();
     p.setPen(Qt::NoPen);
     p.setBrush(color);
@@ -304,12 +304,13 @@ public:
 
     {
       QPainter p(&pixmap);
+	  
       p.setRenderHints(QPainter::Antialiasing,true);
       
       float *xs, *ys;
       int num_points = getPoints2(&xs, &ys);
       
-      QPointF points[num_points+2];
+      QVector<QPointF> points(num_points+2);
       
       for(int i=0;i<num_points;i++){
         points[i].setX(scale(xs[i], 0, 1, 0, width));
@@ -322,11 +323,15 @@ public:
       points[num_points+1].setX(0);
       points[num_points+1].setY(0);
 
-      myFilledPolygon(p, points, num_points+2, foreground);
+      myFilledPolygon(p, points.data(), num_points+2, foreground);
+	  
       QPen sel_pen(pen_color);
+	  
       sel_pen.setWidthF(get_system_fontheight() / 3);
+	  
       p.setPen(sel_pen);
-      p.drawPolyline(points, num_points);
+	  
+      p.drawPolyline(points.data(), num_points);
     }
 
     return QIcon(pixmap);

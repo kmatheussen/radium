@@ -29,6 +29,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 ******************************************/
 
 #include <math.h>
+
+#include <QVarLengthArray>
+
 #include "nsmtracker.h"
 #include "playerclass.h"
 #include "player_pause_proc.h"
@@ -1419,22 +1422,22 @@ static void update_stuff2(struct Blocks *blocks[], const int num_blocks,
 {
   R_ASSERT_NON_RELEASE(update_swings==true);
   
-  struct STimes *stimes_without_global_swings[num_blocks];
-  struct STimes *stimes_with_global_swings[num_blocks];
-  const struct Beats *beats[num_blocks];
-  dyn_t dynbeats[num_blocks];
-  dyn_t filledout_swingss[num_blocks];
-  dynvec_t filledout_trackswingss[num_blocks];
-  vector_t trackstimess[num_blocks];
+  QVarLengthArray<struct STimes *>stimes_without_global_swings(num_blocks);
+  QVarLengthArray<struct STimes *>stimes_with_global_swings(num_blocks);
+  QVarLengthArray<const struct Beats *>beats(num_blocks);
+  QVarLengthArray<dyn_t> dynbeats(num_blocks);
+  QVarLengthArray<dyn_t> filledout_swingss(num_blocks);
+  QVarLengthArray<dynvec_t> filledout_trackswingss(num_blocks);
+  QVarLengthArray<vector_t> trackstimess(num_blocks);
 
   g_editor_blocks_generation++;
 
   R_ASSERT_RETURN_IF_FALSE(g_scheme_has_inited1);
   
-  memset(filledout_trackswingss, 0, sizeof(dynvec_t)*num_blocks);
-  memset(trackstimess, 0, sizeof(vector_t)*num_blocks);
+  memset(filledout_trackswingss.data(), 0, sizeof(dynvec_t)*num_blocks);
+  memset(trackstimess.data(), 0, sizeof(vector_t)*num_blocks);
   
-  bool only_update_beats[num_blocks];
+  QVarLengthArray<bool> only_update_beats(num_blocks);
   bool only_update_beats_for_all_blocks = true; // horrible variable name.
 
   for(int i=0;i<num_blocks;i++){
@@ -1633,7 +1636,7 @@ static void update_all(struct Song *song,
 {
   int num_blocks = ListFindNumElements1(&song->blocks->l);
   
-  struct Blocks *blocks[num_blocks];
+  QVarLengthArray<struct Blocks *>blocks(num_blocks);
 
   {
     int i = 0;
@@ -1645,7 +1648,7 @@ static void update_all(struct Song *song,
     }
   }
 
-  update_stuff2(blocks, num_blocks,
+  update_stuff2(blocks.data(), num_blocks,
                 default_bpm, default_lpb, default_signature,
                 only_signature_has_changed, update_beats, update_swings);
 }

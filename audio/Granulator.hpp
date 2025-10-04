@@ -183,23 +183,23 @@ public:
   }
   
   void pick_up_more_samples(int num_frames){
-    float *samples[_num_ch];
+	  float **samples = RT_ALLOC_ARRAY_STACK(float*, _num_ch);
     
-    for(int ch=0;ch<_num_ch;ch++)
-      samples[ch] = _data[ch] + _end_pos;
+	  for(int ch=0;ch<_num_ch;ch++)
+		  samples[ch] = _data[ch] + _end_pos;
+	  
+	  R_ASSERT_NON_RELEASE(num_frames <= MIXER_get_remaining_num_audioblock_frames());
+	  
+	  const int num_frames_to_pick_up = R_MIN(R_MAX(num_frames, MIXER_get_remaining_num_audioblock_frames()),
+											  get_num_possible_frames_to_pick_up());
+	  num_frames = _sample_up_picker->pick_up(samples, _num_ch, num_frames_to_pick_up);
+	  //printf("     .... Got %d samples. Wanted: %d\n", num_frames, wanted);
+	  
+	  R_ASSERT_NON_RELEASE(num_frames > 0);
+	  R_ASSERT_NON_RELEASE(num_frames <= (_size-_end_pos));
+	  R_ASSERT_NON_RELEASE(num_frames <= num_frames_to_pick_up);
 
-    R_ASSERT_NON_RELEASE(num_frames <= MIXER_get_remaining_num_audioblock_frames());
-    
-    const int num_frames_to_pick_up = R_MIN(R_MAX(num_frames, MIXER_get_remaining_num_audioblock_frames()),
-                                            get_num_possible_frames_to_pick_up());
-    num_frames = _sample_up_picker->pick_up(samples, _num_ch, num_frames_to_pick_up);
-    //printf("     .... Got %d samples. Wanted: %d\n", num_frames, wanted);
-
-    R_ASSERT_NON_RELEASE(num_frames > 0);
-    R_ASSERT_NON_RELEASE(num_frames <= (_size-_end_pos));
-    R_ASSERT_NON_RELEASE(num_frames <= num_frames_to_pick_up);
-
-    push_or_pick_postop(num_frames);
+	  push_or_pick_postop(num_frames);
   }
   
   int get_local_pos_from_global_pos(int64_t global_pos){

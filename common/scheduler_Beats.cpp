@@ -162,16 +162,16 @@ static void RT_schedule_beats_between_seqblocks2(struct SeqTrack *seqtrack, int6
     return;
   
   {
-    int num_args = 5;
-    union SuperType args[num_args];
-    args[0].int_num = end_time;
-    args[1].int_num = beat_seqlength;
-    args[2].int32_num = signature.numerator;
-    //args[3].int32_num = signature.denominator;    
-    args[3].int32_num = barnum;
-    args[4].int32_num = beatnum;
-    
-    SCHEDULER_add_event(seqtrack, time, RT_scheduled_play_click_between_seqblocks, &args[0], num_args, SCHEDULER_NOTE_ON_PRIORITY);
+	  const int num_args = 5;
+	  union SuperType args[num_args];
+	  args[0].int_num = end_time;
+	  args[1].int_num = beat_seqlength;
+	  args[2].int32_num = signature.numerator;
+	  //args[3].int32_num = signature.denominator;    
+	  args[3].int32_num = barnum;
+	  args[4].int32_num = beatnum;
+	  
+	  SCHEDULER_add_event(seqtrack, time, RT_scheduled_play_click_between_seqblocks, &args[0], num_args, SCHEDULER_NOTE_ON_PRIORITY);
   }
 }
 #endif
@@ -342,15 +342,15 @@ void RT_schedule_Beats_newblock(struct SeqTrack *seqtrack,
   iterator->next_beat = next_beat;
   
   {
-    int num_args = 2;
-    union SuperType args[num_args];
-    args[0].const_pointer = seqblock;
-    args[1].const_pointer = next_seqblock;
+	  const int num_args = 2;
+	  union SuperType args[num_args];
+	  args[0].const_pointer = seqblock;
+	  args[1].const_pointer = next_seqblock;
     
-    int64_t time = get_seqblock_place_time(seqblock, next_beat->l.p, PLUGINS_AND_JACK_TRANSPORT_SWINGING_MODE);
-
-    R_ASSERT(iterator->is_active==false);
-    iterator->is_active = true;
-    SCHEDULER_add_event(seqtrack, time, RT_scheduled_Beat, &args[0], num_args, SCHEDULER_BEAT_PRIORITY);
+	  int64_t time = get_seqblock_place_time(seqblock, next_beat->l.p, PLUGINS_AND_JACK_TRANSPORT_SWINGING_MODE);
+	  
+	  R_ASSERT(iterator->is_active==false);
+	  iterator->is_active = true;
+	  SCHEDULER_add_event(seqtrack, time, RT_scheduled_Beat, &args[0], num_args, SCHEDULER_BEAT_PRIORITY);
   }
 }
