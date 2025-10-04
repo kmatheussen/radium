@@ -923,6 +923,34 @@ public:
     }
   };
 
+  template <typename MTAT> class ScopedMultiThreadAccessArrayElement_MayFail{
+    
+    MTAT &_buffers;
+    int _pos;
+
+  public:
+    
+    ScopedMultiThreadAccessArrayElement_MayFail(MTAT &buffers)
+		: _buffers(buffers)
+		, _pos(buffers.RT_obtain_may_fail())
+    {
+    }
+    
+    ~ScopedMultiThreadAccessArrayElement_MayFail()
+	{
+		if (_pos >= 0)
+			_buffers.RT_release(_pos);
+    }
+
+    decltype(_buffers.at(_pos)) RT_get(void)
+	{
+		if (_pos < 0)
+			return NULL;
+		else
+			return _buffers.at(_pos);
+    }
+  };
+
 
 
 }

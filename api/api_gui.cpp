@@ -2372,11 +2372,11 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       } else {
 
         int num_vamps = _vamps.size();
-        bool vamps_to_paint[R_MAX(1, num_vamps)];
-        memset(vamps_to_paint, 0, R_MAX((size_t)1, sizeof(bool)*num_vamps));
+        QVarLengthArray<bool> vamps_to_paint(R_MAX(1, num_vamps));
+        memset(vamps_to_paint.data(), 0, R_MAX((size_t)1, sizeof(bool)*num_vamps));
         
         int num_vamps_to_paint;
-        bool only_vamps_needs_to_be_painted = getVampsToPaint(event, vamps_to_paint, already_painted_areas, num_vamps_to_paint);
+        bool only_vamps_needs_to_be_painted = getVampsToPaint(event, vamps_to_paint.data(), already_painted_areas, num_vamps_to_paint);
 
         if (only_vamps_needs_to_be_painted){
 
@@ -2385,15 +2385,15 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
           if (num_vamps_to_paint > 0){
             TRACK_PAINT();
             QPainter p(_widget);
-            paintVamps(p, vamps_to_paint);
+            paintVamps(p, vamps_to_paint.data());
           }
 
         } else {
 
           if (_paint_callback.v!=NULL || _background_color.isValid())
-            paintEvent2(event, vamps_to_paint);
+			  paintEvent2(event, vamps_to_paint.data());
           else
-            ret = false;
+			  ret = false;
           
         }
 
@@ -2585,8 +2585,10 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
       if (points.num_elements<2)
         return;
 
-      QPointF qpoints[points.num_elements];
+      QVarLengthArray<QPointF> qpoints(points.num_elements);
 
+      //width /= 2.0;
+      
       bool is_first = true;
       float min_x=0,max_x=0,min_y=0,max_y=0;
       for(int i=0;i<points.num_elements;i+=2){
@@ -2650,7 +2652,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
         painter->setPen(pen);
       }
 
-      painter->drawPolygon(qpoints, points.num_elements/2);
+      painter->drawPolygon(qpoints.data(), points.num_elements/2);
 
       if(do_fill)
         painter->setBrush(Qt::NoBrush);

@@ -448,7 +448,7 @@ static UniChar get_char_from_keycode(int keyCode){
   
   if(keyboardLayout) {
     UInt32 deadKeyState = 0;
-    UniCharCount maxStringLength = 255;
+    const UniCharCount maxStringLength = 255;
     UniCharCount actualStringLength = 0;
     UniChar unicodeString[maxStringLength];
     

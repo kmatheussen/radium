@@ -972,91 +972,113 @@ void radium::MidiLearn::RT_maybe_use_forall(instrument_t instrument_id, const sy
 }
 
 // Called from the player thread
-void RT_MIDI_handle_play_buffer(void){
+void RT_MIDI_handle_play_buffer(void)
+{
+	play_buffer_event_t event;
   
-  play_buffer_event_t event;
-  
-  bool has_set_midi_receive_time = false;
+	bool has_set_midi_receive_time = false;
 
-  struct Instruments *midi_instrument = get_MIDI_instrument();
-  struct Instruments *audio_instrument = get_audio_instrument();
+	struct Instruments *midi_instrument = get_MIDI_instrument();
+	struct Instruments *audio_instrument = get_audio_instrument();
   
-  if (midi_instrument==NULL || audio_instrument==NULL){ // happens during init
-    R_ASSERT(midi_instrument==NULL && audio_instrument==NULL);
-    return;
-  }
+	if (midi_instrument==NULL || audio_instrument==NULL){ // happens during init
+		R_ASSERT(midi_instrument==NULL && audio_instrument==NULL);
+		return;
+	}
   
-  struct Patch *playing_patches[midi_instrument->patches.num_elements + audio_instrument->patches.num_elements + 1]; // add 1 to avoid ubsan hit if there are no instruments.
+	//struct Patch *playing_patches[midi_instrument->patches.num_elements + audio_instrument->patches.num_elements + 1]; // add 1 to avoid ubsan hit if there are no instruments.
   
-  bool has_inited = false;
-  int num_playing_patches = 0;
+	bool has_inited = false;
+	//int num_playing_patches = 0;
+	bool has_playing_audio_patches = false;
+	bool has_playing_midi_patches = false;
   
-  struct SeqTrack *seqtrack = NULL; // set to NULL to silence false compiler warning.
-  struct Patch *through_patch = NULL; // set to NULL to silence false compiler warning.
-  double seqtrack_starttime = 0.0; // set to 0.0 to silence false compiler warning.
+	struct SeqTrack *seqtrack = NULL; // set to NULL to silence false compiler warning.
+	struct Patch *through_patch = NULL; // set to NULL to silence false compiler warning.
+	double seqtrack_starttime = 0.0; // set to 0.0 to silence false compiler warning.
   
-  while(g_play_buffer->pop(event)==true){
+	while(g_play_buffer->pop(event)==true)
+	{
+		uint32_t msg = event.msg;
 
-    uint32_t msg = event.msg;
+		radium::MidiLearn::RT_maybe_use_forall(make_instrument(-1), event.port_name, msg);
 
-    radium::MidiLearn::RT_maybe_use_forall(make_instrument(-1), event.port_name, msg);
+		if (has_inited == false)
+		{
+			seqtrack = RT_get_curr_seqtrack();
+			seqtrack_starttime = seqtrack->start_time;
 
-    if (has_inited == false){
+			if(ATOMIC_GET(g_send_midi_input_to_current_instrument))
+				through_patch = ATOMIC_GET(g_through_patch);
+			else
+				through_patch = NULL;
+
+			VECTOR_FOR_EACH(struct Patch *, patch, &midi_instrument->patches)
+			{
+				if(ATOMIC_GET(patch->always_receive_midi_input)){
+					has_playing_midi_patches = true;
+					break;
+					//playing_patches[num_playing_patches] = patch;
+					//num_playing_patches++;
+				}
+			}
+			END_VECTOR_FOR_EACH;
+	  
+			VECTOR_FOR_EACH(struct Patch *, patch, &audio_instrument->patches)
+			{
+				if(ATOMIC_GET(patch->always_receive_midi_input)){          
+					struct SoundPlugin *plugin = static_cast<struct SoundPlugin*>(patch->patchdata);
+					if (plugin==NULL){
+						R_ASSERT_NON_RELEASE(false);
+					} else {
+						PLUGIN_touch(plugin);
+						has_playing_audio_patches = true;
+					}
+
+					//playing_patches[num_playing_patches] = patch;
+					//num_playing_patches++;
+				}
+			}
+			END_VECTOR_FOR_EACH;
       
-      seqtrack = RT_get_curr_seqtrack();
-      seqtrack_starttime = seqtrack->start_time;
-
-      if(ATOMIC_GET(g_send_midi_input_to_current_instrument))
-        through_patch = ATOMIC_GET(g_through_patch);
-      else
-        through_patch = NULL;
-
-      VECTOR_FOR_EACH(struct Patch *, patch, &midi_instrument->patches){
-        if(ATOMIC_GET(patch->always_receive_midi_input)){
-          playing_patches[num_playing_patches] = patch;
-          num_playing_patches++;
-        }
-      }END_VECTOR_FOR_EACH;
-
-      VECTOR_FOR_EACH(struct Patch *, patch, &audio_instrument->patches){
-        if(ATOMIC_GET(patch->always_receive_midi_input)){
-          playing_patches[num_playing_patches] = patch;
-          num_playing_patches++;
-          
-          struct SoundPlugin *plugin = static_cast<struct SoundPlugin*>(patch->patchdata);
-          if (plugin==NULL){
-            R_ASSERT_NON_RELEASE(false);
-          } else {
-            PLUGIN_touch(plugin);
-          }
-        }
-      }END_VECTOR_FOR_EACH;
-      
-      has_inited = true;
-    }
+			has_inited = true;
+		}
     
-    if(through_patch!=NULL || num_playing_patches > 0){
-      
-      uint8_t byte1 = MIDI_msg_byte1(msg);
-      if (byte1 < 0xf0 && ATOMIC_GET(g_use_track_channel_for_midi_input)){
-        byte1 &= 0xf0;
-        byte1 |= ATOMIC_GET(g_curr_midi_channel);
-      }
-      uint8_t byte[3] = {byte1, (uint8_t)MIDI_msg_byte2(msg), (uint8_t)MIDI_msg_byte3(msg)};
+		if (through_patch!=NULL || has_playing_audio_patches || has_playing_midi_patches)
+		{
+			uint8_t byte1 = MIDI_msg_byte1(msg);
+	  
+			if (byte1 < 0xf0 && ATOMIC_GET(g_use_track_channel_for_midi_input)){
+				byte1 &= 0xf0;
+				byte1 |= ATOMIC_GET(g_curr_midi_channel);
+			}
 
-      if (has_set_midi_receive_time==false){
-        g_last_midi_receive_time = TIME_get_ms();
-        has_set_midi_receive_time = true;
-      }
+			const uint8_t bytes[3] = {byte1, (uint8_t)MIDI_msg_byte2(msg), (uint8_t)MIDI_msg_byte3(msg)};
+
+			if (has_set_midi_receive_time==false){
+				g_last_midi_receive_time = TIME_get_ms();
+				has_set_midi_receive_time = true;
+			}
       
-      if (through_patch != NULL)
-        RT_MIDI_send_msg_to_patch(seqtrack, (struct Patch*)through_patch, byte, 3, seqtrack_starttime);
-      
-      for(int i=0;i<num_playing_patches;i++)
-        RT_MIDI_send_msg_to_patch(seqtrack, playing_patches[i], byte, 3, seqtrack_starttime);
-    }
-    
-  }
+			if (through_patch != NULL)
+				RT_MIDI_send_msg_to_patch(seqtrack, through_patch, bytes, 3, seqtrack_starttime);
+
+			if (has_playing_midi_patches)
+				VECTOR_FOR_EACH(struct Patch *, patch, &midi_instrument->patches){
+					if(ATOMIC_GET(patch->always_receive_midi_input))
+						RT_MIDI_send_msg_to_patch(seqtrack, patch, bytes, 3, seqtrack_starttime);
+				}END_VECTOR_FOR_EACH;
+
+			if (has_playing_audio_patches)	  
+				VECTOR_FOR_EACH(struct Patch *, patch, &audio_instrument->patches){
+					if(ATOMIC_GET(patch->always_receive_midi_input))
+						RT_MIDI_send_msg_to_patch(seqtrack, patch, bytes, 3, seqtrack_starttime);
+				}END_VECTOR_FOR_EACH;
+
+			//for(int i=0;i<num_playing_patches;i++)
+			//  RT_MIDI_send_msg_to_patch(seqtrack, playing_patches[i], bytes, 3, seqtrack_starttime);
+		}
+	}
 }
 
 // Called from a MIDI input thread

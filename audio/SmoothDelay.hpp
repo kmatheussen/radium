@@ -301,7 +301,7 @@ public:
     R_ASSERT_NON_RELEASE(_state==State::FADE_IN_DELAY || _state==State::CROSSFADE);
     R_ASSERT_NON_RELEASE(_is_fading_in);
 
-    T temp_output[num_frames];
+    T *temp_output = RT_ALLOC_ARRAY_STACK(T, num_frames);
 
     RT_process_overwrite(num_frames, input, temp_output);
     _fade_in.RT_fade(num_frames, temp_output);
@@ -314,7 +314,7 @@ public:
     R_ASSERT_NON_RELEASE(_state==State::FADE_OUT_DELAY || _state==State::CROSSFADE);
     R_ASSERT_NON_RELEASE(!_is_fading_in);
 
-    T temp_output[num_frames];
+    T *temp_output = RT_ALLOC_ARRAY_STACK(T, num_frames);
 
     RT_process_overwrite(num_frames, input, temp_output);
     _fade_out.RT_fade(num_frames, temp_output);
@@ -412,14 +412,14 @@ private:
         }
 
         {
-          float temp[num_frames];
-          memcpy(temp, input, sizeof(float)*num_frames);
-
-          _fade.RT_fade_out(num_frames, temp);
-
-          _delay1->RT_process_overwrite_fade_in(num_frames, input, output);
-
-          JUCE_add_sound(output, temp, num_frames);
+			float *temp = RT_ALLOC_ARRAY_STACK(float, num_frames);
+			memcpy(temp, input, sizeof(float)*num_frames);
+			
+			_fade.RT_fade_out(num_frames, temp);
+			
+			_delay1->RT_process_overwrite_fade_in(num_frames, input, output);
+			
+			JUCE_add_sound(output, temp, num_frames);
         }
 
         return true;
@@ -473,14 +473,14 @@ private:
         }
 
         {
-          float temp[num_frames];
-          memcpy(temp, input, sizeof(float)*num_frames);
-
-          _fade.RT_fade_in(num_frames, temp);
-          
-          _delay1->RT_process_overwrite_fade_out(num_frames, input, output);
-
-          JUCE_add_sound(output, temp, num_frames);
+			float *temp = RT_ALLOC_ARRAY_STACK(float, num_frames);
+			memcpy(temp, input, sizeof(float)*num_frames);
+			
+			_fade.RT_fade_in(num_frames, temp);
+			
+			_delay1->RT_process_overwrite_fade_out(num_frames, input, output);
+			
+			JUCE_add_sound(output, temp, num_frames);
         }
 
         return true;
@@ -504,9 +504,9 @@ private:
       return RT_process2(num_frames, input, output, delay_size);
 
     {
-      float temp[num_frames];
-      memcpy(temp, input, sizeof(float)*num_frames);
-      return RT_process2(num_frames, temp, output, delay_size);
+		float *temp = RT_ALLOC_ARRAY_STACK(float, num_frames);
+		memcpy(temp, input, sizeof(float)*num_frames);
+		return RT_process2(num_frames, temp, output, delay_size);
     }
   }
 
@@ -560,8 +560,8 @@ public:
 
     if (output_sound==NULL){
 
-      float dev_null[num_frames];
-      RT_process(num_frames, empty_sound, dev_null);
+		float *dev_null = RT_ALLOC_ARRAY_STACK(float, num_frames);
+		RT_process(num_frames, empty_sound, dev_null);
       
     }else{
 

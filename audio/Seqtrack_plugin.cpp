@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/nsmtracker.h"
 #include "../common/disk.h"
 #include "../common/SeqAutomation.hpp"
-#include "../common/Array.hpp"
+//#include "../common/Array.hpp"
 #include "../common/undo_sequencer_proc.h"
 #include "../common/seqblock_automation_proc.h"
 
@@ -234,7 +234,7 @@ private:
   void RT_get_samples_from_disk(float **outputs, int num_frames) const {
     R_ASSERT_RETURN_IF_FALSE(_reader != NULL);
 
-    float *outputs2[_num_ch];
+    float **outputs2 = RT_ALLOC_ARRAY_STACK(float*, _num_ch);
 
     int total_read = 0;
 
@@ -267,9 +267,9 @@ public:
 
     // 1. Set up temporary buffers
     //
-    float temp_buffer_sound[_num_ch*num_frames];
+    float *temp_buffer_sound = RT_ALLOC_ARRAY_STACK(float, _num_ch*num_frames);
     
-    float *temp_buffers[_num_ch];
+    float **temp_buffers = RT_ALLOC_ARRAY_STACK(float*, _num_ch);
     for(int ch=0;ch<_num_ch;ch++)
       temp_buffers[ch] = &temp_buffer_sound[ch*num_frames];
 
@@ -327,51 +327,52 @@ public:
   
 private:
   
-  void RT_add_fade_in_samples(int num_frames, float **outputs){
-    float outputs_buffer[_num_ch * num_frames];
-    float *inputs[_num_ch];
+  void RT_add_fade_in_samples(int num_frames, float **outputs)
+  {
+	  float *outputs_buffer = RT_ALLOC_ARRAY_STACK(float, _num_ch * num_frames);
+	  float **inputs = RT_ALLOC_ARRAY_STACK(float*, _num_ch);
     
-    for(int ch = 0 ; ch < _num_ch ; ch++)
-      inputs[ch] = &outputs_buffer[ch*num_frames];
-
-    RT_get_samples_with_volume_applied(num_frames, inputs, false, false);
+	  for(int ch = 0 ; ch < _num_ch ; ch++)
+		  inputs[ch] = &outputs_buffer[ch*num_frames];
+	  
+	  RT_get_samples_with_volume_applied(num_frames, inputs, false, false);
 
 #define INC_FADE_VOLUME()                       \
-    _curr_fade_volume += _fadein_inc;           \
-    if (_curr_fade_volume > 1.0)                \
-      _curr_fade_volume = 1.0;
+	  _curr_fade_volume += _fadein_inc;			\
+	  if (_curr_fade_volume > 1.0)				\
+		  _curr_fade_volume = 1.0;
+	  
+	  //printf("Fade in %f\n", _curr_fade_volume);
+	  
+	  if (_num_ch == 1) {
+		  
+		  float *input0 = inputs[0];
+		  float *output0 = outputs[0];
+		  float *output1 = outputs[1];
+		  
+		  for(int i=0;i<num_frames;i++){
+			  
+			  float sample = _curr_fade_volume * input0[i];
+			  output0[i] += sample;
+			  output1[i] += sample;
+			  
+			  INC_FADE_VOLUME();
+			  
+		  }
+		  
+	  } else {
+		  
+		  for(int i=0;i<num_frames;i++){
+			  
+			  for(int ch = 0 ; ch < _num_ch ; ch++){
+				  float sample = _curr_fade_volume * inputs[ch][i];
+				  outputs[ch][i] += sample;
+			  }
 
-    //printf("Fade in %f\n", _curr_fade_volume);
-
-    if (_num_ch == 1) {
-
-      float *input0 = inputs[0];
-      float *output0 = outputs[0];
-      float *output1 = outputs[1];
-      
-      for(int i=0;i<num_frames;i++){
-        
-        float sample = _curr_fade_volume * input0[i];
-        output0[i] += sample;
-        output1[i] += sample;
-
-        INC_FADE_VOLUME();
-        
-      }
-      
-    } else {
-    
-      for(int i=0;i<num_frames;i++){
-        
-        for(int ch = 0 ; ch < _num_ch ; ch++){
-          float sample = _curr_fade_volume * inputs[ch][i];
-          outputs[ch][i] += sample;
-        }
-
-        INC_FADE_VOLUME();
-      }
-    }
-
+			  INC_FADE_VOLUME();
+		  }
+	  }
+	  
 #undef INC_FADE_VOLUME
     
   }
@@ -401,8 +402,8 @@ public:
 
     int num_fade_out_frames = R_MIN(num_frames, _fadeout_countdown);
     
-    float outputs_buffer[_num_ch * num_fade_out_frames];
-    float *inputs[_num_ch];
+    float *outputs_buffer = RT_ALLOC_ARRAY_STACK(float, _num_ch * num_fade_out_frames);
+    float **inputs = RT_ALLOC_ARRAY_STACK(float*, _num_ch);
     
     for(int ch = 0 ; ch < _num_ch ; ch++)
       inputs[ch] = &outputs_buffer[ch*num_fade_out_frames];
@@ -2409,7 +2410,7 @@ static void RT_record(Data *data, int num_frames, const float **instrument_input
   const SeqtrackRecordingConfig &config = recorder->_config;
 
   bool empty_block_has_been_cleared = false;
-  float empty_block[RADIUM_BLOCKSIZE];
+  float *empty_block = RT_ALLOC_ARRAY_STACK(float, RADIUM_BLOCKSIZE);
 
   
   // Input buffer
@@ -2432,7 +2433,7 @@ static void RT_record(Data *data, int num_frames, const float **instrument_input
   // Output buffer (i.e. audio sent to soundfile)
   //
   int num_used_output_buffers = 0;
-  float output_buffer[NUM_CHANNELS_RECORDING_MATRIX*RADIUM_BLOCKSIZE];
+  float *output_buffer = RT_ALLOC_ARRAY_STACK(float, NUM_CHANNELS_RECORDING_MATRIX*RADIUM_BLOCKSIZE);
 
   float *outputs_[NUM_CHANNELS_RECORDING_MATRIX];
   float **outputs = outputs_;
@@ -2500,7 +2501,7 @@ static void RT_record(Data *data, int num_frames, const float **instrument_input
   // Record
   //
   if (false==RT_SampleRecorder_add_audio(data->_recorder,
-                                         const_cast<const float**>(outputs),
+                                         const_cast<const float**>(outputs), // How can we get rid of this cast?
                                          RADIUM_BLOCKSIZE
                                          ))
     {
@@ -2526,8 +2527,8 @@ static void RT_process_play_audiofiles(Data *data, SoundPlugin *plugin, int num_
   
   // change outputs in case there are more channels in the audio file than NUM_OUTPUTS
   int extra_num_ch = max_ch - num_outputs;
-  float *extra_outputs[R_MAX(1, max_ch)];
-  float extra[extra_num_ch > 0 ? num_frames : 1];
+  float **extra_outputs = RT_ALLOC_ARRAY_STACK(float*, R_MAX(1, max_ch));
+  float *extra = RT_ALLOC_ARRAY_STACK(float, extra_num_ch > 0 ? num_frames : 1);
 
   if (extra_num_ch > 0){
 

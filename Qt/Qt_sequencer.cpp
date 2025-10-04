@@ -1394,7 +1394,7 @@ public:
       double y1 = scale_double(ch, 0, num_ch, w_y1, w_y2);
       double y2 = scale_double(ch+1, 0, num_ch, w_y1, w_y2);
 
-      QPointF points[num_points*2];
+      QVarLengthArray<QPointF> points(num_points*2);
 
       int64_t p_last_used_end_time = get_stretch_automation_sample_pos(seqblock, time1);
 
@@ -1463,7 +1463,7 @@ public:
         //}
       }
 
-      myFilledPolygon(p, points, num_points*2, color, waveform_pen);
+      myFilledPolygon(p, points.data(), num_points*2, color, waveform_pen);
     }
 
 
@@ -2051,7 +2051,7 @@ public:
       
       int num_points = seqblock->fade_in_envelope->getPoints2(&xs, &ys);
       
-      QPointF points[num_points+2];
+      QVarLengthArray<QPointF> points(num_points+2);
       
       for(int i=0;i<num_points;i++){
         points[i].setX(scale(xs[i], 0, 1, rect.left(), fade_x));
@@ -2064,9 +2064,9 @@ public:
       points[num_points+1].setX(rect.left());
       points[num_points+1].setY(rect.top());
       
-      myFilledPolygon(p, points, num_points+2, color);
+      myFilledPolygon(p, points.data(), num_points+2, color);
       if (seqblock->selected_box==SB_FADE_LEFT) p.setPen(sel_pen);  else  p.setPen(pen);
-      p.drawPolyline(points, num_points);
+      p.drawPolyline(points.data(), num_points);
       //p.drawLine(points[1], points[2]);
 #endif
     }
@@ -2091,7 +2091,7 @@ public:
       
       int num_points = seqblock->fade_out_envelope->getPoints2(&xs, &ys);
       
-      QPointF points[num_points+2];
+      QVarLengthArray<QPointF> points(num_points+2);
       
       for(int i=0;i<num_points;i++){
         points[i].setX(scale(xs[i], 0, 1, fade_x, rect.right()));
@@ -2104,9 +2104,9 @@ public:
       points[num_points+1].setX(fade_x);
       points[num_points+1].setY(rect.top());
       
-      myFilledPolygon(p, points, num_points+2, color);
+      myFilledPolygon(p, points.data(), num_points+2, color);
       if (seqblock->selected_box==SB_FADE_RIGHT) p.setPen(sel_pen);  else  p.setPen(pen);
-      p.drawPolyline(points, num_points);
+      p.drawPolyline(points.data(), num_points);
       //p.drawLine(points[1], points[2]);
 #endif
     }
@@ -2488,98 +2488,99 @@ public:
     }END_VECTOR_FOR_EACH;
   }
   
-  void calculate_heights(double heights[], const int num_seqtracks, double available_space) const {
-    double max_heights[num_seqtracks];
+	void calculate_heights(double heights[], const int num_seqtracks, double available_space) const
+	{
+		QVarLengthArray<double> max_heights(num_seqtracks);
 
-    get_heights(heights, true); // first set heigths to min size.
-    get_heights(max_heights, false);
+		get_heights(heights, true); // first set heigths to min size.
+		get_heights(max_heights.data(), false);
     
-    double min_height = 0;
-    for(int i=0;i<num_seqtracks;i++)
-      min_height += heights[i];
+		double min_height = 0;
+		for(int i=0;i<num_seqtracks;i++)
+			min_height += heights[i];
     
-    double space_left = available_space - min_height;
+		double space_left = available_space - min_height;
 
-    if (space_left <= 0)
-      return;
+		if (space_left <= 0)
+			return;
 
     
-    int num_seqtracks_to_increase = 0;
-    bool has_increased[num_seqtracks];
+		int num_seqtracks_to_increase = 0;
+		QVarLengthArray<bool> has_increased(num_seqtracks);
     
-    VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
-      if (seqtrack->is_visible){
-        int i = iterator666;
-        if (equal_doubles(max_heights[i], -1.0) || max_heights[i] > heights[i]){
-          num_seqtracks_to_increase++;
-          has_increased[i] = false;
-        } else {
-          has_increased[i] = true;
-        }
-      }
-    }END_VECTOR_FOR_EACH;
+		VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
+			if (seqtrack->is_visible){
+				int i = iterator666;
+				if (equal_doubles(max_heights[i], -1.0) || max_heights[i] > heights[i]){
+					num_seqtracks_to_increase++;
+					has_increased[i] = false;
+				} else {
+					has_increased[i] = true;
+				}
+			}
+		}END_VECTOR_FOR_EACH;
     
-    if(num_seqtracks_to_increase==0)
-      return;
+		if(num_seqtracks_to_increase==0)
+			return;
             
-    double average_inc_height;
+		double average_inc_height;
     
-    // 1. Increase to max those that can be safely increased to max.
-    {
-    again:
+		// 1. Increase to max those that can be safely increased to max.
+		{
+		  again:
 
-      average_inc_height = space_left / (double)num_seqtracks_to_increase;
+			average_inc_height = space_left / (double)num_seqtracks_to_increase;
       
-      VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
-        if (seqtrack->is_visible){
+			VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
+				if (seqtrack->is_visible){
           
-          int i = iterator666;
+					int i = iterator666;
           
-          if (!equal_doubles(max_heights[i], -1.0)){
+					if (!equal_doubles(max_heights[i], -1.0)){
             
-            if (has_increased[i]==false){
+						if (has_increased[i]==false){
               
-              double dx = max_heights[i] - heights[i];
+							double dx = max_heights[i] - heights[i];
               
-              if (dx <= average_inc_height){
+							if (dx <= average_inc_height){
                 
-                heights[i] = max_heights[i];
+								heights[i] = max_heights[i];
                 
-                has_increased[i] = true;
-                space_left -= dx;
-                num_seqtracks_to_increase--;
+								has_increased[i] = true;
+								space_left -= dx;
+								num_seqtracks_to_increase--;
                 
-                if (num_seqtracks_to_increase==0)
-                  return;
+								if (num_seqtracks_to_increase==0)
+									return;
                 
-                if(space_left <= 0){
-                  R_ASSERT_NON_RELEASE(false);
-                  return;
-                }
+								if(space_left <= 0){
+									R_ASSERT_NON_RELEASE(false);
+									return;
+								}
                 
-                if (dx < average_inc_height)
-                  goto again; // average_inc_height can be increased now, so we need to check everyone again.
+								if (dx < average_inc_height)
+									goto again; // average_inc_height can be increased now, so we need to check everyone again.
                 
-              }
-            }
-          }
-        }
-      }END_VECTOR_FOR_EACH;
-    }
+							}
+						}
+					}
+				}
+			}END_VECTOR_FOR_EACH;
+		}
 
 
-    R_ASSERT_NON_RELEASE(num_seqtracks_to_increase > 0);
-    R_ASSERT_NON_RELEASE(average_inc_height > 0);
+		R_ASSERT_NON_RELEASE(num_seqtracks_to_increase > 0);
+		R_ASSERT_NON_RELEASE(average_inc_height > 0);
     
-    // 3. Then increase the remaining.
-    //
-    VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
-      if (seqtrack->is_visible){
-        if (has_increased[iterator666]==false)
-          heights[iterator666] += average_inc_height;
-      }
-    }END_VECTOR_FOR_EACH;
-  }
+		// 3. Then increase the remaining.
+		//
+		VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
+			if (seqtrack->is_visible){
+				if (has_increased[iterator666]==false)
+					heights[iterator666] += average_inc_height;
+			}
+		}END_VECTOR_FOR_EACH;
+	}
 
   double get_y1_from_heights(const double heights[], int seqtracknum) const {
     double height = 0;
@@ -2608,8 +2609,8 @@ public:
     double seqtracks_y1 = get_seqtracks_y1();
     double seqtracks_y2 = get_seqtracks_y2();
 
-    double heights[num_seqtracks];
-    calculate_heights(heights, num_seqtracks, seqtracks_y2 - seqtracks_y1);
+    QVarLengthArray<double> heights(num_seqtracks);
+    calculate_heights(heights.data(), num_seqtracks, seqtracks_y2 - seqtracks_y1);
 
     // Above topmost visible seqtrack
     {
@@ -2647,13 +2648,13 @@ public:
     if (num_seqtracks==0)
       return 0;
     
-    double heights[num_seqtracks];
+    QVarLengthArray<double> heights(num_seqtracks);
     
     double seqtracks_y1 = get_seqtracks_y1();
     double seqtracks_y2 = get_seqtracks_y2();
     double available_space = seqtracks_y2 - seqtracks_y1;
       
-    calculate_heights(heights, num_seqtracks, available_space);
+    calculate_heights(heights.data(), num_seqtracks, available_space);
 
     available_space += get_seqtrack_border_width()/2.0;
     

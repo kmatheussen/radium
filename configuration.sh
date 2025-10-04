@@ -320,7 +320,7 @@ else
     export FULL_CCC_PATH=`which g++`
 fi
 
-if ! uname -s |grep Linux > /dev/null ; then
+if ! uname -s |grep -i Linux > /dev/null ; then
     unset INCLUDE_PDDEV
     set_var INCLUDE_PDDEV 0
 fi

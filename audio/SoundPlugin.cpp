@@ -3023,11 +3023,10 @@ void PLUGIN_set_effects_from_state(SoundPlugin *plugin, const hash_t *effects, b
   const SoundPluginType *type=plugin->type;
 
   hash_t *copy = HASH_copy(effects);
-      
-  bool has_value[type->num_effects+NUM_SYSTEM_EFFECTS];
-  float values[type->num_effects+NUM_SYSTEM_EFFECTS];
 
-  // must use memset instead of {} since clang gave error message.
+  bool *has_value = R_ALLOC_ARRAY_ATOMIC_GC(bool, type->num_effects+NUM_SYSTEM_EFFECTS);
+  float *values = R_ALLOC_ARRAY_ATOMIC_GC(float, type->num_effects+NUM_SYSTEM_EFFECTS);
+
   memset(has_value, 0, sizeof(bool)*(type->num_effects+NUM_SYSTEM_EFFECTS));
   memset(values, 0, sizeof(float)*(type->num_effects+NUM_SYSTEM_EFFECTS));
   
@@ -3051,26 +3050,25 @@ void PLUGIN_set_effects_from_state(SoundPlugin *plugin, const hash_t *effects, b
         has_value[i] = HASH_has_key(effects, effect_name);
       }
     }
-    
-    if (has_value[i]) {
-      values[i] = HASH_get_float(effects, effect_name);
 
-      // Fix faulty chance values written to disk for songs with disk version 0.96.
-      if(g_is_loading)
-        if (disk_load_version>0.955 && disk_load_version<0.965)
-          if (QString(effect_name).startsWith("System Chance Voice "))
-            if(fabsf(values[i]-1.0f) < 0.001f){
-              values[i] = 256.0;
-              if(has_given_warning_about_chance==false){
-                if(false==is_radium_internal_file(dc.filename_with_full_path))
-                  GFX_addMessage("Note: Changed note duplicator chance values from 1 to 256. Most likely, these values were wrongfully saved as 1 instead of 256 because of an earlier bug in the program.");
-                has_given_warning_about_chance = true;
-              }
-            }
-          
-      HASH_remove(copy, effect_name);
+    if (has_value[i]) {
+		values[i] = HASH_get_float(effects, effect_name);
+
+		// Fix faulty chance values written to disk for songs with disk version 0.96.
+		if(g_is_loading)
+			if (disk_load_version>0.955 && disk_load_version<0.965)
+				if (QString(effect_name).startsWith("System Chance Voice "))
+					if(fabsf(values[i]-1.0f) < 0.001f){
+						values[i] = 256.0;
+						if(has_given_warning_about_chance==false){
+							if(false==is_radium_internal_file(dc.filename_with_full_path))
+								GFX_addMessage("Note: Changed note duplicator chance values from 1 to 256. Most likely, these values were wrongfully saved as 1 instead of 256 because of an earlier bug in the program.");
+							has_given_warning_about_chance = true;
+						}
+					}
+		
+		HASH_remove(copy, effect_name);
     }
-      
   }    
 
   if (HASH_get_num_elements(copy) > 0){
@@ -3089,19 +3087,19 @@ void PLUGIN_set_effects_from_state(SoundPlugin *plugin, const hash_t *effects, b
   }
   
   // 2. Store system effects
-  for(int i=type->num_effects;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++){
-
+  for(int i=type->num_effects;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++)
+  {
     // Workaround for that pesky old bug that caused all chance values being set to 1 in older songs, e.g. "the elf" and "romance".
-    if (g_is_loading){
-      const char *effect_name = PLUGIN_get_effect_name(plugin,i);
-      if (QString(effect_name)=="System On/Off Voice 1")
-        break;
-    }
-
-    if (has_value[i] || set_default_values_for_unspecified_effects) {
-      float val = has_value[i] ? values[i] : plugin->initial_effect_values_native[i];
-      PLUGIN_set_effect_value(plugin, -1, i, val, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
-    }
+	  if (g_is_loading){
+		  const char *effect_name = PLUGIN_get_effect_name(plugin,i);
+		  if (QString(effect_name)=="System On/Off Voice 1")
+			  break;
+	  }
+	  
+	  if (has_value[i] || set_default_values_for_unspecified_effects) {
+		  float val = has_value[i] ? values[i] : plugin->initial_effect_values_native[i];
+		  PLUGIN_set_effect_value(plugin, -1, i, val, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+	  }
     
     /*
       ?? (old code)
@@ -3834,7 +3832,7 @@ void PLUGIN_random(SoundPlugin *plugin){
   
   ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, -1, AE_ALWAYS_CREATE_SOLO_AND_BYPASS_UNDO));
 
-  float values[type->num_effects+NUM_SYSTEM_EFFECTS];
+  float *values = R_ALLOC_ARRAY_ATOMIC_GC(float, type->num_effects+NUM_SYSTEM_EFFECTS);
   for(i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++)
     if (plugin->do_random_change[i])
       values[i]=get_rand();
