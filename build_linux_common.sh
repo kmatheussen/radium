@@ -178,8 +178,8 @@ if ! is_0 $INCLUDE_PDDEV ; then
     export OS_OPTS="$OS_OPTS -DWITH_PD"
 fi
 
-echo "222==QHTAT??"
-exit -1
+#echo "222==QHTAT??"
+#exit -1
 
 PYTHONLIBPATH=`$PYTHONEXE -c "import sys;print '-L'+sys.prefix+'/lib'"`
 PYTHONLIBNAME=`$PYTHONEXE -c "import sys;print '-lpython'+sys.version[:3]"`
