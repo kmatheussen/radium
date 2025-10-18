@@ -89,6 +89,7 @@ public:
 
 namespace cpp11onmulticore{
 
+#error "TEST USE_WAIT_FOR_SINGLE_OBJECT before next release, and enable if it works"
 #define USE_WAIT_FOR_SINGLE_OBJECT 1 // If set to 0, use WaitOnAddress instead, which should be much faster.
 
 #if USE_WAIT_FOR_SINGLE_OBJECT
