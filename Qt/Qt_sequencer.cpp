@@ -4963,7 +4963,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   }
   
   void paintEvent(QPaintEvent *ev) override {
-    R_ASSERT(_called_from_my_update==false); // Neven know what Qt might do. Also think I've seen Qt do this before, and if Qt calls paintEvent directly from update(), we can get graphical garbage.
+    R_ASSERT(_called_from_my_update==false); // Never know what Qt might do. Also think I've seen Qt do this before, and if Qt calls paintEvent directly from update(), we can get graphical garbage.
     
     D(static int num_calls = 0;
       printf("   SEQ paintEvent called %d, %d -> %d, %d (%d)\n", ev->rect().x(), ev->rect().y(), ev->rect().x()+ev->rect().width(), ev->rect().y()+ev->rect().height(), num_calls++);
