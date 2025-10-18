@@ -91,7 +91,9 @@
                                         :seqtracknum
                                         :include-rec-button #t)
   
-  (define for-audiofiles (<ra> :seqtrack-for-audiofiles seqtracknum))
+  (define for-audiofiles
+	(<ra> :seqtrack-for-audiofiles seqtracknum))
+  
   (define for-blocks (not for-audiofiles))
   
   (define volume-on-off-name (and for-audiofiles

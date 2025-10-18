@@ -21,7 +21,7 @@ if ! $THIS_DIR/radium_check_recent_libxcb ; then
     
 fi
 
-export LD_LIBRARY_PATH="$THIS_DIR/packages/python27_install/lib"${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
+export LD_LIBRARY_PATH="$THIS_DIR/packages/python27_install/lib:$THIS_DIR/packages/faust/build/lib"${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
 
 # To avoid buggy qt plugins crashing radium (very common).
 unset QT_QPA_PLATFORMTHEME

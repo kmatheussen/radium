@@ -90,21 +90,15 @@ build_faust() {
     tar xvzf ../faustlibraries_2024_01_05.tar.gz
     mv faustlibraries libraries
 
-    patch -p0 <../faust_most.cmake.patch
     ### this line is needed to build on artix
     #export LIBNCURSES_PATH=$(shell find /usr -name libncursesw_g.a)
 
+	cp ../faust_targets.cmake build/targets/most.cmake
+	
 	if is_0 $FAUST_USES_LLVM ; then
-        sed -i.backup 's/LLVM_BACKEND   \tCOMPILER STATIC/LLVM_BACKEND OFF/' build/backends/most.cmake
-        if grep LLVM_BACKEND build/backends/most.cmake | grep COMPILER ; then
-            echo "sed failed"
-            exit -1
-        fi
-        if grep LLVM_BACKEND build/backends/most.cmake | grep STATIC ; then
-            echo "sed failed"
-            exit -1
-        fi
+		cp ../faust_radium_nonllvm.cmake build/backends/most.cmake
 	else
+		cp ../faust_radium_llvm.cmake build/backends/most.cmake
 		export ORGTEMPPATH=$PATH
 		export PATH=$(dirname $LLVM_CONFIG_BIN):$PATH
 		#echo "PATH: $PATH"

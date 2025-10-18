@@ -190,7 +190,8 @@ export QSCINTILLA_PATH=`pwd`/bin/packages/QScintilla_src-2.14.0/src
 
 
 if ! is_0 $INCLUDE_FAUSTDEV ; then
-    FAUSTLDFLAGS="`pwd`/bin/packages/faust/build/lib/libfaust.a -lcrypto -lncurses"
+    #FAUSTLDFLAGS="-L `pwd`/bin/packages/faust/build/lib/libfaust.a -lcrypto -lncurses"
+    FAUSTLDFLAGS="-L `pwd`/bin/packages/faust/build/lib/ -lfaust -lcrypto -lncurses"
     if [[ $INCLUDE_FAUSTDEV_BUT_NOT_LLVM == 1 ]] ; then
         export OS_OPTS="$OS_OPTS -DWITHOUT_LLVM_IN_FAUST_DEV"
     else
@@ -203,8 +204,8 @@ if ! is_0 $INCLUDE_FAUSTDEV ; then
         else
             LLVMLIBS=`$LLVM_PATH/bin/llvm-config --libs`
         fi
-        
-        FAUSTLDFLAGS="$FAUSTLDFLAGS `$PKG --libs uuid` `$LLVM_PATH/bin/llvm-config --ldflags` $LLVMLIBS -ltinfo"
+        # ($LLVMLIBS not included since it's included in libfaust)
+        FAUSTLDFLAGS="$FAUSTLDFLAGS `$PKG --libs uuid` `$LLVM_PATH/bin/llvm-config --ldflags` -ltinfo"
     fi
 fi
 # _debug
