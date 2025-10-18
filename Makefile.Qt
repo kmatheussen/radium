@@ -75,11 +75,13 @@ CD=common/
 T ?= /tmp/radium_objects/
 
 STD_C=gnu99
-STD_CPP ?= gnu++20
+STD_CPP ?= -std=gnu++20
 USE_STD_COUNTING_SEMAPHORE ?= 1 # Probably have to change to 0, if stdc < c++20.
 
 PKG ?= pkg-config
 PKGqt ?= $(PKG)
+
+O0 ?= -O0
 
 CCC ?= g++
 CC ?= gcc
@@ -399,6 +401,9 @@ else
 	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=
 endif
 
+FNO_OPTIMIZE_SIBLING_CALLS ?= -fno-optimize-sibling-calls
+
+
 UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow -fno-sanitize-recover=undefined -DRADIUM_USES_UBSAN  # ,integer ,integer
 #UNDEFINED_SANITIZE_OPTS=
 
@@ -411,7 +416,7 @@ endif
 #THREAD_SANITIZE_OPTS=-Og -fsanitize=thread -DRADIUM_USES_TSAN #-DDISABLE_BDWGC
 THREAD_SANITIZE_OPTS=
 
-ADDRESS_SANITIZE_OPTS=-fsanitize=address -fno-common -DRADIUM_USES_ASAN
+ADDRESS_SANITIZE_OPTS ?= -fsanitize=address -fno-common -DRADIUM_USES_ASAN
 #-DDISABLE_BDWGC
 #ADDRESS_SANITIZE_OPTS=
 
@@ -419,12 +424,11 @@ ADDRESS_SANITIZE_OPTS=-fsanitize=address -fno-common -DRADIUM_USES_ASAN
 #MEMORY_SANITIZE_OPTS=-fsanitize=memory -fsanitize-blacklist=SanitizerSupprMem.txt -DRADIUM_USES_MSAN
 MEMORY_SANITIZE_OPTS=
 
-
 # Note that "./build_clean.sh" must be run if changing DEBUG_BUILD_OPTS or changing from RELEASE to DEBUG build.
 OS_DEBUG_BUILD_OPTS ?= 
 #-mbranch-protection=standard -fno-sanitize-trap=all
 #-flto -fvisibility=hidden -fsanitize=cfi -fno-sanitize-trap=all # -fanalyzer 
-DEBUG_BUILD_OPTS = $(WERROR) -Wfloat-equal -Wall $(GGDB_OPT) -fno-optimize-sibling-calls $(UNDEFINED_SANITIZE_OPTS) $(THREAD_SANITIZE_OPTS) $(ADDRESS_SANITIZE_OPTS) $(MEMORY_SANITIZE_OPTS) $(WNO_NAN_INFINITY_DISABLED) $(OS_DEBUG_BUILD_OPTS)
+DEBUG_BUILD_OPTS = $(WERROR) -Wfloat-equal -Wall $(GGDB_OPT) $(FNO_OPTIMIZE_SIBLING_CALLS) $(UNDEFINED_SANITIZE_OPTS) $(THREAD_SANITIZE_OPTS) $(ADDRESS_SANITIZE_OPTS) $(MEMORY_SANITIZE_OPTS) $(WNO_NAN_INFINITY_DISABLED) $(OS_DEBUG_BUILD_OPTS)
 
 
 NOSHORTEN64TO32FLAG=
@@ -546,7 +550,7 @@ QT_SUB:=$(shell echo $(QT_VERSION) | cut -d'.' -f3)
 
 WNO_SUGGEST_OVERRIDE=
 
-CPPOPT += -std=$(STD_CPP) -DUSE_STD_COUNTING_SEMAPHORE=$(USE_STD_COUNTING_SEMAPHORE)
+CPPOPT += $(STD_CPP) -DUSE_STD_COUNTING_SEMAPHORE=$(USE_STD_COUNTING_SEMAPHORE)
 
 ifeq ($(BUILDTYPE), DEBUG)
 	CPPOPT += -Woverloaded-virtual
@@ -872,13 +876,13 @@ test_rt_memory_allocator:
 	printf "\033[0;36mTo use clang: CC=clang CCC=clang++ make test_rt_memory_allocator\033[0m\n"
 	echo
 	cd common && touch buildtype.opt flagopts.opt
-	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DTEST_MAIN -DRADIUM_USES_UBSAN -O3 -fsanitize=undefined $(ADDRESS_SANITIZE_OPTS)  -O0 -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
+	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DTEST_MAIN -DRADIUM_USES_UBSAN -O3 -fsanitize=undefined $(ADDRESS_SANITIZE_OPTS)  $(O0) -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
 	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DTEST_MAIN -DRADIUM_USES_UBSAN -O3 -fsanitize=undefined $(ADDRESS_SANITIZE_OPTS)  -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
-	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DTEST_MAIN -DRADIUM_USES_TSAN -O0 -fsanitize=thread -o a.out && TSAN_OPTIONS="history_size=7,second_deadlock_stack=1,abort_on_error=1,suppressions=../SanitizerSuppr.txt" $(TEST_TIMEDATA_RUNNER)
+	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DTEST_MAIN -DRADIUM_USES_TSAN $(O0) -fsanitize=thread -o a.out && TSAN_OPTIONS="history_size=7,second_deadlock_stack=1,abort_on_error=1,suppressions=../SanitizerSuppr.txt" $(TEST_TIMEDATA_RUNNER)
 	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DTEST_MAIN -DRADIUM_USES_TSAN -O1 -fsanitize=thread -o a.out && TSAN_OPTIONS="history_size=7,second_deadlock_stack=1,abort_on_error=1,suppressions=../SanitizerSuppr.txt" $(TEST_TIMEDATA_RUNNER)
 	#FIX! it fails!
 	#cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DTEST_MAIN -DRADIUM_USES_TSAN -O3 -fsanitize=thread -o a.out && TSAN_OPTIONS="history_size=7,second_deadlock_stack=1,abort_on_error=1,suppressions=../SanitizerSuppr.txt" $(TEST_TIMEDATA_RUNNER)
-	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DTEST_MAIN -O0 -o a.out && $(TEST_TIMEDATA_RUNNER)
+	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DTEST_MAIN $(O0) -o a.out && $(TEST_TIMEDATA_RUNNER)
 	cd common && $(CCC) RT_memory_allocator.cpp $(TEST_RT_MEMORY_ALLOCATOR_OPTS) -DTEST_MAIN -O3 -o a.out && $(TEST_TIMEDATA_RUNNER)
 
 #mingw32:
@@ -890,17 +894,17 @@ test_ratio:
 #	cd common && ln -sf ratio_funcs.h test_ratio.cpp && g++ test_ratio.cpp -D__STDC_FORMAT_MACROS=1 -DTEST_MAIN -Wall $(WERROR) -g -o a.out && gdb ./a.out
 
 test_radium_vector:
-	cd test && $(CCC) -Wall $(WERROR) test_radium_vector.cpp -DTEST_RADIUM_VECTOR_MAIN -Wall -std=$(STD_CPP) -g -D__STDC_FORMAT_MACROS=1 $(ADDRESS_SANITIZE_OPTS) $(UNDEFINED_SANITIZE_OPTS) $(TEST_ARCH_DEF) -I../Qt -Wno-unused-function -O3 -o test_radium_vector
+	cd test && $(CCC) -Wall $(WERROR) test_radium_vector.cpp -DTEST_RADIUM_VECTOR_MAIN -Wall $(STD_CPP) -g -D__STDC_FORMAT_MACROS=1 $(ADDRESS_SANITIZE_OPTS) $(UNDEFINED_SANITIZE_OPTS) $(TEST_ARCH_DEF) -I../Qt -Wno-unused-function -O3 -o test_radium_vector
 	ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" gdb -ex='set confirm on' -ex=run -ex=quit test/test_radium_vector
 	ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" test/test_radium_vector
 
 test_samplereader:
-	cd audio && $(CCC) SampleReader.cpp -DTEST_MAIN -Wall -std=$(STD_CPP) -g && ./a.out
+	cd audio && $(CCC) SampleReader.cpp -DTEST_MAIN -Wall $(STD_CPP) -g && ./a.out
 
 test_threading:
 	$(CCC) common/threading.cpp -DTEST_THREADING -Wall $(QTOPT) $(BOOST_FLAGS) -fPIC $(TEST_ARCH_DEF) $(JACKOPT) -Wno-deprecated-declarations
 	mv threading.o test_threading.o
-	$(CCC) test_threading.o $(QT_LDFLAGS) $(BOOST_FLAGS) -lpthread $(ADDRESS_SANITIZE_OPTS) -fsanitize=undefined  -std=$(STD_CPP)
+	$(CCC) test_threading.o $(QT_LDFLAGS) $(BOOST_FLAGS) -lpthread $(ADDRESS_SANITIZE_OPTS) -fsanitize=undefined $(STD_CPP)
 	./a.out
 #	rm -f test_threading.o
 #	echo "GGGGGGGGGGG"
@@ -923,7 +927,7 @@ test_placement:
 	valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
 
 test_notes:
-	$(CCC) -g -Wall $(WERROR) -DTEST_NOTES -D__STDC_FORMAT_MACROS=1  -DUSE_OPENGL -DUSE_QT_REQTYPE=1 common/notes.cpp common/memory.c -IQt -I$(GCDIR)/include $(GCDIR)/.libs/libgc.a -lpthread -fPIC $(TEST_ARCH_DEF) -std=$(STD_CPP) -Wno-deprecated
+	$(CCC) -g -Wall $(WERROR) -DTEST_NOTES -D__STDC_FORMAT_MACROS=1  -DUSE_OPENGL -DUSE_QT_REQTYPE=1 common/notes.cpp common/memory.c -IQt -I$(GCDIR)/include $(GCDIR)/.libs/libgc.a -lpthread -fPIC $(TEST_ARCH_DEF) $(STD_CPP) -Wno-deprecated
 #	gdb ./a.out
 	valgrind --suppressions=valgrind-python.supp --suppressions=Qt47supp.txt --suppressions=libgc.supp --tool=memcheck --leak-check=no --read-var-info=yes --track-origins=yes --fair-sched=yes ./a.out
 
@@ -1290,7 +1294,7 @@ $(T)scheduler_notes.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_notes.cpp $(CD)sche
 #	$(CC2) $(CD)scheduler_pitches.c $(OPT)
 
 #$(T)scheduler_velocities.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_velocities.c $(CD)scheduler_proc.h
-#	$(CC2) $(CD)scheduler_velocities.c $(OPT) #-fno-sanitize=undefined -O0
+#	$(CC2) $(CD)scheduler_velocities.c $(OPT) #-fno-sanitize=undefined $(O0)
 
 #$(T)scheduler_fxs.o:  $(BUILD_DEPENDENCIES) $(CD)scheduler_fxs.c $(CD)scheduler_proc.h
 #	$(CC2) $(CD)scheduler_fxs.c $(OPT)
@@ -1601,13 +1605,13 @@ $(T)error.o:  $(BUILD_DEPENDENCIES) $(CD)error.c
 	$(CC2) $(CD)error.c $(OPT) -Wno-null-dereference
 
 $(T)threading.o:  $(BUILD_DEPENDENCIES)  $(CD)threading.cpp common/threading.h
-	$(CCC2)  $(CD)threading.cpp $(JACKOPT) $(QTOPT) $(BOOST_INCLUDE) # -O0
+	$(CCC2)  $(CD)threading.cpp $(JACKOPT) $(QTOPT) $(BOOST_INCLUDE) # $(O0)
 
 $(T)Semaphores.o: $(BUILD_DEPENDENCIES) $(CD)/Semaphores.cpp $(CD)/sema.h common/Semaphores.hpp common/OS_Semaphores.h
 	$(CCC2) $(CD)Semaphores.cpp $(QTOPT)
 
 $(T)stacktoucher.o: $(CD)stacktoucher.c
-	$(CC2) -O0 $(CD)stacktoucher.c -c -O0 -std=c99 -g -Wall $(WERROR)
+	$(CC2) $(O0) $(CD)stacktoucher.c -c $(O0) -std=c99 -g -Wall $(WERROR)
 
 
 $(T)X11_Main.o:  $(BUILD_DEPENDENCIES) $(P)X11_Main.c 
@@ -1755,7 +1759,7 @@ $(T)Qt_instruments.o: $(BUILD_DEPENDENCIES) $(P)Qt_instruments.cpp $(INSTRUMENTS
 	if [ $(BUILDTYPE) = RELEASE ] ; then \
 		$(CCC2) $(P)Qt_instruments.cpp $(QTOPT) $(SNDFILEOPT) -Wno-null-dereference  $(NO_ANALYZER) ; \
 	else \
-		$(CCC2) $(P)Qt_instruments.cpp $(QTOPT) $(SNDFILEOPT) -O0 -Wno-null-dereference $(NO_ANALYZER) ; \
+		$(CCC2) $(P)Qt_instruments.cpp $(QTOPT) $(SNDFILEOPT) $(O0) -Wno-null-dereference $(NO_ANALYZER) ; \
 	fi
 	 # ^ It takes forever to compile this file with -Og
 
@@ -1772,7 +1776,7 @@ $(T)Qt_PresetBrowser.o: $(BUILD_DEPENDENCIES) $(P)Qt_PresetBrowser.cpp $(INSTRUM
 	if [ $(BUILDTYPE) = RELEASE ] ; then \
 		$(CCC2) $(P)Qt_PresetBrowser.cpp $(QTOPT) $(SNDFILEOPT) -Wno-null-dereference  $(NO_ANALYZER) ; \
 	else \
-		$(CCC2) $(P)Qt_PresetBrowser.cpp $(QTOPT) $(SNDFILEOPT) -O0 -Wno-null-dereference $(NO_ANALYZER) ; \
+		$(CCC2) $(P)Qt_PresetBrowser.cpp $(QTOPT) $(SNDFILEOPT) $(O0) -Wno-null-dereference $(NO_ANALYZER) ; \
 	fi
 
 $(P)mQt_instruments_widget_callbacks.h: $(BUILD_DEPENDENCIES) $(P)qt4_instruments_widget.ui $(P)create_source_from_ui.sh $(P)Qt_instruments_widget_callbacks.h
@@ -1878,7 +1882,7 @@ $(T)Qt_preferences_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_preferences_callbac
 	if [ $(BUILDTYPE) = RELEASE ] ; then \
 		$(CCC2) $(P)Qt_preferences_callbacks.cpp $(QTOPT)  -Wno-null-dereference $(NO_ANALYZER) ; \
 	else \
-		$(CCC2) $(P)Qt_preferences_callbacks.cpp $(QTOPT) -O0  -Wno-null-dereference $(NO_ANALYZER) ; \
+		$(CCC2) $(P)Qt_preferences_callbacks.cpp $(QTOPT) $(O0)  -Wno-null-dereference $(NO_ANALYZER) ; \
 	fi
 	 # ^ It takes forever to compile this file with -Og
 
@@ -1928,14 +1932,14 @@ $(T)Qt_Error.o: $(BUILD_DEPENDENCIES) $(P)Qt_Error.cpp
 	@echo "Changed (Qt_Error.o):"
 	@echo $?
 	@echo
-	$(CCC2) $(P)Qt_Error.cpp $(QTOPT)  $(WNO_DEPRECATED_COPY_CLANG) #-O0
+	$(CCC2) $(P)Qt_Error.cpp $(QTOPT)  $(WNO_DEPRECATED_COPY_CLANG) #$(O0)
 
 bin/radium_error_message: $(P)Qt_Error.cpp $(P)EditorWidget.h
 	@echo
 	@echo "Changed (bin/radium_error_message):"
 	@echo $?
 	@echo
-	$(CCC) -Wall $(WERROR) $(P)Qt_Error.cpp $(CPPOPT) $(QT_CFLAGS) $(OS_OPTS) -DCOMPILE_EXECUTABLE $(QT_GUI_CFLAGS) -o errormessagebin.o -Wno-missing-declarations  $(WNO_DEPRECATED_COPY_CLANG) # -O0
+	$(CCC) -Wall $(WERROR) $(P)Qt_Error.cpp $(CPPOPT) $(QT_CFLAGS) $(OS_OPTS) -DCOMPILE_EXECUTABLE $(QT_GUI_CFLAGS) -o errormessagebin.o -Wno-missing-declarations  $(WNO_DEPRECATED_COPY_CLANG) # $(O0)
 	$(LINKER) `cat buildtype.opt` errormessagebin.o -o bin/radium_error_message $(QT_GUI_LDFLAGS)
 	rm errormessagebin.o
 
@@ -1945,12 +1949,12 @@ bin/radium_progress_window: $(P)Qt_progresswindow.cpp
 	rm radium_progress_window.o
 
 bin/radium_check_jack_status: audio/KillJackd.cpp $(T)Jack_plugin.o $(T)find_jack_library.o # Jack_plugin.o depends on all the weakjack things
-	$(CCC) -Wall $(WERROR) audio/KillJackd.cpp $(CPPOPT) $(QT_CFLAGS) $(JACKOPT) $(OS_OPTS) -std=$(STD_CPP) -DCOMPILE_EXECUTABLE -Wno-error=deprecated-declarations -o $(T)radium_check_jack_status.o -Wno-missing-declarations
+	$(CCC) -Wall $(WERROR) audio/KillJackd.cpp $(CPPOPT) $(QT_CFLAGS) $(JACKOPT) $(OS_OPTS) $(STD_CPP) -DCOMPILE_EXECUTABLE -Wno-error=deprecated-declarations -o $(T)radium_check_jack_status.o -Wno-missing-declarations
 	$(LINKER) `cat buildtype.opt` $(T)radium_check_jack_status.o $(T)find_jack_library.o $(JACK_LDFLAGS) `$(PKGqt) --libs Qt5Core` $(QT_SYSTEM_CFLAGS) -o bin/radium_check_jack_status $(FPIC)
 	rm $(T)radium_check_jack_status.o
 
 bin/radium_check_opengl: OpenGL/CheckOpenGL.cpp common/Process.hpp
-	$(CCC) -Wall $(WERROR) OpenGL/CheckOpenGL.cpp $(CPPOPT) $(QT_CFLAGS) $(OS_OPTS) -std=$(STD_CPP) -DCOMPILE_EXECUTABLE -o radium_check_opengl.o $(WNO_DEPRECATED_DECLARATIONS)
+	$(CCC) -Wall $(WERROR) OpenGL/CheckOpenGL.cpp $(CPPOPT) $(QT_CFLAGS) $(OS_OPTS) $(STD_CPP) -DCOMPILE_EXECUTABLE -o radium_check_opengl.o $(WNO_DEPRECATED_DECLARATIONS)
 	$(LINKER) `cat buildtype.opt` radium_check_opengl.o -o bin/radium_check_opengl $(QT_GUI_LDFLAGS) `$(PKGqt) --libs Qt5OpenGL`
 	rm radium_check_opengl.o
 
@@ -2094,7 +2098,7 @@ $(T)api_sequencer.o:  $(BUILD_DEPENDENCIES)  $(API)api_sequencer.cpp $(API)api_s
 	$(CCC2) $(JACKOPT) $(API)api_sequencer.cpp $(QTOPT)
 
 $(T)api_osc.o:  $(BUILD_DEPENDENCIES)  $(API)api_osc.cpp embedded_scheme/s7extra_proc.h
-	$(CCC2) $(LIBLOOPT) $(API)api_osc.cpp $(QTOPT) -fno-sanitize=undefined # -O0 # Adding -fno-sanitize=undefined since liblo sends misaligned data to calbacks.
+	$(CCC2) $(LIBLOOPT) $(API)api_osc.cpp $(QTOPT) -fno-sanitize=undefined # $(O0) # Adding -fno-sanitize=undefined since liblo sends misaligned data to calbacks.
 
 $(T)api_midi.o:  $(BUILD_DEPENDENCIES)  $(API)api_midi.cpp
 	$(CCC2) $(API)api_midi.cpp $(QTOPT) $(BOOST_INCLUDE)
@@ -2224,7 +2228,7 @@ $(T)QM_view.o: $(QM)QM_view.cpp $(QM)QM_view.h $(QM)QM_chip.h $(QM)mQM_view.cpp 
 	$(CCC2) $(QM)QM_view.cpp $(QTOPT)
 
 $(T)QM_chip.o: $(QM)QM_chip.cpp $(QM)QM_chip.h $(P)Qt_MyQCheckBox.h $(QM)QM_MixerWidget.h audio/CpuUsage.hpp
-	$(CCC2) $(QM)QM_chip.cpp $(QTOPT) $(NO_ANALYZER_MALLOC_LEAK) #-O0
+	$(CCC2) $(QM)QM_chip.cpp $(QTOPT) $(NO_ANALYZER_MALLOC_LEAK) #$(O0)
 
 $(T)undo_chip_position.o: $(QM)undo_chip_position.c $(QM)QM_chip.h
 	$(CC2) $(OPT) $(QM)undo_chip_position.c
@@ -2735,9 +2739,9 @@ $(T)crashreporter_posix.o: crashreporter/crashreporter_posix.c crashreporter/bac
 	fi
 
 $(T)crashreporter_windows.o: crashreporter/crashreporter_windows.cpp
-	$(CCC2) crashreporter/crashreporter_windows.cpp $(CPPOPT) -O0 $(CRASHREPORTER_WINDOWS_CFLAGS)
-#	$(CC_STATIC2) crashreporter/crashreporter_windows.c $(OPT) -O0 -DPACKAGE  $(CRASHREPORTER_WINDOWS_CFLAGS)
-#	$(CC2) crashreporter/crashreporter_windows.c $(OPT) -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/bfd -DPACKAGE -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/include -O0
+	$(CCC2) crashreporter/crashreporter_windows.cpp $(CPPOPT) $(O0) $(CRASHREPORTER_WINDOWS_CFLAGS)
+#	$(CC_STATIC2) crashreporter/crashreporter_windows.c $(OPT) $(O0) -DPACKAGE  $(CRASHREPORTER_WINDOWS_CFLAGS)
+#	$(CC2) crashreporter/crashreporter_windows.c $(OPT) -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/bfd -DPACKAGE -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/include $(O0)
 
 VISUALIZATION_OPTIONS=$(WNO_SUGGEST_OVERRIDE) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC) $(NO_ANALYZER)  $(WNO_DEPRECATED_COPY_CLANG) $(WNO_DEPRECATED_DECLARATIONS) $(WNO_MISLEADING_INDENTATION_CLANG) $(WNO_CLASS_MEMACCESS) $(WNO_DEPRECATED_ENUM_ENUM_CONVERSION)
 
@@ -2779,10 +2783,10 @@ ifeq ($(BUILDTYPE), DEBUG)
 	endif
 endif
 
-S7OPTS += -DS7_ALIGNED -g # -O0 is REALLY slow on mac, for some reason.
+S7OPTS += -DS7_ALIGNED -g # $(O0) is REALLY slow on mac, for some reason.
 
 ifneq ($(TARGET_OS),linux)
-	S7OPTS += -O2  # -O0 is REALLY slow on mac, for some reason.
+	S7OPTS += -O2  # $(O0) is REALLY slow on mac, for some reason.
 endif
 
 #S7OPTS += -DWITH_GMP
@@ -2833,7 +2837,7 @@ bin/packages/sndlib/clm.c: bin/packages/sndlib.tar.gz bin/packages/sndlib.patch
 
 
 $(T)s7webserver.o: bin/s7webserver/s7webserver.h bin/s7webserver/s7webserver.cpp bin/s7webserver/moc_s7webserver.cpp bin/packages/s7/s7.c
-	$(CCC2) -c bin/s7webserver/s7webserver.cpp $(QTOPT) -Ibin/packages/s7 -g -Iembedded_scheme -Wall $(WERROR) -Wno-error=unused-variable -Wno-error=unused-function -std=$(STD_CPP) -Wno-deprecated-declarations 
+	$(CCC2) -c bin/s7webserver/s7webserver.cpp $(QTOPT) -Ibin/packages/s7 -g -Iembedded_scheme -Wall $(WERROR) -Wno-error=unused-variable -Wno-error=unused-function $(STD_CPP) -Wno-deprecated-declarations 
 
 bin/s7webserver/moc_s7webserver.cpp: bin/s7webserver/s7webserver.h
 	$(MOC) -DCOMPILING_S7WEBSERVER bin/s7webserver/s7webserver.h -o bin/s7webserver/moc_s7webserver.cpp
