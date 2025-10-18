@@ -2187,10 +2187,10 @@ static std::unique_ptr<juce::AudioPluginInstance> create_audio_instance(const Ty
                    layout.getNumChannels(false, 0),
                    layout.getChannelSet(true, 0).size(),
                    layout.getChannelSet(false, 0).size(),
-                   (int)layout.getChannelSet(false, 0).getTypeOfChannel(0),
-                   (int)layout.getChannelSet(true, 0).getTypeOfChannel(0),
-                   layout.getChannelSet(false, 0).getSpeakerArrangementAsString().toRawUTF8(),
-                   layout.getChannelSet(false, 0).getSpeakerArrangementAsString().toRawUTF8()
+                   (int)layout.getChannelSet(true, 0).size()==0 ? -1 : layout.getChannelSet(false, 0).getTypeOfChannel(0),
+                   (int)layout.getChannelSet(false, 0).size()==0 ? -1 : layout.getChannelSet(true, 0).getTypeOfChannel(0),
+                   layout.getChannelSet(false, 0).size()==0 ? "nochannels" : layout.getChannelSet(false, 0).getSpeakerArrangementAsString().toRawUTF8(),
+                   layout.getChannelSet(false, 0).size()==0 ? "nochannels" : layout.getChannelSet(false, 0).getSpeakerArrangementAsString().toRawUTF8()
                    );
                     
             //getchar();

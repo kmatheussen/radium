@@ -1953,10 +1953,12 @@ public:
   // OpenGL thread
   void updateEvent() override {
     //{static double last_time = 0; static int counter =0; double nowtime = TIME_get_ms(); printf("   Counter: %d. Time: %f\n", counter++, nowtime-last_time);last_time = nowtime;}	  
-
 	  UPDATE_ENTER_TIME();
-    
 
+#if !defined(FOR_MACOSX)
+	  R_ASSERT_NON_RELEASE(!THREADING_is_main_thread());
+#endif
+	  
 	  //const int utime = _utimer.restart();
 	  //printf("_utimer: %d. Avg: %f\n", utime, _utimer_moving_average.get(utime));
 	  
