@@ -6,24 +6,25 @@
 #if defined(_MSC_VER)
 #  define RADIUM_USE_CPP_MUTEX 1
 #else
-#  define RADIUM_USE_CPP_MUTEX 0
+#  define RADIUM_USE_CPP_MUTEX 1
 #endif
 
 
 #if RADIUM_USE_CPP_MUTEX
 #  include <mutex>
+#  include <condition_variable>
 #else
 #  include <pthread.h>
 #  include <sys/time.h>
 #  include <errno.h>
+#  ifdef FOR_MACOSX
+#    include <sys/types.h>
+#    include <sys/socket.h>
+#  endif
 #endif
 
-#include <thread>
+//#include <thread>
 
-#ifdef FOR_MACOSX
-# include <sys/types.h>
-# include <sys/socket.h>
-#endif
 
 
 // QMutex/QMutexLocker/QWaitCondition, which were used everywhere, and worked great othervice, didn't work with tsan, so that's the reason for this file.
@@ -420,11 +421,15 @@ struct CondWait
 		std::unique_lock<std::mutex> lk(mutex->mutex);
 		
 		if (timeout_in_milliseconds == 0)
+		{
 			cond.wait(lk);
-		else
-			cond.wait_for(lk, std::chrono::milliseconds(timeout_in_milliseconds));
+			return true;
+		}
 
-		return true;
+		if (std::cv_status::timeout == cond.wait_for(lk, std::chrono::milliseconds(timeout_in_milliseconds)))
+			return false;
+		else
+			return true;
 	}
 
 	void wait(Mutex *mutex)
@@ -488,7 +493,7 @@ struct CondWait {
     if (ret==EINVAL)
       RError("pthread_cond_wait returned EINVAL");
     else if (ret==EPERM)
-      RError("pthread_cond_wait returned EINVAL");
+      RError("pthread_cond_wait returned EPERM");
 #ifndef RELEASE
     else if (ret!=0)
       RError("Unknown return message from pthread_cond_wait: %d",ret);
