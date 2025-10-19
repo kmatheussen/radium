@@ -202,7 +202,7 @@ extern QString STATIC_RATIO_as_qstring(const StaticRatio ratio);
   
 
 
-#if CUSTOM_R_ASSERT
+#if defined(CUSTOM_R_ASSERT) && CUSTOM_R_ASSERT
 #  undef R_ASSERT_NON_RELEASE
 #endif
 

@@ -242,7 +242,7 @@ namespace cvs{
     }
   };
 
-  struct MyWidget{
+  struct MyWidget {
     struct MyQWidget2 : public QWidget{
 
       MyWidget *mywidget;
@@ -286,6 +286,8 @@ namespace cvs{
       : w(new MyQWidget2(static_cast<QWidget*>(parent),this))
     {}
 
+	  virtual ~MyWidget() = default;
+	  
     void update(int x1,int y1,int x2,int y2){
       w->update(x1,y1,x2-x1,y2-y1);
     }
@@ -346,10 +348,10 @@ namespace cvs{
       qtimer->stop(); // Is it okay to call this one without first calling start?
     }
     
-    ~MyTimer(){
+    virtual ~MyTimer(){
       prepare_for_deletion();
     }
-    
+
     virtual void timer() = 0;
 
     void startTimer(int interval_in_milliseconds){

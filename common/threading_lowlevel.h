@@ -33,8 +33,8 @@
 
 #if defined(FOR_WINDOWS)
 
-
-  #include <windows.h>
+  #define NOMINMAX // Prevent min and max macros from being defined.
+  #include <Windows.h>
   #include <process.h>
   #include <comutil.h>
 

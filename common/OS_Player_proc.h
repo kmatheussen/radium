@@ -193,20 +193,20 @@ struct PlayerRecursiveLock{
   
 // TODO: Go through all use of PlayerRecursiveLock and see if it can be replaced with PlayerLockOnlyIfNeeded.
 struct PlayerLockOnlyIfNeeded{
-  bool has_lock;
+  bool _has_lock;
 
-  bool do_lock;
+  bool _do_lock;
 
   void lock(){
-    if (has_lock==false){
-      if(do_lock)
+    if (_has_lock==false){
+      if(_do_lock)
         PLAYER_lock();
-      has_lock = true;
+      _has_lock = true;
     }
   }
 
   void maybe_pause(int i){
-    if (has_lock && do_lock)
+    if (_has_lock && _do_lock)
       PLAYER_maybe_pause_lock_a_little_bit(i);
   }
 
@@ -216,15 +216,15 @@ struct PlayerLockOnlyIfNeeded{
   }
 
   struct ScopedLockPause{
-    bool has_lock;
+    bool _has_lock;
     ScopedLockPause(PlayerLockOnlyIfNeeded *lock)
-      : has_lock(lock==NULL ? false : lock->has_lock)
+      : _has_lock(lock==NULL ? false : lock->_has_lock)
     {
-      if(has_lock)
+      if(_has_lock)
         PLAYER_unlock();        
     }
     ~ScopedLockPause(){
-      if(has_lock)
+      if(_has_lock)
         PLAYER_lock();
     }
   };
@@ -234,15 +234,15 @@ struct PlayerLockOnlyIfNeeded{
 
   
   PlayerLockOnlyIfNeeded(bool do_lock = true)
-    : has_lock(PLAYER_current_thread_has_lock())
-    , do_lock(has_lock==false && do_lock)
+    : _has_lock(PLAYER_current_thread_has_lock())
+    , _do_lock(_has_lock==false && do_lock)
   {
-    R_ASSERT_NON_RELEASE(has_lock==false);
+    R_ASSERT_NON_RELEASE(_has_lock==false);
   }
   
   ~PlayerLockOnlyIfNeeded(){
-    if (has_lock){
-      if(do_lock)
+    if (_has_lock){
+      if(_do_lock)
         PLAYER_unlock();
     }
   }  
