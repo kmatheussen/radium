@@ -44,7 +44,7 @@ struct FXNode : NodeId, TimeDataDataType<int> {
   {}
 };
 
-struct FXSeqBlock : RT_TimeData_Player_Cache<typeof(FXNode::_val)> {
+struct FXSeqBlock : RT_TimeData_Player_Cache<decltype(FXNode::_val)> {
 };
   
 using FXTimeData = TimeData<FXNode, FXSeqBlock>;

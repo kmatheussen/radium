@@ -37,13 +37,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #endif
 
-#if __GNUC__ >= 5
+#if defined(__GNUC__) && __GNUC__ >= 5
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wsuggest-override"
 #endif
 #include <Qsci/qscilexerjava.h>
 #include <Qsci/qscilexercpp.h>
-#if __GNUC__ >= 5
+#if defined(__GNUC__) && __GNUC__ >= 5
 #  pragma GCC diagnostic pop
 #endif
 

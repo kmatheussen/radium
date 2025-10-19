@@ -83,6 +83,10 @@ static inline void* safe_memmove(T1* dest, T2 *src, size_t n)
 } // namespace std.
 
 
+#if defined(__clang__)
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wold-style-cast"
+#endif
 
 namespace
 {
@@ -194,6 +198,10 @@ public:
 	}
 };
 }
+
+#if defined(__clang__)
+#  pragma clang diagnostic pop
+#endif
 
 #if defined(__clang__) // These don't compile under gcc, don't know why.
 #  define malloc(Size) AllocTypeCheckerHelperHack1<size_t>(malloc, Size)

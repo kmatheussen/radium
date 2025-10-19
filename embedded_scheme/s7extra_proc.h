@@ -2,6 +2,8 @@
 #ifndef _RADIUM_EMBEDDED_SCHEME_S7EXTRA_PROC_H
 #define _RADIUM_EMBEDDED_SCHEME_S7EXTRA_PROC_H
 
+#pragma clang diagnostic ignored "-Wclass-varargs"
+
 #define DEBUG_GC_PROTECT 0
 
 #define RADIUM_S7_INSTRUMENT_KEY "___RADIUM_INTERNAL___is_s7_instrument"

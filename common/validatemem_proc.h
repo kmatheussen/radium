@@ -86,8 +86,10 @@ static inline void* my_calloc(size_t size1,size_t size2) {
   
   // 2. Ensure the memory is physically available.
   //
-
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wcast-align"
   int64_t *ret64 = (int64_t*)ret;
+#pragma clang diagnostic pop
   size_t s2=size/sizeof(int64_t);
 
   for(size_t i=0;i<s2;i++)

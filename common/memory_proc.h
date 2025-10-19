@@ -142,8 +142,8 @@ static inline void safe_tfree(T* ptr) {
 #define tcopy2(mem, size) memcpy((void*)talloc(size), mem, size)
 #define tcopy2_atomic(mem, size) memcpy((void*)talloc_atomic(size), mem, size)
 
-#define tcopy(mem) ({ typeof(mem) memTempo = (mem) ; tcopy2(memTempo, sizeof(typeof(*(memTempo)))); })
-#define tcopy_atomic(mem) ({ typeof(mem) memTempo = (mem) ; tcopy2_atomic(memTempo, sizeof(typeof(*(memTempo)))); })
+#define tcopy(mem) ({ decltype(mem) memTempo = (mem) ; tcopy2(memTempo, sizeof(decltype(*(memTempo)))); })
+#define tcopy_atomic(mem) ({ decltype(mem) memTempo = (mem) ; tcopy2_atomic(memTempo, sizeof(decltype(*(memTempo)))); })
 
 
 

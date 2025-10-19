@@ -112,7 +112,7 @@ public:
 
     constexpr int num_preallocated_elements = sizeof(_pre_allocated_memory) / sizeof(T);
 
-    static_assert(num_preallocated_elements==std::max(1, int(PREALLOCATED_SIZE / sizeof(T))), "?");
+    static_assert(num_preallocated_elements==(std::max)(1, int(PREALLOCATED_SIZE / sizeof(T))), "?");
 
     if (vector != NULL && vector->size()>0) {
 

@@ -864,7 +864,10 @@ static inline int getMouseButtonEventID(radium::MouseCycleEvent &qmouseevent){
 
 extern bool g_is_first_move_after_release;
   
-struct MouseCycleFix{
+struct MouseCycleFix
+{
+	virtual ~MouseCycleFix() = default;
+	
   int _last_mouse_cycle_x = -10000;
   int _last_mouse_cycle_y = -10000;
 
@@ -1439,7 +1442,7 @@ namespace r{
 extern QBrush API_get_gradient(int gradient_num, float x1, float y1, float x2, float y2, const QColor &color, double darkness_factor = 1.0);
 
 static inline QBrush API_get_gradient(int gradient_num, const QRectF &rect, const QColor &color, double darkness_factor = 1.0){
-  return API_get_gradient(gradient_num, rect.x(), rect.y(), rect.x()+rect.width(), rect.y()+rect.height(), color, darkness_factor);
+	return API_get_gradient(gradient_num, rect.x(), rect.y(), rect.x()+rect.width(), rect.y()+rect.height(), color, darkness_factor);
 }
 
 
@@ -1450,7 +1453,7 @@ static inline void myFillRectHorizontalGradient(QPainter &p, const QRectF &rect,
   
   
   if (do_gradient){
-    QBrush gradient = API_get_gradient(r::HORIZONTAL_DARK_SIDES, rect, color, how_much_gradient);
+	  QBrush gradient = API_get_gradient(r::HORIZONTAL_DARK_SIDES, rect, color, (double)how_much_gradient);
 
 #if 0
     QLinearGradient gradient(rect.topLeft(), rect.topRight());
@@ -1483,7 +1486,7 @@ static inline void myFillRect(QPainter &p, const QRectF &rect, const QColor &col
   
   if (do_gradient){
 
-    QBrush gradient = API_get_gradient(r::VERTICAL_LIGHT_TOP, rect, color, how_much_gradient);
+	  QBrush gradient = API_get_gradient(r::VERTICAL_LIGHT_TOP, rect, color, (double)how_much_gradient);
 
     /*
     int lighter = 100 + how_much_gradient;

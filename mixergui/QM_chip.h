@@ -224,12 +224,10 @@ public:
   bool input_audio_port_is_operational(void) const;
   
   void mySetSelected(bool selected);
-  
+
   void setSelected(bool selected){
     fprintf(stderr, "Error: Use MySetSelected instead\n");
-#if !defined(RELEASE)
-    abort();
-#endif
+    R_ASSERT_NON_RELEASE(false);
   }
 };
 
@@ -677,49 +675,49 @@ class AudioConnection : public SuperConnection {
 
 public:
   
-  AudioConnection(QGraphicsScene *parent, Chip *from, Chip *to, ConnectionType connection_type, bool is_enabled)
-    : SuperConnection(parent, from, to, false, MIXER_AUDIO_CONNECTION_COLOR_NUM, is_enabled)
+  AudioConnection(QGraphicsScene *parent, Chip *from_, Chip *to_, ConnectionType connection_type, bool is_enabled)
+    : SuperConnection(parent, from_, to_, false, MIXER_AUDIO_CONNECTION_COLOR_NUM, is_enabled)
     , _connection_type(ConnectionType::NOT_SET)
   {
-    if (from!=NULL && to!=NULL){
-      //R_ASSERT_RETURN_IF_FALSE(to!=NULL);
+    if (from_!=NULL && to_!=NULL){
+      //R_ASSERT_RETURN_IF_FALSE(to_!=NULL);
 
       // add connection to from
       {
         bool already_gotit = false;
         
-        for(auto *connection : from->_output_audio_connections){
-          R_ASSERT(connection->from == from);
+        for(auto *connection : from_->_output_audio_connections){
+          R_ASSERT(connection->from == from_);
           
-          if(connection->to==to){
+          if(connection->to==to_){
             R_ASSERT(false);
             already_gotit = true;
           }
         }
         
         if (already_gotit==false)
-          from->_output_audio_connections.push_back(this);
+          from_->_output_audio_connections.push_back(this);
       }
 
       // add connection to to
       {
         bool already_gotit = false;
         
-        for(auto *connection : to->_input_audio_connections){
-          R_ASSERT(connection->to == to);
+        for(auto *connection : to_->_input_audio_connections){
+          R_ASSERT(connection->to == to_);
           
-          if(connection->from==from){
+          if(connection->from==from_){
             R_ASSERT(false);
             already_gotit = true;
           }
         }
         
         if (already_gotit==false)          
-          to->_input_audio_connections.push_back(this);
+          to_->_input_audio_connections.push_back(this);
       }
     }
 
-    if(from != NULL)
+    if(from_ != NULL)
       set_connection_type(connection_type);
     else
       _connection_type = connection_type;
@@ -745,45 +743,45 @@ class EventConnection : public SuperConnection {
   
 public:
 
-  EventConnection(QGraphicsScene *parent, Chip *from, Chip *to)
-    : SuperConnection(parent, from, to, true, MIXER_EVENT_CONNECTION_COLOR_NUM, true /*, true */)
+  EventConnection(QGraphicsScene *parent, Chip *from_, Chip *to_)
+    : SuperConnection(parent, from_, to_, true, MIXER_EVENT_CONNECTION_COLOR_NUM, true /*, true */)
   {
 
-    if (from!=NULL && to!=NULL){
-      //R_ASSERT_RETURN_IF_FALSE(to!=NULL);
+    if (from_!=NULL && to_!=NULL){
+      //R_ASSERT_RETURN_IF_FALSE(to_!=NULL);
       
       // add connection to from
       {
         bool already_gotit = false;
         
-        for(auto *connection : from->_output_event_connections){
-          R_ASSERT(connection->from == from);
+        for(auto *connection : from_->_output_event_connections){
+          R_ASSERT(connection->from == from_);
           
-          if(connection->to==to){
+          if(connection->to==to_){
             R_ASSERT(false);
             already_gotit = true;
           }
         }
         
         if (already_gotit==false)
-          from->_output_event_connections.push_back(this);
+          from_->_output_event_connections.push_back(this);
       }
 
       // add connection to to
       {
         bool already_gotit = false;
         
-        for(auto *connection : to->_input_event_connections){
-          R_ASSERT(connection->to == to);
+        for(auto *connection : to_->_input_event_connections){
+          R_ASSERT(connection->to == to_);
           
-          if(connection->from==from){
+          if(connection->from==from_){
             R_ASSERT(false);
             already_gotit = true;
           }
         }
         
         if (already_gotit==false)
-          to->_input_event_connections.push_back(this);
+          to_->_input_event_connections.push_back(this);
       }
       
       update_position();
