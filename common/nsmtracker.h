@@ -285,21 +285,26 @@ extern bool g_has_gfx_scale;
 
 #include <OS_Visual.h>
 
+#if __cplusplus
+#  define R_DECLTYPE(A) decltype(A)
+#else
+#  define R_DECLTYPE(A) typeof(A)
+#endif
 
 #if 0
 #define R_MAX(a,b) (((a)>(b))?(a):(b))
 #define R_MIN(a,b) (((a)<(b))?(a):(b))
 #define R_ABS(a) ((a)<0?(-(a)):(a))
 #else
-#define R_MAX(a,b) ({ decltype(a) aTEMP = (a); decltype(b) bTEMP = (b); aTEMP > bTEMP ? aTEMP : bTEMP; })
-#define R_MIN(a,b) ({ decltype(a) aTEMP = (a); decltype(b) bTEMP = (b); aTEMP < bTEMP ? aTEMP : bTEMP; })
-#define R_ABS(a) ({ decltype(a) aTEMP = (a) ; aTEMP <0 ? -aTEMP : aTEMP;})
+#define R_MAX(a,b) ({ R_DECLTYPE(a) aTEMP = (a); R_DECLTYPE(b) bTEMP = (b); aTEMP > bTEMP ? aTEMP : bTEMP; })
+#define R_MIN(a,b) ({ R_DECLTYPE(a) aTEMP = (a); R_DECLTYPE(b) bTEMP = (b); aTEMP < bTEMP ? aTEMP : bTEMP; })
+#define R_ABS(a) ({ R_DECLTYPE(a) aTEMP = (a) ; aTEMP <0 ? -aTEMP : aTEMP;})
 #endif
 
 #if defined(RELEASE)
-#  define R_BOUNDARIES(min,b,max) ({ decltype(min) minTEMP = (min); decltype(b) bTEMP = (b); decltype(max) maxTEMP = (max); bTEMP < minTEMP ? minTEMP : bTEMP > maxTEMP ? maxTEMP : bTEMP;})
+#  define R_BOUNDARIES(min,b,max) ({ R_DECLTYPE(min) minTEMP = (min); R_DECLTYPE(b) bTEMP = (b); R_DECLTYPE(max) maxTEMP = (max); bTEMP < minTEMP ? minTEMP : bTEMP > maxTEMP ? maxTEMP : bTEMP;})
 #else
-#  define R_BOUNDARIES(min,b,max) ({ decltype(min) minTEMP = (min); decltype(b) bTEMP = (b); decltype(max) maxTEMP = (max); maxTEMP < minTEMP ? (abort(),minTEMP) : bTEMP < minTEMP ? minTEMP : bTEMP > maxTEMP ? maxTEMP : bTEMP;})
+#  define R_BOUNDARIES(min,b,max) ({ R_DECLTYPE(min) minTEMP = (min); R_DECLTYPE(b) bTEMP = (b); R_DECLTYPE(max) maxTEMP = (max); maxTEMP < minTEMP ? (abort(),minTEMP) : bTEMP < minTEMP ? minTEMP : bTEMP > maxTEMP ? maxTEMP : bTEMP;})
 #endif
 
 static inline bool sane_isnormal_FLOAT(const float x) {

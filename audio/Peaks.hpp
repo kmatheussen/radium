@@ -549,7 +549,7 @@ private:
 #if READ_EVERYTHING_AT_ONCE
         qfloat16 min=data[i*2], max=data[i*2+1];
 #if !defined(RELEASE)
-        if(!sane_isnormal(min) || !sane_isnormal(max)){
+        if(!sane_isnormal((float)min) || !sane_isnormal((float)max)){
           printf("min: %f. max: %f.\n", (float)min, (float)max);
           abort();
         }
