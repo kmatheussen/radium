@@ -17,11 +17,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <stdlib.h>
 
 #if !defined(__clang__) // special workaround for gcc, don't know why.
+#  if !defined(__cplusplus)
 extern void safe_free(void *ptr);
 void safe_free(void *ptr)
 {
 	free(ptr);
 }
+#  endif
 #endif
 
 #include <stdio.h>

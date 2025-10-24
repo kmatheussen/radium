@@ -1,5 +1,7 @@
 #pragma once
 
+#if !defined(RADIUM_IS_TESTING)
+
 #if !defined(RELEASE) && defined(__cplusplus)
 
 #include <type_traits>
@@ -8,7 +10,6 @@
 #include <string.h>
 
 #include <functional>
-
 
 // Copied from https://stackoverflow.com/questions/17946436/compile-time-warning-about-memset-on-non-plain-old-data
 template <typename T>
@@ -209,3 +210,4 @@ public:
 #endif
 
 #endif // !defined(RELEASE) && defined(__cplusplus)
+#endif // !defined(TEST_MAIN)

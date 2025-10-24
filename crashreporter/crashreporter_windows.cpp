@@ -465,13 +465,15 @@ static void do_the_backtrace(CONTEXT *context_org, struct output_buffer *ob){
       }
         
       
-      printf  (    "[%i] %s. %s : %d. PC: %llx. Disp: %lld/%d (%s)\n", i, symbol->Name, FileName, LineNumber, pc_offset, displacement, (int)dwDisplacement, modulename);
+      fprintf  (stderr,    "[%i] %s. %s : %d. PC: %llx. Disp: %lld/%d (%s)\n", i, symbol->Name, FileName, LineNumber, pc_offset, displacement, (int)dwDisplacement, modulename);
       printf_s(ob, "[%i] %s. %s : %d. PC: %llx. Disp: %lld/%d (%s)\n", i, symbol->Name, FileName, LineNumber, pc_offset, displacement, (int)dwDisplacement, modulename);
       
     } else {
 
       DWORD64 module_base = SymGetModuleBase64(process, pc_offset);
       wchar_t *module_name = get_module_name_unless_radum_bin_exe((HINSTANCE)module_base);
+      
+      fprintf  (stderr,ob, "[%i] ???. PC: %llx. Disp: %d. Module: %S\n", i, pc_offset, (int)displacement, module_name==NULL ? L"radium.bin.exe" : module_name);
       printf_s(ob, "[%i] ???. PC: %llx. Disp: %d. Module: %S\n", i, pc_offset, (int)displacement, module_name==NULL ? L"radium.bin.exe" : module_name);
       
     }
