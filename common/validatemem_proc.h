@@ -196,7 +196,7 @@ static inline void *V_realloc(void *ptr, size_t size){
   return realloc(ptr, size);
 }
 
-#  ifdef __cplusplus
+#  if defined(__cplusplus) && !defined(RADIUM_IS_TESTING)
 
 #    define V_malloc(a) AllocTypeCheckerHelperHack1<size_t>(V_malloc, a)
 #    define V_calloc(n,size) AllocTypeCheckerHelperHack2<size_t,size_t>(V_calloc_nomemtypechecks, n, size)

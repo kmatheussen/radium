@@ -103,6 +103,7 @@ else
     export CC="gcc $CPUOPTS "
     export LINKER="g++"
 
+    export STD_CPP="-std=gnu++17"
     export USE_STD_COUNTING_SEMAPHORE=0 # for now, the gcc implementation of std::counting_semaphore doesn't seem to have been tested very much.
     
     # Use the ldd linker instead. It's approx. 10x faster.
@@ -233,11 +234,15 @@ if ! env |grep RADIUM_BFD_LDFLAGS ; then
     fi
 fi
 
-export OS_JUCE_LDFLAGS="-lasound -pthread -lrt -lX11 -ldl -lXext "
+export OS_JUCE_LDFLAGS="-lasound -pthread -lrt -lX11 -lXext "
 
 #LIBGIG_LDFLAGS="bin/packages/libgig/src/.libs/RIFF.o bin/packages/libgig/src/.libs/SF.o"
 FLUIDSYNTH_LDFLAGS="bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a `$PKG --libs glib-2.0`"
 export OS_LDFLAGS="$QSCINTILLA_PATH/libqscintilla2_qt5.a $FAUSTLDFLAGS $PDLDFLAGS pluginhost/Builds/Linux/build/libMyPluginHost.a $OS_JUCE_LDFLAGS -llrdf $GCDIR/.libs/libgc.a $PYTHONLIBPATH $PYTHONLIBNAME `$PKG --libs sndfile` `$PKG --libs samplerate` `$PKG --libs liblo` -lxcb -lxcb-keysyms $FLUIDSYNTH_LDFLAGS $RADIUM_BFD_LDFLAGS -liberty `$PKGqt --libs Qt5X11Extras`"
+
+if [[ $RADIUM_USE_CLANG == 0 ]] ; then
+    export OS_LDFLAGS2="-ldl "
+fi
 
 # -licui18n -licuuc -licudata -lutil 
 

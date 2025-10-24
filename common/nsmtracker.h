@@ -153,6 +153,12 @@ static_assert (sizeof(long long int) >= 8, "sizof(long long int) must be 8 or hi
 #  define GTK_IS_USED 1
 #endif
 
+#if defined(FOR_WINDOWS)
+  #include <windows.h>
+  #include <process.h>
+  #include <comutil.h>
+#endif // for_windows
+
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -569,11 +575,11 @@ static inline int64_t scale_int64(const int64_t x, const int64_t x1, const int64
 #endif
 	
 	if (diff==0)
-	{
-#ifdef __cplusplus
-		[[unlikely]] // this is never supposed to happen, but to avoid integer divide-by-zero, we sacrifice some cycles here.
+#if defined(__cplusplus) && (defined(__clang__) || __GNUC__ >= 10)
+          [[unlikely]]
 #endif
-		return (y1+y2)/2;
+	{
+		return (y1+y2)/2; // this is never supposed to happen, but to avoid integer divide-by-zero, we sacrifice some cycles here.
 	}
 	else
 	{

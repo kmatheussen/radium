@@ -5128,7 +5128,6 @@ int main(int argc, char **argv){
   // Initialize python
   ////////////////////////////////
 
-
   Py_Initialize();
 
   {
