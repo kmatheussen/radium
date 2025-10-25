@@ -52,10 +52,10 @@ else
 fi
 
 #if ! env |grep OPTIMIZE ; then
-export OPTIMIZE="-O2 $CPUOPTS $RADIUM_RELEASE_CFLAGS -fomit-frame-pointer "
+export OPTIMIZE="-O2 $CPUOPTS $RADIUM_RELEASE_CFLAGS -fno-omit-frame-pointer "
 
-#export OS_DEBUG_BUILD_OPTS="-fno-omit-frame-pointer"
-export OS_DEBUG_BUILD_OPTS="-fomit-frame-pointer"
+export OS_DEBUG_BUILD_OPTS="-fno-omit-frame-pointer"
+#export OS_DEBUG_BUILD_OPTS="-fomit-frame-pointer"
 
 
 # -flto 
@@ -127,6 +127,7 @@ export TARGET_OS=linux
 
 export PYPATH=`$PYTHONEXE -c "import sys;print sys.prefix+'/include/python'+sys.version[:3]"`
 export PYOPTS="-I $PYPATH"
+
 
 # static Qt4:
 #RQTDIR=/home/kjetil/qt-everywhere-opensource-src-4.8.6
@@ -335,7 +336,7 @@ do_source_sanity_checks() {
     echo "Doing some source sanity checks. This might take a few seconds...."
     echo
     
-    if grep static\  */*.h */*.hpp */*/*.hpp */*/*/*.hpp */*/*/*/*.hpp */*/*.h */*/*/*/*.h */*/*.cpp */*.c */*.cpp */*.m */*/*.c */*/*.cpp */*/*/*.c */*/*/*/*.c */*/*/*.cpp 2>&1 | grep "\[" | grep -v "\[\]"|grep -v static\ void |grep -v unused_files |grep -v GTK |grep -v test\/ |grep -v X11\/ |grep -v amiga |grep -v faust-examples|grep -v temp\/ |grep -v "\[NO_STATIC_ARRAY_WARNING\]" |grep -v backup |grep -v mingw |grep -v Dropbox |grep -v bin/packages |grep -v python-midi |grep -v "No such file or directory" ; then
+    if grep static\  */*.h */*.hpp */*/*.hpp */*/*/*.hpp */*/*/*/*.hpp */*/*.h */*/*/*/*.h */*/*.cpp */*.c */*.cpp */*.m */*/*.c */*/*.cpp */*/*/*.c */*/*/*/*.c */*/*/*.cpp 2>&1 | grep "\[" | grep -v "\[\]"|grep -v static\ void |grep -v Python-2.7.18 |grep -v unused_files |grep -v GTK |grep -v test\/ |grep -v X11\/ |grep -v amiga |grep -v faust-examples|grep -v temp\/ |grep -v "\[NO_STATIC_ARRAY_WARNING\]" |grep -v backup |grep -v mingw |grep -v Dropbox |grep -v bin/packages |grep -v python-midi |grep -v "No such file or directory" ; then
 	echo
 	echo "ERROR in line(s) above. Static arrays may decrease GC performance notably.";
 	echo
