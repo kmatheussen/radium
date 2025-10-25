@@ -287,8 +287,6 @@ VISUAL ?= -DUSE_QT_VISUAL=1 -DUSE_GTK_VISUAL=0
 
 FULL_VERSION ?= 1
 
-#UNDEFINED_SANITIZE_OPTS= -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow -fsanitize=bounds -fsanitize=object-size -fsanitize=vptr -fno-sanitize-recover
-#  -fsanitize=alignment
 
 
 BUILD_DEBUG=NO

@@ -2,6 +2,8 @@
 
 set -eEu
 
+#set -x
+
 source configuration.sh
 
 if [[ $RADIUM_USE_CLANG == 1 ]] ; then

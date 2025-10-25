@@ -1822,9 +1822,11 @@ private:
 #if defined(INCLUDE_SNDFILE_OPEN_FUNCTIONS)
 
 #if defined(FOR_WINDOWS)
-#define NOMINMAX // Prevent min and max macros from being defined.
-#include <Windows.h>
-#define ENABLE_SNDFILE_WINDOWS_PROTOTYPES 1
+#  if !defined(NOMINMAX)
+#    define NOMINMAX // Prevent min and max macros from being defined.
+#  endif
+#  include <Windows.h>
+#  define ENABLE_SNDFILE_WINDOWS_PROTOTYPES 1
 #endif
 
 #include <sndfile.h>
@@ -3116,19 +3118,28 @@ struct Tempos{
 #define NextConstTempo(a) (const struct Tempos *)((a)->l.next)
 #define NextConstBPM(a) NextConstTempo(a)
 
-struct WTempos{
-	int tempo;
-	int type;							/* 0=normal, 1=below positioned, 2=mul. */
-        int logtype;
-};
-/* Types */
-#define TEMPO_NORMAL 0
-#define TEMPO_BELOW 1
-#define TEMPO_MUL 2
-
-// Todo: Rename all Tempos to BPMs. First step:
 #define BPMs Tempos
-#define WBPMs WTempos
+
+
+#if __cplusplus
+
+/* Types */
+enum class TempoType
+{
+  TEMPO_NORMAL = 0,
+  TEMPO_BELOW,
+  TEMPO_MUL,
+};
+
+struct WBPMs
+{
+	int realline;
+	int tempo;
+	TempoType type;
+	int logtype;
+};
+#endif // __cplusplus
+
 
 
 /*********************************************************************

@@ -82,19 +82,19 @@ PREFIX=`dirname $PWD/$0`
 
 build_faust() {
 
-    rm -fr faust
-    tar xvzf faust-2.81.2.tar.gz
-    mv faust-2.81.2 faust
-    cd faust
-    rm -fr libraries
-    tar xvzf ../faustlibraries_2024_01_05.tar.gz
-    mv faustlibraries libraries
-
-    ### this line is needed to build on artix
-    #export LIBNCURSES_PATH=$(shell find /usr -name libncursesw_g.a)
-
-	cp ../faust_targets.cmake build/targets/most.cmake
+	rm -fr faust
+	tar xvzf faust-2.81.2.tar.gz
+	mv faust-2.81.2 faust
+	cd faust
+	rm -fr libraries
+	tar xvzf ../faustlibraries_2024_01_05.tar.gz
+	mv faustlibraries libraries
 	
+	### this line is needed to build on artix
+	#export LIBNCURSES_PATH=$(shell find /usr -name libncursesw_g.a)
+    
+	cp ../faust_targets.cmake build/targets/most.cmake
+    
 	if is_0 $FAUST_USES_LLVM ; then
 		cp ../faust_radium_nonllvm.cmake build/backends/most.cmake
 	else
@@ -102,26 +102,26 @@ build_faust() {
 		export ORGTEMPPATH=$PATH
 		export PATH=$(dirname $LLVM_CONFIG_BIN):$PATH
 		#echo "PATH: $PATH"
-    fi
-
+	fi
+	
 	# Use all CPUs when building faust.
 	JOBS=$(nproc)
 	#sed -i.backup "s/(BUILDLOCATION)$/(BUILDLOCATION) -j${JOBS}/" Makefile
 	#exit -1
 	
-    # release build
-    BUILDOPT="--config Release -j${JOBS}" VERBOSE=1 CFLAGS="$CFLAGS" CXXFLAGS="$CXXFLAGS" CMAKEOPT="-DCMAKE_BUILD_TYPE=Release -DSELF_CONTAINED_LIBRARY=on -DCMAKE_CXX_COMPILER=`which $DASCXX` -DCMAKE_C_COMPILER=`which $DASCC` " make most
-
+	# release build
+	BUILDOPT="--config Release -j${JOBS}" VERBOSE=1 CFLAGS="$CFLAGS" CXXFLAGS="$CXXFLAGS" CMAKEOPT="-DCMAKE_BUILD_TYPE=Release -DSELF_CONTAINED_LIBRARY=on -DCMAKE_CXX_COMPILER=`which $DASCXX` -DCMAKE_C_COMPILER`which $DASCC` " make most
+	
 	if ! is_0 $FAUST_USES_LLVM ; then
 		export PATH=$ORGTEMPPATH
 		unset ORGTEMPPATH
-    fi
+	fi
     
     
-    # debug build
-    #VERBOSE=1 CFLAGS="$CFLAGS" CXXFLAGS="$CXXFLAGS" CMAKEOPT="-DCMAKE_BUILD_TYPE=Debug -DSELF_CONTAINED_LIBRARY=on -DCMAKE_CXX_COMPILER=`which $DASCXX` -DCMAKE_C_COMPILER=`which $DASCC` " make most
+	# debug build
+	#VERBOSE=1 CFLAGS="$CFLAGS" CXXFLAGS="$CXXFLAGS" CMAKEOPT="-DCMAKE_BUILD_TYPE=Debug -DSELF_CONTAINED_LIBRARY=on -DCMAKE_CXX_COMPILER=`which $DASCXX` -DCMAKE_C_COMPILER=`which $DASCC` " make most
     
-    cd ..
+	cd ..
 }
 
 build_Visualization-Library() {

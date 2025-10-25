@@ -44,11 +44,13 @@ struct WBPMs *WBPMs_get(
 	while(bpm!=NULL){
 		realline=FindRealLineFor(wblock,realline,&bpm->l.p);
 
+		R_ASSERT_NON_RELEASE(wbpms[realline].type == TempoType::TEMPO_NORMAL);
+		
 		if(wbpms[realline].tempo!=0){
-			wbpms[realline].type=TEMPO_MUL;                        
+			wbpms[realline].type=TempoType::TEMPO_MUL;                        
 		}else{
 			if(PlaceNotEqual(&wblock->reallines[realline]->l.p,&bpm->l.p))
-				wbpms[realline].type=TEMPO_BELOW;
+				wbpms[realline].type=TempoType::TEMPO_BELOW;
 		}
 
 		wbpms[realline].tempo=bpm->tempo;

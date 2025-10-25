@@ -69,14 +69,23 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "midi_i_input_proc.h"
 
 
-static DEFINE_ATOMIC(uint32_t, g_msg) = 0;
 
+// Note: Storing this variable globally ensures that the memory for it won't be freed while still in use. (GC)
+// (And the rest of the program knows that it might be dealing with a patch for an instrument that has been deleted.)
+//
 DEFINE_ATOMIC(struct Patch *, g_through_patch) = NULL;
+
 
 extern const char *NotesTexts3[131];
 
+
+// Allocate since static variables are not good for the GC.
+static auto *g_step_recording_midi_msg_queue = new boost::lockfree::queue<uint32_t, boost::lockfree::capacity<128> > ;
+
+
 static radium::Mutex g_midi_learns_mutex;
 static radium::Vector<radium::MidiLearn*> g_midi_learns;
+
 
 static bool msg_is_cc(const uint32_t msg){
   const int d1 = MIDI_msg_byte1(msg);
@@ -242,10 +251,16 @@ static radium::Vector<midi_event_t> g_recorded_midi_events;
 
 static radium::Queue<midi_event_t, 8000> *g_midi_event_queue; // 8000 is not the maximum size that can be recorded totally, but the maximum size that can be recorded until the recording queue pull thread has a chance to pick it up. In other words: 8000 should be plenty enough as long as the CPU is not too busy.
 
+#if !defined(RELEASE)
+static DEFINE_ATOMIC(bool, g_has_inited) = false;
+#endif
   
 // Called from a MIDI input thread. Only called if playing
-static void record_midi_event(const symbol_t *port_name, const uint32_t msg){
+static void record_midi_event(const symbol_t *port_name, const uint32_t msg)
+{
 
+	R_ASSERT_NON_RELEASE(ATOMIC_GET(g_has_inited));
+	
   bool is_fx = msg_is_fx(msg);
   bool is_note = msg_is_note(msg);
 
@@ -942,19 +957,11 @@ typedef struct {
   uint32_t msg;
 } play_buffer_event_t;
 
-static boost::lockfree::queue<play_buffer_event_t, boost::lockfree::capacity<8000> > *g_play_buffer;
+// Allocate since static variables are not good for the GC.
+static auto *g_play_buffer = new boost::lockfree::queue<play_buffer_event_t, boost::lockfree::capacity<8000> >;
 
-namespace
+void radium::MidiLearn::RT_maybe_use_forall(instrument_t instrument_id, const symbol_t *port_name, uint32_t msg)
 {
-  struct InitBuffer{
-    InitBuffer(){
-      g_play_buffer = new boost::lockfree::queue<play_buffer_event_t, boost::lockfree::capacity<8000>>;
-    }
-  } g_init_buffer;
-}
-
-
-void radium::MidiLearn::RT_maybe_use_forall(instrument_t instrument_id, const symbol_t *port_name, uint32_t msg){
   for (auto midi_learn : g_midi_learns) {
     bool may_use = false;
     
@@ -1142,53 +1149,62 @@ static bool maybe_fix_incremental_mode_for_msg(const symbol_t *port_name, uint32
 }
 
 // Can be called from any thread
-void MIDI_editor_and_midi_learn_InputMessageHasBeenReceived(const symbol_t *port_name, int cc,int data1,int data2){
+void MIDI_editor_and_midi_learn_InputMessageHasBeenReceived(const symbol_t *port_name, int cc,int data1,int data2)
+{
   //printf("got new message. on/off:%d. Message: %x,%x,%x\n",(int)root->editonoff,cc,data1,data2);
   //static int num=0;
   //num++;
 
-  if(cc==0xf0 || cc==0xf7) // sysex not supported
-    return;
-  
-  if (MIXER_is_saving())
-    return;
-  
-  bool isplaying = is_playing();
-
-  switch(cc){
-    case 0xfa:
-      RT_request_to_start_playing_block();
-      return;
-    case 0xfb:
-      RT_request_to_continue_playing_block();
-      return;
-    case 0xfc:
-      RT_request_to_stop_playing();
-      return;
-  }
-  
-  uint32_t msg = MIDI_msg_pack3(cc, data1, data2);
-  int len = MIDI_msg_len(msg);
-  if (len<1 || len>3)
-    return;
-
-  if (!maybe_fix_incremental_mode_for_msg(port_name, msg))
-    return;
-  
-  add_event_to_play_buffer(port_name, msg);
-
-  if (g_record_accurately_while_playing && isplaying) {
-    
-    if (ATOMIC_GET(root->editonoff))
-      record_midi_event(port_name, msg);
-
-  } else {
-
-    if(msg_is_note_on(msg))
-      if (ATOMIC_COMPARE_AND_SET_UINT32(g_msg, 0, msg)==false) {
-        // printf("Playing to fast. Skipping note %u from MIDI input.\n",msg); // don't want to print in realtime thread
-      }
-  }
+	R_ASSERT_NON_RELEASE(ATOMIC_GET(g_has_inited));
+	
+	if(cc==0xf0 || cc==0xf7) // sysex not supported
+		return;
+	
+	if (MIXER_is_saving())
+		return;
+	
+	bool isplaying = is_playing();
+	
+	switch(cc){
+		case 0xfa:
+			RT_request_to_start_playing_block();
+			return;
+		case 0xfb:
+			RT_request_to_continue_playing_block();
+			return;
+		case 0xfc:
+			RT_request_to_stop_playing();
+			return;
+	}
+	
+	uint32_t msg = MIDI_msg_pack3(cc, data1, data2);
+	int len = MIDI_msg_len(msg);
+	if (len<1 || len>3)
+		return;
+	
+	if (!maybe_fix_incremental_mode_for_msg(port_name, msg))
+		return;
+	
+	add_event_to_play_buffer(port_name, msg);
+	
+	if (g_record_accurately_while_playing && isplaying) {
+		
+		if (ATOMIC_GET(root->editonoff))
+			record_midi_event(port_name, msg);
+		
+	} else {
+		
+		if(msg_is_note_on(msg))
+		{
+			if (!g_step_recording_midi_msg_queue->bounded_push(msg))
+			{
+#if !defined(RELEASE)
+				printf("Playing to fast. Skipping note-msg %u from MIDI input.\n", msg); // don't want to print in realtime thread
+				R_ASSERT_NON_RELEASE(false); // Seems very unlikely that this should happen. Probably a bug.
+#endif
+			}
+		}
+	}
 }
 
 
@@ -1201,23 +1217,27 @@ void MIDI_editor_and_midi_learn_InputMessageHasBeenReceived(const symbol_t *port
 
 
 // called very often from the main thread
-void MIDI_HandleInputMessage(void){
+void MIDI_HandleInputMessage(void)
+{
+	R_ASSERT_NON_RELEASE(ATOMIC_GET(g_has_inited));
 
-  uint32_t msg = ATOMIC_GET(g_msg); // Hmm, should have an ATOMIC_COMPAREFALSE_AND_SET function. (doesn't matter though, it would just look better)
-  
-  if (msg!=0) {
-
-    ATOMIC_SET(g_msg, 0);
-
-    if(ATOMIC_GET(root->editonoff)){
-      float velocity = -1.0f;
-      if (g_record_velocity)
-        velocity = (float)MIDI_msg_byte3(msg) / 127.0;
-      //printf("velocity: %f, byte3: %d, shift: %d\n",velocity,MIDI_msg_byte3(msg),shiftPressed());
-      InsertNoteCurrPos(root->song->tracker_windows,MIDI_msg_byte2(msg), shiftPressed(), velocity);
-      root->song->tracker_windows->must_redraw = true;
-    }
-  }
+	uint32_t msg;
+	
+	while(g_step_recording_midi_msg_queue->pop(msg)==true)
+	{
+		if(ATOMIC_GET(root->editonoff))
+		{
+			float velocity = -1.0f;
+			
+			if (g_record_velocity)
+				velocity = (float)MIDI_msg_byte3(msg) / 127.0;
+			
+			//printf("velocity: %f, byte3: %d, shift: %d\n",velocity,MIDI_msg_byte3(msg),shiftPressed());
+			InsertNoteCurrPos(root->song->tracker_windows,MIDI_msg_byte2(msg), shiftPressed(), velocity);
+			
+			root->song->tracker_windows->must_redraw = true;
+		}
+	}
 }
 
 
@@ -1240,10 +1260,16 @@ void MIDI_input_init(void){
   }
 
   {
+#if !defined(RELEASE) // The lock below shouldn't be needed since MIDI_input_init should be called before starting audio.
     radium::ScopedMutex lock(g_midi_event_mutex); // Should have a comment here why we need to lock this mutex, if it is really necessary to lock it.
-    
+#endif
+	
     g_midi_event_queue = new radium::Queue<midi_event_t, 8000>;
     
     g_recording_queue_pull_thread.start();
   }
+
+#if !defined(RELEASE)
+  ATOMIC_SET(g_has_inited, true);
+#endif
 }

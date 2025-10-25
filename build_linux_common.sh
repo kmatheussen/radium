@@ -2,6 +2,8 @@
 
 set -eEu
 
+export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
+
 echo "B1_"
 source $(dirname "${0}")/bash_setup.sh
 echo "B2_"
@@ -291,19 +293,18 @@ make common/keyboard_sub_ids.h --stop
 make bin/radium_check_recent_libxcb --stop
 
 if [[ $# -ge 1 ]] && [[ $1 == "test" ]] ; then
-    make test_seqautomation
+	make test_seqautomation
 else
-    if [[ $RADIUM_USES_MOLD_PRELOAD == 1 ]] ; then
-       rm -f /tmp/run_preload
-       make /tmp/run_preload
-    fi
-    make radium $@ --stop # Can not use "exec make" here. Compilation stopped here I think, whether it succeeded or not.
+	if [[ $RADIUM_USES_MOLD_PRELOAD == 1 ]] ; then
+		rm -f /tmp/run_preload
+		make /tmp/run_preload
+	fi
+	make radium $@ --stop # Can not use "exec make" here. Compilation stopped here I think, whether it succeeded or not.
     
-    if ldd -r $RADIUM_BIN | sed 's/0x.*//' |grep -i bfd ; then
-	printf "\033[1;31mError? Is bfd linked dynamically?\033[0m"
-	exit -1
-    fi
-
+	if ldd -r $RADIUM_BIN | sed 's/0x.*//' |grep -i bfd ; then
+		printf "\033[1;31mError? Is bfd linked dynamically?\033[0m"
+		exit -1
+	fi
 fi
 
 if [[ $BUILDTYPE == RELEASE ]] ; then
