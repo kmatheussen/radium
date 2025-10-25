@@ -63,8 +63,8 @@ export G_DEBUG="fatal-warnings,gc-friendly"
 
 #ulimit -s 655360
 
-#debugger="gdb"
-debugger="lldb"
+debugger="gdb"
+#debugger="lldb"
 #debugger="nnd"
 #debugger="lldb -O 'env $FAUST_LD_LIB_PATH'" # LLDB + FAUST/LLVM
 
@@ -91,7 +91,7 @@ debugger_argline=""
 
 if [ "$debugger" = "gdb" ] ; then
 	if $dostartnow ; then
-		debugger_argline="-ex run --args"
+		debugger_argline="-ex run"
 	fi
 	if $running_in_emacs ; then
 		debugger_argline="$debugger_argline -i=im"
