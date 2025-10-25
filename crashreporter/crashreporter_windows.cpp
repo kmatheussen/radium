@@ -473,7 +473,7 @@ static void do_the_backtrace(CONTEXT *context_org, struct output_buffer *ob){
       DWORD64 module_base = SymGetModuleBase64(process, pc_offset);
       wchar_t *module_name = get_module_name_unless_radum_bin_exe((HINSTANCE)module_base);
       
-      fprintf  (stderr,ob, "[%i] ???. PC: %llx. Disp: %d. Module: %S\n", i, pc_offset, (int)displacement, module_name==NULL ? L"radium.bin.exe" : module_name);
+      fprintf  (stderr, "[%i] ???. PC: %llx. Disp: %d. Module: %S\n", i, pc_offset, (int)displacement, module_name==NULL ? L"radium.bin.exe" : module_name);
       printf_s(ob, "[%i] ???. PC: %llx. Disp: %d. Module: %S\n", i, pc_offset, (int)displacement, module_name==NULL ? L"radium.bin.exe" : module_name);
       
     }

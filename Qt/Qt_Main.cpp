@@ -510,7 +510,14 @@ void operator delete(void *mem)
   #endif
 #endif
 {
+#if __GNUC__ >= 11
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wmismatched-new-delete"
+#endif //__GNUC__ >= 10
   V_free(mem);
+#if __GNUC__ >= 11
+#  pragma GCC diagnostic pop
+#endif //__GNUC__ >= 10
 }
 
 void operator delete(void *mem, std::size_t size)
@@ -528,21 +535,28 @@ void operator delete(void *mem, std::size_t size)
   #endif
 #endif
 {
-  V_free(mem);
+#if __GNUC__ >= 11
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wmismatched-new-delete"
+#endif //__GNUC__ >= 10
+     V_free(mem);
+#if __GNUC__ >= 11
+#  pragma GCC diagnostic pop
+#endif //__GNUC__ >= 10
 }
 
 void operator delete(void *mem, std::nothrow_t const&)
 #if defined(__clang__)
   #if FOR_LINUX
-    _GLIBCXX_USE_NOEXCEPT
+	_GLIBCXX_USE_NOEXCEPT
   #else
-    _NOEXCEPT
+	_NOEXCEPT
   #endif
 #else
   #if __GNUC__ >= 15
  	noexcept
   #else
-    noexcept(false)
+	noexcept(false)
   #endif
 #endif
 {

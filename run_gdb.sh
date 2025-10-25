@@ -3,6 +3,13 @@
 set -ueE
 #set -x
 
+#if [ -v QT_QPA_PLATFORM_PLUGIN_PATH ] ; then
+#source ~/.bashrc
+#fi
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+cd $SCRIPT_DIR
 
 source configuration.sh #>/dev/null
 
@@ -56,18 +63,46 @@ export G_DEBUG="fatal-warnings,gc-friendly"
 
 #ulimit -s 655360
 
-# One of these three:
-#
-#
-# 1. GDB
-DEBUGGER="gdb --args"
-#
-# 2. LLDB
-#DEBUGGER="lldb --"
-#DEBUGGER="./nnd "
-#
-# 3. LLDB + FAUST/LLVM
-#DEBUGGER="lldb -O 'env $FAUST_LD_LIB_PATH' --" # lldb when using faust
+#debugger="gdb"
+debugger="lldb"
+#debugger="nnd"
+#debugger="lldb -O 'env $FAUST_LD_LIB_PATH'" # LLDB + FAUST/LLVM
+
+dostartnow=false
+running_in_emacs=false
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+      -s|--start)
+		  dostartnow=true
+		  shift
+		  ;;
+      -i|--in-emacs)
+		  running_in_emacs=true;
+		  shift
+		  ;;
+      *)
+		  break;
+		  ;;
+  esac
+done
+
+debugger_argline=""
+
+if [ "$debugger" = "gdb" ] ; then
+	if $dostartnow ; then
+		debugger_argline="-ex run --args"
+	fi
+	if $running_in_emacs ; then
+		debugger_argline="$debugger_argline -i=im"
+	fi
+	debugger_argline="$debugger_argline --args"
+elif [[ "$debugger" = "lldb"* ]] ; then
+	if $dostartnow ; then
+		debugger_argline="-o run"
+	fi
+	debugger_argline="$debugger_argline --"
+fi
 
 
 
@@ -82,13 +117,16 @@ esac
 
 rm -f /tmp/runradiumgdb*.sh
 
+#exec gdb -i=mi $EXECUTABLE
+
 exename=/tmp/runradiumgdb$$.sh
 
-echo "G_DEBUG="fatal-warnings,gc-friendly" USE=libedit/readline exec $DEBUGGER $EXECUTABLE $@; killall -9 radium_progress_window ; killall -9 radium_crashreporter"  > $exename
+echo "G_DEBUG="fatal-warnings,gc-friendly" USE=libedit/readline exec $debugger $debugger_argline $@ $EXECUTABLE ; killall -9 radium_progress_window ; killall -9 radium_crashreporter"  > $exename
 
 chmod a+rx $exename
 
 exec $exename
+#bash $exename
 
 # without gdb:
 #LD_LIBRARY_PATH=$LD_LIBRARY_PATH G_DEBUG="fatal-warnings,gc-friendly" bin/radium_linux.bin $@; killall -9 radium_progress_window ; killall -9 radium_crashreporter
