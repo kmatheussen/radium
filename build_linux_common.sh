@@ -52,8 +52,21 @@ else
 fi
 
 #if ! env |grep OPTIMIZE ; then
-export OPTIMIZE="-O2 $CPUOPTS $RADIUM_RELEASE_CFLAGS -fno-omit-frame-pointer "
+export OPTIMIZE="-O2 $CPUOPTS $RADIUM_RELEASE_CFLAGS"
 
+
+# Frame pointers, i.e. whether to compile with -fomit-frame-pointer or -fno-omit-frame-pointers.
+#
+# TODO: Benchmark what impact this has  on "make benchmark_smoothdelay" and other relevant tests,
+# both on arm and x86. But for now, omit it for everything in RELEASE mode.
+#
+# After benchmarking, some files will probably be compiled without frame pointers, while most files will have frame pointers.
+#
+if [[ $BUILDTYPE == RELEASE ]] ; then
+	export OPTIMIZE="$OPTIMIZE -fomit-frame-pointer"
+fi
+	
+	
 export OS_DEBUG_BUILD_OPTS="-fno-omit-frame-pointer"
 #export OS_DEBUG_BUILD_OPTS="-fomit-frame-pointer"
 
