@@ -14,8 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-#define __STDC_FORMAT_MACROS 1
-#include <inttypes.h>
+//#define __STDC_FORMAT_MACROS 1
+//#include <inttypes.h>
 
 
 
@@ -167,7 +167,7 @@ const char **get_ccnames(void){
 }
 
 //#define protected public
-#if USE_QT3
+#if defined(USE_QT3) && USE_QT3
 #include "Qt_instruments_widget.cpp"
 #include "Qt_control_change_widget.cpp"
 #include "Qt_midi_instrument_widget.cpp"
@@ -736,24 +736,18 @@ void GFX_set_effect_display_boundaries(struct Patch *patch, int effect_num, int 
     return;
 
   if (min_value > max_value) {
-#if !defined(RELEASE)
-    abort();
-#endif
-    return;
+	  R_ASSERT_NON_RELEASE(false);
+	  return;
   }
   
   if (min_value < 0) {
-#if !defined(RELEASE)
-    abort();
-#endif
-    return;
+	  R_ASSERT_NON_RELEASE(false);
+	  return;
   }
   
   if (max_value > 10000) {
-#if !defined(RELEASE)
-    abort();
-#endif
-    return;
+	  R_ASSERT_NON_RELEASE(false);
+	  return;
   }
   
   R_ASSERT_RETURN_IF_FALSE(patch->instrument==get_audio_instrument());

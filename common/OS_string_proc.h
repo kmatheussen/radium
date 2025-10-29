@@ -176,8 +176,8 @@ public:
     return *this;
   }
 
-  String& operator=(const wchar_t *string){
-    return operator=(String(string));
+  String& operator=(const wchar_t *string_){
+    return operator=(String(string_));
   }
     
   ~String(){

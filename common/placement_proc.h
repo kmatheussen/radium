@@ -234,14 +234,16 @@ static inline void Double2Placement(double f,Place *p){
   p->dividor = MAX_UINT32;
 }
 
-static inline void Float2Placement(float f,Place *p){
-  Double2Placement(f,p);
+static inline void Float2Placement(float f,Place *p)
+{
+	Double2Placement((double)f, p);
 }
 
-static inline Place *PlaceCreate2(float f){
-  Place *place=(Place*)talloc(sizeof(Place));
-  Float2Placement(f, place);
-  return place;
+static inline Place *PlaceCreate2(float f)
+{
+	Place *place=(Place*)talloc(sizeof(Place));
+	Float2Placement(f, place);
+	return place;
 }
 
 static inline Place p_FromFloat(float f){

@@ -1,5 +1,7 @@
 #pragma once
 
+#if !defined(RADIUM_IS_TESTING)
+
 #if !defined(RELEASE) && defined(__cplusplus)
 
 #include <type_traits>
@@ -8,7 +10,6 @@
 #include <string.h>
 
 #include <functional>
-
 
 // Copied from https://stackoverflow.com/questions/17946436/compile-time-warning-about-memset-on-non-plain-old-data
 template <typename T>
@@ -83,6 +84,10 @@ static inline void* safe_memmove(T1* dest, T2 *src, size_t n)
 } // namespace std.
 
 
+#if defined(__clang__)
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wold-style-cast"
+#endif
 
 namespace
 {
@@ -195,9 +200,14 @@ public:
 };
 }
 
+#if defined(__clang__)
+#  pragma clang diagnostic pop
+#endif
+
 #if defined(__clang__) // These don't compile under gcc, don't know why.
 #  define malloc(Size) AllocTypeCheckerHelperHack1<size_t>(malloc, Size)
 #  define calloc(A,B) AllocTypeCheckerHelperHack2<size_t, size_t>(calloc, A, B)
 #endif
 
 #endif // !defined(RELEASE) && defined(__cplusplus)
+#endif // !defined(TEST_MAIN)

@@ -86,8 +86,10 @@ static inline void* my_calloc(size_t size1,size_t size2) {
   
   // 2. Ensure the memory is physically available.
   //
-
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wcast-align"
   int64_t *ret64 = (int64_t*)ret;
+#pragma clang diagnostic pop
   size_t s2=size/sizeof(int64_t);
 
   for(size_t i=0;i<s2;i++)
@@ -194,7 +196,7 @@ static inline void *V_realloc(void *ptr, size_t size){
   return realloc(ptr, size);
 }
 
-#  ifdef __cplusplus
+#  if defined(__cplusplus) && !defined(RADIUM_IS_TESTING)
 
 #    define V_malloc(a) AllocTypeCheckerHelperHack1<size_t>(V_malloc, a)
 #    define V_calloc(n,size) AllocTypeCheckerHelperHack2<size_t,size_t>(V_calloc_nomemtypechecks, n, size)

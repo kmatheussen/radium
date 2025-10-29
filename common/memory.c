@@ -17,11 +17,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <stdlib.h>
 
 #if !defined(__clang__) // special workaround for gcc, don't know why.
+#  if !defined(__cplusplus)
 extern void safe_free(void *ptr);
 void safe_free(void *ptr)
 {
 	free(ptr);
 }
+#  endif
 #endif
 
 #include <stdio.h>
@@ -54,6 +56,8 @@ static void *tmemory;
 static LockType ts_gc_lock;
 
 void Threadsafe_GC_disable(void){
+  // Note: This is definitely not enough. Think we should remove these two functions.
+  //
   LOCK_LOCK(ts_gc_lock); // Is this really enough? We don't lock other GC_* calls, and I don't think bdw-gc is compiled with thread support. Can't remember seeing any psan hits though.
   GC_disable();
   LOCK_UNLOCK(ts_gc_lock);

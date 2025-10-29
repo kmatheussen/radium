@@ -118,8 +118,8 @@ exit_trap () {
     set +o xtrace # If not the program just quits when calling wait below, and the script returns false.
 
     if [ $IS_INSIDE_EXIT_TRAP -eq 1 ] ; then
-	par_print "Ouch. Bug in the error handler."
-	exit -1
+		par_print "Ouch. Bug in the error handler."
+		exit -1
     fi
 
     par_print "EXIT_TRAP: ${IS_INSIDE_EXIT_TRAP}"
@@ -147,9 +147,9 @@ exit_trap () {
 
     #sleep 1
     if wait $MY_TEE_PID ; then
-	par_print  "EXIT: wait returned true"
+		par_print  "EXIT: wait returned true"
     else
-	par_print "EXIT: wait returned false"
+		par_print "EXIT: wait returned false"
     fi
 
     [ $DO_DELETE_TMP_LOG_FILE -eq 1 ] && rm -f -- ${TMP_LOG_FILE}
@@ -237,7 +237,7 @@ PROGRAM_DIRNAME=`dirname $0`
 
 maybe_print_backtrace_line () {
     if ! caller $1 > /dev/null ; then
-	return 0
+		return 0
     fi
     
     local trace=$(caller $1)
@@ -253,8 +253,8 @@ IS_ALREADY_HANDLING_FAILURE=0
 handle_failure () {
     #set +o xtrace
     if [ $IS_ALREADY_HANDLING_FAILURE -eq 1 ] ; then
-	par_print "Ouch. Bug in the error handler."
-	exit -1;
+		par_print "Ouch. Bug in the error handler."
+		exit -1;
     fi
 
     IS_ALREADY_HANDLING_FAILURE=1

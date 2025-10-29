@@ -56,7 +56,7 @@ extern LANGSPEC char *talloc_numberstring__(int number, const char *filename, in
 extern LANGSPEC char *talloc_floatstring__(float number, const char *filename, int linenumber) __attribute__((malloc)) __attribute__((returns_nonnull));
 
 
-#if defined(RELEASE) || !defined(__cplusplus)
+#if defined(RELEASE) || !defined(__cplusplus) || defined(RADIUM_IS_TESTING)
 
 // RELEASE / C
 //////////////
@@ -110,6 +110,7 @@ extern LANGSPEC char *talloc_floatstring__(float number, const char *filename, i
 
 #  define talloc_atomic_clean(a) AllocTypeCheckerHelperHack3<int,const char*,int>(talloc_atomic_clean__, a,__FILE__,__LINE__)
 
+
 template <typename T>
 static inline void safe_tfree(T* ptr) {
 	static_assert(std::is_same<T,void>::value || std::is_trivial<T>::value, "tfree on non-trivial type");
@@ -132,7 +133,8 @@ static inline void safe_tfree(T* ptr) {
 #define R_ALLOC_ARRAY_ATOMIC_GC(Type, num_elements)		\
 	(Type*)talloc_atomic(sizeof(Type)*(num_elements))
 
-#endif // !RELEASE
+#endif // !  (defined(RELEASE) || !defined(__cplusplus) || defined(RADIUM_IS_TESTING))
+
 
 
 #define talloc_strdup(a) talloc_strdup__(a,__FILE__,__LINE__)
@@ -142,8 +144,8 @@ static inline void safe_tfree(T* ptr) {
 #define tcopy2(mem, size) memcpy((void*)talloc(size), mem, size)
 #define tcopy2_atomic(mem, size) memcpy((void*)talloc_atomic(size), mem, size)
 
-#define tcopy(mem) ({ typeof(mem) memTempo = (mem) ; tcopy2(memTempo, sizeof(typeof(*(memTempo)))); })
-#define tcopy_atomic(mem) ({ typeof(mem) memTempo = (mem) ; tcopy2_atomic(memTempo, sizeof(typeof(*(memTempo)))); })
+#define tcopy(mem) ({ R_DECLTYPE(mem) memTempo = (mem) ; tcopy2(memTempo, sizeof(R_DECLTYPE(*(memTempo)))); })
+#define tcopy_atomic(mem) ({ R_DECLTYPE(mem) memTempo = (mem) ; tcopy2_atomic(memTempo, sizeof(R_DECLTYPE(*(memTempo)))); })
 
 
 

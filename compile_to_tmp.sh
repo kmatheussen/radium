@@ -4,6 +4,7 @@
 
 set -u
 set -eEo pipefail
+#set -x
 
 mkdir -p $T
 
