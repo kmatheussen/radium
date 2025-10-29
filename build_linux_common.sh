@@ -60,7 +60,7 @@ export OPTIMIZE="-O2 $CPUOPTS $RADIUM_RELEASE_CFLAGS"
 # TODO: Benchmark what impact this has  on "make benchmark_smoothdelay" and other relevant tests,
 # both on arm and x86. But for now, omit it for everything in RELEASE mode.
 #
-# After benchmarking, some files will probably be compiled without frame pointers, while most files will have frame pointers.
+# After benchmarking, most files will probably have frame pointers, while a few maybe not.
 #
 if [[ $BUILDTYPE == RELEASE ]] ; then
 	export OPTIMIZE="$OPTIMIZE -fomit-frame-pointer"
