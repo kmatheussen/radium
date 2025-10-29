@@ -327,7 +327,7 @@ template <class T>
 struct TimeData_shared_ptr
 {
   using TType = T;
-  using ValType = typeof(T::_val);
+  using ValType = decltype(T::_val);
   
   static_assert(std::is_base_of<TimeDataDataTypeRef<ValType>, T>::value, "T must be a subclass of r::TimeDataDataTypeRef");
   

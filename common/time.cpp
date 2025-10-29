@@ -1416,7 +1416,7 @@ static dyn_t create_filledout_swings(const dyn_t global_swings, const dyn_t trac
 }
 
 
-static void update_stuff2(struct Blocks *blocks[], const int num_blocks,
+static void update_stuff2(struct Blocks *const blocks[], const int num_blocks,
                           const int default_bpm, const int default_lpb, const StaticRatio &default_signature,
                           const bool only_signature_has_changed, const bool update_beats, const bool update_swings)
 {

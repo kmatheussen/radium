@@ -153,6 +153,12 @@ static_assert (sizeof(long long int) >= 8, "sizof(long long int) must be 8 or hi
 #  define GTK_IS_USED 1
 #endif
 
+#if defined(FOR_WINDOWS)
+  #include <windows.h>
+  #include <process.h>
+  #include <comutil.h>
+#endif // for_windows
+
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -166,6 +172,13 @@ static_assert (sizeof(long long int) >= 8, "sizof(long long int) must be 8 or hi
 #  include <limits>
 #  include <atomic>
 #endif
+
+
+#if defined(_MSC_VER)
+#  define strdup(A) _strdup(A)
+#  define wcsdup(A) _wcsdup(A)
+#endif
+
 
 #if USE_QT4
 #if !defined(__clang__)
@@ -278,24 +291,29 @@ extern bool g_has_gfx_scale;
 
 #include <OS_Visual.h>
 
+#if __cplusplus
+#  define R_DECLTYPE(A) decltype(A)
+#else
+#  define R_DECLTYPE(A) typeof(A)
+#endif
 
 #if 0
 #define R_MAX(a,b) (((a)>(b))?(a):(b))
 #define R_MIN(a,b) (((a)<(b))?(a):(b))
 #define R_ABS(a) ((a)<0?(-(a)):(a))
 #else
-#define R_MAX(a,b) ({ typeof(a) aTEMP = (a); typeof(b) bTEMP = (b); aTEMP > bTEMP ? aTEMP : bTEMP; })
-#define R_MIN(a,b) ({ typeof(a) aTEMP = (a); typeof(b) bTEMP = (b); aTEMP < bTEMP ? aTEMP : bTEMP; })
-#define R_ABS(a) ({ typeof(a) aTEMP = (a) ; aTEMP<0?-aTEMP:aTEMP;})
+#define R_MAX(a,b) ({ R_DECLTYPE(a) aTEMP = (a); R_DECLTYPE(b) bTEMP = (b); aTEMP > bTEMP ? aTEMP : bTEMP; })
+#define R_MIN(a,b) ({ R_DECLTYPE(a) aTEMP = (a); R_DECLTYPE(b) bTEMP = (b); aTEMP < bTEMP ? aTEMP : bTEMP; })
+#define R_ABS(a) ({ R_DECLTYPE(a) aTEMP = (a) ; aTEMP <0 ? -aTEMP : aTEMP;})
 #endif
 
 #if defined(RELEASE)
-#  define R_BOUNDARIES(min,b,max) ({ typeof(min) minTEMP = (min); typeof(b) bTEMP = (b); typeof(max) maxTEMP = (max); bTEMP < minTEMP ? minTEMP : bTEMP > maxTEMP ? maxTEMP : bTEMP;})
+#  define R_BOUNDARIES(min,b,max) ({ R_DECLTYPE(min) minTEMP = (min); R_DECLTYPE(b) bTEMP = (b); R_DECLTYPE(max) maxTEMP = (max); bTEMP < minTEMP ? minTEMP : bTEMP > maxTEMP ? maxTEMP : bTEMP;})
 #else
-#  define R_BOUNDARIES(min,b,max) ({ typeof(min) minTEMP = (min); typeof(b) bTEMP = (b); typeof(max) maxTEMP = (max); maxTEMP < minTEMP ? (abort(),minTEMP) : bTEMP < minTEMP ? minTEMP : bTEMP > maxTEMP ? maxTEMP : bTEMP;})
+#  define R_BOUNDARIES(min,b,max) ({ R_DECLTYPE(min) minTEMP = (min); R_DECLTYPE(b) bTEMP = (b); R_DECLTYPE(max) maxTEMP = (max); maxTEMP < minTEMP ? (abort(),minTEMP) : bTEMP < minTEMP ? minTEMP : bTEMP > maxTEMP ? maxTEMP : bTEMP;})
 #endif
 
-static inline bool sane_isnormal_FLOAT(float x) {
+static inline bool sane_isnormal_FLOAT(const float x) {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
 #ifdef __cplusplus
@@ -306,7 +324,7 @@ static inline bool sane_isnormal_FLOAT(float x) {
 #pragma GCC diagnostic pop
 }
 
-static inline bool sane_isnormal_DOUBLE(double x) {
+static inline bool sane_isnormal_DOUBLE(const double x) {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
 #ifdef __cplusplus
@@ -317,13 +335,29 @@ static inline bool sane_isnormal_DOUBLE(double x) {
 #pragma GCC diagnostic pop
 }
 
-#define sane_isnormal(x) (sizeof (x) == sizeof (float) ? sane_isnormal_FLOAT(x) : sane_isnormal_DOUBLE(x))
+#ifdef __cplusplus
+template<typename T>
+static inline bool sane_isnormal(const T x)
+{
+	if constexpr(std::is_same_v<T,float>)
+	{
+		return sane_isnormal_FLOAT(x);
+	}
+	else
+	{
+		static_assert(std::is_same_v<T,double>, "wrong type");
+		return sane_isnormal_DOUBLE(x);
+	}
+}
+#else
+#  define sane_isnormal(x) (sizeof (x) == sizeof (float) ? sane_isnormal_FLOAT(x) : sane_isnormal_DOUBLE(x))
+#endif
 
 #ifdef __cplusplus
 static inline bool equal_floats(float x, float y) {
 #if !defined(RELEASE)
-  if(!sane_isnormal(x) || !sane_isnormal(y)){
-    fprintf(stderr, "equal_floats(): Calling abort(). x: %f. y: %f. sane x: %d. sane y: %d\n", x, y, sane_isnormal(x), sane_isnormal(y));
+  if(!sane_isnormal_FLOAT(x) || !sane_isnormal_FLOAT(y)){
+	  fprintf(stderr, "equal_floats(): Calling abort(). x: %f. y: %f. sane x: %d. sane y: %d\n", static_cast<double>(x), static_cast<double>(y), sane_isnormal_FLOAT(x), sane_isnormal_FLOAT(y));
     abort();
   }
 #endif
@@ -332,11 +366,14 @@ static inline bool equal_floats(float x, float y) {
   if(x==y)
     return true;
 #pragma GCC diagnostic pop
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wgnu-statement-expression-from-macro-expansion"
   return R_ABS(x - y) < std::numeric_limits<float>::epsilon();
+#pragma clang pop
 }
 static inline bool equal_doubles(double x, double y) {
 #if !defined(RELEASE)
-  if(!sane_isnormal(x) || !sane_isnormal(y))
+  if(!sane_isnormal_DOUBLE(x) || !sane_isnormal_DOUBLE(y))
     abort();
 #endif
 #pragma GCC diagnostic push
@@ -350,7 +387,7 @@ static inline bool equal_doubles(double x, double y) {
 extern float g_float_epsilon;
 static inline bool equal_floats(float x, float y) {
 #if !defined(RELEASE)
-  if(!sane_isnormal(x) || !sane_isnormal(y))
+  if(!sane_isnormal_FLOAT(x) || !sane_isnormal_FLOAT(y))
     abort();
 #endif
 #pragma GCC diagnostic push
@@ -363,7 +400,7 @@ static inline bool equal_floats(float x, float y) {
 extern double g_double_epsilon;
 static inline bool equal_doubles(double x, double y) {
 #if !defined(RELEASE)
-  if(!sane_isnormal(x) || !sane_isnormal(y))
+  if(!sane_isnormal_DOUBLE(x) || !sane_isnormal_DOUBLE(y))
     abort();
 #endif
 #pragma GCC diagnostic push
@@ -538,11 +575,11 @@ static inline int64_t scale_int64(const int64_t x, const int64_t x1, const int64
 #endif
 	
 	if (diff==0)
-	{
-#ifdef __cplusplus
-		[[unlikely]] // this is never supposed to happen, but to avoid integer divide-by-zero, we sacrifice some cycles here.
+#if defined(__cplusplus) && (defined(__clang__) || __GNUC__ >= 10)
+          [[unlikely]]
 #endif
-		return (y1+y2)/2;
+	{
+		return (y1+y2)/2; // this is never supposed to happen, but to avoid integer divide-by-zero, we sacrifice some cycles here.
 	}
 	else
 	{
@@ -572,30 +609,31 @@ static inline double scale_double(const double x, const double x1, const double 
 }
 
 static inline float scale(const float x, const float x1, const float x2, const float y1, const float y2){
-  float diff = x2-x1;
+	float diff = x2-x1;
   
 #if !defined(RELEASE)
-  if(!sane_isnormal(x) || !sane_isnormal(12) || !sane_isnormal(x2) || !sane_isnormal(y1) || !sane_isnormal(y2) || !sane_isnormal(diff)){
-
-    fprintf(stderr, "scale(): Calling abort(). x/x1/x2/y1/y2: %f %f %f %f %f ---- %d %d %d %d %d %d\n", x,x1,x2,y1,y2,
-            sane_isnormal(x), sane_isnormal(12), sane_isnormal(x2), sane_isnormal(y1), sane_isnormal(y2), sane_isnormal(diff));
-
-    if (isfinite(x) && isfinite(x1) && isfinite(x2) && isfinite(y1) && isfinite(y2) && isfinite(diff))
-      fprintf(stderr, "   ....Aborting call to abort. None of the numbers where inf or nan.\n");
-    else
-      abort();
-  }
+	if(!sane_isnormal(x) || !sane_isnormal(x1) || !sane_isnormal(x2) || !sane_isnormal(y1) || !sane_isnormal(y2) || !sane_isnormal(diff))
+	{
+		
+		fprintf(stderr, "scale(): Calling abort(). x/x1/x2/y1/y2: %f %f %f %f %f ---- %d %d %d %d %d %d\n", (double)x, (double)x1, (double)x2, (double)y1, (double)y2,
+				sane_isnormal(x), sane_isnormal(x1), sane_isnormal(x2), sane_isnormal(y1), sane_isnormal(y2), sane_isnormal(diff));
+		
+		if (isfinite(x) && isfinite(x1) && isfinite(x2) && isfinite(y1) && isfinite(y2) && isfinite(diff))
+			fprintf(stderr, "   ....Aborting call to abort. None of the numbers where inf or nan.\n");
+		else
+			abort();
+	}
   
-  R_ASSERT(!equal_floats(diff,0.0));
-  
-  if (equal_floats(diff, 0.0))
-    return (y1+y2)/2.0f;
-  else
+	R_ASSERT(!equal_floats(diff,0.0));
+	
+	if (equal_floats(diff, 0.0))
+		return (y1+y2)/2.0f;
+	else
 #endif
-    return y1 + ( ((x-x1)*(y2-y1))
-                  /
-                  diff
-                  );
+		return y1 + ( ((x-x1)*(y2-y1))
+					  /
+					  diff
+			);
 }
 
 // When exp_value < 1, then scale_exp(0.5,0,1,0,1,..) < 0.5
@@ -1784,8 +1822,11 @@ private:
 #if defined(INCLUDE_SNDFILE_OPEN_FUNCTIONS)
 
 #if defined(FOR_WINDOWS)
-#include <windows.h>
-#define ENABLE_SNDFILE_WINDOWS_PROTOTYPES 1
+#  if !defined(NOMINMAX)
+#    define NOMINMAX // Prevent min and max macros from being defined.
+#  endif
+#  include <Windows.h>
+#  define ENABLE_SNDFILE_WINDOWS_PROTOTYPES 1
 #endif
 
 #include <sndfile.h>
@@ -1823,11 +1864,14 @@ static inline const symbol_t *get_symbol(const char *name){
   return (const symbol_t*)symbol;
 }
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wcast-qual"
 static inline void set_symbol_name(const symbol_t *symbol, const char *new_name){
   R_ASSERT_RETURN_IF_FALSE(new_name != NULL);
   free((void*)symbol->name);
   ((symbol_t*)symbol)->name = strdup(new_name);
 }
+#pragma clang diagnostic pop
                                    
 
 /*********************************************************************
@@ -1913,9 +1957,12 @@ struct Velocities{
 #define NextVelocity(a) ((struct Velocities *)((a)->l.next))
 */
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wimplicit-float-conversion"
 static inline float VELOCITY_get(int velocity){
   return scale_double(velocity,0,MAX_VELOCITY,0,1);
 }
+#pragma clang diagnostic pop
 
 #ifdef __cplusplus
 namespace r{
@@ -2017,7 +2064,7 @@ namespace r{
     {}    
   };
 
-  struct VelocitySeqBlock : public RT_TimeData_Player_Cache<typeof(Velocity::_val)> {
+  struct VelocitySeqBlock : public RT_TimeData_Player_Cache<decltype(Velocity::_val)> {
   };
   
   using VelocityTimeData = TimeData<Velocity, VelocitySeqBlock>;
@@ -2058,7 +2105,7 @@ struct Pitch : NodeId, TimeDataDataType<float> {
   {}
 };
 
-struct PitchSeqBlock : RT_TimeData_Player_Cache<typeof(Pitch::_val)> {
+struct PitchSeqBlock : RT_TimeData_Player_Cache<decltype(Pitch::_val)> {
   bool _enabled = true; // Can be false if pitch._chance < MAX_PATCHVOICE_CHANCE.
 };
 
@@ -3071,19 +3118,28 @@ struct Tempos{
 #define NextConstTempo(a) (const struct Tempos *)((a)->l.next)
 #define NextConstBPM(a) NextConstTempo(a)
 
-struct WTempos{
-	int tempo;
-	int type;							/* 0=normal, 1=below positioned, 2=mul. */
-        int logtype;
-};
-/* Types */
-#define TEMPO_NORMAL 0
-#define TEMPO_BELOW 1
-#define TEMPO_MUL 2
-
-// Todo: Rename all Tempos to BPMs. First step:
 #define BPMs Tempos
-#define WBPMs WTempos
+
+
+#if __cplusplus
+
+/* Types */
+enum class TempoType
+{
+  TEMPO_NORMAL = 0,
+  TEMPO_BELOW,
+  TEMPO_MUL,
+};
+
+struct WBPMs
+{
+	int realline;
+	int tempo;
+	TempoType type;
+	int logtype;
+};
+#endif // __cplusplus
+
 
 
 /*********************************************************************
@@ -3664,6 +3720,7 @@ static inline const char *sat_to_string(enum Seqblock_Automation_Type sat){
       return "Stretch";
     case SAT_SPEED:
       return "Speed";
+	case NUM_SATS:
     default:
       R_ASSERT(false);
       return "Unknown";
@@ -3715,7 +3772,7 @@ namespace radium{
 */
 #endif
 
-#if SEQBLOCK_USING_VECTOR
+#if defined(SEQBLOCK_USING_VECTOR) && SEQBLOCK_USING_VECTOR
 #include "Vector.hpp"
 namespace radium{
   using RT_NoteVector = radium::Vector<struct Notes*, radium::AllocatorType::RT>;
@@ -3781,7 +3838,7 @@ struct SeqBlock{
   int cache_num;
 #endif
 
-#if SEQBLOCK_USING_VECTOR
+#if defined(SEQBLOCK_USING_VECTOR) && SEQBLOCK_USING_VECTOR
   radium::Vector< radium::RT_NoteVector*, radium::AllocatorType::RT > *playing_notes;
 #else
   void *playing_notes;
@@ -3813,7 +3870,7 @@ static inline int SEQBLOCK_num_automations(const struct SeqBlock *seqblock){
 
 static inline double get_note_reltempo(note_t note){
   if (note.seqblock==NULL)
-    return 1.0f;
+    return 1.0;
   else
     return ATOMIC_DOUBLE_GET(note.seqblock->block->reltempo);
 }
@@ -3866,6 +3923,7 @@ static inline const char *get_string_from_seqtrack_height_type(enum SeqtrackHeig
   case SHT_2ROWS: return "2 rows";
   case SHT_3ROWS: return "3 rows";
   case SHT_UNLIMITED: return "unlimited";
+  case NUM_SHTs:
   default:{
     R_ASSERT(false);
     return "1 row";
@@ -3944,7 +4002,7 @@ static inline double get_seqtrack_reltempo(struct SeqTrack *seqtrack){
   
   struct SeqBlock *seqblock = seqtrack->curr_seqblock;
   if (seqblock==NULL)
-    return 1.0f; // <--- NOTE: Changed this value from 0.0f to 1.0f. Seems wrong that it should be 0.0f.
+    return 1.0; // <--- NOTE: Changed this value from 0.0f to 1.0f. Seems wrong that it should be 0.0f.
 
   if (seqblock->block==NULL)
     return 1.0;
@@ -4097,7 +4155,7 @@ static inline int get_system_fontheight(void){
 
 // Both width and height of automation nodes are get_min_node_size()*2
 static inline float get_min_node_size(void) {
-  return root->song->tracker_windows->fontheight / 1.5;
+	return (float)(root->song->tracker_windows->fontheight / 1.5);
 }
 
 
@@ -4210,7 +4268,7 @@ static inline note_t create_note_t_plain(const struct SeqBlock *seqblock,
   //R_ASSERT(pan <= 1);
 #endif
   
-  midi_channel = R_BOUNDARIES(0,midi_channel, 15);
+  midi_channel = R_BOUNDARIES((char)0, midi_channel, (char)15);
   
   if(note_id<=-1)
     note_id = NotenumId(pitch);

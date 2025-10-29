@@ -10,7 +10,6 @@
 #include <functional>
 #endif
 
-
 #define ATOMIC_NAME(name) \
   name##_atomic
 
