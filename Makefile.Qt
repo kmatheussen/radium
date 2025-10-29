@@ -2742,7 +2742,7 @@ $(T)crashreporter_windows.o: crashreporter/crashreporter_windows.cpp
 #	$(CC_STATIC2) crashreporter/crashreporter_windows.c $(OPT) $(O0) -DPACKAGE  $(CRASHREPORTER_WINDOWS_CFLAGS)
 #	$(CC2) crashreporter/crashreporter_windows.c $(OPT) -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/bfd -DPACKAGE -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/include $(O0)
 
-VISUALIZATION_OPTIONS=$(WNO_SUGGEST_OVERRIDE) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC) $(NO_ANALYZER)  $(WNO_DEPRECATED_COPY_CLANG) $(WNO_DEPRECATED_DECLARATIONS) $(WNO_MISLEADING_INDENTATION_CLANG) $(WNO_CLASS_MEMACCESS) $(WNO_DEPRECATED_ENUM_ENUM_CONVERSION)
+VISUALIZATION_OPTIONS=$(WNO_SUGGEST_OVERRIDE) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC) $(NO_ANALYZER)  $(WNO_DEPRECATED_COPY_CLANG) $(WNO_DEPRECATED_DECLARATIONS) $(WNO_MISLEADING_INDENTATION_CLANG) $(WNO_CLASS_MEMACCESS) $(WNO_DEPRECATED_ENUM_ENUM_CONVERSION) -Wno-unknown-pragmas
 
 $(T)GfxElements.o: OpenGL/GfxElements.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp OpenGL/FreeType.hpp common/Mutex.hpp OpenGL/T2.hpp common/spinlock.h
 	$(CCC2) OpenGL/GfxElements.cpp $(QTOPT) $(FREETYPE_CFLAGS) $(BOOST_INCLUDE) $(VL_CFLAGS) $(VISUALIZATION_OPTIONS)

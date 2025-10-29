@@ -1,8 +1,4 @@
 
-#include <vlCore/Image.hpp>
-#include <vlCore/IMutex.hpp>
-#include <vlGraphics/ImagePBO.hpp>
-
 #include <QtGlobal>
 #include <QFont>
 #include <QFontMetrics>
@@ -12,6 +8,10 @@
 #include <QSet>
 #include <QCoreApplication>
 #include <QDir>
+
+#include <vlCore/Image.hpp>
+#include <vlCore/IMutex.hpp>
+#include <vlGraphics/ImagePBO.hpp>
 
 #include "../common/nsmtracker.h"
 #include "../common/Mutex.hpp"
