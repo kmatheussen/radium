@@ -80,7 +80,7 @@ extern const char *NotesTexts3[131];
 
 
 // Allocate since static variables are not good for the GC.
-static auto *g_step_recording_midi_msg_queue = new boost::lockfree::queue<uint32_t, boost::lockfree::capacity<128> > ;
+static auto *g_step_recording_midi_msg_queue = new boost::lockfree::queue<uint32_t, boost::lockfree::capacity<512> > ;
 
 
 static radium::Mutex g_midi_learns_mutex;
@@ -1221,22 +1221,44 @@ void MIDI_HandleInputMessage(void)
 {
 	R_ASSERT_NON_RELEASE(ATOMIC_GET(g_has_inited));
 
-	uint32_t msg;
+	int num_messages = 0;
+	const int max_num_messages = 128;
 	
-	while(g_step_recording_midi_msg_queue->pop(msg)==true)
-	{
-		if(ATOMIC_GET(root->editonoff))
+	std::vector<uint32_t> messages;
+
+	auto pull_more_data = [&num_messages, &messages](void)
 		{
-			float velocity = -1.0f;
-			
-			if (g_record_velocity)
-				velocity = (float)MIDI_msg_byte3(msg) / 127.0;
-			
-			//printf("velocity: %f, byte3: %d, shift: %d\n",velocity,MIDI_msg_byte3(msg),shiftPressed());
-			InsertNoteCurrPos(root->song->tracker_windows,MIDI_msg_byte2(msg), shiftPressed(), velocity);
-			
-			root->song->tracker_windows->must_redraw = true;
-		}
+			uint32_t msg;
+	
+			while(num_messages < max_num_messages && g_step_recording_midi_msg_queue->pop(msg)==true)
+			{
+				messages.push_back(msg);
+				num_messages++;
+			}
+		};
+
+	pull_more_data();
+	
+	while(!messages.empty())
+	{
+		std::vector<uint32_t> messages2 = std::move(messages);
+		messages.clear();
+
+		for(uint32_t msg : messages2)
+			if(ATOMIC_GET(root->editonoff))
+			{
+				float velocity = -1.0f;
+				
+				if (g_record_velocity)
+					velocity = (float)MIDI_msg_byte3(msg) / 127.0;
+				
+				//printf("velocity: %f, byte3: %d, shift: %d\n",velocity,MIDI_msg_byte3(msg),shiftPressed());
+				InsertNoteCurrPos(root->song->tracker_windows,MIDI_msg_byte2(msg), shiftPressed(), velocity);
+
+				pull_more_data();
+				
+				root->song->tracker_windows->must_redraw = true;
+			}
 	}
 }
 
