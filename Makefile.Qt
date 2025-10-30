@@ -2,7 +2,7 @@
 # Users and packagers: Edit build_*.sh instead.
 #
 
-RADIUM_VERSION = 7.5.71
+RADIUM_VERSION = 7.5.76
 
 
 SHELL := /usr/bin/env bash
@@ -401,8 +401,8 @@ endif
 
 FNO_OPTIMIZE_SIBLING_CALLS ?= -fno-optimize-sibling-calls
 
+UNDEFINED_SANITIZE_OPTS=-DRADIUM_USES_UBSAN -fsanitize=undefined -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow -fsanitize=bounds -fsanitize=object-size -fsanitize=vptr -fno-sanitize-recover=undefined -fsanitize=alignment
 
-UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow -fno-sanitize-recover=undefined -DRADIUM_USES_UBSAN  # ,integer ,integer
 #UNDEFINED_SANITIZE_OPTS=
 
 ifneq (,$(findstring clang,$(CC)))
