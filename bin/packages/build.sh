@@ -15,9 +15,14 @@ unset CPPFLAGS
 unset LDFLAGS
 unset CXXFLAGS
 
+RELEASE_BUILD=true
+#RELEASE_BUILD=false
 
-export COMMON_CFLAGS="-mtune=generic -fPIC -fno-strict-aliasing -Wno-misleading-indentation "
-    
+if $RELEASE_BUILD ; then
+	export COMMON_CFLAGS="-mtune=generic -fPIC -fno-strict-aliasing -Wno-misleading-indentation "
+else
+	export COMMON_CFLAGS="-ggdb3 -fno-omit-frame-pointer -fPIC -fno-strict-aliasing -Wno-misleading-indentation "
+fi
 
 if uname -s |grep Darwin ; then
     if [[ -z "${MACOSX_DEPLOYMENT_TARGET}" ]]; then

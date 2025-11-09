@@ -21,6 +21,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "vector_proc.h"
 
+#if defined(RADIUM_OMIT_FRAME_POINTERS)
+#  error "-fomit-frame-pointers in a file that don't need it"
+#endif
+
 
 vector_t g_global_roots = {0};
 
