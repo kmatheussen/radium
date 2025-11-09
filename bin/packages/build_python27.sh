@@ -3,6 +3,22 @@
 set -eEu
 #set -x
 
+is_defined()
+{
+    [ -v $1 ]
+}
+
+if ! is_defined MY_CC ; then
+	MY_CC=clang
+fi
+
+if ! is_defined MY_CPP ; then
+	MY_CPP=clang++
+fi
+
+echo "CC: $MY_CC"
+echo "CPP: $MY_CPP"
+
 build_python27 () {
     local macos_patchfiles=$(cat <<-END
     patch-Makefile.pre.in.diff \
@@ -33,36 +49,36 @@ END
     cd Python-$version
 
     if uname |grep Darwin > /dev/null ; then
-	for file in $macos_patchfiles ; do
-	    echo "FILE: $file"
-	    if [ ! -f ../python27_macport_patches/$file ] ; then
-		echo "File not found: -" ../python27_macport_patches/$file + "-"
-		exit -1
-	    fi
-	    patch -p0 < ../python27_macport_patches/$file
-	done
-
-	patch -p1 <../python27_disable_macos.patch
-
-    else
+		for file in $macos_patchfiles ; do
+			echo "FILE: $file"
+			if [ ! -f ../python27_macport_patches/$file ] ; then
+				echo "File not found: -" ../python27_macport_patches/$file + "-"
+				exit -1
+			fi
+			patch -p0 < ../python27_macport_patches/$file
+		done
+		
+ 		patch -p1 <../python27_disable_macos.patch
 	
-	patch -p0 <../python27_disable_linux.patch
+    else
+		
+		patch -p0 <../python27_disable_linux.patch
 	
     fi
     
-    CC=clang
-    CXX=clang++
+    CC=$MY_CC
+    CXX=$MY_CPP
     CFLAGS=-Wno-implicit-function-declaration
     CPPCFLAGS=-Wno-implicit-function-declaration
     
-    ./configure CC=clang CXX=clang++ CFLAGS=-Wno-implicit-function-declaration CPPCFLAGS=-Wno-implicit-function-declaration --prefix=$(realpath `pwd`/../python27_install) --without-gcc --without-threads --disable-ipv6 --without-system-ffi --disable-toolbox-glue --disable-framework --enable-shared
+    ./configure CC=$MY_CC CXX=$MY_CPP CFLAGS=-Wno-implicit-function-declaration CPPCFLAGS=-Wno-implicit-function-declaration --prefix=$(realpath `pwd`/../python27_install) --without-gcc --without-threads --disable-ipv6 --without-system-ffi --disable-toolbox-glue --disable-framework --enable-shared
     # 
     # 
     # 
     #
     # --enable-optimizations
 
-    CC=clang CXX=clang++ CFLAGS=-Wno-implicit-function-declaration CPPCFLAGS=-Wno-implicit-function-declaration make -j`nproc`
+    CC=$MY_CC CXX=$MY_CPP CFLAGS=-Wno-implicit-function-declaration CPPCFLAGS=-Wno-implicit-function-declaration make -j`nproc`
 
     make install
     export LD_LIBRARY_PATH="$(realpath `pwd`/../python27_install/lib)"${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}

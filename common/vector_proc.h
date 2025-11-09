@@ -271,18 +271,21 @@ static inline void VECTOR_sort2(vector_t *v, vector_sort_callback_t comp){
 #define END_ALL_SEQTRACKS_FOR_EACH }
 
 
-#if defined(__cplusplus) && defined(QVECTOR_H)
+#if defined(__cplusplus)
 
+#  if defined(QVECTOR_H)
 template<typename T>
-static inline QVector<T> VECTOR_get_qvector(const vector_t *v){
+static inline QVector<T> VECTOR_get_qvector(const vector_t *v)
+{
   QVector<T> ret;
   VECTOR_FOR_EACH(T, el, v){
     ret.push_back(el);
   }END_VECTOR_FOR_EACH;
   return ret;
 }
+#  endif // defined(QVECTOR_H)
 
-#endif
+#endif // __cplusplus
 
 
 

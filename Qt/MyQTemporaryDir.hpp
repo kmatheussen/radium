@@ -4,6 +4,9 @@
 #include <QTemporaryDir> // Spends too much time deleting files, and gives error messages as well.
 
 #else
+
+#include <QDir>
+
 namespace{
 
   static inline bool try_temp_path(QString &path, QString &error_string){

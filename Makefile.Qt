@@ -254,7 +254,10 @@ endif
 WNO_CLASS_MEMACCESS=
 ifeq (,$(findstring clang,$(CC)))
 	WNO_CLASS_MEMACCESS=-Wno-class-memaccess
+else
+	QT_CFLAGS += "-Wno-ignored-attributes"
 endif
+
 
 
 GTK_CFLAGS ?= `$(PKG) --cflags gtk+-2.0`
@@ -428,6 +431,8 @@ OS_DEBUG_BUILD_OPTS ?=
 #-flto -fvisibility=hidden -fsanitize=cfi -fno-sanitize-trap=all # -fanalyzer 
 DEBUG_BUILD_OPTS = $(WERROR) -Wfloat-equal -Wall $(GGDB_OPT) $(FNO_OPTIMIZE_SIBLING_CALLS) $(UNDEFINED_SANITIZE_OPTS) $(THREAD_SANITIZE_OPTS) $(ADDRESS_SANITIZE_OPTS) $(MEMORY_SANITIZE_OPTS) $(WNO_NAN_INFINITY_DISABLED) $(OS_DEBUG_BUILD_OPTS)
 
+# Slow. Also: asan/ubsan hopefully covers this stuff.
+# -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG -D_GLIBCXX_DEBUG 
 
 NOSHORTEN64TO32FLAG=
 ifneq (,$(findstring clang,$(CC)))
@@ -479,7 +484,7 @@ FLAGOPTS = $(DEFINES) -DGUIISQT -DFULL_VERSION=$(FULL_VERSION) -DIS_LITTLE_ENDIA
 
 RADIUM_VST2SDK_PATH ?= ${HOME}/SDKs/vstsdk2.4
 
-COMMONOPT = -D__STDC_FORMAT_MACROS=1 -c `cat buildtype.opt` -I$(GCDIR)/include -I$(P) $(PYOPTS) `cat flagopts.opt` $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wno-unknown-pragmas -fno-strict-aliasing -Wmissing-field-initializers -Wnull-dereference -Wwrite-strings $(WNO_VLA_CXX_EXTENSION) -DTHREADED_OPENGL=$(RADIUM_THREADED_OPENGL)  $(IS_LINUX_BINARY) $(IS_MACOS_BINARY) -I $(RADIUM_VST2SDK_PATH)
+COMMONOPT = -D__STDC_FORMAT_MACROS=1 -c `cat buildtype.opt` -I$(GCDIR)/include -I$(P) $(PYOPTS) `cat flagopts.opt` $(MIDIINC) $(OS_OPTS) $(VST_OPTS) -Wextra -Wno-unused-parameter -Wno-missing-field-initializers -Wno-unknown-pragmas -fno-strict-aliasing -Wmissing-field-initializers -Wnull-dereference -Wwrite-strings $(WNO_VLA_CXX_EXTENSION) -DTHREADED_OPENGL=$(RADIUM_THREADED_OPENGL)  $(IS_LINUX_BINARY) $(IS_MACOS_BINARY) -I $(RADIUM_VST2SDK_PATH) 
 #-fdelete-null-pointer-checks 
 # $(WERROR)
 
@@ -487,7 +492,7 @@ COMMONOPT = -D__STDC_FORMAT_MACROS=1 -c `cat buildtype.opt` -I$(GCDIR)/include -
 #-Wsuggest-final-types -Wsuggest-final-methods
 
 ifneq '' '$(findstring clang,$(CC))'
-        COMMONOPT += -Wno-deprecated-register -Wlogical-op-parentheses # -Wunused-member-function (isn't there a warning to warn about unused variables only, not methods?)
+	COMMONOPT += -Wno-deprecated-register -Wlogical-op-parentheses # -Wunused-member-function (isn't there a warning to warn about unused variables only, not methods?)
 else
 	COMMONOPT += -Wduplicated-cond -Wduplicated-branches -Wlogical-op -Wrestrict -fmax-errors=5 
 endif
@@ -548,13 +553,21 @@ QT_SUB:=$(shell echo $(QT_VERSION) | cut -d'.' -f3)
 
 WNO_SUGGEST_OVERRIDE=
 
+ifneq ($(BUILDTYPE), DEBUG)
+ifeq (,$(findstring clang,$(CC)))	
+	CPPOPT += -fdiagnostics-all-candidates
+endif
+endif
+
 CPPOPT += $(STD_CPP) -DUSE_STD_COUNTING_SEMAPHORE=$(USE_STD_COUNTING_SEMAPHORE)
 
-ifeq ($(BUILDTYPE), DEBUG)
+ifneq ($(BUILDTYPE), DEBUG)
 	CPPOPT += -Woverloaded-virtual
 endif
 
-CPPOPT += -Wno-register
+ifneq (,$(findstring clang,$(CC)))
+	CPPOPT += -Wno-register
+endif	
 
 WNO_DUPLICATED_BRANCHES=
 ifeq (,$(findstring clang,$(CC)))
@@ -820,7 +833,7 @@ profile:
 #	operf $(RADIUM_BIN) && opreport -ca |more
 
 check: test
-test: test_vector test_placement test_notes test_path_resolver test_seqautomation test_audiobuffer test_smoothdelay test_threading test_samplereader test_ratio test_refcounttimedata test_rt_memory_allocator test_radium_vector test_timedata
+test: test_vector test_placement test_notes test_path_resolver test_seqautomation test_audiobuffer test_smoothdelay test_threading test_samplereader test_ratio test_refcounttimedata test_rt_memory_allocator test_radium_vector test_timedata test_bdw_gc
 	@echo
 	@echo " == All tests succeeded, apparently =="
 
@@ -959,6 +972,12 @@ test_smoothdelay:
 	LSAN_OPTIONS=detect_leaks=0 ./test_smoothdelay
 	@echo "=== success: test_smoothdelay ==="
 	@rm test_smoothdelay
+
+test_bdw_gc:
+	g++ -g -Wall test/bdw_gc_test.cpp -Ibin/packages/gc-8.2.10/include -fsanitize=address bin/packages/gc-8.2.10/.libs/libgc.a -o bdw_gc_test
+#	lldb ./bdw_gc_test
+	./bdw_gc_test
+	rm bdw_gc_test
 
 #SMOOTHDELAY_OPTS=-Rpass-analysis=loop-vectorize -Rpass=loop-vectorize -Rpass-missed=loop-vectorize
 benchmark_smoothdelay:
@@ -1243,7 +1262,7 @@ $(T)range.o:  $(BUILD_DEPENDENCIES) $(CD)range.c
 	$(CC2) $(CD)range.c $(OPT)
 
 $(T)sequencer.o:  $(BUILD_DEPENDENCIES) $(CD)sequencer.cpp audio/Envelope.hpp
-	$(CCC2) $(CD)sequencer.cpp $(QTOPT)
+	$(CCC2) $(CD)sequencer.cpp $(QTOPT) # -fomit-frame-pointer
 
 $(T)seqtrack_automation.o:  $(BUILD_DEPENDENCIES) $(CD)seqtrack_automation.cpp $(CD)SeqAutomation.hpp $(CD)atomic.h common/Vector.hpp
 	$(CCC2) $(CD)seqtrack_automation.cpp $(QTOPT) -Wno-null-dereference
@@ -2104,7 +2123,7 @@ $(T)api_midi.o:  $(BUILD_DEPENDENCIES)  $(API)api_midi.cpp
 
 $(T)api_gui.o:  $(BUILD_DEPENDENCIES)  $(API)api_gui.cpp  Qt/ScrollArea.hpp Qt/helpers.h Qt/lzqlineedit.h  Qt/Rational.h Qt/Qt_MyQCheckBox.h embedded_scheme/s7extra_proc.h Qt/Qt_MyQScrollBar.hpp Qt/FileRequester.hpp Qt/Timer.hpp Qt/HashVector.hpp Qt/Qt_MyQCheckBox.h Qt/FocusSniffers.h Qt/Editor.hpp
 	$(MOC) $(USE_QWEBENGINE_CFLAGS) $(API)api_gui.cpp > $(API)mapi_gui.cpp
-	$(CCC2)  $(API)api_gui.cpp $(QTOPT) $(QT_UI_CFLAGS) $(QT_SVG_CFLAGS) $(FPIC) -Wno-null-dereference $(NO_ANALYZER) $(WNO_DEPRECATED_DECLARATIONS)
+	$(CCC2) $(API)api_gui.cpp $(QTOPT) $(QT_UI_CFLAGS) $(QT_SVG_CFLAGS) $(FPIC) -Wno-null-dereference $(NO_ANALYZER) $(WNO_DEPRECATED_DECLARATIONS)
 
 
 NOUNUSEDBUTSETVARIABLEWARNING=
@@ -2316,7 +2335,7 @@ endif
 
 $(T)Faust_plugins.o: audio/Faust_plugins.cpp audio/Faust_factory_factory.cpp $(FAUST_DEPENDENCIES) audio/Faust_plugins_template.cpp audio/Faust_plugins_template1.cpp audio/Faust_plugins_template2.cpp audio/mfaustqt2.cpp
 	$(MOC) audio/Faust_factory_factory.cpp >audio/mFaust_factory_factory.cpp
-	$(CCC2) $(FAUST_OPTS) $(LLVM_OPTS) -DDSP_NAME="\"FaustDev\"" audio/Faust_plugins.cpp $(NOSHORTEN64TO32FLAG) $(BOOST_INCLUDE) # Qt 5.5 headers (which we use for qtwebkit) needs -Wno-shorten-64-to-32 flag.
+	$(CCC2) $(FAUST_OPTS) $(LLVM_OPTS) $(QT_CFLAGS) -DDSP_NAME="\"FaustDev\"" audio/Faust_plugins.cpp $(NOSHORTEN64TO32FLAG) $(BOOST_INCLUDE) # Qt 5.5 headers (which we use for qtwebkit) needs -Wno-shorten-64-to-32 flag.
 
 audio/mfaustqt2.cpp: $(FAUSTDIR)/architecture/faust/gui/QTUI.h #bin/packages/faust2/architecture/faust/gui/faustqt.h
 	cd audio && $(MOC) $(FAUSTDIR)/architecture/faust/gui/QTUI.h >mfaustqt2.cpp

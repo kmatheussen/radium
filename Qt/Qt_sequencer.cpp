@@ -2274,10 +2274,10 @@ public:
         : i==1 ? Seqblock_Type::GFX_GFX
         : Seqblock_Type::RECORDING;
 
-      QVector<struct SeqBlock*> seqblocks
-        = type==Seqblock_Type::REGULAR ? SEQTRACK_get_seqblocks_in_z_order(seqtrack, false)
-        : type==Seqblock_Type::GFX_GFX ? SEQTRACK_get_seqblocks_in_z_order(seqtrack, true)
-        : VECTOR_get_qvector<struct SeqBlock*>(&seqtrack->recording_seqblocks);
+      auto seqblocks
+		  = type==Seqblock_Type::REGULAR ? SEQTRACK_get_seqblocks_in_z_order(seqtrack, false)
+		  : type==Seqblock_Type::GFX_GFX ? SEQTRACK_get_seqblocks_in_z_order(seqtrack, true)
+		  : radium::Vector_GC<struct SeqBlock*>(&seqtrack->recording_seqblocks);
 
       //printf("  seqblocks size: %d. (%d %d)\n", seqblocks.size(), _seqtrack->seqblocks.num_elements, _seqtrack->gfx_seqblocks==NULL ? -1 : _seqtrack->gfx_seqblocks->num_elements);
       
