@@ -40,7 +40,7 @@ export CPLUS_INCLUDE_PATH := $(VSTSDK)/VST2_SDK:$(VSTSDK)/VST3_SDK
 #----------------END USER SETTINGS---------------------------
 
 # The result value of findstring is so confusing, always, so, minimize usage of it.
-ifneq (,$(findstring clang,$(CC)))
+ifneq (,$(findstring clang,$(CCC)))
 	USING_CLANG = 1
 else
 	USING_GCC = 1

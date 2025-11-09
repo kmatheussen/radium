@@ -707,8 +707,8 @@ static void smoothdelaydelay_test2(int delay_size, int buffer_size){
 
   assert(delay.RT_get_delay_size()==delay_size);
 
-  int input[buffer_size+delay_size];
-  int output[buffer_size];
+  int *input = (int*)alloca(sizeof(int)*(buffer_size+delay_size));
+  int *output = (int*)alloca(sizeof(int)*buffer_size);
 
   for(int i=0;i<buffer_size;i++){
     input[i] = i+1;
@@ -779,6 +779,9 @@ static void SMOOTHDELAY_test(void){
   double gendata_time = 0;
   double time = TIME_get_ms();
 
+  float *input = (float*)alloca(sizeof(float)*2048);
+  float *output = (float*)alloca(sizeof(float)*2048);
+
   for(int testnum0 = 0 ; testnum0 < 500 ; testnum0++){
 #if !BENCHMARK_SMOOTHDELAY
     printf("%d ", testnum0);fflush(stdout);
@@ -790,8 +793,8 @@ static void SMOOTHDELAY_test(void){
         num_frames *= 2;
       //printf("num_frames: %d\n", num_frames);
 
-      float input[num_frames]; // hmm.....
-      float output[num_frames];
+	  //float input[num_frames]; // hmm.....
+	  //float output[num_frames];
 
       double time5 = TIME_get_ms();
       for(int i=0;i<num_frames;i++)
