@@ -42,6 +42,7 @@ endif
 ifeq (,$(findstring clang,$(CXX)))
 	COMMONCPPFLAGS += -Wno-class-memaccess 
 	COMMONCPPFLAGS += -Wno-deprecated-copy
+	COMMONCPPFLAGS += -Wno-deprecated-copy-with-user-provided-copy
 endif
 
 

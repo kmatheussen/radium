@@ -356,7 +356,7 @@ static inline bool equal_floats(float x, float y) {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wgnu-statement-expression-from-macro-expansion"
   return R_ABS(x - y) < std::numeric_limits<float>::epsilon();
-#pragma clang pop
+#pragma clang diagnostic pop
 }
 static inline bool equal_doubles(double x, double y) {
 #if !defined(RELEASE)
@@ -598,7 +598,7 @@ static inline double scale_double(const double x, const double x1, const double 
 static inline float scale(const float x, const float x1, const float x2, const float y1, const float y2){
 	float diff = x2-x1;
   
-#if !defined(RELEASE)
+#if !defined(RELEASE) && (!defined(__clang__) || !__FINITE_MATH_ONLY__)
 	if(!sane_isnormal(x) || !sane_isnormal(x1) || !sane_isnormal(x2) || !sane_isnormal(y1) || !sane_isnormal(y2) || !sane_isnormal(diff))
 	{
 		

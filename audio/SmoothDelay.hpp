@@ -13,6 +13,15 @@ double g_fade_benchmark_time = 0.0;
 #include "Juce_plugins_proc.h"
 #include "Fade.hpp"
 
+#ifdef __OPTIMIZE__
+#  if !defined(RADIUM_OMIT_FRAME_POINTERS)
+#    error "OPTIMIZE + -fno-omit-frame-pointers"
+#  endif
+#else
+#  if defined(RADIUM_OMIT_FRAME_POINTERS)
+#    error "-O0 + -fomit-frame-pointers"
+#  endif
+#endif
 
   //#define B(A) A
   #define B(A)

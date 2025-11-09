@@ -62,12 +62,14 @@ export OPTIMIZE="-O2 $CPUOPTS $RADIUM_RELEASE_CFLAGS"
 #
 # After benchmarking, most files will probably have frame pointers, while a few maybe not.
 #
+export MAYBE_OMIT_FRAME_POINTERS=""
+
 if [[ $BUILDTYPE == RELEASE ]] ; then
-	export OPTIMIZE="$OPTIMIZE -fomit-frame-pointer"
+	export MAYBE_OMIT_FRAME_POINTERS="-DRADIUM_OMIT_FRAME_POINTERS=1 -fno-omit-frame-pointer"
 fi
 	
 	
-export OS_DEBUG_BUILD_OPTS="-fno-omit-frame-pointer"
+export OS_DEBUG_BUILD_OPTS=""
 #export OS_DEBUG_BUILD_OPTS="-fomit-frame-pointer"
 
 
@@ -349,7 +351,7 @@ do_source_sanity_checks() {
     echo "Doing some source sanity checks. This might take a few seconds...."
     echo
     
-    if grep static\  */*.h */*.hpp */*/*.hpp */*/*/*.hpp */*/*/*/*.hpp */*/*.h */*/*/*/*.h */*/*.cpp */*.c */*.cpp */*.m */*/*.c */*/*.cpp */*/*/*.c */*/*/*/*.c */*/*/*.cpp 2>&1 | grep "\[" | grep -v "\[\]"|grep -v static\ void |grep -v Python-2.7.18 |grep -v python2.7/ | grep -v lrdf.c|grep -v unused_files |grep -v GTK |grep -v test\/ |grep -v X11\/ |grep -v amiga |grep -v faust-examples|grep -v temp\/ |grep -v "\[NO_STATIC_ARRAY_WARNING\]" |grep -v backup |grep -v mingw |grep -v Dropbox |grep -v bin/packages |grep -v python-midi |grep -v "No such file or directory" ; then
+    if grep static\  */*.h */*.hpp */*/*.hpp */*/*/*.hpp */*/*/*/*.hpp */*/*.h */*/*/*/*.h */*/*.cpp */*.c */*.cpp */*.m */*/*.c */*/*.cpp */*/*/*.c */*/*/*/*.c */*/*/*.cpp 2>&1 | grep "\[" | grep -v "\[\]"|grep -v static\ void |grep -v Python-2.7.18 |grep -v python2.7/ | grep -v lrdf.c|grep -v unused_files |grep -v GTK |grep -v test\/ |grep -v X11\/ |grep -v amiga |grep -v faust-examples|grep -v temp\/ |grep -v "\[NO_STATIC_ARRAY_WARNING\]" |grep -v backup |grep -v mingw |grep -v Dropbox |grep -v packages |grep -v python-midi |grep -v "No such file or directory" ; then
 	echo
 	echo "ERROR in line(s) above. Static arrays may decrease GC performance notably.";
 	echo
