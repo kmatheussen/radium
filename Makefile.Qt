@@ -39,7 +39,12 @@ export CPLUS_INCLUDE_PATH := $(VSTSDK)/VST2_SDK:$(VSTSDK)/VST3_SDK
 
 #----------------END USER SETTINGS---------------------------
 
-
+# The result value of findstring is so confusing, always, so, minimize usage of it.
+ifneq (,$(findstring clang,$(CC)))
+	USING_CLANG = 1
+else
+	USING_GCC = 1
+endif
 
 UNAME := $(shell uname)
 
@@ -134,7 +139,7 @@ QT_SYSTEM_CFLAGS ?=
 QSCINTILLA_PATH ?= $(shell pwd)/bin/packages/QScintilla_src-2.14.0/src
 #QScintilla_gpl-2.10.8
 
-ifneq '' '$(findstring clang,$(CC))'
+ifdef USING_CLANG
 	CLANG_VERSION:= $(shell $(CC) --version|grep version |& sed "s/.*version \([0-9]*\.[0-9]*\.[0-9]*\\).*/\1/")
 	CLANG_MAJOR:=$(shell echo $(CLANG_VERSION) | cut -d'.' -f1)
 	CLANG_MINOR:=$(shell echo $(CLANG_VERSION) | cut -d'.' -f2)
@@ -198,7 +203,7 @@ endif
 
 WNO_GNU_FOLDING_CONSTANT=
 
-ifneq '' '$(findstring clang,$(CC))'
+ifdef USING_CLANG
 	WNO_DEPRECATED_BUILTINS=-Wno-deprecated-builtins
     WNO_GNU_FOLDING_CONSTANT=-Wno-gnu-folding-constant
 endif
@@ -252,7 +257,7 @@ else
 endif
 
 WNO_CLASS_MEMACCESS=
-ifeq (,$(findstring clang,$(CC)))
+ifdef USING_GCC
 	WNO_CLASS_MEMACCESS=-Wno-class-memaccess
 else
 	QT_CFLAGS += "-Wno-ignored-attributes"
@@ -394,7 +399,7 @@ else ifeq ($(GCC_MAJOR),7)
 #	UNDEFINED_SANITIZE_OPTS=
 	WNO_CLASS_MEMACCESS=-Wno-class-memaccess
 	WNO_PARENTHESIS=-Wno-parentheses
-else ifneq (,$(findstring clang,$(CC)))
+else ifdef USING_CLANG
 	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
 	WNO_DEPRECATED_DECLARATIONS=-Wno-deprecated-declarations
 else
@@ -408,7 +413,7 @@ UNDEFINED_SANITIZE_OPTS=-DRADIUM_USES_UBSAN -fsanitize=undefined -fsanitize=floa
 
 #UNDEFINED_SANITIZE_OPTS=
 
-ifneq (,$(findstring clang,$(CC)))
+ifdef USING_CLANG
 	UNDEFINED_SANITIZE_OPTS += -fno-sanitize=function -fno-sanitize=vptr 
 endif
 
@@ -435,7 +440,7 @@ DEBUG_BUILD_OPTS = $(WERROR) -Wfloat-equal -Wall $(GGDB_OPT) $(FNO_OPTIMIZE_SIBL
 # -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG -D_GLIBCXX_DEBUG 
 
 NOSHORTEN64TO32FLAG=
-ifneq (,$(findstring clang,$(CC)))
+ifdef USING_CLANG
 	NOSHORTEN64TO32FLAG += -Wno-shorten-64-to-32
 endif
 
@@ -443,8 +448,7 @@ endif
 DEBUG_BUILD_OPTS += $(NOSHORTEN64TO32FLAG)
 S7OPTS += $(NOSHORTEN64TO32FLAG)
 
-ifneq (,$(findstring clang,$(CC)))
-else
+ifdef USING_GCC
 #	ifeq ($(GCC_MAJOR),5)
 #		DEBUG_BUILD_OPTS += -Wshadow # gcc 4 has too many unnecessary positives
 #	endif	
@@ -491,7 +495,7 @@ COMMONOPT = -D__STDC_FORMAT_MACROS=1 -c `cat buildtype.opt` -I$(GCDIR)/include -
 #-Wstrict-overflow=4 -Wsuggest-attribute=format -Wstringop-overflow=4
 #-Wsuggest-final-types -Wsuggest-final-methods
 
-ifneq '' '$(findstring clang,$(CC))'
+ifdef USING_CLANG
 	COMMONOPT += -Wno-deprecated-register -Wlogical-op-parentheses # -Wunused-member-function (isn't there a warning to warn about unused variables only, not methods?)
 else
 	COMMONOPT += -Wduplicated-cond -Wduplicated-branches -Wlogical-op -Wrestrict -fmax-errors=5 
@@ -517,7 +521,7 @@ OBJCPP_OPT ?=
 
 # -D_FORTIFY_SOURCE=2 -O2
 
-ifneq '' '$(findstring clang,$(CC))'
+ifdef USING_CLANG
 	OPT += -Wno-missing-field-initializers # TODO: Check if there's a better way ("{0}" again).
 endif
 
@@ -554,7 +558,7 @@ QT_SUB:=$(shell echo $(QT_VERSION) | cut -d'.' -f3)
 WNO_SUGGEST_OVERRIDE=
 
 ifneq ($(BUILDTYPE), RELEASE)
-	ifeq (,$(findstring clang,$(CCC)))	
+	ifdef USING_GCC
 		CPPOPT += -fdiagnostics-all-candidates
 	endif
 endif
@@ -565,20 +569,18 @@ ifneq ($(BUILDTYPE), DEBUG)
 	CPPOPT += -Woverloaded-virtual
 endif
 
-ifneq (,$(findstring clang,$(CC)))
+ifdef USING_CLANG
 	CPPOPT += -Wno-register
 endif	
 
 WNO_DUPLICATED_BRANCHES=
-ifeq (,$(findstring clang,$(CC)))
-#gcc
+ifdef USING_GCC
 	WNO_DUPLICATED_BRANCHES=-Wno-duplicated-branches
 endif
 
 
 WNO_NULL_POINTER_ARITHMETIC=
-ifneq (,$(findstring clang,$(CC)))
-#clang
+ifdef USING_CLANG
   ifeq ($(shell test $(CLANG_MAJOR) -gt 5; echo $$?),0)
      WNO_NULL_POINTER_ARITHMETIC += -Wno-null-pointer-arithmetic
   endif
@@ -636,7 +638,7 @@ ifeq ($(GCC_MAJOR),11)
 	VL_CFLAGS += -Wno-class-memaccess -Wno-deprecated-copy
 endif
 
-ifneq (,$(findstring clang,$(CC)))
+ifdef USING_CLANG
 	ifeq ($(shell test $(CLANG_MAJOR) -gt 12; echo $$?),0)
 		VL_CFLAGS+=-Wno-null-pointer-subtraction
 	endif
@@ -1277,8 +1279,8 @@ $(T)seqblock_automation.o:  $(BUILD_DEPENDENCIES) $(CD)seqblock_automation.cpp $
 	$(CCC2) $(CD)seqblock_automation.cpp $(QTOPT) -Wno-unknown-pragmas
 
 SEQBLOCK_STRETCHSPEED_OPT=
-ifeq (,$(findstring clang,$(CC)))
- SEQBLOCK_STRETCHSPEED_OPT += -Wno-maybe-uninitialized
+ifdef USING_GCC
+	 SEQBLOCK_STRETCHSPEED_OPT += -Wno-maybe-uninitialized
 endif
 
 $(T)seqblock_stretchspeed.o:  $(BUILD_DEPENDENCIES) $(CD)seqblock_stretchspeed.cpp $(CD)SeqAutomation.hpp 
@@ -1432,8 +1434,8 @@ $(T)disk_windows.o:  $(BUILD_DEPENDENCIES) $(CD)disk_windows.c $(CD)disk.h
 	$(CC2) $(CD)disk_windows.c $(OPT)
 
 DISK_FX_OPT=
-ifeq (,$(findstring clang,$(CC)))
- DISK_FX_OPT += -Wno-jump-misses-init
+ifdef USING_GCC
+	 DISK_FX_OPT += -Wno-jump-misses-init
 endif
 $(T)disk_fxs.o:  $(BUILD_DEPENDENCIES) $(CD)disk_fxs.cpp $(CD)disk.h
 	$(CCC2) $(CD)disk_fxs.cpp $(QTOPT)
@@ -2127,7 +2129,7 @@ $(T)api_gui.o:  $(BUILD_DEPENDENCIES)  $(API)api_gui.cpp  Qt/ScrollArea.hpp Qt/h
 
 
 NOUNUSEDBUTSETVARIABLEWARNING=
-ifeq (,$(findstring clang,$(CC)))
+ifdef USING_GCC
 	NOUNUSEDBUTSETVARIABLEWARNING += -Wno-unused-but-set-variable -Wno-cast-function-type
 endif
 
@@ -2328,7 +2330,7 @@ FAUST_OPTS2 = $(FAUST_OPTS) -Wno-float-equal
 # -Ibin/packages/faust2/architecture 
 FAUST_BIN_OPTS = -nvi
 
-ifneq '' '$(findstring clang,$(CC))'
+ifdef USING_CLANG
 	FAUST_BIN_OPTS += -clang
 endif
 
@@ -2792,8 +2794,8 @@ S7AlignmentSanitize=
 endif
 
 ifeq ($(BUILDTYPE), DEBUG)
-	S7OPTS += -DS7_DEBUGGING=1 -DS7_ALIGNED # -DWITH_PROFILE=1 
-	ifneq (,$(findstring clang,$(CC)))
+	S7OPTS += -DS7_DEBUGGING=1 -DS7_ALIGNED # -DWITH_PROFILE=1
+	ifdef USING_CLANG
 		S7OPTS +=  -fno-sanitize=integer
 	endif
 	ifeq ($(TARGET_OS),linux)
