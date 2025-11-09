@@ -553,10 +553,10 @@ QT_SUB:=$(shell echo $(QT_VERSION) | cut -d'.' -f3)
 
 WNO_SUGGEST_OVERRIDE=
 
-ifneq ($(BUILDTYPE), DEBUG)
-ifeq (,$(findstring clang,$(CC)))	
-	CPPOPT += -fdiagnostics-all-candidates
-endif
+ifneq ($(BUILDTYPE), RELEASE)
+	ifeq (,$(findstring clang,$(CCC)))	
+		CPPOPT += -fdiagnostics-all-candidates
+	endif
 endif
 
 CPPOPT += $(STD_CPP) -DUSE_STD_COUNTING_SEMAPHORE=$(USE_STD_COUNTING_SEMAPHORE)
