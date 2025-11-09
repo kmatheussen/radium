@@ -131,10 +131,10 @@ if [ `uname` == "Linux" ] ; then
     echo "int main(){return 0;}" >>temp$$.c
     echo >>temp$$.c
     if ! gcc temp$$.c -lbfd -liberty -ldl; then
-	echo "Couldn't find -lbfd, -ldl, -liberty, or header files for bfd or dlfcn."
-	echo "On Fedora, binutils-devel, libtool-ltdl or libtool might be missing."
-	echo "On Debian, libc6-dev or binutils-dev might be missing."
-	exit 5
+		echo "Couldn't find -lbfd, -ldl, -liberty, or header files for bfd or dlfcn."
+		echo "On Fedora, binutils-devel, libtool-ltdl or libtool might be missing."
+		echo "On Debian, libc6-dev or binutils-dev might be missing."
+		exit 5
     fi
     rm temp$$.c
 fi
@@ -231,8 +231,9 @@ fi
 
 if [ `uname` == "Linux" ] ; then
     if ! pkg-config --cflags lrdf >/dev/null 2>/dev/null ; then
-	echo "liblrdf not found"
-	exit 5
+		env|grep PKG
+		echo "liblrdf not found"
+		exit 5
     fi
 fi
 

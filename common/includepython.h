@@ -17,8 +17,17 @@
 extern "C" {
 #endif
 
+#ifdef __cplusplus
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wregister"
+#endif // __cplusplus
+	
 #include <Python.h>
 
+#ifdef __cplusplus
+#  pragma GCC pop
+#endif
+	
 #define RADIUM_PYTHON_IS_DEFINED 1
   
 #ifdef __cplusplus

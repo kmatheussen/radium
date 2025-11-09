@@ -154,9 +154,11 @@ static_assert (sizeof(long long int) >= 8, "sizof(long long int) must be 8 or hi
 #endif
 
 #if defined(FOR_WINDOWS)
-  #include <windows.h>
-  #include <process.h>
-  #include <comutil.h>
+#  include <windows.h>
+#  include <process.h>
+#  if __cplusplus
+#    include <comutil.h>
+#  endif
 #endif // for_windows
 
 #include <inttypes.h>
@@ -179,34 +181,19 @@ static_assert (sizeof(long long int) >= 8, "sizof(long long int) must be 8 or hi
 #  define wcsdup(A) _wcsdup(A)
 #endif
 
+#ifdef USE_QT4
+#  pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wshorten-64-to-32"
+//#    pragma clang diagnostic ignored "-Wsuggest-attribute"
+#    pragma GCC diagnostic push
+#      pragma GCC diagnostic ignored "-Wnull-dereference"
+#      pragma GCC diagnostic ignored "-Wstrict-overflow"
 
-#if USE_QT4
-#if !defined(__clang__)
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wsuggest-attribute=const"
-#endif
+#      include <QList>
+#      include <QMap>
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wshorten-64-to-32"
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wnull-dereference"
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wstrict-overflow"
-
-#include <QList>
-#include <QMap>
-
-#pragma GCC diagnostic pop
-
-#pragma GCC diagnostic pop
-
-#pragma clang diagnostic pop
-
-#if !defined(__clang__)
-#  pragma GCC diagnostic pop
-#endif
+#    pragma GCC diagnostic pop
+#  pragma clang diagnostic pop
 #endif // USE_QT4
 
 #if defined(__clang__)
