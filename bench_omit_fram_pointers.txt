@@ -1,0 +1,53 @@
+
+Benchmarks running benchmark_smoothdelay (probably the most important benchmark in Radium)
+
+Whether to use -fomit-frame-pointers or -fno-omit-frame-pointers? I don't know, need to run statistics on the numbers.
+Difference seems small though, although omit seems slightly better (as expected).
+
+I'm surprised how much faster g++ 15 is that clang++ 21 though...
+
+
+
+g++ 15.2.0 Omit:
+================
+Total duration: 0.932672. (Generating sine: 15.996224.) RT_fade duration: 0.169284. RT_process_overwrite duration: 0.270629
+Total duration: 0.935676. (Generating sine: 16.040283.) RT_fade duration: 0.169114. RT_process_overwrite duration: 0.273048
+Total duration: 0.924809. (Generating sine: 15.695754.) RT_fade duration: 0.172397. RT_process_overwrite duration: 0.271406
+Total duration: 0.914320. (Generating sine: 15.592740.) RT_fade duration: 0.167713. RT_process_overwrite duration: 0.266180
+
+Total duration: 0.905124. (Generating sine: 15.735477.) RT_fade duration: 0.163438. RT_process_overwrite duration: 0.269125
+Total duration: 0.901918. (Generating sine: 15.599365.) RT_fade duration: 0.163287. RT_process_overwrite duration: 0.268115
+
+Total duration: 0.912125. (Generating sine: 15.819089.) RT_fade duration: 0.165429. RT_process_overwrite duration: 0.271261
+Total duration: 0.900702. (Generating sine: 15.685462.) RT_fade duration: 0.165144. RT_process_overwrite duration: 0.266343
+Total duration: 0.921706. (Generating sine: 16.022326.) RT_fade duration: 0.166526. RT_process_overwrite duration: 0.274470
+
+Total duration: 0.919923. (Generating sine: 16.092427.) RT_fade duration: 0.166639. RT_process_overwrite duration: 0.274164
+Total duration: 0.897517. (Generating sine: 15.574330.) RT_fade duration: 0.163008. RT_process_overwrite duration: 0.265336
+Total duration: 0.928377. (Generating sine: 15.988968.) RT_fade duration: 0.168426. RT_process_overwrite duration: 0.274694
+Total duration: 0.945453. (Generating sine: 15.836844.) RT_fade duration: 0.180051. RT_process_overwrite duration: 0.289485
+
+g++ 15.2.0 No-omit:
+===================
+Total duration: 0.918494. (Generating sine: 15.782397.) RT_fade duration: 0.165384. RT_process_overwrite duration: 0.266734
+Total duration: 0.926419. (Generating sine: 15.831468.) RT_fade duration: 0.167270. RT_process_overwrite duration: 0.270084
+Total duration: 0.931242. (Generating sine: 15.945737.) RT_fade duration: 0.165076. RT_process_overwrite duration: 0.281121
+Total duration: 0.925000. (Generating sine: 15.774122.) RT_fade duration: 0.164892. RT_process_overwrite duration: 0.279409
+Total duration: 0.915657. (Generating sine: 15.740820.) RT_fade duration: 0.165536. RT_process_overwrite duration: 0.271135
+Total duration: 0.937166. (Generating sine: 16.156793.) RT_fade duration: 0.172166. RT_process_overwrite duration: 0.275501
+
+
+Clang 21.1.0 -omit:
+===================
+Total duration: 0.957409. (Generating sine: 6.120502.) RT_fade duration: 0.162843. RT_process_overwrite duration: 0.288906
+Total duration: 0.953874. (Generating sine: 6.145149.) RT_fade duration: 0.159772. RT_process_overwrite duration: 0.287447
+Total duration: 0.960357. (Generating sine: 6.172530.) RT_fade duration: 0.160571. RT_process_overwrite duration: 0.289623
+
+
+
+clang 21.1.0 no-omit:
+======================
+Total duration: 0.989531. (Generating sine: 6.193208.) RT_fade duration: 0.164146. RT_process_overwrite duration: 0.315171
+Total duration: 0.989531. (Generating sine: 6.193208.) RT_fade duration: 0.164146. RT_process_overwrite duration: 0.315171
+Total duration: 0.963047. (Generating sine: 6.048049.) RT_fade duration: 0.160315. RT_process_overwrite duration: 0.306664
+
