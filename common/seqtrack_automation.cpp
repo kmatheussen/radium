@@ -236,7 +236,7 @@ public:
   radium::Vector<Automation*> _automations;
   
   SeqtrackAutomation(struct SeqTrack *seqtrack, double state_samplerate, const hash_t *state = NULL, int seqtracknum = -1)
-    :_seqtrack(seqtrack)
+	  : _seqtrack(seqtrack)
   {
     SEQTRACK_AUTOMATION_cancel_curr_automation();
           

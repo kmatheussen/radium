@@ -456,7 +456,7 @@ extern LANGSPEC double SEQTRACK_get_length(struct SeqTrack *seqtrack);
 
 #if defined(__cplusplus) && defined(QVECTOR_H)
 // The returned vector contains the vector to paint last first, and vice versa.
-QVector<struct SeqBlock*> SEQTRACK_get_seqblocks_in_z_order(const struct SeqTrack *seqtrack, bool is_gfx_gfx);
+radium::Vector_GC<struct SeqBlock*> SEQTRACK_get_seqblocks_in_z_order(const struct SeqTrack *seqtrack, bool is_gfx_gfx);
 #endif
 
 

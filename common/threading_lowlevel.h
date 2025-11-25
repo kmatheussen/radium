@@ -38,8 +38,9 @@
 #  endif
 #  include <Windows.h>
 #  include <process.h>
-#  include <comutil.h>
-
+#  ifdef __cplusplus
+#    include <comutil.h>
+#  endif
 #  if !defined(LockType)
 #    define LockType CRITICAL_SECTION
 #    define LOCK_INITIALIZE(A) InitializeCriticalSection(&A)

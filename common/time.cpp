@@ -1421,14 +1421,16 @@ static void update_stuff2(struct Blocks *const blocks[], const int num_blocks,
                           const bool only_signature_has_changed, const bool update_beats, const bool update_swings)
 {
   R_ASSERT_NON_RELEASE(update_swings==true);
-  
-  QVarLengthArray<struct STimes *>stimes_without_global_swings(num_blocks);
-  QVarLengthArray<struct STimes *>stimes_with_global_swings(num_blocks);
-  QVarLengthArray<const struct Beats *>beats(num_blocks);
-  QVarLengthArray<dyn_t> dynbeats(num_blocks);
-  QVarLengthArray<dyn_t> filledout_swingss(num_blocks);
-  QVarLengthArray<dynvec_t> filledout_trackswingss(num_blocks);
-  QVarLengthArray<vector_t> trackstimess(num_blocks);
+
+  // Note: Seems like QVarLengthArray doesn't do much more than radium::Vector (both preallocates on stack),
+  // so we can probably make a simple gc-safe array based on radium::Vector.
+  QVarLengthArray<struct STimes *>stimes_without_global_swings(num_blocks); // NOT gc-safe.
+  QVarLengthArray<struct STimes *>stimes_with_global_swings(num_blocks); // NOT gc-safe.
+  QVarLengthArray<const struct Beats *>beats(num_blocks); // Perhaps not gc-safe.
+  QVarLengthArray<dyn_t> dynbeats(num_blocks); // don't know
+  QVarLengthArray<dyn_t> filledout_swingss(num_blocks); // don't know
+  QVarLengthArray<dynvec_t> filledout_trackswingss(num_blocks); // don't know.
+  QVarLengthArray<vector_t> trackstimess(num_blocks); // don't know
 
   g_editor_blocks_generation++;
 
