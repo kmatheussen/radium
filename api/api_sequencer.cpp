@@ -4300,7 +4300,7 @@ dynvec_t getSeqblocknumZOrder(int seqtracknum){
     seqblocks_hash[seqblock->id] = iterator666;
   }END_VECTOR_FOR_EACH;
   
-  QVector<struct SeqBlock*> seqblocks = SEQTRACK_get_seqblocks_in_z_order(seqtrack, false);
+  radium::Vector_GC<struct SeqBlock*> seqblocks = SEQTRACK_get_seqblocks_in_z_order(seqtrack, false);
 
   for(const struct SeqBlock *seqblock : seqblocks)
     DYNVEC_push_back(&ret, DYN_create_int(seqblocks_hash[seqblock->id]));
@@ -4318,7 +4318,7 @@ dynvec_t getSeqblockZOrder(int seqtracknum){
   // clean up
   remove_unused_seqblocks_from_seqblocks_z_order(seqtrack);
 
-  QVector<struct SeqBlock*> seqblocks = SEQTRACK_get_seqblocks_in_z_order(seqtrack, false);
+  radium::Vector_GC<struct SeqBlock*> seqblocks = SEQTRACK_get_seqblocks_in_z_order(seqtrack, false);
 
   for(const struct SeqBlock *seqblock : seqblocks)
     DYNVEC_push_back(&ret, DYN_create_int(seqblock->id));

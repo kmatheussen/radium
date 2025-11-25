@@ -23,7 +23,7 @@ LV2FLAGS=-I$(JUCE_MODULES)juce_audio_processors/format_types/LV2_SDK -I$(JUCE_MO
 
 RADIUM_VST2SDK_PATH ?= ${HOME}/SDKs/vstsdk2.4
 
-COMMONCPPFLAGS := $(DEPFLAGS) -D "JUCE_CHECK_MEMORY_LEAKS=0" -D "JUCER_LINUX_MAKE_7346DA2A=1" -D "JUCE_APP_VERSION=1.0.0" -D "JUCE_APP_VERSION_HEX=0x10000" $(AVAILABLES) -I /usr/include -I /usr/include/freetype2 -I$(JUCE_MODULES)/.. -I$(JUCE_MODULES) -I$(JUCE_MODULES)juce_audio_processors/format_types/VST3_SDK -I $(JUCE_MODULES)JuceLibraryCode -I $(JUCE_MODULES)JuceLibraryCode/modules -I $(RADIUM_VST2SDK_PATH) -DJUCE_APP_CONFIG_HEADER="\"AppConfig.h\"" -DPLUGINHOST_BUILD_64BIT -fPIC $(LV2FLAGS)
+COMMONCPPFLAGS := $(DEPFLAGS) -D "JUCE_CHECK_MEMORY_LEAKS=0" -D "JUCER_LINUX_MAKE_7346DA2A=1" -D "JUCE_APP_VERSION=1.0.0" -D "JUCE_APP_VERSION_HEX=0x10000" $(AVAILABLES) -I /usr/include -I /usr/include/freetype2 -I$(JUCE_MODULES)/.. -I$(JUCE_MODULES) -I$(JUCE_MODULES)juce_audio_processors/format_types/VST3_SDK -I $(JUCE_MODULES)JuceLibraryCode -I $(JUCE_MODULES)JuceLibraryCode/modules -I $(RADIUM_VST2SDK_PATH) -DJUCE_APP_CONFIG_HEADER="\"AppConfig.h\"" -DPLUGINHOST_BUILD_64BIT -fPIC $(LV2FLAGS) -Wno-unknown-pragmas
 
 ifeq ($(DAS_ARCH),x86_64)
 	COMMONCPPFLAGS += -msse2 -mfpmath=sse
@@ -42,6 +42,7 @@ endif
 ifeq (,$(findstring clang,$(CXX)))
 	COMMONCPPFLAGS += -Wno-class-memaccess 
 	COMMONCPPFLAGS += -Wno-deprecated-copy
+	COMMONCPPFLAGS += -Wno-deprecated-copy-with-user-provided-copy
 endif
 
 

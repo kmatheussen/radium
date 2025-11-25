@@ -4,6 +4,8 @@
 #include <QWidget>
 #include <QDialog>
 
+#include <faust/gui/QTUI.h>
+
 #include "../Qt/EditorWidget.h"
 #include "../Qt/helpers.h"
 
@@ -19,6 +21,7 @@
 
 
 #include "Faust_plugins_proc.h"
+
 
 namespace{
 

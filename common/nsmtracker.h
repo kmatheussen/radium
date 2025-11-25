@@ -154,9 +154,11 @@ static_assert (sizeof(long long int) >= 8, "sizof(long long int) must be 8 or hi
 #endif
 
 #if defined(FOR_WINDOWS)
-  #include <windows.h>
-  #include <process.h>
-  #include <comutil.h>
+#  include <windows.h>
+#  include <process.h>
+#  if __cplusplus
+#    include <comutil.h>
+#  endif
 #endif // for_windows
 
 #include <inttypes.h>
@@ -179,34 +181,19 @@ static_assert (sizeof(long long int) >= 8, "sizof(long long int) must be 8 or hi
 #  define wcsdup(A) _wcsdup(A)
 #endif
 
+#ifdef USE_QT4
+#  pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wshorten-64-to-32"
+//#    pragma clang diagnostic ignored "-Wsuggest-attribute"
+#    pragma GCC diagnostic push
+#      pragma GCC diagnostic ignored "-Wnull-dereference"
+#      pragma GCC diagnostic ignored "-Wstrict-overflow"
 
-#if USE_QT4
-#if !defined(__clang__)
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wsuggest-attribute=const"
-#endif
+#      include <QList>
+#      include <QMap>
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wshorten-64-to-32"
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wnull-dereference"
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wstrict-overflow"
-
-#include <QList>
-#include <QMap>
-
-#pragma GCC diagnostic pop
-
-#pragma GCC diagnostic pop
-
-#pragma clang diagnostic pop
-
-#if !defined(__clang__)
-#  pragma GCC diagnostic pop
-#endif
+#    pragma GCC diagnostic pop
+#  pragma clang diagnostic pop
 #endif // USE_QT4
 
 #if defined(__clang__)
@@ -369,7 +356,7 @@ static inline bool equal_floats(float x, float y) {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wgnu-statement-expression-from-macro-expansion"
   return R_ABS(x - y) < std::numeric_limits<float>::epsilon();
-#pragma clang pop
+#pragma clang diagnostic pop
 }
 static inline bool equal_doubles(double x, double y) {
 #if !defined(RELEASE)
@@ -611,7 +598,7 @@ static inline double scale_double(const double x, const double x1, const double 
 static inline float scale(const float x, const float x1, const float x2, const float y1, const float y2){
 	float diff = x2-x1;
   
-#if !defined(RELEASE)
+#if !defined(RELEASE) && (!defined(__clang__) || !__FINITE_MATH_ONLY__)
 	if(!sane_isnormal(x) || !sane_isnormal(x1) || !sane_isnormal(x2) || !sane_isnormal(y1) || !sane_isnormal(y2) || !sane_isnormal(diff))
 	{
 		

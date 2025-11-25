@@ -152,38 +152,38 @@ static void gcfinalizer(void *actual_mem_start, void *user_data){
 void *tracker_alloc__(int size,void *(*AllocFunction)(size_t size2), const char *filename, int linenumber){
 	allocated+=size;
 
-        if (THREADING_is_runner_thread() || PLAYER_current_thread_has_lock())
-          RError("Calling GC-alloc while holding player lock. %s: %d", filename, linenumber);
-
-        if (THREADING_is_main_thread()==false){
-          RError("Calling GC-alloc from non-main_thread. %s: %d", filename, linenumber);
-          return calloc(1, size); // thread-safe fallback.
-        }
-        
+	if (THREADING_is_runner_thread() || PLAYER_current_thread_has_lock())
+		RError("Calling GC-alloc while holding player lock. %s: %d", filename, linenumber);
+	
+	if (THREADING_is_main_thread()==false){
+		RError("Calling GC-alloc from non-main_thread. %s: %d", filename, linenumber);
+		return calloc(1, size); // thread-safe fallback.
+	}
+    
 #ifndef DISABLE_BDWGC
-#	ifdef _AMIGA
-		return (*GC_amiga_allocwrapper_do)(size,AllocFunction);
-#	else
-#          if !defined(VALIDATE_MEM)
-                void *ret = AllocFunction(size);
-#          else                
-		void *ret = V_alloc(AllocFunction,size,filename,linenumber);
-                void *actual_mem_start = V_allocated_mem_real_start(ret);
-#if defined(RELEASE)
-                #error "oh no"
-#endif
-                GC_register_finalizer_ignore_self(actual_mem_start, gcfinalizer, NULL, NULL, NULL);
-#          endif
-#	endif
+#  ifdef _AMIGA
+	return (*GC_amiga_allocwrapper_do)(size,AllocFunction);
+#  else // _AMIGA -> !_AMIGA
+#    if !defined(VALIDATE_MEM)
+	void *ret = AllocFunction(size);
+#    else // !VALIDATE_MEM -> VALIDATE_MEM
+	void *ret = V_alloc(AllocFunction,size,filename,linenumber);
+	void *actual_mem_start = V_allocated_mem_real_start(ret);
+#      if defined(RELEASE)
+#        error "oh no"
+#      endif
+	#error "here?"
+	GC_register_finalizer_ignore_self(actual_mem_start, gcfinalizer, NULL, NULL, NULL);
+#    endif // VALIDATE_MEM
+#  endif
 
-
-        return ret;
+	return ret;
 
 #else
 	return OS_getmem(size);		// For debugging. (wrong use of GC_malloced memory could be very difficult to trace)
 #endif
 
-
+	
 
 }
 

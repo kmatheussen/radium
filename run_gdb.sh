@@ -19,7 +19,7 @@ fi
 
 PWD=`pwd`
 export LSAN_OPTIONS=suppressions=$PWD/SanitizerSuppr.txt
-export ASAN_OPTIONS="detect_leaks=0,abort_on_error=1,max_malloc_fill_size=1048576,detect_odr_violation=2,detect_container_overflow=0,suppressions=$PWD/SanitizerSupprAddr.txt"
+export ASAN_OPTIONS="malloc_context_size=200,detect_leaks=0,abort_on_error=1,max_malloc_fill_size=1048576,detect_odr_violation=2,detect_container_overflow=0,suppressions=$PWD/SanitizerSupprAddr.txt"
 
 #
 # earlier we also had these ASAN_OPTIONS:
@@ -134,3 +134,4 @@ exec $exename
 
 # to test crashreporter, comment out the above line, and uncomment the next line:
 #LD_LIBRARY_PATH=$LD_LIBRARY_PATH G_DEBUG="fatal-warnings,gc-friendly" bin/radium_linux.bin $@
+

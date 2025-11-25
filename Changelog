@@ -1,3 +1,29 @@
+Changes 7.7.71 -> 7.5.76:
+
+* Editor/MIDI: Fix recording chords from MIDI input
+  in step-recording mode.
+* Sequencer: Fix seqblocks sometimes being placed at
+  wrong positions after moving more than one
+  seqblock.
+* Faust: Upgraded from 2.70.3 to 2.81.2.
+  (Leo Fruijtier)
+* Sequencer: Fix buggy display of graphics right
+  after loading a new song within the first 100ms.
+* Sequencer: Fix grid not working in sequencer timing
+  mode when there is an editor block in the first
+  seqtrack.
+* Windows: Use "WaitOnAddress" instead of
+  "WaitForSingleObject". This improves DSP
+  performance, but it's only available in Windows 8
+  and newer.
+* Preferences: Remove the "buzy loop" option.
+* Windows: Upgrade LLVM from V10 to V15.
+* MacOS/Arm: Upgrade LLVM from V18 to V19.
+* Build: Many improvements and code quality
+  fixes.
+  
+
+
 Changes 7.4.76 -> 7.5.71:
 * Windows: Finally fix unnecessary loading of LADSPA
   plugins during startup,  sometimes causing very
