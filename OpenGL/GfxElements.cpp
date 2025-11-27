@@ -1183,18 +1183,10 @@ GE_Rgb GE_mix(const GE_Rgb c1, const GE_Rgb c2, float how_much){
   float a1 = how_much / 1000.0f;
   float a2 = 1.0f-a1;
 
-  if(c1.r==0 && c1.g==0 && c1.b==0){ // some of the black lines doesn't look look very good.
-    rgb.r = 74*a1 + c2.r*a2;
-    rgb.g = 74*a1 + c2.g*a2;
-    rgb.b = 74*a1 + c2.b*a2;
-    rgb.a = c1.a*a1 + c2.a*a2;
-  }else{
-    rgb.r = (float)c1.r*a1 + (float)c2.r*a2;
-    rgb.g = (float)c1.g*a1 + (float)c2.g*a2;
-    rgb.b = (float)c1.b*a1 + (float)c2.b*a2;
-    rgb.a = (float)c1.a*a1 + (float)c2.a*a2;
-    //printf("r: %d, g: %d, b: %d, a: %d. a1: %f, a2: %f\n",rgb.r,rgb.g,rgb.b,rgb.a,a1,a2);
- }
+  rgb.r = (float)c1.r*a1 + (float)c2.r*a2;
+  rgb.g = (float)c1.g*a1 + (float)c2.g*a2;
+  rgb.b = (float)c1.b*a1 + (float)c2.b*a2;
+  rgb.a = (float)c1.a*a1 + (float)c2.a*a2;
 
   return rgb;
 }

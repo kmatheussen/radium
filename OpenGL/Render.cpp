@@ -601,7 +601,7 @@ static void create_background_realline(const struct Tracker_Windows *window, con
     }
   }
 
-  float line_width = get_thickness(0.6f);
+  float line_width = get_thickness(1.8f);
 
   // realline separator line
   if(1){
