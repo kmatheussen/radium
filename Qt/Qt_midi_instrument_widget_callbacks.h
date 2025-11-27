@@ -71,12 +71,14 @@ public slots:
 
   void on_volume_spin_valueChanged( int val )
   {
+	  R_ASSERT_NON_RELEASE(val >= -127 && val<128);
+	  
     if( volume_slider->value() != 127-val)
       volume_slider->setValue(127-val);
 
     //fprintf(stderr,"Volume: %d. channel: %d\n",val,patchdata->channel);
     
-    patchdata->volume = val;
+    patchdata->volume = (char)val;
 
     MIDI_send3(patchdata,
                0xb0|patchdata->channel,
@@ -153,7 +155,7 @@ public slots:
       panning_slider->setValue(val);
     //printf("Pan %d\n",val);
     
-    patchdata->pan = val + 63;
+    patchdata->pan = (char)(val + 63);
 
     MIDI_send3(patchdata,
                0xb0|patchdata->channel,
@@ -185,7 +187,8 @@ public slots:
 
   void on_channel_valueChanged( int val)
   {
-    patchdata->channel = val-1;
+	  R_ASSERT_NON_RELEASE(val >= 1 && val <= 16);
+	  patchdata->channel = (char)(val-1);
     //set_editor_focus();                                               
   }
 
@@ -195,7 +198,8 @@ public slots:
 
   void on_msb_valueChanged( int val)
   {
-    patchdata->MSB = val;
+	  R_ASSERT_NON_RELEASE(val >= -127 && val<128);
+	  patchdata->MSB = (char)val;
     //set_editor_focus();
   }
 
@@ -206,8 +210,9 @@ public slots:
 
   void on_lsb_valueChanged( int val)
   {
-    patchdata->LSB = val;
-    //set_editor_focus();
+	  R_ASSERT_NON_RELEASE(val >= -127 && val<128);
+	  patchdata->LSB = (char)val;
+	  //set_editor_focus();
   }
 
   void on_lsb_editingFinished (){
@@ -217,9 +222,11 @@ public slots:
 
   void on_preset_activated( int num)
   {
+	  R_ASSERT_NON_RELEASE(num >= 1 && num<=128);
+	  
     printf("activated preset %d\n",num-1);
     
-    patchdata->preset = num-1;    
+    patchdata->preset = (char)(num-1);
     set_editor_focus();
   }
 
@@ -228,17 +235,17 @@ public slots:
   {
     if(portname=="<Create new port>"){
       struct Tracker_Windows *window=root->song->tracker_windows;
-      ReqType reqtype=GFX_OpenReq(window,70,50,(char*)"Create port");
+      ReqType reqtype=GFX_OpenReq(window,70,50,"Create port");
 
-      const char *name = GFX_GetString(window,reqtype,(char*)"Name: ", true);
+      const char *name = GFX_GetString(window,reqtype,"Name: ", true);
       if(name!=NULL)
         patchdata->midi_port = MIDIgetPort(window,reqtype,patch.data(),name,true);
 
       GFX_CloseReq(window,reqtype);
     }else
-      MIDISetPatchData(patch.data(), (char*)"port", (char*)portname.toUtf8().constData(), true);
+      MIDISetPatchData(patch.data(), "port", portname.toUtf8().constData(), true);
 
-    fprintf(stderr, "Setting new port: \"%s\"\n",(char*)portname.toUtf8().constData());
+    fprintf(stderr, "Setting new port: \"%s\"\n",portname.toUtf8().constData());
 
     updateMidiPortsWidget(this);
   }

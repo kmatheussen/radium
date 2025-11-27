@@ -275,19 +275,25 @@ if ! is_0 $FAUST_USES_LLVM ; then
 		
     assert_exe_exists $LLVM_CONFIG_BIN
     
-    old_path=""
+	if uname -s |grep Linux > /dev/null ; then
+		
+		old_path=""
+   
+		if is_set LD_LIBRARY_PATH ; then
+			old_path=":$LD_LIBRARY_PATH"
+		fi
     
-    if is_set LD_LIBRARY_PATH ; then
-		old_path=":$LD_LIBRARY_PATH"
-    fi
-    
-    if uname -s |grep Linux > /dev/null ; then
+		set_var FAUST_LD_LIB_PATH "LD_LIBRARY_PATH=`${LLVM_CONFIG_BIN} --libdir`$old_path"
 	
-	set_var FAUST_LD_LIB_PATH "LD_LIBRARY_PATH=`${LLVM_CONFIG_BIN} --libdir`$old_path"
-	
-    elif uname -s |grep Darwin > /dev/null ; then
+	elif uname -s |grep Darwin > /dev/null ; then
 
-	set_var FAUST_LD_LIB_PATH "DYLD_LIBRARY_PATH=`${LLVM_CONFIG_BIN} --libdir`$old_path"
+		old_dy_path=""
+		
+		if is_set DYLD_LIBRARY_PATH ; then
+			old_dy_path=":$DYLD_LIBRARY_PATH"
+		fi
+    
+		set_var FAUST_LD_LIB_PATH "DYLD_LIBRARY_PATH=${ORG_PWD}/bin/packages/faust/build/lib:`${LLVM_CONFIG_BIN} --libdir`$old_dy_path"
 
     else
 		handle_failure "unknown architecture"
@@ -320,7 +326,7 @@ else
     export FULL_CCC_PATH=`which g++`
 fi
 
-if ! uname -s |grep Linux > /dev/null ; then
+if ! uname -s |grep -i Linux > /dev/null ; then
     unset INCLUDE_PDDEV
     set_var INCLUDE_PDDEV 0
 fi

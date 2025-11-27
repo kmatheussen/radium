@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QSet>
 #include <QUuid>
+#include <QVarLengthArray>
 
 #include "../weakjack/weak_libjack.h"
 
@@ -3592,10 +3593,12 @@ filepath_t getCurrSampleUnderMouseForSequencer(void){
   return g_curr_sample_under_mouse_for_sequencer;
 }
 
-dynvec_t getBlockUsageInSequencer(void){
+dynvec_t getBlockUsageInSequencer(void)
+{
   int num_blocks = root->song->num_blocks;
-  int ret[num_blocks];
-  memset(ret, 0, sizeof(int)*num_blocks);
+
+  QVarLengthArray<int> ret(num_blocks);
+  memset(ret.data(), 0, sizeof(int)*num_blocks);
 
   VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
     VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
@@ -4297,7 +4300,7 @@ dynvec_t getSeqblocknumZOrder(int seqtracknum){
     seqblocks_hash[seqblock->id] = iterator666;
   }END_VECTOR_FOR_EACH;
   
-  QVector<struct SeqBlock*> seqblocks = SEQTRACK_get_seqblocks_in_z_order(seqtrack, false);
+  radium::Vector_GC<struct SeqBlock*> seqblocks = SEQTRACK_get_seqblocks_in_z_order(seqtrack, false);
 
   for(const struct SeqBlock *seqblock : seqblocks)
     DYNVEC_push_back(&ret, DYN_create_int(seqblocks_hash[seqblock->id]));
@@ -4315,7 +4318,7 @@ dynvec_t getSeqblockZOrder(int seqtracknum){
   // clean up
   remove_unused_seqblocks_from_seqblocks_z_order(seqtrack);
 
-  QVector<struct SeqBlock*> seqblocks = SEQTRACK_get_seqblocks_in_z_order(seqtrack, false);
+  radium::Vector_GC<struct SeqBlock*> seqblocks = SEQTRACK_get_seqblocks_in_z_order(seqtrack, false);
 
   for(const struct SeqBlock *seqblock : seqblocks)
     DYNVEC_push_back(&ret, DYN_create_int(seqblock->id));

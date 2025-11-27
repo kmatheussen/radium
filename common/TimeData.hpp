@@ -26,7 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
   * Writer thread can not be a realtime thread.
   * DataType must provide the two methods 'get_time' and 'set_time' (and sometimes 'get_val'),
     which is usually done by subclassing r::TimeDataDataType.
-    'get_time' and 'set_time' operates on 'Ratio', but other types can probably be supported by
+    'get_time' and 'set_time' operate on 'Ratio', but other types can probably be supported by
     using a template, if necessary, later.
   * The underlying vector is sorted by the result of calling get_time().
   * DataType should ideally be a trivial datatype (i.e. a POD). If that is not possible,
@@ -327,7 +327,7 @@ template <class T>
 struct TimeData_shared_ptr
 {
   using TType = T;
-  using ValType = typeof(T::_val);
+  using ValType = decltype(T::_val);
   
   static_assert(std::is_base_of<TimeDataDataTypeRef<ValType>, T>::value, "T must be a subclass of r::TimeDataDataTypeRef");
   
@@ -1119,9 +1119,11 @@ private:
   
 public:
 
+# define MultipleReaders_ScopedUsage radium::RT_AtomicPointerStorageMultipleReaders_ScopedUsage<const TimeDataVector>
+
   // Optimized reader if reading the vector in a timely linear fashion (cache_num should be supplied in RT code).
   class Reader
-    : private radium::RT_AtomicPointerStorageMultipleReaders_ScopedUsage<const TimeDataVector>
+    : private MultipleReaders_ScopedUsage
     , public ReaderWriter<const TimeData, const TimeDataVector>
   {
     
@@ -1130,15 +1132,17 @@ public:
     Reader& operator=(const Reader&) = delete;
 
    public:
-    
+
     Reader(const TimeData *time_data, const int cache_num = -1)
       : radium::RT_AtomicPointerStorageMultipleReaders_ScopedUsage<const TimeDataVector>(time_data->_atomic_pointer_storage)
       , ReaderWriter<const TimeData, const TimeDataVector>(time_data,
-                                                           radium::RT_AtomicPointerStorageMultipleReaders_ScopedUsage<const TimeDataVector>::get_pointer(),
+                                                           MultipleReaders_ScopedUsage::get_pointer(),
                                                            cache_num)
     {
     }
-    
+
+#  undef MultipleReaders_ScopedUsage
+		
     ~Reader(){
     }
 

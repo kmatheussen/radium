@@ -13,6 +13,15 @@ double g_fade_benchmark_time = 0.0;
 #include "Juce_plugins_proc.h"
 #include "Fade.hpp"
 
+#ifdef __OPTIMIZE__
+#  if !defined(RADIUM_OMIT_FRAME_POINTERS)
+#    error "OPTIMIZE + -fno-omit-frame-pointers"
+#  endif
+#else
+#  if defined(RADIUM_OMIT_FRAME_POINTERS)
+#    error "-O0 + -fomit-frame-pointers"
+#  endif
+#endif
 
   //#define B(A) A
   #define B(A)
@@ -301,7 +310,7 @@ public:
     R_ASSERT_NON_RELEASE(_state==State::FADE_IN_DELAY || _state==State::CROSSFADE);
     R_ASSERT_NON_RELEASE(_is_fading_in);
 
-    T temp_output[num_frames];
+    T *temp_output = RT_ALLOC_ARRAY_STACK(T, num_frames);
 
     RT_process_overwrite(num_frames, input, temp_output);
     _fade_in.RT_fade(num_frames, temp_output);
@@ -314,7 +323,7 @@ public:
     R_ASSERT_NON_RELEASE(_state==State::FADE_OUT_DELAY || _state==State::CROSSFADE);
     R_ASSERT_NON_RELEASE(!_is_fading_in);
 
-    T temp_output[num_frames];
+    T *temp_output = RT_ALLOC_ARRAY_STACK(T, num_frames);
 
     RT_process_overwrite(num_frames, input, temp_output);
     _fade_out.RT_fade(num_frames, temp_output);
@@ -412,14 +421,14 @@ private:
         }
 
         {
-          float temp[num_frames];
-          memcpy(temp, input, sizeof(float)*num_frames);
-
-          _fade.RT_fade_out(num_frames, temp);
-
-          _delay1->RT_process_overwrite_fade_in(num_frames, input, output);
-
-          JUCE_add_sound(output, temp, num_frames);
+			float *temp = RT_ALLOC_ARRAY_STACK(float, num_frames);
+			memcpy(temp, input, sizeof(float)*num_frames);
+			
+			_fade.RT_fade_out(num_frames, temp);
+			
+			_delay1->RT_process_overwrite_fade_in(num_frames, input, output);
+			
+			JUCE_add_sound(output, temp, num_frames);
         }
 
         return true;
@@ -473,14 +482,14 @@ private:
         }
 
         {
-          float temp[num_frames];
-          memcpy(temp, input, sizeof(float)*num_frames);
-
-          _fade.RT_fade_in(num_frames, temp);
-          
-          _delay1->RT_process_overwrite_fade_out(num_frames, input, output);
-
-          JUCE_add_sound(output, temp, num_frames);
+			float *temp = RT_ALLOC_ARRAY_STACK(float, num_frames);
+			memcpy(temp, input, sizeof(float)*num_frames);
+			
+			_fade.RT_fade_in(num_frames, temp);
+			
+			_delay1->RT_process_overwrite_fade_out(num_frames, input, output);
+			
+			JUCE_add_sound(output, temp, num_frames);
         }
 
         return true;
@@ -504,9 +513,9 @@ private:
       return RT_process2(num_frames, input, output, delay_size);
 
     {
-      float temp[num_frames];
-      memcpy(temp, input, sizeof(float)*num_frames);
-      return RT_process2(num_frames, temp, output, delay_size);
+		float *temp = RT_ALLOC_ARRAY_STACK(float, num_frames);
+		memcpy(temp, input, sizeof(float)*num_frames);
+		return RT_process2(num_frames, temp, output, delay_size);
     }
   }
 
@@ -560,8 +569,8 @@ public:
 
     if (output_sound==NULL){
 
-      float dev_null[num_frames];
-      RT_process(num_frames, empty_sound, dev_null);
+		float *dev_null = RT_ALLOC_ARRAY_STACK(float, num_frames);
+		RT_process(num_frames, empty_sound, dev_null);
       
     }else{
 
@@ -707,8 +716,8 @@ static void smoothdelaydelay_test2(int delay_size, int buffer_size){
 
   assert(delay.RT_get_delay_size()==delay_size);
 
-  int input[buffer_size+delay_size];
-  int output[buffer_size];
+  int *input = (int*)alloca(sizeof(int)*(buffer_size+delay_size));
+  int *output = (int*)alloca(sizeof(int)*buffer_size);
 
   for(int i=0;i<buffer_size;i++){
     input[i] = i+1;
@@ -779,6 +788,9 @@ static void SMOOTHDELAY_test(void){
   double gendata_time = 0;
   double time = TIME_get_ms();
 
+  float *input = (float*)alloca(sizeof(float)*2048);
+  float *output = (float*)alloca(sizeof(float)*2048);
+
   for(int testnum0 = 0 ; testnum0 < 500 ; testnum0++){
 #if !BENCHMARK_SMOOTHDELAY
     printf("%d ", testnum0);fflush(stdout);
@@ -790,8 +802,8 @@ static void SMOOTHDELAY_test(void){
         num_frames *= 2;
       //printf("num_frames: %d\n", num_frames);
 
-      float input[num_frames]; // hmm.....
-      float output[num_frames];
+	  //float input[num_frames]; // hmm.....
+	  //float output[num_frames];
 
       double time5 = TIME_get_ms();
       for(int i=0;i<num_frames;i++)

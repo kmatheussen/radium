@@ -539,7 +539,7 @@ public:
     SliceBuffer *slicebuffer = STP_create_SliceBuffer(_num_ch);
     R_ASSERT_RETURN_IF_FALSE(slicebuffer->samples!=NULL);
     
-    float interleaved_samples[SLICE_SIZE * _num_ch];
+    float *interleaved_samples = RT_ALLOC_ARRAY_STACK(float, SLICE_SIZE * _num_ch);
 
     bool samples_are_valid = false;
 

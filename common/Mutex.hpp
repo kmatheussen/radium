@@ -3,16 +3,28 @@
 #ifndef _RADIUM_COMMON_MUTEX_HPP
 #define _RADIUM_COMMON_MUTEX_HPP
 
-#include <pthread.h>
-#include <sys/time.h>
-#include <errno.h>
-
-#include <thread>
-
-#ifdef FOR_MACOSX
-# include <sys/types.h>
-# include <sys/socket.h>
+#if defined(_MSC_VER)
+#  define RADIUM_USE_CPP_MUTEX 1
+#else
+#  define RADIUM_USE_CPP_MUTEX 1
 #endif
+
+
+#if RADIUM_USE_CPP_MUTEX
+#  include <mutex>
+#  include <condition_variable>
+#else
+#  include <pthread.h>
+#  include <sys/time.h>
+#  include <errno.h>
+#  ifdef FOR_MACOSX
+#    include <sys/types.h>
+#    include <sys/socket.h>
+#  endif
+#endif
+
+//#include <thread>
+
 
 
 // QMutex/QMutexLocker/QWaitCondition, which were used everywhere, and worked great othervice, didn't work with tsan, so that's the reason for this file.
@@ -22,10 +34,14 @@
 
 
 
-namespace radium {
+namespace radium
+{
 
+
+#if !RADIUM_USE_CPP_MUTEX
 //clock_gettime is not implemented on OSX, but for the type of usage in this file, it's absolutely no problem at all using gettimeofday instead, so we just as well do that on all platforms. Code copied from http://stackoverflow.com/questions/5167269/clock-gettime-alternative-in-mac-os-x
-static inline int my_clock_gettime(struct timespec* t) {
+static inline int my_clock_gettime(struct timespec* t)
+{
     struct timeval now;
     int rv = gettimeofday(&now, NULL);
     if (rv) return rv;
@@ -33,7 +49,7 @@ static inline int my_clock_gettime(struct timespec* t) {
     t->tv_nsec = now.tv_usec * 1000;
     return 0;
 }
-  
+#endif // !RADIUM_USE_CPP_MUTEX
 
   
 struct AbstractMutex {
@@ -50,7 +66,97 @@ struct AbstractMutex {
   virtual void unlock(void) = 0;
 };
 
+
+#if RADIUM_USE_CPP_MUTEX
+struct Mutex : public AbstractMutex
+{
+	friend struct CondWait;
   
+private:
+
+	std::mutex mutex;
+	std::recursive_mutex recursive_mutex;
+
+	const bool is_recursive;
+	int num_locks;
+
+public:
+  
+	Mutex(bool is_recursive_)
+		: is_recursive(is_recursive_)
+		, num_locks(0)
+	{
+	}
+
+	Mutex()
+    : Mutex(false)
+	{
+	}
+  
+	~Mutex()
+	{
+	}
+
+	bool trylock(void)
+	{
+		bool ret;
+		
+		if (is_recursive)
+		{
+			ret = recursive_mutex.try_lock();
+		}
+		else
+		{
+			ret = mutex.try_lock();
+		}
+
+		if (ret)
+			num_locks++;
+		
+		return ret;
+	}
+
+	void lock(void) override
+	{
+		if (is_recursive)
+		{
+			recursive_mutex.lock();
+		}
+		else
+		{
+			mutex.lock();
+		}
+
+		if (!is_recursive)
+		{
+			R_ASSERT_RETURN_IF_FALSE(num_locks==0);
+		}
+		
+		num_locks++;
+	}
+
+	void unlock(void) override
+	{
+		R_ASSERT_RETURN_IF_FALSE(num_locks>0);
+    
+		num_locks--;
+
+		if (is_recursive)
+		{
+			recursive_mutex.unlock();
+		}
+		else
+		{
+			mutex.unlock();
+		}
+	}
+
+	bool is_locked(void) const
+	{
+		return num_locks>0;
+	}
+};
+#else // RADIUM_USE_CPP_MUTEX -> !RADIUM_USE_CPP_MUTEX
 struct Mutex : public AbstractMutex {
   friend struct CondWait;
   
@@ -114,7 +220,7 @@ public:
     return num_locks>0;
   }
 };
-
+#endif // !RADIUM_USE_CPP_MUTEX
 
 
 #if 0
@@ -302,7 +408,49 @@ private:
   std::atomic_flag flag = ATOMIC_FLAG_INIT;
 };
 #endif
-  
+
+#if RADIUM_USE_CPP_MUTEX
+struct CondWait
+{
+	std::condition_variable cond;
+
+	bool wait(Mutex *mutex, const int timeout_in_milliseconds)
+	{
+		R_ASSERT_NON_RELEASE(!mutex->is_recursive);
+
+		std::unique_lock<std::mutex> lk(mutex->mutex);
+		
+		if (timeout_in_milliseconds == 0)
+		{
+			cond.wait(lk);
+			return true;
+		}
+
+		if (std::cv_status::timeout == cond.wait_for(lk, std::chrono::milliseconds(timeout_in_milliseconds)))
+			return false;
+		else
+			return true;
+	}
+
+	void wait(Mutex *mutex)
+	{
+		R_ASSERT_NON_RELEASE(!mutex->is_recursive);
+		
+		std::unique_lock<std::mutex> lk(mutex->mutex);
+		cond.wait(lk);
+	}
+
+	void notify_one(void)
+	{
+		cond.notify_one();
+	}
+
+	void notify_all(void)
+	{
+		cond.notify_all();
+	}
+};
+#else // RADIUM_USE_CPP_MUTEX -> !RADIUM_USE_CPP_MUTEX
 struct CondWait {
 
   pthread_cond_t cond;
@@ -345,7 +493,7 @@ struct CondWait {
     if (ret==EINVAL)
       RError("pthread_cond_wait returned EINVAL");
     else if (ret==EPERM)
-      RError("pthread_cond_wait returned EINVAL");
+      RError("pthread_cond_wait returned EPERM");
 #ifndef RELEASE
     else if (ret!=0)
       RError("Unknown return message from pthread_cond_wait: %d",ret);
@@ -360,7 +508,7 @@ struct CondWait {
     pthread_cond_broadcast(&cond);
   }
 };
-
+#endif // !RADIUM_USE_CPP_MUTEX
 
 }
 

@@ -27,6 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QFloat16>
 
 #include "Juce_plugins_proc.h"
+#include "../common/Array.hpp"
 #include "../common/Mutex.hpp"
 #include "../common/read_binary.h"
 
@@ -548,7 +549,7 @@ private:
 #if READ_EVERYTHING_AT_ONCE
         qfloat16 min=data[i*2], max=data[i*2+1];
 #if !defined(RELEASE)
-        if(!sane_isnormal(min) || !sane_isnormal(max)){
+        if(!sane_isnormal((float)min) || !sane_isnormal((float)max)){
           printf("min: %f. max: %f.\n", (float)min, (float)max);
           abort();
         }
@@ -656,8 +657,9 @@ private:
       return;
     }
 
-    float interleaved_samples[_num_ch * SAMPLES_PER_PEAK];
-    float samples[_num_ch][SAMPLES_PER_PEAK];
+    QVector<float> interleaved_samples(_num_ch * SAMPLES_PER_PEAK);
+
+	radium::Array2D<float> samples(_num_ch, SAMPLES_PER_PEAK);
 
     int64_t total_frames = sf_info.frames;
 
@@ -667,7 +669,7 @@ private:
 
     for(int64_t i = 0 ; ; i += SAMPLES_PER_PEAK){
       
-      int num_read = (int)sf_readf_float(sndfile, interleaved_samples, SAMPLES_PER_PEAK);
+		int num_read = (int)sf_readf_float(sndfile, interleaved_samples.data(), SAMPLES_PER_PEAK);
       
       if (num_read==0) {
         GFX_Message(NULL, "Unable to read from pos %" PRId64 " in file %S", i, _filename.getString());
@@ -697,9 +699,11 @@ private:
 
       int pos=0;
       for(int i=0;i<num_read;i++)
-        for(int ch=0;ch<_num_ch;ch++)
-          samples[ch][i] = interleaved_samples[pos++];
-      
+	  {
+		  for(int ch=0;ch<_num_ch;ch++)
+			  samples[ch][i] = interleaved_samples[pos++];
+      }
+	  
       for(int ch=0;ch<_num_ch;ch++)
         _peaks[ch].add_samples(samples[ch], num_read, is_finished ? Peaks::THIS_IS_THE_LAST_CALL : Peaks::MORE_IS_COMING_LATER);
       

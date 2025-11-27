@@ -69,14 +69,23 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "midi_i_input_proc.h"
 
 
-static DEFINE_ATOMIC(uint32_t, g_msg) = 0;
 
+// Note: Storing this variable globally ensures that the memory for it won't be freed while still in use. (GC)
+// (And the rest of the program knows that it might be dealing with a patch for an instrument that has been deleted.)
+//
 DEFINE_ATOMIC(struct Patch *, g_through_patch) = NULL;
+
 
 extern const char *NotesTexts3[131];
 
+
+// Allocate since static variables are not good for the GC.
+static auto *g_step_recording_midi_msg_queue = new boost::lockfree::queue<uint32_t, boost::lockfree::capacity<512> > ;
+
+
 static radium::Mutex g_midi_learns_mutex;
 static radium::Vector<radium::MidiLearn*> g_midi_learns;
+
 
 static bool msg_is_cc(const uint32_t msg){
   const int d1 = MIDI_msg_byte1(msg);
@@ -242,10 +251,16 @@ static radium::Vector<midi_event_t> g_recorded_midi_events;
 
 static radium::Queue<midi_event_t, 8000> *g_midi_event_queue; // 8000 is not the maximum size that can be recorded totally, but the maximum size that can be recorded until the recording queue pull thread has a chance to pick it up. In other words: 8000 should be plenty enough as long as the CPU is not too busy.
 
+#if !defined(RELEASE)
+static DEFINE_ATOMIC(bool, g_has_inited) = false;
+#endif
   
 // Called from a MIDI input thread. Only called if playing
-static void record_midi_event(const symbol_t *port_name, const uint32_t msg){
+static void record_midi_event(const symbol_t *port_name, const uint32_t msg)
+{
 
+	R_ASSERT_NON_RELEASE(ATOMIC_GET(g_has_inited));
+	
   bool is_fx = msg_is_fx(msg);
   bool is_note = msg_is_note(msg);
 
@@ -942,19 +957,11 @@ typedef struct {
   uint32_t msg;
 } play_buffer_event_t;
 
-static boost::lockfree::queue<play_buffer_event_t, boost::lockfree::capacity<8000> > *g_play_buffer;
+// Allocate since static variables are not good for the GC.
+static auto *g_play_buffer = new boost::lockfree::queue<play_buffer_event_t, boost::lockfree::capacity<8000> >;
 
-namespace
+void radium::MidiLearn::RT_maybe_use_forall(instrument_t instrument_id, const symbol_t *port_name, uint32_t msg)
 {
-  struct InitBuffer{
-    InitBuffer(){
-      g_play_buffer = new boost::lockfree::queue<play_buffer_event_t, boost::lockfree::capacity<8000>>;
-    }
-  } g_init_buffer;
-}
-
-
-void radium::MidiLearn::RT_maybe_use_forall(instrument_t instrument_id, const symbol_t *port_name, uint32_t msg){
   for (auto midi_learn : g_midi_learns) {
     bool may_use = false;
     
@@ -972,91 +979,113 @@ void radium::MidiLearn::RT_maybe_use_forall(instrument_t instrument_id, const sy
 }
 
 // Called from the player thread
-void RT_MIDI_handle_play_buffer(void){
+void RT_MIDI_handle_play_buffer(void)
+{
+	play_buffer_event_t event;
   
-  play_buffer_event_t event;
-  
-  bool has_set_midi_receive_time = false;
+	bool has_set_midi_receive_time = false;
 
-  struct Instruments *midi_instrument = get_MIDI_instrument();
-  struct Instruments *audio_instrument = get_audio_instrument();
+	struct Instruments *midi_instrument = get_MIDI_instrument();
+	struct Instruments *audio_instrument = get_audio_instrument();
   
-  if (midi_instrument==NULL || audio_instrument==NULL){ // happens during init
-    R_ASSERT(midi_instrument==NULL && audio_instrument==NULL);
-    return;
-  }
+	if (midi_instrument==NULL || audio_instrument==NULL){ // happens during init
+		R_ASSERT(midi_instrument==NULL && audio_instrument==NULL);
+		return;
+	}
   
-  struct Patch *playing_patches[midi_instrument->patches.num_elements + audio_instrument->patches.num_elements + 1]; // add 1 to avoid ubsan hit if there are no instruments.
+	//struct Patch *playing_patches[midi_instrument->patches.num_elements + audio_instrument->patches.num_elements + 1]; // add 1 to avoid ubsan hit if there are no instruments.
   
-  bool has_inited = false;
-  int num_playing_patches = 0;
+	bool has_inited = false;
+	//int num_playing_patches = 0;
+	bool has_playing_audio_patches = false;
+	bool has_playing_midi_patches = false;
   
-  struct SeqTrack *seqtrack = NULL; // set to NULL to silence false compiler warning.
-  struct Patch *through_patch = NULL; // set to NULL to silence false compiler warning.
-  double seqtrack_starttime = 0.0; // set to 0.0 to silence false compiler warning.
+	struct SeqTrack *seqtrack = NULL; // set to NULL to silence false compiler warning.
+	struct Patch *through_patch = NULL; // set to NULL to silence false compiler warning.
+	double seqtrack_starttime = 0.0; // set to 0.0 to silence false compiler warning.
   
-  while(g_play_buffer->pop(event)==true){
+	while(g_play_buffer->pop(event)==true)
+	{
+		uint32_t msg = event.msg;
 
-    uint32_t msg = event.msg;
+		radium::MidiLearn::RT_maybe_use_forall(make_instrument(-1), event.port_name, msg);
 
-    radium::MidiLearn::RT_maybe_use_forall(make_instrument(-1), event.port_name, msg);
+		if (has_inited == false)
+		{
+			seqtrack = RT_get_curr_seqtrack();
+			seqtrack_starttime = seqtrack->start_time;
 
-    if (has_inited == false){
+			if(ATOMIC_GET(g_send_midi_input_to_current_instrument))
+				through_patch = ATOMIC_GET(g_through_patch);
+			else
+				through_patch = NULL;
+
+			VECTOR_FOR_EACH(struct Patch *, patch, &midi_instrument->patches)
+			{
+				if(ATOMIC_GET(patch->always_receive_midi_input)){
+					has_playing_midi_patches = true;
+					break;
+					//playing_patches[num_playing_patches] = patch;
+					//num_playing_patches++;
+				}
+			}
+			END_VECTOR_FOR_EACH;
+	  
+			VECTOR_FOR_EACH(struct Patch *, patch, &audio_instrument->patches)
+			{
+				if(ATOMIC_GET(patch->always_receive_midi_input)){          
+					struct SoundPlugin *plugin = static_cast<struct SoundPlugin*>(patch->patchdata);
+					if (plugin==NULL){
+						R_ASSERT_NON_RELEASE(false);
+					} else {
+						PLUGIN_touch(plugin);
+						has_playing_audio_patches = true;
+					}
+
+					//playing_patches[num_playing_patches] = patch;
+					//num_playing_patches++;
+				}
+			}
+			END_VECTOR_FOR_EACH;
       
-      seqtrack = RT_get_curr_seqtrack();
-      seqtrack_starttime = seqtrack->start_time;
-
-      if(ATOMIC_GET(g_send_midi_input_to_current_instrument))
-        through_patch = ATOMIC_GET(g_through_patch);
-      else
-        through_patch = NULL;
-
-      VECTOR_FOR_EACH(struct Patch *, patch, &midi_instrument->patches){
-        if(ATOMIC_GET(patch->always_receive_midi_input)){
-          playing_patches[num_playing_patches] = patch;
-          num_playing_patches++;
-        }
-      }END_VECTOR_FOR_EACH;
-
-      VECTOR_FOR_EACH(struct Patch *, patch, &audio_instrument->patches){
-        if(ATOMIC_GET(patch->always_receive_midi_input)){
-          playing_patches[num_playing_patches] = patch;
-          num_playing_patches++;
-          
-          struct SoundPlugin *plugin = static_cast<struct SoundPlugin*>(patch->patchdata);
-          if (plugin==NULL){
-            R_ASSERT_NON_RELEASE(false);
-          } else {
-            PLUGIN_touch(plugin);
-          }
-        }
-      }END_VECTOR_FOR_EACH;
-      
-      has_inited = true;
-    }
+			has_inited = true;
+		}
     
-    if(through_patch!=NULL || num_playing_patches > 0){
-      
-      uint8_t byte1 = MIDI_msg_byte1(msg);
-      if (byte1 < 0xf0 && ATOMIC_GET(g_use_track_channel_for_midi_input)){
-        byte1 &= 0xf0;
-        byte1 |= ATOMIC_GET(g_curr_midi_channel);
-      }
-      uint8_t byte[3] = {byte1, (uint8_t)MIDI_msg_byte2(msg), (uint8_t)MIDI_msg_byte3(msg)};
+		if (through_patch!=NULL || has_playing_audio_patches || has_playing_midi_patches)
+		{
+			uint8_t byte1 = MIDI_msg_byte1(msg);
+	  
+			if (byte1 < 0xf0 && ATOMIC_GET(g_use_track_channel_for_midi_input)){
+				byte1 &= 0xf0;
+				byte1 |= ATOMIC_GET(g_curr_midi_channel);
+			}
 
-      if (has_set_midi_receive_time==false){
-        g_last_midi_receive_time = TIME_get_ms();
-        has_set_midi_receive_time = true;
-      }
+			const uint8_t bytes[3] = {byte1, (uint8_t)MIDI_msg_byte2(msg), (uint8_t)MIDI_msg_byte3(msg)};
+
+			if (has_set_midi_receive_time==false){
+				g_last_midi_receive_time = TIME_get_ms();
+				has_set_midi_receive_time = true;
+			}
       
-      if (through_patch != NULL)
-        RT_MIDI_send_msg_to_patch(seqtrack, (struct Patch*)through_patch, byte, 3, seqtrack_starttime);
-      
-      for(int i=0;i<num_playing_patches;i++)
-        RT_MIDI_send_msg_to_patch(seqtrack, playing_patches[i], byte, 3, seqtrack_starttime);
-    }
-    
-  }
+			if (through_patch != NULL)
+				RT_MIDI_send_msg_to_patch(seqtrack, through_patch, bytes, 3, seqtrack_starttime);
+
+			if (has_playing_midi_patches)
+				VECTOR_FOR_EACH(struct Patch *, patch, &midi_instrument->patches){
+					if(ATOMIC_GET(patch->always_receive_midi_input))
+						RT_MIDI_send_msg_to_patch(seqtrack, patch, bytes, 3, seqtrack_starttime);
+				}END_VECTOR_FOR_EACH;
+
+			if (has_playing_audio_patches)	  
+				VECTOR_FOR_EACH(struct Patch *, patch, &audio_instrument->patches){
+					if(ATOMIC_GET(patch->always_receive_midi_input))
+						RT_MIDI_send_msg_to_patch(seqtrack, patch, bytes, 3, seqtrack_starttime);
+				}END_VECTOR_FOR_EACH;
+
+			//for(int i=0;i<num_playing_patches;i++)
+			//  RT_MIDI_send_msg_to_patch(seqtrack, playing_patches[i], bytes, 3, seqtrack_starttime);
+		}
+	}
 }
 
 // Called from a MIDI input thread
@@ -1120,53 +1149,62 @@ static bool maybe_fix_incremental_mode_for_msg(const symbol_t *port_name, uint32
 }
 
 // Can be called from any thread
-void MIDI_editor_and_midi_learn_InputMessageHasBeenReceived(const symbol_t *port_name, int cc,int data1,int data2){
+void MIDI_editor_and_midi_learn_InputMessageHasBeenReceived(const symbol_t *port_name, int cc,int data1,int data2)
+{
   //printf("got new message. on/off:%d. Message: %x,%x,%x\n",(int)root->editonoff,cc,data1,data2);
   //static int num=0;
   //num++;
 
-  if(cc==0xf0 || cc==0xf7) // sysex not supported
-    return;
-  
-  if (MIXER_is_saving())
-    return;
-  
-  bool isplaying = is_playing();
-
-  switch(cc){
-    case 0xfa:
-      RT_request_to_start_playing_block();
-      return;
-    case 0xfb:
-      RT_request_to_continue_playing_block();
-      return;
-    case 0xfc:
-      RT_request_to_stop_playing();
-      return;
-  }
-  
-  uint32_t msg = MIDI_msg_pack3(cc, data1, data2);
-  int len = MIDI_msg_len(msg);
-  if (len<1 || len>3)
-    return;
-
-  if (!maybe_fix_incremental_mode_for_msg(port_name, msg))
-    return;
-  
-  add_event_to_play_buffer(port_name, msg);
-
-  if (g_record_accurately_while_playing && isplaying) {
-    
-    if (ATOMIC_GET(root->editonoff))
-      record_midi_event(port_name, msg);
-
-  } else {
-
-    if(msg_is_note_on(msg))
-      if (ATOMIC_COMPARE_AND_SET_UINT32(g_msg, 0, msg)==false) {
-        // printf("Playing to fast. Skipping note %u from MIDI input.\n",msg); // don't want to print in realtime thread
-      }
-  }
+	R_ASSERT_NON_RELEASE(ATOMIC_GET(g_has_inited));
+	
+	if(cc==0xf0 || cc==0xf7) // sysex not supported
+		return;
+	
+	if (MIXER_is_saving())
+		return;
+	
+	bool isplaying = is_playing();
+	
+	switch(cc){
+		case 0xfa:
+			RT_request_to_start_playing_block();
+			return;
+		case 0xfb:
+			RT_request_to_continue_playing_block();
+			return;
+		case 0xfc:
+			RT_request_to_stop_playing();
+			return;
+	}
+	
+	uint32_t msg = MIDI_msg_pack3(cc, data1, data2);
+	int len = MIDI_msg_len(msg);
+	if (len<1 || len>3)
+		return;
+	
+	if (!maybe_fix_incremental_mode_for_msg(port_name, msg))
+		return;
+	
+	add_event_to_play_buffer(port_name, msg);
+	
+	if (g_record_accurately_while_playing && isplaying) {
+		
+		if (ATOMIC_GET(root->editonoff))
+			record_midi_event(port_name, msg);
+		
+	} else {
+		
+		if(msg_is_note_on(msg))
+		{
+			if (!g_step_recording_midi_msg_queue->bounded_push(msg))
+			{
+#if !defined(RELEASE)
+				printf("Playing to fast. Skipping note-msg %u from MIDI input.\n", msg); // don't want to print in realtime thread
+				R_ASSERT_NON_RELEASE(false); // Seems very unlikely that this should happen. Probably a bug.
+#endif
+			}
+		}
+	}
 }
 
 
@@ -1179,23 +1217,49 @@ void MIDI_editor_and_midi_learn_InputMessageHasBeenReceived(const symbol_t *port
 
 
 // called very often from the main thread
-void MIDI_HandleInputMessage(void){
+void MIDI_HandleInputMessage(void)
+{
+	R_ASSERT_NON_RELEASE(ATOMIC_GET(g_has_inited));
 
-  uint32_t msg = ATOMIC_GET(g_msg); // Hmm, should have an ATOMIC_COMPAREFALSE_AND_SET function. (doesn't matter though, it would just look better)
-  
-  if (msg!=0) {
+	int num_messages = 0;
+	const int max_num_messages = 128;
+	
+	std::vector<uint32_t> messages;
 
-    ATOMIC_SET(g_msg, 0);
+	auto pull_more_data = [&num_messages, &messages](void)
+		{
+			uint32_t msg;
+	
+			while(num_messages < max_num_messages && g_step_recording_midi_msg_queue->pop(msg)==true)
+			{
+				messages.push_back(msg);
+				num_messages++;
+			}
+		};
 
-    if(ATOMIC_GET(root->editonoff)){
-      float velocity = -1.0f;
-      if (g_record_velocity)
-        velocity = (float)MIDI_msg_byte3(msg) / 127.0;
-      //printf("velocity: %f, byte3: %d, shift: %d\n",velocity,MIDI_msg_byte3(msg),shiftPressed());
-      InsertNoteCurrPos(root->song->tracker_windows,MIDI_msg_byte2(msg), shiftPressed(), velocity);
-      root->song->tracker_windows->must_redraw = true;
-    }
-  }
+	pull_more_data();
+	
+	while(!messages.empty())
+	{
+		std::vector<uint32_t> messages2 = std::move(messages);
+		messages.clear();
+
+		for(uint32_t msg : messages2)
+			if(ATOMIC_GET(root->editonoff))
+			{
+				float velocity = -1.0f;
+				
+				if (g_record_velocity)
+					velocity = (float)MIDI_msg_byte3(msg) / 127.0;
+				
+				//printf("velocity: %f, byte3: %d, shift: %d\n",velocity,MIDI_msg_byte3(msg),shiftPressed());
+				InsertNoteCurrPos(root->song->tracker_windows,MIDI_msg_byte2(msg), shiftPressed(), velocity);
+
+				pull_more_data();
+				
+				root->song->tracker_windows->must_redraw = true;
+			}
+	}
 }
 
 
@@ -1218,10 +1282,16 @@ void MIDI_input_init(void){
   }
 
   {
+#if !defined(RELEASE) // The lock below shouldn't be needed since MIDI_input_init should be called before starting audio.
     radium::ScopedMutex lock(g_midi_event_mutex); // Should have a comment here why we need to lock this mutex, if it is really necessary to lock it.
-    
+#endif
+	
     g_midi_event_queue = new radium::Queue<midi_event_t, 8000>;
     
     g_recording_queue_pull_thread.start();
   }
+
+#if !defined(RELEASE)
+  ATOMIC_SET(g_has_inited, true);
+#endif
 }

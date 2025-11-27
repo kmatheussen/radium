@@ -44,12 +44,14 @@ public slots:
   }
 
 
-  void on_value_spin_valueChanged( int val)
+  void on_value_spin_valueChanged(int val)
   {
+	  R_ASSERT_NON_RELEASE(val >= -127 && val<128);
+	  
     if(value_slider->value()!=val)
       value_slider->setValue(val);
     
-    patchdata->ccvalues[this->ccnum] = val;
+    patchdata->ccvalues[this->ccnum] = (char)val;
     printf("num: %d, value: %d\n",patchdata->cc[this->ccnum],val);
 
     MIDI_send3(patchdata,
@@ -85,11 +87,13 @@ public slots:
 
   void on_cctype_activated( int val)
   {
-    patchdata->cc[this->ccnum] = val;
-    patchdata->ccnames[this->ccnum] = talloc_strdup(get_ccnames()[val]);
-    
-    value_slider->_effect_num = patchdata->cc[ccnum];
-    printf("on_cctype_activated: Update effectnum for %d to %d\n",ccnum,patchdata->cc[ccnum]);
+	  R_ASSERT_NON_RELEASE(val >= -127 && val<128);
+	  
+	  patchdata->cc[this->ccnum] = (char)val;
+	  patchdata->ccnames[this->ccnum] = talloc_strdup(get_ccnames()[val]);
+	  
+	  value_slider->_effect_num = patchdata->cc[ccnum];
+	  printf("on_cctype_activated: Update effectnum for %d to %d\n",ccnum,patchdata->cc[ccnum]);
   }
 
 };

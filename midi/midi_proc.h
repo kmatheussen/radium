@@ -3,8 +3,8 @@
 #define RADIUM_MIDI_MIDI_PROC_H
 
 // implemented in audio/Juce_plugins.cpp (because it uses JUCE to parse midi)
-extern LANGSPEC int RT_MIDI_send_msg_to_patch(struct SeqTrack *seqtrack, struct Patch *patch, void *data, int data_size, int64_t seq_time);
-extern LANGSPEC int RT_MIDI_send_msg_to_patch_receivers(struct SeqTrack *seqtrack, struct Patch *patch, void *data, int data_size, int64_t seq_time);
+extern LANGSPEC int RT_MIDI_send_msg_to_patch(struct SeqTrack *seqtrack, struct Patch *patch, const void *data, int data_size, int64_t seq_time);
+extern LANGSPEC int RT_MIDI_send_msg_to_patch_receivers(struct SeqTrack *seqtrack, struct Patch *patch, const void *data, int data_size, int64_t seq_time);
 
 static inline uint32_t MIDI_msg_pack3(int a, int b, int c) {
   uint32_t msg = 0;

@@ -19,6 +19,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <string.h>
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wcast-qual"
+
 static inline void VECTOR_reserve(vector_t *v, int n){
   if(n <= v->num_elements_allocated)
     return;
@@ -268,18 +271,21 @@ static inline void VECTOR_sort2(vector_t *v, vector_sort_callback_t comp){
 #define END_ALL_SEQTRACKS_FOR_EACH }
 
 
-#if defined(__cplusplus) && defined(QVECTOR_H)
+#if defined(__cplusplus)
 
+#  if defined(QVECTOR_H)
 template<typename T>
-static inline QVector<T> VECTOR_get_qvector(const vector_t *v){
+static inline QVector<T> VECTOR_get_qvector(const vector_t *v)
+{
   QVector<T> ret;
   VECTOR_FOR_EACH(T, el, v){
     ret.push_back(el);
   }END_VECTOR_FOR_EACH;
   return ret;
 }
+#  endif // defined(QVECTOR_H)
 
-#endif
+#endif // __cplusplus
 
 
 
@@ -291,14 +297,14 @@ namespace radium{
   template <typename T> 
   class Vector_t {
 
-    const vector_t v;
+    const vector_t _v;
     
     LockAsserter lockAsserter;
 
   public:
     
     Vector_t(const vector_t &v)
-      : v(v)
+      : _v(v)
     {
       LOCKASSERTER_EXCLUSIVE(&lockAsserter);
     }
@@ -316,10 +322,10 @@ namespace radium{
 private:
   
     T *at_internal(int i) const {
-      R_ASSERT_RETURN_IF_FALSE2(i>=0, (T*)v.elements[0]);
-      R_ASSERT_RETURN_IF_FALSE2(i<v.num_elements, (T*)v.elements[0]);
+      R_ASSERT_RETURN_IF_FALSE2(i>=0, (T*)_v.elements[0]);
+      R_ASSERT_RETURN_IF_FALSE2(i<_v.num_elements, (T*)_v.elements[0]);
       
-      return (T*)v.elements[i];
+      return (T*)_v.elements[i];
     }
 
 public:
@@ -327,20 +333,20 @@ public:
     const T** begin() const {
       LOCKASSERTER_SHARED(&lockAsserter);
       
-      return (T**)&v.elements[0];
+      return (T**)&_v.elements[0];
     }
     
     // This function can be called in parallell with the other const functions (i.e. the non-mutating ones).
     const T** end() const {
       LOCKASSERTER_SHARED(&lockAsserter);
       
-      return (T**)&v.elements[v.num_elements];
+      return (T**)&_v.elements[_v.num_elements];
     }
     
     int size(void) const {
       LOCKASSERTER_SHARED(&lockAsserter);
       
-      return v.num_elements;
+      return _v.num_elements;
     }
 
     void push_back(T *t){
@@ -355,5 +361,6 @@ public:
 
 #endif
 
+#pragma clang diagnostic pop // wcast-qual
 
 #endif

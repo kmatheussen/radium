@@ -720,24 +720,30 @@ static void legalize_seqtrack_timing(struct SeqTrack *seqtrack, radium::PlayerLo
   int64_t last_end_time = 0;
   int64_t time_to_add = 0;
   
-  VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
-    if (seqblock->block != NULL){
-      int64_t seq_block_start = seqblock->t.time + time_to_add;
+  VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks)
+  {
+	  if (seqblock->block != NULL)
+	  {
+		  int64_t seq_block_start = seqblock->t.time + time_to_add;
       
-      if (seq_block_start < last_end_time) {
-        time_to_add += (last_end_time - seq_block_start);
-        seq_block_start = last_end_time;
-      }
+		  if (seq_block_start < last_end_time)
+		  {
+			  time_to_add += (last_end_time - seq_block_start);
+			  seq_block_start = last_end_time;
+		  }
+		  
+		  if (seq_block_start != seqblock->t.time)
+		  {
+			  if (lock)
+				  lock->lock();
+			  
+			  move_seqblock(seqblock, seq_block_start);
+		  }
       
-      if (seq_block_start != seqblock->t.time){
-        if (lock)
-          lock->lock();
-        move_seqblock(seqblock, seq_block_start);
-      }
-      
-      last_end_time = seqblock->t.time2;
-    }
-  }END_VECTOR_FOR_EACH;
+		  last_end_time = seqblock->t.time2;
+	  }
+  }
+  END_VECTOR_FOR_EACH;
 
   //VECTOR_sort(&seqtrack->seqblocks, seqblocks_comp);
 }
@@ -1711,88 +1717,102 @@ int SEQBLOCK_insert_seqblock_from_state(const hash_t *hash, enum ShowAssertionOr
   return SEQTRACK_insert_seqblock(seqtrack, seqblock, seqblock->t.time, seqblock->t.time2);
 }
 
-void SEQBLOCK_replace_seqblocks(const vector_t seqblocks, bool must_replace_same_id, bool use_old_seqblock_pos, enum ShowAssertionOrThrowAPIException error_type){
-  R_ASSERT_RETURN_IF_FALSE(must_replace_same_id==true); // must_replace_same_id==false is not implemented (could have implemented it quickly though, but then it wouldn't have been tested)
+void SEQBLOCK_replace_seqblocks(const vector_t seqblocks, bool must_replace_same_id, bool use_old_seqblock_pos, enum ShowAssertionOrThrowAPIException error_type)
+{
+	R_ASSERT_RETURN_IF_FALSE(must_replace_same_id==true); // must_replace_same_id==false is not implemented (could have implemented it quickly though, but then it wouldn't have been tested)
 
-  int num_seqblocks = seqblocks.num_elements;
-  
-  int seqblocknums[num_seqblocks];
-  struct SeqTrack *seqtracks[num_seqblocks];
-  const struct SeqBlock *old_seqblocks[num_seqblocks];
-  struct SeqBlock *new_seqblocks[num_seqblocks];
+	struct Stuff
+	{
+		int _seqblocknum;
+		struct SeqTrack * _seqtrack;
+		const struct SeqBlock *_old_seqblock;
+		struct SeqBlock *_new_seqblock;
+	};
 
-  VECTOR_FOR_EACH(const hash_t *, hash, &seqblocks){
-    const int i = iterator666;
+	radium::Vector_GC<Stuff> stuff;
 
-    int seqtracknum = HASH_get_int32(hash, ":seqtracknum");
-    if (seqtracknum < 0 || seqtracknum >= root->song->seqtracks.num_elements){
-      SHOW_ERROR(0, "No seqtrack #%d", seqtracknum);
-      return;
-    }
-    
-    seqtracks[i] = (struct SeqTrack*)root->song->seqtracks.elements[seqtracknum];
-    
-    seqblocknums[i] = HASH_get_int32(hash, ":seqblocknum");
-    if (seqblocknums[i] < 0 || seqblocknums[i] >= seqtracks[i]->seqblocks.num_elements){
-      SHOW_ERROR(0, "No seqblock #%d", seqblocknums[i]);
-      return;
-    }
-    
-    old_seqblocks[i] = (const struct SeqBlock*)seqtracks[i]->seqblocks.elements[seqblocknums[i]];
-    SEQBLOCK_update_with_borders(seqtracks[i], old_seqblocks[i]);
-    
-    new_seqblocks[i] = SEQBLOCK_create_from_state(seqtracks[i], seqtracknum, hash, QSet<int64_t>(), error_type, Seqblock_Type::REGULAR);
-    if (new_seqblocks[i]==NULL)
-      return;
-    
-    if (seqtracks[i]->for_audiofiles)
-      R_ASSERT_RETURN_IF_FALSE(new_seqblocks[i]->block==NULL);
-    
-    
-    if (old_seqblocks[i]->id != new_seqblocks[i]->id){
-      SHOW_ERROR(0, "When replacing seqblock #%d in seqtrack #%d, different id for seqblocks. Old id: %d. New id: %d.", seqblocknums[i], seqtracknum, (int)old_seqblocks[i]->id, (int)new_seqblocks[i]->id);
-      return;
-    }
+	VECTOR_FOR_EACH(const hash_t *, hash, &seqblocks)
+	{
+		int seqtracknum = HASH_get_int32(hash, ":seqtracknum");
+		if (seqtracknum < 0 || seqtracknum >= root->song->seqtracks.num_elements)
+		{
+			SHOW_ERROR(0, "No seqtrack #%d", seqtracknum);
+			return;
+		}
 
-    if (seqtracks[i]->for_audiofiles)
-      prepare_remove_sample_from_seqblock(seqtracks[i], old_seqblocks[i], Seqblock_Type::REGULAR);
+		Stuff s;
+	
+		s._seqtrack = (struct SeqTrack*)root->song->seqtracks.elements[seqtracknum];
+    
+		s._seqblocknum = HASH_get_int32(hash, ":seqblocknum");
+		if (s._seqblocknum < 0 || s._seqblocknum >= s._seqtrack->seqblocks.num_elements)
+		{
+			SHOW_ERROR(0, "No seqblock #%d", s._seqblocknum);
+			return;
+		}
+    
+		s._old_seqblock = (const struct SeqBlock*)s._seqtrack->seqblocks.elements[s._seqblocknum];
+		SEQBLOCK_update_with_borders(s._seqtrack, s._old_seqblock);
+    
+		s._new_seqblock = SEQBLOCK_create_from_state(s._seqtrack, seqtracknum, hash, QSet<int64_t>(), error_type, Seqblock_Type::REGULAR);
+		if (s._new_seqblock==NULL)
+			return;
+    
+		if (s._seqtrack->for_audiofiles)
+			R_ASSERT_RETURN_IF_FALSE(s._new_seqblock->block==NULL);
+    
+    
+		if (s._old_seqblock->id != s._new_seqblock->id){
+			SHOW_ERROR(0, "When replacing seqblock #%d in seqtrack #%d, different id for seqblocks. Old id: %d. New id: %d.",
+					   s._seqblocknum, seqtracknum, (int)s._old_seqblock->id, (int)s._new_seqblock->id);
+			return;
+		}
 
-  }END_VECTOR_FOR_EACH;
+		if (s._seqtrack->for_audiofiles)
+			prepare_remove_sample_from_seqblock(s._seqtrack, s._old_seqblock, Seqblock_Type::REGULAR);
 
-  
-  {
-    radium::PlayerPause pause(is_playing_song());
-    radium::PlayerLock lock;
+		stuff.push_back(s);	
+	}
+	END_VECTOR_FOR_EACH;
 
-    for(int i=0;i<num_seqblocks;i++){
-      if (use_old_seqblock_pos)
-        move_seqblock(new_seqblocks[i], old_seqblocks[i]->t.time);
+	{
+		radium::PlayerPause pause(is_playing_song());
+		radium::PlayerLock lock;
+
+		for(const Stuff &s : stuff)
+		{
+			if (use_old_seqblock_pos)
+				move_seqblock(s._new_seqblock, s._old_seqblock->t.time);
       
-      set_seqblock_stretch(seqtracks[i], new_seqblocks[i]);
+			set_seqblock_stretch(s._seqtrack, s._new_seqblock);
       
-      seqtracks[i]->seqblocks.elements[seqblocknums[i]] = new_seqblocks[i];      
-    }
+			s._seqtrack->seqblocks.elements[s._seqblocknum] = s._new_seqblock;
+		}
 
-    bool has_legalized[root->song->seqtracks.num_elements];
-    for(int i=0 ; i<root->song->seqtracks.num_elements ; i++)
-      has_legalized[i] = false;
+		QVarLengthArray<bool> has_legalized(root->song->seqtracks.num_elements);
+		for(int i=0 ; i<root->song->seqtracks.num_elements ; i++)
+			has_legalized[i] = false;
     
-    for(int i=0;i<num_seqblocks;i++){
-      int seqtracknum = get_seqtracknum(seqtracks[i]);
+		for(const Stuff &s : stuff)
+		{
+			int seqtracknum = get_seqtracknum(s._seqtrack);
       
-      if (!has_legalized[seqtracknum]){
-        has_legalized[seqtracknum] = true;
-        if (seqtracks[i]->for_audiofiles)
-          SEQTRACKPLUGIN_assert_samples2(seqtracks[i]);
-        RT_legalize_seqtrack_timing(seqtracks[i], NULL);
-      }
-    }
-  }
+			if (!has_legalized[seqtracknum])
+			{
+				has_legalized[seqtracknum] = true;
+				
+				if (s._seqtrack->for_audiofiles)
+					SEQTRACKPLUGIN_assert_samples2(s._seqtrack);
+				
+				RT_legalize_seqtrack_timing(s._seqtrack, NULL);
+			}
+		}
+	}
 
-  for(int i=0;i<num_seqblocks;i++)
-    SEQBLOCK_update_with_borders(seqtracks[i], new_seqblocks[i]);
+	for(const Stuff &s : stuff)
+		SEQBLOCK_update_with_borders(s._seqtrack, s._new_seqblock);
     
-  SEQUENCER_update(SEQUPDATE_BLOCKLIST | SEQUPDATE_PLAYLIST); // in case seqblock name is changed
+	SEQUENCER_update(SEQUPDATE_BLOCKLIST | SEQUPDATE_PLAYLIST); // in case seqblock name is changed
 }
 
 void SEQBLOCK_replace_seqblock(const hash_t *hash, bool must_replace_same_id, bool use_old_seqblock_pos, enum ShowAssertionOrThrowAPIException error_type){
@@ -2146,7 +2166,13 @@ void SEQTRACK_apply_gfx_seqblocks(struct SeqTrack *seqtrack, const int seqtrackn
   R_ASSERT(len1==seqtrack->seqblocks.num_elements);
 }
 
-static QVector<SeqTrack*> SEQTRACK_create_from_state(const hash_t *state, QSet<int64_t> &unavailable_seqblock_ids, double state_samplerate, int seqtracknum, enum ShowAssertionOrThrowAPIException error_type, const struct Song *song){
+static radium::Vector_GC<SeqTrack*> SEQTRACK_create_from_state(const hash_t *state,
+															   QSet<int64_t> &unavailable_seqblock_ids,
+															   double state_samplerate,
+															   int seqtracknum,
+															   enum ShowAssertionOrThrowAPIException error_type,
+															   const struct Song *song)
+{
  const hash_t *automation_state = NULL;
   if (HASH_has_key(state, "automation"))
     automation_state = HASH_get_hash(state, "automation");
@@ -2289,15 +2315,13 @@ static QVector<SeqTrack*> SEQTRACK_create_from_state(const hash_t *state, QSet<i
     }
   }
   
-  {
-    QVector<SeqTrack*> ret;
+  radium::Vector_GC<SeqTrack*> ret;
     
-    ret.push_back(seqtrack);
-    if (seqtrack_extra != NULL)
-      ret.push_back(seqtrack_extra);
-    
-    return ret;
-  }
+  ret.push_back(seqtrack);
+  if (seqtrack_extra != NULL)
+	  ret.push_back(seqtrack_extra);
+  
+  return ret;
 }
 
 // Compatibility with old songs
@@ -2328,7 +2352,7 @@ void SEQTRACK_delete_seqblock(struct SeqTrack *seqtrack, const struct SeqBlock *
   int pos = VECTOR_find_pos(&seqtrack->seqblocks, seqblock);
   R_ASSERT_RETURN_IF_FALSE(pos>=0);
 
-  int64_t seqtimes[seqtrack->seqblocks.num_elements];
+  QVarLengthArray<int64_t> seqtimes(seqtrack->seqblocks.num_elements);
 
   VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
     seqtimes[iterator666] = seqblock->t.time;
@@ -3132,22 +3156,30 @@ static int get_seqblock_pos(vector_t *seqblocks, int64_t seqtime){
 }
 
 // Is static since there is no reason to call this from the outside since seqblocks should only be created in this file.
-static int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, int64_t seqtime, int64_t end_seqtime){
+static int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, const int64_t seqtime, const int64_t end_seqtime){
   R_ASSERT_RETURN_IF_FALSE2(seqblock!=NULL, -1);
-      
+
+  R_ASSERT_NON_RELEASE(seqtime==seqblock->t.time); // only release, not sure if it's always correct.
+  
   if (end_seqtime != -1)
     R_ASSERT_RETURN_IF_FALSE2(end_seqtime >= seqtime, -1);
 
+  R_ASSERT_NON_RELEASE(seqtime==seqblock->t.time); // only release, not sure if it's always correct. // only release, not sure if it's always correct.
+  
   if (end_seqtime != -1){
     seqblock->t.time2 = end_seqtime;
     set_seqblock_stretch(seqtrack, seqblock);
   }
 
+  R_ASSERT_NON_RELEASE(seqtime==seqblock->t.time); // only release, not sure if it's always correct. // only release, not sure if it's always correct.
+  
   // Assert that the seqblock is not in a seqtrack already.
   VECTOR_FOR_EACH(struct SeqTrack *, seqtrack_here, &root->song->seqtracks){
     R_ASSERT_RETURN_IF_FALSE2(!VECTOR_is_in_vector(&seqtrack_here->seqblocks, seqblock), 0);
   }END_VECTOR_FOR_EACH;
 
+  R_ASSERT_NON_RELEASE(seqtime==seqblock->t.time); // only release, not sure if it's always correct. // only release, not sure if it's always correct.
+  
   /*
   int64_t seqtimes[R_MAX(1, seqtrack->seqblocks.num_elements)]; // Using R_MAX since arrays of size 0 causes ubsan hit
 
@@ -3156,21 +3188,34 @@ static int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *
     //printf("bef %d: %f\n", iterator666, abstimes[iterator666] / 44100.0);
   }END_VECTOR_FOR_EACH;
   */
-  
-  int pos = get_seqblock_pos(&seqtrack->seqblocks, seqtime);
 
+  R_ASSERT_NON_RELEASE(seqtime==seqblock->t.time); // only release, not sure if it's always correct. // only release, not sure if it's always correct.
+  
+  const int pos = get_seqblock_pos(&seqtrack->seqblocks, seqtime);
+
+  R_ASSERT_NON_RELEASE(seqtime==seqblock->t.time); // only release, not sure if it's always correct. // only release, not sure if it's always correct.
+  
   const rt_vector_t *rt_vector = VECTOR_create_rt_vector(&seqtrack->seqblocks, 1);
 
+  R_ASSERT_NON_RELEASE(seqtime==seqblock->t.time); // only release, not sure if it's always correct. // only release, not sure if it's always correct.
+  
   {
     radium::PlayerPause pause(is_playing_song());
     radium::PlayerLock lock;
 
+	R_ASSERT_NON_RELEASE(seqtime==seqblock->t.time); // only release, not sure if it's always correct. // only release, not sure if it's always correct.
+	
     move_seqblock(seqblock, seqtime);
+
+	R_ASSERT_NON_RELEASE(seqtime==seqblock->t.time); // only release, not sure if it's always correct. // only release, not sure if it's always correct.
+	
     if (end_seqtime != -1){
       seqblock->t.time2 = end_seqtime;
       set_seqblock_stretch(seqtrack, seqblock);
     }
-    
+
+	R_ASSERT_NON_RELEASE(seqtime==seqblock->t.time); // only release, not sure if it's always correct. // only release, not sure if it's always correct.
+		
     RT_VECTOR_insert(&seqtrack->seqblocks, seqblock, pos, rt_vector);
 
     /*
@@ -3179,12 +3224,18 @@ static int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *
         move_seqblock(seqblock, seqtimes[iterator666-1]);
     }END_VECTOR_FOR_EACH;
     */
-    
+
+	R_ASSERT_NON_RELEASE(seqtime==seqblock->t.time); // only release, not sure if it's always correct. // only release, not sure if it's always correct.
+		
     SEQTRACKPLUGIN_assert_samples2(seqtrack);
 
+	R_ASSERT_NON_RELEASE(seqtime==seqblock->t.time); // only release, not sure if it's always correct. // only release, not sure if it's always correct.
+	
     RT_legalize_seqtrack_timing(seqtrack, NULL);
   }
 
+  R_ASSERT_NON_RELEASE(seqtime==seqblock->t.time); // only release, not sure if it's always correct.
+  
   int seqtracknum = get_seqtracknum(seqtrack);
   if (seqtracknum >= 0){    
     //setCurrSeqtrack(seqtracknum);
@@ -3192,7 +3243,6 @@ static int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *
 
     S7CALL2(void_int_int, "FROM_C-set-current-seqblock!", seqtracknum, seqblock->id); // This one also fixes the z order.
   }
-  
   
   SEQUENCER_update(SEQUPDATE_TIME | SEQUPDATE_BLOCKLIST | SEQUPDATE_PLAYLIST);
 
@@ -3305,7 +3355,7 @@ void SEQUENCER_remove_sample_from_song(filepath_t filename){
     int seqblockpos;
   };
   
-  QVector<ToRemove> to_removes;
+  radium::Vector_GC<ToRemove> to_removes;
     
   VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
     
@@ -3366,76 +3416,101 @@ double SEQTRACK_get_length(struct SeqTrack *seqtrack){
 }
 
 // The returned vector contains the vector to paint last first, and vice versa.
-QVector<struct SeqBlock*> SEQTRACK_get_seqblocks_in_z_order(const struct SeqTrack *seqtrack, bool is_gfx_gfx){
+radium::Vector_GC<struct SeqBlock*> SEQTRACK_get_seqblocks_in_z_order(const struct SeqTrack *seqtrack, bool is_gfx_gfx)
+{
+	radium::Vector_GC<struct SeqBlock*> ret;
+  
+	const vector_t *seqblocks = is_gfx_gfx ? &seqtrack->gfx_gfx_seqblocks : gfx_seqblocks(seqtrack);
 
-  QVector<struct SeqBlock*> ret;
-  
-  const vector_t *seqblocks = is_gfx_gfx ? &seqtrack->gfx_gfx_seqblocks : gfx_seqblocks(seqtrack);
+	if(seqblocks->num_elements==0)
+		return ret;
 
-  if(seqblocks->num_elements==0)
-    return ret;
-
-  // Create a hash table to avoid O(n^2) when adding the ordered seqblocks.
-  QHash<int64_t, struct SeqBlock*> seqblocks_hash;
-  VECTOR_FOR_EACH(struct SeqBlock *, seqblock, seqblocks){
-    if(seqblocks_hash.contains(seqblock->id)){
-      R_ASSERT(false);
-      seqblock->id = new_seqblock_id();
-    }
-    seqblocks_hash[seqblock->id] = seqblock;
-  }END_VECTOR_FOR_EACH;
+	
+	// Create a hash table to avoid O(n^2) when adding the ordered seqblocks.
+	QHash<int64_t, struct SeqBlock*> seqblocks_hash; // (gc-safe.)
+	
+	VECTOR_FOR_EACH(struct SeqBlock *, seqblock, seqblocks)
+	{
+		if(seqblocks_hash.contains(seqblock->id))
+		{
+			R_ASSERT(false);
+			seqblock->id = new_seqblock_id();
+		}
+		seqblocks_hash[seqblock->id] = seqblock;
+	}
+	END_VECTOR_FOR_EACH;
+	
+    
+	QSet<int64_t> already_added;
   
-      
-  QSet<int64_t> already_added;
+	// Add ordered seqblocks.
+	for(const dyn_t &dyn : seqtrack->seqblocks_z_order)
+	{
+		struct SeqBlock *seqblock = seqblocks_hash.value(dyn.int_number);
+		if (seqblock!=NULL) // seqblocks_z_order is not required to be up to date.
+		{
+			ret.push_back(seqblock);
+			already_added << seqblock->id;
+		}
+	}
   
-  // Add ordered seqblocks.
-  for(const dyn_t &dyn : seqtrack->seqblocks_z_order){
-    struct SeqBlock *seqblock = seqblocks_hash.value(dyn.int_number);
-    if (seqblock!=NULL){ // seqblocks_z_order is not required to be up to date.
-      ret.push_back(seqblock);
-      already_added << seqblock->id;
-    }
-  }
+	// Add unordered seqblocks.
+	VECTOR_FOR_EACH(struct SeqBlock *, seqblock, seqblocks)
+	{
+		if (false==already_added.contains(seqblock->id))
+			ret.push_back(seqblock);
+	}
+	END_VECTOR_FOR_EACH;
   
-  // Add unordered seqblocks.
-  VECTOR_FOR_EACH(struct SeqBlock *, seqblock, seqblocks){
-    if (false==already_added.contains(seqblock->id))
-      ret.push_back(seqblock);
-  }END_VECTOR_FOR_EACH;
-  
-  return ret;
+	return ret;
 }
 
-void SEQUENCER_update_seqblocks_holding_editor_block(struct Blocks *block){
-  VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
-    VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
-      if (seqblock->block==block)
-        SEQBLOCK_update(seqtrack, seqblock);
-    }END_VECTOR_FOR_EACH;
-  }END_VECTOR_FOR_EACH;
+void SEQUENCER_update_seqblocks_holding_editor_block(struct Blocks *block)
+{
+  VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks)
+  {
+	  VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks)
+	  {
+		  if (seqblock->block==block)
+			  SEQBLOCK_update(seqtrack, seqblock);
+	  }
+	  END_VECTOR_FOR_EACH;
+  }
+  END_VECTOR_FOR_EACH;
 }
 
 void SEQUENCER_remove_block_from_seqtracks(struct Blocks *block){
-  R_ASSERT_RETURN_IF_FALSE(block!=NULL);
-  
-  QVector<QPair<struct SeqTrack*, struct SeqBlock* > > to_remove;
-  
-  VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
-    VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
-      if (seqblock->block==block)
-        to_remove.push_back(QPair<struct SeqTrack*, struct SeqBlock* >(seqtrack, seqblock));
-    }END_VECTOR_FOR_EACH;
-  }END_VECTOR_FOR_EACH;
+	R_ASSERT_RETURN_IF_FALSE(block!=NULL);
 
-  if(to_remove.size() > 0){
-    radium::PlayerPause pause(is_playing_song());
-    //radium::PlayerLock lock; Commented out since SEQTRACK_delete_seqblock does lots of things.
+	struct SeqTrackBlock
+	{
+		struct SeqTrack *_seqtrack;
+		struct SeqBlock *_seqblock;
+	};
+	
+	radium::Vector_GC<SeqTrackBlock> to_remove; // (most likely it would have been safe to use non-gc storage here, but it's complicated. Easier if we don't have to think about whether it's safe or not every time we look at the code.)
+	
+	VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks)
+	{
+		VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks)
+		{
+			if (seqblock->block==block)
+				to_remove.push_back({seqtrack, seqblock});
+		}
+		END_VECTOR_FOR_EACH;
+	}
+	END_VECTOR_FOR_EACH;
 
-    for(auto pair : to_remove)
-      SEQTRACK_delete_seqblock(pair.first, pair.second, true);
-  }
+	if(to_remove.size() > 0)
+	{
+		radium::PlayerPause pause(is_playing_song());
+		//radium::PlayerLock lock; Commented out since SEQTRACK_delete_seqblock does lots of things.
+		
+		for(auto &stb : to_remove)
+			SEQTRACK_delete_seqblock(stb._seqtrack, stb._seqblock, true);
+	}
 
-  SEQUENCER_update(SEQUPDATE_TIME | SEQUPDATE_PLAYLIST);
+	SEQUENCER_update(SEQUPDATE_TIME | SEQUPDATE_PLAYLIST);
 }
 
 // Note: Creates undo.

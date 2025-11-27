@@ -23,8 +23,10 @@ extern bool g_qtgui_has_stopped;
 namespace radium{
 
 enum class AllocatorType{
-  RT,
-  STD
+	RT,  // Using RT_alloc_raw2/RT_free_raw. Must be set if used in realtime code.
+	STD, // Using malloc/free.
+	GC_ATOMIC,  // Using talloc_atomic. Must be used if storing static GC data, i.e. data without pointers to other gc-allocated data.
+	GC,  // Using talloc. Must be used if storing data containing ointers to other gc-allocated data.
 };
 
 template <typename T>
@@ -42,9 +44,11 @@ static inline constexpr int find_vector_preallocate_size(const int max_size){
 }
   
 // Note:  PREALLOCATED_SIZE is number of bytes, not number of elements. Number of elements is rounded down, but there will always be room for at least one element.
-template <typename T, AllocatorType ALLOCATOR_TYPE = AllocatorType::STD, int PREALLOCATED_SIZE = 256>
-struct Vector{
-
+template <typename T,
+		  AllocatorType ALLOCATOR_TYPE = AllocatorType::STD,
+		  int PREALLOCATED_SIZE = 256>
+struct Vector
+{
   static_assert(
                 ALLOCATOR_TYPE == AllocatorType::STD || std::is_trivially_copyable<T>::value,
                 "Doesn't have to be a problem. The assertion is just added because it seems likely to be an error in the code if this assertion fails."
@@ -93,7 +97,7 @@ private:
 #endif
   
   // Normally it would be a typo or an error if trying to copy a radium::Vector.
-  Vector(const Vector&) = delete;
+  //Vector(const Vector&) = delete;
   Vector& operator=(const Vector&) = delete;
 
 
@@ -112,31 +116,23 @@ public:
 
     constexpr int num_preallocated_elements = sizeof(_pre_allocated_memory) / sizeof(T);
 
-    static_assert(num_preallocated_elements==std::max(1, int(PREALLOCATED_SIZE / sizeof(T))), "?");
+    static_assert(num_preallocated_elements==(std::max)(1, int(PREALLOCATED_SIZE / sizeof(T))), "?");
 
     if (vector != NULL && vector->size()>0) {
 
-      int size = vector->size();
+      const int size = vector->size();
 
-      if (size <= num_preallocated_elements) {
-        
-        _num_elements_max = num_preallocated_elements;
-        _elements = (T*)_pre_allocated_memory;
-        
-      } else if (ALLOCATOR_TYPE == AllocatorType::RT) {
+      if (size <= num_preallocated_elements)
+	  {
+		  _num_elements_max = num_preallocated_elements;
+		  _elements = create_new_elements(_num_elements_max, vector, _pre_allocated_memory);
+	  }
+	  else
+	  {
+		  _num_elements_max = vector->_num_elements_max;
+		  _elements = create_new_elements(_num_elements_max, vector);
+	  }
 
-        _num_elements_max = vector->_num_elements_max;
-        _elements = RT_alloc_raw2<T>(_num_elements_max, _num_elements_max, "Vector.hpp");
-        
-      } else {
-
-        _num_elements_max = vector->_num_elements_max;
-        _elements = (T*)V_calloc_nomemtypechecks(_num_elements_max, sizeof(T));
-
-      }
-      
-      std::copy(&vector->_elements[0], &vector->_elements[size], _elements);
-      
       _num_elements.set(size);
       
     } else {
@@ -151,6 +147,20 @@ public:
     R_ASSERT_NON_RELEASE(_elements!=NULL);
   }
 
+  Vector(const Vector &vector)
+	  : Vector(&vector)
+  {
+  }
+	
+  Vector(const vector_t *v)
+  {
+	  VECTOR_FOR_EACH(T, el, v)
+	  {
+		  push_back(el); // can be made more elegant.
+	  }
+	  END_VECTOR_FOR_EACH;
+  }
+	
   ~Vector(){
     LOCKASSERTER_EXCLUSIVE_NON_RELEASE(&_lockAsserter);
 
@@ -205,31 +215,34 @@ public:
   
 private:
 
-  void free_internal(T *elements, int size) const {
-    if (!std::is_trivially_destructible<T>::value){
-      //      R_ASSERT_NON_RELEASE(false); // never tested
-      for(int i=0;i<size;i++){
-        //printf("   radium::Vector::free_internal %d\n", i);
-        elements[i].~T();
-      }
-    }
-
-    if (!is_preallocated(elements))
-    {
-	    if (ALLOCATOR_TYPE == AllocatorType::RT)
-		    RT_free_raw(elements, "Vector.hpp");
-	    else
-		    V_free((void*)elements); // casting to void* to avoid type-assertion in DEBUG mode. (we have manually run the constructors and destructors, so it's legal to use malloc/free here for non-trivial types.)
-    }
-  }
+	void free_internal(T *elements, int size) const
+	{
+		if constexpr (!std::is_trivially_destructible<T>::value)
+		{
+			//      R_ASSERT_NON_RELEASE(false); // never tested
+			for(int i=0;i<size;i++){
+				//printf("   radium::Vector::free_internal %d\n", i);
+				elements[i].~T();
+			}
+		}
+		
+		if (!is_preallocated(elements))
+		{
+			if constexpr (ALLOCATOR_TYPE == AllocatorType::RT)
+				RT_free_raw(elements, "Vector.hpp");
+			else if constexpr (ALLOCATOR_TYPE == AllocatorType::STD)
+				V_free((void*)elements); // casting to void* to avoid type-assertion in DEBUG mode. (we have manually run the constructors and destructors, so it's legal to use malloc/free here for non-trivial types.)
+		}
+	}
   
-  T &at_internal(int i) const {
-    //fprintf(stderr, "\nat_internal. i: %d. _num_elements: %d.\n", i, _num_elements.get());
-    R_ASSERT_RETURN_IF_FALSE2(i>=0, _elements[0]);
-    R_ASSERT_RETURN_IF_FALSE2(i<_num_elements.get(), _elements[0]);
+	T &at_internal(int i) const
+	{
+		//fprintf(stderr, "\nat_internal. i: %d. _num_elements: %d.\n", i, _num_elements.get());
+		R_ASSERT_RETURN_IF_FALSE2(i>=0, _elements[0]);
+		R_ASSERT_RETURN_IF_FALSE2(i<_num_elements.get(), _elements[0]);
     
-    return _elements[i];
-  }
+		return _elements[i];
+	}
   
 public:
   
@@ -305,7 +318,7 @@ public:
 
       _next_num_elements_max = find_next_num_elements_max(new_num_elements);
         
-      _next_elements = create_new_elements(_next_num_elements_max);
+      _next_elements = create_new_elements(_next_num_elements_max, this);
     }
   }
 
@@ -334,20 +347,36 @@ private:
     return new_num_elements_max;
   }
   
-  T *create_new_elements(int &new_num_elements_max) const {
-    T *new_elements;
+	__attribute__((returns_nonnull))
+	T *create_new_elements(int &new_num_elements_max, const Vector *source, void *preallocated_memory = NULL) const __attribute__((nonnull(3)))
+	{
+		T *new_elements;
 
-    if (ALLOCATOR_TYPE == AllocatorType::RT)
-      new_elements = RT_alloc_raw2<T>(new_num_elements_max, new_num_elements_max, "Vector.hpp");
-    else
-      new_elements = (T*) V_calloc_nomemtypechecks(sizeof(T), new_num_elements_max);
-    
-    int size = _num_elements.get();
+		if (preallocated_memory != NULL)
+		{
+			new_elements = (T*)preallocated_memory;
+		}
+		else if constexpr (ALLOCATOR_TYPE == AllocatorType::RT)
+		{
+			new_elements = RT_alloc_raw2<T>(new_num_elements_max, new_num_elements_max, "Vector.hpp");
+		}
+		else if constexpr (ALLOCATOR_TYPE == AllocatorType::GC_ATOMIC)
+		{
+			new_elements = (T*)talloc_atomic(new_num_elements_max * sizeof(T));
+		}
+		else if constexpr (ALLOCATOR_TYPE == AllocatorType::GC)
+		{
+			new_elements = (T*)talloc(new_num_elements_max * sizeof(T));
+		}
+		else
+		{
+			new_elements = (T*)V_calloc_nomemtypechecks(new_num_elements_max, sizeof(T));
+		}
 
-    std::copy(&_elements[0], &_elements[size], new_elements);
-          
-    return new_elements;
-  }
+		std::copy(&source->_elements[0], &source->_elements[source->_num_elements.get()], new_elements);
+		
+		return new_elements;
+	}
   
   void reserve_internal(int new_num_elements_max, bool do_lock_player){
 #if !defined(RELEASE)
@@ -364,7 +393,7 @@ private:
     int old_num_elements = _num_elements.get();
     
     T* old_elements = _elements;
-    T* new_elements = create_new_elements(new_num_elements_max);
+    T* new_elements = create_new_elements(new_num_elements_max, this);
 
     if (do_lock_player){
       
@@ -401,7 +430,7 @@ private:
 
     //printf("111111111111. radium::Vector::basic_push_back %p -> %p\n", &t, &_elements[_num_elements.get()]);
 
-    if (std::is_trivial<T>::value)
+    if constexpr (std::is_trivial<T>::value)
       _elements[_num_elements.get()] = t;
     else
       new (&_elements[_num_elements.get()]) T(t);
@@ -436,14 +465,14 @@ private:
  
     const int old_last_pos = old_size-1;
     
-    if (!std::is_trivially_destructible<T>::value)
+    if constexpr (!std::is_trivially_destructible<T>::value)
       _elements[pos].~T();
 
     if (pos < old_last_pos) {
       
       if (keep_order) {
         
-        if (std::is_trivially_copyable<T>::value) {
+        if constexpr (std::is_trivially_copyable<T>::value) {
 
           memmove((void*)&_elements[pos], (void*)&_elements[pos+1], (old_last_pos - pos) * sizeof(T));
           
@@ -456,14 +485,14 @@ private:
             // Hopefully this one is correct. If not, the other version should be.
             _elements[i] = std::move(_elements[i+1]);
 #else
-            if (!std::is_trivially_destructible<T>::value)
+            if constexpr (!std::is_trivially_destructible<T>::value)
               _elements[i].~T();
             
             new (&_elements[i]) T(_elements[i+1]);
 #endif
           }
           
-          if (!std::is_trivially_destructible<T>::value)
+          if constexpr (!std::is_trivially_destructible<T>::value)
             _elements[old_last_pos].~T();
         }
         
@@ -471,7 +500,7 @@ private:
         
         //printf("...............................assign3 To: %p. From: %p\n", &_elements[pos], &_elements[old_last_pos]);
         
-        if (std::is_trivially_copyable<T>::value) {
+        if constexpr (std::is_trivially_copyable<T>::value) {
           
           memcpy((void*)&_elements[pos], (void*)&_elements[old_last_pos], sizeof(T));
           
@@ -546,7 +575,7 @@ public:
       _next_elements = NULL;
       _next_num_elements_max = 0;
 
-      if (std::is_trivial<T>::value)
+      if constexpr (std::is_trivial<T>::value)
         _elements[_num_elements.get()-1] = t;
       else
         new (&_elements[_num_elements.get()-1]) T(t);
@@ -662,7 +691,7 @@ public:
     int pos = size;
     
     for (const T &t : *ts)
-      if (std::is_trivial<T>::value)
+      if constexpr (std::is_trivial<T>::value)
         _elements[pos++] = t;
       else
         new (&_elements[pos++]) T(t);
@@ -800,7 +829,7 @@ public:
     R_ASSERT_NON_RELEASE(new_num_elements <= _num_elements.get());
     R_ASSERT(_next_elements == NULL);
     
-    if (!std::is_trivially_destructible<T>::value){
+    if constexpr (!std::is_trivially_destructible<T>::value){
       const int old_num_elements = _num_elements.get();
 
       //printf("   radium::Vector::set_num_elements New/Old: %d/%d\n", new_num_elements, old_num_elements);
@@ -823,6 +852,12 @@ public:
   }
 
 };
+
+template <typename T>
+using Vector_GC_atomic = Vector<T, AllocatorType::GC_ATOMIC>;
+
+template <typename T>
+using Vector_GC = Vector<T, AllocatorType::GC>;
 
 
   // A fixed-size multithread-accessible array. I.e. an array that ensures that only one thread is using an element at the same time.
@@ -920,6 +955,34 @@ public:
 
     decltype(_buffers.at(_pos)) RT_get(void){
       return _buffers.at(_pos);
+    }
+  };
+
+  template <typename MTAT> class ScopedMultiThreadAccessArrayElement_MayFail{
+    
+    MTAT &_buffers;
+    int _pos;
+
+  public:
+    
+    ScopedMultiThreadAccessArrayElement_MayFail(MTAT &buffers)
+		: _buffers(buffers)
+		, _pos(buffers.RT_obtain_may_fail())
+    {
+    }
+    
+    ~ScopedMultiThreadAccessArrayElement_MayFail()
+	{
+		if (_pos >= 0)
+			_buffers.RT_release(_pos);
+    }
+
+    decltype(_buffers.at(_pos)) RT_get(void)
+	{
+		if (_pos < 0)
+			return NULL;
+		else
+			return _buffers.at(_pos);
     }
   };
 

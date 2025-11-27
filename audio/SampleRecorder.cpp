@@ -340,12 +340,13 @@ public:
   
 private:
   
-  void flush(void){
+  void flush(void)
+  {
     R_ASSERT_RETURN_IF_FALSE(sndfile!=NULL);
 
     R_ASSERT_RETURN_IF_FALSE(!non_written_slices.is_empty());
     
-    float *channels[instance->num_ch];
+    float **channels = RT_ALLOC_ARRAY_STACK(float*, instance->num_ch);
 
     int num_frames = RADIUM_BLOCKSIZE;
     
@@ -354,7 +355,7 @@ private:
       num_frames = R_MIN(num_frames, slice->slice.num_frames);
     }
     
-    float interleaved_data[num_frames*instance->num_ch];
+    float *interleaved_data = RT_ALLOC_ARRAY_STACK(float, num_frames*instance->num_ch);
 
     int pos=0;
     for(int i=0;i<num_frames;i++)
@@ -646,7 +647,7 @@ bool RT_SampleRecorder_add_audio(radium::SampleRecorderInstance *instance, const
   
   instance->end += num_frames;
     
-  RecordingSlice *slices[instance->num_ch];
+  RecordingSlice **slices = RT_ALLOC_ARRAY_STACK(RecordingSlice*, instance->num_ch);
   
   for(int ch=0;ch<instance->num_ch;ch++){
     slices[ch] = RT_get_free_slice();

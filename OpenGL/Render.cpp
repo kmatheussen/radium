@@ -1166,7 +1166,7 @@ static void create_swingtrack(const struct Tracker_Windows *window, const struct
 static void create_bpm(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WBPMs *wbpms, int realline){
   const int y     = get_realline_y1(window, realline);
   const int tempo = wbpms[realline].tempo;
-  const int type  = wbpms[realline].type;
+  const TempoType type  = wbpms[realline].type;
   const int logtype = wbpms[realline].logtype;
 
   const GE_Conf conf(Z_ZERO, y, NO_SCISSORS);
@@ -1184,20 +1184,23 @@ static void create_bpm(const struct Tracker_Windows *window, const struct WBlock
                   );
   }
 
-  if(type!=TEMPO_NORMAL){
-    const char *typetext;
-    switch(type){
-    case TEMPO_BELOW:
-      typetext="d";
-      break;
-    case TEMPO_MUL:
-      typetext="m";
-      break;
-    default:
-      abort();
-    };
+  if(type!=TempoType::TEMPO_NORMAL)
+  {
+	  const char *typetext;
+	  switch(type){
+		  case TempoType::TEMPO_BELOW:
+			  typetext="d";
+			  break;
+		  case TempoType::TEMPO_MUL:
+			  typetext="m";
+			  break;
+		  default:
+			  R_ASSERT(false);
+			  typetext="";
+			  break;
+	  };
 
-    GE_text(GE_color_alpha_z(TEXT_COLOR_NUM, 0.3, conf), typetext, wblock->tempoTypearea.x, y);
+	  GE_text(GE_color_alpha_z(TEXT_COLOR_NUM, 0.3, conf), typetext, wblock->tempoTypearea.x, y);
   }
 
   if (logtype==LOGTYPE_HOLD){
@@ -3239,7 +3242,14 @@ static void GL_create2(const struct Tracker_Windows *window, struct WBlocks *wbl
 }
 
 
-#define RENDER_IN_SEPARATE_THREAD 0
+
+
+#define RENDER_IN_SEPARATE_THREAD 0 // Note: This is just for testing. Radium will crash after a while if this one is 1.
+
+
+#if defined(RELEASE) && RENDER_IN_SEPARATE_THREAD
+#  error "uffda"
+#endif
 
 
 #if !RENDER_IN_SEPARATE_THREAD
@@ -3255,13 +3265,13 @@ void GL_create(const struct Tracker_Windows *window){
 #endif
 }
 
-#else
+#else // !RENDER_IN_SEPARATE_THREAD -> RENDER_IN_SEPARATE_THREAD
 
 #include "../common/Semaphores.hpp"
 #include "../common/threading.h"
 
-radium::Semaphore sem_req;
-radium::Semaphore sem_finished;
+static radium::Semaphore g_sem_req;
+static radium::Semaphore g_sem_finished;
 
 const struct Tracker_Windows *g_window;
 static struct WBlocks *g_wblock;
@@ -3274,14 +3284,14 @@ static void gl_create_thread(){
   pthread_setname_np(pthread_self(), "gl_create_thread");
 #endif
 
-  THREADING_init_main_thread_type(); // Can do this since the main thread is waiting for sem_finished while this thread does it's work.
+  THREADING_init_main_thread_type(); // Can do this since the main thread is waiting for g_sem_finished while this thread does it's work.
     
   while(true){
-    sem_req.wait();
+    g_sem_req.wait();
     {
       GL_create2(g_window, g_wblock);
     }
-    sem_finished.signal();
+    g_sem_finished.signal();
   }
 }
 
@@ -3301,25 +3311,26 @@ void GL_create(const struct Tracker_Windows *window){
     g_wblock = window->wblock;
 
     double start = TIME_get_ms();
-    sem_req.signal();
+    g_sem_req.signal();
 
-    sem_finished.wait();
+    g_sem_finished.wait();
 
     printf("   dur: %f\n", TIME_get_ms() - start);
     /*
     do{
       processEventsALittleBit();
-    }while(sem_finished.tryWait()==false);
+    }while(g_sem_finished.tryWait()==false);
     */
     
-    //sem_finished.wait();
+    //g_sem_finished.wait();
   }
   Threadsafe_GC_enable();
 
   //t1.join();
 }
 
-#endif
+#endif // RENDER_IN_SEPARATE_THREAD
+
 
 DEFINE_ATOMIC(bool, g_is_creating_all_GL_blocks) = false;
 

@@ -76,6 +76,8 @@ rm -f "$TARGET/packages/s7/*.o"
 
 # faust
 mkdir -p "$TARGET/packages/faust"
+mkdir -p "$TARGET/packages/faust/build"
+cp -a packages/faust/build/lib "$TARGET/packages/faust/build/"
 cp -a packages/faust/examples "$TARGET/packages/faust/"
 cp -a packages/faust/architecture "$TARGET/packages/faust/"
 cp -a packages/faust/libraries "$TARGET/packages/faust/"

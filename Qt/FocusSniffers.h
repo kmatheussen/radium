@@ -88,13 +88,13 @@ MakeFocusSnifferClass(QTreeView);
 //MakeFocusSnifferClass(QListWidget);
 
 
-#if __GNUC__ >= 5
+#if defined(__GNUC__) && __GNUC__ >= 5
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wsuggest-override"
 #endif
 #include <Qsci/qscilexer.h>
 #include <Qsci/qsciscintilla.h>  // <--- Much trouble. Any qt4 alternatives?
-#if __GNUC__ >= 5
+#if defined(__GNUC__) && __GNUC__ >= 5
 #  pragma GCC diagnostic pop
 #endif
 

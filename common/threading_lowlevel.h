@@ -33,20 +33,23 @@
 
 #if defined(FOR_WINDOWS)
 
+#  if !defined(NOMINMAX)
+#    define NOMINMAX // Prevent min and max macros from being defined.
+#  endif
+#  include <Windows.h>
+#  include <process.h>
+#  ifdef __cplusplus
+#    include <comutil.h>
+#  endif
+#  if !defined(LockType)
+#    define LockType CRITICAL_SECTION
+#    define LOCK_INITIALIZE(A) InitializeCriticalSection(&A)
+#    define LOCK_DESTROY(A)    DeleteCriticalSection(&A)
+#    define LOCK_LOCK(A)       EnterCriticalSection(&A)
+#    define LOCK_UNLOCK(A)     LeaveCriticalSection(&A)
+#  endif
 
-  #include <windows.h>
-  #include <process.h>
-  #include <comutil.h>
-
-  #if !defined(LockType)
-    #define LockType CRITICAL_SECTION
-    #define LOCK_INITIALIZE(A) InitializeCriticalSection(&A)
-    #define LOCK_DESTROY(A)    DeleteCriticalSection(&A)
-    #define LOCK_LOCK(A)       EnterCriticalSection(&A)
-    #define LOCK_UNLOCK(A)     LeaveCriticalSection(&A)
-  #endif
-
-  #define GET_CURRENT_THREAD() GetCurrentThread()
+#  define GET_CURRENT_THREAD() GetCurrentThread()
 
 typedef struct{
   int priority;
@@ -57,7 +60,7 @@ typedef struct{
 #else // WINDOWS -> LINUX/OSX
 
 
-#include <pthread.h>
+#  include <pthread.h>
 
   // pthread API
   #if !defined(LockType)

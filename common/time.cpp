@@ -29,6 +29,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 ******************************************/
 
 #include <math.h>
+
+#include <QVarLengthArray>
+
 #include "nsmtracker.h"
 #include "playerclass.h"
 #include "player_pause_proc.h"
@@ -1413,28 +1416,30 @@ static dyn_t create_filledout_swings(const dyn_t global_swings, const dyn_t trac
 }
 
 
-static void update_stuff2(struct Blocks *blocks[], const int num_blocks,
+static void update_stuff2(struct Blocks *const blocks[], const int num_blocks,
                           const int default_bpm, const int default_lpb, const StaticRatio &default_signature,
                           const bool only_signature_has_changed, const bool update_beats, const bool update_swings)
 {
   R_ASSERT_NON_RELEASE(update_swings==true);
-  
-  struct STimes *stimes_without_global_swings[num_blocks];
-  struct STimes *stimes_with_global_swings[num_blocks];
-  const struct Beats *beats[num_blocks];
-  dyn_t dynbeats[num_blocks];
-  dyn_t filledout_swingss[num_blocks];
-  dynvec_t filledout_trackswingss[num_blocks];
-  vector_t trackstimess[num_blocks];
+
+  // Note: Seems like QVarLengthArray doesn't do much more than radium::Vector (both preallocates on stack),
+  // so we can probably make a simple gc-safe array based on radium::Vector.
+  QVarLengthArray<struct STimes *>stimes_without_global_swings(num_blocks); // NOT gc-safe.
+  QVarLengthArray<struct STimes *>stimes_with_global_swings(num_blocks); // NOT gc-safe.
+  QVarLengthArray<const struct Beats *>beats(num_blocks); // Perhaps not gc-safe.
+  QVarLengthArray<dyn_t> dynbeats(num_blocks); // don't know
+  QVarLengthArray<dyn_t> filledout_swingss(num_blocks); // don't know
+  QVarLengthArray<dynvec_t> filledout_trackswingss(num_blocks); // don't know.
+  QVarLengthArray<vector_t> trackstimess(num_blocks); // don't know
 
   g_editor_blocks_generation++;
 
   R_ASSERT_RETURN_IF_FALSE(g_scheme_has_inited1);
   
-  memset(filledout_trackswingss, 0, sizeof(dynvec_t)*num_blocks);
-  memset(trackstimess, 0, sizeof(vector_t)*num_blocks);
+  memset(filledout_trackswingss.data(), 0, sizeof(dynvec_t)*num_blocks);
+  memset(trackstimess.data(), 0, sizeof(vector_t)*num_blocks);
   
-  bool only_update_beats[num_blocks];
+  QVarLengthArray<bool> only_update_beats(num_blocks);
   bool only_update_beats_for_all_blocks = true; // horrible variable name.
 
   for(int i=0;i<num_blocks;i++){
@@ -1633,7 +1638,7 @@ static void update_all(struct Song *song,
 {
   int num_blocks = ListFindNumElements1(&song->blocks->l);
   
-  struct Blocks *blocks[num_blocks];
+  QVarLengthArray<struct Blocks *>blocks(num_blocks);
 
   {
     int i = 0;
@@ -1645,7 +1650,7 @@ static void update_all(struct Song *song,
     }
   }
 
-  update_stuff2(blocks, num_blocks,
+  update_stuff2(blocks.data(), num_blocks,
                 default_bpm, default_lpb, default_signature,
                 only_signature_has_changed, update_beats, update_swings);
 }

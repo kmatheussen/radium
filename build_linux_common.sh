@@ -2,6 +2,8 @@
 
 set -eEu
 
+export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
+
 echo "B1_"
 source $(dirname "${0}")/bash_setup.sh
 echo "B2_"
@@ -50,10 +52,25 @@ else
 fi
 
 #if ! env |grep OPTIMIZE ; then
-export OPTIMIZE="-O2 $CPUOPTS $RADIUM_RELEASE_CFLAGS -fomit-frame-pointer "
+export OPTIMIZE="-O2 $CPUOPTS $RADIUM_RELEASE_CFLAGS"
 
-#export OS_DEBUG_BUILD_OPTS="-fno-omit-frame-pointer"
-export OS_DEBUG_BUILD_OPTS="-fomit-frame-pointer"
+
+# Frame pointers, i.e. whether to compile with -fomit-frame-pointer or -fno-omit-frame-pointers.
+#
+# TODO: Benchmark what impact this has  on "make benchmark_smoothdelay" and other relevant tests,
+# both on arm and x86. But for now, omit it for everything in RELEASE mode.
+#
+# After benchmarking, most files will probably have frame pointers, while a few maybe not.
+#
+export MAYBE_OMIT_FRAME_POINTERS=""
+
+if [[ $BUILDTYPE == RELEASE ]] ; then
+	export MAYBE_OMIT_FRAME_POINTERS="-DRADIUM_OMIT_FRAME_POINTERS=1 -fno-omit-frame-pointer"
+fi
+	
+	
+export OS_DEBUG_BUILD_OPTS=""
+#export OS_DEBUG_BUILD_OPTS="-fomit-frame-pointer"
 
 
 # -flto 
@@ -103,6 +120,7 @@ else
     export CC="gcc $CPUOPTS "
     export LINKER="g++"
 
+    export STD_CPP="-std=gnu++17"
     export USE_STD_COUNTING_SEMAPHORE=0 # for now, the gcc implementation of std::counting_semaphore doesn't seem to have been tested very much.
     
     # Use the ldd linker instead. It's approx. 10x faster.
@@ -124,6 +142,7 @@ export TARGET_OS=linux
 
 export PYPATH=`$PYTHONEXE -c "import sys;print sys.prefix+'/include/python'+sys.version[:3]"`
 export PYOPTS="-I $PYPATH"
+
 
 # static Qt4:
 #RQTDIR=/home/kjetil/qt-everywhere-opensource-src-4.8.6
@@ -170,13 +189,16 @@ export OS_OPTS="-Werror=array-bounds $CPUOPTS -DFOR_LINUX `$PKGqt --cflags Qt5X1
 #VERBOSE=1 CMAKEOPT="-DCMAKE_BUILD_TYPE=Debug -DSELF_CONTAINED_LIBRARY=on -DCMAKE_CXX_COMPILER=`which clang++` -DCMAKE_C_COMPILER=`which clang`" make most
 #VERBOSE=1 CMAKEOPT="-DCMAKE_BUILD_TYPE=Release -DSELF_CONTAINED_LIBRARY=on -DCMAKE_CXX_COMPILER=`which g++` -DCMAKE_C_COMPILER=`which gcc`" make most
 
-if [[ $INCLUDE_FAUSTDEV == 1 ]] ; then
+if ! is_0 $INCLUDE_FAUSTDEV ; then
     export OS_OPTS="$OS_OPTS -DWITH_FAUST_DEV"
 fi
 
-if [[ $INCLUDE_PDDEV == 1 ]] ; then
+if ! is_0 $INCLUDE_PDDEV ; then
     export OS_OPTS="$OS_OPTS -DWITH_PD"
 fi
+
+#echo "222==QHTAT??"
+#exit -1
 
 PYTHONLIBPATH=`$PYTHONEXE -c "import sys;print '-L'+sys.prefix+'/lib'"`
 PYTHONLIBNAME=`$PYTHONEXE -c "import sys;print '-lpython'+sys.version[:3]"`
@@ -186,8 +208,9 @@ PYTHONLIBNAME=`$PYTHONEXE -c "import sys;print '-lpython'+sys.version[:3]"`
 export QSCINTILLA_PATH=`pwd`/bin/packages/QScintilla_src-2.14.0/src
 
 
-if [[ $INCLUDE_FAUSTDEV == 1 ]] ; then
-    FAUSTLDFLAGS="`pwd`/bin/packages/faust/build/lib/libfaust.a -lcrypto -lncurses"
+if ! is_0 $INCLUDE_FAUSTDEV ; then
+    #FAUSTLDFLAGS="-L `pwd`/bin/packages/faust/build/lib/libfaust.a -lcrypto -lncurses"
+    FAUSTLDFLAGS="-L `pwd`/bin/packages/faust/build/lib/ -lfaust -lcrypto -lncurses"
     if [[ $INCLUDE_FAUSTDEV_BUT_NOT_LLVM == 1 ]] ; then
         export OS_OPTS="$OS_OPTS -DWITHOUT_LLVM_IN_FAUST_DEV"
     else
@@ -200,13 +223,13 @@ if [[ $INCLUDE_FAUSTDEV == 1 ]] ; then
         else
             LLVMLIBS=`$LLVM_PATH/bin/llvm-config --libs`
         fi
-        
-        FAUSTLDFLAGS="$FAUSTLDFLAGS `$PKG --libs uuid` `$LLVM_PATH/bin/llvm-config --ldflags` $LLVMLIBS -ltinfo"
+        # ($LLVMLIBS not included since it's included in libfaust)
+        FAUSTLDFLAGS="$FAUSTLDFLAGS `$PKG --libs uuid` `$LLVM_PATH/bin/llvm-config --ldflags` -ltinfo"
     fi
 fi
 # _debug
 
-if [[ $INCLUDE_PDDEV == 1 ]] ; then
+if ! is_0 $INCLUDE_PDDEV ; then
     PDLDFLAGS="bin/packages/libpd-master/libs/libpds.a"
 else    
     PDLDFLAGS=""
@@ -229,11 +252,15 @@ if ! env |grep RADIUM_BFD_LDFLAGS ; then
     fi
 fi
 
-export OS_JUCE_LDFLAGS="-lasound -pthread -lrt -lX11 -ldl -lXext "
+export OS_JUCE_LDFLAGS="-lasound -pthread -lrt -lX11 -lXext "
 
 #LIBGIG_LDFLAGS="bin/packages/libgig/src/.libs/RIFF.o bin/packages/libgig/src/.libs/SF.o"
 FLUIDSYNTH_LDFLAGS="bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a `$PKG --libs glib-2.0`"
 export OS_LDFLAGS="$QSCINTILLA_PATH/libqscintilla2_qt5.a $FAUSTLDFLAGS $PDLDFLAGS pluginhost/Builds/Linux/build/libMyPluginHost.a $OS_JUCE_LDFLAGS -llrdf $GCDIR/.libs/libgc.a $PYTHONLIBPATH $PYTHONLIBNAME `$PKG --libs sndfile` `$PKG --libs samplerate` `$PKG --libs liblo` -lxcb -lxcb-keysyms $FLUIDSYNTH_LDFLAGS $RADIUM_BFD_LDFLAGS -liberty `$PKGqt --libs Qt5X11Extras`"
+
+if [[ $RADIUM_USE_CLANG == 0 ]] ; then
+    export OS_LDFLAGS2="-ldl "
+fi
 
 # -licui18n -licuuc -licudata -lutil 
 
@@ -282,19 +309,18 @@ make common/keyboard_sub_ids.h --stop
 make bin/radium_check_recent_libxcb --stop
 
 if [[ $# -ge 1 ]] && [[ $1 == "test" ]] ; then
-    make test_seqautomation
+	make test_seqautomation
 else
-    if [[ $RADIUM_USES_MOLD_PRELOAD == 1 ]] ; then
-       rm -f /tmp/run_preload
-       make /tmp/run_preload
-    fi
-    make radium $@ --stop # Can not use "exec make" here. Compilation stopped here I think, whether it succeeded or not.
+	if [[ $RADIUM_USES_MOLD_PRELOAD == 1 ]] ; then
+		rm -f /tmp/run_preload
+		make /tmp/run_preload
+	fi
+	make radium $@ --stop # Can not use "exec make" here. Compilation stopped here I think, whether it succeeded or not.
     
-    if ldd -r $RADIUM_BIN | sed 's/0x.*//' |grep -i bfd ; then
-	printf "\033[1;31mError? Is bfd linked dynamically?\033[0m"
-	exit -1
-    fi
-
+	if ldd -r $RADIUM_BIN | sed 's/0x.*//' |grep -i bfd ; then
+		printf "\033[1;31mError? Is bfd linked dynamically?\033[0m"
+		exit -1
+	fi
 fi
 
 if [[ $BUILDTYPE == RELEASE ]] ; then
@@ -325,7 +351,7 @@ do_source_sanity_checks() {
     echo "Doing some source sanity checks. This might take a few seconds...."
     echo
     
-    if grep static\  */*.h */*.hpp */*/*.hpp */*/*/*.hpp */*/*/*/*.hpp */*/*.h */*/*/*/*.h */*/*.cpp */*.c */*.cpp */*.m */*/*.c */*/*.cpp */*/*/*.c */*/*/*/*.c */*/*/*.cpp 2>&1 | grep "\[" | grep -v "\[\]"|grep -v static\ void |grep -v unused_files |grep -v GTK |grep -v test\/ |grep -v X11\/ |grep -v amiga |grep -v faust-examples|grep -v temp\/ |grep -v "\[NO_STATIC_ARRAY_WARNING\]" |grep -v backup |grep -v mingw |grep -v Dropbox |grep -v bin/packages |grep -v python-midi |grep -v "No such file or directory" ; then
+    if grep static\  */*.h */*.hpp */*/*.hpp */*/*/*.hpp */*/*/*/*.hpp */*/*.h */*/*/*/*.h */*/*.cpp */*.c */*.cpp */*.m */*/*.c */*/*.cpp */*/*/*.c */*/*/*/*.c */*/*/*.cpp 2>&1 | grep "\[" | grep -v "\[\]"|grep -v static\ void |grep -v Python-2.7.18 |grep -v python2.7/ | grep -v lrdf.c|grep -v unused_files |grep -v GTK |grep -v test\/ |grep -v X11\/ |grep -v amiga |grep -v faust-examples|grep -v temp\/ |grep -v "\[NO_STATIC_ARRAY_WARNING\]" |grep -v backup |grep -v mingw |grep -v Dropbox |grep -v packages |grep -v python-midi |grep -v "No such file or directory" ; then
 	echo
 	echo "ERROR in line(s) above. Static arrays may decrease GC performance notably.";
 	echo

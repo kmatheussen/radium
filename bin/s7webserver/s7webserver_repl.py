@@ -14,7 +14,7 @@ def post(url, data):
     try:
         response = urllib2.urlopen(request)
     except urllib2.URLError:
-        print "<Unable to contact Radium>"
+        print("<Unable to contact Radium>")
         return
 
     all_data = ""
@@ -55,9 +55,9 @@ if __name__ == "__main__":
 
     if len(sys.argv)>1:
         if (sys.argv[1].startswith("-")):
-            print "Usage: s7repl <prompt> <url>"
-            print "       Default value for <prompt> is \"s7> \""
-            print "       Default value for <url> is http://localhost:5080"
+            print("Usage: s7repl <prompt> <url>")
+            print("       Default value for <prompt> is \"s7> \"")
+            print("       Default value for <url> is http://localhost:5080")
             sys.exit(0)
         prompt = sys.argv[1]
 

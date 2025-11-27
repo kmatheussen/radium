@@ -1190,7 +1190,7 @@ static bool RT_play_voice(Data *data, Voice *voice, int num_frames_to_produce, f
   if (num_frames <= 0)
     return false;
   
-  float resampled_data[num_frames];
+  float *resampled_data = RT_ALLOC_ARRAY_STACK(float, num_frames);
   int frames_created_by_resampler = 0;
 
   {
@@ -1349,49 +1349,49 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 
   //printf("Recording status: %d\n", ATOMIC_GET(data->recording_status));
       
-  if (ATOMIC_GET(data->recording_status)==IS_RECORDING){
-    float *audio_[data->recorder_instance->num_ch];
-    float **audio = audio_;
+  if (ATOMIC_GET(data->recording_status)==IS_RECORDING)
+  {
+	  const float **audio = RT_ALLOC_ARRAY_STACK(const float*, data->recorder_instance->num_ch);
+	  
+	  int num_ch;
+	
+	  if (data->recording_from_main_input) {
+		  num_ch = MIXER_get_main_inputs(audio, data->recorder_instance->num_ch);
+	  } else {
+		  num_ch = R_MIN(2, data->recorder_instance->num_ch);
+		  for(int ch=0;ch<num_ch;ch++)
+			  audio[ch] = inputs[ch];
+	  }
 
-    int num_ch;
-    
-    if (data->recording_from_main_input) {
-      num_ch = MIXER_get_main_inputs(const_cast<const float**>(audio), data->recorder_instance->num_ch);
-    } else {
-      num_ch = R_MIN(2, data->recorder_instance->num_ch);
-      for(int ch=0;ch<num_ch;ch++)
-        audio_[ch] = inputs[ch];
-    }
+	  for(int ch=0;ch<num_ch;ch++)
+		  audio[ch] += data->recording_start_frame;
 
-    for(int ch=0;ch<num_ch;ch++)
-      audio_[ch] += data->recording_start_frame;
-
-    //R_ASSERT_RETURN_IF_FALSE(num_ch==data->recorder_instance->num_ch);
-    
-    /*
+	  //R_ASSERT_RETURN_IF_FALSE(num_ch==data->recorder_instance->num_ch);
+	  
+	  /*
       // No need. Mixer always have at least 2 channels, and data->recorder->num_ch can never have more than 2 channels.
-    const float empty_block[RADIUM_BLOCKSIZE] = {}; // The stack might be hotter than the heap.
-    for(int ch = num_ch ; ch < data->recorder->num_ch ; ch++)
+	  const float empty_block[RADIUM_BLOCKSIZE] = {}; // The stack might be hotter than the heap.
+	  for(int ch = num_ch ; ch < data->recorder->num_ch ; ch++)
       audio[ch] = empty_block;
-    */
+	  */
     
-    if (num_ch!=data->recorder_instance->num_ch || false==RT_SampleRecorder_add_audio(data->recorder_instance,
-                                                                                      const_cast<const float**>(audio),
-                                                                                      RADIUM_BLOCKSIZE - data->recording_start_frame
-                                                                                      ))
+	  if (num_ch!=data->recorder_instance->num_ch || false==RT_SampleRecorder_add_audio(data->recorder_instance,
+																						audio,
+																						RADIUM_BLOCKSIZE - data->recording_start_frame
+			  ))
       {
-        struct Patch *patch = (struct Patch*)plugin->patch;
+		  struct Patch *patch = (struct Patch*)plugin->patch;
         
-        ATOMIC_SET(data->recording_status, NOT_RECORDING);
-        ATOMIC_SET(patch->is_recording, false);
-        //printf("            ...and STOPPED --------------------\n\n\n");
+		  ATOMIC_SET(data->recording_status, NOT_RECORDING);
+		  ATOMIC_SET(patch->is_recording, false);
+		  //printf("            ...and STOPPED --------------------\n\n\n");
       }
-    
-    data->recording_start_frame = 0;
-
-    RT_PLUGIN_touch(plugin); // Make sure RT_process is called next frame as well.
-    
-    return;
+	  
+	  data->recording_start_frame = 0;
+	  
+	  RT_PLUGIN_touch(plugin); // Make sure RT_process is called next frame as well.
+	  
+	  return;
   }
 
   bool do_add_vibrato = data->p.vibrato_phase_add > 0.0;
@@ -3191,20 +3191,21 @@ static float *load_interleaved_samples(filepath_t filename, SF_INFO *sf_info){
     return NULL;
   }
 
-  while(true){
-    float samples[1024*sf_info->channels];
-    int64_t read_now = sf_readf_float(sndfile, samples, 1024);
-    if(read_now==0)
-      break;
+  while(true)
+  {
+	  float *samples = RT_ALLOC_ARRAY_STACK(float, 1024*sf_info->channels);
+	  int64_t read_now = sf_readf_float(sndfile, samples, 1024);
+	  if(read_now==0)
+		  break;
 
-    if(total_read_frames + read_now > allocated_frames){ // what's happening here?
-      allocated_frames = (total_read_frames+read_now) * 2;
-      ret = (float*)talloc_realloc(ret, (int)(allocated_frames * sizeof(float) * sf_info->channels));
-    }
-
-    memcpy(ret + (total_read_frames*sf_info->channels), samples, sizeof(float)*1024*sf_info->channels);
-
-    total_read_frames += read_now;
+	  if(total_read_frames + read_now > allocated_frames){ // what's happening here?
+		  allocated_frames = (total_read_frames+read_now) * 2;
+		  ret = (float*)talloc_realloc(ret, (int)(allocated_frames * sizeof(float) * sf_info->channels));
+	  }
+	  
+	  memcpy(ret + (total_read_frames*sf_info->channels), samples, sizeof(float)*1024*sf_info->channels);
+	  
+	  total_read_frames += read_now;
   }
 
   sf_close(sndfile);

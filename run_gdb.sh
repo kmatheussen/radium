@@ -3,6 +3,13 @@
 set -ueE
 #set -x
 
+#if [ -v QT_QPA_PLATFORM_PLUGIN_PATH ] ; then
+#source ~/.bashrc
+#fi
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+cd $SCRIPT_DIR
 
 source configuration.sh #>/dev/null
 
@@ -12,7 +19,7 @@ fi
 
 PWD=`pwd`
 export LSAN_OPTIONS=suppressions=$PWD/SanitizerSuppr.txt
-export ASAN_OPTIONS="detect_leaks=0,abort_on_error=1,max_malloc_fill_size=1048576,detect_odr_violation=2,detect_container_overflow=0,suppressions=$PWD/SanitizerSupprAddr.txt"
+export ASAN_OPTIONS="malloc_context_size=200,detect_leaks=0,abort_on_error=1,max_malloc_fill_size=1048576,detect_odr_violation=2,detect_container_overflow=0,suppressions=$PWD/SanitizerSupprAddr.txt"
 
 #
 # earlier we also had these ASAN_OPTIONS:
@@ -39,7 +46,7 @@ if uname -s |grep Linux > /dev/null ; then
     export LD_LIBRARY_PATH=$XCB_LIB_DIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
 fi
 
-export LD_LIBRARY_PATH="$PWD/bin/packages/python27_install/lib"${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
+export LD_LIBRARY_PATH="$PWD/bin/packages/python27_install/lib:$PWD/bin/packages/faust/build/lib"${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
 
 # To avoid buggy qt plugins from crashing radium (very common).
 unset QT_QPA_PLATFORMTHEME
@@ -56,17 +63,46 @@ export G_DEBUG="fatal-warnings,gc-friendly"
 
 #ulimit -s 655360
 
-# One of these three:
-#
-#
-# 1. GDB
-DEBUGGER="gdb --args"
-#
-# 2. LLDB
-#DEBUGGER="lldb --"
-#
-# 3. LLDB + FAUST/LLVM
-#DEBUGGER="lldb -O 'env $FAUST_LD_LIB_PATH' --" # lldb when using faust
+debugger="gdb"
+#debugger="lldb"
+#debugger="nnd"
+#debugger="lldb -O 'env $FAUST_LD_LIB_PATH'" # LLDB + FAUST/LLVM
+
+dostartnow=false
+running_in_emacs=false
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+      -s|--start)
+		  dostartnow=true
+		  shift
+		  ;;
+      -i|--in-emacs)
+		  running_in_emacs=true;
+		  shift
+		  ;;
+      *)
+		  break;
+		  ;;
+  esac
+done
+
+debugger_argline=""
+
+if [ "$debugger" = "gdb" ] ; then
+	if $dostartnow ; then
+		debugger_argline="-ex run"
+	fi
+	if $running_in_emacs ; then
+		debugger_argline="$debugger_argline -i=im"
+	fi
+	debugger_argline="$debugger_argline --args"
+elif [[ "$debugger" = "lldb"* ]] ; then
+	if $dostartnow ; then
+		debugger_argline="-o run"
+	fi
+	debugger_argline="$debugger_argline --"
+fi
 
 
 
@@ -77,15 +113,20 @@ case "${unameOut}" in
     *)          EXECUTABLE="where_is_radium_for_\"${unameOut}\"?_(change_these_lines_in_run_gdb.sh_to_fix_this)";;
 esac
 
+#ldd -r $EXECUTABLE
+
 rm -f /tmp/runradiumgdb*.sh
+
+#exec gdb -i=mi $EXECUTABLE
 
 exename=/tmp/runradiumgdb$$.sh
 
-echo "G_DEBUG="fatal-warnings,gc-friendly" USE=libedit/readline exec $DEBUGGER $EXECUTABLE $@; killall -9 radium_progress_window ; killall -9 radium_crashreporter"  > $exename
+echo "G_DEBUG="fatal-warnings,gc-friendly" USE=libedit/readline exec $debugger $debugger_argline $@ $EXECUTABLE ; killall -9 radium_progress_window ; killall -9 radium_crashreporter"  > $exename
 
 chmod a+rx $exename
 
 exec $exename
+#bash $exename
 
 # without gdb:
 #LD_LIBRARY_PATH=$LD_LIBRARY_PATH G_DEBUG="fatal-warnings,gc-friendly" bin/radium_linux.bin $@; killall -9 radium_progress_window ; killall -9 radium_crashreporter
@@ -93,3 +134,4 @@ exec $exename
 
 # to test crashreporter, comment out the above line, and uncomment the next line:
 #LD_LIBRARY_PATH=$LD_LIBRARY_PATH G_DEBUG="fatal-warnings,gc-friendly" bin/radium_linux.bin $@
+

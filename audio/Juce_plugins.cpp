@@ -1613,17 +1613,17 @@ static void RT_MIDI_send_msg_to_patch_receivers2(struct SeqTrack *seqtrack, stru
   }
 }
 
-int RT_MIDI_send_msg_to_patch_receivers(struct SeqTrack *seqtrack, struct Patch *patch, void *data, int data_size, int64_t seq_time){
+int RT_MIDI_send_msg_to_patch_receivers(struct SeqTrack *seqtrack, struct Patch *patch, const void *data, int data_size, int64_t seq_time){
   int num_bytes_used;
 
   R_ASSERT(data_size>0);
   
   {
-    uint8_t *d=(uint8_t*)data;
-    if (d[0] < 0x80) {
-      RT_message("Illegal value in first byte of MIDI message: %d\n",d[0]);
-      return 0;
-    }
+	  const uint8_t *d=(uint8_t*)data;
+	  if (d[0] < 0x80) {
+		  RT_message("Illegal value in first byte of MIDI message: %d\n",d[0]);
+		  return 0;
+	  }
   }
   
   juce::MidiMessage message(data, data_size, num_bytes_used, 0);
@@ -1690,17 +1690,17 @@ static void RT_MIDI_send_msg_to_patch2(struct SeqTrack *seqtrack, struct Patch *
   }
 }
 
-int RT_MIDI_send_msg_to_patch(struct SeqTrack *seqtrack, struct Patch *patch, void *data, int data_size, int64_t seq_time){
+int RT_MIDI_send_msg_to_patch(struct SeqTrack *seqtrack, struct Patch *patch, const void *data, int data_size, int64_t seq_time){
   int num_bytes_used;
 
   R_ASSERT(data_size>0);
   
   {
-    uint8_t *d=(uint8_t*)data;
-    if (d[0] < 0x80) {
-      RT_message("Illegal value in first byte of MIDI message: %d\n",d[0]);
-      return 0;
-    }
+	  const uint8_t *d=(uint8_t*)data;
+	  if (d[0] < 0x80) {
+		  RT_message("Illegal value in first byte of MIDI message: %d\n",d[0]);
+		  return 0;
+	  }
   }
   
   juce::MidiMessage message(data, data_size, num_bytes_used, 0);
@@ -1730,7 +1730,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   //juce::AudioSampleBuffer &buffer = data->buffer;
 
   int num_channels = R_MAX(data->num_input_channels, data->num_output_channels);
-  float *floatbuffers[num_channels];
+  float **floatbuffers = RT_ALLOC_ARRAY_STACK(float*, num_channels);
   
   for(int ch=0 ; ch<num_channels ; ch++){
     
@@ -2187,10 +2187,10 @@ static std::unique_ptr<juce::AudioPluginInstance> create_audio_instance(const Ty
                    layout.getNumChannels(false, 0),
                    layout.getChannelSet(true, 0).size(),
                    layout.getChannelSet(false, 0).size(),
-                   (int)layout.getChannelSet(false, 0).getTypeOfChannel(0),
-                   (int)layout.getChannelSet(true, 0).getTypeOfChannel(0),
-                   layout.getChannelSet(false, 0).getSpeakerArrangementAsString().toRawUTF8(),
-                   layout.getChannelSet(false, 0).getSpeakerArrangementAsString().toRawUTF8()
+                   (int)layout.getChannelSet(true, 0).size()==0 ? -1 : layout.getChannelSet(false, 0).getTypeOfChannel(0),
+                   (int)layout.getChannelSet(false, 0).size()==0 ? -1 : layout.getChannelSet(true, 0).getTypeOfChannel(0),
+                   layout.getChannelSet(false, 0).size()==0 ? "nochannels" : layout.getChannelSet(false, 0).getSpeakerArrangementAsString().toRawUTF8(),
+                   layout.getChannelSet(false, 0).size()==0 ? "nochannels" : layout.getChannelSet(false, 0).getSpeakerArrangementAsString().toRawUTF8()
                    );
                     
             //getchar();
