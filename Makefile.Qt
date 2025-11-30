@@ -2940,8 +2940,8 @@ $(T)RIFF.o: $(LIBGIG_PATH)/SF.cpp
 $(T)SF.o: $(LIBGIG_PATH)/SF.cpp
 	$(CCC2) -c $(LIBGIG_PATH)/SF.cpp $(CPPOPT) $(LIBGIG_FLAGS)
 
-$(LIBGIG_PATH)/SF.cpp: bin/packages/libgig-4.2.0.tar.bz2
-	cd bin/packages && rm -fr libgig && tar xvjf libgig-4.2.0.tar.bz2 && mv libgig-4.2.0 libgig && touch $(LIBGIG_PATH)/SF.cpp
+$(LIBGIG_PATH)/SF.cpp: bin/packages/libgig-4.5.1.tar.bz2
+	cd bin/packages && rm -fr libgig && tar xvjf libgig-4.5.1.tar.bz2 && mv libgig-4.5.1 libgig && touch $(LIBGIG_PATH)/SF.cpp
 
 $(T)radium_s7_wrap.o: api/radium_s7_wrap.c 
 	$(CC2) api/radium_s7_wrap.c $(OPT) -Ibin/packages/s7
