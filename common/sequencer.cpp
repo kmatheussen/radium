@@ -529,7 +529,7 @@ void SEQBLOCK_init(const struct SeqTrack *seqtrack, struct SeqBlock *seqblock, s
     
     seqblock->t.start_place = p_Create(0,0,1);
     
-    seqblock->t.end_place = p_Absolute_Last_Pos(block);
+    //seqblock->t.end_place = p_Absolute_Last_Pos(block);
 
     if (seqblock->playing_notes!=NULL) {
 
