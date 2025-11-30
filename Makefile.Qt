@@ -437,12 +437,16 @@ endif
 
 FNO_OPTIMIZE_SIBLING_CALLS ?= -fno-optimize-sibling-calls
 
-UNDEFINED_SANITIZE_OPTS=-DRADIUM_USES_UBSAN -fsanitize=undefined -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow -fsanitize=bounds -fsanitize=object-size -fsanitize=vptr -fno-sanitize-recover=undefined -fsanitize=alignment
+UNDEFINED_SANITIZE_OPTS=-DRADIUM_USES_UBSAN -fsanitize=undefined -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow -fsanitize=bounds -fsanitize=vptr -fno-sanitize-recover=undefined -fsanitize=alignment
 
 #UNDEFINED_SANITIZE_OPTS=
 
 ifdef USING_CLANG
 	UNDEFINED_SANITIZE_OPTS += -fno-sanitize=function -fno-sanitize=vptr 
+endif
+
+ifeq ($(BUILD_OPTIMIZED), RELEASE)
+	UNDEFINED_SANITIZE_OPTS += -fsanitize=object-size
 endif
 
 # -fsanitize-thread sometimes require: "export __GL_THREADED_OPTIMIZATIONS=0"
