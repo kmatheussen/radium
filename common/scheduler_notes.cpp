@@ -120,16 +120,9 @@ static bool RT_find_next_note_stop_after_seqblock_end(const struct SeqTrack *seq
   return false;
 }
 
-static inline bool note_continues_next_seqblock(const struct SeqBlock *seqblock, const struct Notes *note){
-  if (note->noend==0)
-    return false;
-  
-  const struct Blocks *block = seqblock->block;
-
-  if (p_Equal(seqblock->t.end_place, p_Absolute_Last_Pos(block)))
-    return note_continues_next_block(block, note);
-      
-  return p_Greater_Than(note->l.p, seqblock->t.end_place);
+static inline bool note_continues_next_seqblock(const struct SeqBlock *seqblock, const struct Notes *note)
+{
+	return note_continues_next_block(seqblock->block, note);
 }
 
 
