@@ -1761,13 +1761,16 @@ static void maybe_warn_about_jack1(void){
   bool ok = true;
 
   const char *version_string = WJACK_get_version_string();
-  
+
   if (version_string==NULL) {
     
     ok = false;
 
   } else {
     
+	  if (QString(version_string).contains("PipeWire"))
+		  return;
+  
     auto splitted = QString(version_string).split(".");
     
     if (splitted.size() != 3){
