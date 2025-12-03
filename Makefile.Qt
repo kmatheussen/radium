@@ -301,7 +301,7 @@ FREETYPE_CFLAGS ?=
 
 VST_OPTS ?=
 
-BOOST_INCLUDE=-I${HOME}/boost_1_85_0 -I${HOME}/boost_1_83_0 -I${HOME}/boost_1_77_0 -I${HOME}/boost_1_76_0 -I${HOME}/boost_1_75_0 -I${HOME}/boost_1_70_0 -I${HOME}/boost_1_67_0 -I${HOME}/boost_1_63_0 $(WNO_DEPRECATED_BUILTINS)
+BOOST_INCLUDE=-I${HOME}/boost_1_89_0 -I${HOME}/boost_1_85_0 -I${HOME}/boost_1_83_0 -I${HOME}/boost_1_77_0 -I${HOME}/boost_1_76_0 -I${HOME}/boost_1_75_0 -I${HOME}/boost_1_70_0 -I${HOME}/boost_1_67_0 -I${HOME}/boost_1_63_0 $(WNO_DEPRECATED_BUILTINS)
 BOOST_FLAGS=$(WNO_CLASS_MEMACCESS) $(BOOST_INCLUDE)
 
 CRASHREPORTER_OPTS ?= 
@@ -799,7 +799,7 @@ CCC_OK.touch: $(ALL_SHELL_SCRIPTS) Makefile.Qt
 	bash check_CCC_OK.sh
 
 dependencies_ok: check_dependencies.sh #Makefile
-	bash check_dependencies.sh `./find_python_path.sh` $(MOC) $(UIC) test_build
+	bash check_dependencies.sh `./find_python_path.sh` test_build
 #	sh check_dependencies.sh $(PYTHONEXE) $(MOC) $(UIC)
 	touch dependencies_ok
 
@@ -1031,7 +1031,7 @@ benchmark_smoothdelay:
 packages: bin/packages/deletemetorebuild
 
 bin/packages/deletemetorebuild: bin/packages/build.sh
-	bash check_dependencies.sh `./find_python_path.sh` $(MOC) $(UIC) test_packages
+	bash check_dependencies.sh `./find_python_path.sh` test_packages
 	echo "\
 	cd bin/packages;\
 	./build.sh this_argument_is_not_used no \
@@ -1932,9 +1932,9 @@ $(T)Qt_song_properties.o: $(BUILD_DEPENDENCIES) $(P)Qt_song_properties_callbacks
 
 $(T)Qt_preferences_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_preferences_callbacks.cpp $(P)Qt_preferences.h common/visual_proc.h Qt/mQt_vst_paths_widget_callbacks.h $(P)Qt_vst_paths_widget.h Qt/helpers.h Qt/Qt_MyQScrollBar.hpp
 	if [ $(BUILDTYPE) = RELEASE ] ; then \
-		$(CCC2) $(P)Qt_preferences_callbacks.cpp $(QTOPT)  -Wno-null-dereference $(NO_ANALYZER) ; \
+		$(CCC2) $(P)Qt_preferences_callbacks.cpp $(QTOPT)  -Wno-null-dereference $(WNO_DEPRECATED_ENUM_ENUM_CONVERSION) $(NO_ANALYZER) ; \
 	else \
-		$(CCC2) $(P)Qt_preferences_callbacks.cpp $(QTOPT) $(O0)  -Wno-null-dereference $(NO_ANALYZER) ; \
+		$(CCC2) $(P)Qt_preferences_callbacks.cpp $(QTOPT) $(O0)  -Wno-null-dereference $(WNO_DEPRECATED_ENUM_ENUM_CONVERSION) $(NO_ANALYZER) ; \
 	fi
 	 # ^ It takes forever to compile this file with -Og
 
