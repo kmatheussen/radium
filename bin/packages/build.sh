@@ -5,6 +5,9 @@ set -x
 
 export PYTHONEXE_NOT_AVAILABLE_YET=1
 
+# Might want to uncomment the line below to make faust build with support for llvm.
+#export RADIUM_USE_CLANG=1
+
 pushd ../../
 source configuration.sh
 popd
@@ -113,6 +116,8 @@ build_faust() {
 	JOBS=$(nproc)
 	#sed -i.backup "s/(BUILDLOCATION)$/(BUILDLOCATION) -j${JOBS}/" Makefile
 	#exit -1
+
+	echo "\n\nNote: Faust might fail if built with gcc. To work around that, simply build faust with clang instead, temporarily setting RADIUM_USE_CLANG=1 only when building faust.\n\n"
 	
 	# release build
 	BUILDOPT="--config Release -j${JOBS}" VERBOSE=1 CFLAGS="$CFLAGS" CXXFLAGS="$CXXFLAGS" CMAKEOPT="-DCMAKE_BUILD_TYPE=Release -DSELF_CONTAINED_LIBRARY=on -DCMAKE_CXX_COMPILER=`which $DASCXX` -DCMAKE_C_COMPILER=`which $DASCC` " make most
@@ -154,7 +159,7 @@ build_Visualization-Library() {
 
 build_libpds() {
 
-    NOWARNS="-Wno-return-mismatch -Wno-implicit-function-declaration -Wno-int-conversion -Wno-implicit-int"
+    NOWARNS="-Wno-return-mismatch -Wno-implicit-function-declaration -Wno-int-conversion -Wno-implicit-int -Wno-strict-prototypes -Wno-incompatible-pointer-types -std=gnu17"
     
     rm -fr libpd-master
     tar xvzf libpd-master.tar.gz
