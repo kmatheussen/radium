@@ -80,8 +80,10 @@ static bool load_sf2_instrument(Data *data, filepath_t filename, int preset_bag_
 			int sample_num = HASH_get_int32(sample_info,"num");
 
 			Sample &sample = data->samples[num_samples++];
-			new (&sample) Sample();
-        
+			//new (&sample) Sample();
+
+			R_ASSERT(num_samples < MAX_NUM_SAMPLES); // For now. TODO: Handle better.
+			
 			sample.data = data;
 
 			sample.volume = 1.0f;
@@ -97,28 +99,30 @@ static bool load_sf2_instrument(Data *data, filepath_t filename, int preset_bag_
 			printf("Loop start / end: %d %d\n",(int)sample.loop_start,(int)sample.loop_end);
       
 			{
-				sample.ch = -1;
 				const char *type = HASH_get_chars(sample_info,"type");
+				
 				if(!strcmp(type,"Left Sample") || !strcmp(type,"ROM Left Sample"))
 					sample.ch = 0;
-				if(!strcmp(type,"Right Sample") || !strcmp(type,"ROM Right Sample"))
+				else if(!strcmp(type,"Right Sample") || !strcmp(type,"ROM Right Sample"))
 					sample.ch = 1;
+				else
+					sample.ch = -1;
 			}
 
-			sample.sound = SF2_load_sample(filename, sample_num);
+			sample.sound = SF2_load_sample(filename, sample_num, sample.ch);
 
 			const int root_key = HASH_get_int32(region, "root key");
 			const int coarsetune = HASH_get_int32(region, "coarse tune");
 			const int finetune = HASH_get_int32(region, "fine tune");
 
-			printf("root: %d, coarse: %d, fine: %d, sample pitch: %d\n",root_key,coarsetune,finetune,(int)HASH_get_int(sample_info,"pitch"));
+			printf("===sample num: %d. root: %d, coarse: %d, fine: %d, sample pitch: %d\n",sample_num,root_key,coarsetune,finetune,(int)HASH_get_int(sample_info,"pitch"));
 
 			int note;
 			for(note=0;note<128;note++)
 				if(HASH_get_int(sample_info,"pitch")==255)
 					sample.frequency_table[note] = HASH_get_int(sample_info, "samplerate");
 				else
-					sample.frequency_table[note] = HASH_get_int(sample_info, "samplerate") * midi_to_hz(note+coarsetune+(float)finetune/100.0) / midi_to_hz(root_key);
+					sample.frequency_table[note] = HASH_get_int(sample_info, "samplerate") * midi_to_hz(note+12+coarsetune+(float)finetune/100.0) / midi_to_hz(root_key);
 
 			int note_num;
 			for(note_num=HASH_get_int32(region,"key start");note_num<=HASH_get_int32(region,"key end");note_num++)
@@ -126,23 +130,47 @@ static bool load_sf2_instrument(Data *data, filepath_t filename, int preset_bag_
 				Note *note = const_cast<Note*>(data->notes[note_num]);
 				note->samples.push_back(&sample);
         
-				//printf("%d: %f. middle_note: %d, finetune: %f. Sample: %p. Frequency: %f\n",i,dest->ratio,dest->middle_note,dest->finetune,dest->interleaved_samples,get_frequency(i,dest->finetune));
+				printf("=======%d: Note_num: %d. finetune: %d. Sample: \"%s\". Channel: %d. Frequency: %f. Wave: %p\n",
+					   i,
+					   note_num,
+					   finetune,
+					   sample_name, //filename.id, //&sample,
+					   sample.ch,
+					   sample.frequency_table[note_num],
+					   sample.sound
+					   //get_frequency(i,finetune);
+					);
 			}
 		}
 	}
 
 	// Optimize data->notes so that as few Note objects as possible are used (better for cache)
 	for(int i=0;i<128;i++)
-	{
-
+	{		
 		Note *old_note = const_cast<Note*>(data->notes[i]);
 		old_note->sort_samples();
-    
+
+		if (!old_note->samples.is_empty())
+		{
+			printf("\n\n=== %d: \n", i);
+			int i3=0;
+			for(auto *sample : old_note->samples)
+			{
+				printf("   Sample #%d. Wave: %p. Ch: %d. Num frames: %d. Loop: %d->%d. Vol: %f",
+					   i3++, sample->sound, sample->ch, (int)sample->num_frames,
+					   (int)sample->loop_start, (int)sample->loop_end,
+					   sample->volume);
+				for(int i = 0 ; i < R_MIN(128,sample->num_frames) ; i += 1)
+					printf(" %d: %f\n", i, sample->sound[i]);
+			}
+			printf("\n\n");
+		}
+			   
+					   
 		for(int i2=0;i2<i;i2++)
 		{
 			if(data->notes[i]->is_equal(data->notes[i2]))
 			{
-        
 				data->notes[i] = data->notes[i2];
 
 				data->note_storage.remove(old_note);
@@ -152,8 +180,7 @@ static bool load_sf2_instrument(Data *data, filepath_t filename, int preset_bag_
 
 				break;
 			}
-		}
-    
+		}				   
 	}
 
 

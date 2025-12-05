@@ -268,7 +268,7 @@ build_qscintilla() {
 build_xcb() {
     
     if ! is_0 ${RADIUM_BUILD_LIBXCB:-1} ; then
-	
+        echo $PYTHONEXE
         rm -fr xcb-proto-1.13/
         tar xvjf xcb-proto-1.13.tar.bz2
         cd xcb-proto-1.13/
@@ -306,7 +306,7 @@ if uname -s |grep Linux ; then
     if ! arch |grep -e arm -e aarch64 ; then
         build_libpds
     fi
-    build_xcb
+    #build_xcb
     echo "finished compiling libpds and xcb" # need this line to avoid script failing if the two lines above are commented out.
 fi
 

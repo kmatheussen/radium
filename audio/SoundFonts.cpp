@@ -53,8 +53,10 @@ template<class T> static inline std::string ToString(T o) {
 
 // Taken from sf2dump.cpp by Grigor Iliev
 template<class T> static inline string GetValue(T val) {
-  if (val == (T)sf2::NONE) return "NONE";
-    return ToString(val);
+	if ((uint)val == (uint)sf2::NONE)
+		return "NONE";
+  
+	return ToString(val);
 }
 
 // Taken from sf2dump.cpp by Grigor Iliev.
@@ -73,26 +75,10 @@ static string GetSampleType(uint16_t type) {
 }
 
 
-#if 0
+#if 1
 
 // PrintPeresets/PrintRegion/PrintSamples/PrintInstruments is from sf2dump.cpp by Grigor Iliev.
 // This code is practical to look at. It's kept here to avoid spending time finding the sf2dump.cpp file when editing this file.
-
-void PrintPeresets(sf2::File* sf) {
-    cout << "Presets (" << sf->GetPresetCount() << "): " << endl;
-    for (int i = 0; i < sf->GetPresetCount(); i++) { /* exclude the terminal header - EOP */
-        sf2::Preset* p = sf->GetPreset(i);
-        cout << "\t" << p->Name << " (Preset: " << p->PresetNum << ", Bank: " << p->Bank;
-        cout << ", Preset bag: " << p->PresetBagNdx << ")" << endl;
-
-        if (p->pGlobalRegion) PrintRegion(-1, p->pGlobalRegion);
-
-        for (int j = 0; j < p->GetRegionCount(); j++) {
-            PrintRegion(j, p->GetRegion(j));
-        }
-        cout << endl;
-    }
-}
 
 void PrintRegion(int idx, sf2::Region* reg) {
     if (idx == -1) cout << "\t\tGlobal Region " << endl;
@@ -166,6 +152,23 @@ void PrintRegion(int idx, sf2::Region* reg) {
 #endif
 }
 
+
+
+void PrintPresets(sf2::File* sf) {
+    cout << "Presets (" << sf->GetPresetCount() << "): " << endl;
+    for (int i = 0; i < sf->GetPresetCount(); i++) { /* exclude the terminal header - EOP */
+        sf2::Preset* p = sf->GetPreset(i);
+        cout << "\t" << p->Name << " (Preset: " << p->PresetNum << ", Bank: " << p->Bank;
+        cout << ", Preset bag: " << p->PresetBagNdx << ")" << endl;
+
+        if (p->pGlobalRegion) PrintRegion(-1, p->pGlobalRegion);
+
+        for (int j = 0; j < p->GetRegionCount(); j++) {
+            PrintRegion(j, p->GetRegion(j));
+        }
+        cout << endl;
+    }
+}
 
 void PrintSamples(sf2::File* sf) {
     cout << "Samples (" << sf->GetSampleCount() << "): " << endl;
@@ -373,7 +376,10 @@ hash_t *SF2_get_info(filepath_t filename){
 #endif
     
     sf2::File file(&riff);
-      
+
+	PrintSamples(&file);
+	PrintInstruments(&file);
+	
     hash_t *hash = HASH_create(5);
     HASH_put_hash(hash,"samples",get_samples_info(&file));
     HASH_put_hash(hash,"instruments",get_instruments_info(&file));
@@ -412,7 +418,7 @@ hash_t *SF2_get_displayable_preset_names(hash_t *info){
 #endif
 
 
-float *SF2_load_sample(filepath_t filename, int sample_num){
+float *SF2_load_sample(filepath_t filename, int sample_num, int ch){
   const char *osfilename = talloc_strdup(QFile::encodeName(STRING_get_qstring(filename.id)).constData());
 #if defined(FOR_WINDOWS)
   RIFF::File riff(filename.id, std::string(osfilename));
@@ -429,19 +435,26 @@ float *SF2_load_sample(filepath_t filename, int sample_num){
 
   int num_frames = int(buffer.Size / sizeof(int16_t));
 
+  if (ch != -1)
+	  num_frames /= 2;
+  
   float *ret=(float*)V_calloc((int)sizeof(float),num_frames);
-  if(ret==NULL){
-    GFX_Message(NULL, "Out of memory? Failed to allocate %d bytes\n",num_frames*4);
-    return NULL;
+  
+  if(ret==NULL)
+  {
+	  GFX_Message(NULL, "Out of memory? Failed to allocate %lu bytes\n",num_frames*sizeof(float));
+	  
+	  return NULL;
   }
 
-  for(int i=0;i<num_frames;i++){
-    int16_t val = get_le_16((unsigned char*)&s16[i]);
-    ret[i] = val / 32768.0f;
+  for(int i=0;i<num_frames;i++)
+  {
+	  int16_t val = get_le_16((unsigned char*)&s16[ch==0 ? i*2 : (i*2)+1]);
+	  ret[i] = val / 32768.0f;
   }
 
   sample->ReleaseSampleData();
-  file.DeleteSample(sample);
+  //file.DeleteSample(sample); (should probably not call, strange method...)
 
   return ret;
 }
