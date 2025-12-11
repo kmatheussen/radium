@@ -3560,7 +3560,6 @@ bool showInstrumentGui(instrument_t instrument_id, int64_t parentgui, bool show_
 
       if (show_message)
         GFX_Message2(NULL, true, "Instrument %s of type %s / %s does not have a native GUI", patch->name, plugin->type->type_name, plugin->type->name);
-      
     }
     
   }

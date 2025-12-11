@@ -33,7 +33,7 @@ IS_LINUX_BINARY ?=
 
 # 5. Full path to a python2 executable.  (Think it needs to be at least V2.4)
 #
-PYTHONEXE ?= `which python2`
+PYTHONEXE ?= `./find_python_path.sh`
 
 export CPLUS_INCLUDE_PATH := $(VSTSDK)/VST2_SDK:$(VSTSDK)/VST3_SDK
 
@@ -878,7 +878,7 @@ ifeq ($(UNAME), Darwin)
 	TEST_ARCH_DEF=-DFOR_MACOSX
 endif
 
-TEST_DEFS=-DRADIUM_IS_TESTING=1 $(TEST_ARCH_DEF)
+TEST_DEFS=-DRADIUM_IS_TESTING=1 -Wno-unknown-pragmas $(TEST_ARCH_DEF)
 
 TEST_TIMEDATA_OPTS=-DTEST_TIMEDATA_MAIN -Wall $(WERROR) -g -lpthread  $(filter-out -c, $(CPPOPT)) $(TEST_DEFS) -I. -I../Qt -Wno-error=parentheses
 
@@ -1008,7 +1008,7 @@ test_smoothdelay:
 	@rm test_smoothdelay
 
 test_bdw_gc:
-	g++ -g -Wall test/bdw_gc_test.cpp -Ibin/packages/gc-8.2.10/include -fsanitize=address bin/packages/gc-8.2.10/.libs/libgc.a -o bdw_gc_test
+	g++ -g -Wall test/bdw_gc_test.cpp -Ibin/packages/gc-8.2.8/include -fsanitize=address bin/packages/gc-8.2.8/.libs/libgc.a -o bdw_gc_test
 #	lldb ./bdw_gc_test
 	./bdw_gc_test
 	rm bdw_gc_test
@@ -2934,7 +2934,7 @@ $(T)http_parser.o: $(QHTTPSERVER_PATH)/http-parser/http_parser.c
 
 LIBGIG_FLAGS=-Wno-sign-compare -Wno-missing-declarations -Wno-unused-result -DPACKAGE="\"libgig\"" -DVERSION="\"4.2.0\"" -D_GNU_SOURCE
 
-$(T)RIFF.o: $(LIBGIG_PATH)/SF.cpp
+$(T)RIFF.o: $(LIBGIG_PATH)/RIFF.cpp
 	$(CCC2) -c $(LIBGIG_PATH)/RIFF.cpp $(CPPOPT) $(LIBGIG_FLAGS)
 
 $(T)SF.o: $(LIBGIG_PATH)/SF.cpp
