@@ -3629,7 +3629,7 @@ struct SeqBlockTimings{
   int64_t num_samples; // Only used if seqblock->block==NULL.
   
   Place start_place; // usually {0,0,1} (not used yet). Only used if block!=NULL
-  Place end_place;   // usually {num_lines,0,1} (not used yet)
+	//Place end_place;   // usually {num_lines,0,1} (not used yet)
 
   bool is_looping;
   int64_t interior_start; // seqtime version of start_place. Non-stretched value. Divide by resampling ratio to get sample pos.
