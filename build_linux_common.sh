@@ -112,7 +112,7 @@ if [[ $RADIUM_USE_CLANG == 1 ]] ; then
         export LINKER="$LINKER -lsframe -fuse-ld=lld"
 
         # stuff
-        export LINKER="$LINKER -lgcc_s --rtlib=compiler-rt"
+        export LINKER="$LINKER -lgcc_s --rtlib=compiler-rt /usr/lib64/libatomic.so.1"
     fi
     
 else

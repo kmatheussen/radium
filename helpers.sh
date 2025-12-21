@@ -12,6 +12,13 @@ assert_exe_exists()
     fi
 }
 
+assert_file_exists()
+{
+    if [ ! -f "$1" ] ; then
+		handle_failure "\"${1}\" doesn't seem to exist."
+    fi
+}
+
 is_empty()
 {
     [ -z $1 ]
