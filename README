@@ -74,15 +74,16 @@ BUILD DEPENDENCIES
 		 Update: Steinberg has removed the VST 2.4 headers from the VST SDK,
 		 so you need to download the VST 2.4 headers separately.
 		 They can be found on the internet.
+		 (Try searching for site:github.com AND "audioeffectx.h")
 		 
        * Etc.
 
 
 ACKNOWLEDGMENT
-        See http://users.notam02.no/~kjetism/radium/documentation.php#acknowledgment
+        See https://radium.dog/documentation.php#acknowledgment
 
 
 
 CONTACT
-	k.s.matheussen@notam02.no
-	http://www.notam02.no/radium/
+	k.s.matheussen@notam02.no / info@radium.dog
+	https://radium.dog
