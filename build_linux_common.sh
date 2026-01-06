@@ -210,7 +210,10 @@ export QSCINTILLA_PATH=`pwd`/bin/packages/QScintilla_src-2.14.0/src
 
 if ! is_0 $INCLUDE_FAUSTDEV ; then
     #FAUSTLDFLAGS="-L `pwd`/bin/packages/faust/build/lib/libfaust.a -lcrypto -lncurses"
-    FAUSTLDFLAGS="-L `pwd`/bin/packages/faust/build/lib/ -lfaust -lcrypto -lncurses"
+    FAUSTLDFLAGS="-L `pwd`/bin/packages/faust/build/lib/ -lfaust"
+	if ! arch |grep -e arm -e aarch64 ; then
+		FAUSTLDFLAGS="$FAUSTLDFLAGS -lcrypto -lncurses"
+	fi
     if [[ $INCLUDE_FAUSTDEV_BUT_NOT_LLVM == 1 ]] ; then
         export OS_OPTS="$OS_OPTS -DWITHOUT_LLVM_IN_FAUST_DEV"
     else
