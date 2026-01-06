@@ -62,7 +62,7 @@ INTRODUCTION
 
 
 
-BUILD DEPENDENCIES, all platforms:
+BUILD DEPENDENCIES
 
         * VST headers from steinberg. The necessary files should be incuded in
           "VST Audio Plug-Ins SDK", which you can download here:
@@ -70,114 +70,12 @@ BUILD DEPENDENCIES, all platforms:
              http://www.steinberg.net/en/company/developers.html
 
          After downloading the VST SDK, unpack it into your ~/SDKs folder.
-
-
-
-BUILD DEPENDENCIES, fedora:
-
-        In addition to OpenGL, you also need:
-
-        python2-devel
-        alsa-lib-devel
-        jack-audio-connection-kit-devel
-        libsamplerate-devel
-        liblrdf-devel
-        libsndfile-devel
-        ladspa-devel
-        glib2-devel
-        ladspa-calf-plugins
-        binutils-devel
-        libtool-ltdl
-        libtool
-        tk
-        libogg-devel
-        libvorbis-devel
-        speex-devel
-        fftw-devel
-        guile
-        libxkbfile-devel
-        xorg-x11-util-macros
-        cmake
-        libXrandr-devel
-        llvm-devel
-        boost-devel
-        openssl-devel
-        ncurses-devel
-        xcb-util-keysyms-devel
-        qt5-qtbase-gui
-        qt5-qttools-common
-        qt5-qtwebkit-devel
-        qt5-qtx11extras-devel
-        qt5-qttools-static
-        gmp-devel
-        mpfr-devel
-        libmpc-devel
-        
-        * Or in one line:
-
-        qt4-devel python2-devel alsa-lib-devel jack-audio-connection-kit-devel libsamplerate-devel liblrdf-devel libsndfile-devel ladspa-devel glib2-devel ladspa-calf-plugins binutils-devel libtool-ltdl libtool tk libogg-devel libvorbis-devel speex-devel fftw-devel guile libxkbfile-devel xorg-x11-util-macros cmake libXrandr-devel qtwebkit-devel llvm-devel boost-devel openssl-devel ncurses-devel xcb-util-keysyms-devel qt5-qtbase-gui qt5-qtwebkit-devel qt5-qtx11extras-devel qt5-qttools-static gmp-devel mpfr-devel libmpc-devel
-
-        (tested on Fedora 17/19/20/22 64 bit)
-
-
-
-BUILD DEPENDENCIES, ubuntu/debian/etc.:
-      * Main packages, Ubuntu 12:
-
-      In addition to OpenGL, you also need:
-
-      python2-dev
-      libasound2-dev
-      libjack-jackd2-dev or libjack-jackd1-dev
-      libsamplerate-dev
-      liblrdf-dev
-      libsndfile-dev
-      ladspa-sdk
-      glib2-dev
-      calf-plugins
-      binutils-dev
-      libc6-dev
-      tk8.5
-      libogg-dev
-      libvorbis-dev
-      libspeex-dev
-      fftw-dev
-      fftw3-dev
-      guile
-      libxkbfile-dev
-      xorg-x11-util-macros
-      cmake
-      libfreetype6-dev
-      libxinerama-dev
-      libxcursor-dev
-      libxrandr-dev
-      llvm-dev
-      libboost-all-dev
-      libssl-dev
-      ncurses-dev
-      libxcb-keysyms1-dev
-      qt5-dev
-      qt5webkit-dev
-      qt5x11extras-dev
-      qt5-qttools-static-dev
-      qtbase5-private-dev
-      gmp-dev
-      mpfr-dev
-      libmpc-dev
-      
-      * Or in one line:
-
-      sudo apt-get install python2-dev       libasound2-dev       libjack-jackd2-dev     libsamplerate-dev       liblrdf-dev       libsndfile-dev      ladspa-sdk      glib2-dev      calf-plugins      binutils-dev      libc6-dev      tk8.5 libogg-dev libvorbis-dev libspeex-dev fftw-dev fftw3-dev guile libxkbfile-dev xorg-x11-util-macros cmake libfreetype6-dev libxinerama-dev libxcursor-dev libxrandr-dev libqtwebkit-dev llvm-dev libboost-all-dev libssl-dev ncurses-dev libxcb-keysyms1-dev qt5-dev qt5webkit-dev qt5x11extras-dev qt5-qttools-static-dev qtbase5-private-dev gmp-dev mpfr-dev libmpc-dev
-
-
-      * Ubuntu LTS: I needed glib-2.0-dev instead of glib2-dev, plus a package called libglib2.0-dev.
-        I also needed to install python2.7-dev instead of python2-dev.
-
-      * On debian stable, it has been reported that you also need libfftw3-dev.
-
-      * Ubuntu 14: Replace glib-2.0-dev with libglib2.0-dev. Add libiberty-dev
-
-
+		 
+		 Update: Steinberg has removed the VST 2.4 headers from the VST SDK,
+		 so you need to download the VST 2.4 headers separately.
+		 They can be found on the internet.
+		 
+       * Etc.
 
 
 ACKNOWLEDGMENT
