@@ -3900,7 +3900,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     }
   }
 
-#if !USE_QWEBENGINE
+#if !USE_QWEBENGINE || !defined(FOR_MACOSX)
   static QUrl getUrl(QString stringurl){
     auto [absoluteurl, query, is_local_file] = getAbsoluteUrl(stringurl);
     
