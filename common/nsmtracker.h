@@ -4245,14 +4245,14 @@ static inline note_t create_note_t_plain(const struct SeqBlock *seqblock,
                                          )
 {
 #if !defined(RELEASE)
-  R_ASSERT(midi_channel>=0 && midi_channel <= 15);
-  R_ASSERT(note_id >= -1);
+	R_ASSERT( /* midi_channel>=0 && */ midi_channel <= 15);
+	R_ASSERT(note_id >= -1);
   
-  //R_ASSERT(pitch < 150); // approx. This assert might give false positives.
+	//R_ASSERT(pitch < 150); // approx. This assert might give false positives.
   
-  R_ASSERT(pitch >= 0);
-  //R_ASSERT(pan >= -1); // Pans have different range in midi
-  //R_ASSERT(pan <= 1);
+	R_ASSERT(pitch >= 0);
+	//R_ASSERT(pan >= -1); // Pans have different range in midi
+	//R_ASSERT(pan <= 1);
 #endif
   
   midi_channel = R_BOUNDARIES((char)0, midi_channel, (char)15);
