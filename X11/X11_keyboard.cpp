@@ -32,7 +32,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #if USE_QT5
 #include <xcb/xcb.h>
-#include <xcb/xcb_keysyms.h>
+#include <xkbcommon/xkbcommon.h>
+#include <xkbcommon/xkbcommon-x11.h>
 #endif
 
 #include "../common/playerclass.h"
@@ -255,6 +256,8 @@ static int get_modifier(KeySym keysym){
 
 
 #if USE_QT5
+
+#if 0
 static xcb_keysym_t get_sym(xcb_key_press_event_t *event){
     static bool inited = false;
   
@@ -279,6 +282,64 @@ static xcb_keysym_t get_sym(xcb_key_press_event_t *event){
 
     return sym;
 }
+#else
+static xcb_keysym_t get_sym(xcb_key_press_event_t *event){
+    static bool inited = false;
+  
+	static struct xkb_keymap *s_keymap = NULL;
+	static struct xkb_state *s_state = NULL;
+ 
+
+    if (inited==false)
+	{
+      xcb_connection_t *connection = QX11Info::connection();
+
+      if (xcb_connection_has_error(connection) > 0)
+	  {
+        GFX_Message(NULL, "Seems like the xcb connection has an error. Keyboard might not work. Error code %d.", xcb_connection_has_error(connection));
+	  }
+	  else
+	  {
+		  int32_t device_id = xkb_x11_get_core_keyboard_device_id(connection);
+		  
+		  if (device_id == -1)
+		  {
+			  GFX_Message(NULL, "Unable to obtain xkb device id");
+		  }
+		  else
+		  {
+			  struct xkb_context *ctx = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
+			  
+			  s_keymap = ctx==NULL ? NULL : xkb_x11_keymap_new_from_device(ctx, connection, device_id,
+																		   XKB_KEYMAP_COMPILE_NO_FLAGS);
+			  if (!s_keymap)
+			  {
+				  if (!ctx)
+					  GFX_Message(NULL, "Unable to create xkb_context");
+				  else
+					  GFX_Message(NULL, "Unable to create xkb keymap from device");
+			  }
+			  else
+			  {
+				  s_state = xkb_x11_state_new_from_device(s_keymap, connection, device_id);
+				  if (!s_state)
+				  {
+					  GFX_Message(NULL, "Unable to create xkb state from device");
+				  }
+			  }
+		  }
+	  }
+	  
+      inited = true;
+    }
+
+    if (s_state == NULL)
+      return XK_space;
+
+	return xkb_state_key_get_one_sym(s_state, event->detail);
+}
+#endif
+
 #endif
 
 
