@@ -677,7 +677,7 @@ int main(){
 
   const int num_main_iterations = 40 + rand()%25;
 
-  int *highest_allocated = (int*)calloc(sizeof(int), num_main_iterations);
+  int *highest_allocated = (int*)calloc(num_main_iterations, sizeof(int));
   
   for(int i=0;i<num_main_iterations;i++){
     
