@@ -1,8 +1,6 @@
 set -eEu
 
-
 source bash_setup.sh
-
 
 
 ########################################################
@@ -189,7 +187,7 @@ if ! is_0 $QT_PKG_CONFIGURATION_PATH ; then
 fi
 
 if is_0 $QMAKE ; then
-    if which qmake-qt5 ; then
+    if which qmake-qt5 2>/dev/null ; then
         export QMAKE=$(which qmake-qt5)
     else
         export QMAKE=$(which qmake)
@@ -197,7 +195,7 @@ if is_0 $QMAKE ; then
 fi
 
 if is_0 $UIC ; then
-    if which uic-qt5 ; then
+    if which uic-qt5 2>/dev/null  ; then
         export UIC=$(which uic-qt5)
     else
         export UIC=$(which uic)
@@ -205,13 +203,12 @@ if is_0 $UIC ; then
 fi
 
 if is_0 $MOC ; then
-    if which moc-qt5 ; then
+    if which moc-qt5 2>/dev/null  ; then
         export MOC=$(which moc-qt5)
     else
         export MOC=$(which moc)
     fi
 fi
-
 
 assert_exe_exists $QMAKE
 assert_exe_exists $UIC

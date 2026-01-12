@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -eEu
-set -x
+#set -x
 
 THIS_DIR="$(dirname "$(readlink -f "$0")")"
 
@@ -95,6 +95,7 @@ rm -fr "$TARGET/packages/faust/architecture/soul"
 rm -fr "$TARGET/packages/faust/architecture/teensy"
 rm -fr "$TARGET/packages/faust/architecture/unity"
 rm -fr "$TARGET/packages/faust/architecture/unsupported-arch"
+rm -fr "$TARGET/packages/faust/libraries/.git"
 
 rm -fr "$TARGET/python-midi/src/sequencer_osx"
 

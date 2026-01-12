@@ -33,7 +33,7 @@ IS_LINUX_BINARY ?=
 
 # 5. Full path to a python2 executable.  (Think it needs to be at least V2.4)
 #
-PYTHONEXE ?= `which python2`
+PYTHONEXE ?= `./find_python_path.sh`
 
 export CPLUS_INCLUDE_PATH := $(VSTSDK)/VST2_SDK:$(VSTSDK)/VST3_SDK
 
@@ -182,15 +182,16 @@ QT_SVG_LDFLAGS ?= `$(PKGqt) --libs Qt5Svg` $(FPIC)
 #	QT_CFLAGS ?= `$(PKGqt) --cflags Qt5Gui --cflags Qt5Network --cflags Qt5OpenGL --cflags Qt5Widgets --cflags Qt5WebEngineWidgets` -Ibin/packages/qhttpserver-master/src -Ibin/packages/QScintilla_gpl-2.10.8 -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) -DUSE_QT5
 #	QT_LDFLAGS ?= `$(PKGqt) --libs Qt5Gui --libs Qt5OpenGL --libs Qt5Network --libs Qt5Widgets --libs Qt5WebEngineWidgets`
 
-#	If using QtWebKit:
 QT_CFLAGS ?= `$(PKGqt) --cflags Qt5Gui --cflags Qt5Network --cflags Qt5OpenGL --cflags Qt5Widgets --cflags Qt5Concurrent` -I$(QHTTPSERVER_PATH)/src -I$(QSCINTILLA_PATH) -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) $(FPIC)
 QT_LDFLAGS ?=  $(QT_UI_LDFLAGS) $(QT_SVG_LDFLAGS) `$(PKGqt) --libs Qt5Gui --libs Qt5OpenGL --libs Qt5Widgets --libs Qt5Network ` $(FPIC)
 
 ifeq ($(USE_QWEBENGINE),1)
+#	If using QtWebEngine:
 	USE_QWEBENGINE_CFLAGS = -D USE_QWEBENGINE=1
 	QT_CFLAGS += `$(PKGqt) --cflags Qt5WebEngine --cflags Qt5WebEngineCore  --cflags Qt5WebEngineWidgets` 
 	QT_LDFLAGS += `$(PKGqt) --libs Qt5WebEngine --libs Qt5WebEngineCore  --libs Qt5WebEngineWidgets`
 else
+#	If using QtWebKit:
 	USE_QWEBENGINE_CFLAGS = -D USE_QWEBENGINE=0
 	QT_CFLAGS += `$(PKGqt) --cflags Qt5WebKitWidgets --cflags Qt5WebKit`
 	QT_LDFLAGS += `$(PKGqt) --libs Qt5WebKitWidgets --libs Qt5WebKit`
@@ -301,7 +302,7 @@ FREETYPE_CFLAGS ?=
 
 VST_OPTS ?=
 
-BOOST_INCLUDE=-I${HOME}/boost_1_85_0 -I${HOME}/boost_1_83_0 -I${HOME}/boost_1_77_0 -I${HOME}/boost_1_76_0 -I${HOME}/boost_1_75_0 -I${HOME}/boost_1_70_0 -I${HOME}/boost_1_67_0 -I${HOME}/boost_1_63_0 $(WNO_DEPRECATED_BUILTINS)
+BOOST_INCLUDE=-I${HOME}/boost_1_90_0 -I${HOME}/boost_1_89_0 -I${HOME}/boost_1_85_0 -I${HOME}/boost_1_83_0 -I${HOME}/boost_1_77_0 -I${HOME}/boost_1_76_0 -I${HOME}/boost_1_75_0 -I${HOME}/boost_1_70_0 -I${HOME}/boost_1_67_0 -I${HOME}/boost_1_63_0 $(WNO_DEPRECATED_BUILTINS)
 BOOST_FLAGS=$(WNO_CLASS_MEMACCESS) $(BOOST_INCLUDE)
 
 CRASHREPORTER_OPTS ?= 
@@ -591,7 +592,9 @@ WNO_SUGGEST_OVERRIDE=
 
 ifneq ($(BUILDTYPE), RELEASE)
 	ifdef USING_GCC
-		CPPOPT += -fdiagnostics-all-candidates
+		ifeq ($(shell test $(GCC_MAJOR) -ge 14; echo $$?),0)
+			CPPOPT += -fdiagnostics-all-candidates
+		endif
 	endif
 endif
 
@@ -799,7 +802,7 @@ CCC_OK.touch: $(ALL_SHELL_SCRIPTS) Makefile.Qt
 	bash check_CCC_OK.sh
 
 dependencies_ok: check_dependencies.sh #Makefile
-	bash check_dependencies.sh `./find_python_path.sh` $(MOC) $(UIC) test_build
+	bash check_dependencies.sh `./find_python_path.sh` test_build
 #	sh check_dependencies.sh $(PYTHONEXE) $(MOC) $(UIC)
 	touch dependencies_ok
 
@@ -878,7 +881,7 @@ ifeq ($(UNAME), Darwin)
 	TEST_ARCH_DEF=-DFOR_MACOSX
 endif
 
-TEST_DEFS=-DRADIUM_IS_TESTING=1 $(TEST_ARCH_DEF)
+TEST_DEFS=-DRADIUM_IS_TESTING=1 -Wno-unknown-pragmas $(TEST_ARCH_DEF)
 
 TEST_TIMEDATA_OPTS=-DTEST_TIMEDATA_MAIN -Wall $(WERROR) -g -lpthread  $(filter-out -c, $(CPPOPT)) $(TEST_DEFS) -I. -I../Qt -Wno-error=parentheses
 
@@ -1008,7 +1011,7 @@ test_smoothdelay:
 	@rm test_smoothdelay
 
 test_bdw_gc:
-	g++ -g -Wall test/bdw_gc_test.cpp -Ibin/packages/gc-8.2.10/include -fsanitize=address bin/packages/gc-8.2.10/.libs/libgc.a -o bdw_gc_test
+	g++ -g -Wall test/bdw_gc_test.cpp -Ibin/packages/gc-8.2.8/include -fsanitize=address bin/packages/gc-8.2.8/.libs/libgc.a -o bdw_gc_test
 #	lldb ./bdw_gc_test
 	./bdw_gc_test
 	rm bdw_gc_test
@@ -1031,7 +1034,7 @@ benchmark_smoothdelay:
 packages: bin/packages/deletemetorebuild
 
 bin/packages/deletemetorebuild: bin/packages/build.sh
-	bash check_dependencies.sh `./find_python_path.sh` $(MOC) $(UIC) test_packages
+	bash check_dependencies.sh `./find_python_path.sh` test_packages
 	echo "\
 	cd bin/packages;\
 	./build.sh this_argument_is_not_used no \
@@ -1932,9 +1935,9 @@ $(T)Qt_song_properties.o: $(BUILD_DEPENDENCIES) $(P)Qt_song_properties_callbacks
 
 $(T)Qt_preferences_callbacks.o: $(BUILD_DEPENDENCIES) $(P)Qt_preferences_callbacks.cpp $(P)Qt_preferences.h common/visual_proc.h Qt/mQt_vst_paths_widget_callbacks.h $(P)Qt_vst_paths_widget.h Qt/helpers.h Qt/Qt_MyQScrollBar.hpp
 	if [ $(BUILDTYPE) = RELEASE ] ; then \
-		$(CCC2) $(P)Qt_preferences_callbacks.cpp $(QTOPT)  -Wno-null-dereference $(NO_ANALYZER) ; \
+		$(CCC2) $(P)Qt_preferences_callbacks.cpp $(QTOPT)  -Wno-null-dereference $(WNO_DEPRECATED_ENUM_ENUM_CONVERSION) $(NO_ANALYZER) ; \
 	else \
-		$(CCC2) $(P)Qt_preferences_callbacks.cpp $(QTOPT) $(O0)  -Wno-null-dereference $(NO_ANALYZER) ; \
+		$(CCC2) $(P)Qt_preferences_callbacks.cpp $(QTOPT) $(O0)  -Wno-null-dereference $(WNO_DEPRECATED_ENUM_ENUM_CONVERSION) $(NO_ANALYZER) ; \
 	fi
 	 # ^ It takes forever to compile this file with -Og
 
@@ -2934,7 +2937,7 @@ $(T)http_parser.o: $(QHTTPSERVER_PATH)/http-parser/http_parser.c
 
 LIBGIG_FLAGS=-Wno-sign-compare -Wno-missing-declarations -Wno-unused-result -DPACKAGE="\"libgig\"" -DVERSION="\"4.2.0\"" -D_GNU_SOURCE
 
-$(T)RIFF.o: $(LIBGIG_PATH)/SF.cpp
+$(T)RIFF.o: $(LIBGIG_PATH)/RIFF.cpp
 	$(CCC2) -c $(LIBGIG_PATH)/RIFF.cpp $(CPPOPT) $(LIBGIG_FLAGS)
 
 $(T)SF.o: $(LIBGIG_PATH)/SF.cpp

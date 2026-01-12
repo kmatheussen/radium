@@ -112,7 +112,7 @@ if [[ $RADIUM_USE_CLANG == 1 ]] ; then
         export LINKER="$LINKER -lsframe -fuse-ld=lld"
 
         # stuff
-        export LINKER="$LINKER -lgcc_s --rtlib=compiler-rt"
+        export LINKER="$LINKER -lgcc_s --rtlib=compiler-rt /usr/lib64/libatomic.so.1"
     fi
     
 else
@@ -210,7 +210,10 @@ export QSCINTILLA_PATH=`pwd`/bin/packages/QScintilla_src-2.14.0/src
 
 if ! is_0 $INCLUDE_FAUSTDEV ; then
     #FAUSTLDFLAGS="-L `pwd`/bin/packages/faust/build/lib/libfaust.a -lcrypto -lncurses"
-    FAUSTLDFLAGS="-L `pwd`/bin/packages/faust/build/lib/ -lfaust -lcrypto -lncurses"
+    FAUSTLDFLAGS="-L `pwd`/bin/packages/faust/build/lib/ -lfaust"
+	if ! arch |grep -e arm -e aarch64 ; then
+		FAUSTLDFLAGS="$FAUSTLDFLAGS -lcrypto -lncurses"
+	fi
     if [[ $INCLUDE_FAUSTDEV_BUT_NOT_LLVM == 1 ]] ; then
         export OS_OPTS="$OS_OPTS -DWITHOUT_LLVM_IN_FAUST_DEV"
     else
@@ -256,8 +259,8 @@ export OS_JUCE_LDFLAGS="-lasound -pthread -lrt -lX11 -lXext "
 
 #LIBGIG_LDFLAGS="bin/packages/libgig/src/.libs/RIFF.o bin/packages/libgig/src/.libs/SF.o"
 FLUIDSYNTH_LDFLAGS="bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a `$PKG --libs glib-2.0`"
-export OS_LDFLAGS="$QSCINTILLA_PATH/libqscintilla2_qt5.a $FAUSTLDFLAGS $PDLDFLAGS pluginhost/Builds/Linux/build/libMyPluginHost.a $OS_JUCE_LDFLAGS -llrdf $GCDIR/.libs/libgc.a $PYTHONLIBPATH $PYTHONLIBNAME `$PKG --libs sndfile` `$PKG --libs samplerate` `$PKG --libs liblo` -lxcb -lxkbcommon-x11 -lxkbcommon $FLUIDSYNTH_LDFLAGS $RADIUM_BFD_LDFLAGS -liberty `$PKGqt --libs Qt5X11Extras`"
-# -lxcb-keysyms
+
+export OS_LDFLAGS="$QSCINTILLA_PATH/libqscintilla2_qt5.a $FAUSTLDFLAGS $PDLDFLAGS pluginhost/Builds/Linux/build/libMyPluginHost.a $OS_JUCE_LDFLAGS `$PKG --libs lrdf` $GCDIR/.libs/libgc.a $PYTHONLIBPATH $PYTHONLIBNAME `$PKG --libs sndfile` `$PKG --libs samplerate` `$PKG --libs liblo` -lxcb -lxkbcommon-x11 -lxkbcommon $FLUIDSYNTH_LDFLAGS $RADIUM_BFD_LDFLAGS -liberty `$PKGqt --libs Qt5X11Extras`"
 
 if [[ $RADIUM_USE_CLANG == 0 ]] ; then
     export OS_LDFLAGS2="-ldl "
