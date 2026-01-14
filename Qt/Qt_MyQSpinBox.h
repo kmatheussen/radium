@@ -77,7 +77,7 @@ struct MyQSpinBox : public GL_PauseCaller, public QSpinBox{
       
   bool _popup_menu_is_visible = false;
 
-  void enterEvent(QEvent *event) override {
+  void enterEvent(QEnterEvent *event) override {
     if (_statusbar_text != "")
       GFX_SetStatusBar(_statusbar_text.toUtf8().constData());
   }

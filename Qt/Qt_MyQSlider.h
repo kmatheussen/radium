@@ -144,7 +144,7 @@ struct MyQSlider : public QSlider, public radium::MouseCycleFix {
 
   bool _is_hovered = false;
   
-  void enterEvent(QEvent *event) override {
+  void enterEvent(QEnterEvent *event) override {
     if (_patch.data() != NULL && isEnabled()){
       SLIDERPAINTER_set_hovered(_painter, true);
       _is_hovered = true;

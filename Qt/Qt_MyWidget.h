@@ -250,15 +250,15 @@ namespace cvs{
       }
 
       void mousePressEvent ( QMouseEvent * event ) override {
-        if(mywidget->mousePress(event->x(),event->y()))
-          event->accept();
+		  if(mywidget->mousePress(event->position().x(), event->position().y()))
+			  event->accept();
       }
       void mouseMoveEvent ( QMouseEvent * event ) override {
-        if(mywidget->mouseMove(event->x(),event->y()))
+        if(mywidget->mouseMove(event->position().x(),event->position().y()))
           event->accept();
       }
       void mouseReleaseEvent ( QMouseEvent * event ) override {
-        if(mywidget->mouseRelease(event->x(),event->y()))
+        if(mywidget->mouseRelease(event->position().x(),event->position().y()))
           event->accept();
       }
       void paintEvent ( QPaintEvent * ev ) override {

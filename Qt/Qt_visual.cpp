@@ -21,7 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <qpainter.h>
 #include <qapplication.h>
-#include <qdesktopwidget.h>
+//#include <qdesktopwidget.h>
 
 #include "Qt_instruments_proc.h"
 #include "Qt_colors_proc.h"

@@ -79,7 +79,7 @@ set_var LLVM_CONFIG_BIN 0
 # qt-webkit. (Installing QtWebKit can be quite a hassle
 # sometimes!)
 #
-set_var USE_QWEBENGINE 0
+set_var USE_QWEBENGINE 1
 
 
 
@@ -108,7 +108,7 @@ set_var FULL_VERSION 1
 
 
 ########################################################
-# qt5
+# qt6
 #
 set_var PKGqt 0 # Can be set to another pkg-config than is not first in PATH.
 set_var QT_PKG_CONFIGURATION_PATH 0 # PKG_CONFIG_PATH will be set to this value.
@@ -116,11 +116,11 @@ set_var QMAKE 0
 set_var UIC 0
 set_var MOC 0
 
-# Alternative: Add the Qt5 bin directory to path,
+# Alternative: Add the Qt6 bin directory to path,
 # The directory can be different on your system,
 # adjust as needed:
 #
-#export PATH="/usr/lib64/qt5/bin:/usr/lib/qt5/bin"${PATH:+:$PATH} 
+#export PATH="/usr/lib64/qt6/bin:/usr/lib/qt6/bin"${PATH:+:$PATH} 
 
 
 
@@ -187,24 +187,24 @@ if ! is_0 $QT_PKG_CONFIGURATION_PATH ; then
 fi
 
 if is_0 $QMAKE ; then
-    if which qmake-qt5 2>/dev/null ; then
-        export QMAKE=$(which qmake-qt5)
+    if which qmake-qt6 2>/dev/null ; then
+        export QMAKE=$(which qmake-qt6)
     else
         export QMAKE=$(which qmake)
     fi
 fi
 
 if is_0 $UIC ; then
-    if which uic-qt5 2>/dev/null  ; then
-        export UIC=$(which uic-qt5)
+    if which uic-qt6 2>/dev/null  ; then
+        export UIC=$(which uic-qt6)
     else
         export UIC=$(which uic)
     fi
 fi
 
 if is_0 $MOC ; then
-    if which moc-qt5 2>/dev/null  ; then
-        export MOC=$(which moc-qt5)
+    if which moc-qt6 2>/dev/null  ; then
+        export MOC=$(which moc-qt6)
     else
         export MOC=$(which moc)
     fi
@@ -214,29 +214,25 @@ assert_exe_exists $QMAKE
 assert_exe_exists $UIC
 assert_exe_exists $MOC
 
-if ${QMAKE} -query QT_VERSION | grep -v '^5.1' ; then
-    handle_failure "Seems like qmake has the wrong version. We need Qt newer than 5.10, but not Qt6. Set QMAKE to correct path to fix".
+if ${QMAKE} -query QT_VERSION | grep -v '^6' ; then
+    handle_failure "Seems like qmake has the wrong version. We need Qt 6 or newer. Set QMAKE to correct path to fix".
 fi
 
-if ${UIC} --version | grep -v '^uic 5.1' ; then
-    if ${UIC} --version | grep -v '^uic-qt5 5.1' ; then
-	handle_failure "Seems like uic has the wrong version. We need Qt newer than 5.10, but not Qt6. Set UIC to correct path to fix".
-    fi
+if ${UIC} --version | grep -v '^uic 6' ; then
+	handle_failure "Seems like uic has the wrong version. We need Qt 6 or newer. Set UIC to correct path to fix".
 fi
 
-if ${MOC} --version | grep -v '^moc 5.1' ; then
-    if ${MOC} --version | grep -v '^moc-qt5 5.1' ; then
-	handle_failure "Seems like moc has the wrong version. We need Qt newer than 5.10, but not Qt6. Set MOC to correct path to fix".
-    fi
+if ${MOC} --version | grep -v '^moc 6' ; then
+	handle_failure "Seems like moc has the wrong version. We need Qt 6 or newer. Set MOC to correct path to fix".
 fi
 
 
-if [ "$($PKGqt --libs-only-L Qt5Core)" != "" ] ; then
+if [ "$($PKGqt --libs-only-L Qt6Core)" != "" ] ; then
     if env |grep QMAKE_LIBS_ONLY_L_SHOULD_BE_EMPTY ; then
         handle_failure "Not empty"
     fi
         
-    A=$($PKGqt --libs-only-L Qt5Core | xargs)
+    A=$($PKGqt --libs-only-L Qt6Core | xargs)
     B="-L$($QMAKE -query QT_INSTALL_PREFIX)/lib"
     if [ "$A" != "$B" ] ; then
 	handle_failure "$PKGqt and $QMAKE doesn't seem to point to the same Qt:\n" \
@@ -246,7 +242,7 @@ if [ "$($PKGqt --libs-only-L Qt5Core)" != "" ] ; then
 else
     if ! is_set QMAKE_LIBS_ONLY_L_SHOULD_BE_EMPTY ; then
         if [ "$($QMAKE -query QT_INSTALL_PREFIX)" != "/usr" ] ; then
-	    handle_failure "\"$PKGqt --libs-only-L Qt5Core\" gave no output. It's assumed that qt is installed in /usr, but it's not. it's installed in \"$($QMAKE -query QT_INSTALL_PREFIX)\". If this is correct, then simply set QMAKE_LIBS_ONLY_L_SHOULD_BE_EMPTY=1 in your build script."
+	    handle_failure "\"$PKGqt --libs-only-L Qt6Core\" gave no output. It's assumed that qt is installed in /usr, but it's not. it's installed in \"$($QMAKE -query QT_INSTALL_PREFIX)\". If this is correct, then simply set QMAKE_LIBS_ONLY_L_SHOULD_BE_EMPTY=1 in your build script."
         fi
     fi
 fi
