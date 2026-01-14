@@ -11,7 +11,7 @@
 #include <QGuiApplication>
 #include <QScreen>
 #include <QPointer>
-#include <QDesktopWidget>
+//#include <QDesktopWidget>
 #include <QMouseEvent>
 #include <QKeyEvent>
 #include <QPainter>
@@ -803,6 +803,13 @@ public:
       return get_localpos_from_qevent(_event);
   }
 
+  QPointF globalPos(void) const {
+    if(_scene_mouse_event!=NULL)
+		return get_globalpos_from_qevent(_scene_mouse_event);
+    else
+		return get_globalpos_from_qevent(_event);
+  }
+
   int x(void) const {
     if(_mouse_event)
 		return _mouse_event->position().x();
@@ -976,7 +983,7 @@ struct MouseCycleFix
 
         QMouseEvent move_event(QEvent::MouseMove,
                                event2.pos(),
-							   event2.localOrScenePos(),
+							   event2.globalPos(),
                                Qt::NoButton,
                                Qt::NoButton,
                                event2.modifiers());

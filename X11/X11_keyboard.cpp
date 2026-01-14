@@ -22,7 +22,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/nsmtracker.h"
 
-#include <QX11Info>
+#if !USE_QT6
+#  include <QX11Info>
+#else
+#  include "/usr/include/qt6/QtGui/6.8.2/QtGui/private/qtx11extras_p.h"
+#endif
 
 #include "X11.h"
 
@@ -260,14 +264,20 @@ static xcb_keysym_t get_sym(xcb_key_press_event_t *event){
   
     static xcb_key_symbols_t *key_symbols = NULL;
 
-    if (inited==false){
-      xcb_connection_t *connection = QX11Info::connection();
+    if (inited==false)
+	{
+#if USE_QT6
+		QNativeInterface::QX11Application *x11App = qApp->nativeInterface<QNativeInterface::QX11Application>();
+		xcb_connection_t *connection = x11App->connection();
+#else
+		xcb_connection_t *connection = QX11Info::connection();
+#endif 
 
-      if (xcb_connection_has_error(connection) > 0)
-        GFX_Message(NULL, "Seems like the xcb connection has an error. Keyboard might not work. Error code %d.", xcb_connection_has_error(connection));
+		if (xcb_connection_has_error(connection) > 0)
+			GFX_Message(NULL, "Seems like the xcb connection has an error. Keyboard might not work. Error code %d.", xcb_connection_has_error(connection));
       
-      key_symbols = xcb_key_symbols_alloc(connection);
-      inited = true;
+		key_symbols = xcb_key_symbols_alloc(connection);
+		inited = true;
     }
 
     if (key_symbols==NULL)

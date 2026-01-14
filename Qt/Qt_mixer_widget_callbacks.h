@@ -167,7 +167,7 @@ public:
 
   }
   
-  void enterEvent(QEvent *event) override {
+  void enterEvent(QEnterEvent *event) override {
     setCursor(Qt::ArrowCursor);
   }
 
@@ -325,7 +325,7 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget, radium::Timer{
     };
   }
 
-  void enterEvent(QEvent *event) override {
+  void enterEvent(QEnterEvent *event) override {
     setCursor(Qt::ArrowCursor);
   }
 

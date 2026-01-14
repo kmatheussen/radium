@@ -1381,7 +1381,7 @@ public:
   
   void add_recorded_peak(int ch, float min_peak, float max_peak) override {
 
-    _peaks[ch].add(radium::Peak(min_peak, max_peak));
+	  _peaks[ch].add(radium::Peak((qfloat16)min_peak, (qfloat16)max_peak));
 
     if (ch==num_ch-1){
 

@@ -1272,7 +1272,7 @@ void GFX_SetBrightness(struct Tracker_Windows *tvisual, float how_much){
   for(int i=0;i<16;i++){
     QColor color = QColor(SETTINGS_read_string(talloc_format("color%d",i),"#d0d5d0"));
 
-    qreal h,s,v,a;
+    float h,s,v,a;
     color.getHsvF(&h,&s,&v,&a);
 
     float value = R_BOUNDARIES(0,v+how_much,1);

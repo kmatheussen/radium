@@ -783,9 +783,9 @@ static void add_to_ids_hash(int64_t seqblock_id, int seqtracknum, int seqblocknu
   // First check if we should clear the hash table if it hasn grown a lot.
   // Currently, this is very unlikely to happen, but maybe something changes in the future.
   if (g_seqblock_ids_hash.size() >= 10000){    
-    printf(" CLEARING: %d\n", g_seqblock_ids_hash.size());
-    R_ASSERT_NON_RELEASE(false);
-    g_seqblock_ids_hash.clear();
+	  printf(" CLEARING: %d\n", (int)g_seqblock_ids_hash.size());
+	  R_ASSERT_NON_RELEASE(false);
+	  g_seqblock_ids_hash.clear();
   }
 
   g_seqblock_ids_hash[seqblock_id] = QPair<int, int>(seqtracknum, seqblocknum);

@@ -187,6 +187,7 @@ build_qhttpserver() {
     tar xvzf qhttpserver-master.tar.gz
     cd qhttpserver-master/
     echo "CONFIG += staticlib" >> src/src.pro
+	patch -p1 <../qhttpserver_qt6.patch
     $QMAKE
     make -j8 # necessary to create the moc files.
     cd ..

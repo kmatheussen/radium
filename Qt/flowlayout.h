@@ -81,6 +81,7 @@ private:
     QList<QLayoutItem *> itemList;
     int m_hSpace;
     int m_vSpace;
+	int m_margin;
 };
 
 #endif // FLOWLAYOUT_H

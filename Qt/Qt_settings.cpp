@@ -17,13 +17,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <unistd.h>
 
 #include <QDesktopServices>
+#include <QStandardPaths>
 #include <QDir>
 #include <QString>
 #include <QFileInfo>
 #include <QLocale>
 #include <QCoreApplication>
 #include <QCryptographicHash>
-
+#include <QMenuBar>
 
 #define INCLUDE_SNDFILE_OPEN_FUNCTIONS 1
 #include "../common/nsmtracker.h"
@@ -326,7 +327,7 @@ QString OS_get_home_path(void){
 
     if(info.exists()==false){
 #ifdef USE_QT5
-      home_path = QStandardPaths::writableLocation(QStandardPaths::DataLocation);
+      home_path = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
 #else
       home_path = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
 #endif

@@ -61,11 +61,11 @@ public:
     return _vector.size();
   }
   
-  T const *begin() const {
-    return _vector.begin(); //&_vector.constFirst();
+  auto begin() const {
+    return _vector.constBegin(); //&_vector.constFirst();
   }
   
-  T const *end() const {
+  auto end() const {
     return _vector.end(); //&_vector.constLast();
   }
 

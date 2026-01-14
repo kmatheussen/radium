@@ -50,6 +50,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QStyleFactory>
 #include <QStyleOption>
 #include <QMenuBar>
+#include <QActionGroup>
 
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"
@@ -1018,8 +1019,11 @@ static void setStyleRecursively(QObject *o, QStyle *style){
     
     ClickableIconAction *a = dynamic_cast<ClickableIconAction*>(o);
     if (a != NULL){
-      for(auto *w : a->associatedWidgets() ){
-        w->setStyle(&g_my_proxy_style);
+      for(auto *o2 : a->associatedObjects())
+	  {
+		  QWidget *w = qobject_cast<QWidget*>(o2);
+		  if (w)
+			  w->setStyle(&g_my_proxy_style);
       }
     }
     
@@ -1664,7 +1668,10 @@ static void make_menu_active(int trynum, int ms){
           QPoint topleft = g_main_menu_bar->rect().topLeft();
           QPoint center = g_main_menu_bar->rect().center();
           QPoint point = QPoint(topleft.x() + 40, center.y());
-          auto *event = new QMouseEvent(QEvent::MouseMove, point, Qt::NoButton, Qt::NoButton, Qt::NoModifier);
+          auto *event = new QMouseEvent(QEvent::MouseMove,
+										point,
+										g_main_menu_bar->mapToGlobal(point),
+										Qt::NoButton, Qt::NoButton, Qt::NoModifier);
           qApp->postEvent(g_main_menu_bar, event);
         }
         

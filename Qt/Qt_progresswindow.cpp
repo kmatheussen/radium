@@ -6,7 +6,7 @@
 #include <QFile>
 #include <QProcess>
 #include <QTimer>
-#include <QDesktopWidget>
+//#include <QDesktopWidget>
 #include <QLayout>
 #include <QThread>
 #include <QMutex>

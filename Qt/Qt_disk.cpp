@@ -392,7 +392,7 @@ public:
 
     if (is_binary==false){
       stream = new QTextStream(file());
-      stream->setCodec("UTF-8");
+      //stream->setCodec("UTF-8"); (UTF-8 is default encoding)
     }
 
     return true;

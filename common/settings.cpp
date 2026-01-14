@@ -92,7 +92,7 @@ static QVector<QString> get_lines2(QFile &file){
   QVector<QString> ret;
   
   QTextStream in(&file);
-  in.setCodec("UTF-8");
+  //in.setCodec("UTF-8"); that's the default value
   
   while ( !in.atEnd() ){
     QString line = in.readLine();
@@ -104,8 +104,8 @@ static QVector<QString> get_lines2(QFile &file){
       line.remove(0, line.indexOf("#"));
     
     if (line.length()>512){ // Because of an old bug, lines could grow and grow. Just delete those lines.
-      GFX_Message(NULL, "A very long line (%d characters) in the config file was ignored",line.length());
-      line = "";
+		GFX_Message(NULL, "A very long line (%d characters) in the config file was ignored", (int)line.length());
+		line = "";
     }
     
     //printf("line: -%s-\n",line.toUtf8().constData());
