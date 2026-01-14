@@ -170,7 +170,8 @@ static vl::GLSLVertexShader *get_gradient_vertex_shader(void){
 }
 #endif
 
-
+namespace
+{
 struct GradientTriangles : public vl::Effect {
   GradientTriangles *next = NULL;
   
@@ -290,6 +291,7 @@ public:
 	    uniform_y->setUniformF((y + y_offset)*safe_double_read(&g_opengl_scale_ratio));
   }
 };
+} // anon. namespace
 
 #if DEBUG_PRINT
 static int gradlist_length(GradientTriangles *gradients){

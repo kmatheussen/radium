@@ -4940,6 +4940,8 @@ struct Sequencer_widget : public MouseTrackerQWidget {
 
       _seqtracks_widget.paint(ev->region(), p);
 
+
+	  
     }
 
     if (showTimeSequencerLane())

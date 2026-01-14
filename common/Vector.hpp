@@ -153,6 +153,7 @@ public:
   }
 	
   Vector(const vector_t *v)
+	  : Vector()
   {
 	  VECTOR_FOR_EACH(T, el, v)
 	  {
