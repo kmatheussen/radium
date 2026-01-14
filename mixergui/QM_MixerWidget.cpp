@@ -1921,7 +1921,7 @@ bool MyScene::fix_mousePressEvent(radium::MouseCycleEvent &event){
   
   _start_mouse_pos = QCursor::pos(); //pos;
 
-  if(event.button()==Qt::MidButton) {
+  if(event.button()==Qt::MiddleButton) {
     
     g_is_dragging_everything = true;
     g_startpos_scrollbar_x = g_mixer->view->horizontalScrollBar()==NULL ? 0 : g_mixer->view->horizontalScrollBar()->value();

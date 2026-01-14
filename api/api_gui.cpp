@@ -42,7 +42,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QUiLoader>
 #include <QToolTip>
 #include <QHeaderView>
-#include <QDesktopWidget>
+//#include <QDesktopWidget>
 #include <QDir>
 #include <QFileDialog>
 #include <QFontDialog>
@@ -210,7 +210,7 @@ static QPointer<QWidget> g_last_released_widget = NULL;
     Gui::mouseLeaveEvent(event);                                        \
     classname::leaveEvent(event);                                       \
   }                                                                     \
-  void enterEvent(QEvent *event) override{                              \
+  void enterEvent(QEnterEvent *event) override{							\
     ScopedEventHandlerTracker event_handler_tracker;                    \
     if (_mouse_callback.v==NULL){                                         \
       classname::enterEvent(event); return;}                            \
@@ -4651,7 +4651,7 @@ static void perhaps_collect_a_little_bit_of_gui_garbage(int num_guis_to_check){
     
     if (gui->_widget==NULL){
 
-      printf("        GUI GC: COLLECTING gui garbage. Pos: %d, guinum: %d. Num alive guis: %d\n", pos, (int)gui->get_gui_num(), g_valid_guis.size());
+		printf("        GUI GC: COLLECTING gui garbage. Pos: %d, guinum: %d. Num alive guis: %d\n", pos, (int)gui->get_gui_num(), (int)g_valid_guis.size());
       delete gui;
 
     } else {
@@ -5928,13 +5928,13 @@ void gui_setSplitterSizes(int64_t splitter_guinum, dynvec_t splitter_sizes){
 
   QSplitter *splitter = dynamic_cast<QSplitter*>(gui->_widget.data());
   if (splitter==NULL){
-    handleError("gui_setSplitterSizes: Gui is not a splitter");
-    return;
+	  handleError("gui_setSplitterSizes: Gui is not a splitter");
+	  return;
   }
   
   if (splitter_sizes.num_elements != splitter->sizes().size()){
-    handleError("gui_setSplitterSizes: Expected %d elements in splitter_sizes, found %d", splitter->sizes().size(), splitter_sizes.num_elements);
-    return;
+	  handleError("gui_setSplitterSizes: Expected %d elements in splitter_sizes, found %d", (int)splitter->sizes().size(), splitter_sizes.num_elements);
+	  return;
   }
   
   QList<int> sizes;
@@ -7642,7 +7642,7 @@ static QString get_html_from_textline(QString line){
   if (line=="")
     return ""; // QTextDocumentFragment::fromPlainText().toHtml returns "<br/>" for empty lines, for some reason.
   
-  QString html = QTextDocumentFragment::fromPlainText(line).toHtml("UTF-8");
+  QString html = QTextDocumentFragment::fromPlainText(line).toHtml(); //("UTF-8");
 
   // Remove <!--StartFragment--> and <!--EndFragment-->
   html.remove("<!--StartFragment-->");
@@ -7656,7 +7656,7 @@ static QString get_html_from_textline(QString line){
     if (pos1>= 0 && pos2>5){
       pos1 += QString("<body>").size();
       if (pos2>pos1){
-        html = html.midRef(pos1, pos2-pos1).toString();
+		  html = html.mid(pos1, pos2-pos1);
       }
     }
   }
@@ -7667,7 +7667,7 @@ static QString get_html_from_textline(QString line){
     int pos1 = html.indexOf("\">") + 2;
     int pos2 = html.indexOf("</p>");
     if (pos2 > pos1){
-      html = html.midRef(pos1, pos2-pos1).toString();
+      html = html.mid(pos1, pos2-pos1);
     }
   }
   
@@ -8162,7 +8162,7 @@ QBrush API_get_gradient(int gradient_num, float x1, float y1, float x2, float y2
   s_stops.resize(gradient._points.size());
 
 
-  qreal huef, satf, valuef, alfaf;
+  float huef, satf, valuef, alfaf;
   color.getHsvF(&huef, &satf, &valuef, &alfaf);
   
 

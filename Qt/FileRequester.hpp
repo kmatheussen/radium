@@ -108,13 +108,13 @@ namespace radium{
     }
     
     static QString get_postfixes_filter(QString type, QString postfixes){
-      QString postfixes2 = postfixes==NULL ? "*.rad *.mmd *.mmd2 *.mmd3 *.MMD *.MMD2 *.MMD3" : QString(postfixes);
+		QString postfixes2 = postfixes.isNull() ? "*.rad *.mmd *.mmd2 *.mmd3 *.MMD *.MMD2 *.MMD3" : postfixes;
       
 #if defined(FOR_WINDOWS)
-      return postfixes2 + " ;; All files (*)";
+		return postfixes2 + " ;; All files (*)";
 #else
-      type = type==NULL ? "Song files" : type;
-      return QString(type) + " (" + postfixes2 + ") ;; All files (*)";
+		type = type.isNull() ? "Song files" : type;
+		return QString(type) + " (" + postfixes2 + ") ;; All files (*)";
 #endif
     }
     

@@ -17,6 +17,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define SHOW_SOLO_BUTTON 0
 
 #include <QFileDialog>
+//#include <QRegExp>
 
 #include "../common/disk.h"
 

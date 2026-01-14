@@ -178,7 +178,7 @@ int main(int argc, char **argv){
     menu_strings.push_back(QByteArray::fromBase64(argv[i]));
 
   //QCoreApplication::setAttribute(Qt::AA_Use96Dpi);
-  QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+  //QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
   
   argv = getQApplicationConstructorArgs(argc, argv);
   QApplication app(argc, argv);

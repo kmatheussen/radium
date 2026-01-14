@@ -852,7 +852,13 @@ static QThread *g_render_thread = NULL;
 
 
 class MyQtThreadedWidget
-#if USE_QT5
+#if USE_QT6
+#  if THREADED_OPENGL
+  : public vlQt6::Qt6ThreadedWidget
+#  else
+  : public vlQt6::Qt6Widget
+#  endif
+#elif USE_QT5
 #  if THREADED_OPENGL
   : public vlQt5::Qt5ThreadedWidget
 #  else
@@ -919,7 +925,13 @@ public:
   
   // Main thread
   MyQtThreadedWidget(vl::OpenGLContextFormat vlFormat, QWidget *parent=0)
-#if USE_QT5
+#if USE_QT6
+#  if THREADED_OPENGL
+    : Qt6ThreadedWidget(vlFormat, parent)
+#  else
+      : Qt6Widget(vlFormat, parent)
+#  endif
+#elif USE_QT5
 #  if THREADED_OPENGL
     : Qt5ThreadedWidget(vlFormat, parent)
 #  else

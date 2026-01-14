@@ -589,7 +589,7 @@ public:
       foreach (QUrl url, event->mimeData()->urls()){
         printf(" Filepath: -%s-\n",url.toLocalFile().toUtf8().constData());          
         QString filename = url.toLocalFile();
-        handleDropEvent(filename, event->pos().x());
+        handleDropEvent(filename, event->position().x());
       }
     }
   }

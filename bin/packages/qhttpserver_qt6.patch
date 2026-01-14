@@ -1,0 +1,75 @@
+diff --git a/examples/bodydata/bodydata.cpp b/examples/bodydata/bodydata.cpp
+index 1a2c7a1..169a42f 100644
+--- a/examples/bodydata/bodydata.cpp
++++ b/examples/bodydata/bodydata.cpp
+@@ -1,7 +1,7 @@
+ #include "bodydata.h"
+ 
+ #include <QCoreApplication>
+-#include <QRegExp>
++//#include <QRegExp>
+ #include <QStringList>
+ #include <QDebug>
+ 
+@@ -31,6 +31,7 @@ Responder::Responder(QHttpRequest *req, QHttpResponse *resp)
+     : m_req(req)
+     , m_resp(resp)
+ {
++#if 0
+     QRegExp exp("^/user/([a-z]+$)");
+     if (exp.indexIn(req->path()) == -1)
+     {
+@@ -50,6 +51,7 @@ Responder::Responder(QHttpRequest *req, QHttpResponse *resp)
+     connect(req, SIGNAL(data(const QByteArray&)), this, SLOT(accumulate(const QByteArray&)));
+     connect(req, SIGNAL(end()), this, SLOT(reply()));
+     connect(m_resp, SIGNAL(done()), this, SLOT(deleteLater()));
++#endif
+ }
+ 
+ Responder::~Responder()
+diff --git a/examples/greeting/greeting.cpp b/examples/greeting/greeting.cpp
+index 4a2550e..4236c7b 100644
+--- a/examples/greeting/greeting.cpp
++++ b/examples/greeting/greeting.cpp
+@@ -1,7 +1,7 @@
+ #include "greeting.h"
+ 
+ #include <QCoreApplication>
+-#include <QRegExp>
++//#include <QRegExp>
+ #include <QStringList>
+ 
+ #include <qhttpserver.h>
+@@ -21,6 +21,7 @@ Greeting::Greeting()
+ 
+ void Greeting::handleRequest(QHttpRequest *req, QHttpResponse *resp)
+ {
++#if 0
+     QRegExp exp("^/user/([a-z]+)$");
+     if( exp.indexIn(req->path()) != -1 )
+     {
+@@ -36,10 +37,10 @@ void Greeting::handleRequest(QHttpRequest *req, QHttpResponse *resp)
+         resp->writeHead(403);
+         resp->end(QByteArray("You aren't allowed here!"));
+     }
++#endif
+ }
+ 
+ /// main
+-
+ int main(int argc, char **argv)
+ {
+     QCoreApplication app(argc, argv);
+diff --git a/src/qhttprequest.h b/src/qhttprequest.h
+index 4f9cc3b..03ee0e4 100644
+--- a/src/qhttprequest.h
++++ b/src/qhttprequest.h
+@@ -46,7 +46,7 @@ class QHTTPSERVER_API QHttpRequest : public QObject
+     Q_PROPERTY(HeaderHash headers READ headers)
+     Q_PROPERTY(QString remoteAddress READ remoteAddress)
+     Q_PROPERTY(quint16 remotePort READ remotePort)
+-    Q_PROPERTY(QString method READ method)
++    Q_PROPERTY(QString method READ methodString)
+     Q_PROPERTY(QUrl url READ url)
+     Q_PROPERTY(QString path READ path)
+     Q_PROPERTY(QString httpVersion READ httpVersion)

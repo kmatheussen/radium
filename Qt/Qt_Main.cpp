@@ -1041,6 +1041,7 @@ namespace{
     int64_t id;
     QPointF start_pos;
     QPointF local_or_scene_pos;
+    QPointF global_pos;
     Qt::MouseButton button;
     Qt::MouseButtons buttons;
     Qt::KeyboardModifiers modifiers;
@@ -1066,6 +1067,7 @@ static void MOUSE_CYCLE_unregister_all(int64_t id, bool include_move);
 
 static void set_curr_mouse_cycle(QEvent *event, bool is_pressing){
   g_curr_mouse_cycle.local_or_scene_pos = dynamic_cast<QGraphicsSceneMouseEvent*>(event) != NULL ? get_scenepos_from_qevent(event) : get_localpos_from_qevent(event);
+  g_curr_mouse_cycle.global_pos = get_globalpos_from_qevent(event);
   
   if (is_pressing)
     g_curr_mouse_cycle.start_pos = g_curr_mouse_cycle.local_or_scene_pos;
@@ -1167,6 +1169,7 @@ bool MOUSE_CYCLE_delete_button_has_been_pressed(void){
   {
     QMouseEvent press_event(QEvent::MouseButtonRelease,
                             g_curr_mouse_cycle.local_or_scene_pos,
+							g_curr_mouse_cycle.global_pos,
                             Qt::BackButton,
                             Qt::BackButton,
                             g_curr_mouse_cycle.modifiers);
@@ -1182,6 +1185,7 @@ bool MOUSE_CYCLE_delete_button_has_been_pressed(void){
       
       QMouseEvent release_event(QEvent::MouseButtonRelease,
                                 g_curr_mouse_cycle.local_or_scene_pos,
+								g_curr_mouse_cycle.global_pos,
                                 Qt::BackButton,
                                 Qt::BackButton,
                                 g_curr_mouse_cycle.modifiers);
@@ -1193,6 +1197,7 @@ bool MOUSE_CYCLE_delete_button_has_been_pressed(void){
     {
       QMouseEvent move_event(QEvent::MouseMove,
                              g_curr_mouse_cycle.local_or_scene_pos,
+							 g_curr_mouse_cycle.global_pos,
                              Qt::NoButton,
                              Qt::NoButton,
                              g_curr_mouse_cycle.modifiers);
@@ -1243,6 +1248,7 @@ static void MOUSE_CYCLE_unregister_all(int64_t id, bool include_mouse_move){
   
   QMouseEvent e(QEvent::MouseButtonRelease,
                 g_curr_mouse_cycle.local_or_scene_pos,
+                g_curr_mouse_cycle.global_pos,
                 g_curr_mouse_cycle.button,
                 g_curr_mouse_cycle.buttons,
                 g_curr_mouse_cycle.modifiers);
@@ -2049,7 +2055,7 @@ protected:
   
 #ifdef USE_QT5
 
-  bool nativeEventFilter(const QByteArray &eventType, void *message, long *) Q_DECL_OVERRIDE
+  bool nativeEventFilter(const QByteArray &eventType, void *message, qintptr *) Q_DECL_OVERRIDE
   {
     //printf("NAtive event filter!\n");
     return SystemEventFilter(message);
@@ -4852,10 +4858,12 @@ int main(int argc, char **argv){
 #if QT_VERSION_MAJOR == 5 && QT_VERSION_MINOR == 9
   QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
 #endif
-#if QT_VERSION_MAJOR != 5 || QT_VERSION_MINOR != 15
+#if !USE_QT6
+#  if QT_VERSION_MAJOR != 5 || QT_VERSION_MINOR != 15
   QCoreApplication::setAttribute(Qt::AA_X11InitThreads);
+#  endif
 #endif
-
+  
   //QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
   //QCoreApplication::setAttribute(Qt::AA_DisableHighDpiScaling); 
   //QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);  // what is this?

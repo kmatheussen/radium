@@ -692,8 +692,8 @@ bool RT_SampleRecorder_add_audio(radium::SampleRecorderInstance *instance, const
       R_ASSERT_NON_RELEASE(max_peak >= min_peak);
       
 #if !defined(RELEASE)
-      qfloat16 min2 = min_peak;
-      qfloat16 max2 = max_peak;
+      qfloat16 min2 = (qfloat16)min_peak;
+      qfloat16 max2 = (qfloat16)max_peak;
       R_ASSERT_NON_RELEASE(sane_isnormal((float)min2));
       R_ASSERT_NON_RELEASE(sane_isnormal((float)max2));
       R_ASSERT_NON_RELEASE(max2 >= min2);

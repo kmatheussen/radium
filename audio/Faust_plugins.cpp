@@ -597,12 +597,12 @@ void FAUST_generate_cpp_code(const struct SoundPlugin *plugin, int generation, s
   
   QString filename = STRING_get_qstring(temp_file.id);
       
-  QtConcurrent::run([code, options, generation, filename, callback]{
+  auto ret = QtConcurrent::run([code, options, generation, filename, callback]{
 
       ArgsCreator args;
       args.push_back("-o");
       args.push_back(filename);
-      args.push_back(options.split("\n", QString::SkipEmptyParts));
+      args.push_back(options.split("\n", Qt::SkipEmptyParts));
       
       std::string error_message2;
       
@@ -654,6 +654,7 @@ void FAUST_generate_cpp_code(const struct SoundPlugin *plugin, int generation, s
         );
       
     });
+  (void)ret;
 }
 
 

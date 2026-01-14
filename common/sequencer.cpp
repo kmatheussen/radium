@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QSet>
 #include <QUuid>
 #include <QTimer>
+#include <QRegularExpression>
 
 #define SEQBLOCK_USING_VECTOR 1
 #include "nsmtracker.h"
@@ -2686,8 +2687,9 @@ static struct SeqtrackRecordingConfig get_recording_config_from_state(const hash
 }
 
 
-static filepath_t get_recording_path(const struct SoundPlugin *plugin){
-  QString filename = STRING_get_qstring(dc.filename.id).replace(QRegExp(".rad$"), "_rad");      
+static filepath_t get_recording_path(const struct SoundPlugin *plugin)
+{
+  QString filename = STRING_get_qstring(dc.filename.id).replace(QRegularExpression(".rad$"), "_rad");      
 
   filepath_t pathdir = make_filepath(QFileInfo(filename).absoluteFilePath() + "_audio");
 
@@ -2704,7 +2706,7 @@ static filepath_t get_recording_path(const struct SoundPlugin *plugin){
   
   QString s = STRING_get_qstring(last_dir);
 
-  s.remove(QRegExp("[^a-zA-Z\\d\\s]"));
+  s.remove(QRegularExpression("[^a-zA-Z\\d\\s]"));
 
   if (s=="")
     s = "noname";

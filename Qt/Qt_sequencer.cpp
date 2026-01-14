@@ -851,7 +851,7 @@ public:
 
   MOUSE_CYCLE_CALLBACKS_FOR_QT;
 
-  void enterEvent(QEvent *event) override {
+  void enterEvent(QEnterEvent *event) override {
     if (_is_sequencer_widget) {
       auto pos = mapFromGlobal(QCursor::pos());
       maybe_set_curr_seqtrack_num_under_mouse(pos.x(), pos.y());
@@ -4256,7 +4256,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   void dropEvent(QDropEvent *event) override {
     printf("               GOT DOP. Text: -%s-\n", event->mimeData()->text().toUtf8().constData());
 
-    QPoint point = mapToEditor(this, event->pos());
+    QPoint point = mapToEditor(this, event->position().toPoint());
     float x = point.x();
     float y = point.y();
     

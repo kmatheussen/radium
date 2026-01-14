@@ -351,7 +351,7 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
     }
   }
   */
-  void enterEvent(QEvent *event) override {
+  void enterEvent(QEnterEvent *event) override {
     setCursor(Qt::ArrowCursor);
   }
 

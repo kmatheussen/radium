@@ -381,7 +381,7 @@ namespace{
 
     QString create_reply_factory(const CompileOptions &opts, FFF_Reply &reply, MyQTemporaryDir* &svg_dir) const {
       ArgsCreator args;
-      args.push_back(opts.options.split("\n", QString::SkipEmptyParts));
+      args.push_back(opts.options.split("\n", Qt::SkipEmptyParts));
 #if 0 // __WIN32 && !_WIN64
       args.push_back("-l");
       args.push_back(OS_get_full_program_file_path("llvm_math.ll"));
@@ -663,9 +663,14 @@ namespace{
       };
 
       if (free_now)
+	  {
         doit();
+	  }
       else
-        QtConcurrent::run(doit);
+	  {
+		  auto ret = QtConcurrent::run(doit);
+		  (void)ret;
+	  }
     }
     
   private:

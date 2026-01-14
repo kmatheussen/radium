@@ -1072,7 +1072,7 @@ public:
 #define D(n) n
 #endif
 
-#define P(n) D(printf("        %d: visited.size(): %d, link: %p, to_add.size(): %d, to_remove.size(): %d, remove_first.size(): %d\n", n, visited.size(), link, to_add.size(), to_remove.size(), links_that_must_be_removed_first.size()));
+#define P(n) D(printf("        %d: visited.size(): %d, link: %p, to_add.size(): %d, to_remove.size(): %d, remove_first.size(): %d\n", n, (int)visited.size(), link, (int)to_add.size(), (int)to_remove.size(), (int)links_that_must_be_removed_first.size()));
   
   // Traverse graph backwards and see if we end up a place we have been before.
   bool is_recursive(const radium::Vector<SoundProducerLink*> &to_add,

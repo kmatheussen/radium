@@ -270,7 +270,7 @@ public:
       int duration = int(R_MIN(num_samples-time, SAMPLES_PER_PEAK));
       float min,max;
       JUCE_get_min_max_val(&samples[time], duration, &min, &max);
-      add(Peak(min, max));
+      add(Peak((qfloat16)min, (qfloat16)max));
     }
 
     if (add_samples_type==THIS_IS_THE_LAST_CALL)
