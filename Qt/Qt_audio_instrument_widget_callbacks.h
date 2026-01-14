@@ -316,7 +316,7 @@ public:
 
   }
 
-  void enterEvent(QEvent *event) override{
+  void enterEvent(QEnterEvent *event) override{
     setCursor(Qt::ArrowCursor);
   }
   

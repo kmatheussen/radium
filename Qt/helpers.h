@@ -675,7 +675,7 @@ static inline QPointF get_localpos_from_qevent(QEvent *event){
   //auto scene_mouse_event = dynamic_cast<QGraphicsSceneMouseEvent*>(event);
   
   if (mouse_event!=NULL)
-    return mouse_event->localPos();
+	  return mouse_event->position();
   /*
   else if (scene_mouse_event!=NULL)
     return scene_mouse_event->scenePos();
@@ -711,11 +711,11 @@ static inline QPoint get_globalpos_from_qevent(QEvent *event){
   auto scene_mouse_event = dynamic_cast<QGraphicsSceneMouseEvent*>(event);
   
   if (mouse_event!=NULL)
-    return mouse_event->globalPos();
+	  return mouse_event->globalPosition().toPoint();
   else if (scene_mouse_event!=NULL)
-    return scene_mouse_event->screenPos(); // good enough. globalpos is only used to avoid double moveevents here.
+	  return scene_mouse_event->screenPos(); // good enough. globalpos is only used to avoid double moveevents here.
   else
-    return QPoint();
+	  return QPoint();
 }
 
 static inline Qt::MouseButton get_button_from_qevent(QEvent *event){
@@ -805,16 +805,16 @@ public:
 
   int x(void) const {
     if(_mouse_event)
-      return _mouse_event->x();
+		return _mouse_event->position().x();
     else
-      return 0.0;
+		return 0.0;
   }
   
   int y(void) const {
     if(_mouse_event)
-      return _mouse_event->y();
+		return _mouse_event->position().y();
     else
-      return 0.0;
+		return 0.0;
   }
 
   Qt::MouseButton button(void) const {
@@ -976,6 +976,7 @@ struct MouseCycleFix
 
         QMouseEvent move_event(QEvent::MouseMove,
                                event2.pos(),
+							   event2.localOrScenePos(),
                                Qt::NoButton,
                                Qt::NoButton,
                                event2.modifiers());

@@ -101,7 +101,7 @@ struct MyQCheckBox_OnlyCustomPainting : public QCheckBox{
 
   bool _show_enabled_marker = true;
   
-  void enterEvent(QEvent *event) override {
+  void enterEvent(QEnterEvent *event) override {
     if (_hovered_callback) {
       _hovered_callback(true);
     } else if (_patch.data() != NULL){

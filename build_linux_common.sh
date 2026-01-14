@@ -151,7 +151,7 @@ export PYOPTS="-I $PYPATH"
 
 QT_INCLUDE_PATH=`$QMAKE -query QT_INSTALL_HEADERS`
 export QT_UI_CFLAGS="-I $QT_INCLUDE_PATH/QtUiTools" # Doing this instead of using pkg since there are bugs in the dependencies of the pkg file in some versions of Qt. (same with the lib file below)
-export QT_UI_LDFLAGS="`$QMAKE -query QT_INSTALL_LIBS`/libQt5UiTools.a"
+export QT_UI_LDFLAGS="`$QMAKE -query QT_INSTALL_LIBS`/libQt6UiTools.a"
 
 
 #One of these:
@@ -179,7 +179,7 @@ export RTMIDI_CFLAGS="-D__LINUX_ALSA__  -D__RTMIDI_DEBUG__"
 export RTMIDI_LDFLAGS="-lpthread -lasound -ljack"
 
 #export OS_OPTS="-DTEST_GC"
-export OS_OPTS="-Werror=array-bounds $CPUOPTS -DFOR_LINUX `$PKGqt --cflags Qt5X11Extras` -DRADIUM_USES_MOLD_OR_LDD=$RADIUM_USES_MOLD_OR_LDD" # -Ibin/packages/libxcb-1.13/"
+export OS_OPTS="-Werror=array-bounds $CPUOPTS -DFOR_LINUX `$PKGqt --cflags Qt6X11Extras` -DRADIUM_USES_MOLD_OR_LDD=$RADIUM_USES_MOLD_OR_LDD" # -Ibin/packages/libxcb-1.13/"
 
 
 #export OS_OPTS="-Werror=array-bounds -march=native"
@@ -259,7 +259,7 @@ export OS_JUCE_LDFLAGS="-lasound -pthread -lrt -lX11 -lXext "
 
 #LIBGIG_LDFLAGS="bin/packages/libgig/src/.libs/RIFF.o bin/packages/libgig/src/.libs/SF.o"
 FLUIDSYNTH_LDFLAGS="bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a `$PKG --libs glib-2.0`"
-export OS_LDFLAGS="$QSCINTILLA_PATH/libqscintilla2_qt5.a $FAUSTLDFLAGS $PDLDFLAGS pluginhost/Builds/Linux/build/libMyPluginHost.a $OS_JUCE_LDFLAGS `$PKG --libs lrdf` $GCDIR/.libs/libgc.a $PYTHONLIBPATH $PYTHONLIBNAME `$PKG --libs sndfile` `$PKG --libs samplerate` `$PKG --libs liblo` -lxcb -lxcb-keysyms $FLUIDSYNTH_LDFLAGS $RADIUM_BFD_LDFLAGS -liberty `$PKGqt --libs Qt5X11Extras`"
+export OS_LDFLAGS="$QSCINTILLA_PATH/libqscintilla2_qt6.a $FAUSTLDFLAGS $PDLDFLAGS pluginhost/Builds/Linux/build/libMyPluginHost.a $OS_JUCE_LDFLAGS `$PKG --libs lrdf` $GCDIR/.libs/libgc.a $PYTHONLIBPATH $PYTHONLIBNAME `$PKG --libs sndfile` `$PKG --libs samplerate` `$PKG --libs liblo` -lxcb -lxcb-keysyms $FLUIDSYNTH_LDFLAGS $RADIUM_BFD_LDFLAGS -liberty `$PKGqt --libs Qt6X11Extras`"
 
 if [[ $RADIUM_USE_CLANG == 0 ]] ; then
     export OS_LDFLAGS2="-ldl "

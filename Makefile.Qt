@@ -17,7 +17,7 @@ bindir ?= $(PREFIX)/bin
 libdir ?= $(PREFIX)/lib
 
 
-# 2. Where moc and uic for QT5 is installed.
+# 2. Where moc and uic for QT6 is installed.
 #
 MOC ?= moc
 UIC ?= uic
@@ -169,32 +169,32 @@ else
 endif
 
 
-QT_GUI_CFLAGS ?=`$(PKGqt) --cflags Qt5Gui --cflags Qt5Widgets` $(FPIC)
-QT_GUI_LDFLAGS ?= `$(PKGqt) --libs Qt5Gui --libs Qt5Widgets` $(FPIC)
-QT_NETWORK_CFLAGS ?=`$(PKGqt) --cflags Qt5Network` $(FPIC)
-QT_NETWORK_LDFLAGS ?= `$(PKGqt) --libs Qt5Network` $(FPIC)
-QT_UI_CFLAGS ?= `$(PKGqt) --cflags Qt5UiTools` $(FPIC)
-QT_UI_LDFLAGS ?= `$(PKGqt) --libs Qt5UiTools` $(FPIC)
-QT_SVG_CFLAGS ?= `$(PKGqt) --cflags Qt5Svg` $(FPIC)
-QT_SVG_LDFLAGS ?= `$(PKGqt) --libs Qt5Svg` $(FPIC)
+QT_GUI_CFLAGS ?=`$(PKGqt) --cflags Qt6Gui --cflags Qt6Widgets` $(FPIC)
+QT_GUI_LDFLAGS ?= `$(PKGqt) --libs Qt6Gui --libs Qt6Widgets` $(FPIC)
+QT_NETWORK_CFLAGS ?=`$(PKGqt) --cflags Qt6Network` $(FPIC)
+QT_NETWORK_LDFLAGS ?= `$(PKGqt) --libs Qt6Network` $(FPIC)
+QT_UI_CFLAGS ?= `$(PKGqt) --cflags Qt6UiTools` $(FPIC)
+QT_UI_LDFLAGS ?= `$(PKGqt) --libs Qt6UiTools` $(FPIC)
+QT_SVG_CFLAGS ?= `$(PKGqt) --cflags Qt6Svg` $(FPIC)
+QT_SVG_LDFLAGS ?= `$(PKGqt) --libs Qt6Svg` $(FPIC)
 
 #	If using QtWebEngine: (Not recommended, dragging doesn't work using it)
-#	QT_CFLAGS ?= `$(PKGqt) --cflags Qt5Gui --cflags Qt5Network --cflags Qt5OpenGL --cflags Qt5Widgets --cflags Qt5WebEngineWidgets` -Ibin/packages/qhttpserver-master/src -Ibin/packages/QScintilla_gpl-2.10.8 -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) -DUSE_QT5
-#	QT_LDFLAGS ?= `$(PKGqt) --libs Qt5Gui --libs Qt5OpenGL --libs Qt5Network --libs Qt5Widgets --libs Qt5WebEngineWidgets`
+#	QT_CFLAGS ?= `$(PKGqt) --cflags Qt6Gui --cflags Qt6Network --cflags Qt6OpenGL --cflags Qt6Widgets --cflags Qt6WebEngineWidgets` -Ibin/packages/qhttpserver-master/src -Ibin/packages/QScintilla_gpl-2.10.8 -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) -DUSE_QT6
+#	QT_LDFLAGS ?= `$(PKGqt) --libs Qt6Gui --libs Qt6OpenGL --libs Qt6Network --libs Qt6Widgets --libs Qt6WebEngineWidgets`
 
-QT_CFLAGS ?= `$(PKGqt) --cflags Qt5Gui --cflags Qt5Network --cflags Qt5OpenGL --cflags Qt5Widgets --cflags Qt5Concurrent` -I$(QHTTPSERVER_PATH)/src -I$(QSCINTILLA_PATH) -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) $(FPIC)
-QT_LDFLAGS ?=  $(QT_UI_LDFLAGS) $(QT_SVG_LDFLAGS) `$(PKGqt) --libs Qt5Gui --libs Qt5OpenGL --libs Qt5Widgets --libs Qt5Network ` $(FPIC)
+QT_CFLAGS ?= `$(PKGqt) --cflags Qt6Gui --cflags Qt6Network --cflags Qt6OpenGL --cflags Qt6Widgets --cflags Qt6Concurrent --cflags Qt6Core5Compat` -I$(QHTTPSERVER_PATH)/src -I$(QSCINTILLA_PATH) -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) $(FPIC)
+QT_LDFLAGS ?=  $(QT_UI_LDFLAGS) $(QT_SVG_LDFLAGS) `$(PKGqt) --libs Qt6Gui --libs Qt6OpenGL --libs Qt6Widgets --libs Qt6Network --libs Qt6Core5Compat` $(FPIC)
 
 ifeq ($(USE_QWEBENGINE),1)
 #	If using QtWebEngine:
 	USE_QWEBENGINE_CFLAGS = -D USE_QWEBENGINE=1
-	QT_CFLAGS += `$(PKGqt) --cflags Qt5WebEngine --cflags Qt5WebEngineCore  --cflags Qt5WebEngineWidgets` 
-	QT_LDFLAGS += `$(PKGqt) --libs Qt5WebEngine --libs Qt5WebEngineCore  --libs Qt5WebEngineWidgets`
+	QT_CFLAGS += `$(PKGqt) --cflags Qt6WebEngineCore  --cflags Qt6WebEngineWidgets` 
+	QT_LDFLAGS += `$(PKGqt) --libs Qt6WebEngineCore  --libs Qt6WebEngineWidgets`
 else
 #	If using QtWebKit:
 	USE_QWEBENGINE_CFLAGS = -D USE_QWEBENGINE=0
-	QT_CFLAGS += `$(PKGqt) --cflags Qt5WebKitWidgets --cflags Qt5WebKit`
-	QT_LDFLAGS += `$(PKGqt) --libs Qt5WebKitWidgets --libs Qt5WebKit`
+	QT_CFLAGS += `$(PKGqt) --cflags Qt6WebKitWidgets --cflags Qt6WebKit`
+	QT_LDFLAGS += `$(PKGqt) --libs Qt6WebKitWidgets --libs Qt6WebKit`
 endif
 
 QT_CFLAGS += $(USE_QWEBENGINE_CFLAGS)
@@ -538,7 +538,7 @@ endif
 #	COMMONOPT += -fstrong-eval-order # Remove this one until all recent compilers support -fstrong-eval-order
 #endif	
 
-COMMONOPT += -DUSE_QT5
+COMMONOPT += -DUSE_QT5 -DUSE_QT6
 
 
 #$(CFLAGS)
@@ -841,7 +841,7 @@ run-gdb:
 
 # [1]
 # G_DEBUG=fatal-criticals
-# QT_FATAL_WARNINGS=1 doesn't work so well with qt5/linux right now. Getting
+# QT_FATAL_WARNINGS=1 doesn't work so well with qt6/linux right now. Getting
 # "QXcbConnection: XCB error: 3 (BadWindow), sequence: 14219, resource id: 8795562, major code: 40 (TranslateCoords), minor code: 0"
 # when closing dialogs. (In qt4 it can crash when we open dialogs, now it's when closing dialogs. However, in qt4 it was known why this happened (opengl race condition in qt).)
 
@@ -889,7 +889,7 @@ TEST_TIMEDATA_RUNNER=gdb -ex "set print thread-events off" -ex run -ex=quit ./a.
 #TEST_TIMEDATA_RUNNER=lldb -o run -f ./a.out
 
 test_refcounttimedata:
-	$(CCC) common/TimeData.cpp $(TEST_TIMEDATA_OPTS) `$(PKGqt) --cflags Qt5Core --libs Qt5Core` -fPIC -O3 -DTEST_SHARED_PTR -DTEST_REFCOUNTTIMEDATA -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
+	$(CCC) common/TimeData.cpp $(TEST_TIMEDATA_OPTS) `$(PKGqt) --cflags Qt6Core --libs Qt6Core` -fPIC -O3 -DTEST_SHARED_PTR -DTEST_REFCOUNTTIMEDATA -o a.out && UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" $(TEST_TIMEDATA_RUNNER)
 # --rtlib=compiler-rt
 
 test_timedata:
@@ -1041,7 +1041,7 @@ bin/packages/deletemetorebuild: bin/packages/build.sh
 	" >makescript.sh
 	bash makescript.sh
 	@echo
-	@echo "packages successfully built. Now run ./build_linux.sh -j7"
+	@echo "packages successfully built. Now run ./build_linux.sh -j`nproc`"
 
 #bin/styles/libqcleanlooksstyle.so: bin/packages/qtstyleplugins-src-5.0.0/plugins/styles/libqcleanlooksstyle.so bin/styles
 #	cp bin/packages/qtstyleplugins-src-5.0.0/plugins/styles/libqcleanlooksstyle.so bin/styles/
@@ -2005,12 +2005,12 @@ bin/radium_progress_window: $(P)Qt_progresswindow.cpp
 
 bin/radium_check_jack_status: audio/KillJackd.cpp $(T)Jack_plugin.o $(T)find_jack_library.o # Jack_plugin.o depends on all the weakjack things
 	$(CCC) -Wall $(WERROR) audio/KillJackd.cpp $(CPPOPT) $(QT_CFLAGS) $(JACKOPT) $(OS_OPTS) $(STD_CPP) -DCOMPILE_EXECUTABLE -Wno-error=deprecated-declarations -o $(T)radium_check_jack_status.o -Wno-missing-declarations
-	$(LINKER) `cat buildtype.opt` $(T)radium_check_jack_status.o $(T)find_jack_library.o $(JACK_LDFLAGS) `$(PKGqt) --libs Qt5Core` $(QT_SYSTEM_CFLAGS) $(OS_LDFLAGS2) -o bin/radium_check_jack_status $(FPIC)
+	$(LINKER) `cat buildtype.opt` $(T)radium_check_jack_status.o $(T)find_jack_library.o $(JACK_LDFLAGS) `$(PKGqt) --libs Qt6Core` $(QT_SYSTEM_CFLAGS) $(OS_LDFLAGS2) -o bin/radium_check_jack_status $(FPIC)
 	rm $(T)radium_check_jack_status.o
 
 bin/radium_check_opengl: OpenGL/CheckOpenGL.cpp common/Process.hpp
 	$(CCC) -Wall $(WERROR) OpenGL/CheckOpenGL.cpp $(CPPOPT) $(QT_CFLAGS) $(OS_OPTS) $(STD_CPP) -DCOMPILE_EXECUTABLE -o radium_check_opengl.o $(WNO_DEPRECATED_DECLARATIONS)
-	$(LINKER) `cat buildtype.opt` radium_check_opengl.o -o bin/radium_check_opengl $(QT_GUI_LDFLAGS) `$(PKGqt) --libs Qt5OpenGL`
+	$(LINKER) `cat buildtype.opt` radium_check_opengl.o -o bin/radium_check_opengl $(QT_GUI_LDFLAGS) `$(PKGqt) --libs Qt6OpenGL`
 	rm radium_check_opengl.o
 
 $(T)Qt_progresswindow.o: $(BUILD_DEPENDENCIES) $(P)Qt_progresswindow.cpp
@@ -2809,7 +2809,7 @@ $(T)T2.o: OpenGL/T2.cpp OpenGL/T2.hpp OpenGL/SharedVariables.hpp common/QueueSta
 $(T)Render.o: OpenGL/Render.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp common/spinlock.h common/time_proc.h common/Beats_proc.h common/TimeData.hpp
 	$(CCC2) OpenGL/Render.cpp $(QTOPT) $(VL_CFLAGS) $(VISUALIZATION_OPTIONS)
 
-$(T)Widget.o: OpenGL/Widget.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/Timing.hpp OpenGL/SharedVariables.hpp common/Mutex.hpp OpenGL/T2.hpp common/spinlock.h common/MovingAverage.hpp OpenGL/Qt5ThreadedWidget.hpp common/Vector.hpp Qt/Timer.hpp
+$(T)Widget.o: OpenGL/Widget.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/Timing.hpp OpenGL/SharedVariables.hpp common/Mutex.hpp OpenGL/T2.hpp common/spinlock.h common/MovingAverage.hpp OpenGL/Qt6ThreadedWidget.hpp common/Vector.hpp Qt/Timer.hpp
 	$(CCC2) OpenGL/Widget.cpp $(QTOPT) $(VL_CFLAGS) $(VISUALIZATION_OPTIONS) 
 
 $(T)CheckOpenGL.o: OpenGL/CheckOpenGL.cpp common/Process.hpp

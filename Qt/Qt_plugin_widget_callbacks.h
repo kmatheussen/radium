@@ -1055,7 +1055,7 @@ public slots:
 
     } else {
 
-      QString filename = STRING_get_qstring(dc.filename.id).replace(QRegExp(".rad$"), "_rad");      
+      QString filename = STRING_get_qstring(dc.filename.id).replace(QRegularExpression(".rad$"), "_rad");      
 
       QDir dir(QFileInfo(filename).absoluteFilePath() + "_audio");
 

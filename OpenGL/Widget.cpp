@@ -120,7 +120,7 @@ static double g_last_resize_time = -1;
 #include "Render_proc.h"
 #include "CheckOpenGL_proc.h"
 
-#define USE_QOPENGL 0
+#define USE_QOPENGL 1
 
 #if USE_QT5
 #  if THREADED_OPENGL

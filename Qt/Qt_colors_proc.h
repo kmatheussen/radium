@@ -57,7 +57,7 @@ static inline void apply_saturation_and_brightness(QColor &color, double saturat
   if (!do_saturation && !do_brightness)
     return;
   
-  qreal h,s,l,a;
+  float h,s,l,a;
   color.getHslF(&h,&s,&l,&a);
 
   if(do_saturation){

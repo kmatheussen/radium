@@ -228,7 +228,7 @@ class FocusSnifferQSpinBox : public GL_PauseCaller, public QSpinBox{
     QSpinBox::hideEvent(event_);          
   }
 
-  void enterEvent(QEvent *event) override {
+  void enterEvent(QEnterEvent *event) override {
     if (_statusbar_text != "")
       GFX_SetStatusBar(_statusbar_text.toUtf8().constData());
   }
@@ -305,7 +305,7 @@ class FocusSnifferQDoubleSpinBox : public GL_PauseCaller, public QDoubleSpinBox{
     }                                                                   
     QDoubleSpinBox::keyPressEvent(event_);                                        
   }                                                                     
-  void enterEvent(QEvent *event) override {
+  void enterEvent(QEnterEvent *event) override {
     if (_statusbar_text != "")
       GFX_SetStatusBar(_statusbar_text.toUtf8().constData());
   }

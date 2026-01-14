@@ -512,12 +512,12 @@ class Sample_requester_widget : public QWidget
       if (time.elapsed() > 500 || (window->message!=NULL && time.elapsed() >= 50)){
         time.restart();
         if (GFX_ProgressIsOpen()){
-          const char *message = talloc_format("Loading sample directory \"%s\" into memory. (%d / %d)", pathtext, i, list.size());
-          GFX_ShowProgressMessage(message, false);
+			const char *message = talloc_format("Loading sample directory \"%s\" into memory. (%d / %d)", pathtext, i, (int)list.size());
+			GFX_ShowProgressMessage(message, false);
         } else {
-          const char *message = talloc_format("Loading sample directory into memory. (%d / %d)", i, list.size());       
-          window->message = message;
-          GL_create(window);
+			const char *message = talloc_format("Loading sample directory into memory. (%d / %d)", i, (int)list.size());       
+			window->message = message;
+			GL_create(window);
         }
       }
 
@@ -736,7 +736,7 @@ class Sample_requester_widget : public QWidget
     
     if(item_text=="../") {
       QList<QListWidgetItem *> items = file_list->findItems(org_directory_name+"/",Qt::MatchExactly);
-      printf("cursor_entry: \"%s\", num_items: %d\n",org_directory_name.toUtf8().constData(),items.count());
+      printf("cursor_entry: \"%s\", num_items: %d\n",org_directory_name.toUtf8().constData(), (int)items.count());
       if(items.count()>0)
         file_list->setCurrentItem(items.first());
     }

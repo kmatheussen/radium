@@ -68,7 +68,7 @@ class ParamWidget : public QWidget {
       int format = type->get_effect_format!=NULL ? type->get_effect_format(plugin, effect_num) : EFFECT_FORMAT_FLOAT;
 
       QGridLayout *grid_layout = new QGridLayout(this);
-      grid_layout->setMargin(0);
+      grid_layout->setContentsMargins(0,0,0,0);
       grid_layout->setSpacing(0);
 
       if(0){

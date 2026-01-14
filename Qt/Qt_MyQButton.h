@@ -89,7 +89,7 @@ struct MyQButton : public QToolButton, public radium::MouseCycleFix {
   
   MOUSE_CYCLE_CALLBACKS_FOR_QT;
 
-  void enterEvent(QEvent *event) override {
+  void enterEvent(QEnterEvent *event) override {
     _is_hovered = true;
     update();
   }
