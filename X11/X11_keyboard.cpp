@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #if !USE_QT6
 #  include <QX11Info>
 #else
-#  include "/usr/include/qt6/QtGui/6.8.2/QtGui/private/qtx11extras_p.h"
+#  include <QtGui/private/qtx11extras_p.h>
 #endif
 
 #include "X11.h"

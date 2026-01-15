@@ -751,7 +751,7 @@ OBJ_MIXER=$(T)QM_view.o $(T)QM_chip.o $(T)QM_MixerWidget.o $(T)undo_mixer.o $(T)
 #undo_chip_addremove.o
 
 #OpenGL
-OBJ_VL=$(T)GfxElements.o $(T)T2.o $(T)Render.o $(T)Widget.o $(T)CheckOpenGL.o
+OBJ_VL=$(T)GfxElements.o $(T)T2.o $(T)Render.o $(T)Widget.o $(T)CheckOpenGL.o $(T)Qt6Widget.o
 
 
 #Embedded scheme
@@ -1712,7 +1712,7 @@ $(T)X11_instrument.o:  $(BUILD_DEPENDENCIES) X11/X11_instrument.c
 	$(CC2) X11/X11_instrument.c $(OPT)
 
 $(T)X11_keyboard.o:  $(BUILD_DEPENDENCIES) X11/X11_keyboard.cpp
-	$(CCC2) X11/X11_keyboard.cpp $(QTOPT) -I/usr/include/qt6/QtCore/6.8.2/
+	$(CCC2) X11/X11_keyboard.cpp $(QTOPT) -I/usr/include/qt6/QtCore/6.9.3/ -I/usr/include/qt6/QtGui/6.9.3/
 
 bin/radium_check_recent_libxcb: X11/check_recent_libxcb.c
 	$(CC) -Wall $(WERROR) X11/check_recent_libxcb.c -ldl -o bin/radium_check_recent_libxcb
@@ -2814,6 +2814,10 @@ $(T)Widget.o: OpenGL/Widget.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h Open
 
 $(T)CheckOpenGL.o: OpenGL/CheckOpenGL.cpp common/Process.hpp
 	$(CCC2) OpenGL/CheckOpenGL.cpp $(QTOPT) $(WNO_DEPRECATED_DECLARATIONS)
+
+$(T)Qt6Widget.o: OpenGL/Qt6Widget.cpp
+	cd OpenGL && $(MOC) Qt6Widget.hpp >mQt6Widget.cpp
+	$(CCC2) OpenGL/Qt6Widget.cpp $(QTOPT) $(VL_CFLAGS) $(VISUALIZATION_OPTIONS) -Wno-float-equal $(WNO_DEPRECATED_DECLARATIONS) -Wno-deprecated-copy
 
 do.o:  $(BUILD_DEPENDENCIES) OpenGL/do.m
 	$(CC) OpenGL/do.m $(OPT)

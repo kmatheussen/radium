@@ -136,15 +136,16 @@ build_faust() {
 
 build_Visualization-Library() {
 
-    rm -fr Visualization-Library-master
-    tar xvzf Visualization-Library-master.tar.gz 
-    cd Visualization-Library-master/
-    patch -p1 <../visualization.patch
-    sed -i.backup 's/add_subdirectory("freetype")//' src/vlGraphics/plugins/CMakeLists.txt
+    #rm -fr Visualization-Library-master
+    #tar xvzf Visualization-Library-master.tar.gz 
+    #cd Visualization-Library-master/
+	#cp -a ../vlQt6 src/
+    #patch -p1 <../visualization.patch
+    #sed -i.backup 's/add_subdirectory("freetype")//' src/vlGraphics/plugins/CMakeLists.txt
     #sed -i s/"VL_ACTOR_USER_DATA 0"/"VL_ACTOR_USER_DATA 1"/ src/vlCore/config.hpp
     export MYFLAGS="-std=gnu++11 $CPPFLAGS -fPIC -g  -Wno-c++11-narrowing -Wno-deprecated-declarations -Wno-implicit-function-declaration `pkg-config --cflags freetype2` " #  -D_GLIBCXX_USE_CXX11_ABI=0
     MYFLAGS="-std=gnu++11 $CPPFLAGS -fPIC -g -Wno-c++11-narrowing -Wno-deprecated-declarations -Wno-implicit-function-declaration `pkg-config --cflags freetype2` " #  -D_GLIBCXX_USE_CXX11_ABI=0
-    echo 'set(CMAKE_CXX_FLAGS "$MYFLAGS")' >>CMakeLists.txt
+    #echo 'set(CMAKE_CXX_FLAGS "$MYFLAGS")' >>CMakeLists.txt
     # previously used build type: RelWithDebInfo. Unfortunately, this one enable _DEBUG and various runtime checks.
 
     #CFLAGS="$CPPFLAGS -fPIC -g" CPPFLAGS="$MYFLAGS" CC="clang" CXX="clang++ $MYFLAGS" cmake -DCMAKE_CXX_FLAGS="$MYFLAGS" CMAKE_CXX_COMPILER="clang++ $MYFLAGS" -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON SUPPORT=ON -DVL_DYNAMIC_LINKING=OFF -DVL_IO_2D_PNG=OFF -DVL_IO_2D_TIFF=OFF -DVL_IO_2D_JPG=OFF -DVL_IO_2D_TGA=OFF -DVL_IO_2D_BMP=OFF .
