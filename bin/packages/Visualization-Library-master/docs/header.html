@@ -1,0 +1,83 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"> 
+<html xmlns="http://www.w3.org/1999/xhtml"> 
+<head> 
+<meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/> 
+
+ <!-- Highslide image gallery -->
+<script type="text/javascript" src="highslide/highslide-full.js"></script>
+<link rel="stylesheet" type="text/css" href="highslide/highslide.css" />
+<!--[if lt IE 7]>
+<link rel="stylesheet" type="text/css" href="highslide/highslide-ie6.css" />
+<![endif]-->
+
+<script type="text/javascript">
+//<![CDATA[
+hs.registerOverlay({
+	html: '<div class="closebutton" onclick="return hs.close(this)" title="Close"></div>',
+	position: 'top right',
+	fade: 2 // fading the semi-transparent overlay looks bad in IE
+});
+
+hs.graphicsDir = 'highslide/graphics/';
+//hs.wrapperClassName = 'borderless';
+hs.align = 'center';
+hs.transitions = ['expand', 'crossfade'];
+hs.outlineType = 'rounded-white';
+hs.fadeInOut = false; 
+hs.dimmingOpacity = 0.66;
+
+// Add the controlbar
+hs.addSlideshow({
+	//slideshowGroup: 'group1',
+	interval: 3000,
+	repeat: false,
+	useControls: true,
+	fixedControls: 'fit',
+	overlayOptions: {
+		opacity: .75,
+		position: 'bottom center',
+		hideOnMouseOut: true
+	}
+});
+
+//]]>
+</script>
+ <!-- End Highslide -->
+
+<title>$title</title> 
+<link href="tabs.css" rel="stylesheet" type="text/css"/> 
+<link href="search/search.css" rel="stylesheet" type="text/css"/> 
+<script type="text/javaScript" src="search/search.js"></script> 
+<link href="docs.css" rel="stylesheet" type="text/css"/> 
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-1058203-6']);
+  _gaq.push(['_trackPageview']);
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+</head>
+<body>
+
+
+<table border="0" style="margin: 0px; margin-bottom: 25px; padding: 0px; border: 0px;" width="100%">
+<tr>
+	<td align="left" valign="top" style="text-align: left; margin: 20px; font-family: Verdana; font-size: 10px;">
+		<h1 style="text-align: left; font-size: 32px; font-family: Arial; border: 0px; margin: 0px; margin-bottom: 10px; margin-top: 10px;">
+			<a href="http://www.visualizationlibrary.org">Visualization Library</a>
+		</h1>
+		<span style="color: gray;">A lightweight C++ OpenGL middleware for 2D/3D graphics</span>
+	</td>
+	<td align="right" valign="top">
+		<small>
+			<a href="index.html">[Home]</a>
+			<a href="pag_guides.html">[Tutorials]</a>
+			<a href="annotated.html">[All Classes]</a>
+			<a href="pag_main_classes.html">[Grouped Classes]</a>
+		</small>
+	</td>
+</tr>
+</table>

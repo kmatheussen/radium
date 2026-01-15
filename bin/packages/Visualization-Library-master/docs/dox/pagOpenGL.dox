@@ -1,0 +1,574 @@
+/**
+
+	\page pagOpenGL OpenGL vs VL Feature Mapping
+
+	<center>
+
+	The table below shows how the most important OpenGL features and functions map to Visualization Library classes and functions.
+
+	<table width=1000 border=1 style="border: 5px solid #EEE">
+		<tr>
+			<th width=40% align=center>
+				OpenGL functions
+			</th>
+			<th  align=center>
+				Visualization Library classes and functions
+			</th>
+		</tr>
+		<tr> <th colspan=2 align=left> Texturing </th> </tr>
+		<tr>
+			<td valign=top>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glActiveTexture.xml>glActiveTexture()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glClientActiveTexture.xml>glClientActiveTexture()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glBindTexture.xml>glBindTexture()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glTexImage1D.xml>glTexImage1D()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glTexImage2D.xml>glTexImage2D()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glTexImage3D.xml>glTexImage3D()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glCompressedTexImage1D.xml>glCompressedTexImage1D()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glCompressedTexImage2D.xml>glCompressedTexImage2D()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glCompressedTexImage3D.xml>glCompressedTexImage3D()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glTexParameter.xml>glTexParameter()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glGenTextures.xml>glGenTextures()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glDeleteTextures.xml>glDeleteTextures()</a>
+			</td>
+			<td valign=top>
+				- vl::Texture
+				- vl::Texture::createTexture()
+				- vl::Texture::setMipLevel()
+				- vl::Texture::prepareTexture1D()
+				- vl::Texture::prepareTexture2D()
+				- vl::Texture::prepareTexture3D()
+				- vl::Texture::prepareTextureCubemap()
+				- vl::Texture::prepareTextureRectangle()
+				- vl::Texture::prepareTexture1DArray()
+				- vl::Texture::prepareTexture2DArray()
+				- vl::TexParameter and vl::Texture::getTexParameter()
+				- vl::TextureSampler
+				- vl::Shader::gocTextureSampler()
+			</td>
+		</tr>
+*******************************************************************************
+		<tr>
+			<td valign=top>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/gluBuild1DMipmaps.xml>gluBuild1DMipmaps()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/gluBuild2DMipmaps.xml>gluBuild2DMipmaps()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/gluBuild3DMipmaps.xml>gluBuild3DMipmaps()</a>
+			</td>
+			<td valign=top>
+				Mipmaps are automatically generated when requested by the texture constructor or by one of the vl::Texture::prepareTexture*() methods.
+				The texture generation uses the hardware acceleration where available otherwise glu is used.
+			</td>
+		</tr>
+*******************************************************************************
+		<tr>
+			<td valign=top>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glTexSubImage1D.xml>glTexSubImage1D()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glTexSubImage2D.xml>glTexSubImage2D()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glTexSubImage3D.xml>glTexSubImage3D()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glCompressedTexSubImage1D.xml>glCompressedTexSubImage1D()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glCompressedTexSubImage2D.xml>glCompressedTexSubImage2D()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glCompressedTexSubImage3D.xml>glCompressedTexSubImage3D()</a>
+			</td>
+			<td valign=top>
+				You can use them as usual:
+				<pre>
+vl::Texture* texture = ... init texture ...
+glBindTexture(GL_TEXTURE_2D, texture->handle());
+glTexSubImage2D(GL_TEXTURE_2D, ...);
+glBindTexture(GL_TEXTURE_2D, 0);
+				</pre>
+			</td>
+		</tr>
+*******************************************************************************
+		<tr>
+			<td valign=top>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glTexParameter.xml>glTexParameter()</a>
+			</td>
+			<td valign=top>
+				- vl::TexParameter
+				- vl::Texture::getTexParameter()
+			</td>
+		</tr>
+*******************************************************************************
+		<tr>
+			<td valign=top>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glTexGen.xml>glTexGen()</a>
+			</td>
+			<td valign=top>
+				- vl::TexGen
+				- vl::Shader::gocTexGen(), vl::Shader::getTexGen()
+			</td>
+		</tr>
+*******************************************************************************
+		<tr>
+			<td valign=top>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glTexEnv.xml>glTexEnv()</a>
+			</td>
+			<td valign=top>
+				- vl::TexEnv
+				- vl::Shader::gocTexEnv(), vl::Shader::getTexEnv()
+			</td>
+		</tr>
+*******************************************************************************
+		<tr>
+			<td valign=top>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glClientActiveTexture.xml>glClientActiveTexture()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glTexCoord.xml>glTexCoord()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glMultiTexCoord.xml>glMultiTexCoord()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glTexCoordPointer.xml>glTexCoordPointer()</a>
+			</td>
+			<td valign=top>
+				- vl::Geometry::setTexCoordArray()
+			</td>
+		</tr>
+*******************************************************************************
+		<tr>
+			<td valign=top>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glCopyTexImage1D.xml>glCopyTexImage1D()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glCopyTexImage2D.xml>glCopyTexImage2D()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glCopyTexSubImage1D.xml>glCopyTexSubImage1D()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glCopyTexSubImage2D.xml>glCopyTexSubImage2D()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glCopyTexSubImage3D.xml>glCopyTexSubImage3D()</a>
+			</td>
+			<td valign=top>
+				- vl::CopyTexSubImage1D
+				- vl::CopyTexSubImage2D
+				- vl::CopyTexSubImage3D
+			</td>
+		</tr>
+*******************************************************************************
+		<tr> <th colspan=2 align=left> Matrices </th> </tr>
+		<tr>
+			<td valign=top>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glMatrixMode.xml>glMatrixMode()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glLoadMatrix.xml>glLoadMatrix()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glLoadIdentity.xml>glLoadIdentity()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glMultMatrix.xml>glMultMatrix()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glPushMatrix.xml>glPushMatrix()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glPopMatrix.xml>glPopMatrix()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glTranslate.xml>glTranslate()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glScale.xml>glScale()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glRotate.xml>glRotate()</a>
+			</td>
+			<td valign=top>
+				- vl::dmat4
+				- vl::fmat4
+				- vl::TextureMatrix
+				- vl::Transform
+				- vl::Billboard
+				- vl::Camera
+				- vl::Camera::setViewMatrix()
+				- vl::Camera::setProjectionMatrix()
+			</td>
+		</tr>
+*******************************************************************************
+		<tr> <th colspan=2 align=left> Camera viewing and projection matrices </th> </tr>
+		<tr>
+			<td valign=top>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/gluPerspective.xml>gluPerspective()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glFrustum.xml>glFrustum()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glOrtho.xml>glOrtho()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/gluOrtho2D.xml>gluOrtho2D()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/gluLookAt.xml>gluLookAt()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/gluProject.xml>gluProject()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/gluUnProject.xml>gluUnProject()</a>
+			</td>
+			<td valign=top>
+				- vl::dmat4::getPerspective()
+				- vl::dmat4::getFrustum()
+				- vl::dmat4::getOrtho()
+				- vl::dmat4::getLookAt()
+				- vl::dmat4::getLookAtModeling()
+				- vl::Camera::setProjectionPerspective()
+				- vl::Camera::setProjectionFrustum()
+				- vl::Camera::setProjectionOrtho()
+				- vl::Camera::setProjectionOrtho()
+				- vl::Camera::setViewMatrixLookAt()
+				- vl::Camera::project()
+				- vl::Camera::unproject()
+			</td>
+		</tr>
+*******************************************************************************
+		<tr> <th colspan=2 align=left> Vertex attributes </th> </tr>
+		<tr>
+			<td valign=top>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glVertex.xml>glVertex()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glVertexPointer.xml>glVertexPointer()</a>
+			</td>
+			<td valign=top>
+				- vl::Geometry::setVertexArray()
+			</td>
+		</tr>
+*******************************************************************************
+		<tr>
+			<td valign=top>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glVertexPointer.xml>glVertexAttrib()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glVertexAttribPointer.xml>glVertexAttribPointer()</a>
+			</td>
+			<td valign=top>
+				- vl::Geometry::setVertexAttribArray()
+			</td>
+		</tr>
+*******************************************************************************
+		<tr>
+			<td valign=top>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glNormal.xml>glNormal()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glNormalPointer.xml>glNormalPointer()</a>
+			</td>
+			<td valign=top>
+				- vl::Geometry::setNormal()
+				- vl::Geometry::setNormalArray()
+			</td>
+		</tr>
+*******************************************************************************
+		<tr>
+			<td valign=top>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glColor.xml>glColor()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glColorPointer.xml>glColorPointer()</a>
+			</td>
+			<td valign=top>
+				- vl::Geometry::setColor()
+				- vl::Geometry::setColorArray()
+			</td>
+		</tr>
+*******************************************************************************
+		<tr>
+			<td valign=top>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glSecondaryColor.xml>glSecondaryColor()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glSecondaryColorPointer.xml>glSecondaryColorPointer()</a>
+			</td>
+			<td valign=top>
+				- vl::Geometry::setSecondaryColor()
+				- vl::Geometry::setSecondaryColorArray()
+			</td>
+		</tr>
+*******************************************************************************
+		<tr>
+			<td valign=top>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glFogCoord.xml>glFogCoord()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glFogCoordPointer.xml>glFogCoordPointer()</a>
+			</td>
+			<td valign=top>
+				- vl::Geometry::setFogCoordArray()
+			</td>
+		</tr>
+*******************************************************************************
+		<tr> <th colspan=2 align=left> Draw commands </th> </tr>
+		<tr>
+			<td valign=top>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glDrawArrays.xml>glDrawArrays()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glMultiDrawArrays.xml>glMultiDrawArrays()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man4/xhtml/glDrawArraysInstanced.xml>glDrawArraysInstanced()</a>
+			</td>
+			<td valign=top>
+				- vl::DrawArrays
+				- vl::Geometry::drawCalls()
+			</td>
+		</tr>
+*******************************************************************************
+		<tr>
+			<td valign=top>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glDrawElements.xml>glDrawElements()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man4/xhtml/glDrawElementsBaseVertex.xml>glDrawElementsBaseVertex</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man4/xhtml/glDrawElementsInstanced.xml>glDrawElementsInstanced</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man4/xhtml/glDrawElementsInstancedBaseVertex.xml>glDrawElementsInstancedBaseVertex</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glMultiDrawElements.xml>glMultiDrawElements()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man4/xhtml/glDrawRangeElements.xml>glDrawRangeElements</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man4/xhtml/glDrawRangeElementsBaseVertex.xml>glDrawRangeElementsBaseVertex</a>
+			</td>
+			<td valign=top>
+				- vl::DrawCall
+				- vl::DrawElements
+				- vl::DrawRangeElements
+				- vl::MultiDrawElements
+				- vl::Geometry::drawCalls()
+			</td>
+		</tr>
+*******************************************************************************
+		<tr> <th colspan=2 align=left> Enables </th> </tr>
+		<tr>
+			<td valign=top>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glEnable.xml>glEnable()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glDisable.xml>glDisable()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glIsEnabled.xml>glIsEnabled()</a>
+			</td>
+			<td valign=top>
+				- vl::Shader::enable()
+				- vl::Shader::disable()
+				- vl::Shader::isEnabled()
+			</td>
+		</tr>
+*******************************************************************************
+		<tr> <th colspan=2 align=left> glReadPixels </th> </tr>
+		<tr>
+			<td valign=top>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glReadPixels.xml>glReadPixels()</a>
+			</td>
+			<td valign=top>
+				- vl::readPixels()
+				- vl::ReadPixels
+			</td>
+		</tr>
+*******************************************************************************
+		<tr> <th colspan=2 align=left> OpenGL Shading Language </th> </tr>
+		<tr>
+			<td valign=top>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glCreateShader.xml>glCreateShader()</a>, <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glDeleteShader.xml>glDeleteShader()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glCreateProgram.xml>glCreateProgram()</a>,  <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glDeleteProgram.xml>glDeleteProgram()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glLinkProgram.xml>glLinkProgram()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glAttachShader.xml>glAttachShader()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glDetachShader.xml>glDetachShader()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glCompileShader.xml>glCompileShader()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glUseProgram.xml>glUseProgram()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glValidateProgram.xml>glValidateProgram()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glBindAttribLocation.xml>glBindAttribLocation()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glUniform.xml>glUniform()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man4/xhtml/glGetActiveAttrib.xml>glGetActiveAttrib()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man4/xhtml/glGetActiveUniform.xml>glGetActiveUniform()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man4/xhtml/glPatchParameter.xml>glPatchParameter()</a>
+				
+			</td>
+			<td valign=top>
+				- vl::GLSLVertexShader, vl::GLSLFragmentShader, vl::GLSLGeometryShader
+				- vl::GLSLProgram
+				- vl::GLSLProgram::linkProgram()
+				- vl::GLSLProgram::attachShader()
+				- vl::GLSLProgram::detachShader()
+				- vl::GLSLShader::compile()
+				- vl::GLSLProgram::useProgram()
+				- vl::GLSLProgram::validateProgram()
+				- vl::GLSLProgram::bindAttribLocation()
+				- vl::Uniform, vl::GLSLProgram::setUniform(), vl::Actor::setUniform(), vl::Shader::setUniform()
+				- vl::GLSLProgram::activeAttribs()
+				- vl::GLSLProgram::activeUniforms()
+				- vl::PatchParameter, vl::DrawCall::setPatchParameter()
+			</td>
+		</tr>
+*******************************************************************************
+		<tr> <th colspan=2 align=left> Vertex and pixel buffer objects (BufferObject, PBO) </th> </tr>
+		<tr>
+			<td valign=top>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glGenBuffers.xml>glGenBuffers()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glDeleteBuffers.xml>glDeleteBuffers()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glBufferData.xml>glBufferData()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glBufferSubData.xml>glBufferSubData()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glMapBuffer.xml>glMapBuffer()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glUnmapBuffer.xml>glUnmapBuffer()</a>
+			</td>
+			<td valign=top>
+				- vl::BufferObject
+				- vl::BufferObject::createBufferObject()
+				- vl::BufferObject::deleteBufferObject()
+				- vl::BufferObject::setBufferData()
+				- vl::BufferObject::setBufferSubData()
+				- vl::BufferObject::mapBufferObject()
+				- vl::BufferObject::unmapBufferObject()
+				- vl::Geometry::setBufferObjectEnabled()
+				- vl::Image::readPixels()
+				- vl::DrawPixels
+			</td>
+		</tr>
+*******************************************************************************
+		<tr><th colspan=2 align=left> Framebuffer object extension (see http://www.opengl.org/registry/specs/ARB/framebuffer_object.txt) </th></tr>
+		<tr>
+			<td valign=top>
+				- glFramebufferTexture1D()
+				- glFramebufferTexture2D()
+				- glFramebufferTexture()
+				- glFramebufferTexture3D()
+				- glFramebufferTextureLayer()
+				- glCheckFramebufferStatus()
+				- glGenRenderbuffers()
+				- glDeleteRenderbuffers()
+				- glRenderbufferStorage()
+				- glFramebufferRenderbuffer()
+				- glGenFramebuffers()
+				- glDeleteFramebuffers()
+				- glBindFramebuffer()
+				</td>
+			<td valign=top>
+				- vl::FBOTexture1DAttachment
+				- vl::FBOTexture2DAttachment
+				- vl::FBOTextureAttachment
+				- vl::FBOTexture3DAttachment
+				- vl::FBOTextureLayerAttachment
+				- vl::FramebufferObject::checkFramebufferStatus()
+				- vl::FBORenderbufferAttachment::create()
+				- vl::FBORenderbufferAttachment::destroy()
+				- automatically called inside vl::FBOAttachmentAbstract::bindAttachment()
+				- automatically called inside vl::FBOAttachmentAbstract::bindAttachment()
+				- vl::FramebufferObject::create()
+				- vl::FramebufferObject::destroy()
+				- vl::FramebufferObject::bindFrameBuffer() (initializes also the attachment points)
+			</td>
+		</tr>
+*******************************************************************************
+		<tr> <th colspan=2 align=left> Display lists </th> </tr>
+		<tr>
+			<td valign=top>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glGenLists.xml>glGenLists()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glDeleteLists.xml>glDeleteLists()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glNewList.xml>glNewList()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glCallLists.xml>glCallLists()</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glCallList.xml>glCallList()</a>
+			</td>
+			<td valign=top>
+				- vl::Renderable::setDisplayListEnabled()
+				- vl::Renderable::setDisplayListDirty()
+				- vl::Renderable::displayList()
+				- vl::Renderable::deleteDisplayList()
+			</td>
+		</tr>
+*******************************************************************************
+		<tr> <th colspan=2 align=left> Render states </th> </tr>
+		<tr>
+			<td valign=top>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glAlphaFunc.xml>glAlphaFunc</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glBlendColor.xml>glBlendColor</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glBlendEquation.xml>glBlendEquation</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glBlendFunc.xml>glBlendFunc</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glClipPlane.xml>glClipPlane</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glColorMask.xml>glColorMask</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glCullFace.xml>glCullFace</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glDepthFunc.xml>glDepthFunc</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glDepthMask.xml>glDepthMask</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glDepthRange.xml>glDepthRange</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glFog.xml>glFog</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glFrontFace.xml>glFrontFace</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glHint.xml>glHint</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glLight.xml>glLight</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glLightModel.xml>glLightModel</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glLineStipple.xml>glLineStipple</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glLineWidth.xml>glLineWidth</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glLogicOp.xml>glLogicOp</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glMaterial.xml>glMaterial</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glPixelTransfer.xml>glPixelTransfer</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glPointParameter.xml>glPointParameter</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glPointSize.xml>glPointSize</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glPolygonMode.xml>glPolygonMode</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glPolygonOffset.xml>glPolygonOffset</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glPolygonStipple.xml>glPolygonStipple</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glSampleCoverage.xml>glSampleCoverage</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glShadeModel.xml>glShadeModel</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glStencilFunc.xml>glStencilFunc</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glStencilMask.xml>glStencilMask</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glStencilOp.xml>glStencilOp</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glTexEnv.xml>glTexEnv</a>
+				- <a target=_blank href=http://www.opengl.org/sdk/docs/man/xhtml/glTexGen.xml>glTexGen</a>
+			</td>
+			<td valign=top>
+				- vl::AlphaFunc
+				- vl::BlendColor
+				- vl::BlendEquation
+				- vl::BlendFunc
+				- vl::ClipPlane
+				- vl::ColorMask
+				- vl::CullFace
+				- vl::DepthFunc
+				- vl::DepthMask
+				- vl::DepthRange
+				- vl::Fog
+				- vl::FrontFace
+				- vl::Hint
+				- vl::Light
+				- vl::LightModel
+				- vl::LineStipple
+				- vl::LineWidth
+				- vl::LogicOp
+				- vl::Material
+				- vl::PixelTransfer
+				- vl::PointParameter
+				- vl::PointSize
+				- vl::PolygonMode
+				- vl::PolygonOffset
+				- vl::PolygonStipple
+				- vl::SampleCoverage
+				- vl::ShadeModel
+				- vl::StencilFunc
+				- vl::StencilMask
+				- vl::StencilOp
+				- vl::TexEnv
+				- vl::TexGen
+			</td>
+		</tr>
+*******************************************************************************
+		<tr> <th colspan=2 align=left> OpenGL Enables </th> </tr>
+		<tr>
+			<td valign=top>
+				- GL_ALPHA_TEST
+				- GL_BLEND
+				- GL_COLOR_LOGIC_OP
+				- GL_LIGHTING
+				- GL_COLOR_SUM
+				- GL_CULL_FACE
+				- GL_DEPTH_TEST
+				- GL_FOG
+				- GL_LINE_SMOOTH
+				- GL_LINE_STIPPLE
+				- GL_POLYGON_STIPPLE
+				- GL_NORMALIZE
+				- GL_POINT_SMOOTH
+				- GL_POINT_SPRITE
+				- GL_POLYGON_SMOOTH
+				- GL_POLYGON_OFFSET_FILL
+				- GL_POLYGON_OFFSET_LINE
+				- GL_POLYGON_OFFSET_POINT
+				- GL_RESCALE_NORMAL
+				- GL_STENCIL_TEST
+				- GL_VERTEX_PROGRAM_POINT_SIZE
+				- GL_VERTEX_PROGRAM_TWO_SIDE
+				- GL_SAMPLE_ALPHA_TO_COVERAGE
+				- GL_SAMPLE_ALPHA_TO_ONE
+				- GL_SAMPLE_COVERAGE
+				- GL_LIGHTi
+				- GL_CLIP_PLANEi
+				- GL_SCISSOR_TEST
+				- GL_COLOR_MATERIAL
+				- GL_TEXTURE_1D
+				- GL_TEXTURE_2D
+				- GL_TEXTURE_3D
+				- GL_TEXTURE_CUBE_MAP
+				- GL_TEXTURE_GEN_Q/R/S/T
+				- GL_INDEX_LOGIC_OP
+			</td>
+			<td valign=top>
+				- vl::EN_ALPHA_TEST
+				- vl::EN_BLEND
+				- vl::EN_COLOR_LOGIC_OP
+				- vl::EN_LIGHTING
+				- vl::EN_COLOR_SUM
+				- vl::EN_CULL_FACE
+				- vl::EN_DEPTH_TEST
+				- vl::EN_FOG
+				- vl::EN_LINE_SMOOTH
+				- vl::EN_LINE_STIPPLE
+				- vl::EN_POLYGON_STIPPLE
+				- vl::EN_NORMALIZE
+				- vl::EN_POINT_SMOOTH
+				- vl::EN_POINT_SPRITE
+				- vl::EN_POLYGON_SMOOTH
+				- vl::EN_POLYGON_OFFSET_FILL
+				- vl::EN_POLYGON_OFFSET_LINE
+				- vl::EN_POLYGON_OFFSET_POINT
+				- vl::EN_RESCALE_NORMAL
+				- vl::EN_STENCIL_TEST
+				- vl::EN_PROGRAM_POINT_SIZE
+				- vl::EN_VERTEX_PROGRAM_TWO_SIDE
+				- vl::EN_SAMPLE_ALPHA_TO_COVERAGE
+				- vl::EN_SAMPLE_ALPHA_TO_ONE
+				- vl::EN_SAMPLE_COVERAGE
+				- automatically managed by vl::Light
+				- automatically managed by vl::ClipPlane
+				- automatically manaded by vl::Scissor
+				- see vl::Material::setColorMaterial(), vl::Material::setColorMaterialEnabled()
+				- automatically managed, see vl::Texture, vl::TextureSampler, vl::TexParameter
+				- automatically managed, see vl::Texture, vl::TextureSampler, vl::TexParameter
+				- automatically managed, see vl::Texture, vl::TextureSampler, vl::TexParameter
+				- automatically managed, see vl::Texture, vl::TextureSampler, vl::TexParameter
+				- automatically managed by vl::TexGen
+				- deprecated functionality
+				</td>
+		</tr>
+	</table>
+
+*/

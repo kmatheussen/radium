@@ -1,0 +1,81 @@
+/**
+
+	\page pagLearning Learning Visualization Library
+
+	\par Prerequisites
+	
+	In order to use Visualization Library you need a at least good familiarity with C++, compilers and ideally linear algebra and geometry.
+	
+	\par Where to Start
+
+	The \ref pagIntro page gives a brief presentation of VL capabilities and design guide lines. It also shows how to keep up to date
+	with VL news and how to obtain help.
+		
+	The \ref pagKeyFeatures page illustrates more in detail the most important aspects of VL, its features, its whys and hows.
+	
+	The \ref pagMainClasses page gives a quick overview of the most important classes and functions divided into functional
+	groups such as "Math", "Geometry", "Animation" etc. Take some time to check it out, it's a great way to start your jurney through VL architecture
+	and organization.
+
+	The <a href=annotated.html>Annotated Class List</a> page contains the complete list of all VL classes with their relative description. 
+	It is strongly adviced to glimpse through it at least once, you might discover classes and features you didn't even know you would need!
+	
+	The \ref pagDesign page depticts visually a 10000 foot view of VL architecture and design. 
+	VL design is all in all very simple but it's important that you understand it before you use it so that you can get the most out of VL.
+	
+	The \ref pagOpenGL page allows you to see how VL maps OpenGL functions and features into its own C++
+	object-oriented framework. This way if you know OpenGL and want to know how to do a specific thing with VL, you will be pointed right
+	to the appropriate direction. This is one of the key features of VL: it translates almost transparently what you would do in 
+	OpenGL into a friendly C++ object-oriented framework.
+	
+	These links are vital for any OpenGL programmer, chances are you will find yourself using them often:
+	
+	- OpenGL API and Shading Language Specifications and Reference Pages: http://www.opengl.org/registry/#apispecs
+	- OpenGL Extensions: http://www.opengl.org/registry/#arbextspecs	
+	- OpenGL 2.x Reference Manual: http://www.opengl.org/sdk/docs/man/
+	- OpenGL 3.x Reference Manual: http://www.opengl.org/sdk/docs/man3/
+	- OpenGL 4.x Reference Manual: http://www.opengl.org/sdk/docs/man4/
+	- OpenGL ES 1.x Reference Manual: http://www.khronos.org/opengles/sdk/1.1/docs/man/
+	- OpenGL ES 2.x Reference Manual: http://www.khronos.org/opengles/sdk/docs/man/
+	- OpenGL SDK: http://www.opengl.org/sdk/
+	
+	\par Tutorials and Examples
+	
+	The \ref pagGuides page contains several tutorials and examples to get you started with the most important 
+	VL programming concepts.
+	
+	In the \a src/examples/ directory you will also find a set of example applications demonstrating how to implement various techniques using Visualization Library.
+	
+	\par Community Resources
+
+	- <a target=_blank href="http://www.visualizationlibrary.org/forum">Forums</a> - The right place to ask for help, advertise your 
+	projects and check for news regarding VL, such as releases, bug fixes etc. Also register to the forum if you would like to be
+	notified via email about the latest VL developments.
+	- <a href="http://twitter.com/VizLibrary">http://twitter.com/VizLibrary</a> - Quick info regarding the latest VL news.
+		
+	\par More OpenGL and 3D Graphics Background
+	
+	If you are just starting your journey in the 3D graphics realm then the <a target=_blank href="http://www.starstonesoftware.com/OpenGL/">OpenGL SuperBible</a> will provide you with very good theoretical and practical foundations.
+	
+	More advanced users will want to buy a copy of the latest revision of \a "The OpenGL Programming Guide" (also known as "red book") and of 
+	\a "The OpenGL Shading Language" (also known as "orange book"). You can find all these plus many others here: http://www.opengl.org/documentation/books/
+	
+	\par GUI Bindings
+	
+	Chances are that you are using a GUI framework that is already supported by Visualization Library, like \p Win32, \p MFC, \p QT4, \p SDL, \p GLUT, \p wxWidgets and \p Cocoa (experimental). 
+	If you would like to see how to use Visualization Library within a particulare GUI framework then take a look at the \p src/examples directory, which contains 
+	a set of minimalistic applications that demonstrate how to use VL with several GUI frameworks. 
+	
+	Note that the GUI bindings shipped with VL should not be considered \a official but rather \a utility bindings. Meaning that they 
+	demonstrate in practice one way to glue your application to VL. 
+	You might as well rewrite from scratch or modify the existing bindings to satisfy any particular requisite 
+	of your application. Eitherway, if you have a fair knowledge of the GUI framework you are using, then gluing it together with VL 
+	is usually a matter of writing one or two source files in the worst case. Plus the existing utility GUI bindings show exactly 
+	what you need to do.
+	
+	Note also that you don't strictly need GUI bindings to use VL as VL just renders to whatever OpenGL context is currently active,
+	just like normal OpenGL API calls. All you need is to make sure that VL knows which camera, viewport, renderbuffer etc. to use
+	when issuing rendering commands.
+	
+	<i>Good luck and have fun!</i>
+*/

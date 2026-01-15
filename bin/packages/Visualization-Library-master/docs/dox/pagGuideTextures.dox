@@ -1,0 +1,241 @@
+/**
+
+	\page pagGuideTextures OpenGL Texture Mapping Tutorial
+
+	<img src="pics/pagGuideTextures.jpg">
+
+	\par Intro
+
+	The complete code for this tutorial can be found in \p "src/examples/Applets/App_Texturing.cpp".
+	
+	"Texturing" is the technique used to apply in various ways an image over the surface of an object. Textures can be used to 
+	change or modify the color, the transparency and even the lighting properties of an object. In this tutorial we will go through the
+	implementation of App_Texturing, the texturing test part of the Visualization Library regression test suite.
+	This will give us the chance to see how to use several standard and advanced texturing techniques like 2D texturing, multi-texturing, 
+	3D textures, 1D and 2D texture arrays, sphere-mapping and cubemaps environment mapping. We will also see how to use the texture lod bias
+	to simulate opaque reflections.
+	
+	The most important classes involved in the texturing process are:
+	
+	- vl::Image: used to load, save and manipulate any kind of image that will be used to create a texture.
+	- vl::Texture: implements all the OpenGL texture object types.
+	- vl::TexParameter: used by vl::Texture to control the parameters associated to a texture such as clamping, filtering, anisotropy etc.
+	- vl::TextureSampler: used by vl::Shader to bind a vl::Texture to a give texture unit.
+	- vl::TexGen: used by vl::Shader to control automatic texture coordinate generation.
+	- vl::TexEnv: used by vl::Shader to program the various texture unit environment settings, such as blending modes etc.
+	- vl::TextureMatrix: used by vl::Shader to transform the texture coordinates of a specific unit.
+
+	\par Textures with Visualization Library
+
+	Currently Visualization Library supports all kinds of textures supported by OpenGL up to OpenGL 4.1 which is:
+
+	- 1D textures
+	- 2D textures
+	- 3D textures
+	- Cubemap textures
+	- Texture rectangles
+	- 1D texture arrays
+	- 2D texture arrays
+	- Texture buffer objects
+	- 2D multisample textures
+	- 2D multisample array textures
+
+	You can setup and create textures in three different ways:
+
+	- Using a \p vl::Texture constructor. \n
+	  With this method you can create 1D, 2D and 3D textures. The actual OpenGL texture object is <b>immediately</b> created.
+	- Using one of \p vl::Texture::prepare*() methods. \n
+	  With this method you can create all supported texture types. The actual OpenGL texture is <b>not created immediately</b> but rather the first time it is used in a rendering.
+	- Using one of \p vl::Texture::create*() methods. \n
+	  With this method you can create all supported texture types. The actual OpenGL texture is <b>created immediately</b>. \n
+	  This is equivalent to calling a \p vl::Texture::prepare*() method followed by \p vl::Texture::createTexture().
+
+	Notes on vl::Image:
+
+	- In order to create 1D texture arrays you need a 2D image, in which every y slice will be considered a layer of the 1D texture array
+	- In order to create 2D texture arrays you need a 3D image, in which every z slice will be considered a layer of the 2D texture array.
+	- When creating 1D textures make sure you have a 1D image not a 1px high 2D image. VL can distinguish between 1D images and 1px high 2D images by the value of vl::Image::height() 
+	  which is 0 in the first case and 1 in the second. \n 
+	  Be careful when loading 1D images as usually they are loaded as 1px high 2D images. Thus, if you intend to use them as 1D 
+	  textures, make sure to set the image height to 0.
+
+	Texture parameters:
+
+	All the parameters that are part of the texture object, such as texture filtering modes, anisotropic filtering, clamping modes etc. can be accessed via \p vl::Texture::getTexParameter().
+	See the code below for a few examples.
+	
+	\par Creating the texturing test
+	
+	Our test like all the other tests is a subclass of \p BaseDemo so the only thing we do is to derive from it, implement a set of functions
+	testing the different texturing technique and reimplementing the virtual functions \p initEvent() and \p updateScene() to initialize and animate
+	our test.
+	
+	\dontinclude App_Texturing.cpp
+	\skipline class
+	\until public:
+
+	After which we start implementing a method for each texture type test.
+	
+	\par Multitexturing
+
+    This example shows how to use multiple textures to enhance the detail of your 3D 
+    objects. We will create 2 cubes: the one on the right will use a single texture, the one on
+    the left will use multitexturing to add detail to the base texture. The two cubes will be 
+    animated by the updateScene() method.
+
+	\skipline void multitexturing()
+	\until }
+	\until }
+	
+	\par 3D textures
+
+	In this paragraph we will use 3D textures to implement a sort of animation on a 2d flat plane.
+	
+	Since we want to animate the texture coordinates of our plane we manually allocate a vl::ArrayFloat3 to be used as the texture coordinate array for the texture unit #0. 
+	Note also that since VBOs are activated by default after animating the texture coordintes we need to tell VL that the textue coordinates' VBOs should be updated.
+	See the \p updateScene() method for the details.
+	
+	\until }
+	\until }
+	
+	\par 2D Texture Arrays
+	
+	Using 2D texture arrays (\p GL_TEXTURE_2D_ARRAY) is very similar to using normal 3D textures (\p GL_TEXTURE_3D), but with the following differences:
+	- the "r" coordinate of a 2D texture array is expressed as an integer and not as normalized floats (as it is for \p GL_TEXTURE_1D/2D/3D and cubemaps), i.e. 1, 2, 3, 4, 5 etc. 
+	  instead of 0.02, 0.04, 0.06, 0.08 etc. for example. 
+	- The mipmaps are computed in a different way: if you have a 3D texture whose dimensions are 256x256x256 at level #0, it's mipmap level #1 will be 128x128x128. 
+	  Instead in 2D texture array each "layer" is kept separate somehow from one another. In fact if the mipmap level #0 of a 2D texture array is 256x256x256, its mipmap level #1 will be 
+	  128x128x256. That is, the texture size is half but you still have 256 "layers". For this reason 2D texture arrays occupy more memory that 3D textures. 
+	- 3D textures can have a texture border, while 2D texture arrays are not allowed to have a border. For more information about the border of a texture refer to the OpenGL function 
+	  glTexImage1D/2D/3D() documentation.
+	- 1D and 2D texture arrays are not available in the fixed function pipeline. In order to take advantage of them you have to use GLSL, that is, your Shader needs a vl::GLSLProgram.
+	
+	For our demo we will use the 2D texture array in the very same way as we did for the 3D textures, but in this case we will put the textured plane on the top right corner. 
+	
+	\until }
+	\until }
+	
+	The fragment shader 'glsl/texture_2d_array.fs' used in the example looks like this:
+\code
+#extension GL_ARB_texture_array: enable
+uniform sampler2DArray sampler0;
+void main(void)
+{
+	gl_FragColor = texture2DArray(sampler0, gl_TexCoord[0].xyz);
+}
+\endcode
+	
+	\par 1D Texture Arrays
+	
+	For 1D texture arrays count the considerations that we did for 2D texture arrays.
+	
+	In this example we create again a plane oriented towards the views with the difference that this time instead of creating a simple plane with \p 2*2 vertices we create 
+	\p 2*img_holebox->height() vertices, that is, we cut the plane in \p img_holebox->height() slices. Each slice will be textured using a 1D texture taken from the 1D texture array. 
+	The resulting image will look very similar to a 2D textured quad. 
+	
+	\until }
+	\until }
+	
+	The fragment shader 'glsl/texture_1d_array.fs' used in the example looks like this:
+\code
+#extension GL_ARB_texture_array: enable
+uniform sampler1DArray sampler0;
+void main(void)
+{
+	gl_FragColor = texture1DArray(sampler0, gl_TexCoord[0].xyz );
+}
+\endcode
+	
+	\par Texture Rectangle
+	
+	A texture rectangle (\p GL_TEXTURE_RECTANGLE) is a special kind of 2D textures mainly used for post processing effects. They differ from normal 2D texture for the following:
+	- Texture rectangle do not support mipmapping.
+	- Texture rectangle do not support texture borders.
+	- Texture rectangle s/t coordinates are expressed as integers instead of normalized 0..1 values.
+	- Texture rectangle supports only the following clamping modes: \p GL_CLAMP, \p GL_CLAMP_TO_EDGE, \p GL_CLAMP_TO_BORDER.
+	
+	\until }
+	\until }
+	
+	\par Spherical mapping
+	
+	Spherical mapping is a very simple and cheap way to simulate environmental reflection over an object using simple 2D textures.
+	
+	All we need to use spherical mapping is:
+	- A spherical map texture (a normal 2D texture with a special image in it)
+	- A 3d object WITH normals computed
+	- Appropriate texture coordinates dynamically generated using glTexGen()/GL_SPHERE_MAP
+	
+	For more information about spherical mapping see also "OpenGL Cube Map Texturing": http://developer.nvidia.com/object/cube_map_ogl_tutorial.html
+	
+	In our test we will apply spherical mapping to a rotating torus.
+	
+	\until }
+	\until }
+	
+	\par Cubemaps
+	
+	Cubemapping is a very flexible technique used to achieve many different kinds of effects. Here we will use cubmapping to implement the so 
+	called "environment mapping" which is a technique that simulates the environmental reflection over an object. While using spherical mapping
+	the reflection always faces the camera (unless you regenerate it on the fly every frame), cubemapping lets you use a single cubemap texture 
+	to simulate a much more realistic three-dimensional reflection.
+	
+	For more information about spherical mapping see also "OpenGL Cube Map Texturing": http://developer.nvidia.com/object/cube_map_ogl_tutorial.html
+	
+	All we need to use cubemapping is:
+	- A cubemap texture, which is a special texture made out of 6 2D images
+	- A 3d model WITH normals
+	- Appropriate texture coordinates dynamically generated using glTexGen()/GL_REFLECTION_MAP
+	
+	Note that you can load cubemap images in many different ways. You can assemble them on the fly using the vl::loadAsCubemap() functions or you can 
+	load it directly from a DDS file with the vl::loadImage() function.
+	
+	We use the GL_CLAMP_TO_EDGE mode here to minimize the seams of the cubemaps. This does not remove
+	the seams totally. In order to have a cubemap without seams the cubemap must be properly generated and adjusted by the texture artist.
+
+	Note that we use GL_REFLECTION_MAP texture generation mode for the S, T and R texture coordinates which requires the rendered geometry to 
+	have proper normals. 
+	
+	Note also the line:
+	<pre>mFXCubic->shader()->gocTextureMatrix(0)->setUseCameraRotationInverse(true);</pre>
+	
+	This tells VL to put in the texture matrix the inverse of the camera rotation. This transforms into world-space the cubemap texture coordinates 
+	automatically generated by OpenGL, which would otherwise be in eye-space (ie. always facing the camera). Basically this way the virtual 
+	texture cube will be aligned with the world axes, which is what we want, instead of being aligned with the eye space axes.
+	
+	\until }
+	\until }
+	
+	\par Applet initialization
+
+	The following function shows the simple steps used to initialize our test and the protected data used by our applet.
+	
+	\skip initEvent()
+	\until }
+	
+	\par Animation
+	
+	The animation of the texture coordinates and of the transformed objects is implemented in the updateScene() virtual function as shown below:
+	
+	\skip updateScene()
+	\until (mActCubic)
+	\until }
+	\until }
+	
+	\par Reflectivity
+	
+	A classic method to simulate sharp/dull reflectivity is to manually change the lod bias via the glTexEnv() command. The Lod Bias modifies
+	the way OpenGL selects the set of mipmaps to be used during the rendering. A higher lod bias will make OpenGL select mipmaps of a higher 
+	level (smaller images) thus the reflected image will look more blurry and less sharp. This will produce an effect similar to a rough and opaque 
+	surface. Instead, if the lod bias is set to 0 (default) the reflection will look very sharp and definite as if the surface was a perfectly
+	polished mirror. In our test we can dynamically adjust the lod bias using the mouse wheel:
+	
+	\skip mouseWheelEvent(int w)
+	\until }
+	
+	\par Conclusions 
+	
+	This tutorial gave you the basic knowledge to start using several standard and advanced texturing techniques like 2D texturing, multi-texturing, 
+	3D textures, 1D and 2D texture arrays, sphere-mapping, cubemap environment mapping and lod bias manipulation. 
+*/
+

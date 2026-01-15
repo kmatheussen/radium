@@ -1,0 +1,68 @@
+/** \page pagGuideThreads Multi-Threading with VL
+
+	\par Can I use VL in multi-thraded applications?
+	
+	Yes! Just like you can use OpenGL in multi-threaded applications. But, you have to know what you are doing. VL was designed to
+	make it possible to be used in multi-threaded applications, but not to make multi-threaded applications development dumb-proof!
+	So you will have to follow certain guide lines and use a few precautions common to all multi-threaded applications.
+	
+	Also VL does not provide an OS-independent threading library, just a few abstract classes required to interoperate with your
+	favourite threading api, such as vl::IMutex and vl::ScopedMutex.
+	
+	\par Does VL use multi-threading?
+	
+	VL does not provide any out of the box multi-threading tricks or optimizations as those are out of the scope and purpose of VL. VL is a generic 
+	framework to be used to create your own rendering pipeline. Therefore making your rendering pipeline multi-threaded is up to you because it's 
+	heavily dependent on the architecture that you choose.
+	
+	It is important also not to confuse multi-threaded application with multi-threaded rendering. Keep in mind that, unless your rendering is CPU bound, i.e. your GPU is starving, performing multiple renderings at the same time, is probably going to impact negatively the efficiency of the GPU!
+	Always try to optimize to the limit your single-thread rendering pipeline and work on your application's specific CPU bottlenecks before considering
+	issuing OpenGL commands from multiple threads.
+	
+	\par Is VL thread-safe?
+	
+	We have to distinguish between \p thread-safety and \p reentrancy. See http://doc.qt.nokia.com/latest/threads-reentrancy.html for a nice introduction to the concept.
+	Strictly speaking, VL is not thread-safe. That actually would be very bad performance-wise.
+	As you probably expect, you can't call the same method of the same objects with the same parameters from two different threads and expect VL to produce predictable results unless you provide some kind of synchronization!
+	However VL is designed to be reentrant (see below for the details) which in this case is the important bit of information in order to develop performant multi-threaded applications.
+
+	\par Guidelines to develop multi-threaded applications using VL
+	
+	In a nutshell you can safely use VL in multi-threaded applications by following the four following rules:
+
+	- 1) Make the logging thread-safe by installing a vl::IMutex to be used with the default logger by calling vl::Log::setLogMutex(). It is important to make the default logger thread-safe as it is used in several places by VL to send feedback to the user.
+
+	- 2) If you would like to be able to assign any vl::Object to a vl::ref<> safely from two different threads at the same time 
+	you have to make sure that the reference count is kept consistent by synchronizing the access to it. You can do that by calling 
+	vl::Object::setRefCountMutex().
+	
+	- 3) Synchronize access to shared VL resources. Basically all you have to do is to synchronize with a mutex or semaphore all the calls to the following functions: 
+		- vl::defFileSystem()
+		- vl::defLoadWriterManager()
+		- vl::defFontManager()
+		- All the vl::load*() functions
+		- vl::canLoad() and vl::canWrite()
+		- vl::locateFile()
+		since they use vl::defFileSystem() and vl::defLoadWriterManager() internally.
+
+	- 4) Use multi-threaded development common sense, i.e. don't try to access the same object from two different threads at the same time without synchronization! Design carefully how and where synchronization happens in order to avoid deadlocks etc.
+
+	\par Remarks
+
+	- Try to avoid using multiple threads for GUI management, try keeping the OpenGL rendering in one single thread and 
+	use multiple threads preferably to parallelize intensive CPU computations such as physics, animation, AI, data streaming/compression/decompression, image processing, culling/visibility computation in some cases etc.
+	
+	- Keep in mind that each thread has its own "currently active" OpenGL context, so changing the active GL context in one thread
+	is not going to affect other threads.
+
+	- When using multiple OpenGL contexts remember that each of them keeps resources separate from all the others, unless you
+	explicitly share them (see for example wglShareLists() on Win32). For this reason you cannot create textures, fonts, VBOs,
+	shaders etc. in one GL context and use them in another, unless the two have been created to share their resources. 
+	I would suggest to share them whenever possible to keep the application logic code to a minimum.
+	This is	a general rule also for single-threaded applications.
+	
+	- VL allows you to use several sets of vl::Rendering, vl::FileSystem, vl::LoadWriterManager, vl::FontManager objects etc. within one single or multiple threads.
+	  Each thread can have its own data, resources, rendering pipeline(s) etc. in those cases you might not even need to synchronize anything!
+
+  	- Use CUDA or OpenCL whenever possible.
+*/

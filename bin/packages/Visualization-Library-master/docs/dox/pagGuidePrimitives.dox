@@ -1,0 +1,77 @@
+/**
+
+	\page pagGuidePrimitives Geometry Primitives
+	
+	Visualization Library includes a series of functions to create the most common primitive objects out of the box such as:
+	
+	<center>
+	<table border=0 cellspacing=0 cellpadding=5 width=1%>
+	<tr>
+		<td align=center>
+			<img src="gallery_small/primitive01.jpg"/>
+			Box
+		</td>
+		<td align=center>
+			<img src="gallery_small/primitive02.jpg"/>
+			Teapot
+		</td>
+		<td align=center>
+			<img src="gallery_small/primitive03.jpg"/>
+			Capsule
+		</td>
+		<td align=center>
+			<img src="gallery_small/primitive04.jpg"/>
+			Torus
+		</td>
+		<td align=center>
+			<img src="gallery_small/primitive05.jpg"/>
+			Cylinder
+		</td>
+	</tr>
+	<tr>
+		<td align=center>
+			<img src="gallery_small/primitive06.jpg"/>
+			UV Sphere
+		</td>
+		<td align=center>
+			<img src="gallery_small/primitive07.jpg"/>
+			Icosphere
+		</td>
+		<td align=center>
+			<img src="gallery_small/primitive08.jpg"/>
+			Icosahedron
+		</td>
+		<td align=center>
+			<img src="gallery_small/primitive09.jpg"/>
+			Cone
+		</td>
+		<td align=center>
+			<img src="gallery_small/primitive11.jpg"/>
+			Grid
+		</td>
+	</tr>
+	</table>
+	</center>
+	
+	The above primitive objects can be created by calling the following functions:
+	<ul>
+		<li> vl::makeBox()
+		<li> vl::makeTeapot()
+		<li> vl::makeCapsule()
+		<li> vl::makeTorus()
+		<li> vl::makeCylinder()
+		<li> vl::makeUVSphere()
+		<li> vl::makeIcosphere()
+		<li> vl::makeIcosahedron()
+		<li> vl::makeCone()
+		<li> vl::makePyramid()
+		<li> vl::makeGrid()
+	</ul>
+
+	The example below demonstrates how to create a simple applet that displays several geometrical primitives and allows the user to navigate through them by pressing the left/right arrow keys. Note how creating a geometrical primitive is just a matter of calling a function such as vl::makeBox(), vl::makeTeapot() etc.
+
+	[From \p App_Primitives.cpp]
+	\dontinclude App_Primitives.cpp
+	\skip class
+	\until // Have fun!
+*/

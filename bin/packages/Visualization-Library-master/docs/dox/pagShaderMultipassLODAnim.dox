@@ -1,0 +1,23 @@
+/**
+	\page pagShaderMultipassLODAnim Shader Multipassing, LOD and Animation Tutorial
+
+	This tutorial shows some advanced techniques related to Shaders. You will learn how to perform multipassing, how to define LODs 
+	(level of detail) in your Effects and how to animate your Shaders using the vl::ShaderAnimator class.
+
+	<img src="pics/pagShaderMultipassLODAnim.jpg">
+	
+	Visualization Library allows you to define quite intricate effects combination setups. You can in fact define several level of detail modes
+	for your Effects. Each level of detail defines its own set of Shader passes, that is, VL will draw the object once for each pass using the 
+	corresponding Shader. And on top of all you can also animate your Shaders by defining a subclass of vl::ShaderAnimator and binding it
+	to the Shader you want to animate!
+	
+	The following example renders a simple scene with a few cubes. At LOD #0 the cubes are rendered using two passes. The firs pass renders the 
+	geometry using two textures out of which the second is animated using a roto-scaling effect. The second pass uses an animated outline 
+	blinking shader. At LOD #1 the cubes are rendered using two passes again. But in this case the first pass uses a simple non animated texture. 
+	The second pass uses again the outline blinking animated shader. At LOD #2 the cubes are rendered with a single pass using a simple texture.
+	
+	[From \p App_ShaderMultiPassLODAnim.cpp]
+	\dontinclude App_ShaderMultiPassLODAnim.cpp
+	\skip #include
+	\until // Have fun!
+*/

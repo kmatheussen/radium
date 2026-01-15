@@ -1,0 +1,845 @@
+/**
+
+\page pagGallery Visualization Library Gallery
+
+	One picture is worth a thousand words, one word is worth a million pictures...
+
+	\htmlonly
+
+	<!-- ----------------------------------------------------------------------------------------------------------------------------- -->
+
+	<h2 style="font-size: 20px">Tessellation Shaders</h2>
+	
+	<p>
+	Using tessellation shaders it is possible to control directly on the GPU the LOD and tessellation level of primitives.<br>
+	The example below shows how to use tesselation shaders to implement a simple terrain rendering system with dynamic LOD (see <tt>App_TessellationShader.cpp</tt>).
+	Note how the size of the triangles in pixels remain roughly constant at different zoom levels.
+	</p>
+	
+	<p>
+	For more info on how to use tessellation shaders with Visualization Library see vl::GLSLTessEvaluationShader and vl::GLSLTessControlShader.
+	</p>
+	
+	<table border=0 cellspacing=0 cellpadding=5 width=1%>
+	<tr>
+		<td>
+			<a href="gallery/tess01.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/tess01.jpg" alt="Tessellation Shaders" title="" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/tess02.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/tess02.jpg" alt="Tessellation Shaders" title="" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/tess03.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/tess03.jpg" alt="Tessellation Shaders" title="" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/tess04.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/tess04.jpg" alt="Tessellation Shaders" title="" />
+			</a>
+		</td>
+	</tr>
+	</table>
+	
+
+	<!-- ----------------------------------------------------------------------------------------------------------------------------- -->
+
+	<h2 style="font-size: 20px">GLSL Shaders</h2>
+	
+	<p>
+	Using GLSL it is possible to create a variety of effects. The source code used to generate images below can be found <a href="http://code.google.com/p/visualizationlibrary/source/browse/#svn%2Ftrunk%2Fdata%2Fglsl%2Fexamples">here</a>.
+	</p>
+	
+	<p>
+	For more info on how to use GLSL shaders with Visualization Library see vl::GLSLProgram, <a href="http://code.google.com/p/visualizationlibrary/source/browse/trunk/src/vlGraphics/GLSL.hpp">GLSL.h</a> and <a href="http://code.google.com/p/visualizationlibrary/source/browse/trunk/src/examples/Applets/App_GLSL.cpp">App_GLSL.cpp</a>.
+	</p>
+	
+	<table border=0 cellspacing=0 cellpadding=5 width=1%>
+	<tr>
+		<td>
+			<a href="gallery/glsl01.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/glsl01.jpg" alt="GLSL Shaders" title="" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/glsl02.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/glsl02.jpg" alt="GLSL Shaders" title="" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/glsl03.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/glsl03.jpg" alt="GLSL Shaders" title="" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/glsl04.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/glsl04.jpg" alt="GLSL Shaders" title="" />
+			</a>
+		</td>
+		<td colspan=2>
+			<a href="gallery/glsl05.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/glsl05.jpg" alt="GLSL Shaders" title="" />
+			</a>
+		</td>
+	</tr>
+
+	<tr>
+		<td>
+			<a href="gallery/glsl06.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/glsl06.jpg" alt="GLSL Shaders" title="" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/glsl07.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/glsl07.jpg" alt="GLSL Shaders" title="" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/glsl08.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/glsl08.jpg" alt="GLSL Shaders" title="" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/glsl09.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/glsl09.jpg" alt="GLSL Shaders" title="" />
+			</a>
+		</td>
+		<td colspan=2>
+			<a href="gallery/glsl10.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/glsl10.jpg" alt="GLSL Shaders" title="" />
+			</a>
+		</td>
+	</tr>
+
+	<tr>
+		<td>
+			<a href="gallery/glsl11.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/glsl11.jpg" alt="GLSL Shaders" title="" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/glsl12.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/glsl12.jpg" alt="GLSL Shaders" title="" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/glsl13.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/glsl13.jpg" alt="GLSL Shaders" title="" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/glsl14.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/glsl14.jpg" alt="GLSL Shaders" title="" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/glsl15.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/glsl15.jpg" alt="GLSL Shaders" title="" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/glsl16.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/glsl16.jpg" alt="GLSL Shaders" title="" />
+			</a>
+		</td>
+	</tr>
+	</table>
+	
+
+	<hr><!-- ----------------------------------------------------------------------------------------------------------------------------- -->
+
+	<h2 style="font-size: 20px">GPU Raycast Volume Rendering</h2>
+
+	A few volume rendering techniques based on GPU raycasting such as isosurface, MIP (maximum intensity projection) and integration, implemented using 
+	OpenGL Shading Language shaders.<br>
+   
+	<p>
+	\endhtmlonly
+	<b>See also:</b>
+	- \ref pagGuideRaycastVolume page.
+	- \ref pagGuideSlicedVolume page.
+
+	\htmlonly
+	</p>
+
+	<table border=0 cellspacing=0 cellpadding=5 width=1%>
+	<tr>
+		<td>
+			<a href="gallery/raycast01.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/raycast01.jpg" alt="Highslide JS" title="Human head (MRI) rendered using a transfer function" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/raycast02.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/raycast02.jpg" alt="Highslide JS" title="Human foot (CT) rendered using a transfer function" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/raycast03.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/raycast03.jpg" alt="Highslide JS" title="Human head (CT) rendered using a transfer function" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/raycast04.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/raycast04.jpg" alt="Highslide JS" title="Engine (CT) rendered with MIP" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/raycast05.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/raycast05.jpg" alt="Highslide JS" title="Human head (CT) with isosurface rendering" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/raycast06.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/raycast06.jpg" alt="Highslide JS" title="Human head (CT) with transparent isosurface rendering" />
+			</a>
+		</td>
+
+	</tr>
+	</table>
+
+	<hr><!-- ----------------------------------------------------------------------------------------------------------------------------- -->
+
+	<h2 style="font-size: 20px">Volume Isosurface Extraction With Marching Cubes</h2>
+
+	Various examples of isosurface extraction using the vl::MarchingCubes class.<br>
+   
+	<p>
+	\endhtmlonly
+	See also the \ref pagGuideMarchingCubes page.
+	\htmlonly
+	</p>
+
+	<table border=0 cellspacing=0 cellpadding=5 width=1%>
+	<tr>
+		<td>
+			<a href="gallery/marching-engine.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/marching-engine.jpg" alt="Highslide JS" title="Isosurface of engine part" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/marching-foot.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/marching-foot.jpg" alt="Highslide JS" title="Isosurface of human foot" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/marching-skull.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/marching-skull.jpg" alt="Highslide JS" title="Isosurface of human skull" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/marching-multi-transp.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/marching-multi-transp.jpg" alt="Highslide JS" title="Multiple transparent intersecting isosurfaces" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/marching-plot.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/marching-plot.jpg" alt="Highslide JS" title="Isosurface of 3D function" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/marching-metaballs.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/marching-metaballs.jpg" alt="Highslide JS" title="Animated metaballs" />
+			</a>
+		</td>
+
+	</tr>
+	</table>
+	
+	<hr><!-- ----------------------------------------------------------------------------------------------------------------------------- -->
+
+	<h2 style="font-size: 20px">Mandelbrot Fractals</h2>
+	
+	A few Mandelbrot fractals generated using the OpenGL Shading Language.<br>
+	<br>
+	
+	<table border=0 cellspacing=0 cellpadding=5 width=1%>
+	<tr>
+		<td>
+			<a href="gallery/mandel01.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/mandel01.jpg" alt="Highslide JS" title="Mandelbrot fractal with GLSL" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/mandel02.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/mandel02.jpg" alt="Highslide JS" title="Mandelbrot fractal with GLSL" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/mandel03.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/mandel03.jpg" alt="Highslide JS" title="Mandelbrot fractal with GLSL" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/mandel04.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/mandel04.jpg" alt="Highslide JS" title="Mandelbrot fractal with GLSL" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/mandel05.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/mandel05.jpg" alt="Highslide JS" title="Mandelbrot fractal with GLSL" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/mandel06.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/mandel06.jpg" alt="Highslide JS" title="Mandelbrot fractal with GLSL" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/mandel07.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/mandel07.jpg" alt="Highslide JS" title="Mandelbrot fractal with GLSL" />
+			</a>
+		</td>
+	</tr>
+	</table>
+
+	<hr><!-- ----------------------------------------------------------------------------------------------------------------------------- -->
+
+	<h2 style="font-size: 20px">Molecule Visualization</h2>
+	
+	The vl::Molecule class implements a simple molecule visualization engine that allows you to visualize molecular structures using several styles.<br>
+	
+	<p>
+	\endhtmlonly
+	See also the \ref pagGuideMolecule page.
+	\htmlonly
+	</p>
+	
+	<table border=0 cellspacing=0 cellpadding=5 width=1%>
+	<tr>
+		<td>
+			<a href="gallery/mol01.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/mol01.jpg" alt="Highslide JS" title="Sticks molecule" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/mol02.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/mol02.jpg" alt="Highslide JS" title="Ball & Sticks molecule" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/mol03.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/mol03.jpg" alt="Highslide JS" title="Wireframe molecule" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/mol04.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/mol04.jpg" alt="Highslide JS" title="CPK molecule" />
+			</a>
+		</td>
+	</tr>
+	<tr>
+		<td>
+			<a href="gallery/mol05.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/mol05.jpg" alt="Highslide JS" title="Sticks molecule" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/mol06.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/mol06.jpg" alt="Highslide JS" title="Ball & Sticks molecule" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/mol07.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/mol07.jpg" alt="Highslide JS" title="Wireframe molecule" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/mol08.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/mol08.jpg" alt="Highslide JS" title="CPK molecule" />
+			</a>
+		</td>
+	</tr>
+	</table>
+	
+	<hr><!-- ----------------------------------------------------------------------------------------------------------------------------- -->
+
+	<h2 style="font-size: 20px">Edge Enhancement</h2>
+	
+	The vl::EdgeExtractor and vl::EdgeRenderer classes allow you to extract and render an object's edges to perform edge-enhancement and hidden edge rendering.<br>
+	
+	<p>
+	\endhtmlonly
+	See also the \ref pagGuideEdgeRendering page.
+	\htmlonly
+	</p>
+	
+	<table border=0 cellspacing=0 cellpadding=5 width=1%>
+	<tr>
+		<td>
+			<a href="gallery/edge01.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/edge01.jpg" alt="Highslide JS" title="No edge enhancement" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/edge02.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/edge02.jpg" alt="Highslide JS" title="Silhouette only" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/edge03.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/edge03.jpg" alt="Highslide JS" title="Silhouette + creases" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/edge04.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/edge04.jpg" alt="Highslide JS" title="Silhouette + creases + hidden creases" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/edge05.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/edge05.jpg" alt="Highslide JS" title="Only silhouette + creases" />
+			</a>
+		</td>
+	</tr>
+	<tr>
+		<td>
+			<a href="gallery/edge06.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/edge06.jpg" alt="Highslide JS" title="No edge enhancement" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/edge07.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/edge07.jpg" alt="Highslide JS" title="Silhouette only" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/edge08.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/edge08.jpg" alt="Highslide JS" title="Silhouette + creases" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/edge09.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/edge09.jpg" alt="Highslide JS" title="Silhouette + creases + hidden creases" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/edge10.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/edge10.jpg" alt="Highslide JS" title="Only silhouette + creases" />
+			</a>
+		</td>
+	</tr>
+	</table>
+
+	<hr><!-- ----------------------------------------------------------------------------------------------------------------------------- -->
+
+	<h2 style="font-size: 20px">Polygon Reduction</h2>
+	
+	The vl::PolygonSimplifier class allows you to easily reduce the polygon count of geometrical objects by defining a percentage or a target polygon count.<br>
+	The polygon reduction algorithm implemented by vl::PolygonSimplifier is based on the <i>"Quadric Error Metrics Surface Simplification"</i> algorithm 
+	by Michael Garland and Paul S. Heckbert.<br>
+	<br>
+
+	The images below show a mesh progressively reduced from ~1.08M to ~11K polygons (1% of the original).
+	<br>
+	
+	<table border=0 cellspacing=0 cellpadding=5 width=1%>
+	<tr>
+		<td>
+			<a href="gallery/simplify01.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/simplify01.jpg" alt="Highslide JS" title="Original mesh shaded" />
+			</a>
+			<div class="highslide-caption">Original mesh shaded.</div>
+		</td>
+		<td>
+			<a href="gallery/simplify02.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/simplify02.jpg" alt="Highslide JS" title="Original mesh wireframe" />
+			</a>
+			<div class="highslide-caption">Original mesh wireframe.</div>
+		</td>
+		<td>
+			<a href="gallery/simplify03.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/simplify03.jpg" alt="Highslide JS" title="10% reduced shaded" />
+			</a>
+			<div class="highslide-caption">10% reduced mesh shaded.</div>
+		</td>
+		<td>
+			<a href="gallery/simplify04.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/simplify04.jpg" alt="Highslide JS" title="10% reduced wireframe" />
+			</a>
+			<div class="highslide-caption">10% reduced mesh wireframe.</div>
+		</td>
+	</tr>
+	</table>
+
+	<hr><!-- ----------------------------------------------------------------------------------------------------------------------------- -->
+
+	<h2 style="font-size: 20px">Extrusions</h2>
+
+	The vl::Extrusion class can extrude a 2d silhouette along a 3d path in order to generate 3d geometries. 
+	A vl::Interpolator can also be used to generate paths and silhouettes to be used with vl::Extrusion.<br>
+   
+	<p>
+	\endhtmlonly
+	See also the \ref pagGuideExtrusion page.
+	\htmlonly
+	</p>
+
+	<table border=0 cellspacing=0 cellpadding=5 width=1%>
+	<tr>
+		<td>
+			<a href="gallery/extrude01.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/extrude01.jpg" alt="Highslide JS" title="Extrusion following a path" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/extrude02.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/extrude02.jpg" alt="Highslide JS" title="Extrusion following a path" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/extrude03.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/extrude03.jpg" alt="Highslide JS" title="Extrusion following a path" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/extrude04.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/extrude04.jpg" alt="Highslide JS" title="Extrusion following a path" />
+			</a>
+		</td>
+
+	</tr>
+	</table>
+	
+	<hr><!-- ----------------------------------------------------------------------------------------------------------------------------- -->
+
+	<h2 style="font-size: 20px">Interpolators</h2>
+
+	The vl::CatmullRomInterpolator and vl::LinearInterpolator classes can be used to interpolate 1, 2, 3 and 4 component values to create paths or animations.<br>
+	
+	<p>
+	\endhtmlonly
+	See also the \ref pagGuideInterpolators page.
+	\htmlonly
+	</p>
+
+	<table border=0 cellspacing=0 cellpadding=5 width=1%>
+	<tr>
+		<td>
+			<a href="gallery/interp01.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/interp01.jpg" alt="Highslide JS" title="Linear vs Catmull Rom interpolation of open line" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/interp02.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/interp02.jpg" alt="Highslide JS" title="Linear vs Catmull Rom interpolation of closed line" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/interp03.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/interp03.jpg" alt="Highslide JS" title="Linear vs Catmull Rom interpolation of closed line" />
+			</a>
+		</td>
+
+	</tr>
+	</table>
+	
+	<hr><!-- ----------------------------------------------------------------------------------------------------------------------------- -->
+
+	<h2 style="font-size: 20px">Bezier Surfaces</h2>
+
+	The vl::BezierPatch and vl::BezierSurface classes allow you to define complex surfaces with an arbitrary tessellation level.
+	Below the famous Newell teapot is rendered using 32 4x4 Bezier patches with three different subdivision levels, less detailed on the left, more detailed on the right.
+	The dots and the white lines in the first image represent the control points of the patches, the red dots represent the corner control points that are guaranteed to 
+	touch the Bezier surface.<br>
+   
+	<p>
+	\endhtmlonly
+	See also the \ref pagGuideBezierSurfaces page.
+	\htmlonly
+	</p>
+
+	<table border=0 cellspacing=0 cellpadding=5 width=1%>
+	<tr>
+		<td>
+			<a href="gallery/bezier01.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/bezier01.jpg" alt="Highslide JS" title="Bezier patches forming a teapot" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/bezier02.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/bezier02.jpg" alt="Highslide JS" title="Teapot with low tessellation level" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/bezier03.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/bezier03.jpg" alt="Highslide JS" title="Teapot with medium tessellation level" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/bezier04.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/bezier04.jpg" alt="Highslide JS" title="Teapot with high tessellation level" />
+			</a>
+		</td>
+
+	</tr>
+	</table>
+	
+	<hr><!-- ----------------------------------------------------------------------------------------------------------------------------- -->
+
+	<h2 style="font-size: 20px">Occlusion Culling</h2>
+	
+	- In the first image the occlusion ratio is 96%: frame rate with and without occlusion culling is 125.9 vs 54.7, <b>speedup 2,3x</b>.<br>
+	- In the second image the occlusion ratio is 84%: frame rate with and without occlusion culling is 139.7 vs 106.4, <b>speedup 1,3x</b>.<br>
+	- In the third image the occlusion ratio is 40%: frame rate with and without occlusion culling is 104.8 vs 59.7, <b>speedup 1,76x</b>.<br>
+	
+	<br>
+	Benchmark info: 1681 trees, tested on NVIDIA GeForce 460M GT, Intel Core i7-740.<br>
+	Note that the speedup can be even much higher for less powerful video cards or more detailed scenes.<br>
+
+	<p>
+	\endhtmlonly
+	See also the \ref pagGuideOcclusionCulling page.
+	\htmlonly
+	</p>
+	
+	<table border=0 cellspacing=0 cellpadding=5 width=1%>
+	<tr>
+		<td>
+			<a href="gallery/occlusion01.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/occlusion01.jpg" alt="Highslide JS" title="96% occlusion ratio" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/occlusion03.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/occlusion03.jpg" alt="Highslide JS" title="84% occlusion ratio" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/occlusion05.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/occlusion05.jpg" alt="Highslide JS" title="40% occlusion ratio" />
+			</a>
+		</td>
+
+	</tr>
+	</table>
+
+	<hr><!-- ----------------------------------------------------------------------------------------------------------------------------- -->
+
+	<h2 style="font-size: 20px">Kd-Tree Scene Manager</h2>
+
+	<p>
+	This sequence of pictures below show how the vl::SceneManagerActorKdTree class subdivides a set objects in both 2D and 3D. Click on the first picture and press 
+	the left or right arrow to browse through the image sequence.<br>
+	</p>
+
+	<table border=0 cellspacing=0 cellpadding=5 width=1%>
+	<tr>
+		<td>
+			<a href="gallery/kdtree-quad01.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/kdtree-quad01.jpg" alt="Highslide JS" title="" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/kdtree-quad02.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/kdtree-quad02.jpg" alt="Highslide JS" title="" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/kdtree-quad03.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/kdtree-quad03.jpg" alt="Highslide JS" title="" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/kdtree-quad04.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/kdtree-quad04.jpg" alt="Highslide JS" title="" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/kdtree-quad05.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/kdtree-quad05.jpg" alt="Highslide JS" title="" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/kdtree-quad06.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/kdtree-quad06.jpg" alt="Highslide JS" title="" />
+			</a>
+		</td>
+	</tr>
+	</table>
+
+	<table border=0 cellspacing=0 cellpadding=5 width=1%>
+	<tr>
+		<td>
+			<a href="gallery/kdtree-cube01.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/kdtree-cube01.jpg" alt="Highslide JS" title="" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/kdtree-cube02.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/kdtree-cube02.jpg" alt="Highslide JS" title="" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/kdtree-cube03.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/kdtree-cube03.jpg" alt="Highslide JS" title="" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/kdtree-cube04.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/kdtree-cube04.jpg" alt="Highslide JS" title="" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/kdtree-cube05.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/kdtree-cube05.jpg" alt="Highslide JS" title="" />
+			</a>
+		</td>
+	</tr>
+	</table>
+	
+	<p>
+	This sequence of pictures below show how the rendering speed is dramatically incread by the use of simple frustum culling (7 -> 140 FPS!) and even more by the use of 
+	kd-tree accelerated frustum culling (140 -> 737 FPS!). The scene contains several thousands of highly detailed objects out of which only a small portion is visible.
+	Using kd-trees allows to discard the vast majority of the non visible objects with just a few tests. On a Intel Core i7-740 the compilation of the 
+	kd-tree takes roughly 1 second for ~100.000 objects.<br>
+	</p>
+
+	<table border=0 cellspacing=0 cellpadding=5 width=1%>
+	<tr>
+		<td>
+			<a href="gallery/culling01.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/culling01.jpg" alt="Highslide JS" title="" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/culling02.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/culling02.jpg" alt="Highslide JS" title="" />
+			</a>
+		</td>
+		<td>
+			<a href="gallery/culling03.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/culling03.jpg" alt="Highslide JS" title="" />
+			</a>
+		</td>
+	</tr>
+	</table>
+
+	<hr><!-- ----------------------------------------------------------------------------------------------------------------------------- -->
+
+	<h2 style="font-size: 20px">Polygon Tessellation</h2>
+	
+	Polygon tessellation is the process of converting a set of outlines into triangles. Such outlines define the <i>inside</i> and <i>outside</i> areas of a complex polygon.
+	Tessellation is commonly used to convert complex, concave or self-intersecting polygons into trangles. 
+	The example below shows how two star-shaped outlines intersecting each other can define a complex polygon. The polygon is rendered in both flat shading and wire-frame,
+	the latter reveals the triangles resulting from the tessellation of the complex polygon.<br>
+	
+	<br>
+	With Visualization Library you can use the vl::Tessellator class to convert such complex polygons into a set of OpenGL-renderable triangles.<br>
+	
+	<p>
+	\endhtmlonly
+	See also the \ref pagGuideTessellation page.
+	\htmlonly
+	</p>
+	
+	<table border=0 cellspacing=0 cellpadding=5 width=1%>
+	<tr>
+		<td>
+			<a href="gallery/tessellator01.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/tessellator01.jpg" alt="Highslide JS" title="" />
+			</a>
+		</td>
+	</tr>
+	</table>
+	
+
+	<hr><!-- ----------------------------------------------------------------------------------------------------------------------------- -->
+
+	<h2 style="font-size: 20px">Geometrical Primitives</h2>
+	
+	Visualization Library includes a series of functions to create the most common geometrical primitives out of the box such as:<br>
+
+	<p>
+	\endhtmlonly
+	<ul>
+		<li> vl::makeBox()
+		<li> vl::makeTeapot()
+		<li> vl::makeCapsule()
+		<li> vl::makeTorus()
+		<li> vl::makeCylinder()
+		<li> vl::makeUVSphere()
+		<li> vl::makeIcosphere()
+		<li> vl::makeIcosahedron()
+		<li> vl::makeCone()
+		<li> vl::makePyramid()
+		<li> vl::makeGrid()
+	</ul>
+
+	See also the \ref pagGuidePrimitives page.
+	\htmlonly
+	</p>
+
+	<table border=0 cellspacing=0 cellpadding=5 width=1%>
+	<tr>
+		<td>
+			<a href="gallery/primitive01.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/primitive01.jpg" alt="Highslide JS" title="" />
+			</a>
+			Box
+		</td>
+		<td>
+			<a href="gallery/primitive02.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/primitive02.jpg" alt="Highslide JS" title="" />
+			</a>
+			Teapot
+		</td>
+		<td>
+			<a href="gallery/primitive03.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/primitive03.jpg" alt="Highslide JS" title="" />
+			</a>
+			Capsule
+		</td>
+		<td>
+			<a href="gallery/primitive04.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/primitive04.jpg" alt="Highslide JS" title="" />
+			</a>
+			Torus
+		</td>
+		<td>
+			<a href="gallery/primitive05.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/primitive05.jpg" alt="Highslide JS" title="" />
+			</a>
+			Cylinder
+		</td>
+	</tr>
+	<tr>
+		<td>
+			<a href="gallery/primitive06.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/primitive06.jpg" alt="Highslide JS" title="" />
+			</a>
+			UV Sphere
+		</td>
+		<td>
+			<a href="gallery/primitive07.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/primitive07.jpg" alt="Highslide JS" title="" />
+			</a>
+			Icosphere
+		</td>
+		<td>
+			<a href="gallery/primitive08.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/primitive08.jpg" alt="Highslide JS" title="" />
+			</a>
+			Icosahedron
+		</td>
+		<td>
+			<a href="gallery/primitive09.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/primitive09.jpg" alt="Highslide JS" title="" />
+			</a>
+			Cone
+		</td>
+		<td>
+			<a href="gallery/primitive11.jpg" class="highslide" onclick="return hs.expand(this)"> 
+				<img src="gallery_small/primitive11.jpg" alt="Highslide JS" title="" />
+			</a>
+			Grid
+		</td>
+	</tr>
+	</table>
+	
+	\endhtmlonly
+*/

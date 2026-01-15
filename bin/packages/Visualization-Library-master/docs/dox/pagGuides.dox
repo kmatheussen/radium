@@ -1,0 +1,392 @@
+/**
+	\page pagGuides Quick Start Guides
+
+	\par Introduction
+
+	This section contains a set of practical tutorials and examples that will guide you through the most important concepts and techniques regarding Visualization Library and computer graphics. The topics range from basic application setup, to memory management, texturing, OpenGL Shading Language, terrain rendering and much more. Enjoy!
+	
+	<center>
+	<table width=1000 border=0><tr><td>
+
+****************************************************************************************
+
+	<table border=0 cellspacing=1 width=100% class="lightborder">
+	 <tr>
+		<td width=100 align=left>
+			<img src="pics/pagGuideRotatingCube_s.jpg">
+		</td>
+		<td align=left>
+			\subpage pagGuideRotatingCube "Implementing a Simple Spinning Cube" (code and comments)
+		</td>
+	</tr>
+	</table>
+ 
+****************************************************************************************
+
+	<table border=0 cellspacing=1 width=100% class="lightborder">
+	<tr>
+		<td width=100 align=left>
+			<img src="pics/pagGuideDefault_s.png">
+		</td>
+		<td align=left>
+			\subpage pagGuideMemory "Smart Pointers and Memory Management"
+		</td>
+	</tr>
+	</table>
+ 
+****************************************************************************************
+
+	<table border=0 cellspacing=1 width=100% class="lightborder">
+	<tr>
+		<td width=100 align=left>
+			<img src="pics/pagGuideDefault_s.png">
+		</td>
+		<td align=left>
+			\subpage pagGuideThreads
+		</td>
+	</tr>
+	</table>
+ 
+****************************************************************************************
+
+	<table border=0 cellspacing=1 width=100% class="lightborder">
+	<tr>
+		<td width=100 align=left>
+			<img src="pics/pagGuideTextures_s.jpg">
+		</td>
+		<td align=left>
+			\subpage pagGuideTextures "OpenGL Texture Mapping"
+		</td>
+	</tr>
+	</table>
+ 
+****************************************************************************************
+
+	<table border=0 cellspacing=1 width=100% class="lightborder">
+	<tr>
+		<td width=100 align=left>
+			<img src="pics/pagGuideDefault_s.png">
+		</td>
+		<td align=left>
+			\subpage pagGuideRenderOrder "Rendering Order"
+		</td>
+	</tr>
+	</table>
+ 
+****************************************************************************************
+
+	<table border=0 cellspacing=1 width=100% class="lightborder">
+	<tr>
+		<td width=100 align=left>
+			<img src="pics/pagGuideGLSL_s.jpg">
+		</td>
+		<td align=left>
+			\subpage pagGuideGLSL "OpenGL Shading Language Tutorial" (code and comments)
+		</td>
+	</tr>
+	</table>
+ 
+****************************************************************************************
+
+	<table border=0 cellspacing=1 width=100% class="lightborder">
+	<tr>
+		<td width=100 align=left>
+			<img src="pics/pagGuidePrimitives_s.jpg">
+		</td>
+		<td align=left>
+			\subpage pagGuidePrimitives "Geometry Primitives" (code and comments)
+		</td>
+	</tr>
+	</table>
+ 
+****************************************************************************************
+
+	<table border=0 cellspacing=1 width=100% class="lightborder">
+	<tr>
+		<td width=100 align=left>
+			<img src="pics/pagGuideFBO_s.jpg">
+		</td>
+		<td align=left>
+			\subpage pagGuideFramebufferObject "Framebuffer Objects Tutorial" (code and comments)
+		</td>
+	</tr>
+	</table>
+ 
+****************************************************************************************
+
+	<table border=0 cellspacing=1 width=100% class="lightborder">
+	<tr>
+		<td width=100 align=left>
+			<img src="pics/pagGuideDefault_s.png">
+		</td>
+		<td align=left>
+			\subpage pagGuidePicking "Picking and Selection Tutorial" (code and comments)
+		</td>
+	</tr>
+	</table>
+ 
+****************************************************************************************
+
+	<table border=0 cellspacing=1 width=100% class="lightborder">
+	<tr>
+		<td width=100 align=left>
+			<img src="pics/pagGuideRaycastVolume_s.jpg">
+		</td>
+		<td align=left>
+			\subpage pagGuideRaycastVolume "GPU Raycast Volume Rendering with Transfer Functions and Lighting" (code and comments)
+		</td>
+	</tr>
+	</table>
+ 
+****************************************************************************************
+
+	<table border=0 cellspacing=1 width=100% class="lightborder">
+	<tr>
+		<td width=100 align=left>
+			<img src="pics/pagGuideSlicedVolume_s.jpg">
+		</td>
+		<td align=left>
+			\subpage pagGuideSlicedVolume "Sliced Volume Rendering with Transfer Functions and Lighting" (code and comments)
+		</td>
+	</tr>
+	</table>
+ 
+****************************************************************************************
+
+	<table border=0 cellspacing=1 width=100% class="lightborder">
+	<tr>
+		<td width=100 align=left>
+			<img src="pics/pagGuideMarchingCubes_s.jpg">
+		</td>
+		<td align=left>
+			\subpage pagGuideMarchingCubes "Volume Rendering and Isosurfaces Extraction with Marching Cubes" (code and comments)
+		</td>
+	</tr>
+	</table>
+ 
+****************************************************************************************
+
+	<table border=0 cellspacing=1 width=100% class="lightborder">
+	<tr>
+		<td width=100 align=left>
+			<img src="pics/pagGuideLights_s.jpg">
+		</td>
+		<td align=left>
+			\subpage pagGuideLights "Directional, Point and Spot Lights" (code and comments)
+		</td>
+	</tr>
+	</table>
+ 
+****************************************************************************************
+
+	 <table border=0 cellspacing=1 width=100% class="lightborder">
+	 <tr>
+		<td width=100 align=left>
+			<img src="pics/pagGuideTerrain_s.jpg">
+		</td>
+		<td align=left>
+			\subpage pagGuideTerrain "Terrains and Heightmaps" (code and comments)
+		</td>
+	 </tr>
+	 </table>
+ 
+****************************************************************************************
+
+	<table border=0 cellspacing=1 width=100% class="lightborder">
+	<tr>
+		<td width=100 align=left>
+			<img src="pics/pagGuideVectorGraphics_s.jpg">
+		</td>
+		<td align=left>
+			\subpage pagGuideVectorGraphics "OpenGL-Accelerated 2D Vector Graphics" (code and comments)
+		</td>
+	</tr>
+	</table>
+ 
+****************************************************************************************
+
+	<table border=0 cellspacing=1 width=100% class="lightborder">
+	<tr>
+		<td width=100 align=left>
+			<img src="pics/pagGuideClipping_s.jpg">
+		</td>
+		<td align=left>
+			\subpage pagGuideClipping "Clipping Planes Tutorial" (code and comments)
+		</td>
+	</tr>
+	</table>
+ 
+****************************************************************************************
+
+	<table border=0 cellspacing=1 width=100% class="lightborder">
+	<tr>
+		<td width=100 align=left>
+			<img src="pics/pagGuideTessellation_s.jpg">
+		</td>
+		<td align=left>
+			\subpage pagGuideTessellation "Polygon Tessellation Tutorial" (code and comments)
+		</td>
+	</tr>
+	</table>
+ 
+****************************************************************************************
+
+	<table border=0 cellspacing=1 width=100% class="lightborder">
+	<tr>
+		<td width=100 align=left>
+			<img src="pics/pagGuideExtrusion_s.jpg">
+		</td>
+		<td align=left>
+			\subpage pagGuideExtrusion "Geometry Extrusion" (code and comments)
+		</td>
+	</tr>
+	</table>
+ 
+****************************************************************************************
+
+	<table border=0 cellspacing=1 width=100% class="lightborder">
+	<tr>
+		<td width=100 align=left>
+			<img src="pics/pagGuideInterpolators_s.png">
+		</td>
+		<td align=left>
+			\subpage pagGuideInterpolators "Interpolators Tutorial" (code and comments)
+		</td>
+	</tr>
+	</table>
+ 
+****************************************************************************************
+
+	<table border=0 cellspacing=1 width=100% class="lightborder">
+	<tr>
+		<td width=100 align=left>
+			<img src="pics/pagGuideMolecule_s.jpg">
+		</td>
+		<td align=left>
+			\subpage pagGuideMolecule "Molecule Visualization" (code and comments)
+		</td>
+	</tr>
+	</table>
+ 
+****************************************************************************************
+
+	<table border=0 cellspacing=1 width=100% class="lightborder">
+	<tr>
+		<td width=100 align=left>
+			<img src="pics/pagGuideWireframe_s.jpg">
+		</td>
+		<td align=left>
+			\subpage pagGuideEdgeRendering "Edge Enhancement and Wireframe Rendering" (code and comments)
+		</td>
+	</tr>
+	</table>
+ 
+****************************************************************************************
+
+	<table border=0 cellspacing=1 width=100% class="lightborder">
+	<tr>
+		<td width=100 align=left>
+			<img src="pics/pagGuidePortals_s.jpg">
+		</td>
+		<td align=left>
+			\subpage pagGuidePortals "Portal-Based Culling and Scene Management" (code and comments)
+		</td>
+	</tr>
+	</table>
+ 
+****************************************************************************************
+
+	<table border=0 cellspacing=1 width=100% class="lightborder">
+	<tr>
+		<td width=100 align=left>
+			<img src="pics/pagGuideOcclusionCulling_s.jpg">
+		</td>
+		<td align=left>
+			\subpage pagGuideOcclusionCulling "OpenGL-Accelerated Occlusion Culling" (code and comments)
+		</td>
+	</tr>
+	</table>
+ 
+****************************************************************************************
+
+	<table border=0 cellspacing=1 width=100% class="lightborder">
+	<tr>
+		<td width=100 align=left>
+			<img src="pics/pagGuideBezierSurfaces_s.jpg">
+		</td>
+		<td align=left>
+			\subpage pagGuideBezierSurfaces "Bicubic Bézier Patches and Surfaces" (code and comments)
+		</td>
+	</tr>
+	</table>
+ 
+****************************************************************************************
+
+	<table border=0 cellspacing=1 width=100% class="lightborder">
+	<tr>
+		<td width=100 align=left>
+			<img src="pics/pagGuidePolygonDepthSorting.png">
+		</td>
+		<td align=left>
+			\subpage pagGuidePolygonDepthSorting "Transparency and Polygon Depth Sorting" (code and comments)
+		</td>
+	</tr>
+	</table>
+ 
+****************************************************************************************
+
+	<table border=0 cellspacing=1 width=100% class="lightborder">
+	<tr>
+		<td width=100 align=left>
+			<img src="pics/pagGuideAntialiasing.png">
+		</td>
+		<td align=left>
+			\subpage pagGuideAntialiasing "Antialiasing and Multisampling"
+		</td>
+	</tr>
+	</table>
+ 
+****************************************************************************************
+
+	<table border=0 cellspacing=1 width=100% class="lightborder">
+	<tr>
+		<td width=100 align=left>
+			<img src="pics/pagGuideBillboards_s.jpg">
+		</td>
+		<td align=left>
+			\subpage pagGuideBillboards "Billboards Tutorial"
+		</td>
+	</tr>
+	</table>
+ 
+****************************************************************************************
+
+	<table border=0 cellspacing=1 width=100% class="lightborder">
+	<tr>
+		<td width=100 align=left>
+			<img src="pics/pagShaderMultipassLODAnim_s.png">
+		</td>
+		<td align=left>
+			\subpage pagShaderMultipassLODAnim
+		</td>
+	</tr>
+	</table>
+ 
+****************************************************************************************
+
+	<table border=0 cellspacing=1 width=100% class="lightborder">
+	<tr>
+		<td width=100 align=left>
+			<img src="pics/pagGeomLodAnim_s.png">
+		</td>
+		<td align=left>
+			\subpage pagGeomLodAnim
+		</td>
+	</tr>
+	</table>
+ 
+****************************************************************************************
+
+	</td></tr></table>
+	</center>
+*/

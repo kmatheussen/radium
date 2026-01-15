@@ -1,0 +1,376 @@
+/**
+
+	\page pagMainClasses Grouped classes and functions
+	
+	This are the most important Visualization Library classes and functions divided into groups. 
+	
+	Some items might appear in more than one group. Hovering with the mouse on the name of a class or function will display a tooltip with a brief description.
+
+	\par Math
+	
+	- vl::half
+	- vl::real
+	- vl::degree
+	- vl::radian
+	- vl::vec4, vl::vec3, vl::vec2
+	- vl::dvec4, vl::dvec3, vl::dvec2
+	- vl::fvec4, vl::fvec3, vl::fvec2
+	- vl::ivec4, vl::ivec3, vl::ivec2
+	- vl::uvec4, vl::uvec3, vl::uvec2
+	- vl::svec4, vl::svec3, vl::svec2
+	- vl::usvec4, vl::usvec3, vl::usvec2
+	- vl::bvec4, vl::bvec3, vl::bvec2
+	- vl::ubvec4, vl::ubvec3, vl::ubvec2
+	- vl::mat4, vl::mat3, vl::mat2
+	- vl::dmat4, vl::dmat3, vl::dmat2
+	- vl::fmat4, vl::fmat3, vl::fmat2
+	- vl::imat4, vl::imat3, vl::imat2
+	- vl::umat4, vl::umat3, vl::umat2
+	- vl::quat
+	- vl::Sphere
+	- vl::AABB
+	- vl::RectI
+	- vl::RectF
+	
+	- glsl_math.hpp
+	
+	\par Text manipulation and rendering
+	
+	- vl::String
+	- vl::TextStream
+	- vl::Say
+	- vl::Log
+	- vl::Text
+	- vl::Font
+	- vl::FontManager
+	- vl::defFontManager() [DEPRECATED]
+	- vl::setDefFontManager() [DEPRECATED]
+	
+	\par Image
+	
+	- vl::loadImage()
+	- vl::saveImage()
+	- vl::loadRAW()
+	- vl::loadCubemap()
+	- vl::loadImagesFromDir()
+	- vl::assemble3DImage()
+	- vl::createCubemap()
+	- vl::Image
+	- vl::Image::convertType()
+	- vl::Image::convertFormat()
+	- vl::Image::sample()
+	- vl::Image::sampleLinear()
+	- vl::makeColorSpectrum()
+	- vl::Image::subImage()
+	
+	\par Input / Output
+
+	- vl::defLoadWriterManager()
+	- vl::setDefLoadWriterManager()
+	- vl::registerLoadWriter()
+	- vl::loadResource()
+	- vl::canLoad()
+	- vl::canWrite()
+	- vl::loadImage()
+	- vl::saveImage()
+	- vl::loadRAW()
+	- vl::loadCubemap()
+	- vl::loadImagesFromDir()
+	- vl::ResourceDatabase
+	- vl::ResourceLoadWriter
+	- vl::LoadWriterManager
+	- vl::LoadCallback
+	- vl::WriteCallback
+	- vl::LoadWriterDICOM
+	- vl::LoadWriterPNG
+	- vl::LoadWriterJPG
+	- vl::LoadWriterTIFF
+	- vl::LoadWriterDDS
+	- vl::LoadWriterTGA
+	- vl::LoadWriterBMP
+	- vl::LoadWriterDAT
+	- vl::LoadWriter3DS
+	- vl::LoadWriterOBJ
+	- vl::LoadWriterAC3D
+	- vl::LoadWriterPLY
+	- vl::LoadWriterSTL
+	- vl::LoadWriterMD2
+	
+	\par Virtual File System
+	
+	- vl::defFileSystem()
+	- vl::setDefFileSystem()
+	- vl::locateFile()
+	- vl::FileSystem
+	- vl::VirtualDirectory
+	- vl::DiskDirectory
+	- vl::ZippedDirectory
+	- vl::MemoryDirectory
+	- vl::VirtualFile
+	- vl::DiskFile
+	- vl::ZippedFile
+	- vl::MemoryFile
+	- vl::GZipCodec
+	
+	\par OpenGL Shading Language
+	
+	- vl::GLSLProgram
+	- vl::GLSLVertexShader
+	- vl::GLSLTessControlShader
+	- vl::GLSLTessEvaluationShader
+	- vl::GLSLGeometryShader
+	- vl::GLSLFragmentShader
+	- vl::Shader::glslProgram()
+	- vl::Uniform
+	
+	\par Framebuffer Objects
+	
+	- vl::FramebufferObject
+	- vl::FBOAbstractAttachment
+		- vl::FBORenderbufferAttachment
+			- vl::FBOColorBufferAttachment
+			- vl::FBODepthBufferAttachment
+			- vl::FBODepthStencilBufferAttachment
+			- vl::FBOStencilBufferAttachment
+		- vl::FBOAbstractTextureAttachment
+			- vl::FBOTexture1DAttachment
+			- vl::FBOTexture2DAttachment
+			- vl::FBOTexture3DAttachment
+			- vl::FBOTextureAttachment
+			- vl::FBOTextureLayerAttachment
+	- vl::BlitFramebuffer
+	- vl::OpenGLContext::createFramebufferObject()
+	
+	\par Renderables
+	
+	- vl::Renderable
+		- vl::Geometry
+		- vl::BezierSurface
+		- vl::Text
+		- vl::DrawPixels
+		- vl::Clear
+		
+	\par Texturing
+	
+	- vl::Image
+	- vl::Texture
+	- vl::TexParameter
+	- vl::TexEnv
+	- vl::TexGen
+	- vl::TextureMatrix
+	- vl::TextureSampler
+	- vl::CopyTexSubImage1D
+	- vl::CopyTexSubImage2D
+	- vl::CopyTexSubImage3D
+
+	\par Callback objects
+
+	- vl::RenderEventCallback
+		- vl::BlitFramebuffer
+		- vl::ReadPixels
+		- vl::CopyTexSubImage1D
+		- vl::CopyTexSubImage2D
+		- vl::CopyTexSubImage3D
+	- vl::ActorEventCallback
+		- vl::DepthSortCallback
+		- vl::MorphingCallback
+		- vl::EdgeUpdateCallback
+	- vl::LoadCallback
+	- vl::WriteCallback
+
+	\par Rendering definition
+	
+	- vl::SceneManager
+	- vl::Rendering
+	- vl::Renderer
+	- vl::Camera
+	- vl::Viewport
+	- vl::Framebuffer
+	- vl::OpenGLContext
+	- vl::OpenGLContextFormat
+	- vl::OpenGLContext::framebuffer()
+	- vl::Actor
+	- vl::Effect
+	- vl::Shader
+	- vl::ShaderNode
+	- vl::Transform
+	- vl::Billboard
+	- vl::Scissor
+	
+	\par Scene managers and spatial partitioning
+	
+	- vl::SceneManager
+		- vl::SceneManagerBVH
+			- vl::SceneManagerActorTree
+			- vl::SceneManagerActorKdTree
+				- vl::Terrain
+		- vl::SceneManagerPortals
+		- vl::SceneManagerVectorGraphics
+	- vl::ActorTree
+	- vl::ActorKdTree
+	
+	\par Geometry Tools
+	- vl::Geometry::convertToVertexAttribs()
+	- vl::Geometry::computeNormals()
+	- vl::Geometry::flipNormals()
+	- vl::Geometry::fixTriangleWinding()
+	- vl::Geometry::transform()
+	- vl::Geometry::mergeTriangleStrips()
+	- vl::Geometry::mergeDrawCallsWithPrimitiveRestart()
+	- vl::Geometry::mergeDrawCallsWithMultiDrawElements()
+	- vl::Geometry::mergeDrawCallsWithTriangles()
+	- vl::Geometry::convertDrawCallToDrawArrays()
+	- vl::Geometry::triangulateDrawCalls()
+	- vl::Geometry::shrinkDrawCalls()
+	- vl::Geometry::makeGLESFriendly()
+	- vl::Geometry::sortVertices()
+	- vl::Geometry::regenerateVertices()
+	- vl::Geometry::colorizePrimitives()
+	- vl::Geometry::computeTangentSpace()
+	
+	\par Geometry
+	
+	- vl::Geometry
+	- vl::BezierSurface
+	- vl::Tessellator
+	- vl::Extrusion
+	- vl::DoubleVertexRemover
+	- vl::PolygonSimplifier
+	- vl::TriangleStripGenerator
+	- vl::DrawCall
+	- vl::DrawArrays
+	- vl::DrawElements
+	- vl::VertexAttribInfo
+	- vl::ArrayAbstract
+	- vl::ArrayFloat3, vl::ArrayFloat4 etc.
+	- vl::ArrayHFloat3, vl::ArrayHFloat4 etc.
+	- vl::ArrayAbstract::computeBoundingSphere()
+	- vl::ArrayAbstract::computeBoundingBox()
+	- vl::ArrayAbstract::transform()
+	- vl::ArrayAbstract::normalize()
+	- vl::ArrayAbstract::getAsVec4()
+	
+	\par Geometry primitives
+	
+	- vl::makeIcosphere()
+	- vl::makeCylinder()
+	- vl::makeUVSphere()
+	- vl::makeTorus()
+	- vl::makeCone()
+	- vl::makePyramid()
+	- vl::makeBox()
+	- vl::makeGrid()
+	- vl::makeIcosahedron()
+	- vl::makePoints()
+	- vl::makeCircle()
+	- vl::makeCapsule()
+	
+	\par Animation
+	
+	- vl::Time
+	- vl::ActorEventCallback
+	- vl::ShaderAnimator
+	- vl::MorphingCallback
+	- vl::Interpolator
+	- vl::LinearInterpolator
+	- vl::CatmullRomInterpolator 
+
+	\par User interaction
+
+	- vl::UIEventListener
+	- vl::OpenGLContext
+	- vl::TrackballManipulator
+	- vl::GhostCameraManipulator
+	
+	\par Threading
+	
+	- vl::Object::setRefCountMutex()
+	- vl::Log::setLogMutex()
+	- vl::IMutex
+	- vl::ScopedMutex
+
+	\par Volume rendering
+
+	- vl::RaycastVolume
+	- vl::SlicedVolume
+	- vl::MarchingCubes
+	- vl::VolumePlot
+
+	\par Rendering enhancement
+
+	- vl::EdgeRenderer
+	- vl::EdgeExtractor
+	- vl::OcclusionCullRenderer
+
+	\par Vector graphics
+
+	- vl::VectorGraphics
+	- vl::SceneManagerVectorGraphics
+
+	\par Molecule visualization
+
+	- vl::Molecule
+	- vl::Atom
+	- vl::Bond
+	- vl::RingExtractor
+
+	\par GUI bindings
+	
+	- vlWin32::Win32Window
+	- vlWin32::Win32Context
+	- vlMFC::MFCWindow
+	- vlWX::vlWXGLCanvas
+	- vlQt4::Qt4Widget
+	- vlSDL::SDLWindow
+	- vlGLUT::GLUTWindow
+
+	\par Memory
+
+	- vl::ref
+	- vl::Object
+	- vl::Buffer
+	- vl::BufferObject
+	- vl::ArrayAbstract
+	- vl::Array
+
+	\par Shader render states
+	
+	- vl::Shader
+	- vl::ShaderNode
+	- vl::AlphaFunc, see also http://www.opengl.org/sdk/docs/man/xhtml/glAlphaFunc.xml
+	- vl::BlendColor, see also http://www.opengl.org/sdk/docs/man/xhtml/glBlendColor.xml
+	- vl::BlendEquation, see also http://www.opengl.org/sdk/docs/man/xhtml/glBlendEquation.xml
+	- vl::BlendFunc, see also http://www.opengl.org/sdk/docs/man/xhtml/glBlendFunc.xml
+	- vl::ClipPlane, see also http://www.opengl.org/sdk/docs/man/xhtml/glClipPlane.xml
+	- vl::ColorMask, see also http://www.opengl.org/sdk/docs/man/xhtml/glColorMask.xml
+	- vl::CullFace, see also http://www.opengl.org/sdk/docs/man/xhtml/glCullFace.xml
+	- vl::DepthFunc, see also http://www.opengl.org/sdk/docs/man/xhtml/glDepthFunc.xml
+	- vl::DepthMask, see also http://www.opengl.org/sdk/docs/man/xhtml/glDepthMask.xml
+	- vl::DepthRange, see also http://www.opengl.org/sdk/docs/man/xhtml/glDepthRange.xml
+	- vl::Fog, see also http://www.opengl.org/sdk/docs/man/xhtml/glFog.xml
+	- vl::FrontFace, see also http://www.opengl.org/sdk/docs/man/xhtml/glFrontFace.xml
+	- vl::GLSLProgram
+	- vl::Hint, see also http://www.opengl.org/sdk/docs/man/xhtml/glHint.xml
+	- vl::Light, see also http://www.opengl.org/sdk/docs/man/xhtml/glLight.xml
+	- vl::LightModel, see also http://www.opengl.org/sdk/docs/man/xhtml/glLightModel.xml
+	- vl::LineStipple, see also http://www.opengl.org/sdk/docs/man/xhtml/glLineStipple.xml
+	- vl::LineWidth, see also http://www.opengl.org/sdk/docs/man/xhtml/glLineWidth.xml
+	- vl::LogicOp, see also http://www.opengl.org/sdk/docs/man/xhtml/glLogicOp.xml
+	- vl::Material, see also http://www.opengl.org/sdk/docs/man/xhtml/glMaterial.xml
+	- vl::PixelTransfer, see also http://www.opengl.org/sdk/docs/man/xhtml/glPixelTransfer.xml
+	- vl::PointParameter, see also http://www.opengl.org/sdk/docs/man/xhtml/glPointParameter.xml
+	- vl::PointSize, see also http://www.opengl.org/sdk/docs/man/xhtml/glPointSize.xml
+	- vl::PolygonMode, see also http://www.opengl.org/sdk/docs/man/xhtml/glPolygonMode.xml
+	- vl::PolygonOffset, see also http://www.opengl.org/sdk/docs/man/xhtml/glPolygonOffset.xml
+	- vl::PolygonStipple, see also http://www.opengl.org/sdk/docs/man/xhtml/glPolygonStipple.xml
+	- vl::SampleCoverage, see also http://www.opengl.org/sdk/docs/man/xhtml/glSampleCoverage.xml
+	- vl::ShadeModel, see also http://www.opengl.org/sdk/docs/man/xhtml/glShadeModel.xml
+	- vl::StencilFunc, see also http://www.opengl.org/sdk/docs/man/xhtml/glStencilFunc.xml
+	- vl::StencilMask, see also http://www.opengl.org/sdk/docs/man/xhtml/glStencilMask.xml
+	- vl::StencilOp, see also http://www.opengl.org/sdk/docs/man/xhtml/glStencilOp.xml
+	- vl::TexEnv, see also http://www.opengl.org/sdk/docs/man/xhtml/glTexEnv.xml
+	- vl::TexGen, see also http://www.opengl.org/sdk/docs/man/xhtml/glTexGen.xml
+	- vl::TextureMatrix
+	- vl::TextureSampler
+	
+*/

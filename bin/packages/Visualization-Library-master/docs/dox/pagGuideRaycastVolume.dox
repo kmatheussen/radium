@@ -1,0 +1,60 @@
+/**
+
+	\page pagGuideRaycastVolume GPU Raycast Volume Rendering with Transfer Functions and Lighting Tutorial
+
+	This tutorial demonstrates how to use the vl::RaycastVolume class to render a volume using various raycasting techniques such as Isosurface, MIP and density integration.
+	
+	<center>
+	<table border=0 cellspacing=0 cellpadding=5>
+	<tr>
+		<td> <img src="pics/pagGuideRaycastVolume_1.jpg"> </td>
+		<td> <img src="pics/pagGuideRaycastVolume_2.jpg"> </td>
+		<td> <img src="pics/pagGuideRaycastVolume_3.jpg"> </td>
+	</tr>
+	<tr>
+		<td> <img src="pics/pagGuideRaycastVolume_4.jpg"> </td>
+		<td> <img src="pics/pagGuideRaycastVolume_5.jpg"> </td>
+		<td> <img src="pics/pagGuideRaycastVolume_6.jpg"> </td>
+	</tr>
+	</table>
+	</center>
+	
+	The example below demonstrates how to use an arbitrary GLSL program and transfer function to render a volume. The fragment shader used
+	in this example is capable of computing the volume gradient and per-pixel lighting in real-time with up to 4 lights at the same time. 
+	It's also capable of taking advantage of a precomputed normal-texture to speedup the lighting computations. You can drag and drop in 
+	the window any supported volume data to	visualize it. The mouse wheel is used to modifies the rendering based on the specific technique.
+	
+	\par Summary of the technique
+
+	Essentally this technique renders a cube with 3d texture coordinates, that is, at each corner of the cube corresponds a corner of the volume texture.
+	We then generate for each interpolated texel the xyz objects space position, to do so we pass such position from the vertex shader
+	to the fragment shader using a 'varying' variable. Once we have such position in the fragment
+	shader we subtract the object space eye position to retrieve the ray vector that goes from the center of the camera through the current fragment.
+	Such vector can then be used to start traversing the volume texture. The starting point of such traversal, in texture coordinates, is simply the 
+	3d texture coordinate of the current fragment. We then iterate through the ray using the particular volume visualization tecnique until we reach
+	one of the borders of the 3D texture.
+	
+	Note that some tecniques require a front to back ray casting (such as isosuface), some others benefit from a back to front ray casting 
+	(integration based methods) and for some others the ray casting direction is indifferent (such as for MIP).
+	To raycast back to front we render the back facing polygons of the cube (so that we start from the furthest away texels) and compute the 
+	ray direction as eye.xyz - fragment.xyz. On the other hand, to raycast front to back, we render the front facing polygons of the cube (so that we 
+	start from the texels closest to the camera) and compute the ray direction as fragment.xyz - eye.xyz (i.e. we invert the direction).
+	
+	That's it! The actual code implementing the bare bone infrastructure is surprisingly simple and small, all the rest is glue code and ancillary logic.
+	
+	[From \p App_VolumeRaycast.cpp]
+	\dontinclude App_VolumeRaycast.cpp
+	\skip #include
+	\until // Have fun!
+
+	[From \p volume_luminance_light.vs]
+	\dontinclude volume_luminance_light.vs
+	\skip /*
+	\until // Have fun!
+
+	[From \p volume_raycast01.fs]
+	\dontinclude volume_raycast01.fs
+	\skip /*
+	\until // Have fun!
+
+*/
