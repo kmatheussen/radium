@@ -1,0 +1,13 @@
+/**
+
+	\page pagGuideVectorGraphics OpenGL-Accelerated 2D Vector Graphics Tutorial
+
+	This tutorial demonstrates how to perform all the most important vector graphics operations using the vl::VectorGraphics class.
+	
+	<img src="pics/pagGuideVectorGraphics.jpg">
+	
+	[From \p App_VectorGraphics.cpp]
+	\dontinclude App_VectorGraphics.cpp
+	\skip class
+	\until // Have fun!
+*/

@@ -1,0 +1,29 @@
+/**
+	\page pagGuideRenderOrder Rendering Order Tutorial
+
+	This tutorial will explain how to define the rendering order of a set of objects.
+	
+	Visualization Library employs a simple and extensible mechanism to define the rendering order. Once Visualization Library extracts all the visible objects present in a scene, a special class called vl::RenderQueueSorter is used to appriately sort such objects. The vl::RenderQueueSorter is the ultimate responsible for such sorting. You can even create your own vl::RenderQueueSorter and install it on your vl::Rendering. 
+	
+	The default vl::RenderQueueSorter is vl::RenderQueueSorterStandard, which implements a sorting mechanism that tries to achieve the following goals:
+	- Enforce user-defined rendering order
+	- Depth-sort transparent object
+	- Minimize render state changes
+	
+	The user can fine tune the rendering order of a set of \p Actors using the following member functions:
+	- vl::Actor::setRenderBlock(int block)
+	- vl::Effect::setRenderRank(int rank)
+	- vl::Actor::setRenderRank(int rank)
+	
+	The higher the rank or block, the later an \p Actor is rendered.
+	
+	The \p Actors are first sorted by their \p Actor \p Render \p Block, then by their \p Effect \p Render \p Rank, then by their \p Actor \p Render \p Rank.
+	Using this three-level sorting the developer can deal with very complex sorting scenarios. This means that first of all you can divide all 
+	your \p Actors into blocks. Within a block you can subdivide them by their \p Effect render rank. Within the same \p Effect render rank you 
+	can again subdivide them based on the \p Actor render rank. The default rank and block is zero.
+	
+	When two \p Actors have the same block and rank it means that the application does not care about their rendering order, so Visualization Library uses this chance to sort them in a way that the objects with similar materials, textures, shaders etc. are rendered as grouped as possible to maximize the rendering performances.
+	
+	If at least one of the two objects is using alpha blending then Visualization Library will automatically perform a depth-sort for two objects to obtain a correct rendering.
+
+*/

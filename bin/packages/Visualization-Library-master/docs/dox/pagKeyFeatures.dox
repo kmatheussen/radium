@@ -1,0 +1,366 @@
+/**
+
+\page pagKeyFeatures Visualization Library Features Overview
+
+\par Intro
+
+Below is a descriptive introduction to Visualization Library key features and functionalities. 
+Take a couple of minutes to read this page as you will find a lot of useful information about how VL works, how to take full advantage of VL's power 
+and how VL compares to plain OpenGL or other libraries.
+
+<div class="featuretitle">A Lightweight Modern OpenGL Middleware</div>
+
+The first and most important feature of Visualization Library is surely its simple and straightforward design. Every aspect of Visualization Library has been developed keeping in mind these important principles:
+
+\b Lightweight: 
+
+<i>VL is a low-level, fast, fine-grained C++ middleware on top of OpenGL.</i>
+
+\b Integrability: 
+
+<i>Visualization Library is simple to integrate into your framework, you do not need to adapt your own framework to Visualization Library. Moreover, Visualization Library has been designed to seamlessly work side by side with other rendering frameworks, thus allowing a gradual and risk-free transition to Visualization Library.</i>
+
+\b Accurate \b OpenGL \b mapping: 
+
+<i>Visualization Library exposes OpenGL functionalities in a manner that reproduces as closely as possible the original OpenGL semantics and adopts as closely as possible the OpenGL wording and conventions.</i>
+
+\b Simplification: 
+
+<i>Visualization Library development has been heavily inspired by the idea of simplification promoted by OpenGL 3.x/4.x and OpenGL ES 2.0. For this reasons many legacy OpenGL features like edge flags, accumulation buffers, feedback mode, the inefficient immediate mode commands etc. are not used by Visualization Library. While retaining full compatibility with OpenGL 1.1 class hardware, this ensures that Visualization Library size is kept to a minimum and that only the most efficient rendering paths are used.</i>
+
+\b Full \b support \b to \b modern \b GPUs: 
+
+<i>Visualization Library architecture has been designed from the ground up to take full advantage of the most modern OpenGL 4.x features like OpenGL Shading Language, 
+Vertex and Pixel Buffer Objects, Framebuffer Objects, Occlusion Culling, Multiple Render Targets, Geometry Shaders, Tessellation Shaders, Geometry Instancing, 
+true double precision GPU computation and so on, thus providing all the necessary tools to create extraordinary 3D graphics applications.</i>
+
+\b Compatibility: 
+
+<i>Probably the single most important factor that made OpenGL the de-facto standard in the 3D graphics industry has been its ability to evolve and to provide always new features with a consistent API, while at the same time maintaining backwards compatibility. Learning from this lesson, mantaining compatibility even with OpenGL 1.1 class hardware is considered a top priority for Visualization Library.</i>
+
+\b Glass \b box: 
+
+<i>Many rendering engines implement their functionalities as a "black box". This approach usually tends to simplify the life of the casual user as many details are hidden inside the "black box". Instead with Visualization Library the user has transparent access to all the switches and buttons provided by OpenGL from a friendly C++ object oriented framework. This kind of approach might be a bit intimidating at the beginning but the extra effort will be well invested, as you will soon be able to create your own rendering pipeline, your own shading model, your own post processing effects or something that no one has even conceived yet!</i>
+
+\b Uber-scene-graphs? \b OpenInventor/Peformer \b clones? \b no \b thanks! 
+
+<i>While many rendering engines still advertise proudly their "scene-graph oriented architecture", more and more developers are starting to realize that a uber-scene-graph architecture is far from being an optimal data structure for modern 3D engines. Visualization Library, with its radical design, is a remarkable example of this trend and promotes the notion of data structure separation and specialization. Put in simple words, while a uber-scene-graph 3D engine uses a single, overloaded data structure (usually a DAG) to represent transforms, spatial/visibility relationships, material properties etc, Visualization Library separates these concepts, utilizing for each of them an optimal domain-specific data structure (possibly referencing each other). This intuitive approach not only provides superior performances but allows you to customize and extend each aspect independently from all the others.</i>
+
+\b Debug \b friendly \b behaviour: 
+
+<i>Developing modern 3D graphics applications requires every day more and more human resources in terms of programmers and skills. It is a fact that a considerable part of such resources is spent for bug fixing and feature stabilization. This is especially true for 3D graphics applications where cutting-edge technology and highly customized tools are often developed in-house. In order to facilitate the developer's job, Visualization Library has been designed to perform a number of checks that help the developer to identify possible bugs as early as possible and to issue sensible and detailed error messages.</i>
+
+\b Reliable: 
+
+<i>In order to privide the maximum degree of code robustness and reliability Visualization Library comes with a set of regression tests which perform hundreds of tests. Such tests are run consistently throughout the development and especially before every release. Furthermore, the regression test framework has been developed to run under all the platforms and GUI backends supported by Visualization Library.</i>
+
+<div class="featuretitle">GUI Bindings</div>
+
+Even if Visualization Library can be used wherever there is an OpenGL context, several utility classes are available to facilitate even more the integration of VL into your applications. VL officially supports all the most popular C/C++ GUI frameworks such as \b Win32, \b MFC, \b Qt4, \b wxWidgets, \b GLUT, \b SDL and \b Cocoa (experimental). A "GUI binding" mainly consists of a \a window class that, using the framework-specific API, is capable of creating and setting up a vl::OpenGLContext, manages unicode keyboard input, mouse events, file drag and drop, OpenGL resource sharing, framebuffer swap, multiple OpenGL windows and many other things. Thanks to the many ready-to-use GUI bindings available, the developer can start using Visualization Library in just a few minutes and has only to concentrate on creating great 3D graphics applications!
+
+\par Classes
+
+vlWin32::Win32Window, vlMFC::MFCWindow, vlQt4::Qt4Widget, vlWX::vlWXGLCanvas, vlGLUT::GLUTWindow, vlSDL::SDLWindow
+
+<div class="featuretitle">OpenGL Shading Language</div>
+
+There is no doubt that the OpenGL Shading Language is the present and the future of OpenGL. For this reason Visualization Library architecture has been carefully designed from the ground up to exploit the full power of the OpenGL Shading Language and to make it accessible to everyone.
+VL makes the OpenGL Shading Language so simple to use that setting up a complete GLSL program requires just a couple of lines of code!
+Advanced features such as <i>geometry instancing, texture arrays, geometry shaders, tessellation shaders, multiple render targets</i> etc. are fully supported as well.
+
+\par Classes
+
+vl::GLSLFragmentShader, vl::GLSLVertexShader, vl::GLSLGeometryShader, vl::GLSLTessEvaluationShader, vl::GLSLTessControlShader, vl::GLSLProgram, vl::Uniform
+
+\par Related Pages
+
+- \ref pagGuideGLSL "OpenGL Shading Language"
+
+<div class="featuretitle">Volume Rendering</div>
+
+Visualization Library also provides a set of simple and powerful classes to perform volume rendering, isosurface extraction and 3D plots from volume data. 
+- The vl::RaycastVolume class can be used to implement direct volume rendering techniques using ray-casting directly on the GPU such as: MIP, isosurface, integration etc.
+- The vl::SlicedVolume class implements all the basic functionalities needed to perform a direct volume rendering with and without OpenGL Shading Language. 
+When the OpenGL Shading Language is used Blinn-Phong lighting and transfer function computations are performed in realtime. 
+- The vl::MarchingCubes is a powerful class that uses an efficient implementation of the marching cubes algorithm to extract one or more isosurfaces from one or more volume data.
+- The vl::VolumePlot is an utility class that takes a volume data and automatically extracts the isosurface at the specified threshold and generates a plot with labels.
+
+\par Classes
+
+vl::SlicedVolume, vl::MarchingCubes, vl::VolumePlot
+
+\par Related Pages
+
+- \ref pagGuideMarchingCubes "Volume Rendering and Isosurfaces Extraction with Marching Cubes Tutorial"
+- \ref pagGuideSlicedVolume "Volume Rendering with Transfer Functions and Lighting Tutorial"
+
+<div class="featuretitle">Hardware Accelerated 2D Vector Graphics</div>
+
+The mission of Visualization Library is not only to provide cutting edge technology for 3D graphics application but also to open the world of hardware accelerated 
+2D graphics for applications like plotting, charting, data mining and many others. The lack of support for hardware accelerated 2D graphics is almost embarrassing 
+and even when such support is claimed, very few times the performances come close to the full potential of modern GPUs. 
+
+Visualization Library enables true OpenGL accelerated 2D vector graphics via the following intuitive classes: vl::VectorGraphics and vl::SceneManagerVectorGraphics. 
+
+Using such classes the developer has full access to standard functionalities like <i>boxes, lines, ellipses, tansforms, clipping</i> etc. but also to advanced features like 
+<i>texturing, point sprites, stencil operations, antialiasing, high quality text rendering and all the blending modes supported by OpenGL</i>! 
+
+All this using an intuitive interface that optimally generates vl::Actor, vl::Geometry, vl::Shader etc. objects and commands that are rendered at full speed!
+
+\par Classes
+
+vl::VectorGraphics, vl::SceneManagerVectorGraphics
+
+\par Related Pages
+
+- \ref pagGuideVectorGraphics "OpenGL Accelerated 2D Vector Graphics"
+
+<div class="featuretitle">High Performances</div>
+
+In order to maximize the rendering performances Visualization Library employs several techniques:
+
+- \b Vertex \b Buffer \b Objects: allows Visualization Library to store the geometrical information directly on the GPU, thus neutralizing the RAM-to-GPU communication bottleneck and maximizing the GPU triangle throughput.
+- \b Pixel \b Buffer \b Objects: allows Visualization Library to store the image data directly on the GPU, thus neutralizing the RAM-to-GPU communication bottleneck and maximizing the performances of image rendering and copy operations.
+- \b Display \b Lists: allows Visualization Library to compile a set of rendering commands which can be recalled later with a single function call. Since the compilation process optimizes the rendering commands and data, using display lists can bring a remarkable performance boost for some applications, in particular when used with static geometries.
+- \b Render \b State \b Sorting: in order to minimize the amount of rendering commands sent to the GPU Visualization Library sorts the visible objects based on their rendering states.
+- \b Lazy \b Render \b State \b Setup: in order to minimize the amount of rendering commands sent to the GPU Visualization Library also implements an efficient mechanism that allows Visualiation Library to setup only the rendering states that have changed from the last rendered object.
+- \b Occlusion \b Culling, \b Portal \b Culling and \b Hierachical \b Frustum \b Culling (kd-tree and others): 
+	in order to minimize the amount of objects sent through the rendering pipeline Visualization Library uses several culling techniques such as hierachical frustum culling 
+	based on \a bounding \a volume \a hierachies and <i>occlusion culling</i>. For example the vl::SceneManagerActorKdTree class uses a \a KdTree to hierachically determine 
+	the objects within the view frustum. Kd-trees are an efficient and flexible data structure that can effectively replace even quadtrees and octrees. 
+	The vl::SceneManagerPortals on the other hand implements a \a portal \a based \a hidden \a suface \a removal which is very efficient to render highly occluded environments. 
+	In addition VL natively supports also the \a GL_ARB_occlusion_query extension, which allows your applications to exploit the benefits of true OpenGL-accelerated 
+	occlusion culling! Other culling techniques like \a PVS (potentially visible set) etc. can be used implementing an appropriate vl::SceneManager.
+- \b LOD (\b Level \b Of \b Detail): in order to accelerate the rendering process, Visualization Library supports both geometrical and shader based LOD. With geometrical LOD you can render objects that are far away using a lower level of detail, i.e. using less vertices and polygons. With shader based LOD you can render objects that are far away using a simpler shader or using less rendering passes, while at the same time you can render objects that are close to the camera using more detailed and complex shaders and geometries.
+
+\par Classes and Functions
+
+vl::Actor, vl::Effect, vl::LODEvaluator, vl::DistanceLODEvaluator, vl::Actor::setLODEvaluator(), vl::Effect::setLODEvaluator(), vl::Renderable::setDisplayListEnabled(), vl::Geometry::setVertexBufferObjectsEnabled()
+
+\par Related Pages
+
+- \ref pagGuideOcclusionCulling "OpenGL-Accelerated Occlusion Culling Tutorial"
+- \ref pagGuidePortals "Portal-Based Culling and Scene Management Tutorial"
+- \ref pagGuideRenderOrder "Rendering Order"
+
+<div class="featuretitle">Flexible Scene Management</div>
+
+Visualization Library uses a simple and extensible scene management system and provides several ready-to-use scene managers:
+- vl::SceneManagerActorTree - a generic \a bounding \a volume \a hierarchy based scene manager.
+- vl::SceneManagerActorKdTree - a \a kd-tree based scene manager which is also a generic and efficient replacement for quadtrees and octrees.
+- vl::SceneManagerPortals - a scene manager that implements \a portal/sector-based hidden surface removal, especially suitable to render highly occluded environments such as indoors and urban environments.
+
+Scene managers using other techniques like \a PVS (potentially visible set) etc. can be also used implementing an appropriate vl::SceneManager subclass.
+
+<i>Note that Visualization Library allows you to seamlessly use multiple scene managers at the same time!</i>
+
+\par Classes
+
+vl::SceneManager, vl::SceneManagerActorTree, vl::SceneManagerActorKdTree, vl::SceneManagerPortals, vl::Rendering
+
+\par Related Pages
+
+- \ref pagGuidePortals
+
+<div class="featuretitle">Automatic Transparency Management</div>
+
+Visualization Library automatically sorts transparent objects in order to perform a correct rendering. The user is not required to setup any special "transparent bin" 
+or other trickery to define any explicit rendering order as Visualization Library automatically detects and manages transparent objects. 
+However, the developer retains full control over the object rendering order via the vl::Actor::setRenderRank(), vl::Actor::setRenderBlock() and vl::Effect::setRenderRank() 
+methods. The developer can also install a custom vl::RenderQueueSorter using the vl::Rendering::setRenderQueueSorter() method.
+
+In case you need to render a convex transparent object then you have to ensure that its polygons are properly depth-sorted. 
+You can do this by simply installing a vl::DepthSortCallback to your vl::Actor.
+
+\par Classes
+
+vl::DepthSortCallback, vl::Actor, vl::Effect, vl::Rendering, vl::RenderQueueSorter
+
+\par Related Pages
+
+- \ref pagGuideRenderOrder
+
+<div class="featuretitle">Shader and Geometry: LOD, Multipassing and Animation</div>
+
+Visualization Library can naturally manage complex scenarios where Effects and/or Actors define several LODs with possibly multiple rendering passes each and with animations defined for each pass and LOD. Visualization Library not only manages naturally such scenarios but also ensures that the animations are computed only once per frame, for only the visible LODs, for each pass, for both Shaders and Actors!
+
+\par Classes
+
+vl::Actor, vl::Effect, vl::Shader
+
+<div class="featuretitle">OpenGL Shading Language Based C++ Math Library</div>
+
+Visualization Library features a complete vector and matrix math library designed to replicate as closely as possible in C++ the OpenGL Shading Language types and functons. VL's math library provides the developer with 2, 3, and 4 components vector (\p float, \p double, \p int, \p unsigned \p int etc.), 2x2, 3x3, 4x4 \p float and \p double matrices, vector/vector, vector/matrix and matrix/matrix operations, a quaternion class to conveniently represent and manipulate rotations and orientations and much more. The glsl_math.hpp module also provides C++ implementations of the most important OpenGL Shading Language scalar and vector functions.
+
+\par Classes
+
+- vl::dvec4, vl::dvec3, vl::dvec2
+- vl::fvec4, vl::fvec3, vl::fvec2
+- vl::ivec4, vl::ivec3, vl::ivec2
+- vl::uvec4, vl::uvec3, vl::uvec2
+- vl::dmat4, vl::dmat3, vl::dmat2
+- vl::fmat4, vl::fmat3, vl::fmat2
+- vl::fquat, vl::dquat
+- vl::Matrix4, vl::Matrix3, vl::Matrix2
+- vl::Vector4, vl::Vector3, vl::Vector2
+- vl::Quaternion
+- vl::AABB, vl::Sphere, vl::RectI, vl::RectF
+
+\par Related Pages
+
+- \ref pagGuideMath
+
+<div class="featuretitle">Framebuffer Objects</div>
+
+Modern OpenGL applications make heavy use of framebuffer objects (\p EXT_framebuffer_object extension) to implement efficient render to texture, offscreen rendering and post processing effects. Visualization Library has been designed to take full advantage of framebuffer objects where available and makes rendering to a framebuffer objects as easy as using the standard OpenGL framebuffer. Besides providing the standard framebuffer object functionalities, Visualization Library goes the extra mile, delivering first-class support for framebuffer objects also in conjuction with many other extensions like \p EXT_texture_array, \p EXT_framebuffer_blit, \p EXT_framebuffer_multisample, \p EXT_packed_depth_stencil, \p ARB_geometry_shader4, \p ARB_texture_rectangle, \p ARB_texture_cube_map, 3D textures and so on.
+
+\par Classes
+
+vl::FramebufferObject, vl::FBOAttachmentAbstract, vl::FBORenderbufferAttachment, vl::FBOColorBufferAttachment, vl::FBODepthBufferAttachment, vl::FBODepthStencilBufferAttachment, vl::FBOStencilBufferAttachment, vl::FBOTexture1DAttachment, vl::FBOTexture2DAttachment, vl::FBOTexture3DAttachment, vl::FBOTextureAttachment, vl::FBOTextureLayerAttachment, vl::BlitFramebuffer
+
+\par Related Pages
+
+- \ref pagGuideFramebufferObject
+
+<div class="featuretitle">Automatic Progressive OpenGL Extension Management</div>
+
+The extension mechanism provided by OpenGL has proved to be one of the key factors for the success and longevity of this elegant API.
+However, exploiting effectively all the possible hardware configurations and all the available extensions can easily become an overwhelming task. For this reason Visualization Library tackles this task for you, querying the available extensions in an automatic manner and selecting and using the most appropriate ones to deliver maximum performance and stability. We refer to this intelligent selection mechanism as "Progressive OpenGL Extension Management". The principle is very simple, wherever an OpenGL feature is requested not only Visualization Library looks for \a an extension to support it but looks for the \a best implementation of that functionality, checking first among the functions which are directly supported by the current OpenGL implementation, then looking among the \a ARB extensions, then looking among the \a EXT extensions, then among the vendor specific extensions if necessary.
+
+<div class="featuretitle">VLX Serialization Framework</div>
+
+VL provides its own serialization framework called VLX. VLX is actually more than a serialization framework. VLX comes in two forms: VLT (text) and VLB (binary). A VLT file is something like XML or JSON but much less verbose and more efficient in terms of parsing and data extraction. A VLT file can typically contain GLSL shader code as is (impossible with XML and JSON), when loaded can automatically resolve object references, even cyclical ones, can recognize automatically large block of numerical data and present them as an std::vector<> of \a double or \a long '\a long. VLT files can also be linked together and refer to objects defined in other VLT or VLB files. A VLB file is simply a compact binary encoding of a VLT file. VLT have been designed to store data efficiently yet to be easily editable by humans, while a VLB has been designed to retain all the information contained in a VLT file but storing them for quick input/output.
+
+VLT and VLB files can currently contain geometries, actors, transform, materials, lights, textures, cameras and all the most common VL classes. More will be added in the future and more can be added by the user either by subclassing existing ones or creating new serialized classes from scratch.
+
+The VLX framework allows the user also to modify the VLX hierachy before it is serialized into a VLT or VLB much like a COLLADA user would moanipulate the XML DOM tree to add custom fields.
+
+\par Classes
+
+vl::VLXSerializer, vl::VLXParserVLT, vl::VLXParserVLB, vl::VLXValue, vl::LoadWriterVLX, vl::loadVLT(), vl::saveVLT(), vl::loadVLB(), vl::saveVLB()
+
+<div class="featuretitle">Advanced Texturing</div>
+
+Taking advantage of the latest and most advanced texturing techniques is a breeze with Visualization Library. 
+The vl::Texture class provides out of the box and transparent support for all the texture formats supported by OpenGL 4.1! This includes multitexturing support, 1D, 2D and 3D textures, cubemap textures, texture rectangles, 1D and 2D texture arrays, automatic mipmaps generation (hardware-accelerated where available), anisotropic filtering, compressed textures, depth textures, integer textures, non normalized floating point textures, and much more! You can also easily manipulate texture parameters, texture matrices, automatic texture coordinate generation and texture environment settings using a few intuitive classes!
+
+\par Classes
+
+vl::Image, vl::Texture, vl::TexParameter, vl::TexEnv, vl::TexGen, vl::TextureMatrix, vl::TextureSampler, vl::CopyTexSubImage1D, vl::CopyTexSubImage2D, vl::CopyTexSubImage3D, vl::Shader
+
+\par Related Pages
+
+- \ref pagGuideTextures "Texturing"
+
+<div class="featuretitle">Unicode support, Text Manipulation and Rendering</div>
+
+Text rendering and manipulation (not to mention Unicode support) has always been the Achilles' heel of many 3D graphics applications.
+Visualization Library inverts this situation and brings to VL developers first class Unicode support, high-quality text rendering, and feature-rich text manipulation classes. Visualization Library not only provides high-quality Unicode text rendering (based on FreeType) but also a set of powerful text manipulation classes that can be considered a library on their own. In particular the vl::String class implements a feature-rich <i>Unicode text manipulation engine</i> that can be used not only to load, parse, split, trim, search and replace text but that can interoperate with \p std::string and \p std::wstring, can encode to/from Latin1, UTF8 and UTF16BE/LE, can perform Unicode-aware case transformations and much more!
+
+\par Classes
+
+vl::String, vl::Text, vl::Font, vl::FontManager, vl::TextStream, vl::Say, vl::Log
+
+\par Related Pages
+
+- \ref pagGuideText
+
+<div class="featuretitle">Virtual File System</div>
+
+In order to load and write resources VL uses an extensible system called "Virtual File System". 
+Anything that can be written to or read from can be implemented as vl::VirtualFile. 
+Anything that is capable of containing or enumerating \p VirtualFiles can be implemented as a vl::VirtualDirectory. 
+Using this mechanism VL can read and write files that are stored in the RAM, on a disk, that are compressed in an archive or that are transparently downloaded from an HTTP connection. 
+VL provides out of the box support for <i>memory files and directories, disk files and directories, zipped files and directories, and a codec to read and write GZ compressed files</i>. 
+This mechanism can be easily extended to implement \p VirtualFiles and \p VirtualDirectories that operate over Internet or that encode, compress or encrypt stream of data on the fly, 
+in a manner that is completely transparent to Visualization Library's resource IO functions!
+
+\par Classes
+
+vl::GZipCodec, vl::VirtualFile, vl::VirtualDirectory, vl::DiskFile, vl::DiskDirectory, vl::MemoryFile, vl::MemoryDirectory, vl::ZippedFile, vl::ZippedDirectory, vl::FileSystem.
+
+\par Related Pages
+
+- \ref pagGuideIO
+
+<div class="featuretitle">Image IO and Manipulation</div>
+
+Visualization Library provides support to all the most common image file formats like \p PNG, \p JPG, \p DDS, \p DICOM, \p TIFF, \p TGA and \p BMP. Not only vl::Image is capable of storing any kind of texture (2D, 3D, cubemaps, arrays, compressed images etc.) supported by OpenGL, but can also load and write them on a variety of virtual devices (even custom defined) using the Virtual File System mechanism. vl::Image can also store its data on a local memory buffer or directly on the GPU memory, taking full advantage of the \p ARB_pixel_buffer_object extension. Moreover, vl::Image allows you to perform operations like sampling the pixel of an image regardless of it's data format and type, and convert among several image formats and types, like converting a \p GL_RGBA/GL_FLOAT image into a \p GL_LUMINANCE/GL_UNSIGNED_BYTE one (automatically performing a color to grayscale conversion)!
+
+\par Classes and Functions
+
+vl::Image, vl::Image::convertType(), vl::Image::convertFormat(), vl::Image::sample(), vl::Image::sampleLinear(), vl::Image::readPixels()
+
+<div class="featuretitle">Extensible Resource I/O System</div>
+
+Visualization Library implements an intuitive and extensible mechanism to load and write a broad range of resource types such as images, 3d file formats like \p 3DS, \p OBJ, \p PLY, \p STL, \p AC3D etc. 
+This mechanism is centered around three simple concepts: 
+- 1) A resource database (vl::ResourceDatabase) that stores the information loaded or to be written.
+- 2) A set of resource load-writers (vl::ResourceLoadWriter) that implement the specific algorithm which reads and/or writes a specific resource type from/to a resource database.
+- 3) A manager class (vl::LoadWriterManager) that coordinates the resource load-writers. 
+
+This way not only it is possible to load and write resources in a simplified and centralized way, regardless of the resource type, but the resource types supported can be extended by the user  implementing a new vl::ResourceLoadWriter and registering it to the vl::LoadWriterManager. Futhermore, the user can also provide a customized vl::ResourceLoadWriter to override the ones shipped with Visualization Library if it is needed. When, for example, an application requests an image using the vl::loadImage() function, the appropriate vl::ResourceLoadWriter is picked by the vl::LoadWriterManager, and the resource is loaded from the specified path or vl::VirtualFile.
+
+\par Classes
+
+vl::ResourceDatabase, vl::ResourceLoadWriter, vl::LoadWriterManager
+
+vl::LoadWriterDICOM, vl::LoadWriterPNG, vl::LoadWriterJPG, vl::LoadWriterTIFF, vl::LoadWriterDDS, vl::LoadWriterTGA, vl::LoadWriterBMP, vl::LoadWriterDAT, vl::LoadWriter3DS, vl::LoadWriterOBJ, vl::LoadWriterAC3D, vl::LoadWriterPLY, vl::LoadWriterSTL, vl::LoadWriterMD2
+
+\par Related Pages
+
+- \ref pagGuideIO "Loading and Saving Resources"
+
+<div class="featuretitle">Terrain Scene Manager</div>
+
+Some applications do not need complex LOD or CLOD management algorithms to display height fields or terrains, either because the data displayed has a limited size or because particular constraints are applied to the camera (like in RTS games for example) for which only a limited portion of the terrain is visible at a given time. This applications can greatly benefit from the vl::Terrain scene manager which implements a fool-proof, high-precision (8, 16 and 32 bits heightmaps) and efficient terrain/heightfield generation and management system. All the user has to provide is a texture for the terrain, a heightfield image and a detail texture following very simple and precise guidelines. The vl::Terrain class takes care of all the rest, like dividing the provided images into chunks, generating the geometry, generating the kd-tree, computing the appropriate texture coordinates in order to prevent seams and so on. If the OpenGL Shading Language is available, the vl::Terrain class can also store the heightmap directly on the GPU and can generate the geometry on the fly using a technique called "vertex texture fetch" (http://developer.nvidia.com/object/using_vertex_textures.html). This technique allows the application to save GPU memory and to manage even greater terrain databases at a higher speed.
+
+\par Classes
+
+vl::Terrain
+
+\par Related Pages
+
+- \ref pagGuideTerrain "Simple Terrain"
+
+<div class="featuretitle">Memory Management</div>
+
+Visualization Library memory management has been designed following three main principles:
+
+- \b Smart-pointers: Visualization Library implements a simple and friendly reference-count based memory management system (via the vl::ref<> class) which greatly simplifies the life of the developer and adds robustness to the application.
+- \b Resource \b sharing: to optimize the resource usage and the rendering performances Visualization Library has been developed to provide the highest possible degree of resource sharing throughout the library. For example two vl::Effect can share tha same vl::Shader, two vl::Shader can share the same render states, two vl::Actor can share the same vl::Transform, vl::Geometry or vl::Effect, two vl::Geometry can share the same vertex attributes and so on.
+- \b Quick \b allocation: complex applications often need to allocate and deallocate quickly hundreds of thousands of objects. For this reason each class of Visualization Library has been designed to be allocated as quickly as possible and to issue as few dynamic memory allocations as possible.
+
+\par Related Pages
+
+- \ref pagGuideMemory "Memory Management"
+
+<div class="featuretitle">Geometrical Primitives</div>
+
+Visualization Library provides the developer with several ready-to-use and configurable geometrical primitives like bicubic bezier surfaces, extrusions, cubes, spheres, toruses, grids, pyramids, circles, point clouds etc.
+
+\par classes
+
+- vl::BezierSurface
+- vl::Extrusion
+
+\par Functions
+
+- vl::makeIcosphere()
+- vl::makeCylinder()
+- vl::makeUVSphere()
+- vl::makeTorus()
+- vl::makeCone()
+- vl::makePyramid()
+- vl::makeBox()
+- vl::makeGrid()
+- vl::makeIcosahedron()
+- vl::makePoints()
+- vl::makeCircle()
+- vl::makeCapsule()
+
+\par Related Pages
+
+- \ref pagGuidePrimitives "Geometrical Primitives"
+
+*/

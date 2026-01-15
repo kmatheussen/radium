@@ -1,0 +1,15 @@
+language: cpp
+compiler:
+  - gcc
+before_install:
+  - sudo add-apt-repository --yes ppa:ubuntu-sdk-team/ppa
+  - sudo apt-get update -qq
+  - sudo apt-get install -qq cmake qt5-default
+  
+script: mkdir build && cd build && cmake .. -DVL_GUI_QT5_SUPPORT=ON && make
+notifications:
+  email:
+    recipients:
+      - vkocherizhkin@gmail.com
+    on_success: change
+    on_failure: always

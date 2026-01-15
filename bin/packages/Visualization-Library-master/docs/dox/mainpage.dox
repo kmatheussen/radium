@@ -1,0 +1,50 @@
+/**
+	\mainpage Visualization Library Reference Documentation
+
+	<center><a href="http://www.visualizationlibrary.org">www.visualizationlibrary.org</a></center>
+	
+	<table width=1000 border=0 style="border: 0px solid #EEEEEE"><tr><td>
+
+	<div class="featuretitle">Basic Information</div>
+
+	- \subpage pagIntro "Introduction"
+	- \subpage pagKeyFeatures "Features Overview"
+	- \subpage pagContacts "Contacts"
+	- \subpage pagGallery "Gallery"
+ 
+	<div class="featuretitle">Downloads</div>
+
+	- \subpage pagChangelog "Changelog"
+	- <a target=_blank href="http://www.visualizationlibrary.org/documentation/downloads.php">Download page</a>
+ 
+	<div class="featuretitle">Getting Started</div>
+
+	- \subpage pagInstall "Compiling and Installing VL"
+	- \subpage pagKnowledgeBase "Knowledge Base"
+	- \subpage pagLearning "Learning VL"
+	- \subpage pagDesign "Architecture Diagrams"
+	- \subpage pagOpenGL "OpenGL to VL Mapping"
+	- \subpage pagGuides "Tutorials"
+ 
+	<div class="featuretitle">API Documentation</div>
+
+	- \subpage pagMainClasses "Grouped Classes and Functions"
+	- <a href="annotated.html">Annotated Class List</a>
+	- <a href="classes.html">  Alphabetical Class List</a>
+	- <a href="hierarchy.html">Class Hierarchy</a>
+
+	<div class="featuretitle">Community</div>
+
+	- <a target=_blank href="http://www.visualizationlibrary.org/forum">Forums</a>
+	- <a target=_blank href="http://www.twitter.com/VizLibrary">Twitter</a>
+	- \subpage pagContributing "Contributing"
+	
+	<div class="featuretitle">Licensing and Credits</div>
+
+	- \subpage pagLicensing "Licensing"
+	- \subpage pagCredits "Credits"
+
+	</td></tr></table>
+	</center>
+*/
+

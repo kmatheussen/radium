@@ -1,0 +1,8 @@
+/**
+	\page pagContributing Contributing to Visualization Library
+
+	If you would like to develop a new feture or fix or extend existing ones please send your patches on the 
+	<a target=_blank href="http://www.visualizationlibrary.org/forum">forum</a> or directly at: michele &lt;at&gt; visualizationlibrary &lt;dot&gt; org.
+	
+	If you would also like to be credited please send me your name and I will be more than happy to insert it in the \ref pagCredits page.
+*/

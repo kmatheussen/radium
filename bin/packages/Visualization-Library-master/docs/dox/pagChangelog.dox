@@ -1,0 +1,852 @@
+﻿/**
+
+   \page pagChangelog Changelog
+
+	<div class="featuretitle">Visualization Library 2011.09.1160 RC3</div>
+
+   - Various fixes for broader support to generic vertex attributes.
+
+	<div class="featuretitle">Visualization Library 2011.09.1160 RC2</div>
+
+   - Fixed MinGW and MSYS compilation errors.
+
+	<div class="featuretitle">Visualization Library 2011.09.1160 RC1</div>
+
+   - Allow DrawElements and DrawRangeElements to use an arbitrary window of the index buffer.
+
+	<div class="featuretitle">Visualization Library 2011.05.1144 (maintenance release of VL 2011.05.1142)</div>
+
+	- Bug: fixed FontManager::acquireFont() always returning entry #0.
+	- Bug: fixed Matrix3::getInverse() returning the transpose of the inverse.
+	- Bug: fixed bug when destroying a Transform with children did not set mParent to NULL.
+	- Bug: fixed lag when starting font rendering with many glyphs.
+	- Bug: fixed problems and typos in FindVL.cmake.
+	- Bug: fixed vl::Time precision when system is up for several days.
+	- Bug: fixed partial GLSLProgState sorting in Renderer.cpp.
+	- actorQueue() cleared after rendering to potentially release rendered objects.
+	- Matrix4::getInverse() implemented using cofactors method give 3.5X speedup.
+	
+	<div class="featuretitle">Visualization Library 2011.09.1157</div>
+
+	- Added new tool: vlxtool.exe: convert data to vlt/vlb format.
+	- Added several GLSL shader examples in test "glsl": procedural bump mapping, wood shader, various marble shaders, hatching shader, cloud shader, ribbon shader, the classic toy-ball shader etc. Shown also in the gallery.
+	- <b>Matrix4::getLookAt() changed semantic</b>: now returns the view-look-at-matrix rather than the modeling-look-at-matrix to comply with OpenGL and COLLADA conventions. See also vl::Matrix4::getLookAtModeling().
+	- Matrix4::getInverse() uses co-factor method: 3.5X quicker and slightly more precise.
+	- More efficient setup of vertex arrays and buffer object usage.
+	- More efficient vl::Material setup.
+	- Added MurmurHash3 quick and reliable hash functions to use with hash tables (not for cryptographic uses).
+	- Added vl::MersenneTwister for high quality and fast random number generation.
+	- LoadWriterManager automatically and transparently loads .gz-ipped files.
+	- Tests can be called by name (besides their number).
+	- App_ModelProfiler.cpp allow drag and drop of GLSL shaders.
+	- Shader::get* return NULL when RenderStateSet is NULL.
+	- Improvements to OBJ loader, correctly handle alpha blending and mask maps.
+	- API:
+		- Removed 'As' from the vl::Camera projection setters, 'As' should be used only for the getters of both matrices and camera.
+		- Camera 'local' matrix renamed to more correct 'modeling' matrix.
+		- blendingEnabled() renamed isBlendingEnabled().
+	- BUGS:
+		- Fixed TypeInfo problems with DLLs and vl namespace.
+		- Fixed FontManager::acquireFont() always returning entry #0.
+		- ShaderNode render state indices made coherent with their usage in Shader.
+
+	<div class="featuretitle">Visualization Library 2011.09.1155</div>
+
+	- <b>New VLX framework</b>:
+		- Several VL classes can now be saved and restored to VLT (text) and VLB (binary) files, including: vl::Actor, vl::Shader, vl::Effect, vl::Transform, vl::GLSLProgram and vertex/fragment/geometry/tess-evaluation/tess-control shaders, vl::Uniform, vl::Light, vl::Material, vl::Texture, vl::Camera, vl::DepthSortCallback, vl::PixelLODEvaluator and vl::DistanceLODEvaluator, all draw calls and vl::Array subclasses and several others.
+		- The framework allows the user to add or subclass a class wrapper for serialization following a few simple steps.
+		- The VLX framework is a sort of XML designed to efficiently represent numerical data and complex networks of objects referencing each other. It can be used to represent any type of data also besides VL classes. The VLX is much less verbose than XML and at the same time more efficient than JSON to store numerical data. It also allows the embedding of GLSL shaders (or any programming language bascally) with virtually no modification or encoding. This means that you can edit 99.99% of GLSL shader code directly in a VLT file as is, which is impossible in XML and JSON due to the encoding rules they use. References to objects are also automatically resolved when loading or saving VLX files and you can even link multiple VLX files togeter, i.e. a VLX file can refer to an object defined in a separate VLX file and then linked together.
+		- VLT and VLB are just representations of a VLX hierarchy. Adding new representations is surprisingly simple actually. For example one could create an XML representation to take advantage of XML validation. There is no VLX validator at the moment. 
+		- In the future it will be possible to embed binary blobs in both VLT and VLB representations and the number of wrapped classes will grow to include the missing render states, scene managers, and all the objects necessary to setup rendering pipelines.
+	- <b>COLLADA</b>: added support for importing .dae files: geometry, basic materials and lights.
+	- vl::PolygonSimplifier: allows also non-ArrayFloat3 input. Now can output multiple mesh resolutions of the same mesh in 1 single run i.e in a fraction of the time previously required.
+	- vl::DoubleVertexRemover speed improvements and code cleaning.
+	- vl::Geometry updates: 
+		- Geometry copy methods policy made coherent with vl::Shader and vl::Effect copy methods.
+		- Implemented completely generic vl::Geometry::shrinkDrawCalls() and vl::Geometry::triangulateDrawCalls().
+		- Added vl::Geometry::fixTriangleWinding().
+		- Added vl::Geometry::mergeDrawCallsWithMultiDrawElements().
+		- Added vl::Geometry::mergeDrawCallsWithPrimitiveRestart().
+		- Updated vl::Geometry::mergeTriangleStrips() to use index iterators.
+		- Refactored vl::Geometry::makeGLESFriendly().
+	- vl::DrawElements, vl::MultiDrawElements, vl::DrawRangeElements classes fixed, refactored and retested.
+	- vl::Array exposes 'vector_type', 'gl_size' and 'gl_type' to ease template code using them.
+	- Added vl::DrawElements::setIndexBuffer() to allow the sharing of index buffers among several draw calls.
+	- Added std_types.hpp file exposing basic typedefs, the new vl::degree and vl::radian classes and swapBytes() function to easily swap te byte order of common types.
+	- vl::DepthSortCallback code and comments update + allows use of any kind of vertex array.
+	- Bug: fixed lag when starting to render text.
+	- Various 'const'-ness fixes for better consness enforcing. In particular vl::ref<> now enforces the constness much more strictly.
+	- CMake scrips updated to allow debug/release extra library linking.
+	- Bug: fixed missing plug-in headers when installing.
+	- vl::TexParameter can now be specified also at the vl::TextureSampler level to allow easy COLLADA/DirectX-like effects specification. Essentially this allows a vl::Texture to use more than one vl::TexParameter which might be required in particular use cases.
+	- Automatic tracking of previous render states and enables.
+	- <b>New indexed render states management</b>:
+		- Till now indexed render states such as lights, clipping planes and texture unit related render states had their binding index hardwired in the render state class making it impossible to share the same indexed render states among different shaders with a different index. Now it is possible for a light, a clipping plane etc. to be bound to the same or a different shader with the same or different binding point, maximizing render states reusability and simplifying the code necessary to their management.	
+		- Currently indexed render states are: vl::ClipPlane, vl::Light, vl::TexEnv, vl::TexGen, vl::TextureMatrix, vl::TextureSampler, vl::VertexAttrib.
+		- Render states management updated to allow \a future support to indexed blending states and enables and later maybe also indexed viewports, depth-range and scissoring at some point...
+	- <b>New constant attributes render states to be used in vl::Shader:</b> 
+		- vl::VertexAttrib indexed render state: wraps the constant generic vertex attributes.
+		- vl::Color, vl::SecondaryColor and vl::Normal: their use can potentially minimize the use of dummy arrays for geometries with attributes whose value does not change across the vertices and allowing the same geometry to be rendered with several different solid colors (which was nearly impossible before).
+	- vl::Transform: 
+		- Refactored to its original simpler form.
+		- Update children local matrix to their world matrix when orphaning.
+		- Added vl::Transform::preMultiply() and vl::Transform::postMultiply() methods.
+		- Added vl::Transform::flattenHierarchy().
+		- Bug: fixed crash when destroying Transforms with children.
+	- Bug: fixed vl::Matrix3::getInverse() function, was returning the transpose inverse.
+	- Finalized App_DrawCalls demo-test: checks primitive restart, base vertex, MultiDrawElements, index iterators, triangle iterators.
+	- Added vl::String::fromPointer() to create a string representing the given pointer.
+	- vl::String::normalizeSlashes() now takes care also of . and ..
+	- Added VL_UNIX_INSTALL_MODE option to allow VL installation to be done into unix path structure
+	- FindVL.cmake: added VL module comments.
+	- Bug: fixed FindVL.cmake errors.
+	- Bug: fixed installation of vlGraphics/GL folder.
+	- pagInstall.dox updated with instructions on how to use VL with a CMake-based project.
+	- Several other minor fixes, enhancements and documentation updates.
+	- <b>API CHANGES</b>
+		- RenderTarget renamed vl::Framebuffer.
+		- FBORenderTarget renamed vl::FramebufferObject.
+		- vl::LoadWriterManager and vl::FileSystem now use plain std::vector instead of vl::Collection<>.
+		- std::string usage rationalized: std::string setters now use "const char*" to minimize the creation of temporary objects.
+		- Prefix of IO plugins changed from 'vl' to 'io' i.e. ioVLT, ioVLB, ioDae, io3DS, ioPNG, ioJPG etc.
+		- Enforced coherent policy on file names: GLSLmath.hpp -> glsl_math.hpp, math3D.hpp -> math_utils.hpp etc.
+		- followTransform() methods renamed boundTransform() for coherency with vl::Camera
+		- Removed vl::Log::info() which didn't seem to fit anywhere, added vl::Log::notify() which is a high importance vl::Log::print()
+		- vl::DrawElements::indices() renamed vl::DrawElements::indexBuffer()
+		- TriangleIterator::isEnd() changed to vl::TriangleIterator::hasNext() and IndexIterator::isEnd() to vl::IndexIterator::hasNext() for better similarity with other APIs (such as Java iterators etc.).
+		- FBO API made coherent with other GL resources:
+			- create() -> createFBO() and createFBORenderTarget()
+			- destroy() -> deleteFBO() and deleteRenderBuffer()		
+		- <b>Legacy GPUBuffer / GLBufferObject / VBO language have been completely replaced with the more correct 'BufferObject' language</b>:
+			- GLBufferObject renamed vl::BufferObject
+			- gpuBuffer() renamed bufferObject()
+			- sizeGPU() renamed sizeBufferObject()
+			- scalarCountGPU() renamed scalarCountBufferObject()
+			- createGLBufferObject() renamed createBufferObject()
+			- deleteGLBufferObject() renamed deleteBufferObject()
+			- downloadGLBufferObject() renamed downloadBufferObject()
+			- mapGPUBuffer() renamed mapBufferObject()
+			- unmapGPUBuffer() renamed unmapBufferObject()
+			- EGLBufferUsage renamed EBufferObjectUsage
+			- EGLBufferAccess renamed EBufferObjectAccess
+			- mBufferGPU renamed mBufferObject etc.
+		- <b>VBO/BufferObject changes</b>:
+			- New vl::EBufferObjectUpdateMode flags for clearer API.
+			- \a updateVBO(bool) replaced by \a updateBufferObject(vl::EBufferObjectUpdateMode mode), which now always updates the BufferObjects.
+			- \a updateDirtyVBO(bool) replaced by \a updateDirtyBufferObject(vl::EBufferObjectUpdateMode mode), which updates the BufferObjects only if dirty.
+			- VL never sets a vl::BufferObject's dirty flag, it is totally under the user's control now. This is to make the behavior of VL more predictable and also avoid unwanted/unnecessary data updates.
+
+	<div class="featuretitle">Visualization Library 2011.07.1153</div>
+	
+	- New class instrumentation system for portable RTTI-like functionalities.
+	- Added TypeInfo regression test.
+	- Texturing tutorial basically rewritten.
+	- vl::Texture::createTexture*() returns boolean value to report success/failure.
+	- Camera enhancements:
+		- vl::Camera::computeNearFarOptimizedProjMatrix() now support orthographic projections as well and issues error if unsupported projection is used (Camera::setProjectionAsFrustum() and custom projection types).
+		- added Camera::left(), Camera::right(), Camera::bottom(), Camera::top() methods.
+		- the projection type now is tracked by projectionMatrixType() and required to be set when setting the projection type.
+		- proper support to Camera::setProjectionAsFrustum() and added comments.
+		- Camera::setProjectionAsOrtho() now can use parameters other than the ones coming from the viewport.
+		- Camera::setProjectionAsOrtho2D() requires explicit offset now for better clarity.
+	- Actor queue cleared after a rendering.
+	- Lots of docs update, code cleanup and OpenGL ES fixes.
+	- <b>API CHANGES</b>
+		- Simplified generic vertex attrib array API.
+		- vl::TextureUnit renamed vl::TextureSampler.
+		- vectorAsVec*() renamed getAsVec*().
+		- Camera::inverseViewMatrix() renamed Camera::localMatrix()
+
+	<div class="featuretitle">Visualization Library 2011.07.1151</div>
+	
+	- <b>New OpenGL extensions management supporting all versions of OpenGL 1/2/3/4 and OpenGL ES 1/2. GLEW has been removed completely.</b>
+	- Important OpenGL status global variables: vl::Is_OpenGL_Initialized, vl::Is_OpenGL_Core_Profile, vl::Is_OpenGL_Forward_Compatible, vl::Has_Fixed_Function_Pipeline.
+	- <b>Preliminary support to OpenGL ES 1.1 and OpenGL ES 2.0, tested with PowerVR SDK under Win32.</b>
+	- New vl::EGLWindow: EGL bindings for Win32.
+	- New OpenGL ES tests and examples: GLES1_example.cpp, GLES1_tests.cpp, GLES2_example.cpp. All relevant tests already passed by GLES1_tests.cpp.
+	- All geometry primitives are now suported under OpenGL ES 1 and OpenGL ES 2.
+	- OpenGL ES related new functions: vl::Geometry::convertToVertexAttribs(), vl::Geometry::makeGLESFriendly()
+	- vl::Geometry::computeNormals() now automatically detects the use of fixed function pipeline or generic vertex attributes.
+	- vl::Text now working under OpenGL ES 1.1 (not yet OpenGL ES 2.0) and enhanced redering efficiency.
+	- Enhanced support to core profiles and forward compatible profiles.
+	- Better enbles management. VL can now detect ahead of time which enables are supported by the current OpenGL driver.
+	- vl::Shader now allows you to enable and disable also GL_DITHER and GL_MULTISAMPLE.
+	- <b>GLSLProgram now reports the full list of active uniforms with name, type, size and location information. See vl::UniformInfo and vl::GLSLProgram::activeUniforms().</b>
+	- Minor efficiency enhancements in MarchingCubes.
+	- Added String::printf() utility function.
+	- Added experimental TypeInfo.hpp for portable RTTI implementation (not yet used).
+	- Added experimental vl::CoreText for text rendering support under OpenGL ES 2.0 and OpenGL core profiles (work in progress).
+	- Fixed vl::Time behavior when system runs for very long time.
+	- Fixed bug in GLSLProgState sorting in rendering loop.
+	- Fixed vl::Object::className() constness.
+	- Simplified generic vertex attrib array API.
+	
+	<div class="featuretitle">Visualization Library 2011.05.1142</div>
+	
+	- Fixed compilation error when VL_PIPELINE_PRECISION is 2.
+	- Define _CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES for MSVC compilers.
+
+	<div class="featuretitle">Visualization Library 2011.05.1140</div>
+
+	- Added pagGuideThreads.dox file "Multi-Threading with VL".
+	- Documentation updates: mainpage.dox, pagDesign.dox, pagKnowledgeBase.dox, pagLearning.dox, pagMainClasses.dox, pagOpenGL.dox, pagCredits.dox, pagInstall.dox.
+	- Updated config.hpp documentation and set to 8 both VL_MAX_TEXTURE_UNITS and VL_MAX_GENERIC_VERTEX_ATTRIB.
+	- App_Deformer loads default file.
+	- App_Molecules loads default mol2 file.
+	- Default log mutex initialized to NULL.
+	- Disabled vl::Object/vl::ref<> automatic delete for MFC windows.
+	- Fixed warning in App_Framebuffer_Object.
+
+	<div class="featuretitle">Visualization Library 2011.05.1140 RC4</div>
+
+	- GLSLProgram: log warning on GLSLProgram linkage in debug mode.
+	- GLSLProgram: methods *AutomaticAttribLocation() renamed *AutoAttribLocation()
+	- GLSLProgram: added getUniformLocation() taking "const char*" as argument.
+	- GLSLProgram: added activeUniformLocations() method to access the list of currently active uniforms and relative binding locations.
+	- GLSLProgram: added methods vl_ModelViewMatrix(), vl_ProjectionMatrix(), vl_ModelViewProjectionMatrix() and vl_NormalMatrix() to access VL built-in uniforms locations and test for their existence after GLSLProgram linkage.
+	- OpenGL 4: OpenGL 4 Core working!
+	- OpenGL 4: unified ProjViewTransfCallback class can automatically update OpenGL 1.x matrices as well as VL built-in matrices for GL 4 Core profile: vl_ModelViewMatrix, vl_ProjectionMatrix, vl_ModelViewProjectionMatrix, vl_NormalMatrix.
+	- OpenGL 4: OpenGL 4 Core mipmaps generation support.
+	- OpenGL 4: App_TessellationShader made (almost) compatible with OpenGL 4 Core.
+	- Added method toGenericVertexAttribs() to convert a Geometry vertex array to generic ones.
+	- Fixed use of wxUSE_UNICODE in WXGLCanvas.cpp
+	- Fixed VL_ACTOR_USER_DATA incorrectly placed inside Object.hpp
+	- VertexAttribInfo construction parameters order changed and added defaults.
+
+	<div class="featuretitle">Visualization Library 2011.05.1140 RC3</div>
+
+	- BlitFrameBuffer::setReadFramebuffer/setDrawFramebuffer() renamed setReadRenderTarget()/setDrawRenderTarget()
+	- Added RenderTarget::setReadBuffer() to specify the read-buffer to be used with a RenderTarget.
+	- Read-buffer and draw-buffer binding moved after render-target binding but before fbo completeness check.
+	- Added VL_INSTALL_DATA option during CMake configuration.
+
+	<div class="featuretitle">Visualization Library 2011.05.1140 RC2</div>
+
+	- Fixed version.hpp configuration error in CMake
+	- Fixed Linux compilation error
+	- Fixed vlQt4 install directory
+	- gDebugger-friendly texture creation
+
+	<div class="featuretitle">Visualization Library 2011.05.1140 RC1</div>
+
+	- Added ScopedMutex class and IMutex interface class.
+	- Synchronized log functions for multithreaded usage of VL.
+	- Added VL_SHADER_USER_DATA config variable, to bind user data to a vl::Shader.
+	- Added ShaderNode getter functions.
+	- CopyTexSubImage calls glReadBuffer only for color textures.
+	- Added vl::Texture::isDepthTexture() method.
+	- DLL compilation enabled by default.
+	- Fixed OpenGL context creation attributes handling.
+	- setUniform(int/unsigned/float/double) renamed setUniformI/U/F/D() for better clarity.
+	- CMake variables starting with GUI_* renamed VL_GUI_*
+	- Fixed double precision pipeline compilation.
+	- Marching cube volume can now use directly the user's data without duplication and perform an optional copy on the internal volume buffer.
+	- MarchingCubes demo-tests uses VBOs and shows polygon tessellation in wireframe.
+	- Added Texture::clone() function. Useful when one needs to use the same texture object with different texture parameters.
+	- Added direct texture creation functions: vl::Texture::createTexture1D()/createTexture2D() etc.
+	- VL_DEBUG_LIVING_OBJECTS enabled also in release mode.
+	- Optional debugging living objects code after tests.
+	- Print demo-applet info on startup.
+	- More coherent template parameters naming conventions.
+	- config.hpp renamed to link_config.hpp.
+	- Updated READMEs.
+
+	<div class="featuretitle">Visualization Library 2011.04.1135</div>
+	
+	- Multisample textures.
+	- Texture buffers support.
+	- Tessellation shaders demo-test.
+	- New directory layout.
+	- New building scripts.
+	- VL can now be compiled as a DLL.
+	- Restored wxWidgets GUI bindings.
+	- A ton of bug fixes and enhancements.
+
+	<div class="featuretitle">Visualization Library 2011.02.1133</div>
+
+	- <b>API CHANGES</b>
+		- Visualization Library splitted into:
+			- \b VLCore: all classes not requiring OpenGL, including vl::Image and 2D image IO modules, virtual file system, resource management, vl::String, math classes and functions etc.
+			- \b VLGraphics [<i>depends on VLCore</i>]: all classes that depend on OpenGL such as vl::Geometry, vl::Shader, vl::Rendering, vl::OpenGLContext, 3D files IO modules etc.
+			- \b VLVG [<i>depends on VLGraphics</i>]: 2D vector graphics facilities.
+			- \b VLVolume [<i>depends on VLGraphics</i>]: volume rendering facilities such as marching cubes, screen aligned slices, ray-casting etc.
+			- \b VLMolecule [<i>depends on VLGraphics</i>]: molecule rendering facilities.
+		- Inclusion of VL files now are in the form of <vlCore/Image.hpp> instead of <vl/Image.hpp> and <vlGraphics/Geometry.hpp> instead of <vl/Geometry.hpp> etc.
+		- "vlut" utility namespace removed.
+		- All sub-library namespaces have been consolidated into vl:: with the exception of the GUI-binding namespaces.
+		- Win32Context::init() renamed Win32Context::initWin32GLContext()
+		- initWin32Window() & destroyWindow() renamed initWin32GLWindow() & destroyWin32GLWindow()
+		- vlWXGLCanvas renamed WXGLCanvas.
+		- <b>Applet::run() renamed Applet::updateScene()</b>.
+		- Changed default top-level objects locations:
+			- vl::VisualizationLibrary::settings() renamed vl::globalSettings().
+			- vl::VisualizationLibrary::fontManager() renamed vl::defFontManager().
+			- vl::VisualizationLibrary::fileSystem() renamed vl::defFileSystem().
+			- vl::VisualizationLibrary::loadWriterManager() renamed vl::defLoadWriterManager().
+			- <b>vl::VisualizationLibrary::rendering() REMOVED</b> (not needed and generated more confusion than anything else)
+		- UIEventListener revisited: 
+			- events have pure virtual functions
+			- <b>runEvent() renamed updateEvent()</b>
+			- addedListenerEvent() removedListenerEvent() substitute openglContextBoundEvent()
+			- enableEvent(bool) substitute prepareToReconnect()	
+		- Removed deprecated Cocoa bindings.
+	- <b>Raycast volume rendering: added vl::RaycastVolume class and App_VolumeRaycast.cpp demo and tutorial.</b>
+	- Added new tutorial on basic rendering application (Win32_direct.cpp)
+	- New vlMFC::MDIWindow to support MFC's MDI framework.
+	- <b>New MFC_MDI_example.cpp application demonstrating multiple VL windows in MFC application with MDI framework.</b>
+	- warning/bug/error logs are now color coded on both Windows and Linux (and hopefully Mac).
+	- GLSL program and shader checks and error messages reviewed.
+	- GLSL math library completely reviewed.
+	- Reviewed various OpenGL checks to use more human readable macros.
+	- Updated and extended documentation of FBO classes, GhostCameraManipulator, TrackballManipulator, UIEventListner, RenderTarget, render states vari, Applet, Sphere, AABB, Camera.
+	- FBO render target and FBO attachment implementation reviewed and more robust.
+	- OpenGLContext & GUI bindings messaging policy clarified especially for destruction.
+	- SDLWindow how allows x/y window positioning.
+	- OpenGL context made current during OpenGLContext event dispatch and FBO operations.
+	- Fixed crash in OBJ loader.
+	- fixed crash on Actor::setLod().
+	- GDCM IO module fixed and updated.
+	- Sphere and AABB classes documented, reviewed and fixed.
+	- Fixed bug when calling multiple simplifications on the same PolygonSimplifier.
+	- Actor and Renderable bounds computation more automatic and developer-friendly.
+	- Added vl::Geometry::flipNormals() and degenerate triangles check during normal computation.
+	- App_PolygonReduction: added file drag&drop and polygon count label, and shows animation of simplified mesh.
+	- App_BezierSurface.cpp demo & gallery updated to use Newell's tea set.
+	- Added App_Primitives demotest and primitive objects gallery.
+	- Refreshed render order tests, now all the tests are collapsed into a single one.
+	- Added makeTeapot() primitive object.
+	- New image gallery (work in progress).
+	
+	<div class="featuretitle">Visualization Library 2010.12.1129</div>
+	
+	- New vl::UUID class implementing version 4 (random based) universally unique IDs.
+	- New vl::Random class to generate high quality random numbers based on OS specific cryptographic facilities.
+	- New experimental signal/slot framework.
+	- New raycasting volume rendering example App_VolumeRaycast.cpp (to be continued).
+	- New \p half class to manipulate half precision floating point data.
+	- OpenGL 4.x:
+		- Double precision uniforms.
+		- Texture and color buffer formats		
+	- <b>API CHANGES</b>
+		- Streamlined array naming convention: ArrayFloat,ArrayFVec2/3/4 renamed 
+		ArrayFloat1/2/3/4, the same goes with all the other base types.
+		- Reworked matrix and quaternion classes for better performances and more 
+		coherent API.
+	- Updated to GLEW 1.5.7
+	- Blind tests solidified in App_BlindTests.cpp: matrix & quaternions, signal/slots framework, virtual 
+	  filesystem, unique ID generation, half float scalar vector and matrices.
+	- Deferred display list and VBO creation and update.
+	- Enhanced renderable bounds update policy.
+	- Many other minor fixes and enhancements.
+
+	<div class="featuretitle">Visualization Library 2010.12.1127</div>
+
+	- <b>OpenGL 2.x, 3.x and 4.1 support enhanced</b>:
+		- Tessellation shaders (GL_ARB_tessellation_shader)!
+		- Read/write GLSL program binaries (GL_ARB_get_program_binary)!
+		- Pure \a double precision vertex attributes!
+		- New vertex array formats: GL_FIXED, GL_HALF_FLOAT, GL_INT_2_10_10_10_REV, GL_UNSIGNED_INT_2_10_10_10_REV.
+		- New texture formats: GL_EXT_texture_sRGB formats, GL_ARB_texture_rg formats.
+	- Added PointParameter point sprite coordinate origin. Fixed PointParameter support for GL 3.x non backwards compatible profiles.
+	- App_GeomLODAnim and App_ShaderMultiPassLODAnim tests refactored and tutorials.
+	- New framebuffer objects test and tutorial (\p App_Famebuffer_Object.cpp).
+	- Updated to Freetype 2.4.4.
+	- Several other minor bug fixes, enhacements, code cleanup and documentation updates.
+	
+   \page pagChangelog Changelog
+
+	<div class="featuretitle">Visualization Library 2010.11.1125</div>
+
+	- <b>Vertex Attrib Set</b> new mechanics for lazy binding of vertex attribute arrays. Mesured around 5% rendering 
+	  speedup for complex scenes with several geometries shared by several other actors.
+	- <b>Greatly improved vl::Texture</b>: immediate and lazy empty texture creation, better texture format/size 
+	  combination support check, each mipmap layer can be manipulated individually, updated documentation.
+	- <b>New animation system</b> for vl::Shader and vl::Actor. Removed deprecated virtual method "update()" in 
+	  favor of vl::ShaderAnimator and vl::ActorEventCallback. This way one does not need anymore to subclass vl::Actor or vl::Shader
+	  to implement a specific animation and allows one to change the animation bound to an vl::Actor or vl::Shader very easily.
+	- <b>RenderEventCallback</b> new class to intercept Renderer and Rendering related events. Much more robust rendering event
+	  triggering and well defined environment contract.
+	- ShaderAnimator can now be enabled/disabled.
+	- Fixed vl::TexGen reset bug.
+	- Enhanced vl::Geometry VBO management.
+	- vl::Geometry::shallowCopy()/deepCopy() reviewed.
+	- Fixed double precision pipeline compilation.
+	- VL_TRANSFORM_USER_DATA compile time configuration variable to enable user data binding to vl::Transform objects.
+	- Added missing texture related render states enums above texture unit #0.
+	- Several other minor improvements and bug fixes.
+	- <b>API CHANGES</b>
+		- vl::Texture::setupTexture*() renamed vl::Texture::prepareTexture*(); added new methods createTexture(), setMipLevel() and prepareTexture*() methods for empty textures.
+		- vl::RenderingCallback removed in favor of vl::RenderEventCallback
+		- vl::Shader::update() and vl::Actor::update() removed in favor of ShaderAnimator and ActorEventCallback.
+		- vl::MorphingActor is now vl::MorphingCallback
+		- vl::SlicedVolume is now a subclass of vl::ActorEventCallback and not a subclass of Actor.
+
+	<div class="featuretitle">Visualization Library 2010.11.1123</div>
+
+	- Fixed texture creation functions.
+	- Improved pre-post condition satisfaction during rendering.
+	- <b>API CHANGES</b>
+		- Updated texture format naming to reflect latest OpenGL headers.
+		- Matrix4/3/2 new methods: transpose(), getTransposed(), getTransposed(M), invert(), getInverse(), getInverse(M), normalize(len), diff(), fill(); scalar_type typedef; 
+	
+	<div class="featuretitle">Visualization Library 2010.11.1121</div>
+
+	- Fixed compilation under Linux 64 bits.
+	- Fixed compilation of Qt4, GLUT, SDL and WX gui bindings.
+	
+	<div class="featuretitle">Visualization Library 2010.11.1119</div>
+	
+	- DrawCall: <b>new universal index and triangle iterator mechanics</b>. Now normals computation, edge extraction, ray intersection, tangent space computation, polygon simplification, triangle stripfy... all support all combinations of DrawArrays, DrawElements, MultiDrawElements, DrawRangeElements, primitive restart and base vertex.
+	- Geometry: enhanced bounds computation, tighter and faster.
+	- <b>API CHANGES</b>
+		- Geometry and DrawCall: removed deprecated triangleCount(), lineCount(), pointCount(), shrinkDrawElements(), sortTriangles(), getTriangle(), methods.
+		- Removed deprecated statistics related methods in Rendering.
+		- DrawCall: removed direct index access API, replaced by index iterator api.
+	- Several other fixes and improvements.
+
+	<div class="featuretitle">Visualization Library 2010.10.1115</div>
+
+	- <b>New vl::OcclusionCullRenderer implementing the new occlusion culling algorithm: 25%-40% more efficient!</b>
+	- <b>Multiple vl::Renderer objects can now be added to a single vl::Rendering in cascade, one feeding the next one!</b>
+	- <b>vl::Shader override mechanics at the vl::Renderer level, see App_ShaderOverride.hpp.</b>
+	- <b>vl::Effect override  mechanics at the vl::Rendering level reviewed, see App_EffectOverride.hpp.</b>
+    - <b>vl::Transform: new methods vl::Transform::addChildren(), vl::Transform::children(), vl::Transform::shrink(), vl::Transform::shrinkRecursive(), vl::Transform::setLocalAndWorldMatrix(), vl::Transform::reserveChildren(), largely improved documentation.</b>
+	- Updated App_OcclusionCulling.hpp and App_EdgeRendering.hpp to use the new features.
+	- <b>API CHANGES</b>
+		- Removed OpenGLContext parameter from Renderable::render() method.
+		- Removed occlusion culling related methods from vl::Rendering.
+		- RenderTarget management methods moved from vl::Renderer to vl::Rendering.
+		- alwaysIdentityWorldMatrix() renamed assumeIdentityWorldMatrix()
+	- Fixed EdgeRenderer bug when dealing with non-Geometry Renderables.
+	- Added VL_ACTOR_USER_DATA configuration variable to add user data to any vl::Actor.
+	- Fixed VL_OBJECT_USER_DATA bugs.
+	- Several other fixes and improvements.
+
+	 <div class="featuretitle">Visualization Library 2010.10.1111</div>
+
+	- <b>API CHANGES</b>
+		- Primitives class renamed <b>DrawCall</b>.
+		- Geometry::primitives() renamed <b>Geometry::drawCalls()</b>.
+		- GlobalSettings renamed <b>Settings</b>.
+		- GlobalSettings::VERBOSITY_* renamed <b>vl::VEL_VERBOSITY_*</b>.
+		- appendActors() renamed <b>extractActors()</b>.
+		- appendVisibleActors() renamed <b>extractVisibleActors()</b>.
+		- compileKdTree() renamed <b>buildKdTree()</b> and <b>rebuildKdTree()</b>.
+	- Draw calls: support to <b>glMultiDrawElementsBaseVertex()</b>, draw call documentation refreshed, fixed default primitive restart index, finalized draw call class inheritance layout.
+	- <b>Effect override mechanics</b> in Rendering class.
+	- New App_EffectOverride demo test.
+	- VirtualFile read/write utility function complete set for type U/S-Int64/32/16/8, Float and Double, both little- and big-endian.
+	- Log class: enforced verbosity level, documentation refreshed.
+	- Geometry bounding box can now be computed from generic vertex attribute #0 if vertex array is not present.
+	- Added silent verbosity level.
+	- vl::String::findInLargeText() function added.
+	- Check for 1 pixel viewport before rendering.
+	- GCC compilation fixes.
+
+	 <div class="featuretitle">Visualization Library 2010.10.1107</div>
+
+	- Near/far plane optimization enhanced implementation + App_NearFarOptimization.hpp test added
+	- Global settings for verbosity level & opengl state check
+	- Nicer log info
+	- Work continued (and still in progress...) on vl::DrawCall and subclasses: DrawElements, MultiDrawElements, DrawRangeElements. Support (where possible) for multi instancing, base vertex, primitive restart.
+	- New automatic GLSL attribute location binding mechanism
+	- Reviewed & more efficient automatic GLSL 'static' uniform update
+	- Various GLSL related documentation updates
+	- More efficient automatic texture and GLSLProgram initialization
+	- Uniforms variable names collision detection
+	- Enhanced opengl state sanity checks
+	- Various documentation fixes & updates
+
+	 <div class="featuretitle">Visualization Library 2010.10.1099</div>
+
+	 - <b>New rendering core architecture</b>:
+		- greatly improved support to OpenGL 3.x
+		- more scalable GLSL programs and uniforms management.
+		- smarter and quicker render states management.
+		- quicker texture unit management.
+		- minimized per-rendering overhead.
+		- much more polished OpenGL context management.
+		- quicker OpenGL context reset.
+		- added several extra sanity check.
+	 - <i>Occusion culling temporarily disabled.</i>
+	 - New Primitive vl::DrawRangeElements.
+	 - Added support to Primitive Restart.
+	 - OpenGL 3.x / 4.x context creation support for Win32 and MFC bindings.
+	 - OpenGL 3.x clipping distance and seam-less cube-maps support.
+	 - vl::Geometry improvements: OpenGL 3.x support and quicker buffer binding.
+	 - Win32 and MFC windows release automatically FBOs on context destruction.
+	 - Enforced well defined policy for VL_gl* function usage.
+     - Enhanced .OBJ file format support.
+	 - Added getTriangle() function to tessellate into triangles arbitrary primitive types.
+	 - Added bitangent space computing utility function.
+	 - GLSL bumpmapping example.
+	 - makeTorus() function enhanced to compute proper normals and texture coordinates.
+	 - Update to GLEW 1.5.6
+	 - Fixed support to single-buffered OpenGL contexts.
+	 - DiskFile and DiskDirectory support for BSD.
+	 - Fixed wxWidgets header include.
+	 - Several other minor bug fixes and improvements.
+
+	 <div class="featuretitle">Visualization Library 2010.06.1000</div>
+	 
+	 - <b>Visualization Library released under the Simplified BSD License!</b>
+	 - Fixed MFC compilation bug under Win64.
+	 - Added compile-time asserts.
+	 - Added optional user data to vl::Object.
+	 - Added ray intersection support with geometry using double precision.
+	 - Added the possibility to use user-allocated buffers in vl::Buffer.
+	 - Other minor fixes and improvements.
+
+	 <div class="featuretitle">Visualization Library 2009.08.812</div>
+
+	 - VirtualMutex class to protect reference counting of Objects shared across multiple threads.
+	 - Fixed crash in MFC tests.
+	 - Polished OpenGLContext::destroy() semantics.
+	 - Several minor bugs, security issues and warnings fixed.
+	 - Fixed vlDDS compilation for 64 bits environments.
+
+	 <div class="featuretitle">Visualization Library 2009.08.804</div>
+
+	 - Fixed bug in scene manager bounding box computation.
+	 - Fixed bug in App_CullingBenchmark.hpp.
+	 - Fixed bug in EdgeExtractor under Linux.
+
+	 <div class="featuretitle">Visualization Library 2009.08.802</div>
+
+	 - Removed bugged support to GL_ATI_separate_stencil.
+	 - Fixed several memory leaks.
+	 - Fixed assert in geometry instancing test.
+
+	 <div class="featuretitle">Visualization Library 2009.08.800</div>
+
+	 - String class now based on \p wchar_t.
+	 - String class documentation.
+	 - Fixed Max OS X compilation.
+	 - Using stricter warning levels.
+	 - Fixed several warnings.
+	 - Fixed typos and non returning functions.
+	 - Fixed bug in OpenGL 2.0 support.
+	 
+	 <div class="featuretitle">Visualization Library 2009.07.640</div>
+
+	- Extended documentation and tutorials.
+	- API improvements and cleanup.
+	- Fixed MFC compilation issues.
+	- Fixed Mac OS X compilation issues.
+
+	 <div class="featuretitle">Visualization Library 2009.07 RC3</div>
+
+	- Extended documentation and tutorials.
+	- API improvements and cleanup.
+
+	 <div class="featuretitle">Visualization Library 2009.07 RC2</div>
+
+	- FileSystem::locateFile() enhanced.
+	- 3DS, OBJ, AC3D texture locating enhanced.
+	- Fixed sources installation.
+
+	<div class="featuretitle">Visualization Library 2009.07 RC1</div>
+
+	- OpenGL & VL enables documentation.
+	- setEnabled/isEnabled policy.
+	- vl::PolygonDephtSorting bug fixes and tutorial.
+	- Picking example.
+	- Image and ReadPixels enhancements.
+	- Transparency and Polygon Depth Sorting Tutorial.
+	- Antialiasing and Multisampling Tutorial.
+	- Billboards Tutorial.
+
+	<div class="featuretitle">Visualization Library 2009.07 Beta 2</div>
+
+	- Bug fixes.
+	- Documentation updates.
+	- API stabilization.
+
+	<div class="featuretitle">Visualization Library 2009.07 Beta 1</div>
+
+	- Added new classes to perform edge enhancement: vl::EdgeRenderer, vl::EdgeExtractor
+	- Added new \ref pagGuideEdgeRendering demo and tutorial.
+	- Added new vl::SceneManagerPortals, a scene manager that implements sector/portal-based occlusion culling.
+	- Added new \ref pagGuidePortals "Portal-Based Culling and Scene Management" demo and tutorial.
+	- Added support OpenGL-accelerated occlusion culling via the \p GL_ARB_occlusion_query extension.
+	- Added new \ref pagGuideOcclusionCulling "Hardware Occlusion Culling" demo and tutorial.
+	- Added new vl::BezierSurface class to manipulate and render complex bicubic Bézier patches and surfaces.
+	- Added new \ref pagGuideBezierSurfaces "Bicubic Bézier Patches and Surfaces" demo and tutorial.
+	- Added new vlMolecule module for molecular visualization. See also vlMolecule::Molecule and vlMolecule.
+	- Added new \ref pagGuideMolecule "Molecule Visualization" demo and tutorial.
+	- Added new vl::Tessellator class to tessellate complex, concave and self-intersecting polygons.
+	- Added new \ref pagGuideTessellation "Polygon Tessellation" demo and tutorial.
+	- Added new vl::Extrusion class to generate 3d geometry by extruding a 2d silhouette along 3d paths.
+	- Added new \ref pagGuideExtrusion "Geometry Extrusions" demo and tutorial.
+	- Added new vl::Interpolator, vl::LinearInterpolator, vl::CatmullRomInterpolator and other classes to interpolate over a set of values.
+	- Added new \ref pagGuideInterpolators "Interpolators" demo and tutorial.
+	- Simplified Actor and Effect lod management; quicker Actor and Effect allocation.
+	- Fixed x86 compilation and portable debug interrupt implementation.
+	- RenderingSequence dropped -> Implemented a new powerful rendering-tree mechanism.
+	- MessageBox used to notify failed checks on Win32.
+	- New VisualizationLibrary class.
+	- Nicely manage degenerate quads normal computation.
+	- Enhanced test framework.
+
+	<div class="featuretitle">Visualization Library Alpha 3.2.440</div>
+
+	- \b Direct \b volume \b rendering via vlVolume::SlicedVolume, supporting gradient, lighting and transfer function pre-computation,
+	  realtime GLSL-based Blinn-Phong lighting and transfer function computation.
+	- New \b App_VolumeRendering.hpp demo demonstrating various volume rendering techniques based on the vlVolume::SlicedVolume class, 
+	  see the <a href="pagguides.html">tutorial section</a> for more information.
+	- \b Isosurface \b extraction with the new vlVolume::MarchingCubes class!
+	- New \b App_MarchingCubes.hpp demo demonstrating various techniques using marching cubes, including multiple volume rendering, 
+	  transparency management, volume color via texturing and vertex color, 3D plots and even two animated metaballs demos! See the <a href="pagguides.html">tutorial section</a> for more information.
+	- \b DICOM file format support (read/write).
+	- New vlVolume::VolumePlot class to generate annotated \b 3D \b plots from volume data.
+	- Dramatic performance improvements up to 10x for STL, PLY and OBJ import.
+	- TGA, TIFF, JPG and PNG files can now save 1D, 2D, 3D and cubemap images.
+	- New Image::makeNonUniformColorSpectrum() function, especially useful to colorize volume data.
+	- Quicker vl::DepthSortCallback: sorts only when the camera or actor matrix changes.
+	- Enhanced Virutal File System functionalities: locate directories, test disk directory existence, enumerate files and directories, other misc enhancements.
+	- New vl::Image related functions: vl::loadImagesFromDir(), vl::assemble3DImage().
+	- Simple KeyValues class to manage a set of key/value pairs.
+	- Now shaders automatically detext if the source passed is a path to a file or is an actual shader text
+
+	<div class="featuretitle">Visualization Library Alpha 3.1.300</div>
+
+	- New official wxWidgets bindings! See vlWX::vlWXGLCanvas for more information.
+	- New vl::STLLoader class: loads ascii and binary STL files.
+	- New vl::PlyLoader class: more powerful loader for ascii and binary (little and big endian) \p ply files.
+	- Callback mechanism to execute operations on resource load and write, see vl::LoadCallback and vl::WriteCallback.
+	- New vl::GeometryLoadCallback class to perform transformations and optimizations on the loaded vl::Geometry.
+	- New vl::GZipCodec class to load/write gz files.
+	- New template math classes vl::Matrix4, vl::Matrix3, vl::Matrix2, vl::Vector4, vl::Vector3, vl::Vector2.
+	- New matrix classes vl::imat4/3/2, vl::umat4/3/2.
+	- New vector classes vl::svec4/3/2, vl::usvec4/3/2, vl::bvec4/3/2, vl::ubvec4/3/2.
+	- New array classes vl::ArrayFVec4/3/2, vl::ArrayDVec4/3/2, vl::ArrayIVec4/3/2, vl::ArrayUVec4/3/2 etc.
+	- Simplified vertex array system based on vl::Array template class.
+	- vl::DoubleVertexRemover: much quicker implementation.
+	- New vl::TriangleStripGenerator class.
+	- New vl::Geometry optimization functions: vl::Geometry::mergeTriangleStrips(), vl::Geometry::convertPrimitivesToDrawArrays(), vl::Geometry::sortVertices().
+	- New App_ModelProfiler applet to measure the performance of different geometrical optimization techniques.
+	- Improved vl::Terrain GPU algorithm for ATI cards.
+	- VBO creation outside of the rendering loop.
+	- Improved DepthSortCallback: sorts all types of DrawElements*.
+	- Fixed potential font deallocation problem.
+	- Image::copySubImage() function to copy a rectangular sub-area of an image, supports all the most common image formats and types.
+
+	<div class="featuretitle">Visualization Library Alpha 3.0.291</div>   
+
+ - Automatic compilation of PNG, JPG, ZLib and FreeType libraries.
+ - New template-based ResourceDatabase implementation: simpler and more flexible.
+ - Fixed bugs and compilation issues for Ubuntu and Fedora 64 bit systems.
+ - Fixed permission settings in tgz and tar.bz2 files.
+ - ZippedFile now supports the seek() operation.
+
+	<div class="featuretitle">Visualization Library Alpha 3.0.290</div>   
+
+ - \b Mac \b OS \b X platform support plus experimental Cocoa GUI bindings! A huge thanks goes to Brent Fulgham
+   for his help and feedback!
+ - \b MFC \b GUI bindings! Again, thanks to Brent Fulgham for his help and feedback!
+   Includes support to fullscreen windows, multisampling, keyboard and mouse
+   management, file drag&drop, OpenGL resource sharing, child and top windows 
+   support etc.
+ - \b VectorGraphics and \b VectorGraphicsScene classes to perform advanced 
+   OpenGL hardware-accelerated 2D rendering.
+ - \b Terrain \b scene \b manager: implements a simple, kdtree/chunk-based, GPU accelerated (if available), 
+   highly memory efficient terrain rendering system (no LOD yet). The system lets you use very large
+   height-maps and texture maps that exceed the GPU's maximum texture size. If the host supports OpenGL Shading Language 
+   the scene manager keeps on the GPU memory only the heightmap and generates all the geometry on the fly, thus allowing
+   very large/detailed terrains.
+ - \b Extensible \b resource \b IO \b system (see below)
+ - \b ShaderNode class to conveniently managed complex hierarchies of Shaders.
+ - \b Progressive \b OpenGL \b extension \b management: if the same functionality is 
+   supported via multiple extensions now VL selects and uses the best
+   available: first checks direct support by the OpenGL implementation, 
+   then checks ARB extensions, then checks EXT extensions.
+ - \b Broader \b video \b card \b compatibility including support to integrated ATI and Intel chipsets.
+ - \b TrackballManipulator new controls and more precise: now you can 
+   zoom in/out with the right mouse button, pan the camera up/down
+   left/right with the middle button and rotate with the left button.
+ - \b Near/far \b clipping \b plane \b optimizations. The camera can now optionally 
+   optimize the near/far clipping planes based on the visible objects
+   enhancing the everall rendering quality, minimizing z-fighting.
+
+   \par  RESOURCE IO 
+
+ - \b JPG file format support for both load and save.
+ - \b PNG file format support for both load and save.
+ - Plug-in based ResourceLoaderWriter system. Now you can load and write
+   any resource including 3d files and images using the methods 
+   LoaderWriterManager::loadResource()/writeResource(). The appropriate
+   ResourceLoaderWriter will be picked up and used for the specified
+   file type. You can register your own ResourceLoaderWriter to support
+   more file formats or to overried existing ResourceLoaderWriter too!
+ - Image: new methods convertType() and convertFormat() to convert images
+   from/to all the OpenGL 1.1 type/format combinations! For example you
+   can convert an IT_FLOAT/IF_RGBA to a IT_UNSIGNED_SHORT/IF_LUMINANCE 
+   image! In this case the image is also automatically converted from 
+   rgb to gray scale! The alpha channel is also retained when possible.
+ - Image: new methods sampleLinear() and sample() to perform nearest-point
+   or bilinear filtering sampling of an image. This functions support all
+   the OpenGL 1.1 standard image type/format combinations too. This 
+   functions can be used to retrieve the color of a pixel, the height
+   of a heightmap or to perform collision detection on a heightmap.
+ - Image: new method subImage() returns a new image containing the specified
+   rectangular pixel area taken from the source image. Also this function
+   supports all the OpenGL 1.1 image type/format combinations!
+ - Image::makeColorSpectrum() function: creates an 1D image filled with the
+   specified color spectrum.
+ - Image: new methods substituteColorRGB_RGB(), substituteColorRGB_RGBA(), and
+   substituteColorGreenKey() to substitute colors and colorize an Image.
+ - All file loaders and writers now use the VirtualFile interface
+ - Added write support to DiskFile class.
+ - Image loader/writers divided into their own modules: vlPNG, vlJPG, 
+   vlTIFF, vlTGA, vlBMP, vlDDS, vlDAT.
+ - 3D file loader/writers divided into their own modules: io3DS, ioOBJ, 
+   ioAC3D, ioPLY, ioMD2.
+ - Autodesk 3DS loader class cleaned and exposed in the vl3DS module to be
+   directly used or enhanced by the user.
+ - Simplified/unified render states management: RenderStates, ClipPlanes, 
+   Light, TextureUnit.
+ - New more flexible texture render states: TexGen, TexEnv, TextureMatrix.
+ - Lazy allocation of RenderStateSet, EnableSet, UniformSet: uses less 
+   memory and object creation/deletion is much quicker.
+   
+   \par  GEOMETRY 
+   
+ - GPUBufferInterfaceAbstract new methods: computeBoundingBox(), 
+   computeBoundingSphere(), transform() and normalize(). Now you can perform
+   all this operations in a GPU-buffer-type-and-layout agnostic way!
+ - Geometry primitives quality updates: uses quads instead of triangles when 
+   possible, topological fixes for better normal computation.
+ - Geometry primitives: draw elements commands minimized and optimized.
+ - Geometry::computeNormals() now supports all vertex formats and layouts!
+ - Geometry::computeNormals() now supports all the main primitive types: 
+   triangles, triangle fan, polygon, quads, tri strips, quad strips!
+ - Geometry::shrinkDrawElements() bug fixes.
+ 
+   \par  DEMOS/TESTS 
+   
+ - New demo App_VectorGraphics showing how to use VectorGraphics and VectorGraphicsScene.
+ - New demo App_Terrain using the Terrain scene manager.
+ - New test/demo App_Lights: shows how to implement moving colored lights
+   like spot-lights, directional lights, point lights, lights following the camera.
+ - App_VolumeRendering enhanced: allows drag&drop of volume data and the energy
+   threshold can be interactively adjusted with the mouse wheel.
+ - New demo App_GLSLImageProcessing: shows how use GLSL to implement some
+   image processing effects.
+ - New demo App_Deformer: shows how to implement a 2D application
+   that loads an image and let the user interactively deform it!
+ - New demo App_Fractals: a GPU accelerated interactive fractal navigator!
+ - App_ModelViewer demo enhanced: massive code cleanup; camera centers the 
+   view to the model; automatic near/far clipping planes adjustment,
+   nicer trackball panning and zooming.
+ - New App_VertexFormat: shows several ways to layout vertex data and.
+   how to use it in VL. VL support data layout in both Structure-Of-Array.
+   and Array-Of-Structures form, spanning a single or multiple buffers!
+ - New test App_ImageFunctions: tests image type/format conversion, nearest
+   and bilinear sampling, loading and saving in JPG, PNG, TGA, TIFF formats.
+ - MorphingActor test simplified and enhanced to show multiple animations.
+ - App_Texturing test: now is a unified test checking 2D textures, 3D textures,
+   1D texture arrays, 2D texture arrays, texture rectangle, cubemap environment
+   mapping, sphere mapping.
+ 
+   \par  MISC 
+ 
+ - CMake building: many optional modules to minimize compilation time and library size.
+ - Support to the GL_ATI_texture_float extension for backwards compatibility.
+ - OpenGLContext's non-continuous update is much more CPU friendly.
+ - Uniform setup bug fixes and performance enhancements.
+ - GLSLProgram now can also have its own "static" Uniforms.
+ - VL containers use the "at()" semantics to stay closer to the STL look'n'feel.
+ - Bounding sphere and bounding box management: simplified, enhanced, bug fixes.
+ - Scene managers bounding sphere, bounding box, and culling: now the 
+   rendering is able to optionally cull whole scene managers.
+ - Current-lod property made a render-time transient variable.
+ - Better definition and splitting of non-const and const rendering operations.
+ - get/goc semantics for Shaders and Uniforms: a method starting with "get"
+   will never create the object requested, methods starting with "goc" 
+   (= get-or-create) will create the resource if it doesn't exist.
+ - Qt4, SDL, Win32 keyboard management fixes when pressing keys like CTRL.
+ - Text: fix when rendering empty lines.
+ - Text: 2d text now can seamlessly interact with 3D objects and be rendered.
+   in front or behind the other 3D objects.
+ - Actor z-sorting now works also when the bounding box is null.
+ - Added support to glStencilOpSeparate().
+ - Added support to glStencilFuncSeparate().
+ - Added support to glStencilMaskSeparate().
+ - Added the new Clear class (Renderable) to clear buffers during the rendering.
+ - Removed deprecated camara/viewport binding to OpenGLContext.
+ - New Scissor class: scissor clipping support for Actors, Effects and vector graphics. 
+   The Scissor class lets you define a rectangular aread clipped against the Viewport 
+   within which the rendering will be performed.
+ - New RectI and RectF classes to manipulate rectangular regions.
+ - Framebuffer Objects fixes and improvements.
+ - New Collection class: managing groups of objects is more robust and closer to 
+   the C++ STL spirit.
+ - New object oriented battery test framework
+ - GLUT, WIN32, SDL, QT4 examples updated
+ - Fixed mouse visibility bug under Win32
+ - KdTree is now a subclass of BoundingBoxTree
+ - KdTree compilation time 4.3x faster
+ - Fixed culling for objects with Null bounds
+ - Terrain scene manager is now based on the KdTree scene manager
+ - TextStream reads UTF8 encoded strings
+ - String::trim() functions improved
+ - String::replace() functions improved
+ - OpenGL extensions management greatly improved: wider compatibility, optimal 
+   use of the available extensions
+ - Win32 GUI bindings: better support for fullscreen mode, support for top and child windows, many fixes and improvements.
+   
+
+	<div class="featuretitle">Visualization Library Alpha 2.1</div>   
+
+ - VBO usage and creation bug fixes.
+ - GLSLProgram and GLSLShader documentation and pointers to the reference manual.
+ - version string and build number put into version.hpp.
+ - merged TextStream and TokenStream classes.
+ - simplified GLCHECK() macro usage.
+ - GLSL temporarily removed binding maps.
+ - render states constness fixes.
+ - removed deprecated Actor::prepareForRendering() callback.
+ - updated MorphingActor and MD2 loader.
+ - ActorRenderingCallback for morphing actor and polygon depth sorting.
+ - removed deprecated specific Actors for morphing and point splatting.
+ - generalized depth sorting callback supporting points, lines, triangles and quads.
+ - improvements to the constness of the objects during the rendering.
+ - added FontManager class.
+ - removed deprecated RenderStream systems.
+ - texture SetupParams more flexible and documented.
+ - removed deprecated math classes and tests.
+
+	<div class="featuretitle">Visualization Library Alpha 2</div>   
+
+ - faster and lighter rendering architecture (deprecated scene-graph system).
+ - Unicode String class.
+ - Virtual file system.
+ - geometry shaders.
+ - GLSL 1.30 support.
+ - most of OpenGL 3.0 extensions support.
+ - Win32 and QT4 bindings.
+ - new OBJ importer and much better 3DS importer.
+ - CMake building system.
+ - Documentation updates.
+
+	<div class="featuretitle">Visualization Library Alpha 1</div>
+
+ - KdTree.
+ - OpenGL 1.1 - 2.1 support.
+ - OpenGL Shading Language.
+ - VBO, PBO, MRT.
+ - Image class, support to BMP, DDS, TIFF, TGA.
+ - Multipassing and LOD.
+ - FreeType based text rendering engine.
+ - Transform trees and billboards.
+ - 3DS, PLY, AC3D, MD2 importers.
+ - GLUT and SDL bindings.
+
+	<div class="featuretitle">June 1986, Visualization Library 1.0 runs on Commodore 128's 8502 Processor!</div>
+	
+ - Added support to 80 columns fast mode and sprite editor for accelerated graphics.
+ - Use SID cpu as parallel co-processor.
+ - Full support to BASIC 7.0.
+ - Just kidding :)
+
+*/

@@ -1,0 +1,19 @@
+/**
+	\page pagGeomLodAnim Geometry LOD and Animation
+
+	In this tutorial you will learn how to define a set of LOD (level of detail) geometries using the vl::DistanceLODEvaluator class and how to 
+	animate your geometry using the vl::ActorEventCallback class.
+
+	<img src="pics/pagGeomLodAnim.jpg">
+	
+	This demo creates a scene containing a central animated wave geometry and a few objects surrounding it in a circle. The central wave geometry 
+	defines 3 level of detail which will be animated in realtime using a subclass of vl::ActorEventCallback created ad-hoc. The surrounding objects
+	are there to demonstrate even more clearly how to use geomety LOD. Each objects is rendered as a sphere at LOD level #0, as a cube at LOD level
+	#1 and as a wireframe pyramid at LOD level #2. Note that the demo also uses the same LOD evaluator to perform Effect lod, demonstrating how simple
+	it is to synchronize geometry and effect LOD.
+	
+	[From \p App_GeomLODAnim.cpp]
+	\dontinclude App_GeomLODAnim.cpp
+	\skip #include
+	\until // Have fun!
+*/

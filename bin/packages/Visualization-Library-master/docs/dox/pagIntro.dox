@@ -1,0 +1,126 @@
+/**
+
+	\page pagIntro Introduction
+	
+Welcome to Visualization Library!
+
+Visualization Library is a C++ middleware for high-performance 2D and 3D graphics applications based on the industry standard OpenGL 1.x-4.x, designed to develop portable 
+applications for the Windows, Linux and Mac OS X operating systems.
+
+Visualization Library is currently used by professionals, researchers and students to develop all sorts of 2D and 3D applications.
+	
+Visualization Libray has been designed to be a fine-grained platform upon which a wide variety of highly-specialized 3D graphics applications can be effectively developed. 
+Instead of abstracting the user from the underlying OpenGL API, Visualization Library stays as close as possible to it and defines a thin high-performance layer on top of it. 
+The result is that many OpenGL functions and features have a 1 to 1 mapping to Visualization Library's classes. 
+
+You can think of Visualization Library as a toolkit that provides you with the power and flexibility of OpenGL within a light and user friendly C++ object oriented framework. 
+
+Visualization Library has been developed by Michele Bosi with the help of several contributors (see the \ref pagCredits page).
+
+Contacts:
+
+	- michele &lt;at&gt; visualizationlibrary &lt;dot&gt; org
+	- http://www.linkedin.com/in/michelebosi
+
+\par Community Resources
+
+- <a target=_blank href="http://www.visualizationlibrary.org/forum">Forums</a> - The right place to ask for help, ask feedback on your 
+projects and check for news regarding VL, such as releases, bug fixes etc. Also register to the forum if you would like to be
+notified via email about the latest VL developments.
+- <a href="http://twitter.com/VizLibrary">http://twitter.com/VizLibrary</a> - Quick info regarding the latest VL news.
+	
+\par Visualization Library Design Key Features and Goals
+
+- Code developed in standard C++/STL.
+- Portable across Windows, Linux and Mac OS X operating systems (32 and 64 bits).
+- Friendly API using OpenGL wording and conventions.
+- Minimalistic, efficient and reliable design.
+- Debug-friendly behaviour.
+- Designed to be a sensible, high-performance, thin layer on top of OpenGL:
+  
+  <i>Being a thin wrapper around OpenGL, Visualization Library not only provides the developer with a generic, fast and light 2-3D framework suitable for multiple purposes 
+  but also exposes the programmer to a familiar framework. 
+  In fact, most of the OpenGL mechanisms are mapped in an intuitive way to Visualization Library's API, 
+  maximizing the value of the OpenGL developer's experience and know-how. See \ref pagOpenGL page for more information.</i>
+
+- Developed for today's and tomorrow's hardware:<br/>
+  
+  <i>Visualization Library's core architecture is based on technologies such as OpenGL Shading Language, Framebuffer Objects, Multiple Render Targets, 
+  Geometry Shaders, Tessellation Shaders, Pixel and Vertex Buffer Objects etc. while at the same time retains full compatibility with OpenGL 1.1 class hardware.</i>
+
+- Compatible with OpenGL 1.x, designed for OpenGL 2.x, 3.x and 4.x:
+
+	<i>Many legacy features like accumulation buffer, edge flags, indexed rendering, immediate mode, feedback mode, picking mode etc. have been removed 
+	in order to keep Visualization Library as simple as possible and to guarantee that only the optimal rendering paths are used. 
+	Special attention has been paid in order to make Visualization Library's design neater and closer to OpenGL ES 2.0 and OpenGL 4.x principles.</i>
+
+- GUI independent:
+
+	<i>Like OpenGL, Visualization Library does not depend or rely on any GUI library. 
+	It is the user's responsibility to provide an adequate OpenGL context on which Visualization Library operates. 
+	However, several utility GUI bindings (Qt4, MFC, Win32...) are provided to further simplify the development process.</i>
+
+- Non direct multithreading support but multithreading-aware:
+
+	<i>Like OpenGL, Visualization Library does not provide any special multithreading commands/classes or a multithreading library. 
+	It is the user's responsibility to take care of the various aspects involved in the development of a multithreaded or distributed application. 
+	However, Visualization Library have been designed to minimize multithreading-related issues as much as possible. 
+	If you are interested in the topic you might want to use Visualization Library in conjunction with the following: <a target=_blank href="http://www.threadingbuildingblocks.org">Intel® Threading Building Blocks</a>, <a target=_blank href="http://www.vrjuggler.org">VR Juggler</a>, <a target=_blank href="http://chromium.sourceforge.net">Chromium</a>.</i>
+
+\par Quick Feature Overview
+
+- Support OpenGL 1.x, 2.x, 3.x and 4.1.
+- Experimental support to OpenGL ES 1.1, OpenGL ES 2.0.
+- <b>3D file formats</b>: 3DS, OBJ, PLY (binary and ascii), STL (binary and ascii), AC3D, MD2, COLLADA, VLT and VLB proprietary formats.
+- <b>2D Image file formats</b>: JPG, PNG, TGA, TIFF, BMP, DDS, DICOM, RAW.
+- <b>VLX serialization framework to load/save VL classes to/from VLT and VLB files.</b>
+- <b>GUI bindings</b>: Win32, MFC, Qt4, wxWidgets, SDL, GLUT.
+- <b>Volume rendering</b> facilities: direct volume rendering via \b screen \b aligned \b slices, \b ray \b casting (transfer functions, isosurface, MIP etc.) and \b marching \b cubes for isosurface extraction.
+- \b Virtual \b File \b System: read/write \b disk files and directories, read <b>.ZIP</b> files and directories, read/write \b memory files and directories, read/write <b>.GZ</b> files.
+- \b Texturing: almost all texture formats supported by OpenGL 1.x, 2.x, 3.x, 4.x plus several extensions: 1D, 2D, 3D textures, cubemaps, texture arrays, texture rectangles, multi-texturing, render to texture, texture coordinate generation, texture combiners, mipmapping and hw mipmaps generation, anisotropic filtering, compressed textures, depth textures, integer textures, float and half float texture formats, 2 components textures and more.
+- \b OpenGL \b Shading \b Language support.
+- <b> C++ vector/matrix library</b> based on GLSL specs.
+- \b Geometry \b Shaders support.
+- \b Tessellation \b Shaders support.
+- \b Framebuffer \b Objects support.
+- <b> GLSL/FBO multiple render targets.</b>
+- \b Vertex \b Buffer \b Objects support.
+- \b Pixel \b Buffer \b Objects support.
+- OpenGL accelerated \b 2D \b vector \b graphics.
+- \b Multisampling.
+- High quality \b unicode \b text \b rendering and text manipulation functions and classes.
+- Display Lists support.
+- Hierachical frustum culling against boxes and spheres.
+- Hierachical bounding volume scene manager.
+- \b Kd-Tree hierachical scene manager.
+- \b Portal/sector scene manager.
+- <b>Kd-Tree based terrain scene manager</b> (with GPU acceleration if available).
+- <b>Support for multiple scene managers in one rendering</b>.
+- <b>Multiple cameras and multiple renderings</b>.
+- Hierarchical matrix transformations.
+- Morphing animations (with GPU acceleration if available).
+- GPU geometry instancing.
+- Geometry Level of Detail.
+- Shader Level of Deatil.
+- Multipassing effects.
+- <b> Automatic render state sorting and lazy setup.</b> 
+- <b> Automatic transparency management and polygon depth sorting.</b> 
+- Highly customizable rendering order.
+- <b> Resource sharing design</b>: render states, textures, geometry data, shaders etc. almost anything can be shared and reused in different places.
+- <b> Automatic memory management</b> via reference counting.
+- Billboards.
+- Clipping planes.
+- <b>All standard OpenGL lighting models</b>: point lights, directional lights, spot lights - diffuse, ambient, emission and specular material/light properties - light decay radius etc.
+- Extensible resource system to support new resource types.
+- Geometry optimization functions, <b>triangle reduction/decimation</b>, double vertex removal etc.
+- \b Image \b manipulation routines.
+- <b>Molecular visualization</b>.
+- <b>Extrusion generation</b>.
+- <b>Linear and Catmull-Rom path interpolation</b>.
+- <b>Bicubic Bézier surfaces</b>.
+- <b>Edge and silhouette enhancement</b>.
+- <b>Interactive object picking</b>.
+- <b>Trackball manipulator</b>.
+- ... and much more, see \ref pagKeyFeatures "Features Overview" for a more in-depth overview of Visualization Library's features.
+
+*/

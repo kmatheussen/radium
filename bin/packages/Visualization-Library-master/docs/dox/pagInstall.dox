@@ -1,0 +1,121 @@
+/**
+	\page pagInstall Compiling and Installing Visualization Library
+	
+	Visualization Library uses the CMake building system to target several platforms and compilers. At the moment Visualization Library supports the following development platforms:
+
+	- Windows: Visual Studio 2005-2008 32-64 bits
+	- Windows: MinGW
+	- Linux: GNU make/gcc 32-64 bits
+	- Mac OS X: Xcode
+	
+	Note that CMake supports many other platforms and operating systems as well, in which you can probably also run Visualization Library.
+	
+	Please visit http://www.cmake.org to download the latest 2.6.x CMake distribution for your operating system.
+	
+	In order to compile Visualization Library with CMake you have to understand a few simple concepts that remain valid for all the platforms. When building Visualization Library you will need 3 directories:
+	
+	- a \a source \a directory: the directory where Visualization Library sources are located (containing the main CMakeLists.txt)
+	- a \a build \a directory: the directory used to keep the temporary object and project files generated for and during the building process.
+	- an \a install \a directory: the directory in which Visualization Libary's executables, libraries and header files will be installed.
+	
+	Run CMake, select the \a source \a directory and the \a build \a directory, then press the \a Configure button:
+	
+	<img src="pics/cmake-01.png">
+	
+	Select your building environment and press the \a Finish button:
+	
+	<img src="pics/cmake-02.png">
+	
+	The basic build environment is ready:
+	
+	<img src="pics/cmake-03.png">
+	
+	Variables overview:
+	
+	- \b CMAKE_BUID_TYPE: set it to \a Release if you want to compile VL for maximum performance or to \a Debug if you want to compile VL with debugging symbols. Note that this variable is not available under Visual Studio since you can manage the Release and Debug configurations directly from the Visual Studio gui.
+	
+	- \b CMAKE_INSTALL_PREFIX: this is the location where Visualization Library will be installed. In order to install visualization library you can either call \p make \p install under Unix-like environments or build the \p INSTALL project under Visual Studio.
+	
+	- \b VL_GUI_*_SUPPORT and \b VL_GUI_*_EXAMPLES: check the appropriate variable if you would like to build the binding classes for a particular GUI framework. Note that after selecting this variable and pressing the \a Configure button CMake might require more information to locate the required libraries and include files (like the location of the SDL library, of the GLUT header files etc.).
+	
+	- \b VL_IO_2D_*: check the resource file formats that you want to be natively supported by VL. Selecting less modules will make Visualization Library smaller. Note that if you select modules like VL_IO_2D_JPG or VL_IO_2D_PNG CMake will require more information to locate the libpng and libjpeg libraries and include files.
+	
+	Press the \a Configure button, you should see something similar to:
+	
+	<img src="pics/cmake-04.png">
+	
+	If you would like to reset your configuration go to the menu \p File -> \p Delete \p Cache.
+
+	To finalize and generate the building environment press \a Generate. Now you can close CMake and go to the specified \a build \a directory. If you are using a Unix-like environment you can simply type \p make then \p make \p install. If you are using Visual Studio you just need to double click on the \p  VisualizationLibrarySDK.sln file and build the \p BUILD_ALL project and then the \p INSTALL project.
+
+	You are now ready to use Visualization Library!
+
+	\par Using VL from a CMake project
+
+	Let's say that you are working on a project that uses VL and you would like to take advantage of CMake to support several compilers and operating system, 
+	your CMakeLists.txt would look like similar to the following example:
+	
+	\code
+project(My_VL_Project)
+
+# must be called after project!
+cmake_minimum_required(VERSION 2.6)
+
+# let CMake locate the FindVL.cmake if you haven't installed in any standard location
+# this will look for the FindVL.cmake file where the CMakeLists.txt is
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}")
+
+# set VL_ROOT to point to where VL have been installed.
+# you can set the VL_ROOT either here or as an environment variable
+# set(VL_ROOT "D:/VL/Install")
+
+# for static linking do this
+# find_package(VL COMPONENTS VLCore VLGraphics VLVG VLVolume VLMolecule VLWin32 FreeType JPG PNG TIFF ZLib REQUIRED)
+# add_definitions(-DVL_STATIC_LINKING)
+
+# for dynamic linking do this
+find_package(VL COMPONENTS VLCore VLGraphics VLVG VLVolume VLMolecule VLWin32 REQUIRED)
+
+# NOTE:
+# - FreeType, JPG, PNG, TIFF, ZLib, are not required with dynamic linking because they have been linked already in VLCore and VLGraphics.
+# - VLWin32 is the library implementing the VL/Win32 gui bindings, here is required because Win32_example.cpp uses it.
+# - For a full list of available modules and all the details see the instructions inside FindVL.cmake.
+
+# add VL include directories
+include_directories(${VL_INCLUDE_DIRS})
+
+# find ${OPENGL_LIBRARIES} to be used later
+find_package(OpenGL REQUIRED)
+
+# adds a new executable with sources
+add_executable(vlWin32_example WIN32 Win32_example.cpp App_RotatingCube.hpp)
+
+# defines which libraries to link to the previously defined executable
+target_link_libraries(vlWin32_example ${VL_LIBRARIES} ${OPENGL_LIBRARIES})
+
+# install everything in the destination path defined at CMake configuration time
+install( TARGETS vlWin32_example
+	RUNTIME DESTINATION "."
+	LIBRARY DESTINATION "."
+	ARCHIVE DESTINATION "."
+)
+	\endcode
+
+	\par Third Party Libraries
+	
+	This is a convenience list of third party libraries used by Visualization Library:
+	
+	- \b FreeType - http://www.freetype.org [required, included with VL]
+	- \b zlib - http://www.zlib.net [required, included with VL]
+	- \b IJG's \b libjpeg - http://www.ijg.org [required, included with VL]
+	- \b libpng - http://www.libpng.org [required, included with VL]
+	- \b libtiff - http://www.libtiff.org [required, included with VL]
+	- \b GDCM - http://sourceforge.net/projects/gdcm
+	- \b Qt - http://qt.nokia.com
+	- \b wxWidgets - http://www.wxwidgets.org
+	- \b SDL - http://www.libsdl.org
+	- \b GLUT - http://www.opengl.org/resources/libraries/glut
+	- \b FreeGLUT - http://freeglut.sourceforge.net
+	- \b GnuWin32: http://gnuwin32.sourceforge.net/packages.html (provides Win32-versions of tools and libraries with GNU or similar open source licences)
+
+*/

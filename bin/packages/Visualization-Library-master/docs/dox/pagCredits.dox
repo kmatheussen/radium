@@ -1,0 +1,88 @@
+﻿/**
+
+	\page pagCredits Credits
+
+	\par Third party libraries used by Visualization Library
+
+	<table width=500 class="creditstable" border=0 cellspacing=5 cellpadding=5 style="background-color: white">
+		<tr>
+			<th>LIBRARY</th><th>WEBSITE</th>
+		</tr>
+		<tr>
+			<td>FreeType library</td><td>http://www.freetype.org</td>
+		</tr>
+		<tr>
+			<td>zlib library</td><td>http://www.zlib.net</td>
+		</tr>
+		<tr>
+			<td>IJG's libjpeg</td><td>http://www.ijg.org</td>
+		</tr>
+		<tr>
+			<td>libpng library</td><td>http://www.libpng.org</td>
+		</tr>
+		<tr>
+			<td>libtiff library</td><td>http://www.libtiff.org</td>
+		</tr>
+		<tr>
+			<td>GDCM library</td><td>http://sourceforge.net/projects/gdcm</td>
+		</tr>
+		<tr>
+			<td> Qt </td><td> http://qt.nokia.com </td> 
+		</tr>
+		<tr>
+			<td> wxWidgets </td><td> http://www.wxwidgets.org </td>
+		</tr>
+		<tr>
+			<td> SDL </td><td> http://www.libsdl.org </td>
+		</tr>
+		<tr>
+			<td> GLUT </td><td> http://www.opengl.org/resources/libraries/glut </td>
+		</tr>
+		<tr>
+			<td> FreeGLUT </td><td> http://freeglut.sourceforge.net </td>
+		</tr>
+	</table>
+
+	\par Developers and Contributors
+	
+	<table width=600 class="creditstable" border=0 cellspacing=5 cellpadding=5 style="background-color: white">
+		<tr>
+			<td>Michele Bosi</td>
+		</tr>
+		<tr>
+			<td>Richard J. Wagner - Mersenne Twister implementation (MersenneTwister.hpp)</td>
+		</tr>
+		<tr>
+			<td>Colin Plumb - MD5 implementation (md5.h, md5.c)</td>
+		</tr>
+		<tr>
+			<td>Tanguy Fautré - tri_stripper implementation (tri_stripper.h, tri_stripper.cpp)</td>
+		</tr>
+		<tr>
+			<td>Austin Appleby - MurmurHash3 functions (MurmurHash3.hpp, MurmurHash3.cpp)</td>
+		</tr>
+		<tr>
+			<td>Brent Fulgham</td>
+		</tr>
+		<tr>
+			<td>Emil Salling</td>
+		</tr>
+		<tr>
+			<td>Olivier Vaillancourt</td>
+		</tr>
+		<tr>
+			<td>Hermann Amthor</td>
+		</tr>
+		<tr>
+			<td>Ludovic Silvestre</td>
+		</tr>
+		<tr>
+			<td>Thiago Bastos</td>
+		</tr>
+		<tr>
+			<td colspan=2>Thanks to all the people (especially in the forum) who tested VL, reported bugs and 
+			provided feedback: your contribution made Visualization Library a much better resource!</td>
+		</tr>
+	</table>
+
+*/

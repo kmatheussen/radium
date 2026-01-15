@@ -1,0 +1,74 @@
+/**
+	\page pagKnowledgeBase VL Knowledge Base
+
+	\par General Info
+	
+	- The officially released packages can be found here: http://www.visualizationlibrary.org/documentation/downloads.php
+	
+	- The latest version of VL sources can be found here: http://code.google.com/p/visualizationlibrary/source/checkout
+	
+	- If you need support or want to keep up to date with the latest developments visit: http://www.visualizationlibrary.org/forum
+	
+	- You can also email me at: michele &lt;at&gt; visualizationlibrary &lt;dot&gt; org
+
+	\par Compiling And Installing VL
+	
+	See the page \ref pagInstall
+	
+	\par Running The Demos And Sample Code
+	
+	Once you have succesfully compiled and installed VL, if you compiled any of the examples you will find them in \a "<VL_INSTALL_DIR>/bin". For example under windows by default the following executables are created:
+	
+	- \a Win32_tests.exe: contains Visualization Library test-demos. Calling it without arguments will show the list of available demo-tests. Calling it with a number as argument will run the corresponding demo-test.
+	- \a Win32_example.exe: displays a simple rotating cube implemented using the utility vl::Applet class.
+	- \a Win32_direct.exe: shows all the steps required to manually setup a simple rendering pipeline (no vl::Applet here).
+	
+	Note that by default VL applications look for their data in the \a "../data" subdirectory. If you run the demos make sure you also installed the data by selecting the \a VL_INSTALL_DATA option from CMake. 
+	You can also specify a custom directory using the \a VL_DATA_PATH environment variable.
+	
+	The code for all the examples are located in the \a "<VL_SDK_DIR>/src/examples" directory. There you will find examples showing how to use VL under all the supported GUI libraries. In the \a "Applets" subdirectory you will find the source code for all the demo-tests. That is the best source of information to discover how VL is used.
+	
+	\par Environment Variables
+
+	- VL_VERBOSITY_LEVEL: defines the verbosity level of VL logs. Possible values are:
+		- DEBUG: extra information useful for debugging VL or the user's program are logged.
+		- NORMAL: normal logging level. Errors, warning, and brief notification are logged.
+		- ERROR: only errors and warnings are logged.
+		- SILENT: not even errors and warnings are logged.
+	- VL_LOGFILE_PATH: the log file name and path. Default is \a log.txt.
+	- VL_DATA_PATH: the path where the application's data is looked for, default is \a "../data".
+	- VL_CHECK_GL_STATES: mainly for debugging. Possible values are "YES" and "NO". When enabled VL checks the consistency of the OpenGL environment upon rendering. Enabled by default in debug builds, disabled by default in release mode.
+	
+	Note that such environment variable merely modify the vl::GlobalSettings default values. You can access and modify them at runtime using the vl::globalSettings() method.
+
+	\par Configuring Visualization Library (\a config.hpp)
+	
+	Before compiling VL you have a chance to tune it for your particular purposes by modifing some defines located in the config.hpp file (see the file content for all the details).
+	
+	Popular macros:
+	
+	- VL_PIPELINE_PRECISION = defines whether VL's default math classes should use single precision (\p float) or double precision (\p double). Default is 1 (single precision).
+	- VL_OBJECT_USER_DATA, VL_ACTOR_USER_DATA, VL_TRANSFORM_USER_DATA, VL_SHADER_USER_DATA = allows the user to bind a void* to any vl::Object, vl::Actor, vl::Transform and vl::Shader respectively. 
+      Very helpful to glue the user's application's logic to VL main classes. Default is 0 (disabled).
+	- VL_MAX_TEXTURE_UNITS = the maximum number of texture units your application is going to use. Allows VL to keep track of a minimum number of texture units. Default is 8.
+	- VL_MAX_GENERIC_VERTEX_ATTRIB = the maximum number of vertex attributes that can be used in a vl::Geometry. Allows VL to keep track of a minimum number of vertex attributes. Default is 8.
+	- VL_MAX_ACTOR_LOD = the maximum number of LOD levels that a vl::Actor can use. Default is 4.
+	- VL_MAX_EFFECT_LOD = the maximum number of LOD levels that a vl::Effect can use. Default is 4.
+	
+	\par Requesting Help And Reporting Issues
+	
+	The right way of asking for help and reporting issues is via the forum or contacting me at the above mentioned email. <i>Please do not write on the issue tracker on google code or on github.com, just use the forums!</i>
+	
+	- Important: 
+		- Make sure you checked the log.txt file when you have a problem with VL, most of the time the solution to your problem is written right in there or can be easily deducted. 
+		- When posting on the forum always include the exact error reported in the log.txt file (or even better attach the whole file), your operating system, and VL version at least!
+		
+	- Use of the forum:
+		- When signing up in the forum choose a human readable, non-dumb name, otherwise your subscription will be most probably discarded as spam. Avoid names such as Iuuuseeassiiwa, abc123 etc. or SupremeKingOfTheDragons etc. Names such as Nike, Mike, John80 or your real name are much better choices.
+		- If your user name falls under the "not-so-decent" category then it helps a lot to sign your posts with your real name or decent nickname to keep the interaction in the forum more pleasant and human. I hate starting a post reply with "Hi KingOfDoom, ..." or similar user names, I'd rather not reply, so keep this into consideration... If you would like to change your user name just let me know, I will be happy to do it for you.
+
+	\par Learning VL
+	
+	To move on with VL see the page \ref pagLearning
+
+*/

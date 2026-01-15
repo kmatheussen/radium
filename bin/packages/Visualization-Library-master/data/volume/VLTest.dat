@@ -1,0 +1,5 @@
+ObjectFileName: "VLTest.raw"
+Resolution: 64 64 64
+SliceThickness: 1 1 1
+Format: UCHAR
+ObjectModel: RGBA

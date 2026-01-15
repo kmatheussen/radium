@@ -1,0 +1,366 @@
+/*
+   \page pagFAQ Visualization Library FAQ
+   
+   THIS IS WORK IN PROGRESS
+   
+	<hr>
+	<b>GENERAL QUESTIONS</b>
+	<hr>
+
+	<h2>What is Visualization Library and what can I do with it?</h2>
+    
+    \ref pagIntro
+     
+	<h2>Under which licensing terms is visualization library distributed?</h2>
+    
+    \ref pagLicensing
+     
+	<h2>Is Visualization Library free of charge?</h2>
+    
+    Yes, absolutely and completely!
+     
+	<h2>Can Visualization Library be used for Open Source projects?</h2>
+    
+    Yes.
+    
+	<h2>Can Visualization Library be used for proprietary and/or commercial projects?</h2>
+    
+    Yes. And again: yes, you don't need to pay a penny, just report proper credit as stated in \ref pagLicensing.
+    
+    A link back to Visualization Library's website is also very welcome.
+    
+	<h2>Who is developing Visualization Library?</h2>
+    
+    Michele Bosi is the principal author of Visualization Library. You can find full credits in \ref pagCredits.
+	Contact information can be found in \ref pagIntro.
+     
+	<h2>Which operating systems does VL support?</h2>
+    
+    VL supports Windows XP, Vista and 7, Linux and Mac OS X.
+     
+	<h2>What is the state of Mac OS X support?</h2>
+    
+    Since I cannot personally check the state of VL functionalities under Mac OS this task is left to the users' community.
+	As far as I know there are quite a few users developing Mac OS applications using VL, so I am quite confident that it
+	works even if I don't get regular updates from them. However, usually if there are problems they are minor compilation 
+	fixes which get promptly fixed.
+     
+	<h2>What does the "VL" abbreviation stays for?</h2>
+    
+    Guess what? VL = Visualization Library.
+     
+	<h2>What is the meaning of VL's version number?</h2>
+    
+    Instead of using fancy version numbers VL uses a very simple scheme, for example:
+	Version 2010.10.1500 actually means YEAR.MONTH.BUILD_NUMBER. Bug fix versions which retain API compatibility with an older version
+	differ only in their build number. An even build number identifies an \a officially \a stable release, while an odd build number identifies
+	a \a development \a milestone release. No garbage releases are publicly distributed so even the \a development \a milestone releases are 
+	usually quite stable as they must pass all the regression tests (with the possible exception of some GUI bindings not properly working) and 
+	don't contain known major bugs. I personally advice VL users to keep up to date with the dev milestone releases as much as possible.
+     
+	<h2>Does VL support DirectX? Does VL support OpenGL ES?</h2>
+	
+	VL does not support DirectX and most likely will never support it. 
+	VL provides experimental support to OpenGL ES 1.1 and 2.0 which I tested only under PowerVL emulators at the moment.
+	
+	<h2>What background knowledge is needed to use VL?</h2>
+	
+	Familiarity with the C++ language and compilers such as GNU G++ and MS Visual C++. Some OpenGL and linear algebra knowledge is highly 
+	beneficial. For more info see \ref pagLearning.
+	
+	<h2>Can VL be used from languages other than C++?</h2>
+	
+	Not that I know, but I think you can build bindings using tools such as ToLua++, SWIG etc.
+	
+	<h2>How can I get notified of new VL releases?</h2>
+    
+    The most up to date source of information is VL forums (http://www.visualizationlibrary.org/forum) and twitter page (http://twitter.com/VizLibrary).
+    
+	<h2>Where can I download Visualization Library?</h2>
+    
+    Here: http://www.visualizationlibrary.org/documentation/downloads.php
+     
+	<h2>Are there binary distributions?</h2>
+	
+	No, for simplicity VL is distributed in source code format only. However the source code provides all the most common dependencies such as libz, libpng, libjpeg, freetype etc. which are automatically built for you.
+	
+	<h2>How do I compile and install Visualization Library?</h2>
+    
+    See the \ref pagInstall page for the full instructions.
+     
+	<h2>How do I compile and run the example and test applications?</h2>
+    
+    When configuring CMake tick the checkbox relative to the GUI examples you want to compile. For ex. "VL_GUI_WIN32_EXAMPLES" will compile the \a 
+	win32_example.exe and \a win32_tests.exe applications. Running the \a win32_tests.exe application without parameters will print out the list
+	of available tests and options.
+     
+	<h2>Are there tutorials about VL?</h2>
+	
+	VL comes with a few official tutorials, see \ref pagGuides. 
+	
+	As far as I know no user has yet written any tutorials or articles about VL. 
+	I like to think this is because VL is damn easy to use! ;)
+	
+	<h2>Are there books about VL?</h2>
+	
+	No books are available yet.
+	
+	<h2>Where can I get more help</h2>
+	
+	In the forum: http://www.visualizationlibrary.org/forum
+	
+	<hr>
+	<b>BASIC SCENE MANAGEMENT AND SHADING QUESTIONS</b>
+	<hr>
+
+	<h2>How do I add objects to my scene?</h2>
+
+    ... fillme ... 
+	
+	<h2>How do I define the position/rotation/scale of an object?</h2>
+    
+    ... fillme ...
+     
+	<h2>How do I assign textures to my objects?</h2>
+
+    ... fillme ... 
+	
+	<h2>How do I define the vertex color of my objects?</h2>
+
+    ... when light is off just set vertex color, and secondary color 
+	
+	... when light is on, set material colors, set vertex colors, and enable vertex-color-material
+	
+	<h2>How do I switch from wire-frame to polygon-fill shading?</h2>
+
+    ... fillme ... 
+	
+	<h2>How do I switch from smooth shading (Gouraud shading) to flat shading?</h2>
+
+    ... fillme ... 
+	
+	<h2>How do I render both, front and back, polygon faces (i.e. double-face polygons)?</h2>
+
+    ... fillme ... 
+	
+	<h2>How do I make an object transparent?</h2>
+
+    ... enable blending; set vertex alpha channel and/or material color alpha channel 
+	
+	<h2>My transparent objects look weird/wrong, what can I do?</h2>
+    
+    ... sort objects, sort triangles, draw back facing before front facing polygons
+	
+	... make sure blend func and blend equations are good
+     
+	<h2>How do I sort the polygons of my object?</h2>
+    
+    ... fillme ...
+     
+	<h2>How do I sort my objects to be rendered in specific way?</h2>
+    
+    ... point to render order article
+     
+	<h2>Why are my transparent objects rendered as opaque?</h2>
+	
+	... enable blending
+	
+	... make sure blend func and blend equations are good
+	
+	<h2>How do I make my lines less jagged?</h2>
+	
+	... enable blending, line smoothing, blend func
+	
+	<h2>Why do my smoothed lines seem to have tiny holes in them?</h2>
+	
+	... depth testing
+
+	<h2>Why are my points rendered as squares instead of circles?</h2>
+	
+	... enable point smooth, enabled blending, set blend func
+
+	<h2>How do I use point sprites?</h2>
+	
+	... mention NVidia performance issue: use glPointParameter(GL_POINT_SPRITE_COORD_ORIGIN, GL_LOWER_LEFT) rather than upper-left, should be quicker.
+
+	<h2>How can I draw 2D objects using VL?</h2>
+	
+	... set a 2d projection matrix; disable depth test; DrawPixels; Vector graphics.
+
+	<h2>How do I add lights to my scene?</h2>
+
+    ... fillme ... 
+	
+	<h2>How do I compute the normals for my objects?</h2>
+
+    ... fillme ... 
+	
+	<h2>Why do my objects look overly bright or overly dark?</h2>
+	
+	... renormalize normals
+	
+	<h2>Is there a simple way to override my Actors' Effect or Shader in a rendering?</h2>
+
+    ... use shader override or effect override 	
+	
+	<h2>How do I define and move a camera to render my scene?</h2>
+
+    ... fillme ... 
+	
+	<h2>How do I animate the entities of my scene?</h2>
+
+    ... fillme ... 
+	
+	<h2>How can I speedup the rendering of my scene?</h2>
+
+    ... fillme ... 
+	
+	<h2>How can I reduce the memory consumption of my application?</h2>
+
+    ... fillme ... 
+	
+	<hr>
+	<b>MISC QUESTIONS</b>
+	<hr>
+
+	<h2>What GUI framework does VL support?</h2>
+    
+    ... Win32, MFC, wxWidgets, Qt4, SDL, GLUT
+	
+	... GUI bindings are more utility classes than anything else
+	
+	... Mac OS Carbon & Cocoa support is experimental
+	
+	... Under Mac you can also use QT4, SDL, GLUT, wxWidgets though
+     
+	<h2>What file formats can VL read/write?</h2>
+	
+	... state and functionality of each read/write plugin
+	
+	... external libraries might be required
+	
+	... PNG, JPG, TIFF, DDS, TGA, BMP, RAW/DAT, DICOM
+	
+	... 3DS, OBJ, PLY, STL, AC3D, MD2
+	
+	<h2>Can I use VL to render from withing my existing rendering framework?</h2>
+	
+	... sure, see the next one
+	
+	<h2>Can I use OpenGL commands with VL?</h2>
+	
+	... option (1): custom Renderable object
+	
+	... option (2): your OGL code; save states; VL render; reset states; your OGL code
+	
+	<h2>My scene shows z-fighting artifacts, how can I eliminate them?</h2> 
+	
+	... use appropriate near/far plane values.
+	
+	... enable automatic near/far optimization.
+	
+	<h2>How can I let my users select objects in the scene?</h2>
+	
+	... picking, rubberband selection not implemented but implementable
+	
+	<h2>I want to render only a specific subset of objects from my scene, how do I do that?</h2>
+	
+	... use enable-masks
+	
+	<h2>Are there environment variables to configure VL at run-time?</h2>
+	
+	... verbosity, data, etc.
+	
+	<h2>What are these ref<> things in the source code?</h2>
+	
+	... reference counting, see memory management article
+
+	<h2>What is VL's native file format?</h2>
+    
+    ... fillme ...
+     
+	<h2>Why doesn't VL have a native file format?</h2>
+    
+    ... fillme ...
+     
+	<h2>How do I make screenshots?</h2>
+
+    ... fillme ... 
+	
+	<h2>How can I add post processing effects to my scene?</h2>
+
+    ... fillme ... 
+	
+	<h2>How do I use framebuffer objects with VL?</h2>
+
+    ... fillme ... 
+	
+	<h2>How can I reduce the aliasing effect in my scene?</h2>
+
+    ... fillme ... 
+	
+	<h2>How do I load image files, 3d files, data files etc.?</h2>
+
+    ... fillme ... 
+	
+	<h2>How do I read and write files and directories?</h2>
+
+    ... fillme ... 
+	
+	<h2>How can I read and write compressed files?</h2>
+
+    ... fillme ... 
+	
+	<h2>How do I manipulate strings?</h2>
+
+    ... fillme ... 
+	
+	<h2>How do I use matrices, vectors, quaternions?</h2>
+
+    ... fillme ... 
+	
+	<h2>How can I visualize 3d volumes?</h2>
+
+    ... fillme ... 
+	
+	<h2>How do I enhance the rendering of edges in my scene?</h2>
+
+    ... fillme ... 
+	
+	<hr>
+	<b>GEOMETRY MANIPULATION</b>
+	<hr>
+
+	<h2>What geometrical primitives does VL provide?</h2>
+
+    ... fillme ... 
+	
+	<h2>How do I remove duplicate vertices?</h2>
+
+    ... fillme ... 
+	
+	<h2>How can I reduce the number of polygons of my objects?</h2>
+
+    ... fillme ... 
+	
+	<h2>How do I generate tangend and bi-tangent vectors for bumpmapping?</h2>
+
+    ... fillme ... 
+	
+	<h2>How I generate triangle strips?</h2>
+
+    ... fillme ... 
+	
+	<hr>
+	<b>MATH QUESTIONS</b>
+	<hr>
+
+	<h2>What is the multiplication order of matrix/vectors/quaternions?</h2>
+
+    ... fillme ... 
+	
+	<h2>How do I interpolate two values?</h2>
+
+    ... fillme ... 
+	
+*/

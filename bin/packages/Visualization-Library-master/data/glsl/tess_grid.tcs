@@ -1,0 +1,117 @@
+/**************************************************************************************/
+/*                                                                                    */
+/*  Copyright (c) 2005-2011, Michele Bosi.                                            */
+/*  All rights reserved.                                                              */
+/*                                                                                    */
+/*  This file is part of Visualization Library                                        */
+/*  http://www.visualizationlibrary.org                                               */
+/*                                                                                    */
+/*  Released under the OSI approved Simplified BSD License                            */
+/*  http://www.opensource.org/licenses/bsd-license.php                                */
+/*                                                                                    */
+/**************************************************************************************/
+
+#version 400
+#extension GL_ARB_tessellation_shader : enable
+
+layout( vertices = 4 ) out;
+
+in vec4 vPosition[];
+out vec4 tcsPosition[];
+
+uniform mat4 vl_ModelViewProjectionMatrix;
+
+// pixels between two edges
+uniform float pixel_per_edge;
+
+// maximum tessellation level allowed
+uniform float max_tessellation;
+
+uniform vec2 screen_size;
+
+vec4 project(vec4 a)
+{
+	vec4 b = vl_ModelViewProjectionMatrix * a;
+	return b / b.w;
+}
+
+vec2 to_screen(vec4 v)
+{
+	// normalize from -1 .. +1 to 0 .. 1
+	vec2 scr = v.xy * 0.5 + vec2(0.5, 0.5);
+	return scr * screen_size;
+}
+
+bool off_screen_left(vec4 p0, vec4 p1, vec4 p2, vec4 p3)
+{
+	return p0.x < -1.0 && p1.x < -1.0 && p2.x < -1.0 && p3.x < -1.0;
+}
+
+bool off_screen_right(vec4 p0, vec4 p1, vec4 p2, vec4 p3)
+{
+	return p0.x > +1.0 && p1.x > +1.0 && p2.x > +1.0 && p3.x > +1.0;
+}
+
+bool off_screen_bottom(vec4 p0, vec4 p1, vec4 p2, vec4 p3)
+{
+	return p0.y < -1.0 && p1.y < -1.0 && p2.y < -1.0 && p3.y < -1.0;
+}
+
+bool off_screen_top(vec4 p0, vec4 p1, vec4 p2, vec4 p3)
+{
+	return p0.y > +1.0 && p1.y > +1.0 && p2.y > +1.0 && p3.y > +1.0;
+}
+
+void main( )
+{
+	tcsPosition[gl_InvocationID] = vPosition[gl_InvocationID];
+
+	// here compute the lod of the inner patch and of the edges
+	if (gl_InvocationID == 0)
+	{
+		vec4 v0 = project(vPosition[0]);
+		vec4 v1 = project(vPosition[1]);
+		vec4 v2 = project(vPosition[2]);
+		vec4 v3 = project(vPosition[3]);
+
+		// check if patch is offscreen
+		// if ( off_screen_left(v0, v1, v2, v3) || off_screen_right(v0, v1, v2, v3) || off_screen_bottom(v0, v1, v2, v3) || off_screen_top(v0, v1, v2, v3) )
+		// {
+			// // skip patch
+			// gl_TessLevelOuter[0] = 
+			// gl_TessLevelOuter[1] = 
+			// gl_TessLevelOuter[2] = 
+			// gl_TessLevelOuter[3] = 
+			// gl_TessLevelInner[0] = 
+			// gl_TessLevelInner[1] = 0;
+		// }
+		// else
+		{
+			vec2 s0 = to_screen(v0);
+			vec2 s1 = to_screen(v1);
+			vec2 s2 = to_screen(v2);
+			vec2 s3 = to_screen(v3);
+
+			// compute edge length in pixels
+			float e0 = distance(s0,s3);
+			float e1 = distance(s0,s1);
+			float e2 = distance(s1,s2);
+			float e3 = distance(s2,s3);
+
+			float tess_level0 = clamp( e0 / pixel_per_edge, 1, max_tessellation );
+			float tess_level1 = clamp( e1 / pixel_per_edge, 1, max_tessellation );
+			float tess_level2 = clamp( e2 / pixel_per_edge, 1, max_tessellation );
+			float tess_level3 = clamp( e3 / pixel_per_edge, 1, max_tessellation );
+
+			gl_TessLevelOuter[0] = tess_level0;
+			gl_TessLevelOuter[1] = tess_level1;
+			gl_TessLevelOuter[2] = tess_level2;
+			gl_TessLevelOuter[3] = tess_level3;
+
+			// here you can use whichever function you like the most: min, max, mix etc.
+			gl_TessLevelInner[0] = max(tess_level1, tess_level3);
+			gl_TessLevelInner[1] = max(tess_level0, tess_level2);
+		}
+	}
+}
+

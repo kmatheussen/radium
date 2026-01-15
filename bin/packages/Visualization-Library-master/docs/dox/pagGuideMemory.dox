@@ -1,0 +1,374 @@
+/**
+
+  \page pagGuideMemory Smart Pointers and Memory Management Tutorial
+
+  \par Smart Pointers
+  
+  Visualization applications often deal with a large amount of objects and complex data structures. This complexity makes it very difficult
+  to track the reference relationship between objects. This is a typical problem in C++ since it does not provide any out-of-the-box garbage 
+  collection or automatic memory management system. Among the most common problems that a C++ application has to deal with we find:
+  
+  - invalid pointers (deallocating objects that are still being used), result: crash.
+  - multiple memory release (objects released more than once), result: crash.
+  - memory leaks (objects never deallocated), result: unrecoverable memory consumption.
+  
+  In order to minimize this issues Visualiation Library employs a well-known, simple and effective techniqe called "reference counting".
+  For every dynamically allocated object VL keeps a reference count that tracks the number of references that an object has. When the 
+  reference reaches zero it means that no one is using that object anymore and that it can be safely deleted. All the reference 
+  counted classes derive from vl::Object, while the actual reference count is managed by the template class vl::ref<>.
+  The vl::ref<> class behaves similarly to Boost's smart pointer "boost::intrusive_ptr<>".
+  
+  \par Basic usage
+  
+  The following example shows the basic usage of the \p ref<> class:
+  
+\code
+class MyObject: public vl::Object
+{
+public:
+    MyObject(int data): mData(data) {}
+    int mData;
+};
+
+int main()
+{
+    // the ref<> class can be used for the most part like a normal pointer
+    vl::ref<MyObject> obj1 = new MyObject(10);
+    MyObject obj3(30);
+    *obj1 = obj3; // supports the '*' operator
+    obj1->mData = 40; // supports the '->' operator
+    MyObject* naked = obj1.get(); // retrieves the naked pointer
+    if (obj1) // bool operator -> obj1.get() != NULL
+        doSomething();
+    vl::ref<MyObject> obj2 = new MyObject(20);
+    if (obj1 == obj2) // == and != operators
+        doSomethingElse();
+    std::map< vl::ref<MyObject>, int > mMyMap; // can be used with STD maps and sets
+}
+\endcode
+  
+  Now consider the following example:
+
+  \code
+void myfunc()
+{
+  vl::ref<MyObject> obj_ref = new MyObject; // ref count is 1
+  obj_ref->someMethod();
+} 
+// "obj_ref" goes out of scope and frees the allocated memory
+  \endcode
+
+  The function \p myfunc() allocates an object of type \p MyObject deriving from (vl::Object), then calls the method \p someMethod() and then 
+  returns. As you can see there is no need to explicitly call the \p delete operator to deallocate the object pointed by \p obj_ref. 
+  Infact when \p obj_ref goes out of scope its destructor will decrement the reference count of the previously allocated object 
+  (which will reach 0) and will deallocate it.
+  
+  The power of this kind of memory management system though is much more evident when applied to complex or hierarchycal data structures. 
+  Consider the following example:
+  
+\code
+class TreeNode: public vl::Object
+{
+public:
+  TreeNode(const std::string& name): mName(name) {}
+  
+  void addChild(TreeNode* child) { mChildNodes.push_back(child); }
+  void removeChild(int i) { mChildNodes.erase(mChildNodes.begin()+i); }
+
+public:
+  std::vector< vl::ref<TreeNode> > mChildNodes;
+  std::string mName;
+};
+
+void mytree()
+{
+  vl::ref<TreeNode> nodeA = new TreeNode("A"); // A's ref count == 1
+  TreeNode* nodeB = new TreeNode("B"); // B's ref count == 0
+  TreeNode* nodeC = new TreeNode("C"); // C's ref count == 0
+  nodeA->addChild(nodeB); // B's ref count == 1
+  nodeA->addChild(nodeC); // C's ref count == 1
+  nodeA = NULL;
+  // A's ref count == 0
+  // A is deleted, thus also it's std::vector< ref<TreeNode> > mChildNodes is deleted
+  // B and C ref count reaches 0 too, so they are also deleted.
+}
+\endcode
+
+  The above code shows a bare-bone implementation of a tree-like data structure. As you can see when child nodes are added to a node their
+  reference count is incremented. When the parent is destroyed though, there is no need to iterate recursively over the child nodes to explicitly
+  deallocate them, since they are automatically deallocated if nobody else is referencing them! As you can see this approach can greatly 
+  simplify the management of dynamic objects. Reference counting can at the same time simplify our programs and make them more robust, but 
+  they must be used carefully to avoid a well known issue called "cyclic dependencies".
+  
+  \par Cyclic dependencies
+  
+  To understand the problem of cyclic dependencies let's see another example:
+  
+\code
+class TreeNode: public vl::Object
+{
+public:
+  TreeNode(const std::string& name): mName(name) {}
+
+  void addChild(TreeNode* child) 
+  { 
+    child->mParent = this;
+    mChildNodes.push_back(child); 
+  }
+
+  void removeChild(int i) 
+  { 
+    mChildNodes[i]->mParent = NULL;
+    mChildNodes.erase(mChildNodes.begin()+i); 
+  }
+
+public:
+  std::vector< vl::ref<TreeNode> > mChildNodes; // ref<> pointer
+  vl::ref<TreeNode> mParent; // ref<> pointer (BAD)
+  std::string mName;
+};
+
+void mytree()
+{
+  vl::ref<TreeNode> nodeA = new TreeNode("A"); // A's ref count == 1
+  TreeNode* nodeB = new TreeNode("B"); // B's ref count == 0
+  TreeNode* nodeC = new TreeNode("C"); // C's ref count == 0
+  nodeA->addChild(nodeB); // B's ref count == 1, A's ref count = 2
+  nodeA->addChild(nodeC); // C's ref count == 1, A's ref count = 3
+  nodeA = NULL;
+  // A's ref count == 2
+  // A is NOT deleted!
+  // B and C are NOT deleted either!
+  // when this function exits we have a memory leak!
+}
+\endcode
+
+  So what is the problem here? The problem is that A refers B and C, while at the same time B and C also refer A. So when the the function exits
+  none of their reference count reach zero and we generated a memory leak! In order to manage this kind of cyclic dependency usually one has
+  to define a \a "who owns who" policy. The \b owner of another object uses \p ref<> while the \b owned object uses a normal naked pointer, for example the 
+  following data structure does not generate memory leaks:
+  
+\code
+class TreeNode: public vl::Object
+{
+public:
+  TreeNode(const std::string& name): mName(name) {}
+
+  void addChild(TreeNode* child) 
+  { 
+    child->mParent = this;
+    mChildNodes.push_back(child); 
+  }
+
+  void removeChild(int i) 
+  { 
+    mChildNodes[i]->mParent = NULL;
+    mChildNodes.erase(mChildNodes.begin()+i); 
+  }
+
+public:
+  std::vector< vl::ref<TreeNode> > mChildNodes; // ref<> pointer
+  TreeNode* mParent; // naked pointer!
+  std::string mName;
+};
+
+void mytree()
+{
+  vl::ref<TreeNode> nodeA = new TreeNode("A"); // A's ref count == 1
+  TreeNode* nodeB = new TreeNode("B"); // B's ref count == 0
+  TreeNode* nodeC = new TreeNode("C"); // C's ref count == 0
+  nodeA->addChild(nodeB); // B's ref count == 1, A's ref count = 1
+  nodeA->addChild(nodeC); // C's ref count == 1, A's ref count = 1
+  nodeA = NULL;
+  // A's ref count == 0, so the whole tree is deleted as expected
+}
+\endcode
+
+  As far as the \p mParent pointer is kept consistent this approach works very well and without any additional complication.
+
+  If the \p mParent pointer is not kept consistent it means that the program has a bug. In this case it does not matter if you are using
+  smart pointers or not, your application is doomed to crash sooner or later.
+
+  Let's see another example:
+  
+\code
+class List: public vl::Object
+{
+public:
+  int Data;
+  vl::ref<List> mNext;
+};
+
+void mylist()
+{
+  List* a = new List; // a's ref count = 0
+  List* b = new List; // b's ref count = 0
+  List* c = new List; // c's ref count = 0
+  List* d = new List; // d's ref count = 0
+  a->mNext = b; // b's ref count = 1
+  b->mNext = c; // c's ref count = 1
+  c->mNext = d; // d's ref count = 1
+  d->mNext = a; // a's ref count = 1
+  // now we have a cyclic dependency: a -> b -> c -> d -> a!
+  // when we exit this function a, b, c and d are 
+  // not released since their reference count is 1!
+}
+\endcode
+  
+  Also in this case the cyclic dependency generated a memory leak since the object were not deallocated as you might have expected.
+  
+  In this case you must be aware of the cyclic dependency and must break it explicitly when appropriate. In our case we would put something like
+  \p a->mNext=NULL; before the end of the function. This would generate a chain-reaction whose effect whould be the deallocation of the objects 
+  in the following order: \p b, \p c, \p d, \p a.
+  
+  The bottonline is that smart pointers can be very handy and can simplify a lot your life, but you still need to design appropriately your
+  data-structures.
+
+  \par Returning naked pointers
+  
+  A typical mistake is creating a referenced object within a function and returning the naked pointer instead of the \p ref<> object.
+  Consider the following example:
+
+\code
+MyObject* createMyObject()
+{
+  vl::ref<MyObject> obj = new MyObject;
+  return obj.get();
+}
+\endcode
+  
+  The problem here is that when \p ref_obj goes out of scope it will deallocate the object, so the returned pointer will point to an invalid
+  memory address! A way to solve the problem could be substituting the first line of the function with a naked pointer:
+
+\code
+MyObject* createMyObject()
+{
+  MyObject* obj = new MyObject;
+  return obj;
+}
+\endcode
+  
+  Although correct, this approach is considered bad practice since this breaks the policy that for each \p new there should be a corresponding \p ref<>, 
+  plus the function signature seem to imply that somebody else is owning the object that has just been allocated.
+  
+  The policy followed by Visualization Library in this cases is to return the actual \p ref<> object to remark the fact that the function is
+  creating a \b new \b object and is \b passing \b the \b ownership of such object to you:
+  
+\code
+vl::ref<MyObject> createMyObject()
+{
+  vl::ref<MyObject> obj = new MyObject;
+  return obj;
+}
+\endcode
+
+  This approach also prevent other functions to deallocate the object before it is returned as described in the following section.
+
+  \par Passing naked pointers
+  
+  Let's take the simple example seen above with a slight modification: before returning we do some kind of operation on the object:
+  
+\code
+void doSomething(MyObject*);
+
+vl::ref<MyObject> createMyObject()
+{
+  MyObject* obj = new MyObject; // naked pointer! (BAD)
+  doSomething(obj);
+  return obj;
+}
+\endcode
+  
+  We have a problem here. What happens if the function \p doSomething() internally uses a \p ref<> to reference the pointer we just passed?
+  Or what happens if the function \p doSomething() internally uses directly or indirectly some object that create a \p ref<> to the pointer
+  we just passed? The answer is that by the time \p doSomething() returns \p obj might contain an invalid pointer since the object it is
+  pointing to might have been already deallocated!
+  
+  For this reason especially in this cases it is very important to associate the \p ref<> pointer to an object as soon as it is allocated, like this:
+  
+\code
+void doSomething(MyObject*);
+
+vl::ref<MyObject> createMyObject()
+{
+  vl::ref<MyObject> obj = new MyObject;
+  doSomething(obj.get());
+  return obj.get();
+}
+\endcode
+
+  Preventing such errors is very simple, you just have to remember that for each \p new there must be a corresponding \p ref<>.
+  
+  \par Static allocation and arrays
+  
+  Sometimes you don't want to dynamically allocate your objects (usually for performance reasons) but still want to safely pass around pointers 
+  and \p ref<> references to them. Normally you are not allowed to do this, for example the following example will produce a crash:
+
+\code
+void myfunc()
+{
+  MyObject obj; // MyObject is a subclass of vl::Object
+  vl::ref<MyObject> obj_ref = &obj; // fear the "&" opearator!
+}
+// when 'obj_ref' goes out of scope it will try to use the 'delete' operator to deallocate the 
+// object it points to (which is a statically allocated): your program will crash immediately!
+\endcode
+
+  Whenever you use the "&" operator with an object derived from vl::Object you should reconsider why you need to use it.
+  
+  In order to make \p ref<> work with statically allocated objects you have to disable the automatic object deletion using the method
+  \p vl::Object::setAutomaticDelete(bool) passing \p false. If vl::Object::automaticDelete() is set to \p false then \p ref<> will not
+  delete the object when its reference count reaches zero.
+  
+  The \p vl::Object::setAutomaticDelete() method can also be useful when you want to allocate a large amount of object in a single chunk
+  using the \p new[] operator. For example if you wanted to quickly allocate a large amount of objects and safely pass pointers to them 
+  you would do something like this:
+  
+\code
+class MyObjectPool
+{
+public:
+  MyObjectPool(): mPool(NULL) {}
+  ~MyObjectPool() 
+  {
+    // dispose old pool
+    if (mPool)
+      delete [] mPool;
+  }
+  
+  void allocatePool(int count)
+  {
+    // dispose old pool
+    if (mPool)
+      delete [] mPool;
+    // allocate new pool
+    mPool = new MyObject[count];
+    // disable the automatic object deletion
+    for(int i=0; i<count; ++i)
+      mPool->setAutomaticDelete(false);
+  }
+  
+  // the pointer returned here can be safely used also by ref<>
+  MyObject* getObject(int index) { return &mPool[index]; }
+
+public:
+  MyObject* mPool;
+};
+\endcode
+  
+  Beware that if you disable the automatic deletion for an object you are responsible for tracking all its references and its deletion.
+  In particular pay attention not to deallocate your pool while orther objects are still pointing to data within the pool. If instead of using the 
+  new[]/delete[] operator you want to use the \p std::vector<> class, keep in mind that any \p push_back(), \p resize() etc. might 
+  reallocate the whole internal buffer kept by \p std::vector<>, thus invalidating all the previously used pointers to the contained objects.
+  
+  You should use vl::Object::setAutomaticDelete() very carefully and only after excluding all the other options.
+  Usually it is worth using it only in extreme situations, when you have to allocate quickly several hundreds of thousands of complex objects.
+  
+  \par References
+  
+  For more information see also:
+
+  - http://en.wikipedia.org/wiki/Smart_pointer
+  - http://www.boost.org/doc/libs/1_38_0/libs/smart_ptr/smart_ptr.htm
+  
+*/
