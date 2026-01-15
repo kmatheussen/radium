@@ -138,7 +138,7 @@ build_Visualization-Library() {
 
     #rm -fr Visualization-Library-master
     #tar xvzf Visualization-Library-master.tar.gz 
-    #cd Visualization-Library-master/
+    cd Visualization-Library-master/
 	#cp -a ../vlQt6 src/
     #patch -p1 <../visualization.patch
     #sed -i.backup 's/add_subdirectory("freetype")//' src/vlGraphics/plugins/CMakeLists.txt
