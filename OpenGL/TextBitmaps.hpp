@@ -4,7 +4,7 @@
 #include <QFontMetrics>
 #include <QHash>
 #include <QPainter>
-#include <QGLWidget>
+//#include <QGLWidget>
 #include <QSet>
 #include <QCoreApplication>
 #include <QDir>

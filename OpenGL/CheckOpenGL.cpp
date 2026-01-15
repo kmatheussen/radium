@@ -8,7 +8,7 @@
 #ifdef COMPILE_EXECUTABLE
 
 #include <QWidget>
-#include <QGLFormat>
+//#include <QGLFormat>
 #include <QGuiApplication>
 #include <QOperatingSystemVersion>
 
@@ -28,12 +28,12 @@ int main(int argc, char **argv){
 #endif
 
   QGuiApplication app(argc, argv);
-
+#if 0 // FIX
   if (QGLFormat::hasOpenGL()==false)
     return 0;
 
   QGLFormat::openGLVersionFlags();
-
+#endif
   return 0;
 }
 

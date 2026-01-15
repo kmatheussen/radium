@@ -151,7 +151,8 @@ export PYOPTS="-I $PYPATH"
 
 QT_INCLUDE_PATH=`$QMAKE -query QT_INSTALL_HEADERS`
 export QT_UI_CFLAGS="-I $QT_INCLUDE_PATH/QtUiTools" # Doing this instead of using pkg since there are bugs in the dependencies of the pkg file in some versions of Qt. (same with the lib file below)
-export QT_UI_LDFLAGS="`$QMAKE -query QT_INSTALL_LIBS`/libQt6UiTools.a"
+#export QT_UI_LDFLAGS="`$QMAKE -query QT_INSTALL_LIBS`/libQt6UiTools.a"
+export QT_UI_LDFLAGS="`$PKGqt --libs Qt6UiTools`"
 
 
 #One of these:

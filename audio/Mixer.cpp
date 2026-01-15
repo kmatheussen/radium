@@ -1558,7 +1558,7 @@ struct Mixer{
       
        RT_message("jack's blocksize (%d) can not be smaller than Radium's internal block size of %d.", num_frames, RADIUM_BLOCKSIZE);
        if (!MIXER_dummy_driver_is_running())
-         MIXER_start_dummy_driver();
+		   MIXER_start_dummy_driver();
 
     } else {
 
@@ -1852,7 +1852,7 @@ bool MIXER_start(void){
   g_player_stopped_semaphore = RSEMAPHORE_create(0);
 
   g_mixer = new Mixer();  
-  
+
   if(g_mixer->start_jack()==false)
     if (g_mixer->start_juce_audio()==false) {
 
@@ -1871,7 +1871,6 @@ bool MIXER_start(void){
 
       //return false;
     }
-
 
   while(ATOMIC_GET(g_mixer->_RT_process_has_inited)==false)
     msleep(50);

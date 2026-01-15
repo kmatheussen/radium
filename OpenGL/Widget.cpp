@@ -76,7 +76,7 @@ static double g_last_resize_time = -1;
 #include <QMessageBox>
 #include <QApplication>
 #include <QAbstractButton>
-#include <QGLFormat>
+//#include <QGLFormat>
 #include <QDebug>
 #include <QElapsedTimer>
 #include <QOperatingSystemVersion>
@@ -929,7 +929,7 @@ public:
 #  if THREADED_OPENGL
     : Qt6ThreadedWidget(vlFormat, parent)
 #  else
-      : Qt6Widget(vlFormat, parent)
+      : Qt6Widget(/*vlFormat,*/ parent)
 #  endif
 #elif USE_QT5
 #  if THREADED_OPENGL
@@ -999,7 +999,8 @@ public:
     glContext->initGLContext(); // Sometimes, the first gl* call crashes inside here on OSX.
 
 #if USE_QOPENGL
-    glContext->vl::OpenGLContext::framebuffer()->setExternallyManaged( true );
+	// FIX
+	//    glContext->vl::OpenGLContext::framebuffer()->setExternallyManaged( true );
     //dispatchInitEvent();
 #endif
       
@@ -2034,7 +2035,7 @@ public:
 	    ATOMIC_SET(GE_version_string, V_strdup((const char*)glGetString(GL_VERSION)));
       printf("vendor: %s, renderer: %s, version: %s \n",(const char*)ATOMIC_GET(GE_vendor_string),(const char*)ATOMIC_GET(GE_renderer_string),(const char*)ATOMIC_GET(GE_version_string));
       
-      ATOMIC_SET(GE_opengl_version_flags, QGLFormat::openGLVersionFlags());
+	  //      ATOMIC_SET(GE_opengl_version_flags, QGLFormat::openGLVersionFlags());
       //abort();
     }
 
@@ -2178,7 +2179,13 @@ public:
     
     GE_set_height(qresizeevent->size().height());
 
-#if USE_QT5
+#if USE_QT6
+#  if THREADED_OPENGL
+    vlQt6::Qt5ThreadedWidget::resizeEvent(qresizeevent);
+#  else
+    vlQt6::Qt6Widget::resizeEvent(qresizeevent);
+#  endif
+#elif USE_QT5
 #  if THREADED_OPENGL
     vlQt5::Qt5ThreadedWidget::resizeEvent(qresizeevent);
 #  else
@@ -2730,17 +2737,23 @@ extern "C" void cocoa_set_best_resolution(void *view);
 #endif
 
 static bool is_opengl_certainly_too_old_questionmark(void){
+	return false;
+	/*
   if (! ((QGLFormat::openGLVersionFlags()&QGLFormat::OpenGL_Version_2_0) == QGLFormat::OpenGL_Version_2_0))
     return true;
   else
     return false;
+	*/
 }
 
 static bool is_opengl_version_recent_enough_questionmark(void){
+	return true;
+	/*
   if ((QGLFormat::openGLVersionFlags()&QGLFormat::OpenGL_Version_3_0) == QGLFormat::OpenGL_Version_3_0)
     return true;
   else
     return false;
+	*/
 }
 
 static void init_widget2(void){
@@ -3100,13 +3113,14 @@ bool GL_check_compatibility(void){
     init_g_pause_rendering_on_off();
   }
   
-    
+#if 0    
   if (QGLFormat::hasOpenGL()==false) {
     GFX_Message(NULL,"OpenGL not found");
     //exit(-1);
     return false;
   }
-
+#endif
+  
 #if !RADIUM_USES_TSAN
   if (CHECKOPENGL_checkit()==true)
     return false;
