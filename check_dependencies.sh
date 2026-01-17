@@ -228,13 +228,13 @@ if ! pkg-config --cflags samplerate >/dev/null 2>/dev/null ; then
     exit 5
 fi
 
-if [ `uname` == "Linux" ] ; then
-    if ! pkg-config --cflags lrdf >/dev/null 2>/dev/null ; then
-		env|grep PKG
-		echo "liblrdf not found"
-		exit 5
-    fi
-fi
+#if [ `uname` == "Linux" ] ; then
+    #if ! pkg-config --cflags lrdf >/dev/null 2>/dev/null ; then
+	#	env|grep PKG
+	#	echo "liblrdf not found"
+	#	exit 5
+    #fi
+#fi
 
 if ! pkg-config --cflags glib-2.0 >/dev/null 2>/dev/null ; then
     echo "glib-2.0 not found"
