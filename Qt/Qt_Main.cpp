@@ -2835,8 +2835,21 @@ protected:
 
     GL_update();
     
-    if(doquit==true) {
-      QApplication::quit();
+    if(doquit==true)
+	{
+		static bool s_has_called_qapp_quit = false;
+
+		if (s_has_called_qapp_quit == false)
+		{
+			s_has_called_qapp_quit = true;
+			//QApplication::quit();
+			QApplication::exit();
+		}
+		else
+		{
+			printf("Timer running after quit?\n");
+			return;
+		}
     }
 
     PATCH_call_very_often();
@@ -4108,7 +4121,8 @@ int radium_main(const char *arg){
 #if USE_QT_VISUAL
  again:
   try{
-    qapplication->exec();
+	  printf("Running qapplication->exec()\n");
+	  qapplication->exec();
   } catch (radium::EndlessRecursion e){
     SYSTEM_show_error_message("This is a serious bug. You should save and restart the program immediately.");
     g_endless_recursion = false;
