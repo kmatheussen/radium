@@ -2199,10 +2199,10 @@ void openAboutWindow(void){
   GFX_addMessage(
               "<center><b>Radium " RADIUM_VERSION "</b></center>"
               "<p>"
-              "OpenGL vendor: \"%s\"<br>"
-              "OpenGL renderer: \"%s\"<br>"
-              "OpenGL version: \"%s\"<br>"
-              "OpenGL flags: %x<br>"
+              //"OpenGL vendor: \"%s\"<br>"
+              //"OpenGL renderer: \"%s\"<br>"
+              //"OpenGL version: \"%s\"<br>"
+              //"OpenGL flags: %x<br>"
               "Qt version: \"%s\"<br>"
               "JUCE version: \"%s\"<br>"
               "C/C++ compiler version: " __VERSION__ "<br>"
@@ -2219,10 +2219,10 @@ void openAboutWindow(void){
               "<p>"
               "Radium needs more demo songs. If you provide one which is suitable, you will get a free lifetime subscription. More information <A href=\"http://users.notam02.no/~kjetism/radium/songs.php\">here</A>."
               ,
-              ATOMIC_GET(GE_vendor_string)==NULL ? "(null)" : ATOMIC_GET(GE_vendor_string),
-              ATOMIC_GET(GE_renderer_string)==NULL ? "(null)" : ATOMIC_GET(GE_renderer_string),
-              ATOMIC_GET(GE_version_string)==NULL ? "(null)" : ATOMIC_GET(GE_version_string),
-              ATOMIC_GET(GE_opengl_version_flags),
+              //ATOMIC_GET(GE_vendor_string)==NULL ? "(null)" : ATOMIC_GET(GE_vendor_string),
+              //ATOMIC_GET(GE_renderer_string)==NULL ? "(null)" : ATOMIC_GET(GE_renderer_string),
+              //ATOMIC_GET(GE_version_string)==NULL ? "(null)" : ATOMIC_GET(GE_version_string),
+              //ATOMIC_GET(GE_opengl_version_flags),
               GFX_qVersion(),
               JUCE_get_JUCE_version(),
               getCLibFaustVersion(),
@@ -4337,8 +4337,8 @@ bool doModalWindows(void){
   static bool has_inited = false;
 
   if (has_inited==false){
-    g_modal_windows = SETTINGS_read_bool("modal_windows", GL_should_do_modal_windows());
-    has_inited = true;
+	  g_modal_windows = SETTINGS_read_bool("modal_windows", false); //GL_should_do_modal_windows());
+	  has_inited = true;
   }
 
   return g_modal_windows;

@@ -900,10 +900,10 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
   
   tosend += "OS version: " + QSysInfo::productVersion() + "\n\n";
     
-  tosend += "OpenGL vendor: " + opengl_vendor + "\n";
-  tosend += "OpenGL renderer: " + QString((ATOMIC_GET(GE_renderer_string)==NULL ? "(null)" : (const char*)ATOMIC_GET(GE_renderer_string))) + "\n";
-  tosend += "OpenGL version: " + QString((ATOMIC_GET(GE_version_string)==NULL ? "(null)" : (const char*)ATOMIC_GET(GE_version_string))) + "\n";
-  tosend += QString("OpenGL flags: %1").arg(ATOMIC_GET(GE_opengl_version_flags), 0, 16) + "\n\n";
+  //tosend += "OpenGL vendor: " + opengl_vendor + "\n";
+  //tosend += "OpenGL renderer: " + QString((ATOMIC_GET(GE_renderer_string)==NULL ? "(null)" : (const char*)ATOMIC_GET(GE_renderer_string))) + "\n";
+  //tosend += "OpenGL version: " + QString((ATOMIC_GET(GE_version_string)==NULL ? "(null)" : (const char*)ATOMIC_GET(GE_version_string))) + "\n";
+  //tosend += QString("OpenGL flags: %1").arg(ATOMIC_GET(GE_opengl_version_flags), 0, 16) + "\n\n";
 
   tosend += "Runtime Qt version: " + QString(qVersion()) + " on " + QSysInfo::currentCpuArchitecture().toUtf8().constData() + "\n";
   tosend += "Compile-time Qt version:" + QString(QT_VERSION_STR) +  " for " + QSysInfo::buildAbi().toUtf8().constData() + ".\n\n";
