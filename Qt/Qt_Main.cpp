@@ -4747,7 +4747,6 @@ static void determine_dpi_and_gfx_scale(void){
 }
 
 int main(int argc, char **argv){
-
   //return 0;
 
 #if defined(RADIUM_USES_ASAN)
@@ -4850,8 +4849,11 @@ int main(int argc, char **argv){
 #else
   qInstallMsgHandler(myMessageOutput);
 #endif
-  
-  QCoreApplication::setLibraryPaths(QStringList());  
+
+  for(auto &path : QCoreApplication::libraryPaths())
+	  printf("PATH: %s\n", path.toUtf8().constData());
+
+  QCoreApplication::setLibraryPaths(QStringList(getenv("QT_QPA_PLATFORM_PLUGIN_PATH")));
 
   //QCoreApplication::setAttribute(Qt::AA_DontCheckOpenGLContextThreadAffinity);
 
@@ -4906,7 +4908,7 @@ int main(int argc, char **argv){
 
     
   argv = getQApplicationConstructorArgs(argc, argv); // Add Qt things to the command line arguments. (freetype).
-  
+
   // Create application here in order to get default style. (not recommended, but can't find another way)
   qapplication=new MyApplication(argc,argv);
   
