@@ -1968,7 +1968,7 @@ public:
     //{static double last_time = 0; static int counter =0; double nowtime = TIME_get_ms(); printf("   Counter: %d. Time: %f\n", counter++, nowtime-last_time);last_time = nowtime;}	  
 	  UPDATE_ENTER_TIME();
 
-#if !defined(FOR_MACOSX)
+#if THREADED_OPENGL //defined(FOR_MACOSX)
 	  R_ASSERT_NON_RELEASE(!THREADING_is_main_thread());
 #endif
 	  

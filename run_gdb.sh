@@ -39,8 +39,8 @@ if uname -s |grep Linux > /dev/null ; then
     XCB_LIB_DIR=$THIS_DIR/bin/packages/libxcb-1.13/src/.libs
     
     if ! file $XCB_LIB_DIR >/dev/null ; then
-	echo "Unable to find directory $XCB_LIB_DIR"
-	exit -1
+		echo "Unable to find directory $XCB_LIB_DIR"
+		exit -1
     fi
 
     export LD_LIBRARY_PATH=$XCB_LIB_DIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}

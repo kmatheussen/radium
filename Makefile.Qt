@@ -583,10 +583,15 @@ CPPOPT = $(COMMONOPT) -Wmissing-declarations -DNDEBUG # NDEBUG must be defined t
 # -Wno-deprecated-copy added because of Qt
 
 
-QT_VERSION:=$(shell $(MOC) --version)
+QT_VERSION:=$(shell $(QMAKE) -query QT_VERSION)
 QT_MAJOR:=$(shell echo $(QT_VERSION) | cut -d'.' -f1)
 QT_MINOR:=$(shell echo $(QT_VERSION) | cut -d'.' -f2)
 QT_SUB:=$(shell echo $(QT_VERSION) | cut -d'.' -f3)
+
+QT_HEADERS_DIR:=$(shell $(QMAKE) -query QT_INSTALL_HEADERS)
+
+PRIVATE_QT_CORE_HEADERS=$(QT_HEADERS_DIR)/QtCore/$(QT_VERSION)
+PRIVATE_QT_GUI_HEADERS=$(QT_HEADERS_DIR)/QtGui/$(QT_VERSION)
 
 WNO_SUGGEST_OVERRIDE=
 
@@ -1712,7 +1717,7 @@ $(T)X11_instrument.o:  $(BUILD_DEPENDENCIES) X11/X11_instrument.c
 	$(CC2) X11/X11_instrument.c $(OPT)
 
 $(T)X11_keyboard.o:  $(BUILD_DEPENDENCIES) X11/X11_keyboard.cpp
-	$(CCC2) X11/X11_keyboard.cpp $(QTOPT) -I/usr/include/qt6/QtCore/6.9.3/ -I/usr/include/qt6/QtGui/6.9.3/
+	$(CCC2) X11/X11_keyboard.cpp $(QTOPT) -I $(PRIVATE_QT_CORE_HEADERS) -I $(PRIVATE_QT_GUI_HEADERS)
 
 bin/radium_check_recent_libxcb: X11/check_recent_libxcb.c
 	$(CC) -Wall $(WERROR) X11/check_recent_libxcb.c -ldl -o bin/radium_check_recent_libxcb
