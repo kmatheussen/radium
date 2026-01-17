@@ -50,8 +50,10 @@ int main(int argc, char **argv){
 
 
 // Returns true if we want to exit;
-bool CHECKOPENGL_checkit(void){
-  
+bool CHECKOPENGL_checkit(void)
+{
+	return false;
+	
   radium::Process process;
 
 #if FOR_WINDOWS  

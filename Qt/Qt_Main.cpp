@@ -2913,7 +2913,7 @@ protected:
     {
       int gl_status = GL_maybe_notify_that_main_window_is_exposed(_interval);
       if (gl_status>=1){
-        GL_maybe_estimate_vblank(static_cast<EditorWidget*>(window->os_visual.widget)->gl_widget);
+		  //GL_maybe_estimate_vblank(static_cast<EditorWidget*>(window->os_visual.widget)->gl_widget);
       }
     }
 
@@ -3725,7 +3725,7 @@ int radium_main(const char *arg){
 
   //SCHEME_init1();
 
-  printf("starting\n");
+  fprintf(stderr, "starting\n");
   if(InitProgram()==false)
       return 0;
 
