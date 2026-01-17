@@ -230,6 +230,8 @@ if ! is_0 $INCLUDE_FAUSTDEV ; then
         # ($LLVMLIBS not included since it's included in libfaust)
         FAUSTLDFLAGS="$FAUSTLDFLAGS `$PKG --libs uuid` `$LLVM_PATH/bin/llvm-config --ldflags` -ltinfo"
     fi
+else
+	FAUSTLDFLAGS=""
 fi
 # _debug
 
@@ -377,7 +379,7 @@ do_source_sanity_checks() {
             exit -1
 	fi            
 	
-	if git grep -e if\( --or -e if\ \( *|grep \=|grep -v \=\=|grep -v \!\=|grep -v \>\=|grep -v \<\=|grep -v pluginhost|grep -v bin/scheme|grep -v rtmidi|grep -v python|grep -v amiga|grep -v unused_files|grep -v weakjack|grep -v radium_wrap_1.c|grep -v keybindings.conf |grep -v bin/help ; then
+	if git grep -e if\( --or -e if\ \( *|grep \=|grep -v \=\=|grep -v \!\=|grep -v \>\=|grep -v \<\=|grep -v pluginhost|grep -v bin/scheme|grep -v rtmidi|grep -v python|grep -v amiga|grep -v unused_files|grep -v weakjack|grep -v radium_wrap_1.c|grep -v keybindings.conf |grep -v bin/help | grep -v Visualization-Library-master; then
             echo
             echo "ERROR in line(s) above. A single '=' can not be placed on the same line as an if.";
             echo

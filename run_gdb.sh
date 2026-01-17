@@ -125,6 +125,8 @@ echo "G_DEBUG="fatal-warnings,gc-friendly" USE=libedit/readline exec $debugger $
 
 chmod a+rx $exename
 
+#ldd -r $EXECUTABLE
+
 exec $exename
 #bash $exename
 
