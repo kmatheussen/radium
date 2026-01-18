@@ -115,6 +115,7 @@ set_var QT_PKG_CONFIGURATION_PATH 0 # PKG_CONFIG_PATH will be set to this value.
 set_var QMAKE 0
 set_var UIC 0
 set_var MOC 0
+set_var QSB 0
 
 # Alternative: Add the Qt6 bin directory to path,
 # The directory can be different on your system,
@@ -210,21 +211,29 @@ if is_0 $MOC ; then
     fi
 fi
 
-assert_exe_exists $QMAKE
-assert_exe_exists $UIC
-assert_exe_exists $MOC
-
-if ${QMAKE} -query QT_VERSION | grep -v '^6' ; then
-    handle_failure "Seems like qmake has the wrong version. We need Qt 6 or newer. Set QMAKE to correct path to fix".
+if is_0 $QSB ; then
+    if which qsb-qt6 2>/dev/null  ; then
+        export QSB=$(which qsb-qt6)
+    else
+        export QSB=$(which qsb)
+    fi
 fi
 
-if ${UIC} --version | grep -v '^uic 6' ; then
-	handle_failure "Seems like uic has the wrong version. We need Qt 6 or newer. Set UIC to correct path to fix".
-fi
+assert_v6()
+{
+	assert_exe_exists $1
+	
+	if $@ | grep -v '^6' ; then
+		if $@ | awk '{print $2}' | grep -v '^6' ; then
+			handle_failure "Seems like $1 has the wrong version. We need Qt 6 or newer. Set QMAKE to correct path to fix".
+		fi
+	fi
+}
 
-if ${MOC} --version | grep -v '^moc 6' ; then
-	handle_failure "Seems like moc has the wrong version. We need Qt 6 or newer. Set MOC to correct path to fix".
-fi
+assert_v6 ${QMAKE} -query QT_VERSION
+assert_v6 ${UIC} --version
+assert_v6 ${MOC} --version
+assert_v6 ${QSB} --version
 
 
 if [ "$($PKGqt --libs-only-L Qt6Core)" != "" ] ; then

@@ -593,6 +593,8 @@ QT_HEADERS_DIR:=$(shell $(QMAKE) -query QT_INSTALL_HEADERS)
 PRIVATE_QT_CORE_HEADERS=$(QT_HEADERS_DIR)/QtCore/$(QT_VERSION)
 PRIVATE_QT_GUI_HEADERS=$(QT_HEADERS_DIR)/QtGui/$(QT_VERSION)
 
+QRHI_HEADERS=$(PRIVATE_QT_GUI_HEADERS)/QtGui
+
 WNO_SUGGEST_OVERRIDE=
 
 ifneq ($(BUILDTYPE), RELEASE)
@@ -756,7 +758,7 @@ OBJ_MIXER=$(T)QM_view.o $(T)QM_chip.o $(T)QM_MixerWidget.o $(T)undo_mixer.o $(T)
 #undo_chip_addremove.o
 
 #OpenGL
-OBJ_VL=$(T)GfxElements.o $(T)T2.o $(T)Render.o $(T)Widget.o $(T)CheckOpenGL.o $(T)Qt6Widget.o
+OBJ_VL=$(T)GfxElements.o $(T)T2.o $(T)Render.o $(T)Widget.o $(T)RhiWindow.o $(T)CheckOpenGL.o $(T)Qt6Widget.o
 
 
 #Embedded scheme
@@ -772,7 +774,7 @@ OBJ = $(OBJ12) $(OBJ_ES) $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7)
 BUILD_DEPENDENCIES = flagopts.opt $(CD)keyboard_sub_ids.h dependencies_ok
 #buildtype.opt 
 
-PROGRAM_MODULES = $(RADIUM_BIN) bin/radium_crashreporter bin/protoconfparser.py bin/protos.conf bin/radium_error_message bin/radium_progress_window bin/radium_check_jack_status bin/radium_check_opengl bin/radium_plugin_scanner bin/scheme/api_protos.scm
+PROGRAM_MODULES = $(RADIUM_BIN) bin/radium_crashreporter bin/protoconfparser.py bin/protos.conf bin/radium_error_message bin/radium_progress_window bin/radium_check_jack_status bin/radium_plugin_scanner bin/scheme/api_protos.scm bin/color.frag.qsb bin/color.vert.qsb # bin/radium_check_opengl 
 OBJECT_DEPENDENCIES = $(BUILD_DEPENDENCIES)
 
 #bin/styles/libqcleanlooksstyle.so bin/styles/libqplastiquestyle.so
@@ -2013,10 +2015,10 @@ bin/radium_check_jack_status: audio/KillJackd.cpp $(T)Jack_plugin.o $(T)find_jac
 	$(LINKER) `cat buildtype.opt` $(T)radium_check_jack_status.o $(T)find_jack_library.o $(JACK_LDFLAGS) `$(PKGqt) --libs Qt6Core` $(QT_SYSTEM_CFLAGS) $(OS_LDFLAGS2) -o bin/radium_check_jack_status $(FPIC)
 	rm $(T)radium_check_jack_status.o
 
-bin/radium_check_opengl: OpenGL/CheckOpenGL.cpp common/Process.hpp
-	$(CCC) -Wall $(WERROR) OpenGL/CheckOpenGL.cpp $(CPPOPT) $(QT_CFLAGS) $(OS_OPTS) $(STD_CPP) -DCOMPILE_EXECUTABLE -o radium_check_opengl.o $(WNO_DEPRECATED_DECLARATIONS)
-	$(LINKER) `cat buildtype.opt` radium_check_opengl.o -o bin/radium_check_opengl $(QT_GUI_LDFLAGS) `$(PKGqt) --libs Qt6OpenGL`
-	rm radium_check_opengl.o
+#bin/radium_check_opengl: OpenGL/CheckOpenGL.cpp common/Process.hpp
+#	$(CCC) -Wall $(WERROR) OpenGL/CheckOpenGL.cpp $(CPPOPT) $(QT_CFLAGS) $(OS_OPTS) $(STD_CPP) -DCOMPILE_EXECUTABLE -o radium_check_opengl.o $(WNO_DEPRECATED_DECLARATIONS)
+#	$(LINKER) `cat buildtype.opt` radium_check_opengl.o -o bin/radium_check_opengl $(QT_GUI_LDFLAGS) `$(PKGqt) --libs Qt6OpenGL`
+#	rm radium_check_opengl.o
 
 $(T)Qt_progresswindow.o: $(BUILD_DEPENDENCIES) $(P)Qt_progresswindow.cpp
 	$(CCC2) $(P)Qt_progresswindow.cpp $(QTOPT) -DP_SERVER
@@ -2814,8 +2816,11 @@ $(T)T2.o: OpenGL/T2.cpp OpenGL/T2.hpp OpenGL/SharedVariables.hpp common/QueueSta
 $(T)Render.o: OpenGL/Render.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp common/spinlock.h common/time_proc.h common/Beats_proc.h common/TimeData.hpp
 	$(CCC2) OpenGL/Render.cpp $(QTOPT) $(VL_CFLAGS) $(VISUALIZATION_OPTIONS)
 
-$(T)Widget.o: OpenGL/Widget.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/Timing.hpp OpenGL/SharedVariables.hpp common/Mutex.hpp OpenGL/T2.hpp common/spinlock.h common/MovingAverage.hpp common/Vector.hpp Qt/Timer.hpp # OpenGL/Qt6ThreadedWidget.hpp 
-	$(CCC2) OpenGL/Widget.cpp $(QTOPT) $(VL_CFLAGS) $(VISUALIZATION_OPTIONS) 
+$(T)Widget.o: OpenGL/Widget.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/Timing.hpp OpenGL/SharedVariables.hpp common/Mutex.hpp OpenGL/T2.hpp OpenGL/Context.hpp common/spinlock.h common/MovingAverage.hpp common/Vector.hpp Qt/Timer.hpp # OpenGL/Qt6ThreadedWidget.hpp 
+	$(CCC2) OpenGL/Widget.cpp $(QTOPT) -I $(QRHI_HEADERS) $(VL_CFLAGS) $(VISUALIZATION_OPTIONS) 
+
+$(T)RhiWindow.o: OpenGL/RhiWindow.hpp
+	$(CCC2) OpenGL/RhiWindow.cpp $(QTOPT) -I $(QRHI_HEADERS)
 
 $(T)CheckOpenGL.o: OpenGL/CheckOpenGL.cpp common/Process.hpp
 	$(CCC2) OpenGL/CheckOpenGL.cpp $(QTOPT) $(WNO_DEPRECATED_DECLARATIONS)
@@ -2823,6 +2828,12 @@ $(T)CheckOpenGL.o: OpenGL/CheckOpenGL.cpp common/Process.hpp
 $(T)Qt6Widget.o: OpenGL/Qt6Widget.cpp
 	cd OpenGL && $(MOC) Qt6Widget.hpp >mQt6Widget.cpp
 	$(CCC2) OpenGL/Qt6Widget.cpp $(QTOPT) $(VL_CFLAGS) $(VISUALIZATION_OPTIONS) -Wno-float-equal $(WNO_DEPRECATED_DECLARATIONS) -Wno-deprecated-copy
+
+bin/color.frag.qsb: OpenGL/shaders/color.frag
+	$(QSB) --qt6 OpenGL/shaders/color.frag -o bin/color.frag.qsb
+
+bin/color.vert.qsb: OpenGL/shaders/color.vert
+	$(QSB) --qt6 OpenGL/shaders/color.vert -o in/color.vert.qsb
 
 do.o:  $(BUILD_DEPENDENCIES) OpenGL/do.m
 	$(CC) OpenGL/do.m $(OPT)
