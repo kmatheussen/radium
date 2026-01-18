@@ -2833,7 +2833,7 @@ bin/color.frag.qsb: OpenGL/shaders/color.frag
 	$(QSB) --qt6 OpenGL/shaders/color.frag -o bin/color.frag.qsb
 
 bin/color.vert.qsb: OpenGL/shaders/color.vert
-	$(QSB) --qt6 OpenGL/shaders/color.vert -o in/color.vert.qsb
+	$(QSB) --qt6 OpenGL/shaders/color.vert -o bin/color.vert.qsb
 
 do.o:  $(BUILD_DEPENDENCIES) OpenGL/do.m
 	$(CC) OpenGL/do.m $(OPT)
