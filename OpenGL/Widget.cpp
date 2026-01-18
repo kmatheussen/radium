@@ -21,6 +21,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <bitset>
 
+#include <QFile>
+#include <QCommandLineParser>
+
 #include <QWidget>
 
 #if USE_QT5
@@ -41,6 +44,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QOperatingSystemVersion>
 
 #define GE_DRAW_VL
+
+#include "RhiWindow.hpp"
 
 #include "../common/nsmtracker.h"
 #include "../common/windows_proc.h"
@@ -74,6 +79,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../api/api_gui_proc.h"
 
 #include "GfxElements.h"
+#include "Context.hpp"
 //#include "T2.hpp"
 #include "Timing.hpp"
 #include "Render_proc.h"
@@ -254,27 +260,345 @@ void GL_update(void)
 		return;
 }
 
-namespace
-{
-struct RenderWidget : public QWidget
-{
-	DEFINE_ATOMIC(bool, _main_window_is_exposed) = false;
 
-	void paintEvent(QPaintEvent *ev) override
+static inline QThread *qthread2(QString name, std::function<void(void)> callback)
+{
+	//assert_is_qthread();
+
+	QThread *thread = QThread::create([name, callback]()
+		{
+			//QTHREAD_SCOPED_INIT;
+
+			//LOG_EXCEPTIONS(name.toUtf8().constData(), callback);
+			callback();
+		});
+	
+	if (QThread::currentThread() != qApp->thread())
 	{
-		TRACK_PAINT();
-		
-		QPainter p(this);
+		assert(thread->thread() == QThread::currentThread()); // If not, 'QObject::moveToThread' doesn't work.
 
-		p.fillRect(rect(), get_qcolor(PEAKS_COLOR_NUM));
+		// If we don't do this, 'thread' won't be deleted until after the current thread is deleted/
+		// E.g. if this function is called from a thread pool-thread, the object may never be deleted.
+
+		assert(qApp->thread() != NULL);
+		
+		thread->moveToThread(qApp->thread());
 	}
 
+	thread->setObjectName(name);
+	thread->start();
+
+	return thread;
+}
+
+static QShader getShader(const QString &name)
+{
+	assert(QThread::currentThread() == g_thread);
+
+    QFile f(name);
+    if (f.open(QIODevice::ReadOnly))
+        return QShader::fromSerialized(f.readAll());
+
+    return QShader();
+}
+
+static void init_test_triangles(r::Context *my_context, float dy = 0)
+{
+	my_context->addTriangle({
+			-1.0f,   0.0f+dy,       1.0f,   dy,   dy, 0.6f,
+			-0.5f,  -1.0f+dy,       1.0f,   0.0f,   dy, 0.6f,
+			-0.0f,  -0.0f+dy,       dy,   0.0f,   dy, 0.6f
+		});
+	
+	my_context->addTriangle({
+			0.5f,  1.0f+dy,       dy,   1.0f,   dy, 0.6f,
+			0.0f,  0.0f+dy,       0.0f,   dy,   dy, 0.6f,
+			1.0f,  0.0f+dy,       0.0f,   1.0f,   dy, 0.6f
+		});
+	
+	my_context->addTriangle(20, 400+dy,
+							20, 1800+dy,
+							800, 1800+dy,
+							0,0,1);
 };
+
+
+namespace
+{
+
+class RenderWindow : public radium::RhiWindow
+{
+public:
+	r::Context *_my_context = nullptr;
+	r::Context *_my_context2 = nullptr;
+    QRhiShaderResourceBindings *_shader_resource_bindings;
+    QRhiGraphicsPipeline *_pipeline;
+
+    //QRhiResourceUpdateBatch *_initialUpdates = nullptr;
+
+	DEFINE_ATOMIC(bool, _main_window_is_exposed) = false;
+	
+public:
+
+	RenderWindow(QRhi::Implementation graphicsApi)
+		: RhiWindow(graphicsApi)
+	{
+	}
+
+	~RenderWindow()
+	{
+		fprintf(stderr, "H1\n");
+
+		QSemaphore sem;
+	
+		put_event([this, &sem]()
+			{
+				fprintf(stderr, "H2\n");
+				delete _my_context;
+				fprintf(stderr, "H2.5\n");
+				delete _my_context2;
+				fprintf(stderr, "H3\n");
+				delete _shader_resource_bindings;
+				fprintf(stderr, "H4\n");
+				delete _pipeline;
+				fprintf(stderr, "H4\n");
+				//delete _initialUpdates; // must not be deleted.
+				fprintf(stderr, "H5\n");
+				sem.release();
+			});
+
+		fprintf(stderr, "H6\n");
+		sem.acquire();
+		fprintf(stderr, "H7\n");
+	}
+
+	void init_context(float dy = 0)
+	{
+		_my_context = new r::Context;
+		
+		init_test_triangles(_my_context, dy);
+		
+		_my_context->call_me_when_finished_painting(_rhi);
+	}
+	
+	void init_context2(float dy = 0)
+	{
+		_my_context2 = new r::Context;
+
+		int range = 150;
+		for (int i = 0 ; i < range ; i++)
+			init_test_triangles(_my_context2, dy+0.3+i);
+		for (int i = 0 ; i < range ; i++)
+			init_test_triangles(_my_context2, dy+5.3-i);
+		
+		_my_context2->call_me_when_finished_painting(_rhi);
+	}
+	
+	void customInit() override
+	{
+		assert(QThread::currentThread() == g_thread);
+				
+		init_context();
+		
+		_shader_resource_bindings = _rhi->newShaderResourceBindings();
+
+		_shader_resource_bindings->create();
+
+		_pipeline = _rhi->newGraphicsPipeline();
+
+		// Enable depth testing; not quite needed for a simple triangle, but we
+		// have a depth-stencil buffer so why not.
+		//_pipeline->setDepthTest(true);
+		//_pipeline->setDepthWrite(true);
+
+#if DO_ANTIALIASING
+		_pipeline->setSampleCount(4);
+#endif
+		
+		// Blend factors default to One, OneOneMinusSrcAlpha, which is convenient.
+		if(1){
+			QRhiGraphicsPipeline::TargetBlend premulAlphaBlend;
+			premulAlphaBlend.enable = true;
+			//premulAlphaBlend.colorWrite = QRhiGraphicsPipeline::ColorMask(0xF);
+
+			_pipeline->setTargetBlends({ premulAlphaBlend });
+		}
+		
+		_pipeline->setShaderStages({
+				{ QRhiShaderStage::Vertex, getShader(QLatin1String("color.vert.qsb")) },
+				{ QRhiShaderStage::Fragment, getShader(QLatin1String("color.frag.qsb")) }
+			});
+
+		{
+			QRhiVertexInputLayout inputLayout;
+			
+			inputLayout.setBindings({
+					{ 6 * sizeof(float) }
+				});
+			
+			inputLayout.setAttributes({
+					{ 0, 0, QRhiVertexInputAttribute::Float2, 0 },
+					{ 0, 1, QRhiVertexInputAttribute::Float4, 2 * sizeof(float) }
+				});
+			_pipeline->setVertexInputLayout(inputLayout);
+		}
+		
+		_pipeline->setShaderResourceBindings(_shader_resource_bindings);
+		_pipeline->setRenderPassDescriptor(_rp);
+
+		_pipeline->create();
+	}
+
+	void customRender() override
+	{
+		assert(QThread::currentThread() == g_thread);
+
+		//static int g_n=0; printf("Rendering %d\n", g_n++);
+		
+		QRhiResourceUpdateBatch *resourceUpdates = _rhi->nextResourceUpdateBatch();
+
+		if (_my_context)
+			_my_context->maybe_merge_in(resourceUpdates);
+		if (_my_context2)
+			_my_context2->maybe_merge_in(resourceUpdates);
+
+		const QSize outputSizeInPixels = _sc->currentPixelSize();
+		
+		QRhiCommandBuffer *cb = _sc->currentFrameCommandBuffer();
+
+		cb->beginPass(_sc->currentFrameRenderTarget(), Qt::black, { 1.0f, 0 }, resourceUpdates);
+		{
+			cb->setGraphicsPipeline(_pipeline);
+			//cb->setViewport({ 0, 100, float(outputSizeInPixels.width()), float(outputSizeInPixels.height())   });
+			cb->setViewport({ 0, 0, float(outputSizeInPixels.width()), float(outputSizeInPixels.height())   });
+			cb->setShaderResources();
+
+			if (_my_context)
+				_my_context->render(cb);
+			if (_my_context2)
+				_my_context2->render(cb);
+		}		
+		cb->endPass();
+	}
+};
+
+#if QT_CONFIG(vulkan)
+static QVulkanInstance g_vulkan_inst;
+#endif
+
+static QRhi::Implementation init_qrhi(void)
+{
+    QRhi::Implementation graphicsApi;
+
+    // Use platform-specific defaults when no command-line arguments given.
+#if defined(Q_OS_WIN)
+    graphicsApi = QRhi::D3D11;
+#elif QT_CONFIG(metal)
+    graphicsApi = QRhi::Metal;
+#elif QT_CONFIG(vulkan)
+    graphicsApi = QRhi::Vulkan;
+#else
+    graphicsApi = QRhi::OpenGLES2;
+#endif
+
+    QCommandLineParser cmdLineParser;
+    cmdLineParser.addHelpOption();
+    QCommandLineOption nullOption({ "n", "null" }, QLatin1String("Null"));
+    cmdLineParser.addOption(nullOption);
+    QCommandLineOption glOption({ "g", "opengl" }, QLatin1String("OpenGL"));
+    cmdLineParser.addOption(glOption);
+    QCommandLineOption vkOption({ "v", "vulkan" }, QLatin1String("Vulkan"));
+    cmdLineParser.addOption(vkOption);
+    QCommandLineOption d3d11Option({ "d", "d3d11" }, QLatin1String("Direct3D 11"));
+    cmdLineParser.addOption(d3d11Option);
+    QCommandLineOption d3d12Option({ "D", "d3d12" }, QLatin1String("Direct3D 12"));
+    cmdLineParser.addOption(d3d12Option);
+    QCommandLineOption mtlOption({ "m", "metal" }, QLatin1String("Metal"));
+    cmdLineParser.addOption(mtlOption);
+
+    cmdLineParser.process(*qApp);
+    if (cmdLineParser.isSet(nullOption))
+        graphicsApi = QRhi::Null;
+    if (cmdLineParser.isSet(glOption))
+        graphicsApi = QRhi::OpenGLES2;
+    if (cmdLineParser.isSet(vkOption))
+        graphicsApi = QRhi::Vulkan;
+    if (cmdLineParser.isSet(d3d11Option))
+        graphicsApi = QRhi::D3D11;
+    if (cmdLineParser.isSet(d3d12Option))
+        graphicsApi = QRhi::D3D12;
+    if (cmdLineParser.isSet(mtlOption))
+        graphicsApi = QRhi::Metal;
+
+ //! [api-setup]
+    // For OpenGL, to ensure there is a depth/stencil buffer for the window.
+    // With other APIs this is under the application's control (QRhiRenderBuffer etc.)
+    // and so no special setup is needed for those.
+    QSurfaceFormat fmt;
+    fmt.setDepthBufferSize(24);
+    fmt.setStencilBufferSize(8);
+    // Special case macOS to allow using OpenGL there.
+    // (the default Metal is the recommended approach, though)
+    // gl_VertexID is a GLSL 130 feature, and so the default OpenGL 2.1 context
+    // we get on macOS is not sufficient.
+#ifdef Q_OS_MACOS
+    fmt.setVersion(4, 1);
+    fmt.setProfile(QSurfaceFormat::CoreProfile);
+#endif
+
+#if 1 //DO_ANTIALIASING
+	fmt.setSamples(4); // Don't see any difference setting this one.
+#endif
+	
+#if 0 // investigate when/if there's a difference between these three. (if no difference, than SingleBuffer is probably better due to lower input latency)
+	fmt.setSwapBehavior(QSurfaceFormat::SingleBuffer);
+	fmt.setSwapBehavior(QSurfaceFormat::TripleBuffer);
+	fmt.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
+#endif
+
+	printf("--- Swap interval: %d\n"
+		   "--- Renderable types: %x\n",
+		   fmt.swapInterval(),
+		   (unsigned int)fmt.renderableType()
+		);
+#if 0
+	fmt.setAlphaBufferSize(8); // Tipper dette bare er for å få gjennomsiktige os-vinduer... (om man har compositør kjørende)
+	
+	if (!fmt.hasAlpha())
+	{
+		abort();
+	}
+#endif
+	
+    QSurfaceFormat::setDefaultFormat(fmt);
+
+    // For Vulkan.
+#if QT_CONFIG(vulkan)
+    if (graphicsApi == QRhi::Vulkan) {
+        // Request validation, if available. This is completely optional
+        // and has a performance impact, and should be avoided in production use.
+        g_vulkan_inst.setLayers({ "VK_LAYER_KHRONOS_validation" });
+        // Play nice with QRhi.
+        g_vulkan_inst.setExtensions(QRhiVulkanInitParams::preferredInstanceExtensions());
+        if (!g_vulkan_inst.create()) {
+            qWarning("Failed to create Vulkan instance, switching to OpenGL");
+            graphicsApi = QRhi::OpenGLES2;
+        }
+    }
+#endif
+//! [api-setup]
+
+	return graphicsApi;
+}
+
+
+
 } // anon. namespace
 
 
 bool g_gl_widget_started = false;
-static RenderWidget *g_widget;
+static RenderWindow *g_window;
+static QWidget *g_widget;
 
 static double get_refresh_rate(void){
   
@@ -363,7 +687,7 @@ int GL_maybe_notify_that_main_window_is_exposed(int interval){
 		QWindow *window = g_widget->windowHandle();
 		if (window != NULL){
 			if (window->isExposed()) {
-				ATOMIC_SET(g_widget->_main_window_is_exposed, true);
+				ATOMIC_SET(g_window->_main_window_is_exposed, true);
 				ret = 1;
 			}
 		}
@@ -470,8 +794,18 @@ bool GL_get_pause_rendering_on_off(void){
 QWidget *GL_create_widget(QWidget *parent)
 {
 	init_g_pause_rendering_on_off();
+
+	QRhi::Implementation graphicsApi = init_qrhi();
 	
-	g_widget = new RenderWidget();
+	g_window = new RenderWindow(graphicsApi);
+
+#if QT_CONFIG(vulkan)
+	if (graphicsApi == QRhi::Vulkan)
+		g_window->setVulkanInstance(&g_vulkan_inst);
+#endif
+
+	g_widget = QWidget::createWindowContainer(g_window);
+
 	g_gl_widget_started = true;
 	
 	return g_widget;
