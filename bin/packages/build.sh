@@ -134,30 +134,6 @@ build_faust() {
 	cd ..
 }
 
-build_Visualization-Library() {
-
-    #rm -fr Visualization-Library-master
-    #tar xvzf Visualization-Library-master.tar.gz 
-    cd Visualization-Library-master/
-	#cp -a ../vlQt6 src/
-    #patch -p1 <../visualization.patch
-    #sed -i.backup 's/add_subdirectory("freetype")//' src/vlGraphics/plugins/CMakeLists.txt
-    #sed -i s/"VL_ACTOR_USER_DATA 0"/"VL_ACTOR_USER_DATA 1"/ src/vlCore/config.hpp
-    export MYFLAGS="-std=gnu++11 $CPPFLAGS -fPIC -g  -Wno-c++11-narrowing -Wno-deprecated-declarations -Wno-implicit-function-declaration `pkg-config --cflags freetype2` " #  -D_GLIBCXX_USE_CXX11_ABI=0
-    MYFLAGS="-std=gnu++11 $CPPFLAGS -fPIC -g -Wno-c++11-narrowing -Wno-deprecated-declarations -Wno-implicit-function-declaration `pkg-config --cflags freetype2` " #  -D_GLIBCXX_USE_CXX11_ABI=0
-    #echo 'set(CMAKE_CXX_FLAGS "$MYFLAGS")' >>CMakeLists.txt
-    # previously used build type: RelWithDebInfo. Unfortunately, this one enable _DEBUG and various runtime checks.
-
-    #CFLAGS="$CPPFLAGS -fPIC -g" CPPFLAGS="$MYFLAGS" CC="clang" CXX="clang++ $MYFLAGS" cmake -DCMAKE_CXX_FLAGS="$MYFLAGS" CMAKE_CXX_COMPILER="clang++ $MYFLAGS" -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON SUPPORT=ON -DVL_DYNAMIC_LINKING=OFF -DVL_IO_2D_PNG=OFF -DVL_IO_2D_TIFF=OFF -DVL_IO_2D_JPG=OFF -DVL_IO_2D_TGA=OFF -DVL_IO_2D_BMP=OFF .
-    
-    CFLAGS="$CPPFLAGS -fPIC -g" CPPFLAGS="$MYFLAGS" CC="$DASCC" CXX="$DASCXX $MYFLAGS" cmake -DCMAKE_CXX_FLAGS="$MYFLAGS" CMAKE_CXX_COMPILER="$DASCXX $MYFLAGS" -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON SUPPORT=ON -DVL_DYNAMIC_LINKING=OFF -DVL_IO_2D_PNG=OFF -DVL_IO_2D_TIFF=OFF -DVL_IO_2D_JPG=OFF -DVL_IO_2D_TGA=OFF -DVL_IO_2D_BMP=OFF -DVL_IO_FREETYPE=OFF .
-    
-    VERBOSE=1 make VLCore -j8
-    VERBOSE=1 make VLVG/fast -j8
-    VERBOSE=1 make VLGraphics/fast -j8
-    cd ..
-}
-
 build_libpds() {
 
     NOWARNS="-Wno-return-mismatch -Wno-implicit-function-declaration -Wno-int-conversion -Wno-implicit-int -Wno-strict-prototypes -Wno-incompatible-pointer-types -std=gnu17"
@@ -190,7 +166,7 @@ build_qhttpserver() {
     echo "CONFIG += staticlib" >> src/src.pro
 	patch -p1 <../qhttpserver_qt6.patch
     $QMAKE
-    make -j8 # necessary to create the moc files.
+    make -j`nproc` # necessary to create the moc files.
     cd ..
 }
 
@@ -220,7 +196,7 @@ build_gc() {
     #patch -p1 <../gcdiff.patch
     #./autogen.sh
     CFLAGS="-mtune=generic -g -O2" ./configure --enable-static --disable-shared --disable-gc-debug --disable-gc-assertions
-    CFLAGS="-mtune=generic -g -O2" make -j8
+    CFLAGS="-mtune=generic -g -O2" make -j`nproc`
     cd ..
 }
 
@@ -232,7 +208,7 @@ build_fluidsynth() {
     make clean
     CFLAGS="-fPIC -fno-strict-aliasing -O3 -DDEFAULT_SOUNDFONT=\\\"\\\"" CPPFLAGS="-fPIC -fno-strict-aliasing -O3" CXXFLAGS="-fPIC -fno-strict-aliasing -O3" ./configure --enable-static --disable-aufile-support --disable-pulse-support --disable-alsa-support --disable-libsndfile-support --disable-portaudio-support --disable-oss-support --disable-midishare --disable-jack-support --disable-coreaudio --disable-coremidi --disable-dart --disable-lash --disable-ladcca --disable-aufile-support --disable-dbus-support --without-readline
     # --enable-debug
-    make -j8
+    make -j`nproc`
     cd ..
 }
 
@@ -244,7 +220,7 @@ build_libgig () {
     cd libgig
     make clean
     CFLAGS="-O3 -fno-strict-aliasing" CPPFLAGS="-O3 -fno-strict-aliasing" CXXFLAGS="-O3 -fno-strict-aliasing" CC=$DASCC CXX=$DASCXX ./configure
-    CFLAGS="$CFLAGS" CPPFLAGS="$CPPFLAGS" CPPFLAGS="$CXXFLAGS" make -j8
+    CFLAGS="$CFLAGS" CPPFLAGS="$CPPFLAGS" CPPFLAGS="$CXXFLAGS" make -j`nproc`
     cd ..
 }
 
@@ -257,7 +233,7 @@ build_qscintilla() {
     echo "CONFIG += staticlib" >> qscintilla.pro
     $QMAKE
     patch -p0 <../../qscintilla.patch
-    make -j8
+    make -j`nproc`
     cd ../..
 }
 
@@ -281,7 +257,7 @@ build_xcb() {
         cd xcb-proto-1.13/
         mkdir install
         ./configure --prefix=`pwd`/install PYTHON=$PYTHONEXE
-        make -j8
+        make -j`nproc`
         make install
         cd ..
         
@@ -299,8 +275,6 @@ build_xcb() {
 }
 
 source ./build_python27.sh
-
-build_Visualization-Library
 
 build_faust
 build_qhttpserver
