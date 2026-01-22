@@ -665,32 +665,6 @@ QTLINKFLAGS = $(QT_LDFLAGS)
 
 
 
-# vl flags
-VL_CFLAGS ?=
-VL_LIBS ?=
-
-VL_LDFLAGS=$(VL_LIBS)
-
-ifeq ($(GCC_MAJOR),9)
-	VL_CFLAGS += -Wno-class-memaccess -Wno-deprecated-copy
-endif
-ifeq ($(GCC_MAJOR),10)
-	VL_CFLAGS += -Wno-class-memaccess -Wno-deprecated-copy
-endif
-ifeq ($(GCC_MAJOR),11)
-	VL_CFLAGS += -Wno-class-memaccess -Wno-deprecated-copy
-endif
-
-ifdef USING_CLANG
-	ifeq ($(shell test $(CLANG_MAJOR) -gt 12; echo $$?),0)
-		VL_CFLAGS+=-Wno-null-pointer-subtraction
-	endif
-endif
-
-#ifeq ($(BUILD_DEBUG), YES)
-#	VL_CFLAGS+=-U _GLIBCXX_SANITIZE_VECTOR -U _GLIBCXX_DEBUG
-#endif
-
 #-------------------OBJECT DEFINITIONS-------------------------------
 
 OBJ1= $(T)windows.o $(T)window_config.o $(T)list.o $(T)vector.o $(T)hashmap.o $(T)Dynvec.o $(T)TimeData.o $(T)song.o $(T)blocks.o $(T)block_insert.o $(T)block_split.o $(T)block_delete.o $(T)block_properties.o $(T)tracks.o $(T)localzooms.o $(T)control.o $(T)lines.o $(T)font.o $(T)track_insert.o $(T)track_onoff.o $(T)settings.o $(T)mmd2load.o $(T)RT_memory_allocator.o
@@ -759,7 +733,8 @@ OBJ_MIXER=$(T)QM_view.o $(T)QM_chip.o $(T)QM_MixerWidget.o $(T)undo_mixer.o $(T)
 #undo_chip_addremove.o
 
 #OpenGL
-OBJ_VL=$(T)GfxElements.o $(T)T2.o $(T)Render.o $(T)Widget.o $(T)RhiWindow.o $(T)CheckOpenGL.o $(T)Qt6Widget.o
+OBJ_VL=$(T)GfxElements.o $(T)T2.o $(T)Render.o $(T)Widget.o $(T)RhiWindow.o $(T)CheckOpenGL.o
+#$(T)Qt6Widget.o
 
 
 #Embedded scheme
@@ -1075,7 +1050,7 @@ start_bin.sh:
 	chmod a+rx start_bin.sh
 
 /tmp/run_preload:
-	time $(LINKER) -Xlinker --preload `cat buildtype.opt` $(OBJ) $(OS_OBJS) -o $(RADIUM_BIN) -g $(VL_LDFLAGS) $(OS_LDFLAGS) $(JACK_LDFLAGS) $(QTLINKFLAGS) $(OS_LDFLAGS2)
+	time $(LINKER) -Xlinker --preload `cat buildtype.opt` $(OBJ) $(OS_OBJS) -o $(RADIUM_BIN) -g $(OS_LDFLAGS) $(JACK_LDFLAGS) $(QTLINKFLAGS) $(OS_LDFLAGS2)
 	touch /tmp/run_preload
 
 $(RADIUM_BIN): $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a $(OS_DEPS)
@@ -1083,7 +1058,7 @@ $(RADIUM_BIN): $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-1.1.6/src/.libs/libflu
 	@echo "Changed ($(RADIUM_BIN)):"
 	@echo $?
 	@echo
-	time $(LINKER) `cat buildtype.opt` $(OBJ) $(OS_OBJS) -o $(RADIUM_BIN) -g $(VL_LDFLAGS) $(OS_LDFLAGS) $(JACK_LDFLAGS) $(QTLINKFLAGS) $(OS_LDFLAGS2)
+	time $(LINKER) `cat buildtype.opt` $(OBJ) $(OS_OBJS) -o $(RADIUM_BIN) -g $(OS_LDFLAGS) $(JACK_LDFLAGS) $(QTLINKFLAGS) $(OS_LDFLAGS2)
 
 #libqhttpserver.a
 # -lX11 -ldl -lpthread -lfreetype -lXext
@@ -1810,7 +1785,6 @@ $(T)Qt_Bs_edit.o: $(BUILD_DEPENDENCIES) $(P)Qt_Bs_edit.cpp  Qt/Qt_MyQScrollBar.h
 
 
 INSTRUMENTS_DEPENDENCIES = $(P)mQt_instruments_widget_callbacks.h $(P)mQt_midi_instrument_widget_callbacks.h $(P)mQt_audio_instrument_widget_callbacks.h $(P)mQt_sample_requester_widget_callbacks.h $(P)mQt_control_change_widget_callbacks.h $(P)mQt_plugin_widget_callbacks.h $(P)Qt_auto_suspend_menu.h $(P)Qt_pd_plugin_widget.h $(P)Qt_jack_plugin_widget.h $(P)Qt_sendreceive_plugins_widget.h $(P)Qt_faust_plugin_widget.h $(P)Qt_pd_controller_widget.h $(P)mQt_compressor_widget_callbacks.h $(P)Qt_MyQSlider.h $(P)Qt_MyQCheckBox.h $(P)Qt_MyQButton.h $(P)create_source_from_ui.sh $(P)undo_instruments_widget.cpp $(P)undo_instruments_widget_proc.h $(P)Qt_PluginWidget.h $(P)MySliderPainterPainter.h $(P)Qt_MyWidget.h $(P)Qt_mix_colors.h $(P)Qt_audio_instrument_widget_callbacks.h $(P)compressor_vertical_sliders.cpp $(P)FocusSniffers.h audio/CpuUsage.hpp Qt/Qt_MyQScrollBar.hpp Qt/Qt_MyQLabel.h common/Vector.hpp Qt/Editor.hpp
-
 
 
 # $(P)midi_instrument_widget.ui.h $(P)control_change_widget.ui.h $(P)instruments_widget.ui.h
@@ -2806,19 +2780,20 @@ $(T)crashreporter_windows.o: crashreporter/crashreporter_windows.cpp
 #	$(CC_STATIC2) crashreporter/crashreporter_windows.c $(OPT) $(O0) -DPACKAGE  $(CRASHREPORTER_WINDOWS_CFLAGS)
 #	$(CC2) crashreporter/crashreporter_windows.c $(OPT) -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/bfd -DPACKAGE -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/include $(O0)
 
-VISUALIZATION_OPTIONS=$(WNO_SUGGEST_OVERRIDE) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC) $(NO_ANALYZER)  $(WNO_DEPRECATED_COPY_CLANG) $(WNO_DEPRECATED_DECLARATIONS) $(WNO_MISLEADING_INDENTATION_CLANG) $(WNO_CLASS_MEMACCESS) $(WNO_DEPRECATED_ENUM_ENUM_CONVERSION) -Wno-unknown-pragmas
+VISUALIZATION_OPTIONS=
+#$(WNO_SUGGEST_OVERRIDE) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC) $(NO_ANALYZER)  $(WNO_DEPRECATED_COPY_CLANG) $(WNO_DEPRECATED_DECLARATIONS) $(WNO_MISLEADING_INDENTATION_CLANG) $(WNO_CLASS_MEMACCESS) $(WNO_DEPRECATED_ENUM_ENUM_CONVERSION) -Wno-unknown-pragmas
 
 $(T)GfxElements.o: OpenGL/GfxElements.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp OpenGL/FreeType.hpp common/Mutex.hpp OpenGL/T2.hpp common/spinlock.h
-	$(CCC2) OpenGL/GfxElements.cpp $(QTOPT) $(FREETYPE_CFLAGS) $(BOOST_INCLUDE) $(VL_CFLAGS) $(VISUALIZATION_OPTIONS)
+	$(CCC2) OpenGL/GfxElements.cpp $(QTOPT) $(FREETYPE_CFLAGS) $(BOOST_INCLUDE) $(VISUALIZATION_OPTIONS)
 
 $(T)T2.o: OpenGL/T2.cpp OpenGL/T2.hpp OpenGL/SharedVariables.hpp common/QueueStack.hpp OpenGL/GfxElements.h
-	$(CCC2) OpenGL/T2.cpp $(QTOPT) $(BOOST_INCLUDE) $(VL_CFLAGS) $(VISUALIZATION_OPTIONS) 
+	$(CCC2) OpenGL/T2.cpp $(QTOPT) $(BOOST_INCLUDE) $(VISUALIZATION_OPTIONS) 
 
 $(T)Render.o: OpenGL/Render.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp common/spinlock.h common/time_proc.h common/Beats_proc.h common/TimeData.hpp
-	$(CCC2) OpenGL/Render.cpp $(QTOPT) $(VL_CFLAGS) $(VISUALIZATION_OPTIONS)
+	$(CCC2) OpenGL/Render.cpp $(QTOPT) $(VISUALIZATION_OPTIONS)
 
 $(T)Widget.o: OpenGL/Widget.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/Timing.hpp OpenGL/SharedVariables.hpp common/Mutex.hpp OpenGL/T2.hpp OpenGL/Context.hpp common/spinlock.h common/MovingAverage.hpp common/Vector.hpp Qt/Timer.hpp # OpenGL/Qt6ThreadedWidget.hpp 
-	$(CCC2) OpenGL/Widget.cpp $(QTOPT) -I $(QRHI_HEADERS) $(VL_CFLAGS) $(VISUALIZATION_OPTIONS) 
+	$(CCC2) OpenGL/Widget.cpp $(QTOPT) -I $(QRHI_HEADERS) $(VISUALIZATION_OPTIONS) 
 
 $(T)RhiWindow.o: OpenGL/RhiWindow.hpp
 	$(CCC2) OpenGL/RhiWindow.cpp $(QTOPT) -I $(QRHI_HEADERS)
@@ -2828,7 +2803,7 @@ $(T)CheckOpenGL.o: OpenGL/CheckOpenGL.cpp common/Process.hpp
 
 $(T)Qt6Widget.o: OpenGL/Qt6Widget.cpp
 	cd OpenGL && $(MOC) Qt6Widget.hpp >mQt6Widget.cpp
-	$(CCC2) OpenGL/Qt6Widget.cpp $(QTOPT) $(VL_CFLAGS) $(VISUALIZATION_OPTIONS) -Wno-float-equal $(WNO_DEPRECATED_DECLARATIONS) -Wno-deprecated-copy
+	$(CCC2) OpenGL/Qt6Widget.cpp $(QTOPT) $(VISUALIZATION_OPTIONS) -Wno-float-equal $(WNO_DEPRECATED_DECLARATIONS) -Wno-deprecated-copy
 
 bin/color.frag.qsb: OpenGL/shaders/color.frag
 	$(QSB) --qt6 OpenGL/shaders/color.frag -o bin/color.frag.qsb
