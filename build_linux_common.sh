@@ -157,9 +157,9 @@ export QT_UI_LDFLAGS="`$PKGqt --libs Qt6UiTools`"
 
 #One of these:
 # 1. OLD
-VL_PATH="bin/packages/Visualization-Library-master"
-export VL_CFLAGS="-DVL_STATIC_LINKING -Wall -I$VL_PATH/src -I$VL_PATH/src/3rdparty/Khronos -I$VL_PATH/src/examples -DNEW_VL=0"
-export VL_LIBS="$VL_PATH/src/vlVG/lib/libVLVG.a $VL_PATH/src/vlGraphics/lib/libVLGraphics.a $VL_PATH/src/vlCore/lib/libVLCore.a `$PKG --libs freetype2` -lGL -lGLU -lz"
+#VL_PATH="bin/packages/Visualization-Library-master"
+#export VL_CFLAGS="-DVL_STATIC_LINKING -Wall -I$VL_PATH/src -I$VL_PATH/src/3rdparty/Khronos -I$VL_PATH/src/examples -DNEW_VL=0"
+#export VL_LIBS="$VL_PATH/src/vlVG/lib/libVLVG.a $VL_PATH/src/vlGraphics/lib/libVLGraphics.a $VL_PATH/src/vlCore/lib/libVLCore.a `$PKG --libs freetype2` -lGL -lGLU -lz"
 
 # Or 2. NEW:
 #VL_PATH="bin/packages/VisualizationLibrary"

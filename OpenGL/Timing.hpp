@@ -1,89 +1,86 @@
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wfloat-equal"
-#include <vlCore/Time.hpp>
-#pragma GCC diagnostic pop
-
 // All time values are in milliseconds
 namespace{
 
-struct VBlankEstimator{
-  vl::Time time;
+struct VBlankEstimator
+{
+	QElapsedTimer time;
+	
+	double last_time;
 
-  double last_time;
+	int i_trainings;
+	int num_trainings;
+	double base_interval;
+	double last_base_interval;
+	double last_diff;
 
-  int i_trainings;
-  int num_trainings;
-  double base_interval;
-  double last_base_interval;
-  double last_diff;
+	struct Result
+	{
+		double period;
+		int num_periods;
+		Result(double period, int num_periods)
+			: period(period)
+			, num_periods(num_periods)
+		{}
+	};
 
-  struct Result{
-    double period;
-    int num_periods;
-    Result(double period, int num_periods)
-      : period(period)
-      , num_periods(num_periods)
-    {}
-  };
-
-  VBlankEstimator(int num_trainings, double base_interval = 0.0)
-    : last_time(0)
-    , i_trainings(0)
-    , num_trainings(num_trainings)
-    , base_interval(base_interval)
-    , last_base_interval(0)
-    , last_diff(500)
-  {
-    R_ASSERT(num_trainings>=60);
-  }
+	VBlankEstimator(int num_trainings, double base_interval = 0.0)
+		: last_time(0)
+		, i_trainings(0)
+		, num_trainings(num_trainings)
+		, base_interval(base_interval)
+		, last_base_interval(0)
+		, last_diff(500)
+	{
+		R_ASSERT(num_trainings>=60);
+	}
   
-  void set_vblank(double period){
-    if (!equal_doubles(period, base_interval)){
-      base_interval = period;
-      time.start();
-      printf("\n\n\n\n ************* Setting vblank to %f ************\n\n\n",period);
-    }
-  }
+	void set_vblank(double period){
+		if (!equal_doubles(period, base_interval)){
+			base_interval = period;
+			time.start();
+			printf("\n\n\n\n ************* Setting vblank to %f ************\n\n\n",period);
+		}
+	}
 
-  bool train(){
-    if(i_trainings==60)
-      time.start();
+	bool train(){
+		if(i_trainings==60)
+			time.start();
 
-    //printf("__________________ i_tr: %d, num: %d (%d)\n",i_trainings,num_trainings,(int)time.elapsed());
-    i_trainings++;
+		//printf("__________________ i_tr: %d, num: %d (%d)\n",i_trainings,num_trainings,(int)time.elapsed());
+		i_trainings++;
 
-    if (i_trainings < num_trainings)
-      return true;
+		if (i_trainings < num_trainings)
+			return true;
 
-    else {
-      double elapsed = time.elapsed() * 1000.0;
-      base_interval = elapsed / (double)(i_trainings-60);
-      double diff = fabs(last_base_interval-base_interval);
-      last_base_interval = base_interval;
+		else {
+			double elapsed = time.elapsed() * 1000.0;
+			base_interval = elapsed / (double)(i_trainings-60);
+			double diff = fabs(last_base_interval-base_interval);
+			last_base_interval = base_interval;
 
-      if(i_trainings>600 || (diff<0.0001 && last_diff<0.0001)) {
-        printf("**************************** Time: %f, num: %d. Estimated vblank to be %f ms (change: %f)\n",elapsed,num_trainings,base_interval,diff);
-        return false;
+			if(i_trainings>600 || (diff<0.0001 && last_diff<0.0001)) {
+				printf("**************************** Time: %f, num: %d. Estimated vblank to be %f ms (change: %f)\n",elapsed,num_trainings,base_interval,diff);
+				return false;
 
-      }else{
-        last_diff = diff;
-        return true;
-      }
-    }
-  }
+			}else{
+				last_diff = diff;
+				return true;
+			}
+		}
+	}
 
-  const Result get(void) {
-    double time_now = time.elapsed();
-    double interval = (time_now - last_time)*1000.0;
-    int num_periods = (interval+(base_interval/2.0)) / base_interval;
-    last_time = time_now;
+	const Result get(void) {
+		double time_now = time.elapsed();
+		double interval = (time_now - last_time)*1000.0;
+		int num_periods = (interval+(base_interval/2.0)) / base_interval;
+		last_time = time_now;
 #if !defined(RELEASE)
-    if (num_periods > 10)
-      printf("interval: %f, num_periods: %d, base_interval: %f\n",interval,num_periods,base_interval);
+		if (num_periods > 10)
+			printf("interval: %f, num_periods: %d, base_interval: %f\n",interval,num_periods,base_interval);
 #endif
-    return Result(base_interval, num_periods); //16.6666666666666666666666666666666666666666666666666666666667, 1);
-  }
+		return Result(base_interval, num_periods); //16.6666666666666666666666666666666666666666666666666666666667, 1);
+	}
 };
 
 

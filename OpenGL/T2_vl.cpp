@@ -61,11 +61,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 namespace{
-struct T1_data
-{
-	r::PaintingData *painting_data;
-	GE_Rgb background_color;
-	bool stop_me = false;
+struct T1_data{
+  PaintingData *painting_data;
+  GE_Rgb background_color;
+  bool stop_me = false;
 };
 }
 
@@ -154,18 +153,16 @@ bool T3_t2_data_picked_up_but_old_data_will_be_sent_back_later(void){
   return t3_to_t2_queue.tryPut(NULL); // Wake up t2 thread. See [ref 1] below.
 }
 
-T2_data::T2_data(r::PaintingData *painting_data, GE_Rgb background_color)
+T2_data::T2_data(PaintingData *painting_data, GE_Rgb background_color)
   : painting_data(painting_data)
   , background_color(background_color)
 {
-#if 0
-	scroll_transform = new vl::Transform;
-	//linenumbers_transform = new vl::Transform;
-	scrollbar_transform = new vl::Transform;
-	playcursor_transform = new vl::Transform;
-	
-	vg = new vl::VectorGraphics;
-#endif
+  scroll_transform = new vl::Transform;
+  //linenumbers_transform = new vl::Transform;
+  scrollbar_transform = new vl::Transform;
+  playcursor_transform = new vl::Transform;
+
+  vg = new vl::VectorGraphics;
 }
 
 T2_data::~T2_data(){
@@ -341,7 +338,7 @@ void T1_ensure_t2_is_initialized(void){
 }
 
 
-void T1_send_data_to_t2(r::PaintingData *painting_data, GE_Rgb background_color){
+void T1_send_data_to_t2(PaintingData *painting_data, GE_Rgb background_color){
   T1_data *t1_data = new T1_data;
 
   t1_data->painting_data    = painting_data;

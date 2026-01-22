@@ -32,6 +32,32 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern double g_opengl_scale_ratio;
 
+namespace r
+{
+struct fvec2
+{
+	float a,b;
+	
+	fvec2(const float a_, const float b_)
+		: a(a_)
+		, b(b_)
+	{
+	}
+
+	fvec2()
+	{
+	}
+};
+struct fvec3
+{
+	float a,b,c;
+};
+struct fvec4
+{
+	float a,b,c,d;
+};
+} // namespace r
+
 enum UseScissors{
   NO_SCISSORS = 0,
   USE_SCISSORS = 1
@@ -92,7 +118,7 @@ static inline GE_Rgb GE_alpha(const GE_Rgb c, float alpha){
   return ret;
 }
 
-#ifdef Object_INCLUDE_ONCE
+#if 0 //def Object_INCLUDE_ONCE
 static inline vl::vec4 get_vec4(GE_Rgb rgb){
   return vl::vec4(rgb.r/255.0f, rgb.g/255.0f, rgb.b/255.0f, rgb.a/255.0f);
 }
@@ -101,7 +127,10 @@ static inline vl::vec4 get_vec4(GE_Rgb rgb){
 typedef struct _GE_Context GE_Context;
 
 #ifdef __cplusplus
+namespace r
+{
 struct PaintingData;
+}
 #endif
 
 // OpenGL draws from the bottom and up, so we need to know the height in order for the scheduling calls to accept "normal" y values.
@@ -140,7 +169,7 @@ static inline uint32_t getMask(int a_y1, int a_y2, int slice_size){
 
 #if defined(GE_DRAW_VL)
 struct T2_data;
-void GE_update_triangle_gradient_shaders(PaintingData *painting_data, float y_offset);
+void GE_update_triangle_gradient_shaders(r::PaintingData *painting_data, float y_offset);
 void GE_draw_vl(T2_data *t2_data);
 #endif
 
@@ -173,15 +202,10 @@ int GE_get_z(const GE_Context *c);
 GE_Rgb GE_get_rgb(const GE_Context *c);
 
 
-#if defined(VectorGraphics_INCLUDE_ONCE) // i.e. when <vlVG/VectorGraphics.hpp> has been #included
+const SharedVariables *GE_get_shared_variables(const r::PaintingData *painting_data);
+int GE_get_slice_size(const r::PaintingData *painting_data);
 
-const SharedVariables *GE_get_shared_variables(const PaintingData *painting_data);
-int GE_get_slice_size(const PaintingData *painting_data);
-
-
-#endif
-
-void GE_delete_painting_data(PaintingData *painting_data);
+void GE_delete_painting_data(r::PaintingData *painting_data);
 
 void GE_start_writing(int full_height, bool block_is_visible); // 'full_height' is not used if block_is_visible is false.
 void GE_end_writing(GE_Rgb new_background_color);
