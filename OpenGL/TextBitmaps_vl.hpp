@@ -9,6 +9,10 @@
 #include <QCoreApplication>
 #include <QDir>
 
+#include <vlCore/Image.hpp>
+#include <vlCore/IMutex.hpp>
+#include <vlGraphics/ImagePBO.hpp>
+
 #include "../common/nsmtracker.h"
 #include "../common/Mutex.hpp"
 #include "../common/OS_error_proc.h"
@@ -24,10 +28,31 @@
 
 namespace{
 
-struct ImageHolder
-{
-	//vl::ImagePBO *image;
-	int width;
+struct MyIMutex : public vl::IMutex{
+  radium::Mutex _lock;
+
+  bool is_obtained = false;
+
+  void lock () override {
+    _lock.lock();
+    is_obtained = true;
+  }
+  
+  void 	unlock () override {
+    is_obtained = false;
+    _lock.unlock();
+  }
+  
+  int isLocked () const override {
+    //Returns 1 if locked, 0 if non locked, -1 if unknown. 
+    return is_obtained ? 1 : 0;
+  }
+  
+};
+
+struct ImageHolder {
+  vl::ImagePBO *image;
+  int width;
 };
 
 static QFont g_qfont;
@@ -41,10 +66,16 @@ static QHash<QString, QHash<QChar,ImageHolder>* > g_imageholderss;
 static QSet<QString> g_imageholder_fonts;
    
 
+static MyIMutex image_mutex;
+
 static inline void GE_add_imageholder(QFont qfont, QHash<QChar,ImageHolder> *imageholders, QString chars){
   QFontMetrics metrics(qfont);
 
-  int real_width = metrics.horizontalAdvance("#"); (void)real_width;
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
+  int real_width = metrics.horizontalAdvance("#");
+#else
+  int real_width = metrics.width("#");
+#endif
   int height = metrics.height();
   int width=height;
   //int width=real_width;
@@ -87,14 +118,13 @@ static inline void GE_add_imageholder(QFont qfont, QHash<QChar,ImageHolder> *ima
 #endif
 
     //QImage qtgl_image = QGLWidget::convertToGLFormat(qt_image);
-
-#if 0 // TODO/FIX
+    
     vl::ImagePBO *vl_image = new vl::ImagePBO;
     vl_image->setRefCountMutex(&image_mutex);
     vl_image->setAutomaticDelete(false);
 
     vl_image->allocate2D(width,height,4,vl::IF_RGBA, vl::IT_UNSIGNED_BYTE);
-	
+    
     unsigned char *qt_bits = qtgl_image.bits();
     unsigned char *vl_bits = vl_image->pixels();
     
@@ -107,8 +137,6 @@ static inline void GE_add_imageholder(QFont qfont, QHash<QChar,ImageHolder> *ima
     
     imageholders->insert(c, holder);
     //printf("Added '%c' (%d) to g_imageholders. image: %p\n",c,c,vl_image);
-#endif // 0
-
   }
 
 #if USE_FREETYPE
@@ -184,9 +212,8 @@ static inline void GE_set_new_font(const QFont &nonscaled_font){
 }
 
 
-struct TextBitmaps
-{
-  QHash<QChar, std::vector<r::fvec2> > points;
+struct TextBitmaps{
+  QHash<QChar, std::vector<vl::dvec2> > points;
 
   QFont qfont;
   QHash<QChar,ImageHolder> *imageholders;
@@ -198,7 +225,7 @@ struct TextBitmaps
 
   // called from Main thread (not used)
   void clearCharBoxes(){
-    QHash<QChar, std::vector<r::fvec2> >::iterator i;
+    QHash<QChar, std::vector<vl::dvec2> >::iterator i;
     for (i = points.begin(); i != points.end(); ++i)
       i.value().clear();
   }
@@ -222,7 +249,6 @@ struct TextBitmaps
     ImageHolder holder = imageholders->value(c);
 
     if (c != ' '){
-#if 0 // TODO/FIX
       vl::ImagePBO *image = holder.image;
       //float x2 = x + image->width()-1;
       //float y2 = y + image->height()-1;
@@ -233,7 +259,6 @@ struct TextBitmaps
                                     y - image->height()/scale_ratio/2.0
                                     )
                           );
-#endif
     }
 
     // return x + holder.width;
@@ -254,8 +279,6 @@ struct TextBitmaps
   }
   
 
-#if 0 // TODO/FIX
-	
 #if RADIUM_DRAW_FONTS_DIRECTLY
 
   // Called from OpenGL thread.
@@ -325,8 +348,7 @@ struct TextBitmaps
     vg->setImage(NULL);
   }
 #endif
-#endif // 0
-	
+
   //ImageHolder get_image_holder(char c){
   //  return image_holders[c];
   // }

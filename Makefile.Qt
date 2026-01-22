@@ -135,6 +135,7 @@ LRDFOPT ?= `$(PKG) --cflags lrdf`
 SNDFILEOPT ?= `$(PKG) --cflags sndfile`
 SAMPLERATEOPT ?= `$(PKG) --cflags samplerate`
 LIBLOOPT ?= `$(PKG) --cflags liblo`
+
 # (G_BYTE_ORDER == G_LITTLE_ENDIAN)
 
 PYOPTS ?=
