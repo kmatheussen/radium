@@ -2298,8 +2298,15 @@ static void create_track_peaks(const struct Tracker_Windows *window, const struc
       float y2 = ns->y2;
 
       //printf("y1/y2: %f, %f\n", y1, y2);
-      
-      c = c!=NULL ? GE_y(c, y1) : GE_mix_color_z(GE_get_rgb(LOW_EDITOR_BACKGROUND_COLOR_NUM), GE_get_rgb(WAVEFORM_COLOR_NUM), 100, GE_Conf(Z_ABOVE(Z_ZERO), y1));
+
+	  if (c != NULL)
+		  c = GE_y(c, y1);
+	  else
+		  c = GE_mix_color_z(GE_get_rgb(LOW_EDITOR_BACKGROUND_COLOR_NUM),
+							 GE_get_rgb(WAVEFORM_COLOR_NUM),
+							 100,
+							 GE_Conf(Z_ABOVE(Z_ZERO),
+									 y1));
 
       const STime time1 = Ratio2STime2(wblock->block, ns->time1, wtrack->track) - note_time;
       const STime time2 = Ratio2STime2(wblock->block, ns->time2, wtrack->track) - note_time;
