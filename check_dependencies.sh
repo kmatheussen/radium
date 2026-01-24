@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-PYTHONEXE=$1
+PYTHONEXE=`./find_python_path.sh`
 #MOC=$2
 #UIC=$3
 
@@ -11,7 +11,7 @@ source configuration.sh
 
 
 mywhich() {
-    if which $1 ; then
+    if which $1 &>/dev/null ; then
         echo $1 found
     else
         echo $1 not found
@@ -25,15 +25,15 @@ mywhich sed
 #which guile-1.8
 mywhich guile
 
-if [[ $2 == "test_packages" ]] ; then
+if [[ $1 == "test_packages" ]] ; then
     echo "testing packages"
 fi
 
-if [[ $2 == "test_build" ]] ; then
+if [[ $1 == "test_build" ]] ; then
     echo "testing build"
 fi
 
-if [[ $2 == "test_build" ]] ; then
+if [[ $1 == "test_build" ]] ; then
 
     if ! which $MOC ; then
         echo "Can not find moc. Make sure QTDIR and/or MOC is set correctly in the Makefile".
@@ -241,7 +241,7 @@ if ! pkg-config --cflags glib-2.0 >/dev/null 2>/dev/null ; then
     exit 5
 fi
 
-if [[ $2 == "test_build" ]] ; then
+if [[ $1 == "test_build" ]] ; then
     if [ `uname` == "Linux" ] ; then
         if [ ! -f bin/packages/deletemetorebuild ] ; then
 	    echo

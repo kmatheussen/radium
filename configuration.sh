@@ -1,5 +1,5 @@
 set -eEu
-
+#set -x
 source bash_setup.sh
 
 
@@ -165,7 +165,8 @@ RADIUM_CONFIGURATION_HAS_BEEN_SETUP=1
 # lead to unexpected behaviors.
 #
 set_var PYTHONEXE `./find_python_path.sh`
-if ! env |grep PYTHONEXE_NOT_AVAILABLE_YET ; then
+
+if ! env |grep PYTHONEXE_NOT_AVAILABLE_YET >/dev/null ; then
     assert_exe_exists $PYTHONEXE
 fi
 
@@ -187,50 +188,73 @@ if ! is_0 $QT_PKG_CONFIGURATION_PATH ; then
     export PKGqt="PKG_CONFIG_PATH=$QT_PKG_CONFIGURATION_PATH $PKGqt"
 fi
 
-if is_0 $QMAKE ; then
-    if which qmake-qt6 2>/dev/null ; then
-        export QMAKE=$(which qmake-qt6)
-    else
-        export QMAKE=$(which qmake)
-    fi
-fi
-
-if is_0 $UIC ; then
-    if which uic-qt6 2>/dev/null  ; then
-        export UIC=$(which uic-qt6)
-    else
-        export UIC=$(which uic)
-    fi
-fi
-
-if is_0 $MOC ; then
-    if which moc-qt6 2>/dev/null  ; then
-        export MOC=$(which moc-qt6)
-    else
-        export MOC=$(which moc)
-    fi
-fi
-
-if is_0 $QSB ; then
-    if which qsb-qt6 2>/dev/null  ; then
-        export QSB=$(which qsb-qt6)
-    else
-        export QSB=$(which qsb)
-    fi
-fi
 
 assert_v6()
 {
 	assert_exe_exists $1
-	
-	if $@ | grep -v '^6' ; then
+
+	if $@ | grep -v '^6' &>/dev/null; then
 		if $@ | awk '{print $2}' | grep -v '^6' ; then
 			handle_failure "Seems like $1 has the wrong version. We need Qt 6 or newer. Set QMAKE to correct path to fix".
 		fi
 	fi
 }
 
+if is_0 $QMAKE ; then
+    if which qmake-qt6 &> /dev/null ; then
+        export QMAKE=$(which qmake-qt6)
+	elif which qmake &> /dev/null ; then
+        export QMAKE=$(which qmake)
+	else
+		echo "Could not find qmake-qt6 or qmake in path. Either: 1. set PATH. 2. Install qmake. 3. Set the QMAKE environment variable."
+		exit -1
+    fi
+fi
+
 assert_v6 ${QMAKE} -query QT_VERSION
+
+QT_INSTALL_LIBEXECS=`${QMAKE} -query QT_INSTALL_LIBEXECS`
+QT_HOST_LIBEXECS=`${QMAKE} -query QT_HOST_LIBEXECS`
+
+if is_0 $UIC ; then
+	if [ -f "${QT_HOST_LIBEXECS}/uic" ] ; then
+		export UIC="${QT_HOST_LIBEXECS}/uic"
+	elif which uic-qt6 &>/dev/null  ; then
+        export UIC=$(which uic-qt6)
+    elif which uic &>/dev/null ; then
+		export UIC=$(which uic)
+	else
+		echo "Could not find uic-qt6 or uic in path. Either install uic or set the UIC environment variable."
+		exit -1
+    fi
+fi
+
+if is_0 $MOC ; then
+	if [ -f "${QT_HOST_LIBEXECS}/moc" ] ; then
+		export MOC="${QT_HOST_LIBEXECS}/moc"
+    elif which moc-qt6 &>/dev/null  ; then
+        export MOC=$(which moc-qt6)
+	elif which moc &>/dev/null ; then
+        export MOC=$(which moc)
+    else
+		echo "Could not find moc-qt6 or moc in path. Either install moc or set the MOC environment variable."
+		exit -1
+    fi
+fi
+
+if is_0 $QSB ; then
+	if [ -f "${QT_HOST_LIBEXECS}/qsb" ] ; then
+		export QSB="${QT_HOST_LIBEXECS}/qsb"
+    elif which qsb-qt6 &>/dev/null  ; then
+        export QSB=$(which qsb-qt6)
+	elif which qsb &>/dev/null ; then
+        export QSB=$(which qsb)
+    else
+		echo "Could not find qsb-qt6 or qsb in path. Either install qsb or set the QSB environment variable."
+		exit -1
+    fi
+fi
+
 assert_v6 ${UIC} --version
 assert_v6 ${MOC} --version
 assert_v6 ${QSB} --version

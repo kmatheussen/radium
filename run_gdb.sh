@@ -2,6 +2,7 @@
 
 set -ueE
 #set -x
+#echo "S1"
 
 #if [ -v QT_QPA_PLATFORM_PLUGIN_PATH ] ; then
 #source ~/.bashrc
@@ -19,7 +20,7 @@ fi
 
 PWD=`pwd`
 export LSAN_OPTIONS=suppressions=$PWD/SanitizerSuppr.txt
-export ASAN_OPTIONS="malloc_context_size=200,detect_leaks=0,abort_on_error=1,max_malloc_fill_size=1048576,detect_odr_violation=2,detect_container_overflow=0,suppressions=$PWD/SanitizerSupprAddr.txt"
+export ASAN_OPTIONS="malloc_context_size=200,detect_leaks=0,abort_on_error=1,max_malloc_fill_size=1048576,detect_odr_violation=2,detect_container_overflow=0,detect_stack_use_after_return=0,suppressions=$PWD/SanitizerSupprAddr.txt"
 
 #
 # earlier we also had these ASAN_OPTIONS:
@@ -105,7 +106,6 @@ elif [[ "$debugger" = "lldb"* ]] ; then
 fi
 
 
-
 unameOut="$(uname -s)"
 case "${unameOut}" in
     Linux*)     EXECUTABLE="/tmp/radium_bin/radium_linux.bin";;
@@ -120,7 +120,7 @@ rm -f /tmp/runradiumgdb*.sh
 #exec gdb -i=mi $EXECUTABLE
 
 exename=/tmp/runradiumgdb$$.sh
-
+#set -x
 echo "G_DEBUG="fatal-warnings,gc-friendly" USE=libedit/readline exec $debugger $debugger_argline $@ $EXECUTABLE ; killall -9 radium_progress_window ; killall -9 radium_crashreporter"  > $exename
 
 chmod a+rx $exename

@@ -975,53 +975,66 @@ static QTemporaryFile *create_temp_pdfile(){
 
 static QTemporaryFile *get_pdfile_from_state(hash_t *state){
   QTemporaryFile *pdfile = create_temp_pdfile();
-  pdfile->open();
+  
+  if (!pdfile->open())
+  {
+	  GFX_Message(NULL, "Error. Unable to create temporary file. Disk full?");
+  }
+  else
+  {
+	  QTextStream out(pdfile);
+	  int num_lines = HASH_get_int(state, "num_lines");
+	  
+	  for(int i=0; i<num_lines; i++)
+		  out << STRING_get_qstring(HASH_get_string_at(state, "line", i)) + "\n";
 
-  QTextStream out(pdfile);
-  int num_lines = HASH_get_int(state, "num_lines");
-
-  for(int i=0; i<num_lines; i++)
-    out << STRING_get_qstring(HASH_get_string_at(state, "line", i)) + "\n";
-
-  pdfile->close();
-
+	  pdfile->close();
+  }
+  
   return pdfile;
 }
 
 // http://www.java2s.com/Code/Cpp/Qt/Readtextfilelinebyline.htm
-static void put_pdfile_into_state(const SoundPlugin *plugin, QFile *file, hash_t *state){
-  Data *data=(Data*)plugin->data;
-  void *request;
-  PLAYER_lock();{
-    request = libpds_request_savefile(data->pd, data->file);
-  }PLAYER_unlock();
-
-  libpds_wait_until_file_is_saved(data->pd, request, 2.0);
-
-  file->open(QIODevice::ReadOnly | QIODevice::Text);
-
-  QTextStream in(file);
-
-  int i=0;
-  QString line = in.readLine();
-  while (!line.isNull()) {
-    //printf("line: -%s-\n",line.toUtf8().constData());
-    HASH_put_string_at(state, "line", i, STRING_create(line));
-    i++;
-    line = in.readLine();
-  }
-
-  HASH_put_int(state, "num_lines", i);
-
-  file->close();
+static void put_pdfile_into_state(const SoundPlugin *plugin, QFile *file, hash_t *state)
+{
+	if (file == NULL)
+		return;
+	
+	Data *data=(Data*)plugin->data;
+	void *request;
+	PLAYER_lock();{
+		request = libpds_request_savefile(data->pd, data->file);
+	}PLAYER_unlock();
+	
+	libpds_wait_until_file_is_saved(data->pd, request, 2.0);
+	
+	file->open(QIODevice::ReadOnly | QIODevice::Text);
+	
+	QTextStream in(file);
+	
+	int i=0;
+	QString line = in.readLine();
+	while (!line.isNull()) {
+		//printf("line: -%s-\n",line.toUtf8().constData());
+		HASH_put_string_at(state, "line", i, STRING_create(line));
+		i++;
+		line = in.readLine();
+	}
+	
+	HASH_put_int(state, "num_lines", i);
+	
+	file->close();
 }
 
 static QString get_search_path() {
   return STRING_get_qstring(OS_get_full_program_file_path("pd").id);
 }
 
-static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, float sample_rate, int block_size){
-  Data *data = (Data*)V_calloc(1,sizeof(Data));
+static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, float sample_rate, int block_size)
+{
+	R_ASSERT(pdfile != NULL);
+	
+	Data *data = (Data*)V_calloc(1,sizeof(Data));
   
   data->largest_used_ids_pos = -1;
 
@@ -1089,7 +1102,7 @@ static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, flo
 
   QFileInfo qfileinfo(pdfile->fileName());
   printf("name: %s, dir: %s\n",qfileinfo.fileName().toUtf8().constData(), qfileinfo.absolutePath().toUtf8().constData());
-
+  
   data->file = libpds_openfile(pd, qfileinfo.fileName().toUtf8().constData(), qfileinfo.absolutePath().toUtf8().constData());
   
   R_ASSERT(data->file != NULL);
@@ -1105,17 +1118,28 @@ static QTemporaryFile *create_new_tempfile(QString *fileName){
   QTemporaryFile *pdfile = create_temp_pdfile();
 
   // open
-  printf("open: %d\n",pdfile->open());
-  source.open(QIODevice::ReadOnly);
+  if (!pdfile->open())
+  {
+	  GFX_Message(NULL, "Error. Unable to create tempfile \"%s\". Disk full?", fileName->toUtf8().constData());
+  }
+  else if (!source.open(QIODevice::ReadOnly))
+  {
+	  GFX_Message(NULL, "Error. Unable to create temporary file. Disk full?");
+  }
+  else
+  {
+	  printf("filename: -%s-\n",pdfile->fileName().toUtf8().constData());
 
-  printf("filename: -%s-\n",pdfile->fileName().toUtf8().constData());
-
-  // copy
-  pdfile->write(source.readAll());
+	  // copy
+	  pdfile->write(source.readAll());
+  }
 
   // close
-  pdfile->close();
-  source.close();
+  if (pdfile->isOpen())
+	  pdfile->close();
+
+  if (source.isOpen())
+	  source.close();
 
   return pdfile;
 }
