@@ -40,6 +40,8 @@ double g_opengl_scale_ratio = 1.0;
 
 #include "T2.hpp"
 
+#include "Context.hpp"
+
 
 #define DEBUG_PRINT 0
 
@@ -48,7 +50,6 @@ double g_opengl_scale_ratio = 1.0;
 #endif
 
 
-#define USE_TRIANGLE_STRIPS 0
 #define NUM_PREDEFINED_COLORS 16
 
 
@@ -96,6 +97,7 @@ GE_Rgb GE_get_custom_rgb(int custom_colornum){
   return ret;
 }
 
+r::Context *g_context = new r::Context();
 
 struct _GE_Context
 {
@@ -114,7 +116,7 @@ struct _GE_Context
   
 public:
 	
-	std::vector<r::fvec2> _triangles;
+	//std::vector<r::fvec2> _triangles;
 	
 	_GE_Context(const Color &_color, const GE_Conf &conf, int slice)
 		: color(_color)
@@ -124,13 +126,23 @@ public:
 		R_ASSERT(sizeof(Color)==sizeof(uint64_t));
 	}
 
+	void add_triangle(const r::fvec2 &p1, const r::fvec2 &p2, const r::fvec2 &p3)
+	{
+		if (g_rhi != NULL)
+			g_context->add_triangle(p1, p2, p3, color.c);
+	}
+	
 	static float y(float y)
 	{
+#if 0 // TODO: Find out if we need to invert y or not.
 		float height = g_height;
 		float ret = scale(y,
 						  0, height,
 						  height, 0);
 		return ret;
+#else
+		return y;
+#endif
 	}
 };
 
@@ -198,6 +210,12 @@ struct PaintingData
 		if (slice_size < MIN_SLICE_SIZE)
 			slice_size = MIN_SLICE_SIZE;
 	}
+
+	~PaintingData()
+	{
+		for(GE_Context* context : _contexts)
+			delete context;
+	}
 };
 } // namespace r
 
@@ -233,15 +251,23 @@ void GE_start_writing(int full_height, bool block_is_visible){
   g_painting_data = new r::PaintingData(full_height, block_is_visible);
   GE_fill_in_shared_variables(&g_painting_data->shared_variables, g_height);
 
+  g_context->clear();
+  
   //T1_prepare_gradients2_for_new_rendering();
   //T1_collect_gradients1_garbage();
 }
 
 // Called from the main thread
 void GE_end_writing(GE_Rgb new_background_color){
-  T1_send_data_to_t2(g_painting_data, new_background_color);
+
+	if (g_rhi != NULL)
+	{
+		g_context->call_me_when_finished_painting(g_rhi);
+	}
+	
+	T1_send_data_to_t2(g_painting_data, new_background_color);
     
-  g_painting_data = NULL;
+	g_painting_data = NULL;
 }
 
 // Called from the main thread. Only used when loading song to ensure all gradients are created before starting to play.
@@ -422,25 +448,6 @@ void GE_set_font(const QFont &font){
 }
 
 
-#if 0
-
-void GE_line(GE_Context *c, float x1, float y1, float x2, float y2, float pen_width){
-
-  if (c->is_gradient || y1!=y2){
-    int key = get_key_from_pen_width(pen_width);
-    c->lines[key].push_back(vl::dvec2(x1,c->y(y1+0.1f)));
-    c->lines[key].push_back(vl::dvec2(x2,c->y(y2-0.1f)));
-  }else{
-    float half = pen_width/2.0f;
-    c->boxes.push_back(vl::dvec2(x1,c->y(y1-half)));
-    c->boxes.push_back(vl::dvec2(x1,c->y(y2+half)));
-    c->boxes.push_back(vl::dvec2(x2,c->y(y2+half)));
-    c->boxes.push_back(vl::dvec2(x2,c->y(y1-half)));
-  }
-}
-
-#else
-
 static float scissor_x,scissor_x2;
 static bool has_x_scissor=false;
 
@@ -467,7 +474,7 @@ void GE_unset_x_scissor(void){
   has_x_scissor=false;
 }
 
-static void GE_line_lowlevel(GE_Context *c, std::vector<r::fvec2> &triangles, float x1, float y1, float x2, float y2, float pen_width){
+static void GE_line_lowlevel(GE_Context *c, float x1, float y1, float x2, float y2, float pen_width){
   // Code below mostly copied from http://www.softswit.ch/wiki/index.php?title=Draw_line_with_triangles
 
   float dx = x2-x1;
@@ -487,28 +494,38 @@ static void GE_line_lowlevel(GE_Context *c, std::vector<r::fvec2> &triangles, fl
   float h = pen_width;//.125*length;
   
   // since perp defines how wide our quad is, scale it
-  perp_x *= h;
-  perp_y *= h;
+  perp_x *= h * 0.5f;
+  perp_y *= h * 0.5f;
  
-  float v1x = x1 + perp_x*.5;
-  float v1y = y1 + perp_y*.5;
+  float v1x = x1 + perp_x;
+  float v1y = y1 + perp_y;
   
-  float v2x = x2 + perp_x*.5;
-  float v2y = y2 + perp_y*.5;
+  float v2x = x2 + perp_x;
+  float v2y = y2 + perp_y;
  
-  float v3x = x2 - perp_x*.5;
-  float v3y = y2 - perp_y*.5;
+  float v3x = x2 - perp_x;
+  float v3y = y2 - perp_y;
  
-  float v4x = x1 - perp_x*.5;
-  float v4y = y1 - perp_y*.5;
+  float v4x = x1 - perp_x;
+  float v4y = y1 - perp_y;
 
+  c->add_triangle({v1x, c->y(v1y)},
+				  {v2x, c->y(v2y)},
+				  {v3x, c->y(v3y)});
+/*
   triangles.push_back(r::fvec2(v1x, c->y(v1y)));
   triangles.push_back(r::fvec2(v2x, c->y(v2y)));
   triangles.push_back(r::fvec2(v3x, c->y(v3y)));
+*/
+  c->add_triangle({v1x, c->y(v1y)},
+				  {v3x, c->y(v3y)},
+				  {v4x, c->y(v4y)});
 
+  /*
   triangles.push_back(r::fvec2(v1x, c->y(v1y)));
   triangles.push_back(r::fvec2(v3x, c->y(v3y)));
   triangles.push_back(r::fvec2(v4x, c->y(v4y)));
+  */
 }
 
 
@@ -566,9 +583,8 @@ void GE_line(GE_Context *c, float x1, float y1, float x2, float y2, float pen_wi
 #endif
 
 
-  GE_line_lowlevel(c, c->_triangles, x1, y1, x2, y2, pen_width);
+  GE_line_lowlevel(c, x1, y1, x2, y2, pen_width);
 }
-#endif
 
 void GE_text(GE_Context *c, const char *text, int x, int y){
 	//c->textbitmaps.addCharBoxes(text, x, c->y(y+1));
@@ -586,34 +602,23 @@ void GE_text_halfsize2(GE_Context *c, QString text, int x, int y){
 	//c->textbitmaps_halfsize.addCharBoxes(text, x, c->y(y+1));
 }
 
-#if 0
-void GE_box(GE_Context *c, float x1, float y1, float x2, float y2, float pen_width){
-  int key = get_key_from_pen_width(pen_width);
-  y1=c->y(y1);
-  y2=c->y(y2);
-
-  c->lines[key].push_back(vl::dvec2(x1, y1));
-  c->lines[key].push_back(vl::dvec2(x2, y1));
-
-  c->lines[key].push_back(vl::dvec2(x2, y1));
-  c->lines[key].push_back(vl::dvec2(x2, y2));
-
-  c->lines[key].push_back(vl::dvec2(x2, y2));
-  c->lines[key].push_back(vl::dvec2(x1, y2));
-
-  c->lines[key].push_back(vl::dvec2(x1, y2));
-  c->lines[key].push_back(vl::dvec2(x1, y1));
-}
-#else
 void GE_box(GE_Context *c, float x1, float y1, float x2, float y2, float pen_width){
   GE_line(c, x1, y1, x2, y1, pen_width);
   GE_line(c, x2, y1, x2, y2, pen_width);
   GE_line(c, x2, y2, x1, y2, pen_width);
   GE_line(c, x1, y2, x1, y1, pen_width);
 }
-#endif
 
 void GE_filledBox(GE_Context *c, float x1, float y1, float x2, float y2){
+
+	c->add_triangle({x1, c->y(y1)},
+					{x2, c->y(y1)},
+					{x1, c->y(y2)});
+	
+	c->add_triangle({x1, c->y(y2)},
+					{x2, c->y(y1)},
+					{x2, c->y(y2)});
+	
 	/*
 	  c->boxes.push_back(vl::dvec2(x1,c->y(y1)));
 	  c->boxes.push_back(vl::dvec2(x1,c->y(y2)));
@@ -640,35 +645,20 @@ void GE_polyline(GE_Context *c, int num_points, const APoint *points, float pen_
 
 void GE_trianglestrip(GE_Context *c, int num_points, const APoint *points){
   if(num_points>0){
-#if USE_TRIANGLE_STRIPS
-    std::vector<vl::dvec2> trianglestrip;
-    for(int i=0;i<num_points;i++)
-      trianglestrip.push_back(vl::dvec2(points[i].x, c->y(points[i].y)));
-    c->trianglestrips.push_back(trianglestrip);
-#else
-    for(int i=0; i<num_points-2; i++){
-      c->_triangles.push_back(r::fvec2(points[i].x, c->y(points[i].y)));
-      c->_triangles.push_back(r::fvec2(points[i+1].x, c->y(points[i+1].y)));
-      c->_triangles.push_back(r::fvec2(points[i+2].x, c->y(points[i+2].y)));
+    for(int i=0; i<num_points-2; i++)
+	{
+		c->add_triangle({points[i].x, c->y(points[i].y)},
+						{points[i+1].x, c->y(points[i+1].y)},
+						{points[i+2].x, c->y(points[i+2].y)});
+
+		/*
+		c->_triangles.push_back(r::fvec2(points[i].x, c->y(points[i].y)));
+		c->_triangles.push_back(r::fvec2(points[i+1].x, c->y(points[i+1].y)));
+		c->_triangles.push_back(r::fvec2(points[i+2].x, c->y(points[i+2].y)));
+		*/
     }
-#endif
   }
 }
-
-#if USE_TRIANGLE_STRIPS
-
-static std::vector<vl::dvec2> trianglestrip;
-void GE_trianglestrip_start(){
-  trianglestrip.clear();
-}
-void GE_trianglestrip_add(GE_Context *c, float x, float y){
-  trianglestrip.push_back(vl::dvec2(x,y));
-}
-void GE_trianglestrip_end(GE_Context *c){
-  c->trianglestrips.push_back(trianglestrip);
-}
-
-#else //  USE_TRIANGLE_STRIPS
 
 static int num_trianglestrips;
 
@@ -687,9 +677,14 @@ void GE_trianglestrip_add(GE_Context *new_c, float x, float y){
 
   if(num_trianglestrips>=3)
   {
-    c->_triangles.push_back(r::fvec2(x, c->y(y)));
-    c->_triangles.push_back(r::fvec2(x1, c->y(y1)));
-    c->_triangles.push_back(r::fvec2(x2, c->y(y2)));
+	  c->add_triangle({x, c->y(y)},
+					  {x1, c->y(y1)},
+					  {x2, c->y(y2)});
+	  /*
+		c->_triangles.push_back(r::fvec2(x, c->y(y)));
+		c->_triangles.push_back(r::fvec2(x1, c->y(y1)));
+		c->_triangles.push_back(r::fvec2(x2, c->y(y2)));
+	  */
   }
 
   c = new_c;
@@ -792,6 +787,3 @@ void GE_gradient_triangle_end(GE_Context *c, float x1, float x2){
   current_gradient_rectangle = NULL;
 	*/
 }
-
-
-#endif //  !USE_TRIANGLE_STRIPS

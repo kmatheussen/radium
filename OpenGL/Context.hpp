@@ -4,6 +4,7 @@
 #  include <rhi/qrhi.h>
 #pragma GCC diagnostic pop
 
+extern QRhi *g_rhi;
 
 namespace r
 {
@@ -16,7 +17,7 @@ struct Context
 	int _buffer_pos = 0;
 	float *_buffer = (float*)malloc(_buffer_size * sizeof(float));
 
-	QRhiBuffer *_vbuf;
+	QRhiBuffer *_vbuf = nullptr;
 
 	QRhiResourceUpdateBatch *_updates = nullptr;
 	
@@ -41,7 +42,12 @@ struct Context
 							   get_num_bytes());
 
 		_vbuf->create();
-	
+
+		if (_updates != nullptr)
+		{
+			_updates->release(); // unused.
+		}
+		
 		_updates = rhi->nextResourceUpdateBatch();
 		_updates->uploadStaticBuffer(_vbuf, get_buffer());
 	}
@@ -74,8 +80,13 @@ struct Context
 		_buffer_pos = 0;
 		_buffer = (float*)malloc(_buffer_size);
 		*/
-		_vbuf->deleteLater();
-		_vbuf = NULL;
+		_buffer_pos = 0;
+
+		if (_vbuf != NULL)
+		{
+			_vbuf->deleteLater();
+			_vbuf = NULL;
+		}
 	}
 	
 	void addTriangle(const float *triangle)
@@ -102,10 +113,8 @@ struct Context
 	void addTriangle(float x1, float y1,
 					 float x2, float y2,
 					 float x3, float y3,
-					 float r, float g, float b)
+					 float r, float g, float b, float a = 0.01)
 	{
-		float a = 0.01;
-		
 		float f[TRIANGLE_SIZE];
 		f[0] = scale(x1,
 					 0, 1000,
@@ -135,7 +144,15 @@ struct Context
 		addTriangle(f);
 	}
 	
-					 
+	void add_triangle(const r::fvec2 &p1, const r::fvec2 &p2, const r::fvec2 &p3,
+					  GE_Rgb rgb)
+	{
+		addTriangle(p1.a, p1.b,
+					p2.a, p2.b,
+					p3.a, p3.b,
+					rgb.r / 256.0f, rgb.g / 256.0f, rgb.b / 256.0f, rgb.a / 256.0f);
+	}
+	
 	int get_num_bytes(void) const
 	{
 		return _buffer_pos * sizeof(float);

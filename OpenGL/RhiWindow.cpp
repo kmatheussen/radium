@@ -6,9 +6,11 @@
 #include <QThread>
 #include <QOffscreenSurface>
 
-#include "RhiWindow.hpp"
-
 #include "../common/nsmtracker.h"
+
+#include "RhiWindow.hpp"
+//#include "Context.hpp"
+extern QRhi *g_rhi;
 
 
 static QThread *g_thread = NULL;
@@ -349,6 +351,7 @@ void radium::RhiWindow::init()
 		
 #endif // !THREADED_GFX
 
+		g_rhi = _rhi;
 	}
 }
 						  
