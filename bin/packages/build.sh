@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -eEu
-set -x
+#set -x
 
 export PYTHONEXE_NOT_AVAILABLE_YET=1
 

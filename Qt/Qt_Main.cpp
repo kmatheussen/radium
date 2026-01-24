@@ -4867,7 +4867,7 @@ int main(int argc, char **argv){
   for(auto &path : QCoreApplication::libraryPaths())
 	  printf("PATH: %s\n", path.toUtf8().constData());
 
-  QCoreApplication::setLibraryPaths(QStringList(getenv("QT_QPA_PLATFORM_PLUGIN_PATH")));
+  //QCoreApplication::setLibraryPaths(QStringList(getenv("QT_QPA_PLATFORM_PLUGIN_PATH")));
 
   //QCoreApplication::setAttribute(Qt::AA_DontCheckOpenGLContextThreadAffinity);
 

@@ -178,13 +178,15 @@ QT_UI_CFLAGS ?= `$(PKGqt) --cflags Qt6UiTools` $(FPIC)
 QT_UI_LDFLAGS ?= `$(PKGqt) --libs Qt6UiTools` $(FPIC)
 QT_SVG_CFLAGS ?= `$(PKGqt) --cflags Qt6Svg` $(FPIC)
 QT_SVG_LDFLAGS ?= `$(PKGqt) --libs Qt6Svg` $(FPIC)
+QT_SVGWIDGETS_CFLAGS ?= `$(PKGqt) --cflags Qt6SvgWidgets` $(FPIC)
+QT_SVGWIDGETS_LDFLAGS ?= `$(PKGqt) --libs Qt6SvgWidgets` $(FPIC)
 
 #	If using QtWebEngine: (Not recommended, dragging doesn't work using it)
 #	QT_CFLAGS ?= `$(PKGqt) --cflags Qt6Gui --cflags Qt6Network --cflags Qt6OpenGL --cflags Qt6Widgets --cflags Qt6WebEngineWidgets` -Ibin/packages/qhttpserver-master/src -Ibin/packages/QScintilla_gpl-2.10.8 -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) -DUSE_QT6
 #	QT_LDFLAGS ?= `$(PKGqt) --libs Qt6Gui --libs Qt6OpenGL --libs Qt6Network --libs Qt6Widgets --libs Qt6WebEngineWidgets`
 
 QT_CFLAGS ?= `$(PKGqt) --cflags Qt6Gui --cflags Qt6Network --cflags Qt6OpenGL --cflags Qt6Widgets --cflags Qt6OpenGLWidgets --cflags Qt6Concurrent --cflags Qt6Core5Compat` -I$(QHTTPSERVER_PATH)/src -I$(QSCINTILLA_PATH) -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) $(FPIC)
-QT_LDFLAGS ?=  $(QT_UI_LDFLAGS) $(QT_SVG_LDFLAGS) `$(PKGqt) --libs Qt6Gui --libs Qt6OpenGL --libs Qt6Widgets --libs Qt6OpenGLWidgets --libs Qt6Network --libs Qt6Core5Compat` $(FPIC)
+QT_LDFLAGS ?=  $(QT_UI_LDFLAGS) $(QT_SVG_LDFLAGS) $(QT_SVGWIDGETS_LDFLAGS) `$(PKGqt) --libs Qt6Gui --libs Qt6OpenGL --libs Qt6Widgets --libs Qt6OpenGLWidgets --libs Qt6Network --libs Qt6Core5Compat` $(FPIC)
 
 ifeq ($(USE_QWEBENGINE),1)
 #	If using QtWebEngine:
@@ -1794,9 +1796,9 @@ $(T)Qt_instruments.o: $(BUILD_DEPENDENCIES) $(P)Qt_instruments.cpp $(INSTRUMENTS
 	@echo $?
 	@echo
 	if [ $(BUILDTYPE) = RELEASE ] ; then \
-		$(CCC2) $(P)Qt_instruments.cpp $(QTOPT) $(SNDFILEOPT) -Wno-null-dereference  $(NO_ANALYZER) ; \
+		$(CCC2) $(P)Qt_instruments.cpp $(QTOPT) $(SNDFILEOPT) $(QT_SVGWIDGETS_CFLAGS) -Wno-null-dereference  $(NO_ANALYZER) ; \
 	else \
-		$(CCC2) $(P)Qt_instruments.cpp $(QTOPT) $(SNDFILEOPT) $(O0) -Wno-null-dereference $(NO_ANALYZER) ; \
+		$(CCC2) $(P)Qt_instruments.cpp $(QTOPT) $(SNDFILEOPT) $(QT_SVGWIDGETS_CFLAGS) $(O0) -Wno-null-dereference $(NO_ANALYZER) ; \
 	fi
 	 # ^ It takes forever to compile this file with -Og
 
