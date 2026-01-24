@@ -124,10 +124,15 @@ static void delete_file(QString filename){
 }
 
 static void clear_file(QString filename){
-  QFile file(filename);
-  file.open(QIODevice::WriteOnly | QIODevice::Text);
-  file.write("");
-  file.close();
+	QFile file(filename);
+	if (file.open(QIODevice::WriteOnly | QIODevice::Text))
+	{
+		fprintf(stderr, "\033[31m\n\n !!!!!!!!!!!!!!!!!!!!!!!!! \n\n\n Error in crashreporter.cpp at line %d: Unable to open file \"%s\" for writing. \n\n !!!!!!!!!!!!!!!!!!!!!!!!! \n\n\n \033[0m",
+				__LINE__,
+				filename.toUtf8().constData());
+		file.write("");
+		file.close();
+	}
 }
 #endif
 
@@ -602,10 +607,12 @@ int main(int argc, char **argv){
   if(getenv("QT_QPA_PLATFORM_PLUGIN_PATH")==NULL){
     faulty_installation = true;
   }else{
-    QCoreApplication::setLibraryPaths(QStringList());
+	  QCoreApplication::setLibraryPaths(QStringList(getenv("QT_QPA_PLATFORM_PLUGIN_PATH")));
+	  //QCoreApplication::setLibraryPaths(QStringList());
   }
 #else
-  QCoreApplication::setLibraryPaths(QStringList());
+  QCoreApplication::setLibraryPaths(QStringList(getenv("QT_QPA_PLATFORM_PLUGIN_PATH")));
+  //QCoreApplication::setLibraryPaths(QStringList());
 #endif
 
   QLocale::setDefault(QLocale::c());
@@ -1042,7 +1049,7 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
 #endif
 
     if (dosave)
-      emergency_save_file.open();
+		dosave = emergency_save_file.open();
 
     printf(" calling run_program. Filename: %S. base64: %S\n",STRING_create(file->fileName(), false), STRING_create(local::toBase64(file->fileName()), false));
     //getchar();
