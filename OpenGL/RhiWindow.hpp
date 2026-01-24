@@ -13,6 +13,37 @@
 #define USE_RENDER_BUFFER 1
 
 
+static inline QThread *qthread2(QString name, std::function<void(void)> callback)
+{
+	//assert_is_qthread();
+
+	QThread *thread = QThread::create([name, callback]()
+		{
+			//QTHREAD_SCOPED_INIT;
+
+			//LOG_EXCEPTIONS(name.toUtf8().constData(), callback);
+			callback();
+		});
+	
+	if (QThread::currentThread() != qApp->thread())
+	{
+		assert(thread->thread() == QThread::currentThread()); // If not, 'QObject::moveToThread' doesn't work.
+
+		// If we don't do this, 'thread' won't be deleted until after the current thread is deleted/
+		// E.g. if this function is called from a thread pool-thread, the object may never be deleted.
+
+		assert(qApp->thread() != NULL);
+		
+		thread->moveToThread(qApp->thread());
+	}
+
+	thread->setObjectName(name);
+	thread->start();
+
+	return thread;
+}
+
+
 
 namespace radium
 {

@@ -2780,22 +2780,23 @@ $(T)crashreporter_windows.o: crashreporter/crashreporter_windows.cpp
 #	$(CC_STATIC2) crashreporter/crashreporter_windows.c $(OPT) $(O0) -DPACKAGE  $(CRASHREPORTER_WINDOWS_CFLAGS)
 #	$(CC2) crashreporter/crashreporter_windows.c $(OPT) -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/bfd -DPACKAGE -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/include $(O0)
 
-VISUALIZATION_OPTIONS=
+VISUALIZATION_OPTIONS=-I $(QRHI_HEADERS)
+VISUALIZATION_HEADERS=OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp OpenGL/FreeType.hpp OpenGL/T2.hpp OpenGL/Context.hpp OpenGL/RhiWindow.hpp OpenGL/Timing.hpp
 #$(WNO_SUGGEST_OVERRIDE) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC) $(NO_ANALYZER)  $(WNO_DEPRECATED_COPY_CLANG) $(WNO_DEPRECATED_DECLARATIONS) $(WNO_MISLEADING_INDENTATION_CLANG) $(WNO_CLASS_MEMACCESS) $(WNO_DEPRECATED_ENUM_ENUM_CONVERSION) -Wno-unknown-pragmas
 
-$(T)GfxElements.o: OpenGL/GfxElements.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp OpenGL/FreeType.hpp common/Mutex.hpp OpenGL/T2.hpp common/spinlock.h
+$(T)GfxElements.o: OpenGL/GfxElements.cpp $(VISUALIZATION_HEADERS) common/Mutex.hpp common/spinlock.h
 	$(CCC2) OpenGL/GfxElements.cpp $(QTOPT) $(FREETYPE_CFLAGS) $(BOOST_INCLUDE) $(VISUALIZATION_OPTIONS)
 
-$(T)T2.o: OpenGL/T2.cpp OpenGL/T2.hpp OpenGL/SharedVariables.hpp common/QueueStack.hpp OpenGL/GfxElements.h
+$(T)T2.o: OpenGL/T2.cpp $(VISUALIZATION_HEADERS) common/QueueStack.hpp
 	$(CCC2) OpenGL/T2.cpp $(QTOPT) $(BOOST_INCLUDE) $(VISUALIZATION_OPTIONS) 
 
-$(T)Render.o: OpenGL/Render.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp common/spinlock.h common/time_proc.h common/Beats_proc.h common/TimeData.hpp
+$(T)Render.o: OpenGL/Render.cpp $(VISUALIZATION_HEADERS) common/spinlock.h common/time_proc.h common/Beats_proc.h common/TimeData.hpp
 	$(CCC2) OpenGL/Render.cpp $(QTOPT) $(VISUALIZATION_OPTIONS)
 
-$(T)Widget.o: OpenGL/Widget.cpp OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/Timing.hpp OpenGL/SharedVariables.hpp common/Mutex.hpp OpenGL/T2.hpp OpenGL/Context.hpp common/spinlock.h common/MovingAverage.hpp common/Vector.hpp Qt/Timer.hpp # OpenGL/Qt6ThreadedWidget.hpp 
-	$(CCC2) OpenGL/Widget.cpp $(QTOPT) -I $(QRHI_HEADERS) $(VISUALIZATION_OPTIONS) 
+$(T)Widget.o: OpenGL/Widget.cpp $(VISUALIZATION_HEADERS) common/Mutex.hpp common/spinlock.h common/MovingAverage.hpp common/Vector.hpp Qt/Timer.hpp # OpenGL/Qt6ThreadedWidget.hpp 
+	$(CCC2) OpenGL/Widget.cpp $(QTOPT) $(VISUALIZATION_OPTIONS) 
 
-$(T)RhiWindow.o: OpenGL/RhiWindow.hpp
+$(T)RhiWindow.o: $(VISUALIZATION_HEADERS)
 	$(CCC2) OpenGL/RhiWindow.cpp $(QTOPT) -I $(QRHI_HEADERS)
 
 $(T)CheckOpenGL.o: OpenGL/CheckOpenGL.cpp common/Process.hpp

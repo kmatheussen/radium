@@ -261,36 +261,6 @@ void GL_update(void)
 }
 
 
-static inline QThread *qthread2(QString name, std::function<void(void)> callback)
-{
-	//assert_is_qthread();
-
-	QThread *thread = QThread::create([name, callback]()
-		{
-			//QTHREAD_SCOPED_INIT;
-
-			//LOG_EXCEPTIONS(name.toUtf8().constData(), callback);
-			callback();
-		});
-	
-	if (QThread::currentThread() != qApp->thread())
-	{
-		assert(thread->thread() == QThread::currentThread()); // If not, 'QObject::moveToThread' doesn't work.
-
-		// If we don't do this, 'thread' won't be deleted until after the current thread is deleted/
-		// E.g. if this function is called from a thread pool-thread, the object may never be deleted.
-
-		assert(qApp->thread() != NULL);
-		
-		thread->moveToThread(qApp->thread());
-	}
-
-	thread->setObjectName(name);
-	thread->start();
-
-	return thread;
-}
-
 static QShader getShader(const QString &name)
 {
 	assert(QThread::currentThread() == g_thread);
@@ -323,10 +293,23 @@ static void init_test_triangles(r::Context *my_context, float dy = 0)
 };
 
 
+// Main thread
+static Tracker_Windows *get_window(void){
+  return root->song->tracker_windows;
+}
+
+// Main thread
+static EditorWidget *get_editorwidget(void){
+  return (EditorWidget *)get_window()->os_visual.widget;
+}
+
+extern r::Context *g_context;
+QRhi *g_rhi = NULL;
+
 namespace
 {
 
-class RenderWindow : public radium::RhiWindow
+class RenderWindow : public radium::RhiWindow, public radium::MouseCycleFix
 {
 public:
 	r::Context *_my_context = nullptr;
@@ -457,11 +440,18 @@ public:
 		
 		QRhiResourceUpdateBatch *resourceUpdates = _rhi->nextResourceUpdateBatch();
 
-		if (_my_context)
-			_my_context->maybe_merge_in(resourceUpdates);
-		if (_my_context2)
-			_my_context2->maybe_merge_in(resourceUpdates);
-
+		if (g_context != NULL && g_context->get_num_vertices() > 0)
+		{
+			g_context->maybe_merge_in(resourceUpdates);
+		}
+		else
+		{		
+			if (_my_context)
+				_my_context->maybe_merge_in(resourceUpdates);
+			if (_my_context2)
+				_my_context2->maybe_merge_in(resourceUpdates);
+		}
+		
 		const QSize outputSizeInPixels = _sc->currentPixelSize();
 		
 		QRhiCommandBuffer *cb = _sc->currentFrameCommandBuffer();
@@ -473,12 +463,45 @@ public:
 			cb->setViewport({ 0, 0, float(outputSizeInPixels.width()), float(outputSizeInPixels.height())   });
 			cb->setShaderResources();
 
-			if (_my_context)
-				_my_context->render(cb);
-			if (_my_context2)
-				_my_context2->render(cb);
+			if (g_context != NULL && g_context->get_num_vertices() > 0)
+			{
+				g_context->render(cb);
+			}
+			else
+			{
+				if (_my_context)
+					_my_context->render(cb);
+				if (_my_context2)
+					_my_context2->render(cb);
+			}
 		}		
 		cb->endPass();
+	}
+
+	// Main thread
+	bool fix_mousePressEvent(radium::MouseCycleEvent &qmouseevent) override
+	{
+		return get_editorwidget()->handle_mouse_press(qmouseevent, qmouseevent.x(), qmouseevent.y() + root->song->tracker_windows->wblock->t.y1);
+	}
+
+	// Main thread
+	void fix_mouseMoveEvent(radium::MouseCycleEvent &qmouseevent) override
+	{
+		//printf("fix_mouseMoveEvent %d %d\n", (int)qmouseevent.x(), (int)qmouseevent.y());
+		get_editorwidget()->handle_mouse_move(qmouseevent.button(), qmouseevent.x(), qmouseevent.y() + root->song->tracker_windows->wblock->t.y1);
+	}
+
+	// Main thread
+	bool fix_mouseReleaseEvent(radium::MouseCycleEvent &event) override
+	{
+		return get_editorwidget()->handle_mouse_release(event.button(), event.x(), event.y() + root->song->tracker_windows->wblock->t.y1);
+	}
+  
+	MOUSE_CYCLE_CALLBACKS_FOR_QT;
+
+	void wheelEvent(QWheelEvent *qwheelevent) override
+	{
+		get_editorwidget()->wheelEvent(qwheelevent);
 	}
 };
 
