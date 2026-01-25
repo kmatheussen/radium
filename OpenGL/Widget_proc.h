@@ -33,7 +33,7 @@ extern double GL_get_vblank(void);
     // returns 0 if gl not started
     // returns 1 if gl just started (only returned once)
     // returns 2 if gl had been started earlier
-extern int GL_maybe_notify_that_main_window_is_exposed(int interval);
+//extern int GL_maybe_notify_that_main_window_is_exposed(int interval);
     
 static inline void GL_pause_gl_thread_a_short_while(void){}
 static inline void GL_EnsureMakeCurrentIsCalled(void){}

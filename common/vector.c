@@ -25,7 +25,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #  error "-fomit-frame-pointers in a file that don't need it"
 #endif
 
-
 vector_t g_global_roots = {0};
 
 

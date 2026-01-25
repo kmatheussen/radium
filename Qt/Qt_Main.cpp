@@ -2910,26 +2910,6 @@ protected:
       }
     }
 
-    {
-      int gl_status = GL_maybe_notify_that_main_window_is_exposed(_interval);
-      if (gl_status>=1){
-		  //GL_maybe_estimate_vblank(static_cast<EditorWidget*>(window->os_visual.widget)->gl_widget);
-      }
-    }
-
-    #if 0
-    static bool main_window_is_exposed = false;
-    if (main_window_is_exposed==false){
-      QMainWindow *main_window = (QMainWindow *)window->os_visual.main_window;
-      if (main_window != NULL){
-        if (main_window->isExposed()) {
-
-          main_window_is_exposed = true;
-        }
-      }
-    }
-    #endif
-
     GL_update();
     
     SEQUENCER_WIDGET_call_very_often();
