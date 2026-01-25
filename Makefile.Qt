@@ -191,8 +191,8 @@ QT_LDFLAGS ?=  $(QT_UI_LDFLAGS) $(QT_SVG_LDFLAGS) $(QT_SVGWIDGETS_LDFLAGS) `$(PK
 ifeq ($(USE_QWEBENGINE),1)
 #	If using QtWebEngine:
 	USE_QWEBENGINE_CFLAGS = -D USE_QWEBENGINE=1
-	QT_CFLAGS += `$(PKGqt) --cflags Qt6WebEngineCore  --cflags Qt6WebEngineWidgets` 
-	QT_LDFLAGS += `$(PKGqt) --libs Qt6WebEngineCore  --libs Qt6WebEngineWidgets`
+#	QT_CFLAGS += `$(PKGqt) --cflags Qt6WebEngineCore  --cflags Qt6WebEngineWidgets` 
+#	QT_LDFLAGS += `$(PKGqt) --libs Qt6WebEngineCore  --libs Qt6WebEngineWidgets`
 else
 #	If using QtWebKit:
 	USE_QWEBENGINE_CFLAGS = -D USE_QWEBENGINE=0

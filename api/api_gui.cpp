@@ -65,11 +65,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 
 #if USE_QWEBENGINE
-  #include <QWebEngineView>
-  #include <QWebEnginePage>
+//#  include <QWebEngineView>
+//#  include <QWebEnginePage>
 #else
-  #include <QtWebKitWidgets/QWebView>
-  #include <QtWebKitWidgets/QWebFrame>
+#  include <QtWebKitWidgets/QWebView>
+#  include <QtWebKitWidgets/QWebFrame>
 #endif
 
 #include "../common/nsmtracker.h"

@@ -430,6 +430,57 @@ public:
 		_pipeline->setRenderPassDescriptor(_rp);
 
 		_pipeline->create();
+
+		double ratio = devicePixelRatio();
+
+		safe_double_write(&g_opengl_scale_ratio, ratio);
+		
+		// Make sure editor font is scaled.
+		if(root!=NULL && root->song!=NULL && root->song->tracker_windows!=NULL){
+			setFontValues(root->song->tracker_windows);
+		}
+
+		QScreen *qscreen = screen();
+		R_ASSERT(qscreen != NULL);
+
+		double refresh_rate;
+		
+		if (qscreen != NULL)			
+			refresh_rate = qscreen->refreshRate();
+		else
+			refresh_rate = 60;
+
+		R_ASSERT(refresh_rate >= 0.5);
+
+		if (refresh_rate >= 0.5)
+		{
+			ATOMIC_DOUBLE_SET(g_vblank, 1000.0 / refresh_rate);
+		}
+
+		connect(this, &QWindow::screenChanged, [](QScreen *screen)
+			{
+				R_ASSERT(screen != NULL);
+		
+				if (screen==NULL)
+					return;
+		
+				double refresh_rate = screen->refreshRate();
+		
+				printf("  NEW REFRESH RATE: %f\n", refresh_rate);
+
+				R_ASSERT(refresh_rate >= 0.5);
+				
+				if (refresh_rate >= 0.5)
+				{
+					//widget->set_vblank(1000.0 / refresh_rate);
+					ATOMIC_DOUBLE_SET(g_vblank, 1000.0 / refresh_rate);
+				}
+			});
+
+		printf("Ratio: %f. refresh: %f\n", ratio, refresh_rate);
+
+		printf("gotit\n");
+		//getchar();
 	}
 
 	void customRender() override
@@ -460,7 +511,21 @@ public:
 		{
 			cb->setGraphicsPipeline(_pipeline);
 			//cb->setViewport({ 0, 100, float(outputSizeInPixels.width()), float(outputSizeInPixels.height())   });
-			cb->setViewport({ 0, 0, float(outputSizeInPixels.width()), float(outputSizeInPixels.height())   });
+			cb->setViewport(
+				{ 0,
+				  0,
+				  float(double(outputSizeInPixels.width()) * 1.0), //g_opengl_scale_ratio),
+				  float(double(outputSizeInPixels.height()) * 1.0), //g_opengl_scale_ratio)
+				});
+
+			/*
+			printf("Width: %d. Scale: %f. W: %f. H: %f\n",
+				   outputSizeInPixels.width(),
+				   g_opengl_scale_ratio,
+				   float(double(outputSizeInPixels.width()) * g_opengl_scale_ratio),
+				   float(double(outputSizeInPixels.height()) * g_opengl_scale_ratio));
+			*/
+			
 			cb->setShaderResources();
 
 			if (g_context != NULL && g_context->get_num_vertices() > 0)
@@ -502,6 +567,13 @@ public:
 	void wheelEvent(QWheelEvent *qwheelevent) override
 	{
 		get_editorwidget()->wheelEvent(qwheelevent);
+	}
+
+	void resizeEvent(QResizeEvent *qresizeevent) override
+	{
+		if (g_editor->window != NULL)
+			calculateNewWindowWidthAndHeight(g_editor->window);
+
 	}
 };
 
@@ -623,126 +695,8 @@ bool g_gl_widget_started = false;
 static RenderWindow *g_window;
 static QWidget *g_widget;
 
-static double get_refresh_rate(void){
-  
-  QWindow *qwindow = g_widget->windowHandle();
-  if (qwindow!=NULL){
-
-    double ratio = qwindow->devicePixelRatio();
-    //ratio = 0.5;
-
-    if (fabs(ratio-1.0) > 0.01){
-
-      /*
-      static bool has_shown_warning = false;
-
-      if (has_shown_warning==false){
-        RT_message("Note: High DPI display detected. Radium has not supported high DPI display very long. If you notice strange graphics, please report it.");
-        has_shown_warning=true;
-      }
-      */
-      
-	    safe_double_write(&g_opengl_scale_ratio, ratio);
-      
-      // Make sure editor font is scaled.
-      if(root!=NULL && root->song!=NULL && root->song->tracker_windows!=NULL){
-        setFontValues(root->song->tracker_windows);
-      }
-      
-    }
-    
-    QScreen *qscreen = qwindow->screen();
-    if (qscreen!=NULL)
-	{
-		//maybe_start_t2_thread();
-
-		return qscreen->refreshRate();
-    }
-
-  }
-
-  return -1;
-}
-
-
-static DEFINE_ATOMIC(bool, g_has_found_refresh_rate) = false;
-
-static void setup_screen_changed_callback(void){
-	QWindow *qwindow = g_widget->windowHandle();
-	R_ASSERT(qwindow != NULL);
-	
-	if (qwindow==NULL)
-		return;
-	
-	qwindow->connect(qwindow, &QWindow::screenChanged, [](QScreen *screen){
-		
-		R_ASSERT(screen != NULL);
-		
-		if (screen==NULL)
-			return;
-		
-		double refresh_rate = screen->refreshRate();
-		
-		printf("  NEW REFRESH RATE: %f\n", refresh_rate);
-		
-		if (refresh_rate >= 0.5)
-		{
-			//widget->set_vblank(1000.0 / refresh_rate);
-			ATOMIC_DOUBLE_SET(g_vblank, 1000.0 / refresh_rate);
-		}
-		
-  });
-}
-  
-
 double GL_get_vblank(void){
-  if (ATOMIC_GET(g_has_found_refresh_rate)==false)
-    return -1;
-  else
     return ATOMIC_DOUBLE_GET(g_vblank);
-}
-
-int GL_maybe_notify_that_main_window_is_exposed(int interval){
-	static int ret = 0;
-
-	if (ret==0)
-	{
-		QWindow *window = g_widget->windowHandle();
-		if (window != NULL){
-			if (window->isExposed()) {
-				ATOMIC_SET(g_window->_main_window_is_exposed, true);
-				ret = 1;
-			}
-		}
-	}
-	else
-	{
-    
-		ret = 2;
-    
-		static int downcounter = 0;
-		if (downcounter==0) {
-#if !defined(RELEASE)
-			printf("Checking refresh rate\n");
-#endif
-			double refresh_rate = get_refresh_rate();
-			if (refresh_rate >= 0.5) {
-				//g_widget->set_vblank(1000.0 / refresh_rate);
-				ATOMIC_DOUBLE_SET(g_vblank, 1000.0 / refresh_rate);
-				ATOMIC_SET(g_has_found_refresh_rate, true);
-				downcounter = 200 * 1000 / interval; // Check refresh rate every 200 seconds.
-
-				setup_screen_changed_callback();
-        
-			}else{
-				printf("Warning: Unable to find screen refresh rate\n");
-				downcounter = 500 / interval; // Check again in 0.5 seconds
-			}
-		}else
-			downcounter--;
-	}
-
-	return ret;
 }
 
 bool GL_check_compatibility(void)

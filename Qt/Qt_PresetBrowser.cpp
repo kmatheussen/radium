@@ -117,16 +117,26 @@ class BrowserQSortFilterProxyModel: public QSortFilterProxyModel
 
   void setPresetFolder(const QString &pFolder)
   {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
 	  beginFilterChange();
 	  presetFolder = pFolder;
 	  endFilterChange();
+#else
+	  presetFolder = pFolder;
+	  invalidateFilter();
+#endif
   }
 
   void setFilter(const QString &filter)
   {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
 	  beginFilterChange();
 	  this->filterText = filter;
 	  endFilterChange();
+#else
+	  this->filterText = filter;
+	  invalidateFilter();
+#endif
   }
 
 };
