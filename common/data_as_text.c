@@ -240,7 +240,7 @@ extern struct TEvent tevent;
 
 
 // We circumvent the normal keyboard configuration system here.
-bool DAT_keypress(struct Tracker_Windows *window, int key, bool is_keydown){
+bool DAT_keypress(struct Tracker_Windows *window, const int key, const bool is_keydown){
 
   if (! (tevent.keyswitch & EVENT_FOCUS_EDITOR2))
     return false;

@@ -1422,9 +1422,9 @@ protected:
     return true;
 #endif
 
-    bool is_key_press = type==TR_KEYBOARD;
+    const bool is_key_press = type==TR_KEYBOARD;
 
-    int modifier = OS_SYSTEM_get_modifier(event); // Note that OS_SYSTEM_get_modifier is unable to return an EVENT_EXTRA_L event on windows. Not too sure about EVENT_EXTRA_R either (VK_APPS key) (doesn't matter, EVENT_EXTRA_R is abandoned, and the key is just used to configure block). In addition, the release value order might be wrong if pressing several modifier keys, still windows only.
+    const int modifier = OS_SYSTEM_get_modifier(event); // Note that OS_SYSTEM_get_modifier is unable to return an EVENT_EXTRA_L event on windows. Not too sure about EVENT_EXTRA_R either (VK_APPS key) (doesn't matter, EVENT_EXTRA_R is abandoned, and the key is just used to configure block). In addition, the release value order might be wrong if pressing several modifier keys, still windows only.
 
     //printf("modifier: %d. Right shift: %d\n",modifier, modifier==EVENT_SHIFT_R);
     if (g_show_key_codes){
@@ -1618,7 +1618,7 @@ protected:
       return false;
     }
 
-    int keynum = OS_SYSTEM_get_keynum(event);
+    const int keynum = OS_SYSTEM_get_keynum(event);
     
     //printf(" Got key 4. Keynum: %d. down: %d. up: %d\n", keynum, EVENT_VOLUME_DOWN, EVENT_VOLUME_UP);
     
