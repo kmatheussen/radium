@@ -18,6 +18,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #ifdef __linux__
 
+#define GET_CONNECTION_FROM_DISPLAY 0
+
 #include "../common/includepython.h"
 
 #include "../common/nsmtracker.h"
@@ -28,6 +30,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #ifndef USE_QT5
 #include <X11/Xlib.h>
+#endif
+
+#if GET_CONNECTION_FROM_DISPLAY
+#  include <X11/Xlib-xcb.h>
 #endif
 
 #if USE_QT5
@@ -293,11 +299,29 @@ static xcb_keysym_t get_sym(xcb_key_press_event_t *event){
 	{
 		//SYSTEM_show_error_message("Testing message");
 
+#if GET_CONNECTION_FROM_DISPLAY
+		Display *display = QX11Info::display();		
+		xcb_connection_t *connection = display==NULL ? NULL : XGetXCBConnection(display);
+#else
 		xcb_connection_t *connection = QX11Info::connection();
-
-		if (xcb_connection_has_error(connection) > 0)
+#endif
+		
+		if (connection==NULL || xcb_connection_has_error(connection) > 0)
 		{
-			SYSTEM_show_error_message(talloc_format("Seems like the xcb connection has an error. Keyboard might not work. Error code %d.", xcb_connection_has_error(connection)));
+#if GET_CONNECTION_FROM_DISPLAY
+			if (display==NULL)
+			{
+				SYSTEM_show_error_message("Unable to get X11 display");
+			} else
+#endif
+			if (connection==NULL)
+			{
+				SYSTEM_show_error_message("Unable to obtain xcb_connection");
+			}
+			else
+			{
+				SYSTEM_show_error_message(talloc_format("Seems like the xcb connection has an error. Keyboard might not work. Error code %d.", xcb_connection_has_error(connection)));
+			}
 		}
 		else
 		{
