@@ -3,6 +3,8 @@
 set -ueE
 #set -x
 
+
+
 #if [ -v QT_QPA_PLATFORM_PLUGIN_PATH ] ; then
 #source ~/.bashrc
 #fi
@@ -57,24 +59,33 @@ unset QT_PLUGIN_PATH
 export QT_QPA_PLATFORM_PLUGIN_PATH=`$QMAKE -query QT_INSTALL_PLUGINS`
 
 # To avoid freezing X
+# (or maybe not. It's extremely annoying when the popup_killscript script ruins a debug session. I've upgraded to fvwm3 now, so maybe it won't happen.)
+#
 export USE_SAFE_POPUP="1"
 
 export G_DEBUG="fatal-warnings,gc-friendly"
 
 #ulimit -s 655360
 
-debugger="gdb"
-#debugger="lldb"
+#debugger="gdb"
+#debugger="lldb --batch -K lldb.batch"
+debugger="lldb"
+#
 #debugger="nnd"
 #debugger="lldb -O 'env $FAUST_LD_LIB_PATH'" # LLDB + FAUST/LLVM
 
 dostartnow=false
 running_in_emacs=false
+autoquit=false
 
 while [[ $# -gt 0 ]]; do
   case $1 in
       -s|--start)
 		  dostartnow=true
+		  shift
+		  ;;
+      -aq|--auto-quit)
+		  autoquit=true
 		  shift
 		  ;;
       -i|--in-emacs)
@@ -87,7 +98,9 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+
 debugger_argline=""
+dostartnow_workaround=false
 
 if [ "$debugger" = "gdb" ] ; then
 	if $dostartnow ; then
@@ -99,7 +112,9 @@ if [ "$debugger" = "gdb" ] ; then
 	debugger_argline="$debugger_argline --args"
 elif [[ "$debugger" = "lldb"* ]] ; then
 	if $dostartnow ; then
-		debugger_argline="-o run"
+		#debugger_argline="-o run"
+		# "-o run" prevents Ctrl-C from working. Use workaround instead.
+		dostartnow_workaround=true
 	fi
 	debugger_argline="$debugger_argline --"
 fi
@@ -118,10 +133,66 @@ esac
 rm -f /tmp/runradiumgdb*.sh
 
 #exec gdb -i=mi $EXECUTABLE
+#exec gdb --fullname $EXECUTABLE
+
 
 exename=/tmp/runradiumgdb$$.sh
 
-echo "G_DEBUG="fatal-warnings,gc-friendly" USE=libedit/readline exec $debugger $debugger_argline $@ $EXECUTABLE ; killall -9 radium_progress_window ; killall -9 radium_crashreporter"  > $exename
+#export OVERRIDE_RADIUM_QPA=1
+#export QT_QPA_PLATFORM="wayland-xcomposite-egl"
+
+autoquitter()
+{
+	set -x
+	trap '' SIGINT # Prevent Ctrl-C from stopping this process.
+	
+	local radium_pid=""
+	while [[ -z "$radium_pid" ]] ; do
+		sleep 0.5
+		radium_pid=$(ps -Af|grep $EXECUTABLE|grep -v $debugger|grep -v grep|awk '{print $3}')		
+	done
+	
+	while kill -0 "$radium_pid" ; do
+		sleep 0.1
+	done
+
+	xdotool type $'q\n'
+	sleep 0.1
+	
+	while ps -Af|grep "$EXECUTABLE"|grep "$debugger"  ; do
+		echo "still alive..."
+		xdotool type $'q\n'
+		sleep 5 # Won't sleep too short time. Won't risk xdotool inserting "q\n" to any program having focus.
+	done
+	
+	#xdotool type $'q\n'
+	#xdotool type $'q\n'
+}
+
+if $autoquit ; then
+	#eval "autoquitter &>/tmp/log.txt" &
+	autoquitter &>/dev/null &
+fi
+
+if $dostartnow_workaround ; then
+	xdotool type $'r\n'
+fi
+
+G_DEBUG="fatal-warnings,gc-friendly" USE=libedit/readline $debugger $debugger_argline $EXECUTABLE $@
+ret=$?
+
+killall -9 radium_progress_window 2>/dev/null
+killall -9 radium_crashreporter 2>/dev/null
+
+exit $ret
+
+#
+# old stuff below. Don't remember why I needed to do it like this...
+#
+
+echo "G_DEBUG="fatal-warnings,gc-friendly" USE=libedit/readline exec $debugger $debugger_argline $EXECUTABLE $@ ; killall -9 radium_progress_window ; killall -9 radium_crashreporter"  > $exename
+
+echo "EXECNAME: $exename"
 
 chmod a+rx $exename
 
