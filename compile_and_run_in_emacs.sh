@@ -3,7 +3,7 @@
 #set -x
 set -eEu
 
-runit="./run_gdb.sh"
+runit="./run_gdb.sh --start --auto-quit --in-emacs"
 
 print_help(){
 	echo "  Usage in emacs:"
@@ -12,7 +12,7 @@ print_help(){
 	echo
 	echo "  2. Use this line as compile command:"
 	echo
-	echo "BUILDTYPE=DEBUG ./compile_and_run_in_emacs"
+	echo "BUILDTYPE=DEBUG ./compile_and_run_in_emacs.sh"
 	echo
 }
 
@@ -39,7 +39,7 @@ done
 
 start_terminal_and_runit()
 {	
-	eval gnome-terminal --full-screen -- $runit
+	eval gnome-terminal --full-screen --hide-menubar -- $runit
 }
 
 ./build_linux.sh -j`nproc` && start_terminal_and_runit
