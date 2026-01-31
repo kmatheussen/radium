@@ -4,7 +4,7 @@ HOW TO MAKE IT RUN
 
           1. Install dependencies. See "BUILD DEPENDENCIES, *" below in this file.
 
-	  2. Inspect the file "configuration.sh" and see if you want to change anything.
+          2. Inspect the file "configuration.sh" and see if you want to change anything.
 	  
           3. Do this:
 
@@ -15,7 +15,11 @@ HOW TO MAKE IT RUN
           "
 
           Note: There is an install.sh script, and it works, but you don't need it to run the program.
-	  
+ 
+          On Linux, Radium is officially distributed by Arch Linux, and you can find a derivation for NixOS here:
+		  https://git.cfpi-fpsi.eu:8443/emil/radium-nixos
+		  
+
 
 IF YOU GOT THE SOURCE FROM GIT
 
@@ -71,10 +75,10 @@ BUILD DEPENDENCIES
 
          After downloading the VST SDK, unpack it into your ~/SDKs folder.
 		 
-		 Update: Steinberg has removed the VST 2.4 headers from the VST SDK,
-		 so you need to download the VST 2.4 headers separately.
-		 They can be found on the internet.
-		 (Try searching for site:github.com AND "audioeffectx.h")
+         Update: Steinberg has removed the VST 2.4 headers from the VST SDK,
+         so you need to download the VST 2.4 headers separately.
+         They can be found on the internet.
+         (Try searching for site:github.com AND "audioeffectx.h")
 		 
        * Etc.
 
