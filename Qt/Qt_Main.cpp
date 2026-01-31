@@ -1764,18 +1764,20 @@ protected:
       else
         ret = EventReciever(&tevent,window);
       
-      if (ret==false) {
-        keynum = OS_SYSTEM_get_qwerty_keynum(event); // e.g. using scancode.
-        
-        //printf("keynum2: %d. switch: %d\n",keynum,tevent.keyswitch);
-        
-        if (keynum==EVENT_NO){
-          //printf("Return true. Unknown key for event type %d. Key: %d\n",type, tevent.SubID);//virtual_key);
-          return true;
-        }
-        
-        tevent.SubID=keynum;
-        ret = EventReciever(&tevent,window);
+      if (ret==false)
+	  {
+		  const int qwerty_keynum = OS_SYSTEM_get_qwerty_keynum(event); // e.g. using scancode.
+		  
+		  //printf("keynum2: %d. switch: %d\n",keynum,tevent.keyswitch);
+		  
+		  if (qwerty_keynum==EVENT_NO)
+		  {
+			  //printf("Return true. Unknown key for event type %d. Key: %d\n",type, tevent.SubID);//virtual_key);
+			  return true;
+		  }
+		  
+		  tevent.SubID=qwerty_keynum;
+		  ret = EventReciever(&tevent,window);
       }
     }
 
