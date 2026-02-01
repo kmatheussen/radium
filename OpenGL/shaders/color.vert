@@ -25,15 +25,19 @@ layout(location = 1) in vec4 color;
 
 layout(location = 0) out vec4 v_color;
 
+layout(std140, binding = 0) uniform buf {
+    float yscroll;
+};
+
 void main()
 {
 	vec4 gakk = color;
 	//gakk.rgb *= 0.5;
 	//gakk.a = 0.5;
-	//gakk.rgb *= gakk.a;
+	gakk.rgb *= gakk.a;
 	//color.rgb *= color.a;
-	v_color = gakk; //color; //vec3(1,0,0);//color;
+	v_color = gakk; //color; //gakk; //color; //vec3(1,0,0);//color;
 	//gl_Position = vec4(pos, 0.0, 1.0); //vec4(pos, 0.0, 1.0);
-	gl_Position = vec4(pos, 0.0, 1); //vec4(pos, 0.0, 1.0);
+	gl_Position = vec4(pos.x, pos.y+yscroll, 0, 1); //vec4(pos, 0.0, 1.0);
 	//FragColor = v_color;
 }

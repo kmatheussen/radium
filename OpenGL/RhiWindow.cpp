@@ -322,7 +322,7 @@ void radium::RhiWindow::init()
 #if USE_RENDER_BUFFER
 #if 1 // DO_ANTIALIASING
 				// Crash... (on 6.8.2, without render buffer. Too old version of Qt perhaps?)
-				_sc->setSampleCount(4); // Weird, must set this one as well, to the same value as above. (guess it's because it's an unfinished API, this should have been done automatically.)
+				_sc->setSampleCount(4); // Weird, must set this one as well, to the same value as above. (maybe it's because it's an unfinished API? Seems like this should have been done automatically.)
 #endif
 #endif
 				
@@ -354,7 +354,11 @@ void radium::RhiWindow::init()
 		g_rhi = _rhi;
 	}
 }
-						  
+
+
+//QMatrix4x4 g_viewProjection;
+float g2_height, g2_width;
+
 //! [swapchain-resize]
 void radium::RhiWindow::resizeSwapChain()
 {
@@ -362,11 +366,17 @@ void radium::RhiWindow::resizeSwapChain()
 	
     _hasSwapChain = _sc->createOrResize(); // also handles _ds
 
-	/*
+
     const QSize outputSize = _sc->currentPixelSize();
+	g2_height = outputSize.height();
+	g2_width = outputSize.width();
+
+	/*
     _viewProjection = _rhi->clipSpaceCorrMatrix();
     _viewProjection.perspective(45.0f, outputSize.width() / (float) outputSize.height(), 0.01f, 1000.0f);
     _viewProjection.translate(0, 0, -4);
+
+	g_viewProjection = _viewProjection;
 	*/
 }
 //! [swapchain-resize]
