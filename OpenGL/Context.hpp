@@ -6,6 +6,8 @@
 
 extern QRhi *g_rhi;
 
+extern float g2_height, g2_width;
+
 namespace r
 {
 struct Context
@@ -116,31 +118,36 @@ struct Context
 					 float r, float g, float b, float a = 0.01)
 	{
 		float f[TRIANGLE_SIZE];
-		f[0] = scale(x1,
-					 0, 1000,
-					 -1, 1);
-		f[1] = scale(y1,
-					 0, 4000,
-					 -1, 1);
+
+
+		constexpr float sx1 = 0;
+		const float sxx = g2_width > 0 ? g2_width : 1000;
+		const float sxy = g2_height > 0 ? g2_height : 1000;
+		constexpr float sy1 = -1;
+		constexpr float sy2 = 1;
+		
+#define TRANS(I1, X, Y)							\
+		f[I1] = scale(X,						\
+					  sx1, sxx,					\
+					  sy1, sy2);				\
+		f[I1+1] = scale(Y,						\
+						sx1, sxy,				\
+						sy1, sy2);
+		// P1
+		TRANS(0, x1, y1);
 		f[2] = r; f[3] = g; f[4] = b; f[5] = a;
+		//printf("P1. In: %f, %f. Out: %f, %f\n", x1, y1, f[0], f[1]);
 		
-		f[6] = scale(x2,
-					 0, 1000,
-					 -1, 1);
-		f[7] = scale(y2,
-					 0, 4000,
-					 -1, 1);
+		// P2
+		TRANS(6, x2, y2);
 		f[8] = r; f[9] = g; f[10] = b; f[11] = a;
+		//printf("P2. In: %f, %f. Out: %f, %f\n", x2, y2, f[6], f[7]);
 		
-		f[12] = scale(x3,
-					 0, 1000,
-					 -1, 1);
-		f[13] = scale(y3,
-					 0, 4000,
-					 -1, 1);
-
+		// P3
+		TRANS(12, x3, y3);
 		f[14] = r; f[15] = g; f[16] = b; f[17] = a;
-
+		//printf("P3. In: %f, %f. Out: %f, %f\n", x3, y3, f[14], f[15]);
+		
 		addTriangle(f);
 	}
 	
@@ -150,7 +157,7 @@ struct Context
 		addTriangle(p1.a, p1.b,
 					p2.a, p2.b,
 					p3.a, p3.b,
-					rgb.r / 256.0f, rgb.g / 256.0f, rgb.b / 256.0f, rgb.a / 256.0f);
+					(float)rgb.r / 256.0f, (float)rgb.g / 256.0f, (float)rgb.b / 256.0f, (float)rgb.a / 256.0f);
 	}
 	
 	int get_num_bytes(void) const

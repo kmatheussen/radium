@@ -317,6 +317,8 @@ public:
     QRhiShaderResourceBindings *_shader_resource_bindings;
     QRhiGraphicsPipeline *_pipeline;
 
+	QRhiBuffer *_ubuf = nullptr;
+
     //QRhiResourceUpdateBatch *_initialUpdates = nullptr;
 
 	DEFINE_ATOMIC(bool, _main_window_is_exposed) = false;
@@ -384,6 +386,15 @@ public:
 		init_context();
 		
 		_shader_resource_bindings = _rhi->newShaderResourceBindings();
+
+		_ubuf = _rhi->newBuffer(QRhiBuffer::Dynamic,
+								QRhiBuffer::UniformBuffer,
+								sizeof(float));
+		_ubuf->create();
+
+		static const QRhiShaderResourceBinding::StageFlags visibility = QRhiShaderResourceBinding::VertexStage; // | QRhiShaderResourceBinding::FragmentStage;
+		
+		_shader_resource_bindings->setBindings({QRhiShaderResourceBinding::uniformBuffer(0, visibility, _ubuf)});
 
 		_shader_resource_bindings->create();
 
@@ -502,12 +513,19 @@ public:
 			if (_my_context2)
 				_my_context2->maybe_merge_in(resourceUpdates);
 		}
+
+		static float yscroll = 0.5;
+		yscroll -= 0.0002;
+		if (yscroll < -1)
+			yscroll = 0.5;
+		
+		resourceUpdates->updateDynamicBuffer(_ubuf, 0, sizeof(float), &yscroll);
 		
 		const QSize outputSizeInPixels = _sc->currentPixelSize();
 		
 		QRhiCommandBuffer *cb = _sc->currentFrameCommandBuffer();
 
-		cb->beginPass(_sc->currentFrameRenderTarget(), Qt::black, { 1.0f, 0 }, resourceUpdates);
+		cb->beginPass(_sc->currentFrameRenderTarget(), Qt::green, { 1.0f, 0 }, resourceUpdates);
 		{
 			cb->setGraphicsPipeline(_pipeline);
 			//cb->setViewport({ 0, 100, float(outputSizeInPixels.width()), float(outputSizeInPixels.height())   });

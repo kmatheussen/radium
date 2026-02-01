@@ -8,22 +8,14 @@
 #pragma GCC diagnostic pop
 
 
-#define THREADED_GFX 0
+#define THREADED_GFX 1
 #define DO_ANTIALIASING 1
-#define USE_RENDER_BUFFER 1
+#define USE_RENDER_BUFFER 1 // At least one of opengl/directx/metal/vulkan systems required this one, don't remember which.
 
 
-static inline QThread *qthread2(QString name, std::function<void(void)> callback)
+static inline QThread *qthread2(const QString &name, std::function<void(void)> callback)
 {
-	//assert_is_qthread();
-
-	QThread *thread = QThread::create([name, callback]()
-		{
-			//QTHREAD_SCOPED_INIT;
-
-			//LOG_EXCEPTIONS(name.toUtf8().constData(), callback);
-			callback();
-		});
+	QThread *thread = QThread::create(callback);
 	
 	if (QThread::currentThread() != qApp->thread())
 	{
@@ -110,7 +102,7 @@ protected:
     QRhiRenderPassDescriptor *_rp;
 //! [swapchain-data]
 	bool _hasSwapChain = false;
-    //QMatrix4x4 _viewProjection;
+    QMatrix4x4 _viewProjection;
 
 private:
     void init();

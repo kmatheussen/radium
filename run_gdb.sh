@@ -156,14 +156,15 @@ autoquitter()
 		sleep 0.1
 	done
 
-	xdotool type $'q\n'
 	sleep 0.1
+	xdotool type $'q\n'
+	#sleep 0.1
 	
-	while ps -Af|grep "$EXECUTABLE"|grep "$debugger"  ; do
-		echo "still alive..."
-		xdotool type $'q\n'
-		sleep 5 # Won't sleep too short time. Won't risk xdotool inserting "q\n" to any program having focus.
-	done
+	#while ps -Af|grep "$EXECUTABLE"|grep "$debugger"  ; do
+	#	echo "still alive..."
+	#	xdotool type $'q\n'
+	#	sleep 5 # Won't sleep too short time. Won't risk xdotool inserting "q\n" to any program having focus.
+	#done
 	
 	#xdotool type $'q\n'
 	#xdotool type $'q\n'
