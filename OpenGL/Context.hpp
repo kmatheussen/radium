@@ -115,7 +115,8 @@ struct Context
 	void addTriangle(float x1, float y1,
 					 float x2, float y2,
 					 float x3, float y3,
-					 float r, float g, float b, float a = 0.01)
+					 float r, float g, float b, float a,
+					 float r2, float g2, float b2, float a2)
 	{
 		float f[TRIANGLE_SIZE];
 
@@ -140,17 +141,25 @@ struct Context
 		
 		// P2
 		TRANS(6, x2, y2);
-		f[8] = r; f[9] = g; f[10] = b; f[11] = a;
+		f[8] = r2; f[9] = g2; f[10] = b2; f[11] = a;
 		//printf("P2. In: %f, %f. Out: %f, %f\n", x2, y2, f[6], f[7]);
 		
 		// P3
 		TRANS(12, x3, y3);
-		f[14] = r; f[15] = g; f[16] = b; f[17] = a;
+		f[14] = r2; f[15] = g2; f[16] = b2; f[17] = a2;
 		//printf("P3. In: %f, %f. Out: %f, %f\n", x3, y3, f[14], f[15]);
 		
 		addTriangle(f);
 	}
 	
+	void addTriangle(float x1, float y1,
+					 float x2, float y2,
+					 float x3, float y3,
+					 float r, float g, float b, float a = 0.01)
+	{
+		addTriangle(x1, y1, x2, y2, x3, y3, r, g, b, a, r, g, b, a);
+	}
+					 
 	void add_triangle(const r::fvec2 &p1, const r::fvec2 &p2, const r::fvec2 &p3,
 					  GE_Rgb rgb)
 	{
@@ -159,7 +168,17 @@ struct Context
 					p3.a, p3.b,
 					(float)rgb.r / 256.0f, (float)rgb.g / 256.0f, (float)rgb.b / 256.0f, (float)rgb.a / 256.0f);
 	}
-	
+
+	void add_triangle(const r::fvec2 &p1, const r::fvec2 &p2, const r::fvec2 &p3,
+					  GE_Rgb rgb, GE_Rgb rgb2)
+	{
+		addTriangle(p1.a, p1.b,
+					p2.a, p2.b,
+					p3.a, p3.b,
+					(float)rgb.r / 256.0f, (float)rgb.g / 256.0f, (float)rgb.b / 256.0f, (float)rgb.a / 256.0f,
+					(float)rgb2.r / 256.0f, (float)rgb2.g / 256.0f, (float)rgb2.b / 256.0f, (float)rgb2.a / 256.0f);
+	}
+
 	int get_num_bytes(void) const
 	{
 		return _buffer_pos * sizeof(float);

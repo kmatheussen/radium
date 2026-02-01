@@ -126,12 +126,25 @@ public:
 		R_ASSERT(sizeof(Color)==sizeof(uint64_t));
 	}
 
-	void add_triangle(const r::fvec2 &p1, const r::fvec2 &p2, const r::fvec2 &p3)
+	void add_triangle(const r::fvec2 &p1, const r::fvec2 &p2, const r::fvec2 &p3, GradientType::Type gradient_type = GradientType::Type::NOTYPE)
 	{
 		if (g_rhi != NULL)
-			g_context->add_triangle(p1, p2, p3, color.c);
+		{
+			switch(gradient_type)
+			{
+				case GradientType::Type::NOTYPE:
+					g_context->add_triangle(p1, p2, p3, color.c);
+					break;
+				case GradientType::Type::HORIZONTAL:
+					g_context->add_triangle(p1, p2, p3, color.c, color.c_gradient);
+					break;
+				case GradientType::Type::VELOCITY:
+					g_context->add_triangle(p1, p2, p3, GE_rgb(200,80,80), /*color.c_gradient, */ color.c);
+					break;
+			}
+		}
 	}
-	
+
 	static float y(float y)
 	{
 #if 0 // TODO: Find out if we need to invert y or not.
@@ -587,19 +600,19 @@ void GE_line(GE_Context *c, float x1, float y1, float x2, float y2, float pen_wi
 }
 
 void GE_text(GE_Context *c, const char *text, int x, int y){
-	//c->textbitmaps.addCharBoxes(text, x, c->y(y+1));
+	c->textbitmaps.addCharBoxes(text, x, c->y(y+1));
 }
 
 void GE_text2(GE_Context *c, QString text, int x, int y){
-	//c->textbitmaps.addCharBoxes(text, x, c->y(y+1));
+	c->textbitmaps.addCharBoxes(text, x, c->y(y+1));
 }
 
 void GE_text_halfsize(GE_Context *c, const char *text, int x, int y){
-	//c->textbitmaps_halfsize.addCharBoxes(text, x, c->y(y+1));
+	c->textbitmaps_halfsize.addCharBoxes(text, x, c->y(y+1));
 }
 
 void GE_text_halfsize2(GE_Context *c, QString text, int x, int y){
-	//c->textbitmaps_halfsize.addCharBoxes(text, x, c->y(y+1));
+	c->textbitmaps_halfsize.addCharBoxes(text, x, c->y(y+1));
 }
 
 void GE_box(GE_Context *c, float x1, float y1, float x2, float y2, float pen_width){
@@ -667,12 +680,10 @@ void GE_trianglestrip_start(void){
   num_trianglestrips = 0;
 }
 
-void GE_trianglestrip_add(GE_Context *new_c, float x, float y){
+void GE_trianglestrip_add(GE_Context *c, float x, float y){
   static float y2,y1;
   static float x2,x1;
 
-  static GE_Context *c = new_c;
-    
   num_trianglestrips++;
 
   if(num_trianglestrips>=3)
@@ -680,15 +691,8 @@ void GE_trianglestrip_add(GE_Context *new_c, float x, float y){
 	  c->add_triangle({x, c->y(y)},
 					  {x1, c->y(y1)},
 					  {x2, c->y(y2)});
-	  /*
-		c->_triangles.push_back(r::fvec2(x, c->y(y)));
-		c->_triangles.push_back(r::fvec2(x1, c->y(y1)));
-		c->_triangles.push_back(r::fvec2(x2, c->y(y2)));
-	  */
   }
 
-  c = new_c;
-  
   y2 = y1;  y1 = y;
   x2 = x1;  x1 = x;
 }
@@ -704,86 +708,50 @@ void GE_trianglestrip_end(GE_Context *c){
 
 
 
-/*
 static int num_gradient_triangles;
-static vl::ref<GradientTriangles> current_gradient_rectangle;
+static QVector<r::fvec2> current_gradient_rectangle;
 static float triangles_min_y;
 static float triangles_max_y;
 static GradientType::Type current_gradient_type;
-*/
 
-void GE_gradient_triangle_start(GradientType::Type type){
-	/*
-  current_gradient_rectangle = T1_get_gradient_triangles(type);
-  current_gradient_type = type;
-  num_gradient_triangles = 0;
-	*/
+void GE_gradient_triangle_start(GradientType::Type type)
+{
+	current_gradient_rectangle.clear();
+	current_gradient_type = type;
+	num_gradient_triangles = 0;
 }
 
 void GE_gradient_triangle_add(GE_Context *c, float x, float y){
-	/*
-  static float y2,y1;
-  static float x2,x1;
-
-  if (current_gradient_rectangle.get()==NULL){ // Happens when we are too buzy.
-    current_gradient_rectangle = T1_get_gradient_triangles(current_gradient_type); // try again.
-    if (current_gradient_rectangle.get()==NULL){
-
-      // We could have slept for the duration of a frame here, and tried again, but that would probably have been worse than using a non-gradient triangle.
-      
-      GE_trianglestrip_start(); // fallback to non-gradient triangles
-      GE_trianglestrip_add(c, x, y);
-      return;
-    }
-  }
-  
-  if(num_gradient_triangles==0){
-    triangles_min_y = triangles_max_y = y;
-  }else{
-    if (y<triangles_min_y)
-      triangles_min_y = y;
-    
-    if (y>triangles_max_y)
-      triangles_max_y = y;
-  }
-  
-  num_gradient_triangles++;
-  
-  if(num_gradient_triangles>=3){
-    current_gradient_rectangle->triangles.push_back(vl::dvec2(x, c->y(y)));
-    current_gradient_rectangle->triangles.push_back(vl::dvec2(x1, c->y(y1)));
-    current_gradient_rectangle->triangles.push_back(vl::dvec2(x2, c->y(y2)));
-  }
-  
-  y2 = y1;  y1 = y;
-  x2 = x1;  x1 = x;
-	*/
+	static float y2,y1;
+	static float x2,x1;
+	
+	if(num_gradient_triangles==0)
+	{
+		triangles_min_y = triangles_max_y = y;
+	}
+	else
+	{
+		if (y<triangles_min_y)
+			triangles_min_y = y;
+		
+		if (y>triangles_max_y)
+			triangles_max_y = y;
+	}
+	
+	num_gradient_triangles++;
+	
+	if(num_gradient_triangles>=3)
+	{
+		c->add_triangle(r::fvec2(x, c->y(y)),
+						r::fvec2(x1, c->y(y1)),
+						r::fvec2(x2, c->y(y2)),
+						current_gradient_type);
+	}
+	
+	y2 = y1;  y1 = y;
+	x2 = x1;  x1 = x;
 }
 
 void GE_gradient_triangle_end(GE_Context *c, float x1, float x2){
-	/*
-  if (current_gradient_rectangle.get()==NULL){
-    GE_trianglestrip_end(c);
-    return;
-  }
-  
-  //printf("min_y: %f, max_y: %f. height: %f\n",triangles_min_y, triangles_max_y, triangles_max_y-triangles_min_y);
-  current_gradient_rectangle->y = c->y(triangles_max_y);
-  current_gradient_rectangle->height = triangles_max_y-triangles_min_y;
-
-  current_gradient_rectangle->x = x1;
-  current_gradient_rectangle->width = x2-x1;
-
-  if (current_gradient_rectangle->type==GradientType::VELOCITY) {
-    current_gradient_rectangle->color1 = get_vec4(c->color.c_gradient);
-    current_gradient_rectangle->color2 = get_vec4(c->color.c);
-  } else {
-    current_gradient_rectangle->color1 = get_vec4(c->color.c);
-    current_gradient_rectangle->color2 = get_vec4(c->color.c_gradient);  
-  }
-
-  c->gradient_triangles.push_back(current_gradient_rectangle);
-
-  current_gradient_rectangle = NULL;
-	*/
+	// TODO: Fix correct gradiation. It's supposed to go from x1->x2. Now, it' just hacked and quite random.
 }
