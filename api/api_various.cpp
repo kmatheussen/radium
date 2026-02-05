@@ -3593,6 +3593,44 @@ void showHideLinenumbers(void){
 
 // Various
 
+static bool g_use_qwerty_09_editor_subtracks = false;
+
+bool useQwerty09EditorSubtracks(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_use_qwerty_09_editor_subtracks = SETTINGS_read_bool("use_qwerty_09_editor_subtracks", g_use_qwerty_09_editor_subtracks);
+    has_inited = true;
+  }
+
+  return g_use_qwerty_09_editor_subtracks;
+}
+
+void setUseQwerty09EditorSubtracks(bool val){
+  g_use_qwerty_09_editor_subtracks = val;
+  SETTINGS_write_bool("use_qwerty_09_editor_subtracks", val);
+}
+
+
+static bool g_use_qwerty_af_editor_subtracks = false;
+
+bool useQwertyAfEditorSubtracks(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_use_qwerty_af_editor_subtracks = SETTINGS_read_bool("use_qwerty_af_editor_subtracks", g_use_qwerty_af_editor_subtracks);
+    has_inited = true;
+  }
+
+  return g_use_qwerty_af_editor_subtracks;
+}
+
+void setUseQwertyAfEditorSubtracks(bool val){
+  g_use_qwerty_af_editor_subtracks = val;
+  SETTINGS_write_bool("use_qwerty_af_editor_subtracks", val);
+}
+
+
 static bool g_cpu_friendly_audio_meter_updates = false;
 
 bool useCPUFriendlyAudiometerUpdates(void){

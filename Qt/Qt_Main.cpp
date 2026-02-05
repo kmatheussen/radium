@@ -1443,7 +1443,7 @@ protected:
 
       bool menu_is_active = GFX_MenuActive();
       
-      //printf("   Modifier: %d. EVENT_ALT_L: %d. Menu is active: %d. Is key press: %d\n", modifier, EVENT_ALT_L, GFX_MenuActive(), is_key_press);
+      //printf("   Modifier: %d. EVENT_ALT_L: %d. Menu is active: %d. Is key press: %d. Scancode: %d\n", modifier, EVENT_ALT_L, GFX_MenuActive(), is_key_press, OS_SYSTEM_get_scancode(event));
 
       /*
       if(modifier==EVENT_ALT_L)       
@@ -1735,16 +1735,49 @@ protected:
     bool dat_used_key;
 
     {
-      dat_used_key = DAT_keypress(window, tevent.SubID, is_key_press);
+		const bool g_use_qwerty_09_in_subtrack = useQwerty09EditorSubtracks();
+		const bool g_use_qwerty_af_in_subtrack = useQwertyAfEditorSubtracks();
+	
+		if (g_use_qwerty_09_in_subtrack || g_use_qwerty_af_in_subtrack)
+		{
+			int scancode_keynum = OS_SYSTEM_get_qwerty_keynum(event);
+
+			if (g_use_qwerty_09_in_subtrack)
+			{
+				if (scancode_keynum >= EVENT_1 && scancode_keynum <= EVENT_0)
+				{
+					dat_used_key = DAT_keypress(window, scancode_keynum, is_key_press);
+					goto got_used_key;
+				}
+			}
+			
+			if (g_use_qwerty_af_in_subtrack)
+			{
+				if (scancode_keynum == EVENT_A
+					|| scancode_keynum == EVENT_B
+					|| scancode_keynum == EVENT_C
+					|| scancode_keynum == EVENT_D
+					|| scancode_keynum == EVENT_E
+					|| scancode_keynum == EVENT_F)
+				{
+					dat_used_key = DAT_keypress(window, scancode_keynum, is_key_press);
+					goto got_used_key;
+				}
+			}
+		}
+		
+		dat_used_key = DAT_keypress(window, tevent.SubID, is_key_press);
+			
       /*
         // This code should perhaps not be commented out.
       if (dat_used_key==false){
         int scancode_keynum = OS_SYSTEM_get_qwerty_keynum(event); // e.g. using scancode.
         dat_used_key = DAT_keypress(window, scancode_keynum, is_key_press);
       }
-      */
+      */	  
     }
-    
+
+		  got_used_key:
     if (dat_used_key) {
       
       ret = true;
@@ -1758,18 +1791,19 @@ protected:
       else
         ret = EventReciever(&tevent,window);
       
-      if (ret==false) {
-        keynum = OS_SYSTEM_get_qwerty_keynum(event); // e.g. using scancode.
+      if (ret==false)
+	  {
+		  const int scancode_keynum = OS_SYSTEM_get_qwerty_keynum(event); // e.g. using scancode.
         
-        //printf("keynum2: %d. switch: %d\n",keynum,tevent.keyswitch);
+		  //printf("keynum2: %d. switch: %d\n",keynum,tevent.keyswitch);
+		  
+		  if (scancode_keynum==EVENT_NO){
+			  //printf("Return true. Unknown key for event type %d. Key: %d\n",type, tevent.SubID);//virtual_key);
+			  return true;
+		  }
         
-        if (keynum==EVENT_NO){
-          //printf("Return true. Unknown key for event type %d. Key: %d\n",type, tevent.SubID);//virtual_key);
-          return true;
-        }
-        
-        tevent.SubID=keynum;
-        ret = EventReciever(&tevent,window);
+		  tevent.SubID = scancode_keynum;
+		  ret = EventReciever(&tevent,window);
       }
     }
 

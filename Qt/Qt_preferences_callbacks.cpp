@@ -713,6 +713,9 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       pauseRenderingOnoff->setChecked(GL_get_pause_rendering_on_off());
       showKeyCodesOnoff->setChecked(false);
 
+	  use_qwerty_09_editor_subtracks->setChecked(useQwerty09EditorSubtracks());
+	  use_qwerty_af_editor_subtracks->setChecked(useQwertyAfEditorSubtracks());
+	  
       colorTracksOnoff->setChecked(GL_get_colored_tracks());
 
       update_waveforms_during_playback->setChecked(SETTINGS_read_bool("enable_editor_rerendering_during_playback",true));
@@ -964,6 +967,16 @@ public slots:
     }
   }
 
+  void on_use_qwerty_09_editor_subtracks_toggled(bool val){
+    if (_initing==false)
+		setUseQwerty09EditorSubtracks(val);
+  }
+	
+  void on_use_qwerty_af_editor_subtracks_toggled(bool val){
+    if (_initing==false)
+		setUseQwertyAfEditorSubtracks(val);
+  }
+	
   void on_colorTracksOnoff_toggled(bool val){
     if (_initing==false)
       GL_set_colored_tracks(val);
