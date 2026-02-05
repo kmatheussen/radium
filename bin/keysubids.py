@@ -32,7 +32,7 @@ keysub=(
 "F20",
 
 "1L1",
-"1",
+"1", # Note: order between "1" and "0" can not change.
 "2",
 "3",
 "4",
