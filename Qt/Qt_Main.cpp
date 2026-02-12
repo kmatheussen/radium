@@ -1429,7 +1429,7 @@ protected:
     //printf("modifier: %d. Right shift: %d\n",modifier, modifier==EVENT_SHIFT_R);
     if (g_show_key_codes){
       char *message = talloc_format("%d - %d: %s", modifier, OS_SYSTEM_get_scancode(event), tevent_autorepeat ? "Autorepeat" : is_key_press ? "Down" : "Up");
-      printf("  Got key: %s\n",message);
+      //printf("  Got key: %s\n",message);
       window->message=message;
       
       GL_create(window);
@@ -1742,25 +1742,62 @@ protected:
 		{
 			int scancode_keynum = OS_SYSTEM_get_qwerty_keynum(event);
 
+			/*
+			printf("=========    SCancode: %d. 1: %d. 0: %d. a: %d. QWERTY: %d/%d/%d\n",
+				   scancode_keynum,
+				   EVENT_1, EVENT_0, EVENT_A,
+				   EVENT_QWERTY_1, EVENT_QWERTY_0, EVENT_QWERTY_A);
+			*/
+			
 			if (g_use_qwerty_09_in_subtrack)
 			{
-				if (scancode_keynum >= EVENT_1 && scancode_keynum <= EVENT_0)
+				if (scancode_keynum >= EVENT_QWERTY_1 && scancode_keynum <= EVENT_QWERTY_0)
 				{
-					dat_used_key = DAT_keypress(window, scancode_keynum, is_key_press);
+					int k;
+					switch (scancode_keynum)
+					{
+						case EVENT_QWERTY_0: k=EVENT_0; break;
+						case EVENT_QWERTY_1: k=EVENT_1; break;
+						case EVENT_QWERTY_2: k=EVENT_2; break;
+						case EVENT_QWERTY_3: k=EVENT_3; break;
+						case EVENT_QWERTY_4: k=EVENT_4; break;
+						case EVENT_QWERTY_5: k=EVENT_5; break;
+						case EVENT_QWERTY_6: k=EVENT_6; break;
+						case EVENT_QWERTY_7: k=EVENT_7; break;
+						case EVENT_QWERTY_8: k=EVENT_8; break;
+						case EVENT_QWERTY_9: k=EVENT_9; break;
+						default: R_ASSERT(false);break;
+					}
+					
+					dat_used_key = DAT_keypress(window, k, is_key_press);
+					//printf("=========    GOT IT 1\n");
 					goto got_used_key;
 				}
 			}
 			
 			if (g_use_qwerty_af_in_subtrack)
 			{
-				if (scancode_keynum == EVENT_A
-					|| scancode_keynum == EVENT_B
-					|| scancode_keynum == EVENT_C
-					|| scancode_keynum == EVENT_D
-					|| scancode_keynum == EVENT_E
-					|| scancode_keynum == EVENT_F)
+				if (scancode_keynum == EVENT_QWERTY_A
+					|| scancode_keynum == EVENT_QWERTY_B
+					|| scancode_keynum == EVENT_QWERTY_C
+					|| scancode_keynum == EVENT_QWERTY_D
+					|| scancode_keynum == EVENT_QWERTY_E
+					|| scancode_keynum == EVENT_QWERTY_F)
 				{
-					dat_used_key = DAT_keypress(window, scancode_keynum, is_key_press);
+					int k;
+					switch (scancode_keynum)
+					{
+						case EVENT_QWERTY_A: k=EVENT_A; break;
+						case EVENT_QWERTY_B: k=EVENT_B; break;
+						case EVENT_QWERTY_C: k=EVENT_C; break;
+						case EVENT_QWERTY_D: k=EVENT_D; break;
+						case EVENT_QWERTY_E: k=EVENT_E; break;
+						case EVENT_QWERTY_F: k=EVENT_F; break;
+						default: R_ASSERT(false);break;
+					}
+					
+					dat_used_key = DAT_keypress(window, k, is_key_press);
+					//printf("=========    GOT IT 2\n");
 					goto got_used_key;
 				}
 			}
@@ -1795,7 +1832,7 @@ protected:
 	  {
 		  const int scancode_keynum = OS_SYSTEM_get_qwerty_keynum(event); // e.g. using scancode.
         
-		  //printf("keynum2: %d. switch: %d\n",keynum,tevent.keyswitch);
+		  //printf("Scancode_keynum: %d. keynum2: %d. switch: %d\n",scancode_keynum, keynum,tevent.keyswitch);
 		  
 		  if (scancode_keynum==EVENT_NO){
 			  //printf("Return true. Unknown key for event type %d. Key: %d\n",type, tevent.SubID);//virtual_key);
