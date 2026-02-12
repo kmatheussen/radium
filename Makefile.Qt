@@ -802,7 +802,14 @@ CCC_OK.touch: $(ALL_SHELL_SCRIPTS) Makefile.Qt
 	bash check_CCC_OK.sh
 
 dependencies_ok: check_dependencies.sh #Makefile
-	bash check_dependencies.sh `./find_python_path.sh` test_build
+	echo "\
+	set -xeEu;\
+	export PYTHONEXE_NOT_AVAILABLE_YET=1;\
+	./check_dependencies.sh test_build\
+	" >makescript.sh
+	bash makescript.sh
+
+#	#PYTHONEXE_NOT_AVAILABLE_YET=1 ./check_dependencies.sh test_build
 #	sh check_dependencies.sh $(PYTHONEXE) $(MOC) $(UIC)
 	touch dependencies_ok
 
@@ -1034,8 +1041,10 @@ benchmark_smoothdelay:
 packages: bin/packages/deletemetorebuild
 
 bin/packages/deletemetorebuild: bin/packages/build.sh
-	bash check_dependencies.sh `./find_python_path.sh` test_packages
 	echo "\
+	set -xeEu;\
+	export PYTHONEXE_NOT_AVAILABLE_YET=1;\
+	./check_dependencies.sh test_packages
 	cd bin/packages;\
 	./build.sh this_argument_is_not_used no \
 	" >makescript.sh
@@ -1728,7 +1737,7 @@ $(P)EditorWidget.h: $(BUILD_DEPENDENCIES)
 $(T)Qt_Main.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_instruments_proc.h $(QM)QM_MixerWidget.h Qt/helpers.h audio/SampleRecorder_proc.h common/nag.h Qt/KeyboardFocusFrame.hpp common/Process.hpp Qt/Timer.hpp
 	$(MOC) Qt/Qt_Main.cpp > Qt/mQt_Main.cpp
 	cd Qt && $(MOC) -DFOR_LINUX Timer.hpp > mTimer.hpp
-	$(CCC2) $(P)Qt_Main.cpp $(QTOPT) $(SNDFILEOPT) $(BOOST_INCLUDE) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" -Wno-null-dereference # -Wno-deprecated-declarations -Wno-shadow 
+	$(CCC2) $(P)Qt_Main.cpp $(QTOPT) $(SNDFILEOPT) $(BOOST_INCLUDE) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" -Wno-null-dereference  # -Wno-deprecated-declarations -Wno-shadow 
 
 $(T)Qt_SaveRestoreWindows.o:  $(BUILD_DEPENDENCIES) Qt/Qt_SaveRestoreWindows.cpp
 	$(CCC2) $(P)Qt_SaveRestoreWindows.cpp $(QTOPT)
