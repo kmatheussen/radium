@@ -185,14 +185,19 @@ QT_SVG_LDFLAGS ?= `$(PKGqt) --libs Qt5Svg` $(FPIC)
 QT_CFLAGS ?= `$(PKGqt) --cflags Qt5Gui --cflags Qt5Network --cflags Qt5OpenGL --cflags Qt5Widgets --cflags Qt5Concurrent` -I$(QHTTPSERVER_PATH)/src -I$(QSCINTILLA_PATH) -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) $(FPIC)
 QT_LDFLAGS ?=  $(QT_UI_LDFLAGS) $(QT_SVG_LDFLAGS) `$(PKGqt) --libs Qt5Gui --libs Qt5OpenGL --libs Qt5Widgets --libs Qt5Network` $(FPIC)
 
-ifeq ($(USE_QWEBENGINE),1)
+ifeq ($(USE_QSVGVIEWER),1)
+#	If using QSvg:
+	USE_QWEBENGINE_CFLAGS = -D USE_QSVGVIEWER=1 -D USE_WEBENGINE=0
+	QT_CFLAGS += `$(PKGqt) --cflags Qt5WebEngine --cflags Qt5WebEngineCore  --cflags Qt5WebEngineWidgets` 
+#	QT_LDFLAGS += ""
+else ifeq ($(USE_QWEBENGINE),1)
 #	If using QtWebEngine:
-	USE_QWEBENGINE_CFLAGS = -D USE_QWEBENGINE=1
+	USE_QWEBENGINE_CFLAGS = -D USE_QSVGVIEWER=0 -D USE_QWEBENGINE=1
 	QT_CFLAGS += `$(PKGqt) --cflags Qt5WebEngine --cflags Qt5WebEngineCore  --cflags Qt5WebEngineWidgets` 
 	QT_LDFLAGS += `$(PKGqt) --libs Qt5WebEngine --libs Qt5WebEngineCore  --libs Qt5WebEngineWidgets`
 else
 #	If using QtWebKit:
-	USE_QWEBENGINE_CFLAGS = -D USE_QWEBENGINE=0
+	USE_QWEBENGINE_CFLAGS = -D USE_QSVGVIEWER=0 -D USE_QWEBENGINE=0
 	QT_CFLAGS += `$(PKGqt) --cflags Qt5WebKitWidgets --cflags Qt5WebKit`
 	QT_LDFLAGS += `$(PKGqt) --libs Qt5WebKitWidgets --libs Qt5WebKit`
 endif
@@ -1823,9 +1828,9 @@ $(T)Qt_instruments.o: $(BUILD_DEPENDENCIES) $(P)Qt_instruments.cpp $(INSTRUMENTS
 	@echo $?
 	@echo
 	if [ $(BUILDTYPE) = RELEASE ] ; then \
-		$(CCC2) $(P)Qt_instruments.cpp $(QTOPT) $(SNDFILEOPT) -Wno-null-dereference  $(NO_ANALYZER) ; \
+		$(CCC2) $(P)Qt_instruments.cpp $(QTOPT) $(SNDFILEOPT) $(QT_SVG_CFLAGS) -Wno-null-dereference  $(NO_ANALYZER) ; \
 	else \
-		$(CCC2) $(P)Qt_instruments.cpp $(QTOPT) $(SNDFILEOPT) $(O0) -Wno-null-dereference $(NO_ANALYZER) ; \
+		$(CCC2) $(P)Qt_instruments.cpp $(QTOPT) $(SNDFILEOPT) $(QT_SVG_CFLAGS) $(O0) -Wno-null-dereference $(NO_ANALYZER) ; \
 	fi
 	 # ^ It takes forever to compile this file with -Og
 
