@@ -3,7 +3,7 @@
 //licence: STK-4.3
 
 float loadPhonemeGains(int index0, int index1) {
-	static float phonemeGains[32][2] =
+	static const float phonemeGains[32][2] =
 	{{1.0, 0.0},    // eee
 		{1.0, 0.0},    // ihh
 		{1.0, 0.0},    // ehh
@@ -48,7 +48,7 @@ float loadPhonemeGains(int index0, int index1) {
 }
 	
 float loadPhonemeParameters(int index0, int index1, int index2){
-	static float phonemeParameters[32][4][3] =
+	static const float phonemeParameters[32][4][3] =
   {{  { 273, 0.996,  10},       // eee (beet)
       {2086, 0.945, -16}, 
       {2754, 0.979, -12}, 

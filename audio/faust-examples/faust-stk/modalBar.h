@@ -5,8 +5,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-float loadPreset(int preset, int index0, int index1){
-	static float presets[9][4][4] = { 
+static inline float loadPreset(int preset, int index0, int index1){
+	static const float presets[9][4][4] = { 
 		{{1.0, 3.99, 10.65, -2443},		// Marimba
 			{0.9996, 0.9994, 0.9994, 0.999},
 			{0.04, 0.01, 0.01, 0.008},
