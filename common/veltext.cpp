@@ -157,9 +157,14 @@ int VELTEXT_subsubtrack(struct Tracker_Windows *window, struct WTracks *wtrack){
 
 
 
-bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, int realline, const Place *place, int key){
+bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, int realline, const Place *place, int key)
+{
+	//printf("DEBUG/VELTEXT_keypress: Enter. realline: %d. Place: %s. key: %d\n", realline, PlaceToString(place), key);
+	
   int subsubtrack = VELTEXT_subsubtrack(window, wtrack);
 
+  //printf("DEBUG/VELTEXT_keypress: subsubtrack: %d\n", subsubtrack);
+  
   if (subsubtrack==-1)
     return false;
   
@@ -175,7 +180,9 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, st
   if (veltext.size() > 1) {
 
     // MORE THAN ONE ELEMENT
-    
+
+	  //printf("DEBUG/VELTEXT_keypress: Branch 1\n");
+	  
     if (key == EVENT_DEL){
 
       /*
@@ -204,6 +211,8 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, st
     
   } else if (veltext.size() == 0) {
 
+	  // printf("DEBUG/VELTEXT_keypress: Branch 2\n");
+	  
     // NO ELEMENTS
     
     struct Notes *note = FindNote(wtrack->track, place);
@@ -224,6 +233,8 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, st
 
   } else {
 
+	  //  printf("DEBUG/VELTEXT_keypress: Branch 3\n");
+	  
     // ONE ELEMENT
     
     const VelText &vt = veltext.at(0);
@@ -254,6 +265,8 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, st
       
     } else {
 
+		//printf("DEBUG/VELTEXT_keypress: Branch 4\n");
+		
       data_as_text_t dat = DAT_get_overwrite(vt.value, vt.logtype, subsubtrack, key, 0, 0xff, 0, MAX_VELOCITY, true, true);
 
       if (dat.is_valid==false)
