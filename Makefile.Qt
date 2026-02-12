@@ -593,7 +593,9 @@ WNO_SUGGEST_OVERRIDE=
 ifneq ($(BUILDTYPE), RELEASE)
 	ifdef USING_GCC
 		ifeq ($(shell test $(GCC_MAJOR) -ge 14; echo $$?),0)
-			CPPOPT += -fdiagnostics-all-candidates
+			ifneq (,$(findstring FOR_LINUX,$(OS_OPTS)))
+				CPPOPT += -fdiagnostics-all-candidates
+			endif
 		endif
 	endif
 endif
@@ -2953,7 +2955,7 @@ $(T)SF.o: $(LIBGIG_PATH)/SF.cpp
 	$(CCC2) -c $(LIBGIG_PATH)/SF.cpp $(CPPOPT) $(LIBGIG_FLAGS)
 
 $(LIBGIG_PATH)/SF.cpp: bin/packages/libgig-4.5.1.tar.bz2
-	cd bin/packages && rm -fr libgig && tar xvjf libgig-4.5.1.tar.bz2 && mv libgig-4.5.1 libgig && touch $(LIBGIG_PATH)/SF.cpp
+	cd bin/packages && rm -fr libgig && tar xvjf libgig-4.5.1.tar.bz2 && mv libgig-4.5.1 libgig && touch $(LIBGIG_PATH)/SF.cpp && patch -p0 <libgig_win32.patch && echo "#define VER_STRING \"4.5.1\"" >$(LIBGIG_PATH)/../win32/libgig_private.h
 
 $(T)radium_s7_wrap.o: api/radium_s7_wrap.c 
 	$(CC2) api/radium_s7_wrap.c $(OPT) -Ibin/packages/s7
