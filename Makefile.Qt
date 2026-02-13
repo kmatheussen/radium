@@ -186,22 +186,23 @@ QT_CFLAGS ?= `$(PKGqt) --cflags Qt5Gui --cflags Qt5Network --cflags Qt5OpenGL --
 QT_LDFLAGS ?=  $(QT_UI_LDFLAGS) $(QT_SVG_LDFLAGS) `$(PKGqt) --libs Qt5Gui --libs Qt5OpenGL --libs Qt5Widgets --libs Qt5Network` $(FPIC)
 
 ifeq ($(USE_QSVGVIEWER),1)
-#	If using QSvg:
-	USE_QWEBENGINE_CFLAGS = -D USE_QSVGVIEWER=1 -D USE_WEBENGINE=0
-	QT_CFLAGS += `$(PKGqt) --cflags Qt5WebEngine --cflags Qt5WebEngineCore  --cflags Qt5WebEngineWidgets` 
-#	QT_LDFLAGS += ""
+#  If using QSvg:
+  USE_QWEBENGINE_CFLAGS=-DUSE_QSVGVIEWER=1 -DUSE_QWEBENGINE=0
+  QT_CFLAGS += $(QT_SVG_CFLAGS)
+#  QT_LDFLAGS += ""
 else ifeq ($(USE_QWEBENGINE),1)
-#	If using QtWebEngine:
-	USE_QWEBENGINE_CFLAGS = -D USE_QSVGVIEWER=0 -D USE_QWEBENGINE=1
-	QT_CFLAGS += `$(PKGqt) --cflags Qt5WebEngine --cflags Qt5WebEngineCore  --cflags Qt5WebEngineWidgets` 
-	QT_LDFLAGS += `$(PKGqt) --libs Qt5WebEngine --libs Qt5WebEngineCore  --libs Qt5WebEngineWidgets`
+#  If using QtWebEngine:
+  USE_QWEBENGINE_CFLAGS = -DUSE_QSVGVIEWER=0 -DUSE_QWEBENGINE=1
+  QT_CFLAGS += `$(PKGqt) --cflags Qt5WebEngine --cflags Qt5WebEngineCore  --cflags Qt5WebEngineWidgets` 
+  QT_LDFLAGS += `$(PKGqt) --libs Qt5WebEngine --libs Qt5WebEngineCore  --libs Qt5WebEngineWidgets`
 else
-#	If using QtWebKit:
-	USE_QWEBENGINE_CFLAGS = -D USE_QSVGVIEWER=0 -D USE_QWEBENGINE=0
-	QT_CFLAGS += `$(PKGqt) --cflags Qt5WebKitWidgets --cflags Qt5WebKit`
-	QT_LDFLAGS += `$(PKGqt) --libs Qt5WebKitWidgets --libs Qt5WebKit`
+#  If using QtWebKit:
+  USE_QWEBENGINE_CFLAGS = -DUSE_QSVGVIEWER=0 -DUSE_QWEBENGINE=0
+  QT_CFLAGS += `$(PKGqt) --cflags Qt5WebKitWidgets --cflags Qt5WebKit`
+  QT_LDFLAGS += `$(PKGqt) --libs Qt5WebKitWidgets --libs Qt5WebKit`
 endif
 
+# (Need separate variable for the definitions (i.e. USE_QWEBENGINE_CFLAGS) because of moc-ing.)
 QT_CFLAGS += $(USE_QWEBENGINE_CFLAGS)
 
 
@@ -1744,7 +1745,7 @@ $(P)EditorWidget.h: $(BUILD_DEPENDENCIES)
 $(T)Qt_Main.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_instruments_proc.h $(QM)QM_MixerWidget.h Qt/helpers.h audio/SampleRecorder_proc.h common/nag.h Qt/KeyboardFocusFrame.hpp common/Process.hpp Qt/Timer.hpp
 	$(MOC) Qt/Qt_Main.cpp > Qt/mQt_Main.cpp
 	cd Qt && $(MOC) -DFOR_LINUX Timer.hpp > mTimer.hpp
-	$(CCC2) $(P)Qt_Main.cpp $(QTOPT) $(SNDFILEOPT) $(BOOST_INCLUDE) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" -Wno-null-dereference  # -Wno-deprecated-declarations -Wno-shadow 
+	$(CCC2) $(P)Qt_Main.cpp $(QTOPT) $(SNDFILEOPT) $(BOOST_INCLUDE)  -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" -Wno-null-dereference  # -Wno-deprecated-declarations -Wno-shadow 
 
 $(T)Qt_SaveRestoreWindows.o:  $(BUILD_DEPENDENCIES) Qt/Qt_SaveRestoreWindows.cpp
 	$(CCC2) $(P)Qt_SaveRestoreWindows.cpp $(QTOPT)
@@ -1828,11 +1829,12 @@ $(T)Qt_instruments.o: $(BUILD_DEPENDENCIES) $(P)Qt_instruments.cpp $(INSTRUMENTS
 	@echo $?
 	@echo
 	if [ $(BUILDTYPE) = RELEASE ] ; then \
-		$(CCC2) $(P)Qt_instruments.cpp $(QTOPT) $(SNDFILEOPT) $(QT_SVG_CFLAGS) -Wno-null-dereference  $(NO_ANALYZER) ; \
+		$(CCC2) $(P)Qt_instruments.cpp $(QTOPT) $(SNDFILEOPT) -Wno-null-dereference  $(NO_ANALYZER) ; \
 	else \
-		$(CCC2) $(P)Qt_instruments.cpp $(QTOPT) $(SNDFILEOPT) $(QT_SVG_CFLAGS) $(O0) -Wno-null-dereference $(NO_ANALYZER) ; \
+		$(CCC2) $(P)Qt_instruments.cpp $(QTOPT) $(SNDFILEOPT) $(O0) -Wno-null-dereference $(NO_ANALYZER) ; \
 	fi
 	 # ^ It takes forever to compile this file with -Og
+
 
 #	$(CLANGPLUSPLUS) $(P)Qt_instruments.cpp $(QTOPT)
 # clang++ $(P)Qt_instruments.cpp $(QTOPT)
@@ -2176,7 +2178,7 @@ $(T)api_midi.o:  $(BUILD_DEPENDENCIES)  $(API)api_midi.cpp
 
 $(T)api_gui.o:  $(BUILD_DEPENDENCIES)  $(API)api_gui.cpp  Qt/ScrollArea.hpp Qt/helpers.h Qt/lzqlineedit.h  Qt/Rational.h Qt/Qt_MyQCheckBox.h embedded_scheme/s7extra_proc.h Qt/Qt_MyQScrollBar.hpp Qt/FileRequester.hpp Qt/Timer.hpp Qt/HashVector.hpp Qt/Qt_MyQCheckBox.h Qt/FocusSniffers.h Qt/Editor.hpp
 	$(MOC) $(USE_QWEBENGINE_CFLAGS) $(API)api_gui.cpp > $(API)mapi_gui.cpp
-	$(CCC2) $(API)api_gui.cpp $(QTOPT) $(QT_UI_CFLAGS) $(QT_SVG_CFLAGS) $(FPIC) -Wno-null-dereference $(NO_ANALYZER) $(WNO_DEPRECATED_DECLARATIONS)
+	$(CCC2) $(API)api_gui.cpp $(QTOPT) $(QT_UI_CFLAGS) $(FPIC) -Wno-null-dereference $(NO_ANALYZER) $(WNO_DEPRECATED_DECLARATIONS)
 
 
 NOUNUSEDBUTSETVARIABLEWARNING=
