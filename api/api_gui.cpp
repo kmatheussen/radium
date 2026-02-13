@@ -3908,7 +3908,7 @@ MakeFocusSnifferClass(QWebView);
     }
   }
 
-#if (USE_QSVGVIEWER || USE_QWEBENGINE) && !defined(FOR_MACOSX)
+#if (USE_QSVGVIEWER || !USE_QWEBENGINE || !defined(FOR_MACOSX))
 static QUrl getUrl(QString stringurl)
 {
     auto [absoluteurl, query, is_local_file] = getAbsoluteUrl(stringurl);
