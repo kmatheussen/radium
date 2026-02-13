@@ -152,8 +152,7 @@ static bool load_sf2_instrument(Data *data, filepath_t filename, int preset_bag_
 
 				break;
 			}
-		}
-    
+		}				   
 	}
 
 

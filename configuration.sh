@@ -86,7 +86,7 @@ set_var USE_QWEBENGINE 0
 ########################################################
 # If enabled, use QSvgViewer instead of QWebEngine or QtWebKit
 #
-# Can be handy to use during developing. You can not
+# Can be handy to use during development. You can not
 # click on any of the elements in the svg viewer, and
 # you can not drag, but compilation should be faster.
 # HTML pages for help is viewed by opening an external browser.

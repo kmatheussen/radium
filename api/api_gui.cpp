@@ -3874,13 +3874,12 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     OVERRIDERS(MyFocusSnifferQDoubleSpinBox);
   };
 
-
-#if USE_SVGVIEWER
+#if USE_QSVGVIEWER
 //
 #elif USE_QWEBENGINE
-//MakeFocusSnifferClass(QWebEngineView);
+MakeFocusSnifferClass(QWebEngineView);
 #else
-  MakeFocusSnifferClass(QWebView);
+MakeFocusSnifferClass(QWebView);
 #endif
 
   static std::tuple<QString,QString, bool> getAbsoluteUrl(QString stringurl){
@@ -3909,8 +3908,9 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     }
   }
 
-#if !USE_SVGVIEWER && (!USE_QWEBENGINE || !defined(FOR_MACOSX))
-  static QUrl getUrl(QString stringurl){
+#if (USE_QSVGVIEWER || USE_QWEBENGINE) && !defined(FOR_MACOSX)
+static QUrl getUrl(QString stringurl)
+{
     auto [absoluteurl, query, is_local_file] = getAbsoluteUrl(stringurl);
     
     if (is_local_file) {
@@ -3929,7 +3929,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
   }
 #endif
 
-#if !USE_SVGVIEWER
+#if !USE_QSVGVIEWER
   struct Web :
 #if USE_QWEBENGINE
 		
@@ -4184,7 +4184,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     } 
     */
   };
-#endif //!USE_SVGVIEWER
+#endif //!USE_QSVGVIEWER
 
   struct FileRequester : radium::FileRequester, Gui, public radium::MouseCycleFix {
     Q_OBJECT;
