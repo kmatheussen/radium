@@ -2178,7 +2178,7 @@ $(T)api_midi.o:  $(BUILD_DEPENDENCIES)  $(API)api_midi.cpp
 
 $(T)api_gui.o:  $(BUILD_DEPENDENCIES)  $(API)api_gui.cpp  Qt/ScrollArea.hpp Qt/helpers.h Qt/lzqlineedit.h  Qt/Rational.h Qt/Qt_MyQCheckBox.h embedded_scheme/s7extra_proc.h Qt/Qt_MyQScrollBar.hpp Qt/FileRequester.hpp Qt/Timer.hpp Qt/HashVector.hpp Qt/Qt_MyQCheckBox.h Qt/FocusSniffers.h Qt/Editor.hpp
 	$(MOC) $(USE_QWEBENGINE_CFLAGS) $(API)api_gui.cpp > $(API)mapi_gui.cpp
-	$(CCC2) $(API)api_gui.cpp $(QTOPT) $(QT_UI_CFLAGS) $(FPIC) -Wno-null-dereference $(NO_ANALYZER) $(WNO_DEPRECATED_DECLARATIONS)
+	$(CCC2) $(API)api_gui.cpp $(QTOPT) $(QT_UI_CFLAGS) $(QT_SVG_CFLAGS) $(FPIC) -Wno-null-dereference $(NO_ANALYZER) $(WNO_DEPRECATED_DECLARATIONS)
 
 
 NOUNUSEDBUTSETVARIABLEWARNING=
