@@ -1,0 +1,103 @@
+diff -ur libgig_old/src/RIFF.cpp libgig/src/RIFF.cpp
+--- libgig_old/src/RIFF.cpp	2025-05-19 19:00:00.000000000 +0200
++++ libgig/src/RIFF.cpp	2026-02-12 19:08:33.739000515 +0100
+@@ -1865,7 +1865,30 @@
+         nDataChunkCount = 0;
+         nListChunkCount = 0;
+         try {
+-            __openExistingFile(path);
++            __openExistingFile(NULL, path);
++            if (ChunkID != CHUNK_ID_RIFF && ChunkID != CHUNK_ID_RIFX) {
++                throw RIFF::Exception("Not a RIFF file");
++            }
++        }
++        catch (...) {
++            Cleanup();
++            throw;
++        }
++    }
++
++    File::File(const wchar_t *path, const String& path8)
++        : List(this), Filename(path8), bIsNewFile(false), Layout(layout_standard),
++          FileOffsetPreference(offset_size_auto)
++    {
++        #if DEBUG_RIFF
++        std::cout << "File::File("<<path<<")" << std::endl;
++        #endif // DEBUG_RIFF
++        bEndianNative = true;
++        FileOffsetSize = 4;
++        nDataChunkCount = 0;
++        nListChunkCount = 0;
++        try {
++            __openExistingFile(path, path8);
+             if (ChunkID != CHUNK_ID_RIFF && ChunkID != CHUNK_ID_RIFX) {
+                 throw RIFF::Exception("Not a RIFF file");
+             }
+@@ -1913,7 +1936,7 @@
+         nDataChunkCount = 0;
+         nListChunkCount = 0;
+         try {
+-            __openExistingFile(path, &FileType);
++            __openExistingFile(NULL, path, &FileType);
+         }
+         catch (...) {
+             Cleanup();
+@@ -1931,29 +1954,29 @@
+      * @throws RIFF::Exception if error occurred while trying to load the
+      *                         given RIFF file or RIFF-alike file
+      */
+-    void File::__openExistingFile(const String& path, uint32_t* FileType) {
++    void File::__openExistingFile(const wchar_t *path, const String& path8, uint32_t* FileType) {
+         io.isPerThread = false;
+         #if POSIX
+-        io.hRead = io.hWrite = open(path.c_str(), O_RDONLY | O_NONBLOCK);
++        io.hRead = io.hWrite = open(path8.c_str(), O_RDONLY | O_NONBLOCK);
+         if (!_isValidHandle(io.hRead)) {
+             String sError = strerror(errno);
+-            throw RIFF::Exception("Can't open \"" + path + "\": " + sError);
++            throw RIFF::Exception("Can't open \"" + path8 + "\": " + sError);
+         }
+         #elif defined(WIN32)
+-        io.hRead = io.hWrite = CreateFile(
+-                                     path.c_str(), GENERIC_READ,
++        io.hRead = io.hWrite = CreateFileW(
++                                     path, GENERIC_READ,
+                                      FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                      NULL, OPEN_EXISTING,
+                                      FILE_ATTRIBUTE_NORMAL |
+                                      FILE_FLAG_RANDOM_ACCESS, NULL
+                                  );
+         if (!_isValidHandle(io.hRead)) {
+-            throw RIFF::Exception("Can't open \"" + path + "\"");
++            throw RIFF::Exception("Can't open \"" + path8 + "\"");
+         }
+         #else
+-        io.hRead = io.hWrite = fopen(path.c_str(), "rb");
++        io.hRead = io.hWrite = fopen(path8.c_str(), "rb");
+         if (!_isValidHandle(io.hRead))
+-            throw RIFF::Exception("Can't open \"" + path + "\"");
++            throw RIFF::Exception("Can't open \"" + path8 + "\"");
+         #endif // POSIX
+         io.Mode = stream_mode_read;
+ 
+Only in libgig/src: RIFF.cpp~
+diff -ur libgig_old/src/RIFF.h libgig/src/RIFF.h
+--- libgig_old/src/RIFF.h	2025-03-14 17:17:11.000000000 +0100
++++ libgig/src/RIFF.h	2026-02-12 19:07:52.265777361 +0100
+@@ -327,6 +327,7 @@
+ 
+             File(uint32_t FileType);
+             File(const String& path);
++		    File(const wchar_t *path, const String& path8);
+             File(const String& path, uint32_t FileType, endian_t Endian, layout_t layout, offset_size_t fileOffsetSize = offset_size_auto);
+             stream_mode_t GetMode() const;
+             bool          SetMode(stream_mode_t NewMode);
+@@ -376,7 +377,7 @@
+             friend class Chunk;
+             friend class List;
+         private:
+-            void __openExistingFile(const String& path, uint32_t* FileType = NULL);
++            void __openExistingFile(const wchar_t *path, const String& path8, uint32_t* FileType = NULL);
+             void ResizeFile(file_offset_t ullNewSize);
+             #if POSIX
+             file_offset_t __GetFileSize(int hFile) const;

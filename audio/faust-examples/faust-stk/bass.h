@@ -8,7 +8,7 @@
 
 namespace{
 
-double bassLoopFilterb0_points[19*2] = {
+const double bassLoopFilterb0_points[19*2] = {
 	24.000,0.54355,
 	26.000,0.54355,
 	27.000,0.55677,
@@ -29,14 +29,14 @@ double bassLoopFilterb0_points[19*2] = {
 	63.000,0.94594,
 	65.000,0.91820,
 };
-extern LookupTable bassLoopFilterb0;
-LookupTable bassLoopFilterb0(&bassLoopFilterb0_points[0], 18);
+extern const LookupTable bassLoopFilterb0;
+const LookupTable bassLoopFilterb0(&bassLoopFilterb0_points[0], 18);
 
 float getValueBassLoopFilterb0(float index){
 	return bassLoopFilterb0.getValue(index);
 }
 
-double bassLoopFilterb1_points[19*2] = {
+const double bassLoopFilterb1_points[19*2] = {
 	24.000,-0.36586,
 	26.000,-0.36586,
 	27.000,-0.37628,
@@ -57,14 +57,14 @@ double bassLoopFilterb1_points[19*2] = {
 	63.000,-0.83230,
 	65.000,-0.83230,
 };
-extern LookupTable bassLoopFilterb1;
-LookupTable bassLoopFilterb1(&bassLoopFilterb1_points[0], 18);
+extern const LookupTable bassLoopFilterb1;
+const LookupTable bassLoopFilterb1(&bassLoopFilterb1_points[0], 18);
 
 float getValueBassLoopFilterb1(float index){
 	return bassLoopFilterb1.getValue(index);
 }
 
-double bassLoopFiltera1_points[19*2] = {
+const double bassLoopFiltera1_points[19*2] = {
 	24.000,-0.81486,
 	26.000,-0.81486,
 	27.000,-0.81147,
@@ -85,8 +85,8 @@ double bassLoopFiltera1_points[19*2] = {
 	63.000,-0.88537,
 	65.000,-0.88537,
 };
-extern LookupTable bassLoopFiltera1;
-LookupTable bassLoopFiltera1(&bassLoopFiltera1_points[0], 18);
+extern const LookupTable bassLoopFiltera1;
+const LookupTable bassLoopFiltera1(&bassLoopFiltera1_points[0], 18);
 
 float getValueBassLoopFiltera1(float index){
 	return bassLoopFiltera1.getValue(index);

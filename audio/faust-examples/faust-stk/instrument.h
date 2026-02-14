@@ -16,37 +16,35 @@ namespace{
 class LookupTable
 {
 public:
-	LookupTable(double *points, int num_points);
-	double getValue(double x);
+	LookupTable(const double *points, int num_points);
+	double getValue(double x) const;
 	
 protected:
 	
 	// Note: Actual array size is 2*m_nPoints;
-	double *m_Points;
-	int m_nPoints;
+	const double *m_Points;
+	const int m_nPoints;
 };
 
-LookupTable::LookupTable(double *points, int num_points)
+LookupTable::LookupTable(const double *points, int num_points)
+	: m_Points(points)
+	, m_nPoints(num_points)	// Note: Actual array size is 2*num_points
 {
-	// Note: Actual array size is 2*num_points
-	
-	m_Points = points;
-	m_nPoints = num_points;
 }
 
-double LookupTable::getValue(double x)
+double LookupTable::getValue(double x) const
 {
 	// Note: Assumes points are monotonically increasing in X!
-	
+
 	int i=0;
-	while (x>m_Points[i*2] && i<m_nPoints)
+	while (x>m_Points[i*2]){
 		i++;
+		if (i>=m_nPoints)
+			return m_Points[(m_nPoints-1)*2+1];
+	}
 	
 	if (i==0)
 		return m_Points[1];
-	
-	if (i>=m_nPoints)
-		return m_Points[(m_nPoints-1)*2+1];
 	
 	double ratio =
 	(x - m_Points[(i-1)*2])
@@ -59,7 +57,7 @@ double LookupTable::getValue(double x)
 //stick for modal synthesis
 //********************************
 static inline float readMarmstk1(int index){
-	static float marmstk1[TABLE_SIZE/4] = {
+	static const float marmstk1[TABLE_SIZE/4] = {
 		0.000579833984375, -0.003417968750000, 0.015930175781250, -0.037689208984375, 0.062866210937500, 
 		0.168640136718750, -0.226287841796875, -0.020233154296875, 0.017120361328125, 0.032745361328125, 
 		0.028198242187500, -0.065704345703125, 0.102355957031250, -0.135375976562500, -0.088378906250000, 

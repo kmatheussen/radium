@@ -84,6 +84,18 @@ set_var USE_QWEBENGINE 1
 
 
 ########################################################
+# If enabled, use QSvgViewer instead of QWebEngine or QtWebKit
+#
+# Can be handy to use during development. You can not
+# click on any of the elements in the svg viewer, and
+# you can not drag, but compilation should be faster.
+# HTML pages for help is viewed by opening an external browser.
+#
+set_var USE_QSVGVIEWER 0
+
+
+
+########################################################
 # Set to 0 to make the demo version of the program.
 #
 # The demo version has the following three restrictions:
@@ -128,8 +140,9 @@ set_var QSB 0
 
 ########################################################
 # When developing Radium, this value should proabably
-# be set to 1. If you just want to compile the program,
-# set it to 0.
+# be set to 1. Note that this option is ignored
+# if compiling in RELEASE mode (warnings are never
+# errors in release mode).
 #
 set_var WARNINGS_AS_ERRORS 1
 

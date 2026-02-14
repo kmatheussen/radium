@@ -158,7 +158,6 @@ autoquitter()
 
 	sleep 0.1
 	xdotool type $'q\n'
-	#sleep 0.1
 	
 	#while ps -Af|grep "$EXECUTABLE"|grep "$debugger"  ; do
 	#	echo "still alive..."

@@ -1,4 +1,3 @@
-
 /* Copyright 2003 Kjetil S. Matheussen
 
 This program is free software; you can redistribute it and/or
@@ -18,6 +17,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #ifdef __linux__
 
+#define USE_BOTH_XCB_MODES 0 // If enabled, use -lX11-xcb -lxcb-keysyms -lxkbcommon-x11 -lxkbcommon 
+
+#define USE_xcb_key_release_lookup_keysym 0 // If enabled, use -lX11-xcb -lxcb-keysyms, if not use -lxkbcommon-x11 -lxkbcommon 
 #define GET_CONNECTION_FROM_DISPLAY 0
 
 #include "../common/includepython.h"
@@ -41,9 +43,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 
 #if USE_QT5
-#include <xcb/xcb.h>
-#include <xkbcommon/xkbcommon.h>
-#include <xkbcommon/xkbcommon-x11.h>
+#  include <xcb/xcb.h>
+#  if USE_BOTH_XCB_MODES || USE_xcb_key_release_lookup_keysym
+#    include <xcb/xcb_keysyms.h>
+#  endif
+#  if USE_BOTH_XCB_MODES || !USE_xcb_key_release_lookup_keysym
+#    include <xkbcommon/xkbcommon.h>
+#    include <xkbcommon/xkbcommon-x11.h>
+#  endif
 #endif
 
 #include "../common/playerclass.h"
@@ -267,55 +274,21 @@ static int get_modifier(KeySym keysym){
 
 #if USE_QT5
 
-#if 0
-static xcb_keysym_t get_sym(xcb_key_press_event_t *event){
-    static bool inited = false;
-  
-    static xcb_key_symbols_t *key_symbols = NULL;
+static xcb_connection_t *get_xcb_connection(void)
+{
+	static bool inited = false;
 
+	static xcb_connection_t *connection = NULL;
+		
     if (inited==false)
 	{
-#if USE_QT6
-		QNativeInterface::QX11Application *x11App = qApp->nativeInterface<QNativeInterface::QX11Application>();
-		xcb_connection_t *connection = x11App->connection();
-#else
-		xcb_connection_t *connection = QX11Info::connection();
-#endif 
-
-      if (xcb_connection_has_error(connection) > 0)
-		  SYSTEM_show_error_message("Seems like the xcb connection has an error. Keyboard might not work. Error code %d.", xcb_connection_has_error(connection));
-      
-		key_symbols = xcb_key_symbols_alloc(connection);
-		inited = true;
-    }
-
-    if (key_symbols==NULL)
-      return XK_space;
-    
-    xcb_keysym_t sym = xcb_key_release_lookup_keysym (key_symbols,
-                                                      event,
-                                                      0);
-
-    return sym;
-}
-#else
-static xcb_keysym_t get_sym(xcb_key_press_event_t *event){
-    static bool inited = false;
-  
-	static struct xkb_keymap *s_keymap = NULL;
-	static struct xkb_state *s_state = NULL;
-
-    if (inited==false)
-	{
-		//SYSTEM_show_error_message("Testing message");
-
 #if GET_CONNECTION_FROM_DISPLAY
 		Display *display = QX11Info::display();		
-		xcb_connection_t *connection = display==NULL ? NULL : XGetXCBConnection(display);
+		connection = display==NULL ? NULL : XGetXCBConnection(display);
 #else
-		xcb_connection_t *connection = QX11Info::connection();
+		connection = QX11Info::connection();
 #endif
-		
+
 		if (connection==NULL || xcb_connection_has_error(connection) > 0)
 		{
 #if GET_CONNECTION_FROM_DISPLAY
@@ -333,7 +306,56 @@ static xcb_keysym_t get_sym(xcb_key_press_event_t *event){
 				SYSTEM_show_error_message(talloc_format("Seems like the xcb connection has an error. Keyboard might not work. Error code %d.", xcb_connection_has_error(connection)));
 			}
 		}
-		else
+		
+		inited = true;
+	}
+
+	return connection;
+}
+
+#if USE_BOTH_XCB_MODES || USE_xcb_key_release_lookup_keysym
+static xcb_keysym_t get_sym_from_key_symbols(xcb_key_press_event_t *event){
+    static bool inited = false;
+  
+    static xcb_key_symbols_t *key_symbols = NULL;
+
+    if (inited==false)
+	{
+		xcb_connection_t *connection = get_xcb_connection();
+
+		if (connection != NULL)
+			key_symbols = xcb_key_symbols_alloc(connection);
+
+		inited = true;
+    }
+	
+    if (key_symbols==NULL)
+		return XK_space;
+    
+    xcb_keysym_t sym = xcb_key_release_lookup_keysym (key_symbols,
+                                                      event,
+                                                      0);
+
+    return sym;
+}
+#endif
+
+#if USE_BOTH_XCB_MODES || !USE_xcb_key_release_lookup_keysym
+static xcb_keysym_t get_sym_from_key_get_one_sym(xcb_key_press_event_t *event){
+	//printf("DEBUG/get_sym: Enter. event->detail: %u\n", (unsigned)event->detail);
+
+    static bool inited = false;
+  
+	static struct xkb_keymap *s_keymap = NULL;
+	static struct xkb_state *s_state = NULL;
+
+    if (inited==false)
+	{
+		//SYSTEM_show_error_message("Testing message");
+
+		xcb_connection_t *connection = get_xcb_connection();
+
+		if (connection != NULL)
 		{
 			int32_t device_id = xkb_x11_get_core_keyboard_device_id(connection);
 			
@@ -370,12 +392,36 @@ static xcb_keysym_t get_sym(xcb_key_press_event_t *event){
 	
     if (s_state == NULL)
 		return XK_space;
-	
+
 	return xkb_state_key_get_one_sym(s_state, event->detail);
 }
 #endif
 
+static xcb_keysym_t get_sym(xcb_key_press_event_t *event)
+{
+#if USE_BOTH_XCB_MODES
+	
+#  if USE_xcb_key_release_lookup_keysym
+	bool a=true;
+#  else
+	bool a=false;
+#  endif
+	if (a)
+		return get_sym_from_key_symbols(event);
+	else
+		return get_sym_from_key_get_one_sym(event);
+#else
+	
+#  if USE_xcb_key_release_lookup_keysym
+	return get_sym_from_key_symbols(event);
+#  else
+	return get_sym_from_key_get_one_sym(event);
+#  endif
+	
 #endif
+}
+
+#endif // USE_QT5
 
 
 int OS_SYSTEM_get_modifier(void *void_event){
