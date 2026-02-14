@@ -1361,8 +1361,8 @@ protected:
    bool SystemEventFilter(void *event){
 
      if(g_is_starting_up==true){
-       //printf("   ret false 0\n");
-       return false;
+		 //printf("   ret false 0\n");
+		 return false;
      }
      
     OS_SYSTEM_EventPreHandler(event);
@@ -1378,7 +1378,8 @@ protected:
 
     //printf("Got key. Another window has focus? %d\n",(int)g_a_non_radium_window_has_focus);
     //return false;    
-    if (g_a_non_radium_window_has_focus && JUCE_native_gui_grabs_keyboard()){
+    if (g_a_non_radium_window_has_focus && JUCE_native_gui_grabs_keyboard())
+	{
 
       //printf("   Ret false 1. non: %d. juce: %d\n", g_a_non_radium_window_has_focus, JUCE_native_gui_grabs_keyboard());
       
@@ -1389,14 +1390,15 @@ protected:
         downcount = 40;
       }
       */
-      //printf("ret false 1\n");
-      return false;
+		//printf("ret false 1\n");
+		return false;
     }
 
-    if (MIXER_is_saving()){
-      //printf(" Got key -1\n");
-      //printf("ret false 2\n");
-      return false;
+    if (MIXER_is_saving())
+	{
+		//printf(" Got key -1\n");
+		//printf("ret false 2\n");
+		return false;
     }
 
     struct Tracker_Windows *window = root->song->tracker_windows;
@@ -1418,7 +1420,7 @@ protected:
     if (type==TR_AUTOREPEAT)
       type = TR_KEYBOARD;
     
-    if (type!=TR_KEYBOARD && type!=TR_KEYBOARDUP){
+    if (type!=TR_KEYBOARD && type!=TR_KEYBOARDUP){		
       return false;
     }
     
@@ -1431,18 +1433,19 @@ protected:
     const int modifier = OS_SYSTEM_get_modifier(event); // Note that OS_SYSTEM_get_modifier is unable to return an EVENT_EXTRA_L event on windows. Not too sure about EVENT_EXTRA_R either (VK_APPS key) (doesn't matter, EVENT_EXTRA_R is abandoned, and the key is just used to configure block). In addition, the release value order might be wrong if pressing several modifier keys, still windows only.
 
     //printf("modifier: %d. Right shift: %d\n",modifier, modifier==EVENT_SHIFT_R);
-    if (g_show_key_codes){
-      char *message = talloc_format("%d - %d: %s", modifier, OS_SYSTEM_get_scancode(event), tevent_autorepeat ? "Autorepeat" : is_key_press ? "Down" : "Up");
-      //printf("  Got key: %s\n",message);
-      window->message=message;
-      
-      GL_create(window);
+    if (g_show_key_codes)
+	{
+		char *message = talloc_format("%d - %d: %s", modifier, OS_SYSTEM_get_scancode(event), tevent_autorepeat ? "Autorepeat" : is_key_press ? "Down" : "Up");
+		//printf("  Got key: %s\n",message);
+		window->message=message;
+		
+		GL_create(window);
     }
-              
+	
     //printf(" Got key 1. modifier: %d. Left ctrl: %d, Press: %d. Is EVENT_NO: %d. Scancode: %d\n", modifier, EVENT_CTRL_L, is_key_press, modifier==EVENT_NO, OS_SYSTEM_get_scancode(event));
 
-    if (modifier != EVENT_NO) {
-
+    if (modifier != EVENT_NO)
+	{
       bool must_return_true = false;
 
       bool menu_is_active = GFX_MenuActive();
@@ -1501,7 +1504,7 @@ protected:
             menu_should_be_active = 0;
             must_return_true = true;
             
-            printf("   SHOW MENU\n");
+            //printf("   SHOW MENU\n");
 
             GFX_ShowMenu(window);
             
