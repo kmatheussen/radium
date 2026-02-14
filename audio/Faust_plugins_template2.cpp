@@ -369,10 +369,13 @@ static bool RT_is_silent(float *sound, int num_frames, const bool use_old_buggy_
 	return true;
 }
 
-enum VoiceOp{
+namespace
+{
+enum class VoiceOp{
   VOICE_KEEP,
   VOICE_REMOVE
 };
+}
 
 static void RT_process_between(Voice *voice, float **inputs, float **outputs, int start, int end)
 {
@@ -421,7 +424,7 @@ static VoiceOp RT_play_voice(Data *data, Voice *voice, int num_frames, float **i
 		  {
 			  //printf("----removing voice: %d %d\n", RT_is_silent(outputs[0], num_frames), voice->frames_since_stop > data->samplerate);
 			  
-			  return VOICE_REMOVE;
+			  return VoiceOp::VOICE_REMOVE;
 		  }
 		  
 		  voice->frames_since_stop += num_frames;
@@ -447,7 +450,7 @@ static VoiceOp RT_play_voice(Data *data, Voice *voice, int num_frames, float **i
 		  *(voice->myUI._gate_control)=0.0f;
 	  }
 	  RT_process_between(voice, inputs, outputs, delta_pos_at_end, num_frames);
-	  
+
 	  voice->frames_since_stop = num_frames-delta_pos_at_end;
 	  
 	  *start_process = delta_pos_at_start;
@@ -455,7 +458,7 @@ static VoiceOp RT_play_voice(Data *data, Voice *voice, int num_frames, float **i
 	  voice->delta_pos_at_end = -1;
   }
 
-  return VOICE_KEEP;
+  return VoiceOp::VOICE_KEEP;
 }
 
 static void RT_process_instrument2(int num_outputs, Data *data, int64_t time, int num_frames, float **inputs, float **outputs){
@@ -477,7 +480,7 @@ static void RT_process_instrument2(int num_outputs, Data *data, int64_t time, in
 	  Voice *next = voice->next;
 	  int start_process;
 	  
-	  if(RT_play_voice(data,voice,num_frames,inputs,tempsounds,&start_process)==VOICE_REMOVE)
+	  if(RT_play_voice(data,voice,num_frames,inputs,tempsounds,&start_process)==VoiceOp::VOICE_REMOVE)
 	  {
 		  
 		  RT_remove_voice(&data->voices_playing, voice);
