@@ -597,9 +597,13 @@ float g_float_epsilon = std::numeric_limits<float>::epsilon();
 double g_double_epsilon = std::numeric_limits<double>::epsilon();
 
 
-  //QApplication *qapplication;
-class MyApplication;
-MyApplication *qapplication = NULL;
+//QApplication *qapplication;
+namespace
+{
+	class MyApplication;
+	MyApplication *qapplication = NULL;
+}
+
 QApplication *g_qapplication = NULL;
 //QSplashScreen *g_splashscreen = NULL;
 
@@ -1337,7 +1341,8 @@ namespace{
 #endif
 
 
-
+namespace
+{
 class MyApplication
   : public QApplication
 #if USE_QT5
@@ -1773,7 +1778,10 @@ protected:
 						case EVENT_QWERTY_7: k=EVENT_7; break;
 						case EVENT_QWERTY_8: k=EVENT_8; break;
 						case EVENT_QWERTY_9: k=EVENT_9; break;
-						default: R_ASSERT(false);break;
+						default:
+							R_ASSERT(false);
+							k=EVENT_NO;
+							break;
 					}
 					
 					dat_used_key = DAT_keypress(window, k, is_key_press);
@@ -1800,7 +1808,10 @@ protected:
 						case EVENT_QWERTY_D: k=EVENT_D; break;
 						case EVENT_QWERTY_E: k=EVENT_E; break;
 						case EVENT_QWERTY_F: k=EVENT_F; break;
-						default: R_ASSERT(false);break;
+						default:
+							R_ASSERT(false);
+							k=EVENT_NO;
+							break;
 					}
 					
 					dat_used_key = DAT_keypress(window, k, is_key_press);
@@ -2174,6 +2185,7 @@ public slots:
   }
 
 };
+} // anon. namespace
 
 
 MyApplication::MyApplication(int &argc,char **argv)
@@ -4996,7 +5008,7 @@ int main(int argc, char **argv){
   
   g_startup_rect = QRect(QPoint(0,0), QGuiApplication::screens().at(0)->size()); //QApplication::desktop()->screenGeometry(); // Probably no point. Hoped that it would force radium to open on the same desktop that was current when program started.
 
-  printf("********* Has set startup rect %d, %d**********\n", g_startup_rect.x(), g_startup_rect.y());
+  printf("********* Has set startup rect %d, %d. W: %d. H: %d**********\n", g_startup_rect.x(), g_startup_rect.y(), g_startup_rect.width(), g_startup_rect.height());
   //getchar();
   
 #if 0
