@@ -139,8 +139,9 @@ set_var MOC 0
 
 ########################################################
 # When developing Radium, this value should proabably
-# be set to 1. If you just want to compile the program,
-# set it to 0.
+# be set to 1. Note that this option is ignored
+# if compiling in RELEASE mode (warnings are never
+# errors in release mode).
 #
 set_var WARNINGS_AS_ERRORS 1
 
