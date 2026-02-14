@@ -8,7 +8,7 @@
 
 namespace{
 
-double DryTapAmpT60_points[16*2] = {
+const double DryTapAmpT60_points[16*2] = {
 //  NoteNumber(A440=69), T60(sec)
 	21.001,0.491,
 	26.587,0.498,
@@ -26,14 +26,14 @@ double DryTapAmpT60_points[16*2] = {
 	97.319,0.469,
 	102.400,0.500,
 	107.198,0.494	};
-extern LookupTable DryTapAmpT60;
-LookupTable DryTapAmpT60(&DryTapAmpT60_points[0], 16);
+extern const LookupTable DryTapAmpT60;
+const LookupTable DryTapAmpT60(&DryTapAmpT60_points[0], 16);
 
 float getValueDryTapAmpT60 (float index){
 	return DryTapAmpT60.getValue(index);
 }
 
-double releaseLoopGain_points[10*2] = {
+const double releaseLoopGain_points[10*2] = {
 	21.000,0.865,
 	24.000,0.880,
 	29.000,0.896,
@@ -44,14 +44,14 @@ double releaseLoopGain_points[10*2] = {
 	84.000,0.988,
 	88.000,0.997,
 	99.000,0.988	};
-extern LookupTable releaseLoopGain;
-LookupTable releaseLoopGain(&releaseLoopGain_points[0], 10);
+extern const LookupTable releaseLoopGain;
+const LookupTable releaseLoopGain(&releaseLoopGain_points[0], 10);
 
 float getValueReleaseLoopGain(float index){
 	return releaseLoopGain.getValue(index);
 }
 
-double loopFilterb0_points[18*2] = {
+const double loopFilterb0_points[18*2] = {
 	35.000,0.94373,
 	36.000,0.94731,
 	46.000,0.94731,
@@ -71,8 +71,8 @@ double loopFilterb0_points[18*2] = {
 	86.000,0.98462,
 	87.000,0.98611,
 };
-extern LookupTable loopFilterb0;
-LookupTable loopFilterb0(&loopFilterb0_points[0], 18);
+extern const LookupTable loopFilterb0;
+const LookupTable loopFilterb0(&loopFilterb0_points[0], 18);
 
 float getValueLoopFilterb0(float index){
 	return loopFilterb0.getValue(index);
@@ -98,14 +98,14 @@ double loopFilterb1_points[18*2] = {
 	86.000,0.85655,
 	87.000,0.68851,
 };
-extern LookupTable loopFilterb1;
-LookupTable loopFilterb1(&loopFilterb1_points[0], 18);
+extern const LookupTable loopFilterb1;
+const LookupTable loopFilterb1(&loopFilterb1_points[0], 18);
 
 float getValueLoopFilterb1(float index){
 	return loopFilterb1.getValue(index);
 }
 
-double loopFilterb2_points[18*2] = {
+const double loopFilterb2_points[18*2] = {
 	35.000,-0.00360,
 	36.000,-0.12249,
 	46.000,-0.12249,
@@ -152,14 +152,14 @@ double loopFiltera1_points[18*2] = {
 	86.000,0.85396,
 	87.000,0.68332,
 };
-extern LookupTable loopFiltera1;
-LookupTable loopFiltera1(&loopFiltera1_points[0], 18);
+extern const LookupTable loopFiltera1;
+const LookupTable loopFiltera1(&loopFiltera1_points[0], 18);
 
 float getValueLoopFiltera1(float index){
 	return loopFiltera1.getValue(index);
 }
 
-double loopFiltera2_points[18*2] = {
+const double loopFiltera2_points[18*2] = {
 	35.000,-0.02641,
 	36.000,-0.10275,
 	46.000,-0.10275,
@@ -179,8 +179,8 @@ double loopFiltera2_points[18*2] = {
 	86.000,0.24405,
 	87.000,0.14370,
 };
-extern LookupTable loopFiltera2;
-LookupTable loopFiltera2(&loopFiltera2_points[0], 18);
+extern const LookupTable loopFiltera2;
+const LookupTable loopFiltera2(&loopFiltera2_points[0], 18);
 
 float getValueLoopFiltera2(float index){
 	return loopFiltera2.getValue(index);

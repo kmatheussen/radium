@@ -30,8 +30,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 #include <boost/lockfree/queue.hpp>
 
+#ifndef USE_QSVGVIEWER
+#  error error
+#endif
+
 #ifndef USE_QWEBENGINE
-#error error
+#  error error
 #endif
 
 
@@ -44,8 +48,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QPluginLoader>
 #endif
 
-#if !USE_QWEBENGINE
-#include <QtWebKitWidgets/QWebView>
+#if !USE_QSVGVIEWER && !USE_QWEBENGINE
+#  include <QtWebKitWidgets/QWebView>
 #endif
 
 #define TEST_CRASHREPORTER 0
@@ -593,9 +597,13 @@ float g_float_epsilon = std::numeric_limits<float>::epsilon();
 double g_double_epsilon = std::numeric_limits<double>::epsilon();
 
 
-  //QApplication *qapplication;
-class MyApplication;
-MyApplication *qapplication = NULL;
+//QApplication *qapplication;
+namespace
+{
+	class MyApplication;
+	MyApplication *qapplication = NULL;
+}
+
 QApplication *g_qapplication = NULL;
 //QSplashScreen *g_splashscreen = NULL;
 
@@ -1339,7 +1347,8 @@ namespace{
 #endif
 
 
-
+namespace
+{
 class MyApplication
   : public QApplication
 #if USE_QT5
@@ -1363,8 +1372,8 @@ protected:
    bool SystemEventFilter(void *event){
 
      if(g_is_starting_up==true){
-       //printf("   ret false 0\n");
-       return false;
+		 //printf("   ret false 0\n");
+		 return false;
      }
      
     OS_SYSTEM_EventPreHandler(event);
@@ -1380,7 +1389,8 @@ protected:
 
     //printf("Got key. Another window has focus? %d\n",(int)g_a_non_radium_window_has_focus);
     //return false;    
-    if (g_a_non_radium_window_has_focus && JUCE_native_gui_grabs_keyboard()){
+    if (g_a_non_radium_window_has_focus && JUCE_native_gui_grabs_keyboard())
+	{
 
       //printf("   Ret false 1. non: %d. juce: %d\n", g_a_non_radium_window_has_focus, JUCE_native_gui_grabs_keyboard());
       
@@ -1391,14 +1401,15 @@ protected:
         downcount = 40;
       }
       */
-      //printf("ret false 1\n");
-      return false;
+		//printf("ret false 1\n");
+		return false;
     }
 
-    if (MIXER_is_saving()){
-      //printf(" Got key -1\n");
-      //printf("ret false 2\n");
-      return false;
+    if (MIXER_is_saving())
+	{
+		//printf(" Got key -1\n");
+		//printf("ret false 2\n");
+		return false;
     }
 
     struct Tracker_Windows *window = root->song->tracker_windows;
@@ -1420,7 +1431,7 @@ protected:
     if (type==TR_AUTOREPEAT)
       type = TR_KEYBOARD;
     
-    if (type!=TR_KEYBOARD && type!=TR_KEYBOARDUP){
+    if (type!=TR_KEYBOARD && type!=TR_KEYBOARDUP){		
       return false;
     }
     
@@ -1433,23 +1444,24 @@ protected:
     const int modifier = OS_SYSTEM_get_modifier(event); // Note that OS_SYSTEM_get_modifier is unable to return an EVENT_EXTRA_L event on windows. Not too sure about EVENT_EXTRA_R either (VK_APPS key) (doesn't matter, EVENT_EXTRA_R is abandoned, and the key is just used to configure block). In addition, the release value order might be wrong if pressing several modifier keys, still windows only.
 
     //printf("modifier: %d. Right shift: %d\n",modifier, modifier==EVENT_SHIFT_R);
-    if (g_show_key_codes){
-      char *message = talloc_format("%d - %d: %s", modifier, OS_SYSTEM_get_scancode(event), tevent_autorepeat ? "Autorepeat" : is_key_press ? "Down" : "Up");
-      printf("  Got key: %s\n",message);
-      window->message=message;
-      
-      GL_create(window);
+    if (g_show_key_codes)
+	{
+		char *message = talloc_format("%d - %d: %s", modifier, OS_SYSTEM_get_scancode(event), tevent_autorepeat ? "Autorepeat" : is_key_press ? "Down" : "Up");
+		//printf("  Got key: %s\n",message);
+		window->message=message;
+		
+		GL_create(window);
     }
-              
+	
     //printf(" Got key 1. modifier: %d. Left ctrl: %d, Press: %d. Is EVENT_NO: %d. Scancode: %d\n", modifier, EVENT_CTRL_L, is_key_press, modifier==EVENT_NO, OS_SYSTEM_get_scancode(event));
 
-    if (modifier != EVENT_NO) {
-
+    if (modifier != EVENT_NO)
+	{
       bool must_return_true = false;
 
       bool menu_is_active = GFX_MenuActive();
       
-      //printf("   Modifier: %d. EVENT_ALT_L: %d. Menu is active: %d. Is key press: %d\n", modifier, EVENT_ALT_L, GFX_MenuActive(), is_key_press);
+      //printf("   Modifier: %d. EVENT_ALT_L: %d. Menu is active: %d. Is key press: %d. Scancode: %d\n", modifier, EVENT_ALT_L, GFX_MenuActive(), is_key_press, OS_SYSTEM_get_scancode(event));
 
       /*
       if(modifier==EVENT_ALT_L)       
@@ -1503,7 +1515,7 @@ protected:
             menu_should_be_active = 0;
             must_return_true = true;
             
-            printf("   SHOW MENU\n");
+            //printf("   SHOW MENU\n");
 
             GFX_ShowMenu(window);
             
@@ -1741,16 +1753,92 @@ protected:
     bool dat_used_key;
 
     {
-      dat_used_key = DAT_keypress(window, tevent.SubID, is_key_press);
+		const bool g_use_qwerty_09_in_subtrack = useQwerty09EditorSubtracks();
+		const bool g_use_qwerty_af_in_subtrack = useQwertyAfEditorSubtracks();
+	
+		if (g_use_qwerty_09_in_subtrack || g_use_qwerty_af_in_subtrack)
+		{
+			int scancode_keynum = OS_SYSTEM_get_qwerty_keynum(event);
+
+			/*
+			printf("=========    SCancode: %d. 1: %d. 0: %d. a: %d. QWERTY: %d/%d/%d\n",
+				   scancode_keynum,
+				   EVENT_1, EVENT_0, EVENT_A,
+				   EVENT_QWERTY_1, EVENT_QWERTY_0, EVENT_QWERTY_A);
+			*/
+			
+			if (g_use_qwerty_09_in_subtrack)
+			{
+				if (scancode_keynum >= EVENT_QWERTY_1 && scancode_keynum <= EVENT_QWERTY_0)
+				{
+					int k;
+					switch (scancode_keynum)
+					{
+						case EVENT_QWERTY_0: k=EVENT_0; break;
+						case EVENT_QWERTY_1: k=EVENT_1; break;
+						case EVENT_QWERTY_2: k=EVENT_2; break;
+						case EVENT_QWERTY_3: k=EVENT_3; break;
+						case EVENT_QWERTY_4: k=EVENT_4; break;
+						case EVENT_QWERTY_5: k=EVENT_5; break;
+						case EVENT_QWERTY_6: k=EVENT_6; break;
+						case EVENT_QWERTY_7: k=EVENT_7; break;
+						case EVENT_QWERTY_8: k=EVENT_8; break;
+						case EVENT_QWERTY_9: k=EVENT_9; break;
+						default:
+							R_ASSERT(false);
+							k=EVENT_NO;
+							break;
+					}
+					
+					dat_used_key = DAT_keypress(window, k, is_key_press);
+					//printf("=========    GOT IT 1\n");
+					goto got_used_key;
+				}
+			}
+			
+			if (g_use_qwerty_af_in_subtrack)
+			{
+				if (scancode_keynum == EVENT_QWERTY_A
+					|| scancode_keynum == EVENT_QWERTY_B
+					|| scancode_keynum == EVENT_QWERTY_C
+					|| scancode_keynum == EVENT_QWERTY_D
+					|| scancode_keynum == EVENT_QWERTY_E
+					|| scancode_keynum == EVENT_QWERTY_F)
+				{
+					int k;
+					switch (scancode_keynum)
+					{
+						case EVENT_QWERTY_A: k=EVENT_A; break;
+						case EVENT_QWERTY_B: k=EVENT_B; break;
+						case EVENT_QWERTY_C: k=EVENT_C; break;
+						case EVENT_QWERTY_D: k=EVENT_D; break;
+						case EVENT_QWERTY_E: k=EVENT_E; break;
+						case EVENT_QWERTY_F: k=EVENT_F; break;
+						default:
+							R_ASSERT(false);
+							k=EVENT_NO;
+							break;
+					}
+					
+					dat_used_key = DAT_keypress(window, k, is_key_press);
+					//printf("=========    GOT IT 2\n");
+					goto got_used_key;
+				}
+			}
+		}
+		
+		dat_used_key = DAT_keypress(window, tevent.SubID, is_key_press);
+			
       /*
         // This code should perhaps not be commented out.
       if (dat_used_key==false){
         int scancode_keynum = OS_SYSTEM_get_qwerty_keynum(event); // e.g. using scancode.
         dat_used_key = DAT_keypress(window, scancode_keynum, is_key_press);
       }
-      */
+      */	  
     }
-    
+
+		  got_used_key:
     if (dat_used_key) {
       
       ret = true;
@@ -1766,17 +1854,16 @@ protected:
       
       if (ret==false)
 	  {
-		  const int qwerty_keynum = OS_SYSTEM_get_qwerty_keynum(event); // e.g. using scancode.
+		  const int scancode_keynum = OS_SYSTEM_get_qwerty_keynum(event); // e.g. using scancode.
+        
+		  //printf("Scancode_keynum: %d. keynum2: %d. switch: %d\n",scancode_keynum, keynum,tevent.keyswitch);
 		  
-		  //printf("keynum2: %d. switch: %d\n",keynum,tevent.keyswitch);
-		  
-		  if (qwerty_keynum==EVENT_NO)
-		  {
+		  if (scancode_keynum==EVENT_NO){
 			  //printf("Return true. Unknown key for event type %d. Key: %d\n",type, tevent.SubID);//virtual_key);
 			  return true;
 		  }
-		  
-		  tevent.SubID=qwerty_keynum;
+        
+		  tevent.SubID = scancode_keynum;
 		  ret = EventReciever(&tevent,window);
       }
     }
@@ -2104,6 +2191,7 @@ public slots:
   }
 
 };
+} // anon. namespace
 
 
 MyApplication::MyApplication(int &argc,char **argv)
@@ -4913,7 +5001,7 @@ int main(int argc, char **argv){
   
   qapplication->setAttribute(Qt::AA_DontCreateNativeWidgetSiblings); // Fix splitter handlers on OSX. Seems like a good flag to set in general. Seems like a hack qt has added to workaround bugs in qt. https://bugreports.qt.io/browse/QTBUG-33479
 
-#if !USE_QWEBENGINE
+#if !USE_QSVGVIEWER && !USE_QWEBENGINE
   QWebSettings::globalSettings()->setAttribute(QWebSettings::PluginsEnabled, false);
   #if !defined(RELEASE)
     QWebSettings::globalSettings()->setAttribute(QWebSettings::DeveloperExtrasEnabled, true);
@@ -4924,7 +5012,7 @@ int main(int argc, char **argv){
   
   g_startup_rect = QRect(QPoint(0,0), QGuiApplication::screens().at(0)->size()); //QApplication::desktop()->screenGeometry(); // Probably no point. Hoped that it would force radium to open on the same desktop that was current when program started.
 
-  printf("********* Has set startup rect %d, %d**********\n", g_startup_rect.x(), g_startup_rect.y());
+  printf("********* Has set startup rect %d, %d. W: %d. H: %d**********\n", g_startup_rect.x(), g_startup_rect.y(), g_startup_rect.width(), g_startup_rect.height());
   //getchar();
   
 #if 0

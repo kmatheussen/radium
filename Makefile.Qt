@@ -2,7 +2,7 @@
 # Users and packagers: Edit build_*.sh instead.
 #
 
-RADIUM_VERSION = 7.5.76
+RADIUM_VERSION = 7.5.77
 
 
 SHELL := /usr/bin/env bash
@@ -189,18 +189,24 @@ QT_CFLAGS ?= `$(PKGqt) --cflags Qt6Gui --cflags Qt6Network --cflags Qt6OpenGL --
 QT_LDFLAGS ?=  $(QT_UI_LDFLAGS) $(QT_SVG_LDFLAGS) $(QT_SVGWIDGETS_LDFLAGS) `$(PKGqt) --libs Qt6Gui --libs Qt6Widgets --libs Qt6Network --libs Qt6Core5Compat` $(FPIC)
 # --libs Qt6OpenGL --libs Qt6OpenGLWidgets 
 
-ifeq ($(USE_QWEBENGINE),1)
-#	If using QtWebEngine:
-	USE_QWEBENGINE_CFLAGS = -D USE_QWEBENGINE=1
-#	QT_CFLAGS += `$(PKGqt) --cflags Qt6WebEngineCore  --cflags Qt6WebEngineWidgets` 
-#	QT_LDFLAGS += `$(PKGqt) --libs Qt6WebEngineCore  --libs Qt6WebEngineWidgets`
+ifeq ($(USE_QSVGVIEWER),1)
+#  If using QSvg:
+  USE_QWEBENGINE_CFLAGS=-DUSE_QSVGVIEWER=1 -DUSE_QWEBENGINE=0
+  QT_CFLAGS += $(QT_SVG_CFLAGS)
+#  QT_LDFLAGS += ""
+else ifeq ($(USE_QWEBENGINE),1)
+#  If using QtWebEngine:
+  USE_QWEBENGINE_CFLAGS = -DUSE_QSVGVIEWER=0 -DUSE_QWEBENGINE=1
+  QT_CFLAGS += `$(PKGqt) --cflags Qt6WebEngineCore  --cflags Qt6WebEngineWidgets` 
+  QT_LDFLAGS += `$(PKGqt) --libs Qt6WebEngineCore  --libs Qt6WebEngineWidgets`
 else
-#	If using QtWebKit:
-	USE_QWEBENGINE_CFLAGS = -D USE_QWEBENGINE=0
-	QT_CFLAGS += `$(PKGqt) --cflags Qt6WebKitWidgets --cflags Qt6WebKit`
-	QT_LDFLAGS += `$(PKGqt) --libs Qt6WebKitWidgets --libs Qt6WebKit`
+#  If using QtWebKit:
+  USE_QWEBENGINE_CFLAGS = -DUSE_QSVGVIEWER=0 -DUSE_QWEBENGINE=0
+  QT_CFLAGS += `$(PKGqt) --cflags Qt6WebKitWidgets --cflags Qt6WebKit`
+  QT_LDFLAGS += `$(PKGqt) --libs Qt6WebKitWidgets --libs Qt6WebKit`
 endif
 
+# (Need separate variable for the definitions (i.e. USE_QWEBENGINE_CFLAGS) because of moc-ing.)
 QT_CFLAGS += $(USE_QWEBENGINE_CFLAGS)
 
 
@@ -604,7 +610,9 @@ WNO_SUGGEST_OVERRIDE=
 ifneq ($(BUILDTYPE), RELEASE)
 	ifdef USING_GCC
 		ifeq ($(shell test $(GCC_MAJOR) -ge 14; echo $$?),0)
-			CPPOPT += -fdiagnostics-all-candidates
+			ifneq (,$(findstring FOR_LINUX,$(OS_OPTS)))
+				CPPOPT += -fdiagnostics-all-candidates
+			endif
 		endif
 	endif
 endif
@@ -788,7 +796,14 @@ CCC_OK.touch: $(ALL_SHELL_SCRIPTS) Makefile.Qt
 	bash check_CCC_OK.sh
 
 dependencies_ok: check_dependencies.sh #Makefile
-	bash check_dependencies.sh `./find_python_path.sh` test_build
+	echo "\
+	set -xeEu;\
+	export PYTHONEXE_NOT_AVAILABLE_YET=1;\
+	./check_dependencies.sh test_build\
+	" >makescript.sh
+	bash makescript.sh
+
+#	#PYTHONEXE_NOT_AVAILABLE_YET=1 ./check_dependencies.sh test_build
 #	sh check_dependencies.sh $(PYTHONEXE) $(MOC) $(UIC)
 	touch dependencies_ok
 
@@ -1020,8 +1035,10 @@ benchmark_smoothdelay:
 packages: bin/packages/deletemetorebuild
 
 bin/packages/deletemetorebuild: bin/packages/build.sh
-	bash check_dependencies.sh `./find_python_path.sh` test_packages
 	echo "\
+	set -xeEu;\
+	export PYTHONEXE_NOT_AVAILABLE_YET=1;\
+	./check_dependencies.sh test_packages
 	cd bin/packages;\
 	./build.sh this_argument_is_not_used no \
 	" >makescript.sh
@@ -1714,7 +1731,7 @@ $(P)EditorWidget.h: $(BUILD_DEPENDENCIES)
 $(T)Qt_Main.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_instruments_proc.h $(QM)QM_MixerWidget.h Qt/helpers.h audio/SampleRecorder_proc.h common/nag.h Qt/KeyboardFocusFrame.hpp common/Process.hpp Qt/Timer.hpp
 	$(MOC) Qt/Qt_Main.cpp > Qt/mQt_Main.cpp
 	cd Qt && $(MOC) -DFOR_LINUX Timer.hpp > mTimer.hpp
-	$(CCC2) $(P)Qt_Main.cpp $(QTOPT) $(SNDFILEOPT) $(BOOST_INCLUDE) -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" -Wno-null-dereference # -Wno-deprecated-declarations -Wno-shadow 
+	$(CCC2) $(P)Qt_Main.cpp $(QTOPT) $(SNDFILEOPT) $(BOOST_INCLUDE)  -DRADIUM_VERSION=\"$(RADIUM_VERSION)\" -Wno-null-dereference  # -Wno-deprecated-declarations -Wno-shadow 
 
 $(T)Qt_SaveRestoreWindows.o:  $(BUILD_DEPENDENCIES) Qt/Qt_SaveRestoreWindows.cpp
 	$(CCC2) $(P)Qt_SaveRestoreWindows.cpp $(QTOPT)
@@ -1802,6 +1819,7 @@ $(T)Qt_instruments.o: $(BUILD_DEPENDENCIES) $(P)Qt_instruments.cpp $(INSTRUMENTS
 		$(CCC2) $(P)Qt_instruments.cpp $(QTOPT) $(SNDFILEOPT) $(QT_SVGWIDGETS_CFLAGS) $(O0) -Wno-null-dereference $(NO_ANALYZER) ; \
 	fi
 	 # ^ It takes forever to compile this file with -Og
+
 
 #	$(CLANGPLUSPLUS) $(P)Qt_instruments.cpp $(QTOPT)
 # clang++ $(P)Qt_instruments.cpp $(QTOPT)
@@ -2944,7 +2962,7 @@ $(T)SF.o: $(LIBGIG_PATH)/SF.cpp
 	$(CCC2) -c $(LIBGIG_PATH)/SF.cpp $(CPPOPT) $(LIBGIG_FLAGS)
 
 $(LIBGIG_PATH)/SF.cpp: bin/packages/libgig-4.5.1.tar.bz2
-	cd bin/packages && rm -fr libgig && tar xvjf libgig-4.5.1.tar.bz2 && mv libgig-4.5.1 libgig && touch $(LIBGIG_PATH)/SF.cpp
+	cd bin/packages && rm -fr libgig && tar xvjf libgig-4.5.1.tar.bz2 && mv libgig-4.5.1 libgig && touch $(LIBGIG_PATH)/SF.cpp && patch -p0 <libgig_win32.patch && echo "#define VER_STRING \"4.5.1\"" >$(LIBGIG_PATH)/../win32/libgig_private.h
 
 $(T)radium_s7_wrap.o: api/radium_s7_wrap.c 
 	$(CC2) api/radium_s7_wrap.c $(OPT) -Ibin/packages/s7

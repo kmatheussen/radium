@@ -264,6 +264,7 @@ export OS_JUCE_LDFLAGS="-lasound -pthread -lrt -lX11 -lXext "
 FLUIDSYNTH_LDFLAGS="bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a `$PKG --libs glib-2.0`"
 export OS_LDFLAGS="$QSCINTILLA_PATH/libqscintilla2_qt6.a $FAUSTLDFLAGS $PDLDFLAGS pluginhost/Builds/Linux/build/libMyPluginHost.a $OS_JUCE_LDFLAGS `$PKG --libs lrdf` $GCDIR/.libs/libgc.a $PYTHONLIBPATH $PYTHONLIBNAME `$PKG --libs sndfile` `$PKG --libs samplerate` `$PKG --libs liblo` -lxcb -lxkbcommon-x11 -lxkbcommon $FLUIDSYNTH_LDFLAGS $RADIUM_BFD_LDFLAGS -liberty `$PKG --libs freetype2`"
 #`$PKGqt --libs Qt6X11Extras`"
+# -lX11-xcb -lxcb-keysyms 
 
 if [[ $RADIUM_USE_CLANG == 0 ]] ; then
     export OS_LDFLAGS2="-ldl "

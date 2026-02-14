@@ -6,66 +6,69 @@
 
 #define _LOOKUP_TABLE_H_
 
+namespace
+{
+	
 //**********************************************************************
 
-extern LookupTable noteOffDelayTime;
+extern const LookupTable noteOffDelayTime;
 
 /* pianoDriverC.sb */
 /* Coupling Filter */
 
-extern LookupTable singleStringDecayRate;
-extern LookupTable singleStringZero;
-extern LookupTable singleStringPole;
-extern LookupTable releaseLoopGain;
-extern LookupTable detuningHz;
-extern LookupTable stiffnessCoefficient;
-extern LookupTable strikePosition;
-extern LookupTable EQGain;
-extern LookupTable EQBandwidthFactor;
+extern const LookupTable singleStringDecayRate;
+extern const LookupTable singleStringZero;
+extern const LookupTable singleStringPole;
+extern const LookupTable releaseLoopGain;
+extern const LookupTable detuningHz;
+extern const LookupTable stiffnessCoefficient;
+extern const LookupTable strikePosition;
+extern const LookupTable EQGain;
+extern const LookupTable EQBandwidthFactor;
 
 /* PianoDriverA */
 /* HammerFilter */
-extern LookupTable loudPole;
-extern LookupTable softPole;
-extern LookupTable normalizedVelocity;
-extern LookupTable loudGain;
-extern LookupTable softGain;
+extern const LookupTable loudPole;
+extern const LookupTable softPole;
+extern const LookupTable normalizedVelocity;
+extern const LookupTable loudGain;
+extern const LookupTable softGain;
 
 
 /* Soundboard */
-extern LookupTable sustainPedalLevel;
-extern LookupTable DryTapAmpT60;
-extern double DryTapAmpCurrent;
-extern LookupTable DCBa1;
+extern const LookupTable sustainPedalLevel;
+extern const LookupTable DryTapAmpT60;
+extern const double DryTapAmpCurrent;
+extern const LookupTable DCBa1;
 
 
 /* pianoDriverB */
 /* High Notes */
-extern LookupTable secondStageAmpRatio;
-extern LookupTable r1_1db;
-extern LookupTable r1_2db;
-extern LookupTable r2db;
-extern LookupTable r3db;
-extern LookupTable secondPartialFactor;
-extern LookupTable thirdPartialFactor;
-extern LookupTable bq4_gEarBalled;
+extern const LookupTable secondStageAmpRatio;
+extern const LookupTable r1_1db;
+extern const LookupTable r1_2db;
+extern const LookupTable r2db;
+extern const LookupTable r3db;
+extern const LookupTable secondPartialFactor;
+extern const LookupTable thirdPartialFactor;
+extern const LookupTable bq4_gEarBalled;
 
 //***************************************************************
 
 /* PianoDriver.sb */
-double noteOffDelayTime_points[5*2] = {
+const double noteOffDelayTime_points[5*2] = {
 	89.000,3.000,
 	93.000,2.000,
 	95.000,1.500,
 	99.782,1.020,
 	108.000,0.300,
 };
-LookupTable noteOffDelayTime(&noteOffDelayTime_points[0], 5);
+const LookupTable noteOffDelayTime(&noteOffDelayTime_points[0], 5);
 
 /* pianoDriverC.sb */
 /* Coupling Filter */
 
-double singleStringDecayRate_points[17*2] = {
+const double singleStringDecayRate_points[17*2] = {
 	21.000,-1.500,
 	24.000,-1.500,
 	28.000,-1.500,
@@ -84,9 +87,9 @@ double singleStringDecayRate_points[17*2] = {
 	95.684,-13.934,
 	99.000,-15.000
 };
-LookupTable singleStringDecayRate(&singleStringDecayRate_points[0], 17);
+const LookupTable singleStringDecayRate(&singleStringDecayRate_points[0], 17);
 
-double singleStringZero_points[17*2] = {
+const double singleStringZero_points[17*2] = {
 	21.000,-1.000,
 	24.000,-1.000,
 	28.000,-1.000,
@@ -104,9 +107,9 @@ double singleStringZero_points[17*2] = {
 	88.000,-0.060,
 	96.000,-0.050,
 	99.000,-0.050	};
-LookupTable singleStringZero(&singleStringZero_points[0], 17);
+const LookupTable singleStringZero(&singleStringZero_points[0], 17);
 
-double singleStringPole_points[17*2] = {
+const double singleStringPole_points[17*2] = {
 	21.000,0.350,
 	24.604,0.318,
 	26.335,0.279,
@@ -124,9 +127,9 @@ double singleStringPole_points[17*2] = {
 	88.000,0.000,
 	96.000,0.000,
 	99.000,0.000	};
-LookupTable singleStringPole(&singleStringPole_points[0], 17);
+const LookupTable singleStringPole(&singleStringPole_points[0], 17);
 
-double releaseLoopGain_points[10*2] = {
+const double releaseLoopGain_points[10*2] = {
 	21.000,0.865,
 	24.000,0.880,
 	29.000,0.896,
@@ -137,9 +140,9 @@ double releaseLoopGain_points[10*2] = {
 	84.000,0.988,
 	88.000,0.997,
 	99.000,0.988	};
-LookupTable releaseLoopGain(&releaseLoopGain_points[0], 10);
+const LookupTable releaseLoopGain(&releaseLoopGain_points[0], 10);
 
-double detuningHz_points[18*2] = {
+const double detuningHz_points[18*2] = {
 	21.000,0.003,
 	24.000,0.003,
 	28.000,0.003,
@@ -158,9 +161,9 @@ double detuningHz_points[18*2] = {
 	92.116,0.664,
 	95.844,0.793,
 	99.000,1.000	};
-LookupTable detuningHz(&detuningHz_points[0], 18);
+const LookupTable detuningHz(&detuningHz_points[0], 18);
 
-double stiffnessCoefficient_points[10*2] = {
+const double stiffnessCoefficient_points[10*2] = {
 	21.000,-0.850,
 	23.595,-0.850,
 	27.055,-0.830,
@@ -171,9 +174,9 @@ double stiffnessCoefficient_points[10*2] = {
 	73.625,-0.036,
 	93.810,-0.006,
 	99.000,1.011	};
-LookupTable stiffnessCoefficient(&stiffnessCoefficient_points[0], 10);
+const LookupTable stiffnessCoefficient(&stiffnessCoefficient_points[0], 10);
 
-double strikePosition_points[12*2] = {
+const double strikePosition_points[12*2] = {
 	21.000,0.050,
 	24.000,0.050,
 	28.000,0.050,
@@ -186,9 +189,9 @@ double strikePosition_points[12*2] = {
 	84.000,0.125,
 	96.000,0.125,
 	99.000,0.125	};
-LookupTable strikePosition(&strikePosition_points[0], 12);
+const LookupTable strikePosition(&strikePosition_points[0], 12);
 
-double EQGain_points[14*2] = {
+const double EQGain_points[14*2] = {
 	21.000,2.000,
 	24.000,2.000,
 	28.000,2.000,
@@ -203,9 +206,9 @@ double EQGain_points[14*2] = {
 	74.201,0.477,
 	91.791,1.000,
 	99.000,1.000	};
-LookupTable EQGain(&EQGain_points[0], 14);
+const LookupTable EQGain(&EQGain_points[0], 14);
 
-double EQBandwidthFactor_points[13*2] = {
+const double EQBandwidthFactor_points[13*2] = {
 	21.000,5.000,
 	24.112,5.000,
 	28.000,5.000,
@@ -219,13 +222,13 @@ double EQBandwidthFactor_points[13*2] = {
 	72.862,1.525,
 	80.404,2.788,
 	97.659,1.739	};
-LookupTable EQBandwidthFactor(&EQBandwidthFactor_points[0], 13);
+const LookupTable EQBandwidthFactor(&EQBandwidthFactor_points[0], 13);
 
 
 /* PianoDriverA */
 /* HammerFilter */
 
-double loudPole_points[19*2] = {
+const double loudPole_points[19*2] = {
 	21.000,0.875,
 	23.719,0.871,
 	27.237,0.836,
@@ -245,9 +248,9 @@ double loudPole_points[19*2] = {
 	96.463,0.848,
 	103.512,0.840,
 	107.678,0.840	};
-LookupTable loudPole(&loudPole_points[0], 19);
+const LookupTable loudPole(&loudPole_points[0], 19);
 
-double softPole_points[16*2] = {
+const double softPole_points[16*2] = {
 	21.000,0.990,
 	24.000,0.990,
 	28.000,0.990,
@@ -264,9 +267,9 @@ double softPole_points[16*2] = {
 	91.157,0.990,
 	100.982,0.970,
 	104.205,0.950	};
-LookupTable softPole(&softPole_points[0], 16);
+const LookupTable softPole(&softPole_points[0], 16);
 
-double normalizedVelocity_points[8*2] = {
+const double normalizedVelocity_points[8*2] = {
 	0.000,0.000,
 	0.170,0.318,
 	0.316,0.546,
@@ -275,9 +278,9 @@ double normalizedVelocity_points[8*2] = {
 	0.717,0.894,
 	0.841,0.945,
 	1.000,1.000	};
-LookupTable normalizedVelocity(&normalizedVelocity_points[0], 8);
+const LookupTable normalizedVelocity(&normalizedVelocity_points[0], 8);
 
-double loudGain_points[16*2] = {
+const double loudGain_points[16*2] = {
 	21.873,0.891,
 	25.194,0.870,
 	30.538,0.848,
@@ -294,9 +297,9 @@ double loudGain_points[16*2] = {
 	95.668,1.296,
 	99.000,1.300,
 	100.000,1.100	};
-LookupTable loudGain(&loudGain_points[0], 16);
+const LookupTable loudGain(&loudGain_points[0], 16);
 
-double softGain_points[15*2] = {
+const double softGain_points[15*2] = {
 	20.865,0.400,
 	22.705,0.400,
 	25.960,0.400,
@@ -312,12 +315,12 @@ double softGain_points[15*2] = {
 	88.311,0.450,
 	93.040,0.500,
 	96.434,0.500	};
-LookupTable softGain(&softGain_points[0], 15);
+const LookupTable softGain(&softGain_points[0], 15);
 
 
 /* Soundboard */
 
-double sustainPedalLevel_points[13*2] = {
+const double sustainPedalLevel_points[13*2] = {
 	21.000,0.050,
 	24.000,0.050,
 	31.000,0.030,
@@ -331,9 +334,9 @@ double sustainPedalLevel_points[13*2] = {
 	90.000,0.003,
 	96.000,0.003,
 	108.000,0.002	};
-LookupTable sustainPedalLevel(&sustainPedalLevel_points[0], 13);
+const LookupTable sustainPedalLevel(&sustainPedalLevel_points[0], 13);
 
-double DryTapAmpT60_points[16*2] = {
+const double DryTapAmpT60_points[16*2] = {
 	21.001,0.491,
 	26.587,0.498,
 	34.249,0.470,
@@ -350,11 +353,11 @@ double DryTapAmpT60_points[16*2] = {
 	97.319,0.469,
 	102.400,0.500,
 	107.198,0.494	};
-LookupTable DryTapAmpT60(&DryTapAmpT60_points[0], 16);
+const LookupTable DryTapAmpT60(&DryTapAmpT60_points[0], 16);
 
-double DryTapAmpCurrent = 0.15;
+const double DryTapAmpCurrent = 0.15;
 
-double DCBa1_points[18*2] = {
+const double DCBa1_points[18*2] = {
 	21.000,-0.999,
 	24.000,-0.999,
 	30.000,-0.999,
@@ -373,61 +376,61 @@ double DCBa1_points[18*2] = {
 	100.000,-0.850,
 	104.634,-0.700,
 	107.518,-0.500	};
-LookupTable DCBa1(&DCBa1_points[0], 18);
+const LookupTable DCBa1(&DCBa1_points[0], 18);
 
 /* pianoDriverB */
 /* High Notes */
 
-double secondStageAmpRatio_points[6*2] = {
+const double secondStageAmpRatio_points[6*2] = {
 	82.277,-18.508,
 	88.000,-30.000,
 	90.000,-30.000,
 	93.451,-30.488,
 	98.891,-30.633,
 	107.573,-30.633	};
-LookupTable secondStageAmpRatio(&secondStageAmpRatio_points[0], 6);
+const LookupTable secondStageAmpRatio(&secondStageAmpRatio_points[0], 6);
 
-double r1_1db_points[3*2] = {
+const double r1_1db_points[3*2] = {
 	100.000,-75.000,
 	103.802,-237.513,
 	108.000,-400.000	};
-LookupTable r1_1db(&r1_1db_points[0], 3);
+const LookupTable r1_1db(&r1_1db_points[0], 3);
 
-double r1_2db_points[4*2] = {
+const double r1_2db_points[4*2] = {
 	98.388,-16.562,
 	100.743,-75.531,
 	103.242,-154.156,
 	108.000,-300.000	};
-LookupTable r1_2db(&r1_2db_points[0], 4);
+const LookupTable r1_2db(&r1_2db_points[0], 4);
 
-double r2db_points[2*2] = {
+const double r2db_points[2*2] = {
 	100.000,-115.898,
 	107.858,-250.000	};
-LookupTable r2db(&r2db_points[0], 2);
+const LookupTable r2db(&r2db_points[0], 2);
 
-double r3db_points[2*2] = {
+const double r3db_points[2*2] = {
 	100.000,-150.000,
 	108.000,-400.000	};
-LookupTable r3db(&r3db_points[0], 2);
+const LookupTable r3db(&r3db_points[0], 2);
 
-double secondPartialFactor_points[2*2] = {
+const double secondPartialFactor_points[2*2] = {
 	88.000,2.000,
 	108.000,2.100	};
-LookupTable secondPartialFactor(&secondPartialFactor_points[0], 2);
+const LookupTable secondPartialFactor(&secondPartialFactor_points[0], 2);
 
-double thirdPartialFactor_points[2*2] = {
+const double thirdPartialFactor_points[2*2] = {
 	88.000,3.100,
 	108.000,3.100	};
-LookupTable thirdPartialFactor(&thirdPartialFactor_points[0], 2);
+const LookupTable thirdPartialFactor(&thirdPartialFactor_points[0], 2);
 
-double bq4_gEarBalled_points[6*2] = {
+const double bq4_gEarBalled_points[6*2] = {
 	100.000,0.040,
 	102.477,0.100,
 	104.518,0.300,
 	106.000,0.500,
 	107.000,1.000,
 	108.000,1.500	};
-LookupTable bq4_gEarBalled(&bq4_gEarBalled_points[0], 6);
+const LookupTable bq4_gEarBalled(&bq4_gEarBalled_points[0], 6);
 
 //************************************************************************
 
@@ -529,7 +532,7 @@ float getValueReleaseLoopGain(float index){
 
 //Harpsichord
 
-double loopFilterb0_points[18*2] = {
+const double loopFilterb0_points[18*2] = {
 	35.000,0.94373,
 	36.000,0.94731,
 	46.000,0.94731,
@@ -549,14 +552,14 @@ double loopFilterb0_points[18*2] = {
 	86.000,0.98462,
 	87.000,0.98611,
 };
-extern LookupTable loopFilterb0;
-LookupTable loopFilterb0(&loopFilterb0_points[0], 18);
+extern const LookupTable loopFilterb0;
+const LookupTable loopFilterb0(&loopFilterb0_points[0], 18);
 
 float getValueLoopFilterb0(float index){
 	return loopFilterb0.getValue(index);
 }
 
-double loopFilterb1_points[18*2] = {
+const double loopFilterb1_points[18*2] = {
 	35.000,0.60010,
 	36.000,-0.59124,
 	46.000,-0.59124,
@@ -576,14 +579,14 @@ double loopFilterb1_points[18*2] = {
 	86.000,0.85655,
 	87.000,0.68851,
 };
-extern LookupTable loopFilterb1;
-LookupTable loopFilterb1(&loopFilterb1_points[0], 18);
+extern const LookupTable loopFilterb1;
+const LookupTable loopFilterb1(&loopFilterb1_points[0], 18);
 
 float getValueLoopFilterb1(float index){
 	return loopFilterb1.getValue(index);
 }
 
-double loopFilterb2_points[18*2] = {
+const double loopFilterb2_points[18*2] = {
 	35.000,-0.00360,
 	36.000,-0.12249,
 	46.000,-0.12249,
@@ -603,14 +606,14 @@ double loopFilterb2_points[18*2] = {
 	86.000,0.24937,
 	87.000,0.14838,
 };
-extern LookupTable loopFilterb2;
-LookupTable loopFilterb2(&loopFilterb2_points[0], 18);
+extern const LookupTable loopFilterb2;
+const LookupTable loopFilterb2(&loopFilterb2_points[0], 18);
 
 float getValueLoopFilterb2(float index){
 	return loopFilterb2.getValue(index);
 }
 
-double loopFiltera1_points[18*2] = {
+const double loopFiltera1_points[18*2] = {
 	35.000,0.5941,
 	36.000,-0.65928,
 	46.000,-0.65928,
@@ -630,14 +633,14 @@ double loopFiltera1_points[18*2] = {
 	86.000,0.85396,
 	87.000,0.68332,
 };
-extern LookupTable loopFiltera1;
-LookupTable loopFiltera1(&loopFiltera1_points[0], 18);
+extern const LookupTable loopFiltera1;
+const LookupTable loopFiltera1(&loopFiltera1_points[0], 18);
 
 float getValueLoopFiltera1(float index){
 	return loopFiltera1.getValue(index);
 }
 
-double loopFiltera2_points[18*2] = {
+const double loopFiltera2_points[18*2] = {
 	35.000,-0.02641,
 	36.000,-0.10275,
 	46.000,-0.10275,
@@ -657,8 +660,8 @@ double loopFiltera2_points[18*2] = {
 	86.000,0.24405,
 	87.000,0.14370,
 };
-extern LookupTable loopFiltera2;
-LookupTable loopFiltera2(&loopFiltera2_points[0], 18);
+extern const LookupTable loopFiltera2;
+const LookupTable loopFiltera2(&loopFiltera2_points[0], 18);
 
 float getValueLoopFiltera2(float index){
 	return loopFiltera2.getValue(index);
@@ -666,7 +669,7 @@ float getValueLoopFiltera2(float index){
 
 //bass
 
-double bassLoopFilterb0_points[19*2] = {
+const double bassLoopFilterb0_points[19*2] = {
 	24.000,0.54355,
 	26.000,0.54355,
 	27.000,0.55677,
@@ -687,14 +690,14 @@ double bassLoopFilterb0_points[19*2] = {
 	63.000,0.94594,
 	65.000,0.91820,
 };
-extern LookupTable bassLoopFilterb0;
-LookupTable bassLoopFilterb0(&bassLoopFilterb0_points[0], 18);
+extern const LookupTable bassLoopFilterb0;
+const LookupTable bassLoopFilterb0(&bassLoopFilterb0_points[0], 18);
 
 float getValueBassLoopFilterb0(float index){
 	return bassLoopFilterb0.getValue(index);
 }
 
-double bassLoopFilterb1_points[19*2] = {
+const double bassLoopFilterb1_points[19*2] = {
 	24.000,-0.36586,
 	26.000,-0.36586,
 	27.000,-0.37628,
@@ -715,14 +718,14 @@ double bassLoopFilterb1_points[19*2] = {
 	63.000,-0.83230,
 	65.000,-0.83230,
 };
-extern LookupTable bassLoopFilterb1;
-LookupTable bassLoopFilterb1(&bassLoopFilterb1_points[0], 18);
+extern const LookupTable bassLoopFilterb1;
+const LookupTable bassLoopFilterb1(&bassLoopFilterb1_points[0], 18);
 
 float getValueBassLoopFilterb1(float index){
 	return bassLoopFilterb1.getValue(index);
 }
 
-double bassLoopFiltera1_points[19*2] = {
+const double bassLoopFiltera1_points[19*2] = {
 	24.000,-0.81486,
 	26.000,-0.81486,
 	27.000,-0.81147,
@@ -743,9 +746,11 @@ double bassLoopFiltera1_points[19*2] = {
 	63.000,-0.88537,
 	65.000,-0.88537,
 };
-extern LookupTable bassLoopFiltera1;
-LookupTable bassLoopFiltera1(&bassLoopFiltera1_points[0], 18);
+extern const LookupTable bassLoopFiltera1;
+const LookupTable bassLoopFiltera1(&bassLoopFiltera1_points[0], 18);
 
 float getValueBassLoopFiltera1(float index){
 	return bassLoopFiltera1.getValue(index);
 }
+
+} // anon. namespace
