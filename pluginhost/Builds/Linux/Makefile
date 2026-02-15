@@ -39,10 +39,20 @@ endif
 
 # -I~/SDKs/VST_SDK/VST3_SDK -I ~/SDKs/VST_SDK/VST2_SDK/ -I ~/SDKs/VST3\ SDK
 
-ifeq (,$(findstring clang,$(CXX)))
+# The result value of findstring is so confusing, always, so, minimize usage of it.
+ifneq (,$(findstring clang,$(CXX)))
+	USING_CLANG = 1
+else
+	USING_GCC = 1
+endif
+
+ifdef USING_CLANG
+	COMMONCPPFLAGS += -Wno-deprecated-copy-with-user-provided-copy
+endif
+
+ifdef USING_GCC
 	COMMONCPPFLAGS += -Wno-class-memaccess 
 	COMMONCPPFLAGS += -Wno-deprecated-copy
-	COMMONCPPFLAGS += -Wno-deprecated-copy-with-user-provided-copy
 endif
 
 
