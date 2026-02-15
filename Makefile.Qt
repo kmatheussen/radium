@@ -2101,8 +2101,8 @@ $(T)api_common.o:  $(BUILD_DEPENDENCIES)  $(API)api_common.cpp
 $(T)api_keyplay.o:  $(BUILD_DEPENDENCIES)  $(API)api_keyplay.c
 	$(CC2)  $(API)api_keyplay.c $(OPT)
 
-$(T)api_keyplayedit.o:  $(BUILD_DEPENDENCIES)  $(API)api_keyplayedit.c 
-	$(CC2)  $(API)api_keyplayedit.c $(OPT)
+$(T)api_keyplayedit.o:  $(BUILD_DEPENDENCIES)  $(API)api_keyplayedit.cpp
+	$(CCC2)  $(API)api_keyplayedit.cpp $(QTOPT)
 
 $(T)api_navigate.o:  $(BUILD_DEPENDENCIES)  $(API)api_navigate.cpp
 	$(CCC2)  $(API)api_navigate.cpp $(CPPOPT)

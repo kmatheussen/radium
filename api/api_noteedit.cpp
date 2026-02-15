@@ -246,6 +246,26 @@ void setAutoRepeat(bool doit){
 }
 
 
+static bool g_do_addNotesWhenReleasingKeys = true;
+
+bool doAddNotesWhenReleasingKeys(void){
+  static bool has_inited = false;
+
+  if (has_inited==false)
+  {
+	  g_do_addNotesWhenReleasingKeys = SETTINGS_read_bool("add_notes_when_releasing_keys", true);
+	  has_inited = true;
+  }
+
+  return g_do_addNotesWhenReleasingKeys;
+}
+
+void setAddNotesWhenReleasingKeys(bool doit){
+  g_do_addNotesWhenReleasingKeys = doit;
+  SETTINGS_write_bool("add_notes_when_releasing_keys", doit);
+}
+
+
 static bool g_do_range_paste_cut = true;
 
 bool doRangePasteCut(void){
