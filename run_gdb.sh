@@ -178,6 +178,12 @@ if $dostartnow_workaround ; then
 	xdotool type $'r\n'
 fi
 
+#export QT_OPENGL=software
+#export QT_XCB_FORCE_SOFTWARE_OPENGL=1
+#export LIBGL_ALWAYS_SOFTWARE=1
+#export QT_QUICK_BACKEND=software
+#export QT_QPA_PLATFORM=offscreen
+
 G_DEBUG="fatal-warnings,gc-friendly" USE=libedit/readline $debugger $debugger_argline $EXECUTABLE $@
 ret=$?
 
