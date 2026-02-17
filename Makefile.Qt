@@ -1070,7 +1070,7 @@ start_bin.sh:
 	time $(LINKER) -Xlinker --preload `cat buildtype.opt` $(OBJ) $(OS_OBJS) -o $(RADIUM_BIN) -g $(VL_LDFLAGS) $(OS_LDFLAGS) $(JACK_LDFLAGS) $(QTLINKFLAGS) $(OS_LDFLAGS2)
 	touch /tmp/run_preload
 
-$(RADIUM_BIN): $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a $(OS_DEPS)
+$(RADIUM_BIN): $(OBJ) $(MAKEFILE) bin/packages/fluidsynth-2.5.2/src/libfluidsynth.a $(OS_DEPS)
 	@echo
 	@echo "Changed ($(RADIUM_BIN)):"
 	@echo $?
@@ -2343,7 +2343,7 @@ $(T)FluidSynth_plugin.o: audio/FluidSynth_plugin.cpp
 #`$(PKG) --cflags fluidsynth`
 
 $(T)Pd_plugin.o: audio/Pd_plugin.cpp
-	$(CCC2) -Ibin/packages/fluidsynth-1.1.6/include $(QTOPT) `$(PKG) --cflags glib-2.0` audio/Pd_plugin.cpp -Ibin/packages/libpd-master/libpds -Ibin/packages/libpd-master/libpd_wrapper -Ibin/packages/libpd-master/pure-data/src
+	$(CCC2) -Ibin/packages/fluidsynth-2.5.2/include $(QTOPT) `$(PKG) --cflags glib-2.0` audio/Pd_plugin.cpp -Ibin/packages/libpd-master/libpds -Ibin/packages/libpd-master/libpd_wrapper -Ibin/packages/libpd-master/pure-data/src
 
 
 $(T)Modulator_plugin.o: audio/Modulator_plugin.cpp audio/Delay.hpp
@@ -2943,8 +2943,8 @@ $(T)RIFF.o: $(LIBGIG_PATH)/RIFF.cpp
 $(T)SF.o: $(LIBGIG_PATH)/SF.cpp
 	$(CCC2) -c $(LIBGIG_PATH)/SF.cpp $(CPPOPT) $(LIBGIG_FLAGS)
 
-$(LIBGIG_PATH)/SF.cpp: bin/packages/libgig-4.5.1.tar.bz2
-	cd bin/packages && rm -fr libgig && tar xvjf libgig-4.5.1.tar.bz2 && mv libgig-4.5.1 libgig && touch $(LIBGIG_PATH)/SF.cpp
+$(LIBGIG_PATH)/SF.cpp: bin/packages/libgig-4.5.1-patched.tar.bz2
+	cd bin/packages && rm -fr libgig && tar xvjf libgig-4.5.1-patched.tar.bz2 && mv libgig-4.5.1-patched libgig && touch $(LIBGIG_PATH)/SF.cpp
 
 $(T)radium_s7_wrap.o: api/radium_s7_wrap.c 
 	$(CC2) api/radium_s7_wrap.c $(OPT) -Ibin/packages/s7

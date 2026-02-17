@@ -27,7 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define FLUIDSYNTH_DLL_EXPORTS 1
 #endif
 
-#include "../bin/packages/fluidsynth-1.1.6/include/fluidsynth.h"
+#include "../bin/packages/fluidsynth-2.5.2/include/fluidsynth.h"
 
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"
@@ -152,7 +152,6 @@ static void sendnoteon(Data *data, int chan, short key, int velocity, unsigned i
   if(velocity>127) // not supported by fluidsynth
     velocity=127;
 
-  fluid_event_clear(data->event);
   fluid_event_set_source(data->event, -1);
   fluid_event_set_dest(data->event, data->synth_seq_ID);
   fluid_event_noteon(data->event, chan, key, velocity);
@@ -170,7 +169,6 @@ static void sendnoteoff(Data *data, int chan, short key, int velocity, unsigned 
   if(velocity>127) // not supported by fluidsynth
     velocity=127;
 
-  fluid_event_clear(data->event);
   fluid_event_set_source(data->event, -1);
   fluid_event_set_dest(data->event, data->synth_seq_ID);
   fluid_event_noteoff(data->event, chan, key);
@@ -184,7 +182,6 @@ static void sendcontrolchange(Data *data, int chan, int cc, int val, int time)
 {
   int fluid_res;
 
-  fluid_event_clear(data->event);
   fluid_event_set_source(data->event, -1);
   fluid_event_set_dest(data->event, data->synth_seq_ID);
   fluid_event_control_change(data->event, chan, cc, val);
@@ -198,7 +195,6 @@ static void sendpitchbend(Data *data, int chan, int pitch, int time)
 {
   int fluid_res;
 
-  fluid_event_clear(data->event);
   fluid_event_set_source(data->event, -1);
   fluid_event_set_dest(data->event, data->synth_seq_ID);
   fluid_event_pitch_bend(data->event, chan, pitch);
@@ -401,21 +397,21 @@ static Data *create_data(filepath_t filename, float samplerate){
     return NULL;
   }
 
-  if(fluid_settings_setnum(data->settings, "synth.sample-rate", samplerate)==0){
+  if(fluid_settings_setnum(data->settings, "synth.sample-rate", samplerate)==FLUID_FAILED){
     GFX_Message(NULL, "Unable to set sample rate of fluidsynth to %f\n",samplerate);
     //delete_data(data);
     //return NULL;
   }
 
-  if(fluid_settings_setint(data->settings, "synth.threadsafe-api", 0)==0){
+  if(fluid_settings_setint(data->settings, "synth.threadsafe-api", 0)==FLUID_FAILED){
     printf("Unable to set threadsafe-api to 0 (we don't need it)\n");
   }
 
-  if(fluid_settings_setint(data->settings, "synth.chorus.active", 0)==0){
+  if(fluid_settings_setint(data->settings, "synth.chorus.active", 0)==FLUID_FAILED){
     printf("Unable to set synth.chorus.active to 0 (we don't use it)\n");
   }
 
-  if(fluid_settings_setint(data->settings, "synth.reverb.active", 0)==0){
+  if(fluid_settings_setint(data->settings, "synth.reverb.active", 0)==FLUID_FAILED){
     printf("Unable to set synth.reverb.active to 0 (we don't use it)\n");
   }
 
@@ -534,6 +530,7 @@ bool FLUIDSYNTH_set_new_preset(SoundPlugin *plugin, filepath_t sf2_file, int ban
 
   fluid_synth_bank_select(data->synth,0,bank_num);
   fluid_synth_program_change(data->synth,0,preset_num);
+  fluid_synth_set_gain(data->synth,1.0);
 
   volatile struct Patch *patch = plugin->patch;
   if(patch != NULL)

@@ -224,21 +224,41 @@ build_gc() {
 
 build_fluidsynth() {
 
-    rm -fr fluidsynth-1.1.6
-    tar xvzf fluidsynth-1.1.6.tar.gz
-    cd fluidsynth-1.1.6
-    make clean
-    CFLAGS="-fPIC -fno-strict-aliasing -O3 -DDEFAULT_SOUNDFONT=\\\"\\\"" CPPFLAGS="-fPIC -fno-strict-aliasing -O3" CXXFLAGS="-fPIC -fno-strict-aliasing -O3" ./configure --enable-static --disable-aufile-support --disable-pulse-support --disable-alsa-support --disable-libsndfile-support --disable-portaudio-support --disable-oss-support --disable-midishare --disable-jack-support --disable-coreaudio --disable-coremidi --disable-dart --disable-lash --disable-ladcca --disable-aufile-support --disable-dbus-support --without-readline
-    # --enable-debug
+    rm -fr fluidsynth-2.5.2
+    tar xvzf fluidsynth-2.5.2.tar.gz
+    cd fluidsynth-2.5.2
+    cmake . \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DBUILD_SHARED_LIBS=OFF \
+        -Denable-ladspa=OFF \
+        -Denable-aufile=OFF \
+        -Denable-pulseaudio=OFF \
+        -Denable-alsa=OFF \
+        -Denable-libsndfile=OFF \
+        -Denable-portaudio=OFF \
+        -Denable-oss=OFF \
+        -Denable-midishare=OFF \
+        -Denable-jack=OFF \
+        -Denable-coreaudio=OFF \
+        -Denable-coremidi=OFF \
+        -Denable-dart=OFF \
+        -Denable-lash=OFF \
+        -Denable-dbus=OFF \
+        -Denable-readline=OFF \
+        -Denable-pipewire=OFF \
+        -Denable-sdl2=OFF \
+        -Denable-openmp=OFF \
+        -DCMAKE_C_FLAGS="-fPIC -fno-strict-aliasing -O3" \
+        -DCMAKE_CXX_FLAGS="-fPIC -fno-strict-aliasing -O3"
     make -j8
-    cd ..
+    cd ../..
 }
 
 build_libgig () {
 
     rm -fr libgig
-    tar xvjf libgig-4.2.0.tar.bz2
-    mv libgig-4.2.0 libgig
+    tar xvf libgig-4.2.0-patched.tar.xz
+    mv libgig-4.2.0-patched libgig
     cd libgig
     make clean
     CFLAGS="-O3 -fno-strict-aliasing" CPPFLAGS="-O3 -fno-strict-aliasing" CXXFLAGS="-O3 -fno-strict-aliasing" CC=$DASCC CXX=$DASCXX ./configure
@@ -296,16 +316,16 @@ build_xcb() {
     fi
 }
 
-source ./build_python27.sh
+#source ./build_python27.sh
 
-build_Visualization-Library
+#build_Visualization-Library
 
-build_faust
-build_qhttpserver
-build_gc
+#build_faust
+#build_qhttpserver
+#build_gc
 build_fluidsynth
-build_python27
-build_qscintilla # Note: Linking fails on Mac. Just ignore it.
+#build_python27
+#build_qscintilla # Note: Linking fails on Mac. Just ignore it.
 
 if uname -s |grep Linux ; then
     if ! arch |grep -e arm -e aarch64 ; then
