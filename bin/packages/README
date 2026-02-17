@@ -1,307 +1,67 @@
-Home
-====
-  You can always find the latest version of libgig at:
-  https://www.linuxsampler.org/libgig/
-
-Content
-=======
-  libgig actually consists of three major parts:
-
-  - RIFF classes (RIFF.h, RIFF.cpp): Provides convenient methods to parse and
-                                     access arbitrary RIFF files.
-  - DLS classes (DLS.h, DLS.cpp):    They're using the RIFF classes to parse
-                                     DLS (Downloadable Sounds) Level 1 and 2
-                                     files and provide abstract access to the
-                                     data.
-  - gig classes (gig.h, gig.cpp):    These are based on the DLS classes and
-                                     provide the necessary extensions for
-                                     the Gigasampler/GigaStudio file format.
-
-  Despite its name, libgig also provides (since version 4.0.0) support for
-  other sampler file formats as well:
-
-  - SoundFont classes (SF.h, SF.cpp):  They provide support for the very popular
-                                       SoundFont v1 and v2 format (.sf2).
-
-  - KORG classes (Korg.h, Korg.cpp):   Provides support for sample based sounds
-                                       used on many KORG synthesizer keyboards.
-
-  - Akai classes (Akai.h):             Currently S1000, S01, S2000 and S3000
-                                       series are supported.
-
-  Additionally libgig contains the following separate API:
-
-  - Serialization classes (Serialization.h, Serialization.cpp):
-                                       Framework to serialize and deserialize
-                                       the runtime state of native C++ objects
-                                       (for saving and restoring their states
-                                       as abstract data).
-
-  Beside the actual library there are following example applications:
-
-    gigdump:     Demo app that prints out the content of a .gig file.
-    gigextract:  Extracts samples from a .gig file.
-    gigmerge:    Merges several .gig files to one .gig file.
-    gig2mono:    Converts .gig files from stereo to mono.
-    gig2stereo:  Converts .gig files to true interleaved stereo sounds.
-    wav2gig:     Creates a new .gig file from a set of .wav files.
-    dlsdump:     Demo app that prints out the content of a DLS file.
-    korgdump:    Prints out the content of the various KORG file types.
-    korg2gig:    Convert KORG sound file to Gigasampler/GigaStudio format.
-    sf2dump:     Prints out the content of a .sf2 file.
-    sf2extract:  Extracts audio samples from a .sf2 file.
-    rifftree:    Tool that prints out the RIFF tree of an arbitrary RIFF
-                 file.
-    akaidump:    Dump an AKAI media i.e. from a CDROM drive as disk image file
-                 to your hard disk drive.
-    akaiextract: Extracts samples from an Akai disk image, either from a media
-                 (i.e. CDROM or Zip drive) for from a AKAI disk image file.
-
-  Since version 3.0.0 libgig also provides write support, that is for
-  creating modifying .gig, DLS and RIFF files.
-
-Requirements
-============
-
-  All systems
-  -----------
-
-  Since libgig 4.3.0 you need at least a C++11 compliant compiler.
-
-  POSIX systems (e.g. Linux, macOS):
-  ---------------------------------
-
-  You need at least to have libtool installed to be able to build the
-  library with "./configure && make".
-
-  Additionally you need to have either libaudiofile (>= 0.2.3) or
-  libsndfile (>= 1.0.2) installed which is mandatory to be able to compile
-  the 'gigextract' example application. But of course 'gigextract' is still
-  just an example application, so it would make sense to compile it only if
-  one of those libraries are available. That would remove that hard
-  dependency to those two libs. But that's not a priority for me now.
-  Note: for Windows systems only libsndfile is available.
-
-  If you want to regenerate all autotools build files (that is configure,
-  Makefile.in, etc.) then you need to have automake (>= 1.5) and autoconf
-  installed.
-
-  Windows:
-  --------
-
-  The precompiled versions of libgig (and its tools) should be compatible
-  with any Windows operating system of at least Win95 or younger. Notice
-  that all example / demo applications coming with libgig are pure console
-  applications, thus you won't see a GUI showing up! :)
 
-  If you want to compile libgig and its tools by yourself, please also
-  notice the requirements under "Compiling for Windows".
-
-  Other Operating Systems:
-  ------------------------
 
-  libgig was written to compile for any operating system, using standard C
-  library functions. However there are some OS dependent requirements:
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!! PLEASE DON'T ATTEMPT NOT TO USE ANY OF THE PACKAGES IN THIS DIRECTORY !!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-  * Since libgig 3.0.0 an OS dependent implementation for a tiny method called
-    RIFF::File::ResizeFile() is required. So you would either have to add
-    native OS API calls for that particular method, that is dependant to your
-    OS, or you have to add a portable implementation. No matter which way you
-    choose, please let us know! :)
 
-  * Since libgig 4.3.0 presence of some UUID generating function is required to
-    be provided by the underlying system. This was an optional feature in
-    previous versions of libgig for many years, its absence only meant that you
-    were unable to load gig files created/modified by libgig to be accepted by
-    Tascam's original GigaStudio studio software, did not mean any restriction
-    for being used with LinuxSampler though. This has changed in the meantime,
-    so this is now a hard build requirement, as you would potentially encounter
-    misbehaviours now even if you stay entirely in the Linux eco system if UUIDs
-    were missing in gig files.
+Replacing anything in here will MOST LIKELY make Radium UNSTABLE in (more or less) subtle ways. 
+There are VERY good reasons for all of the packages included here.
 
-Compiling for Linux
-===================
-  You can either compile the sources and install the library directly on
-  your system or you can create Redhat or Debian packages.
 
-  a) Compiling and installing directly
+Here are the reasons for including the packages you find in this directory:
 
-  Call './configure && make' on the console to compile the library, all
-  tools and demo applications, documentation and install them with
-  'make install'. The latter has to be called as root.
+1. Modified versions of upstream. (faust2, fluidsynth, gc/libatomic, libgig, libpd, qhttpserver, QScintilla, and Visualization-Library)
+   (Yes, patches have been provided upstream.)
+2. Almost no, or no, distributions provide the package (faust2, libpd, qhttpserver, qtstyleplugins, s7, and Visualization-Library).
+   (Most of these overlap with the packages in point 1.)
+3. Needs to be compiled with custom options. (s7, Visualization-Library)
+4. Radium requires a newer version that not all distributions provide. (libxcb/xcb-proto).
 
-  If you are compiling from CVS you have to call 'make -f Makefile.cvs'
-  to generate all autotools build files before calling
-  './configure && make'.
+In the case of libxcb, linking to older versions of libxcb.so WILL CRASH Radium for many users.
+Using an older version of libxcb is probably the most common reason Radium has crashed.
+And I know this because I get an email with backtrace every time a user presses the "Send" button in the crash reporter window, which pops up when Radium crashes.
+After including libxcb with the program, all crash reports caused by libxcb suddenly disappeared.
+But if you know that the system version of libxcb is at least 1.12, the package can probably be safely removed.
 
-  You can use 'make distclean' and probably 'make -f Makefile.cvs clean'
-  to clean up everything again. The latter will also delete all automatic
-  generated autools build files.
+In addition, it's generally better that the users of a program use the same versions of 3rd party libraries as the developer(s).
+This increases stability, but it is currently not the reason for any of the packages in this directory. However, if Qt, for instance, were less stable,
+I would consider including Qt in this directory to make sure everyone used the same version of Qt. Luckily, though, Qt is relatively stable.
+Same goes for libsamplerate, libsndfile, libjack, etc. etc. But in the future, other packages might be included here just as a general precaution.
 
-  b) Creating Debian packages
+Also, it's not unusual for larger software to include custom version of other packages.
+In fact, it's very common, and for good reasons, as I've explained a little bit above.
+Even packages included in Radium have themselves other packages included (Visualization-Library, JUCE, and probably others).
 
-  Use 'dpkg-buildpackage -rfakeroot -b' to compile and create the Debian
-  packages. This will generate 3 Debian packages:
 
-    libgig:      Contains the shared library files.
-    libgig-dev:  Contains the header files and documentation for building
-                 applications using libgig.
-    gigtools:    Contains the tools and demo applications.
 
-  You can use 'fakeroot debian/rules clean' to clean up everything again.
+Regarding negative feedback I have gotten about the content of this directory from package distributors and others
+------------------------------------------------------------------------------------------------------------------
+First of all, there are several packages included with Radium in other directories than this one (with good reasons for those as well).
+But for some reason, people are hung up on the specific packages included in this directory. Could it be because
+the explicit step called "make packages" in the build process would make it seem like the author of Radium
+tries to step on the toes of package managers? Well, that's not my intention. I guess the problem would be solved if there wasn't
+an explicit "make packages" step, and instead "make packages" was baked into the "./build_linux.sh" script?
+Because that's how most builds handle included packages, although one step has several disadvantages (more magic).
+But I guess keeping piece is more important. Anyway, if you are making a Radium package for a Linux distribution,
+it shouldn't be too hard without getting angry. Just do the following:
 
-  c) Creating Redhat packages
+BUILDTYPE=RELEASE make packages
+BUILDTYPE=RELEASE ./build_linux.sh -j `nproc`
+./install.sh /opt
+TARGET=/usr/bin/radium
+echo "#!/bin/env bash" > $TARGET
+echo "QT_QPA_PLATFORM_PLUGIN_PATH=\"$($(./find_moc_and_uic_paths.sh qmake) -query QT_INSTALL_PLUGINS)\" /opt/radium/radium \"\$@\"" >> $TARGET
+chmod a+rx $TARGET
 
-  You need to have the rpmbuild tool installed and properly configured to
-  create RPM packages. To create the RPM packages do the following:
+And if "make packages" or "./build_linux.sh" fail, at least send me a bug report before complaining publicly about the build system of Radium.
 
-    * Get .spec file generated by ./configure and edit it as appropriate.
+There shouldn't be a rational reason to do anything else (except that I would prefer that you distribute the official binary demo packages instead,
+which would also save you a lot of work). There's no reason to try using system versions of things you find deep into the Radium source code
+that might resemble something your Linux distribution already provides. It will probably make Radium (more) unstable if you attempt to do so.
+And there's no need to try to minimize the size of the package by removing apparently unused files. Computers have big harddrives these
+days, and the same goes for the web servers. If your distribution has a rule against including modified versions of already existing
+packages within a package (make sure you haven't misunderstood this rule), you should either ignore this rule, or use a different Linux distribution.
+To sum up: Don't make life harder than necessary.
 
-    * Copy the source tarball to "/usr/src/<rpmdir>/SOURCES" directory,
-      where <rpmdir> is dependent to the system you are using. For SuSE
-      <rmpdir> will be "packages", for Mandrake <rpmdir> is "RPM" and for
-      Redhat / Fedora <rpmdir> always equals "redhat".
 
-    * Build the rpm(s) by invoking 'rpmbuild -bb <specfile>' from the
-      command line.
-
-  On success, the resulting rpm(s) can usually be found under the proper
-  "/usr/src/<rpmdir>/RPMS/<arch>" directory.
-
-Compiling for Windows using CMake
-=================================
-The easiest way is to compile is to use vcpkg (https://github.com/Microsoft/vcpkg)
-to install libsndfile (required). In the vcpkg install dir type:
-
-.\vcpkg.exe install libsndfile [--triplet x64-windows]
-
-This should install the libraries in vcpkg, add the triplet option if you wish to
-get the 64bit libraries.
-
-In an empty directory type:
-cmake <libgig source dir> -DCMAKE_TOOLCHAIN_FILE=<vcpkg dir>\scripts\buildsystems\vcpkg.cmake
-[-G"Visual Studio 15 2017 Win64"]
-
-Use the -G option to select the visual studio version and whether to compile for
-64bits.
-
-This will create libgig.sln file which you can open in visual studio or you can use
-the following command line to compile:
-
-cmake --build . --config <Release|Debug|MinRelSize|RelWithDebInfo>
-
-Compiling for Windows using Dev-C++
-===================================
-
-  libgig and its tools can also be compiled on Windows using Bloodshed Dev-C++,
-  which is a free (GPL) C++ integrated development environment for Windows.
-  It is also possible to use MSYS from MinGW, which allows you to use
-  './configure && make' like the linux builds.
-
-  You can download Dev-C++ here:
-
-    http://www.bloodshed.net/devcpp.html
-
-  Make sure you install a version with Mingw integrated.
-
-  a) Compiling libgig.dll
-
-  Simply open the project file "win32/libgig.dev" either directly in Dev-C++
-  or by double clicking on the project file in the Windows explorer, then
-  click on "Compile" in the Dev-C++ menu and that's it! After compilation
-  finished, you can find the files "libgig.dll", "libgig.a" and
-  "liblibgig.def" in the "win32" directory.
-
-  b) Compiling the example tools "rifftree", "dlsdump" and "gigdump"
-
-  You need to have libgig.dll compiled as described in a). Then you can
-  compile the respective tool by simply opening the respective project
-  (.dev) file and clicking on "Compile" from the Dev-C++ menu. After
-  compilation you can find the respective .exe file in the "win32"
-  directory.
-
-  c) Compiling the example tool "gigextract"
-
-  You need to have libgig.dll compiled as described in a). Also you need
-  libsndfile (as DLL) which is used to create the .wav files. You can
-  download libsndfile already precompiled as DLL here:
-
-    http://www.mega-nerd.com/libsndfile/
-
-  Extract the .zip file i.e. to "C:\". The libsndfile .dll file should then
-  be i.e. under "C:\libsndfile-1_0_17". Beside the .dll file, make sure
-  libsndfile's .lib file exists in that directory as well. If the .lib file
-  does not exist yet, you have to create it with:
-
-    dlltool --input-def libsndfile-1.def --output-lib libsndfile-1.lib
-
-  Then you have to ensure the settings of gigextract's Dev-C++ project file
-  are pointing to the correct location of your local copy of libsndfile. For
-  that click in the Dev-C++ menu on "Project" -> "Project Options". Then
-  click on the tab "Parameter" and make sure the path to "libsndfile-1.lib"
-  in the "Linker" list view is correct. Then click on the tab "Directories"
-  and then on the tab "Include Directories" and make sure the path to
-  libsndfile points to the correct location there as well.
-
-  After that you should finally be able to compile "gigextract" by clicking
-  on "Compile" in the Dev-C++ menu. After compilation succeeded, you can
-  find the "gigextract.exe" file in the "win32" directory.
-
-Test Cases
-==========
-  There are automated test cases which allow to automatically check libgig's
-  functions behaving as expected on your system. These test cases are not
-  compiled by default:
-
-    * Run 'make check' from the toplevel source directory to compile and
-      run all test cases.
-
-License
-=======
-  libgig and its tools are released under the GNU General Public License (GPL).
-
-  libakai and its tools are released under the GNU Lesser General Public (LGPL).
-  Due to its different license model the Akai support part is built as separate
-  DLL (.so) file.
-
-API Documentation
-=================
-  If you have Doxygen installed you can generate the API documentation by
-  running 'make docs' in the sources' top level directory. The API
-  documentation will be generated in the 'doc' subdirectory.
-
-Patches
-=======
-  If you have bug fixes or improvements, your patches are always welcome!
-  Send them either directly to me or to the LinuxSampler developer's mailing
-  list <linuxsampler-devel@lists.sourceforge.net>.
-
-Bugs
-====
-  Please report bugs to the LinuxSampler Developers mailing list.
-
-  You might also try to run the "Test Cases" coming with libgig (see above),
-  especially in case you are running on an odd system.
-
-Trademarks
-==========
-  Tascam, Gigasampler, GigaStudio, KORG, Trinity, Triton, OASYS, M3, Kronos
-  and Akai are trademarks of their respective owners.
-
-Credits
-=======
-  The initial library (Gigasampler part) was based on the reverse engineering
-  effort of Paul Kellett and Ruben van Royen. We owe current support for the
-  Gigasampler v3/v4 format to Andreas Persson. Please also have a look at the
-  ChangeLog for all those who contributed.
-
-  Akai support files are a ported version of Sébastien Métrot's libakai. The
-  original libakai only supported Mac and Windows. This forked version of
-  libakai now also supports Linux and other POSIX compliant operating systems
-  as well and does not have a dependency to libngl as the original libakai had.
-
-  The SoundFont 2 file format C++ classes were written by Grigor Iliev.
-
-  Thanks to all of you for your great work!
-
- Christian Schoenebeck <cuse@users.sourceforge.net>
