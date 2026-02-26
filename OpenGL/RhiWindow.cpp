@@ -358,6 +358,7 @@ void radium::RhiWindow::init()
 
 //QMatrix4x4 g_viewProjection;
 float g2_height, g2_width;
+extern double g_opengl_scale_ratio;
 
 //! [swapchain-resize]
 void radium::RhiWindow::resizeSwapChain()
@@ -368,8 +369,8 @@ void radium::RhiWindow::resizeSwapChain()
 
 
     const QSize outputSize = _sc->currentPixelSize();
-	g2_height = outputSize.height();
-	g2_width = outputSize.width();
+	g2_height = double(outputSize.height()) / g_opengl_scale_ratio;
+	g2_width = double(outputSize.width()) / g_opengl_scale_ratio;
 
 	/*
     _viewProjection = _rhi->clipSpaceCorrMatrix();

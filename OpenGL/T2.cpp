@@ -305,6 +305,7 @@ namespace{
 static T2_Thread *t2_thread = NULL;
 
 void T1_start_t2_thread(QOpenGLContext *widget_context){
+	return;
   T1_ensure_t2_is_initialized();
   if (ATOMIC_GET(g_use_t2_thread)== Use_T2_Thread::YES){
     t2_thread = new T2_Thread(widget_context);
@@ -312,6 +313,7 @@ void T1_start_t2_thread(QOpenGLContext *widget_context){
 }
 
 void T1_ensure_t2_is_initialized(void){
+	return;
   if (ATOMIC_GET(g_use_t2_thread)==Use_T2_Thread::UNINITIALIZED){
     if(SETTINGS_read_bool("opengl_draw_in_separate_process",true))
       ATOMIC_SET(g_use_t2_thread, Use_T2_Thread::YES);
@@ -322,6 +324,7 @@ void T1_ensure_t2_is_initialized(void){
 
 
 void T1_send_data_to_t2(r::PaintingData *painting_data, GE_Rgb background_color){
+	return;
   T1_data *t1_data = new T1_data;
 
   t1_data->painting_data    = painting_data;
@@ -342,6 +345,7 @@ void T1_send_data_to_t2(r::PaintingData *painting_data, GE_Rgb background_color)
 }
 
 void T1_stop_t2(void){
+	return;
   if(t2_thread!=NULL){
     T1_data *t1_data = new T1_data;
     t1_data->stop_me = true;
@@ -351,6 +355,7 @@ void T1_stop_t2(void){
 }
 
 void T1_wait_until_t2_got_t1_data(void){
+	return;
 #if THREADED_OPENGL
   while(t1_to_t2_queue.size() > 0)
     msleep(20);

@@ -19,6 +19,9 @@ struct Context
 	int _buffer_pos = 0;
 	float *_buffer = (float*)malloc(_buffer_size * sizeof(float));
 
+	QVector<QRhiBuffer*> _buffers_to_delete;
+	radium::Mutex _vbuf_lock;
+	
 	QRhiBuffer *_vbuf = nullptr;
 
 	QRhiResourceUpdateBatch *_updates = nullptr;
@@ -38,6 +41,13 @@ struct Context
 		static int total = 0;
 		total += get_num_bytes();
 		printf("Num bytes: %d. Total: %d\n", get_num_bytes(), total);
+		
+		radium::ScopedMutex lock(_vbuf_lock);
+
+		for(auto *buf : _buffers_to_delete)
+			delete buf;
+		
+		_buffers_to_delete.clear();
 		
 		_vbuf = rhi->newBuffer(QRhiBuffer::Static, // Note: Possible optimization here. Don't really understand difference between Static, Immutable, and Dynamic.
 							   QRhiBuffer::VertexBuffer,
@@ -67,6 +77,8 @@ struct Context
 
 	void render(QRhiCommandBuffer *cb)
 	{
+		radium::ScopedMutex lock(_vbuf_lock);
+		
 		if (_vbuf)
 		{
 			const QRhiCommandBuffer::VertexInput vbufBinding(_vbuf, 0);
@@ -84,9 +96,11 @@ struct Context
 		*/
 		_buffer_pos = 0;
 
+		radium::ScopedMutex lock(_vbuf_lock);
+
 		if (_vbuf != NULL)
 		{
-			_vbuf->deleteLater();
+			_buffers_to_delete.push_back(_vbuf);
 			_vbuf = NULL;
 		}
 	}
@@ -196,3 +210,17 @@ struct Context
 };
 
 }
+
+extern r::Context *g_context_under_text; // Scrolling: Everything painted under text (only the track backgruond color.)
+extern r::Context *g_context_text; // Scrolling: Text.
+extern r::Context *g_context; // Scrolling: Everything painted above text)
+extern r::Context *g_context_left_slider; // Left slider (Scrolls it's own way)
+extern r::Context *g_context_static; // Non-Scrolling: Cursor + Indicators
+
+//extern QVector<r::Context> g_all_contexts = {};
+
+#define ALL_CONTEXTS {g_context_under_text, g_context_text, g_context, g_context_left_slider, g_context_static}
+
+
+
+
