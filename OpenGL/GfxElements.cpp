@@ -97,8 +97,35 @@ GE_Rgb GE_get_custom_rgb(int custom_colornum){
   return ret;
 }
 
-r::Context *g_context = new r::Context();
+r::Context *g_context_under_text = new r::Context(); // Scrolling: Everything painted under text (only the track backgruond color.)
+r::Context *g_context_text = new r::Context(); // Scrolling: Text.
+r::Context *g_context = new r::Context(); // Scrolling: Everything painted above text)
+r::Context *g_context_left_slider = new r::Context(); // Left slider (Scrolls it's own way) (not the border around the slider, only the moving box)
+r::Context *g_context_static = new r::Context(); // Non-Scrolling: Cursor + Indicators + left slider border.
 
+//std::initializer_list<r::Context> g_all_contexts = {g_context_under_text, g_context_text, g_context, g_context_left_slider, g_context_static};
+
+
+void GE_Context::add_triangle(const r::fvec2 &p1, const r::fvec2 &p2, const r::fvec2 &p3, GradientType::Type gradient_type) const
+{
+	if (g_rhi != NULL)
+	{
+		switch(gradient_type)
+		{
+			case GradientType::Type::NOTYPE:
+				g_context->add_triangle(p1, p2, p3, color.c);
+				break;
+			case GradientType::Type::HORIZONTAL:
+				g_context->add_triangle(p1, p2, p3, color.c, color.c_gradient);
+				break;
+			case GradientType::Type::VELOCITY:
+				g_context->add_triangle(p1, p2, p3, GE_rgb(200,80,80), /*color.c_gradient, */ color.c);
+				break;
+		}
+		}
+}
+
+#if 0
 struct _GE_Context
 {
   union Color
@@ -158,17 +185,18 @@ public:
 #endif
 	}
 };
+#endif
 
-void GE_set_z(GE_Context *c, int new_z) {
-  c->_conf.z = new_z;
+void GE_set_z(GE_Context &c, int new_z) {
+  c._conf.z = new_z;
 }
 
-int GE_get_z(const GE_Context *c){
-  return c->_conf.z;
+int GE_get_z(const GE_Context &c){
+  return c._conf.z;
 }
 
-GE_Rgb GE_get_rgb(const GE_Context *c){
-  return c->color.c;
+GE_Rgb GE_get_rgb(const GE_Context &c){
+  return c.color.c;
 }
 
 /* Drawing */
@@ -278,8 +306,10 @@ void GE_end_writing(GE_Rgb new_background_color){
 		g_context->call_me_when_finished_painting(g_rhi);
 	}
 	
-	T1_send_data_to_t2(g_painting_data, new_background_color);
-    
+	//T1_send_data_to_t2(g_painting_data, new_background_color);
+
+	GL_set_new_painting_data(g_painting_data, new_background_color);
+		
 	g_painting_data = NULL;
 }
 
@@ -328,33 +358,34 @@ static int get_slice_from_y(const int y){
   return y/g_painting_data->slice_size;
 }
 
-static GE_Context *get_context(const GE_Context::Color &color, const GE_Conf &conf){
+static GE_Context get_context(const GE_Context::Color &color, const GE_Conf &conf){
   int slice = get_slice_from_y(conf.y);
 
   //if(g_painting_data->contexts[conf.z][slice][conf.use_scissors].contains(color.key))
   // return g_painting_data->contexts[conf.z][slice][conf.use_scissors][color.key].get();
 
-  GE_Context *c = new GE_Context(color, conf, slice);
+  GE_Context c(color, conf, slice);
 
   //g_painting_data->contexts[conf.z][slice][conf.use_scissors][color.key] = c;
-  g_painting_data->_contexts.push_back(c);
+  //g_painting_data->_contexts.push_back(c);
   
   return c;
 }
 
-GE_Context *GE_y(GE_Context *c, int y){
+GE_Context GE_y(GE_Context &c, int y){
   const int slice = get_slice_from_y(y);
 
-  if (slice==c->_slice)
+  if (slice==c._slice)
     return c;
-  
-  c->_conf.y = y;
 
-  return get_context(c->color, c->_conf);
+  // ??
+  c._conf.y = y;
+
+  return get_context(c.color, c._conf);
 }
 
 
-GE_Context *GE_z(const GE_Rgb rgb, const GE_Conf &conf){
+GE_Context GE_z(const GE_Rgb rgb, const GE_Conf &conf){
   GE_Context::Color color;
 
   color.key = 0;
@@ -368,28 +399,28 @@ static GE_Rgb rgb_from_qcolor(const QColor &color){
   return rgb;
 }
 
-GE_Context *GE_color_z(const QColor &color, const GE_Conf &conf){
+GE_Context GE_color_z(const QColor &color, const GE_Conf &conf){
   return GE_z(rgb_from_qcolor(color), conf);
 }
 
-GE_Context *GE_color_z(enum ColorNums colornum, const GE_Conf &conf){
+GE_Context GE_color_z(enum ColorNums colornum, const GE_Conf &conf){
   //const QColor c = get_qcolor(window, colornum);
   return GE_z(GE_get_rgb(colornum), conf);
 }
 
-GE_Context *GE_color_alpha_z(enum ColorNums colornum, float alpha, const GE_Conf &conf){
+GE_Context GE_color_alpha_z(enum ColorNums colornum, float alpha, const GE_Conf &conf){
   GE_Rgb rgb = GE_get_rgb(colornum);
   rgb.a = alpha * 255;
   return GE_z(rgb, conf);
 }
 
-GE_Context *GE_textcolor_z(enum ColorNums colornum, const GE_Conf &conf){
+GE_Context GE_textcolor_z(enum ColorNums colornum, const GE_Conf &conf){
   GE_Rgb rgb = GE_get_rgb(colornum);
   rgb.a=230;
   return GE_z(rgb, conf);
 }
 
-GE_Context *GE_rgba_color_z(unsigned char r, unsigned char g, unsigned char b, unsigned char a, const GE_Conf &conf){
+GE_Context GE_rgba_color_z(unsigned char r, unsigned char g, unsigned char b, unsigned char a, const GE_Conf &conf){
 #if 1
   // Reduce number of contexts. May also reduce cpu usage significantly.
   r |= 15;
@@ -403,7 +434,7 @@ GE_Context *GE_rgba_color_z(unsigned char r, unsigned char g, unsigned char b, u
   return GE_z(rgb, conf);
 }
 
-GE_Context *GE_rgb_color_z(unsigned char r, unsigned char g, unsigned char b, const GE_Conf &conf){
+GE_Context GE_rgb_color_z(unsigned char r, unsigned char g, unsigned char b, const GE_Conf &conf){
   return GE_rgba_color_z(r,g,b,255, conf);
 }
 
@@ -429,24 +460,24 @@ GE_Rgb GE_mix(const GE_Rgb c1, const GE_Rgb c2, float how_much){
   return rgb;
 }
 
-GE_Context *GE_mix_color_z(const GE_Rgb c1, const GE_Rgb c2, float how_much, const GE_Conf &conf){
+GE_Context GE_mix_color_z(const GE_Rgb c1, const GE_Rgb c2, float how_much, const GE_Conf &conf){
   return GE_z(GE_mix(c1, c2, how_much), conf);
 }
 
-GE_Context *GE_gradient_z(const GE_Rgb c1, const GE_Rgb c2, const GE_Conf &conf){
+GE_Context GE_gradient_z(const GE_Rgb c1, const GE_Rgb c2, const GE_Conf &conf){
   GE_Context::Color color;
 
   color.c=c1;
   color.c_gradient=c2;
 
-  GE_Context *c = get_context(color, conf);
+  GE_Context c = get_context(color, conf);
 
-  //c->is_gradient = true;
+  //c.is_gradient = true;
 
   return c;
 }
 
-GE_Context *GE_gradient_z(const QColor &c1, const QColor &c2, const GE_Conf &conf){
+GE_Context GE_gradient_z(const QColor &c1, const QColor &c2, const GE_Conf &conf){
   return GE_gradient_z(rgb_from_qcolor(c1), rgb_from_qcolor(c2), conf);
 }
 
@@ -487,9 +518,13 @@ void GE_unset_x_scissor(void){
   has_x_scissor=false;
 }
 
-static void GE_line_lowlevel(GE_Context *c, float x1, float y1, float x2, float y2, float pen_width){
+static void GE_line_lowlevel(const GE_Context &c, float x1, float y1, float x2, float y2, float pen_width){
   // Code below mostly copied from http://www.softswit.ch/wiki/index.php?title=Draw_line_with_triangles
 
+	//
+	// TODO: Optimize when x1==x2 || y1==y2?
+	//
+	
   float dx = x2-x1;
   float dy = y2-y1;
  
@@ -522,22 +557,22 @@ static void GE_line_lowlevel(GE_Context *c, float x1, float y1, float x2, float 
   float v4x = x1 - perp_x;
   float v4y = y1 - perp_y;
 
-  c->add_triangle({v1x, c->y(v1y)},
-				  {v2x, c->y(v2y)},
-				  {v3x, c->y(v3y)});
+  c.add_triangle({v1x, c.y(v1y)},
+				  {v2x, c.y(v2y)},
+				  {v3x, c.y(v3y)});
 /*
-  triangles.push_back(r::fvec2(v1x, c->y(v1y)));
-  triangles.push_back(r::fvec2(v2x, c->y(v2y)));
-  triangles.push_back(r::fvec2(v3x, c->y(v3y)));
+  triangles.push_back(r::fvec2(v1x, c.y(v1y)));
+  triangles.push_back(r::fvec2(v2x, c.y(v2y)));
+  triangles.push_back(r::fvec2(v3x, c.y(v3y)));
 */
-  c->add_triangle({v1x, c->y(v1y)},
-				  {v3x, c->y(v3y)},
-				  {v4x, c->y(v4y)});
+  c.add_triangle({v1x, c.y(v1y)},
+				  {v3x, c.y(v3y)},
+				  {v4x, c.y(v4y)});
 
   /*
-  triangles.push_back(r::fvec2(v1x, c->y(v1y)));
-  triangles.push_back(r::fvec2(v3x, c->y(v3y)));
-  triangles.push_back(r::fvec2(v4x, c->y(v4y)));
+  triangles.push_back(r::fvec2(v1x, c.y(v1y)));
+  triangles.push_back(r::fvec2(v3x, c.y(v3y)));
+  triangles.push_back(r::fvec2(v4x, c.y(v4y)));
   */
 }
 
@@ -549,7 +584,7 @@ static void GE_line_lowlevel(GE_Context *c, float x1, float y1, float x2, float 
     b = c;                 \
   } while(0)
 
-void GE_line(GE_Context *c, float x1, float y1, float x2, float y2, float pen_width){
+void GE_line(const GE_Context &c, float x1, float y1, float x2, float y2, float pen_width){
 
   if (has_x_scissor){
 
@@ -587,10 +622,10 @@ void GE_line(GE_Context *c, float x1, float y1, float x2, float y2, float pen_wi
   }
   
 #if 0
-  if (c->is_gradient) {
+  if (c.is_gradient) {
     int key = get_key_from_pen_width(pen_width);
-    c->lines[key].push_back(vl::dvec2(x1,c->y(y1+0.1f)));
-    c->lines[key].push_back(vl::dvec2(x2,c->y(y2-0.1f)));
+    c.lines[key].push_back(vl::dvec2(x1,c.y(y1+0.1f)));
+    c.lines[key].push_back(vl::dvec2(x2,c.y(y2-0.1f)));
     return;
   }
 #endif
@@ -599,75 +634,75 @@ void GE_line(GE_Context *c, float x1, float y1, float x2, float y2, float pen_wi
   GE_line_lowlevel(c, x1, y1, x2, y2, pen_width);
 }
 
-void GE_text(GE_Context *c, const char *text, int x, int y){
-	c->textbitmaps.addCharBoxes(text, x, c->y(y+1));
+void GE_text(const GE_Context &c, const char *text, int x, int y){
+	//c.textbitmaps.addCharBoxes(text, x, c.y(y+1));
 }
 
-void GE_text2(GE_Context *c, QString text, int x, int y){
-	c->textbitmaps.addCharBoxes(text, x, c->y(y+1));
+void GE_text2(const GE_Context &c, QString text, int x, int y){
+	//c.textbitmaps.addCharBoxes(text, x, c.y(y+1));
 }
 
-void GE_text_halfsize(GE_Context *c, const char *text, int x, int y){
-	c->textbitmaps_halfsize.addCharBoxes(text, x, c->y(y+1));
+void GE_text_halfsize(const GE_Context &c, const char *text, int x, int y){
+	//c.textbitmaps_halfsize.addCharBoxes(text, x, c.y(y+1));
 }
 
-void GE_text_halfsize2(GE_Context *c, QString text, int x, int y){
-	c->textbitmaps_halfsize.addCharBoxes(text, x, c->y(y+1));
+void GE_text_halfsize2(const GE_Context &c, QString text, int x, int y){
+	//c.textbitmaps_halfsize.addCharBoxes(text, x, c.y(y+1));
 }
 
-void GE_box(GE_Context *c, float x1, float y1, float x2, float y2, float pen_width){
+void GE_box(const GE_Context &c, float x1, float y1, float x2, float y2, float pen_width){
   GE_line(c, x1, y1, x2, y1, pen_width);
   GE_line(c, x2, y1, x2, y2, pen_width);
   GE_line(c, x2, y2, x1, y2, pen_width);
   GE_line(c, x1, y2, x1, y1, pen_width);
 }
 
-void GE_filledBox(GE_Context *c, float x1, float y1, float x2, float y2){
+void GE_filledBox(const GE_Context &c, float x1, float y1, float x2, float y2){
 
-	c->add_triangle({x1, c->y(y1)},
-					{x2, c->y(y1)},
-					{x1, c->y(y2)});
+	c.add_triangle({x1, c.y(y1)},
+					{x2, c.y(y1)},
+					{x1, c.y(y2)});
 	
-	c->add_triangle({x1, c->y(y2)},
-					{x2, c->y(y1)},
-					{x2, c->y(y2)});
+	c.add_triangle({x1, c.y(y2)},
+					{x2, c.y(y1)},
+					{x2, c.y(y2)});
 	
 	/*
-	  c->boxes.push_back(vl::dvec2(x1,c->y(y1)));
-	  c->boxes.push_back(vl::dvec2(x1,c->y(y2)));
-	  c->boxes.push_back(vl::dvec2(x2,c->y(y2)));
-	  c->boxes.push_back(vl::dvec2(x2,c->y(y1)));
+	  c.boxes.push_back(vl::dvec2(x1,c.y(y1)));
+	  c.boxes.push_back(vl::dvec2(x1,c.y(y2)));
+	  c.boxes.push_back(vl::dvec2(x2,c.y(y2)));
+	  c.boxes.push_back(vl::dvec2(x2,c.y(y1)));
 	*/
 }
 
 /*
-void GE_polyline(GE_Context *c, int num_points, const APoint *points, float pen_width){
+void GE_polyline(GE_Context &c, int num_points, const APoint *points, float pen_width){
   if(num_points>0) {
     int key = get_key_from_pen_width(pen_width);
-    c->lines[key].push_back(vl::dvec2(points[0].x, -points[0].y));
+    c.lines[key].push_back(vl::dvec2(points[0].x, -points[0].y));
     for(int i=1;i<num_points;i++){
       float x = points[i].x;
-      float y = c->y(points[i].y);
-      c->lines[key].push_back(vl::dvec2(x,y));
-      c->lines[key].push_back(vl::dvec2(x,y));
+      float y = c.y(points[i].y);
+      c.lines[key].push_back(vl::dvec2(x,y));
+      c.lines[key].push_back(vl::dvec2(x,y));
     }
-    c->lines[key].push_back(vl::dvec2(points[0].x, c->y(points[0].y)));
+    c.lines[key].push_back(vl::dvec2(points[0].x, c.y(points[0].y)));
   }
 }
 */
 
-void GE_trianglestrip(GE_Context *c, int num_points, const APoint *points){
+void GE_trianglestrip(const GE_Context &c, int num_points, const APoint *points){
   if(num_points>0){
     for(int i=0; i<num_points-2; i++)
 	{
-		c->add_triangle({points[i].x, c->y(points[i].y)},
-						{points[i+1].x, c->y(points[i+1].y)},
-						{points[i+2].x, c->y(points[i+2].y)});
+		c.add_triangle({points[i].x, c.y(points[i].y)},
+						{points[i+1].x, c.y(points[i+1].y)},
+						{points[i+2].x, c.y(points[i+2].y)});
 
 		/*
-		c->_triangles.push_back(r::fvec2(points[i].x, c->y(points[i].y)));
-		c->_triangles.push_back(r::fvec2(points[i+1].x, c->y(points[i+1].y)));
-		c->_triangles.push_back(r::fvec2(points[i+2].x, c->y(points[i+2].y)));
+		c._triangles.push_back(r::fvec2(points[i].x, c.y(points[i].y)));
+		c._triangles.push_back(r::fvec2(points[i+1].x, c.y(points[i+1].y)));
+		c._triangles.push_back(r::fvec2(points[i+2].x, c.y(points[i+2].y)));
 		*/
     }
   }
@@ -680,7 +715,7 @@ void GE_trianglestrip_start(void){
   num_trianglestrips = 0;
 }
 
-void GE_trianglestrip_add(GE_Context *c, float x, float y){
+void GE_trianglestrip_add(GE_Context &c, float x, float y){
   static float y2,y1;
   static float x2,x1;
 
@@ -688,9 +723,9 @@ void GE_trianglestrip_add(GE_Context *c, float x, float y){
 
   if(num_trianglestrips>=3)
   {
-	  c->add_triangle({x, c->y(y)},
-					  {x1, c->y(y1)},
-					  {x2, c->y(y2)});
+	  c.add_triangle({x, c.y(y)},
+					  {x1, c.y(y1)},
+					  {x2, c.y(y2)});
   }
 
   y2 = y1;  y1 = y;
@@ -698,12 +733,12 @@ void GE_trianglestrip_add(GE_Context *c, float x, float y){
 }
 
 /*
-void GE_trianglestrip_add_line(GE_Context *c, float x1, float y1, float x2, float y2, float pen_width){
-  GE_line_lowlevel(c, c->_triangles, x1, y1, x2, y2, pen_width);
+void GE_trianglestrip_add_line(GE_Context &c, float x1, float y1, float x2, float y2, float pen_width){
+  GE_line_lowlevel(c, c._triangles, x1, y1, x2, y2, pen_width);
 }
 */
 
-void GE_trianglestrip_end(GE_Context *c){
+void GE_trianglestrip_end(GE_Context &c){
 }
 
 
@@ -721,9 +756,11 @@ void GE_gradient_triangle_start(GradientType::Type type)
 	num_gradient_triangles = 0;
 }
 
-void GE_gradient_triangle_add(GE_Context *c, float x, float y){
+void GE_gradient_triangle_add(GE_Context &c, float x, float y){
 	static float y2,y1;
 	static float x2,x1;
+
+	// TODO: Fix this, probably not correct. Look at original code.
 	
 	if(num_gradient_triangles==0)
 	{
@@ -742,9 +779,9 @@ void GE_gradient_triangle_add(GE_Context *c, float x, float y){
 	
 	if(num_gradient_triangles>=3)
 	{
-		c->add_triangle(r::fvec2(x, c->y(y)),
-						r::fvec2(x1, c->y(y1)),
-						r::fvec2(x2, c->y(y2)),
+		c.add_triangle(r::fvec2(x, c.y(y)),
+						r::fvec2(x1, c.y(y1)),
+						r::fvec2(x2, c.y(y2)),
 						current_gradient_type);
 	}
 	
@@ -752,6 +789,31 @@ void GE_gradient_triangle_add(GE_Context *c, float x, float y){
 	x2 = x1;  x1 = x;
 }
 
-void GE_gradient_triangle_end(GE_Context *c, float x1, float x2){
+void GE_gradient_triangle_end(GE_Context &c, float x1, float x2){
 	// TODO: Fix correct gradiation. It's supposed to go from x1->x2. Now, it' just hacked and quite random.
+#if 0
+	if (current_gradient_rectangle.get()==NULL){
+    GE_trianglestrip_end(c);
+    return;
+  }
+  
+  //printf("min_y: %f, max_y: %f. height: %f\n",triangles_min_y, triangles_max_y, triangles_max_y-triangles_min_y);
+  current_gradient_rectangle->y = c->y(triangles_max_y);
+  current_gradient_rectangle->height = triangles_max_y-triangles_min_y;
+
+  current_gradient_rectangle->x = x1;
+  current_gradient_rectangle->width = x2-x1;
+
+  if (current_gradient_rectangle->type==GradientType::VELOCITY) {
+    current_gradient_rectangle->color1 = get_vec4(c->color.c_gradient);
+    current_gradient_rectangle->color2 = get_vec4(c->color.c);
+  } else {
+    current_gradient_rectangle->color1 = get_vec4(c->color.c);
+    current_gradient_rectangle->color2 = get_vec4(c->color.c_gradient);  
+  }
+
+  c->gradient_triangles.push_back(current_gradient_rectangle);
+
+  current_gradient_rectangle = NULL;
+#endif
 }
