@@ -4891,6 +4891,7 @@ int main(int argc, char **argv){
       abort();
     }
   }
+
   if (getenv("QT_QPA_PLATFORM")!=NULL){
     if (strcmp(getenv("QT_QPA_PLATFORM"), "xcb")) {
       printf("Warning: Environment variable QT_QPA_PLATFORM is not set to \"xcb\".\n");
@@ -4900,6 +4901,7 @@ int main(int argc, char **argv){
       }
     }
   }
+
   if (getenv("QT_PLUGIN_PATH")!=NULL){
     printf("Warning: Environment variable QT_PLUGIN_PATH is set.\n");
     if (getenv("OVERRIDE_RADIUM_QPA")==NULL){
@@ -4941,6 +4943,8 @@ int main(int argc, char **argv){
 
   //QCoreApplication::setAttribute(Qt::AA_DontCheckOpenGLContextThreadAffinity);
 
+  //QApplication::setAttribute(Qt::AA_UseSoftwareOpenGL);
+  
 #if QT_VERSION_MAJOR == 5 && QT_VERSION_MINOR == 9
   QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
 #endif

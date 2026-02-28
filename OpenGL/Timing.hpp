@@ -54,7 +54,7 @@ struct VBlankEstimator
 			return true;
 
 		else {
-			double elapsed = time.elapsed() * 1000.0;
+			double elapsed = time.elapsed();
 			base_interval = elapsed / (double)(i_trainings-60);
 			double diff = fabs(last_base_interval-base_interval);
 			last_base_interval = base_interval;
@@ -71,9 +71,9 @@ struct VBlankEstimator
 	}
 
 	const Result get(void) {
-		double time_now = time.elapsed();
-		double interval = (time_now - last_time)*1000.0;
-		int num_periods = (interval+(base_interval/2.0)) / base_interval;
+		const double time_now = time.elapsed();
+		const double interval = time_now - last_time;
+		const int num_periods = (interval+(base_interval/2.0)) / base_interval;
 		last_time = time_now;
 #if !defined(RELEASE)
 		if (num_periods > 10)
@@ -179,15 +179,20 @@ struct TimeEstimator{
     double num_periods_wrong = wrong / vblank.period;
     double a_num_periods_wrong = fabs(num_periods_wrong);
 
-    if (a_num_periods_wrong > (period_multiplier*k_num_periods_to_correct)) {
-      #if !defined(RELEASE)
-      printf("NOT RETURNING NEW_VALUE. New_Value (calculated): %f. Returning instead (approx correct): %f\n",(float)new_value,(float)approx_correct);
-      #endif
+    if (a_num_periods_wrong > (period_multiplier*k_num_periods_to_correct))
+	{
+
+#if !defined(RELEASE)
+      printf("NOT RETURNING NEW_VALUE. New_Value (calculated): %f. Returning instead (approx correct): %f\n",
+			 (float)new_value,
+			 (float)approx_correct);
+#endif
       
       set_time(approx_correct);
       return approx_correct;
-
-    } else if (a_num_periods_wrong > (period_multiplier*k_num_periods_to_adjust)) {      
+    }
+	else if (a_num_periods_wrong > (period_multiplier*k_num_periods_to_adjust))
+	{      
       // try to adjust.
       _adjustment = scale_double(a_num_periods_wrong,
                                 period_multiplier*k_num_periods_to_adjust, period_multiplier*k_num_periods_to_adjust_max,

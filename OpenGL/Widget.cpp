@@ -166,7 +166,10 @@ static bool need_to_reset_timing(const SharedVariables *sv, double stime, int la
 static double find_current_realline_while_playing(const SharedVariables *sv, double blocktime)
 {
 	double time_in_ms = blocktime * 1000.0 / (double)pc->pfreq; // I'm not entirely sure reading pc->start_time_f instead of pc->start_time is unproblematic.
-	double stime      = time_estimator.get(time_in_ms, sv->reltempo * ATOMIC_DOUBLE_GET(g_curr_song_tempo_automation_tempo)) * (double)pc->pfreq / 1000.0; // Could this value be slightly off because we just changed block, and because of that we skipped a few calles to time_estimator.get ? (it shouldn't matter though, timing is resetted when that happens. 'time_in_ms' should always be valid)
+	
+	double stime = time_estimator.get(time_in_ms,
+									  sv->reltempo * ATOMIC_DOUBLE_GET(g_curr_song_tempo_automation_tempo))
+		* (double)pc->pfreq / 1000.0; // Could this value be slightly off because we just changed block, and because of that we skipped a few calles to time_estimator.get ? (it shouldn't matter though, timing is resetted when that happens. 'time_in_ms' should always be valid)
 
 	//stime      = time_in_ms* (double)pc->pfreq / 1000.0;
 
@@ -503,7 +506,7 @@ public:
 
 		_ubuf = _rhi->newBuffer(QRhiBuffer::Dynamic,
 								QRhiBuffer::UniformBuffer,
-								sizeof(float));
+								64 + sizeof(float)); // 64 is the size of the projection matrix.
 		_ubuf->create();
 
 		static const QRhiShaderResourceBinding::StageFlags visibility = QRhiShaderResourceBinding::VertexStage; // | QRhiShaderResourceBinding::FragmentStage;
@@ -602,19 +605,42 @@ public:
 					//widget->set_vblank(1000.0 / refresh_rate);
 					ATOMIC_DOUBLE_SET(g_vblank, 1000.0 / refresh_rate);
 				}
+
+				time_estimator.set_vblank(ATOMIC_DOUBLE_GET(g_vblank));
+#if !defined(RELEASE)
+				getchar();
+#endif
 			});
 
 		printf("Ratio: %f. refresh: %f\n", ratio, refresh_rate);
 
 		printf("gotit\n");
+#if !defined(RELEASE)
 		//getchar();
+#endif
 	}
 
+#if !defined(RELEASE)
+	double _num_renderings=0;
+	double _last_rendering_time = 0;
+#endif
+	
 	void customRender() override
 	{
 		assert(QThread::currentThread() == g_thread);
 
+#if !defined(RELEASE)
+		static double s_start_time = TIME_get_ms();
+
+		double new_time = TIME_get_ms();
+		double dur = new_time - _last_rendering_time;
+		if (dur > 30 || dur < 5)
+			printf("\n\n\n****************** Dur: %f. Average: %f ************\n\n\n", dur, (new_time - s_start_time) / R_MAX(1, _num_renderings));
+		_num_renderings++;
+		_last_rendering_time = new_time;
+
 		//static int g_n=0; printf("Rendering %d\n", g_n++);
+#endif
 		
 		QRhiResourceUpdateBatch *resourceUpdates = _rhi->nextResourceUpdateBatch();
 
@@ -652,8 +678,9 @@ public:
 			yscroll = 0.5;
 #endif
 		const QSize outputSizeInPixels = _sc->currentPixelSize();
+		//GE_set_height(outputSizeInPixels.height());
 
-#if 1
+#if 0
 		float yscroll = scale_double(double(scroll_pos) + double(outputSizeInPixels.height())/2.0,
 									 0, double(outputSizeInPixels.height()) / g_opengl_scale_ratio,
 									 2, 0);
@@ -661,9 +688,67 @@ public:
 		float yscroll = scroll_pos;
 #endif
 
-		printf("Curr scroll_pos: %f. Height: %f or %f\n", scroll_pos, double(outputSizeInPixels.height()), double(outputSizeInPixels.height()) / g_opengl_scale_ratio);
+#if 0
+		auto matrix = _rhi->clipSpaceCorrMatrix();
 
-		resourceUpdates->updateDynamicBuffer(_ubuf, 0, sizeof(float), &yscroll);
+	  OpenGL:
+0,0: 1.000000
+0,1: 0.000000
+0,2: 0.000000
+0,3: 0.000000
+1,0: 0.000000
+1,1: 1.000000
+1,2: 0.000000
+1,3: 0.000000
+2,0: 0.000000
+2,1: 0.000000
+2,2: 1.000000
+2,3: 0.000000
+3,0: 0.000000
+3,1: 0.000000
+3,2: 0.000000
+3,3: 1.000000
+
+	  Vulkan:
+0,0: 1.000000
+0,1: 0.000000
+0,2: 0.000000
+0,3: 0.000000
+1,0: 0.000000
+1,1: -1.000000
+1,2: 0.000000
+1,3: 0.000000
+2,0: 0.000000
+2,1: 0.000000
+2,2: 0.500000
+2,3: 0.000000
+3,0: 0.000000
+3,1: 0.000000
+3,2: 0.500000
+3,3: 1.000000
+
+
+		auto mappoint1 = matrix.map(QPointF(0,0));
+		auto mappoint2 = matrix.map(QPointF(100,GE_get_height()));
+		
+		printf("1: %f / %f. 2: %f / %f. Height: %d / %d\n",
+			   mappoint1.x(),mappoint1.y(),
+			   mappoint2.x(),mappoint2.y(),
+			   (int)outputSizeInPixels.height(), GE_get_height()
+			);
+		int p=0;
+		for(int x = 0 ; x < 4 ; x++)
+			for(int y = 0 ; y < 4 ; y++)
+				printf("%d,%d: %f\n", x, y, matrix.data()[p++]);
+
+		printf("\n");
+#endif
+					   
+		//printf("Curr scroll_pos: %f. Height: %f or %f. g_height: %d\n", scroll_pos, double(outputSizeInPixels.height()), double(outputSizeInPixels.height()) / g_opengl_scale_ratio, GE_get_height());
+
+		resourceUpdates->updateDynamicBuffer(_ubuf, 0, 64, _viewProjection.constData());
+		
+		resourceUpdates->updateDynamicBuffer(_ubuf, 64, sizeof(float), &yscroll);
 		
 		QRhiCommandBuffer *cb = _sc->currentFrameCommandBuffer();
 
@@ -742,6 +827,7 @@ public:
 		if (g_editor->window != NULL)
 			calculateNewWindowWidthAndHeight(g_editor->window);
 
+		GE_set_height(qresizeevent->size().height());
 	}
 };
 
@@ -765,6 +851,8 @@ static QRhi::Implementation init_qrhi(void)
     graphicsApi = QRhi::OpenGLES2;
 #endif
 
+	//graphicsApi = QRhi::OpenGLES2;
+	
     QCommandLineParser cmdLineParser;
     cmdLineParser.addHelpOption();
     QCommandLineOption nullOption({ "n", "null" }, QLatin1String("Null"));
