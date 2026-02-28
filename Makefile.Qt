@@ -2101,8 +2101,8 @@ $(T)api_common.o:  $(BUILD_DEPENDENCIES)  $(API)api_common.cpp
 $(T)api_keyplay.o:  $(BUILD_DEPENDENCIES)  $(API)api_keyplay.c
 	$(CC2)  $(API)api_keyplay.c $(OPT)
 
-$(T)api_keyplayedit.o:  $(BUILD_DEPENDENCIES)  $(API)api_keyplayedit.c 
-	$(CC2)  $(API)api_keyplayedit.c $(OPT)
+$(T)api_keyplayedit.o:  $(BUILD_DEPENDENCIES)  $(API)api_keyplayedit.cpp
+	$(CCC2)  $(API)api_keyplayedit.cpp $(QTOPT)
 
 $(T)api_navigate.o:  $(BUILD_DEPENDENCIES)  $(API)api_navigate.cpp
 	$(CCC2)  $(API)api_navigate.cpp $(CPPOPT)
@@ -2953,7 +2953,7 @@ $(T)moc_qhttpserver.o: $(QHTTPSERVER_PATH)/build/moc_qhttpserver.cpp
 $(T)http_parser.o: $(QHTTPSERVER_PATH)/http-parser/http_parser.c
 	$(CC2) -c $(QHTTPSERVER_PATH)/http-parser/http_parser.c $(OPT) $(HTTPPARSERFLAGS)
 
-LIBGIG_FLAGS=-Wno-sign-compare -Wno-missing-declarations -Wno-unused-result -DPACKAGE="\"libgig\"" -DVERSION="\"4.2.0\"" -D_GNU_SOURCE
+LIBGIG_FLAGS=-Wno-sign-compare -Wno-missing-declarations -Wno-unused-result -DPACKAGE="\"libgig\"" -DVERSION="\"4.5.1\"" -D_GNU_SOURCE
 
 $(T)RIFF.o: $(LIBGIG_PATH)/RIFF.cpp
 	$(CCC2) -c $(LIBGIG_PATH)/RIFF.cpp $(CPPOPT) $(LIBGIG_FLAGS)
@@ -2962,7 +2962,7 @@ $(T)SF.o: $(LIBGIG_PATH)/SF.cpp
 	$(CCC2) -c $(LIBGIG_PATH)/SF.cpp $(CPPOPT) $(LIBGIG_FLAGS)
 
 $(LIBGIG_PATH)/SF.cpp: bin/packages/libgig-4.5.1.tar.bz2
-	cd bin/packages && rm -fr libgig && tar xvjf libgig-4.5.1.tar.bz2 && mv libgig-4.5.1 libgig && touch $(LIBGIG_PATH)/SF.cpp && patch -p0 <libgig_win32.patch && echo "#define VER_STRING \"4.5.1\"" >$(LIBGIG_PATH)/../win32/libgig_private.h
+	cd bin/packages && rm -fr libgig && tar xvjf libgig-4.5.1.tar.bz2 && mv libgig-4.5.1 libgig && touch $(LIBGIG_PATH)/SF.cpp && patch -p0 <libgig_win32.patch && patch -p0 <libgig_dont_check_loops.patch && echo "#define VER_STRING \"4.5.1\"" >$(LIBGIG_PATH)/../win32/libgig_private.h
 
 $(T)radium_s7_wrap.o: api/radium_s7_wrap.c 
 	$(CC2) api/radium_s7_wrap.c $(OPT) -Ibin/packages/s7
