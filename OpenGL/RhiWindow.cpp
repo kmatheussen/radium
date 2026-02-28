@@ -356,9 +356,9 @@ void radium::RhiWindow::init()
 }
 
 
-//QMatrix4x4 g_viewProjection;
-float g2_height, g2_width;
 extern double g_opengl_scale_ratio;
+
+//QMatrix4x4 g_viewProjection;
 
 //! [swapchain-resize]
 void radium::RhiWindow::resizeSwapChain()
@@ -367,11 +367,20 @@ void radium::RhiWindow::resizeSwapChain()
 	
     _hasSwapChain = _sc->createOrResize(); // also handles _ds
 
+    const QSize outputSizeInPixels = _sc->currentPixelSize();
 
-    const QSize outputSize = _sc->currentPixelSize();
-	g2_height = double(outputSize.height()) / g_opengl_scale_ratio;
-	g2_width = double(outputSize.width()) / g_opengl_scale_ratio;
+	QMatrix4x4 s_y_flipper_matrix;
+	s_y_flipper_matrix.scale(1.0f, -1.0f, 1.0f);
 
+	QMatrix4x4 orthoProjection;
+	orthoProjection.ortho(-0.5f,
+						  float(outputSizeInPixels.width()/g_opengl_scale_ratio)-0.5f,
+						  -0.5f,
+						  float(outputSizeInPixels.height()/g_opengl_scale_ratio)-0.5f,
+						  -1.0, +1.0);
+
+	_viewProjection = (_rhi->clipSpaceCorrMatrix() * s_y_flipper_matrix) * orthoProjection;
+		
 	/*
     _viewProjection = _rhi->clipSpaceCorrMatrix();
     _viewProjection.perspective(45.0f, outputSize.width() / (float) outputSize.height(), 0.01f, 1000.0f);

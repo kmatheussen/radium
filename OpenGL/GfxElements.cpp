@@ -175,10 +175,10 @@ public:
 	static float y(float y)
 	{
 #if 0 // TODO: Find out if we need to invert y or not.
-		float height = g_height;
-		float ret = scale(y,
-						  0, height,
-						  height, 0);
+		const float height = g_height;
+		const float ret = scale(y,
+								0, height,
+								height, 0);
 		return ret;
 #else
 		return y;

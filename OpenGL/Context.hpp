@@ -6,8 +6,6 @@
 
 extern QRhi *g_rhi;
 
-extern float g2_height, g2_width;
-
 namespace r
 {
 struct Context
@@ -36,38 +34,51 @@ struct Context
 		free(_buffer);
 	}
 
+	std::function<void(void)> _do_before_merging;
+	
 	void call_me_when_finished_painting(QRhi *rhi)
 	{
 		static int total = 0;
 		total += get_num_bytes();
 		printf("Num bytes: %d. Total: %d\n", get_num_bytes(), total);
-		
+
 		radium::ScopedMutex lock(_vbuf_lock);
-
-		for(auto *buf : _buffers_to_delete)
-			delete buf;
 		
-		_buffers_to_delete.clear();
-		
-		_vbuf = rhi->newBuffer(QRhiBuffer::Static, // Note: Possible optimization here. Don't really understand difference between Static, Immutable, and Dynamic.
-							   QRhiBuffer::VertexBuffer,
-							   get_num_bytes());
+		_do_before_merging = [rhi, this](void)
+			{
+				//radium::ScopedMutex lock(_vbuf_lock);
 
-		_vbuf->create();
-
-		if (_updates != nullptr)
-		{
-			_updates->release(); // unused.
-		}
+				for(auto *buf : _buffers_to_delete)
+					delete buf;
 		
-		_updates = rhi->nextResourceUpdateBatch();
-		_updates->uploadStaticBuffer(_vbuf, get_buffer());
+				_buffers_to_delete.clear();
+				
+				_vbuf = rhi->newBuffer(QRhiBuffer::Static, // Note: Possible optimization here. Don't really understand difference between Static, Immutable, and Dynamic.
+									   QRhiBuffer::VertexBuffer,
+									   get_num_bytes());
+				
+				_vbuf->create();
+
+				if (_updates != nullptr)
+				{
+					_updates->release(); // unused.
+				}
+		
+				_updates = rhi->nextResourceUpdateBatch();
+				_updates->uploadStaticBuffer(_vbuf, get_buffer());
+			};
 	}
 	
 	void maybe_merge_in(QRhiResourceUpdateBatch *update_batch)
 	{
-		if (_updates)
+		radium::ScopedMutex lock(_vbuf_lock);
+		
+		//if (_updates)
+		if (_do_before_merging)
 		{
+			_do_before_merging();
+			_do_before_merging = nullptr;
+			
 			printf("MERGING UPDATES\n");
 			update_batch->merge(_updates);
 			_updates->release();
@@ -134,33 +145,29 @@ struct Context
 	{
 		float f[TRIANGLE_SIZE];
 
+#define POS(I, X, Y)							\
+		f[I] = X;								\
+		f[I+1] = Y;
 
-		constexpr float sx1 = 0;
-		const float sxx = g2_width > 0 ? g2_width : 1000;
-		const float sxy = g2_height > 0 ? g2_height : 1000;
-		constexpr float sy1 = -1;
-		constexpr float sy2 = 1;
+#define COL(I, R, G, B, A)						\
+		f[I] = R;								\
+		f[I+1] = G;								\
+		f[I+2] = B;								\
+		f[I+3] = A;
 		
-#define TRANS(I1, X, Y)							\
-		f[I1] = scale(X,						\
-					  sx1, sxx,					\
-					  sy1, sy2);				\
-		f[I1+1] = scale(Y,						\
-						sx1, sxy,				\
-						sy1, sy2);
 		// P1
-		TRANS(0, x1, y1);
-		f[2] = r; f[3] = g; f[4] = b; f[5] = a;
+		POS(0, x1, y1);
+		COL(2, r, g, b, a);
 		//printf("P1. In: %f, %f. Out: %f, %f\n", x1, y1, f[0], f[1]);
 		
 		// P2
-		TRANS(6, x2, y2);
-		f[8] = r2; f[9] = g2; f[10] = b2; f[11] = a;
+		POS(6, x2, y2);
+		COL(8, r, g, b, a);
 		//printf("P2. In: %f, %f. Out: %f, %f\n", x2, y2, f[6], f[7]);
 		
 		// P3
-		TRANS(12, x3, y3);
-		f[14] = r2; f[15] = g2; f[16] = b2; f[17] = a2;
+		POS(12, x3, y3);
+		COL(14, r2, g2, b2, a2);
 		//printf("P3. In: %f, %f. Out: %f, %f\n", x3, y3, f[14], f[15]);
 		
 		addTriangle(f);

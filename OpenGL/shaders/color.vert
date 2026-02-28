@@ -26,6 +26,7 @@ layout(location = 1) in vec4 color;
 layout(location = 0) out vec4 v_color;
 
 layout(std140, binding = 0) uniform buf {
+    mat4 mvp;
     float yscroll;
 };
 
@@ -38,6 +39,6 @@ void main()
 	//color.rgb *= color.a;
 	v_color = gakk; //color; //gakk; //color; //vec3(1,0,0);//color;
 	//gl_Position = vec4(pos, 0.0, 1.0); //vec4(pos, 0.0, 1.0);
-	gl_Position = vec4(pos.x, pos.y+yscroll, 0, 1); //vec4(pos, 0.0, 1.0);
+	gl_Position = mvp * vec4(pos.x, pos.y - yscroll, 0, 1); //vec4(pos, 0.0, 1.0);
 	//FragColor = v_color;
 }
