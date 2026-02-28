@@ -246,7 +246,7 @@ static int osc_callback(const char *path, const char *typespec, lo_arg **argv, i
          );
 #endif
   
-  int result;
+  int result = 0;
   
   THREADING_run_on_main_thread_and_wait([typespec, argv, argc, msg, user_data, &result](){
   

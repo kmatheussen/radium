@@ -384,43 +384,43 @@ FROM_C-show-select-instrument-right-click
   (call-with-output-string
    (lambda (p)
      (let ((ow (owlet))
-	   (elist (list (rootlet))))
+           (elist (list (rootlet))))
        
        ;; show current error data
-       (format p "error: ~A " (ow 'error-type))
+       (format p "error: ") ;;~A " (ow 'error-type))
        (let ((info (ow 'error-data)))
-	 (if (and (pair? info)
-		  (string? (car info)))
-	     (format p " <font color='black' font size=\"+2\">~A</font><br>" (catch #t 
-				(lambda () 
-				  (apply format #f info))
-                                  ;;(ra:get-html-from-text (apply format #f info)))
-				(lambda args 
-				  "<error in format>")))
-	     (if (not (null? info))
-		 (format p "~A: " info))))
-
+         (if (and (pair? info)
+                  (string? (car info)))
+             (format p " <font color='black' font size=\"+2\">~A</font><br>" (catch #t 
+                                                                                    (lambda () 
+                                                                                      (apply format #f info))
+                                                                                    ;;(ra:get-html-from-text (apply format #f info)))
+                                                                                    (lambda args 
+                                                                                      "<error in format>")))
+             (if (not (null? info))
+                 (format p "~A: " info))))
+       
        (format p "~%<br>error-code: <font color='black' font size=\"+2\">~S</font><br>" (ow 'error-code))
        (when (ow 'error-line)
-	 (format p "~%<br>error-file/line: <font color='black'>~A[~A]</font><br>" (ow 'error-file) (ow 'error-line)))
-	   
+         (format p "~%<br>error-file/line: <font color='black'>~A[~A]</font><br>" (ow 'error-file) (ow 'error-line)))
+       
        ;; show history, if available
        (when (pair? (ow 'error-history)) ; a circular list, starts at error-code, entries stored backwards
-	 (let ((history ())
-	       (lines ())
-	       (files ())
-	       (start (ow 'error-history)))
-	   (do ((x (cdr start) (cdr x))
-		(i 0 (+ i 1)))
-	       ((or (eq? x start)
-		    (null? (car x))
-		    (= i (*s7* 'history-size)))
-		(format p "~%<br>error-history: ~%<br><br>~S<br>" (ra:get-html-from-text (format #f "~A" (car start))))
+         (let ((history ())
+               (lines ())
+               (files ())
+               (start (ow 'error-history)))
+           (do ((x (cdr start) (cdr x))
+                (i 0 (+ i 1)))
+               ((or (eq? x start)
+                    (null? (car x))
+                    (= i (*s7* 'history-size)))
+                (format p "~%<br>error-history: ~%<br><br>~S<br>" (ra:get-html-from-text (format #f "~A" (car start))))
                 (define i2 0)
                 (define is-finished #f)
-		(do ((x history (cdr x)) ;; x))) ;;(cdr x))
-		     (line lines (cdr line))
-		     (f files (cdr f))
+                (do ((x history (cdr x)) ;; x))) ;;(cdr x))
+                     (line lines (cdr line))
+                     (f files (cdr f))
                      )
                     ((null? x))
                   (set! i2 (+ i2 1))
@@ -432,8 +432,8 @@ FROM_C-show-select-instrument-right-click
                   (cond ((or is-finished
                              (equal? (car x)
                                      '(if (and rethrow maybe-rethrow) (throw *try-finally-rethrown*) ret))
-                             ;(and is-call
-                             ;     (eq? call-func-name 'FROM-C-catch-all-errors-and-display-backtrace-automatically))
+                                        ;(and is-call
+                                        ;     (eq? call-func-name 'FROM-C-catch-all-errors-and-display-backtrace-automatically))
                              (and is-call
                                   (eq? call-func-name 'eval-string))
                              )
@@ -460,23 +460,23 @@ FROM_C-show-select-instrument-right-click
                                                i2
                                                (ra:get-html-from-text (format #f "~A" (car x)))))))))
                 (format p "~%<br>"))
-	     (set! history (cons (car x) history))
-	     (set! lines (cons (and (pair? (car x))
+             (set! history (cons (car x) history))
+             (set! lines (cons (and (pair? (car x))
                                     (pair-line-number (car x)))
                                lines))
-	     (set! files (cons (and (pair? (car x))
+             (set! files (cons (and (pair? (car x))
                                     (pair-filename (car x)))
                                files)))))
        
        ;; show the enclosing contexts
        (let ((old-print-length (*s7* 'print-length)))
-	 (set! (*s7* 'print-length) 8)
-	 (do ((e (outlet ow) (outlet e))) 
-	     ((memq e elist)
-	      (set! (*s7* 'print-length) old-print-length))
-	   (if (> (length e) 0)
-	       (format p "~%<br>~{~A~| ~}~%<br>" e))
-	   (set! elist (cons e elist))))))))
+         (set! (*s7* 'print-length) 8)
+         (do ((e (outlet ow) (outlet e))) 
+             ((memq e elist)
+              (set! (*s7* 'print-length) old-print-length))
+           (if (> (length e) 0)
+               (format p "~%<br>~{~A~| ~}~%<br>" e))
+           (set! elist (cons e elist))))))))
 
 ;; Note! This function is called from the error handler.
 (define (history-ow!)

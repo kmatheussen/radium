@@ -965,7 +965,7 @@
                                   (lambda (ison)
                                     (<ra> :set-seqtrack-record-compensate-latency seqtracknum ison))))
 
-                    (<gui> :group "Source channel -> Soundfile channel"
+                    (<gui> :group "Input channel -> Soundfile channel"
                            (let ((matrix (<gui> :horizontal-layout
                                                 (map (lambda (input-channel)
                                                        (<gui> :vertical-layout
