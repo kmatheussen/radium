@@ -1422,6 +1422,13 @@ void PLUGIN_call_me_before_starting_to_play_song_END(SoundPlugin *plugin){
     }
   }
   
+  // FIX: Snap all Smooth parameters immediately to avoid interpolation glitch
+  // on song restart when in the middle of an automation curve.
+  SMOOTH_force_target_value(&plugin->volume,       SMOOTH_get_target_value(&plugin->volume));
+  SMOOTH_force_target_value(&plugin->input_volume, SMOOTH_get_target_value(&plugin->input_volume));
+  SMOOTH_force_target_value(&plugin->pan,          SMOOTH_get_target_value(&plugin->pan));
+  SMOOTH_force_target_value(&plugin->drywet,       SMOOTH_get_target_value(&plugin->drywet));
+  
   if (has_set_effect_value)
     update_instrument_gui(plugin);
 
