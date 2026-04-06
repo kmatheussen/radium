@@ -46,8 +46,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #  if USE_BOTH_XCB_MODES || !USE_xcb_key_release_lookup_keysym
 #    include <xkbcommon/xkbcommon.h>
 #    include <xkbcommon/xkbcommon-x11.h>
+//#    include <xcb/xcb_keysyms.h>
+//#    include <xcb/xinput.h>
+//#    define explicit dont_use_cxx_explicit
+//#      include <xcb/xkb.h>
+//#    undef explicit
+//#include <QtXcb/qxcbkeyboard.h>
 #  endif
 #endif
+
 
 #include "../common/playerclass.h"
 #include "../common/eventreciever_proc.h"
@@ -336,60 +343,69 @@ static xcb_keysym_t get_sym_from_key_symbols(xcb_key_press_event_t *event){
 }
 #endif
 
+
 #if USE_BOTH_XCB_MODES || !USE_xcb_key_release_lookup_keysym
-static xcb_keysym_t get_sym_from_key_get_one_sym(xcb_key_press_event_t *event){
-	//printf("DEBUG/get_sym: Enter. event->detail: %u\n", (unsigned)event->detail);
 
-    static bool inited = false;
-  
-	static struct xkb_keymap *s_keymap = NULL;
-	static struct xkb_state *s_state = NULL;
+static xcb_keysym_t get_sym_from_key_get_one_sym(xcb_key_press_event_t *event)
+{
+	static QHash<uint16_t, struct xkb_state*> s_states; //s_state> = NULL;
 
-    if (inited==false)
+	if (!s_states.contains(event->state))
 	{
-		//SYSTEM_show_error_message("Testing message");
+		static xcb_connection_t *connection = NULL;
 
-		xcb_connection_t *connection = get_xcb_connection();
-
-		if (connection != NULL)
+		if (connection == NULL)
 		{
-			int32_t device_id = xkb_x11_get_core_keyboard_device_id(connection);
+			connection = get_xcb_connection();
+
+			if (connection == NULL)
+			{
+				SYSTEM_show_error_message("Unable to obtain xkb device id");
+				return XK_space;
+			}
+		}
+		
+		static int32_t device_id = -1;
+			
+		if (device_id == -1)
+		{
+			device_id = xkb_x11_get_core_keyboard_device_id(connection);
 			
 			if (device_id == -1)
 			{
 				SYSTEM_show_error_message("Unable to obtain xkb device id");
-			}
-			else
-			{
-				struct xkb_context *ctx = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
-				
-				s_keymap = ctx==NULL ? NULL : xkb_x11_keymap_new_from_device(ctx, connection, device_id,
-																			 XKB_KEYMAP_COMPILE_NO_FLAGS);
-				if (!s_keymap)
-				{
-					if (!ctx)
-						SYSTEM_show_error_message("Unable to create xkb_context");
-					else
-						SYSTEM_show_error_message("Unable to create xkb keymap from device");
-				}
-				else
-				{
-					s_state = xkb_x11_state_new_from_device(s_keymap, connection, device_id);
-					if (!s_state)
-					{
-						SYSTEM_show_error_message("Unable to create xkb state from device");
-					}
-				}
+				return XK_space;
 			}
 		}
-		
-		inited = true;
-    }
-	
-    if (s_state == NULL)
-		return XK_space;
+			
+		static struct xkb_context *ctx = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
 
-	return xkb_state_key_get_one_sym(s_state, event->detail);
+		if (ctx == NULL)
+		{
+			ctx = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
+
+			if (ctx == NULL)
+			{
+				SYSTEM_show_error_message("Unable to obtain xkb device id");
+				return XK_space;
+			}			
+		}
+		
+		struct xkb_keymap *s_keymap = xkb_x11_keymap_new_from_device(ctx, connection, device_id,
+																	 XKB_KEYMAP_COMPILE_NO_FLAGS);
+		
+		auto *new_state = xkb_x11_state_new_from_device(s_keymap, connection, device_id);
+		
+		if (!new_state)
+		{
+			SYSTEM_show_error_message("Unable to create xkb state from device");
+			return XK_space;
+		}
+			
+		s_states[event->state] = new_state;
+	}
+	
+	return xkb_state_key_get_one_sym(s_states.value(event->state), event->detail);
 }
 #endif
 
@@ -579,6 +595,8 @@ int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
   
   auto response_type = RX11_get_event_response_type(event);
 
+  //printf("Event_type: %x. %x\n", response_type, (response_type & ~0x80));
+  
   if ( (response_type & ~0x80) == XCB_KEY_PRESS){
     
     struct Stuff{
