@@ -4188,7 +4188,10 @@ int radium_main(const char *arg){
 
   if (getDoSaveRestoreWindows())
 	  restoreWindowsState(main_window);
-  
+
+  // Ensure we're not reading config file first time adding a note.
+  doAddNotesWhenReleasingKeys();
+	  
 #if USE_QT_VISUAL
  again:
   try{
