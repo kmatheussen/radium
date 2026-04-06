@@ -352,49 +352,64 @@ static xcb_keysym_t get_sym_from_key_get_one_sym(xcb_key_press_event_t *event)
 
 	if (!s_states.contains(event->state))
 	{
-		static xcb_connection_t *connection = NULL;
+		static xcb_connection_t *s_connection = NULL;
 
-		if (connection == NULL)
+		if (s_connection == NULL)
 		{
-			connection = get_xcb_connection();
+			s_connection = get_xcb_connection();
 
-			if (connection == NULL)
+			if (s_connection == NULL)
 			{
 				SYSTEM_show_error_message("Unable to obtain xkb device id");
 				return XK_space;
 			}
 		}
 		
-		static int32_t device_id = -1;
+		static int32_t s_device_id = -1;
 			
-		if (device_id == -1)
+		if (s_device_id == -1)
 		{
-			device_id = xkb_x11_get_core_keyboard_device_id(connection);
+			s_device_id = xkb_x11_get_core_keyboard_device_id(s_connection);
 			
-			if (device_id == -1)
+			if (s_device_id == -1)
 			{
 				SYSTEM_show_error_message("Unable to obtain xkb device id");
 				return XK_space;
 			}
 		}
 			
-		static struct xkb_context *ctx = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
+		static struct xkb_context *s_ctx = NULL;
 
-		if (ctx == NULL)
+		if (s_ctx == NULL)
 		{
-			ctx = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
+			s_ctx = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
 
-			if (ctx == NULL)
+			if (s_ctx == NULL)
 			{
-				SYSTEM_show_error_message("Unable to obtain xkb device id");
+				SYSTEM_show_error_message("Unable to create new xkb_context");
 				return XK_space;
 			}			
 		}
 		
-		struct xkb_keymap *s_keymap = xkb_x11_keymap_new_from_device(ctx, connection, device_id,
-																	 XKB_KEYMAP_COMPILE_NO_FLAGS);
+		static struct xkb_keymap *s_keymap = NULL;
 		
-		auto *new_state = xkb_x11_state_new_from_device(s_keymap, connection, device_id);
+		if (s_keymap == NULL)
+		{
+			s_keymap = xkb_x11_keymap_new_from_device(s_ctx,
+													  s_connection,
+													  s_device_id,
+													  XKB_KEYMAP_COMPILE_NO_FLAGS);
+		
+			if (s_keymap == NULL)
+			{
+				SYSTEM_show_error_message("Unable to create xkb keymap from device");
+				return XK_space;
+			}
+		}
+			
+		auto *new_state = xkb_x11_state_new_from_device(s_keymap,
+														s_connection,
+														s_device_id);
 		
 		if (!new_state)
 		{
