@@ -1,5 +1,44 @@
-Changes 7.7.71 -> 7.5.76:
+Changes 7.5.76 -> 7.5.77:
+* Linux: Binaries are now built on AlmaLinux 9 (El9)
+  using gcc 15.1.1. The Radium binaries now requires
+  glibc 2.34 or newer.
+* Windows: Binaries are now built with gcc 11.5.
+* MacOS: Binaries are now built with clang 20.1.8.
+* Build: Add USE_QSVGVIEWER option to avoid building
+  with neither QWebEngine nor QtWebKit (development
+  only.)
+* Faust: Fix reading uninitialized data.
+* Editor/Preferences: Options to use QWERTY keyboard
+  when editing editor subtracks. This is a workaround
+  for incompatible keyboard locales such as french
+  keyboards where it was impossible to add numbers
+  into editor subtracks.
+* Linux: Fix locale settings when not using US
+  keyboard setting (and other almost compatible
+  locale settings such as scandinavian keyboards).
+* Linux: Improve the startup script a little bit.
+* Linux/Jack: Don't wrongly warn about using Jack1
+  when we're actually using PipeWire for Jack.
+* Audio: Update libgig from 4.2.0 to 4.5.1, which
+  might solve some issues when deleting instruments.
+* Editor: Fix hanging notes when playing song in some
+  situations after shrinking block length.
+* Build: Add "-fno-omit-frame-pointers" option to
+  almost all source files, also in release builds.
+  We're now only compiling with -fomit-frame-pointer
+  on a few files where using that option might
+  improve performance notably.
+* Build: Fix theoretical crashes caused by pointers
+  not being available to bdw-gc.
+* Many build fixes and code cleanups.
+* API: useQwerty09EditorSubtracks,
+  setUseQwerty09EditorSubtracks,
+  useQwertyAfEditorSubtracks,
+  setUseQwertyAfEditorSubtracks
 
+
+
+Changes 7.5.71 -> 7.5.76:
 * Editor/MIDI: Fix recording chords from MIDI input
   in step-recording mode.
 * Sequencer: Fix seqblocks sometimes being placed at

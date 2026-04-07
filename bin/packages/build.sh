@@ -235,16 +235,19 @@ build_fluidsynth() {
     cd ..
 }
 
-build_libgig () {
-
-    rm -fr libgig
-    tar xvjf libgig-4.2.0.tar.bz2
-    mv libgig-4.2.0 libgig
-    cd libgig
-    make clean
-    CFLAGS="-O3 -fno-strict-aliasing" CPPFLAGS="-O3 -fno-strict-aliasing" CXXFLAGS="-O3 -fno-strict-aliasing" CC=$DASCC CXX=$DASCXX ./configure
-    CFLAGS="$CFLAGS" CPPFLAGS="$CPPFLAGS" CPPFLAGS="$CXXFLAGS" make -j8
-    cd ..
+build_libgig ()
+{
+	exit -1 # this stuff is done in the makefile now. The lines below are only kept for reference.
+	rm -fr libgig
+	tar xvjf libgig-4.2.0.tar.bz2
+	mv libgig-4.2.0 libgig
+	cd libgig
+	patch -p1 <../libgig_dont_check_loops.patch
+	patch -p1 <../libgig_win32.patch
+	make clean
+	CFLAGS="-O3 -fno-strict-aliasing" CPPFLAGS="-O3 -fno-strict-aliasing" CXXFLAGS="-O3 -fno-strict-aliasing" CC=$DASCC CXX=$DASCXX ./configure
+	CFLAGS="$CFLAGS" CPPFLAGS="$CPPFLAGS" CPPFLAGS="$CXXFLAGS" make -j8
+	cd ..
 }
 
 

@@ -1,0 +1,15 @@
+--- libgig/src/SF_unpatched.cpp	2026-02-17 15:42:32.509600437 +0100
++++ libgig/src/SF.cpp	2026-02-17 15:44:03.933129211 +0100
+@@ -505,10 +505,12 @@
+                 if (HasLoop) {
+                     LoopStart += pSample->StartLoop;
+                     LoopEnd   += pSample->EndLoop;
++#if 0
+                     if ( LoopStart < pSample->Start || LoopStart > pSample->End ||
+                          LoopStart > LoopEnd        || LoopEnd   > pSample->End    ) {
+                         throw Exception("Broken SF2 file (invalid loops)");
+                     }
++#endif
+                     LoopStart -= pSample->Start; // Relative to the sample start
+                     LoopEnd   -= pSample->Start; // Relative to the sample start
+                 }
