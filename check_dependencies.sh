@@ -25,6 +25,15 @@ mywhich sed
 #which guile-1.8
 mywhich guile
 
+
+if [ `uname` == "Linux" ] ; then
+	if [[ $BUILDTYPE != "RELEASE" ]] ; then
+		mywhich dialog # for the popup menu kill script (avoids locking up X in case program freeze while a popup menu is open)
+		#mywhich kdialog # notifies when compilation is finished. (not important, just comment out if you don't want to install kde stuff)
+	fi
+fi
+
+
 if [[ $1 == "test_packages" ]] ; then
     echo "testing packages"
 fi

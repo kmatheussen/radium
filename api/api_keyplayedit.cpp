@@ -38,11 +38,12 @@ extern bool tevent_autorepeat;
   Computer Keyboard Note Playing/Editing 
 *******************************************/
 
-void keyDownPlay(int notenum,int windownum){
-  //printf("DOWN: doautorepeat: %d, autorepeat: %d\n", doAutoRepeat(), AutoRepeat(tevent.keyswitch));
+void keyDownPlay(int notenum,int windownum)
+{
+	//printf("DOWN: doautorepeat: %d, autorepeat: %d\n", doAutoRepeat(), AutoRepeat(tevent.keyswitch));
   
-        if (!doAutoRepeat() && tevent_autorepeat)
-          return;
+	if (!doAutoRepeat() && tevent_autorepeat)
+		return;
 
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 
@@ -51,20 +52,22 @@ void keyDownPlay(int notenum,int windownum){
 	if(notenum<=0 || notenum>127) return;
 	if(window==NULL || window->curr_track<0) return;
 
-        bool do_edit = ATOMIC_GET_RELAXED(root->editonoff);
+	bool do_edit = ATOMIC_GET_RELAXED(root->editonoff);
 
-        PATCH_playNoteCurrPos(window,notenum,-1);
-        if(do_edit){
-          InsertNoteCurrPos(window,notenum,false,-1);
-          window->must_redraw = true;
-        }
+	PATCH_playNoteCurrPos(window,notenum,-1);
+	if(do_edit)
+	{
+		InsertNoteCurrPos(window,notenum,false,-1);
+		window->must_redraw = true;
+	}
 }
 
-void polyKeyDownPlay(int notenum,int windownum){
-  //printf("POLY: doautorepeat: %d, autorepeat: %d\n", doAutoRepeat(), AutoRepeat(tevent.keyswitch));
+void polyKeyDownPlay(int notenum,int windownum)
+{
+	//printf("POLY: doautorepeat: %d, autorepeat: %d\n", doAutoRepeat(), AutoRepeat(tevent.keyswitch));
 
-        if (!doAutoRepeat() && tevent_autorepeat)
-          return;
+	if (!doAutoRepeat() && tevent_autorepeat)
+		return;
 
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 
@@ -74,12 +77,13 @@ void polyKeyDownPlay(int notenum,int windownum){
 	if(window==NULL || window->curr_track<0) return;
 
 	PATCH_playNoteCurrPos(window,notenum,-1);
-        if(ATOMIC_GET(root->editonoff))
-          InsertNoteCurrPos(window,notenum,true,-1);
+	if(ATOMIC_GET(root->editonoff))
+		InsertNoteCurrPos(window,notenum,true,-1);
 }
 
-void keyUpPlay(int notenum,int windownum){
-  //printf("UP: doautorepeat: %d, autorepeat: %d\n", doAutoRepeat(), AutoRepeat(tevent.keyswitch));
+void keyUpPlay(int notenum,int windownum)
+{
+	//printf("UP: doautorepeat: %d, autorepeat: %d\n", doAutoRepeat(), AutoRepeat(tevent.keyswitch));
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 
 	notenum+=root->keyoct;
@@ -87,52 +91,58 @@ void keyUpPlay(int notenum,int windownum){
 	if(notenum<=0 || notenum>127) return;
 	if(window==NULL || window->curr_track<0) return;
         
-        PATCH_stopNoteCurrPos(window,notenum,-1);
+	PATCH_stopNoteCurrPos(window,notenum,-1);
 }
 
-void setKeyAdd(int addnum){
+void setKeyAdd(int addnum)
+{
 #if 0
-  if(root->keyoct==addnum)
-    root->keyoct=addnum+12;
-  else if(root->keyoct==addnum+12 && addnum==72)
-    root->keyoct=addnum+24;
-  else if(root->keyoct==addnum+24 && addnum==72)
-    root->keyoct=addnum+36;
-  else if(root->keyoct==addnum+36 && addnum==72)
-    root->keyoct=addnum+48;
-  else
+	if(root->keyoct==addnum)
+		root->keyoct=addnum+12;
+	else if(root->keyoct==addnum+12 && addnum==72)
+		root->keyoct=addnum+24;
+	else if(root->keyoct==addnum+24 && addnum==72)
+		root->keyoct=addnum+36;
+	else if(root->keyoct==addnum+36 && addnum==72)
+		root->keyoct=addnum+48;
+	else
 #endif
-    root->keyoct=addnum;
+		root->keyoct=addnum;
     GFX_OS_UpdateKeyOctave();
 }
 
-void incKeyAdd(int incaddnum){
-  int keyoct = root->keyoct + incaddnum;
+void incKeyAdd(int incaddnum)
+{
+	int keyoct = root->keyoct + incaddnum;
 	
-  if(keyoct>127 || keyoct<0)
-    return;
+	if(keyoct>127 || keyoct<0)
+		return;
 
-  setKeyAdd(keyoct);
+	setKeyAdd(keyoct);
 }
 
-void decKeyAdd(int decaddnum){
+void decKeyAdd(int decaddnum)
+{
 	incKeyAdd(-decaddnum);
 }
 
-bool switchDrunkVelocityOnOff(void){
-  return EDITOR_switch_drunk_velocity();
+bool switchDrunkVelocityOnOff(void)
+{
+	return EDITOR_switch_drunk_velocity();
 }
 
-void switchEditOnOff(void){
+void switchEditOnOff(void)
+{
 	struct Tracker_Windows *window=getWindowFromNum(-1);
 	ATOMIC_SET(root->editonoff, ATOMIC_GET(root->editonoff)?false:true);
-        char temp[1000];
-        snprintf(temp,999,"Edit %s",ATOMIC_GET(root->editonoff)?"On":"Off");
-        GFX_SetStatusBar(temp);
-        window->must_redraw=true;
+	char temp[1000];
+	snprintf(temp,999,"Edit %s",ATOMIC_GET(root->editonoff)?"On":"Off");
+	GFX_SetStatusBar(temp);
+	window->must_redraw=true;
 }
 
-void switchSoundScrollOnOff(int windownum){
+void switchSoundScrollOnOff(int windownum)
+{
 	struct Tracker_Windows *window=getWindowFromNum(windownum);
 	if(window==NULL) return;
 
