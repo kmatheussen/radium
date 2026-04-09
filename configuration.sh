@@ -233,7 +233,7 @@ fi
 
 if ${UIC} --version | grep -v '^uic 5.1' ; then
     if ${UIC} --version | grep -v '^uic-qt5 5.1' ; then
-	handle_failure "Seems like uic has the wrong version. We need Qt newer than 5.10, but not Qt6. Set UIC to correct path to fix".
+		handle_failure "Seems like uic has the wrong version. We need Qt newer than 5.10, but not Qt6. Set UIC to correct path to fix".
     fi
 fi
 
