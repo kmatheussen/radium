@@ -27,6 +27,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/nsmtracker.h"
 
 #include <QX11Info>
+//#include <QLocale>
+//#include <QGuiApplication>
 
 #include "X11.h"
 
@@ -348,10 +350,17 @@ static xcb_keysym_t get_sym_from_key_symbols(xcb_key_press_event_t *event){
 
 static xcb_keysym_t get_sym_from_key_get_one_sym(xcb_key_press_event_t *event)
 {
-	static QHash<uint16_t, struct xkb_state*> s_states; //s_state> = NULL;
+	//.const QLocale locale = QGuiApplication::inputMethod()->locale(); // doesn't work. Arrgh.
+	//static QHash<QLocale, QHash<uint16_t, struct xkb_state*>> s_states; //s_state> = NULL;
+	//printf("Locale: %d\n", (int)locale.language());
+	
+	static QHash<QHash<uint16_t, struct xkb_state*> s_states; //s_state> = NULL;
 
+	//if (!s_states.contains(locale) || !s_states.value(locale).contains(event->state))
 	if (!s_states.contains(event->state))
 	{
+		//printf("Creating new state\n");
+
 		static xcb_connection_t *s_connection = NULL;
 
 		if (s_connection == NULL)
@@ -406,7 +415,7 @@ static xcb_keysym_t get_sym_from_key_get_one_sym(xcb_key_press_event_t *event)
 				return XK_space;
 			}
 		}
-			
+
 		auto *new_state = xkb_x11_state_new_from_device(s_keymap,
 														s_connection,
 														s_device_id);
@@ -417,9 +426,11 @@ static xcb_keysym_t get_sym_from_key_get_one_sym(xcb_key_press_event_t *event)
 			return XK_space;
 		}
 			
+		//s_states[locale][event->state] = new_state;
 		s_states[event->state] = new_state;
 	}
 	
+	//return xkb_state_key_get_one_sym(s_states.value(locale).value(event->state), event->detail);
 	return xkb_state_key_get_one_sym(s_states.value(event->state), event->detail);
 }
 #endif
