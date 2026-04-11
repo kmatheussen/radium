@@ -815,6 +815,7 @@ dependencies_ok: check_dependencies.sh #Makefile
 	export PYTHONEXE_NOT_AVAILABLE_YET=1;\
 	./check_dependencies.sh test_build\
 	" >makescript.sh
+	dos2unix makescript.sh
 	bash makescript.sh
 
 #	#PYTHONEXE_NOT_AVAILABLE_YET=1 ./check_dependencies.sh test_build
