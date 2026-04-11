@@ -1,3 +1,20 @@
+Changes 7.5.77 -> 7.5.78:
+* Linux/Keyboard: Fix program using wrong modifier
+  keys if starting the program while holding a
+  modifier key and other situations.
+* Sequencer: Change "Source channel" to "Input channel"
+  in the recording options dialog.
+* Api: Document consistant behavior and fix reading
+  an uninitialized variable in case running an
+  osc-method fails.
+* Packages: Fix libgig checking loops in soundfonts.
+  This fix a regression from 2021. Bug found
+  by @linux-leo.
+* API: doAddNotesWhenReleasingKeys,
+  setAddNotesWhenReleasingKeys.
+
+
+
 Changes 7.5.76 -> 7.5.77:
 * Linux: Binaries are now built on AlmaLinux 9 (El9)
   using gcc 15.1.1. The Radium binaries now requires
