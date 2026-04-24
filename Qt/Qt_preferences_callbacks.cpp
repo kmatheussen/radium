@@ -730,6 +730,8 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
 
       autorepeatbutton->setChecked(doAutoRepeat());
 
+      add_notes_on_release->setChecked(doAddNotesWhenReleasingKeys());
+
       range_paste_cut_button->setChecked(doRangePasteCut());
 
       range_paste_scroll_down_button->setChecked(doRangePasteScrollDown());
@@ -1407,6 +1409,10 @@ public slots:
   void on_autorepeatbutton_toggled(bool val){
     if (_initing==false)
       setAutoRepeat(val);
+  }
+  void on_add_notes_on_release_toggled(bool val){
+    if (_initing==false)
+      setAddNotesWhenReleasingKeys(val);
   }
   void on_range_paste_cut_button_toggled(bool val){
     if (_initing==false)
