@@ -354,7 +354,7 @@ static xcb_keysym_t get_sym_from_key_get_one_sym(xcb_key_press_event_t *event)
 	//static QHash<QLocale, QHash<uint16_t, struct xkb_state*>> s_states; //s_state> = NULL;
 	//printf("Locale: %d\n", (int)locale.language());
 	
-	static QHash<QHash<uint16_t, struct xkb_state*> s_states; //s_state> = NULL;
+	static QHash<uint16_t, struct xkb_state*> s_states; //s_state> = NULL;
 
 	//if (!s_states.contains(locale) || !s_states.value(locale).contains(event->state))
 	if (!s_states.contains(event->state))
