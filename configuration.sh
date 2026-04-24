@@ -255,6 +255,7 @@ if is_0 $MOC ; then
     fi
 fi
 
+
 if is_0 $QSB ; then
 	if [ -f "${QT_HOST_LIBEXECS}/qsb" ] ; then
 		export QSB="${QT_HOST_LIBEXECS}/qsb"
