@@ -163,7 +163,7 @@ public:
   
   void remove(radium::MidiLearn *midi_learn){
     MidiLearnItem *item=NULL;
-    for (auto item2 : items)
+    for (auto *item2 : items)
       if (item2->midi_learn==midi_learn){
         item = item2;
         break;

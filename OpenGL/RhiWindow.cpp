@@ -5,6 +5,7 @@
 #include <QSemaphore>
 #include <QThread>
 #include <QOffscreenSurface>
+#include <QVarLengthArray>
 
 #include "../common/nsmtracker.h"
 

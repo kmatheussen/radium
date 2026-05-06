@@ -697,12 +697,15 @@ private:
         is_finished=true;
       }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
       int pos=0;
       for(int i=0;i<num_read;i++)
 	  {
-		  for(int ch=0;ch<_num_ch;ch++)
+		  for(int ch=0;ch<_num_ch;ch++)			  
 			  samples[ch][i] = interleaved_samples[pos++];
       }
+#pragma GCC diagnostic pop
 	  
       for(int ch=0;ch<_num_ch;ch++)
         _peaks[ch].add_samples(samples[ch], num_read, is_finished ? Peaks::THIS_IS_THE_LAST_CALL : Peaks::MORE_IS_COMING_LATER);

@@ -62,7 +62,11 @@ void MIDILEARN_PREFS_add(radium::MidiLearn *midi_learn){
 void MIDILEARN_PREFS_remove(radium::MidiLearn *midi_learn){
   ensure_open();
   R_ASSERT_RETURN_IF_FALSE(midi_learn != NULL);
-  midilearn_prefs_widget->remove(midi_learn);
+  
+  auto *mlp = midilearn_prefs_widget.get(); // A little bit awkward code here to avoid a gcc warning about potentially using a NULL pointer.
+  R_ASSERT_RETURN_IF_FALSE(mlp != NULL);
+  
+  mlp->remove(midi_learn);
 }
 
 void TOOLS_open(void){

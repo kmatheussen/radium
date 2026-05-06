@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <vector>
 
 #include <QMap>
+#include <QVarLengthArray> // Must be included before nsmtracker.h to avoid compilation error.
 
 double g_opengl_scale_ratio = 1.0;
 

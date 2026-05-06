@@ -19,7 +19,7 @@ static inline void* safe_memset(T* ptr, int value, size_t num) {
 		std::is_same<T,QAccessible::State>::value ||
 #endif
 		std::is_same<T,void>::value ||
-	        std::is_trivial<T>::value,
+	        std::is_trivially_copyable<T>::value,
 		"memset on non-trivial type");
 	return memset(ptr, value, num);
 }
@@ -30,7 +30,7 @@ static inline void* safe_memset(T* ptr, int value, size_t num) {
 
 template <typename T>
 static inline void safe_free(T* ptr) {
-	static_assert(std::is_same<T,void>::value || std::is_trivial<T>::value, "free on non-trivial type");
+	static_assert(std::is_same<T,void>::value || std::is_trivially_copyable<T>::value, "free on non-trivial type");
 	free(ptr);
 }
 
@@ -40,8 +40,8 @@ static inline void safe_free(T* ptr) {
 template <typename T1, typename T2>
 static inline void *safe_memcpy(T1* dest, T2 *src, size_t n)
 {
-	static_assert(std::is_same<T1,void>::value || std::is_trivial<T1>::value, "memcpy on non-trivial type");
-	static_assert(std::is_same<typename std::remove_const<T2>::type,void>::value || std::is_trivial<T2>::value, "memcpy on non-trivial type");
+	static_assert(std::is_same<T1,void>::value || std::is_trivially_copyable<T1>::value, "memcpy on non-trivial type");
+	static_assert(std::is_same<typename std::remove_const<T2>::type,void>::value || std::is_trivially_copyable<T2>::value, "memcpy on non-trivial type");
 	return memcpy(dest, src, n);
 }
 
@@ -51,8 +51,8 @@ static inline void *safe_memcpy(T1* dest, T2 *src, size_t n)
 template <typename T1, typename T2>
 static inline void *safe_memmove(T1* dest, T2 *src, size_t n)
 {
-	static_assert(std::is_same<T1,void>::value || std::is_trivial<T1>::value, "memmove on non-trivial type");
-	static_assert(std::is_same<T2,void>::value || std::is_trivial<T2>::value, "memmove on non-trivial type");
+	static_assert(std::is_same<T1,void>::value || std::is_trivially_copyable<T1>::value, "memmove on non-trivial type");
+	static_assert(std::is_same<T2,void>::value || std::is_trivially_copyable<T2>::value, "memmove on non-trivial type");
 	return memmove(dest, src, n);
 }
 
@@ -104,7 +104,7 @@ public:
 	operator Return_type () const
 	{
 		using NonPointerReturnType = typename std::remove_pointer<Return_type>::type;
-		static_assert(std::is_same<NonPointerReturnType, void>::value || std::is_trivial<NonPointerReturnType>::value, "malloc/etc. used to create object with non-trivial type");
+		static_assert(std::is_same<NonPointerReturnType, void>::value || std::is_trivially_copyable<NonPointerReturnType>::value, "malloc/etc. used to create object with non-trivial type");
 		return (Return_type)_alloc_func(_a1);
 	}
 	
@@ -129,7 +129,7 @@ public:
 	operator Return_type () const
 	{
 		using NonPointerReturnType = typename std::remove_pointer<Return_type>::type;
-		static_assert(std::is_same<NonPointerReturnType, void>::value || std::is_trivial<NonPointerReturnType>::value, "malloc/etc. used to create object with non-trivial type");
+		static_assert(std::is_same<NonPointerReturnType, void>::value || std::is_trivially_copyable<NonPointerReturnType>::value, "malloc/etc. used to create object with non-trivial type");
 		return (Return_type)_alloc_func(_a1, _a2);
 	}
 	
@@ -156,7 +156,7 @@ public:
 	operator Return_type () const
 	{
 		using NonPointerReturnType = typename std::remove_pointer<Return_type>::type;
-		static_assert(std::is_same<NonPointerReturnType, void>::value || std::is_trivial<NonPointerReturnType>::value, "malloc/etc. used to create object with non-trivial type");
+		static_assert(std::is_same<NonPointerReturnType, void>::value || std::is_trivially_copyable<NonPointerReturnType>::value, "malloc/etc. used to create object with non-trivial type");
 		return (Return_type)_alloc_func(_a1, _a2, _a3);
 	}
 	
@@ -185,7 +185,7 @@ public:
 	operator Return_type () const
 	{
 		using NonPointerReturnType = typename std::remove_pointer<Return_type>::type;
-		static_assert(std::is_same<NonPointerReturnType, void>::value || std::is_trivial<NonPointerReturnType>::value, "malloc/etc. used to create object with non-trivial type");
+		static_assert(std::is_same<NonPointerReturnType, void>::value || std::is_trivially_copyable<NonPointerReturnType>::value, "malloc/etc. used to create object with non-trivial type");
 		return (Return_type)_alloc_func(_a1, _a2, _a3, _a4);
 	}
 	
