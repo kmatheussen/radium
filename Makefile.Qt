@@ -210,6 +210,11 @@ endif
 QT_CFLAGS += $(USE_QWEBENGINE_CFLAGS)
 
 
+WNO_MAYBE_UNINITIALIZED=
+ifdef USING_GCC
+	 WNO_MAYBE_UNINITIALIZED += -Wno-maybe-uninitialized
+endif
+
 WNO_DEPRECATED_COPY=
 ifeq ($(GCC_MAJOR),9)
 	WNO_DEPRECATED_COPY=-Wno-deprecated-copy
@@ -1038,9 +1043,9 @@ bin/packages/deletemetorebuild: bin/packages/build.sh
 	echo "\
 	set -xeEu;\
 	export PYTHONEXE_NOT_AVAILABLE_YET=1;\
-	./check_dependencies.sh test_packages
+	./check_dependencies.sh test_packages;\
 	cd bin/packages;\
-	./build.sh this_argument_is_not_used no \
+	./build.sh this_argument_is_not_used no\
 	" >makescript.sh
 	bash makescript.sh
 	@echo
@@ -1316,13 +1321,8 @@ $(T)sequencer_timing.o:  $(BUILD_DEPENDENCIES) $(CD)sequencer_timing.cpp $(CD)Se
 $(T)seqblock_automation.o:  $(BUILD_DEPENDENCIES) $(CD)seqblock_automation.cpp $(CD)SeqAutomation.hpp $(CD)atomic.h audio/Envelope.hpp common/Vector.hpp
 	$(CCC2) $(CD)seqblock_automation.cpp $(QTOPT) -Wno-unknown-pragmas
 
-SEQBLOCK_STRETCHSPEED_OPT=
-ifdef USING_GCC
-	 SEQBLOCK_STRETCHSPEED_OPT += -Wno-maybe-uninitialized
-endif
-
 $(T)seqblock_stretchspeed.o:  $(BUILD_DEPENDENCIES) $(CD)seqblock_stretchspeed.cpp $(CD)SeqAutomation.hpp 
-	$(CCC2) $(CD)seqblock_stretchspeed.cpp $(QTOPT) $(SEQBLOCK_STRETCHSPEED_OPT)
+	$(CCC2) $(CD)seqblock_stretchspeed.cpp $(QTOPT) $(WNO_MAYBE_UNINITIALIZED)
 
 $(T)time.o:  $(BUILD_DEPENDENCIES) $(CD)time.cpp common/time_proc.h
 	$(CCC2) $(CD)time.cpp $(QTOPT)
@@ -2956,7 +2956,7 @@ $(T)http_parser.o: $(QHTTPSERVER_PATH)/http-parser/http_parser.c
 LIBGIG_FLAGS=-Wno-sign-compare -Wno-missing-declarations -Wno-unused-result -DPACKAGE="\"libgig\"" -DVERSION="\"4.2.0\"" -D_GNU_SOURCE
 
 $(T)RIFF.o: $(LIBGIG_PATH)/RIFF.cpp
-	$(CCC2) -c $(LIBGIG_PATH)/RIFF.cpp $(CPPOPT) $(LIBGIG_FLAGS)
+	$(CCC2) -c $(LIBGIG_PATH)/RIFF.cpp $(CPPOPT) $(LIBGIG_FLAGS) $(WNO_MAYBE_UNINITIALIZED)
 
 $(T)SF.o: $(LIBGIG_PATH)/SF.cpp
 	$(CCC2) -c $(LIBGIG_PATH)/SF.cpp $(CPPOPT) $(LIBGIG_FLAGS)

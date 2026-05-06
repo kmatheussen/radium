@@ -3552,14 +3552,19 @@ void cancelCurrSeqblockUnderMouse(void){
     return;
   
   int seqblocknum, seqtracknum;
-  struct SeqTrack *seqtrack;
+  struct SeqTrack *seqtrack = NULL;
   struct SeqBlock *seqblock = getGfxSeqblockFromIdB(g_curr_seqblock_id_under_mouse, &seqtrack, seqblocknum, seqtracknum, false);
 
   if(seqblock!=NULL)
-    SEQBLOCK_update(seqtrack, seqblock);
+  {
+	  R_ASSERT_RETURN_IF_FALSE(seqtrack != NULL);
+	  SEQBLOCK_update(seqtrack, seqblock);
+  }
   else
+  {
     SEQUENCER_update(SEQUPDATE_TIME); // A scheme error will be thrown if this happens.
-
+  }
+  
   SEQUENCER_update(SEQUPDATE_NAVIGATOR);
   
   //g_curr_seqblock_under_mouse = NULL;
