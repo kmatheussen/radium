@@ -58,13 +58,13 @@ public:
 				delete _fallbackSurface;
 #endif
 				fprintf(stderr, "A2\n");
-				delete _sc;
+				delete _swap_chain;
 				//fprintf(stderr, "A3\n");
 #if USE_RENDER_BUFFER
 				delete _ds;
 #endif
 				fprintf(stderr, "A4\n");
-				delete _rp;
+				delete _render_pass_descriptor;
 				fprintf(stderr, "A5\n");
 
 				if (_graphicsApi != QRhi::OpenGLES2) // Crash if deleting _rhi when using OpenGL.
@@ -95,11 +95,11 @@ protected:
 	
     QRhi *_rhi;
 //! [swapchain-data]
-    QRhiSwapChain *_sc;
+    QRhiSwapChain *_swap_chain;
 #if USE_RENDER_BUFFER
     QRhiRenderBuffer *_ds = nullptr;
 #endif
-    QRhiRenderPassDescriptor *_rp;
+    QRhiRenderPassDescriptor *_render_pass_descriptor;
 //! [swapchain-data]
 	bool _hasSwapChain = false;
     QMatrix4x4 _viewProjection;

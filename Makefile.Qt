@@ -766,7 +766,7 @@ OBJ = $(OBJ12) $(OBJ_ES) $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7)
 BUILD_DEPENDENCIES = flagopts.opt $(CD)keyboard_sub_ids.h dependencies_ok
 #buildtype.opt 
 
-PROGRAM_MODULES = $(RADIUM_BIN) bin/radium_crashreporter bin/protoconfparser.py bin/protos.conf bin/radium_error_message bin/radium_progress_window bin/radium_check_jack_status bin/radium_plugin_scanner bin/scheme/api_protos.scm bin/color.frag.qsb bin/color.vert.qsb # bin/radium_check_opengl 
+PROGRAM_MODULES = $(RADIUM_BIN) bin/radium_crashreporter bin/protoconfparser.py bin/protos.conf bin/radium_error_message bin/radium_progress_window bin/radium_check_jack_status bin/radium_plugin_scanner bin/scheme/api_protos.scm bin/color.frag.qsb bin/color.vert.qsb bin/texture_vertex.qsb bin/texture_fragment.qsb # bin/radium_check_opengl 
 OBJECT_DEPENDENCIES = $(BUILD_DEPENDENCIES)
 
 #bin/styles/libqcleanlooksstyle.so bin/styles/libqplastiquestyle.so
@@ -2815,10 +2815,10 @@ $(T)T2.o: OpenGL/T2.cpp $(VISUALIZATION_HEADERS) common/QueueStack.hpp
 $(T)Render.o: OpenGL/Render.cpp $(VISUALIZATION_HEADERS) common/spinlock.h common/time_proc.h common/Beats_proc.h common/TimeData.hpp
 	$(CCC2) OpenGL/Render.cpp $(QTOPT) $(VISUALIZATION_OPTIONS)
 
-$(T)Widget.o: OpenGL/Widget.cpp $(VISUALIZATION_HEADERS) common/Mutex.hpp common/spinlock.h common/MovingAverage.hpp common/Vector.hpp Qt/Timer.hpp # OpenGL/Qt6ThreadedWidget.hpp 
+$(T)Widget.o: OpenGL/Widget.cpp $(VISUALIZATION_HEADERS) OpenGL/Text.hpp common/Mutex.hpp common/spinlock.h common/MovingAverage.hpp common/Vector.hpp Qt/Timer.hpp # OpenGL/Qt6ThreadedWidget.hpp 
 	$(CCC2) OpenGL/Widget.cpp $(QTOPT) $(VISUALIZATION_OPTIONS) 
 
-$(T)RhiWindow.o: $(VISUALIZATION_HEADERS)
+$(T)RhiWindow.o: OpenGL/RhiWindow.cpp $(VISUALIZATION_HEADERS)
 	$(CCC2) OpenGL/RhiWindow.cpp $(QTOPT) -I $(QRHI_HEADERS)
 
 $(T)CheckOpenGL.o: OpenGL/CheckOpenGL.cpp common/Process.hpp
@@ -2833,6 +2833,12 @@ bin/color.frag.qsb: OpenGL/shaders/color.frag
 
 bin/color.vert.qsb: OpenGL/shaders/color.vert
 	$(QSB) --qt6 OpenGL/shaders/color.vert -o bin/color.vert.qsb
+
+bin/texture_vertex.qsb: OpenGL/shaders/texture_vertex.vert
+	$(QSB) --qt6 OpenGL/shaders/texture_vertex.vert -o bin/texture_vertex.qsb
+
+bin/texture_fragment.qsb: OpenGL/shaders/texture_fragment.frag
+	$(QSB) --qt6 OpenGL/shaders/texture_fragment.frag -o bin/texture_fragment.qsb
 
 do.o:  $(BUILD_DEPENDENCIES) OpenGL/do.m
 	$(CC) OpenGL/do.m $(OPT)
