@@ -8,6 +8,7 @@ extern QRhi *g_rhi;
 
 namespace r
 {
+
 struct Context
 {
 	static constexpr int START_SIZE = 200; // Number of triangles
@@ -115,7 +116,7 @@ struct Context
 			_vbuf = NULL;
 		}
 	}
-	
+
 	void addTriangle(const float *triangle)
 	{
 		if (_buffer_pos+TRIANGLE_SIZE >= _buffer_size)
