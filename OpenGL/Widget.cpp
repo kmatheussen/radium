@@ -392,6 +392,7 @@ static QShader getShader(const QString &name)
     return QShader();
 }
 
+#if 0
 static void init_test_triangles(r::Context *my_context, float dy = 0)
 {
 	my_context->addTriangle({
@@ -411,7 +412,7 @@ static void init_test_triangles(r::Context *my_context, float dy = 0)
 							800, 1800+dy,
 							0,0,1);
 };
-
+#endif
 
 // Main thread
 static Tracker_Windows *get_window(void){
@@ -535,7 +536,7 @@ struct TextureRenderer
 
 	bool _vertexDataDirty = true;
 	
-    void render_prepare_pass(QRhi *rhi, QRhiResourceUpdateBatch *batch, const QMatrix4x4 view_projection, float width, float height)
+    void prepare_frame(QRhi *rhi, QRhiResourceUpdateBatch *batch, const QMatrix4x4 view_projection, float width, float height)
     {
 		static float _y_inc = -height;
 		
@@ -567,7 +568,7 @@ struct TextureRenderer
         }
 	}
 	
-	void render_in_pass(QRhi *rhi, QRhiCommandBuffer *command_buffer)
+	void render_frame(QRhi *rhi, QRhiCommandBuffer *command_buffer)
     {
         if (_pipeline && _vertex_buffer) {
             command_buffer->setGraphicsPipeline(_pipeline);
@@ -617,24 +618,205 @@ private:
     }
 };
 
+struct TriangleRenderer
+{
+    r::Context *_context1 = nullptr;
+    r::Context *_context2 = nullptr;
+
+    QRhiShaderResourceBindings *_shader_resource_bindings = nullptr;
+    QRhiGraphicsPipeline *_pipeline = nullptr;
+
+    QRhiBuffer *_ubuf = nullptr;
+
+    void init(QRhi *rhi,
+              QRhiRenderPassDescriptor *render_pass_descriptor)
+    {
+        init_contexts(rhi);
+
+        _shader_resource_bindings = rhi->newShaderResourceBindings();
+
+        _ubuf = rhi->newBuffer(QRhiBuffer::Dynamic,
+                               QRhiBuffer::UniformBuffer,
+                               64 + sizeof(float));
+
+        _ubuf->create();
+
+        QVector<QRhiShaderResourceBinding> bindings;
+
+        bindings.push_back(
+            QRhiShaderResourceBinding::uniformBuffer(
+                0,
+                QRhiShaderResourceBinding::VertexStage,
+                _ubuf));
+
+        _shader_resource_bindings->setBindings(
+            bindings.cbegin(),
+            bindings.cend());
+
+        _shader_resource_bindings->create();
+
+        _pipeline = rhi->newGraphicsPipeline();
+
+#if DO_ANTIALIASING
+        _pipeline->setSampleCount(4);
+#endif
+
+        {
+            QRhiGraphicsPipeline::TargetBlend blend;
+            blend.enable = true;
+            _pipeline->setTargetBlends({blend});
+        }
+
+        _pipeline->setShaderStages({
+            {
+                QRhiShaderStage::Vertex,
+                getShader("color.vert.qsb")
+            },
+            {
+                QRhiShaderStage::Fragment,
+                getShader("color.frag.qsb")
+            }
+        });
+
+        QRhiVertexInputLayout inputLayout;
+
+        inputLayout.setBindings({
+            { 6 * sizeof(float) }
+        });
+
+        inputLayout.setAttributes({
+            { 0, 0, QRhiVertexInputAttribute::Float2, 0 },
+            { 0, 1, QRhiVertexInputAttribute::Float4,
+              2 * sizeof(float) }
+        });
+
+        _pipeline->setVertexInputLayout(inputLayout);
+
+        _pipeline->setShaderResourceBindings(
+            _shader_resource_bindings);
+
+        _pipeline->setRenderPassDescriptor(
+            render_pass_descriptor);
+
+        _pipeline->create();
+    }
+
+    void release()
+    {
+        delete _context1;
+        delete _context2;
+
+        delete _shader_resource_bindings;
+        delete _pipeline;
+        delete _ubuf;
+
+        _context1 = nullptr;
+        _context2 = nullptr;
+
+        _shader_resource_bindings = nullptr;
+        _pipeline = nullptr;
+        _ubuf = nullptr;
+    }
+
+    void prepare_frame(QRhi *rhi,
+					   QRhiResourceUpdateBatch *batch,
+					   const QMatrix4x4 &viewProjection,
+					   float scrollPos)
+    {
+        for (r::Context *context : ALL_CONTEXTS)
+        {
+            if (context != nullptr &&
+                context->get_num_vertices() > 0)
+            {
+                context->maybe_merge_in(batch);
+            }
+        }
+
+        if (_context1)
+            _context1->maybe_merge_in(batch);
+
+        if (_context2)
+            _context2->maybe_merge_in(batch);
+
+        batch->updateDynamicBuffer(
+            _ubuf,
+            0,
+            64,
+            viewProjection.constData());
+
+        float yscroll = scrollPos;
+
+        batch->updateDynamicBuffer(
+            _ubuf,
+            64,
+            sizeof(float),
+            &yscroll);
+    }
+
+    void render_frame(QRhiCommandBuffer *command_buffer,
+					  const QSize &outputSizeInPixels)
+	{
+		command_buffer->setGraphicsPipeline(_pipeline);
+
+        command_buffer->setViewport({
+				0,
+				0,
+				float(outputSizeInPixels.width()),
+				float(outputSizeInPixels.height())
+			});
+
+        command_buffer->setShaderResources();
+
+        for (r::Context *context : ALL_CONTEXTS)
+        {
+            if (context != nullptr &&
+                context->get_num_vertices() > 0)
+            {
+                context->render(command_buffer);
+            }
+        }
+
+        if (_context1)
+            _context1->render(command_buffer);
+
+        if (_context2)
+            _context2->render(command_buffer);
+    }
+
+private:
+
+    void init_contexts(QRhi *rhi)
+    {
+        _context1 = new r::Context;
+
+        //init_test_triangles(_context1, 0);
+
+        _context1->call_me_when_finished_painting(rhi);
+
+        _context2 = new r::Context;
+
+#if 0
+        int range = 150;
+
+        for (int i = 0; i < range; ++i)
+            init_test_triangles(_context2, 0.3f + i);
+
+        for (int i = 0; i < range; ++i)
+            init_test_triangles(_context2, 5.3f - i);
+#endif
+        _context2->call_me_when_finished_painting(rhi);
+    }
+};
+
 class RenderWindow : public radium::RhiWindow, public radium::MouseCycleFix
 {
 	
 public:
 
-	// For Text.
 	TextureRenderer _texture_renderer;
 	
-	// For triangles
-	r::Context *_my_context = nullptr;
-	r::Context *_my_context2 = nullptr;
-    QRhiShaderResourceBindings *_shader_resource_bindings;
-    QRhiGraphicsPipeline *_pipeline;
-
-	QRhiBuffer *_ubuf = nullptr;
-
-    //QRhiResourceUpdateBatch *_initialUpdates = nullptr;
-
+	TriangleRenderer _triangle_renderer;
+	
 	DEFINE_ATOMIC(bool, _main_window_is_exposed) = false;
 	
 public:
@@ -652,16 +834,8 @@ public:
 	
 		put_event([this, &sem]()
 			{
-				fprintf(stderr, "H2\n");
-				delete _my_context;
-				fprintf(stderr, "H2.5\n");
-				delete _my_context2;
-				fprintf(stderr, "H3\n");
-				delete _shader_resource_bindings;
-				fprintf(stderr, "H4\n");
-				delete _pipeline;
-				fprintf(stderr, "H4\n");
-				//delete _initialUpdates; // must not be deleted.
+				_triangle_renderer.release();
+				
 				fprintf(stderr, "H5\n");
 				sem.release();
 			});
@@ -671,124 +845,20 @@ public:
 		fprintf(stderr, "H7\n");
 	}
 
-	void init_context(float dy = 0)
-	{
-		_my_context = new r::Context;
-		
-		init_test_triangles(_my_context, dy);
-		
-		_my_context->call_me_when_finished_painting(_rhi);
-	}
-	
-	void init_context2(float dy = 0)
-	{
-		_my_context2 = new r::Context;
-
-		int range = 150;
-		for (int i = 0 ; i < range ; i++)
-			init_test_triangles(_my_context2, dy+0.3+i);
-		for (int i = 0 ; i < range ; i++)
-			init_test_triangles(_my_context2, dy+5.3-i);
-		
-		_my_context2->call_me_when_finished_painting(_rhi);
-	}
-	
 	void customInit() override
 	{
-		assert(QThread::currentThread() == g_thread);
-				
-		init_context();
-		
-		_shader_resource_bindings = _rhi->newShaderResourceBindings();
-
-		_ubuf = _rhi->newBuffer(QRhiBuffer::Dynamic,
-								QRhiBuffer::UniformBuffer,
-								64 + sizeof(float)); // 64 is the size of the projection matrix.
-		_ubuf->create();
-
-		static const QRhiShaderResourceBinding::StageFlags visibility = QRhiShaderResourceBinding::VertexStage; // | QRhiShaderResourceBinding::FragmentStage;
-
-		QVector<QRhiShaderResourceBinding> bindings;
-
-		bindings.push_back(QRhiShaderResourceBinding::uniformBuffer(0,
-																	visibility,
-																	_ubuf));
-		
-		{
-			for(r::Context *context : ALL_CONTEXTS)
-			{
-				context->addBindings(_rhi, bindings);
-			}
-
-			if (g_context != NULL && g_context->get_num_vertices() > 0)
-			{
-				//g_context->render(cb);
-			}
-			else
-			{
-				if (_my_context)
-					_my_context->addBindings(_rhi, bindings);
-				if (_my_context2)
-					_my_context2->addBindings(_rhi, bindings);
-			}
-		}
-		
-		_shader_resource_bindings->setBindings(bindings.cbegin(), bindings.cend());
-
-		_shader_resource_bindings->create();
 
 		// Texture renderer
-		{
-			_texture_renderer.init(_rhi, _render_pass_descriptor);
-		}
+		_texture_renderer.init(_rhi, _render_pass_descriptor);
+
+		// Triangle renderer
+		_triangle_renderer.init(_rhi, _render_pass_descriptor);
+
 		
-		_pipeline = _rhi->newGraphicsPipeline();
-
-		// Enable depth testing; not quite needed for a simple triangle, but we
-		// have a depth-stencil buffer so why not.
-		//_pipeline->setDepthTest(true);
-		//_pipeline->setDepthWrite(true);
-
-#if DO_ANTIALIASING
-		_pipeline->setSampleCount(4);
-#endif
-		
-		// Blend factors default to One, OneOneMinusSrcAlpha, which is convenient.
-		if(1){
-			QRhiGraphicsPipeline::TargetBlend premulAlphaBlend;
-			premulAlphaBlend.enable = true;
-			//premulAlphaBlend.colorWrite = QRhiGraphicsPipeline::ColorMask(0xF);
-
-			_pipeline->setTargetBlends({ premulAlphaBlend });
-		}
-		
-		_pipeline->setShaderStages({
-				{ QRhiShaderStage::Vertex, getShader(QLatin1String("color.vert.qsb")) },
-				{ QRhiShaderStage::Fragment, getShader(QLatin1String("color.frag.qsb")) }
-			});
-
-		{
-			QRhiVertexInputLayout inputLayout;
-			
-			inputLayout.setBindings({
-					{ 6 * sizeof(float) }
-				});
-			
-			inputLayout.setAttributes({
-					{ 0, 0, QRhiVertexInputAttribute::Float2, 0 },
-					{ 0, 1, QRhiVertexInputAttribute::Float4, 2 * sizeof(float) }
-				});
-			_pipeline->setVertexInputLayout(inputLayout);
-		}
-		
-		_pipeline->setShaderResourceBindings(_shader_resource_bindings);
-		_pipeline->setRenderPassDescriptor(_render_pass_descriptor);
-
-		_pipeline->create();
-
 		double ratio = devicePixelRatio();
 
 		safe_double_write(&g_opengl_scale_ratio, ratio);
+
 		
 		// Make sure editor font is scaled.
 		if(root!=NULL && root->song!=NULL && root->song->tracker_windows!=NULL){
@@ -868,165 +938,42 @@ public:
 
 		//static int g_n=0; printf("Rendering %d\n", g_n++);
 #endif
-		
-		QRhiResourceUpdateBatch *batch = _rhi->nextResourceUpdateBatch();
-
-		for(r::Context *context : ALL_CONTEXTS)
-		{
-			if (context != NULL && context->get_num_vertices() > 0)
-				context->maybe_merge_in(batch);
-		}
-		
-		if (g_context != NULL && g_context->get_num_vertices() > 0)
-		{
-			//g_context->maybe_merge_in(batch);
-		}
-		else
-		{		
-			if (_my_context)
-				_my_context->maybe_merge_in(batch);
-			if (_my_context2)
-				_my_context2->maybe_merge_in(batch);
-		}
 
 		auto *sv = GE_get_shared_variables(g_painting_data);
 
 		// TODO: Check this one.
 		//GE_set_curr_realline(sv->curr_realline);
+
+		const QSize outputSizeInPixels = _swap_chain->currentPixelSize();
 		
 		double scroll_pos = 0.0;
 
 		find_scrollpos(sv, scroll_pos);
+
+		QRhiResourceUpdateBatch *batch = _rhi->nextResourceUpdateBatch();
+
+		// Triangles
+		_triangle_renderer.prepare_frame(_rhi,
+										 batch,
+										 _viewProjection,
+										 scroll_pos);
 		
-#if 0
-		static float yscroll = 0.5;
-		yscroll -= 0.005;
-		if (yscroll < -1)
-			yscroll = 0.5;
-#endif
-		const QSize outputSizeInPixels = _swap_chain->currentPixelSize();
-		//GE_set_height(outputSizeInPixels.height());
-
-#if 0
-		float yscroll = scale_double(double(scroll_pos) + double(outputSizeInPixels.height())/2.0,
-									 0, double(outputSizeInPixels.height()) / g_opengl_scale_ratio,
-									 2, 0);
-#else
-		float yscroll = scroll_pos;
-#endif
-
-#if 0
-		auto matrix = _rhi->clipSpaceCorrMatrix();
-
-	  OpenGL:
-0,0: 1.000000
-0,1: 0.000000
-0,2: 0.000000
-0,3: 0.000000
-1,0: 0.000000
-1,1: 1.000000
-1,2: 0.000000
-1,3: 0.000000
-2,0: 0.000000
-2,1: 0.000000
-2,2: 1.000000
-2,3: 0.000000
-3,0: 0.000000
-3,1: 0.000000
-3,2: 0.000000
-3,3: 1.000000
-
-	  Vulkan:
-0,0: 1.000000
-0,1: 0.000000
-0,2: 0.000000
-0,3: 0.000000
-1,0: 0.000000
-1,1: -1.000000
-1,2: 0.000000
-1,3: 0.000000
-2,0: 0.000000
-2,1: 0.000000
-2,2: 0.500000
-2,3: 0.000000
-3,0: 0.000000
-3,1: 0.000000
-3,2: 0.500000
-3,3: 1.000000
-
-
-		auto mappoint1 = matrix.map(QPointF(0,0));
-		auto mappoint2 = matrix.map(QPointF(100,GE_get_height()));
-		
-		printf("1: %f / %f. 2: %f / %f. Height: %d / %d\n",
-			   mappoint1.x(),mappoint1.y(),
-			   mappoint2.x(),mappoint2.y(),
-			   (int)outputSizeInPixels.height(), GE_get_height()
-			);
-		int p=0;
-		for(int x = 0 ; x < 4 ; x++)
-			for(int y = 0 ; y < 4 ; y++)
-				printf("%d,%d: %f\n", x, y, matrix.data()[p++]);
-
-		printf("\n");
-#endif
-					   
-		//printf("Curr scroll_pos: %f. Height: %f or %f. g_height: %d\n", scroll_pos, double(outputSizeInPixels.height()), double(outputSizeInPixels.height()) / g_opengl_scale_ratio, GE_get_height());
-
-		batch->updateDynamicBuffer(_ubuf, 0, 64, _viewProjection.constData());
-		
-		batch->updateDynamicBuffer(_ubuf, 64, sizeof(float), &yscroll);
-
-		// Texture renderer.
-		{
-			_texture_renderer.render_prepare_pass(_rhi, batch, _viewProjection, outputSizeInPixels.width(), outputSizeInPixels.height());
-		}
+		// Textures (i.e. text)
+		_texture_renderer.prepare_frame(_rhi,
+										batch,
+										_viewProjection,
+										outputSizeInPixels.width(),
+										outputSizeInPixels.height());
 		
 		QRhiCommandBuffer *command_buffer = _swap_chain->currentFrameCommandBuffer();
 
 		command_buffer->beginPass(_swap_chain->currentFrameRenderTarget(), g_background_color, { 1.0f, 0 }, batch);
 		{
-			command_buffer->setGraphicsPipeline(_pipeline);
-			//command_buffer->setViewport({ 0, 100, float(outputSizeInPixels.width()), float(outputSizeInPixels.height())   });
-			command_buffer->setViewport(
-				{ 0,
-				  0,
-				  float(double(outputSizeInPixels.width()) * 1.0), //g_opengl_scale_ratio),
-				  float(double(outputSizeInPixels.height()) * 1.0), //g_opengl_scale_ratio)
-				});
-
-			/*
-			printf("Width: %d. Scale: %f. W: %f. H: %f\n",
-				   outputSizeInPixels.width(),
-				   g_opengl_scale_ratio,
-				   float(double(outputSizeInPixels.width()) * g_opengl_scale_ratio),
-				   float(double(outputSizeInPixels.height()) * g_opengl_scale_ratio));
-			*/
+			_triangle_renderer.render_frame(command_buffer,
+											outputSizeInPixels);
 			
-			command_buffer->setShaderResources();
-
-			for(r::Context *context : ALL_CONTEXTS)
-			{
-				if (context != NULL && context->get_num_vertices() > 0)
-					context->render(command_buffer);
-			}
-
-			if (g_context != NULL && g_context->get_num_vertices() > 0)
-			{
-				//g_context->render(command_buffer);
-			}
-			else
-			{
-				if (_my_context)
-					_my_context->render(command_buffer);
-				if (_my_context2)
-					_my_context2->render(command_buffer);
-			}
-
-			// Texture renderer.
-			{
-				_texture_renderer.render_in_pass(_rhi, command_buffer);
-			}
+			_texture_renderer.render_frame(_rhi,
+										   command_buffer);
 		}		
 		command_buffer->endPass();
 
@@ -1067,6 +1014,7 @@ public:
 		GE_set_height(qresizeevent->size().height());
 	}
 };
+
 
 	
 #if QT_CONFIG(vulkan)
