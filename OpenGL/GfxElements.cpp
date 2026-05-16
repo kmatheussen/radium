@@ -238,7 +238,7 @@ namespace r
 struct PaintingData
 {
 	//Contexts contexts;
-	std::vector<GE_Context*> _contexts;
+	//std::vector<GE_Context*> _contexts;
 	
 	//std::vector< vl::ref<GradientTriangles> > gradient_triangles;
 	SharedVariables shared_variables;
@@ -255,8 +255,8 @@ struct PaintingData
 
 	~PaintingData()
 	{
-		for(GE_Context* context : _contexts)
-			delete context;
+		//	for(GE_Context* context : _contexts)
+		//	delete context;
 	}
 };
 } // namespace r
