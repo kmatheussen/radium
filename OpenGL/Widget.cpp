@@ -393,7 +393,7 @@ static QShader getShader(const QString &name)
 }
 
 #if 0
-static void init_test_triangles(r::Context *my_context, float dy = 0)
+static void init_test_triangles(r::TriangleContext *my_context, float dy = 0)
 {
 	my_context->addTriangle({
 			-1.0f,   0.0f+dy,       1.0f,   dy,   dy, 0.6f,
@@ -426,31 +426,43 @@ static EditorWidget *get_editorwidget(void){
 
 QRhi *g_rhi = NULL;
 
+extern r::TextureContext *g_texture_context;
+
+#define USE_BUILTIN 0
+
 namespace
 {
 
 struct TextureRenderer
 {
+	r::TextureContext *_context = nullptr;
 	r::TextureAtlas *_texture_atlas = nullptr;
+
+#if USE_BUILTIN
 	QRhiBuffer *_vertex_buffer = nullptr;
+#endif
+	
 	QRhiBuffer *_clipCorrBuffer = nullptr;
     QRhiBuffer *_scrollBuffer = nullptr;
     QRhiGraphicsPipeline *_pipeline;
 
 	int _num_vertices_in_buffer = 0;
-	
+
 	void init(QRhi *rhi, QRhiRenderPassDescriptor *render_pass_descriptor)
 	{
+		init_contexts(rhi);
+		
 		_clipCorrBuffer = rhi->newBuffer(QRhiBuffer::Dynamic,
 										 QRhiBuffer::UniformBuffer,
 										 sizeof(QMatrix4x4) + sizeof(float));
 		
-		if (!_clipCorrBuffer || !_clipCorrBuffer->create()) {
+		if (!_clipCorrBuffer || !_clipCorrBuffer->create())
+		{
 			qDebug() << "Failed to create clip correction buffer";
 			getchar();
 			//return false;
 		}
-
+		
 		_scrollBuffer = rhi->newBuffer(QRhiBuffer::Dynamic,
 									   QRhiBuffer::UniformBuffer,
 									   sizeof(float));
@@ -461,45 +473,50 @@ struct TextureRenderer
 			getchar();
 			//return false;
 		}
-
-		QFont font("Cousine", 40, QFont::Normal);
+		
+		QFont font("Cousine", 14, QFont::Normal);
 		font.setStyleStrategy(QFont::PreferAntialias);
 		QString supportedChars = "abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVW #-,.(){}<>=*:0123456789";
-			
+		
 		_texture_atlas = new r::TextureAtlas(rhi, font, supportedChars, _clipCorrBuffer, _scrollBuffer);
-
+		
 		QShader vertexShader = getShader("texture_vertex.qsb");
 		QShader fragmentShader = getShader("texture_fragment.qsb");
-			
+		
 		if (!vertexShader.isValid() || !fragmentShader.isValid())
 		{
 			qDebug() << "Failed to load compiled shaders";
 			getchar();
 		}
-
+		
 		_pipeline = rhi->newGraphicsPipeline();
-			
+		
 		if (!_pipeline)
 		{
 			qDebug() << "Failed to create graphics pipeline";
 			getchar();
 		}
-
-		_pipeline->setSampleCount(4);
 		
-		_vertex_buffer = rhi->newBuffer(QRhiBuffer::Dynamic, QRhiBuffer::VertexBuffer,
+		_pipeline->setSampleCount(4);
+	
+#if USE_BUILTIN
+		_vertex_buffer = rhi->newBuffer(QRhiBuffer::Dynamic,
+										QRhiBuffer::VertexBuffer,
 										sizeof(r::Vertex) * 6000); // FIX
 		
-		if (!_vertex_buffer || !_vertex_buffer->create()) {
+		if (!_vertex_buffer || !_vertex_buffer->create())
+		{
 			qDebug() << "Failed to create vertex buffer";
 			getchar();
 		}
-			
+#endif
+		
 		QRhiVertexInputLayout inputLayout;
+		
 		inputLayout.setBindings({
 				QRhiVertexInputBinding(sizeof(r::Vertex))
 			});
-			
+	
 		inputLayout.setAttributes({
 				QRhiVertexInputAttribute(0, 0, QRhiVertexInputAttribute::Float2, offsetof(r::Vertex, x)),
 				QRhiVertexInputAttribute(0, 1, QRhiVertexInputAttribute::Float2, offsetof(r::Vertex, u)),
@@ -515,7 +532,7 @@ struct TextureRenderer
 		_pipeline->setVertexInputLayout(inputLayout);
 		_pipeline->setShaderResourceBindings(_texture_atlas->getShaderBindings());
 		_pipeline->setRenderPassDescriptor(render_pass_descriptor);
-			
+		
 		// Enable alpha blending for smooth font edges
 		{
 			QRhiGraphicsPipeline::TargetBlend blend;
@@ -526,17 +543,41 @@ struct TextureRenderer
 			blend.dstAlpha = QRhiGraphicsPipeline::OneMinusSrcAlpha;
 			_pipeline->setTargetBlends({blend});
 		}
-			
+		
 		if (!_pipeline->create()) {
 			qDebug() << "Failed to create pipeline";
 			getchar();
 			//return false;
 		}
 	}
+	
+    void release(void)
+    {
+        delete _context;
+		
+        delete _pipeline;
+        //delete _ubuf;
+
+        _context = nullptr;
+
+        _pipeline = nullptr;
+        //_ubuf = nullptr;
+    }
+	
+	void add_text(const char *text, int x, int y, float r, float g, float b, float a)
+	{
+		if (_texture_atlas)
+			_texture_atlas->appendString(_context, text, x, y, 20, 20, r, g, b, a);
+		//g_window->_texture_renderer->add_text(gc, text, x, y);
+	}
 
 	bool _vertexDataDirty = true;
 	
-    void prepare_frame(QRhi *rhi, QRhiResourceUpdateBatch *batch, const QMatrix4x4 view_projection, float width, float height)
+    void prepare_frame(QRhi *rhi,
+					   QRhiResourceUpdateBatch *batch,
+					   const QMatrix4x4 view_projection,
+					   float scroll_pos,
+					   float width, float height)
     {
 		static float _y_inc = -height;
 		
@@ -547,46 +588,63 @@ struct TextureRenderer
 
         _texture_atlas->uploadTexture(batch);
 
-        if (_vertexDataDirty) { // || true) {
+#if !USE_BUILTIN
+		_context->maybe_merge_in(batch);
+#else
+        if (_vertexDataDirty) { // || true
             updateVerticesInBatch(batch, width, height);
             _vertexDataDirty = false;
         }
-
-        if (_clipCorrBuffer) {
+#endif
+		
+        if (_clipCorrBuffer)
+		{
 #if 0
             QMatrix4x4 clipCorr = rhi->clipSpaceCorrMatrix();
             batch->updateDynamicBuffer(_clipCorrBuffer, 0, sizeof(QMatrix4x4), clipCorr.constData());
 #else
 			batch->updateDynamicBuffer(_clipCorrBuffer, 0, sizeof(QMatrix4x4), view_projection.constData());
 #endif
-            batch->updateDynamicBuffer(_clipCorrBuffer, sizeof(QMatrix4x4), sizeof(float), &_y_inc);
+            batch->updateDynamicBuffer(_clipCorrBuffer,
+									   sizeof(QMatrix4x4),
+									   sizeof(float),
+									   &scroll_pos);
         }
-
+		
         if (_scrollBuffer) {
 			//float yscroll = _y_inc / height;
-            batch->updateDynamicBuffer(_scrollBuffer, 0, sizeof(float), &_y_inc);
+            batch->updateDynamicBuffer(_scrollBuffer,
+									   0,
+									   sizeof(float),
+									   &scroll_pos);
         }
 	}
-	
+
 	void render_frame(QRhi *rhi, QRhiCommandBuffer *command_buffer)
     {
-        if (_pipeline && _vertex_buffer) {
+        if (_pipeline)
+		{
             command_buffer->setGraphicsPipeline(_pipeline);
             command_buffer->setShaderResources(_texture_atlas->getShaderBindings());
-            
+			
+#if USE_BUILTIN
             const QRhiCommandBuffer::VertexInput bindings[] = {{_vertex_buffer, 0}};
             command_buffer->setVertexInput(0, 1, bindings);
             command_buffer->draw(_num_vertices_in_buffer);
+#else
+			if (_context)
+				_context->render(command_buffer);
+#endif
         }
     }
 
-private:
+#if USE_BUILTIN
+	std::vector<r::Vertex> _vertices;
 
     void updateVerticesInBatch(QRhiResourceUpdateBatch *batch, float height, float width)
-    {
+	{
         if (width <= 0 || height <= 0)
             return;
-        
         QString text = "string C#5 D-9 verticesInBatch(QRhiResourceUpdateBatch *batch) std::vector<QColor> colors = { ==================aergaerg======= C-50";
         int startX = 100;
         int startY = 0; // + static_cast<int>(m_y_inc);
@@ -601,27 +659,40 @@ private:
             Qt::magenta   // 'g'
         };
         
-        std::vector<r::Vertex> vertices;
-        vertices.reserve(text.length() * 6);
-        
-        _texture_atlas->appendStringWithColors(vertices, text, startX, startY, width, height, colors);
-        
+        //std::vector<r::Vertex> vertices;
+        //vertices.reserve(text.length() * 6);
+
+        _texture_atlas->appendStringWithColors(_vertices, text, startX, startY, width, height, colors);
+
+		//_texture_atlas->appendString(_context, "HELLO", 100, 0, 20, 20, Qt::blue);
+		
         //_texture_atlas->appendString(vertices, text, startX, startY, width, height, Qt::white);
         
-        _num_vertices_in_buffer = static_cast<int>(vertices.size());
+        _num_vertices_in_buffer = static_cast<int>(_vertices.size());
         
-        if (!vertices.empty()) {
-            batch->updateDynamicBuffer(_vertex_buffer, 0, 
+        if (!_vertices.empty()) {
+            batch->updateDynamicBuffer(_vertex_buffer,
+									   0, 
                                        sizeof(r::Vertex) * _num_vertices_in_buffer, 
-                                       vertices.data());
+                                       _vertices.data());
         }
+    }
+#endif
+
+    void init_contexts(QRhi *rhi)
+    {
+        _context = new r::TextureContext;
+		g_texture_context = _context;
+		
+        _context->call_me_when_finished_painting(rhi);
+
     }
 };
 
 struct TriangleRenderer
 {
-    r::Context *_context1 = nullptr;
-    r::Context *_context2 = nullptr;
+    r::TriangleContext *_context1 = nullptr;
+    r::TriangleContext *_context2 = nullptr;
 
     QRhiShaderResourceBindings *_shader_resource_bindings = nullptr;
     QRhiGraphicsPipeline *_pipeline = nullptr;
@@ -630,29 +701,28 @@ struct TriangleRenderer
 
     void init(QRhi *rhi,
               QRhiRenderPassDescriptor *render_pass_descriptor)
-    {
+	{
         init_contexts(rhi);
-
+		
         _shader_resource_bindings = rhi->newShaderResourceBindings();
-
+		
         _ubuf = rhi->newBuffer(QRhiBuffer::Dynamic,
                                QRhiBuffer::UniformBuffer,
                                64 + sizeof(float));
-
+		
         _ubuf->create();
-
+		
         QVector<QRhiShaderResourceBinding> bindings;
-
-        bindings.push_back(
-            QRhiShaderResourceBinding::uniformBuffer(
-                0,
-                QRhiShaderResourceBinding::VertexStage,
-                _ubuf));
-
+		
+        bindings.push_back(QRhiShaderResourceBinding::uniformBuffer(
+							   0,
+							   QRhiShaderResourceBinding::VertexStage,
+							   _ubuf));
+		
         _shader_resource_bindings->setBindings(
             bindings.cbegin(),
             bindings.cend());
-
+		
         _shader_resource_bindings->create();
 
         _pipeline = rhi->newGraphicsPipeline();
@@ -660,7 +730,7 @@ struct TriangleRenderer
 #if DO_ANTIALIASING
         _pipeline->setSampleCount(4);
 #endif
-
+		
         {
             QRhiGraphicsPipeline::TargetBlend blend;
             blend.enable = true;
@@ -668,15 +738,15 @@ struct TriangleRenderer
         }
 
         _pipeline->setShaderStages({
-            {
+				{
                 QRhiShaderStage::Vertex,
                 getShader("color.vert.qsb")
-            },
-            {
-                QRhiShaderStage::Fragment,
-                getShader("color.frag.qsb")
-            }
-        });
+				},
+				{
+					QRhiShaderStage::Fragment,
+					getShader("color.frag.qsb")
+				}
+			});
 
         QRhiVertexInputLayout inputLayout;
 
@@ -685,34 +755,31 @@ struct TriangleRenderer
         });
 
         inputLayout.setAttributes({
-            { 0, 0, QRhiVertexInputAttribute::Float2, 0 },
-            { 0, 1, QRhiVertexInputAttribute::Float4,
-              2 * sizeof(float) }
-        });
+				{ 0, 0, QRhiVertexInputAttribute::Float2, 0 },
+				{ 0, 1, QRhiVertexInputAttribute::Float4, 2 * sizeof(float) }
+			});
 
         _pipeline->setVertexInputLayout(inputLayout);
-
-        _pipeline->setShaderResourceBindings(
-            _shader_resource_bindings);
-
-        _pipeline->setRenderPassDescriptor(
-            render_pass_descriptor);
+		
+        _pipeline->setShaderResourceBindings(_shader_resource_bindings);
+		
+        _pipeline->setRenderPassDescriptor(render_pass_descriptor);
 
         _pipeline->create();
     }
 
-    void release()
-    {
-        delete _context1;
+    void release(void)
+	{
+		delete _context1;
         delete _context2;
 
         delete _shader_resource_bindings;
         delete _pipeline;
         delete _ubuf;
-
+		
         _context1 = nullptr;
         _context2 = nullptr;
-
+		
         _shader_resource_bindings = nullptr;
         _pipeline = nullptr;
         _ubuf = nullptr;
@@ -723,7 +790,7 @@ struct TriangleRenderer
 					   const QMatrix4x4 &viewProjection,
 					   float scrollPos)
     {
-        for (r::Context *context : ALL_CONTEXTS)
+        for (r::TriangleContext *context : ALL_CONTEXTS)
         {
             if (context != nullptr &&
                 context->get_num_vertices() > 0)
@@ -734,25 +801,21 @@ struct TriangleRenderer
 
         if (_context1)
             _context1->maybe_merge_in(batch);
-
+		
         if (_context2)
             _context2->maybe_merge_in(batch);
+		
+        batch->updateDynamicBuffer(_ubuf,
+								   0,
+								   64,
+								   viewProjection.constData());
 
-        batch->updateDynamicBuffer(
-            _ubuf,
-            0,
-            64,
-            viewProjection.constData());
-
-        float yscroll = scrollPos;
-
-        batch->updateDynamicBuffer(
-            _ubuf,
-            64,
-            sizeof(float),
-            &yscroll);
+        batch->updateDynamicBuffer(_ubuf,
+								   64,
+								   sizeof(float),
+								   &scrollPos);
     }
-
+	
     void render_frame(QRhiCommandBuffer *command_buffer,
 					  const QSize &outputSizeInPixels)
 	{
@@ -764,10 +827,10 @@ struct TriangleRenderer
 				float(outputSizeInPixels.width()),
 				float(outputSizeInPixels.height())
 			});
-
+		
         command_buffer->setShaderResources();
 
-        for (r::Context *context : ALL_CONTEXTS)
+        for (r::TriangleContext *context : ALL_CONTEXTS)
         {
             if (context != nullptr &&
                 context->get_num_vertices() > 0)
@@ -778,35 +841,36 @@ struct TriangleRenderer
 
         if (_context1)
             _context1->render(command_buffer);
-
+		
         if (_context2)
             _context2->render(command_buffer);
     }
-
+	
 private:
-
+	
     void init_contexts(QRhi *rhi)
-    {
-        _context1 = new r::Context;
-
-        //init_test_triangles(_context1, 0);
-
+	{
+		_context1 = new r::TriangleContext;
+		
+		//init_test_triangles(_context1, 0);
+		
         _context1->call_me_when_finished_painting(rhi);
-
-        _context2 = new r::Context;
-
+		
+        _context2 = new r::TriangleContext;
+		
 #if 0
         int range = 150;
-
+		
         for (int i = 0; i < range; ++i)
             init_test_triangles(_context2, 0.3f + i);
-
+		
         for (int i = 0; i < range; ++i)
             init_test_triangles(_context2, 5.3f - i);
 #endif
         _context2->call_me_when_finished_painting(rhi);
     }
 };
+
 
 class RenderWindow : public radium::RhiWindow, public radium::MouseCycleFix
 {
@@ -818,6 +882,7 @@ public:
 	TriangleRenderer _triangle_renderer;
 	
 	DEFINE_ATOMIC(bool, _main_window_is_exposed) = false;
+
 	
 public:
 
@@ -835,6 +900,7 @@ public:
 		put_event([this, &sem]()
 			{
 				_triangle_renderer.release();
+				_texture_renderer.release();
 				
 				fprintf(stderr, "H5\n");
 				sem.release();
@@ -962,6 +1028,7 @@ public:
 		_texture_renderer.prepare_frame(_rhi,
 										batch,
 										_viewProjection,
+										scroll_pos,
 										outputSizeInPixels.width(),
 										outputSizeInPixels.height());
 		
@@ -969,9 +1036,11 @@ public:
 
 		command_buffer->beginPass(_swap_chain->currentFrameRenderTarget(), g_background_color, { 1.0f, 0 }, batch);
 		{
+			// triangles
 			_triangle_renderer.render_frame(command_buffer,
 											outputSizeInPixels);
-			
+
+			// text
 			_texture_renderer.render_frame(_rhi,
 										   command_buffer);
 		}		
@@ -1136,6 +1205,12 @@ static QRhi::Implementation init_qrhi(void)
 bool g_gl_widget_started = false;
 static RenderWindow *g_window;
 static QWidget *g_widget;
+
+extern void gakk_GE_text(const char *text, int x, int y, float r, float g, float b, float a);
+void gakk_GE_text(const char *text, int x, int y, float r, float g, float b, float a)
+{
+	g_window->_texture_renderer.add_text(text, x, y, r, g, b, a);
+}
 
 void GL_set_new_painting_data(r::PaintingData *painting_data, GE_Rgb new_background_color)
 {

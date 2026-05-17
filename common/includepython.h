@@ -25,7 +25,7 @@ extern "C" {
 #include <Python.h>
 
 #ifdef __cplusplus
-#  pragma GCC pop
+#  pragma GCC diagnostic pop
 #endif
 	
 #define RADIUM_PYTHON_IS_DEFINED 1
