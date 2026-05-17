@@ -88,7 +88,12 @@ public:
     }
     
     // Append vertices for a character at position (x, y) in pixels with color
-    void appendChar(std::vector<Vertex>& vertices, char c, float x, float y, float width, float height, const QColor& color = Qt::white) const
+    void appendChar(std::vector<Vertex>& vertices,
+					char c,
+					float x, float y,
+					float width, float height,
+					const QColor& color = Qt::white
+		) const
     {
         auto it = m_charUVs.find(c);
         if (it == m_charUVs.end()) {
@@ -112,7 +117,14 @@ public:
         float g = color.greenF();
         float b = color.blueF();
         float a = color.alphaF();
-        
+		
+		printf("==22Add-texture22: Dest: %f,%f -> %f,%f\n"
+			   "                   Src:  %f,%f -> %f,%f\n"
+			   "                   r: %f. g: %f. b: %f. a: %f\n\n",
+			   left,top,right,bottom,
+			   uvs.u1,uvs.v0,uvs.u1,uvs.v1,
+			   r,g,b,a);
+
         // Triangle 1: bottom-left, bottom-right, top-right
         vertices.push_back(Vertex(left, bottom, uvs.u0, uvs.v1, r, g, b, a));
         vertices.push_back(Vertex(right, bottom, uvs.u1, uvs.v1, r, g, b, a));
@@ -122,7 +134,47 @@ public:
         vertices.push_back(Vertex(right, top, uvs.u1, uvs.v0, r, g, b, a));
         vertices.push_back(Vertex(left, top, uvs.u0, uvs.v0, r, g, b, a));
     }
-    
+
+    void appendString(r::TextureContext *_context, const QString& text, 
+                      float startX, float startY,
+					  float width, float height,
+					  float r, float g, float b, float a)
+	//					  const QColor& color = Qt::white)
+		const
+	{
+		/*
+        float r = color.redF();
+        float g = color.greenF();
+        float b = color.blueF();
+        float a = color.alphaF();
+        */
+        for (int i = 0; i < text.length(); i++)
+		{
+            char c = text[i].toLatin1();
+
+			if (c==' ')
+				continue;
+			
+			auto it = m_charUVs.find(c);
+			
+			if (it == m_charUVs.end()) {
+				printf("===Can't render this character: '%c'\n", c);
+				continue;
+			}
+        
+			const UVs& uvs = it->second;
+
+            float x = startX + i * m_charWidth;
+            float y = startY;
+			
+            _context->addTexture(x, y,
+								 x + m_charWidth, y + m_charHeight,
+								 uvs.u0, uvs.v0,
+								 uvs.u1, uvs.v1,
+								 r,g,b,a);
+        }
+	}
+	
     // Append vertices for a string with a single color
     void appendString(std::vector<Vertex>& vertices, const QString& text, 
                       float startX, float startY,
@@ -163,7 +215,7 @@ public:
             appendChar(vertices, c, x, y, width, height, color);
         }
     }
-    
+
     int getCharWidth() const { return m_charWidth; }
     int getCharHeight() const { return m_charHeight; }
     

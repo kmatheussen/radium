@@ -98,13 +98,15 @@ GE_Rgb GE_get_custom_rgb(int custom_colornum){
   return ret;
 }
 
-r::Context *g_context_under_text = new r::Context(); // Scrolling: Everything painted under text (only the track backgruond color.)
-r::Context *g_context_text = new r::Context(); // Scrolling: Text.
-r::Context *g_context = new r::Context(); // Scrolling: Everything painted above text)
-r::Context *g_context_left_slider = new r::Context(); // Left slider (Scrolls it's own way) (not the border around the slider, only the moving box)
-r::Context *g_context_static = new r::Context(); // Non-Scrolling: Cursor + Indicators + left slider border.
+r::TriangleContext *g_context_under_text = new r::TriangleContext(); // Scrolling: Everything painted under text (only the track backgruond color.)
+r::TriangleContext *g_context_text = new r::TriangleContext(); // Scrolling: Text.
+r::TriangleContext *g_context = new r::TriangleContext(); // Scrolling: Everything painted above text)
+r::TriangleContext *g_context_left_slider = new r::TriangleContext(); // Left slider (Scrolls it's own way) (not the border around the slider, only the moving box)
+r::TriangleContext *g_context_static = new r::TriangleContext(); // Non-Scrolling: Cursor + Indicators + left slider border.
 
-//std::initializer_list<r::Context> g_all_contexts = {g_context_under_text, g_context_text, g_context, g_context_left_slider, g_context_static};
+r::TextureContext *g_texture_context = NULL;
+
+//std::initializer_list<r::TriangleContext> g_all_contexts = {g_context_under_text, g_context_text, g_context, g_context_left_slider, g_context_static};
 
 
 void GE_Context::add_triangle(const r::fvec2 &p1, const r::fvec2 &p2, const r::fvec2 &p3, GradientType::Type gradient_type) const
@@ -294,6 +296,9 @@ void GE_start_writing(int full_height, bool block_is_visible){
   GE_fill_in_shared_variables(&g_painting_data->shared_variables, g_height);
 
   g_context->clear();
+
+  if (g_texture_context != NULL)
+	  g_texture_context->clear();
   
   //T1_prepare_gradients2_for_new_rendering();
   //T1_collect_gradients1_garbage();
@@ -305,6 +310,7 @@ void GE_end_writing(GE_Rgb new_background_color){
 	if (g_rhi != NULL)
 	{
 		g_context->call_me_when_finished_painting(g_rhi);
+		g_texture_context->call_me_when_finished_painting(g_rhi);
 	}
 	
 	//T1_send_data_to_t2(g_painting_data, new_background_color);
@@ -635,8 +641,18 @@ void GE_line(const GE_Context &c, float x1, float y1, float x2, float y2, float 
   GE_line_lowlevel(c, x1, y1, x2, y2, pen_width);
 }
 
+extern void gakk_GE_text(const char *text, int x, int y, float r, float g, float b, float a);
+
 void GE_text(const GE_Context &c, const char *text, int x, int y){
 	//c.textbitmaps.addCharBoxes(text, x, c.y(y+1));
+	const GE_Rgb &rgb = c.color.c;
+	
+	gakk_GE_text(text, x, y,
+				 rgb.r / 256.0,
+				 rgb.g / 256.0,
+				 rgb.b / 256.0,
+				 rgb.a / 256.0
+		);
 }
 
 void GE_text2(const GE_Context &c, QString text, int x, int y){

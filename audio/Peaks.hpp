@@ -698,7 +698,9 @@ private:
       }
 
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#if !defined(__clang__)
+#  pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
       int pos=0;
       for(int i=0;i<num_read;i++)
 	  {
