@@ -52,7 +52,8 @@ struct Context
 
 		radium::ScopedMutex lock(_vbuf_lock);
 		
-		_do_before_merging = [rhi, this](QRhiResourceUpdateBatch *update_batch)
+		_do_before_merging = [rhi, /* buffer_pos = _buffer_pos */ , this]
+			(QRhiResourceUpdateBatch *update_batch)
 			{
 				//radium::ScopedMutex lock(_vbuf_lock);
 
@@ -64,10 +65,18 @@ struct Context
 				if (VERTEX_SIZE != 18)
 					printf("   NEWBUFFER: %d\n", get_num_bytes());
 
-				_vbuf = rhi->newBuffer(QRhiBuffer::Dynamic, //Static, // Note: Possible optimization here. Don't really understand difference between Static, Immutable, and Dynamic.
-									   QRhiBuffer::VertexBuffer,
-									   get_num_bytes());
+				if (_vbuf == NULL || (int)_vbuf->size() < get_num_bytes())
+				{
+					const int size = std::max(get_num_bytes(),
+											  _vbuf == NULL ? 1024 : int(_vbuf->size())*2);
+					
+					delete _vbuf;
 
+					_vbuf = rhi->newBuffer(QRhiBuffer::Dynamic, //Static, // Note: Possible optimization here. Don't really understand difference between Static, Immutable, and Dynamic.
+										   QRhiBuffer::VertexBuffer,
+										   size);
+				}
+				
 				if (!_vbuf || !_vbuf->create()) {
 					qDebug() << "Failed to create vertex buffer";
 					getchar();
@@ -85,6 +94,19 @@ struct Context
 	void maybe_merge_in(QRhiResourceUpdateBatch *update_batch)
 	{
 		radium::ScopedMutex lock(_vbuf_lock);
+
+		// TODO:
+		//
+		// Problem: _buffer access is not synchronized properly now.
+		//
+		// Solution: Either we need a buffer queue, or more optimally:
+		// Pause block-rendering while waiting for the next batch to be merged
+		// in by the qrhi render thread. However, since block-rendering
+		// is currently performed by the main thread, we shouldn't pause
+		// anything, but rather just stop block-rendering and instead
+		// signal a new block-rendering to start from the qrhi render
+		// thread when it's finished merging. (Or change block-rendering
+		// to run in it's own thread, but that's more work, but also the best solution.)
 		
 		//if (_updates)
 		if (_do_before_merging)
@@ -92,8 +114,8 @@ struct Context
 			_do_before_merging(update_batch);
 			_do_before_merging = nullptr;
 			
-			printf("MERGING UPDATES\n");
-			update_batch->merge(update_batch);
+			//printf("MERGING UPDATES\n");
+			//update_batch->merge(update_batch);
 			/*
 			_updates->release();
 			_updates = nullptr;
@@ -110,6 +132,7 @@ struct Context
 		*/
 		_buffer_pos = 0;
 
+#if 0
 		radium::ScopedMutex lock(_vbuf_lock);
 
 		if (_vbuf != NULL)
@@ -117,6 +140,7 @@ struct Context
 			_buffers_to_delete.push_back(_vbuf);
 			_vbuf = NULL;
 		}
+#endif
 	}
 
 	void render(QRhiCommandBuffer *command_buffer)
