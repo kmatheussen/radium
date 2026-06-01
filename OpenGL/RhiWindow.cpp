@@ -6,6 +6,7 @@
 #include <QThread>
 #include <QOffscreenSurface>
 #include <QVarLengthArray>
+#include <QFont>
 
 #include "../common/nsmtracker.h"
 
@@ -70,7 +71,7 @@ void radium::RhiWindow::exposeEvent(QExposeEvent *)
 		//printf("2. ExposeEvent!\n");
 		if (is_exposed)
 		{
-			init();
+			init(g_initial_editor_font);			
 			must_call_resize_swap_chain = true;
 		}
 		else
@@ -187,7 +188,13 @@ void radium::RhiWindow::handle_thread_events(void)
 		while (g_sem.tryAcquire())
 		{
 			//printf("1.  Got message that threre is a new event on queue\n");
-			
+
+			if (_please_shut_down_qrhi_thread)
+			{
+				_qrhi_thread_has_shut_down = true;
+				return;
+			}
+
 			std::function<void(void)> func;
 		
 			{
@@ -239,14 +246,14 @@ void radium::RhiWindow::request_update_from_thread(void)
 }
 
 //! [rhi-init]
-void radium::RhiWindow::init()
+void radium::RhiWindow::init(const QFont &font)
 {
 	//printf("INIT CALLED\n");
 	if (g_thread==NULL)
 	{
 		QSemaphore finished_initing;
 
-		auto initfunc = [this, &finished_initing]
+		auto initfunc = [this, &finished_initing, font]
 			{
 				if (_graphicsApi == QRhi::Null) {
 					QRhiNullInitParams params;
@@ -335,7 +342,7 @@ void radium::RhiWindow::init()
 				_swap_chain->setRenderPassDescriptor(_render_pass_descriptor);
 //! [swapchain-init]
 				
-				customInit();
+				customInit(font);
 
 				finished_initing.release();
 				

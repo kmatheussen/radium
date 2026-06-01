@@ -49,7 +49,7 @@ IF YOU ARE DEVELOPING RADIUM
         make packages # Only necessary one time.
         BUILDTYPE=DEBUG ./build_linux.sh -j`nproc` && ./run_gdb.sh
 
-     There are three types of BUILD_TYPE:
+     There are three types of BUILDTYPE:
      
         RELEASE    - Compiled with -O2/-O3 and without various assertions.
         DEBUG_FAST - Same as DEBUG + -O2/-O3. Quite slow, but usually acceptable.

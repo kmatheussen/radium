@@ -597,6 +597,7 @@ public:
 };
 }
 
+QFont g_initial_editor_font;
 
 QWidget *g_main_window = NULL;
 
@@ -764,6 +765,8 @@ void SetupMainWindow(void){
 
     editor->font = font;
 
+	g_initial_editor_font = font;
+	
     if (custom_config_set==true){
       SETTINGS_unset_custom_configfile();
     }

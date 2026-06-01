@@ -480,8 +480,8 @@ static GE_Rgb shade_realline(const GE_Rgb rgb, bool is_current_track, const WSig
     
 }
 
-static void create_background_realline(const struct Tracker_Windows *window, const struct WBlocks *wblock, const WSignature &wsignature, int realline){
-
+static void create_background_realline(const struct Tracker_Windows *window, const struct WBlocks *wblock, const WSignature &wsignature, int realline)
+{
   bool has_keyboard_focus = FOCUSFRAMES_has_focus(radium::KeyboardFocusFrameType::EDITOR);
   struct WTracks *curr_wtrack = window->curr_track >=0 ? wblock->wtrack : NULL;
   
@@ -505,52 +505,66 @@ static void create_background_realline(const struct Tracker_Windows *window, con
   
   if(g_bar_opacity == -1)
     g_bar_opacity = SETTINGS_read_int32("first_beat_opacity", 870);
+
   
-
-  // background
-  {    
-
+  {
     const struct WTracks *wtrack = get_leftmost_visible_wtrack(wblock);
     const struct WTracks *end_wtrack = get_first_not_visible_wtrack(wblock, wtrack);
 
     if (wtrack==NULL)
       R_ASSERT_RETURN_IF_FALSE(end_wtrack==NULL);
 
-    if (wtrack!=NULL){
-      {
-        GE_Context c = GE_z(shade_realline(GE_get_rgb(c15), false, wsignature, localzoom), GE_Conf(Z_BACKGROUND | Z_STATIC_X, y1));
-        
-        if (g_colored_tracks)
-          GE_filledBox(c,x1,y1,wtrack->x,y2);
-        else
-          GE_filledBox(c,x1,y1,x2,y2);
-      }
+    if (wtrack!=NULL)
+	{
+		// Block control tracks (leftmost part of editor) (also paints all tracks if non-colored tracks)
+		//
+		{
+			GE_Context c = GE_z(shade_realline(GE_get_rgb(c15),
+											   false,
+											   wsignature,
+											   localzoom),
+								GE_Conf(Z_BACKGROUND | Z_STATIC_X, y1, NO_SCISSORS));
+			
+			if (g_colored_tracks)
+				GE_filledBox(c, x1, y1, wtrack->x, y2);
+			else
+				GE_filledBox(c, x1, y1, x2, y2);
+		}
       
-      if (g_colored_tracks) {
+		// Note track backgrounds
+		//
+		if (g_colored_tracks)
+		{
         
-        while(wtrack != end_wtrack){
+         while(wtrack != end_wtrack)
+		 {
           
           int x1 = R_MAX(wtrack->x - 1, wblock->t.x1);
           int x2 = wtrack->x2;
           //int y1 = wtrack1->y;
           //int y2 = wtrack1->panonoff.y1 - 1;
-          
+
+		  if (realline == 0)
+			  printf("  Background for track #%d: %d -> %d. Track: %d -> %d. Block: %d -> %d\n",
+					 wtrack->l.num,
+					 x1, x2,
+					 wtrack->x, wtrack->x2,
+					 wblock->t.x1, wblock->t.x2);
+		  
           struct Patch *patch = wtrack->track->patch;
           
-          if (patch != NULL){
+          if (patch != NULL)
+		  {
             GE_Rgb rgb = patch==NULL ? GE_get_custom_rgb(HIGH_EDITOR_BACKGROUND_COLOR_NUM) : GE_get_rgb(patch->color, true);
             
             bool is_current_track = get_current_instruments_gui_patch()==patch;
             
-            GE_Context c = GE_z(
-                                 shade_realline(rgb,
-                                                is_current_track,
-                                                wsignature,
-                                                localzoom
-                                                )
-                                 ,
-                                 GE_Conf(Z_BACKGROUND | Z_STATIC_X, y1)
-                                 );
+            GE_Context c = GE_z(shade_realline(rgb,
+											   is_current_track,
+											   wsignature,
+											   localzoom),
+								GE_Conf(Z_BACKGROUND | Z_STATIC_X, y1)
+				);
 
 
             if (has_keyboard_focus && wtrack==curr_wtrack){

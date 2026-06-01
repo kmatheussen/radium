@@ -750,7 +750,8 @@ OBJ_MIXER=$(T)QM_view.o $(T)QM_chip.o $(T)QM_MixerWidget.o $(T)undo_mixer.o $(T)
 #undo_chip_addremove.o
 
 #OpenGL
-OBJ_VL=$(T)GfxElements.o $(T)T2.o $(T)Render.o $(T)Widget.o $(T)RhiWindow.o $(T)CheckOpenGL.o
+OBJ_VL=$(T)GfxElements.o $(T)Render.o $(T)Widget.o $(T)RhiWindow.o $(T)CheckOpenGL.o
+# $(T)T2.o 
 #$(T)Qt6Widget.o
 
 
@@ -2811,8 +2812,8 @@ VISUALIZATION_HEADERS=OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedV
 $(T)GfxElements.o: OpenGL/GfxElements.cpp $(VISUALIZATION_HEADERS) common/Mutex.hpp common/spinlock.h
 	$(CCC2) OpenGL/GfxElements.cpp $(QTOPT) $(FREETYPE_CFLAGS) $(BOOST_INCLUDE) $(VISUALIZATION_OPTIONS)
 
-$(T)T2.o: OpenGL/T2.cpp $(VISUALIZATION_HEADERS) common/QueueStack.hpp
-	$(CCC2) OpenGL/T2.cpp $(QTOPT) $(BOOST_INCLUDE) $(VISUALIZATION_OPTIONS) 
+#$(T)T2.o: OpenGL/T2.cpp $(VISUALIZATION_HEADERS) common/QueueStack.hpp
+#	$(CCC2) OpenGL/T2.cpp $(QTOPT) $(BOOST_INCLUDE) $(VISUALIZATION_OPTIONS) 
 
 $(T)Render.o: OpenGL/Render.cpp $(VISUALIZATION_HEADERS) common/spinlock.h common/time_proc.h common/Beats_proc.h common/TimeData.hpp
 	$(CCC2) OpenGL/Render.cpp $(QTOPT) $(VISUALIZATION_OPTIONS)

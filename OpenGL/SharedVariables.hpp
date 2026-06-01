@@ -12,10 +12,8 @@ extern struct Root *root;
 
 // Can't read data from 'root' from the OpenGL thread, because we risk reading from NULL now and then.
 // So we store everything we need into this structure, and send it over to the OpenGL thread.
-struct SharedVariables{
-
-	float opengl_widget_height;
-	
+struct SharedVariables
+{
   int top_realline;
   int num_reallines;
   int curr_realline;
@@ -85,7 +83,7 @@ SharedVariables::~SharedVariables(){
 // Called from main thread
 static void GE_fill_in_shared_variables(SharedVariables *sv, int opengl_widget_height){
 
-	sv->opengl_widget_height = opengl_widget_height;
+//	sv->opengl_widget_height = opengl_widget_height;
 	
   struct Tracker_Windows *window = root->song->tracker_windows;
   struct WBlocks *wblock = window->wblock;

@@ -393,21 +393,21 @@ static QShader getShader(const QString &name)
 }
 
 #if 0
-static void init_test_triangles(r::TriangleContext *my_context, float dy = 0)
+static void init_test_triangles(r::TriangleContext *my_vertices, float dy = 0)
 {
-	my_context->addTriangle({
+	my_vertices->addTriangle({
 			-1.0f,   0.0f+dy,       1.0f,   dy,   dy, 0.6f,
 			-0.5f,  -1.0f+dy,       1.0f,   0.0f,   dy, 0.6f,
 			-0.0f,  -0.0f+dy,       dy,   0.0f,   dy, 0.6f
 		});
 	
-	my_context->addTriangle({
+	my_vertices->addTriangle({
 			0.5f,  1.0f+dy,       dy,   1.0f,   dy, 0.6f,
 			0.0f,  0.0f+dy,       0.0f,   dy,   dy, 0.6f,
 			1.0f,  0.0f+dy,       0.0f,   1.0f,   dy, 0.6f
 		});
 	
-	my_context->addTriangle(20, 400+dy,
+	my_vertices->addTriangle(20, 400+dy,
 							20, 1800+dy,
 							800, 1800+dy,
 							0,0,1);
@@ -426,31 +426,25 @@ static EditorWidget *get_editorwidget(void){
 
 QRhi *g_rhi = NULL;
 
-extern r::TextureContext *g_texture_context;
-
-#define USE_BUILTIN 0
+extern r::TextureVertices *g_texture_vertices;
 
 namespace
 {
 
 struct TextureRenderer
 {
-	r::TextureContext *_context = nullptr;
+	r::TextureVertices *_vertices = nullptr;
 	r::TextureAtlas *_texture_atlas = nullptr;
 
-#if USE_BUILTIN
-	QRhiBuffer *_vertex_buffer = nullptr;
-#endif
-	
 	QRhiBuffer *_clipCorrBuffer = nullptr;
     QRhiBuffer *_scrollBuffer = nullptr;
     QRhiGraphicsPipeline *_pipeline;
 
 	int _num_vertices_in_buffer = 0;
 
-	void init(QRhi *rhi, QRhiRenderPassDescriptor *render_pass_descriptor)
+	void init(QRhi *rhi, QRhiRenderPassDescriptor *render_pass_descriptor, const QFont &font)
 	{
-		init_contexts(rhi);
+		init_verticess(rhi);
 		
 		_clipCorrBuffer = rhi->newBuffer(QRhiBuffer::Dynamic,
 										 QRhiBuffer::UniformBuffer,
@@ -474,8 +468,8 @@ struct TextureRenderer
 			//return false;
 		}
 		
-		QFont font("Cousine", 14, QFont::Normal);
-		font.setStyleStrategy(QFont::PreferAntialias);
+		//QFont font("Cousine", 14, QFont::Normal);
+		//font.setStyleStrategy(QFont::PreferAntialias);
 		QString supportedChars = "abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVW #-,.(){}<>=*:0123456789";
 		
 		_texture_atlas = new r::TextureAtlas(rhi, font, supportedChars, _clipCorrBuffer, _scrollBuffer);
@@ -499,28 +493,16 @@ struct TextureRenderer
 		
 		_pipeline->setSampleCount(4);
 	
-#if USE_BUILTIN
-		_vertex_buffer = rhi->newBuffer(QRhiBuffer::Dynamic,
-										QRhiBuffer::VertexBuffer,
-										sizeof(r::Vertex) * 6000); // FIX
-		
-		if (!_vertex_buffer || !_vertex_buffer->create())
-		{
-			qDebug() << "Failed to create vertex buffer";
-			getchar();
-		}
-#endif
-		
 		QRhiVertexInputLayout inputLayout;
 		
 		inputLayout.setBindings({
-				QRhiVertexInputBinding(sizeof(r::Vertex))
+				QRhiVertexInputBinding(sizeof(r::TextureVertex))
 			});
 	
 		inputLayout.setAttributes({
-				QRhiVertexInputAttribute(0, 0, QRhiVertexInputAttribute::Float2, offsetof(r::Vertex, x)),
-				QRhiVertexInputAttribute(0, 1, QRhiVertexInputAttribute::Float2, offsetof(r::Vertex, u)),
-				QRhiVertexInputAttribute(0, 2, QRhiVertexInputAttribute::Float4, offsetof(r::Vertex, r))
+				QRhiVertexInputAttribute(0, 0, QRhiVertexInputAttribute::Float2, offsetof(r::TextureVertex, x)),
+				QRhiVertexInputAttribute(0, 1, QRhiVertexInputAttribute::Float2, offsetof(r::TextureVertex, u)),
+				QRhiVertexInputAttribute(0, 2, QRhiVertexInputAttribute::Float4, offsetof(r::TextureVertex, r))
 			});
 			
 		{
@@ -553,12 +535,12 @@ struct TextureRenderer
 	
     void release(void)
     {
-        delete _context;
+        delete _vertices;
 		
         delete _pipeline;
         //delete _ubuf;
 
-        _context = nullptr;
+        _vertices = nullptr;
 
         _pipeline = nullptr;
         //_ubuf = nullptr;
@@ -567,7 +549,7 @@ struct TextureRenderer
 	void add_text(const char *text, int x, int y, float r, float g, float b, float a)
 	{
 		if (_texture_atlas)
-			_texture_atlas->appendString(_context, text, x, y, 20, 20, r, g, b, a);
+			_texture_atlas->appendString(_vertices, text, x, y, 20, 20, r, g, b, a);
 		//g_window->_texture_renderer->add_text(gc, text, x, y);
 	}
 
@@ -588,14 +570,7 @@ struct TextureRenderer
 
         _texture_atlas->uploadTexture(batch);
 
-#if !USE_BUILTIN
-		_context->maybe_merge_in(batch);
-#else
-        if (_vertexDataDirty) { // || true
-            updateVerticesInBatch(batch, width, height);
-            _vertexDataDirty = false;
-        }
-#endif
+		_vertices->maybe_merge_in(batch);
 		
         if (_clipCorrBuffer)
 		{
@@ -627,72 +602,25 @@ struct TextureRenderer
             command_buffer->setGraphicsPipeline(_pipeline);
             command_buffer->setShaderResources(_texture_atlas->getShaderBindings());
 			
-#if USE_BUILTIN
-            const QRhiCommandBuffer::VertexInput bindings[] = {{_vertex_buffer, 0}};
-            command_buffer->setVertexInput(0, 1, bindings);
-            command_buffer->draw(_num_vertices_in_buffer);
-#else
-			if (_context)
-				_context->render(command_buffer);
-#endif
+			if (_vertices)
+				_vertices->render(command_buffer);
         }
     }
 
-#if USE_BUILTIN
-	std::vector<r::Vertex> _vertices;
-
-    void updateVerticesInBatch(QRhiResourceUpdateBatch *batch, float height, float width)
-	{
-        if (width <= 0 || height <= 0)
-            return;
-        QString text = "string C#5 D-9 verticesInBatch(QRhiResourceUpdateBatch *batch) std::vector<QColor> colors = { ==================aergaerg======= C-50";
-        int startX = 100;
-        int startY = 0; // + static_cast<int>(m_y_inc);
-        
-        // Example with different colors per character
-        std::vector<QColor> colors = {
-            Qt::red,      // 's'
-            Qt::green,    // 't'
-            Qt::blue,     // 'r'
-            Qt::yellow,   // 'i'
-            Qt::cyan,     // 'n'
-            Qt::magenta   // 'g'
-        };
-        
-        //std::vector<r::Vertex> vertices;
-        //vertices.reserve(text.length() * 6);
-
-        _texture_atlas->appendStringWithColors(_vertices, text, startX, startY, width, height, colors);
-
-		//_texture_atlas->appendString(_context, "HELLO", 100, 0, 20, 20, Qt::blue);
-		
-        //_texture_atlas->appendString(vertices, text, startX, startY, width, height, Qt::white);
-        
-        _num_vertices_in_buffer = static_cast<int>(_vertices.size());
-        
-        if (!_vertices.empty()) {
-            batch->updateDynamicBuffer(_vertex_buffer,
-									   0, 
-                                       sizeof(r::Vertex) * _num_vertices_in_buffer, 
-                                       _vertices.data());
-        }
-    }
-#endif
-
-    void init_contexts(QRhi *rhi)
+    void init_verticess(QRhi *rhi)
     {
-        _context = new r::TextureContext;
-		g_texture_context = _context;
+        _vertices = new r::TextureVertices;
+		g_texture_vertices = _vertices;
 		
-        _context->call_me_when_finished_painting(rhi);
+        //_vertices->call_me_when_finished_painting(rhi);
 
     }
 };
 
 struct TriangleRenderer
 {
-    r::TriangleContext *_context1 = nullptr;
-    r::TriangleContext *_context2 = nullptr;
+    r::TriangleVertices *_vertices1 = nullptr;
+    r::TriangleVertices *_vertices2 = nullptr;
 
     QRhiShaderResourceBindings *_shader_resource_bindings = nullptr;
     QRhiGraphicsPipeline *_pipeline = nullptr;
@@ -702,13 +630,13 @@ struct TriangleRenderer
     void init(QRhi *rhi,
               QRhiRenderPassDescriptor *render_pass_descriptor)
 	{
-        init_contexts(rhi);
+        init_verticess(rhi);
 		
         _shader_resource_bindings = rhi->newShaderResourceBindings();
 		
         _ubuf = rhi->newBuffer(QRhiBuffer::Dynamic,
                                QRhiBuffer::UniformBuffer,
-                               64 + sizeof(float));
+                               sizeof(QMatrix4x4) + sizeof(float));
 		
         _ubuf->create();
 		
@@ -770,15 +698,15 @@ struct TriangleRenderer
 
     void release(void)
 	{
-		delete _context1;
-        delete _context2;
+		delete _vertices1;
+        delete _vertices2;
 
         delete _shader_resource_bindings;
         delete _pipeline;
         delete _ubuf;
 		
-        _context1 = nullptr;
-        _context2 = nullptr;
+        _vertices1 = nullptr;
+        _vertices2 = nullptr;
 		
         _shader_resource_bindings = nullptr;
         _pipeline = nullptr;
@@ -790,20 +718,19 @@ struct TriangleRenderer
 					   const QMatrix4x4 &viewProjection,
 					   float scrollPos)
     {
-        for (r::TriangleContext *context : ALL_CONTEXTS)
+        for (r::TriangleVertices *context : ALL_VERTICESS)
         {
-            if (context != nullptr &&
-                context->get_num_vertices() > 0)
+            if (context)
             {
                 context->maybe_merge_in(batch);
             }
         }
 
-        if (_context1)
-            _context1->maybe_merge_in(batch);
+        if (_vertices1)
+            _vertices1->maybe_merge_in(batch);
 		
-        if (_context2)
-            _context2->maybe_merge_in(batch);
+        if (_vertices2)
+            _vertices2->maybe_merge_in(batch);
 		
         batch->updateDynamicBuffer(_ubuf,
 								   0,
@@ -830,44 +757,43 @@ struct TriangleRenderer
 		
         command_buffer->setShaderResources();
 
-        for (r::TriangleContext *context : ALL_CONTEXTS)
+        for (r::TriangleVertices *context : ALL_VERTICESS)
         {
-            if (context != nullptr &&
-                context->get_num_vertices() > 0)
+            if (context)
             {
                 context->render(command_buffer);
             }
         }
 
-        if (_context1)
-            _context1->render(command_buffer);
+        if (_vertices1)
+            _vertices1->render(command_buffer);
 		
-        if (_context2)
-            _context2->render(command_buffer);
+        if (_vertices2)
+            _vertices2->render(command_buffer);
     }
 	
 private:
 	
-    void init_contexts(QRhi *rhi)
+    void init_verticess(QRhi *rhi)
 	{
-		_context1 = new r::TriangleContext;
+		_vertices1 = new r::TriangleVertices;
 		
-		//init_test_triangles(_context1, 0);
+		//init_test_triangles(_vertices1, 0);
 		
-        _context1->call_me_when_finished_painting(rhi);
+        //_vertices1->call_me_when_finished_painting(rhi);
 		
-        _context2 = new r::TriangleContext;
+        _vertices2 = new r::TriangleVertices;
 		
 #if 0
         int range = 150;
 		
         for (int i = 0; i < range; ++i)
-            init_test_triangles(_context2, 0.3f + i);
+            init_test_triangles(_vertices2, 0.3f + i);
 		
         for (int i = 0; i < range; ++i)
-            init_test_triangles(_context2, 5.3f - i);
+            init_test_triangles(_vertices2, 5.3f - i);
 #endif
-        _context2->call_me_when_finished_painting(rhi);
+        //_vertices2->call_me_when_finished_painting(rhi);
     }
 };
 
@@ -911,11 +837,11 @@ public:
 		fprintf(stderr, "H7\n");
 	}
 
-	void customInit() override
+	void customInit(const QFont &font) override
 	{
 
 		// Texture renderer
-		_texture_renderer.init(_rhi, _render_pass_descriptor);
+		_texture_renderer.init(_rhi, _render_pass_descriptor, font);
 
 		// Triangle renderer
 		_triangle_renderer.init(_rhi, _render_pass_descriptor);
@@ -925,12 +851,16 @@ public:
 
 		safe_double_write(&g_opengl_scale_ratio, ratio);
 
-		
+#if 0
 		// Make sure editor font is scaled.
-		if(root!=NULL && root->song!=NULL && root->song->tracker_windows!=NULL){
-			setFontValues(root->song->tracker_windows);
-		}
-
+		THREADING_run_on_main_thread_async([](void)
+			{
+				if(root!=NULL && root->song!=NULL && root->song->tracker_windows!=NULL){
+					setFontValues(root->song->tracker_windows);
+				}
+			});
+#endif
+		
 		QScreen *qscreen = screen();
 		R_ASSERT(qscreen != NULL);
 
@@ -1016,6 +946,12 @@ public:
 
 		find_scrollpos(sv, scroll_pos);
 
+		if (ATOMIC_GET(pc->player_state) != PLAYER_STATE_PLAYING)
+		{
+			R_ASSERT(fabsf(scroll_pos - round(scroll_pos)) < 0.001);
+			scroll_pos = round(scroll_pos);
+		}
+		
 		QRhiResourceUpdateBatch *batch = _rhi->nextResourceUpdateBatch();
 
 		// Triangles
@@ -1162,6 +1098,8 @@ static QRhi::Implementation init_qrhi(void)
 	fmt.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
 #endif
 
+	//fmt.setSwapBehavior(QSurfaceFormat::TripleBuffer);
+	
 	printf("--- Swap interval: %d\n"
 		   "--- Renderable types: %x\n",
 		   fmt.swapInterval(),
@@ -1212,10 +1150,29 @@ void gakk_GE_text(const char *text, int x, int y, float r, float g, float b, flo
 	g_window->_texture_renderer.add_text(text, x, y, r, g, b, a);
 }
 
-void GL_set_new_painting_data(r::PaintingData *painting_data, GE_Rgb new_background_color)
+void GE_set_font(const QFont &font)
 {
+	if (g_window)
+	{
+		g_window->_texture_renderer._texture_atlas->setFont(font);
+		GFX_ForceScheduleEditorRedraw(); // New font will be set before starting new paint.
+	}
+}
+
+void aiai(void);
+void aiai(void) // Called after finished rendering.
+{
+	if (g_window)
+		if (g_window->_texture_renderer._texture_atlas)
+			g_window->_texture_renderer._texture_atlas->maybe_switch_to_next_d();
+}
+
+
+void GL_set_new_painting_data(r::PaintingData *painting_data, GE_Rgb new_background_color)
+{	
 	g_window->put_event([painting_data, new_background_color](void)
 		{
+
 			// TODO: Free/etc. All global Context variables here as well, maybe.
 
 			GE_delete_painting_data(g_painting_data);
