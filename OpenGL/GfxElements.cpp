@@ -41,7 +41,7 @@ double g_opengl_scale_ratio = 1.0;
 
 #include "T2.hpp"
 
-#include "Context.hpp"
+#include "Vertices.hpp"
 
 
 #define DEBUG_PRINT 0

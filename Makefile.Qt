@@ -2806,7 +2806,7 @@ $(T)crashreporter_windows.o: crashreporter/crashreporter_windows.cpp
 #	$(CC2) crashreporter/crashreporter_windows.c $(OPT) -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/bfd -DPACKAGE -I/home/kjetil/radium-qt4/mingw/binutils-2.23.1/include $(O0)
 
 VISUALIZATION_OPTIONS=-I $(QRHI_HEADERS)
-VISUALIZATION_HEADERS=OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp OpenGL/FreeType.hpp OpenGL/T2.hpp OpenGL/Context.hpp OpenGL/RhiWindow.hpp OpenGL/Timing.hpp
+VISUALIZATION_HEADERS=OpenGL/TextBitmaps.hpp OpenGL/GfxElements.h OpenGL/SharedVariables.hpp OpenGL/FreeType.hpp OpenGL/T2.hpp OpenGL/Vertices.hpp OpenGL/RhiWindow.hpp OpenGL/Timing.hpp
 #$(WNO_SUGGEST_OVERRIDE) $(WNO_DUPLICATED_BRANCHES) $(WNO_NULL_POINTER_ARITHMETIC) $(NO_ANALYZER)  $(WNO_DEPRECATED_COPY_CLANG) $(WNO_DEPRECATED_DECLARATIONS) $(WNO_MISLEADING_INDENTATION_CLANG) $(WNO_CLASS_MEMACCESS) $(WNO_DEPRECATED_ENUM_ENUM_CONVERSION) -Wno-unknown-pragmas
 
 $(T)GfxElements.o: OpenGL/GfxElements.cpp $(VISUALIZATION_HEADERS) common/Mutex.hpp common/spinlock.h
