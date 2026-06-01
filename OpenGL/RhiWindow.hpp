@@ -7,6 +7,7 @@
 #  include <rhi/qrhi.h>
 #pragma GCC diagnostic pop
 
+#include "../Qt/Qt_MainWindow_proc.h"
 
 #define THREADED_GFX 1
 #define DO_ANTIALIASING 1
@@ -41,6 +42,9 @@ namespace radium
 {
 class RhiWindow : public QWindow
 {
+	std::atomic<bool> _please_shut_down_qrhi_thread{false};
+	std::atomic<bool> _qrhi_thread_has_shut_down{false};
+	
 public:
     RhiWindow(QRhi::Implementation graphicsApi);
     QString graphicsApiName() const;
@@ -79,11 +83,21 @@ public:
 		fprintf(stderr, "A8\n");
 		sem.acquire();
 		fprintf(stderr, "A9\n");
+
+		_please_shut_down_qrhi_thread = true;
+
+		put_event([]()
+			{
+				return;
+			});
+		
+		while(_qrhi_thread_has_shut_down == false)
+			QThread::msleep(10);
 	}
 	
 protected:
 	
-    virtual void customInit() = 0;
+    virtual void customInit(const QFont &font) = 0;
     virtual void customRender() = 0;
 
     // destruction order matters to a certain degree: the fallbackSurface must
@@ -105,7 +119,7 @@ protected:
     QMatrix4x4 _viewProjection;
 
 private:
-    void init();
+    void init(const QFont &font);
     void resizeSwapChain();
     void render();
 

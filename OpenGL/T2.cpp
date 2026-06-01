@@ -14,7 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-
+#if 0
 /**
    T1: Main thread
    T2: Drawer thread
@@ -172,6 +172,7 @@ T2_data::~T2_data(){
 
 
 static QThread *g_draw_thread = NULL;
+
 static bool g_high_draw_thread_priority = true;
 
 bool GL_get_high_draw_thread_priority(void){
@@ -191,7 +192,6 @@ void GL_set_high_draw_thread_priority(bool onoff){
   if (g_draw_thread != NULL)
     g_draw_thread->setPriority(onoff ? QThread::HighPriority : QThread::NormalPriority);
 }
-
 
 static void T2_thread_func(QOffscreenSurface *offscreen, QOpenGLContext *offscreen_context){
   
@@ -362,3 +362,4 @@ void T1_wait_until_t2_got_t1_data(void){
 #endif
 }
 
+#endif

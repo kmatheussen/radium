@@ -129,6 +129,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_Bs_edit_proc.h"
 #include "Qt_PresetBrowser.h"
 #include "Qt_SaveRestoreWindows_proc.h"
+#include "Qt_Fonts_proc.h"
 
 #include "Timer.hpp"
 #include "mTimer.hpp"
@@ -4187,6 +4188,7 @@ int radium_main(const char *arg){
 
   if (getDoSaveRestoreWindows())
 	  restoreWindowsState(main_window);
+
 
   // Ensure we're not reading config file first time adding a note.
   doAddNotesWhenReleasingKeys();

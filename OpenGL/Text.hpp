@@ -2,140 +2,127 @@
 namespace r
 {
 
-struct Vertex
-{
-    float x, y;     // position
-    float u, v;     // texture coordinates
-    float r, g, b, a;
-    
-    Vertex()
-		: x(0), y(0)
-		, u(0), v(0)
-		, r(1), g(1), b(1), a(1)
-	{
-	}
-	
-    Vertex(float _x, float _y,
-		   float _u, float _v,
-		   float _r, float _g, float _b, float _a)
-        : x(_x), y(_y)
-		, u(_u), v(_v)
-		, r(_r), g(_g), b(_b), a(_a)
-	{
-	}
-};
-
-static float getNDC_y(float y, float screenHeight)
-{
-	return y;
-	#if 0
-	return scale(y,
-				 0, screenHeight,
-				 0, 1);
-	#endif
-	return 1.0f - 2.0f * y / screenHeight;
-}
-
-static float getNDC_x(float x, float screenWidth)
-{
-	return x;
-	return -1.0f + 2.0f * x / screenWidth;
-}
-
 class TextureAtlas
 {
+	struct UVs
+	{
+        float u0, v0, u1, v1;
+    };
+
+	QRhi* _rhi = nullptr;
+    QString _supportedChars;
+
+	mutable radium::Mutex _newImageLock;
+
+	struct D
+	{
+		QImage _image;
+		int _num_columns = 0;
+		int _num_rows = 0;
+		
+		int _char_width = 0;
+		int _char_height = 0;
+		
+		QMap<char, UVs> _char_uvs;
+	} _d, _next_d;
+	
+    // QRhi resources owned by this class
+    QRhiTexture* _texture = nullptr;
+    QRhiSampler* _sampler = nullptr;
+    QRhiShaderResourceBindings* _shaderBindings = nullptr;
+    QRhiBuffer* _clipCorrBuffer = nullptr;
+    QRhiBuffer* _scrollBuffer = nullptr;
+    bool _textureUploaded = false;
+
 public:
     // Constructor: takes QRhi, font, supported characters, and clip correction buffer
     TextureAtlas(QRhi* rhi, const QFont& font, const QString& supportedChars, QRhiBuffer* clipCorrBuffer, QRhiBuffer* scrollBuffer)
-        : m_rhi(rhi)
-        , m_font(font)
-        , m_supportedChars(supportedChars)
-        , m_clipCorrBuffer(clipCorrBuffer)
-        , m_scrollBuffer(scrollBuffer)
+        : _rhi(rhi)
+        , _supportedChars(supportedChars)
+        , _clipCorrBuffer(clipCorrBuffer)
+        , _scrollBuffer(scrollBuffer)
     {
-        createAtlas();
-        createTextureResources();
+        createAtlas(font);
+        createTextureResources(_next_d._image);
         createShaderBindings();
     }
     
     ~TextureAtlas()
     {
-        if (m_texture) {
-            m_texture->destroy();
-            delete m_texture;
+        if (_texture) {
+            _texture->destroy();
+            delete _texture;
         }
-        if (m_sampler) {
-            m_sampler->destroy();
-            delete m_sampler;
+        if (_sampler) {
+            _sampler->destroy();
+            delete _sampler;
         }
-        if (m_shaderBindings) {
-            m_shaderBindings->destroy();
-            delete m_shaderBindings;
+        if (_shaderBindings) {
+            _shaderBindings->destroy();
+            delete _shaderBindings;
         }
     }
     
     // Get shader resource bindings
-    QRhiShaderResourceBindings* getShaderBindings() const { return m_shaderBindings; }
+    QRhiShaderResourceBindings* getShaderBindings() const { return _shaderBindings; }
     
     // Upload texture data to GPU (call once after creating atlas)
     void uploadTexture(QRhiResourceUpdateBatch* batch)
     {
-        if (!m_textureUploaded && batch && !m_atlasImage.isNull()) {
-            batch->uploadTexture(m_texture, m_atlasImage);
-            m_textureUploaded = true;
+		if (batch==NULL)
+			return;
+
+		radium::ScopedMutex lock(_newImageLock);
+
+        if (!_d._image.isNull())
+		{
+			if (_texture->pixelSize() != _d._image.size())
+			{
+				_texture->setPixelSize(_d._image.size());
+				
+				if (!_texture->create()) {
+					qFatal("Failed to recreate texture");
+				}
+			}
+			
+            batch->uploadTexture(_texture, _d._image);
+
+			_next_d._image = QImage();
+			_d._image = QImage();
+			
             qDebug() << "TextureAtlas: Uploaded to GPU";
         }
     }
-    
-    // Append vertices for a character at position (x, y) in pixels with color
-    void appendChar(std::vector<Vertex>& vertices,
-					char c,
-					float x, float y,
-					float width, float height,
-					const QColor& color = Qt::white
-		) const
-    {
-        auto it = m_charUVs.find(c);
-        if (it == m_charUVs.end()) {
-            for (int i = 0; i < 6; ++i) {
-				// Fix. No need to add vertex here?
-                vertices.push_back(Vertex(0.0f, 0.0f, 0.0f, 0.0f, 
-                                          color.redF(), color.greenF(), 
-                                          color.blueF(), color.alphaF()));
-            }
-            return;
-        }
-        
-        const UVs& uvs = it->second;
 
-        float left = getNDC_x(x, width);
-        float right = getNDC_x(x + m_charWidth, width);
-        float top = getNDC_y(y, height);
-        float bottom = getNDC_y(y + m_charHeight, height);
-        
-        float r = color.redF();
-        float g = color.greenF();
-        float b = color.blueF();
-        float a = color.alphaF();
+	// Suspected switching at the wrong time could cause flickering, but all this is probably just unnecessary complication.
+	// (the flickering is caused by something else)
+	//
+	// This function is called right before starting a new render, on the same thread that is rendering (which is currently the main thread).
+	//
+	void maybe_switch_to_next_d(void)
+	{
+		radium::ScopedMutex lock(_newImageLock);
+
+		if (!_next_d._image.isNull())
+		{
+			_d = std::move(_next_d);
+			_next_d._image = QImage();
+		}
+	}
+	
+	void setFont(const QFont &nonscaled_font)
+	{
+		QFont font(nonscaled_font);
+
+		const double scale_ratio = safe_double_read(&g_opengl_scale_ratio);
 		
-		printf("==22Add-texture22: Dest: %f,%f -> %f,%f\n"
-			   "                   Src:  %f,%f -> %f,%f\n"
-			   "                   r: %f. g: %f. b: %f. a: %f\n\n",
-			   left,top,right,bottom,
-			   uvs.u1,uvs.v0,uvs.u1,uvs.v1,
-			   r,g,b,a);
+		if(!equal_doubles(scale_ratio, 1.0))
+			font.setPointSize(font.pointSize() * scale_ratio);
 
-        // Triangle 1: bottom-left, bottom-right, top-right
-        vertices.push_back(Vertex(left, bottom, uvs.u0, uvs.v1, r, g, b, a));
-        vertices.push_back(Vertex(right, bottom, uvs.u1, uvs.v1, r, g, b, a));
-        vertices.push_back(Vertex(right, top, uvs.u1, uvs.v0, r, g, b, a));
-        // Triangle 2: bottom-left, top-right, top-left
-        vertices.push_back(Vertex(left, bottom, uvs.u0, uvs.v1, r, g, b, a));
-        vertices.push_back(Vertex(right, top, uvs.u1, uvs.v0, r, g, b, a));
-        vertices.push_back(Vertex(left, top, uvs.u0, uvs.v0, r, g, b, a));
-    }
-
-    void appendString(r::TextureContext *_context, const QString& text, 
+		createAtlas(font);
+	}
+	
+    void appendString(r::TextureVertices *_context, const QString& text, 
                       float startX, float startY,
 					  float width, float height,
 					  float r, float g, float b, float a)
@@ -148,6 +135,11 @@ public:
         float b = color.blueF();
         float a = color.alphaF();
         */
+
+		radium::ScopedMutex lock(_newImageLock);
+
+		const D &d = _d; //_next_d._image.isNull() ? _d : _next_d;
+
         for (int i = 0; i < text.length(); i++)
 		{
             char c = text[i].toLatin1();
@@ -155,145 +147,153 @@ public:
 			if (c==' ')
 				continue;
 			
-			auto it = m_charUVs.find(c);
+			auto it = d._char_uvs.find(c);
 			
-			if (it == m_charUVs.end()) {
+			if (it == d._char_uvs.end()) {
 				printf("===Can't render this character: '%c'\n", c);
 				continue;
 			}
         
-			const UVs& uvs = it->second;
+			const UVs& uvs = it.value();
 
-            float x = startX + i * m_charWidth;
-            float y = startY;
+            float x = floor(startX + i * d._char_width) + 1;
+            float y = floor(startY) + 1;
 			
             _context->addTexture(x, y,
-								 x + m_charWidth, y + m_charHeight,
+								 x + d._char_width, y + d._char_height,
 								 uvs.u0, uvs.v0,
 								 uvs.u1, uvs.v1,
 								 r,g,b,a);
         }
 	}
 	
-    // Append vertices for a string with a single color
-    void appendString(std::vector<Vertex>& vertices, const QString& text, 
-                      float startX, float startY,
-					  float width, float height,
-					  const QColor& color = Qt::white) const
-    {
-        vertices.reserve(vertices.size() + text.length() * 6);
-		
-        for (int i = 0; i < text.length(); i++)
-		{
-            char c = text[i].toLatin1();
-            float x = startX + i * m_charWidth;
-            float y = startY;
-            appendChar(vertices, c, x, y, width, height, color);
-        }
-    }
-    
-    // Append vertices for a string with per-character colors
-    void appendStringWithColors(std::vector<Vertex>& vertices, const QString& text,
-                                float startX, float startY, 
-								float width, float height,
-                                const std::vector<QColor>& colors) const
-    {
-        vertices.reserve(vertices.size() + text.length() * 6);
-		
-        for (int i = 0; i < text.length(); i++)
-		{
-            char c = text[i].toLatin1();
-			startX += m_charWidth;
-			if (startX > width*5)
-			{
-				startX = 10;
-				startY += m_charHeight*0.6;
-			}
-            float x = startX; // + i * m_charWidth;
-            float y = startY;
-            QColor color = colors[i % colors.size()]; //(i < (int)colors.size()) ? colors[i] : Qt::white;
-            appendChar(vertices, c, x, y, width, height, color);
-        }
-    }
-
-    int getCharWidth() const { return m_charWidth; }
-    int getCharHeight() const { return m_charHeight; }
+    //int getCharWidth() const { return _char_width; }
+    //int getCharHeight() const { return _char_height; }
     
 private:
-    struct UVs {
-        float u0, v0, u1, v1;
-    };
     
-    void createAtlas()
+    void createAtlas(const QFont &orgfont)
     {
-        if (m_supportedChars.isEmpty()) {
+        if (_supportedChars.isEmpty()) {
             qDebug() << "TextureAtlas: No supported characters provided!";
             return;
         }
+
+        int charCount = _supportedChars.length();
+
+		D d;
+		
+        d._num_columns = static_cast<int>(std::ceil(std::sqrt(charCount)));
+        d._num_rows = (charCount + d._num_columns - 1) / d._num_columns;
+
+#if 0
+        QFontMetrics fm(_font);
+        int char_width = fm.horizontalAdvance('W') + 4;
+        int char_height = fm.height() + 4;
+#endif
+
+		QFont font(orgfont);
+		font.setHintingPreference(QFont::PreferFullHinting); // full hinting should look better
+
+		QFontMetrics metrics(font);
+		
+		int real_width = metrics.horizontalAdvance("#"); //(void)real_width;
+		d._char_height = metrics.height();
+		d._char_width = real_width; //char_height;
+
+        int atlasWidth = d._num_columns * d._char_width;
+        int atlasHeight = d._num_rows * d._char_height;
         
-        int charCount = m_supportedChars.length();
-        m_atlasCols = static_cast<int>(std::ceil(std::sqrt(charCount)));
-        m_atlasRows = (charCount + m_atlasCols - 1) / m_atlasCols;
+        d._image = QImage(atlasWidth, atlasHeight, QImage::Format_ARGB32);
+
+        //image.fill(Qt::transparent);
         
-        QFontMetrics fm(m_font);
-        m_charWidth = fm.horizontalAdvance('W') + 4;
-        m_charHeight = fm.height() + 4;
-        
-        int atlasWidth = m_atlasCols * m_charWidth;
-        int atlasHeight = m_atlasRows * m_charHeight;
-        
-        m_atlasImage = QImage(atlasWidth, atlasHeight, QImage::Format_ARGB32);
-        m_atlasImage.fill(Qt::transparent);
-        
-        QPainter painter(&m_atlasImage);
+        QPainter painter(&d._image);
+#if 0
         painter.setRenderHint(QPainter::Antialiasing, true);
         painter.setRenderHint(QPainter::TextAntialiasing, true);
-        painter.setFont(m_font);
+        painter.setFont(font);
         painter.setPen(Qt::white);
-        
-        for (int i = 0; i < charCount; ++i) {
-            int col = i % m_atlasCols;
-            int row = i / m_atlasCols;
-            int x = col * m_charWidth + 2;
-            int y = row * m_charHeight + 2;
+#endif
+
+		painter.setPen(QColor(255, 255, 255, 255));
+
+		painter.setFont(font);
+
+		QColor qcol("#fefefe");
+		//QColor qcol("#c0c0c0c0");
+		qcol.setAlpha(0);
+		d._image.fill(qcol);//QColor(0.0, 0.0, 0.0, 0));
+
+        for (int i = 0; i < charCount; ++i)
+		{			
+            int col = i % d._num_columns;
+            int row = i / d._num_columns;
+            int x = col * d._char_width;
+            int y = row * d._char_height;
             
-            QRect rect(x, y, m_charWidth - 4, m_charHeight - 4);
-            painter.drawText(rect, Qt::AlignCenter, QString(m_supportedChars[i]));
+            QRect rect(x, y, d._char_width, d._char_height);
+            painter.drawText(rect, Qt::AlignVCenter, QString(_supportedChars[i]));
             
-            float u0 = (float)(col * m_charWidth) / atlasWidth;
-            float v0 = (float)(row * m_charHeight) / atlasHeight;
-            float u1 = (float)((col + 1) * m_charWidth) / atlasWidth;
-            float v1 = (float)((row + 1) * m_charHeight) / atlasHeight;
+            float u0 = (float)(x + 0.5f) / atlasWidth;
+            float v0 = (float)(y + 0.5f) / atlasHeight;
+            float u1 = (float)(x + d._char_width + 0.5f) / atlasWidth;
+            float v1 = (float)(y + d._char_height + 0.5f) / atlasHeight;
             
-            m_charUVs[m_supportedChars[i].toLatin1()] = {u0, v0, u1, v1};
+            d._char_uvs[_supportedChars[i].toLatin1()] = {u0, v0, u1, v1};
         }
         
         painter.end();
         
         qDebug() << "TextureAtlas created:" << atlasWidth << "x" << atlasHeight
                  << "with" << charCount << "characters"
-                 << "(" << m_atlasCols << "x" << m_atlasRows << "grid)";
+                 << "(" << d._num_columns << "x" << d._num_rows << "grid)";
+
+		{
+			radium::ScopedMutex lock(_newImageLock);
+
+			_next_d = d;
+		}
     }
     
-    void createTextureResources()
+    void createTextureResources(const QImage &image)
     {
-        if (!m_rhi) {
+        if (!_rhi) {
             qDebug() << "TextureAtlas: Cannot create texture resources - QRhi is null";
 			getchar();
             return;
         }
         
-        m_texture = m_rhi->newTexture(QRhiTexture::RGBA8, m_atlasImage.size(), 1, QRhiTexture::Flag{});
-        if (!m_texture || !m_texture->create()) {
+        _texture = _rhi->newTexture(QRhiTexture::RGBA8,
+									  image.size(),
+									  1,
+									  QRhiTexture::Flag{});
+		
+        if (!_texture || !_texture->create()) {
             qDebug() << "TextureAtlas: Failed to create texture";
 			getchar();
             return;
         }
-        
-        m_sampler = m_rhi->newSampler(QRhiSampler::Linear, QRhiSampler::Linear,
-                                      QRhiSampler::None, QRhiSampler::ClampToEdge,
-                                      QRhiSampler::ClampToEdge);
-        if (!m_sampler || !m_sampler->create()) {
+
+#if 0
+		// This one ensures non-scaled text (no bluring), but also causes jumpy text when scrolling.
+		// (Try to enable it to see if text becomes clearer. If it does, something is wrong.)
+        _sampler = _rhi->newSampler(QRhiSampler::Nearest,
+									QRhiSampler::Nearest,
+									QRhiSampler::None,
+									QRhiSampler::ClampToEdge,
+									QRhiSampler::ClampToEdge);
+#else
+		// This one doesn't guarantee non-scaled text, but we should not experience it anyway (since the parameters we're using shouldn't cause scaling).
+		// We also avoid jumpy text when scrolling using this one. */
+        _sampler = _rhi->newSampler(QRhiSampler::Linear,
+									QRhiSampler::Linear,
+									QRhiSampler::None,
+									QRhiSampler::ClampToEdge,
+									QRhiSampler::ClampToEdge);
+#endif
+		
+        if (!_sampler || !_sampler->create()) {
             qDebug() << "TextureAtlas: Failed to create sampler";
 			getchar();
         }
@@ -301,14 +301,14 @@ private:
     
     void createShaderBindings()
     {
-        if (!m_rhi || !m_texture || !m_sampler) {
+        if (!_rhi || !_texture || !_sampler) {
             qDebug() << "TextureAtlas: Cannot create shader bindings - resources not ready";
 			getchar();
             return;
         }
         
-        m_shaderBindings = m_rhi->newShaderResourceBindings();
-        if (!m_shaderBindings) {
+        _shaderBindings = _rhi->newShaderResourceBindings();
+        if (!_shaderBindings) {
             qDebug() << "TextureAtlas: Failed to create shader resource bindings";
 			getchar();
             return;
@@ -318,46 +318,28 @@ private:
         std::vector<QRhiShaderResourceBinding> bindings;
         bindings.push_back(QRhiShaderResourceBinding::sampledTexture(0,
 																	 QRhiShaderResourceBinding::FragmentStage,
-																	 m_texture,
-																	 m_sampler));
+																	 _texture,
+																	 _sampler));
         
-        if (m_clipCorrBuffer) {
+        if (_clipCorrBuffer) {
             bindings.push_back(QRhiShaderResourceBinding::uniformBuffer(1,
 																		QRhiShaderResourceBinding::VertexStage,
-																		m_clipCorrBuffer));
+																		_clipCorrBuffer));
         }
         
-        if (m_scrollBuffer) {
+        if (_scrollBuffer) {
             bindings.push_back(QRhiShaderResourceBinding::uniformBuffer(2,
 																		QRhiShaderResourceBinding::VertexStage,
-																		m_scrollBuffer));
+																		_scrollBuffer));
 		}
         
-        m_shaderBindings->setBindings(bindings.cbegin(), bindings.cend());
+        _shaderBindings->setBindings(bindings.cbegin(), bindings.cend());
         
-        if (!m_shaderBindings->create()) {
+        if (!_shaderBindings->create()) {
             qDebug() << "TextureAtlas: Failed to create shader resource bindings";
 			getchar();
         }
     }
-    
-    QRhi* m_rhi = nullptr;
-    QFont m_font;
-    QString m_supportedChars;
-    QImage m_atlasImage;
-    std::map<char, UVs> m_charUVs;
-    int m_charWidth = 0;
-    int m_charHeight = 0;
-    int m_atlasCols = 0;
-    int m_atlasRows = 0;
-    
-    // QRhi resources owned by this class
-    QRhiTexture* m_texture = nullptr;
-    QRhiSampler* m_sampler = nullptr;
-    QRhiShaderResourceBindings* m_shaderBindings = nullptr;
-    QRhiBuffer* m_clipCorrBuffer = nullptr;
-    QRhiBuffer* m_scrollBuffer = nullptr;
-    bool m_textureUploaded = false;
 };
 
 } // namespace r

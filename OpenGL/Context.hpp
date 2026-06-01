@@ -11,215 +11,263 @@ extern QRhi *g_rhi;
 namespace r
 {
 
-template <int VERTEX_SIZE>
-struct Context
+struct TriangleVertex
 {
-	static constexpr int START_SIZE = 200; // Number of triangles
+    float x, y;     // position
+    float r, g, b, a; // color
+};
 
-	int _buffer_size = VERTEX_SIZE * START_SIZE;
+struct TextureVertex
+{
+    float x, y;     // position (on screen)
+    float u, v;     // texture coordinates (position in the texture atlas)
+    float r, g, b, a; // color
+};
+
+
+namespace vertices
+{
+
+struct Buffer
+{
 	int _buffer_pos = 0;
-	float *_buffer = (float*)malloc(_buffer_size * sizeof(float));
-
-	QVector<QRhiBuffer*> _buffers_to_delete;
-	radium::Mutex _vbuf_lock;
 	
-	QRhiBuffer *_vbuf = nullptr;
+	int _buffer_size;
+	float *_buffer;
 
-	QRhiResourceUpdateBatch *_updates = nullptr;	
-
-	Context()
-	{	
-	}
-
-	~Context()
+	~Buffer()
 	{
-		delete _vbuf;
 		free(_buffer);
 	}
 
-	//static constexpr int START_SIZE = 200; // Number of triangles
-	//static constexpr int VERTEX_SIZE = 18; // Number of floats in one triangle (pos1 + pos1-color, pos2 + pos2-color, pos3 + pos3-color.)
-
-	std::function<void(QRhiResourceUpdateBatch*)> _do_before_merging;
-	
-	void call_me_when_finished_painting(QRhi *rhi)
+	Buffer(int initial_size)
+		: _buffer_size(initial_size)
+		, _buffer((float*)malloc(sizeof(float) * _buffer_size))
 	{
-		static int total = 0;
-		total += get_num_bytes();
-
-		if (VERTEX_SIZE != 18)
-			printf("Num bytes: %d. Total: %d\n", get_num_bytes(), total);
-
-		radium::ScopedMutex lock(_vbuf_lock);
-		
-		_do_before_merging = [rhi, /* buffer_pos = _buffer_pos */ , this]
-			(QRhiResourceUpdateBatch *update_batch)
+		memset(_buffer, 0, sizeof(float) * _buffer_size); // Ensure it's allocated before starting to use it (calloc might not always actually allocate.)
+	}
+	
+	void append(const float *data, int num_floats)
+	{
+		if (_buffer_pos + num_floats > _buffer_size)
+		{
+			do
 			{
-				//radium::ScopedMutex lock(_vbuf_lock);
-
-				for(auto *buf : _buffers_to_delete)
-					delete buf;
-		
-				_buffers_to_delete.clear();
-
-				if (VERTEX_SIZE != 18)
-					printf("   NEWBUFFER: %d\n", get_num_bytes());
-
-				if (_vbuf == NULL || (int)_vbuf->size() < get_num_bytes())
-				{
-					const int size = std::max(get_num_bytes(),
-											  _vbuf == NULL ? 1024 : int(_vbuf->size())*2);
-					
-					delete _vbuf;
-
-					_vbuf = rhi->newBuffer(QRhiBuffer::Dynamic, //Static, // Note: Possible optimization here. Don't really understand difference between Static, Immutable, and Dynamic.
-										   QRhiBuffer::VertexBuffer,
-										   size);
-				}
-				
-				if (!_vbuf || !_vbuf->create()) {
-					qDebug() << "Failed to create vertex buffer";
-					getchar();
-				}
-
-				//update_batch = rhi->nextResourceUpdateBatch();
-				
-				update_batch->updateDynamicBuffer(_vbuf,
-												  0,
-												  get_num_bytes(),
-												  get_buffer());
-			};
-	}
-	
-	void maybe_merge_in(QRhiResourceUpdateBatch *update_batch)
-	{
-		radium::ScopedMutex lock(_vbuf_lock);
-
-		// TODO:
-		//
-		// Problem: _buffer access is not synchronized properly now.
-		//
-		// Solution: Either we need a buffer queue, or more optimally:
-		// Pause block-rendering while waiting for the next batch to be merged
-		// in by the qrhi render thread. However, since block-rendering
-		// is currently performed by the main thread, we shouldn't pause
-		// anything, but rather just stop block-rendering and instead
-		// signal a new block-rendering to start from the qrhi render
-		// thread when it's finished merging. (Or change block-rendering
-		// to run in it's own thread, but that's more work, but also the best solution.)
-		
-		//if (_updates)
-		if (_do_before_merging)
-		{
-			_do_before_merging(update_batch);
-			_do_before_merging = nullptr;
-			
-			//printf("MERGING UPDATES\n");
-			//update_batch->merge(update_batch);
-			/*
-			_updates->release();
-			_updates = nullptr;
-			*/
-		}
-	}
-
-	void clear(void)
-	{
-		/*
-		_buffer_size = VERTEX_SIZE * 200 * sizeof(float);
-		_buffer_pos = 0;
-		_buffer = (float*)malloc(_buffer_size);
-		*/
-		_buffer_pos = 0;
-
-#if 0
-		radium::ScopedMutex lock(_vbuf_lock);
-
-		if (_vbuf != NULL)
-		{
-			_buffers_to_delete.push_back(_vbuf);
-			_vbuf = NULL;
-		}
-#endif
-	}
-
-	void render(QRhiCommandBuffer *command_buffer)
-	{
-		radium::ScopedMutex lock(_vbuf_lock);
-
-		int num_vertices = get_num_vertices();
-
-		if (false) //VERTEX_SIZE != 18)
-		{
-			printf("A\n");
-			printf("B\n");
-		}
-		
-		if (_vbuf && num_vertices>0)
-		{
-			const QRhiCommandBuffer::VertexInput vbufBinding(_vbuf, 0);
-			command_buffer->setVertexInput(0, 1, &vbufBinding);
-			command_buffer->draw(get_num_vertices());
-
-#if 0
-			const QRhiCommandBuffer::VertexInput bindings[] = {{_vertex_buffer, 0}};
-            command_buffer->setVertexInput(0, 1, bindings);
-            command_buffer->draw(_num_vertices_in_buffer);
-#endif
-			
-			//if (VERTEX_SIZE != 18)
-			//	printf("--- Rendered %d vertices. Vertex size: %d\n", get_num_vertices(), VERTEX_SIZE);
-		}
-	}
-	
-	int get_num_vertices(void) const
-	{
-		if (VERTEX_SIZE == 18)
-			return _buffer_pos * 3 / VERTEX_SIZE;
-		else
-			return _buffer_pos / 8; //* 3 / VERTEX_SIZE;
-	}
-
-	const float *get_buffer(void) const
-	{
-		return _buffer;
-	}	
-
-	int get_num_bytes(void) const
-	{
-		return _buffer_pos * sizeof(float);
-	}
-
-	void addVertex(const float *vertex)
-	{
-		if (_buffer_pos+VERTEX_SIZE >= _buffer_size)
-		{
-			_buffer_size *= 2;
+				_buffer_size *= 2;
+			}
+			while (_buffer_pos + num_floats > _buffer_size);
+						
 			_buffer = (float*)realloc(_buffer, _buffer_size * sizeof(float));
 		}
 
-		memcpy(_buffer + _buffer_pos, vertex, VERTEX_SIZE * sizeof(float));
+		memcpy(_buffer + _buffer_pos, data, num_floats * sizeof(float));
 
-		_buffer_pos += VERTEX_SIZE;
+		_buffer_pos += num_floats;
+	}
+
+	void reset(void)
+	{
+		_buffer_pos = 0;
+	}	
+};
+
+struct Buffers
+{
+	radium::Mutex _lock;
+
+	Buffer _buffers[2];
+
+	int _render_buffer = -1; // either -1, 0, or 1.
+	int _qrhi_buffer = -1; // either -1, 0, or 1.
+
+	int _next_ready_buffer = -1; // either -1, 0, or 1.
+
+	Buffers(int initial_size)
+		: _buffers{initial_size, initial_size}
+	{
+	}
+	
+	[[nodiscard]] const Buffer *maybe_obtain_qrhi_buffer(void)
+	{
+		radium::ScopedMutex lock(_lock);
+		
+		R_ASSERT_NON_RELEASE(_qrhi_buffer == -1);
+
+		if (_next_ready_buffer != -1)
+		{
+			_qrhi_buffer = _next_ready_buffer;
+			_next_ready_buffer = -1;
+			
+			R_ASSERT_NON_RELEASE(_render_buffer != _qrhi_buffer);
+			
+			return &_buffers[_qrhi_buffer];
+		}
+
+		return NULL;
+ 	}
+
+	void release_qrhi_buffer(void)
+	{
+		radium::ScopedMutex lock(_lock);
+
+		R_ASSERT_NON_RELEASE(_qrhi_buffer != -1);
+		
+		_qrhi_buffer = -1;
+	}
+	
+	[[nodiscard]] Buffer *obtain_render_buffer(void) __attribute__((returns_nonnull))
+	{
+		radium::ScopedMutex lock(_lock);
+
+		R_ASSERT_NON_RELEASE(_render_buffer == -1);
+
+		switch(_qrhi_buffer)
+		{
+			case -1:
+				switch(_next_ready_buffer)
+				{
+					case -1: _render_buffer = 0 ; break;
+					case 0: _render_buffer = 1 ; break; // Probably best, but should we return 0 instead? (Both will behave correctly, but which one looks best? In theory, 0 might have lower latency, while 1 also might have lower latency in addition to smoother animation. It might not be possible to notice any difference though.)
+					case 1: _render_buffer = 0 ; break; // Probably best, but should we return 1 instead? (...)
+					default:
+						_render_buffer = 0;
+						R_ASSERT_NON_RELEASE(false);
+						break;
+				}
+				break;
+			case 0: _render_buffer = 1 ; break;
+			case 1: _render_buffer = 0 ; break;
+			default:
+				R_ASSERT_NON_RELEASE(false);
+				_render_buffer = 0;
+				break;
+		}
+
+		Buffer *ret = &_buffers[_render_buffer];
+
+		ret->reset();
+		
+		return ret;
+	}
+
+	void release_render_buffer(void)
+	{
+		radium::ScopedMutex lock(_lock);
+
+		R_ASSERT_NON_RELEASE(_render_buffer != -1);
+
+		_next_ready_buffer = _render_buffer;
+		_render_buffer = -1;
+	}
+};
+	
+} // namespace vertices
+
+
+template <int VERTEX_SIZE, int NUM_VERTICES_PER_UNIT>
+struct Vertices
+{
+	static constexpr int START_SIZE = 128; // Initial number of units.
+
+	static constexpr int _num_vertices_per_unit = NUM_VERTICES_PER_UNIT;
+	static constexpr int _vertex_size = VERTEX_SIZE;
+	
+	//const int _vertex_size;
+	
+	QRhiBuffer *_vbuf = nullptr;
+
+	int _curr_num_qhri_vertices = -1;
+	
+	vertices::Buffers _buffers;
+	
+	vertices::Buffer *_render_buffer;
+	
+	Vertices() //int vertex_size, int num_vertices_per_unit)
+		: _buffers(sizeof(float) * VERTEX_SIZE * NUM_VERTICES_PER_UNIT * START_SIZE)
+	{	
+	}
+
+	~Vertices()
+	{
+		delete _vbuf;
+	}
+
+	void maybe_merge_in(QRhiResourceUpdateBatch *update_batch)
+	{
+		const vertices::Buffer *buffer = _buffers.maybe_obtain_qrhi_buffer();
+
+		if (buffer==NULL)
+			return;
+
+		const int num_bytes = buffer->_buffer_pos * sizeof(float);
+		
+		if (_vbuf == NULL || (int)_vbuf->size() < num_bytes)
+		{
+			const int size = std::max(num_bytes + 1024,
+									  _vbuf == NULL ? 1024 : int(_vbuf->size()) * 2);
+			
+			delete _vbuf;
+
+			_vbuf = g_rhi->newBuffer(QRhiBuffer::Dynamic,
+									 QRhiBuffer::VertexBuffer,
+									 size);
+		}
+				
+		if (!_vbuf || !_vbuf->create()) {
+			qDebug() << "Failed to create vertex buffer";
+			getchar();
+		}
+
+		update_batch->updateDynamicBuffer(_vbuf,
+										  0,
+										  num_bytes,
+										  buffer->_buffer);
+
+		_curr_num_qhri_vertices = buffer->_buffer_pos / VERTEX_SIZE;
+
+		printf("Updated vbuf. Num bytes: %d. Num vertices: %d\n", num_bytes, _curr_num_qhri_vertices);
+		//getchar();
+		 
+		_buffers.release_qrhi_buffer();
+	}
+	
+	void render(QRhiCommandBuffer *command_buffer)
+	{
+		if (_vbuf && _curr_num_qhri_vertices>0)
+		{
+			const QRhiCommandBuffer::VertexInput vbufBinding(_vbuf, 0);
+			command_buffer->setVertexInput(0, 1, &vbufBinding);
+			command_buffer->draw(_curr_num_qhri_vertices);
+		}
+	}
+
+	void call_me_when_starting_to_generate_vertices(void)
+	{
+		_render_buffer = _buffers.obtain_render_buffer();
+	}
+	
+	void call_me_after_finished_generating_vertices(void)
+	{
+		_buffers.release_render_buffer();
+	}
+	
+	void addUnit(const float *unit)
+	{
+		_render_buffer->append(unit, VERTEX_SIZE * NUM_VERTICES_PER_UNIT);
 	}
 
 	
-	void addVertex(std::initializer_list<float> list)
+	void addUnit(std::initializer_list<float> list)
 	{
 		//fprintf(stderr,"Size: %d\n", (int)(list.end()-list.begin()));
-		assert((list.end() - list.begin()) == VERTEX_SIZE);
-		addVertex(list.begin());
+		assert((list.end() - list.begin()) == VERTEX_SIZE * NUM_VERTICES_PER_UNIT);
+		addUnit(list.begin());
 	}
 };
 
-#define TRIANGLE_VERTEX_SIZE 18
-struct TriangleContext : public Context<TRIANGLE_VERTEX_SIZE>
+struct TriangleVertices : public Vertices<sizeof(TriangleVertex)/sizeof(float), 3>
 {
-	/*
-	void addBindings(QRhi *rhi, QVector<QRhiShaderResourceBinding> &bindings) const //QRhiShaderResourceBindings *shader_resource_bindings)
-	{
-	}
-	*/
+	static_assert(_vertex_size == 6);
 	
 	void addTriangle(float x1, float y1,
 					 float x2, float y2,
@@ -227,8 +275,8 @@ struct TriangleContext : public Context<TRIANGLE_VERTEX_SIZE>
 					 float r, float g, float b, float a,
 					 float r2, float g2, float b2, float a2)
 	{
-		float f[TRIANGLE_VERTEX_SIZE];
-
+		float f[_num_vertices_per_unit * _vertex_size];
+		
 #define POS(I, X, Y)							\
 		f[I] = X;								\
 		f[I+1] = Y;
@@ -254,7 +302,7 @@ struct TriangleContext : public Context<TRIANGLE_VERTEX_SIZE>
 		COL(14, r2, g2, b2, a2);
 		//printf("P3. In: %f, %f. Out: %f, %f\n", x3, y3, f[14], f[15]);
 		
-		addVertex(f);
+		addUnit(f);
 	}
 	
 	void addTriangle(float x1, float y1,
@@ -286,15 +334,10 @@ struct TriangleContext : public Context<TRIANGLE_VERTEX_SIZE>
 };
 
 
-#define TEXTURE_VERTEX_SIZE (8*6)
-struct TextureContext : public Context<TEXTURE_VERTEX_SIZE>
+struct TextureVertices : public Vertices<sizeof(TextureVertex)/sizeof(float), 6> // (6 vertices == 2 triangles == 1 square)
 {
-	/*
-	void addBindings(QRhi *rhi, QVector<QRhiShaderResourceBinding> &bindings) const //QRhiShaderResourceBindings *shader_resource_bindings)
-	{
-	}
-	*/
-	
+	static_assert(_vertex_size == 8);
+
 	void addTexture(float x1, float y1, float x2, float y2, // dest square
 					float u0, float v0, float u1, float v1, // source square
 					float r, float g, float b, float a
@@ -308,7 +351,8 @@ struct TextureContext : public Context<TEXTURE_VERTEX_SIZE>
 			   u0,v0,u1,v1,
 			   r,g,b,a);
 		#endif
-		float f[TEXTURE_VERTEX_SIZE];
+
+		float f[_num_vertices_per_unit * _vertex_size];
 
 #define ADD_VERTEX(I, X, Y, uv_x, uv_y)									\
 		f[I] = X ; f[I+1] = Y ; f[I+2] = uv_x ; f[I+3] = uv_y ;			\
@@ -324,21 +368,21 @@ struct TextureContext : public Context<TEXTURE_VERTEX_SIZE>
         ADD_VERTEX(32, x2, y1, u1, v0);
         ADD_VERTEX(40, x1, y1, u0, v0);
 
-		addVertex(f);
+		addUnit(f);
 	}
 };
 
 }
 
-extern r::TriangleContext *g_context_under_text; // Scrolling: Everything painted under text (only the track backgruond color.)
-extern r::TriangleContext *g_context_text; // Scrolling: Text.
-extern r::TriangleContext *g_context; // Scrolling: Everything painted above text)
-extern r::TriangleContext *g_context_left_slider; // Left slider (Scrolls it's own way)
-extern r::TriangleContext *g_context_static; // Non-Scrolling: Cursor + Indicators
+extern r::TriangleVertices *g_vertices_under_text; // Scrolling: Everything painted under text (only the track backgruond color.)
+extern r::TriangleVertices *g_vertices_text; // Scrolling: Text.
+extern r::TriangleVertices *g_vertices; // Scrolling: Everything painted above text)
+extern r::TriangleVertices *g_vertices_left_slider; // Left slider (Scrolls it's own way)
+extern r::TriangleVertices *g_vertices_static; // Non-Scrolling: Cursor + Indicators
 
-//extern QVector<r::Context> g_all_contexts = {};
+//extern QVector<r::Vertices> g_all_verticess = {};
 
-#define ALL_CONTEXTS {g_context_under_text, g_context_text, g_context, g_context_left_slider, g_context_static}
+#define ALL_VERTICESS {g_vertices_under_text, g_vertices_text, g_vertices, g_vertices_left_slider, g_vertices_static}
 
 
 

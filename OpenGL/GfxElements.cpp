@@ -56,7 +56,7 @@ double g_opengl_scale_ratio = 1.0;
 
 static float g_height = 512; // Only access from main thread
 
-static float g_height_t2_thread = 512; // Only access from t2 thread
+//static float g_height_t2_thread = 512; // Only access from t2 thread
 
 // Called from vl::Widget::resizeEvent
 void GE_set_height(int height){
@@ -98,15 +98,15 @@ GE_Rgb GE_get_custom_rgb(int custom_colornum){
   return ret;
 }
 
-r::TriangleContext *g_context_under_text = new r::TriangleContext(); // Scrolling: Everything painted under text (only the track backgruond color.)
-r::TriangleContext *g_context_text = new r::TriangleContext(); // Scrolling: Text.
-r::TriangleContext *g_context = new r::TriangleContext(); // Scrolling: Everything painted above text)
-r::TriangleContext *g_context_left_slider = new r::TriangleContext(); // Left slider (Scrolls it's own way) (not the border around the slider, only the moving box)
-r::TriangleContext *g_context_static = new r::TriangleContext(); // Non-Scrolling: Cursor + Indicators + left slider border.
+r::TriangleVertices *g_vertices_under_text = new r::TriangleVertices(); // Scrolling: Everything painted under text (only the track backgruond color.)
+r::TriangleVertices *g_vertices_text = new r::TriangleVertices(); // Scrolling: Text.
+r::TriangleVertices *g_vertices = new r::TriangleVertices(); // Scrolling: Everything painted above text)
+r::TriangleVertices *g_vertices_left_slider = new r::TriangleVertices(); // Left slider (Scrolls it's own way) (not the border around the slider, only the moving box)
+r::TriangleVertices *g_vertices_static = new r::TriangleVertices(); // Non-Scrolling: Cursor + Indicators + left slider border.
 
-r::TextureContext *g_texture_context = NULL;
+r::TextureVertices *g_texture_vertices = NULL;
 
-//std::initializer_list<r::TriangleContext> g_all_contexts = {g_context_under_text, g_context_text, g_context, g_context_left_slider, g_context_static};
+//std::initializer_list<r::TriangleVertices> g_all_contexts = {g_vertices_under_text, g_vertices_text, g_vertices, g_vertices_left_slider, g_vertices_static};
 
 
 void GE_Context::add_triangle(const r::fvec2 &p1, const r::fvec2 &p2, const r::fvec2 &p3, GradientType::Type gradient_type) const
@@ -116,13 +116,13 @@ void GE_Context::add_triangle(const r::fvec2 &p1, const r::fvec2 &p2, const r::f
 		switch(gradient_type)
 		{
 			case GradientType::Type::NOTYPE:
-				g_context->add_triangle(p1, p2, p3, color.c);
+				g_vertices->add_triangle(p1, p2, p3, color.c);
 				break;
 			case GradientType::Type::HORIZONTAL:
-				g_context->add_triangle(p1, p2, p3, color.c, color.c_gradient);
+				g_vertices->add_triangle(p1, p2, p3, color.c, color.c_gradient);
 				break;
 			case GradientType::Type::VELOCITY:
-				g_context->add_triangle(p1, p2, p3, GE_rgb(200,80,80), /*color.c_gradient, */ color.c);
+				g_vertices->add_triangle(p1, p2, p3, GE_rgb(200,80,80), /*color.c_gradient, */ color.c);
 				break;
 		}
 		}
@@ -143,7 +143,7 @@ struct _GE_Context
 
 	GE_Conf _conf;
 	int _slice;
-  
+
 public:
 	
 	//std::vector<r::fvec2> _triangles;
@@ -163,13 +163,13 @@ public:
 			switch(gradient_type)
 			{
 				case GradientType::Type::NOTYPE:
-					g_context->add_triangle(p1, p2, p3, color.c);
+					g_vertices->add_triangle(p1, p2, p3, color.c);
 					break;
 				case GradientType::Type::HORIZONTAL:
-					g_context->add_triangle(p1, p2, p3, color.c, color.c_gradient);
+					g_vertices->add_triangle(p1, p2, p3, color.c, color.c_gradient);
 					break;
 				case GradientType::Type::VELOCITY:
-					g_context->add_triangle(p1, p2, p3, GE_rgb(200,80,80), /*color.c_gradient, */ color.c);
+					g_vertices->add_triangle(p1, p2, p3, GE_rgb(200,80,80), /*color.c_gradient, */ color.c);
 					break;
 			}
 		}
@@ -228,10 +228,12 @@ typedef QMap<int,                        // <- z
              > Contexts;
 */
 
+/*
 struct Contexts
 {
 	int something;
 };
+*/
 
 namespace r
 {
@@ -265,7 +267,7 @@ struct PaintingData
 
 void GE_delete_painting_data(r::PaintingData *painting_data)
 {
-  delete painting_data;
+	delete painting_data;
 }
 
 
@@ -286,19 +288,28 @@ int GE_get_slice_size(const r::PaintingData *painting_data){
   return painting_data->slice_size;
 }
 
+extern void aiai(void);
+
 // Called from the main thread
 void GE_start_writing(int full_height, bool block_is_visible){
   R_ASSERT(g_painting_data==NULL);
 
-  T1_ensure_t2_is_initialized();
+  aiai();
+  
+  //T1_ensure_t2_is_initialized();
   
   g_painting_data = new r::PaintingData(full_height, block_is_visible);
   GE_fill_in_shared_variables(&g_painting_data->shared_variables, g_height);
 
-  g_context->clear();
-
-  if (g_texture_context != NULL)
-	  g_texture_context->clear();
+  if (g_rhi != NULL)
+  {
+	  //g_vertices->clear();
+	  g_vertices->call_me_when_starting_to_generate_vertices();
+  
+  //if (g_texture_vertices != NULL)
+	  //g_texture_vertices->clear();
+	  g_texture_vertices->call_me_when_starting_to_generate_vertices();
+  }
   
   //T1_prepare_gradients2_for_new_rendering();
   //T1_collect_gradients1_garbage();
@@ -306,11 +317,13 @@ void GE_start_writing(int full_height, bool block_is_visible){
 
 // Called from the main thread
 void GE_end_writing(GE_Rgb new_background_color){
-
+	
 	if (g_rhi != NULL)
 	{
-		g_context->call_me_when_finished_painting(g_rhi);
-		g_texture_context->call_me_when_finished_painting(g_rhi);
+		//g_vertices->call_me_when_finished_painting(g_rhi);
+		//g_texture_vertices->call_me_when_finished_painting(g_rhi);
+		g_vertices->call_me_after_finished_generating_vertices();
+		g_texture_vertices->call_me_after_finished_generating_vertices();
 	}
 	
 	//T1_send_data_to_t2(g_painting_data, new_background_color);
@@ -322,7 +335,7 @@ void GE_end_writing(GE_Rgb new_background_color){
 
 // Called from the main thread. Only used when loading song to ensure all gradients are created before starting to play.
 void GE_wait_until_block_is_rendered(void){
-  T1_wait_until_t2_got_t1_data();
+	//T1_wait_until_t2_got_t1_data();
   // T1_wait_until_t3_got_t2_data(); // A bit inconvenient to make that function since the t2_to_t3 queue is not threadsafe. Instead we let T1_wait_until_all_gradients_are_created wait at least two periods.
   //T1_wait_until_all_gradients_are_created();
 }
@@ -340,16 +353,6 @@ void GE_wait_until_block_is_rendered(void){
 // OpenGL Thread
 void GE_update_triangle_gradient_shaders(r::PaintingData *painting_data, float y_offset)
 {
-}
-
-// T2 thread.
-void GE_draw_vl(T2_data *t2_data){
-  //GL_draw_lock();
-
-  r::PaintingData *painting_data = t2_data->painting_data;
-
-  g_height_t2_thread = painting_data->shared_variables.opengl_widget_height;
-	  
 }
 
 
@@ -428,7 +431,7 @@ GE_Context GE_textcolor_z(enum ColorNums colornum, const GE_Conf &conf){
 }
 
 GE_Context GE_rgba_color_z(unsigned char r, unsigned char g, unsigned char b, unsigned char a, const GE_Conf &conf){
-#if 1
+#if 0
   // Reduce number of contexts. May also reduce cpu usage significantly.
   r |= 15;
   g |= 15;
@@ -494,10 +497,11 @@ GE_Context GE_gradient_z(const QColor &c1, const QColor &c2, const GE_Conf &conf
 /* Scheduling drawing operations. Called from main thread. */
 /**********************************************************/
 
+#if 0
 void GE_set_font(const QFont &font){
   GE_set_new_font(font);
 }
-
+#endif
 
 static float scissor_x,scissor_x2;
 static bool has_x_scissor=false;

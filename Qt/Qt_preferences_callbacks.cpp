@@ -546,7 +546,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
 #endif
 
       high_priority_render_thread->setChecked(GL_get_high_render_thread_priority());
-      high_priority_drawer_thread->setChecked(GL_get_high_draw_thread_priority());
+      high_priority_drawer_thread->setChecked(false); //GL_get_high_draw_thread_priority());
     }
 
 
@@ -947,8 +947,8 @@ public slots:
   }
   
   void on_high_priority_draw_thread_toggled(bool val){
-    if (_initing==false)
-      GL_set_high_draw_thread_priority(val);
+	  //if (_initing==false)
+      //GL_set_high_draw_thread_priority(val);
   }
   
   void on_enable_sample_seek_by_default_toggled(bool val){
