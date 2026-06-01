@@ -80,7 +80,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../api/api_gui_proc.h"
 
 #include "GfxElements.h"
-#include "Context.hpp"
+#include "Vertices.hpp"
 #include "Text.hpp"
 //#include "T2.hpp"
 #include "Timing.hpp"
