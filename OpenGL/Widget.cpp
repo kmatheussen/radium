@@ -441,9 +441,11 @@ struct TextureRenderer : public r::TextRenderer
     QRhiGraphicsPipeline *_pipeline;
 
 	int _num_vertices_in_buffer = 0;
+	bool _is_scrolling = true;
 
-	void init(QRhi *rhi, QRhiRenderPassDescriptor *render_pass_descriptor, const QFont &font)
+	void init(QRhi *rhi, QRhiRenderPassDescriptor *render_pass_descriptor, const QFont &font, bool is_scrolling = true)
 	{
+		_is_scrolling = is_scrolling;
 		init_verticess(rhi);
 		
 		_clipCorrBuffer = rhi->newBuffer(QRhiBuffer::Dynamic,
@@ -498,7 +500,7 @@ struct TextureRenderer : public r::TextRenderer
 		inputLayout.setBindings({
 				QRhiVertexInputBinding(sizeof(r::TextureVertex))
 			});
-	
+		
 		inputLayout.setAttributes({
 				QRhiVertexInputAttribute(0, 0, QRhiVertexInputAttribute::Float2, offsetof(r::TextureVertex, x)),
 				QRhiVertexInputAttribute(0, 1, QRhiVertexInputAttribute::Float2, offsetof(r::TextureVertex, u)),
@@ -587,7 +589,7 @@ struct TextureRenderer : public r::TextRenderer
 					   float width, float height)
     {
 		static float _y_inc = -height;
-		
+			
         _y_inc += 0.5f;
         if (_y_inc > 0) {
             _y_inc = -height;
@@ -596,7 +598,7 @@ struct TextureRenderer : public r::TextRenderer
         _texture_atlas->uploadTexture(batch);
 
 		_vertices->maybe_merge_in(batch);
-		
+			
         if (_clipCorrBuffer)
 		{
 #if 0
@@ -605,13 +607,15 @@ struct TextureRenderer : public r::TextRenderer
 #else
 			batch->updateDynamicBuffer(_clipCorrBuffer, 0, sizeof(QMatrix4x4), view_projection.constData());
 #endif
-            batch->updateDynamicBuffer(_clipCorrBuffer,
+            if (_is_scrolling) {
+                batch->updateDynamicBuffer(_clipCorrBuffer,
 									   sizeof(QMatrix4x4),
 									   sizeof(float),
 									   &scroll_pos);
+            }
         }
-		
-        if (_scrollBuffer) {
+			
+        if (_scrollBuffer && _is_scrolling) {
 			//float yscroll = _y_inc / height;
             batch->updateDynamicBuffer(_scrollBuffer,
 									   0,
@@ -662,11 +666,14 @@ struct TriangleRenderer : public r::TriangleRenderer
     QRhiShaderResourceBindings *_shader_resource_bindings = nullptr;
     QRhiGraphicsPipeline *_pipeline = nullptr;
 
-    QRhiBuffer *_ubuf = nullptr;
+	QRhiBuffer *_ubuf = nullptr;
+	bool _is_scrolling = true;
 
     void init(QRhi *rhi,
-              QRhiRenderPassDescriptor *render_pass_descriptor)
+              QRhiRenderPassDescriptor *render_pass_descriptor,
+              bool is_scrolling = true)
 	{
+        _is_scrolling = is_scrolling;
         init_verticess(rhi);
 		
         _shader_resource_bindings = rhi->newShaderResourceBindings();
@@ -704,8 +711,8 @@ struct TriangleRenderer : public r::TriangleRenderer
 
         _pipeline->setShaderStages({
 				{
-                QRhiShaderStage::Vertex,
-                getShader("color.vert.qsb")
+					QRhiShaderStage::Vertex,
+					getShader("color.vert.qsb")
 				},
 				{
 					QRhiShaderStage::Fragment,
@@ -713,13 +720,13 @@ struct TriangleRenderer : public r::TriangleRenderer
 				}
 			});
 
-        QRhiVertexInputLayout inputLayout;
-
-        inputLayout.setBindings({
-            { 6 * sizeof(float) }
-        });
-
-        inputLayout.setAttributes({
+		QRhiVertexInputLayout inputLayout;
+		
+		inputLayout.setBindings({
+				{ 6 * sizeof(float) }
+			});
+		
+		inputLayout.setAttributes({
 				{ 0, 0, QRhiVertexInputAttribute::Float2, 0 },
 				{ 0, 1, QRhiVertexInputAttribute::Float4, 2 * sizeof(float) }
 			});
@@ -765,10 +772,10 @@ struct TriangleRenderer : public r::TriangleRenderer
             }
         }
 		*/
-		
+			
         //if (_vertices1)
          //   _vertices1->maybe_merge_in(batch);
-		
+			
         //if (_vertices2)
 		//_vertices2->maybe_merge_in(batch);
 			
@@ -777,10 +784,12 @@ struct TriangleRenderer : public r::TriangleRenderer
 								   64,
 								   viewProjection.constData());
 
-        batch->updateDynamicBuffer(_ubuf,
+        if (_is_scrolling) {
+            batch->updateDynamicBuffer(_ubuf,
 								   64,
 								   sizeof(float),
 								   &scrollPos);
+        }
     }
 	
     void render_frame(QRhiCommandBuffer *command_buffer,
@@ -862,8 +871,10 @@ class RenderWindow : public radium::RhiWindow, public radium::MouseCycleFix
 public:
 
 	TextureRenderer _texture_renderer;
+	TextureRenderer _texture_renderer_static;
 	
 	TriangleRenderer _triangle_renderer;
+	TriangleRenderer _triangle_renderer_static;
 	
 	DEFINE_ATOMIC(bool, _main_window_is_exposed) = false;
 
@@ -885,6 +896,8 @@ public:
 			{
 				_triangle_renderer.release();
 				_texture_renderer.release();
+				_triangle_renderer_static.release();
+				_texture_renderer_static.release();
 				
 				fprintf(stderr, "H5\n");
 				sem.release();
@@ -898,11 +911,17 @@ public:
 	void customInit(const QFont &font) override
 	{
 
-		// Texture renderer
-		_texture_renderer.init(_rhi, _render_pass_descriptor, font);
+		// Texture renderer (scrolling)
+		_texture_renderer.init(_rhi, _render_pass_descriptor, font, true);
 
-		// Triangle renderer
-		_triangle_renderer.init(_rhi, _render_pass_descriptor);
+		// Triangle renderer (scrolling)
+		_triangle_renderer.init(_rhi, _render_pass_descriptor, true);
+
+		// Non-scrolling texture renderer
+		_texture_renderer_static.init(_rhi, _render_pass_descriptor, font, false);
+
+		// Non-scrolling triangle renderer
+		_triangle_renderer_static.init(_rhi, _render_pass_descriptor, false);
 
 		
 		double ratio = devicePixelRatio();
@@ -1012,17 +1031,31 @@ public:
 		
 		QRhiResourceUpdateBatch *batch = _rhi->nextResourceUpdateBatch();
 
-		// Triangles
+		// Triangles (scrolling)
 		_triangle_renderer.prepare_frame(_rhi,
 										 batch,
 										 _viewProjection,
 										 scroll_pos);
+
+		// Triangles (non-scrolling)
+		_triangle_renderer_static.prepare_frame(_rhi,
+										 batch,
+										 _viewProjection,
+										 0.0f);
 		
-		// Textures (i.e. text)
+		// Textures (i.e. text) - scrolling
 		_texture_renderer.prepare_frame(_rhi,
 										batch,
 										_viewProjection,
 										scroll_pos,
+										outputSizeInPixels.width(),
+										outputSizeInPixels.height());
+
+		// Textures (non-scrolling)
+		_texture_renderer_static.prepare_frame(_rhi,
+										batch,
+										_viewProjection,
+										0.0f,
 										outputSizeInPixels.width(),
 										outputSizeInPixels.height());
 		
@@ -1030,12 +1063,20 @@ public:
 
 		command_buffer->beginPass(_swap_chain->currentFrameRenderTarget(), g_background_color, { 1.0f, 0 }, batch);
 		{
-			// triangles
+			// triangles (scrolling)
 			_triangle_renderer.render_frame(command_buffer,
 											outputSizeInPixels);
 
-			// text
+			// triangles (non-scrolling) - draw on top
+			_triangle_renderer_static.render_frame(command_buffer,
+											outputSizeInPixels);
+
+			// text (scrolling)
 			_texture_renderer.render_frame(_rhi,
+										   command_buffer);
+
+			// text (non-scrolling) - draw on top
+			_texture_renderer_static.render_frame(_rhi,
 										   command_buffer);
 		}		
 		command_buffer->endPass();
@@ -1207,20 +1248,42 @@ bool g_gl_widget_started = false;
 static RenderWindow *g_window;
 static QWidget *g_widget;
 
-r::TriangleRenderer *GE_get_triangle_renderer(const GE_Context &)
+
+static bool is_scrolling(const GE_Context &c)
+{
+    if (Z_IS_STATIC_X(c._conf.z))
+		return true; // scroll
+
+	if (c._conf.z == Z_PLAYCURSOR)
+		return false; // play cursor 
+
+    if (c._conf.z <= Z_MAX_SCROLLTRANSFORM)
+		return true; // scroll
+
+	if (c._conf.z < Z_MIN_STATIC)
+		return false; // scroll bar
+
+	return false; // everything else.
+}
+
+r::TriangleRenderer *GE_get_triangle_renderer(const GE_Context &context)
 {
 	R_ASSERT(g_gl_widget_started);
 
-    //printf("g_window=%p\n", (void*)g_window);
-    //printf("renderer=%p\n", (void*)&g_window->_triangle_renderer);
-
-    return &g_window->_triangle_renderer;
+	if (is_scrolling(context))
+		return &g_window->_triangle_renderer;
+	else
+		return &g_window->_triangle_renderer_static;
 }
 
 r::TextRenderer *GE_get_text_renderer(const GE_Context &context)
 {
 	R_ASSERT(g_gl_widget_started);
-	return dynamic_cast<r::TextRenderer*>(&g_window->_texture_renderer);
+
+	if (is_scrolling(context))
+		return dynamic_cast<r::TextRenderer*>(&g_window->_texture_renderer);
+	else
+		return dynamic_cast<r::TextRenderer*>(&g_window->_texture_renderer_static);
 }
 
 	
@@ -1267,12 +1330,19 @@ void aiai2(void) // Called after finished rendering.
   // painting-data lifecycle to avoid duplicate starts from other paths.
   if (g_rhi != NULL && g_window)
   {
-    // Triangle vertices
+    // Triangle vertices (scrolling)
     g_window->_triangle_renderer._vertices.call_me_when_starting_to_generate_vertices();
 
-    // Texture vertices (may not exist yet)
+    // Triangle vertices (non-scrolling/static)
+    g_window->_triangle_renderer_static._vertices.call_me_when_starting_to_generate_vertices();
+
+    // Texture vertices (may not exist yet) - scrolling
     if (g_window->_texture_renderer._vertices)
-		g_window->_texture_renderer._vertices->call_me_when_starting_to_generate_vertices();
+      g_window->_texture_renderer._vertices->call_me_when_starting_to_generate_vertices();
+
+    // Texture vertices (non-scrolling/static)
+    if (g_window->_texture_renderer_static._vertices)
+      g_window->_texture_renderer_static._vertices->call_me_when_starting_to_generate_vertices();
   }
 }
 
@@ -1306,8 +1376,13 @@ void GL_finish_generating_vertices(void)
 
 	// These methods are thread-safe wrt the internal buffer locking.
 	g_window->_triangle_renderer._vertices.call_me_after_finished_generating_vertices();
+	g_window->_triangle_renderer_static._vertices.call_me_after_finished_generating_vertices();
+
 	if (g_window->_texture_renderer._vertices)
 		g_window->_texture_renderer._vertices->call_me_after_finished_generating_vertices();
+
+	if (g_window->_texture_renderer_static._vertices)
+		g_window->_texture_renderer_static._vertices->call_me_after_finished_generating_vertices();
 }
 
 
