@@ -123,6 +123,25 @@ void GE_Context::add_triangle(const r::fvec2 &p1, const r::fvec2 &p2, const r::f
 	}
 }
 
+void GE_Context::add_text(const char *text, int x, int y) const
+{
+	if (g_rhi != NULL)
+	{
+		if (_text_renderer == NULL)
+			_text_renderer = GE_get_text_renderer(*this);
+
+		//printf("Printing \"%s\". y: %d. Slice: %d\n", text, y, _slice);
+		
+		const GE_Rgb &rgb = color.c;
+		
+		_text_renderer->add_text(text, x, y,
+								 rgb.r / 256.0,
+								 rgb.g / 256.0,
+								 rgb.b / 256.0,
+								 rgb.a / 256.0);
+	}
+}
+
 #if 0
 struct _GE_Context
 {
@@ -248,7 +267,8 @@ struct PaintingData
 	PaintingData(int full_height, bool block_is_visible)
 		: shared_variables(block_is_visible)
 	{
-		slice_size = full_height / 32;
+		slice_size = full_height / MAX_NUM_SLICES;
+		
 		if (slice_size < MIN_SLICE_SIZE)
 			slice_size = MIN_SLICE_SIZE;
 	}
@@ -362,7 +382,10 @@ void GE_update_triangle_gradient_shaders(r::PaintingData *painting_data, float y
 /***********************************************/
 
 static int get_slice_from_y(const int y){
-  return y/g_painting_data->slice_size;
+	if (y < 0)
+		return 0;
+	else
+		return y/g_painting_data->slice_size;
 }
 
 static GE_Context get_context(const GE_Context::Color &color, const GE_Conf &conf){
@@ -642,18 +665,22 @@ void GE_line(const GE_Context &c, float x1, float y1, float x2, float y2, float 
   GE_line_lowlevel(c, x1, y1, x2, y2, pen_width);
 }
 
-extern void gakk_GE_text(const char *text, int x, int y, float r, float g, float b, float a);
+//extern void gakk_GE_text(const char *text, int x, int y, float r, float g, float b, float a);
 
 void GE_text(const GE_Context &c, const char *text, int x, int y){
 	//c.textbitmaps.addCharBoxes(text, x, c.y(y+1));
+
+	c.add_text(text, x, y);
+		
+#if 0
 	const GE_Rgb &rgb = c.color.c;
-	
 	gakk_GE_text(text, x, y,
 				 rgb.r / 256.0,
 				 rgb.g / 256.0,
 				 rgb.b / 256.0,
 				 rgb.a / 256.0
 		);
+#endif
 }
 
 void GE_text2(const GE_Context &c, QString text, int x, int y){
