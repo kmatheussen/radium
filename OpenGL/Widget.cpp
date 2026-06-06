@@ -426,12 +426,12 @@ static EditorWidget *get_editorwidget(void){
 
 QRhi *g_rhi = NULL;
 
-extern r::TextureVertices *g_texture_vertices;
+//extern r::TextureVertices *g_texture_vertices;
 
 namespace
 {
 
-struct TextureRenderer
+struct TextureRenderer : public r::TextRenderer
 {
 	r::TextureVertices *_vertices = nullptr;
 	r::TextureAtlas *_texture_atlas = nullptr;
@@ -571,7 +571,7 @@ struct TextureRenderer
         _num_vertices_in_buffer = 0;
     }
 	
-	void add_text(const char *text, int x, int y, float r, float g, float b, float a)
+	void add_text(const char *text, int x, int y, float r, float g, float b, float a) override
 	{
 		if (_texture_atlas)
 			_texture_atlas->appendString(_vertices, text, x, y, 20, 20, r, g, b, a);
@@ -635,18 +635,30 @@ struct TextureRenderer
     void init_verticess(QRhi *rhi)
     {
         _vertices = new r::TextureVertices;
-		g_texture_vertices = _vertices;
+		//g_texture_vertices = _vertices;
 		
         //_vertices->call_me_when_finished_painting(rhi);
 
     }
 };
 
-struct TriangleRenderer
-{
-    //r::TriangleVertices *_vertices1 = nullptr;
-    //r::TriangleVertices *_vertices2 = nullptr;
 
+#if 0
+r::TriangleVertices *g_vertices_under_text = new r::TriangleVertices(); // Scrolling: Everything painted under text (only the track backgruond color.)
+r::TriangleVertices *g_vertices_text = new r::TriangleVertices(); // Scrolling: Text.
+r::TriangleVertices *g_vertices = new r::TriangleVertices(); // Scrolling: Everything painted above text)
+r::TriangleVertices *g_vertices_left_slider = new r::TriangleVertices(); // Left slider (Scrolls it's own way) (not the border around the slider, only the moving box)
+r::TriangleVertices *g_vertices_static = new r::TriangleVertices(); // Non-Scrolling: Cursor + Indicators + left slider border.
+
+r::TextureVertices *g_texture_vertices = NULL;
+
+//std::initializer_list<r::TriangleVertices> g_all_contexts = {g_vertices_under_text, g_vertices_text, g_vertices, g_vertices_left_slider, g_vertices_static};
+#endif
+
+struct TriangleRenderer : public r::TriangleRenderer
+{	
+	r::TriangleVertices _vertices;
+	
     QRhiShaderResourceBindings *_shader_resource_bindings = nullptr;
     QRhiGraphicsPipeline *_pipeline = nullptr;
 
@@ -743,6 +755,8 @@ struct TriangleRenderer
 					   const QMatrix4x4 &viewProjection,
 					   float scrollPos)
     {
+		_vertices.maybe_merge_in(batch);
+		/*
         for (r::TriangleVertices *context : ALL_VERTICESS)
         {
             if (context)
@@ -750,7 +764,8 @@ struct TriangleRenderer
                 context->maybe_merge_in(batch);
             }
         }
-
+		*/
+		
         //if (_vertices1)
          //   _vertices1->maybe_merge_in(batch);
 		
@@ -782,6 +797,8 @@ struct TriangleRenderer
 		
         command_buffer->setShaderResources();
 
+		_vertices.render(command_buffer);
+		/*
         for (r::TriangleVertices *context : ALL_VERTICESS)
         {
             if (context)
@@ -789,13 +806,30 @@ struct TriangleRenderer
                 context->render(command_buffer);
             }
         }
-
+		*/
         //if (_vertices1)
 		//  _vertices1->render(command_buffer);
 		
         //if (_vertices2)
 		//  _vertices2->render(command_buffer);
     }
+
+	void add_triangle(const GE_Context &c, const r::fvec2 &p1, const r::fvec2 &p2, const r::fvec2 &p3, r2::GradientType::Type gradient_type) override
+	{
+		//printf("ADDTRIANGLE\n");
+		switch(gradient_type)
+		{
+			case r2::GradientType::Type::NOTYPE:
+				_vertices.add_triangle(p1, p2, p3, c.color.c);
+				break;
+			case r2::GradientType::Type::HORIZONTAL:
+				_vertices.add_triangle(p1, p2, p3, c.color.c, c.color.c_gradient);
+				break;
+			case r2::GradientType::Type::VELOCITY:
+				_vertices.add_triangle(p1, p2, p3, GE_rgb(200,80,80), /*color.c_gradient, */ c.color.c);
+				break;
+		}
+	}
 	
 private:
 	
@@ -821,7 +855,6 @@ private:
         //_vertices2->call_me_when_finished_painting(rhi);
     }
 };
-
 
 class RenderWindow : public radium::RhiWindow, public radium::MouseCycleFix
 {
@@ -1045,8 +1078,6 @@ public:
 	}
 };
 
-
-	
 #if QT_CONFIG(vulkan)
 static QVulkanInstance *g_vulkan_inst = nullptr;
 #endif
@@ -1176,6 +1207,24 @@ bool g_gl_widget_started = false;
 static RenderWindow *g_window;
 static QWidget *g_widget;
 
+r::TriangleRenderer *GE_get_triangle_renderer(const GE_Context &)
+{
+	R_ASSERT(g_gl_widget_started);
+
+    //printf("g_window=%p\n", (void*)g_window);
+    //printf("renderer=%p\n", (void*)&g_window->_triangle_renderer);
+
+    return &g_window->_triangle_renderer;
+}
+
+r::TextRenderer *GE_get_text_renderer(const GE_Context &context)
+{
+	R_ASSERT(g_gl_widget_started);
+	return dynamic_cast<r::TextRenderer*>(&g_window->_texture_renderer);
+}
+
+	
+
 extern void gakk_GE_text(const char *text, int x, int y, float r, float g, float b, float a);
 void gakk_GE_text(const char *text, int x, int y, float r, float g, float b, float a)
 {
@@ -1195,13 +1244,45 @@ void aiai(void);
 void aiai(void) // Called after finished rendering.
 {
 	if (g_window)
+	{
 		if (g_window->_texture_renderer._texture_atlas)
 			g_window->_texture_renderer._texture_atlas->maybe_switch_to_next_d();
+
+		// Note: previously this function obtained render buffers for new
+		// vertex generation. That could race with GE_start_writing calling
+		// the same routines, causing duplicate starts. Start/finish must be
+		// driven by the main-thread writing lifecycle (GE_start_writing/
+		// GE_end_writing). Leave aiai purely for texture atlas switching.
+
+		//g_window->_triangle_renderer._vertices.call_me_when_starting_to_generate_vertices();
+		//if (g_window->_texture_renderer._vertices)
+		//	g_window->_texture_renderer._vertices->call_me_when_starting_to_generate_vertices();
+	}
+}
+
+void aiai2(void);
+void aiai2(void) // Called after finished rendering.
+{
+  // Obtain render buffers for vertex generators here, driven by the main-thread
+  // painting-data lifecycle to avoid duplicate starts from other paths.
+  if (g_rhi != NULL && g_window)
+  {
+    // Triangle vertices
+    g_window->_triangle_renderer._vertices.call_me_when_starting_to_generate_vertices();
+
+    // Texture vertices (may not exist yet)
+    if (g_window->_texture_renderer._vertices)
+		g_window->_texture_renderer._vertices->call_me_when_starting_to_generate_vertices();
+  }
 }
 
 
+// Called from main thread -> schedule painting data on the RHI thread.
 void GL_set_new_painting_data(r::PaintingData *painting_data, GE_Rgb new_background_color)
-{	
+{
+	// The render buffers should already have been obtained by aiai()/GE_start_writing.
+	// Don't re-obtain them here — that caused double-start issues.
+
 	g_window->put_event([painting_data, new_background_color](void)
 		{
 
@@ -1215,6 +1296,18 @@ void GL_set_new_painting_data(r::PaintingData *painting_data, GE_Rgb new_backgro
 										(int)new_background_color.b,
 										(int)new_background_color.a);
 		});
+}
+
+// Called from main thread to indicate generation finished and buffers may be released.
+void GL_finish_generating_vertices(void)
+{
+	if (!g_window)
+		return;
+
+	// These methods are thread-safe wrt the internal buffer locking.
+	g_window->_triangle_renderer._vertices.call_me_after_finished_generating_vertices();
+	if (g_window->_texture_renderer._vertices)
+		g_window->_texture_renderer._vertices->call_me_after_finished_generating_vertices();
 }
 
 

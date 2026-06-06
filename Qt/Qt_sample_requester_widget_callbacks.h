@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Qt_sample_requester_widget.h"
 
+#include "../OpenGL/Render_proc.h"
 #include "../audio/Sampler_plugin_proc.h"
 #include "../audio/FluidSynth_plugin_proc.h"
 #include "../audio/SoundFonts_proc.h"

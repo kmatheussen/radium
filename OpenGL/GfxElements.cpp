@@ -98,34 +98,29 @@ GE_Rgb GE_get_custom_rgb(int custom_colornum){
   return ret;
 }
 
-r::TriangleVertices *g_vertices_under_text = new r::TriangleVertices(); // Scrolling: Everything painted under text (only the track backgruond color.)
-r::TriangleVertices *g_vertices_text = new r::TriangleVertices(); // Scrolling: Text.
-r::TriangleVertices *g_vertices = new r::TriangleVertices(); // Scrolling: Everything painted above text)
-r::TriangleVertices *g_vertices_left_slider = new r::TriangleVertices(); // Left slider (Scrolls it's own way) (not the border around the slider, only the moving box)
-r::TriangleVertices *g_vertices_static = new r::TriangleVertices(); // Non-Scrolling: Cursor + Indicators + left slider border.
-
-r::TextureVertices *g_texture_vertices = NULL;
-
-//std::initializer_list<r::TriangleVertices> g_all_contexts = {g_vertices_under_text, g_vertices_text, g_vertices, g_vertices_left_slider, g_vertices_static};
-
-
-void GE_Context::add_triangle(const r::fvec2 &p1, const r::fvec2 &p2, const r::fvec2 &p3, GradientType::Type gradient_type) const
+void GE_Context::add_triangle(const r::fvec2 &p1, const r::fvec2 &p2, const r::fvec2 &p3, r2::GradientType::Type gradient_type) const
 {
 	if (g_rhi != NULL)
 	{
+		if (_triangle_renderer == NULL)
+			_triangle_renderer = GE_get_triangle_renderer(*this);
+
+		_triangle_renderer->add_triangle(*this, p1, p2, p3, gradient_type);
+#if 0
 		switch(gradient_type)
 		{
-			case GradientType::Type::NOTYPE:
+			case r2::GradientType::Type::NOTYPE:
 				g_vertices->add_triangle(p1, p2, p3, color.c);
 				break;
-			case GradientType::Type::HORIZONTAL:
+			case r2::GradientType::Type::HORIZONTAL:
 				g_vertices->add_triangle(p1, p2, p3, color.c, color.c_gradient);
 				break;
-			case GradientType::Type::VELOCITY:
+			case r2::GradientType::Type::VELOCITY:
 				g_vertices->add_triangle(p1, p2, p3, GE_rgb(200,80,80), /*color.c_gradient, */ color.c);
 				break;
 		}
-		}
+#endif
+	}
 }
 
 #if 0
@@ -156,19 +151,19 @@ public:
 		R_ASSERT(sizeof(Color)==sizeof(uint64_t));
 	}
 
-	void add_triangle(const r::fvec2 &p1, const r::fvec2 &p2, const r::fvec2 &p3, GradientType::Type gradient_type = GradientType::Type::NOTYPE)
+	void add_triangle(const r::fvec2 &p1, const r::fvec2 &p2, const r::fvec2 &p3, r2::GradientType::Type gradient_type = r2::GradientType::Type::NOTYPE)
 	{
 		if (g_rhi != NULL)
 		{
 			switch(gradient_type)
 			{
-				case GradientType::Type::NOTYPE:
+				case r2::GradientType::Type::NOTYPE:
 					g_vertices->add_triangle(p1, p2, p3, color.c);
 					break;
-				case GradientType::Type::HORIZONTAL:
+				case r2::GradientType::Type::HORIZONTAL:
 					g_vertices->add_triangle(p1, p2, p3, color.c, color.c_gradient);
 					break;
-				case GradientType::Type::VELOCITY:
+				case r2::GradientType::Type::VELOCITY:
 					g_vertices->add_triangle(p1, p2, p3, GE_rgb(200,80,80), /*color.c_gradient, */ color.c);
 					break;
 			}
@@ -190,7 +185,8 @@ public:
 };
 #endif
 
-void GE_set_z(GE_Context &c, int new_z) {
+void GE_set_z(GE_Context &c, int new_z)
+{
   c._conf.z = new_z;
 }
 
@@ -289,6 +285,7 @@ int GE_get_slice_size(const r::PaintingData *painting_data){
 }
 
 extern void aiai(void);
+extern void aiai2(void);
 
 // Called from the main thread
 void GE_start_writing(int full_height, bool block_is_visible){
@@ -300,7 +297,7 @@ void GE_start_writing(int full_height, bool block_is_visible){
   
   g_painting_data = new r::PaintingData(full_height, block_is_visible);
   GE_fill_in_shared_variables(&g_painting_data->shared_variables, g_height);
-
+#if 0
   if (g_rhi != NULL)
   {
 	  //g_vertices->clear();
@@ -310,22 +307,22 @@ void GE_start_writing(int full_height, bool block_is_visible){
 	  //g_texture_vertices->clear();
 	  g_texture_vertices->call_me_when_starting_to_generate_vertices();
   }
-  
+  #endif
   //T1_prepare_gradients2_for_new_rendering();
   //T1_collect_gradients1_garbage();
+
+  aiai2();
 }
 
-// Called from the main thread
-void GE_end_writing(GE_Rgb new_background_color){
-	
+
+void GE_end_writing(GE_Rgb new_background_color)
+{
+	// Release the render buffers previously obtained in GE_start_writing/aiai.
 	if (g_rhi != NULL)
 	{
-		//g_vertices->call_me_when_finished_painting(g_rhi);
-		//g_texture_vertices->call_me_when_finished_painting(g_rhi);
-		g_vertices->call_me_after_finished_generating_vertices();
-		g_texture_vertices->call_me_after_finished_generating_vertices();
+		GL_finish_generating_vertices();
 	}
-	
+
 	//T1_send_data_to_t2(g_painting_data, new_background_color);
 
 	GL_set_new_painting_data(g_painting_data, new_background_color);
@@ -768,9 +765,9 @@ static int num_gradient_triangles;
 static QVector<r::fvec2> current_gradient_rectangle;
 static float triangles_min_y;
 static float triangles_max_y;
-static GradientType::Type current_gradient_type;
+static r2::GradientType::Type current_gradient_type;
 
-void GE_gradient_triangle_start(GradientType::Type type)
+void GE_gradient_triangle_start(r2::GradientType::Type type)
 {
 	current_gradient_rectangle.clear();
 	current_gradient_type = type;

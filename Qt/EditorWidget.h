@@ -58,11 +58,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define GFX_DONTSHRINK
 #include "../common/nsmtracker.h"
 #include "../common/windows_proc.h"
+#include "../common/wblocks_proc.h"
 
 #include "../common/visual_proc.h"
 
-#include "../OpenGL/Render_proc.h"
-#include "../OpenGL/GfxElements.h"
+//#include "../OpenGL/Render_proc.h"
+//#include "../OpenGL/GfxElements.h"
 
 // Don't paint on the frame.
 //#define XOFFSET 5

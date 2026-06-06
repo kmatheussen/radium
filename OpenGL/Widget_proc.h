@@ -26,6 +26,9 @@ class QWidget;
  	extern void GL_update(void);
 #endif
 
+
+extern void GL_finish_generating_vertices(void);
+
 extern double GL_get_vblank(void);
 
 //extern bool GL_should_do_modal_windows(void);
