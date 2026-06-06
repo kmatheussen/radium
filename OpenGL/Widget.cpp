@@ -535,15 +535,40 @@ struct TextureRenderer
 	
     void release(void)
     {
-        delete _vertices;
-		
-        delete _pipeline;
-        //delete _ubuf;
+        if (_texture_atlas)
+		{
+        	delete _texture_atlas;
+        	_texture_atlas = nullptr;
+        }
 
-        _vertices = nullptr;
+        if (_clipCorrBuffer)
+		{
+        	_clipCorrBuffer->destroy();
+        	delete _clipCorrBuffer;
+        	_clipCorrBuffer = nullptr;
+        }
 
-        _pipeline = nullptr;
-        //_ubuf = nullptr;
+        if (_scrollBuffer)
+		{
+        	_scrollBuffer->destroy();
+        	delete _scrollBuffer;
+        	_scrollBuffer = nullptr;
+        }
+
+        if (_vertices)
+		{
+        	delete _vertices;
+        	_vertices = nullptr;
+        }
+
+        if (_pipeline)
+		{
+        	_pipeline->destroy();
+        	delete _pipeline;
+        	_pipeline = nullptr;
+        }
+
+        _num_vertices_in_buffer = 0;
     }
 	
 	void add_text(const char *text, int x, int y, float r, float g, float b, float a)
@@ -619,8 +644,8 @@ struct TextureRenderer
 
 struct TriangleRenderer
 {
-    r::TriangleVertices *_vertices1 = nullptr;
-    r::TriangleVertices *_vertices2 = nullptr;
+    //r::TriangleVertices *_vertices1 = nullptr;
+    //r::TriangleVertices *_vertices2 = nullptr;
 
     QRhiShaderResourceBindings *_shader_resource_bindings = nullptr;
     QRhiGraphicsPipeline *_pipeline = nullptr;
@@ -698,15 +723,15 @@ struct TriangleRenderer
 
     void release(void)
 	{
-		delete _vertices1;
-        delete _vertices2;
+		//delete _vertices1;
+        //delete _vertices2;
 
         delete _shader_resource_bindings;
         delete _pipeline;
         delete _ubuf;
 		
-        _vertices1 = nullptr;
-        _vertices2 = nullptr;
+        //_vertices1 = nullptr;
+        //_vertices2 = nullptr;
 		
         _shader_resource_bindings = nullptr;
         _pipeline = nullptr;
@@ -726,12 +751,12 @@ struct TriangleRenderer
             }
         }
 
-        if (_vertices1)
-            _vertices1->maybe_merge_in(batch);
+        //if (_vertices1)
+         //   _vertices1->maybe_merge_in(batch);
 		
-        if (_vertices2)
-            _vertices2->maybe_merge_in(batch);
-		
+        //if (_vertices2)
+		//_vertices2->maybe_merge_in(batch);
+			
         batch->updateDynamicBuffer(_ubuf,
 								   0,
 								   64,
@@ -765,24 +790,24 @@ struct TriangleRenderer
             }
         }
 
-        if (_vertices1)
-            _vertices1->render(command_buffer);
+        //if (_vertices1)
+		//  _vertices1->render(command_buffer);
 		
-        if (_vertices2)
-            _vertices2->render(command_buffer);
+        //if (_vertices2)
+		//  _vertices2->render(command_buffer);
     }
 	
 private:
 	
     void init_verticess(QRhi *rhi)
 	{
-		_vertices1 = new r::TriangleVertices;
+		//_vertices1 = new r::TriangleVertices;
 		
 		//init_test_triangles(_vertices1, 0);
 		
         //_vertices1->call_me_when_finished_painting(rhi);
 		
-        _vertices2 = new r::TriangleVertices;
+        //_vertices2 = new r::TriangleVertices;
 		
 #if 0
         int range = 150;
@@ -1023,7 +1048,7 @@ public:
 
 	
 #if QT_CONFIG(vulkan)
-static QVulkanInstance g_vulkan_inst;
+static QVulkanInstance *g_vulkan_inst = nullptr;
 #endif
 
 static QRhi::Implementation init_qrhi(void)
@@ -1119,13 +1144,20 @@ static QRhi::Implementation init_qrhi(void)
     // For Vulkan.
 #if QT_CONFIG(vulkan)
     if (graphicsApi == QRhi::Vulkan) {
+        // Allocate the global Vulkan instance on the heap so its lifetime
+        // can be controlled precisely and torn down before static shutdown.
+        if (g_vulkan_inst == nullptr)
+            g_vulkan_inst = new QVulkanInstance();
+
         // Request validation, if available. This is completely optional
         // and has a performance impact, and should be avoided in production use.
-        g_vulkan_inst.setLayers({ "VK_LAYER_KHRONOS_validation" });
+        g_vulkan_inst->setLayers({ "VK_LAYER_KHRONOS_validation" });
         // Play nice with QRhi.
-        g_vulkan_inst.setExtensions(QRhiVulkanInitParams::preferredInstanceExtensions());
-        if (!g_vulkan_inst.create()) {
+        g_vulkan_inst->setExtensions(QRhiVulkanInitParams::preferredInstanceExtensions());
+        if (!g_vulkan_inst->create()) {
             qWarning("Failed to create Vulkan instance, switching to OpenGL");
+            delete g_vulkan_inst;
+            g_vulkan_inst = nullptr;
             graphicsApi = QRhi::OpenGLES2;
         }
     }
@@ -1268,8 +1300,8 @@ QWidget *GL_create_widget(QWidget *parent)
 	g_window = new RenderWindow(graphicsApi);
 
 #if QT_CONFIG(vulkan)
-	if (graphicsApi == QRhi::Vulkan)
-		g_window->setVulkanInstance(&g_vulkan_inst);
+	if (graphicsApi == QRhi::Vulkan && g_vulkan_inst != nullptr)
+		g_window->setVulkanInstance(g_vulkan_inst);
 #endif
 
 	g_widget = QWidget::createWindowContainer(g_window);
@@ -1283,6 +1315,19 @@ QWidget *GL_create_widget(QWidget *parent)
 void GL_stop_widget(QWidget *widget)
 {
 	R_ASSERT(widget == g_widget);
+
+	// First delete the widget (which may use the Vulkan instance internally),
+	// then tear down the global Vulkan instance to ensure Qt has finished
+	// cleaning up any Vulkan-related state.
 	delete widget;
 	g_widget = NULL;
+
+#if QT_CONFIG(vulkan)
+	if (g_vulkan_inst)
+	{
+		g_vulkan_inst->destroy();
+		delete g_vulkan_inst;
+		g_vulkan_inst = nullptr;
+	}
+#endif
 }
