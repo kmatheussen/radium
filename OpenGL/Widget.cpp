@@ -442,10 +442,14 @@ struct TextureRenderer : public r::TextRenderer
 
 	int _num_vertices_in_buffer = 0;
 	bool _is_scrolling = true;
+	bool _use_scissors = true;
 
-	void init(QRhi *rhi, QRhiRenderPassDescriptor *render_pass_descriptor, const QFont &font, bool is_scrolling = true)
+	void init(QRhi *rhi, QRhiRenderPassDescriptor *render_pass_descriptor, const QFont &font, bool is_scrolling, bool use_scissors)
 	{
 		_is_scrolling = is_scrolling;
+
+		_use_scissors = use_scissors;
+		
 		init_verticess(rhi);
 		
 		_clipCorrBuffer = rhi->newBuffer(QRhiBuffer::Dynamic,
@@ -494,7 +498,10 @@ struct TextureRenderer : public r::TextRenderer
 		}
 		
 		_pipeline->setSampleCount(4);
-	
+
+		if (_use_scissors)
+			_pipeline->setFlags(QRhiGraphicsPipeline::UsesScissor);
+		
 		QRhiVertexInputLayout inputLayout;
 		
 		inputLayout.setBindings({
@@ -624,14 +631,14 @@ struct TextureRenderer : public r::TextRenderer
         }
 	}
 
-	void render_frame(QRhi *rhi, QRhiCommandBuffer *command_buffer)
+	void render_frame(QRhi *rhi, QRhiCommandBuffer *command_buffer, const QSize &outputSizeInPixels)
     {
         if (_pipeline)
 		{
             command_buffer->setGraphicsPipeline(_pipeline);
             command_buffer->setShaderResources(_texture_atlas->getShaderBindings());
-			
-			if (_vertices)
+
+            if (_vertices)
 				_vertices->render(command_buffer);
         }
     }
@@ -668,12 +675,17 @@ struct TriangleRenderer : public r::TriangleRenderer
 
 	QRhiBuffer *_ubuf = nullptr;
 	bool _is_scrolling = true;
+	bool _use_scissors = true;
 
     void init(QRhi *rhi,
               QRhiRenderPassDescriptor *render_pass_descriptor,
-              bool is_scrolling = true)
+              bool is_scrolling,
+			  bool use_scissors)
 	{
         _is_scrolling = is_scrolling;
+
+		_use_scissors = use_scissors;
+		
         init_verticess(rhi);
 		
         _shader_resource_bindings = rhi->newShaderResourceBindings();
@@ -702,6 +714,8 @@ struct TriangleRenderer : public r::TriangleRenderer
 #if DO_ANTIALIASING
         _pipeline->setSampleCount(4);
 #endif
+		if (use_scissors)
+			_pipeline->setFlags(QRhiGraphicsPipeline::UsesScissor);
 		
         {
             QRhiGraphicsPipeline::TargetBlend blend;
@@ -870,10 +884,12 @@ class RenderWindow : public radium::RhiWindow, public radium::MouseCycleFix
 	
 public:
 
-	TextureRenderer _texture_renderer;
+	TextureRenderer _texture_renderers[MAX_NUM_SLICES];
+	TextureRenderer _texture_renderer_scissors[MAX_NUM_SLICES];
 	TextureRenderer _texture_renderer_static;
 	
-	TriangleRenderer _triangle_renderer;
+	TriangleRenderer _triangle_renderers[MAX_NUM_SLICES];
+	TriangleRenderer _triangle_renderer_scissors[MAX_NUM_SLICES];
 	TriangleRenderer _triangle_renderer_static;
 	
 	DEFINE_ATOMIC(bool, _main_window_is_exposed) = false;
@@ -894,10 +910,14 @@ public:
 	
 		put_event([this, &sem]()
 			{
-				_triangle_renderer.release();
-				_texture_renderer.release();
-				_triangle_renderer_static.release();
+				for (int i = 0; i < MAX_NUM_SLICES; ++i) {
+					_triangle_renderers[i].release();
+					_triangle_renderer_scissors[i].release();
+					_texture_renderers[i].release();
+					_texture_renderer_scissors[i].release();
+				}
 				_texture_renderer_static.release();
+				_triangle_renderer_static.release();
 				
 				fprintf(stderr, "H5\n");
 				sem.release();
@@ -911,20 +931,30 @@ public:
 	void customInit(const QFont &font) override
 	{
 
-		// Texture renderer (scrolling)
-		_texture_renderer.init(_rhi, _render_pass_descriptor, font, true);
+		// Texture renderers (scrolling, tempo tracks, per-slice)
+		for (int i = 0; i < MAX_NUM_SLICES; ++i)
+			_texture_renderers[i].init(_rhi, _render_pass_descriptor, font, true, false);
 
-		// Triangle renderer (scrolling)
-		_triangle_renderer.init(_rhi, _render_pass_descriptor, true);
+		// Triangle renderers (per-slice, scrolling)
+		for (int i = 0; i < MAX_NUM_SLICES; ++i)
+			_triangle_renderers[i].init(_rhi, _render_pass_descriptor, true, false);
+
+		// Texture renderers (scrolling, normal tracks, per-slice scissored)
+		for (int i = 0; i < MAX_NUM_SLICES; ++i)
+			_texture_renderer_scissors[i].init(_rhi, _render_pass_descriptor, font, true, true);
+
+		// Triangle renderers (per-slice, scissored)
+		for (int i = 0; i < MAX_NUM_SLICES; ++i)
+			_triangle_renderer_scissors[i].init(_rhi, _render_pass_descriptor, true, true);
 
 		// Non-scrolling texture renderer
-		_texture_renderer_static.init(_rhi, _render_pass_descriptor, font, false);
+		_texture_renderer_static.init(_rhi, _render_pass_descriptor, font, false, false);
 
 		// Non-scrolling triangle renderer
-		_triangle_renderer_static.init(_rhi, _render_pass_descriptor, false);
+		_triangle_renderer_static.init(_rhi, _render_pass_descriptor, false, false);
 
 		
-		double ratio = devicePixelRatio();
+		const double ratio = devicePixelRatio();
 
 		safe_double_write(&g_opengl_scale_ratio, ratio);
 
@@ -1031,53 +1061,112 @@ public:
 		
 		QRhiResourceUpdateBatch *batch = _rhi->nextResourceUpdateBatch();
 
-		// Triangles (scrolling)
-		_triangle_renderer.prepare_frame(_rhi,
-										 batch,
-										 _viewProjection,
-										 scroll_pos);
+		// Triangles (per-slice) - scrolling
+		for (int i = 0; i < MAX_NUM_SLICES; ++i)
+		_triangle_renderers[i].prepare_frame(_rhi,
+			 batch,
+			 _viewProjection,
+			 scroll_pos);
+
+		// Triangles (per-slice) - scissored
+		for (int i = 0; i < MAX_NUM_SLICES; ++i)
+		_triangle_renderer_scissors[i].prepare_frame(_rhi,
+			 batch,
+			 _viewProjection,
+			 scroll_pos);
 
 		// Triangles (non-scrolling)
 		_triangle_renderer_static.prepare_frame(_rhi,
-										 batch,
-										 _viewProjection,
-										 0.0f);
+		 batch,
+		 _viewProjection,
+		 0.0f);
 		
-		// Textures (i.e. text) - scrolling
-		_texture_renderer.prepare_frame(_rhi,
-										batch,
-										_viewProjection,
-										scroll_pos,
-										outputSizeInPixels.width(),
-										outputSizeInPixels.height());
+		// Textures (i.e. text) - scrolling, per-slice
+		for (int i = 0; i < MAX_NUM_SLICES; ++i)
+			_texture_renderers[i].prepare_frame(_rhi,
+											   batch,
+											   _viewProjection,
+											   scroll_pos,
+											   outputSizeInPixels.width(),
+											   outputSizeInPixels.height());
+
+		// Textures (scissored), per-slice
+		for (int i = 0; i < MAX_NUM_SLICES; ++i)
+			_texture_renderer_scissors[i].prepare_frame(_rhi,
+											   batch,
+											   _viewProjection,
+											   scroll_pos,
+											   outputSizeInPixels.width(),
+											   outputSizeInPixels.height());
 
 		// Textures (non-scrolling)
 		_texture_renderer_static.prepare_frame(_rhi,
-										batch,
-										_viewProjection,
-										0.0f,
-										outputSizeInPixels.width(),
-										outputSizeInPixels.height());
+			batch,
+			_viewProjection,
+			0.0f,
+			outputSizeInPixels.width(),
+			outputSizeInPixels.height());
 		
 		QRhiCommandBuffer *command_buffer = _swap_chain->currentFrameCommandBuffer();
-
+		
 		command_buffer->beginPass(_swap_chain->currentFrameRenderTarget(), g_background_color, { 1.0f, 0 }, batch);
 		{
 			// triangles (scrolling)
-			_triangle_renderer.render_frame(command_buffer,
-											outputSizeInPixels);
+			// triangles (scrolling) - per-slice
+			for (int i = 0; i < MAX_NUM_SLICES; ++i)
+				_triangle_renderers[i].render_frame(command_buffer, outputSizeInPixels);
+
+			// scissor rectangle based on shared variables
+			int sc_x = 0;
+			int sc_w = 0;
+			if (g_painting_data)
+			{
+				const SharedVariables *sv = GE_get_shared_variables(g_painting_data);
+				sc_x = int(sv->wtracks_scissor_x1 * g_opengl_scale_ratio);
+				sc_w = int((sv->wtracks_scissor_x2 - sv->wtracks_scissor_x1) * g_opengl_scale_ratio);
+				if (sc_x < 0)
+					sc_x = 0;
+
+				/*
+				printf("sc_x: %d. scissor_x1: %d. sc_w: %d. scissor_x2: %d\n",
+					   sc_x, sv->wtracks_scissor_x1,
+					   sc_w, sv->wtracks_scissor_x2);
+				*/
+				
+				if (sc_w > 0)
+					command_buffer->setScissor({sc_x, 0, sc_w, outputSizeInPixels.height()});
+			}
+
+			for (int i = 0; i < MAX_NUM_SLICES; ++i)
+				_triangle_renderer_scissors[i].render_frame(command_buffer, outputSizeInPixels);
+			if (sc_w > 0)
+				command_buffer->setScissor({0, 0, outputSizeInPixels.width(), outputSizeInPixels.height()});
 
 			// triangles (non-scrolling) - draw on top
 			_triangle_renderer_static.render_frame(command_buffer,
-											outputSizeInPixels);
+												   outputSizeInPixels);
 
-			// text (scrolling)
-			_texture_renderer.render_frame(_rhi,
-										   command_buffer);
+			// text (scrolling) - per-slice
+			for (int i = 0; i < MAX_NUM_SLICES; ++i)
+				_texture_renderers[i].render_frame(_rhi,
+												   command_buffer,
+												   outputSizeInPixels);
+
+			// text (scissored)
+			if (sc_w > 0)
+				command_buffer->setScissor({sc_x, 0, sc_w, outputSizeInPixels.height()});
+
+			for (int i = 0; i < MAX_NUM_SLICES; ++i)
+				_texture_renderer_scissors[i].render_frame(_rhi,
+												   command_buffer,
+												   outputSizeInPixels);
+			if (sc_w > 0)
+				command_buffer->setScissor({0, 0, outputSizeInPixels.width(), outputSizeInPixels.height()});
 
 			// text (non-scrolling) - draw on top
 			_texture_renderer_static.render_frame(_rhi,
-										   command_buffer);
+												  command_buffer,
+												  outputSizeInPixels);
 		}		
 		command_buffer->endPass();
 
@@ -1252,7 +1341,7 @@ static QWidget *g_widget;
 static bool is_scrolling(const GE_Context &c)
 {
     if (Z_IS_STATIC_X(c._conf.z))
-		return true; // scroll
+		return true; // scroll, non-scissor.
 
 	if (c._conf.z == Z_PLAYCURSOR)
 		return false; // play cursor 
@@ -1270,35 +1359,69 @@ r::TriangleRenderer *GE_get_triangle_renderer(const GE_Context &context)
 {
 	R_ASSERT(g_gl_widget_started);
 
-	if (is_scrolling(context))
-		return &g_window->_triangle_renderer;
-	else
+	if (!is_scrolling(context))
 		return &g_window->_triangle_renderer_static;
+
+	int slice = context._slice;
+	
+	R_ASSERT(slice >= 0 && slice < MAX_NUM_SLICES);
+	
+	if (slice < 0)
+		slice = 0;
+	
+	if (slice >= MAX_NUM_SLICES)
+		slice = MAX_NUM_SLICES-1;
+
+	if (context._conf.use_scissors == USE_SCISSORS)
+		return &g_window->_triangle_renderer_scissors[slice];
+	else
+		return &g_window->_triangle_renderers[slice];
 }
 
 r::TextRenderer *GE_get_text_renderer(const GE_Context &context)
 {
 	R_ASSERT(g_gl_widget_started);
 
-	if (is_scrolling(context))
-		return dynamic_cast<r::TextRenderer*>(&g_window->_texture_renderer);
-	else
+	if (!is_scrolling(context))
 		return dynamic_cast<r::TextRenderer*>(&g_window->_texture_renderer_static);
+
+	int slice = context._slice;
+
+	R_ASSERT(slice >= 0 && slice < MAX_NUM_SLICES);
+	
+	if (slice < 0)
+		slice = 0;
+	
+	if (slice >= MAX_NUM_SLICES)
+		slice = MAX_NUM_SLICES-1;
+
+	if (context._conf.use_scissors == USE_SCISSORS)
+		return dynamic_cast<r::TextRenderer*>(&g_window->_texture_renderer_scissors[slice]);
+	else
+		return dynamic_cast<r::TextRenderer*>(&g_window->_texture_renderers[slice]);
 }
 
 	
-
+#if 0
 extern void gakk_GE_text(const char *text, int x, int y, float r, float g, float b, float a);
 void gakk_GE_text(const char *text, int x, int y, float r, float g, float b, float a)
 {
-	g_window->_texture_renderer.add_text(text, x, y, r, g, b, a);
+	g_window->_texture_renderers[0].add_text(text, x, y, r, g, b, a);
 }
+#endif
 
 void GE_set_font(const QFont &font)
 {
 	if (g_window)
 	{
-		g_window->_texture_renderer._texture_atlas->setFont(font);
+		for (int i = 0; i < MAX_NUM_SLICES; ++i) {
+			if (g_window->_texture_renderers[i]._texture_atlas)
+				g_window->_texture_renderers[i]._texture_atlas->setFont(font);
+			if (g_window->_texture_renderer_scissors[i]._texture_atlas)
+				g_window->_texture_renderer_scissors[i]._texture_atlas->setFont(font);
+		}
+		if (g_window->_texture_renderer_static._texture_atlas)
+			g_window->_texture_renderer_static._texture_atlas->setFont(font);
 		GFX_ForceScheduleEditorRedraw(); // New font will be set before starting new paint.
 	}
 }
@@ -1308,8 +1431,14 @@ void aiai(void) // Called after finished rendering.
 {
 	if (g_window)
 	{
-		if (g_window->_texture_renderer._texture_atlas)
-			g_window->_texture_renderer._texture_atlas->maybe_switch_to_next_d();
+		for (int i = 0; i < MAX_NUM_SLICES; ++i) {
+			if (g_window->_texture_renderers[i]._texture_atlas)
+				g_window->_texture_renderers[i]._texture_atlas->maybe_switch_to_next_d();
+			if (g_window->_texture_renderer_scissors[i]._texture_atlas)
+				g_window->_texture_renderer_scissors[i]._texture_atlas->maybe_switch_to_next_d();
+		}
+		if (g_window->_texture_renderer_static._texture_atlas)
+			g_window->_texture_renderer_static._texture_atlas->maybe_switch_to_next_d();
 
 		// Note: previously this function obtained render buffers for new
 		// vertex generation. That could race with GE_start_writing calling
@@ -1330,15 +1459,26 @@ void aiai2(void) // Called after finished rendering.
   // painting-data lifecycle to avoid duplicate starts from other paths.
   if (g_rhi != NULL && g_window)
   {
-    // Triangle vertices (scrolling)
-    g_window->_triangle_renderer._vertices.call_me_when_starting_to_generate_vertices();
+    // Triangle vertices (scrolling) - per-slice
+    for (int i = 0; i < MAX_NUM_SLICES; ++i)
+      g_window->_triangle_renderers[i]._vertices.call_me_when_starting_to_generate_vertices();
 
     // Triangle vertices (non-scrolling/static)
     g_window->_triangle_renderer_static._vertices.call_me_when_starting_to_generate_vertices();
 
-    // Texture vertices (may not exist yet) - scrolling
-    if (g_window->_texture_renderer._vertices)
-      g_window->_texture_renderer._vertices->call_me_when_starting_to_generate_vertices();
+    // Triangle vertices (scissored) - per-slice
+    for (int i = 0; i < MAX_NUM_SLICES; ++i)
+      g_window->_triangle_renderer_scissors[i]._vertices.call_me_when_starting_to_generate_vertices();
+
+    // Texture vertices (may not exist yet) - scrolling (per-slice)
+    for (int i = 0; i < MAX_NUM_SLICES; ++i)
+      if (g_window->_texture_renderers[i]._vertices)
+        g_window->_texture_renderers[i]._vertices->call_me_when_starting_to_generate_vertices();
+
+    // Texture vertices (scissored) (per-slice)
+    for (int i = 0; i < MAX_NUM_SLICES; ++i)
+      if (g_window->_texture_renderer_scissors[i]._vertices)
+        g_window->_texture_renderer_scissors[i]._vertices->call_me_when_starting_to_generate_vertices();
 
     // Texture vertices (non-scrolling/static)
     if (g_window->_texture_renderer_static._vertices)
@@ -1375,11 +1515,21 @@ void GL_finish_generating_vertices(void)
 		return;
 
 	// These methods are thread-safe wrt the internal buffer locking.
-	g_window->_triangle_renderer._vertices.call_me_after_finished_generating_vertices();
+	for (int i = 0; i < MAX_NUM_SLICES; ++i)
+		g_window->_triangle_renderers[i]._vertices.call_me_after_finished_generating_vertices();
+	
 	g_window->_triangle_renderer_static._vertices.call_me_after_finished_generating_vertices();
+	
+	for (int i = 0; i < MAX_NUM_SLICES; ++i)
+		g_window->_triangle_renderer_scissors[i]._vertices.call_me_after_finished_generating_vertices();
 
-	if (g_window->_texture_renderer._vertices)
-		g_window->_texture_renderer._vertices->call_me_after_finished_generating_vertices();
+	for (int i = 0; i < MAX_NUM_SLICES; ++i)
+		if (g_window->_texture_renderers[i]._vertices)
+			g_window->_texture_renderers[i]._vertices->call_me_after_finished_generating_vertices();
+
+	for (int i = 0; i < MAX_NUM_SLICES; ++i)
+		if (g_window->_texture_renderer_scissors[i]._vertices)
+			g_window->_texture_renderer_scissors[i]._vertices->call_me_after_finished_generating_vertices();
 
 	if (g_window->_texture_renderer_static._vertices)
 		g_window->_texture_renderer_static._vertices->call_me_after_finished_generating_vertices();

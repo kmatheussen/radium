@@ -334,7 +334,8 @@ static void create_single_linenum_border(
                                   )
 {
   float thickness = get_thickness(0.5);
-  GE_line(GE_color_alpha(TRACK_SEPARATOR1_COLOR_NUM,0.5,NOMASK_Y,use_scissors),x,y,x,y2,thickness);
+  GE_line(GE_color_alpha(TRACK_SEPARATOR1_COLOR_NUM,0.5,NOMASK_Y,use_scissors),
+		  x,y,x,y2,thickness);
 }
 
 
@@ -544,12 +545,14 @@ static void create_background_realline(const struct Tracker_Windows *window, con
           //int y1 = wtrack1->y;
           //int y2 = wtrack1->panonoff.y1 - 1;
 
+		  /*
 		  if (realline == 0)
 			  printf("  Background for track #%d: %d -> %d. Track: %d -> %d. Block: %d -> %d\n",
 					 wtrack->l.num,
 					 x1, x2,
 					 wtrack->x, wtrack->x2,
 					 wblock->t.x1, wblock->t.x2);
+		  */
 		  
           struct Patch *patch = wtrack->track->patch;
           

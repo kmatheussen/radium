@@ -30,6 +30,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "SharedVariables.hpp"
 
+#define MAX_NUM_SLICES 32
+
 extern double g_opengl_scale_ratio;
 
 namespace r
@@ -202,6 +204,7 @@ public:
 	}
 
 	void add_triangle(const r::fvec2 &p1, const r::fvec2 &p2, const r::fvec2 &p3, r2::GradientType::Type gradient_type = r2::GradientType::Type::NOTYPE) const;
+	void add_text(const char *text, int x, int y) const;
 
 	static float y(float y)
 	{
@@ -283,7 +286,8 @@ void GE_draw_vl(T2_data *t2_data);
 #define Z_STATIC_X 1
 #define Z_IS_STATIC_X(z) ((z)&1)
 
-enum{
+enum
+{
   Z_BACKGROUND = -10,
   Z_ZERO = 0,
 

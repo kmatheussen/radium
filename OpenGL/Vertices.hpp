@@ -230,7 +230,7 @@ struct Vertices
 
 		_curr_num_qhri_vertices = buffer->_buffer_pos / VERTEX_SIZE;
 
-		printf("Updated vbuf. Num bytes: %d. Num vertices: %d\n", num_bytes, _curr_num_qhri_vertices);
+		//printf("Updated vbuf. Num bytes: %d. Num vertices: %d\n", num_bytes, _curr_num_qhri_vertices);
 		//getchar();
 		 
 		_buffers.release_qrhi_buffer();
