@@ -119,7 +119,12 @@ struct Buffers
 	{
 		radium::ScopedMutex lock(_lock);
 
-		R_ASSERT_NON_RELEASE(_render_buffer == -1);
+		if (_render_buffer != -1) {
+			// Already holding a render buffer — allow redundant starts (startup races can call start twice).
+			fprintf(stderr, "WARN: obtain_render_buffer called while _render_buffer=%d, returning existing buffer (Buffers@%p)\n",
+				    _render_buffer, (void*)this);
+			return &_buffers[_render_buffer];
+		}
 
 		switch(_qrhi_buffer)
 		{
@@ -374,6 +379,7 @@ struct TextureVertices : public Vertices<sizeof(TextureVertex)/sizeof(float), 6>
 
 }
 
+#if 0
 extern r::TriangleVertices *g_vertices_under_text; // Scrolling: Everything painted under text (only the track backgruond color.)
 extern r::TriangleVertices *g_vertices_text; // Scrolling: Text.
 extern r::TriangleVertices *g_vertices; // Scrolling: Everything painted above text)
@@ -383,6 +389,7 @@ extern r::TriangleVertices *g_vertices_static; // Non-Scrolling: Cursor + Indica
 //extern QVector<r::Vertices> g_all_verticess = {};
 
 #define ALL_VERTICESS {g_vertices_under_text, g_vertices_text, g_vertices, g_vertices_left_slider, g_vertices_static}
+#endif
 
 
 

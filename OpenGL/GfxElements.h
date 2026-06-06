@@ -126,6 +126,10 @@ static inline vl::vec4 get_vec4(GE_Rgb rgb){
 
 //typedef struct _GE_Context GE_Context;
 
+struct GE_Context;
+
+namespace r2
+{
 struct GradientType {
   enum Type {
     NOTYPE,
@@ -133,40 +137,71 @@ struct GradientType {
     VELOCITY
   };
 };
+}
 
+namespace r
+{
+struct TriangleRenderer
+{
+	virtual	void add_triangle(const GE_Context &c, const r::fvec2 &p1, const r::fvec2 &p2, const r::fvec2 &p3, r2::GradientType::Type gradient_type) = 0;
+};
+
+struct TextRenderer
+{
+	virtual void add_text(const char *text, int x, int y, float r, float g, float b, float a) = 0;
+};
+} // namespace r
+
+
+// These two are implemented in Widget.cpp
+extern r::TriangleRenderer *GE_get_triangle_renderer(const GE_Context &context);
+extern r::TextRenderer *GE_get_text_renderer(const GE_Context &context);
+
+#if 0
+struct GE_Context
+{
+	mutable r::TriangleRenderer *_triangle_renderer = NULL;
+
+	void GE_Context::add_triangle(const r::fvec2 &p1, const r::fvec2 &p2, const r::fvec2 &p3, r2::GradientType::Type gradient_type) const
+	{
+		if (_triangle_renderer == NULL)
+			_triangle_renderer = GE_get_triangle_renderer(*this);
+
+		_triangle_renderer->add_triangle(*this, p1, p2, p3, gradient_type);
+	}
+};
+#endif
 
 struct GE_Context
 {
-  union Color
-  {
-    struct
+	union Color
 	{
-		GE_Rgb c;
-		GE_Rgb c_gradient;
-    };
-	  uint64_t key;
-  } color;
-
+		struct
+		{
+			GE_Rgb c;
+			GE_Rgb c_gradient;
+		};
+		uint64_t key;
+	} color;
+	
 	GE_Conf _conf;
 	int _slice;
-  
-public:
-	
-	//std::vector<r::fvec2> _triangles;
 
-	//GE_Context()
-	//{
-	//}
+public:
+
+	mutable r::TriangleRenderer *_triangle_renderer = NULL;
+	mutable r::TextRenderer *_text_renderer = NULL;
 	
 	GE_Context(const Color &_color, const GE_Conf &conf, int slice)
 		: color(_color)
 		, _conf(conf)
 		, _slice(slice)
 	{
+		//printf("ctor: this=%p\n", this);
 		R_ASSERT(sizeof(Color)==sizeof(uint64_t));
 	}
 
-	void add_triangle(const r::fvec2 &p1, const r::fvec2 &p2, const r::fvec2 &p3, GradientType::Type gradient_type = GradientType::Type::NOTYPE) const;
+	void add_triangle(const r::fvec2 &p1, const r::fvec2 &p2, const r::fvec2 &p3, r2::GradientType::Type gradient_type = r2::GradientType::Type::NOTYPE) const;
 
 	static float y(float y)
 	{
@@ -426,7 +461,7 @@ namespace{
 
 void T3_create_gradienttriangles_if_needed(bool got_new_t2_data);
 
-void GE_gradient_triangle_start(GradientType::Type type);
+void GE_gradient_triangle_start(r2::GradientType::Type type);
 void GE_gradient_triangle_add(GE_Context &c, float x, float y);
 void GE_gradient_triangle_end(GE_Context &c, float x1, float x2);
 

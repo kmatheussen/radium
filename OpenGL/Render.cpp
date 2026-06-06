@@ -137,7 +137,7 @@ static void draw_bordered_text(
   GE_Context c2 = GE_gradient_z(qc1, qc2, GE_Conf(z, y)); //GE_get_rgb(9), GE_get_rgb(11), z);
 
   
-  GE_gradient_triangle_start(GradientType::HORIZONTAL);
+  GE_gradient_triangle_start(r2::GradientType::HORIZONTAL);
   GE_gradient_triangle_add(c2, x,  y+0.75 - 0.5);
   GE_gradient_triangle_add(c2, x2, y+0.75 - 0.5);
   GE_gradient_triangle_add(c2, x,  y+1.25);
@@ -2450,7 +2450,7 @@ static void create_velocity_gradient_background(
         c = GE_y(c, y1);
       else {
         c = GE_gradient_z(rgb1, rgb2, GE_Conf(Z_BELOW(Z_ZERO), y1));
-        GE_gradient_triangle_start(GradientType::VELOCITY);
+        GE_gradient_triangle_start(r2::GradientType::VELOCITY);
       }
       
       GE_gradient_triangle_add(c, subtrack_x1, y1);

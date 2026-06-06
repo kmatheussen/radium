@@ -33,6 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_PopupMenu_proc.h"
 
 #include "../OpenGL/GfxElements.h"
+#include "../OpenGL/Render_proc.h"
 
 #include "Qt_Fonts_proc.h"
 
