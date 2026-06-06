@@ -114,10 +114,10 @@ public:
 	{
 		QFont font(nonscaled_font);
 
-		const double scale_ratio = safe_double_read(&g_opengl_scale_ratio);
+		//const double scale_ratio = safe_double_read(&g_opengl_scale_ratio);
 		
-		if(!equal_doubles(scale_ratio, 1.0))
-			font.setPointSize(font.pointSize() * scale_ratio);
+		//if(!equal_doubles(scale_ratio, 1.0))
+		//	font.setPointSize(font.pointSize() * scale_ratio);
 
 		createAtlas(font);
 	}
