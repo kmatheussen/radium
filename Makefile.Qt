@@ -2818,7 +2818,7 @@ $(T)GfxElements.o: OpenGL/GfxElements.cpp $(VISUALIZATION_HEADERS) common/Mutex.
 $(T)Render.o: OpenGL/Render.cpp $(VISUALIZATION_HEADERS) common/spinlock.h common/time_proc.h common/Beats_proc.h common/TimeData.hpp
 	$(CCC2) OpenGL/Render.cpp $(QTOPT) $(VISUALIZATION_OPTIONS)
 
-$(T)Widget.o: OpenGL/Widget.cpp $(VISUALIZATION_HEADERS) OpenGL/Text.hpp common/Mutex.hpp common/spinlock.h common/MovingAverage.hpp common/Vector.hpp Qt/Timer.hpp # OpenGL/Qt6ThreadedWidget.hpp 
+$(T)Widget.o: OpenGL/Widget.cpp $(VISUALIZATION_HEADERS) OpenGL/TextureAtlas.hpp common/Mutex.hpp common/spinlock.h common/MovingAverage.hpp common/Vector.hpp Qt/Timer.hpp # OpenGL/Qt6ThreadedWidget.hpp 
 	$(CCC2) OpenGL/Widget.cpp $(QTOPT) $(VISUALIZATION_OPTIONS) 
 
 $(T)RhiWindow.o: OpenGL/RhiWindow.cpp $(VISUALIZATION_HEADERS)
