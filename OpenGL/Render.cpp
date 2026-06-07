@@ -132,8 +132,8 @@ static void draw_bordered_text(
   int x2=x+((int)strlen(text)*window->fontwidth);
   
   // 2. Line (the gradient one)
-  QColor qc1 = GE_qcolor(LOW_BACKGROUND_COLOR_NUM).darker(96);
-  QColor qc2 = GE_qcolor(LOW_BACKGROUND_COLOR_NUM).darker(113);
+  QColor qc1 = GE_qcolor(LOW_BACKGROUND_COLOR_NUM).darker(70);//96);
+  QColor qc2 = GE_qcolor(LOW_BACKGROUND_COLOR_NUM).darker(140);//113);
   GE_Context c2 = GE_gradient_z(qc1, qc2, GE_Conf(z, y)); //GE_get_rgb(9), GE_get_rgb(11), z);
 
   

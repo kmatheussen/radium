@@ -3,7 +3,7 @@ namespace r
 {
 
 	
-static const QString g_supportedChars = QStringLiteral("abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVW #-,.(){}<>=*:0123456789");
+static const QString g_supportedChars = QStringLiteral("abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVW #-,.(){}<>=*:0123456789|/");
 
 
 class TextureAtlasBackend

@@ -278,7 +278,8 @@ struct TriangleVertices : public Vertices<sizeof(TriangleVertex)/sizeof(float), 
 					 float x2, float y2,
 					 float x3, float y3,
 					 float r, float g, float b, float a,
-					 float r2, float g2, float b2, float a2)
+					 float r2, float g2, float b2, float a2,
+					 float r3, float g3, float b3, float a3)
 	{
 		float f[_num_vertices_per_unit * _vertex_size];
 		
@@ -299,12 +300,12 @@ struct TriangleVertices : public Vertices<sizeof(TriangleVertex)/sizeof(float), 
 		
 		// P2
 		POS(6, x2, y2);
-		COL(8, r, g, b, a);
+		COL(8, r2, g2, b2, a2);
 		//printf("P2. In: %f, %f. Out: %f, %f\n", x2, y2, f[6], f[7]);
 		
 		// P3
 		POS(12, x3, y3);
-		COL(14, r2, g2, b2, a2);
+		COL(14, r3, g3, b3, a3);
 		//printf("P3. In: %f, %f. Out: %f, %f\n", x3, y3, f[14], f[15]);
 		
 		addUnit(f);
@@ -315,7 +316,7 @@ struct TriangleVertices : public Vertices<sizeof(TriangleVertex)/sizeof(float), 
 					 float x3, float y3,
 					 float r, float g, float b, float a = 0.01)
 	{
-		addTriangle(x1, y1, x2, y2, x3, y3, r, g, b, a, r, g, b, a);
+		addTriangle(x1, y1, x2, y2, x3, y3, r, g, b, a, r, g, b, a, r, g, b, a);
 	}
 					 
 	void add_triangle(const r::fvec2 &p1, const r::fvec2 &p2, const r::fvec2 &p3,
@@ -327,14 +328,116 @@ struct TriangleVertices : public Vertices<sizeof(TriangleVertex)/sizeof(float), 
 					(float)rgb.r / 256.0f, (float)rgb.g / 256.0f, (float)rgb.b / 256.0f, (float)rgb.a / 256.0f);
 	}
 
-	void add_triangle(const r::fvec2 &p1, const r::fvec2 &p2, const r::fvec2 &p3,
-					  GE_Rgb rgb, GE_Rgb rgb2)
+	void add_triangle_horizontal_gradient(const r::fvec2 &p1, const r::fvec2 &p2, const r::fvec2 &p3,
+										  GE_Rgb rgb, GE_Rgb rgb2)
 	{
+		// Compute left-to-right blend factor for each vertex based on x position
+		float x1 = p1.a;
+		float x2 = p2.a;
+		float x3 = p3.a;
+		
+		float minx = R_MIN(x1, R_MIN(x2, x3));
+		
+		float maxx = R_MAX(x1, R_MAX(x2, x3));
+		
+		float dx = maxx - minx;
+
+		auto lerp = [](float a, float b, float t)
+		{
+			return a + (b - a) * t;
+		};
+		
+		auto clamp01 = [](float v)
+		{
+			if (v < 0.0f)
+				return 0.0f;
+			if (v > 1.0f)
+				return 1.0f;
+			else
+				return v;
+		};
+
+		float t1 = equal_floats(dx, 0.0f) ? 0.0f : clamp01((x1 - minx) / dx);
+		float t2 = equal_floats(dx, 0.0f) ? 0.0f : clamp01((x2 - minx) / dx);
+		float t3 = equal_floats(dx, 0.0f) ? 0.0f : clamp01((x3 - minx) / dx);
+
+		float r1 = lerp((float)rgb.r / 256.0f, (float)rgb2.r / 256.0f, t1);
+		float g1 = lerp((float)rgb.g / 256.0f, (float)rgb2.g / 256.0f, t1);
+		float b1 = lerp((float)rgb.b / 256.0f, (float)rgb2.b / 256.0f, t1);
+		float a1 = lerp((float)rgb.a / 256.0f, (float)rgb2.a / 256.0f, t1);
+
+		float r2 = lerp((float)rgb.r / 256.0f, (float)rgb2.r / 256.0f, t2);
+		float g2 = lerp((float)rgb.g / 256.0f, (float)rgb2.g / 256.0f, t2);
+		float b2 = lerp((float)rgb.b / 256.0f, (float)rgb2.b / 256.0f, t2);
+		float a2 = lerp((float)rgb.a / 256.0f, (float)rgb2.a / 256.0f, t2);
+
+		float r3 = lerp((float)rgb.r / 256.0f, (float)rgb2.r / 256.0f, t3);
+		float g3 = lerp((float)rgb.g / 256.0f, (float)rgb2.g / 256.0f, t3);
+		float b3 = lerp((float)rgb.b / 256.0f, (float)rgb2.b / 256.0f, t3);
+		float a3 = lerp((float)rgb.a / 256.0f, (float)rgb2.a / 256.0f, t3);
+
 		addTriangle(p1.a, p1.b,
 					p2.a, p2.b,
 					p3.a, p3.b,
-					(float)rgb.r / 256.0f, (float)rgb.g / 256.0f, (float)rgb.b / 256.0f, (float)rgb.a / 256.0f,
-					(float)rgb2.r / 256.0f, (float)rgb2.g / 256.0f, (float)rgb2.b / 256.0f, (float)rgb2.a / 256.0f);
+					r1, g1, b1, a1,
+					r2, g2, b2, a2,
+					r3, g3, b3, a3);
+	}
+
+	void add_triangle_vertical_gradient(const r::fvec2 &p1, const r::fvec2 &p2, const r::fvec2 &p3,
+										GE_Rgb rgb, GE_Rgb rgb2)
+	{
+		// Distribute gradient top-to-bottom (y increases downwards)
+		float y1 = p1.b;
+		float y2 = p2.b;
+		float y3 = p3.b;
+		
+		float miny = R_MIN(y1, R_MIN(y2, y3));
+		
+		float maxy = R_MAX(y1, R_MAX(y2, y3));
+		
+		float dy = maxy - miny;
+
+		auto lerp = [](float a, float b, float t)
+		{
+			return a + (b - a) * t;
+		};
+		
+		auto clamp01 = [](float v)
+		{
+			if (v < 0.0f)
+				return 0.0f;
+			if (v > 1.0f)
+				return 1.0f;
+			else
+				return v;
+		};
+
+		float t1 = equal_floats(dy, 0.0f) ? 0.0f : clamp01((y1 - miny) / dy);
+		float t2 = equal_floats(dy, 0.0f) ? 0.0f : clamp01((y2 - miny) / dy);
+		float t3 = equal_floats(dy, 0.0f) ? 0.0f : clamp01((y3 - miny) / dy);
+
+		float r1 = lerp((float)rgb.r / 256.0f, (float)rgb2.r / 256.0f, t1);
+		float g1 = lerp((float)rgb.g / 256.0f, (float)rgb2.g / 256.0f, t1);
+		float b1 = lerp((float)rgb.b / 256.0f, (float)rgb2.b / 256.0f, t1);
+		float a1 = lerp((float)rgb.a / 256.0f, (float)rgb2.a / 256.0f, t1);
+
+		float r2 = lerp((float)rgb.r / 256.0f, (float)rgb2.r / 256.0f, t2);
+		float g2 = lerp((float)rgb.g / 256.0f, (float)rgb2.g / 256.0f, t2);
+		float b2 = lerp((float)rgb.b / 256.0f, (float)rgb2.b / 256.0f, t2);
+		float a2 = lerp((float)rgb.a / 256.0f, (float)rgb2.a / 256.0f, t2);
+
+		float r3 = lerp((float)rgb.r / 256.0f, (float)rgb2.r / 256.0f, t3);
+		float g3 = lerp((float)rgb.g / 256.0f, (float)rgb2.g / 256.0f, t3);
+		float b3 = lerp((float)rgb.b / 256.0f, (float)rgb2.b / 256.0f, t3);
+		float a3 = lerp((float)rgb.a / 256.0f, (float)rgb2.a / 256.0f, t3);
+
+		addTriangle(p1.a, p1.b,
+					p2.a, p2.b,
+					p3.a, p3.b,
+					r1, g1, b1, a1,
+					r2, g2, b2, a2,
+					r3, g3, b3, a3);
 	}
 };
 

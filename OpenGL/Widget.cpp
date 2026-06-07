@@ -855,10 +855,10 @@ struct TriangleRenderer : public r::TriangleRenderer
 				_vertices.add_triangle(p1, p2, p3, c.color.c);
 				break;
 			case r2::GradientType::Type::HORIZONTAL:
-				_vertices.add_triangle(p1, p2, p3, c.color.c, c.color.c_gradient);
+				_vertices.add_triangle_horizontal_gradient(p1, p2, p3, c.color.c, c.color.c_gradient);
 				break;
 			case r2::GradientType::Type::VELOCITY:
-				_vertices.add_triangle(p1, p2, p3, GE_rgb(200,80,80), /*color.c_gradient, */ c.color.c);
+				_vertices.add_triangle_vertical_gradient(p1, p2, p3, c.color.c, c.color.c_gradient);
 				break;
 		}
 	}
