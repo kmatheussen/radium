@@ -123,12 +123,31 @@ void GE_Context::add_triangle(const r::fvec2 &p1, const r::fvec2 &p2, const r::f
 	}
 }
 
-void GE_Context::add_text(const char *text, int x, int y) const
+void GE_Context::add_text(const QString &text, int x, int y) const
 {
 	if (g_rhi != NULL)
 	{
 		if (_text_renderer == NULL)
-			_text_renderer = GE_get_text_renderer(*this);
+			_text_renderer = GE_get_text_renderer(*this, false);
+
+		//printf("Printing \"%s\". y: %d. Slice: %d\n", text, y, _slice);
+		
+		const GE_Rgb &rgb = color.c;
+		
+		_text_renderer->add_text(text, x, y,
+								 rgb.r / 256.0,
+								 rgb.g / 256.0,
+								 rgb.b / 256.0,
+								 rgb.a / 256.0);
+	}
+}
+
+void GE_Context::add_text_halfsize(const QString &text, int x, int y) const
+{
+	if (g_rhi != NULL)
+	{
+		if (_text_renderer == NULL)
+			_text_renderer = GE_get_text_renderer(*this, true);
 
 		//printf("Printing \"%s\". y: %d. Slice: %d\n", text, y, _slice);
 		
@@ -684,15 +703,18 @@ void GE_text(const GE_Context &c, const char *text, int x, int y){
 }
 
 void GE_text2(const GE_Context &c, QString text, int x, int y){
+	c.add_text(text, x, y);
 	//c.textbitmaps.addCharBoxes(text, x, c.y(y+1));
 }
 
 void GE_text_halfsize(const GE_Context &c, const char *text, int x, int y){
 	//c.textbitmaps_halfsize.addCharBoxes(text, x, c.y(y+1));
+	c.add_text_halfsize(text, x, y);
 }
 
 void GE_text_halfsize2(const GE_Context &c, QString text, int x, int y){
 	//c.textbitmaps_halfsize.addCharBoxes(text, x, c.y(y+1));
+	c.add_text_halfsize(text, x, y);
 }
 
 void GE_box(const GE_Context &c, float x1, float y1, float x2, float y2, float pen_width){

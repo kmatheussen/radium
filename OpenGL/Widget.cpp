@@ -589,7 +589,7 @@ struct TextureRenderer : public r::TextRenderer
         _num_vertices_in_buffer = 0;
     }
 	
-	void add_text(const char *text, int x, int y, float r, float g, float b, float a) override
+	void add_text(const QString &text, int x, int y, float r, float g, float b, float a) override
 	{
 		if (_texture_atlas)
 			_texture_atlas->appendStringToVertices(_vertices,
@@ -893,9 +893,11 @@ class RenderWindow : public radium::RhiWindow, public radium::MouseCycleFix
 public:
 
 	r::TextureAtlasBackend *_texture_atlas_backend = nullptr;
+	r::TextureAtlasBackend *_texture_atlas_backend_halfsize = nullptr;
 
 	TextureRenderer _texture_renderers[MAX_NUM_SLICES];
 	TextureRenderer _texture_renderer_scissors[MAX_NUM_SLICES];
+	TextureRenderer _texture_renderer_scissors_halfsize[MAX_NUM_SLICES];
 	TextureRenderer _texture_renderer_static;
 	
 	TriangleRenderer _triangle_renderers[MAX_NUM_SLICES];
@@ -926,6 +928,7 @@ public:
 					_triangle_renderer_scissors[i].release();
 					_texture_renderers[i].release();
 					_texture_renderer_scissors[i].release();
+					_texture_renderer_scissors_halfsize[i].release();
 				}
 				_texture_renderer_static.release();
 				_triangle_renderer_static.release();
@@ -940,25 +943,52 @@ public:
 		fprintf(stderr, "H7\n");
 	}
 
+	const QFont get_halfsize_font(const QFont &font)
+	{
+		int full_size = font.pointSize();
+		int half_size = full_size / 2;
+		
+		for(int size = half_size ; size > 1 && size < full_size ; size++)
+		{
+			QFont font2(font);
+			font2.setPointSize(size);
+			
+			if (font2.pointSize() != full_size)
+				return font2;
+		}
+  
+		return font; // give up.
+	}
+
+	void setFont(const QFont &font)
+	{
+		if (_texture_atlas_backend && _texture_atlas_backend_halfsize)
+		{
+			_texture_atlas_backend->setFont(font);
+			_texture_atlas_backend_halfsize->setFont(get_halfsize_font(font));
+		}
+	}
+	
 	void customInit(const QFont &font) override
 	{
 		_texture_atlas_backend = new r::TextureAtlasBackend(_rhi, font);
+		_texture_atlas_backend_halfsize = new r::TextureAtlasBackend(_rhi, get_halfsize_font(font));
 		
-		// Texture renderers (scrolling, tempo tracks, per-slice)
 		for (int i = 0; i < MAX_NUM_SLICES; ++i)
+		{
+			// Texture renderers (scrolling, tempo tracks, per-slice)
 			_texture_renderers[i].init(_rhi, _texture_atlas_backend, _render_pass_descriptor, true, false);
 
-		// Triangle renderers (per-slice, scrolling)
-		for (int i = 0; i < MAX_NUM_SLICES; ++i)
+			// Triangle renderers (per-slice, scrolling)
 			_triangle_renderers[i].init(_rhi, _render_pass_descriptor, true, false);
 
-		// Texture renderers (scrolling, normal tracks, per-slice scissored)
-		for (int i = 0; i < MAX_NUM_SLICES; ++i)
+			// Texture renderers (scrolling, normal tracks, per-slice scissored)
 			_texture_renderer_scissors[i].init(_rhi, _texture_atlas_backend, _render_pass_descriptor, true, true);
+			_texture_renderer_scissors_halfsize[i].init(_rhi, _texture_atlas_backend_halfsize, _render_pass_descriptor, true, true);
 
-		// Triangle renderers (per-slice, scissored)
-		for (int i = 0; i < MAX_NUM_SLICES; ++i)
+			// Triangle renderers (per-slice, scissored)
 			_triangle_renderer_scissors[i].init(_rhi, _render_pass_descriptor, true, true);
+		}
 
 		// Non-scrolling texture renderer
 		_texture_renderer_static.init(_rhi, _texture_atlas_backend, _render_pass_descriptor, false, false);
@@ -1077,6 +1107,7 @@ public:
 
 
 		_texture_atlas_backend->uploadTexture(batch);
+		_texture_atlas_backend_halfsize->uploadTexture(batch);
 
 
 		// Triangles (per-slice) - scrolling
@@ -1116,13 +1147,21 @@ public:
 
 		// Textures (scissored), per-slice
 		for (int i = 0; i < MAX_NUM_SLICES; ++i)
+		{
 			_texture_renderer_scissors[i].prepare_frame(_rhi,
-											   batch,
-											   _viewProjection,
-											   scroll_pos,
-											   outputSizeInPixels.width(),
-											   outputSizeInPixels.height());
-
+														batch,
+														_viewProjection,
+														scroll_pos,
+														outputSizeInPixels.width(),
+														outputSizeInPixels.height());
+			_texture_renderer_scissors_halfsize[i].prepare_frame(_rhi,
+																 batch,
+																 _viewProjection,
+																 scroll_pos,
+																 outputSizeInPixels.width(),
+																 outputSizeInPixels.height());
+		}
+		
 		// Textures (non-scrolling)
 		_texture_renderer_static.prepare_frame(_rhi,
 											   batch,
@@ -1186,9 +1225,15 @@ public:
 				command_buffer->setScissor({sc_x, 0, sc_w, outputSizeInPixels.height()});
 
 			for (int i = 0; i < MAX_NUM_SLICES; ++i)
+			{
 				_texture_renderer_scissors[i].render_frame(_rhi,
-												   command_buffer,
-												   outputSizeInPixels);
+														   command_buffer,
+														   outputSizeInPixels);
+				_texture_renderer_scissors_halfsize[i].render_frame(_rhi,
+																	command_buffer,
+																	outputSizeInPixels);
+			}
+			
 			if (sc_w > 0)
 				command_buffer->setScissor({0, 0, outputSizeInPixels.width(), outputSizeInPixels.height()});
 
@@ -1412,13 +1457,16 @@ r::TriangleRenderer *GE_get_triangle_renderer(const GE_Context &context)
 		return &g_window->_triangle_renderers[slice];
 }
 
-r::TextRenderer *GE_get_text_renderer(const GE_Context &context)
+r::TextRenderer *GE_get_text_renderer(const GE_Context &context, bool is_half_size)
 {
 	R_ASSERT(g_gl_widget_started);
 
 	if (!is_scrolling(context))
+	{
+		R_ASSERT_NON_RELEASE(!is_half_size);
 		return dynamic_cast<r::TextRenderer*>(&g_window->_texture_renderer_static);
-
+	}
+			
 	int slice = context._slice;
 
 	R_ASSERT(slice >= 0 && slice < MAX_NUM_SLICES);
@@ -1430,9 +1478,17 @@ r::TextRenderer *GE_get_text_renderer(const GE_Context &context)
 		slice = MAX_NUM_SLICES-1;
 
 	if (context._conf.use_scissors == USE_SCISSORS)
-		return dynamic_cast<r::TextRenderer*>(&g_window->_texture_renderer_scissors[slice]);
+	{
+		if (is_half_size)
+			return dynamic_cast<r::TextRenderer*>(&g_window->_texture_renderer_scissors_halfsize[slice]);
+		else
+			return dynamic_cast<r::TextRenderer*>(&g_window->_texture_renderer_scissors[slice]);
+	}
 	else
+	{
+		R_ASSERT_NON_RELEASE(!is_half_size);
 		return dynamic_cast<r::TextRenderer*>(&g_window->_texture_renderers[slice]);
+	}
 }
 
 	
@@ -1446,9 +1502,9 @@ void gakk_GE_text(const char *text, int x, int y, float r, float g, float b, flo
 
 void GE_set_font(const QFont &font)
 {
-	if (g_window && g_window->_texture_atlas_backend)
+	if (g_window)
 	{
-		g_window->_texture_atlas_backend->setFont(font);
+		g_window->setFont(font);
 		#if 0
 		for (int i = 0; i < MAX_NUM_SLICES; ++i) {
 			if (g_window->_texture_renderers[i]._texture_atlas)
@@ -1466,9 +1522,10 @@ void GE_set_font(const QFont &font)
 void aiai(void);
 void aiai(void) // Called after finished rendering.
 {
-	if (g_window && g_window->_texture_atlas_backend)
+	if (g_window && g_window->_texture_atlas_backend && g_window->_texture_atlas_backend_halfsize)
 	{
 		g_window->_texture_atlas_backend->maybe_switch_to_next_d();
+		g_window->_texture_atlas_backend_halfsize->maybe_switch_to_next_d();
 		#if 0
 		for (int i = 0; i < MAX_NUM_SLICES; ++i) {
 			if (g_window->_texture_renderers[i]._texture_atlas)
@@ -1494,38 +1551,40 @@ void aiai(void) // Called after finished rendering.
 void aiai2(void);
 void aiai2(void) // Called after finished rendering.
 {
-  // Obtain render buffers for vertex generators here, driven by the main-thread
-  // painting-data lifecycle to avoid duplicate starts from other paths.
-  if (g_rhi != NULL && g_window)
-  {
-    // Triangle vertices (scrolling) - per-slice
-    for (int i = 0; i < MAX_NUM_SLICES; ++i)
-      g_window->_triangle_renderers[i]._vertices.call_me_when_starting_to_generate_vertices();
-
-    // Triangle vertices (non-scrolling/static)
-    g_window->_triangle_renderer_static._vertices.call_me_when_starting_to_generate_vertices();
-
-    // Triangle vertices (non-scrolling/static, scissors)
-    g_window->_triangle_renderer_static_scissor._vertices.call_me_when_starting_to_generate_vertices();
-
-    // Triangle vertices (scissored) - per-slice
-    for (int i = 0; i < MAX_NUM_SLICES; ++i)
-      g_window->_triangle_renderer_scissors[i]._vertices.call_me_when_starting_to_generate_vertices();
-
-    // Texture vertices (may not exist yet) - scrolling (per-slice)
-    for (int i = 0; i < MAX_NUM_SLICES; ++i)
-      if (g_window->_texture_renderers[i]._vertices)
-        g_window->_texture_renderers[i]._vertices->call_me_when_starting_to_generate_vertices();
-
-    // Texture vertices (scissored) (per-slice)
-    for (int i = 0; i < MAX_NUM_SLICES; ++i)
-      if (g_window->_texture_renderer_scissors[i]._vertices)
-        g_window->_texture_renderer_scissors[i]._vertices->call_me_when_starting_to_generate_vertices();
-
-    // Texture vertices (non-scrolling/static)
-    if (g_window->_texture_renderer_static._vertices)
-      g_window->_texture_renderer_static._vertices->call_me_when_starting_to_generate_vertices();
-  }
+	// Obtain render buffers for vertex generators here, driven by the main-thread
+	// painting-data lifecycle to avoid duplicate starts from other paths.
+	if (g_rhi != NULL && g_window)
+	{
+		// Triangle vertices (scrolling) - per-slice
+		for (int i = 0; i < MAX_NUM_SLICES; ++i)
+			g_window->_triangle_renderers[i]._vertices.call_me_when_starting_to_generate_vertices();
+		
+		// Triangle vertices (non-scrolling/static)
+		g_window->_triangle_renderer_static._vertices.call_me_when_starting_to_generate_vertices();
+		
+		// Triangle vertices (non-scrolling/static, scissors)
+		g_window->_triangle_renderer_static_scissor._vertices.call_me_when_starting_to_generate_vertices();
+		
+		for (int i = 0; i < MAX_NUM_SLICES; ++i)
+		{
+			// Triangle vertices (scissored) - per-slice
+			g_window->_triangle_renderer_scissors[i]._vertices.call_me_when_starting_to_generate_vertices();
+		
+			// Texture vertices (may not exist yet) - scrolling (per-slice)
+			if (g_window->_texture_renderers[i]._vertices)
+				g_window->_texture_renderers[i]._vertices->call_me_when_starting_to_generate_vertices();
+			
+			// Texture vertices (scissored) (per-slice)
+			if (g_window->_texture_renderer_scissors[i]._vertices)
+				g_window->_texture_renderer_scissors[i]._vertices->call_me_when_starting_to_generate_vertices();
+			if (g_window->_texture_renderer_scissors_halfsize[i]._vertices)
+				g_window->_texture_renderer_scissors_halfsize[i]._vertices->call_me_when_starting_to_generate_vertices();
+		}
+		
+		// Texture vertices (non-scrolling/static)
+		if (g_window->_texture_renderer_static._vertices)
+			g_window->_texture_renderer_static._vertices->call_me_when_starting_to_generate_vertices();
+	}
 }
 
 
@@ -1564,16 +1623,18 @@ void GL_finish_generating_vertices(void)
 	g_window->_triangle_renderer_static_scissor._vertices.call_me_after_finished_generating_vertices();
 	
 	for (int i = 0; i < MAX_NUM_SLICES; ++i)
+	{
 		g_window->_triangle_renderer_scissors[i]._vertices.call_me_after_finished_generating_vertices();
 
-	for (int i = 0; i < MAX_NUM_SLICES; ++i)
 		if (g_window->_texture_renderers[i]._vertices)
 			g_window->_texture_renderers[i]._vertices->call_me_after_finished_generating_vertices();
 
-	for (int i = 0; i < MAX_NUM_SLICES; ++i)
 		if (g_window->_texture_renderer_scissors[i]._vertices)
 			g_window->_texture_renderer_scissors[i]._vertices->call_me_after_finished_generating_vertices();
-
+		if (g_window->_texture_renderer_scissors_halfsize[i]._vertices)
+			g_window->_texture_renderer_scissors_halfsize[i]._vertices->call_me_after_finished_generating_vertices();
+	}
+	
 	if (g_window->_texture_renderer_static._vertices)
 		g_window->_texture_renderer_static._vertices->call_me_after_finished_generating_vertices();
 }
