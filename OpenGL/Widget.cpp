@@ -608,13 +608,6 @@ struct TextureRenderer : public r::TextRenderer
 					   float scroll_pos,
 					   float width, float height)
     {
-		static float _y_inc = -height;
-			
-        _y_inc += 0.5f;
-        if (_y_inc > 0) {
-            _y_inc = -height;
-        }
-
 		_vertices->maybe_merge_in(batch);
 			
         if (_viewCorrectionBuffer)
@@ -633,8 +626,8 @@ struct TextureRenderer : public r::TextRenderer
             }
         }
 			
-        if (_scrollPosBuffer && _is_scrolling) {
-			//float yscroll = _y_inc / height;
+        if (_scrollPosBuffer && _is_scrolling)
+		{
             batch->updateDynamicBuffer(_scrollPosBuffer,
 									   0,
 									   sizeof(float),
@@ -962,14 +955,17 @@ public:
 		if (gradient_type == r2::GradientType::Type::VELOCITY)
 		{
 			const float miny = _next_renderer == NULL ? -1 : R_MIN(p1.b, R_MIN(p2.b, p3.b));
-			
-			c1.color.c_gradient = GE_mix(c1.color.c,
-										 c1.color.c_gradient,
-										 scale(_bottom_y,
-											   miny, maxy,
-											   1000, 0));
-			
-			c2.color.c = c1.color.c_gradient;
+
+			if ((maxy - miny) > 0.01)
+			{
+				c1.color.c_gradient = GE_mix(c1.color.c,
+											 c1.color.c_gradient,
+											 scale(_bottom_y,
+												   miny, maxy,
+												   1000, 0));
+				
+				c2.color.c = c1.color.c_gradient;
+			}
 		}
 		
 		// Triangulate top polygon and add locally
@@ -1206,7 +1202,17 @@ public:
 			R_ASSERT(fabsf(scroll_pos - round(scroll_pos)) < 0.001);
 			scroll_pos = round(scroll_pos);
 		}
+
+		const float scroll_y1 = scroll_pos;
+		const float scroll_y2 = scroll_pos + outputSizeInPixels.height();
+
+		const float slice_size = GE_get_slice_size(g_painting_data);
 		
+		const int slice_start = R_BOUNDARIES(0, scroll_y1 / slice_size, MAX_NUM_SLICES-1);
+		const int slice_end = R_BOUNDARIES(slice_start+1, ceilf(scroll_y2 / slice_size), MAX_NUM_SLICES);
+
+		printf("slices: %d -> %d. scroll: %f -> %f. scroll_pos: %f\n", slice_start, slice_end, scroll_y1, scroll_y2, scroll_pos);
+
 		QRhiResourceUpdateBatch *batch = _rhi->nextResourceUpdateBatch();
 
 
@@ -1214,7 +1220,7 @@ public:
 		_texture_atlas_backend_halfsize->uploadTexture(batch);
 
 
-		for (int i = 0; i < MAX_NUM_SLICES; ++i)
+		for (int i = slice_start ; i < slice_end ; ++i)
 		{
 			// Triangles (per-slice) - scrolling
 			_triangle_renderers[i].prepare_frame(_rhi,
@@ -1241,7 +1247,7 @@ public:
 														_viewProjection,
 														0.0f);
 		
-		for (int i = 0; i < MAX_NUM_SLICES; ++i)
+		for (int i = slice_start ; i < slice_end ; ++i)
 		{
 			// Textures (i.e. text) - scrolling, per-slice
 			_texture_renderers[i].prepare_frame(_rhi,
@@ -1279,7 +1285,7 @@ public:
 		command_buffer->beginPass(_swap_chain->currentFrameRenderTarget(), g_background_color, { 1.0f, 0 }, batch);
 		{
 			// triangles (scrolling) - per-slice
-			for (int i = 0; i < MAX_NUM_SLICES; ++i)
+			for (int i = slice_start ; i < slice_end ; ++i)
 				_triangle_renderers[i].render_frame(command_buffer, outputSizeInPixels);
 
 			// scissor rectangle based on shared variables
@@ -1303,7 +1309,7 @@ public:
 					command_buffer->setScissor({sc_x, 0, sc_w, outputSizeInPixels.height()});
 			}
 
-			for (int i = 0; i < MAX_NUM_SLICES; ++i)
+			for (int i = slice_start ; i < slice_end ; ++i)
 				_triangle_renderer_scissors[i].render_frame(command_buffer, outputSizeInPixels);
 			
 			// triangles (non-scrolling, scissors) - draw on top
@@ -1318,7 +1324,7 @@ public:
 												   outputSizeInPixels);
 
 			// text (scrolling) - per-slice
-			for (int i = 0; i < MAX_NUM_SLICES; ++i)
+			for (int i = slice_start ; i < slice_end ; ++i)
 				_texture_renderers[i].render_frame(_rhi,
 												   command_buffer,
 												   outputSizeInPixels);
@@ -1327,7 +1333,7 @@ public:
 				command_buffer->setScissor({sc_x, 0, sc_w, outputSizeInPixels.height()});
 
 			// text (scissored)
-			for (int i = 0; i < MAX_NUM_SLICES; ++i)
+			for (int i = slice_start ; i < slice_end ; ++i)
 			{
 				_texture_renderer_scissors[i].render_frame(_rhi,
 														   command_buffer,
