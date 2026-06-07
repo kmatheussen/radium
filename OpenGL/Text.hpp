@@ -2,15 +2,20 @@
 namespace r
 {
 
-class TextureAtlas
+	
+static const QString g_supportedChars = QStringLiteral("abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVW #-,.(){}<>=*:0123456789");
+
+
+class TextureAtlasBackend
 {
+	friend class TextureAtlas;
+	
 	struct UVs
 	{
         float u0, v0, u1, v1;
     };
 
 	QRhi* _rhi = nullptr;
-    QString _supportedChars;
 
 	mutable radium::Mutex _newImageLock;
 
@@ -29,25 +34,19 @@ class TextureAtlas
     // QRhi resources owned by this class
     QRhiTexture* _texture = nullptr;
     QRhiSampler* _sampler = nullptr;
-    QRhiShaderResourceBindings* _shaderBindings = nullptr;
-    QRhiBuffer* _clipCorrBuffer = nullptr;
-    QRhiBuffer* _scrollBuffer = nullptr;
+
     bool _textureUploaded = false;
 
 public:
-    // Constructor: takes QRhi, font, supported characters, and clip correction buffer
-    TextureAtlas(QRhi* rhi, const QFont& font, const QString& supportedChars, QRhiBuffer* clipCorrBuffer, QRhiBuffer* scrollBuffer)
+
+    TextureAtlasBackend(QRhi* rhi, const QFont& font)
         : _rhi(rhi)
-        , _supportedChars(supportedChars)
-        , _clipCorrBuffer(clipCorrBuffer)
-        , _scrollBuffer(scrollBuffer)
     {
         createAtlas(font);
         createTextureResources(_next_d._image);
-        createShaderBindings();
     }
-    
-    ~TextureAtlas()
+	
+	~TextureAtlasBackend()
     {
         if (_texture) {
             _texture->destroy();
@@ -57,15 +56,53 @@ public:
             _sampler->destroy();
             delete _sampler;
         }
-        if (_shaderBindings) {
-            _shaderBindings->destroy();
-            delete _shaderBindings;
-        }
     }
-    
-    // Get shader resource bindings
-    QRhiShaderResourceBindings* getShaderBindings() const { return _shaderBindings; }
-    
+
+	void appendStringToVertices(r::TextureVertices *vertices,
+								const QString& text, 
+								float startX, float startY,
+								float r, float g, float b, float a)
+		//					  const QColor& color = Qt::white)
+		const
+	{
+		/*
+        float r = color.redF();
+        float g = color.greenF();
+        float b = color.blueF();
+        float a = color.alphaF();
+        */
+
+		radium::ScopedMutex lock(_newImageLock);
+
+		const D &d = _d; //_next_d._image.isNull() ? _d : _next_d;
+
+        for (int i = 0; i < text.length(); i++)
+		{
+            char c = text[i].toLatin1();
+
+			if (c==' ')
+				continue;
+			
+			auto it = d._char_uvs.find(c);
+			
+			if (it == d._char_uvs.end()) {
+				printf("===Can't render this character: '%c'\n", c);
+				continue;
+			}
+        
+			const UVs& uvs = it.value();
+
+            float x = floor(startX + i * d._char_width) + 1;
+            float y = floor(startY) + 1;
+			
+            vertices->addTexture(x, y,
+								 x + d._char_width, y + d._char_height,
+								 uvs.u0, uvs.v0,
+								 uvs.u1, uvs.v1,
+								 r,g,b,a);
+        }
+	}
+
     // Upload texture data to GPU (call once after creating atlas)
     void uploadTexture(QRhiResourceUpdateBatch* batch)
     {
@@ -112,59 +149,18 @@ public:
 	
 	void setFont(const QFont &nonscaled_font)
 	{
+#if 1
+		createAtlas(nonscaled_font);
+#else
 		QFont font(nonscaled_font);
 
-		//const double scale_ratio = safe_double_read(&g_opengl_scale_ratio);
+		const double scale_ratio = safe_double_read(&g_opengl_scale_ratio);
 		
-		//if(!equal_doubles(scale_ratio, 1.0))
-		//	font.setPointSize(font.pointSize() * scale_ratio);
+		if(!equal_doubles(scale_ratio, 1.0))
+			font.setPointSize(font.pointSize() * scale_ratio);
 
 		createAtlas(font);
-	}
-	
-    void appendString(r::TextureVertices *_context, const QString& text, 
-                      float startX, float startY,
-					  float width, float height,
-					  float r, float g, float b, float a)
-	//					  const QColor& color = Qt::white)
-		const
-	{
-		/*
-        float r = color.redF();
-        float g = color.greenF();
-        float b = color.blueF();
-        float a = color.alphaF();
-        */
-
-		radium::ScopedMutex lock(_newImageLock);
-
-		const D &d = _d; //_next_d._image.isNull() ? _d : _next_d;
-
-        for (int i = 0; i < text.length(); i++)
-		{
-            char c = text[i].toLatin1();
-
-			if (c==' ')
-				continue;
-			
-			auto it = d._char_uvs.find(c);
-			
-			if (it == d._char_uvs.end()) {
-				printf("===Can't render this character: '%c'\n", c);
-				continue;
-			}
-        
-			const UVs& uvs = it.value();
-
-            float x = floor(startX + i * d._char_width) + 1;
-            float y = floor(startY) + 1;
-			
-            _context->addTexture(x, y,
-								 x + d._char_width, y + d._char_height,
-								 uvs.u0, uvs.v0,
-								 uvs.u1, uvs.v1,
-								 r,g,b,a);
-        }
+#endif
 	}
 	
     //int getCharWidth() const { return _char_width; }
@@ -174,12 +170,7 @@ private:
     
     void createAtlas(const QFont &orgfont)
     {
-        if (_supportedChars.isEmpty()) {
-            qDebug() << "TextureAtlas: No supported characters provided!";
-            return;
-        }
-
-        int charCount = _supportedChars.length();
+        int charCount = g_supportedChars.length();
 
 		D d;
 		
@@ -233,14 +224,14 @@ private:
             int y = row * d._char_height;
             
             QRect rect(x, y, d._char_width, d._char_height);
-            painter.drawText(rect, Qt::AlignVCenter, QString(_supportedChars[i]));
+            painter.drawText(rect, Qt::AlignVCenter, QString(g_supportedChars[i]));
             
             float u0 = (float)(x + 0.5f) / atlasWidth;
             float v0 = (float)(y + 0.5f) / atlasHeight;
             float u1 = (float)(x + d._char_width + 0.5f) / atlasWidth;
             float v1 = (float)(y + d._char_height + 0.5f) / atlasHeight;
             
-            d._char_uvs[_supportedChars[i].toLatin1()] = {u0, v0, u1, v1};
+            d._char_uvs[g_supportedChars[i].toLatin1()] = {u0, v0, u1, v1};
         }
         
         painter.end();
@@ -299,43 +290,93 @@ private:
         }
     }
     
-    void createShaderBindings()
+};
+	
+class TextureAtlas
+{
+	QRhi *_rhi;
+	
+	TextureAtlasBackend *_backend;
+	
+    QRhiShaderResourceBindings* _shaderBindings = nullptr;
+    QRhiBuffer* _viewCorrectionBuffer = nullptr;
+    QRhiBuffer* _scrollPosBuffer = nullptr;
+
+public:
+	
+    TextureAtlas(QRhi* rhi, TextureAtlasBackend *backend, QRhiBuffer* viewCorrectionBuffer, QRhiBuffer* scrollPosBuffer)
+        : _rhi(rhi)
+		, _backend(backend)
+        , _viewCorrectionBuffer(viewCorrectionBuffer)
+        , _scrollPosBuffer(scrollPosBuffer)
     {
-        if (!_rhi || !_texture || !_sampler) {
+        createShaderBindings();
+    }
+    
+    ~TextureAtlas()
+    {
+    }
+    
+    // Get shader resource bindings
+	QRhiShaderResourceBindings* getShaderBindings(void) const
+	{
+		return _shaderBindings;
+	}
+    
+    void appendStringToVertices(r::TextureVertices *vertices,
+								const QString& text, 
+								float startX, float startY,
+								float r, float g, float b, float a)
+		const
+	{
+		_backend->appendStringToVertices(vertices,
+							   text,
+							   startX, startY,
+							   r, g, b, a);
+	}
+	
+    void createShaderBindings(void)
+    {
+        if (!_rhi || !_backend->_texture || !_backend->_sampler) {
             qDebug() << "TextureAtlas: Cannot create shader bindings - resources not ready";
 			getchar();
             return;
         }
         
         _shaderBindings = _rhi->newShaderResourceBindings();
-        if (!_shaderBindings) {
+        if (!_shaderBindings)
+		{
             qDebug() << "TextureAtlas: Failed to create shader resource bindings";
 			getchar();
             return;
         }
         
-        // Create bindings: texture at binding 0, clip correction at binding 1
+        // Create bindings: texture at binding 0, view correction at binding 1, scroll-pos at binding 2
         std::vector<QRhiShaderResourceBinding> bindings;
+		
         bindings.push_back(QRhiShaderResourceBinding::sampledTexture(0,
 																	 QRhiShaderResourceBinding::FragmentStage,
-																	 _texture,
-																	 _sampler));
+																	 _backend->_texture,
+																	 _backend->_sampler));
         
-        if (_clipCorrBuffer) {
+        if (_viewCorrectionBuffer)
+		{
             bindings.push_back(QRhiShaderResourceBinding::uniformBuffer(1,
 																		QRhiShaderResourceBinding::VertexStage,
-																		_clipCorrBuffer));
+																		_viewCorrectionBuffer));
         }
         
-        if (_scrollBuffer) {
+        if (_scrollPosBuffer)
+		{
             bindings.push_back(QRhiShaderResourceBinding::uniformBuffer(2,
 																		QRhiShaderResourceBinding::VertexStage,
-																		_scrollBuffer));
+																		_scrollPosBuffer));
 		}
         
         _shaderBindings->setBindings(bindings.cbegin(), bindings.cend());
         
-        if (!_shaderBindings->create()) {
+        if (!_shaderBindings->create())
+		{
             qDebug() << "TextureAtlas: Failed to create shader resource bindings";
 			getchar();
         }

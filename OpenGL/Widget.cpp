@@ -434,40 +434,48 @@ namespace
 struct TextureRenderer : public r::TextRenderer
 {
 	r::TextureVertices *_vertices = nullptr;
+	
+	r::TextureAtlasBackend *_texture_atlas_backend = nullptr;
 	r::TextureAtlas *_texture_atlas = nullptr;
 
-	QRhiBuffer *_clipCorrBuffer = nullptr;
-    QRhiBuffer *_scrollBuffer = nullptr;
+	QRhiBuffer *_viewCorrectionBuffer = nullptr;
+    QRhiBuffer *_scrollPosBuffer = nullptr;
     QRhiGraphicsPipeline *_pipeline;
 
 	int _num_vertices_in_buffer = 0;
 	bool _is_scrolling = true;
 	bool _use_scissors = true;
 
-	void init(QRhi *rhi, QRhiRenderPassDescriptor *render_pass_descriptor, const QFont &font, bool is_scrolling, bool use_scissors)
+	void init(QRhi *rhi,
+			  r::TextureAtlasBackend *texture_atlas_backend,
+			  QRhiRenderPassDescriptor *render_pass_descriptor,
+			  bool is_scrolling,
+			  bool use_scissors)
 	{
+		_texture_atlas_backend = texture_atlas_backend;
+		
 		_is_scrolling = is_scrolling;
 
 		_use_scissors = use_scissors;
 		
 		init_verticess(rhi);
 		
-		_clipCorrBuffer = rhi->newBuffer(QRhiBuffer::Dynamic,
+		_viewCorrectionBuffer = rhi->newBuffer(QRhiBuffer::Dynamic,
 										 QRhiBuffer::UniformBuffer,
 										 sizeof(QMatrix4x4) + sizeof(float));
 		
-		if (!_clipCorrBuffer || !_clipCorrBuffer->create())
+		if (!_viewCorrectionBuffer || !_viewCorrectionBuffer->create())
 		{
 			qDebug() << "Failed to create clip correction buffer";
 			getchar();
 			//return false;
 		}
 		
-		_scrollBuffer = rhi->newBuffer(QRhiBuffer::Dynamic,
+		_scrollPosBuffer = rhi->newBuffer(QRhiBuffer::Dynamic,
 									   QRhiBuffer::UniformBuffer,
 									   sizeof(float));
 		
-		if (!_scrollBuffer || !_scrollBuffer->create())
+		if (!_scrollPosBuffer || !_scrollPosBuffer->create())
 		{
 			qDebug() << "Failed to create scroll correction buffer";
 			getchar();
@@ -476,9 +484,9 @@ struct TextureRenderer : public r::TextRenderer
 		
 		//QFont font("Cousine", 14, QFont::Normal);
 		//font.setStyleStrategy(QFont::PreferAntialias);
-		QString supportedChars = "abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVW #-,.(){}<>=*:0123456789";
+		//QString supportedChars = "abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVW #-,.(){}<>=*:0123456789";
 		
-		_texture_atlas = new r::TextureAtlas(rhi, font, supportedChars, _clipCorrBuffer, _scrollBuffer);
+		_texture_atlas = new r::TextureAtlas(rhi, texture_atlas_backend, _viewCorrectionBuffer, _scrollPosBuffer);
 		
 		QShader vertexShader = getShader("texture_vertex.qsb");
 		QShader fragmentShader = getShader("texture_fragment.qsb");
@@ -550,18 +558,18 @@ struct TextureRenderer : public r::TextRenderer
         	_texture_atlas = nullptr;
         }
 
-        if (_clipCorrBuffer)
+        if (_viewCorrectionBuffer)
 		{
-        	_clipCorrBuffer->destroy();
-        	delete _clipCorrBuffer;
-        	_clipCorrBuffer = nullptr;
+        	_viewCorrectionBuffer->destroy();
+        	delete _viewCorrectionBuffer;
+        	_viewCorrectionBuffer = nullptr;
         }
 
-        if (_scrollBuffer)
+        if (_scrollPosBuffer)
 		{
-        	_scrollBuffer->destroy();
-        	delete _scrollBuffer;
-        	_scrollBuffer = nullptr;
+        	_scrollPosBuffer->destroy();
+        	delete _scrollPosBuffer;
+        	_scrollPosBuffer = nullptr;
         }
 
         if (_vertices)
@@ -583,7 +591,10 @@ struct TextureRenderer : public r::TextRenderer
 	void add_text(const char *text, int x, int y, float r, float g, float b, float a) override
 	{
 		if (_texture_atlas)
-			_texture_atlas->appendString(_vertices, text, x, y, 20, 20, r, g, b, a);
+			_texture_atlas->appendStringToVertices(_vertices,
+												   text,
+												   x, y,
+												   r, g, b, a);
 		//g_window->_texture_renderer->add_text(gc, text, x, y);
 	}
 
@@ -602,29 +613,27 @@ struct TextureRenderer : public r::TextRenderer
             _y_inc = -height;
         }
 
-        _texture_atlas->uploadTexture(batch);
-
 		_vertices->maybe_merge_in(batch);
 			
-        if (_clipCorrBuffer)
+        if (_viewCorrectionBuffer)
 		{
 #if 0
             QMatrix4x4 clipCorr = rhi->clipSpaceCorrMatrix();
-            batch->updateDynamicBuffer(_clipCorrBuffer, 0, sizeof(QMatrix4x4), clipCorr.constData());
+            batch->updateDynamicBuffer(_viewCorrectionBuffer, 0, sizeof(QMatrix4x4), clipCorr.constData());
 #else
-			batch->updateDynamicBuffer(_clipCorrBuffer, 0, sizeof(QMatrix4x4), view_projection.constData());
+			batch->updateDynamicBuffer(_viewCorrectionBuffer, 0, sizeof(QMatrix4x4), view_projection.constData());
 #endif
             if (_is_scrolling) {
-                batch->updateDynamicBuffer(_clipCorrBuffer,
+                batch->updateDynamicBuffer(_viewCorrectionBuffer,
 									   sizeof(QMatrix4x4),
 									   sizeof(float),
 									   &scroll_pos);
             }
         }
 			
-        if (_scrollBuffer && _is_scrolling) {
+        if (_scrollPosBuffer && _is_scrolling) {
 			//float yscroll = _y_inc / height;
-            batch->updateDynamicBuffer(_scrollBuffer,
+            batch->updateDynamicBuffer(_scrollPosBuffer,
 									   0,
 									   sizeof(float),
 									   &scroll_pos);
@@ -881,8 +890,9 @@ private:
 
 class RenderWindow : public radium::RhiWindow, public radium::MouseCycleFix
 {
-	
 public:
+
+	r::TextureAtlasBackend *_texture_atlas_backend = nullptr;
 
 	TextureRenderer _texture_renderers[MAX_NUM_SLICES];
 	TextureRenderer _texture_renderer_scissors[MAX_NUM_SLICES];
@@ -930,10 +940,11 @@ public:
 
 	void customInit(const QFont &font) override
 	{
-
+		_texture_atlas_backend = new r::TextureAtlasBackend(_rhi, font);
+		
 		// Texture renderers (scrolling, tempo tracks, per-slice)
 		for (int i = 0; i < MAX_NUM_SLICES; ++i)
-			_texture_renderers[i].init(_rhi, _render_pass_descriptor, font, true, false);
+			_texture_renderers[i].init(_rhi, _texture_atlas_backend, _render_pass_descriptor, true, false);
 
 		// Triangle renderers (per-slice, scrolling)
 		for (int i = 0; i < MAX_NUM_SLICES; ++i)
@@ -941,14 +952,14 @@ public:
 
 		// Texture renderers (scrolling, normal tracks, per-slice scissored)
 		for (int i = 0; i < MAX_NUM_SLICES; ++i)
-			_texture_renderer_scissors[i].init(_rhi, _render_pass_descriptor, font, true, true);
+			_texture_renderer_scissors[i].init(_rhi, _texture_atlas_backend, _render_pass_descriptor, true, true);
 
 		// Triangle renderers (per-slice, scissored)
 		for (int i = 0; i < MAX_NUM_SLICES; ++i)
 			_triangle_renderer_scissors[i].init(_rhi, _render_pass_descriptor, true, true);
 
 		// Non-scrolling texture renderer
-		_texture_renderer_static.init(_rhi, _render_pass_descriptor, font, false, false);
+		_texture_renderer_static.init(_rhi, _texture_atlas_backend, _render_pass_descriptor, false, false);
 
 		// Non-scrolling triangle renderer
 		_triangle_renderer_static.init(_rhi, _render_pass_descriptor, false, false);
@@ -1060,6 +1071,10 @@ public:
 		}
 		
 		QRhiResourceUpdateBatch *batch = _rhi->nextResourceUpdateBatch();
+
+
+		_texture_atlas_backend->uploadTexture(batch);
+
 
 		// Triangles (per-slice) - scrolling
 		for (int i = 0; i < MAX_NUM_SLICES; ++i)
@@ -1412,8 +1427,10 @@ void gakk_GE_text(const char *text, int x, int y, float r, float g, float b, flo
 
 void GE_set_font(const QFont &font)
 {
-	if (g_window)
+	if (g_window && g_window->_texture_atlas_backend)
 	{
+		g_window->_texture_atlas_backend->setFont(font);
+		#if 0
 		for (int i = 0; i < MAX_NUM_SLICES; ++i) {
 			if (g_window->_texture_renderers[i]._texture_atlas)
 				g_window->_texture_renderers[i]._texture_atlas->setFont(font);
@@ -1422,6 +1439,7 @@ void GE_set_font(const QFont &font)
 		}
 		if (g_window->_texture_renderer_static._texture_atlas)
 			g_window->_texture_renderer_static._texture_atlas->setFont(font);
+		#endif
 		GFX_ForceScheduleEditorRedraw(); // New font will be set before starting new paint.
 	}
 }
@@ -1429,8 +1447,10 @@ void GE_set_font(const QFont &font)
 void aiai(void);
 void aiai(void) // Called after finished rendering.
 {
-	if (g_window)
+	if (g_window && g_window->_texture_atlas_backend)
 	{
+		g_window->_texture_atlas_backend->maybe_switch_to_next_d();
+		#if 0
 		for (int i = 0; i < MAX_NUM_SLICES; ++i) {
 			if (g_window->_texture_renderers[i]._texture_atlas)
 				g_window->_texture_renderers[i]._texture_atlas->maybe_switch_to_next_d();
@@ -1439,7 +1459,7 @@ void aiai(void) // Called after finished rendering.
 		}
 		if (g_window->_texture_renderer_static._texture_atlas)
 			g_window->_texture_renderer_static._texture_atlas->maybe_switch_to_next_d();
-
+		#endif
 		// Note: previously this function obtained render buffers for new
 		// vertex generation. That could race with GE_start_writing calling
 		// the same routines, causing duplicate starts. Start/finish must be
