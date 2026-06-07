@@ -713,9 +713,8 @@ struct TriangleRenderer : public r::TriangleRenderer
 							   QRhiShaderResourceBinding::VertexStage,
 							   _ubuf));
 		
-        _shader_resource_bindings->setBindings(
-            bindings.cbegin(),
-            bindings.cend());
+        _shader_resource_bindings->setBindings(bindings.cbegin(),
+											   bindings.cend());
 		
         _shader_resource_bindings->create();
 
@@ -902,6 +901,7 @@ public:
 	TriangleRenderer _triangle_renderers[MAX_NUM_SLICES];
 	TriangleRenderer _triangle_renderer_scissors[MAX_NUM_SLICES];
 	TriangleRenderer _triangle_renderer_static;
+	TriangleRenderer _triangle_renderer_static_scissor;
 	
 	DEFINE_ATOMIC(bool, _main_window_is_exposed) = false;
 
@@ -929,6 +929,7 @@ public:
 				}
 				_texture_renderer_static.release();
 				_triangle_renderer_static.release();
+				_triangle_renderer_static_scissor.release();
 				
 				fprintf(stderr, "H5\n");
 				sem.release();
@@ -964,7 +965,8 @@ public:
 
 		// Non-scrolling triangle renderer
 		_triangle_renderer_static.init(_rhi, _render_pass_descriptor, false, false);
-
+		// Non-scrolling scissored triangle renderer
+		_triangle_renderer_static_scissor.init(_rhi, _render_pass_descriptor, false, true);
 		
 		const double ratio = devicePixelRatio();
 
@@ -1080,22 +1082,28 @@ public:
 		// Triangles (per-slice) - scrolling
 		for (int i = 0; i < MAX_NUM_SLICES; ++i)
 		_triangle_renderers[i].prepare_frame(_rhi,
-			 batch,
-			 _viewProjection,
-			 scroll_pos);
-
+											 batch,
+											 _viewProjection,
+											 scroll_pos);
+		
 		// Triangles (per-slice) - scissored
 		for (int i = 0; i < MAX_NUM_SLICES; ++i)
-		_triangle_renderer_scissors[i].prepare_frame(_rhi,
-			 batch,
-			 _viewProjection,
-			 scroll_pos);
-
+			_triangle_renderer_scissors[i].prepare_frame(_rhi,
+														 batch,
+														 _viewProjection,
+														 scroll_pos);
+		
 		// Triangles (non-scrolling)
 		_triangle_renderer_static.prepare_frame(_rhi,
-		 batch,
-		 _viewProjection,
-		 0.0f);
+												batch,
+												_viewProjection,
+												0.0f);
+		
+		// Triangles (non-scrolling, scissors)
+		_triangle_renderer_static_scissor.prepare_frame(_rhi,
+														batch,
+														_viewProjection,
+														0.0f);
 		
 		// Textures (i.e. text) - scrolling, per-slice
 		for (int i = 0; i < MAX_NUM_SLICES; ++i)
@@ -1117,11 +1125,11 @@ public:
 
 		// Textures (non-scrolling)
 		_texture_renderer_static.prepare_frame(_rhi,
-			batch,
-			_viewProjection,
-			0.0f,
-			outputSizeInPixels.width(),
-			outputSizeInPixels.height());
+											   batch,
+											   _viewProjection,
+											   0.0f,
+											   outputSizeInPixels.width(),
+											   outputSizeInPixels.height());
 		
 		QRhiCommandBuffer *command_buffer = _swap_chain->currentFrameCommandBuffer();
 		
@@ -1155,6 +1163,11 @@ public:
 
 			for (int i = 0; i < MAX_NUM_SLICES; ++i)
 				_triangle_renderer_scissors[i].render_frame(command_buffer, outputSizeInPixels);
+			
+			// triangles (non-scrolling, scissors) - draw on top
+			_triangle_renderer_static_scissor.render_frame(command_buffer,
+														   outputSizeInPixels);
+			
 			if (sc_w > 0)
 				command_buffer->setScissor({0, 0, outputSizeInPixels.width(), outputSizeInPixels.height()});
 
@@ -1376,7 +1389,12 @@ r::TriangleRenderer *GE_get_triangle_renderer(const GE_Context &context)
 	R_ASSERT(g_gl_widget_started);
 
 	if (!is_scrolling(context))
-		return &g_window->_triangle_renderer_static;
+	{
+		if (context._conf.use_scissors == USE_SCISSORS)
+			return &g_window->_triangle_renderer_static_scissor;
+		else
+			return &g_window->_triangle_renderer_static;
+	}
 
 	int slice = context._slice;
 	
@@ -1487,6 +1505,9 @@ void aiai2(void) // Called after finished rendering.
     // Triangle vertices (non-scrolling/static)
     g_window->_triangle_renderer_static._vertices.call_me_when_starting_to_generate_vertices();
 
+    // Triangle vertices (non-scrolling/static, scissors)
+    g_window->_triangle_renderer_static_scissor._vertices.call_me_when_starting_to_generate_vertices();
+
     // Triangle vertices (scissored) - per-slice
     for (int i = 0; i < MAX_NUM_SLICES; ++i)
       g_window->_triangle_renderer_scissors[i]._vertices.call_me_when_starting_to_generate_vertices();
@@ -1540,6 +1561,7 @@ void GL_finish_generating_vertices(void)
 		g_window->_triangle_renderers[i]._vertices.call_me_after_finished_generating_vertices();
 	
 	g_window->_triangle_renderer_static._vertices.call_me_after_finished_generating_vertices();
+	g_window->_triangle_renderer_static_scissor._vertices.call_me_after_finished_generating_vertices();
 	
 	for (int i = 0; i < MAX_NUM_SLICES; ++i)
 		g_window->_triangle_renderer_scissors[i]._vertices.call_me_after_finished_generating_vertices();
