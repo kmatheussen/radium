@@ -327,7 +327,8 @@ extern void aiai(void);
 extern void aiai2(void);
 
 // Called from the main thread
-void GE_start_writing(int full_height, bool block_is_visible){
+void GE_start_writing(int full_height, bool block_is_visible)
+{
   R_ASSERT(g_painting_data==NULL);
 
   aiai();
@@ -336,6 +337,7 @@ void GE_start_writing(int full_height, bool block_is_visible){
   
   g_painting_data = new r::PaintingData(full_height, block_is_visible);
   GE_fill_in_shared_variables(&g_painting_data->shared_variables, g_height);
+  
 #if 0
   if (g_rhi != NULL)
   {
@@ -346,7 +348,7 @@ void GE_start_writing(int full_height, bool block_is_visible){
 	  //g_texture_vertices->clear();
 	  g_texture_vertices->call_me_when_starting_to_generate_vertices();
   }
-  #endif
+#endif
   //T1_prepare_gradients2_for_new_rendering();
   //T1_collect_gradients1_garbage();
 
@@ -404,7 +406,7 @@ static int get_slice_from_y(const int y){
 	if (y < 0)
 		return 0;
 	else
-		return y/g_painting_data->slice_size;
+		return R_MIN(MAX_NUM_SLICES-1, y/g_painting_data->slice_size);
 }
 
 static GE_Context get_context(const GE_Context::Color &color, const GE_Conf &conf){
@@ -487,7 +489,8 @@ GE_Context GE_rgb_color_z(unsigned char r, unsigned char g, unsigned char b, con
   return GE_rgba_color_z(r,g,b,255, conf);
 }
 
-GE_Rgb GE_mix(const GE_Rgb c1, const GE_Rgb c2, float how_much){
+GE_Rgb GE_mix(const GE_Rgb c1, const GE_Rgb c2, float how_much)
+{
   GE_Rgb rgb;
 
   float a1 = how_much / 1000.0f;

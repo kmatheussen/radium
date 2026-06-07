@@ -249,7 +249,7 @@ extern void GL_set_new_painting_data(r::PaintingData *painting_data, GE_Rgb new_
 void GE_set_height(int height);
 int GE_get_height(void);
 
-#define MIN_SLICE_SIZE 1024
+#define MIN_SLICE_SIZE 64 //1024
 #define NOMASK_Y (-MIN_SLICE_SIZE*20)
 
 static inline uint32_t getMask(int a_y1, int a_y2, int slice_size){
