@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <errno.h>
 
 #include <bitset>
+#include <vector>
 
 #include <QFile>
 #include <QCommandLineParser>
@@ -677,7 +678,13 @@ r::TextureVertices *g_texture_vertices = NULL;
 #endif
 
 struct TriangleRenderer : public r::TriangleRenderer
-{	
+{
+	int _slice_num;
+	TriangleRenderer *_next_renderer;
+
+	float _top_y;
+	float _bottom_y;
+
 	r::TriangleVertices _vertices;
 	
     QRhiShaderResourceBindings *_shader_resource_bindings = nullptr;
@@ -688,15 +695,18 @@ struct TriangleRenderer : public r::TriangleRenderer
 	bool _use_scissors = true;
 
     void init(QRhi *rhi,
+			  int slice_num,
+			  TriangleRenderer *next_renderer,
               QRhiRenderPassDescriptor *render_pass_descriptor,
               bool is_scrolling,
 			  bool use_scissors)
 	{
+		_slice_num = slice_num;
+		_next_renderer = next_renderer;
+				  
         _is_scrolling = is_scrolling;
 
 		_use_scissors = use_scissors;
-		
-        init_verticess(rhi);
 		
         _shader_resource_bindings = rhi->newShaderResourceBindings();
 		
@@ -779,7 +789,19 @@ struct TriangleRenderer : public r::TriangleRenderer
         _pipeline = nullptr;
         _ubuf = nullptr;
     }
+	
+	void call_me_before_adding_triangles(void)
+	{
+		_vertices.call_me_when_starting_to_generate_vertices();
 
+		if (_next_renderer != NULL)
+		{
+			const float slice_size = GE_get_slice_size(g_painting_data);
+			_top_y = _slice_num * slice_size;
+			_bottom_y = _next_renderer->_slice_num * slice_size;
+		}
+	}
+	
     void prepare_frame(QRhi *rhi,
 					   QRhiResourceUpdateBatch *batch,
 					   const QMatrix4x4 &viewProjection,
@@ -846,9 +868,11 @@ struct TriangleRenderer : public r::TriangleRenderer
 		//  _vertices2->render(command_buffer);
     }
 
-	void add_triangle(const GE_Context &c, const r::fvec2 &p1, const r::fvec2 &p2, const r::fvec2 &p3, r2::GradientType::Type gradient_type) override
+	
+private:
+	
+	void add_triangle_no_split(const GE_Context &c, const r::fvec2 &p1, const r::fvec2 &p2, const r::fvec2 &p3, r2::GradientType::Type gradient_type)
 	{
-		//printf("ADDTRIANGLE\n");
 		switch(gradient_type)
 		{
 			case r2::GradientType::Type::NOTYPE:
@@ -863,29 +887,109 @@ struct TriangleRenderer : public r::TriangleRenderer
 		}
 	}
 	
-private:
+public:
 	
-    void init_verticess(QRhi *rhi)
-	{
-		//_vertices1 = new r::TriangleVertices;
+	void add_triangle(const GE_Context &c, const r::fvec2 &p1, const r::fvec2 &p2, const r::fvec2 &p3, r2::GradientType::Type gradient_type) override
+	{	
+		if (_next_renderer == NULL)
+		{
+			add_triangle_no_split(c, p1, p2, p3, gradient_type);
+			return;
+		}
+
+		const float maxy = _next_renderer == NULL ? -1 : R_MAX(p1.b, R_MAX(p2.b, p3.b));
+			
+		if (maxy <= _bottom_y)
+		{
+			add_triangle_no_split(c, p1, p2, p3, gradient_type);
+			return;
+		}
+
+		// Clip triangle against horizontal line y = _bottom_y. Produce top and bottom polygons.
+		std::vector<r::fvec2> inVerts = {p1, p2, p3};
+
+		std::vector<r::fvec2> topPoly, bottomPoly;
 		
-		//init_test_triangles(_vertices1, 0);
+		for (size_t i = 0; i < inVerts.size(); ++i)
+		{
+			r::fvec2 a = inVerts[i];
+			r::fvec2 b = inVerts[(i+1) % inVerts.size()];
+
+			for(bool keepTop : {false, true})
+			{
+				auto &out = keepTop ? topPoly : bottomPoly;
+
+				// Top should be strictly above the boundary; bottom includes the boundary
+				bool a_in = keepTop ? (a.b < _bottom_y) : (a.b >= _bottom_y);
+				bool b_in = keepTop ? (b.b < _bottom_y) : (b.b >= _bottom_y);
+			
+				if (a_in && b_in)
+				{
+					// both in: keep b
+					out.push_back(b);
+				}
+				else if (a_in && !b_in)
+				{
+					// exiting: add intersection
+					float dy = b.b - a.b;
+					if (std::fabs(dy) > 1e-9f) {
+						float t = (_bottom_y - a.b) / dy;
+						float x = a.a + t * (b.a - a.a);
+						out.push_back({x, _bottom_y});
+					}
+				}
+				else if (!a_in && b_in)
+				{
+					// entering: add intersection then b
+					float dy = b.b - a.b;
+					if (std::fabs(dy) > 1e-9f) {
+						float t = (_bottom_y - a.b) / dy;
+						float x = a.a + t * (b.a - a.a);
+						out.push_back({x, _bottom_y});
+					}
+					out.push_back(b);
+				}
+				else
+				{
+					// both out: nothing
+				}
+			}
+		}
 		
-        //_vertices1->call_me_when_finished_painting(rhi);
+		GE_Context c1 = c;
+		GE_Context c2 = c;
+			
+		if (gradient_type == r2::GradientType::Type::VELOCITY)
+		{
+			const float miny = _next_renderer == NULL ? -1 : R_MIN(p1.b, R_MIN(p2.b, p3.b));
+			
+			c1.color.c_gradient = GE_mix(c1.color.c,
+										 c1.color.c_gradient,
+										 scale(_bottom_y,
+											   miny, maxy,
+											   1000, 0));
+			
+			c2.color.c = c1.color.c_gradient;
+		}
 		
-        //_vertices2 = new r::TriangleVertices;
-		
-#if 0
-        int range = 150;
-		
-        for (int i = 0; i < range; ++i)
-            init_test_triangles(_vertices2, 0.3f + i);
-		
-        for (int i = 0; i < range; ++i)
-            init_test_triangles(_vertices2, 5.3f - i);
-#endif
-        //_vertices2->call_me_when_finished_painting(rhi);
-    }
+		// Triangulate top polygon and add locally
+		if (topPoly.size() >= 3)
+		{
+			for (size_t i = 1; i + 1 < topPoly.size(); ++i)
+			{
+				add_triangle_no_split(c1, topPoly[0], topPoly[i], topPoly[i+1], gradient_type);
+			}
+		}
+
+		// Triangulate bottom polygon and forward to next renderer
+		if (bottomPoly.size() >= 3)
+		{
+			for (size_t i = 1; i + 1 < bottomPoly.size(); ++i)
+			{
+				_next_renderer->add_triangle(c2, bottomPoly[0], bottomPoly[i], bottomPoly[i+1], gradient_type);
+			}
+		}
+	}
 };
 
 class RenderWindow : public radium::RhiWindow, public radium::MouseCycleFix
@@ -980,23 +1084,23 @@ public:
 			_texture_renderers[i].init(_rhi, _texture_atlas_backend, _render_pass_descriptor, true, false);
 
 			// Triangle renderers (per-slice, scrolling)
-			_triangle_renderers[i].init(_rhi, _render_pass_descriptor, true, false);
+			_triangle_renderers[i].init(_rhi, i, i >= (MAX_NUM_SLICES-1) ? NULL : &_triangle_renderers[i+1], _render_pass_descriptor, true, false);
 
 			// Texture renderers (scrolling, normal tracks, per-slice scissored)
 			_texture_renderer_scissors[i].init(_rhi, _texture_atlas_backend, _render_pass_descriptor, true, true);
 			_texture_renderer_scissors_halfsize[i].init(_rhi, _texture_atlas_backend_halfsize, _render_pass_descriptor, true, true);
 
 			// Triangle renderers (per-slice, scissored)
-			_triangle_renderer_scissors[i].init(_rhi, _render_pass_descriptor, true, true);
+			_triangle_renderer_scissors[i].init(_rhi, i, i == (MAX_NUM_SLICES-1) ? NULL : &_triangle_renderer_scissors[i+1], _render_pass_descriptor, true, true);
 		}
 
 		// Non-scrolling texture renderer
 		_texture_renderer_static.init(_rhi, _texture_atlas_backend, _render_pass_descriptor, false, false);
 
 		// Non-scrolling triangle renderer
-		_triangle_renderer_static.init(_rhi, _render_pass_descriptor, false, false);
+		_triangle_renderer_static.init(_rhi, -1, NULL, _render_pass_descriptor, false, false);
 		// Non-scrolling scissored triangle renderer
-		_triangle_renderer_static_scissor.init(_rhi, _render_pass_descriptor, false, true);
+		_triangle_renderer_static_scissor.init(_rhi, -1, NULL, _render_pass_descriptor, false, true);
 		
 		const double ratio = devicePixelRatio();
 
@@ -1110,19 +1214,20 @@ public:
 		_texture_atlas_backend_halfsize->uploadTexture(batch);
 
 
-		// Triangles (per-slice) - scrolling
 		for (int i = 0; i < MAX_NUM_SLICES; ++i)
-		_triangle_renderers[i].prepare_frame(_rhi,
-											 batch,
-											 _viewProjection,
-											 scroll_pos);
+		{
+			// Triangles (per-slice) - scrolling
+			_triangle_renderers[i].prepare_frame(_rhi,
+												 batch,
+												 _viewProjection,
+												 scroll_pos);
 		
-		// Triangles (per-slice) - scissored
-		for (int i = 0; i < MAX_NUM_SLICES; ++i)
+			// Triangles (per-slice) - scrolling+scissored
 			_triangle_renderer_scissors[i].prepare_frame(_rhi,
 														 batch,
 														 _viewProjection,
 														 scroll_pos);
+		}
 		
 		// Triangles (non-scrolling)
 		_triangle_renderer_static.prepare_frame(_rhi,
@@ -1136,18 +1241,17 @@ public:
 														_viewProjection,
 														0.0f);
 		
-		// Textures (i.e. text) - scrolling, per-slice
-		for (int i = 0; i < MAX_NUM_SLICES; ++i)
-			_texture_renderers[i].prepare_frame(_rhi,
-											   batch,
-											   _viewProjection,
-											   scroll_pos,
-											   outputSizeInPixels.width(),
-											   outputSizeInPixels.height());
-
-		// Textures (scissored), per-slice
 		for (int i = 0; i < MAX_NUM_SLICES; ++i)
 		{
+			// Textures (i.e. text) - scrolling, per-slice
+			_texture_renderers[i].prepare_frame(_rhi,
+												batch,
+												_viewProjection,
+												scroll_pos,
+												outputSizeInPixels.width(),
+												outputSizeInPixels.height());
+
+			// Texture, scrolling+scissored, per-slice
 			_texture_renderer_scissors[i].prepare_frame(_rhi,
 														batch,
 														_viewProjection,
@@ -1174,7 +1278,6 @@ public:
 		
 		command_buffer->beginPass(_swap_chain->currentFrameRenderTarget(), g_background_color, { 1.0f, 0 }, batch);
 		{
-			// triangles (scrolling)
 			// triangles (scrolling) - per-slice
 			for (int i = 0; i < MAX_NUM_SLICES; ++i)
 				_triangle_renderers[i].render_frame(command_buffer, outputSizeInPixels);
@@ -1220,10 +1323,10 @@ public:
 												   command_buffer,
 												   outputSizeInPixels);
 
-			// text (scissored)
 			if (sc_w > 0)
 				command_buffer->setScissor({sc_x, 0, sc_w, outputSizeInPixels.height()});
 
+			// text (scissored)
 			for (int i = 0; i < MAX_NUM_SLICES; ++i)
 			{
 				_texture_renderer_scissors[i].render_frame(_rhi,
@@ -1520,7 +1623,7 @@ void GE_set_font(const QFont &font)
 }
 
 void aiai(void);
-void aiai(void) // Called after finished rendering.
+void aiai(void)  // Called before starting to render, before sharedData has been filled in.
 {
 	if (g_window && g_window->_texture_atlas_backend && g_window->_texture_atlas_backend_halfsize)
 	{
@@ -1549,27 +1652,29 @@ void aiai(void) // Called after finished rendering.
 }
 
 void aiai2(void);
-void aiai2(void) // Called after finished rendering.
+void aiai2(void) // Called before starting to render, after sharedData has been filled in.
 {
 	// Obtain render buffers for vertex generators here, driven by the main-thread
 	// painting-data lifecycle to avoid duplicate starts from other paths.
 	if (g_rhi != NULL && g_window)
 	{
-		// Triangle vertices (scrolling) - per-slice
 		for (int i = 0; i < MAX_NUM_SLICES; ++i)
-			g_window->_triangle_renderers[i]._vertices.call_me_when_starting_to_generate_vertices();
+		{
+			// Triangle vertices (scrolling) - per-slice
+			g_window->_triangle_renderers[i].call_me_before_adding_triangles();
+
+			// Triangle vertices (scrolling, scissored) - per-slice
+			g_window->_triangle_renderer_scissors[i].call_me_before_adding_triangles();
+		}
 		
 		// Triangle vertices (non-scrolling/static)
-		g_window->_triangle_renderer_static._vertices.call_me_when_starting_to_generate_vertices();
+		g_window->_triangle_renderer_static.call_me_before_adding_triangles();
 		
 		// Triangle vertices (non-scrolling/static, scissors)
-		g_window->_triangle_renderer_static_scissor._vertices.call_me_when_starting_to_generate_vertices();
+		g_window->_triangle_renderer_static_scissor.call_me_before_adding_triangles();
 		
 		for (int i = 0; i < MAX_NUM_SLICES; ++i)
 		{
-			// Triangle vertices (scissored) - per-slice
-			g_window->_triangle_renderer_scissors[i]._vertices.call_me_when_starting_to_generate_vertices();
-		
 			// Texture vertices (may not exist yet) - scrolling (per-slice)
 			if (g_window->_texture_renderers[i]._vertices)
 				g_window->_texture_renderers[i]._vertices->call_me_when_starting_to_generate_vertices();
@@ -1617,15 +1722,16 @@ void GL_finish_generating_vertices(void)
 
 	// These methods are thread-safe wrt the internal buffer locking.
 	for (int i = 0; i < MAX_NUM_SLICES; ++i)
+	{
 		g_window->_triangle_renderers[i]._vertices.call_me_after_finished_generating_vertices();
+		g_window->_triangle_renderer_scissors[i]._vertices.call_me_after_finished_generating_vertices();
+	}
 	
 	g_window->_triangle_renderer_static._vertices.call_me_after_finished_generating_vertices();
 	g_window->_triangle_renderer_static_scissor._vertices.call_me_after_finished_generating_vertices();
 	
 	for (int i = 0; i < MAX_NUM_SLICES; ++i)
 	{
-		g_window->_triangle_renderer_scissors[i]._vertices.call_me_after_finished_generating_vertices();
-
 		if (g_window->_texture_renderers[i]._vertices)
 			g_window->_texture_renderers[i]._vertices->call_me_after_finished_generating_vertices();
 
