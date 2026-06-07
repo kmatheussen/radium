@@ -81,7 +81,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "GfxElements.h"
 #include "Vertices.hpp"
-#include "Text.hpp"
+#include "TextureAtlas.hpp"
 //#include "T2.hpp"
 #include "Timing.hpp"
 #include "Render_proc.h"
@@ -543,7 +543,8 @@ struct TextureRenderer : public r::TextRenderer
 			_pipeline->setTargetBlends({blend});
 		}
 		
-		if (!_pipeline->create()) {
+		if (!_pipeline->create())
+		{
 			qDebug() << "Failed to create pipeline";
 			getchar();
 			//return false;
