@@ -150,14 +150,14 @@ struct TriangleRenderer
 
 struct TextRenderer
 {
-	virtual void add_text(const char *text, int x, int y, float r, float g, float b, float a) = 0;
+	virtual void add_text(const QString &text, int x, int y, float r, float g, float b, float a) = 0;
 };
 } // namespace r
 
 
 // These two are implemented in Widget.cpp
 extern r::TriangleRenderer *GE_get_triangle_renderer(const GE_Context &context);
-extern r::TextRenderer *GE_get_text_renderer(const GE_Context &context);
+extern r::TextRenderer *GE_get_text_renderer(const GE_Context &context, bool is_half_size);
 
 #if 0
 struct GE_Context
@@ -204,7 +204,10 @@ public:
 	}
 
 	void add_triangle(const r::fvec2 &p1, const r::fvec2 &p2, const r::fvec2 &p3, r2::GradientType::Type gradient_type = r2::GradientType::Type::NOTYPE) const;
-	void add_text(const char *text, int x, int y) const;
+	
+	void add_text(const QString &text, int x, int y) const;
+	
+	void add_text_halfsize(const QString &text, int x, int y) const;
 
 	static float y(float y)
 	{
