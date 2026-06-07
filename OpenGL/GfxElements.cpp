@@ -791,8 +791,8 @@ void GE_trianglestrip_add(GE_Context &c, float x, float y){
   if(num_trianglestrips>=3)
   {
 	  c.add_triangle({x, c.y(y)},
-					  {x1, c.y(y1)},
-					  {x2, c.y(y2)});
+					 {x1, c.y(y1)},
+					 {x2, c.y(y2)});
   }
 
   y2 = y1;  y1 = y;
@@ -847,9 +847,9 @@ void GE_gradient_triangle_add(GE_Context &c, float x, float y){
 	if(num_gradient_triangles>=3)
 	{
 		c.add_triangle(r::fvec2(x, c.y(y)),
-						r::fvec2(x1, c.y(y1)),
-						r::fvec2(x2, c.y(y2)),
-						current_gradient_type);
+					   r::fvec2(x1, c.y(y1)),
+					   r::fvec2(x2, c.y(y2)),
+					   current_gradient_type);
 	}
 	
 	y2 = y1;  y1 = y;

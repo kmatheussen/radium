@@ -661,13 +661,13 @@ static void create_curr_track_border(const struct Tracker_Windows *window, const
 		 width);
 }
 
-static void create_background(const struct Tracker_Windows *window, const struct WBlocks *wblock, const WSignature_trss &wsignatures_trss){
-  int realline;
-  for(realline = 0 ; realline<wblock->num_reallines ; realline++)
-    create_background_realline(window, wblock, wsignatures_trss[realline], realline);
+static void create_background(const struct Tracker_Windows *window, const struct WBlocks *wblock, const WSignature_trss &wsignatures_trss)
+{
+	for(int realline = 0 ; realline<wblock->num_reallines ; realline++)
+		create_background_realline(window, wblock, wsignatures_trss[realline], realline);
 
-  if (FOCUSFRAMES_has_focus(radium::KeyboardFocusFrameType::EDITOR))
-    create_curr_track_border(window, wblock);
+	if (FOCUSFRAMES_has_focus(radium::KeyboardFocusFrameType::EDITOR))
+		create_curr_track_border(window, wblock);
 }
 
 
@@ -2423,7 +2423,6 @@ static void create_velocity_gradient_background(
                                                 const struct NodeLine2 *velocity_nodelines
                                                 )
 {
-
   GE_Rgb rgb1 = get_note_color(start_note);
   GE_Rgb rgb2 = get_note_color(end_note);
 
@@ -2457,7 +2456,14 @@ static void create_velocity_gradient_background(
         c = GE_gradient_z(rgb1, rgb2, GE_Conf(Z_BELOW(Z_ZERO), y1));
         GE_gradient_triangle_start(r2::GradientType::VELOCITY);
       }
-      
+
+	  float note1 = scale(y1, area_y1, area_y2, start_note, end_note);
+	  float note2 = scale(y2, area_y1, area_y2, start_note, end_note);
+	  GE_Rgb rgb1 = get_note_color(note1);
+	  GE_Rgb rgb2 = get_note_color(note2);
+
+	  c = GE_gradient_z(rgb1, rgb2, GE_Conf(Z_BELOW(Z_ZERO), y1));
+	  
       GE_gradient_triangle_add(c, subtrack_x1, y1);
       GE_gradient_triangle_add(c, x1b,         y1);
       GE_gradient_triangle_add(c, subtrack_x1, y2);
