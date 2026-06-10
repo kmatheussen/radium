@@ -94,7 +94,9 @@ static inline void* my_calloc(size_t size1,size_t size2) {
   size_t s2=size/sizeof(int64_t);
 
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wstringop-overflow="
+#if !defined(__clang__)
+#  pragma GCC diagnostic ignored "-Wstringop-overflow="
+#endif
   for(size_t i=0;i<s2;i++)
     ret64[i]=0;
 #pragma GCC diagnostic pop
