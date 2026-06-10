@@ -332,8 +332,8 @@ namespace{
 
       dsp_->init(MIXER_get_sample_rate());
       
-      int num_inputs = dsp_->getNumInputs();
-      int num_outputs = dsp_->getNumInputs();
+      const int num_inputs = dsp_->getNumInputs();
+      const int num_outputs = dsp_->getNumOutputs();
       
       if (num_inputs > MAX_CHANNELS){
         QString ret = QString("Maximum %1 input channels supported (%2)").arg(QString::number(MAX_CHANNELS), QString::number(num_inputs));

@@ -258,16 +258,20 @@ static inline Ratio RATIO_floor(const Ratio r){
   R_ASSERT_NON_RELEASE(r.den > 0);
   if (r.den==1)
     return r;
-  else
+  else if (r.num >= 0)
     return make_ratio(r.num / r.den, 1);
+  else
+    return make_ratio(-((-r.num + r.den - 1) / r.den), 1); // ceiling division toward -inf
 }
 
 static inline Ratio RATIO_ceil(const Ratio r){
   R_ASSERT_NON_RELEASE(r.den > 0);
   if (r.den==1)
     return r;
+  else if (r.num >= 0)
+    return make_ratio((r.num + r.den - 1) / r.den, 1);
   else
-    return make_ratio(1 + (r.num / r.den), 1);
+    return make_ratio(-((-r.num) / r.den), 1);
 }
 
 

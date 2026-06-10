@@ -77,6 +77,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define RADIUM_COMMON_TIMEDATA_HPP 1
 
 #include <memory>
+#include <unordered_set>
 
 #include "Vector.hpp"
 #include "ratio_funcs.h"
@@ -1332,18 +1333,11 @@ public:
 #if 1
       TimeDataVector *_new_vector = new TimeDataVector();
 
-      int i = -1;
-      for(const auto &element : *this->_vector){
-        i++;
-        bool include = true;
-        for(int pos : positions)
-          if (pos==i){
-            include = false;
-            break;
-          }
-        if (include)
-          _new_vector->push_back(element);
-      }
+	  std::unordered_set<int> remove_set(positions.begin(), positions.end());
+	  
+	  for (int i = 0; i < this->_vector->size(); i++)
+		  if (remove_set.count(i) == 0)
+			  _new_vector->push_back(this->_vector->at_ref(i));
 
       delete this->_vector;
       this->_vector = _new_vector;
