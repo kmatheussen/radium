@@ -75,6 +75,7 @@ extern LANGSPEC bool THREADING_init_player_thread_type(void); // returns true if
 extern LANGSPEC void THREADING_init_runner_thread_type(void);
 extern LANGSPEC void THREADING_init_juce_thread_type(void);
 extern LANGSPEC void THREADING_init_deleter_thread_type(void);
+extern LANGSPEC void THREADING_init_qrhi_thread_type(void);
 
 extern LANGSPEC bool THREADING_is_main_thread(void); // This function is called very often (every time we gc-alloc, for instance). The reason it is not inlined is because static thread local variables (which are used to identify which thread is currently running) may be a lot faster to access than non-static thread-local variabes: http://david-grs.github.io/tls_performance_overhead_cost_linux/ (I have just very superficially skimmed the article though, so I could very well have misunderstood this.).
 extern LANGSPEC bool THREADING_is_player_thread(void);
@@ -82,6 +83,7 @@ extern LANGSPEC bool THREADING_is_runner_thread(void);
 extern LANGSPEC bool THREADING_is_player_or_runner_thread(void);
 extern LANGSPEC bool THREADING_is_juce_thread(void);
 extern LANGSPEC bool THREADING_is_deleter_thread(void);
+extern LANGSPEC bool THREADING_is_qrhi_thread(void);
 
 
 #ifdef __cplusplus
