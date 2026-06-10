@@ -394,6 +394,7 @@ void MULTICORE_run_all(const radium::Vector<SoundProducer*> &sp_all, int64_t tim
   // 1. Initialize threads
 
   for(int i=0;i<g_num_runners;i++){
+    // These fields are read by runner threads after can_start_main_loop.signal() below.
     g_runners[i]->time = time;
     g_runners[i]->num_frames = num_frames;
     g_runners[i]->process_plugins = process_plugins;

@@ -699,7 +699,7 @@ void ReplaceNoteEnds(
           if (note->polyphony_num == polyphony_num) {
             if(PlaceGreaterThan(&note->l.p,old_placement)) break;
             if(note->end == place2ratio(*old_placement)) {
-              note->end = place2ratio(*old_placement);
+              note->end = place2ratio(*new_placement);
               NOTE_validate(block, track, note);
             }
           }
@@ -1085,13 +1085,15 @@ static int get_sharp(const char sharptext){
 }
 
 static char *substring(const char *s,int start,int end){
-  char *ret       = (char*)talloc(end-start+1);
+  char *ret       = (char*)talloc_atomic(end-start+1);
   int   read_pos  = start;
   int   write_pos = 0;
 
   while(read_pos<end)
     ret[write_pos++] = s[read_pos++];
 
+  ret[write_pos] = 0;
+  
   return ret;
 }
 

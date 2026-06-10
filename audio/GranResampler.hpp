@@ -104,7 +104,7 @@ protected:
 public:
   
   int RT_process(float **output, int num_frames) {
-    int ret = -1;
+    int ret = 0;
 
     for(int ch=0;ch<_num_ch;ch++){
       int num_frames2 = RT_process(output[ch], ch, num_frames);
