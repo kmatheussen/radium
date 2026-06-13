@@ -5219,13 +5219,35 @@ int main(int argc, char **argv){
   
   SETTINGS_init();
 
-  if (set_gpu_backend){
-    set_gpu_backend2();
-    CRASHREPORTER_dont_report();
-    PLUGINHOST_shut_down();
-    return 0;
-  }
+  bool has_requested_new_rhi_backend = false;
+  
+  {
+	  const char *requested_rhi_backend = SETTINGS_read_string("requested_rhi_backend", "");
 
+	  if (requested_rhi_backend[0] != 0)
+	  {
+		  SETTINGS_write_string("rhi_backend", requested_rhi_backend);
+		  SETTINGS_write_string("requested_rhi_backend", "");
+
+		  has_requested_new_rhi_backend = true;
+	  }
+  }
+	  
+
+  if (set_gpu_backend)
+  {
+	  set_gpu_backend2();
+  }
+  else if (!has_requested_new_rhi_backend)
+  {
+	  const bool successfull_rhi_startup =
+		  QString(SETTINGS_read_string("last_successfully_started_rhi_backend", "-a"))
+		  ==
+		  QString(SETTINGS_read_string("rhi_backend", "-b"));
+	  
+	  if (!successfull_rhi_startup)
+		  set_gpu_backend2();
+  }
   
 #if defined(FOR_MACOSX) && (defined (__arm64__) || defined (__aarch64__))
 

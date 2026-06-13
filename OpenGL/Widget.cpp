@@ -1810,6 +1810,23 @@ bool GL_get_safe_mode(void){
   return SETTINGS_read_bool("safe_mode", false);
 }
 
+void GL_request_setting_backend(const char *backend)
+{
+	if (strcmp(backend, "null")
+		&& strcmp(backend, "opengl")
+		&& strcmp(backend, "vulkan")
+		&& strcmp(backend, "d3d11")
+		&& strcmp(backend, "d3d12")
+		&& strcmp(backend, "metal"))
+	{
+		GFX_Message(NULL, "Unknown backend \"%s\"", backend);
+	}
+	else
+	{
+		SETTINGS_write_string("requested_rhi_backend", backend);
+	}
+}
+
 void GL_set_backend(const char *backend)
 {
 	if (strcmp(backend, "null")
@@ -1903,9 +1920,13 @@ bool GL_get_pause_rendering_on_off(void){
 
 QWidget *GL_create_widget(QWidget *parent)
 {
+	SETTINGS_write_string("last_successfully_started_rhi_backend", ""); // To force the gpu-selection-dialog to pop up the next time the program starts up, in case the program crashes between here and after 20 calls to GL_create.
+	
+	g_msaa_samples = GL_get_multisample();
+
 	init_g_pause_rendering_on_off();
 
-	QRhi::Implementation graphicsApi = init_qrhi();
+	QRhi::Implementation graphicsApi = MAIN_init_qrhi();
 	
 	g_window = new RenderWindow(graphicsApi);
 
