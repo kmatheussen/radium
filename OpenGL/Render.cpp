@@ -3272,6 +3272,20 @@ static void GL_create2(const struct Tracker_Windows *window, struct WBlocks *wbl
 #if !RENDER_IN_SEPARATE_THREAD
 
 void GL_create(const struct Tracker_Windows *window){
+  {
+    static int num_calls = 0;
+
+    if (num_calls == 20)
+	{
+		SETTINGS_write_string("last_successfully_started_rhi_backend", GL_get_backend());
+		num_calls = -1;
+	}
+	else if (num_calls >= 0)
+	{
+		num_calls++;
+	}
+  }
+
 #if 1 //defined(RELEASE)
   GL_create2(window, window->curr_block < 0 ? NULL : window->wblock);
 #else
@@ -3316,7 +3330,22 @@ static void gl_create_thread(){
 
 extern bool g_qtgui_has_started,g_qtgui_has_stopped;
 
-void GL_create(const struct Tracker_Windows *window){
+void GL_create(const struct Tracker_Windows *window)
+{
+  {
+    static int num_calls = 0;
+
+    if (num_calls == 20)
+	{
+		SETTINGS_write_string("last_successfully_started_rhi_backend", GL_get_backend());
+		num_calls = -1;
+	}
+	else if (num_calls >= 0)
+	{
+		num_calls++;
+	}
+  }
+  
   static std::thread t1(gl_create_thread);
 
   if (g_qtgui_has_started==false || g_qtgui_has_stopped==true)

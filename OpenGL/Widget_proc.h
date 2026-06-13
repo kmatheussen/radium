@@ -62,6 +62,7 @@ extern void GL_set_high_draw_thread_priority(bool onoff);
 extern void GL_set_pause_rendering_on_off(bool onoff);
 extern bool GL_get_pause_rendering_on_off(void);
 
+extern void GL_request_setting_backend(const char *backend);
 extern void GL_set_backend(const char *backend);
 extern const char *GL_get_backend(void);
 
