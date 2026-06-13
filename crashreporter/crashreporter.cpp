@@ -447,7 +447,7 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
       buttons.addButton(b3, 3);
     }
     
-    box.connect(&buttons, SIGNAL(buttonClicked(int)), &box, SLOT(done(int)));
+    box.connect(&buttons, SIGNAL(idClicked(int)), &box, SLOT(done(int)));
 
     QLabel space(" ");
     QLabel space2(" ");
