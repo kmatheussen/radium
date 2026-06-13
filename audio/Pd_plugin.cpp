@@ -1007,8 +1007,11 @@ static void put_pdfile_into_state(const SoundPlugin *plugin, QFile *file, hash_t
 	}PLAYER_unlock();
 	
 	libpds_wait_until_file_is_saved(data->pd, request, 2.0);
-	
-	file->open(QIODevice::ReadOnly | QIODevice::Text);
+
+	if (!file->open(QIODevice::ReadOnly | QIODevice::Text)){
+		GFX_Message(NULL, "Unable to open temporary Pd file for reading");
+		return;
+	}
 	
 	QTextStream in(file);
 	
