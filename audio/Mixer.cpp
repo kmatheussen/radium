@@ -1168,7 +1168,7 @@ struct Mixer{
                    MULTICORE_get_num_threads()>1 ? "" : "\n\nTip: Turning on Multi CPU processing might help."
                    );
       } else {
-        RT_message("Error!\n"
+		  RT_message("Error!\n"
                    "\n"
                    "Audio using too much CPU. Pausing audio processing for 5 seconds to avoid locking up the computer.%s",
                    MULTICORE_get_num_threads()>1 ? "" : "\n\nTip: Turning on Multi CPU processing might help."
@@ -1243,6 +1243,8 @@ struct Mixer{
       R_ASSERT_NON_RELEASE(!THREADING_is_main_thread());
       
       ATOMIC_SET(_RT_process_has_inited, true);
+      
+      _excessive_time.RT_restart();
     }
 
     RT_before_processing_audio_block_not_holding_lock();
