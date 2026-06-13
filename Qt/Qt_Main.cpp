@@ -76,6 +76,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QCheckBox>
 #include <QPushButton>
 #include <QButtonGroup>
+#include <QRadioButton>
+#include <QLabel>
 #include <QOperatingSystemVersion>
 #include <QStyleFactory>
 
@@ -4696,6 +4698,113 @@ bar()
 }
 #endif
 
+static void set_gpu_backend2(void){
+
+  QDialog box;
+  QVBoxLayout layout;
+  QHBoxLayout button_layout;
+
+  box.setWindowTitle("Set GPU backend");
+
+  auto *label = new QLabel("Select GPU backend:");
+  layout.addWidget(label);
+
+  const char *current_backend = GL_get_backend();
+
+  auto *rhi_null = new QRadioButton("Null (no graphics)");
+  layout.addWidget(rhi_null);
+
+#if !FOR_MACOSX
+  auto *rhi_opengl = new QRadioButton("OpenGL");
+  auto *rhi_vulkan = new QRadioButton("Vulkan");
+  layout.addWidget(rhi_opengl);
+  layout.addWidget(rhi_vulkan);
+#endif
+
+#if FOR_WINDOWS
+  auto *rhi_d3d11 = new QRadioButton("Direct3D 11");
+  auto *rhi_d3d12 = new QRadioButton("Direct3D 12");
+  layout.addWidget(rhi_d3d11);
+  layout.addWidget(rhi_d3d12);
+#endif
+
+#if FOR_MACOSX
+  auto *rhi_metal = new QRadioButton("Metal");
+  layout.addWidget(rhi_metal);
+#endif
+
+  if (!strcmp(current_backend, "null"))
+    rhi_null->setChecked(true);
+#if !FOR_MACOSX
+  else if (!strcmp(current_backend, "opengl"))
+    rhi_opengl->setChecked(true);
+  else if (!strcmp(current_backend, "vulkan"))
+    rhi_vulkan->setChecked(true);
+#endif
+#if FOR_WINDOWS
+  else if (!strcmp(current_backend, "d3d11"))
+    rhi_d3d11->setChecked(true);
+  else if (!strcmp(current_backend, "d3d12"))
+    rhi_d3d12->setChecked(true);
+#endif
+#if FOR_MACOSX
+  else if (!strcmp(current_backend, "metal"))
+    rhi_metal->setChecked(true);
+#endif
+
+  QButtonGroup buttons;
+  enum doit{
+    OK = 0,
+    CANCEL = 1
+  };
+
+  auto *ok_button = new QPushButton("Ok");
+  auto *cancel_button = new QPushButton("Cancel");
+
+  buttons.addButton(ok_button, doit::OK);
+  buttons.addButton(cancel_button, doit::CANCEL);
+
+  button_layout.addWidget(ok_button);
+  button_layout.addWidget(cancel_button);
+  layout.addLayout(&button_layout);
+
+  box.setWindowModality(Qt::ApplicationModal);
+  box.setLayout(&layout);
+  box.adjustSize();
+  box.updateGeometry();
+
+  box.setVisible(true);
+  box.show();
+  box.activateWindow();
+  box.raise();
+
+  box.connect(&buttons, SIGNAL(idClicked(int)), &box, SLOT(done(int)));
+
+  int ret = box.exec();
+
+  if (ret==doit::CANCEL)
+    return;
+
+  if (rhi_null->isChecked())
+    GL_set_backend("null");
+#if !FOR_MACOSX
+  else if (rhi_opengl->isChecked())
+    GL_set_backend("opengl");
+  else if (rhi_vulkan->isChecked())
+    GL_set_backend("vulkan");
+#endif
+#if FOR_WINDOWS
+  else if (rhi_d3d11->isChecked())
+    GL_set_backend("d3d11");
+  else if (rhi_d3d12->isChecked())
+    GL_set_backend("d3d12");
+#endif
+#if FOR_MACOSX
+  else if (rhi_metal->isChecked())
+    GL_set_backend("metal");
+#endif
+}
+
 static void clean_configuration2(void){
   //g_force_regular_gfx_message = true;
 
@@ -4768,7 +4877,7 @@ static void clean_configuration2(void){
   box.activateWindow();
   box.raise();
 
-  box.connect(&buttons, SIGNAL(buttonClicked(int)), &box, SLOT(done(int)));
+  box.connect(&buttons, SIGNAL(idClicked(int)), &box, SLOT(done(int)));
   
   int ret = box.exec();
 
@@ -4847,8 +4956,11 @@ int main(int argc, char **argv){
 #endif
     
   bool clean_configuration = false;
+  bool set_gpu_backend = false;
   if (argc > 1 && !strcmp(argv[1], "--radium-clean-configuration")){
     clean_configuration = true;
+  } else if (argc > 1 && !strcmp(argv[1], "--set-gpu-backend")){
+    set_gpu_backend = true;
   }
 
   QLocale::setDefault(QLocale::c());
@@ -5054,6 +5166,13 @@ int main(int argc, char **argv){
   }
   
   SETTINGS_init();
+
+  if (set_gpu_backend){
+    set_gpu_backend2();
+    CRASHREPORTER_dont_report();
+    PLUGINHOST_shut_down();
+    return 0;
+  }
 
   
 #if defined(FOR_MACOSX) && (defined (__arm64__) || defined (__aarch64__))
