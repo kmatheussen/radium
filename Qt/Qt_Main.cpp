@@ -69,7 +69,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QTextEdit>
 #include <QLayout>
 #include <QDesktopServices>
-#include <QTextCodec>
+//#include <QTextCodec>
 #include <QWindow>
 #include <QScreen>
 #include <QThread>
@@ -2549,13 +2549,15 @@ void Ptask2Mtask(void){
 #endif
 
 
-
+namespace
+{
 enum RT_MESSAGE_STATUS {
   RT_MESSAGE_READY,
   RT_MESSAGE_FILLING_UP,
   RT_MESSAGE_READY_FOR_SHOWING,
   RT_MESSAGE_SHOWING
 };
+} // anon. namespace
 
 static DEFINE_ATOMIC(int, rt_message_status) = RT_MESSAGE_READY;
 static const int rt_message_length = 1024;

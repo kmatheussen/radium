@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../bin/s7webserver/s7webserver.h"
 
 #include <QCoreApplication>
-#include <QRegExp>
+//#include <QRegExp>
 #include <QStringList>
 #include <QDebug>
 

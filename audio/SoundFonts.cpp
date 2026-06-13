@@ -53,6 +53,7 @@ template<class T> static inline std::string ToString(T o) {
 
 // Taken from sf2dump.cpp by Grigor Iliev
 template<class T> static inline string GetValue(T val) {
+#pragma GCC diagnostic ignored "-Wfloat-equal"
   if (val == (T)sf2::NONE) return "NONE";
     return ToString(val);
 }
