@@ -89,7 +89,17 @@ void set_editor_focus(void){
 
   // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
   GL_lock();{
+#if USE_QT_VISUAL && USE_OPENGL
+    // In Qt6, the QFrame parent doesn't automatically forward focus to
+    // the QWindowContainer child that handles actual keyboard input.
+    // Focus the gl_widget (QWindowContainer) directly.
+    if (editor->gl_widget != NULL)
+      editor->gl_widget->setFocus();
+    else
+      editor->editor_layout_widget->setFocus();
+#else
     editor->editor_layout_widget->setFocus();
+#endif
   }GL_unlock();
 
 #if USE_GTK_VISUAL

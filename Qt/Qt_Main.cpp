@@ -2797,6 +2797,7 @@ protected:
 
         // Force full keyboard focus to the main window after startup. This seems to be the only reliable way. (if you think this is unnecessary, see if left alt works to start navigating menues after startup while using the fvwm window manager)
         {
+#if USE_QT5
           static QPointer<MyQMessageBox> gakkbox = NULL; // gakkbox could, perhaps, be deleted by itself if radium finds a strange parent. (got a crash once where gakkbox was deleted before explicitly calling delete below.)
           
           if(num_calls_at_this_point==50/_interval){
@@ -2813,12 +2814,58 @@ protected:
               //g_main_window->activateWindow();
             }
           }
-          
+#endif
           if(num_calls_at_this_point==70/_interval){
+#if USE_QT5
             delete gakkbox;
+#endif
             GFX_SetMenuFontsAgain();
             GFX_CloseProgress();
             ATOMIC_SET(g_qtgui_has_started_step2, true);
+#if USE_QT6
+            // Qt6: the old show/hide popup trick no longer returns focus if
+            // the window manager uses focus-follows-mouse. Poll until the window is fully ready,
+            // then nudge the cursor to trigger focus.
+            {
+              static bool initialized = false;
+              if (!initialized) {
+                initialized = true;
+                auto *ready_timer = new QTimer;
+                auto *attempts = new int(0);
+                QObject::connect(ready_timer, &QTimer::timeout, [attempts, ready_timer]{
+                  (*attempts)++;
+                  if (g_main_window->isVisible()
+                      && g_main_window->width() > 100
+                      && g_main_window->height() > 100
+                      && QApplication::activeWindow() != nullptr) {
+                    ready_timer->stop();
+                    if (g_main_window->geometry().contains(QCursor::pos())) {
+                      QPoint pos = QCursor::pos();
+                      QCursor::setPos(pos.x() + 1, pos.y());
+                      QCursor::setPos(pos.x(), pos.y());
+                    } else {
+                      QCursor::setPos(g_main_window->geometry().center());
+                    }
+                    schedule_set_editor_focus(50);
+                  } else if (*attempts > 40) {
+                    // Timeout after ~4 seconds — nudge anyway
+                    ready_timer->stop();
+                    if (g_main_window->geometry().contains(QCursor::pos())) {
+                      QPoint pos = QCursor::pos();
+                      QCursor::setPos(pos.x() + 1, pos.y());
+                      QCursor::setPos(pos.x(), pos.y());
+                    } else {
+                      QCursor::setPos(g_main_window->geometry().center());
+                    }
+                    schedule_set_editor_focus(50);
+                  }
+                });
+                ready_timer->start(100);
+              }
+            }
+#else // USE_QT6 -> !USE_QT6
+            schedule_set_editor_focus(200);
+#endif
           }
         }
         
@@ -4137,7 +4184,12 @@ int radium_main(const char *arg){
   main_window->raise();
   main_window->activateWindow();
 
+  if (main_window->windowHandle())
+    main_window->windowHandle()->requestActivate();
+
   updateWidgetRecursively(g_main_window);
+
+  schedule_set_editor_focus(100);
 
 #if defined(FOR_WINDWS)
   // Probably makes no difference.
