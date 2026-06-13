@@ -547,6 +547,38 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
 
       high_priority_render_thread->setChecked(GL_get_high_render_thread_priority());
       high_priority_drawer_thread->setChecked(false); //GL_get_high_draw_thread_priority());
+
+      // GPU Backend
+      {
+        const char *rhi_backend = GL_get_backend();
+        if (!strcmp(rhi_backend, "null"))
+          rhi_null->setChecked(true);
+        else if (!strcmp(rhi_backend, "opengl"))
+          rhi_opengl->setChecked(true);
+        else if (!strcmp(rhi_backend, "vulkan"))
+          rhi_vulkan->setChecked(true);
+        else if (!strcmp(rhi_backend, "d3d11"))
+          rhi_d3d11->setChecked(true);
+        else if (!strcmp(rhi_backend, "d3d12"))
+          rhi_d3d12->setChecked(true);
+        else if (!strcmp(rhi_backend, "metal"))
+          rhi_metal->setChecked(true);
+
+#if FOR_WINDOWS
+        rhi_metal->hide();
+#elif FOR_MACOSX
+        rhi_opengl->hide();
+        rhi_vulkan->hide();
+        rhi_d3d11->hide();
+        rhi_d3d12->hide();
+#elif FOR_LINUX
+        rhi_d3d11->hide();
+        rhi_d3d12->hide();
+        rhi_metal->hide();
+#else
+#  error "unknown arch."
+#endif
+      }
     }
 
 
@@ -949,6 +981,31 @@ public slots:
   void on_high_priority_draw_thread_toggled(bool val){
 	  //if (_initing==false)
       //GL_set_high_draw_thread_priority(val);
+  }
+
+  void on_rhi_null_toggled(bool val){
+    if (_initing==false && val)
+      GL_set_backend("null");
+  }
+  void on_rhi_opengl_toggled(bool val){
+    if (_initing==false && val)
+      GL_set_backend("opengl");
+  }
+  void on_rhi_vulkan_toggled(bool val){
+    if (_initing==false && val)
+      GL_set_backend("vulkan");
+  }
+  void on_rhi_d3d11_toggled(bool val){
+    if (_initing==false && val)
+      GL_set_backend("d3d11");
+  }
+  void on_rhi_d3d12_toggled(bool val){
+    if (_initing==false && val)
+      GL_set_backend("d3d12");
+  }
+  void on_rhi_metal_toggled(bool val){
+    if (_initing==false && val)
+      GL_set_backend("metal");
   }
   
   void on_enable_sample_seek_by_default_toggled(bool val){
