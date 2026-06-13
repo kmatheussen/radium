@@ -86,6 +86,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 //#include "T2.hpp"
 #include "Timing.hpp"
 #include "Render_proc.h"
+#include "Widget_proc.h"
 //#include "CheckOpenGL_proc.h"
 
 DEFINE_ATOMIC(char *, GE_vendor_string) = strdup("TODO/FIX: vendor-string not set by Radium yet");
@@ -1807,6 +1808,81 @@ void GL_set_high_render_thread_priority(bool onoff){
 
 bool GL_get_safe_mode(void){
   return SETTINGS_read_bool("safe_mode", false);
+}
+
+void GL_set_backend(const char *backend)
+{
+	if (strcmp(backend, "null")
+		&& strcmp(backend, "opengl")
+		&& strcmp(backend, "vulkan")
+		&& strcmp(backend, "d3d11")
+		&& strcmp(backend, "d3d12")
+		&& strcmp(backend, "metal"))
+	{
+		GFX_Message(NULL, "Unknown backend \"%s\"", backend);
+	}
+	else
+	{
+		SETTINGS_write_string("rhi_backend", backend);
+	}
+}
+
+const char *GL_get_backend(void)
+{
+	const char *rhi_backend = SETTINGS_read_string("rhi_backend", "");
+
+	if (!strcmp(rhi_backend, "null"))
+		return "null";
+	else if (!strcmp(rhi_backend, "opengl"))
+		return "opengl";
+	else if (!strcmp(rhi_backend, "vulkan"))
+		return "vulkan";
+	else if (!strcmp(rhi_backend, "d3d11"))
+		return "d3d11";
+	else if (!strcmp(rhi_backend, "d3d12"))
+		return "d3d12";
+	else if (!strcmp(rhi_backend, "metal"))
+		return "metal";
+	else {
+		// Platform default when no backend has been configured.
+
+#if FOR_WINDOWS
+		if (strcmp(rhi_backend, "null")
+			&& strcmp(rhi_backend, "opengl")
+			&& strcmp(rhi_backend, "vulkan")
+			&& strcmp(rhi_backend, "d3d11")
+			&& strcmp(rhi_backend, "d3d12"))
+		{
+			return "d3d11";
+		}
+#elif FOR_MACOSX
+		if (strcmp(rhi_backend, "null")
+			&& strcmp(rhi_backend, "metal")
+			//&& strcmp(rhi_backend, "vulkan") // maybe later.
+			)
+		{
+			return "metal";
+		}
+#elif FOR_LINUX && QT_CONFIG(vulkan)
+		if (strcmp(rhi_backend, "null")
+			&& strcmp(rhi_backend, "opengl")
+			&& strcmp(rhi_backend, "vulkan")
+			)
+		{
+			return "vulkan";
+		}
+#elif FOR_LINUX && !QT_CONFIG(vulkan)
+		if (strcmp(rhi_backend, "null")
+			&& strcmp(rhi_backend, "opengl"))
+		{
+			return "opengl";
+		}
+#else
+#  error "unknown architecture"
+#endif
+	}
+
+	return rhi_backend;
 }
 
 static bool g_pause_rendering_on_off = false;
