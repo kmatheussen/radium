@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #pragma clang diagnostic ignored "-Wshorten-64-to-32"
 #include <QVector> // Shortening warning in the QVector header. Temporarily turned off by the surrounding pragmas.
 #pragma clang diagnostic pop
-#include <QLinkedList>
+//#include <QLinkedList>
 #include <QThread>
 #include <QUuid>
 #include <QClipboard>

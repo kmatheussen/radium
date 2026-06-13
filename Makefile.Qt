@@ -185,9 +185,10 @@ QT_SVGWIDGETS_LDFLAGS ?= `$(PKGqt) --libs Qt6SvgWidgets` $(FPIC)
 #	QT_CFLAGS ?= `$(PKGqt) --cflags Qt6Gui --cflags Qt6Network --cflags Qt6OpenGL --cflags Qt6Widgets --cflags Qt6WebEngineWidgets` -Ibin/packages/qhttpserver-master/src -Ibin/packages/QScintilla_gpl-2.10.8 -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) -DUSE_QT6
 #	QT_LDFLAGS ?= `$(PKGqt) --libs Qt6Gui --libs Qt6OpenGL --libs Qt6Network --libs Qt6Widgets --libs Qt6WebEngineWidgets`
 
-QT_CFLAGS ?= `$(PKGqt) --cflags Qt6Gui --cflags Qt6Network --cflags Qt6OpenGL --cflags Qt6Widgets --cflags Qt6OpenGLWidgets --cflags Qt6Concurrent --cflags Qt6Core5Compat` -I$(QHTTPSERVER_PATH)/src -I$(QSCINTILLA_PATH) -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) $(FPIC)
+QT_CFLAGS ?= `$(PKGqt) --cflags Qt6Gui --cflags Qt6Network --cflags Qt6OpenGL --cflags Qt6Widgets --cflags Qt6OpenGLWidgets --cflags Qt6Concurrent ` -I$(QHTTPSERVER_PATH)/src -I$(QSCINTILLA_PATH) -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) $(FPIC)
 QT_LDFLAGS ?=  $(QT_UI_LDFLAGS) $(QT_SVG_LDFLAGS) $(QT_SVGWIDGETS_LDFLAGS) `$(PKGqt) --libs Qt6Gui --libs Qt6Widgets --libs Qt6Network --libs Qt6Core5Compat` $(FPIC)
 # --libs Qt6OpenGL --libs Qt6OpenGLWidgets 
+# --cflags Qt6Core5Compat
 
 ifeq ($(USE_QSVGVIEWER),1)
 #  If using QSvg:
@@ -1050,6 +1051,7 @@ bin/packages/deletemetorebuild: bin/packages/build.sh
 	cd bin/packages;\
 	./build.sh this_argument_is_not_used no\
 	" >makescript.sh
+	dos2unix makescript.sh
 	bash makescript.sh
 	@echo
 	@echo "packages successfully built. Now run ./build_linux.sh -j`nproc`"
@@ -2928,7 +2930,7 @@ bin/s7webserver/moc_s7webserver.cpp: bin/s7webserver/s7webserver.h
 $(T)scheme.o: embedded_scheme/scheme.cpp  bin/packages/s7/s7.c embedded_scheme/s7extra_proc.h
 	$(CCC2) -c embedded_scheme/scheme.cpp $(QTOPT) -I$(QHTTPSERVER_PATH)/src -Ibin/packages/s7
 
-QHTTPSERVERFLAGS= $(CPPOPT) $(QT_CFLAGS) $(NOSHORTEN64TO32FLAG) -I$(QHTTPSERVER_PATH)/http-parser -I$(QHTTPSERVER_PATH)/build -Wno-null-dereference -D_REENTRANT  #-fno-sanitize=undefined
+QHTTPSERVERFLAGS= $(CPPOPT) $(QT_CFLAGS) $(NOSHORTEN64TO32FLAG) -I$(QHTTPSERVER_PATH)/http-parser -I$(QHTTPSERVER_PATH)/build -Wno-null-dereference -D_REENTRANT $(QT_NETWORK_CFLAGS)  #-fno-sanitize=undefined
 
 ifeq ($(shell test $(GCC_MAJOR) -gt 6; echo $$?),0)
 	QHTTPCONNECTIONFLAGS=-fno-sanitize=vptr # <- Workaround. Couldn't find real bug. TODO: Update to qhttp.
