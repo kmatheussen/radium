@@ -1849,6 +1849,31 @@ void GL_set_safe_mode(bool onoff){
   SETTINGS_write_bool("safe_mode", onoff);
 }
 
+static std::atomic<bool> g_clamp_text_rendering{false};
+
+void GL_set_clamp_text_rendering(bool onoff)
+{
+	g_clamp_text_rendering = onoff;
+	
+	SETTINGS_write_bool("clamp_text_rendering", onoff);
+}
+
+// Can be called from any thread.
+bool GL_get_clamp_text_rendering(void){
+	static bool s_has_inited = false;
+
+	if (!s_has_inited)
+	{
+		R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
+		
+		g_clamp_text_rendering = SETTINGS_read_bool("clamp_text_rendering", false);
+
+		s_has_inited = true;
+	}
+
+	return g_clamp_text_rendering;
+}
+
 
 static bool g_high_render_thread_priority = true;
 bool GL_get_high_render_thread_priority(void){
@@ -1993,6 +2018,8 @@ QWidget *GL_create_widget(QWidget *parent)
 	
 	g_msaa_samples = GL_get_multisample();
 
+	GL_get_clamp_text_rendering(); // Ensure SETTINGS_read_bool is not called on the qrhi thread.
+		
 	init_g_pause_rendering_on_off();
 
 	QRhi::Implementation graphicsApi = MAIN_init_qrhi();

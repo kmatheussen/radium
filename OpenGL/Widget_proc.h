@@ -51,6 +51,9 @@ extern int GL_get_multisample(void);
 extern void GL_set_safe_mode(bool onoff);
 extern bool GL_get_safe_mode(void);
 
+extern void GL_set_clamp_text_rendering(bool onoff);
+extern bool GL_get_clamp_text_rendering(void);
+
 extern bool GL_get_high_render_thread_priority(void);
 extern void GL_set_high_render_thread_priority(bool onoff);
     

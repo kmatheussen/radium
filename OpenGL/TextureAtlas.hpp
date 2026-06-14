@@ -1,4 +1,6 @@
 
+#include "Widget_proc.h"
+
 namespace r
 {
 
@@ -276,28 +278,28 @@ private:
             return;
         }
 
-#if 0
-		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		/////////// ALWAYS TEST THIS BRANCH IF CHANGING SOMETHING YOU SUSPECT COULD CHANGE TEXT-SCALING ////////////////////
-		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		if (GL_get_clamp_text_rendering())
+		{
+			////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+			/////////// ALWAYS TEST THIS BRANCH IF CHANGING SOMETHING YOU SUSPECT COULD CHANGE TEXT-SCALING ////////////////////
+			////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		
-		
-		// This one ensures non-scaled text (no bluring), but also causes jumpy text when scrolling.
-		// (Try to enable it to see if text becomes clearer. If it does, something is wrong.)
-        _sampler = _rhi->newSampler(QRhiSampler::Nearest,
-									QRhiSampler::Nearest,
-									QRhiSampler::None,
-									QRhiSampler::ClampToEdge,
-									QRhiSampler::ClampToEdge);
-#else
-		// This one doesn't guarantee non-scaled text, but we should not experience it anyway (since the parameters we're using shouldn't cause scaling).
-		// We also avoid jumpy text when scrolling using this one. */
-        _sampler = _rhi->newSampler(QRhiSampler::Linear,
-									QRhiSampler::Linear,
-									QRhiSampler::None,
-									QRhiSampler::ClampToEdge,
-									QRhiSampler::ClampToEdge);
-#endif
+			// This one ensures non-scaled text (no bluring), but also causes jumpy text when scrolling.
+			_sampler = _rhi->newSampler(QRhiSampler::Nearest,
+			                            QRhiSampler::Nearest,
+			                            QRhiSampler::None,
+			                            QRhiSampler::ClampToEdge,
+			                            QRhiSampler::ClampToEdge);
+		}
+		else
+		{
+			// This one doesn't guarantee non-scaled text, but we should not experience it anyway (since the parameters we're using shouldn't cause scaling).
+			_sampler = _rhi->newSampler(QRhiSampler::Linear,
+			                            QRhiSampler::Linear,
+			                            QRhiSampler::None,
+			                            QRhiSampler::ClampToEdge,
+			                            QRhiSampler::ClampToEdge);
+		}
 		
         if (!_sampler || !_sampler->create())
 		{
