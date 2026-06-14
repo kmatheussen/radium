@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <vector>
 
 #include <QFile>
-#include <QCommandLineParser>
+//#include <QCommandLineParser>
 
 #include <QWidget>
 
@@ -46,8 +46,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QOperatingSystemVersion>
 
 #define GE_DRAW_VL
-
-#include "RhiWindow.hpp"
 
 #include "../common/nsmtracker.h"
 #include "../common/windows_proc.h"
@@ -80,14 +78,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../api/api_gui_proc.h"
 
+#include "RhiWindow.hpp"
 #include "GfxElements.h"
 #include "Vertices.hpp"
 #include "TextureAtlas.hpp"
-//#include "T2.hpp"
 #include "Timing.hpp"
 #include "Render_proc.h"
+
 #include "Widget_proc.h"
-//#include "CheckOpenGL_proc.h"
+
 
 DEFINE_ATOMIC(char *, GE_vendor_string) = strdup("TODO/FIX: vendor-string not set by Radium yet");
 
@@ -101,10 +100,12 @@ void GE_set_curr_realline(int curr_realline){
 
 #if 1
 // OpenGL thread
-static float GE_scroll_pos(const SharedVariables *sv, double realline){
-  double extra = sv->top_realline - sv->curr_realline;
+static float QRHI_GE_scroll_pos(const SharedVariables &sv, double realline){
+  R_ASSERT_NON_RELEASE(THREADING_is_qrhi_thread());
+
+  double extra = sv.top_realline - sv.curr_realline;
   return
-    (   (realline+extra) * sv->fontheight  );
+    (   (realline+extra) * sv.fontheight  );
 }
 #endif
 
@@ -122,22 +123,26 @@ static TimeEstimator time_estimator;
 
 #if 1
 // OpenGL thread
-static double get_realline_stime(const SharedVariables *sv, int realline)
+static double QRHI_get_realline_stime(const SharedVariables &sv, int realline)
 {
+	R_ASSERT_NON_RELEASE(THREADING_is_qrhi_thread());
+
 	double blocktime;
-	if(realline==sv->num_reallines)
-		blocktime = sv->block_duration;
+	if(realline==sv.num_reallines)
+		blocktime = sv.block_duration;
 	else
-		blocktime = Place2STime_from_times2(sv->times, p_getDouble(sv->reallines[realline]->l.p));
+		blocktime = Place2STime_from_times2(sv.times, p_getDouble(sv.reallines[realline]->l.p));
   
-	return blocktime_to_seqtime_double(sv->seqblock_stretch, blocktime);
+	return blocktime_to_seqtime_double(sv.seqblock_stretch, blocktime);
 }
 #endif
 
 #if 1
 // OpenGL thread
-static bool need_to_reset_timing(const SharedVariables *sv, double stime, int last_used_i_realline, const struct Blocks *last_used_block, double last_used_stime, double blocktime)
+static bool QRHI_need_to_reset_timing(const SharedVariables &sv, double stime, int last_used_i_realline, const struct Blocks *last_used_block, double last_used_stime, double blocktime)
 {
+	R_ASSERT_NON_RELEASE(THREADING_is_qrhi_thread());
+
 	if (stime < 0){
 		fprintf(stderr,"Error: stime: %f, pc->blocktime: %f\n",stime,blocktime);
 #if 0
@@ -148,17 +153,17 @@ static bool need_to_reset_timing(const SharedVariables *sv, double stime, int la
 		return true;
 	}
 
-	if (last_used_block != sv->block)    
+	if (last_used_block != sv.block)    
 		return true;
   
-	if(last_used_i_realline>=sv->num_reallines) // First check that i_realline is within the range of the block. (block might have changed number of lines)
+	if(last_used_i_realline>=sv.num_reallines) // First check that i_realline is within the range of the block. (block might have changed number of lines)
 		return true;
     
 	// TODO: Make the "last_stime < stime"-check configurable.
 	if (stime < last_used_stime)
 		return true;
   
-	if(stime < get_realline_stime(sv, last_used_i_realline)) // Time is now before the line we were at when we left last time. Start searching from 0 again. (Not sure if is correct. It might be last_used_i_realline+1 instead)
+	if(stime < QRHI_get_realline_stime(sv, last_used_i_realline)) // Time is now before the line we were at when we left last time. Start searching from 0 again. (Not sure if is correct. It might be last_used_i_realline+1 instead)
 		return true;
 
 	return false;
@@ -167,12 +172,14 @@ static bool need_to_reset_timing(const SharedVariables *sv, double stime, int la
 
 #if 1
 // OpenGL thread
-static double find_current_realline_while_playing(const SharedVariables *sv, double blocktime)
+static double QRHI_find_current_realline_while_playing(const SharedVariables &sv, double blocktime)
 {
+	R_ASSERT_NON_RELEASE(THREADING_is_qrhi_thread());
+
 	double time_in_ms = blocktime * 1000.0 / (double)pc->pfreq; // I'm not entirely sure reading pc->start_time_f instead of pc->start_time is unproblematic.
 	
 	double stime = time_estimator.get(time_in_ms,
-									  sv->reltempo * ATOMIC_DOUBLE_GET(g_curr_song_tempo_automation_tempo))
+									  sv.reltempo * ATOMIC_DOUBLE_GET(g_curr_song_tempo_automation_tempo))
 		* (double)pc->pfreq / 1000.0; // Could this value be slightly off because we just changed block, and because of that we skipped a few calles to time_estimator.get ? (it shouldn't matter though, timing is resetted when that happens. 'time_in_ms' should always be valid)
 
 	//stime      = time_in_ms* (double)pc->pfreq / 1000.0;
@@ -192,9 +199,9 @@ static double find_current_realline_while_playing(const SharedVariables *sv, dou
 	if (i_realline > 0) i_realline--; //  but we need to go one step back to reload prev_line_stime.
 	//                                    (storing last used 'stime1' and/or 'stime2' would be an optimization which would make my head hurt and make no difference in cpu usage)
 
-	if (need_to_reset_timing(sv, stime, i_realline, block, last_stime, blocktime)) {
+	if (QRHI_need_to_reset_timing(sv, stime, i_realline, block, last_stime, blocktime)) {
 		i_realline = 0;
-		block = sv->block;
+		block = sv.block;
 		time_estimator.set_time(time_in_ms);
 		stime = time_in_ms * (double)pc->pfreq / 1000.0; // Convert the current block time into number of frames.
 	}
@@ -203,13 +210,13 @@ static double find_current_realline_while_playing(const SharedVariables *sv, dou
       
 	last_stime = stime;
   
-	double stime2 = get_realline_stime(sv, i_realline);
+	double stime2 = QRHI_get_realline_stime(sv, i_realline);
   
 	while(true){
 
 		double stime1 = stime2;
 		for(;;){ // This for loop is here to handle a very special situation where we play so fast that stime1==stime2. In normal songs, this should not happen.
-			stime2 = get_realline_stime(sv, i_realline+1);
+			stime2 = QRHI_get_realline_stime(sv, i_realline+1);
 
 #if 0
 			if (stime1==stime2){ // Could probably happen if playing really fast... Not sure. (yes, it happens if playing really fast)
@@ -220,8 +227,8 @@ static double find_current_realline_while_playing(const SharedVariables *sv, dou
 			}
 #endif
       
-			if (i_realline==sv->num_reallines)
-				return sv->num_reallines;
+			if (i_realline==sv.num_reallines)
+				return sv.num_reallines;
 			if (equal_doubles(stime1, stime2))
 				i_realline++;
 			else
@@ -237,20 +244,22 @@ static double find_current_realline_while_playing(const SharedVariables *sv, dou
 
 		i_realline++;
 
-		if (i_realline==sv->num_reallines)
+		if (i_realline==sv.num_reallines)
 			break;
 	}
 
-	return sv->num_reallines;
+	return sv.num_reallines;
 }
 
-static bool find_scrollpos(const SharedVariables *sv, double &scroll_pos)
+static bool QRHI_find_scrollpos(const SharedVariables &sv, double &scroll_pos, double &current_realline_while_playing_out)
 {
+	R_ASSERT_NON_RELEASE(THREADING_is_qrhi_thread());
+
 	const int player_id = ATOMIC_GET(pc->play_id);
 	bool is_playing = ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING;
 
 	if (is_playing)
-		if (sv->block_is_visible==false || sv->block!=sv->curr_playing_block)
+		if (sv.block_is_visible==false || sv.block!=sv.curr_playing_block)
 			is_playing = false; // I.e. we are not rendering the block that is currently playing (if any).
 
     double blocktime = 0.0;
@@ -260,38 +269,42 @@ static bool find_scrollpos(const SharedVariables *sv, double &scroll_pos)
     if (is_playing){
 		
 #if 0
-		if ((sv->curr_playing_block==NULL || sv->block!=sv->curr_playing_block)) { // Check that our blocktime belongs to the block that is rendered.
+		if ((sv.curr_playing_block==NULL || sv.block!=sv.curr_playing_block)) { // Check that our blocktime belongs to the block that is rendered.
         
 			//if (new_t2_data!=NULL && use_t2_thread)
 			//  T3_t2_data_picked_up_but_old_data_will_be_sent_back_later();
         
 			if (t2_data_can_be_used){
 				//printf("Waiting...\n");
-				//_rendering->render();
+				//_rendering->QRHI_render();
 				return true;
 			}else{
 
-				//printf("Retfalse2. old_t2_datas.size: %d. sv->curr_playing_block==NULL (%d) || sv->block!=sv->curr_playing_block (%d)\n",old_t2_datas.size(), sv->curr_playing_block==NULL, sv->block!=sv->curr_playing_block);
+				//printf("Retfalse2. old_t2_datas.size: %d. sv.curr_playing_block==NULL (%d) || sv.block!=sv.curr_playing_block (%d)\n",old_t2_datas.size(), sv.curr_playing_block==NULL, sv.block!=sv.curr_playing_block);
 				//printf("  Wait.gakk\n");
 				return false; // Returning false uses 100% CPU on Intel gfx / Linux, and could possibly cause jumpy graphics, but here we are just waiting for the block to be rendered.
 			}
 		}
 #endif
 		
-		playing_blocknum = sv->curr_playing_block->l.num;
+		playing_blocknum = sv.curr_playing_block->l.num;
         
-		blocktime = ATOMIC_DOUBLE_GET(sv->curr_playing_block->player_time);
+		blocktime = ATOMIC_DOUBLE_GET(sv.curr_playing_block->player_time);
+
+		if (equal_doubles(blocktime, -100.0))
+			return false; // we just switched block and waiting for a proper blocktime to be calculated, I think.
+																	  
+		
 		//if (blocktime < -50)
 		//  printf("blocktime: %f\n",blocktime);
 #if 0
-		
 		if (blocktime < 0.0) {  // Either the block hasn't started playing yet (sequencer cursor is inside a pause), or we just switched block and waiting for a proper blocktime to be calculated.
 			
 			//if (new_t2_data!=NULL && use_t2_thread)
 			//  T3_t2_data_picked_up_but_old_data_will_be_sent_back_later();
 
 			if (t2_data_can_be_used  || !equal_doubles(blocktime, -100.0)){
-				_rendering->render();
+				_rendering->QRHI_render();
 				//printf("   rettrue1\n");
 				return true;
 			} else {
@@ -300,12 +313,11 @@ static bool find_scrollpos(const SharedVariables *sv, double &scroll_pos)
 			}
 		}
 #endif
-	  
     }
 
     double current_realline_while_playing =
 		is_playing
-		? find_current_realline_while_playing(sv, blocktime)
+		? QRHI_find_current_realline_while_playing(sv, blocktime)
 		: 0.0;
     
     R_ASSERT_NON_RELEASE(current_realline_while_playing >= 0);
@@ -313,7 +325,7 @@ static bool find_scrollpos(const SharedVariables *sv, double &scroll_pos)
     int current_realline_while_not_playing = ATOMIC_GET(g_curr_realline);
     
     double till_realline =
-		ATOMIC_GET_RELAXED(sv->root->play_cursor_onoff)
+		ATOMIC_GET_RELAXED(sv.root->play_cursor_onoff)
 		? current_realline_while_not_playing
 		: is_playing
 		? current_realline_while_playing
@@ -324,8 +336,9 @@ static bool find_scrollpos(const SharedVariables *sv, double &scroll_pos)
 		playing_blocknum
 		);
     
-    scroll_pos = GE_scroll_pos(sv, till_realline);
+    scroll_pos = QRHI_GE_scroll_pos(sv, till_realline);
 
+    current_realline_while_playing_out = current_realline_while_playing;
     
     if (player_id != ATOMIC_GET(pc->play_id)) {// In the very weird and unlikely case that the player has stopped and started since the top of this function (the computer is really struggling), we return false
       
@@ -341,7 +354,7 @@ static bool find_scrollpos(const SharedVariables *sv, double &scroll_pos)
 	
     if (!is_playing && equal_floats(scroll_pos, last_scroll_pos) && new_t2_data==NULL) {
 		if (t2_data_can_be_used){
-			//_rendering->render();
+			//_rendering->QRHI_render();
 			//printf("   rettrue2\n");
 			return true;
 		}else{
@@ -357,7 +370,6 @@ static bool find_scrollpos(const SharedVariables *sv, double &scroll_pos)
 #endif
 
 
-#if 0
 // Main thread
 static Tracker_Windows *get_window(void){
   return root->song->tracker_windows;
@@ -367,10 +379,10 @@ static Tracker_Windows *get_window(void){
 static EditorWidget *get_editorwidget(void){
   return (EditorWidget *)get_window()->os_visual.widget;
 }
-#endif
 
 
 volatile float g_scroll_pos = 0.0f;
+int g_msaa_samples = 8; // set on main thread, read by QRHI thread
 
 static DEFINE_ATOMIC(double, g_vblank) = 1000 / 60.0;
 
@@ -380,12 +392,11 @@ void GL_update(void)
 	//	return;
 }
 
-static r::PaintingData *g_painting_data = NULL; // Accessed from render thread only.
 static QColor g_background_color = Qt::black; // Accessed from render thread only.
 
-static QShader getShader(const QString &name)
+static QShader QRHI_getShader(const QString &name)
 {
-	assert(QThread::currentThread() == g_thread);
+	R_ASSERT_NON_RELEASE(THREADING_is_qrhi_thread());
 
     QFile f(name);
     if (f.open(QIODevice::ReadOnly))
@@ -394,46 +405,40 @@ static QShader getShader(const QString &name)
     return QShader();
 }
 
-#if 0
-static void init_test_triangles(r::TriangleContext *my_vertices, float dy = 0)
-{
-	my_vertices->addTriangle({
-			-1.0f,   0.0f+dy,       1.0f,   dy,   dy, 0.6f,
-			-0.5f,  -1.0f+dy,       1.0f,   0.0f,   dy, 0.6f,
-			-0.0f,  -0.0f+dy,       dy,   0.0f,   dy, 0.6f
-		});
-	
-	my_vertices->addTriangle({
-			0.5f,  1.0f+dy,       dy,   1.0f,   dy, 0.6f,
-			0.0f,  0.0f+dy,       0.0f,   dy,   dy, 0.6f,
-			1.0f,  0.0f+dy,       0.0f,   1.0f,   dy, 0.6f
-		});
-	
-	my_vertices->addTriangle(20, 400+dy,
-							20, 1800+dy,
-							800, 1800+dy,
-							0,0,1);
-};
-#endif
 
-// Main thread
-static Tracker_Windows *get_window(void){
-  return root->song->tracker_windows;
-}
-
-// Main thread
-static EditorWidget *get_editorwidget(void){
-  return (EditorWidget *)get_window()->os_visual.widget;
-}
 
 QRhi *g_rhi = NULL;
 
-//extern r::TextureVertices *g_texture_vertices;
+
+
+enum class RendererFlags : uint16_t
+{
+	None           = 0,
+	IsScrolling    = 1 << 0,
+	UseScissors    = 1 << 1,
+	UseBlending    = 1 << 2,
+	CreatePipeline = 1 << 3,
+};
+
+constexpr RendererFlags operator|(RendererFlags a, RendererFlags b)
+{
+	return static_cast<RendererFlags>(static_cast<uint16_t>(a) | static_cast<uint16_t>(b));
+}
+
+constexpr RendererFlags operator&(RendererFlags a, RendererFlags b)
+{
+	return static_cast<RendererFlags>(static_cast<uint16_t>(a) & static_cast<uint16_t>(b));
+}
+
+constexpr bool has_flag(RendererFlags flags, RendererFlags flag)
+{
+	return (static_cast<uint16_t>(flags) & static_cast<uint16_t>(flag)) != 0;
+}
 
 namespace
 {
 
-struct TextureRenderer : public r::TextRenderer
+struct TextureRenderer
 {
 	r::TextureVertices *_vertices = nullptr;
 	
@@ -444,23 +449,20 @@ struct TextureRenderer : public r::TextRenderer
     QRhiBuffer *_scrollPosBuffer = nullptr;
     QRhiGraphicsPipeline *_pipeline;
 
-	int _num_vertices_in_buffer = 0;
 	bool _is_scrolling = true;
 	bool _use_scissors = true;
 
 	void init(QRhi *rhi,
 			  r::TextureAtlasBackend *texture_atlas_backend,
 			  QRhiRenderPassDescriptor *render_pass_descriptor,
-			  bool is_scrolling,
-			  bool use_scissors)
+			  RendererFlags flags)
 	{
+		_is_scrolling = has_flag(flags, RendererFlags::IsScrolling);
+		_use_scissors = has_flag(flags, RendererFlags::UseScissors);
+		
 		_texture_atlas_backend = texture_atlas_backend;
 		
-		_is_scrolling = is_scrolling;
-
-		_use_scissors = use_scissors;
-		
-		init_verticess(rhi);
+		init_verticess();
 		
 		_viewCorrectionBuffer = rhi->newBuffer(QRhiBuffer::Dynamic,
 										 QRhiBuffer::UniformBuffer,
@@ -468,8 +470,9 @@ struct TextureRenderer : public r::TextRenderer
 		
 		if (!_viewCorrectionBuffer || !_viewCorrectionBuffer->create())
 		{
-			qDebug() << "Failed to create clip correction buffer";
-			getchar();
+			GFX_Message(NULL, "Failed to create clip correction buffer"); // Should never happen, so we don't care about avoiding crash or misbheaviors that may happen later in code if this happens.
+			
+			//getchar();
 			//return false;
 		}
 		
@@ -479,8 +482,9 @@ struct TextureRenderer : public r::TextRenderer
 		
 		if (!_scrollPosBuffer || !_scrollPosBuffer->create())
 		{
-			qDebug() << "Failed to create scroll correction buffer";
-			getchar();
+			GFX_Message(NULL, "Failed to create scroll correction buffer"); // Should never happen, so we don't care about avoiding crash or misbheaviors that may happen later in code if this happens.
+			
+			//getchar();
 			//return false;
 		}
 		
@@ -490,24 +494,25 @@ struct TextureRenderer : public r::TextRenderer
 		
 		_texture_atlas = new r::TextureAtlas(rhi, texture_atlas_backend, _viewCorrectionBuffer, _scrollPosBuffer);
 		
-		QShader vertexShader = getShader("texture_vertex.qsb");
-		QShader fragmentShader = getShader("texture_fragment.qsb");
+		QShader vertexShader = QRHI_getShader("texture_vertex.qsb");
+		QShader fragmentShader = QRHI_getShader("texture_fragment.qsb");
 		
 		if (!vertexShader.isValid() || !fragmentShader.isValid())
 		{
-			qDebug() << "Failed to load compiled shaders";
-			getchar();
+			GFX_Message(NULL, "Failed to load compiled shaders");
+			//getchar();
 		}
 		
 		_pipeline = rhi->newGraphicsPipeline();
 		
 		if (!_pipeline)
 		{
-			qDebug() << "Failed to create graphics pipeline";
-			getchar();
+			GFX_Message(NULL, "Failed to create graphics pipeline");
+			//getchar();
 		}
 		
-		_pipeline->setSampleCount(4);
+		if (g_msaa_samples > 1)
+			_pipeline->setSampleCount(g_msaa_samples);
 
 		if (_use_scissors)
 			_pipeline->setFlags(QRhiGraphicsPipeline::UsesScissor);
@@ -531,7 +536,7 @@ struct TextureRenderer : public r::TextRenderer
 		}
 		
 		_pipeline->setVertexInputLayout(inputLayout);
-		_pipeline->setShaderResourceBindings(_texture_atlas->getShaderBindings());
+		_pipeline->setShaderResourceBindings(_texture_atlas->QRHI_getShaderBindings());
 		_pipeline->setRenderPassDescriptor(render_pass_descriptor);
 		
 		// Enable alpha blending for smooth font edges
@@ -547,8 +552,8 @@ struct TextureRenderer : public r::TextRenderer
 		
 		if (!_pipeline->create())
 		{
-			qDebug() << "Failed to create pipeline";
-			getchar();
+			GFX_Message(NULL, "Failed to create pipeline");
+			//getchar();
 			//return false;
 		}
 	}
@@ -587,29 +592,27 @@ struct TextureRenderer : public r::TextRenderer
         	delete _pipeline;
         	_pipeline = nullptr;
         }
-
-        _num_vertices_in_buffer = 0;
     }
 	
-	void add_text(const QString &text, int x, int y, float r, float g, float b, float a) override
+	void MAIN_add_text(const QString &text, int x, int y, float r, float g, float b, float a)
 	{
 		if (_texture_atlas)
-			_texture_atlas->appendStringToVertices(_vertices,
-												   text,
-												   x, y,
-												   r, g, b, a);
+			_texture_atlas->MAIN_appendStringToVertices(_vertices,
+														text,
+														x, y,
+														r, g, b, a);
 		//g_window->_texture_renderer->add_text(gc, text, x, y);
 	}
 
-	bool _vertexDataDirty = true;
-	
-    void prepare_frame(QRhi *rhi,
-					   QRhiResourceUpdateBatch *batch,
-					   const QMatrix4x4 view_projection,
-					   float scroll_pos,
-					   float width, float height)
+    void QRHI_prepare_frame(QRhi *rhi,
+							QRhiResourceUpdateBatch *batch,
+							const QMatrix4x4 view_projection,
+							float scroll_pos)
+	//float width, float height)
     {
-		_vertices->maybe_merge_in(batch);
+		R_ASSERT_NON_RELEASE(THREADING_is_qrhi_thread());
+
+		_vertices->QRHI_maybe_merge_in(batch);
 			
         if (_viewCorrectionBuffer)
 		{
@@ -636,19 +639,20 @@ struct TextureRenderer : public r::TextRenderer
         }
 	}
 
-	void render_frame(QRhi *rhi, QRhiCommandBuffer *command_buffer, const QSize &outputSizeInPixels)
+	void QRHI_render_frame(QRhiCommandBuffer *command_buffer)
     {
-        if (_pipeline)
+        R_ASSERT_NON_RELEASE(THREADING_is_qrhi_thread());
+
+        if (_pipeline && _vertices && _vertices->QRHI_has_vertices())
 		{
             command_buffer->setGraphicsPipeline(_pipeline);
-            command_buffer->setShaderResources(_texture_atlas->getShaderBindings());
+            command_buffer->setShaderResources(_texture_atlas->QRHI_getShaderBindings());
 
-            if (_vertices)
-				_vertices->render(command_buffer);
+			_vertices->QRHI_render(command_buffer);
         }
     }
 
-    void init_verticess(QRhi *rhi)
+    void init_verticess(void)
     {
         _vertices = new r::TextureVertices;
 		//g_texture_vertices = _vertices;
@@ -658,27 +662,8 @@ struct TextureRenderer : public r::TextRenderer
     }
 };
 
-
-#if 0
-r::TriangleVertices *g_vertices_under_text = new r::TriangleVertices(); // Scrolling: Everything painted under text (only the track backgruond color.)
-r::TriangleVertices *g_vertices_text = new r::TriangleVertices(); // Scrolling: Text.
-r::TriangleVertices *g_vertices = new r::TriangleVertices(); // Scrolling: Everything painted above text)
-r::TriangleVertices *g_vertices_left_slider = new r::TriangleVertices(); // Left slider (Scrolls it's own way) (not the border around the slider, only the moving box)
-r::TriangleVertices *g_vertices_static = new r::TriangleVertices(); // Non-Scrolling: Cursor + Indicators + left slider border.
-
-r::TextureVertices *g_texture_vertices = NULL;
-
-//std::initializer_list<r::TriangleVertices> g_all_contexts = {g_vertices_under_text, g_vertices_text, g_vertices, g_vertices_left_slider, g_vertices_static};
-#endif
-
-struct TriangleRenderer : public r::TriangleRenderer
+struct TriangleRenderer
 {
-	int _slice_num;
-	TriangleRenderer *_next_renderer;
-
-	float _top_y;
-	float _bottom_y;
-
 	r::TriangleVertices _vertices;
 	
     QRhiShaderResourceBindings *_shader_resource_bindings = nullptr;
@@ -689,82 +674,82 @@ struct TriangleRenderer : public r::TriangleRenderer
 	bool _use_scissors = true;
 
     void init(QRhi *rhi,
-			  int slice_num,
-			  TriangleRenderer *next_renderer,
               QRhiRenderPassDescriptor *render_pass_descriptor,
-              bool is_scrolling,
-			  bool use_scissors)
+              RendererFlags flags)
 	{
-		_slice_num = slice_num;
-		_next_renderer = next_renderer;
-				  
-        _is_scrolling = is_scrolling;
+		_is_scrolling = has_flag(flags, RendererFlags::IsScrolling);
+		_use_scissors = has_flag(flags, RendererFlags::UseScissors);
+		
+		bool use_blending = has_flag(flags, RendererFlags::UseBlending);
+		bool create_pipeline = has_flag(flags, RendererFlags::CreatePipeline);
 
-		_use_scissors = use_scissors;
-		
-        _shader_resource_bindings = rhi->newShaderResourceBindings();
-		
-        _ubuf = rhi->newBuffer(QRhiBuffer::Dynamic,
-                               QRhiBuffer::UniformBuffer,
-                               sizeof(QMatrix4x4) + sizeof(float));
-		
-        _ubuf->create();
-		
-        QVector<QRhiShaderResourceBinding> bindings;
-		
-        bindings.push_back(QRhiShaderResourceBinding::uniformBuffer(
-							   0,
-							   QRhiShaderResourceBinding::VertexStage,
-							   _ubuf));
-		
-        _shader_resource_bindings->setBindings(bindings.cbegin(),
-											   bindings.cend());
-		
-        _shader_resource_bindings->create();
-
-        _pipeline = rhi->newGraphicsPipeline();
-
-#if DO_ANTIALIASING
-        _pipeline->setSampleCount(4);
-#endif
-		if (use_scissors)
-			_pipeline->setFlags(QRhiGraphicsPipeline::UsesScissor);
-		
+        if (create_pipeline)
         {
-            QRhiGraphicsPipeline::TargetBlend blend;
-            blend.enable = true;
-            _pipeline->setTargetBlends({blend});
+            _shader_resource_bindings = rhi->newShaderResourceBindings();
+            
+            _ubuf = rhi->newBuffer(QRhiBuffer::Dynamic,
+                                   QRhiBuffer::UniformBuffer,
+                                   sizeof(QMatrix4x4) + sizeof(float));
+            
+            _ubuf->create();
+            
+            QVector<QRhiShaderResourceBinding> bindings;
+            
+            bindings.push_back(QRhiShaderResourceBinding::uniformBuffer(
+                                   0,
+                                   QRhiShaderResourceBinding::VertexStage,
+                                   _ubuf));
+            
+            _shader_resource_bindings->setBindings(bindings.cbegin(),
+                                                   bindings.cend());
+            
+            _shader_resource_bindings->create();
+
+            _pipeline = rhi->newGraphicsPipeline();
+
+            if (g_msaa_samples > 1)
+                _pipeline->setSampleCount(g_msaa_samples);
+            
+            if (_use_scissors)
+                _pipeline->setFlags(QRhiGraphicsPipeline::UsesScissor);
+            
+            if (use_blending)
+			{
+                QRhiGraphicsPipeline::TargetBlend blend;
+                blend.enable = true;
+                _pipeline->setTargetBlends({blend});
+            }
+
+            _pipeline->setShaderStages({
+                    {
+                        QRhiShaderStage::Vertex,
+                        QRHI_getShader("color.vert.qsb")
+                    },
+                    {
+                        QRhiShaderStage::Fragment,
+                        QRHI_getShader("color.frag.qsb")
+                    }
+                });
+
+            QRhiVertexInputLayout inputLayout;
+            
+            inputLayout.setBindings({
+                    { 6 * sizeof(float) }
+                });
+            
+            inputLayout.setAttributes({
+                    { 0, 0, QRhiVertexInputAttribute::Float2, 0 },
+                    { 0, 1, QRhiVertexInputAttribute::Float4, 2 * sizeof(float) }
+                });
+
+            _pipeline->setVertexInputLayout(inputLayout);
+            
+            _pipeline->setShaderResourceBindings(_shader_resource_bindings);
+            
+            _pipeline->setRenderPassDescriptor(render_pass_descriptor);
+
+            _pipeline->create();
         }
-
-        _pipeline->setShaderStages({
-				{
-					QRhiShaderStage::Vertex,
-					getShader("color.vert.qsb")
-				},
-				{
-					QRhiShaderStage::Fragment,
-					getShader("color.frag.qsb")
-				}
-			});
-
-		QRhiVertexInputLayout inputLayout;
-		
-		inputLayout.setBindings({
-				{ 6 * sizeof(float) }
-			});
-		
-		inputLayout.setAttributes({
-				{ 0, 0, QRhiVertexInputAttribute::Float2, 0 },
-				{ 0, 1, QRhiVertexInputAttribute::Float4, 2 * sizeof(float) }
-			});
-
-        _pipeline->setVertexInputLayout(inputLayout);
-		
-        _pipeline->setShaderResourceBindings(_shader_resource_bindings);
-		
-        _pipeline->setRenderPassDescriptor(render_pass_descriptor);
-
-        _pipeline->create();
     }
 
     void release(void)
@@ -772,9 +757,21 @@ struct TriangleRenderer : public r::TriangleRenderer
 		//delete _vertices1;
         //delete _vertices2;
 
-        delete _shader_resource_bindings;
-        delete _pipeline;
-        delete _ubuf;
+        if (_shader_resource_bindings)
+        {
+            _shader_resource_bindings->destroy();
+            delete _shader_resource_bindings;
+        }
+        if (_pipeline)
+        {
+            _pipeline->destroy();
+            delete _pipeline;
+        }
+        if (_ubuf)
+        {
+            _ubuf->destroy();
+            delete _ubuf;
+        }
 		
         //_vertices1 = nullptr;
         //_vertices2 = nullptr;
@@ -783,211 +780,77 @@ struct TriangleRenderer : public r::TriangleRenderer
         _pipeline = nullptr;
         _ubuf = nullptr;
     }
-	
-	void call_me_before_adding_triangles(void)
-	{
-		_vertices.call_me_when_starting_to_generate_vertices();
 
-		if (_next_renderer != NULL)
-		{
-			const float slice_size = GE_get_slice_size(g_painting_data);
-			_top_y = _slice_num * slice_size;
-			_bottom_y = _next_renderer->_slice_num * slice_size;
-		}
+	void MAIN_call_me_before_adding_triangles(void)
+	{
+		R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
+		_vertices.MAIN_call_me_when_starting_to_generate_vertices();
 	}
 	
-    void prepare_frame(QRhi *rhi,
-					   QRhiResourceUpdateBatch *batch,
-					   const QMatrix4x4 &viewProjection,
-					   float scrollPos)
-    {
-		_vertices.maybe_merge_in(batch);
-		/*
-        for (r::TriangleVertices *context : ALL_VERTICESS)
-        {
-            if (context)
-            {
-                context->maybe_merge_in(batch);
-            }
-        }
-		*/
-			
-        //if (_vertices1)
-         //   _vertices1->maybe_merge_in(batch);
-			
-        //if (_vertices2)
-		//_vertices2->maybe_merge_in(batch);
-			
-        batch->updateDynamicBuffer(_ubuf,
-								   0,
-								   64,
-								   viewProjection.constData());
+    void QRHI_prepare_frame(QRhi *rhi,
+							QRhiResourceUpdateBatch *batch,
+							const QMatrix4x4 &viewProjection,
+							float scrollPos)
+	{
+		R_ASSERT_NON_RELEASE(THREADING_is_qrhi_thread());
 
-        if (_is_scrolling) {
+		_vertices.QRHI_maybe_merge_in(batch);
+			
+        if (!_is_scrolling) {
             batch->updateDynamicBuffer(_ubuf,
-								   64,
-								   sizeof(float),
-								   &scrollPos);
+            						   0,
+            						   64,
+            						   viewProjection.constData());
+        } else {
+            // Scrolling renderers share a single ubuf; skip per-renderer upload.
         }
     }
 	
-    void render_frame(QRhiCommandBuffer *command_buffer,
-					  const QSize &outputSizeInPixels)
+    void QRHI_render_frame(QRhiCommandBuffer *command_buffer)
 	{
-		command_buffer->setGraphicsPipeline(_pipeline);
+		R_ASSERT_NON_RELEASE(THREADING_is_qrhi_thread());
 
-        command_buffer->setViewport({
-				0,
-				0,
-				float(outputSizeInPixels.width()),
-				float(outputSizeInPixels.height())
-			});
-		
-        command_buffer->setShaderResources();
+		if (_pipeline && _vertices.QRHI_has_vertices())
+		{
+			command_buffer->setGraphicsPipeline(_pipeline);
 
-		_vertices.render(command_buffer);
-		/*
-        for (r::TriangleVertices *context : ALL_VERTICESS)
-        {
-            if (context)
-            {
-                context->render(command_buffer);
-            }
-        }
-		*/
-        //if (_vertices1)
-		//  _vertices1->render(command_buffer);
-		
-        //if (_vertices2)
-		//  _vertices2->render(command_buffer);
+			command_buffer->setShaderResources();
+			
+			_vertices.QRHI_render(command_buffer);
+		}
     }
 
 	
-private:
-	
-	void add_triangle_no_split(const GE_Context &c, const r::fvec2 &p1, const r::fvec2 &p2, const r::fvec2 &p3, r2::GradientType::Type gradient_type)
+	// Add triangle without splitting across renderers
+	void MAIN_add_triangle(const GE_Context &c, const r::Triangle &triangle, r2::GradientType::Type gradient_type)
 	{
+		R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
 		switch(gradient_type)
 		{
 			case r2::GradientType::Type::NOTYPE:
-				_vertices.add_triangle(p1, p2, p3, c.color.c);
+				_vertices.MAIN_add_triangle(triangle, c.color.c);
 				break;
 			case r2::GradientType::Type::HORIZONTAL:
-				_vertices.add_triangle_horizontal_gradient(p1, p2, p3, c.color.c, c.color.c_gradient);
+				_vertices.MAIN_add_triangle_horizontal_gradient(triangle, c.color.c, c.color.c_gradient);
 				break;
 			case r2::GradientType::Type::VELOCITY:
-				_vertices.add_triangle_vertical_gradient(p1, p2, p3, c.color.c, c.color.c_gradient);
+				_vertices.MAIN_add_triangle_vertical_gradient(triangle, c.color.c, c.color.c_gradient);
 				break;
-		}
-	}
-	
-public:
-	
-	void add_triangle(const GE_Context &c, const r::fvec2 &p1, const r::fvec2 &p2, const r::fvec2 &p3, r2::GradientType::Type gradient_type) override
-	{	
-		if (_next_renderer == NULL)
-		{
-			add_triangle_no_split(c, p1, p2, p3, gradient_type);
-			return;
-		}
-
-		const float maxy = _next_renderer == NULL ? -1 : R_MAX(p1.b, R_MAX(p2.b, p3.b));
-			
-		if (maxy <= _bottom_y)
-		{
-			add_triangle_no_split(c, p1, p2, p3, gradient_type);
-			return;
-		}
-
-		// Clip triangle against horizontal line y = _bottom_y. Produce top and bottom polygons.
-		std::vector<r::fvec2> inVerts = {p1, p2, p3};
-
-		std::vector<r::fvec2> topPoly, bottomPoly;
-		
-		for (size_t i = 0; i < inVerts.size(); ++i)
-		{
-			r::fvec2 a = inVerts[i];
-			r::fvec2 b = inVerts[(i+1) % inVerts.size()];
-
-			for(bool keepTop : {false, true})
-			{
-				auto &out = keepTop ? topPoly : bottomPoly;
-
-				// Top should be strictly above the boundary; bottom includes the boundary
-				bool a_in = keepTop ? (a.b < _bottom_y) : (a.b >= _bottom_y);
-				bool b_in = keepTop ? (b.b < _bottom_y) : (b.b >= _bottom_y);
-			
-				if (a_in && b_in)
-				{
-					// both in: keep b
-					out.push_back(b);
-				}
-				else if (a_in && !b_in)
-				{
-					// exiting: add intersection
-					float dy = b.b - a.b;
-					if (std::fabs(dy) > 1e-9f) {
-						float t = (_bottom_y - a.b) / dy;
-						float x = a.a + t * (b.a - a.a);
-						out.push_back({x, _bottom_y});
-					}
-				}
-				else if (!a_in && b_in)
-				{
-					// entering: add intersection then b
-					float dy = b.b - a.b;
-					if (std::fabs(dy) > 1e-9f) {
-						float t = (_bottom_y - a.b) / dy;
-						float x = a.a + t * (b.a - a.a);
-						out.push_back({x, _bottom_y});
-					}
-					out.push_back(b);
-				}
-				else
-				{
-					// both out: nothing
-				}
-			}
-		}
-		
-		GE_Context c1 = c;
-		GE_Context c2 = c;
-			
-		if (gradient_type == r2::GradientType::Type::VELOCITY)
-		{
-			const float miny = _next_renderer == NULL ? -1 : R_MIN(p1.b, R_MIN(p2.b, p3.b));
-
-			if ((maxy - miny) > 0.01)
-			{
-				c1.color.c_gradient = GE_mix(c1.color.c,
-											 c1.color.c_gradient,
-											 scale(_bottom_y,
-												   miny, maxy,
-												   1000, 0));
-				
-				c2.color.c = c1.color.c_gradient;
-			}
-		}
-		
-		// Triangulate top polygon and add locally
-		if (topPoly.size() >= 3)
-		{
-			for (size_t i = 1; i + 1 < topPoly.size(); ++i)
-			{
-				add_triangle_no_split(c1, topPoly[0], topPoly[i], topPoly[i+1], gradient_type);
-			}
-		}
-
-		// Triangulate bottom polygon and forward to next renderer
-		if (bottomPoly.size() >= 3)
-		{
-			for (size_t i = 1; i + 1 < bottomPoly.size(); ++i)
-			{
-				_next_renderer->add_triangle(c2, bottomPoly[0], bottomPoly[i], bottomPoly[i+1], gradient_type);
-			}
 		}
 	}
 };
+
+#if !defined(RELEASE)
+// Profiling: count opaque vs transparent triangle draws per frame
+static int g_profile_opaque = 0;
+static int g_profile_transparent = 0;
+static int g_profile_solid = 0;
+static int g_profile_gradient = 0;
+static int g_profile_slice_dups = 0;
+static int g_profile_frame_count = 0;
+#endif
+
+static bool g_render_window_has_been_deleted = false;
 
 class RenderWindow : public radium::RhiWindow, public radium::MouseCycleFix
 {
@@ -1001,12 +864,31 @@ public:
 	TextureRenderer _texture_renderer_scissors_halfsize[MAX_NUM_SLICES];
 	TextureRenderer _texture_renderer_static;
 	
+	//TriangleRenderer _triangle_renderers_background[MAX_NUM_SLICES];
 	TriangleRenderer _triangle_renderers[MAX_NUM_SLICES];
 	TriangleRenderer _triangle_renderer_scissors[MAX_NUM_SLICES];
+
+	TriangleRenderer _triangle_renderer_scrollbar;  // single non-sliced renderer for scrollbar
+	TriangleRenderer _triangle_renderer_node_indicator;  // single non-sliced foreground renderer for node indicator
+	TriangleRenderer _triangle_renderer_playcursor;  // single non-sliced renderer for playcursor (custom scroll_pos)
+	
 	TriangleRenderer _triangle_renderer_static;
 	TriangleRenderer _triangle_renderer_static_scissor;
-	
-	DEFINE_ATOMIC(bool, _main_window_is_exposed) = false;
+
+	// Scrollbar pipeline: separate scroll_pos, no blending, no scissors
+	QRhiBuffer *_shared_scrollbar_ubuf = nullptr;
+	QRhiShaderResourceBindings *_shared_scrollbar_sbr = nullptr;
+
+	// Playcursor: separate scroll_pos, blending, no scissors
+	QRhiBuffer *_shared_playcursor_ubuf = nullptr;
+	QRhiShaderResourceBindings *_shared_playcursor_sbr = nullptr;
+
+	// All scrolling renderers have identical uniform data (mvp + yscroll).
+	// One shared buffer and SBR uploaded once per frame.
+	QRhiBuffer *_shared_scrolling_ubuf = nullptr;
+	QRhiShaderResourceBindings *_shared_scrolling_sbr = nullptr;
+
+	r::PaintingData *_painting_data = nullptr;
 
 	
 public:
@@ -1016,32 +898,113 @@ public:
 	{
 	}
 
+	template <typename F>
+	void for_each_renderer(int tri_start, int tri_end, int text_start, int text_end, F func)
+	{
+		// Triangles.
+		//
+		for (int i = tri_start; i < tri_end; ++i)
+		{
+			func(_triangle_renderers[i]);
+			func(_triangle_renderer_scissors[i]);
+		}
+		
+		func(_triangle_renderer_static);
+		func(_triangle_renderer_static_scissor);
+		func(_triangle_renderer_scrollbar);
+		func(_triangle_renderer_node_indicator);
+		func(_triangle_renderer_playcursor);
+
+		// Textures.
+		//
+		for (int i = text_start; i < text_end; ++i)
+		{
+			func(_texture_renderers[i]);
+			func(_texture_renderer_scissors[i]);
+			func(_texture_renderer_scissors_halfsize[i]);
+		}
+		
+		func(_texture_renderer_static);
+	}
+
+	template <typename F>
+	void for_each_renderer(F func)
+	{
+		for_each_renderer(0, MAX_NUM_SLICES, 0, MAX_NUM_SLICES, func);
+	}
+
+	template <typename F>
+	void for_each_vertices(F func)
+	{
+		for_each_renderer([func](auto &r)
+			{
+				if constexpr (std::is_pointer_v<decltype(r._vertices)>)
+				{
+					if (r._vertices)
+						func(*r._vertices);
+				}
+				else
+				{
+					func(r._vertices);
+				}
+			});
+	}
+
 	~RenderWindow()
 	{
 		fprintf(stderr, "H1\n");
 
-		QSemaphore sem;
-	
-		put_event([this, &sem]()
+		// All QRhi resources must be freed on the RHI thread while _rhi is still alive.
+		// Non-QRhi cleanup (_painting_data) is done outside on the main thread.
+		MAIN_put_event_sync([this]()
 			{
-				for (int i = 0; i < MAX_NUM_SLICES; ++i) {
-					_triangle_renderers[i].release();
-					_triangle_renderer_scissors[i].release();
-					_texture_renderers[i].release();
-					_texture_renderer_scissors[i].release();
-					_texture_renderer_scissors_halfsize[i].release();
+				for_each_renderer([](auto &r){ r.release(); });
+				
+				if (_shared_scrolling_sbr)
+				{
+					_shared_scrolling_sbr->destroy();
+					delete _shared_scrolling_sbr;
 				}
-				_texture_renderer_static.release();
-				_triangle_renderer_static.release();
-				_triangle_renderer_static_scissor.release();
+				if (_shared_scrolling_ubuf)
+				{
+					_shared_scrolling_ubuf->destroy();
+					delete _shared_scrolling_ubuf;
+				}
+				
+				if (_shared_scrollbar_sbr)
+				{
+					_shared_scrollbar_sbr->destroy();
+					delete _shared_scrollbar_sbr;
+				}
+				if (_shared_scrollbar_ubuf)
+				{
+					_shared_scrollbar_ubuf->destroy();
+					delete _shared_scrollbar_ubuf;
+				}
+
+				if (_shared_playcursor_sbr)
+				{
+					_shared_playcursor_sbr->destroy();
+					delete _shared_playcursor_sbr;
+				}
+				if (_shared_playcursor_ubuf)
+				{
+					_shared_playcursor_ubuf->destroy();
+					delete _shared_playcursor_ubuf;
+				}
+				
+				delete _texture_atlas_backend;
+				delete _texture_atlas_backend_halfsize;
 				
 				fprintf(stderr, "H5\n");
-				sem.release();
 			});
 
 		fprintf(stderr, "H6\n");
-		sem.acquire();
 		fprintf(stderr, "H7\n");
+		
+		delete _painting_data;
+
+		g_render_window_has_been_deleted = true;
 	}
 
 	const QFont get_halfsize_font(const QFont &font)
@@ -1061,16 +1024,18 @@ public:
 		return font; // give up.
 	}
 
-	void setFont(const QFont &font)
+	void MAIN_setFont(const QFont &font)
 	{
+		R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
+
 		if (_texture_atlas_backend && _texture_atlas_backend_halfsize)
 		{
-			_texture_atlas_backend->setFont(font);
-			_texture_atlas_backend_halfsize->setFont(get_halfsize_font(font));
+			_texture_atlas_backend->MAIN_setFont(font);
+			_texture_atlas_backend_halfsize->MAIN_setFont(get_halfsize_font(font));
 		}
 	}
 	
-	void customInit(const QFont &font) override
+	void QRHI_customInit(const QFont &font) override
 	{
 		_texture_atlas_backend = new r::TextureAtlasBackend(_rhi, font);
 		_texture_atlas_backend_halfsize = new r::TextureAtlasBackend(_rhi, get_halfsize_font(font));
@@ -1078,26 +1043,113 @@ public:
 		for (int i = 0; i < MAX_NUM_SLICES; ++i)
 		{
 			// Texture renderers (scrolling, tempo tracks, per-slice)
-			_texture_renderers[i].init(_rhi, _texture_atlas_backend, _render_pass_descriptor, true, false);
+			_texture_renderers[i].init(_rhi, _texture_atlas_backend, _render_pass_descriptor,
+									   RendererFlags::IsScrolling);
 
-			// Triangle renderers (per-slice, scrolling)
-			_triangle_renderers[i].init(_rhi, i, i >= (MAX_NUM_SLICES-1) ? NULL : &_triangle_renderers[i+1], _render_pass_descriptor, true, false);
+			// Triangle renderers (per-slice, scrolling). Only [0] creates its own pipeline.
+			_triangle_renderers[i].init(_rhi, _render_pass_descriptor,
+			                            RendererFlags::IsScrolling |
+										RendererFlags::UseScissors |
+										RendererFlags::UseBlending |
+										(i == 0 ? RendererFlags::CreatePipeline : RendererFlags::None));
 
 			// Texture renderers (scrolling, normal tracks, per-slice scissored)
-			_texture_renderer_scissors[i].init(_rhi, _texture_atlas_backend, _render_pass_descriptor, true, true);
-			_texture_renderer_scissors_halfsize[i].init(_rhi, _texture_atlas_backend_halfsize, _render_pass_descriptor, true, true);
+			_texture_renderer_scissors[i].init(_rhi, _texture_atlas_backend, _render_pass_descriptor,
+											   RendererFlags::IsScrolling |
+											   RendererFlags::UseScissors);
+			
+			_texture_renderer_scissors_halfsize[i].init(_rhi, _texture_atlas_backend_halfsize, _render_pass_descriptor,
+														RendererFlags::IsScrolling |
+														RendererFlags::UseScissors);
 
-			// Triangle renderers (per-slice, scissored)
-			_triangle_renderer_scissors[i].init(_rhi, i, i == (MAX_NUM_SLICES-1) ? NULL : &_triangle_renderer_scissors[i+1], _render_pass_descriptor, true, true);
+			// Triangle renderers (per-slice, scissored). Use shared scrolling pipeline
+			_triangle_renderer_scissors[i].init(_rhi, _render_pass_descriptor,
+			                                    RendererFlags::IsScrolling |
+												RendererFlags::UseScissors |
+												RendererFlags::UseBlending);
+		}
+
+		// Scrollbar resources (separate ubuf for different scroll_pos)
+		{
+			_shared_scrollbar_ubuf = _rhi->newBuffer(QRhiBuffer::Dynamic,
+			                                         QRhiBuffer::UniformBuffer,
+			                                         sizeof(QMatrix4x4) + sizeof(float));
+			_shared_scrollbar_ubuf->create();
+
+			_shared_scrollbar_sbr = _rhi->newShaderResourceBindings();
+			
+			QVector<QRhiShaderResourceBinding> bindings;
+			
+			bindings.push_back(QRhiShaderResourceBinding::uniformBuffer(
+				0, QRhiShaderResourceBinding::VertexStage, _shared_scrollbar_ubuf));
+			
+			_shared_scrollbar_sbr->setBindings(bindings.cbegin(), bindings.cend());
+			_shared_scrollbar_sbr->create();
+		}
+
+		// Playcursor resources (separate ubuf for different scroll_pos)
+		{
+			_shared_playcursor_ubuf = _rhi->newBuffer(QRhiBuffer::Dynamic,
+			                                          QRhiBuffer::UniformBuffer,
+			                                          sizeof(QMatrix4x4) + sizeof(float));
+			_shared_playcursor_ubuf->create();
+
+			_shared_playcursor_sbr = _rhi->newShaderResourceBindings();
+			
+			QVector<QRhiShaderResourceBinding> bindings;
+			
+			bindings.push_back(QRhiShaderResourceBinding::uniformBuffer(
+				0, QRhiShaderResourceBinding::VertexStage, _shared_playcursor_ubuf));
+			
+			_shared_playcursor_sbr->setBindings(bindings.cbegin(), bindings.cend());
+			_shared_playcursor_sbr->create();
+		}
+
+		// Shared uniform buffer for all scrolling renderers
+		{
+			_shared_scrolling_ubuf = _rhi->newBuffer(QRhiBuffer::Dynamic,
+			                                        QRhiBuffer::UniformBuffer,
+			                                        sizeof(QMatrix4x4) + sizeof(float));
+			_shared_scrolling_ubuf->create();
+
+			_shared_scrolling_sbr = _rhi->newShaderResourceBindings();
+			
+			QVector<QRhiShaderResourceBinding> bindings;
+			
+			bindings.push_back(QRhiShaderResourceBinding::uniformBuffer(
+				0, QRhiShaderResourceBinding::VertexStage, _shared_scrolling_ubuf));
+			
+			_shared_scrolling_sbr->setBindings(bindings.cbegin(), bindings.cend());
+			_shared_scrolling_sbr->create();
 		}
 
 		// Non-scrolling texture renderer
-		_texture_renderer_static.init(_rhi, _texture_atlas_backend, _render_pass_descriptor, false, false);
+		_texture_renderer_static.init(_rhi, _texture_atlas_backend, _render_pass_descriptor,
+									  RendererFlags::None);
 
 		// Non-scrolling triangle renderer
-		_triangle_renderer_static.init(_rhi, -1, NULL, _render_pass_descriptor, false, false);
+		_triangle_renderer_static.init(_rhi, _render_pass_descriptor,
+		                               RendererFlags::UseBlending |
+									   RendererFlags::CreatePipeline);
+		
 		// Non-scrolling scissored triangle renderer
-		_triangle_renderer_static_scissor.init(_rhi, -1, NULL, _render_pass_descriptor, false, true);
+		_triangle_renderer_static_scissor.init(_rhi, _render_pass_descriptor,
+		                                       RendererFlags::UseScissors |
+											   RendererFlags::UseBlending |
+											   RendererFlags::CreatePipeline);
+
+		// Scrollbar renderer (non-sliced, non-scrolling, non-scissored, no blending)
+		_triangle_renderer_scrollbar.init(_rhi, _render_pass_descriptor,
+		                                  RendererFlags::CreatePipeline);
+		
+		// Node indicator renderer (non-sliced, scrolling, non-scissored, no blending, uses shared pipeline)
+		_triangle_renderer_node_indicator.init(_rhi, _render_pass_descriptor,
+		                                       RendererFlags::IsScrolling);
+
+		// Playcursor renderer (non-sliced, scrolling, non-scissored, blending, uses shared pipeline)
+		_triangle_renderer_playcursor.init(_rhi, _render_pass_descriptor,
+		                                   RendererFlags::IsScrolling |
+										   RendererFlags::UseBlending);
 		
 		const double ratio = devicePixelRatio();
 
@@ -1153,7 +1205,7 @@ public:
 
 				time_estimator.set_vblank(ATOMIC_DOUBLE_GET(g_vblank));
 #if !defined(RELEASE)
-				getchar();
+				//getchar();
 #endif
 			});
 
@@ -1170,9 +1222,8 @@ public:
 	double _last_rendering_time = 0;
 #endif
 	
-	void customRender() override
+	void QRHI_customRender(void) override
 	{
-		assert(QThread::currentThread() == g_thread);
 
 #if !defined(RELEASE)
 		static double s_start_time = TIME_get_ms();
@@ -1187,170 +1238,296 @@ public:
 		//static int g_n=0; printf("Rendering %d\n", g_n++);
 #endif
 
-		auto *sv = GE_get_shared_variables(g_painting_data);
+		if (_painting_data == nullptr) // Note: Only happens during startup, if at all.
+			return;
+		
+		auto &sv = _painting_data->shared_variables;
 
-		// TODO: Check this one.
-		//GE_set_curr_realline(sv->curr_realline);
-
+#if !defined(RELEASE)
+		// Profile: print opaque/transparent triangle counts
+		{
+			g_profile_frame_count++;
+			if (g_profile_frame_count % 60 == 0) {
+				int total = g_profile_opaque + g_profile_transparent;
+				if(0)
+				printf("--- TRI PROFILE frame #%d: %d triangles (%d opaque %.0f%%, %d transparent %.0f%%), "
+					   "%d solid %d gradient, %d slice duplications (avg %.1f/tri)\n",
+					   g_profile_frame_count, total,
+					   g_profile_opaque, total > 0 ? 100.0 * g_profile_opaque / total : 0.0,
+					   g_profile_transparent, total > 0 ? 100.0 * g_profile_transparent / total : 0.0,
+					   g_profile_solid, g_profile_gradient,
+					   g_profile_slice_dups, total > 0 ? (float)g_profile_slice_dups / total : 0.0f);
+				
+				int opaque_verts = 0, transp_verts = 0;
+				for (int i = 0; i < MAX_NUM_SLICES; ++i) {
+					transp_verts += _triangle_renderers[i]._vertices.QRHI_has_vertices() ? 1 : 0;
+					transp_verts += _triangle_renderer_scissors[i]._vertices.QRHI_has_vertices() ? 1 : 0;
+				}
+				if(0)
+					printf("  Renderer slices: %d opaque, %d transparent\n",
+						   opaque_verts, transp_verts);
+				
+				g_profile_opaque = 0;
+				g_profile_transparent = 0;
+				g_profile_solid = 0;
+				g_profile_gradient = 0;
+				g_profile_slice_dups = 0;
+			}
+		}
+#endif
+		
 		const QSize outputSizeInPixels = _swap_chain->currentPixelSize();
 		
 		double scroll_pos = 0.0;
+		double current_realline_while_playing = 0.0;
 
-		find_scrollpos(sv, scroll_pos);
+		if (!QRHI_find_scrollpos(sv, scroll_pos, current_realline_while_playing))
+			return;
 
 		if (ATOMIC_GET(pc->player_state) != PLAYER_STATE_PLAYING)
 		{
-			R_ASSERT(fabsf(scroll_pos - round(scroll_pos)) < 0.001);
+			R_ASSERT(fabs(scroll_pos - round(scroll_pos)) < 0.001);
 			scroll_pos = round(scroll_pos);
 		}
 
 		const float scroll_y1 = scroll_pos;
 		const float scroll_y2 = scroll_pos + outputSizeInPixels.height();
 
-		const float slice_size = GE_get_slice_size(g_painting_data);
-		
-		const int slice_start = R_BOUNDARIES(0, scroll_y1 / slice_size, MAX_NUM_SLICES-1);
-		const int slice_end = R_BOUNDARIES(slice_start+1, ceilf(scroll_y2 / slice_size), MAX_NUM_SLICES);
+		const float slice_size = _painting_data->slice_size;
 
-		printf("slices: %d -> %d. scroll: %f -> %f. scroll_pos: %f\n", slice_start, slice_end, scroll_y1, scroll_y2, scroll_pos);
+		const int tri_slice_start = R_BOUNDARIES(0, scroll_y1 / slice_size, MAX_NUM_SLICES-1);
+		const int tri_slice_end   = R_BOUNDARIES(tri_slice_start+1, ceilf(scroll_y2 / slice_size), MAX_NUM_SLICES);
+
+		const int font_overspill = R_MAX(0, _texture_atlas_backend->QRHI_getFontHeight() - slice_size);
+		
+		const int text_slice_start = R_BOUNDARIES(0, (scroll_y1 - font_overspill) / slice_size, MAX_NUM_SLICES-1);
+		const int text_slice_end   = tri_slice_end; //R_BOUNDARIES(text_slice_start+1, ceilf(scroll_y2 / slice_size), MAX_NUM_SLICES);
+
+		//printf("slices: %d -> %d. scroll: %f -> %f. scroll_pos: %f\n", tri_slice_start, tri_slice_end, scroll_y1, scroll_y2, scroll_pos);
 
 		QRhiResourceUpdateBatch *batch = _rhi->nextResourceUpdateBatch();
 
 
-		_texture_atlas_backend->uploadTexture(batch);
-		_texture_atlas_backend_halfsize->uploadTexture(batch);
+		_texture_atlas_backend->QRHI_uploadTexture(batch);
+		_texture_atlas_backend_halfsize->QRHI_uploadTexture(batch);
 
+		for_each_renderer(tri_slice_start, tri_slice_end,
+						  text_slice_start, text_slice_end,
+						  [this, batch, scroll_pos]
+				(auto &r)
+			{
+				r.QRHI_prepare_frame(_rhi,
+									 batch,
+									 _viewProjection,
+									 scroll_pos);
+			});
 
-		for (int i = slice_start ; i < slice_end ; ++i)
-		{
-			// Triangles (per-slice) - scrolling
-			_triangle_renderers[i].prepare_frame(_rhi,
-												 batch,
-												 _viewProjection,
-												 scroll_pos);
-		
-			// Triangles (per-slice) - scrolling+scissored
-			_triangle_renderer_scissors[i].prepare_frame(_rhi,
-														 batch,
-														 _viewProjection,
-														 scroll_pos);
-		}
-		
-		// Triangles (non-scrolling)
-		_triangle_renderer_static.prepare_frame(_rhi,
-												batch,
-												_viewProjection,
-												0.0f);
-		
-		// Triangles (non-scrolling, scissors)
-		_triangle_renderer_static_scissor.prepare_frame(_rhi,
-														batch,
-														_viewProjection,
-														0.0f);
-		
-		for (int i = slice_start ; i < slice_end ; ++i)
-		{
-			// Textures (i.e. text) - scrolling, per-slice
-			_texture_renderers[i].prepare_frame(_rhi,
-												batch,
-												_viewProjection,
-												scroll_pos,
-												outputSizeInPixels.width(),
-												outputSizeInPixels.height());
-
-			// Texture, scrolling+scissored, per-slice
-			_texture_renderer_scissors[i].prepare_frame(_rhi,
-														batch,
-														_viewProjection,
-														scroll_pos,
-														outputSizeInPixels.width(),
-														outputSizeInPixels.height());
-			_texture_renderer_scissors_halfsize[i].prepare_frame(_rhi,
-																 batch,
-																 _viewProjection,
-																 scroll_pos,
-																 outputSizeInPixels.width(),
-																 outputSizeInPixels.height());
-		}
-		
-		// Textures (non-scrolling)
-		_texture_renderer_static.prepare_frame(_rhi,
-											   batch,
-											   _viewProjection,
-											   0.0f,
-											   outputSizeInPixels.width(),
-											   outputSizeInPixels.height());
 		
 		QRhiCommandBuffer *command_buffer = _swap_chain->currentFrameCommandBuffer();
+
 		
+#if !defined(RELEASE)
+		// Diagnostic: check for blank frames
+		{
+			static int blank_count = 0;
+			bool any_tri = false;
+			for (int i = tri_slice_start; i < tri_slice_end && !any_tri; ++i)
+				any_tri |= _triangle_renderers[i]._vertices.QRHI_has_vertices()
+					|| _triangle_renderer_scissors[i]._vertices.QRHI_has_vertices();
+			any_tri |= _triangle_renderer_static._vertices.QRHI_has_vertices()
+				|| _triangle_renderer_static_scissor._vertices.QRHI_has_vertices();
+			if (!any_tri) {
+				blank_count++;
+				printf("BLANK FRAME #%d: no tri verts. _painting_data=%p, slice_size=%f, tri_range=[%d,%d)\n",
+					   blank_count, (void*)_painting_data, slice_size, tri_slice_start, tri_slice_end);
+				//getchar();
+			}
+		}
+#endif
+		
+		// Upload shared scrolling uniforms once (mvp + yscroll same for all slices)
+		{
+			batch->updateDynamicBuffer(_shared_scrolling_ubuf, 0, 64, _viewProjection.constData());
+			float scrollPos_f = (float)scroll_pos;
+			batch->updateDynamicBuffer(_shared_scrolling_ubuf, 64, sizeof(float), &scrollPos_f);
+		}
+
+		// Upload scrollbar uniforms (different scroll_pos)
+		{
+			batch->updateDynamicBuffer(_shared_scrollbar_ubuf, 0, 64, _viewProjection.constData());
+			float scrollbar_pos = 0.0f;
+			{
+				double till_realline = 0.0;
+				bool is_playing = ATOMIC_GET(pc->player_state) == PLAYER_STATE_PLAYING;
+				// Recompute till_realline from scroll_pos
+				till_realline = scroll_pos / sv.fontheight - (sv.top_realline - sv.curr_realline);
+				float y1 = get_scrollbar_scroller_y1(till_realline, sv.num_reallines - (is_playing ? 0 : 1),
+				                                     sv.scrollbar_height, sv.scrollbar_scroller_height);
+				scrollbar_pos = scale(y1, 0, sv.scrollbar_height, 0, -(float)sv.scrollbar_height);
+			}
+			batch->updateDynamicBuffer(_shared_scrollbar_ubuf, 64, sizeof(float), &scrollbar_pos);
+		}
+
+		// Upload playcursor uniforms (different scroll_pos)
+		{
+			batch->updateDynamicBuffer(_shared_playcursor_ubuf, 0, 64, _viewProjection.constData());
+			
+			float playcursor_pos = (float)scroll_pos;
+			
+			if (current_realline_while_playing > 0.0)
+				playcursor_pos = (float)(scroll_pos - QRHI_GE_scroll_pos(sv, current_realline_while_playing));
+			
+			batch->updateDynamicBuffer(_shared_playcursor_ubuf, 64, sizeof(float), &playcursor_pos);
+		}
+
 		command_buffer->beginPass(_swap_chain->currentFrameRenderTarget(), g_background_color, { 1.0f, 0 }, batch);
 		{
-			// triangles (scrolling) - per-slice
-			for (int i = slice_start ; i < slice_end ; ++i)
-				_triangle_renderers[i].render_frame(command_buffer, outputSizeInPixels);
+			command_buffer->setViewport({
+					0,
+					0,
+					float(outputSizeInPixels.width()),
+					float(outputSizeInPixels.height())
+				});
 
+			
 			// scissor rectangle based on shared variables
-			int sc_x = 0;
-			int sc_w = 0;
-			if (g_painting_data)
+			int scissor_x = 0;
+			int scissor_w = 0;
 			{
-				const SharedVariables *sv = GE_get_shared_variables(g_painting_data);
-				sc_x = int(sv->wtracks_scissor_x1 * g_opengl_scale_ratio);
-				sc_w = int((sv->wtracks_scissor_x2 - sv->wtracks_scissor_x1) * g_opengl_scale_ratio);
-				if (sc_x < 0)
-					sc_x = 0;
+				scissor_x = int(sv.wtracks_scissor_x1 * g_opengl_scale_ratio);
+				scissor_w = int((sv.wtracks_scissor_x2 - sv.wtracks_scissor_x1) * g_opengl_scale_ratio);
+				if (scissor_x < 0)
+					scissor_x = 0;
 
 				/*
-				printf("sc_x: %d. scissor_x1: %d. sc_w: %d. scissor_x2: %d\n",
-					   sc_x, sv->wtracks_scissor_x1,
-					   sc_w, sv->wtracks_scissor_x2);
+				printf("scissor_x: %d. scissor_x1: %d. scissor_w: %d. scissor_x2: %d\n",
+					   scissor_x, sv.wtracks_scissor_x1,
+					   scissor_w, sv.wtracks_scissor_x2);
 				*/
-				
-				if (sc_w > 0)
-					command_buffer->setScissor({sc_x, 0, sc_w, outputSizeInPixels.height()});
 			}
 
-			for (int i = slice_start ; i < slice_end ; ++i)
-				_triangle_renderer_scissors[i].render_frame(command_buffer, outputSizeInPixels);
-			
-			// triangles (non-scrolling, scissors) - draw on top
-			_triangle_renderer_static_scissor.render_frame(command_buffer,
-														   outputSizeInPixels);
-			
-			if (sc_w > 0)
+
+			auto *shared_scrolling_triangle_pipeline = _triangle_renderers[0]._pipeline;
+
+
+			// triangles (scrolling). Non-scissored then scissored
+			//
+			{
+				command_buffer->setGraphicsPipeline(shared_scrolling_triangle_pipeline);
+				command_buffer->setShaderResources(_shared_scrolling_sbr);
+
+				auto setScissor = [&](int i, int scissor_x, int scissor_w)
+					{
+						float y_px_high = (i==0)
+							? 0
+							: (i * slice_size - scroll_pos) * g_opengl_scale_ratio;
+						
+						float y_px_low = (i==MAX_NUM_SLICES-1)
+							? outputSizeInPixels.height()
+							: ((i + 1) * slice_size - scroll_pos) * g_opengl_scale_ratio;
+						
+						int scissor_y = R_MAX(0, outputSizeInPixels.height() - (int)floorf(y_px_low));
+						
+						int scissor_bottom = R_MIN(outputSizeInPixels.height(), outputSizeInPixels.height() - (int)floorf(y_px_high));
+						
+						int scissor_h = scissor_bottom - scissor_y;
+
+						if (scissor_h <= 0)
+							return false;
+
+						command_buffer->setScissor({scissor_x, scissor_y, scissor_w, scissor_h});
+
+						return true;
+					};
+					
+				// Non-scissored
+				for (int i = tri_slice_start ; i < tri_slice_end ; i++)
+				{
+					if (!_triangle_renderers[i]._vertices.QRHI_has_vertices())
+						continue;
+					
+					if (setScissor(i, 0, outputSizeInPixels.width()))
+						_triangle_renderers[i]._vertices.QRHI_render(command_buffer);
+				}
+
+				// Scissored
+				for (int i = tri_slice_start ; i < tri_slice_end ; i++)
+				{
+					if (!_triangle_renderer_scissors[i]._vertices.QRHI_has_vertices())
+						continue;
+					
+					if (setScissor(i, scissor_x, scissor_w))
+						_triangle_renderer_scissors[i]._vertices.QRHI_render(command_buffer);
+				}
+				
 				command_buffer->setScissor({0, 0, outputSizeInPixels.width(), outputSizeInPixels.height()});
+			}
+
+			// Node indicator (scrolling, non-scissored, foreground)
+			if (_triangle_renderer_node_indicator._vertices.QRHI_has_vertices())
+			{
+				command_buffer->setGraphicsPipeline(shared_scrolling_triangle_pipeline);
+				command_buffer->setShaderResources(_shared_scrolling_sbr);
+				_triangle_renderer_node_indicator._vertices.QRHI_render(command_buffer);
+			}
+
+			// Playcursor (scrolling, non-scissored, foreground, separate scroll_pos)
+			if (_triangle_renderer_playcursor._vertices.QRHI_has_vertices())
+			{
+				command_buffer->setGraphicsPipeline(shared_scrolling_triangle_pipeline);
+				command_buffer->setShaderResources(_shared_playcursor_sbr);
+				_triangle_renderer_playcursor._vertices.QRHI_render(command_buffer);
+			}
+
+			// triangles (non-scrolling, scissors) - draw on top
+			//
+			{
+				if (scissor_w > 0)
+					command_buffer->setScissor({scissor_x, 0, scissor_w, outputSizeInPixels.height()});
+				
+				_triangle_renderer_static_scissor.QRHI_render_frame(command_buffer);
+				
+				if (scissor_w > 0)
+					command_buffer->setScissor({0, 0, outputSizeInPixels.width(), outputSizeInPixels.height()});
+			}
 
 			// triangles (non-scrolling) - draw on top
-			_triangle_renderer_static.render_frame(command_buffer,
-												   outputSizeInPixels);
+			//
+			_triangle_renderer_static.QRHI_render_frame(command_buffer);
 
-			// text (scrolling) - per-slice
-			for (int i = slice_start ; i < slice_end ; ++i)
-				_texture_renderers[i].render_frame(_rhi,
-												   command_buffer,
-												   outputSizeInPixels);
-
-			if (sc_w > 0)
-				command_buffer->setScissor({sc_x, 0, sc_w, outputSizeInPixels.height()});
-
-			// text (scissored)
-			for (int i = slice_start ; i < slice_end ; ++i)
+			// Scrollbar (opaque, non-scissored)
 			{
-				_texture_renderer_scissors[i].render_frame(_rhi,
-														   command_buffer,
-														   outputSizeInPixels);
-				_texture_renderer_scissors_halfsize[i].render_frame(_rhi,
-																	command_buffer,
-																	outputSizeInPixels);
+				auto *shared_scrollbar_triangle_pipeline = _triangle_renderer_scrollbar._pipeline;
+
+				command_buffer->setGraphicsPipeline(shared_scrollbar_triangle_pipeline);
+				command_buffer->setShaderResources(_shared_scrollbar_sbr);
+				if (_triangle_renderer_scrollbar._vertices.QRHI_has_vertices())
+					_triangle_renderer_scrollbar._vertices.QRHI_render(command_buffer);
 			}
 			
-			if (sc_w > 0)
-				command_buffer->setScissor({0, 0, outputSizeInPixels.width(), outputSizeInPixels.height()});
+			// text (non-scissored) - per slice
+			for (int i = text_slice_start ; i < text_slice_end ; i++)
+				_texture_renderers[i].QRHI_render_frame(command_buffer);
 
-			// text (non-scrolling) - draw on top
-			_texture_renderer_static.render_frame(_rhi,
-												  command_buffer,
-												  outputSizeInPixels);
+			// text (scissored) - per slice
+			//
+			{
+				if (scissor_w > 0)
+					command_buffer->setScissor({scissor_x, 0, scissor_w, outputSizeInPixels.height()});
+				
+				for (int i = text_slice_start ; i < text_slice_end ; i++)
+				{
+					_texture_renderer_scissors[i].QRHI_render_frame(command_buffer);
+					_texture_renderer_scissors_halfsize[i].QRHI_render_frame(command_buffer);
+				}
+				
+				if (scissor_w > 0)
+					command_buffer->setScissor({0, 0, outputSizeInPixels.width(), outputSizeInPixels.height()});
+			}
+			
+			// text (non-scrolling) - draw on top. Not often used, but we need it for messages.
+			//
+			_texture_renderer_static.QRHI_render_frame(command_buffer);
 		}		
 		command_buffer->endPass();
 
@@ -1396,52 +1573,28 @@ public:
 static QVulkanInstance *g_vulkan_inst = nullptr;
 #endif
 
-static QRhi::Implementation init_qrhi(void)
+static QRhi::Implementation MAIN_init_qrhi(void)
 {
-    QRhi::Implementation graphicsApi;
+	R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
 
-    // Use platform-specific defaults when no command-line arguments given.
-#if defined(Q_OS_WIN)
-    graphicsApi = QRhi::D3D11;
-#elif QT_CONFIG(metal)
-    graphicsApi = QRhi::Metal;
-#elif QT_CONFIG(vulkan)
-    graphicsApi = QRhi::Vulkan;
-#else
-    graphicsApi = QRhi::OpenGLES2;
-#endif
+    QRhi::Implementation graphicsApi = QRhi::Null;
 
-	//graphicsApi = QRhi::OpenGLES2;
-	
-    QCommandLineParser cmdLineParser;
-    cmdLineParser.addHelpOption();
-    QCommandLineOption nullOption({ "n", "null" }, QLatin1String("Null"));
-    cmdLineParser.addOption(nullOption);
-    QCommandLineOption glOption({ "g", "opengl" }, QLatin1String("OpenGL"));
-    cmdLineParser.addOption(glOption);
-    QCommandLineOption vkOption({ "v", "vulkan" }, QLatin1String("Vulkan"));
-    cmdLineParser.addOption(vkOption);
-    QCommandLineOption d3d11Option({ "d", "d3d11" }, QLatin1String("Direct3D 11"));
-    cmdLineParser.addOption(d3d11Option);
-    QCommandLineOption d3d12Option({ "D", "d3d12" }, QLatin1String("Direct3D 12"));
-    cmdLineParser.addOption(d3d12Option);
-    QCommandLineOption mtlOption({ "m", "metal" }, QLatin1String("Metal"));
-    cmdLineParser.addOption(mtlOption);
-
-    cmdLineParser.process(*qApp);
-    if (cmdLineParser.isSet(nullOption))
+    {
+      const char *rhi_backend = GL_get_backend();
+      if (!strcmp(rhi_backend, "null"))
         graphicsApi = QRhi::Null;
-    if (cmdLineParser.isSet(glOption))
+      else if (!strcmp(rhi_backend, "opengl"))
         graphicsApi = QRhi::OpenGLES2;
-    if (cmdLineParser.isSet(vkOption))
+      else if (!strcmp(rhi_backend, "vulkan"))
         graphicsApi = QRhi::Vulkan;
-    if (cmdLineParser.isSet(d3d11Option))
+      else if (!strcmp(rhi_backend, "d3d11"))
         graphicsApi = QRhi::D3D11;
-    if (cmdLineParser.isSet(d3d12Option))
+      else if (!strcmp(rhi_backend, "d3d12"))
         graphicsApi = QRhi::D3D12;
-    if (cmdLineParser.isSet(mtlOption))
+      else if (!strcmp(rhi_backend, "metal"))
         graphicsApi = QRhi::Metal;
-
+    }
+	
  //! [api-setup]
     // For OpenGL, to ensure there is a depth/stencil buffer for the window.
     // With other APIs this is under the application's control (QRhiRenderBuffer etc.)
@@ -1458,9 +1611,7 @@ static QRhi::Implementation init_qrhi(void)
     fmt.setProfile(QSurfaceFormat::CoreProfile);
 #endif
 
-#if 1 //DO_ANTIALIASING
-	fmt.setSamples(4); // Don't see any difference setting this one.
-#endif
+	fmt.setSamples(g_msaa_samples);
 	
 #if 0 // investigate when/if there's a difference between these three. (if no difference, than SingleBuffer is probably better due to lower input latency)
 	fmt.setSwapBehavior(QSurfaceFormat::SingleBuffer);
@@ -1468,7 +1619,8 @@ static QRhi::Implementation init_qrhi(void)
 	fmt.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
 #endif
 
-	//fmt.setSwapBehavior(QSurfaceFormat::TripleBuffer);
+	//fmt.setSwapBehavior(QSurfaceFormat::SingleBuffer);
+	fmt.setSwapBehavior(QSurfaceFormat::DefaultSwapBehavior);
 	
 	printf("--- Swap interval: %d\n"
 		   "--- Renderable types: %x\n",
@@ -1500,7 +1652,7 @@ static QRhi::Implementation init_qrhi(void)
         // Play nice with QRhi.
         g_vulkan_inst->setExtensions(QRhiVulkanInitParams::preferredInstanceExtensions());
         if (!g_vulkan_inst->create()) {
-            qWarning("Failed to create Vulkan instance, switching to OpenGL");
+            GFX_Message(NULL, "Failed to create Vulkan instance, switching to OpenGL");
             delete g_vulkan_inst;
             g_vulkan_inst = nullptr;
             graphicsApi = QRhi::OpenGLES2;
@@ -1517,13 +1669,13 @@ static QRhi::Implementation init_qrhi(void)
 } // anon. namespace
 
 
-bool g_gl_widget_started = false;
 static RenderWindow *g_window;
 static QWidget *g_widget;
 
 
-static bool is_scrolling(const GE_Context &c)
+static bool MAIN_is_scrolling(const GE_Context &c)
 {
+    R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
     if (Z_IS_STATIC_X(c._conf.z))
 		return true; // scroll, non-scissor.
 
@@ -1539,217 +1691,252 @@ static bool is_scrolling(const GE_Context &c)
 	return false; // everything else.
 }
 
-r::TriangleRenderer *GE_get_triangle_renderer(const GE_Context &context)
+static int MAIN_get_slice_from_y(const int y)
 {
-	R_ASSERT(g_gl_widget_started);
+	R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
 
-	if (!is_scrolling(context))
+	int slice;
+	
+	if (y < 0)
+		slice = 0;
+	else
+		slice = R_MIN(MAX_NUM_SLICES-1, y / g_main_thread_slice_size);
+
+	if (slice < 0)
 	{
-		if (context._conf.use_scissors == USE_SCISSORS)
-			return &g_window->_triangle_renderer_static_scissor;
-		else
-			return &g_window->_triangle_renderer_static;
+		R_ASSERT(false);
+		slice = 0;
 	}
 
-	int slice = context._slice;
-	
-	R_ASSERT(slice >= 0 && slice < MAX_NUM_SLICES);
-	
-	if (slice < 0)
-		slice = 0;
-	
 	if (slice >= MAX_NUM_SLICES)
+	{
+		R_ASSERT(false);
 		slice = MAX_NUM_SLICES-1;
-
-	if (context._conf.use_scissors == USE_SCISSORS)
-		return &g_window->_triangle_renderer_scissors[slice];
-	else
-		return &g_window->_triangle_renderers[slice];
+	}
+	
+	return slice;
 }
 
-r::TextRenderer *GE_get_text_renderer(const GE_Context &context, bool is_half_size)
+static TextureRenderer *MAIN_get_texture_renderer(const GE_Context &context, bool is_half_size, float y)
 {
-	R_ASSERT(g_gl_widget_started);
+	R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
 
-	if (!is_scrolling(context))
+	if (!MAIN_is_scrolling(context))
 	{
 		R_ASSERT_NON_RELEASE(!is_half_size);
-		return dynamic_cast<r::TextRenderer*>(&g_window->_texture_renderer_static);
+		return &g_window->_texture_renderer_static;
 	}
 			
-	int slice = context._slice;
-
-	R_ASSERT(slice >= 0 && slice < MAX_NUM_SLICES);
-	
-	if (slice < 0)
-		slice = 0;
-	
-	if (slice >= MAX_NUM_SLICES)
-		slice = MAX_NUM_SLICES-1;
+	int slice = MAIN_get_slice_from_y(y);
 
 	if (context._conf.use_scissors == USE_SCISSORS)
 	{
 		if (is_half_size)
-			return dynamic_cast<r::TextRenderer*>(&g_window->_texture_renderer_scissors_halfsize[slice]);
+			return &g_window->_texture_renderer_scissors_halfsize[slice];
 		else
-			return dynamic_cast<r::TextRenderer*>(&g_window->_texture_renderer_scissors[slice]);
+			return &g_window->_texture_renderer_scissors[slice];
 	}
 	else
 	{
 		R_ASSERT_NON_RELEASE(!is_half_size);
-		return dynamic_cast<r::TextRenderer*>(&g_window->_texture_renderers[slice]);
+		return &g_window->_texture_renderers[slice];
+	}
+}
+
+void GE_Context::add_triangle(const r::Triangle &triangle, r2::GradientType::Type gradient_type) const
+{
+	// MAIN THREAD
+
+	if (g_rhi == NULL)
+		return;
+
+#if !defined(RELEASE)
+	// Opaque pass: only Z_BACKGROUND objects (lowest z-layer, nothing behind them)
+	bool is_opaque = (_conf.z == Z_BACKGROUND);
+
+	if (is_opaque)
+		g_profile_opaque++;
+	else
+		g_profile_transparent++;
+	
+	if (gradient_type == r2::GradientType::Type::NOTYPE)
+		g_profile_solid++;
+	else
+		g_profile_gradient++;
+#endif
+	
+	if (_conf.z == Z_PLAYCURSOR)
+	{
+		g_window->_triangle_renderer_playcursor.MAIN_add_triangle(*this, triangle, gradient_type);
+		return;
+	}
+
+	if (_conf.z >= Z_SCROLLBAR && _conf.z < Z_MIN_STATIC)
+	{
+		g_window->_triangle_renderer_scrollbar.MAIN_add_triangle(*this, triangle, gradient_type);
+		return;
+	}
+
+	// Node indicator: foreground non-scissored, needs to scroll but render after scissored pass
+	if (_conf.z == Z_MAX_SCROLLTRANSFORM && _conf.use_scissors == NO_SCISSORS)
+	{
+		g_window->_triangle_renderer_node_indicator.MAIN_add_triangle(*this, triangle, gradient_type);
+		return;
+	}
+	
+	if (!MAIN_is_scrolling(*this))
+	{
+		TriangleRenderer *r;
+
+		if (_conf.use_scissors == USE_SCISSORS)
+			r = &g_window->_triangle_renderer_static_scissor;
+		else
+			r = &g_window->_triangle_renderer_static;
+		
+		r->MAIN_add_triangle(*this, triangle, gradient_type);
+		
+		return;
+	}
+
+	const int slice_size = g_main_thread_slice_size;
+
+#if !defined(RELEASE)
+	int num_slices = 0;
+#endif
+	
+	for(int slice = R_BOUNDARIES(0, triangle.get_y1() / slice_size, MAX_NUM_SLICES-1) ; slice < MAX_NUM_SLICES ; slice++)
+	{
+		TriangleRenderer *triangle_renderer;
+		
+		if (_conf.use_scissors == USE_SCISSORS)
+			triangle_renderer = &g_window->_triangle_renderer_scissors[slice];
+		else
+			triangle_renderer = &g_window->_triangle_renderers[slice];
+
+		triangle_renderer->MAIN_add_triangle(*this, triangle, gradient_type);
+
+#if !defined(RELEASE)
+		num_slices++;
+#endif
+		
+		if (slice * slice_size >= triangle.get_y3())
+			break;
+	}
+
+#if !defined(RELEASE)
+	g_profile_slice_dups += (num_slices - 1); // duplications beyond the first
+#endif
+}
+
+void GE_Context::add_text(const QString &text, int x, int y) const
+{
+	if (g_rhi != NULL)
+	{
+		const GE_Rgb &rgb = color.c;
+		
+		MAIN_get_texture_renderer(*this, false, y)->MAIN_add_text(text, x, y,
+																  rgb.r / 256.0,
+																  rgb.g / 256.0,
+																  rgb.b / 256.0,
+																  rgb.a / 256.0);
+	}
+}
+
+void GE_Context::add_text_halfsize(const QString &text, int x, int y) const
+{
+	if (g_rhi != NULL)
+	{
+		const GE_Rgb &rgb = color.c;
+		
+		MAIN_get_texture_renderer(*this, true, y)->MAIN_add_text(text, x, y,
+																 rgb.r / 256.0,
+																 rgb.g / 256.0,
+																 rgb.b / 256.0,
+																 rgb.a / 256.0);
 	}
 }
 
 	
-#if 0
-extern void gakk_GE_text(const char *text, int x, int y, float r, float g, float b, float a);
-void gakk_GE_text(const char *text, int x, int y, float r, float g, float b, float a)
-{
-	g_window->_texture_renderers[0].add_text(text, x, y, r, g, b, a);
-}
-#endif
-
 void GE_set_font(const QFont &font)
 {
 	if (g_window)
 	{
-		g_window->setFont(font);
-		#if 0
-		for (int i = 0; i < MAX_NUM_SLICES; ++i) {
-			if (g_window->_texture_renderers[i]._texture_atlas)
-				g_window->_texture_renderers[i]._texture_atlas->setFont(font);
-			if (g_window->_texture_renderer_scissors[i]._texture_atlas)
-				g_window->_texture_renderer_scissors[i]._texture_atlas->setFont(font);
-		}
-		if (g_window->_texture_renderer_static._texture_atlas)
-			g_window->_texture_renderer_static._texture_atlas->setFont(font);
-		#endif
+		g_window->MAIN_setFont(font);
 		GFX_ForceScheduleEditorRedraw(); // New font will be set before starting new paint.
 	}
 }
 
-void aiai(void);
-void aiai(void)  // Called before starting to render, before sharedData has been filled in.
+bool GL_call_me_before_starting_to_generate_vertices1(void)
 {
-	if (g_window && g_window->_texture_atlas_backend && g_window->_texture_atlas_backend_halfsize)
-	{
-		g_window->_texture_atlas_backend->maybe_switch_to_next_d();
-		g_window->_texture_atlas_backend_halfsize->maybe_switch_to_next_d();
-		#if 0
-		for (int i = 0; i < MAX_NUM_SLICES; ++i) {
-			if (g_window->_texture_renderers[i]._texture_atlas)
-				g_window->_texture_renderers[i]._texture_atlas->maybe_switch_to_next_d();
-			if (g_window->_texture_renderer_scissors[i]._texture_atlas)
-				g_window->_texture_renderer_scissors[i]._texture_atlas->maybe_switch_to_next_d();
-		}
-		if (g_window->_texture_renderer_static._texture_atlas)
-			g_window->_texture_renderer_static._texture_atlas->maybe_switch_to_next_d();
-		#endif
-		// Note: previously this function obtained render buffers for new
-		// vertex generation. That could race with GE_start_writing calling
-		// the same routines, causing duplicate starts. Start/finish must be
-		// driven by the main-thread writing lifecycle (GE_start_writing/
-		// GE_end_writing). Leave aiai purely for texture atlas switching.
+	if (g_window == NULL || g_rhi == NULL)
+		return false;
+	
+	// Switch texture atlas double-buffers
+		
+	g_window->_texture_atlas_backend->MAIN_maybe_switch_to_next_d();
+	
+	g_window->_texture_atlas_backend_halfsize->MAIN_maybe_switch_to_next_d();
 
-		//g_window->_triangle_renderer._vertices.call_me_when_starting_to_generate_vertices();
-		//if (g_window->_texture_renderer._vertices)
-		//	g_window->_texture_renderer._vertices->call_me_when_starting_to_generate_vertices();
-	}
+	return true;
 }
 
-void aiai2(void);
-void aiai2(void) // Called before starting to render, after sharedData has been filled in.
+void GL_call_me_before_starting_to_generate_vertices2(void)
 {
 	// Obtain render buffers for vertex generators here, driven by the main-thread
 	// painting-data lifecycle to avoid duplicate starts from other paths.
-	if (g_rhi != NULL && g_window)
-	{
-		for (int i = 0; i < MAX_NUM_SLICES; ++i)
+	g_window->for_each_vertices([](auto &vertices)
 		{
-			// Triangle vertices (scrolling) - per-slice
-			g_window->_triangle_renderers[i].call_me_before_adding_triangles();
-
-			// Triangle vertices (scrolling, scissored) - per-slice
-			g_window->_triangle_renderer_scissors[i].call_me_before_adding_triangles();
-		}
-		
-		// Triangle vertices (non-scrolling/static)
-		g_window->_triangle_renderer_static.call_me_before_adding_triangles();
-		
-		// Triangle vertices (non-scrolling/static, scissors)
-		g_window->_triangle_renderer_static_scissor.call_me_before_adding_triangles();
-		
-		for (int i = 0; i < MAX_NUM_SLICES; ++i)
-		{
-			// Texture vertices (may not exist yet) - scrolling (per-slice)
-			if (g_window->_texture_renderers[i]._vertices)
-				g_window->_texture_renderers[i]._vertices->call_me_when_starting_to_generate_vertices();
-			
-			// Texture vertices (scissored) (per-slice)
-			if (g_window->_texture_renderer_scissors[i]._vertices)
-				g_window->_texture_renderer_scissors[i]._vertices->call_me_when_starting_to_generate_vertices();
-			if (g_window->_texture_renderer_scissors_halfsize[i]._vertices)
-				g_window->_texture_renderer_scissors_halfsize[i]._vertices->call_me_when_starting_to_generate_vertices();
-		}
-		
-		// Texture vertices (non-scrolling/static)
-		if (g_window->_texture_renderer_static._vertices)
-			g_window->_texture_renderer_static._vertices->call_me_when_starting_to_generate_vertices();
-	}
+			vertices.MAIN_call_me_when_starting_to_generate_vertices();
+		});
 }
 
 
-// Called from main thread -> schedule painting data on the RHI thread.
+// Called from main thread.
+//
+// Two-phase commit to ensure all vertex buffer releases and the painting-data swap
+// happen atomically from the RHI thread's perspective, while also preventing the
+// main thread from overwriting vertex buffers before the RHI thread consumes them.
+//
+// Phase 1 (main thread): publish all render buffers by moving them to _next_ready.
+//   This clears _render_buffer so the next GE_start_writing picks a different buffer.
+// Phase 2 (RHI thread, via MAIN_put_event): atomically commit all published buffers
+//   to _committed, swap _painting_data, update background color, and delete old data.
 void GL_set_new_painting_data(r::PaintingData *painting_data, GE_Rgb new_background_color)
 {
-	// The render buffers should already have been obtained by aiai()/GE_start_writing.
-	// Don't re-obtain them here — that caused double-start issues.
+	// ---- Phase 1: Main thread. Publish all vertex buffers ----
 
-	g_window->put_event([painting_data, new_background_color](void)
+	// Triangle renderers (scrolling, per-slice)
+	g_window->for_each_vertices([](auto &v)
 		{
+			v.MAIN_call_me_after_finished_generating_vertices();
+		});
 
-			// TODO: Free/etc. All global Context variables here as well, maybe.
+	// ---- Phase 2: RHI thread. Atomically commit, swap, and delete ----
+	g_window->MAIN_put_event([painting_data, new_background_color](void)
+		{
+			// Commit all published buffers. Must happen before _painting_data swap
+			// so that QRHI_customRender() always sees consistent vertex data + painting data.
 
-			GE_delete_painting_data(g_painting_data);
-			
-			g_painting_data = painting_data;
+			g_window->for_each_vertices([](auto &v)
+				{
+					v.QRHI_commit_buffers();
+				});
+
+			// Now swap painting data and background color atomically with the buffer commits.
+			auto *old = g_window->_painting_data;
+			g_window->_painting_data = painting_data;
+
+			GE_set_curr_realline(painting_data->shared_variables.curr_realline);
+
 			g_background_color = QColor((int)new_background_color.r,
 										(int)new_background_color.g,
 										(int)new_background_color.b,
 										(int)new_background_color.a);
+
+			// Safe to delete here since we're on the RHI thread.
+			if (old)
+				delete old;
 		});
-}
-
-// Called from main thread to indicate generation finished and buffers may be released.
-void GL_finish_generating_vertices(void)
-{
-	if (!g_window)
-		return;
-
-	// These methods are thread-safe wrt the internal buffer locking.
-	for (int i = 0; i < MAX_NUM_SLICES; ++i)
-	{
-		g_window->_triangle_renderers[i]._vertices.call_me_after_finished_generating_vertices();
-		g_window->_triangle_renderer_scissors[i]._vertices.call_me_after_finished_generating_vertices();
-	}
-	
-	g_window->_triangle_renderer_static._vertices.call_me_after_finished_generating_vertices();
-	g_window->_triangle_renderer_static_scissor._vertices.call_me_after_finished_generating_vertices();
-	
-	for (int i = 0; i < MAX_NUM_SLICES; ++i)
-	{
-		if (g_window->_texture_renderers[i]._vertices)
-			g_window->_texture_renderers[i]._vertices->call_me_after_finished_generating_vertices();
-
-		if (g_window->_texture_renderer_scissors[i]._vertices)
-			g_window->_texture_renderer_scissors[i]._vertices->call_me_after_finished_generating_vertices();
-		if (g_window->_texture_renderer_scissors_halfsize[i]._vertices)
-			g_window->_texture_renderer_scissors_halfsize[i]._vertices->call_me_after_finished_generating_vertices();
-	}
-	
-	if (g_window->_texture_renderer_static._vertices)
-		g_window->_texture_renderer_static._vertices->call_me_after_finished_generating_vertices();
 }
 
 
@@ -1775,7 +1962,7 @@ void GL_set_multisample(int size){
 }
 
 int GL_get_multisample(void){
-  return R_BOUNDARIES(1, SETTINGS_read_int32("multisample", 4), 32);
+  return R_BOUNDARIES(1, SETTINGS_read_int32("multisample", 8), 32);
 }
 
 void GL_set_safe_mode(bool onoff){
@@ -1796,13 +1983,10 @@ bool GL_get_high_render_thread_priority(void){
 }
 
 void GL_set_high_render_thread_priority(bool onoff){
-  printf("setting safe mode to %d\n",onoff);
+  printf("setting high render thread priority to %d\n",onoff);
   SETTINGS_write_bool("high_render_thread_priority", onoff);
   g_high_render_thread_priority = onoff;
-	/*
-  if (g_render_thread != NULL)
-    g_render_thread->setPriority(onoff ? QThread::HighestPriority : QThread::NormalPriority);
-	*/
+  radium::RhiWindow::QRHI_set_thread_priority(onoff);
 }
 
 
@@ -1920,7 +2104,13 @@ bool GL_get_pause_rendering_on_off(void){
 
 QWidget *GL_create_widget(QWidget *parent)
 {
-	SETTINGS_write_string("last_successfully_started_rhi_backend", ""); // To force the gpu-selection-dialog to pop up the next time the program starts up, in case the program crashes between here and after 20 calls to GL_create.
+	// MAIN THREAD
+	
+	// To force the gpu-selection-dialog to pop up the next time the program starts up,
+	// in case the program crashes between here and after 4 calls to GL_create.
+	// (Commented out since it causes the gpu-selection-dialog to pop up the
+	// next time if not making any edits in the current session.)
+	//SETTINGS_write_string("last_successfully_started_rhi_backend", "");
 	
 	g_msaa_samples = GL_get_multisample();
 
@@ -1936,9 +2126,8 @@ QWidget *GL_create_widget(QWidget *parent)
 #endif
 
 	g_widget = QWidget::createWindowContainer(g_window);
+	g_widget->setFocusPolicy(Qt::WheelFocus);
 
-	g_gl_widget_started = true;
-	
 	return g_widget;
 }
 
@@ -1952,7 +2141,10 @@ void GL_stop_widget(QWidget *widget)
 	// cleaning up any Vulkan-related state.
 	delete widget;
 	g_widget = NULL;
+	g_window = nullptr;
 
+	R_ASSERT(g_render_window_has_been_deleted); // g_window should have been deleted automatically when calling "delete widget"...
+	
 #if QT_CONFIG(vulkan)
 	if (g_vulkan_inst)
 	{

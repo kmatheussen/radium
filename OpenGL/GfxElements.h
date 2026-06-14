@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "SharedVariables.hpp"
 
 #define MAX_NUM_SLICES 32
+#define MIN_SLICE_SIZE 64 //1024
 
 extern double g_opengl_scale_ratio;
 
@@ -68,18 +69,12 @@ enum UseScissors{
 
 struct GE_Conf{
   int z;
-  int y;
   enum UseScissors use_scissors;
 
-  GE_Conf(int z, int y, enum UseScissors use_scissors = USE_SCISSORS)
+  GE_Conf(int z, enum UseScissors use_scissors = USE_SCISSORS)
     : z(z)
-    , y(y)
     , use_scissors(use_scissors)
   {
-  }
-
-  const GE_Conf copy(int new_y) const {
-    return GE_Conf(z, new_y, use_scissors);
   }
 };
 
@@ -143,36 +138,46 @@ struct GradientType {
 
 namespace r
 {
-struct TriangleRenderer
+struct Triangle
 {
-	virtual	void add_triangle(const GE_Context &c, const r::fvec2 &p1, const r::fvec2 &p2, const r::fvec2 &p3, r2::GradientType::Type gradient_type) = 0;
-};
+	r::fvec2 _v0, _v1, _v2;
 
-struct TextRenderer
-{
-	virtual void add_text(const QString &text, int x, int y, float r, float g, float b, float a) = 0;
+	Triangle(const r::fvec2 &p1, const r::fvec2 &p2, const r::fvec2 &p3)
+		: _v0(p1)
+		, _v1(p2)
+		, _v2(p3)
+	{
+#if 0
+		const r::fvec2 *vs[3] = {&p1, &p2, &p3};
+
+		// Sort by y (ascending): _v0 = topmost, _v1 = middle, _v2 = bottommost
+		if (vs[1]->b < vs[0]->b) std::swap(vs[0], vs[1]);
+		if (vs[2]->b < vs[0]->b) std::swap(vs[0], vs[2]);
+		if (vs[2]->b < vs[1]->b) std::swap(vs[1], vs[2]);
+
+		_v0 = *vs[0];
+		_v1 = *vs[1];
+		_v2 = *vs[2];
+#endif
+	}
+
+	float get_y1(void) const
+	{
+		return R_MIN(_v0.b, R_MIN(_v1.b, _v2.b));
+	}
+	
+	//float get_y2(void) const { return _v1.b; }
+	
+	float get_y3(void) const
+	{
+		return R_MAX(_v0.b, R_MAX(_v1.b, _v2.b));
+	}
 };
 } // namespace r
 
 
-// These two are implemented in Widget.cpp
-extern r::TriangleRenderer *GE_get_triangle_renderer(const GE_Context &context);
-extern r::TextRenderer *GE_get_text_renderer(const GE_Context &context, bool is_half_size);
+extern int g_main_thread_slice_size;
 
-#if 0
-struct GE_Context
-{
-	mutable r::TriangleRenderer *_triangle_renderer = NULL;
-
-	void GE_Context::add_triangle(const r::fvec2 &p1, const r::fvec2 &p2, const r::fvec2 &p3, r2::GradientType::Type gradient_type) const
-	{
-		if (_triangle_renderer == NULL)
-			_triangle_renderer = GE_get_triangle_renderer(*this);
-
-		_triangle_renderer->add_triangle(*this, p1, p2, p3, gradient_type);
-	}
-};
-#endif
 
 struct GE_Context
 {
@@ -183,63 +188,74 @@ struct GE_Context
 			GE_Rgb c;
 			GE_Rgb c_gradient;
 		};
-		uint64_t key;
+		//uint64_t key;
 	} color;
 	
 	GE_Conf _conf;
-	int _slice;
+	bool _is_null = false;
 
 public:
 
-	mutable r::TriangleRenderer *_triangle_renderer = NULL;
-	mutable r::TextRenderer *_text_renderer = NULL;
-	
-	GE_Context(const Color &_color, const GE_Conf &conf, int slice)
+	GE_Context(const Color &_color, const GE_Conf &conf)
 		: color(_color)
 		, _conf(conf)
-		, _slice(slice)
 	{
 		//printf("ctor: this=%p\n", this);
 		R_ASSERT(sizeof(Color)==sizeof(uint64_t));
 	}
 
-	void add_triangle(const r::fvec2 &p1, const r::fvec2 &p2, const r::fvec2 &p3, r2::GradientType::Type gradient_type = r2::GradientType::Type::NOTYPE) const;
+	void add_triangle(const r::Triangle &triangle, r2::GradientType::Type gradient_type = r2::GradientType::Type::NOTYPE) const;
 	
 	void add_text(const QString &text, int x, int y) const;
 	
 	void add_text_halfsize(const QString &text, int x, int y) const;
 
-	static float y(float y)
-	{
-#if 0 // TODO: Find out if we need to invert y or not.
-		float height = g_height;
-		float ret = scale(y,
-						  0, height,
-						  height, 0);
-		return ret;
-#else
-		return y;
-#endif
-	}
-
 	bool isNull(void) const
 	{
-		return _slice == -10;
+		return _is_null;
 	}
 };
 
 
-static GE_Context g_c_NULL({}, GE_Conf(0,0), -10);
+static GE_Context g_c_NULL = [](){
+	GE_Context c({}, GE_Conf(0));
+	c._is_null = true;
+	return c;
+}();
 
 
 #ifdef __cplusplus
 namespace r
 {
-struct PaintingData;
-}
-#endif
+// Contains all data necessary to paint the editor.
+// Created on the main thread, and then transfered to the qhri thread.
+struct PaintingData
+{
+	//Contexts contexts;
+	//std::vector<GE_Context*> _contexts;
+	
+	//std::vector< vl::ref<GradientTriangles> > gradient_triangles;
+	SharedVariables shared_variables;
+	
+	int slice_size;
+	
+	PaintingData(int full_height, bool block_is_visible)
+		: shared_variables(block_is_visible)
+	{
+		slice_size = full_height / MAX_NUM_SLICES;
+		
+		if (slice_size < MIN_SLICE_SIZE)
+			slice_size = MIN_SLICE_SIZE;
+	}
 
-#ifdef __cplusplus
+	~PaintingData()
+	{
+		//	for(GE_Context* context : _contexts)
+		//	delete context;
+	}
+};
+} // namespace r
+
 extern void GL_set_new_painting_data(r::PaintingData *painting_data, GE_Rgb new_background_color); // Implemented in Widget.cpp
 #endif
 
@@ -249,45 +265,12 @@ extern void GL_set_new_painting_data(r::PaintingData *painting_data, GE_Rgb new_
 void GE_set_height(int height);
 int GE_get_height(void);
 
-#define MIN_SLICE_SIZE 64 //1024
-#define NOMASK_Y (-MIN_SLICE_SIZE*20)
-
-static inline uint32_t getMask(int a_y1, int a_y2, int slice_size){
-  uint32_t mask = 0;
-
-  a_y1--; // floating point rounding fix
-  a_y2++; // floating point rounding fix
-  
-  int b_y1 = 0;
-  int b_y2 = slice_size;
-  int i=0;
-  for(i=0 ; i<32 ; i++, b_y1+=slice_size, b_y2+=slice_size){
-
-    if (i < 31) { // The last bit includes everyting below
-
-      if (b_y2 < a_y1)
-        continue;
-
-      if (b_y1 > a_y2)
-        break;
-    }
-
-    mask |= ( 1<<i );
-  }
-
-  return mask;
-}
-
-#if defined(GE_DRAW_VL)
-struct T2_data;
-void GE_update_triangle_gradient_shaders(r::PaintingData *painting_data, float y_offset);
-void GE_draw_vl(T2_data *t2_data);
-#endif
 
 #define Z_ABOVE(z) ((z)+2)
 #define Z_BELOW(z) ((z)-2)
 #define Z_STATIC_X 1
 #define Z_IS_STATIC_X(z) ((z)&1)
+
 
 enum
 {
@@ -314,20 +297,11 @@ int GE_get_z(const GE_Context &c);
 GE_Rgb GE_get_rgb(const GE_Context &c);
 
 
-const SharedVariables *GE_get_shared_variables(const r::PaintingData *painting_data);
-int GE_get_slice_size(const r::PaintingData *painting_data);
-
-void GE_delete_painting_data(r::PaintingData *painting_data);
-
-void GE_start_writing(int full_height, bool block_is_visible); // 'full_height' is not used if block_is_visible is false.
+bool GE_start_writing(int full_height, bool block_is_visible); // 'full_height' is not used if block_is_visible is false. Returns false if gpu widget isn't ready yet.
 void GE_end_writing(GE_Rgb new_background_color);
 void GE_wait_until_block_is_rendered(void);
 
 GE_Context GE_z(const GE_Rgb rgb, const GE_Conf &conf);
-static inline GE_Context GE(const GE_Rgb rgb, int y, enum UseScissors use_scissors = USE_SCISSORS){
-  return GE_z(rgb, GE_Conf(Z_ZERO, y, use_scissors));
-}
-GE_Context GE_y(GE_Context &c, int y);
 GE_Context GE_color_z(enum ColorNums colornum, const GE_Conf &conf);
 GE_Context GE_textcolor_z(enum ColorNums colornum, const GE_Conf &conf);
 GE_Context GE_rgb_color_z(unsigned char r, unsigned char g, unsigned char b, const GE_Conf &conf);
@@ -337,56 +311,28 @@ GE_Context GE_gradient_z(const GE_Rgb c1, const GE_Rgb c2, const GE_Conf &conf);
 
 #ifdef __cplusplus
 GE_Context GE_color_z(const QColor &color, const GE_Conf &conf);
-static inline GE_Context GE_color(const QColor &color, int y, enum UseScissors use_scissors = USE_SCISSORS) {
-  return GE_color_z(color, GE_Conf(Z_ZERO, y, use_scissors));
-}
 GE_Context GE_gradient_z(const QColor &c1, const QColor &c2, const GE_Conf &conf);
-static inline GE_Context GE_mix_alpha(const GE_Rgb c1, const GE_Rgb c2, float how_much, float alpha, int y, enum UseScissors use_scissors = USE_SCISSORS){
-  return GE(GE_alpha(GE_mix(c1, c2, how_much), alpha), y, use_scissors);
-}
 static inline GE_Context GE_mix_alpha_z(const GE_Rgb c1, const GE_Rgb c2, float how_much, float alpha, const GE_Conf &conf){
   return GE_z(GE_alpha(GE_mix(c1, c2, how_much), alpha), conf);
 }
 
-#ifndef EDITOR_WIDGET_H
-#include "../Qt/EditorWidget.h"
-extern struct Root *root;
 static inline QColor GE_qcolor(enum ColorNums colornum){
   return get_qcolor(colornum);
 }
 #endif
 
-#endif
-
-static inline GE_Context GE_color(enum ColorNums colornum, int y, enum UseScissors use_scissors = USE_SCISSORS) {
-  return GE_color_z(colornum, GE_Conf(Z_ZERO, y, use_scissors));
-}
-
 GE_Context GE_color_alpha_z(enum ColorNums colornum, float alpha, const GE_Conf &conf);
-static inline GE_Context GE_color_alpha(enum ColorNums colornum, float alpha, int y, enum UseScissors use_scissors = USE_SCISSORS) {
-  return GE_color_alpha_z(colornum, alpha, GE_Conf(Z_ZERO, y, use_scissors));
+static inline GE_Context GE_color_alpha(enum ColorNums colornum, float alpha, enum UseScissors use_scissors = USE_SCISSORS) {
+  return GE_color_alpha_z(colornum, alpha, GE_Conf(Z_ZERO, use_scissors));
 }
 
-static inline GE_Context GE_textcolor(enum ColorNums colornum, int y, enum UseScissors use_scissors = USE_SCISSORS) {
-  return GE_textcolor_z(colornum, GE_Conf(Z_ZERO, y, use_scissors));
-}
-static inline GE_Context GE_rgb_color(unsigned char r, unsigned char g, unsigned char b, int y, enum UseScissors use_scissors = USE_SCISSORS) {
-  return GE_rgb_color_z(r,g,b, GE_Conf(Z_ZERO, y, use_scissors));
+static inline GE_Context GE_rgb_color(unsigned char r, unsigned char g, unsigned char b, enum UseScissors use_scissors = USE_SCISSORS) {
+  return GE_rgb_color_z(r,g,b, GE_Conf(Z_ZERO, use_scissors));
 }
 
-#define Black_color(y,use_scissors) GE_rgb_color(0,0,0,y,use_scissors)
-#define White_color(y,use_scissors) GE_rgb_color(0,0,0,y,use_scissors)
-
-
-static inline GE_Context GE_rgba_color(unsigned char r, unsigned char g, unsigned char b, unsigned char a, int y, enum UseScissors use_scissors = USE_SCISSORS) {
-  return GE_rgba_color_z(r,g,b,a, GE_Conf(Z_ZERO,y,use_scissors));
-}
-static inline GE_Context GE_mix_color(const GE_Rgb c1, const GE_Rgb c2, float how_much, int y, enum UseScissors use_scissors = USE_SCISSORS) {
-  return GE_mix_color_z(c1,c2,how_much, GE_Conf(Z_ZERO,y,use_scissors));
-}
-static inline GE_Context GE_gradient(const GE_Rgb c1, const GE_Rgb c2, int y, enum UseScissors use_scissors = USE_SCISSORS) {
-  return GE_gradient_z(c1,c2, GE_Conf(Z_ZERO,y,use_scissors));
-}
+#define Black_color(use_scissors) GE_rgb_color(0,0,0,use_scissors)
+#define White_color(use_scissors) GE_rgb_color(255,255,255,use_scissors)
+#define Green_color(use_scissors) GE_rgb_color(0,255,0,use_scissors)
 
 #ifdef __cplusplus
 //void GE_set_font(QFont font);
