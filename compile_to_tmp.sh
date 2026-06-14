@@ -50,7 +50,7 @@ NC='\033[0m'
 printf "${GREEN}Compiling${LIGHT_CYAN} $sourcefile${NC}...\n"
 
 start=`date +%s`
-"$@" -o $T/$base.o
+"$@" -o $T$base.o -MMD -MP -MF $T$base.d
 end=`date +%s`
 
 runtime=$((end-start))
