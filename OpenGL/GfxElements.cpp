@@ -316,62 +316,75 @@ void GE_unset_x_scissor(void){
   has_x_scissor=false;
 }
 
-static void GE_line_lowlevel(const GE_Context &c, float x1, float y1, float x2, float y2, float pen_width){
-  // Code below mostly copied from http://www.softswit.ch/wiki/index.php?title=Draw_line_with_triangles
+static void GE_line_lowlevel(const GE_Context &c, float x1, float y1, float x2, float y2, float pen_width)
+{
+	// Nothing
+	if (equal_floats(x1, x2) && equal_floats(y1, y2))
+		return;
 
-	//
-	// TODO: Optimize when x1==x2 || y1==y2?
-	//
+
+	const float h = pen_width * 0.5f;
+
 	
-  float dx = x2-x1;
-  float dy = y2-y1;
- 
-  float length = sqrtf( dx*dx + dy*dy );   
- 
-  // perp
-  float perp_x = -dy;
-  float perp_y = dx;
-  if (!equal_floats(length, 0.0f)){
-    // Normalize the perp
-    perp_x /= length;
-    perp_y /= length;
-  }
- 
-  float h = pen_width;//.125*length;
-  
-  // since perp defines how wide our quad is, scale it
-  perp_x *= h * 0.5f;
-  perp_y *= h * 0.5f;
- 
-  float v1x = x1 + perp_x;
-  float v1y = y1 + perp_y;
-  
-  float v2x = x2 + perp_x;
-  float v2y = y2 + perp_y;
- 
-  float v3x = x2 - perp_x;
-  float v3y = y2 - perp_y;
- 
-  float v4x = x1 - perp_x;
-  float v4y = y1 - perp_y;
+	// Horizontal line
+	//
+	if (equal_floats(y1, y2))
+	{
+		c.add_triangle(r::Triangle({x1, y1 + h},
+								   {x2, y2 + h},
+								   {x2, y2 - h}));
+		
+		c.add_triangle(r::Triangle({x1, y1 + h},
+								   {x2, y2 - h},
+								   {x1, y1 - h}));
+		return;
+	}
 
-  c.add_triangle(r::Triangle({v1x, v1y},
-							 {v2x, v2y},
-							 {v3x, v3y}));
-  /*
-  triangles.push_back(r::fvec2(v1x, v1y));
-  triangles.push_back(r::fvec2(v2x, v2y));
-  triangles.push_back(r::fvec2(v3x, v3y));
-*/
-  c.add_triangle(r::Triangle({v1x, v1y},
-							 {v3x, v3y},
-							 {v4x, v4y}));
 
-  /*
-  triangles.push_back(r::fvec2(v1x, v1y));
-  triangles.push_back(r::fvec2(v3x, v3y));
-  triangles.push_back(r::fvec2(v4x, v4y));
-  */
+	// Vertical line
+	//
+	if (equal_floats(x1, x2))
+	{
+		c.add_triangle(r::Triangle({x1 + h, y1},
+								   {x2 + h, y2},
+								   {x2 - h, y2}));
+		
+		c.add_triangle(r::Triangle({x1 + h, y1},
+								   {x2 - h, y2},
+								   {x1 - h, y1}));
+		
+		return;
+	}
+
+
+	// Code below mostly copied from http://www.softswit.ch/wiki/index.php?title=Draw_line_with_triangles
+	// 
+
+	float dx = x2-x1;
+	float dy = y2-y1;
+ 
+	float length = sqrtf( dx*dx + dy*dy );   
+ 
+	// perp
+	float perp_x = -dy;
+	float perp_y = dx;
+	if (!equal_floats(length, 0.0f)){
+		// Normalize the perp
+		perp_x /= length;
+		perp_y /= length;
+	}
+ 
+	// since perp defines how wide our quad is, scale it
+	perp_x *= h;
+	perp_y *= h;
+
+	c.add_triangle(r::Triangle({x1 + perp_x, y1 + perp_y},
+	                           {x2 + perp_x, y2 + perp_y},
+	                           {x2 - perp_x, y2 - perp_y}));
+	
+	c.add_triangle(r::Triangle({x1 + perp_x, y1 + perp_y},
+	                           {x2 - perp_x, y2 - perp_y},
+	                           {x1 - perp_x, y1 - perp_y}));
 }
 
 
