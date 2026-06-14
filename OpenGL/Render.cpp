@@ -3121,7 +3121,7 @@ static void create_cursor(const struct Tracker_Windows *window, const struct WBl
 static void create_playcursor(const struct Tracker_Windows *window, const struct WBlocks *wblock){
   if (ATOMIC_GET(root->play_cursor_onoff)) {
     
-    GE_Context c = GE_z(GE_alpha(GE_get_rgb(PLAY_CURSOR_COLOR_NUM), 0.3), GE_Conf(Z_PLAYCURSOR, NO_SCISSORS));
+    GE_Context c = GE_z(GE_get_rgb(PLAY_CURSOR_COLOR_NUM), GE_Conf(Z_PLAYCURSOR, NO_SCISSORS));
     
     int x1 = window->leftslider.width;
     int x2 = window->width;
