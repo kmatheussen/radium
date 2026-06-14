@@ -548,6 +548,8 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       high_priority_render_thread->setChecked(GL_get_high_render_thread_priority());
       high_priority_drawer_thread->setChecked(false); //GL_get_high_draw_thread_priority());
 
+      clampTextRendering->setChecked(GL_get_clamp_text_rendering());
+
       // GPU Backend
       {
         const char *rhi_backend = GL_get_backend();
@@ -954,6 +956,11 @@ public slots:
 #endif
       GL_set_vsync(val);
     }
+  }
+
+  void on_clampTextRendering_toggled(bool val){
+    if (_initing==false)
+      GL_set_clamp_text_rendering(val);
   }
 
   void on_high_cpu_protection_toggled(bool val){
