@@ -655,18 +655,37 @@ static void create_curr_track_border(const struct Tracker_Windows *window, const
 
   x1--;
   x2 += 3;
+
+  // Manually scissor to track area instead of using USE_SCISSORS
+  bool is_left_clamped = false;
+  {
+    int scissor_x1 = wblock->t.x1 - 1;
+    int scissor_x2 = wblock->t.x2;
+
+    if (x1 < scissor_x1){
+      x1 = scissor_x1;
+      is_left_clamped = true;
+    }
+    if (x2 > scissor_x2)
+      x2 = scissor_x2;
+  }
   
   float y1 = get_scrollbar_y1(window, wblock);
   float y2 = GE_get_height();//get_scrollbar_y2(window, wblock);
   
   GE_Context c2 = GE_z(GE_get_rgb(KEYBOARD_FOCUS_BORDER_COLOR_NUM),
-					   GE_Conf(Z_BELOW(Z_STATIC),
-							   window->curr_track >= 0 ? USE_SCISSORS : NO_SCISSORS));
+					   GE_Conf(Z_BELOW(Z_STATIC), NO_SCISSORS));
   
-  GE_box(c2,
-		 x1+width/2, y1+width/2,
-		 x2-width/2, y2-width/2,
-		 width);
+  if (is_left_clamped)
+    GE_box_without_left(c2,
+                        x1+width/2, y1+width/2,
+                        x2-width/2, y2-width/2,
+                        width);
+  else
+    GE_box(c2,
+           x1+width/2, y1+width/2,
+           x2-width/2, y2-width/2,
+           width);
 }
 
 static void create_background(const struct Tracker_Windows *window, const struct WBlocks *wblock, const WSignature_trss &wsignatures_trss)

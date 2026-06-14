@@ -413,11 +413,12 @@ QRhi *g_rhi = NULL;
 
 enum class RendererFlags : uint16_t
 {
-	None           = 0,
-	IsScrolling    = 1 << 0,
-	UseScissors    = 1 << 1,
-	UseBlending    = 1 << 2,
-	CreatePipeline = 1 << 3,
+	None             = 0,
+	IsScrolling      = 1 << 0,
+	UseScissors      = 1 << 1,
+	UseBlending      = 1 << 2,
+	CreateBuffer     = 1 << 3,
+	CreatePipeline   = 1 << 4,
 };
 
 constexpr RendererFlags operator|(RendererFlags a, RendererFlags b)
@@ -681,9 +682,10 @@ struct TriangleRenderer
 		_use_scissors = has_flag(flags, RendererFlags::UseScissors);
 		
 		bool use_blending = has_flag(flags, RendererFlags::UseBlending);
+		bool create_buffer = has_flag(flags, RendererFlags::CreateBuffer);
 		bool create_pipeline = has_flag(flags, RendererFlags::CreatePipeline);
 
-        if (create_pipeline)
+        if (create_buffer)
         {
             _shader_resource_bindings = rhi->newShaderResourceBindings();
             
@@ -704,7 +706,10 @@ struct TriangleRenderer
                                                    bindings.cend());
             
             _shader_resource_bindings->create();
+        }
 
+        if (create_pipeline)
+        {
             _pipeline = rhi->newGraphicsPipeline();
 
             if (g_msaa_samples > 1)
@@ -806,18 +811,40 @@ struct TriangleRenderer
         }
     }
 	
-    void QRHI_render_frame(QRhiCommandBuffer *command_buffer)
+    void QRHI_render_frame(QRhiCommandBuffer *command_buffer,
+                           QRhiGraphicsPipeline *pipeline = nullptr,
+                           QRhiShaderResourceBindings *sbr = nullptr)
 	{
 		R_ASSERT_NON_RELEASE(THREADING_is_qrhi_thread());
 
-		if (_pipeline && _vertices.QRHI_has_vertices())
-		{
-			command_buffer->setGraphicsPipeline(_pipeline);
+		if (!_vertices.QRHI_has_vertices())
+			return;
 
-			command_buffer->setShaderResources();
-			
-			_vertices.QRHI_render(command_buffer);
+		QRhiGraphicsPipeline *p = pipeline ? pipeline : _pipeline;
+
+		if (!p)
+		{
+			R_ASSERT_NON_RELEASE(false);
+			return;
 		}
+
+		if (sbr == NULL)
+		{
+			if (_shader_resource_bindings == NULL)
+			{
+				R_ASSERT_NON_RELEASE(false);
+				return;
+			}
+		}
+		else
+		{
+			R_ASSERT_NON_RELEASE(_shader_resource_bindings == NULL || _shader_resource_bindings == sbr);
+		}
+		
+		command_buffer->setGraphicsPipeline(p);
+		command_buffer->setShaderResources(sbr);
+
+		_vertices.QRHI_render(command_buffer);
     }
 
 	
@@ -873,20 +900,6 @@ public:
 	TriangleRenderer _triangle_renderer_playcursor;  // single non-sliced renderer for playcursor (custom scroll_pos)
 	
 	TriangleRenderer _triangle_renderer_static;
-	TriangleRenderer _triangle_renderer_static_scissor;
-
-	// Scrollbar pipeline: separate scroll_pos, no blending, no scissors
-	QRhiBuffer *_shared_scrollbar_ubuf = nullptr;
-	QRhiShaderResourceBindings *_shared_scrollbar_sbr = nullptr;
-
-	// Playcursor: separate scroll_pos, blending, no scissors
-	QRhiBuffer *_shared_playcursor_ubuf = nullptr;
-	QRhiShaderResourceBindings *_shared_playcursor_sbr = nullptr;
-
-	// All scrolling renderers have identical uniform data (mvp + yscroll).
-	// One shared buffer and SBR uploaded once per frame.
-	QRhiBuffer *_shared_scrolling_ubuf = nullptr;
-	QRhiShaderResourceBindings *_shared_scrolling_sbr = nullptr;
 
 	r::PaintingData *_painting_data = nullptr;
 
@@ -910,7 +923,6 @@ public:
 		}
 		
 		func(_triangle_renderer_static);
-		func(_triangle_renderer_static_scissor);
 		func(_triangle_renderer_scrollbar);
 		func(_triangle_renderer_node_indicator);
 		func(_triangle_renderer_playcursor);
@@ -959,39 +971,6 @@ public:
 		MAIN_put_event_sync([this]()
 			{
 				for_each_renderer([](auto &r){ r.release(); });
-				
-				if (_shared_scrolling_sbr)
-				{
-					_shared_scrolling_sbr->destroy();
-					delete _shared_scrolling_sbr;
-				}
-				if (_shared_scrolling_ubuf)
-				{
-					_shared_scrolling_ubuf->destroy();
-					delete _shared_scrolling_ubuf;
-				}
-				
-				if (_shared_scrollbar_sbr)
-				{
-					_shared_scrollbar_sbr->destroy();
-					delete _shared_scrollbar_sbr;
-				}
-				if (_shared_scrollbar_ubuf)
-				{
-					_shared_scrollbar_ubuf->destroy();
-					delete _shared_scrollbar_ubuf;
-				}
-
-				if (_shared_playcursor_sbr)
-				{
-					_shared_playcursor_sbr->destroy();
-					delete _shared_playcursor_sbr;
-				}
-				if (_shared_playcursor_ubuf)
-				{
-					_shared_playcursor_ubuf->destroy();
-					delete _shared_playcursor_ubuf;
-				}
 				
 				delete _texture_atlas_backend;
 				delete _texture_atlas_backend_halfsize;
@@ -1051,7 +1030,7 @@ public:
 			                            RendererFlags::IsScrolling |
 										RendererFlags::UseScissors |
 										RendererFlags::UseBlending |
-										(i == 0 ? RendererFlags::CreatePipeline : RendererFlags::None));
+										(i == 0 ? RendererFlags::CreateBuffer | RendererFlags::CreatePipeline : RendererFlags::None));
 
 			// Texture renderers (scrolling, normal tracks, per-slice scissored)
 			_texture_renderer_scissors[i].init(_rhi, _texture_atlas_backend, _render_pass_descriptor,
@@ -1069,60 +1048,6 @@ public:
 												RendererFlags::UseBlending);
 		}
 
-		// Scrollbar resources (separate ubuf for different scroll_pos)
-		{
-			_shared_scrollbar_ubuf = _rhi->newBuffer(QRhiBuffer::Dynamic,
-			                                         QRhiBuffer::UniformBuffer,
-			                                         sizeof(QMatrix4x4) + sizeof(float));
-			_shared_scrollbar_ubuf->create();
-
-			_shared_scrollbar_sbr = _rhi->newShaderResourceBindings();
-			
-			QVector<QRhiShaderResourceBinding> bindings;
-			
-			bindings.push_back(QRhiShaderResourceBinding::uniformBuffer(
-				0, QRhiShaderResourceBinding::VertexStage, _shared_scrollbar_ubuf));
-			
-			_shared_scrollbar_sbr->setBindings(bindings.cbegin(), bindings.cend());
-			_shared_scrollbar_sbr->create();
-		}
-
-		// Playcursor resources (separate ubuf for different scroll_pos)
-		{
-			_shared_playcursor_ubuf = _rhi->newBuffer(QRhiBuffer::Dynamic,
-			                                          QRhiBuffer::UniformBuffer,
-			                                          sizeof(QMatrix4x4) + sizeof(float));
-			_shared_playcursor_ubuf->create();
-
-			_shared_playcursor_sbr = _rhi->newShaderResourceBindings();
-			
-			QVector<QRhiShaderResourceBinding> bindings;
-			
-			bindings.push_back(QRhiShaderResourceBinding::uniformBuffer(
-				0, QRhiShaderResourceBinding::VertexStage, _shared_playcursor_ubuf));
-			
-			_shared_playcursor_sbr->setBindings(bindings.cbegin(), bindings.cend());
-			_shared_playcursor_sbr->create();
-		}
-
-		// Shared uniform buffer for all scrolling renderers
-		{
-			_shared_scrolling_ubuf = _rhi->newBuffer(QRhiBuffer::Dynamic,
-			                                        QRhiBuffer::UniformBuffer,
-			                                        sizeof(QMatrix4x4) + sizeof(float));
-			_shared_scrolling_ubuf->create();
-
-			_shared_scrolling_sbr = _rhi->newShaderResourceBindings();
-			
-			QVector<QRhiShaderResourceBinding> bindings;
-			
-			bindings.push_back(QRhiShaderResourceBinding::uniformBuffer(
-				0, QRhiShaderResourceBinding::VertexStage, _shared_scrolling_ubuf));
-			
-			_shared_scrolling_sbr->setBindings(bindings.cbegin(), bindings.cend());
-			_shared_scrolling_sbr->create();
-		}
-
 		// Non-scrolling texture renderer
 		_texture_renderer_static.init(_rhi, _texture_atlas_backend, _render_pass_descriptor,
 									  RendererFlags::None);
@@ -1130,26 +1055,23 @@ public:
 		// Non-scrolling triangle renderer
 		_triangle_renderer_static.init(_rhi, _render_pass_descriptor,
 		                               RendererFlags::UseBlending |
+									   RendererFlags::CreateBuffer |
 									   RendererFlags::CreatePipeline);
 		
-		// Non-scrolling scissored triangle renderer
-		_triangle_renderer_static_scissor.init(_rhi, _render_pass_descriptor,
-		                                       RendererFlags::UseScissors |
-											   RendererFlags::UseBlending |
-											   RendererFlags::CreatePipeline);
-
 		// Scrollbar renderer (non-sliced, non-scrolling, non-scissored, no blending)
 		_triangle_renderer_scrollbar.init(_rhi, _render_pass_descriptor,
+		                                  RendererFlags::CreateBuffer |
 		                                  RendererFlags::CreatePipeline);
 		
 		// Node indicator renderer (non-sliced, scrolling, non-scissored, no blending, uses shared pipeline)
 		_triangle_renderer_node_indicator.init(_rhi, _render_pass_descriptor,
 		                                       RendererFlags::IsScrolling);
 
-		// Playcursor renderer (non-sliced, scrolling, non-scissored, blending, uses shared pipeline)
+		// Playcursor renderer (non-sliced, scrolling, non-scissored, blending, owns ubuf+sbr, uses shared pipeline)
 		_triangle_renderer_playcursor.init(_rhi, _render_pass_descriptor,
 		                                   RendererFlags::IsScrolling |
-										   RendererFlags::UseBlending);
+										   RendererFlags::UseBlending |
+										   RendererFlags::CreateBuffer);
 		
 		const double ratio = devicePixelRatio();
 
@@ -1334,8 +1256,7 @@ public:
 			for (int i = tri_slice_start; i < tri_slice_end && !any_tri; ++i)
 				any_tri |= _triangle_renderers[i]._vertices.QRHI_has_vertices()
 					|| _triangle_renderer_scissors[i]._vertices.QRHI_has_vertices();
-			any_tri |= _triangle_renderer_static._vertices.QRHI_has_vertices()
-				|| _triangle_renderer_static_scissor._vertices.QRHI_has_vertices();
+			any_tri |= _triangle_renderer_static._vertices.QRHI_has_vertices();
 			if (!any_tri) {
 				blank_count++;
 				printf("BLANK FRAME #%d: no tri verts. _painting_data=%p, slice_size=%f, tri_range=[%d,%d)\n",
@@ -1347,14 +1268,14 @@ public:
 		
 		// Upload shared scrolling uniforms once (mvp + yscroll same for all slices)
 		{
-			batch->updateDynamicBuffer(_shared_scrolling_ubuf, 0, 64, _viewProjection.constData());
+			batch->updateDynamicBuffer(_triangle_renderers[0]._ubuf, 0, 64, _viewProjection.constData());
 			float scrollPos_f = (float)scroll_pos;
-			batch->updateDynamicBuffer(_shared_scrolling_ubuf, 64, sizeof(float), &scrollPos_f);
+			batch->updateDynamicBuffer(_triangle_renderers[0]._ubuf, 64, sizeof(float), &scrollPos_f);
 		}
 
 		// Upload scrollbar uniforms (different scroll_pos)
 		{
-			batch->updateDynamicBuffer(_shared_scrollbar_ubuf, 0, 64, _viewProjection.constData());
+			batch->updateDynamicBuffer(_triangle_renderer_scrollbar._ubuf, 0, 64, _viewProjection.constData());
 			float scrollbar_pos = 0.0f;
 			{
 				double till_realline = 0.0;
@@ -1365,19 +1286,19 @@ public:
 				                                     sv.scrollbar_height, sv.scrollbar_scroller_height);
 				scrollbar_pos = scale(y1, 0, sv.scrollbar_height, 0, -(float)sv.scrollbar_height);
 			}
-			batch->updateDynamicBuffer(_shared_scrollbar_ubuf, 64, sizeof(float), &scrollbar_pos);
+			batch->updateDynamicBuffer(_triangle_renderer_scrollbar._ubuf, 64, sizeof(float), &scrollbar_pos);
 		}
 
 		// Upload playcursor uniforms (different scroll_pos)
 		{
-			batch->updateDynamicBuffer(_shared_playcursor_ubuf, 0, 64, _viewProjection.constData());
+			batch->updateDynamicBuffer(_triangle_renderer_playcursor._ubuf, 0, 64, _viewProjection.constData());
 			
 			float playcursor_pos = (float)scroll_pos;
 			
 			if (current_realline_while_playing > 0.0)
 				playcursor_pos = (float)(scroll_pos - QRHI_GE_scroll_pos(sv, current_realline_while_playing));
 			
-			batch->updateDynamicBuffer(_shared_playcursor_ubuf, 64, sizeof(float), &playcursor_pos);
+			batch->updateDynamicBuffer(_triangle_renderer_playcursor._ubuf, 64, sizeof(float), &playcursor_pos);
 		}
 
 		command_buffer->beginPass(_swap_chain->currentFrameRenderTarget(), g_background_color, { 1.0f, 0 }, batch);
@@ -1407,15 +1328,12 @@ public:
 			}
 
 
-			auto *shared_scrolling_triangle_pipeline = _triangle_renderers[0]._pipeline;
+			auto *shared_scrolling_triangles_pipeline = _triangle_renderers[0]._pipeline;
 
 
 			// triangles (scrolling). Non-scissored then scissored
 			//
 			{
-				command_buffer->setGraphicsPipeline(shared_scrolling_triangle_pipeline);
-				command_buffer->setShaderResources(_shared_scrolling_sbr);
-
 				auto setScissor = [&](int i, int scissor_x, int scissor_w)
 					{
 						float y_px_high = (i==0)
@@ -1440,70 +1358,39 @@ public:
 						return true;
 					};
 					
-				// Non-scissored
+				// Non-vertical-scissored
 				for (int i = tri_slice_start ; i < tri_slice_end ; i++)
-				{
-					if (!_triangle_renderers[i]._vertices.QRHI_has_vertices())
-						continue;
-					
 					if (setScissor(i, 0, outputSizeInPixels.width()))
-						_triangle_renderers[i]._vertices.QRHI_render(command_buffer);
-				}
-
-				// Scissored
+						_triangle_renderers[i].QRHI_render_frame(command_buffer,
+																 shared_scrolling_triangles_pipeline,
+																 _triangle_renderers[0]._shader_resource_bindings);
+				
+				// Vertical-scissored
 				for (int i = tri_slice_start ; i < tri_slice_end ; i++)
-				{
-					if (!_triangle_renderer_scissors[i]._vertices.QRHI_has_vertices())
-						continue;
-					
 					if (setScissor(i, scissor_x, scissor_w))
-						_triangle_renderer_scissors[i]._vertices.QRHI_render(command_buffer);
-				}
+						_triangle_renderer_scissors[i].QRHI_render_frame(command_buffer,
+																		 shared_scrolling_triangles_pipeline,
+																		 _triangle_renderers[0]._shader_resource_bindings);
 				
 				command_buffer->setScissor({0, 0, outputSizeInPixels.width(), outputSizeInPixels.height()});
 			}
 
 			// Node indicator (scrolling, non-scissored, foreground)
-			if (_triangle_renderer_node_indicator._vertices.QRHI_has_vertices())
-			{
-				command_buffer->setGraphicsPipeline(shared_scrolling_triangle_pipeline);
-				command_buffer->setShaderResources(_shared_scrolling_sbr);
-				_triangle_renderer_node_indicator._vertices.QRHI_render(command_buffer);
-			}
+			_triangle_renderer_node_indicator.QRHI_render_frame(command_buffer,
+																shared_scrolling_triangles_pipeline,
+																_triangle_renderers[0]._shader_resource_bindings);
 
 			// Playcursor (scrolling, non-scissored, foreground, separate scroll_pos)
-			if (_triangle_renderer_playcursor._vertices.QRHI_has_vertices())
-			{
-				command_buffer->setGraphicsPipeline(shared_scrolling_triangle_pipeline);
-				command_buffer->setShaderResources(_shared_playcursor_sbr);
-				_triangle_renderer_playcursor._vertices.QRHI_render(command_buffer);
-			}
-
-			// triangles (non-scrolling, scissors) - draw on top
-			//
-			{
-				if (scissor_w > 0)
-					command_buffer->setScissor({scissor_x, 0, scissor_w, outputSizeInPixels.height()});
-				
-				_triangle_renderer_static_scissor.QRHI_render_frame(command_buffer);
-				
-				if (scissor_w > 0)
-					command_buffer->setScissor({0, 0, outputSizeInPixels.width(), outputSizeInPixels.height()});
-			}
+			_triangle_renderer_playcursor.QRHI_render_frame(command_buffer,
+															shared_scrolling_triangles_pipeline,
+															_triangle_renderer_playcursor._shader_resource_bindings);
 
 			// triangles (non-scrolling) - draw on top
 			//
 			_triangle_renderer_static.QRHI_render_frame(command_buffer);
 
 			// Scrollbar (opaque, non-scissored)
-			{
-				auto *shared_scrollbar_triangle_pipeline = _triangle_renderer_scrollbar._pipeline;
-
-				command_buffer->setGraphicsPipeline(shared_scrollbar_triangle_pipeline);
-				command_buffer->setShaderResources(_shared_scrollbar_sbr);
-				if (_triangle_renderer_scrollbar._vertices.QRHI_has_vertices())
-					_triangle_renderer_scrollbar._vertices.QRHI_render(command_buffer);
-			}
+			_triangle_renderer_scrollbar.QRHI_render_frame(command_buffer);
 			
 			// text (non-scissored) - per slice
 			for (int i = text_slice_start ; i < text_slice_end ; i++)
@@ -1786,14 +1673,9 @@ void GE_Context::add_triangle(const r::Triangle &triangle, r2::GradientType::Typ
 	
 	if (!MAIN_is_scrolling(*this))
 	{
-		TriangleRenderer *r;
+		R_ASSERT_NON_RELEASE(_conf.use_scissors==NO_SCISSORS);
 
-		if (_conf.use_scissors == USE_SCISSORS)
-			r = &g_window->_triangle_renderer_static_scissor;
-		else
-			r = &g_window->_triangle_renderer_static;
-		
-		r->MAIN_add_triangle(*this, triangle, gradient_type);
+		g_window->_triangle_renderer_static.MAIN_add_triangle(*this, triangle, gradient_type);
 		
 		return;
 	}
