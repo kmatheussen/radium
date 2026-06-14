@@ -373,7 +373,7 @@ static ReplacementColor g_replacement_color[] = {
   {PIANONOTE_SELECTED_COLOR_NUM, QColor("#00c8e6")},
   
   {PIANOROLL_NOTE_BORDER_COLOR_NUM, QColor("#ff010101")},
-  {PLAY_CURSOR_COLOR_NUM, QColor("#ff000000")},
+  {PLAY_CURSOR_COLOR_NUM, QColor("#70ff0000")},
   {LINE_SLIDER_COLOR_NUM, QColor("#ff000000")},
 
   {CURRENT_BEAT_TEXT_COLOR_NUM, QColor("#ff000000")},
