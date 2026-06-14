@@ -1958,11 +1958,11 @@ bool GL_get_vsync(void){
 }
 
 void GL_set_multisample(int size){
-  SETTINGS_write_int("multisample", size);
+  SETTINGS_write_int("qrhi_multisample", size);
 }
 
 int GL_get_multisample(void){
-  return R_BOUNDARIES(1, SETTINGS_read_int32("multisample", 8), 32);
+  return R_BOUNDARIES(1, SETTINGS_read_int32("qrhi_multisample", 8), 32);
 }
 
 void GL_set_safe_mode(bool onoff){
