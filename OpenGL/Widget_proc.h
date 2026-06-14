@@ -3,8 +3,6 @@
 
 #include <stdint.h>
 
-extern bool g_gl_widget_started;
-
 
 // Should be called as early as possible. Might take some time though, so progress window should open first.
 bool GL_check_compatibility(void);
@@ -26,9 +24,9 @@ class QWidget;
  	extern void GL_update(void);
 #endif
 
-
-extern void GL_finish_generating_vertices(void);
-
+bool GL_call_me_before_starting_to_generate_vertices1(void); // Returns false if widget is not ready (which is an error.)
+void GL_call_me_before_starting_to_generate_vertices2(void);
+	  
 extern double GL_get_vblank(void);
 
 //extern bool GL_should_do_modal_windows(void);

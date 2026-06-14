@@ -32,13 +32,6 @@ layout(std140, binding = 0) uniform buf {
 
 void main()
 {
-	vec4 gakk = color;
-	//gakk.rgb *= 0.5;
-	//gakk.a = 0.5;
-	gakk.rgb *= gakk.a;
-	//color.rgb *= color.a;
-	v_color = gakk; //color; //gakk; //color; //vec3(1,0,0);//color;
-	//gl_Position = vec4(pos, 0.0, 1.0); //vec4(pos, 0.0, 1.0);
-	gl_Position = mvp * vec4(pos.x, pos.y - yscroll, 0, 1); //vec4(pos, 0.0, 1.0);
-	//FragColor = v_color;
+	v_color = vec4(color.rgb * color.a, color.a);
+	gl_Position = mvp * vec4(pos.x, pos.y - yscroll, 0, 1);
 }

@@ -11,8 +11,10 @@
 #include "../common/nsmtracker.h"
 
 #include "RhiWindow.hpp"
+#include "Widget_proc.h"
 //#include "Vertices.hpp"
 extern QRhi *g_rhi;
+extern int g_msaa_samples;
 
 
 static QThread *g_thread = NULL;
@@ -67,11 +69,12 @@ void radium::RhiWindow::exposeEvent(QExposeEvent *)
 	const bool is_exposed = isExposed();
 	bool must_call_resize_swap_chain = false;
 	
-	if (!_initialized) {
+	if (!_initialized)
+	{
 		//printf("2. ExposeEvent!\n");
 		if (is_exposed)
 		{
-			init(g_initial_editor_font);			
+			MAIN_init(g_initial_editor_font);			
 			must_call_resize_swap_chain = true;
 		}
 		else
@@ -84,11 +87,11 @@ void radium::RhiWindow::exposeEvent(QExposeEvent *)
 
 	QSemaphore sem;
 	
-	put_event([this, &sem, is_exposed, must_call_resize_swap_chain](void)
+	MAIN_put_event([this, &sem, is_exposed, must_call_resize_swap_chain](void)
 	{
 		if (must_call_resize_swap_chain)
 		{
-			resizeSwapChain();
+			QRHI_resizeSwapChain();
 			_initialized = true;
 		}
 
@@ -117,11 +120,11 @@ void radium::RhiWindow::exposeEvent(QExposeEvent *)
 		if (is_exposed)
 		{
 			//printf("     1.5. Expose event: About to call render\n");
-			render();
+			QRHI_render();
 			//printf("    2. Expose event: Render() finished, puttning a requestUpdate event on queue\n");
 			const QSize surfaceSize = _hasSwapChain ? _swap_chain->surfacePixelSize() : QSize();
 			if (!surfaceSize.isEmpty())
-				request_update_from_thread();
+				QRHI_request_update_from_thread();
 		}
 	});
 	//printf("8. ExposeEvent Finished!\n");
@@ -133,7 +136,8 @@ void radium::RhiWindow::exposeEvent(QExposeEvent *)
 //! [event]
 bool radium::RhiWindow::event(QEvent *e)
 {
-    switch (e->type()) {
+    switch (e->type())
+	{
 
 #if 0
     case QEvent::UpdateRequest:
@@ -141,11 +145,11 @@ bool radium::RhiWindow::event(QEvent *e)
 		if (isExposed())
 		{
 			//printf("Gakk\n");
-			put_event([this](void)
+			MAIN_put_event([this](void)
 				{
 					const QSize surfaceSize = _hasSwapChain ? _swap_chain->surfacePixelSize() : QSize();
 					if (!surfaceSize.isEmpty())
-						render();
+						QRHI_render();
 				});
 		}
         break;
@@ -155,9 +159,9 @@ bool radium::RhiWindow::event(QEvent *e)
     case QEvent::PlatformSurface:
         // this is the proper time to tear down the swapchain (while the native window and surface are still around)
 		if (static_cast<QPlatformSurfaceEvent *>(e)->surfaceEventType() == QPlatformSurfaceEvent::SurfaceAboutToBeDestroyed)
-			put_event([this](void)
+			MAIN_put_event([this](void)
 				{
-					releaseSwapChain();
+					QRHI_releaseSwapChain();
 				});
         break;
 
@@ -173,9 +177,11 @@ static QQueue<std::function<void(void)>>  g_queue;
 static QSemaphore g_sem;
 static QMutex g_mutex;
 
-void radium::RhiWindow::handle_thread_events(void)
+void radium::RhiWindow::QRHI_handle_thread_events(void)
 {
-	request_update_from_thread();
+	R_ASSERT_NON_RELEASE(THREADING_is_qrhi_thread());
+
+	QRHI_request_update_from_thread();
 
 #if THREADED_GFX
 		
@@ -207,14 +213,16 @@ void radium::RhiWindow::handle_thread_events(void)
 			func();
 		}		
 
-		render();
+		QRHI_render();
 	}
 
 #endif // THREADED_GFX
 }
 
-void radium::RhiWindow::put_event(std::function<void(void)> event)
+void radium::RhiWindow::MAIN_put_event(std::function<void(void)> event)
 {
+	R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
+
 #if THREADED_GFX
 	
 	//printf("  About to put event\n");
@@ -233,8 +241,33 @@ void radium::RhiWindow::put_event(std::function<void(void)> event)
 #endif
 }
 
-void radium::RhiWindow::request_update_from_thread(void)
+void radium::RhiWindow::MAIN_put_event_sync(std::function<void(void)> event)
 {
+	R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
+
+#if THREADED_GFX
+	
+	QSemaphore sem;
+
+	MAIN_put_event([event = std::move(event), &sem]()
+		{
+			event();
+			sem.release();
+		});
+
+	sem.acquire();
+	
+#else
+	
+	event();
+	
+#endif
+}
+
+void radium::RhiWindow::QRHI_request_update_from_thread(void)
+{
+	R_ASSERT_NON_RELEASE(THREADING_is_qrhi_thread());
+
 #if THREADED_GFX
 	QMetaObject::invokeMethod(qApp->thread(), [this] ()
 		{
@@ -245,9 +278,17 @@ void radium::RhiWindow::request_update_from_thread(void)
 #endif
 }
 
-//! [rhi-init]
-void radium::RhiWindow::init(const QFont &font)
+void radium::RhiWindow::QRHI_set_thread_priority(bool high)
 {
+	if (g_thread != NULL)
+		g_thread->setPriority(high ? QThread::HighestPriority : QThread::NormalPriority);
+}
+
+//! [rhi-init]
+void radium::RhiWindow::MAIN_init(const QFont &font)
+{
+	R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
+
 	//printf("INIT CALLED\n");
 	if (g_thread==NULL)
 	{
@@ -255,7 +296,10 @@ void radium::RhiWindow::init(const QFont &font)
 
 		auto initfunc = [this, &finished_initing, font]
 			{
-				if (_graphicsApi == QRhi::Null) {
+				THREADING_init_qrhi_thread_type();
+
+				if (_graphicsApi == QRhi::Null)
+				{
 					QRhiNullInitParams params;
 					_rhi = QRhi::create(QRhi::Null, &params);
 				}
@@ -319,39 +363,43 @@ void radium::RhiWindow::init(const QFont &font)
 				_swap_chain = _rhi->newSwapChain();
 
 #if USE_RENDER_BUFFER
-				_ds = _rhi->newRenderBuffer(QRhiRenderBuffer::DepthStencil,
-											QSize(), // no need to set the size here, due to UsedWithSwapChainOnly
-											4, // antialias
-											QRhiRenderBuffer::UsedWithSwapChainOnly);
+				if (g_msaa_samples > 1)
+				{
+					_ds = _rhi->newRenderBuffer(QRhiRenderBuffer::DepthStencil,
+					                            QSize(),
+					                            g_msaa_samples,
+					                            QRhiRenderBuffer::UsedWithSwapChainOnly);
+				}
 #endif
 				_swap_chain->setWindow(this);
 #if USE_RENDER_BUFFER
-				_swap_chain->setDepthStencil(_ds);
+				if (_ds)
+					_swap_chain->setDepthStencil(_ds);
 #endif
 				for(int s : _rhi->supportedSampleCounts())
 					printf("Supported sample count on qrhi: %d\n", s);
 
 #if USE_RENDER_BUFFER
-#if 1 // DO_ANTIALIASING
-				// Crash... (on 6.8.2, without render buffer. Too old version of Qt perhaps?)
-				_swap_chain->setSampleCount(4); // Weird, must set this one as well, to the same value as above. (maybe it's because it's an unfinished API? Seems like this should have been done automatically.)
-#endif
+				if (g_msaa_samples > 1)
+					_swap_chain->setSampleCount(g_msaa_samples);
 #endif
 				
 				_render_pass_descriptor = _swap_chain->newCompatibleRenderPassDescriptor();
 				_swap_chain->setRenderPassDescriptor(_render_pass_descriptor);
 //! [swapchain-init]
 				
-				customInit(font);
+QRHI_customInit(font);
 
 				finished_initing.release();
 				
-				handle_thread_events();
+				QRHI_handle_thread_events();
 			};
 
 #if THREADED_GFX
 		
 		g_thread = qthread2("RHI-thread", initfunc);
+
+		g_thread->setPriority(GL_get_high_render_thread_priority() ? QThread::HighestPriority : QThread::NormalPriority);
 
 		finished_initing.acquire();
 		
@@ -373,9 +421,11 @@ extern double g_opengl_scale_ratio;
 //QMatrix4x4 g_viewProjection;
 
 //! [swapchain-resize]
-void radium::RhiWindow::resizeSwapChain()
+void radium::RhiWindow::QRHI_resizeSwapChain()
 {
-	assert(QThread::currentThread() == g_thread);
+	R_ASSERT_NON_RELEASE(THREADING_is_qrhi_thread());
+
+	R_ASSERT_NON_RELEASE(QThread::currentThread() == g_thread);
 	
     _hasSwapChain = _swap_chain->createOrResize(); // also handles _ds
 
@@ -403,20 +453,25 @@ void radium::RhiWindow::resizeSwapChain()
 }
 //! [swapchain-resize]
 
-void radium::RhiWindow::releaseSwapChain()
+void radium::RhiWindow::QRHI_releaseSwapChain()
 {
-	assert(QThread::currentThread() == g_thread);
+	R_ASSERT_NON_RELEASE(THREADING_is_qrhi_thread());
+
+	R_ASSERT_NON_RELEASE(QThread::currentThread() == g_thread);
 	
-    if (_hasSwapChain) {
+	if (_hasSwapChain)
+	{
         _hasSwapChain = false;
         _swap_chain->destroy();
     }
 }
 
 //! [render-precheck]
-void radium::RhiWindow::render()
+void radium::RhiWindow::QRHI_render()
 {
-	assert(QThread::currentThread() == g_thread);
+	R_ASSERT_NON_RELEASE(THREADING_is_qrhi_thread());
+
+	R_ASSERT_NON_RELEASE(QThread::currentThread() == g_thread);
 
 	const QSize surfaceSize = _hasSwapChain ? _swap_chain->surfacePixelSize() : QSize();
 	if (surfaceSize.isEmpty())
@@ -424,6 +479,7 @@ void radium::RhiWindow::render()
 
     if (!_hasSwapChain || _notExposed)
         return;
+	
 //! [render-precheck]
 
 //! [render-resize]
@@ -436,29 +492,34 @@ void radium::RhiWindow::render()
     // never QWindow::size(). (the two may or may not be the same under the hood,
     // depending on the backend and platform)
     //
-    if (_swap_chain->currentPixelSize() != _swap_chain->surfacePixelSize() || _newlyExposed) {
-        resizeSwapChain();
+    if (_swap_chain->currentPixelSize() != _swap_chain->surfacePixelSize() || _newlyExposed)
+	{
+        QRHI_resizeSwapChain();
+		
         if (!_hasSwapChain)
             return;
+		
         _newlyExposed = false;
     }
 //! [render-resize]
 
 //! [beginframe]
     QRhi::FrameOpResult result = _rhi->beginFrame(_swap_chain);
-    if (result == QRhi::FrameOpSwapChainOutOfDate) {
-        resizeSwapChain();
+    if (result == QRhi::FrameOpSwapChainOutOfDate)
+	{
+        QRHI_resizeSwapChain();
         if (!_hasSwapChain)
             return;
         result = _rhi->beginFrame(_swap_chain);
     }
-    if (result != QRhi::FrameOpSuccess) {
-        qWarning("beginFrame failed with %d, will retry", result);
-        request_update_from_thread();
+    if (result != QRhi::FrameOpSuccess)
+	{
+        fprintf(stderr, "beginFrame failed with %d, will retry", result);
+        QRHI_request_update_from_thread();
         return;
     }
 
-    customRender();
+QRHI_customRender();
 //! [beginframe]
 
 //! [request-update]
@@ -467,6 +528,6 @@ void radium::RhiWindow::render()
     // Always request the next frame via requestUpdate(). On some platforms this is backed
     // by a platform-specific solution, e.g. CVDisplayLink on macOS, which is potentially
     // more efficient than a timer, queued metacalls, etc.
-	request_update_from_thread();
+	QRHI_request_update_from_thread();
     //requestUpdate();
 }
