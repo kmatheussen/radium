@@ -184,6 +184,10 @@ struct KeyboardFocusFrame : public QFrame{
 
   void enterEvent(QEnterEvent * event) override {
     FOCUSFRAMES_set_focus(_type, true);
+
+	if(_type==KeyboardFocusFrameType::EDITOR)
+		if (root && root->song && root->song->tracker_windows)
+			root->song->tracker_windows->must_redraw_editor = true;
   }
 };
 
