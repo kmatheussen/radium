@@ -1293,10 +1293,7 @@ public:
 		{
 			batch->updateDynamicBuffer(_triangle_renderer_playcursor._ubuf, 0, 64, _viewProjection.constData());
 			
-			float playcursor_pos = (float)scroll_pos;
-			
-			if (current_realline_while_playing > 0.0)
-				playcursor_pos = (float)(scroll_pos - QRHI_GE_scroll_pos(sv, current_realline_while_playing));
+			float playcursor_pos = (float)(scroll_pos - QRHI_GE_scroll_pos(sv, current_realline_while_playing));
 			
 			batch->updateDynamicBuffer(_triangle_renderer_playcursor._ubuf, 64, sizeof(float), &playcursor_pos);
 		}
