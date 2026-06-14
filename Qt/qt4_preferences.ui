@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1085</width>
-    <height>570</height>
+    <height>616</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -6482,7 +6482,7 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
                <x>0</x>
                <y>0</y>
                <width>935</width>
-               <height>243</height>
+               <height>289</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="midi_input_layout">
@@ -10157,7 +10157,7 @@ This option should be considered as a lightweight version of  &quot;Only show mo
           <enum>QTabWidget::TabPosition::West</enum>
          </property>
          <property name="currentIndex">
-          <number>0</number>
+          <number>1</number>
          </property>
          <widget class="QWidget" name="tab_5">
           <attribute name="title">
@@ -10661,6 +10661,53 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </widget>
            </item>
            <item>
+            <widget class="QGroupBox" name="groupBox_clamp_text">
+             <property name="title">
+              <string>Text rendering</string>
+             </property>
+             <layout class="QHBoxLayout" name="horizontalLayout_19">
+              <item>
+               <widget class="QCheckBox" name="clampTextRendering">
+                <property name="toolTip">
+                 <string/>
+                </property>
+                <property name="text">
+                 <string>Clamp text rendering</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer_15">
+                <property name="orientation">
+                 <enum>Qt::Orientation::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item>
+               <widget class="QLabel" name="label_15">
+                <property name="layoutDirection">
+                 <enum>Qt::LayoutDirection::LeftToRight</enum>
+                </property>
+                <property name="text">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;
+Only for debugging text rendering in the editor. If you enable this option and&lt;br&gt;
+the text becomes less blury after restarting the program,&lt;br&gt;
+please report it as a bug. The disadvantage of enabling this option is&lt;br&gt;
+that scrolling becomes less smooth.
+&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
             <spacer name="verticalSpacer_35">
              <property name="orientation">
               <enum>Qt::Orientation::Vertical</enum>
@@ -10735,7 +10782,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
               <x>0</x>
               <y>0</y>
               <width>568</width>
-              <height>262</height>
+              <height>308</height>
              </rect>
             </property>
             <property name="sizePolicy">

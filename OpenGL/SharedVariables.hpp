@@ -54,7 +54,7 @@ struct SharedVariables
 static radium::Mutex g_vector_mutex;
 static vector_t g_shared_variables_gc_storage = {}; // Here we store stuff used in SharedVariables that should not be garbage collected
 
-// Called from T2 or main thread
+// Called on the qrhi thread.
 SharedVariables::~SharedVariables(){
   {
     radium::ScopedMutex locker(g_vector_mutex);

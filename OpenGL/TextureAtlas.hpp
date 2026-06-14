@@ -1,4 +1,6 @@
 
+#include "Widget_proc.h"
+
 namespace r
 {
 
@@ -17,7 +19,7 @@ class TextureAtlasBackend
 
 	QRhi* _rhi = nullptr;
 
-	mutable radium::Mutex _newImageLock;
+	mutable radium::RWLock _newImageLock;
 
 	struct D
 	{
@@ -43,28 +45,32 @@ public:
         : _rhi(rhi)
     {
         createAtlas(font);
-        createTextureResources(_next_d._image);
+        QRHI_createTextureResources(_next_d._image);
     }
 	
 	~TextureAtlasBackend()
     {
-        if (_texture) {
+        if (_texture)
+		{
             _texture->destroy();
             delete _texture;
         }
-        if (_sampler) {
+        if (_sampler)
+		{
             _sampler->destroy();
             delete _sampler;
         }
     }
 
-	void appendStringToVertices(r::TextureVertices *vertices,
-								const QString& text, 
-								float startX, float startY,
-								float r, float g, float b, float a)
-		//					  const QColor& color = Qt::white)
+	void MAIN_appendStringToVertices(r::TextureVertices *vertices,
+									 const QString& text, 
+									 float startX, float startY,
+									 float r, float g, float b, float a)
+	//					  const QColor& color = Qt::white)
 		const
 	{
+		R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
+
 		/*
         float r = color.redF();
         float g = color.greenF();
@@ -72,7 +78,7 @@ public:
         float a = color.alphaF();
         */
 
-		radium::ScopedMutex lock(_newImageLock);
+		radium::ScopedReadLock lock(_newImageLock);
 
 		const D &d = _d; //_next_d._image.isNull() ? _d : _next_d;
 
@@ -85,7 +91,8 @@ public:
 			
 			auto it = d._char_uvs.find(c);
 			
-			if (it == d._char_uvs.end()) {
+			if (it == d._char_uvs.end())
+			{
 				printf("===Can't render this character: '%c'\n", c);
 				continue;
 			}
@@ -95,21 +102,23 @@ public:
             float x = floor(startX + i * d._char_width) + 1;
             float y = floor(startY) + 1;
 			
-            vertices->addTexture(x, y,
-								 x + d._char_width, y + d._char_height,
-								 uvs.u0, uvs.v0,
-								 uvs.u1, uvs.v1,
-								 r,g,b,a);
+            vertices->MAIN_addTexture(x, y,
+									  x + d._char_width, y + d._char_height,
+									  uvs.u0, uvs.v0,
+									  uvs.u1, uvs.v1,
+									  r,g,b,a);
         }
 	}
 
     // Upload texture data to GPU (call once after creating atlas)
-    void uploadTexture(QRhiResourceUpdateBatch* batch)
+    void QRHI_uploadTexture(QRhiResourceUpdateBatch* batch)
     {
+		R_ASSERT_NON_RELEASE(THREADING_is_qrhi_thread());
+
 		if (batch==NULL)
 			return;
 
-		radium::ScopedMutex lock(_newImageLock);
+		radium::ScopedWriteLock lock(_newImageLock);
 
         if (!_d._image.isNull())
 		{
@@ -117,8 +126,9 @@ public:
 			{
 				_texture->setPixelSize(_d._image.size());
 				
-				if (!_texture->create()) {
-					qFatal("Failed to recreate texture");
+				if (!_texture->create())
+				{
+					GFX_Message(NULL, "Failed to recreate texture");
 				}
 			}
 			
@@ -127,18 +137,19 @@ public:
 			_next_d._image = QImage();
 			_d._image = QImage();
 			
-            qDebug() << "TextureAtlas: Uploaded to GPU";
+            //qDebug() << "TextureAtlas: Uploaded to GPU";
         }
     }
 
-	// Suspected switching at the wrong time could cause flickering, but all this is probably just unnecessary complication.
-	// (the flickering is caused by something else)
+	// I suspected that switching at the wrong time could cause flickering, but all this might be (or is probably) just unnecessary complication.
 	//
 	// This function is called right before starting a new render, on the same thread that is rendering (which is currently the main thread).
 	//
-	void maybe_switch_to_next_d(void)
+	void MAIN_maybe_switch_to_next_d(void)
 	{
-		radium::ScopedMutex lock(_newImageLock);
+		R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
+
+		radium::ScopedWriteLock lock(_newImageLock);
 
 		if (!_next_d._image.isNull())
 		{
@@ -147,27 +158,24 @@ public:
 		}
 	}
 	
-	void setFont(const QFont &nonscaled_font)
+	void MAIN_setFont(const QFont &nonscaled_font)
 	{
-#if 1
+		R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
+
 		createAtlas(nonscaled_font);
-#else
-		QFont font(nonscaled_font);
-
-		const double scale_ratio = safe_double_read(&g_opengl_scale_ratio);
-		
-		if(!equal_doubles(scale_ratio, 1.0))
-			font.setPointSize(font.pointSize() * scale_ratio);
-
-		createAtlas(font);
-#endif
 	}
 	
-    //int getCharWidth() const { return _char_width; }
-    //int getCharHeight() const { return _char_height; }
+    int QRHI_getFontHeight(void) const
+	{
+		R_ASSERT_NON_RELEASE(THREADING_is_qrhi_thread());
+
+    	radium::ScopedReadLock lock(_newImageLock);
+    	return _d._char_height;
+    }
     
 private:
-    
+
+	// Note: Can be called from both the main thread and the qrhi thread.
     void createAtlas(const QFont &orgfont)
     {
         int charCount = g_supportedChars.length();
@@ -235,23 +243,27 @@ private:
         }
         
         painter.end();
-        
+
+		/*
         qDebug() << "TextureAtlas created:" << atlasWidth << "x" << atlasHeight
                  << "with" << charCount << "characters"
                  << "(" << d._num_columns << "x" << d._num_rows << "grid)";
-
+		*/
+		
 		{
-			radium::ScopedMutex lock(_newImageLock);
+			radium::ScopedWriteLock lock(_newImageLock);
 
 			_next_d = d;
 		}
     }
     
-    void createTextureResources(const QImage &image)
+    void QRHI_createTextureResources(const QImage &image)
     {
-        if (!_rhi) {
-            qDebug() << "TextureAtlas: Cannot create texture resources - QRhi is null";
-			getchar();
+        R_ASSERT_NON_RELEASE(THREADING_is_qrhi_thread());
+
+        if (!_rhi)
+		{
+            GFX_Message(NULL, "TextureAtlas: Cannot create texture resources - QRhi is null");
             return;
         }
         
@@ -260,33 +272,38 @@ private:
 									  1,
 									  QRhiTexture::Flag{});
 		
-        if (!_texture || !_texture->create()) {
-            qDebug() << "TextureAtlas: Failed to create texture";
-			getchar();
+        if (!_texture || !_texture->create())
+		{
+            GFX_Message(NULL, "TextureAtlas: Failed to create texture");
             return;
         }
 
-#if 0
-		// This one ensures non-scaled text (no bluring), but also causes jumpy text when scrolling.
-		// (Try to enable it to see if text becomes clearer. If it does, something is wrong.)
-        _sampler = _rhi->newSampler(QRhiSampler::Nearest,
-									QRhiSampler::Nearest,
-									QRhiSampler::None,
-									QRhiSampler::ClampToEdge,
-									QRhiSampler::ClampToEdge);
-#else
-		// This one doesn't guarantee non-scaled text, but we should not experience it anyway (since the parameters we're using shouldn't cause scaling).
-		// We also avoid jumpy text when scrolling using this one. */
-        _sampler = _rhi->newSampler(QRhiSampler::Linear,
-									QRhiSampler::Linear,
-									QRhiSampler::None,
-									QRhiSampler::ClampToEdge,
-									QRhiSampler::ClampToEdge);
-#endif
+		if (GL_get_clamp_text_rendering())
+		{
+			////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+			/////////// ALWAYS TEST THIS BRANCH IF CHANGING SOMETHING YOU SUSPECT COULD CHANGE TEXT-SCALING ////////////////////
+			////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		
-        if (!_sampler || !_sampler->create()) {
-            qDebug() << "TextureAtlas: Failed to create sampler";
-			getchar();
+			// This one ensures non-scaled text (no bluring), but also causes jumpy text when scrolling.
+			_sampler = _rhi->newSampler(QRhiSampler::Nearest,
+			                            QRhiSampler::Nearest,
+			                            QRhiSampler::None,
+			                            QRhiSampler::ClampToEdge,
+			                            QRhiSampler::ClampToEdge);
+		}
+		else
+		{
+			// This one doesn't guarantee non-scaled text, but we should not experience it anyway (since the parameters we're using shouldn't cause scaling).
+			_sampler = _rhi->newSampler(QRhiSampler::Linear,
+			                            QRhiSampler::Linear,
+			                            QRhiSampler::None,
+			                            QRhiSampler::ClampToEdge,
+			                            QRhiSampler::ClampToEdge);
+		}
+		
+        if (!_sampler || !_sampler->create())
+		{
+			GFX_Message(NULL, "TextureAtlas: Failed to create sampler");
         }
     }
     
@@ -310,44 +327,54 @@ public:
         , _viewCorrectionBuffer(viewCorrectionBuffer)
         , _scrollPosBuffer(scrollPosBuffer)
     {
-        createShaderBindings();
+        QRHI_createShaderBindings();
     }
     
     ~TextureAtlas()
     {
+        if (_shaderBindings)
+        {
+            _shaderBindings->destroy();
+            delete _shaderBindings;
+        }
     }
     
-    // Get shader resource bindings
-	QRhiShaderResourceBindings* getShaderBindings(void) const
+	QRhiShaderResourceBindings* QRHI_getShaderBindings(void) const
 	{
+		R_ASSERT_NON_RELEASE(THREADING_is_qrhi_thread());
+
 		return _shaderBindings;
 	}
     
-    void appendStringToVertices(r::TextureVertices *vertices,
-								const QString& text, 
-								float startX, float startY,
-								float r, float g, float b, float a)
+    void MAIN_appendStringToVertices(r::TextureVertices *vertices,
+									 const QString& text, 
+									 float startX, float startY,
+									 float r, float g, float b, float a)
 		const
 	{
-		_backend->appendStringToVertices(vertices,
-							   text,
-							   startX, startY,
-							   r, g, b, a);
+		R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
+
+		_backend->MAIN_appendStringToVertices(vertices,
+											  text,
+											  startX, startY,
+											  r, g, b, a);
 	}
 	
-    void createShaderBindings(void)
+    void QRHI_createShaderBindings(void)
     {
-        if (!_rhi || !_backend->_texture || !_backend->_sampler) {
-            qDebug() << "TextureAtlas: Cannot create shader bindings - resources not ready";
-			getchar();
+        R_ASSERT_NON_RELEASE(THREADING_is_qrhi_thread());
+
+        if (!_rhi || !_backend->_texture || !_backend->_sampler)
+		{
+            GFX_Message(NULL, "TextureAtlas: Cannot create shader bindings - resources not ready");
             return;
         }
         
         _shaderBindings = _rhi->newShaderResourceBindings();
+		
         if (!_shaderBindings)
 		{
-            qDebug() << "TextureAtlas: Failed to create shader resource bindings";
-			getchar();
+            GFX_Message(NULL, "TextureAtlas: Failed to create shader resource bindings");
             return;
         }
         
@@ -377,8 +404,7 @@ public:
         
         if (!_shaderBindings->create())
 		{
-            qDebug() << "TextureAtlas: Failed to create shader resource bindings";
-			getchar();
+            GFX_Message(NULL, "TextureAtlas: Failed to create shader resource bindings");
         }
     }
 };

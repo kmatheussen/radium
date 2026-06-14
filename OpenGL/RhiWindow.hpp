@@ -10,7 +10,6 @@
 #include "../Qt/Qt_MainWindow_proc.h"
 
 #define THREADED_GFX 1
-#define DO_ANTIALIASING 1
 #define USE_RENDER_BUFFER 1 // At least one of opengl/directx/metal/vulkan systems required this one, don't remember which.
 
 
@@ -20,12 +19,9 @@ static inline QThread *qthread2(const QString &name, std::function<void(void)> c
 	
 	if (QThread::currentThread() != qApp->thread())
 	{
-		assert(thread->thread() == QThread::currentThread()); // If not, 'QObject::moveToThread' doesn't work.
+		R_ASSERT(thread->thread() == QThread::currentThread()); // If not, 'QObject::moveToThread' doesn't work.
 
-		// If we don't do this, 'thread' won't be deleted until after the current thread is deleted/
-		// E.g. if this function is called from a thread pool-thread, the object may never be deleted.
-
-		assert(qApp->thread() != NULL);
+		R_ASSERT(qApp->thread() != NULL);
 		
 		thread->moveToThread(qApp->thread());
 	}
@@ -48,15 +44,13 @@ class RhiWindow : public QWindow
 public:
     RhiWindow(QRhi::Implementation graphicsApi);
     QString graphicsApiName() const;
-    void releaseSwapChain();
+    void QRHI_releaseSwapChain();
 
 	virtual ~RhiWindow()
 	{
 		fprintf(stderr, "A1\n");
 
-		QSemaphore sem;
-	
-		put_event([this, &sem]()
+		MAIN_put_event_sync([this]()
 			{
 #if QT_CONFIG(opengl)
 				delete _fallbackSurface;
@@ -75,18 +69,15 @@ public:
 					delete _rhi;
 				
 				fprintf(stderr, "A6\n");
-				
-				sem.release();
 				fprintf(stderr, "A7\n");
 			});
 
 		fprintf(stderr, "A8\n");
-		sem.acquire();
 		fprintf(stderr, "A9\n");
 
 		_please_shut_down_qrhi_thread = true;
 
-		put_event([]()
+		MAIN_put_event([]()
 			{
 				return;
 			});
@@ -97,8 +88,8 @@ public:
 	
 protected:
 	
-    virtual void customInit(const QFont &font) = 0;
-    virtual void customRender() = 0;
+    virtual void QRHI_customInit(const QFont &font) = 0;
+    virtual void QRHI_customRender() = 0;
 
     // destruction order matters to a certain degree: the fallbackSurface must
     // outlive the rhi, the rhi must outlive all other resources.  The resources
@@ -119,9 +110,9 @@ protected:
     QMatrix4x4 _viewProjection;
 
 private:
-    void init(const QFont &font);
-    void resizeSwapChain();
-    void render();
+    void MAIN_init(const QFont &font);
+    void QRHI_resizeSwapChain();
+    void QRHI_render();
 
     void exposeEvent(QExposeEvent *) override;
     bool event(QEvent *) override;
@@ -131,12 +122,15 @@ private:
     bool _notExposed = false;
     bool _newlyExposed = false;
 	
-	void handle_thread_events(void);
+	void QRHI_handle_thread_events(void);
 
 public:
 	
-	void put_event(std::function<void(void)> event);
-	void request_update_from_thread(void);
+	void MAIN_put_event(std::function<void(void)> event);
+	void MAIN_put_event_sync(std::function<void(void)> event);
+	void QRHI_request_update_from_thread(void);
+
+	static void QRHI_set_thread_priority(bool high);
 };
 }
 

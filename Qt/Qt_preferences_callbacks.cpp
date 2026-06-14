@@ -548,6 +548,8 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       high_priority_render_thread->setChecked(GL_get_high_render_thread_priority());
       high_priority_drawer_thread->setChecked(false); //GL_get_high_draw_thread_priority());
 
+      clampTextRendering->setChecked(GL_get_clamp_text_rendering());
+
       // GPU Backend
       {
         const char *rhi_backend = GL_get_backend();
@@ -956,6 +958,11 @@ public slots:
     }
   }
 
+  void on_clampTextRendering_toggled(bool val){
+    if (_initing==false)
+      GL_set_clamp_text_rendering(val);
+  }
+
   void on_high_cpu_protection_toggled(bool val){
     if (_initing==false)
       setHighCpuOpenGlProtection(val);
@@ -985,27 +992,27 @@ public slots:
 
   void on_rhi_null_toggled(bool val){
     if (_initing==false && val)
-      GL_set_backend("null");
+      GL_request_setting_backend("null");
   }
   void on_rhi_opengl_toggled(bool val){
     if (_initing==false && val)
-      GL_set_backend("opengl");
+      GL_request_setting_backend("opengl");
   }
   void on_rhi_vulkan_toggled(bool val){
     if (_initing==false && val)
-      GL_set_backend("vulkan");
+      GL_request_setting_backend("vulkan");
   }
   void on_rhi_d3d11_toggled(bool val){
     if (_initing==false && val)
-      GL_set_backend("d3d11");
+      GL_request_setting_backend("d3d11");
   }
   void on_rhi_d3d12_toggled(bool val){
     if (_initing==false && val)
-      GL_set_backend("d3d12");
+      GL_request_setting_backend("d3d12");
   }
   void on_rhi_metal_toggled(bool val){
     if (_initing==false && val)
-      GL_set_backend("metal");
+      GL_request_setting_backend("metal");
   }
   
   void on_enable_sample_seek_by_default_toggled(bool val){

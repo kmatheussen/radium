@@ -25,12 +25,5 @@ layout(location = 0) in vec4 v_color;
 layout(location = 0) out vec4 c;
 
 void main() {
-	vec4 gakk = v_color;
-	//gakk.rgb *= 0.5;
-	//gakk.a = 0.5;
-	//gakk.rgb *= gakk.a;
-
-	//c = vec4(0.5, 0, 0.5, 1);
-	c = gakk; //v_color; //vec4(v_color);
-	//FragColor = v_color;
+	c = v_color;
 }
