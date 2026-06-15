@@ -170,22 +170,22 @@ else
 endif
 
 
-QT_GUI_CFLAGS ?=`$(PKGqt) --cflags Qt6Gui --cflags Qt6Widgets` $(FPIC)
+QT_GUI_CFLAGS ?=`$(PKGqt) --cflags Qt6Gui --cflags Qt6Widgets | sed 's/-I/-isystem/g'` $(FPIC)
 QT_GUI_LDFLAGS ?= `$(PKGqt) --libs Qt6Gui --libs Qt6Widgets` $(FPIC)
-QT_NETWORK_CFLAGS ?=`$(PKGqt) --cflags Qt6Network` $(FPIC)
+QT_NETWORK_CFLAGS ?=`$(PKGqt) --cflags Qt6Network | sed 's/-I/-isystem/g'` $(FPIC)
 QT_NETWORK_LDFLAGS ?= `$(PKGqt) --libs Qt6Network` $(FPIC)
-QT_UI_CFLAGS ?= `$(PKGqt) --cflags Qt6UiTools` $(FPIC)
+QT_UI_CFLAGS ?= `$(PKGqt) --cflags Qt6UiTools | sed 's/-I/-isystem/g'` $(FPIC)
 QT_UI_LDFLAGS ?= `$(PKGqt) --libs Qt6UiTools` $(FPIC)
-QT_SVG_CFLAGS ?= `$(PKGqt) --cflags Qt6Svg` $(FPIC)
+QT_SVG_CFLAGS ?= `$(PKGqt) --cflags Qt6Svg | sed 's/-I/-isystem/g'` $(FPIC)
 QT_SVG_LDFLAGS ?= `$(PKGqt) --libs Qt6Svg` $(FPIC)
-QT_SVGWIDGETS_CFLAGS ?= `$(PKGqt) --cflags Qt6SvgWidgets` $(FPIC)
+QT_SVGWIDGETS_CFLAGS ?= `$(PKGqt) --cflags Qt6SvgWidgets | sed 's/-I/-isystem/g'` $(FPIC)
 QT_SVGWIDGETS_LDFLAGS ?= `$(PKGqt) --libs Qt6SvgWidgets` $(FPIC)
 
 #	If using QtWebEngine: (Not recommended, dragging doesn't work using it)
 #	QT_CFLAGS ?= `$(PKGqt) --cflags Qt6Gui --cflags Qt6Network --cflags Qt6OpenGL --cflags Qt6Widgets --cflags Qt6WebEngineWidgets` -Ibin/packages/qhttpserver-master/src -Ibin/packages/QScintilla_gpl-2.10.8 -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) -DUSE_QT6
 #	QT_LDFLAGS ?= `$(PKGqt) --libs Qt6Gui --libs Qt6OpenGL --libs Qt6Network --libs Qt6Widgets --libs Qt6WebEngineWidgets`
 
-QT_CFLAGS ?= `$(PKGqt) --cflags Qt6Gui --cflags Qt6Network --cflags Qt6OpenGL --cflags Qt6Widgets --cflags Qt6OpenGLWidgets --cflags Qt6Concurrent ` -I$(QHTTPSERVER_PATH)/src -I$(QSCINTILLA_PATH) -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) $(FPIC)
+QT_CFLAGS ?= `$(PKGqt) --cflags Qt6Gui --cflags Qt6Network --cflags Qt6OpenGL --cflags Qt6Widgets --cflags Qt6OpenGLWidgets --cflags Qt6Concurrent | sed 's/-I/-isystem/g'` -I$(QHTTPSERVER_PATH)/src -I$(QSCINTILLA_PATH) -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) $(FPIC)
 QT_LDFLAGS ?=  $(QT_UI_LDFLAGS) $(QT_SVG_LDFLAGS) $(QT_SVGWIDGETS_LDFLAGS) `$(PKGqt) --libs Qt6Gui --libs Qt6Widgets --libs Qt6Network --libs Qt6Core5Compat` $(FPIC)
 # --libs Qt6OpenGL --libs Qt6OpenGLWidgets 
 # --cflags Qt6Core5Compat
@@ -198,12 +198,12 @@ ifeq ($(USE_QSVGVIEWER),1)
 else ifeq ($(USE_QWEBENGINE),1)
 #  If using QtWebEngine:
   USE_QWEBENGINE_CFLAGS = -DUSE_QSVGVIEWER=0 -DUSE_QWEBENGINE=1
-  QT_CFLAGS += `$(PKGqt) --cflags Qt6WebEngineCore  --cflags Qt6WebEngineWidgets` 
+  QT_CFLAGS += `$(PKGqt) --cflags Qt6WebEngineCore  --cflags Qt6WebEngineWidgets | sed 's/-I/-isystem/g'` 
   QT_LDFLAGS += `$(PKGqt) --libs Qt6WebEngineCore  --libs Qt6WebEngineWidgets`
 else
 #  If using QtWebKit:
   USE_QWEBENGINE_CFLAGS = -DUSE_QSVGVIEWER=0 -DUSE_QWEBENGINE=0
-  QT_CFLAGS += `$(PKGqt) --cflags Qt6WebKitWidgets --cflags Qt6WebKit`
+  QT_CFLAGS += `$(PKGqt) --cflags Qt6WebKitWidgets --cflags Qt6WebKit | sed 's/-I/-isystem/g'`
   QT_LDFLAGS += `$(PKGqt) --libs Qt6WebKitWidgets --libs Qt6WebKit`
 endif
 
@@ -767,11 +767,25 @@ OBJ = $(OBJ12) $(OBJ_ES) $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7)
 
 #-------------------KARSJK-------------------------------
 
-BUILD_DEPENDENCIES = flagopts.opt $(CD)keyboard_sub_ids.h dependencies_ok
+BUILD_DEPENDENCIES =
+#flagopts.opt $(CD)keyboard_sub_ids.h dependencies_ok
 #buildtype.opt 
 
 PROGRAM_MODULES = $(RADIUM_BIN) bin/radium_crashreporter bin/protoconfparser.py bin/protos.conf bin/radium_error_message bin/radium_progress_window bin/radium_check_jack_status bin/radium_plugin_scanner bin/scheme/api_protos.scm bin/color.frag.qsb bin/color.vert.qsb bin/texture_vertex.qsb bin/texture_fragment.qsb # bin/radium_check_opengl 
 OBJECT_DEPENDENCIES = $(BUILD_DEPENDENCIES)
+
+
+
+
+
+###########################################################
+###### AUTOMATIC DEPENDENCY TRACKING STUFF ################
+-include $(wildcard $(T)/*.d)
+###########################################################
+###########################################################
+
+
+
 
 #bin/styles/libqcleanlooksstyle.so bin/styles/libqplastiquestyle.so
 
@@ -1733,7 +1747,7 @@ bin/radium_check_recent_libxcb: X11/check_recent_libxcb.c
 #X11_ClientMessages.o:  $(BUILD_DEPENDENCIES) X11/X11_ClientMessages.c
 #	$(CC2) X11/X11_ClientMessages.c $(OPT)
 
-$(P)EditorWidget.h: $(BUILD_DEPENDENCIES)
+$(P)EditorWidget.h: $(BUILD_DEPENDENCIES) Qt/KeyboardFocusFrame.hpp
 
 $(T)Qt_Main.o:  $(BUILD_DEPENDENCIES) $(P)Qt_Main.cpp $(P)EditorWidget.h $(P)Qt_instruments_proc.h $(QM)QM_MixerWidget.h Qt/helpers.h audio/SampleRecorder_proc.h common/nag.h Qt/KeyboardFocusFrame.hpp common/Process.hpp Qt/Timer.hpp
 	$(MOC) Qt/Qt_Main.cpp > Qt/mQt_Main.cpp
@@ -2149,8 +2163,6 @@ Qt/Qt_MyQCheckBox.h: $(P)EditorWidget.h
 Qt/Qt_MyQSlider.h: $(P)EditorWidget.h
 common/windows_proc.h: $(P)EditorWidget.h
 
-$(P)EditorWidget.h: Qt/KeyboardFocusFrame.hpp
-
 
 
 $(T)api_requesters.o:  $(BUILD_DEPENDENCIES)  $(API)api_requesters.cpp 
@@ -2244,7 +2256,7 @@ $(T)midi_ports.o: $(BUILD_DEPENDENCIES) midi/midi_ports.cpp
 
 
 
-buildtype.opt: #Makefile
+buildtype.opt: Makefile.Qt
 	echo $(TARGET_OS)
 	if [ $(BUILDTYPE) = DEBUG ] ; then \
 		echo "$(DEBUG_BUILD_OPTS) $(OPTIMIZE)" >buildtype.opt ; \
@@ -2258,7 +2270,7 @@ buildtype.opt: #Makefile
 #		echo "$(RELEASE_BUILD_OPTS_WITHOUT_NDEBUG)" >buildtype.opt ; \
 
 
-flagopts.opt: #Makefile
+flagopts.opt: Makefile.Qt
 	if [ $(BUILDTYPE) = DEBUG ] ; then \
 		echo "$(FLAGOPTS)" >flagopts.opt ; \
 	elif [ $(BUILDTYPE) = DEBUG_FAST ] ; then \
@@ -2982,6 +2994,9 @@ $(T)radium_s7_wrap.o: api/radium_s7_wrap.c
 
 api/radium_s7_wrap.c: bin/protoconfparser.py api/protos.conf bin/packages/s7/s7.c api/s7_types_code.c api/s7_types_code_init.c
 	cd api && $(PYTHONEXE) ../bin/protoconfparser.py radium_s7_wrap.c >radium_s7_wrap.c
+
+api/s7_types.h: api/s7_types_generator.scm
+	api/s7_types_generator.scm types
 
 api/s7_types_code.c: api/s7_types_generator.scm
 	api/s7_types_generator.scm code

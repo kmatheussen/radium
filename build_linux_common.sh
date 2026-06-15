@@ -310,12 +310,8 @@ if ! file $RADIUM_BIN |grep Linux ; then
     rm -f bin/radium_error_message
 fi
 
-api/s7_types_generator.scm types
-make buildtype.opt --stop
-make flagopts.opt --stop
-make api/radium_proc.h --stop
-make common/keyboard_sub_ids.h --stop
-make bin/radium_check_recent_libxcb --stop
+#api/s7_types_generator.scm types
+make api/s7_types.h buildtype.opt flagopts.opt api/radium_proc.h common/keyboard_sub_ids.h bin/radium_check_recent_libxcb --stop
 
 if [[ $# -ge 1 ]] && [[ $1 == "test" ]] ; then
 	make test_seqautomation
@@ -325,6 +321,7 @@ else
 		make /tmp/run_preload
 	fi
 	make radium $@ --stop # Can not use "exec make" here. Compilation stopped here I think, whether it succeeded or not.
+	#make ${T}Qt_instruments.o $@ --stop # Can not use "exec make" here. Compilation stopped here I think, whether it succeeded or not.
     
 	if ldd -r $RADIUM_BIN | sed 's/0x.*//' |grep -i bfd |grep -v libfdk ; then
 		printf "\033[1;31mError? Is bfd linked dynamically?\033[0m\n"
