@@ -4,6 +4,7 @@
 // Written Sept. 2010 by Róbert Márki <gsmiko@gmail.com>,
 // with slight modifications by Werner Lemberg
 
+#pragma once
 
 
 #include <QImage>

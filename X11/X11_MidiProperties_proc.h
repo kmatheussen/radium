@@ -16,6 +16,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
+#pragma once
+
 extern LANGSPEC bool X11_StartMidiProperties(void);
 //extern LANGSPEC void X11_MIDI_PP_Update(struct Instruments *instrument,struct Patch *patch);
 

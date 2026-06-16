@@ -16,5 +16,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
+#pragma once
+
 extern LANGSPEC void posix_EndPlayer(void);
 extern LANGSPEC bool posix_InitPlayer(void);

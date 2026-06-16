@@ -1,3 +1,5 @@
+#pragma once
+
 extern LANGSPEC void Scroll_play_down(
                       struct WBlocks *wblock,
                       int start_realline,

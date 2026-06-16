@@ -24,7 +24,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-#include "../common/includepython.h"
+//#include "../common/includepython.h"
+
+
+#if defined(__GNUC__) && !defined(__clang__)
+#  include "../Qt/Qt_precompiled.hpp"
+#endif
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wshorten-64-to-32"
@@ -50,8 +55,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/visual_proc.h"
 
 #include "api_common_proc.h"
-
-#include "radium_proc.h"
+#include "api_proc.h"
 #include "api_instruments_proc.h"
 
 

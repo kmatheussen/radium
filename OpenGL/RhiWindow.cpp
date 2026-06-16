@@ -1,3 +1,7 @@
+#if defined(__GNUC__) && !defined(__clang__)
+#  include "../Qt/Qt_precompiled.hpp"
+#endif
+
 #include <functional>
 
 #include <QQueue>

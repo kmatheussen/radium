@@ -1,3 +1,4 @@
+#pragma once
 /* Copyright 2012 Kjetil S. Matheussen
 
 This program is free software; you can redistribute it and/or
@@ -43,6 +44,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 #include "mQt_jack_plugin_widget_callbacks.h"
 #include "mQt_sendreceive_plugins_widget_callbacks.h"
+
 
 static QString last_fxb_preset_path = "";
 

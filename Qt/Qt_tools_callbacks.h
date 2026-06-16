@@ -1,3 +1,4 @@
+#pragma once
 
 #include <inttypes.h>
 
@@ -30,6 +31,7 @@
 #include "ScrollArea.hpp"
 
 #include "Qt_tools.h"
+
 
 namespace{
 

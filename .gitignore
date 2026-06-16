@@ -1,4 +1,6 @@
 *.o
+*.gch
+*.pch
 Qt/Qt_control_change_widget.cpp
 Qt/Qt_control_change_widget.h
 Qt/Qt_instrument_widget.cpp

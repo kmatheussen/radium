@@ -57,6 +57,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 ** $QT_END_LICENSE$
 **
 ****************************************************************************/
+#if defined(__GNUC__) && !defined(__clang__)
+#  include "../Qt/Qt_precompiled.hpp"
+#endif
+
 #define __STDC_FORMAT_MACROS 1
 #include <inttypes.h>
 #include <unistd.h>

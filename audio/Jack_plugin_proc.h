@@ -1,3 +1,5 @@
+#pragma once
+
 #ifdef __cplusplus
 #  define LANGSPEC "C"
 #else

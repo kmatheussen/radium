@@ -1,3 +1,7 @@
+#if defined(__GNUC__) && !defined(__clang__)
+#  include "../Qt/Qt_precompiled.hpp"
+#endif
+
 #ifdef _WIN32
 
 #include <windows.h>

@@ -1,3 +1,4 @@
+#pragma once
 /* Copyright 2012-2013 Kjetil S. Matheussen
 
 This program is free software; you can redistribute it and/or
@@ -29,6 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_pd_plugin_widget_callbacks_proc.h"
 
 #include "Qt_pd_plugin_widget.h"
+
 
 
 static const int k_timer_interval_here3 = 50;

@@ -11,6 +11,8 @@
 *****************************************************************************/
 
 
+#pragma once
+
 void No_instrument_widget::create_instrument_clicked()
 {
     struct Patch *patch = NewPatchCurrPos();
