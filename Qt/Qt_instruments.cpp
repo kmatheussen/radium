@@ -17,6 +17,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 //#define __STDC_FORMAT_MACROS 1
 //#include <inttypes.h>
 
+
+#if defined(__GNUC__) && !defined(__clang__)
+#  include "../Qt/Qt_precompiled.hpp"
+#endif
+
 #if defined(__clang__)
 #  pragma GCC diagnostic ignored "-Wignored-attributes"
 #endif

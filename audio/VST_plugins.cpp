@@ -23,6 +23,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 // http://code.breakfastquay.com/projects/dssi-vst/repository/entry/dssi-vst-server.cpp
 
 
+
+#if defined(__GNUC__) && !defined(__clang__)
+#  include "../Qt/Qt_precompiled.hpp"
+#endif
+
 #if defined(FOR_MACOSX)
 #  include <Carbon/Carbon.h>
 #  undef EVENT_H

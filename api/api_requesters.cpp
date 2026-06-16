@@ -15,8 +15,12 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-#include "Python.h"
-#include "radium_proc.h"
+//#include "Python.h"
+
+
+#if defined(__GNUC__) && !defined(__clang__)
+#  include "../Qt/Qt_precompiled.hpp"
+#endif
 
 #include <QFont>
 #include <QApplication>
@@ -37,6 +41,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #ifdef _AMIGA
 #include "Amiga_colors_proc.h"
 #endif
+
+#include "api_proc.h"
 
 #include "api_requesters_proc.h"
 

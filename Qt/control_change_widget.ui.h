@@ -11,6 +11,8 @@
 *****************************************************************************/
 
 
+#pragma once
+
 void Control_change_widget::value_slider_valueChanged( int val)
 {
     value_spin->setValue(val);

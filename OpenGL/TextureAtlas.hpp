@@ -1,3 +1,4 @@
+#pragma once
 
 #include "Widget_proc.h"
 

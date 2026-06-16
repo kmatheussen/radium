@@ -153,7 +153,6 @@ public:
     bool handle_mouse_press(radium::MouseCycleEvent &event, float x, float y) const;
     void handle_mouse_move(Qt::MouseButton button, float x, float y) const;
     bool handle_mouse_release(Qt::MouseButton button, float x, float y) const;
-
 };
 
 extern QWidget *g_main_window;

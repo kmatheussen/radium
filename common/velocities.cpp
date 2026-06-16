@@ -15,6 +15,10 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
+#if defined(__GNUC__) && !defined(__clang__)
+#  include "../Qt/Qt_precompiled.hpp"
+#endif
+
 #define SEQBLOCK_USING_VECTOR 1
 #include "nsmtracker.h"
 #include "TimeData.hpp"

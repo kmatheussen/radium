@@ -1,3 +1,5 @@
+#pragma once
+
 #include <QWindow>
 #include <QSemaphore>
 #include <QOffscreenSurface>

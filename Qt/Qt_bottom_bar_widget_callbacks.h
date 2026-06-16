@@ -1,3 +1,4 @@
+#pragma once
 /* Copyright 2012 Kjetil S. Matheussen
 
 This program is free software; you can redistribute it and/or
@@ -45,6 +46,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_bottom_bar_widget.h"
 
 #include "Qt_bottom_bar_widget_proc.h"
+
 
 
 class Bottom_bar_widget;

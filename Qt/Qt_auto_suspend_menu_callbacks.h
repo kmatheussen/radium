@@ -1,4 +1,6 @@
 
+#pragma once
+
 #include "Qt_auto_suspend_menu.h"
 
 class Auto_Suspend_Menu : public QDialog, public Ui::Auto_Suspend_Menu{

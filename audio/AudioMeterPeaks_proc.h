@@ -1,6 +1,8 @@
 
 
 
+#pragma once
+
 static inline float db2linear(float db, float y1, float y2){
 
   if(db<MIN_DB)

@@ -1,3 +1,4 @@
+#pragma once
 /* Copyright 2013 Kjetil S. Matheussen
 
 This program is free software; you can redistribute it and/or
@@ -27,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #ifdef COMPILING_RADIUM
+
 const int max_attack_release = 500;
 
 // These two functions are not used in Radium. The start function could be used to create undo though. (Fix)

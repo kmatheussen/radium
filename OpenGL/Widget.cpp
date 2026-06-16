@@ -16,6 +16,11 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
+
+#if defined(__GNUC__) && !defined(__clang__)
+#  include "../Qt/Qt_precompiled.hpp"
+#endif
+
 #include <sys/types.h>
 #include <unistd.h>
 #include <errno.h>
@@ -73,6 +78,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/Timer.hpp"
 #include "../Qt/Qt_Fonts_proc.h"
 #include "../Qt/Qt_mix_colors.h"
+#include "../Qt/EditorWidget.h"
 
 #include "../audio/Juce_plugins_proc.h"
 

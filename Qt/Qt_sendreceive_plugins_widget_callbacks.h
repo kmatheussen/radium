@@ -1,3 +1,4 @@
+#pragma once
 /* Copyright 2020 Kjetil S. Matheussen
 
 This program is free software; you can redistribute it and/or
@@ -18,6 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_sendreceive_plugins_widget.h"
 
 #include "../audio/SendReceive_plugins_proc.h"
+
 
 
 class SendReceive_Plugin_widget : public QWidget, public Ui::SendReceive_Plugin_widget{

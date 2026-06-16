@@ -15,7 +15,12 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-#include "Python.h"
+//#include "Python.h"
+
+
+#if defined(__GNUC__) && !defined(__clang__)
+#  include "../Qt/Qt_precompiled.hpp"
+#endif
 
 #include <QSet>
 
@@ -27,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../embedded_scheme/s7extra_proc.h"
 
+#include "api_proc.h"
 #include "api_common_proc.h"
 
 #include "api_undo_proc.h"

@@ -1,5 +1,10 @@
 
+#if defined(__GNUC__) && !defined(__clang__)
+#  include "../Qt/Qt_precompiled.hpp"
+#endif
+
 #include <unistd.h>
+
 #include <errno.h>
 #include <pthread.h>
 

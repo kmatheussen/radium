@@ -2,6 +2,7 @@
 #define _RADIUM_COMMON_DYN_TYPE_H
 
 #include <wchar.h>
+#include <stdlib.h>
 
 #include "ratio_type.h"
 #include "../api/s7_types.h"
