@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define USE_xcb_key_release_lookup_keysym 0 // If enabled, use -lX11-xcb -lxcb-keysyms, if not use -lxkbcommon-x11 -lxkbcommon 
 #define GET_CONNECTION_FROM_DISPLAY 0
 
-#include "../common/includepython.h"
+//#include "../common/includepython.h"
 
 #include "../common/nsmtracker.h"
 

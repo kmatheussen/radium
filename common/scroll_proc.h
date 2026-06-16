@@ -1,3 +1,5 @@
+#pragma once
+
 extern LANGSPEC void Scroll_scroll(
 	struct Tracker_Windows *window,
 	int num_lines

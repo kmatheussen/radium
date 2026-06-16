@@ -1,5 +1,7 @@
 
 // All time values are in milliseconds
+#pragma once
+
 namespace{
 
 struct VBlankEstimator

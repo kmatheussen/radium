@@ -1,4 +1,4 @@
-
+#pragma once
 
 #define VERSION_LETTER ""
 #define DISKVERSION 1.24

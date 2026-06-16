@@ -1,3 +1,4 @@
+#pragma once
 /* Copyright 2013 Kjetil S. Matheussen
 
 This program is free software; you can redistribute it and/or
@@ -38,6 +39,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "Qt_song_properties.h"
+
 
 
 bool g_is_replacing_main_pipe = false;

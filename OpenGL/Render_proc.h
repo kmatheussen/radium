@@ -1,4 +1,6 @@
 
+#pragma once
+
 extern const struct ListHeader3 *g_current_node;
 extern const struct ListHeader3 *g_indicator_node;
 extern int g_indicator_velocity_num;

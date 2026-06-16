@@ -17,6 +17,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 //extern void SetNum_Vel(struct WTracks *wtrack);
 
+#pragma once
+
 extern LANGSPEC int AddVelocity3(
                                  int logtype,
                                  int velocityvelocity,

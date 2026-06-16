@@ -15,8 +15,10 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
+#pragma once
 #ifdef TRACKER_GB
 #include <stdlib.h>
+
 extern void *GC_malloc(size_t size);
 extern void *GC_malloc_atomic(size_t size);
 extern void GC_free(void *mem);

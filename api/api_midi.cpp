@@ -15,7 +15,12 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
-#include "../common/includepython.h"
+//#include "../common/includepython.h"
+
+
+#if defined(__GNUC__) && !defined(__clang__)
+#  include "../Qt/Qt_precompiled.hpp"
+#endif
 
 #include <inttypes.h>
 #include <functional>
@@ -32,10 +37,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../midi/OS_midi_proc.h"
 
 #include "api_common_proc.h"
+#include "api_proc.h"
 
 
-#include "radium_proc.h"
 #include "api_midi_proc.h"
+
 
 
 static int64_t g_output_port_counter = 0;

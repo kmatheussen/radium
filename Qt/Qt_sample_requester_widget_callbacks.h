@@ -1,3 +1,4 @@
+#pragma once
 /* Copyright 2012 Kjetil S. Matheussen
 
 This program is free software; you can redistribute it and/or
@@ -30,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/undo_plugin_state_proc.h"
 #include "../common/patch_proc.h"
 #include "../common/playerclass.h"
+
 
 extern PlayerClass *pc;
 extern QApplication *g_qapplication;

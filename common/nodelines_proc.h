@@ -24,6 +24,8 @@ extern LANGSPEC const struct NodeLine *create_nodelines(
                                                         );
 */
 
+#pragma once
+
 extern LANGSPEC const vector_t *get_nodeline_nodes(const struct NodeLine *nodelines, float y_offset);
 extern LANGSPEC const vector_t *get_nodeline_nodes2(const struct NodeLine2 *nodelines, float y_offset);
 

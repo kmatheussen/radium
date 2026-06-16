@@ -16,6 +16,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
+#if defined(__GNUC__) && !defined(__clang__)
+#  include "../Qt/Qt_precompiled.hpp"
+#endif
+
 // It may be that these old timing structures may cover everything perfectly.
 // Unfortunatly, I don't understand it anymore. I was a lot more trained
 // in math when I wrote this code (year 2000), so it's likely to work.
