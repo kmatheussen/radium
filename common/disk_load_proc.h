@@ -1,6 +1,8 @@
 
 
 
+#pragma once
+
 extern LANGSPEC bool Load_Initialize(const filepath_t filename, const char *type);
 
 //bool Load(const char *filename);

@@ -1,9 +1,19 @@
+#pragma once
+
+/*
+class QRhi;
+class QRhiBuffer;
+class QRhiResourceUpdateBatch;
+class QRhiCommandBuffer;
+*/
+
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wfloat-equal"
+#  pragma GCC diagnostic ignored "-Wfloat-equal"
 #  include <rhi/qrhi.h>
 #pragma GCC diagnostic pop
 
 extern QRhi *g_rhi;
+
 
 namespace r
 {

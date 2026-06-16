@@ -1,3 +1,4 @@
+#pragma once
 /* Copyright 2000 Kjetil S. Matheussen
 
 This program is free software; you can redistribute it and/or
@@ -19,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #ifndef TRACKER_INCLUDE
+
 
 extern void SaveSlider(struct Slider *slider);
 extern void LoadSlider(struct Slider *slider);

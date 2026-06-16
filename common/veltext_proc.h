@@ -1,5 +1,7 @@
+#pragma once
 
 #if USE_QT4
+
 const VelText_trss VELTEXTS_get(const struct WBlocks *wblock, const struct WTracks *wtrack);
 #endif
 

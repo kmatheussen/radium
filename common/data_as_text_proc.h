@@ -1,3 +1,5 @@
+#pragma once
+
 extern LANGSPEC data_as_text_t DAT_get_newvalue(int subsubtrack,
                                                 int key,
                                                 int default_value,

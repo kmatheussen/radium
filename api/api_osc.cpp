@@ -16,7 +16,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-#include "../common/includepython.h"
+//#include "../common/includepython.h"
 
 #include <inttypes.h>
 
@@ -31,17 +31,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QVector>
 #pragma clang diagnostic pop
 
-#include "radium_proc.h"
-
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"
 #include "../common/settings_proc.h"
 
 #include "../embedded_scheme/s7extra_proc.h"
 
+#include "api_proc.h"
 #include "api_common_proc.h"
 
-#include "radium_proc.h"
 
 static int64_t g_curr_oscservernum = 0;
 static int64_t g_curr_oscmethodnum = 0;

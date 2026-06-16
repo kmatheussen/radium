@@ -1,5 +1,7 @@
+#pragma once
 
 #include "Qt_mixer_direction_menu.h"
+
 
 class Mixer_Direction_Menu : public QDialog, public Ui::Mixer_Direction_Menu{
   Q_OBJECT

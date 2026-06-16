@@ -1,5 +1,7 @@
 
 
+#pragma once
+
 struct Inputs{
 	struct Inputs *next;
 	NInt tracknum;
