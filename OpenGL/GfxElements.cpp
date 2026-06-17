@@ -161,9 +161,9 @@ void GE_wait_until_block_is_rendered(void){
 // figured out how to get it yet.
 //
 // OpenGL Thread
-void GE_update_triangle_gradient_shaders(r::PaintingData *painting_data, float y_offset)
-{
-}
+//void GE_update_triangle_gradient_shaders(r::PaintingData *painting_data, float y_offset)
+//{
+//}
 
 
 

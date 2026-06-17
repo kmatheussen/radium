@@ -201,7 +201,6 @@ if ! is_0 $QT_PKG_CONFIGURATION_PATH ; then
     export PKGqt="PKG_CONFIG_PATH=$QT_PKG_CONFIGURATION_PATH $PKGqt"
 fi
 
-
 assert_v6()
 {
 	assert_exe_exists $1
