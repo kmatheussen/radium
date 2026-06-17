@@ -54,7 +54,7 @@ is_0()
 assert_var_value()
 {
     if [ "${!1}" != "$2" ] ; then
-	handle_failure "\"${1}\" should have the value \"$2\". Instead it has the value \"${!1}\""
+		handle_failure "\"${1}\" should have the value \"$2\". Instead it has the value \"${!1}\""
     fi	
 }
 
