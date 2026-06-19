@@ -48,7 +48,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QPluginLoader>
 #endif
 
-#if !USE_QSVGVIEWER && !USE_QWEBENGINE
+#if !USE_QSVGVIEWER && !USE_QTWEBVIEW && !USE_QWEBENGINE
 #  include <QtWebKitWidgets/QWebView>
 #endif
 
@@ -80,6 +80,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QLabel>
 #include <QOperatingSystemVersion>
 #include <QStyleFactory>
+
+#if USE_QTWEBVIEW
+#  include <QtWebView>
+#endif
 
 
 #ifdef __linux__
@@ -5165,7 +5169,8 @@ int main(int argc, char **argv){
 
   QLocale::setDefault(QLocale::C);
 
-    
+  QtWebView::initialize();
+	
   argv = getQApplicationConstructorArgs(argc, argv); // Add Qt things to the command line arguments. (freetype).
 
   // Create application here in order to get default style. (not recommended, but can't find another way)
@@ -5176,7 +5181,7 @@ int main(int argc, char **argv){
   
   qapplication->setAttribute(Qt::AA_DontCreateNativeWidgetSiblings); // Fix splitter handlers on OSX. Seems like a good flag to set in general. Seems like a hack qt has added to workaround bugs in qt. https://bugreports.qt.io/browse/QTBUG-33479
 
-#if !USE_QSVGVIEWER && !USE_QWEBENGINE
+#if !USE_QSVGVIEWER && !USE_QTWEBVIEW && !USE_QWEBENGINE
   QWebSettings::globalSettings()->setAttribute(QWebSettings::PluginsEnabled, false);
   #if !defined(RELEASE)
     QWebSettings::globalSettings()->setAttribute(QWebSettings::DeveloperExtrasEnabled, true);
