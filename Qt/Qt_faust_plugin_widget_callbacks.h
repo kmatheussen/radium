@@ -16,8 +16,13 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QScrollArea>
+#include <QVBoxLayout>
 
 #ifndef USE_QSVGVIEWER
+#  error error
+#endif
+
+#ifndef USE_QTWEBVIEW
 #  error error
 #endif
 
@@ -27,14 +32,19 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #if USE_QSVGVIEWER
 #  include <QSvgWidget>
+#elif USE_QTWEBVIEW
+#  include <QWebView>
 #elif USE_QWEBENGINE
   #include <QWebEngineView>
   #include <QWebEnginePage>
 #else
-  #if USE_QT5
+  #if USE_QT6
+    #error "QtWebKit is not available for QT6"
+  #elif USE_QT5
     #include <QtWebKitWidgets/QWebView>
     #include <QtWebKitWidgets/QWebFrame>
   #else
+    // QtWebKit for Qt4 (confusingly, the name of the header has the same name as the QtWebView header for Qt6, but it's not the same thing!
     #include <QWebView>
     #include <QWebFrame>
   #endif
@@ -104,6 +114,181 @@ static void mySetZoomFactor(T *view, float zoom){
 
 namespace{
   
+#if USE_QTWEBVIEW
+struct FaustResultWebView : public QWidget, public radium::MouseCycleFix
+{
+	QWebView *_webview = NULL;
+	QWidget *_container = NULL;
+  
+	qreal _zoomfactor = 1.0;
+	QUrl _url;
+	QString _pending_html;
+	bool _pending_is_html = false;
+	
+	bool is_dragging;
+	bool was_dragging;
+	QPoint start;
+	
+	FaustResultWebView(QWidget *parent)
+		: QWidget(parent)
+		, is_dragging(false)
+	{
+		setAutoFillBackground(true);
+	}
+	
+	void ensureWebView(void)
+	{
+		if (_webview != nullptr)
+			return;
+		
+		_webview = new QWebView;
+		
+		_container = QWidget::createWindowContainer(_webview, this);
+		_container->setAttribute(Qt::WA_NativeWindow);
+		_container->setMinimumSize(1, 1);
+		
+		auto *layout = new QVBoxLayout(this);
+		layout->setContentsMargins(0, 0, 0, 0);
+		layout->addWidget(_container);
+		
+		if (_pending_is_html)
+			_webview->loadHtml(_pending_html, QUrl());
+		else
+			_webview->setUrl(_url);
+	}
+  
+	void showEvent(QShowEvent *event) override
+	{
+		ensureWebView();
+		QWidget::showEvent(event);
+	}
+  
+	const QUrl &url(void) const
+	{
+		return _url;
+	}
+	
+	void setUrl(const QUrl &url)
+	{
+		_url = url;
+		_pending_is_html = false;
+		if (_webview != nullptr)
+			_webview->setUrl(url);
+	}
+	
+	void setHtml(const QString &html, const QUrl &baseUrl = QUrl())
+	{
+		(void)baseUrl;
+		_pending_html = html;
+		_pending_is_html = true;
+		if (_webview != nullptr)
+			_webview->loadHtml(html, QUrl());
+	}
+	
+	void reload(void)
+	{
+		if (_webview != nullptr)
+			_webview->reload();
+	}
+  
+	qreal zoomFactor() const
+	{
+		return _zoomfactor;
+	}
+	
+	void setZoomFactor(qreal factor)
+	{
+		_zoomfactor = factor;
+	}
+  
+	void setPointer(QPoint pos)
+	{
+		(void)pos;
+		setCursor(Qt::OpenHandCursor);
+	}
+  
+	void fix_mouseMoveEvent(radium::MouseCycleEvent &event) override
+	{
+		if (is_dragging)
+		{
+			was_dragging = true;
+			event.accept();
+		}
+		else
+		{
+			auto *qevent = event.get_qtevent();
+			if (qevent)
+				QWidget::mouseMoveEvent(qevent);
+			
+			if (cursor().shape() == Qt::ArrowCursor)
+				setPointer(event.pos());
+		}
+	}
+  
+	bool fix_mousePressEvent(radium::MouseCycleEvent &event) override
+	{
+		start = event.pos();
+		is_dragging = true;
+		was_dragging = false;
+		
+		setCursor(Qt::ClosedHandCursor);
+		event.accept();
+		
+		auto *qevent = event.get_qtevent();
+		
+		if (qevent)
+			QWidget::mousePressEvent(qevent);
+		
+		return true;
+	}
+	
+	bool fix_mouseReleaseEvent(radium::MouseCycleEvent &event) override
+	{
+		is_dragging = false;
+		
+		if (was_dragging)
+		{
+			event.accept();
+		}
+		else
+		{
+			auto *qevent = event.get_qtevent();
+			if (qevent)
+				QWidget::mouseReleaseEvent(qevent);
+		}
+    
+		setPointer(event.pos());
+		
+		return true;
+	}
+  
+	MOUSE_CYCLE_CALLBACKS_FOR_QT;
+    
+	QSize sizeHint() const override
+	{
+		return QSize(-1,-1);
+	}
+  
+	void wheelEvent(QWheelEvent *qwheelevent) override
+	{
+		if (qwheelevent->modifiers() & Qt::ControlModifier){
+			float zoom = myZoomFactor(this);      
+			float newzoom;
+			if (qwheelevent->angleDelta().y() > 0)
+				newzoom = zoom * 1.2;
+			else
+				newzoom = zoom * 0.8;
+			
+			if (newzoom > 0.85 && newzoom < 1.15)
+				newzoom = 1.0;
+			
+			if (newzoom > 0.05)
+				setZoomFactor(newzoom);
+		}
+	}
+};
+}
+#else // !USE_QTWEBVIEW
 struct FaustResultWebView
 #if USE_QSVGVIEWER
 	: public QSvgWidget 
@@ -337,7 +522,10 @@ struct FaustResultWebView
     }
   }
 };
+
 }
+
+#endif // !USE_QTWEBVIEW
 
 
 static radium::Editor *create_faust_editor(QWidget *parent){
@@ -365,7 +553,7 @@ public:
   FaustResultWebView *web;
 	
 #if USE_QSVGVIEWER
-#elif !USE_QWEBENGINE
+#elif !USE_QWEBENGINE && !USE_QTWEBVIEW
   QWebFrame *_last_web_frame;
 #endif
   QString _web_text;
@@ -397,7 +585,7 @@ public:
     , _faust_compilation_status(faust_compilation_status)
     , _patch(patch)
 #if USE_QSVGVIEWER
-#elif !USE_QWEBENGINE
+#elif !USE_QWEBENGINE && !USE_QTWEBVIEW
     , _last_web_frame(NULL)
 #endif
     , _svg_zoom_factor(1.0)
@@ -446,6 +634,8 @@ public:
     printf("    URL: -%s-. native: -%s-, org: -%s-\n",web->url().toString().toUtf8().constData(), QDir::fromNativeSeparators(FAUST_get_svg_path(plugin)).toUtf8().constData(), FAUST_get_svg_path(plugin).toUtf8().constData());
 
 #if USE_QSVGVIEWER
+#elif USE_QTWEBVIEW
+    mySetZoomFactor(web, 0.5);
 #elif !USE_QWEBENGINE
     _last_web_frame = web->page()->mainFrame(); // Important that we do this after calling setUrl/setHtml
     mySetZoomFactor(_last_web_frame, 0.5);
@@ -609,7 +799,7 @@ public:
         printf("    URL: -%s-. native: -%s-, org: -%s-\n",web->url().toString().toUtf8().constData(), QDir::fromNativeSeparators(FAUST_get_svg_path(plugin)).toUtf8().constData(), FAUST_get_svg_path(plugin).toUtf8().constData());
 
 #if USE_QSVGVIEWER
-#elif !USE_QWEBENGINE
+#elif !USE_QWEBENGINE && !USE_QTWEBVIEW
         _last_web_frame = web->page()->mainFrame(); // Important that we do this after calling setUrl/setHtml
 #endif
         
@@ -641,7 +831,7 @@ public:
         web->setHtml(_web_text);
         mySetZoomFactor(web, _error_zoom_factor);
 #if USE_QSVGVIEWER
-#elif !USE_QWEBENGINE
+#elif !USE_QWEBENGINE && !USE_QTWEBVIEW
         _last_web_frame = web->page()->mainFrame(); // Important that we do this after calling setUrl/setHtml
 #endif
         
@@ -655,7 +845,7 @@ public:
     // Change vertical scroll bar policy (not easy...)
     {
 #if USE_QSVGVIEWER
-#elif !USE_QWEBENGINE
+#elif !USE_QWEBENGINE && !USE_QTWEBVIEW
       _last_web_frame->setScrollBarPolicy(Qt::Horizontal, Qt::ScrollBarAlwaysOff);
 #endif
       if (showing_svg())
@@ -663,7 +853,7 @@ public:
       else
         web->setHtml(_web_text);
 #if USE_QSVGVIEWER
-#elif !USE_QWEBENGINE
+#elif !USE_QWEBENGINE && !USE_QTWEBVIEW
       _last_web_frame = web->page()->mainFrame(); // Important that we do this after calling setUrl/setHtml
       _last_web_frame->setScrollBarPolicy(Qt::Horizontal, Qt::ScrollBarAsNeeded);
 #endif
@@ -679,7 +869,7 @@ public:
     _size_type = SIZETYPE_NORMAL;
     //_is_large = false;
 #if USE_QSVGVIEWER
-#elif !USE_QWEBENGINE
+#elif !USE_QWEBENGINE && !USE_QTWEBVIEW
     _last_web_frame->setScrollBarPolicy(Qt::Horizontal, Qt::ScrollBarAlwaysOn);
 #endif
     

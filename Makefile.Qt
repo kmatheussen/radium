@@ -192,17 +192,21 @@ QT_LDFLAGS ?=  $(QT_UI_LDFLAGS) $(QT_SVG_LDFLAGS) $(QT_SVGWIDGETS_LDFLAGS) `$(PK
 
 ifeq ($(USE_QSVGVIEWER),1)
 #  If using QSvg:
-  USE_QWEBENGINE_CFLAGS=-DUSE_QSVGVIEWER=1 -DUSE_QWEBENGINE=0
+  USE_QWEBENGINE_CFLAGS = -DUSE_QSVGVIEWER=1 -DUSE_QTWEBVIEW=0 -DUSE_QWEBENGINE=0
   QT_CFLAGS += $(QT_SVG_CFLAGS)
 #  QT_LDFLAGS += ""
+else ifeq ($(USE_QTWEBVIEW),1)
+  USE_QWEBENGINE_CFLAGS = -DUSE_QSVGVIEWER=0 -DUSE_QTWEBVIEW=1 -DUSE_QWEBENGINE=0
+  QT_CFLAGS += `$(PKGqt) --cflags Qt6WebView | sed 's/-I/-isystem/g'` 
+  QT_LDFLAGS += `$(PKGqt) --libs Qt6WebView`
 else ifeq ($(USE_QWEBENGINE),1)
 #  If using QtWebEngine:
-  USE_QWEBENGINE_CFLAGS = -DUSE_QSVGVIEWER=0 -DUSE_QWEBENGINE=1
+  USE_QWEBENGINE_CFLAGS = -DUSE_QSVGVIEWER=0 -DUSE_QTWEBVIEW=0 -DUSE_QWEBENGINE=1
   QT_CFLAGS += `$(PKGqt) --cflags Qt6WebEngineCore  --cflags Qt6WebEngineWidgets | sed 's/-I/-isystem/g'` 
   QT_LDFLAGS += `$(PKGqt) --libs Qt6WebEngineCore  --libs Qt6WebEngineWidgets`
 else
 #  If using QtWebKit:
-  USE_QWEBENGINE_CFLAGS = -DUSE_QSVGVIEWER=0 -DUSE_QWEBENGINE=0
+  USE_QWEBENGINE_CFLAGS = -DUSE_QSVGVIEWER=0 -DUSE_QTWEBVIEW=0 -DUSE_QWEBENGINE=0
   QT_CFLAGS += `$(PKGqt) --cflags Qt6WebKitWidgets --cflags Qt6WebKit | sed 's/-I/-isystem/g'`
   QT_LDFLAGS += `$(PKGqt) --libs Qt6WebKitWidgets --libs Qt6WebKit`
 endif

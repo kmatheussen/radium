@@ -79,12 +79,22 @@ set_var LLVM_CONFIG_BIN 0
 # qt-webkit. (Installing QtWebKit can be quite a hassle
 # sometimes!)
 #
-set_var USE_QWEBENGINE 1
+set_var USE_QWEBENGINE 0
 
 
 
 ########################################################
-# If enabled, use QSvgViewer instead of QWebEngine or QtWebKit
+# If enabled, use QtWebView instead of QWebEngine or QtWebKit
+#
+# QtWebView embeds native web wiewer, and is the only
+# alternative when using mingw with Qt6.
+#
+set_var USE_QTWEBVIEW 0
+
+
+
+########################################################
+# If enabled, use QSvgViewer instead of QWebEngine, QtWebKit, or QtWebView
 #
 # Can be handy to use during development. You can not
 # click on any of the elements in the svg viewer, and

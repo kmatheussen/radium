@@ -69,12 +69,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #  error error
 #endif
 
+#ifndef USE_QTWEBVIEW
+#  error error
+#endif
+
 #ifndef USE_QWEBENGINE
 #  error error
 #endif
 
 
-#if USE_QSVGVIEWER
+#if USE_QSVGVIEWER || USE_QTWEBVIEW
 //
 #elif USE_QWEBENGINE
   #include <QWebEngineView>
@@ -3879,7 +3883,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     OVERRIDERS(MyFocusSnifferQDoubleSpinBox);
   };
 
-#if USE_QSVGVIEWER
+#if USE_QSVGVIEWER || USE_QTWEBVIEW
 //
 #elif USE_QWEBENGINE
 MakeFocusSnifferClass(QWebEngineView);
@@ -3913,7 +3917,7 @@ MakeFocusSnifferClass(QWebView);
     }
   }
 
-#if (USE_QSVGVIEWER || !USE_QWEBENGINE || !defined(FOR_MACOSX))
+#if (USE_QSVGVIEWER || USE_QTWEBVIEW || !USE_QWEBENGINE || !defined(FOR_MACOSX))
 static QUrl getUrl(QString stringurl)
 {
     auto [absoluteurl, query, is_local_file] = getAbsoluteUrl(stringurl);
@@ -3934,7 +3938,7 @@ static QUrl getUrl(QString stringurl)
   }
 #endif
 
-#if !USE_QSVGVIEWER
+#if !USE_QSVGVIEWER && !USE_QTWEBVIEW
   struct Web :
 #if USE_QWEBENGINE
 		
@@ -4189,7 +4193,7 @@ static QUrl getUrl(QString stringurl)
     } 
     */
   };
-#endif //!USE_QSVGVIEWER
+#endif //!USE_QSVGVIEWER && !USE_QTWEBVIEW
 
   struct FileRequester : radium::FileRequester, Gui, public radium::MouseCycleFix {
     Q_OBJECT;
@@ -5545,7 +5549,7 @@ int64_t gui_floatText(double min, double curr, double max, int num_decimals, dou
 }
 
 int64_t gui_web(const_char* stringurl){
-#if !USE_QSVGVIEWER && !USE_QWEBENGINE
+#if !USE_QSVGVIEWER && !USE_QTWEBVIEW && !USE_QWEBENGINE
   return (new Web(stringurl))->get_gui_num();
 #else
   return -1;
@@ -5553,7 +5557,7 @@ int64_t gui_web(const_char* stringurl){
 }
 
 void gui_setUrl(int64_t guinum, const_char* url){
-#if !USE_QSVGVIEWER && !USE_QWEBENGINE
+#if !USE_QSVGVIEWER && !USE_QTWEBVIEW && !USE_QWEBENGINE
   Gui *web_gui = get_gui(guinum);
   if (web_gui==NULL)
     return;
@@ -5570,7 +5574,7 @@ void gui_setUrl(int64_t guinum, const_char* url){
 }
 
 bool gui_webCanShowManual(void){
-#if USE_QSVGVIEWER || USE_QWEBENGINE
+#if USE_QSVGVIEWER || USE_QTWEBVIEW || USE_QWEBENGINE
 	return false;
 #else
   int major = qWebKitVersion().split(".")[0].toInt();
