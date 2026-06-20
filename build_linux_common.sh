@@ -209,7 +209,6 @@ PYTHONLIBNAME=`$PYTHONEXE -c "import sys;print '-lpython'+sys.version[:3]"`
 #export QSCINTILLA_PATH=`pwd`/bin/packages/QScintilla_gpl-2.10.8
 export QSCINTILLA_PATH=`pwd`/bin/packages/QScintilla_src-2.14.0/src
 
-
 if ! is_0 $INCLUDE_FAUSTDEV ; then
     #FAUSTLDFLAGS="-L `pwd`/bin/packages/faust/build/lib/libfaust.a -lcrypto -lncurses"
     FAUSTLDFLAGS="-L `pwd`/bin/packages/faust/build/lib/ -lfaust"
@@ -220,16 +219,16 @@ if ! is_0 $INCLUDE_FAUSTDEV ; then
         export OS_OPTS="$OS_OPTS -DWITHOUT_LLVM_IN_FAUST_DEV"
     else
         LLVM_PATH=${LLVM_PATH:-} # use /bin/llvm-config from root directory if empty
-        LLVM_OPTS=`$LLVM_PATH/bin/llvm-config --cppflags`
+        LLVM_OPTS=$($LLVM_CONFIG_BIN --cppflags) #`$LLVM_PATH/bin/llvm-config --cppflags`
         
-        MAYBELLVM=`$LLVM_PATH/bin/llvm-config --libdir`/libLLVM-`$LLVM_PATH/bin/llvm-config --version`.so
+        MAYBELLVM=$($LLVM_CONFIG_BIN --libdir)/libLLVM-$($LLVM_CONFIG_BIN --libdir).so
         if [ -f $MAYBELLVM ]; then
-            LLVMLIBS=-lLLVM-`$LLVM_PATH/bin/llvm-config --version`
+            LLVMLIBS=-lLLVM-$($LLVM_CONFIG_BIN --version)
         else
-            LLVMLIBS=`$LLVM_PATH/bin/llvm-config --libs`
+            LLVMLIBS=$($LLVM_CONFIG_BIN --libs)
         fi
         # ($LLVMLIBS not included since it's included in libfaust)
-        FAUSTLDFLAGS="$FAUSTLDFLAGS `$PKG --libs uuid` `$LLVM_PATH/bin/llvm-config --ldflags` -ltinfo"
+        FAUSTLDFLAGS="$FAUSTLDFLAGS `$PKG --libs uuid` $($LLVM_CONFIG_BIN --ldflags) -ltinfo"
     fi
 else
 	FAUSTLDFLAGS=""

@@ -108,7 +108,7 @@ build_faust() {
 	else
 		cp ../faust_radium_llvm.cmake build/backends/most.cmake
 		export ORGTEMPPATH=$PATH
-		export PATH=$(dirname $LLVM_CONFIG_BIN):$PATH
+		export PATH=$($LLVM_CONFIG_BIN --bindir):$PATH
 		#echo "PATH: $PATH"
 	fi
 	
