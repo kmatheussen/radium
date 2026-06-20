@@ -66,7 +66,10 @@ set_var INCLUDE_FAUSTDEV_BUT_NOT_LLVM 0
 # but this variable can be set to something else if ncessary, e.g
 # /usr/local/llvm-90/bin/llvm-config
 #
-set_var LLVM_CONFIG_BIN 0
+# Only used if INCLUDE_FAUSTDEV==1 && INCLUDE_FAUSTDEV_BUT_NOT_LLVM==0 
+#
+set_var 0
+
 
 
 
@@ -303,6 +306,7 @@ else
     fi
 fi
 
+
 if ! is_0 $INCLUDE_FAUSTDEV ; then
     if is_0 $INCLUDE_FAUSTDEV_BUT_NOT_LLVM ; then
 		export FAUST_USES_LLVM=1
@@ -315,15 +319,12 @@ set_var FAUST_USES_LLVM 0
 if ! is_0 $FAUST_USES_LLVM ; then
 
 	if is_0 $LLVM_CONFIG_BIN ; then
-		if ! which llvm-config ; then
-			handle_failure "llvm-config not found"
-		fi
-	
-		export LLVM_CONFIG_BIN=`which llvm-config`
+		assert_exe_exists llvm-config
+		export LLVM_CONFIG_BIN=$(which llvm-config)
 	fi
-		
-    assert_exe_exists $LLVM_CONFIG_BIN
-    
+
+	assert_exe_exists $LLVM_CONFIG_BIN
+
 	if uname -s |grep Linux > /dev/null ; then
 		
 		old_path=""
