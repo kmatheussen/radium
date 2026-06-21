@@ -104,7 +104,7 @@ set_var USE_QTWEBVIEW 0
 # you can not drag, but compilation should be faster.
 # HTML pages for help is viewed by opening an external browser.
 #
-set_var USE_QSVGVIEWER 0
+set_var USE_QSVGVIEWER 1
 
 
 
