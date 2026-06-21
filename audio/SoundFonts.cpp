@@ -232,8 +232,9 @@ static hash_t *get_region_info(sf2::Region *reg){
   }
 
   // Store pitch-related fields for all regions (both instrument and preset).
-  // Preset regions can override these values, and they need to be available
-  // in the hash for the merge logic in load_sf2_instrument.
+  // Preset regions can override these values for the instrument regions that
+  // fall within their key range. "root key" is only stored when there is a
+  // sample or overridingRootKey is set (to avoid dereferencing null pSample).
   HASH_put_int(info, "fine tune", reg->fineTune);
   HASH_put_int(info, "coarse tune", reg->coarseTune);
   if (reg->GetSample() != NULL || reg->overridingRootKey != -1)

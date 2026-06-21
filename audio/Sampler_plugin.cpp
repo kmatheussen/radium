@@ -583,6 +583,8 @@ struct Data{
 
   Sample samples[MAX_NUM_SAMPLES] = {}; // Put last to keep data togheter. (only the first elements of "samples" are used)
   
+  bool sf2_midi_note_convention = true; // SoundFont OriginalPitch uses MIDI numbering (C4=60) rather than tracker numbering (C4=48). New instruments default to true. Old saved state without this key defaults to false.
+  
   Data(const Data&) = delete;
   Data& operator=(const Data&) = delete;
  
@@ -3482,8 +3484,10 @@ static void free_tremolo(SoundPlugin *tremolo){
   V_free(tremolo);
 }
 
-static Data *create_data(float samplerate, Data *old_data, filepath_t filename, int instrument_number, enum ResamplerType resampler_type, bool use_sample_file_middle_note, bool is_loading){
+static Data *create_data(float samplerate, Data *old_data, filepath_t filename, int instrument_number, enum ResamplerType resampler_type, bool use_sample_file_middle_note, bool is_loading, bool sf2_midi_note_convention = true){
   Data *data = new Data(filename);
+
+  data->sf2_midi_note_convention = sf2_midi_note_convention;
 
   data->signal_from_RT = RSEMAPHORE_create(0);
 
@@ -3642,7 +3646,8 @@ static bool set_new_sample(struct SoundPlugin *plugin,
                            bool use_sample_file_middle_note,
                            bool is_loading,
                            int64_t loop_start = -1,
-                           int64_t loop_end = -1)
+                           int64_t loop_end = -1,
+                           bool sf2_midi_note_convention = true)
 {
   bool success=false;
 
@@ -3669,7 +3674,7 @@ static bool set_new_sample(struct SoundPlugin *plugin,
   if (isIllegalFilepath(filename))
     goto exit;
 
-  data = create_data(old_data->samplerate, old_data, filename, instrument_number, resampler_type, use_sample_file_middle_note, is_loading);
+  data = create_data(old_data->samplerate, old_data, filename, instrument_number, resampler_type, use_sample_file_middle_note, is_loading, sf2_midi_note_convention);
   
   if(load_sample(data,filename,instrument_number, false)==false)
     goto exit;
@@ -4191,7 +4196,8 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
     if(isIllegalFilepath(filename)) // not supposed to happen though. Assertion in PLUGIN_DISK_get_audio_filename.
       goto exit;
     
-    bool successfully_set_new_sample = set_new_sample(plugin,filename,instrument_number,resampler_type, use_sample_file_middle_note, is_loading, loop_start, loop_end);
+    bool successfully_set_new_sample = set_new_sample(plugin,filename,instrument_number,resampler_type, use_sample_file_middle_note, is_loading, loop_start, loop_end,
+                                                     HASH_has_key(state, "sf2_midi_note_convention") ? HASH_get_bool(state, "sf2_midi_note_convention") : false);
     
     if(!successfully_set_new_sample)
       GFX_addMessage("Could not load soundfile \"%S\". (instrument number: %d)\n", filename.id,instrument_number);
@@ -4255,6 +4261,8 @@ static void create_state(const struct SoundPlugin *plugin, hash_t *state){
 
   HASH_put_int(state, "loop_start",data->p.loop_start);
   HASH_put_int(state, "loop_length",data->p.loop_end - data->p.loop_start);
+
+  HASH_put_bool(state, "use_sf2_midi_note_convention", data->sf2_midi_note_convention);
 
   if (g_embed_samples){
     const char *audiofile = DISK_file_to_base64(data->filename.get());
