@@ -143,34 +143,53 @@ bool radium::RhiWindow::event(QEvent *e)
     switch (e->type())
 	{
 
+		case QEvent::Enter:
+			// The mouse has entered the QWindow
+			//qDebug() << "\n\n===========Mouse entered window!\n\n";
+			if (root && root->song && root->song->tracker_windows)
+				root->song->tracker_windows->must_redraw_editor = true;
+			break;//return true;
+			
 #if 0
-    case QEvent::UpdateRequest:
-	{
-		if (isExposed())
+		case QEvent::UpdateRequest:
 		{
-			//printf("Gakk\n");
-			MAIN_put_event([this](void)
-				{
-					const QSize surfaceSize = _hasSwapChain ? _swap_chain->surfacePixelSize() : QSize();
-					if (!surfaceSize.isEmpty())
-						QRHI_render();
-				});
+			if (isExposed())
+			{
+				//printf("Gakk\n");
+				MAIN_put_event([this](void)
+					{
+						const QSize surfaceSize = _hasSwapChain ? _swap_chain->surfacePixelSize() : QSize();
+						if (!surfaceSize.isEmpty())
+							QRHI_render();
+					});
+			}
+			break;
 		}
-        break;
-	}
 #endif
 	
-    case QEvent::PlatformSurface:
-        // this is the proper time to tear down the swapchain (while the native window and surface are still around)
-		if (static_cast<QPlatformSurfaceEvent *>(e)->surfaceEventType() == QPlatformSurfaceEvent::SurfaceAboutToBeDestroyed)
-			MAIN_put_event([this](void)
-				{
-					QRHI_releaseSwapChain();
-				});
+		case QEvent::PlatformSurface:
+		{
+			auto *surfaceEvent = static_cast<QPlatformSurfaceEvent *>(e);
+			if (surfaceEvent->surfaceEventType() == QPlatformSurfaceEvent::SurfaceAboutToBeDestroyed)
+			{
+			    MAIN_put_event([this](void)
+					{
+					    QRHI_releaseSwapChain();
+					});
+			}
+			else if (surfaceEvent->surfaceEventType() == QPlatformSurfaceEvent::SurfaceCreated)
+			{
+			    MAIN_put_event([this](void)
+					{
+					    if (!_hasSwapChain)
+					        QRHI_resizeSwapChain();
+					});
+			}
+		}
         break;
 
-    default:
-        break;
+		default:
+			break;
     }
 
     return QWindow::event(e);
