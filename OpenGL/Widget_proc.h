@@ -10,9 +10,11 @@ bool GL_check_compatibility(void);
 
 #ifdef __cplusplus
 class QWidget;
+class QWindow;
 
   extern QWidget *GL_create_widget(QWidget *parent);
   extern void GL_stop_widget(QWidget *widget);
+  extern QWindow *GL_get_editor_qwindow(void);
 //extern void GL_maybe_estimate_vblank(QWidget *widget);
 
   extern "C" {

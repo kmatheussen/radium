@@ -3349,6 +3349,16 @@ static void setCursor(int64_t guinum, const QCursor &cursor){
 #endif
   
   widget->setCursor(cursor);
+
+  // When the editor uses a native QWindow (via createWindowContainer), the cursor must also
+  // be set directly on the QWindow. Setting it only on the parent QWidget does not propagate
+  // to the embedded QWindow in Qt6.
+  if (guinum == gui_getEditorGui())
+  {
+    QWindow *editor_qwindow = GL_get_editor_qwindow();
+    if (editor_qwindow != nullptr)
+      editor_qwindow->setCursor(cursor);
+  }
 }
 
 void SetNormalPointer(int64_t guinum){

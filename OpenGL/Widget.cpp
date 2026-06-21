@@ -2076,3 +2076,8 @@ void GL_stop_widget(QWidget *widget)
 	}
 #endif
 }
+
+QWindow *GL_get_editor_qwindow(void)
+{
+	return g_window;
+}
