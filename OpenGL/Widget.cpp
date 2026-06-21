@@ -1456,6 +1456,16 @@ public:
 			calculateNewWindowWidthAndHeight(g_editor->window);
 
 		GE_set_height(qresizeevent->size().height());
+
+		if (Undo_num_undos()==0 && !CanRedo() && isIllegalFilepath(dc.filename))
+		{
+			// Schedule it to run a little bit later just to be safe. minimizeBlockTracks is doing a lot so it's hard to keep track at all times of whether it does Qt operations or not.
+			QTimer::singleShot(1, []
+				{
+					radium::ScopedIgnoreUndo ignore;
+					minimizeBlockTracks(-1, -1, false); // maximize track widths.
+				});
+		}
 	}
 };
 
