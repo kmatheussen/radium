@@ -99,10 +99,8 @@ set_var USE_QTWEBVIEW 0
 ########################################################
 # If enabled, use QSvgViewer instead of QWebEngine, QtWebKit, or QtWebView
 #
-# Can be handy to use during development. You can not
-# click on any of the elements in the svg viewer, and
-# you can not drag, but compilation should be faster.
-# HTML pages for help is viewed by opening an external browser.
+# Generally better than any of the web viewers for
+# the Faust-Dev instrument.
 #
 set_var USE_QSVGVIEWER 1
 
