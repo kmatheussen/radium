@@ -327,4 +327,3 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, st
 
   return true;
 }
-  
