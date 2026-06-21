@@ -34,6 +34,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #  error error
 #endif
 
+#ifndef USE_QTWEBVIEW
+#  error error
+#endif
+
 #ifndef USE_QWEBENGINE
 #  error error
 #endif
@@ -5022,7 +5026,8 @@ int main(int argc, char **argv){
   init_asan();
 #endif
 #endif
-    
+
+
   bool clean_configuration = false;
   bool set_gpu_backend = false;
   if (argc > 1 && !strcmp(argv[1], "--radium-clean-configuration")){
@@ -5064,8 +5069,38 @@ int main(int argc, char **argv){
 #if defined(FOR_WINDOWS)
 #if defined(RELEASE)
   DWORD progress_pid = atoi(argv[2]);
+  bool has_closed_progress_pid = false;
 #endif
   GC_set_no_dls(1);
+#endif
+
+  auto maybe_close_progress_pid = [&]
+	  (void)
+	  {
+#if defined(RELEASE) && defined(FOR_WINDOWS)
+		  if (!has_closed_progress_pid)
+		  {
+			  auto handle = OpenProcess(PROCESS_ALL_ACCESS, TRUE, progress_pid);
+			  if (handle != NULL)
+				  TerminateProcess(handle, 0);
+			  has_closed_progress_pid = true;
+		  }
+#endif
+	  };
+
+
+#if 0 // made no difference
+//  {
+	  QSurfaceFormat format;
+	  format.setSamples(4); // Request 4x MSAA
+	  
+	  // Intel GPUs often require OpenGL 4.0+ Compatibility Profile for MSAA
+	  format.setVersion(4, 0); 
+	  format.setProfile(QSurfaceFormat::CompatibilityProfile);
+	  
+	  // 2. Set this format as the global application default
+	  QSurfaceFormat::setDefaultFormat(format);
+	  //}
 #endif
 
 #if defined(FOR_LINUX)
@@ -5179,8 +5214,10 @@ int main(int argc, char **argv){
 
   QLocale::setDefault(QLocale::C);
 
+#if USE_QTWEBVIEW
   QtWebView::initialize();
-	
+#endif
+  
   argv = getQApplicationConstructorArgs(argc, argv); // Add Qt things to the command line arguments. (freetype).
 
   // Create application here in order to get default style. (not recommended, but can't find another way)
@@ -5228,10 +5265,11 @@ int main(int argc, char **argv){
   CRASHREPORTER_init();
   
   if (clean_configuration){
-    clean_configuration2();
-    CRASHREPORTER_dont_report();
-    PLUGINHOST_shut_down();
-    return 0;
+	  maybe_close_progress_pid();
+	  clean_configuration2();
+	  CRASHREPORTER_dont_report();
+	  PLUGINHOST_shut_down();
+	  return 0;
   }
   
   SETTINGS_init();
@@ -5249,10 +5287,10 @@ int main(int argc, char **argv){
 		  has_requested_new_rhi_backend = true;
 	  }
   }
-	  
 
   if (set_gpu_backend)
   {
+	  maybe_close_progress_pid();
 	  set_gpu_backend2();
   }
   else if (!has_requested_new_rhi_backend)
@@ -5263,7 +5301,10 @@ int main(int argc, char **argv){
 		  QString(SETTINGS_read_string("rhi_backend", "-b"));
 	  
 	  if (!successfull_rhi_startup)
+	  {
+		  maybe_close_progress_pid();
 		  set_gpu_backend2();
+	  }
   }
   
 #if defined(FOR_MACOSX) && (defined (__arm64__) || defined (__aarch64__))
@@ -5357,14 +5398,8 @@ int main(int argc, char **argv){
   //QPixmap pixmap(OS_get_full_program_file_path("radium_256x256x32.png"));
   //QPixmap pixmap(QPixmap(OS_get_full_program_file_path("/home/kjetil/radium/pictures/logo_big.png")).scaled(QSize(256,256), Qt::KeepAspectRatioByExpanding));
   GFX_OpenProgress("Please wait, starting program");
-  
-#if defined(RELEASE) && defined(FOR_WINDOWS)
-  {
-    auto handle = OpenProcess(PROCESS_ALL_ACCESS, TRUE, progress_pid);
-    if (handle != NULL)
-      TerminateProcess(handle, 0);
-  }
-#endif
+
+  maybe_close_progress_pid();
 
   DISKPEAKS_start();
   
