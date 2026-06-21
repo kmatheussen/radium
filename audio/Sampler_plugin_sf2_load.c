@@ -80,8 +80,9 @@ static bool load_sf2_instrument(Data *data, filepath_t filename, int preset_bag_
 			int sample_num = HASH_get_int32(sample_info,"num");
 
 			Sample &sample = data->samples[num_samples++];
-			new (&sample) Sample();
-        
+
+			R_ASSERT(num_samples < MAX_NUM_SAMPLES); // For now. TODO: Handle better.
+			
 			sample.data = data;
 
 			sample.volume = 1.0f;
@@ -97,28 +98,63 @@ static bool load_sf2_instrument(Data *data, filepath_t filename, int preset_bag_
 			printf("Loop start / end: %d %d\n",(int)sample.loop_start,(int)sample.loop_end);
       
 			{
-				sample.ch = -1;
 				const char *type = HASH_get_chars(sample_info,"type");
+				
 				if(!strcmp(type,"Left Sample") || !strcmp(type,"ROM Left Sample"))
 					sample.ch = 0;
-				if(!strcmp(type,"Right Sample") || !strcmp(type,"ROM Right Sample"))
+				else if(!strcmp(type,"Right Sample") || !strcmp(type,"ROM Right Sample"))
 					sample.ch = 1;
+				else
+					sample.ch = -1;
 			}
 
-			sample.sound = SF2_load_sample(filename, sample_num);
+			sample.sound = SF2_load_sample(filename, sample_num, sample.ch);
 
-			const int root_key = HASH_get_int32(region, "root key");
-			const int coarsetune = HASH_get_int32(region, "coarse tune");
-			const int finetune = HASH_get_int32(region, "fine tune");
+			int root_key = HASH_get_int32(region, "root key");
+			int coarsetune = HASH_get_int32(region, "coarse tune");
+			int finetune = HASH_get_int32(region, "fine tune");
+			int pitch_correction = HASH_get_int32(sample_info, "pitch correction");
 
-			printf("root: %d, coarse: %d, fine: %d, sample pitch: %d\n",root_key,coarsetune,finetune,(int)HASH_get_int(sample_info,"pitch"));
+			// Merge in preset region pitch overrides (e.g. overridingRootKey/fixedKey)
+			// Preset regions can override the root key, coarse tune, and fine tune
+			// of instrument regions. This is how "fixed key" is implemented in SF2.
+			{
+				hash_t *preset_regions = HASH_get_hash(preset, "regions");
+				const char *instr_name = HASH_get_chars(instrument, "name");
+				int num_pr = HASH_get_array_size(preset_regions, "");
+
+				for(int p = 0; p < num_pr; p++)
+				{
+					hash_t *pregion = HASH_get_hash_at(preset_regions, "", p);
+
+					if (HASH_has_key(pregion, "instrument")
+					    && !strcmp(HASH_get_chars(pregion, "instrument"), instr_name))
+					{
+						if (HASH_has_key(pregion, "root key"))
+							root_key = HASH_get_int32(pregion, "root key");
+						if (HASH_has_key(pregion, "coarse tune"))
+							coarsetune = HASH_get_int32(pregion, "coarse tune");
+						if (HASH_has_key(pregion, "fine tune"))
+							finetune = HASH_get_int32(pregion, "fine tune");
+						break;
+					}
+				}
+			}
+
+			printf("===sample num: %d. root: %d, coarse: %d, fine: %d, sample pitch: %d, pitch_correction: %d\n",
+			       sample_num, root_key, coarsetune, finetune, (int)HASH_get_int(sample_info,"pitch"), pitch_correction);
 
 			int note;
 			for(note=0;note<128;note++)
 				if(HASH_get_int(sample_info,"pitch")==255)
 					sample.frequency_table[note] = HASH_get_int(sample_info, "samplerate");
 				else
-					sample.frequency_table[note] = HASH_get_int(sample_info, "samplerate") * midi_to_hz(note+coarsetune+(float)finetune/100.0) / midi_to_hz(root_key);
+					// Note: +12 converts Radium tracker note numbering (C4=48) to MIDI note numbering (C4=60).
+					// SoundFont root_key, coarsetune, and finetune use MIDI note numbering.
+					// However, we can't use it because of backwards compatibility.
+					sample.frequency_table[note] = HASH_get_int(sample_info, "samplerate")
+						* midi_to_hz(note + /*12 + */ coarsetune + (finetune + pitch_correction)/100.0f)
+						/ midi_to_hz(root_key);
 
 			int note_num;
 			for(note_num=HASH_get_int32(region,"key start");note_num<=HASH_get_int32(region,"key end");note_num++)
