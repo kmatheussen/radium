@@ -237,7 +237,11 @@ static inline void moveWindowToCentre(QWidget *widget, QRect parentRect = QRect(
 
   if (widget->window() != widget){
     
+#ifndef CRASHREPORTER_BIN
+#ifndef COMPILE_EXECUTABLE
     R_ASSERT_NON_RELEASE(false);
+#endif
+#endif
     
   } else {
 
@@ -252,7 +256,11 @@ static inline void moveWindowToCentre(QWidget *widget, QRect parentRect = QRect(
 static inline void adjustSizeAndMoveWindowToCentre(QWidget *widget, QRect parentRect = QRect()){
   if (widget->window() != widget){
     
+#ifndef CRASHREPORTER_BIN
+#ifndef COMPILE_EXECUTABLE
     R_ASSERT_NON_RELEASE(false);
+#endif
+#endif
     
   } else {
 
@@ -1081,17 +1089,27 @@ namespace radium{
 // Why doesn't Qt provide this one?
 namespace{
 template <typename T>
-struct ScopedQPointer : public QPointer<T>{
-  T *_widget;
-  ScopedQPointer(T *widget)
-    : QPointer<T>(widget)
-    , _widget(widget)
-  {}
-  ~ScopedQPointer(){
-    printf("Deleting scoped pointer widget %p\n",_widget);
-    delete _widget;
-  }
+struct ScopedQPointer : public QPointer<T>
+{
+	ScopedQPointer(T *widget)
+		: QPointer<T>(widget)
+	{
+	}
+	
+	~ScopedQPointer()
+	{
+		if (QPointer<T>::data() != nullptr)
+		{
+			printf("Deleting scoped pointer widget %p\n", QPointer<T>::data());
+			delete QPointer<T>::data();
+		}
+		else
+		{
+			printf("WARN: ScopedQPointer: widget already deleted, skipping delete\n");
+		}
+	}
 };
+
 /*
 template <typename T>
 struct ScopedQPointer {
@@ -1194,7 +1212,7 @@ static inline void setUpdatesEnabledRecursively(QWidget *widget, bool doit){
     widget->setUpdatesEnabled(doit);
     
     for(auto *c : widget->children()){
-      QWidget *w = dynamic_cast<QWidget*>(c);      
+      QWidget *w = qobject_cast<QWidget*>(c);      
       if (w && w->isWindow()==false)
         setUpdatesEnabledRecursively(w, doit);
     }
@@ -1244,7 +1262,7 @@ static inline void pauseUpdates(QWidget *w, int ms = 50){
 static inline void updateWidgetRecursively(QObject *object, bool is_child = false){
   if (object != NULL){
 
-    QWidget *w = dynamic_cast<QWidget*>(object);
+    QWidget *w = qobject_cast<QWidget*>(object);
 
     if (w != NULL && w->isVisible()) {
 
