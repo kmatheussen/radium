@@ -59,7 +59,7 @@ template<class T> static inline std::string ToString(T o) {
 // Taken from sf2dump.cpp by Grigor Iliev
 template<class T> static inline string GetValue(T val) {
 #pragma GCC diagnostic ignored "-Wfloat-equal"
-  if (val == (T)sf2::NONE) return "NONE";
+  if ((uint)val == (uint)sf2::NONE) return "NONE";
     return ToString(val);
 }
 
@@ -223,9 +223,6 @@ static hash_t *get_region_info(sf2::Region *reg){
   sf2::Sample* s = reg->GetSample();
   if(s!=NULL){
     HASH_put_chars(info, "sample_name", s->Name.c_str());
-    HASH_put_int(info, "fine tune", reg->fineTune);
-    HASH_put_int(info, "coarse tune", reg->coarseTune);
-    HASH_put_int(info, "root key", reg->GetUnityNote()); // TODO: 60 might be wrong. Maybe it's 48? (it's 48)
     if(reg->HasLoop){
       HASH_put_int(info, "loop start", reg->LoopStart); // What's the difference between these and sample->loopStart/loopEnd?
       HASH_put_int(info, "loop end", reg->LoopEnd);
@@ -233,6 +230,14 @@ static hash_t *get_region_info(sf2::Region *reg){
   }else{
     HASH_put_chars(info, "sample_name", "<no sample!>");
   }
+
+  // Store pitch-related fields for all regions (both instrument and preset).
+  // Preset regions can override these values, and they need to be available
+  // in the hash for the merge logic in load_sf2_instrument.
+  HASH_put_int(info, "fine tune", reg->fineTune);
+  HASH_put_int(info, "coarse tune", reg->coarseTune);
+  if (reg->GetSample() != NULL || reg->overridingRootKey != -1)
+    HASH_put_int(info, "root key", reg->GetUnityNote());
 
   HASH_put_float(info, "attack", reg->GetEG1Attack());
   HASH_put_float(info, "hold", reg->GetEG1Hold());
@@ -418,7 +423,7 @@ hash_t *SF2_get_displayable_preset_names(hash_t *info){
 #endif
 
 
-float *SF2_load_sample(filepath_t filename, int sample_num){
+float *SF2_load_sample(filepath_t filename, int sample_num, int ch){
   const char *osfilename = talloc_strdup(QFile::encodeName(STRING_get_qstring(filename.id)).constData());
 #if defined(FOR_WINDOWS)
   RIFF::File riff(filename.id, std::string(osfilename));
@@ -435,19 +440,30 @@ float *SF2_load_sample(filepath_t filename, int sample_num){
 
   int num_frames = int(buffer.Size / sizeof(int16_t));
 
+  if (ch != -1)
+    num_frames /= 2;
+  
   float *ret=(float*)V_calloc((int)sizeof(float),num_frames);
-  if(ret==NULL){
-    GFX_Message(NULL, "Out of memory? Failed to allocate %d bytes\n",num_frames*4);
+  if(ret==NULL)
+  {
+    GFX_Message(NULL, "Out of memory? Failed to allocate %lu bytes\n",num_frames*sizeof(float));
     return NULL;
   }
 
-  for(int i=0;i<num_frames;i++){
-    int16_t val = get_le_16((unsigned char*)&s16[i]);
+  for(int i=0;i<num_frames;i++)
+  {
+    int16_t val;
+    if (ch == -1)
+      val = get_le_16((unsigned char*)&s16[i]);
+    else if (ch == 0)
+      val = get_le_16((unsigned char*)&s16[i*2]);
+    else // ch == 1
+      val = get_le_16((unsigned char*)&s16[i*2 + 1]);
     ret[i] = val / 32768.0f;
   }
 
   sample->ReleaseSampleData();
-  file.DeleteSample(sample);
+  //file.DeleteSample(sample); // should probably not call, strange method...
 
   return ret;
 }
