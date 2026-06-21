@@ -115,6 +115,15 @@ static int keysym_to_keynum(KeySym keysym) {
     return EVENT_HOMEPAGE;
   }
 
+  // Fix upper case keys. We detect shift separately, so we don't want other symbols
+  // when pressing the shift key.
+  if (keysym >= XK_A && keysym <= XK_Z)
+    keysym = (KeySym)(keysym + (XK_a - XK_A));
+
+  // Do the same for these characters as well.
+  if (keysym >= XK_Agrave && keysym <= XK_Odiaeresis)
+    keysym = (KeySym)(keysym + (XK_agrave - XK_Agrave));
+
 
 # define S(X11_VAL, EVENT_VAL) if(keysym==XK_##X11_VAL) return EVENT_##EVENT_VAL;
 # define T(VAL) if(keysym==XK_##VAL) return EVENT_##VAL;
