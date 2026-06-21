@@ -72,7 +72,7 @@ static void minimizeRecursively(QObject *object){
   if (object==NULL)
     return;
   
-  QWidget *widget = dynamic_cast<QWidget*>(object);
+  QWidget *widget = qobject_cast<QWidget*>(object);
   
   if (widget != NULL){
     widget->resize(widget->width()+1, widget->height()+1);

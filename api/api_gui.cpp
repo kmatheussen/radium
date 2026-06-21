@@ -62,6 +62,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QDrag>
 #include <QSvgRenderer>
 #include <QMouseEvent>
+#include <QLabel>
 
 #include <QDesktopServices>
 
@@ -108,6 +109,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/FileRequester.hpp"
 #include "../Qt/HashVector.hpp"
 #include "../Qt/Editor.hpp"
+#include "../Qt/EditorWidget.h"
 
 #include "../mixergui/QM_MixerWidget.h"
 
@@ -6071,7 +6073,7 @@ namespace{
       return w;
 
     for(auto *c : w->children()){
-      QWidget *maybe = dynamic_cast<QWidget*>(c);
+      QWidget *maybe = qobject_cast<QWidget*>(c);
       if (maybe != NULL){
         maybe = get_first_widget_in_widget(maybe);
         if (maybe != NULL)
