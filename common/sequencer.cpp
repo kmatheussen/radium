@@ -211,7 +211,18 @@ static bool seqblock_has_stretch(const struct SeqTrack *seqtrack, const struct S
 static void set_seqblock_stretch(const struct SeqTrack *seqtrack, struct SeqBlock *seqblock){
   double reltempo = seqblock->block==NULL ? 1.0 : ATOMIC_DOUBLE_GET(seqblock->block->reltempo);
 
-  seqblock->t.stretch = (double)get_seqblock_duration(seqblock) / (double)(seqblock->t.interior_end - seqblock->t.interior_start);
+  const double diff = seqblock->t.interior_end - seqblock->t.interior_start;
+
+  if (equal_doubles(diff, 0.0))
+  {
+	  R_ASSERT_NON_RELEASE(false);
+	  seqblock->t.stretch = 20000.0 * seqblock->t.speed;
+  }
+  else
+  {
+	  seqblock->t.stretch = (double)get_seqblock_duration(seqblock) / diff;
+  }
+  
   seqblock->t.stretch /= seqblock->t.speed;
   
   //  if (reltempo != 1.0) // <- Only correct to test for this if seqblock->t.stretch is also not 1.0.
