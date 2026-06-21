@@ -7,6 +7,8 @@
 
 extern LANGSPEC bool FXTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, struct WTracks *wtrack, int realline, const Place *place, int key);
 
+extern LANGSPEC int FXTEXT_subsubtrack(const struct Tracker_Windows *window, const struct WTracks *wtrack, struct FXs **to_fxs);
+
 #ifdef __cplusplus
 
 #include "FX.hpp"
@@ -14,8 +16,6 @@ extern LANGSPEC bool FXTEXT_keypress(struct Tracker_Windows *window, struct WBlo
 #if USE_QT4
 const FXText_trss FXTEXTS_get(const struct WBlocks *wblock, const struct WTracks *wtrack, const struct FXs *fxs);
 #endif
-
-extern int FXTEXT_subsubtrack(const struct Tracker_Windows *window, const struct WTracks *wtrack, struct FXs **to_fxs);
 
 static inline int FXTEXT_num(struct Tracks *track){
   int ret = 0;

@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "wtracks_proc.h"
 
 #include "../OpenGL/Render_proc.h"
+#include "OS_visual_input.h"
 
 #include "data_as_text_proc.h"
 
@@ -239,87 +240,197 @@ data_as_text_t DAT_get_overwrite(int old_value, int logtype, int subsubtrack, in
 extern struct TEvent tevent;
 
 
+static const char *DAT_get_editor_description(struct Tracker_Windows *window, struct WTracks *wtrack, bool *is_hex, bool *valid_keys_has_t)
+{
+	*is_hex = false;
+	*valid_keys_has_t = true;
+
+	// Other tracks
+	//
+	if (window->curr_track < 0)
+	{
+		if (BPMTEXT_subsubtrack(window) >= 0)
+			return "BPM text";
+		
+		if (LPBTEXT_subsubtrack(window) >= 0)
+		{
+			*valid_keys_has_t = false;
+			return "LPB text";
+		}
+		
+		if (SWINGTEXT_subsubtrack(window, NULL) >= 0)
+			return "Swing text";
+		
+		// Signature track: all keys accepted by SIGNATURETEXT_keypress.
+		if (SIGNATURETEXT_subsubtrack(window) >= 0)
+			return NULL;
+		
+		return "";
+	}
+
+	// Track subsubtracks
+	//
+	if (SWINGTEXT_subsubtrack(window, wtrack) >= 0)
+		return talloc_format("Swing text, track #%d", wtrack->l.num);
+
+	if (CENTTEXT_subsubtrack(window, wtrack) >= 0)
+	{
+		*valid_keys_has_t						= false;
+		return talloc_format("Cent text, track #%d", wtrack->l.num);
+	}
+
+	if (CHANCETEXT_subsubtrack(window, wtrack) >= 0)
+	{
+		*is_hex									  = true;
+		*valid_keys_has_t						  = false;
+		return talloc_format("Chance text, track #%d", wtrack->l.num);
+	}
+
+	if (VELTEXT_subsubtrack(window, wtrack) >= 0)
+	{
+		*is_hex								   = true;
+		return talloc_format("Velocity text, track #%d", wtrack->l.num);
+	}
+
+	if (FXTEXT_subsubtrack(window, wtrack, NULL) >= 0)
+	{
+		*is_hex = true;
+		return talloc_format("FX text, track #%d", wtrack->l.num);
+	}
+
+	return "";
+}
+
+
 // We circumvent the normal keyboard configuration system here.
-bool DAT_keypress(struct Tracker_Windows *window, const int key, const bool is_keydown){
+bool DAT_keypress(struct Tracker_Windows *window, const int key, const bool is_keydown)
+{
 
-  if (! (tevent.keyswitch & EVENT_FOCUS_EDITOR2))
-    return false;
+	if (! (tevent.keyswitch & EVENT_FOCUS_EDITOR2))
+		return false;
 
-  // We allow shift. Shift + key means not moving cursor to next line.
-  // But we only allow shift alone. Other qualifier keys could (and does) interfere with various keybindings.
-  {
-    if (AnyAlt(tevent.keyswitch))
-      return false;
+	// We allow shift. Shift + key means not moving cursor to next line.
+	// But we only allow shift alone. Other qualifier keys could (and does) interfere with various keybindings.
+	{
+		if (AnyAlt(tevent.keyswitch))
+			return false;
     
-    if (AnyCtrl(tevent.keyswitch))
-      return false;
+		if (AnyCtrl(tevent.keyswitch))
+			return false;
     
-    if (AnyExtra(tevent.keyswitch))
-      return false;    
-  }
+		if (AnyExtra(tevent.keyswitch))
+			return false;    
+	}
 
-  // Do nothing if mouse is above a bar or a beat in the bar/beat track.
-  if (g_current_barbeat_block_num >= 0)
-    return false;
+	// Do nothing if mouse is above a bar or a beat in the bar/beat track.
+	if (g_current_barbeat_block_num >= 0)
+		return false;
       
-  struct WBlocks *wblock = window->wblock;
-  struct WTracks *wtrack = wblock->wtrack;
+	struct WBlocks *wblock = window->wblock;
+	struct WTracks *wtrack = wblock->wtrack;
 
-  int subtrack = window->curr_track_sub;
+	int subtrack = window->curr_track_sub;
 
-  if (window->curr_track >= 0){
-    if (subtrack < 0 || subtrack >= WTRACK_num_non_polyphonic_subtracks(wtrack)) // subtrack -1 = note text
-      return false;
-  } else {
-    if (window->curr_track != TEMPOTRACK && window->curr_track != LPBTRACK && window->curr_track != SIGNATURETRACK && window->curr_track != SWINGTRACK)
-      return false;
-  }
+	if (window->curr_track >= 0){
+		if (subtrack < 0 || subtrack >= WTRACK_num_non_polyphonic_subtracks(wtrack)) // subtrack -1 = note text
+			return false;
+	} else {
+		if (window->curr_track != TEMPOTRACK && window->curr_track != LPBTRACK && window->curr_track != SIGNATURETRACK && window->curr_track != SWINGTRACK)
+			return false;
+	}
       
   
-  if (get_val_from_key(key, true)==-1)
-    return false;
+	if (is_keydown==false)
+		return true;
 
-  if (is_keydown==false)
-    return true;
+	bool is_hex;
+	bool valid_keys_has_t;
+	const char *desc = DAT_get_editor_description(window, wtrack, &is_hex, &valid_keys_has_t);
 
-  int realline = wblock->curr_realline;
-  if (realline < 0 || realline >= wblock->num_reallines){
-    EVENTLOG_add_event(strdup(talloc_format("curr_realline: %d (%d)", wblock->curr_realline, wblock->num_reallines)));
-    R_ASSERT(false);
-    return false;
-  }
+	// NULL means signature track — keep filtering but don't show message.
+	// (SIGNATURETEXT_keypress only handles keys that pass get_val_from_key.)
+	if (desc == NULL)
+		is_hex = true;
+
+	if (get_val_from_key(key, is_hex) == -1)
+	{
+
+		// Don't consume navigation/function keys — let them fall through to EventReciever.
+		switch(key)
+		{
+			case EVENT_UPARROW:
+			case EVENT_DOWNARROW:
+			case EVENT_LEFTARROW:
+			case EVENT_RIGHTARROW:
+			case EVENT_PAGE_UP:
+			case EVENT_PAGE_DOWN:
+			case EVENT_HOME:
+			case EVENT_END:
+			case EVENT_TAB:
+			case EVENT_ESC:
+			case EVENT_INSERT:
+			case EVENT_BACKSPACE:
+			case EVENT_F1 ... EVENT_F6:
+			case EVENT_F7 ... EVENT_F12:
+			case EVENT_F13 ... EVENT_F16:
+			case EVENT_F20:
+				return false;
+		}
+
+		// Signature track: don't show message, just let the key through.
+		if (desc == NULL)
+			return false;
+
+		GFX_SetStatusBar(talloc_format("Valid keys: 0-9%s, %sDelete",
+		                               is_hex ? ", a-f" : "",
+		                               valid_keys_has_t ? "g, t, " : "g, "));
+
+		// Consume the key so it doesn't trigger unexpected keybindings.
+		return true;
+	}
+
   
-  const Place *place = &wblock->reallines[realline]->l.p;
-
-  if (window->curr_track < 0) {
-    if (BPMTEXT_keypress(window, wblock, realline, place, key) == false) {
-      if (LPBTEXT_keypress(window, wblock, realline, place, key) == false) {
-        if (SIGNATURETEXT_keypress(window, wblock, realline, place, key) == false) {
-          if (SWINGTEXT_keypress(window, wblock, NULL, realline, place, key) == false) {
-            return false;
-          }
-        }
-      }
-    }
-  } else {
-    if (VELTEXT_keypress(window, wblock, wtrack, realline, place, key) == false) {
-      if (FXTEXT_keypress(window, wblock, wtrack, realline, place, key) == false) {
-        if (CHANCETEXT_keypress(window, wblock, wtrack, realline, place, key) == false) {
-          if (CENTTEXT_keypress(window, wblock, wtrack, realline, place, key) == false) {
-              if (SWINGTEXT_keypress(window, wblock, wtrack, realline, place, key) == false) {
-                return false;
-              }
-            }
-        }
-      }
-    }
-  }
+	int realline = wblock->curr_realline;
+	if (realline < 0 || realline >= wblock->num_reallines){
+		EVENTLOG_add_event(strdup(talloc_format("curr_realline: %d (%d)", wblock->curr_realline, wblock->num_reallines)));
+		R_ASSERT(false);
+		return false;
+	}
   
-  window->must_redraw_editor = true;
+	const Place *place = &wblock->reallines[realline]->l.p;
 
-  if(!AnyShift(tevent.keyswitch))
-    MaybeScrollEditorDownAfterEditing(window,NULL);
+	if (window->curr_track < 0)
+	{
+		if (BPMTEXT_keypress(window, wblock, realline, place, key) == false) {
+			if (LPBTEXT_keypress(window, wblock, realline, place, key) == false) {
+				if (SIGNATURETEXT_keypress(window, wblock, realline, place, key) == false) {
+					if (SWINGTEXT_keypress(window, wblock, NULL, realline, place, key) == false) {
+						return false;
+					}
+				}
+			}
+		}
+	}
+	else
+	{
+		if (VELTEXT_keypress(window, wblock, wtrack, realline, place, key) == false) {
+			if (FXTEXT_keypress(window, wblock, wtrack, realline, place, key) == false) {
+				if (CHANCETEXT_keypress(window, wblock, wtrack, realline, place, key) == false) {
+					if (CENTTEXT_keypress(window, wblock, wtrack, realline, place, key) == false) {
+						if (SWINGTEXT_keypress(window, wblock, wtrack, realline, place, key) == false) {
+							return false;
+						}
+					}
+				}
+			}
+		}
+	}
   
-  return true;
+	window->must_redraw_editor = true;
+
+	if(!AnyShift(tevent.keyswitch))
+		MaybeScrollEditorDownAfterEditing(window,NULL);
+  
+	return true;
 }
 
