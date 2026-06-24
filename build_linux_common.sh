@@ -310,6 +310,11 @@ if ! file $RADIUM_BIN |grep Linux ; then
 fi
 
 #api/s7_types_generator.scm types
+
+# Touch PCH .d files to prevent make from rebuilding them during prerequisite generation.
+# They will be properly regenerated during the main 'make radium' call.
+touch Qt/Qt_precompiled.hpp.d audio/Faust_plugins_precompiled.hpp.d 2>/dev/null || true
+
 make api/s7_types.h buildtype.opt flagopts.opt api/radium_proc.h common/keyboard_sub_ids.h bin/radium_check_recent_libxcb --stop
 
 if [[ $# -ge 1 ]] && [[ $1 == "test" ]] ; then
