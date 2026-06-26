@@ -950,31 +950,77 @@ static int64_t RT_src_callback_reverse(Voice *voice, const LoopData &loop_data, 
   return num_samples_to_return;
 }
 
-static int64_t RT_src_callback_ping_pong_looping(Voice *voice, const LoopData &loop_data, const Sample *sample, Data *data, int64_t start_pos, float **out_data){  
-  R_ASSERT(start_pos <= sample->num_frames*2);
+static int64_t RT_src_callback_ping_pong_looping(Voice *voice, const LoopData &loop_data, const Sample *sample, Data *data, int64_t start_pos, float **out_data)
+{  
+	// Ping-pong: bounce back and forth between loop_start and loop_end-1.
+	// Position in sample space, direction +1 = forward, -1 = backward.
   
-  if (start_pos >= loop_data._end + loop_data._length)
-    start_pos = loop_data._start;
+	int64_t pos = start_pos;
+	int64_t lend = loop_data._end;  // exclusive upper bound
+	int64_t lstart = loop_data._start;
 
-  if (start_pos >= loop_data._end) {
+	// Determine direction: positions past _end are in the reflected region
+	int direction;
+	if (pos >= lend)
+	{
+		// Reflected position: map back into sample space
+		pos = lend - 1 - (pos - lend);
+		direction = -1;
+	}
+	else
+	{
+		direction = +1;
+	}
 
-    int64_t org_voice_pos = voice->pos;
-    
-    int64_t ret = RT_src_callback_reverse(voice, loop_data, sample, data, start_pos - loop_data._length, out_data, true);
-    voice->pos = org_voice_pos + ret;
-    
-    R_ASSERT_NON_RELEASE(voice->pos <= loop_data._end + loop_data._length);
-    
-    return ret;
-    
-  } else {
-    
-    int64_t ret = loop_data._end - start_pos;
-    *out_data = &sample->sound[start_pos];    
-    voice->pos = loop_data._end;
-    
-    return ret;
-  }
+	// Produce at most CROSSFADE_BUFFER_LENGTH frames per call
+	int64_t num_frames = 0;
+	float *dest = &voice->crossfade_buffer[0];
+	const float *src = sample->sound;
+
+	while (num_frames < CROSSFADE_BUFFER_LENGTH)
+	{
+		if (direction == +1)
+		{
+			int64_t remaining = lend - pos;
+			if (remaining <= 0) {
+				// Bounce at _end
+				pos = lend - 1;   // last forward sample was at lend-1, bounce back one
+				direction = -1;
+				// Don't produce a sample here, just bounce
+			}
+			else
+			{
+				int64_t to_copy = R_MIN(remaining, CROSSFADE_BUFFER_LENGTH - num_frames);
+				memcpy(dest + num_frames, src + pos, to_copy * sizeof(float));
+				num_frames += to_copy;
+				pos += to_copy;
+			}
+		}
+		else
+		{
+			// direction == -1
+			if (pos < lstart)
+			{
+				// Bounce at loop_start
+				pos = lstart;
+				direction = +1;
+			}
+			else
+			{
+				int64_t to_copy = R_MIN(pos - lstart + 1, CROSSFADE_BUFFER_LENGTH - num_frames);
+				for (int64_t i = 0; i < to_copy; i++)
+					dest[num_frames + i] = src[pos - i];
+				num_frames += to_copy;
+				pos -= to_copy;
+			}
+		}
+	}
+
+	voice->pos = (direction == 1) ? pos : lend + (lend - 1 - pos);
+	
+	*out_data = dest;
+	
+	return num_frames;
 }
 
 
