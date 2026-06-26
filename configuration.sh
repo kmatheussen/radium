@@ -68,8 +68,7 @@ set_var INCLUDE_FAUSTDEV_BUT_NOT_LLVM 0
 #
 # Only used if INCLUDE_FAUSTDEV==1 && INCLUDE_FAUSTDEV_BUT_NOT_LLVM==0 
 #
-set_var 0
-
+set_var LLVM_CONFIG_BIN 0
 
 
 

@@ -188,7 +188,14 @@ fi
 #export QT_QUICK_BACKEND=software
 #export QT_QPA_PLATFORM=offscreen
 
+export VK_LOADER_DEBUG=error,warn,info
+
+# gcc
+#G_DEBUG="fatal-warnings,gc-friendly" USE=libedit/readline MANGOHUD_CONFIGFILE=/home/kjetil/radium_qrhi_gfx/MangoHud.conf mangohud LD_PRELOAD=/lib64/libasan.so.8 $debugger $debugger_argline $EXECUTABLE $@
+
+# clang
 G_DEBUG="fatal-warnings,gc-friendly" USE=libedit/readline $debugger $debugger_argline $EXECUTABLE $@
+
 ret=$?
 
 killall -9 radium_progress_window 2>/dev/null
