@@ -773,8 +773,7 @@ OBJ = $(OBJ12) $(OBJ_ES) $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7)
 
 #-------------------KARSJK-------------------------------
 
-BUILD_DEPENDENCIES = $(CD)keyboard_sub_ids.h dependencies_ok
-#flagopts.opt buildtype.opt 
+BUILD_DEPENDENCIES = $(CD)keyboard_sub_ids.h dependencies_ok flagopts.opt buildtype.opt $(API)s7_types.h $(API)radium_proc.h
 
 PROGRAM_MODULES = $(RADIUM_BIN) bin/radium_crashreporter bin/protoconfparser.py bin/protos.conf bin/radium_error_message bin/radium_progress_window bin/radium_check_jack_status bin/radium_plugin_scanner bin/scheme/api_protos.scm bin/color.frag.qsb bin/color.vert.qsb bin/texture_vertex.qsb bin/texture_fragment.qsb # bin/radium_check_opengl 
 OBJECT_DEPENDENCIES = $(BUILD_DEPENDENCIES)
@@ -799,7 +798,7 @@ ifdef USING_CLANG
 	QT_PCH_INCLUDE = -include-pch $(QT_PCH)
 endif
 
-$(QT_PCH) Qt/Qt_precompiled.hpp.d &: Qt/Qt_precompiled.hpp
+$(QT_PCH) Qt/Qt_precompiled.hpp.d &: Qt/Qt_precompiled.hpp $(BUILD_DEPENDENCIES)
 	$(CCC) -MMD -MP -DNO_PRAGMA_ONCE -x c++-header $(QTOPT) -o $(QT_PCH) -c $<
 
 -include Qt/Qt_precompiled.hpp.d
@@ -2214,7 +2213,7 @@ $(T)api_midi.o:  $(BUILD_DEPENDENCIES)  $(API)api_midi.cpp $(QT_PCH)
 	$(CCC2) $(API)api_midi.cpp $(QTOPT) $(QT_PCH_INCLUDE) $(BOOST_INCLUDE)
 
 $(T)api_gui.o:  $(BUILD_DEPENDENCIES)  $(API)api_gui.cpp  Qt/ScrollArea.hpp Qt/helpers.h Qt/lzqlineedit.h  Qt/Rational.h Qt/Qt_MyQCheckBox.h embedded_scheme/s7extra_proc.h Qt/Qt_MyQScrollBar.hpp Qt/FileRequester.hpp Qt/Timer.hpp Qt/HashVector.hpp Qt/Qt_MyQCheckBox.h Qt/FocusSniffers.h Qt/Editor.hpp $(QT_PCH)
-	$(MOC) $(USE_QWEBENGINE_CFLAGS) $(API)api_gui.cpp > $(API)mapi_gui.cpp
+	$(MOC) $(USE_QWEBENGINE_CFLAGS) $(QT_UI_CFLAGS) $(API)api_gui.cpp > $(API)mapi_gui.cpp
 	$(CCC2) $(API)api_gui.cpp $(QTOPT) $(QT_PCH_INCLUDE) $(QT_UI_CFLAGS) $(QT_SVG_CFLAGS) $(FPIC) -Wno-null-dereference $(NO_ANALYZER) $(WNO_DEPRECATED_DECLARATIONS)
 
 
@@ -2434,7 +2433,7 @@ ifdef USING_CLANG
   FAUST_PCH_INCLUDE = -include-pch $(FAUST_PCH)
 endif
 
-$(FAUST_PCH) audio/Faust_plugins_precompiled.hpp.d &: audio/Faust_plugins_precompiled.hpp
+$(FAUST_PCH) audio/Faust_plugins_precompiled.hpp.d &: audio/Faust_plugins_precompiled.hpp $(BUILD_DEPENDENCIES)
 	$(CCC) -MMD -MP -DNO_PRAGMA_ONCE $(FAUST_OPTS2) -o $(FAUST_PCH) -c $<
 
 -include audio/Faust_plugins_precompiled.hpp.d
