@@ -340,7 +340,11 @@ def import_xm(filename_base64):
         flags = read_le16(f)
         default_tempo = read_le16(f)
         default_bpm = read_le16(f)
-        pattern_order = [ord(b) for b in f.read(256)]
+        # header_size = 4 (header_size field) + 16 (song_length..default_bpm fields) + order_table_size.
+        # Standard XM: order_table is always 256 bytes -> header_size = 276.
+        # OpenMPT: header_size = 20 + song_length (stores only the used entries).
+        order_table_size = min(256, max(song_length, header_size - 20))
+        pattern_order = [ord(b) for b in f.read(order_table_size)]
         
         print("XM: ch=%d pat=%d instr=%d tempo=%d bpm=%d file_pos=%d" % (num_channels, num_patterns, num_instruments, default_tempo, default_bpm, f.tell()))
         
@@ -348,7 +352,7 @@ def import_xm(filename_base64):
         playlist = pattern_order[:song_length]
 
         print("\n\n\n\n\n\n5===================================\n\n\n\n\n")
-        
+
         # Parse patterns (patterns come before instruments in XM format)
         patterns = parse_xm_patterns(f, num_patterns, num_channels, pattern_order, song_length)
 
