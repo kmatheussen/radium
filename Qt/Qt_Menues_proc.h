@@ -20,5 +20,6 @@ class QMenu;
 class QMenuBar;
 
 void initMenues(QMenuBar *base_menu);
+void init_recent_menu(void); // Call after all main menus have been set up.
 void GFX_AddMenuMenu(const char *name, QMenu *mymenu);
 void GFX_SetMenuFontsAgain(void);
