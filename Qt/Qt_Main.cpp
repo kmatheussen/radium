@@ -4047,6 +4047,7 @@ int radium_main(const char *arg){
   GFX_ShowProgressMessage("Creating main menus", true);
   S7CALL2(void_void,"generate-main-menus");
     
+  init_recent_menu();
   //getchar();
 
 

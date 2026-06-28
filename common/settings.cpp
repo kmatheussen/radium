@@ -577,6 +577,62 @@ void SETTINGS_write_string(QString key, QString val){
   SETTINGS_put(key.toUtf8().constData(),val);
 }
 
+void SETTINGS_add_recent_song(const char *filename)
+{
+	if (filename == NULL || strlen(filename) == 0)
+		return;
+
+	// Exclude internal template songs
+	if (QString::fromUtf8(filename).endsWith("sounds/new_song.rad"))
+		return;
+	if (QString::fromUtf8(filename).endsWith("sounds/mod_song_template.rad"))
+		return;
+
+	const int max_recent = 30;
+
+	// Read existing recent entries
+	const char *existing[max_recent];
+	int num_existing = 0;
+
+	for (int i = 0; i < max_recent; i++)
+	{
+		char key[64];
+		snprintf(key, sizeof(key), "recent_song_%d", i);
+		const char *val = SETTINGS_read_string(key, "");
+		if (val != NULL && strlen(val) > 0)
+		{
+			existing[num_existing] = val;
+			num_existing++;
+		}
+	}
+
+	// Build new list: filename first, then existing entries (deduplicated)
+	const char *new_list[max_recent];
+	int num_new = 0;
+
+	new_list[num_new++] = filename;
+
+	for (int i = 0; i < num_existing && num_new < max_recent; i++)
+	{
+		if (strcmp(existing[i], filename) != 0)
+		{
+			new_list[num_new++] = existing[i];
+		}
+	}
+
+	// Write back
+	for (int i = 0; i < max_recent; i++)
+	{
+		char key[64];
+		snprintf(key, sizeof(key), "recent_song_%d", i);
+
+		if (i < num_new)
+			SETTINGS_write_string(key, new_list[i]);
+		else
+			SETTINGS_remove(key);
+	}
+}
+
 // Note: Called before SETTINGS_init.
 void SETTINGS_delete_configuration(const radium::ResetSettings &rs){
   

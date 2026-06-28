@@ -310,105 +310,109 @@ __attribute__((constructor)) static void initialize_mmp2filename(void) {
 //#endif
 
 
-static bool Load_CurrPos_org(struct Tracker_Windows *window, filepath_t filename){
+static bool Load_CurrPos_org(struct Tracker_Windows *window, filepath_t filename)
+{
 	bool ret = false;
 
-        // So many things happen here, that we should turn off garbage collection while loading.
-        //
-        // For instance, the instrument widget contains pointers (which are unreachable from the GC) to Patch
-        // and PatchData objects. The instrument widget is updated after setting a new root, so it may access
-        // that memory while a new song is loaded (since we don't have control over what Qt may do while we
-        // access it). Not unlikely to be other similar situations.
-        if(0){
-          Threadsafe_GC_disable();
-        }
+	// So many things happen here, that we should turn off garbage collection while loading.
+	//
+	// For instance, the instrument widget contains pointers (which are unreachable from the GC) to Patch
+	// and PatchData objects. The instrument widget is updated after setting a new root, so it may access
+	// that memory while a new song is loaded (since we don't have control over what Qt may do while we
+	// access it). Not unlikely to be other similar situations.
+	if(0){
+		Threadsafe_GC_disable();
+	}
 
 
 	PlayStop();
 
-        if(Undo_are_you_sure_questionmark()==false)
-          goto exit;
+	if(Undo_are_you_sure_questionmark()==false)
+		goto exit;
 
-        if(isIllegalFilepath(filename)){
-          const wchar_t *song_path = SETTINGS_read_wchars("filerequester_song_path", NULL);
-          const filepath_t wdir = song_path==NULL ? createIllegalFilepath() : make_filepath(song_path);
-          filename = GFX_GetLoadFileName(window,NULL,"Select file to load", wdir, NULL, NULL, true);
-          if (!isIllegalFilepath(filename))
+	if(isIllegalFilepath(filename)){
+		const wchar_t *song_path = SETTINGS_read_wchars("filerequester_song_path", NULL);
+		const filepath_t wdir = song_path==NULL ? createIllegalFilepath() : make_filepath(song_path);
+		filename = GFX_GetLoadFileName(window,NULL,"Select file to load", wdir, NULL, NULL, true);
+		if (!isIllegalFilepath(filename))
             SETTINGS_write_wchars("filerequester_song_path", DISK_get_absolute_dir_path(filename).id);
-        }
+	}
 
 	if(isIllegalFilepath(filename))
-          goto exit;
+		goto exit;
 
-        deletePresetBrowserInstrument();
-        g_is_loading = true;
+	deletePresetBrowserInstrument();
+	g_is_loading = true;
 
         
-        if (STRING_ends_with(filename.id,".MMD2") ||
-            STRING_ends_with(filename.id,".MMD3") ||
-            STRING_ends_with(filename.id,".MMD") ||
-            STRING_ends_with(filename.id,".mmd2") ||
-            STRING_ends_with(filename.id,".mmd3") ||
-            STRING_ends_with(filename.id,".mmd")
-            )
-          {
-            mmp2filename=filename;
-            ret = Load(make_filepath(L"sounds/new_song.rad"));
+	if (STRING_ends_with(filename.id,".MMD2") ||
+		STRING_ends_with(filename.id,".MMD3") ||
+		STRING_ends_with(filename.id,".MMD") ||
+		STRING_ends_with(filename.id,".mmd2") ||
+		STRING_ends_with(filename.id,".mmd3") ||
+		STRING_ends_with(filename.id,".mmd")
+		)
+	{
+		mmp2filename=filename;
+		ret = Load(make_filepath(L"sounds/new_song.rad"));
 
-          } else {
+	} else {
 
-            OS_set_loading_path(filename);
-            {
-              ret = Load(filename);
-            }
-            OS_unset_loading_path();
+		OS_set_loading_path(filename);
+		{
+			ret = Load(filename);
+		}
+		OS_unset_loading_path();
             
-            GFX_SetWindowTitle(root->song->tracker_windows, filename.id);
+		GFX_SetWindowTitle(root->song->tracker_windows, filename.id);
             
-            GFX_EditorWindowToFront(root->song->tracker_windows);
+		GFX_EditorWindowToFront(root->song->tracker_windows);
             
-            struct WBlocks *wblock = root->song->tracker_windows->wblock;
-            GFX_update_instrument_patch_gui(wblock->wtrack->track->patch, false);
+		struct WBlocks *wblock = root->song->tracker_windows->wblock;
+		GFX_update_instrument_patch_gui(wblock->wtrack->track->patch, false);
 
-            root->song->tracker_windows->must_redraw = true;
+		root->song->tracker_windows->must_redraw = true;
             
-            fprintf(stderr,"Got here (loading finished)\n");
-        }
+		fprintf(stderr,"Got here (loading finished)\n");
+	}
 
- exit:
+	if (ret && !isIllegalFilepath(filename))
+		SETTINGS_add_recent_song(STRING_get_chars(filename.id));
 
-        //fprintf(stderr,"Got here2 (loading finished)\n");
+exit:
+
+	//fprintf(stderr,"Got here2 (loading finished)\n");
         
-        if(0){
-          Threadsafe_GC_enable();
-        }
+	if(0){
+		Threadsafe_GC_enable();
+	}
 
 	if(isLegalFilepath(mmp2filename)){
-          LoadMMP2(root->song->tracker_windows, mmp2filename);
-          mmp2filename = createIllegalFilepath();
-        }
+		LoadMMP2(root->song->tracker_windows, mmp2filename);
+		mmp2filename = createIllegalFilepath();
+	}
 
-        //fprintf(stderr,"Got here3 (loading finished)\n");
+	//fprintf(stderr,"Got here3 (loading finished)\n");
         
-        if (ret)
-          ResetUndo();
+	if (ret)
+		ResetUndo();
 
-        g_is_loading = false;
+	g_is_loading = false;
 
-        if (ret)
-          PATCH_clean_unused_patches();
+	if (ret)
+		PATCH_clean_unused_patches();
 
-        if (!ret){
-          const vector_t deletable_audiofiles = SAMPLEREADER_get_all_deletable_filenames();
+	if (!ret){
+		const vector_t deletable_audiofiles = SAMPLEREADER_get_all_deletable_filenames();
           
-          VECTOR_FOR_EACH(const wchar_t *filename, &deletable_audiofiles){      
+		VECTOR_FOR_EACH(const wchar_t *filename, &deletable_audiofiles){      
             SAMPLEREADER_mark_what_to_do_with_deletable_file_when_loading_or_quitting(make_filepath(filename), WTT_DONT_KNOW);
-          }END_VECTOR_FOR_EACH;
-        }
+		}END_VECTOR_FOR_EACH;
+	}
         
-        //fprintf(stderr,"Got here4 (loading finished)\n");
+	//fprintf(stderr,"Got here4 (loading finished)\n");
         
-        return ret;
+	return ret;
 }
 
 bool Load_CurrPos(struct Tracker_Windows *window){

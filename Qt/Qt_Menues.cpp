@@ -22,6 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/nsmtracker.h"
 #include "../common/settings_proc.h"
+#include "../common/disk_load_proc.h"
+#include "../api/api_common_proc.h"
 #include "EditorWidget.h"
 #include "Timer.hpp"
 
@@ -33,6 +35,79 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern QApplication *qapplication;
 
 QMenuBar *g_main_menu_bar = NULL;
+
+static QMenu *g_first_menu = NULL;
+
+static QMenu *g_recent_menu = nullptr;
+
+static void populate_recent_menu(void)
+{
+  if (g_recent_menu == nullptr)
+    return;
+
+  g_recent_menu->clear();
+
+  bool has_items = false;
+  for (int i = 0; i < 30; i++)
+  {
+    char key[64];
+    snprintf(key, sizeof(key), "recent_song_%d", i);
+    const char *filename = SETTINGS_read_string(key, "");
+    if (filename == nullptr || strlen(filename) == 0)
+      break;
+
+    has_items = true;
+    QAction *action = g_recent_menu->addAction(QString::fromUtf8(filename));
+    action->setData(QString::fromUtf8(filename));
+  }
+
+  if (!has_items)
+  {
+    QAction *action = g_recent_menu->addAction("(no recent files)");
+    action->setEnabled(false);
+  }
+}
+
+static void find_and_setup_recent_menu(QMenu *parent)
+{
+  for (QAction *action : parent->actions())
+  {
+    if (action->text() == "Recent-main-menu-99992222")
+    {
+      QMenu *menu = action->menu();
+      if (menu != nullptr)
+      {
+        action->setText("Recent");
+        g_recent_menu = menu;
+        g_recent_menu->clear();
+
+        QObject::connect(g_recent_menu, &QMenu::aboutToShow, []()
+        {
+			populate_recent_menu();
+        });
+
+        QObject::connect(g_recent_menu, &QMenu::triggered, [](QAction *action)
+        {
+          QString filename = action->data().toString();
+          if (!filename.isEmpty())
+            LoadSong_CurrPos(getWindowFromNum(-1), make_filepath(STRING_create(filename.toUtf8().constData())));
+        });
+
+        return;
+      }
+    }
+
+    QMenu *submenu = action->menu();
+    if (submenu != nullptr)
+      find_and_setup_recent_menu(submenu);
+  }
+}
+
+void init_recent_menu(void)
+{
+  if (g_first_menu != nullptr)
+	  find_and_setup_recent_menu(g_first_menu);
+}
 
 namespace{
 
@@ -121,11 +196,12 @@ struct Menues{
   QMenuBar *base;
 };
 
-static QMenu *g_first_menu = NULL;
+} // end of anonymous namespace for MyMenu, Menues
 
 static QVector<QMenu*> g_all_menus;
- 
 static struct Menues *current_menu = NULL;
+
+namespace{
 
 class MenuItem : public QObject
 {
@@ -354,7 +430,7 @@ void initMenues(QMenuBar *base_menu){
   current_menu = (struct Menues*)V_calloc(1, sizeof(struct Menues));
   //g_base_menues = current_menu;
   current_menu->base = base_menu;
-  
+
 #if 0
   GFX_AddMenuItem(NULL, "item1", "dosomething");
   GFX_AddMenuItem(NULL, "item2", "");
