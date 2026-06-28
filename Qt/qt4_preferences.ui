@@ -10340,6 +10340,13 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                </spacer>
               </item>
+              <item row="1" column="0" colspan="3">
+               <widget class="QLabel" name="label_msaa_supported">
+                <property name="text">
+                 <string>Supported values by current backend:</string>
+                </property>
+               </widget>
+              </item>
              </layout>
             </widget>
            </item>
