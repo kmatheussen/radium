@@ -5699,7 +5699,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
     (set-playlist-and-events! message (list playlist new-events)))
   
   (define (add-instruments-and-events! message new-instruments-and-events)
-    (c-display ":message" message ":new-instruments-and-events" new-instruments-and-events)
+    ;;(c-display ":message" message ":new-instruments-and-events" new-instruments-and-events)
     (define cloned-instruments (map (lambda (cloned-instrument)
                                       ;; old-instrumentnum can be 0 when a clashing effect (vibrato, tremolo, etc.)
                                       ;; is not preceded by a note, i.e. no real instrument is referenced.
