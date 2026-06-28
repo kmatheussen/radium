@@ -226,9 +226,12 @@ static double xi_get_frequency(disk_t *file, int note, int sample_num){
 //
 // Also, the interface for loading xi intruments with libsndfile is currently too limited, so we have to parse the files manually anyway.
 
-static bool load_xi_instrument(Data *data, filepath_t filename, bool set_loop_on_off){
+static bool load_xi_instrument(Data *data, filepath_t filename, bool set_loop_on_off, bool *did_set_loop, bool *did_set_pingpong){
   EVENTLOG_add_event(talloc_format("load_xi_instrument -%S-", filename.id));
   bool ret=false;
+
+  if (did_set_loop) *did_set_loop = false;
+  if (did_set_pingpong) *did_set_pingpong = false;
 
   disk_t *file=DISK_open_binary_for_reading(filename);
   if(file==NULL){
@@ -255,6 +258,21 @@ static bool load_xi_instrument(Data *data, filepath_t filename, bool set_loop_on
     data->num_different_samples = R_MIN(num_samples,MAX_NUM_SAMPLES);
   }
 
+   // Parse XI volume envelope (offset 0xA2 in XI file, before sample headers)
+  {
+    DISK_set_pos(file, 0xa2);
+    xi_envelope_read_both(&data->xi_vol_env, &data->xi_pan_env, file);
+
+    // If the XI instrument has volume fading, disable the Sampler ADSR.
+    // The XI volume envelope + volfade handle the note lifecycle instead.
+    if (data->xi_vol_env.volfade > 0)
+      data->p.ahdsr_onoff = false;
+
+    // Warn about stereo XI samples (bit 5 in panning flags)
+    if (data->xi_pan_env.flags & XI_STEREO_SAMPLE)
+      showAsyncMessage("Stereo XI samples are not supported. Only the left channel will be used.");
+  }
+
   {
     int sample_num;
 
@@ -268,12 +286,23 @@ static bool load_xi_instrument(Data *data, filepath_t filename, bool set_loop_on
 
       set_legal_loop_points(sample,-1,-1, set_loop_on_off); // By default, loop all.
 
-      if(xi_get_loop_type(file,sample_num)!=0){ // TODO: Implement those other types of loops.
-        set_legal_loop_points(sample,
-                              xi_get_loop_start(file,sample_num),
-                              xi_get_loop_end(file,sample_num),
-                              set_loop_on_off
-                              );
+      {
+        int loop_type = xi_get_loop_type(file,sample_num);
+
+        if (loop_type != 0){
+          set_legal_loop_points(sample,
+                                xi_get_loop_start(file,sample_num),
+                                xi_get_loop_end(file,sample_num),
+                                true
+                                );
+
+          if (did_set_loop) *did_set_loop = true;
+
+          if (loop_type == 2){ // 2 = ping-pong
+            data->p.pingpong = true;
+            if (did_set_pingpong) *did_set_pingpong = true;
+          }
+        }
       }
 
       sample.sound = xi_get_sample(file, sample_num);
