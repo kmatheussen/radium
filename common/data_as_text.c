@@ -354,39 +354,68 @@ bool DAT_keypress(struct Tracker_Windows *window, const int key, const bool is_k
 
 	if (get_val_from_key(key, is_hex) == -1)
 	{
-
-		// Don't consume navigation/function keys — let them fall through to EventReciever.
+		// If pressing a character/number key (a-f, 0-9), show the
+		// valid-keys message but let the key through so it isn't
+		// consumed (giving Space, Return, etc. a chance to work).
 		switch(key)
 		{
-			case EVENT_UPARROW:
-			case EVENT_DOWNARROW:
-			case EVENT_LEFTARROW:
-			case EVENT_RIGHTARROW:
-			case EVENT_PAGE_UP:
-			case EVENT_PAGE_DOWN:
-			case EVENT_HOME:
-			case EVENT_END:
-			case EVENT_TAB:
-			case EVENT_ESC:
-			case EVENT_INSERT:
-			case EVENT_BACKSPACE:
-			case EVENT_F1 ... EVENT_F6:
-			case EVENT_F7 ... EVENT_F12:
-			case EVENT_F13 ... EVENT_F16:
-			case EVENT_F20:
-				return false;
+			case EVENT_A:
+			case EVENT_B:
+			case EVENT_C:
+			case EVENT_D:
+			case EVENT_E:
+			case EVENT_F:
+			case EVENT_G:
+			case EVENT_H:
+			case EVENT_I:
+			case EVENT_J:
+			case EVENT_K:
+			case EVENT_L:
+			case EVENT_LR1:
+			case EVENT_LR2:
+			case EVENT_LR3:
+			case EVENT_M:
+			case EVENT_N:
+			case EVENT_O:
+			case EVENT_P:
+			case EVENT_PR1:
+			case EVENT_PR2:
+			case EVENT_Q:
+			case EVENT_R:
+			case EVENT_S:
+			case EVENT_T:
+			case EVENT_U:
+			case EVENT_V:
+			case EVENT_W:
+			case EVENT_X:
+			case EVENT_Y:
+			case EVENT_Z:
+			case EVENT_ZL1:
+			case EVENT_MR1:
+			case EVENT_MR2:
+			case EVENT_MR3:
+			case EVENT_0:
+			case EVENT_0R1:
+			case EVENT_0R2:
+			case EVENT_1:
+			case EVENT_2:
+			case EVENT_3:
+			case EVENT_4:
+			case EVENT_5:
+			case EVENT_6:
+			case EVENT_7:
+			case EVENT_8:
+			case EVENT_9:
+				if (desc == NULL)
+					return false;
+				
+				GFX_SetStatusBar(talloc_format("Valid keys: 0-9%s, %sDelete",
+											   is_hex ? ", a-f" : "",
+											   valid_keys_has_t ? "g, t, " : "g, "));
+				return true;
 		}
 
-		// Signature track: don't show message, just let the key through.
-		if (desc == NULL)
-			return false;
-
-		GFX_SetStatusBar(talloc_format("Valid keys: 0-9%s, %sDelete",
-		                               is_hex ? ", a-f" : "",
-		                               valid_keys_has_t ? "g, t, " : "g, "));
-
-		// Consume the key so it doesn't trigger unexpected keybindings.
-		return true;
+		return false;
 	}
 
   
