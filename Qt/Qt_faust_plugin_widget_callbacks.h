@@ -310,7 +310,7 @@ struct FaustResultSvgView
 					{
 						QString name = _navStack[i].fileName();
 						
-						int dash = name.indexOf(QStringLiteral("-0x"));
+						int dash = name.indexOf(QStringLiteral("-0"));
 						
 						if (dash > 0)
 							name = name.left(dash);
