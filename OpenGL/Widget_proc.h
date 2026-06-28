@@ -15,6 +15,7 @@ class QWindow;
   extern QWidget *GL_create_widget(QWidget *parent);
   extern void GL_stop_widget(QWidget *widget);
   extern QWindow *GL_get_editor_qwindow(void);
+  extern const char *GL_get_supported_msaa_samples(void);
 //extern void GL_maybe_estimate_vblank(QWidget *widget);
 
   extern "C" {

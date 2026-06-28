@@ -510,6 +510,11 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
         mma32->setChecked(true);
         break;
       }
+      {
+        const char *supported = GL_get_supported_msaa_samples();
+        label_msaa_supported->setText(QString("Supported by current backend: ") + supported);
+      }
+
 #if 0
       QString w="999999999";
       adjustWidthToFitText(mma1, w);

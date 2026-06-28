@@ -1860,6 +1860,22 @@ int GL_get_multisample(void){
   return R_BOUNDARIES(1, SETTINGS_read_int32("qrhi_multisample", 8), 32);
 }
 
+const char *GL_get_supported_msaa_samples(void)
+{
+  if (g_rhi == NULL)
+    return "(not available)";
+
+  const auto counts = g_rhi->supportedSampleCounts();
+  if (counts.isEmpty())
+    return "(none)";
+
+  QStringList parts;
+  for (int s : counts)
+    parts.append(QString::number(s));
+
+  return talloc_strdup(parts.join(", ").toUtf8().constData());
+}
+
 void GL_set_safe_mode(bool onoff){
   printf("setting safe mode to %d\n",onoff);
   SETTINGS_write_bool("safe_mode", onoff);
