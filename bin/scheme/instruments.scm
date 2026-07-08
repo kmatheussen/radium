@@ -2677,6 +2677,12 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                                  (<ra> :create-midi-instrument "Unnamed"))))
   
 ;; Note: Used for shortcut
+(delafina (assign-fluid-drum-instrument-for-track :tracknum -1)
+  (assign-instrument-for-track tracknum
+                               (lambda ()
+                                 (<ra> :create-audio-instrument "FluidSynth" "FluidSynth"))))
+
+;; Note: Used for shortcut
 (define (assign-new-instrument-for-track type-name plugin-name)
   (assign-instrument-for-track -1
                                (lambda ()
@@ -2772,8 +2778,10 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
          :shortcut assign-sampler-for-track
          (lambda ()
            (LOAD (<ra> :create-audio-instrument "Sample Player" "Sample Player"))))
-   "Drums" (lambda ()
-             (LOAD (<ra> :create-audio-instrument "FluidSynth" "FluidSynth")))
+   (list "Drums"
+         :shortcut assign-fluid-drum-instrument-for-track
+         (lambda ()
+           (LOAD (<ra> :create-audio-instrument "FluidSynth" "FluidSynth"))))
    ;;(if (<ra> :has-pure-data)
    ;;    (list "<New Pd Instrument>" (lambda ()
    ;;                                  (LOAD (<ra> :create-audio-instrument "Pd" "Simple Midi Synth"))))
