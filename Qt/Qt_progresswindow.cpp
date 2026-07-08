@@ -214,13 +214,7 @@ namespace{
 
       painter.setPen(QPen(QColor("#3138bf")));
       
-      QFontMetrics fm(font);
-      int actual_text_height = fm.boundingRect(_text).height();
-      QRectF rect(border, height() - text_height - border, width()-border*2, actual_text_height);
-
-      //generate_new_text();
-        
-      painter.drawText(rect, _text);
+      painter.drawText(QPointF(border, height() - border), _text);
     }
     
     void resizeEvent(QResizeEvent *ev) override{
