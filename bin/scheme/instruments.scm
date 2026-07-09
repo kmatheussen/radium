@@ -2093,6 +2093,10 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
               )))))
 
 
+(define (show-effect-popup-menu-help)
+  (FROM-C-show-help-window "help/index.html?page=effect_popup_menu"))
+
+
 (delafina (get-effect-popup-entries :instrument-id
                                     :effect-name
                                     :automation-error-message #f ;; If set to a string, the entries will be disabled, and this will be the text
@@ -2235,8 +2239,7 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                         (edit-instrument-effect (string->keyword (string-drop (string->keybinding-string effect-name) 1)))))))))
    "-----------------"
    (list "Help"
-         (lambda ()
-           (FROM-C-show-help-window "help/index.html?page=effect_popup_menu")))
+         show-effect-popup-menu-help)
    
    ))
   
