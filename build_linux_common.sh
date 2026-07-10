@@ -193,6 +193,7 @@ export OS_OPTS="-Werror=array-bounds $CPUOPTS -DFOR_LINUX -DRADIUM_USES_MOLD_OR_
 
 if ! is_0 $INCLUDE_FAUSTDEV ; then
     export OS_OPTS="$OS_OPTS -DWITH_FAUST_DEV"
+    export OS_OPTS="$OS_OPTS -DWITH_FAUST_DEV2"
 fi
 
 if ! is_0 $INCLUDE_PDDEV ; then

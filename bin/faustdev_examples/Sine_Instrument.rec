@@ -456,7 +456,7 @@ BOOL_TYPE
 name
 0
 STRING_TYPE
-Faust Dev
+Faust Dev 2
 plugin_state
 0
 HASH_TYPE
@@ -868,7 +868,7 @@ BOOL_TYPE
 type_name
 0
 STRING_TYPE
-Faust Dev
+Faust Dev 2
 << HASH MAP V5 END
 color
 0

@@ -1144,7 +1144,6 @@ void CRASHREPORTER_send_assert_message(Crash_Type crash_type, const char *fmt,..
   RT_request_to_stop_playing();
   RT_pause_plugins();
 
-
   CRASHREPORTER_send_message_with_backtrace(message, crash_type, time);
 
 #if 0

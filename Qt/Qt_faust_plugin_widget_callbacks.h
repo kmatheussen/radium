@@ -556,8 +556,98 @@ static radium::Editor *create_faust_editor(QWidget *parent)
 }
 
 
+// FAUST2_ function declarations (defined in audio/Faust_dev2.cpp)
+extern void FAUST2_set_code(struct SoundPlugin *plugin, QString code);
+extern void FAUST2_set_options(struct SoundPlugin *plugin, QString options);
+extern bool FAUST2_is_compiling(const struct SoundPlugin *plugin);
+extern QString FAUST2_get_code(const struct SoundPlugin *plugin);
+extern QString FAUST2_get_options(const struct SoundPlugin *plugin);
+extern void FAUST2_generate_cpp_code(const struct SoundPlugin *plugin, int generation, std::function<void(int, QString)> callback);
+extern QString FAUST2_get_error_message(const struct SoundPlugin *plugin);
+extern QString FAUST2_get_svg_path(const struct SoundPlugin *plugin);
+extern radium::FAUST_calledRegularlyByParentReply FAUST2_calledRegularlyByParent(struct SoundPlugin *plugin);
+extern void FAUST2_start_compilation(struct SoundPlugin *plugin);
+extern bool FAUST2_set_use_interpreter_backend(struct SoundPlugin *plugin, bool use_interpreter);
+extern bool FAUST2_get_use_interpreter_backend(struct SoundPlugin *plugin);
+
+
+
 namespace{
-  
+
+// Dispatch functions that call FAUST_ or FAUST2_ depending on plugin type.
+static inline bool faust_disp_is_compiling(const SoundPlugin *plugin){
+  if (!strcmp(plugin->type->type_name, "Faust Dev 2"))
+    return FAUST2_is_compiling(plugin);
+  else
+    return FAUST_is_compiling(plugin);
+}
+static inline QString faust_disp_get_svg_path(const SoundPlugin *plugin){
+  if (!strcmp(plugin->type->type_name, "Faust Dev 2"))
+    return FAUST2_get_svg_path(plugin);
+  else
+    return FAUST_get_svg_path(plugin);
+}
+static inline QString faust_disp_get_code(const SoundPlugin *plugin){
+  if (!strcmp(plugin->type->type_name, "Faust Dev 2"))
+    return FAUST2_get_code(plugin);
+  else
+    return FAUST_get_code(plugin);
+}
+static inline void faust_disp_generate_cpp_code(const SoundPlugin *plugin, int generation, std::function<void(int, QString)> callback){
+  if (!strcmp(plugin->type->type_name, "Faust Dev 2"))
+    FAUST2_generate_cpp_code(plugin, generation, callback);
+  else
+    FAUST_generate_cpp_code(plugin, generation, callback);
+}
+static inline radium::FAUST_calledRegularlyByParentReply faust_disp_calledRegularlyByParent(SoundPlugin *plugin){
+  if (!strcmp(plugin->type->type_name, "Faust Dev 2"))
+    return FAUST2_calledRegularlyByParent(plugin);
+  else
+    return FAUST_calledRegularlyByParent(plugin);
+}
+static inline QString faust_disp_get_error_message(const SoundPlugin *plugin){
+  if (!strcmp(plugin->type->type_name, "Faust Dev 2"))
+    return FAUST2_get_error_message(plugin);
+  else
+    return FAUST_get_error_message(plugin);
+}
+static inline void faust_disp_set_code(SoundPlugin *plugin, QString code){
+  if (!strcmp(plugin->type->type_name, "Faust Dev 2"))
+    FAUST2_set_code(plugin, code);
+  else
+    FAUST_set_code(plugin, code);
+}
+static inline void faust_disp_set_options(SoundPlugin *plugin, QString options){
+  if (!strcmp(plugin->type->type_name, "Faust Dev 2"))
+    FAUST2_set_options(plugin, options);
+  else
+    FAUST_set_options(plugin, options);
+}
+static inline void faust_disp_start_compilation(SoundPlugin *plugin){
+  if (!strcmp(plugin->type->type_name, "Faust Dev 2"))
+    FAUST2_start_compilation(plugin);
+  else
+    FAUST_start_compilation(plugin);
+}
+static inline QString faust_disp_get_options(const SoundPlugin *plugin){
+  if (!strcmp(plugin->type->type_name, "Faust Dev 2"))
+    return FAUST2_get_options(plugin);
+  else
+    return FAUST_get_options(plugin);
+}
+static inline bool faust_disp_get_use_interpreter_backend(SoundPlugin *plugin){
+  if (!strcmp(plugin->type->type_name, "Faust Dev 2"))
+    return FAUST2_get_use_interpreter_backend(plugin);
+  else
+    return FAUST_get_use_interpreter_backend(plugin);
+}
+static inline bool faust_disp_set_use_interpreter_backend(SoundPlugin *plugin, bool use_interpreter){
+  if (!strcmp(plugin->type->type_name, "Faust Dev 2"))
+    return FAUST2_set_use_interpreter_backend(plugin, use_interpreter);
+  else
+    return FAUST_set_use_interpreter_backend(plugin, use_interpreter);
+}
+
 class Faust_Plugin_widget : public QWidget, public Ui::Faust_Plugin_widget{
   Q_OBJECT;
 
@@ -608,7 +698,7 @@ public:
 
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 
-    if (FAUST_is_compiling(plugin))
+    if (faust_disp_is_compiling(plugin))
       _faust_compilation_status->setText("&#8987;");
     //_faust_compilation_status->setText("Initializing... ");
     else
@@ -635,8 +725,8 @@ public:
     
     //svg_view->setHtml("<object id=\"svg1\" data=\"file:///home/kjetil/radium/audio/faust_multibandcomp-svg/process.svg\" type=\"image/svg+xml\"></object>");
     //svg_view->setUrl(QUrl("file:///home/kjetil/radium/audio/faust_multibandcomp-svg/process.svg"));
-    _svg_view->setUrl(QUrl::fromLocalFile(QDir::fromNativeSeparators(FAUST_get_svg_path(plugin))));
-    printf("    URL: -%s-. native: -%s-, org: -%s-\n",_svg_view->_url.toString().toUtf8().constData(), QDir::fromNativeSeparators(FAUST_get_svg_path(plugin)).toUtf8().constData(), FAUST_get_svg_path(plugin).toUtf8().constData());
+    _svg_view->setUrl(QUrl::fromLocalFile(QDir::fromNativeSeparators(faust_disp_get_svg_path(plugin))));
+    printf("    URL: -%s-. native: -%s-, org: -%s-\n",_svg_view->_url.toString().toUtf8().constData(), QDir::fromNativeSeparators(faust_disp_get_svg_path(plugin)).toUtf8().constData(), faust_disp_get_svg_path(plugin).toUtf8().constData());
 
     faust_webview_layout->addWidget(_svg_view, 4);
 
@@ -671,7 +761,7 @@ public:
     if (plugin!=NULL) {
       _initing = true;{
         
-        QString new_code = FAUST_get_code(plugin);
+        QString new_code = faust_disp_get_code(plugin);
         if (new_code != _faust_editor->text())
           set_text_in__faust_editor_widget(new_code);
       
@@ -696,7 +786,7 @@ public:
 
       IsAlive is_alive(this);
 
-      FAUST_generate_cpp_code(plugin, _cpp_generation++, [is_alive, this](int generation, QString cpp_code){
+      faust_disp_generate_cpp_code(plugin, _cpp_generation++, [is_alive, this](int generation, QString cpp_code){
 
           R_ASSERT(THREADING_is_main_thread());
 
@@ -730,7 +820,7 @@ public:
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     if (plugin!=NULL) {
 
-      const radium::FAUST_calledRegularlyByParentReply ready = FAUST_calledRegularlyByParent(plugin);      
+      const radium::FAUST_calledRegularlyByParentReply ready = faust_disp_calledRegularlyByParent(plugin);      
 
       if (ready.has_new_data==false){
         R_ASSERT(ready.factory_is_ready==false);
@@ -742,7 +832,7 @@ public:
 
         if (ready.factory_succeeded) {
 
-          _latest_working_code = FAUST_get_code(plugin);
+          _latest_working_code = faust_disp_get_code(plugin);
 
           _faust_compilation_status->setText("<font color=\"green\">&#10004;</font>");
           
@@ -779,7 +869,7 @@ public:
       
       if (ready.svg_is_ready && ready.svg_succeeded) {
         
-        QString svg_path = FAUST_get_svg_path(plugin);
+        QString svg_path = faust_disp_get_svg_path(plugin);
         svg_file_exists = QFile::exists(QDir::fromNativeSeparators(svg_path));
         
         if (svg_file_exists) {
@@ -788,7 +878,7 @@ public:
           
           _svg_view->setUrl(QUrl::fromLocalFile(QDir::fromNativeSeparators(svg_path)));
           
-          printf("    URL: -%s-. native: -%s-, org: -%s-\n",_svg_view->_url.toString().toUtf8().constData(), QDir::fromNativeSeparators(svg_path).toUtf8().constData(), FAUST_get_svg_path(plugin).toUtf8().constData());
+          printf("    URL: -%s-. native: -%s-, org: -%s-\n",_svg_view->_url.toString().toUtf8().constData(), QDir::fromNativeSeparators(svg_path).toUtf8().constData(), faust_disp_get_svg_path(plugin).toUtf8().constData());
 
           update_cpp_editor(plugin);
         }
@@ -808,7 +898,7 @@ public:
                      "<!DOCTYPE html>"
                      "<html>"
                      "<body style=\"background-color:white;\"><big>"
-                     +FAUST_get_error_message(plugin)+
+                     +faust_disp_get_error_message(plugin)+
                      "</big></body>"
                      "</html>"
           ;
@@ -864,11 +954,11 @@ public:
   void start_compilation(QString code){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     if (plugin!=NULL){
-      FAUST_set_code(plugin, code);
+      faust_disp_set_code(plugin, code);
       if (_options_editor != NULL)
-        FAUST_set_options(plugin, _options_editor->text());
+        faust_disp_set_options(plugin, _options_editor->text());
       _faust_compilation_status->setText("&#8987;");
-      FAUST_start_compilation(plugin);
+      faust_disp_start_compilation(plugin);
       //_faust_compilation_status->setText("Compiling... ");
     }
   }
@@ -924,7 +1014,7 @@ public:
         _options_dialog->resize(600,400);
       }
       
-      _options_editor->setText(FAUST_get_options(plugin));
+      _options_editor->setText(faust_disp_get_options(plugin));
       
       _options_dialog->show();
       _options_dialog->raise();
@@ -986,7 +1076,7 @@ public slots:
       if (plugin!=NULL) {
         QString new_code = _faust_editor->text();
         if (new_code != ""){ // <-- QScintilla sometimes gives us empty string in _faust_editor->text() (when there shouldn't be).
-          QString old_code = FAUST_get_code(plugin);
+          QString old_code = faust_disp_get_code(plugin);
           start_compilation(new_code);
           ADD_UNDO(FaustDev_CurrPos(_patch.data(), old_code, _prev_cursor_line, _prev_cursor_index)); // note: _prev_cursor_pos is not correct when pasting something.
         }
@@ -1081,7 +1171,7 @@ static void *Undo_Do_FaustDev(
   Faust_Plugin_widget *faust_plugin_widget = AUDIOWIDGET_get_faust_plugin_widget(audio_instrument_widget);
   R_ASSERT_RETURN_IF_FALSE2(faust_plugin_widget!=NULL, undo_fd);
 
-  const wchar_t *new_code = STRING_create(FAUST_get_code(plugin));
+  const wchar_t *new_code = STRING_create(faust_disp_get_code(plugin));
 
   int new_cursor_line, new_cursor_index;
   faust_plugin_widget->_faust_editor->getCursorPosition(&new_cursor_line, &new_cursor_index);

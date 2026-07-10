@@ -253,6 +253,9 @@ extern "C" {
   int64_t s7extra_callFunc_int_instrument(const func_t *func, instrument_t arg1);
   int64_t s7extra_callFunc2_int_instrument(const char *funcname, instrument_t arg1);
 
+  instrument_t s7extra_callFunc_instrument_instrument(const func_t *func, instrument_t arg1);
+  instrument_t s7extra_callFunc2_instrument_instrument(const char *funcname, instrument_t arg1);
+
   int64_t s7extra_callFunc_int_int_int_int(const func_t *func, int64_t arg1, int64_t arg2, int64_t arg3);
   int64_t s7extra_callFunc2_int_int_int_int(const char *funcname, int64_t arg1, int64_t arg2, int64_t arg3);
 
