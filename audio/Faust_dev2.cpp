@@ -279,7 +279,6 @@ static void delete_dsp_data(FaustDev2Dsp *dsp_data)
 }
 
 
-// The player lock must be held when calling this function.
 static void hotswap_dsp_data(FaustDev2Data *devdata, FaustDev2Dsp *new_dsp)
 {
 	FaustDev2Dsp *old_dsp = devdata->dsp_data;
@@ -298,7 +297,10 @@ static void hotswap_dsp_data(FaustDev2Data *devdata, FaustDev2Dsp *new_dsp)
 		}
 	}
 
-	devdata->dsp_data = new_dsp;
+	{
+		radium::PlayerLock lock;
+		devdata->dsp_data = new_dsp;
+	}
 
 	// Delete old implementation
 	delete old_dsp;
@@ -536,9 +538,7 @@ public:
 				delete devdata->svg_dir;
 			devdata->svg_dir = svg_dir;
 
-			PLAYER_lock();{
-				hotswap_dsp_data(devdata, dsp_data);
-			}PLAYER_unlock();
+			hotswap_dsp_data(devdata, dsp_data);
 
 			if (dsp_data->is_instrument)
 				plugin->type->is_instrument = true;
@@ -914,9 +914,7 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
 													  interp_factory,
 													  sample_rate);
 			if (dsp_data != NULL){
-				PLAYER_lock();{
-					hotswap_dsp_data(devdata, dsp_data);
-				}PLAYER_unlock();
+				hotswap_dsp_data(devdata, dsp_data);
 			}
 		}
 	}
