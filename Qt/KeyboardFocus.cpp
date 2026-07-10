@@ -4,6 +4,7 @@
 #  include "../Qt/Qt_precompiled.hpp"
 #endif
 
+#include <QApplication>
 #include <QVector>
 
 #include "../common/nsmtracker.h"
@@ -41,6 +42,11 @@ void KeyboardFocusFrame::set_focus(bool has_focus)
 						//printf("kf::set_focus/%d 5\n",_type==KeyboardFocusFrameType::EDITOR);
 						g_prev_focus_type = focus->_type;
 						focus->_has_focus = false;
+						{
+							QWidget *focused = QApplication::focusWidget();
+							if (focused && focus->isAncestorOf(focused))
+								focused->clearFocus();
+						}
 						focus->update();
 						if(focus->_type==KeyboardFocusFrameType::EDITOR)
 						{

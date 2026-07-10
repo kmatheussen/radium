@@ -132,6 +132,14 @@ class FocusSnifferQsciScintilla : public GL_PauseCaller, public QsciScintilla{
     }                                 
     QsciScintilla::hideEvent(event_);          
   }
+  void enterEvent(QEnterEvent *event) override {
+    setFocus();
+    QsciScintilla::enterEvent(event);
+  }
+  void leaveEvent(QEvent *event) override {
+    clearFocus();
+    QsciScintilla::leaveEvent(event);
+  }
 };
 
 class FocusSnifferQTextEdit : public GL_PauseCaller, public QTextEdit{
