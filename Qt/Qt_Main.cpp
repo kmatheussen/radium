@@ -2054,7 +2054,22 @@ protected:
 
 #endif
     
-    bool activation_changed = event->type() == QEvent::WindowDeactivate || event->type() == QEvent::WindowActivate;
+    // Qt6 QRhi backend can cause QWindow (rendering surface) to spam activate/deactivate events.
+    // Only treat actual QWidget window activate/deactivate as meaningful, not QWindow surface events.
+    bool window_deactivated = false;
+    bool window_activated = false;
+    
+    if (event->type() == QEvent::WindowDeactivate || event->type() == QEvent::WindowActivate){
+      auto *widget = dynamic_cast<QWidget*>(obj);
+      if (widget != NULL && widget->isWindow()){
+        if (event->type() == QEvent::WindowDeactivate)
+          window_deactivated = true;
+        else
+          window_activated = true;
+      }
+    }
+    
+    bool activation_changed = window_deactivated || window_activated;
 
 #if FOR_LINUX
 
