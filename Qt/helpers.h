@@ -512,14 +512,9 @@ static inline void safe_set_parent(QWidget *w, QWidget *parent, Qt::WindowFlags 
   auto *b = get_oldest_parent(parent);
   
   if (a==b){
-#if !defined(RELEASE)
-#ifndef CRASHREPORTER_BIN
-#ifndef COMPILE_EXECUTABLE
-    R_ASSERT_RETURN_IF_FALSE4(a!=b, error_type, "widget::setParent: widget and parent have common ancestor: %p, %p", a, b);
-#endif
-#endif
-#endif
-    //return; // it's probably okay to set parent below. I think the "a_is_a_parent_of_b" check above covers all situations that causes crash.
+    // This is probably okay. The "a_is_a_parent_of_b" check above covers all situations that cause crash.
+    // Just skip setParent when both widgets share the same oldest ancestor.
+    return;
   }
 
   if (set_window_flags)

@@ -1961,6 +1961,13 @@ void splitBlock(int windownum){
 
 // Warning, must be called via python (does not update graphics or handle undo/redo)
 void setNumTracks(int numtracks, int blocknum, int windownum){
+
+	if (numtracks <= 0)
+	{
+		handleError("setNumTracks: numtracks==%d", numtracks);
+		return;
+	}
+	
   struct Tracker_Windows *window=NULL;
   struct WBlocks *wblock = getWBlockFromNumA(
                                              windownum,

@@ -178,12 +178,12 @@ namespace radium{
     ScopedIgnoreUndo(bool doit = true)
       : doit(doit)
     {
-      if (doit)
+      if (doit && Undo_Is_Currently_Undoing()==false)
         Undo_start_ignoring_undo_operations();
     }
     
     ~ScopedIgnoreUndo(){
-      if (doit)
+      if (doit && Undo_Is_Currently_Undoing()==false)
         Undo_stop_ignoring_undo_operations();
     }
   };

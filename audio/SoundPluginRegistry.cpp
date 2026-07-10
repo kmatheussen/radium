@@ -839,7 +839,7 @@ void PR_init_plugin_types(void){
   create_modulator_plugin();
   create_sample_plugin(true);
   
-#if defined(WITH_PD) || defined(WITH_FAUST_DEV)
+#if defined(WITH_PD) || defined(WITH_FAUST_DEV) || defined(WITH_FAUST_DEV2)
   PR_add_menu_entry(PluginMenuEntry::separator("Development"));
   
 #ifdef WITH_PD
@@ -848,6 +848,10 @@ void PR_init_plugin_types(void){
   
 #ifdef WITH_FAUST_DEV
   create_faust_plugin();
+#endif
+
+#ifdef WITH_FAUST_DEV2
+  create_faust_dev2_plugin();
 #endif
 
 #endif
