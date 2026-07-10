@@ -55,6 +55,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QDialog>
 #include <QPointer>
 #include <QGridLayout>
+#include <QFile>
+#include <QtConcurrent>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
@@ -64,6 +66,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"
 #include "../common/patch_proc.h"
+#include "../common/disk.h"
+
+#include "../common/ArgsCreator.hpp"
 
 #include "../api/api_proc.h"
 #include "../api/api_gui_proc.h"
@@ -978,12 +983,74 @@ QString FAUST2_get_options(const SoundPlugin *plugin)
 
 void FAUST2_generate_cpp_code(const SoundPlugin *plugin, int generation, std::function<void(int, QString)> callback)
 {
-	(void)plugin;
-	QString message = "// C++ code generation not yet implemented for Faust Dev 2.\n";
-	THREADING_run_on_main_thread_async([callback, generation, message]()
-	{
-		callback(generation, message);
+	FaustDev2Data *devdata = (FaustDev2Data*)plugin->data;
+
+	QString code = devdata->code;
+	QString options = devdata->options;
+
+	// Must do this in main thread since DISK_create_non_existant_filename allocates gc-memory.
+	filepath_t template_ = appendFilePaths(DISK_get_temp_dir(), make_filepath(L"radium_faust2_cppsource.cpp"));
+	filepath_t temp_file = DISK_create_non_existant_filename(template_);
+
+	QString filename = STRING_get_qstring(temp_file.id);
+
+	auto ret = QtConcurrent::run([code, options, generation, filename, callback]{
+
+		radium::ArgsCreator args;
+		args.push_back("-o");
+		args.push_back(filename);
+		args.push_back(options.split("\n", Qt::SkipEmptyParts));
+
+		std::string error_message2;
+
+		QString message;
+
+		if (generateAuxFilesFromString(
+		                             "FaustDev",
+		                             code.toUtf8().constData(),
+		                             args.get_argc(),
+		                             args.get_argv(),
+		                             error_message2
+		                             )
+		    == false)
+		{
+
+			message = QString("// Unable to create cpp source: %1").arg(error_message2.c_str());
+
+		} else {
+
+			disk_t *disk = DISK_open_for_reading(filename);
+
+			if (disk==NULL){
+
+				message = QString("// Error! File not found: \"") + filename.toUtf8().constData() + "\"";
+
+			} else {
+
+				QString cpp_code = DISK_read_qstring_file(disk);
+
+				if (DISK_close_and_delete(disk)==false) {
+
+					message = QString("// Error! Unable to read from \"") + filename.toUtf8().constData() + "\"";
+
+				} else {
+
+					message = cpp_code;
+
+				}
+
+			}
+
+			QFile::remove(filename);
+
+		}
+
+		THREADING_run_on_main_thread_async([callback, generation, message]{
+			callback(generation, message);
+		});
+
 	});
+	(void)ret;
 }
 
 QString FAUST2_get_error_message(const SoundPlugin *plugin)
