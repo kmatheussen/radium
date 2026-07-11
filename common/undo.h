@@ -173,19 +173,20 @@ namespace radium{
   };
 
   struct ScopedIgnoreUndo{
-    bool doit;
+	  bool _doit;
 
-    ScopedIgnoreUndo(bool doit = true)
-      : doit(doit)
-    {
-      if (doit)
-        Undo_start_ignoring_undo_operations();
-    }
-    
-    ~ScopedIgnoreUndo(){
-      if (doit)
-        Undo_stop_ignoring_undo_operations();
-    }
+	  ScopedIgnoreUndo(bool doit = true)
+		  : _doit(doit && Undo_Is_Currently_Undoing()==false)
+		{
+			if (_doit)
+				Undo_start_ignoring_undo_operations();
+		}
+	  
+	  ~ScopedIgnoreUndo()
+	  {
+		  if (_doit)
+			  Undo_stop_ignoring_undo_operations();
+	  }
   };
 
   struct UndoOnlyIfNeeded{

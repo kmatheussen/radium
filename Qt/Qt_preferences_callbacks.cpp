@@ -72,7 +72,7 @@ static void minimizeRecursively(QObject *object){
   if (object==NULL)
     return;
   
-  QWidget *widget = dynamic_cast<QWidget*>(object);
+  QWidget *widget = qobject_cast<QWidget*>(object);
   
   if (widget != NULL){
     widget->resize(widget->width()+1, widget->height()+1);
@@ -510,6 +510,11 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
         mma32->setChecked(true);
         break;
       }
+      {
+        const char *supported = GL_get_supported_msaa_samples();
+        label_msaa_supported->setText(QString("Supported by current backend: ") + supported);
+      }
+
 #if 0
       QString w="999999999";
       adjustWidthToFitText(mma1, w);
@@ -528,30 +533,12 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       eraseEstimatedVBlankInterval->setText(vblankbuttontext);
 #endif
 
-#if defined(FOR_MACOSX)
-      // Seems like Apple goes to great lengths to make it impossible to avoid high CPU in OpenGL applications when a window is not visible, unless we accept some stuttering in the graphics.      
-      high_cpu_protection->setChecked(false);
-      high_cpu_protection->setEnabled(false);
-#else      
-      high_cpu_protection->setChecked(doHighCpuOpenGlProtection());
-#endif
-
-#if 0 // FOR_MACOSX
-      // Of course it doesn't work on OSX.
-      bool draw_in_separate_process = false;
-      draw_in_separate_process_onoff->setEnabled(false);
-#else
-      bool draw_in_separate_process = SETTINGS_read_bool("opengl_draw_in_separate_process",true);//GL_using_nvidia_card());
-#endif
-      draw_in_separate_process_onoff->setChecked(draw_in_separate_process);
-
 #if 0
       safeModeOnoff->setChecked(GL_get_safe_mode());
       safeModeOnoff->setEnabled(false);
 #endif
 
       high_priority_render_thread->setChecked(GL_get_high_render_thread_priority());
-      high_priority_drawer_thread->setChecked(false); //GL_get_high_draw_thread_priority());
 
       clampTextRendering->setChecked(GL_get_clamp_text_rendering());
 
@@ -968,16 +955,6 @@ public slots:
       GL_set_clamp_text_rendering(val);
   }
 
-  void on_high_cpu_protection_toggled(bool val){
-    if (_initing==false)
-      setHighCpuOpenGlProtection(val);
-  }
-  
-  void on_draw_in_separate_process_onoff_toggled(bool val){
-    if (_initing==false)
-      SETTINGS_write_bool("opengl_draw_in_separate_process",val);
-  }
-
 #if 0
   void on_safeModeOnoff_toggled(bool val){
     if (_initing==false)
@@ -990,10 +967,6 @@ public slots:
       GL_set_high_render_thread_priority(val);
   }
   
-  void on_high_priority_draw_thread_toggled(bool val){
-	  //if (_initing==false)
-      //GL_set_high_draw_thread_priority(val);
-  }
 
   void on_rhi_null_toggled(bool val){
     if (_initing==false && val)

@@ -34,6 +34,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #  error error
 #endif
 
+#ifndef USE_QTWEBVIEW
+#  error error
+#endif
+
 #ifndef USE_QWEBENGINE
 #  error error
 #endif
@@ -48,7 +52,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QPluginLoader>
 #endif
 
-#if !USE_QSVGVIEWER && !USE_QWEBENGINE
+#if !USE_QSVGVIEWER && !USE_QTWEBVIEW && !USE_QWEBENGINE
 #  include <QtWebKitWidgets/QWebView>
 #endif
 
@@ -80,6 +84,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QLabel>
 #include <QOperatingSystemVersion>
 #include <QStyleFactory>
+
+#if USE_QTWEBVIEW
+#  include <QtWebView>
+#endif
 
 
 #ifdef __linux__
@@ -2046,7 +2054,22 @@ protected:
 
 #endif
     
-    bool activation_changed = event->type() == QEvent::WindowDeactivate || event->type() == QEvent::WindowActivate;
+    // Qt6 QRhi backend can cause QWindow (rendering surface) to spam activate/deactivate events.
+    // Only treat actual QWidget window activate/deactivate as meaningful, not QWindow surface events.
+    bool window_deactivated = false;
+    bool window_activated = false;
+    
+    if (event->type() == QEvent::WindowDeactivate || event->type() == QEvent::WindowActivate){
+      auto *widget = dynamic_cast<QWidget*>(obj);
+      if (widget != NULL && widget->isWindow()){
+        if (event->type() == QEvent::WindowDeactivate)
+          window_deactivated = true;
+        else
+          window_activated = true;
+      }
+    }
+    
+    bool activation_changed = window_deactivated || window_activated;
 
 #if FOR_LINUX
 
@@ -2136,9 +2159,11 @@ protected:
 
     auto ret = QApplication::eventFilter(obj, event);
 
-    if (activation_changed){
-      //static int counter = 0;  printf("   %d: Activation changed: activate: %d deactivate: %d\n", counter++, event->type() == QEvent::WindowActivate, event->type() == QEvent::WindowDeactivate);
-      MOUSE_CYCLE_schedule_unregister_all(true);
+    if (activation_changed)
+	{
+		//static int counter = 0;  printf("   %d: Activation changed: activate: %d deactivate: %d\n", counter++, event->type() == QEvent::WindowActivate, event->type() == QEvent::WindowDeactivate);
+
+		MOUSE_CYCLE_schedule_unregister_all(true);
     }
     
     return ret;
@@ -3345,6 +3370,16 @@ static void setCursor(int64_t guinum, const QCursor &cursor){
 #endif
   
   widget->setCursor(cursor);
+
+  // When the editor uses a native QWindow (via createWindowContainer), the cursor must also
+  // be set directly on the QWindow. Setting it only on the parent QWidget does not propagate
+  // to the embedded QWindow in Qt6.
+  if (guinum == gui_getEditorGui())
+  {
+    QWindow *editor_qwindow = GL_get_editor_qwindow();
+    if (editor_qwindow != nullptr)
+      editor_qwindow->setCursor(cursor);
+  }
 }
 
 void SetNormalPointer(int64_t guinum){
@@ -4029,6 +4064,7 @@ int radium_main(const char *arg){
   GFX_ShowProgressMessage("Creating main menus", true);
   S7CALL2(void_void,"generate-main-menus");
     
+  init_recent_menu();
   //getchar();
 
 
@@ -5008,7 +5044,8 @@ int main(int argc, char **argv){
   init_asan();
 #endif
 #endif
-    
+
+
   bool clean_configuration = false;
   bool set_gpu_backend = false;
   if (argc > 1 && !strcmp(argv[1], "--radium-clean-configuration")){
@@ -5050,8 +5087,38 @@ int main(int argc, char **argv){
 #if defined(FOR_WINDOWS)
 #if defined(RELEASE)
   DWORD progress_pid = atoi(argv[2]);
+  bool has_closed_progress_pid = false;
 #endif
   GC_set_no_dls(1);
+#endif
+
+  auto maybe_close_progress_pid = [&]
+	  (void)
+	  {
+#if defined(RELEASE) && defined(FOR_WINDOWS)
+		  if (!has_closed_progress_pid)
+		  {
+			  auto handle = OpenProcess(PROCESS_ALL_ACCESS, TRUE, progress_pid);
+			  if (handle != NULL)
+				  TerminateProcess(handle, 0);
+			  has_closed_progress_pid = true;
+		  }
+#endif
+	  };
+
+
+#if 0 // made no difference
+//  {
+	  QSurfaceFormat format;
+	  format.setSamples(4); // Request 4x MSAA
+	  
+	  // Intel GPUs often require OpenGL 4.0+ Compatibility Profile for MSAA
+	  format.setVersion(4, 0); 
+	  format.setProfile(QSurfaceFormat::CompatibilityProfile);
+	  
+	  // 2. Set this format as the global application default
+	  QSurfaceFormat::setDefaultFormat(format);
+	  //}
 #endif
 
 #if defined(FOR_LINUX)
@@ -5165,7 +5232,10 @@ int main(int argc, char **argv){
 
   QLocale::setDefault(QLocale::C);
 
-    
+#if USE_QTWEBVIEW
+  QtWebView::initialize();
+#endif
+  
   argv = getQApplicationConstructorArgs(argc, argv); // Add Qt things to the command line arguments. (freetype).
 
   // Create application here in order to get default style. (not recommended, but can't find another way)
@@ -5176,7 +5246,7 @@ int main(int argc, char **argv){
   
   qapplication->setAttribute(Qt::AA_DontCreateNativeWidgetSiblings); // Fix splitter handlers on OSX. Seems like a good flag to set in general. Seems like a hack qt has added to workaround bugs in qt. https://bugreports.qt.io/browse/QTBUG-33479
 
-#if !USE_QSVGVIEWER && !USE_QWEBENGINE
+#if !USE_QSVGVIEWER && !USE_QTWEBVIEW && !USE_QWEBENGINE
   QWebSettings::globalSettings()->setAttribute(QWebSettings::PluginsEnabled, false);
   #if !defined(RELEASE)
     QWebSettings::globalSettings()->setAttribute(QWebSettings::DeveloperExtrasEnabled, true);
@@ -5213,10 +5283,11 @@ int main(int argc, char **argv){
   CRASHREPORTER_init();
   
   if (clean_configuration){
-    clean_configuration2();
-    CRASHREPORTER_dont_report();
-    PLUGINHOST_shut_down();
-    return 0;
+	  maybe_close_progress_pid();
+	  clean_configuration2();
+	  CRASHREPORTER_dont_report();
+	  PLUGINHOST_shut_down();
+	  return 0;
   }
   
   SETTINGS_init();
@@ -5234,10 +5305,10 @@ int main(int argc, char **argv){
 		  has_requested_new_rhi_backend = true;
 	  }
   }
-	  
 
   if (set_gpu_backend)
   {
+	  maybe_close_progress_pid();
 	  set_gpu_backend2();
   }
   else if (!has_requested_new_rhi_backend)
@@ -5248,7 +5319,10 @@ int main(int argc, char **argv){
 		  QString(SETTINGS_read_string("rhi_backend", "-b"));
 	  
 	  if (!successfull_rhi_startup)
+	  {
+		  maybe_close_progress_pid();
 		  set_gpu_backend2();
+	  }
   }
   
 #if defined(FOR_MACOSX) && (defined (__arm64__) || defined (__aarch64__))
@@ -5342,14 +5416,8 @@ int main(int argc, char **argv){
   //QPixmap pixmap(OS_get_full_program_file_path("radium_256x256x32.png"));
   //QPixmap pixmap(QPixmap(OS_get_full_program_file_path("/home/kjetil/radium/pictures/logo_big.png")).scaled(QSize(256,256), Qt::KeepAspectRatioByExpanding));
   GFX_OpenProgress("Please wait, starting program");
-  
-#if defined(RELEASE) && defined(FOR_WINDOWS)
-  {
-    auto handle = OpenProcess(PROCESS_ALL_ACCESS, TRUE, progress_pid);
-    if (handle != NULL)
-      TerminateProcess(handle, 0);
-  }
-#endif
+
+  maybe_close_progress_pid();
 
   DISKPEAKS_start();
   

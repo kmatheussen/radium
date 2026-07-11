@@ -26,6 +26,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Qt_MyQScrollBar.hpp"
 #include "Timer.hpp"
+#include "EditorWidget.h"
+
 
 
 bool g_pause_scroll_area_updates_when_resizing = false;

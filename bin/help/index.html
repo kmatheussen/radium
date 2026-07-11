@@ -297,7 +297,7 @@ const gui_text = `
 
     <h2>GUI Overview</h2>
     <OL align="left" width="50%">
-        <LI> <a onclick="showHide('menu')" href="#!">Menus</A> *
+        <LI> <a onclick="showHide('menu')" href="javascript:void(0)">Menus</A> *
           <div id="menu" style="display: none">
             <UL>
               <LI>Use the <b>left alt key</b> to show/hide menus and to start/stop navigitating the menus with the keyboard.
@@ -308,7 +308,7 @@ const gui_text = `
             </UL>
           </div>
         <LI> <A href="index.html?page=editor">Editor</a>
-        <LI> <a onclick="showHide('blocklist')" href="#!">Blocklist</A> *
+        <LI> <a onclick="showHide('blocklist')" href="javascript:void(0)">Blocklist</A> *
           <div id="blocklist" style="display: none">
             If the current seqtrack is for <b>editor blocks</b>, the blocklist shows a list of all available blocks.
             If the current seqtrack is for <b>audio files</b>, the blocklist shows a list of all available audio files.
@@ -318,20 +318,20 @@ const gui_text = `
               <LI>Shift + rightclick a block to delete a block or audio file.
             </UL>
           </div>
-        <LI><a onclick="showHide('playlist')" href="#!">Playlist</A> *
+        <LI><a onclick="showHide('playlist')" href="javascript:void(0)">Playlist</A> *
           <div id="playlist" style="display: none">
-            The <b>playlist</b> is a textual representation of the current seqtrack in the <a onclick="showHide('sequencer')" href="#!">sequencer</a>. The playlist does not display more information than the sequencer, but it can be more convenient to use, especially if there is only one seqtrack.
+            The <b>playlist</b> is a textual representation of the current seqtrack in the <a onclick="showHide('sequencer')" href="javascript:void(0)">sequencer</a>. The playlist does not display more information than the sequencer, but it can be more convenient to use, especially if there is only one seqtrack.
           </div>
         <LI> <a href="index.html?page=mixer">Mixer</A>
-        <LI> <a onclick="showHide('mixerstripforcurrentinstrument')" href="#!">Mixer strip for current instrument</A> *
+        <LI> <a onclick="showHide('mixerstripforcurrentinstrument')" href="javascript:void(0)">Mixer strip for current instrument</A> *
           <div id="mixerstripforcurrentinstrument" style="display: none">
             <UL>
               <LI>Shows a <a href="index.html?page=mixer">mixer strip</a> for the current instrument.
-              <LI>The current instrument is also shown in the <a onclick="showHide('instrument')" href="#!">instrument widget</a>.
+              <LI>The current instrument is also shown in the <a onclick="showHide('instrument')" href="javascript:void(0)">instrument widget</a>.
               <LI>Input MIDI signals are sent to the current instrument.
             </UL>
           </div>
-        <LI> Main window lower tabs <!-- <A onclick="showHide('lowertabs')" href="#!">Main window lower tabs</a> -->
+        <LI> Main window lower tabs <!-- <A onclick="showHide('lowertabs')" href="javascript:void(0)">Main window lower tabs</a> -->
 <!--
           <div id="lowertabs" style="display: none">
             (under construction)
@@ -340,12 +340,12 @@ const gui_text = `
           <UL>
             <LI> <a href="index.html?page=sequencer">Sequencer</a>
             <LI> <a href="index.html?page=instrument">Instrument widget</a>
-            <LI> <a onclick="showHide('edit')" href="#!">Edit</A> *
+            <LI> <a onclick="showHide('edit')" href="javascript:void(0)">Edit</A> *
               <div id="edit" style="display: none">
                 The edit tab provides various functions to edit notes in the editor. Right-click a button to edit or remove keybinding.
               </div>
           </UL>
-        <LI> <a onclick="showHide('bottombar')" href="#!">Bottom bar</A> *
+        <LI> <a onclick="showHide('bottombar')" href="javascript:void(0)">Bottom bar</A> *
           <div id="bottombar" style="display: none">
             The bottom bar contains elements that might be useful at all times.
 	    <UL>
@@ -420,7 +420,7 @@ const gui_mouse_text = `
           <LI>Either:
             <OL>
               <LI>Press <b>Shift</b> and click <b>Right mouse button</b> at the same time.<br>
-              <LI>Or, press <b>ZL1</b> (the key one step to the left of Z on a <a onclick="showHide('qwerty10')" href="#!">QWERTY</A> keyboard).<br>
+              <LI>Or, press <b>ZL1</b> (the key one step to the left of Z on a <a onclick="showHide('qwerty10')" href="javascript:void(0)">QWERTY</A> keyboard).<br>
                 <div id="qwerty10" style="display: none">
                   <img src="900px-KB_Danish.svg.png" style="background-color:white;"/>
                 </div>
@@ -596,13 +596,13 @@ const gui_common_keybindings_text = `
         </tr><tr>
           <td>Left Ctrl + Keypad 0/1/2/3/4/5/6/7/8/9</td><td>Move cursor to track 10/11/12/13/14/15/16/17/18/19</td>
         </tr><tr>
-          <td>Left Ctrl + A</td><td>Select previous block (Note: <a onclick="showHide('qwerty1')" href="#!">QWERTY</A> keyboard A!)
+          <td>Left Ctrl + A</td><td>Select previous block (Note: <a onclick="showHide('qwerty1')" href="javascript:void(0)">QWERTY</A> keyboard A!)
             <div id="qwerty1" style="display: none">
               <img src="900px-KB_Danish.svg.png" style="background-color:white;"/>
             </div>
           </td>
         </tr><tr>
-          <td>Left Ctrl + F</td><td>Select previous block (Note: <a onclick="showHide('qwerty2')" href="#!">QWERTY</A> keyboard F!)
+          <td>Left Ctrl + F</td><td>Select previous block (Note: <a onclick="showHide('qwerty2')" href="javascript:void(0)">QWERTY</A> keyboard F!)
             <div id="qwerty2" style="display: none">
               <img src="900px-KB_Danish.svg.png" style="background-color:white;"/>
             </div>
@@ -807,7 +807,7 @@ F12          : ra.showMixerHelpWindow
   
     <LI> Alphanumeric keys: <b>0</b>, ..., <b>9</b>, and <b>A</b>, ..., <b>Z</b>.
     <p> 
-    <LI> Locale-independent alphanumeric keys (<A onclick="showHide('qwerty3')" href="#!">QWERTY</A>): <b>QWERTY_1</b>, ...<b>QWERTY_0</b>, and <b>QWERTY_A</b>, ..., <b>QWERTY_Z</b>.
+    <LI> Locale-independent alphanumeric keys (<A onclick="showHide('qwerty3')" href="javascript:void(0)">QWERTY</A>): <b>QWERTY_1</b>, ...<b>QWERTY_0</b>, and <b>QWERTY_A</b>, ..., <b>QWERTY_Z</b>.
       <div id="qwerty3" style="display: none">
         <img src="900px-KB_Danish.svg.png" style="background-color:white;"/>
       </div>
@@ -877,7 +877,7 @@ F12          : ra.showMixerHelpWindow
       <p>
         <LI><b>MENU</b> key: Placed between SPACE and CTRL_R on a PC (the "Windows Menu" key). Not available on Mac.
      <p>
-  <LI> xLx and xRx Keys (<A  onclick="showHide('qwerty4')" href="#!">QWERTY</A>):
+  <LI> xLx and xRx Keys (<A  onclick="showHide('qwerty4')" href="javascript:void(0)">QWERTY</A>):
       <div id="qwerty4" style="display: none">
         <img src="900px-KB_Danish.svg.png" style="background-color:white;"/>
       </div>
@@ -980,7 +980,7 @@ const editor_text = `
 
 <IMG SRC="editor.png" ALT="editor" style="border:10px solid transparent" width="50%" align="right">
 
-See <A href="index.html?page=notetext">Note text</a> or <A href="index.html?page=pianoroll.html">Pianoroll</a> for instructions on how to edit notes to the editor.
+See <A href="index.html?page=notetext">Note text</a> or <A href="index.html?page=pianoroll">Pianoroll</a> for instructions on how to edit notes to the editor.
 
 <p>
 
@@ -993,7 +993,6 @@ See <A href="index.html?page=notetext">Note text</a> or <A href="index.html?page
     <LI>Press <b>Left Alt + Backspace</b> to scroll down the content of the current sub track one line.
   </UL>
 
-  
   <h3>Text sub tracks</h3>
   
   <UL>
@@ -1018,7 +1017,14 @@ The <b>U</b> and <b>D</b> keys, in combination with various qualifier keys, can 
       
   </UL>
             
-            
+  <h3>MIDI Recording</h3>
+  When recording MIDI (adding notes by playing a MIDI keyboard), timing accuracy depends on the audio backend used:
+  <UL>
+    <LI>When using <b>Jack</b>, MIDI timing is sample-accurate.</LI>
+    <LI>When <b>not</b> using Jack, MIDI timing accuracy is limited to the soundcard block size.</LI>
+  </UL>
+
+              
 <small>            
 Note that the editor was from the start in 1999 designed to be a pure step machine. It wasn't designed to support editing while playing because that wasn't the intended workflow of the program. Instead, the player stopped automatically when starting to edit, which is actually a very efficient way to work. However, after numerous requests, editing while playing was eventually possible. But, to avoid having to rewrite almost the whole program, the player was just paused when editing, which caused all playing notes to stop permanently. However, more and more functions have later been rewritten in such a way that the player does not have to pause while editing. There's still many functions left where the player is paused while editing though and that's the reason playing notes sometimes are silenced while editing. Hopefully, all these situations will be removed in the future. This is not the case for the sequencer though. The sequencer was built from the ground up to support editing while playing.
 </small>
@@ -1530,7 +1536,7 @@ const editor_notetext_text = `
           <LI>Press <b>F1</b> to select octave down.
           <LI>Press <b>F2</b> to select octave up.
         </UL>
-        Note that locale setting is ignored when adding notes. Radium always uses a <A onclick="showHide('qwerty3')" href="#!">QWERTY</A> keyboard for note editing.
+        Note that locale setting is ignored when adding notes. Radium always uses a <A onclick="showHide('qwerty3')" href="javascript:void(0)">QWERTY</A> keyboard for note editing.
         <div id="qwerty3" style="display: none">
           <img src="900px-KB_Danish.svg.png" style="background-color:white;"/>
         </div>
@@ -2241,7 +2247,7 @@ const instrument_text = `
         <LI>Enable <b>Sample Seek</b> or <b>MIDI chase</b> for an instrument by pressing the <b>"S"</b> button in the instrument header. Sample seek is only supported by the Sampler instrument. All other instruments will resort to MIDI chase when this option is enabled.
         <LI> Some common instruments:
           <UL>
-            <LI> <a onclick="showHide('sampler')" href="#!">Sample Player</a>
+            <LI> <a onclick="showHide('sampler')" href="javascript:void(0)">Sample Player</a>
               <div id="sampler" style="display: none">
                 The sample player plays audio files.
 		<UL>
@@ -2252,11 +2258,11 @@ const instrument_text = `
 		  <LI>To record audio, either from outside the program or inside the program, click the red <font color="red">Record</font> button in the instrument widget header. A new audio file will be created automatically when recording. Recording will start when the new instrument receives a note, and it will stop recording when that note stops playing.
 		</UL>
               </div>
-            <LI> <a onclick="showHide('faustdev')" href="#!">FaustDev</a>
+            <LI> <a onclick="showHide('faustdev')" href="javascript:void(0)">FaustDev</a>
               <div id="faustdev" style="display: none">
                 The Faust instrument lets you program <A href="http://faust.grame.fr">Faust</A> instruments in Radium. Also note that there is no "compile" button since programs are compiled in realtime while you write code.
               </div>
-            <LI> <a onclick="showHide('puredata')" href="#!">Pure Data</a>
+            <LI> <a onclick="showHide('puredata')" href="javascript:void(0)">Pure Data</a>
               <div id="puredata" style="display: none">
                 The Pure Data instrument lets you program <A href="http://puredata.info">Pure Data</A> instruments in Radium. Currently, this instrument is only available on Linux.
               </div>

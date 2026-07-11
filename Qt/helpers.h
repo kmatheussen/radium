@@ -237,7 +237,11 @@ static inline void moveWindowToCentre(QWidget *widget, QRect parentRect = QRect(
 
   if (widget->window() != widget){
     
+#ifndef CRASHREPORTER_BIN
+#ifndef COMPILE_EXECUTABLE
     R_ASSERT_NON_RELEASE(false);
+#endif
+#endif
     
   } else {
 
@@ -252,7 +256,11 @@ static inline void moveWindowToCentre(QWidget *widget, QRect parentRect = QRect(
 static inline void adjustSizeAndMoveWindowToCentre(QWidget *widget, QRect parentRect = QRect()){
   if (widget->window() != widget){
     
+#ifndef CRASHREPORTER_BIN
+#ifndef COMPILE_EXECUTABLE
     R_ASSERT_NON_RELEASE(false);
+#endif
+#endif
     
   } else {
 
@@ -504,14 +512,9 @@ static inline void safe_set_parent(QWidget *w, QWidget *parent, Qt::WindowFlags 
   auto *b = get_oldest_parent(parent);
   
   if (a==b){
-#if !defined(RELEASE)
-#ifndef CRASHREPORTER_BIN
-#ifndef COMPILE_EXECUTABLE
-    R_ASSERT_RETURN_IF_FALSE4(a!=b, error_type, "widget::setParent: widget and parent have common ancestor: %p, %p", a, b);
-#endif
-#endif
-#endif
-    //return; // it's probably okay to set parent below. I think the "a_is_a_parent_of_b" check above covers all situations that causes crash.
+    // This is probably okay. The "a_is_a_parent_of_b" check above covers all situations that cause crash.
+    // Just skip setParent when both widgets share the same oldest ancestor.
+    return;
   }
 
   if (set_window_flags)
@@ -1081,17 +1084,27 @@ namespace radium{
 // Why doesn't Qt provide this one?
 namespace{
 template <typename T>
-struct ScopedQPointer : public QPointer<T>{
-  T *_widget;
-  ScopedQPointer(T *widget)
-    : QPointer<T>(widget)
-    , _widget(widget)
-  {}
-  ~ScopedQPointer(){
-    printf("Deleting scoped pointer widget %p\n",_widget);
-    delete _widget;
-  }
+struct ScopedQPointer : public QPointer<T>
+{
+	ScopedQPointer(T *widget)
+		: QPointer<T>(widget)
+	{
+	}
+	
+	~ScopedQPointer()
+	{
+		if (QPointer<T>::data() != nullptr)
+		{
+			printf("Deleting scoped pointer widget %p\n", QPointer<T>::data());
+			delete QPointer<T>::data();
+		}
+		else
+		{
+			printf("WARN: ScopedQPointer: widget already deleted, skipping delete\n");
+		}
+	}
 };
+
 /*
 template <typename T>
 struct ScopedQPointer {
@@ -1194,7 +1207,7 @@ static inline void setUpdatesEnabledRecursively(QWidget *widget, bool doit){
     widget->setUpdatesEnabled(doit);
     
     for(auto *c : widget->children()){
-      QWidget *w = dynamic_cast<QWidget*>(c);      
+      QWidget *w = qobject_cast<QWidget*>(c);      
       if (w && w->isWindow()==false)
         setUpdatesEnabledRecursively(w, doit);
     }
@@ -1244,7 +1257,7 @@ static inline void pauseUpdates(QWidget *w, int ms = 50){
 static inline void updateWidgetRecursively(QObject *object, bool is_child = false){
   if (object != NULL){
 
-    QWidget *w = dynamic_cast<QWidget*>(object);
+    QWidget *w = qobject_cast<QWidget*>(object);
 
     if (w != NULL && w->isVisible()) {
 

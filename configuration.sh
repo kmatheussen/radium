@@ -66,6 +66,8 @@ set_var INCLUDE_FAUSTDEV_BUT_NOT_LLVM 0
 # but this variable can be set to something else if ncessary, e.g
 # /usr/local/llvm-90/bin/llvm-config
 #
+# Only used if INCLUDE_FAUSTDEV==1 && INCLUDE_FAUSTDEV_BUT_NOT_LLVM==0 
+#
 set_var LLVM_CONFIG_BIN 0
 
 
@@ -79,19 +81,27 @@ set_var LLVM_CONFIG_BIN 0
 # qt-webkit. (Installing QtWebKit can be quite a hassle
 # sometimes!)
 #
-set_var USE_QWEBENGINE 1
+set_var USE_QWEBENGINE 0
 
 
 
 ########################################################
-# If enabled, use QSvgViewer instead of QWebEngine or QtWebKit
+# If enabled, use QtWebView instead of QWebEngine or QtWebKit
 #
-# Can be handy to use during development. You can not
-# click on any of the elements in the svg viewer, and
-# you can not drag, but compilation should be faster.
-# HTML pages for help is viewed by opening an external browser.
+# QtWebView embeds native web wiewer, and is the only
+# alternative when using mingw with Qt6.
 #
-set_var USE_QSVGVIEWER 0
+set_var USE_QTWEBVIEW 0
+
+
+
+########################################################
+# If enabled, use QSvgViewer instead of QWebEngine, QtWebKit, or QtWebView
+#
+# Generally better than any of the web viewers for
+# the Faust-Dev instrument.
+#
+set_var USE_QSVGVIEWER 1
 
 
 
@@ -201,7 +211,6 @@ if ! is_0 $QT_PKG_CONFIGURATION_PATH ; then
     export PKGqt="PKG_CONFIG_PATH=$QT_PKG_CONFIGURATION_PATH $PKGqt"
 fi
 
-
 assert_v6()
 {
 	assert_exe_exists $1
@@ -294,6 +303,7 @@ else
     fi
 fi
 
+
 if ! is_0 $INCLUDE_FAUSTDEV ; then
     if is_0 $INCLUDE_FAUSTDEV_BUT_NOT_LLVM ; then
 		export FAUST_USES_LLVM=1
@@ -306,15 +316,12 @@ set_var FAUST_USES_LLVM 0
 if ! is_0 $FAUST_USES_LLVM ; then
 
 	if is_0 $LLVM_CONFIG_BIN ; then
-		if ! which llvm-config ; then
-			handle_failure "llvm-config not found"
-		fi
-	
-		export LLVM_CONFIG_BIN=`which llvm-config`
+		assert_exe_exists llvm-config
+		export LLVM_CONFIG_BIN=$(which llvm-config)
 	fi
-		
-    assert_exe_exists $LLVM_CONFIG_BIN
-    
+
+	assert_exe_exists $LLVM_CONFIG_BIN
+
 	if uname -s |grep Linux > /dev/null ; then
 		
 		old_path=""

@@ -193,6 +193,7 @@ export OS_OPTS="-Werror=array-bounds $CPUOPTS -DFOR_LINUX -DRADIUM_USES_MOLD_OR_
 
 if ! is_0 $INCLUDE_FAUSTDEV ; then
     export OS_OPTS="$OS_OPTS -DWITH_FAUST_DEV"
+    export OS_OPTS="$OS_OPTS -DWITH_FAUST_DEV2"
 fi
 
 if ! is_0 $INCLUDE_PDDEV ; then
@@ -209,7 +210,6 @@ PYTHONLIBNAME=`$PYTHONEXE -c "import sys;print '-lpython'+sys.version[:3]"`
 #export QSCINTILLA_PATH=`pwd`/bin/packages/QScintilla_gpl-2.10.8
 export QSCINTILLA_PATH=`pwd`/bin/packages/QScintilla_src-2.14.0/src
 
-
 if ! is_0 $INCLUDE_FAUSTDEV ; then
     #FAUSTLDFLAGS="-L `pwd`/bin/packages/faust/build/lib/libfaust.a -lcrypto -lncurses"
     FAUSTLDFLAGS="-L `pwd`/bin/packages/faust/build/lib/ -lfaust"
@@ -220,16 +220,16 @@ if ! is_0 $INCLUDE_FAUSTDEV ; then
         export OS_OPTS="$OS_OPTS -DWITHOUT_LLVM_IN_FAUST_DEV"
     else
         LLVM_PATH=${LLVM_PATH:-} # use /bin/llvm-config from root directory if empty
-        LLVM_OPTS=`$LLVM_PATH/bin/llvm-config --cppflags`
+        LLVM_OPTS=$($LLVM_CONFIG_BIN --cppflags) #`$LLVM_PATH/bin/llvm-config --cppflags`
         
-        MAYBELLVM=`$LLVM_PATH/bin/llvm-config --libdir`/libLLVM-`$LLVM_PATH/bin/llvm-config --version`.so
+        MAYBELLVM=$($LLVM_CONFIG_BIN --libdir)/libLLVM-$($LLVM_CONFIG_BIN --libdir).so
         if [ -f $MAYBELLVM ]; then
-            LLVMLIBS=-lLLVM-`$LLVM_PATH/bin/llvm-config --version`
+            LLVMLIBS=-lLLVM-$($LLVM_CONFIG_BIN --version)
         else
-            LLVMLIBS=`$LLVM_PATH/bin/llvm-config --libs`
+            LLVMLIBS=$($LLVM_CONFIG_BIN --libs)
         fi
         # ($LLVMLIBS not included since it's included in libfaust)
-        FAUSTLDFLAGS="$FAUSTLDFLAGS `$PKG --libs uuid` `$LLVM_PATH/bin/llvm-config --ldflags` -ltinfo"
+        FAUSTLDFLAGS="$FAUSTLDFLAGS `$PKG --libs uuid` $($LLVM_CONFIG_BIN --ldflags) -ltinfo"
     fi
 else
 	FAUSTLDFLAGS=""
@@ -311,6 +311,11 @@ if ! file $RADIUM_BIN |grep Linux ; then
 fi
 
 #api/s7_types_generator.scm types
+
+# Touch PCH .d files to prevent make from rebuilding them during prerequisite generation.
+# They will be properly regenerated during the main 'make radium' call.
+touch Qt/Qt_precompiled.hpp.d audio/Faust_plugins_precompiled.hpp.d 2>/dev/null || true
+
 make api/s7_types.h buildtype.opt flagopts.opt api/radium_proc.h common/keyboard_sub_ids.h bin/radium_check_recent_libxcb --stop
 
 if [[ $# -ge 1 ]] && [[ $1 == "test" ]] ; then

@@ -37,6 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_MyQSpinBox.h"
 #include "Qt_colors_proc.h"
 #include "FocusSniffers.h"
+#include "KeyboardFocusFrame.hpp"
 
 #include <QTreeView>
 #include <QFileSystemModel>

@@ -1961,6 +1961,13 @@ void splitBlock(int windownum){
 
 // Warning, must be called via python (does not update graphics or handle undo/redo)
 void setNumTracks(int numtracks, int blocknum, int windownum){
+
+	if (numtracks <= 0)
+	{
+		handleError("setNumTracks: numtracks==%d", numtracks);
+		return;
+	}
+	
   struct Tracker_Windows *window=NULL;
   struct WBlocks *wblock = getWBlockFromNumA(
                                              windownum,
@@ -4391,26 +4398,6 @@ bool doModalWindows(void){
 void setModalWindows(bool doit){
   g_modal_windows = doit;
   SETTINGS_write_bool("modal_windows", doit);
-}
-
-//
-
-static DEFINE_ATOMIC(int, g_high_cpu_protection_opengl_protection) = -1;
-
-bool doHighCpuOpenGlProtection(void){  
-  int g = ATOMIC_GET(g_high_cpu_protection_opengl_protection);
-  
-  if (g == -1){
-    g = SETTINGS_read_bool("high_cpu_protection_opengl_protection", true) ? 1 : 0;
-    ATOMIC_SET(g_high_cpu_protection_opengl_protection, g);
-  }
-
-  return g==1 ? true : false;
-}
-
-void setHighCpuOpenGlProtection(bool doit){
-  ATOMIC_SET(g_high_cpu_protection_opengl_protection, doit ? 1 : 0);
-  SETTINGS_write_bool("high_cpu_protection_opengl_protection", doit);
 }
 
 //

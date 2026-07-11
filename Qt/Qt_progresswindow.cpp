@@ -214,11 +214,7 @@ namespace{
 
       painter.setPen(QPen(QColor("#3138bf")));
       
-      QRectF rect(border, height() - text_height - border, width()-border*2, text_height);
-
-      //generate_new_text();
-        
-      painter.drawText(rect, _text);
+      painter.drawText(QPointF(border, height() - border), _text);
     }
     
     void resizeEvent(QResizeEvent *ev) override{

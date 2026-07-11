@@ -16,29 +16,16 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QScrollArea>
+#include <QVBoxLayout>
 
-#ifndef USE_QSVGVIEWER
-#  error error
-#endif
-
-#ifndef USE_QWEBENGINE
-#  error error
-#endif
-
-#if USE_QSVGVIEWER
-#  include <QSvgWidget>
-#elif USE_QWEBENGINE
-  #include <QWebEngineView>
-  #include <QWebEnginePage>
-#else
-  #if USE_QT5
-    #include <QtWebKitWidgets/QWebView>
-    #include <QtWebKitWidgets/QWebFrame>
-  #else
-    #include <QWebView>
-    #include <QWebFrame>
-  #endif
-#endif
+#include <QSvgWidget>
+#include <QLabel>
+#include <QTextDocumentFragment>
+#include <QSvgRenderer>
+#include <QXmlStreamReader>
+#include <QFile>
+#include <QRegularExpression>
+#include <algorithm>
 
 #if defined(__GNUC__) && __GNUC__ >= 5
 #  pragma GCC diagnostic push
@@ -60,299 +47,607 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 static void ADD_UNDO_FUNC(FaustDev_CurrPos(struct Patch *patch, const QString &code, int cursor_line, int cursor_index));
 
-namespace{
-  
-class FaustResultScrollArea : public QScrollArea{
-  Q_OBJECT
-  
-public:
-  
- FaustResultScrollArea(QWidget *parent)
-   : QScrollArea(parent)
-  {
-    setHorizontalScrollBar(new Qt_MyQScrollBar(Qt::Horizontal));
-    setVerticalScrollBar(new Qt_MyQScrollBar(Qt::Vertical));
-  }
-
-  void wheelEvent(QWheelEvent *qwheelevent) override {
-    if (HorizontalModifierPressed(qwheelevent->modifiers()))
-      horizontalScrollBar()->setValue(horizontalScrollBar()->value() + qwheelevent->angleDelta().y()/5);
-    else
-      verticalScrollBar()->setValue(verticalScrollBar()->value() - qwheelevent->angleDelta().y()/5);
-  }
-};
-}
-
 
 #include "Qt_faust_plugin_widget.h"
 
-template <typename T>
-static float myZoomFactor(const T *view){
-  if (g_has_gfx_scale)
-    return view->zoomFactor() / (g_gfx_scale * 0.85);
-  else
-    return view->zoomFactor();
-}
-
-template <typename T>
-static void mySetZoomFactor(T *view, float zoom){
-  if (g_has_gfx_scale)
-    view->setZoomFactor(zoom * g_gfx_scale * 0.85);
-  else
-    view->setZoomFactor(zoom);
-}
-
-namespace{
-  
-struct FaustResultWebView
-#if USE_QSVGVIEWER
-	: public QSvgWidget 
-#elif USE_QWEBENGINE
-	: public QWebEngineView
-#else
-	: public QWebView
-#endif
-  , public radium::MouseCycleFix
+namespace
 {
-
-  bool is_dragging;
-  bool was_dragging;
   
-  FaustResultWebView(QWidget *parent)
-#if USE_QSVGVIEWER
-	  : QSvgWidget(parent)
-#elif USE_QWEBENGINE
-    : QWebEngineView(parent)
-#else
-    : QWebView(parent)
-#endif
-    , is_dragging(false)
-  {
-  }
-
-  QPoint start;
-  QPoint start_scrollPos;
-
-#if USE_QSVGVIEWER
+struct FaustResultSvgView
+	: public QSvgWidget
+	, public radium::MouseCycleFix
+{
+	
+	FaustResultSvgView(QWidget *parent)
+		: QSvgWidget(parent)
+	{
+		setMouseTracking(true);
+	}
+	
+	QPoint start;
+	QPoint start_scrollPos;
+	
 	QUrl _url;
-	QString _content;
-	const QUrl &url(void)
+
+	struct SvgLink
 	{
-		return _url;
-	}
-	void setUrl(const QUrl &url)
+		QRectF bounds; // in SVG coordinate space
+		QString href;
+	};
+	
+	QVector<SvgLink> _links;
+	double _lineMinY = 0;
+	QVector<QUrl> _navStack;       // E.g: [0]=process.svg, [n-1]=parent, [n]=current
+	QVector<QRectF> _segmentRects; // hit-test rects in widget coordinates for _navStack
+	int _hoveredSegment = -1;      // which segment the mouse is over, -1 = none
+	QLabel *_errorLabel = nullptr;  // overlay for error messages (replaces setHtml)
+
+	void _parseSvgLinks(const QString &filepath)
 	{
-		_url = url;
-		load(_url.toLocalFile());//String());
+		_links.clear();
+
+		QFile file(filepath);
+		
+		if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+			return;
+
+		QXmlStreamReader xml(&file);
+
+		// Parse SVG for viewBox dimensions
+		QRectF viewBox;
+		
+		while (!xml.atEnd() && !xml.hasError())
+		{
+			xml.readNext();
+			if (xml.isStartElement() && xml.name().compare(QStringLiteral("svg"), Qt::CaseInsensitive) == 0)
+			{
+				QString vb = xml.attributes().value("viewBox").toString();
+				if (!vb.isEmpty())
+				{
+					auto parts = vb.split(QRegularExpression("[,\\s]+"), Qt::SkipEmptyParts);
+					if (parts.size() >= 4)
+					{
+						viewBox = QRectF(parts[0].toDouble(), parts[1].toDouble(),
+						                 parts[2].toDouble(), parts[3].toDouble());
+					}
+				}
+				break;
+			}
+		}
+
+		// If no viewBox found, SVG rendering will use default; skip link parsing.
+		if (viewBox.isEmpty())
+			return;
+
+		// Parse <a> elements, find the line bounding box,
+		// and detect the full-viewBox background link.
+		QString currentHref;
+		
+		QString backHref;
+		
+		double lineMinY = 1e30;
+		
+		const double vbArea = viewBox.width() * viewBox.height();
+
+		while (!xml.atEnd() && !xml.hasError())
+		{
+			xml.readNext();
+
+			if (xml.isStartElement())
+			{
+				if (xml.name().compare(QStringLiteral("a"), Qt::CaseInsensitive) == 0)
+				{
+					currentHref = xml.attributes().value("xlink:href").toString();
+					
+					if (currentHref.isEmpty())
+						currentHref = xml.attributes().value("href").toString(); // SVG2
+				}
+				else if (!currentHref.isEmpty() && xml.name().compare(QStringLiteral("rect"), Qt::CaseInsensitive) == 0)
+				{
+					double x = xml.attributes().value("x").toDouble();
+					double y = xml.attributes().value("y").toDouble();
+					double w = xml.attributes().value("width").toDouble();
+					double h = xml.attributes().value("height").toDouble();
+					
+					_links.append({QRectF(x, y, w, h), currentHref});
+
+					// Detect the full-viewBox background link by area
+					if (backHref.isEmpty() && (w * h) > vbArea * 0.9)
+						backHref = currentHref;
+				}
+				else if (!currentHref.isEmpty()
+						 && xml.name().compare(QStringLiteral("polygon"), Qt::CaseInsensitive) == 0)
+				{
+					// Compute bounding rect of polygon points
+					QString pts = xml.attributes().value("points").toString();
+					
+					if (!pts.isEmpty())
+					{
+						auto pairs = pts.split(QRegularExpression("[,\\s]+"), Qt::SkipEmptyParts);
+						
+						if (pairs.size() >= 4)
+						{
+							double minX = 1e30, minY = 1e30, maxX = -1e30, maxY = -1e30;
+							
+							for (int i = 0; i + 1 < pairs.size(); i += 2)
+							{
+								double px = pairs[i].toDouble();
+								double py = pairs[i+1].toDouble();
+								minX = qMin(minX, px);
+								minY = qMin(minY, py);
+								maxX = qMax(maxX, px);
+								maxY = qMax(maxY, py);
+							}
+							
+							_links.append({QRectF(minX, minY, maxX - minX, maxY - minY), currentHref});
+						}
+					}
+				}
+				else if (xml.name().compare(QStringLiteral("line"), Qt::CaseInsensitive) == 0)
+				{
+					double y1 = xml.attributes().value("y1").toDouble();
+					double y2 = xml.attributes().value("y2").toDouble();
+					lineMinY = qMin(lineMinY, qMin(y1, y2));
+				}
+			}
+			else if (xml.isEndElement())
+			{
+				if (xml.name().compare(QStringLiteral("a"), Qt::CaseInsensitive) == 0)
+					currentHref.clear();
+			}
+		}
+
+		// Store line bounding box for path stuff in the top
+		// and remove the full-viewBox background link
+		if (lineMinY < 1e6)
+			_lineMinY = lineMinY;
+
+		if (!backHref.isEmpty())
+		{
+			_links.erase(std::remove_if(_links.begin(), _links.end(),
+			    [&backHref](const SvgLink &l){ return l.href == backHref; }),
+			    _links.end());
+		}
 	}
+
+	QPointF _widgetToSvg(QPointF widgetPos) const
+	{
+		QRectF vb = renderer()->viewBoxF();
+		if (vb.isEmpty())
+			return widgetPos;
+
+		QSize sz = size();
+		if (sz.isEmpty())
+			return widgetPos;
+
+		// SVG fills the widget (stretched), so map linearly in X and Y independently.
+		double svgX = widgetPos.x() * vb.width() / sz.width() + vb.x();
+		double svgY = widgetPos.y() * vb.height() / sz.height() + vb.y();
+
+		/*
+		printf("   _widgetToSvg: widget=(%d,%d) size=(%dx%d) vb=(%.0fx%.0f) svg=(%.1f,%.1f)\n",
+			   (int)widgetPos.x(), (int)widgetPos.y(),
+			   sz.width(), sz.height(),
+			   vb.width(), vb.height(),
+			   svgX, svgY);
+		*/
+		
+		return QPointF(svgX, svgY);
+	}
+
 	void setHtml(const QString &html, const QUrl &baseUrl = QUrl())
 	{
-		//load(url.toString());
-		printf("HMMMMMMMMMMMMMMMMMMMMMMMMMM\n");
+		(void)baseUrl;
+
+		// Extract text from <big>...</big> in the simple HTML error format
+		QString text = html;
+		int start = text.indexOf(QStringLiteral("<big>"));
+		int end = text.indexOf(QStringLiteral("</big>"));
+		
+		if (start >= 0 && end > start)
+			text = text
+				.mid(start + 5, end - start - 5)
+				.replace(QStringLiteral("<br>"), QStringLiteral("\n"));
+		else
+			text = QTextDocumentFragment::fromHtml(html).toPlainText();
+
+		if (!_errorLabel)
+		{
+			_errorLabel = new QLabel(this);
+			_errorLabel->setAlignment(Qt::AlignCenter);
+			_errorLabel->setWordWrap(true);
+			_errorLabel->setStyleSheet(QStringLiteral("QLabel { background: white; padding: 8px; color: black; }"));
+			_errorLabel->setAutoFillBackground(true);
+		}
+		
+		_errorLabel->setText(text);
+		_errorLabel->setGeometry(rect());
+		_errorLabel->show();
+		_errorLabel->raise();
 	}
+
+	void setUrl(const QUrl &url)
+	{
+		if (_errorLabel)
+			_errorLabel->hide();
+		
+		_url = url;
+		
+		QString filepath = _url.toLocalFile();
+		
+		if (!QFile::exists(filepath))
+			return;
+		
+		_parseSvgLinks(filepath);
+		
+		load(filepath);
+		
+		update();
+	}
+
 	void reload(void)
 	{
+		if (!_url.isEmpty())
+			setUrl(_url);
 	}
 
-	qreal _zoomfactor = 1.0;
-	qreal	zoomFactor() const
+	void fix_mouseMoveEvent(radium::MouseCycleEvent &event) override
 	{
-		return _zoomfactor;
+		auto *qevent = event.get_qtevent();
+			
+		if (qevent)
+		{
+			// Check for path link hover first
+			bool over_circle = false;
+			int newHover = -1;
+			
+			if (!_navStack.isEmpty() && _segmentRects.size() == _navStack.size())
+			{
+				QPointF wp = qevent->pos();
+				for (int i = 0; i < _segmentRects.size(); i++)
+				{
+					if (_segmentRects[i].contains(wp))
+					{
+						QString name = _navStack[i].fileName();
+						
+						int dash = name.indexOf(QStringLiteral("-0"));
+						
+						if (dash > 0)
+							name = name.left(dash);
+						
+						setStatusbarText(qPrintable(name));
+						setCursor(Qt::PointingHandCursor);
+						
+						over_circle = true;
+						newHover = i;
+						
+						break;
+					}
+				}
+			}
+			
+			if (newHover != _hoveredSegment)
+			{
+				_hoveredSegment = newHover;
+				update(); // repaint to show hover background
+			}
+
+			// Check for xlink hover to show pointing hand cursor
+			QString href;
+			
+			bool over_link = false;
+			
+			if (!over_circle && renderer() != nullptr && !_links.isEmpty())
+			{
+				QPointF svgPos = _widgetToSvg(QPointF(qevent->pos()));
+				for (int i = _links.size() - 1; i >= 0; i--)
+				{
+					if (_links[i].bounds.contains(svgPos))
+					{
+						href = _links[i].href;
+						over_link = true;
+						break;
+					}
+				}
+			}
+			if (!over_circle)
+			{
+				if (over_link)
+				{
+					setStatusbarText(qPrintable(href));
+					setCursor(Qt::PointingHandCursor);
+				}
+				else
+				{
+					setStatusbarText("");
+					setCursor(Qt::ArrowCursor);
+				}
+			}
+		}
 	}
-	void setZoomFactor(qreal factor)
+   
+	bool fix_mousePressEvent(radium::MouseCycleEvent &event) override
 	{
-		_zoomfactor = factor;
+		return true;
 	}
-#endif
-	
-  void setPointer(QPoint pos){
-#if USE_QSVGVIEWER
-#elif !USE_QWEBENGINE
-    QWebFrame *frame = page()->mainFrame();
-    
-    bool is_in_scrollbar = frame->scrollBarGeometry(Qt::Vertical).contains(pos);
 
-    is_in_scrollbar = is_in_scrollbar || frame->scrollBarGeometry(Qt::Horizontal).contains(pos);
-    
-    if (!is_in_scrollbar)
-#endif
-      setCursor(Qt::OpenHandCursor);
-  }
-  
-  void fix_mouseMoveEvent(radium::MouseCycleEvent &event) override {
-    if (is_dragging){
-#if USE_QSVGVIEWER
-#elif !USE_QWEBENGINE
-      QPoint pos = event.pos();
-
-      QPoint delta = start - pos;
-      page()->mainFrame()->setScrollPosition(start_scrollPos + delta);
-#endif
-      was_dragging = true;
-
-      event.accept();
-
-    } else {
-
-      auto *qevent = event.get_qtevent();
-      if (qevent)
-	  {
-
-#if USE_QSVGVIEWER
-		  QSvgWidget::mouseMoveEvent(qevent);
-#elif USE_QWEBENGINE
-		  QWebEngineView::mouseMoveEvent(qevent);
-#else
-		  QWebView::mouseMoveEvent(qevent);
-#endif
-      }
-      
-      if (cursor().shape() == Qt::ArrowCursor)
-        setPointer(event.pos());
-    }
-  }
-  
-  bool fix_mousePressEvent(radium::MouseCycleEvent &event) override {
-#if USE_QSVGVIEWER
-	  bool is_in_scrollbar = false;
-#elif !USE_QWEBENGINE
-    QWebFrame *frame = page()->mainFrame();
-
-    printf("mouse: %d,%d. geo: %d,%d -> %d, %d\n",
-           start.x(), start.y(),
-           frame->scrollBarGeometry(Qt::Vertical).x(), frame->scrollBarGeometry(Qt::Vertical).y(),
-           frame->scrollBarGeometry(Qt::Vertical).width(), frame->scrollBarGeometry(Qt::Vertical).height()
-           );
-
-    bool is_in_scrollbar = frame->scrollBarGeometry(Qt::Vertical).contains(event.pos());
-    
-    is_in_scrollbar = is_in_scrollbar || frame->scrollBarGeometry(Qt::Horizontal).contains(event.pos());
-#else
-    bool is_in_scrollbar = false;
-#endif
-    
-    if (!is_in_scrollbar){
-      
-      start = event.pos();
-#if USE_QSVGVIEWER
-#elif !USE_QWEBENGINE
-      start_scrollPos = frame->scrollPosition();
-#endif
-      is_dragging = true;
-      was_dragging = false;
-
-      setCursor(Qt::ClosedHandCursor);
-              
-      event.accept();
-
-    } else {
-      is_dragging = false;
-      was_dragging = false;
-    }
-
-    auto *qevent = event.get_qtevent();
-    if (qevent)
+	bool fix_mouseReleaseEvent(radium::MouseCycleEvent &event) override
 	{
-#if USE_QSVGVIEWER
-		QSvgWidget::mousePressEvent(qevent);
-#elif USE_QWEBENGINE
-		QWebEngineView::mousePressEvent(qevent);
-#else
-		QWebView::mousePressEvent(qevent);
-#endif
-    }
+		auto *qevent = event.get_qtevent();
+		
+		if (qevent)
+		{
+			bool link_clicked = false;
 
-    return true;
-  }
+			// First check path links
+			if (!_navStack.isEmpty() && _segmentRects.size() == _navStack.size() && qevent != nullptr)
+			{
+				QPointF wp = qevent->pos();
+				for (int i = 0; i < _segmentRects.size(); i++)
+				{
+					if (_segmentRects[i].contains(wp))
+					{
+						//printf("   Path %d clicked -> %s\n", i, _navStack[i].fileName().toUtf8().constData());
+						
+						QUrl target = _navStack[i];
+						
+						_navStack.resize(i);
+						
+						setUrl(target);
+						
+						link_clicked = true;
+						
+						break;
+					}
+				}
+			}
 
-  bool fix_mouseReleaseEvent(radium::MouseCycleEvent &event) override {
-    is_dragging = false;
+			// Then check SVG links
+			if (!link_clicked && renderer() != nullptr && !_links.isEmpty())
+			{
+				QPointF svgPos = _widgetToSvg(QPointF(qevent->pos()));
+				
+				//printf("   svgPos=(%.1f,%.1f) url=%s\n", svgPos.x(), svgPos.y(), _url.toString().toUtf8().constData());
+				
+				for (int i = _links.size() - 1; i >= 0; i--)
+				{
+					bool contains = _links[i].bounds.contains(svgPos);
+
+					/*
+					printf("   link[%d] %s: (%.1f,%.1f %.1fx%.1f) %s\n",
+						   i, _links[i].href.toUtf8().constData(),
+						   _links[i].bounds.x(), _links[i].bounds.y(),
+						   _links[i].bounds.width(), _links[i].bounds.height(),
+						   contains ? "MATCH" : "");
+					*/
+					
+					if (contains)
+					{
+						QUrl resolved = _url.resolved(QUrl(_links[i].href));
+						
+						//printf("   NAVIGATE to %s\n", resolved.toString().toUtf8().constData());
+						
+						_navStack.push_back(_url);
+						
+						setUrl(resolved);
+						
+						link_clicked = true;
+						
+						break;
+					}
+				}
+			}
+		}
+
+		setCursor(Qt::ArrowCursor);
+			
+		return true;
+	}
+
+	MOUSE_CYCLE_CALLBACKS_FOR_QT;
     
-    if (was_dragging) {
-      event.accept();
-    } else {
-      auto *qevent = event.get_qtevent();
-#if USE_QSVGVIEWER
-	  if (qevent)
-		QSvgWidget::mouseReleaseEvent(qevent);
-#elif USE_QWEBENGINE
-      if(qevent)
-        QWebEngineView::mouseReleaseEvent(qevent);
-#else
-      if(qevent)
-        QWebView::mouseReleaseEvent(qevent);
-#endif
-    }
+	// Seems like QWebView tries to find a smart sizeHint by default. We don't want that.
+	QSize sizeHint() const override
+	{
+		return QSize(-1,-1);
+	}
 
-    setPointer(event.pos());
+	void resizeEvent(QResizeEvent *event) override
+	{
+		QSvgWidget::resizeEvent(event);
+		
+		if (_errorLabel && _errorLabel->isVisible())
+			_errorLabel->setGeometry(rect());
+	}
 
-    return true;
-  }
+	void paintEvent(QPaintEvent *event) override
+	{
+		if (_errorLabel && _errorLabel->isVisible())
+		{
+			QPainter p(this);
+			p.fillRect(rect(), Qt::white);
+			
+			return;
+		}
 
-  MOUSE_CYCLE_CALLBACKS_FOR_QT;
-    
-  // Seems like QWebView tries to find a smart sizeHint by default. We don't want that.
-  QSize sizeHint() const override {
-    return QSize(-1,-1);
-  }
+		QSvgWidget::paintEvent(event);
 
-  void wheelEvent(QWheelEvent *qwheelevent) override {
-    if (qwheelevent->modifiers() & Qt::ControlModifier){
-      float zoom = myZoomFactor(this);      
-      float newzoom;
-      if (qwheelevent->angleDelta().y() > 0)
-        newzoom = zoom * 1.2;
-      else
-        newzoom = zoom * 0.8;
+		if (_navStack.isEmpty() || _lineMinY <= 0 || renderer() == nullptr)
+			return;
 
-      if (newzoom > 0.85 && newzoom < 1.15)
-        newzoom = 1.0;
+		QSize sz = size();
+		if (sz.isEmpty() || renderer()->viewBoxF().isEmpty())
+			return;
 
-      if (newzoom > 0.05) {
-#if USE_QSVGVIEWER
-#elif USE_QWEBENGINE
-        page()->setZoomFactor(newzoom);
-#else
-        mySetZoomFactor(page()->mainFrame(), newzoom);
-#endif
-      }
-    } else {
-#if USE_QSVGVIEWER
-#elif !USE_QWEBENGINE
-      Qt::Orientation orientation;
+		double stripH = _lineMinY * sz.height() / renderer()->viewBoxF().height();
 
-      double direction;
-      
-      if (HorizontalModifierPressed(qwheelevent->modifiers())){
-        orientation = Qt::Horizontal;
-        direction = 1.0;
-      } else {
-        orientation = Qt::Vertical;
-        direction = -1.0;
-      }
-    
-      page()->mainFrame()->setScrollBarValue(orientation, page()->mainFrame()->scrollBarValue(orientation) + (direction*qwheelevent->angleDelta().y()/5));
-      //scroll_area->wheelEvent(qwheelevent);
-#endif
-    }
-  }
+		_segmentRects.clear();
+
+		QPainter painter(this);
+
+		// Layout: each arrow gets dedicated gap space proportional to strip height
+		double arrowGapW = stripH * 0.5;
+		double totalArrowW = (_navStack.size() - 1) * arrowGapW;
+		double rectW = (sz.width() - totalArrowW) / (double)_navStack.size();
+		double rectH = stripH / 2.0;  // half the strip height
+		double rectY = stripH / 4.0; // centered vertically
+
+		for (int i = 0; i < _navStack.size(); i++)
+		{
+			double x = i * (rectW + arrowGapW);
+			
+			QRectF rect(x, rectY, rectW, rectH);
+			
+			QString text = _navStack[i].fileName();
+			
+			int dash = text.indexOf(QStringLiteral("-0x"));
+			if (dash > 0)
+				text = text.left(dash);
+			
+			_segmentRects.append(rect);
+
+			// Subtle background to indicate clickability
+			painter.setPen(Qt::NoPen);
+			if (i == _hoveredSegment)
+				painter.setBrush(QColor(0xD2, 0xDC, 0xE6)); // light blue hover
+			else
+				painter.setBrush(QColor(0xEE, 0xF2, 0xF5)); // barely off-white
+			
+			painter.drawRect(rect);
+
+			painter.setPen(QColor(0x33, 0x44, 0x55)); // blue-gray text
+			myDrawText(painter,
+					   rect,
+					   text,
+					   Qt::AlignCenter,
+					   false, 0, true);
+		}
+
+		// Paint right-pointing arrows in the gaps between rectangles
+		if (_navStack.size() > 1)
+		{
+			painter.setPen(QColor(0x88, 0x99, 0xAA)); // lighter blue-gray
+			
+			for (int i = 0; i < _navStack.size() - 1; i++)
+			{
+				double gapX = (i + 1) * rectW + i * arrowGapW;
+				myDrawText(painter,
+						   QRectF(gapX, 0, arrowGapW, stripH),
+						   QStringLiteral("\u25b8"),
+						   Qt::AlignCenter,
+						   false, 0, true);
+			}
+		}
+	}
 };
+
+} // anon. namespace
+
+
+static radium::Editor *create_faust_editor(QWidget *parent)
+{
+	pre_create_editor();
+	
+	auto *ret = new radium::Editor(parent, new QsciLexerCPP(parent));
+	
+	post_create_editor();
+	
+	return ret;
 }
 
 
-static radium::Editor *create_faust_editor(QWidget *parent){
-  pre_create_editor();
+// FAUST2_ function declarations (defined in audio/Faust_dev2.cpp)
+extern void FAUST2_set_code(struct SoundPlugin *plugin, QString code);
+extern void FAUST2_set_options(struct SoundPlugin *plugin, QString options);
+extern bool FAUST2_is_compiling(const struct SoundPlugin *plugin);
+extern QString FAUST2_get_code(const struct SoundPlugin *plugin);
+extern QString FAUST2_get_options(const struct SoundPlugin *plugin);
+extern void FAUST2_generate_cpp_code(const struct SoundPlugin *plugin, int generation, std::function<void(int, QString)> callback);
+extern QString FAUST2_get_error_message(const struct SoundPlugin *plugin);
+extern QString FAUST2_get_svg_path(const struct SoundPlugin *plugin);
+extern radium::FAUST_calledRegularlyByParentReply FAUST2_calledRegularlyByParent(struct SoundPlugin *plugin);
+extern void FAUST2_start_compilation(struct SoundPlugin *plugin);
+extern bool FAUST2_set_use_interpreter_backend(struct SoundPlugin *plugin, bool use_interpreter);
+extern bool FAUST2_get_use_interpreter_backend(struct SoundPlugin *plugin);
 
-  auto *ret = new radium::Editor(parent, new QsciLexerCPP(parent));
-  
-  post_create_editor();
-  
-  return ret;
-}
 
 
 namespace{
-  
+
+// Dispatch functions that call FAUST_ or FAUST2_ depending on plugin type.
+static inline bool faust_disp_is_compiling(const SoundPlugin *plugin){
+  if (!strcmp(plugin->type->type_name, "Faust Dev 2"))
+    return FAUST2_is_compiling(plugin);
+  else
+    return FAUST_is_compiling(plugin);
+}
+static inline QString faust_disp_get_svg_path(const SoundPlugin *plugin){
+  if (!strcmp(plugin->type->type_name, "Faust Dev 2"))
+    return FAUST2_get_svg_path(plugin);
+  else
+    return FAUST_get_svg_path(plugin);
+}
+static inline QString faust_disp_get_code(const SoundPlugin *plugin){
+  if (!strcmp(plugin->type->type_name, "Faust Dev 2"))
+    return FAUST2_get_code(plugin);
+  else
+    return FAUST_get_code(plugin);
+}
+static inline void faust_disp_generate_cpp_code(const SoundPlugin *plugin, int generation, std::function<void(int, QString)> callback){
+  if (!strcmp(plugin->type->type_name, "Faust Dev 2"))
+    FAUST2_generate_cpp_code(plugin, generation, callback);
+  else
+    FAUST_generate_cpp_code(plugin, generation, callback);
+}
+static inline radium::FAUST_calledRegularlyByParentReply faust_disp_calledRegularlyByParent(SoundPlugin *plugin){
+  if (!strcmp(plugin->type->type_name, "Faust Dev 2"))
+    return FAUST2_calledRegularlyByParent(plugin);
+  else
+    return FAUST_calledRegularlyByParent(plugin);
+}
+static inline QString faust_disp_get_error_message(const SoundPlugin *plugin){
+  if (!strcmp(plugin->type->type_name, "Faust Dev 2"))
+    return FAUST2_get_error_message(plugin);
+  else
+    return FAUST_get_error_message(plugin);
+}
+static inline void faust_disp_set_code(SoundPlugin *plugin, QString code){
+  if (!strcmp(plugin->type->type_name, "Faust Dev 2"))
+    FAUST2_set_code(plugin, code);
+  else
+    FAUST_set_code(plugin, code);
+}
+static inline void faust_disp_set_options(SoundPlugin *plugin, QString options){
+  if (!strcmp(plugin->type->type_name, "Faust Dev 2"))
+    FAUST2_set_options(plugin, options);
+  else
+    FAUST_set_options(plugin, options);
+}
+static inline void faust_disp_start_compilation(SoundPlugin *plugin){
+  if (!strcmp(plugin->type->type_name, "Faust Dev 2"))
+    FAUST2_start_compilation(plugin);
+  else
+    FAUST_start_compilation(plugin);
+}
+static inline QString faust_disp_get_options(const SoundPlugin *plugin){
+  if (!strcmp(plugin->type->type_name, "Faust Dev 2"))
+    return FAUST2_get_options(plugin);
+  else
+    return FAUST_get_options(plugin);
+}
+static inline bool faust_disp_get_use_interpreter_backend(SoundPlugin *plugin){
+  if (!strcmp(plugin->type->type_name, "Faust Dev 2"))
+    return FAUST2_get_use_interpreter_backend(plugin);
+  else
+    return FAUST_get_use_interpreter_backend(plugin);
+}
+static inline bool faust_disp_set_use_interpreter_backend(SoundPlugin *plugin, bool use_interpreter){
+  if (!strcmp(plugin->type->type_name, "Faust Dev 2"))
+    return FAUST2_set_use_interpreter_backend(plugin, use_interpreter);
+  else
+    return FAUST_set_use_interpreter_backend(plugin, use_interpreter);
+}
+
 class Faust_Plugin_widget : public QWidget, public Ui::Faust_Plugin_widget{
   Q_OBJECT;
 
@@ -362,16 +657,10 @@ public:
   PluginWidget *_plugin_widget;
   QLabel *_faust_compilation_status;
   radium::GcHolder<struct Patch> _patch;
-  FaustResultWebView *web;
+  FaustResultSvgView *_svg_view;
 	
-#if USE_QSVGVIEWER
-#elif !USE_QWEBENGINE
-  QWebFrame *_last_web_frame;
-#endif
-  QString _web_text;
-  float _svg_zoom_factor;
-  float _error_zoom_factor;
-  
+  QString _svg_view_text;
+
   //QLabel *_error_message;
   radium::Editor *_faust_editor;
   
@@ -396,12 +685,6 @@ public:
     , parent(parent)
     , _faust_compilation_status(faust_compilation_status)
     , _patch(patch)
-#if USE_QSVGVIEWER
-#elif !USE_QWEBENGINE
-    , _last_web_frame(NULL)
-#endif
-    , _svg_zoom_factor(1.0)
-    , _error_zoom_factor(1.0)
     , _size_type(SIZETYPE_NORMAL)
     , _size_type_before_hidden(SIZETYPE_NORMAL)
     , _prev_cursor_line(0) , _cursor_line(0)
@@ -415,7 +698,7 @@ public:
 
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 
-    if (FAUST_is_compiling(plugin))
+    if (faust_disp_is_compiling(plugin))
       _faust_compilation_status->setText("&#8987;");
     //_faust_compilation_status->setText("Initializing... ");
     else
@@ -438,23 +721,14 @@ public:
     //connect(_faust_editor, SIGNAL(linesChanged()), this, SLOT(a_on__faust_editor_linesChanged()));
     connect(_faust_editor, SIGNAL(cursorPositionChanged(int,int)), this, SLOT(a_on__faust_editor_cursorPositionChanged(int,int)));
 
-    web = new FaustResultWebView(this);
+    _svg_view = new FaustResultSvgView(this);
     
-    //web->setHtml("<object id=\"svg1\" data=\"file:///home/kjetil/radium/audio/faust_multibandcomp-svg/process.svg\" type=\"image/svg+xml\"></object>");
-    //web->setUrl(QUrl("file:///home/kjetil/radium/audio/faust_multibandcomp-svg/process.svg"));
-    web->setUrl(QUrl::fromLocalFile(QDir::fromNativeSeparators(FAUST_get_svg_path(plugin))));
-    printf("    URL: -%s-. native: -%s-, org: -%s-\n",web->url().toString().toUtf8().constData(), QDir::fromNativeSeparators(FAUST_get_svg_path(plugin)).toUtf8().constData(), FAUST_get_svg_path(plugin).toUtf8().constData());
+    //svg_view->setHtml("<object id=\"svg1\" data=\"file:///home/kjetil/radium/audio/faust_multibandcomp-svg/process.svg\" type=\"image/svg+xml\"></object>");
+    //svg_view->setUrl(QUrl("file:///home/kjetil/radium/audio/faust_multibandcomp-svg/process.svg"));
+    _svg_view->setUrl(QUrl::fromLocalFile(QDir::fromNativeSeparators(faust_disp_get_svg_path(plugin))));
+    printf("    URL: -%s-. native: -%s-, org: -%s-\n",_svg_view->_url.toString().toUtf8().constData(), QDir::fromNativeSeparators(faust_disp_get_svg_path(plugin)).toUtf8().constData(), faust_disp_get_svg_path(plugin).toUtf8().constData());
 
-#if USE_QSVGVIEWER
-#elif !USE_QWEBENGINE
-    _last_web_frame = web->page()->mainFrame(); // Important that we do this after calling setUrl/setHtml
-    mySetZoomFactor(_last_web_frame, 0.5);
-    _last_web_frame->setScrollBarPolicy(Qt::Horizontal, Qt::ScrollBarAlwaysOn); // The faust editor always has a scroll bar, so it looks strange without it here as well.
-#else
-    web->page()->setZoomFactor(0.5);
-#endif
-    
-    faust_webview_layout->addWidget(web, 4);
+    faust_webview_layout->addWidget(_svg_view, 4);
 
     _plugin_widget = PluginWidget_create(this, patch, SIZETYPE_NORMAL);
     faust_interface_layout_radium->insertWidget(0, _plugin_widget);
@@ -487,7 +761,7 @@ public:
     if (plugin!=NULL) {
       _initing = true;{
         
-        QString new_code = FAUST_get_code(plugin);
+        QString new_code = faust_disp_get_code(plugin);
         if (new_code != _faust_editor->text())
           set_text_in__faust_editor_widget(new_code);
       
@@ -497,7 +771,7 @@ public:
   }
 
   bool showing_svg(void){
-    return _web_text=="";
+    return _svg_view_text=="";
   }
 
   // These two are here so that an older version is not displayed after a newer version.
@@ -512,7 +786,7 @@ public:
 
       IsAlive is_alive(this);
 
-      FAUST_generate_cpp_code(plugin, _cpp_generation++, [is_alive, this](int generation, QString cpp_code){
+      faust_disp_generate_cpp_code(plugin, _cpp_generation++, [is_alive, this](int generation, QString cpp_code){
 
           R_ASSERT(THREADING_is_main_thread());
 
@@ -546,7 +820,7 @@ public:
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     if (plugin!=NULL) {
 
-      const radium::FAUST_calledRegularlyByParentReply ready = FAUST_calledRegularlyByParent(plugin);      
+      const radium::FAUST_calledRegularlyByParentReply ready = faust_disp_calledRegularlyByParent(plugin);      
 
       if (ready.has_new_data==false){
         R_ASSERT(ready.factory_is_ready==false);
@@ -554,13 +828,11 @@ public:
         return;
       }
 
-      printf("========== %d: %d - %d: %d ===========\n", ready.factory_is_ready, ready.factory_succeeded, ready.svg_is_ready, ready.svg_succeeded);
-
       if (ready.factory_is_ready) {
 
         if (ready.factory_succeeded) {
 
-          _latest_working_code = FAUST_get_code(plugin);
+          _latest_working_code = faust_disp_get_code(plugin);
 
           _faust_compilation_status->setText("<font color=\"green\">&#10004;</font>");
           
@@ -593,27 +865,23 @@ public:
       }
 
 
+      bool svg_file_exists = false;
+      
       if (ready.svg_is_ready && ready.svg_succeeded) {
+        
+        QString svg_path = faust_disp_get_svg_path(plugin);
+        svg_file_exists = QFile::exists(QDir::fromNativeSeparators(svg_path));
+        
+        if (svg_file_exists) {
 
-        if (showing_svg())
-          _svg_zoom_factor = myZoomFactor(web);
-        else
-          _error_zoom_factor = myZoomFactor(web);
-        
-        _web_text = "";
-        
-        web->setUrl(QUrl::fromLocalFile(QDir::fromNativeSeparators(FAUST_get_svg_path(plugin))));
-        
-        mySetZoomFactor(web, _svg_zoom_factor);
-        
-        printf("    URL: -%s-. native: -%s-, org: -%s-\n",web->url().toString().toUtf8().constData(), QDir::fromNativeSeparators(FAUST_get_svg_path(plugin)).toUtf8().constData(), FAUST_get_svg_path(plugin).toUtf8().constData());
+          _svg_view_text = "";
+          
+          _svg_view->setUrl(QUrl::fromLocalFile(QDir::fromNativeSeparators(svg_path)));
+          
+          printf("    URL: -%s-. native: -%s-, org: -%s-\n",_svg_view->_url.toString().toUtf8().constData(), QDir::fromNativeSeparators(svg_path).toUtf8().constData(), faust_disp_get_svg_path(plugin).toUtf8().constData());
 
-#if USE_QSVGVIEWER
-#elif !USE_QWEBENGINE
-        _last_web_frame = web->page()->mainFrame(); // Important that we do this after calling setUrl/setHtml
-#endif
-        
-        update_cpp_editor(plugin);
+          update_cpp_editor(plugin);
+        }
       }
 
 
@@ -623,28 +891,27 @@ public:
 
       if (factory_failed || svg_failed){
 
-        if (showing_svg())
-          _svg_zoom_factor = myZoomFactor(web);
-        else
-          _error_zoom_factor = myZoomFactor(web);
+        printf("   ERROR BLOCK: factory_failed=%d svg_failed=%d\n", factory_failed, svg_failed);
           
-        //_last_web_frame->setScrollBarPolicy(Qt::Horizontal, Qt::ScrollBarAlwaysOff);
-        _web_text = 
+        //_last_svg_view_frame->setScrollBarPolicy(Qt::Horizontal, Qt::ScrollBarAlwaysOff);
+        _svg_view_text = 
                      "<!DOCTYPE html>"
                      "<html>"
                      "<body style=\"background-color:white;\"><big>"
-                     +FAUST_get_error_message(plugin)+
+                     +faust_disp_get_error_message(plugin)+
                      "</big></body>"
                      "</html>"
           ;
         
-        web->setHtml(_web_text);
-        mySetZoomFactor(web, _error_zoom_factor);
-#if USE_QSVGVIEWER
-#elif !USE_QWEBENGINE
-        _last_web_frame = web->page()->mainFrame(); // Important that we do this after calling setUrl/setHtml
-#endif
+        _svg_view->setHtml(_svg_view_text);
+
+      } else if (!_svg_view_text.isEmpty()) {
         
+        // Error just cleared but SVG file wasn't ready — reload previous SVG to dismiss error overlay.
+        printf("   ERROR CLEARED: reloading SVG from _url=%s\n", _svg_view->_url.toString().toUtf8().constData());
+        _svg_view_text = "";
+        if (!_svg_view->_url.isEmpty())
+          _svg_view->setUrl(_svg_view->_url);
       }
     }
   }
@@ -654,19 +921,10 @@ public:
 
     // Change vertical scroll bar policy (not easy...)
     {
-#if USE_QSVGVIEWER
-#elif !USE_QWEBENGINE
-      _last_web_frame->setScrollBarPolicy(Qt::Horizontal, Qt::ScrollBarAlwaysOff);
-#endif
       if (showing_svg())
-        web->reload();
+        _svg_view->reload();
       else
-        web->setHtml(_web_text);
-#if USE_QSVGVIEWER
-#elif !USE_QWEBENGINE
-      _last_web_frame = web->page()->mainFrame(); // Important that we do this after calling setUrl/setHtml
-      _last_web_frame->setScrollBarPolicy(Qt::Horizontal, Qt::ScrollBarAsNeeded);
-#endif
+        _svg_view->setHtml(_svg_view_text);
     }
     
     main_layout->addWidget(code_widget);
@@ -678,10 +936,6 @@ public:
   void set_small(void){
     _size_type = SIZETYPE_NORMAL;
     //_is_large = false;
-#if USE_QSVGVIEWER
-#elif !USE_QWEBENGINE
-    _last_web_frame->setScrollBarPolicy(Qt::Horizontal, Qt::ScrollBarAlwaysOn);
-#endif
     
     faust_interface_layout_radium->insertWidget(0, _plugin_widget);
 
@@ -700,11 +954,11 @@ public:
   void start_compilation(QString code){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     if (plugin!=NULL){
-      FAUST_set_code(plugin, code);
+      faust_disp_set_code(plugin, code);
       if (_options_editor != NULL)
-        FAUST_set_options(plugin, _options_editor->text());
+        faust_disp_set_options(plugin, _options_editor->text());
       _faust_compilation_status->setText("&#8987;");
-      FAUST_start_compilation(plugin);
+      faust_disp_start_compilation(plugin);
       //_faust_compilation_status->setText("Compiling... ");
     }
   }
@@ -760,7 +1014,7 @@ public:
         _options_dialog->resize(600,400);
       }
       
-      _options_editor->setText(FAUST_get_options(plugin));
+      _options_editor->setText(faust_disp_get_options(plugin));
       
       _options_dialog->show();
       _options_dialog->raise();
@@ -792,8 +1046,8 @@ public slots:
     printf("Splitter moved to pos %d. Full width: %d, faust_width: %d, web: %d\n", pos, splitter->width(),_faust_editor->width(), webWidth);
 
     if (webWidth > 10){
-      web->resize(webWidth,web->height());//setMinimumWidth(webWidth);
-      web->setMaximumWidth(webWidth+10);
+      svg_view->resize(webWidth,svg_view->height());//setMinimumWidth(webWidth);
+      svg_view->setMaximumWidth(webWidth+10);
     }
   }
   #endif
@@ -822,7 +1076,7 @@ public slots:
       if (plugin!=NULL) {
         QString new_code = _faust_editor->text();
         if (new_code != ""){ // <-- QScintilla sometimes gives us empty string in _faust_editor->text() (when there shouldn't be).
-          QString old_code = FAUST_get_code(plugin);
+          QString old_code = faust_disp_get_code(plugin);
           start_compilation(new_code);
           ADD_UNDO(FaustDev_CurrPos(_patch.data(), old_code, _prev_cursor_line, _prev_cursor_index)); // note: _prev_cursor_pos is not correct when pasting something.
         }
@@ -917,7 +1171,7 @@ static void *Undo_Do_FaustDev(
   Faust_Plugin_widget *faust_plugin_widget = AUDIOWIDGET_get_faust_plugin_widget(audio_instrument_widget);
   R_ASSERT_RETURN_IF_FALSE2(faust_plugin_widget!=NULL, undo_fd);
 
-  const wchar_t *new_code = STRING_create(FAUST_get_code(plugin));
+  const wchar_t *new_code = STRING_create(faust_disp_get_code(plugin));
 
   int new_cursor_line, new_cursor_index;
   faust_plugin_widget->_faust_editor->getCursorPosition(&new_cursor_line, &new_cursor_index);

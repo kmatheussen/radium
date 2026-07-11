@@ -130,11 +130,14 @@ static void delete_file(QString filename){
 
 static void clear_file(QString filename){
 	QFile file(filename);
-	if (file.open(QIODevice::WriteOnly | QIODevice::Text))
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
 	{
 		fprintf(stderr, "\033[31m\n\n !!!!!!!!!!!!!!!!!!!!!!!!! \n\n\n Error in crashreporter.cpp at line %d: Unable to open file \"%s\" for writing. \n\n !!!!!!!!!!!!!!!!!!!!!!!!! \n\n\n \033[0m",
 				__LINE__,
 				filename.toUtf8().constData());
+	}
+	else
+	{
 		file.write("");
 		file.close();
 	}
@@ -1143,7 +1146,6 @@ void CRASHREPORTER_send_assert_message(Crash_Type crash_type, const char *fmt,..
 
   RT_request_to_stop_playing();
   RT_pause_plugins();
-
 
   CRASHREPORTER_send_message_with_backtrace(message, crash_type, time);
 

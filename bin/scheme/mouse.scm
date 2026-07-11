@@ -1851,14 +1851,16 @@
               (get-editor-editor-menu-entries)
               "-------Help"
               (list "Editor help"
-                    (lambda ()
-                      (FROM-C-show-help-window "help/index.html?page=editor")))              
+                    show-editor-help-window)
                                         ;(cadr (swingtext-popup-elements))
               ;(cadr (centtext-popup-elements))
               ;(cadr (chancetext-popup-elements))
               ;(cadr (velocitytext-popup-elements))
               ;(cadr (fxtext-popup-elements))
               ))
+
+(define (show-editor-help-window)
+  (FROM-C-show-help-window "help/index.html?page=editor"))
 
 (define (track-configuration-popup-async X Y)
   (popup-menu (get-track-configuration-menu-entries *current-track-num* X Y)))

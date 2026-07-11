@@ -237,7 +237,6 @@ struct Devdata{
   }
 
   ~Devdata(){
-    delete qtgui_parent.data();
   }
 };
 
@@ -405,6 +404,11 @@ static void dev_cleanup_plugin_data(SoundPlugin *plugin){
 
   FFF_free_now(devdata->reply);
 
+  if (devdata->qtgui_parent.data() != NULL){
+    devdata->qtgui_parent->close();
+    delete devdata->qtgui_parent.data();
+  }
+
   delete devdata->svg_dir;
   
   // We can lose memory by not receiving replies in the queue, but that won't crash the program or make it unstable.
@@ -540,12 +544,6 @@ void create_faust_plugin(void){
     ;
 
   PR_add_plugin_type(plugin_type);
-
-  PR_add_menu_entry(PluginMenuEntry::level_up("FaustDev examples"));
-  {
-    PR_add_load_preset_menu_entries_in_directory(OS_get_full_program_file_path("faustdev_examples"));
-  }
-  PR_add_menu_entry(PluginMenuEntry::level_down());
 }
 
 /*
@@ -599,7 +597,7 @@ void FAUST_generate_cpp_code(const struct SoundPlugin *plugin, int generation, s
       
   auto ret = QtConcurrent::run([code, options, generation, filename, callback]{
 
-      ArgsCreator args;
+      radium::ArgsCreator args;
       args.push_back("-o");
       args.push_back(filename);
       args.push_back(options.split("\n", Qt::SkipEmptyParts));
@@ -845,7 +843,8 @@ static void FAUST_compile_now(struct SoundPlugin *plugin){
 
 bool FAUST_set_use_interpreter_backend(struct SoundPlugin *plugin, bool use_interpreter){
 #if defined(WITHOUT_LLVM_IN_FAUST_DEV)
-  R_ASSERT_NON_RELEASE(false);
+  (void)plugin;
+  (void)use_interpreter;
   return false;
 #endif
   

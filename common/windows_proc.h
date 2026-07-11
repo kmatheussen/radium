@@ -38,7 +38,7 @@ static inline int getBottomSliderX2(struct Tracker_Windows *window){
 
 #ifdef USE_QT4
 
-#include "../Qt/EditorWidget.h"
+//#include "../Qt/EditorWidget.h"
 
 #endif
 

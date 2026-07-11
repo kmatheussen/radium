@@ -3,8 +3,7 @@
 #include <QtConcurrent>
 #include <QPair>
 
-
-
+#include "../common/ArgsCreator.hpp"
 #include "../common/Mutex.hpp"
 #include "../common/QueueStack.hpp"
 
@@ -70,59 +69,6 @@ namespace{
     */
   };
 
-  class ArgsCreator{
-    QStringList args;
-
-    int argc;
-    const char **argv;
-
-    bool is_dirty;
-    
-    void free_argv(){
-      for(int i=0;i<argc;i++)
-        free((void*)argv[i]);
-      free((void*)argv);      
-    }
-    
-    void create(){
-      free_argv();
-      argc = args.size();
-      argv = (const char**)calloc(argc, sizeof(char*));
-      for(int i=0;i<argc;i++)
-        argv[i] = strdup(args[i].toUtf8().constData());
-      is_dirty = false;
-    }
-    
-  public:
-    void push_back(QString arg){
-      args.push_back(arg.replace("%radium_path%",QCoreApplication::applicationDirPath()));
-      is_dirty = true;
-    }
-    void push_back(QStringList args2){
-      for(auto arg : args2)
-        push_back(arg);
-    }
-    
-    int get_argc(void){
-      return args.size();
-    }
-
-    const char** get_argv(void){
-      if (is_dirty)
-        create();
-      return argv;
-    }
-    
-    ArgsCreator()
-      : argc(0)
-      , argv(NULL)
-      , is_dirty(true)
-    {}
-    
-    ~ArgsCreator(){
-      free_argv();
-    }
-  };
 }
 
 /*
@@ -267,7 +213,7 @@ namespace{
 
   private:
 
-    MyQTemporaryDir *create_svg_dir(ArgsCreator &args, QString &error_message) const {
+    MyQTemporaryDir *create_svg_dir(radium::ArgsCreator &args, QString &error_message) const {
       MyQTemporaryDir *svg_dir = new MyQTemporaryDir(QDir::tempPath() + QDir::separator() + "radium_faust_svg_XXXXXX");
 
       if (svg_dir->isValid()==false) {
@@ -286,10 +232,10 @@ namespace{
 #if COMPILE_SVG_IN_PARALLEL
     MyQTemporaryDir *create_svg(const CompileOptions &opts, QString &error_message) const {
 
-      ArgsCreator args;
+      radium::ArgsCreator args;
       args.push_back("-o");
       args.push_back("cppsource.cpp");
-      args.push_back(options.split("\n", QString::SkipEmptyParts));
+      args.push_back(options.split("\n", Qt::SkipEmptyParts));
 
       MyQTemporaryDir *svg_dir = create_svg_dir(args, error_message);
       if (svg_dir==NULL)
@@ -380,7 +326,7 @@ namespace{
     // Check atan2! Opt seems to not work.
 
     QString create_reply_factory(const CompileOptions &opts, FFF_Reply &reply, MyQTemporaryDir* &svg_dir) const {
-      ArgsCreator args;
+      radium::ArgsCreator args;
       args.push_back(opts.options.split("\n", Qt::SkipEmptyParts));
 #if 0 // __WIN32 && !_WIN64
       args.push_back("-l");

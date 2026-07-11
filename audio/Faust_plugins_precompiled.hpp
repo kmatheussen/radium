@@ -1,4 +1,6 @@
-#pragma once
+#if !defined(NO_PRAGMA_ONCE)
+#  pragma once
+#endif
 
 /*
 #include "/usr/share/faust/audio/dsp.h"
