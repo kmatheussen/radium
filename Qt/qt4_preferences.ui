@@ -10539,13 +10539,6 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                </widget>
               </item>
-              <item row="1" column="0">
-               <widget class="QCheckBox" name="high_priority_drawer_thread">
-                <property name="text">
-                 <string>High priority for OpenGL drawer thread (restart not required)</string>
-                </property>
-               </widget>
-              </item>
              </layout>
             </widget>
            </item>
