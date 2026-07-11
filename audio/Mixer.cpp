@@ -484,8 +484,12 @@ static void unlock_player_from_nonrt_thread(int iteration){
       printf("Warning (non-main thread): Holding player lock (%d) for more than %fms: %fms.<br>\n<pre>%s</pre>\n",
              iteration,
              MAX_LOCK_DURATION_TO_REPORT_ABOUT_MS, elapsed,
-             JUCE_get_backtrace()
+             "<no backtrace>" //JUCE_get_backtrace()
              );
+	  if (elapsed > 3)
+	  {
+		  abort();
+	  }
     }
   }
 #endif
@@ -1153,6 +1157,7 @@ struct Mixer{
 
 
   radium::Time _excessive_time;
+  int _num_callback_invocations = 0;
 
   void RT_before_processing_audio_block_not_holding_lock(void) {
     if (ATOMIC_GET(g_request_to_pause_plugins)==true){
@@ -1161,29 +1166,39 @@ struct Mixer{
       pause_time.restart();
     }
       
-    if (g_process_plugins==false) {
-      if (pause_time.elapsed() > 5000)
-        g_process_plugins = true;
-    } else if (_is_saving_sound==false && _excessive_time.elapsed() > 2000) { // 2 seconds
-      if (ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING) {
-        RT_request_to_stop_playing();
-        RT_message("Error!\n"
-                   "\n"
-                   "Audio using too much CPU. Stopping player to avoid locking up the computer.%s",
-                   MULTICORE_get_num_threads()>1 ? "" : "\n\nTip: Turning on Multi CPU processing might help."
-                   );
-      } else {
-		  RT_message("Error!\n"
-                   "\n"
-                   "Audio using too much CPU. Pausing audio processing for 5 seconds to avoid locking up the computer.%s",
-                   MULTICORE_get_num_threads()>1 ? "" : "\n\nTip: Turning on Multi CPU processing might help."
-                   );
-        printf("stop processing plugins\n");
-        g_process_plugins = false; // Because the main thread waits very often waits for the audio thread, we can get very long breaks where nothing happens if the audio thread uses too much CPU.
-      }
-        
-      pause_time.restart();
-      _excessive_time.restart();
+    if (g_process_plugins==false)
+	{
+		if (pause_time.elapsed() > 5000)
+			g_process_plugins = true;
+    }
+	else if (_is_saving_sound==false && _excessive_time.elapsed() > 2000) // 2 seconds
+	{
+		if (_num_callback_invocations >= 64)
+		{
+#if !defined(RELEASE)
+			abort();
+#endif
+			if (ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING) {
+				RT_request_to_stop_playing();
+				RT_message("Error!\n"
+						   "\n"
+						   "Audio using too much CPU. Stopping player to avoid locking up the computer.%s",
+						   MULTICORE_get_num_threads()>1 ? "" : "\n\nTip: Turning on Multi CPU processing might help."
+					);
+			} else {
+				RT_message("Error!\n"
+						   "\n"
+						   "Audio using too much CPU. Pausing audio processing for 5 seconds to avoid locking up the computer.%s",
+						   MULTICORE_get_num_threads()>1 ? "" : "\n\nTip: Turning on Multi CPU processing might help."
+					);
+				printf("stop processing plugins\n");
+				g_process_plugins = false; // Because the main thread waits very often waits for the audio thread, we can get very long breaks where nothing happens if the audio thread uses too much CPU.
+			}
+			
+			pause_time.restart();
+		}
+		
+		_excessive_time.restart();
     }
 
     RT_AUDIOBUFFERS_optimize();
@@ -1251,6 +1266,8 @@ struct Mixer{
       
       _excessive_time.RT_restart();
     }
+
+    _num_callback_invocations++;
 
     RT_before_processing_audio_block_not_holding_lock();
 
