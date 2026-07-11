@@ -389,6 +389,7 @@ static EditorWidget *get_editorwidget(void){
 
 volatile float g_scroll_pos = 0.0f;
 int g_msaa_samples = 8; // set on main thread, read by QRHI thread
+bool g_vsync_enabled = true; // set on main thread, read by QRHI thread
 
 static DEFINE_ATOMIC(double, g_vblank) = 1000 / 60.0;
 
@@ -1521,10 +1522,12 @@ static QRhi::Implementation MAIN_init_qrhi(void)
 
 	//fmt.setSwapBehavior(QSurfaceFormat::SingleBuffer);
 	fmt.setSwapBehavior(QSurfaceFormat::DefaultSwapBehavior);
+	fmt.setSwapInterval(GL_get_vsync() ? 1 : 0);
 	
-	printf("--- Swap interval: %d\n"
+	printf("--- Swap interval: %d (vsync: %s)\n"
 		   "--- Renderable types: %x\n",
 		   fmt.swapInterval(),
+		   GL_get_vsync() ? "on" : "off",
 		   (unsigned int)fmt.renderableType()
 		);
 #if 0
@@ -1845,19 +1848,19 @@ bool GL_check_compatibility(void)
 }
 
 void GL_set_vsync(bool onoff){
-  SETTINGS_write_bool("vsync", onoff);
+  SETTINGS_write_bool("vsync_qrhi", onoff);
 }
 
 bool GL_get_vsync(void){
-  return SETTINGS_read_bool("vsync", true);
+  return SETTINGS_read_bool("vsync_qrhi", true);
 }
 
 void GL_set_multisample(int size){
-  SETTINGS_write_int("qrhi_multisample", size);
+  SETTINGS_write_int("multisample_qrhi", size);
 }
 
 int GL_get_multisample(void){
-  return R_BOUNDARIES(1, SETTINGS_read_int32("qrhi_multisample", 8), 32);
+  return R_BOUNDARIES(1, SETTINGS_read_int32("multisample_qrhi", 8), 32);
 }
 
 const char *GL_get_supported_msaa_samples(void)
@@ -2049,6 +2052,7 @@ QWidget *GL_create_widget(QWidget *parent)
 	//SETTINGS_write_string("last_successfully_started_rhi_backend", "");
 	
 	g_msaa_samples = GL_get_multisample();
+	g_vsync_enabled = GL_get_vsync(); // Ensure SETTINGS_read_bool is not called on the qrhi thread.
 
 	GL_get_clamp_text_rendering(); // Ensure SETTINGS_read_bool is not called on the qrhi thread.
 		
