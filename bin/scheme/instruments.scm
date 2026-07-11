@@ -1790,7 +1790,7 @@
                :enabled enabled
                (lambda ()
                  (insert-plugin-for-instrument-from-popup-menu instrument-id parentgui)))
-         (list "From list of most frequently used instruments..." ;;"From list of favourites"
+         (list "From list of most used instruments..." ;;"From list of favourites"
                :shortcut (and is-top-instrument
                               insert-plugin-for-instrument-from-favourites-menu)
                (lambda ()
@@ -2832,10 +2832,11 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
    
    ;;"From list of favourites" (lambda ()
    ;;                            (show-favourites-menu :callback callback :shortcut-func assign-new-instrument-for-track))
-   (list "From list of most frequently used instruments..."
-         :shortcut assign-instrument-for-track-from-most-frequently-used-instruments
-         (lambda ()
-           (show-favourites-menu :callback callback :shortcut-func assign-new-instrument-for-track)))
+(list "From list of most frequently used instruments..."
+          :enabled (not (null? (get-favourite-plugin-menu-entries callback assign-new-instrument-for-track)))
+          :shortcut assign-instrument-for-track-from-most-frequently-used-instruments
+          (lambda ()
+            (show-favourites-menu :callback callback :shortcut-func assign-new-instrument-for-track)))
    
    "----------------"
    (list "From preset file (.rec/.mrec)..."
