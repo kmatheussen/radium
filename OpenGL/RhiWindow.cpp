@@ -19,6 +19,7 @@
 //#include "Vertices.hpp"
 extern QRhi *g_rhi;
 extern int g_msaa_samples;
+extern bool g_vsync_enabled;
 
 
 static QThread *g_thread = NULL;
@@ -384,6 +385,8 @@ void radium::RhiWindow::MAIN_init(const QFont &font)
 
 //! [swapchain-init]
 				_swap_chain = _rhi->newSwapChain();
+				if (!g_vsync_enabled)
+					_swap_chain->setFlags(_swap_chain->flags() | QRhiSwapChain::NoVSync);
 
 #if USE_RENDER_BUFFER
 				if (g_msaa_samples > 1)
