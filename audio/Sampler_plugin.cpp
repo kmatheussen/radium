@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/visual_proc.h"
 #include "../common/disk.h"
 #include "../common/spinlock.h"
+#include "../common/scheduler_proc.h"
 
 #include "SoundPlugin.h"
 #include "SoundPlugin_proc.h"
@@ -68,6 +69,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "Sampler_plugin_proc.h"
+#include "XI_Envelope.h"
 
 #define POLYPHONY 256
 #define MAX_NUM_SAMPLES 256
@@ -427,6 +429,24 @@ struct Voice{
 
   double vibrato_phase;
   double vibrato_value;
+  
+  // XI volume envelope (only used for XI instruments)
+  int32_t xi_env_pos = 0;      // current envelope tick position
+  int32_t xi_env_sub = 0;      // sub-tick counter (0 .. tick_rate-1)
+  int32_t xi_env_gain = 0;     // cached gain for current tick
+  // XI pan envelope
+  int32_t xi_pan_env_pos = 0;
+  int32_t xi_pan_env_sub = 0;
+  int32_t xi_pan_env_gain = 0;
+  // XI volume fadeout
+  int32_t xi_fade_vol = 0;     // fade accumulator, 65536 → 0
+  int32_t xi_fade_accum = 0;   // sub-tick accumulator for fade timing
+  bool    xi_sustain = false;   // true while note is held
+  bool    use_xi_volume_fadeout = false;   // true if this voice uses XI volume fadeout instead of AHDSR
+  bool    adsr_onoff = false;               // snapshot of ahdsr setting at voice creation
+  bool    loop_onoff = false;               // snapshot of loop on/off at voice creation
+  bool    pingpong = false;                 // snapshot of ping-pong at voice creation
+  bool    has_been_stopped = false;              // true after stop_note has been called
 };
 
 struct Note{
@@ -582,6 +602,12 @@ struct Data{
   */
 
   Sample samples[MAX_NUM_SAMPLES] = {}; // Put last to keep data togheter. (only the first elements of "samples" are used)
+  
+  // XI volume envelope (parsed from .xi files, applied per-voice in RT_process)
+  XIEnvelope xi_vol_env = {};
+  XIEnvelope xi_pan_env = {};
+  
+  bool sf2_midi_note_convention = true; // SoundFont OriginalPitch uses MIDI numbering (C4=60) rather than tracker numbering (C4=48). New instruments default to true. Old saved state without this key defaults to false.
   
   Data(const Data&) = delete;
   Data& operator=(const Data&) = delete;
@@ -881,12 +907,14 @@ static int64_t RT_src_callback_with_normal_looping(Voice *voice, const LoopData 
 
 
 static int64_t RT_src_callback_nolooping(Voice *voice, const Sample *sample, Data *data, int64_t start_pos, float **out_data){
-  *out_data = &sample->sound[start_pos];
-
   if(start_pos >= sample->num_frames){
-    R_ASSERT_NON_RELEASE(start_pos==sample->num_frames);
+    // Normally start_pos==sample->num_frames when the sample has finished playing.
+    // Can also be > sample->num_frames due to a reflected ping-pong position
+    // that wasn't unwrapped by the caller (should have been, but be defensive).
     return 0;
   }
+
+  *out_data = &sample->sound[start_pos];
 
   voice->pos = sample->num_frames; // next
 
@@ -948,31 +976,77 @@ static int64_t RT_src_callback_reverse(Voice *voice, const LoopData &loop_data, 
   return num_samples_to_return;
 }
 
-static int64_t RT_src_callback_ping_pong_looping(Voice *voice, const LoopData &loop_data, const Sample *sample, Data *data, int64_t start_pos, float **out_data){  
-  R_ASSERT(start_pos <= sample->num_frames*2);
+static int64_t RT_src_callback_ping_pong_looping(Voice *voice, const LoopData &loop_data, const Sample *sample, Data *data, int64_t start_pos, float **out_data)
+{  
+	// Ping-pong: bounce back and forth between loop_start and loop_end-1.
+	// Position in sample space, direction +1 = forward, -1 = backward.
   
-  if (start_pos >= loop_data._end + loop_data._length)
-    start_pos = loop_data._start;
+	int64_t pos = start_pos;
+	int64_t lend = loop_data._end;  // exclusive upper bound
+	int64_t lstart = loop_data._start;
 
-  if (start_pos >= loop_data._end) {
+	// Determine direction: positions past _end are in the reflected region
+	int direction;
+	if (pos >= lend)
+	{
+		// Reflected position: map back into sample space
+		pos = lend - 1 - (pos - lend);
+		direction = -1;
+	}
+	else
+	{
+		direction = +1;
+	}
 
-    int64_t org_voice_pos = voice->pos;
-    
-    int64_t ret = RT_src_callback_reverse(voice, loop_data, sample, data, start_pos - loop_data._length, out_data, true);
-    voice->pos = org_voice_pos + ret;
-    
-    R_ASSERT_NON_RELEASE(voice->pos <= loop_data._end + loop_data._length);
-    
-    return ret;
-    
-  } else {
-    
-    int64_t ret = loop_data._end - start_pos;
-    *out_data = &sample->sound[start_pos];    
-    voice->pos = loop_data._end;
-    
-    return ret;
-  }
+	// Produce at most CROSSFADE_BUFFER_LENGTH frames per call
+	int64_t num_frames = 0;
+	float *dest = &voice->crossfade_buffer[0];
+	const float *src = sample->sound;
+
+	while (num_frames < CROSSFADE_BUFFER_LENGTH)
+	{
+		if (direction == +1)
+		{
+			int64_t remaining = lend - pos;
+			if (remaining <= 0) {
+				// Bounce at _end
+				pos = lend - 1;   // last forward sample was at lend-1, bounce back one
+				direction = -1;
+				// Don't produce a sample here, just bounce
+			}
+			else
+			{
+				int64_t to_copy = R_MIN(remaining, CROSSFADE_BUFFER_LENGTH - num_frames);
+				memcpy(dest + num_frames, src + pos, to_copy * sizeof(float));
+				num_frames += to_copy;
+				pos += to_copy;
+			}
+		}
+		else
+		{
+			// direction == -1
+			if (pos < lstart)
+			{
+				// Bounce at loop_start
+				pos = lstart;
+				direction = +1;
+			}
+			else
+			{
+				int64_t to_copy = R_MIN(pos - lstart + 1, CROSSFADE_BUFFER_LENGTH - num_frames);
+				for (int64_t i = 0; i < to_copy; i++)
+					dest[num_frames + i] = src[pos - i];
+				num_frames += to_copy;
+				pos -= to_copy;
+			}
+		}
+	}
+
+	voice->pos = (direction == 1) ? pos : lend + (lend - 1 - pos);
+	
+	*out_data = dest;
+	
+	return num_frames;
 }
 
 
@@ -986,12 +1060,12 @@ static long RT_src_callback(void *cb_data, float **out_data){
   int64_t start_pos = voice->pos;
   Data  *data = sample->data;
 
-  bool pingpong = sample->data->p.pingpong;
+  bool pingpong = voice->pingpong;
   bool reverse = voice->reverse;
 
   LoopData loop_data(sample, data->p.loop_start_was_set_last);
 
-  bool loop = ATOMIC_GET_RELAXED(data->p.loop_onoff) && loop_data._end > loop_data._start;
+  bool loop = voice->loop_onoff && loop_data._end > loop_data._start;
 
   //printf("loop: %d / %d\n", ATOMIC_GET(data->p.loop_onoff), loop_data._end > loop_data._start);
   
@@ -1007,6 +1081,22 @@ static long RT_src_callback(void *cb_data, float **out_data){
     ret = RT_src_callback_ping_pong_looping(voice, loop_data, sample, data, start_pos, out_data); // ping pong looping
 
   } else if (!loop) {
+
+    if (start_pos > sample->num_frames) {
+      // This happens when switching from ping-pong to non-looping
+      // (note-off with XI volume fadeout while playing backward).
+      // voice->pos holds a reflected position from the ping-pong
+      // backward direction encoding (line 1043), which can be
+      // > sample->num_frames when lend == sample->num_frames.
+      // Unwrap the reflected position to get the actual forward position.
+      start_pos = 2 * sample->num_frames - 1 - start_pos;
+      if (start_pos < 0)
+        start_pos = 0;
+      if (start_pos >= sample->num_frames)
+        start_pos = sample->num_frames;
+      // Play forward from the unwrapped position; ignore reverse
+      // since we've already corrected for the backward direction.
+    }
 
     //printf("NOlooping. %d\n", (int)start_pos);
     if (reverse)
@@ -1142,183 +1232,343 @@ static float get_peak(float *samples, int num_samples){
 }
 #endif
 
-static bool RT_play_voice(Data *data, Voice *voice, int num_frames_to_produce, float **outputs){
-  // portamento
-  {
+static bool RT_play_voice(Data *data, Voice *voice, int num_frames_to_produce, float **outputs, double bpm)
+{
+	// portamento
+	{
 #if 0
-    voice->pitch = voice->end_pitch;
+		voice->pitch = voice->end_pitch;
 #else
-    if (!equal_floats(voice->end_pitch, voice->pitch)){
-      voice->pitch += voice->pitch_inc*num_frames_to_produce;
-      if (voice->pitch_inc < 0){
-        if (voice->end_pitch > voice->pitch)
-          voice->pitch = voice->end_pitch;
-      } else {
-        if (voice->end_pitch < voice->pitch)
-          voice->pitch = voice->end_pitch;
-      }
-    }
+		if (!equal_floats(voice->end_pitch, voice->pitch)){
+			voice->pitch += voice->pitch_inc*num_frames_to_produce;
+			if (voice->pitch_inc < 0){
+				if (voice->end_pitch > voice->pitch)
+					voice->pitch = voice->end_pitch;
+			} else {
+				if (voice->end_pitch < voice->pitch)
+					voice->pitch = voice->end_pitch;
+			}
+		}
 
-    if (voice->set_last_end_pitch){
-      data->last_end_pitch[voice->portamento_channel] = voice->pitch;
-    }
+		if (voice->set_last_end_pitch){
+			data->last_end_pitch[voice->portamento_channel] = voice->pitch;
+		}
     
 #endif
-  }
+	}
   
-  int startpos = voice->delta_pos_at_start;
-  int endpos = voice->delta_pos_at_end;
+	int startpos = voice->delta_pos_at_start;
+	int endpos = voice->delta_pos_at_end;
 
-  if(startpos>=0)
-    voice->delta_pos_at_start = 0;
-  if(endpos>=0)
-    voice->delta_pos_at_end = -1;
+	if (startpos>=0)
+		voice->delta_pos_at_start = 0;
+	if (endpos>=0)
+		voice->delta_pos_at_end = -1;
 
 
-  if(endpos>=0 && endpos<startpos) // Should not happen. Test for it just in case. It's a bit messy when notes are generated by the keyboard, player and other places at the same time.
+	if (endpos>=0 && endpos<startpos) // Should not happen. Test for it just in case. It's a bit messy when notes are generated by the keyboard, player and other places at the same time.
     {
 #if !defined(RELEASE)
-      printf("Oops. Endpos: %d. startpos: %d\n",endpos,startpos); // FIX: We get here when the CPU is very buzy.
+		printf("Oops. Endpos: %d. startpos: %d\n",endpos,startpos); // FIX: We get here when the CPU is very buzy.
 #endif
-      return false;
+		return false;
     }
 
-  int num_frames = num_frames_to_produce-startpos;
+	int num_frames = num_frames_to_produce-startpos;
 
-  R_ASSERT_NON_RELEASE(num_frames >= 0);
+	R_ASSERT_NON_RELEASE(num_frames >= 0);
     
-  if (num_frames <= 0)
-    return false;
-  
-  float *resampled_data = RT_ALLOC_ARRAY_STACK(float, num_frames);
-  int frames_created_by_resampler = 0;
+	if (num_frames <= 0)
+		return false;
 
-  {
-    bool do_add_vibrato = data->p.vibrato_phase_add > 0.0;
+	// Voice has been explicitly stopped via call to "stop_note", and it has zero velocity. Therefore it will
+	// never produce audible output again. Terminate to save CPU.
+	if (voice->has_been_stopped && voice->start_volume <= 0.000001f && voice->end_volume <= 0.000001f)
+		return true;
+  
+	float *resampled_data = RT_ALLOC_ARRAY_STACK(float, num_frames);
+	int frames_created_by_resampler = 0;
+
+	{
+		bool do_add_vibrato = data->p.vibrato_phase_add > 0.0;
     
-    int num_frames_inc;
+		int num_frames_inc;
     
-    if (do_add_vibrato){
+		if (do_add_vibrato)
+		{
+			voice->vibrato_value = data->p.vibrato_value;
+			voice->vibrato_phase = data->p.vibrato_phase;
       
-      voice->vibrato_value = data->p.vibrato_value;
-      voice->vibrato_phase = data->p.vibrato_phase;
+			num_frames_inc = 64;  // Run smaller inner loop if using vibrato.
+		}
+		else
+		{
+			num_frames_inc = num_frames;
+		}
+
+		for(int i=0;i<num_frames;i+=num_frames_inc)
+		{
+			int num_frames2 = num_frames_inc;
+
+			if ( i + num_frames2 > num_frames)
+				num_frames2 = num_frames - i;
       
-      num_frames_inc = 64;  // Run smaller inner loop if using vibrato.
+			frames_created_by_resampler += RT_get_resampled_data(data,voice,resampled_data+i,num_frames2);
+			//printf("Frames created by resampler: %d\n",frames_created_by_resampler);
+			//printf("peak: %f\n",get_peak(resampled_data,frames_created_by_resampler));
       
-    } else {
-      
-      num_frames_inc = num_frames;
+			if (do_add_vibrato)
+			{
+				voice->vibrato_value = data->p.vibrato_depth * sin(voice->vibrato_phase);
+				voice->vibrato_phase += data->p.vibrato_phase_add*(double)num_frames2;
+			}
+		}
+	}
 
-    }
+	/*
+	{
+		float max = JUCE_get_max_val(resampled_data, frames_created_by_resampler);
+		printf("Max: %f. frames_created_by_resampler: %d\n", max, frames_created_by_resampler);
 
-    for(int i=0;i<num_frames;i+=num_frames_inc){
-      
-      int num_frames2 = num_frames_inc;
+		if (true) //equal_floats(0.992188, max))
+		{
+			for(int i = 0 ; i < frames_created_by_resampler ; i++)
+				printf("%f, ", resampled_data[i]);
+			printf("\n");
+		}
+	}
+	*/
+	
+	if (frames_created_by_resampler==0)
+		return true;
 
-      if( i + num_frames2 > num_frames)
-        num_frames2 = num_frames - i;
-      
-      frames_created_by_resampler += RT_get_resampled_data(data,voice,resampled_data+i,num_frames2);
-      //printf("Frames created by resampler: %d\n",frames_created_by_resampler);
-      //printf("peak: %f\n",get_peak(resampled_data,frames_created_by_resampler));
-      
-      if(do_add_vibrato){
-        voice->vibrato_value = data->p.vibrato_depth * sin(voice->vibrato_phase);
-        voice->vibrato_phase += data->p.vibrato_phase_add*(double)num_frames2;
-      }
-    }
-  }
-  
-  if (frames_created_by_resampler==0)
-    return true;
-  
-  int frames_created_by_envelope;
+	// Compute BPM-synced tick rate for XI envelopes (bpm is pre-computed and guaranteed >= 1)
+	int xi_tick_rate = (int)(data->samplerate * 2.5 / bpm);
 
-  float *adsr_sound_data[1]={&resampled_data[0]};
+	// FT2 fadeout advances per ROW, not per envelope tick.
+	// Formula: fade = samplerate * 2.5 * speed / XM_bpm
+	// With radium-converted BPM: radium_bpm = 6 * XM_bpm / speed
+	//   => xi_tick_rate = samplerate * 2.5 / radium_bpm
+	//   => fade_tick = xi_tick_rate * 6  (constant, speed cancels out)
+	int xi_fade_tick_rate = xi_tick_rate * 6;
 
-  bool adsr_onoff = data->p.ahdsr_onoff;
-  
-  if(endpos>=0){
-    int pre_release_len = endpos-startpos;
+	int frames_created_by_envelope;
 
-    //printf("********** endpos>0: %d. prelen: %d, frames_created_by_resampler: %d\n",endpos,prelen,frames_created_by_resampler);
+	float *adsr_sound_data[1]={&resampled_data[0]};
 
-    if (!adsr_onoff) {
+	if (endpos>=0)
+	{
+		//
+		// In this branch, we're preparing to stop the note
+		//
+		
+		int pre_release_len = endpos-startpos;
 
-      frames_created_by_envelope = pre_release_len;
+		// Note-off happens mid-buffer — set sustain false at the correct audio frame.
+		voice->xi_sustain = false;
 
-    } else if(frames_created_by_resampler <= pre_release_len){ // i.e. we reached the end of sound before beginning to release the ADSR envelope.
+		//printf("********** endpos>0: %d. prelen: %d, frames_created_by_resampler: %d\n",endpos,prelen,frames_created_by_resampler);
+		
+		if (frames_created_by_resampler <= pre_release_len) // i.e. we reached the end of sound before beginning to release the ADSR envelope.
+		{
+			// Volume envelope: sustain was active before note-off.
+			int env_frames = frames_created_by_resampler;
+			
+			if (data->xi_vol_env.flags & XI_EF_ON)
+				env_frames = RT_apply_xi_envelope(&data->xi_vol_env,
+				                     &voice->xi_env_pos,
+				                     &voice->xi_env_sub,
+				                     &voice->xi_env_gain,
+				                     true,
+				                     resampled_data,
+				                     frames_created_by_resampler,
+				                     1,
+				                     1.0f,
+				                     xi_tick_rate);
 
-      frames_created_by_envelope = ADSR_apply(voice->adsr, adsr_sound_data, 1, frames_created_by_resampler);
+			if (voice->adsr_onoff)
+				frames_created_by_envelope = ADSR_apply(voice->adsr, adsr_sound_data, 1, env_frames);
+			else
+				frames_created_by_envelope = env_frames;
+		}
+		else
+		{
+			// Volume envelope on pre-release portion: sustain was active.
+			frames_created_by_envelope = RT_apply_xi_envelope(&data->xi_vol_env,
+															  &voice->xi_env_pos,
+															  &voice->xi_env_sub,
+															  &voice->xi_env_gain,
+															  true,
+															  resampled_data,
+															  pre_release_len,
+															  1,
+															  1.0f,
+															  xi_tick_rate);
 
-    }else{
-      
-      if (pre_release_len > 0)
-        frames_created_by_envelope = ADSR_apply(voice->adsr, adsr_sound_data, 1, pre_release_len);
-      else
-        frames_created_by_envelope = 0;
-      
-      //printf("************************ Calling adsr release\n");
-      ADSR_release(voice->adsr);
+			if (frames_created_by_envelope > 0 && voice->adsr_onoff)
+					frames_created_by_envelope = ADSR_apply(voice->adsr, adsr_sound_data, 1, frames_created_by_envelope);
 
-      int post_release_len = frames_created_by_resampler - frames_created_by_envelope;
-      adsr_sound_data[0] = &resampled_data[frames_created_by_envelope];        
-      frames_created_by_envelope += ADSR_apply(voice->adsr, adsr_sound_data, 1, post_release_len);
-    }
+			if (frames_created_by_envelope == pre_release_len)
+			{
 
-  }else{
+				if (voice->adsr_onoff)
+				{
+					//printf("************************ Calling adsr release\n");
+					ADSR_release(voice->adsr);
+				}
+			
+				int post_release_len = frames_created_by_resampler - frames_created_by_envelope;
+				
+				adsr_sound_data[0] = &resampled_data[frames_created_by_envelope];
 
-    if (!adsr_onoff)
-      frames_created_by_envelope = frames_created_by_resampler;
-    else
-      frames_created_by_envelope = ADSR_apply(voice->adsr, adsr_sound_data, 1, frames_created_by_resampler);
-    
-    //printf("Frames created by envelope: %d, peak: %f\n",frames_created_by_envelope,get_peak(resampled_data,frames_created_by_envelope));
-    //printf("peak: %f\n",get_peak(resampled_data,frames_created_by_resampler));
-  }
+				// Volume envelope on post-release portion: sustain released.
+				int env_post_frames = RT_apply_xi_envelope(&data->xi_vol_env,
+														   &voice->xi_env_pos,
+														   &voice->xi_env_sub,
+														   &voice->xi_env_gain,
+														   false,
+														   adsr_sound_data[0],
+														   post_release_len,
+														   1,
+														   1.0f,
+														   xi_tick_rate);
 
-  //float peak_in = get_peak(resampled_data,frames_created_by_envelope);
+				if (voice->use_xi_volume_fadeout)
+				{
+					frames_created_by_envelope += XI_volume_fadeout_apply(data->xi_vol_env.volfade,
+																		  &voice->xi_fade_vol,
+																		  &voice->xi_fade_accum,
+																		  xi_fade_tick_rate,
+																		  adsr_sound_data[0],
+																		  env_post_frames);
+				}
+				else if (voice->adsr_onoff)
+				{
+					frames_created_by_envelope += ADSR_apply(voice->adsr, adsr_sound_data, 1, env_post_frames);
+				}
+				else
+				{
+					frames_created_by_envelope += env_post_frames;
+				}
+			}
+		}
+	}
+	else
+	{
+		//
+		// In this branch, we're either processing before note is in the process of stopping. Or, we are playing a note before it begins to stop playing.
+		//
 
-  if (frames_created_by_envelope==0)
-    return true;
+		// No note-off in this buffer. Envelope with current sustain state.
+		int env_frames = frames_created_by_resampler;
+		if (data->xi_vol_env.flags & XI_EF_ON)
+			env_frames = RT_apply_xi_envelope(&data->xi_vol_env,
+			                     &voice->xi_env_pos,
+			                     &voice->xi_env_sub,
+			                     &voice->xi_env_gain,
+			                     voice->xi_sustain,
+			                     resampled_data,
+			                     frames_created_by_resampler,
+			                     1,
+			                     1.0f,
+			                     xi_tick_rate);
 
-  const Sample *sample = voice->sample;
+		if (voice->use_xi_volume_fadeout && !voice->xi_sustain)
+		{
+			frames_created_by_envelope = XI_volume_fadeout_apply(data->xi_vol_env.volfade,
+																 &voice->xi_fade_vol,
+																 &voice->xi_fade_accum,
+																 xi_fade_tick_rate,
+																 resampled_data,
+																 env_frames);
+		}
+		else if (voice->adsr_onoff)
+		{
+			frames_created_by_envelope = ADSR_apply(voice->adsr, adsr_sound_data, 1, env_frames);
+		}
+		else
+		{
+			frames_created_by_envelope = env_frames;
+		}
+		
+		//printf("Frames created by envelope: %d, peak: %f\n",frames_created_by_envelope,get_peak(resampled_data,frames_created_by_envelope));
+		//printf("peak: %f\n",get_peak(resampled_data,frames_created_by_resampler));
+	}
+
+	//float peak_in = get_peak(resampled_data,frames_created_by_envelope);
+
+
+	const Sample *sample = voice->sample;
 
 #define mix(input_channel, output_channel) do{                          \
-    float panval = voice->pan.vals[input_channel][output_channel];      \
-    if(panval>0.0f){                                                    \
-      float *out          = outputs[output_channel] + startpos;         \
-      float  start_volume = voice->start_volume*panval;                 \
-      float  end_volume   = voice->end_volume*panval;                   \
-      SMOOTH_mix_sounds_raw(out, resampled_data, frames_created_by_envelope, start_volume, end_volume); \
-    }                                                                   \
-  }while(0)
+		float panval = voice->pan.vals[input_channel][output_channel];	\
+		if (panval>0.0f){												\
+			float *out          = outputs[output_channel] + startpos;	\
+			float  start_volume = voice->start_volume*panval;			\
+			float  end_volume   = voice->end_volume*panval;				\
+			SMOOTH_mix_sounds_raw(out, resampled_data, frames_created_by_envelope, start_volume, end_volume); \
+		}																\
+	}while(0)
 
-  if(sample->ch == -1){
-    mix(0,0);
-    mix(0,1);
-  }else{
-    mix(sample->ch,0);
-    mix(sample->ch,1);
-  }
-  
+	if (frames_created_by_envelope > 0)
+	{
+		if (sample->ch == -1)
+		{
+			if (data->xi_pan_env.flags & XI_EF_ON)
+			{
+				// Create stereo copies of the mono resampled data and apply pan envelope
+				float *stereo_left  = RT_ALLOC_ARRAY_STACK(float, frames_created_by_envelope);
+				memcpy(stereo_left,  resampled_data, frames_created_by_envelope * sizeof(float));
+				
+				float *stereo_right = resampled_data;
+				
+				RT_apply_xi_pan_envelope(&data->xi_pan_env,
+										 &voice->xi_pan_env_pos, &voice->xi_pan_env_sub, &voice->xi_pan_env_gain,
+										 voice->xi_sustain,
+										 stereo_left, stereo_right,
+										 frames_created_by_envelope, xi_tick_rate);
+				
+				// Mix panned stereo buffers into outputs, also applying normal voice panning
+				{
+					float *left_out  = outputs[0] + startpos;
+					float *right_out = outputs[1] + startpos;
+					float  pan_left  = voice->pan.vals[0][0];
+					float  pan_right = voice->pan.vals[0][1];
+					SMOOTH_mix_sounds_raw(left_out,  stereo_left,  frames_created_by_envelope, voice->start_volume * pan_left,  voice->end_volume * pan_left);
+					SMOOTH_mix_sounds_raw(right_out, stereo_right, frames_created_by_envelope, voice->start_volume * pan_right, voice->end_volume * pan_right);
+				}
+			}
+			else
+			{
+				mix(0,0);
+				mix(0,1);
+			}
+		}
+		else
+		{
+			mix(sample->ch,0);
+			mix(sample->ch,1);
+		}
+	} // frames_created_by_envelope > 0
+
 #undef mix
   
-  //printf("peak in/out: %.3f - %.3f\n",peak_in,get_peak(outputs[0], num_frames_to_produce));
+	//printf("peak in/out: %.3f - %.3f\n",peak_in,get_peak(outputs[0], num_frames_to_produce));
 
-  voice->start_volume = voice->end_volume;
-  //voice->start_pitch = voice->end_pitch;
+	voice->start_volume = voice->end_volume;
+	//voice->start_pitch = voice->end_pitch;
   
-  if(startpos+frames_created_by_envelope < num_frames_to_produce)
-    return true;
-  else
-    return false;
+	// Keep voice alive during XI fadeout even if fewer frames were produced
+	if (startpos+frames_created_by_envelope < num_frames_to_produce)
+		return true;
+
+	return false;
 }
 
 
 static void RT_prepare_voice_for_playing_with_granulation(Data *data, Voice *voice){
   auto *granulator = RT_obtain_granulator(voice->_get_samples.get());
-  if(granulator==NULL)
+  if (granulator==NULL)
     return;
 
   granulator->apply_parameters_and_reset(data->p.gran_parms);
@@ -1402,11 +1652,20 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   }
 
   bool was_playing_something = data->voices_playing != NULL;
-    
+
+  // Compute BPM once for all voices (RT_LPB_get_current_BPM is cheap, so it doesn't matter if we read it unnecessarily)
+  double bpm = RT_LPB_get_current_BPM((struct SeqTrack *)root->song->seqtracks.elements[0]);
+  // Block play on a freshly-imported song may return 0 (seqtrack->lpb_iterator.curr_bpm not yet initialized).
+  // Fall back to the song tempo in that case.
+  if (bpm <= 0)
+    bpm = (double)root->tempo;
+  if (bpm < 1)
+    bpm = 1;
+
   while(voice!=NULL){
     Voice *next = voice->next;
-    
-    if(RT_play_voice(data, voice, num_frames, outputs)==true){
+
+    if (RT_play_voice(data, voice, num_frames, outputs, bpm)==true){
       RT_release_voice_for_playing_with_granulation(voice);
       RT_remove_voice(&data->voices_playing, voice);
       RT_add_voice(&data->voices_not_playing, voice);
@@ -1417,7 +1676,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
     
   if (was_playing_something){
     data->tremolo->type->RT_process(data->tremolo, time, num_frames, outputs, outputs);
-    if(data->p.gran_enabled){
+    if (data->p.gran_enabled){
       float gran_volume = data->p.gran_volume;
       if (!equal_floats(gran_volume, 0.0)){
         gran_volume = db2gain(gran_volume);
@@ -1430,7 +1689,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
   
   Data *new_data = ATOMIC_GET(data->new_data);
   
-  if(new_data != NULL){
+  if (new_data != NULL){
     RT_fade_out(outputs[0],num_frames);
     RT_fade_out(outputs[1],num_frames);
     
@@ -1482,12 +1741,27 @@ static void play_note(struct SoundPlugin *plugin, int time, note_t note2){
 
     LoopData loop_data(sample, data->p.loop_start_was_set_last);
     
-    if(data->voices_not_playing==NULL){
+    if (data->voices_not_playing==NULL){
       printf("No more free voices\n");
       return;
     }
 
     Voice *voice = data->voices_not_playing;
+
+    voice->xi_env_pos = 0;
+    voice->xi_env_sub = 0;
+    voice->xi_env_gain = 0;
+    voice->xi_pan_env_pos = 0;
+    voice->xi_pan_env_sub = 0;
+    voice->xi_pan_env_gain = 0;
+    voice->xi_fade_vol = 65536;
+    voice->xi_fade_accum = 0;
+    voice->xi_sustain = true;   // fade starts when sustain goes false (on note-off)
+    voice->use_xi_volume_fadeout = !data->p.ahdsr_onoff && (data->xi_vol_env.volfade > 0);
+    voice->adsr_onoff = data->p.ahdsr_onoff;
+    voice->loop_onoff = ATOMIC_GET(data->p.loop_onoff);
+    voice->pingpong = data->p.pingpong;
+    voice->has_been_stopped = false;
     
     RT_remove_voice(&data->voices_not_playing, voice);
     RT_add_voice(&data->voices_playing, voice);
@@ -1499,8 +1773,8 @@ static void play_note(struct SoundPlugin *plugin, int time, note_t note2){
     voice->note_num = note2.pitch;
     voice->note_id = note2.id;
     voice->seqblock = note2.seqblock;
-    voice->portamento_channel = portamento_channel; //note2.midi_channel * 16 + note2.voicenum;
-    
+    voice->portamento_channel = portamento_channel;
+
     voice->start_volume = velocity2gain(note2.velocity);
     voice->end_volume = voice->start_volume;
 
@@ -1528,7 +1802,7 @@ static void play_note(struct SoundPlugin *plugin, int time, note_t note2){
 
     bool is_looping = ATOMIC_GET_RELAXED(data->p.loop_onoff)==true && loop_data._end > loop_data._start;
   
-    if(is_looping)
+    if (is_looping)
       voice->pos=scale(data->p.startpos, // set startpos between 0 and loop_end
                        0,1,
                        0,loop_data._end);
@@ -1612,7 +1886,7 @@ static void set_note_volume(struct SoundPlugin *plugin, int time, note_t note){
   while(voice!=NULL){
     //printf("Setting volume to %f. note_num: %d. voice: %d\n",volume,note_num,voice->note_num);
 
-    if(is_note(note, voice->note_id, voice->seqblock))
+    if (is_note(note, voice->note_id, voice->seqblock))
       voice->end_volume = velocity2gain(note.velocity);
 
     voice = voice->next;
@@ -1631,7 +1905,7 @@ static void set_note_pitch(struct SoundPlugin *plugin, int time, note_t note){
 
   while(voice!=NULL){
 
-    if(is_note(note, voice->note_id, voice->seqblock)){
+    if (is_note(note, voice->note_id, voice->seqblock)){
 
       const float portamento = data->p.portamento;
       
@@ -1662,7 +1936,7 @@ static void set_note_pan(struct SoundPlugin *plugin, int time, note_t note){
 
   while(voice!=NULL){
 
-    if(is_note(note, voice->note_id, voice->seqblock)){
+    if (is_note(note, voice->note_id, voice->seqblock)){
       
       voice->pan = get_pan_vals_vector(note.pan,voice->sample->ch==-1?1:2);
       
@@ -1699,12 +1973,16 @@ static void stop_note(struct SoundPlugin *plugin, int time, note_t note){
     time = RADIUM_BLOCKSIZE -1;
   
   while(voice!=NULL){
-    if(is_note(note, voice->note_id, voice->seqblock)){
-      if(voice->delta_pos_at_end == -1)
+    if (is_note(note, voice->note_id, voice->seqblock)){
+      if (voice->delta_pos_at_end == -1){
         voice->delta_pos_at_end = time;
+        voice->has_been_stopped = true;
+        if (voice->use_xi_volume_fadeout)
+          voice->loop_onoff = false;
+      }
     }
 
-    voice = voice->next;
+   voice = voice->next;
   }
 }
 
@@ -1791,17 +2069,17 @@ static void apply_adsr_to_peak(Data *data, int64_t time, radium::Peak &peak){
   float ms = time*1000 / data->samplerate;
   float mul;
 
-  if(ms >= data->p.a+data->p.h+data->p.d)
+  if (ms >= data->p.a+data->p.h+data->p.d)
     mul = data->p.s;
 
-  else if(ms >= data->p.a+data->p.h)
+  else if (ms >= data->p.a+data->p.h)
     mul = scale(ms,
                 (data->p.a+data->p.h),
                 (data->p.a+data->p.h+data->p.d), 
                 1.0f,
                 data->p.s);
 
-  else if(ms >= data->p.a)
+  else if (ms >= data->p.a)
     return;
 
   else
@@ -1826,7 +2104,7 @@ static radium::Peak get_peak_from_sample(Data *data, const Sample *sample, int64
   
   bool is_looping = ATOMIC_GET(data->p.loop_onoff)==true;
 
-  if(is_looping && start_time>=loop_data._end){
+  if (is_looping && start_time>=loop_data._end){
 
     if (loop_data._end <= loop_data._start)
       return peak;
@@ -1854,7 +2132,7 @@ static radium::Peak get_peak_from_sample(Data *data, const Sample *sample, int64
 
   int64_t duration_now = R_MIN(duration, end - start_time);
   
-  if(duration_now <= 0){
+  if (duration_now <= 0){
     //printf("    Duration now: %d. duration: %d. end: %d, start_time: %d. end-start_time: %d\n", (int)duration_now, (int)duration, (int)end, (int)start_time, (int)(end-start_time));
     //R_ASSERT_NON_RELEASE(is_looping==false); // INVESTIGATE: This happens when assigning modulator to note adjustment.
     return peak;
@@ -1890,7 +2168,7 @@ static int get_peaks(struct SoundPlugin *plugin,
 
   //printf("  get_peaks. Start_time: %d, end_time: %d\n\n",(int)start_time,(int)end_time);
   
-  if(ch==-1){
+  if (ch==-1){
     if (ATOMIC_GET(data->recording_status) == IS_RECORDING){
       R_ASSERT_RETURN_IF_FALSE2(data->recorder_instance!=NULL, 1);
       return data->recorder_instance->num_ch;
@@ -1908,7 +2186,7 @@ static int get_peaks(struct SoundPlugin *plugin,
         break;
       }
         
-      if(sample.ch==1)
+      if (sample.ch==1)
         return 2;
     }
     return 1;
@@ -2010,7 +2288,7 @@ static int get_peaks(struct SoundPlugin *plugin,
 
       //printf("  Sample %d. Panval: %f\n", samplenum, panval);
       
-      if(panval>0.0f){
+      if (panval>0.0f){
 
         //printf("Asking for peak %d %d (%d). Total sample duration: %d\n", (int)start_frame, (int)end_frame, (int)(end_frame-start_frame), (int)sample->num_frames);
         radium::Peak new_peak = get_peak_from_sample(data, sample, start_frame, end_frame-start_frame,0);
@@ -2023,7 +2301,7 @@ static int get_peaks(struct SoundPlugin *plugin,
         }else{
 #if !defined(RELEASE)
           /*
-          if(ATOMIC_GET(sample->data->p.loop_onoff)==true) //INVESTIGATE: Happens when assigning modulator to note adjustment.
+          if (ATOMIC_GET(sample->data->p.loop_onoff)==true) //INVESTIGATE: Happens when assigning modulator to note adjustment.
             abort();
           */
           if (start_frame < sample->num_frames)
@@ -2103,7 +2381,7 @@ static bool get_granulation_enabled(Data *data){
     data->p.gran_parms.Methodname = val;                                \
                                                                         \
     for(Voice *voice = data->voices_playing ; voice!=NULL ; voice=voice->next) \
-      if(voice->_granulator != NULL)                                    \
+      if (voice->_granulator != NULL)                                    \
         voice->_granulator->set_##Methodname(val);                      \
                                                                         \
     RT_RTWIDGET_mark_needing_update(ATOMIC_GET_RELAXED(data->rtwidget_pos)); \
@@ -2175,7 +2453,7 @@ static void RT_set_loop_points_internal(const SoundPlugin *plugin, Data *data, i
     if (sample.sound==NULL)
       break;
     
-    if(sample.sound != prev){
+    if (sample.sound != prev){
       prev = sample.sound;
       
       if (data->p.loop_override_default && !force_use_org) {
@@ -2454,7 +2732,7 @@ static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_nu
       break;
   }
   
-  if(value_format==EFFECT_FORMAT_SCALED){
+  if (value_format==EFFECT_FORMAT_SCALED){
     switch(effect_num){
     case EFF_STARTPOS:
       //printf("    Samp: start pos to %f at %d\n", value , time);
@@ -2776,7 +3054,7 @@ static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum V
 #endif
   }
   
-  if(value_format==EFFECT_FORMAT_SCALED){
+  if (value_format==EFFECT_FORMAT_SCALED){
     switch(effect_num){
     case EFF_STARTPOS:
       return data->p.startpos;
@@ -3014,7 +3292,7 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
     snprintf(buffer,buffersize-1,"%.2f",data->p.tremolo_depth);
     break;
   case EFF_NOTE_ADJUST:
-    if(false && data->num_different_samples>1)
+    if (false && data->num_different_samples>1)
       snprintf(buffer,buffersize-1,"disabled (multi-sample instrument)");
     else{
       float adjust = data->p.note_adjust;
@@ -3023,7 +3301,7 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
     break;
 #if 0
   case EFF_OCTAVE_ADJUST:
-    if(false && data->num_different_samples>1)
+    if (false && data->num_different_samples>1)
       snprintf(buffer,buffersize-1,"disabled (multi-sample instrument)");
     else{
       int adjust=data->p.octave_adjust;
@@ -3133,20 +3411,20 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
 // Called after loading sample.
 // Note, if start==-1 and end==-1, loop_start is set to 0 and loop_end is set to sample->num_frames, and loop_onoff is not set.
 static void set_legal_loop_points(Sample &sample, int64_t start, int64_t end, bool set_loop_on_off){
-  if(start==-1 && end==-1){
+  if (start==-1 && end==-1){
     
     sample.loop_start=0;
     sample.loop_end=sample.num_frames;
 
   } else {
 
-    if(start<0)
+    if (start<0)
       start=0;
 
-    if(end>sample.num_frames)
+    if (end>sample.num_frames)
       end=sample.num_frames;
 
-    if(end<=start){
+    if (end<=start){
       sample.loop_start=0;
       sample.loop_end=sample.num_frames;
     }else{
@@ -3164,13 +3442,15 @@ static void set_legal_loop_points(Sample &sample, int64_t start, int64_t end, bo
 
 
 #include "Sampler_plugin_wav_parse.c"
+
+
 #include "Sampler_plugin_xi_load.c"
 #include "Sampler_plugin_sf2_load.c"
 
 static float *load_interleaved_samples(filepath_t filename, SF_INFO *sf_info){
   SNDFILE *sndfile = radium_sf_open(filename,SFM_READ,sf_info);
   
-  if(sndfile==NULL)
+  if (sndfile==NULL)
     return NULL;
 
   int64_t alloc_size = sizeof(float) * sf_info->channels * sf_info->frames;
@@ -3186,7 +3466,7 @@ static float *load_interleaved_samples(filepath_t filename, SF_INFO *sf_info){
 
   int64_t total_read_frames = sf_readf_float(sndfile, ret, sf_info->frames);
 
-  if(total_read_frames==0){
+  if (total_read_frames==0){
     fprintf(stderr, "   libsndfile could open the file, but couldn't read data from it\n");
     return NULL;
   }
@@ -3195,10 +3475,10 @@ static float *load_interleaved_samples(filepath_t filename, SF_INFO *sf_info){
   {
 	  float *samples = RT_ALLOC_ARRAY_STACK(float, 1024*sf_info->channels);
 	  int64_t read_now = sf_readf_float(sndfile, samples, 1024);
-	  if(read_now==0)
+	  if (read_now==0)
 		  break;
 
-	  if(total_read_frames + read_now > allocated_frames){ // what's happening here?
+	  if (total_read_frames + read_now > allocated_frames){ // what's happening here?
 		  allocated_frames = (total_read_frames+read_now) * 2;
 		  ret = (float*)talloc_realloc(ret, (int)(allocated_frames * sizeof(float) * sf_info->channels));
 	  }
@@ -3223,7 +3503,7 @@ static bool load_sample_with_libsndfile(Data *data, filepath_t filename, bool se
 
   float *samples = load_interleaved_samples(filename, &sf_info);
 
-  if(samples==NULL){
+  if (samples==NULL){
     fprintf(stderr,"  Libsndfile could not open file \"%S\"\n", filename.id);
     return false;
   }
@@ -3233,7 +3513,7 @@ static bool load_sample_with_libsndfile(Data *data, filepath_t filename, bool se
 
     //printf("Num channels: %d\n",num_channels);
 
-    if(num_channels > 2) // TODO
+    if (num_channels > 2) // TODO
       num_channels = 2;
 
     int ch;
@@ -3247,7 +3527,7 @@ static bool load_sample_with_libsndfile(Data *data, filepath_t filename, bool se
     int i;
     for(i=0;i<sf_info.frames;i++){
       for(ch=0;ch<sf_info.channels;ch++){
-        if(ch<2){
+        if (ch<2){
           Sample &sample=data->samples[ch];
           sample.sound[i] = samples[interleaved_pos];
 #if !defined(RELEASE)
@@ -3269,14 +3549,14 @@ static bool load_sample_with_libsndfile(Data *data, filepath_t filename, bool se
 
       set_legal_loop_points(sample,-1,-1, set_loop_on_off); // By default, don't loop, but if set, loop all.
               
-      if((sf_info.format&0xffff0000) == SF_FORMAT_WAV){
+      if ((sf_info.format&0xffff0000) == SF_FORMAT_WAV){
         //printf("format: 0x%x. sections: %d, num_frames: %d. SF_FORMAT_WAV: 0x%x. og: 0x%x\n",sf_info.format,sf_info.sections,(int)sf_info.frames,SF_FORMAT_WAV,sf_info.format&SF_FORMAT_WAV);
         set_wav_loop_points(sample,filename,set_loop_on_off);
         if (data->use_sample_file_middle_note)
           middle_note = get_wav_middle_note(filename, middle_note);
       }
       
-      if(num_channels==1)
+      if (num_channels==1)
         sample.ch = -1; // i.e play the sample in both channels.
       else
         sample.ch = ch;
@@ -3316,7 +3596,7 @@ static void generate_peaks(Data *data){
     if (sample.sound==NULL)
       break;
     
-    if(sample.sound!=NULL && sample.sound != prev){
+    if (sample.sound!=NULL && sample.sound != prev){
       prev = sample.sound;
 
       sample.peaks->add_samples(sample.sound, sample.num_frames, radium::Peaks::THIS_IS_THE_LAST_CALL);
@@ -3324,7 +3604,7 @@ static void generate_peaks(Data *data){
 #if 0 //!defined(RELEASE)
       if (sample.filename!=NULL){
         radium::DiskPeaks *disk_peaks = DISKPEAKS_get(sample.filename);
-        if(disk_peaks->is_valid()==false)
+        if (disk_peaks->is_valid()==false)
           abort();
         disk_peaks->wait();
         sample.peaks = disk_peaks->_peaks[sample.ch==-1 ? 0 : sample.ch];
@@ -3418,17 +3698,17 @@ static void release_voice(Voice &voice){
   delete voice._resampler2;
   //delete voice._granulator;
 
-  if(voice._granulator!=NULL){
+  if (voice._granulator!=NULL){
     radium::PlayerLock lock; // To avoid priority inversion in RT_release_granulator while holding spinlock. This should only happen if instrument is removed while playing, so probably no need to optimize.
     RT_release_voice_for_playing_with_granulation(&voice);
   }
 }
 
 
-static bool load_sample(Data *data, filepath_t filename, int instrument_number, bool set_loop_on_off){
-  if(load_xi_instrument(data,filename, set_loop_on_off)==false){
-    if(load_sample_with_libsndfile(data,filename, set_loop_on_off)==false){
-      if(load_sf2_instrument(data,filename,instrument_number, set_loop_on_off)==false){        
+static bool load_sample(Data *data, filepath_t filename, int instrument_number, bool set_loop_on_off, bool *did_set_loop=NULL, bool *did_set_pingpong=NULL){
+  if (load_xi_instrument(data,filename, set_loop_on_off, did_set_loop, did_set_pingpong)==false){
+    if (load_sample_with_libsndfile(data,filename, set_loop_on_off)==false){
+      if (load_sf2_instrument(data,filename,instrument_number, set_loop_on_off)==false){        
         GFX_Message(NULL,"Unable to load soundfile %S.", filename.id);
         return false;
       }
@@ -3482,14 +3762,16 @@ static void free_tremolo(SoundPlugin *tremolo){
   V_free(tremolo);
 }
 
-static Data *create_data(float samplerate, Data *old_data, filepath_t filename, int instrument_number, enum ResamplerType resampler_type, bool use_sample_file_middle_note, bool is_loading){
+static Data *create_data(float samplerate, Data *old_data, filepath_t filename, int instrument_number, enum ResamplerType resampler_type, bool use_sample_file_middle_note, bool is_loading, bool sf2_midi_note_convention = true){
   Data *data = new Data(filename);
+
+  data->sf2_midi_note_convention = sf2_midi_note_convention;
 
   data->signal_from_RT = RSEMAPHORE_create(0);
 
   data->tremolo = create_tremolo(is_loading);
       
-  if(old_data==NULL){
+  if (old_data==NULL){
 
     data->p.finetune = 0.5f;
 
@@ -3560,7 +3842,7 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, struct Sound
     data->p.r = 50;
   }
 
-  if(load_sample(data,default_sound_filename,0, true)==false){
+  if (load_sample(data,default_sound_filename,0, true)==false){
     delete data;
     return NULL;
   }
@@ -3581,7 +3863,7 @@ static void delete_data(Data *data){
   for(i=0;i<MAX_NUM_SAMPLES;i++){
     Sample &sample=data->samples[i];
         
-    if(sample.sound!=NULL && sample.sound != prev){
+    if (sample.sound!=NULL && sample.sound != prev){
       prev = sample.sound;
       V_free(sample.sound);
       
@@ -3630,7 +3912,7 @@ void SAMPLER_set_loop_data(struct SoundPlugin *plugin, int64_t start, int64_t le
 
   {
     struct Patch *patch = plugin->patch;
-    if(patch!=NULL)
+    if (patch!=NULL)
       GFX_update_instrument_widget((struct Patch*)patch);
   }
 }
@@ -3642,12 +3924,16 @@ static bool set_new_sample(struct SoundPlugin *plugin,
                            bool use_sample_file_middle_note,
                            bool is_loading,
                            int64_t loop_start = -1,
-                           int64_t loop_end = -1)
+                           int64_t loop_end = -1,
+                           bool sf2_midi_note_convention = true)
 {
   bool success=false;
 
   Data *data = NULL;
   Data *old_data = (Data*)plugin->data;
+
+  bool did_set_loop = false;
+  bool did_set_pingpong = false;
 
 #if !defined(RELEASE)
   if (loop_start < 0 || loop_end < 0)
@@ -3663,16 +3949,24 @@ static bool set_new_sample(struct SoundPlugin *plugin,
 
   //bool org_loop_override_default = data->p.loop_override_default;
   //float loop_override_default = PLUGIN_get_effect_value2(plugin, EFF_LOOP_OVERRIDE_DEFAULT, VALUE_FROM_STORAGE, EFFECT_FORMAT_NATIVE);
-  
 
   filename = OS_loading_get_resolved_file_path(filename, false); // set program_state_is_valid=false. Might not be necessary, but I'm not sure.
   if (isIllegalFilepath(filename))
     goto exit;
 
-  data = create_data(old_data->samplerate, old_data, filename, instrument_number, resampler_type, use_sample_file_middle_note, is_loading);
-  
-  if(load_sample(data,filename,instrument_number, false)==false)
+  data = create_data(old_data->samplerate, old_data, filename, instrument_number, resampler_type, use_sample_file_middle_note, is_loading, sf2_midi_note_convention);
+
+  did_set_loop = false;
+  did_set_pingpong = false;
+
+  if (load_sample(data,filename,instrument_number, false, &did_set_loop, &did_set_pingpong)==false)
     goto exit;
+
+  // XI loader may have enabled loop/pingpong from file metadata — update GUI.
+  if (did_set_loop)
+    PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_ONOFF, 1.0f, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+  if (did_set_pingpong)
+    PLUGIN_set_effect_value(plugin, -1, EFF_PINGPONG, 1.0f, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
 
 
   if (keepOldLoopWhenLoadingNewSample()){
@@ -3706,26 +4000,31 @@ static bool set_new_sample(struct SoundPlugin *plugin,
     
   } else {
 
-    int64_t loop_start2 = loop_start >= 0 ? loop_start : 0;
-    int64_t loop_end2 = loop_end >= 0 ? loop_end : 0;
+    // XI loader already configured loops from file metadata — don't overwrite.
+    if (!did_set_loop) {
 
-    //int64_t new_num_frames = data->samples[0]==NULL ? 0 : data->samples[0].num_frames;
+      int64_t loop_start2 = loop_start >= 0 ? loop_start : 0;
+      int64_t loop_end2 = loop_end >= 0 ? loop_end : 0;
 
-    //printf("**STARTING. Org loop points: %d -> %d. New loop points: %d -> %d\n", (int)old_data->p.loop_start, (int)old_data->p.loop_end, (int)data->p.loop_start, (int)data->p.loop_end);
+      //int64_t new_num_frames = data->samples[0]==NULL ? 0 : data->samples[0].num_frames;
 
-    if (!is_loading)
-      PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_OVERRIDE_DEFAULT, 0.0f, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE); // turn off override default.
-    
-    RT_set_loop_points_complete(plugin, data, loop_start2, loop_end2, true);
-    
-    // Put loop_onoff into storage.
-    //PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_ONOFF, ATOMIC_GET(data->p.loop_onoff)==true?1.0f:0.0f, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+      //printf("**STARTING. Org loop points: %d -> %d. New loop points: %d -> %d\n", (int)old_data->p.loop_start, (int)old_data->p.loop_end, (int)data->p.loop_start, (int)data->p.loop_end);
+
+      if (!is_loading)
+        PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_OVERRIDE_DEFAULT, 0.0f, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE); // turn off override default.
+
+      RT_set_loop_points_complete(plugin, data, loop_start2, loop_end2, true);
+
+      // Put loop_onoff into storage.
+      //PLUGIN_set_effect_value(plugin, -1, EFF_LOOP_ONOFF, ATOMIC_GET(data->p.loop_onoff)==true?1.0f:0.0f, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+
+    }
 
   }
   
 
 
-  if(SP_is_plugin_running(plugin)){
+  if (SP_is_plugin_running(plugin)){
 
     //fprintf(stderr, "    *************** 11111. plugin IS running **********\n");
 
@@ -3759,14 +4058,14 @@ static bool set_new_sample(struct SoundPlugin *plugin,
 
   {
     volatile struct Patch *patch = plugin->patch;
-    if(patch!=NULL)
+    if (patch!=NULL)
       GFX_update_instrument_widget((struct Patch*)patch); // Update "loop" button.
   }
   
   success = true;
 
  exit:
-  if(success==false)
+  if (success==false)
     delete data;
 
   return success;
@@ -3781,7 +4080,7 @@ bool SAMPLER_set_new_sample(struct SoundPlugin *plugin, filepath_t filename, int
     return false;
 
   struct Patch *patch = plugin->patch;
-  if(patch!=NULL){
+  if (patch!=NULL){
     //printf("       1. UPDATE %s\n", patch->name);
     GFX_update_instrument_widget(patch);
   }
@@ -3820,7 +4119,7 @@ bool SAMPLER_set_random_sample(struct SoundPlugin *plugin, filepath_t path){
   
   QStringList list = dir.entryList(get_sample_name_filters(), QDir::Files|QDir::NoDotAndDotDot|QDir::Readable);
 
-  if(list.size()==0){
+  if (list.size()==0){
     GFX_Message2(NULL, true, "No samples found in %s", dir.absolutePath().toUtf8().constData());
     return false;
   }
@@ -3883,14 +4182,14 @@ void SAMPLER_save_sample(struct SoundPlugin *plugin, filepath_t filename, int sa
   sf_info.channels = 1;
   sf_info.format = SF_FORMAT_WAV | SF_FORMAT_PCM_16;
 
-  if(sf_format_check(&sf_info)==0){
+  if (sf_format_check(&sf_info)==0){
     fprintf (stderr, "\nFileformat not supported by libsndfile.\n");
     return;
   }
 
   SNDFILE *sndfile = radium_sf_open(filename,SFM_WRITE,&sf_info);
 
-  if(sndfile==NULL){
+  if (sndfile==NULL){
     fprintf(stderr,"could not open file\n");
     return;
   }
@@ -3928,7 +4227,7 @@ void SAMPLER_start_recording(struct SoundPlugin *plugin, filepath_t pathdir, int
 
   int64_t latency = 0;
   
-  if(recording_from_main_input){
+  if (recording_from_main_input){
     
     latency = MIXER_get_recording_latency_compensation_from_system_in(); // Recording latency from the sound card + Playback latency from the sound card.
     latency += MIXER_get_latency_for_main_system_out(); // In case there are parallel running plugins introducing latency in the chain.
@@ -4052,7 +4351,7 @@ static const char *get_effect_name(const struct SoundPlugin *plugin, int effect_
 }
 
 static int get_effect_format(struct SoundPlugin *plugin, int effect_num){
-  if(effect_num==EFF_LOOP_ONOFF || effect_num==EFF_REVERSE || effect_num==EFF_PINGPONG || effect_num==EFF_GRAN_onoff || effect_num==EFF_GRAN_strict_no_jitter || effect_num==EFF_LOOP_OVERRIDE_DEFAULT || effect_num==EFF_AHDSR_ONOFF)
+  if (effect_num==EFF_LOOP_ONOFF || effect_num==EFF_REVERSE || effect_num==EFF_PINGPONG || effect_num==EFF_GRAN_onoff || effect_num==EFF_GRAN_strict_no_jitter || effect_num==EFF_LOOP_OVERRIDE_DEFAULT || effect_num==EFF_AHDSR_ONOFF)
     return EFFECT_FORMAT_BOOL;
   else if (effect_num==EFF_CROSSFADE_LENGTH)
     return EFFECT_FORMAT_INT;
@@ -4142,7 +4441,7 @@ static bool show_gui(struct SoundPlugin *plugin, int64_t parentgui){
 static void hide_gui(struct SoundPlugin *plugin){
   Data *data=(Data*)plugin->data;
   
-  if(data->gui.data() != NULL){
+  if (data->gui.data() != NULL){
     if (ATOMIC_GET_RELAXED(data->rtwidget_pos) != -1){
       RTWIDGET_release_slot(ATOMIC_GET_RELAXED(data->rtwidget_pos));
       ATOMIC_SET_RELAXED(data->rtwidget_pos, -1);
@@ -4188,12 +4487,13 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
     
     filepath_t filename = PLUGIN_DISK_get_audio_filename(state);
     
-    if(isIllegalFilepath(filename)) // not supposed to happen though. Assertion in PLUGIN_DISK_get_audio_filename.
+    if (isIllegalFilepath(filename)) // not supposed to happen though. Assertion in PLUGIN_DISK_get_audio_filename.
       goto exit;
     
-    bool successfully_set_new_sample = set_new_sample(plugin,filename,instrument_number,resampler_type, use_sample_file_middle_note, is_loading, loop_start, loop_end);
+    bool successfully_set_new_sample = set_new_sample(plugin,filename,instrument_number,resampler_type, use_sample_file_middle_note, is_loading, loop_start, loop_end,
+                                                     HASH_has_key(state, "sf2_midi_note_convention") ? HASH_get_bool(state, "sf2_midi_note_convention") : false);
     
-    if(!successfully_set_new_sample)
+    if (!successfully_set_new_sample)
       GFX_addMessage("Could not load soundfile \"%S\". (instrument number: %d)\n", filename.id,instrument_number);
 
     data=(Data*)plugin->data; // set_new_sample created new data.
@@ -4204,7 +4504,7 @@ static void recreate_from_state(struct SoundPlugin *plugin, hash_t *state, bool 
 
     // Loop points. Setting loop points is tricky. Make sure everything is right. (This should not have been necessary though, but I think it was)
     {
-      if(successfully_set_new_sample){
+      if (successfully_set_new_sample){
         radium::PlayerLock lock(SP_is_plugin_running(plugin));
         RT_set_loop_points_complete(plugin, data, loop_start, loop_end);
       }
@@ -4255,6 +4555,8 @@ static void create_state(const struct SoundPlugin *plugin, hash_t *state){
 
   HASH_put_int(state, "loop_start",data->p.loop_start);
   HASH_put_int(state, "loop_length",data->p.loop_end - data->p.loop_start);
+
+  HASH_put_bool(state, "use_sf2_midi_note_convention", data->sf2_midi_note_convention);
 
   if (g_embed_samples){
     const char *audiofile = DISK_file_to_base64(data->filename.get());

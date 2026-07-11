@@ -45,6 +45,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_Fonts_proc.h"
 #include "Qt_colors_proc.h"
 #include "KeyboardFocusFrame.hpp"
+#include "EditorWidget.h"
 
 #include "../embedded_scheme/scheme_proc.h"
 #include "../common/seqtrack_automation_proc.h"

@@ -211,7 +211,18 @@ static bool seqblock_has_stretch(const struct SeqTrack *seqtrack, const struct S
 static void set_seqblock_stretch(const struct SeqTrack *seqtrack, struct SeqBlock *seqblock){
   double reltempo = seqblock->block==NULL ? 1.0 : ATOMIC_DOUBLE_GET(seqblock->block->reltempo);
 
-  seqblock->t.stretch = (double)get_seqblock_duration(seqblock) / (double)(seqblock->t.interior_end - seqblock->t.interior_start);
+  const double diff = seqblock->t.interior_end - seqblock->t.interior_start;
+
+  if (equal_doubles(diff, 0.0))
+  {
+	  R_ASSERT_NON_RELEASE(false);
+	  seqblock->t.stretch = 20000.0 * seqblock->t.speed;
+  }
+  else
+  {
+	  seqblock->t.stretch = (double)get_seqblock_duration(seqblock) / diff;
+  }
+  
   seqblock->t.stretch /= seqblock->t.speed;
   
   //  if (reltempo != 1.0) // <- Only correct to test for this if seqblock->t.stretch is also not 1.0.
@@ -3162,7 +3173,8 @@ static int get_seqblock_pos(vector_t *seqblocks, int64_t seqtime){
 }
 
 // Is static since there is no reason to call this from the outside since seqblocks should only be created in this file.
-static int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, const int64_t seqtime, const int64_t end_seqtime){
+static int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *seqblock, const int64_t seqtime, const int64_t end_seqtime)
+{
   R_ASSERT_RETURN_IF_FALSE2(seqblock!=NULL, -1);
 
   R_ASSERT_NON_RELEASE(seqtime==seqblock->t.time); // only release, not sure if it's always correct.
@@ -3256,7 +3268,7 @@ static int SEQTRACK_insert_seqblock(struct SeqTrack *seqtrack, struct SeqBlock *
 }
 
 int SEQTRACK_insert_block(struct SeqTrack *seqtrack, struct Blocks *block, int64_t seqtime, int64_t end_seqtime){
-  struct SeqBlock *seqblock = SEQBLOCK_create_block(seqtrack, block, NULL, -1, -1);
+  struct SeqBlock *seqblock = SEQBLOCK_create_block(seqtrack, block, NULL, -1, seqtime);
   if (seqblock==NULL)
     return -1;
   return SEQTRACK_insert_seqblock(seqtrack, seqblock, seqtime, end_seqtime);
@@ -3290,7 +3302,7 @@ static struct SeqBlock *create_sample_seqblock(struct SeqTrack *seqtrack, int se
   if (end_seqtime != -1)
     R_ASSERT_RETURN_IF_FALSE2(end_seqtime > seqtime, NULL);
 
-  struct SeqBlock *seqblock = SEQBLOCK_create_sample(seqtrack, seqtracknum, filename, RESAMPLER_SINC1, NULL, -1, -1, type);
+  struct SeqBlock *seqblock = SEQBLOCK_create_sample(seqtrack, seqtracknum, filename, RESAMPLER_SINC1, NULL, -1, seqtime, type);
   if (seqblock==NULL)
     return NULL;
 

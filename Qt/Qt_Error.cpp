@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <time.h>
 
 #include <QWidget>
 
@@ -73,8 +74,6 @@ static int show_message(QString message, const QVector<QString> &menu_strings){
     buttons.push_back(button);
   }
 
-  msgBox->show();
-
   msgBox->layout()->setSizeConstraint(QLayout::SetMinimumSize);
 
   
@@ -94,6 +93,12 @@ static int show_message(QString message, const QVector<QString> &menu_strings){
   }
 
   QAbstractButton *clicked_button = msgBox->clickedButton();
+
+  if (clicked_button == NULL)
+  {
+    fprintf(stderr, "WARN: radium_error_message: dialog closed without clicking a button\n");
+    return -1;
+  }
 
   int i = 0;
   for(QString menu_string : menu_strings){
@@ -157,10 +162,10 @@ int main(int argc, char **argv){
   if(getenv("QT_QPA_PLATFORM_PLUGIN_PATH")==NULL){
     faulty_installation = true;
   }else{
-    QCoreApplication::setLibraryPaths(QStringList());
+    QCoreApplication::setLibraryPaths(QStringList(getenv("QT_QPA_PLATFORM_PLUGIN_PATH")));
   }
 #else
-  QCoreApplication::setLibraryPaths(QStringList());
+  QCoreApplication::setLibraryPaths(QStringList(getenv("QT_QPA_PLATFORM_PLUGIN_PATH")));
 #endif
 
   QLocale::setDefault(QLocale::c());
@@ -263,13 +268,7 @@ int SYSTEM_show_message_menu(const struct vector_t_ *options, const char *messag
     closePopup();
   
   QProcess *myProcess = new QProcess();
-  myProcess->connect(myProcess, SIGNAL(finished(int)), myProcess, SLOT(deleteLater()));
-  
-#if defined(FOR_LINUX) || defined(FOR_MACOSX)
-  QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-  env.insert("LD_LIBRARY_PATH", getenv("LD_LIBRARY_PATH"));
-  myProcess->setProcessEnvironment(env);
-#endif
+  myProcess->connect(myProcess, SIGNAL(finished(int, QProcess::ExitStatus)), myProcess, SLOT(deleteLater()));
 
   GL_lock();
   
@@ -297,10 +296,15 @@ int SYSTEM_show_message_menu(const struct vector_t_ *options, const char *messag
     return -1;
   }
   
-  R_ASSERT_RETURN_IF_FALSE2(myProcess->exitStatus()==QProcess::NormalExit, -1);
+  QProcess::ExitStatus exit_status = myProcess->exitStatus();
+  int exit_code = myProcess->exitCode();
   
-  printf("  Exit code: %d\n", myProcess->exitCode());
-  return myProcess->exitCode();
+  printf("  radium_error_message exitStatus: %d, exitCode: %d, error: %d\n", exit_status, exit_code, myProcess->error());
+  
+  R_ASSERT_RETURN_IF_FALSE2(exit_status==QProcess::NormalExit, -1);
+  
+  printf("  Exit code: %d\n", exit_code);
+  return exit_code;
 }
 
 extern "C" {

@@ -731,6 +731,22 @@
 
              
 
+(define (rename-current-block-name)
+  (define blocknum (<ra> :current-block))
+  (define old-name (<ra> :get-block-name blocknum))
+  (define new-name (<ra> :request-string "New name:" #t old-name))
+  (when (and (not (string=? new-name ""))
+             (not (string=? new-name old-name)))
+    (<ra> :add-undo-block blocknum)
+    (<ra> :set-block-name new-name blocknum)))
+
+(define (configure-color-for-current-block)
+  (define blocknum (<ra> :current-block))
+  (when blocknum
+    (<ra> :color-dialog (<ra> :get-block-color blocknum -1 #f) -1
+          (lambda (color)
+            (<ra> :set-block-color color blocknum)))))
+
 (define (get-blocklist-popup-menu-entries)
   (define blocknum (<ra> :current-block))
 
@@ -740,21 +756,10 @@
      (<-> "-------" blocknum ": \"" (<ra> :get-block-name blocknum) "\"")
      
      (list "Rename..."
-           (lambda ()
-             (define old-name (<ra> :get-block-name blocknum))
-             (define new-name (<ra> :request-string "New name:" #t old-name))
-             (c-display "NEWNAME" (<-> "-" new-name "-"))
-             (when (and (not (string=? new-name ""))
-                        (not (string=? new-name old-name)))
-               (<ra> :add-undo-block blocknum)
-               (<ra> :set-block-name new-name blocknum))))
+           rename-current-block-name)
 
      (list "Configure color..."
-           (lambda ()
-             (if blocknum
-                 (<ra> :color-dialog (<ra> :get-block-color blocknum -1 #f) -1
-                       (lambda (color)
-                         (<ra> :set-block-color color blocknum))))))
+           configure-color-for-current-block)
      
      (list "Generate new color"
            :shortcut ra:generate-new-color-for-all-selected-seqblocks

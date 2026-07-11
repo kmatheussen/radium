@@ -1104,10 +1104,10 @@ int GFX_Message2_internal(vector_t *buttons, bool program_state_is_valid, const 
   int ret;
   
   if (g_force_regular_gfx_message || safe_to_run_exec())
-    ret = show_gfx_message(buttons, program_state_is_valid, QString(message));
+	  ret = show_gfx_message(buttons, program_state_is_valid, QString(message));
   else
-    ret = SYSTEM_show_message_menu(buttons, message);
-
+	  ret = SYSTEM_show_message_menu(buttons, message); // Note: Always ends up here if not on main thread since safe_to_run_exec() returns false if not on main thread.
+  
   ATOMIC_SET(g_is_showing_message, false);
   return ret;
 }

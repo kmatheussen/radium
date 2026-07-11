@@ -263,7 +263,7 @@ static void InitTrack(struct Tracks *track){
         g_num_live_tracks++;
         GC_register_finalizer(track, trackgcfinalizer, NULL, NULL, NULL);
 
-        printf("--------------------------------NUM live tracks: %d-------------------------\n", g_num_live_tracks);
+        //printf("--------------------------------NUM live tracks: %d-------------------------\n", g_num_live_tracks);
 }
 
 struct Tracks *TRACK_create(int tracknum){

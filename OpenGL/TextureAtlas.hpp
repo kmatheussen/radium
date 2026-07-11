@@ -38,7 +38,7 @@ class TextureAtlasBackend
     QRhiTexture* _texture = nullptr;
     QRhiSampler* _sampler = nullptr;
 
-    bool _textureUploaded = false;
+//    bool _textureUploaded = false;
 
 public:
 

@@ -188,6 +188,10 @@ extern void create_faust_multibandcomp_plugin(void);
 extern void create_faust_plugin(void);
 #endif
 
+#ifdef WITH_FAUST_DEV2
+extern void create_faust_dev2_plugin(void);
+#endif
+
 extern void create_pitchshift_plugin(void);
 
 extern void create_faust_system_eq_plugin(void);

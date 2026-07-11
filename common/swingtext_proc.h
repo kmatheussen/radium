@@ -39,14 +39,24 @@ static inline bool swingtext_fits_reallines(struct WBlocks *wblock, const dynvec
       
       const Place place = p_Add(beats->l.p, DYN_get_place(swing->elements[0]));
         
-      Place realline_place2 = realline==wblock->num_reallines-1 ? p_Last_Pos(wblock->block) :  wblock->reallines[realline+1]->l.p;
+      Place realline_place2 = realline >= wblock->num_reallines-1 ? p_Last_Pos(wblock->block) :  wblock->reallines[realline+1]->l.p;
 
-      if (p_Greater_Or_Equal(place, realline_place2)){
-
-        do{
-          realline++;
-          realline_place2 = realline==wblock->num_reallines-1 ? p_Last_Pos(wblock->block) :  wblock->reallines[realline+1]->l.p;
-        }while(p_Greater_Or_Equal(place, realline_place2));
+      if (p_Greater_Or_Equal(place, realline_place2))
+	  {
+		  do
+		  {
+			  realline++;
+			  
+			  if (realline == wblock->num_reallines)
+			  {
+				  R_ASSERT_NON_RELEASE(false);
+				  realline--;
+				  break;
+			  }
+			  
+			  realline_place2 = realline >= wblock->num_reallines-1 ? p_Last_Pos(wblock->block) :  wblock->reallines[realline+1]->l.p;
+		  }
+		  while(p_Greater_Or_Equal(place, realline_place2));
       }
       
       const Place realline_place1 = wblock->reallines[realline]->l.p;

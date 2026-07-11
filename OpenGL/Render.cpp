@@ -661,18 +661,27 @@ static void create_curr_track_border(const struct Tracker_Windows *window, const
   x1--;
   x2 += 3;
 
-  // Manually scissor to track area instead of using USE_SCISSORS
+  // Manually scissor to track area instead of using USE_SCISSORS  
   bool is_left_clamped = false;
+  
   {
-    int scissor_x1 = wblock->t.x1 - 1;
-    int scissor_x2 = wblock->t.x2;
-
-    if (x1 < scissor_x1){
-      x1 = scissor_x1;
-      is_left_clamped = true;
-    }
-    if (x2 > scissor_x2)
-      x2 = scissor_x2;
+	  // For non-notes tracks (curr_track < 0, e.g. BPM/LPB/Sign/Swing),
+	  // the track area is left of wblock->t.x1 (inside the block control area).
+	  // If so, use the same leftmost boundary as create_background_realline.
+	  int scissor_x1 = (window->curr_track >= 0)
+		  ? wblock->t.x1 - 1
+		  : wblock->tempocolorarea.x - 1;
+	  
+	  int scissor_x2 = wblock->t.x2;
+	  
+	  if (x1 < scissor_x1)
+	  {
+		  x1 = scissor_x1;
+		  is_left_clamped = true;
+	  }
+	  
+	  if (x2 > scissor_x2)
+		  x2 = scissor_x2;
   }
   
   float y1 = get_scrollbar_y1(window, wblock);
@@ -699,7 +708,7 @@ static void create_background(const struct Tracker_Windows *window, const struct
 		create_background_realline(window, wblock, wsignatures_trss[realline], realline);
 
 	if (FOCUSFRAMES_has_focus(radium::KeyboardFocusFrameType::EDITOR))
-		create_curr_track_border(window, wblock);
+		create_curr_track_border(window, wblock);		   
 }
 
 

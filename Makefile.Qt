@@ -185,24 +185,28 @@ QT_SVGWIDGETS_LDFLAGS ?= `$(PKGqt) --libs Qt6SvgWidgets` $(FPIC)
 #	QT_CFLAGS ?= `$(PKGqt) --cflags Qt6Gui --cflags Qt6Network --cflags Qt6OpenGL --cflags Qt6Widgets --cflags Qt6WebEngineWidgets` -Ibin/packages/qhttpserver-master/src -Ibin/packages/QScintilla_gpl-2.10.8 -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) -DUSE_QT6
 #	QT_LDFLAGS ?= `$(PKGqt) --libs Qt6Gui --libs Qt6OpenGL --libs Qt6Network --libs Qt6Widgets --libs Qt6WebEngineWidgets`
 
-QT_CFLAGS ?= `$(PKGqt) --cflags Qt6Gui --cflags Qt6Network --cflags Qt6OpenGL --cflags Qt6Widgets --cflags Qt6OpenGLWidgets --cflags Qt6Concurrent | sed 's/-I/-isystem/g'` -I$(QHTTPSERVER_PATH)/src -I$(QSCINTILLA_PATH) -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) $(FPIC)
+QT_CFLAGS ?= `$(PKGqt) --cflags Qt6Gui --cflags Qt6Network --cflags Qt6OpenGL --cflags Qt6Widgets --cflags Qt6OpenGLWidgets --cflags Qt6Concurrent | sed 's/-I/-isystem/g'` $(QT_SVG_CFLAGS) -I$(QHTTPSERVER_PATH)/src -I$(QSCINTILLA_PATH) -DQHTTPSERVER_EXPORT $(QT_SYSTEM_CFLAGS) $(FPIC)
 QT_LDFLAGS ?=  $(QT_UI_LDFLAGS) $(QT_SVG_LDFLAGS) $(QT_SVGWIDGETS_LDFLAGS) `$(PKGqt) --libs Qt6Gui --libs Qt6Widgets --libs Qt6Network --libs Qt6Core5Compat` $(FPIC)
 # --libs Qt6OpenGL --libs Qt6OpenGLWidgets 
 # --cflags Qt6Core5Compat
 
 ifeq ($(USE_QSVGVIEWER),1)
 #  If using QSvg:
-  USE_QWEBENGINE_CFLAGS=-DUSE_QSVGVIEWER=1 -DUSE_QWEBENGINE=0
-  QT_CFLAGS += $(QT_SVG_CFLAGS)
+  USE_QWEBENGINE_CFLAGS = -DUSE_QSVGVIEWER=1 -DUSE_QTWEBVIEW=0 -DUSE_QWEBENGINE=0
+#  QT_CFLAGS += $(QT_SVG_CFLAGS)
 #  QT_LDFLAGS += ""
+else ifeq ($(USE_QTWEBVIEW),1)
+  USE_QWEBENGINE_CFLAGS = -DUSE_QSVGVIEWER=0 -DUSE_QTWEBVIEW=1 -DUSE_QWEBENGINE=0
+  QT_CFLAGS += `$(PKGqt) --cflags Qt6WebView | sed 's/-I/-isystem/g'` 
+  QT_LDFLAGS += `$(PKGqt) --libs Qt6WebView`
 else ifeq ($(USE_QWEBENGINE),1)
 #  If using QtWebEngine:
-  USE_QWEBENGINE_CFLAGS = -DUSE_QSVGVIEWER=0 -DUSE_QWEBENGINE=1
+  USE_QWEBENGINE_CFLAGS = -DUSE_QSVGVIEWER=0 -DUSE_QTWEBVIEW=0 -DUSE_QWEBENGINE=1
   QT_CFLAGS += `$(PKGqt) --cflags Qt6WebEngineCore  --cflags Qt6WebEngineWidgets | sed 's/-I/-isystem/g'` 
   QT_LDFLAGS += `$(PKGqt) --libs Qt6WebEngineCore  --libs Qt6WebEngineWidgets`
 else
 #  If using QtWebKit:
-  USE_QWEBENGINE_CFLAGS = -DUSE_QSVGVIEWER=0 -DUSE_QWEBENGINE=0
+  USE_QWEBENGINE_CFLAGS = -DUSE_QSVGVIEWER=0 -DUSE_QTWEBVIEW=0 -DUSE_QWEBENGINE=0
   QT_CFLAGS += `$(PKGqt) --cflags Qt6WebKitWidgets --cflags Qt6WebKit | sed 's/-I/-isystem/g'`
   QT_LDFLAGS += `$(PKGqt) --libs Qt6WebKitWidgets --libs Qt6WebKit`
 endif
@@ -377,7 +381,7 @@ WNO_TEMPLATE_ID_CDTOR=
 
 ifeq ($(GCC_MAJOR),15)
 	WNO_DEPRECATED_ENUM_ENUM_CONVERSION=-Wno-deprecated-enum-enum-conversion
-	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined # -fno-sanitize-recover
+	DEFAULT_UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined # -fno-sanitize-recover
 	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
 	WNO_DEPRECATED_DECLARATIONS=-Wno-deprecated-declarations
 	WNO_CLASS_MEMACCESS=-Wno-class-memaccess
@@ -387,7 +391,7 @@ ifeq ($(GCC_MAJOR),15)
 #	UNDEFINED_SANITIZE_OPTS=
 else ifeq ($(GCC_MAJOR),14)
 	WNO_DEPRECATED_ENUM_ENUM_CONVERSION=-Wno-deprecated-enum-enum-conversion
-	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined # -fno-sanitize-recover
+	DEFAULT_UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined # -fno-sanitize-recover
 	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
 	WNO_DEPRECATED_DECLARATIONS=-Wno-deprecated-declarations
 	WNO_CLASS_MEMACCESS=-Wno-class-memaccess
@@ -396,49 +400,49 @@ else ifeq ($(GCC_MAJOR),14)
 	QT_CFLAGS += $(WNO_TEMPLATE_ID_CDTOR)
 #	UNDEFINED_SANITIZE_OPTS=
 else ifeq ($(GCC_MAJOR),13)
-	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined # -fno-sanitize-recover
+	DEFAULT_UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined # -fno-sanitize-recover
 	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
 	WNO_DEPRECATED_DECLARATIONS=-Wno-deprecated-declarations
 	WNO_CLASS_MEMACCESS=-Wno-class-memaccess
 	WNO_PARENTHESIS=-Wno-parentheses
 #	UNDEFINED_SANITIZE_OPTS=
 else ifeq ($(GCC_MAJOR),12)
-	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined # -fno-sanitize-recover
+	DEFAULT_UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined # -fno-sanitize-recover
 	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
 	WNO_DEPRECATED_DECLARATIONS=-Wno-deprecated-declarations
 	WNO_CLASS_MEMACCESS=-Wno-class-memaccess
 	WNO_PARENTHESIS=-Wno-parentheses
 #	UNDEFINED_SANITIZE_OPTS=
 else ifeq ($(GCC_MAJOR),11)
-	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined # -fno-sanitize-recover
+	DEFAULT_UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined # -fno-sanitize-recover
 	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
 	WNO_DEPRECATED_DECLARATIONS=-Wno-deprecated-declarations
 	WNO_CLASS_MEMACCESS=-Wno-class-memaccess
 	WNO_PARENTHESIS=-Wno-parentheses
 #	UNDEFINED_SANITIZE_OPTS=
 else ifeq ($(GCC_MAJOR),10)
-	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined # -fno-sanitize-recover
+	DEFAULT_UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined # -fno-sanitize-recover
 	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
 	WNO_DEPRECATED_DECLARATIONS=-Wno-deprecated-declarations
 	WNO_CLASS_MEMACCESS=-Wno-class-memaccess
 	WNO_PARENTHESIS=-Wno-parentheses
 #	UNDEFINED_SANITIZE_OPTS=
 else ifeq ($(GCC_MAJOR),9)
-	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined -fno-sanitize-recover
+	DEFAULT_UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined -fno-sanitize-recover
 	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
 #	UNDEFINED_SANITIZE_OPTS=
 	WNO_DEPRECATED_DECLARATIONS=-Wno-deprecated-declarations
 	WNO_CLASS_MEMACCESS=-Wno-class-memaccess
 	WNO_PARENTHESIS=-Wno-parentheses
 else ifeq ($(GCC_MAJOR),8)
-	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined -fno-sanitize-recover
+	DEFAULT_UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined -fno-sanitize-recover
 	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
 	WNO_DEPRECATED_DECLARATIONS=-Wno-deprecated-declarations
 #	UNDEFINED_SANITIZE_OPTS=
 	WNO_CLASS_MEMACCESS=-Wno-class-memaccess
 	WNO_PARENTHESIS=-Wno-parentheses
 else ifeq ($(GCC_MAJOR),7)
-	UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined -fno-sanitize-recover
+	DEFAULT_UNDEFINED_SANITIZE_OPTS= -fsanitize=undefined -fno-sanitize-recover
 	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
 	WNO_DEPRECATED_DECLARATIONS=-Wno-deprecated-declarations
 #	UNDEFINED_SANITIZE_OPTS=
@@ -448,27 +452,29 @@ else ifdef USING_CLANG
 	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=-fno-sanitize=signed-integer-overflow
 	WNO_DEPRECATED_DECLARATIONS=-Wno-deprecated-declarations
 else
-	UNDEFINED_SANITIZE_OPTS=
+	DEFAULT_UNDEFINED_SANITIZE_OPTS=
 	NO_SANITIZE_SIGNED_INTEGER_OVERFLOW=
 endif
 
 FNO_OPTIMIZE_SIBLING_CALLS ?= -fno-optimize-sibling-calls
 
-UNDEFINED_SANITIZE_OPTS=-DRADIUM_USES_UBSAN -fsanitize=undefined -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow -fsanitize=bounds -fsanitize=vptr -fno-sanitize-recover=undefined -fsanitize=alignment
+DEFAULT_UNDEFINED_SANITIZE_OPTS=-DRADIUM_USES_UBSAN -fsanitize=undefined -fsanitize=float-divide-by-zero -fsanitize=float-cast-overflow -fsanitize=bounds -fsanitize=vptr -fno-sanitize-recover=undefined -fsanitize=alignment
 
 #UNDEFINED_SANITIZE_OPTS=
 
 ifdef USING_CLANG
-	UNDEFINED_SANITIZE_OPTS += -fno-sanitize=function -fno-sanitize=vptr 
+	DEFAULT_UNDEFINED_SANITIZE_OPTS += -fno-sanitize=function -fno-sanitize=vptr 
 endif
 
 ifeq ($(BUILD_OPTIMIZED), RELEASE)
-	UNDEFINED_SANITIZE_OPTS += -fsanitize=object-size
+	DEFAULT_UNDEFINED_SANITIZE_OPTS += -fsanitize=object-size
 endif
+
+UNDEFINED_SANITIZE_OPTS ?= $(DEFAULT_UNDEFINED_SANITIZE_OPTS)
 
 # -fsanitize-thread sometimes require: "export __GL_THREADED_OPTIMIZATIONS=0"
 # "-Og" very often destroys debugging (although it's not supposed to), but without it things are too slow (well, it's already too slow, but -Og helps a lot).
-#THREAD_SANITIZE_OPTS=-Og -fsanitize=thread -DRADIUM_USES_TSAN #-DDISABLE_BDWGC
+#THREAD_SANITIZE_OPTS=-fsanitize=thread -DRADIUM_USES_TSAN # -Og -DDISABLE_BDWGC
 THREAD_SANITIZE_OPTS=
 
 ADDRESS_SANITIZE_OPTS ?= -fsanitize=address -fno-common -DRADIUM_USES_ASAN
@@ -483,7 +489,7 @@ MEMORY_SANITIZE_OPTS=
 OS_DEBUG_BUILD_OPTS ?= 
 #-mbranch-protection=standard -fno-sanitize-trap=all
 #-flto -fvisibility=hidden -fsanitize=cfi -fno-sanitize-trap=all # -fanalyzer 
-DEBUG_BUILD_OPTS = $(WERROR) -Wfloat-equal -Wall $(GGDB_OPT) $(FNO_OPTIMIZE_SIBLING_CALLS) $(UNDEFINED_SANITIZE_OPTS) $(THREAD_SANITIZE_OPTS) $(ADDRESS_SANITIZE_OPTS) $(MEMORY_SANITIZE_OPTS) $(WNO_NAN_INFINITY_DISABLED) $(OS_DEBUG_BUILD_OPTS)
+DEBUG_BUILD_OPTS = $(ADDRESS_SANITIZE_OPTS) $(WERROR) -Wfloat-equal -Wall $(GGDB_OPT) $(FNO_OPTIMIZE_SIBLING_CALLS) $(UNDEFINED_SANITIZE_OPTS) $(THREAD_SANITIZE_OPTS) $(MEMORY_SANITIZE_OPTS) $(WNO_NAN_INFINITY_DISABLED) $(OS_DEBUG_BUILD_OPTS)
 
 # Slow. Also: asan/ubsan hopefully covers this stuff.
 # -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG -D_GLIBCXX_DEBUG 
@@ -741,7 +747,7 @@ OBJ14=$(T)disk_midi_fx.o $(T)disk_midi_instrument.o $(T)midi_fx.o $(T)midi_instr
 OBJ_FAUST=$(T)zita_rev.o $(T)stk_flute.o $(T)stk_bowed.o $(T)stk_blow_bottle.o $(T)stk_bass.o $(T)stk_blow_hole.o $(T)stk_brass.o $(T)stk_clarinet.o $(T)stk_flute_stk.o $(T)stk_glass_harmonica.o $(T)stk_harpsi.o $(T)stk_modal_bar.o $(T)stk_NLF_eks.o $(T)stk_NLF_fm.o $(T)stk_piano.o $(T)stk_saxophony.o $(T)stk_sitar.o $(T)stk_tibetan_bowl.o $(T)stk_tuned_bar.o $(T)stk_uni_bar.o $(T)stk_voice_form.o $(T)faust_tapiir.o $(T)faust_system_eq.o $(T)faust_system_tremolo.o $(T)faust_system_lowpass.o $(T)faust_system_highpass.o $(T)faust_system_lowshelf.o $(T)faust_system_highshelf.o $(T)faust_multibandcomp.o
 
 #AUDIO
-OBJ_AUDIO=$(T)audio_instrument.o $(T)SoundProducer.o $(T)AudioBuffer.o $(T)Jack_plugin.o $(T)find_jack_library.o $(T)Faust_plugins.o $(T)Bus_plugins.o $(T)Timeskew_plugin.o $(T)Patchbay_plugin.o $(T)MidiMessages_plugin.o $(T)VST_plugins.o $(T)Ladspa_plugins.o $(T)Sampler_plugin.o $(T)SampleRecorder.o $(T)SampleReader.o $(T)Seqtrack_plugin.o $(T)FluidSynth_plugin.o $(T)Pd_plugin.o $(T)Modulator_plugin.o $(T)SendReceive_plugins.o $(T)SoundPluginRegistry.o $(T)SoundPlugin.o $(T)AudioMeterPeaks.o $(T)Peaks.o $(T)Fade.o $(T)Mixer.o $(T)get_windows_commandlines.o $(T)Envelope.o $(T)Resampler.o $(T)SoundFonts.o $(T)Presets.o $(T)undo_audio_effect.o $(T)undo_connection_enabled.o $(T)undo_audio_connection_gain.o $(T)undo_pd_controllers.o $(T)undo_plugin_state.o $(T)SoundfileSaver.o $(T)system_compressor_wrapper.o $(T)KillJackd.o $(T)SF.o $(T)RIFF.o
+OBJ_AUDIO=$(T)audio_instrument.o $(T)SoundProducer.o $(T)AudioBuffer.o $(T)Jack_plugin.o $(T)find_jack_library.o $(T)Faust_plugins.o $(T)Faust_dev2.o $(T)Bus_plugins.o $(T)Timeskew_plugin.o $(T)Patchbay_plugin.o $(T)MidiMessages_plugin.o $(T)VST_plugins.o $(T)Ladspa_plugins.o $(T)Sampler_plugin.o $(T)SampleRecorder.o $(T)SampleReader.o $(T)Seqtrack_plugin.o $(T)FluidSynth_plugin.o $(T)XI_Plugin.o $(T)Pd_plugin.o $(T)Modulator_plugin.o $(T)SendReceive_plugins.o $(T)SoundPluginRegistry.o $(T)SoundPlugin.o $(T)AudioMeterPeaks.o $(T)Peaks.o $(T)Fade.o $(T)Mixer.o $(T)get_windows_commandlines.o $(T)Envelope.o $(T)Resampler.o $(T)SoundFonts.o $(T)Presets.o $(T)undo_audio_effect.o $(T)undo_connection_enabled.o $(T)undo_audio_connection_gain.o $(T)undo_pd_controllers.o $(T)undo_plugin_state.o $(T)SoundfileSaver.o $(T)system_compressor_wrapper.o $(T)KillJackd.o $(T)SF.o $(T)RIFF.o
  
 #MultiCore.o $(T)Smooth.o
 
@@ -767,8 +773,7 @@ OBJ = $(OBJ12) $(OBJ_ES) $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ4) $(OBJ5) $(OBJ6) $(OBJ7)
 
 #-------------------KARSJK-------------------------------
 
-BUILD_DEPENDENCIES = $(CD)keyboard_sub_ids.h dependencies_ok
-#flagopts.opt buildtype.opt 
+BUILD_DEPENDENCIES = $(CD)keyboard_sub_ids.h dependencies_ok flagopts.opt buildtype.opt $(API)s7_types.h $(API)radium_proc.h
 
 PROGRAM_MODULES = $(RADIUM_BIN) bin/radium_crashreporter bin/protoconfparser.py bin/protos.conf bin/radium_error_message bin/radium_progress_window bin/radium_check_jack_status bin/radium_plugin_scanner bin/scheme/api_protos.scm bin/color.frag.qsb bin/color.vert.qsb bin/texture_vertex.qsb bin/texture_fragment.qsb # bin/radium_check_opengl 
 OBJECT_DEPENDENCIES = $(BUILD_DEPENDENCIES)
@@ -793,8 +798,10 @@ ifdef USING_CLANG
 	QT_PCH_INCLUDE = -include-pch $(QT_PCH)
 endif
 
-$(QT_PCH): Qt/Qt_precompiled.hpp
-	$(CCC) -x c++-header $(QTOPT) -o $@ -c $<
+$(QT_PCH) Qt/Qt_precompiled.hpp.d &: Qt/Qt_precompiled.hpp $(BUILD_DEPENDENCIES)
+	$(CCC) -MMD -MP -DNO_PRAGMA_ONCE -x c++-header $(QTOPT) -o $(QT_PCH) -c $<
+
+-include Qt/Qt_precompiled.hpp.d
 
 
 
@@ -2206,7 +2213,7 @@ $(T)api_midi.o:  $(BUILD_DEPENDENCIES)  $(API)api_midi.cpp $(QT_PCH)
 	$(CCC2) $(API)api_midi.cpp $(QTOPT) $(QT_PCH_INCLUDE) $(BOOST_INCLUDE)
 
 $(T)api_gui.o:  $(BUILD_DEPENDENCIES)  $(API)api_gui.cpp  Qt/ScrollArea.hpp Qt/helpers.h Qt/lzqlineedit.h  Qt/Rational.h Qt/Qt_MyQCheckBox.h embedded_scheme/s7extra_proc.h Qt/Qt_MyQScrollBar.hpp Qt/FileRequester.hpp Qt/Timer.hpp Qt/HashVector.hpp Qt/Qt_MyQCheckBox.h Qt/FocusSniffers.h Qt/Editor.hpp $(QT_PCH)
-	$(MOC) $(USE_QWEBENGINE_CFLAGS) $(API)api_gui.cpp > $(API)mapi_gui.cpp
+	$(MOC) $(USE_QWEBENGINE_CFLAGS) $(QT_UI_CFLAGS) $(API)api_gui.cpp > $(API)mapi_gui.cpp
 	$(CCC2) $(API)api_gui.cpp $(QTOPT) $(QT_PCH_INCLUDE) $(QT_UI_CFLAGS) $(QT_SVG_CFLAGS) $(FPIC) -Wno-null-dereference $(NO_ANALYZER) $(WNO_DEPRECATED_DECLARATIONS)
 
 
@@ -2426,8 +2433,10 @@ ifdef USING_CLANG
   FAUST_PCH_INCLUDE = -include-pch $(FAUST_PCH)
 endif
 
-$(FAUST_PCH): audio/Faust_plugins_precompiled.hpp
-	$(CCC) $(FAUST_OPTS2) -o $@ -c $<
+$(FAUST_PCH) audio/Faust_plugins_precompiled.hpp.d &: audio/Faust_plugins_precompiled.hpp $(BUILD_DEPENDENCIES)
+	$(CCC) -MMD -MP -DNO_PRAGMA_ONCE $(FAUST_OPTS2) -o $(FAUST_PCH) -c $<
+
+-include audio/Faust_plugins_precompiled.hpp.d
 
 
 
@@ -2435,6 +2444,8 @@ $(T)Faust_plugins.o: audio/Faust_plugins.cpp audio/Faust_factory_factory.cpp $(F
 	$(MOC) audio/Faust_factory_factory.cpp >audio/mFaust_factory_factory.cpp
 	$(CCC2) $(FAUST_OPTS) $(LLVM_OPTS) $(QT_CFLAGS) -DDSP_NAME="\"FaustDev\"" audio/Faust_plugins.cpp $(NOSHORTEN64TO32FLAG) $(BOOST_INCLUDE) # Qt 5.5 headers (which we use for qtwebkit) needs -Wno-shorten-64-to-32 flag.
 
+$(T)Faust_dev2.o: audio/Faust_dev2.cpp audio/SubBlockNoteCollector.h
+	$(CCC2) $(FAUST_OPTS) $(LLVM_OPTS) $(QT_CFLAGS) audio/Faust_dev2.cpp $(BOOST_INCLUDE)
 
 audio/mfaustqt2.cpp: $(FAUSTDIR)/architecture/faust/gui/QTUI.h #bin/packages/faust2/architecture/faust/gui/faustqt.h
 	cd audio && $(MOC) $(FAUSTDIR)/architecture/faust/gui/QTUI.h >mfaustqt2.cpp

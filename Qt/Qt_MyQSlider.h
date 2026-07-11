@@ -26,7 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QApplication>
 #include <QFont>
 
-#include "EditorWidget.h"
+//#include "EditorWidget.h"
 
 #include "../common/instruments_proc.h"
 #include "../common/vector_proc.h"
@@ -45,9 +45,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../api/api_proc.h"
 
+#include "helpers.h"
 #include "Qt_instruments_proc.h"
-
 #include "Qt_SliderPainter_proc.h"
+#include "Qt_colors_proc.h"
+
 
 struct MyQSlider;
 

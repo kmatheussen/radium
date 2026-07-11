@@ -141,9 +141,9 @@ bool fileExists(filepath_t path){
 
 extern QStringList get_sample_name_filters(void);
 
-#if FOR_WINDOWS
-extern Q_CORE_EXPORT int qt_ntfs_permission_lookup;
-#endif
+//#if FOR_WINDOWS
+//extern Q_CORE_EXPORT int qt_ntfs_permission_lookup;
+//#endif
 
 
 dyn_t getFileInfo(filepath_t w_path){
@@ -383,19 +383,24 @@ bool iterateDirectory(filepath_t daspath, bool async, func_t* callback){
     return false;
   }
 
+  bool is_readable;
+
+  {
 #if FOR_WINDOWS
-  qt_ntfs_permission_lookup++;
+	  //qt_ntfs_permission_lookup++;
+	  QNtfsPermissionCheckGuard permissionGuard;	 
 #endif
 
 #if FOR_WINDOWS
-  bool is_readable = true; // isReadable() returns false for network disks on windows, even when the network disk is actually readable.
+	  is_readable = true; // isReadable() returns false for network disks on windows, even when the network disk is actually readable.
 #else
-  bool is_readable = info.isReadable();
+	  is_readable = info.isReadable();
 #endif
   
 #if FOR_WINDOWS
-  qt_ntfs_permission_lookup--;
+	  //qt_ntfs_permission_lookup--;
 #endif
+  }
 
   if (!is_readable){
     showAsyncMessage(talloc_format("Directory \"%S\" is not readable", STRING_create(path)));
