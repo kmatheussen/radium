@@ -130,11 +130,14 @@ static void delete_file(QString filename){
 
 static void clear_file(QString filename){
 	QFile file(filename);
-	if (file.open(QIODevice::WriteOnly | QIODevice::Text))
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
 	{
 		fprintf(stderr, "\033[31m\n\n !!!!!!!!!!!!!!!!!!!!!!!!! \n\n\n Error in crashreporter.cpp at line %d: Unable to open file \"%s\" for writing. \n\n !!!!!!!!!!!!!!!!!!!!!!!!! \n\n\n \033[0m",
 				__LINE__,
 				filename.toUtf8().constData());
+	}
+	else
+	{
 		file.write("");
 		file.close();
 	}
