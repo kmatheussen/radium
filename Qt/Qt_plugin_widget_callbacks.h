@@ -262,34 +262,34 @@ public:
               // redo: convert Faust Dev 1 -> Faust Dev 2
               [state, code, options, use_interpreter]()
               {
-                radium::ScopedIgnoreUndo scoped_ignore_undo;
-
-                *state = S7CALL2(instrument_instrument, "FROM_C-convert-faust-dev1-to-dev2", *state);
-
-                struct Patch *new_patch = PATCH_get_from_id(*state);
-                if (new_patch != NULL && new_patch->patchdata != NULL){
-                  SoundPlugin *new_plugin = (SoundPlugin*)new_patch->patchdata;
-                  FAUST2_set_code(new_plugin, code);
-                  FAUST2_set_options(new_plugin, options);
-                  FAUST2_set_use_interpreter_backend(new_plugin, use_interpreter);
-                  FAUST2_start_compilation(new_plugin);
-                }
+				  *state = S7CALL2(instrument_instrument, "FROM_C-convert-faust-dev1-to-dev2", *state);
+				  
+				  struct Patch *new_patch = PATCH_get_from_id(*state);
+				  
+				  if (new_patch != NULL && new_patch->patchdata != NULL)
+				  {
+					  SoundPlugin *new_plugin = (SoundPlugin*)new_patch->patchdata;
+					  FAUST2_set_code(new_plugin, code);
+					  FAUST2_set_options(new_plugin, options);
+					  FAUST2_set_use_interpreter_backend(new_plugin, use_interpreter);
+					  FAUST2_start_compilation(new_plugin);
+				  }
               },
               // undo: convert Faust Dev 2 -> Faust Dev 1
               [state, code, options, use_interpreter]()
               {
-                radium::ScopedIgnoreUndo scoped_ignore_undo;
-
-                *state = S7CALL2(instrument_instrument, "FROM_C-convert-faust-dev2-to-dev1", *state);
-
-                struct Patch *old_patch = PATCH_get_from_id(*state);
-                if (old_patch != NULL && old_patch->patchdata != NULL){
-                  SoundPlugin *old_plugin = (SoundPlugin*)old_patch->patchdata;
-                  FAUST_set_code(old_plugin, code);
-                  FAUST_set_options(old_plugin, options);
-                  FAUST_set_use_interpreter_backend(old_plugin, use_interpreter);
-                  FAUST_start_compilation(old_plugin);
-                }
+				  *state = S7CALL2(instrument_instrument, "FROM_C-convert-faust-dev2-to-dev1", *state);
+				  
+				  struct Patch *old_patch = PATCH_get_from_id(*state);
+				  
+				  if (old_patch != NULL && old_patch->patchdata != NULL)
+				  {
+					  SoundPlugin *old_plugin = (SoundPlugin*)old_patch->patchdata;
+					  FAUST_set_code(old_plugin, code);
+					  FAUST_set_options(old_plugin, options);
+					  FAUST_set_use_interpreter_backend(old_plugin, use_interpreter);
+					  FAUST_start_compilation(old_plugin);
+				  }
               }
             );
           });

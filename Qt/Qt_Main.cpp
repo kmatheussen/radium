@@ -2159,9 +2159,11 @@ protected:
 
     auto ret = QApplication::eventFilter(obj, event);
 
-    if (activation_changed){
-      //static int counter = 0;  printf("   %d: Activation changed: activate: %d deactivate: %d\n", counter++, event->type() == QEvent::WindowActivate, event->type() == QEvent::WindowDeactivate);
-      MOUSE_CYCLE_schedule_unregister_all(true);
+    if (activation_changed)
+	{
+		//static int counter = 0;  printf("   %d: Activation changed: activate: %d deactivate: %d\n", counter++, event->type() == QEvent::WindowActivate, event->type() == QEvent::WindowDeactivate);
+
+		MOUSE_CYCLE_schedule_unregister_all(true);
     }
     
     return ret;
