@@ -59,9 +59,6 @@ extern bool GL_get_clamp_text_rendering(void);
 
 extern bool GL_get_high_render_thread_priority(void);
 extern void GL_set_high_render_thread_priority(bool onoff);
-    
-extern bool GL_get_high_draw_thread_priority(void);
-extern void GL_set_high_draw_thread_priority(bool onoff);
 
 extern void GL_set_pause_rendering_on_off(bool onoff);
 extern bool GL_get_pause_rendering_on_off(void);
