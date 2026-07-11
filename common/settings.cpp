@@ -704,18 +704,6 @@ void SETTINGS_delete_configuration(const radium::ResetSettings &rs){
 }
 
 void SETTINGS_init(void){
-  double settings_version = SETTINGS_read_double("settings_version", 0.0);
-
-  // Enable draw_in_separate_process if it had been excplicitly disabled in a version where it didn't always work very well.
-  if (settings_version <= 0.725){
-
-    const char *draw_in_separate = "opengl_draw_in_separate_process";
-
-    if (SETTINGS_has_key(draw_in_separate)){
-      bool val = SETTINGS_read_bool(draw_in_separate,true);
-      if (val==false)
-        SETTINGS_write_bool(draw_in_separate,true);
-    }
-  }
+	//double settings_version = SETTINGS_read_double("settings_version", 0.0);
 }
 

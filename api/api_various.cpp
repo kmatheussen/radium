@@ -4402,26 +4402,6 @@ void setModalWindows(bool doit){
 
 //
 
-static DEFINE_ATOMIC(int, g_high_cpu_protection_opengl_protection) = -1;
-
-bool doHighCpuOpenGlProtection(void){  
-  int g = ATOMIC_GET(g_high_cpu_protection_opengl_protection);
-  
-  if (g == -1){
-    g = SETTINGS_read_bool("high_cpu_protection_opengl_protection", true) ? 1 : 0;
-    ATOMIC_SET(g_high_cpu_protection_opengl_protection, g);
-  }
-
-  return g==1 ? true : false;
-}
-
-void setHighCpuOpenGlProtection(bool doit){
-  ATOMIC_SET(g_high_cpu_protection_opengl_protection, doit ? 1 : 0);
-  SETTINGS_write_bool("high_cpu_protection_opengl_protection", doit);
-}
-
-//
-
 static DEFINE_ATOMIC(int, g_lock_juce_when_swapping_opengl) = -1;
 
 bool doLockJuceWhenSwappingOpenGL(void){
