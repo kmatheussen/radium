@@ -237,7 +237,10 @@ void radium::RhiWindow::QRHI_handle_thread_events(void)
 			func();
 		}		
 
-		QRHI_render();
+		if (_stop_rendering)
+			QThread::msleep(5);
+		else
+			QRHI_render();
 	}
 
 #endif // THREADED_GFX
@@ -300,6 +303,11 @@ void radium::RhiWindow::QRHI_request_update_from_thread(void)
 #else
 	requestUpdate();
 #endif
+}
+
+void radium::RhiWindow::QRHI_stop_rendering(void)
+{
+	_stop_rendering = true;
 }
 
 void radium::RhiWindow::QRHI_set_thread_priority(bool high)
@@ -442,7 +450,7 @@ QRHI_customInit(font);
 }
 
 
-extern double g_opengl_scale_ratio;
+//extern double g_opengl_scale_ratio;
 
 //QMatrix4x4 g_viewProjection;
 

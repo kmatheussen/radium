@@ -33,7 +33,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define MAX_NUM_SLICES 32
 #define MIN_SLICE_SIZE 64 //1024
 
-extern double g_opengl_scale_ratio;
+//extern double g_opengl_scale_ratio;
 
 namespace r
 {
