@@ -442,7 +442,7 @@ QRHI_customInit(font);
 }
 
 
-extern double g_opengl_scale_ratio;
+//extern double g_opengl_scale_ratio;
 
 //QMatrix4x4 g_viewProjection;
 

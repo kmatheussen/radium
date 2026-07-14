@@ -4,6 +4,9 @@
 #include <stdint.h>
 
 
+extern double g_opengl_scale_ratio;
+
+
 // Should be called as early as possible. Might take some time though, so progress window should open first.
 bool GL_check_compatibility(void);
 

@@ -83,6 +83,10 @@ public:
 
 		const D &d = _d; //_next_d._image.isNull() ? _d : _next_d;
 
+		const double scale_ratio = g_opengl_scale_ratio;
+		const float char_width_logical = d._char_width / scale_ratio;
+		const float char_height_logical = d._char_height / scale_ratio;
+
         for (int i = 0; i < text.length(); i++)
 		{
             char c = text[i].toLatin1();
@@ -100,11 +104,11 @@ public:
         
 			const UVs& uvs = it.value();
 
-            float x = floor(startX + i * d._char_width) + 1;
+            float x = floor(startX + i * char_width_logical) + 1;
             float y = floor(startY) + 1;
 			
             vertices->MAIN_addTexture(x, y,
-									  x + d._char_width, y + d._char_height,
+									  x + char_width_logical, y + char_height_logical,
 									  uvs.u0, uvs.v0,
 									  uvs.u1, uvs.v1,
 									  r,g,b,a);
@@ -171,7 +175,7 @@ public:
 		R_ASSERT_NON_RELEASE(THREADING_is_qrhi_thread());
 
     	radium::ScopedReadLock lock(_newImageLock);
-    	return _d._char_height;
+    	return _d._char_height / g_opengl_scale_ratio;
     }
     
 private:
@@ -192,7 +196,11 @@ private:
         int char_height = fm.height() + 4;
 #endif
 
+		const double scale_ratio = g_opengl_scale_ratio;
+		
 		QFont font(orgfont);
+		if(!equal_doubles(scale_ratio, 1.0))
+			font.setPointSize(font.pointSize() * scale_ratio);
 		font.setHintingPreference(QFont::PreferFullHinting); // full hinting should look better
 
 		QFontMetrics metrics(font);
