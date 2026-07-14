@@ -745,6 +745,82 @@ int readU8FromFile(file_t disknum){
   return chars[0];
 }
 
+
+// write binary
+
+file_t openFileForBinaryWriting(filepath_t w_path)
+{
+	if (isIllegalFilepath(w_path))
+	{
+		handleError("Illegal filepath argument 1");
+		return createIllegalFile();
+	}
+
+	disk_t *disk = DISK_open_binary_for_writing(w_path);
+	if (disk == NULL)
+	{
+		handleError("Unable to open file %S for writing\n", w_path.id);
+		return createIllegalFile();
+	}
+
+	R_ASSERT(DISK_is_binary(disk));
+
+	file_t disknum = make_file(++g_curr_disknum);
+	g_disks[disknum] = disk;
+	return disknum;
+}
+
+
+static bool write_binary(const_char* funcname, file_t disknum, const unsigned char src[], int64_t num_bytes)
+{
+	disk_t *disk = g_disks.value(disknum);
+	if (disk == NULL)
+	{
+		handleError("%s: No file #%d", funcname, (int)disknum.id);
+		return false;
+	}
+
+	if (DISK_is_binary(disk) == false)
+	{
+		handleError("%s: File #%d is not opened in binary mode", funcname, (int)disknum.id);
+		return false;
+	}
+
+	if (DISK_write_binary(disk, src, num_bytes) == false)
+	{
+		handleError("%s: Writing to file failed. %s", funcname, DISK_get_error(disk));
+		return false;
+	}
+
+	return true;
+}
+
+
+bool writeBe32ToFile(file_t disknum, int64_t val)
+{
+	unsigned char chars[4];
+	chars[0] = (val >> 24) & 0xFF;
+	chars[1] = (val >> 16) & 0xFF;
+	chars[2] = (val >> 8) & 0xFF;
+	chars[3] = val & 0xFF;
+	return write_binary("writeBe32ToFile", disknum, chars, 4);
+}
+
+bool writeBe16ToFile(file_t disknum, int val)
+{
+	unsigned char chars[2];
+	chars[0] = (val >> 8) & 0xFF;
+	chars[1] = val & 0xFF;
+	return write_binary("writeBe16ToFile", disknum, chars, 2);
+}
+
+bool write8ToFile(file_t disknum, int val)
+{
+	unsigned char chars[1] = { (unsigned char)(val & 0xFF) };
+	return write_binary("write8ToFile", disknum, chars, 1);
+}
+
+
 void putSettings(const_char* key, const_char* value){
   SETTINGS_write_string(key, value);
 }

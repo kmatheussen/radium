@@ -975,6 +975,8 @@ FROM_C-show-select-instrument-right-click
 
 (my-require 'nsm.scm)
 
+(my-require 'midi_export.scm)
+
 
 (define (FROM-C-assert-that-function-can-be-called-from-C funcname)
   (when #f ;; Disabled for now. It's a very good idea to do this assertion, but it's also very frustrating to keep the list of functions up-to-date.
