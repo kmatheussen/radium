@@ -77,6 +77,16 @@ Place getMainSignature(void){
   return p_Create(0,(int)root->signature.numerator,(int)root->signature.denominator);
 }
 
+int getMainSignatureNumerator(void)
+{
+	return root->signature.numerator;
+}
+
+int getMainSignatureDenominator(void)
+{
+	return root->signature.denominator;
+}
+
 int numSignatures(int blocknum, int windownum){
   struct WBlocks *wblock=getWBlockFromNum(windownum,blocknum);
   if(wblock==NULL)
@@ -133,6 +143,33 @@ Place getSignature(int signaturenum, int blocknum, int windownum){
     return p_Create(0,-1,1);
   else
     return p_Create(0, (int)signature->signature.numerator, (int)signature->signature.denominator);
+}
+
+Place getSignaturePlace(int signaturenum, int blocknum, int windownum)
+{
+	struct Signatures *signature = getSignatureFromNum(windownum, blocknum, signaturenum);
+	if (signature == NULL)
+		return p_Create(0, 0, 1);
+	else
+		return signature->l.p;
+}
+
+int getSignatureNumerator(int signaturenum, int blocknum, int windownum)
+{
+	struct Signatures *signature = getSignatureFromNum(windownum, blocknum, signaturenum);
+	if (signature == NULL)
+		return 0;
+	else
+		return signature->signature.numerator;
+}
+
+int getSignatureDenominator(int signaturenum, int blocknum, int windownum)
+{
+	struct Signatures *signature = getSignatureFromNum(windownum, blocknum, signaturenum);
+	if (signature == NULL)
+		return 1;
+	else
+		return signature->signature.denominator;
 }
 
 /******************* LPBs *************************/

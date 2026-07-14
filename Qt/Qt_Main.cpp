@@ -5148,7 +5148,7 @@ int main(int argc, char **argv){
     }
   }
 #endif
-           
+  
 
 #if defined(FOR_MACOSX) || defined(FOR_LINUX)
   GC_register_has_static_roots_callback(gc_has_static_roots_func);
