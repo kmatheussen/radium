@@ -1023,6 +1023,10 @@ public:
 	
 	void QRHI_customInit(const QFont &font) override
 	{
+		const double ratio = devicePixelRatio();
+
+		safe_double_write(&g_opengl_scale_ratio, ratio);
+		
 		_texture_atlas_backend = new r::TextureAtlasBackend(_rhi, font);
 		_texture_atlas_backend_halfsize = new r::TextureAtlasBackend(_rhi, get_halfsize_font(font));
 		
@@ -1080,10 +1084,6 @@ public:
 										   RendererFlags::UseBlending |
 										   RendererFlags::CreateBuffer);
 		
-		const double ratio = devicePixelRatio();
-
-		safe_double_write(&g_opengl_scale_ratio, ratio);
-
 #if 0
 		// Make sure editor font is scaled.
 		THREADING_run_on_main_thread_async([](void)
