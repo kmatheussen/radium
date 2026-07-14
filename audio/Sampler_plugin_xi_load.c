@@ -230,8 +230,10 @@ static bool load_xi_instrument(Data *data, filepath_t filename, bool set_loop_on
   EVENTLOG_add_event(talloc_format("load_xi_instrument -%S-", filename.id));
   bool ret=false;
 
-  if (did_set_loop) *did_set_loop = false;
-  if (did_set_pingpong) *did_set_pingpong = false;
+  if (did_set_loop)
+	  *did_set_loop = false;
+  if (did_set_pingpong)
+	  *did_set_pingpong = false;
 
   disk_t *file=DISK_open_binary_for_reading(filename);
   if(file==NULL){
@@ -296,11 +298,13 @@ static bool load_xi_instrument(Data *data, filepath_t filename, bool set_loop_on
                                 true
                                 );
 
-          if (did_set_loop) *did_set_loop = true;
+          if (did_set_loop)
+			  *did_set_loop = true;
 
           if (loop_type == 2){ // 2 = ping-pong
             data->p.pingpong = true;
-            if (did_set_pingpong) *did_set_pingpong = true;
+            if (did_set_pingpong)
+				*did_set_pingpong = true;
           }
         }
       }
