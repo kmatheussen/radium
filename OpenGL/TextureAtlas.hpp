@@ -200,7 +200,10 @@ private:
 		
 		QFont font(orgfont);
 		if(!equal_doubles(scale_ratio, 1.0))
-			font.setPointSize(font.pointSize() * scale_ratio);
+		{
+			QFontMetrics fm_unscaled(orgfont);
+			font.setPixelSize(fm_unscaled.height() * scale_ratio);
+		}
 		font.setHintingPreference(QFont::PreferFullHinting); // full hinting should look better
 
 		QFontMetrics metrics(font);
