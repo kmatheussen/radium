@@ -130,8 +130,10 @@ static bool load_sf2_instrument(Data *data, filepath_t filename, int preset_bag_
 			int key_start = HASH_get_int32(region, "key start") + key_offset;
 			int key_end   = HASH_get_int32(region, "key end")   + key_offset;
 
-			if (key_start < 0)   key_start = 0;
-			if (key_end   > 127) key_end   = 127;
+			if (key_start < 0)
+				key_start = 0;
+			if (key_end   > 127)
+				key_end   = 127;
 
 			for(int note_num = key_start; note_num <= key_end; note_num++)
 			{
