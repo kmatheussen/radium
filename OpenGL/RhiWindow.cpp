@@ -317,16 +317,18 @@ void radium::RhiWindow::QRHI_set_thread_priority(bool high)
 }
 
 //! [rhi-init]
-void radium::RhiWindow::MAIN_init(const QFont &font)
-{
-	R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
-
-	//printf("INIT CALLED\n");
-	if (g_thread==NULL)
+	void radium::RhiWindow::MAIN_init(const QFont &font)
 	{
-		QSemaphore finished_initing;
+		R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
 
-		auto initfunc = [this, &finished_initing, font]
+		//printf("INIT CALLED\n");
+		if (g_thread==NULL)
+		{
+			safe_double_write(&g_opengl_scale_ratio, devicePixelRatio());
+		
+			QSemaphore finished_initing;
+
+			auto initfunc = [this, &finished_initing, font]
 			{
 				THREADING_init_qrhi_thread_type();
 

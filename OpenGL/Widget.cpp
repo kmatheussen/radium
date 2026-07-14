@@ -1023,10 +1023,6 @@ public:
 	
 	void QRHI_customInit(const QFont &font) override
 	{
-		const double ratio = devicePixelRatio();
-
-		safe_double_write(&g_opengl_scale_ratio, ratio);
-		
 		_texture_atlas_backend = new r::TextureAtlasBackend(_rhi, font);
 		_texture_atlas_backend_halfsize = new r::TextureAtlasBackend(_rhi, get_halfsize_font(font));
 		
@@ -1138,7 +1134,7 @@ public:
 #endif
 			});
 
-		printf("Ratio: %f. refresh: %f\n", ratio, refresh_rate);
+		printf("Ratio: %f. refresh: %f\n", g_opengl_scale_ratio, refresh_rate);
 
 		printf("gotit\n");
 #if !defined(RELEASE)
