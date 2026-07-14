@@ -42,11 +42,13 @@ class RhiWindow : public QWindow
 {
 	std::atomic<bool> _please_shut_down_qrhi_thread{false};
 	std::atomic<bool> _qrhi_thread_has_shut_down{false};
+	std::atomic<bool> _stop_rendering{false};
 	
 public:
     RhiWindow(QRhi::Implementation graphicsApi);
     QString graphicsApiName() const;
     void QRHI_releaseSwapChain();
+    void QRHI_stop_rendering(void);
 
 	virtual ~RhiWindow()
 	{
@@ -58,6 +60,7 @@ public:
 				delete _fallbackSurface;
 #endif
 				fprintf(stderr, "A2\n");
+				_hasSwapChain = false;
 				delete _swap_chain;
 				//fprintf(stderr, "A3\n");
 #if USE_RENDER_BUFFER

@@ -2078,6 +2078,12 @@ void GL_stop_widget(QWidget *widget)
 {
 	R_ASSERT(widget == g_widget);
 
+	// Halt the RHI render thread's rendering before tearing down the window,
+	// so it never presents against a surface that is being destroyed (which
+	// otherwise stalls for several seconds and emits VK_ERROR_SURFACE_LOST_KHR).
+	if (g_window != nullptr)
+		g_window->QRHI_stop_rendering();
+
 	// First delete the widget (which may use the Vulkan instance internally),
 	// then tear down the global Vulkan instance to ensure Qt has finished
 	// cleaning up any Vulkan-related state.
