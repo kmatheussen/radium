@@ -66,6 +66,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/track_insert_proc.h"
 #include "../common/tracks_proc.h"
 #include "../common/wtracks_proc.h"
+#include "../common/undo.h"
 #include "../common/undo_trackheader_proc.h"
 #include "../common/block_insert_proc.h"
 #include "../common/block_delete_proc.h"
@@ -2989,15 +2990,37 @@ void showHideSwingtextInBlock(int blocknum,int windownum){
   window->must_redraw = true;
 }
 
-void setSwingEnabled(bool val, int blocknum, int windownum){
-  struct Tracker_Windows *window;
-  const struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
-  if(wblock==NULL) return;
+void setSwingEnabled(bool val, int blocknum, int windownum)
+{
+	struct Tracker_Windows *window;
+	const struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+	if(wblock==NULL) return;
+	
+	if (wblock->block->swing_enabled == val)
+		return;
+	
+	bool old_val = wblock->block->swing_enabled;
 
-  wblock->block->swing_enabled = val;
-  TIME_block_swings_have_changed(wblock->block);
-
-  window->must_redraw = true;
+	if (val == old_val)
+		return;
+	
+	auto setit = [blocknum = wblock->block->l.num](bool doit) // Won't use the parameter "blocknum" since that value might be -1. (-1 might work though, but this way we don't have to think about whether it works or not.
+		{
+			struct Blocks *block = getBlockFromNum(blocknum);
+			if (block==NULL)
+				return;
+			
+			block->swing_enabled = doit;
+			TIME_block_swings_have_changed(block);
+		};
+	
+	UNDO_functions(
+		"Toggle swing enabled",
+		[setit, val]()    { setit(val); },
+		[setit, old_val](){ setit(old_val); }
+		);
+	
+	window->must_redraw = true;
 }
 
   
@@ -3009,20 +3032,12 @@ bool getSwingEnabled(int blocknum, int windownum){
 }
 
 bool switchSwingEnabled(int blocknum, int windownum){
-
-  struct Tracker_Windows *window;
-  const struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  const struct WBlocks *wblock = getWBlockFromNum(windownum, blocknum);
   if(wblock==NULL) return false;
 
-  bool ret = !wblock->block->swing_enabled;
-  
-  wblock->block->swing_enabled = ret;
+  setSwingEnabled(!wblock->block->swing_enabled, blocknum, windownum);
 
-  TIME_block_swings_have_changed(wblock->block);
-
-  window->must_redraw = true;
-  
-  return ret;
+  return wblock->block->swing_enabled;
 }
 
   
