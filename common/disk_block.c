@@ -54,8 +54,9 @@ DC_start("BLOCK");
 	DC_SSN("num_tracks",block->num_tracks);
 	DC_SSI("num_lines",block->num_lines);
 	DC_SSF("reltempo",ATOMIC_DOUBLE_GET(block->reltempo));
-        DC_SSS("color", GFX_get_colorname_from_color(block->color));
-        
+	DC_SSS("color", GFX_get_colorname_from_color(block->color));
+	DC_SSB("swing_enabled", block->swing_enabled);
+         
 	SaveTrack(block->tracks, true);
 	SaveSignatures(block->signatures);
         SaveLPBs(block->lpbs);
