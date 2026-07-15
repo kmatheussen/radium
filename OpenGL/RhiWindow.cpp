@@ -308,6 +308,10 @@ void radium::RhiWindow::QRHI_request_update_from_thread(void)
 void radium::RhiWindow::QRHI_stop_rendering(void)
 {
 	_stop_rendering = true;
+
+	// Drain the RHI event queue so any in-progress render completes
+	// before the caller tears down the window surface.
+	MAIN_put_event_sync([](){});
 }
 
 void radium::RhiWindow::QRHI_set_thread_priority(bool high)
@@ -509,6 +513,9 @@ void radium::RhiWindow::QRHI_render()
 
 	R_ASSERT_NON_RELEASE(QThread::currentThread() == g_thread);
 
+	if (_stop_rendering)
+		return;
+
 	const QSize surfaceSize = _hasSwapChain ? _swap_chain->surfacePixelSize() : QSize();
 	if (surfaceSize.isEmpty())
 		return;
@@ -546,6 +553,7 @@ void radium::RhiWindow::QRHI_render()
         QRHI_resizeSwapChain();
         if (!_hasSwapChain)
             return;
+		
         result = _rhi->beginFrame(_swap_chain);
     }
     if (result != QRhi::FrameOpSuccess)
