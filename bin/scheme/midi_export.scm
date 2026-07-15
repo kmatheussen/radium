@@ -2,106 +2,121 @@
 
 
 (define *midi-export-auto-assign-MIDI-channel* #t)
+(define *midi-pulses-per-quarter-note* 480)
 
+(define-struct midi-event
+  :tick
+  :type
+  :bytes)
+
+(define-struct note-track
+  :channel
+  :events)
+
+(define-struct instrument-interval
+  :start
+  :end)
+
+(define-struct tick-map-entry
+  :stime
+  :tick
+  :bpm)
+
+(define-struct block-result
+  :conductor-events
+  :note-tracks)
+
+(define-struct seqblock-result
+  :stime
+  :conductor-events
+  :note-tracks)
 
 ;; ============================================================
 ;; MIDI channel clash detection
 ;; ============================================================
 
-;; Helper: add val to the set stored at key in the alist.
-;; Returns the (possibly modified) alist.
-(define (alist-cons-set alist key val)
-  (let ((pair (assoc key alist)))
-    (if pair
-        (let ((lst (cdr pair)))
-          (if (member val lst)
-              alist
-              (begin (set-cdr! pair (cons val lst)) alist)))
-        (cons (cons key (list val))
-              alist))))
+;; Helper: add val to the set stored at key in a hash table.
+;; Mutates the hash table.
+(define (hash-table-add-to-set! table key val)
+  (let ((lst (hash-table-ref table key)))
+    (if lst
+        (if (not (member val lst))
+            (hash-table-set! table key (cons val lst)))
+        (hash-table-set! table key (list val)))))
 
-;; Helper: check interval overlap. Intervals are (start . end) pairs of s7 ratios.
-(define (intervals-overlap? start-a end-a start-b end-b)
-  (and (< start-a end-b) (< start-b end-a)))
+
+;; Helper: check interval overlap.
+(define (intervals-overlap? interval-a interval-b)
+  (and (< (interval-a :start) (interval-b :end))
+       (< (interval-b :start) (interval-a :end))))
+
+;; Helper: calls (proc a b) for every unique unordered pair from lst.
+(define (for-each-pair proc lst)
+  (let outer ((remaining lst))
+    (when (not (null? (cdr remaining)))
+      (let ((first (car remaining)))
+        (let inner ((rest (cdr remaining)))
+          (if (null? rest)
+              (outer (cdr remaining))
+              (begin
+                (proc first (car rest))
+                (inner (cdr rest)))))))))
+
+;; Helper: iterate all pairs (a from lst-a, b from lst-b) calling (proc a b).
+;; Returns the first non-#f result from proc, or #f if proc always returns #f.
+(define (find-cross-pair proc lst-a lst-b)
+  (call-with-exit
+    (lambda (return)
+      (for-each (lambda (a)
+                  (for-each (lambda (b)
+                              (let ((result (proc a b)))
+                                (if result
+                                    (return result))))
+                            lst-b))
+                lst-a)
+      #f)))
+
 
 ;; Helper: check if any interval pair between two instruments overlaps.
 (define (instruments-overlap? intervals-a intervals-b)
-  (let outer ((as intervals-a))
-    (if (null? as)
-        #f
-        (let* ((a (car as))
-               (sa (car a))
-               (ea (cdr a)))
-          (let inner ((bs intervals-b))
-            (if (null? bs)
-                (outer (cdr as))
-                (let* ((b (car bs))
-                       (sb (car b))
-                       (eb (cdr b)))
-                  (if (intervals-overlap? sa ea sb eb)
-                      #t
-                      (inner (cdr bs))))))))))
+  (find-cross-pair intervals-overlap? intervals-a intervals-b))
 
 ;; Return a hash table mapping instrument_id → list of instrument_ids
 ;; that have overlapping notes in the given block.
 (define (get-MIDI-channel-clash-map blocknum)
-  (let* ((num-tracks (<ra> :get-num-tracks blocknum))
-         (instrument-intervals '()))
+  (define instrument-intervals (make-hash-table))
 
-    ;; Phase 1: Collect (start . end) intervals per instrument
-    (let loop ((tracknum 0))
-      (if (< tracknum num-tracks)
-          (let ((instr (<ra> :get-instrument-for-track tracknum blocknum -1)))
-            (if (<ra> :is-legal-instrument instr)
-                (let ((notes-vec (<ra> :get-all-notes tracknum blocknum -1)))
-                  (let note-loop ((notes (vector->list notes-vec)))
-                    (if (null? notes)
-                        (loop (+ tracknum 1))
-                        (let ((note (car notes)))
-                          (let* ((pair (assoc instr instrument-intervals))
-                                 (intervals (if pair (cdr pair) '()))
-                                 (start (<ra> :get-note-start note tracknum blocknum -1))
-                                 (end (<ra> :get-note-end note tracknum blocknum -1))
-                                 (new-intervals (cons (cons start end) intervals)))
-                            (if pair
-                                (set-cdr! pair new-intervals)
-                                (set! instrument-intervals
-                                      (cons (cons instr new-intervals) instrument-intervals)))
-                            (note-loop (cdr notes)))))))
-                (loop (+ tracknum 1))))))
-    
-    (define clash-alist '())
-    
-    ;; Phase 2: Pairwise overlap check
-    (let ((instruments (map car instrument-intervals)))
-      (let outer ((is instruments) (ca clash-alist))
-        (if (null? is)
-            (set! clash-alist ca)
-            (let* ((i (car is))
-                   (intervals-i (cdr (assoc i instrument-intervals))))
-              (let inner ((js (cdr is)) (ca ca))
-                (if (null? js)
-                    (outer (cdr is) ca)
-                    (let* ((j (car js))
-                           (intervals-j (cdr (assoc j instrument-intervals))))
-                      (if (instruments-overlap? intervals-i intervals-j)
-                          (inner (cdr js)
-                                 (alist-cons-set (alist-cons-set ca i j) j i))
-                          (inner (cdr js) ca)))))))))
-    
-    ;; Phase 3: Convert clash alist to hash table
-    (let ((table (make-hash-table)))
-      ;; Initialize all instruments with empty clash lists
-      (for-each (lambda (pair)
-                  (let ((instr (car pair)))
-                    (if (not (assoc instr clash-alist))
-                        (hash-table-set! table instr '()))))
-                instrument-intervals)
-      ;; Insert clash data
-      (for-each (lambda (pair)
-                  (hash-table-set! table (car pair) (cdr pair)))
-                clash-alist)
-      table)))
+  ;; Phase 1: Collect (start . end) intervals per instrument  
+  (for-each (lambda (tracknum)
+              (let ((instr (<ra> :get-instrument-for-track tracknum blocknum -1)))
+                (if (<ra> :is-legal-instrument instr)
+                    (for-each (lambda (note)
+                                (hash-table-set! instrument-intervals
+                                                 instr
+                                                 (cons (make-instrument-interval :start (<ra> :get-note-start note tracknum blocknum)
+                                                                                 :end (<ra> :get-note-end note tracknum blocknum))
+                                                       (or (hash-table-ref instrument-intervals instr) '()))))
+                              (vector->list (<ra> :get-all-notes tracknum blocknum))))))
+            (iota (<ra> :get-num-tracks blocknum)))
+
+  (define clash-map (make-hash-table))
+
+  ;; Phase 2: Initialize all instruments with empty clash lists
+  (for-each (lambda (kv)
+              (define instr (car kv))
+              (if (not (hash-table-ref clash-map instr))
+                  (hash-table-set! clash-map instr '())))
+            instrument-intervals)
+
+  ;; Phase 3: Pairwise overlap check
+  (for-each-pair (lambda (i j)
+                   (when (instruments-overlap? (hash-table-ref instrument-intervals i)
+                                               (hash-table-ref instrument-intervals j))
+                     (hash-table-add-to-set! clash-map i j)
+                     (hash-table-add-to-set! clash-map j i)))
+                 (hash-table-keys instrument-intervals))
+
+  clash-map)
 
 
 ;; Helper: return a list of all keys in a hash table.
@@ -112,49 +127,61 @@
 
 ;; Assign MIDI channels (0-15) to block instruments using greedy graph coloring.
 ;; Returns a hash table mapping instrument_t → midi_channel.
+;; Note: We skip channel 9, since that's the drum channel.
 (define (create-MIDI-channel-map-for-block blocknum)
-  (let* ((clash-map (get-MIDI-channel-clash-map blocknum))
-         (instruments (hash-table-keys clash-map))
-         (degree (lambda (instr)
+  (define clash-map (get-MIDI-channel-clash-map blocknum))
+  (define instruments (hash-table-keys clash-map))
+  (define degree (lambda (instr)
                    (let ((clashes (hash-table-ref clash-map instr)))
                      (if clashes
                          (length clashes)
                          0))))
-         (sorted-instruments (sort instruments
+  (define sorted-instruments (sort instruments
                                    (lambda (a b)
                                      (> (degree a) (degree b)))))
-         (channel-map (make-hash-table)))
+  (define channel-map (make-hash-table))
 
-    (for-each
-     (lambda (instr)
-       (let* ((clashes (or (hash-table-ref clash-map instr) '()))
-              (used-channels (keep (lambda (c)
-                                     c)
-                                   (map (lambda (other)
-                                          (hash-table-ref channel-map other))
-                                        clashes)))
-              (available-channel (let loop ((ch 0))
-                                   (if (> ch 15)
-                                       #f
-                                       (if (member ch used-channels)
-                                           (loop (+ ch 1))
-                                           ch)))))
-         (if available-channel
-             (hash-table-set! channel-map instr available-channel)
-             ;; Fallback: pick channel with fewest conflicts
-             (let ((best-channel (let loop ((ch 0) (best-ch 0) (best-count 999))
-                                   (if (> ch 15)
-                                       best-ch
+  (for-each
+   (lambda (instr)
+     (define clashes (or (hash-table-ref clash-map instr) '()))
+     (define used-channels (keep (lambda (c)
+                                   c)
+                                 (map (lambda (other)
+                                        (hash-table-ref channel-map other))
+                                      clashes)))
+     (define available-channel (let loop ((ch 0))
+                                 (if (> ch 15)
+                                     #f
+                                     (if (or (member ch used-channels)
+                                             (= ch 9)) ;; Skip the drum channel.
+                                         (loop (+ ch 1))
+                                         ch))))
+     (if available-channel
+         (hash-table-set! channel-map instr available-channel)
+         ;; Fallback: pick channel with fewest conflicts
+         (let ((best-channel (let loop ((ch 0)
+                                        (best-ch 0)
+                                        (best-count 999))
+                               (if (> ch 15)
+                                   best-ch
+                                   (if (= ch 9)
+                                       (loop (+ ch 1)
+                                             best-ch
+                                             best-count) ;; Skip the drum channel.
                                        (let ((count (length (keep (lambda (c)
                                                                     (= c ch))
                                                                   used-channels))))
                                          (if (< count best-count)
-                                             (loop (+ ch 1) ch count)
-                                             (loop (+ ch 1) best-ch best-count)))))))
-               (hash-table-set! channel-map instr best-channel)))))
-     sorted-instruments)
+                                             (loop (+ ch 1)
+                                                   ch
+                                                   count)
+                                             (loop (+ ch 1)
+                                                   best-ch
+                                                   best-count))))))))
+           (hash-table-set! channel-map instr best-channel))))
+   sorted-instruments)
 
-    channel-map))
+  channel-map)
 
 
 ;; ============================================================
@@ -165,22 +192,27 @@
 ;; Collects 7-bit groups MSB-first, then sets bit 7 on all
 ;; bytes except the last (which is the LSB).
 (define (encode-varlen val)
-  (let ((chunks '()))
-    (let loop ((v val))
-      (set! chunks (cons (logand v #x7F) chunks))
-      (set! v (ash v -7))
-      (if (> v 0) (loop v)))
-    (let* ((n (length chunks))
-           (last (- n 1)))
-      (let iter ((cs chunks)
-                 (i 0)
-                 (result '()))
-        (if (null? cs)
-            (reverse result)
-            (let ((b (car cs)))
-              (if (< i last)
-                  (iter (cdr cs) (+ i 1) (cons (logior b #x80) result))
-                  (iter (cdr cs) (+ i 1) (cons b result)))))))))
+  (define chunks (let loop ((v val)
+                            (chunks '()))
+                   (let ((new-chunks (cons (logand v #x7F)
+                                           chunks))
+                         (next-v (ash v -7)))
+                     (if (> next-v 0)
+                         (loop next-v
+                               new-chunks)
+                         new-chunks))))
+  (define num-chunks (length chunks))
+  (define last (- num-chunks 1))
+  
+  (let iter ((cs chunks)
+             (i 0)
+             (result '()))
+    (if (null? cs)
+        (reverse result)
+        (let ((b (car cs)))
+          (if (< i last)
+              (iter (cdr cs) (+ i 1) (cons (logior b #x80) result))
+              (iter (cdr cs) (+ i 1) (cons b result)))))))
 
 (***assert*** (encode-varlen 0) ;; 1-byte varlen
               (list 0))
@@ -229,11 +261,12 @@
 
 ;; Set Tempo: FF 51 03 tttttt   (mpqn = 60,000,000 / bpm)
 (define (encode-set-tempo delta bpm)
-  (let* ((mpqn (floor (/ 60000000 bpm)))
-         (b0 (logand (ash mpqn -16) #xFF))
-         (b1 (logand (ash mpqn -8) #xFF))
-         (b2 (logand mpqn #xFF)))
-    (encode-meta-event delta #x51 (list b0 b1 b2))))
+  (define mpqn (floor (/ 60000000 bpm)))
+  (define b0 (logand (ash mpqn -16) #xFF))
+  (define b1 (logand (ash mpqn -8) #xFF))
+  (define b2 (logand mpqn #xFF))
+  
+  (encode-meta-event delta #x51 (list b0 b1 b2)))
 
 (***assert*** (encode-set-tempo 0 120)               ;; 500000 us/qn = 0x07A120
               (list #x00 #xFF #x51 #x03 #x07 #xA1 #x20))
@@ -242,14 +275,17 @@
 ;; Time Signature: FF 58 04 nn dd cc bb
 ;; dd = log2(denominator). 4->2, 8->3, 2->1, 1->0.
 (define (encode-time-signature delta numerator denominator)
-  (let* ((denom-exp (cond ((= denominator 1) 0)
+  (define denom-exp (cond ((= denominator 1) 0)
                           ((= denominator 2) 1)
                           ((= denominator 4) 2)
                           ((= denominator 8) 3)
                           ((= denominator 16) 4)
                           ((= denominator 32) 5)
-                          (else (round (/ (log denominator) (log 2)))))))
-    (encode-meta-event delta #x58 (list numerator (max 0 denom-exp) 24 8))))
+                          (else
+                           (round (/ (log denominator)
+                                     (log 2))))))
+  
+  (encode-meta-event delta #x58 (list numerator (max 0 denom-exp) 24 8)))
 
 (***assert*** (encode-time-signature 0 4 4)           ;; 4/4, denom-exp=2
               (list #x00 #xFF #x58 #x04 #x04 #x02 #x18 #x08))
@@ -277,119 +313,203 @@
 ;; Radium data conversion
 ;; ============================================================
 
-;; Convert a Place (represented as an s7 ratio a/b where
-;; a = line*dividor + counter,  b = dividor) to MIDI ticks.
-;; ticks = (position_in_lines / lpb) * resolution
-(define (place-to-ticks place-ratio lpb resolution)
-  (let* ((num (numerator place-ratio))
-         (den (denominator place-ratio))
-         (ticks (/ (* num resolution) (* den lpb))))
-    (max 0 (round ticks))))
+;; Build tempo tick map and collect tempo events.
+;; tempo-tick-map: list of (stime tick bpm) triples sorted by stime,
+;; each representing the start of a constant-tempo segment.
+;; Returns (tempo-events . tempo-tick-map).
+(define (build-tempo-tick-map blocknum pfreq)
 
-(***assert*** (place-to-ticks 0 4 480)                ;; tick 0
-              0)
-(***assert*** (place-to-ticks 4 4 480)                ;; 1 beat at lpb=4 → 480 ticks
-              480)
+  (define-struct tempo-point
+    :stime
+    :bpm)
 
-;; Collect tempo change events: returns ((tick tempo bpm) ...)
-(define (collect-tempo-events blocknum lpb resolution)
-  (let* ((n (<ra> :num-bpms blocknum))
-         (events '()))
-    (let loop ((i 0))
-      (if (>= i n)
-          (reverse events)
+  (define tempo-points
+    (let loop ((i 0)
+               (points '()))
+      (if (>= i (<ra> :num-bpms blocknum))
+          (if (or (null? points)
+                  (> ((car points) :stime) 0))
+              (cons (make-tempo-point :stime 0  ;; Ensure a tempo point at stime 0
+                                      :bpm (* (<ra> :get-main-bpm) (<ra> :get-reltempo blocknum)))
+                    (reverse points))
+              (reverse points))
           (let* ((place (<ra> :get-bpm-place i blocknum))
-             (bpm (<ra> :get-bpm i blocknum))
-             (reltempo (<ra> :get-reltempo blocknum))
-             (effective-bpm (* bpm reltempo))
-             (tick (place-to-ticks place lpb resolution)))
-            (set! events (cons (list tick 'tempo effective-bpm) events))
-            (loop (+ i 1)))))))
+                 (bpm (<ra> :get-bpm i blocknum))
+                 (reltempo (<ra> :get-reltempo blocknum))
+                 (effective-bpm (* bpm reltempo))
+                 (stime (<ra> :get-stime-from-place place blocknum)))
+            (loop (1+ i)
+                  (cons (make-tempo-point :stime stime
+                                          :bpm effective-bpm)
+                        points))))))
+  
+  (let loop ((tempo-points tempo-points)
+             (tempo-events '())
+             (tick-map '())
+             (prev-stime 0)
+             (prev-tick-exact 0)
+             (prev-bpm ((car tempo-points) :bpm)))
+    (if (null? tempo-points)
+        (cons (reverse tempo-events)
+              (reverse tick-map))
+        (let* ((point (car tempo-points))
+               (stime (point :stime))
+               (bpm (point :bpm))
+               (delta-samples (- stime prev-stime))
+               (delta-ticks-exact (/ (* delta-samples prev-bpm *midi-pulses-per-quarter-note*)
+                                     (* 60 pfreq)))
+               (tick-exact (+ prev-tick-exact delta-ticks-exact))
+               (tick (round tick-exact)))
+          (loop (cdr tempo-points)
+                (cons (make-midi-event :tick tick
+                                       :type 'tempo
+                                       :bytes (list bpm))
+                      tempo-events)
+                (cons (make-tick-map-entry :stime stime
+                                           :tick tick-exact
+                                           :bpm bpm)
+                      tick-map)
+                stime
+                tick-exact
+                bpm)))))
 
 
-;; Collect signature events.
-;; getSignature returns Place{0, numerator, denominator} => s7 ratio num/den.
-(define (collect-signature-events blocknum lpb resolution)
-  (let* ((n (<ra> :num-signatures blocknum))
-         (events '()))
-    (let loop ((i 0))
-      (if (>= i n)
-          (reverse events)
-          (let* ((sig-place (<ra> :get-signature-place i blocknum))
-                 (num-sig (<ra> :get-signature-numerator i blocknum))
-                 (den-sig (<ra> :get-signature-denominator i blocknum))
-                 (tick (place-to-ticks sig-place lpb resolution)))
-            (set! events (cons (list tick 'signature num-sig den-sig) events))
-            (loop (+ i 1)))))))
+;; Convert a sample-time to MIDI ticks using the tempo tick map.
+(define (stime-to-ticks stime tempo-tick-map pfreq)
+  (define first (car tempo-tick-map))
+  (define first-stime ((car tempo-tick-map) :stime))
+  (define first-bpm ((car tempo-tick-map) :bpm))
 
-
-;; Collect note events from one track.
-;; Returns ((tick 'note-on pitch velocity) (tick 'note-off pitch 0) ...)
-(define (collect-note-events tracknum blocknum lpb resolution)
-  (let* ((notes-vec (<ra> :get-all-notes tracknum blocknum -1))
-         (events '()))
-    (for-each
-     (lambda (note)
-       (let* ((start-ratio (<ra> :get-note-start note tracknum blocknum -1))
-              (end-ratio (<ra> :get-note-end note tracknum blocknum -1))
-              (pitch-float (<ra> :get-note-value note tracknum blocknum -1))
-              (vel-float (<ra> :get-velocity-value 0 note tracknum blocknum -1))
-              (pitch (max 0 (min 127 (round pitch-float))))
-              (velocity (max 1 (min 127 (round (* vel-float 127)))))
-              (start-tick (place-to-ticks start-ratio lpb resolution))
-              (end-tick (place-to-ticks end-ratio lpb resolution)))
-         (when (> end-tick start-tick)
-           (set! events (cons (list start-tick 'note-on pitch velocity) events))
-           (set! events (cons (list end-tick 'note-off pitch 0) events)))))
-     (vector->list notes-vec))
-    (reverse events)))
+  (if (< stime first-stime)
+      ;; Before the first tempo event: extrapolate from start
+      (round (/ (* stime first-bpm *midi-pulses-per-quarter-note*) (* 60 pfreq)))
+      ;; Find enclosing segment
+      (let loop ((map tempo-tick-map))
+        (define seg (car map))
+        (define seg-stime (seg :stime))
+        (define seg-tick (seg :tick))
+        (define seg-bpm (seg :bpm))
+        (define next (cdr map))
+        
+        (if (or (null? next) (< stime ((car next) :stime)))
+            (let ((delta-samples (- stime seg-stime)))
+              (round (+ (seg :tick)
+                        (/ (* delta-samples (seg :bpm) *midi-pulses-per-quarter-note*)
+                           (* 60 pfreq)))))
+            (loop next)))))
 
 
 (define (sort-by-tick events)
-  (sort events (lambda (a b) (< (car a) (car b)))))
+  (sort events (lambda (a b)
+                 (< (a :tick) (b :tick)))))
 
 
-;; Encode a sorted sequence of (tick tag ...) events into a byte list,
+;; Collect signature events with STimes-based tick positions.
+(define (collect-signature-events blocknum tempo-tick-map pfreq)
+  (define n (<ra> :num-signatures blocknum))
+  (define events '())
+  
+  (let loop ((i 0))
+    (if (>= i n)
+        (reverse events)
+        (let* ((sig-place (<ra> :get-signature-place i blocknum))
+               (num-sig (<ra> :get-signature-numerator i blocknum))
+               (den-sig (<ra> :get-signature-denominator i blocknum))
+               (stime (<ra> :get-stime-from-place sig-place blocknum -1))
+               (tick (stime-to-ticks stime tempo-tick-map pfreq)))
+          (set! events (cons (make-midi-event :tick tick :type 'signature :bytes (list num-sig den-sig)) events))
+          (loop (+ i 1))))))
+
+
+;; Collect note events from one track with STimes-based tick positions.
+(define (collect-note-events tracknum blocknum tempo-tick-map pfreq)
+  (define notes-vec (<ra> :get-all-notes tracknum blocknum -1))
+  (define track-volume (<ra> :get-track-volume tracknum blocknum -1))
+  (define has-instrument (not (<ra> :is-illegal-instrument (<ra> :get-instrument-for-track tracknum blocknum -1))))
+  
+  (let loop ((notes (vector->list notes-vec))
+             (events '()))
+    (if (null? notes)
+        (sort-by-tick events)
+        (let ((note (car notes)))
+          (define start-place (<ra> :get-note-start note tracknum blocknum -1))
+          (define end-place (<ra> :get-note-end note tracknum blocknum -1))
+          (define pitch-float (<ra> :get-note-value note tracknum blocknum -1))
+          (define vel-float (<ra> :get-velocity-value 0 note tracknum blocknum -1))
+          (define pitch (max 0 (min 127 (round pitch-float))))
+          (define velocity (if has-instrument
+                               (max 1 (min 127 (round (* vel-float 127 track-volume))))
+                               0))
+          (define start-stime (<ra> :get-stime-from-place2 start-place
+                                    tracknum blocknum -1))
+          (define end-stime (<ra> :get-stime-from-place2 end-place
+                                  tracknum blocknum -1))
+          (define start-tick (stime-to-ticks start-stime tempo-tick-map pfreq))
+          (define end-tick (stime-to-ticks end-stime tempo-tick-map pfreq))
+          
+          (loop (cdr notes)
+                (append (list  (make-midi-event :tick end-tick
+                                                :type 'note-off
+                                                :bytes (list pitch 0))
+                               (make-midi-event :tick start-tick
+                                                :type 'note-on
+                                                :bytes (list pitch velocity)))
+                        events))))))
+
+
+;; Sent as "event-encoder" argument for "encode-event-sequence" for tempo/signature/etc. events.
+(define (conductor-event-encoder delta midi-event)
+  (if (eq? (midi-event :type) 'end-of-track)
+      (encode-end-of-track delta)
+      (let ((bytes (midi-event :bytes)))
+        (cond ((eq? (midi-event :type) 'tempo)
+               (encode-set-tempo delta (car bytes)))
+              ((eq? (midi-event :type) 'signature)
+               (encode-time-signature delta (car bytes) (cadr bytes)))
+              (else
+               '())))))
+
+;; Creates a function that is sent "event-encoder" argument for "encode-event-sequence" for note events.
+(define (make-note-event-encoder channel)
+  (lambda (delta midi-event)
+    (if (eq? (midi-event :type) 'end-of-track)
+        (encode-end-of-track delta)
+        (let ((bytes (midi-event :bytes)))
+          (cond ((eq? (midi-event :type) 'note-on)
+                 (encode-note-on delta channel (car bytes) (cadr bytes)))
+                ((eq? (midi-event :type) 'note-off)
+                 (encode-note-off delta channel (car bytes)))
+                (else
+                 '()))))))
+
+
+
+;; Encode a sorted sequence of (tick tag ...) events into a list of midi-event structs,
 ;; using delta encoding. 'end-tick' is where the track ends.
 (define (encode-event-sequence events event-encoder end-tick)
-  (let ((prev-tick 0)
-        (result '()))
-    (for-each
-     (lambda (event)
-       (let* ((tick (car event))
-              (delta (- tick prev-tick)))
-         (set! prev-tick tick)
-         (set! result
-               (append result (event-encoder delta event)))))
-     events)
-    (append result (event-encoder (- end-tick prev-tick) #f))))
+  (define prev-tick 0)
+  (define result '())
+  
+  (for-each
+   (lambda (event)
+     (define tick (event :tick))
+     (define delta (- tick prev-tick))
+     (set! prev-tick tick)
+     (set! result
+           (cons (make-midi-event :tick tick
+                                  :type (event :type)
+                                  :bytes (event-encoder delta event))
+                 result)))
+   events)
+  
+  (append (reverse result)
+          (list (make-midi-event :tick end-tick
+                                 :type 'end-of-track
+                                 :bytes (event-encoder (- end-tick prev-tick)
+                                                       (make-midi-event :tick end-tick
+                                                                        :type 'end-of-track
+                                                                        :bytes '()))))))
 
-
-(define (conductor-event-encoder delta event)
-  (if (not event)
-      (encode-end-of-track delta)
-      (let ((tag (cadr event)))
-        (cond
-         ((eq? tag 'tempo)
-          (encode-set-tempo delta (caddr event)))
-         ((eq? tag 'signature)
-          (encode-time-signature delta (caddr event) (cadddr event)))
-         (else '())))))
-
-
-(define (make-note-event-encoder channel)
-  (lambda (delta event)
-    (if (not event)
-        (encode-end-of-track delta)
-        (let ((tag (cadr event))
-              (pitch (caddr event))
-              (vel (cadddr event)))
-          (cond
-           ((eq? tag 'note-on)
-            (encode-note-on delta channel pitch vel))
-           ((eq? tag 'note-off)
-            (encode-note-off delta channel pitch))
-           (else '()))))))
 
 
 ;; ============================================================
@@ -406,6 +526,7 @@
         (<ra> :write8-to-file file #x68)  ;; h
         (<ra> :write8-to-file file #x64)) ;; d
       (begin
+        (assert (string=? type "MTrk"))
         (<ra> :write8-to-file file #x4D)  ;; M
         (<ra> :write8-to-file file #x54)  ;; T
         (<ra> :write8-to-file file #x72)  ;; r
@@ -413,10 +534,89 @@
   (<ra> :write-be32-to-file file length))
 
 
-;; Write an entire track chunk (header + all bytes)
-(define (midi-write-track-chunk bytes file)
-  (midi-write-chunk-header "MTrk" (length bytes) file)
-  (for-each (lambda (b) (<ra> :write8-to-file file b)) bytes))
+;; Write an entire track chunk from a list of midi-event structs.
+(define (midi-write-track-chunk midi-events file)
+  (define all-bytes (apply append (map (lambda (ev)
+                                         (ev :bytes))
+                                       midi-events)))
+  
+  (midi-write-chunk-header "MTrk" (length all-bytes) file)
+  
+  (for-each (lambda (b)
+              (<ra> :write8-to-file file b))
+            all-bytes))
+
+
+;; ============================================================
+;; Block export — collects raw midi-events for a single block
+;; ============================================================
+
+(define (get-block-result blocknum)
+  (define pfreq (<ra> :get-sample-rate))
+  (define tempo-result (build-tempo-tick-map blocknum pfreq))
+  (define tempo-events (car tempo-result))
+  (define tempo-tick-map (cdr tempo-result))
+
+  (define conductor-events (sort-by-tick (append tempo-events
+                                                 (collect-signature-events blocknum tempo-tick-map pfreq))))
+
+  ;; Check we have initial tempo at tick 0
+  (assert (find-if (lambda (e)
+                     (and (eq? (e :type) 'tempo)
+                          (= (e :tick) 0)))
+                   conductor-events))
+  
+  ;; Ensure initial time signature at tick 0 (use main signature)
+  (if (not (find-if (lambda (e)
+                      (and (eq? (e :type) 'signature)
+                           (= (e :tick) 0)))
+                    conductor-events))
+      (set! conductor-events
+            (cons (make-midi-event :tick 0
+                                   :type 'signature
+                                   :bytes (list (<ra> :get-main-signature-numerator)
+                                                (<ra> :get-main-signature-denominator)))
+                  conductor-events)))
+  
+  ;; Collect note tracks
+  (define auto-channel-map (if *midi-export-auto-assign-MIDI-channel*
+                               (create-MIDI-channel-map-for-block blocknum)
+                               #f))
+  
+  (define note-tracks
+    (let loop ((tracknum 0)
+               (note-tracks '()))
+      (if (>= tracknum (<ra> :get-num-tracks blocknum))
+          (reverse note-tracks)
+          (let ((channel (if auto-channel-map
+                             (let ((instr (<ra> :get-instrument-for-track tracknum blocknum)))
+                               (if (<ra> :is-illegal-instrument instr)
+                                   -1
+                                   (or (hash-table-ref auto-channel-map instr) -1)))
+                             (<ra> :get-track-midi-channel tracknum blocknum)))
+                (note-events (collect-note-events tracknum
+                                                  blocknum
+                                                  tempo-tick-map
+                                                  pfreq)))
+            (loop (1+ tracknum)
+                  (cons (make-note-track :channel (max channel 0)
+                                         :events note-events)
+                        note-tracks))))))
+  
+  (make-block-result :conductor-events conductor-events
+                     :note-tracks note-tracks))
+
+
+;; Returns the block results for a seqblock in a seqtrack,
+;; with the seqblock's stime as the start time.
+(define (get-seqblock-result seqtracknum seqblocknum)
+  (define blocknum (<ra> :get-seqblock-blocknum seqblocknum seqtracknum))
+  (define block (get-block-result blocknum))
+  (define stime (<ra> :get-seqblock-start-time seqblocknum seqtracknum))
+  
+  (make-seqblock-result :stime stime
+                        :conductor-events (block :conductor-events)
+                        :note-tracks (block :note-tracks)))
 
 
 ;; ============================================================
@@ -424,105 +624,53 @@
 ;; ============================================================
 
 (define (export-midi-to-file filename)
-  (let* ((blocknum -1)
-         (windownum -1)
-         (lpb (<ra> :get-main-lpb))
-         (resolution (* lpb 120))
-         (num-tracks (<ra> :get-num-tracks blocknum))
+  (define block (get-block-result -1))
+  (define conductor-events (block :conductor-events))
+  (define note-tracks (block :note-tracks))
 
-         (conductor-events
-          (sort-by-tick
-           (append (collect-tempo-events blocknum lpb resolution)
-                   (collect-signature-events blocknum lpb resolution))))
+  ;; Compute last tick across all tracks (plus padding)
+  (define last-tick 0)
+  (for-each (lambda (e)
+              (set! last-tick (max last-tick (e :tick))))
+            conductor-events)
+  (for-each (lambda (tr)
+              (for-each (lambda (e)
+                          (set! last-tick (max last-tick (e :tick))))
+                        (tr :events)))
+            note-tracks)
+  (set! last-tick (+ last-tick *midi-pulses-per-quarter-note*))
 
-         (note-tracks '()))
+  ;; Encode all track data
+  (let* ((conductor-midi-events (encode-event-sequence conductor-events conductor-event-encoder last-tick))
+         (note-track-midi-events (map (lambda (tr)
+                                        (encode-event-sequence (tr :events)
+                                                               (make-note-event-encoder (tr :channel))
+                                                               last-tick))
+                                      note-tracks)))
 
-    ;; Ensure initial tempo at tick 0 (use main BPM)
-    (let ((tempo-at-0 (keep (lambda (e) (and (eq? (cadr e) 'tempo) (= (car e) 0)))
-                            conductor-events)))
-      (if (null? tempo-at-0)
-        (set! conductor-events
-              (cons (list 0 'tempo
-                          (* (<ra> :get-main-bpm) (<ra> :get-reltempo blocknum)))
-                    conductor-events))))
+    ;; Open binary file
+    (let ((file (<ra> :open-file-for-binary-writing filename)))
+      (if (<ra> :is-illegal-file file)
+          (begin
+            (c-display "export-midi: Could not open file for writing")
+            #f)
+          (begin
+            ;; SMF Header chunk
+            (midi-write-chunk-header "MThd" 6 file)
+            (<ra> :write-be16-to-file file 1)          ;; Format 1
+            (<ra> :write-be16-to-file file (1+ (length note-track-midi-events)))    ;; Number of tracks (+1 is the tempo/signature track.)
+            (<ra> :write-be16-to-file file *midi-pulses-per-quarter-note*)  ;; PPQ
 
-    ;; Ensure initial time signature at tick 0 (use main signature)
-    (let ((sig-at-0 (keep (lambda (e) (and (eq? (cadr e) 'signature) (= (car e) 0)))
-                          conductor-events)))
-      (if (null? sig-at-0)
-        (set! conductor-events
-              (cons (list 0 'signature
-                          (<ra> :get-main-signature-numerator)
-                          (<ra> :get-main-signature-denominator))
-                    conductor-events))))
-    (set! conductor-events (sort-by-tick conductor-events))
+            ;; Conductor track
+            (midi-write-track-chunk conductor-midi-events file)
 
-    ;; Collect note tracks (only MIDI instrument tracks with notes)
-    (let ((auto-channel-map (if *midi-export-auto-assign-MIDI-channel*
-                                (create-MIDI-channel-map-for-block blocknum)
-                                #f)))
-      (let loop ((tracknum 0))
-        (if (< tracknum num-tracks)
-          (let* ((notes-vec (<ra> :get-all-notes tracknum blocknum windownum))
-                 (n (vector-length notes-vec))
-                 (channel (if auto-channel-map
-                            (let ((instr (<ra> :get-instrument-for-track tracknum blocknum windownum)))
-                              (if (<ra> :is-illegal-instrument instr)
-                                -1
-                                (or (hash-table-ref auto-channel-map instr) -1)))
-                            (<ra> :get-track-midi-channel tracknum blocknum windownum))))
-            (if (and (> n 0) (>= channel 0) (<= channel 15))
-              (let ((events (sort-by-tick
-                              (collect-note-events tracknum blocknum lpb resolution))))
-                (c-display "EVENTS:" events)
-                (if (not (null? events))
-                  (set! note-tracks
-                        (cons (cons channel events) note-tracks)))))
-            (loop (+ tracknum 1))))))
-    (set! note-tracks (reverse note-tracks))
+            ;; Note tracks
+            (for-each (lambda (evs)
+                        (midi-write-track-chunk evs file))
+                      note-track-midi-events)
 
-    ;; Compute last tick across all tracks (plus padding)
-    (let ((last-tick 0))
-      (for-each (lambda (e) (set! last-tick (max last-tick (car e)))) conductor-events)
-      (for-each (lambda (tr)
-                  (for-each (lambda (e) (set! last-tick (max last-tick (car e))))
-                            (cdr tr)))
-                note-tracks)
-      (set! last-tick (+ last-tick resolution))
-
-      ;; Encode all track data
-      (let* ((conductor-bytes (encode-event-sequence conductor-events conductor-event-encoder last-tick))
-             (note-track-bytes (map (lambda (tr)
-                                      (let* ((channel (car tr))
-                                             (events (cdr tr))
-                                             (encoder (make-note-event-encoder channel)))
-                                        (encode-event-sequence events encoder last-tick)))
-                                    note-tracks))
-             (num-mtrk (1+ (length note-track-bytes))))
-
-        ;; Open binary file
-        (let ((file (<ra> :open-file-for-binary-writing filename)))
-          (if (<ra> :is-illegal-file file)
-              (begin
-                (c-display "export-midi: Could not open file for writing")
-                #f)
-              (begin
-                ;; SMF Header chunk
-                (midi-write-chunk-header "MThd" 6 file)
-                (<ra> :write-be16-to-file file 1)          ;; Format 1
-                (<ra> :write-be16-to-file file num-mtrk)    ;; Number of tracks
-                (<ra> :write-be16-to-file file resolution)  ;; PPQ
-
-                ;; Conductor track
-                (midi-write-track-chunk conductor-bytes file)
-
-                ;; Note tracks
-                (for-each (lambda (bytes)
-                            (midi-write-track-chunk bytes file))
-                          note-track-bytes)
-
-                (<ra> :close-file file)
-                #t)))))))
+            (<ra> :close-file file)
+            #t)))))
 
 
 ;; ============================================================
