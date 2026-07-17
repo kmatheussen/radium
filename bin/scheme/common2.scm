@@ -105,6 +105,51 @@
 (light-shuffle '(1 2 3 4) 0.0)
 !!#
 
+;; map is guaranteed to run in order in s7.
+(define map-in-order map)
+
+(define (hash-table-keys ht)
+  (map car ht))
+
+(define (hash-table-values ht)
+  (map cdr ht))
+
+;; Add val to the set (actually a list) stored at key in a hash table.
+(define (hash-table-add-to-set! table key val)
+  (let ((lst (hash-table-ref table key)))
+    (if lst
+        (if (not (member val lst))
+            (hash-table-set! table key (cons val lst)))
+        (hash-table-set! table key (list val)))))
+
+;; Calls (proc a b) for every unique unordered pair from lst.
+(define (for-each-pair proc lst)
+  (let outer ((remaining lst))
+    (when (and (not (null? remaining))
+               (not (null? (cdr remaining))))
+      (let ((first (car remaining)))
+        (let inner ((rest (cdr remaining)))
+          (if (null? rest)
+              (outer (cdr remaining))
+              (begin
+                (proc first (car rest))
+                (inner (cdr rest)))))))))
+
+;; Iterate all pairs (a from lst-a, b from lst-b) calling (proc a b).
+;; Returns the first non-#f result from proc, or #f if proc always returns #f.
+(define (find-cross-pair proc lst-a lst-b)
+  (call-with-exit
+    (lambda (return)
+      (for-each (lambda (a)
+                  (for-each (lambda (b)
+                              (let ((result (proc a b)))
+                                (if result
+                                    (return result))))
+                            lst-b))
+                lst-a)
+      #f)))
+
+
 ;; (round 2.5) -> 2
 ;; (roundup 2.5) -> 3
 (define (roundup A)
