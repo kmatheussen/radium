@@ -852,7 +852,8 @@
                                                                    (stime-to-ticks (event :stime) song-tempo-tick-map pfreq))))
                                             (note-track :events)))
                                 note-tracks)
-                      (+ last-tick *midi-pulses-per-quarter-note*)))
+                      (+ last-tick
+                         *midi-pulses-per-quarter-note*)))
 
   (define instrument->midi-channel-map (create-MIDI-channel-map all-note-track-lists))
 
@@ -884,8 +885,7 @@
                                               file))
                     note-tracks)
           
-          (<ra> :close-file file)
-          #t))))
+          (<ra> :close-file file)))))
 
 
 ;; ============================================================
