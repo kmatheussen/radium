@@ -810,7 +810,6 @@ FROM_C-show-select-instrument-right-click
                   (error 'loading-failed)
                   ret))))))
 
-
 (require stuff.scm)
 
 (define *safe-ow-recursive-level* 0)

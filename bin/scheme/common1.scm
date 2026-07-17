@@ -1,6 +1,5 @@
 (provide 'common1.scm)
 
-
 ;; redefine 'ow!'
 #||
 (set! ow! (lambda ()      
