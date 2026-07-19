@@ -5576,11 +5576,11 @@ int main(int argc, char **argv){
     // set system font
 
     bool custom_config_set = false;
-    QString fontstring = SETTINGS_read_qstring("system_font","");
+    QString fontstring = SETTINGS_read_qstring("system_font_qt6","");
 
     if(fontstring=="") {
       SETTINGS_set_custom_configfile(OS_get_full_program_file_path("config"));
-      fontstring = SETTINGS_read_qstring("system_font","");
+      fontstring = SETTINGS_read_qstring("system_font_qt6","");
       R_ASSERT(fontstring != "");
       custom_config_set = true;
     }

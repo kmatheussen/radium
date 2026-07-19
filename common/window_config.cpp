@@ -54,7 +54,7 @@ void SelectEditFont(
 
         printf("font: -%s-\n",font);
         // Saved last in case the font crashes radium
-        SETTINGS_write_string("font",font);
+        SETTINGS_write_string("font_qt6",font);
 }
 #endif
 
