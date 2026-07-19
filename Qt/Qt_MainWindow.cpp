@@ -745,10 +745,10 @@ void SetupMainWindow(void){
     bool custom_config_set = false;
     QFont font = QFont("Monospace");
 
-    const char *fontstring = SETTINGS_read_string("font",NULL);
+    const char *fontstring = SETTINGS_read_string("font_qt6",NULL);
     if(fontstring==NULL) {
       SETTINGS_set_custom_configfile(OS_get_full_program_file_path(L"config"));
-      fontstring = SETTINGS_read_string("font",NULL);
+      fontstring = SETTINGS_read_string("font_qt6",NULL);
       R_ASSERT(fontstring != NULL);
       custom_config_set = true;
     }

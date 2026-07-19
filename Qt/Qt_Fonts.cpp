@@ -277,7 +277,7 @@ void GFX_SetSystemFont(QFont font){
 #if 0 //FOR_MACOSX
     font.setPointSize(font.pointSize()*72.0/96.0); // macs have dpi of 72, while linux and mac have 96.
 #endif    
-    SETTINGS_write_string("system_font",write_font.toString());
+    SETTINGS_write_string("system_font_qt6",write_font.toString());
   }
   
   SETTINGS_write_string("system_font_style",font.styleName()); // toString doesn't seem to cover this.
@@ -313,7 +313,7 @@ const char *GFX_GetSystemFont(void){
 
 static void save_editor_font_to_config(struct Tracker_Windows *tvisual){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
-  SETTINGS_write_string("font",editor->font.toString().toUtf8().constData());
+  SETTINGS_write_string("font_qt6",editor->font.toString().toUtf8().constData());
   SETTINGS_write_string("font_style",editor->font.styleName()); // toString doesn't seem to cover this.
 }
 
@@ -369,7 +369,7 @@ void GFX_ResetFontSize(struct Tracker_Windows *tvisual){
   QFont font;
 
   {
-    QString fontstring = SETTINGS_read_qstring("font","");
+    QString fontstring = SETTINGS_read_qstring("font_qt6","");
     font.fromString(fontstring);
   }
 
@@ -411,7 +411,7 @@ void GFX_SetDefaultFont(struct Tracker_Windows *tvisual){
 
   SETTINGS_set_custom_configfile(OS_get_full_program_file_path("config"));
   {
-    QString fontstring = SETTINGS_read_qstring("font","");
+    QString fontstring = SETTINGS_read_qstring("font_qt6","");
 
     font.fromString(fontstring);
 #if 0 //FOR_MACOSX
@@ -424,7 +424,7 @@ void GFX_SetDefaultFont(struct Tracker_Windows *tvisual){
   }
   SETTINGS_unset_custom_configfile();
 
-  SETTINGS_write_string("font",font.toString());
+  SETTINGS_write_string("font_qt6",font.toString());
   SETTINGS_write_string("font_style",font.styleName()); // toString doesn't seem to cover this.
 
 
@@ -440,7 +440,7 @@ void GFX_SetDefaultSystemFont(struct Tracker_Windows *tvisual){
 
   SETTINGS_set_custom_configfile(OS_get_full_program_file_path("config"));
   {
-    QString fontstring = SETTINGS_read_qstring("system_font","");
+    QString fontstring = SETTINGS_read_qstring("system_font_qt6","");
 
 #if defined(FOR_WINDOWS)
     fontstring = fontstring.replace("Lato Black", "Lato");
