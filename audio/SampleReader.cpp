@@ -1612,7 +1612,20 @@ void SAMPLEREADER_apply_audiofiles_state(const dyn_t state){
       printf("Note: Applying color \"%s\" to audio file \"%S\"\n", colorname, provider->_filename.getString());
     }
     
-  }
+	  }
+
+	if (g_is_loading)
+	{
+		for (auto *provider : g_sample_providers.values())
+		{
+			if (!applied.contains(provider))
+			{
+				if (provider->_can_be_deleted == false)
+					provider->_can_be_deleted = true;
+				provider->delete_me_if_no_users();
+			}
+		}
+	}
 }
 
 bool SAMPLEREADER_add_audiofile(filepath_t filename){

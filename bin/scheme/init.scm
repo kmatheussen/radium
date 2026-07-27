@@ -810,7 +810,6 @@ FROM_C-show-select-instrument-right-click
                   (error 'loading-failed)
                   ret))))))
 
-
 (require stuff.scm)
 
 (define *safe-ow-recursive-level* 0)
@@ -974,6 +973,8 @@ FROM_C-show-select-instrument-right-click
 (my-require 'main_menus.scm)
 
 (my-require 'nsm.scm)
+
+(my-require 'midi_export.scm)
 
 
 (define (FROM-C-assert-that-function-can-be-called-from-C funcname)

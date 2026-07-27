@@ -1,9 +1,13 @@
 settings_version = 0.73 # dont change this one
 
-font = Cousine,11,-1,5,75,0,0,0,0,0
+# Remove default value for font_qt6 since QString serialization doesn't seem to be portable across OS-es in qt6.
+# Instead we set default family name and size manually in the program.
+#font_qt6 = Cousine,12,-1,5,400,0,0,0,0,0,0,0,0,0,0,1,Regular,0,0
 font_style = Regular
 
-system_font = Lato,10,-1,5,87,0,0,0,0,0,Black
+# Remove default value for font_qt6 since QString serialization doesn't seem to be portable across OS-es in qt6.
+# Instead we set default family name and size manually in the program.
+#system_font_qt6 = Lato,12,-1,5,900,0,0,0,0,0,0,0,0,0,0,1,Black,0,0
 system_font_style = Black
 
 bottom_slider_height = 0

@@ -308,6 +308,10 @@ void radium::RhiWindow::QRHI_request_update_from_thread(void)
 void radium::RhiWindow::QRHI_stop_rendering(void)
 {
 	_stop_rendering = true;
+
+	// Drain the RHI event queue so any in-progress render completes
+	// before the caller tears down the window surface.
+	MAIN_put_event_sync([](){});
 }
 
 void radium::RhiWindow::QRHI_set_thread_priority(bool high)
@@ -317,16 +321,18 @@ void radium::RhiWindow::QRHI_set_thread_priority(bool high)
 }
 
 //! [rhi-init]
-void radium::RhiWindow::MAIN_init(const QFont &font)
-{
-	R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
-
-	//printf("INIT CALLED\n");
-	if (g_thread==NULL)
+	void radium::RhiWindow::MAIN_init(const QFont &font)
 	{
-		QSemaphore finished_initing;
+		R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
 
-		auto initfunc = [this, &finished_initing, font]
+		//printf("INIT CALLED\n");
+		if (g_thread==NULL)
+		{
+			safe_double_write(&g_opengl_scale_ratio, devicePixelRatio());
+		
+			QSemaphore finished_initing;
+
+			auto initfunc = [this, &finished_initing, font]
 			{
 				THREADING_init_qrhi_thread_type();
 
@@ -507,6 +513,9 @@ void radium::RhiWindow::QRHI_render()
 
 	R_ASSERT_NON_RELEASE(QThread::currentThread() == g_thread);
 
+	if (_stop_rendering)
+		return;
+
 	const QSize surfaceSize = _hasSwapChain ? _swap_chain->surfacePixelSize() : QSize();
 	if (surfaceSize.isEmpty())
 		return;
@@ -544,6 +553,7 @@ void radium::RhiWindow::QRHI_render()
         QRHI_resizeSwapChain();
         if (!_hasSwapChain)
             return;
+		
         result = _rhi->beginFrame(_swap_chain);
     }
     if (result != QRhi::FrameOpSuccess)

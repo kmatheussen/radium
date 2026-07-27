@@ -299,6 +299,36 @@ static const char *MIDIGetPatchData(struct Patch *patch, const char *key){
   }else if(!strcasecmp(key,"preset")){
     return talloc_numberstring(getPatchData(patch)->preset);
 
+  }else if(!strcasecmp(key,"volume")){
+    return talloc_numberstring(getPatchData(patch)->volume);
+
+  }else if(!strcasecmp(key,"volumeonoff")){
+    return getPatchData(patch)->volumeonoff ? "1" : "0";
+
+  }else if(!strcasecmp(key,"pan")){
+    return talloc_numberstring(getPatchData(patch)->pan);
+
+  }else if(!strcasecmp(key,"panonoff")){
+    return getPatchData(patch)->panonoff ? "1" : "0";
+
+  }else if(!strncmp(key,"cc",2) && strlen(key)==3 && key[2]>='0' && key[2]<='9'){
+    int index = atoi(key+2);
+    if(index >= 0 && index < NUM_MIDI_CC)
+      return talloc_numberstring(getPatchData(patch)->cc[index]);
+
+  }else if(!strncmp(key,"ccsonoff",8) && strlen(key)==9 && key[8]>='0' && key[8]<='9'){
+    int index = atoi(key+8);
+    if(index >= 0 && index < NUM_MIDI_CC)
+      return getPatchData(patch)->ccsonoff[index] ? "1" : "0";
+
+  }else if(!strncmp(key,"ccvalues",8) && strlen(key)==9 && key[8]>='0' && key[8]<='9'){
+    int index = atoi(key+8);
+    if(index >= 0 && index < NUM_MIDI_CC)
+      return talloc_numberstring(getPatchData(patch)->ccvalues[index]);
+
+  }else if(!strcasecmp(key,"numcc")){
+    return talloc_numberstring(NUM_MIDI_CC);
+
   } else
     RWarning("MIDIGetPatchData: Unknown key \"%s\" for midi instrument", key);
 
@@ -342,7 +372,7 @@ static struct PatchData *createPatchData(struct Patch *patch) {
   patchdata->pan=0x40;
     
   int lokke2;
-  for(lokke2=0;lokke2<8;lokke2++){
+  for(lokke2=0;lokke2<NUM_MIDI_CC;lokke2++){
     patchdata->ccvalues[lokke2]=0;
     patchdata->ccsonoff[lokke2]=false;
   }

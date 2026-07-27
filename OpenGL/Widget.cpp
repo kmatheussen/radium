@@ -975,15 +975,26 @@ public:
 
 		// All QRhi resources must be freed on the RHI thread while _rhi is still alive.
 		// Non-QRhi cleanup (_painting_data) is done outside on the main thread.
+		//
+		// However, explicit resource release (buffers, pipelines, textures) is slow because
+		// Vulkan buffer destruction blocks until the GPU finishes pending work. QRhi resources
+		// are implicitly destroyed when _rhi is deleted in ~RhiWindow() (via vkDeviceWaitIdle
+		// + vkDestroyDevice), so explicit release is redundant and causes a multi-second hang.
+#if 0
 		MAIN_put_event_sync([this]()
 			{
+				fprintf(stderr, "H1a\n");
 				for_each_renderer([](auto &r){ r.release(); });
-				
+				fprintf(stderr, "H1b\n");
+				fprintf(stderr, "H1b1\n");
 				delete _texture_atlas_backend;
+				fprintf(stderr, "H1b2\n");
 				delete _texture_atlas_backend_halfsize;
-				
+				fprintf(stderr, "H1c\n");
+
 				fprintf(stderr, "H5\n");
 			});
+#endif
 
 		fprintf(stderr, "H6\n");
 		fprintf(stderr, "H7\n");
@@ -1023,10 +1034,6 @@ public:
 	
 	void QRHI_customInit(const QFont &font) override
 	{
-		const double ratio = devicePixelRatio();
-
-		safe_double_write(&g_opengl_scale_ratio, ratio);
-		
 		_texture_atlas_backend = new r::TextureAtlasBackend(_rhi, font);
 		_texture_atlas_backend_halfsize = new r::TextureAtlasBackend(_rhi, get_halfsize_font(font));
 		
@@ -1138,7 +1145,7 @@ public:
 #endif
 			});
 
-		printf("Ratio: %f. refresh: %f\n", ratio, refresh_rate);
+		printf("Ratio: %f. refresh: %f\n", g_opengl_scale_ratio, refresh_rate);
 
 		printf("gotit\n");
 #if !defined(RELEASE)

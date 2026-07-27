@@ -37,6 +37,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QUrl>
 #include <QMimeData>
 
+#include "../config/config.h"
+
 #if USE_GTK_VISUAL
 #  ifdef __linux__
 #    if USE_QT3
@@ -743,17 +745,22 @@ void SetupMainWindow(void){
 
   {
     bool custom_config_set = false;
-    QFont font = QFont("Monospace");
+    QFont font = QFont(DEFAULT_EDITOR_FONT_FAMILY, DEFAULT_EDITOR_FONT_SIZE, DEFAULT_EDITOR_FONT_WEIGHT);
 
-    const char *fontstring = SETTINGS_read_string("font",NULL);
-    if(fontstring==NULL) {
+    const char *fontstring = SETTINGS_read_string("font_qt6",NULL);
+    if(fontstring!=NULL)
+	{
+		font.fromString(fontstring);
+	}
+	
+#if 0 //QString serialization doesn't seem to be portable across OS-es in qt6.
+	{
       SETTINGS_set_custom_configfile(OS_get_full_program_file_path(L"config"));
-      fontstring = SETTINGS_read_string("font",NULL);
+      fontstring = SETTINGS_read_string("font_qt6",NULL);
       R_ASSERT(fontstring != NULL);
       custom_config_set = true;
-    }
-
-    font.fromString(fontstring);
+    }	
+#endif // 0
 
 #if 0 //FOR_MACOSX
     if (custom_config_set==true)

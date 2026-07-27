@@ -106,6 +106,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 
 
+#include "../config/config.h"
+
 #define INCLUDE_SNDFILE_OPEN_FUNCTIONS 1
 #include "../common/nsmtracker.h"
 #include "../common/RT_memory_allocator_proc.h"
@@ -4059,7 +4061,7 @@ int radium_main(const char *arg){
 
   }
 
-  GFX_reload_qt_stylesheets();
+  GFX_reload_qt_stylesheets(false);
 
   GFX_ShowProgressMessage("Creating main menus", true);
   S7CALL2(void_void,"generate-main-menus");
@@ -5148,7 +5150,7 @@ int main(int argc, char **argv){
     }
   }
 #endif
-           
+  
 
 #if defined(FOR_MACOSX) || defined(FOR_LINUX)
   GC_register_has_static_roots_callback(gc_has_static_roots_func);
@@ -5575,34 +5577,38 @@ int main(int argc, char **argv){
 
     // set system font
 
+	QFont font = QFont(DEFAULT_SYSTEM_FONT_FAMILY, DEFAULT_SYSTEM_FONT_SIZE, DEFAULT_SYSTEM_FONT_WEIGHT);
+	
     bool custom_config_set = false;
-    QString fontstring = SETTINGS_read_qstring("system_font","");
+    QString fontstring = SETTINGS_read_qstring("system_font_qt6","");
 
+#if 0
     if(fontstring=="") {
       SETTINGS_set_custom_configfile(OS_get_full_program_file_path("config"));
-      fontstring = SETTINGS_read_qstring("system_font","");
+      fontstring = SETTINGS_read_qstring("system_font_qt6","");
       R_ASSERT(fontstring != "");
       custom_config_set = true;
     }
-
 #if defined(FOR_WINDOWS)
     fontstring = fontstring.replace("Lato Black", "Lato");
 #endif
+#endif // 0
+	
 
     {
-      QFont font;
-      font.fromString(fontstring);
-      //font.fromString("Cousine,11,-1,5,75,0,0,0,0,0");
+		if (fontstring != "")
+			font.fromString(fontstring);
+		//font.fromString("Cousine,11,-1,5,75,0,0,0,0,0");
  
 #if 0 //FOR_MACOSX
-      if(custom_config_set)
-        font.setPointSizeF(font.pointSizeF()*96.0/72.0); // macs have dpi of 72, while linux and windows have 96.
+		if(custom_config_set)
+			font.setPointSizeF(font.pointSizeF()*96.0/72.0); // macs have dpi of 72, while linux and windows have 96.
 #endif
-      
-      if(SETTINGS_read_qstring("system_font_style","")!="")
-        font.setStyleName(SETTINGS_read_qstring("system_font_style",""));
-      qapplication->setFont(font);
-      QApplication::setFont(font);
+		
+		if(SETTINGS_read_qstring("system_font_style","")!="")
+			font.setStyleName(SETTINGS_read_qstring("system_font_style",""));
+		qapplication->setFont(font);
+		QApplication::setFont(font);
     }
 
     if (custom_config_set==true){
