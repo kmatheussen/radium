@@ -27,6 +27,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <qapplication.h>
 #include <QTextStream>
 
+#include "../config/config.h"
+
 #include "../common/nsmtracker.h"
 #include "../common/settings_proc.h"
 #include "../common/wblocks_proc.h"
@@ -365,13 +367,15 @@ void GFX_ConfigFonts(struct Tracker_Windows *tvisual){
   save_editor_font_to_config(tvisual);
 }
 
-void GFX_ResetFontSize(struct Tracker_Windows *tvisual){
-  QFont font;
+void GFX_ResetFontSize(struct Tracker_Windows *tvisual)
+{
+	QFont font(DEFAULT_EDITOR_FONT_FAMILY, DEFAULT_EDITOR_FONT_SIZE, DEFAULT_EDITOR_FONT_WEIGHT);
 
-  {
-    QString fontstring = SETTINGS_read_qstring("font_qt6","");
-    font.fromString(fontstring);
-  }
+	{
+		QString fontstring = SETTINGS_read_qstring("font_qt6","");
+		if (fontstring != "")
+			font.fromString(fontstring);
+	}
 
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   editor->font.setPointSize(font.pointSize());
@@ -407,8 +411,9 @@ void GFX_IncFontSize(struct Tracker_Windows *tvisual, int pixels){
 }
 
 void GFX_SetDefaultFont(struct Tracker_Windows *tvisual){
-  QFont font;
+  QFont font(DEFAULT_EDITOR_FONT_FAMILY, DEFAULT_EDITOR_FONT_SIZE, DEFAULT_EDITOR_FONT_WEIGHT);
 
+#if 0
   SETTINGS_set_custom_configfile(OS_get_full_program_file_path("config"));
   {
     QString fontstring = SETTINGS_read_qstring("font_qt6","");
@@ -423,7 +428,8 @@ void GFX_SetDefaultFont(struct Tracker_Windows *tvisual){
 
   }
   SETTINGS_unset_custom_configfile();
-
+#endif
+  
   SETTINGS_write_string("font_qt6",font.toString());
   SETTINGS_write_string("font_style",font.styleName()); // toString doesn't seem to cover this.
 
@@ -438,16 +444,19 @@ void GFX_SetDefaultFont(struct Tracker_Windows *tvisual){
 void GFX_SetDefaultSystemFont(struct Tracker_Windows *tvisual){
   QFont font;
 
-  SETTINGS_set_custom_configfile(OS_get_full_program_file_path("config"));
+  //SETTINGS_set_custom_configfile(OS_get_full_program_file_path("config"));
   {
-    QString fontstring = SETTINGS_read_qstring("system_font_qt6","");
+	  QFont font = QFont(DEFAULT_SYSTEM_FONT_FAMILY, DEFAULT_SYSTEM_FONT_SIZE, DEFAULT_SYSTEM_FONT_WEIGHT);
 
-#if defined(FOR_WINDOWS)
-    fontstring = fontstring.replace("Lato Black", "Lato");
+#if 0
+	  //QString fontstring = SETTINGS_read_qstring("system_font_qt6","");
+#  if defined(FOR_WINDOWS)
+	  fontstring = fontstring.replace("Lato Black", "Lato");
+#  endif
+	  font.fromString(fontstring);
 #endif
-    
-    font.fromString(fontstring);
 
+	  
 #if 0 //FOR_MACOSX
     font.setPointSize(font.pointSize()*96.0/72.0); // macs have dpi of 72, while linux and windows have 96.
 #endif
@@ -456,7 +465,7 @@ void GFX_SetDefaultSystemFont(struct Tracker_Windows *tvisual){
       font.setStyleName(SETTINGS_read_qstring("system_font_style",""));
 
   }
-  SETTINGS_unset_custom_configfile();
+  //SETTINGS_unset_custom_configfile();
 
   GFX_SetSystemFont(font);
 }
