@@ -234,12 +234,13 @@ void setFontValues(struct Tracker_Windows *tvisual){
   
   GE_set_font(editor->font);
 
-  const QFont &font=editor->font;
+  const QFont &font = editor->font;
 
-  QFontMetrics fm(font);
+  QFont hinted_font(font);
+  hinted_font.setHintingPreference(QFont::PreferFullHinting);
+  QFontMetrics fm(hinted_font);
 
-  double width3           = R_MAX(fm.boundingRect("D#6").width(), R_MAX(fm.boundingRect("MUL").width(), fm.boundingRect("STP").width()));
-  tvisual->fontwidth      = (int)(width3/3.0) + 1;
+  tvisual->fontwidth      = fm.horizontalAdvance("#") + 1;
   tvisual->org_fontheight = fm.height() - 1;
   tvisual->fontheight     = tvisual->org_fontheight;
 
