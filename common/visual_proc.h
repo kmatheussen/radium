@@ -197,7 +197,7 @@ extern void GFX_SetSystemFont(QFont font);
 #endif
 extern LANGSPEC void GFX_ConfigFonts(struct Tracker_Windows *tvisual);
 
-extern LANGSPEC void GFX_reload_qt_stylesheets(void);
+extern LANGSPEC void GFX_reload_qt_stylesheets(bool only_for_testing);
 
 extern LANGSPEC void GFX_SetDefaultColors1(struct Tracker_Windows *tvisual);
 extern LANGSPEC void GFX_SetDefaultColors2(struct Tracker_Windows *tvisual);

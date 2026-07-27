@@ -26,6 +26,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <qapplication.h>
 #include <qpalette.h>
 #include <qcombobox.h>
+#include <QMap>
+#include <QVector>
+#include <QDir>
+#include <QPushButton>
+#include <QSplitter>
+#include <QTabWidget>
+#include <QLabel>
 
 #include "qcolordialog.h"
 #include <qtimer.h>
@@ -65,6 +72,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/settings_proc.h"
 #include "../common/windows_proc.h"
 #include "../common/OS_settings_proc.h"
+#include "../common/OS_disk_proc.h"
 
 #include "../mixergui/QM_MixerWidget.h"
 
@@ -72,6 +80,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../api/api_gui_proc.h"
 #include "../api/api_proc.h"
+#include "../api/api_various_proc.h"
+
+#include "../common/hashmap_proc.h"
 
 
 #include "Qt_colors_proc.h"
@@ -85,6 +96,7 @@ namespace{
     const char *display_name;
     bool is_separator;
   };
+
   struct ReplacementColorNum{
     enum ColorNums num;
     enum ColorNums replacement_num;
@@ -1295,24 +1307,128 @@ void GFX_SetBrightness(struct Tracker_Windows *tvisual, float how_much){
   tvisual->must_redraw = true;
 }
 
-void GFX_reload_qt_stylesheets(void){
-  int darker = 150; // Push buttons are painted in a gradient color, which makes them a little bit lighter than the background-color overall. We compensate for this by darkening the background color a little bit.
+void GFX_reload_qt_stylesheets(bool only_for_testing)
+{
+	int darker = 150; // Push buttons are painted in a gradient color, which makes them a little bit lighter than the background-color overall. We compensate for this by darkening the background color a little bit.
+
+	bool high_background_has_changed;
+	bool low_background_has_changed;
   
-  qApp->setStyleSheet("QPushButton{"
-                      "  color: " + get_qcolor(BUTTONS_TEXT_COLOR_NUM).name(QColor::HexArgb) + ";" +
-                      "  background-color: " + get_qcolor(BUTTONS_COLOR_NUM).darker(darker).name(QColor::HexArgb) + ";" +
-                      "}" +
-                      "QPushButton:pressed{ background-color: " + get_qcolor(BUTTONS_PRESSED_COLOR_NUM).darker(darker).name(QColor::HexArgb) + ";}" +
-                      "QPushButton:disabled{ background-color: " + mix_colors(QColor("#808080"), get_qcolor(BUTTONS_PRESSED_COLOR_NUM).darker(darker), 0.5).name(QColor::HexArgb) + ";}" +
-                      "QPushButton:hover{ background-color: " + get_qcolor(BUTTONS_COLOR_NUM).lighter(100).name(QColor::HexArgb) + ";}" +
-                      "QSplitter::handle{background-color: " + get_qcolor(HIGH_BACKGROUND_COLOR_NUM).darker(110).name(QColor::HexArgb) + ";}" +
-                      "QTabWidget::pane { border: 0; background: " + get_qcolor(LOW_BACKGROUND_COLOR_NUM).name(QColor::HexArgb) + "}" +
-                      "QLabel { color: " + get_qcolor(LABEL_COLOR_NUM).name(QColor::HexArgb) + "}" +
-                      DISK_file_to_qstring(OS_get_full_program_file_path("stylesheet.css"))
-                      );
+	{
+		// qApp->setStyleSheet is really slow.
+		// Check if we really need to call it.
+	  
+		static QString cached_buttons_text;
+		static QString cached_buttons;
+		static QString cached_buttons_pressed;
+		static QString cached_high_background;
+		static QString cached_low_background;
+		static QString cached_label;
+	  
+		QString buttons_text = get_qcolor(BUTTONS_TEXT_COLOR_NUM).name(QColor::HexArgb);
+		QString buttons = get_qcolor(BUTTONS_COLOR_NUM).name(QColor::HexArgb);
+		QString buttons_pressed = get_qcolor(BUTTONS_PRESSED_COLOR_NUM).name(QColor::HexArgb);
+		QString high_background = get_qcolor(HIGH_BACKGROUND_COLOR_NUM).name(QColor::HexArgb);
+		QString low_background = get_qcolor(LOW_BACKGROUND_COLOR_NUM).name(QColor::HexArgb);
+		QString label = get_qcolor(LABEL_COLOR_NUM).name(QColor::HexArgb);
+
+		high_background_has_changed = cached_high_background != high_background;
+		low_background_has_changed = cached_low_background != low_background;
+		  
+		if (only_for_testing==true
+			&& cached_buttons_text == buttons_text
+			&& cached_buttons == buttons
+			&& cached_buttons_pressed == buttons_pressed
+			&& cached_high_background == high_background
+			&& cached_low_background == low_background
+			&& cached_label == label)
+		{
+			return;
+		}
+	  
+		cached_buttons_text = buttons_text;
+		cached_buttons = buttons;
+		cached_buttons_pressed = buttons_pressed;
+		cached_high_background = high_background;
+		cached_low_background = low_background;
+		cached_label = label;
+	}
+
+	QString pushbutton_sheet = "QPushButton{"
+		"  color: " + get_qcolor(BUTTONS_TEXT_COLOR_NUM).name(QColor::HexArgb) + ";" +
+		"  background-color: " + get_qcolor(BUTTONS_COLOR_NUM).darker(darker).name(QColor::HexArgb) + ";" +
+		"}" +
+		"QPushButton:pressed{ background-color: " + get_qcolor(BUTTONS_PRESSED_COLOR_NUM).darker(darker).name(QColor::HexArgb) + ";}" +
+		"QPushButton:disabled{ background-color: " + mix_colors(QColor("#808080"), get_qcolor(BUTTONS_PRESSED_COLOR_NUM).darker(darker), 0.5).name(QColor::HexArgb) + ";}" +
+		"QPushButton:hover{ background-color: " + get_qcolor(BUTTONS_COLOR_NUM).lighter(100).name(QColor::HexArgb) + ";}";
+
+	QString splitter_sheet = "QSplitter::handle{background-color: " + get_qcolor(HIGH_BACKGROUND_COLOR_NUM).darker(110).name(QColor::HexArgb) + ";}";
+
+	QString tabwidget_sheet = "QTabWidget::pane { border: 0; background: " + get_qcolor(LOW_BACKGROUND_COLOR_NUM).name(QColor::HexArgb) + "}";
+
+	QString label_sheet = "QLabel { color: " + get_qcolor(LABEL_COLOR_NUM).name(QColor::HexArgb) + "}";
+
+	static bool s_has_called_qApp = false;
+	static bool s_has_called_with_testing = false;
+
+	if (only_for_testing == false)
+	{
+		if (s_has_called_with_testing)
+		{
+			s_has_called_with_testing = false;
+
+			QString full_sheet = pushbutton_sheet + splitter_sheet + tabwidget_sheet + label_sheet
+				+ DISK_file_to_qstring(OS_get_full_program_file_path("stylesheet.css"));
+
+			GFX_OpenProgress("Applying stylesheet colors...");
+			//QThread::msleep(2000);
+			qApp->setStyleSheet(full_sheet);
+			//QThread::msleep(5000);
+			GFX_CloseProgress();
+			return;
+		}
+
+		if (s_has_called_qApp == false)
+		{
+			s_has_called_qApp = true;
+
+			QString full_sheet = pushbutton_sheet + splitter_sheet + tabwidget_sheet + label_sheet
+				+ DISK_file_to_qstring(OS_get_full_program_file_path("stylesheet.css"));
+	
+			qApp->setStyleSheet(full_sheet);
+			return;
+		}
+	}
+
+	s_has_called_with_testing = true;
+
+	foreach(QWidget *widget, QApplication::allWidgets())
+	{
+		if (QPushButton *w = qobject_cast<QPushButton*>(widget)) // [NO_IF_=_WARNING]
+		{
+			if (w->isVisible())
+				w->setStyleSheet(pushbutton_sheet);
+		}
+		else if (QSplitter *w = qobject_cast<QSplitter*>(widget)) // [NO_IF_=_WARNING]
+		{
+			if (high_background_has_changed && w->isVisible())
+				w->setStyleSheet(splitter_sheet);
+		}
+		else if (QTabWidget *w = qobject_cast<QTabWidget*>(widget)) // [NO_IF_=_WARNING]
+		{
+			if (low_background_has_changed && w->isVisible())
+				w->setStyleSheet(tabwidget_sheet);
+		}
+		else if (QLabel *w = qobject_cast<QLabel*>(widget)) // [NO_IF_=_WARNING]
+		{
+			if (w->isVisible())
+				w->setStyleSheet(label_sheet);
+		}
+	}
 }
 
-void testColorInRealtime(enum ColorNums num, QColor color){
+void testColorInRealtime(enum ColorNums num, QColor color)
+{
   R_ASSERT_RETURN_IF_FALSE(num<END_CONFIG_COLOR_NUM);
 
   //printf("  alpha2: %d\n",color.alpha());
@@ -1334,7 +1450,7 @@ void testColorInRealtime(enum ColorNums num, QColor color){
       updateAll(my_widget);
 
     if (num==HIGH_BACKGROUND_COLOR_NUM || num==LOW_BACKGROUND_COLOR_NUM || num==BUTTONS_COLOR_NUM || num==BUTTONS_PRESSED_COLOR_NUM || num==BUTTONS_TEXT_COLOR_NUM || num==LABEL_COLOR_NUM){
-      GFX_reload_qt_stylesheets();
+      GFX_reload_qt_stylesheets(true);
     }
 
     GFX_update_current_instrument_widget();
@@ -1444,4 +1560,415 @@ void GFX_SetDefaultColors1(struct Tracker_Windows *tvisual){
 void GFX_SetDefaultColors2(struct Tracker_Windows *tvisual){
   setDefaultColors(tvisual,"colors2");
   printf("hepp\n");
+}
+
+
+
+
+//////////////////////////
+// Color configurations //
+//////////////////////////
+
+namespace
+{
+struct ColorConfigSnapshot
+{
+	QString name;
+	
+	QVector<QColor> colors;
+	float instrument_brightness;
+	float instrument_saturation;
+	float instrument_brightness_in_editor;
+	float instrument_saturation_in_editor;
+	float block_brightness;
+	float block_saturation;
+	float amount_of_gradient;
+
+	ColorConfigSnapshot(void)
+		: instrument_brightness(0.0f)
+		, instrument_saturation(0.0f)
+		, instrument_brightness_in_editor(0.0f)
+		, instrument_saturation_in_editor(0.0f)
+		, block_brightness(0.0f)
+		, block_saturation(0.0f)
+		, amount_of_gradient(0.0f)
+	{
+	}
+
+	ColorConfigSnapshot(const hash_t *state)
+		: ColorConfigSnapshot()
+	{
+		name = HASH_get_qstring(state, "name");
+		
+		colors = QVector<QColor>(END_CONFIG_COLOR_NUM);
+
+		for(int i = START_CONFIG_COLOR_NUM ; i < END_CONFIG_COLOR_NUM ; i++)
+		{
+			const char *key = talloc_format("color_%d", i);
+			if (HASH_has_key(state, key))
+			{
+				const char *val = HASH_get_chars(state, key);
+				if (val != NULL && val[0] != '\0')
+					colors[i] = QColor(val);
+			}
+		}
+
+		instrument_brightness = HASH_get_float(state, "instrument_brightness");
+		instrument_saturation = HASH_get_float(state, "instrument_saturation");
+		instrument_brightness_in_editor = HASH_get_float(state, "instrument_brightness_in_editor");
+		instrument_saturation_in_editor = HASH_get_float(state, "instrument_saturation_in_editor");
+		block_brightness = HASH_get_float(state, "block_brightness");
+		block_saturation = HASH_get_float(state, "block_saturation");
+		amount_of_gradient = HASH_get_float(state, "amount_of_gradient");
+	}
+
+
+	ColorConfigSnapshot(disk_t *file)
+		: ColorConfigSnapshot(HASH_load(file))
+	{
+	}
+
+	ColorConfigSnapshot(filepath_t wfilename)
+	{
+		disk_t *file = DISK_open_for_reading(wfilename);
+
+		if (file != NULL)
+		{
+			*this = ColorConfigSnapshot(file);
+			DISK_close_and_delete(file);
+		}
+		else
+		{
+			*this = ColorConfigSnapshot();
+		}
+	}
+	
+	hash_t *getState(void) const
+	{
+		hash_t *hash = HASH_create(END_CONFIG_COLOR_NUM + 7);
+
+		HASH_put_qstring(hash, "name", name);
+
+		for(int i = START_CONFIG_COLOR_NUM ; i < END_CONFIG_COLOR_NUM ; i++)
+		{
+			if (colors[i].isValid())
+				HASH_put_chars(hash, talloc_format("color_%d", i), colors[i].name(QColor::HexArgb).toUtf8().constData());
+		}
+
+		HASH_put_float(hash, "instrument_brightness", instrument_brightness);
+		HASH_put_float(hash, "instrument_saturation", instrument_saturation);
+		HASH_put_float(hash, "instrument_brightness_in_editor", instrument_brightness_in_editor);
+		HASH_put_float(hash, "instrument_saturation_in_editor", instrument_saturation_in_editor);
+		HASH_put_float(hash, "block_brightness", block_brightness);
+		HASH_put_float(hash, "block_saturation", block_saturation);
+		HASH_put_float(hash, "amount_of_gradient", amount_of_gradient);
+
+		return hash;
+	}
+
+	void saveState(disk_t *disk)
+	{
+		hash_t *state = getState();
+		if (HASH_save(state, disk) == false)
+			showAsyncMessage("Failed to save color configuration");
+	}
+
+	void saveState(filepath_t wfilename)
+	{
+		disk_t *file = DISK_open_for_writing(wfilename);
+		if (file != NULL)
+		{
+			saveState(file);
+			DISK_close_and_delete(file);
+		}
+		else
+		{
+			showAsyncMessage("Failed to open file for writing color configuration");
+		}
+	}
+};
+} // anon. namespace
+
+static QMap<QString, ColorConfigSnapshot> g_color_configurations;
+static QString g_current_configuration_name;
+static bool g_color_configurations_initialized = false;
+
+static void ensure_color_configurations_initialized(void)
+{
+	if (g_color_configurations_initialized == false)
+	{
+		QDir dir(QString::fromStdWString((getConfigPath()).id));
+		QStringList filters;
+		filters << "color_configuration_*";
+		QStringList files = dir.entryList(filters, QDir::Files, QDir::Name);
+
+		if (files.isEmpty())
+		{
+			ColorConfigSnapshot snap;
+			snap.name = "Default";
+			snap.colors = QVector<QColor>(END_CONFIG_COLOR_NUM);
+			g_color_configurations[snap.name] = snap;
+			g_current_configuration_name = snap.name;
+		}
+		else
+		{
+			for(const QString &filename : files)
+			{
+				filepath_t wfilename = make_filepath(STRING_create(dir.absoluteFilePath(filename)));
+				ColorConfigSnapshot snap(wfilename);
+
+				if (snap.name.isEmpty())
+				{
+					R_ASSERT_NON_RELEASE(false);
+					snap.name = filename.mid(strlen("color_configuration_"));
+				}
+				
+				g_color_configurations[snap.name] = snap;
+			}
+
+			if (g_color_configurations.contains("Default"))
+				g_current_configuration_name = "Default";
+			else
+				g_current_configuration_name = g_color_configurations.begin().key();
+		}
+
+		{
+			const char *saved = SETTINGS_read_string("current_color_configuration", "");
+			if (saved[0] != '\0' && g_color_configurations.contains(saved))
+				g_current_configuration_name = saved;
+		}
+
+		g_color_configurations_initialized = true;
+	}
+}
+
+static void save_current_to_configuration(const QString &name)
+{
+	ColorConfigSnapshot &dest = g_color_configurations[name];
+	dest.name = name;
+	dest.colors.resize(END_CONFIG_COLOR_NUM);
+
+	for(int i = START_CONFIG_COLOR_NUM ; i < END_CONFIG_COLOR_NUM ; i++)
+	{
+		if (g_config_colors[i] != NULL)
+			dest.colors[i] = *g_config_colors[i];
+	}
+
+	dest.instrument_brightness = getInstrumentBrightness();
+	dest.instrument_saturation = getInstrumentSaturation();
+	dest.instrument_brightness_in_editor = getInstrumentBrightnessInEditor();
+	dest.instrument_saturation_in_editor = getInstrumentSaturationInEditor();
+	dest.block_brightness = getBlockBrightness();
+	dest.block_saturation = getBlockSaturation();
+	dest.amount_of_gradient = getAmountOfGradient();
+}
+
+static void write_current_configuration_name_to_settings(void)
+{
+	SETTINGS_write_string("current_color_configuration", g_current_configuration_name.toUtf8().constData());
+}
+
+static void load_configuration(const QString &name)
+{
+	clear_config_colors();
+
+	const ColorConfigSnapshot &src = g_color_configurations[name];
+
+	for(int i = START_CONFIG_COLOR_NUM ; i < END_CONFIG_COLOR_NUM ; i++)
+	{
+		if (src.colors[i].isValid())
+			g_config_colors[i] = new QColor(src.colors[i]);
+	}
+
+	setInstrumentBrightness(src.instrument_brightness);
+	setInstrumentSaturation(src.instrument_saturation);
+	setInstrumentBrightnessInEditor(src.instrument_brightness_in_editor);
+	setInstrumentSaturationInEditor(src.instrument_saturation_in_editor);
+	setBlockBrightness(src.block_brightness);
+	setBlockSaturation(src.block_saturation);
+	setAmountOfGradient(src.amount_of_gradient);
+}
+
+QVector<QString> GFX_GetColorConfigurationNames(void)
+{
+	ensure_color_configurations_initialized();
+
+	QVector<QString> names;
+	names.reserve(g_color_configurations.size());
+
+	QMapIterator<QString, ColorConfigSnapshot> it(g_color_configurations);
+	while(it.hasNext()){
+		it.next();
+		if (it.key() != "__checkpoint")
+			names.push_back(it.key());
+	}
+
+	return names;
+}
+
+QString GFX_GetCurrentColorConfigurationName(void){
+	ensure_color_configurations_initialized();
+
+	return g_current_configuration_name;
+}
+
+void GFX_RenameColorConfiguration(const QString &old_name, const QString &new_name)
+{
+	ensure_color_configurations_initialized();
+
+	if (g_color_configurations.contains(old_name)==false)
+		return;
+
+	if (g_color_configurations.contains(new_name))
+		return;
+
+	g_color_configurations[new_name] = g_color_configurations[old_name];
+	g_color_configurations.remove(old_name);
+
+	g_color_configurations[new_name].name = new_name;
+	
+	if (g_current_configuration_name == old_name)
+	{
+		g_current_configuration_name = new_name;
+		write_current_configuration_name_to_settings();
+	}
+}
+
+void GFX_NewColorConfiguration(const QString &name)
+{
+	ensure_color_configurations_initialized();
+
+	if (g_color_configurations.contains(name))
+		return;
+
+	save_current_to_configuration(g_current_configuration_name);
+
+	g_color_configurations[name] = g_color_configurations[g_current_configuration_name];
+	g_color_configurations[name].name = name;
+	
+	g_current_configuration_name = name;
+	write_current_configuration_name_to_settings();
+}
+
+void GFX_DeleteColorConfiguration(const QString &name)
+{
+	ensure_color_configurations_initialized();
+
+	if (g_color_configurations.size() <= 1)
+		return;
+
+	if (g_color_configurations.contains(name)==false)
+		return;
+
+	g_color_configurations.remove(name);
+
+	if (g_current_configuration_name == name)
+	{
+		if (g_color_configurations.contains("Default"))
+			g_current_configuration_name = "Default";
+		else
+			g_current_configuration_name = g_color_configurations.begin().key();
+
+		write_current_configuration_name_to_settings();
+	}
+}
+
+void GFX_SetColorConfiguration(const QString &name)
+{
+	ensure_color_configurations_initialized();
+
+	if (g_color_configurations.contains(name)==false)
+		return;
+
+	if (g_current_configuration_name == name)
+		return;
+
+	save_current_to_configuration(g_current_configuration_name);
+
+	g_current_configuration_name = name;
+	write_current_configuration_name_to_settings();
+
+	load_configuration(name);
+
+	struct Tracker_Windows *window = root->song->tracker_windows;
+	EditorWidget *editorwidget = static_cast<EditorWidget*>(window->os_visual.widget);
+
+	updateAll(editorwidget);
+	GFX_update_current_instrument_widget();
+	GFX_reload_qt_stylesheets(true);
+	window->must_redraw = true;
+}
+
+void GFX_SaveAllColorConfigurations(void)
+{
+	ensure_color_configurations_initialized();
+
+	QMapIterator<QString, ColorConfigSnapshot> it(g_color_configurations);
+	while(it.hasNext())
+	{
+		it.next();
+
+		filepath_t wfilename = appendFilePaths(getConfigPath(),
+		                                       getPath(qUtf8Printable(QString("color_configuration_")
+		                                                              + legalizeFilename(qUtf8Printable(it.key())))));
+
+		g_color_configurations[it.key()].saveState(wfilename);
+	}
+}
+
+void GFX_StoreCheckpoint(void)
+{
+	ensure_color_configurations_initialized();
+
+	save_current_to_configuration(g_current_configuration_name);
+
+	g_color_configurations["__checkpoint"] = g_color_configurations[g_current_configuration_name];
+	g_color_configurations["__checkpoint"].name = "__checkpoint";
+}
+
+void GFX_RevertAllToCheckpoint(void)
+{
+	ensure_color_configurations_initialized();
+
+	if (g_color_configurations.contains("__checkpoint")==false)
+		return;
+
+	save_current_to_configuration(g_current_configuration_name);
+
+	load_configuration("__checkpoint");
+
+	struct Tracker_Windows *window = root->song->tracker_windows;
+	EditorWidget *editorwidget = static_cast<EditorWidget*>(window->os_visual.widget);
+
+	updateAll(editorwidget);
+	GFX_update_current_instrument_widget();
+	GFX_reload_qt_stylesheets(true);
+	window->must_redraw = true;
+}
+
+void GFX_RevertColorFromCheckpoint(enum ColorNums colornum)
+{
+	ensure_color_configurations_initialized();
+
+	if (g_color_configurations.contains("__checkpoint")==false)
+		return;
+
+	const QVector<QColor> &colors = g_color_configurations["__checkpoint"].colors;
+
+	if (colornum >= colors.size())
+		return;
+
+	if (colors[colornum].isValid())
+		testColorInRealtime(colornum, colors[colornum]);
+}
+
+void GFX_SetDefaultColor(enum ColorNums colornum)
+{
+	if (has_qcolor(colornum)==false)
+		return;
+
+	enum ColorNums redirect = get_replacement_colornum(colornum);
+
+	testColorInRealtime(colornum,
+	                    get_replacement_color(redirect != ILLEGAL_COLOR_NUM ? redirect : colornum));
 }

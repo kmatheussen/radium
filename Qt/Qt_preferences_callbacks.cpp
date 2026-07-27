@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QCloseEvent>
 #include <QHideEvent>
 #include <QPainter>
+#include <QVector>
 
 #include "../common/nsmtracker.h"
 #include "../common/hashmap_proc.h"
@@ -408,6 +409,16 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       }
       
       //contents->adjustSize();
+
+      populate_color_selector();
+
+      {
+        static bool has_stored_checkpoint = false;
+        if (has_stored_checkpoint==false){
+          has_stored_checkpoint = true;
+          GFX_StoreCheckpoint();
+        }
+      }
     }
 
     gui_tab_widget->setCurrentIndex(0);
@@ -443,6 +454,12 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
         if (_needs_to_update)
           updateWidgets();
       }
+    }
+
+    if (visible==false && isVisible()==true){
+      GFX_reload_qt_stylesheets(false);
+      GFX_SaveAllColorConfigurations();
+	  GFX_SaveColors(createIllegalFilepath());
     }
 
     RememberGeometryQDialog::setVisible(visible);
@@ -918,6 +935,27 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
     minimizeRecursively(this->window());
     
     _is_updating_widgets = false;
+  }
+
+  void populate_color_selector(void){
+    color_selector->blockSignals(true);
+
+    color_selector->clear();
+
+    QVector<QString> names = GFX_GetColorConfigurationNames();
+    for(const auto &name : names)
+      color_selector->addItem(name);
+
+    delete_color->setEnabled(names.size() > 1);
+    color_selector->setEnabled(names.size() > 1);
+
+    QString current = GFX_GetCurrentColorConfigurationName();
+    int index = color_selector->findText(current);
+    if (index >= 0)
+      color_selector->setCurrentIndex(index);
+
+    color_selector->blockSignals(false);
+    color_selector->update();
   }
 
 public slots:
@@ -1570,30 +1608,50 @@ public slots:
       release_keyboard_focus();
   }
   
-  void on_color_reset_button_clicked(){
-    printf("HHH");
-    GFX_ResetColor(g_current_colornum);
-    _color_dialog.setCurrentColor(get_qcolor(g_current_colornum));
-
-    for(auto button : all_buttons){
-      button->update();
-    }
-
+  void on_color_store_snapshot_clicked(){
+    GFX_StoreCheckpoint();
   }
 
-  void on_color_reset_all_button_clicked(){
-    printf("AAAxHHH");
-    GFX_ResetColors();
+  void on_color_revert_color_clicked(){
+    GFX_RevertColorFromCheckpoint(g_current_colornum);
     _color_dialog.setCurrentColor(get_qcolor(g_current_colornum));
 
-    for(auto button : all_buttons){
+    for(auto button : all_buttons)
       button->update();
-    }
-
   }
 
-  void on_color_save_button_clicked(){
-    GFX_SaveColors(createIllegalFilepath());
+  void on_color_revert_all_colors_clicked(){
+    GFX_RevertAllToCheckpoint();
+    _color_dialog.setCurrentColor(get_qcolor(g_current_colornum));
+    update_color_sliders();
+
+    for(auto button : all_buttons)
+      button->update();
+  }
+
+  void on_color_set_default_color_clicked(){
+    GFX_SetDefaultColor(g_current_colornum);
+    _color_dialog.setCurrentColor(get_qcolor(g_current_colornum));
+
+    for(auto button : all_buttons)
+      button->update();
+  }
+
+  void on_color_set_all_default_colors_clicked(){
+    GFX_SetDefaultColors1(root->song->tracker_windows);
+
+    instrument_brightness->setValue(1000 * DEFAULT_INSTRUMENT_BRIGHTNESS);
+    instrument_saturation->setValue(1000 * DEFAULT_INSTRUMENT_SATURATION);
+    instrument_brightness_in_editor->setValue(1000 * DEFAULT_INSTRUMENT_BRIGHTNESS_IN_EDITOR);
+    instrument_saturation_in_editor->setValue(1000 * DEFAULT_INSTRUMENT_SATURATION_IN_EDITOR);
+    block_brightness->setValue(1000 * DEFAULT_BLOCK_BRIGHTNESS);
+    block_saturation->setValue(1000 * DEFAULT_BLOCK_SATURATION);
+    gradient_slider->setValue(1000 * DEFAULT_AMOUNT_OF_GRADIENT);
+
+    _color_dialog.setCurrentColor(get_qcolor(g_current_colornum));
+
+    for(auto button : all_buttons)
+      button->update();
   }
 
 
@@ -1608,6 +1666,58 @@ public slots:
                                               true);
     if (isLegalFilepath(filename))
       GFX_SaveColors(filename);
+  }
+
+  void update_color_sliders(void){
+    instrument_brightness->setValue(getInstrumentBrightness()*1000);
+    instrument_saturation->setValue(getInstrumentSaturation()*1000);
+    instrument_brightness_in_editor->setValue(getInstrumentBrightnessInEditor()*1000);
+    instrument_saturation_in_editor->setValue(getInstrumentSaturationInEditor()*1000);
+    block_brightness->setValue(getBlockBrightness()*1000);
+    block_saturation->setValue(getBlockSaturation()*1000);
+    gradient_slider->setValue(getAmountOfGradient()*1000);
+  }
+
+  void on_rename_color_clicked(){
+    QString old_name = GFX_GetCurrentColorConfigurationName();
+
+    ReqType reqtype = GFX_OpenReq(root->song->tracker_windows, 50, 4, "");
+    GFX_SetString(reqtype, old_name.toUtf8().constData());
+
+    const char *new_name = GFX_GetString(root->song->tracker_windows, reqtype, "New name: ", true);
+
+    GFX_CloseReq(root->song->tracker_windows, reqtype);
+
+    if (new_name != NULL && strlen(new_name) > 0 && old_name != new_name){
+      GFX_RenameColorConfiguration(old_name, new_name);
+      populate_color_selector();
+    }
+  }
+
+  void on_add_color_clicked(){
+    const char *name = GFX_GetString(root->song->tracker_windows, NULL, "New color configuration:", true);
+
+    if (name != NULL && strlen(name) > 0){
+      GFX_NewColorConfiguration(name);
+      populate_color_selector();
+      update_color_sliders();
+      _color_dialog.setCurrentColor(get_qcolor(g_current_colornum));
+    }
+  }
+
+  void on_delete_color_clicked(){
+    QString name = GFX_GetCurrentColorConfigurationName();
+    GFX_DeleteColorConfiguration(name);
+    populate_color_selector();
+    update_color_sliders();
+    _color_dialog.setCurrentColor(get_qcolor(g_current_colornum));
+  }
+
+  void on_color_selector_activated(int index){
+    QString name = color_selector->itemText(index);
+    GFX_SetColorConfiguration(name);
+    update_color_sliders();
+    _color_dialog.setCurrentColor(get_qcolor(g_current_colornum));
   }
 
 
