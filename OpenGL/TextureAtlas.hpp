@@ -30,6 +30,7 @@ class TextureAtlasBackend
 		
 		int _char_width = 0;
 		int _char_height = 0;
+		int _logical_char_width = 0;
 		
 		QMap<char, UVs> _char_uvs;
 	} _d, _next_d;
@@ -84,7 +85,7 @@ public:
 		const D &d = _d; //_next_d._image.isNull() ? _d : _next_d;
 
 		const double scale_ratio = g_opengl_scale_ratio;
-		const float char_width_logical = d._char_width / scale_ratio;
+		const float char_width_logical = d._logical_char_width;
 		const float char_height_logical = d._char_height / scale_ratio;
 
         for (int i = 0; i < text.length(); i++)
@@ -190,6 +191,13 @@ private:
         d._num_columns = static_cast<int>(std::ceil(std::sqrt(charCount)));
         d._num_rows = (charCount + d._num_columns - 1) / d._num_columns;
 
+		{
+			QFont logical_font(orgfont);
+			logical_font.setHintingPreference(QFont::PreferFullHinting);
+			QFontMetrics logical_metrics(logical_font);
+			d._logical_char_width = logical_metrics.horizontalAdvance("#");
+		}
+
 #if 0
         QFontMetrics fm(_font);
         int char_width = fm.horizontalAdvance('W') + 4;
@@ -244,7 +252,7 @@ private:
             int y = row * d._char_height;
             
             QRect rect(x, y, d._char_width, d._char_height);
-            painter.drawText(rect, Qt::AlignVCenter, QString(g_supportedChars[i]));
+            painter.drawText(rect, Qt::AlignBottom, QString(g_supportedChars[i]));
             
             float u0 = (float)(x + 0.5f) / atlasWidth;
             float v0 = (float)(y + 0.5f) / atlasHeight;
