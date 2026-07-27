@@ -141,6 +141,8 @@ static bool SaveAs2(const filepath_t filename, struct Root *theroot){
   }
 
   SETTINGS_write_wchars("filerequester_song_path", DISK_get_absolute_dir_path(filename).id);
+
+  SETTINGS_add_recent_song(STRING_get_chars(filename.id));
   
   dc.filename = copy_filepath(filename);
   

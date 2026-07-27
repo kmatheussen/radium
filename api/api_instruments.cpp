@@ -440,12 +440,19 @@ bool hasInstrumentForTrack(int tracknum, int blocknum, int windownum){
   return true;
 }
 
-bool isLegalInstrument(instrument_t instrument_id){
-  return instrument_id.id >= 0;
+bool isIllegalInstrument(instrument_t instrument_id)
+{
+	return instrument_id.id < 0;
+}
+
+bool isLegalInstrument(instrument_t instrument_id)
+{
+	return instrument_id.id >= 0;
 }
   
-instrument_t createIllegalInstrument(void){
-  return make_instrument(-1);
+instrument_t createIllegalInstrument(void)
+{
+	return make_instrument(-1);
 }
   
 void setInstrumentForTrack(instrument_t instrument_id, int tracknum, int blocknum, int windownum){
