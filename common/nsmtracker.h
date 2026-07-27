@@ -668,29 +668,37 @@ enum WhetherToDeleteUnusedRecordingTakes{
 };
 
 #ifdef __cplusplus
-namespace radium{
-  class ScopedBoolean{
-    bool &_abool;
+namespace radium
+{
+template <typename Bool>
+class ScopedBoolean
+{
+	static_assert(std::is_same_v<Bool, bool> || std::is_same_v<Bool, std::atomic<bool>>);
+	
+	Bool &_abool;
     const bool _doit;
-  public:
-    ScopedBoolean(bool &abool, const bool doit = true)
-      : _abool(abool)
-      , _doit(doit)
-    {
-      R_ASSERT(_abool==false);
-      if(_doit)
-        _abool = true;
+	
+public:
+	ScopedBoolean(Bool &abool, const bool doit = true)
+	   : _abool(abool)
+	   , _doit(doit)
+	{
+		R_ASSERT(_abool==false);
+		if(_doit)
+			_abool = true;
     }
 
-    ~ScopedBoolean(){
-      if(_doit){
-        R_ASSERT(_abool==true);
-        _abool = false;
-      } else {
-        R_ASSERT_NON_RELEASE(_abool==false);
-      }
+	~ScopedBoolean()
+	{
+		if(_doit){
+			R_ASSERT(_abool==true);
+			_abool = false;
+		} else {
+			R_ASSERT_NON_RELEASE(_abool==false);
+		}
     }
-  };    
+};
+
   class ScopedGeneration{
     int &_anint;
     const bool _doit;

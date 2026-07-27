@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/undo_swings_proc.h"
 #include "../common/Beats_proc.h"
 #include "../common/player_pause_proc.h"
+#include "../common/playerclass.h"
 #include "../common/time_proc.h"
 #include "../common/nodelines_proc.h"
 #include "../common/reltempo_proc.h"
@@ -891,4 +892,23 @@ dyn_t testsomething(dyn_t arg){
 }
 */
 
+int64_t getStimeFromPlace(Place place, int blocknum, int windownum)
+{
+	struct WBlocks *wblock = getWBlockFromNum(windownum, blocknum);
+	if (wblock == NULL)
+		return 0;
 
+	return Place2STime(wblock->block, &place, NON_SWINGING_MODE);
+}
+
+int64_t getStimeFromPlace2(Place place, int tracknum, int blocknum, int windownum)
+{
+	struct Tracker_Windows *window;
+	struct WBlocks *wblock;
+	struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+	if (wtrack == NULL)
+		return 0;
+
+	Ratio ratio = ratio_from_place(place);
+	return Ratio2STime2(wblock->block, ratio, wtrack->track);
+}

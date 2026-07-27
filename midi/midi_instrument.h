@@ -19,6 +19,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "OS_midi_proc.h"
 
+#define NUM_MIDI_CC 8
+
 struct MidiPort;
 
 struct PatchData{
@@ -35,14 +37,14 @@ struct PatchData{
 	bool panonoff;
 	char pan;
 
-	bool ccsonoff[8];
-	const char *ccnames[8];
+	bool ccsonoff[NUM_MIDI_CC];
+	const char *ccnames[NUM_MIDI_CC];
 #if defined(__aarch64__)
-        signed char cc[8];
+        signed char cc[NUM_MIDI_CC];
 #else
-	char cc[8];
+	char cc[NUM_MIDI_CC];
 #endif
-	char ccvalues[8];
+	char ccvalues[NUM_MIDI_CC];
 };
 
 
