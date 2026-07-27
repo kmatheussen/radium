@@ -77,6 +77,11 @@ filepath_t getProgramPath(void){
   return make_filepath(QCoreApplication::applicationDirPath());
 }
 
+filepath_t getConfigPath(void){
+	return make_filepath(OS_get_home_path() + QDir::separator() + ".radium");
+}
+
+
 const_char* getPathString(filepath_t filepath){
   if (isIllegalFilepath(filepath)){
     handleError("Illegal filepath argument 1");
@@ -881,4 +886,27 @@ dyn_t getAllSettings(const_char* starting_with) {
   }END_VECTOR_FOR_EACH;
 
   return DYN_create_hash(ret);
+}
+
+
+const_char* legalizeFilename(const_char* filename)
+{
+	QString input = QString::fromUtf8(filename);
+	QString result;
+
+	const auto codepoints = input.toUcs4();
+
+	for (uint codepoint : codepoints)
+	{
+		if ((codepoint >= 'a' && codepoint <= 'z') || (codepoint >= 'A' && codepoint <= 'Z') || (codepoint >= '0' && codepoint <= '9') || codepoint == '_')
+		{
+			result.append(QChar(codepoint));
+		}
+		else
+		{
+			result.append("_u" + QString::number(codepoint, 16) + "_");
+		}
+	}
+
+	return talloc_strdup(result.toUtf8().constData());
 }
