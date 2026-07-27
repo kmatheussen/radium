@@ -852,6 +852,10 @@ void PR_init_plugin_types(void){
 
 #ifdef WITH_FAUST_DEV2
   create_faust_dev2_plugin();
+#else
+#if WIN32
+  #error "checkthisout"
+#endif
 #endif
 
 #endif

@@ -438,7 +438,7 @@ static dsp_factory *create_factory(const FaustDev2Data *devdata,
 
 class Dev2CompileThread : public QThread
 {
-	SoundPlugin *_plugin;
+	instrument_t _patch_id;
 	QString _code;
 	QString _options;
 	bool _use_interpreter;
@@ -448,7 +448,7 @@ public:
 					  const QString &code,
 					  const QString &options,
 					  bool use_interpreter)
-		: _plugin(plugin)
+		: _patch_id(plugin->patch->id)
 		, _code(code)
 		, _options(options)
 		, _use_interpreter(use_interpreter)
@@ -480,9 +480,12 @@ public:
 			delete svg_dir;
 			if (error_message != ""){
 				QByteArray err = error_message.toUtf8();
-				THREADING_run_on_main_thread_async([plugin = _plugin, err]()
+				THREADING_run_on_main_thread_async([patch_id = _patch_id, err]()
 				{
-					FaustDev2Data *devdata = (FaustDev2Data*)plugin->data;
+					struct Patch *patch = PATCH_get_from_id(patch_id);
+					if (patch == NULL || patch->patchdata == NULL)
+						return;
+					FaustDev2Data *devdata = (FaustDev2Data*)((SoundPlugin*)patch->patchdata)->data;
 					devdata->is_compiling = false;
 					devdata->error_message = QString::fromUtf8(err);
 					devdata->ready.has_new_data = true;
@@ -492,9 +495,12 @@ public:
 					devdata->ready.svg_succeeded = false;
 				});
 			}else{
-				THREADING_run_on_main_thread_async([plugin = _plugin]()
+				THREADING_run_on_main_thread_async([patch_id = _patch_id]()
 				{
-					FaustDev2Data *devdata = (FaustDev2Data*)plugin->data;
+					struct Patch *patch = PATCH_get_from_id(patch_id);
+					if (patch == NULL || patch->patchdata == NULL)
+						return;
+					FaustDev2Data *devdata = (FaustDev2Data*)((SoundPlugin*)patch->patchdata)->data;
 					devdata->is_compiling = false;
 					devdata->ready.has_new_data = true;
 					devdata->ready.factory_is_ready = true;
@@ -520,16 +526,23 @@ public:
 			if (llvm_factory)
 				deleteDSPFactory(llvm_factory);
 #endif
-			THREADING_run_on_main_thread_async([plugin = _plugin]()
+			THREADING_run_on_main_thread_async([patch_id = _patch_id]()
 			{
-				FaustDev2Data *devdata = (FaustDev2Data*)plugin->data;
+				struct Patch *patch = PATCH_get_from_id(patch_id);
+				if (patch == NULL || patch->patchdata == NULL)
+					return;
+				FaustDev2Data *devdata = (FaustDev2Data*)((SoundPlugin*)patch->patchdata)->data;
 				devdata->is_compiling = false;
 			});
 			return;
 		}
 
-		THREADING_run_on_main_thread_async([plugin = _plugin, dsp_data, svg_dir, compile_code = _code]()
+		THREADING_run_on_main_thread_async([patch_id = _patch_id, dsp_data, svg_dir, compile_code = _code]()
 		{
+			struct Patch *patch = PATCH_get_from_id(patch_id);
+			if (patch == NULL || patch->patchdata == NULL)
+				return;
+			SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
 			FaustDev2Data *devdata = (FaustDev2Data*)plugin->data;
 			devdata->is_compiling = false;
 
