@@ -4061,7 +4061,7 @@ int radium_main(const char *arg){
 
   }
 
-  GFX_reload_qt_stylesheets();
+  GFX_reload_qt_stylesheets(false);
 
   GFX_ShowProgressMessage("Creating main menus", true);
   S7CALL2(void_void,"generate-main-menus");
