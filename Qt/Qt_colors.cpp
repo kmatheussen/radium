@@ -1449,9 +1449,9 @@ void testColorInRealtime(enum ColorNums num, QColor color)
     else
       updateAll(my_widget);
 
-    if (num==HIGH_BACKGROUND_COLOR_NUM || num==LOW_BACKGROUND_COLOR_NUM || num==BUTTONS_COLOR_NUM || num==BUTTONS_PRESSED_COLOR_NUM || num==BUTTONS_TEXT_COLOR_NUM || num==LABEL_COLOR_NUM){
-      GFX_reload_qt_stylesheets(true);
-    }
+    //if (num==HIGH_BACKGROUND_COLOR_NUM || num==LOW_BACKGROUND_COLOR_NUM || num==BUTTONS_COLOR_NUM || num==BUTTONS_PRESSED_COLOR_NUM || num==BUTTONS_TEXT_COLOR_NUM || num==LABEL_COLOR_NUM){
+    //  GFX_reload_qt_stylesheets(true);
+    //}
 
     GFX_update_current_instrument_widget();
 
