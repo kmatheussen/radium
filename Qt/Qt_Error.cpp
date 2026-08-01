@@ -165,7 +165,8 @@ int main(int argc, char **argv){
     QCoreApplication::setLibraryPaths(QStringList(getenv("QT_QPA_PLATFORM_PLUGIN_PATH")));
   }
 #else
-  QCoreApplication::setLibraryPaths(QStringList(getenv("QT_QPA_PLATFORM_PLUGIN_PATH")));
+  if(getenv("QT_QPA_PLATFORM_PLUGIN_PATH")!=NULL)
+    QCoreApplication::setLibraryPaths(QStringList(getenv("QT_QPA_PLATFORM_PLUGIN_PATH")));
 #endif
 
   QLocale::setDefault(QLocale::c());

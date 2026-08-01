@@ -2227,6 +2227,8 @@ public slots:
 MyApplication::MyApplication(int &argc,char **argv)
   : QApplication(argc,argv)
 {
+  setOrganizationName("Radium"); // Needed for QSettings persistence, e.g. QColorDialog custom colors.
+  setApplicationName("Radium");
   //setStyleSheet("QStatusBar::item { border: 0px solid black }; ");
 #if USE_QT5
   installNativeEventFilter(this);
@@ -4396,6 +4398,7 @@ int radium_main(const char *arg){
   
 #ifdef WITH_FAUST_DEV
   FFF_shut_down();
+  FAUST2_shut_down(); // Empty libfaust's DSP factory table before its static destructors run at exit().
   D(GFX_ShowProgressMessage("14", true));
 #endif
 
