@@ -436,6 +436,9 @@ static dsp_factory *create_factory(const FaustDev2Data *devdata,
 } // end anonymous namespace (split for Dev2CompileThread)
 
 
+static void start_compilation(SoundPlugin *plugin);
+
+
 class Dev2CompileThread : public QThread
 {
 	instrument_t _patch_id;
@@ -480,12 +483,13 @@ public:
 			delete svg_dir;
 			if (error_message != ""){
 				QByteArray err = error_message.toUtf8();
-				THREADING_run_on_main_thread_async([patch_id = _patch_id, err]()
+				THREADING_run_on_main_thread_async([patch_id = _patch_id, err, compile_code = _code]()
 				{
 					struct Patch *patch = PATCH_get_from_id(patch_id);
 					if (patch == NULL || patch->patchdata == NULL)
 						return;
-					FaustDev2Data *devdata = (FaustDev2Data*)((SoundPlugin*)patch->patchdata)->data;
+					SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+					FaustDev2Data *devdata = (FaustDev2Data*)plugin->data;
 					devdata->is_compiling = false;
 					devdata->error_message = QString::fromUtf8(err);
 					devdata->ready.has_new_data = true;
@@ -493,20 +497,29 @@ public:
 					devdata->ready.factory_succeeded = false;
 					devdata->ready.svg_is_ready = true;
 					devdata->ready.svg_succeeded = false;
+
+					// Recompile if code changed while this compilation was running.
+					if (devdata->code != compile_code)
+						start_compilation(plugin);
 				});
 			}else{
-				THREADING_run_on_main_thread_async([patch_id = _patch_id]()
+				THREADING_run_on_main_thread_async([patch_id = _patch_id, compile_code = _code]()
 				{
 					struct Patch *patch = PATCH_get_from_id(patch_id);
 					if (patch == NULL || patch->patchdata == NULL)
 						return;
-					FaustDev2Data *devdata = (FaustDev2Data*)((SoundPlugin*)patch->patchdata)->data;
+					SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+					FaustDev2Data *devdata = (FaustDev2Data*)plugin->data;
 					devdata->is_compiling = false;
 					devdata->ready.has_new_data = true;
 					devdata->ready.factory_is_ready = true;
 					devdata->ready.factory_succeeded = false;
 					devdata->ready.svg_is_ready = true;
 					devdata->ready.svg_succeeded = false;
+
+					// Recompile if code changed while this compilation was running.
+					if (devdata->code != compile_code)
+						start_compilation(plugin);
 				});
 			}
 			return;
@@ -526,13 +539,18 @@ public:
 			if (llvm_factory)
 				deleteDSPFactory(llvm_factory);
 #endif
-			THREADING_run_on_main_thread_async([patch_id = _patch_id]()
+			THREADING_run_on_main_thread_async([patch_id = _patch_id, compile_code = _code]()
 			{
 				struct Patch *patch = PATCH_get_from_id(patch_id);
 				if (patch == NULL || patch->patchdata == NULL)
 					return;
-				FaustDev2Data *devdata = (FaustDev2Data*)((SoundPlugin*)patch->patchdata)->data;
+				SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+				FaustDev2Data *devdata = (FaustDev2Data*)plugin->data;
 				devdata->is_compiling = false;
+
+				// Recompile if code changed while this compilation was running.
+				if (devdata->code != compile_code)
+					start_compilation(plugin);
 			});
 			return;
 		}
@@ -547,8 +565,10 @@ public:
 			devdata->is_compiling = false;
 
 			// Discard if code changed while this compilation was running
-			if (devdata->code != compile_code)
+			if (devdata->code != compile_code){
+				start_compilation(plugin); // Recompile the latest code.
 				return;
+			}
 			devdata->error_message = "";
 
 			// Store SVG dir
@@ -1095,6 +1115,9 @@ void FAUST2_start_compilation(SoundPlugin *plugin)
 	if (devdata->code == "")
 		return;
 
+	if (devdata->is_compiling)
+		return; // A compile is already running. When it finishes, it will recompile the latest code if it has changed.
+
 	devdata->is_compiling = true;
 
 	Dev2CompileThread *thread = new Dev2CompileThread(plugin,
@@ -1184,6 +1207,12 @@ static void RT_player_is_stopped(SoundPlugin *plugin)
 
 void create_faust_dev2_plugin(void)
 {
+	// Make the Faust compiler thread safe by activating its internal global lock.
+	// Without this, concurrent compilations (multiple Dev2CompileThreads) race on
+	// Faust's single, non-thread-local 'gGlobal' pointer and crash.
+	// Idempotent: only creates the lock the first time it is called.
+	startMTDSPFactories();
+
 	SoundPluginType *plugin_type = (SoundPluginType*)V_calloc(1, sizeof(SoundPluginType));
 
 	plugin_type->type_name                = "Faust Dev 2";
