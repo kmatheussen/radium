@@ -17,6 +17,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QScrollArea>
 #include <QVBoxLayout>
+#include <QLineEdit>
+#include <QPushButton>
+#include <QCheckBox>
+#include <QSpinBox>
+#include <QJsonArray>
+#include <atomic>
+#include <memory>
 
 #include <QSvgWidget>
 #include <QLabel>

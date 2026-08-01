@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1085</width>
-    <height>616</height>
+    <width>1219</width>
+    <height>634</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -6481,8 +6481,8 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>935</width>
-               <height>289</height>
+               <width>100</width>
+               <height>30</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="midi_input_layout">
@@ -10663,8 +10663,8 @@ that scrolling becomes less smooth.
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>516</width>
-              <height>308</height>
+              <width>501</width>
+              <height>239</height>
              </rect>
             </property>
             <property name="sizePolicy">
@@ -11009,136 +11009,213 @@ that scrolling becomes less smooth.
             </size>
            </property>
           </spacer>
-          </item>
-          <item>
-           <widget class="QGroupBox" name="groupBox_configurations">
-            <property name="title">
-             <string>Configurations</string>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="groupBox_undo_redo">
+           <property name="title">
+            <string>Undo / Redo</string>
+           </property>
+           <layout class="QHBoxLayout" name="undo_redo_layout">
+            <property name="leftMargin">
+             <number>0</number>
             </property>
-            <layout class="QHBoxLayout" name="color_top_layout">
-             <item>
-              <widget class="QComboBox" name="color_selector">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-              </widget>
-              </item>
-              <item>
-              <widget class="QPushButton" name="add_color">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="text">
-                <string>New</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="delete_color">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="text">
-                <string>Delete</string>
-               </property>
-              </widget>
-             </item>
-              <item>
-               <widget class="QPushButton" name="rename_color">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="text">
-                 <string>Rename</string>
-                </property>
-               </widget>
-              </item>
-            </layout>
-           </widget>
-          </item>
-          <item>
-           <widget class="QGroupBox" name="groupBox_snapshot">
-            <property name="title">
-             <string>Snapshot</string>
+            <property name="topMargin">
+             <number>0</number>
             </property>
-            <layout class="QHBoxLayout" name="snapshot_layout">
-             <item>
-              <widget class="QPushButton" name="color_store_snapshot">
-               <property name="text">
-                <string>Create snapshot</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="color_revert_color">
-               <property name="text">
-                <string>Restore current color from snapshot</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="color_revert_all_colors">
-               <property name="text">
-                <string>Restore all colors from snapshot</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </widget>
-          </item>
-          <item>
-           <widget class="QGroupBox" name="groupBox_defaults">
-            <property name="title">
-             <string>Defaults</string>
+            <property name="rightMargin">
+             <number>0</number>
             </property>
-            <layout class="QHBoxLayout" name="defaults_layout">
-             <item>
-              <widget class="QPushButton" name="color_set_default_color">
-               <property name="text">
-                <string>Set default value for current color</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="color_set_all_default_colors">
-               <property name="text">
-                <string>Set default value for all colors</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </widget>
-          </item>
-          <item>
-           <layout class="QHBoxLayout" name="colorlayout_right_2">
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
             <item>
-             <widget class="QPushButton" name="load_color_file">
+             <widget class="QPushButton" name="color_undo">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <property name="text">
-               <string>Load from file</string>
+               <string>Undo</string>
               </property>
              </widget>
             </item>
             <item>
-             <widget class="QPushButton" name="save_color_file">
+             <widget class="QPushButton" name="color_redo">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <property name="text">
-               <string>Save to file</string>
+               <string>Redo</string>
               </property>
              </widget>
             </item>
            </layout>
-          </item>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="groupBox_configurations">
+           <property name="title">
+            <string>Configurations</string>
+           </property>
+           <layout class="QHBoxLayout" name="color_top_layout">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QComboBox" name="color_selector">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="add_color">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="text">
+               <string>New</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="delete_color">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="text">
+               <string>Delete</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="rename_color">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="text">
+               <string>Rename</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="groupBox_snapshot">
+           <property name="title">
+            <string>Snapshot</string>
+           </property>
+           <layout class="QHBoxLayout" name="snapshot_layout">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QPushButton" name="color_store_snapshot">
+              <property name="text">
+               <string>Create snapshot</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="color_revert_color">
+              <property name="text">
+               <string>Restore current color from snapshot</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="color_revert_all_colors">
+              <property name="text">
+               <string>Restore all colors from snapshot</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="groupBox_defaults">
+           <property name="title">
+            <string>Defaults</string>
+           </property>
+           <layout class="QHBoxLayout" name="defaults_layout">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QPushButton" name="color_set_default_color">
+              <property name="text">
+               <string>Set default value for current color</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="color_set_all_default_colors">
+              <property name="text">
+               <string>Set default value for all colors</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="colorlayout_right_2">
+           <item>
+            <widget class="QPushButton" name="load_color_file">
+             <property name="text">
+              <string>Load from file</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="save_color_file">
+             <property name="text">
+              <string>Save to file</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
         </layout>
        </item>
       </layout>
