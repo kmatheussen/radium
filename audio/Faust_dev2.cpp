@@ -558,14 +558,24 @@ public:
 		THREADING_run_on_main_thread_async([patch_id = _patch_id, dsp_data, svg_dir, compile_code = _code]()
 		{
 			struct Patch *patch = PATCH_get_from_id(patch_id);
-			if (patch == NULL || patch->patchdata == NULL)
+			if (patch == NULL || patch->patchdata == NULL){
+				// The instrument was deleted while we were compiling.
+				// Must delete the factory, or it stays in libfaust's global
+				// factory table and crashes during shutdown (libfaust's static
+				// destructor then destroys a JIT registration mutex that has
+				// already been torn down).
+				delete dsp_data;
+				delete svg_dir;
 				return;
+			}
 			SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
 			FaustDev2Data *devdata = (FaustDev2Data*)plugin->data;
 			devdata->is_compiling = false;
 
 			// Discard if code changed while this compilation was running
 			if (devdata->code != compile_code){
+				delete dsp_data; // this compile result is outdated
+				delete svg_dir;
 				start_compilation(plugin); // Recompile the latest code.
 				return;
 			}
@@ -614,6 +624,22 @@ public:
 };
 
 
+// All running Dev2CompileThread instances. Tracked so FAUST2_shut_down can wait
+// for them before libfaust tears down its global DSP factory table (otherwise a
+// still-running compile could recreate a factory during/after teardown, and any
+// leftover factory makes libfaust's static destructor crash at exit).
+static QList<QPointer<Dev2CompileThread>> g_compile_threads;
+
+static void start_dev2_compile_thread(Dev2CompileThread *thread){
+	g_compile_threads.push_back(thread);
+	QObject::connect(thread, &QThread::finished, [thread](){
+		g_compile_threads.removeAll(thread);
+		thread->deleteLater();
+	});
+	thread->start();
+}
+
+
 static void start_compilation(SoundPlugin *plugin)
 {
 	FaustDev2Data *devdata = (FaustDev2Data*)plugin->data;
@@ -630,8 +656,7 @@ static void start_compilation(SoundPlugin *plugin)
 													   devdata->code,
 													   devdata->options,
 													   devdata->use_interpreter_backend);
-	QObject::connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
-	thread->start();
+	start_dev2_compile_thread(thread);
 }
 
 
@@ -1124,8 +1149,27 @@ void FAUST2_start_compilation(SoundPlugin *plugin)
 	                                                   devdata->code,
 	                                                   devdata->options,
 	                                                   devdata->use_interpreter_backend);
-	QObject::connect(thread, SIGNAL(finished()), thread, SLOT(deleteLater()));
-	thread->start();
+	start_dev2_compile_thread(thread);
+}
+
+void FAUST2_shut_down(void)
+{
+	// Wait for any in-flight compiles so no factory is created while (or
+	// after) we empty libfaust's global factory table.
+	for (const QPointer<Dev2CompileThread> &thread : g_compile_threads)
+		if (thread)
+			thread->wait(10000);
+	g_compile_threads.clear();
+
+	// Empty the global factory tables now, while libfaust's static objects are
+	// still alive. If factories are left in the table, libfaust destroys them
+	// in its static destructor at exit(), which crashes because the LLVM JIT
+	// registration mutex has already been torn down
+	// ("recursive_mutex lock failed: Invalid argument").
+#if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
+	deleteAllDSPFactories();
+#endif
+	deleteAllInterpreterDSPFactories();
 }
 
 bool FAUST2_set_use_interpreter_backend(SoundPlugin *plugin, bool use_interpreter)
@@ -1257,6 +1301,7 @@ void create_faust_dev2_plugin(void)
 		"<p>"
 		"Hints:\n"
 		"<UL>"
+		"<LI> An LLM prompt (beta feature) can generate or fix the Faust code for you (e.g. \"Create a low-shelf filter\"). Enable it via <b>Help -> Beta features -> \"Show/hide Faust Dev 2 LLM prompt\"</b>, then configure your LLM provider (API key, model) with the \"LLM settings\" button in the prompt bar. "
 		"<LI> To zoom, either the editor or a diagram, press CTRL while scrolling the mouse wheel."
 		"<LI> To search for a string in the source code, press Ctrl + F."
 		"<LI> Running full size window (by pressing the \"Full\" button) can be very convenient when developing."
