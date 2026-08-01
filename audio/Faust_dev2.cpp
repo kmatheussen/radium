@@ -17,6 +17,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <math.h>
 #include <string>
+#include <vector>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
@@ -169,6 +170,16 @@ struct FaustDev2Dsp
 };
 
 
+// Identifies one control in the QTGUI dialog, so a change made there can be
+// routed back through set_effect_value() (keeping param_values/stored values in
+// sync, and making the change survive a recompile).
+struct Faust2GuiControlRef
+{
+	SoundPlugin *plugin;
+	int effect_num;
+};
+
+
 struct FaustDev2Data
 {
 	QString code;
@@ -185,6 +196,7 @@ struct FaustDev2Data
 	QString error_message;
 	QPointer<QDialog> qtgui_parent;
 	QTGUI *qtgui;
+	std::vector<Faust2GuiControlRef*> qtgui_control_refs; // owned; one per visible control
 	radium::FAUST_calledRegularlyByParentReply ready;
 	MyQTemporaryDir *svg_dir; // owns SVG output directory
 
@@ -199,11 +211,41 @@ struct FaustDev2Data
 
 	~FaustDev2Data()
 	{
+		for (Faust2GuiControlRef *ref : qtgui_control_refs)
+			delete ref;
+		qtgui_control_refs.clear();
 		delete qtgui;
 		delete svg_dir;
 		delete dsp_data;
 	}
 };
+
+
+// Called by the QTGUI dialog whenever a control zone is reflected and its value
+// differs from what Radium thinks the value is. Routes the change through
+// PLUGIN_set_effect_value -> set_effect_value so it updates param_values, the
+// stored effect values, and the polyphonic voices. (Same pattern as Faust Dev 1's
+// faust_gui_zone_callback.)
+static void faust2_gui_zone_callback(float val, void *data)
+{
+	Faust2GuiControlRef *ref = (Faust2GuiControlRef*)data;
+	if (ref == NULL || ref->plugin == NULL || PLUGIN_exists(ref->plugin) == false)
+		return;
+
+	SoundPlugin *plugin = ref->plugin;
+	FaustDev2Data *devdata = (FaustDev2Data*)plugin->data;
+	if (devdata == NULL)
+		return;
+
+	FaustDev2Dsp *dsp_data = devdata->dsp_data;
+	if (dsp_data == NULL || ref->effect_num >= dsp_data->num_params)
+		return;
+
+	if (equal_floats(val, dsp_data->param_values[ref->effect_num]))
+		return; // round-trip guard; the change already came from Radium.
+
+	PLUGIN_set_effect_value(plugin, -1, ref->effect_num, val, STORE_VALUE, FX_single, EFFECT_FORMAT_NATIVE);
+}
 
 
 // The player lock must be held when calling this function.
@@ -288,14 +330,16 @@ static void hotswap_dsp_data(FaustDev2Data *devdata, FaustDev2Dsp *new_dsp)
 {
 	FaustDev2Dsp *old_dsp = devdata->dsp_data;
 
-	// Preserve parameter values from old DSP to new DSP by matching names
+	// Preserve parameter values from old DSP to new DSP by matching names.
+	// Read from the live control zones (not the cached param_values), so values
+	// changed directly in the QTGUI dialog are also carried over.
 	if (old_dsp != NULL && new_dsp != NULL){
 		int n_new = new_dsp->api_ui.getParamsCount();
 		for (int i = 0; i < n_new; i++){
 			const char *addr = new_dsp->api_ui.getParamAddress(i);
 			int old_idx = old_dsp->api_ui.getParamIndex(addr);
 			if (old_idx >= 0){
-				float val = old_dsp->param_values[old_idx];
+				float val = old_dsp->api_ui.getParamValue(old_idx);
 				new_dsp->api_ui.setParamValue(i, val);
 				new_dsp->param_values[i] = val;
 			}
@@ -318,6 +362,7 @@ static void hotswap_dsp_data(FaustDev2Data *devdata, FaustDev2Dsp *new_dsp)
 
 
 static dsp_factory *create_factory(const FaustDev2Data *devdata,
+									int optlevel,
 									QString &error_message,
 #if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
 									llvm_dsp_factory **out_llvm_factory,
@@ -362,7 +407,6 @@ static dsp_factory *create_factory(const FaustDev2Data *devdata,
 		factory = interp_factory;
 #if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
 	}else{
-		int optlevel = getFaustOptimizationLevel();
 		llvm_factory = createDSPFactoryFromString("FaustDev2", devdata->code.toUtf8().constData(), argc, argv,
 #if FOR_LINUX
 												  "x86_64-pc-linux-gnu",
@@ -437,6 +481,7 @@ static dsp_factory *create_factory(const FaustDev2Data *devdata,
 
 
 static void start_compilation(SoundPlugin *plugin);
+static bool effect_is_visible(SoundPlugin *plugin, int effect_num);
 
 
 class Dev2CompileThread : public QThread
@@ -445,6 +490,7 @@ class Dev2CompileThread : public QThread
 	QString _code;
 	QString _options;
 	bool _use_interpreter;
+	int _optlevel;
 
 public:
 	Dev2CompileThread(SoundPlugin *plugin,
@@ -455,6 +501,7 @@ public:
 		, _code(code)
 		, _options(options)
 		, _use_interpreter(use_interpreter)
+		, _optlevel(getFaustOptimizationLevel()) // Must be read on the main thread (settings are main-thread only). This constructor runs on the main thread.
 	{
 	}
 
@@ -472,7 +519,7 @@ public:
 		interpreter_dsp_factory *interp_factory = NULL;
 		MyQTemporaryDir *svg_dir = NULL;
 
-		dsp_factory *factory = create_factory(&tmp_data, error_message,
+		dsp_factory *factory = create_factory(&tmp_data, _optlevel, error_message,
 #if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
 											   &llvm_factory,
 #endif
@@ -603,6 +650,9 @@ public:
 				}
 				delete devdata->qtgui;
 			}
+			for (Faust2GuiControlRef *ref : devdata->qtgui_control_refs)
+				delete ref;
+			devdata->qtgui_control_refs.clear();
 
 			// Create dialog parent if needed
 			if (devdata->qtgui_parent.data() == NULL){
@@ -613,6 +663,36 @@ public:
 			devdata->qtgui = new QTGUI(devdata->qtgui_parent.data());
 			dsp_data->final_dsp->buildUserInterface(devdata->qtgui);
 			devdata->qtgui_parent->layout()->addWidget(devdata->qtgui);
+
+			// buildUserInterface resets each control zone to its default value
+			// (the QTGUI widget constructors write fCur back into the zone), so
+			// re-apply the preserved parameter values. The qtgui->update() call
+			// below (GUI::updateAllGuis) then dispatches them to the polyphonic
+			// voices and to the recreated interface.
+			for (int i = 0; i < dsp_data->num_params; i++)
+				dsp_data->api_ui.setParamValue(i, dsp_data->param_values[i]);
+
+			// Route GUI-dialog control changes through set_effect_value, so they
+			// update param_values / stored values and survive recompiles.
+			for (int i = 0; i < dsp_data->num_params; i++){
+				if (effect_is_visible(plugin, i) == false)
+					continue;
+				Faust2GuiControlRef *ref = new Faust2GuiControlRef;
+				ref->plugin = plugin;
+				ref->effect_num = i;
+				devdata->qtgui_control_refs.push_back(ref);
+				devdata->qtgui->addCallback(dsp_data->api_ui.getParamZone(i), faust2_gui_zone_callback, ref);
+			}
+
+			// Restart the interface if it is visible. The old QTGUI was stopped
+			// (and deleted) above, so without this call the rebuilt interface
+			// freezes (its refresh timer never starts).
+			devdata->qtgui->update();
+			if (devdata->qtgui_parent.data() != NULL
+			    && devdata->qtgui_parent->isVisible())
+			{
+				devdata->qtgui->run();
+			}
 
 			devdata->ready.has_new_data = true;
 			devdata->ready.factory_is_ready = true;
@@ -632,10 +712,17 @@ static QList<QPointer<Dev2CompileThread>> g_compile_threads;
 
 static void start_dev2_compile_thread(Dev2CompileThread *thread){
 	g_compile_threads.push_back(thread);
-	QObject::connect(thread, &QThread::finished, [thread](){
+
+	// Use 'thread' as the context object: QThread::finished is emitted from the
+	// worker thread, and without a context object the functor would run there
+	// too, racing with the main thread's push_back/iteration of
+	// g_compile_threads. With 'thread' as context (the QThread object lives on
+	// the main thread), the functor is queued to the main thread.
+	QObject::connect(thread, &QThread::finished, thread, [thread](){
 		g_compile_threads.removeAll(thread);
 		thread->deleteLater();
 	});
+
 	thread->start();
 }
 
@@ -797,6 +884,19 @@ static void set_effect_value(SoundPlugin *plugin, int time, int effect_num, floa
 
 	dsp_data->param_values[effect_num] = native_value;
 	dsp_data->api_ui.setParamValue(effect_num, native_value);
+
+	// For polyphonic instruments the control zones are "grouped": writing to a
+	// control only reaches the actual voice DSPs when the voice group UI is
+	// refreshed (see mydsp_poly/GroupUI in poly-dsp.h). Without this the
+	// controls are dead unless the QTGUI dialog happens to be open.
+	//
+	// We must not call the global GUI::updateAllGuis() here: it runs while the
+	// player lock is held and also updates other instruments' Qt GUIs, whose
+	// callbacks call back into Radium (e.g. faust_gui_zone_callback), which
+	// asserts when the player lock is held. Refreshing only this instrument's
+	// voice group is a pure data update and is safe from any thread.
+	if (dsp_data->is_instrument && dsp_data->poly_dsp != NULL)
+		dsp_data->poly_dsp->fGroups.updateAllZones();
 }
 
 
@@ -957,7 +1057,7 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
 		interpreter_dsp_factory *interp_factory = NULL;
 		MyQTemporaryDir *svg_dir = NULL;
 
-		dsp_factory *factory = create_factory(devdata, error_message,
+		dsp_factory *factory = create_factory(devdata, getFaustOptimizationLevel(), error_message, // main thread, safe to read settings
 #if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
 											   &llvm_factory,
 #endif

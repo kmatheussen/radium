@@ -8,7 +8,7 @@
 #include "../common/QueueStack.hpp"
 
 #define U_MUTEX false
-static radium::Mutex g_faust_mutex; // Calling startMTDSPFactories() is not enough since that one will only protect llvm factories.
+static radium::Mutex g_faust_mutex; // U_MUTEX is false, so this mutex is compiled out. Thread safety relies on startMTDSPFactories(), which locks the Faust API (both llvm and interpreter factories) via LOCK_API.
 //radium::Mutex fff_mutex; // Must be obtained when using the factory. (Not necessary, faust has its own lock)
 
 #define COMPILE_SVG_IN_PARALLEL 0 // Setting this one to 1 is currently a lot slower. The reason is that Faust uses a common lock around all API functions (so it's not running in parallell anyway), plus that generating C++ code takes a lot of time.
