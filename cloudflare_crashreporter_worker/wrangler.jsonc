@@ -1,0 +1,19 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "radium-crashreport",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-08-01",
+	"workers_dev": false,
+	"routes": [
+		{
+			"pattern": "crashreport.radium.dog",
+			"custom_domain": true
+		}
+	],
+	"send_email": [
+		{
+			"name": "EMAIL",
+			"allowed_destination_addresses": ["k.s.matheussen@gmail.com"]
+		}
+	]
+}
