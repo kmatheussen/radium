@@ -1165,6 +1165,19 @@ static bool gui_is_visible(SoundPlugin *plugin)
 }
 
 
+static void RT_player_is_stopped(SoundPlugin *plugin)
+{
+	FaustDev2Data *devdata = (FaustDev2Data*)plugin->data;
+	FaustDev2Dsp *dsp_data = devdata->dsp_data;
+
+	if (dsp_data != NULL && dsp_data->is_instrument && dsp_data->poly_dsp != NULL)
+	{
+		dsp_data->poly_dsp->allNotesOff(false);
+		dsp_data->collector.clear();
+	}
+}
+
+
 //===========================================
 // Registration
 //===========================================
@@ -1189,6 +1202,7 @@ void create_faust_dev2_plugin(void)
 	plugin_type->show_gui                 = show_gui;
 	plugin_type->hide_gui                 = hide_gui;
 	plugin_type->gui_is_visible           = gui_is_visible;
+	plugin_type->RT_player_is_stopped     = RT_player_is_stopped;
 
 	plugin_type->RT_process       = RT_process;
 	plugin_type->play_note        = play_note;
@@ -1202,9 +1216,22 @@ void create_faust_dev2_plugin(void)
 	plugin_type->effect_is_visible = effect_is_visible;
 
 	plugin_type->info =
-		"HTML: FAUST (Functional Audio Stream) is a functional programming language specifically designed for real-time signal processing and synthesis."
+		"HTML: FAUST (Functional Audio Stream) is a functional programming language specifically designed for real-time signal processing and synthesis. FAUST targets high-performance signal processing applications and audio plug-ins for a variety of platforms and standards. More info <A href=\"http://faust.grame.fr\">here</a>."
 		"<p>"
-		"Faust Dev 2 uses the built-in Faust polyphonic architecture (mydsp_poly) for voice management and sub-block accurate note timing."
+		"Faust Dev 2 is a development instrument for writing and testing Faust programs in real time."
+		"<UL>"
+		"<LI> It uses Faust's built-in polyphonic architecture (mydsp_poly) for automatic voice management, so instruments are polyphonic without any special coding."
+		"<LI> Set the number of voices with <code>declare options \"[nvoices:N]\"</code> in the Faust code (up to 32 voices)."
+		"<LI> Notes are triggered with sub-block accuracy for precise timing."
+		"<LI> The note controls <code>freq</code>, <code>gain</code>, <code>gate</code> and <code>velocity</code>, as well as the built-in Panic button, are handled automatically and hidden from the GUI."
+		"</UL>"
+		"<p>"
+		"Hints:\n"
+		"<UL>"
+		"<LI> To zoom, either the editor or a diagram, press CTRL while scrolling the mouse wheel."
+		"<LI> To search for a string in the source code, press Ctrl + F."
+		"<LI> Running full size window (by pressing the \"Full\" button) can be very convenient when developing."
+		"</UL"
 		;
 
 	PR_add_plugin_type(plugin_type);
