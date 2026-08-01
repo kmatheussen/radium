@@ -311,7 +311,7 @@ namespace{
         {
           //radium::ScopedMutex lock(fff_mutex);
           for(int i=1;i<MAX_POLYPHONY;i++)
-            dsps[i] = reply.factory->createDSPInstance(); //reply.factory);
+			  dsps[i] = reply.factory->createDSPInstance(); //reply.factory);
         }
         
         for(int i=1;i<MAX_POLYPHONY;i++)          

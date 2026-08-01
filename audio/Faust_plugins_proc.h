@@ -25,6 +25,7 @@ QDialog *FAUST_create_qdialog(SoundPlugin *plugin);
 //void FAUST_set_qtguistyle(QDialog *gui);
 
 void FFF_shut_down(void);
+void FAUST2_shut_down(void);
 //void FAUST_inform_about_instrument_gui(SoundPlugin *plugin, QWidget *instrument_gui);
 void FAUST_set_code(SoundPlugin *plugin, QString code);
 void FAUST_set_options(SoundPlugin *plugin, QString options);
