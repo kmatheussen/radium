@@ -5070,7 +5070,7 @@ int main(int argc, char **argv){
   
 #if !defined(IS_MACOS_BINARY)
     setenv("QT_QPA_PLATFORM", "cocoa", 1);
-    setenv("QT_QPA_PLATFORM_PLUGIN_PATH", "/opt/local/libexec/qt5/plugins/platforms", 1);
+    setenv("QT_QPA_PLATFORM_PLUGIN_PATH", "/opt/local/libexec/qt6/plugins/platforms", 1);
 #endif
 
   setenv("LC_CTYPE", "UTF-8", 1);

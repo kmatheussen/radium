@@ -88,6 +88,9 @@ static DEFINE_ATOMIC(bool, g_dont_report) = false;
 #define NOPLUGINNAMES "<nopluginnames>"
 #define NOEMERGENCYSAVE "<noemergencysave>"
 
+#define CRASHREPORT_URL "https://crashreport.radium.dog"
+#define CRASHREPORT_SECRET "d9fbe02a2be4366243e33378999ae97e8ac8988339c2f179dba782e9ab0f78fb"
+
 
 namespace local{
   
@@ -552,8 +555,9 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
       data.append(text_edit.toPlainText().toUtf8());
       
       QNetworkAccessManager nam;
-      QNetworkRequest request(QUrl("http://users.notam02.no/~kjetism/radium/crashreport.php"));
+      QNetworkRequest request(QUrl(CRASHREPORT_URL));
       request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded" );
+      request.setRawHeader("X-Radium-Secret", CRASHREPORT_SECRET);
 
       QNetworkReply *reply = nam.post(request,data);
 
@@ -615,11 +619,25 @@ int main(int argc, char **argv){
   if(getenv("QT_QPA_PLATFORM_PLUGIN_PATH")==NULL){
     faulty_installation = true;
   }else{
-	  QCoreApplication::setLibraryPaths(QStringList(getenv("QT_QPA_PLATFORM_PLUGIN_PATH")));
+	  // Do not replace, but prepend, the library paths. Otherwise the default paths are
+	  // lost, including the ".../plugins/tls" directory containing the TLS backend plugins
+	  // (e.g. libqopensslbackend.so) needed for HTTPS. Radium sets
+	  // QT_QPA_PLATFORM_PLUGIN_PATH to the ".../plugins/platforms" directory only.
+	  QStringList paths = QCoreApplication::libraryPaths();
+	  paths.prepend(QString(getenv("QT_QPA_PLATFORM_PLUGIN_PATH")));
+	  QCoreApplication::setLibraryPaths(paths);
 	  //QCoreApplication::setLibraryPaths(QStringList());
   }
 #else
-  QCoreApplication::setLibraryPaths(QStringList(getenv("QT_QPA_PLATFORM_PLUGIN_PATH")));
+  if(getenv("QT_QPA_PLATFORM_PLUGIN_PATH")!=NULL){
+    // Do not replace, but prepend, the library paths. Otherwise the default paths are
+    // lost, including the ".../plugins/tls" directory containing the TLS backend plugins
+    // (e.g. libqopensslbackend.dylib) needed for HTTPS. Radium sets
+    // QT_QPA_PLATFORM_PLUGIN_PATH to the ".../plugins/platforms" directory only.
+    QStringList paths = QCoreApplication::libraryPaths();
+    paths.prepend(QString(getenv("QT_QPA_PLATFORM_PLUGIN_PATH")));
+    QCoreApplication::setLibraryPaths(paths);
+  }
   //QCoreApplication::setLibraryPaths(QStringList());
 #endif
 
