@@ -971,6 +971,167 @@ g_pages.push(
 );
 
 
+const gui_blocks_and_instruments_lists_text = `
+<h3>Blocks and Instruments list windows</h3>
+
+<p><small><i>This manual page was written by an AI.</i></small></p>
+
+There are two windows for getting an overview of the blocks and instruments in the song. Both are opened from the <b>Windows</b> menu, and both have a search field at the top.
+
+<h4>Blocks list</h4>
+
+Opened from <b>Windows -> Show Block list</b>. The list contains the following columns:
+
+<table>
+  <tr><th>Column</th><th>Description</th></tr>
+  <tr><td><b>Block #</b></td> <td>Block number.</td></tr>
+  <tr><td><b>Usage #</b></td> <td>Number of seqtracks and seqblocks using this block.</td></tr>
+  <tr><td><b>Name</b></td> <td>Block name. Click a name to select the block, or edit it to rename the block.</td></tr>
+  <tr><td><b>Lines</b></td> <td>Number of lines in the block.</td></tr>
+  <tr><td><b>Tracks</b></td> <td>Number of tracks in the block.</td></tr>
+  <tr><td><b>Delete</b></td> <td>Button to delete the block.</td></tr>
+</table>
+
+<p>
+
+Note that selecting a row only changes the current block if the player is not playing a song.
+
+<h4>Instruments list</h4>
+
+Opened from <b>Windows -> Show Instrument list</b>. The list contains the following columns:
+
+<table>
+  <tr><th>Column</th><th>Description</th></tr>
+  <tr><td><b>#</b></td> <td>Instrument number.</td></tr>
+  <tr><td><b># Conn.</b></td> <td>Number of connections to other instruments.</td></tr>
+  <tr><td><b>Name</b></td> <td>Instrument name. Click a name to make it the current instrument, or edit it to rename the instrument.</td></tr>
+  <tr><td><b># in</b></td> <td>Number of audio inputs.</td></tr>
+  <tr><td><b># out</b></td> <td>Number of audio outputs.</td></tr>
+  <tr><td><b>Type</b></td> <td>Instrument type (e.g. "Sample Player" or "VST").</td></tr>
+  <tr><td><b>Recv. ext. MIDI</b></td> <td>Whether the instrument receives external MIDI.</td></tr>
+  <tr><td><b>GUI</b></td> <td>Button to show/hide the instrument GUI.</td></tr>
+  <tr><td><b>Delete</b></td> <td>Button to delete the instrument.</td></tr>
+</table>
+
+<p>
+
+Clicking a row makes that instrument the current instrument.
+`;
+
+
+g_pages.push(
+    {text : gui_blocks_and_instruments_lists_text,
+     name : "blocks_and_instruments_lists",
+     menu : "gui",
+     display : "Blocks and Instruments lists"
+    }
+);
+
+
+const gui_song_properties_and_preferences_text = `
+<h3>Song properties and Preferences</h3>
+
+<p><small><i>This manual page was written by an AI.</i></small></p>
+
+These two windows configure the song and the program, respectively.
+
+<h4>Song properties</h4>
+
+Opened from <b>File -> Song properties</b>. The settings are saved with the song:
+
+<table>
+  <tr><th>Group</th><th>Settings</th></tr>
+  <tr>
+    <td><b>Accelerando / Ritardando</b></td>
+    <td>Choose whether accelerando and ritardando should be <b>linear</b>, or <b>faster and faster</b> / <b>slower and slower</b>.</td>
+  </tr>
+  <tr>
+    <td><b>Swing</b></td>
+    <td>
+      <UL>
+        <LI><b>Send swinging beats to plugins, modulators, metronomes, and jack transport</b>.
+        <LI><b>Let the editor swing along when playing</b>.
+        <LI><b>Display swinging beats for editor seqblocks in the sequencer</b>.
+        <LI><b>Use swinging beats in the sequencer for timeline and grid</b>.
+      </UL>
+    </td>
+  </tr>
+  <tr>
+    <td><b>Editor automation ("FX")</b></td>
+    <td><b>Mute automation if track is muted</b>.</td>
+  </tr>
+  <tr>
+    <td><b>Instrument glissando behavior</b></td>
+    <td>
+      <UL>
+        <LI><b>Never do glissando instead of pitch changes</b>.
+        <LI><b>Do glissando instead of changing pitch if instrument doesn't support changing pitch</b>.
+        <LI><b>Always do glissando instead of pitch changes</b>.
+      </UL>
+    </td>
+  </tr>
+  <tr>
+    <td><b>Mixer</b></td>
+    <td>
+      <UL>
+        <LI><b>Show comments</b> in the mixer.
+        <LI><b>Mute output to the 5 system buses when a plugin is bypassed</b>.
+        <LI><b>Include Panning and Width in the Wet signal</b>.
+        <LI><b># bus channels</b>. Note that the song must be reloaded for a change to take effect.
+      </UL>
+    </td>
+  </tr>
+  <tr>
+    <td><b>Plugin MIDI behavior</b></td>
+    <td>
+      <UL>
+        <LI><b>Mute MIDI when plugin is muted</b>.
+        <LI><b>Send MIDI through when plugin is bypassed</b>.
+        <LI><b>Implicitly mute MIDI the same way as Audio</b>.
+      </UL>
+    </td>
+  </tr>
+  <tr>
+    <td><b>Audio files in Sample player and Fluidsynth</b></td>
+    <td><b>Embed audio files in song file</b>.</td>
+  </tr>
+  <tr>
+    <td><b>Faust Dev instrument (Not Faust Dev2)</b></td>
+    <td><b>Use old/buggy note-release behavior for compatibility with old songs</b>.</td>
+  </tr>
+</table>
+
+<p>
+
+<h4>Preferences</h4>
+
+Opened from <b>Edit -> Preferences</b> (or <b>Edit -> Soundcard preferences</b>). The preferences window has the following tabs:
+
+<UL>
+  <LI><b>Audio</b> - Soundcard, sample rate, block size, and audio routing.
+  <LI><b>Disk</b> - Automatic backup and other disk-related settings.
+  <LI><b>Editor</b> - Behavior and appearance of the editor.
+  <LI><b>Sequencer</b> - Behavior and appearance of the sequencer, including Jack Transport settings.
+  <LI><b>Instruments</b> - Default settings for instruments, sample loading, and looping.
+  <LI><b>MIDI</b> - MIDI input ports, output ports, and other MIDI settings.
+  <LI><b>Faust</b> - Settings for the Faust instruments.
+  <LI><b>GUI</b> - Common and Advanced subtabs for graphical user interface settings, fonts, and colors.
+  <LI><b>GPU</b> - Common and Advanced subtabs for graphics settings. A restart is required for changes to take effect.
+  <LI><b>Colors</b> - Color configuration and color snapshots.
+  <LI><b>Various</b> - Miscellaneous settings.
+</UL>
+`;
+
+
+g_pages.push(
+    {text : gui_song_properties_and_preferences_text,
+     name : "song_properties_and_preferences",
+     menu : "gui",
+     display : "Song properties and Preferences"
+    }
+);
+
+
 
 /*******************************/
 /*****  Editor             *****/
@@ -1681,7 +1842,7 @@ Chance text format: <b>xx</b>, where
 
   <UL>
     <LI>To remove a chance text (to make sure the note is always played), press <b>DEL</b>.
-    <LI>To control the chance of individual voices in the note duplicator,
+    <LI>To control the chance of individual voices in the <a href="index.html?page=note_duplicator">note duplicator</a>,
       you can automate the instrument effects <b>System Chance 1</b>, <b>System Chance 2</b>, and so forth, instead.
       (Note that the value <b>ff</b> is interpreted as 256 when automating the chance
       of individual voices in the note duplicator so you don't have to worry about
@@ -1851,6 +2012,36 @@ g_pages.push(
     }
 );
 
+
+const editor_post_recording_tools_text = `
+<h2>Post-recording tools</h2>
+
+<p><small><i>This manual page was written by an AI.</i></small></p>
+
+The post-recording tools provide functions to clean up MIDI recordings. They are opened from <b>MIDI -> Post-recording tools...</b>.
+
+<p>
+
+<h3>MIDI post-recording tools</h3>
+
+<UL>
+  <LI><b>Make track monophonic</b>: Converts the current track into a monophonic track, i.e. a track where only one note plays at a time.
+  <LI><b>Split track into several monophonic tracks</b>: Splits the current track into several monophonic tracks. This is useful when recording a polyphonic instrument (such as a guitar) where each note should be placed in its own track.
+  <LI><b>Note quantization</b>: Quantizes the notes in the current track. Use the "Quantitize" tab in the <a href="index.html?page=editor">Edit</a> tab to adjust the quantization settings.
+</UL>
+
+<p>
+
+Note that these functions can also be found in the <b>Edit tab</b> in the main window, and in the <b>Edit -> Editor Edit -> Track</b> submenu.
+`;
+
+g_pages.push(
+    {text : editor_post_recording_tools_text,
+     name : "post_recording_tools",
+     menu : "editor",
+     display : "Post-recording tools"
+    }
+);
 
 
 
@@ -2188,10 +2379,10 @@ const sequencer_text = `
       <LI> To quickly copy a seqblock, hold the <b>Alt</b> key and drag a seqblock.
       <LI> Double-click a seqblock to open a GUI for it.
     </UL> 
-  <LI> Use the popup menu to add effect automations, tempo automations, loop start and end positions, and other operations.
+  <LI> Use the popup menu to add effect automations (<a href="index.html?page=sequencer_automation">seqtrack automation</a>), tempo automations, loop start and end positions, and other operations.
   <LI> For information about the different types of fade in and fade out shapes, look in the Ardour manual <A href="http://manual.ardour.org/editing-and-arranging/create-region-fades-and-crossfades/">here</A>.
   <LI> Drag seqtrack number to change track order.
-  <LI> Insert several audio files into their own separate seqtracks by right-clicking inside an audio seqtrack and select "<b>Insert audio file(s)</b>".
+  <LI> Insert several audio files into their own separate seqtracks by right-clicking inside an audio seqtrack and select "<b>Insert audio file(s)</b>". See <a href="index.html?page=audio_seqblocks">Audio seqblocks</a> for how to edit audio seqblocks.
 </UL>
 
 <h3>Timeline</h3>
@@ -2225,6 +2416,184 @@ g_pages.push(
 );
 
 
+const sequencer_editor_seqblocks_text = `
+<h2>Editor seqblocks</h2>
+
+<p><small><i>This manual page was written by an AI.</i></small></p>
+
+Seqtracks can hold <a href="index.html?page=editor">editor blocks</a> as well as <a href="index.html?page=audio_seqblocks">audio files</a>. An <b>editor seqblock</b> is a seqblock holding an editor block.
+
+<p>
+
+To insert an editor block, either double-click a block in the blocklist, or right-click inside a seqtrack and select "<b>Insert current block</b>" or "<b>Insert block...</b>".
+
+<h3>Moving and copying</h3>
+
+<UL>
+  <LI>Move a seqblock with the mouse.
+  <LI>To quickly copy a seqblock, hold the <b>Alt</b> key and drag a seqblock.
+  <LI>To move several seqblocks, either mark a rectangle, or press <b>Ctrl</b> and click on the seqblocks you want to move.
+  <LI>When moving a seqblock, blocks are automatically swapped with the seqblock you drop it on.
+</UL>
+
+<h3>Track on/off editor</h3>
+
+Double-click an editor seqblock (or select "<b>Seqblock track on/off editor</b>" in the popup menu) to open a window showing all tracks of the block. Each track has a <b>checkbox</b> to enable or disable that track inside this seqblock only, without changing the editor block itself.
+
+<p>
+
+The following functions in the "Advanced" submenu copy track on/off settings between the editor and the seqblock:
+
+<UL>
+  <LI><b>Copy track on/off editor => seqblock</b>: Sets the seqblock track on/off settings to match the editor block's current track on/off settings.
+  <LI><b>Copy track on/off seqblock => editor</b>: Sets the editor block's track on/off settings to match this seqblock's track on/off settings.
+</UL>
+
+<h3>Fades</h3>
+
+Editor seqblocks can have <b>fade in</b> and <b>fade out</b>:
+
+<UL>
+  <LI>Drag the fade boxes at the left and right edges of a seqblock to adjust the fade in and fade out.
+  <LI>Right-click a fade box to select the <b>fade shape</b>.
+  <LI>Press <b>Shift</b> and click <b>Right mouse button</b> (or the <b>ZL1</b> key) on a fade box to remove the fade.
+  <LI>For information about the different fade shapes, look in the Ardour manual <A href="http://manual.ardour.org/editing-and-arranging/create-region-fades-and-crossfades/">here</A>.
+</UL>
+
+<h3>Other operations</h3>
+
+Right-click an editor seqblock to get a popup menu with operations such as:
+
+<UL>
+  <LI><b>Copy</b>, <b>Cut</b>, <b>Paste</b>, and <b>Delete all selected</b> seqblocks.
+  <LI><b>Duplicate seqblock and block</b>: Creates a new copy of the block and inserts it right after this seqblock.
+  <LI><b>Rename...</b> and <b>Configure color...</b>.
+  <LI><b>Replace block</b>: Replaces the block in the seqblock with another block.
+  <LI><b>Set gain...</b>: Sets the volume gain of the seqblock.
+  <LI><b>Forced as current block</b>: Makes this block the current block, and prevents Radium from automatically changing the current block.
+  <LI><b>Configure block...</b>: Opens the block configuration window.
+  <LI><b>Clone (create new block(s) from selected block(s))</b>: Creates new blocks by copying the selected block(s).
+  <LI><b>Select previous/next seqblock</b>.
+</UL>
+
+<p>
+
+See <a href="index.html?page=sequencer_automation">Seqtrack automation</a> for how to automate instrument effects along a seqtrack, and <a href="index.html?page=audio_seqblocks">Audio seqblocks</a> for how to edit seqblocks holding audio files.
+`;
+
+
+g_pages.push(
+    {text : sequencer_editor_seqblocks_text,
+     name : "editor_seqblocks",
+     menu : "sequencer",
+     display : "Editor seqblocks"
+    }
+);
+
+
+const sequencer_audio_seqblocks_text = `
+<h2>Audio seqblocks</h2>
+
+<p><small><i>This manual page was written by an AI.</i></small></p>
+
+Seqtracks can hold <b>audio files</b> instead of <a href="index.html?page=editor">editor blocks</a>. An audio seqblock is a seqblock holding an audio file.
+
+<p>
+
+To insert an audio file, either double-click an audio file in the blocklist / audio files list, or right-click inside an audio seqtrack and select "<b>Insert audio file(s)</b>".
+
+<p>
+
+Right-click an audio seqblock and select "<b>Edit audio seqblock</b>" to open a window where you can adjust the following properties of the audio seqblock:
+
+<UL>
+  <LI><b>Gain</b>: Adjust the gain of the audio seqblock in dB. The <b>Normalize!</b> button sets the gain so that the loudest sample is at 0 dB.
+    <UL>
+      <LI><b>Volume automation</b>: Enable this checkbox to create a <a href="index.html?page=sequencer_automation">seqtrack automation</a> for the gain.
+    </UL>
+  <LI><b>Resampler type</b>: Sample and hold, Linear, Cubic, Sinc1, or Sinc2.
+  <LI><b>Pitch</b>: Change the pitch of the audio, in semitones (from -48 to 48). Changing the pitch also changes the playback speed. (Speed 1.0 = pitch 0, speed 2.0 = pitch -12, speed 0.5 = pitch +12, and so on.)
+  <LI><b>Granular synthesis</b>:
+    <UL>
+      <LI><b>Grain overlap (X)</b>: How much the grains overlap.
+      <LI><b>Grain length (ms)</b>: The length of each grain.
+      <LI><b>Grain jitter (%)</b>: How randomly the grains are positioned. 0% means the same distance between each grain, 100% means very random positions.
+      <LI><b>Grain ramp (%)</b>: Fade in + fade out duration, as a percentage of the grain length.
+      <LI><b>Strict no jitter when jitter is 0.00%</b>: If set, the distance between the start of all grains will always be the same when jitter is 0.00%. The duration of the generated sound will be slightly wrong, but the sound will contain a purer comb filter effect. If not set, the distances will differ in size by at most 1 frame in such a way that the total duration of the generated sound will be correct.
+      <LI>Each grain parameter can be automated (checkbox to the right of each slider).
+    </UL>
+  <LI><b>Stretch and speed automation</b>: Enable to create automations for the stretch and speed of the audio seqblock.
+</UL>
+
+<p>
+
+Tips:
+<UL>
+  <LI>Hold <b>Alt</b> and drag an audio seqblock to quickly copy it.
+  <LI>Right-click an audio seqtrack to set the number of audio channels and where to get audio from when recording.
+</UL>
+`;
+
+g_pages.push(
+    {text : sequencer_audio_seqblocks_text,
+     name : "audio_seqblocks",
+     menu : "sequencer",
+     display : "Audio seqblocks"
+    }
+);
+
+
+const sequencer_automation_text = `
+<h2>Seqtrack automation</h2>
+
+<p><small><i>This manual page was written by an AI.</i></small></p>
+
+<b>Seqtrack automation</b> (also called <b>sequencer automation</b>) is automation of an instrument effect along the timeline of a seqtrack. It is used to automate effects such as volume, pan, or filters across the whole seqtrack, without having to create automation in the editor.
+
+<p>
+
+<IMG SRC="sequencergrid.png" ALT="Sequencer automation" style="border:10px solid transparent" align="right" width="40%">
+
+<h3>Creating automation</h3>
+
+<OL>
+  <LI><b>Right-click</b> a seqtrack.
+  <LI>Select "<b>New automation...</b>".
+  <LI>Select the instrument and the effect you want to automate.
+  <LI>A minimal automation with two nodes should now have been created at the position of the mouse pointer.
+</OL>
+
+<p>
+
+<h3>Editing nodes</h3>
+
+Automation nodes are moved, added, and deleted with the mouse in the same way as other automation in Radium:
+
+<UL>
+  <LI>Press <b>Ctrl</b> and use the mouse to finetune or break the grid.
+  <LI>Press <b>Shift</b> and click <b>Right mouse button</b> to delete a node.
+</UL>
+
+<p>
+
+<h3>Managing automations</h3>
+
+Right-click a seqtrack to get a list of all automations on that seqtrack:
+
+<UL>
+  <LI><b>Paste automation</b>: Paste a previously copied seqtrack automation into the seqtrack at the position of the mouse pointer.
+  <LI>Each existing automation is listed with a <b>checkbox</b> to enable/disable it.
+  <LI>Use the <b>Edit -> ClipBoard</b> menu (or <b>Left Alt</b> qualifier) to copy and cut seqtrack automations.
+</UL>
+`;
+
+g_pages.push(
+    {text : sequencer_automation_text,
+     name : "sequencer_automation",
+     menu : "sequencer",
+     display : "Seqtrack automation"
+    }
+);
 
 
 
@@ -2244,6 +2613,7 @@ const instrument_text = `
           </UL>
           Click the "I" button in the mixer to switch between these two positions.
         <LI>By right-clicking a slider or checkbox, you can learn MIDI, assign an LFO, add automation, record into the editor, etc.
+        <LI>Use the <a href="index.html?page=note_duplicator">note duplicator</a> to play several voices for each note.
         <LI>Enable <b>Sample Seek</b> or <b>MIDI chase</b> for an instrument by pressing the <b>"S"</b> button in the instrument header. Sample seek is only supported by the Sampler instrument. All other instruments will resort to MIDI chase when this option is enabled.
         <LI> Some common instruments:
           <UL>
@@ -2262,6 +2632,10 @@ const instrument_text = `
               <div id="faustdev" style="display: none">
                 The Faust instrument lets you program <A href="http://faust.grame.fr">Faust</A> instruments in Radium. Also note that there is no "compile" button since programs are compiled in realtime while you write code.
               </div>
+            <LI> <a onclick="showHide('faustdev2')" href="javascript:void(0)">FaustDev2</a>
+              <div id="faustdev2" style="display: none">
+                A newer version of the Faust instrument with automatic polyphony, sub-block note triggering, and an optional LLM prompt (beta) that can generate or fix the Faust code. Enable the prompt via <b>Help -> Beta features -> "Show/hide Faust Dev 2 LLM prompt"</b>.
+              </div>
             <LI> <a onclick="showHide('puredata')" href="javascript:void(0)">Pure Data</a>
               <div id="puredata" style="display: none">
                 The Pure Data instrument lets you program <A href="http://puredata.info">Pure Data</A> instruments in Radium. Currently, this instrument is only available on Linux.
@@ -2279,12 +2653,95 @@ g_pages.push(
 );
 
 
+/*******************************/
+/*****  Note Duplicator    *****/
+/*******************************/
+
+const note_duplicator_text = `
+
+<h2>Note Duplicator</h2>
+
+<p><small><i>This manual page was written by an AI.</i></small></p>
+
+The note duplicator lets you play up to 7 <b>voices</b> for each note played by an instrument. Each voice can be transposed, given its own volume, start time, length, pan position, and probability (chance) of playing.
+
+<p>
+
+The note duplicator is available for most instruments. It is shown as a <b>patch widget</b> in the <a href="index.html?page=instrument">instrument widget</a>, in the row area right below the instrument header.
+
+<h3>Voice parameters</h3>
+
+Each of the 7 voices has the following parameters:
+
+<table>
+  <tr><th>Column</th><th>Description</th></tr>
+  <tr><td><b>On/Off</b></td> <td>Whether to play this voice. At least one voice must be enabled in order for any notes to be played.</td></tr>
+  <tr><td><b>Transp.</b></td> <td>How much to transpose this voice, in semitones. Can be set to any value between -99 and 99, including fractional values.</td></tr>
+  <tr><td><b>Vol.</b></td> <td>Volume (in dB) for this voice. MIDI and FluidSynth do not support higher values than 0 dB.</td></tr>
+  <tr><td><b>Start</b></td> <td>How long time until this voice starts playing. The unit is milliseconds.</td></tr>
+  <tr><td><b>Length</b></td> <td>A value higher than 0.0 will override the duration of this voice. The unit is milliseconds.</td></tr>
+  <tr><td><b>Pan</b></td> <td>Pan value for this voice, in degrees. (Shown only for instruments that supports it, such as the Sample Player and Pure Data.)</td></tr>
+  <tr><td><b>Chance</b></td> <td>The chance of this voice to play. A value of 256 means there is a 100% chance of this voice playing, while a value of 128 means there is a 50% chance.</td></tr>
+</table>
+
+<p>
+
+In the header of the patch widget there is also a <b>"T"</b> checkbox:
+
+<UL>
+  <LI><b>Send events through</b>. Incoming events such as note on and note off are forwarded to the event-connected instruments (i.e. connected through the yellow lines). Normally, this setting is convenient, but for note manipulation effects such as PD arpeggiators or VST MIDI effects, it should be turned off. Enabling this option has no impact on the performance if no instruments are event-connected.
+</UL>
+
+<h3>Automating voice parameters</h3>
+
+Each voice parameter also exists as a regular instrument effect, so it can be automated, modulated, or assigned a MIDI controller just like any other effect. The effects are named:
+
+<UL>
+  <LI><b>System On/Off Voice N</b>
+  <LI><b>System Transpose Voice N</b>
+  <LI><b>System Volume Voice N</b>
+  <LI><b>System Start Voice N</b>
+  <LI><b>System Length Voice N</b>
+  <LI><b>System Pan Voice N</b>
+  <LI><b>System Chance Voice N</b>
+</UL>
+
+where <b>N</b> is the voice number (1-7).
+
+<p>
+
+See <a href="index.html?page=chancetext">Chance text</a> for information about automating the chance of individual voices in the note duplicator.
+
+`;
+
+g_pages.push(
+    {text : note_duplicator_text,
+     name : "note_duplicator",
+     menu : "instrument",
+     display : "Note Duplicator"
+    }
+);
+
+
+
+
+
+
 /**************************************/
 /*****  Instruments -> faustdev  *****/
 /************************************/
 const faustdev_text = `
 <h2>Faust Dev instrument</h2>
-(under construction)
+
+<p><small><i>This manual page was written by an AI.</i></small></p>
+
+The Faust instrument lets you program <A href="http://faust.grame.fr">Faust</A> instruments in Radium. Faust is a functional programming language for realtime signal processing.
+
+<UL>
+  <LI>To create a Faust instrument, use the "Create new instrument" popup menu in the modular mixer (or the plugin manager) and select the Faust Dev instrument.
+  <LI>There is no "compile" button since programs are compiled in realtime while you write code.
+  <LI>In the instrument widget there are buttons to load and save Faust source code.
+</UL>
 `;
 
 g_pages.push(
@@ -2296,10 +2753,44 @@ g_pages.push(
 );
 
 
+const faustdev2_text = `
+<h2>Faust Dev 2 instrument</h2>
+
+<p><small><i>This manual page was written by an AI.</i></small></p>
+
+Faust Dev 2 is a development instrument for writing and testing <A href="http://faust.grame.fr">Faust</A> programs in real time. Faust is a functional programming language for realtime signal processing.
+
+<UL>
+  <LI>To create a Faust Dev 2 instrument, use the "Create new instrument" popup menu in the modular mixer (or the plugin manager) and select the "Faust Dev 2" instrument.
+  <LI>It uses Faust's built-in polyphonic architecture (mydsp_poly) for automatic voice management, so instruments are polyphonic without any special coding.
+  <LI>Set the number of voices with <code>declare options "[nvoices:N]"</code> in the Faust code (up to 32 voices).
+  <LI>Notes are triggered with sub-block accuracy for precise timing.
+  <LI>The note controls <code>freq</code>, <code>gain</code>, <code>gate</code> and <code>velocity</code>, as well as the built-in Panic button, are handled automatically and hidden from the GUI.
+  <LI>An LLM prompt (beta feature) can generate or fix the Faust code for you (e.g. "Create a low-shelf filter"). Enable it via <b>Help -> Beta features -> "Show/hide Faust Dev 2 LLM prompt"</b>, then configure your LLM provider (API key, model) with the "LLM settings" button in the prompt bar.
+</UL>
+`;
+
+g_pages.push(
+    {text : faustdev2_text,
+     name : "faustdev2",
+     menu : "instrument",
+     display : "FaustDev2"
+    }
+);
+
+
 const instrument_puredata_text = `
 <h2>Pure Data</h2>
 
-(under construction)
+<p><small><i>This manual page was written by an AI.</i></small></p>
+
+The Pure Data instrument lets you program <A href="http://puredata.info">Pure Data</A> instruments in Radium. Pure Data (Pd) is a visual programming language for realtime audio.
+
+<UL>
+  <LI>Currently, this instrument is only available on Linux.
+  <LI>To create a Pure Data instrument, use the "Create new instrument" popup menu in the modular mixer (or the plugin manager) and select the Pure Data instrument.
+  <LI>Note that a Pure Data instrument can be used for note manipulation: incoming note events can be transformed and sent further to event-connected instruments. In this case, the "<b>T</b>" (through) checkbox in the <a href="index.html?page=note_duplicator">note duplicator</a> header should be turned off.
+</UL>
   `;
 
 g_pages.push(
@@ -2442,7 +2933,7 @@ Convenient function to create a minimal automation for this effect at the curren
 
 <p>
 
-  Selecting this option is much faster than manually creating the automation in the sequencer.
+  Selecting this option is much faster than manually creating the automation in the sequencer. See <a href="index.html?page=sequencer_automation">Seqtrack automation</a> for more information about automating effects in the sequencer.
 
 <p>
 
@@ -2469,6 +2960,187 @@ g_pages.push(
 );
 
 
+const instrument_plugin_manager_text = `
+<h2>Plugin manager</h2>
+
+<p><small><i>This manual page was written by an AI.</i></small></p>
+
+The plugin manager is used to find and scan plugins. It is opened from <b>Windows -> Show Plugin manager</b>.
+
+<p>
+
+The plugin manager shows a searchable table with the following columns:
+
+<table>
+  <tr><th>Column</th><th>Description</th></tr>
+  <tr><td><b>Usage</b></td> <td>Number of times the plugin is used in the current song.</td></tr>
+  <tr><td><b>Name</b></td> <td>Name of the plugin.</td></tr>
+  <tr><td><b>Type</b></td> <td>Type of plugin (e.g. Sample Player, VST, LADSPA).</td></tr>
+  <tr><td><b>Category</b></td> <td>Plugin category (e.g. effect, instrument).</td></tr>
+  <tr><td><b>Creator</b></td> <td>The author of the plugin.</td></tr>
+  <tr><td><b>Path</b></td> <td>The plugin type and path to the plugin file.</td></tr>
+  <tr><td><b>Inputs</b></td> <td>Number of audio inputs.</td></tr>
+  <tr><td><b>Outputs</b></td> <td>Number of audio outputs.</td></tr>
+</table>
+
+<p>
+
+To create a plugin, either double-click a row in the plugin manager, or use "<b>From plugin manager</b>" in the modular mixer popup menu.
+
+<p>
+
+When a plugin is selected, the <b>Add</b> button adds it to the current instrument, and the <b>Cancel</b> / <b>Close</b> button closes the window. The <b>Scan all remaining plugins</b> and <b>Rescan all plugins</b> buttons scan for plugins. Plugins that crash during scanning are blacklisted and will not be scanned again.
+`;
+
+g_pages.push(
+    {text : instrument_plugin_manager_text,
+     name : "plugin_manager",
+     menu : "instrument",
+     display : "Plugin manager"
+    }
+);
+
+
+const instrument_routing_text = `
+<h2>Routing</h2>
+
+<p><small><i>This manual page was written by an AI.</i></small></p>
+
+The routing instruments are used to route and transform audio signals between instruments. They are found in the <b>"Routing"</b> section of the "<b>From instrument/effect-menu...</b>" popup menu (used e.g. when creating a new instrument, inserting a plugin, or assigning an instrument to a track).
+
+<p>
+
+The routing section is divided into the following groups: <b>Buses</b>, <b>In/Out</b>, <b>Send/Receive</b>, and <b>Patchbays</b>.
+
+<h3>Buses (Pipe and Pipe8)</h3>
+
+<UL>
+  <LI><b>Pipe</b>: A stereo (2-channel) audio bus. Sends the sound through unmodified.
+  <LI><b>Pipe8</b>: An 8-channel audio bus. Sends the sound through unmodified.
+</UL>
+
+Every instrument outputs to a set of <b>system buses</b> (Pipe objects), which are used to collect the output of all instruments before it is sent to the main output. A Pipe has no controls; it just passes the audio through.
+
+<p>
+
+<h3>In/Out</h3>
+
+These objects connect to the soundcard, or to Jack ports:
+
+<UL>
+  <LI><b>Jack Stereo In</b>: Receives a stereo sound from an external Jack port (or the soundcard). Has no audio inputs; it is a source.
+  <LI><b>Jack Stereo Out</b>: Sends a stereo sound to an external Jack port (or the soundcard). Has no audio outputs; it is a sink.
+  <LI><b>Jack 8ch In</b>: Same as Jack Stereo In, but with 8 channels.
+  <LI><b>Jack 8ch Out</b>: Same as Jack Stereo Out, but with 8 channels.
+  <LI><b>System In</b>: The system input (2 channels). Usually connected to the main soundcard input.
+  <LI><b>System In 8</b>: The system input with 8 channels.
+  <LI><b>System Out</b>: The system output (2 channels). Connected to the system volume control in the bottom bar.
+  <LI><b>System Out 8</b>: The system output with 8 channels.
+</UL>
+
+<p>
+
+When Jack is running, the "Jack Stereo/8ch" objects connect to Jack ports that can be wired up in an external patchbay. The <b>System In</b> and <b>System Out</b> objects are always available, and are used to get audio into and out of Radium when not using Jack.
+
+<p>
+
+<h3>Send/Receive</h3>
+
+<UL>
+  <LI><b>Send</b>: Sends stereo audio to all <b>Receive</b> objects with the same name.
+  <LI><b>Send8</b>: Same as Send, but with 8 channels.
+  <LI><b>Receive</b>: Receives stereo audio from a <b>Send</b> object with the same name.
+  <LI><b>Receive8</b>: Same as Receive, but with 8 channels.
+</UL>
+
+Send and Send8 send audio to all Receive and Receive8 objects with the same name. Audio is delayed by one Radium buffer, so this is not the same as using an audio connection. The main purpose of Send/Receive is to create recursive audio graphs.
+
+<p>
+
+<h3>Patchbays</h3>
+
+A patchbay sends any input channel to any output channel. The following sizes are available:
+
+<UL>
+  <LI><b>Patchbay 8x8</b>
+  <LI><b>Patchbay 16x16</b>
+  <LI><b>Patchbay 24x24</b>
+  <LI><b>Patchbay 32x32</b>
+</UL>
+
+Each possible input-to-output route is a checkbox effect named "<b>from->to</b>". For example, <b>Patchbay 8x8</b> has 64 checkbox effects (8 inputs x 8 outputs). This is useful e.g. for sidechain compression, where you want to send a separate signal (like a kick drum) to the sidechain input of a compressor.
+`;
+
+g_pages.push(
+    {text : instrument_routing_text,
+     name : "routing",
+     menu : "instrument",
+     display : "Routing"
+    }
+);
+
+
+const instrument_misc_text = `
+<h2>Misc.</h2>
+
+<p><small><i>This manual page was written by an AI.</i></small></p>
+
+The instruments in the <b>"Misc."</b> section of the "<b>From instrument/effect-menu...</b>" popup menu (used e.g. when creating a new instrument, inserting a plugin, or assigning an instrument to a track) are the following: <b>Timeskew</b>, <b>MIDI Messages</b>, <b>Modulator</b>, and <b>Click</b>.
+
+<h3>Timeskew</h3>
+
+The Timeskew object skews time backwards or forwards. Instead of skewing the time of this object backwards, it skews all parallel objects forward instead.
+
+<p>
+
+It has the following effects:
+
+<UL>
+  <LI><b>Skew</b>: The amount of time skew, in milliseconds (from -1000 to 1000).
+  <LI><b>Report latency, skew > 0</b>: Whether to report the resulting latency to the program.
+</UL>
+
+<p>
+
+<h3>MIDI Messages</h3>
+
+The MIDI Messages object makes it possible to send MIDI messages to other sound objects. This can for instance be used to send pitch bend changes to VST plugins.
+
+<p>
+
+It has a <b>Channel</b> effect, which sets the MIDI channel (1-16) that the messages are sent on. In addition, it has effects for all the most common MIDI messages, including:
+
+<UL>
+  <LI><b>Program Change</b>
+  <LI><b>Channel Aftertouch</b>
+  <LI><b>Pitch Bend</b>
+  <LI><b>MSB</b> (cc=0) and <b>LSB</b> (cc=32)
+  <LI>Continuous controllers, e.g. <b>Modulation Wheel</b> (cc=1), <b>Channel Volume</b> (cc=7), <b>Pan</b> (cc=10), <b>Expression</b> (cc=11), <b>Reverb</b> (cc=91), <b>Tremolo</b> (cc=92), <b>Chorus</b> (cc=93), and all other cc values.
+  <LI>Pedal switches, e.g. <b>Damper</b> (cc=64), <b>Portamento</b> (cc=65), <b>Sostenuto</b> (cc=66), <b>Soft Pedal</b> (cc=67), and <b>Legato Footswitch</b> (cc=68).
+</UL>
+
+The messages are sent to all event-connected instruments, and the values can be automated or MIDI-learned like any other effect. Note that a MIDI Messages object has no audio inputs or outputs.
+
+<p>
+
+<h3>Modulator</h3>
+
+The Modulator is a special object used to continuously change the value of other effects. See <a href="index.html?page=modulators">Modulators</a> for a full description.
+
+<p>
+
+<h3>Click</h3>
+
+The Click object is a special variant of the <a href="index.html?page=sampler">Sample Player</a>. It is used as the metronome click sound when the <b>Click</b> button in the bottom bar is enabled. A sample is loaded into the Click object, and it is played once per beat (or according to the metronome settings).
+`;
+
+g_pages.push(
+    {text : instrument_misc_text,
+     name : "misc",
+     menu : "instrument",
+     display : "Misc."
+    }
+);
 
 
 
@@ -2611,13 +3283,86 @@ g_pages.push(
 
 const modulators_text = `
 <h2>Modulators (LFO, etc.)</h2>
- 
+
+<p><small><i>This manual page was written by an AI.</i></small></p>
+
 Any effect parameter, both Audio and MIDI, can be controlled by a modulator.
 
 <p>
-  
-A modulator constantly changes the value of the effect, usually in a cyclic manner (LFO). You change shape and frequency in the instrument widget of the modulator:
 
+A modulator constantly changes the value of the effect, usually in a cyclic manner (LFO). Modulators are often used to create vibrato, tremolo, and so forth.
+
+<p>
+
+<IMG SRC="modulator_instrument.png" ALT="Modulator instrument" style="border:10px solid transparent" align="right" width="60%">
+
+<h3>How to</h3>
+
+<OL>
+  <LI><b>Right-click</b> an effect (slider or checkbox) in the instrument widget.
+  <LI>Select "<a href="index.html?page=effect_popup_menu">Assign Modulator</a>".
+  <LI>A modulator is created, and its instrument widget is shown, where you change the <b>shape</b> and <b>frequency</b> of the modulator.
+</OL>
+
+<p>
+
+<h3>Modulator types (the "Type" effect)</h3>
+
+Each modulator has a <b>"Type"</b> effect which selects what kind of signal the modulator generates. The available types are:
+
+<table>
+  <tr><th>Type</th><th>Description</th></tr>
+  <tr>
+    <td><b>Sine (LFO)</b></td>
+    <td>A smooth sinusoidal (LFO) wave. Good for vibrato and tremolo.</td>
+  </tr>
+  <tr>
+    <td><b>Triangle (LFO)</b></td>
+    <td>A triangle wave. Smooth, but changes direction abruptly at the peaks.</td>
+  </tr>
+  <tr>
+    <td><b>Square (LFO)</b></td>
+    <td>A square wave, jumping between the minimum and maximum value.</td>
+  </tr>
+  <tr>
+    <td><b>Saw (LFO)</b></td>
+    <td>A sawtooth wave, ramping up and then dropping abruptly back down.</td>
+  </tr>
+  <tr>
+    <td><b>Inverted Saw (LFO)</b></td>
+    <td>An inverted sawtooth wave, ramping down and then jumping abruptly back up.</td>
+  </tr>
+  <tr>
+    <td><b>Random</b></td>
+    <td>Outputs a new random value each cycle. The value stays constant within a cycle.</td>
+  </tr>
+  <tr>
+    <td><b>Manual Parameter Input</b></td>
+    <td>Does not generate a signal itself. Instead, the modulation value is the value of the <b>Manual input</b> effect, which can be moved manually, automated, or MIDI-learned. This is convenient to MIDI-learn on if using 3rd party modulators.</td>
+  </tr>
+  <tr>
+    <td><b>Audio Input (no envelope follower, no filtering)</b></td>
+    <td>The modulation value follows the audio coming into the modulator's audio input directly. No envelope follower or filtering is applied.</td>
+  </tr>
+  <tr>
+    <td><b>Audio Input Envelope Follower</b></td>
+    <td>The modulation value follows the amplitude (envelope) of the audio coming into the modulator's audio input. The <b>Attack</b> and <b>Release</b> effects control how fast the envelope follower reacts to louder and quieter input, respectively.</td>
+  </tr>
+</table>
+
+<p>
+
+The oscillator types (Sine, Triangle, Square, Saw, and Inverted Saw) are all synced to the tempo while playing. Their frequency is set with the <b>Tempo multiplier</b> and <b>Tempo divisor</b> effects (the frequency is the BPM multiplied by the tempo multiplier, divided by the tempo divisor). When not playing, the <b>Phase shift</b> effect can be used to set the phase of the oscillator.
+
+<p>
+
+<h3>Modulator instruments</h3>
+
+<UL>
+  <LI>A modulator has its own instrument widget, just like other instruments. Use it to change the modulator's shape (e.g. sine, square, saw) and frequency.
+  <LI>Several modulators can be assigned to the same effect, and they are summed together.
+  <LI>Modulators can also be created from <b>Windows -> Show Instrument list</b> (or by the <b>Create new instrument</b> popup menu) and then connected to an effect.
+</UL>
   `;
 
 g_pages.push(
