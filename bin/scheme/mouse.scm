@@ -2176,6 +2176,94 @@
                      (lambda (nodenum)
                        (abs (- Y (<ra> :get-pitchnum-y nodenum tracknum))))))
 
+;; track borders
+;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+(define-struct trackwidth-info
+  :tracknum
+  :width
+  :y)
+
+(define (may-be-a-resize-point-in-track X Y Tracknum)
+  (and (>= X (- (<ra> :get-track-x1 Tracknum)
+                2))
+       (<= X (+ (<ra> :get-track-x1 Tracknum)
+                (<ra> :get-half-of-node-width)))
+       (>= Y (+ 4 (<ra> :get-editor-scrollbar-y1)))))
+
+(define-match get-resize-point-track
+  X _ Tracknum :> (and (>= X (- (<ra> :get-track-fx-x2 (1- Tracknum))
+                                2))
+                       Tracknum) :where (= Tracknum (<ra> :get-num-tracks)) ;; i.e. to the right of the rightmost track
+  X _ Tracknum :> #f       :where (> (<ra> :get-track-x1 Tracknum) X)
+  X Y Tracknum :> Tracknum :where (may-be-a-resize-point-in-track X Y Tracknum)
+  X Y Tracknum :> (get-resize-point-track X Y (1+ Tracknum)))
+
+(define (get-trackwidth-info X Y)
+  (and (inside-box? (<ra> :get-box editor) X Y)
+       (begin
+         (define resize-point-track (get-resize-point-track X Y 0))
+         (and resize-point-track
+              (let ((tracknum (1- resize-point-track)))
+                (make-trackwidth-info :tracknum tracknum
+                                      :width    (<ra> :get-track-width tracknum)
+                                      :y        Y))))))
+
+#||
+(add-delta-mouse-handler
+ :press (lambda (Button X Y)
+          (and (= Button *left-button*)
+               (get-trackwidth-info X Y)))
+
+ :move-and-release (lambda (Button DX DY trackwidth-info)
+                     (c-display "hepp")
+                     (define tracknum (trackwidth-info :tracknum))
+                     (define new-width (+ DX
+                                          (trackwidth-info :width)))
+                     (<ra> :set-track-width new-width tracknum)
+                     (make-trackwidth-info :tracknum tracknum
+                                             :width    new-width)))
+
+||#
+
+(add-horizontal-handler :Get-handler-data get-trackwidth-info
+                        :Get-x1 (lambda (Trackwidth-info)
+                                  (define tracknum (Trackwidth-info :tracknum))
+                                  (if (< tracknum (<ra> :get-num-tracks))
+                                      (<ra> :get-track-fx-x1 tracknum)
+                                      0))
+                        :Get-x2 (lambda (Trackwidth-info)
+                                  (+ 10000
+                                     (let ()
+                                       (define tracknum (Trackwidth-info :tracknum))
+                                       (if (< tracknum (<ra> :get-num-tracks))
+                                           (<ra> :get-track-fx-x1 (Trackwidth-info :tracknum))
+                                           0))))
+                        :Get-min-value (lambda (_)
+                                         0)
+                        :Get-max-value (lambda (_)
+                                         10000)
+                        :Get-release-x (lambda (Trackwidth-info)
+                                         (define tracknum (Trackwidth-info :tracknum))
+                                         (if (< tracknum (<ra> :get-num-tracks))
+                                             (if (= tracknum (1- (<ra> :get-num-tracks)))
+                                                 (<ra> :get-track-fx-x2 tracknum)
+                                                 (<ra> :get-track-x1 (1+ tracknum)))
+                                             0))
+                        :Get-value (lambda (Trackwidth-info)
+                                     (Trackwidth-info :width))
+                        :Make-undo (lambda (Trackwidth-info)
+                                     (define tracknum (Trackwidth-info :tracknum))
+                                     (if (< tracknum (<ra> :get-num-tracks))
+                                         (<ra> :undo-track-width)))
+                        :Move (lambda (Trackwidth-info Value)
+                                (define tracknum (Trackwidth-info :tracknum))
+                                (if (< tracknum (<ra> :get-num-tracks))
+                                    (<ra> :set-track-width Value tracknum)))
+                        :Publicize (lambda (_)
+                                     #f))
+
 ;; add and move pitch
 (add-node-mouse-handler :Get-area-box (lambda ()
                                         (and *current-track-num*
@@ -3864,99 +3952,6 @@
 
 
 ||#
-
-
-;; track borders
-;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-
-(define-struct trackwidth-info
-  :tracknum
-  :width
-  :y)
-
-(define (may-be-a-resize-point-in-track X Y Tracknum)
-  (and (>= X (- (<ra> :get-track-x1 Tracknum)
-                2))
-       (<= X (+ (<ra> :get-track-x1 Tracknum)
-                (<ra> :get-half-of-node-width)))
-       (>= Y (+ 4 (<ra> :get-editor-scrollbar-y1)))))
-                
-
-(define-match get-resize-point-track
-  X _ Tracknum :> (and (>= X (- (<ra> :get-track-fx-x2 (1- Tracknum))
-                                2))
-                       Tracknum) :where (= Tracknum (<ra> :get-num-tracks)) ;; i.e. to the right of the rightmost track
-  X _ Tracknum :> #f       :where (> (<ra> :get-track-x1 Tracknum) X)
-  X Y Tracknum :> Tracknum :where (may-be-a-resize-point-in-track X Y Tracknum)
-  X Y Tracknum :> (get-resize-point-track X Y (1+ Tracknum)))
-
-(define (get-trackwidth-info X Y)
-  (and (inside-box? (<ra> :get-box editor) X Y)
-       (begin
-         (define resize-point-track (get-resize-point-track X Y 0))
-         (and resize-point-track
-              (let ((tracknum (1- resize-point-track)))
-                (make-trackwidth-info :tracknum tracknum
-                                      :width    (<ra> :get-track-width tracknum)
-                                      :y        Y))))))
-
-#||
-(add-delta-mouse-handler
- :press (lambda (Button X Y)
-          (and (= Button *left-button*)
-               (get-trackwidth-info X Y)))
-
- :move-and-release (lambda (Button DX DY trackwidth-info)
-                     (c-display "hepp")
-                     (define tracknum (trackwidth-info :tracknum))
-                     (define new-width (+ DX
-                                          (trackwidth-info :width)))
-                     (<ra> :set-track-width new-width tracknum)
-                     (make-trackwidth-info :tracknum tracknum
-                                             :width    new-width)))
-
-||#
-
-(add-horizontal-handler :Get-handler-data get-trackwidth-info
-                        :Get-x1 (lambda (Trackwidth-info)
-                                  (define tracknum (Trackwidth-info :tracknum))
-                                  (if (< tracknum (<ra> :get-num-tracks))
-                                      (<ra> :get-track-fx-x1 tracknum)
-                                      0))
-                        :Get-x2 (lambda (Trackwidth-info)
-                                  (+ 10000
-                                     (let ()
-                                       (define tracknum (Trackwidth-info :tracknum))
-                                       (if (< tracknum (<ra> :get-num-tracks))
-                                           (<ra> :get-track-fx-x1 (Trackwidth-info :tracknum))
-                                           0))))
-                        :Get-min-value (lambda (_)
-                                         0)
-                        :Get-max-value (lambda (_)
-                                         10000)
-                        :Get-release-x (lambda (Trackwidth-info)
-                                         (define tracknum (Trackwidth-info :tracknum))
-                                         (if (< tracknum (<ra> :get-num-tracks))
-                                             (if (= tracknum (1- (<ra> :get-num-tracks)))
-                                                 (<ra> :get-track-fx-x2 tracknum)
-                                                 (<ra> :get-track-x1 (1+ tracknum)))
-                                             0))
-                        :Get-value (lambda (Trackwidth-info)
-                                     (Trackwidth-info :width))
-                        :Make-undo (lambda (Trackwidth-info)
-                                     (define tracknum (Trackwidth-info :tracknum))
-                                     (if (< tracknum (<ra> :get-num-tracks))
-                                         (<ra> :undo-track-width)))
-                        :Move (lambda (Trackwidth-info Value)
-                                (define tracknum (Trackwidth-info :tracknum))
-                                (if (< tracknum (<ra> :get-num-tracks))
-                                    (<ra> :set-track-width Value tracknum)))
-                        :Publicize (lambda (_)
-                                     #f))
-                        
-                        
-
 
 ;; fxnodes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
