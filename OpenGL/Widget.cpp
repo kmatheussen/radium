@@ -2061,6 +2061,27 @@ QWidget *GL_create_widget(QWidget *parent)
 	g_msaa_samples = GL_get_multisample();
 	g_vsync_enabled = GL_get_vsync(); // Ensure SETTINGS_read_bool is not called on the qrhi thread.
 
+	if (g_vsync_enabled == false)
+	{
+		if (SETTINGS_read_bool("show_vsync_warning_during_startup_v2", true))
+		{
+			vector_t v = {};
+			VECTOR_push_back(&v, "Ok");
+			int vsync_hide = VECTOR_push_back(&v, "Don't show this message again");
+
+			int vsyncret = GFX_Message(&v,
+			                           "Warning: VSync is disabled. You probably don't want to do that. You can enable vsync under"
+			                           "<p>"
+			                           "Edit -> Preferences -> GPU -> Advanced -> Vertical Blank -> VSync"
+			                           "<p>"
+			                           "Disabling vsync will normally cripple graphical performance.<br>"
+			                           "You should only turn off vsync if your gfx driver is misbehaving."
+			                           );
+			if (vsyncret == vsync_hide)
+				SETTINGS_write_bool("show_vsync_warning_during_startup_v2", false);
+		}
+	}
+
 	GL_get_clamp_text_rendering(); // Ensure SETTINGS_read_bool is not called on the qrhi thread.
 		
 	init_g_pause_rendering_on_off();
