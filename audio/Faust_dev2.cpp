@@ -549,26 +549,35 @@ public:
 		//
 		// Note: THIS CALL IS THE BIG EXPENSIVE THING.
 		//
-		dsp_factory *factory = create_factory(&tmp_data, _optlevel, error_message,
+		dsp_factory *factory = create_factory(&tmp_data,
+											  _optlevel,
+											  error_message,
 #if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
-											   &llvm_factory,
+											  &llvm_factory,
 #endif
-											   &interp_factory,
-											   &svg_dir);
+											  &interp_factory,
+											  &svg_dir);
 
-		if (factory == NULL){
+		if (factory == NULL)
+		{
+			
 			delete svg_dir;
-			if (error_message != ""){
-				QByteArray err = error_message.toUtf8();
-				THREADING_run_on_main_thread_async([patch_id = _patch_id, err, compile_code = _code]()
+
+			THREADING_run_on_main_thread_async([patch_id = _patch_id,
+												error_message,
+												compile_code = _code]()
 				{
 					struct Patch *patch = PATCH_get_from_id(patch_id);
+					
 					if (patch == NULL || patch->patchdata == NULL)
 						return;
+					
 					SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+					
 					FaustDev2Data *devdata = (FaustDev2Data*)plugin->data;
+					
 					devdata->is_compiling = false;
-					devdata->error_message = QString::fromUtf8(err);
+					devdata->error_message = error_message;
 					devdata->ready.has_new_data = true;
 					devdata->ready.factory_is_ready = true;
 					devdata->ready.factory_succeeded = false;
@@ -579,30 +588,12 @@ public:
 					if (devdata->code != compile_code)
 						start_compilation(plugin);
 				});
-			}else{
-				THREADING_run_on_main_thread_async([patch_id = _patch_id, compile_code = _code]()
-				{
-					struct Patch *patch = PATCH_get_from_id(patch_id);
-					if (patch == NULL || patch->patchdata == NULL)
-						return;
-					SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
-					FaustDev2Data *devdata = (FaustDev2Data*)plugin->data;
-					devdata->is_compiling = false;
-					devdata->ready.has_new_data = true;
-					devdata->ready.factory_is_ready = true;
-					devdata->ready.factory_succeeded = false;
-					devdata->ready.svg_is_ready = true;
-					devdata->ready.svg_succeeded = false;
-
-					// Recompile if code changed while this compilation was running.
-					if (devdata->code != compile_code)
-						start_compilation(plugin);
-				});
-			}
+			
 			return;
 		}
 
-		THREADING_run_on_main_thread_async([patch_id = _patch_id, factory,
+		THREADING_run_on_main_thread_async([patch_id = _patch_id,
+											factory,
 #if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
 											llvm_factory,
 #endif
@@ -611,6 +602,7 @@ public:
 											compile_code = _code]()
 		{
 			struct Patch *patch = PATCH_get_from_id(patch_id);
+			
 			if (patch == NULL || patch->patchdata == NULL){
 				// The instrument was deleted while we were compiling.
 				// Must delete the factory, or it stays in libfaust's global
@@ -622,11 +614,16 @@ public:
 							   llvm_factory,
 #endif
 							   interp_factory);
+				
 				delete svg_dir;
+				
 				return;
 			}
+			
 			SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+			
 			FaustDev2Data *devdata = (FaustDev2Data*)plugin->data;
+			
 			devdata->is_compiling = false;
 
 			// Discard if code changed while this compilation was running
@@ -645,7 +642,8 @@ public:
 			// itself in Faust's process-global GUI list (GUI.h), which the main
 			// thread iterates in GUI::updateAllGuis (from QTGUI timers), so
 			// constructing it on the compile thread raced with that iteration.
-			FaustDev2Dsp *dsp_data = create_dsp_data(factory, factory,
+			FaustDev2Dsp *dsp_data = create_dsp_data(factory,
+													 factory,
 #if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
 													 llvm_factory,
 #endif
@@ -658,7 +656,9 @@ public:
 							   llvm_factory,
 #endif
 							   interp_factory);
+				
 				delete svg_dir;
+				
 				return;
 			}
 
@@ -667,6 +667,7 @@ public:
 			// Store SVG dir
 			if (devdata->svg_dir != NULL)
 				delete devdata->svg_dir;
+			
 			devdata->svg_dir = svg_dir;
 
 			hotswap_dsp_data(devdata, dsp_data);
@@ -686,8 +687,10 @@ public:
 				}
 				delete devdata->qtgui;
 			}
+			
 			for (Faust2GuiControlRef *ref : devdata->qtgui_control_refs)
 				delete ref;
+			
 			devdata->qtgui_control_refs.clear();
 
 			// Create dialog parent if needed
@@ -710,20 +713,27 @@ public:
 
 			// Route GUI-dialog control changes through set_effect_value, so they
 			// update param_values / stored values and survive recompiles.
-			for (int i = 0; i < dsp_data->num_params; i++){
+			for (int i = 0; i < dsp_data->num_params; i++)
+			{
 				if (effect_is_visible(plugin, i) == false)
 					continue;
+				
 				Faust2GuiControlRef *ref = new Faust2GuiControlRef;
+				
 				ref->plugin = plugin;
 				ref->effect_num = i;
+				
 				devdata->qtgui_control_refs.push_back(ref);
-				devdata->qtgui->addCallback(dsp_data->api_ui.getParamZone(i), faust2_gui_zone_callback, ref);
+				devdata->qtgui->addCallback(dsp_data->api_ui.getParamZone(i),
+											faust2_gui_zone_callback,
+											ref);
 			}
 
 			// Restart the interface if it is visible. The old QTGUI was stopped
 			// (and deleted) above, so without this call the rebuilt interface
 			// freezes (its refresh timer never starts).
 			devdata->qtgui->update();
+			
 			if (devdata->qtgui_parent.data() != NULL
 			    && devdata->qtgui_parent->isVisible())
 			{
@@ -776,9 +786,9 @@ static void start_compilation(SoundPlugin *plugin)
 	devdata->is_compiling = true;
 
 	Dev2CompileThread *thread = new Dev2CompileThread(plugin,
-													   devdata->code,
-													   devdata->options,
-													   devdata->use_interpreter_backend);
+													  devdata->code,
+													  devdata->options,
+													  devdata->use_interpreter_backend);
 	start_dev2_compile_thread(thread);
 }
 
@@ -800,7 +810,9 @@ static void register_note_voice(FaustDev2Dsp *dsp_data, const note_t &note, int 
 			dsp_data->num_note_voices--;
 		}
 		else
+		{
 			i++;
+		}
 	}
 
 	if (dsp_data->num_note_voices < MAX_POLYPHONY)
@@ -887,22 +899,29 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 	FaustDev2Data *devdata = (FaustDev2Data*)plugin->data;
 	FaustDev2Dsp *dsp_data = devdata->dsp_data;
 
-	if (dsp_data == NULL){
+	if (dsp_data == NULL)
+	{
 		for (int ch = 0; ch < MAX_CHANNELS; ch++)
 			memset(outputs[ch], 0, num_frames * sizeof(float));
+		
 		return;
 	}
 
 	int num_inputs = dsp_data->num_inputs;
 	int num_outputs = dsp_data->num_outputs;
 
-	if (dsp_data->is_instrument && dsp_data->poly_dsp != NULL){
+	if (dsp_data->is_instrument && dsp_data->poly_dsp != NULL)
+	{
 		dsp_data->collector.sort();
 
 		int pos = 0;
-		for (int i = 0; i < dsp_data->collector.num_events; i++){
+		
+		for (int i = 0; i < dsp_data->collector.num_events; i++)
+		{
 			const NoteEventCollector::Event &ev = dsp_data->collector.events[i];
+			
 			int seg_len = ev.sample_offset - pos;
+			
 			if (seg_len < 0)
 				seg_len = 0;
 
@@ -921,6 +940,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 			else
 			{
 				int pitch = (int)(ev.note.pitch + 0.5f);
+				
 				if (release_note_voice(dsp_data, ev.note, pitch) == false)
 				{
 					// No registered voice for this note (for instance because its
@@ -930,12 +950,14 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 					// keyOff releases the *oldest* voice with that pitch, which
 					// would release the wrong note when notes overlap on one pitch.
 					bool other_note_with_same_pitch = false;
+					
 					for (int i = 0; i < dsp_data->num_note_voices; i++)
 						if (dsp_data->note_voices[i].pitch == pitch)
 						{
 							other_note_with_same_pitch = true;
 							break;
 						}
+					
 					if (other_note_with_same_pitch == false)
 						dsp_data->poly_dsp->keyOff(0, pitch);
 				}
@@ -948,10 +970,13 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 			compute_poly_chunked(dsp_data->poly_dsp, num_inputs, num_outputs, num_frames - pos, inputs, outputs, pos);
 
 		dsp_data->collector.clear();
-	}else{
+	}
+	else
+	{
 		dsp_data->final_dsp->compute(num_frames, inputs, outputs);
 	}
 
+	// Clean unused channels.
 	for (int ch = num_outputs; ch < MAX_CHANNELS; ch++)
 		memset(outputs[ch], 0, num_frames * sizeof(float));
 }
