@@ -817,6 +817,46 @@ static bool release_note_voice(FaustDev2Dsp *dsp_data, const note_t &note, int p
 }
 
 
+// mydsp_poly's voice mixer uses fixed internal buffers of MIX_BUFFER_SIZE
+// frames (poly-dsp.h), so a compute longer than that overflows the heap
+// buffers. Split the compute into chunks that fit. (Block sizes up to 8192
+// are selectable in the preferences.)
+static constexpr int MAX_POLY_COMPUTE_FRAMES = MIX_BUFFER_SIZE;
+
+static void compute_poly_chunked(mydsp_poly *poly_dsp,
+								 int num_inputs,
+								 int num_outputs,
+								 int num_frames,
+								 float **inputs,
+								 float **outputs,
+								 int offset)
+{
+	int done = 0;
+	
+	while (done < num_frames)
+	{
+		int chunk = MAX_POLY_COMPUTE_FRAMES;
+
+		if (num_frames - done < MAX_POLY_COMPUTE_FRAMES)
+			chunk = num_frames - done;
+		
+		float **in_slice = RT_ALLOC_ARRAY_STACK(float*, R_MAX(1, num_inputs));
+		
+		float **out_slice = RT_ALLOC_ARRAY_STACK(float*, R_MAX(1, num_outputs));
+		
+		for (int ch = 0; ch < num_inputs; ch++)
+			in_slice[ch] = &inputs[ch][offset + done];
+		
+		for (int ch = 0; ch < num_outputs; ch++)
+			out_slice[ch] = &outputs[ch][offset + done];
+		
+		poly_dsp->compute(chunk, in_slice, out_slice);
+		
+		done += chunk;
+	}
+}
+
+
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs)
 {
 	FaustDev2Data *devdata = (FaustDev2Data*)plugin->data;
@@ -841,15 +881,8 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 			if (seg_len < 0)
 				seg_len = 0;
 
-			if (seg_len > 0){
-				float **in_slice = RT_ALLOC_ARRAY_STACK(float*, R_MAX(1, num_inputs));
-				float **out_slice = RT_ALLOC_ARRAY_STACK(float*, R_MAX(1, num_outputs));
-				for (int ch = 0; ch < num_inputs; ch++)
-					in_slice[ch] = &inputs[ch][pos];
-				for (int ch = 0; ch < num_outputs; ch++)
-					out_slice[ch] = &outputs[ch][pos];
-				dsp_data->poly_dsp->compute(seg_len, in_slice, out_slice);
-			}
+			if (seg_len > 0)
+				compute_poly_chunked(dsp_data->poly_dsp, num_inputs, num_outputs, seg_len, inputs, outputs, pos);
 
 			if (ev.is_note_on)
 			{
@@ -886,15 +919,8 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 			pos = ev.sample_offset;
 		}
 
-		if (num_frames > pos){
-			float **in_slice = RT_ALLOC_ARRAY_STACK(float*, R_MAX(1, num_inputs));
-			float **out_slice = RT_ALLOC_ARRAY_STACK(float*, R_MAX(1, num_outputs));
-			for (int ch = 0; ch < num_inputs; ch++)
-				in_slice[ch] = &inputs[ch][pos];
-			for (int ch = 0; ch < num_outputs; ch++)
-				out_slice[ch] = &outputs[ch][pos];
-			dsp_data->poly_dsp->compute(num_frames - pos, in_slice, out_slice);
-		}
+		if (num_frames > pos)
+			compute_poly_chunked(dsp_data->poly_dsp, num_inputs, num_outputs, num_frames - pos, inputs, outputs, pos);
 
 		dsp_data->collector.clear();
 	}else{
