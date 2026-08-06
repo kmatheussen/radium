@@ -372,6 +372,22 @@ static void hotswap_dsp_data(FaustDev2Data *devdata, FaustDev2Dsp *new_dsp)
 //===========================================
 
 
+static void delete_factory(
+#if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
+						   llvm_dsp_factory *llvm_factory,
+#endif
+						   interpreter_dsp_factory *interp_factory)
+{
+	if (interp_factory != NULL)
+		deleteInterpreterDSPFactory(interp_factory);
+	
+#if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
+	if (llvm_factory != NULL)
+		deleteDSPFactory(llvm_factory);
+#endif
+}
+
+
 static dsp_factory *create_factory(const FaustDev2Data *devdata,
 									int optlevel,
 									QString &error_message,
@@ -530,6 +546,9 @@ public:
 		interpreter_dsp_factory *interp_factory = NULL;
 		MyQTemporaryDir *svg_dir = NULL;
 
+		//
+		// Note: THIS CALL IS THE BIG EXPENSIVE THING.
+		//
 		dsp_factory *factory = create_factory(&tmp_data, _optlevel, error_message,
 #if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
 											   &llvm_factory,
@@ -583,37 +602,13 @@ public:
 			return;
 		}
 
-		FaustDev2Dsp *dsp_data = create_dsp_data(factory, factory,
+		THREADING_run_on_main_thread_async([patch_id = _patch_id, factory,
 #if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
-										llvm_factory,
+											llvm_factory,
 #endif
-										interp_factory,
-										MIXER_get_sample_rate());
-
-		if (dsp_data == NULL){
-			if (interp_factory)
-				deleteInterpreterDSPFactory(interp_factory);
-#if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
-			if (llvm_factory)
-				deleteDSPFactory(llvm_factory);
-#endif
-			THREADING_run_on_main_thread_async([patch_id = _patch_id, compile_code = _code]()
-			{
-				struct Patch *patch = PATCH_get_from_id(patch_id);
-				if (patch == NULL || patch->patchdata == NULL)
-					return;
-				SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
-				FaustDev2Data *devdata = (FaustDev2Data*)plugin->data;
-				devdata->is_compiling = false;
-
-				// Recompile if code changed while this compilation was running.
-				if (devdata->code != compile_code)
-					start_compilation(plugin);
-			});
-			return;
-		}
-
-		THREADING_run_on_main_thread_async([patch_id = _patch_id, dsp_data, svg_dir, compile_code = _code]()
+											interp_factory,
+											svg_dir,
+											compile_code = _code]()
 		{
 			struct Patch *patch = PATCH_get_from_id(patch_id);
 			if (patch == NULL || patch->patchdata == NULL){
@@ -622,7 +617,11 @@ public:
 				// factory table and crashes during shutdown (libfaust's static
 				// destructor then destroys a JIT registration mutex that has
 				// already been torn down).
-				delete dsp_data;
+				delete_factory(
+#if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
+							   llvm_factory,
+#endif
+							   interp_factory);
 				delete svg_dir;
 				return;
 			}
@@ -632,11 +631,37 @@ public:
 
 			// Discard if code changed while this compilation was running
 			if (devdata->code != compile_code){
-				delete dsp_data; // this compile result is outdated
-				delete svg_dir;
+				delete_factory(
+#if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
+							   llvm_factory,
+#endif
+							   interp_factory);
+				delete svg_dir; // this compile result is outdated
 				start_compilation(plugin); // Recompile the latest code.
 				return;
 			}
+
+			// Create the DSP on the main thread. mydsp_poly's GroupUI registers
+			// itself in Faust's process-global GUI list (GUI.h), which the main
+			// thread iterates in GUI::updateAllGuis (from QTGUI timers), so
+			// constructing it on the compile thread raced with that iteration.
+			FaustDev2Dsp *dsp_data = create_dsp_data(factory, factory,
+#if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
+													 llvm_factory,
+#endif
+													 interp_factory,
+													 MIXER_get_sample_rate());
+
+			if (dsp_data == NULL){
+				delete_factory(
+#if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
+							   llvm_factory,
+#endif
+							   interp_factory);
+				delete svg_dir;
+				return;
+			}
+
 			devdata->error_message = "";
 
 			// Store SVG dir
