@@ -58,6 +58,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QGridLayout>
 #include <QFile>
 #include <QtConcurrent>
+#include <QTimer>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
@@ -81,6 +82,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Mixer_proc.h"
 
 #include "Faust_plugins_proc.h"
+#include "Fade.hpp"
 
 #include "../Qt/MyQTemporaryDir.hpp"
 #include "../Qt/helpers.h"
@@ -205,6 +207,16 @@ struct FaustDev2Data
 	FaustDev2Dsp *dsp_data;   // NULL until compiled
 	bool is_compiling;
 	QString error_message;
+
+	// Fade-out state. When a compile finishes, the current dsp fades out over
+	// about FADE_LENGTH_MS (see perform_compile_completion), and the new dsp
+	// is only swapped in after the fade is finished, so the old dsp is never
+	// cut off abruptly. fade_out_is_active and the fade counters are written
+	// by the main thread (under the player lock) and read by RT_process.
+	bool fade_out_is_active;
+	int fade_frames_total;
+	int fade_frames_left;
+
 	QPointer<QDialog> qtgui_parent;
 	QTGUI *qtgui;
 	std::vector<Faust2GuiControlRef*> qtgui_control_refs; // owned; one per visible control
@@ -215,6 +227,9 @@ struct FaustDev2Data
 		: options("-I\n%radium_path%/packages/faust/libraries")
 		, dsp_data(NULL)
 		, is_compiling(false)
+		, fade_out_is_active(false)
+		, fade_frames_total(0)
+		, fade_frames_left(0)
 		, qtgui(NULL)
 		, svg_dir(NULL)
 	{
@@ -261,12 +276,12 @@ static void faust2_gui_zone_callback(float val, void *data)
 
 // The player lock must be held when calling this function.
 static FaustDev2Dsp *create_dsp_data(dsp_factory *factory,
-									  dsp_factory *base_factory,
+									 dsp_factory *base_factory,
 #if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
-									  llvm_dsp_factory *llvm_factory,
+									 llvm_dsp_factory *llvm_factory,
 #endif
-									  interpreter_dsp_factory *interp_factory,
-									  float sample_rate)
+									 interpreter_dsp_factory *interp_factory,
+									 float sample_rate)
 {
 
 	dsp *mono_dsp = factory->createDSPInstance();
@@ -360,6 +375,9 @@ static void hotswap_dsp_data(FaustDev2Data *devdata, FaustDev2Dsp *new_dsp)
 	{
 		radium::PlayerLock lock;
 		devdata->dsp_data = new_dsp;
+		devdata->fade_out_is_active = false; // the new dsp plays at full volume
+		devdata->fade_frames_left = 0;
+		devdata->fade_frames_total = 0;
 	}
 
 	// Delete old implementation
@@ -511,6 +529,210 @@ static void start_compilation(SoundPlugin *plugin);
 static bool effect_is_visible(SoundPlugin *plugin, int effect_num);
 
 
+// How long the current dsp fades out when a recompile finishes, before the
+// new dsp is swapped in. Short enough to be nearly inaudible, long enough to
+// avoid a click.
+static constexpr int FADE_LENGTH_MS = 50;
+
+// How many times to poll (with a 4 ms interval) for the fade to finish
+// before swapping in the new dsp anyway. The fade progresses in RT_process,
+// so if the audio device is closed it never finishes; swapping anyway is
+// then harmless since nothing is audible.
+static constexpr int FADE_POLL_RETRIES = 15;
+
+
+static void perform_compile_completion(instrument_t patch_id,
+									   dsp_factory *factory,
+#if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
+									   llvm_dsp_factory *llvm_factory,
+#endif
+									   interpreter_dsp_factory *interp_factory,
+									   MyQTemporaryDir *svg_dir,
+									   const QString &compile_code,
+									   int retries_left)
+{
+	struct Patch *patch = PATCH_get_from_id(patch_id);
+	if (patch == NULL || patch->patchdata == NULL){
+		// The instrument was deleted while we were compiling.
+		// Must delete the factory, or it stays in libfaust's global
+		// factory table and crashes during shutdown (libfaust's static
+		// destructor then destroys a JIT registration mutex that has
+		// already been torn down).
+		delete_factory(
+#if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
+					   llvm_factory,
+#endif
+					   interp_factory);
+		delete svg_dir;
+		return;
+	}
+
+	SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+	FaustDev2Data *devdata = (FaustDev2Data*)plugin->data;
+	devdata->is_compiling = false;
+
+	// Discard if code changed while this compilation was running
+	if (devdata->code != compile_code){
+		delete_factory(
+#if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
+					   llvm_factory,
+#endif
+					   interp_factory);
+		delete svg_dir; // this compile result is outdated
+		start_compilation(plugin); // Recompile the latest code.
+		return;
+	}
+
+	// Start fading out the current dsp (unless it is already fading out from
+	// an earlier compile), and wait for the fade to finish before swapping in
+	// the new dsp, so the old dsp is not cut off abruptly. The fade
+	// progresses in RT_process, so we poll with a timer instead of holding
+	// the player lock. The old and new dsp never compute at the same time, so
+	// there is no CPU spike during the transition.
+	bool must_wait_for_fade;
+	{
+		radium::PlayerLock lock; // makes the fade state reads consistent
+
+		if (devdata->dsp_data != NULL && devdata->fade_frames_left == 0){
+			devdata->fade_out_is_active = true;
+			devdata->fade_frames_total = (int)(FADE_LENGTH_MS * MIXER_get_sample_rate() / 1000.0);
+			devdata->fade_frames_left = devdata->fade_frames_total;
+		}
+
+		must_wait_for_fade = devdata->fade_out_is_active && devdata->fade_frames_left > 0;
+	}
+
+	if (must_wait_for_fade && retries_left > 0){
+		QTimer::singleShot(4, [patch_id, factory,
+#if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
+							   llvm_factory,
+#endif
+							   interp_factory,
+							   svg_dir,
+							   compile_code,
+							   retries_left_m1 = retries_left-1]()
+			{
+				perform_compile_completion(patch_id,
+										   factory,
+#if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
+										   llvm_factory,
+#endif
+										   interp_factory,
+										   svg_dir,
+										   compile_code,
+										   retries_left_m1);
+		});
+		return;
+	}
+
+	// Create the DSP on the main thread. mydsp_poly's GroupUI registers
+	// itself in Faust's process-global GUI list (GUI.h), which the main
+	// thread iterates in GUI::updateAllGuis (from QTGUI timers), so
+	// constructing it on the compile thread raced with that iteration.
+	FaustDev2Dsp *dsp_data = create_dsp_data(factory,
+											 factory,
+#if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
+											 llvm_factory,
+#endif
+											 interp_factory,
+											 MIXER_get_sample_rate());
+
+	if (dsp_data == NULL){
+		delete_factory(
+#if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
+					   llvm_factory,
+#endif
+					   interp_factory);
+		delete svg_dir;
+		return;
+	}
+
+	devdata->error_message = "";
+
+	// Store SVG dir
+	if (devdata->svg_dir != NULL)
+		delete devdata->svg_dir;
+
+	devdata->svg_dir = svg_dir;
+
+	hotswap_dsp_data(devdata, dsp_data);
+
+	if (dsp_data->is_instrument)
+		plugin->type->is_instrument = true;
+	else
+		plugin->type->is_instrument = false;
+
+	// Recreate the QTGUI
+	if (devdata->qtgui != NULL){
+		devdata->qtgui->stop();
+		if (devdata->qtgui_parent.data() != NULL
+		    && devdata->qtgui_parent->layout() != NULL)
+		{
+			devdata->qtgui_parent->layout()->removeWidget(devdata->qtgui);
+		}
+		delete devdata->qtgui;
+	}
+
+	for (Faust2GuiControlRef *ref : devdata->qtgui_control_refs)
+		delete ref;
+
+	devdata->qtgui_control_refs.clear();
+
+	// Create dialog parent if needed
+	if (devdata->qtgui_parent.data() == NULL){
+		devdata->qtgui_parent = FAUST_create_qdialog(plugin);
+		devdata->qtgui_parent->setLayout(new QGridLayout(devdata->qtgui_parent.data()));
+	}
+
+	devdata->qtgui = new QTGUI(devdata->qtgui_parent.data());
+	dsp_data->final_dsp->buildUserInterface(devdata->qtgui);
+	devdata->qtgui_parent->layout()->addWidget(devdata->qtgui);
+
+	// buildUserInterface resets each control zone to its default value
+	// (the QTGUI widget constructors write fCur back into the zone), so
+	// re-apply the preserved parameter values. The qtgui->update() call
+	// below (GUI::updateAllGuis) then dispatches them to the polyphonic
+	// voices and to the recreated interface.
+	for (int i = 0; i < dsp_data->num_params; i++)
+		dsp_data->api_ui.setParamValue(i, dsp_data->param_values[i]);
+
+	// Route GUI-dialog control changes through set_effect_value, so they
+	// update param_values / stored values and survive recompiles.
+	for (int i = 0; i < dsp_data->num_params; i++)
+	{
+		if (effect_is_visible(plugin, i) == false)
+			continue;
+
+		Faust2GuiControlRef *ref = new Faust2GuiControlRef;
+
+		ref->plugin = plugin;
+		ref->effect_num = i;
+
+		devdata->qtgui_control_refs.push_back(ref);
+		devdata->qtgui->addCallback(dsp_data->api_ui.getParamZone(i),
+									faust2_gui_zone_callback,
+									ref);
+	}
+
+	// Restart the interface if it is visible. The old QTGUI was stopped
+	// (and deleted) above, so without this call the rebuilt interface
+	// freezes (its refresh timer never starts).
+	devdata->qtgui->update();
+
+	if (devdata->qtgui_parent.data() != NULL
+	    && devdata->qtgui_parent->isVisible())
+	{
+		devdata->qtgui->run();
+	}
+
+	devdata->ready.has_new_data = true;
+	devdata->ready.factory_is_ready = true;
+	devdata->ready.factory_succeeded = true;
+	devdata->ready.svg_is_ready = true;
+	devdata->ready.svg_succeeded = (svg_dir != NULL);
+}
+
+
 class Dev2CompileThread : public QThread
 {
 	instrument_t _patch_id;
@@ -599,152 +821,15 @@ public:
 #endif
 											interp_factory,
 											svg_dir,
-											compile_code = _code]()
-		{
-			struct Patch *patch = PATCH_get_from_id(patch_id);
-			
-			if (patch == NULL || patch->patchdata == NULL){
-				// The instrument was deleted while we were compiling.
-				// Must delete the factory, or it stays in libfaust's global
-				// factory table and crashes during shutdown (libfaust's static
-				// destructor then destroys a JIT registration mutex that has
-				// already been torn down).
-				delete_factory(
+											compile_code = _code](){
+			perform_compile_completion(patch_id, factory,
 #if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
-							   llvm_factory,
+									   llvm_factory,
 #endif
-							   interp_factory);
-				
-				delete svg_dir;
-				
-				return;
-			}
-			
-			SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
-			
-			FaustDev2Data *devdata = (FaustDev2Data*)plugin->data;
-			
-			devdata->is_compiling = false;
-
-			// Discard if code changed while this compilation was running
-			if (devdata->code != compile_code){
-				delete_factory(
-#if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
-							   llvm_factory,
-#endif
-							   interp_factory);
-				delete svg_dir; // this compile result is outdated
-				start_compilation(plugin); // Recompile the latest code.
-				return;
-			}
-
-			// Create the DSP on the main thread. mydsp_poly's GroupUI registers
-			// itself in Faust's process-global GUI list (GUI.h), which the main
-			// thread iterates in GUI::updateAllGuis (from QTGUI timers), so
-			// constructing it on the compile thread raced with that iteration.
-			FaustDev2Dsp *dsp_data = create_dsp_data(factory,
-													 factory,
-#if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
-													 llvm_factory,
-#endif
-													 interp_factory,
-													 MIXER_get_sample_rate());
-
-			if (dsp_data == NULL){
-				delete_factory(
-#if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
-							   llvm_factory,
-#endif
-							   interp_factory);
-				
-				delete svg_dir;
-				
-				return;
-			}
-
-			devdata->error_message = "";
-
-			// Store SVG dir
-			if (devdata->svg_dir != NULL)
-				delete devdata->svg_dir;
-			
-			devdata->svg_dir = svg_dir;
-
-			hotswap_dsp_data(devdata, dsp_data);
-
-			if (dsp_data->is_instrument)
-				plugin->type->is_instrument = true;
-			else
-				plugin->type->is_instrument = false;
-
-			// Recreate the QTGUI
-			if (devdata->qtgui != NULL){
-				devdata->qtgui->stop();
-				if (devdata->qtgui_parent.data() != NULL
-				    && devdata->qtgui_parent->layout() != NULL)
-				{
-					devdata->qtgui_parent->layout()->removeWidget(devdata->qtgui);
-				}
-				delete devdata->qtgui;
-			}
-			
-			for (Faust2GuiControlRef *ref : devdata->qtgui_control_refs)
-				delete ref;
-			
-			devdata->qtgui_control_refs.clear();
-
-			// Create dialog parent if needed
-			if (devdata->qtgui_parent.data() == NULL){
-				devdata->qtgui_parent = FAUST_create_qdialog(plugin);
-				devdata->qtgui_parent->setLayout(new QGridLayout(devdata->qtgui_parent.data()));
-			}
-
-			devdata->qtgui = new QTGUI(devdata->qtgui_parent.data());
-			dsp_data->final_dsp->buildUserInterface(devdata->qtgui);
-			devdata->qtgui_parent->layout()->addWidget(devdata->qtgui);
-
-			// buildUserInterface resets each control zone to its default value
-			// (the QTGUI widget constructors write fCur back into the zone), so
-			// re-apply the preserved parameter values. The qtgui->update() call
-			// below (GUI::updateAllGuis) then dispatches them to the polyphonic
-			// voices and to the recreated interface.
-			for (int i = 0; i < dsp_data->num_params; i++)
-				dsp_data->api_ui.setParamValue(i, dsp_data->param_values[i]);
-
-			// Route GUI-dialog control changes through set_effect_value, so they
-			// update param_values / stored values and survive recompiles.
-			for (int i = 0; i < dsp_data->num_params; i++)
-			{
-				if (effect_is_visible(plugin, i) == false)
-					continue;
-				
-				Faust2GuiControlRef *ref = new Faust2GuiControlRef;
-				
-				ref->plugin = plugin;
-				ref->effect_num = i;
-				
-				devdata->qtgui_control_refs.push_back(ref);
-				devdata->qtgui->addCallback(dsp_data->api_ui.getParamZone(i),
-											faust2_gui_zone_callback,
-											ref);
-			}
-
-			// Restart the interface if it is visible. The old QTGUI was stopped
-			// (and deleted) above, so without this call the rebuilt interface
-			// freezes (its refresh timer never starts).
-			devdata->qtgui->update();
-			
-			if (devdata->qtgui_parent.data() != NULL
-			    && devdata->qtgui_parent->isVisible())
-			{
-				devdata->qtgui->run();
-			}
-
-			devdata->ready.has_new_data = true;
-			devdata->ready.factory_is_ready = true;
-			devdata->ready.factory_succeeded = true;
-			devdata->ready.svg_is_ready = true;
-			devdata->ready.svg_succeeded = (svg_dir != NULL);
+									   interp_factory,
+									   svg_dir,
+									   compile_code,
+									   FADE_POLL_RETRIES);
 		});
 	}
 };
@@ -907,6 +992,26 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 		return;
 	}
 
+	// When a recompile finishes, the current dsp fades out and the new dsp is
+	// only swapped in after the fade is finished (see
+	// perform_compile_completion), so the old dsp is not cut off abruptly.
+	// fade_out_is_active is set by the main thread (under the player lock)
+	// and only cleared at the swap.
+	const bool fading = devdata->fade_out_is_active;
+
+	if (fading && devdata->fade_frames_left == 0)
+	{
+		// Fade finished: stay silent until the new dsp is swapped in. Clear
+		// the collector, or a note-on arriving in the wait window would be
+		// processed with the wrong timing if a later compile restarts the
+		// fade (playing a short, out-of-time blip before the swap).
+		dsp_data->collector.clear();
+		for (int ch = 0; ch < MAX_CHANNELS; ch++)
+			memset(outputs[ch], 0, num_frames * sizeof(float));
+		
+		return;
+	}
+
 	int num_inputs = dsp_data->num_inputs;
 	int num_outputs = dsp_data->num_outputs;
 
@@ -974,6 +1079,23 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 	else
 	{
 		dsp_data->final_dsp->compute(num_frames, inputs, outputs);
+	}
+
+	if (fading)
+	{
+		// Fade out in place. RT_fade_out ramps from the current position
+		// (done) down to the end of the fade (done+how_many), and the rest of
+		// the block is silenced below.
+		const int done = devdata->fade_frames_total - devdata->fade_frames_left;
+		const int how_many = R_MIN(num_frames, devdata->fade_frames_left);
+
+		for (int ch = 0; ch < num_outputs; ch++)
+			RT_fade_out(outputs[ch], devdata->fade_frames_total, done, done + how_many);
+
+		for (int ch = 0; ch < num_outputs; ch++)
+			memset(outputs[ch] + how_many, 0, (num_frames - how_many) * sizeof(float));
+
+		devdata->fade_frames_left -= how_many;
 	}
 
 	// Clean unused channels.
