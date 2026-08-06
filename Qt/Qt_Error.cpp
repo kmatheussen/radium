@@ -11,6 +11,13 @@
 #include <qfontdatabase.h>
 #include <QMouseEvent>
 #include <QOperatingSystemVersion>
+#include <QTimer>
+#include <QWindow>
+
+#if defined(FOR_MACOSX)
+#include <objc/message.h>
+#include <objc/runtime.h>
+#endif
 
 #include "../common/nsmtracker.h"
 
@@ -61,6 +68,22 @@ static inline QSizePolicy::Policy get_grow_policy_from_bool(bool grow){
   return grow ? QSizePolicy::MinimumExpanding : QSizePolicy::Fixed;
 }
 
+#if defined(FOR_MACOSX)
+static void activate_application(void){
+  typedef id (*shared_app_fn)(Class, SEL);
+  Class ns_application_class = objc_getClass("NSApplication");
+  if (ns_application_class == NULL)
+    return;
+
+  id nsapp = ((shared_app_fn)objc_msgSend)(ns_application_class, sel_registerName("sharedApplication"));
+  if (nsapp == NULL)
+    return;
+
+  typedef void (*activate_fn)(id, SEL, BOOL);
+  ((activate_fn)objc_msgSend)(nsapp, sel_registerName("activateIgnoringOtherApps:"), YES);
+}
+#endif
+
 static int show_message(QString message, const QVector<QString> &menu_strings){
 
   //QPointer<MyQMessageBox> msgBox = MyQMessageBox::create();
@@ -84,9 +107,19 @@ static int show_message(QString message, const QVector<QString> &menu_strings){
   msgBox->setSizePolicy(policy);
   
   adjustSizeAndMoveWindowToCentre(msgBox);
-  msgBox->raise();
-  msgBox->activateWindow();
-  
+
+  MyQMessageBox *msgbox_ptr = msgBox.data(); // Make sure the dialog is raised and activated after it has been shown by exec() below.
+  QTimer::singleShot(0, [msgbox_ptr]()
+  {
+#if defined(FOR_MACOSX)
+    activate_application();
+#endif
+    msgbox_ptr->raise();
+    msgbox_ptr->activateWindow();
+    if (msgbox_ptr->windowHandle())
+      msgbox_ptr->windowHandle()->requestActivate();
+  });
+
   printf("hepp: %d. msgBox: %p\n",msgBox->exec(), msgBox.data()); // safeExec(&msgBox)); <-- We are not inside the radium executable here.
 
   if (msgBox.data()==NULL){

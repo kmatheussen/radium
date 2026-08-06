@@ -2048,7 +2048,7 @@ bin/radium_error_message: $(P)Qt_Error.cpp $(P)EditorWidget.h
 	@echo $?
 	@echo
 	$(CCC) -Wall $(WERROR) $(P)Qt_Error.cpp $(CPPOPT) $(QT_CFLAGS) $(OS_OPTS) -DCOMPILE_EXECUTABLE $(QT_GUI_CFLAGS) -o errormessagebin.o -Wno-missing-declarations  $(WNO_DEPRECATED_COPY_CLANG) # $(O0)
-	$(LINKER) `cat buildtype.opt` errormessagebin.o -o bin/radium_error_message $(QT_GUI_LDFLAGS)
+	$(LINKER) `cat buildtype.opt` errormessagebin.o -o bin/radium_error_message $(QT_GUI_LDFLAGS) $(OS_LDFLAGS2)
 	rm errormessagebin.o
 
 bin/radium_progress_window: $(P)Qt_progresswindow.cpp
