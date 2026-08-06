@@ -317,17 +317,26 @@ struct Patch *PATCH_get_current_audio(void){
   return ret;
 }
 
-struct Patch *PATCH_get_current(void){
-  struct Patch *ret = g_curr_patch;
-  struct Patch *org_curr_patch = g_curr_patch;
+struct Patch *PATCH_get_current(void)
+{
+	R_ASSERT_NON_RELEASE(!PLAYER_current_thread_has_lock()); // Might call low_level_set_g_curr_patch.
+	R_ASSERT_NON_RELEASE(!THREADING_is_player_or_runner_thread()); // Same reason.
+	
+	struct Patch *ret = g_curr_patch;
+	struct Patch *org_curr_patch = g_curr_patch;
+	
+	if (ret==NULL)
+		ret = PATCH_get_current_audio();
+	
+	if (org_curr_patch != ret)
+		low_level_set_g_curr_patch(ret);
   
-  if (ret==NULL)
-    ret = PATCH_get_current_audio();
+	return g_curr_patch;
+}
 
-  if (org_curr_patch != ret)
-    low_level_set_g_curr_patch(ret);
-  
-  return g_curr_patch;
+struct Patch *RT_PATCH_get_current(void)
+{
+	return g_curr_patch;
 }
 
 
