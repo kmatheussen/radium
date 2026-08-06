@@ -120,12 +120,22 @@ static const char *g_default_faust_dev2_program =
 
 namespace{
 
+struct NoteVoice
+{
+	int64_t note_id;
+	const struct SeqBlock *seqblock;
+	int pitch;
+	dsp_voice *voice;
+};
+
 struct FaustDev2Dsp
 {
 	mydsp_poly *poly_dsp;     // owns the voice DSPs; NULL for effects
 	dsp *final_dsp;           // points to poly_dsp for instruments, or mono_dsp for effects
 	APIUI api_ui;
 	NoteEventCollector collector;
+	NoteVoice note_voices[MAX_POLYPHONY]; // RT-safe: only touched from the player thread / RT_process.
+	int num_note_voices;
 	dsp_factory *factory;     // base factory pointer
 #if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
 	llvm_dsp_factory *llvm_factory;       // NULL if interpreter was used
@@ -140,6 +150,7 @@ struct FaustDev2Dsp
 	FaustDev2Dsp()
 		: poly_dsp(NULL)
 		, final_dsp(NULL)
+		, num_note_voices(0)
 		, factory(NULL)
 #if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
 		, llvm_factory(NULL)
@@ -361,6 +372,22 @@ static void hotswap_dsp_data(FaustDev2Data *devdata, FaustDev2Dsp *new_dsp)
 //===========================================
 
 
+static void delete_factory(
+#if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
+						   llvm_dsp_factory *llvm_factory,
+#endif
+						   interpreter_dsp_factory *interp_factory)
+{
+	if (interp_factory != NULL)
+		deleteInterpreterDSPFactory(interp_factory);
+	
+#if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
+	if (llvm_factory != NULL)
+		deleteDSPFactory(llvm_factory);
+#endif
+}
+
+
 static dsp_factory *create_factory(const FaustDev2Data *devdata,
 									int optlevel,
 									QString &error_message,
@@ -519,6 +546,9 @@ public:
 		interpreter_dsp_factory *interp_factory = NULL;
 		MyQTemporaryDir *svg_dir = NULL;
 
+		//
+		// Note: THIS CALL IS THE BIG EXPENSIVE THING.
+		//
 		dsp_factory *factory = create_factory(&tmp_data, _optlevel, error_message,
 #if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
 											   &llvm_factory,
@@ -572,37 +602,13 @@ public:
 			return;
 		}
 
-		FaustDev2Dsp *dsp_data = create_dsp_data(factory, factory,
+		THREADING_run_on_main_thread_async([patch_id = _patch_id, factory,
 #if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
-										llvm_factory,
+											llvm_factory,
 #endif
-										interp_factory,
-										MIXER_get_sample_rate());
-
-		if (dsp_data == NULL){
-			if (interp_factory)
-				deleteInterpreterDSPFactory(interp_factory);
-#if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
-			if (llvm_factory)
-				deleteDSPFactory(llvm_factory);
-#endif
-			THREADING_run_on_main_thread_async([patch_id = _patch_id, compile_code = _code]()
-			{
-				struct Patch *patch = PATCH_get_from_id(patch_id);
-				if (patch == NULL || patch->patchdata == NULL)
-					return;
-				SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
-				FaustDev2Data *devdata = (FaustDev2Data*)plugin->data;
-				devdata->is_compiling = false;
-
-				// Recompile if code changed while this compilation was running.
-				if (devdata->code != compile_code)
-					start_compilation(plugin);
-			});
-			return;
-		}
-
-		THREADING_run_on_main_thread_async([patch_id = _patch_id, dsp_data, svg_dir, compile_code = _code]()
+											interp_factory,
+											svg_dir,
+											compile_code = _code]()
 		{
 			struct Patch *patch = PATCH_get_from_id(patch_id);
 			if (patch == NULL || patch->patchdata == NULL){
@@ -611,7 +617,11 @@ public:
 				// factory table and crashes during shutdown (libfaust's static
 				// destructor then destroys a JIT registration mutex that has
 				// already been torn down).
-				delete dsp_data;
+				delete_factory(
+#if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
+							   llvm_factory,
+#endif
+							   interp_factory);
 				delete svg_dir;
 				return;
 			}
@@ -621,11 +631,37 @@ public:
 
 			// Discard if code changed while this compilation was running
 			if (devdata->code != compile_code){
-				delete dsp_data; // this compile result is outdated
-				delete svg_dir;
+				delete_factory(
+#if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
+							   llvm_factory,
+#endif
+							   interp_factory);
+				delete svg_dir; // this compile result is outdated
 				start_compilation(plugin); // Recompile the latest code.
 				return;
 			}
+
+			// Create the DSP on the main thread. mydsp_poly's GroupUI registers
+			// itself in Faust's process-global GUI list (GUI.h), which the main
+			// thread iterates in GUI::updateAllGuis (from QTGUI timers), so
+			// constructing it on the compile thread raced with that iteration.
+			FaustDev2Dsp *dsp_data = create_dsp_data(factory, factory,
+#if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
+													 llvm_factory,
+#endif
+													 interp_factory,
+													 MIXER_get_sample_rate());
+
+			if (dsp_data == NULL){
+				delete_factory(
+#if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
+							   llvm_factory,
+#endif
+							   interp_factory);
+				delete svg_dir;
+				return;
+			}
+
 			devdata->error_message = "";
 
 			// Store SVG dir
@@ -752,6 +788,100 @@ static void start_compilation(SoundPlugin *plugin)
 //===========================================
 
 
+// The player lock must be held when calling this function.
+static void register_note_voice(FaustDev2Dsp *dsp_data, const note_t &note, int pitch, dsp_voice *voice)
+{
+	// The voice may have been stolen from a previous note; drop that note's entry.
+	for (int i = 0; i < dsp_data->num_note_voices; )
+	{
+		if (dsp_data->note_voices[i].voice == voice)
+		{
+			dsp_data->note_voices[i] = dsp_data->note_voices[dsp_data->num_note_voices-1];
+			dsp_data->num_note_voices--;
+		}
+		else
+			i++;
+	}
+
+	if (dsp_data->num_note_voices < MAX_POLYPHONY)
+	{
+		dsp_data->note_voices[dsp_data->num_note_voices].note_id = note.id;
+		dsp_data->note_voices[dsp_data->num_note_voices].seqblock = note.seqblock;
+		dsp_data->note_voices[dsp_data->num_note_voices].pitch = pitch;
+		dsp_data->note_voices[dsp_data->num_note_voices].voice = voice;
+		dsp_data->num_note_voices++;
+	}
+}
+
+
+// The player lock must be held when calling this function.
+static bool release_note_voice(FaustDev2Dsp *dsp_data, const note_t &note, int pitch)
+{
+	for (int i = 0; i < dsp_data->num_note_voices; i++)
+	{
+		NoteVoice &nv = dsp_data->note_voices[i];
+		if (nv.pitch == pitch && is_note(note, nv.note_id, nv.seqblock))
+		{
+			dsp_voice *voice = nv.voice;
+
+			dsp_data->note_voices[i] = dsp_data->note_voices[dsp_data->num_note_voices-1];
+			dsp_data->num_note_voices--;
+
+			// Sanity check that the voice is still playing (or is about to
+			// play, in legato mode) this pitch. If it was stolen, the note is
+			// already gone, and releasing the voice would kill the note that
+			// stole it.
+			if (voice->fCurNote == pitch || (voice->fCurNote == kLegatoVoice && voice->fNextNote == pitch))
+				voice->keyOff();
+
+			return true;
+		}
+	}
+
+	return false;
+}
+
+
+// mydsp_poly's voice mixer uses fixed internal buffers of MIX_BUFFER_SIZE
+// frames (poly-dsp.h), so a compute longer than that overflows the heap
+// buffers. Split the compute into chunks that fit. (Block sizes up to 8192
+// are selectable in the preferences.)
+static constexpr int MAX_POLY_COMPUTE_FRAMES = MIX_BUFFER_SIZE;
+
+static void compute_poly_chunked(mydsp_poly *poly_dsp,
+								 int num_inputs,
+								 int num_outputs,
+								 int num_frames,
+								 float **inputs,
+								 float **outputs,
+								 int offset)
+{
+	int done = 0;
+	
+	while (done < num_frames)
+	{
+		int chunk = MAX_POLY_COMPUTE_FRAMES;
+
+		if (num_frames - done < MAX_POLY_COMPUTE_FRAMES)
+			chunk = num_frames - done;
+		
+		float **in_slice = RT_ALLOC_ARRAY_STACK(float*, R_MAX(1, num_inputs));
+		
+		float **out_slice = RT_ALLOC_ARRAY_STACK(float*, R_MAX(1, num_outputs));
+		
+		for (int ch = 0; ch < num_inputs; ch++)
+			in_slice[ch] = &inputs[ch][offset + done];
+		
+		for (int ch = 0; ch < num_outputs; ch++)
+			out_slice[ch] = &outputs[ch][offset + done];
+		
+		poly_dsp->compute(chunk, in_slice, out_slice);
+		
+		done += chunk;
+	}
+}
+
+
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs)
 {
 	FaustDev2Data *devdata = (FaustDev2Data*)plugin->data;
@@ -776,38 +906,46 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 			if (seg_len < 0)
 				seg_len = 0;
 
-			if (seg_len > 0){
-				float **in_slice = RT_ALLOC_ARRAY_STACK(float*, R_MAX(1, num_inputs));
-				float **out_slice = RT_ALLOC_ARRAY_STACK(float*, R_MAX(1, num_outputs));
-				for (int ch = 0; ch < num_inputs; ch++)
-					in_slice[ch] = &inputs[ch][pos];
-				for (int ch = 0; ch < num_outputs; ch++)
-					out_slice[ch] = &outputs[ch][pos];
-				dsp_data->poly_dsp->compute(seg_len, in_slice, out_slice);
-			}
+			if (seg_len > 0)
+				compute_poly_chunked(dsp_data->poly_dsp, num_inputs, num_outputs, seg_len, inputs, outputs, pos);
 
 			if (ev.is_note_on)
 			{
 				int pitch = (int)(ev.note.pitch + 0.5f);
 				float gain = velocity2gain(ev.note.velocity);
 				int vel = R_BOUNDARIES(0, (int)(gain * 127), 127);
-				dsp_data->poly_dsp->keyOn(0, pitch, vel);
+				MapUI *voice = dsp_data->poly_dsp->keyOn(0, pitch, vel);
+				if (voice != NULL)
+					register_note_voice(dsp_data, ev.note, pitch, static_cast<dsp_voice*>(voice));
 			}
 			else
-				dsp_data->poly_dsp->keyOff(0, (int)(ev.note.pitch + 0.5f));
+			{
+				int pitch = (int)(ev.note.pitch + 0.5f);
+				if (release_note_voice(dsp_data, ev.note, pitch) == false)
+				{
+					// No registered voice for this note (for instance because its
+					// keyOn event was dropped, or the voice was stolen and reused).
+					// Only fall back to the pitch-based keyOff if no other
+					// registered note uses the same pitch, since mydsp_poly's
+					// keyOff releases the *oldest* voice with that pitch, which
+					// would release the wrong note when notes overlap on one pitch.
+					bool other_note_with_same_pitch = false;
+					for (int i = 0; i < dsp_data->num_note_voices; i++)
+						if (dsp_data->note_voices[i].pitch == pitch)
+						{
+							other_note_with_same_pitch = true;
+							break;
+						}
+					if (other_note_with_same_pitch == false)
+						dsp_data->poly_dsp->keyOff(0, pitch);
+				}
+			}
 
 			pos = ev.sample_offset;
 		}
 
-		if (num_frames > pos){
-			float **in_slice = RT_ALLOC_ARRAY_STACK(float*, R_MAX(1, num_inputs));
-			float **out_slice = RT_ALLOC_ARRAY_STACK(float*, R_MAX(1, num_outputs));
-			for (int ch = 0; ch < num_inputs; ch++)
-				in_slice[ch] = &inputs[ch][pos];
-			for (int ch = 0; ch < num_outputs; ch++)
-				out_slice[ch] = &outputs[ch][pos];
-			dsp_data->poly_dsp->compute(num_frames - pos, in_slice, out_slice);
-		}
+		if (num_frames > pos)
+			compute_poly_chunked(dsp_data->poly_dsp, num_inputs, num_outputs, num_frames - pos, inputs, outputs, pos);
 
 		dsp_data->collector.clear();
 	}else{
@@ -1341,6 +1479,7 @@ static void RT_player_is_stopped(SoundPlugin *plugin)
 	{
 		dsp_data->poly_dsp->allNotesOff(false);
 		dsp_data->collector.clear();
+		dsp_data->num_note_voices = 0;
 	}
 }
 
