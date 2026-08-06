@@ -120,12 +120,22 @@ static const char *g_default_faust_dev2_program =
 
 namespace{
 
+struct NoteVoice
+{
+	int64_t note_id;
+	const struct SeqBlock *seqblock;
+	int pitch;
+	dsp_voice *voice;
+};
+
 struct FaustDev2Dsp
 {
 	mydsp_poly *poly_dsp;     // owns the voice DSPs; NULL for effects
 	dsp *final_dsp;           // points to poly_dsp for instruments, or mono_dsp for effects
 	APIUI api_ui;
 	NoteEventCollector collector;
+	NoteVoice note_voices[MAX_POLYPHONY]; // RT-safe: only touched from the player thread / RT_process.
+	int num_note_voices;
 	dsp_factory *factory;     // base factory pointer
 #if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
 	llvm_dsp_factory *llvm_factory;       // NULL if interpreter was used
@@ -140,6 +150,7 @@ struct FaustDev2Dsp
 	FaustDev2Dsp()
 		: poly_dsp(NULL)
 		, final_dsp(NULL)
+		, num_note_voices(0)
 		, factory(NULL)
 #if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
 		, llvm_factory(NULL)
@@ -752,6 +763,60 @@ static void start_compilation(SoundPlugin *plugin)
 //===========================================
 
 
+// The player lock must be held when calling this function.
+static void register_note_voice(FaustDev2Dsp *dsp_data, const note_t &note, int pitch, dsp_voice *voice)
+{
+	// The voice may have been stolen from a previous note; drop that note's entry.
+	for (int i = 0; i < dsp_data->num_note_voices; )
+	{
+		if (dsp_data->note_voices[i].voice == voice)
+		{
+			dsp_data->note_voices[i] = dsp_data->note_voices[dsp_data->num_note_voices-1];
+			dsp_data->num_note_voices--;
+		}
+		else
+			i++;
+	}
+
+	if (dsp_data->num_note_voices < MAX_POLYPHONY)
+	{
+		dsp_data->note_voices[dsp_data->num_note_voices].note_id = note.id;
+		dsp_data->note_voices[dsp_data->num_note_voices].seqblock = note.seqblock;
+		dsp_data->note_voices[dsp_data->num_note_voices].pitch = pitch;
+		dsp_data->note_voices[dsp_data->num_note_voices].voice = voice;
+		dsp_data->num_note_voices++;
+	}
+}
+
+
+// The player lock must be held when calling this function.
+static bool release_note_voice(FaustDev2Dsp *dsp_data, const note_t &note, int pitch)
+{
+	for (int i = 0; i < dsp_data->num_note_voices; i++)
+	{
+		NoteVoice &nv = dsp_data->note_voices[i];
+		if (nv.pitch == pitch && is_note(note, nv.note_id, nv.seqblock))
+		{
+			dsp_voice *voice = nv.voice;
+
+			dsp_data->note_voices[i] = dsp_data->note_voices[dsp_data->num_note_voices-1];
+			dsp_data->num_note_voices--;
+
+			// Sanity check that the voice is still playing (or is about to
+			// play, in legato mode) this pitch. If it was stolen, the note is
+			// already gone, and releasing the voice would kill the note that
+			// stole it.
+			if (voice->fCurNote == pitch || (voice->fCurNote == kLegatoVoice && voice->fNextNote == pitch))
+				voice->keyOff();
+
+			return true;
+		}
+	}
+
+	return false;
+}
+
+
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs)
 {
 	FaustDev2Data *devdata = (FaustDev2Data*)plugin->data;
@@ -791,10 +856,32 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 				int pitch = (int)(ev.note.pitch + 0.5f);
 				float gain = velocity2gain(ev.note.velocity);
 				int vel = R_BOUNDARIES(0, (int)(gain * 127), 127);
-				dsp_data->poly_dsp->keyOn(0, pitch, vel);
+				MapUI *voice = dsp_data->poly_dsp->keyOn(0, pitch, vel);
+				if (voice != NULL)
+					register_note_voice(dsp_data, ev.note, pitch, static_cast<dsp_voice*>(voice));
 			}
 			else
-				dsp_data->poly_dsp->keyOff(0, (int)(ev.note.pitch + 0.5f));
+			{
+				int pitch = (int)(ev.note.pitch + 0.5f);
+				if (release_note_voice(dsp_data, ev.note, pitch) == false)
+				{
+					// No registered voice for this note (for instance because its
+					// keyOn event was dropped, or the voice was stolen and reused).
+					// Only fall back to the pitch-based keyOff if no other
+					// registered note uses the same pitch, since mydsp_poly's
+					// keyOff releases the *oldest* voice with that pitch, which
+					// would release the wrong note when notes overlap on one pitch.
+					bool other_note_with_same_pitch = false;
+					for (int i = 0; i < dsp_data->num_note_voices; i++)
+						if (dsp_data->note_voices[i].pitch == pitch)
+						{
+							other_note_with_same_pitch = true;
+							break;
+						}
+					if (other_note_with_same_pitch == false)
+						dsp_data->poly_dsp->keyOff(0, pitch);
+				}
+			}
 
 			pos = ev.sample_offset;
 		}
@@ -1341,6 +1428,7 @@ static void RT_player_is_stopped(SoundPlugin *plugin)
 	{
 		dsp_data->poly_dsp->allNotesOff(false);
 		dsp_data->collector.clear();
+		dsp_data->num_note_voices = 0;
 	}
 }
 
