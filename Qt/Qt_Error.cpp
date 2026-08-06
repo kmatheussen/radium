@@ -4,6 +4,7 @@
 #include <QWidget>
 
 #include <qapplication.h>
+#include <QIcon>
 #include <QPushButton>
 #include <QProcess>
 #include <QDir>
@@ -188,6 +189,8 @@ int main(int argc, char **argv){
   
   argv = getQApplicationConstructorArgs(argc, argv);
   QApplication app(argc, argv);
+
+  app.setWindowIcon(QIcon(QCoreApplication::applicationDirPath() + QDir::separator() + "graphics" + QDir::separator() + "radium_dog_logo_256x256_colorized.png"));
 
   /*
   {
