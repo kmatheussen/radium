@@ -36,6 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QWidget>
 #include <QString>
 #include <QApplication>
+#include <QIcon>
 #include <QFile>
 #include <QTextStream>
 #include <QPlainTextEdit>
@@ -651,6 +652,8 @@ int main(int argc, char **argv){
 
   argv = getQApplicationConstructorArgs(argc, argv);
   QApplication app(argc, argv);
+
+  app.setWindowIcon(QIcon(QCoreApplication::applicationDirPath() + QDir::separator() + "graphics" + QDir::separator() + "radium_dog_logo_256x256_colorized.png"));
 
 #if FOR_LINUX
   if(faulty_installation){

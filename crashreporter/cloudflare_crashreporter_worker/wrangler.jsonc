@@ -3,6 +3,10 @@
 	"name": "radium-crashreport",
 	"main": "src/index.ts",
 	"compatibility_date": "2026-08-01",
+	"observability": {
+		"enabled": true,
+		"head_sampling_rate": 1
+	},
 	"workers_dev": false,
 	"routes": [
 		{
