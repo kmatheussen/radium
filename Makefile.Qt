@@ -528,6 +528,10 @@ OS_OPTS ?=
 OS_JUCE_LDFLAGS ?=
 OS_LDFLAGS ?=
 OS_LDFLAGS2 ?=
+
+PROGRESS_WINDOW_CXX_FLAG ?=
+PROGRESS_WINDOW_LDFLAGS ?=
+
 OS_DEPS ?=
 OS_OBJS ?=
 
@@ -2052,8 +2056,8 @@ bin/radium_error_message: $(P)Qt_Error.cpp $(P)EditorWidget.h
 	rm errormessagebin.o
 
 bin/radium_progress_window: $(P)Qt_progresswindow.cpp
-	$(CCC) -Wall $(WERROR) $(P)Qt_progresswindow.cpp $(CPPOPT) $(QT_CFLAGS) $(OS_OPTS) -DP_CLIENT $(QT_GUI_CFLAGS) -o radium_progress_window.o
-	$(LINKER) `cat buildtype.opt` radium_progress_window.o -o bin/radium_progress_window $(QT_GUI_LDFLAGS)  
+	$(CCC) $(PROGRESS_WINDOW_CXX_FLAG) -o radium_progress_window.o -Wall $(WERROR) $(P)Qt_progresswindow.cpp $(CPPOPT) $(QT_CFLAGS) $(OS_OPTS) -DP_CLIENT $(QT_GUI_CFLAGS) 
+	$(LINKER) `cat buildtype.opt` radium_progress_window.o -o bin/radium_progress_window $(QT_GUI_LDFLAGS) $(PROGRESS_WINDOW_LDFLAGS)
 	rm radium_progress_window.o
 
 bin/radium_check_jack_status: audio/KillJackd.cpp $(T)Jack_plugin.o $(T)find_jack_library.o # Jack_plugin.o depends on all the weakjack things
