@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdint.h>
 #include <unistd.h>
 
 #include <QApplication>
@@ -269,6 +270,29 @@ namespace{
 
 static MyProgressWindow *g_progressWindow = NULL;
 
+#if defined(FOR_MACOSX) && defined(P_CLIENT)
+#import <Cocoa/Cocoa.h>
+
+// Make the window able to appear on top of other apps running in fullscreen
+// mode. On macOS, a fullscreen app runs in its own Space, and windows from
+// other apps are normally not allowed to be shown there. Setting the
+// NSWindowCollectionBehavior flags below opts this window into joining all
+// spaces, including the fullscreen Space of another app.
+static void make_progress_window_join_fullscreen_space(QWidget *widget)
+{
+	NSView *ns_view = (NSView*)widget->winId();
+	if (ns_view == NULL)
+		return;
+	
+	NSWindow *ns_window = [ns_view window];
+	if (ns_window == NULL)
+		return;
+	
+	// NSWindowCollectionBehaviorCanJoinAllSpaces | NSWindowCollectionBehaviorFullScreenAuxiliary
+	[ns_window setCollectionBehavior: NSWindowCollectionBehaviorCanJoinAllSpaces | NSWindowCollectionBehaviorFullScreenAuxiliary];
+}
+#endif
+
 class MyTimer : public QTimer{
 public:
   MyTimer(){
@@ -279,35 +303,40 @@ public:
     if (!isParentRunning())
       QApplication::quit();
 
-    if (g_progressWindow != NULL && g_progressWindow->isVisible() && !g_progressWindow->isMinimized()) {
-      g_progressWindow->raise();
+    if (g_progressWindow != NULL && g_progressWindow->isVisible() && !g_progressWindow->isMinimized())
+	{
+		g_progressWindow->raise();
+#if defined(FOR_MACOSX) && defined(P_CLIENT)
+		make_progress_window_join_fullscreen_space(g_progressWindow);
+#endif
     }
   }
 };
 
 
-static void positionWindow(const QRect &rect, QWidget *widget){
-  int height = widget->height();
-  int width = widget->width();
-
-  if (rect.height() > height){
-    height = rect.height() + 100;
-  }
-
-  if (rect.width() > width){
-    width = rect.width() + 100;
-  }
-
-  height=rect.height();
-  width=rect.width();
-  
-  widget->setMinimumHeight(height);
-  widget->setMaximumHeight(height);
-  widget->setMinimumWidth(width);
-  widget->setMaximumWidth(width);
-  widget->resize(width, height);
-  
-  widget->move(rect.x(), rect.y());
+static void positionWindow(const QRect &rect, QWidget *widget)
+{
+	int height = widget->height();
+	int width = widget->width();
+	
+	if (rect.height() > height){
+		height = rect.height() + 100;
+	}
+	
+	if (rect.width() > width){
+		width = rect.width() + 100;
+	}
+	
+	height=rect.height();
+	width=rect.width();
+	
+	widget->setMinimumHeight(height);
+	widget->setMaximumHeight(height);
+	widget->setMinimumWidth(width);
+	widget->setMaximumWidth(width);
+	widget->resize(width, height);
+	
+	widget->move(rect.x(), rect.y());
 }
 
 static QString handle_rect_in_message(QString message, QWidget *widget){
@@ -351,9 +380,19 @@ static void process_OpenProgress(QString message, QRect rect){
   setContent("");
 
   g_progressWindow->generate_new_text();
+#if defined(FOR_MACOSX)
+  make_progress_window_join_fullscreen_space(g_progressWindow);
+#endif
   g_progressWindow->show();
   g_progressWindow->raise();
+#if !defined(FOR_MACOSX)
+  // On macOS, activating the window here makes the operating system switch
+  // to another workspace when Radium is in fullscreen mode.
   g_progressWindow->activateWindow();
+#endif
+#if defined(FOR_MACOSX)
+  make_progress_window_join_fullscreen_space(g_progressWindow);
+#endif
 }
 
 static void process_ShowProgressMessage(QString message, QRect rect){
@@ -424,8 +463,14 @@ private:
                                       
                                     } else if (line==message_show) {
                                       g_progressWindow->generate_new_text();
+#if defined(FOR_MACOSX)
+                                      make_progress_window_join_fullscreen_space(g_progressWindow);
+#endif
                                       g_progressWindow->show();
                                       g_progressWindow->raise();
+#if defined(FOR_MACOSX)
+                                      make_progress_window_join_fullscreen_space(g_progressWindow);
+#endif
                                       
                                     } else if (g_progressWindow->isVisible()){
                                       QString message = handle_rect_in_message(line, g_progressWindow);
@@ -493,6 +538,14 @@ int main(int argc, char **argv){
 
   argv = getQApplicationConstructorArgs(argc, argv);
   QApplication app(argc, argv);
+
+#if defined(FOR_MACOSX)
+  // Make sure the progress window application can never be activated. If it
+  // is activated while Radium is in fullscreen mode, the operating system
+  // switches to another workspace, leaving the progress window visible only
+  // on that workspace.
+  [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
+#endif
 
   app.setWindowIcon(QIcon(QCoreApplication::applicationDirPath() + QDir::separator() + "graphics" + QDir::separator() + "radium_dog_logo_256x256_colorized.png"));
 
