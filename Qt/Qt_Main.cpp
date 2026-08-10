@@ -1645,14 +1645,21 @@ protected:
     //printf(" Got key 3\n");
 
     RETURN_IF_DATA_IS_INACCESSIBLE(false);
-      
-    if (g_grab_next_eventreceiver_key==false && editor_has_keyboard_focus()==false){
+
+    const int keynum = OS_SYSTEM_get_keynum(event);
+
+    // Ctrl+Space must always stop playback, even when a text widget (e.g. the
+    // Faust Dev 2 editor or the LLM prompt) has keyboard focus: fall through
+    // to the normal keybinding dispatch instead of letting Qt handle the key.
+    const bool ctrl_space_pressed = is_key_press
+                                    && keynum == EVENT_SPACE
+                                    && AnyCtrl(tevent.keyswitch);
+
+    if (g_grab_next_eventreceiver_key==false && editor_has_keyboard_focus()==false && !ctrl_space_pressed){
       //printf("  Returning false 2.2\n");
       return false;
     }
 
-    const int keynum = OS_SYSTEM_get_keynum(event);
-    
     //printf(" Got key 4. Keynum: %d. down: %d. up: %d\n", keynum, EVENT_VOLUME_DOWN, EVENT_VOLUME_UP);
     
     g_last_pressed_key = keynum;
