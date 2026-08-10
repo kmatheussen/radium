@@ -1,0 +1,13 @@
+--- architecture/faust/dsp/poly-dsp.h	2024-01-05 00:00:00.000000000 +0100
++++ architecture/faust/dsp/poly-dsp.h	2026-08-10 00:00:00.000000000 +0200
+@@ -540,6 +540,10 @@
+         void fadeOut(int count, FAUSTFLOAT** outBuffer)
+         {
++            if (count <= 0) {
++                return;
++            }
++    
+             // FadeOut on half buffer
+             for (int chan = 0; chan < getNumOutputs(); chan++) {
+                 double factor = 1., step = 1./double(count);
+                for (int frame = 0; frame < count; frame++) {
