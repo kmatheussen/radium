@@ -34,8 +34,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QWindow>
 #include <QStatusBar>
 #include <QMenuBar>
+#include <QMenu>
 #include <QUrl>
 #include <QMimeData>
+
+#include <QAction>
+#include <QHBoxLayout>
+#include <QKeyEvent>
+#include <QMouseEvent>
 
 #include "../config/config.h"
 
@@ -81,6 +87,10 @@ static HWND gtk_hwnd = NULL;
 #include "Qt_colors_proc.h"
 #include "Qt_Menues_proc.h"
 #include "FileRequester.hpp"
+
+#if defined(FOR_MACOSX) && defined(USE_QT6)
+#include "../macosx/cocoa_Helpers_proc.h"
+#endif
 
 #if USE_QT_VISUAL
 #  include "Qt_Fonts_proc.h"
@@ -494,6 +504,104 @@ void handleDropEvent(QString filename, float x){
 
 
 namespace{
+class MyQMenuBar : public QMenuBar
+{
+public:
+  MyQMenuBar() : QMenuBar(0)
+  {
+  }
+
+protected:
+  // When the main menu is split over two menu bars (full screen on a mac
+  // with a notch), keyboard navigation should move from the last menu in the
+  // left menu bar to the first menu in the right menu bar (and vice versa),
+  // instead of wrapping around within the same menu bar.
+  void keyPressEvent(QKeyEvent *event) override
+  {
+    int key = event->key();
+
+    //printf("  MyQMenuBar::keyPressEvent. key: %d. this_is_left: %d. active: %s. popup: %d\n", key, this==g_main_menu_bar, activeAction()==NULL ? "(null)" : activeAction()->text().toUtf8().constData(), QApplication::activePopupWidget()!=NULL);
+
+    QAction *current = activeAction();
+
+    // A resize of the menu bar (e.g. the layout changes made when entering
+    // full screen) calls QMenuBarPrivate::updateGeometries, which clears
+    // currentAction even while a popup menu is open. If that happened,
+    // keyboard navigation stops working until the mouse is clicked. Recover
+    // the current action from the open popup in that case.
+    if (current==NULL && (key==Qt::Key_Right || key==Qt::Key_Left) && QApplication::activePopupWidget()!=NULL)
+    {
+      QAction *popup_action = static_cast<QMenu*>(QApplication::activePopupWidget())->menuAction();
+
+      if (popup_action!=NULL && actions().contains(popup_action))
+      {
+        setActiveAction(popup_action);
+        current = popup_action;
+      }
+    }
+
+    if ((key==Qt::Key_Right || key==Qt::Key_Left) && g_main_menu_bar_right!=NULL)
+    {
+      if (current != NULL)
+      {
+        QVector<QAction*> my_actions = actions();
+        int index = my_actions.indexOf(current);
+
+        bool at_right_edge = (index==my_actions.size()-1 && key==Qt::Key_Right);
+        bool at_left_edge = (index==0 && key==Qt::Key_Left);
+
+        if (at_right_edge || at_left_edge)
+        {
+          QMenuBar *target_bar = (this==g_main_menu_bar) ? g_main_menu_bar_right : g_main_menu_bar;
+          QVector<QAction*> target_actions = target_bar->actions();
+
+          if (!target_actions.isEmpty())
+          {
+            QAction *target_action = (key==Qt::Key_Right) ? target_actions.first() : target_actions.last();
+            QRect rect = target_bar->actionGeometry(target_action);
+
+            //printf("    switch: target %s. rect: %d %d %d %d. valid: %d. popup_mode: %d\n", target_action->text().toUtf8().constData(), rect.x(), rect.y(), rect.width(), rect.height(), rect.isValid(), QApplication::activePopupWidget()!=NULL);
+
+            if (rect.isValid())
+            {
+              if (QApplication::activePopupWidget()!=NULL)
+              {
+                // A popup is open on this menu bar. Reset this menu bar (this
+                // also closes its popup), and open the target menu's popup.
+                setActiveAction(NULL);
+                if (current->menu()!=NULL)
+                  current->menu()->hide();
+                target_bar->setActiveAction(target_action);
+              }
+              else
+              {
+                // Highlight mode. Move the highlight to the target action
+                // without opening any popup menu. (setActiveAction would open
+                // the popup.)
+                QMouseEvent *eve = new QMouseEvent(QEvent::MouseMove, rect.center(), target_bar->mapToGlobal(rect.center()), Qt::NoButton, Qt::NoButton, Qt::NoModifier);
+                QApplication::postEvent(target_bar, eve);
+              }
+
+              target_bar->setFocus();
+              event->accept();
+              return;
+            }
+          }
+        }
+      }
+    }
+
+    QMenuBar::keyPressEvent(event);
+  }
+
+  void mouseMoveEvent(QMouseEvent *event) override
+  {
+    //printf("    mouseMoveEvent. this_is_left: %d. pos: %d %d\n", this==g_main_menu_bar, (int)event->position().x(), (int)event->position().y());
+    QMenuBar::mouseMoveEvent(event);
+    //printf("      after mouseMoveEvent. active: %s\n", activeAction()==NULL ? "(null)" : activeAction()->text().toUtf8().constData());
+  }
+};
+
 class MyQMainWindow : public QWidget{
   //Q_OBJECT;
 
@@ -602,6 +710,95 @@ public:
 QFont g_initial_editor_font;
 
 QWidget *g_main_window = NULL;
+
+static QWidget *g_menu_bar_notch_gap_widget = NULL; // Empty area reserved where the notch is placed in the main menu bar when the window is full screen on a mac with a notch.
+
+#if defined(FOR_MACOSX) && defined(USE_QT6)
+
+static void move_all_menu_actions_to_left_menu_bar(void)
+{
+  QVector<QAction*> actions = g_main_menu_bar_right->actions();
+  for(QAction *action : actions)
+  {
+    g_main_menu_bar_right->removeAction(action);
+    g_main_menu_bar->addAction(action);
+  }
+}
+
+// Called when entering/leaving full screen. If the window is full screen on a
+// mac display with a notch, all menus that would end up under the notch are
+// moved to the right menu bar, and an empty area the size of the notch is
+// reserved in the main menu bar between the two menu bars.
+void update_main_menu_notch_gap(bool window_is_fullscreen)
+{
+  if (g_main_menu_bar_right==NULL || g_menu_bar_notch_gap_widget==NULL)
+    return;
+
+  move_all_menu_actions_to_left_menu_bar();
+  g_menu_bar_notch_gap_widget->setFixedWidth(0);
+
+  if (window_is_fullscreen==false)
+    return;
+
+  int x1, y1, x2, y2;
+  if (OS_OSX_get_notch_rect((void*)g_main_window->winId(), x1, y1, x2, y2)==false)
+    return;
+
+  int bar_left = g_main_menu_bar->mapToGlobal(QPoint(0,0)).x();
+  int gap_start = x1 - bar_left;
+  int gap_end = x2 - bar_left;
+
+  static int retry_num = 0;
+
+  QVector<QAction*> actions = g_main_menu_bar->actions();
+  QVector<QAction*> actions_to_move;
+  int left_bar_width = 0;
+  bool move_rest = false;
+
+  for(QAction *action : actions)
+  {
+    QRect rect = g_main_menu_bar->actionGeometry(action);
+    if (rect.width() <= 0)
+    {
+      // Menu bar has not been laid out yet. Try again a little bit later.
+      if (retry_num < 20)
+      {
+        retry_num++;
+        QTimer::singleShot(0, []{
+            update_main_menu_notch_gap(true);
+          });
+      }
+      return;
+    }
+
+    if (move_rest==false && rect.right() >= gap_start)
+      move_rest = true;
+
+    if (move_rest==true)
+      actions_to_move.push_back(action);
+    else
+      left_bar_width = rect.right();
+  }
+
+  retry_num = 0;
+
+  for(QAction *action : actions_to_move)
+  {
+    g_main_menu_bar->removeAction(action);
+    g_main_menu_bar_right->addAction(action);
+  }
+
+  g_menu_bar_notch_gap_widget->setFixedWidth(R_MAX(0, gap_end - left_bar_width));
+}
+
+#else
+
+void update_main_menu_notch_gap(bool window_is_fullscreen)
+{
+  // No-op on platforms without a notch.
+}
+
+#endif
 
 void SetupMainWindow(void){
 
@@ -719,11 +916,26 @@ void SetupMainWindow(void){
   
   QApplication::instance()->setAttribute(Qt::AA_DontUseNativeMenuBar);
 
-  QMenuBar *menubar = new QMenuBar(0);
+  QMenuBar *menubar = new MyQMenuBar();
   initMenues(menubar);
   menubar->setNativeMenuBar(false);
-  
-  mainLayout->insertWidget(0, menubar, 0); // position 0, stretch 1.
+
+  g_main_menu_bar_right = new MyQMenuBar();
+  g_main_menu_bar_right->setNativeMenuBar(false);
+
+  g_menu_bar_notch_gap_widget = new QWidget;
+  g_menu_bar_notch_gap_widget->setFixedWidth(0);
+
+  QWidget *menubar_container = new QWidget;
+  QHBoxLayout *menubar_layout = new QHBoxLayout(menubar_container);
+  menubar_layout->setSpacing(0);
+  menubar_layout->setContentsMargins(0, 0, 0, 0);
+
+  menubar_layout->addWidget(menubar, 0);
+  menubar_layout->addWidget(g_menu_bar_notch_gap_widget, 0);
+  menubar_layout->addWidget(g_main_menu_bar_right, 0);
+
+  mainLayout->insertWidget(0, menubar_container, 0); // position 0, stretch 1.
 
   
 #if 0

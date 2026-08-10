@@ -35,6 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern QApplication *qapplication;
 
 QMenuBar *g_main_menu_bar = NULL;
+QMenuBar *g_main_menu_bar_right = NULL;
 
 static QMenu *g_first_menu = NULL;
 
@@ -382,7 +383,9 @@ bool GFX_MenuVisible(struct Tracker_Windows *tvisual){
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
   return editor->main_window->menuBar()->isVisible();
   */
-  return g_main_menu_bar->isVisible();
+  if (g_main_menu_bar->isVisible())
+    return true;
+  return g_main_menu_bar_right->isVisible();
 }
 
 void GFX_ShowMenu(struct Tracker_Windows *tvisual){
@@ -390,6 +393,7 @@ void GFX_ShowMenu(struct Tracker_Windows *tvisual){
   GL_lock();{
     GL_pause_gl_thread_a_short_while();
     g_main_menu_bar->show();
+    g_main_menu_bar_right->show();
     //editor->main_window->menuBar()->show();
   }GL_unlock();
 }
@@ -402,6 +406,7 @@ void GFX_HideMenu(struct Tracker_Windows *tvisual){
   */
   
   g_main_menu_bar->hide();
+  g_main_menu_bar_right->hide();
   
   //EditorWidget *editor=(EditorWidget *)root->song->tracker_windows->os_visual.widget;
   QKeyEvent *eve1 = new QKeyEvent((enum QEvent::Type)6, Qt::Key_Escape, Qt::NoModifier);

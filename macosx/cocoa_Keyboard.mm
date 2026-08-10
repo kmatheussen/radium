@@ -31,50 +31,26 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/OS_system_proc.h"
 
-void OS_OSX_show_icon_in_dock(void){
-
-  //  ProcessSerialNumber psn;
-  //  if (GetCurrentProcess(&psn) == noErr)
-    {
-      ProcessSerialNumber psn = { 0, kCurrentProcess };
-      TransformProcessType(&psn, 
-                           kProcessTransformToForegroundApplication);
-    }
-  
-  // didn't work.
-  //[NSApp setPresentationOptions: [NSApp presentationOptions] | NSApplicationPresentationHideMenuBar];
-}
-
-/*
-void OS_OSX_get_os_version(void){
-  //[[NSProcessInfo processInfo] operatingSystemVersion];
-  [[NSProcessInfo processInfo] operatingSystem];
-}
-*/
-
 extern struct TEvent tevent;
 extern struct Root *root;
 
 
+// Highest macOS modifier keycode is kVK_Function = 0x3F (63). macOS also generates NSEventTypeFlagsChanged
+// events with bogus keycodes (e.g. 255 when opening menus), hence the bounds check below.
+#define NUM_G_MODIFIERS 64
+
 static bool *g_modifiers; // These are used to keep track of whether it's a key up or key down event when pressing a modifier key. Unfortunately we get NSFlagsChanged events for modifier keys.
 
 __attribute__((constructor)) static void initialize_g_modifiers(void) {
-  g_modifiers = (bool*)calloc(sizeof(bool), 64);
+  g_modifiers = (bool*)calloc(sizeof(bool), NUM_G_MODIFIERS);
 };
 
 static void clear_modifiers(void){
   int i;
-  for(i=0;i<64;i++)
+  for(i=0;i<NUM_G_MODIFIERS;i++)
     g_modifiers[i]=false;
 
   OS_SYSTEM_ResetKeysUpDowns(); // Sync
-}
-
-void OS_OSX_set_cursorpos(int x, int y){
-  CGPoint pos;
-  pos.x = x;
-  pos.y = y;
-  CGWarpMouseCursorPosition(pos);
 }
 
 // Called from MyQApplication::applicationStateChanged
@@ -150,14 +126,16 @@ int OS_SYSTEM_get_event_type(void *void_event, bool ignore_autorepeat){
     if(type==NSEventTypeFlagsChanged){
       int keycode = [event keyCode];
       
-      if (g_modifiers[keycode])
-        ret = TR_KEYBOARDUP;
-      else
-        ret = TR_KEYBOARD;
+      if (keycode < NUM_G_MODIFIERS){
+        if (g_modifiers[keycode])
+          ret = TR_KEYBOARDUP;
+        else
+          ret = TR_KEYBOARD;
 
-      // Workaround for horrible NSEvent API. (doesn't seem to be a way to detect whether key is pressed or released)
-      // This is VERY fragile, so all modifiers are also reset when modifierFlags is 0 for all the osx modifiers. (see below)
-      g_modifiers[keycode] = !g_modifiers[keycode];
+        // Workaround for horrible NSEvent API. (doesn't seem to be a way to detect whether key is pressed or released)
+        // This is VERY fragile, so all modifiers are also reset when modifierFlags is 0 for all the osx modifiers. (see below)
+        g_modifiers[keycode] = !g_modifiers[keycode];
+      }
       
       //printf("   modifier is %s\n",(ret==TR_KEYBOARDUP)?"released":"pressed");
       
@@ -759,20 +737,6 @@ void OS_SYSTEM_init_keyboard(void){
   }
 }
 
-#if 0
-bool OS_SYSTEM_window_is_actually_visible(void *void_nsview){
-  return false;
-  /*
-  NSView *view = (NSView*)void_nsview;
-  return [[view window] isVisible]; // Must use occlusion function which is only available from 10.9.
-  */
-}
-#endif
-
-bool OS_OSX_is_key_window(void *void_nsview){
-  NSView *view = (NSView*)void_nsview;
-  return [[view window] isKeyWindow];
-}
 
 void OS_SYSTEM_EventPreHandler(void *void_event){
   NSEvent *event = (NSEvent *)void_event;

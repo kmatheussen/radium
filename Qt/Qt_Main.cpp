@@ -133,6 +133,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../api/api_midi_proc.h"
 #include "../api/api_common_proc.h"
 
+#include "../macosx/cocoa_Helpers_proc.h"
+
 #include "../mixergui/QM_MixerWidget.h"
 
 #include "EditorWidget.h"
@@ -3539,6 +3541,92 @@ Area GetScreenSize(struct Tracker_Windows *tvisual){
   return ret;
 }
 
+#if defined(FOR_MACOSX) && defined(USE_QT6)
+
+// Make the main window layout run with the current widget geometry right
+// away (a pending layout request would normally handle it, but doing it
+// immediately avoids a short window where the layout has old geometry).
+static void force_fullscreen_layout(QWidget *toplevel)
+{
+  toplevel->layout()->setGeometry(QRect(0, 0, toplevel->width(), toplevel->height()));
+  toplevel->layout()->activate();
+}
+
+static Qt::WindowFlags g_saved_main_window_flags;
+static bool g_saved_main_window_flags_is_valid = false;
+
+static void set_main_window_fullscreen(QWidget *toplevel)
+{
+  // Qt 6.11 applies the window's safe area margins to top-level widget
+  // layouts by default (WA_ContentsMarginsRespectsSafeArea). When the
+  // window covers the whole screen (including the menu bar area), the safe
+  // area top margin becomes the menu bar height, offsetting the whole
+  // layout down. Radium's own widgets should fill the entire window, so
+  // turn it off.
+  toplevel->setAttribute(Qt::WA_ContentsMarginsRespectsSafeArea, false);
+
+  // Qt on macOS derives the NSWindow style mask from the window flags
+  // (QCocoaWindow::windowStyleMask) and re-applies it from
+  // applyContentBorderThickness (via QTabBar::updateMacBorderMetrics)
+  // whenever a tab bar is shown/hidden. Without Qt::FramelessWindowHint
+  // the mask becomes NSWindowStyleMaskTitled, which brings the title bar
+  // back in the middle of the custom (non-native) fullscreen. Set the
+  // hint so Qt's flags-derived mask stays borderless.
+  if (toplevel->windowHandle() != NULL)
+  {
+    if (g_saved_main_window_flags_is_valid == false)
+    {
+      g_saved_main_window_flags = toplevel->windowFlags();
+      g_saved_main_window_flags_is_valid = true;
+    }
+    toplevel->windowHandle()->setFlags(g_saved_main_window_flags | Qt::FramelessWindowHint);
+  }
+
+  OS_OSX_show_very_fullscreen((void*)toplevel->winId());
+  force_fullscreen_layout(toplevel);
+  update_main_menu_notch_gap(true);
+}
+
+static void unset_main_window_fullscreen(QWidget *toplevel)
+{
+  OS_OSX_unshow_very_fullscreen((void*)toplevel->winId());
+
+  if (toplevel->windowHandle() != NULL && g_saved_main_window_flags_is_valid)
+  {
+    toplevel->windowHandle()->setFlags(g_saved_main_window_flags);
+    g_saved_main_window_flags_is_valid = false;
+  }
+
+  force_fullscreen_layout(toplevel);
+  update_main_menu_notch_gap(false);
+}
+
+// Called from the AppKit toggleFullScreen: redirect installed by
+// OS_OSX_install_fullscreen_button_redirect. Runs the same operation as
+// pressing F11 when the main window is under the cursor.
+extern "C" void OS_OSX_toggle_main_window_fullscreen(void)
+{
+  QWidget *toplevel = g_main_window;
+
+  bool main_layout_visible = g_editor->editor_layout_widget->isVisible();
+
+  if (main_layout_visible)
+    g_editor->editor_layout_widget->hide(); // prevents crash in apple opengl library.
+
+  if (OS_OSX_window_is_fullscreen((void*)toplevel->winId()))
+    unset_main_window_fullscreen(toplevel);
+  else
+    set_main_window_fullscreen(toplevel);
+
+  if (main_layout_visible){
+    g_editor->editor_layout_widget->show();
+    schedule_set_editor_focus(20); // Hiding and showing the editor layout widget loses keyboard focus, which makes the menu bar unable to receive keyboard events until the mouse is clicked.
+  }
+}
+
+#endif
+
+
 void GFX_toggleFullScreen(struct Tracker_Windows *tvisual){
 #if defined(FOR_MACOSX) && !defined(USE_QT5)
   GFX_Message2(NULL, false, "Full screen not supported on OSX");
@@ -3550,14 +3638,23 @@ void GFX_toggleFullScreen(struct Tracker_Windows *tvisual){
   if (main_layout_visible)
     g_editor->editor_layout_widget->hide(); // prevents crash in apple opengl library.
 
+#if defined(FOR_MACOSX) && defined(USE_QT6)
+  if (OS_OSX_window_is_fullscreen((void*)main_window->winId()))
+    unset_main_window_fullscreen(main_window);
+  else
+    set_main_window_fullscreen(main_window);
+#else
   if(main_window->isFullScreen()){
     main_window->showNormal();
   }else{
     main_window->showFullScreen();
   }
+#endif
 
-  if (main_layout_visible)
+  if (main_layout_visible){
     g_editor->editor_layout_widget->show();
+    schedule_set_editor_focus(20); // Hiding and showing the editor layout widget loses keyboard focus, which makes the menu bar unable to receive keyboard events until the mouse is clicked.
+  }
 
 #if defined(FOR_WINDOWS)
   OS_WINDOWS_set_key_window((void*)g_main_window->winId()); // Need to do this when setting other windows to full screen. Set it for the main window too, just in case.
@@ -3604,28 +3701,26 @@ void GFX_toggleCurrWindowFullScreen(void){
 
         fprintf(stderr, "\n\n     TOGGLE main window\n\n\n");
 
+#if defined(FOR_MACOSX) && defined(USE_QT6)
+        OS_OSX_toggle_main_window_fullscreen();
+#else
         bool main_layout_visible = g_editor->editor_layout_widget->isVisible();
 
         if (main_layout_visible)
           g_editor->editor_layout_widget->hide(); // prevents crash in apple opengl library.
-        
+
         if(toplevel->isFullScreen()){
-          printf("Trying to set normal\n");
           toplevel->showNormal();
         }else{
-
-          /*
-          if (toplevel->parent() != NULL)
-            safe_set_parent(toplevel, NULL, Qt::Window  | DEFAULT_WINDOW_FLAGS);
-          */
-          
-          printf("Trying to set full screen\n");
           toplevel->showFullScreen();
         }
 
-        if (main_layout_visible)
+        if (main_layout_visible){
           g_editor->editor_layout_widget->show();
-        
+          schedule_set_editor_focus(20); // Hiding and showing the editor layout widget loses keyboard focus, which makes the menu bar unable to receive keyboard events until the mouse is clicked.
+        }
+#endif
+
 #if defined(FOR_WINDOWS)
         OS_WINDOWS_set_key_window((void*)toplevel->winId()); // Need to do this when setting other windows to full screen. Set it for the main window too, just in case.
 #endif
@@ -4225,6 +4320,10 @@ int radium_main(const char *arg){
   main_window->show();
   main_window->raise();
   main_window->activateWindow();
+
+#if defined(FOR_MACOSX) && defined(USE_QT6)
+  OS_OSX_install_fullscreen_button_redirect((void*)main_window->winId()); // Make the green button run the home-made fullscreen (same as F11) instead of the native fullscreen.
+#endif
 
   if (main_window->windowHandle())
     main_window->windowHandle()->requestActivate();
