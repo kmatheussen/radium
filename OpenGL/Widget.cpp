@@ -1,4 +1,3 @@
-
 /* Copyright 2014-2016 Kjetil S. Matheussen
 
 This program is free software; you can redistribute it and/or
@@ -50,7 +49,21 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QElapsedTimer>
 #include <QOperatingSystemVersion>
 
+#define LINUX_DEFAULT_BACKEND_IS_OPENGL 1
+
 #define GE_DRAW_VL
+
+// Rendering-failure detection. A rendering failure is a frame that takes clearly
+// longer to render than the screen's frame time (1000.0 / screen refresh rate). If
+// more than RENDER_FAILURE_MAX_COUNT_PER_WINDOW failures happen within
+// RENDER_FAILURE_TIME_WINDOW_SECONDS seconds, we show a dialog telling the user
+// that they might want to lower the multisample setting. Failures are not counted
+// during the first RENDER_FAILURE_STARTUP_GRACE_SECONDS seconds, since frames
+// take longer than normal during startup (shader and texture-atlas initialization,
+// plugin loading, etc.).
+#define RENDER_FAILURE_TIME_WINDOW_SECONDS    10.0
+#define RENDER_FAILURE_MAX_COUNT_PER_WINDOW   10
+#define RENDER_FAILURE_STARTUP_GRACE_SECONDS  10.0
 
 #include "../common/nsmtracker.h"
 #include "../common/windows_proc.h"
@@ -1157,6 +1170,13 @@ public:
 	double _num_renderings=0;
 	double _last_rendering_time = 0;
 #endif
+
+	// Render-failure detection. Only accessed from the QRHI thread.
+	double _last_frame_start_time = 0.0;
+	double _render_failure_window_start_time = 0.0;
+	int _render_failure_count = 0;
+	bool _render_failure_dialog_has_been_shown = false;
+	double _first_frame_time = 0.0;
 	
 	void QRHI_customRender(void) override
 	{
@@ -1166,13 +1186,77 @@ public:
 
 		double new_time = TIME_get_ms();
 		double dur = new_time - _last_rendering_time;
-		if (dur > 30 || dur < 5)
+		if (false) //dur > 30 || dur < 5)
 			printf("\n\n\n****************** Dur: %f. Average: %f ************\n\n\n", dur, (new_time - s_start_time) / R_MAX(1, _num_renderings));
 		_num_renderings++;
 		_last_rendering_time = new_time;
 
 		//static int g_n=0; printf("Rendering %d\n", g_n++);
 #endif
+
+		// Count how often a frame takes longer to render than the screen's frame time.
+		// If that happens more than RENDER_FAILURE_MAX_COUNT_PER_WINDOW times within
+		// RENDER_FAILURE_TIME_WINDOW_SECONDS seconds, we show a dialog informing the
+		// user that they might want to lower the multisample setting.
+		//
+		// Only frames that actually paint something are measured, and no failures
+		// are counted during the first RENDER_FAILURE_STARTUP_GRACE_SECONDS seconds,
+		// since frames take longer than normal during startup (shader and
+		// texture-atlas initialization, plugin loading, etc.).
+		//
+		{
+			const double now = RT_TIME_get_ms(); // Monotonic, unlike TIME_get_ms.
+
+			if (_first_frame_time == 0.0)
+				_first_frame_time = now;
+
+			if (_painting_data != nullptr
+				&& now - _first_frame_time > RENDER_FAILURE_STARTUP_GRACE_SECONDS * 1000.0
+				&& _last_frame_start_time > 0.0)
+			{
+				const double frame_time = ATOMIC_DOUBLE_GET(g_vblank); // 1000.0 / screen refresh rate
+				const double frame_duration = now - _last_frame_start_time;
+
+				// Require the frame to be clearly slower than the screen's frame
+				// time, both relatively and absolutely, to avoid counting timing
+				// jitter (and any mismatch between the reported refresh rate and
+				// the actual swap-cadence) as a failure.
+				if (frame_duration > frame_time * 1.5 && frame_duration > frame_time + 5.0)
+				{
+					if (now - _render_failure_window_start_time > RENDER_FAILURE_TIME_WINDOW_SECONDS * 1000.0)
+					{
+						_render_failure_window_start_time = now;
+						_render_failure_count = 0;
+					}
+
+					_render_failure_count++;
+
+					if (_render_failure_count > RENDER_FAILURE_MAX_COUNT_PER_WINDOW)
+					{
+						if (GL_get_show_render_failure_warning() && !_render_failure_dialog_has_been_shown)
+						{
+							_render_failure_dialog_has_been_shown = true;
+
+							// GFX_Message with a buttons-vector can only be shown from the main thread
+							// (show_gfx_message asserts THREADING_is_main_thread()). Schedule it there.
+							THREADING_run_on_main_thread_async([](void)
+								{
+									vector_t v = {};
+									VECTOR_push_back(&v, "OK");
+									int dont_show = VECTOR_push_back(&v, "Don't show this message again");
+
+									int result = GFX_Message(&v, "Rendering is taking longer than the screen's refresh time. You might want to lower the multisample (MSAA) value in the OpenGL preferences to improve performance.");
+
+									if (result == dont_show)
+										SETTINGS_write_bool("show_render_failure_multisample_warning", false);
+								});
+						}
+					}
+				}
+			}
+
+			_last_frame_start_time = now;
+		}
 
 		if (_painting_data == nullptr) // Note: Only happens during startup, if at all.
 			return;
@@ -1494,7 +1578,16 @@ static QRhi::Implementation MAIN_init_qrhi(void)
       else if (!strcmp(rhi_backend, "opengl"))
         graphicsApi = QRhi::OpenGLES2;
       else if (!strcmp(rhi_backend, "vulkan"))
+#if QT_CONFIG(vulkan)
         graphicsApi = QRhi::Vulkan;
+#else
+        {
+          // Vulkan is not available in this build of Qt. Fall back to OpenGL
+          // without changing the "rhi_backend" setting.
+          printf("WARNING: \"vulkan\" is not available in this build of Qt. Using OpenGL instead.\n");
+          graphicsApi = QRhi::OpenGLES2;
+        }
+#endif
       else if (!strcmp(rhi_backend, "d3d11"))
         graphicsApi = QRhi::D3D11;
       else if (!strcmp(rhi_backend, "d3d12"))
@@ -1900,6 +1993,25 @@ void GL_set_clamp_text_rendering(bool onoff)
 	SETTINGS_write_bool("clamp_text_rendering", onoff);
 }
 
+static DEFINE_ATOMIC(bool, g_show_render_failure_warning) = true;
+
+// Can be called from any thread, but must be initialized on the main thread (done in GL_create_widget).
+bool GL_get_show_render_failure_warning(void)
+{
+	static bool s_has_inited = false;
+
+	if (!s_has_inited)
+	{
+		R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
+
+		ATOMIC_SET(g_show_render_failure_warning, SETTINGS_read_bool("show_render_failure_multisample_warning", true));
+
+		s_has_inited = true;
+	}
+
+	return ATOMIC_GET(g_show_render_failure_warning);
+}
+
 // Can be called from any thread.
 bool GL_get_clamp_text_rendering(void){
 	static bool s_has_inited = false;
@@ -2010,19 +2122,26 @@ const char *GL_get_backend(void)
 		{
 			return "metal";
 		}
-#elif FOR_LINUX && QT_CONFIG(vulkan)
-		if (strcmp(rhi_backend, "null")
-			&& strcmp(rhi_backend, "opengl")
-			&& strcmp(rhi_backend, "vulkan")
-			)
+#elif FOR_LINUX
+		if (LINUX_DEFAULT_BACKEND_IS_OPENGL || !QT_CONFIG(vulkan))
 		{
-			return "vulkan";
+			if (strcmp(rhi_backend, "null")
+				&& strcmp(rhi_backend, "opengl")
+				&& strcmp(rhi_backend, "vulkan")
+				)
+			{
+				return "opengl";
+			}
 		}
-#elif FOR_LINUX && !QT_CONFIG(vulkan)
-		if (strcmp(rhi_backend, "null")
-			&& strcmp(rhi_backend, "opengl"))
+		else
 		{
-			return "opengl";
+			if (strcmp(rhi_backend, "null")
+				&& strcmp(rhi_backend, "opengl")
+				&& strcmp(rhi_backend, "vulkan")
+				)
+			{
+				return "vulkan";
+			}
 		}
 #else
 #  error "unknown architecture"
@@ -2083,6 +2202,7 @@ QWidget *GL_create_widget(QWidget *parent)
 	}
 
 	GL_get_clamp_text_rendering(); // Ensure SETTINGS_read_bool is not called on the qrhi thread.
+	GL_get_show_render_failure_warning(); // Ensure SETTINGS_read_bool is not called on the qrhi thread.
 		
 	init_g_pause_rendering_on_off();
 

@@ -2753,13 +2753,13 @@ static void create_track_stops(const struct Tracker_Windows *window, const struc
 }
 
 static void create_track_is_recording(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack){
-  GE_Context c = GE_z(GE_alpha(GE_get_rgb(RED_COLOR_NUM), 0.7), GE_Conf(Z_STATIC));
+  GE_Context c = GE_z(GE_alpha(GE_get_rgb(RED_COLOR_NUM), 0.7), GE_Conf(Z_STATIC, NO_SCISSORS));
 
   GE_text(c, "Rec", wtrack->x, 0);
 }
 
 static void create_track_is_disabled_in_seqblock(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack){
-  GE_Context c = GE_z(GE_alpha(GE_get_rgb(WHITE_COLOR_NUM), 0.7), GE_Conf(Z_STATIC));
+  GE_Context c = GE_z(GE_alpha(GE_get_rgb(WHITE_COLOR_NUM), 0.7), GE_Conf(Z_STATIC, NO_SCISSORS));
 
   float y2 = get_scrollbar_y2(window, wblock);
   
