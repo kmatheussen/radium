@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Dependencies
+      run: |
+        sudo apt install libc6-dev binutils-dev python2-dev libasound2-dev \
+        libjack-jackd2-dev libresample1-dev liblrdf0-dev libsndfile1-dev  \
+        ladspa-sdk libglib2.0-dev calf-plugins binutils-dev libc6-dev  \
+        tk8.6-dev libogg-dev libvorbis-dev libspeex-dev fftw-dev  \
+        fftw3-dev guile-2.2-dev libxkbfile-dev x11-utils cmake libiberty-dev \
+        libfreetype6-dev libxinerama-dev libxcursor-dev libxrandr-dev  \
+        llvm-dev libboost-all-dev libssl-dev libncurses-dev libxcb-keysyms1-dev  \
+        libgmp-dev libgmp3-dev libmpfr-dev libmpc-dev libsamplerate0-dev
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v2
+      with:
+        version: '5.15.2'
+    - name: VST Audio Plug-Ins SDK
+      run: |
+          wget -q https://web.archive.org/web/20190111193507/https://www.steinberg.net/sdk_downloads/vstsdk367_03_03_2017_build_352.zip
+          unzip vstsdk367_03_03_2017_build_352.zip -d ~/SDKs
+    - name: make
+      run: |
+          export RADIUM_QT_VERSION=5
+          make packages
+          BUILDTYPE=RELEASE ./build_linux.sh -j `nproc`
+          QT_QPA_PLATFORM_PLUGIN_PATH=`$(./find_moc_and_uic_paths.sh qmake) -query QT_INSTALL_PLUGINS` bin/radium
