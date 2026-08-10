@@ -4917,9 +4917,11 @@ static void set_gpu_backend2(void){
 
 #if !FOR_MACOSX
   auto *rhi_opengl = new QRadioButton("OpenGL");
-  auto *rhi_vulkan = new QRadioButton("Vulkan");
   layout.addWidget(rhi_opengl);
+#if QT_CONFIG(vulkan)
+  auto *rhi_vulkan = new QRadioButton("Vulkan");
   layout.addWidget(rhi_vulkan);
+#endif
 #endif
 
 #if FOR_WINDOWS
@@ -4939,8 +4941,10 @@ static void set_gpu_backend2(void){
 #if !FOR_MACOSX
   else if (!strcmp(current_backend, "opengl"))
     rhi_opengl->setChecked(true);
+#if QT_CONFIG(vulkan)
   else if (!strcmp(current_backend, "vulkan"))
     rhi_vulkan->setChecked(true);
+#endif
 #endif
 #if FOR_WINDOWS
   else if (!strcmp(current_backend, "d3d11"))
@@ -4991,8 +4995,10 @@ static void set_gpu_backend2(void){
 #if !FOR_MACOSX
   else if (rhi_opengl->isChecked())
     GL_set_backend("opengl");
+#if QT_CONFIG(vulkan)
   else if (rhi_vulkan->isChecked())
     GL_set_backend("vulkan");
+#endif
 #endif
 #if FOR_WINDOWS
   else if (rhi_d3d11->isChecked())
