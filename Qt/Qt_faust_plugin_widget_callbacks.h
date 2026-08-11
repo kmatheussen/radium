@@ -263,6 +263,7 @@ struct FaustResultSvgView
 			_errorLabel = new QLabel(this);
 			_errorLabel->setAlignment(Qt::AlignCenter);
 			_errorLabel->setWordWrap(true);
+			_errorLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
 			_errorLabel->setStyleSheet(QStringLiteral("QLabel { background: white; padding: 8px; color: black; }"));
 			_errorLabel->setAutoFillBackground(true);
 		}
