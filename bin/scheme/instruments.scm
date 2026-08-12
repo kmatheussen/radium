@@ -809,6 +809,22 @@
              (lambda (descr)
                (<ra> :create-audio-instrument-from-description descr "" x y))))
 
+(define (get-mixer-slot-after-last-audio-instrument)
+  (define main-pipe (<ra> :get-main-pipe-instrument))
+  (define instruments (remove (lambda (id)
+                                (equal? id main-pipe))
+                              (get-all-audio-instruments)))
+  (if (null? instruments)
+      (cons 0 0)
+      (let ((rightmost (car (sort (map (lambda (id)
+                                         (cons (<ra> :get-instrument-x id)
+                                               (<ra> :get-instrument-y id)))
+                                       instruments)
+                                 (lambda (a b)
+                                   (> (car a) (car b)))))))
+        (cons (+ 120 (car rightmost))  ;; 120 = chip_width/grid_width in mixergui/QM_MixerWidget.h
+              (cdr rightmost)))))
+
 ;; Note: Used for shortcut.
 (define (new-instrument-from-spr-entry type-name plugin-name)
   (define parentgui (<gui> :get-main-mixer-gui))
@@ -2714,6 +2730,12 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
   (assign-instrument-for-track tracknum
                                (lambda ()
                                  (<ra> :create-audio-instrument "FluidSynth" "FluidSynth"))))
+
+;; Note: Used for shortcut
+(delafina (assign-faust-dev-2-instrument-for-track :tracknum -1)
+  (assign-instrument-for-track tracknum
+                               (lambda ()
+                                 (<ra> :create-audio-instrument "Faust Dev 2" "Faust Dev 2"))))
 
 ;; Note: Used for shortcut
 (define (assign-new-instrument-for-track type-name plugin-name)
