@@ -524,33 +524,42 @@
   (sort-by-stime (apply append conductor-lists)))
 
 ;; Merge lists of note tracks by tracknum into a single list of note-track structs.
+;; Note tracks are merged by their :tracknum field, not by their position in the lists.
 (define (merge-seqblock-note-tracks note-track-lists)
-  ;; Find max track count across all blocks
+  ;; Note tracks for tracks with illegal instruments have no tracknum (the
+  ;; hash-table-ref in get-block-note-tracks returns #f, which s7 does not
+  ;; store). Drop them; they only contain silent velocity-0 notes anyway.
+  (define all-note-tracks (keep (lambda (tr)
+                                  (tr :tracknum))
+                                (apply append note-track-lists)))
+
+  ;; Find max tracknum across all tracks
   (define num-tracks
-    (if (null? note-track-lists)
+    (if (null? all-note-tracks)
         0
-        (apply max (map length note-track-lists))))
+        (1+ (apply max (map (lambda (tr)
+                              (tr :tracknum))
+                            all-note-tracks)))))
 
   ;; Merge note tracks by tracknum
   (map (lambda (tracknum)
+         (define tracks-with-tracknum (keep (lambda (tr)
+                                              (= (tr :tracknum) tracknum))
+                                            all-note-tracks))
          (define events
            (sort-by-stime
              (apply append
-                    (map (lambda (trs)
-                           (if (< tracknum (length trs))
-                               ((list-ref trs tracknum) :events)
-                               '()))
-                         note-track-lists))))
-         (define instrument-id (or (let find ((lists note-track-lists))
-                                     (if (null? lists)
-                                         (<ra> :create-illegal-instrument)
-                                         (let ((tr (if (< tracknum (length (car lists)))
-                                                       (list-ref (car lists) tracknum)
-                                                       #f)))
-                                           (if (and tr (not (<ra> :is-illegal-instrument (tr :instrument-id))))
-                                               (tr :instrument-id)
-                                               (find (cdr lists))))))
-                                   (<ra> :create-illegal-instrument)))
+                    (map (lambda (tr)
+                           (tr :events))
+                         tracks-with-tracknum))))
+         (define instrument-id
+           (or (let find ((tracks tracks-with-tracknum))
+                 (if (null? tracks)
+                     #f
+                     (if (not (<ra> :is-illegal-instrument ((car tracks) :instrument-id)))
+                         ((car tracks) :instrument-id)
+                         (find (cdr tracks)))))
+               (<ra> :create-illegal-instrument)))
          (make-note-track :tracknum tracknum
                           :instrument-id instrument-id
                           :events events))
