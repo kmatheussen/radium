@@ -2195,7 +2195,9 @@ void openToolsDialog(void){
 }
 
 void openPluginManager(void){
-  evalScheme("(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (create-instrument (ra:create-new-instrument-conf) descr)))");
+  //evalScheme("(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (create-instrument (ra:create-new-instrument-conf) descr)))");
+  //evalScheme("(new-instrument-from-plugin-manager)");
+  evalScheme("(let ((pos (get-mixer-slot-after-last-audio-instrument)))(new-instrument-from-plugin-manager -2 (car pos) (cdr pos)))");
 }
 
 void openMidiLearnPreferencesDialog(void){
