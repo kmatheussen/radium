@@ -2560,18 +2560,21 @@ static struct Patch *get_curr_patch(struct Tracker_Windows *window, struct Track
   return PATCH_get_current();
 }
 
-void PATCH_playNoteCurrPos(struct Tracker_Windows *window, float notenum, int64_t note_id){
+void PATCH_playNoteCurrPos(struct Tracker_Windows *window, float notenum, int64_t note_id, float velocity){
 
         struct Tracks *track = NULL;
         struct Patch *patch = get_curr_patch(window, track);
   
 	if(patch==NULL || notenum<0 || notenum>127) return;
 
+        if (velocity < 0.0f)
+          velocity = track==NULL ? 1.0 : TRACK_get_velocity(track, NOTE_get_velocity(track));
+
 	PATCH_play_note(patch,
                         create_note_t(NULL,
                                       note_id,
                                       notenum,
-                                      track==NULL ? 1.0 : TRACK_get_volume(track),
+                                      velocity,
                                       track==NULL ? 0.0 : TRACK_get_pan(track),
                                       track==NULL ? 0 : ATOMIC_GET(track->midi_channel),
                                       0,
