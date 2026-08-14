@@ -225,6 +225,11 @@ static inline void Double2Placement(double f,Place *p){
     p->line=0;
     p->counter=0;
     p->dividor=1;
+	
+#if !defined(RELEASE)
+	abort(); // What the??? There was no return call here earlier! I need to know when this could have happened...
+#endif
+	return;
   }
   
   p->line = (int)f;

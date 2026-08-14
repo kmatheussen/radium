@@ -159,8 +159,8 @@ static QVector<PreferencesUndoEntry> g_color_undo_stack;
 static QVector<PreferencesUndoEntry> g_color_redo_stack;
 static QColor g_pending_old_color;
 static bool g_pending_change_committed = false;
-static bool g_slider_committed[NUM_SLIDERS] = {false};
-static int g_pending_old_slider_values[NUM_SLIDERS] = {0};
+static bool g_slider_committed[NUM_SLIDERS] = {false}; // [NO_STATIC_ARRAY_WARNING]
+static int g_pending_old_slider_values[NUM_SLIDERS] = {0}; // [NO_STATIC_ARRAY_WARNING]
 static bool g_in_undo_redo = false;
 
 struct Separator : public QWidget{

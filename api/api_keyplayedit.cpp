@@ -60,10 +60,19 @@ void keyDownPlay(int notenum,int windownum)
 
 	bool do_edit = ATOMIC_GET_RELAXED(root->editonoff);
 
-	PATCH_playNoteCurrPos(window,notenum,-1);
+	float velocity = -1.0;
+	float note_velocity = -1.0;
+	if (do_edit)
+	{
+		struct Tracks *track = window->wblock->wtrack->track;
+		note_velocity = VELOCITY_get(NOTE_get_velocity(track));
+		velocity = TRACK_get_volume(track) * note_velocity;
+	}
+
+	PATCH_playNoteCurrPos(window,notenum,-1, velocity);
 	if(do_edit)
 	{
-		InsertNoteCurrPos(window,notenum,false,-1);
+		InsertNoteCurrPos(window,notenum,false, note_velocity);
 		window->must_redraw = true;
 	}
 }
@@ -82,9 +91,20 @@ void polyKeyDownPlay(int notenum,int windownum)
 	if(notenum<=0 || notenum>127) return;
 	if(window==NULL || window->curr_track<0) return;
 
-	PATCH_playNoteCurrPos(window,notenum,-1);
-	if(ATOMIC_GET(root->editonoff))
-		InsertNoteCurrPos(window,notenum,true,-1);
+	bool do_edit = ATOMIC_GET(root->editonoff);
+
+	float velocity = -1.0;
+	float note_velocity = -1.0;
+	if (do_edit)
+	{
+		struct Tracks *track = window->wblock->wtrack->track;
+		note_velocity = VELOCITY_get(NOTE_get_velocity(track));
+		velocity = TRACK_get_volume(track) * note_velocity;
+	}
+
+	PATCH_playNoteCurrPos(window,notenum,-1, velocity);
+	if(do_edit)
+		InsertNoteCurrPos(window,notenum,true, note_velocity);
 }
 
 void keyUpPlay(int notenum,int windownum)

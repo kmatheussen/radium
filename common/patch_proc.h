@@ -87,7 +87,7 @@ extern LANGSPEC int64_t PATCH_play_note(struct Patch *patch,const note_t note);
 extern LANGSPEC void PATCH_stop_note(struct Patch *patch,const note_t note);
 extern LANGSPEC void PATCH_change_velocity(struct Patch *patch,const note_t note);
 extern LANGSPEC void PATCH_stop_all_notes(struct Patch *patch);
-extern LANGSPEC void PATCH_playNoteCurrPos(struct Tracker_Windows *window, float notenum, int64_t note_id);
+extern LANGSPEC void PATCH_playNoteCurrPos(struct Tracker_Windows *window, float notenum, int64_t note_id, float velocity);
 extern LANGSPEC void PATCH_stopNoteCurrPos(struct Tracker_Windows *window, float notenum, int64_t note_id);
 extern LANGSPEC void PATCH_change_pitch(struct Patch *patch,const note_t note);
 extern LANGSPEC void PATCH_change_pan(struct Patch *patch,const note_t note);
