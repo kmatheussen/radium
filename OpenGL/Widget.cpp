@@ -1177,6 +1177,102 @@ public:
 	int _render_failure_count = 0;
 	bool _render_failure_dialog_has_been_shown = false;
 	double _first_frame_time = 0.0;
+	r::PaintingData *_last_frame_painting_data = nullptr;
+
+	// Count how often a frame takes longer to render than the screen's frame time.
+	// If that happens more than RENDER_FAILURE_MAX_COUNT_PER_WINDOW times within
+	// RENDER_FAILURE_TIME_WINDOW_SECONDS seconds, we show a dialog informing the
+	// user that they might want to lower the multisample setting.
+	//
+	// Only frames that actually paint something are measured, and no failures
+	// are counted during the first RENDER_FAILURE_STARTUP_GRACE_SECONDS seconds,
+	// since frames take longer than normal during startup (shader and
+	// texture-atlas initialization, plugin loading, etc.). Nor are failures
+	// counted right after new painting data has been committed (from GL_create),
+	// since uploading the new data makes the following frames slower than
+	// normal. Slow frames are only counted while playing.
+	//
+	// Only called from the QRHI thread.
+	//
+	void QRHI_maybe_check_for_slow_rendering(void)
+	{
+		{
+			const double now = RT_TIME_get_ms(); // Monotonic, unlike TIME_get_ms.
+
+			if (_first_frame_time == 0.0)
+				_first_frame_time = now;
+
+			if (_painting_data != _last_frame_painting_data)
+			{
+				// New graphical data (from GL_create) was committed since the last
+				// frame. The frames that upload the new texture/vertex data take
+				// longer than normal, so reset all render-failure counters and
+				// don't measure this frame.
+				_last_frame_start_time = 0.0;
+				_render_failure_window_start_time = 0.0;
+				_render_failure_count = 0;
+				_last_frame_painting_data = _painting_data;
+			}
+			else if (ATOMIC_GET(pc->player_state) == PLAYER_STATE_PLAYING)
+			{
+				if (_painting_data != nullptr
+					&& now - _first_frame_time > RENDER_FAILURE_STARTUP_GRACE_SECONDS * 1000.0
+					&& _last_frame_start_time > 0.0)
+				{
+					const double frame_time = ATOMIC_DOUBLE_GET(g_vblank); // 1000.0 / screen refresh rate
+					const double frame_duration = now - _last_frame_start_time;
+
+					// Require the frame to be clearly slower than the screen's frame
+					// time, both relatively and absolutely, to avoid counting timing
+					// jitter (and any mismatch between the reported refresh rate and
+					// the actual swap-cadence) as a failure.
+					if ((frame_duration > frame_time * 1.5 && frame_duration > frame_time + 5.0))
+					{
+						if (now - _render_failure_window_start_time > RENDER_FAILURE_TIME_WINDOW_SECONDS * 1000.0)
+						{
+							_render_failure_window_start_time = now;
+							_render_failure_count = 0;
+						}
+
+						_render_failure_count++;
+
+						if (_render_failure_count > RENDER_FAILURE_MAX_COUNT_PER_WINDOW)
+						{
+							if (GL_get_show_render_failure_warning() && !_render_failure_dialog_has_been_shown)
+							{
+								_render_failure_dialog_has_been_shown = true;
+
+								// GFX_Message_async shows a non-modal message box and can only
+								// be called from the main thread (it asserts THREADING_is_main_thread()).
+								// Schedule it there.
+								THREADING_run_on_main_thread_async([](void)
+									{
+										GFX_Message_async("Rendering is taking longer than the screen's refresh time. You might want to lower the multisample (MSAA) value in the OpenGL preferehnces to improve performance.",
+														  {"OK", "Don't show this message again"},
+														  [](const std::string &selection)
+															  {
+																  if (selection == "Don't show this message again")
+																	  SETTINGS_write_bool("show_render_failure_multisample_warning", false);
+															  });
+									});
+							}
+						}
+					}
+				}
+
+				_last_frame_start_time = now;
+			}
+			else
+			{
+				// Not playing: reset all render-failure counters so that slow
+				// non-playing frames never trigger the warning, and so that the
+				// first frame after resuming playback isn't measured either.
+				_last_frame_start_time = 0.0;
+				_render_failure_window_start_time = 0.0;
+				_render_failure_count = 0;
+			}
+		}
+	}
 	
 	void QRHI_customRender(void) override
 	{
@@ -1194,69 +1290,7 @@ public:
 		//static int g_n=0; printf("Rendering %d\n", g_n++);
 #endif
 
-		// Count how often a frame takes longer to render than the screen's frame time.
-		// If that happens more than RENDER_FAILURE_MAX_COUNT_PER_WINDOW times within
-		// RENDER_FAILURE_TIME_WINDOW_SECONDS seconds, we show a dialog informing the
-		// user that they might want to lower the multisample setting.
-		//
-		// Only frames that actually paint something are measured, and no failures
-		// are counted during the first RENDER_FAILURE_STARTUP_GRACE_SECONDS seconds,
-		// since frames take longer than normal during startup (shader and
-		// texture-atlas initialization, plugin loading, etc.).
-		//
-		{
-			const double now = RT_TIME_get_ms(); // Monotonic, unlike TIME_get_ms.
-
-			if (_first_frame_time == 0.0)
-				_first_frame_time = now;
-
-			if (_painting_data != nullptr
-				&& now - _first_frame_time > RENDER_FAILURE_STARTUP_GRACE_SECONDS * 1000.0
-				&& _last_frame_start_time > 0.0)
-			{
-				const double frame_time = ATOMIC_DOUBLE_GET(g_vblank); // 1000.0 / screen refresh rate
-				const double frame_duration = now - _last_frame_start_time;
-
-				// Require the frame to be clearly slower than the screen's frame
-				// time, both relatively and absolutely, to avoid counting timing
-				// jitter (and any mismatch between the reported refresh rate and
-				// the actual swap-cadence) as a failure.
-				if (frame_duration > frame_time * 1.5 && frame_duration > frame_time + 5.0)
-				{
-					if (now - _render_failure_window_start_time > RENDER_FAILURE_TIME_WINDOW_SECONDS * 1000.0)
-					{
-						_render_failure_window_start_time = now;
-						_render_failure_count = 0;
-					}
-
-					_render_failure_count++;
-
-					if (_render_failure_count > RENDER_FAILURE_MAX_COUNT_PER_WINDOW)
-					{
-						if (GL_get_show_render_failure_warning() && !_render_failure_dialog_has_been_shown)
-						{
-							_render_failure_dialog_has_been_shown = true;
-
-							// GFX_Message with a buttons-vector can only be shown from the main thread
-							// (show_gfx_message asserts THREADING_is_main_thread()). Schedule it there.
-							THREADING_run_on_main_thread_async([](void)
-								{
-									vector_t v = {};
-									VECTOR_push_back(&v, "OK");
-									int dont_show = VECTOR_push_back(&v, "Don't show this message again");
-
-									int result = GFX_Message(&v, "Rendering is taking longer than the screen's refresh time. You might want to lower the multisample (MSAA) value in the OpenGL preferences to improve performance.");
-
-									if (result == dont_show)
-										SETTINGS_write_bool("show_render_failure_multisample_warning", false);
-								});
-						}
-					}
-				}
-			}
-
-			_last_frame_start_time = now;
-		}
+		QRHI_maybe_check_for_slow_rendering();
 
 		if (_painting_data == nullptr) // Note: Only happens during startup, if at all.
 			return;

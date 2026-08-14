@@ -73,6 +73,10 @@ static HWND gtk_hwnd = NULL;
 
 #include <QString>
 
+#include <initializer_list>
+#include <string>
+#include <vector>
+
 #include "EditorWidget.h"
 #include "../common/threading.h"
 
@@ -1329,6 +1333,77 @@ int GFX_Message2_internal(vector_t *buttons, bool program_state_is_valid, const 
   
   ATOMIC_SET(g_is_showing_message, false);
   return ret;
+}
+
+// Can only be called from the main thread. Shows a non-modal message box and
+// returns immediately. See the declaration in OS_visual_input.h for details.
+void GFX_Message_async(const char *message, std::initializer_list<const char*> buttons, std::function<void(const std::string&)> callback)
+{
+	R_ASSERT_RETURN_IF_FALSE(THREADING_is_main_thread());
+
+	MyQMessageBox *msgBox = MyQMessageBox::create(false);
+	msgBox->setAttribute(Qt::WA_DeleteOnClose);
+	set_window_flags(msgBox, radium::NOT_MODAL);
+
+	msgBox->setText(message);
+
+	std::vector<std::string> button_texts;
+
+	if (buttons.size() == 0)
+	{
+		msgBox->setStandardButtons(QMessageBox::Ok);
+		button_texts.push_back("OK");
+	}
+	else
+	{
+		for (const char *button_text : buttons)
+		{
+			button_texts.push_back(button_text);
+			msgBox->addButton(button_text, QMessageBox::AcceptRole);
+		}
+	}
+
+	adjustSizeAndMoveWindowToCentre(msgBox);
+
+	QObject::connect(msgBox, &QMessageBox::finished, msgBox, [msgBox, button_texts, callback](int)
+		{
+			std::string selection = GFX_MESSAGE_CLOSED;
+
+			QAbstractButton *clicked_button = msgBox->clickedButton();
+
+			if (clicked_button != NULL)
+			{
+				for (int i = 0 ; i < (int)button_texts.size() ; i++)
+				{
+					QString button_text = QString::fromStdString(button_texts[i]);
+
+					if (clicked_button->text() == button_text)
+					{
+						selection = button_texts[i];
+						break;
+					}
+				}
+
+				if (selection == GFX_MESSAGE_CLOSED) // Workaround for buggy KDE library.
+				{
+					for (int i = 0 ; i < (int)button_texts.size() ; i++)
+					{
+						QString button_text = QString::fromStdString(button_texts[i]);
+
+						if (clicked_button->text().contains(button_text))
+						{
+							selection = button_texts[i];
+							break;
+						}
+					}
+				}
+			}
+
+			if (callback)
+				callback(selection);
+		});
+
+	safeShow(msgBox);
 }
 
 // Note: Can be called from any thread
