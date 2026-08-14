@@ -116,6 +116,8 @@ extern LANGSPEC const wchar_t *GFX_GetWString(struct Tracker_Windows *tvisual,Re
 #ifdef __cplusplus
 
 #include <functional>
+#include <initializer_list>
+#include <string>
 
 // returns guinum of popup menu
 int64_t GFX_Menu3(
@@ -129,6 +131,21 @@ int64_t GFX_Menu3(
 static inline int64_t GFX_SimpleMenu(const char *texts, std::function<void(int,bool)> callback3){
   return API_simplePopupMenu(texts, callback3);
 }
+
+// Value passed to the callback of GFX_Message_async when the dialog is closed
+// without clicking a button. (std::string == const char* compares by content.)
+#define GFX_MESSAGE_CLOSED "__closed__"
+
+// Shows a non-modal message box and returns immediately. Can only be called
+// from the main thread. The callback is called when the dialog is closed, with
+// the text of the clicked button, or GFX_MESSAGE_CLOSED if it was closed
+// without clicking a button. An empty buttons-list shows a standard "OK"
+// button (which reports as "OK").
+void GFX_Message_async(
+	const char *message,
+	std::initializer_list<const char*> buttons,
+	std::function<void(const std::string&)> callback
+);
 
 #endif
 
