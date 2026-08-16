@@ -106,11 +106,11 @@ static QVector<QString> get_lines2(QFile &file){
     else if (line.contains("#") && !line.contains("=")) // another possible malformed line fix: "a#b" -> "#b" (==)
       line.remove(0, line.indexOf("#"));
     
-    if (line.length()>512){ // Because of an old bug, lines could grow and grow. Just delete those lines.
+	if (line.length()>16*1024){ // Because of an old bug, lines could grow and grow. Just delete those lines.
 		GFX_Message(NULL, "A very long line (%d characters) in the config file was ignored", (int)line.length());
 		line = "";
     }
-    
+
     //printf("line: -%s-\n",line.toUtf8().constData());
     ret.push_back(line);
   }
@@ -302,6 +302,23 @@ bool SETTINGS_remove(const char* key){
   write_lines(key, lines);
 
   return true;
+}
+
+void SETTINGS_make_config_file_private(const char *key)
+{
+#if !defined(FOR_WINDOWS)
+	R_ASSERT(THREADING_is_main_thread());
+
+	const QString filename = STRING_get_qstring(OS_get_config_filename(key).id);
+
+	if (QFile::exists(filename))
+	{
+		if (QFile::setPermissions(filename, QFile::ReadOwner | QFile::WriteOwner) == false)
+		{
+			showAsyncMessage(QString("Unable to set private permissions on config file \"%1\"").arg(filename).toUtf8().constData());
+		}
+	}
+#endif
 }
 
 // Warning, called before GC_init, so it cannot allocate with talloc or talloc_atomic.

@@ -23,9 +23,15 @@ struct NoteEventCollector
 
 	static constexpr int MAX_EVENTS = 128;
 
+	enum EventType {
+		NOTE_OFF,    // 0: sorts first at equal offsets (release before retrigger)
+		NOTE_ON,     // 1: note starts before its same-offset pitch change
+		NOTE_PITCH   // 2: pitch change of an already playing note
+	};
+
 	struct Event {
 		int sample_offset;   // block_delta_time [0, RADIUM_BLOCKSIZE)
-		bool is_note_on;     // true=on, false=off
+		EventType type;
 		note_t note;
 	};
 
@@ -41,7 +47,7 @@ struct NoteEventCollector
 	{
 		if (num_events < MAX_EVENTS){
 			events[num_events].sample_offset = block_delta_time;
-			events[num_events].is_note_on = true;
+			events[num_events].type = NOTE_ON;
 			events[num_events].note = note;
 			num_events++;
 		}
@@ -51,7 +57,17 @@ struct NoteEventCollector
 	{
 		if (num_events < MAX_EVENTS){
 			events[num_events].sample_offset = block_delta_time;
-			events[num_events].is_note_on = false;
+			events[num_events].type = NOTE_OFF;
+			events[num_events].note = note;
+			num_events++;
+		}
+	}
+
+	void notePitch(int block_delta_time, const note_t &note)
+	{
+		if (num_events < MAX_EVENTS){
+			events[num_events].sample_offset = block_delta_time;
+			events[num_events].type = NOTE_PITCH;
 			events[num_events].note = note;
 			num_events++;
 		}
@@ -60,27 +76,28 @@ struct NoteEventCollector
 	static bool comes_after(const Event &a, const Event &b)
 	{
 		if (a.sample_offset == b.sample_offset)
-			return a.is_note_on && !b.is_note_on; // note-on after note-off at same offset
-		
+			return a.type > b.type; // at the same offset: NOTE_OFF < NOTE_ON < NOTE_PITCH
+
 		return a.sample_offset > b.sample_offset;
     }
 
-	// Insertion sort by sample_offset. Note-off sorts before note-on at same offset.
+	// Insertion sort by sample_offset. At equal offsets the order is
+	// NOTE_OFF, NOTE_ON, NOTE_PITCH.
 	// RT-safe: no allocation, small N.
     void sort(void)
 	{
 		for (int i = 1; i < num_events; i++)
 		{
 			Event key = events[i];
-			
+
 			int j = i - 1;
-			
+
              while (j >= 0 && comes_after(events[j], key))
              {
                  events[j + 1] = events[j];
                  j--;
              }
-			 
+
              events[j + 1] = key;
 		}
 	}

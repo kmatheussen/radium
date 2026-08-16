@@ -18,6 +18,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <math.h>
 #include <string>
 #include <vector>
+#include <map>
+#include <algorithm>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
@@ -29,7 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../bin/packages/faust/architecture/faust/dsp/llvm-dsp.h"
 #endif
 #include "../bin/packages/faust/architecture/faust/dsp/interpreter-dsp.h"
-#include "../bin/packages/faust/architecture/faust/dsp/poly-dsp.h"
+#include "Faust_dev2_poly.h"
 
 #if __GNUC__ >= 5
 #  pragma GCC diagnostic push
@@ -41,7 +43,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../bin/packages/faust/architecture/faust/gui/UI.h"
 #include "../bin/packages/faust/architecture/faust/gui/APIUI.h"
-#include "../bin/packages/faust/architecture/faust/gui/MidiUI.h"
+#include "../bin/packages/faust/architecture/faust/gui/Soundfile.h"
+#include "../bin/packages/faust/architecture/faust/gui/LibsndfileReader.h"
 
 #if __GNUC__ >= 5
 #  pragma GCC diagnostic pop
@@ -57,6 +60,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QPointer>
 #include <QGridLayout>
 #include <QFile>
+#include <QSet>
+#include <QRegularExpression>
 #include <QtConcurrent>
 #include <QTimer>
 
@@ -65,10 +70,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <faust/gui/QTUI.h>
 #pragma GCC diagnostic pop
 
+#define INCLUDE_SNDFILE_OPEN_FUNCTIONS // for the radium_sf_open declarations in nsmtracker.h
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"
 #include "../common/patch_proc.h"
 #include "../common/disk.h"
+
+#include <sndfile.h>
 
 #include "../common/ArgsCreator.hpp"
 
@@ -92,7 +100,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define MAX_CHANNELS 16
 #define MAX_EFFECTS 1024
-#define MAX_POLYPHONY 32
+#define MAX_POLYPHONY 128
 
 #define MIN_LINEAR_VELOCITY 0.1f
 static constexpr float g_min_linear_gain_fd2 = 0.001995f; // = powf(10, R_SCALE(MIN_LINEAR_VELOCITY, 0.0, 1.0 ,-40, 20) / 20.0f) / 10.0f;
@@ -113,11 +121,16 @@ static inline float velocity2gain(float val)
 static const char *g_default_faust_dev2_program =
 	"import(\"stdfaust.lib\");\n"
 	"\n"
-	"declare options \"[nvoices:8]\";\n"
 	"freq = hslider(\"freq\", 440, 20, 20000, 0.01);\n"
 	"gain = hslider(\"gain\", 0.5, 0, 1, 0.01);\n"
 	"gate = button(\"gate\");\n"
 	"process = os.sawtooth(freq) * gain * gate <: _,_;\n";
+
+// The code a newly created Faust Dev 2 instrument starts with.
+QString FAUST2_get_default_code(void)
+{
+	return QString(g_default_faust_dev2_program);
+}
 
 
 namespace{
@@ -126,13 +139,73 @@ struct NoteVoice
 {
 	int64_t note_id;
 	const struct SeqBlock *seqblock;
-	int pitch;
-	dsp_voice *voice;
+	float pitch;
+	FaustDev2PolyVoice *voice;
+};
+
+
+//===========================================
+// Soundfile support
+//===========================================
+
+// All audio data used by one compiled program. Created on the compile thread
+// (file decoding is slow), then assigned to the dsp zones in create_dsp_data
+// and owned by FaustDev2Dsp from then on.
+struct FaustDev2SoundfileData
+{
+	std::map<std::string, Soundfile*> url2soundfile; // url string (as passed to addSoundfile) -> Soundfile
+	std::vector<Soundfile*> owned;                   // all created Soundfiles
+
+	~FaustDev2SoundfileData()
+	{
+		for (Soundfile *sf : owned)
+			delete sf;
+	}
+};
+
+// Collects the list of soundfile urls used by a dsp. Derives from GUI (which
+// provides no-op defaults for all widget methods) and only handles
+// addSoundfile.
+class Faust2SoundfileCollectUI : public GUI
+{
+public:
+	std::vector<std::string> url_list;
+
+	void addSoundfile(const char* label, const char* filename, Soundfile** sf_zone) override
+	{
+		if (filename == NULL || *filename == 0)
+			return;
+		if (std::find(url_list.begin(), url_list.end(), filename) == url_list.end())
+			url_list.push_back(filename);
+	}
+};
+
+// Assigns already-loaded Soundfile pointers to the zones of a dsp instance.
+// Run once per dsp instance (the mono dsp and each polyphonic voice); every
+// voice then reads from the same shared Soundfile data.
+class Faust2SoundfileAssignUI : public GUI
+{
+public:
+	const std::map<std::string, Soundfile*> &url2soundfile;
+
+	Faust2SoundfileAssignUI(const std::map<std::string, Soundfile*> &map)
+		: url2soundfile(map)
+	{
+	}
+
+	void addSoundfile(const char* label, const char* filename, Soundfile** sf_zone) override
+	{
+		if (filename == NULL || sf_zone == NULL)
+			return;
+		auto it = url2soundfile.find(filename);
+		if (it != url2soundfile.end())
+			*sf_zone = it->second;
+	}
 };
 
 struct FaustDev2Dsp
 {
-	mydsp_poly *poly_dsp;     // owns the voice DSPs; NULL for effects
+	nonstealing_microtonal_poly_dsp *poly_dsp;  // owns the voice DSPs; NULL for effects
 	dsp *final_dsp;           // points to poly_dsp for instruments, or mono_dsp for effects
 	APIUI api_ui;
 	NoteEventCollector collector;
@@ -143,6 +216,7 @@ struct FaustDev2Dsp
 	llvm_dsp_factory *llvm_factory;       // NULL if interpreter was used
 #endif
 	interpreter_dsp_factory *interp_factory; // NULL if LLVM was used
+	FaustDev2SoundfileData *soundfile_data; // owned; soundfiles loaded on the compile thread
 	bool is_instrument;
 	int num_params;
 	float *param_values;      // current values, indexed by APIUI id
@@ -158,6 +232,7 @@ struct FaustDev2Dsp
 		, llvm_factory(NULL)
 #endif
 		, interp_factory(NULL)
+		, soundfile_data(NULL)
 		, is_instrument(false)
 		, num_params(0)
 		, param_values(NULL)
@@ -171,6 +246,7 @@ struct FaustDev2Dsp
 		// final_dsp owns poly_dsp and the mono DSP, so just delete final_dsp
 		delete final_dsp;
 		V_free(param_values);
+		delete soundfile_data;
 
 		// Delete factory
 		if (interp_factory != NULL)
@@ -281,35 +357,51 @@ static FaustDev2Dsp *create_dsp_data(dsp_factory *factory,
 									 llvm_dsp_factory *llvm_factory,
 #endif
 									 interpreter_dsp_factory *interp_factory,
+									 FaustDev2SoundfileData *soundfile_data,
 									 float sample_rate)
 {
 
 	dsp *mono_dsp = factory->createDSPInstance();
 	if (mono_dsp == NULL){
 		RWarning("createDSPInstance returned NULL in FaustDev2");
+		delete soundfile_data;
 		return NULL;
 	}
 
+	// Assign the pre-loaded soundfiles to the mono dsp's zones before it is
+	// cloned into voices and before init: the interpreter backend needs the
+	// soundfile zones to be valid when init runs.
+	if (soundfile_data != NULL && !soundfile_data->url2soundfile.empty())
+	{
+		Faust2SoundfileAssignUI assign_ui(soundfile_data->url2soundfile);
+		mono_dsp->buildUserInterface(&assign_ui);
+	}
+
 	dsp *final_dsp;
-	mydsp_poly *poly_dsp = NULL;
+	nonstealing_microtonal_poly_dsp *poly_dsp = NULL;
 	bool is_instrument;
 
-	// Detect polyphony from metadata or naming convention
-	bool midi = false, midi_sync = false;
-	int nvoices = 0;
-	MidiMeta::analyse(mono_dsp, midi, midi_sync, nvoices);
-
-	if (nvoices <= 0 && MidiMeta::checkPolyphony(mono_dsp))
-		nvoices = MAX_POLYPHONY;
-
-	if (nvoices > 0){
-		poly_dsp = new mydsp_poly(mono_dsp, nvoices, true, true);
+	// Polyphony is always 128 voices: any 'declare options "[nvoices:N]"'
+	// in the Faust code is ignored. An instrument is detected by the
+	// presence of the freq/key, gate, and gain/velocity controls.
+	if (MidiMeta::checkPolyphony(mono_dsp)){
+		poly_dsp = new nonstealing_microtonal_poly_dsp(mono_dsp, MAX_POLYPHONY);
 		final_dsp = poly_dsp;
 		is_instrument = true;
 	}else{
 		poly_dsp = NULL;
 		final_dsp = mono_dsp;
 		is_instrument = false;
+	}
+
+	// Every voice has its own soundfile zones (the interpreter backend keeps
+	// them in a per-voice table), so assign the shared Soundfiles to each
+	// voice too.
+	if (poly_dsp != NULL && soundfile_data != NULL && !soundfile_data->url2soundfile.empty())
+	{
+		Faust2SoundfileAssignUI assign_ui(soundfile_data->url2soundfile);
+		for (FaustDev2PolyVoice *voice : poly_dsp->fVoiceTable)
+			voice->buildUserInterface(&assign_ui);
 	}
 
 	FaustDev2Dsp *dsp_data = new FaustDev2Dsp;
@@ -321,6 +413,7 @@ static FaustDev2Dsp *create_dsp_data(dsp_factory *factory,
 	dsp_data->llvm_factory = llvm_factory;
 #endif
 	dsp_data->interp_factory = interp_factory;
+	dsp_data->soundfile_data = soundfile_data;
 
 	final_dsp->init(sample_rate);
 	final_dsp->buildUserInterface(&dsp_data->api_ui);
@@ -374,6 +467,15 @@ static void hotswap_dsp_data(FaustDev2Data *devdata, FaustDev2Dsp *new_dsp)
 
 	{
 		radium::PlayerLock lock;
+
+		// The api_ui only writes the grouped (voice 0) control zones; the poly
+		// voices only pick up values via GroupUI::updateAllZones (see
+		// uiGroupItem::reflectZone in GUI.h), so fan the preserved values out
+		// to all new voices now, while the new dsp is not yet live. Pure data
+		// write, no callbacks into Radium, safe under the player lock.
+		if (new_dsp->is_instrument && new_dsp->poly_dsp != NULL)
+			new_dsp->poly_dsp->fGroups.updateAllZones();
+
 		devdata->dsp_data = new_dsp;
 		devdata->fade_out_is_active = false; // the new dsp plays at full volume
 		devdata->fade_frames_left = 0;
@@ -406,6 +508,185 @@ static void delete_factory(
 }
 
 
+// Parses the url argument of a Faust 'soundfile' call, e.g.
+// "{'bd_808.flac';'sn_dub.flac'}", into a list of file names.
+static std::vector<std::string> parse_soundfile_url(const char *url)
+{
+	std::vector<std::string> ret;
+
+	if (url == NULL || *url == 0)
+		return ret;
+
+	std::string s = url;
+
+	// Remove surrounding braces and single quotes.
+	while (!s.empty() && (s.front() == '{' || s.front() == '\''))
+		s.erase(s.begin());
+	while (!s.empty() && (s.back() == '}' || s.back() == '\''))
+		s.pop_back();
+
+	size_t pos = 0;
+	while (true)
+	{
+		size_t end = s.find(';', pos);
+		std::string item = s.substr(pos, (end == std::string::npos) ? std::string::npos : end - pos);
+
+		// Remove single quotes from this item.
+		std::string stripped;
+		stripped.reserve(item.size());
+		for (char c : item)
+		{
+			if (c != '\'')
+				stripped.push_back(c);
+		}
+		if (!stripped.empty())
+			ret.push_back(stripped);
+
+		if (end == std::string::npos)
+			break;
+		pos = end + 1;
+	}
+
+	return ret;
+}
+
+
+// LibsndfileReader that opens files through Radium's own libsndfile wrapper
+// (radium_sf_open), which handles non-ASCII paths on Windows (sf_wchar_open),
+// where libsndfile's plain sf_open(const char*) fails. All decoding logic is
+// delegated to the upstream *Aux helpers, so this reader keeps
+// LibsndfileReader's features: chunked reads, 'is_double' support, and the
+// '_SAMPLERATE' resampling if that build flag is ever enabled (it is not:
+// the so. module already handles sample-rate differences via its read step
+// srate(sf,part)/ma.SR, and resampling will be investigated separately).
+class Faust2LibsndfileReader : public LibsndfileReader
+{
+public:
+
+	Faust2LibsndfileReader()
+		: LibsndfileReader(true)
+	{}
+	
+	// Check that the file exists and is readable.
+	bool checkFile(const std::string &path_name) override
+	{
+		SF_INFO snd_info;
+		memset(&snd_info, 0, sizeof(snd_info));
+		SNDFILE *snd_file = radium_sf_open(QString::fromStdString(path_name), SFM_READ, &snd_info);
+		return checkFileAux(snd_file, path_name);
+	}
+
+	// Get the number of channels and the length in frames.
+	void getParamsFile(const std::string &path_name, int &channels, int &length) override
+	{
+		SF_INFO snd_info;
+		memset(&snd_info, 0, sizeof(snd_info));
+		SNDFILE *snd_file = radium_sf_open(QString::fromStdString(path_name), SFM_READ, &snd_info);
+		if (snd_file == NULL)
+		{
+			// checkFiles verified the file, so this should not happen; keep
+			// getParamsFileAux's assert from firing.
+			channels = 1;
+			length = BUFFER_SIZE;
+			return;
+		}
+		getParamsFileAux(snd_file, snd_info, channels, length);
+	}
+
+	// Read one file into part 'part' of 'soundfile', starting at frame
+	// 'offset' (which is incremented by the number of frames read).
+	void readFile(Soundfile *soundfile, const std::string &path_name, int part, int &offset, int max_chan) override
+	{
+		SF_INFO snd_info;
+		memset(&snd_info, 0, sizeof(snd_info));
+		SNDFILE *snd_file = radium_sf_open(QString::fromStdString(path_name), SFM_READ, &snd_info);
+		if (snd_file == NULL)
+		{
+			// checkFiles verified the file, so this should not happen; keep
+			// readFileAux's assert from firing and the part silent.
+			soundfile->emptyFile(part, offset);
+			return;
+		}
+		readFileAux(soundfile, snd_file, snd_info, part, offset, max_chan);
+	}
+};
+
+
+// Creates a silent one-part Soundfile used when nothing could be loaded.
+static Soundfile *create_empty_soundfile(void)
+{
+	Soundfile *sf = new Soundfile(1, BUFFER_SIZE * MAX_SOUNDFILE_PARTS, MAX_CHAN, 1, false);
+	int offset = 0;
+	for (int i = 0; i < MAX_SOUNDFILE_PARTS; i++)
+		sf->emptyFile(i, offset);
+	sf->shareBuffers(1, MAX_CHAN);
+	return sf;
+}
+
+// Loads all files of one 'soundfile("label[url:{...}]")' call into a
+// Soundfile, using the standard SoundfileReader::createSoundfile layout.
+// Only absolute paths are used (no sample pool is searched); files that
+// cannot be found become silent BUFFER_SIZE parts (the reader's
+// "__empty_sound__" mechanism). Never returns NULL.
+static Soundfile *load_soundfile(const std::vector<std::string> &filenames)
+{
+	Faust2LibsndfileReader reader;
+	Soundfile::Directories dirs;
+
+	std::vector<std::string> path_list = reader.checkFiles(dirs, filenames);
+	for (size_t i = 0; i < path_list.size(); i++)
+		if (path_list[i] == "__empty_sound__")
+		{
+			const std::string filename = filenames[i];
+			THREADING_run_on_main_thread_async([filename]()
+				{
+					showAsyncMessage(QString("Faust Dev 2: Could not load soundfile '%1'. Replaced with silence.")
+									 .arg(QString::fromStdString(filename)).toUtf8().constData());
+				});
+		}
+
+	try
+	{
+		Soundfile *sf = reader.createSoundfile(path_list, MAX_CHAN, false);
+		if (sf != NULL)
+			return sf;
+	}
+	catch (...)
+	{
+	}
+	return create_empty_soundfile();
+}
+
+// Loads all soundfiles used by the program in 'test_dsp'. Runs on the
+// compile thread, so the (potentially slow) file decoding never blocks the
+// audio thread. The Soundfile pointers are assigned to the dsp zones later,
+// in create_dsp_data. Only absolute paths are supported: relative names are
+// not searched in any sample pool and load as silence (with a warning).
+static FaustDev2SoundfileData *collect_and_load_soundfiles(dsp *test_dsp)
+{
+	Faust2SoundfileCollectUI collect_ui;
+	test_dsp->buildUserInterface(&collect_ui);
+
+	if (collect_ui.url_list.empty())
+		return NULL;
+
+	FaustDev2SoundfileData *soundfile_data = new FaustDev2SoundfileData;
+
+	for (const std::string &url : collect_ui.url_list)
+	{
+		if (soundfile_data->url2soundfile.find(url) != soundfile_data->url2soundfile.end())
+			continue; // same url used twice; share the same data
+
+		std::vector<std::string> filenames = parse_soundfile_url(url.c_str());
+		Soundfile *sf = load_soundfile(filenames);
+		soundfile_data->url2soundfile[url] = sf;
+		soundfile_data->owned.push_back(sf);
+	}
+
+	return soundfile_data;
+}
+
+
 static dsp_factory *create_factory(const FaustDev2Data *devdata,
 									int optlevel,
 									QString &error_message,
@@ -413,8 +694,10 @@ static dsp_factory *create_factory(const FaustDev2Data *devdata,
 									llvm_dsp_factory **out_llvm_factory,
 #endif
 									interpreter_dsp_factory **out_interp_factory,
-									MyQTemporaryDir **out_svg_dir)
+									MyQTemporaryDir **out_svg_dir,
+									FaustDev2SoundfileData **out_soundfile_data)
 {
+	*out_soundfile_data = NULL;
 	QStringList args_list = devdata->options.split("\n", Qt::SkipEmptyParts);
 
 	// Create temp directory for SVG output
@@ -489,6 +772,9 @@ static dsp_factory *create_factory(const FaustDev2Data *devdata,
 
 	int num_inputs = test_dsp->getNumInputs();
 	int num_outputs = test_dsp->getNumOutputs();
+
+	FaustDev2SoundfileData *soundfile_data = collect_and_load_soundfiles(test_dsp);
+
 	delete test_dsp;
 
 	if (num_inputs > MAX_CHANNELS){
@@ -498,6 +784,7 @@ static dsp_factory *create_factory(const FaustDev2Data *devdata,
 		if (llvm_factory)
 			deleteDSPFactory(llvm_factory);
 #endif
+		delete soundfile_data;
 		error_message = QString("Maximum %1 input channels supported (%2)").arg(MAX_CHANNELS).arg(num_inputs);
 		return NULL;
 	}
@@ -509,6 +796,7 @@ static dsp_factory *create_factory(const FaustDev2Data *devdata,
 		if (llvm_factory)
 			deleteDSPFactory(llvm_factory);
 #endif
+		delete soundfile_data;
 		error_message = QString("Maximum %1 output channels supported (%2)").arg(MAX_CHANNELS).arg(num_outputs);
 		return NULL;
 	}
@@ -517,6 +805,7 @@ static dsp_factory *create_factory(const FaustDev2Data *devdata,
 	*out_llvm_factory = llvm_factory;
 #endif
 	*out_interp_factory = interp_factory;
+	*out_soundfile_data = soundfile_data;
 
 	return factory;
 }
@@ -547,6 +836,7 @@ static void perform_compile_completion(instrument_t patch_id,
 									   llvm_dsp_factory *llvm_factory,
 #endif
 									   interpreter_dsp_factory *interp_factory,
+									   FaustDev2SoundfileData *soundfile_data,
 									   MyQTemporaryDir *svg_dir,
 									   const QString &compile_code,
 									   int retries_left)
@@ -564,6 +854,7 @@ static void perform_compile_completion(instrument_t patch_id,
 #endif
 					   interp_factory);
 		delete svg_dir;
+		delete soundfile_data;
 		return;
 	}
 
@@ -579,6 +870,7 @@ static void perform_compile_completion(instrument_t patch_id,
 #endif
 					   interp_factory);
 		delete svg_dir; // this compile result is outdated
+		delete soundfile_data;
 		start_compilation(plugin); // Recompile the latest code.
 		return;
 	}
@@ -589,11 +881,23 @@ static void perform_compile_completion(instrument_t patch_id,
 	// progresses in RT_process, so we poll with a timer instead of holding
 	// the player lock. The old and new dsp never compute at the same time, so
 	// there is no CPU spike during the transition.
+	//
+	// Note: check fade_out_is_active, not fade_frames_left, when deciding
+	// whether to start the fade. fade_frames_left reaches 0 when the fade is
+	// finished, and this function is re-entered by the poll timer below, so
+	// checking fade_frames_left would restart the finished fade. That re-arms
+	// the normal compute path in RT_process: the old dsp, which had been
+	// frozen in the silent wait window, starts playing its voices again at
+	// full volume (the fade multiplier restarts at 1.0), and then the swap is
+	// forced by the retry budget while the restarted fade is barely started,
+	// cutting the burst abruptly. Net effect: ugly scratchy sounds for some
+	// 60-70ms after a recompile. fade_out_is_active, on the other hand, is
+	// only set when the fade starts and only cleared at the swap.
 	bool must_wait_for_fade;
 	{
 		radium::PlayerLock lock; // makes the fade state reads consistent
 
-		if (devdata->dsp_data != NULL && devdata->fade_frames_left == 0){
+		if (devdata->dsp_data != NULL && devdata->fade_out_is_active == false){
 			devdata->fade_out_is_active = true;
 			devdata->fade_frames_total = (int)(FADE_LENGTH_MS * MIXER_get_sample_rate() / 1000.0);
 			devdata->fade_frames_left = devdata->fade_frames_total;
@@ -608,6 +912,7 @@ static void perform_compile_completion(instrument_t patch_id,
 							   llvm_factory,
 #endif
 							   interp_factory,
+							   soundfile_data,
 							   svg_dir,
 							   compile_code,
 							   retries_left_m1 = retries_left-1]()
@@ -618,6 +923,7 @@ static void perform_compile_completion(instrument_t patch_id,
 										   llvm_factory,
 #endif
 										   interp_factory,
+										   soundfile_data,
 										   svg_dir,
 										   compile_code,
 										   retries_left_m1);
@@ -625,7 +931,7 @@ static void perform_compile_completion(instrument_t patch_id,
 		return;
 	}
 
-	// Create the DSP on the main thread. mydsp_poly's GroupUI registers
+	// Create the DSP on the main thread. The poly dsp's GroupUI registers
 	// itself in Faust's process-global GUI list (GUI.h), which the main
 	// thread iterates in GUI::updateAllGuis (from QTGUI timers), so
 	// constructing it on the compile thread raced with that iteration.
@@ -635,6 +941,7 @@ static void perform_compile_completion(instrument_t patch_id,
 											 llvm_factory,
 #endif
 											 interp_factory,
+											 soundfile_data,
 											 MIXER_get_sample_rate());
 
 	if (dsp_data == NULL){
@@ -644,7 +951,7 @@ static void perform_compile_completion(instrument_t patch_id,
 #endif
 					   interp_factory);
 		delete svg_dir;
-		return;
+		return; // soundfile_data was deleted inside create_dsp_data
 	}
 
 	devdata->error_message = "";
@@ -654,13 +961,6 @@ static void perform_compile_completion(instrument_t patch_id,
 		delete devdata->svg_dir;
 
 	devdata->svg_dir = svg_dir;
-
-	hotswap_dsp_data(devdata, dsp_data);
-
-	if (dsp_data->is_instrument)
-		plugin->type->is_instrument = true;
-	else
-		plugin->type->is_instrument = false;
 
 	// Recreate the QTGUI
 	if (devdata->qtgui != NULL){
@@ -689,12 +989,19 @@ static void perform_compile_completion(instrument_t patch_id,
 	devdata->qtgui_parent->layout()->addWidget(devdata->qtgui);
 
 	// buildUserInterface resets each control zone to its default value
-	// (the QTGUI widget constructors write fCur back into the zone), so
-	// re-apply the preserved parameter values. The qtgui->update() call
-	// below (GUI::updateAllGuis) then dispatches them to the polyphonic
-	// voices and to the recreated interface.
-	for (int i = 0; i < dsp_data->num_params; i++)
-		dsp_data->api_ui.setParamValue(i, dsp_data->param_values[i]);
+	// (the QTGUI widget constructors write fCur back into the zone), so the
+	// preserved values must be copied in afterwards. This happens in
+	// hotswap_dsp_data below, which (1) copies the old values into the new
+	// api_ui / param_values, (2) fans them out to all poly voices via
+	// fGroups.updateAllZones(), and only then (3) swaps the new dsp in under
+	// the player lock. The qtgui->update() call further below
+	// (GUI::updateAllGuis) then just refreshes the recreated widgets.
+	hotswap_dsp_data(devdata, dsp_data);
+
+	if (dsp_data->is_instrument)
+		plugin->type->is_instrument = true;
+	else
+		plugin->type->is_instrument = false;
 
 	// Route GUI-dialog control changes through set_effect_value, so they
 	// update param_values / stored values and survive recompiles.
@@ -767,6 +1074,7 @@ public:
 #endif
 		interpreter_dsp_factory *interp_factory = NULL;
 		MyQTemporaryDir *svg_dir = NULL;
+		FaustDev2SoundfileData *soundfile_data = NULL;
 
 		//
 		// Note: THIS CALL IS THE BIG EXPENSIVE THING.
@@ -778,12 +1086,14 @@ public:
 											  &llvm_factory,
 #endif
 											  &interp_factory,
-											  &svg_dir);
+											  &svg_dir,
+											  &soundfile_data);
 
 		if (factory == NULL)
 		{
 			
 			delete svg_dir;
+			delete soundfile_data;
 
 			THREADING_run_on_main_thread_async([patch_id = _patch_id,
 												error_message,
@@ -820,6 +1130,7 @@ public:
 											llvm_factory,
 #endif
 											interp_factory,
+											soundfile_data,
 											svg_dir,
 											compile_code = _code](){
 			perform_compile_completion(patch_id, factory,
@@ -827,6 +1138,7 @@ public:
 									   llvm_factory,
 #endif
 									   interp_factory,
+									   soundfile_data,
 									   svg_dir,
 									   compile_code,
 									   FADE_POLL_RETRIES);
@@ -882,9 +1194,15 @@ static void start_compilation(SoundPlugin *plugin)
 // SoundPluginType Callbacks
 //===========================================
 
+// The pitch comparisons in this section compare float pitches that were
+// stored from the same note_t value they are later matched against, so the
+// exact == comparisons are correct (the values are bit-identical).
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wfloat-equal"
+
 
 // The player lock must be held when calling this function.
-static void register_note_voice(FaustDev2Dsp *dsp_data, const note_t &note, int pitch, dsp_voice *voice)
+static void register_note_voice(FaustDev2Dsp *dsp_data, const note_t &note, float pitch, FaustDev2PolyVoice *voice)
 {
 	// The voice may have been stolen from a previous note; drop that note's entry.
 	for (int i = 0; i < dsp_data->num_note_voices; )
@@ -912,23 +1230,22 @@ static void register_note_voice(FaustDev2Dsp *dsp_data, const note_t &note, int 
 
 
 // The player lock must be held when calling this function.
-static bool release_note_voice(FaustDev2Dsp *dsp_data, const note_t &note, int pitch)
+static bool release_note_voice(FaustDev2Dsp *dsp_data, const note_t &note, float pitch)
 {
 	for (int i = 0; i < dsp_data->num_note_voices; i++)
 	{
 		NoteVoice &nv = dsp_data->note_voices[i];
 		if (nv.pitch == pitch && is_note(note, nv.note_id, nv.seqblock))
 		{
-			dsp_voice *voice = nv.voice;
+			FaustDev2PolyVoice *voice = nv.voice;
 
 			dsp_data->note_voices[i] = dsp_data->note_voices[dsp_data->num_note_voices-1];
 			dsp_data->num_note_voices--;
 
-			// Sanity check that the voice is still playing (or is about to
-			// play, in legato mode) this pitch. If it was stolen, the note is
-			// already gone, and releasing the voice would kill the note that
-			// stole it.
-			if (voice->fCurNote == pitch || (voice->fCurNote == kLegatoVoice && voice->fNextNote == pitch))
+			// Sanity check that the voice is still playing this pitch. If it
+			// was released or restarted, the note is already gone, and
+			// releasing the voice would kill the note that took it over.
+			if (voice->fCurNote == pitch)
 				voice->keyOff();
 
 			return true;
@@ -939,13 +1256,13 @@ static bool release_note_voice(FaustDev2Dsp *dsp_data, const note_t &note, int p
 }
 
 
-// mydsp_poly's voice mixer uses fixed internal buffers of MIX_BUFFER_SIZE
+// The poly dsp's voice mixer uses fixed internal buffers of MIX_BUFFER_SIZE
 // frames (poly-dsp.h), so a compute longer than that overflows the heap
 // buffers. Split the compute into chunks that fit. (Block sizes up to 8192
 // are selectable in the preferences.)
 static constexpr int MAX_POLY_COMPUTE_FRAMES = MIX_BUFFER_SIZE;
 
-static void compute_poly_chunked(mydsp_poly *poly_dsp,
+static void compute_poly_chunked(nonstealing_microtonal_poly_dsp *poly_dsp,
 								 int num_inputs,
 								 int num_outputs,
 								 int num_frames,
@@ -1033,27 +1350,29 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 			if (seg_len > 0)
 				compute_poly_chunked(dsp_data->poly_dsp, num_inputs, num_outputs, seg_len, inputs, outputs, pos);
 
-			if (ev.is_note_on)
+			if (ev.type == NoteEventCollector::NOTE_ON)
 			{
-				int pitch = (int)(ev.note.pitch + 0.5f);
+				float pitch = ev.note.pitch;
 				float gain = velocity2gain(ev.note.velocity);
 				int vel = R_BOUNDARIES(0, (int)(gain * 127), 127);
 				MapUI *voice = dsp_data->poly_dsp->keyOn(0, pitch, vel);
 				if (voice != NULL)
-					register_note_voice(dsp_data, ev.note, pitch, static_cast<dsp_voice*>(voice));
+					register_note_voice(dsp_data, ev.note, pitch, static_cast<FaustDev2PolyVoice*>(voice));
+				else
+					RT_message("FaustDev2 instrument: no more free voices. (max polyphony is %d)", (int)dsp_data->poly_dsp->fVoiceTable.size());
 			}
-			else
+			else if (ev.type == NoteEventCollector::NOTE_OFF)
 			{
-				int pitch = (int)(ev.note.pitch + 0.5f);
+				float pitch = ev.note.pitch;
 				
 				if (release_note_voice(dsp_data, ev.note, pitch) == false)
 				{
 					// No registered voice for this note (for instance because its
-					// keyOn event was dropped, or the voice was stolen and reused).
-					// Only fall back to the pitch-based keyOff if no other
-					// registered note uses the same pitch, since mydsp_poly's
-					// keyOff releases the *oldest* voice with that pitch, which
-					// would release the wrong note when notes overlap on one pitch.
+					// keyOn event was dropped). Only fall back to the
+					// pitch-based keyOff if no other registered note uses the
+					// same pitch, since keyOff releases the *oldest* voice with
+					// that pitch, which would release the wrong note when notes
+					// overlap on one pitch.
 					bool other_note_with_same_pitch = false;
 					
 					for (int i = 0; i < dsp_data->num_note_voices; i++)
@@ -1065,6 +1384,23 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 					
 					if (other_note_with_same_pitch == false)
 						dsp_data->poly_dsp->keyOff(0, pitch);
+				}
+			}
+			else // NOTE_PITCH
+			{
+				// Glide / pitch-line change. Only the freq/key zones are
+				// updated (setPitch keeps fCurNote at the note-on pitch, since
+				// note-off events carry the original pitch). If the note is not
+				// registered (keyOn was dropped, or the pitch event is ordered
+				// before its note-on), the event is ignored.
+				for (int n = 0; n < dsp_data->num_note_voices; n++)
+				{
+					NoteVoice &nv = dsp_data->note_voices[n];
+					if (is_note(ev.note, nv.note_id, nv.seqblock))
+					{
+						nv.voice->setPitch(ev.note.pitch);
+						break;
+					}
 				}
 			}
 
@@ -1102,6 +1438,8 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 	for (int ch = num_outputs; ch < MAX_CHANNELS; ch++)
 		memset(outputs[ch], 0, num_frames * sizeof(float));
 }
+
+#pragma GCC diagnostic pop
 
 
 static void play_note(SoundPlugin *plugin, int block_delta_time, note_t note)
@@ -1142,10 +1480,16 @@ static void set_note_volume(SoundPlugin *plugin, int block_delta_time, note_t no
 
 static void set_note_pitch(SoundPlugin *plugin, int block_delta_time, note_t note)
 {
-	// Not currently implemented for mydsp_poly.
-	(void)plugin;
-	(void)block_delta_time;
-	(void)note;
+	FaustDev2Data *devdata = (FaustDev2Data*)plugin->data;
+	FaustDev2Dsp *dsp_data = devdata->dsp_data;
+
+	// The pitch change is queued and applied in RT_process at the exact
+	// sample offset, in the same way as note-on/note-off events. Note that
+	// the engine only calls set_note_pitch while the note is still playing,
+	// and that note-off events carry the original note-on pitch, so the
+	// voice keeps its original fCurNote (see FaustDev2PolyVoice::setPitch).
+	if (dsp_data != NULL && dsp_data->is_instrument)
+		dsp_data->collector.notePitch(block_delta_time, note);
 }
 
 
@@ -1172,7 +1516,7 @@ static void set_effect_value(SoundPlugin *plugin, int time, int effect_num, floa
 
 	// For polyphonic instruments the control zones are "grouped": writing to a
 	// control only reaches the actual voice DSPs when the voice group UI is
-	// refreshed (see mydsp_poly/GroupUI in poly-dsp.h). Without this the
+	// refreshed (see GroupUI in poly-dsp.h). Without this the
 	// controls are dead unless the QTGUI dialog happens to be open.
 	//
 	// We must not call the global GUI::updateAllGuis() here: it runs while the
@@ -1278,18 +1622,46 @@ static bool effect_is_visible(SoundPlugin *plugin, int effect_num)
 	if (dsp_data == NULL || effect_num >= dsp_data->num_params)
 		return false;
 
-	// Hide note-control parameters (freq/key, gain/vel/velocity, gate) since they are managed by note events.
-	// Also hide the Panic button added by mydsp_poly.
+	// The note-control parameters (freq/key, gain/vel/velocity, gate) are
+	// managed by note events and hidden from the GUI - but ONLY when the
+	// program defines the full note-control set, i.e. all three of freq,
+	// gain, and gate (the same condition MidiMeta::checkPolyphony uses to
+	// detect an instrument). A program defining just one or two of them,
+	// e.g. a filter effect with a 'freq' slider, keeps its sliders in the
+	// GUI. The Panic button added by the poly dsp is always hidden.
 	const char *addr = dsp_data->api_ui.getParamAddress(effect_num);
 	std::string path(addr);
 
-	if (MapUI::endsWith(path, "/freq")
-	    || MapUI::endsWith(path, "/key")
-	    || MapUI::endsWith(path, "/gain")
-	    || MapUI::endsWith(path, "/vel")
-	    || MapUI::endsWith(path, "/velocity")
-	    || MapUI::endsWith(path, "/gate")
-	    || MapUI::endsWith(path, "/Panic"))
+	if (MapUI::endsWith(path, "/Panic"))
+		return false;
+
+	bool has_freq = false;
+	bool has_gain = false;
+	bool has_gate = false;
+	for (int i = 0; i < dsp_data->num_params; i++)
+	{
+		const char *param_addr = dsp_data->api_ui.getParamAddress(i);
+		if (param_addr == NULL)
+			continue;
+		std::string param_path(param_addr);
+		if (MapUI::endsWith(param_path, "/freq")
+		    || MapUI::endsWith(param_path, "/key"))
+			has_freq = true;
+		else if (MapUI::endsWith(param_path, "/gain")
+		         || MapUI::endsWith(param_path, "/vel")
+		         || MapUI::endsWith(param_path, "/velocity"))
+			has_gain = true;
+		else if (MapUI::endsWith(param_path, "/gate"))
+			has_gate = true;
+	}
+
+	if (has_freq && has_gain && has_gate
+	    && (MapUI::endsWith(path, "/freq")
+	        || MapUI::endsWith(path, "/key")
+	        || MapUI::endsWith(path, "/gain")
+	        || MapUI::endsWith(path, "/vel")
+	        || MapUI::endsWith(path, "/velocity")
+	        || MapUI::endsWith(path, "/gate")))
 	{
 		return false;
 	}
@@ -1341,13 +1713,15 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
 #endif
 		interpreter_dsp_factory *interp_factory = NULL;
 		MyQTemporaryDir *svg_dir = NULL;
+		FaustDev2SoundfileData *soundfile_data = NULL;
 
 		dsp_factory *factory = create_factory(devdata, getFaustOptimizationLevel(), error_message, // main thread, safe to read settings
 #if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
 											   &llvm_factory,
 #endif
 											   &interp_factory,
-											   &svg_dir);
+											   &svg_dir,
+											   &soundfile_data);
 
 		if (factory != NULL){
 			// Store SVG dir
@@ -1360,10 +1734,27 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
 													  llvm_factory,
 #endif
 													  interp_factory,
+													  soundfile_data,
 													  sample_rate);
 			if (dsp_data != NULL){
 				hotswap_dsp_data(devdata, dsp_data);
 			}
+		} else {
+			// Loading a song with code that does not compile: store the
+			// error and signal the failed compile exactly like the async
+			// compile thread does (Dev2CompileThread::run), so the editor
+			// widget shows the error pane when it is opened. Without this,
+			// the failure is silent and the instrument (which has no DSP)
+			// looks like it never tried to compile.
+			delete svg_dir;
+			delete soundfile_data;
+
+			devdata->error_message = error_message;
+			devdata->ready.has_new_data = true;
+			devdata->ready.factory_is_ready = true;
+			devdata->ready.factory_succeeded = false;
+			devdata->ready.svg_is_ready = true;
+			devdata->ready.svg_succeeded = false;
 		}
 	}
 
@@ -1577,6 +1968,794 @@ bool FAUST2_get_use_interpreter_backend(SoundPlugin *plugin)
 }
 
 
+//=====================================================
+// Static analysis used by the LLM auto-fix loop.
+//
+// When a generated program fails to compile, the widget asks the LLM to fix
+// it. Faust's compiler error for arity/composition mistakes is a multi-KB
+// dump of the inlined signal graph without source locations, so the model
+// cannot localize the bug (it has failed whole sessions rewriting the wrong
+// code). To give it exact lines instead, each top-level definition of the
+// failing program is compiled in isolation here: the expression is wrapped
+// in its own tiny program, compiled with the fast interpreter backend, and
+// the real compiler's type system then tells us whether the expression
+// itself is well-formed and whether it has unbound audio inputs (the
+// signature of "a filter/smoother was used as a plain value instead of
+// being applied to a signal with ':'").
+//=====================================================
+
+namespace
+{
+
+struct Faust2LintDef
+{
+	QString name;
+	QString rhs;
+	int line;
+};
+
+// Masks strings and comments in one line so delimiter counting below never
+// sees them. 'in_block_comment' carries a /* */ comment across lines.
+QString faust2_lint_mask_line(const QString &line, bool &in_block_comment)
+{
+	QString masked = line;
+	const int len = masked.size();
+
+	for (int i = 0; i < len; i++)
+	{
+		const QChar c = masked.at(i);
+
+		if (in_block_comment)
+		{
+			if (c == '*' && i + 1 < len && masked.at(i + 1) == '/')
+			{
+				masked[i] = masked[i + 1] = ' ';
+				i++;
+				in_block_comment = false;
+			}
+			else
+				masked[i] = ' ';
+		}
+		else if (c == '/' && i + 1 < len && masked.at(i + 1) == '/')
+		{
+			while (i < len)
+			{
+				masked[i] = ' ';
+				i++;
+			}
+		}
+		else if (c == '/' && i + 1 < len && masked.at(i + 1) == '*')
+		{
+			masked[i] = masked[i + 1] = ' ';
+			i++;
+			in_block_comment = true;
+		}
+		else if (c == '"')
+		{
+			masked[i] = ' ';
+			i++;
+			while (i < len && masked.at(i) != '"')
+			{
+				if (masked.at(i) == '\\')
+				{
+					masked[i] = ' ';
+					i++;
+				}
+				masked[i] = ' ';
+				i++;
+			}
+		}
+	}
+
+	return masked;
+}
+
+// Collects the top-level "name = ...;" definitions of 'code'. The RHS may
+// span several lines ('with { }' blocks included) and ends at the first ';'
+// outside of any bracket. Assumes at most one definition per line.
+QList<Faust2LintDef> faust2_lint_collect_defs(const QString &code)
+{
+	QList<Faust2LintDef> defs;
+	const QStringList lines = code.split('\n');
+	const QRegularExpression def_re(QStringLiteral("^\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\s*=(.*)$"));
+
+	bool in_block_comment = false;
+	bool collecting = false;
+	QString def_name;
+	QString def_rhs;
+	int def_line = 0;
+	int depth = 0; // delimiters inside the statement being collected
+
+	for (int i = 0; i < lines.size(); i++)
+	{
+		const QString line_text = lines.at(i);
+		const QString masked = faust2_lint_mask_line(line_text, in_block_comment);
+
+		if (!collecting)
+		{
+			// Match on the ORIGINAL line (the RHS must keep its string
+			// literals and comments intact), but require that the matched
+			// name is real code: the masked line has everything inside
+			// strings/comments blanked, so if the name position was blanked
+			// the "definition" is only text inside a string or comment.
+			const QRegularExpressionMatch m = def_re.match(line_text);
+			if (m.hasMatch()
+			    && m.captured(1) != "declare"
+			    && m.captured(1) != "import"
+			    && m.capturedStart(1) < masked.size()
+			    && masked.at(m.capturedStart(1)) != ' ')
+			{
+				def_name = m.captured(1);
+				def_rhs = m.captured(2);
+				def_line = i + 1;
+				depth = 0;
+				collecting = true;
+			}
+		}
+		else
+			def_rhs += "\n" + line_text;
+
+		if (collecting)
+		{
+			bool terminated = false;
+			int terminator_pos = -1; // index of the terminating ';' in the current (masked) line
+			for (int pos = 0; pos < masked.size(); pos++)
+			{
+				const QChar ch = masked.at(pos);
+				if (ch == '(' || ch == '{' || ch == '[')
+				  depth++;
+				else if (ch == ')' || ch == '}' || ch == ']')
+				  depth--;
+				else if (ch == ';' && depth <= 0)
+				{
+					terminated = true;
+					terminator_pos = pos;
+					break;
+				}
+			}
+
+			if (terminated)
+			{
+				// Cut the RHS at the terminating ';' (the same position in
+				// the original text; anything after it on that line belongs
+				// to the next statement and is ignored, since one definition
+				// per line is assumed). The synthetic program adds its own
+				// ';' after the RHS.
+				const int cut = def_rhs.size() - (line_text.size() - terminator_pos);
+				if (cut > 0 && cut < def_rhs.size())
+				  def_rhs = def_rhs.left(cut);
+
+				Faust2LintDef d;
+				d.name = def_name;
+				d.rhs = def_rhs.trimmed();
+				d.line = def_line;
+				defs.append(d);
+
+				def_name.clear();
+				def_rhs.clear();
+				collecting = false;
+				depth = 0;
+			}
+		}
+	}
+
+	return defs;
+}
+
+// Replaces the content of every string literal with "x", so the name
+// substitution below can never match (and thereby corrupt) text inside
+// strings. String contents are irrelevant for the arity check.
+QString faust2_lint_sanitize_strings(const QString &rhs)
+{
+	QString out;
+	out.reserve(rhs.size());
+	const int len = rhs.size();
+
+	for (int i = 0; i < len; i++)
+	{
+		const QChar c = rhs.at(i);
+		if (c != '"')
+		{
+			out.append(c);
+			continue;
+		}
+
+		i++;
+		while (i < len && rhs.at(i) != '"')
+		{
+			if (rhs.at(i) == '\\')
+			  i++;
+			i++;
+		}
+
+		out.append("\"x\"");
+	}
+
+	return out;
+}
+
+// Returns the output channel count if 'rhs' is a 'soundfile("...", N)'
+// declaration (N is parsed from the trailing numeric argument of the
+// sanitized rhs), else -1. Used to substitute references to soundfile
+// definitions with type-correct placeholders.
+int faust2_lint_soundfile_channels(const QString &rhs)
+{
+	const QString sanitized = faust2_lint_sanitize_strings(rhs);
+	const QRegularExpression re(QStringLiteral("\\bsoundfile\\s*\\([^()]*,\\s*(\\d+)\\s*\\)"));
+	const QRegularExpressionMatch m = re.match(sanitized);
+	if (!m.hasMatch())
+	  return -1;
+	return m.captured(1).toInt();
+}
+
+// True if the (sanitized) rhs is a soundfile declaration.
+bool faust2_lint_is_soundfile_decl(const QString &rhs)
+{
+	return faust2_lint_sanitize_strings(rhs).contains(QStringLiteral("soundfile"));
+}
+
+// Replaces every reference to another top-level definition in 'rhs' with a
+// 0-input hslider placeholder. All replaced names refer to 0-input
+// definitions (in a valid instrument every definition is 0-input, and a
+// definition with an unbound input is flagged when its own line is
+// checked), so the substitution preserves the input arity of the
+// expression. Names in 'soundfile_channels' are replaced by a real
+// soundfile placeholder with the same channel count instead: so.sound()
+// and friends require an actual soundfile signal, and the channel count
+// matters for arity (a stereo file produces 2 outputs, a mono hslider
+// only 1).
+QString faust2_lint_substitute(const QString &rhs,
+                               const QString &self_name,
+                               const QSet<QString> &all_names,
+                               const QHash<QString, int> &soundfile_channels)
+{
+	QString out = faust2_lint_sanitize_strings(rhs);
+	int placeholder = 0;
+
+	for (const QString &name : all_names)
+	{
+		if (name == self_name)
+		  continue; // recursive references are left as-is
+
+		// Word-bounded, not followed by '.', so module-qualified names like
+		// 'ma.SR' and partial identifiers like 'freq' inside 'vib_freq' are
+		// never touched.
+		const QRegularExpression re(QStringLiteral("\\b%1\\b(?!\\.)").arg(name));
+
+		if (soundfile_channels.contains(name))
+		{
+			// A soundfile-derived name is either passed to so.sound()/so.loop()
+			// (which expect the raw soundfile signal with its auxiliary
+			// length/rate outputs), or used as a plain N-channel audio signal
+			// (e.g. 'wet = dry : pf.flanger_stereo(...)'). In the first case
+			// the raw placeholder is correct; in the second the auxiliary
+			// outputs must be stripped ((0, 0) binds the implicit part/index
+			// inputs so the compiler's interval analysis accepts it).
+			const QRegularExpression so_arg_re(QStringLiteral("\\bso\\.[a-zA-Z_]*\\s*\\(\\s*%1\\s*,").arg(name));
+			if (so_arg_re.match(out).hasMatch())
+			  out.replace(re, QString("soundfile(\"_lint[url:{'_lint.wav'}]\", %1)").arg(soundfile_channels.value(name)));
+			else
+			  // Parenthesized: the trailing 'si.block(2), si.bus(N)' contains a
+			  // top-level comma, which would leak into an enclosing tuple.
+			  out.replace(re, QString("((0, 0) : soundfile(\"_lint[url:{'_lint.wav'}]\", %1) : si.block(2), si.bus(%1))").arg(soundfile_channels.value(name)));
+		}
+		else
+		  out.replace(re, QString("hslider(\"_l%1\", 0, 0, 1, 0.01)").arg(placeholder++));
+	}
+
+	return out;
+}
+
+}
+
+// The LLM auto-fix lint: returns "Line N: ..." findings for the definitions
+// of 'code' that are themselves ill-formed or carry unbound audio inputs.
+// Called synchronously on the GUI thread, only after a compile has failed
+// (no plugin compile is in flight, and libfaust serializes its factory
+// creation through its own global lock anyway). Each check is a small
+// interpreter-backend compile, ~10-50 ms.
+QStringList FAUST2_lint_faust_code(const SoundPlugin *plugin, const QString &code)
+{
+	(void)plugin;
+
+	const QList<Faust2LintDef> defs = faust2_lint_collect_defs(code);
+	if (defs.isEmpty())
+	  return QStringList();
+
+	QSet<QString> all_names;
+	for (const Faust2LintDef &def : defs)
+	  all_names.insert(def.name);
+
+	// Soundfile definitions and the definitions derived from them (e.g.
+	// 'dry = so.sound(mysf, 0).play_interp(...)') produce N-channel signals.
+	// Track them so the substitution uses a type-correct, N-channel
+	// placeholder instead of a mono hslider.
+	QHash<QString, int> soundfile_channels;
+	for (const Faust2LintDef &def : defs)
+	{
+		const int channels = faust2_lint_soundfile_channels(def.rhs);
+		if (channels > 0)
+		  soundfile_channels.insert(def.name, channels);
+	}
+	// Propagate to definitions that reference a soundfile-derived name.
+	for (bool changed = true; changed; )
+	{
+		changed = false;
+		for (const Faust2LintDef &def : defs)
+		{
+			if (soundfile_channels.contains(def.name))
+			  continue;
+			const QString sanitized = faust2_lint_sanitize_strings(def.rhs);
+			for (auto it = soundfile_channels.constBegin(); it != soundfile_channels.constEnd(); ++it)
+			{
+				const QRegularExpression re(QStringLiteral("\\b%1\\b(?!\\.)").arg(it.key()));
+				if (re.match(sanitized).hasMatch())
+				{
+					soundfile_channels.insert(def.name, it.value());
+					changed = true;
+					break;
+				}
+			}
+		}
+	}
+
+	const QString radium_path = QCoreApplication::applicationDirPath();
+	radium::ArgsCreator args;
+	args.push_back("-I");
+	args.push_back(radium_path + "/packages/faust/libraries");
+
+	QStringList findings;
+
+	// Mono effects applied directly to stereo (soundfile-derived) signals:
+	// e.g. 'delay = dry : ef.echo(2.0, 0.25, 0.5)' or
+	// 'left = dry : de.delay(0.1, mod1)'. The compiler error says
+	// "outputs [2] ... must be equal to the number of inputs [3]" and the
+	// per-line check flags the line, but nothing says WHY - so name the
+	// pattern and give the recipe here. Note: no map-membership skip - a
+	// def that references a stereo signal can still apply a mono effect to
+	// it wrongly (that is exactly how 'left'/'right' above are broken).
+	{
+		static const QStringList mono_effects =
+		{
+			QStringLiteral("ef\\.[a-zA-Z_][a-zA-Z0-9_]*"),
+			QStringLiteral("de\\.[a-zA-Z_][a-zA-Z0-9_]*"),
+			QStringLiteral("fi\\.[a-zA-Z_][a-zA-Z0-9_]*"),
+			QStringLiteral("en\\.[a-zA-Z_][a-zA-Z0-9_]*"),
+			QStringLiteral("co\\.[a-zA-Z_][a-zA-Z0-9_]*"),
+			QStringLiteral("pf\\.flanger_mono"),
+			QStringLiteral("pf\\.vibrato2_mono"),
+			QStringLiteral("pf\\.phaser2_mono"),
+		};
+
+		for (const Faust2LintDef &def : defs)
+		{
+			const QString sanitized = faust2_lint_sanitize_strings(def.rhs);
+			for (auto it = soundfile_channels.constBegin(); it != soundfile_channels.constEnd(); ++it)
+			{
+				const QRegularExpression re(QStringLiteral("\\b%1\\b\\s*:\\s*(%2)\\s*\\(").arg(it.key()).arg(mono_effects.join("|")));
+				const QRegularExpressionMatch m = re.match(sanitized);
+				if (m.hasMatch())
+				{
+					// The de. module takes its signal as the LAST argument
+					// (de.delay(n, d, x)); the other mono effects are
+					// 1-input filters applied with par.
+					if (m.captured(1).startsWith("de."))
+					  findings.append(QString("Line %1: '%2' takes its signal as its last argument - write %2(..., %3) instead of '%3 : %2(...)'. Example: de.delay(0.1, mod1, dry).").arg(def.line).arg(m.captured(1)).arg(it.key()));
+					else
+					  findings.append(QString("Line %1: '%2' is a mono effect applied to a stereo signal - this gives an arity error. Apply it per channel: sig : par(i, 2, %2).").arg(def.line).arg(m.captured(1)));
+					break;
+				}
+			}
+		}
+	}
+
+	// A parallel composition mixing mono signals with stereo signals before
+	// ro.interleave(2, 2): e.g. 'mix1 = (piano, chorus) : ro.interleave(2, 2)'
+	// where piano is mono (1 channel) and chorus stereo (2 channels): 3
+	// channels into a 4-input interleave is an arity error. The compiler
+	// error and the per-line check flag the line, but nothing says WHY -
+	// name the pattern and give the recipe. Also covers tuples whose
+	// members are all mono with fewer than 4 members (2 channels into the
+	// 4-input interleave), and mono signals applied to stereo effects.
+	{
+		// Which names are stereo: soundfile-derived 2-channel signals (the
+		// propagation above), outputs of known stereo effects, and the
+		// results of a pairwise (2,2) interleave mix.
+		QSet<QString> stereo_names;
+		for (auto it = soundfile_channels.constBegin(); it != soundfile_channels.constEnd(); ++it)
+		  if (it.value() == 2)
+		    stereo_names.insert(it.key());
+		static const QStringList stereo_effects =
+		{
+			QStringLiteral("pf\\.flanger_stereo"),
+			QStringLiteral("re\\.stereo_freeverb"),
+			QStringLiteral("re\\.dattorro_rev_default"),
+			QStringLiteral("re\\.satrev"),
+			QStringLiteral("co\\.compressor_stereo"),
+		};
+		for (const Faust2LintDef &def : defs)
+		{
+			const QString sanitized = faust2_lint_sanitize_strings(def.rhs);
+			if (sanitized.contains(QStringLiteral("ro.interleave(2, 2)"))
+			    || QRegularExpression(QStringLiteral(":\\s*(%1)\\s*\\(").arg(stereo_effects.join("|"))).match(sanitized).hasMatch())
+			  stereo_names.insert(def.name);
+		}
+		// A name is (heuristically) mono when its definition uses only mono
+		// primitives (oscillators, envelopes, filters, noises, UI controls)
+		// and no stereo construct, propagated through definitions that only
+		// reference known-mono names ('dry = piano_sound * gain' is mono
+		// because piano_sound and the gain slider are). A 'name, name'
+		// tuple makes a definition non-mono (parallel composition), and so
+		// does any stereo construct.
+		static const QStringList mono_primitives =
+		{
+			QStringLiteral("\\bos\\."),
+			QStringLiteral("\\ben\\."),
+			QStringLiteral("\\bfi\\."),
+			QStringLiteral("\\bno\\."),
+			QStringLiteral("\\bhslider\\s*\\("),
+			QStringLiteral("\\bvslider\\s*\\("),
+			QStringLiteral("\\bnentry\\s*\\("),
+			QStringLiteral("\\bbutton\\s*\\("),
+			QStringLiteral("\\bcheckbox\\s*\\("),
+			QStringLiteral("\\bhbargraph\\s*\\("),
+			QStringLiteral("\\bvbargraph\\s*\\("),
+		};
+		const QRegularExpression mono_primitive_re(mono_primitives.join("|"));
+		const QRegularExpression name_pair_re(QStringLiteral("\\b[a-zA-Z_][a-zA-Z0-9_]*\\s*,\\s*[a-zA-Z_][a-zA-Z0-9_]*\\b"));
+		const auto has_stereo_construct = [&](const QString &sanitized) -> bool
+		{
+			return sanitized.contains(QStringLiteral("ro.interleave"))
+			    || sanitized.contains(QStringLiteral("soundfile"))
+			    || sanitized.contains(QStringLiteral("so.sound"))
+			    || QRegularExpression(QStringLiteral(":\\s*(%1)\\s*\\(").arg(stereo_effects.join("|"))).match(sanitized).hasMatch();
+		};
+		QSet<QString> mono_names;
+		for (bool changed = true; changed; )
+		{
+			changed = false;
+			for (const Faust2LintDef &def : defs)
+			{
+				if (mono_names.contains(def.name) || stereo_names.contains(def.name))
+				  continue;
+			const QString sanitized = faust2_lint_sanitize_strings(def.rhs);
+			if (name_pair_re.match(sanitized).hasMatch())
+			  continue;
+			if (has_stereo_construct(sanitized))
+			  continue;
+			// 'x = _;' binds the input as a plain identity: 1 channel.
+			bool mono = mono_primitive_re.match(sanitized).hasMatch()
+			         || sanitized.trimmed() == QStringLiteral("_");
+				if (!mono)
+				{
+					// No mono primitive of its own: mono only if it
+					// references at least one known-mono name and nothing
+					// else (all references are known-mono names).
+					mono = false;
+					bool refs_any = false;
+					for (const Faust2LintDef &other : defs)
+					{
+						if (other.name == def.name)
+						  continue;
+						const QRegularExpression ref(QStringLiteral("\\b%1\\b(?!\\.)").arg(other.name));
+						if (ref.match(sanitized).hasMatch())
+						{
+							refs_any = true;
+							if (!mono_names.contains(other.name))
+							{
+								mono = false;
+								break;
+							}
+							mono = true;
+						}
+					}
+					mono = mono && refs_any;
+				}
+				if (mono)
+				{
+					mono_names.insert(def.name);
+					changed = true;
+				}
+			}
+		}
+		// A mono signal applied to a stereo effect: e.g. the synthesized
+		// piano's 'chorus = dry : pf.flanger_stereo(...)' (1 channel into a
+		// 2-input effect). The reverse direction (stereo into a mono
+		// effect) has its own finding above.
+		for (const Faust2LintDef &def : defs)
+		{
+			const QString sanitized = faust2_lint_sanitize_strings(def.rhs);
+			const QRegularExpression re(QStringLiteral("\\b([a-zA-Z_][a-zA-Z0-9_]*)\\s*:\\s*(%1)\\s*\\(").arg(stereo_effects.join("|")));
+			const QRegularExpressionMatch m = re.match(sanitized);
+			if (m.hasMatch() && mono_names.contains(m.captured(1)))
+			  findings.append(QString("Line %1: '%2' is a mono signal applied to the stereo effect %3 - this gives an arity error. Duplicate it first: (%2, %2) : %3(...).").arg(def.line).arg(m.captured(1)).arg(m.captured(2)));
+		}
+		// A mono effect called with a stereo argument: e.g. the chorus
+		// effect's 'process = x : ef.dryWetMixer(wet, chorus)' where chorus
+		// is stereo - ef.dryWetMixer is a mono mixer. (The de. module is
+		// excluded: it takes its signal as the last argument and has its
+		// own finding.)
+		{
+			static const QStringList mono_arg_effects =
+			{
+				QStringLiteral("ef\\.[a-zA-Z_][a-zA-Z0-9_]*"),
+				QStringLiteral("fi\\.[a-zA-Z_][a-zA-Z0-9_]*"),
+				QStringLiteral("en\\.[a-zA-Z_][a-zA-Z0-9_]*"),
+				QStringLiteral("co\\.[a-zA-Z_][a-zA-Z0-9_]*"),
+				QStringLiteral("pf\\.flanger_mono"),
+				QStringLiteral("pf\\.vibrato2_mono"),
+				QStringLiteral("pf\\.phaser2_mono"),
+			};
+			for (const Faust2LintDef &def : defs)
+			{
+				const QString sanitized = faust2_lint_sanitize_strings(def.rhs);
+				for (auto it = stereo_names.constBegin(); it != stereo_names.constEnd(); ++it)
+				{
+					const QRegularExpression re(QStringLiteral("\\b(%1)\\s*\\([^()]*\\b%2\\b[^()]*\\)").arg(mono_arg_effects.join("|")).arg(*it));
+					const QRegularExpressionMatch m = re.match(sanitized);
+					if (m.hasMatch())
+					{
+						findings.append(QString("Line %1: '%2' is a mono effect, but its argument '%3' is a stereo signal - this gives an arity error. For a stereo effect, bind the input with 2 channels ('x = _,_;') and apply mono effects per channel (par(i, 2, %2(...))).").arg(def.line).arg(m.captured(1)).arg(*it));
+						break;
+					}
+				}
+			}
+		}
+		// Tuples before ro.interleave(2, 2): the interleave needs 4 input
+		// channels. Flag tuples that mix stereo and mono members (3 or
+		// fewer channels) and all-mono tuples with fewer than 4 members.
+		for (const Faust2LintDef &def : defs)
+		{
+			const QString sanitized = faust2_lint_sanitize_strings(def.rhs);
+			const QRegularExpression re(QStringLiteral("\\(([^()]*)\\)\\s*:\\s*ro\\.interleave\\(2\\s*,\\s*2\\)"));
+			const QRegularExpressionMatch m = re.match(sanitized);
+			if (!m.hasMatch())
+			  continue;
+			const QStringList members = m.captured(1).split(",", Qt::SkipEmptyParts);
+			QStringList mono_members;
+			bool has_stereo_member = false;
+			for (const QString &member : members)
+			{
+				const QString name = member.trimmed();
+				if (stereo_names.contains(name))
+				  has_stereo_member = true;
+				else if (mono_names.contains(name))
+				  mono_members << name;
+			}
+			if (has_stereo_member && !mono_members.isEmpty())
+			{
+				QString dup = "(";
+				for (int i = 0; i < members.size(); i++)
+				{
+					const QString name = members[i].trimmed();
+					if (i > 0)
+					  dup += ", ";
+					dup += mono_members.contains(name) ? QString("(%1, %1)").arg(name) : name;
+				}
+				dup += ")";
+				findings.append(QString("Line %1: the parallel composition (%2) mixes mono signal(s) %3 with stereo signals before ro.interleave(2, 2) - this gives an arity error. Duplicate the mono signal(s): %4 : ro.interleave(2, 2) : par(i, 2, +).").arg(def.line).arg(m.captured(1)).arg(mono_members.join(", ")).arg(dup));
+			}
+			else if (!has_stereo_member && members.size() < 4 && mono_members.size() == members.size())
+			{
+				QString dup = "(";
+				for (int i = 0; i < members.size(); i++)
+				{
+					const QString name = members[i].trimmed();
+					if (i > 0)
+					  dup += ", ";
+					dup += QString("(%1, %1)").arg(name);
+				}
+				dup += ")";
+				findings.append(QString("Line %1: every signal in (%2) is mono, so the tuple has only %3 channels - ro.interleave(2, 2) needs 4. Duplicate each one: %4 : ro.interleave(2, 2) : par(i, 2, +).").arg(def.line).arg(m.captured(1)).arg(mono_members.size()).arg(dup));
+			}
+		}
+		// A tuple containing a stereo signal applied to a stereo effect:
+		// '(dry, dry) : pf.flanger_stereo(...)' with stereo dry is 4 channels
+		// into a 2-input effect (the model over-applies the duplicate-mono
+		// recipe). Name it and undo the duplication.
+		for (const Faust2LintDef &def : defs)
+		{
+			const QString sanitized = faust2_lint_sanitize_strings(def.rhs);
+			const QRegularExpression re(QStringLiteral("\\(([^()]*)\\)\\s*:\\s*(%1)\\s*\\(").arg(stereo_effects.join("|")));
+			const QRegularExpressionMatch m = re.match(sanitized);
+			if (!m.hasMatch())
+			  continue;
+			const QStringList members = m.captured(1).split(",", Qt::SkipEmptyParts);
+			for (const QString &member : members)
+			{
+				const QString name = member.trimmed();
+				if (stereo_names.contains(name))
+				{
+					findings.append(QString("Line %1: (%2) has at least 4 channels but %3 takes only 2 inputs - '%4' is already stereo. Write '%4 : %3(...)' without duplicating.").arg(def.line).arg(m.captured(1)).arg(m.captured(2)).arg(name));
+					break;
+				}
+			}
+		}
+		// Operators do not distribute over multi-channel signals. For every
+		// operator touching a stereo-tracked name, name the line and give a
+		// recipe: '*'/'/' need the per-channel scaling, '+' between two
+		// stereo signals needs the pairwise mix, and '+'/'-' against a
+		// constant needs the per-channel operator. The '+' inside the
+		// pairwise-mix idiom itself (par(i, 2, +)) is masked out first, and
+		// the two-stereo case does not require the operator to be adjacent
+		// to a name: '(a : par(...)) + (b : par(...))' has the stereo names
+		// behind parentheses and is just as broken.
+		for (const Faust2LintDef &def : defs)
+		{
+			QString sanitized = faust2_lint_sanitize_strings(def.rhs);
+			sanitized.replace(QRegularExpression(QStringLiteral("par\\(i\\s*,\\s*\\d+\\s*,\\s*[+\\-]\\)")), QStringLiteral("PARSUM"));
+
+			QString stereo_name;
+			QString op;
+			bool found = false;
+			for (auto it = stereo_names.constBegin(); it != stereo_names.constEnd() && !found; ++it)
+			{
+				const QRegularExpression re(QStringLiteral("\\b%1\\b\\s*([+\\-*/])|([+\\-*/])\\s*\\b%1\\b").arg(*it));
+				const QRegularExpressionMatch m = re.match(sanitized);
+				if (m.hasMatch())
+				{
+					stereo_name = *it;
+					op = !m.captured(1).isEmpty() ? m.captured(1) : m.captured(2);
+					found = true;
+				}
+			}
+			if (!found)
+			{
+				// Operator not adjacent to a stereo name: still the two-stereo
+				// case when a remaining +/- operator exists anywhere and at
+				// least two stereo names appear (e.g. parenthesized sums).
+				if (!sanitized.contains("+") && !sanitized.contains("-"))
+				  continue;
+				int stereo_count = 0;
+				for (auto it = stereo_names.constBegin(); it != stereo_names.constEnd(); ++it)
+				  if (QRegularExpression(QStringLiteral("\\b%1\\b(?!\\.)").arg(*it)).match(sanitized).hasMatch())
+				    stereo_count++;
+				if (stereo_count < 2)
+				  continue;
+				findings.append(QString("Line %1: '+'/'-' does not distribute over stereo signals - this gives an arity error. Mix stereo signals pairwise: (a, b) : ro.interleave(2, 2) : par(i, 2, +).").arg(def.line));
+				continue;
+			}
+			if (op == "*" || op == "/")
+			  findings.append(QString("Line %1: '%2' is a stereo signal %3 by a mono coefficient - this gives an arity error. Scale each channel instead: %2 : par(i, 2, %4).").arg(def.line).arg(stereo_name).arg(op == "*" ? "multiplied" : "divided").arg(op == "*" ? "*(x)" : "/(x)"));
+			else
+			{
+				int stereo_count = 0;
+				for (auto it = stereo_names.constBegin(); it != stereo_names.constEnd(); ++it)
+				  if (QRegularExpression(QStringLiteral("\\b%1\\b(?!\\.)").arg(*it)).match(sanitized).hasMatch())
+				    stereo_count++;
+				if (stereo_count >= 2)
+				  findings.append(QString("Line %1: '%2' does not distribute over stereo signals - this gives an arity error. Mix stereo signals pairwise: (a, b) : ro.interleave(2, 2) : par(i, 2, +).").arg(def.line).arg(op));
+				else
+				  findings.append(QString("Line %1: applying '%2' to the stereo signal '%3' gives an arity error. Apply it per channel: %3 : par(i, 2, %2(x)).").arg(def.line).arg(op).arg(stereo_name));
+			}
+		}
+	}
+
+	// A sum of applied filter terms, e.g.
+	// 'process = _,_ : par(i, 2, (_ : lp) + (_ : bp1) + ...)'. Each
+	// '(_ : band)' term consumes its OWN input channel (the '+' operator
+	// distributes the composition's inputs across its branches), so the
+	// sum has one input per term and the arity is wrong. Fan the input to
+	// all bands with the split instead: '_ <: lp, bp1, ... :> _'.
+	{
+		const QRegularExpression re(QStringLiteral("\\(_\\s*:\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\)\\s*\\+[^;\\n]*\\(_\\s*:\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\)"));
+		for (const Faust2LintDef &def : defs)
+		{
+			const QString sanitized = faust2_lint_sanitize_strings(def.rhs);
+			const QRegularExpressionMatch m = re.match(sanitized);
+			if (m.hasMatch())
+			  findings.append(QString("Line %1: each '(_ : band)' term in the '+' sum consumes its own input channel - this gives an arity error. Fan one signal to all bands with the split instead: _ <: %2, %3, ... :> _.").arg(def.line).arg(m.captured(1)).arg(m.captured(2)));
+		}
+	}
+
+	// re.mono_freeverb / re.stereo_freeverb derive their internal delay
+	// lengths from the 'spread' argument (reverbs.lib:
+	// lbcf(combtuningL(i) + spread, ...)). Passing a SMOOTHED slider there
+	// hides its range from the compiler (the smoothing recursion breaks
+	// range analysis) and gives an 'invalid delay parameter range' error
+	// with no line number - name the line and give the recipe.
+	{
+		const QRegularExpression freeverb_re(QStringLiteral("re\\.(mono_freeverb|stereo_freeverb)\\s*\\(([^()]*)\\)"));
+		for (const Faust2LintDef &def : defs)
+		{
+			const QString sanitized = faust2_lint_sanitize_strings(def.rhs);
+			const QRegularExpressionMatch m = freeverb_re.match(sanitized);
+			if (!m.hasMatch())
+			  continue;
+			const QStringList args = m.captured(2).split(",", Qt::SkipEmptyParts);
+			if (args.size() != 4)
+			  continue;
+			const QString spread_name = args[3].trimmed();
+			if (!QRegularExpression(QStringLiteral("^[a-zA-Z_][a-zA-Z0-9_]*$")).match(spread_name).hasMatch())
+			  continue;
+			for (const Faust2LintDef &other : defs)
+			{
+				if (other.name != spread_name)
+				  continue;
+				const QString rhs = faust2_lint_sanitize_strings(other.rhs);
+				if (rhs.contains(QStringLiteral("si.smooth")) || rhs.contains(QStringLiteral("ba.tau2pole")) || rhs.contains(QStringLiteral("si.smoo")))
+				  findings.append(QString("Line %1: '%2' is a smoothed slider passed as the 'spread' argument of %3, and its delay lengths depend on spread - the smoothing hides the range from the compiler and gives an 'invalid delay parameter range' error. Leave that slider unsmoothed ('%2 = hslider(...);' without si.smooth).").arg(def.line).arg(spread_name).arg(m.captured(1)));
+				break;
+			}
+		}
+	}
+
+	for (const Faust2LintDef &def : defs)
+	{
+		// A soundfile declaration cannot be checked standalone: a bare
+		// 'process = soundfile(...)' is not a valid program (the compiler
+		// rejects the unbound part number), so it would always be flagged
+		// even though the line is fine in context.
+		if (faust2_lint_is_soundfile_decl(def.rhs))
+		  continue;
+
+		const QString substituted = faust2_lint_substitute(def.rhs, def.name, all_names, soundfile_channels);
+
+		const QString synthetic =
+		  "import(\"stdfaust.lib\");\n"
+		  "process = " + substituted + ";\n";
+
+		std::string error_msg;
+		interpreter_dsp_factory *factory =
+		  createInterpreterDSPFactoryFromString("FaustDev2Lint",
+		                                        synthetic.toUtf8().constData(),
+		                                        args.get_argc(),
+		                                        args.get_argv(),
+		                                        error_msg);
+
+		if (factory == NULL)
+		{
+			printf("LLM lint: line %d (%s): expression does not compile on its own: %s\n",
+			       def.line, def.name.toUtf8().constData(), error_msg.c_str());
+			findings.append(QString("Line %1: the definition '%2' does not compile on its own, so it is part of the compile error.")
+			                .arg(def.line).arg(def.name));
+		}
+		else
+		{
+			dsp *dsp = factory->createDSPInstance();
+			const int num_inputs = (dsp != NULL) ? dsp->getNumInputs() : 0;
+			delete dsp;
+			deleteInterpreterDSPFactory(factory);
+
+			if (num_inputs > 0)
+			{
+				printf("LLM lint: line %d (%s): expression has %d unbound audio input(s)\n",
+				       def.line, def.name.toUtf8().constData(), num_inputs);
+				findings.append(QString("Line %1: the definition '%2' has %3 unbound audio input channel(s): a filter/smoother is probably used as a plain value instead of being applied to a signal with ':'.")
+				                .arg(def.line).arg(def.name).arg(num_inputs));
+
+				// If another definition references this unbound-input
+				// definition BARE (not applied with ':'), name that line
+				// too and give the recipe: the model writes
+				// 'lp = fi.lowpass(2, fc) : *(...)' and then sums it bare
+				// ('process = _,_ : par(i, 2, lp + bp1 + ...)'), which
+				// reproduces exactly this unbound input.
+				for (const Faust2LintDef &user : defs)
+				{
+					if (user.name == def.name)
+					  continue;
+					const QString sanitized = faust2_lint_sanitize_strings(user.rhs);
+					const QRegularExpression re(QStringLiteral("(?<!:\\s)\\b%1\\b").arg(def.name));
+					if (re.match(sanitized).hasMatch())
+					{
+						if (num_inputs == 1)
+						  findings.append(QString("Line %1: '%2' has an audio input but is referenced as a plain value - apply it to the signal with ':': (_ : %2), or, when summing several filters, fan the input to them with the split: _ <: f1, f2, ... :> _.").arg(user.line).arg(def.name));
+						else
+						  findings.append(QString("Line %1: '%2' has %3 unbound audio input channels and is referenced as a plain value - a bare reference consumes %3 of the process's input channels; the total over ALL bare references must equal the process input count.").arg(user.line).arg(def.name).arg(num_inputs));
+						break;
+					}
+				}
+			}
+		}
+
+		if (findings.size() >= 8)
+		  break;
+	}
+
+	return findings;
+}
+
+
 static bool show_gui(SoundPlugin *plugin, int64_t parentgui)
 {
 	FaustDev2Data *devdata = (FaustDev2Data*)plugin->data;
@@ -1679,10 +2858,10 @@ void create_faust_dev2_plugin(void)
 		"<p>"
 		"Faust Dev 2 is a development instrument for writing and testing Faust programs in real time."
 		"<UL>"
-		"<LI> It uses Faust's built-in polyphonic architecture (mydsp_poly) for automatic voice management, so instruments are polyphonic without any special coding."
-		"<LI> Set the number of voices with <code>declare options \"[nvoices:N]\"</code> in the Faust code (up to 32 voices)."
+		"<LI> It uses a built-in polyphonic voice manager for automatic voice management, so instruments are polyphonic without any special coding. Microtonal notes (cents) are supported."
+		"<LI> Polyphony is automatic: instruments get 128 voices."
 		"<LI> Notes are triggered with sub-block accuracy for precise timing."
-		"<LI> The note controls <code>freq</code>, <code>gain</code>, <code>gate</code> and <code>velocity</code>, as well as the built-in Panic button, are handled automatically and hidden from the GUI."
+		"<LI> When the program defines all three note controls <code>freq</code>, <code>gain</code> and <code>gate</code>, they are handled automatically by note events and hidden from the GUI (the same applies to <code>velocity</code> and the built-in Panic button). A program defining just one or two of them, e.g. a filter effect with a <code>freq</code> slider, keeps its sliders in the GUI."
 		"</UL>"
 		"<p>"
 		"Hints:\n"

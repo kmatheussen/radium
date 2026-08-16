@@ -2451,7 +2451,7 @@ $(T)Faust_plugins.o: audio/Faust_plugins.cpp audio/Faust_factory_factory.cpp $(F
 	$(MOC) audio/Faust_factory_factory.cpp >audio/mFaust_factory_factory.cpp
 	$(CCC2) $(FAUST_OPTS) $(LLVM_OPTS) $(QT_CFLAGS) -DDSP_NAME="\"FaustDev\"" audio/Faust_plugins.cpp $(NOSHORTEN64TO32FLAG) $(BOOST_INCLUDE) # Qt 5.5 headers (which we use for qtwebkit) needs -Wno-shorten-64-to-32 flag.
 
-$(T)Faust_dev2.o: audio/Faust_dev2.cpp audio/SubBlockNoteCollector.h
+$(T)Faust_dev2.o: audio/Faust_dev2.cpp audio/SubBlockNoteCollector.h audio/Faust_dev2_poly.h
 	$(CCC2) $(FAUST_OPTS) $(LLVM_OPTS) $(QT_CFLAGS) audio/Faust_dev2.cpp $(BOOST_INCLUDE)
 
 audio/mfaustqt2.cpp: $(FAUSTDIR)/architecture/faust/gui/QTUI.h #bin/packages/faust2/architecture/faust/gui/faustqt.h

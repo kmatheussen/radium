@@ -52,6 +52,8 @@ extern LANGSPEC void SETTINGS_write_string(const char *key, const char *val);
 
 extern LANGSPEC bool SETTINGS_remove(const char* key);
 
+extern LANGSPEC void SETTINGS_make_config_file_private(const char *key);
+
 extern LANGSPEC void SETTINGS_add_recent_song(const char *filename);
 
 #ifdef __cplusplus

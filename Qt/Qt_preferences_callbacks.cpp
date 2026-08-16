@@ -773,9 +773,9 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
         
         custom_recording_latency_value->setValue(getCustomRecordingLatencyFromSystemInput());
         
-        //custom_recording_latency_layout->setEnabled(!getRecordingLatencyFromSystemInputIsAutomaticallyDetermined());
-        //custom_recording_latency_label->setEnabled(!getRecordingLatencyFromSystemInputIsAutomaticallyDetermined());
-        //custom_recording_latency_value->setEnabled(!getRecordingLatencyFromSystemInputIsAutomaticallyDetermined());
+        custom_recording_latency_layout->setEnabled(!getRecordingLatencyFromSystemInputIsAutomaticallyDetermined());
+        custom_recording_latency_label->setEnabled(!getRecordingLatencyFromSystemInputIsAutomaticallyDetermined());
+        custom_recording_latency_value->setEnabled(!getRecordingLatencyFromSystemInputIsAutomaticallyDetermined());
       }
 
       {
@@ -1357,23 +1357,17 @@ public slots:
   void on_auto_recording_latency_toggled(bool val){
     if (_initing==false && val){
       setRecordingLatencyFromSystemInputIsAutomaticallyDetermined(true);
-      /*
-      custom_recording_latency_layout->setEnabled(false);
-      custom_recording_latency_label->setEnabled(false);
-      custom_recording_latency_value->setEnabled(false);
-      */
     }
   }
   
   void on_custom_recording_latency_toggled(bool val){
     if (_initing==false && val){
       setRecordingLatencyFromSystemInputIsAutomaticallyDetermined(false);
-      /*
-      custom_recording_latency_layout->setEnabled(true);
-      custom_recording_latency_label->setEnabled(true);
-      custom_recording_latency_value->setEnabled(true);
-      */
     }
+
+    custom_recording_latency_layout->setEnabled(val);
+    custom_recording_latency_label->setEnabled(val);
+    custom_recording_latency_value->setEnabled(val);
   }
 
   void on_custom_recording_latency_value_valueChanged(double val){

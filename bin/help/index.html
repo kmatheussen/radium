@@ -2756,7 +2756,7 @@ g_pages.push(
 const faustdev2_text = `
 <h2>Faust Dev 2 instrument</h2>
 
-<p><small><i>This manual page was written by an AI.</i></small></p>
+<p><small><i>This manual page was partly written by an AI.</i></small></p>
 
 Faust Dev 2 is a development instrument for writing and testing <A href="http://faust.grame.fr">Faust</A> programs in real time. Faust is a functional programming language for realtime signal processing.
 
@@ -2766,8 +2766,42 @@ Faust Dev 2 is a development instrument for writing and testing <A href="http://
   <LI>Set the number of voices with <code>declare options "[nvoices:N]"</code> in the Faust code (up to 32 voices).
   <LI>Notes are triggered with sub-block accuracy for precise timing.
   <LI>The note controls <code>freq</code>, <code>gain</code>, <code>gate</code> and <code>velocity</code>, as well as the built-in Panic button, are handled automatically and hidden from the GUI.
-  <LI>An LLM prompt (beta feature) can generate or fix the Faust code for you (e.g. "Create a low-shelf filter"). Enable it via <b>Help -> Beta features -> "Show/hide Faust Dev 2 LLM prompt"</b>, then configure your LLM provider (API key, model) with the "LLM settings" button in the prompt bar.
+  <LI>An LLM prompt can generate or fix the Faust code for you (e.g. "Create a low-shelf filter effect"). Configure your LLM provider (API key, model) with the "LLM settings" button in the prompt bar.
 </UL>
+
+<h3>The LLM request config file</h3>
+
+<p>The LLM client reads the file <code>llm.conf</code> in Radium's configuration directory (e.g. <code>~/.radium/llm.conf</code> on macOS and Linux) to add parameters to, and remove parameters from, the body of LLM requests. It's not necessary to restart Radium after changing the file. All matching sections are used, applied in the order they are listed. Example:</p>
+
+<pre>
+# 1. Applied to all requests
+#  
+REMOVED
+#====================
+temperature
+
+ADDED
+#====================
+verbosity = low
+
+
+# 2. Applied to all requests where the model name is "gpt-5.6-luna"
+#
+REMOVED gpt-5.6-luna
+#====================
+verbosity
+
+ADDED gpt-5.6-luna
+#====================
+top_p = 0.8
+
+
+# 3. Applied to all requests where model name starts with "gpt-5.6-"
+#
+ADDED gpt-5.6-*
+#====================
+top_p = 0.9
+</pre>
 `;
 
 g_pages.push(
