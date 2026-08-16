@@ -854,37 +854,41 @@ public:
 
     if(num_outputs>0){
       bool effects_are_on = ATOMIC_GET(plugin->effects_are_on);
+
+      // In Half/Full mode, don't disable any widgets when the instrument
+      // is bypassed.
+      const bool enable_widgets = effects_are_on || _size_type != SIZETYPE_NORMAL;
       
-      input_volume_layout->setEnabled(effects_are_on);
+      input_volume_layout->setEnabled(enable_widgets);
       
       if(plugin->type->num_inputs>0)
-        _plugin_widget->setEnabled(effects_are_on);
+        _plugin_widget->setEnabled(enable_widgets);
       
-      filters_widget->setEnabled(effects_are_on);
+      filters_widget->setEnabled(enable_widgets);
       
-      volume_widget->setEnabled(effects_are_on);
+      volume_widget->setEnabled(enable_widgets);
 
       pitch_slider->setEnabled(plugin->pitch_type!=SPT_DISABLED);
       
       if (root->song->include_pan_and_dry_in_wet_signal){
-        bool pan_is_on = effects_are_on && PLUGIN_get_effect_value(plugin, type->num_effects + EFFNUM_PAN_ONOFF, VALUE_FROM_PLUGIN) >= 0.5f;
-        bool width_is_on = effects_are_on && PLUGIN_get_effect_value(plugin, type->num_effects + EFFNUM_DELAY_ONOFF, VALUE_FROM_PLUGIN) >= 0.5f;
+        bool pan_is_on = enable_widgets && PLUGIN_get_effect_value(plugin, type->num_effects + EFFNUM_PAN_ONOFF, VALUE_FROM_PLUGIN) >= 0.5f;
+        bool width_is_on = enable_widgets && PLUGIN_get_effect_value(plugin, type->num_effects + EFFNUM_DELAY_ONOFF, VALUE_FROM_PLUGIN) >= 0.5f;
         
         panning_slider->setEnabled(pan_is_on);
         rightdelay_slider->setEnabled(width_is_on);
 
-        panning_onoff->setEnabled(effects_are_on);
-        rightdelay_onoff->setEnabled(effects_are_on);
+        panning_onoff->setEnabled(enable_widgets);
+        rightdelay_onoff->setEnabled(enable_widgets);
       }
       
-      drywet_slider->setEnabled(effects_are_on);
+      drywet_slider->setEnabled(enable_widgets);
 
       if (root->song->mute_system_buses_when_bypassed) {
-        bus1_widget->setEnabled(effects_are_on);
-        bus2_widget->setEnabled(effects_are_on);
-        bus3_widget->setEnabled(effects_are_on);
-        bus4_widget->setEnabled(effects_are_on);
-        bus5_widget->setEnabled(effects_are_on);
+        bus1_widget->setEnabled(enable_widgets);
+        bus2_widget->setEnabled(enable_widgets);
+        bus3_widget->setEnabled(enable_widgets);
+        bus4_widget->setEnabled(enable_widgets);
+        bus5_widget->setEnabled(enable_widgets);
       }
     }
 
@@ -1019,7 +1023,33 @@ private:
       setMaximumHeight(16777214);//g_main_window->height());
     }
 
+#ifdef WITH_FAUST_DEV
+    // For faust instruments, move the mute/solo/bypass buttons into the
+    // plugin widget header, right next to the "Random" button, so they
+    // remain available in Half/Full mode where the outputs widget (their
+    // normal place) is hidden. Inserting in order is idempotent, so this
+    // also works when switching between Half and Full mode.
+    if (_plugin_widget->_faust_plugin_widget != NULL)
+    {
+      QHBoxLayout *header_layout = _plugin_widget->horizontalLayout_2;
+      const int pos = header_layout->indexOf(_plugin_widget->random_button) + 1;
+
+      header_layout->insertWidget(pos, mute_button);
+      header_layout->insertWidget(pos + 1, solo_button);
+      header_layout->insertWidget(pos + 2, bypass_button);
+
+      mute_button->show();
+      solo_button->show();
+      bypass_button->show();
+    }
+#endif
+
     _size_type = new_size_type;
+
+    // Refresh the enabled states of all widgets: in Half/Full mode no
+    // widgets are disabled by bypass, so if the instrument was bypassed
+    // while in normal mode, everything must be re-enabled now.
+    updateWidgets();
   }
 
   void show_small(void){
@@ -1040,6 +1070,22 @@ private:
       widget->show();
     
     hidden_widgets.clear();
+
+#ifdef WITH_FAUST_DEV
+    // Move the mute/solo/bypass buttons back to their normal place in the
+    // outputs widget. (They become visible again when the outputs widget
+    // was re-shown by the loop above.)
+    if (_plugin_widget->_faust_plugin_widget != NULL)
+    {
+      horizontalLayout_8->insertWidget(0, mute_button);
+      horizontalLayout_8->insertWidget(1, solo_button);
+      horizontalLayout_8->insertWidget(2, bypass_button);
+    }
+#endif
+
+    // Refresh the enabled states of all widgets (in normal mode bypass
+    // disables the effect widgets again).
+    updateWidgets();
   }
 
   void hide_non_instrument_widgets(void){
@@ -1078,9 +1124,19 @@ private:
 public:
 
   // Note: May be called from the destructor (new_size_type=SIZETYPE_NORMAL when called from the destructor)
-  void change_height(SizeType new_size_type){
+  void change_height(SizeType new_size_type)
+  {
     if (new_size_type==_size_type)
+    {
+      // The faust plugin widget keeps its own size state, and its hide/show
+      // events are suppressed while loading, so it can get out of sync with
+      // this widget. Keep it in sync even when we early-return.
+#ifdef WITH_FAUST_DEV
+      if (_plugin_widget->_faust_plugin_widget != NULL)
+        _plugin_widget->_faust_plugin_widget->change_height(new_size_type);
+#endif
       return;
+    }
 
     if(isVisible())
       _patch->widget_height_type = new_size_type;
@@ -1111,26 +1167,43 @@ public:
       S7CALL2(void_void,"FROM_C-minimize-lowertab");
   }
 
-  void hideEvent(QHideEvent * event) override {
+  void hideEvent(QHideEvent * event) override
+  {
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     if (plugin != NULL)
       ATOMIC_SET(plugin->is_visible, false);
 
-    _patch->widget_height_type = _size_type;
     _size_type_before_hidden = _size_type;
     
     if(_size_type != SIZETYPE_NORMAL)
+    {
+      // Only overwrite the saved size type if the widget was actually in
+      // Half or Full mode. If the widget is hidden while still in normal
+      // mode (for instance while loading a song), the saved state must be
+      // kept so that half/full mode is entered the next time the widget is
+      // shown.
+      _patch->widget_height_type = _size_type;
       change_height(SIZETYPE_NORMAL);
       //show_small();  // If not, all instrument widgets will have large height.
+    }
   }
   
-  void showEvent(QShowEvent * event) override {
+  void showEvent(QShowEvent * event) override
+  {
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     if (plugin != NULL)
       ATOMIC_SET(plugin->is_visible, true);
     
-    if (_size_type_before_hidden != SIZETYPE_NORMAL)
-      change_height(_size_type_before_hidden);
+    // Restore the saved size type. The saved patch state is authoritative
+    // since _size_type_before_hidden can be clobbered by a hide event that
+    // happens before half/full mode has ever been entered (for instance
+    // while loading a song).
+    const SizeType restore_type = _patch->widget_height_type != SIZETYPE_NORMAL
+                                    ? _patch->widget_height_type
+                                    : _size_type_before_hidden;
+    
+    if (restore_type != SIZETYPE_NORMAL)
+      change_height(restore_type);
     else if (!instrumentInMixer())
       S7CALL2(void_void,"FROM_C-minimize-lowertab");
 

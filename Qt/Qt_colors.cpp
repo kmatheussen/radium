@@ -1377,27 +1377,39 @@ void GFX_reload_qt_stylesheets(bool only_for_testing)
 		{
 			s_has_called_with_testing = false;
 
-			QString full_sheet = pushbutton_sheet + splitter_sheet + tabwidget_sheet + label_sheet
-				+ DISK_file_to_qstring(OS_get_full_program_file_path("stylesheet.css"));
+		QString full_sheet = pushbutton_sheet + splitter_sheet + tabwidget_sheet + label_sheet
+			+ DISK_file_to_qstring(OS_get_full_program_file_path("stylesheet.css"));
 
-			GFX_OpenProgress("Applying stylesheet colors...");
-			//QThread::msleep(2000);
-			qApp->setStyleSheet(full_sheet);
-			//QThread::msleep(5000);
-			GFX_CloseProgress();
-			return;
-		}
+		GFX_OpenProgress("Applying stylesheet colors...");
+		//QThread::msleep(2000);
+		qApp->setStyleSheet(full_sheet);
+		//QThread::msleep(5000);
+		GFX_CloseProgress();
 
-		if (s_has_called_qApp == false)
-		{
-			s_has_called_qApp = true;
+		// Setting the app stylesheet replaces the application palette with
+		// one where the Disabled group is identical to the Active group, so
+		// widgets created after this would not look different when disabled.
+		// Re-apply the palette to restore the distinct Disabled colors.
+		if (application != NULL)
+			updateApplication(NULL, application);
 
-			QString full_sheet = pushbutton_sheet + splitter_sheet + tabwidget_sheet + label_sheet
-				+ DISK_file_to_qstring(OS_get_full_program_file_path("stylesheet.css"));
+		return;
+	}
+
+	if (s_has_called_qApp == false)
+	{
+		s_has_called_qApp = true;
+
+		QString full_sheet = pushbutton_sheet + splitter_sheet + tabwidget_sheet + label_sheet
+			+ DISK_file_to_qstring(OS_get_full_program_file_path("stylesheet.css"));
 	
-			qApp->setStyleSheet(full_sheet);
-			return;
-		}
+		qApp->setStyleSheet(full_sheet);
+
+		if (application != NULL)
+			updateApplication(NULL, application);
+
+		return;
+	}
 	}
 
 	s_has_called_with_testing = true;

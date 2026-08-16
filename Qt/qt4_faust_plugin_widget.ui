@@ -102,21 +102,91 @@
       <attribute name="title">
        <string>Code</string>
       </attribute>
-      <layout class="QHBoxLayout" name="tab_develop_layout">
-       <property name="leftMargin">
-        <number>0</number>
-       </property>
-       <property name="topMargin">
-        <number>0</number>
-       </property>
-       <property name="rightMargin">
-        <number>0</number>
-       </property>
-       <property name="bottomMargin">
-        <number>0</number>
-       </property>
-       <item>
-        <widget class="QWidget" name="code_widget" native="true">
+       <layout class="QVBoxLayout" name="tab_develop_layout">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="QWidget" name="llm_prompt_widget" native="true">
+          <layout class="QHBoxLayout" name="llm_prompt_layout">
+           <property name="leftMargin">
+            <number>4</number>
+           </property>
+           <property name="topMargin">
+            <number>2</number>
+           </property>
+           <property name="rightMargin">
+            <number>4</number>
+           </property>
+           <property name="bottomMargin">
+            <number>2</number>
+           </property>
+            <item>
+             <widget class="QPushButton" name="clear_history_button">
+               <property name="text">
+                <string>New</string>
+               </property>
+               <property name="toolTip">
+                <string>Reset the LLM prompt: clear the conversation history and replace the code with the default program</string>
+               </property>
+              </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="llm_prompt_label">
+              <property name="text">
+               <string>Prompt:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+              <widget class="QLineEdit" name="prompt_edit">
+                <property name="placeholderText">
+                 <string>E.g. "Create an atmospheric instrument". First prompt format: "Create a ... instrument/effect".</string>
+                </property>
+              </widget>
+             </item>
+            <item>
+             <widget class="QPushButton" name="generate_button">
+              <property name="text">
+               <string>Generate</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="cancel_button">
+              <property name="text">
+               <string>Cancel</string>
+              </property>
+             </widget>
+            </item>
+           <item>
+            <widget class="QPushButton" name="llm_settings_button">
+             <property name="text">
+              <string>LLM settings</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="llm_status">
+             <property name="text">
+              <string/>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QWidget" name="code_widget" native="true">
          <property name="sizePolicy">
           <sizepolicy hsizetype="MinimumExpanding" vsizetype="MinimumExpanding">
            <horstretch>0</horstretch>

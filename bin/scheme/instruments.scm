@@ -2837,6 +2837,10 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
          :shortcut assign-fluid-drum-instrument-for-track
          (lambda ()
            (LOAD (<ra> :create-audio-instrument "FluidSynth" "FluidSynth"))))
+   (list "Faust Dev 2"
+         :shortcut assign-faust-dev-2-instrument-for-track
+         (lambda ()
+           (LOAD (<ra> :create-audio-instrument "Faust Dev 2" "Faust Dev 2"))))
    ;;(if (<ra> :has-pure-data)
    ;;    (list "<New Pd Instrument>" (lambda ()
    ;;                                  (LOAD (<ra> :create-audio-instrument "Pd" "Simple Midi Synth"))))

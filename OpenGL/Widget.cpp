@@ -62,7 +62,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 // take longer than normal during startup (shader and texture-atlas initialization,
 // plugin loading, etc.).
 #define RENDER_FAILURE_TIME_WINDOW_SECONDS    10.0
-#define RENDER_FAILURE_MAX_COUNT_PER_WINDOW   10
+#define RENDER_FAILURE_MAX_COUNT_PER_WINDOW   20
 #define RENDER_FAILURE_STARTUP_GRACE_SECONDS  10.0
 
 #include "../common/nsmtracker.h"
