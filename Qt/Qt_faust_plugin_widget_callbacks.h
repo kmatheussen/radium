@@ -76,6 +76,56 @@ class Faust_Plugin_widget;
 // "Show/hide Faust Dev 2 LLM prompt" beta menu entry) can update them.
 static QList<QPointer<Faust_Plugin_widget>> g_faust_plugin_widgets;
 
+// Icon for the "Generate" button: a filled green play triangle.
+static QIcon llm_play_icon(int size)
+{
+	QPixmap pixmap(size, size);
+	pixmap.fill(Qt::transparent);
+
+	{
+		QPainter p(&pixmap);
+		p.setRenderHints(QPainter::Antialiasing, true);
+
+		QPolygonF triangle;
+		triangle << QPointF(size * 0.15, size * 0.10)
+		         << QPointF(size * 0.15, size * 0.90)
+		         << QPointF(size * 0.90, size * 0.50);
+
+		p.setPen(Qt::NoPen);
+		p.setBrush(QColor(0x4C, 0xAF, 0x50));
+		p.drawPolygon(triangle);
+	}
+
+	return QIcon(pixmap);
+}
+
+// Icon for the "Cancel" button: a filled red stop-sign octagon.
+static QIcon llm_stop_icon(int size)
+{
+	QPixmap pixmap(size, size);
+	pixmap.fill(Qt::transparent);
+
+	{
+		QPainter p(&pixmap);
+		p.setRenderHints(QPainter::Antialiasing, true);
+
+		QPolygonF octagon;
+		for (int i = 0; i < 8; i++)
+		{
+			const double angle = (i + 0.5) * 0.7853981633974483; // pi / 4
+			const double radius = size * 0.48;
+			octagon << QPointF(size * 0.5 + radius * cos(angle),
+			                   size * 0.5 + radius * sin(angle));
+		}
+
+		p.setPen(Qt::NoPen);
+		p.setBrush(QColor(0xE0, 0x40, 0x40));
+		p.drawPolygon(octagon);
+	}
+
+	return QIcon(pixmap);
+}
+
 // How many prompts the prompt history (persisted across sessions) remembers.
 static const int g_llm_prompt_history_max_size = 50;
 
@@ -814,8 +864,8 @@ public:
   // remembered so the Up/Down arrow keys can re-insert previous prompts.
   QStringList _llm_prompt_history;
   int _llm_prompt_history_index = -1; // -1 = not browsing the history
-  QString _llm_prompt_draft;          // text being edited before browsing started
 
+  QString _llm_prompt_draft;          // text being edited before browsing started
   Faust_Plugin_widget(QWidget *parent, QLabel *faust_compilation_status, struct Patch *patch)
     : QWidget(parent)
     , parent(parent)
@@ -845,11 +895,41 @@ public:
 
     connect(prompt_edit, SIGNAL(returnPressed()), this, SLOT(a_on_generate_prompt_clicked()));
     connect(generate_button, SIGNAL(clicked()), this, SLOT(a_on_generate_prompt_clicked()));
-    connect(llm_settings_button, SIGNAL(clicked()), this, SLOT(a_on_llm_settings_clicked()));
-    connect(clear_history_button, SIGNAL(clicked()), this, SLOT(a_on_clear_history_clicked()));
     connect(cancel_button, SIGNAL(clicked()), this, SLOT(a_on_cancel_clicked()));
     cancel_button->setEnabled(false);
     prompt_edit->installEventFilter(this);
+
+    // The hamburger menu replaces the former "New" and "LLM settings" buttons.
+    {
+      QMenu *menu = new QMenu(llm_menu_button);
+      menu->addAction("New", this, [this]()
+      {
+        a_on_clear_history_clicked();
+      });
+      menu->addAction("LLM settings", this, [this]()
+      {
+        a_on_llm_settings_clicked();
+      });
+      llm_menu_button->setMenu(menu);
+    }
+
+    // The Instr./FX combo. The selection is compared by item text; if the
+    // items are renamed, llm_combo_is_effect() asserts instead of silently
+    // changing the behavior.
+    llm_instr_fx_combo->addItem("Instr.");
+    llm_instr_fx_combo->addItem("FX");
+
+    // Icons for the Generate and Cancel buttons: a green play triangle and a
+    // red stop-sign octagon.
+    {
+      const int icon_size = get_system_fontheight() * 4 / 3;
+
+      generate_button->setIcon(llm_play_icon(icon_size));
+      generate_button->setIconSize(QSize(icon_size, icon_size));
+
+      cancel_button->setIcon(llm_stop_icon(icon_size));
+      cancel_button->setIconSize(QSize(icon_size, icon_size));
+    }
 
     if(0){
       static QStyle *style = QStyleFactory::create("plastique");
@@ -1443,13 +1523,15 @@ public slots:
     }
   }
 
-   // Sends the actual LLM generation request for 'prompt_to_send' (the original
-   // prompt, or its English translation when the translate setting is on).
-   // If the model echoes the sent program back (returning the current program
-   // unchanged instead of making the requested change), the answer is
-   // discarded with a status message: retrying without the current program
-   // would make modification requests lose all context, and the model then
-   // invents a new instrument and replaces the old one (observed).
+   bool llm_combo_is_effect(void) const
+   {
+     const QString text = llm_instr_fx_combo->currentText();
+
+     R_ASSERT_NON_RELEASE(text == "Instr." || text == "FX");
+
+     return text == "FX";
+   }
+
    void send_llm_generate_request(const QString &prompt_to_send)
    {
      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
@@ -1459,6 +1541,8 @@ public slots:
        current_code = faust_disp_get_code(plugin);
 
      const radium::llm::LLMConfig config = radium::llm::get_config();
+
+     const bool is_effect = llm_combo_is_effect();
 
      const QString code_for_request = radium::llm::is_creation_request(prompt_to_send)
                                       ? QString()
@@ -1494,7 +1578,7 @@ public slots:
     IsAlive is_alive(this);
 
     radium::llm::send_prompt(config, code_for_request, prompt_to_send,
-                             [is_alive, this, config, prompt_to_send, code_for_request, compile_error, current_code](bool ok, QString result_or_error)
+                             [is_alive, this, config, prompt_to_send, code_for_request, compile_error, current_code, is_effect](bool ok, QString result_or_error)
     {
       if (!is_alive)
         return;
@@ -1524,7 +1608,7 @@ public slots:
       {
         _llm_history.append(QJsonObject{
           {QStringLiteral("role"), QStringLiteral("user")},
-          {QStringLiteral("content"), radium::llm::build_full_user_content(code_for_request, prompt_to_send, config.library_context, false, compile_error)},
+          {QStringLiteral("content"), radium::llm::build_full_user_content(code_for_request, prompt_to_send, config.library_context, false, compile_error, is_effect)},
         });
         _llm_history.append(QJsonObject{
           {QStringLiteral("role"), QStringLiteral("assistant")},
@@ -1557,7 +1641,8 @@ public slots:
       update_llm_progress(reasoning_chars, content_chars);
     },
                              false, // skip_examples
-                             compile_error);
+                             compile_error,
+                             is_effect);
   }
 
   void a_on_generate_prompt_clicked()
@@ -1569,15 +1654,6 @@ public slots:
     const QString prompt = prompt_edit->text().trimmed();
     if (prompt.isEmpty())
       return;
-
-    // Warn if the prompt asks to create something new without saying
-    // whether to create an effect or an instrument. (Warning only, the
-    // request still proceeds.)
-    const QString lower_prompt = prompt.toLower();
-    const bool starts_with_create = lower_prompt.startsWith("create")
-                                    && (lower_prompt.size() == 6 || !lower_prompt[6].isLetterOrNumber());
-    if (starts_with_create && !lower_prompt.contains("effect") && !lower_prompt.contains("instrument"))
-      showAsyncMessage("The prompt asks to create something new, but does not mention whether to create an \"effect\" or an \"instrument\".");
 
     // Remember the submitted prompt for Up/Down arrow key navigation, and
     // persist the history (the last 50 prompts) across sessions.
@@ -1754,6 +1830,8 @@ public slots:
 
     IsAlive is_alive(this);
 
+    const bool is_effect = llm_combo_is_effect();
+
     // One fix attempt is fired. Only when it is useless - it returns the
     // failing program unchanged, or the request fails - is a second attempt
     // fired (higher temperature, so different sampling). Firing both in
@@ -1772,7 +1850,7 @@ public slots:
     };
 
     auto fix_callback = std::make_shared<std::function<void(bool, QString)>>();
-    *fix_callback = [is_alive, this, cancel, current_code, used_fallback, thinking_enabled, config, fix_prompt, fix_progress, fix_callback](bool ok, QString result_or_error)
+    *fix_callback = [is_alive, this, cancel, current_code, used_fallback, thinking_enabled, config, fix_prompt, fix_progress, fix_callback, is_effect](bool ok, QString result_or_error)
     {
       if (!is_alive)
         return;
@@ -1800,7 +1878,9 @@ public slots:
                                  *fix_callback,
                                  QJsonArray(), cancel, 0.7,
                                  fix_progress,
-                                 true); // skip the example section: a fix corrects code, it doesn't need program examples
+                                 true, // skip the example section: a fix corrects code, it doesn't need program examples
+                                 QString(), // compile_error (already part of fix_prompt)
+                                 is_effect);
         return;
       }
 
@@ -1816,7 +1896,9 @@ public slots:
                              *fix_callback,
                              QJsonArray(), cancel, 0.2,
                              fix_progress,
-                             true); // skip the example section: a fix corrects code, it doesn't need program examples
+                             true, // skip the example section: a fix corrects code, it doesn't need program examples
+                             QString(), // compile_error (already part of fix_prompt)
+                             is_effect);
   }
 
   // Resets the LLM prompt to the state of a newly created instrument:
