@@ -121,13 +121,24 @@ static inline bool is_openai_reasoning_model(const LLMConfig &config)
 // stereo output). All examples use flat top-level definitions (no 'with'
 // blocks): the static analysis used in the auto-fix rounds can only see
 // top-level definitions, and with-block contents are invisible to it.
-static const char *example_sawtooth_synth =
-  "import(\"stdfaust.lib\");\n"
-  "\n"
-  "freq = hslider(\"freq\", 440, 20, 20000, 0.01);\n"
-  "gain = hslider(\"gain\", 0.5, 0, 1, 0.01);\n"
-  "gate = button(\"gate\");\n"
-  "process = os.sawtooth(freq) * gain * gate <: _,_;\n";
+// The first example is identical to the program a newly created Faust Dev 2
+// instrument starts with (audio/Faust_dev2.cpp).
+static const char *example_default_instrument =
+	"import(\"stdfaust.lib\");\n"
+	"\n"
+	"freq = hslider(\"freq\", 440, 20, 20000, 0.01);\n"
+	"gain = hslider(\"gain\", 0.25, 0, 1, 0.01);\n"
+	"volume = hslider(\"volume\", 0, -60, 12, 0.1) : ba.db2linear : si.smooth(ba.tau2pole(0.010));\n"
+	"gate = button(\"gate\");\n"
+	"\n"
+  "attack = hslider(\"attack\", 0.01, 0.001, 5, 0.001) : si.smooth(ba.tau2pole(0.010));\n"
+  "decay = hslider(\"decay\", 0.2, 0.001, 5, 0.001) : si.smooth(ba.tau2pole(0.010));\n"
+  "sustain = hslider(\"sustain\", 0.7, 0, 1, 0.01) : si.smooth(ba.tau2pole(0.010));\n"
+  "release = hslider(\"release\", 0.4, 0.001, 5, 0.001) : si.smooth(ba.tau2pole(0.010));\n"
+	"\n"
+	"envelope = en.adsr(attack, decay, sustain, release, gate);\n"
+	"\n"
+	"process = os.osc(freq) * gain * envelope * volume <: _,_;\n";
 
 static const char *example_sine_synth =
   "import(\"stdfaust.lib\");\n"
@@ -208,7 +219,7 @@ struct FaustExample
 
 static const FaustExample g_faust_examples[] =
 {
-	{"polyphonic sawtooth synth", "synth,saw,sawtooth,oscillator", example_sawtooth_synth},
+	{"polyphonic sine tone with ADSR envelope", "synth,sine,oscillator,tone,adsr", example_default_instrument},
 	{"polyphonic sine synth with ADSR envelope", "synth,sine,oscillator,envelope,adsr", example_sine_synth},
 	{"mono low-shelf filter effect", "filter,shelf,lowshelf,eq", example_lowshelf_filter},
 	{"stereo chorus effect", "chorus,flanger,modulation,effect", example_chorus},
@@ -218,10 +229,12 @@ static const FaustExample g_faust_examples[] =
 	{"polyphonic pitched sampler", "sampler,sample,soundfile,pitch,pitched,playback", example_pitched_sampler},
 };
 
-// Picks the most relevant examples for the given prompt. The base synth
-// (index 0) is always included; the two best keyword-matching examples are
-// added, filling with the sine synth and low-shelf filter if needed.
-static inline QString build_example_section(const QString &prompt)
+// Picks the most relevant examples for the given prompt. The base example is
+// always included: the default sine tone for instruments, the low-shelf
+// filter for effects. The two best keyword-matching examples are added,
+// filling with defaults if needed. For effects, only the effect examples are
+// considered.
+static inline QString build_example_section(const QString &prompt, bool is_effect = false)
 {
 	const int total = (int)(sizeof(g_faust_examples) / sizeof(g_faust_examples[0]));
 	const QString lower = prompt.toLower();
@@ -229,6 +242,9 @@ static inline QString build_example_section(const QString &prompt)
 	QList<QPair<int, int>> scores; // (score, index)
 	for (int i = 1; i < total; i++)
 	{
+		if (is_effect && (i < 2 || i > 6))
+			continue; // only the effect examples
+
 		int score = 0;
 		const QStringList keywords = QString(g_faust_examples[i].keywords).split(',', Qt::SkipEmptyParts);
 		for (const QString &keyword : keywords)
@@ -243,17 +259,29 @@ static inline QString build_example_section(const QString &prompt)
 		          return a.first > b.first;
 	          });
 
+	const int base_index = is_effect ? 2 : 0;
+
 	QList<int> chosen;
-	chosen << 0;
+	chosen << base_index;
 	for (const QPair<int, int> &s : scores)
 	{
 		if (chosen.size() >= 3)
 		  break;
 		chosen << s.second;
 	}
-	for (int default_index = 1; default_index <= 2 && chosen.size() < 3; default_index++)
-	  if (!chosen.contains(default_index))
-	    chosen << default_index;
+
+	// Fill the remaining slots: with default examples (sine synth and
+	// low-shelf filter for instruments; other effect examples for effects).
+	for (int default_index = is_effect ? 3 : 1;
+	     chosen.size() < 3;
+	     default_index++)
+	{
+		if (is_effect && default_index > 6)
+		  break;
+		if (chosen.contains(default_index))
+		  continue;
+		chosen << default_index;
+	}
 
 	QString out;
 	int n = 1;
@@ -1363,7 +1391,8 @@ static inline void sse_feed(LLMStreamAccumulator *acc,
 // compile and what the compiler reported.
 static inline QString build_user_content(const QString &current_code,
                                          const QString &prompt,
-                                         const QString &compile_error = QString())
+                                         const QString &compile_error = QString(),
+                                         bool is_effect = false)
 {
 	QString program_section;
 	if (current_code.trimmed().isEmpty())
@@ -1380,7 +1409,24 @@ static inline QString build_user_content(const QString &current_code,
 	    "\nThe current Faust program does NOT compile. The Faust compiler "
 	    "reported this error:\n" + compile_error + "\n";
 
-	return program_section + error_section + "\nRequested change: " + prompt + "\n\n"
+	// Tells the model whether to build an instrument or an effect. Unless the
+	// user specified the channel count (e.g. "mono"), effects are stereo.
+	QString target_section;
+	if (is_effect)
+	{
+		const bool mono = prompt.toLower().contains("mono");
+		target_section = mono
+			? "Target: a mono audio effect (1 input, 1 output; no note controls).\n"
+			: "Target: a stereo audio effect (2 inputs, 2 outputs; no note controls).\n";
+	}
+	else
+	{
+		target_section =
+			"Target: a polyphonic instrument using the automatic note controls "
+			"(freq, gain, and gate). Instruments have no audio inputs.\n";
+	}
+
+	return program_section + error_section + target_section + "\nRequested change: " + prompt + "\n\n"
 	       "Respond with ONLY the complete new Faust program.";
 }
 
@@ -1391,16 +1437,17 @@ static inline QString build_user_content(const QString &current_code,
 // matches what the LLM saw. 'skip_examples' omits the example section (used
 // for compile-error fix requests: a fix needs to correct code, not
 // pattern-match complete programs, so the ~2-3K chars of examples are pure
-// waste there).
+// waste there). 'is_effect' selects the instrument or effect conventions.
 static inline QString build_full_user_content(const QString &current_code,
                                               const QString &prompt,
                                               const QString &library_context,
                                               bool skip_examples = false,
-                                              const QString &compile_error = QString())
+                                              const QString &compile_error = QString(),
+                                              bool is_effect = false)
 {
 	QString content;
 	if (!skip_examples)
-	  content = build_example_section(prompt);
+	  content = build_example_section(prompt, is_effect);
 
 	if (library_context != "off")
 	{
@@ -1409,7 +1456,7 @@ static inline QString build_full_user_content(const QString &current_code,
 		  content += "\n" + relevant_definitions;
 	}
 
-	content += "\n" + build_user_content(current_code, prompt, compile_error);
+	content += "\n" + build_user_content(current_code, prompt, compile_error, is_effect);
 	return content;
 }
 
@@ -2575,7 +2622,8 @@ static inline void send_request_once(const LLMConfig &config,
                                      std::function<void(bool ok, QString result_or_error)> callback,
                                      bool skip_examples = false,
                                      const QString &effort_override = QString(),
-                                     const QString &compile_error = QString())
+                                     const QString &compile_error = QString(),
+                                     bool is_effect = false)
 {
 	llm_start_price_fetch();
 
@@ -2598,7 +2646,11 @@ static inline void send_request_once(const LLMConfig &config,
 		+ "Multiply the LEVEL argument by gate, NOT the output: multiplying the output only works for mono files (stereo files have 2 channels and give an arity error). "
 		+ "In polyphonic instruments the automatic 'gate' control triggers and stops the playback.\n"
 		+ "7) Never respond by echoing the current program unchanged. If the request asks for a change or a new instrument, always output a new program (which may modify the current one). If the request is to create a new instrument or effect, completely ignore the current program and write a new program from scratch.\n"
-		+ "8) If the compiler reports a 'recursive composition' or an inputs/outputs mismatch error, either a function is called with the wrong number of arguments, or a filter/smoother is used as a plain value instead of being applied to a signal with ':'. E.g. si.polySmooth(gate, 0.999, 1) * freq is WRONG; freq : si.polySmooth(gate, 0.999, 1) is right. If the mismatch involves a parallel composition before ro.interleave(2, 2) (e.g. '(piano, chorus)' where piano is a mono signal and chorus stereo), duplicate the mono signal(s) to stereo: '((piano, piano), chorus) : ro.interleave(2, 2) : par(i, 2, +)'. Find that expression, fix it, and change nothing else.\n\n"
+		+ "8) If the compiler reports a 'recursive composition' or an inputs/outputs mismatch error, either a function is called with the wrong number of arguments, or a filter/smoother is used as a plain value instead of being applied to a signal with ':'. E.g. si.polySmooth(gate, 0.999, 1) * freq is WRONG; freq : si.polySmooth(gate, 0.999, 1) is right. If the mismatch involves a parallel composition before ro.interleave(2, 2) (e.g. '(piano, chorus)' where piano is a mono signal and chorus stereo), duplicate the mono signal(s) to stereo: '((piano, piano), chorus) : ro.interleave(2, 2) : par(i, 2, +)'. Find that expression, fix it, and change nothing else.\n"
+		+ (is_effect
+		   ? "9) This request asks for an audio EFFECT: an audio processor with no note controls (no freq/gain/gate) and no polyphony. Unless the user specifies otherwise, make it stereo (2 inputs, 2 outputs).\n"
+		   : "9) This request asks for an INSTRUMENT: a polyphonic sound generator with no audio inputs, using the automatic note controls freq/gain/gate (and optionally velocity).\n")
+		+ "\n"
 		+ faust_module_reference;
 
 	// Keep the stable parts (rules, module reference, symbol table) in the
@@ -2636,7 +2688,7 @@ static inline void send_request_once(const LLMConfig &config,
 
 	QJsonObject user_msg;
 	user_msg["role"] = "user";
-	user_msg["content"] = build_full_user_content(current_code, prompt, config.library_context, skip_examples, compile_error);
+	user_msg["content"] = build_full_user_content(current_code, prompt, config.library_context, skip_examples, compile_error, is_effect);
 
 	QJsonArray messages;
 	messages.append(system_msg);
@@ -2775,7 +2827,7 @@ static inline void send_request_once(const LLMConfig &config,
 		}
 	});
 
-	QObject::connect(reply, &QNetworkReply::finished, [reply, nam, acc, callback, config, current_code, prompt, history, cancel, retries_left, temperature, progress_callback, effective_effort, thinking_enabled, reasoning_loop, skip_examples, error_buffer, compile_error]()
+	QObject::connect(reply, &QNetworkReply::finished, [reply, nam, acc, callback, config, current_code, prompt, history, cancel, retries_left, temperature, progress_callback, effective_effort, thinking_enabled, reasoning_loop, skip_examples, error_buffer, compile_error, is_effect]()
 	{
 		QString http_status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toString();
 
@@ -2808,7 +2860,7 @@ static inline void send_request_once(const LLMConfig &config,
 			delete acc;
 			reply->deleteLater();
 			nam->deleteLater();
-			send_request_once(config, current_code, prompt, history, cancel, retries_left, temperature, progress_callback, callback, skip_examples, next_effort, compile_error);
+			send_request_once(config, current_code, prompt, history, cancel, retries_left, temperature, progress_callback, callback, skip_examples, next_effort, compile_error, is_effect);
 			return;
 		}
 
@@ -2844,7 +2896,7 @@ static inline void send_request_once(const LLMConfig &config,
 				delete acc;
 				reply->deleteLater();
 				nam->deleteLater();
-				send_request_once(config, current_code, prompt, history, cancel, retries_left - 1, temperature, progress_callback, callback, skip_examples, effective_effort, compile_error);
+				send_request_once(config, current_code, prompt, history, cancel, retries_left - 1, temperature, progress_callback, callback, skip_examples, effective_effort, compile_error, is_effect);
 				return;
 			}
 
@@ -2915,7 +2967,7 @@ static inline void send_request_once(const LLMConfig &config,
 			       (long long)acc->reasoning_content.size(),
 			       next_effort.toUtf8().constData());
 			delete acc;
-			send_request_once(config, current_code, prompt, history, cancel, retries_left, temperature, progress_callback, callback, skip_examples, next_effort, compile_error);
+			send_request_once(config, current_code, prompt, history, cancel, retries_left, temperature, progress_callback, callback, skip_examples, next_effort, compile_error, is_effect);
 			return;
 		}
 
@@ -2955,7 +3007,8 @@ static inline void send_request_once(const LLMConfig &config,
 // section from the user message (used by compile-error fix requests).
 // 'compile_error' (when non-empty) adds the current compile error to the
 // user message, so generate requests can tell the model why the current
-// program does not compile.
+// program does not compile. 'is_effect' selects the effect (instead of
+// instrument) conventions, examples and system instructions.
 static inline void send_prompt(const LLMConfig &config,
                                const QString &current_code,
                                const QString &prompt,
@@ -2965,9 +3018,10 @@ static inline void send_prompt(const LLMConfig &config,
                                double temperature = 0.2,
                                std::function<void(int reasoning_chars, int content_chars)> progress_callback = std::function<void(int, int)>(),
                                bool skip_examples = false,
-                               const QString &compile_error = QString())
+                               const QString &compile_error = QString(),
+                               bool is_effect = false)
 {
-	send_request_once(config, current_code, prompt, history, cancel, 2, temperature, progress_callback, callback, skip_examples, QString(), compile_error);
+	send_request_once(config, current_code, prompt, history, cancel, 2, temperature, progress_callback, callback, skip_examples, QString(), compile_error, is_effect);
 }
 
 } // namespace llm

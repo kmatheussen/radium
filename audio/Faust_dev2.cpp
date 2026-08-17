@@ -122,9 +122,18 @@ static const char *g_default_faust_dev2_program =
 	"import(\"stdfaust.lib\");\n"
 	"\n"
 	"freq = hslider(\"freq\", 440, 20, 20000, 0.01);\n"
-	"gain = hslider(\"gain\", 0.5, 0, 1, 0.01);\n"
+	"gain = hslider(\"gain\", 0.25, 0, 1, 0.01);\n"
+	"volume = hslider(\"volume\", 0, -60, 12, 0.1) : ba.db2linear : si.smooth(ba.tau2pole(0.010));\n"
 	"gate = button(\"gate\");\n"
-	"process = os.sawtooth(freq) * gain * gate <: _,_;\n";
+	"\n"
+	"attack = hslider(\"attack\", 0.01, 0.001, 5, 0.001) : si.smooth(ba.tau2pole(0.010));\n"
+	"decay = hslider(\"decay\", 0.2, 0.001, 5, 0.001) : si.smooth(ba.tau2pole(0.010));\n"
+	"sustain = hslider(\"sustain\", 0.7, 0, 1, 0.01) : si.smooth(ba.tau2pole(0.010));\n"
+	"release = hslider(\"release\", 0.4, 0.001, 5, 0.001) : si.smooth(ba.tau2pole(0.010));\n"
+	"\n"
+	"envelope = en.adsr(attack, decay, sustain, release, gate);\n"
+	"\n"
+	"process = os.osc(freq) * gain * envelope * volume <: _,_;\n";
 
 // The code a newly created Faust Dev 2 instrument starts with.
 QString FAUST2_get_default_code(void)
@@ -264,7 +273,7 @@ struct FaustDev2Dsp
 // sync, and making the change survive a recompile).
 struct Faust2GuiControlRef
 {
-	SoundPlugin *plugin;
+	instrument_t patch_id;
 	int effect_num;
 };
 
@@ -331,10 +340,14 @@ struct FaustDev2Data
 static void faust2_gui_zone_callback(float val, void *data)
 {
 	Faust2GuiControlRef *ref = (Faust2GuiControlRef*)data;
-	if (ref == NULL || ref->plugin == NULL || PLUGIN_exists(ref->plugin) == false)
+	if (ref == NULL)
 		return;
 
-	SoundPlugin *plugin = ref->plugin;
+	struct Patch *patch = PATCH_get_from_id(ref->patch_id);
+	if (patch == NULL || patch->patchdata == NULL)
+		return;
+
+	SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
 	FaustDev2Data *devdata = (FaustDev2Data*)plugin->data;
 	if (devdata == NULL)
 		return;
@@ -1012,7 +1025,7 @@ static void perform_compile_completion(instrument_t patch_id,
 
 		Faust2GuiControlRef *ref = new Faust2GuiControlRef;
 
-		ref->plugin = plugin;
+		ref->patch_id = plugin->patch->id;
 		ref->effect_num = i;
 
 		devdata->qtgui_control_refs.push_back(ref);
