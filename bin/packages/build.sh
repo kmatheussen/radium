@@ -98,7 +98,9 @@ build_faust() {
 	tar xvzf ../faustlibraries_2024_01_05.tar.gz
 	mv faustlibraries libraries
 	
-	patch -p0 < ../faust_polydsp_fadeout.patch
+	#patch -p0 < ../faust_polydsp_fadeout.patch
+	#patch -p0 < ../faust_soundfiles_clickfix.patch
+	patch -p0 < ../faust_soundfile_padding.patch
 	
 	### this line is needed to build on artix
 	#export LIBNCURSES_PATH=$(shell find /usr -name libncursesw_g.a)

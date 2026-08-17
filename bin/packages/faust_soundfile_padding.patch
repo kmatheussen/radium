@@ -1,0 +1,129 @@
+--- architecture/faust/gui/Soundfile.h.orig	2026-08-17 00:00:00.000000000 +0200
++++ architecture/faust/gui/Soundfile.h	2026-08-17 00:00:00.000000000 +0200
+@@ -180,6 +180,7 @@
+    protected:
+     
+     int fDriverSR;
++    bool fPadding;
+    
+     // Check if a soundfile exists and return its real path_name
+     std::string checkFile(const Soundfile::Directories& sound_directories, const std::string& file_name)
+@@ -267,10 +268,14 @@
+ 
+   public:
+     
+-    SoundfileReader() {}
++    SoundfileReader(bool add_padding = false) : fPadding(add_padding) {}
+     virtual ~SoundfileReader() {}
+     
+     void setSampleRate(int sample_rate) { fDriverSR = sample_rate; }
++    
++    // Add one zero frame before and one after each part, so that each part
++    // length is the actual soundfile length plus two frames.
++    void setAddPadding(bool add_padding) { fPadding = add_padding; }
+    
+     Soundfile* createSoundfile(const std::vector<std::string>& path_name_list, int max_chan, bool is_double)
+     {
+@@ -293,6 +298,10 @@
+            
+             // Complete with empty parts
+             total_length += (MAX_SOUNDFILE_PARTS - path_name_list.size()) * BUFFER_SIZE;
++            // Add one zero frame before and after each part
++            if (fPadding) {
++                total_length += 2 * MAX_SOUNDFILE_PARTS;
++            }
+             
+             // Create the soundfile
+             Soundfile* soundfile = new Soundfile(cur_chan, total_length, max_chan, path_name_list.size(), is_double);
+@@ -304,14 +313,34 @@
+             for (size_t part = 0; part < path_name_list.size(); part++) {
+                 if (path_name_list[part] == "__empty_sound__") {
+                     soundfile->emptyFile(part, offset);
++                    if (fPadding) {
++                        soundfile->fLength[part] += 2;
++                        offset += 2;
++                    }
+                 } else {
+-                    readFile(soundfile, path_name_list[part], part, offset, max_chan);
++                    if (fPadding) {
++                        // Reserve the leading zero frame and pass offset+1, so
++                        // that the sound data starts one frame later. The
++                        // leading and trailing frames are zero because the
++                        // buffers are zero-initialized.
++                        int padded_offset = offset + 1;
++                        readFile(soundfile, path_name_list[part], part, padded_offset, max_chan);
++                        soundfile->fOffset[part] -= 1;
++                        soundfile->fLength[part] += 2;
++                        offset = padded_offset + 1;
++                    } else {
++                        readFile(soundfile, path_name_list[part], part, offset, max_chan);
++                    }
+                 }
+             }
+             
+             // Complete with empty parts
+             for (size_t part = path_name_list.size(); part < MAX_SOUNDFILE_PARTS; part++) {
+                 soundfile->emptyFile(part, offset);
++                if (fPadding) {
++                    soundfile->fLength[part] += 2;
++                    offset += 2;
++                }
+             }
+             
+             // Share the same buffers for all other channels so that we have max_chan channels available
+--- architecture/faust/gui/LibsndfileReader.h.orig	2026-08-17 00:00:00.000000000 +0200
++++ architecture/faust/gui/LibsndfileReader.h	2026-08-17 00:00:00.000000000 +0200
+@@ -150,7 +150,7 @@
+ 
+ struct LibsndfileReader : public SoundfileReader {
+ 	
+-    LibsndfileReader() {}
++    LibsndfileReader(bool add_padding = false) : SoundfileReader(add_padding) {}
+ 	
+     typedef sf_count_t (* sample_read)(SNDFILE* sndfile, void* buffer, sf_count_t frames);
+ 	
+--- architecture/faust/gui/MiniaudioReader.h.orig	2026-08-17 00:00:00.000000000 +0200
++++ architecture/faust/gui/MiniaudioReader.h	2026-08-17 00:00:00.000000000 +0200
+@@ -43,7 +43,7 @@
+ #include "faust/gui/Soundfile.h"
+ 
+ struct MiniaudioReader : public SoundfileReader {
+-    MiniaudioReader() {}
++    MiniaudioReader(bool add_padding = false) : SoundfileReader(add_padding) {}
+ 
+     bool checkFile(const std::string& path_name) override
+     {
+--- architecture/faust/gui/WaveReader.h.orig	2026-08-17 00:00:00.000000000 +0200
++++ architecture/faust/gui/WaveReader.h	2026-08-17 00:00:00.000000000 +0200
+@@ -307,7 +307,7 @@
+ 
+ struct WaveReader : public SoundfileReader {
+     
+-    WaveReader() {}
++    WaveReader(bool add_padding = false) : SoundfileReader(add_padding) {}
+     virtual ~WaveReader() {}
+     
+     bool checkFile(const std::string& path_name) override
+--- architecture/faust/gui/MemoryReader.h.orig	2026-08-17 00:00:00.000000000 +0200
++++ architecture/faust/gui/MemoryReader.h	2026-08-17 00:00:00.000000000 +0200
+@@ -43,8 +43,7 @@
+ 
+ struct MemoryReader : public SoundfileReader {
+     
+-    MemoryReader()
+-    {}
++    MemoryReader(bool add_padding = false) : SoundfileReader(add_padding) {}
+     virtual ~MemoryReader()
+     {}
+     
+--- architecture/faust/gui/JuceReader.h.orig	2026-08-17 00:00:00.000000000 +0200
++++ architecture/faust/gui/JuceReader.h	2026-08-17 00:00:00.000000000 +0200
+@@ -35,7 +35,7 @@
+     
+     juce::AudioFormatManager fFormatManager;
+     
+-    JuceReader() { fFormatManager.registerBasicFormats(); }
++    JuceReader(bool add_padding = false) : SoundfileReader(add_padding) { fFormatManager.registerBasicFormats(); }
+     virtual ~JuceReader()
+     {}
+     

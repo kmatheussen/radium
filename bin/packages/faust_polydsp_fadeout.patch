@@ -1,6 +1,41 @@
---- architecture/faust/dsp/poly-dsp.h	2024-01-05 00:00:00.000000000 +0100
-+++ architecture/faust/dsp/poly-dsp.h	2026-08-10 00:00:00.000000000 +0200
-@@ -540,6 +540,10 @@
+--- architecture/faust/dsp/poly-dsp.h.orig	2025-06-30 14:55:47
++++ architecture/faust/dsp/poly-dsp.h	2026-08-12 22:44:48
+@@ -210,23 +210,21 @@
+     }
+     
+     // Compute audio in legato mode
+-    void computeLegato(int count, FAUSTFLOAT** inputs, FAUSTFLOAT** outputs)
++    void computeLegato(int count, int switch_at, FAUSTFLOAT** inputs, FAUSTFLOAT** outputs)
+     {
+-        int slice = count/2;
+-        
+         // Reset envelops
+         for (size_t i = 0; i < fGatePath.size(); i++) {
+             setParamValue(fGatePath[i], FAUSTFLOAT(0));
+         }
+         
+-        // Compute current voice on half buffer
+-        computeSlice(0, slice, inputs, outputs);
++        // Compute old (fading out) voice
++        computeSlice(0, switch_at, inputs, outputs);
+          
+         // Start next keyOn
+         keyOn(fNextNote, fNextVel);
+         
+-        // Compute on second half buffer
+-        computeSlice(slice, slice, inputs, outputs);
++        // Compute new voice
++        computeSlice(switch_at, count - switch_at, inputs, outputs);
+     }
+ 
+     // Extract control paths from fullpath map
+@@ -535,16 +533,38 @@
+         FAUSTFLOAT** fOutBuffer;        // Intermediate buffer for output
+         midi_interface* fMidiHandler;   // The midi_interface the DSP is connected to
+         int fDate;                      // Current date for managing voices
++        int fFadeLen;                   // Fixed fade length (in samples) when a voice is stolen
+     
+         // Fade out the audio in the buffer
          void fadeOut(int count, FAUSTFLOAT** outBuffer)
          {
 +            if (count <= 0) {
@@ -10,4 +45,98 @@
              // FadeOut on half buffer
              for (int chan = 0; chan < getNumOutputs(); chan++) {
                  double factor = 1., step = 1./double(count);
-                for (int frame = 0; frame < count; frame++) {
+                 for (int frame = 0; frame < count; frame++) {
+                     outBuffer[chan][frame] *= factor;
+                     factor -= step;
++                }
++            }
++        }
++    
++        // Fade in the audio in the buffer starting at 'start'
++        void fadeIn(int start, int count, FAUSTFLOAT** outBuffer)
++        {
++            if (count <= 0) {
++                return;
++            }
++    
++            // FadeIn on 'count' frames
++            for (int chan = 0; chan < getNumOutputs(); chan++) {
++                double factor = 0., step = 1./double(count);
++                for (int frame = start; frame < start + count; frame++) {
++                    outBuffer[chan][frame] *= factor;
++                    factor += step;
+                 }
+             }
+         }
+@@ -662,16 +682,20 @@
+             
+             // Then decide which one to steal
+             if (oldest_date_release != INT_MAX) {
++				/*
+                 fprintf(stderr, "Steal release voice : voice_date = %d cur_date = %d voice = %d \n",
+                         fVoiceTable[voice_release]->fDate,
+                         fDate,
+                         voice_release);
++				*/
+                 return allocVoice(voice_release, kLegatoVoice);
+             } else if (oldest_date_playing != INT_MAX) {
++				/*
+                 fprintf(stderr, "Steal playing voice : voice_date = %d cur_date = %d voice = %d \n",
+                         fVoiceTable[voice_playing]->fDate,
+                         fDate,
+                         voice_release);
++				*/
+                 return allocVoice(voice_playing, kLegatoVoice);
+             } else {
+                 assert(false);
+@@ -719,6 +743,7 @@
+         : dsp_voice_group(panic, this, control, group), dsp_poly(dsp) // dsp parameter is deallocated by ~dsp_poly
+         {
+             fDate = 0;
++            fFadeLen = 0;
+             fMidiHandler = nullptr;
+ 
+             // Create voices
+@@ -775,6 +800,9 @@
+             fVoiceGroup->init(sample_rate);
+             fPanic = FAUSTFLOAT(0);
+             
++            // 50 ms fade length when a voice is stolen (to avoid clicks)
++            fFadeLen = (int)(0.050 * sample_rate);
++            
+             // Init voices
+             for (size_t i = 0; i < fVoiceTable.size(); i++) {
+                 fVoiceTable[i]->init(sample_rate);
+@@ -837,10 +865,18 @@
+                 for (size_t i = 0; i < fVoiceTable.size(); i++) {
+                     dsp_voice* voice = fVoiceTable[i];
+                     if (voice->fCurNote == kLegatoVoice) {
+-                        // Play from current note and next note
+-                        voice->computeLegato(count, inputs, fMixBuffer);
+-                        // FadeOut on first half buffer
+-                        fadeOut(count/2, fMixBuffer);
++                        // Play from current note and next note. The old note is
++                        // rendered (and faded out) for the first 'switch_at'
++                        // samples, then the new note is faded in. The first
++                        // rendered sample of the new note is still the old note
++                        // (the gate-triggered restart of the new note takes
++                        // effect one sample later), so the fade-in also removes
++                        // that one-sample discontinuity, which otherwise causes
++                        // a click on every voice steal.
++                        int switch_at = std::min(count, fFadeLen);
++                        voice->computeLegato(count, switch_at, inputs, fMixBuffer);
++                        fadeOut(switch_at, fMixBuffer);
++                        fadeIn(switch_at, std::min(fFadeLen, count - switch_at), fMixBuffer);
+                         // Mix it in result
+                         voice->fLevel = mixCheckVoice(count, fMixBuffer, fOutBuffer);
+                     } else if (voice->fCurNote != kFreeVoice) {
+@@ -915,7 +951,9 @@
+                 if (voice != kNoVoice) {
+                     fVoiceTable[voice]->keyOff();
+                 } else {
++                    /*
+                     fprintf(stderr, "Playing pitch = %d not found\n", pitch);
++                    */
+                 }
+             }
+         }
