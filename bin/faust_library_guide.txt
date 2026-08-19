@@ -1,0 +1,367 @@
+# Faust Dev 2 library function guide.
+#
+# One function per line: module.name(params): description
+#
+# This file is read at runtime (Qt/LLM_client.hpp) and the descriptions of
+# functions relevant to the current request are included in the user message,
+# so the LLM knows what each function is for, not just its signature.
+#
+# Core subset: the functions most commonly used in Faust Dev 2 instruments
+# (oscillators, envelopes, filters, basics, noises, signals, maths, delays,
+# effects, reverbs, compressors, flangers, quantizers, interpolators).
+
+# --- os. Oscillators ---
+os.osc(freq): Sine oscillator. freq in Hz. The standard go-to oscillator.
+os.oscsin(freq): Sine oscillator (same as os.osc). freq in Hz.
+os.osccos(freq): Cosine oscillator. freq in Hz.
+os.oscp(freq, phase): Sine oscillator with phase offset in radians.
+os.oscq(fr): Quadrature (sine + cosine) oscillator, 2 outputs. fr in Hz.
+os.osci(freq): Interpolated sine oscillator. freq in Hz.
+os.sawtooth(freq): Band-limited sawtooth oscillator. freq in Hz.
+os.saw2(freq): Band-limited sawtooth oscillator (alias of os.sawtooth).
+os.sawN(N, freq): Sawtooth with N partials (N=1 pure ramp, higher = brighter).
+os.sawNp(N, freq, phase): Sawtooth with N partials and phase offset.
+os.square(freq): Band-limited square oscillator. freq in Hz.
+os.squareN(N, freq): Square with N partials. freq in Hz.
+os.triangle(freq): Band-limited triangle oscillator. freq in Hz.
+os.triangleN(N, freq): Triangle with N partials. freq in Hz.
+os.pulsetrain(freq): Pulse train (narrow pulses at freq). freq in Hz.
+os.pulsetrainN(N, freq, duty): Pulse train with N partials and duty cycle. freq in Hz.
+os.imptrain(freq): Impulse train (spikes at freq). freq in Hz.
+os.imptrainN(N, freq): Impulse train with N partials. freq in Hz.
+os.phasor(tablesize, freq): Ramp 0..tablesize at freq, resets each cycle.
+os.phasor_table(tablesize, freq, reset, phase): Ramp with reset and phase control.
+os.phasor_imp(freq, reset, phase): Ramp 0..1 at freq with reset/phase.
+os.lf_saw(freq): Low-frequency sawtooth (direct phase ramp, no band-limiting).
+os.lf_sawpos(freq): LF sawtooth 0..1, never negative. Good for LFOs.
+os.lf_squarewave(freq): LF square wave. Good for LFOs.
+os.lf_triangle(freq): LF triangle wave. Good for LFOs.
+os.lf_pulsetrain(freq, duty): LF pulse train; duty = fraction of cycle high (0..1).
+os.lf_imptrain(freq): LF impulse train. Good for LFO triggers.
+os.hs_oscsin(freq, reset): Sine with reset input (restarts phase).
+os.hs_osccos(freq, reset): Cosine with reset input.
+os.polyblep_saw(freq): PolyBLEP anti-aliased sawtooth. freq in Hz.
+os.polyblep_square(freq): PolyBLEP anti-aliased square. freq in Hz.
+os.polyblep_triangle(freq): PolyBLEP anti-aliased triangle. freq in Hz.
+os.sinwaveform(tablesize): Lookup table of one sine cycle (tablesize samples).
+os.coswaveform(tablesize): Lookup table of one cosine cycle.
+
+# --- en. Envelopes ---
+en.ar(at, rt, gate): Attack/release envelope. at,rt in seconds; gate=1 while held. Ideal for percussive one-shots.
+en.asr(at, sl, rt, gate): Attack/sustain/release. sl = sustain level 0..1.
+en.adsr(at, dt, sl, rt, gate): ADSR envelope; at,dt,rt in seconds, sl sustain 0..1.
+en.adsre(attT60, decT60, susLvl, relT60, gate): ADSR with T60 time constants.
+en.asre(attT60, susLvl, relT60, gate): ASR with T60 time constants.
+en.are(attT60, relT60, gate): AR with T60 time constants.
+en.arfe(attT60, relT60, fv, gate): AR with final value fv (0..1).
+en.asrfe(attT60, susLvl, relT60, finLvl, gate): ASR with final value.
+en.adsr_bias(att, dec, sus, rel, bias_att, bias_dec, bias_rel, legato, gate): ADSR with bias control and legato mode.
+en.ahdsr_bias(att, hol, dec, sus, rel, bias_att, bias_dec, bias_rel, legato, gate): AHDSR (attack/hold/decay/sustain/release) with bias.
+en.dx7envelope(R1,R2,R3,R4,L1,L2,L3,L4,t): DX7-style 4-stage rate/level envelope; t = time signal (e.g. t = (ba.time - noteStart)).
+en.smoothEnvelope(ar, t): Envelope that exponentially approaches t with time constant ar seconds.
+
+# --- fi. Filters ---
+fi.lowpass(N, fc): Nth-order Butterworth lowpass; fc = cutoff in Hz. Very common.
+fi.highpass(N, fc): Nth-order Butterworth highpass; fc in Hz.
+fi.lowpass3e(fc): 3rd-order (18 dB/oct) lowpass; fc in Hz.
+fi.highpass3e(fc): 3rd-order highpass; fc in Hz.
+fi.lowpassLR4(cf, x): Linkwitz-Riley 4th-order lowpass (24 dB/oct). cf in Hz.
+fi.highpassLR4(cf, x): Linkwitz-Riley 4th-order highpass. cf in Hz.
+fi.bandpass(Nh, fl, fu): Butterworth bandpass; Nh = HALF order, fl/fu = -3dB frequencies in Hz.
+fi.bandpass6e(fl, fu): 6 dB/oct bandpass; fl,fu in Hz.
+fi.bandpass12e(fl, fu): 12 dB/oct bandpass; fl,fu in Hz.
+fi.bandstop(Nh, fl, fu): Butterworth bandstop; Nh = half order, fl/fu in Hz.
+fi.lowshelf(N, L0, fx): Nth-order low shelf; L0 = gain in dB, fx = shelf frequency in Hz.
+fi.highshelf(N, Lpi, fx): Nth-order high shelf; Lpi = gain in dB, fx in Hz.
+fi.low_shelf: One-pole low shelf (parameters via GUI sliders).
+fi.high_shelf: One-pole high shelf (parameters via GUI sliders).
+fi.resonlp(fc, Q, gain): Resonant lowpass (virtual analog). fc in Hz, Q = resonance, gain 0..1.
+fi.resonhp(fc, Q, gain, x): Resonant highpass. fc in Hz, Q = resonance, gain 0..1.
+fi.resonbp(fc, Q, gain): Resonant bandpass. fc in Hz, Q = resonance, gain 0..1.
+fi.peak_eq(Lfx, fx, B): Peak/notch equalizer; Lfx = gain in dB, fx = center Hz, B = bandwidth in Hz.
+fi.peak_eq_cq(Lfx, fx, Q): Peak EQ with Q instead of bandwidth.
+fi.notchw(width, freq): Notch filter; width in Hz, freq = center in Hz.
+fi.dcblocker: Removes DC offset.
+fi.dcblockerat(fb): DC blocker with feedback coefficient fb.
+fi.tf1(b0, b1, a1): 1st-order transfer function (direct form).
+fi.tf2(b0, b1, b2, a1, a2): 2nd-order transfer function.
+fi.tf2s(b2, b1, b0, a1, a0, w1): 2nd-order transfer function with prewarped frequency w1 (used to build custom filters).
+fi.tf3(b0, b1, b2, b3, a1, a2, a3): 3rd-order transfer function.
+fi.iir(bv, av): IIR filter from coefficient vectors (bv = numerator, av = denominator).
+fi.fir(b0): FIR filter from coefficient vector b0.
+fi.conv(kv): Convolution with coefficient vector kv.
+fi.convN(N, kv): N-tap convolution with coefficient vector kv.
+fi.allpass_comb(maxdel, N, aN): Allpass comb filter (delay-line based). Used in reverbs.
+fi.fb_comb(maxdel, N, b0, aN): Feedback comb filter. Used in reverbs.
+fi.ff_comb(maxdel, M, b0, bM): Feedforward comb filter.
+fi.rev1(maxdel, N, g): 1st-order allpass reverb-ish delay (comb with feedback g).
+fi.rev2(maxlen, len, g): 2nd-order allpass (comb pair). Used in reverbs.
+fi.filterbank(O, lfreqs): Octave filterbank; O = order, lfreqs = cutoff frequencies.
+fi.levelfilter(L, freq, x): Single level filter; L = order, freq in Hz.
+fi.svf: State-variable filter with GUI sliders (lp/hp/bp outputs).
+fi.pole(p): One-pole filter; p = pole position (0..1, close to 1 = slow).
+fi.zero(z): One-zero filter; z = zero position.
+fi.integrator: Integrator (accumulator) filter.
+fi.lptau(tN, x): One-pole lowpass reaching target in tN seconds (tau time constant).
+fi.lpt60(tN, x): One-pole lowpass with -60 dB time constant tN seconds.
+fi.lpt19(tN, x): One-pole lowpass with -19 dB time constant tN seconds.
+fi.lptN(N, tN, x): One-pole lowpass with arbitrary dB time constant.
+
+# --- ba. Basics ---
+ba.impulsify(x): Outputs 1 for one sample when x rises above 0. Note-on trigger.
+ba.latch(trig, x): When trig rises, x is latched; holds the value while trig stays high. Sample-and-hold on rising edge.
+ba.sAndH(trig): Sample-and-hold: when trig is 1 the input passes through, when trig is 0 the output holds its last value. One input signal.
+ba.counter(trig): Counts rising edges of trig (0,1,2,...).
+ba.countup(n, trig): Counts 0..n, resets to 0 on trig.
+ba.countdown(n, trig): Counts n..0, resets to n on trig.
+ba.pulse(p): Outputs 1 for one sample every p samples.
+ba.pulsen(n, p): Outputs 1 for the first n samples of every p-sample period.
+ba.pulse_countup(trig): Counts 1,2,3,... while trig is 1; resets when trig is 0.
+ba.pulse_countdown(trig): Counts ...,3,2,1 while trig is 1; resets when trig is 0.
+ba.period(p): Ramp 0..p-1 repeating; p = period in samples.
+ba.tempo(t): Samples per beat at tempo t BPM.
+ba.beat(t): Pulse once per beat at tempo t BPM.
+ba.time: Sample counter (0,1,2,...).
+ba.time1s: GUI slider time in seconds (0..1), output in samples. No input arguments.
+ba.ramp: Ramp that increases 1 per sample.
+ba.sweep: Ramp that increases 1 per sample (alias of ba.ramp).
+ba.line(n, x): Ramps from current value to x over n samples.
+ba.tabulate(C, FX, S, r0, r1, x): Table lookup of FX over S samples, x maps r0..r1 to 0..S.
+ba.cycle(n): Outputs n cycling phases (0..n-1 per cycle).
+ba.resetCtr(n, m): Counter 0..n-1, outputs 1 when count == m.
+ba.db2linear(l): Converts dB to linear gain.
+ba.linear2db(g): Converts linear gain to dB.
+ba.lin2LogGain(n): Converts linear to logarithmic gain (n*n).
+ba.log2LinGain(n): Converts logarithmic to linear gain (sqrt(n)).
+ba.midikey2hz(mk): MIDI note number to frequency in Hz.
+ba.hz2midikey(freq): Frequency in Hz to MIDI note number.
+ba.pianokey2hz(pk): Piano key number (49 = A440) to Hz.
+ba.hz2pianokey(freq): Hz to piano key number.
+ba.semi2ratio(semi): Semitones to frequency ratio.
+ba.ratio2semi(ratio): Frequency ratio to semitones.
+ba.cent2ratio(cent): Cents to frequency ratio.
+ba.ratio2cent(ratio): Frequency ratio to cents.
+ba.tau2pole(tau): Time constant tau seconds to one-pole coefficient.
+ba.pole2tau(pole): One-pole coefficient to time constant in seconds.
+ba.samp2sec(n): Samples to seconds.
+ba.sec2samp(d): Seconds to samples.
+ba.selector(i, n): Routes input i (0..n-1) of n parallel inputs to the output.
+ba.selectn(N, i): Selects input i of N (same as ba.selector).
+ba.selectnX(N, i, sel): Selects input i when sel=0, else input N-1.
+ba.if(cond, then, else): Selects 'then' when cond != 0, else 'else'. Standard conditional.
+ba.ifNc((c, r)): Like ba.if but evaluates both branches (no short-circuit).
+ba.count((xs, xxs)): Counts elements in a tuple.
+ba.peakhold: Holds the peak; parameters via GUI sliders.
+ba.peakholder(holdTime, x): Peak hold for holdTime seconds.
+ba.slidingSum(n): Sum of the last n samples.
+ba.slidingMean(n): Mean of the last n samples.
+ba.slidingRMS(n): RMS of the last n samples.
+ba.slidingMax(n, maxN): Max of the last n samples (maxN = maximum buffer size).
+ba.slidingMin(n, maxN): Min of the last n samples (maxN = maximum buffer size).
+ba.bitcrusher(nbits, x): Bit-depth reduction; nbits = number of bits.
+ba.downSample(freq): Sample-and-hold downsampler; freq = new sample rate.
+ba.toggle: Toggles 0/1 on each rising edge (GUI button).
+ba.on_and_off(a, b): Trigger on a, off on b.
+ba.automat(t, size, init, input): Steps through table t (size entries), advancing when input != 0.
+
+# --- no. Noises ---
+no.noise: White noise, uniform in [-1, 1].
+no.pink_noise: Pink noise (equal power per octave).
+no.pink_noise_m: Pink noise, louder (equal loudness to no.noise).
+no.pink_noise_vm(N): N decorrelated pink noise outputs.
+no.multinoise(N): N decorrelated white noise outputs.
+no.multirandom(N): N decorrelated white noise outputs (same as multinoise).
+no.noises(N, i): The i-th of N decorrelated white noises.
+no.rnoise: White noise with a new random seed each run.
+no.rmultinoise(N): N decorrelated white noises, re-seeded each run.
+no.rnoises(N, i): i-th of N decorrelated re-seeded noises.
+no.gnoise(N): Gaussian white noise (sum of N uniform noises).
+no.gnoisem(N): Gaussian noise, louder (equal loudness to no.noise).
+no.lfnoise(freq): Low-frequency noise, new random value freq times/second (smooth).
+no.lfnoise0(freq): Low-frequency noise, new random value freq times/second (step).
+no.lfnoiseN(N, freq): LF noise smoothed by Nth-order lowpass.
+no.sparse_noise(f0): Sparse noise: impulses at rate f0.
+no.velvet_noise(amp, f0): Velvet noise: impulses at rate f0 with amplitude amp.
+no.colored_noise(N, alpha): Noise with spectral tilt; alpha = -2..2 (0 = white).
+
+# --- si. Signal manipulation ---
+si.smoo: One-pole smoother with 44.1 kHz time constant. Removes clicks on parameter changes.
+si.smooth(c): One-pole smoother; c = smoothing coefficient (0..1, close to 1 = slow).
+si.smoothAndH(t, s): Smoother + sample-and-hold on trigger t.
+si.smoothq(time, q, tar): Smoother with adjustable time and Q.
+si.polySmooth(g, s, d): Polyphonic-friendly smoother for parameter changes; g = gate, s = smoothing, d = delay in samples.
+si.lag_ud: One-pole smoother with fast attack, slow release (legato).
+si.bsmooth(c): Exponential smoother; c = coefficient.
+si.onePoleSwitching(att, rel, x): One-pole with separate attack and release coefficients.
+si.bus(N): Split one signal into N copies.
+si.block(N): Combine N signals into one (inverse of bus).
+si.rev(n): Reverse the order of n parallel signals.
+si.repeat(n, FX): Apply FX to n copies of the input and mix.
+si.interpolate(i, x, y): Linear interpolation between x and y; i = 0..1.
+si.dot(N): Dot product of two N-signal vectors.
+
+# --- ma. Maths (note: sin, cos, tan, exp, log, sqrt, pow, abs, min, max,
+# floor, ceil, round are built-in Faust keywords and are used WITHOUT the
+# ma. prefix; the entries below are the actual ma. library functions) ---
+ma.tanh(x): Hyperbolic tangent (soft saturation curve; good for distortion).
+ma.sinh(x): Hyperbolic sine.
+ma.cosh(x): Hyperbolic cosine.
+ma.acosh(x): Inverse hyperbolic cosine.
+ma.asinh(x): Inverse hyperbolic sine.
+ma.atanh(x): Inverse hyperbolic tangent.
+ma.expm1(x): e^x - 1 (accurate for small x).
+ma.log2(x): Base-2 logarithm.
+ma.log1p(x): log(1+x) (accurate for small x).
+ma.cbrt(x): Cube root.
+ma.hypot(x, y): sqrt(x^2 + y^2).
+ma.frac(x): Fractional part of x. Same as (x - floor(x)).
+ma.modulo(x, y): x modulo y.
+ma.decimal(x): Fractional part of x.
+ma.inv(x): 1/x.
+ma.signum(x): -1, 0, or 1 depending on sign of x.
+ma.neg(x): -x.
+ma.deg2rad: Degrees to radians.
+ma.rad2deg: Radians to degrees.
+ma.np2(x): Next power of 2 >= x.
+ma.nextpow2(x): Next power of 2 >= x.
+ma.isnan(x): 1 if x is NaN, else 0.
+ma.isinf(x): 1 if x is infinite, else 0.
+ma.fabs(x): Absolute value.
+ma.fmax(x, y): Maximum of x and y.
+ma.fmin(x, y): Minimum of x and y.
+ma.PI: pi constant.
+ma.E: e constant.
+ma.SR: Sample rate.
+ma.T: 1 / sample rate.
+ma.MIN: Smallest positive float.
+ma.MAX: Largest float.
+
+# --- de. Delays ---
+de.delay(n, d, x): Delay x by d samples (max delay n). n and d can be audio-rate.
+de.delay1s(d): Delay up to 1 second.
+de.delay2s(d): Delay up to 2 seconds.
+de.delay5s(d): Delay up to 5 seconds.
+de.delay10s(d): Delay up to 10 seconds.
+de.delay21s(d): Delay up to 21 seconds.
+de.delay43s(d): Delay up to 43 seconds.
+de.fdelay(n, d, x): Fractional delay by d samples (interpolated, max n). For pitch-shifting/flanger effects.
+de.fdelay1(n, d, x): Fractional delay with 1st-order interpolation; n = max delay, d = delay in samples.
+de.fdelay2(n, d, x): Fractional delay with 2nd-order interpolation; n = max delay, d = delay in samples.
+de.fdelay5(n, d, x): Fractional delay with 5th-order interpolation; n = max delay, d = delay in samples.
+de.fdelay1s(d): Fractional delay up to 1 second.
+de.fdelay2s(d): Fractional delay up to 2 seconds.
+de.fdelay5s(d): Fractional delay up to 5 seconds.
+de.fdelaylti(N, n, d, x): N-piecewise linear fractional delay (cheaper than fdelay).
+de.fdelayltv(N, n, d, x): N-piecewise linear fractional delay with varying d (allpass).
+de.fdelay1a(n, d, x): 1st-order allpass fractional delay (high quality).
+de.fdelay2a(n, d, x): 2nd-order allpass fractional delay (high quality).
+de.fdelay3a(n, d, x): 3rd-order allpass fractional delay.
+de.sdelay(n, it, d): Sample delay with constant it samples offset.
+
+# --- ef. Effects ---
+ef.echo(maxDuration, duration, feedback): Echo effect; duration in seconds.
+ef.echo1s: Echo with 1-second max delay; delay and feedback via GUI sliders. No input arguments.
+ef.echo2s: Echo with 2-second max delay; GUI sliders. No input arguments.
+ef.echo5s: Echo with 5-second max delay; GUI sliders. No input arguments.
+ef.echo10s: Echo with 10-second max delay; GUI sliders. No input arguments.
+ef.cubicnl(drive, offset): Cubic nonlinearity (saturation); drive = amount, offset = DC.
+ef.cubicnl_nodc(drive, offset): Cubic saturation with DC removal.
+ef.dryWetMixer(wetAmount, FX): Mixes dry signal with FX output; wetAmount 0..1.
+ef.dryWetMixerConstantPower(wetAmount, FX): Dry/wet mixer with constant power.
+ef.dwmEnv(wetAmount, FX): Dry/wet mixer with envelope-controlled wet amount.
+ef.gate_mono(thresh, att, hold, rel, x): Noise gate, mono.
+ef.gate_stereo(thresh, att, hold, rel, x, y): Noise gate, stereo.
+ef.gate_gain_mono(thresh, att, hold, rel, x): Gate that outputs the gain (0..1) applied.
+ef.stereo_width(w): Stereo width control; w = 0..2.
+ef.transpose(w, x, s, sig): Variable-speed playback transpose effect.
+ef.mixLinearLoop(N, C, m, sounds): Linear crossfade mixer for N buses of C channels each; m = mix position.
+ef.mixLinearClamp(N, C, m, sounds): Linear crossfade mixer, clamped at the ends.
+ef.mixPowerLoop(N, C, m, sounds): Power-complementary (equal power) crossfade mixer.
+ef.mixPowerClamp(N, C, m, sounds): Power-complementary crossfade mixer, clamped.
+ef.mixingEnv: GUI-based crossfade loop envelope.
+ef.wavefold: Wavefolder distortion (GUI sliders).
+ef.softclipQuadratic: Quadratic soft clipper (GUI sliders).
+ef.speakerbp(f1, f2): Speaker-like bandpass; f1, f2 in Hz.
+ef.reverseDelayRamped(delMax, phs): Reverse delay with ramped phase.
+ef.reverseEchoN(N, delMax): Reverse echo with N taps.
+ef.piano_dispersion_filter(M, B, f0): Piano string dispersion filter (for physical modeling).
+ef.fibonacci(order): Fibonacci sequence generator.
+ef.fibonacciSeq(N): First N Fibonacci numbers.
+ef.mesh_square(N): NxN mesh of coupled delay lines (physical modeling).
+ba.bypass1(bpc, e): Bypass control for one-channel effect.
+ba.bypass2(bpc, e): Bypass control for two-channel effect.
+
+# --- re. Reverbs ---
+re.mono_freeverb(fb1, fb2, damp, spread): Freeverb, mono. fb = feedback (0.7-0.9), damp = damping, spread = stereo-ish spread.
+re.stereo_freeverb(fb1, fb2, damp, spread): Freeverb, stereo in/out.
+re.dattorro_rev(pre_delay, bw, i_diff1, i_diff2, decay, d_diff1, d_diff2, damping): Dattorro plate reverb (high quality).
+re.dattorro_rev_default: Dattorro plate reverb with good default settings.
+re.satrev: Schroeder reverb (1971, classic).
+re.jcrev: Schroeder reverb, 4-channel output.
+re.greyhole(dt, damp, size, early_diff, feedback, mod_depth, mod_freq): Greyhole reverb (modulated).
+re.jpverb(t60, damp, size, early_diff, mod_depth, mod_freq, low, mid, high, low_cutoff, high_cutoff): Jot verb with EQ controls.
+re.fdnrev0(MAXDELAY, delays, BBSO, freqs, durs, loopgainmax, nonl): Feedback delay network reverb.
+re.zita_rev1_stereo(rdel, f1, f2, t60dc, t60m, fsmax): Zita rev1 stereo reverb (high quality, CPU heavy).
+re.zita_rev1_ambi(rgxyz, rdel, f1, f2, t60dc, t60m, fsmax): Zita rev1 ambisonic version.
+re.zita_rev_fdn(f1, f2, t60dc, t60m, fsmax): Zita FDN reverb.
+
+# --- co. Compressors ---
+co.compressor_mono: Compressor with GUI sliders (threshold, ratio, attack, release). No input arguments.
+co.compressor_stereo(ratio, thresh, att, rel, x, y): Stereo compressor; ratio (e.g. 4), thresh in dB, att/rel in seconds.
+co.compressor_lad_mono(lad, ratio, thresh, att, rel, x): Mono compressor with lookahead (lad in seconds).
+co.compression_gain_mono(ratio, thresh, att, rel): Outputs the compressor gain (0..1) instead of the compressed signal.
+co.peak_compression_gain_mono(strength, thresh, att, rel, knee, prePost): Peak-based compression gain.
+co.peak_compression_gain_mono_db(strength, thresh, att, rel, knee, prePost): Peak-based compression gain in dB.
+co.limiter_1176_R4_mono: 1176-style limiter (4:1), mono, GUI sliders. No input arguments.
+co.limiter_1176_R4_stereo: 1176-style limiter, stereo. No input arguments.
+co.limiter_lad_mono(LD): Lookahead limiter; LD = lookahead delay in seconds.
+co.limiter_lad_stereo(LD): Lookahead limiter, stereo.
+co.expander_N_chan(strength, thresh, range, att, hold, rel, knee, prePost, link, meter, maxHold, N): N-channel expander.
+co.expanderSC_N_chan(strength, thresh, range, att, hold, rel, knee, prePost, link, meter, maxHold, N, SCfunction, SCswitch, SCsignal): N-channel expander with sidechain.
+
+# --- pf. Flangers/phasers ---
+pf.flanger_mono(dmax, curdel, depth, fb, invert): Mono flanger; dmax = max delay, curdel = current delay, depth = modulation depth, fb = feedback, invert 0/1.
+pf.flanger_stereo(dmax, curdel1, curdel2, depth, fb, invert): Stereo flanger.
+pf.phaser2_mono(Notches, phase01, width, frqmin, fratio, frqmax, speed, depth, fb, invert): Mono phaser with Notches notches.
+pf.phaser2_stereo(Notches, width, frqmin, fratio, frqmax, speed, depth, fb, invert): Stereo phaser.
+pf.vibrato2_mono(sections, phase01, fb, width, frqmin, fratio, frqmax, speed): Vibrato/pitch shifter.
+
+# --- qu. Quantizers ---
+qu.quantize(rf, nl): Quantizes pitch to a scale. rf = reference frequency, nl = note list.
+qu.quantizeSmoothed(rf, nl): Quantizes with smoothing (glide between notes).
+qu.qLog(x): Logarithmic quantization curve.
+qu.qSmooth(x): Smoothing curve for quantizer.
+
+# --- so. Soundfiles ---
+# The 'soundfile' primitive: soundfile("name[url:{'file.flac';'file2.flac'}]", N)
+# loads the listed files from the sample pack (each file = one 'part').
+# N is the number of output channels (2 for stereo) - NOT a buffer size.
+# The soundfile signal is passed to the so. functions below.
+so.sound(sf, part): Environment for one part of a soundfile, with methods:
+so.sound(sf, part).play(level, gate): Plays the part once from the start on note-on, then stops at the end of the part (note-off does not cut it short).
+so.sound(sf, part).play_rev(level, gate): Plays the part in reverse.
+so.sound(sf, part).play_alt(level, gate, ctrl): Alternates forward/reverse playback; ctrl selects.
+so.sound(sf, part).play_interp(ref, freq, level, gate, selector): Pitched playback; ref = recorded pitch in Hz, freq = target pitch, selector = it.linear/it.cubic/etc.
+so.sound(sf, part).loop: Loops the part at its natural rate.
+so.sound(sf, part).loop_speed(speed): Loops at a speed factor (1 = natural, 2 = twice as fast).
+so.sound(sf, part).loop_speed_level(speed, level): Loops with speed and level control.
+so.loop(sf, part): Loops the part at its natural rate (top-level form).
+so.loop_speed(sf, part, speed): Loops at a speed factor (top-level form).
+so.loop_speed_level(sf, part, speed, level): Loops with speed and level (top-level form).
+
+# --- it. Interpolators ---
+it.interpolate_linear(dv, v0, v1): Linear interpolation between v0 and v1; dv = 0..1.
+it.interpolate_cosine(dv, v0, v1): Cosine (smooth) interpolation between v0 and v1.
+it.interpolate_cubic(dv, v0, v1, v2, v3): Cubic interpolation between v1 and v2 using neighbors v0, v3.
+it.interpolator_linear(gen, idv): Linear interpolating table reader.
+it.interpolator_cosine(gen, idv): Cosine-interpolating table reader.
+it.interpolator_cubic(gen, idv): Cubic-interpolating table reader.
+it.interpolator_null(gen, idv): Table reader without interpolation.
+it.interpolator_select(gen, idv, sel): Table reader with selectable interpolation.
+it.frdtable(N, S, init, idx): Read-only float table (N tables, S size).
+it.frwtable(N, S, init, w_idx, x, r_idx): Read/write float table with separate write/read indices.
+it.make_idv(idv): Make a variable-index reader for a table.
+it.nointerp: Table reader without interpolation (GUI).
+it.linear: Linear interpolation table reader (GUI).
+it.cosine: Cosine interpolation table reader (GUI).
+it.cubic: Cubic interpolation table reader (GUI).
