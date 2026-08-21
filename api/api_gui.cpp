@@ -119,6 +119,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../embedded_scheme/scheme_proc.h"
 
 #include "../common/OS_system_proc.h"
+#include "../windows/W_Keyboard_proc.h"
 
 #include "../Qt/Qt_MyQSlider.h"
 #include "../Qt/Qt_mix_colors.h"

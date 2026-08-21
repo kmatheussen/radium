@@ -22,3 +22,4 @@ extern LANGSPEC void W_RegisterRawInputHandler(void *hwnd); // hwnd is g_main_wi
 extern LANGSPEC bool W_HasDeltaMouse(void);
 extern LANGSPEC bool W_CanMovePointer(void);
 extern LANGSPEC bool OS_WINDOWS_is_key_window(void *maybewin);
+extern LANGSPEC void OS_WINDOWS_set_key_window(void *win);

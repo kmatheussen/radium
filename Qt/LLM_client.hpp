@@ -661,18 +661,15 @@ static inline void faust_skip_comment(const QString &text, int &pos)
 	if (text.at(pos) == '/' && pos + 1 < len && text.at(pos + 1) == '/')
 	{
 		while (pos < len && text.at(pos) != '\n')
-		  pos++;
+			pos++;
 	}
 	else if (text.at(pos) == '/' && pos + 1 < len && text.at(pos + 1) == '*')
 	{
 		pos += 2;
+		
 		while (pos + 1 < len && !(text.at(pos) == '*' && text.at(pos + 1) == '/'))
-		{
-			if (text.at(pos) == '\n')
-			  pos++;
-			else
-			  pos++;
-		}
+			pos++;
+		
 		pos = qMin(pos + 2, len);
 	}
 }
@@ -685,14 +682,17 @@ static inline void faust_skip_string(const QString &text, int &pos)
 	while (pos < len)
 	{
 		if (text.at(pos) == '\\')
-		  pos += 2;
+			pos += 2;
+		
 		else if (text.at(pos) == quote)
 		{
 			pos++;
 			break;
 		}
 		else
+		{
 		  pos++;
+		}
 	}
 }
 

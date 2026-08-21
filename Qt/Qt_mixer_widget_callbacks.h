@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../api/api_gui_proc.h"
 #include "../api/api_proc.h"
+#include "../windows/W_Keyboard_proc.h"
 
 #include "Qt_MyQScrollBar.hpp"
 #include "Timer.hpp"
