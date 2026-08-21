@@ -1,6 +1,8 @@
 
 // Must always be included first.
 
+#pragma once
+
 #ifdef _POSIX_C_SOURCE
 #  undef _POSIX_C_SOURCE
 #endif
@@ -25,7 +27,7 @@ extern "C" {
 #include <Python.h>
 
 #ifdef __cplusplus
-#  pragma GCC pop
+#  pragma GCC diagnostic pop
 #endif
 	
 #define RADIUM_PYTHON_IS_DEFINED 1

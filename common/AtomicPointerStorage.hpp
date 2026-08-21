@@ -243,7 +243,7 @@ public:
 
   void set_new_pointer(T *new_pointer)
   {
-	  R_ASSERT(new_pointer != NULL); // NULL not supported now. If NULL is needed, we can use ((T*)-1) (or something similar) in AtomicPointerStorage to indicate a used slot instead of NULL.
+	  R_ASSERT_RETURN_IF_FALSE(new_pointer != NULL); // NULL not supported now. If NULL is needed, we can use ((T*)-1) (or something similar) in AtomicPointerStorage to indicate a used slot instead of NULL.
 
 	  R_ASSERT_NON_RELEASE(THREADING_is_main_thread()); //  // If not '_num_references' must be atomic, which it currently isn't.
 	  

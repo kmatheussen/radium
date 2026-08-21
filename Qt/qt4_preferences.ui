@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1085</width>
-    <height>570</height>
+    <width>1219</width>
+    <height>634</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -23,16 +23,19 @@
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="tabPosition">
-      <enum>QTabWidget::North</enum>
+      <enum>QTabWidget::TabPosition::North</enum>
      </property>
      <property name="tabShape">
-      <enum>QTabWidget::Rounded</enum>
+      <enum>QTabWidget::TabShape::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>2</number>
+      <number>9</number>
      </property>
      <property name="elideMode">
-      <enum>Qt::ElideNone</enum>
+      <enum>Qt::TextElideMode::ElideNone</enum>
+     </property>
+     <property name="tabBarAutoHide">
+      <bool>true</bool>
      </property>
      <widget class="QWidget" name="Audio">
       <attribute name="title">
@@ -42,7 +45,7 @@
        <item>
         <spacer name="verticalSpacer_15">
          <property name="orientation">
-          <enum>Qt::Vertical</enum>
+          <enum>Qt::Orientation::Vertical</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -74,7 +77,6 @@
             </property>
             <property name="font">
              <font>
-              <weight>50</weight>
               <bold>false</bold>
              </font>
             </property>
@@ -86,10 +88,10 @@
           <item row="1" column="2">
            <spacer name="horizontalSpacer">
             <property name="orientation">
-             <enum>Qt::Horizontal</enum>
+             <enum>Qt::Orientation::Horizontal</enum>
             </property>
             <property name="sizeType">
-             <enum>QSizePolicy::Fixed</enum>
+             <enum>QSizePolicy::Policy::Fixed</enum>
             </property>
             <property name="sizeHint" stdset="0">
              <size>
@@ -122,7 +124,6 @@
             </property>
             <property name="font">
              <font>
-              <weight>50</weight>
               <bold>false</bold>
              </font>
             </property>
@@ -136,10 +137,10 @@
              <bool>false</bool>
             </property>
             <property name="alignment">
-             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
             </property>
             <property name="buttonSymbols">
-             <enum>QAbstractSpinBox::UpDownArrows</enum>
+             <enum>QAbstractSpinBox::ButtonSymbols::UpDownArrows</enum>
             </property>
             <property name="minimum">
              <number>1</number>
@@ -226,10 +227,10 @@
             <item>
              <spacer name="horizontalSpacer_12">
               <property name="orientation">
-               <enum>Qt::Horizontal</enum>
+               <enum>Qt::Orientation::Horizontal</enum>
               </property>
               <property name="sizeType">
-               <enum>QSizePolicy::Fixed</enum>
+               <enum>QSizePolicy::Policy::Fixed</enum>
               </property>
               <property name="sizeHint" stdset="0">
                <size>
@@ -247,7 +248,7 @@
                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;A larger block size will cause less CPU usage at the cost of higher memory usage, lower accuracy of automation, and other things. &lt;/span&gt; (Restart required)&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Note 1: Setting the internal block size to a higher value than 64 should for now be considered an experimental feature. Please report any problems you may have. &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Note 2: The soundcard block size must be a multiple of the internal block size.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                 <property name="textFormat">
-                 <enum>Qt::AutoText</enum>
+                 <enum>Qt::TextFormat::AutoText</enum>
                 </property>
                 <property name="wordWrap">
                  <bool>true</bool>
@@ -323,7 +324,7 @@
                   <item>
                    <widget class="QDoubleSpinBox" name="custom_recording_latency_value">
                     <property name="alignment">
-                     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                     <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
                     </property>
                     <property name="suffix">
                      <string>ms</string>
@@ -365,7 +366,7 @@
          <item>
           <spacer name="horizontalSpacer_6">
            <property name="orientation">
-            <enum>Qt::Horizontal</enum>
+            <enum>Qt::Orientation::Horizontal</enum>
            </property>
            <property name="sizeHint" stdset="0">
             <size>
@@ -380,7 +381,7 @@
        <item>
         <spacer name="verticalSpacer_6">
          <property name="orientation">
-          <enum>Qt::Vertical</enum>
+          <enum>Qt::Orientation::Vertical</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -393,7 +394,7 @@
        <item>
         <spacer name="verticalSpacer_27">
          <property name="orientation">
-          <enum>Qt::Vertical</enum>
+          <enum>Qt::Orientation::Vertical</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -406,7 +407,7 @@
        <item>
         <spacer name="verticalSpacer_28">
          <property name="orientation">
-          <enum>Qt::Vertical</enum>
+          <enum>Qt::Orientation::Vertical</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -419,7 +420,7 @@
        <item>
         <spacer name="verticalSpacer_23">
          <property name="orientation">
-          <enum>Qt::Vertical</enum>
+          <enum>Qt::Orientation::Vertical</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -439,10 +440,10 @@
        <item row="0" column="0" colspan="2">
         <spacer name="verticalSpacer_12">
          <property name="orientation">
-          <enum>Qt::Vertical</enum>
+          <enum>Qt::Orientation::Vertical</enum>
          </property>
          <property name="sizeType">
-          <enum>QSizePolicy::Fixed</enum>
+          <enum>QSizePolicy::Policy::Fixed</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -602,15 +603,6 @@
               </color>
              </brush>
             </colorrole>
-            <colorrole role="NoRole">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>113</red>
-               <green>113</green>
-               <blue>113</blue>
-              </color>
-             </brush>
-            </colorrole>
             <colorrole role="ToolTipBase">
              <brush brushstyle="SolidPattern">
               <color alpha="255">
@@ -635,6 +627,15 @@
                <red>84</red>
                <green>84</green>
                <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
+            <colorrole role="Accent">
+             <brush brushstyle="SolidPattern">
+              <color alpha="255">
+               <red>48</red>
+               <green>140</green>
+               <blue>198</blue>
               </color>
              </brush>
             </colorrole>
@@ -766,15 +767,6 @@
               </color>
              </brush>
             </colorrole>
-            <colorrole role="NoRole">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>113</red>
-               <green>113</green>
-               <blue>113</blue>
-              </color>
-             </brush>
-            </colorrole>
             <colorrole role="ToolTipBase">
              <brush brushstyle="SolidPattern">
               <color alpha="255">
@@ -799,6 +791,15 @@
                <red>84</red>
                <green>84</green>
                <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
+            <colorrole role="Accent">
+             <brush brushstyle="SolidPattern">
+              <color alpha="255">
+               <red>48</red>
+               <green>140</green>
+               <blue>198</blue>
               </color>
              </brush>
             </colorrole>
@@ -930,15 +931,6 @@
               </color>
              </brush>
             </colorrole>
-            <colorrole role="NoRole">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>113</red>
-               <green>113</green>
-               <blue>113</blue>
-              </color>
-             </brush>
-            </colorrole>
             <colorrole role="ToolTipBase">
              <brush brushstyle="SolidPattern">
               <color alpha="255">
@@ -966,11 +958,20 @@
               </color>
              </brush>
             </colorrole>
+            <colorrole role="Accent">
+             <brush brushstyle="SolidPattern">
+              <color alpha="255">
+               <red>145</red>
+               <green>145</green>
+               <blue>145</blue>
+              </color>
+             </brush>
+            </colorrole>
            </disabled>
           </palette>
          </property>
          <property name="frameShadow">
-          <enum>QFrame::Plain</enum>
+          <enum>QFrame::Shadow::Plain</enum>
          </property>
          <property name="lineWidth">
           <number>1</number>
@@ -979,17 +980,17 @@
           <number>0</number>
          </property>
          <property name="orientation">
-          <enum>Qt::Horizontal</enum>
+          <enum>Qt::Orientation::Horizontal</enum>
          </property>
         </widget>
        </item>
        <item row="13" column="0" colspan="2">
         <spacer name="verticalSpacer_13">
          <property name="orientation">
-          <enum>Qt::Vertical</enum>
+          <enum>Qt::Orientation::Vertical</enum>
          </property>
          <property name="sizeType">
-          <enum>QSizePolicy::Expanding</enum>
+          <enum>QSizePolicy::Policy::Expanding</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -1093,7 +1094,7 @@
                </sizepolicy>
               </property>
               <property name="alignment">
-               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
               </property>
               <property name="minimum">
                <number>1</number>
@@ -1131,7 +1132,7 @@
                </sizepolicy>
               </property>
               <property name="alignment">
-               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+               <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
               </property>
               <property name="minimum">
                <number>1</number>
@@ -1144,10 +1145,10 @@
             <item row="2" column="0">
              <spacer name="verticalSpacer_17">
               <property name="orientation">
-               <enum>Qt::Vertical</enum>
+               <enum>Qt::Orientation::Vertical</enum>
               </property>
               <property name="sizeType">
-               <enum>QSizePolicy::Fixed</enum>
+               <enum>QSizePolicy::Policy::Fixed</enum>
               </property>
               <property name="sizeHint" stdset="0">
                <size>
@@ -1208,10 +1209,10 @@
        <item row="4" column="0">
         <spacer name="verticalSpacer_18">
          <property name="orientation">
-          <enum>Qt::Vertical</enum>
+          <enum>Qt::Orientation::Vertical</enum>
          </property>
          <property name="sizeType">
-          <enum>QSizePolicy::Fixed</enum>
+          <enum>QSizePolicy::Policy::Fixed</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -1224,10 +1225,10 @@
        <item row="2" column="0">
         <spacer name="verticalSpacer_24">
          <property name="orientation">
-          <enum>Qt::Vertical</enum>
+          <enum>Qt::Orientation::Vertical</enum>
          </property>
          <property name="sizeType">
-          <enum>QSizePolicy::Fixed</enum>
+          <enum>QSizePolicy::Policy::Fixed</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -1265,17 +1266,17 @@
          <item>
           <widget class="QLineEdit" name="presetBrowserRootFolder">
            <property name="alignment">
-            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+            <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
            </property>
           </widget>
          </item>
          <item>
           <spacer name="horizontalSpacer_25">
            <property name="orientation">
-            <enum>Qt::Horizontal</enum>
+            <enum>Qt::Orientation::Horizontal</enum>
            </property>
            <property name="sizeType">
-            <enum>QSizePolicy::Fixed</enum>
+            <enum>QSizePolicy::Policy::Fixed</enum>
            </property>
            <property name="sizeHint" stdset="0">
             <size>
@@ -1295,7 +1296,7 @@
          <item>
           <spacer name="horizontalSpacer_24">
            <property name="orientation">
-            <enum>Qt::Horizontal</enum>
+            <enum>Qt::Orientation::Horizontal</enum>
            </property>
            <property name="sizeHint" stdset="0">
             <size>
@@ -1438,15 +1439,6 @@
               </color>
              </brush>
             </colorrole>
-            <colorrole role="NoRole">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>113</red>
-               <green>113</green>
-               <blue>113</blue>
-              </color>
-             </brush>
-            </colorrole>
             <colorrole role="ToolTipBase">
              <brush brushstyle="SolidPattern">
               <color alpha="255">
@@ -1471,6 +1463,15 @@
                <red>84</red>
                <green>84</green>
                <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
+            <colorrole role="Accent">
+             <brush brushstyle="SolidPattern">
+              <color alpha="255">
+               <red>48</red>
+               <green>140</green>
+               <blue>198</blue>
               </color>
              </brush>
             </colorrole>
@@ -1602,15 +1603,6 @@
               </color>
              </brush>
             </colorrole>
-            <colorrole role="NoRole">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>113</red>
-               <green>113</green>
-               <blue>113</blue>
-              </color>
-             </brush>
-            </colorrole>
             <colorrole role="ToolTipBase">
              <brush brushstyle="SolidPattern">
               <color alpha="255">
@@ -1635,6 +1627,15 @@
                <red>84</red>
                <green>84</green>
                <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
+            <colorrole role="Accent">
+             <brush brushstyle="SolidPattern">
+              <color alpha="255">
+               <red>48</red>
+               <green>140</green>
+               <blue>198</blue>
               </color>
              </brush>
             </colorrole>
@@ -1766,15 +1767,6 @@
               </color>
              </brush>
             </colorrole>
-            <colorrole role="NoRole">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>113</red>
-               <green>113</green>
-               <blue>113</blue>
-              </color>
-             </brush>
-            </colorrole>
             <colorrole role="ToolTipBase">
              <brush brushstyle="SolidPattern">
               <color alpha="255">
@@ -1802,11 +1794,20 @@
               </color>
              </brush>
             </colorrole>
+            <colorrole role="Accent">
+             <brush brushstyle="SolidPattern">
+              <color alpha="255">
+               <red>145</red>
+               <green>145</green>
+               <blue>145</blue>
+              </color>
+             </brush>
+            </colorrole>
            </disabled>
           </palette>
          </property>
          <property name="frameShadow">
-          <enum>QFrame::Plain</enum>
+          <enum>QFrame::Shadow::Plain</enum>
          </property>
          <property name="lineWidth">
           <number>1</number>
@@ -1815,7 +1816,7 @@
           <number>0</number>
          </property>
          <property name="orientation">
-          <enum>Qt::Horizontal</enum>
+          <enum>Qt::Orientation::Horizontal</enum>
          </property>
         </widget>
        </item>
@@ -1964,15 +1965,6 @@
               </color>
              </brush>
             </colorrole>
-            <colorrole role="NoRole">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>113</red>
-               <green>113</green>
-               <blue>113</blue>
-              </color>
-             </brush>
-            </colorrole>
             <colorrole role="ToolTipBase">
              <brush brushstyle="SolidPattern">
               <color alpha="255">
@@ -1997,6 +1989,15 @@
                <red>84</red>
                <green>84</green>
                <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
+            <colorrole role="Accent">
+             <brush brushstyle="SolidPattern">
+              <color alpha="255">
+               <red>48</red>
+               <green>140</green>
+               <blue>198</blue>
               </color>
              </brush>
             </colorrole>
@@ -2128,15 +2129,6 @@
               </color>
              </brush>
             </colorrole>
-            <colorrole role="NoRole">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>113</red>
-               <green>113</green>
-               <blue>113</blue>
-              </color>
-             </brush>
-            </colorrole>
             <colorrole role="ToolTipBase">
              <brush brushstyle="SolidPattern">
               <color alpha="255">
@@ -2161,6 +2153,15 @@
                <red>84</red>
                <green>84</green>
                <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
+            <colorrole role="Accent">
+             <brush brushstyle="SolidPattern">
+              <color alpha="255">
+               <red>48</red>
+               <green>140</green>
+               <blue>198</blue>
               </color>
              </brush>
             </colorrole>
@@ -2292,15 +2293,6 @@
               </color>
              </brush>
             </colorrole>
-            <colorrole role="NoRole">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>113</red>
-               <green>113</green>
-               <blue>113</blue>
-              </color>
-             </brush>
-            </colorrole>
             <colorrole role="ToolTipBase">
              <brush brushstyle="SolidPattern">
               <color alpha="255">
@@ -2328,11 +2320,20 @@
               </color>
              </brush>
             </colorrole>
+            <colorrole role="Accent">
+             <brush brushstyle="SolidPattern">
+              <color alpha="255">
+               <red>145</red>
+               <green>145</green>
+               <blue>145</blue>
+              </color>
+             </brush>
+            </colorrole>
            </disabled>
           </palette>
          </property>
          <property name="frameShadow">
-          <enum>QFrame::Plain</enum>
+          <enum>QFrame::Shadow::Plain</enum>
          </property>
          <property name="lineWidth">
           <number>1</number>
@@ -2341,7 +2342,7 @@
           <number>0</number>
          </property>
          <property name="orientation">
-          <enum>Qt::Horizontal</enum>
+          <enum>Qt::Orientation::Horizontal</enum>
          </property>
         </widget>
        </item>
@@ -2374,7 +2375,7 @@
          <item row="2" column="2">
           <spacer name="horizontalSpacer_22">
            <property name="orientation">
-            <enum>Qt::Horizontal</enum>
+            <enum>Qt::Orientation::Horizontal</enum>
            </property>
            <property name="sizeHint" stdset="0">
             <size>
@@ -2387,7 +2388,7 @@
          <item row="0" column="2">
           <spacer name="horizontalSpacer_13">
            <property name="orientation">
-            <enum>Qt::Horizontal</enum>
+            <enum>Qt::Orientation::Horizontal</enum>
            </property>
            <property name="sizeHint" stdset="0">
             <size>
@@ -2448,7 +2449,7 @@
          <item row="1" column="2">
           <spacer name="horizontalSpacer_21">
            <property name="orientation">
-            <enum>Qt::Horizontal</enum>
+            <enum>Qt::Orientation::Horizontal</enum>
            </property>
            <property name="sizeHint" stdset="0">
             <size>
@@ -2591,15 +2592,6 @@
               </color>
              </brush>
             </colorrole>
-            <colorrole role="NoRole">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>113</red>
-               <green>113</green>
-               <blue>113</blue>
-              </color>
-             </brush>
-            </colorrole>
             <colorrole role="ToolTipBase">
              <brush brushstyle="SolidPattern">
               <color alpha="255">
@@ -2624,6 +2616,15 @@
                <red>84</red>
                <green>84</green>
                <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
+            <colorrole role="Accent">
+             <brush brushstyle="SolidPattern">
+              <color alpha="255">
+               <red>48</red>
+               <green>140</green>
+               <blue>198</blue>
               </color>
              </brush>
             </colorrole>
@@ -2755,15 +2756,6 @@
               </color>
              </brush>
             </colorrole>
-            <colorrole role="NoRole">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>113</red>
-               <green>113</green>
-               <blue>113</blue>
-              </color>
-             </brush>
-            </colorrole>
             <colorrole role="ToolTipBase">
              <brush brushstyle="SolidPattern">
               <color alpha="255">
@@ -2788,6 +2780,15 @@
                <red>84</red>
                <green>84</green>
                <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
+            <colorrole role="Accent">
+             <brush brushstyle="SolidPattern">
+              <color alpha="255">
+               <red>48</red>
+               <green>140</green>
+               <blue>198</blue>
               </color>
              </brush>
             </colorrole>
@@ -2919,15 +2920,6 @@
               </color>
              </brush>
             </colorrole>
-            <colorrole role="NoRole">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>113</red>
-               <green>113</green>
-               <blue>113</blue>
-              </color>
-             </brush>
-            </colorrole>
             <colorrole role="ToolTipBase">
              <brush brushstyle="SolidPattern">
               <color alpha="255">
@@ -2955,11 +2947,20 @@
               </color>
              </brush>
             </colorrole>
+            <colorrole role="Accent">
+             <brush brushstyle="SolidPattern">
+              <color alpha="255">
+               <red>145</red>
+               <green>145</green>
+               <blue>145</blue>
+              </color>
+             </brush>
+            </colorrole>
            </disabled>
           </palette>
          </property>
          <property name="frameShadow">
-          <enum>QFrame::Plain</enum>
+          <enum>QFrame::Shadow::Plain</enum>
          </property>
          <property name="lineWidth">
           <number>1</number>
@@ -2968,7 +2969,7 @@
           <number>0</number>
          </property>
          <property name="orientation">
-          <enum>Qt::Horizontal</enum>
+          <enum>Qt::Orientation::Horizontal</enum>
          </property>
         </widget>
        </item>
@@ -3204,15 +3205,6 @@
               </color>
              </brush>
             </colorrole>
-            <colorrole role="NoRole">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>113</red>
-               <green>113</green>
-               <blue>113</blue>
-              </color>
-             </brush>
-            </colorrole>
             <colorrole role="ToolTipBase">
              <brush brushstyle="SolidPattern">
               <color alpha="255">
@@ -3237,6 +3229,15 @@
                <red>84</red>
                <green>84</green>
                <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
+            <colorrole role="Accent">
+             <brush brushstyle="SolidPattern">
+              <color alpha="255">
+               <red>48</red>
+               <green>140</green>
+               <blue>198</blue>
               </color>
              </brush>
             </colorrole>
@@ -3368,15 +3369,6 @@
               </color>
              </brush>
             </colorrole>
-            <colorrole role="NoRole">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>113</red>
-               <green>113</green>
-               <blue>113</blue>
-              </color>
-             </brush>
-            </colorrole>
             <colorrole role="ToolTipBase">
              <brush brushstyle="SolidPattern">
               <color alpha="255">
@@ -3401,6 +3393,15 @@
                <red>84</red>
                <green>84</green>
                <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
+            <colorrole role="Accent">
+             <brush brushstyle="SolidPattern">
+              <color alpha="255">
+               <red>48</red>
+               <green>140</green>
+               <blue>198</blue>
               </color>
              </brush>
             </colorrole>
@@ -3532,15 +3533,6 @@
               </color>
              </brush>
             </colorrole>
-            <colorrole role="NoRole">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>113</red>
-               <green>113</green>
-               <blue>113</blue>
-              </color>
-             </brush>
-            </colorrole>
             <colorrole role="ToolTipBase">
              <brush brushstyle="SolidPattern">
               <color alpha="255">
@@ -3568,11 +3560,20 @@
               </color>
              </brush>
             </colorrole>
+            <colorrole role="Accent">
+             <brush brushstyle="SolidPattern">
+              <color alpha="255">
+               <red>145</red>
+               <green>145</green>
+               <blue>145</blue>
+              </color>
+             </brush>
+            </colorrole>
            </disabled>
           </palette>
          </property>
          <property name="frameShadow">
-          <enum>QFrame::Plain</enum>
+          <enum>QFrame::Shadow::Plain</enum>
          </property>
          <property name="lineWidth">
           <number>1</number>
@@ -3581,7 +3582,7 @@
           <number>0</number>
          </property>
          <property name="orientation">
-          <enum>Qt::Horizontal</enum>
+          <enum>Qt::Orientation::Horizontal</enum>
          </property>
         </widget>
        </item>
@@ -3646,7 +3647,7 @@
        <item>
         <spacer name="verticalSpacer_5">
          <property name="orientation">
-          <enum>Qt::Vertical</enum>
+          <enum>Qt::Orientation::Vertical</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -3666,10 +3667,10 @@
        <item>
         <spacer name="verticalSpacer_4">
          <property name="orientation">
-          <enum>Qt::Vertical</enum>
+          <enum>Qt::Orientation::Vertical</enum>
          </property>
          <property name="sizeType">
-          <enum>QSizePolicy::Fixed</enum>
+          <enum>QSizePolicy::Policy::Fixed</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -3759,7 +3760,7 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
          <item>
           <spacer name="horizontalSpacer_17">
            <property name="orientation">
-            <enum>Qt::Horizontal</enum>
+            <enum>Qt::Orientation::Horizontal</enum>
            </property>
            <property name="sizeHint" stdset="0">
             <size>
@@ -3828,7 +3829,7 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
               </property>
               <layout class="QHBoxLayout" name="horizontalLayout_6">
                <property name="sizeConstraint">
-                <enum>QLayout::SetNoConstraint</enum>
+                <enum>QLayout::SizeConstraint::SetNoConstraint</enum>
                </property>
                <property name="leftMargin">
                 <number>0</number>
@@ -3884,7 +3885,7 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
          <item>
           <spacer name="horizontalSpacer_14">
            <property name="orientation">
-            <enum>Qt::Horizontal</enum>
+            <enum>Qt::Orientation::Horizontal</enum>
            </property>
            <property name="sizeHint" stdset="0">
             <size>
@@ -3924,7 +3925,7 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
          <item>
           <spacer name="horizontalSpacer_3">
            <property name="orientation">
-            <enum>Qt::Horizontal</enum>
+            <enum>Qt::Orientation::Horizontal</enum>
            </property>
            <property name="sizeHint" stdset="0">
             <size>
@@ -3939,7 +3940,7 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
        <item>
         <spacer name="verticalSpacer_3">
          <property name="orientation">
-          <enum>Qt::Vertical</enum>
+          <enum>Qt::Orientation::Vertical</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -3959,7 +3960,7 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
        <item row="0" column="1">
         <spacer name="horizontalSpacer_5">
          <property name="orientation">
-          <enum>Qt::Horizontal</enum>
+          <enum>Qt::Orientation::Horizontal</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -3997,7 +3998,7 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
                  <string>Note: Latency compensation is currently only applied to notes.</string>
                 </property>
                 <property name="alignment">
-                 <set>Qt::AlignCenter</set>
+                 <set>Qt::AlignmentFlag::AlignCenter</set>
                 </property>
                </widget>
               </item>
@@ -4041,7 +4042,7 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
                 <item>
                  <widget class="QDoubleSpinBox" name="custom_midi_instrument_latency_value">
                   <property name="alignment">
-                   <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                   <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
                   </property>
                   <property name="suffix">
                    <string>ms</string>
@@ -4093,7 +4094,7 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
            <item>
             <spacer name="verticalSpacer_33">
              <property name="orientation">
-              <enum>Qt::Vertical</enum>
+              <enum>Qt::Orientation::Vertical</enum>
              </property>
              <property name="sizeHint" stdset="0">
               <size>
@@ -4191,7 +4192,7 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
                  </sizepolicy>
                 </property>
                 <property name="layoutDirection">
-                 <enum>Qt::LeftToRight</enum>
+                 <enum>Qt::LayoutDirection::LeftToRight</enum>
                 </property>
                 <property name="text">
                  <string>Enable by default</string>
@@ -4201,10 +4202,10 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
               <item>
                <spacer name="horizontalSpacer_19">
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                 <property name="sizeType">
-                 <enum>QSizePolicy::Fixed</enum>
+                 <enum>QSizePolicy::Policy::Fixed</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
@@ -4239,7 +4240,7 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The value should be higher than the longest delay line you have in the mixer.&lt;/p&gt;&lt;p&gt;It might make sense to disable auto-suspend for all delay, reverb, echo, etc. instruments, and rather set this value low.&lt;/p&gt;&lt;p&gt;Note that many instruments are able to provide accurate auto-suspend values (Sampler, Pipe, some VST plugins, etc.). For those instruments, this value will not be used.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                 <property name="alignment">
-                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                 <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
                 </property>
                 <property name="maximum">
                  <number>20000</number>
@@ -4249,7 +4250,7 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
               <item>
                <spacer name="horizontalSpacer_9">
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
@@ -4269,7 +4270,7 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
        <item row="4" column="0">
         <spacer name="verticalSpacer_31">
          <property name="orientation">
-          <enum>Qt::Vertical</enum>
+          <enum>Qt::Orientation::Vertical</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -4288,10 +4289,10 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
           <item row="0" column="1">
            <spacer name="horizontalSpacer_26">
             <property name="orientation">
-             <enum>Qt::Horizontal</enum>
+             <enum>Qt::Orientation::Horizontal</enum>
             </property>
             <property name="sizeType">
-             <enum>QSizePolicy::Fixed</enum>
+             <enum>QSizePolicy::Policy::Fixed</enum>
             </property>
             <property name="sizeHint" stdset="0">
              <size>
@@ -4488,15 +4489,6 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
               </color>
              </brush>
             </colorrole>
-            <colorrole role="NoRole">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>113</red>
-               <green>113</green>
-               <blue>113</blue>
-              </color>
-             </brush>
-            </colorrole>
             <colorrole role="ToolTipBase">
              <brush brushstyle="SolidPattern">
               <color alpha="255">
@@ -4521,6 +4513,15 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
                <red>84</red>
                <green>84</green>
                <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
+            <colorrole role="Accent">
+             <brush brushstyle="SolidPattern">
+              <color alpha="255">
+               <red>48</red>
+               <green>140</green>
+               <blue>198</blue>
               </color>
              </brush>
             </colorrole>
@@ -4652,15 +4653,6 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
               </color>
              </brush>
             </colorrole>
-            <colorrole role="NoRole">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>113</red>
-               <green>113</green>
-               <blue>113</blue>
-              </color>
-             </brush>
-            </colorrole>
             <colorrole role="ToolTipBase">
              <brush brushstyle="SolidPattern">
               <color alpha="255">
@@ -4685,6 +4677,15 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
                <red>84</red>
                <green>84</green>
                <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
+            <colorrole role="Accent">
+             <brush brushstyle="SolidPattern">
+              <color alpha="255">
+               <red>48</red>
+               <green>140</green>
+               <blue>198</blue>
               </color>
              </brush>
             </colorrole>
@@ -4816,15 +4817,6 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
               </color>
              </brush>
             </colorrole>
-            <colorrole role="NoRole">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>113</red>
-               <green>113</green>
-               <blue>113</blue>
-              </color>
-             </brush>
-            </colorrole>
             <colorrole role="ToolTipBase">
              <brush brushstyle="SolidPattern">
               <color alpha="255">
@@ -4852,11 +4844,20 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
               </color>
              </brush>
             </colorrole>
+            <colorrole role="Accent">
+             <brush brushstyle="SolidPattern">
+              <color alpha="255">
+               <red>145</red>
+               <green>145</green>
+               <blue>145</blue>
+              </color>
+             </brush>
+            </colorrole>
            </disabled>
           </palette>
          </property>
          <property name="frameShadow">
-          <enum>QFrame::Plain</enum>
+          <enum>QFrame::Shadow::Plain</enum>
          </property>
          <property name="lineWidth">
           <number>1</number>
@@ -4865,7 +4866,7 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
           <number>0</number>
          </property>
          <property name="orientation">
-          <enum>Qt::Horizontal</enum>
+          <enum>Qt::Orientation::Horizontal</enum>
          </property>
         </widget>
        </item>
@@ -5020,15 +5021,6 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
               </color>
              </brush>
             </colorrole>
-            <colorrole role="NoRole">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>113</red>
-               <green>113</green>
-               <blue>113</blue>
-              </color>
-             </brush>
-            </colorrole>
             <colorrole role="ToolTipBase">
              <brush brushstyle="SolidPattern">
               <color alpha="255">
@@ -5053,6 +5045,15 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
                <red>84</red>
                <green>84</green>
                <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
+            <colorrole role="Accent">
+             <brush brushstyle="SolidPattern">
+              <color alpha="255">
+               <red>48</red>
+               <green>140</green>
+               <blue>198</blue>
               </color>
              </brush>
             </colorrole>
@@ -5184,15 +5185,6 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
               </color>
              </brush>
             </colorrole>
-            <colorrole role="NoRole">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>113</red>
-               <green>113</green>
-               <blue>113</blue>
-              </color>
-             </brush>
-            </colorrole>
             <colorrole role="ToolTipBase">
              <brush brushstyle="SolidPattern">
               <color alpha="255">
@@ -5217,6 +5209,15 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
                <red>84</red>
                <green>84</green>
                <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
+            <colorrole role="Accent">
+             <brush brushstyle="SolidPattern">
+              <color alpha="255">
+               <red>48</red>
+               <green>140</green>
+               <blue>198</blue>
               </color>
              </brush>
             </colorrole>
@@ -5348,15 +5349,6 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
               </color>
              </brush>
             </colorrole>
-            <colorrole role="NoRole">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>113</red>
-               <green>113</green>
-               <blue>113</blue>
-              </color>
-             </brush>
-            </colorrole>
             <colorrole role="ToolTipBase">
              <brush brushstyle="SolidPattern">
               <color alpha="255">
@@ -5384,11 +5376,20 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
               </color>
              </brush>
             </colorrole>
+            <colorrole role="Accent">
+             <brush brushstyle="SolidPattern">
+              <color alpha="255">
+               <red>145</red>
+               <green>145</green>
+               <blue>145</blue>
+              </color>
+             </brush>
+            </colorrole>
            </disabled>
           </palette>
          </property>
          <property name="frameShadow">
-          <enum>QFrame::Plain</enum>
+          <enum>QFrame::Shadow::Plain</enum>
          </property>
          <property name="lineWidth">
           <number>1</number>
@@ -5397,7 +5398,7 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
           <number>0</number>
          </property>
          <property name="orientation">
-          <enum>Qt::Horizontal</enum>
+          <enum>Qt::Orientation::Horizontal</enum>
          </property>
         </widget>
        </item>
@@ -5539,15 +5540,6 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
               </color>
              </brush>
             </colorrole>
-            <colorrole role="NoRole">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>113</red>
-               <green>113</green>
-               <blue>113</blue>
-              </color>
-             </brush>
-            </colorrole>
             <colorrole role="ToolTipBase">
              <brush brushstyle="SolidPattern">
               <color alpha="255">
@@ -5572,6 +5564,15 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
                <red>84</red>
                <green>84</green>
                <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
+            <colorrole role="Accent">
+             <brush brushstyle="SolidPattern">
+              <color alpha="255">
+               <red>48</red>
+               <green>140</green>
+               <blue>198</blue>
               </color>
              </brush>
             </colorrole>
@@ -5703,15 +5704,6 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
               </color>
              </brush>
             </colorrole>
-            <colorrole role="NoRole">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>113</red>
-               <green>113</green>
-               <blue>113</blue>
-              </color>
-             </brush>
-            </colorrole>
             <colorrole role="ToolTipBase">
              <brush brushstyle="SolidPattern">
               <color alpha="255">
@@ -5736,6 +5728,15 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
                <red>84</red>
                <green>84</green>
                <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
+            <colorrole role="Accent">
+             <brush brushstyle="SolidPattern">
+              <color alpha="255">
+               <red>48</red>
+               <green>140</green>
+               <blue>198</blue>
               </color>
              </brush>
             </colorrole>
@@ -5867,15 +5868,6 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
               </color>
              </brush>
             </colorrole>
-            <colorrole role="NoRole">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>113</red>
-               <green>113</green>
-               <blue>113</blue>
-              </color>
-             </brush>
-            </colorrole>
             <colorrole role="ToolTipBase">
              <brush brushstyle="SolidPattern">
               <color alpha="255">
@@ -5903,11 +5895,20 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
               </color>
              </brush>
             </colorrole>
+            <colorrole role="Accent">
+             <brush brushstyle="SolidPattern">
+              <color alpha="255">
+               <red>145</red>
+               <green>145</green>
+               <blue>145</blue>
+              </color>
+             </brush>
+            </colorrole>
            </disabled>
           </palette>
          </property>
          <property name="frameShadow">
-          <enum>QFrame::Plain</enum>
+          <enum>QFrame::Shadow::Plain</enum>
          </property>
          <property name="lineWidth">
           <number>1</number>
@@ -5916,7 +5917,7 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
           <number>0</number>
          </property>
          <property name="orientation">
-          <enum>Qt::Horizontal</enum>
+          <enum>Qt::Orientation::Horizontal</enum>
          </property>
         </widget>
        </item>
@@ -6071,15 +6072,6 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
               </color>
              </brush>
             </colorrole>
-            <colorrole role="NoRole">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>113</red>
-               <green>113</green>
-               <blue>113</blue>
-              </color>
-             </brush>
-            </colorrole>
             <colorrole role="ToolTipBase">
              <brush brushstyle="SolidPattern">
               <color alpha="255">
@@ -6104,6 +6096,15 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
                <red>84</red>
                <green>84</green>
                <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
+            <colorrole role="Accent">
+             <brush brushstyle="SolidPattern">
+              <color alpha="255">
+               <red>48</red>
+               <green>140</green>
+               <blue>198</blue>
               </color>
              </brush>
             </colorrole>
@@ -6235,15 +6236,6 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
               </color>
              </brush>
             </colorrole>
-            <colorrole role="NoRole">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>113</red>
-               <green>113</green>
-               <blue>113</blue>
-              </color>
-             </brush>
-            </colorrole>
             <colorrole role="ToolTipBase">
              <brush brushstyle="SolidPattern">
               <color alpha="255">
@@ -6268,6 +6260,15 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
                <red>84</red>
                <green>84</green>
                <blue>84</blue>
+              </color>
+             </brush>
+            </colorrole>
+            <colorrole role="Accent">
+             <brush brushstyle="SolidPattern">
+              <color alpha="255">
+               <red>48</red>
+               <green>140</green>
+               <blue>198</blue>
               </color>
              </brush>
             </colorrole>
@@ -6399,15 +6400,6 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
               </color>
              </brush>
             </colorrole>
-            <colorrole role="NoRole">
-             <brush brushstyle="SolidPattern">
-              <color alpha="255">
-               <red>113</red>
-               <green>113</green>
-               <blue>113</blue>
-              </color>
-             </brush>
-            </colorrole>
             <colorrole role="ToolTipBase">
              <brush brushstyle="SolidPattern">
               <color alpha="255">
@@ -6435,11 +6427,20 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
               </color>
              </brush>
             </colorrole>
+            <colorrole role="Accent">
+             <brush brushstyle="SolidPattern">
+              <color alpha="255">
+               <red>145</red>
+               <green>145</green>
+               <blue>145</blue>
+              </color>
+             </brush>
+            </colorrole>
            </disabled>
           </palette>
          </property>
          <property name="frameShadow">
-          <enum>QFrame::Plain</enum>
+          <enum>QFrame::Shadow::Plain</enum>
          </property>
          <property name="lineWidth">
           <number>1</number>
@@ -6448,7 +6449,7 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
           <number>0</number>
          </property>
          <property name="orientation">
-          <enum>Qt::Horizontal</enum>
+          <enum>Qt::Orientation::Horizontal</enum>
          </property>
         </widget>
        </item>
@@ -6461,10 +6462,10 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
           <item>
            <widget class="QScrollArea" name="scrollArea_2">
             <property name="frameShape">
-             <enum>QFrame::NoFrame</enum>
+             <enum>QFrame::Shape::NoFrame</enum>
             </property>
             <property name="frameShadow">
-             <enum>QFrame::Plain</enum>
+             <enum>QFrame::Shadow::Plain</enum>
             </property>
             <property name="lineWidth">
              <number>0</number>
@@ -6473,15 +6474,15 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
              <bool>true</bool>
             </property>
             <property name="alignment">
-             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+             <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignTop</set>
             </property>
             <widget class="QWidget" name="scrollAreaWidgetContents">
              <property name="geometry">
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>935</width>
-               <height>235</height>
+               <width>100</width>
+               <height>30</height>
               </rect>
              </property>
              <layout class="QVBoxLayout" name="midi_input_layout">
@@ -6626,7 +6627,7 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
              </size>
             </property>
             <property name="alignment">
-             <set>Qt::AlignCenter</set>
+             <set>Qt::AlignmentFlag::AlignCenter</set>
             </property>
             <property name="maximum">
              <number>5</number>
@@ -6636,10 +6637,10 @@ such as Ardour, Bitwig, or another instance of Radium.</string>
           <item>
            <spacer name="horizontalSpacer_4">
             <property name="orientation">
-             <enum>Qt::Horizontal</enum>
+             <enum>Qt::Orientation::Horizontal</enum>
             </property>
             <property name="sizeType">
-             <enum>QSizePolicy::Fixed</enum>
+             <enum>QSizePolicy::Policy::Fixed</enum>
             </property>
             <property name="sizeHint" stdset="0">
              <size>
@@ -6669,7 +6670,7 @@ Optimization level 5 may cause very long compilation time with no apparent benef
           <item>
            <spacer name="horizontalSpacer_23">
             <property name="orientation">
-             <enum>Qt::Horizontal</enum>
+             <enum>Qt::Orientation::Horizontal</enum>
             </property>
             <property name="sizeHint" stdset="0">
              <size>
@@ -6685,7 +6686,7 @@ Optimization level 5 may cause very long compilation time with no apparent benef
        <item>
         <spacer name="verticalSpacer_36">
          <property name="orientation">
-          <enum>Qt::Vertical</enum>
+          <enum>Qt::Orientation::Vertical</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -6720,10 +6721,10 @@ Optimization level 5 may cause very long compilation time with no apparent benef
        <item>
         <widget class="QTabWidget" name="gui_tab_widget">
          <property name="tabPosition">
-          <enum>QTabWidget::West</enum>
+          <enum>QTabWidget::TabPosition::West</enum>
          </property>
          <property name="tabShape">
-          <enum>QTabWidget::Rounded</enum>
+          <enum>QTabWidget::TabShape::Rounded</enum>
          </property>
          <property name="currentIndex">
           <number>0</number>
@@ -6880,15 +6881,6 @@ Optimization level 5 may cause very long compilation time with no apparent benef
                   </color>
                  </brush>
                 </colorrole>
-                <colorrole role="NoRole">
-                 <brush brushstyle="SolidPattern">
-                  <color alpha="255">
-                   <red>113</red>
-                   <green>113</green>
-                   <blue>113</blue>
-                  </color>
-                 </brush>
-                </colorrole>
                 <colorrole role="ToolTipBase">
                  <brush brushstyle="SolidPattern">
                   <color alpha="255">
@@ -6913,6 +6905,15 @@ Optimization level 5 may cause very long compilation time with no apparent benef
                    <red>84</red>
                    <green>84</green>
                    <blue>84</blue>
+                  </color>
+                 </brush>
+                </colorrole>
+                <colorrole role="Accent">
+                 <brush brushstyle="SolidPattern">
+                  <color alpha="255">
+                   <red>48</red>
+                   <green>140</green>
+                   <blue>198</blue>
                   </color>
                  </brush>
                 </colorrole>
@@ -7044,15 +7045,6 @@ Optimization level 5 may cause very long compilation time with no apparent benef
                   </color>
                  </brush>
                 </colorrole>
-                <colorrole role="NoRole">
-                 <brush brushstyle="SolidPattern">
-                  <color alpha="255">
-                   <red>113</red>
-                   <green>113</green>
-                   <blue>113</blue>
-                  </color>
-                 </brush>
-                </colorrole>
                 <colorrole role="ToolTipBase">
                  <brush brushstyle="SolidPattern">
                   <color alpha="255">
@@ -7077,6 +7069,15 @@ Optimization level 5 may cause very long compilation time with no apparent benef
                    <red>84</red>
                    <green>84</green>
                    <blue>84</blue>
+                  </color>
+                 </brush>
+                </colorrole>
+                <colorrole role="Accent">
+                 <brush brushstyle="SolidPattern">
+                  <color alpha="255">
+                   <red>48</red>
+                   <green>140</green>
+                   <blue>198</blue>
                   </color>
                  </brush>
                 </colorrole>
@@ -7208,15 +7209,6 @@ Optimization level 5 may cause very long compilation time with no apparent benef
                   </color>
                  </brush>
                 </colorrole>
-                <colorrole role="NoRole">
-                 <brush brushstyle="SolidPattern">
-                  <color alpha="255">
-                   <red>113</red>
-                   <green>113</green>
-                   <blue>113</blue>
-                  </color>
-                 </brush>
-                </colorrole>
                 <colorrole role="ToolTipBase">
                  <brush brushstyle="SolidPattern">
                   <color alpha="255">
@@ -7244,11 +7236,20 @@ Optimization level 5 may cause very long compilation time with no apparent benef
                   </color>
                  </brush>
                 </colorrole>
+                <colorrole role="Accent">
+                 <brush brushstyle="SolidPattern">
+                  <color alpha="255">
+                   <red>145</red>
+                   <green>145</green>
+                   <blue>145</blue>
+                  </color>
+                 </brush>
+                </colorrole>
                </disabled>
               </palette>
              </property>
              <property name="frameShadow">
-              <enum>QFrame::Plain</enum>
+              <enum>QFrame::Shadow::Plain</enum>
              </property>
              <property name="lineWidth">
               <number>1</number>
@@ -7257,7 +7258,7 @@ Optimization level 5 may cause very long compilation time with no apparent benef
               <number>0</number>
              </property>
              <property name="orientation">
-              <enum>Qt::Horizontal</enum>
+              <enum>Qt::Orientation::Horizontal</enum>
              </property>
             </widget>
            </item>
@@ -7271,7 +7272,7 @@ Optimization level 5 may cause very long compilation time with no apparent benef
            <item row="19" column="0">
             <spacer name="verticalSpacer_25">
              <property name="orientation">
-              <enum>Qt::Vertical</enum>
+              <enum>Qt::Orientation::Vertical</enum>
              </property>
              <property name="sizeHint" stdset="0">
               <size>
@@ -7286,7 +7287,7 @@ Optimization level 5 may cause very long compilation time with no apparent benef
              <item row="0" column="2">
               <spacer name="horizontalSpacer_20">
                <property name="orientation">
-                <enum>Qt::Horizontal</enum>
+                <enum>Qt::Orientation::Horizontal</enum>
                </property>
                <property name="sizeHint" stdset="0">
                 <size>
@@ -7318,7 +7319,7 @@ Optimization level 5 may cause very long compilation time with no apparent benef
                 </sizepolicy>
                </property>
                <property name="alignment">
-                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
                </property>
                <property name="suffix">
                 <string/>
@@ -7341,7 +7342,7 @@ Optimization level 5 may cause very long compilation time with no apparent benef
              <item row="1" column="2">
               <spacer name="horizontalSpacer_18">
                <property name="orientation">
-                <enum>Qt::Horizontal</enum>
+                <enum>Qt::Orientation::Horizontal</enum>
                </property>
                <property name="sizeHint" stdset="0">
                 <size>
@@ -7363,7 +7364,7 @@ Optimization level 5 may cause very long compilation time with no apparent benef
                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The instrument popup menu may show a lot of elements. You might want to set this value as high as possible while still being able to fit all elements on the screen.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
                <property name="alignment">
-                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
                </property>
                <property name="prefix">
                 <string/>
@@ -7530,15 +7531,6 @@ Optimization level 5 may cause very long compilation time with no apparent benef
                   </color>
                  </brush>
                 </colorrole>
-                <colorrole role="NoRole">
-                 <brush brushstyle="SolidPattern">
-                  <color alpha="255">
-                   <red>113</red>
-                   <green>113</green>
-                   <blue>113</blue>
-                  </color>
-                 </brush>
-                </colorrole>
                 <colorrole role="ToolTipBase">
                  <brush brushstyle="SolidPattern">
                   <color alpha="255">
@@ -7563,6 +7555,15 @@ Optimization level 5 may cause very long compilation time with no apparent benef
                    <red>84</red>
                    <green>84</green>
                    <blue>84</blue>
+                  </color>
+                 </brush>
+                </colorrole>
+                <colorrole role="Accent">
+                 <brush brushstyle="SolidPattern">
+                  <color alpha="255">
+                   <red>48</red>
+                   <green>140</green>
+                   <blue>198</blue>
                   </color>
                  </brush>
                 </colorrole>
@@ -7694,15 +7695,6 @@ Optimization level 5 may cause very long compilation time with no apparent benef
                   </color>
                  </brush>
                 </colorrole>
-                <colorrole role="NoRole">
-                 <brush brushstyle="SolidPattern">
-                  <color alpha="255">
-                   <red>113</red>
-                   <green>113</green>
-                   <blue>113</blue>
-                  </color>
-                 </brush>
-                </colorrole>
                 <colorrole role="ToolTipBase">
                  <brush brushstyle="SolidPattern">
                   <color alpha="255">
@@ -7727,6 +7719,15 @@ Optimization level 5 may cause very long compilation time with no apparent benef
                    <red>84</red>
                    <green>84</green>
                    <blue>84</blue>
+                  </color>
+                 </brush>
+                </colorrole>
+                <colorrole role="Accent">
+                 <brush brushstyle="SolidPattern">
+                  <color alpha="255">
+                   <red>48</red>
+                   <green>140</green>
+                   <blue>198</blue>
                   </color>
                  </brush>
                 </colorrole>
@@ -7858,15 +7859,6 @@ Optimization level 5 may cause very long compilation time with no apparent benef
                   </color>
                  </brush>
                 </colorrole>
-                <colorrole role="NoRole">
-                 <brush brushstyle="SolidPattern">
-                  <color alpha="255">
-                   <red>113</red>
-                   <green>113</green>
-                   <blue>113</blue>
-                  </color>
-                 </brush>
-                </colorrole>
                 <colorrole role="ToolTipBase">
                  <brush brushstyle="SolidPattern">
                   <color alpha="255">
@@ -7894,11 +7886,20 @@ Optimization level 5 may cause very long compilation time with no apparent benef
                   </color>
                  </brush>
                 </colorrole>
+                <colorrole role="Accent">
+                 <brush brushstyle="SolidPattern">
+                  <color alpha="255">
+                   <red>145</red>
+                   <green>145</green>
+                   <blue>145</blue>
+                  </color>
+                 </brush>
+                </colorrole>
                </disabled>
               </palette>
              </property>
              <property name="frameShadow">
-              <enum>QFrame::Plain</enum>
+              <enum>QFrame::Shadow::Plain</enum>
              </property>
              <property name="lineWidth">
               <number>1</number>
@@ -7907,7 +7908,7 @@ Optimization level 5 may cause very long compilation time with no apparent benef
               <number>0</number>
              </property>
              <property name="orientation">
-              <enum>Qt::Horizontal</enum>
+              <enum>Qt::Orientation::Horizontal</enum>
              </property>
             </widget>
            </item>
@@ -8056,15 +8057,6 @@ Optimization level 5 may cause very long compilation time with no apparent benef
                   </color>
                  </brush>
                 </colorrole>
-                <colorrole role="NoRole">
-                 <brush brushstyle="SolidPattern">
-                  <color alpha="255">
-                   <red>113</red>
-                   <green>113</green>
-                   <blue>113</blue>
-                  </color>
-                 </brush>
-                </colorrole>
                 <colorrole role="ToolTipBase">
                  <brush brushstyle="SolidPattern">
                   <color alpha="255">
@@ -8089,6 +8081,15 @@ Optimization level 5 may cause very long compilation time with no apparent benef
                    <red>84</red>
                    <green>84</green>
                    <blue>84</blue>
+                  </color>
+                 </brush>
+                </colorrole>
+                <colorrole role="Accent">
+                 <brush brushstyle="SolidPattern">
+                  <color alpha="255">
+                   <red>48</red>
+                   <green>140</green>
+                   <blue>198</blue>
                   </color>
                  </brush>
                 </colorrole>
@@ -8220,15 +8221,6 @@ Optimization level 5 may cause very long compilation time with no apparent benef
                   </color>
                  </brush>
                 </colorrole>
-                <colorrole role="NoRole">
-                 <brush brushstyle="SolidPattern">
-                  <color alpha="255">
-                   <red>113</red>
-                   <green>113</green>
-                   <blue>113</blue>
-                  </color>
-                 </brush>
-                </colorrole>
                 <colorrole role="ToolTipBase">
                  <brush brushstyle="SolidPattern">
                   <color alpha="255">
@@ -8253,6 +8245,15 @@ Optimization level 5 may cause very long compilation time with no apparent benef
                    <red>84</red>
                    <green>84</green>
                    <blue>84</blue>
+                  </color>
+                 </brush>
+                </colorrole>
+                <colorrole role="Accent">
+                 <brush brushstyle="SolidPattern">
+                  <color alpha="255">
+                   <red>48</red>
+                   <green>140</green>
+                   <blue>198</blue>
                   </color>
                  </brush>
                 </colorrole>
@@ -8384,15 +8385,6 @@ Optimization level 5 may cause very long compilation time with no apparent benef
                   </color>
                  </brush>
                 </colorrole>
-                <colorrole role="NoRole">
-                 <brush brushstyle="SolidPattern">
-                  <color alpha="255">
-                   <red>113</red>
-                   <green>113</green>
-                   <blue>113</blue>
-                  </color>
-                 </brush>
-                </colorrole>
                 <colorrole role="ToolTipBase">
                  <brush brushstyle="SolidPattern">
                   <color alpha="255">
@@ -8420,11 +8412,20 @@ Optimization level 5 may cause very long compilation time with no apparent benef
                   </color>
                  </brush>
                 </colorrole>
+                <colorrole role="Accent">
+                 <brush brushstyle="SolidPattern">
+                  <color alpha="255">
+                   <red>145</red>
+                   <green>145</green>
+                   <blue>145</blue>
+                  </color>
+                 </brush>
+                </colorrole>
                </disabled>
               </palette>
              </property>
              <property name="frameShadow">
-              <enum>QFrame::Plain</enum>
+              <enum>QFrame::Shadow::Plain</enum>
              </property>
              <property name="lineWidth">
               <number>1</number>
@@ -8433,7 +8434,7 @@ Optimization level 5 may cause very long compilation time with no apparent benef
               <number>0</number>
              </property>
              <property name="orientation">
-              <enum>Qt::Horizontal</enum>
+              <enum>Qt::Orientation::Horizontal</enum>
              </property>
             </widget>
            </item>
@@ -8568,15 +8569,6 @@ Optimization level 5 may cause very long compilation time with no apparent benef
                   </color>
                  </brush>
                 </colorrole>
-                <colorrole role="NoRole">
-                 <brush brushstyle="SolidPattern">
-                  <color alpha="255">
-                   <red>113</red>
-                   <green>113</green>
-                   <blue>113</blue>
-                  </color>
-                 </brush>
-                </colorrole>
                 <colorrole role="ToolTipBase">
                  <brush brushstyle="SolidPattern">
                   <color alpha="255">
@@ -8601,6 +8593,15 @@ Optimization level 5 may cause very long compilation time with no apparent benef
                    <red>84</red>
                    <green>84</green>
                    <blue>84</blue>
+                  </color>
+                 </brush>
+                </colorrole>
+                <colorrole role="Accent">
+                 <brush brushstyle="SolidPattern">
+                  <color alpha="255">
+                   <red>48</red>
+                   <green>140</green>
+                   <blue>198</blue>
                   </color>
                  </brush>
                 </colorrole>
@@ -8732,15 +8733,6 @@ Optimization level 5 may cause very long compilation time with no apparent benef
                   </color>
                  </brush>
                 </colorrole>
-                <colorrole role="NoRole">
-                 <brush brushstyle="SolidPattern">
-                  <color alpha="255">
-                   <red>113</red>
-                   <green>113</green>
-                   <blue>113</blue>
-                  </color>
-                 </brush>
-                </colorrole>
                 <colorrole role="ToolTipBase">
                  <brush brushstyle="SolidPattern">
                   <color alpha="255">
@@ -8765,6 +8757,15 @@ Optimization level 5 may cause very long compilation time with no apparent benef
                    <red>84</red>
                    <green>84</green>
                    <blue>84</blue>
+                  </color>
+                 </brush>
+                </colorrole>
+                <colorrole role="Accent">
+                 <brush brushstyle="SolidPattern">
+                  <color alpha="255">
+                   <red>48</red>
+                   <green>140</green>
+                   <blue>198</blue>
                   </color>
                  </brush>
                 </colorrole>
@@ -8896,15 +8897,6 @@ Optimization level 5 may cause very long compilation time with no apparent benef
                   </color>
                  </brush>
                 </colorrole>
-                <colorrole role="NoRole">
-                 <brush brushstyle="SolidPattern">
-                  <color alpha="255">
-                   <red>113</red>
-                   <green>113</green>
-                   <blue>113</blue>
-                  </color>
-                 </brush>
-                </colorrole>
                 <colorrole role="ToolTipBase">
                  <brush brushstyle="SolidPattern">
                   <color alpha="255">
@@ -8932,11 +8924,20 @@ Optimization level 5 may cause very long compilation time with no apparent benef
                   </color>
                  </brush>
                 </colorrole>
+                <colorrole role="Accent">
+                 <brush brushstyle="SolidPattern">
+                  <color alpha="255">
+                   <red>145</red>
+                   <green>145</green>
+                   <blue>145</blue>
+                  </color>
+                 </brush>
+                </colorrole>
                </disabled>
               </palette>
              </property>
              <property name="frameShadow">
-              <enum>QFrame::Plain</enum>
+              <enum>QFrame::Shadow::Plain</enum>
              </property>
              <property name="lineWidth">
               <number>1</number>
@@ -8945,7 +8946,7 @@ Optimization level 5 may cause very long compilation time with no apparent benef
               <number>0</number>
              </property>
              <property name="orientation">
-              <enum>Qt::Horizontal</enum>
+              <enum>Qt::Orientation::Horizontal</enum>
              </property>
             </widget>
            </item>
@@ -9080,15 +9081,6 @@ Optimization level 5 may cause very long compilation time with no apparent benef
                   </color>
                  </brush>
                 </colorrole>
-                <colorrole role="NoRole">
-                 <brush brushstyle="SolidPattern">
-                  <color alpha="255">
-                   <red>113</red>
-                   <green>113</green>
-                   <blue>113</blue>
-                  </color>
-                 </brush>
-                </colorrole>
                 <colorrole role="ToolTipBase">
                  <brush brushstyle="SolidPattern">
                   <color alpha="255">
@@ -9113,6 +9105,15 @@ Optimization level 5 may cause very long compilation time with no apparent benef
                    <red>84</red>
                    <green>84</green>
                    <blue>84</blue>
+                  </color>
+                 </brush>
+                </colorrole>
+                <colorrole role="Accent">
+                 <brush brushstyle="SolidPattern">
+                  <color alpha="255">
+                   <red>48</red>
+                   <green>140</green>
+                   <blue>198</blue>
                   </color>
                  </brush>
                 </colorrole>
@@ -9244,15 +9245,6 @@ Optimization level 5 may cause very long compilation time with no apparent benef
                   </color>
                  </brush>
                 </colorrole>
-                <colorrole role="NoRole">
-                 <brush brushstyle="SolidPattern">
-                  <color alpha="255">
-                   <red>113</red>
-                   <green>113</green>
-                   <blue>113</blue>
-                  </color>
-                 </brush>
-                </colorrole>
                 <colorrole role="ToolTipBase">
                  <brush brushstyle="SolidPattern">
                   <color alpha="255">
@@ -9277,6 +9269,15 @@ Optimization level 5 may cause very long compilation time with no apparent benef
                    <red>84</red>
                    <green>84</green>
                    <blue>84</blue>
+                  </color>
+                 </brush>
+                </colorrole>
+                <colorrole role="Accent">
+                 <brush brushstyle="SolidPattern">
+                  <color alpha="255">
+                   <red>48</red>
+                   <green>140</green>
+                   <blue>198</blue>
                   </color>
                  </brush>
                 </colorrole>
@@ -9408,15 +9409,6 @@ Optimization level 5 may cause very long compilation time with no apparent benef
                   </color>
                  </brush>
                 </colorrole>
-                <colorrole role="NoRole">
-                 <brush brushstyle="SolidPattern">
-                  <color alpha="255">
-                   <red>113</red>
-                   <green>113</green>
-                   <blue>113</blue>
-                  </color>
-                 </brush>
-                </colorrole>
                 <colorrole role="ToolTipBase">
                  <brush brushstyle="SolidPattern">
                   <color alpha="255">
@@ -9444,11 +9436,20 @@ Optimization level 5 may cause very long compilation time with no apparent benef
                   </color>
                  </brush>
                 </colorrole>
+                <colorrole role="Accent">
+                 <brush brushstyle="SolidPattern">
+                  <color alpha="255">
+                   <red>145</red>
+                   <green>145</green>
+                   <blue>145</blue>
+                  </color>
+                 </brush>
+                </colorrole>
                </disabled>
               </palette>
              </property>
              <property name="frameShadow">
-              <enum>QFrame::Plain</enum>
+              <enum>QFrame::Shadow::Plain</enum>
              </property>
              <property name="lineWidth">
               <number>1</number>
@@ -9457,7 +9458,7 @@ Optimization level 5 may cause very long compilation time with no apparent benef
               <number>0</number>
              </property>
              <property name="orientation">
-              <enum>Qt::Horizontal</enum>
+              <enum>Qt::Orientation::Horizontal</enum>
              </property>
             </widget>
            </item>
@@ -9485,10 +9486,10 @@ Optimization level 5 may cause very long compilation time with no apparent benef
            <item row="0" column="0">
             <spacer name="verticalSpacer_26">
              <property name="orientation">
-              <enum>Qt::Vertical</enum>
+              <enum>Qt::Orientation::Vertical</enum>
              </property>
              <property name="sizeType">
-              <enum>QSizePolicy::Fixed</enum>
+              <enum>QSizePolicy::Policy::Fixed</enum>
              </property>
              <property name="sizeHint" stdset="0">
               <size>
@@ -9657,15 +9658,6 @@ Optimization level 5 may cause very long compilation time with no apparent benef
                   </color>
                  </brush>
                 </colorrole>
-                <colorrole role="NoRole">
-                 <brush brushstyle="SolidPattern">
-                  <color alpha="255">
-                   <red>113</red>
-                   <green>113</green>
-                   <blue>113</blue>
-                  </color>
-                 </brush>
-                </colorrole>
                 <colorrole role="ToolTipBase">
                  <brush brushstyle="SolidPattern">
                   <color alpha="255">
@@ -9690,6 +9682,15 @@ Optimization level 5 may cause very long compilation time with no apparent benef
                    <red>84</red>
                    <green>84</green>
                    <blue>84</blue>
+                  </color>
+                 </brush>
+                </colorrole>
+                <colorrole role="Accent">
+                 <brush brushstyle="SolidPattern">
+                  <color alpha="255">
+                   <red>48</red>
+                   <green>140</green>
+                   <blue>198</blue>
                   </color>
                  </brush>
                 </colorrole>
@@ -9821,15 +9822,6 @@ Optimization level 5 may cause very long compilation time with no apparent benef
                   </color>
                  </brush>
                 </colorrole>
-                <colorrole role="NoRole">
-                 <brush brushstyle="SolidPattern">
-                  <color alpha="255">
-                   <red>113</red>
-                   <green>113</green>
-                   <blue>113</blue>
-                  </color>
-                 </brush>
-                </colorrole>
                 <colorrole role="ToolTipBase">
                  <brush brushstyle="SolidPattern">
                   <color alpha="255">
@@ -9854,6 +9846,15 @@ Optimization level 5 may cause very long compilation time with no apparent benef
                    <red>84</red>
                    <green>84</green>
                    <blue>84</blue>
+                  </color>
+                 </brush>
+                </colorrole>
+                <colorrole role="Accent">
+                 <brush brushstyle="SolidPattern">
+                  <color alpha="255">
+                   <red>48</red>
+                   <green>140</green>
+                   <blue>198</blue>
                   </color>
                  </brush>
                 </colorrole>
@@ -9985,15 +9986,6 @@ Optimization level 5 may cause very long compilation time with no apparent benef
                   </color>
                  </brush>
                 </colorrole>
-                <colorrole role="NoRole">
-                 <brush brushstyle="SolidPattern">
-                  <color alpha="255">
-                   <red>113</red>
-                   <green>113</green>
-                   <blue>113</blue>
-                  </color>
-                 </brush>
-                </colorrole>
                 <colorrole role="ToolTipBase">
                  <brush brushstyle="SolidPattern">
                   <color alpha="255">
@@ -10021,11 +10013,20 @@ Optimization level 5 may cause very long compilation time with no apparent benef
                   </color>
                  </brush>
                 </colorrole>
+                <colorrole role="Accent">
+                 <brush brushstyle="SolidPattern">
+                  <color alpha="255">
+                   <red>145</red>
+                   <green>145</green>
+                   <blue>145</blue>
+                  </color>
+                 </brush>
+                </colorrole>
                </disabled>
               </palette>
              </property>
              <property name="frameShadow">
-              <enum>QFrame::Plain</enum>
+              <enum>QFrame::Shadow::Plain</enum>
              </property>
              <property name="lineWidth">
               <number>1</number>
@@ -10034,7 +10035,7 @@ Optimization level 5 may cause very long compilation time with no apparent benef
               <number>0</number>
              </property>
              <property name="orientation">
-              <enum>Qt::Horizontal</enum>
+              <enum>Qt::Orientation::Horizontal</enum>
              </property>
             </widget>
            </item>
@@ -10130,9 +10131,9 @@ This option should be considered as a lightweight version of  &quot;Only show mo
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="OpenGL">
+     <widget class="QWidget" name="GPU">
       <attribute name="title">
-       <string>OpenGL</string>
+       <string>GPU</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_2" stretch="0,0,0">
        <property name="spacing">
@@ -10153,10 +10154,10 @@ This option should be considered as a lightweight version of  &quot;Only show mo
        <item>
         <widget class="QTabWidget" name="opengl_tab_widget">
          <property name="tabPosition">
-          <enum>QTabWidget::West</enum>
+          <enum>QTabWidget::TabPosition::West</enum>
          </property>
          <property name="currentIndex">
-          <number>0</number>
+          <number>1</number>
          </property>
          <widget class="QWidget" name="tab_5">
           <attribute name="title">
@@ -10173,10 +10174,10 @@ This option should be considered as a lightweight version of  &quot;Only show mo
            <item>
             <spacer name="verticalSpacer_32">
              <property name="orientation">
-              <enum>Qt::Vertical</enum>
+              <enum>Qt::Orientation::Vertical</enum>
              </property>
              <property name="sizeType">
-              <enum>QSizePolicy::Fixed</enum>
+              <enum>QSizePolicy::Policy::Fixed</enum>
              </property>
              <property name="sizeHint" stdset="0">
               <size>
@@ -10300,10 +10301,10 @@ This option should be considered as a lightweight version of  &quot;Only show mo
               <item row="0" column="3">
                <spacer name="horizontalSpacer_2">
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                 <property name="sizeType">
-                 <enum>QSizePolicy::Fixed</enum>
+                 <enum>QSizePolicy::Policy::Fixed</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
@@ -10326,10 +10327,10 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
               <item row="0" column="1">
                <spacer name="horizontalSpacer_11">
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                 <property name="sizeType">
-                 <enum>QSizePolicy::Fixed</enum>
+                 <enum>QSizePolicy::Policy::Fixed</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
@@ -10338,122 +10339,62 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </size>
                 </property>
                </spacer>
+              </item>
+              <item row="1" column="0" colspan="3">
+               <widget class="QLabel" name="label_msaa_supported">
+                <property name="text">
+                 <string>Supported values by current backend:</string>
+                </property>
+               </widget>
               </item>
              </layout>
             </widget>
            </item>
            <item>
-            <widget class="QGroupBox" name="horizontalGroupBox_2">
+            <widget class="QGroupBox" name="backend_group">
              <property name="title">
-              <string>Various</string>
+              <string>Backend</string>
              </property>
-             <layout class="QGridLayout" name="gridLayout">
-              <property name="sizeConstraint">
-               <enum>QLayout::SetDefaultConstraint</enum>
-              </property>
-              <item row="0" column="1">
-               <spacer name="horizontalSpacer_16">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeType">
-                 <enum>QSizePolicy::Fixed</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>60</width>
-                  <height>20</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item row="1" column="0">
-               <widget class="QCheckBox" name="draw_in_separate_process_onoff">
-                <property name="enabled">
-                 <bool>true</bool>
-                </property>
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                  <horstretch>1</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="minimumSize">
-                 <size>
-                  <width>0</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>16777215</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
-                <property name="toolTip">
-                 <string/>
-                </property>
-                <property name="statusTip">
-                 <string/>
-                </property>
+             <layout class="QVBoxLayout" name="verticalLayout_backend_group">
+              <item>
+               <widget class="QRadioButton" name="rhi_null">
                 <property name="text">
-                 <string>Draw in separate process</string>
+                 <string>Null (No graphics)</string>
                 </property>
                </widget>
               </item>
-              <item row="0" column="0">
-               <widget class="QCheckBox" name="high_cpu_protection">
-                <property name="sizePolicy">
-                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-                  <horstretch>1</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="minimumSize">
-                 <size>
-                  <width>0</width>
-                  <height>0</height>
-                 </size>
-                </property>
-                <property name="maximumSize">
-                 <size>
-                  <width>16777215</width>
-                  <height>16777215</height>
-                 </size>
-                </property>
+              <item>
+               <widget class="QRadioButton" name="rhi_opengl">
                 <property name="text">
-                 <string>Protect against high CPU usage</string>
+                 <string>OpenGL ES2.0+</string>
                 </property>
                </widget>
               </item>
-              <item row="1" column="1">
-               <spacer name="horizontalSpacer_8">
-                <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
-                </property>
-                <property name="sizeType">
-                 <enum>QSizePolicy::Fixed</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>60</width>
-                  <height>20</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-              <item row="1" column="3">
-               <widget class="QLabel" name="label_10">
+              <item>
+               <widget class="QRadioButton" name="rhi_vulkan">
                 <property name="text">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;This feature improves graphical performance by drawing in a separate process.&lt;br&gt;(Note that some drivers might lower performance significantly when enabling this option,)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 <string>Vulkan</string>
                 </property>
                </widget>
               </item>
-              <item row="0" column="3">
-               <widget class="QLabel" name="label_5">
+              <item>
+               <widget class="QRadioButton" name="rhi_d3d11">
                 <property name="text">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Protects against high CPU usage by pausing the OpenGL process if it draws&lt;br&gt;faster than vertical blank refresh rate. Sometimes lowers CPU usage significantly,&lt;br&gt; especially if using Intel GFX. Note that you might experience jumpy graphics&lt;br&gt;on OSX if enabling this option.
-(restart not required)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 <string>Direct3D 11</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QRadioButton" name="rhi_d3d12">
+                <property name="text">
+                 <string>Direct3D 12</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QRadioButton" name="rhi_metal">
+                <property name="text">
+                 <string>Metal</string>
                 </property>
                </widget>
               </item>
@@ -10463,7 +10404,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
            <item>
             <spacer name="verticalSpacer_34">
              <property name="orientation">
-              <enum>Qt::Vertical</enum>
+              <enum>Qt::Orientation::Vertical</enum>
              </property>
              <property name="sizeHint" stdset="0">
               <size>
@@ -10540,7 +10481,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
               <item row="8" column="0">
                <spacer name="erase_estimated_vblank_spacer">
                 <property name="orientation">
-                 <enum>Qt::Vertical</enum>
+                 <enum>Qt::Orientation::Vertical</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
@@ -10553,10 +10494,10 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
               <item row="6" column="1">
                <spacer name="horizontalSpacer_10">
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                 <property name="sizeType">
-                 <enum>QSizePolicy::Fixed</enum>
+                 <enum>QSizePolicy::Policy::Fixed</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
@@ -10569,10 +10510,10 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
               <item row="6" column="3">
                <spacer name="horizontalSpacer_7">
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                 <property name="sizeType">
-                 <enum>QSizePolicy::Fixed</enum>
+                 <enum>QSizePolicy::Policy::Fixed</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
@@ -10598,10 +10539,50 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                </widget>
               </item>
-              <item row="1" column="0">
-               <widget class="QCheckBox" name="high_priority_drawer_thread">
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <widget class="QGroupBox" name="groupBox_clamp_text">
+             <property name="title">
+              <string>Text rendering</string>
+             </property>
+             <layout class="QHBoxLayout" name="horizontalLayout_19">
+              <item>
+               <widget class="QCheckBox" name="clampTextRendering">
+                <property name="toolTip">
+                 <string/>
+                </property>
                 <property name="text">
-                 <string>High priority for OpenGL drawer thread (restart not required)</string>
+                 <string>Clamp text rendering</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="horizontalSpacer_15">
+                <property name="orientation">
+                 <enum>Qt::Orientation::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item>
+               <widget class="QLabel" name="label_15">
+                <property name="layoutDirection">
+                 <enum>Qt::LayoutDirection::LeftToRight</enum>
+                </property>
+                <property name="text">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;
+Only for debugging text rendering in the editor. If you enable this option and&lt;br&gt;
+the text becomes less blury after restarting the program,&lt;br&gt;
+please report it as a bug. The disadvantage of enabling this option is&lt;br&gt;
+that scrolling becomes less smooth.
+&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                </widget>
               </item>
@@ -10611,7 +10592,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
            <item>
             <spacer name="verticalSpacer_35">
              <property name="orientation">
-              <enum>Qt::Vertical</enum>
+              <enum>Qt::Orientation::Vertical</enum>
              </property>
              <property name="sizeHint" stdset="0">
               <size>
@@ -10628,10 +10609,10 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
        <item>
         <spacer name="verticalSpacer_2">
          <property name="orientation">
-          <enum>Qt::Vertical</enum>
+          <enum>Qt::Orientation::Vertical</enum>
          </property>
          <property name="sizeType">
-          <enum>QSizePolicy::Expanding</enum>
+          <enum>QSizePolicy::Policy::Expanding</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -10644,7 +10625,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
        <item>
         <spacer name="verticalSpacer">
          <property name="orientation">
-          <enum>Qt::Vertical</enum>
+          <enum>Qt::Orientation::Vertical</enum>
          </property>
          <property name="sizeHint" stdset="0">
           <size>
@@ -10672,7 +10653,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </size>
            </property>
            <property name="layoutDirection">
-            <enum>Qt::LeftToRight</enum>
+            <enum>Qt::LayoutDirection::LeftToRight</enum>
            </property>
            <property name="widgetResizable">
             <bool>true</bool>
@@ -10682,8 +10663,8 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>568</width>
-              <height>253</height>
+              <width>501</width>
+              <height>239</height>
              </rect>
             </property>
             <property name="sizePolicy">
@@ -10727,7 +10708,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  <number>1000</number>
                 </property>
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                </widget>
               </item>
@@ -10771,7 +10752,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  <number>500</number>
                 </property>
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                </widget>
               </item>
@@ -10819,7 +10800,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  <number>1000</number>
                 </property>
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                </widget>
               </item>
@@ -10863,7 +10844,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  <number>500</number>
                 </property>
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                </widget>
               </item>
@@ -10911,7 +10892,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  <number>1000</number>
                 </property>
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                </widget>
               </item>
@@ -10955,7 +10936,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  <number>500</number>
                 </property>
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                </widget>
               </item>
@@ -10998,7 +10979,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                <number>1000</number>
               </property>
               <property name="orientation">
-               <enum>Qt::Horizontal</enum>
+               <enum>Qt::Orientation::Horizontal</enum>
               </property>
              </widget>
             </item>
@@ -11019,7 +11000,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
          <item>
           <spacer name="verticalSpacer_19">
            <property name="orientation">
-            <enum>Qt::Vertical</enum>
+            <enum>Qt::Orientation::Vertical</enum>
            </property>
            <property name="sizeHint" stdset="0">
             <size>
@@ -11030,28 +11011,195 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </spacer>
          </item>
          <item>
+          <widget class="QGroupBox" name="groupBox_undo_redo">
+           <property name="title">
+            <string>Undo / Redo</string>
+           </property>
+           <layout class="QHBoxLayout" name="undo_redo_layout">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QPushButton" name="color_undo">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="text">
+               <string>Undo</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="color_redo">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="text">
+               <string>Redo</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="groupBox_configurations">
+           <property name="title">
+            <string>Configurations</string>
+           </property>
+           <layout class="QHBoxLayout" name="color_top_layout">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QComboBox" name="color_selector">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="add_color">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="text">
+               <string>New</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="delete_color">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="text">
+               <string>Delete</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="rename_color">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="text">
+               <string>Rename</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="groupBox_snapshot">
+           <property name="title">
+            <string>Snapshot</string>
+           </property>
+           <layout class="QHBoxLayout" name="snapshot_layout">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QPushButton" name="color_store_snapshot">
+              <property name="text">
+               <string>Create snapshot</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="color_revert_color">
+              <property name="text">
+               <string>Restore current color from snapshot</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="color_revert_all_colors">
+              <property name="text">
+               <string>Restore all colors from snapshot</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QGroupBox" name="groupBox_defaults">
+           <property name="title">
+            <string>Defaults</string>
+           </property>
+           <layout class="QHBoxLayout" name="defaults_layout">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QPushButton" name="color_set_default_color">
+              <property name="text">
+               <string>Set default value for current color</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="color_set_all_default_colors">
+              <property name="text">
+               <string>Set default value for all colors</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
           <layout class="QHBoxLayout" name="colorlayout_right_2">
-           <item>
-            <widget class="QPushButton" name="color_reset_all_button">
-             <property name="text">
-              <string>Reset all</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="color_reset_button">
-             <property name="text">
-              <string>Reset</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="color_save_button">
-             <property name="text">
-              <string>Save permanent</string>
-             </property>
-            </widget>
-           </item>
            <item>
             <widget class="QPushButton" name="load_color_file">
              <property name="text">
@@ -11249,15 +11397,6 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </color>
                </brush>
               </colorrole>
-              <colorrole role="NoRole">
-               <brush brushstyle="SolidPattern">
-                <color alpha="255">
-                 <red>113</red>
-                 <green>113</green>
-                 <blue>113</blue>
-                </color>
-               </brush>
-              </colorrole>
               <colorrole role="ToolTipBase">
                <brush brushstyle="SolidPattern">
                 <color alpha="255">
@@ -11282,6 +11421,15 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  <red>84</red>
                  <green>84</green>
                  <blue>84</blue>
+                </color>
+               </brush>
+              </colorrole>
+              <colorrole role="Accent">
+               <brush brushstyle="SolidPattern">
+                <color alpha="255">
+                 <red>48</red>
+                 <green>140</green>
+                 <blue>198</blue>
                 </color>
                </brush>
               </colorrole>
@@ -11413,15 +11561,6 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </color>
                </brush>
               </colorrole>
-              <colorrole role="NoRole">
-               <brush brushstyle="SolidPattern">
-                <color alpha="255">
-                 <red>113</red>
-                 <green>113</green>
-                 <blue>113</blue>
-                </color>
-               </brush>
-              </colorrole>
               <colorrole role="ToolTipBase">
                <brush brushstyle="SolidPattern">
                 <color alpha="255">
@@ -11446,6 +11585,15 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  <red>84</red>
                  <green>84</green>
                  <blue>84</blue>
+                </color>
+               </brush>
+              </colorrole>
+              <colorrole role="Accent">
+               <brush brushstyle="SolidPattern">
+                <color alpha="255">
+                 <red>48</red>
+                 <green>140</green>
+                 <blue>198</blue>
                 </color>
                </brush>
               </colorrole>
@@ -11577,15 +11725,6 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </color>
                </brush>
               </colorrole>
-              <colorrole role="NoRole">
-               <brush brushstyle="SolidPattern">
-                <color alpha="255">
-                 <red>113</red>
-                 <green>113</green>
-                 <blue>113</blue>
-                </color>
-               </brush>
-              </colorrole>
               <colorrole role="ToolTipBase">
                <brush brushstyle="SolidPattern">
                 <color alpha="255">
@@ -11613,11 +11752,20 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </color>
                </brush>
               </colorrole>
+              <colorrole role="Accent">
+               <brush brushstyle="SolidPattern">
+                <color alpha="255">
+                 <red>145</red>
+                 <green>145</green>
+                 <blue>145</blue>
+                </color>
+               </brush>
+              </colorrole>
              </disabled>
             </palette>
            </property>
            <property name="frameShadow">
-            <enum>QFrame::Plain</enum>
+            <enum>QFrame::Shadow::Plain</enum>
            </property>
            <property name="lineWidth">
             <number>1</number>
@@ -11626,7 +11774,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
             <number>0</number>
            </property>
            <property name="orientation">
-            <enum>Qt::Horizontal</enum>
+            <enum>Qt::Orientation::Horizontal</enum>
            </property>
           </widget>
          </item>
@@ -11761,15 +11909,6 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </color>
                </brush>
               </colorrole>
-              <colorrole role="NoRole">
-               <brush brushstyle="SolidPattern">
-                <color alpha="255">
-                 <red>113</red>
-                 <green>113</green>
-                 <blue>113</blue>
-                </color>
-               </brush>
-              </colorrole>
               <colorrole role="ToolTipBase">
                <brush brushstyle="SolidPattern">
                 <color alpha="255">
@@ -11794,6 +11933,15 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  <red>84</red>
                  <green>84</green>
                  <blue>84</blue>
+                </color>
+               </brush>
+              </colorrole>
+              <colorrole role="Accent">
+               <brush brushstyle="SolidPattern">
+                <color alpha="255">
+                 <red>48</red>
+                 <green>140</green>
+                 <blue>198</blue>
                 </color>
                </brush>
               </colorrole>
@@ -11925,15 +12073,6 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </color>
                </brush>
               </colorrole>
-              <colorrole role="NoRole">
-               <brush brushstyle="SolidPattern">
-                <color alpha="255">
-                 <red>113</red>
-                 <green>113</green>
-                 <blue>113</blue>
-                </color>
-               </brush>
-              </colorrole>
               <colorrole role="ToolTipBase">
                <brush brushstyle="SolidPattern">
                 <color alpha="255">
@@ -11958,6 +12097,15 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  <red>84</red>
                  <green>84</green>
                  <blue>84</blue>
+                </color>
+               </brush>
+              </colorrole>
+              <colorrole role="Accent">
+               <brush brushstyle="SolidPattern">
+                <color alpha="255">
+                 <red>48</red>
+                 <green>140</green>
+                 <blue>198</blue>
                 </color>
                </brush>
               </colorrole>
@@ -12089,15 +12237,6 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </color>
                </brush>
               </colorrole>
-              <colorrole role="NoRole">
-               <brush brushstyle="SolidPattern">
-                <color alpha="255">
-                 <red>113</red>
-                 <green>113</green>
-                 <blue>113</blue>
-                </color>
-               </brush>
-              </colorrole>
               <colorrole role="ToolTipBase">
                <brush brushstyle="SolidPattern">
                 <color alpha="255">
@@ -12125,11 +12264,20 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </color>
                </brush>
               </colorrole>
+              <colorrole role="Accent">
+               <brush brushstyle="SolidPattern">
+                <color alpha="255">
+                 <red>145</red>
+                 <green>145</green>
+                 <blue>145</blue>
+                </color>
+               </brush>
+              </colorrole>
              </disabled>
             </palette>
            </property>
            <property name="frameShadow">
-            <enum>QFrame::Plain</enum>
+            <enum>QFrame::Shadow::Plain</enum>
            </property>
            <property name="lineWidth">
             <number>1</number>
@@ -12138,7 +12286,7 @@ or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
             <number>0</number>
            </property>
            <property name="orientation">
-            <enum>Qt::Horizontal</enum>
+            <enum>Qt::Orientation::Horizontal</enum>
            </property>
           </widget>
          </item>
@@ -12304,15 +12452,6 @@ enable the &quot;Incremental Garbage Collector&quot; to avoid graphical freezes.
                 </color>
                </brush>
               </colorrole>
-              <colorrole role="NoRole">
-               <brush brushstyle="SolidPattern">
-                <color alpha="255">
-                 <red>113</red>
-                 <green>113</green>
-                 <blue>113</blue>
-                </color>
-               </brush>
-              </colorrole>
               <colorrole role="ToolTipBase">
                <brush brushstyle="SolidPattern">
                 <color alpha="255">
@@ -12337,6 +12476,15 @@ enable the &quot;Incremental Garbage Collector&quot; to avoid graphical freezes.
                  <red>84</red>
                  <green>84</green>
                  <blue>84</blue>
+                </color>
+               </brush>
+              </colorrole>
+              <colorrole role="Accent">
+               <brush brushstyle="SolidPattern">
+                <color alpha="255">
+                 <red>48</red>
+                 <green>140</green>
+                 <blue>198</blue>
                 </color>
                </brush>
               </colorrole>
@@ -12468,15 +12616,6 @@ enable the &quot;Incremental Garbage Collector&quot; to avoid graphical freezes.
                 </color>
                </brush>
               </colorrole>
-              <colorrole role="NoRole">
-               <brush brushstyle="SolidPattern">
-                <color alpha="255">
-                 <red>113</red>
-                 <green>113</green>
-                 <blue>113</blue>
-                </color>
-               </brush>
-              </colorrole>
               <colorrole role="ToolTipBase">
                <brush brushstyle="SolidPattern">
                 <color alpha="255">
@@ -12501,6 +12640,15 @@ enable the &quot;Incremental Garbage Collector&quot; to avoid graphical freezes.
                  <red>84</red>
                  <green>84</green>
                  <blue>84</blue>
+                </color>
+               </brush>
+              </colorrole>
+              <colorrole role="Accent">
+               <brush brushstyle="SolidPattern">
+                <color alpha="255">
+                 <red>48</red>
+                 <green>140</green>
+                 <blue>198</blue>
                 </color>
                </brush>
               </colorrole>
@@ -12632,15 +12780,6 @@ enable the &quot;Incremental Garbage Collector&quot; to avoid graphical freezes.
                 </color>
                </brush>
               </colorrole>
-              <colorrole role="NoRole">
-               <brush brushstyle="SolidPattern">
-                <color alpha="255">
-                 <red>113</red>
-                 <green>113</green>
-                 <blue>113</blue>
-                </color>
-               </brush>
-              </colorrole>
               <colorrole role="ToolTipBase">
                <brush brushstyle="SolidPattern">
                 <color alpha="255">
@@ -12668,11 +12807,20 @@ enable the &quot;Incremental Garbage Collector&quot; to avoid graphical freezes.
                 </color>
                </brush>
               </colorrole>
+              <colorrole role="Accent">
+               <brush brushstyle="SolidPattern">
+                <color alpha="255">
+                 <red>145</red>
+                 <green>145</green>
+                 <blue>145</blue>
+                </color>
+               </brush>
+              </colorrole>
              </disabled>
             </palette>
            </property>
            <property name="frameShadow">
-            <enum>QFrame::Plain</enum>
+            <enum>QFrame::Shadow::Plain</enum>
            </property>
            <property name="lineWidth">
             <number>1</number>
@@ -12681,7 +12829,7 @@ enable the &quot;Incremental Garbage Collector&quot; to avoid graphical freezes.
             <number>0</number>
            </property>
            <property name="orientation">
-            <enum>Qt::Horizontal</enum>
+            <enum>Qt::Orientation::Horizontal</enum>
            </property>
           </widget>
          </item>
@@ -12816,15 +12964,6 @@ enable the &quot;Incremental Garbage Collector&quot; to avoid graphical freezes.
                 </color>
                </brush>
               </colorrole>
-              <colorrole role="NoRole">
-               <brush brushstyle="SolidPattern">
-                <color alpha="255">
-                 <red>113</red>
-                 <green>113</green>
-                 <blue>113</blue>
-                </color>
-               </brush>
-              </colorrole>
               <colorrole role="ToolTipBase">
                <brush brushstyle="SolidPattern">
                 <color alpha="255">
@@ -12849,6 +12988,15 @@ enable the &quot;Incremental Garbage Collector&quot; to avoid graphical freezes.
                  <red>84</red>
                  <green>84</green>
                  <blue>84</blue>
+                </color>
+               </brush>
+              </colorrole>
+              <colorrole role="Accent">
+               <brush brushstyle="SolidPattern">
+                <color alpha="255">
+                 <red>48</red>
+                 <green>140</green>
+                 <blue>198</blue>
                 </color>
                </brush>
               </colorrole>
@@ -12980,15 +13128,6 @@ enable the &quot;Incremental Garbage Collector&quot; to avoid graphical freezes.
                 </color>
                </brush>
               </colorrole>
-              <colorrole role="NoRole">
-               <brush brushstyle="SolidPattern">
-                <color alpha="255">
-                 <red>113</red>
-                 <green>113</green>
-                 <blue>113</blue>
-                </color>
-               </brush>
-              </colorrole>
               <colorrole role="ToolTipBase">
                <brush brushstyle="SolidPattern">
                 <color alpha="255">
@@ -13013,6 +13152,15 @@ enable the &quot;Incremental Garbage Collector&quot; to avoid graphical freezes.
                  <red>84</red>
                  <green>84</green>
                  <blue>84</blue>
+                </color>
+               </brush>
+              </colorrole>
+              <colorrole role="Accent">
+               <brush brushstyle="SolidPattern">
+                <color alpha="255">
+                 <red>48</red>
+                 <green>140</green>
+                 <blue>198</blue>
                 </color>
                </brush>
               </colorrole>
@@ -13144,15 +13292,6 @@ enable the &quot;Incremental Garbage Collector&quot; to avoid graphical freezes.
                 </color>
                </brush>
               </colorrole>
-              <colorrole role="NoRole">
-               <brush brushstyle="SolidPattern">
-                <color alpha="255">
-                 <red>113</red>
-                 <green>113</green>
-                 <blue>113</blue>
-                </color>
-               </brush>
-              </colorrole>
               <colorrole role="ToolTipBase">
                <brush brushstyle="SolidPattern">
                 <color alpha="255">
@@ -13180,11 +13319,20 @@ enable the &quot;Incremental Garbage Collector&quot; to avoid graphical freezes.
                 </color>
                </brush>
               </colorrole>
+              <colorrole role="Accent">
+               <brush brushstyle="SolidPattern">
+                <color alpha="255">
+                 <red>145</red>
+                 <green>145</green>
+                 <blue>145</blue>
+                </color>
+               </brush>
+              </colorrole>
              </disabled>
             </palette>
            </property>
            <property name="frameShadow">
-            <enum>QFrame::Plain</enum>
+            <enum>QFrame::Shadow::Plain</enum>
            </property>
            <property name="lineWidth">
             <number>1</number>
@@ -13193,7 +13341,7 @@ enable the &quot;Incremental Garbage Collector&quot; to avoid graphical freezes.
             <number>0</number>
            </property>
            <property name="orientation">
-            <enum>Qt::Horizontal</enum>
+            <enum>Qt::Orientation::Horizontal</enum>
            </property>
           </widget>
          </item>
@@ -13358,15 +13506,6 @@ enable the &quot;Incremental Garbage Collector&quot; to avoid graphical freezes.
                 </color>
                </brush>
               </colorrole>
-              <colorrole role="NoRole">
-               <brush brushstyle="SolidPattern">
-                <color alpha="255">
-                 <red>113</red>
-                 <green>113</green>
-                 <blue>113</blue>
-                </color>
-               </brush>
-              </colorrole>
               <colorrole role="ToolTipBase">
                <brush brushstyle="SolidPattern">
                 <color alpha="255">
@@ -13391,6 +13530,15 @@ enable the &quot;Incremental Garbage Collector&quot; to avoid graphical freezes.
                  <red>84</red>
                  <green>84</green>
                  <blue>84</blue>
+                </color>
+               </brush>
+              </colorrole>
+              <colorrole role="Accent">
+               <brush brushstyle="SolidPattern">
+                <color alpha="255">
+                 <red>48</red>
+                 <green>140</green>
+                 <blue>198</blue>
                 </color>
                </brush>
               </colorrole>
@@ -13522,15 +13670,6 @@ enable the &quot;Incremental Garbage Collector&quot; to avoid graphical freezes.
                 </color>
                </brush>
               </colorrole>
-              <colorrole role="NoRole">
-               <brush brushstyle="SolidPattern">
-                <color alpha="255">
-                 <red>113</red>
-                 <green>113</green>
-                 <blue>113</blue>
-                </color>
-               </brush>
-              </colorrole>
               <colorrole role="ToolTipBase">
                <brush brushstyle="SolidPattern">
                 <color alpha="255">
@@ -13555,6 +13694,15 @@ enable the &quot;Incremental Garbage Collector&quot; to avoid graphical freezes.
                  <red>84</red>
                  <green>84</green>
                  <blue>84</blue>
+                </color>
+               </brush>
+              </colorrole>
+              <colorrole role="Accent">
+               <brush brushstyle="SolidPattern">
+                <color alpha="255">
+                 <red>48</red>
+                 <green>140</green>
+                 <blue>198</blue>
                 </color>
                </brush>
               </colorrole>
@@ -13686,15 +13834,6 @@ enable the &quot;Incremental Garbage Collector&quot; to avoid graphical freezes.
                 </color>
                </brush>
               </colorrole>
-              <colorrole role="NoRole">
-               <brush brushstyle="SolidPattern">
-                <color alpha="255">
-                 <red>113</red>
-                 <green>113</green>
-                 <blue>113</blue>
-                </color>
-               </brush>
-              </colorrole>
               <colorrole role="ToolTipBase">
                <brush brushstyle="SolidPattern">
                 <color alpha="255">
@@ -13722,11 +13861,20 @@ enable the &quot;Incremental Garbage Collector&quot; to avoid graphical freezes.
                 </color>
                </brush>
               </colorrole>
+              <colorrole role="Accent">
+               <brush brushstyle="SolidPattern">
+                <color alpha="255">
+                 <red>145</red>
+                 <green>145</green>
+                 <blue>145</blue>
+                </color>
+               </brush>
+              </colorrole>
              </disabled>
             </palette>
            </property>
            <property name="frameShadow">
-            <enum>QFrame::Plain</enum>
+            <enum>QFrame::Shadow::Plain</enum>
            </property>
            <property name="lineWidth">
             <number>1</number>
@@ -13735,7 +13883,7 @@ enable the &quot;Incremental Garbage Collector&quot; to avoid graphical freezes.
             <number>0</number>
            </property>
            <property name="orientation">
-            <enum>Qt::Horizontal</enum>
+            <enum>Qt::Orientation::Horizontal</enum>
            </property>
           </widget>
          </item>
@@ -13878,15 +14026,6 @@ enable the &quot;Incremental Garbage Collector&quot; to avoid graphical freezes.
                 </color>
                </brush>
               </colorrole>
-              <colorrole role="NoRole">
-               <brush brushstyle="SolidPattern">
-                <color alpha="255">
-                 <red>113</red>
-                 <green>113</green>
-                 <blue>113</blue>
-                </color>
-               </brush>
-              </colorrole>
               <colorrole role="ToolTipBase">
                <brush brushstyle="SolidPattern">
                 <color alpha="255">
@@ -13911,6 +14050,15 @@ enable the &quot;Incremental Garbage Collector&quot; to avoid graphical freezes.
                  <red>84</red>
                  <green>84</green>
                  <blue>84</blue>
+                </color>
+               </brush>
+              </colorrole>
+              <colorrole role="Accent">
+               <brush brushstyle="SolidPattern">
+                <color alpha="255">
+                 <red>48</red>
+                 <green>140</green>
+                 <blue>198</blue>
                 </color>
                </brush>
               </colorrole>
@@ -14042,15 +14190,6 @@ enable the &quot;Incremental Garbage Collector&quot; to avoid graphical freezes.
                 </color>
                </brush>
               </colorrole>
-              <colorrole role="NoRole">
-               <brush brushstyle="SolidPattern">
-                <color alpha="255">
-                 <red>113</red>
-                 <green>113</green>
-                 <blue>113</blue>
-                </color>
-               </brush>
-              </colorrole>
               <colorrole role="ToolTipBase">
                <brush brushstyle="SolidPattern">
                 <color alpha="255">
@@ -14075,6 +14214,15 @@ enable the &quot;Incremental Garbage Collector&quot; to avoid graphical freezes.
                  <red>84</red>
                  <green>84</green>
                  <blue>84</blue>
+                </color>
+               </brush>
+              </colorrole>
+              <colorrole role="Accent">
+               <brush brushstyle="SolidPattern">
+                <color alpha="255">
+                 <red>48</red>
+                 <green>140</green>
+                 <blue>198</blue>
                 </color>
                </brush>
               </colorrole>
@@ -14206,15 +14354,6 @@ enable the &quot;Incremental Garbage Collector&quot; to avoid graphical freezes.
                 </color>
                </brush>
               </colorrole>
-              <colorrole role="NoRole">
-               <brush brushstyle="SolidPattern">
-                <color alpha="255">
-                 <red>113</red>
-                 <green>113</green>
-                 <blue>113</blue>
-                </color>
-               </brush>
-              </colorrole>
               <colorrole role="ToolTipBase">
                <brush brushstyle="SolidPattern">
                 <color alpha="255">
@@ -14242,11 +14381,20 @@ enable the &quot;Incremental Garbage Collector&quot; to avoid graphical freezes.
                 </color>
                </brush>
               </colorrole>
+              <colorrole role="Accent">
+               <brush brushstyle="SolidPattern">
+                <color alpha="255">
+                 <red>145</red>
+                 <green>145</green>
+                 <blue>145</blue>
+                </color>
+               </brush>
+              </colorrole>
              </disabled>
             </palette>
            </property>
            <property name="frameShadow">
-            <enum>QFrame::Plain</enum>
+            <enum>QFrame::Shadow::Plain</enum>
            </property>
            <property name="lineWidth">
             <number>1</number>
@@ -14255,7 +14403,7 @@ enable the &quot;Incremental Garbage Collector&quot; to avoid graphical freezes.
             <number>0</number>
            </property>
            <property name="orientation">
-            <enum>Qt::Horizontal</enum>
+            <enum>Qt::Orientation::Horizontal</enum>
            </property>
           </widget>
          </item>
@@ -14390,15 +14538,6 @@ enable the &quot;Incremental Garbage Collector&quot; to avoid graphical freezes.
                 </color>
                </brush>
               </colorrole>
-              <colorrole role="NoRole">
-               <brush brushstyle="SolidPattern">
-                <color alpha="255">
-                 <red>113</red>
-                 <green>113</green>
-                 <blue>113</blue>
-                </color>
-               </brush>
-              </colorrole>
               <colorrole role="ToolTipBase">
                <brush brushstyle="SolidPattern">
                 <color alpha="255">
@@ -14423,6 +14562,15 @@ enable the &quot;Incremental Garbage Collector&quot; to avoid graphical freezes.
                  <red>84</red>
                  <green>84</green>
                  <blue>84</blue>
+                </color>
+               </brush>
+              </colorrole>
+              <colorrole role="Accent">
+               <brush brushstyle="SolidPattern">
+                <color alpha="255">
+                 <red>48</red>
+                 <green>140</green>
+                 <blue>198</blue>
                 </color>
                </brush>
               </colorrole>
@@ -14554,15 +14702,6 @@ enable the &quot;Incremental Garbage Collector&quot; to avoid graphical freezes.
                 </color>
                </brush>
               </colorrole>
-              <colorrole role="NoRole">
-               <brush brushstyle="SolidPattern">
-                <color alpha="255">
-                 <red>113</red>
-                 <green>113</green>
-                 <blue>113</blue>
-                </color>
-               </brush>
-              </colorrole>
               <colorrole role="ToolTipBase">
                <brush brushstyle="SolidPattern">
                 <color alpha="255">
@@ -14587,6 +14726,15 @@ enable the &quot;Incremental Garbage Collector&quot; to avoid graphical freezes.
                  <red>84</red>
                  <green>84</green>
                  <blue>84</blue>
+                </color>
+               </brush>
+              </colorrole>
+              <colorrole role="Accent">
+               <brush brushstyle="SolidPattern">
+                <color alpha="255">
+                 <red>48</red>
+                 <green>140</green>
+                 <blue>198</blue>
                 </color>
                </brush>
               </colorrole>
@@ -14718,15 +14866,6 @@ enable the &quot;Incremental Garbage Collector&quot; to avoid graphical freezes.
                 </color>
                </brush>
               </colorrole>
-              <colorrole role="NoRole">
-               <brush brushstyle="SolidPattern">
-                <color alpha="255">
-                 <red>113</red>
-                 <green>113</green>
-                 <blue>113</blue>
-                </color>
-               </brush>
-              </colorrole>
               <colorrole role="ToolTipBase">
                <brush brushstyle="SolidPattern">
                 <color alpha="255">
@@ -14754,11 +14893,20 @@ enable the &quot;Incremental Garbage Collector&quot; to avoid graphical freezes.
                 </color>
                </brush>
               </colorrole>
+              <colorrole role="Accent">
+               <brush brushstyle="SolidPattern">
+                <color alpha="255">
+                 <red>145</red>
+                 <green>145</green>
+                 <blue>145</blue>
+                </color>
+               </brush>
+              </colorrole>
              </disabled>
             </palette>
            </property>
            <property name="frameShadow">
-            <enum>QFrame::Plain</enum>
+            <enum>QFrame::Shadow::Plain</enum>
            </property>
            <property name="lineWidth">
             <number>1</number>
@@ -14767,7 +14915,7 @@ enable the &quot;Incremental Garbage Collector&quot; to avoid graphical freezes.
             <number>0</number>
            </property>
            <property name="orientation">
-            <enum>Qt::Horizontal</enum>
+            <enum>Qt::Orientation::Horizontal</enum>
            </property>
           </widget>
          </item>
@@ -14939,15 +15087,6 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                 </color>
                </brush>
               </colorrole>
-              <colorrole role="NoRole">
-               <brush brushstyle="SolidPattern">
-                <color alpha="255">
-                 <red>113</red>
-                 <green>113</green>
-                 <blue>113</blue>
-                </color>
-               </brush>
-              </colorrole>
               <colorrole role="ToolTipBase">
                <brush brushstyle="SolidPattern">
                 <color alpha="255">
@@ -14972,6 +15111,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                  <red>84</red>
                  <green>84</green>
                  <blue>84</blue>
+                </color>
+               </brush>
+              </colorrole>
+              <colorrole role="Accent">
+               <brush brushstyle="SolidPattern">
+                <color alpha="255">
+                 <red>48</red>
+                 <green>140</green>
+                 <blue>198</blue>
                 </color>
                </brush>
               </colorrole>
@@ -15103,15 +15251,6 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                 </color>
                </brush>
               </colorrole>
-              <colorrole role="NoRole">
-               <brush brushstyle="SolidPattern">
-                <color alpha="255">
-                 <red>113</red>
-                 <green>113</green>
-                 <blue>113</blue>
-                </color>
-               </brush>
-              </colorrole>
               <colorrole role="ToolTipBase">
                <brush brushstyle="SolidPattern">
                 <color alpha="255">
@@ -15136,6 +15275,15 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                  <red>84</red>
                  <green>84</green>
                  <blue>84</blue>
+                </color>
+               </brush>
+              </colorrole>
+              <colorrole role="Accent">
+               <brush brushstyle="SolidPattern">
+                <color alpha="255">
+                 <red>48</red>
+                 <green>140</green>
+                 <blue>198</blue>
                 </color>
                </brush>
               </colorrole>
@@ -15267,15 +15415,6 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                 </color>
                </brush>
               </colorrole>
-              <colorrole role="NoRole">
-               <brush brushstyle="SolidPattern">
-                <color alpha="255">
-                 <red>113</red>
-                 <green>113</green>
-                 <blue>113</blue>
-                </color>
-               </brush>
-              </colorrole>
               <colorrole role="ToolTipBase">
                <brush brushstyle="SolidPattern">
                 <color alpha="255">
@@ -15303,11 +15442,20 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
                 </color>
                </brush>
               </colorrole>
+              <colorrole role="Accent">
+               <brush brushstyle="SolidPattern">
+                <color alpha="255">
+                 <red>145</red>
+                 <green>145</green>
+                 <blue>145</blue>
+                </color>
+               </brush>
+              </colorrole>
              </disabled>
             </palette>
            </property>
            <property name="frameShadow">
-            <enum>QFrame::Plain</enum>
+            <enum>QFrame::Shadow::Plain</enum>
            </property>
            <property name="lineWidth">
             <number>1</number>
@@ -15316,7 +15464,7 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
             <number>0</number>
            </property>
            <property name="orientation">
-            <enum>Qt::Horizontal</enum>
+            <enum>Qt::Orientation::Horizontal</enum>
            </property>
           </widget>
          </item>
@@ -15345,7 +15493,7 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
    <item>
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="standardButtons">
-      <set>QDialogButtonBox::Close</set>
+      <set>QDialogButtonBox::StandardButton::Close</set>
      </property>
     </widget>
    </item>

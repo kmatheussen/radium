@@ -75,6 +75,9 @@
 
 
 
+(define (reset-editor-seqtrack-mute)
+  (<ra> :set-editor-seqtrack-muted #f (<ra> :get-curr-seqtrack-under-mouse)))
+
 (delafina (get-mutesolo-width :for-audiofiles
                               :include-rec-button #t)
   (myfloor (* 1.8 (<gui> :text-width (if for-audiofiles
@@ -215,9 +218,10 @@
                                                                           ((eq? type 'mute)
                                                                            (if for-audiofiles
                                                                                (show-sequencer-header-popup-menu seqtracknum instrument-id "System Volume On/Off" gui)
-                                                                               (popup-menu "Reset"
-                                                                                           (lambda ()
-                                                                                             (<ra> :set-editor-seqtrack-muted #f seqtracknum)))))
+                                                                               (popup-menu (list "Reset"
+                                                                                                 :shortcut reset-editor-seqtrack-mute
+                                                                                                 (lambda ()
+                                                                                                   (<ra> :set-editor-seqtrack-muted #f seqtracknum))))))
                                                                           (else
                                                                            (assert #f))))
                                     :delete-clicked-callback (lambda ()

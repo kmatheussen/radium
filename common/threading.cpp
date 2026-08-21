@@ -1,5 +1,10 @@
 
+#if defined(__GNUC__) && !defined(__clang__)
+#  include "../Qt/Qt_precompiled.hpp"
+#endif
+
 #include <unistd.h>
+
 #include <errno.h>
 #include <pthread.h>
 
@@ -66,7 +71,8 @@ enum ThreadType{
   MAIN_THREAD,
   PLAYER_THREAD,
   JUCE_THREAD,
-  RUNNER_THREAD
+  RUNNER_THREAD,
+  QRHI_THREAD
 };
 
 static __thread ThreadType g_thread_type = OTHER_THREAD;
@@ -96,6 +102,11 @@ void THREADING_init_juce_thread_type(void) {
   g_thread_type = JUCE_THREAD;
 }
 
+void THREADING_init_qrhi_thread_type(void) {
+  R_ASSERT_NON_RELEASE(g_thread_type==OTHER_THREAD);
+  g_thread_type = QRHI_THREAD;
+}
+
 bool THREADING_is_main_thread(void){
   return g_thread_type==MAIN_THREAD;
 }
@@ -115,6 +126,10 @@ bool THREADING_is_player_or_runner_thread(void){
 
 bool THREADING_is_juce_thread(void){
   return g_thread_type==JUCE_THREAD;
+}
+
+bool THREADING_is_qrhi_thread(void){
+  return g_thread_type==QRHI_THREAD;
 }
 
 

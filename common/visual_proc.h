@@ -144,11 +144,12 @@ static inline void GFX_ScheduleEditorRedrawIfPatchIsCurrentlyVisible(const struc
 
 // RT function.
 static inline void GFX_ScheduleCurrentInstrumentRedraw(void){
-  ATOMIC_SET(atomic_must_redraw_instrument, PATCH_get_current());
+  ATOMIC_SET(atomic_must_redraw_instrument, RT_PATCH_get_current());
 }
 
+// Safe to call from RT.
 static inline void GFX_ScheduleInstrumentRedraw(struct Patch *patch){
-  if (patch==PATCH_get_current())
+  if (patch==RT_PATCH_get_current())
     ATOMIC_SET(atomic_must_redraw_instrument, patch);
 }
 
@@ -197,7 +198,7 @@ extern void GFX_SetSystemFont(QFont font);
 #endif
 extern LANGSPEC void GFX_ConfigFonts(struct Tracker_Windows *tvisual);
 
-extern LANGSPEC void GFX_reload_qt_stylesheets(void);
+extern LANGSPEC void GFX_reload_qt_stylesheets(bool only_for_testing);
 
 extern LANGSPEC void GFX_SetDefaultColors1(struct Tracker_Windows *tvisual);
 extern LANGSPEC void GFX_SetDefaultColors2(struct Tracker_Windows *tvisual);

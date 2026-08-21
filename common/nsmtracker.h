@@ -14,6 +14,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#pragma once
 
 #ifndef RADIUM_COMMON_NSMTRACKER_H
 #define RADIUM_COMMON_NSMTRACKER_H 1
@@ -667,29 +668,37 @@ enum WhetherToDeleteUnusedRecordingTakes{
 };
 
 #ifdef __cplusplus
-namespace radium{
-  class ScopedBoolean{
-    bool &_abool;
+namespace radium
+{
+template <typename Bool>
+class ScopedBoolean
+{
+	static_assert(std::is_same_v<Bool, bool> || std::is_same_v<Bool, std::atomic<bool>>);
+	
+	Bool &_abool;
     const bool _doit;
-  public:
-    ScopedBoolean(bool &abool, const bool doit = true)
-      : _abool(abool)
-      , _doit(doit)
-    {
-      R_ASSERT(_abool==false);
-      if(_doit)
-        _abool = true;
+	
+public:
+	ScopedBoolean(Bool &abool, const bool doit = true)
+	   : _abool(abool)
+	   , _doit(doit)
+	{
+		R_ASSERT(_abool==false);
+		if(_doit)
+			_abool = true;
     }
 
-    ~ScopedBoolean(){
-      if(_doit){
-        R_ASSERT(_abool==true);
-        _abool = false;
-      } else {
-        R_ASSERT_NON_RELEASE(_abool==false);
-      }
+	~ScopedBoolean()
+	{
+		if(_doit){
+			R_ASSERT(_abool==true);
+			_abool = false;
+		} else {
+			R_ASSERT_NON_RELEASE(_abool==false);
+		}
     }
-  };    
+};
+
   class ScopedGeneration{
     int &_anint;
     const bool _doit;

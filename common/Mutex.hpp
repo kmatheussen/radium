@@ -1,5 +1,3 @@
-
-
 #ifndef _RADIUM_COMMON_MUTEX_HPP
 #define _RADIUM_COMMON_MUTEX_HPP
 
@@ -13,6 +11,7 @@
 #if RADIUM_USE_CPP_MUTEX
 #  include <mutex>
 #  include <condition_variable>
+#  include <shared_mutex>
 #else
 #  include <pthread.h>
 #  include <sys/time.h>
@@ -351,7 +350,111 @@ struct ScopedMutex{
   }
 };
 
-  #if 0
+
+#if RADIUM_USE_CPP_MUTEX
+
+struct RWLock
+{
+	std::shared_mutex _mutex;
+	
+	void lock_shared(void)
+	{
+		_mutex.lock_shared();
+	}
+	
+	void unlock_shared(void)
+	{
+		_mutex.unlock_shared();
+	}
+	
+	void lock(void)
+	{
+		_mutex.lock();
+	}
+
+	void unlock(void)
+	{
+		_mutex.unlock();
+	}
+};
+
+#else
+
+struct RWLock
+{
+	pthread_rwlock_t _mutex;
+	
+	RWLock()
+	{
+		pthread_rwlock_init(&_mutex, NULL);
+	}
+	
+	~RWLock()
+	{
+		pthread_rwlock_destroy(&_mutex);
+	}
+	
+	void lock_shared(void)
+	{
+		pthread_rwlock_rdlock(&_mutex);
+	}
+	
+	void unlock_shared(void)
+	{
+		pthread_rwlock_unlock(&_mutex);
+	}
+	
+	void lock(void)
+	{
+		pthread_rwlock_wrlock(&_mutex);
+	}
+	
+	void unlock(void)
+	{
+		pthread_rwlock_unlock(&_mutex);
+	}
+};
+#endif
+
+struct ScopedReadLock {
+	RWLock &_rwlock;
+	
+	ScopedReadLock(const ScopedReadLock&) = delete;
+	ScopedReadLock& operator=(const ScopedReadLock&) = delete;
+	
+	ScopedReadLock(RWLock &rwlock)
+		: _rwlock(rwlock)
+	{
+		_rwlock.lock_shared();
+	}
+	
+	~ScopedReadLock()
+	{
+		_rwlock.unlock_shared();
+	}
+};
+
+struct ScopedWriteLock {
+	RWLock &_rwlock;
+	
+	ScopedWriteLock(const ScopedWriteLock&) = delete;
+	ScopedWriteLock& operator=(const ScopedWriteLock&) = delete;
+	
+	ScopedWriteLock(RWLock &rwlock)
+		: _rwlock(rwlock)
+	{
+		_rwlock.lock();
+	}
+	
+	~ScopedWriteLock()
+	{
+		_rwlock.unlock();
+	}
+};
+
+
+
+#if 0
 // Class written by Timur Doumler. Code copied from https://timur.audio/using-locks-in-real-time-audio-processing-safely
 // (I assume it is public domain)
 struct AudioSpinMutex : public AbstractMutex{
@@ -510,7 +613,7 @@ struct CondWait {
 };
 #endif // !RADIUM_USE_CPP_MUTEX
 
-}
+} // namespace radium
 
 
 

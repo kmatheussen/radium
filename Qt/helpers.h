@@ -11,7 +11,7 @@
 #include <QGuiApplication>
 #include <QScreen>
 #include <QPointer>
-#include <QDesktopWidget>
+//#include <QDesktopWidget>
 #include <QMouseEvent>
 #include <QKeyEvent>
 #include <QPainter>
@@ -237,7 +237,11 @@ static inline void moveWindowToCentre(QWidget *widget, QRect parentRect = QRect(
 
   if (widget->window() != widget){
     
+#ifndef CRASHREPORTER_BIN
+#ifndef COMPILE_EXECUTABLE
     R_ASSERT_NON_RELEASE(false);
+#endif
+#endif
     
   } else {
 
@@ -252,7 +256,11 @@ static inline void moveWindowToCentre(QWidget *widget, QRect parentRect = QRect(
 static inline void adjustSizeAndMoveWindowToCentre(QWidget *widget, QRect parentRect = QRect()){
   if (widget->window() != widget){
     
+#ifndef CRASHREPORTER_BIN
+#ifndef COMPILE_EXECUTABLE
     R_ASSERT_NON_RELEASE(false);
+#endif
+#endif
     
   } else {
 
@@ -504,14 +512,9 @@ static inline void safe_set_parent(QWidget *w, QWidget *parent, Qt::WindowFlags 
   auto *b = get_oldest_parent(parent);
   
   if (a==b){
-#if !defined(RELEASE)
-#ifndef CRASHREPORTER_BIN
-#ifndef COMPILE_EXECUTABLE
-    R_ASSERT_RETURN_IF_FALSE4(a!=b, error_type, "widget::setParent: widget and parent have common ancestor: %p, %p", a, b);
-#endif
-#endif
-#endif
-    //return; // it's probably okay to set parent below. I think the "a_is_a_parent_of_b" check above covers all situations that causes crash.
+    // This is probably okay. The "a_is_a_parent_of_b" check above covers all situations that cause crash.
+    // Just skip setParent when both widgets share the same oldest ancestor.
+    return;
   }
 
   if (set_window_flags)
@@ -675,7 +678,7 @@ static inline QPointF get_localpos_from_qevent(QEvent *event){
   //auto scene_mouse_event = dynamic_cast<QGraphicsSceneMouseEvent*>(event);
   
   if (mouse_event!=NULL)
-    return mouse_event->localPos();
+	  return mouse_event->position();
   /*
   else if (scene_mouse_event!=NULL)
     return scene_mouse_event->scenePos();
@@ -711,11 +714,11 @@ static inline QPoint get_globalpos_from_qevent(QEvent *event){
   auto scene_mouse_event = dynamic_cast<QGraphicsSceneMouseEvent*>(event);
   
   if (mouse_event!=NULL)
-    return mouse_event->globalPos();
+	  return mouse_event->globalPosition().toPoint();
   else if (scene_mouse_event!=NULL)
-    return scene_mouse_event->screenPos(); // good enough. globalpos is only used to avoid double moveevents here.
+	  return scene_mouse_event->screenPos(); // good enough. globalpos is only used to avoid double moveevents here.
   else
-    return QPoint();
+	  return QPoint();
 }
 
 static inline Qt::MouseButton get_button_from_qevent(QEvent *event){
@@ -803,18 +806,25 @@ public:
       return get_localpos_from_qevent(_event);
   }
 
+  QPointF globalPos(void) const {
+    if(_scene_mouse_event!=NULL)
+		return get_globalpos_from_qevent(_scene_mouse_event);
+    else
+		return get_globalpos_from_qevent(_event);
+  }
+
   int x(void) const {
     if(_mouse_event)
-      return _mouse_event->x();
+		return _mouse_event->position().x();
     else
-      return 0.0;
+		return 0.0;
   }
   
   int y(void) const {
     if(_mouse_event)
-      return _mouse_event->y();
+		return _mouse_event->position().y();
     else
-      return 0.0;
+		return 0.0;
   }
 
   Qt::MouseButton button(void) const {
@@ -976,6 +986,7 @@ struct MouseCycleFix
 
         QMouseEvent move_event(QEvent::MouseMove,
                                event2.pos(),
+							   event2.globalPos(),
                                Qt::NoButton,
                                Qt::NoButton,
                                event2.modifiers());
@@ -1073,17 +1084,27 @@ namespace radium{
 // Why doesn't Qt provide this one?
 namespace{
 template <typename T>
-struct ScopedQPointer : public QPointer<T>{
-  T *_widget;
-  ScopedQPointer(T *widget)
-    : QPointer<T>(widget)
-    , _widget(widget)
-  {}
-  ~ScopedQPointer(){
-    printf("Deleting scoped pointer widget %p\n",_widget);
-    delete _widget;
-  }
+struct ScopedQPointer : public QPointer<T>
+{
+	ScopedQPointer(T *widget)
+		: QPointer<T>(widget)
+	{
+	}
+	
+	~ScopedQPointer()
+	{
+		if (QPointer<T>::data() != nullptr)
+		{
+			printf("Deleting scoped pointer widget %p\n", QPointer<T>::data());
+			delete QPointer<T>::data();
+		}
+		else
+		{
+			printf("WARN: ScopedQPointer: widget already deleted, skipping delete\n");
+		}
+	}
 };
+
 /*
 template <typename T>
 struct ScopedQPointer {
@@ -1186,7 +1207,7 @@ static inline void setUpdatesEnabledRecursively(QWidget *widget, bool doit){
     widget->setUpdatesEnabled(doit);
     
     for(auto *c : widget->children()){
-      QWidget *w = dynamic_cast<QWidget*>(c);      
+      QWidget *w = qobject_cast<QWidget*>(c);      
       if (w && w->isWindow()==false)
         setUpdatesEnabledRecursively(w, doit);
     }
@@ -1236,7 +1257,7 @@ static inline void pauseUpdates(QWidget *w, int ms = 50){
 static inline void updateWidgetRecursively(QObject *object, bool is_child = false){
   if (object != NULL){
 
-    QWidget *w = dynamic_cast<QWidget*>(object);
+    QWidget *w = qobject_cast<QWidget*>(object);
 
     if (w != NULL && w->isVisible()) {
 

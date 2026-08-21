@@ -1,5 +1,5 @@
 set -eEu
-
+#set -x
 source bash_setup.sh
 
 
@@ -66,6 +66,8 @@ set_var INCLUDE_FAUSTDEV_BUT_NOT_LLVM 0
 # but this variable can be set to something else if ncessary, e.g
 # /usr/local/llvm-90/bin/llvm-config
 #
+# Only used if INCLUDE_FAUSTDEV==1 && INCLUDE_FAUSTDEV_BUT_NOT_LLVM==0 
+#
 set_var LLVM_CONFIG_BIN 0
 
 
@@ -84,14 +86,22 @@ set_var USE_QWEBENGINE 0
 
 
 ########################################################
-# If enabled, use QSvgViewer instead of QWebEngine or QtWebKit
+# If enabled, use QtWebView instead of QWebEngine or QtWebKit
 #
-# Can be handy to use during development. You can not
-# click on any of the elements in the svg viewer, and
-# you can not drag, but compilation should be faster.
-# HTML pages for help is viewed by opening an external browser.
+# QtWebView embeds native web wiewer, and is the only
+# alternative when using mingw with Qt6.
 #
-set_var USE_QSVGVIEWER 0
+set_var USE_QTWEBVIEW 0
+
+
+
+########################################################
+# If enabled, use QSvgViewer instead of QWebEngine, QtWebKit, or QtWebView
+#
+# Generally better than any of the web viewers for
+# the Faust-Dev instrument.
+#
+set_var USE_QSVGVIEWER 1
 
 
 
@@ -120,19 +130,20 @@ set_var FULL_VERSION 1
 
 
 ########################################################
-# qt5
+# qt6
 #
 set_var PKGqt 0 # Can be set to another pkg-config than is not first in PATH.
 set_var QT_PKG_CONFIGURATION_PATH 0 # PKG_CONFIG_PATH will be set to this value.
 set_var QMAKE 0
 set_var UIC 0
 set_var MOC 0
+set_var QSB 0
 
-# Alternative: Add the Qt5 bin directory to path,
+# Alternative: Add the Qt6 bin directory to path,
 # The directory can be different on your system,
 # adjust as needed:
 #
-#export PATH="/usr/lib64/qt5/bin:/usr/lib/qt5/bin"${PATH:+:$PATH} 
+#export PATH="/usr/lib64/qt6/bin:/usr/lib/qt6/bin"${PATH:+:$PATH} 
 
 
 
@@ -177,7 +188,8 @@ RADIUM_CONFIGURATION_HAS_BEEN_SETUP=1
 # lead to unexpected behaviors.
 #
 set_var PYTHONEXE `./find_python_path.sh`
-if ! env |grep PYTHONEXE_NOT_AVAILABLE_YET ; then
+
+if ! env |grep PYTHONEXE_NOT_AVAILABLE_YET >/dev/null ; then
     assert_exe_exists $PYTHONEXE
 fi
 
@@ -199,57 +211,84 @@ if ! is_0 $QT_PKG_CONFIGURATION_PATH ; then
     export PKGqt="PKG_CONFIG_PATH=$QT_PKG_CONFIGURATION_PATH $PKGqt"
 fi
 
+assert_v6()
+{
+	assert_exe_exists $1
+
+	if $@ | grep -v '^6' &>/dev/null; then
+		if $@ | awk '{print $2}' | grep -v '^6' ; then
+			handle_failure "Seems like $1 has the wrong version. We need Qt 6 or newer. Set QMAKE to correct path to fix".
+		fi
+	fi
+}
+
 if is_0 $QMAKE ; then
-    if which qmake-qt5 2>/dev/null ; then
-        export QMAKE=$(which qmake-qt5)
-    else
+    if which qmake-qt6 &> /dev/null ; then
+        export QMAKE=$(which qmake-qt6)
+	elif which qmake &> /dev/null ; then
         export QMAKE=$(which qmake)
+	else
+		echo "Could not find qmake-qt6 or qmake in path. Either: 1. set PATH. 2. Install qmake. 3. Set the QMAKE environment variable."
+		exit -1
     fi
 fi
 
+assert_v6 ${QMAKE} -query QT_VERSION
+
+QT_INSTALL_LIBEXECS=`${QMAKE} -query QT_INSTALL_LIBEXECS`
+QT_HOST_LIBEXECS=`${QMAKE} -query QT_HOST_LIBEXECS`
+
 if is_0 $UIC ; then
-    if which uic-qt5 2>/dev/null  ; then
-        export UIC=$(which uic-qt5)
-    else
-        export UIC=$(which uic)
+	if [ -f "${QT_HOST_LIBEXECS}/uic" ] ; then
+		export UIC="${QT_HOST_LIBEXECS}/uic"
+	elif which uic-qt6 &>/dev/null  ; then
+        export UIC=$(which uic-qt6)
+    elif which uic &>/dev/null ; then
+		export UIC=$(which uic)
+	else
+		echo "Could not find uic-qt6 or uic in path. Either install uic or set the UIC environment variable."
+		exit -1
     fi
 fi
 
 if is_0 $MOC ; then
-    if which moc-qt5 2>/dev/null  ; then
-        export MOC=$(which moc-qt5)
-    else
+	if [ -f "${QT_HOST_LIBEXECS}/moc" ] ; then
+		export MOC="${QT_HOST_LIBEXECS}/moc"
+    elif which moc-qt6 &>/dev/null  ; then
+        export MOC=$(which moc-qt6)
+	elif which moc &>/dev/null ; then
         export MOC=$(which moc)
-    fi
-fi
-
-assert_exe_exists $QMAKE
-assert_exe_exists $UIC
-assert_exe_exists $MOC
-
-if ${QMAKE} -query QT_VERSION | grep -v '^5.1' ; then
-    handle_failure "Seems like qmake has the wrong version. We need Qt newer than 5.10, but not Qt6. Set QMAKE to correct path to fix".
-fi
-
-if ${UIC} --version | grep -v '^uic 5.1' ; then
-    if ${UIC} --version | grep -v '^uic-qt5 5.1' ; then
-		handle_failure "Seems like uic has the wrong version. We need Qt newer than 5.10, but not Qt6. Set UIC to correct path to fix".
-    fi
-fi
-
-if ${MOC} --version | grep -v '^moc 5.1' ; then
-    if ${MOC} --version | grep -v '^moc-qt5 5.1' ; then
-	handle_failure "Seems like moc has the wrong version. We need Qt newer than 5.10, but not Qt6. Set MOC to correct path to fix".
+    else
+		echo "Could not find moc-qt6 or moc in path. Either install moc or set the MOC environment variable."
+		exit -1
     fi
 fi
 
 
-if [ "$($PKGqt --libs-only-L Qt5Core)" != "" ] ; then
+if is_0 $QSB ; then
+	if [ -f "${QT_HOST_LIBEXECS}/qsb" ] ; then
+		export QSB="${QT_HOST_LIBEXECS}/qsb"
+    elif which qsb-qt6 &>/dev/null  ; then
+        export QSB=$(which qsb-qt6)
+	elif which qsb &>/dev/null ; then
+        export QSB=$(which qsb)
+    else
+		echo "Could not find qsb-qt6 or qsb in path. Either install qsb or set the QSB environment variable."
+		exit -1
+    fi
+fi
+
+assert_v6 ${UIC} --version
+assert_v6 ${MOC} --version
+assert_v6 ${QSB} --version
+
+
+if [ "$($PKGqt --libs-only-L Qt6Core)" != "" ] ; then
     if env |grep QMAKE_LIBS_ONLY_L_SHOULD_BE_EMPTY ; then
         handle_failure "Not empty"
     fi
         
-    A=$($PKGqt --libs-only-L Qt5Core | xargs)
+    A=$($PKGqt --libs-only-L Qt6Core | xargs)
     B="-L$($QMAKE -query QT_INSTALL_PREFIX)/lib"
     if [ "$A" != "$B" ] ; then
 	handle_failure "$PKGqt and $QMAKE doesn't seem to point to the same Qt:\n" \
@@ -259,10 +298,11 @@ if [ "$($PKGqt --libs-only-L Qt5Core)" != "" ] ; then
 else
     if ! is_set QMAKE_LIBS_ONLY_L_SHOULD_BE_EMPTY ; then
         if [ "$($QMAKE -query QT_INSTALL_PREFIX)" != "/usr" ] ; then
-	    handle_failure "\"$PKGqt --libs-only-L Qt5Core\" gave no output. It's assumed that qt is installed in /usr, but it's not. it's installed in \"$($QMAKE -query QT_INSTALL_PREFIX)\". If this is correct, then simply set QMAKE_LIBS_ONLY_L_SHOULD_BE_EMPTY=1 in your build script."
+	    handle_failure "\"$PKGqt --libs-only-L Qt6Core\" gave no output. It's assumed that qt is installed in /usr, but it's not. it's installed in \"$($QMAKE -query QT_INSTALL_PREFIX)\". If this is correct, then simply set QMAKE_LIBS_ONLY_L_SHOULD_BE_EMPTY=1 in your build script."
         fi
     fi
 fi
+
 
 if ! is_0 $INCLUDE_FAUSTDEV ; then
     if is_0 $INCLUDE_FAUSTDEV_BUT_NOT_LLVM ; then
@@ -276,15 +316,12 @@ set_var FAUST_USES_LLVM 0
 if ! is_0 $FAUST_USES_LLVM ; then
 
 	if is_0 $LLVM_CONFIG_BIN ; then
-		if ! which llvm-config ; then
-			handle_failure "llvm-config not found"
-		fi
-	
-		export LLVM_CONFIG_BIN=`which llvm-config`
+		assert_exe_exists llvm-config
+		export LLVM_CONFIG_BIN=$(which llvm-config)
 	fi
-		
-    assert_exe_exists $LLVM_CONFIG_BIN
-    
+
+	assert_exe_exists $LLVM_CONFIG_BIN
+
 	if uname -s |grep Linux > /dev/null ; then
 		
 		old_path=""

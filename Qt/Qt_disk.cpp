@@ -14,6 +14,11 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+
+#if defined(__GNUC__) && !defined(__clang__)
+#  include "../Qt/Qt_precompiled.hpp"
+#endif
+
 #include <unistd.h>
 
 #include <QString>
@@ -392,7 +397,7 @@ public:
 
     if (is_binary==false){
       stream = new QTextStream(file());
-      stream->setCodec("UTF-8");
+      //stream->setCodec("UTF-8"); (UTF-8 is default encoding)
     }
 
     return true;

@@ -1,7 +1,9 @@
+#pragma once
 
 
 
 #ifndef TRACKER_INCLUDE
+
 
 extern LANGSPEC void SaveInstrument(struct Instruments *instrument);
 extern LANGSPEC struct Instruments *LoadInstrument(void);

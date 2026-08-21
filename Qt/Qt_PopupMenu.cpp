@@ -20,6 +20,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
+
+#if defined(__GNUC__) && !defined(__clang__)
+#  include "../Qt/Qt_precompiled.hpp"
+#endif
+
 #if USE_QT_MENU
 
 #ifndef SAFE_POPUP
@@ -50,6 +55,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QStyleFactory>
 #include <QStyleOption>
 #include <QMenuBar>
+#include <QActionGroup>
 
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"
@@ -647,87 +653,123 @@ namespace{
     void keyPressEvent(QKeyEvent *event) override {
       
       evalScheme("(set! *last-pressed-menu-entry-widget-mouse-button* -1)"); // To avoid keybindings-configuration menu to pop up when pressing return.
-      
+
+#if defined(FOR_MACOSX)
+	  //
+	  // Workaround for wrongly designed OS.
+	  // (wrap-around is specifically prevented on MacOs by design, sigh!)
+	  //
+      if (event->spontaneous() && actions().size() > 0)
+	  {
+		  bool is_up   = event->key()==Qt::Key_Up   || event->key()==Qt::Key_PageUp   || event->key()==Qt::Key_Home;
+		  bool is_down = event->key()==Qt::Key_Down || event->key()==Qt::Key_PageDown || event->key()==Qt::Key_End;
+		  
+		  if (is_up || is_down)
+		  {
+			  auto *curr_action = activeAction();
+          
+			  if (curr_action == actions().first() && is_up) {
+				  setActiveAction(actions().last());
+				  event->accept();
+				  return;
+			  } else if (curr_action == actions().last() && is_down) {
+				  setActiveAction(actions().first());
+				  event->accept();
+				  return;
+			  }
+		  }
+      }
+#endif
+	  
       bool custom_treat
         = ((event->modifiers() & Qt::ShiftModifier) && (event->key()==Qt::Key_Up || event->key()==Qt::Key_Down))
         || (event->key()==Qt::Key_PageUp || event->key()==Qt::Key_PageDown)
         || (event->key()==Qt::Key_Home || event->key()==Qt::Key_End);
 
-      if (custom_treat && actions().size() > 0) {
+      if (custom_treat && actions().size() > 0)
+	  {
+		  bool key_down = event->key()==Qt::Key_Down || event->key()==Qt::Key_PageDown;
+#if !defined(FOR_MACOSX)
+		  bool key_up = !key_down;
+#endif
+		  
+		  int inc = key_down ? 1 : -1;
+		  
+		  auto *curr_action = activeAction();
 
-        bool key_down = event->key()==Qt::Key_Down || event->key()==Qt::Key_PageDown;
-        bool key_up = !key_down;
-        int inc = key_down ? 1 : -1;
+#if !defined(FOR_MACOSX)
+		  bool is_at_top = curr_action==actions().first();
+		  bool is_at_bot = curr_action==actions().last();
+#endif
+		  
+		  int min_num_steps = 4;
+		  if (event->key()==Qt::Key_PageUp || event->key()==Qt::Key_PageDown)
+			  min_num_steps = 10;
+		  else if (event->key()==Qt::Key_Home || event->key()==Qt::Key_End)
+			  min_num_steps = 1000000;
 
-        auto *curr_action = activeAction();
+#if !defined(FOR_MACOSX)
+		  if (is_at_top && key_up){
+			  
+			  send_key_up(this, 1);
+			  
+		  } else if (is_at_bot && key_down){
+			  
+			  send_key_down(this, 1);
 
-        bool is_at_top = curr_action==actions().first();
-        bool is_at_bot = curr_action==actions().last();
-
-        int min_num_steps = 4;
-        if (event->key()==Qt::Key_PageUp || event->key()==Qt::Key_PageDown)
-          min_num_steps = 10;
-        else if (event->key()==Qt::Key_Home || event->key()==Qt::Key_End)
-          min_num_steps = 1000000;
-        
-        if (is_at_top && key_up){
-          
-          send_key_up(this, 1);
-          
-        } else if (is_at_bot && key_down){
-
-          send_key_down(this, 1);
-
-        } else {
-
-          int curr_pos = 0;
-            
-          if (curr_action!=NULL) {
-            
-            for(auto *action : actions()){
-              //printf("%d: %p (%p)\n", curr_pos, action, curr_action);
-              
-              if (curr_action==action)
-                break;
-              
-              curr_pos++;
-            }
-            
-            if (curr_pos>=actions().size())
-              curr_pos = actions().size()-1;
-          }
-
-          int i = curr_pos;
-          int num_steps = 0;
-          
-          while(num_steps < min_num_steps){
-
-            if (key_down)
+		  }
+		  else
+#endif
+		  {
+			  
+			  int curr_pos = 0;
+			  
+			  if (curr_action!=NULL) {
+				  
+				  for(auto *action : actions()){
+					  //printf("%d: %p (%p)\n", curr_pos, action, curr_action);
+					  
+					  if (curr_action==action)
+						  break;
+					  
+					  curr_pos++;
+				  }
+				  
+				  if (curr_pos>=actions().size())
+					  curr_pos = actions().size()-1;
+			  }
+			  
+			  int i = curr_pos;
+			  int num_steps = 0;
+			  
+			  while(num_steps < min_num_steps){
+				  
+				  if (key_down)
               send_key_down(this, 1);
-            else
-              send_key_up(this, 1);
-            
-            while(true){
-              i += inc;
-              num_steps++;
-              
+				  else
+					  send_key_up(this, 1);
+				  
+				  while(true){
+					  i += inc;
+					  num_steps++;
+					  
               if (i <= 0 || i >= actions().size()-1)
-                goto finished;
-
+				  goto finished;
+			  
               bool is_selectable = actions().at(i)->isVisible()==true && actions().at(i)->isSeparator()==false && actions().at(i)->isEnabled()==true;
-
+			  
               if(is_selectable)
-                break;
-            }
-
-            //printf("    i: %d. at: %p. Curr: %p. Size: %d\n", i, NULL /*actions().at(i)*/, curr_action, actions().size());
-          }
-        }
-
-      finished:
+				  break;
+				  }
+				  
+				  //printf("    i: %d. at: %p. Curr: %p. Size: %d\n", i, NULL /*actions().at(i)*/, curr_action, actions().size());
+			  }
+		  }
+		  
+		finished:
         
-        event->accept();
-        return;
+		  event->accept();
+		  return;
       }
 
       QMenu::keyPressEvent(event);
@@ -1018,8 +1060,11 @@ static void setStyleRecursively(QObject *o, QStyle *style){
     
     ClickableIconAction *a = dynamic_cast<ClickableIconAction*>(o);
     if (a != NULL){
-      for(auto *w : a->associatedWidgets() ){
-        w->setStyle(&g_my_proxy_style);
+      for(auto *o2 : a->associatedObjects())
+	  {
+		  QWidget *w = qobject_cast<QWidget*>(o2);
+		  if (w)
+			  w->setStyle(&g_my_proxy_style);
       }
     }
     
@@ -1664,7 +1709,10 @@ static void make_menu_active(int trynum, int ms){
           QPoint topleft = g_main_menu_bar->rect().topLeft();
           QPoint center = g_main_menu_bar->rect().center();
           QPoint point = QPoint(topleft.x() + 40, center.y());
-          auto *event = new QMouseEvent(QEvent::MouseMove, point, Qt::NoButton, Qt::NoButton, Qt::NoModifier);
+          auto *event = new QMouseEvent(QEvent::MouseMove,
+										point,
+										g_main_menu_bar->mapToGlobal(point),
+										Qt::NoButton, Qt::NoButton, Qt::NoModifier);
           qApp->postEvent(g_main_menu_bar, event);
         }
         

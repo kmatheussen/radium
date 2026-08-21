@@ -511,6 +511,7 @@
                        (,funcname ,@(butlast args) ,last-arg))))))))
 
 
+
 (delafina (<gui-number-input> :text text
                               :input-type 'float ;; float or int
                               :direction 'horizontal ;; horizontal or vertical
@@ -1037,7 +1038,7 @@
 (show-async-message :text "hello Gakk gakk\nHmm.2")
 (show-async-message "hello2" :callback c-display)
 (show-async-message "hello1" (list "BBBb1" "AAAb2") #f c-display)
-(show-message "gakk")
+(<ra> :show-async-message "gakk")
 !!#
 
 (when (and (defined? '*message-gui*)

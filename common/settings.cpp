@@ -13,6 +13,9 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
+#if defined(__GNUC__) && !defined(__clang__)
+#  include "../Qt/Qt_precompiled.hpp"
+#endif
 
 #include <inttypes.h>
 #include <stdint.h>
@@ -92,7 +95,7 @@ static QVector<QString> get_lines2(QFile &file){
   QVector<QString> ret;
   
   QTextStream in(&file);
-  in.setCodec("UTF-8");
+  //in.setCodec("UTF-8"); that's the default value
   
   while ( !in.atEnd() ){
     QString line = in.readLine();
@@ -103,11 +106,11 @@ static QVector<QString> get_lines2(QFile &file){
     else if (line.contains("#") && !line.contains("=")) // another possible malformed line fix: "a#b" -> "#b" (==)
       line.remove(0, line.indexOf("#"));
     
-    if (line.length()>512){ // Because of an old bug, lines could grow and grow. Just delete those lines.
-      GFX_Message(NULL, "A very long line (%d characters) in the config file was ignored",line.length());
-      line = "";
+	if (line.length()>16*1024){ // Because of an old bug, lines could grow and grow. Just delete those lines.
+		GFX_Message(NULL, "A very long line (%d characters) in the config file was ignored", (int)line.length());
+		line = "";
     }
-    
+
     //printf("line: -%s-\n",line.toUtf8().constData());
     ret.push_back(line);
   }
@@ -299,6 +302,23 @@ bool SETTINGS_remove(const char* key){
   write_lines(key, lines);
 
   return true;
+}
+
+void SETTINGS_make_config_file_private(const char *key)
+{
+#if !defined(FOR_WINDOWS)
+	R_ASSERT(THREADING_is_main_thread());
+
+	const QString filename = STRING_get_qstring(OS_get_config_filename(key).id);
+
+	if (QFile::exists(filename))
+	{
+		if (QFile::setPermissions(filename, QFile::ReadOwner | QFile::WriteOwner) == false)
+		{
+			showAsyncMessage(QString("Unable to set private permissions on config file \"%1\"").arg(filename).toUtf8().constData());
+		}
+	}
+#endif
 }
 
 // Warning, called before GC_init, so it cannot allocate with talloc or talloc_atomic.
@@ -574,6 +594,62 @@ void SETTINGS_write_string(QString key, QString val){
   SETTINGS_put(key.toUtf8().constData(),val);
 }
 
+void SETTINGS_add_recent_song(const char *filename)
+{
+	if (filename == NULL || strlen(filename) == 0)
+		return;
+
+	// Exclude internal template songs
+	if (QString::fromUtf8(filename).endsWith("sounds/new_song.rad"))
+		return;
+	if (QString::fromUtf8(filename).endsWith("sounds/mod_song_template.rad"))
+		return;
+
+	const int max_recent = 30;
+
+	// Read existing recent entries
+	const char *existing[max_recent];
+	int num_existing = 0;
+
+	for (int i = 0; i < max_recent; i++)
+	{
+		char key[64];
+		snprintf(key, sizeof(key), "recent_song_%d", i);
+		const char *val = SETTINGS_read_string(key, "");
+		if (val != NULL && strlen(val) > 0)
+		{
+			existing[num_existing] = val;
+			num_existing++;
+		}
+	}
+
+	// Build new list: filename first, then existing entries (deduplicated)
+	const char *new_list[max_recent];
+	int num_new = 0;
+
+	new_list[num_new++] = filename;
+
+	for (int i = 0; i < num_existing && num_new < max_recent; i++)
+	{
+		if (strcmp(existing[i], filename) != 0)
+		{
+			new_list[num_new++] = existing[i];
+		}
+	}
+
+	// Write back
+	for (int i = 0; i < max_recent; i++)
+	{
+		char key[64];
+		snprintf(key, sizeof(key), "recent_song_%d", i);
+
+		if (i < num_new)
+			SETTINGS_write_string(key, new_list[i]);
+		else
+			SETTINGS_remove(key);
+	}
+}
+
 // Note: Called before SETTINGS_init.
 void SETTINGS_delete_configuration(const radium::ResetSettings &rs){
   
@@ -645,18 +721,6 @@ void SETTINGS_delete_configuration(const radium::ResetSettings &rs){
 }
 
 void SETTINGS_init(void){
-  double settings_version = SETTINGS_read_double("settings_version", 0.0);
-
-  // Enable draw_in_separate_process if it had been excplicitly disabled in a version where it didn't always work very well.
-  if (settings_version <= 0.725){
-
-    const char *draw_in_separate = "opengl_draw_in_separate_process";
-
-    if (SETTINGS_has_key(draw_in_separate)){
-      bool val = SETTINGS_read_bool(draw_in_separate,true);
-      if (val==false)
-        SETTINGS_write_bool(draw_in_separate,true);
-    }
-  }
+	//double settings_version = SETTINGS_read_double("settings_version", 0.0);
 }
 

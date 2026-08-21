@@ -1,3 +1,4 @@
+#pragma once
 
 #if 0 //QT_VERSION >= 0x050600
 

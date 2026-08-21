@@ -15,6 +15,11 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
+
+#if defined(__GNUC__) && !defined(__clang__)
+#  include "../Qt/Qt_precompiled.hpp"
+#endif
+
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -899,7 +904,19 @@ struct SoundProducer {
   bool _is_bus;
   int _bus_num;
 
+	//int _scheduler_queue_pos = -1;
+	
   LatencyCompensatorDelay *_dry_sound_latencycompensator_delays;
+  
+  // Workspace buffers for RT_process. Allocated on the main thread when the
+  // soundproducer is created, since the RT code must not allocate memory.
+  // (Putting these buffers on the stack would use up to several hundred KB of
+  // stack for soundproducers with many channels, and would easily overflow the
+  // stack of the RT threads.)
+  float *_dry_sound_sound;
+  float *_output_sound_sound;
+  float *_temp_sound_sound;
+  float *_latency_dry_sound_sound;
   
   //radium::AudioBuffer _output_buffer;
   //radium::AudioBuffer **_input_buffers;
@@ -1011,6 +1028,11 @@ public:
       
     _dry_sound_latencycompensator_delays = new LatencyCompensatorDelay[_num_dry_sounds];
     
+    _dry_sound_sound = (float*)V_calloc(sizeof(float), R_MAX(1,_num_dry_sounds)*RADIUM_BLOCKSIZE);
+    _output_sound_sound = (float*)V_calloc(sizeof(float), R_MAX(1,_num_outputs)*RADIUM_BLOCKSIZE);
+    _temp_sound_sound = (float*)V_calloc(sizeof(float), R_MAX(1,_num_inputs)*RADIUM_BLOCKSIZE);
+    _latency_dry_sound_sound = (float*)V_calloc(sizeof(float), R_MAX(1,_num_dry_sounds)*RADIUM_BLOCKSIZE);
+    
     MIXER_add_SoundProducer(this);
 
 #if !defined(RELEASE)
@@ -1032,6 +1054,11 @@ public:
 
     delete[] _curr_output_is_silent;
     delete[] _dry_sound_latencycompensator_delays;
+
+    V_free(_dry_sound_sound);
+    V_free(_output_sound_sound);
+    V_free(_temp_sound_sound);
+    V_free(_latency_dry_sound_sound);
   }
   
   static bool is_audio_connected(const SoundProducer *start_producer, const SoundProducer *end_producer, int &safety) {
@@ -1072,7 +1099,7 @@ public:
 #define D(n) n
 #endif
 
-#define P(n) D(printf("        %d: visited.size(): %d, link: %p, to_add.size(): %d, to_remove.size(): %d, remove_first.size(): %d\n", n, visited.size(), link, to_add.size(), to_remove.size(), links_that_must_be_removed_first.size()));
+#define P(n) D(printf("        %d: visited.size(): %d, link: %p, to_add.size(): %d, to_remove.size(): %d, remove_first.size(): %d\n", n, (int)visited.size(), link, (int)to_add.size(), (int)to_remove.size(), (int)links_that_must_be_removed_first.size()));
   
   // Traverse graph backwards and see if we end up a place we have been before.
   bool is_recursive(const radium::Vector<SoundProducerLink*> &to_add,
@@ -2228,7 +2255,9 @@ public:
   
   void RT_process(int64_t time, int num_frames, bool process_plugins)
   {
-    float *dry_sound_sound = RT_ALLOC_ARRAY_STACK(float, _num_dry_sounds*num_frames);
+    R_ASSERT_NON_RELEASE(num_frames <= RADIUM_BLOCKSIZE); // The member buffers below are sized RADIUM_BLOCKSIZE.
+    
+    float *dry_sound_sound = _dry_sound_sound;
     
     float **dry_sound = RT_ALLOC_ARRAY_STACK(float*, R_MAX(1,_num_dry_sounds)); // r_max to avoid ubsan hit
     for(int ch=0;ch<_num_dry_sounds;ch++)
@@ -2273,7 +2302,7 @@ public:
     
     // Note: output_sound and wet_sound is actually the same variable (optimization)
     
-    float *output_sound_sound = RT_ALLOC_ARRAY_STACK(float, R_MAX(1, _num_outputs)*num_frames);
+    float *output_sound_sound = _output_sound_sound;
     float **output_sound = RT_ALLOC_ARRAY_STACK(float*, R_MAX(1, _num_outputs));
     for(int ch=0;ch<_num_outputs;ch++)
       output_sound[ch] = &output_sound_sound[ch*num_frames];
@@ -2281,7 +2310,7 @@ public:
     float **wet_sound = output_sound;
 
     {
-		float *temp_sound_sound = RT_ALLOC_ARRAY_STACK(float, R_MAX(1, _num_inputs)*num_frames);
+		float *temp_sound_sound = _temp_sound_sound;
 		float **temp_sound = RT_ALLOC_ARRAY_STACK(float*, R_MAX(1, _num_inputs));
 		for(int ch=0;ch<_num_inputs;ch++)
 			temp_sound[ch] = &temp_sound_sound[ch*num_frames];
@@ -2358,7 +2387,7 @@ public:
       RT_process_pan_width_and_pitch(wet_sound, num_frames, process_plugins);
 
     {
-		float *latency_dry_sound_sound = RT_ALLOC_ARRAY_STACK(float, R_MAX(1,_num_dry_sounds)*num_frames); // Using 'R_MAX' since array[0] is undefined behavior. (ubsan fix only, most likely nothing bad would happen)
+		float *latency_dry_sound_sound = _latency_dry_sound_sound; // Using 'R_MAX' since array[0] is undefined behavior. (ubsan fix only, most likely nothing bad would happen)
 		const float **latency_dry_sound = RT_ALLOC_ARRAY_STACK(const float*, R_MAX(1,_num_dry_sounds));
 	  
 		for(int ch=0;ch<_num_dry_sounds;ch++)

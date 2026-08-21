@@ -1,3 +1,4 @@
+#pragma once
 /* Copyright 2012 Kjetil S. Matheussen
 
 This program is free software; you can redistribute it and/or
@@ -17,8 +18,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define SHOW_SOLO_BUTTON 0
 
 #include <QFileDialog>
+//#include <QRegExp>
 
 #include "../common/disk.h"
+
+#include "../embedded_scheme/s7extra_proc.h"
 
 #include "Qt_PluginWidget.h"
 #include "helpers.h"
@@ -42,6 +46,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 #include "mQt_jack_plugin_widget_callbacks.h"
 #include "mQt_sendreceive_plugins_widget_callbacks.h"
+
 
 static QString last_fxb_preset_path = "";
 
@@ -229,8 +234,73 @@ public:
       new_pd_controller_button->hide();
       _faust_plugin_widget = new Faust_Plugin_widget(this, faust_compilation_status, _patch.data());
       vertical_layout->insertWidget(1,_faust_plugin_widget);
-      faust_interpreted->setChecked(FAUST_get_use_interpreter_backend(plugin));
-      //_plugin_widget=PluginWidget_create(this, _patch.data());
+      faust_interpreted->setChecked(faust_disp_get_use_interpreter_backend(plugin));
+      
+      // Add "1->2" conversion button
+      {
+        auto *conv_button = new MyQButton(header);
+        conv_button->setText("1\u21922");
+        conv_button->setToolTip("Convert this Faust Dev 1 instrument to Faust Dev 2");
+        horizontalLayout_2->insertWidget(horizontalLayout_2->indexOf(faust_show_button) + 1, conv_button);
+        
+        QObject::connect(conv_button, &QPushButton::released, [this](){
+          SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+          if (plugin==NULL || strcmp(plugin->type->type_name, "Faust Dev"))
+            return;
+          
+          const instrument_t old_id = _patch.data()->id;
+          const QString code = FAUST_get_code(plugin);
+          const QString options = FAUST_get_options(plugin);
+          const bool use_interpreter = FAUST_get_use_interpreter_backend(plugin);
+
+          auto state = std::make_shared<instrument_t>(old_id);
+
+          // Defer via QTimer so the mouse release handler finishes before
+          // S7CALL2 destroys this widget (via delete-instrument in Scheme).
+          QTimer::singleShot(0, [state, code, options, use_interpreter](){
+            UNDO_functions("ConvertFaustDev1ToDev2",
+              // redo: convert Faust Dev 1 -> Faust Dev 2
+              [state, code, options, use_interpreter]()
+              {
+				  *state = S7CALL2(instrument_instrument, "FROM_C-convert-faust-dev1-to-dev2", *state);
+				  
+				  struct Patch *new_patch = PATCH_get_from_id(*state);
+				  
+				  if (new_patch != NULL && new_patch->patchdata != NULL)
+				  {
+					  SoundPlugin *new_plugin = (SoundPlugin*)new_patch->patchdata;
+					  FAUST2_set_code(new_plugin, code);
+					  FAUST2_set_options(new_plugin, options);
+					  FAUST2_set_use_interpreter_backend(new_plugin, use_interpreter);
+					  FAUST2_start_compilation(new_plugin);
+				  }
+              },
+              // undo: convert Faust Dev 2 -> Faust Dev 1
+              [state, code, options, use_interpreter]()
+              {
+				  *state = S7CALL2(instrument_instrument, "FROM_C-convert-faust-dev2-to-dev1", *state);
+				  
+				  struct Patch *old_patch = PATCH_get_from_id(*state);
+				  
+				  if (old_patch != NULL && old_patch->patchdata != NULL)
+				  {
+					  SoundPlugin *old_plugin = (SoundPlugin*)old_patch->patchdata;
+					  FAUST_set_code(old_plugin, code);
+					  FAUST_set_options(old_plugin, options);
+					  FAUST_set_use_interpreter_backend(old_plugin, use_interpreter);
+					  FAUST_start_compilation(old_plugin);
+				  }
+              }
+            );
+          });
+        });
+      }
+      
+    }else if(!strcmp(plugin->type->type_name, "Faust Dev 2")) {
+      new_pd_controller_button->hide();
+      _faust_plugin_widget = new Faust_Plugin_widget(this, faust_compilation_status, _patch.data());
+      vertical_layout->insertWidget(1,_faust_plugin_widget);
+      faust_interpreted->setChecked(faust_disp_get_use_interpreter_backend(plugin));
 #endif
 
       // Others:
@@ -904,7 +974,7 @@ public slots:
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     if(plugin != NULL){
       faust_compilation_status->setText("&#8987;");
-      if (!FAUST_set_use_interpreter_backend(plugin, val))
+      if (!faust_disp_set_use_interpreter_backend(plugin, val))
         faust_compilation_status->setText("<font color=\"green\">&#10004;</font>");
     }
 #endif
@@ -1055,7 +1125,7 @@ public slots:
 
     } else {
 
-      QString filename = STRING_get_qstring(dc.filename.id).replace(QRegExp(".rad$"), "_rad");      
+      QString filename = STRING_get_qstring(dc.filename.id).replace(QRegularExpression(".rad$"), "_rad");      
 
       QDir dir(QFileInfo(filename).absoluteFilePath() + "_audio");
 

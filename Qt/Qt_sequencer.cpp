@@ -14,6 +14,11 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+
+#if defined(__GNUC__) && !defined(__clang__)
+#  include "../Qt/Qt_precompiled.hpp"
+#endif
+
 #define __STDC_FORMAT_MACROS 1
 #include <inttypes.h>
 
@@ -40,6 +45,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_Fonts_proc.h"
 #include "Qt_colors_proc.h"
 #include "KeyboardFocusFrame.hpp"
+#include "EditorWidget.h"
 
 #include "../embedded_scheme/scheme_proc.h"
 #include "../common/seqtrack_automation_proc.h"
@@ -851,7 +857,7 @@ public:
 
   MOUSE_CYCLE_CALLBACKS_FOR_QT;
 
-  void enterEvent(QEvent *event) override {
+  void enterEvent(QEnterEvent *event) override {
     if (_is_sequencer_widget) {
       auto pos = mapFromGlobal(QCursor::pos());
       maybe_set_curr_seqtrack_num_under_mouse(pos.x(), pos.y());
@@ -4256,7 +4262,7 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   void dropEvent(QDropEvent *event) override {
     printf("               GOT DOP. Text: -%s-\n", event->mimeData()->text().toUtf8().constData());
 
-    QPoint point = mapToEditor(this, event->pos());
+    QPoint point = mapToEditor(this, event->position().toPoint());
     float x = point.x();
     float y = point.y();
     

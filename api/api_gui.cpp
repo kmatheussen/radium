@@ -14,9 +14,14 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+
+#if defined(__GNUC__) && !defined(__clang__)
+#  include "../Qt/Qt_precompiled.hpp"
+#endif
+
 #define __STDC_FORMAT_MACROS 1
 
-#include "../common/includepython.h"
+//#include "../common/includepython.h"
 
 #include <inttypes.h>
 
@@ -42,7 +47,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QUiLoader>
 #include <QToolTip>
 #include <QHeaderView>
-#include <QDesktopWidget>
+//#include <QDesktopWidget>
 #include <QDir>
 #include <QFileDialog>
 #include <QFontDialog>
@@ -57,10 +62,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QDrag>
 #include <QSvgRenderer>
 #include <QMouseEvent>
+#include <QLabel>
 
 #include <QDesktopServices>
 
 #ifndef USE_QSVGVIEWER
+#  error error
+#endif
+
+#ifndef USE_QTWEBVIEW
 #  error error
 #endif
 
@@ -69,14 +79,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 
 
-#if USE_QSVGVIEWER
+#if USE_QSVGVIEWER || USE_QTWEBVIEW
 //
 #elif USE_QWEBENGINE
   #include <QWebEngineView>
   #include <QWebEnginePage>
 #else
-  #include <QtWebKitWidgets/QWebView>
-  #include <QtWebKitWidgets/QWebFrame>
+#  include <QtWebKitWidgets/QWebView>
+#  include <QtWebKitWidgets/QWebFrame>
 #endif
 
 #include "../common/nsmtracker.h"
@@ -99,6 +109,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/FileRequester.hpp"
 #include "../Qt/HashVector.hpp"
 #include "../Qt/Editor.hpp"
+#include "../Qt/EditorWidget.h"
 
 #include "../mixergui/QM_MixerWidget.h"
 
@@ -217,7 +228,7 @@ static QPointer<QWidget> g_last_released_widget = NULL;
     Gui::mouseLeaveEvent(event);                                        \
     classname::leaveEvent(event);                                       \
   }                                                                     \
-  void enterEvent(QEvent *event) override{                              \
+  void enterEvent(QEnterEvent *event) override{							\
     ScopedEventHandlerTracker event_handler_tracker;                    \
     if (_mouse_callback.v==NULL){                                         \
       classname::enterEvent(event); return;}                            \
@@ -3874,7 +3885,7 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     OVERRIDERS(MyFocusSnifferQDoubleSpinBox);
   };
 
-#if USE_QSVGVIEWER
+#if USE_QSVGVIEWER || USE_QTWEBVIEW
 //
 #elif USE_QWEBENGINE
 MakeFocusSnifferClass(QWebEngineView);
@@ -3908,7 +3919,7 @@ MakeFocusSnifferClass(QWebView);
     }
   }
 
-#if (USE_QSVGVIEWER || !USE_QWEBENGINE || !defined(FOR_MACOSX))
+#if (USE_QSVGVIEWER || USE_QTWEBVIEW || !USE_QWEBENGINE || !defined(FOR_MACOSX))
 static QUrl getUrl(QString stringurl)
 {
     auto [absoluteurl, query, is_local_file] = getAbsoluteUrl(stringurl);
@@ -3929,7 +3940,7 @@ static QUrl getUrl(QString stringurl)
   }
 #endif
 
-#if !USE_QSVGVIEWER
+#if !USE_QSVGVIEWER && !USE_QTWEBVIEW
   struct Web :
 #if USE_QWEBENGINE
 		
@@ -4184,7 +4195,7 @@ static QUrl getUrl(QString stringurl)
     } 
     */
   };
-#endif //!USE_QSVGVIEWER
+#endif //!USE_QSVGVIEWER && !USE_QTWEBVIEW
 
   struct FileRequester : radium::FileRequester, Gui, public radium::MouseCycleFix {
     Q_OBJECT;
@@ -4662,7 +4673,7 @@ static void perhaps_collect_a_little_bit_of_gui_garbage(int num_guis_to_check){
     
     if (gui->_widget==NULL){
 
-      printf("        GUI GC: COLLECTING gui garbage. Pos: %d, guinum: %d. Num alive guis: %d\n", pos, (int)gui->get_gui_num(), g_valid_guis.size());
+		printf("        GUI GC: COLLECTING gui garbage. Pos: %d, guinum: %d. Num alive guis: %d\n", pos, (int)gui->get_gui_num(), (int)g_valid_guis.size());
       delete gui;
 
     } else {
@@ -5540,7 +5551,7 @@ int64_t gui_floatText(double min, double curr, double max, int num_decimals, dou
 }
 
 int64_t gui_web(const_char* stringurl){
-#if !USE_QSVGVIEWER && !USE_QWEBENGINE
+#if !USE_QSVGVIEWER && !USE_QTWEBVIEW && !USE_QWEBENGINE
   return (new Web(stringurl))->get_gui_num();
 #else
   return -1;
@@ -5548,7 +5559,7 @@ int64_t gui_web(const_char* stringurl){
 }
 
 void gui_setUrl(int64_t guinum, const_char* url){
-#if !USE_QSVGVIEWER && !USE_QWEBENGINE
+#if !USE_QSVGVIEWER && !USE_QTWEBVIEW && !USE_QWEBENGINE
   Gui *web_gui = get_gui(guinum);
   if (web_gui==NULL)
     return;
@@ -5565,7 +5576,7 @@ void gui_setUrl(int64_t guinum, const_char* url){
 }
 
 bool gui_webCanShowManual(void){
-#if USE_QSVGVIEWER || USE_QWEBENGINE
+#if USE_QSVGVIEWER || USE_QTWEBVIEW || USE_QWEBENGINE
 	return false;
 #else
   int major = qWebKitVersion().split(".")[0].toInt();
@@ -5939,13 +5950,13 @@ void gui_setSplitterSizes(int64_t splitter_guinum, dynvec_t splitter_sizes){
 
   QSplitter *splitter = dynamic_cast<QSplitter*>(gui->_widget.data());
   if (splitter==NULL){
-    handleError("gui_setSplitterSizes: Gui is not a splitter");
-    return;
+	  handleError("gui_setSplitterSizes: Gui is not a splitter");
+	  return;
   }
   
   if (splitter_sizes.num_elements != splitter->sizes().size()){
-    handleError("gui_setSplitterSizes: Expected %d elements in splitter_sizes, found %d", splitter->sizes().size(), splitter_sizes.num_elements);
-    return;
+	  handleError("gui_setSplitterSizes: Expected %d elements in splitter_sizes, found %d", (int)splitter->sizes().size(), splitter_sizes.num_elements);
+	  return;
   }
   
   QList<int> sizes;
@@ -6062,7 +6073,7 @@ namespace{
       return w;
 
     for(auto *c : w->children()){
-      QWidget *maybe = dynamic_cast<QWidget*>(c);
+      QWidget *maybe = qobject_cast<QWidget*>(c);
       if (maybe != NULL){
         maybe = get_first_widget_in_widget(maybe);
         if (maybe != NULL)
@@ -7653,7 +7664,7 @@ static QString get_html_from_textline(QString line){
   if (line=="")
     return ""; // QTextDocumentFragment::fromPlainText().toHtml returns "<br/>" for empty lines, for some reason.
   
-  QString html = QTextDocumentFragment::fromPlainText(line).toHtml("UTF-8");
+  QString html = QTextDocumentFragment::fromPlainText(line).toHtml(); //("UTF-8");
 
   // Remove <!--StartFragment--> and <!--EndFragment-->
   html.remove("<!--StartFragment-->");
@@ -7667,7 +7678,7 @@ static QString get_html_from_textline(QString line){
     if (pos1>= 0 && pos2>5){
       pos1 += QString("<body>").size();
       if (pos2>pos1){
-        html = html.midRef(pos1, pos2-pos1).toString();
+		  html = html.mid(pos1, pos2-pos1);
       }
     }
   }
@@ -7678,7 +7689,7 @@ static QString get_html_from_textline(QString line){
     int pos1 = html.indexOf("\">") + 2;
     int pos2 = html.indexOf("</p>");
     if (pos2 > pos1){
-      html = html.midRef(pos1, pos2-pos1).toString();
+      html = html.mid(pos1, pos2-pos1);
     }
   }
   
@@ -8173,7 +8184,7 @@ QBrush API_get_gradient(int gradient_num, float x1, float y1, float x2, float y2
   s_stops.resize(gradient._points.size());
 
 
-  qreal huef, satf, valuef, alfaf;
+  float huef, satf, valuef, alfaf;
   color.getHsvF(&huef, &satf, &valuef, &alfaf);
   
 

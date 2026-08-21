@@ -270,7 +270,7 @@ public:
       int duration = int(R_MIN(num_samples-time, SAMPLES_PER_PEAK));
       float min,max;
       JUCE_get_min_max_val(&samples[time], duration, &min, &max);
-      add(Peak(min, max));
+      add(Peak((qfloat16)min, (qfloat16)max));
     }
 
     if (add_samples_type==THIS_IS_THE_LAST_CALL)
@@ -697,12 +697,17 @@ private:
         is_finished=true;
       }
 
+#pragma GCC diagnostic push
+#if !defined(__clang__)
+#  pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
       int pos=0;
       for(int i=0;i<num_read;i++)
 	  {
-		  for(int ch=0;ch<_num_ch;ch++)
+		  for(int ch=0;ch<_num_ch;ch++)			  
 			  samples[ch][i] = interleaved_samples[pos++];
       }
+#pragma GCC diagnostic pop
 	  
       for(int ch=0;ch<_num_ch;ch++)
         _peaks[ch].add_samples(samples[ch], num_read, is_finished ? Peaks::THIS_IS_THE_LAST_CALL : Peaks::MORE_IS_COMING_LATER);

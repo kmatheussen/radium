@@ -14,6 +14,11 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+
+#if defined(__GNUC__) && !defined(__clang__)
+#  include "../Qt/Qt_precompiled.hpp"
+#endif
+
 #define __STDC_FORMAT_MACROS 1
 #include <inttypes.h>
 
@@ -27,6 +32,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QCloseEvent>
 #include <QHideEvent>
 #include <QPainter>
+#include <QVector>
+#include <QFile>
+#include <QTextStream>
+#include <QDir>
 
 #include "../common/nsmtracker.h"
 #include "../common/hashmap_proc.h"
@@ -67,7 +76,7 @@ static void minimizeRecursively(QObject *object){
   if (object==NULL)
     return;
   
-  QWidget *widget = dynamic_cast<QWidget*>(object);
+  QWidget *widget = qobject_cast<QWidget*>(object);
   
   if (widget != NULL){
     widget->resize(widget->width()+1, widget->height()+1);
@@ -85,9 +94,31 @@ static void minimizeRecursively(QObject *object){
     widget->updateGeometry();
 
   }
-  
+   
 }
 
+static void save_color_dialog_custom_colors(void){
+  QFile file(OS_get_dot_radium_path() + QDir::separator() + "color_dialog_custom_colors.conf");
+  if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+    return;
+  QTextStream out(&file);
+  for(int i = 0; i < QColorDialog::customCount(); i++){
+    QColor color = QColorDialog::customColor(i);
+    out << (color.isValid() ? color.name(QColor::HexArgb) : "") << "\n";
+  }
+}
+
+static void restore_color_dialog_custom_colors(void){
+  QFile file(OS_get_dot_radium_path() + QDir::separator() + "color_dialog_custom_colors.conf");
+  if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+    return;
+  QTextStream in(&file);
+  for(int i = 0; i < QColorDialog::customCount() && !in.atEnd(); i++){
+    QString line = in.readLine().trimmed();
+    if (!line.isEmpty())
+      QColorDialog::setCustomColor(i, QColor(line));
+  }
+}
 
 extern struct Root *root;
 bool g_show_key_codes = false;
@@ -104,6 +135,33 @@ struct ColorButton;
 static radium::Vector<ColorButton*> all_buttons;
 
 static enum ColorNums g_current_colornum = LOW_EDITOR_BACKGROUND_COLOR_NUM;
+
+enum {
+  SLIDER_INSTRUMENT_BRIGHTNESS = 0,
+  SLIDER_INSTRUMENT_SATURATION,
+  SLIDER_INSTRUMENT_BRIGHTNESS_IN_EDITOR,
+  SLIDER_INSTRUMENT_SATURATION_IN_EDITOR,
+  SLIDER_BLOCK_BRIGHTNESS,
+  SLIDER_BLOCK_SATURATION,
+  SLIDER_GRADIENT,
+  NUM_SLIDERS
+};
+
+struct PreferencesUndoEntry {
+  bool is_slider;
+  enum ColorNums colornum;
+  QColor color;
+  int slider_id;
+  float slider_value;
+};
+
+static QVector<PreferencesUndoEntry> g_color_undo_stack;
+static QVector<PreferencesUndoEntry> g_color_redo_stack;
+static QColor g_pending_old_color;
+static bool g_pending_change_committed = false;
+static bool g_slider_committed[NUM_SLIDERS] = {false}; // [NO_STATIC_ARRAY_WARNING]
+static int g_pending_old_slider_values[NUM_SLIDERS] = {0}; // [NO_STATIC_ARRAY_WARNING]
+static bool g_in_undo_redo = false;
 
 struct Separator : public QWidget{
   QString _text;
@@ -137,23 +195,49 @@ struct Separator : public QWidget{
   
 };
  
-struct MyColorDialog : public QColorDialog {
+struct MyColorDialog : public QColorDialog
+{
 
 public: 
 
-  MyColorDialog(){
-    setOption(QColorDialog::NoButtons); // Avoid crash on macos sierra. (https://bugreports.qt.io/browse/QTBUG-56448)
-  }
+	MyColorDialog()
+	{
+		setOption(QColorDialog::NoButtons); // Avoid crash on macos sierra. (https://bugreports.qt.io/browse/QTBUG-56448)
+	}
 
+	void mouseReleaseEvent(QMouseEvent *event) override
+	{
+		QColorDialog::mouseReleaseEvent(event);
+
+		if (g_pending_change_committed) {
+			g_pending_old_color = get_qcolor(g_current_colornum);
+			g_pending_change_committed = false;
+		}
+	}
+
+	void keyReleaseEvent(QKeyEvent *event) override
+	{
+		QColorDialog::keyReleaseEvent(event);
+
+		if (g_pending_change_committed) {
+			g_pending_old_color = get_qcolor(g_current_colornum);
+			g_pending_change_committed = false;
+		}
+	}
+
+	
 #if FOR_MACOSX && !USE_QT5
-  void closeEvent(QCloseEvent *event) override {
-    hide();
-    event->ignore(); // Only hide the window, dont close it.
-  }
-  void myshow(){
-    safeShow(this);
-    raise();
-  }
+	void closeEvent(QCloseEvent *event) override
+	{
+		hide();
+		event->ignore(); // Only hide the window, dont close it.
+	}
+	
+	void myshow()
+	{
+		safeShow(this);
+		raise();
+	}
 #endif
 };
  
@@ -206,29 +290,24 @@ public:
     int split = 100;
     int text_width = width() - split;
 
-    QColor text_color = get_qcolor(TEXT_COLOR_NUM); //black(0,0,0);
+    QColor text_color = get_qcolor(TEXT_COLOR_NUM);
 
-    /*
-    QColor white(255,255,255);
-    QColor col;
-    if (is_current){
-      col = black;
-      p.setPen(white);
-    } else {
-      col = white;
-      p.setPen(black);
-    }
-    
-    
-    p.fillRect(half_width,0,half_width,height(),col);
-    */
+    QColor swatch_color = get_qcolor(colornum);
+    printf("COLOR_BUTTON_PAINT: name='%s' colornum=%d is_current=%d swatch=%s\n",
+           text().toUtf8().constData(), colornum, is_current, swatch_color.name(QColor::HexArgb).toUtf8().constData());
 
     QRect rect(split+10,1,text_width-2,height()-1);
 
     p.setPen(text_color);
     p.drawText(rect, Qt::AlignLeft | Qt::AlignVCenter, text());
 
-    p.fillRect(0,0,split,height(),get_qcolor(colornum));
+    // Left 50px: opaque
+    QColor opaque_color = swatch_color;
+    opaque_color.setAlpha(255);
+    p.fillRect(0, 0, split/2, height(), opaque_color);
+
+    // Right 50px: with alpha
+    p.fillRect(split/2, 0, split - split/2, height(), swatch_color);
 
     if (is_current) {
       p.drawRect(0,0,width()-1,height()-1);
@@ -247,6 +326,10 @@ public:
     }
     is_current = true;
 
+    printf("set_current: colornum=%d  old=%s  committed=%d\n", colornum, get_qcolor(colornum).name().toUtf8().constData(), g_pending_change_committed);
+    g_pending_old_color = get_qcolor(colornum);
+    g_pending_change_committed = false;
+
     g_current_colornum = colornum;
     color_dialog->setCurrentColor(get_qcolor(colornum));
 #if FOR_MACOSX && !USE_QT5
@@ -259,7 +342,9 @@ public:
   public slots:
 
   void color_pressed(){
-    printf("Color %d pressed to %d\n",colornum,is_current);
+    printf("color_pressed: colornum=%d is_current=%d  old=%s\n", colornum, is_current, get_qcolor(colornum).name().toUtf8().constData());
+    g_pending_old_color = get_qcolor(colornum);
+    g_pending_change_committed = false;
     if (is_current==false)
       set_current();
   }
@@ -366,8 +451,10 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       _color_dialog.setOption(QColorDialog::ShowAlphaChannel, true);
 
       colorlayout_right->insertWidget(0, &_color_dialog);
+      g_pending_old_color = get_qcolor(g_current_colornum);
 #endif
 
+      restore_color_dialog_custom_colors();
 
       connect(&_color_dialog, SIGNAL(currentColorChanged(const QColor &)), this, SLOT(color_changed(const QColor &)));
       connect(tabWidget, SIGNAL(currentChanged(int)), this, SLOT(current_tab_changed(int)));
@@ -403,6 +490,16 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       }
       
       //contents->adjustSize();
+
+      populate_color_selector();
+
+      {
+        static bool has_stored_checkpoint = false;
+        if (has_stored_checkpoint==false){
+          has_stored_checkpoint = true;
+          GFX_StoreCheckpoint();
+        }
+      }
     }
 
     gui_tab_widget->setCurrentIndex(0);
@@ -438,6 +535,13 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
         if (_needs_to_update)
           updateWidgets();
       }
+    }
+
+    if (visible==false && isVisible()==true){
+      GFX_reload_qt_stylesheets(false);
+      GFX_SaveAllColorConfigurations();
+	  GFX_SaveColors(createIllegalFilepath());
+      save_color_dialog_custom_colors();
     }
 
     RememberGeometryQDialog::setVisible(visible);
@@ -505,6 +609,11 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
         mma32->setChecked(true);
         break;
       }
+      {
+        const char *supported = GL_get_supported_msaa_samples();
+        label_msaa_supported->setText(QString("Supported by current backend: ") + supported);
+      }
+
 #if 0
       QString w="999999999";
       adjustWidthToFitText(mma1, w);
@@ -523,30 +632,46 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       eraseEstimatedVBlankInterval->setText(vblankbuttontext);
 #endif
 
-#if defined(FOR_MACOSX)
-      // Seems like Apple goes to great lengths to make it impossible to avoid high CPU in OpenGL applications when a window is not visible, unless we accept some stuttering in the graphics.      
-      high_cpu_protection->setChecked(false);
-      high_cpu_protection->setEnabled(false);
-#else      
-      high_cpu_protection->setChecked(doHighCpuOpenGlProtection());
-#endif
-
-#if 0 // FOR_MACOSX
-      // Of course it doesn't work on OSX.
-      bool draw_in_separate_process = false;
-      draw_in_separate_process_onoff->setEnabled(false);
-#else
-      bool draw_in_separate_process = SETTINGS_read_bool("opengl_draw_in_separate_process",true);//GL_using_nvidia_card());
-#endif
-      draw_in_separate_process_onoff->setChecked(draw_in_separate_process);
-
 #if 0
       safeModeOnoff->setChecked(GL_get_safe_mode());
       safeModeOnoff->setEnabled(false);
 #endif
 
       high_priority_render_thread->setChecked(GL_get_high_render_thread_priority());
-      high_priority_drawer_thread->setChecked(GL_get_high_draw_thread_priority());
+
+      clampTextRendering->setChecked(GL_get_clamp_text_rendering());
+
+      // GPU Backend
+      {
+        const char *rhi_backend = GL_get_backend();
+        if (!strcmp(rhi_backend, "null"))
+          rhi_null->setChecked(true);
+        else if (!strcmp(rhi_backend, "opengl"))
+          rhi_opengl->setChecked(true);
+        else if (!strcmp(rhi_backend, "vulkan"))
+          rhi_vulkan->setChecked(true);
+        else if (!strcmp(rhi_backend, "d3d11"))
+          rhi_d3d11->setChecked(true);
+        else if (!strcmp(rhi_backend, "d3d12"))
+          rhi_d3d12->setChecked(true);
+        else if (!strcmp(rhi_backend, "metal"))
+          rhi_metal->setChecked(true);
+
+#if FOR_WINDOWS
+        rhi_metal->hide();
+#elif FOR_MACOSX
+        rhi_opengl->hide();
+        rhi_vulkan->hide();
+        rhi_d3d11->hide();
+        rhi_d3d12->hide();
+#elif FOR_LINUX
+        rhi_d3d11->hide();
+        rhi_d3d12->hide();
+        rhi_metal->hide();
+#else
+#  error "unknown arch."
+#endif
+      }
     }
 
 
@@ -648,9 +773,9 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
         
         custom_recording_latency_value->setValue(getCustomRecordingLatencyFromSystemInput());
         
-        //custom_recording_latency_layout->setEnabled(!getRecordingLatencyFromSystemInputIsAutomaticallyDetermined());
-        //custom_recording_latency_label->setEnabled(!getRecordingLatencyFromSystemInputIsAutomaticallyDetermined());
-        //custom_recording_latency_value->setEnabled(!getRecordingLatencyFromSystemInputIsAutomaticallyDetermined());
+        custom_recording_latency_layout->setEnabled(!getRecordingLatencyFromSystemInputIsAutomaticallyDetermined());
+        custom_recording_latency_label->setEnabled(!getRecordingLatencyFromSystemInputIsAutomaticallyDetermined());
+        custom_recording_latency_value->setEnabled(!getRecordingLatencyFromSystemInputIsAutomaticallyDetermined());
       }
 
       {
@@ -894,6 +1019,27 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
     _is_updating_widgets = false;
   }
 
+  void populate_color_selector(void){
+    color_selector->blockSignals(true);
+
+    color_selector->clear();
+
+    QVector<QString> names = GFX_GetColorConfigurationNames();
+    for(const auto &name : names)
+      color_selector->addItem(name);
+
+    delete_color->setEnabled(names.size() > 1);
+    color_selector->setEnabled(names.size() > 1);
+
+    QString current = GFX_GetCurrentColorConfigurationName();
+    int index = color_selector->findText(current);
+    if (index >= 0)
+      color_selector->setCurrentIndex(index);
+
+    color_selector->blockSignals(false);
+    color_selector->update();
+  }
+
 public slots:
 
   void on_buttonBox_clicked(QAbstractButton * button){
@@ -924,14 +1070,9 @@ public slots:
     }
   }
 
-  void on_high_cpu_protection_toggled(bool val){
+  void on_clampTextRendering_toggled(bool val){
     if (_initing==false)
-      setHighCpuOpenGlProtection(val);
-  }
-  
-  void on_draw_in_separate_process_onoff_toggled(bool val){
-    if (_initing==false)
-      SETTINGS_write_bool("opengl_draw_in_separate_process",val);
+      GL_set_clamp_text_rendering(val);
   }
 
 #if 0
@@ -946,9 +1087,30 @@ public slots:
       GL_set_high_render_thread_priority(val);
   }
   
-  void on_high_priority_draw_thread_toggled(bool val){
-    if (_initing==false)
-      GL_set_high_draw_thread_priority(val);
+
+  void on_rhi_null_toggled(bool val){
+    if (_initing==false && val)
+      GL_request_setting_backend("null");
+  }
+  void on_rhi_opengl_toggled(bool val){
+    if (_initing==false && val)
+      GL_request_setting_backend("opengl");
+  }
+  void on_rhi_vulkan_toggled(bool val){
+    if (_initing==false && val)
+      GL_request_setting_backend("vulkan");
+  }
+  void on_rhi_d3d11_toggled(bool val){
+    if (_initing==false && val)
+      GL_request_setting_backend("d3d11");
+  }
+  void on_rhi_d3d12_toggled(bool val){
+    if (_initing==false && val)
+      GL_request_setting_backend("d3d12");
+  }
+  void on_rhi_metal_toggled(bool val){
+    if (_initing==false && val)
+      GL_request_setting_backend("metal");
   }
   
   void on_enable_sample_seek_by_default_toggled(bool val){
@@ -1195,23 +1357,17 @@ public slots:
   void on_auto_recording_latency_toggled(bool val){
     if (_initing==false && val){
       setRecordingLatencyFromSystemInputIsAutomaticallyDetermined(true);
-      /*
-      custom_recording_latency_layout->setEnabled(false);
-      custom_recording_latency_label->setEnabled(false);
-      custom_recording_latency_value->setEnabled(false);
-      */
     }
   }
   
   void on_custom_recording_latency_toggled(bool val){
     if (_initing==false && val){
       setRecordingLatencyFromSystemInputIsAutomaticallyDetermined(false);
-      /*
-      custom_recording_latency_layout->setEnabled(true);
-      custom_recording_latency_label->setEnabled(true);
-      custom_recording_latency_value->setEnabled(true);
-      */
     }
+
+    custom_recording_latency_layout->setEnabled(val);
+    custom_recording_latency_label->setEnabled(val);
+    custom_recording_latency_value->setEnabled(val);
   }
 
   void on_custom_recording_latency_value_valueChanged(double val){
@@ -1505,11 +1661,33 @@ public slots:
   
   // colors
   void color_changed(const QColor &col){
-    //printf("HAPP! %s\n",col.name(QColor::HexArgb).toUtf8().constData());
+    printf("COLOR_CHANGED: g_current_colornum=%d new_color=%s\n", g_current_colornum, col.name(QColor::HexArgb).toUtf8().constData());
     testColorInRealtime(g_current_colornum, col);
-    //printf("  alpha1: %d\n",col.alpha());
     
+    if (g_in_undo_redo){
+      printf("color_changed: skipped (in_undo_redo)\n");
+      goto color_changed_end;
+    }
+    
+    if (g_pending_change_committed==false && col==g_pending_old_color){
+      printf("color_changed: skipped (same_color colornum=%d)\n", g_current_colornum);
+      goto color_changed_end;
+    }
+    
+    if (g_pending_change_committed==false){
+      printf("color_changed: PUSH colornum=%d restore_to=%s\n", g_current_colornum, g_pending_old_color.name().toUtf8().constData());
+      g_color_undo_stack.push_back({false, g_current_colornum, g_pending_old_color, 0, 0.0f});
+      g_pending_change_committed = true;
+    } else {
+      printf("color_changed: consecutive colornum=%d (already committed)\n", g_current_colornum);
+    }
+    g_color_redo_stack.clear();
+    update_color_undo_redo_buttons();
+
+  color_changed_end:
     for(auto button : all_buttons){
+      if (button->colornum == LOW_EDITOR_BACKGROUND_COLOR_NUM || button->colornum == HIGH_EDITOR_BACKGROUND_COLOR_NUM)
+        printf("color_changed_end: updating colornum=%d isVisible=%d isHidden=%d\n", button->colornum, button->isVisible(), button->isHidden());
       button->update();
     }
   }
@@ -1527,31 +1705,129 @@ public slots:
     else
       release_keyboard_focus();
   }
-  
-  void on_color_reset_button_clicked(){
-    printf("HHH");
-    GFX_ResetColor(g_current_colornum);
-    _color_dialog.setCurrentColor(get_qcolor(g_current_colornum));
 
-    for(auto button : all_buttons){
-      button->update();
-    }
-
+  void update_color_undo_redo_buttons(void){
+    printf("==== update_buttons: undo_stack=%d  redo_stack=%d\n", (int)g_color_undo_stack.size(), (int)g_color_redo_stack.size());
+    color_undo->setEnabled(g_color_undo_stack.isEmpty()==false);
+    color_redo->setEnabled(g_color_redo_stack.isEmpty()==false);
   }
 
-  void on_color_reset_all_button_clicked(){
-    printf("AAAxHHH");
-    GFX_ResetColors();
-    _color_dialog.setCurrentColor(get_qcolor(g_current_colornum));
+  void on_color_undo_clicked(){
+    printf("UNDO clicked: undo_stack=%d  redo_stack=%d\n", (int)g_color_undo_stack.size(), (int)g_color_redo_stack.size());
+    if (g_color_undo_stack.isEmpty())
+      return;
 
-    for(auto button : all_buttons){
-      button->update();
+    PreferencesUndoEntry entry = g_color_undo_stack.last();
+    g_color_undo_stack.pop_back();
+
+    if (entry.is_slider) {
+      int current_value = get_slider_value(entry.slider_id);
+      printf("UNDO slider: slider_id=%d  restoring=%d  was=%d\n", entry.slider_id, (int)entry.slider_value, current_value);
+      g_color_redo_stack.push_back({true, (enum ColorNums)0, QColor(), entry.slider_id, (float)current_value});
+
+      g_in_undo_redo = true;
+      set_slider_value(entry.slider_id, (int)entry.slider_value);
+      g_in_undo_redo = false;
+    } else {    
+      QColor current_value = get_qcolor(entry.colornum);
+      printf("UNDO: colornum=%d  restoring=%s  was=%s\n", entry.colornum, entry.color.name().toUtf8().constData(), current_value.name().toUtf8().constData());
+      g_color_redo_stack.push_back({false, entry.colornum, current_value, 0, 0.0f});
+
+      g_in_undo_redo = true;
+      testColorInRealtime(entry.colornum, entry.color);
+
+      if (g_current_colornum==entry.colornum)
+        _color_dialog.setCurrentColor(entry.color);
+
+      g_in_undo_redo = false;
+
+      for(auto button : all_buttons)
+        button->update();
     }
 
+    update_color_undo_redo_buttons();
   }
 
-  void on_color_save_button_clicked(){
-    GFX_SaveColors(createIllegalFilepath());
+  void on_color_redo_clicked(){
+    printf("REDO clicked: undo_stack=%d  redo_stack=%d\n", (int)g_color_undo_stack.size(), (int)g_color_redo_stack.size());
+    if (g_color_redo_stack.isEmpty())
+      return;
+
+    PreferencesUndoEntry entry = g_color_redo_stack.last();
+    g_color_redo_stack.pop_back();
+
+    if (entry.is_slider) {
+      int current_value = get_slider_value(entry.slider_id);
+      printf("REDO slider: slider_id=%d  restoring=%d  was=%d\n", entry.slider_id, (int)entry.slider_value, current_value);
+      g_color_undo_stack.push_back({true, (enum ColorNums)0, QColor(), entry.slider_id, (float)current_value});
+
+      g_in_undo_redo = true;
+      set_slider_value(entry.slider_id, (int)entry.slider_value);
+      g_in_undo_redo = false;
+    } else {
+      QColor current_value = get_qcolor(entry.colornum);
+      printf("REDO: colornum=%d  restoring=%s  was=%s\n", entry.colornum, entry.color.name().toUtf8().constData(), current_value.name().toUtf8().constData());
+      g_color_undo_stack.push_back({false, entry.colornum, current_value, 0, 0.0f});
+
+      g_in_undo_redo = true;
+      testColorInRealtime(entry.colornum, entry.color);
+
+      if (g_current_colornum==entry.colornum)
+        _color_dialog.setCurrentColor(entry.color);
+
+      g_in_undo_redo = false;
+
+      for(auto button : all_buttons)
+        button->update();
+    }
+
+    update_color_undo_redo_buttons();
+  }
+
+  void on_color_store_snapshot_clicked(){
+    GFX_StoreCheckpoint();
+  }
+
+  void on_color_revert_color_clicked(){
+    GFX_RevertColorFromCheckpoint(g_current_colornum);
+    _color_dialog.setCurrentColor(get_qcolor(g_current_colornum));
+
+    for(auto button : all_buttons)
+      button->update();
+  }
+
+  void on_color_revert_all_colors_clicked(){
+    GFX_RevertAllToCheckpoint();
+    _color_dialog.setCurrentColor(get_qcolor(g_current_colornum));
+    update_color_sliders();
+
+    for(auto button : all_buttons)
+      button->update();
+  }
+
+  void on_color_set_default_color_clicked(){
+    GFX_SetDefaultColor(g_current_colornum);
+    _color_dialog.setCurrentColor(get_qcolor(g_current_colornum));
+
+    for(auto button : all_buttons)
+      button->update();
+  }
+
+  void on_color_set_all_default_colors_clicked(){
+    GFX_SetDefaultColors1(root->song->tracker_windows);
+
+    instrument_brightness->setValue(1000 * DEFAULT_INSTRUMENT_BRIGHTNESS);
+    instrument_saturation->setValue(1000 * DEFAULT_INSTRUMENT_SATURATION);
+    instrument_brightness_in_editor->setValue(1000 * DEFAULT_INSTRUMENT_BRIGHTNESS_IN_EDITOR);
+    instrument_saturation_in_editor->setValue(1000 * DEFAULT_INSTRUMENT_SATURATION_IN_EDITOR);
+    block_brightness->setValue(1000 * DEFAULT_BLOCK_BRIGHTNESS);
+    block_saturation->setValue(1000 * DEFAULT_BLOCK_SATURATION);
+    gradient_slider->setValue(1000 * DEFAULT_AMOUNT_OF_GRADIENT);
+
+    _color_dialog.setCurrentColor(get_qcolor(g_current_colornum));
+
+    for(auto button : all_buttons)
+      button->update();
   }
 
 
@@ -1568,58 +1844,254 @@ public slots:
       GFX_SaveColors(filename);
   }
 
+  void update_color_sliders(void){
+    instrument_brightness->setValue(getInstrumentBrightness()*1000);
+    instrument_saturation->setValue(getInstrumentSaturation()*1000);
+    instrument_brightness_in_editor->setValue(getInstrumentBrightnessInEditor()*1000);
+    instrument_saturation_in_editor->setValue(getInstrumentSaturationInEditor()*1000);
+    block_brightness->setValue(getBlockBrightness()*1000);
+    block_saturation->setValue(getBlockSaturation()*1000);
+    gradient_slider->setValue(getAmountOfGradient()*1000);
+  }
 
+  void on_rename_color_clicked(){
+    QString old_name = GFX_GetCurrentColorConfigurationName();
+
+    ReqType reqtype = GFX_OpenReq(root->song->tracker_windows, 50, 4, "");
+    GFX_SetString(reqtype, old_name.toUtf8().constData());
+
+    const char *new_name = GFX_GetString(root->song->tracker_windows, reqtype, "New name: ", true);
+
+    GFX_CloseReq(root->song->tracker_windows, reqtype);
+
+    if (new_name != NULL && strlen(new_name) > 0 && old_name != new_name){
+      GFX_RenameColorConfiguration(old_name, new_name);
+      populate_color_selector();
+    }
+  }
+
+  void on_add_color_clicked(){
+    const char *name = GFX_GetString(root->song->tracker_windows, NULL, "New color configuration:", true);
+
+    if (name != NULL && strlen(name) > 0){
+      GFX_NewColorConfiguration(name);
+      populate_color_selector();
+      update_color_sliders();
+      _color_dialog.setCurrentColor(get_qcolor(g_current_colornum));
+    }
+  }
+
+  void on_delete_color_clicked(){
+    QString name = GFX_GetCurrentColorConfigurationName();
+    GFX_DeleteColorConfiguration(name);
+    populate_color_selector();
+    update_color_sliders();
+    _color_dialog.setCurrentColor(get_qcolor(g_current_colornum));
+  }
+
+  void on_color_selector_activated(int index){
+    QString name = color_selector->itemText(index);
+    GFX_SetColorConfiguration(name);
+    update_color_sliders();
+    _color_dialog.setCurrentColor(get_qcolor(g_current_colornum));
+  }
+
+
+  int get_slider_value(int slider_id){
+    switch(slider_id){
+      case SLIDER_INSTRUMENT_BRIGHTNESS: return instrument_brightness->value();
+      case SLIDER_INSTRUMENT_SATURATION: return instrument_saturation->value();
+      case SLIDER_INSTRUMENT_BRIGHTNESS_IN_EDITOR: return instrument_brightness_in_editor->value();
+      case SLIDER_INSTRUMENT_SATURATION_IN_EDITOR: return instrument_saturation_in_editor->value();
+      case SLIDER_BLOCK_BRIGHTNESS: return block_brightness->value();
+      case SLIDER_BLOCK_SATURATION: return block_saturation->value();
+      case SLIDER_GRADIENT: return gradient_slider->value();
+      default: return 0;
+    }
+  }
+
+  void set_slider_value(int slider_id, int value){
+    switch(slider_id){
+      case SLIDER_INSTRUMENT_BRIGHTNESS: instrument_brightness->setValue(value); break;
+      case SLIDER_INSTRUMENT_SATURATION: instrument_saturation->setValue(value); break;
+      case SLIDER_INSTRUMENT_BRIGHTNESS_IN_EDITOR: instrument_brightness_in_editor->setValue(value); break;
+      case SLIDER_INSTRUMENT_SATURATION_IN_EDITOR: instrument_saturation_in_editor->setValue(value); break;
+      case SLIDER_BLOCK_BRIGHTNESS: block_brightness->setValue(value); break;
+      case SLIDER_BLOCK_SATURATION: block_saturation->setValue(value); break;
+      case SLIDER_GRADIENT: gradient_slider->setValue(value); break;
+    }
+  }
+
+  void on_instrument_brightness_sliderPressed(){
+    if (_initing==false){
+      g_pending_old_slider_values[SLIDER_INSTRUMENT_BRIGHTNESS] = instrument_brightness->value();
+      g_slider_committed[SLIDER_INSTRUMENT_BRIGHTNESS] = false;
+    }
+  }
   void on_instrument_brightness_valueChanged(int val){
-    if (_initing==false)
+    if (_initing==false){
       setInstrumentBrightness((float)val/1000.0);
+      if (!g_in_undo_redo && !g_slider_committed[SLIDER_INSTRUMENT_BRIGHTNESS] && val!=g_pending_old_slider_values[SLIDER_INSTRUMENT_BRIGHTNESS]){
+        g_color_undo_stack.push_back({true, (enum ColorNums)0, QColor(), SLIDER_INSTRUMENT_BRIGHTNESS, (float)g_pending_old_slider_values[SLIDER_INSTRUMENT_BRIGHTNESS]});
+        g_color_redo_stack.clear();
+        g_slider_committed[SLIDER_INSTRUMENT_BRIGHTNESS] = true;
+        update_color_undo_redo_buttons();
+      }
+    }
+  }
+  void on_instrument_brightness_sliderReleased(){
+    g_pending_old_slider_values[SLIDER_INSTRUMENT_BRIGHTNESS] = instrument_brightness->value();
+    g_slider_committed[SLIDER_INSTRUMENT_BRIGHTNESS] = false;
   }
   void on_reset_instrument_brightness_clicked(){
     instrument_brightness->setValue(1000 * DEFAULT_INSTRUMENT_BRIGHTNESS);
   }
 
+  void on_instrument_saturation_sliderPressed(){
+    if (_initing==false){
+      g_pending_old_slider_values[SLIDER_INSTRUMENT_SATURATION] = instrument_saturation->value();
+      g_slider_committed[SLIDER_INSTRUMENT_SATURATION] = false;
+    }
+  }
   void on_instrument_saturation_valueChanged(int val){
-    if (_initing==false)
+    if (_initing==false){
       setInstrumentSaturation((float)val/1000.0);
+      if (!g_in_undo_redo && !g_slider_committed[SLIDER_INSTRUMENT_SATURATION] && val!=g_pending_old_slider_values[SLIDER_INSTRUMENT_SATURATION]){
+        g_color_undo_stack.push_back({true, (enum ColorNums)0, QColor(), SLIDER_INSTRUMENT_SATURATION, (float)g_pending_old_slider_values[SLIDER_INSTRUMENT_SATURATION]});
+        g_color_redo_stack.clear();
+        g_slider_committed[SLIDER_INSTRUMENT_SATURATION] = true;
+        update_color_undo_redo_buttons();
+      }
+    }
+  }
+  void on_instrument_saturation_sliderReleased(){
+    g_pending_old_slider_values[SLIDER_INSTRUMENT_SATURATION] = instrument_saturation->value();
+    g_slider_committed[SLIDER_INSTRUMENT_SATURATION] = false;
   }
   void on_reset_instrument_saturation_clicked(){
     instrument_saturation->setValue(1000 * DEFAULT_INSTRUMENT_SATURATION);
   }
-  
+
+  void on_instrument_brightness_in_editor_sliderPressed(){
+    if (_initing==false){
+      g_pending_old_slider_values[SLIDER_INSTRUMENT_BRIGHTNESS_IN_EDITOR] = instrument_brightness_in_editor->value();
+      g_slider_committed[SLIDER_INSTRUMENT_BRIGHTNESS_IN_EDITOR] = false;
+    }
+  }
   void on_instrument_brightness_in_editor_valueChanged(int val){
-    if (_initing==false)
+    if (_initing==false){
       setInstrumentBrightnessInEditor((float)val/1000.0);
+      if (!g_in_undo_redo && !g_slider_committed[SLIDER_INSTRUMENT_BRIGHTNESS_IN_EDITOR] && val!=g_pending_old_slider_values[SLIDER_INSTRUMENT_BRIGHTNESS_IN_EDITOR]){
+        g_color_undo_stack.push_back({true, (enum ColorNums)0, QColor(), SLIDER_INSTRUMENT_BRIGHTNESS_IN_EDITOR, (float)g_pending_old_slider_values[SLIDER_INSTRUMENT_BRIGHTNESS_IN_EDITOR]});
+        g_color_redo_stack.clear();
+        g_slider_committed[SLIDER_INSTRUMENT_BRIGHTNESS_IN_EDITOR] = true;
+        update_color_undo_redo_buttons();
+      }
+    }
+  }
+  void on_instrument_brightness_in_editor_sliderReleased(){
+    g_pending_old_slider_values[SLIDER_INSTRUMENT_BRIGHTNESS_IN_EDITOR] = instrument_brightness_in_editor->value();
+    g_slider_committed[SLIDER_INSTRUMENT_BRIGHTNESS_IN_EDITOR] = false;
   }
   void on_reset_instrument_brightness_in_editor_clicked(){
     instrument_brightness_in_editor->setValue(1000 * DEFAULT_INSTRUMENT_BRIGHTNESS_IN_EDITOR);
   }
 
+  void on_instrument_saturation_in_editor_sliderPressed(){
+    if (_initing==false){
+      g_pending_old_slider_values[SLIDER_INSTRUMENT_SATURATION_IN_EDITOR] = instrument_saturation_in_editor->value();
+      g_slider_committed[SLIDER_INSTRUMENT_SATURATION_IN_EDITOR] = false;
+    }
+  }
   void on_instrument_saturation_in_editor_valueChanged(int val){
-    if (_initing==false)
+    if (_initing==false){
       setInstrumentSaturationInEditor((float)val/1000.0);
+      if (!g_in_undo_redo && !g_slider_committed[SLIDER_INSTRUMENT_SATURATION_IN_EDITOR] && val!=g_pending_old_slider_values[SLIDER_INSTRUMENT_SATURATION_IN_EDITOR]){
+        g_color_undo_stack.push_back({true, (enum ColorNums)0, QColor(), SLIDER_INSTRUMENT_SATURATION_IN_EDITOR, (float)g_pending_old_slider_values[SLIDER_INSTRUMENT_SATURATION_IN_EDITOR]});
+        g_color_redo_stack.clear();
+        g_slider_committed[SLIDER_INSTRUMENT_SATURATION_IN_EDITOR] = true;
+        update_color_undo_redo_buttons();
+      }
+    }
+  }
+  void on_instrument_saturation_in_editor_sliderReleased(){
+    g_pending_old_slider_values[SLIDER_INSTRUMENT_SATURATION_IN_EDITOR] = instrument_saturation_in_editor->value();
+    g_slider_committed[SLIDER_INSTRUMENT_SATURATION_IN_EDITOR] = false;
   }
   void on_reset_instrument_saturation_in_editor_clicked(){
     instrument_saturation_in_editor->setValue(1000 * DEFAULT_INSTRUMENT_SATURATION_IN_EDITOR);
   }
-  
+
+  void on_block_brightness_sliderPressed(){
+    if (_initing==false){
+      g_pending_old_slider_values[SLIDER_BLOCK_BRIGHTNESS] = block_brightness->value();
+      g_slider_committed[SLIDER_BLOCK_BRIGHTNESS] = false;
+    }
+  }
   void on_block_brightness_valueChanged(int val){
-    if (_initing==false)
+    if (_initing==false){
       setBlockBrightness((float)val/1000.0);
+      if (!g_in_undo_redo && !g_slider_committed[SLIDER_BLOCK_BRIGHTNESS] && val!=g_pending_old_slider_values[SLIDER_BLOCK_BRIGHTNESS]){
+        g_color_undo_stack.push_back({true, (enum ColorNums)0, QColor(), SLIDER_BLOCK_BRIGHTNESS, (float)g_pending_old_slider_values[SLIDER_BLOCK_BRIGHTNESS]});
+        g_color_redo_stack.clear();
+        g_slider_committed[SLIDER_BLOCK_BRIGHTNESS] = true;
+        update_color_undo_redo_buttons();
+      }
+    }
+  }
+  void on_block_brightness_sliderReleased(){
+    g_pending_old_slider_values[SLIDER_BLOCK_BRIGHTNESS] = block_brightness->value();
+    g_slider_committed[SLIDER_BLOCK_BRIGHTNESS] = false;
   }
   void on_reset_block_brightness_clicked(){
     block_brightness->setValue(1000 * DEFAULT_BLOCK_BRIGHTNESS);
   }
 
+  void on_block_saturation_sliderPressed(){
+    if (_initing==false){
+      g_pending_old_slider_values[SLIDER_BLOCK_SATURATION] = block_saturation->value();
+      g_slider_committed[SLIDER_BLOCK_SATURATION] = false;
+    }
+  }
   void on_block_saturation_valueChanged(int val){
-    if (_initing==false)
+    if (_initing==false){
       setBlockSaturation((float)val/1000.0);
+      if (!g_in_undo_redo && !g_slider_committed[SLIDER_BLOCK_SATURATION] && val!=g_pending_old_slider_values[SLIDER_BLOCK_SATURATION]){
+        g_color_undo_stack.push_back({true, (enum ColorNums)0, QColor(), SLIDER_BLOCK_SATURATION, (float)g_pending_old_slider_values[SLIDER_BLOCK_SATURATION]});
+        g_color_redo_stack.clear();
+        g_slider_committed[SLIDER_BLOCK_SATURATION] = true;
+        update_color_undo_redo_buttons();
+      }
+    }
+  }
+  void on_block_saturation_sliderReleased(){
+    g_pending_old_slider_values[SLIDER_BLOCK_SATURATION] = block_saturation->value();
+    g_slider_committed[SLIDER_BLOCK_SATURATION] = false;
   }
   void on_reset_block_saturation_clicked(){
     block_saturation->setValue(1000 * DEFAULT_BLOCK_SATURATION);
   }
-  
+
+  void on_gradient_slider_sliderPressed(){
+    if (_initing==false){
+      g_pending_old_slider_values[SLIDER_GRADIENT] = gradient_slider->value();
+      g_slider_committed[SLIDER_GRADIENT] = false;
+    }
+  }
   void on_gradient_slider_valueChanged(int val){
-    if (_initing==false)
+    if (_initing==false){
       setAmountOfGradient((float)val/1000.0);
+      if (!g_in_undo_redo && !g_slider_committed[SLIDER_GRADIENT] && val!=g_pending_old_slider_values[SLIDER_GRADIENT]){
+        g_color_undo_stack.push_back({true, (enum ColorNums)0, QColor(), SLIDER_GRADIENT, (float)g_pending_old_slider_values[SLIDER_GRADIENT]});
+        g_color_redo_stack.clear();
+        g_slider_committed[SLIDER_GRADIENT] = true;
+        update_color_undo_redo_buttons();
+      }
+    }
+  }
+  void on_gradient_slider_sliderReleased(){
+    g_pending_old_slider_values[SLIDER_GRADIENT] = gradient_slider->value();
+    g_slider_committed[SLIDER_GRADIENT] = false;
   }
   void on_reset_gradient_button_clicked(){
     gradient_slider->setValue(1000 * DEFAULT_AMOUNT_OF_GRADIENT);

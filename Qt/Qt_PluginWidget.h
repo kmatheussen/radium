@@ -14,6 +14,8 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+#pragma once
+
 
 #include <QToolButton>
 #include <QString>
@@ -68,7 +70,7 @@ class ParamWidget : public QWidget {
       int format = type->get_effect_format!=NULL ? type->get_effect_format(plugin, effect_num) : EFFECT_FORMAT_FLOAT;
 
       QGridLayout *grid_layout = new QGridLayout(this);
-      grid_layout->setMargin(0);
+      grid_layout->setContentsMargins(0,0,0,0);
       grid_layout->setSpacing(0);
 
       if(0){

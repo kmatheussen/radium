@@ -22,13 +22,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define USE_xcb_key_release_lookup_keysym 0 // If enabled, use -lX11-xcb -lxcb-keysyms, if not use -lxkbcommon-x11 -lxkbcommon 
 #define GET_CONNECTION_FROM_DISPLAY 0
 
-#include "../common/includepython.h"
+//#include "../common/includepython.h"
 
 #include "../common/nsmtracker.h"
 
-#include <QX11Info>
-//#include <QLocale>
-//#include <QGuiApplication>
+#if !USE_QT6
+#  include <QX11Info>
+#else
+#  include <QtGui/private/qtx11extras_p.h>
+#endif
 
 #include "X11.h"
 
@@ -112,6 +114,15 @@ static int keysym_to_keynum(KeySym keysym) {
   case XF86XK_HomePage:
     return EVENT_HOMEPAGE;
   }
+
+  // Fix upper case keys. We detect shift separately, so we don't want other symbols
+  // when pressing the shift key.
+  if (keysym >= XK_A && keysym <= XK_Z)
+    keysym = (KeySym)(keysym + (XK_a - XK_A));
+
+  // Do the same for these characters as well.
+  if (keysym >= XK_Agrave && keysym <= XK_Odiaeresis)
+    keysym = (KeySym)(keysym + (XK_agrave - XK_Agrave));
 
 
 # define S(X11_VAL, EVENT_VAL) if(keysym==XK_##X11_VAL) return EVENT_##EVENT_VAL;
@@ -348,6 +359,77 @@ static xcb_keysym_t get_sym_from_key_symbols(xcb_key_press_event_t *event){
 
 #if USE_BOTH_XCB_MODES || !USE_xcb_key_release_lookup_keysym
 
+// Lazy-initialize the xkb keymap. Returns NULL on failure.
+static struct xkb_keymap *get_or_init_xkb_keymap(void)
+{
+	static struct xkb_keymap *s_keymap = NULL;
+	static bool s_init_attempted = false;
+
+	if (s_init_attempted)
+		return s_keymap;
+
+	s_init_attempted = true;
+
+	static xcb_connection_t *s_connection = NULL;
+	static int32_t s_device_id = -1;
+	static struct xkb_context *s_ctx = NULL;
+
+	s_connection = get_xcb_connection();
+	
+	if (s_connection == NULL)
+	{
+		SYSTEM_show_error_message("Unable to obtain xcb connection");
+		return NULL;
+	}
+
+	s_device_id = xkb_x11_get_core_keyboard_device_id(s_connection);
+	if (s_device_id == -1)
+	{
+		SYSTEM_show_error_message("Unable to obtain xkb device id");
+		return NULL;
+	}
+
+	s_ctx = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
+	if (s_ctx == NULL)
+	{
+		SYSTEM_show_error_message("Unable to create new xkb_context");
+		return NULL;
+	}
+
+	s_keymap = xkb_x11_keymap_new_from_device(s_ctx,
+											  s_connection,
+											  s_device_id,
+											  XKB_KEYMAP_COMPILE_NO_FLAGS);
+	if (s_keymap == NULL)
+	{
+		SYSTEM_show_error_message("Unable to create xkb keymap from device");
+		return NULL;
+	}
+
+	return s_keymap;
+}
+
+// Get the base keysym for a keycode directly from the keymap,
+// completely independent of any keyboard state (modifiers, layout, etc.).
+// This is the most reliable way to detect modifier keys.
+static xcb_keysym_t get_base_keysym_from_keymap(xcb_keycode_t keycode)
+{
+	static struct xkb_keymap *s_keymap = NULL;
+	
+	if (s_keymap == NULL)
+		s_keymap = get_or_init_xkb_keymap();
+	
+	if (s_keymap == NULL)
+		return XKB_KEY_NoSymbol;
+
+	const xkb_keysym_t *syms;
+	int num = xkb_keymap_key_get_syms_by_level(s_keymap, keycode, 0, 0, &syms);
+	if (num > 0 && syms[0] != XKB_KEY_NoSymbol)
+		return syms[0];
+
+	return XKB_KEY_NoSymbol;
+}
+
 static xcb_keysym_t get_sym_from_key_get_one_sym(xcb_key_press_event_t *event)
 {
 	//.const QLocale locale = QGuiApplication::inputMethod()->locale(); // doesn't work. Arrgh.
@@ -361,64 +443,32 @@ static xcb_keysym_t get_sym_from_key_get_one_sym(xcb_key_press_event_t *event)
 	{
 		//printf("Creating new state\n");
 
-		static xcb_connection_t *s_connection = NULL;
-
-		if (s_connection == NULL)
-		{
-			s_connection = get_xcb_connection();
-
-			if (s_connection == NULL)
-			{
-				SYSTEM_show_error_message("Unable to obtain xkb device id");
-				return XK_space;
-			}
-		}
-		
-		static int32_t s_device_id = -1;
-			
-		if (s_device_id == -1)
-		{
-			s_device_id = xkb_x11_get_core_keyboard_device_id(s_connection);
-			
-			if (s_device_id == -1)
-			{
-				SYSTEM_show_error_message("Unable to obtain xkb device id");
-				return XK_space;
-			}
-		}
-			
-		static struct xkb_context *s_ctx = NULL;
-
-		if (s_ctx == NULL)
-		{
-			s_ctx = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
-
-			if (s_ctx == NULL)
-			{
-				SYSTEM_show_error_message("Unable to create new xkb_context");
-				return XK_space;
-			}			
-		}
-		
-		static struct xkb_keymap *s_keymap = NULL;
-		
+		struct xkb_keymap *s_keymap = get_or_init_xkb_keymap();
 		if (s_keymap == NULL)
-		{
-			s_keymap = xkb_x11_keymap_new_from_device(s_ctx,
-													  s_connection,
-													  s_device_id,
-													  XKB_KEYMAP_COMPILE_NO_FLAGS);
+			return XK_space;
 		
-			if (s_keymap == NULL)
-			{
-				SYSTEM_show_error_message("Unable to create xkb keymap from device");
+		static xcb_connection_t *s_connection2 = NULL;
+		static int32_t s_device_id2 = -1;
+
+		if (s_connection2 == NULL) {
+			s_connection2 = get_xcb_connection();
+			if (s_connection2 == NULL) {
+				SYSTEM_show_error_message("Unable to obtain xcb device id");
+				return XK_space;
+			}
+		}
+			
+		if (s_device_id2 == -1) {
+			s_device_id2 = xkb_x11_get_core_keyboard_device_id(s_connection2);
+			if (s_device_id2 == -1) {
+				SYSTEM_show_error_message("Unable to obtain xkb device id");
 				return XK_space;
 			}
 		}
 
 		auto *new_state = xkb_x11_state_new_from_device(s_keymap,
-														s_connection,
-														s_device_id);
+														s_connection2,
+														s_device_id2);
 		
 		if (!new_state)
 		{
@@ -429,7 +479,7 @@ static xcb_keysym_t get_sym_from_key_get_one_sym(xcb_key_press_event_t *event)
 		//s_states[locale][event->state] = new_state;
 		s_states[event->state] = new_state;
 	}
-	
+
 	//return xkb_state_key_get_one_sym(s_states.value(locale).value(event->state), event->detail);
 	return xkb_state_key_get_one_sym(s_states.value(event->state), event->detail);
 }
@@ -474,6 +524,19 @@ int OS_SYSTEM_get_modifier(void *void_event){
   //KeySym keysym = (KeySym)virtualkey;
 
   int ret = get_modifier(keysym);
+
+#if USE_QT5
+  // Fallback: if the state-based keysym lookup failed to identify a modifier,
+  // try keycode-based detection using the xkb keymap directly. This bypasses
+  // any keyboard state issues (e.g. NumLock state mismatches) that can cause
+  // the state-based lookup to return incorrect keysyms for modifier keys.
+  if (ret == EVENT_NO) {
+    xcb_key_press_event_t *kb_event = (xcb_key_press_event_t *)void_event;
+    xcb_keysym_t base_sym = get_base_keysym_from_keymap(kb_event->detail);
+    if (base_sym != XKB_KEY_NoSymbol)
+      ret = get_modifier(base_sym);
+  }
+#endif
 
   if (ret==EVENT_NO && get_subID_from_scancode(OS_SYSTEM_get_scancode(void_event))==EVENT_CAPS) // caps lock key doesn't map to XK_Caps_Lock on my keyboard.
     return EVENT_CAPS;

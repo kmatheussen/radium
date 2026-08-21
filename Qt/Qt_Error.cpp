@@ -1,14 +1,23 @@
 #include <stdio.h>
+#include <time.h>
 
 #include <QWidget>
 
 #include <qapplication.h>
+#include <QIcon>
 #include <QPushButton>
 #include <QProcess>
 #include <QDir>
 #include <qfontdatabase.h>
 #include <QMouseEvent>
 #include <QOperatingSystemVersion>
+#include <QTimer>
+#include <QWindow>
+
+#if defined(FOR_MACOSX)
+#include <objc/message.h>
+#include <objc/runtime.h>
+#endif
 
 #include "../common/nsmtracker.h"
 
@@ -59,6 +68,22 @@ static inline QSizePolicy::Policy get_grow_policy_from_bool(bool grow){
   return grow ? QSizePolicy::MinimumExpanding : QSizePolicy::Fixed;
 }
 
+#if defined(FOR_MACOSX)
+static void activate_application(void){
+  typedef id (*shared_app_fn)(Class, SEL);
+  Class ns_application_class = objc_getClass("NSApplication");
+  if (ns_application_class == NULL)
+    return;
+
+  id nsapp = ((shared_app_fn)objc_msgSend)(ns_application_class, sel_registerName("sharedApplication"));
+  if (nsapp == NULL)
+    return;
+
+  typedef void (*activate_fn)(id, SEL, BOOL);
+  ((activate_fn)objc_msgSend)(nsapp, sel_registerName("activateIgnoringOtherApps:"), YES);
+}
+#endif
+
 static int show_message(QString message, const QVector<QString> &menu_strings){
 
   //QPointer<MyQMessageBox> msgBox = MyQMessageBox::create();
@@ -73,8 +98,6 @@ static int show_message(QString message, const QVector<QString> &menu_strings){
     buttons.push_back(button);
   }
 
-  msgBox->show();
-
   msgBox->layout()->setSizeConstraint(QLayout::SetMinimumSize);
 
   
@@ -84,9 +107,19 @@ static int show_message(QString message, const QVector<QString> &menu_strings){
   msgBox->setSizePolicy(policy);
   
   adjustSizeAndMoveWindowToCentre(msgBox);
-  msgBox->raise();
-  msgBox->activateWindow();
-  
+
+  MyQMessageBox *msgbox_ptr = msgBox.data(); // Make sure the dialog is raised and activated after it has been shown by exec() below.
+  QTimer::singleShot(0, [msgbox_ptr]()
+  {
+#if defined(FOR_MACOSX)
+    activate_application();
+#endif
+    msgbox_ptr->raise();
+    msgbox_ptr->activateWindow();
+    if (msgbox_ptr->windowHandle())
+      msgbox_ptr->windowHandle()->requestActivate();
+  });
+
   printf("hepp: %d. msgBox: %p\n",msgBox->exec(), msgBox.data()); // safeExec(&msgBox)); <-- We are not inside the radium executable here.
 
   if (msgBox.data()==NULL){
@@ -94,6 +127,12 @@ static int show_message(QString message, const QVector<QString> &menu_strings){
   }
 
   QAbstractButton *clicked_button = msgBox->clickedButton();
+
+  if (clicked_button == NULL)
+  {
+    fprintf(stderr, "WARN: radium_error_message: dialog closed without clicking a button\n");
+    return -1;
+  }
 
   int i = 0;
   for(QString menu_string : menu_strings){
@@ -157,10 +196,11 @@ int main(int argc, char **argv){
   if(getenv("QT_QPA_PLATFORM_PLUGIN_PATH")==NULL){
     faulty_installation = true;
   }else{
-    QCoreApplication::setLibraryPaths(QStringList());
+    QCoreApplication::setLibraryPaths(QStringList(getenv("QT_QPA_PLATFORM_PLUGIN_PATH")));
   }
 #else
-  QCoreApplication::setLibraryPaths(QStringList());
+  if(getenv("QT_QPA_PLATFORM_PLUGIN_PATH")!=NULL)
+    QCoreApplication::setLibraryPaths(QStringList(getenv("QT_QPA_PLATFORM_PLUGIN_PATH")));
 #endif
 
   QLocale::setDefault(QLocale::c());
@@ -178,10 +218,12 @@ int main(int argc, char **argv){
     menu_strings.push_back(QByteArray::fromBase64(argv[i]));
 
   //QCoreApplication::setAttribute(Qt::AA_Use96Dpi);
-  QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+  //QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
   
   argv = getQApplicationConstructorArgs(argc, argv);
   QApplication app(argc, argv);
+
+  app.setWindowIcon(QIcon(QCoreApplication::applicationDirPath() + QDir::separator() + "graphics" + QDir::separator() + "radium_dog_logo_256x256_colorized.png"));
 
   /*
   {
@@ -263,13 +305,7 @@ int SYSTEM_show_message_menu(const struct vector_t_ *options, const char *messag
     closePopup();
   
   QProcess *myProcess = new QProcess();
-  myProcess->connect(myProcess, SIGNAL(finished(int)), myProcess, SLOT(deleteLater()));
-  
-#if defined(FOR_LINUX) || defined(FOR_MACOSX)
-  QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
-  env.insert("LD_LIBRARY_PATH", getenv("LD_LIBRARY_PATH"));
-  myProcess->setProcessEnvironment(env);
-#endif
+  myProcess->connect(myProcess, SIGNAL(finished(int, QProcess::ExitStatus)), myProcess, SLOT(deleteLater()));
 
   GL_lock();
   
@@ -297,10 +333,15 @@ int SYSTEM_show_message_menu(const struct vector_t_ *options, const char *messag
     return -1;
   }
   
-  R_ASSERT_RETURN_IF_FALSE2(myProcess->exitStatus()==QProcess::NormalExit, -1);
+  QProcess::ExitStatus exit_status = myProcess->exitStatus();
+  int exit_code = myProcess->exitCode();
   
-  printf("  Exit code: %d\n", myProcess->exitCode());
-  return myProcess->exitCode();
+  printf("  radium_error_message exitStatus: %d, exitCode: %d, error: %d\n", exit_status, exit_code, myProcess->error());
+  
+  R_ASSERT_RETURN_IF_FALSE2(exit_status==QProcess::NormalExit, -1);
+  
+  printf("  Exit code: %d\n", exit_code);
+  return exit_code;
 }
 
 extern "C" {

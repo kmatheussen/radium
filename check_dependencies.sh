@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-PYTHONEXE=$1
+PYTHONEXE=`./find_python_path.sh`
 #MOC=$2
 #UIC=$3
 
@@ -11,7 +11,7 @@ source configuration.sh
 
 
 mywhich() {
-    if which $1 ; then
+    if which $1 &>/dev/null ; then
         echo $1 found
     else
         echo $1 not found

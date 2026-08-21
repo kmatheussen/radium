@@ -15,6 +15,11 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
+
+#if defined(__GNUC__) && !defined(__clang__)
+#  include "../Qt/Qt_precompiled.hpp"
+#endif
+
 #include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
@@ -834,7 +839,7 @@ void PR_init_plugin_types(void){
   create_modulator_plugin();
   create_sample_plugin(true);
   
-#if defined(WITH_PD) || defined(WITH_FAUST_DEV)
+#if defined(WITH_PD) || defined(WITH_FAUST_DEV) || defined(WITH_FAUST_DEV2)
   PR_add_menu_entry(PluginMenuEntry::separator("Development"));
   
 #ifdef WITH_PD
@@ -843,6 +848,14 @@ void PR_init_plugin_types(void){
   
 #ifdef WITH_FAUST_DEV
   create_faust_plugin();
+#endif
+
+#ifdef WITH_FAUST_DEV2
+  create_faust_dev2_plugin();
+#else
+#if WIN32
+  #error "checkthisout"
+#endif
 #endif
 
 #endif

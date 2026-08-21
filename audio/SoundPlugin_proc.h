@@ -246,8 +246,8 @@ static inline void RT_PLUGIN_touch(SoundPlugin *plugin){
 
 #ifdef __cplusplus
 static inline void PLUGIN_touch(SoundPlugin *plugin){
-  radium::PlayerRecursiveLock lock;
-  RT_PLUGIN_touch(plugin);
+	radium::PlayerRecursiveLock lock;
+	RT_PLUGIN_touch(plugin);
 }
 #endif
 

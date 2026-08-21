@@ -34,6 +34,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #  error error
 #endif
 
+#ifndef USE_QTWEBVIEW
+#  error error
+#endif
+
 #ifndef USE_QWEBENGINE
 #  error error
 #endif
@@ -48,7 +52,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QPluginLoader>
 #endif
 
-#if !USE_QSVGVIEWER && !USE_QWEBENGINE
+#if !USE_QSVGVIEWER && !USE_QTWEBVIEW && !USE_QWEBENGINE
 #  include <QtWebKitWidgets/QWebView>
 #endif
 
@@ -69,15 +73,21 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QTextEdit>
 #include <QLayout>
 #include <QDesktopServices>
-#include <QTextCodec>
+//#include <QTextCodec>
 #include <QWindow>
 #include <QScreen>
 #include <QThread>
 #include <QCheckBox>
 #include <QPushButton>
 #include <QButtonGroup>
+#include <QRadioButton>
+#include <QLabel>
 #include <QOperatingSystemVersion>
 #include <QStyleFactory>
+
+#if USE_QTWEBVIEW
+#  include <QtWebView>
+#endif
 
 
 #ifdef __linux__
@@ -95,6 +105,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 #endif
 
+
+#include "../config/config.h"
 
 #define INCLUDE_SNDFILE_OPEN_FUNCTIONS 1
 #include "../common/nsmtracker.h"
@@ -121,6 +133,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../api/api_midi_proc.h"
 #include "../api/api_common_proc.h"
 
+#include "../macosx/cocoa_Helpers_proc.h"
+
 #include "../mixergui/QM_MixerWidget.h"
 
 #include "EditorWidget.h"
@@ -129,6 +143,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_Bs_edit_proc.h"
 #include "Qt_PresetBrowser.h"
 #include "Qt_SaveRestoreWindows_proc.h"
+#include "Qt_Fonts_proc.h"
 
 #include "Timer.hpp"
 #include "mTimer.hpp"
@@ -1049,6 +1064,7 @@ namespace{
     int64_t id;
     QPointF start_pos;
     QPointF local_or_scene_pos;
+    QPointF global_pos;
     Qt::MouseButton button;
     Qt::MouseButtons buttons;
     Qt::KeyboardModifiers modifiers;
@@ -1074,6 +1090,7 @@ static void MOUSE_CYCLE_unregister_all(int64_t id, bool include_move);
 
 static void set_curr_mouse_cycle(QEvent *event, bool is_pressing){
   g_curr_mouse_cycle.local_or_scene_pos = dynamic_cast<QGraphicsSceneMouseEvent*>(event) != NULL ? get_scenepos_from_qevent(event) : get_localpos_from_qevent(event);
+  g_curr_mouse_cycle.global_pos = get_globalpos_from_qevent(event);
   
   if (is_pressing)
     g_curr_mouse_cycle.start_pos = g_curr_mouse_cycle.local_or_scene_pos;
@@ -1175,6 +1192,7 @@ bool MOUSE_CYCLE_delete_button_has_been_pressed(void){
   {
     QMouseEvent press_event(QEvent::MouseButtonRelease,
                             g_curr_mouse_cycle.local_or_scene_pos,
+							g_curr_mouse_cycle.global_pos,
                             Qt::BackButton,
                             Qt::BackButton,
                             g_curr_mouse_cycle.modifiers);
@@ -1190,6 +1208,7 @@ bool MOUSE_CYCLE_delete_button_has_been_pressed(void){
       
       QMouseEvent release_event(QEvent::MouseButtonRelease,
                                 g_curr_mouse_cycle.local_or_scene_pos,
+								g_curr_mouse_cycle.global_pos,
                                 Qt::BackButton,
                                 Qt::BackButton,
                                 g_curr_mouse_cycle.modifiers);
@@ -1201,6 +1220,7 @@ bool MOUSE_CYCLE_delete_button_has_been_pressed(void){
     {
       QMouseEvent move_event(QEvent::MouseMove,
                              g_curr_mouse_cycle.local_or_scene_pos,
+							 g_curr_mouse_cycle.global_pos,
                              Qt::NoButton,
                              Qt::NoButton,
                              g_curr_mouse_cycle.modifiers);
@@ -1251,6 +1271,7 @@ static void MOUSE_CYCLE_unregister_all(int64_t id, bool include_mouse_move){
   
   QMouseEvent e(QEvent::MouseButtonRelease,
                 g_curr_mouse_cycle.local_or_scene_pos,
+                g_curr_mouse_cycle.global_pos,
                 g_curr_mouse_cycle.button,
                 g_curr_mouse_cycle.buttons,
                 g_curr_mouse_cycle.modifiers);
@@ -1624,14 +1645,21 @@ protected:
     //printf(" Got key 3\n");
 
     RETURN_IF_DATA_IS_INACCESSIBLE(false);
-      
-    if (g_grab_next_eventreceiver_key==false && editor_has_keyboard_focus()==false){
+
+    const int keynum = OS_SYSTEM_get_keynum(event);
+
+    // Ctrl+Space must always stop playback, even when a text widget (e.g. the
+    // Faust Dev 2 editor or the LLM prompt) has keyboard focus: fall through
+    // to the normal keybinding dispatch instead of letting Qt handle the key.
+    const bool ctrl_space_pressed = is_key_press
+                                    && keynum == EVENT_SPACE
+                                    && AnyCtrl(tevent.keyswitch);
+
+    if (g_grab_next_eventreceiver_key==false && editor_has_keyboard_focus()==false && !ctrl_space_pressed){
       //printf("  Returning false 2.2\n");
       return false;
     }
 
-    const int keynum = OS_SYSTEM_get_keynum(event);
-    
     //printf(" Got key 4. Keynum: %d. down: %d. up: %d\n", keynum, EVENT_VOLUME_DOWN, EVENT_VOLUME_UP);
     
     g_last_pressed_key = keynum;
@@ -2037,7 +2065,22 @@ protected:
 
 #endif
     
-    bool activation_changed = event->type() == QEvent::WindowDeactivate || event->type() == QEvent::WindowActivate;
+    // Qt6 QRhi backend can cause QWindow (rendering surface) to spam activate/deactivate events.
+    // Only treat actual QWidget window activate/deactivate as meaningful, not QWindow surface events.
+    bool window_deactivated = false;
+    bool window_activated = false;
+    
+    if (event->type() == QEvent::WindowDeactivate || event->type() == QEvent::WindowActivate){
+      auto *widget = dynamic_cast<QWidget*>(obj);
+      if (widget != NULL && widget->isWindow()){
+        if (event->type() == QEvent::WindowDeactivate)
+          window_deactivated = true;
+        else
+          window_activated = true;
+      }
+    }
+    
+    bool activation_changed = window_deactivated || window_activated;
 
 #if FOR_LINUX
 
@@ -2127,9 +2170,11 @@ protected:
 
     auto ret = QApplication::eventFilter(obj, event);
 
-    if (activation_changed){
-      //static int counter = 0;  printf("   %d: Activation changed: activate: %d deactivate: %d\n", counter++, event->type() == QEvent::WindowActivate, event->type() == QEvent::WindowDeactivate);
-      MOUSE_CYCLE_schedule_unregister_all(true);
+    if (activation_changed)
+	{
+		//static int counter = 0;  printf("   %d: Activation changed: activate: %d deactivate: %d\n", counter++, event->type() == QEvent::WindowActivate, event->type() == QEvent::WindowDeactivate);
+
+		MOUSE_CYCLE_schedule_unregister_all(true);
     }
     
     return ret;
@@ -2138,7 +2183,7 @@ protected:
   
 #ifdef USE_QT5
 
-  bool nativeEventFilter(const QByteArray &eventType, void *message, long *) Q_DECL_OVERRIDE
+  bool nativeEventFilter(const QByteArray &eventType, void *message, qintptr *) Q_DECL_OVERRIDE
   {
     //printf("NAtive event filter!\n");
     return SystemEventFilter(message);
@@ -2191,6 +2236,8 @@ public slots:
 MyApplication::MyApplication(int &argc,char **argv)
   : QApplication(argc,argv)
 {
+  setOrganizationName("Radium"); // Needed for QSettings persistence, e.g. QColorDialog custom colors.
+  setApplicationName("Radium");
   //setStyleSheet("QStatusBar::item { border: 0px solid black }; ");
 #if USE_QT5
   installNativeEventFilter(this);
@@ -2540,13 +2587,15 @@ void Ptask2Mtask(void){
 #endif
 
 
-
+namespace
+{
 enum RT_MESSAGE_STATUS {
   RT_MESSAGE_READY,
   RT_MESSAGE_FILLING_UP,
   RT_MESSAGE_READY_FOR_SHOWING,
   RT_MESSAGE_SHOWING
 };
+} // anon. namespace
 
 static DEFINE_ATOMIC(int, rt_message_status) = RT_MESSAGE_READY;
 static const int rt_message_length = 1024;
@@ -2788,6 +2837,7 @@ protected:
 
         // Force full keyboard focus to the main window after startup. This seems to be the only reliable way. (if you think this is unnecessary, see if left alt works to start navigating menues after startup while using the fvwm window manager)
         {
+#if USE_QT5
           static QPointer<MyQMessageBox> gakkbox = NULL; // gakkbox could, perhaps, be deleted by itself if radium finds a strange parent. (got a crash once where gakkbox was deleted before explicitly calling delete below.)
           
           if(num_calls_at_this_point==50/_interval){
@@ -2804,12 +2854,58 @@ protected:
               //g_main_window->activateWindow();
             }
           }
-          
+#endif
           if(num_calls_at_this_point==70/_interval){
+#if USE_QT5
             delete gakkbox;
+#endif
             GFX_SetMenuFontsAgain();
             GFX_CloseProgress();
             ATOMIC_SET(g_qtgui_has_started_step2, true);
+#if USE_QT6
+            // Qt6: the old show/hide popup trick no longer returns focus if
+            // the window manager uses focus-follows-mouse. Poll until the window is fully ready,
+            // then nudge the cursor to trigger focus.
+            {
+              static bool initialized = false;
+              if (!initialized) {
+                initialized = true;
+                auto *ready_timer = new QTimer;
+                auto *attempts = new int(0);
+                QObject::connect(ready_timer, &QTimer::timeout, [attempts, ready_timer]{
+                  (*attempts)++;
+                  if (g_main_window->isVisible()
+                      && g_main_window->width() > 100
+                      && g_main_window->height() > 100
+                      && QApplication::activeWindow() != nullptr) {
+                    ready_timer->stop();
+                    if (g_main_window->geometry().contains(QCursor::pos())) {
+                      QPoint pos = QCursor::pos();
+                      QCursor::setPos(pos.x() + 1, pos.y());
+                      QCursor::setPos(pos.x(), pos.y());
+                    } else {
+                      QCursor::setPos(g_main_window->geometry().center());
+                    }
+                    schedule_set_editor_focus(50);
+                  } else if (*attempts > 40) {
+                    // Timeout after ~4 seconds — nudge anyway
+                    ready_timer->stop();
+                    if (g_main_window->geometry().contains(QCursor::pos())) {
+                      QPoint pos = QCursor::pos();
+                      QCursor::setPos(pos.x() + 1, pos.y());
+                      QCursor::setPos(pos.x(), pos.y());
+                    } else {
+                      QCursor::setPos(g_main_window->geometry().center());
+                    }
+                    schedule_set_editor_focus(50);
+                  }
+                });
+                ready_timer->start(100);
+              }
+            }
+#else // USE_QT6 -> !USE_QT6
+            schedule_set_editor_focus(200);
+#endif
           }
         }
         
@@ -2919,8 +3015,21 @@ protected:
 
     GL_update();
     
-    if(doquit==true) {
-      QApplication::quit();
+    if(doquit==true)
+	{
+		static bool s_has_called_qapp_quit = false;
+
+		if (s_has_called_qapp_quit == false)
+		{
+			s_has_called_qapp_quit = true;
+			//QApplication::quit();
+			QApplication::exit();
+		}
+		else
+		{
+			printf("Timer running after quit?\n");
+			return;
+		}
     }
 
     PATCH_call_very_often();
@@ -2980,26 +3089,6 @@ protected:
         last_height = new_height;
       }
     }
-
-    {
-      int gl_status = GL_maybe_notify_that_main_window_is_exposed(_interval);
-      if (gl_status>=1){
-        GL_maybe_estimate_vblank(static_cast<EditorWidget*>(window->os_visual.widget)->gl_widget);
-      }
-    }
-
-    #if 0
-    static bool main_window_is_exposed = false;
-    if (main_window_is_exposed==false){
-      QMainWindow *main_window = (QMainWindow *)window->os_visual.main_window;
-      if (main_window != NULL){
-        if (main_window->isExposed()) {
-
-          main_window_is_exposed = true;
-        }
-      }
-    }
-    #endif
 
     GL_update();
     
@@ -3294,6 +3383,16 @@ static void setCursor(int64_t guinum, const QCursor &cursor){
 #endif
   
   widget->setCursor(cursor);
+
+  // When the editor uses a native QWindow (via createWindowContainer), the cursor must also
+  // be set directly on the QWindow. Setting it only on the parent QWidget does not propagate
+  // to the embedded QWindow in Qt6.
+  if (guinum == gui_getEditorGui())
+  {
+    QWindow *editor_qwindow = GL_get_editor_qwindow();
+    if (editor_qwindow != nullptr)
+      editor_qwindow->setCursor(cursor);
+  }
 }
 
 void SetNormalPointer(int64_t guinum){
@@ -3449,6 +3548,92 @@ Area GetScreenSize(struct Tracker_Windows *tvisual){
   return ret;
 }
 
+#if defined(FOR_MACOSX) && defined(USE_QT6)
+
+// Make the main window layout run with the current widget geometry right
+// away (a pending layout request would normally handle it, but doing it
+// immediately avoids a short window where the layout has old geometry).
+static void force_fullscreen_layout(QWidget *toplevel)
+{
+  toplevel->layout()->setGeometry(QRect(0, 0, toplevel->width(), toplevel->height()));
+  toplevel->layout()->activate();
+}
+
+static Qt::WindowFlags g_saved_main_window_flags;
+static bool g_saved_main_window_flags_is_valid = false;
+
+static void set_main_window_fullscreen(QWidget *toplevel)
+{
+  // Qt 6.11 applies the window's safe area margins to top-level widget
+  // layouts by default (WA_ContentsMarginsRespectsSafeArea). When the
+  // window covers the whole screen (including the menu bar area), the safe
+  // area top margin becomes the menu bar height, offsetting the whole
+  // layout down. Radium's own widgets should fill the entire window, so
+  // turn it off.
+  toplevel->setAttribute(Qt::WA_ContentsMarginsRespectsSafeArea, false);
+
+  // Qt on macOS derives the NSWindow style mask from the window flags
+  // (QCocoaWindow::windowStyleMask) and re-applies it from
+  // applyContentBorderThickness (via QTabBar::updateMacBorderMetrics)
+  // whenever a tab bar is shown/hidden. Without Qt::FramelessWindowHint
+  // the mask becomes NSWindowStyleMaskTitled, which brings the title bar
+  // back in the middle of the custom (non-native) fullscreen. Set the
+  // hint so Qt's flags-derived mask stays borderless.
+  if (toplevel->windowHandle() != NULL)
+  {
+    if (g_saved_main_window_flags_is_valid == false)
+    {
+      g_saved_main_window_flags = toplevel->windowFlags();
+      g_saved_main_window_flags_is_valid = true;
+    }
+    toplevel->windowHandle()->setFlags(g_saved_main_window_flags | Qt::FramelessWindowHint);
+  }
+
+  OS_OSX_show_very_fullscreen((void*)toplevel->winId());
+  force_fullscreen_layout(toplevel);
+  update_main_menu_notch_gap(true);
+}
+
+static void unset_main_window_fullscreen(QWidget *toplevel)
+{
+  OS_OSX_unshow_very_fullscreen((void*)toplevel->winId());
+
+  if (toplevel->windowHandle() != NULL && g_saved_main_window_flags_is_valid)
+  {
+    toplevel->windowHandle()->setFlags(g_saved_main_window_flags);
+    g_saved_main_window_flags_is_valid = false;
+  }
+
+  force_fullscreen_layout(toplevel);
+  update_main_menu_notch_gap(false);
+}
+
+// Called from the AppKit toggleFullScreen: redirect installed by
+// OS_OSX_install_fullscreen_button_redirect. Runs the same operation as
+// pressing F11 when the main window is under the cursor.
+extern "C" void OS_OSX_toggle_main_window_fullscreen(void)
+{
+  QWidget *toplevel = g_main_window;
+
+  bool main_layout_visible = g_editor->editor_layout_widget->isVisible();
+
+  if (main_layout_visible)
+    g_editor->editor_layout_widget->hide(); // prevents crash in apple opengl library.
+
+  if (OS_OSX_window_is_fullscreen((void*)toplevel->winId()))
+    unset_main_window_fullscreen(toplevel);
+  else
+    set_main_window_fullscreen(toplevel);
+
+  if (main_layout_visible){
+    g_editor->editor_layout_widget->show();
+    schedule_set_editor_focus(20); // Hiding and showing the editor layout widget loses keyboard focus, which makes the menu bar unable to receive keyboard events until the mouse is clicked.
+  }
+}
+
+#endif
+
+
 void GFX_toggleFullScreen(struct Tracker_Windows *tvisual){
 #if defined(FOR_MACOSX) && !defined(USE_QT5)
   GFX_Message2(NULL, false, "Full screen not supported on OSX");
@@ -3460,14 +3645,23 @@ void GFX_toggleFullScreen(struct Tracker_Windows *tvisual){
   if (main_layout_visible)
     g_editor->editor_layout_widget->hide(); // prevents crash in apple opengl library.
 
+#if defined(FOR_MACOSX) && defined(USE_QT6)
+  if (OS_OSX_window_is_fullscreen((void*)main_window->winId()))
+    unset_main_window_fullscreen(main_window);
+  else
+    set_main_window_fullscreen(main_window);
+#else
   if(main_window->isFullScreen()){
     main_window->showNormal();
   }else{
     main_window->showFullScreen();
   }
+#endif
 
-  if (main_layout_visible)
+  if (main_layout_visible){
     g_editor->editor_layout_widget->show();
+    schedule_set_editor_focus(20); // Hiding and showing the editor layout widget loses keyboard focus, which makes the menu bar unable to receive keyboard events until the mouse is clicked.
+  }
 
 #if defined(FOR_WINDOWS)
   OS_WINDOWS_set_key_window((void*)g_main_window->winId()); // Need to do this when setting other windows to full screen. Set it for the main window too, just in case.
@@ -3514,28 +3708,26 @@ void GFX_toggleCurrWindowFullScreen(void){
 
         fprintf(stderr, "\n\n     TOGGLE main window\n\n\n");
 
+#if defined(FOR_MACOSX) && defined(USE_QT6)
+        OS_OSX_toggle_main_window_fullscreen();
+#else
         bool main_layout_visible = g_editor->editor_layout_widget->isVisible();
 
         if (main_layout_visible)
           g_editor->editor_layout_widget->hide(); // prevents crash in apple opengl library.
-        
+
         if(toplevel->isFullScreen()){
-          printf("Trying to set normal\n");
           toplevel->showNormal();
         }else{
-
-          /*
-          if (toplevel->parent() != NULL)
-            safe_set_parent(toplevel, NULL, Qt::Window  | DEFAULT_WINDOW_FLAGS);
-          */
-          
-          printf("Trying to set full screen\n");
           toplevel->showFullScreen();
         }
 
-        if (main_layout_visible)
+        if (main_layout_visible){
           g_editor->editor_layout_widget->show();
-        
+          schedule_set_editor_focus(20); // Hiding and showing the editor layout widget loses keyboard focus, which makes the menu bar unable to receive keyboard events until the mouse is clicked.
+        }
+#endif
+
 #if defined(FOR_WINDOWS)
         OS_WINDOWS_set_key_window((void*)toplevel->winId()); // Need to do this when setting other windows to full screen. Set it for the main window too, just in case.
 #endif
@@ -3796,7 +3988,7 @@ int radium_main(const char *arg){
 
   //SCHEME_init1();
 
-  printf("starting\n");
+  fprintf(stderr, "starting\n");
   if(InitProgram()==false)
       return 0;
 
@@ -3973,11 +4165,12 @@ int radium_main(const char *arg){
 
   }
 
-  GFX_reload_qt_stylesheets();
+  GFX_reload_qt_stylesheets(false);
 
   GFX_ShowProgressMessage("Creating main menus", true);
   S7CALL2(void_void,"generate-main-menus");
     
+  init_recent_menu();
   //getchar();
 
 
@@ -4135,7 +4328,16 @@ int radium_main(const char *arg){
   main_window->raise();
   main_window->activateWindow();
 
+#if defined(FOR_MACOSX) && defined(USE_QT6)
+  OS_OSX_install_fullscreen_button_redirect((void*)main_window->winId()); // Make the green button run the home-made fullscreen (same as F11) instead of the native fullscreen.
+#endif
+
+  if (main_window->windowHandle())
+    main_window->windowHandle()->requestActivate();
+
   updateWidgetRecursively(g_main_window);
+
+  schedule_set_editor_focus(100);
 
 #if defined(FOR_WINDWS)
   // Probably makes no difference.
@@ -4189,13 +4391,15 @@ int radium_main(const char *arg){
   if (getDoSaveRestoreWindows())
 	  restoreWindowsState(main_window);
 
+
   // Ensure we're not reading config file first time adding a note.
   doAddNotesWhenReleasingKeys();
 	  
 #if USE_QT_VISUAL
  again:
   try{
-    qapplication->exec();
+	  printf("Running qapplication->exec()\n");
+	  qapplication->exec();
   } catch (radium::EndlessRecursion e){
     SYSTEM_show_error_message("This is a serious bug. You should save and restart the program immediately.");
     g_endless_recursion = false;
@@ -4300,6 +4504,7 @@ int radium_main(const char *arg){
   
 #ifdef WITH_FAUST_DEV
   FFF_shut_down();
+  FAUST2_shut_down(); // Empty libfaust's DSP factory table before its static destructors run at exit().
   D(GFX_ShowProgressMessage("14", true));
 #endif
 
@@ -4694,6 +4899,119 @@ bar()
 }
 #endif
 
+static void set_gpu_backend2(void){
+
+  QDialog box;
+  QVBoxLayout layout;
+  QHBoxLayout button_layout;
+
+  box.setWindowTitle("Set GPU backend");
+
+  auto *label = new QLabel("Select GPU backend:");
+  layout.addWidget(label);
+
+  const char *current_backend = GL_get_backend();
+
+  auto *rhi_null = new QRadioButton("Null (no graphics)");
+  layout.addWidget(rhi_null);
+
+#if !FOR_MACOSX
+  auto *rhi_opengl = new QRadioButton("OpenGL");
+  layout.addWidget(rhi_opengl);
+#if QT_CONFIG(vulkan)
+  auto *rhi_vulkan = new QRadioButton("Vulkan");
+  layout.addWidget(rhi_vulkan);
+#endif
+#endif
+
+#if FOR_WINDOWS
+  auto *rhi_d3d11 = new QRadioButton("Direct3D 11");
+  auto *rhi_d3d12 = new QRadioButton("Direct3D 12");
+  layout.addWidget(rhi_d3d11);
+  layout.addWidget(rhi_d3d12);
+#endif
+
+#if FOR_MACOSX
+  auto *rhi_metal = new QRadioButton("Metal");
+  layout.addWidget(rhi_metal);
+#endif
+
+  if (!strcmp(current_backend, "null"))
+    rhi_null->setChecked(true);
+#if !FOR_MACOSX
+  else if (!strcmp(current_backend, "opengl"))
+    rhi_opengl->setChecked(true);
+#if QT_CONFIG(vulkan)
+  else if (!strcmp(current_backend, "vulkan"))
+    rhi_vulkan->setChecked(true);
+#endif
+#endif
+#if FOR_WINDOWS
+  else if (!strcmp(current_backend, "d3d11"))
+    rhi_d3d11->setChecked(true);
+  else if (!strcmp(current_backend, "d3d12"))
+    rhi_d3d12->setChecked(true);
+#endif
+#if FOR_MACOSX
+  else if (!strcmp(current_backend, "metal"))
+    rhi_metal->setChecked(true);
+#endif
+
+  QButtonGroup buttons;
+  enum doit{
+    OK = 0,
+    CANCEL = 1
+  };
+
+  auto *ok_button = new QPushButton("Ok");
+  auto *cancel_button = new QPushButton("Cancel");
+
+  buttons.addButton(ok_button, doit::OK);
+  buttons.addButton(cancel_button, doit::CANCEL);
+
+  button_layout.addWidget(ok_button);
+  button_layout.addWidget(cancel_button);
+  layout.addLayout(&button_layout);
+
+  box.setWindowModality(Qt::ApplicationModal);
+  box.setLayout(&layout);
+  box.adjustSize();
+  box.updateGeometry();
+
+  box.setVisible(true);
+  box.show();
+  box.activateWindow();
+  box.raise();
+
+  box.connect(&buttons, SIGNAL(idClicked(int)), &box, SLOT(done(int)));
+
+  int ret = box.exec();
+
+  if (ret==doit::CANCEL)
+    return;
+
+  if (rhi_null->isChecked())
+    GL_set_backend("null");
+#if !FOR_MACOSX
+  else if (rhi_opengl->isChecked())
+    GL_set_backend("opengl");
+#if QT_CONFIG(vulkan)
+  else if (rhi_vulkan->isChecked())
+    GL_set_backend("vulkan");
+#endif
+#endif
+#if FOR_WINDOWS
+  else if (rhi_d3d11->isChecked())
+    GL_set_backend("d3d11");
+  else if (rhi_d3d12->isChecked())
+    GL_set_backend("d3d12");
+#endif
+#if FOR_MACOSX
+  else if (rhi_metal->isChecked())
+    GL_set_backend("metal");
+#endif
+}
+
 static void clean_configuration2(void){
   //g_force_regular_gfx_message = true;
 
@@ -4766,7 +5084,7 @@ static void clean_configuration2(void){
   box.activateWindow();
   box.raise();
 
-  box.connect(&buttons, SIGNAL(buttonClicked(int)), &box, SLOT(done(int)));
+  box.connect(&buttons, SIGNAL(idClicked(int)), &box, SLOT(done(int)));
   
   int ret = box.exec();
 
@@ -4834,7 +5152,6 @@ static void determine_dpi_and_gfx_scale(void){
 }
 
 int main(int argc, char **argv){
-
   //return 0;
 
 #if defined(RADIUM_USES_ASAN)
@@ -4844,10 +5161,14 @@ int main(int argc, char **argv){
   init_asan();
 #endif
 #endif
-    
+
+
   bool clean_configuration = false;
+  bool set_gpu_backend = false;
   if (argc > 1 && !strcmp(argv[1], "--radium-clean-configuration")){
     clean_configuration = true;
+  } else if (argc > 1 && !strcmp(argv[1], "--set-gpu-backend")){
+    set_gpu_backend = true;
   }
 
   QLocale::setDefault(QLocale::c());
@@ -4863,8 +5184,8 @@ int main(int argc, char **argv){
   }
   
 #if !defined(IS_MACOS_BINARY)
-  setenv("QT_QPA_PLATFORM", "cocoa", 1);
-  setenv("QT_QPA_PLATFORM_PLUGIN_PATH", "/opt/local/libexec/qt5/plugins/platforms", 1);
+    setenv("QT_QPA_PLATFORM", "cocoa", 1);
+    setenv("QT_QPA_PLATFORM_PLUGIN_PATH", "/opt/local/libexec/qt6/plugins/platforms", 1);
 #endif
 
   setenv("LC_CTYPE", "UTF-8", 1);
@@ -4883,8 +5204,38 @@ int main(int argc, char **argv){
 #if defined(FOR_WINDOWS)
 #if defined(RELEASE)
   DWORD progress_pid = atoi(argv[2]);
+  bool has_closed_progress_pid = false;
 #endif
   GC_set_no_dls(1);
+#endif
+
+  auto maybe_close_progress_pid = [&]
+	  (void)
+	  {
+#if defined(RELEASE) && defined(FOR_WINDOWS)
+		  if (!has_closed_progress_pid)
+		  {
+			  auto handle = OpenProcess(PROCESS_ALL_ACCESS, TRUE, progress_pid);
+			  if (handle != NULL)
+				  TerminateProcess(handle, 0);
+			  has_closed_progress_pid = true;
+		  }
+#endif
+	  };
+
+
+#if 0 // made no difference
+//  {
+	  QSurfaceFormat format;
+	  format.setSamples(4); // Request 4x MSAA
+	  
+	  // Intel GPUs often require OpenGL 4.0+ Compatibility Profile for MSAA
+	  format.setVersion(4, 0); 
+	  format.setProfile(QSurfaceFormat::CompatibilityProfile);
+	  
+	  // 2. Set this format as the global application default
+	  QSurfaceFormat::setDefaultFormat(format);
+	  //}
 #endif
 
 #if defined(FOR_LINUX)
@@ -4895,6 +5246,7 @@ int main(int argc, char **argv){
       abort();
     }
   }
+
   if (getenv("QT_QPA_PLATFORM")!=NULL){
     if (strcmp(getenv("QT_QPA_PLATFORM"), "xcb")) {
       printf("Warning: Environment variable QT_QPA_PLATFORM is not set to \"xcb\".\n");
@@ -4904,6 +5256,7 @@ int main(int argc, char **argv){
       }
     }
   }
+
   if (getenv("QT_PLUGIN_PATH")!=NULL){
     printf("Warning: Environment variable QT_PLUGIN_PATH is set.\n");
     if (getenv("OVERRIDE_RADIUM_QPA")==NULL){
@@ -4912,7 +5265,7 @@ int main(int argc, char **argv){
     }
   }
 #endif
-           
+  
 
 #if defined(FOR_MACOSX) || defined(FOR_LINUX)
   GC_register_has_static_roots_callback(gc_has_static_roots_func);
@@ -4937,18 +5290,25 @@ int main(int argc, char **argv){
 #else
   qInstallMsgHandler(myMessageOutput);
 #endif
-  
-  QCoreApplication::setLibraryPaths(QStringList());  
+
+  for(auto &path : QCoreApplication::libraryPaths())
+	  printf("PATH: %s\n", path.toUtf8().constData());
+
+  //QCoreApplication::setLibraryPaths(QStringList(getenv("QT_QPA_PLATFORM_PLUGIN_PATH")));
 
   //QCoreApplication::setAttribute(Qt::AA_DontCheckOpenGLContextThreadAffinity);
 
+  //QApplication::setAttribute(Qt::AA_UseSoftwareOpenGL);
+  
 #if QT_VERSION_MAJOR == 5 && QT_VERSION_MINOR == 9
   QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
 #endif
-#if QT_VERSION_MAJOR != 5 || QT_VERSION_MINOR != 15
+#if !USE_QT6
+#  if QT_VERSION_MAJOR != 5 || QT_VERSION_MINOR != 15
   QCoreApplication::setAttribute(Qt::AA_X11InitThreads);
+#  endif
 #endif
-
+  
   //QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
   //QCoreApplication::setAttribute(Qt::AA_DisableHighDpiScaling); 
   //QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);  // what is this?
@@ -4989,9 +5349,12 @@ int main(int argc, char **argv){
 
   QLocale::setDefault(QLocale::C);
 
-    
-  argv = getQApplicationConstructorArgs(argc, argv); // Add Qt things to the command line arguments. (freetype).
+#if USE_QTWEBVIEW
+  QtWebView::initialize();
+#endif
   
+  argv = getQApplicationConstructorArgs(argc, argv); // Add Qt things to the command line arguments. (freetype).
+
   // Create application here in order to get default style. (not recommended, but can't find another way)
   qapplication=new MyApplication(argc,argv);
   
@@ -5000,7 +5363,7 @@ int main(int argc, char **argv){
   
   qapplication->setAttribute(Qt::AA_DontCreateNativeWidgetSiblings); // Fix splitter handlers on OSX. Seems like a good flag to set in general. Seems like a hack qt has added to workaround bugs in qt. https://bugreports.qt.io/browse/QTBUG-33479
 
-#if !USE_QSVGVIEWER && !USE_QWEBENGINE
+#if !USE_QSVGVIEWER && !USE_QTWEBVIEW && !USE_QWEBENGINE
   QWebSettings::globalSettings()->setAttribute(QWebSettings::PluginsEnabled, false);
   #if !defined(RELEASE)
     QWebSettings::globalSettings()->setAttribute(QWebSettings::DeveloperExtrasEnabled, true);
@@ -5037,14 +5400,47 @@ int main(int argc, char **argv){
   CRASHREPORTER_init();
   
   if (clean_configuration){
-    clean_configuration2();
-    CRASHREPORTER_dont_report();
-    PLUGINHOST_shut_down();
-    return 0;
+	  maybe_close_progress_pid();
+	  clean_configuration2();
+	  CRASHREPORTER_dont_report();
+	  PLUGINHOST_shut_down();
+	  return 0;
   }
   
   SETTINGS_init();
 
+  bool has_requested_new_rhi_backend = false;
+  
+  {
+	  const char *requested_rhi_backend = SETTINGS_read_string("requested_rhi_backend", "");
+
+	  if (requested_rhi_backend[0] != 0)
+	  {
+		  SETTINGS_write_string("rhi_backend", requested_rhi_backend);
+		  SETTINGS_write_string("requested_rhi_backend", "");
+
+		  has_requested_new_rhi_backend = true;
+	  }
+  }
+
+  if (set_gpu_backend)
+  {
+	  maybe_close_progress_pid();
+	  set_gpu_backend2();
+  }
+  else if (!has_requested_new_rhi_backend)
+  {
+	  const bool successfull_rhi_startup =
+		  QString(SETTINGS_read_string("last_successfully_started_rhi_backend", "-a"))
+		  ==
+		  QString(SETTINGS_read_string("rhi_backend", "-b"));
+	  
+	  if (!successfull_rhi_startup)
+	  {
+		  maybe_close_progress_pid();
+		  set_gpu_backend2();
+	  }
+  }
   
 #if defined(FOR_MACOSX) && (defined (__arm64__) || defined (__aarch64__))
 
@@ -5137,14 +5533,8 @@ int main(int argc, char **argv){
   //QPixmap pixmap(OS_get_full_program_file_path("radium_256x256x32.png"));
   //QPixmap pixmap(QPixmap(OS_get_full_program_file_path("/home/kjetil/radium/pictures/logo_big.png")).scaled(QSize(256,256), Qt::KeepAspectRatioByExpanding));
   GFX_OpenProgress("Please wait, starting program");
-  
-#if defined(RELEASE) && defined(FOR_WINDOWS)
-  {
-    auto handle = OpenProcess(PROCESS_ALL_ACCESS, TRUE, progress_pid);
-    if (handle != NULL)
-      TerminateProcess(handle, 0);
-  }
-#endif
+
+  maybe_close_progress_pid();
 
   DISKPEAKS_start();
   
@@ -5302,34 +5692,38 @@ int main(int argc, char **argv){
 
     // set system font
 
+	QFont font = QFont(DEFAULT_SYSTEM_FONT_FAMILY, DEFAULT_SYSTEM_FONT_SIZE, DEFAULT_SYSTEM_FONT_WEIGHT);
+	
     bool custom_config_set = false;
-    QString fontstring = SETTINGS_read_qstring("system_font","");
+    QString fontstring = SETTINGS_read_qstring("system_font_qt6","");
 
+#if 0
     if(fontstring=="") {
       SETTINGS_set_custom_configfile(OS_get_full_program_file_path("config"));
-      fontstring = SETTINGS_read_qstring("system_font","");
+      fontstring = SETTINGS_read_qstring("system_font_qt6","");
       R_ASSERT(fontstring != "");
       custom_config_set = true;
     }
-
 #if defined(FOR_WINDOWS)
     fontstring = fontstring.replace("Lato Black", "Lato");
 #endif
+#endif // 0
+	
 
     {
-      QFont font;
-      font.fromString(fontstring);
-      //font.fromString("Cousine,11,-1,5,75,0,0,0,0,0");
+		if (fontstring != "")
+			font.fromString(fontstring);
+		//font.fromString("Cousine,11,-1,5,75,0,0,0,0,0");
  
 #if 0 //FOR_MACOSX
-      if(custom_config_set)
-        font.setPointSizeF(font.pointSizeF()*96.0/72.0); // macs have dpi of 72, while linux and windows have 96.
+		if(custom_config_set)
+			font.setPointSizeF(font.pointSizeF()*96.0/72.0); // macs have dpi of 72, while linux and windows have 96.
 #endif
-      
-      if(SETTINGS_read_qstring("system_font_style","")!="")
-        font.setStyleName(SETTINGS_read_qstring("system_font_style",""));
-      qapplication->setFont(font);
-      QApplication::setFont(font);
+		
+		if(SETTINGS_read_qstring("system_font_style","")!="")
+			font.setStyleName(SETTINGS_read_qstring("system_font_style",""));
+		qapplication->setFont(font);
+		QApplication::setFont(font);
     }
 
     if (custom_config_set==true){

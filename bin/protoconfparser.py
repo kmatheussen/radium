@@ -1007,6 +1007,7 @@ class Read:
     def makeRadium_h(self):
         oh=open("radium_proc.h","w")
         oh.write("/*This file is automaticly generated from protos.conf.*/\n");
+        oh.write("#pragma once\n");
         oh.write("#define const_char const char\n")
         oh.write("#include \"../common/placement_type.h\"\n")
         oh.write("#include \"../common/dyn_type.h\"\n")

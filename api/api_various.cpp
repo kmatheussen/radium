@@ -14,6 +14,12 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+/*
+#if defined(__GNUC__) && !defined(__clang__)
+#  include "../Qt/Qt_precompiled.hpp"
+#endif
+*/
+
 #include "../common/includepython.h"
 
 #include <unistd.h>
@@ -29,7 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #pragma clang diagnostic ignored "-Wshorten-64-to-32"
 #include <QVector> // Shortening warning in the QVector header. Temporarily turned off by the surrounding pragmas.
 #pragma clang diagnostic pop
-#include <QLinkedList>
+//#include <QLinkedList>
 #include <QThread>
 #include <QUuid>
 #include <QClipboard>
@@ -60,6 +66,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/track_insert_proc.h"
 #include "../common/tracks_proc.h"
 #include "../common/wtracks_proc.h"
+#include "../common/undo.h"
 #include "../common/undo_trackheader_proc.h"
 #include "../common/block_insert_proc.h"
 #include "../common/block_delete_proc.h"
@@ -1955,6 +1962,13 @@ void splitBlock(int windownum){
 
 // Warning, must be called via python (does not update graphics or handle undo/redo)
 void setNumTracks(int numtracks, int blocknum, int windownum){
+
+	if (numtracks <= 0)
+	{
+		handleError("setNumTracks: numtracks==%d", numtracks);
+		return;
+	}
+	
   struct Tracker_Windows *window=NULL;
   struct WBlocks *wblock = getWBlockFromNumA(
                                              windownum,
@@ -2181,7 +2195,9 @@ void openToolsDialog(void){
 }
 
 void openPluginManager(void){
-  evalScheme("(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (create-instrument (ra:create-new-instrument-conf) descr)))");
+  //evalScheme("(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (create-instrument (ra:create-new-instrument-conf) descr)))");
+  //evalScheme("(new-instrument-from-plugin-manager)");
+  evalScheme("(let ((pos (get-mixer-slot-after-last-audio-instrument)))(new-instrument-from-plugin-manager -2 (car pos) (cdr pos)))");
 }
 
 void openMidiLearnPreferencesDialog(void){
@@ -2199,10 +2215,10 @@ void openAboutWindow(void){
   GFX_addMessage(
               "<center><b>Radium " RADIUM_VERSION "</b></center>"
               "<p>"
-              "OpenGL vendor: \"%s\"<br>"
-              "OpenGL renderer: \"%s\"<br>"
-              "OpenGL version: \"%s\"<br>"
-              "OpenGL flags: %x<br>"
+              //"OpenGL vendor: \"%s\"<br>"
+              //"OpenGL renderer: \"%s\"<br>"
+              //"OpenGL version: \"%s\"<br>"
+              //"OpenGL flags: %x<br>"
               "Qt version: \"%s\"<br>"
               "JUCE version: \"%s\"<br>"
               "C/C++ compiler version: " __VERSION__ "<br>"
@@ -2219,10 +2235,10 @@ void openAboutWindow(void){
               "<p>"
               "Radium needs more demo songs. If you provide one which is suitable, you will get a free lifetime subscription. More information <A href=\"http://users.notam02.no/~kjetism/radium/songs.php\">here</A>."
               ,
-              ATOMIC_GET(GE_vendor_string)==NULL ? "(null)" : ATOMIC_GET(GE_vendor_string),
-              ATOMIC_GET(GE_renderer_string)==NULL ? "(null)" : ATOMIC_GET(GE_renderer_string),
-              ATOMIC_GET(GE_version_string)==NULL ? "(null)" : ATOMIC_GET(GE_version_string),
-              ATOMIC_GET(GE_opengl_version_flags),
+              //ATOMIC_GET(GE_vendor_string)==NULL ? "(null)" : ATOMIC_GET(GE_vendor_string),
+              //ATOMIC_GET(GE_renderer_string)==NULL ? "(null)" : ATOMIC_GET(GE_renderer_string),
+              //ATOMIC_GET(GE_version_string)==NULL ? "(null)" : ATOMIC_GET(GE_version_string),
+              //ATOMIC_GET(GE_opengl_version_flags),
               GFX_qVersion(),
               JUCE_get_JUCE_version(),
               getCLibFaustVersion(),
@@ -2976,15 +2992,37 @@ void showHideSwingtextInBlock(int blocknum,int windownum){
   window->must_redraw = true;
 }
 
-void setSwingEnabled(bool val, int blocknum, int windownum){
-  struct Tracker_Windows *window;
-  const struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
-  if(wblock==NULL) return;
+void setSwingEnabled(bool val, int blocknum, int windownum)
+{
+	struct Tracker_Windows *window;
+	const struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+	if(wblock==NULL) return;
+	
+	if (wblock->block->swing_enabled == val)
+		return;
+	
+	bool old_val = wblock->block->swing_enabled;
 
-  wblock->block->swing_enabled = val;
-  TIME_block_swings_have_changed(wblock->block);
-
-  window->must_redraw = true;
+	if (val == old_val)
+		return;
+	
+	auto setit = [blocknum = wblock->block->l.num](bool doit) // Won't use the parameter "blocknum" since that value might be -1. (-1 might work though, but this way we don't have to think about whether it works or not.
+		{
+			struct Blocks *block = getBlockFromNum(blocknum);
+			if (block==NULL)
+				return;
+			
+			block->swing_enabled = doit;
+			TIME_block_swings_have_changed(block);
+		};
+	
+	UNDO_functions(
+		"Toggle swing enabled",
+		[setit, val]()    { setit(val); },
+		[setit, old_val](){ setit(old_val); }
+		);
+	
+	window->must_redraw = true;
 }
 
   
@@ -2996,20 +3034,12 @@ bool getSwingEnabled(int blocknum, int windownum){
 }
 
 bool switchSwingEnabled(int blocknum, int windownum){
-
-  struct Tracker_Windows *window;
-  const struct WBlocks *wblock = getWBlockFromNumA(windownum, &window, blocknum);
+  const struct WBlocks *wblock = getWBlockFromNum(windownum, blocknum);
   if(wblock==NULL) return false;
 
-  bool ret = !wblock->block->swing_enabled;
-  
-  wblock->block->swing_enabled = ret;
+  setSwingEnabled(!wblock->block->swing_enabled, blocknum, windownum);
 
-  TIME_block_swings_have_changed(wblock->block);
-
-  window->must_redraw = true;
-  
-  return ret;
+  return wblock->block->swing_enabled;
 }
 
   
@@ -4375,8 +4405,8 @@ bool doModalWindows(void){
   static bool has_inited = false;
 
   if (has_inited==false){
-    g_modal_windows = SETTINGS_read_bool("modal_windows", GL_should_do_modal_windows());
-    has_inited = true;
+	  g_modal_windows = SETTINGS_read_bool("modal_windows", false); //GL_should_do_modal_windows());
+	  has_inited = true;
   }
 
   return g_modal_windows;
@@ -4385,26 +4415,6 @@ bool doModalWindows(void){
 void setModalWindows(bool doit){
   g_modal_windows = doit;
   SETTINGS_write_bool("modal_windows", doit);
-}
-
-//
-
-static DEFINE_ATOMIC(int, g_high_cpu_protection_opengl_protection) = -1;
-
-bool doHighCpuOpenGlProtection(void){  
-  int g = ATOMIC_GET(g_high_cpu_protection_opengl_protection);
-  
-  if (g == -1){
-    g = SETTINGS_read_bool("high_cpu_protection_opengl_protection", true) ? 1 : 0;
-    ATOMIC_SET(g_high_cpu_protection_opengl_protection, g);
-  }
-
-  return g==1 ? true : false;
-}
-
-void setHighCpuOpenGlProtection(bool doit){
-  ATOMIC_SET(g_high_cpu_protection_opengl_protection, doit ? 1 : 0);
-  SETTINGS_write_bool("high_cpu_protection_opengl_protection", doit);
 }
 
 //

@@ -57,6 +57,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 ** $QT_END_LICENSE$
 **
 ****************************************************************************/
+#if defined(__GNUC__) && !defined(__clang__)
+#  include "../Qt/Qt_precompiled.hpp"
+#endif
+
 #define __STDC_FORMAT_MACROS 1
 #include <inttypes.h>
 #include <unistd.h>
@@ -1921,7 +1925,7 @@ bool MyScene::fix_mousePressEvent(radium::MouseCycleEvent &event){
   
   _start_mouse_pos = QCursor::pos(); //pos;
 
-  if(event.button()==Qt::MidButton) {
+  if(event.button()==Qt::MiddleButton) {
     
     g_is_dragging_everything = true;
     g_startpos_scrollbar_x = g_mixer->view->horizontalScrollBar()==NULL ? 0 : g_mixer->view->horizontalScrollBar()->value();

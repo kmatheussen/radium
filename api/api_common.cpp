@@ -14,6 +14,12 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+/*
+#if defined(__GNUC__) && !defined(__clang__)
+#  include "../Qt/Qt_precompiled.hpp"
+#endif
+*/
+
 #define __STDC_FORMAT_MACROS 1
 
 #include "../common/includepython.h"
@@ -43,7 +49,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "api_gui_proc.h"
 
-#include "radium_proc.h"
+#include "api_proc.h"
 #include "api_common_proc.h"
 
 
@@ -783,9 +789,9 @@ static void add_to_ids_hash(int64_t seqblock_id, int seqtracknum, int seqblocknu
   // First check if we should clear the hash table if it hasn grown a lot.
   // Currently, this is very unlikely to happen, but maybe something changes in the future.
   if (g_seqblock_ids_hash.size() >= 10000){    
-    printf(" CLEARING: %d\n", g_seqblock_ids_hash.size());
-    R_ASSERT_NON_RELEASE(false);
-    g_seqblock_ids_hash.clear();
+	  printf(" CLEARING: %d\n", (int)g_seqblock_ids_hash.size());
+	  R_ASSERT_NON_RELEASE(false);
+	  g_seqblock_ids_hash.clear();
   }
 
   g_seqblock_ids_hash[seqblock_id] = QPair<int, int>(seqtracknum, seqblocknum);

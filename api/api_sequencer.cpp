@@ -16,7 +16,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #define __STDC_FORMAT_MACROS 1
 
-#include "../common/includepython.h"
+//#include "../common/includepython.h"
 
 #include <inttypes.h>
 
@@ -3552,14 +3552,19 @@ void cancelCurrSeqblockUnderMouse(void){
     return;
   
   int seqblocknum, seqtracknum;
-  struct SeqTrack *seqtrack;
+  struct SeqTrack *seqtrack = NULL;
   struct SeqBlock *seqblock = getGfxSeqblockFromIdB(g_curr_seqblock_id_under_mouse, &seqtrack, seqblocknum, seqtracknum, false);
 
   if(seqblock!=NULL)
-    SEQBLOCK_update(seqtrack, seqblock);
+  {
+	  R_ASSERT_RETURN_IF_FALSE(seqtrack != NULL);
+	  SEQBLOCK_update(seqtrack, seqblock);
+  }
   else
+  {
     SEQUENCER_update(SEQUPDATE_TIME); // A scheme error will be thrown if this happens.
-
+  }
+  
   SEQUENCER_update(SEQUPDATE_NAVIGATOR);
   
   //g_curr_seqblock_under_mouse = NULL;

@@ -1,3 +1,4 @@
+#pragma once
 /* Copyright 2012 Kjetil S. Matheussen
 
 This program is free software; you can redistribute it and/or
@@ -23,12 +24,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Qt_sample_requester_widget.h"
 
+#include "../OpenGL/Render_proc.h"
 #include "../audio/Sampler_plugin_proc.h"
 #include "../audio/FluidSynth_plugin_proc.h"
 #include "../audio/SoundFonts_proc.h"
 #include "../audio/undo_plugin_state_proc.h"
 #include "../common/patch_proc.h"
 #include "../common/playerclass.h"
+
 
 extern PlayerClass *pc;
 extern QApplication *g_qapplication;
@@ -512,12 +515,12 @@ class Sample_requester_widget : public QWidget
       if (time.elapsed() > 500 || (window->message!=NULL && time.elapsed() >= 50)){
         time.restart();
         if (GFX_ProgressIsOpen()){
-          const char *message = talloc_format("Loading sample directory \"%s\" into memory. (%d / %d)", pathtext, i, list.size());
-          GFX_ShowProgressMessage(message, false);
+			const char *message = talloc_format("Loading sample directory \"%s\" into memory. (%d / %d)", pathtext, i, (int)list.size());
+			GFX_ShowProgressMessage(message, false);
         } else {
-          const char *message = talloc_format("Loading sample directory into memory. (%d / %d)", i, list.size());       
-          window->message = message;
-          GL_create(window);
+			const char *message = talloc_format("Loading sample directory into memory. (%d / %d)", i, (int)list.size());       
+			window->message = message;
+			GL_create(window);
         }
       }
 
@@ -736,7 +739,7 @@ class Sample_requester_widget : public QWidget
     
     if(item_text=="../") {
       QList<QListWidgetItem *> items = file_list->findItems(org_directory_name+"/",Qt::MatchExactly);
-      printf("cursor_entry: \"%s\", num_items: %d\n",org_directory_name.toUtf8().constData(),items.count());
+      printf("cursor_entry: \"%s\", num_items: %d\n",org_directory_name.toUtf8().constData(), (int)items.count());
       if(items.count()>0)
         file_list->setCurrentItem(items.first());
     }

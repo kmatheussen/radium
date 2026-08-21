@@ -15,6 +15,11 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
+
+#if defined(__GNUC__) && !defined(__clang__)
+#  include "../Qt/Qt_precompiled.hpp"
+#endif
+
 #define __STDC_FORMAT_MACROS 1
 #include <inttypes.h>
 
@@ -153,7 +158,7 @@ PluginWidget *PluginWidget_create(QWidget *parent, struct Patch *patch, SizeType
   if (iPages > 1) {
     widget->pTabWidget  = new QTabWidget(widget);
     pVBoxLayout = new QVBoxLayout(widget);
-    pVBoxLayout->setMargin(0);
+    pVBoxLayout->setContentsMargins(0,0,0,0);
     pVBoxLayout->setSpacing(0);
 #if USE_QT5
     static QStyle *style = QStyleFactory::create("plastique");
@@ -163,7 +168,7 @@ PluginWidget *PluginWidget_create(QWidget *parent, struct Patch *patch, SizeType
   }
 
   QGridLayout *pGridLayout = new QGridLayout; //(widget);
-  pGridLayout->setMargin(0);
+  pGridLayout->setContentsMargins(0,0,0,0);
   pGridLayout->setSpacing(0);
 
   int iPage = 0;
@@ -212,7 +217,7 @@ PluginWidget *PluginWidget_create(QWidget *parent, struct Patch *patch, SizeType
         iX = 0;
         if (widget->pTabWidget && iPage < iPages) {
           pGridLayout = new QGridLayout; //(widget);
-          pGridLayout->setMargin(0);
+          pGridLayout->setContentsMargins(0,0,0,0);
           pGridLayout->setSpacing(0);
           pPageWidget = new QWidget(widget);
           pPageWidget->setLayout(pGridLayout);

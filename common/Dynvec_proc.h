@@ -1,9 +1,11 @@
+#pragma once
 
 #if !defined(_RADIUM_COMMON_DYNVEC_PROC_H)
 #define _RADIUM_COMMON_DYNVEC_PROC_H
 
 
 #ifdef __cplusplus
+
 static inline const dyn_t* begin(const dynvec_t &v) {
   return &v.elements[0];
 }

@@ -14,6 +14,11 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
+
+#if defined(__GNUC__) && !defined(__clang__)
+#  include "../Qt/Qt_precompiled.hpp"
+#endif
+
 #include "Qt_PresetBrowser.h"
 
 #define __STDC_FORMAT_MACROS 1
@@ -32,6 +37,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Qt_MyQSpinBox.h"
 #include "Qt_colors_proc.h"
 #include "FocusSniffers.h"
+#include "KeyboardFocusFrame.hpp"
 
 #include <QTreeView>
 #include <QFileSystemModel>
@@ -117,14 +123,26 @@ class BrowserQSortFilterProxyModel: public QSortFilterProxyModel
 
   void setPresetFolder(const QString &pFolder)
   {
-    presetFolder = pFolder;
-    invalidateFilter();
+#if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
+	  beginFilterChange();
+	  presetFolder = pFolder;
+	  endFilterChange();
+#else
+	  presetFolder = pFolder;
+	  invalidateFilter();
+#endif
   }
 
   void setFilter(const QString &filter)
   {
-    this->filterText = filter;
-    invalidateFilter();
+#if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
+	  beginFilterChange();
+	  this->filterText = filter;
+	  endFilterChange();
+#else
+	  this->filterText = filter;
+	  invalidateFilter();
+#endif
   }
 
 };

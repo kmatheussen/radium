@@ -1,3 +1,4 @@
+#pragma once
 
 #if USE_QT4
 

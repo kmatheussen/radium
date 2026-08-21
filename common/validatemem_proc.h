@@ -90,11 +90,17 @@ static inline void* my_calloc(size_t size1,size_t size2) {
 #pragma clang diagnostic ignored "-Wcast-align"
   int64_t *ret64 = (int64_t*)ret;
 #pragma clang diagnostic pop
+  
   size_t s2=size/sizeof(int64_t);
 
+#pragma GCC diagnostic push
+#if !defined(__clang__)
+#  pragma GCC diagnostic ignored "-Wstringop-overflow="
+#endif
   for(size_t i=0;i<s2;i++)
     ret64[i]=0;
-
+#pragma GCC diagnostic pop
+  
   for(size_t i=s2*sizeof(int64_t);i<size;i++)
     ret[i] = 0;
   

@@ -16,6 +16,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
+#if defined(__GNUC__) && !defined(__clang__)
+#  include "../Qt/Qt_precompiled.hpp"
+#endif
+
 #include <math.h>
 
 #include "nsmtracker.h"
@@ -32,6 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../api/api_common_proc.h"
 
+#include "OS_visual_input.h"
 #include "veltext_proc.h"
 
 
@@ -322,4 +327,3 @@ bool VELTEXT_keypress(struct Tracker_Windows *window, struct WBlocks *wblock, st
 
   return true;
 }
-  

@@ -16,13 +16,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
+
+#if defined(__GNUC__) && !defined(__clang__)
+#  include "../Qt/Qt_precompiled.hpp"
+#endif
+
 #include <unistd.h>
 
 #include "s7.h"
 #include "../bin/s7webserver/s7webserver.h"
 
 #include <QCoreApplication>
-#include <QRegExp>
+//#include <QRegExp>
 #include <QStringList>
 #include <QDebug>
 
@@ -1865,6 +1870,27 @@ int64_t s7extra_callFunc_int_instrument(const func_t *func, instrument_t arg1){
 
 int64_t s7extra_callFunc2_int_instrument(const char *funcname, instrument_t arg1){
   return s7extra_callFunc_int_instrument((const func_t*)find_scheme_value(s7, funcname), arg1);
+}
+
+instrument_t s7extra_callFunc_instrument_instrument(const func_t *func, instrument_t arg1){
+  ScopedEvalTracker eval_tracker;
+  
+  s7_pointer ret = catch_call(s7,
+                              S7_LIST(s7,
+                                         (s7_pointer)func,
+                                         eval_tracker.p(s7extra_make_instrument(s7, arg1))
+                                         )
+                              );
+  if(!is_instrument(ret)){
+    handleError("Callback did not return an instrument");
+    return make_instrument(-1);
+  }else{
+    return get_instrument(ret);
+  }
+}
+
+instrument_t s7extra_callFunc2_instrument_instrument(const char *funcname, instrument_t arg1){
+  return s7extra_callFunc_instrument_instrument((const func_t*)find_scheme_value(s7, funcname), arg1);
 }
 
 void s7extra_callFunc_void_instrument(const func_t *func, instrument_t arg1){

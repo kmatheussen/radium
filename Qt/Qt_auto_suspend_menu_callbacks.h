@@ -1,4 +1,6 @@
 
+#pragma once
+
 #include "Qt_auto_suspend_menu.h"
 
 class Auto_Suspend_Menu : public QDialog, public Ui::Auto_Suspend_Menu{
@@ -52,7 +54,8 @@ class Auto_Suspend_Menu : public QDialog, public Ui::Auto_Suspend_Menu{
   void myExec(void){
     update_widget();
     move(QCursor::pos());
-    qApp->setActiveWindow(enable_suspend);
+	enable_suspend->activateWindow();
+    //qApp->setActiveWindow(enable_suspend);
     
     _timer.start();
     safeExec(this, true);

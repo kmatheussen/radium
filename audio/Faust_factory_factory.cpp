@@ -3,13 +3,12 @@
 #include <QtConcurrent>
 #include <QPair>
 
-
-
+#include "../common/ArgsCreator.hpp"
 #include "../common/Mutex.hpp"
 #include "../common/QueueStack.hpp"
 
 #define U_MUTEX false
-static radium::Mutex g_faust_mutex; // Calling startMTDSPFactories() is not enough since that one will only protect llvm factories.
+static radium::Mutex g_faust_mutex; // U_MUTEX is false, so this mutex is compiled out. Thread safety relies on startMTDSPFactories(), which locks the Faust API (both llvm and interpreter factories) via LOCK_API.
 //radium::Mutex fff_mutex; // Must be obtained when using the factory. (Not necessary, faust has its own lock)
 
 #define COMPILE_SVG_IN_PARALLEL 0 // Setting this one to 1 is currently a lot slower. The reason is that Faust uses a common lock around all API functions (so it's not running in parallell anyway), plus that generating C++ code takes a lot of time.
@@ -70,59 +69,6 @@ namespace{
     */
   };
 
-  class ArgsCreator{
-    QStringList args;
-
-    int argc;
-    const char **argv;
-
-    bool is_dirty;
-    
-    void free_argv(){
-      for(int i=0;i<argc;i++)
-        free((void*)argv[i]);
-      free((void*)argv);      
-    }
-    
-    void create(){
-      free_argv();
-      argc = args.size();
-      argv = (const char**)calloc(argc, sizeof(char*));
-      for(int i=0;i<argc;i++)
-        argv[i] = strdup(args[i].toUtf8().constData());
-      is_dirty = false;
-    }
-    
-  public:
-    void push_back(QString arg){
-      args.push_back(arg.replace("%radium_path%",QCoreApplication::applicationDirPath()));
-      is_dirty = true;
-    }
-    void push_back(QStringList args2){
-      for(auto arg : args2)
-        push_back(arg);
-    }
-    
-    int get_argc(void){
-      return args.size();
-    }
-
-    const char** get_argv(void){
-      if (is_dirty)
-        create();
-      return argv;
-    }
-    
-    ArgsCreator()
-      : argc(0)
-      , argv(NULL)
-      , is_dirty(true)
-    {}
-    
-    ~ArgsCreator(){
-      free_argv();
-    }
-  };
 }
 
 /*
@@ -267,7 +213,7 @@ namespace{
 
   private:
 
-    MyQTemporaryDir *create_svg_dir(ArgsCreator &args, QString &error_message) const {
+    MyQTemporaryDir *create_svg_dir(radium::ArgsCreator &args, QString &error_message) const {
       MyQTemporaryDir *svg_dir = new MyQTemporaryDir(QDir::tempPath() + QDir::separator() + "radium_faust_svg_XXXXXX");
 
       if (svg_dir->isValid()==false) {
@@ -286,10 +232,10 @@ namespace{
 #if COMPILE_SVG_IN_PARALLEL
     MyQTemporaryDir *create_svg(const CompileOptions &opts, QString &error_message) const {
 
-      ArgsCreator args;
+      radium::ArgsCreator args;
       args.push_back("-o");
       args.push_back("cppsource.cpp");
-      args.push_back(options.split("\n", QString::SkipEmptyParts));
+      args.push_back(options.split("\n", Qt::SkipEmptyParts));
 
       MyQTemporaryDir *svg_dir = create_svg_dir(args, error_message);
       if (svg_dir==NULL)
@@ -332,8 +278,8 @@ namespace{
 
       dsp_->init(MIXER_get_sample_rate());
       
-      int num_inputs = dsp_->getNumInputs();
-      int num_outputs = dsp_->getNumInputs();
+      const int num_inputs = dsp_->getNumInputs();
+      const int num_outputs = dsp_->getNumOutputs();
       
       if (num_inputs > MAX_CHANNELS){
         QString ret = QString("Maximum %1 input channels supported (%2)").arg(QString::number(MAX_CHANNELS), QString::number(num_inputs));
@@ -365,7 +311,7 @@ namespace{
         {
           //radium::ScopedMutex lock(fff_mutex);
           for(int i=1;i<MAX_POLYPHONY;i++)
-            dsps[i] = reply.factory->createDSPInstance(); //reply.factory);
+			  dsps[i] = reply.factory->createDSPInstance(); //reply.factory);
         }
         
         for(int i=1;i<MAX_POLYPHONY;i++)          
@@ -380,8 +326,8 @@ namespace{
     // Check atan2! Opt seems to not work.
 
     QString create_reply_factory(const CompileOptions &opts, FFF_Reply &reply, MyQTemporaryDir* &svg_dir) const {
-      ArgsCreator args;
-      args.push_back(opts.options.split("\n", QString::SkipEmptyParts));
+      radium::ArgsCreator args;
+      args.push_back(opts.options.split("\n", Qt::SkipEmptyParts));
 #if 0 // __WIN32 && !_WIN64
       args.push_back("-l");
       args.push_back(OS_get_full_program_file_path("llvm_math.ll"));
@@ -663,9 +609,14 @@ namespace{
       };
 
       if (free_now)
+	  {
         doit();
+	  }
       else
-        QtConcurrent::run(doit);
+	  {
+		  auto ret = QtConcurrent::run(doit);
+		  (void)ret;
+	  }
     }
     
   private:

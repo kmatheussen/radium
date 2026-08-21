@@ -16,6 +16,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
+#if defined(__GNUC__) && !defined(__clang__)
+#  include "../Qt/Qt_precompiled.hpp"
+#endif
+
 #include <QUuid>
 
 
@@ -744,7 +748,7 @@ static void prepare_signature_and_tempo_automation(QVector<SignatureAutomationNo
       break;
 
 #if !defined(RELEASE)
-    printf("      I: %d. is_changed: %d. max1: %d. max2: %d. size1: %d. size2: %d\n", i, is_changed, max_size1, max_size2, signatures.size(), tempos.size());
+    printf("      I: %d. is_changed: %d. max1: %d. max2: %d. size1: %d. size2: %d\n", i, is_changed, max_size1, max_size2, (int)signatures.size(), (int)tempos.size());
     
     if (i > R_MAX(init_signature_size, init_tempos_size)){
       printf("  Signatures for #%d:\n", i);
@@ -759,7 +763,7 @@ static void prepare_signature_and_tempo_automation(QVector<SignatureAutomationNo
 #endif
     
     if (i > max_size1){
-      printf("Warning:      I: %d. is_changed: %d. max1: %d. max2: %d. size1: %d. size2: %d\n", i, is_changed, max_size1, max_size2, signatures.size(), tempos.size());
+		printf("Warning:      I: %d. is_changed: %d. max1: %d. max2: %d. size1: %d. size2: %d\n", i, is_changed, max_size1, max_size2, (int)signatures.size(), (int)tempos.size());
       //getchar();
       R_ASSERT_NON_RELEASE(false);
     }

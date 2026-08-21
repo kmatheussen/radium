@@ -1,3 +1,4 @@
+#pragma once
 /* Copyright 2012- Kjetil S. Matheussen
 
 This program is free software; you can redistribute it and/or
@@ -16,6 +17,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "Qt_instruments_widget.h"
+
 
 class Instruments_widget : public QWidget, public Ui::Instruments_widget{
   Q_OBJECT;
@@ -74,7 +76,7 @@ public:
     GFX_update_current_instrument_widget(); // Fix arrow colors, etc.
   }
 
-  void enterEvent(QEvent * event) override {
+  void enterEvent(QEnterEvent * event) override {
     instrument_t current = getCurrentInstrument();
     if (isLegalInstrument(current) && instrumentIsAudio(current))
       setCurrentInstrumentUnderMouse(current);

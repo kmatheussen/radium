@@ -16,6 +16,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
+#if defined(__GNUC__) && !defined(__clang__)
+#  include "../Qt/Qt_precompiled.hpp"
+#endif
+
 #include "nsmtracker.h"
 #include "disk.h"
 #include "disk_windows_proc.h"
@@ -38,6 +42,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../mixergui/QM_MixerWidget.h"
 #include "../Qt/Qt_instruments_proc.h"
 #include "../Qt/Qt_comment_dialog_proc.h"
+#include "../Qt/EditorWidget.h"
 #include "../audio/audio_instrument_proc.h"
 #include "../audio/Presets_proc.h"
 #include "../audio/Seqtrack_plugin_proc.h"

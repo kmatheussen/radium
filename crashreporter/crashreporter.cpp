@@ -16,6 +16,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
+#if defined(__GNUC__) && !defined(__clang__) && !defined(NO_PRECOMPILED_HEADERS)
+#  include "../Qt/Qt_precompiled.hpp"
+#endif
+
+
 #include <stdio.h>
 #include <unistd.h>
 #include <signal.h>
@@ -31,6 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QWidget>
 #include <QString>
 #include <QApplication>
+#include <QIcon>
 #include <QFile>
 #include <QTextStream>
 #include <QPlainTextEdit>
@@ -83,6 +89,9 @@ static DEFINE_ATOMIC(bool, g_dont_report) = false;
 #define NOPLUGINNAMES "<nopluginnames>"
 #define NOEMERGENCYSAVE "<noemergencysave>"
 
+#define CRASHREPORT_URL "https://crashreport.radium.dog"
+#define CRASHREPORT_SECRET "d9fbe02a2be4366243e33378999ae97e8ac8988339c2f179dba782e9ab0f78fb"
+
 
 namespace local{
   
@@ -124,10 +133,18 @@ static void delete_file(QString filename){
 }
 
 static void clear_file(QString filename){
-  QFile file(filename);
-  file.open(QIODevice::WriteOnly | QIODevice::Text);
-  file.write("");
-  file.close();
+	QFile file(filename);
+	if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+	{
+		fprintf(stderr, "\033[31m\n\n !!!!!!!!!!!!!!!!!!!!!!!!! \n\n\n Error in crashreporter.cpp at line %d: Unable to open file \"%s\" for writing. \n\n !!!!!!!!!!!!!!!!!!!!!!!!! \n\n\n \033[0m",
+				__LINE__,
+				filename.toUtf8().constData());
+	}
+	else
+	{
+		file.write("");
+		file.close();
+	}
 }
 #endif
 
@@ -442,7 +459,7 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
       buttons.addButton(b3, 3);
     }
     
-    box.connect(&buttons, SIGNAL(buttonClicked(int)), &box, SLOT(done(int)));
+    box.connect(&buttons, SIGNAL(idClicked(int)), &box, SLOT(done(int)));
 
     QLabel space(" ");
     QLabel space2(" ");
@@ -539,8 +556,9 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
       data.append(text_edit.toPlainText().toUtf8());
       
       QNetworkAccessManager nam;
-      QNetworkRequest request(QUrl("http://users.notam02.no/~kjetism/radium/crashreport.php"));
+      QNetworkRequest request(QUrl(CRASHREPORT_URL));
       request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded" );
+      request.setRawHeader("X-Radium-Secret", CRASHREPORT_SECRET);
 
       QNetworkReply *reply = nam.post(request,data);
 
@@ -602,10 +620,26 @@ int main(int argc, char **argv){
   if(getenv("QT_QPA_PLATFORM_PLUGIN_PATH")==NULL){
     faulty_installation = true;
   }else{
-    QCoreApplication::setLibraryPaths(QStringList());
+	  // Do not replace, but prepend, the library paths. Otherwise the default paths are
+	  // lost, including the ".../plugins/tls" directory containing the TLS backend plugins
+	  // (e.g. libqopensslbackend.so) needed for HTTPS. Radium sets
+	  // QT_QPA_PLATFORM_PLUGIN_PATH to the ".../plugins/platforms" directory only.
+	  QStringList paths = QCoreApplication::libraryPaths();
+	  paths.prepend(QString(getenv("QT_QPA_PLATFORM_PLUGIN_PATH")));
+	  QCoreApplication::setLibraryPaths(paths);
+	  //QCoreApplication::setLibraryPaths(QStringList());
   }
 #else
-  QCoreApplication::setLibraryPaths(QStringList());
+  if(getenv("QT_QPA_PLATFORM_PLUGIN_PATH")!=NULL){
+    // Do not replace, but prepend, the library paths. Otherwise the default paths are
+    // lost, including the ".../plugins/tls" directory containing the TLS backend plugins
+    // (e.g. libqopensslbackend.dylib) needed for HTTPS. Radium sets
+    // QT_QPA_PLATFORM_PLUGIN_PATH to the ".../plugins/platforms" directory only.
+    QStringList paths = QCoreApplication::libraryPaths();
+    paths.prepend(QString(getenv("QT_QPA_PLATFORM_PLUGIN_PATH")));
+    QCoreApplication::setLibraryPaths(paths);
+  }
+  //QCoreApplication::setLibraryPaths(QStringList());
 #endif
 
   QLocale::setDefault(QLocale::c());
@@ -618,6 +652,8 @@ int main(int argc, char **argv){
 
   argv = getQApplicationConstructorArgs(argc, argv);
   QApplication app(argc, argv);
+
+  app.setWindowIcon(QIcon(QCoreApplication::applicationDirPath() + QDir::separator() + "graphics" + QDir::separator() + "radium_dog_logo_256x256_colorized.png"));
 
 #if FOR_LINUX
   if(faulty_installation){
@@ -900,10 +936,10 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
   
   tosend += "OS version: " + QSysInfo::productVersion() + "\n\n";
     
-  tosend += "OpenGL vendor: " + opengl_vendor + "\n";
-  tosend += "OpenGL renderer: " + QString((ATOMIC_GET(GE_renderer_string)==NULL ? "(null)" : (const char*)ATOMIC_GET(GE_renderer_string))) + "\n";
-  tosend += "OpenGL version: " + QString((ATOMIC_GET(GE_version_string)==NULL ? "(null)" : (const char*)ATOMIC_GET(GE_version_string))) + "\n";
-  tosend += QString("OpenGL flags: %1").arg(ATOMIC_GET(GE_opengl_version_flags), 0, 16) + "\n\n";
+  //tosend += "OpenGL vendor: " + opengl_vendor + "\n";
+  //tosend += "OpenGL renderer: " + QString((ATOMIC_GET(GE_renderer_string)==NULL ? "(null)" : (const char*)ATOMIC_GET(GE_renderer_string))) + "\n";
+  //tosend += "OpenGL version: " + QString((ATOMIC_GET(GE_version_string)==NULL ? "(null)" : (const char*)ATOMIC_GET(GE_version_string))) + "\n";
+  //tosend += QString("OpenGL flags: %1").arg(ATOMIC_GET(GE_opengl_version_flags), 0, 16) + "\n\n";
 
   tosend += "Runtime Qt version: " + QString(qVersion()) + " on " + QSysInfo::currentCpuArchitecture().toUtf8().constData() + "\n";
   tosend += "Compile-time Qt version:" + QString(QT_VERSION_STR) +  " for " + QSysInfo::buildAbi().toUtf8().constData() + ".\n\n";
@@ -1042,7 +1078,7 @@ void CRASHREPORTER_send_message(const char *additional_information, const char *
 #endif
 
     if (dosave)
-      emergency_save_file.open();
+		dosave = emergency_save_file.open();
 
     printf(" calling run_program. Filename: %S. base64: %S\n",STRING_create(file->fileName(), false), STRING_create(local::toBase64(file->fileName()), false));
     //getchar();
@@ -1131,7 +1167,6 @@ void CRASHREPORTER_send_assert_message(Crash_Type crash_type, const char *fmt,..
 
   RT_request_to_stop_playing();
   RT_pause_plugins();
-
 
   CRASHREPORTER_send_message_with_backtrace(message, crash_type, time);
 

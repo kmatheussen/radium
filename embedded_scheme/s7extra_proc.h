@@ -253,6 +253,9 @@ extern "C" {
   int64_t s7extra_callFunc_int_instrument(const func_t *func, instrument_t arg1);
   int64_t s7extra_callFunc2_int_instrument(const char *funcname, instrument_t arg1);
 
+  instrument_t s7extra_callFunc_instrument_instrument(const func_t *func, instrument_t arg1);
+  instrument_t s7extra_callFunc2_instrument_instrument(const char *funcname, instrument_t arg1);
+
   int64_t s7extra_callFunc_int_int_int_int(const func_t *func, int64_t arg1, int64_t arg2, int64_t arg3);
   int64_t s7extra_callFunc2_int_int_int_int(const char *funcname, int64_t arg1, int64_t arg2, int64_t arg3);
 
@@ -321,9 +324,12 @@ extern "C" {
 extern QHash<const char*, int> g_num_s7_protected;
 #endif
 
-namespace radium{
+namespace radium
+{
 
-  template <typename T> struct ProtectedS7Extra{
+template <typename T>
+struct ProtectedS7Extra
+{
     T v;
     int64_t _pos;
     
@@ -333,14 +339,20 @@ namespace radium{
 
     const char *_id;
 
-    ProtectedS7Extra& operator=(const ProtectedS7Extra&) = delete;
-
     ProtectedS7Extra(T val, const char *id = "")
       : _id(id)
     {
       protect(val);
     }
     
+    ProtectedS7Extra& operator=(const ProtectedS7Extra &another)
+	{
+		_id = another._id;
+		protect(another.v);
+
+		return *this;
+	}
+
     ProtectedS7Extra(const ProtectedS7Extra &another)
       : ProtectedS7Extra(another.v, another._id)
     {
@@ -416,9 +428,9 @@ namespace radium{
     T get(void){
       return v;
     }
-  };
+};
 
-}
+} // namespace radium
 #endif
 
 

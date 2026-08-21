@@ -24,7 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QString>
 #include <QPainter>
 
-#include "../Qt/EditorWidget.h"
+//#include "../Qt/EditorWidget.h"
 
 #include "helpers.h"
 
@@ -101,7 +101,7 @@ struct MyQCheckBox_OnlyCustomPainting : public QCheckBox{
 
   bool _show_enabled_marker = true;
   
-  void enterEvent(QEvent *event) override {
+  void enterEvent(QEnterEvent *event) override {
     if (_hovered_callback) {
       _hovered_callback(true);
     } else if (_patch.data() != NULL){

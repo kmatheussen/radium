@@ -151,14 +151,15 @@ export PYOPTS="-I $PYPATH"
 
 QT_INCLUDE_PATH=`$QMAKE -query QT_INSTALL_HEADERS`
 export QT_UI_CFLAGS="-I $QT_INCLUDE_PATH/QtUiTools" # Doing this instead of using pkg since there are bugs in the dependencies of the pkg file in some versions of Qt. (same with the lib file below)
-export QT_UI_LDFLAGS="`$QMAKE -query QT_INSTALL_LIBS`/libQt5UiTools.a"
+#export QT_UI_LDFLAGS="`$QMAKE -query QT_INSTALL_LIBS`/libQt6UiTools.a"
+export QT_UI_LDFLAGS="`$PKGqt --libs Qt6UiTools`"
 
 
 #One of these:
 # 1. OLD
-VL_PATH="bin/packages/Visualization-Library-master"
-export VL_CFLAGS="-DVL_STATIC_LINKING -Wall -I$VL_PATH/src -I$VL_PATH/src/3rdparty/Khronos -I$VL_PATH/src/examples -DNEW_VL=0"
-export VL_LIBS="$VL_PATH/src/vlVG/lib/libVLVG.a $VL_PATH/src/vlGraphics/lib/libVLGraphics.a $VL_PATH/src/vlCore/lib/libVLCore.a `$PKG --libs freetype2` -lGL -lGLU -lz"
+#VL_PATH="bin/packages/Visualization-Library-master"
+#export VL_CFLAGS="-DVL_STATIC_LINKING -Wall -I$VL_PATH/src -I$VL_PATH/src/3rdparty/Khronos -I$VL_PATH/src/examples -DNEW_VL=0"
+#export VL_LIBS="$VL_PATH/src/vlVG/lib/libVLVG.a $VL_PATH/src/vlGraphics/lib/libVLGraphics.a $VL_PATH/src/vlCore/lib/libVLCore.a `$PKG --libs freetype2` -lGL -lGLU -lz"
 
 # Or 2. NEW:
 #VL_PATH="bin/packages/VisualizationLibrary"
@@ -179,7 +180,8 @@ export RTMIDI_CFLAGS="-D__LINUX_ALSA__  -D__RTMIDI_DEBUG__"
 export RTMIDI_LDFLAGS="-lpthread -lasound -ljack"
 
 #export OS_OPTS="-DTEST_GC"
-export OS_OPTS="-Werror=array-bounds $CPUOPTS -DFOR_LINUX `$PKGqt --cflags Qt5X11Extras` -DRADIUM_USES_MOLD_OR_LDD=$RADIUM_USES_MOLD_OR_LDD" # -Ibin/packages/libxcb-1.13/"
+export OS_OPTS="-Werror=array-bounds $CPUOPTS -DFOR_LINUX -DRADIUM_USES_MOLD_OR_LDD=$RADIUM_USES_MOLD_OR_LDD" # -Ibin/packages/libxcb-1.13/"
+# `$PKGqt --cflags Qt6X11Extras` 
 
 
 #export OS_OPTS="-Werror=array-bounds -march=native"
@@ -191,6 +193,7 @@ export OS_OPTS="-Werror=array-bounds $CPUOPTS -DFOR_LINUX `$PKGqt --cflags Qt5X1
 
 if ! is_0 $INCLUDE_FAUSTDEV ; then
     export OS_OPTS="$OS_OPTS -DWITH_FAUST_DEV"
+    export OS_OPTS="$OS_OPTS -DWITH_FAUST_DEV2"
 fi
 
 if ! is_0 $INCLUDE_PDDEV ; then
@@ -207,7 +210,6 @@ PYTHONLIBNAME=`$PYTHONEXE -c "import sys;print '-lpython'+sys.version[:3]"`
 #export QSCINTILLA_PATH=`pwd`/bin/packages/QScintilla_gpl-2.10.8
 export QSCINTILLA_PATH=`pwd`/bin/packages/QScintilla_src-2.14.0/src
 
-
 if ! is_0 $INCLUDE_FAUSTDEV ; then
     #FAUSTLDFLAGS="-L `pwd`/bin/packages/faust/build/lib/libfaust.a -lcrypto -lncurses"
     FAUSTLDFLAGS="-L `pwd`/bin/packages/faust/build/lib/ -lfaust"
@@ -218,17 +220,19 @@ if ! is_0 $INCLUDE_FAUSTDEV ; then
         export OS_OPTS="$OS_OPTS -DWITHOUT_LLVM_IN_FAUST_DEV"
     else
         LLVM_PATH=${LLVM_PATH:-} # use /bin/llvm-config from root directory if empty
-        LLVM_OPTS=`$LLVM_PATH/bin/llvm-config --cppflags`
+        LLVM_OPTS=$($LLVM_CONFIG_BIN --cppflags) #`$LLVM_PATH/bin/llvm-config --cppflags`
         
-        MAYBELLVM=`$LLVM_PATH/bin/llvm-config --libdir`/libLLVM-`$LLVM_PATH/bin/llvm-config --version`.so
+        MAYBELLVM=$($LLVM_CONFIG_BIN --libdir)/libLLVM-$($LLVM_CONFIG_BIN --libdir).so
         if [ -f $MAYBELLVM ]; then
-            LLVMLIBS=-lLLVM-`$LLVM_PATH/bin/llvm-config --version`
+            LLVMLIBS=-lLLVM-$($LLVM_CONFIG_BIN --version)
         else
-            LLVMLIBS=`$LLVM_PATH/bin/llvm-config --libs`
+            LLVMLIBS=$($LLVM_CONFIG_BIN --libs)
         fi
         # ($LLVMLIBS not included since it's included in libfaust)
-        FAUSTLDFLAGS="$FAUSTLDFLAGS `$PKG --libs uuid` `$LLVM_PATH/bin/llvm-config --ldflags` -ltinfo"
+        FAUSTLDFLAGS="$FAUSTLDFLAGS `$PKG --libs uuid` $($LLVM_CONFIG_BIN --ldflags) -ltinfo"
     fi
+else
+	FAUSTLDFLAGS=""
 fi
 # _debug
 
@@ -259,9 +263,9 @@ export OS_JUCE_LDFLAGS="-lasound -pthread -lrt -lX11 -lXext "
 
 #LIBGIG_LDFLAGS="bin/packages/libgig/src/.libs/RIFF.o bin/packages/libgig/src/.libs/SF.o"
 FLUIDSYNTH_LDFLAGS="bin/packages/fluidsynth-1.1.6/src/.libs/libfluidsynth.a `$PKG --libs glib-2.0`"
-
-export OS_LDFLAGS="$QSCINTILLA_PATH/libqscintilla2_qt5.a $FAUSTLDFLAGS $PDLDFLAGS pluginhost/Builds/Linux/build/libMyPluginHost.a $OS_JUCE_LDFLAGS `$PKG --libs lrdf` $GCDIR/.libs/libgc.a $PYTHONLIBPATH $PYTHONLIBNAME `$PKG --libs sndfile` `$PKG --libs samplerate` `$PKG --libs liblo` -lxcb -lxkbcommon-x11 -lxkbcommon $FLUIDSYNTH_LDFLAGS $RADIUM_BFD_LDFLAGS -liberty `$PKGqt --libs Qt5X11Extras`"
-# -lX11-xcb -lxcb-keysyms -lxcb-xkb 
+export OS_LDFLAGS="$QSCINTILLA_PATH/libqscintilla2_qt6.a $FAUSTLDFLAGS $PDLDFLAGS pluginhost/Builds/Linux/build/libMyPluginHost.a $OS_JUCE_LDFLAGS `$PKG --libs lrdf` $GCDIR/.libs/libgc.a $PYTHONLIBPATH $PYTHONLIBNAME `$PKG --libs sndfile` `$PKG --libs samplerate` `$PKG --libs liblo` -lxcb -lxkbcommon-x11 -lxkbcommon $FLUIDSYNTH_LDFLAGS $RADIUM_BFD_LDFLAGS -liberty `$PKG --libs freetype2`"
+#`$PKGqt --libs Qt6X11Extras`"
+# -lX11-xcb -lxcb-keysyms -lxcb-xkb
 
 if [[ $RADIUM_USE_CLANG == 0 ]] ; then
     export OS_LDFLAGS2="-ldl "
@@ -306,12 +310,13 @@ if ! file $RADIUM_BIN |grep Linux ; then
     rm -f bin/radium_error_message
 fi
 
-api/s7_types_generator.scm types
-make buildtype.opt --stop
-make flagopts.opt --stop
-make api/radium_proc.h --stop
-make common/keyboard_sub_ids.h --stop
-make bin/radium_check_recent_libxcb --stop
+#api/s7_types_generator.scm types
+
+# Touch PCH .d files to prevent make from rebuilding them during prerequisite generation.
+# They will be properly regenerated during the main 'make radium' call.
+touch Qt/Qt_precompiled.hpp.d audio/Faust_plugins_precompiled.hpp.d 2>/dev/null || true
+
+make api/s7_types.h buildtype.opt flagopts.opt api/radium_proc.h common/keyboard_sub_ids.h bin/radium_check_recent_libxcb --stop
 
 if [[ $# -ge 1 ]] && [[ $1 == "test" ]] ; then
 	make test_seqautomation
@@ -321,9 +326,10 @@ else
 		make /tmp/run_preload
 	fi
 	make radium $@ --stop # Can not use "exec make" here. Compilation stopped here I think, whether it succeeded or not.
+	#make ${T}Qt_instruments.o $@ --stop # Can not use "exec make" here. Compilation stopped here I think, whether it succeeded or not.
     
-	if ldd -r $RADIUM_BIN | sed 's/0x.*//' |grep -i bfd ; then
-		printf "\033[1;31mError? Is bfd linked dynamically?\033[0m"
+	if ldd -r $RADIUM_BIN | sed 's/0x.*//' |grep -i bfd |grep -v libfdk ; then
+		printf "\033[1;31mError? Is bfd linked dynamically?\033[0m\n"
 		exit -1
 	fi
 fi
@@ -333,7 +339,7 @@ if [[ $BUILDTYPE == RELEASE ]] ; then
     strip bin/radium_error_message
     strip bin/radium_progress_window
     strip bin/radium_check_jack_status
-    strip bin/radium_check_opengl
+    #strip bin/radium_check_opengl
     strip bin/radium_plugin_scanner
 fi
     
@@ -378,7 +384,7 @@ do_source_sanity_checks() {
             exit -1
 	fi            
 	
-	if git grep -e if\( --or -e if\ \( *|grep \=|grep -v \=\=|grep -v \!\=|grep -v \>\=|grep -v \<\=|grep -v pluginhost|grep -v bin/scheme|grep -v rtmidi|grep -v python|grep -v amiga|grep -v unused_files|grep -v weakjack|grep -v radium_wrap_1.c|grep -v keybindings.conf |grep -v bin/help ; then
+	if git grep -e if\( --or -e if\ \( *|grep \=|grep -v \=\=|grep -v \!\=|grep -v \>\=|grep -v \<\=|grep -v pluginhost|grep -v bin/scheme|grep -v rtmidi|grep -v python|grep -v amiga|grep -v unused_files|grep -v weakjack|grep -v radium_wrap_1.c|grep -v keybindings.conf |grep -v bin/help | grep -v Visualization-Library-master; then
             echo
             echo "ERROR in line(s) above. A single '=' can not be placed on the same line as an if.";
             echo

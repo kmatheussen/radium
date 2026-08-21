@@ -9,6 +9,9 @@
 ;; https://files.scene.org
 
 
+(define *use-xi-instrument* #f)
+(define *instrument-supports-sample-offset-effect* (not *use-xi-instrument*))
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -151,21 +154,81 @@
 ;; Conversion between note number and period ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define-constant *note-to-period-table* (vector
+
+;; Protracker Amiga period table (notes 0-83, periods 1712-14)
+;; Extended to 96 entries for XM compatibility (notes 84-95 linearly extrapolated)
+(define *note-to-period-table* (vector
   1712 1616 1524 1440 1356 1280 1208 1140 1076 1016  960  906  ;; c0 ->
   856  808  762  720  678  640  604  570  538  508  480  453   ;; c1 ->
   428  404  381  360  339  320  302  285  269  254  240  226   ;; c2 ->
   214  202  190  180  170  160  151  143  135  127  120  113   ;; c3 ->
   107  101   95   90   85   80   75   71   67   63   60   56   ;; c4 ->
+   53   50   47   45   42   40   37   35   33   31   30   28   ;; c5 ->
+   27   25   24   22   21   20   19   18   17   16   15   14   ;; c6 ->
+   13   12   12   11   10   10    9    9    8    8    7    7   ;; c7 -> (halved from c6, rounded)
+))
 
-  53  50  47  45  42  40  37  35  33  31  30  28               ;; c5 ->
-  27  25  24  22  21  20  19  18  17  16  15  14               ;; c6 ->
-  ))
+;; Protracker constants (immutable)
+(define *pt-max-period*          (*note-to-period-table* 0))  ;; 1712
+(define *pt-min-period*          (last (vector->list *note-to-period-table*)))  ;; 7
+(define *pt-max-slide-period*    856)
+(define *pt-min-slide-period*    113)
 
-(define-constant *max-period* (*note-to-period-table* 0))
-(define-constant *min-period* (last (vector->list *note-to-period-table*)))
-(define-constant *max-slide-period* 856)
-(define-constant *min-slide-period* 113)
+;; Current period system constants (may be changed for XM linear mode)
+(define *max-period*       *pt-max-period*)
+(define *min-period*       *pt-min-period*)
+(define *max-slide-period* *pt-max-slide-period*)
+(define *min-slide-period* *pt-min-slide-period*)
+
+;; XM Linear period system constants
+(define *xm-max-period*      7680)
+(define *xm-min-slide-period* 1000)
+(define *xm-max-slide-period* 8000)
+
+;; XM Amiga period system constants (from xm.txt PeriodTab, fine-tune -8)
+;; PeriodTab has 12 entries (C through B at fine-tune -8), octave scaling: ×16/2^octave
+;; Period range: C-0=14512 ... B-7=60
+(define *xm-amiga-periodtab* (vector 907 856 808 762 720 678 640 604 570 538 508 480))
+
+;; Pre-compute XM Amiga note→period table (96 entries, notes 0-95)
+(define *xm-amiga-note-to-period-table*
+  (list->vector
+   (map (lambda (note)
+          (/ (* (vector-ref *xm-amiga-periodtab* (i-modulo note 12)) 16)
+             (expt 2 (quotient note 12))))
+        (iota 96))))
+
+(define *xm-amiga-max-period*       (*xm-amiga-note-to-period-table* 0))
+(define *xm-amiga-min-period*       (last (vector->list *xm-amiga-note-to-period-table*)))
+(define *xm-amiga-min-slide-period* 40)
+(define *xm-amiga-max-slide-period* 15000)
+
+;; Tracks which XM period mode is active: #f (Protracker), 'linear, or 'amiga
+(define *xm-period-mode* #f)
+
+(define (setup-xm-period-system!)
+  (set! *xm-period-mode*  'linear)
+  (set! *c00-is-stop*     #f)
+  (set! *max-period*       *xm-max-period*)
+  (set! *min-period*       0)
+  (set! *max-slide-period* *xm-max-slide-period*)
+  (set! *min-slide-period* *xm-min-slide-period*))
+
+(define (setup-xm-amiga-period-system!)
+  (set! *xm-period-mode*  'amiga)
+  (set! *c00-is-stop*     #f)
+  (set! *max-period*       *xm-amiga-max-period*)
+  (set! *min-period*       *xm-amiga-min-period*)
+  (set! *max-slide-period* *xm-amiga-max-slide-period*)
+  (set! *min-slide-period* *xm-amiga-min-slide-period*))
+
+(define (setup-amiga-period-system!)
+  (set! *xm-period-mode*  #f)
+  (set! *c00-is-stop*     #t)
+  (set! *max-period*       *pt-max-period*)
+  (set! *min-period*       *pt-min-period*)
+  (set! *max-slide-period* *pt-max-slide-period*)
+  (set! *min-slide-period* *pt-min-slide-period*))
 
 (define (get-period-to-note-table period period1 period2 note1)
   ;;(c-display period period1 period2 note1)
@@ -198,15 +261,46 @@
                                                            0))))
 
 (define (note->period note)
-  (if (integer? note)
-      (*note-to-period-table* note)
-      (scale note
-             (floor note) (ceiling note)
-             (*note-to-period-table* (floor note))
-             (*note-to-period-table* (ceiling note)))))
+  (cond ((eq? *xm-period-mode* 'linear)
+         ;; XM Linear: Period = 7680 - Note*64
+         (max 0 (- *xm-max-period* (* note 64))))
+        ((eq? *xm-period-mode* 'amiga)
+         ;; XM Amiga: table lookup from PeriodTab with octave scaling
+         (if (integer? note)
+             (vector-ref *xm-amiga-note-to-period-table* note)
+             (scale note
+                    (floor note) (ceiling note)
+                    (vector-ref *xm-amiga-note-to-period-table* (floor note))
+                    (vector-ref *xm-amiga-note-to-period-table* (ceiling note)))))
+        (else
+         ;; Protracker Amiga table lookup
+         (if (integer? note)
+             (*note-to-period-table* note)
+             (scale note
+                    (floor note) (ceiling note)
+                    (*note-to-period-table* (floor note))
+                    (*note-to-period-table* (ceiling note)))))))
+
+;;(note->period 120)
 
 (define (period->note period)
-  (*period-to-note-table* (round period)))
+  (cond ((eq? *xm-period-mode* 'linear)
+         ;; XM Linear: Note = (7680 - Period) / 64
+         (/ (- *xm-max-period* period) 64))
+        ((eq? *xm-period-mode* 'amiga)
+         ;; XM Amiga: reverse lookup in pre-computed table
+         ;; Linear interpolation between table entries
+         (let loop ((i 0))
+           (if (>= i 95)
+               95
+               (let ((p0 (vector-ref *xm-amiga-note-to-period-table* i))
+                     (p1 (vector-ref *xm-amiga-note-to-period-table* (+ i 1))))
+                 (if (<= p1 period p0)
+                     (+ i (/ (- p0 period) (- p0 p1)))
+                     (loop (+ i 1)))))))
+        (else
+         ;; Protracker Amiga reverse table lookup
+         (*period-to-note-table* (round period)))))
 
 
 (***assert*** (period->note 1712)
@@ -914,6 +1008,8 @@
                   (find-c00s-at (cdr c00s) patternnum channel))
             (find-c00s-at (cdr c00s) patternnum channel)))))
 
+(define *c00-is-stop* #t)  ;; MOD: velocity 0 means stop. XM sets this to #f (velocity 0 = silence).
+
 (define (find-all-c00-stops events current-c00s)
   (define length-events (length events))
   (if (= 0 (modulo length-events 128))
@@ -961,6 +1057,11 @@
 (define (replace-c00-with-stops events)
   (replace-c00-with-stops-1 events
                             (find-all-c00-stops events '())))
+
+(define (maybe-replace-c00-with-stops events)
+  (if *c00-is-stop*   ;; only MOD treats velocity 0 as stop
+      (replace-c00-with-stops events)
+      events))
 
 
 ;;TODO: Add tests to make sure c00s which are actually just parameters for slide-to-note are not made into :stops.
@@ -1098,7 +1199,7 @@ Done during input reading instead.
 
 (define (merge-patterns playlist events num-channels)
   (c-display "merge 1 " (length events))
-  (define new-events (replace-c00-with-stops events))
+  (define new-events (maybe-replace-c00-with-stops events))
   (c-display "merge 2")
   (define patterns (group-events-in-patterns new-events))
   (c-display "merge 3")
@@ -3628,7 +3729,7 @@ The behavior for these three tests are not needed since break events are always 
 (define (get-pitches-0 note curr-period events tpds)
   (let* ((event (car events))
          (linenum (event :linenum))
-         (place (+ linenum (/ (event :tick) (tpds linenum))))
+         (place (+ linenum (/ (event :tick) (vector-ref tpds linenum))))
          (type (event :type)))
     (cond ((or (eq? type :stop)
                (eq? type :note))
@@ -4123,7 +4224,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
 (define (get-velocities-0 note default-value curr-velocity events tpds)
   (let* ((event (car events))
          (linenum (event :linenum))
-         (place (+ linenum (/ (event :tick) (tpds linenum))))
+         (place (+ linenum (/ (event :tick) (vector-ref tpds linenum))))
          (type (event :type)))
     (cond ((or (eq? type :stop)
                (eq? type :note))
@@ -4442,17 +4543,20 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
 (define (instrument-sample-name instr)
   (<ra> :from-base64 (instr 0)))
 (define (instrument-sample-filename instr)
-  (define home-path (<ra> :get-home-path))
-  (define samples-path (<ra> :append-file-paths
-                             (<ra> :append-file-paths
-                                   home-path                             
-                                   (<ra> :get-path ".radium"))
-                             (<ra> :get-path "mod_samples")))
-  (define basename (<ra> :get-path (instr 1)))
-  (define full-path (<ra> :append-file-paths
-                          samples-path
-                          basename))
-  full-path)
+  (define raw (instr 1))
+  (define basename (<ra> :get-path raw))
+  ;; If path starts with "/", it's already absolute (e.g., XM temp files).
+  ;; Otherwise, look in the mod_samples directory (MOD).
+  (if (and (> (length raw) 0)
+           (char=? (raw 0) #\/))
+      basename
+      (let* ((home-path (<ra> :get-home-path))
+            (samples-path (<ra> :append-file-paths
+                              (<ra> :append-file-paths
+                                    home-path                             
+                                    (<ra> :get-path ".radium"))
+                              (<ra> :get-path "mod_samples"))))
+        (<ra> :append-file-paths samples-path basename))))
 (define (instrument-num-samples instr)
   (instr 2))
 (define (instrument-finetune instr)
@@ -4761,6 +4865,9 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
 
 (define *pitch-transpose* 24)
 
+(define *use-period-conversion* #t)
+
+
 (define (send-note-event-to-radium note channelnum events instrument tpds num-lines)
 
   (define (legal-pos pos)
@@ -4820,6 +4927,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
           (c-display "FAILED:"
                      (validate-gliding2 pitches)
                      (validate-gliding2 velocities))
+          (c-display "*xm-period-mode*:" *xm-period-mode*)
           (c-display "pitches: " pitches)
           (c-display "velocities: " velocities)
           (c-display note)
@@ -4905,10 +5013,12 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
      (if (null? events)
          '()
          (let ((event (car events)))
+           ;;(c-display "========ZERO? tpds: " tpds " linenum: " (event :linenum) " tpd-val: " (vector-ref tpds (event :linenum)))
+           ;;(c-display "EVENT: " event)
            (let* ((linenum (event :linenum))
-                  (place (+ linenum (/ (event :tick) (tpds linenum)))) ;; Can tick be anything other than 0?
+                  (place (+ linenum (/ (event :tick) (vector-ref tpds linenum)))) ;; Can tick be anything other than 0?
                   (value (get-value event)))
-             
+             ;;(c-display "<<<Survived")
              (append (list (list place value #f)
                            (list (1+ linenum) reset-value #f))
                      (loop (cdr events)))))))))
@@ -5253,10 +5363,12 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
 
 (define (get-sampleoffsets sampleoffset-events instrument tpds)
   (define num-samples-in-instrument (instrument-num-samples instrument))
-  (get-effect-glidings sampleoffset-events tpds 0 (lambda (event)
-                                                    (scale (min (event :value) num-samples-in-instrument)
-                                                           0 num-samples-in-instrument
-                                                           0 1))))
+  (if (= num-samples-in-instrument 0)
+      '()  ;; No samples in instrument...
+      (get-effect-glidings sampleoffset-events tpds 0 (lambda (event)
+                                                        (scale (min (event :value) num-samples-in-instrument)
+                                                               0 num-samples-in-instrument
+                                                               0 1)))))
 
 
 #||
@@ -5474,7 +5586,8 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
                          (<ra> :set-instrument-for-track radium-instrument-num tracknum)
                          (send-vibrato-events-to-radium tracknum channel instrument tpds)
                          (send-tremolo-events-to-radium tracknum channel instrument tpds)
-                         (send-sampleoffset-events-to-radium tracknum channel instrument tpds)
+                         (if *instrument-supports-sample-offset-effect*
+                             (send-sampleoffset-events-to-radium tracknum channel instrument tpds))
                          (send-finetune-events-to-radium tracknum channel instrument tpds))
 
                       (<ra> :set-track-pan (get-pan-value (first-instrument-event :channel)) tracknum)
@@ -5585,11 +5698,15 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
   (define (set-events! message new-events)
     (set-playlist-and-events! message (list playlist new-events)))
   
-  (define (add-instruments-and-events! message new-instruments-and-events)    
+  (define (add-instruments-and-events! message new-instruments-and-events)
+    ;;(c-display ":message" message ":new-instruments-and-events" new-instruments-and-events)
     (define cloned-instruments (map (lambda (cloned-instrument)
-                                      (define new-instrument-num (1- (cloned-instrument :old-instrumentnum)))
+                                      ;; old-instrumentnum can be 0 when a clashing effect (vibrato, tremolo, etc.)
+                                      ;; is not preceded by a note, i.e. no real instrument is referenced.
+                                      ;; Fall back to instrument 0 (the first real instrument) as template.
+                                      (define new-instrument-num (max 0 (1- (cloned-instrument :old-instrumentnum))))
                                       (assert-non-release (>= new-instrument-num 0))
-                                      (let ((instrument (instruments (max 0 new-instrument-num))))
+                                      (let ((instrument (instruments new-instrument-num)))
                                         (vector-copy instrument)))
                                     (car new-instruments-and-events)))
     (c-display "   cloned-instruments:" cloned-instruments)
@@ -5614,7 +5731,7 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
   ;;                          (simplify-break-events playlist events))
 
   ;;(set-events! "Replace c00 with stops"
-  ;;             (replace-c00-with-stops events))
+  ;;             (maybe-replace-c00-with-stops events))
 
   ;;(c-display "playlist" playlist)
   ;;(print-events (get-pattern events 0))
@@ -5640,15 +5757,18 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
   ;             (expand-loops events))
 
 
+  ;; Commented out for now since it creates gigantic blocks for XM modules.
+
   ;; Need to run this one after run-through-patterns since breaks are handled in run-through-patterns (at least that's the plan)
   (set-playlist-and-events! "Merge patterns"
                             (merge-patterns playlist events num-channels)) ;; merge-patterns adds :stop events and merges patterns if there are hanging notes from the previously played pattern.
 
+  
   (set-playlist-and-events! "Remove temporarily created patterns"
                             (remove-unused-patterns playlist events num-original-patterns))
 
   ;;(set-events! "Convert c00 into STP"
-  ;;             (replace-c00-with-stops events))
+  ;;             (maybe-replace-c00-with-stops events))
 
   (set-playlist-and-events! "Split long patterns"
                             (split-long-patterns playlist events num-channels))
@@ -5728,7 +5848,8 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
            (print-progress-message (<-> "Processing pattern " (break-event :patternnum)))
            
            (define tpds (create-tpds pattern-events))
-
+           (c-display "------------------------tpds" tpds "len" (vector-length tpds))
+           
            (define tempos (get-tempo-events pattern-events))
            
            (define channels (pattern-events-to-channels pattern-events break-event num-channels))
@@ -5785,12 +5906,19 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
 (<ra> :eval-python "print 51")
 (<ra> :eval-scheme "(c-display 50)")
 
+(define *xm-pan-values* #f)  ;; Replaced by import_xm.scm with a channel vector when loading XM
+
 (define (get-pan-value channelnum)
-  (if (= 1 (modulo (floor (/ (1- channelnum)
-                             2))
-                   2))
-      -0.37
-      0.37))
+  (if *xm-pan-values*
+      ;; XM mode: convert 8xx value to Radium pan. 0=left, 128=center, 255=right
+      (let ((xm-pan (vector-ref *xm-pan-values* channelnum)))
+        (scale xm-pan 0 255 -1 1))
+      ;; MOD: alternate left/right
+      (if (= 1 (modulo (floor (/ (1- channelnum)
+                                  2))
+                        2))
+          -0.37
+          0.37)))
 
 #||
 (load-protracker-module)
@@ -5799,6 +5927,8 @@ velocities:  ((30 31 #f ) (31 31 #f ) )
 (define (load-protracker-module filename)
   (assert (<ra> :is-legal-filepath filename))
 
+  (setup-amiga-period-system!)
+  
   (<ra> :open-progress-window
         (<ra> :append-base64-strings
               (<ra> :to-base64 "Please wait, loading ")

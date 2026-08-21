@@ -1,6 +1,5 @@
 (provide 'common1.scm)
 
-
 ;; redefine 'ow!'
 #||
 (set! ow! (lambda ()      
@@ -110,6 +109,10 @@
 (define i-min (let ((+signature+ '(integer? integer? integer?)))
                 (lambda (a b)
                   (min a b))))
+
+(define i-modulo (let ((+signature+ '(integer? integer? integer?)))
+                   (lambda (a b)
+                     (modulo a b))))
 
 ;; Partial application
 (define (P-> funcname . args)

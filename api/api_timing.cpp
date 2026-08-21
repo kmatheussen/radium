@@ -14,7 +14,12 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
-#include "Python.h"
+//#include "Python.h"
+
+
+#if defined(__GNUC__) && !defined(__clang__)
+#  include "../Qt/Qt_precompiled.hpp"
+#endif
 
 #include "../common/nsmtracker.h"
 #include "../common/list_proc.h"
@@ -31,6 +36,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/undo_swings_proc.h"
 #include "../common/Beats_proc.h"
 #include "../common/player_pause_proc.h"
+#include "../common/playerclass.h"
 #include "../common/time_proc.h"
 #include "../common/nodelines_proc.h"
 #include "../common/reltempo_proc.h"
@@ -38,8 +44,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../embedded_scheme/s7extra_proc.h"
 
 #include "api_common_proc.h"
-#include "api_support_proc.h"
-#include "radium_proc.h"
+//#include "api_support_proc.h"
+#include "api_proc.h"
 
 #include "api_timing_proc.h"
 
@@ -70,6 +76,16 @@ void setMainSignature(int numerator, int denominator){
 
 Place getMainSignature(void){
   return p_Create(0,(int)root->signature.numerator,(int)root->signature.denominator);
+}
+
+int getMainSignatureNumerator(void)
+{
+	return root->signature.numerator;
+}
+
+int getMainSignatureDenominator(void)
+{
+	return root->signature.denominator;
 }
 
 int numSignatures(int blocknum, int windownum){
@@ -128,6 +144,33 @@ Place getSignature(int signaturenum, int blocknum, int windownum){
     return p_Create(0,-1,1);
   else
     return p_Create(0, (int)signature->signature.numerator, (int)signature->signature.denominator);
+}
+
+Place getSignaturePlace(int signaturenum, int blocknum, int windownum)
+{
+	struct Signatures *signature = getSignatureFromNum(windownum, blocknum, signaturenum);
+	if (signature == NULL)
+		return p_Create(0, 0, 1);
+	else
+		return signature->l.p;
+}
+
+int getSignatureNumerator(int signaturenum, int blocknum, int windownum)
+{
+	struct Signatures *signature = getSignatureFromNum(windownum, blocknum, signaturenum);
+	if (signature == NULL)
+		return 0;
+	else
+		return signature->signature.numerator;
+}
+
+int getSignatureDenominator(int signaturenum, int blocknum, int windownum)
+{
+	struct Signatures *signature = getSignatureFromNum(windownum, blocknum, signaturenum);
+	if (signature == NULL)
+		return 1;
+	else
+		return signature->signature.denominator;
 }
 
 /******************* LPBs *************************/
@@ -849,4 +892,23 @@ dyn_t testsomething(dyn_t arg){
 }
 */
 
+int64_t getStimeFromPlace(Place place, int blocknum, int windownum)
+{
+	struct WBlocks *wblock = getWBlockFromNum(windownum, blocknum);
+	if (wblock == NULL)
+		return 0;
 
+	return Place2STime(wblock->block, &place, NON_SWINGING_MODE);
+}
+
+int64_t getStimeFromPlace2(Place place, int tracknum, int blocknum, int windownum)
+{
+	struct Tracker_Windows *window;
+	struct WBlocks *wblock;
+	struct WTracks *wtrack = getWTrackFromNumA(windownum, &window, blocknum, &wblock, tracknum);
+	if (wtrack == NULL)
+		return 0;
+
+	Ratio ratio = ratio_from_place(place);
+	return Ratio2STime2(wblock->block, ratio, wtrack->track);
+}

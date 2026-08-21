@@ -15,6 +15,10 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
+#if defined(__GNUC__) && !defined(__clang__)
+#  include "../Qt/Qt_precompiled.hpp"
+#endif
+
 #include <unistd.h>
 #include <string.h>
 
@@ -313,17 +317,26 @@ struct Patch *PATCH_get_current_audio(void){
   return ret;
 }
 
-struct Patch *PATCH_get_current(void){
-  struct Patch *ret = g_curr_patch;
-  struct Patch *org_curr_patch = g_curr_patch;
+struct Patch *PATCH_get_current(void)
+{
+	R_ASSERT_NON_RELEASE(!PLAYER_current_thread_has_lock()); // Might call low_level_set_g_curr_patch.
+	R_ASSERT_NON_RELEASE(!THREADING_is_player_or_runner_thread()); // Same reason.
+	
+	struct Patch *ret = g_curr_patch;
+	struct Patch *org_curr_patch = g_curr_patch;
+	
+	if (ret==NULL)
+		ret = PATCH_get_current_audio();
+	
+	if (org_curr_patch != ret)
+		low_level_set_g_curr_patch(ret);
   
-  if (ret==NULL)
-    ret = PATCH_get_current_audio();
+	return g_curr_patch;
+}
 
-  if (org_curr_patch != ret)
-    low_level_set_g_curr_patch(ret);
-  
-  return g_curr_patch;
+struct Patch *RT_PATCH_get_current(void)
+{
+	return g_curr_patch;
 }
 
 
@@ -2547,18 +2560,21 @@ static struct Patch *get_curr_patch(struct Tracker_Windows *window, struct Track
   return PATCH_get_current();
 }
 
-void PATCH_playNoteCurrPos(struct Tracker_Windows *window, float notenum, int64_t note_id){
+void PATCH_playNoteCurrPos(struct Tracker_Windows *window, float notenum, int64_t note_id, float velocity){
 
         struct Tracks *track = NULL;
         struct Patch *patch = get_curr_patch(window, track);
   
 	if(patch==NULL || notenum<0 || notenum>127) return;
 
+        if (velocity < 0.0f)
+          velocity = track==NULL ? 1.0 : TRACK_get_velocity(track, NOTE_get_velocity(track));
+
 	PATCH_play_note(patch,
                         create_note_t(NULL,
                                       note_id,
                                       notenum,
-                                      track==NULL ? 1.0 : TRACK_get_volume(track),
+                                      velocity,
                                       track==NULL ? 0.0 : TRACK_get_pan(track),
                                       track==NULL ? 0 : ATOMIC_GET(track->midi_channel),
                                       0,

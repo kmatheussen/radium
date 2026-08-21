@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -eEu
-set -x
+#set -x
 
 export PYTHONEXE_NOT_AVAILABLE_YET=1
 
@@ -98,6 +98,10 @@ build_faust() {
 	tar xvzf ../faustlibraries_2024_01_05.tar.gz
 	mv faustlibraries libraries
 	
+	#patch -p0 < ../faust_polydsp_fadeout.patch
+	#patch -p0 < ../faust_soundfiles_clickfix.patch
+	patch -p0 < ../faust_soundfile_padding.patch
+	
 	### this line is needed to build on artix
 	#export LIBNCURSES_PATH=$(shell find /usr -name libncursesw_g.a)
     
@@ -108,7 +112,7 @@ build_faust() {
 	else
 		cp ../faust_radium_llvm.cmake build/backends/most.cmake
 		export ORGTEMPPATH=$PATH
-		export PATH=$(dirname $LLVM_CONFIG_BIN):$PATH
+		export PATH=$($LLVM_CONFIG_BIN --bindir):$PATH
 		#echo "PATH: $PATH"
 	fi
 	
@@ -132,30 +136,6 @@ build_faust() {
 	#VERBOSE=1 CFLAGS="$CFLAGS" CXXFLAGS="$CXXFLAGS" CMAKEOPT="-DCMAKE_BUILD_TYPE=Debug -DSELF_CONTAINED_LIBRARY=on -DCMAKE_CXX_COMPILER=`which $DASCXX` -DCMAKE_C_COMPILER=`which $DASCC` " make most
     
 	cd ..
-}
-
-build_Visualization-Library() {
-
-    rm -fr Visualization-Library-master
-    tar xvzf Visualization-Library-master.tar.gz 
-    cd Visualization-Library-master/
-    patch -p1 <../visualization.patch
-    sed -i.backup 's/add_subdirectory("freetype")//' src/vlGraphics/plugins/CMakeLists.txt
-    #sed -i s/"VL_ACTOR_USER_DATA 0"/"VL_ACTOR_USER_DATA 1"/ src/vlCore/config.hpp
-    export MYFLAGS="-std=gnu++11 $CPPFLAGS -fPIC -g  -Wno-c++11-narrowing -Wno-deprecated-declarations -Wno-implicit-function-declaration `pkg-config --cflags freetype2` " #  -D_GLIBCXX_USE_CXX11_ABI=0
-    MYFLAGS="-std=gnu++11 $CPPFLAGS -fPIC -g -Wno-c++11-narrowing -Wno-deprecated-declarations -Wno-implicit-function-declaration `pkg-config --cflags freetype2` " #  -D_GLIBCXX_USE_CXX11_ABI=0
-	# -D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_DEBUG -D_GLIBCXX_DEBUG 
-    echo 'set(CMAKE_CXX_FLAGS "$MYFLAGS")' >>CMakeLists.txt
-    # previously used build type: RelWithDebInfo. Unfortunately, this one enable _DEBUG and various runtime checks.
-
-    #CFLAGS="$CPPFLAGS -fPIC -g" CPPFLAGS="$MYFLAGS" CC="clang" CXX="clang++ $MYFLAGS" cmake -DCMAKE_CXX_FLAGS="$MYFLAGS" CMAKE_CXX_COMPILER="clang++ $MYFLAGS" -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON SUPPORT=ON -DVL_DYNAMIC_LINKING=OFF -DVL_IO_2D_PNG=OFF -DVL_IO_2D_TIFF=OFF -DVL_IO_2D_JPG=OFF -DVL_IO_2D_TGA=OFF -DVL_IO_2D_BMP=OFF .
-    
-    CFLAGS="$CPPFLAGS -fPIC -g" CPPFLAGS="$MYFLAGS" CC="$DASCC" CXX="$DASCXX $MYFLAGS" cmake -DCMAKE_CXX_FLAGS="$MYFLAGS" CMAKE_CXX_COMPILER="$DASCXX $MYFLAGS" -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=ON SUPPORT=ON -DVL_DYNAMIC_LINKING=OFF -DVL_IO_2D_PNG=OFF -DVL_IO_2D_TIFF=OFF -DVL_IO_2D_JPG=OFF -DVL_IO_2D_TGA=OFF -DVL_IO_2D_BMP=OFF -DVL_IO_FREETYPE=OFF .
-    
-    VERBOSE=1 make VLCore -j8
-    VERBOSE=1 make VLVG/fast -j8
-    VERBOSE=1 make VLGraphics/fast -j8
-    cd ..
 }
 
 build_libpds() {
@@ -188,8 +168,9 @@ build_qhttpserver() {
     tar xvzf qhttpserver-master.tar.gz
     cd qhttpserver-master/
     echo "CONFIG += staticlib" >> src/src.pro
+	patch -p1 <../qhttpserver_qt6.patch
     $QMAKE
-    make -j8 # necessary to create the moc files.
+    make -j`nproc` # necessary to create the moc files.
     cd ..
 }
 
@@ -219,7 +200,7 @@ build_gc() {
     #patch -p1 <../gcdiff.patch
     #./autogen.sh
     CFLAGS="-mtune=generic -g -O2" ./configure --enable-static --disable-shared --disable-gc-debug --disable-gc-assertions
-    CFLAGS="-mtune=generic -g -O2" make -j8
+    CFLAGS="-mtune=generic -g -O2" make -j`nproc`
     cd ..
 }
 
@@ -231,7 +212,7 @@ build_fluidsynth() {
     make clean
     CFLAGS="-fPIC -fno-strict-aliasing -O3 -DDEFAULT_SOUNDFONT=\\\"\\\"" CPPFLAGS="-fPIC -fno-strict-aliasing -O3" CXXFLAGS="-fPIC -fno-strict-aliasing -O3" ./configure --enable-static --disable-aufile-support --disable-pulse-support --disable-alsa-support --disable-libsndfile-support --disable-portaudio-support --disable-oss-support --disable-midishare --disable-jack-support --disable-coreaudio --disable-coremidi --disable-dart --disable-lash --disable-ladcca --disable-aufile-support --disable-dbus-support --without-readline
     # --enable-debug
-    make -j8
+    make -j`nproc`
     cd ..
 }
 
@@ -259,7 +240,7 @@ build_qscintilla() {
     echo "CONFIG += staticlib" >> qscintilla.pro
     $QMAKE
     patch -p0 <../../qscintilla.patch
-    make -j8
+    make -j`nproc`
     cd ../..
 }
 
@@ -283,7 +264,7 @@ build_xcb() {
         cd xcb-proto-1.13/
         mkdir install
         ./configure --prefix=`pwd`/install PYTHON=$PYTHONEXE
-        make -j8
+        make -j`nproc`
         make install
         cd ..
         
@@ -301,8 +282,6 @@ build_xcb() {
 }
 
 source ./build_python27.sh
-
-build_Visualization-Library
 
 build_faust
 build_qhttpserver

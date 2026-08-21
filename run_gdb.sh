@@ -2,6 +2,7 @@
 
 set -ueE
 #set -x
+#echo "S1"
 
 
 
@@ -21,7 +22,7 @@ fi
 
 PWD=`pwd`
 export LSAN_OPTIONS=suppressions=$PWD/SanitizerSuppr.txt
-export ASAN_OPTIONS="malloc_context_size=200,detect_leaks=0,abort_on_error=1,max_malloc_fill_size=1048576,detect_odr_violation=2,detect_container_overflow=0,suppressions=$PWD/SanitizerSupprAddr.txt"
+export ASAN_OPTIONS="malloc_context_size=200,detect_leaks=0,abort_on_error=1,max_malloc_fill_size=1048576,detect_odr_violation=2,detect_container_overflow=0,detect_stack_use_after_return=0,suppressions=$PWD/SanitizerSupprAddr.txt"
 
 #
 # earlier we also had these ASAN_OPTIONS:
@@ -41,8 +42,8 @@ if uname -s |grep Linux > /dev/null ; then
     XCB_LIB_DIR=$THIS_DIR/bin/packages/libxcb-1.13/src/.libs
     
     if ! file $XCB_LIB_DIR >/dev/null ; then
-	echo "Unable to find directory $XCB_LIB_DIR"
-	exit -1
+		echo "Unable to find directory $XCB_LIB_DIR"
+		exit -1
     fi
 
     export LD_LIBRARY_PATH=$XCB_LIB_DIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
@@ -120,7 +121,6 @@ elif [[ "$debugger" = "lldb"* ]] ; then
 fi
 
 
-
 unameOut="$(uname -s)"
 case "${unameOut}" in
     Linux*)     EXECUTABLE="/tmp/radium_bin/radium_linux.bin";;
@@ -160,6 +160,8 @@ autoquitter()
 	xdotool type $'q\n'
 	sleep 0.1
 	xdotool type $'q\n'
+	sleep 0.1
+	xdotool type $'q\n'
 	
 	#while ps -Af|grep "$EXECUTABLE"|grep "$debugger"  ; do
 	#	echo "still alive..."
@@ -180,7 +182,20 @@ if $dostartnow_workaround ; then
 	xdotool type $'r\n'
 fi
 
+#export QT_OPENGL=software
+#export QT_XCB_FORCE_SOFTWARE_OPENGL=1
+#export LIBGL_ALWAYS_SOFTWARE=1
+#export QT_QUICK_BACKEND=software
+#export QT_QPA_PLATFORM=offscreen
+
+export VK_LOADER_DEBUG=error,warn,info
+
+# gcc
+#G_DEBUG="fatal-warnings,gc-friendly" USE=libedit/readline MANGOHUD_CONFIGFILE=/home/kjetil/radium_qrhi_gfx/MangoHud.conf mangohud LD_PRELOAD=/lib64/libasan.so.8 $debugger $debugger_argline $EXECUTABLE $@
+
+# clang
 G_DEBUG="fatal-warnings,gc-friendly" USE=libedit/readline $debugger $debugger_argline $EXECUTABLE $@
+
 ret=$?
 
 killall -9 radium_progress_window 2>/dev/null
@@ -197,6 +212,8 @@ echo "G_DEBUG="fatal-warnings,gc-friendly" USE=libedit/readline exec $debugger $
 echo "EXECNAME: $exename"
 
 chmod a+rx $exename
+
+#ldd -r $EXECUTABLE
 
 exec $exename
 #bash $exename

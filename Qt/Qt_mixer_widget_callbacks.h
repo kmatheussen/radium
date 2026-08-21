@@ -1,3 +1,4 @@
+#pragma once
 /* Copyright 2012 Kjetil S. Matheussen
 
 This program is free software; you can redistribute it and/or
@@ -25,6 +26,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Qt_MyQScrollBar.hpp"
 #include "Timer.hpp"
+#include "EditorWidget.h"
+
 
 
 bool g_pause_scroll_area_updates_when_resizing = false;
@@ -167,7 +170,7 @@ public:
 
   }
   
-  void enterEvent(QEvent *event) override {
+  void enterEvent(QEnterEvent *event) override {
     setCursor(Qt::ArrowCursor);
   }
 
@@ -325,7 +328,7 @@ class Mixer_widget : public QWidget, public Ui::Mixer_widget, radium::Timer{
     };
   }
 
-  void enterEvent(QEvent *event) override {
+  void enterEvent(QEnterEvent *event) override {
     setCursor(Qt::ArrowCursor);
   }
 

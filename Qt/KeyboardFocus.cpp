@@ -1,4 +1,10 @@
 
+
+#if defined(__GNUC__) && !defined(__clang__)
+#  include "../Qt/Qt_precompiled.hpp"
+#endif
+
+#include <QApplication>
 #include <QVector>
 
 #include "../common/nsmtracker.h"
@@ -9,6 +15,61 @@
 
 #include "KeyboardFocusFrame.hpp"
 
+
+namespace radium
+{
+
+void KeyboardFocusFrame::set_focus(bool has_focus)
+{
+	//printf("kf::kf::set_focus/%d 1\n",_type==KeyboardFocusFrameType::EDITOR);
+    if (has_focus != _has_focus)
+	{
+      	//printf("kf::set_focus/%d 2\n",_type==KeyboardFocusFrameType::EDITOR);
+		_has_focus = has_focus;
+      
+		if (has_focus)
+			g_curr_focus_type = _type;
+
+		update();
+      
+		for(auto focuses : g_keyboard_focus_frames)
+			for(auto *focus : focuses){
+				if(focus->_type != _type)
+				{
+					//printf("kf::set_focus/%d 4\n",_type==KeyboardFocusFrameType::EDITOR);
+					if (focus->_has_focus)
+					{
+						//printf("kf::set_focus/%d 5\n",_type==KeyboardFocusFrameType::EDITOR);
+						g_prev_focus_type = focus->_type;
+						focus->_has_focus = false;
+						{
+							QWidget *focused = QApplication::focusWidget();
+							if (focused && focus->isAncestorOf(focused))
+								focused->clearFocus();
+						}
+						focus->update();
+						if(focus->_type==KeyboardFocusFrameType::EDITOR)
+						{
+							//printf("kf::set_focus/%d 6\n",_type==KeyboardFocusFrameType::EDITOR);
+							root->song->tracker_windows->must_redraw_editor = true;
+						}
+					}
+				}
+			}
+    }
+}
+
+void KeyboardFocusFrame::enterEvent(QEnterEvent * event)
+{
+	//printf("kf::Enter. Right type? %d\n", _type==KeyboardFocusFrameType::EDITOR);
+	
+    FOCUSFRAMES_set_focus(_type, true);
+
+	if(_type==KeyboardFocusFrameType::EDITOR)
+		if (root && root->song && root->song->tracker_windows)
+			root->song->tracker_windows->must_redraw_editor = true;
+}
+} // radium namespace
 
 QVector<radium::KeyboardFocusFrame*> g_keyboard_focus_frames[(int)radium::KeyboardFocusFrameType::NUM_TYPES] = {};
 
@@ -42,8 +103,11 @@ namespace{
 
     bool eventFilter(QObject *obj, QEvent *event) override {
       if (event->type()==QEvent::GraphicsSceneMousePress || event->type()==QEvent::MouseButtonPress)
-        handle_mouse_pressed_widget(dynamic_cast<QWidget*>(obj));
-      
+	  {
+		  QWidget *widget = qobject_cast<QWidget*>(obj);
+		  handle_mouse_pressed_widget(widget);
+      }
+	  
       return false;
     }
   };
@@ -68,8 +132,12 @@ radium::KeyboardFocusFrameType g_prev_focus_type = radium::KeyboardFocusFrameTyp
 void FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType type, bool has_focus){
   //R_ASSERT_RETURN_IF_FALSE(g_keyboard_focus_frames[(int)type] != NULL);
 
-  for(auto *frame : g_keyboard_focus_frames[(int)type])
-    frame->set_focus(has_focus);
+	//printf("Set focus/START. Right type? %d\n", type==radium::KeyboardFocusFrameType::EDITOR);
+		
+	for(auto *frame : g_keyboard_focus_frames[(int)type])
+		frame->set_focus(has_focus);
+
+	//printf("Set focus/END. Right type? %d\n", type==radium::KeyboardFocusFrameType::EDITOR);
 }
 
 static bool set_if_visible(radium::KeyboardFocusFrameType type){

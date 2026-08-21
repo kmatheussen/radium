@@ -86,57 +86,11 @@ struct KeyboardFocusFrame : public QFrame{
 
   
   
-  void set_focus(bool has_focus){
-    
-    if (has_focus != _has_focus){
-      
-      _has_focus = has_focus;
-      
-      if (has_focus)
-        g_curr_focus_type = _type;
-
-      /*
-
-      // Doesn't work. Qt refuses to behave in a sane way.
-
-      if (has_focus)
-        setLineWidth(15);
-      else
-        setLineWidth(1);
-
-      if (has_focus)
-        setFrameShape(QFrame::Box);
-      else
-        setFrameShape(QFrame::NoFrame);
-
-
-      for(auto *c : children()){
-        QWidget *w = dynamic_cast<QWidget*>(c);      
-        if (w && w->isWindow()==false)
-          setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-      }
-      */
-      
-      update();
-      
-      for(auto focuses : g_keyboard_focus_frames)
-        for(auto *focus : focuses){
-          if(focus->_type != _type){
-            if (focus->_has_focus){
-              g_prev_focus_type = focus->_type;
-              focus->_has_focus = false;
-              focus->update();
-              if(focus->_type==KeyboardFocusFrameType::EDITOR)
-                root->song->tracker_windows->must_redraw_editor = true;
-            }
-          }
-        }
-    }
-  }
+	void set_focus(bool has_focus);
   
-  bool has_focus(void){
-    return _has_focus;
-  }
+	bool has_focus(void){
+		return _has_focus;
+	}
   
   void maybe_update_width(void){
 	  if (root==NULL || root->song==NULL || root->song->tracker_windows==NULL)
@@ -182,9 +136,8 @@ struct KeyboardFocusFrame : public QFrame{
     }
   }
 
-  void enterEvent(QEvent * event) override {
-    FOCUSFRAMES_set_focus(_type, true);
-  }
+	// Imlemented in KeyboardFocus.cpp
+	void enterEvent(QEnterEvent * event) override;
 };
 
 }

@@ -974,10 +974,15 @@ static void *Undo_Do_Functions(
 ){
   UndoFunctions *functions = static_cast<UndoFunctions*>(pointer);
 
-  if (functions->must_undo)
-    functions->undo();
-  else
-    functions->redo();
+  // ScopedIgnoreUndo ensures nested ADD_UNDO calls inside the redo/undo lambdas are dropped, so callers don't need to wrap their lambdas manually. (No-op here since currently_undoing is true, but keeps the contract uniform.)
+  {
+    radium::ScopedIgnoreUndo scoped_ignore_undo;
+
+    if (functions->must_undo)
+      functions->undo();
+    else
+      functions->redo();
+  }
   
   functions->must_undo = !functions->must_undo;
   
@@ -1007,8 +1012,13 @@ void UNDO_functions(const char *name, std::function<void(void)> redo, std::funct
                                );
 
     UNDO_add_callback_when_curr_entry_becomes_unavailable(Undo_free_functions, functions, 0);
-      
-    redo();
+
+    // ScopedIgnoreUndo ensures nested ADD_UNDO calls inside the redo/undo lambdas are dropped, so callers don't need to wrap their lambdas manually.
+    {
+      radium::ScopedIgnoreUndo scoped_ignore_undo;
+      redo();
+    }
+	
     functions->must_undo = true;
 }
 

@@ -132,6 +132,14 @@ class FocusSnifferQsciScintilla : public GL_PauseCaller, public QsciScintilla{
     }                                 
     QsciScintilla::hideEvent(event_);          
   }
+  void enterEvent(QEnterEvent *event) override {
+    setFocus();
+    QsciScintilla::enterEvent(event);
+  }
+  void leaveEvent(QEvent *event) override {
+    clearFocus();
+    QsciScintilla::leaveEvent(event);
+  }
 };
 
 class FocusSnifferQTextEdit : public GL_PauseCaller, public QTextEdit{
@@ -228,7 +236,7 @@ class FocusSnifferQSpinBox : public GL_PauseCaller, public QSpinBox{
     QSpinBox::hideEvent(event_);          
   }
 
-  void enterEvent(QEvent *event) override {
+  void enterEvent(QEnterEvent *event) override {
     if (_statusbar_text != "")
       GFX_SetStatusBar(_statusbar_text.toUtf8().constData());
   }
@@ -305,7 +313,7 @@ class FocusSnifferQDoubleSpinBox : public GL_PauseCaller, public QDoubleSpinBox{
     }                                                                   
     QDoubleSpinBox::keyPressEvent(event_);                                        
   }                                                                     
-  void enterEvent(QEvent *event) override {
+  void enterEvent(QEnterEvent *event) override {
     if (_statusbar_text != "")
       GFX_SetStatusBar(_statusbar_text.toUtf8().constData());
   }
