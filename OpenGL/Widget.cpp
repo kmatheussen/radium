@@ -1247,13 +1247,15 @@ public:
 								// Schedule it there.
 								THREADING_run_on_main_thread_async([](void)
 									{
-										GFX_Message_async("Rendering is taking longer than the screen's refresh time. You might want to lower the multisample (MSAA) value in the OpenGL preferehnces to improve performance.",
+										GFX_Message_async("Rendering is taking longer than the screen's refresh time. "
+														  "You might want to lower the multisample (MSAA) value in the OpenGL preferehnces to improve performance.",
 														  {"OK", "Don't show this message again"},
-														  [](const std::string &selection)
-															  {
-																  if (selection == "Don't show this message again")
-																	  SETTINGS_write_bool("show_render_failure_multisample_warning", false);
-															  });
+														  []
+											(const std::string &selection)
+											{
+												if (selection == "Don't show this message again")
+													SETTINGS_write_bool("show_render_failure_multisample_warning", false);
+											});
 									});
 							}
 						}
