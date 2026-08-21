@@ -21,4 +21,4 @@ extern LANGSPEC void W_KeyboardHandlerShutDown(void);
 extern LANGSPEC void W_RegisterRawInputHandler(void *hwnd); // hwnd is g_main_window->effectiveWinId(). Call this function during initialization after g_main_window has started.
 extern LANGSPEC bool W_HasDeltaMouse(void);
 extern LANGSPEC bool W_CanMovePointer(void);
-
+extern LANGSPEC bool OS_WINDOWS_is_key_window(void *maybewin);
