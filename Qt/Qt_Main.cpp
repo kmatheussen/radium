@@ -4841,7 +4841,7 @@ static int gc_has_static_roots_func(
 #if defined(FOR_LINUX)
   {
     QString name(dlpi_name);
-    if (name.contains("libxcb.so")){
+    if (name.contains("libqxcb.so")){
 
       bool success = false;
       
@@ -4856,9 +4856,9 @@ static int gc_has_static_roots_func(
       
       if (!success) { //name.contains("/packages/libxcb-1.13/src/.libs/")){
         fprintf(stderr,
-                "\n\n%c[31mError. A too old version of libxcb has been dynamically linked into the program.\n"
-                "Something is wrong in the installation of Radium since a replacement version of libxcb should have been used automatically by the startup script if this is the case.\n"
-                "Older versions of libxcb (probably before 1.11.1) are unstable with Radium.%c[0m\n\n",
+                "\n\n%c[31mError. A too old version of libqxcb has been dynamically linked into the program.\n"
+                "Something is wrong in the installation of Radium since a replacement version of libqxcb should have been used automatically by the startup script if this is the case.\n"
+                "Older versions of libqxcb (probably before 1.11.1) are unstable with Radium.%c[0m\n\n",
                 0x1b, 0x1b);
         fprintf(stderr, "(\"%s\")\n", name.toUtf8().constData());
         abort();
@@ -5379,7 +5379,7 @@ int main(int argc, char **argv){
   
 #if 0
  #if defined(IS_LINUX_BINARY) || defined(FOR_WINDOWS) || defined(FOR_MACOSX)
-    QApplication::addLibraryPath(QCoreApplication::applicationDirPath() + QDir::separator() + "qt5_plugins");
+    QApplication::addLibraryPath(QCoreApplication::applicationDirPath() + QDir::separator() + "qt6_plugins");
   #endif
 #endif
   
