@@ -23,7 +23,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wfloat-equal"
-#pragma GCC diagnostic ignored "-Wcast-function-type-mismatch"
+#if defined(__clang__)
+#  pragma GCC diagnostic ignored "-Wcast-function-type-mismatch"
+#else
+#  pragma GCC diagnostic ignored "-Wcast-function-type"
+#endif
 #pragma GCC diagnostic ignored "-Wunused-but-set-variable"
 
 #include "../bin/packages/faust/architecture/faust/dsp/dsp.h"

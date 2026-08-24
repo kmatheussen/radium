@@ -1199,7 +1199,7 @@ public:
 		{
 			const double now = RT_TIME_get_ms(); // Monotonic, unlike TIME_get_ms.
 
-			if (_first_frame_time == 0.0)
+			if (equal_doubles(_first_frame_time, 0.0))
 				_first_frame_time = now;
 
 			if (_painting_data != _last_frame_painting_data)

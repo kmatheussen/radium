@@ -5377,7 +5377,7 @@ int main(int argc, char **argv){
   printf("********* Has set startup rect %d, %d. W: %d. H: %d**********\n", g_startup_rect.x(), g_startup_rect.y(), g_startup_rect.width(), g_startup_rect.height());
   //getchar();
   
-#if 0
+#if 1
  #if defined(IS_LINUX_BINARY) || defined(FOR_WINDOWS) || defined(FOR_MACOSX)
     QApplication::addLibraryPath(QCoreApplication::applicationDirPath() + QDir::separator() + "qt6_plugins");
   #endif
