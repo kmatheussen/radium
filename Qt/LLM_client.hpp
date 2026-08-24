@@ -2426,6 +2426,12 @@ static inline QVector<LLMRequestParamRule> llm_request_param_rules(void)
 {
 	QVector<LLMRequestParamRule> rules;
 
+	// NOTE: OS_get_conf_filename2() exits the program when the file is
+	// missing from both the config dir and the program dir, so check
+	// existence first (llm.conf is optional).
+	if (!OS_has_conf_filename2("llm.conf"))
+		return rules;
+
 	const QString filename = STRING_get_qstring(OS_get_conf_filename2("llm.conf").id);
 
 	QFile file(filename);
