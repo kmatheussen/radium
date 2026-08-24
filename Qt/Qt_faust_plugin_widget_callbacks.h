@@ -2085,10 +2085,10 @@ public slots:
       }
     });
     layout->addWidget(advanced_button);
+#endif
 
     QPushButton *ok_button = new QPushButton("OK");
     layout->addWidget(ok_button);
-#endif
 	
     // The reasoning cut-offs only do anything for DeepSeek, so the rows are
     // hidden for OpenAI and other providers. Visibility follows the base URL
