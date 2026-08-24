@@ -163,7 +163,7 @@ set_var WARNINGS_AS_ERRORS 1
 # Set to the minimum Macos version you want the program
 # to run on. (Obviously ignored on the other platforms)
 #
-set_var MACOSX_DEPLOYMENT_TARGET 12.0
+set_var MACOSX_DEPLOYMENT_TARGET 14.0
 
 
 

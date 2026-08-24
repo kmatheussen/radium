@@ -2485,9 +2485,14 @@ QStringList FAUST2_lint_faust_code(const SoundPlugin *plugin, const QString &cod
 		}
 		// A mono effect called with a stereo argument: e.g. the chorus
 		// effect's 'process = x : ef.dryWetMixer(wet, chorus)' where chorus
-		// is stereo - ef.dryWetMixer is a mono mixer. (The de. module is
-		// excluded: it takes its signal as the last argument and has its
-		// own finding.)
+		// is a stereo signal. (The de. module is excluded: it takes its
+		// signal as the last argument and has its own finding.)
+		// ef.dryWetMixer is special-cased below: it is an N-in/N-out bus
+		// mixer whose second argument must be an EFFECT FUNCTION, not a
+		// signal, so the generic per-channel recipe does not apply. (The
+		// model repeatedly passes the named 'wet' signal there, and then
+		// "fixes" it with par(i, 2, ...), which still does not compile -
+		// observed.)
 		{
 			static const QStringList mono_arg_effects =
 			{
@@ -2508,7 +2513,30 @@ QStringList FAUST2_lint_faust_code(const SoundPlugin *plugin, const QString &cod
 					const QRegularExpressionMatch m = re.match(sanitized);
 					if (m.hasMatch())
 					{
-						findings.append(QString("Line %1: '%2' is a mono effect, but its argument '%3' is a stereo signal - this gives an arity error. For a stereo effect, bind the input with 2 channels ('x = _,_;') and apply mono effects per channel (par(i, 2, %2(...))).").arg(def.line).arg(m.captured(1)).arg(*it));
+						if (m.captured(1) == QStringLiteral("ef.dryWetMixer")
+						    || m.captured(1) == QStringLiteral("ef.dryWetMixerConstantPower"))
+						{
+							// Only a problem when the argument is a SIGNAL
+							// (a definition with no audio inputs). A named
+							// effect (its definition contains a bare '_'
+							// input binding, e.g. 'chorus = _,_ : ...') is
+							// exactly what FX must be: then the call is
+							// legal and nothing is reported.
+							QString arg_rhs;
+							for (const Faust2LintDef &other : defs)
+							  if (other.name == *it)
+							  {
+							    arg_rhs = faust2_lint_sanitize_strings(other.rhs);
+							    break;
+							  }
+							const QRegularExpression input_re(QStringLiteral("(^|[^a-zA-Z0-9_])_([^a-zA-Z0-9_]|$)"));
+							if (!arg_rhs.isEmpty() && !input_re.match(arg_rhs).hasMatch())
+							  findings.append(QString("Line %1: %2(wetAmount, FX) expects an EFFECT (a function) as its second argument, not a signal like '%3' (a signal has 0 inputs, so the compiler reports the arity mismatch). Pass the effect itself instead: %2(wetAmount, re.stereo_freeverb(0.8, 0.8, 0.3, 0.5)) - and DELETE the separate '%3' definition: %2 already passes the input through as the dry signal (do not add a dry path). Do NOT wrap it in par(i, 2, ...): that does not help here.").arg(def.line).arg(m.captured(1)).arg(*it));
+						}
+						else
+						{
+							findings.append(QString("Line %1: '%2' is a mono effect, but its argument '%3' is a stereo signal - this gives an arity error. Apply the effect per channel: sig : par(i, 2, %2(...)).").arg(def.line).arg(m.captured(1)).arg(*it));
+						}
 						break;
 					}
 				}

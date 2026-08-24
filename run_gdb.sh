@@ -180,6 +180,7 @@ fi
 
 if $dostartnow_workaround ; then
 	xdotool type $'r\n'
+	echo
 fi
 
 #export QT_OPENGL=software

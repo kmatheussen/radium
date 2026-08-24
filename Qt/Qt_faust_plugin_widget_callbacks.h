@@ -1875,10 +1875,29 @@ public slots:
       {
         // The first attempt was useless (echo or request failure). One
         // retry with a higher temperature: different sampling can produce
-        // a different - and working - fix.
+        // a different - and working - fix. The prompt is escalated too:
+        // when the model echoed the failing program, a plain re-ask often
+        // just repeats it (observed), so the retry prompt spells out that
+        // the returned code did NOT fix the error and that the fix must
+        // actually change the failing expression.
         *used_fallback = true;
         set_llm_status("First fix attempt failed. Trying once more...");
-        radium::llm::send_prompt(config, current_code, fix_prompt,
+        const QString retry_prompt =
+          fix_prompt
+          + "\n\n"
+          + (ok
+             ? QString("Your previous fix attempt returned the failing program UNCHANGED, "
+                       "so the compile error is still present. Do NOT repeat the program "
+                       "above: it does not compile.\n\n")
+             : QString("The previous fix attempt failed. The compile error is still present. "
+                       "Do NOT repeat the program above: it does not compile.\n\n"))
+          + "Locate the exact expression the error message points at and change it. "
+            "If the cause is unclear, replace the failing line(s) with a simpler "
+            "equivalent construction - for example, drop the dry/wet helper and mix "
+            "the dry and wet signals explicitly - and remove any definition that "
+            "becomes unused.\n\n"
+            "Respond with a DIFFERENT complete Faust program that fixes the error.";
+        radium::llm::send_prompt(config, current_code, retry_prompt,
                                  *fix_callback,
                                  QJsonArray(), cancel, 0.7,
                                  fix_progress,
@@ -2038,9 +2057,39 @@ public slots:
 #endif
     add_row("Max compile fix attempts:", max_fixes_spinbox);
 
+#if 0
+    QPushButton *advanced_button = new QPushButton("Advanced");
+    QObject::connect(advanced_button, &QPushButton::clicked, [dialog]()
+    {
+      // When llm.conf does not exist yet, seed it with the commented-out
+      // example settings before opening the editor. NOTE: the conf path
+      // must be built directly - OS_get_conf_filename2() exits the program
+      // when the file is missing.
+      const QString conf_filename = QDir(OS_get_dot_radium_path()).filePath(QStringLiteral("llm.conf"));
+      if (!QFile::exists(conf_filename))
+      {
+        const QString default_filename = QCoreApplication::applicationDirPath() + "/default_llm.conf";
+        if (!QFile::copy(default_filename, conf_filename))
+          printf("LLM: Warning: could not copy -%s- to -%s-\n",
+                 default_filename.toUtf8().constData(),
+                 conf_filename.toUtf8().constData());
+      }
+      if (QFile::exists(conf_filename))
+      {
+        evalScheme("(FROM_C-show-llm-conf-editor)");
+        dialog->close();
+      }
+      else
+      {
+        showAsyncMessage(QString("Could not open the llm.conf editor: -%1- does not exist and could not be created.").arg(conf_filename).toUtf8().constData());
+      }
+    });
+    layout->addWidget(advanced_button);
+
     QPushButton *ok_button = new QPushButton("OK");
     layout->addWidget(ok_button);
-
+#endif
+	
     // The reasoning cut-offs only do anything for DeepSeek, so the rows are
     // hidden for OpenAI and other providers. Visibility follows the base URL
     // field (and the Free/Custom mode): Free mode always uses the DeepSeek
