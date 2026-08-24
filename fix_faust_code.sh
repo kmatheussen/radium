@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+dos2unix $2
+
 sed -i'' -e s/^float\ faustpower/static\ float\ faustpower/ $2
 
 function fixit () {

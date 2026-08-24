@@ -28,6 +28,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QStringList>
+#include <QFile>
+
+#include "../api/radium_proc.h"
 #include <atomic>
 #include <memory>
 
@@ -980,7 +983,8 @@ public:
       // priced by the time its response arrives.
       radium::llm::llm_start_price_fetch();
 
-      set_llm_prompt_visible(SETTINGS_read_bool("faustdev2_llm_prompt_visible", false));
+      //set_llm_prompt_visible(SETTINGS_read_bool("faustdev2_llm_prompt_visible", false));
+	  set_llm_prompt_visible(true);
 
       // Restore the prompt history (the last 50 submitted prompts) from
       // the settings so Up/Down navigation also works across sessions.
@@ -2184,6 +2188,7 @@ public slots:
 } // anon. namespace
 
 
+#if 0
 // Toggles the "Show/hide Faust Dev 2 LLM prompt" beta feature (menu entry in
 // Help -> Beta features). Updates all open Faust Dev 2 widgets.
 void showHideFaustDev2LLMPrompt(void){
@@ -2194,7 +2199,7 @@ void showHideFaustDev2LLMPrompt(void){
     if (widget)
       widget->set_llm_prompt_visible(visible);
 }
-
+#endif
 
 
 /*
