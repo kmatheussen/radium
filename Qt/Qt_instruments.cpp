@@ -92,6 +92,9 @@ void set_editor_focus(void){
     return;
   EditorWidget *editor = static_cast<EditorWidget*>(root->song->tracker_windows->os_visual.widget);
 
+  if (editor==NULL || editor->editor_layout_widget==NULL)
+    return;
+
   // GL_lock is needed when using intel gfx driver to avoid crash caused by opening two opengl contexts simultaneously from two threads.
   GL_lock();{
 #if USE_QT_VISUAL && USE_OPENGL

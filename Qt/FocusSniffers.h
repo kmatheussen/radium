@@ -398,11 +398,13 @@ class FocusSnifferQComboBox : public GL_PauseCaller, public QComboBox{
   }                                                                     
   void hideEvent ( QHideEvent *e ) override {                                
     //printf("Got hideEvent\n");
+    const bool had_focus = hasFocus();
     if(dontsniff==false) {
       release_keyboard_focus();
     }                                                                   
     QComboBox::hideEvent(e);
-    set_editor_focus();
+    if (had_focus)
+      set_editor_focus();
   }                                                                     
   void keyPressEvent ( QKeyEvent * event_ ) override {                             
     if(event_->key()==Qt::Key_Escape){                                   
@@ -443,11 +445,13 @@ class FocusSnifferQFileDialog : public GL_PauseCaller, public QFileDialog{
   }                                                                     
   void hideEvent ( QHideEvent *e ) override {                                
     //printf("Got hideEvent\n");
+    const bool had_focus = hasFocus();
     if(dontsniff==false) {
       release_keyboard_focus();
     }                                                                   
     QComboBox::hideEvent(e);
-    set_editor_focus();
+    if (had_focus)
+      set_editor_focus();
   }                                                                     
   void keyPressEvent ( QKeyEvent * event_ ) override {                             
     if(event_->key()==Qt::Key_Escape){                                   
