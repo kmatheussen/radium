@@ -1527,12 +1527,16 @@ static inline QString truncate_faust_error(const QString &error)
 {
 	QString text = error;
 
-	const int dump_pos = text.indexOf("Here  A =");
-	if (dump_pos >= 0)
+	// The dump of the inlined signal graph starts with "Here  <name> ="
+	// where <name> is either the failing definition ('sound') or 'A' for
+	// anonymous signals. It must be found by pattern, not by the literal
+	// "Here  A =": a named definition gives "Here  sound = ...".
+	const QRegularExpression dump_re(QStringLiteral("Here  ([a-zA-Z_][a-zA-Z0-9_]*)\\s*="));
+	const QRegularExpressionMatch dump_m = dump_re.match(text);
+	if (dump_m.hasMatch())
 	{
-		const QRegularExpression name_re(QStringLiteral("Here  ([a-zA-Z_][a-zA-Z0-9_]*)\\s*="));
-		const QRegularExpressionMatch name_m = name_re.match(text, dump_pos);
-		const QString name = name_m.hasMatch() ? name_m.captured(1) : QString();
+		const int dump_pos = dump_m.capturedStart();
+		const QString name = dump_m.captured(1);
 
 		QString counts;
 		const QRegularExpression out_re(QStringLiteral("has (\\d+) outputs"));
@@ -1545,6 +1549,13 @@ static inline QString truncate_faust_error(const QString &error)
 		text = text.left(dump_pos);
 		if (!name.isEmpty() && name != "A")
 		  text += QString("\n(Failing definition: %1%2 - inlined expression omitted)").arg(name).arg(counts);
+
+		// The compiler's box printer shows inlined expressions in a
+		// normalized form: infix operators as compositions and function
+		// call arguments in REVERSE order. Since the dump is omitted
+		// here, the reader must match calls against the library list,
+		// never against the argument order in the compiler output.
+		text += QString("\n(Note: the compiler prints inlined call arguments in reverse order - compare against the library list, not this error text.)");
 	}
 
 	text = text.trimmed();
@@ -1597,7 +1608,17 @@ static inline QString summarize_faust_error(const QString &error)
 		  "total over ALL bare references must equal the process input "
 		  "count. Multiplying "
 		  "a stereo signal by a mono coefficient (a dry/wet mix weight) "
-		  "gives it too; use sig : par(i, 2, *(x)). Also remember that the "
+		  "gives it too; use sig : par(i, 2, *(x)). Feeding a MONO "
+		  "signal into a 2-channel par gives it too (e.g. "
+		  "'dry : par(i, 2, *(1 - mix))' where dry is mono): duplicate "
+		  "the mono signal to stereo first: "
+		  "'dryStereo = dry <: _,_;'. For a dry/wet "
+		  "crossfade, keep BOTH branches stereo and crossfade per "
+		  "channel: '((dry : par(i, 2, *(1 - mix))), "
+		  "(wet : par(i, 2, *(mix)))) : ro.interleave(2, 2) : "
+		  "par(i, 2, +)'. Never write mix math that cancels out "
+		  "('1 - mix + mix' or 'mix * 1'): the knob must actually "
+		  "change the level. Also remember that the "
 		  "comma binds tighter than ':': '(a : f, b : g)' means "
 		  "'a : (f, b) : g' — parenthesize each tuple element: "
 		  "'((a : f), (b : g))'. Arithmetic also binds tighter than ':': "
@@ -2106,6 +2127,95 @@ static inline QString lint_faust_code(const QString &code)
 		}
 	}
 
+	// 7) Self-cancelling dry/wet (mix) math: the model writes e.g.
+	// 'par(i, 2, *(1 - reverb_mix + reverb_mix * 1))' which is exactly
+	// 'par(i, 2, *(1))' - the control cancels out and the knob does
+	// nothing. Compilation succeeds, so the auto-fix loop never sees it.
+	// Two textual signs: a term multiplied by 1 ('name * 1' or '1 * name',
+	// but NOT 'name * 1.0' which is a deliberate explicit level, NOT
+	// '0.1 * name' where the 1 belongs to a decimal fraction, and NOT
+	// 'partial1 * env1' where the 1 is the trailing digit of an
+	// identifier), and a name that is both added and subtracted in the
+	// same line ('1 - name + name * 1').
+	{
+		int line_no = 1;
+		const QRegularExpression times1_re(QStringLiteral("(?:([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\*\\s*1(?![0-9.A-Za-z_]))|(?:(?<![0-9.A-Za-z_])1(?![0-9.])\\s*\\*\\s*([a-zA-Z_][a-zA-Z0-9_]*))"));
+		const QRegularExpression signed_re(QStringLiteral("([+-])\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\b"));
+		for (const QString &line_text : masked.split('\n'))
+		{
+			QSet<QString> plus_names, minus_names;
+			QRegularExpressionMatchIterator sit = signed_re.globalMatch(line_text);
+			while (sit.hasNext())
+			{
+				const QRegularExpressionMatch m = sit.next();
+				if (m.captured(1) == "+")
+				  plus_names.insert(m.captured(2));
+				else
+				  minus_names.insert(m.captured(2));
+			}
+
+			const QSet<QString> cancels = plus_names & minus_names;
+			for (const QString &name : cancels)
+			  findings.append(QString("Line %1: '%2' is both added and subtracted in the same expression. If the terms are identical (e.g. '1 - %2 + %2 * 1'), the control cancels out and the knob does nothing - the dry/wet mix must actually change the level (see the dry/wet crossfade recipe in the rules).").arg(line_no).arg(name));
+
+			QRegularExpressionMatchIterator tit = times1_re.globalMatch(line_text);
+			while (tit.hasNext())
+			{
+				const QRegularExpressionMatch m = tit.next();
+				const QString name = m.captured(1).isEmpty() ? m.captured(2) : m.captured(1);
+				findings.append(QString("Line %1: multiplying '%2' by 1 does nothing. If this is part of a dry/wet mix expression, the mix control cancels out - see the dry/wet crossfade recipe in the rules.").arg(line_no).arg(name));
+			}
+			line_no++;
+		}
+	}
+
+	// 8) UI controls that are declared but never used: the model writes
+	// 'mix = hslider("mix", 0.5, 0, 1, 0.01);' anticipating a reverb it
+	// then drops, so the knob does nothing. Compilation succeeds, so the
+	// auto-fix loop never sees it. Only top-level definitions are scanned
+	// (same 'with {}' depth rule as the duplicate-definition check); the
+	// automatic note controls freq/gain/gate are exempt (host-driven).
+	{
+		struct UiDef
+		{
+			QString name;
+			int line;
+		};
+		QVector<UiDef> ui_defs;
+		{
+			const QRegularExpression def_re(QStringLiteral("^\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\s*=\\s*(hslider|vslider|nentry|button|checkbox)\\s*\\("));
+			int depth = 0;
+			int line_no = 1;
+			for (const QString &line_text : masked.split('\n'))
+			{
+				if (depth == 0)
+				{
+					const QRegularExpressionMatch m = def_re.match(line_text);
+					if (m.hasMatch())
+					{
+						const QString name = m.captured(1);
+						if (name != "freq" && name != "gain" && name != "gate" && name != "velocity")
+						  ui_defs.append(UiDef{name, line_no});
+					}
+				}
+				for (const QChar &ch : line_text)
+				{
+					if (ch == '{')
+					  depth++;
+					else if (ch == '}')
+					  depth--;
+				}
+				line_no++;
+			}
+		}
+		for (const UiDef &def : ui_defs)
+		{
+			const QRegularExpression use_re(QStringLiteral("\\b%1\\b").arg(def.name));
+			if (masked.count(use_re) <= 1)
+			  findings.append(QString("Line %1: '%2' is declared but never used anywhere in the program - the knob does nothing. Either use it or remove it.").arg(def.line).arg(def.name));
+		}
+	}
+
 	// Deduplicate (one line can trigger both checks) and cap the list so the
 	// injected text stays small.
 	QStringList unique;
@@ -2534,8 +2644,9 @@ static inline void llm_apply_param_rules(QJsonObject &body,
 // why the model loops in its reasoning, or what context
 // it was missing). The API key is never logged (it is
 // only sent in the Authorization header, not the body).
-// Default path: /tmp/llm.log; override with the
-// RADIUM_LLM_LOG environment variable.
+// Default path: ~/.radium/llm.log; override with the
+// RADIUM_LLM_LOG environment variable. The file is
+// cleared the first time it is written to.
 //=====================================================
 
 static inline QString llm_log_path(void)
@@ -2543,15 +2654,23 @@ static inline QString llm_log_path(void)
 	const char *env_path = getenv("RADIUM_LLM_LOG");
 	if (env_path != NULL && env_path[0] != '\0')
 	  return QString::fromUtf8(env_path);
-	return "/tmp/llm.log";
+	return QDir::homePath() + QString::fromUtf8("/.radium/llm.log");
 }
 
 static inline void llm_log_append(const QString &text)
 {
 	static bool printed_path = false;
-	QFile file(llm_log_path());
-	if (file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text))
+	static bool first_write = true;
+	const QString path = llm_log_path();
+	if (first_write)
+		QDir().mkpath(QFileInfo(path).absolutePath());
+	QFile file(path);
+	const QIODevice::OpenMode mode = first_write
+		? (QIODevice::WriteOnly | QIODevice::Text)
+		: (QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text);
+	if (file.open(mode))
 	{
+		first_write = false;
 		file.write(text.toUtf8());
 		file.close();
 		if (!printed_path)
@@ -2603,6 +2722,14 @@ static inline void llm_log_finish(const LLMStreamAccumulator *acc,
 	llm_log_append(entry);
 }
 
+// Host-side event notes (decisions made outside the HTTP request/response
+// pairs, e.g. static-check findings and auto-fix/cleanup loop outcomes) so
+// the log tells the whole story of an LLM session.
+static inline void llm_log_note(const QString &text)
+{
+	llm_log_append("----- note -----\n" + text + "\n");
+}
+
 
 
 // One HTTP attempt. Retries are handled internally via retries_left.
@@ -2652,7 +2779,11 @@ static inline void send_request_once(const LLMConfig &config,
 		+ "Multiply the LEVEL argument by gate, NOT the output: multiplying the output only works for mono files (stereo files have 2 channels and give an arity error). "
 		+ "In polyphonic instruments the automatic 'gate' control triggers and stops the playback.\n"
 		+ "7) Never respond by echoing the current program unchanged. If the request asks for a change or a new instrument, always output a new program (which may modify the current one). If the request is to create a new instrument or effect, completely ignore the current program and write a new program from scratch.\n"
-		+ "8) If the compiler reports a 'recursive composition' or an inputs/outputs mismatch error, either a function is called with the wrong number of arguments, or a filter/smoother is used as a plain value instead of being applied to a signal with ':'. E.g. si.polySmooth(gate, 0.999, 1) * freq is WRONG; freq : si.polySmooth(gate, 0.999, 1) is right. If the mismatch involves a parallel composition before ro.interleave(2, 2) (e.g. '(piano, chorus)' where piano is a mono signal and chorus stereo), duplicate the mono signal(s) to stereo: '((piano, piano), chorus) : ro.interleave(2, 2) : par(i, 2, +)'. Find that expression, fix it, and change nothing else.\n"
+		+ "8) If the compiler reports a 'recursive composition' or an inputs/outputs mismatch error, either a function is called with the wrong number of arguments, or a filter/smoother is used as a plain value instead of being applied to a signal with ':'. E.g. si.polySmooth(gate, 0.999, 1) * freq is WRONG; freq : si.polySmooth(gate, 0.999, 1) is right. If the mismatch involves a parallel composition before ro.interleave(2, 2) (e.g. '(piano, chorus)' where piano is a mono signal and chorus stereo), duplicate the mono signal(s) to stereo: '((piano, piano), chorus) : ro.interleave(2, 2) : par(i, 2, +)'. Find that expression, fix it, and change nothing else. When mixing a dry signal with a wet effect output (a dry/wet knob), keep BOTH branches the same channel count and crossfade per channel:\n"
+		+ "     dry = sound <: _,_;\n"
+		+ "     wet = (sound, sound) : re.stereo_freeverb(0.8, 0.8, 0.3, 0.5);\n"
+		+ "     process = ((dry : par(i, 2, *(1 - mix))), (wet : par(i, 2, *(mix)))) : ro.interleave(2, 2) : par(i, 2, +);\n"
+		+ "NEVER write mix math that cancels out (e.g. '1 - mix + mix' or 'mix * 1'): the knob must actually change the level - the compile check cannot catch a dead knob.\n"
 		+ (is_effect
 		   ? "9) This request asks for an audio EFFECT: an audio processor with no note controls (no freq/gain/gate) and no polyphony. Unless the user specifies otherwise, make it stereo (2 inputs, 2 outputs).\n"
 		   : "9) This request asks for an INSTRUMENT: a polyphonic sound generator with no audio inputs, using the automatic note controls freq/gain/gate (and optionally velocity).\n")

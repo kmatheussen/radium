@@ -1153,15 +1153,35 @@ public:
           const bool llm_compile_done = _llm_fixing_error;
           const bool llm_compile_was_fix = _llm_compile_attempts > 0;
           _llm_fixing_error = false;
-          _llm_compile_attempts = 0;
-          _llm_last_fix_error.clear();
-          _llm_same_error_count = 0;
 
           // The LLM status label says "...Compiling..." while an
           // LLM-generated program is being compiled; now that the
           // compilation succeeded, replace it with the final status.
+          // If the cheap static checks still find suspicious lines
+          // (e.g. a dry/wet expression that cancels out, or a slider
+          // that is declared but never used - compilation succeeds, so
+          // the auto-fix loop never sees them), send the findings back
+          // to the LLM as a cleanup request instead of just warning
+          // about them. The counters are only reset when the loop
+          // truly ends (no findings left).
           if (llm_compile_done)
-            set_llm_status(llm_compile_was_fix ? "Fixed." : "Generated.");
+          {
+            const QStringList lint_warnings = collect_lint_findings(plugin, _faust_editor->text(), false);
+            if (!lint_warnings.isEmpty())
+            {
+              radium::llm::llm_log_note("LLM code compiled, static check findings:\n" + lint_warnings.join("\n"));
+              request_llm_lint_cleanup(lint_warnings, llm_compile_was_fix); // keeps _llm_fixing_error=true while the cleanup round is in flight
+            }
+            else
+            {
+              if (llm_compile_was_fix)
+                radium::llm::llm_log_note("Auto-fix/cleanup done - no static-check findings remain.");
+              _llm_compile_attempts = 0;
+              _llm_last_fix_error.clear();
+              _llm_same_error_count = 0;
+              set_llm_status(llm_compile_was_fix ? "Fixed." : "Generated.");
+            }
+          }
 
           _latest_working_code = faust_disp_get_code(plugin);
 
@@ -1309,6 +1329,7 @@ public:
           if (_llm_same_error_count >= 2)
           {
             _llm_fixing_error = false;
+            radium::llm::llm_log_note("Compile-error fix loop stopped - same error twice:\n" + error_message);
             set_llm_status("LLM fix attempts keep producing the same error. Giving up - edit the code manually.");
           }
           else
@@ -1830,6 +1851,8 @@ public slots:
     set_llm_status(QString("Compile error. Asking the LLM to fix it (%1/%2)...")
                    .arg(_llm_compile_attempts).arg(_llm_max_fixes));
 
+    radium::llm::llm_log_note(QString("Sending compile-error fix round %1/%2:\n").arg(_llm_compile_attempts).arg(_llm_max_fixes) + radium::llm::truncate_faust_error(error_message));
+
     const std::shared_ptr<std::atomic_bool> cancel = start_llm_request();
 
     IsAlive is_alive(this);
@@ -1882,6 +1905,7 @@ public slots:
         // actually change the failing expression.
         *used_fallback = true;
         set_llm_status("First fix attempt failed. Trying once more...");
+        radium::llm::llm_log_note("Fix attempt failed (" + failure_reason + "), retrying hotter.");
         const QString retry_prompt =
           fix_prompt
           + "\n\n"
@@ -1909,6 +1933,7 @@ public slots:
 
       end_llm_request();
       _llm_fixing_error = false;
+      radium::llm::llm_log_note("Fix failed: " + failure_reason);
       if (failure_reason.contains("429"))
         show_llm_error("LLM quota exhausted (HTTP 429). Giving up on fixing the compile error.");
       else
@@ -1921,6 +1946,159 @@ public slots:
                              fix_progress,
                              true, // skip the example section: a fix corrects code, it doesn't need program examples
                              QString(), // compile_error (already part of fix_prompt)
+                             is_effect);
+  }
+
+  // Sends the static-check findings back to the LLM when LLM-generated code
+  // COMPILES but has suspicious lines (dead sliders, cancelling mix math):
+  // compilation succeeds, so the compile-error fix loop never sees them.
+  // Rounds share _llm_compile_attempts / _llm_max_fixes with the
+  // compile-error fix loop, and stop when the findings repeat unchanged
+  // (they contain line numbers, so identical text means nothing changed).
+  // If the cleanup code fails to compile, the regular fix loop takes over
+  // (the compiler error gets priority).
+  void request_llm_lint_cleanup(const QStringList &findings, bool llm_compile_was_fix)
+  {
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if (plugin==NULL)
+      return;
+
+    QString current_code = _faust_editor->text();
+    if (current_code.isEmpty())
+      current_code = faust_disp_get_code(plugin);
+
+    const QString findings_text = findings.join("\n");
+
+    if (findings_text == _llm_last_fix_error)
+      _llm_same_error_count++;
+    else
+      _llm_same_error_count = 0;
+
+    _llm_last_fix_error = findings_text;
+
+    if (_llm_same_error_count >= 2)
+    {
+      radium::llm::llm_log_note("Cleanup gave up - same findings twice:\n" + findings_text);
+      set_llm_status("Cleanup gave up - the LLM keeps producing: " + findings.first());
+      return;
+    }
+
+    if (_llm_compile_attempts >= _llm_max_fixes)
+    {
+      radium::llm::llm_log_note(QString("Cleanup gave up - round budget exhausted (%1/%2):\n").arg(_llm_compile_attempts).arg(_llm_max_fixes) + findings_text);
+      set_llm_status("Cleanup round limit reached: " + findings.first());
+      return;
+    }
+
+    _llm_compile_attempts++;
+    _llm_fixing_error = true;
+
+    const radium::llm::LLMConfig config = radium::llm::get_config();
+
+    if (config.api_key.isEmpty() && config.mode != "free")
+    {
+      _llm_fixing_error = false;
+      set_llm_status("No API key set. Cannot clean up the code.");
+      return;
+    }
+
+    set_llm_status(QString("%1. Cleaning up (%2/%3)...")
+                   .arg(llm_compile_was_fix ? "Fixed" : "Generated")
+                   .arg(_llm_compile_attempts).arg(_llm_max_fixes));
+
+    radium::llm::llm_log_note(QString("Sending lint cleanup round %1/%2:\n").arg(_llm_compile_attempts).arg(_llm_max_fixes) + findings_text);
+
+    const QString cleanup_prompt =
+      "The program compiles successfully, but a static check of the code above found these suspicious lines:\n"
+      + findings_text + "\n\n"
+      + "Fix ONLY the issues listed above and respond with ONLY the complete "
+        "corrected Faust program. For example: remove a UI control that is "
+        "declared but never used, or replace dry/wet mix math that cancels "
+        "out. Do not change anything else.\n\n"
+      + "The original request was: " + _llm_original_prompt;
+
+    const std::shared_ptr<std::atomic_bool> cancel = start_llm_request();
+
+    IsAlive is_alive(this);
+
+    const bool is_effect = llm_combo_is_effect();
+
+    // Same single-attempt + one hotter retry strategy as request_llm_fix:
+    // an unchanged echo (or a failed request) gets one retry with a higher
+    // temperature and an escalated prompt. DeepSeek's thinking mode ignores
+    // temperature, so with thinking enabled the retry would be identical
+    // and is skipped.
+    const bool thinking_enabled = radium::llm::is_deepseek(config) && config.reasoning_effort != "off";
+    std::shared_ptr<bool> used_fallback = std::make_shared<bool>(false);
+
+    auto cleanup_progress = [is_alive, this](int reasoning_chars, int content_chars)
+    {
+      if (!is_alive)
+        return;
+      update_llm_progress(reasoning_chars, content_chars);
+    };
+
+    auto cleanup_callback = std::make_shared<std::function<void(bool, QString)>>();
+    *cleanup_callback = [is_alive, this, cancel, current_code, used_fallback, thinking_enabled, config, cleanup_prompt, findings_text, cleanup_progress, cleanup_callback, is_effect](bool ok, QString result_or_error)
+    {
+      if (!is_alive)
+        return;
+
+      if (ok && result_or_error.simplified() != current_code.simplified())
+      {
+        end_llm_request();
+        set_llm_status("Cleanup received. Compiling...");
+        apply_llm_code(result_or_error);
+        return;
+      }
+
+      const QString failure_reason = ok
+        ? "The LLM returned the program unchanged."
+        : result_or_error;
+
+      if (!*used_fallback && !thinking_enabled)
+      {
+        *used_fallback = true;
+        set_llm_status("Cleanup attempt failed. Trying once more...");
+        radium::llm::llm_log_note("Cleanup attempt failed (" + failure_reason + "), retrying hotter.");
+
+        const QString retry_prompt =
+          cleanup_prompt
+          + "\n\n"
+          + (ok
+             ? QString("Your previous cleanup attempt returned the program UNCHANGED, "
+                       "so the issues listed above are still present. Do NOT repeat "
+                       "the program above.\n\n")
+             : QString("The previous cleanup attempt failed. The issues listed above "
+                       "are still present. Do NOT repeat the program above.\n\n"))
+          + "Remove or fix the exact suspicious lines listed above, and respond "
+            "with a DIFFERENT complete Faust program.";
+
+        radium::llm::send_prompt(config, current_code, retry_prompt,
+                                 *cleanup_callback,
+                                 QJsonArray(), cancel, 0.7,
+                                 cleanup_progress,
+                                 true, // skip the example section
+                                 QString(), // compile_error
+                                 is_effect);
+        return;
+      }
+
+      end_llm_request();
+      _llm_fixing_error = false;
+      radium::llm::llm_log_note("Cleanup failed: " + failure_reason);
+      if (failure_reason.contains("429"))
+        show_llm_error("LLM quota exhausted (HTTP 429). Giving up on cleaning up the code.");
+      else
+        set_llm_status("Cleanup failed - remaining: " + findings_text.left(200));
+    };
+
+    radium::llm::send_prompt(config, current_code, cleanup_prompt,
+                             *cleanup_callback,
+                             QJsonArray(), cancel, 0.2,
+                             cleanup_progress,
+                             true, // skip the example section: a cleanup corrects code, it doesn't need program examples
+                             QString(), // compile_error
                              is_effect);
   }
 

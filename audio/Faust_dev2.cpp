@@ -973,6 +973,23 @@ static void perform_compile_completion(instrument_t patch_id,
 
 	devdata->error_message = "";
 
+	// Refresh the plugin's reset-to defaults. The parameter layout and
+	// defaults may have changed since the plugin was created (e.g. an LLM
+	// recompile). At creation, PLUGIN_init captures the initial values
+	// before this asynchronous first compile has produced a dsp, so every
+	// slot holds get_effect_value's 0.5 sentinel, and the Reset button
+	// restores 0.5 instead of the code defaults. Capture the new program's
+	// defaults NOW - hotswap_dsp_data below overwrites the new dsp's
+	// param_values with values preserved from the old dsp.
+	const int num_params = dsp_data->num_params < plugin->type->num_effects ? dsp_data->num_params : plugin->type->num_effects;
+	for (int i = 0; i < num_params; i++)
+	{
+		plugin->initial_effect_values_native[i] = dsp_data->param_values[i];
+		const float min_val = dsp_data->api_ui.getParamMin(i);
+		const float max_val = dsp_data->api_ui.getParamMax(i);
+		plugin->initial_effect_values_scaled[i] = scale(dsp_data->param_values[i], min_val, max_val, 0.0f, 1.0f);
+	}
+
 	// Store SVG dir
 	if (devdata->svg_dir != NULL)
 		delete devdata->svg_dir;
