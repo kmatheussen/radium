@@ -723,6 +723,7 @@ extern QString FAUST2_get_error_message(const struct SoundPlugin *plugin);
 extern QString FAUST2_get_svg_path(const struct SoundPlugin *plugin);
 extern radium::FAUST_calledRegularlyByParentReply FAUST2_calledRegularlyByParent(struct SoundPlugin *plugin);
 extern void FAUST2_start_compilation(struct SoundPlugin *plugin);
+extern void FAUST2_set_reset_effect_values_on_compile(struct SoundPlugin *plugin, bool reset);
 extern bool FAUST2_set_use_interpreter_backend(struct SoundPlugin *plugin, bool use_interpreter);
 extern bool FAUST2_get_use_interpreter_backend(struct SoundPlugin *plugin);
 extern QStringList FAUST2_lint_faust_code(const struct SoundPlugin *plugin, const QString &code);
@@ -933,6 +934,14 @@ public:
       cancel_button->setIcon(llm_stop_icon(icon_size));
       cancel_button->setIconSize(QSize(icon_size, icon_size));
     }
+
+    // Whether effect values are reset to their defaults after compilation
+    // (global setting, default on). The checkbox is part of the LLM prompt
+    // bar, so it is hidden for Faust Dev 1.
+    reset_effects_checkbox->setChecked(SETTINGS_read_bool("faustdev2_reset_effect_values_on_compile", true));
+    if (!strcmp(plugin->type->type_name, "Faust Dev 2"))
+      FAUST2_set_reset_effect_values_on_compile(plugin, reset_effects_checkbox->isChecked());
+    connect(reset_effects_checkbox, SIGNAL(toggled(bool)), this, SLOT(a_on_reset_effects_checkbox_toggled(bool)));
 
     if(0){
       static QStyle *style = QStyleFactory::create("plastique");
@@ -1668,6 +1677,15 @@ public slots:
                              false, // skip_examples
                              compile_error,
                              is_effect);
+  }
+
+  void a_on_reset_effects_checkbox_toggled(bool checked)
+  {
+    SETTINGS_write_bool("faustdev2_reset_effect_values_on_compile", checked);
+
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if (plugin != NULL && !strcmp(plugin->type->type_name, "Faust Dev 2"))
+      FAUST2_set_reset_effect_values_on_compile(plugin, checked);
   }
 
   void a_on_generate_prompt_clicked()
