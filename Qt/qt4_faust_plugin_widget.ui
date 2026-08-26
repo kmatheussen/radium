@@ -158,6 +158,16 @@
               </widget>
           </item>
           <item>
+           <widget class="QCheckBox" name="reset_effects_checkbox">
+            <property name="toolTip">
+             <string>Reset effects on compile</string>
+            </property>
+            <property name="text">
+             <string>R_FX</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QPushButton" name="generate_button">
             <property name="text">
              <string>Generate</string>

@@ -297,6 +297,12 @@ struct FaustDev2Data
 	bool is_compiling;
 	QString error_message;
 
+	// When true (default), effect values are reset to the program's default
+	// values after each successful compilation. When false, existing effects
+	// keep their current values. New effects always get their default values.
+	// Set from the GUI (the "R_FX" checkbox), read on the main thread.
+	bool reset_effect_values_on_compile = true;
+
 	// Fade-out state. When a compile finishes, the current dsp fades out over
 	// about FADE_LENGTH_MS (see perform_compile_completion), and the new dsp
 	// is only swapped in after the fade is finished, so the old dsp is never
@@ -462,14 +468,15 @@ static void delete_dsp_data(FaustDev2Dsp *dsp_data)
 }
 
 
-static void hotswap_dsp_data(FaustDev2Data *devdata, FaustDev2Dsp *new_dsp)
+static void hotswap_dsp_data(FaustDev2Data *devdata, FaustDev2Dsp *new_dsp, bool reset_effect_values)
 {
 	FaustDev2Dsp *old_dsp = devdata->dsp_data;
 
 	// Preserve parameter values from old DSP to new DSP by matching names.
 	// Read from the live control zones (not the cached param_values), so values
 	// changed directly in the QTGUI dialog are also carried over.
-	if (old_dsp != NULL && new_dsp != NULL){
+	// Skipped when the values should be reset to the program defaults.
+	if (old_dsp != NULL && new_dsp != NULL && !reset_effect_values){
 		int n_new = new_dsp->api_ui.getParamsCount();
 		for (int i = 0; i < n_new; i++){
 			const char *addr = new_dsp->api_ui.getParamAddress(i);
@@ -1030,7 +1037,7 @@ static void perform_compile_completion(instrument_t patch_id,
 	// fGroups.updateAllZones(), and only then (3) swaps the new dsp in under
 	// the player lock. The qtgui->update() call further below
 	// (GUI::updateAllGuis) then just refreshes the recreated widgets.
-	hotswap_dsp_data(devdata, dsp_data);
+	hotswap_dsp_data(devdata, dsp_data, devdata->reset_effect_values_on_compile);
 
 	// Also refresh the stored values read by the GUI sliders (via
 	// PLUGIN_get_effect_value(..., VALUE_FROM_STORAGE)). They were captured
@@ -1788,7 +1795,10 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
 													  soundfile_data,
 													  sample_rate);
 			if (dsp_data != NULL){
-				hotswap_dsp_data(devdata, dsp_data);
+				// No old dsp here, so the reset flag has no effect. The
+				// effect values saved in the song state are applied after
+				// create_plugin_data returns, so they must not be lost.
+				hotswap_dsp_data(devdata, dsp_data, false);
 			}
 		} else {
 			// Loading a song with code that does not compile: store the
@@ -1840,6 +1850,12 @@ void FAUST2_set_code(SoundPlugin *plugin, QString code)
 {
 	FaustDev2Data *devdata = (FaustDev2Data*)plugin->data;
 	devdata->code = code;
+}
+
+void FAUST2_set_reset_effect_values_on_compile(SoundPlugin *plugin, bool reset)
+{
+	FaustDev2Data *devdata = (FaustDev2Data*)plugin->data;
+	devdata->reset_effect_values_on_compile = reset;
 }
 
 void FAUST2_set_options(SoundPlugin *plugin, QString options)
