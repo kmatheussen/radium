@@ -2945,7 +2945,6 @@ void create_faust_dev2_plugin(void)
 		"<p>"
 		"Hints:\n"
 		"<UL>"
-		"<LI> An LLM prompt (beta feature) can generate or fix the Faust code for you (e.g. \"Create a low-shelf filter\"). Enable it via <b>Help -> Beta features -> \"Show/hide Faust Dev 2 LLM prompt\"</b>, then configure your LLM provider (API key, model) with the \"LLM settings\" button in the prompt bar. "
 		"<LI> To zoom, either the editor or a diagram, press CTRL while scrolling the mouse wheel."
 		"<LI> To search for a string in the source code, press Ctrl + F."
 		"<LI> Running full size window (by pressing the \"Full\" button) can be very convenient when developing."
