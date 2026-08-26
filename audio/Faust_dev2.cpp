@@ -1032,6 +1032,23 @@ static void perform_compile_completion(instrument_t patch_id,
 	// (GUI::updateAllGuis) then just refreshes the recreated widgets.
 	hotswap_dsp_data(devdata, dsp_data);
 
+	// Also refresh the stored values read by the GUI sliders (via
+	// PLUGIN_get_effect_value(..., VALUE_FROM_STORAGE)). They were captured
+	// at plugin creation, before this asynchronous first compile produced a
+	// dsp, so every slot holds get_effect_value's 0.5 sentinel and the
+	// sliders all show the middle position. After the hotswap, param_values
+	// hold the real values (the program defaults, or the values preserved
+	// from the previous dsp).
+	for (int i = 0; i < num_params; i++)
+	{
+		const float native = dsp_data->param_values[i];
+		const float min_val = dsp_data->api_ui.getParamMin(i);
+		const float max_val = dsp_data->api_ui.getParamMax(i);
+		safe_float_write(&plugin->stored_effect_values_native[i], native);
+		safe_float_write(&plugin->stored_effect_values_scaled[i],
+						 scale(native, min_val, max_val, 0.0f, 1.0f));
+	}
+
 	if (dsp_data->is_instrument)
 		plugin->type->is_instrument = true;
 	else
