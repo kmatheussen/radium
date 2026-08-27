@@ -1,9 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=Radium
-Comment=Radium music editor
-Exec=radium
-Icon=radium
-Terminal=false
-Categories=AudioVideo;Audio;Music;
-StartupWMClass=radium
