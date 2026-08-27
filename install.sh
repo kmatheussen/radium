@@ -51,6 +51,22 @@ can_copy() {
         return 1
     elif [[ "$1" = *.mrec ]]; then
         return 1
+    elif [[ "$1" = *.orig ]]; then
+        return 1
+    elif [[ "$1" = *.rej ]]; then
+        return 1
+    elif [[ "$1" = *~ ]]; then
+        return 1
+    elif [[ "$1" = *#*# ]]; then
+        return 1
+    elif [[ "$1" = .#* ]]; then
+        return 1
+    elif [[ "$1" = .DS_Store ]]; then
+        return 1
+    elif [[ "$1" = deletemetorebuild ]]; then
+        return 1
+    elif [[ "$1" = scheme ]]; then
+        return 1
     else
         return 0
     fi
@@ -62,6 +78,12 @@ for a in * ; do
     fi
 done
 
+# scheme. Only copy files which are in the git repository.
+mkdir -p "$TARGET/scheme"
+git ls-files scheme/ | while read -r a; do
+    cp -a "$a" "$TARGET/$a"
+done
+
 if test -f /tmp/radium_bin/radium_linux.bin; then
     rm -f "$TARGET/radium_linux.bin"
     cp -f /tmp/radium_bin/radium_linux.bin "$TARGET/"
@@ -71,7 +93,7 @@ mkdir -p "$TARGET/packages"
 
 # s7
 cp -a packages/s7 "$TARGET/packages/"
-rm -f "$TARGET/packages/s7/*.o"
+rm -f "$TARGET"/packages/s7/*.o
 # rm -fr "$TARGET/packages/s7/sndlib"
 
 # faust
@@ -130,3 +152,9 @@ fi
 
 # python27
 cp -a packages/python27_install  "$TARGET/packages/"
+
+# Remove accidentally included files (patch artifacts, editor backups, etc.).
+# Note: Only remove regular files, not directories, since pure data objects are commonly
+# named with a trailing "~", and they are often stored in directories with that name as well.
+find "$TARGET" -type f \( -name '*.orig' -o -name '*.rej' -o -name '*~' -o -name '*.bak' \
+                        -o -name '#*#' -o -name '.#*' -o -name '.DS_Store' \) -delete
