@@ -137,14 +137,11 @@ QT_LIBS_DIR="$("$QMAKE" -query QT_INSTALL_LIBS)"
 # .init section, causing crashes when the plugin is loaded.)
 # The plugins don't need patched rpaths since AppRun puts usr/lib into
 # LD_LIBRARY_PATH.
+# Only the "platforms" plugin (libqxcb.so) and the "tls" plugin (https, needed
+# by the crashreporter) are needed.
 for plugin_type in \
-    iconengines \
-    imageformats \
-    networkinformation \
-    platforminputcontexts \
     platforms \
-    tls \
-    xcbglintegrations ; do
+    tls ; do
     mkdir -p "$APPDIR/usr/plugins/$plugin_type"
     cp -a "$QT_PLUGINS_DIR/$plugin_type/." "$APPDIR/usr/plugins/$plugin_type/"
 done
