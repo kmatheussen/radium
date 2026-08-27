@@ -316,7 +316,7 @@ fi
 # They will be properly regenerated during the main 'make radium' call.
 touch Qt/Qt_precompiled.hpp.d audio/Faust_plugins_precompiled.hpp.d 2>/dev/null || true
 
-make api/s7_types.h buildtype.opt flagopts.opt api/radium_proc.h common/keyboard_sub_ids.h bin/radium_check_recent_libxcb --stop
+make api/s7_types.h buildtype.opt flagopts.opt api/radium_proc.h common/keyboard_sub_ids.h bin/radium_check_recent_libxcb bin/radium_show_message --stop
 
 if [[ $# -ge 1 ]] && [[ $1 == "test" ]] ; then
 	make test_seqautomation
@@ -341,6 +341,7 @@ if [[ $BUILDTYPE == RELEASE ]] ; then
     strip bin/radium_check_jack_status
     #strip bin/radium_check_opengl
     strip bin/radium_plugin_scanner
+    strip bin/radium_show_message
 fi
     
 #make pluginhost/Builds/Linux/build/libMyPluginHost.a

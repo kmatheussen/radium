@@ -65,23 +65,47 @@ can_copy() {
         return 1
     elif [[ "$1" = deletemetorebuild ]]; then
         return 1
-    elif [[ "$1" = scheme ]]; then
-        return 1
     else
         return 0
     fi
 }
 
-for a in * ; do
-    if can_copy "$a"; then
+GENERATED_FILES="radium|radium_linux.bin|radium.bin.exe|radium_check_jack_status|radium_check_jack_status.exe|radium_check_recent_libxcb|radium_crashreporter|radium_crashreporter.exe|radium_error_message|radium_error_message.exe|radium_plugin_scanner|radium_plugin_scanner.exe|radium_progress_window|radium_progress_window.exe|radium_show_message|keybindingsparser.pyc|keysubids.pyc|protoconfparser.pyc|color.frag.qsb|color.vert.qsb|texture_fragment.qsb|texture_vertex.qsb|llvm_math.ll|protos.conf"
+
+in_allowlist() {
+    local f
+    for f in ${GENERATED_FILES//|/ } ; do
+        if [[ "$1" = "$f" ]]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+# Copy files which are in the git repository.
+TMP_FILELIST=/tmp/radium_install_filelist.$$
+if ! git ls-files -z > "$TMP_FILELIST"; then
+    echo "Unable to list files in the git repository. install.sh must be run from a git checkout of radium."
+    exit 1
+fi
+
+while IFS= read -r -d '' a; do
+    top="${a%%/*}"
+    if [[ "$top" = scheme ]] || can_copy "$top"; then
+        if test -e "$a" || test -L "$a"; then
+            mkdir -p "$TARGET/$(dirname "$a")"
+            cp -a "$a" "$TARGET/$a"
+        fi
+    fi
+done < "$TMP_FILELIST"
+
+rm -f "$TMP_FILELIST"
+
+# Copy known generated files.
+for a in ${GENERATED_FILES//|/ } ; do
+    if test -e "$a"; then
         cp -a "$a" "$TARGET/"
     fi
-done
-
-# scheme. Only copy files which are in the git repository.
-mkdir -p "$TARGET/scheme"
-git ls-files scheme/ | while read -r a; do
-    cp -a "$a" "$TARGET/$a"
 done
 
 if test -f /tmp/radium_bin/radium_linux.bin; then
@@ -158,3 +182,28 @@ cp -a packages/python27_install  "$TARGET/packages/"
 # named with a trailing "~", and they are often stored in directories with that name as well.
 find "$TARGET" -type f \( -name '*.orig' -o -name '*.rej' -o -name '*~' -o -name '*.bak' \
                         -o -name '#*#' -o -name '.#*' -o -name '.DS_Store' \) -delete
+
+# Collect files in bin/ which were not copied because they are neither in the git repository
+# nor known generated files.
+excluded_files=""
+while IFS= read -r -d '' a; do
+    a="${a#./}"
+    top="${a%%/*}"
+    if [[ "$top" = scheme ]] || can_copy "$top"; then
+        if ! in_allowlist "$a" && ! git ls-files --error-unmatch "$a" >/dev/null 2>&1; then
+            excluded_files+="$a"$'\n'
+        fi
+    fi
+done < <(find . -path ./packages -prune -o \( -type f -o -type l \) -print0)
+
+if [[ -n "$excluded_files" ]]; then
+    while [[ "$excluded_files" == *$'\n' ]]; do
+        excluded_files="${excluded_files%$'\n'}"
+    done
+    echo "Files not included because they are not in the whitelist (git repository + known generated files):"
+    RED="$(tput setaf 1 2>/dev/null || printf '\033[31m')"
+    RESET="$(tput sgr0 2>/dev/null || printf '\033[0m')"
+    while IFS= read -r line; do
+        printf '%s%s%s\n' "$RED" "$line" "$RESET"
+    done <<< "$excluded_files"
+fi

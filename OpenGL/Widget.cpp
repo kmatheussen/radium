@@ -32,6 +32,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QWidget>
 
+#if QT_CONFIG(opengl)
+#include <QOpenGLContext>
+#endif
+
 #if USE_QT5
 #include <QWindow>
 #include <QScreen>
@@ -1601,6 +1605,41 @@ public:
 static QVulkanInstance *g_vulkan_inst = nullptr;
 #endif
 
+#if defined(FOR_LINUX) && QT_CONFIG(opengl)
+static bool opengl_is_available(const QSurfaceFormat &fmt)
+{
+	// Verify that an OpenGL context can actually be created on this system.
+	// The QRhiGles2 backend creates its context on the RHI thread, so test it
+	// here on the main thread first in order to be able to switch to another
+	// backend before the window has been created.
+	QOpenGLContext context;
+	context.setFormat(fmt);
+
+	QOffscreenSurface surface;
+	surface.setFormat(fmt);
+
+	if (!context.create()) {
+		printf("WARNING: Could not create an OpenGL context.\n");
+		return false;
+	}
+
+	surface.create();
+	if (!surface.isValid()) {
+		printf("WARNING: Could not create an offscreen surface for OpenGL.\n");
+		return false;
+	}
+
+	if (!context.makeCurrent(&surface)) {
+		printf("WARNING: Could not make the OpenGL context current.\n");
+		return false;
+	}
+
+	context.doneCurrent();
+
+	return true;
+}
+#endif
+
 static QRhi::Implementation MAIN_init_qrhi(void)
 {
 	R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
@@ -1679,9 +1718,10 @@ static QRhi::Implementation MAIN_init_qrhi(void)
 
     // For Vulkan.
 #if QT_CONFIG(vulkan)
-    if (graphicsApi == QRhi::Vulkan) {
-        // Allocate the global Vulkan instance on the heap so its lifetime
-        // can be controlled precisely and torn down before static shutdown.
+
+    // Allocate the global Vulkan instance on the heap so its lifetime
+    // can be controlled precisely and torn down before static shutdown.
+    auto init_vulkan_instance = []() -> bool {
         if (g_vulkan_inst == nullptr)
             g_vulkan_inst = new QVulkanInstance();
 
@@ -1691,11 +1731,35 @@ static QRhi::Implementation MAIN_init_qrhi(void)
         // Play nice with QRhi.
         g_vulkan_inst->setExtensions(QRhiVulkanInitParams::preferredInstanceExtensions());
         if (!g_vulkan_inst->create()) {
-            GFX_Message(NULL, "Failed to create Vulkan instance, switching to OpenGL");
             delete g_vulkan_inst;
             g_vulkan_inst = nullptr;
+            return false;
+        }
+        return true;
+    };
+
+    if (graphicsApi == QRhi::Vulkan) {
+        if (!init_vulkan_instance()) {
+            GFX_Message(NULL, "Failed to create Vulkan instance, switching to OpenGL");
             graphicsApi = QRhi::OpenGLES2;
         }
+    }
+#endif
+
+#if defined(FOR_LINUX) && QT_CONFIG(opengl)
+    if (graphicsApi == QRhi::OpenGLES2 && !opengl_is_available(fmt)) {
+        printf("WARNING: OpenGL seems to be unavailable on this system.\n");
+#if QT_CONFIG(vulkan)
+        if (init_vulkan_instance()) {
+            printf("WARNING: Switching to Vulkan instead.\n");
+            GFX_Message(NULL, "OpenGL seems to be unavailable, switching to Vulkan");
+            graphicsApi = QRhi::Vulkan;
+        } else {
+            printf("WARNING: Vulkan is also unavailable. Radium will run without graphics.\n");
+        }
+#else
+        printf("WARNING: Radium will run without graphics.\n");
+#endif
     }
 #endif
 //! [api-setup]
