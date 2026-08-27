@@ -5151,6 +5151,30 @@ static void determine_dpi_and_gfx_scale(void){
   }
 }
 
+#if defined(RELEASE) && defined(FOR_WINDOWS)
+static QString W_getApplicationDirectory(void)
+{
+	wchar_t buffer[MAX_PATH];
+	
+	DWORD length = GetModuleFileNameW(NULL, buffer, MAX_PATH);
+   
+    if (length == 0 || length == MAX_PATH)
+		return ""; // Oops.
+
+   QString fullPath = QString::fromWCharArray(buffer, length);
+   
+   fullPath = QDir::fromNativeSeparators(fullPath);
+   
+   int lastSlash = fullPath.lastIndexOf('/');
+
+   if (lastSlash != -1)
+       return fullPath.left(lastSlash);
+   
+   return "";
+}
+#endif // defined(RELEASE) && defined(FOR_WINDOWS)
+
+
 int main(int argc, char **argv){
   //return 0;
 
@@ -5189,8 +5213,15 @@ int main(int argc, char **argv){
 #endif
 
   setenv("LC_CTYPE", "UTF-8", 1);
+#endif // defined(FOR_MACOSX)
+
+#if defined(RELEASE) && defined(FOR_WINDOWS)
+  //setenv("QT_PLUGIN_PATH", QString(W_getApplicationDirectory() + QDir::separator() + "qt6_plugins").toUtf8().constData(), 1); //
+  qputenv("QT_PLUGIN_PATH", QString(W_getApplicationDirectory() + QDir::separator() + "qt6_plugins").toUtf8()); // This should populate into all sub processes as well.
+  //QApplication::addLibraryPath(W_getApplicationDirectory() + QDir::separator() + "qt6_plugins");
 #endif
-  
+
+
   //  testme();
 #if TEST_CRASHREPORTER
   QApplication dasqapp(argc,argv);
@@ -5313,7 +5344,7 @@ int main(int argc, char **argv){
   //QCoreApplication::setAttribute(Qt::AA_DisableHighDpiScaling); 
   //QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);  // what is this?
   //QGuiApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::Ceil);
- 
+
 #ifndef USE_QT5
   QTextCodec::setCodecForCStrings(QTextCodec::codecForName("UTF-8"));
 #endif
@@ -5376,13 +5407,19 @@ int main(int argc, char **argv){
 
   printf("********* Has set startup rect %d, %d. W: %d. H: %d**********\n", g_startup_rect.x(), g_startup_rect.y(), g_startup_rect.width(), g_startup_rect.height());
   //getchar();
-  
+
 #if 1
- #if defined(IS_LINUX_BINARY) || defined(FOR_WINDOWS) || defined(FOR_MACOSX)
-    QApplication::addLibraryPath(QCoreApplication::applicationDirPath() + QDir::separator() + "qt6_plugins");
-  #endif
-#endif
+#  if defined(IS_LINUX_BINARY) || /*defined(FOR_WINDOWS) || */ defined(FOR_MACOSX)
+  {
+	  QString plugin_path = W_getApplicationDirectory() + QDir::separator() + "qt6_plugins";
+	  
+	  qputenv("QT_PLUGIN_PATH", plugin_path.toUtf8()); // This should populate into all sub processes as well.
   
+	  QApplication::addLibraryPath(QCoreApplication::applicationDirPath() + QDir::separator() + "qt6_plugins");
+  }	  
+#  endif
+#endif
+
   g_qapplication = qapplication;
   g_startup_path = QDir::currentPath();
   
