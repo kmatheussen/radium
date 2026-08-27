@@ -1,0 +1,15 @@
+# Extra libraries that must not be bundled into the Radium AppImage.
+#
+# Note that linuxdeploy's default excludelist already excludes libjack.so.0,
+# libxcb.so.1, libX11.so.6, libX11-xcb.so.1, libxcb-dri2/3, libstdc++, etc.
+#
+# These entries are removed from AppDir/usr/lib by build_linux_appimage.sh
+# after running linuxdeploy, since linuxdeploy has no option for a custom
+# excludelist file.
+#
+# libxcb: Radium does not bundle libxcb anymore. The AppImage must always use
+# the host's libxcb, since bundling it can conflict with the host's libX11.
+# libjack: JACK must match the ABI of the JACK server installed on the host
+# (real jackd, PipeWire's JACK implementation, etc.).
+libxcb*.so.*
+libjack*.so.*
