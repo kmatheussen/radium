@@ -36,9 +36,9 @@ cd "$THIS_DIR"
 
 # 1. Version
 
-VERSION=$(sed -n '1s/Changes .* -> \(.*\):/\1/p' Changelog)
+VERSION=$(sed -n 's/^RADIUM_VERSION[[:space:]]*=[[:space:]]*//p' "$THIS_DIR/Makefile" | head -1)
 if [ -z "$VERSION" ]; then
-    echo "Error: Unable to find version in Changelog." >&2
+    echo "Error: Unable to find RADIUM_VERSION in Makefile." >&2
     exit -1
 fi
 
