@@ -935,6 +935,14 @@ public:
       cancel_button->setIconSize(QSize(icon_size, icon_size));
     }
 
+    // The prompt bar must keep exactly its content height, and the code
+    // area below must absorb all extra vertical space (same as the
+    // Half/Full layout). Without the explicit stretch factors the prompt
+    // bar can grow taller than its controls, leaving an empty
+    // background-colored band below it.
+    tab_develop_layout->setStretch(0, 0);
+    tab_develop_layout->setStretch(1, 1);
+
     // Whether effect values are reset to their defaults after compilation
     // (global setting, default on). The checkbox is part of the LLM prompt
     // bar, so it is hidden for Faust Dev 1.
@@ -950,6 +958,11 @@ public:
     }
     
     _faust_editor = create_faust_editor(this);
+
+    // Fill the whole code area: the editor's default size policy doesn't
+    // expand vertically, which could leave an empty band below (or above)
+    // the editor in its column.
+    _faust_editor->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     
     develop_layout->insertWidget(0, _faust_editor);
 
