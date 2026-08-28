@@ -51,15 +51,23 @@ class Auto_Suspend_Menu : public QDialog, public Ui::Auto_Suspend_Menu{
     QDialog::keyPressEvent(event);
   }                                                                     
   
+  void showEvent(QShowEvent *event) override {
+    QDialog::showEvent(event);
+    _timer.start();
+  }
+
+  void hideEvent(QHideEvent *event) override {
+    QDialog::hideEvent(event);
+    _timer.stop();
+  }
+  
   void myExec(void){
     update_widget();
     move(QCursor::pos());
 	enable_suspend->activateWindow();
     //qApp->setActiveWindow(enable_suspend);
     
-    _timer.start();
-    safeExec(this, true);
-    _timer.stop();
+    safeShowPopup(this);
   }
 
 public slots:

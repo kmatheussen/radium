@@ -50,17 +50,24 @@ class Mixer_Direction_Menu : public QDialog, public Ui::Mixer_Direction_Menu{
       hide();
     QDialog::keyPressEvent(event);
   }                                                                     
+  
+  void showEvent(QShowEvent *event) override {
+    QDialog::showEvent(event);
+    _timer.start();
+  }
 
+  void hideEvent(QHideEvent *event) override {
+    QDialog::hideEvent(event);
+    _timer.stop();
+    set_editor_focus();
+  }
+  
   void myExec(void){
     update_widget();
     move(QCursor::pos());
     qApp->setActiveWindow(up_button);
     
-    _timer.start();
-    safeExec(this, true);
-    _timer.stop();
-
-    set_editor_focus();
+    safeShowPopup(this);
   }
   
   void clicked(float rotate){

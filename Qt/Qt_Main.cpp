@@ -5411,11 +5411,11 @@ int main(int argc, char **argv){
 #if 1
 #  if defined(IS_LINUX_BINARY) || /*defined(FOR_WINDOWS) || */ defined(FOR_MACOSX)
   {
-	  QString plugin_path = W_getApplicationDirectory() + QDir::separator() + "qt6_plugins";
+	  QString plugin_path = QCoreApplication::applicationDirPath() + QDir::separator() + "qt6_plugins";
 	  
 	  qputenv("QT_PLUGIN_PATH", plugin_path.toUtf8()); // This should populate into all sub processes as well.
   
-	  QApplication::addLibraryPath(QCoreApplication::applicationDirPath() + QDir::separator() + "qt6_plugins");
+	  QApplication::addLibraryPath(plugin_path);
   }	  
 #  endif
 #endif

@@ -211,6 +211,18 @@ struct FaustResultSvgView
 	QVector<QRectF> _segmentRects; // hit-test rects in widget coordinates for _navStack
 	int _hoveredSegment = -1;      // which segment the mouse is over, -1 = none
 	QPlainTextEdit *_errorView = nullptr;  // scrollable overlay for error messages (replaces setHtml)
+	std::function<void(const QString &)> _on_module_clicked; // called with the module name when a box/breadcrumb is clicked
+
+	// Faust names sub-diagram svg files after the definition name
+	// (legalFileName in the faust compiler): <name>-0x<hash>.svg.
+	static QString _module_name_from_svg_url(const QUrl &url)
+	{
+		QString name = url.fileName();
+		int dash = name.indexOf(QStringLiteral("-0"));
+		if (dash > 0)
+			name = name.left(dash);
+		return name;
+	}
 
 	void _parseSvgLinks(const QString &filepath)
 	{
@@ -525,6 +537,9 @@ struct FaustResultSvgView
 						
 						setUrl(target);
 						
+						if (_on_module_clicked)
+							_on_module_clicked(_module_name_from_svg_url(target));
+						
 						link_clicked = true;
 						
 						break;
@@ -560,6 +575,9 @@ struct FaustResultSvgView
 						_navStack.push_back(_url);
 						
 						setUrl(resolved);
+						
+						if (_on_module_clicked)
+							_on_module_clicked(_module_name_from_svg_url(resolved));
 						
 						link_clicked = true;
 						
@@ -903,6 +921,11 @@ public:
     cancel_button->setEnabled(false);
     prompt_edit->installEventFilter(this);
 
+    // Keyboard focus is lost when the mouse pointer moves outside the LLM
+    // prompt. Give it back when the mouse re-enters the prompt bar, like
+    // the Faust Dev 2 text editor does (see FocusSnifferQsciScintilla::enterEvent).
+    llm_prompt_widget->installEventFilter(this);
+
     // The hamburger menu replaces the former "New" and "LLM settings" buttons.
     {
       QMenu *menu = new QMenu(llm_menu_button);
@@ -977,6 +1000,13 @@ public:
     _svg_view->setUrl(QUrl::fromLocalFile(QDir::fromNativeSeparators(faust_disp_get_svg_path(plugin))));
     printf("    URL: -%s-. native: -%s-, org: -%s-\n",_svg_view->_url.toString().toUtf8().constData(), QDir::fromNativeSeparators(faust_disp_get_svg_path(plugin)).toUtf8().constData(), faust_disp_get_svg_path(plugin).toUtf8().constData());
 
+    // Clicking a module in the diagram moves the text editor cursor to the
+    // definition of that module in the source code.
+    _svg_view->_on_module_clicked = [this](const QString &module_name)
+    {
+      move_cursor_to_module_definition(module_name);
+    };
+
     faust_webview_layout->addWidget(_svg_view, 4);
 
     _plugin_widget = PluginWidget_create(this, patch, SIZETYPE_NORMAL);
@@ -1033,7 +1063,13 @@ public:
 
   bool eventFilter(QObject *watched, QEvent *event) override
   {
-    if (watched == prompt_edit && event->type() == QEvent::KeyPress)
+    if (watched == llm_prompt_widget && event->type() == QEvent::Enter)
+    {
+      // Re-entering the LLM prompt bar gives keyboard focus back to the
+      // prompt field, like the Faust Dev 2 text editor does.
+      prompt_edit->setFocus();
+    }
+    else if (watched == prompt_edit && event->type() == QEvent::KeyPress)
     {
       QKeyEvent *key_event = static_cast<QKeyEvent*>(event);
       if (key_event->key() == Qt::Key_Up)
@@ -1446,6 +1482,42 @@ public:
 
   void revert_to_latest_working_version(void){
     set_text_in__faust_editor_widget(_latest_working_code);
+  }
+
+  // Moves the text editor cursor to the definition of a module whose box was
+  // clicked in the SVG diagram. The module name comes from the sub-diagram
+  // file name, which Faust derives from the definition name (up to 16 alnum
+  // chars), so names truncated there (e.g. "foo_1" -> "foo") are matched with
+  // a prefix search as a fallback.
+  void move_cursor_to_module_definition(const QString &module_name){
+    if (module_name.isEmpty() || module_name.startsWith("diagram_"))
+      return;
+
+    const QStringList lines = _faust_editor->text().split('\n');
+
+    const QString escaped = QRegularExpression::escape(module_name);
+    const QRegularExpression exact(QStringLiteral("^\\s*%1(\\s*\\([^)]*\\))?\\s*=").arg(escaped));
+    const QRegularExpression prefix(QStringLiteral("^\\s*%1\\w*(\\s*\\([^)]*\\))?\\s*=").arg(escaped));
+
+    const QList<QRegularExpression> attempts{exact, prefix};
+
+    for (const QRegularExpression &re : attempts)
+    {
+      for (int i = 0; i < lines.size(); i++)
+      {
+        if (re.match(lines[i]).hasMatch())
+        {
+          int first_non_ws = lines[i].indexOf(QRegularExpression("\\S"));
+          if (first_non_ws < 0)
+            first_non_ws = 0;
+
+          _faust_editor->setCursorPosition(i, first_non_ws);
+          _faust_editor->ensureLineVisible(i);
+
+          return;
+        }
+      }
+    }
   }
 
   void load_source(QString filename){
