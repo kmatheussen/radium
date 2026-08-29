@@ -2605,6 +2605,21 @@ QStringList FAUST2_lint_faust_code(const SoundPlugin *plugin, const QString &cod
 			if (m.hasMatch() && mono_names.contains(m.captured(1)))
 			  findings.append(QString("Line %1: '%2' is a mono signal applied to the stereo effect %3 - this gives an arity error. Duplicate it first: (%2, %2) : %3(...).").arg(def.line).arg(m.captured(1)).arg(m.captured(2)));
 		}
+		// A mono signal applied to a 2-channel par: 'dry : par(i, 2,
+		// *(1 - mix))' where dry is mono - 1 channel into a 2-way par is
+		// an arity error, and the compiler reports it as "sequential
+		// composition dry:B" (outputs [1] vs inputs [2]) with no recipe.
+		// The model then applies the per-channel idiom to a mono signal
+		// and the fix round only carries the generic per-def finding
+		// (observed). Duplicate the mono signal first.
+		for (const Faust2LintDef &def : defs)
+		{
+			const QString sanitized = faust2_lint_sanitize_strings(def.rhs);
+			const QRegularExpression re(QStringLiteral("\\b([a-zA-Z_][a-zA-Z0-9_]*)\\s*:\\s*par\\s*\\(\\s*i\\s*,\\s*2\\s*,"));
+			const QRegularExpressionMatch m = re.match(sanitized);
+			if (m.hasMatch() && mono_names.contains(m.captured(1)))
+			  findings.append(QString("Line %1: '%2' is a mono signal applied to par(i, 2, ...) - this gives an arity error (1 channel into a 2-channel par). Duplicate it to stereo first: %2Stereo = %2 <: _,_; and use %2Stereo instead.").arg(def.line).arg(m.captured(1)));
+		}
 		// A mono effect called with a stereo argument: e.g. the chorus
 		// effect's 'process = x : ef.dryWetMixer(wet, chorus)' where chorus
 		// is a stereo signal. (The de. module is excluded: it takes its

@@ -882,6 +882,17 @@ public:
   QJsonArray _llm_history;
   std::shared_ptr<std::atomic_bool> _llm_cancel;
 
+  // Armed by the "New" menu action: the next generate request is treated as
+  // creation (the current code is NOT embedded and the examples are shown),
+  // whatever the prompt says. Disarmed by the first successful generation
+  // and by manual edits.
+  bool _llm_new_session = false;
+
+  // Incremented by start_llm_request(): each new request owns a new epoch,
+  // and callbacks of superseded requests (fix/cleanup attempts) see the
+  // mismatch and stand down instead of retrying over the newer request.
+  int _llm_request_epoch = 0;
+
   // Prompt input history (like a shell's history): every submitted prompt is
   // remembered so the Up/Down arrow keys can re-insert previous prompts.
   QStringList _llm_prompt_history;
@@ -1628,6 +1639,7 @@ public slots:
       if (!_llm_applying_code){
         _llm_fixing_error = false; // A manual edit cancels auto-fixing of LLM code.
         _llm_history = QJsonArray(); // ...and invalidates the conversation history.
+        _llm_new_session = false; // ...and any pending creation context.
       }
 
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
@@ -1663,7 +1675,8 @@ public slots:
 
      const bool is_effect = llm_combo_is_effect();
 
-      const QString code_for_request = radium::llm::is_creation_request(prompt_to_send)
+      const bool creation = _llm_new_session || radium::llm::is_creation_request(prompt_to_send);
+      const QString code_for_request = creation
                                        ? QString()
                                        : current_code;
 
@@ -1742,6 +1755,11 @@ public slots:
         });
         trim_llm_history(result_or_error.size());
 
+        // The next prompt is about the generated code: a modification, not
+        // a creation. (Left armed when the attempt failed or was discarded,
+        // so a retry stays creation.)
+        _llm_new_session = false;
+
         prompt_edit->clear();
         _llm_original_prompt = prompt_to_send;
         _llm_max_fixes = config.max_fixes < 0 ? 0 : config.max_fixes;
@@ -1755,6 +1773,7 @@ public slots:
       else
       {
         // Nothing was appended to the history for this failed attempt.
+        radium::llm::llm_log_note("Generate request failed: " + result_or_error);
         _llm_fixing_error = false;
         show_llm_error(result_or_error);
       }
@@ -1813,12 +1832,17 @@ public slots:
     send_llm_generate_request(prompt);
   }
 
-  // Marks a new in-flight LLM request; cancels any previous one.
+  // Marks a new in-flight LLM request; cancels any previous one. The epoch
+  // lets fix/cleanup callbacks detect that a NEWER request (e.g. a user
+  // prompt) has taken over, so their automatic retries never cancel or
+  // clobber a user request (observed: a cleanup retry chain cancelled an
+  // in-flight generate request).
   std::shared_ptr<std::atomic_bool> start_llm_request(void)
   {
     if (_llm_cancel)
       *_llm_cancel = true;
     _llm_cancel = std::make_shared<std::atomic_bool>(false);
+    _llm_request_epoch++;
     cancel_button->setEnabled(true);
     _llm_last_progress_total = -1;
     _llm_last_progress_thinking = false;
@@ -2005,6 +2029,7 @@ public slots:
     radium::llm::llm_log_note(QString("Sending compile-error fix round %1/%2:\n").arg(_llm_compile_attempts).arg(_llm_max_fixes) + radium::llm::truncate_faust_error(error_message));
 
     const std::shared_ptr<std::atomic_bool> cancel = start_llm_request();
+    const int epoch = _llm_request_epoch;
 
     IsAlive is_alive(this);
 
@@ -2028,10 +2053,13 @@ public slots:
     };
 
     auto fix_callback = std::make_shared<std::function<void(bool, QString)>>();
-    *fix_callback = [is_alive, this, cancel, current_code, used_fallback, thinking_enabled, config, fix_prompt, fix_progress, fix_callback, is_effect](bool ok, QString result_or_error)
+    *fix_callback = [is_alive, this, cancel, epoch, current_code, used_fallback, thinking_enabled, config, fix_prompt, fix_progress, fix_callback, is_effect](bool ok, QString result_or_error)
     {
       if (!is_alive)
         return;
+
+      if (_llm_request_epoch != epoch)
+        return; // a newer request (e.g. a user prompt) took over - never apply or retry over it
 
       if (ok && result_or_error.simplified() != current_code.simplified())
       {
@@ -2169,6 +2197,7 @@ public slots:
       + "The original request was: " + _llm_original_prompt;
 
     const std::shared_ptr<std::atomic_bool> cancel = start_llm_request();
+    const int epoch = _llm_request_epoch;
 
     IsAlive is_alive(this);
 
@@ -2190,10 +2219,13 @@ public slots:
     };
 
     auto cleanup_callback = std::make_shared<std::function<void(bool, QString)>>();
-    *cleanup_callback = [is_alive, this, cancel, current_code, used_fallback, thinking_enabled, config, cleanup_prompt, findings_text, cleanup_progress, cleanup_callback, is_effect](bool ok, QString result_or_error)
+    *cleanup_callback = [is_alive, this, cancel, epoch, current_code, used_fallback, thinking_enabled, config, cleanup_prompt, findings_text, cleanup_progress, cleanup_callback, is_effect](bool ok, QString result_or_error)
     {
       if (!is_alive)
         return;
+
+      if (_llm_request_epoch != epoch)
+        return; // a newer request (e.g. a user prompt) took over - never apply or retry over it
 
       if (ok && result_or_error.simplified() != current_code.simplified())
       {
@@ -2282,6 +2314,11 @@ public slots:
     // Replace the code with the default program. Going through the editor
     // triggers the normal text-changed path (undo entry + recompilation).
     set_text_in__faust_editor_widget(FAUST2_get_default_code());
+
+    // Arm the creation context AFTER replacing the code: the text change
+    // above disarms it (it looks like a manual edit). The next generate
+    // request will be treated as creation, whatever the prompt says.
+    _llm_new_session = true;
 
     set_llm_status("New session.");
   }
