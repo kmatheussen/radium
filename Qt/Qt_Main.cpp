@@ -5630,26 +5630,12 @@ int main(int argc, char **argv){
   // Set PYTHOHOME and PYTHONPATH
   ////////////////////////////////
   
-#if defined (__arm64__) || defined (__aarch64__)
-#  define IS_ARM 1
-#else
-#  define IS_ARM 0
-#endif
-  
-#if defined(FOR_LINUX) || (defined(FOR_MACOSX) && IS_ARM)
-  
+#if defined(FOR_LINUX) || defined(FOR_MACOSX)
+   
   QString pythonlibpath = STRING_get_qstring(OS_get_full_program_file_path(QString("packages/python27_install/lib/python2.7")).id);
   setenv("PYTHONHOME",V_strdup(pythonlibpath.toLocal8Bit().constData()),1);
   setenv("PYTHONPATH",V_strdup(pythonlibpath.toLocal8Bit().constData()),1);
-  
-#elif defined(FOR_MACOSX) && !IS_ARM
-
-  QString pythonhome = STRING_get_qstring(OS_get_full_program_file_path(QString("python2.7/lib")).id);
-  QString pythonpath = pythonhome;
-
-  setenv("PYTHONHOME",V_strdup(pythonhome.toLocal8Bit().constData()),1);
-  setenv("PYTHONPATH",V_strdup(pythonpath.toLocal8Bit().constData()),1);
-
+   
 #elif defined(FOR_WINDOWS)
 
   //putenv(strdup(QString("PYTHONHOME="+pythonlibpath).toLocal8Bit().constData()));
