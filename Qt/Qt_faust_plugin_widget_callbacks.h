@@ -1663,9 +1663,16 @@ public slots:
 
      const bool is_effect = llm_combo_is_effect();
 
-     const QString code_for_request = radium::llm::is_creation_request(prompt_to_send)
-                                      ? QString()
-                                      : current_code;
+      const QString code_for_request = radium::llm::is_creation_request(prompt_to_send)
+                                       ? QString()
+                                       : current_code;
+
+    // Modification turns embed the current program, so the ~2-3K chars of
+    // examples (pattern-matching help for creation requests) are redundant
+    // there: the system prompt already carries the conventions, and the
+    // library definitions are rebuilt for the current code. Skipping the
+    // examples keeps the history budget for what matters: the programs.
+    const bool skip_examples = !code_for_request.isEmpty();
 
     // If the current code fails to compile, tell the model why: the same
     // summarized error and static-analysis findings the fix prompt uses.
@@ -1697,7 +1704,7 @@ public slots:
     IsAlive is_alive(this);
 
     radium::llm::send_prompt(config, code_for_request, prompt_to_send,
-                             [is_alive, this, config, prompt_to_send, code_for_request, compile_error, current_code, is_effect](bool ok, QString result_or_error)
+                             [is_alive, this, config, prompt_to_send, code_for_request, compile_error, current_code, is_effect, skip_examples](bool ok, QString result_or_error)
     {
       if (!is_alive)
         return;
@@ -1727,13 +1734,13 @@ public slots:
       {
         _llm_history.append(QJsonObject{
           {QStringLiteral("role"), QStringLiteral("user")},
-          {QStringLiteral("content"), radium::llm::build_full_user_content(code_for_request, prompt_to_send, config.library_context, false, compile_error, is_effect)},
+          {QStringLiteral("content"), radium::llm::build_full_user_content(code_for_request, prompt_to_send, config.library_context, skip_examples, compile_error, is_effect)},
         });
         _llm_history.append(QJsonObject{
           {QStringLiteral("role"), QStringLiteral("assistant")},
           {QStringLiteral("content"), result_or_error},
         });
-        trim_llm_history();
+        trim_llm_history(result_or_error.size());
 
         prompt_edit->clear();
         _llm_original_prompt = prompt_to_send;
@@ -1759,7 +1766,7 @@ public slots:
         return;
       update_llm_progress(reasoning_chars, content_chars);
     },
-                             false, // skip_examples
+                             skip_examples, // modification turns skip the examples section
                              compile_error,
                              is_effect);
   }
@@ -1868,18 +1875,45 @@ public slots:
     cancel_button->setEnabled(false);
   }
 
-  // Keeps history bounded: at most ~6 user/assistant pairs and ~20K chars.
-  void trim_llm_history(void){
+  // Keeps history bounded: at most ~6 user/assistant pairs and a character
+  // budget that scales with the current program size (each kept turn carries
+  // the program twice - user message and assistant answer - so a large
+  // program legitimately consumes the budget faster). Trimming is atomic:
+  // complete user/assistant pairs are dropped from the front, so the history
+  // never starts with an orphaned assistant message.
+  void trim_llm_history(int current_code_size){
     const int max_pairs = 6;
+    const int base_budget = 20000;
+    const int max_budget = 60000;
+
+    int char_budget = base_budget + 2 * current_code_size;
+    if (char_budget > max_budget)
+      char_budget = max_budget;
+
+    // Pair cap first: drop complete user/assistant pairs from the front.
     while (_llm_history.size() > max_pairs * 2)
-      _llm_history.removeFirst();
+    {
+      _llm_history.removeFirst(); // the user message
+      if (!_llm_history.isEmpty() && _llm_history.at(0).toObject().value("role").toString() == QStringLiteral("assistant"))
+        _llm_history.removeFirst();
+    }
 
     int total = 0;
     for (const QJsonValue &message : _llm_history)
       total += message.toObject().value("content").toString().size();
-    while (total > 20000 && _llm_history.size() > 2){
+    while (total > char_budget && _llm_history.size() > 2)
+    {
+      // Drop the oldest complete pair: the leading user message and (when
+      // present) the assistant answer right after it. If the history
+      // starts with an assistant message (should not happen), drop it
+      // alone.
       total -= _llm_history.at(0).toObject().value("content").toString().size();
       _llm_history.removeFirst();
+      if (!_llm_history.isEmpty() && _llm_history.at(0).toObject().value("role").toString() == QStringLiteral("assistant"))
+      {
+        total -= _llm_history.at(0).toObject().value("content").toString().size();
+        _llm_history.removeFirst();
+      }
     }
   }
 

@@ -1434,10 +1434,12 @@ static inline QString build_user_content(const QString &current_code,
 // exact definitions of referenced functions, followed by the request itself.
 // Both send_request_once (what is sent) and the widget (mirroring it into
 // the conversation history) must use this, so that the history exactly
-// matches what the LLM saw. 'skip_examples' omits the example section (used
-// for compile-error fix requests: a fix needs to correct code, not
-// pattern-match complete programs, so the ~2-3K chars of examples are pure
-// waste there). 'is_effect' selects the instrument or effect conventions.
+// matches what the LLM saw. 'skip_examples' omits the example section
+// (used by compile-error fix requests and modification turns: a fix needs
+// to correct code, not pattern-match complete programs, and a modification
+// already embeds the current program - in both cases the ~2-3K chars of
+// examples are pure waste there). 'is_effect' selects the instrument or
+// effect conventions.
 static inline QString build_full_user_content(const QString &current_code,
                                               const QString &prompt,
                                               const QString &library_context,
@@ -3328,8 +3330,8 @@ static inline void send_request_once(const LLMConfig &config,
 // controls sampling randomness. 'progress_callback' (optional) is invoked on
 // the main thread as the stream arrives, with the accumulated number of
 // reasoning and content characters so far. 'skip_examples' omits the example
-// section from the user message (used by compile-error fix requests).
-// 'compile_error' (when non-empty) adds the current compile error to the
+// section from the user message (used by compile-error fix requests and
+// modification turns). 'compile_error' (when non-empty) adds the current compile error to the
 // user message, so generate requests can tell the model why the current
 // program does not compile. 'is_effect' selects the effect (instead of
 // instrument) conventions, examples and system instructions.
