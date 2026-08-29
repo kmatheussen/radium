@@ -3825,7 +3825,7 @@ static float get_rand(void){
   return r;
 }
 
-void PLUGIN_random(SoundPlugin *plugin){
+void PLUGIN_random(SoundPlugin *plugin, float how_much){
   const SoundPluginType *type = plugin->type;
   int i;
 
@@ -3838,9 +3838,16 @@ void PLUGIN_random(SoundPlugin *plugin){
   ADD_UNDO(AudioEffect_CurrPos((struct Patch*)patch, -1, AE_ALWAYS_CREATE_SOLO_AND_BYPASS_UNDO));
 
   float *values = R_ALLOC_ARRAY_ATOMIC_GC(float, type->num_effects+NUM_SYSTEM_EFFECTS);
-  for(i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++)
-    if (plugin->do_random_change[i])
-      values[i]=get_rand();
+  for(i=0;i<type->num_effects+NUM_SYSTEM_EFFECTS;i++){
+    if (plugin->do_random_change[i]){
+      if (how_much >= 1.0f){
+        values[i]=get_rand();
+      } else {
+        float old_value = PLUGIN_get_effect_value(plugin, i, VALUE_FROM_STORAGE); // Scaled between 0 and 1.
+        values[i] = R_BOUNDARIES(0.0f, old_value + (get_rand()*2.0f - 1.0f) * how_much, 1.0f);
+      }
+    }
+  }
   
   {
     radium::PlayerLockOnlyIfNeeded lock; // To avoid relocking for every effect.

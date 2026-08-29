@@ -1032,7 +1032,7 @@ private:
     if (_plugin_widget->_faust_plugin_widget != NULL)
     {
       QHBoxLayout *header_layout = _plugin_widget->horizontalLayout_2;
-      const int pos = header_layout->indexOf(_plugin_widget->random_button) + 1;
+      const int pos = header_layout->indexOf(_plugin_widget->random100_button) + 1;
 
       header_layout->insertWidget(pos, mute_button);
       header_layout->insertWidget(pos + 1, solo_button);
