@@ -1928,6 +1928,23 @@ public slots:
     const QStringList lint_findings_list = collect_lint_findings(plugin, current_code, true);
     const QString lint_findings = lint_findings_list.join("\n");
 
+    // Class-specific closing instruction: telling the model to check function
+    // arity for an 'undefined symbol' error (and vice versa) sends it looking
+    // in the wrong place.
+    QString verification_instruction;
+    if (radium::llm::is_arity_error(error_message))
+      verification_instruction =
+        "Before writing the fix, verify that every function call in the program "
+        "has the exact number of arguments given in the library list. An arity "
+        "error means one call has too many or too few arguments; fix that call "
+        "and change nothing else.";
+    else if (error_message.contains("undefined symbol"))
+      verification_instruction =
+        "Before writing the fix, verify that every identifier the program uses "
+        "is defined in the program itself - names that appear only in an "
+        "example are not defined here. Define each missing name (e.g. as a "
+        "slider) or remove every use of it, and change nothing else.";
+
     const QString fix_prompt =
       "The Faust compiler reported this error for the code above:\n"
       + radium::llm::summarize_faust_error(error_message) + "\n\n"
@@ -1937,10 +1954,7 @@ public slots:
            + lint_findings + "\n\n")
       + "The original request was: " + _llm_original_prompt + "\n\n"
       "Please fix the compile error and respond with ONLY the complete corrected Faust program.\n\n"
-      "Before writing the fix, verify that every function call in the program "
-      "has the exact number of arguments given in the library list. An arity "
-      "error means one call has too many or too few arguments; fix that call "
-      "and change nothing else.";
+      + verification_instruction;
 
     const radium::llm::LLMConfig config = radium::llm::get_config();
 

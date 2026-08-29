@@ -528,6 +528,24 @@ static QRect get_startup_rect(void){
 
 int main(int argc, char **argv){
 
+#if defined(FOR_WINDOWS)
+  {
+    // The launcher program (radium.exe) sets this environment variable before starting
+    // this program, but do it here as well to make sure this program always works,
+    // no matter how it's started. (Qt is not able to find the platform plugins by
+    // itself since they are installed in a nonstandard location (qt6_plugins).)
+    wchar_t buffer[MAX_PATH];
+    DWORD length = GetModuleFileNameW(NULL, buffer, MAX_PATH);
+    if (length > 0 && length < MAX_PATH){
+      QString full_path = QString::fromWCharArray(buffer, length);
+      full_path = QDir::fromNativeSeparators(full_path);
+      int last_slash = full_path.lastIndexOf('/');
+      if (last_slash != -1)
+        qputenv("QT_PLUGIN_PATH", (full_path.left(last_slash) + "/qt6_plugins").toUtf8());
+    }
+  }
+#endif
+
   QLocale::setDefault(QLocale::c());
   QLocale::setDefault(QLocale::C);
 

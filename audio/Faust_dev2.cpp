@@ -2319,7 +2319,8 @@ QString faust2_lint_substitute(const QString &rhs,
 }
 
 // The LLM auto-fix lint: returns "Line N: ..." findings for the definitions
-// of 'code' that are themselves ill-formed or carry unbound audio inputs.
+// of 'code' that are themselves ill-formed, carry unbound audio inputs, or
+// reference an undefined symbol.
 // Called synchronously on the GUI thread, only after a compile has failed
 // (no plugin compile is in flight, and libfaust serializes its factory
 // creation through its own global lock anyway). Each check is a small
@@ -2429,8 +2430,15 @@ QStringList FAUST2_lint_faust_code(const SoundPlugin *plugin, const QString &cod
 	// 4-input interleave), and mono signals applied to stereo effects.
 	{
 		// Which names are stereo: soundfile-derived 2-channel signals (the
-		// propagation above), outputs of known stereo effects, and the
-		// results of a pairwise (2,2) interleave mix.
+		// propagation above), outputs of known stereo effects, the results
+		// of a pairwise (2,2) interleave mix, and - propagated to a fixed
+		// point - names whose definition applies a 2-channel par to a
+		// known-stereo name ('out = mixed : par(i, 2, *(1 - mix))' is
+		// 2-in/2-out, so 'out' is stereo too). Without that last rule,
+		// 'process = out * gain' (a stereo signal multiplied by a mono
+		// coefficient) hides behind 'out' and only the generic per-def
+		// compile finding is reported, which cost two extra fix rounds
+		// (observed).
 		QSet<QString> stereo_names;
 		for (auto it = soundfile_channels.constBegin(); it != soundfile_channels.constEnd(); ++it)
 		  if (it.value() == 2)
@@ -2443,12 +2451,42 @@ QStringList FAUST2_lint_faust_code(const SoundPlugin *plugin, const QString &cod
 			QStringLiteral("re\\.satrev"),
 			QStringLiteral("co\\.compressor_stereo"),
 		};
-		for (const Faust2LintDef &def : defs)
+		for (bool changed = true; changed; )
 		{
-			const QString sanitized = faust2_lint_sanitize_strings(def.rhs);
-			if (sanitized.contains(QStringLiteral("ro.interleave(2, 2)"))
-			    || QRegularExpression(QStringLiteral(":\\s*(%1)\\s*\\(").arg(stereo_effects.join("|"))).match(sanitized).hasMatch())
-			  stereo_names.insert(def.name);
+			changed = false;
+			for (const Faust2LintDef &def : defs)
+			{
+				if (stereo_names.contains(def.name))
+				  continue;
+				const QString sanitized = faust2_lint_sanitize_strings(def.rhs);
+
+				bool stereo = sanitized.contains(QStringLiteral("ro.interleave(2, 2)"))
+				           || QRegularExpression(QStringLiteral(":\\s*(%1)\\s*\\(").arg(stereo_effects.join("|"))).match(sanitized).hasMatch();
+
+				// Channel-count-preserving application of a stereo name:
+				// par(i, 2, f) runs f over each of its 2 input channels, so
+				// a 2-channel input gives a 2-channel output. The input
+				// must be fed directly with ':' ('mixed * gain : par(...)'
+				// is still the multiplication bug and must NOT match).
+				if (!stereo)
+				{
+					for (auto it = stereo_names.constBegin(); it != stereo_names.constEnd(); ++it)
+					{
+						const QRegularExpression re(QStringLiteral("\\b%1\\b\\s*:\\s*par\\s*\\(\\s*i\\s*,\\s*2\\s*,").arg(*it));
+						if (re.match(sanitized).hasMatch())
+						{
+							stereo = true;
+							break;
+						}
+					}
+				}
+
+				if (stereo)
+				{
+					stereo_names.insert(def.name);
+					changed = true;
+				}
+			}
 		}
 		// A name is (heuristically) mono when its definition uses only mono
 		// primitives (oscillators, envelopes, filters, noises, UI controls)
@@ -2521,10 +2559,37 @@ QStringList FAUST2_lint_faust_code(const SoundPlugin *plugin, const QString &cod
 					}
 					mono = mono && refs_any;
 				}
-				if (mono)
+			if (mono)
+			{
+				mono_names.insert(def.name);
+				changed = true;
+			}
+		}
+	}
+		// A mono signal duplicated into a stereo pair with the split
+		// ('dry = bell <: _,_;'): mono input, 2 outputs, so the def is
+		// stereo. This makes the operator checks below see named
+		// split-duplicates ('process = dry : *(mix)') as stereo. Only
+		// the mono-name-anchored form is matched: '<: _,_' fanned over
+		// a stereo input would give 4 channels, which is a different
+		// bug and must not be classified as stereo.
+		for (bool changed = true; changed; )
+		{
+			changed = false;
+			for (const Faust2LintDef &def : defs)
+			{
+				if (stereo_names.contains(def.name))
+				  continue;
+				const QString sanitized = faust2_lint_sanitize_strings(def.rhs);
+				for (auto it = mono_names.constBegin(); it != mono_names.constEnd(); ++it)
 				{
-					mono_names.insert(def.name);
-					changed = true;
+					const QRegularExpression re(QStringLiteral("\\b%1\\b\\s*<:\\s*_,\\s*_").arg(*it));
+					if (re.match(sanitized).hasMatch())
+					{
+						stereo_names.insert(def.name);
+						changed = true;
+						break;
+					}
 				}
 			}
 		}
@@ -2727,6 +2792,66 @@ QStringList FAUST2_lint_faust_code(const SoundPlugin *plugin, const QString &cod
 				  findings.append(QString("Line %1: applying '%2' to the stereo signal '%3' gives an arity error. Apply it per channel: %3 : par(i, 2, %2(x)).").arg(def.line).arg(op).arg(stereo_name));
 			}
 		}
+
+		// Postfix operator application to a (possibly anonymous) stereo
+		// signal: '... : ro.interleave(2, 2) : par(i, 2, +) : *(gain)'.
+		// The operator consumes the stereo signal as one input, so the
+		// arity breaks. The checks above only see operators ADJACENT to
+		// a named stereo signal; here the stereo side is an anonymous
+		// composition and the operator is a postfix ':' application.
+		// Observed: the fix loop exhausted all three rounds on
+		// '... : par(i, 2, +) : *(gain)' because no finding localized
+		// the line. Only matches at paren depth 0 are candidates: the
+		// same textual pattern inside 'par(i, 2, *(1 - mix))' is the
+		// legal per-channel recipe.
+		for (const Faust2LintDef &def : defs)
+		{
+			const QString sanitized = faust2_lint_sanitize_strings(def.rhs);
+
+			const QRegularExpression postfix_re(QStringLiteral(":\\s*([+*/-])\\s*\\("));
+			QRegularExpressionMatchIterator it = postfix_re.globalMatch(sanitized);
+			while (it.hasNext())
+			{
+				const QRegularExpressionMatch m = it.next();
+
+				int depth = 0;
+				for (int i = 0; i < m.capturedStart(); i++)
+				{
+					if (sanitized.at(i) == '(')
+					  depth++;
+					else if (sanitized.at(i) == ')')
+					  depth--;
+				}
+				if (depth > 0)
+				  continue; // inside a par(...) body or another group
+
+				// The signal the operator is applied to must actually be
+				// stereo: the prefix either builds one anonymously
+				// (interleave mix, par, a stereo effect) or references a
+				// stereo-tracked name.
+				const QString prefix = sanitized.left(m.capturedStart());
+				bool prefix_stereo =
+					prefix.contains(QStringLiteral("ro.interleave(2, 2)"))
+					|| prefix.contains(QStringLiteral("par(i, 2,"))
+					|| QRegularExpression(QStringLiteral(":\\s*(%1)\\s*\\(").arg(stereo_effects.join("|"))).match(prefix).hasMatch();
+				if (!prefix_stereo)
+				{
+					for (auto sn = stereo_names.constBegin(); sn != stereo_names.constEnd() && !prefix_stereo; ++sn)
+					  if (QRegularExpression(QStringLiteral("\\b%1\\b(?!\\.)").arg(*sn)).match(prefix).hasMatch())
+					    prefix_stereo = true;
+				}
+				if (!prefix_stereo)
+				  continue;
+
+				const QString op = m.captured(1);
+				if (op == "*" || op == "/")
+				  findings.append(QString("Line %1: '%2' is applied to a stereo signal with ':' - the operator consumes it as one input, so this gives an arity error. Scale each channel instead: sig : par(i, 2, %2(x)) (e.g. write ... : par(i, 2, *(gain)), not ... : *(gain)).").arg(def.line).arg(op == "*" ? "*(x)" : "/(x)"));
+				else
+				  findings.append(QString("Line %1: applying '%2' to a stereo signal gives an arity error. Apply it per channel: sig : par(i, 2, %2(x)).").arg(def.line).arg(op));
+
+				break; // one finding per definition
+			}
+		}
 	}
 
 	// A sum of applied filter terms, e.g.
@@ -2807,6 +2932,55 @@ QStringList FAUST2_lint_faust_code(const SoundPlugin *plugin, const QString &cod
 			       def.line, def.name.toUtf8().constData(), error_msg.c_str());
 			findings.append(QString("Line %1: the definition '%2' does not compile on its own, so it is part of the compile error.")
 			                .arg(def.line).arg(def.name));
+
+			// An 'undefined symbol' failure is the one case where the
+			// compiler names the exact symbol (and this isolated compile
+			// proves it belongs to this definition). Report it precisely:
+			// the generic finding above does not say what to fix, and the
+			// model often copies the name from an example (observed with
+			// 'bend').
+			const QString error_qstr = QString::fromUtf8(error_msg.c_str());
+			if (error_qstr.contains(QStringLiteral("undefined symbol")))
+			{
+				const QRegularExpression sym_re(QStringLiteral("undefined symbol\\s*:?\\s*'?([a-zA-Z_][a-zA-Z0-9_]*)"));
+				const QRegularExpressionMatch sym_m = sym_re.match(error_qstr);
+				if (sym_m.hasMatch())
+				{
+					const QString symbol = sym_m.captured(1);
+
+					// The substitution deliberately leaves self-references
+					// ('bell = bell : fi.lowpass(...)') as-is, so a def that
+					// redefines an already-defined name fails the isolated
+					// compile with 'undefined symbol : bell' even though
+					// 'bell' IS defined - the real error is the duplicate
+					// definition, which the textual check reports with its
+					// own (contradicting this one) message. Do not add a
+					// 'never defined' finding on top of it.
+					bool duplicate_of_self = false;
+					if (symbol == def.name)
+					{
+						for (const Faust2LintDef &other : defs)
+						  if (other.name == def.name && other.line != def.line)
+						  {
+						    duplicate_of_self = true;
+						    break;
+						  }
+					}
+
+					if (!duplicate_of_self)
+					{
+						if (symbol == def.name)
+						  // Pure self-reference without another definition:
+						  // the recursion itself is the bug, and the generic
+						  // 'define it as a slider' recipe does not apply.
+						  findings.append(QString("Line %1: the definition '%2' references itself, but there is no other definition of '%2' - the self-reference is the undefined symbol. Either add the missing base definition, or remove the reference to itself.")
+						                  .arg(def.line).arg(def.name));
+						else
+						  findings.append(QString("Line %1: the definition '%2' uses '%3', which is never defined anywhere in the program - this gives the 'undefined symbol' error. It is probably a leftover from an example or a previous revision: either define it (e.g. %3 = hslider(\"%3\", 0.5, 0, 1, 0.01);) or remove every use of it.")
+						                  .arg(def.line).arg(def.name).arg(symbol));
+					}
+				}
+			}
 		}
 		else
 		{

@@ -1608,7 +1608,11 @@ static inline QString summarize_faust_error(const QString &error)
 		  "total over ALL bare references must equal the process input "
 		  "count. Multiplying "
 		  "a stereo signal by a mono coefficient (a dry/wet mix weight) "
-		  "gives it too; use sig : par(i, 2, *(x)). Feeding a MONO "
+		  "gives it too; use sig : par(i, 2, *(x)). A postfix operator at "
+		  "the end of a stereo chain gives it too: never write "
+		  "'... : par(i, 2, +) : *(gain)' - write "
+		  "'... : par(i, 2, *(gain))' instead (the operator must go "
+		  "INSIDE the par). Feeding a MONO "
 		  "signal into a 2-channel par gives it too (e.g. "
 		  "'dry : par(i, 2, *(1 - mix))' where dry is mono): duplicate "
 		  "the mono signal to stereo first: "
@@ -1662,12 +1666,28 @@ static inline QString summarize_faust_error(const QString &error)
 	}
 	else if (error.contains("undefined symbol"))
 	{
-		hint = "The program uses a symbol that is never defined. In an "
-		  "instrument, the note controls must be declared: "
-		  "freq = hslider(\"freq\", ...);, gain = hslider(...);, "
-		  "gate = button(\"gate\"); (library functions like the soundfile "
-		  "playback reference them). For an effect, define the missing "
-		  "symbol explicitly.";
+		const QRegularExpression sym_re(QStringLiteral("undefined symbol\\s*:?\\s*'?([a-zA-Z_][a-zA-Z0-9_]*)"));
+		const QRegularExpressionMatch sym_m = sym_re.match(error);
+		const QString name = sym_m.hasMatch() ? sym_m.captured(1) : QString();
+
+		hint = name.isEmpty()
+		  ? "The program uses a symbol that is never defined. In an "
+		    "instrument, the note controls must be declared: "
+		    "freq = hslider(\"freq\", ...);, gain = hslider(...);, "
+		    "gate = button(\"gate\"); (library functions like the soundfile "
+		    "playback reference them). For an effect, define the missing "
+		    "symbol explicitly. The symbol may also be a leftover from an "
+		    "example or a previous revision - then define it in this "
+		    "program or remove every use of it."
+		  : QString("The program uses '%1', but never defines it anywhere. "
+		    "If it is meant to be a note control, declare it "
+		    "(freq = hslider(\"freq\", 440, 20, 20000, 0.01);, "
+		    "gain = hslider(\"gain\", 0.5, 0, 1, 0.01);, "
+		    "gate = button(\"gate\");). Otherwise it is probably a "
+		    "leftover from an example or a previous revision: either "
+		    "define it in this program (e.g. "
+		    "%1 = hslider(\"%1\", 0.5, 0, 1, 0.01);) or remove every "
+		    "use of it.").arg(name);
 	}
 	else if (error.contains("invalid delay parameter range"))
 	{
@@ -1946,6 +1966,145 @@ static inline QString lint_faust_code(const QString &code)
 					}
 				}
 				ref_line++;
+			}
+		}
+
+		// Any OTHER identifier used but never defined: the "undefined
+		// symbol : X" error, almost always a variable copied from one of the
+		// examples ('bend') or left over from a previous revision.
+		// Deliberately conservative so it never annoys with false
+		// positives: only non-call uses (a token NOT followed by '('; an
+		// undefined function call is caught by the compiler-based lint and
+		// the compile-error fix round), only outside '{ }' blocks and
+		// 'declare' lines, and never the note controls freq/gain/gate (the
+		// check above reports those with a better message).
+		{
+			// Everything that may legally appear as an identifier: all
+			// definitions (at ANY brace depth - 'with' block locals are in
+			// scope where they are referenced), the stdfaust.lib aliases,
+			// Faust keywords/builtins, UI constructors, and the language
+			// primitives.
+			QSet<QString> defined;
+			for (auto it = first_line.constBegin(); it != first_line.constEnd(); ++it)
+			  defined.insert(it.key());
+			defined.unite(library_aliases);
+			static const QStringList faust_lint_keywords =
+			{
+				QStringLiteral("import"), QStringLiteral("declare"),
+				QStringLiteral("process"), QStringLiteral("library"),
+				QStringLiteral("environment"), QStringLiteral("component"),
+				QStringLiteral("with"), QStringLiteral("letrec"),
+				QStringLiteral("where"), QStringLiteral("include"),
+				QStringLiteral("instance"), QStringLiteral("replace"),
+				QStringLiteral("case"), QStringLiteral("match"),
+				QStringLiteral("pattern"), QStringLiteral("default"),
+				QStringLiteral("route"), QStringLiteral("sum"),
+				QStringLiteral("prod"), QStringLiteral("seq"),
+				QStringLiteral("par"), QStringLiteral("prefix"),
+				QStringLiteral("parallel"), QStringLiteral("sequential"),
+				QStringLiteral("recursion"), QStringLiteral("mem"),
+				QStringLiteral("int"), QStringLiteral("float"),
+				QStringLiteral("select2"), QStringLiteral("select3"),
+				QStringLiteral("soundfile"), QStringLiteral("waveform"),
+				QStringLiteral("RDtable"), QStringLiteral("RWtable"),
+				QStringLiteral("hslider"), QStringLiteral("vslider"),
+				QStringLiteral("nentry"), QStringLiteral("button"),
+				QStringLiteral("checkbox"), QStringLiteral("hbargraph"),
+				QStringLiteral("vbargraph"), QStringLiteral("bargraph"),
+				QStringLiteral("attach"), QStringLiteral("tgroup"),
+				QStringLiteral("metadata"), QStringLiteral("bus"),
+				QStringLiteral("block"), QStringLiteral("split"),
+				QStringLiteral("merge"), QStringLiteral("delay"),
+				QStringLiteral("assertbounds"), QStringLiteral("crossfade"),
+				QStringLiteral("interpolate"),
+			};
+			for (const QString &kw : faust_lint_keywords)
+			  defined.insert(kw);
+			for (const QString &prim : faust_language_primitives)
+			  defined.insert(prim);
+
+			// Definitions at any brace depth ('with' block locals).
+			{
+				const QRegularExpression any_def_re(QStringLiteral("\\b([a-zA-Z_][a-zA-Z0-9_]*)\\s*="));
+				QRegularExpressionMatchIterator it = any_def_re.globalMatch(masked);
+				while (it.hasNext())
+				  defined.insert(it.next().captured(1));
+			}
+			// Variables bound by the iteration constructs (their first
+			// argument: par(i, 2, ...), sum(i, N, ...), ...) and lambda
+			// parameters (\(i, p).(...)).
+			{
+				const QRegularExpression iter_re(QStringLiteral("\\b(?:par|sum|prod|seq|prefix)\\s*\\(\\s*([a-zA-Z_][a-zA-Z0-9_]*)"));
+				QRegularExpressionMatchIterator it = iter_re.globalMatch(masked);
+				while (it.hasNext())
+				  defined.insert(it.next().captured(1));
+
+				const QString lambda_marker = QString::fromUtf8("\\(");
+				int from = 0;
+				while ((from = masked.indexOf(lambda_marker, from)) >= 0)
+				{
+					const int close = masked.indexOf(QChar(')'), from);
+					if (close < 0)
+					  break;
+					if (close > from + 1)
+					{
+						const QStringList params = masked.mid(from + 2, close - from - 2).split(',', Qt::SkipEmptyParts);
+						for (const QString &param : params)
+						{
+							const QString trimmed = param.trimmed();
+							if (QRegularExpression(QStringLiteral("^[a-zA-Z_][a-zA-Z0-9_]*$")).match(trimmed).hasMatch())
+							  defined.insert(trimmed);
+						}
+					}
+					from = close + 1;
+				}
+			}
+
+			QSet<QString> reported;
+			int brace_depth = 0;
+			int scan_line = 1;
+			const QRegularExpression token_re(QStringLiteral("[a-zA-Z_][a-zA-Z0-9_]*"));
+			for (const QString &line_text : masked.split('\n'))
+			{
+				const bool declare_line = QRegularExpression(QStringLiteral("^\\s*declare\\b")).match(line_text).hasMatch();
+				if (brace_depth == 0 && !declare_line)
+				{
+					QRegularExpressionMatchIterator it = token_re.globalMatch(line_text);
+					while (it.hasNext())
+					{
+						const QRegularExpressionMatch m = it.next();
+						const int pos = m.capturedStart();
+						const int end = m.capturedEnd();
+						const QString name = m.captured(0);
+
+						if (name == QStringLiteral("_"))
+						  continue; // the input wildcard
+						if (name == QStringLiteral("i"))
+						  continue; // the universal iteration variable
+						const QChar prev = pos > 0 ? line_text.at(pos - 1) : QChar(' ');
+						const QChar next = end < line_text.size() ? line_text.at(end) : QChar(' ');
+						if (prev == QChar('.') || next == QChar('.'))
+						  continue; // module-qualified (os.osc) or qualifier (si.SR)
+						if (next == QChar('('))
+						  continue; // call position - not checked here (conservative)
+						if (name == QStringLiteral("freq") || name == QStringLiteral("gain") || name == QStringLiteral("gate"))
+						  continue; // reported by the note-control check above
+						if (defined.contains(name) || reported.contains(name))
+						  continue;
+
+						findings.append(QString("Line %1: '%2' is used but never defined anywhere in the program - this gives the 'undefined symbol' error. It is probably a leftover from an example or a previous revision: either define it (e.g. %2 = hslider(\"%2\", 0.5, 0, 1, 0.01);) or remove every use of it.").arg(scan_line).arg(name));
+						reported.insert(name);
+					}
+				}
+
+				for (const QChar &ch : line_text)
+				{
+					if (ch == '{')
+					  brace_depth++;
+					else if (ch == '}')
+					  brace_depth--;
+				}
+				scan_line++;
 			}
 		}
 	}
