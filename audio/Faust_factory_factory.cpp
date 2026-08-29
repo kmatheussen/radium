@@ -6,6 +6,7 @@
 #include "../common/ArgsCreator.hpp"
 #include "../common/Mutex.hpp"
 #include "../common/QueueStack.hpp"
+#include "../common/OS_rosetta.h"
 
 #define U_MUTEX false
 static radium::Mutex g_faust_mutex; // U_MUTEX is false, so this mutex is compiled out. Thread safety relies on startMTDSPFactories(), which locks the Faust API (both llvm and interpreter factories) via LOCK_API.
@@ -40,7 +41,7 @@ namespace{
 #if defined(WITHOUT_LLVM_IN_FAUST_DEV)
       , use_interpreter(true)
 #else
-      , use_interpreter(use_interpreter)
+      , use_interpreter(use_interpreter || OS_running_under_rosetta())
 #endif
     {}
 

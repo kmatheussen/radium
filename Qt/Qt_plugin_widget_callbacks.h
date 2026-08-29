@@ -21,6 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 //#include <QRegExp>
 
 #include "../common/disk.h"
+#include "../common/OS_rosetta.h"
 
 #include "../embedded_scheme/s7extra_proc.h"
 
@@ -970,6 +971,21 @@ public slots:
     }
     return;
 #endif
+
+    if(val==false && OS_running_under_rosetta()){
+
+      showAsyncMessage("The LLVM backend is not available when running under Rosetta. Using the interpreter backend instead.");
+
+      IsAlive is_alive(this);
+
+      QTimer::singleShot(3000,[is_alive, this]{
+          if (!is_alive)
+            return;
+
+          faust_interpreted->setChecked(true);
+        });
+      return;
+    }
 
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     if(plugin != NULL){
