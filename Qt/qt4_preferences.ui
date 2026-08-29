@@ -29,7 +29,7 @@
       <enum>QTabWidget::TabShape::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>9</number>
+      <number>8</number>
      </property>
      <property name="elideMode">
       <enum>Qt::TextElideMode::ElideNone</enum>
@@ -10157,7 +10157,7 @@ This option should be considered as a lightweight version of  &quot;Only show mo
           <enum>QTabWidget::TabPosition::West</enum>
          </property>
          <property name="currentIndex">
-          <number>1</number>
+          <number>0</number>
          </property>
          <widget class="QWidget" name="tab_5">
           <attribute name="title">
@@ -10317,10 +10317,7 @@ This option should be considered as a lightweight version of  &quot;Only show mo
               <item row="0" column="2">
                <widget class="QLabel" name="label_12">
                 <property name="text">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;span style=&quot; color:#000000;&quot;&gt;
-Adjusts the amount of anti-aliasing. 4X should normally be a good value.&lt;br/&gt;
-If you experience slow graphical performance in the editor, it will help to lower&lt;br/&gt;
-or remove anti-aliasing.&lt;/span&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Adjusts the amount of anti-aliasing. 8X or 4X should normally be good values.&lt;br/&gt;If you experience slow graphical performance in the editor, it will help to lower&lt;br/&gt;or remove anti-aliasing.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                </widget>
               </item>
@@ -10663,8 +10660,8 @@ that scrolling becomes less smooth.
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>501</width>
-              <height>239</height>
+              <width>583</width>
+              <height>326</height>
              </rect>
             </property>
             <property name="sizePolicy">
