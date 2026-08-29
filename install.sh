@@ -118,6 +118,19 @@ mkdir -p "$TARGET/packages"
 # s7
 cp -a packages/s7 "$TARGET/packages/"
 rm -f "$TARGET"/packages/s7/*.o
+
+# Remove files only needed when building s7. Only the .scm files (and s7 webserver files)
+# are used at runtime.
+rm -fr "$TARGET/packages/s7/s7webserver_org"
+#rm -fr "$TARGET/packages/s7/tools"
+#rm -f "$TARGET/packages/s7/s7test.scm"
+#rm -f "$TARGET/packages/s7/lint.scm"
+#rm -f "$TARGET/packages/s7/snd-lint.scm"
+rm -f "$TARGET/packages/s7/s7.c"
+#rm -f "$TARGET/packages/s7/s7.h"
+#rm -f "$TARGET/packages/s7/s7.html"
+rm -f "$TARGET/packages/s7"/*.c
+#rm -f "$TARGET/packages/s7"/*.h
 # rm -fr "$TARGET/packages/s7/sndlib"
 
 # faust
@@ -125,22 +138,9 @@ mkdir -p "$TARGET/packages/faust"
 mkdir -p "$TARGET/packages/faust/build"
 cp -a packages/faust/build/lib "$TARGET/packages/faust/build/"
 cp -a packages/faust/examples "$TARGET/packages/faust/"
-cp -a packages/faust/architecture "$TARGET/packages/faust/"
+mkdir -p "$TARGET/packages/faust/architecture/faust/gui"
+cp -a packages/faust/architecture/faust/gui/Styles "$TARGET/packages/faust/architecture/faust/gui/"
 cp -a packages/faust/libraries "$TARGET/packages/faust/"
-rm -fr "$TARGET/packages/faust/architecture/webaudio"
-rm -fr "$TARGET/packages/faust/architecture/osclib"
-rm -fr "$TARGET/packages/faust/architecture/android"
-rm -fr "$TARGET/packages/faust/architecture/iOS"
-rm -fr "$TARGET/packages/faust/architecture/juce"
-rm -fr "$TARGET/packages/faust/architecture/max-msp"
-rm -fr "$TARGET/packages/faust/architecture/android"
-rm -fr "$TARGET/packages/faust/architecture/node2js"
-rm -fr "$TARGET/packages/faust/architecture/sam"
-rm -fr "$TARGET/packages/faust/architecture/smartKeyboard"
-rm -fr "$TARGET/packages/faust/architecture/soul"
-rm -fr "$TARGET/packages/faust/architecture/teensy"
-rm -fr "$TARGET/packages/faust/architecture/unity"
-rm -fr "$TARGET/packages/faust/architecture/unsupported-arch"
 rm -fr "$TARGET/packages/faust/libraries/.git"
 
 rm -fr "$TARGET/python-midi/src/sequencer_osx"
@@ -176,6 +176,24 @@ fi
 
 # python27
 cp -a packages/python27_install  "$TARGET/packages/"
+
+# Slim down the embedded python installation. Radium only uses a small part of the
+# standard library, so remove bytecode, the test suite, and unneeded modules.
+find "$TARGET/packages/python27_install" \( -name '*.pyc' -o -name '*.pyo' \) -delete
+rm -fr "$TARGET/packages/python27_install/include"
+PY27LIB="$TARGET/packages/python27_install/lib/python2.7"
+for d in test config plat-mac distutils idlelib lib-tk lib2to3 ensurepip pydoc_data email unittest bsddb multiprocessing compiler wsgiref curses hotshot sqlite3; do
+    rm -fr "$PY27LIB/$d"
+done
+for f in _testcapi.so _sqlite3_failed.so _tkinter.so readline.so _bsddb.so _curses.so _curses_panel.so _hotshot.so audioop.so; do
+    rm -f "$PY27LIB/lib-dynload/$f"
+done
+
+# Remove files not needed at runtime.
+rm -fr "$TARGET/graphics/macosx_iconset"
+rm -f "$TARGET/graphics/Radium.icns"
+rm -f "$TARGET/graphics/radium_logo_colorized.ico"
+rm -fr "$TARGET/help/old"
 
 # Remove accidentally included files (patch artifacts, editor backups, etc.).
 # Note: Only remove regular files, not directories, since pure data objects are commonly
