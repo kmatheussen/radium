@@ -17,3 +17,4 @@ bin/protos.conf
 common/keyboard_sub_ids.h
 makescript.sh
 Radium-*.AppImage
+web/secret.txt

@@ -2136,25 +2136,53 @@ static inline QString lint_faust_code(const QString &code)
 	// '0.1 * name' where the 1 belongs to a decimal fraction, and NOT
 	// 'partial1 * env1' where the 1 is the trailing digit of an
 	// identifier), and a name that is both added and subtracted in the
-	// same line ('1 - name + name * 1').
+	// SAME sum ('1 - name + name * 1'). Only matching signs inside the
+	// same parenthesized group count: 'freq * (1 + detune) + freq * (1 -
+	// detune)' is a legitimate unison detune, not a cancelling control -
+	// each sign lives in its own factor, so no finding is reported.
 	{
 		int line_no = 1;
 		const QRegularExpression times1_re(QStringLiteral("(?:([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\*\\s*1(?![0-9.A-Za-z_]))|(?:(?<![0-9.A-Za-z_])1(?![0-9.])\\s*\\*\\s*([a-zA-Z_][a-zA-Z0-9_]*))"));
 		const QRegularExpression signed_re(QStringLiteral("([+-])\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\b"));
 		for (const QString &line_text : masked.split('\n'))
 		{
-			QSet<QString> plus_names, minus_names;
+			// Assign every character position to a parenthesized group:
+			// group id 0 is the line itself, each '(' starts a new group
+			// id that is popped at the matching ')'.
+			QVector<int> group_at(line_text.size() + 1, 0);
+			{
+				int group = 0;
+				int next_group = 1;
+				QVector<int> stack;
+				for (int i = 0; i < line_text.size(); i++)
+				{
+					const QChar ch = line_text.at(i);
+					group_at[i] = group;
+					if (ch == '(')
+					{
+						stack.append(group);
+						group = next_group++;
+					}
+					else if (ch == ')' && !stack.isEmpty())
+						group = stack.takeLast();
+				}
+			}
+
+			QHash<int, QSet<QString>> plus_names, minus_names;
 			QRegularExpressionMatchIterator sit = signed_re.globalMatch(line_text);
 			while (sit.hasNext())
 			{
 				const QRegularExpressionMatch m = sit.next();
+				const int group = group_at.value(m.capturedStart(), 0);
 				if (m.captured(1) == "+")
-				  plus_names.insert(m.captured(2));
+				  plus_names[group].insert(m.captured(2));
 				else
-				  minus_names.insert(m.captured(2));
+				  minus_names[group].insert(m.captured(2));
 			}
 
-			const QSet<QString> cancels = plus_names & minus_names;
+			QSet<QString> cancels;
+			for (auto it = plus_names.constBegin(); it != plus_names.constEnd(); ++it)
+			  cancels += it.value() & minus_names.value(it.key());
 			for (const QString &name : cancels)
 			  findings.append(QString("Line %1: '%2' is both added and subtracted in the same expression. If the terms are identical (e.g. '1 - %2 + %2 * 1'), the control cancels out and the knob does nothing - the dry/wet mix must actually change the level (see the dry/wet crossfade recipe in the rules).").arg(line_no).arg(name));
 
