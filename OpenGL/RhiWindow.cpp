@@ -397,7 +397,7 @@ void radium::RhiWindow::QRHI_set_thread_priority(bool high)
 				{
 					const QString api_name = graphicsApiName();
 
-					fprintf(stderr, "Error: Failed to create the \"%s\" graphics backend. Falling back to the Null backend (radium will run without graphics).\n",
+					fprintf(stderr, "Error: Failed to create the \"%s\" graphics backend. Falling back to the Null backend (radium will run without graphics in the editor).\n",
 					        api_name.toUtf8().constData());
 
 					QRhiNullInitParams params;
@@ -407,7 +407,7 @@ void radium::RhiWindow::QRHI_set_thread_priority(bool high)
 					QMetaObject::invokeMethod(qApp->thread(), [api_name]
 						{
 							GFX_Message(NULL,
-							            "Failed to create the \"%s\" graphics backend. Radium will run without graphics.\n\n"
+							            "Failed to create the \"%s\" graphics backend. Radium will run without graphics in the editor.\n\n"
 							            "Please make sure that the graphics drivers are installed and working properly. "
 							            "(You can also select another graphics backend in Preferences.)",
 							            api_name.toUtf8().constData());

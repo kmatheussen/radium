@@ -1755,10 +1755,10 @@ static QRhi::Implementation MAIN_init_qrhi(void)
             GFX_Message(NULL, "OpenGL seems to be unavailable, switching to Vulkan");
             graphicsApi = QRhi::Vulkan;
         } else {
-            printf("WARNING: Vulkan is also unavailable. Radium will run without graphics.\n");
+            printf("WARNING: Vulkan is also unavailable. Radium will run without graphics in the editor.\n");
         }
 #else
-        printf("WARNING: Radium will run without graphics.\n");
+        printf("WARNING: Radium will run without graphics in the editor.\n");
 #endif
     }
 #endif
