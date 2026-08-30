@@ -64,6 +64,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QPointer>
 #include <QGridLayout>
 #include <QFile>
+#include <QFileInfo>
 #include <QSet>
 #include <QRegularExpression>
 #include <QtConcurrent>
