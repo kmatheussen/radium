@@ -1572,10 +1572,10 @@ Example:
          </sizepolicy>
         </property>
         <property name="toolTip">
-         <string>Change each effect by 1% in a random direction</string>
+         <string>Change each effect by 5% in a random direction</string>
         </property>
         <property name="text">
-         <string>R1%</string>
+         <string>R5%</string>
         </property>
        </widget>
       </item>

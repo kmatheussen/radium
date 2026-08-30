@@ -2815,8 +2815,12 @@ protected:
         }
         
         
-        if (num_calls_at_this_point==1)
+        if (num_calls_at_this_point==1){
           API_initialize_sequencer_in_mixer();
+
+          if (!instrumentInMixer() && (!getDoSaveRestoreWindows() || !SETTINGS_read_bool("windows_settings_saved", false)))
+            GFX_InstrumentWindowToFront(); // Show the instrument widget at startup instead of the sequencer.
+        }
         
         // Update the screen constantly during the first second. It's a hack to make sure graphics is properly drawn after startup. (dont know what goes wrong)
         // No, we still need to do this. At least in qt 5.5.1. Seems like it's not necessary in 5.7 or 5.8 though, but that could be coincidental.
