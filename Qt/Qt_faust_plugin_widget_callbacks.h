@@ -747,6 +747,7 @@ extern bool FAUST2_set_use_interpreter_backend(struct SoundPlugin *plugin, bool 
 extern bool FAUST2_get_use_interpreter_backend(struct SoundPlugin *plugin);
 extern QStringList FAUST2_lint_faust_code(const struct SoundPlugin *plugin, const QString &code);
 extern QString FAUST2_splice_faust_definitions(const QString &current_code, const QString &fragment);
+extern bool FAUST2_try_fix_duplicate_definition(const QString &code, const QString &name, QString *fixed_code, QString *note);
 
 
 
@@ -831,6 +832,12 @@ static inline QStringList faust_disp_lint_faust_code(const SoundPlugin *plugin, 
   else
     return QStringList(); // only Faust Dev 2 has the LLM prompt bar
 }
+static inline bool faust_disp_try_fix_duplicate_definition(const SoundPlugin *plugin, const QString &code, const QString &name, QString *fixed_code, QString *note){
+  if (!strcmp(plugin->type->type_name, "Faust Dev 2"))
+    return FAUST2_try_fix_duplicate_definition(code, name, fixed_code, note);
+  else
+    return false; // only Faust Dev 2 has the LLM prompt bar
+}
 
 class Faust_Plugin_widget : public QWidget, public Ui::Faust_Plugin_widget{
   Q_OBJECT;
@@ -873,11 +880,21 @@ public:
   bool _llm_applying_code = false;  // distinguishes LLM-applied edits from user edits
   QString _llm_last_fix_error;      // last compile error sent to the LLM (detect fix rounds that changed nothing)
   int _llm_same_error_count = 0;    // consecutive fix rounds ending in the same compile error
+  int _llm_auto_fix_count = 0;      // consecutive local duplicate-definition auto-fixes (loop guard)
   QString _llm_lint_cache_code;         // code the cached lint findings below belong to
   bool _llm_lint_cache_compile_check = false; // whether the cached findings include the compile-based check
   QStringList _llm_lint_cache_findings; // static-analysis findings for that code (shared by the error pane and the LLM fix prompt)
   int _llm_last_progress_total = -1;      // chars shown in llm_status (throttling)
   bool _llm_last_progress_thinking = false; // whether llm_status showed "Thinking..."
+
+  // Compile watchdog: faust_disp_is_compiling() is polled by
+  // calledRegularlyByParent, which records when the current compilation
+  // started here so a hung compile (e.g. an an.* analyzer program that the
+  // Faust compiler can churn on forever) can be reported instead of showing
+  // an endless hourglass. The compile thread cannot be cancelled, but the
+  // GUI stays responsive, so the user can edit the code.
+  qint64 _compile_started_ms = 0;
+  bool _compile_watchdog_flagged = false;
 
   // Multi-turn conversation history (list of {"role","content"} messages) and
   // cancellation.
@@ -1211,6 +1228,34 @@ public:
 
       const radium::FAUST_calledRegularlyByParentReply ready = faust_disp_calledRegularlyByParent(plugin);      
 
+      // Compile watchdog: report a hung compile instead of an endless
+      // hourglass. The compile runs in a background thread holding
+      // libfaust's global factory lock, so it cannot be cancelled - but
+      // the GUI stays responsive and the user can edit the code (or
+      // restart the instrument).
+      {
+        const bool is_compiling = faust_disp_is_compiling(plugin);
+        const qint64 now = QDateTime::currentMSecsSinceEpoch();
+        if (is_compiling)
+        {
+          if (_compile_started_ms == 0)
+            _compile_started_ms = now;
+          else if (!_compile_watchdog_flagged && now - _compile_started_ms > 30000)
+          {
+            _compile_watchdog_flagged = true;
+            _faust_compilation_status->setText("&#8987; <font color=\"orange\">very long compile</font>");
+            _faust_compilation_status->setToolTip("Compilation has been running for over 30 seconds and is probably stuck. Programs using an.* analyzer functions (an.pitchTracker, an.fft, an.rfft, an.rtocv, ...) are known to make the Faust compiler run for minutes or hang. The compile cannot be cancelled - edit the code to remove the construct, or restart the instrument.");
+            printf("FaustDev2: compilation has been running for over 30 seconds - probably stuck (an.* analyzers are known to make the Faust compiler hang)\n");
+          }
+        }
+        else
+        {
+          _compile_started_ms = 0;
+          _compile_watchdog_flagged = false;
+          _faust_compilation_status->setToolTip(QString());
+        }
+      }
+
       if (ready.has_new_data==false){
         R_ASSERT(ready.factory_is_ready==false);
         R_ASSERT(ready.svg_is_ready==false);
@@ -1237,7 +1282,28 @@ public:
           // truly ends (no findings left).
           if (llm_compile_done)
           {
-            const QStringList lint_warnings = collect_lint_findings(plugin, _faust_editor->text(), false);
+            QStringList lint_warnings = collect_lint_findings(plugin, _faust_editor->text(), false);
+
+            // An LLM-generated EFFECT must have exactly 2 inputs (or 1 when
+            // the request asked for mono). The model sometimes mis-arranges
+            // the bare '_' bindings so the compiled effect ends up with 0,
+            // 3, or more inputs (observed: an autotune effect with 0
+            // inputs). The input count is only known after compilation, so
+            // report a mismatch as a cleanup finding and let the cleanup
+            // loop repair the bindings.
+            if (llm_combo_is_effect())
+            {
+              const int expected_inputs = _llm_original_prompt.toLower().contains("mono") ? 1 : 2;
+              // Permanent diagnostic: record that the measured input count
+              // and the effect's expected count agree (or disagree) - the
+              // log entry shows the two values next to the compiled
+              // program, so input-binding regressions are diagnosable
+              // from the LLM log alone.
+              radium::llm::llm_log_note(QString("effect-input-check: ready.num_inputs=%1 expected=%2").arg(ready.num_inputs).arg(expected_inputs));
+              if (ready.num_inputs != expected_inputs)
+                lint_warnings.append(QString("The compiled effect has %1 input channel(s), but it must have exactly %2. Bind the input ONCE ('process = %3 : ...') and derive every other signal from that single binding - a bare '_' reference outside the input binding consumes an extra input channel, and references inside par(i, 2, ...) bodies belong to the lambda, not the input.").arg(ready.num_inputs).arg(expected_inputs).arg(expected_inputs == 2 ? "_,_" : "_"));
+            }
+
             if (!lint_warnings.isEmpty())
             {
               radium::llm::llm_log_note("LLM code compiled, static check findings:\n" + lint_warnings.join("\n"));
@@ -1250,6 +1316,7 @@ public:
               _llm_compile_attempts = 0;
               _llm_last_fix_error.clear();
               _llm_same_error_count = 0;
+              _llm_auto_fix_count = 0;
               set_llm_status(llm_compile_was_fix ? "Fixed." : "Generated.");
             }
           }
@@ -1387,6 +1454,31 @@ public:
             && _llm_last_applied_code == _faust_editor->text()) // code hasn't been manually edited/undone
         {
           const QString error_message = faust_disp_get_error_message(plugin);
+
+          // Local auto-fix for "multiple definitions of symbol 'name'":
+          // the model writes imperative faust ('x = ...; x = x : f;') and
+          // the translation into legal faust is mechanical (rename the
+          // first definition / remove it), so it is fixed here without
+          // spending an LLM round or a fix attempt. The recompile then
+          // surfaces the next error, and the LLM loop continues with its
+          // full budget. Guarded by a small counter so pathological
+          // multi-duplicate programs cannot loop forever.
+          {
+            static const QRegularExpression dup_re(QStringLiteral("multiple definitions of symbol\\s+'?([a-zA-Z_][a-zA-Z0-9_]*)")); // [NO_STATIC_ARRAY_WARNING]
+            const QRegularExpressionMatch dup_m = dup_re.match(error_message);
+            if (dup_m.hasMatch() && _llm_auto_fix_count < 3)
+            {
+              QString fixed_code, note;
+              if (faust_disp_try_fix_duplicate_definition(plugin, _faust_editor->text(), dup_m.captured(1), &fixed_code, &note))
+              {
+                _llm_auto_fix_count++;
+                radium::llm::llm_log_note(note);
+                set_llm_status("Auto-fixed duplicate definition. Compiling...");
+                apply_llm_code(fixed_code); // recompiles; _llm_fixing_error stays true so the loop continues on the next error
+                return;
+              }
+            }
+          }
 
           // If the error text is unchanged since the previous fix round, the
           // fix did not touch the failing expression. One identical repeat is
@@ -1675,7 +1767,13 @@ public slots:
 
      const radium::llm::LLMConfig config = radium::llm::get_config();
 
-     const bool is_effect = llm_combo_is_effect();
+      const bool is_effect = llm_combo_is_effect();
+      // Whether the user asked for a mono effect: derived from the USER'S
+      // request text only (see build_user_content in LLM_client.hpp - the
+      // fix/cleanup prompts contain "mono" in their own boilerplate, so
+      // deriving it from the full prompt text flips fix rounds to a mono
+      // target and the model then rewrites stereo effects as mono).
+      const bool effect_is_mono = is_effect && prompt_to_send.toLower().contains("mono");
 
       const bool creation = _llm_new_session || radium::llm::is_creation_request(prompt_to_send);
       const QString code_for_request = creation
@@ -1719,7 +1817,7 @@ public slots:
     IsAlive is_alive(this);
 
     radium::llm::send_prompt(config, code_for_request, prompt_to_send,
-                             [is_alive, this, config, prompt_to_send, code_for_request, compile_error, current_code, is_effect, skip_examples](bool ok, QString result_or_error)
+                             [is_alive, this, config, prompt_to_send, code_for_request, compile_error, current_code, is_effect, effect_is_mono, skip_examples](bool ok, QString result_or_error)
     {
       if (!is_alive)
         return;
@@ -1749,7 +1847,7 @@ public slots:
       {
         _llm_history.append(QJsonObject{
           {QStringLiteral("role"), QStringLiteral("user")},
-          {QStringLiteral("content"), radium::llm::build_full_user_content(code_for_request, prompt_to_send, config.library_context, skip_examples, compile_error, is_effect)},
+          {QStringLiteral("content"), radium::llm::build_full_user_content(code_for_request, prompt_to_send, config.library_context, skip_examples, compile_error, is_effect, effect_is_mono)},
         });
         _llm_history.append(QJsonObject{
           {QStringLiteral("role"), QStringLiteral("assistant")},
@@ -1768,6 +1866,7 @@ public slots:
         _llm_compile_attempts = 0;
         _llm_last_fix_error.clear();
         _llm_same_error_count = 0;
+        _llm_auto_fix_count = 0;
         _llm_fixing_error = true;
         set_llm_status("Generated. Compiling...");
         apply_llm_code(result_or_error);
@@ -1789,7 +1888,8 @@ public slots:
     },
                              skip_examples, // modification turns skip the examples section
                              compile_error,
-                             is_effect);
+                             is_effect,
+                             effect_is_mono);
   }
 
   void a_on_reset_effects_checkbox_toggled(bool checked)
@@ -1972,12 +2072,43 @@ public slots:
   // run the compile-based check twice for the same failing code.
   QStringList collect_lint_findings(SoundPlugin *plugin, const QString &code, bool compile_check)
   {
+    // libfaust serializes ALL factory creation through one global lock. A
+    // pathological program can keep that lock held essentially forever
+    // (observed: an autotune effect with an.pitchTracker(2048, 512) sent the
+    // interpreter evaluator into an unbounded tree expansion), so while any
+    // compilation is in flight the compile-based check below would block
+    // this GUI thread indefinitely. Downgrade to the textual checks, which
+    // do not call into libfaust at all. (FAUST2_lint_faust_code also guards
+    // for compiles of OTHER plugins - it sees all running compile threads.)
+    if (compile_check && faust_disp_is_compiling(plugin))
+      compile_check = false;
+
     if (_llm_lint_cache_code == code && _llm_lint_cache_compile_check == compile_check)
       return _llm_lint_cache_findings;
 
     QStringList findings = radium::llm::lint_faust_code(code).split('\n', Qt::SkipEmptyParts);
     if (compile_check)
       findings += faust_disp_lint_faust_code(plugin, code);
+
+    // Correct 'undefined symbol' findings that name a Faust LIBRARY
+    // function: the fix is the module-qualified form (ma.log2), never a
+    // self-made definition (defining the bare name collides with the
+    // library definition - observed with 'log2', which the model then
+    // defined itself and got "BoxIdent[log2] is defined here"). Both
+    // phrasings of the finding are matched: the audio-side compile check
+    // ("uses 'X', which is never defined") and the textual check
+    // ("'X' is used but never defined anywhere in the program").
+    static const QRegularExpression undef_re(QStringLiteral("(?:uses '([a-zA-Z_][a-zA-Z0-9_]*)', which is never defined|'([a-zA-Z_][a-zA-Z0-9_]*)' is used but never defined)")); // [NO_STATIC_ARRAY_WARNING]
+    for (QString &finding : findings)
+    {
+      const QRegularExpressionMatch m = undef_re.match(finding);
+      if (!m.hasMatch())
+        continue;
+      const QString symbol = m.captured(1).isEmpty() ? m.captured(2) : m.captured(1);
+      const QString qualified = radium::llm::llm_library_qualified_name(symbol);
+      if (!qualified.isEmpty())
+        finding += QString(" Note: '%1' is a function in the Faust standard library - use the module-qualified form '%2' instead of defining it yourself (defining the bare name collides with the library definition).").arg(symbol).arg(qualified);
+    }
 
     _llm_lint_cache_code = code;
     _llm_lint_cache_compile_check = compile_check;
@@ -2016,13 +2147,15 @@ public slots:
         "example are not defined here. Define each missing name (e.g. as a "
         "slider) or remove every use of it, and change nothing else.";
 
-    // Long programs cannot be fixed by a whole-program response: the model
-    // hits the completion token limit and the code comes back truncated
-    // (observed: an 8K-token program whose fix prompt was 36.7K tokens).
-    // In that regime ask for only the corrected definition(s) and splice
-    // them into the current program.
-    const bool partial_fix = current_code.size() > 24000;
-
+    // Fix rounds ALWAYS use definition splicing: the model replies with
+    // only the corrected definition(s), which are spliced into the current
+    // program by name (FAUST2_splice_faust_definitions). Whole-program
+    // rewrites keep introducing NEW wiring errors (extra input bindings,
+    // redefined names) that the loop then chases until it exhausts
+    // (observed with autotune and dry/wet effects), and for long programs
+    // the completion token limit truncates them anyway. A response that is
+    // a complete program (contains a 'process' definition) still replaces
+    // everything.
     const QString fix_prompt =
       "The Faust compiler reported this error for the code above:\n"
       + radium::llm::summarize_faust_error(error_message) + "\n\n"
@@ -2031,9 +2164,7 @@ public slots:
          : QString("A local static check of the code above found these suspicious lines:\n")
            + lint_findings + "\n\n")
       + "The original request was: " + _llm_original_prompt + "\n\n"
-      + (partial_fix
-         ? QString("The program is very long, so DO NOT return the whole program. Reply with ONLY the corrected top-level definition(s), each written as 'name = ...;' (a definition may span several lines and must end with ';'). The rest of the program is kept unchanged.\n\n")
-         : QString("Please fix the compile error and respond with ONLY the complete corrected Faust program.\n\n"))
+      + "Reply with ONLY the corrected top-level definition(s), each written as 'name = ...;' (a definition may span several lines and must end with ';'). The rest of the program is kept unchanged. Do NOT re-emit the whole program - change only the definition(s) the error points at.\n\n"
       + verification_instruction;
 
     const radium::llm::LLMConfig config = radium::llm::get_config();
@@ -2056,6 +2187,10 @@ public slots:
     IsAlive is_alive(this);
 
     const bool is_effect = llm_combo_is_effect();
+    // From the user's request text only (NOT the fix prompt text, which
+    // contains "mono" in its own boilerplate): a mono request must stay a
+    // mono target across fix/cleanup rounds.
+    const bool effect_is_mono = is_effect && _llm_original_prompt.toLower().contains("mono");
 
     // One fix attempt is fired. Only when it is useless - it returns the
     // failing program unchanged, or the request fails - is a second attempt
@@ -2075,7 +2210,7 @@ public slots:
     };
 
     auto fix_callback = std::make_shared<std::function<void(bool, QString)>>();
-    *fix_callback = [is_alive, this, cancel, epoch, current_code, partial_fix, used_fallback, thinking_enabled, config, fix_prompt, fix_progress, fix_callback, is_effect](bool ok, QString result_or_error)
+    *fix_callback = [is_alive, this, cancel, epoch, current_code, used_fallback, thinking_enabled, config, fix_prompt, fix_progress, fix_callback, is_effect, effect_is_mono](bool ok, QString result_or_error)
     {
       if (!is_alive)
         return;
@@ -2083,14 +2218,20 @@ public slots:
       if (_llm_request_epoch != epoch)
         return; // a newer request (e.g. a user prompt) took over - never apply or retry over it
 
-      if (ok && result_or_error.simplified() != current_code.simplified())
+      // The response is spliced into the current program by name. An
+      // "unchanged" response is a splice whose result equals the current
+      // program (e.g. the model returned the definitions verbatim).
+      // Comments and string literals are masked before comparing, so a
+      // response that only rewrites comments counts as unchanged too
+      // (observed: the model stripped all comments and returned the
+      // otherwise-identical failing program).
+      if (ok
+          && radium::llm::faust_lint_mask(FAUST2_splice_faust_definitions(current_code, result_or_error)).simplified()
+             != radium::llm::faust_lint_mask(current_code).simplified())
       {
         end_llm_request();
         set_llm_status("LLM fix received. Compiling...");
-        if (partial_fix)
-          apply_llm_code_splice(result_or_error);
-        else
-          apply_llm_code(result_or_error);
+        apply_llm_code_splice(result_or_error);
         return;
       }
 
@@ -2124,16 +2265,15 @@ public slots:
             "equivalent construction - for example, drop the dry/wet helper and mix "
             "the dry and wet signals explicitly - and remove any definition that "
             "becomes unused.\n\n"
-          + (partial_fix
-             ? QString("Respond with ONLY the corrected definition(s) (each 'name = ...;').")
-             : QString("Respond with a DIFFERENT complete Faust program that fixes the error."));
+            "Respond with ONLY the corrected definition(s) (each 'name = ...;').";
         radium::llm::send_prompt(config, current_code, retry_prompt,
                                  *fix_callback,
                                  QJsonArray(), cancel, 0.7,
                                  fix_progress,
                                  true, // skip the example section: a fix corrects code, it doesn't need program examples
                                  QString(), // compile_error (already part of fix_prompt)
-                                 is_effect);
+                                 is_effect,
+                                 effect_is_mono);
         return;
       }
 
@@ -2152,7 +2292,8 @@ public slots:
                              fix_progress,
                              true, // skip the example section: a fix corrects code, it doesn't need program examples
                              QString(), // compile_error (already part of fix_prompt)
-                             is_effect);
+                             is_effect,
+                             effect_is_mono);
   }
 
   // Sends the static-check findings back to the LLM when LLM-generated code
@@ -2255,6 +2396,10 @@ public slots:
     IsAlive is_alive(this);
 
     const bool is_effect = llm_combo_is_effect();
+    // From the user's request text only (NOT the cleanup prompt text, which
+    // contains "mono" in its own boilerplate): a mono request must stay a
+    // mono target across fix/cleanup rounds.
+    const bool effect_is_mono = is_effect && _llm_original_prompt.toLower().contains("mono");
 
     // Same single-attempt + one hotter retry strategy as request_llm_fix:
     // an unchanged echo (or a failed request) gets one retry with a higher
@@ -2272,7 +2417,7 @@ public slots:
     };
 
     auto cleanup_callback = std::make_shared<std::function<void(bool, QString)>>();
-    *cleanup_callback = [is_alive, this, cancel, epoch, current_code, used_fallback, thinking_enabled, config, cleanup_prompt, findings_text, cleanup_progress, cleanup_callback, is_effect](bool ok, QString result_or_error)
+    *cleanup_callback = [is_alive, this, cancel, epoch, current_code, used_fallback, thinking_enabled, config, cleanup_prompt, findings_text, cleanup_progress, cleanup_callback, is_effect, effect_is_mono](bool ok, QString result_or_error)
     {
       if (!is_alive)
         return;
@@ -2280,7 +2425,11 @@ public slots:
       if (_llm_request_epoch != epoch)
         return; // a newer request (e.g. a user prompt) took over - never apply or retry over it
 
-      if (ok && result_or_error.simplified() != current_code.simplified())
+      // Comments and strings are masked before comparing: a response that
+      // only rewrites comments is still "unchanged".
+      if (ok
+          && radium::llm::faust_lint_mask(result_or_error).simplified()
+             != radium::llm::faust_lint_mask(current_code).simplified())
       {
         end_llm_request();
         set_llm_status("Cleanup received. Compiling...");
@@ -2316,7 +2465,8 @@ public slots:
                                  cleanup_progress,
                                  true, // skip the example section
                                  QString(), // compile_error
-                                 is_effect);
+                                 is_effect,
+                                 effect_is_mono);
         return;
       }
 
@@ -2335,7 +2485,8 @@ public slots:
                              cleanup_progress,
                              true, // skip the example section: a cleanup corrects code, it doesn't need program examples
                              QString(), // compile_error
-                             is_effect);
+                             is_effect,
+                             effect_is_mono);
   }
 
   // Resets the LLM prompt to the state of a newly created instrument:

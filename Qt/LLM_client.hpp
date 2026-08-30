@@ -346,7 +346,9 @@ static const char *faust_module_reference =
   "           exp(x), never ma.exp(x) (there is no ma.exp; ma.exp(x) is a\n"
   "           syntax error). NOTE: sinh, cosh, tanh are NOT language\n"
   "           primitives - use ma.sinh, ma.cosh, ma.tanh (bare tanh is an\n"
-  "           'undefined symbol' error).\n"
+  "           'undefined symbol' error). NOTE: there is NO bare 'sign'\n"
+  "           function - use ma.signum(x) (bare sign is an 'undefined\n"
+  "           symbol' error).\n"
   "  so.      Soundfiles: so.sound(mysf, part).play(level, gate),\n"
   "           so.sound(mysf, part).play_rev(level, gate),\n"
   "           so.sound(mysf, part).play_interp(ref, freq, level, gate, it.cubic),\n"
@@ -396,8 +398,11 @@ static const char *faust_module_reference =
   "  - To use the input channels separately, bind each with its own def:\n"
   "    main = _; key = _; - each bare reference consumes its own input\n"
   "    channel, and the total over ALL bare references must equal the\n"
-  "    process input count. Never reference an input-binding def more\n"
-  "    than once (it consumes another channel each time).\n"
+  "    process input count - for a stereo effect that total is exactly 2.\n"
+  "    Bind the input once ('x = _,_;') and derive everything else from\n"
+  "    x; never write a second bare '_,_' binding. Never reference an\n"
+  "    input-binding def more than once (it consumes another channel each\n"
+  "    time).\n"
   "  - For a mono effect: process = fi.lowshelf(2, gain, freq); with the\n"
   "    sliders as separate top-level definitions\n"
   "    (gain = hslider(\"gain\", 0, -24, 24, 0.1) : si.smooth(ba.tau2pole(0.010));\n"
@@ -425,6 +430,10 @@ static const char *faust_module_reference =
   "    host. Always use play_interp for one-shot playback.\n"
   "  - so.loop_speed_level(mysf, part, speed, level * gate) loops the part at\n"
   "    a speed factor (e.g. 2 = twice as fast).\n"
+  "  - NEVER use analyzer functions (an.*: an.pitchTracker, an.fft, an.rfft,\n"
+  "    an.rtocv, an.filterbank, ...). They expand into enormous internal\n"
+  "    signal graphs that can make the Faust compiler run for minutes or\n"
+  "    hang outright. Implement pitch/spectral features without them.\n"
   "\n"
   "Faust Dev 2 idioms:\n"
   "  - 'gate' is a held level (1 while the note is down). 'ba.impulsify(gate)'\n"
@@ -474,6 +483,15 @@ static const char *faust_module_reference =
   "    its own input channel, so '(_ : lp) + (_ : bp)' has 2 inputs and\n"
   "    gives an arity error. Do NOT sum bare band definitions either\n"
   "    (each one then has an unbound input).\n"
+  "    When each band is itself a STEREO effect (e.g. a multiband\n"
+  "    compressor or a band of stereo effects), bind the stereo input in\n"
+  "    EACH band and fan the input once with the split/merge:\n"
+  "    low_band = _,_ : par(i, 2, fi.lowpass(2, 250)) : co.compressor_stereo(...);\n"
+  "    mid_band = _,_ : par(i, 2, fi.bandpass(2, 250, 4000)) : co.compressor_stereo(...);\n"
+  "    high_band = _,_ : par(i, 2, fi.highpass(2, 4000)) : co.compressor_stereo(...);\n"
+  "    process = _,_ <: low_band, mid_band, high_band :> _,_;\n"
+  "    NEVER duplicate the input with 'par(i, N, _,_)', and never mix the\n"
+  "    bands with ro.interleave(R, C) when R or C is not 2.\n"
   "  - A sidechain computes a control signal from one input channel and\n"
   "    applies it to another:\n"
   "    main = _;\n"
@@ -481,7 +499,14 @@ static const char *faust_module_reference =
   "    mix = hslider(\"mix\", 1, 0, 1, 0.01) : si.smooth(ba.tau2pole(0.010));\n"
   "    gain = key : abs : fi.lowpass(2, 30) : co.compressor_mono(ratio, threshold, attack, release);\n"
   "    process = main <: par(i, 2, *(1 - mix + gain * mix));\n"
-  "  - Define each name only once (Faust rejects redefinitions). To build a\n"
+  "  - Define each name only once (Faust rejects redefinitions). Faust has\n"
+  "    NO assignment: a definition is not 'executed' in order, so writing\n"
+  "    'x = ...; x = x : f;' is a compile error ('multiple definitions'),\n"
+  "    NOT an update of x. To compute a value from a previous one, give\n"
+  "    the intermediate a new name:\n"
+  "    delay_time = max_delay / (ratio + 0.001);\n"
+  "    delay_time_smoothed = delay_time : fi.lowpass(2, 100);\n"
+  "    and use delay_time_smoothed from then on. To build a\n"
   "    sound from parts, give each part its own name and sum them:\n"
   "    part1 = ...; part2 = ...; combined = part1 + part2;\n"
   "  - Vibrato / LFO pitch modulation: freq * (1 + depth * os.osc(rate)),\n"
@@ -520,15 +545,20 @@ static const char *faust_module_reference =
   "    select2(cond, else_value, then_value).\n"
   "  - Faust lambda syntax is \\(x).(...) or \\(x, y).(...) — NEVER the\n"
   "    JavaScript arrow syntax '(x) => ...' (that is a syntax error).\n"
-  "    E.g. a lookup table over 100 values:\n"
-  "    table = ba.tabulate(100, 100, \\(i, p).select2(p == 0, 0.5, select2(p == 1, 0.8, 0.3)));\n"
   "  - Never write expressions nested more than ~3-4 levels — especially\n"
   "    long select2/conditional chains, which always end up with unbalanced\n"
   "    parentheses. Split them into several named definitions (e.g. one per\n"
   "    10 values) and combine them:\n"
   "    t0 = select2(p == 0, 0.5, select2(p == 1, 0.8, 0.3));\n"
   "    t1 = select2(p == 2, 0.4, select2(p == 3, 0.6, 0.2));\n"
-  "    table = ba.tabulate(100, 100, \\(i, p).select2(p < 2, t0, t1));\n"
+  "    result = select2(p < 2, t0, t1);\n"
+  "  - ba.tabulate in THIS Faust version takes SIX arguments:\n"
+  "    ba.tabulate(C, FX, S, r0, r1, x).(val|lin|cub), where C is 0 or 1\n"
+  "    (range check), FX is a UNARY FUNCTION (e.g. \\(x).(x * x)), S is the\n"
+  "    table size, r0/r1 the argument range, and x the signal the table is\n"
+  "    applied to. There is NO 3-argument lambda form (writing one gives\n"
+  "    'unexpected SELECT2, expecting LPAR'). For a simple lookup table,\n"
+  "    prefer the chain of named select2 definitions shown above.\n"
   "  - When filtering an oscillator, keep the filter's passband overlapping\n"
   "    the oscillator's fundamental range: a bandpass entirely above the\n"
   "    fundamental strips the sound's main energy and can make it inaudible.\n"
@@ -948,9 +978,14 @@ inline const FaustLibraryIndex &get_library_index(void)
 	// Faust Dev 2 programs. Excluded: physmodels, hoa, wdmodels, dx7, demos,
 	// aanl, spats, webaudio, etc. Keeping the table smaller cuts prefill
 	// cost on cache misses and adds less noise for the model.
+	// The analyzer module "an" is deliberately NOT in the compact table (and
+	// forbidden by a convention rule in the system prompt): its functions
+	// (an.pitchTracker, an.fft, an.rfft, an.rtocv, ...) expand into enormous
+	// internal signal graphs that can make the Faust compiler run for
+	// minutes or hang outright, so the model must not be encouraged to use
+	// them.
 	static const QSet<QString> compact_modules =
 	{
-		QStringLiteral("an"), // analyzers
 		QStringLiteral("ba"), // basics
 		QStringLiteral("co"), // compressors
 		QStringLiteral("de"), // delays
@@ -987,6 +1022,59 @@ inline const FaustLibraryIndex &get_library_index(void)
 	       dir_path.toUtf8().constData());
 
 	return index;
+}
+
+// Returns the module-qualified name (e.g. "ma.log2") when 'name' is the
+// base name of a function in the Faust standard library, else an empty
+// string. Used to correct 'undefined symbol' findings for library
+// functions the model forgot to qualify: defining the bare name instead
+// collides with the library definition (observed with 'log2', which the
+// model defined itself and got "BoxIdent[log2] is defined here").
+inline QString llm_library_qualified_name(const QString &name)
+{
+	const FaustLibraryIndex &index = get_library_index();
+	if (index.definitions.contains(name))
+	{
+		const QString &def = index.definitions.value(name); // "ma.log2(params) ..."
+		const int open = def.indexOf('(');
+		if (open >= 0)
+		  return def.left(open).trimmed();
+		return QString();
+	}
+
+	// Near-misses: the model writes the WRONG bare name and the compiler
+	// reports 'undefined symbol' for it. 'sign' is the observed case: the
+	// library has no 'sign' (the function is ma.signum), and the finding
+	// then advised 'define sign = hslider(...)' - the worst possible fix.
+	// When exactly ONE library function name starts with the undefined
+	// symbol, suggest its module-qualified form. (Bare faust primitives
+	// like sin/cos/tan compile fine, so this only fires for names that are
+	// genuinely not functions; short symbols are skipped to avoid noise.)
+	if (name.size() >= 3)
+	{
+		QString unique_match;
+		for (auto it = index.definitions.constBegin(); it != index.definitions.constEnd(); ++it)
+		{
+			if (!it.key().startsWith(name))
+			  continue;
+			if (unique_match.isEmpty())
+			  unique_match = it.key();
+			else
+			{
+				unique_match.clear(); // ambiguous prefix - no suggestion
+				break;
+			}
+		}
+		if (!unique_match.isEmpty())
+		{
+			const QString &def = index.definitions.value(unique_match);
+			const int open = def.indexOf('(');
+			if (open >= 0)
+			  return def.left(open).trimmed();
+		}
+	}
+
+	return QString();
 }
 
 // Starts loading the Faust library index in the background (it parses ~1.5 MB
@@ -1210,6 +1298,13 @@ static inline QString build_relevant_definitions(const QString &code,
 		                      : index.definitions.value(name, QString());
 		if (entry.isEmpty())
 		  continue;
+		// NEVER suggest analyzer functions: they build enormous internal
+		// signal graphs and can make the compiler hang (the an.* ban from
+		// the system prompt must hold here too - the model's own def
+		// 'zcr(x) = ...' once matched 'an.zcr' and pulled the analyzer
+		// definition into the prompt).
+		if (entry.startsWith(QStringLiteral("an.")))
+		  continue;
 		if (out.size() + entry.size() + 2 > budget)
 		  break;
 		out += entry + "\n";
@@ -1399,7 +1494,8 @@ static inline void sse_feed(LLMStreamAccumulator *acc,
 static inline QString build_user_content(const QString &current_code,
                                          const QString &prompt,
                                          const QString &compile_error = QString(),
-                                         bool is_effect = false)
+                                         bool is_effect = false,
+                                         bool effect_is_mono = false)
 {
 	QString program_section;
 	if (current_code.trimmed().isEmpty())
@@ -1418,13 +1514,17 @@ static inline QString build_user_content(const QString &current_code,
 
 	// Tells the model whether to build an instrument or an effect. Unless the
 	// user specified the channel count (e.g. "mono"), effects are stereo.
+	// 'effect_is_mono' must come from the USER'S request text: an earlier
+	// version tested 'prompt' itself, but fix/cleanup prompts contain the
+	// words "mono" in their own boilerplate ("Feeding a MONO signal...",
+	// "duplicate the mono signal"), so every fix round told the model the
+	// target was a MONO effect and it kept rewriting stereo effects as mono.
 	QString target_section;
 	if (is_effect)
 	{
-		const bool mono = prompt.toLower().contains("mono");
-		target_section = mono
+		target_section = effect_is_mono
 			? "Target: a mono audio effect (1 input, 1 output; no note controls).\n"
-			: "Target: a stereo audio effect (2 inputs, 2 outputs; no note controls).\n";
+			: "Target: a stereo audio effect (exactly 2 inputs, 2 outputs; no note controls). The input must be bound only once.\n";
 	}
 	else
 	{
@@ -1452,7 +1552,8 @@ static inline QString build_full_user_content(const QString &current_code,
                                               const QString &library_context,
                                               bool skip_examples = false,
                                               const QString &compile_error = QString(),
-                                              bool is_effect = false)
+                                              bool is_effect = false,
+                                              bool effect_is_mono = false)
 {
 	QString content;
 	if (!skip_examples)
@@ -1465,7 +1566,7 @@ static inline QString build_full_user_content(const QString &current_code,
 		  content += "\n" + relevant_definitions;
 	}
 
-	content += "\n" + build_user_content(current_code, prompt, compile_error, is_effect);
+	content += "\n" + build_user_content(current_code, prompt, compile_error, is_effect, effect_is_mono);
 	return content;
 }
 
@@ -1638,7 +1739,16 @@ static inline QString summarize_faust_error(const QString &error)
 		  "'_ : f + g' means '_ : (f + g)'. To sum several filters, fan "
 		  "the input to them with the split and merge the results: "
 		  "'_ <: f, g :> _' — each '(_ : f) + (_ : g)' term consumes its "
-		  "own input channel (an arity error).";
+		  "own input channel (an arity error). A 'split composition "
+		  "A<:B' error (the number of outputs of A must divide the "
+		  "number of inputs of B) almost always means a function was "
+		  "given a bare input binding as an argument (e.g. "
+		  "ef.dryWetMixer(mix, _,_) - pass the EFFECT function instead, "
+		  "like ef.dryWetMixer(mix, re.stereo_freeverb(...))), or that a "
+		  "definition contains extra bare '_'s inside its expression "
+		  "(e.g. ba.if(_, 1, 0) inside a chain - every bare '_' consumes "
+		  "a process input channel; apply the function with ':' "
+		  "instead).";
 	}
 	else if (error.contains("multiple definitions")
 	         || error.contains("redefinition of symbols"))
@@ -1646,6 +1756,20 @@ static inline QString summarize_faust_error(const QString &error)
 		hint = "A symbol is defined more than once, or the program redefines "
 		  "a symbol that the imported libraries already define (stdfaust.lib "
 		  "defines the library aliases sf, os, ma, fi, ...). Rename it.";
+	}
+	else if (error.contains("defined here"))
+	{
+		// "BoxIdent[log2] is defined here : maths.lib:371" - the program
+		// defined a name the library already defines. When the name is a
+		// library function, the fix is the module-qualified form (ma.log2),
+		// never a self-made definition.
+		const QRegularExpression re(QStringLiteral("BoxIdent\\[([a-zA-Z_][a-zA-Z0-9_]*)\\]"));
+		const QRegularExpressionMatch m = re.match(error);
+		const QString name = m.hasMatch() ? m.captured(1) : QString();
+		const QString qualified = !name.isEmpty() ? llm_library_qualified_name(name) : QString();
+		hint = qualified.isEmpty()
+		  ? "A symbol is defined more than once, or a library symbol is redefined. Give each definition a unique name - and never redefine library functions (use the module-qualified form instead)."
+		  : QString("'%1' is already defined in the Faust standard library - do NOT redefine it. Use the module-qualified function '%2' instead (e.g. %2(...)), and remove your own definition of %1.").arg(name).arg(qualified);
 	}
 	else if (error.contains("ARROW"))
 	{
@@ -1658,6 +1782,17 @@ static inline QString summarize_faust_error(const QString &error)
 		hint = "Unbalanced parentheses: a long expression has too many or "
 		  "too few closing parentheses. Count them carefully, or better: "
 		  "split the long expression into several named definitions.";
+	}
+	else if (error.contains("SELECT2") || error.contains("SELECT3"))
+	{
+		hint = "A select2/select3 chain's parentheses are unbalanced (the "
+		  "compiler reports 'unexpected SELECT2, expecting LPAR' when it "
+		  "meets an extra ')'). Split long select2 chains into several "
+		  "named definitions (t0 = select2(...); t1 = select2(...); "
+		  "result = select2(cond, t0, t1)). Also: ba.tabulate in this "
+		  "Faust version takes SIX arguments "
+		  "(ba.tabulate(C, FX, S, r0, r1, x).(val|lin|cub), FX = unary "
+		  "function) - the 3-argument lambda form does NOT exist.";
 	}
 	else if (error.contains("unexpected $end") || error.contains("unexpected EOF"))
 	{
@@ -1967,6 +2102,18 @@ static inline QString lint_faust_code(const QString &code)
 		// user-declared 'gate' button, and the host needs freq/gain for
 		// note events). Report each missing note control once.
 		{
+			// 'freq'/'gain'/'gate' defined anywhere in the program - even as
+			// a 'with' block local - are not missing note controls. (An
+			// effect program computing a local 'freq' inside a 'with' block
+			// is perfectly legal and must not be flagged.)
+			QSet<QString> defined_anywhere;
+			{
+				const QRegularExpression any_def_re(QStringLiteral("\\b([a-zA-Z_][a-zA-Z0-9_]*)\\s*(\\(\\s*([^)]*)\\s*\\))?\\s*="));
+				QRegularExpressionMatchIterator it = any_def_re.globalMatch(masked);
+				while (it.hasNext())
+				  defined_anywhere.insert(it.next().captured(1));
+			}
+
 			const QRegularExpression ref_re(QStringLiteral("\\b(freq|gain|gate)\\b"));
 			QSet<QString> reported;
 			int ref_line = 1;
@@ -1977,7 +2124,7 @@ static inline QString lint_faust_code(const QString &code)
 				while (it.hasNext())
 				{
 					const QString name = it.next().captured(1);
-					if (!first_line.contains(name) && !reported.contains(name))
+					if (!first_line.contains(name) && !defined_anywhere.contains(name) && !reported.contains(name))
 					{
 						findings.append(QString("Line %1: the program uses '%2' but never defines it. Instruments must declare the note controls (gate = button(\"gate\"), freq = hslider(...), gain = hslider(...)); effects should define the symbol explicitly.").arg(ref_line).arg(name));
 						reported.insert(name);
@@ -2041,12 +2188,26 @@ static inline QString lint_faust_code(const QString &code)
 			for (const QString &prim : faust_language_primitives)
 			  defined.insert(prim);
 
-			// Definitions at any brace depth ('with' block locals).
+			// Definitions at any brace depth ('with' block locals), INCLUDING
+			// function-style definitions ('name(a, b) = ...') and their
+			// parameters: references to all of them are NOT undefined.
+			// (Without this, every use of a function - and every parameter
+			// of one - was falsely reported as 'never defined', which made
+			// the model distrust the whole findings list.)
 			{
-				const QRegularExpression any_def_re(QStringLiteral("\\b([a-zA-Z_][a-zA-Z0-9_]*)\\s*="));
+				const QRegularExpression any_def_re(QStringLiteral("\\b([a-zA-Z_][a-zA-Z0-9_]*)\\s*(\\(\\s*([^)]*)\\s*\\))?\\s*="));
 				QRegularExpressionMatchIterator it = any_def_re.globalMatch(masked);
 				while (it.hasNext())
-				  defined.insert(it.next().captured(1));
+				{
+					const QRegularExpressionMatch m = it.next();
+					defined.insert(m.captured(1));
+					for (const QString &arg : m.captured(3).split(",", Qt::SkipEmptyParts))
+					{
+						const QString trimmed = arg.trimmed();
+						if (!trimmed.isEmpty())
+						  defined.insert(trimmed);
+					}
+				}
 			}
 			// Variables bound by the iteration constructs (their first
 			// argument: par(i, 2, ...), sum(i, N, ...), ...) and lambda
@@ -2105,6 +2266,8 @@ static inline QString lint_faust_code(const QString &code)
 						  continue; // module-qualified (os.osc) or qualifier (si.SR)
 						if (next == QChar('('))
 						  continue; // call position - not checked here (conservative)
+						if (prev == QChar('('))
+						  continue; // call argument, e.g. 'x' in 'f(x)' - its owner is a call to a (now-known) function; the compiler-based lint checks the real program
 						if (name == QStringLiteral("freq") || name == QStringLiteral("gain") || name == QStringLiteral("gate"))
 						  continue; // reported by the note-control check above
 						if (defined.contains(name) || reported.contains(name))
@@ -2292,6 +2455,12 @@ static inline QString lint_faust_code(const QString &code)
 	// 'ro.interleave(3, 2)' to mix three stereo signals, but interleave does
 	// not perform pairwise sums - it just interleaves R*C channels, so the
 	// following par(i, 2, +) gets the wrong arity. Give the exact recipe.
+	// The recipe is a REPLACEMENT instruction: the model has been observed
+	// to add the pairwise mix definitions and then leave the broken
+	// 'ro.interleave(...) : par(i, 2, +)' composition in 'process' in place
+	// (observed with a multiband compressor). A 'par(i, N, _,_)' input fan
+	// in the same program is the other half of the same mistake and is
+	// called out too.
 	{
 		int line_no = 1;
 		const QRegularExpression re(QStringLiteral("\\bro\\.interleave\\s*\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*\\)"));
@@ -2299,7 +2468,14 @@ static inline QString lint_faust_code(const QString &code)
 		{
 			const QRegularExpressionMatch m = re.match(line_text);
 			if (m.hasMatch() && (m.captured(1) != "2" || m.captured(2) != "2"))
-			  findings.append(QString("Line %1: ro.interleave(%2, %3) does not perform pairwise sums. To mix more than two stereo signals, chain pairwise mixes into named definitions: mix1 = (a, b) : ro.interleave(2, 2) : par(i, 2, +); mix2 = (mix1, c) : ro.interleave(2, 2) : par(i, 2, +);. Do NOT change the R and C arguments to fit the tuple - restructure the tuple into pairwise mixes instead.").arg(line_no).arg(m.captured(1)).arg(m.captured(2)));
+			{
+				const bool has_input_fan = QRegularExpression(QStringLiteral("\\bpar\\s*\\(\\s*i\\s*,\\s*[3-9]\\d*\\s*,\\s*_,\\s*_")).match(masked).hasMatch();
+				findings.append(QString("Line %1: ro.interleave(%2, %3) does not perform pairwise sums. To mix more than two stereo signals, chain pairwise mixes into named definitions: mix1 = (a, b) : ro.interleave(2, 2) : par(i, 2, +); mix2 = (mix1, c) : ro.interleave(2, 2) : par(i, 2, +); and REPLACE the whole 'ro.interleave(...) : par(i, 2, +)' composition in 'process' with the last mix definition (e.g. process = mix2;). Do NOT change the R and C arguments to fit the tuple - restructure the tuple into pairwise mixes instead.%4")
+				                  .arg(line_no).arg(m.captured(1)).arg(m.captured(2))
+				                  .arg(has_input_fan
+				                       ? QString(" Also remove the 'par(i, N, _,_)' input fan: when each branch binds its own input ('band = _,_ : ...'), the input is fanned with the split instead: _ <: band1, band2, band3 :> _.")
+				                       : QString()));
+			}
 			line_no++;
 		}
 	}
@@ -2961,7 +3137,8 @@ static inline void send_request_once(const LLMConfig &config,
                                      bool skip_examples = false,
                                      const QString &effort_override = QString(),
                                      const QString &compile_error = QString(),
-                                     bool is_effect = false)
+                                     bool is_effect = false,
+                                     bool effect_is_mono = false)
 {
 	llm_start_price_fetch();
 
@@ -2990,7 +3167,7 @@ static inline void send_request_once(const LLMConfig &config,
 		+ "     process = ((dry : par(i, 2, *(1 - mix))), (wet : par(i, 2, *(mix)))) : ro.interleave(2, 2) : par(i, 2, +);\n"
 		+ "NEVER write mix math that cancels out (e.g. '1 - mix + mix' or 'mix * 1'): the knob must actually change the level - the compile check cannot catch a dead knob.\n"
 		+ (is_effect
-		   ? "9) This request asks for an audio EFFECT: an audio processor with no note controls (no freq/gain/gate) and no polyphony. Unless the user specifies otherwise, make it stereo (2 inputs, 2 outputs).\n"
+		   ? "9) This request asks for an audio EFFECT: an audio processor with no note controls (no freq/gain/gate) and no polyphony. Unless the user specifies otherwise, the effect must have EXACTLY two inputs and two outputs. NEVER create an effect with 3 or more inputs: no matter how many parallel branches it has, bind the input ONLY ONCE (process = _,_ : ...) and derive every other signal from that single binding. Multiple bare input bindings ('dry = _,_; wet = _,_;') consume extra input channels and are forbidden - use 'dry = _,_; wet = dry : effect' or 'dry = _,_ <: a, b :> _,_' instead.\n"
 		   : "9) This request asks for an INSTRUMENT: a polyphonic sound generator with no audio inputs, using the automatic note controls freq/gain/gate (and optionally velocity).\n")
 		+ "\n"
 		+ faust_module_reference;
@@ -3030,7 +3207,7 @@ static inline void send_request_once(const LLMConfig &config,
 
 	QJsonObject user_msg;
 	user_msg["role"] = "user";
-	user_msg["content"] = build_full_user_content(current_code, prompt, config.library_context, skip_examples, compile_error, is_effect);
+	user_msg["content"] = build_full_user_content(current_code, prompt, config.library_context, skip_examples, compile_error, is_effect, effect_is_mono);
 
 	QJsonArray messages;
 	messages.append(system_msg);
@@ -3369,9 +3546,10 @@ static inline void send_prompt(const LLMConfig &config,
                                std::function<void(int reasoning_chars, int content_chars)> progress_callback = std::function<void(int, int)>(),
                                bool skip_examples = false,
                                const QString &compile_error = QString(),
-                               bool is_effect = false)
+                               bool is_effect = false,
+                               bool effect_is_mono = false)
 {
-	send_request_once(config, current_code, prompt, history, cancel, 2, temperature, progress_callback, callback, skip_examples, QString(), compile_error, is_effect);
+	send_request_once(config, current_code, prompt, history, cancel, 2, temperature, progress_callback, callback, skip_examples, QString(), compile_error, is_effect, effect_is_mono);
 }
 
 } // namespace llm
