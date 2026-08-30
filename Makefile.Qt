@@ -470,6 +470,13 @@ ifeq ($(BUILD_OPTIMIZED), RELEASE)
 	DEFAULT_UNDEFINED_SANITIZE_OPTS += -fsanitize=object-size
 endif
 
+# Universal (arm64 + x86_64) binaries are only built in RELEASE mode.
+ifeq ($(BUILDTYPE), RELEASE)
+UNIVERSAL = -arch arm64 -arch x86_64
+else
+UNIVERSAL =
+endif
+
 UNDEFINED_SANITIZE_OPTS ?= $(DEFAULT_UNDEFINED_SANITIZE_OPTS)
 
 # -fsanitize-thread sometimes require: "export __GL_THREADED_OPTIMIZATIONS=0"
@@ -799,11 +806,21 @@ OBJECT_DEPENDENCIES = $(BUILD_DEPENDENCIES)
 QT_PCH = Qt/Qt_precompiled.hpp.gch
 
 ifdef USING_CLANG
+ifneq ($(strip $(UNIVERSAL)),)
+	QT_PCH_INCLUDE = -include Qt/Qt_precompiled.hpp
+else
 	QT_PCH_INCLUDE = -include-pch $(QT_PCH)
 endif
+endif
 
+# Note: Precompiled headers can not be used when building universal binaries
+# since clang does not support multiple -arch options when generating PCH files.
+ifneq ($(strip $(UNIVERSAL)),)
+$(QT_PCH) Qt/Qt_precompiled.hpp.d &: ;
+else
 $(QT_PCH) Qt/Qt_precompiled.hpp.d &: Qt/Qt_precompiled.hpp $(BUILD_DEPENDENCIES)
 	$(CCC) -MMD -MP -DNO_PRAGMA_ONCE -x c++-header $(QTOPT) -o $(QT_PCH) -c $<
+endif
 
 -include Qt/Qt_precompiled.hpp.d
 
@@ -1158,9 +1175,9 @@ endif
 
 
 # Adding "TARGET_ARCH=-g" to prevent juce from compiling with -march=native
-PLUGINHOSTOPTS += CXX="$(CCC) -DCOMPILING_JUCE_PLUGINS_O=1 -DDEBUG_ALLOWED -DJUCE_ALSA_MIDI_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_INPUT_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_OUTPUT_NAME=\\\"Radium\\\"" TARGET_ARCH="-g -fno-strict-aliasing"
+PLUGINHOSTOPTS += CXX="$(CCC) -DCOMPILING_JUCE_PLUGINS_O=1 -DDEBUG_ALLOWED -DJUCE_ALSA_MIDI_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_INPUT_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_OUTPUT_NAME=\\\"Radium\\\"" TARGET_ARCH="-g -fno-strict-aliasing $(UNIVERSAL)"
 
-LIBPLUGIN_SCANNER_OPTS += CXX="$(CCC) -DCOMPILING_RADIUM_PLUGIN_SCANNER=1 -DDEBUG_ALLOWED -DJUCE_ALSA_MIDI_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_INPUT_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_OUTPUT_NAME=\\\"Radium\\\" " TARGET_ARCH="-g -fno-strict-aliasing" TARGET="libMyPluginHost_for_scanner.a"
+LIBPLUGIN_SCANNER_OPTS += CXX="$(CCC) -DCOMPILING_RADIUM_PLUGIN_SCANNER=1 -DDEBUG_ALLOWED -DJUCE_ALSA_MIDI_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_INPUT_NAME=\\\"Radium\\\" -DJUCE_ALSA_MIDI_OUTPUT_NAME=\\\"Radium\\\" " TARGET_ARCH="-g -fno-strict-aliasing $(UNIVERSAL)" TARGET="libMyPluginHost_for_scanner.a"
 
 pluginhost/Builds/Linux/build/libMyPluginHost.a: pluginhost/Builds/Linux/build/libMyPluginHost_for_scanner.a audio/Juce_plugins.cpp midi/midi_juce.cpp pluginhost/MyPluginHost.jucer common/Vector.hpp audio/Smooth.cpp audio/Smooth_proc.h audio/JuceAudioDevice.cpp
 	@echo
@@ -1721,7 +1738,7 @@ $(T)Semaphores.o: $(BUILD_DEPENDENCIES) $(CD)/Semaphores.cpp $(CD)/sema.h common
 	$(CCC2) $(CD)Semaphores.cpp $(QTOPT) $(QT_PCH_INCLUDE)
 
 $(T)stacktoucher.o: $(CD)stacktoucher.c
-	$(CC2) $(O0) $(CD)stacktoucher.c -c $(O0) -std=c99 -g -Wall $(WERROR)
+	$(CC2) $(O0) $(CD)stacktoucher.c -c $(O0) -std=c99 -g -Wall $(WERROR) $(UNIVERSAL)
 
 
 $(T)X11_Main.o:  $(BUILD_DEPENDENCIES) $(P)X11_Main.c 
@@ -2440,11 +2457,21 @@ endif
 FAUST_PCH = audio/Faust_plugins_precompiled.hpp.gch
 
 ifdef USING_CLANG
+ifneq ($(strip $(UNIVERSAL)),)
+  FAUST_PCH_INCLUDE = -include audio/Faust_plugins_precompiled.hpp
+else
   FAUST_PCH_INCLUDE = -include-pch $(FAUST_PCH)
 endif
+endif
 
+# Note: Precompiled headers can not be used when building universal binaries
+# since clang does not support multiple -arch options when generating PCH files.
+ifneq ($(strip $(UNIVERSAL)),)
+$(FAUST_PCH) audio/Faust_plugins_precompiled.hpp.d &: ;
+else
 $(FAUST_PCH) audio/Faust_plugins_precompiled.hpp.d &: audio/Faust_plugins_precompiled.hpp $(BUILD_DEPENDENCIES)
 	$(CCC) -MMD -MP -DNO_PRAGMA_ONCE $(FAUST_OPTS2) -o $(FAUST_PCH) -c $<
+endif
 
 -include audio/Faust_plugins_precompiled.hpp.d
 
@@ -2950,7 +2977,7 @@ endif
 #S7OPTS += -DWITH_GMP
 
 bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o: bin/packages/s7/s7.c
-	$(CC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o `cat buildtype.opt` -Wno-error -Wno-float-equal -Iembedded_scheme $(S7OPTS) $(S7AlignmentSanitize) -DWITH_C_LOADER=0 -DWITH_HISTORY=1 -fPIC
+	$(CC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o `cat buildtype.opt` -Wno-error -Wno-float-equal -Iembedded_scheme $(S7OPTS) $(S7AlignmentSanitize) -DWITH_C_LOADER=0 -DWITH_HISTORY=1 -fPIC $(UNIVERSAL)
 
 bin/packages/s7/s7.c: bin/packages/s7.tar.gz
 	cd bin/packages && rm -fr s7 && tar xvzf s7.tar.gz && touch s7/s7.c && mv s7/s7webserver s7/s7webserver_org # Note: renaming s7webserver to avoid mistakenly using it instead of bin/s7webserver
