@@ -70,6 +70,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QMenuBar>
 #include <Qt>
 #include <QDir>
+#include <QFileInfo>
 #include <QTextEdit>
 #include <QLayout>
 #include <QDesktopServices>
@@ -5212,6 +5213,16 @@ int main(int argc, char **argv){
     setenv("QT_QPA_PLATFORM_PLUGIN_PATH", "/opt/local/libexec/qt6/plugins/platforms", 1);
 #endif
 
+#if defined(IS_MACOS_BINARY)
+  {
+    QString exe_path = (argc > 0 && argv[0] != NULL) ? QString::fromLocal8Bit(argv[0]) : QString();
+    QString plugins_dir = QFileInfo(exe_path).absolutePath() + QDir::separator() + "qt6_plugins";
+    qputenv("QT_PLUGIN_PATH", plugins_dir.toUtf8()); // Inherited by subprocesses.
+    qputenv("QT_QPA_PLATFORM_PLUGIN_PATH", (plugins_dir + QDir::separator() + "platforms").toUtf8());
+    QCoreApplication::setLibraryPaths(QStringList(plugins_dir)); // Don't scan the paths compiled into the macports-built Qt libraries.
+  }
+#endif
+
   setenv("LC_CTYPE", "UTF-8", 1);
 #endif // defined(FOR_MACOSX)
 
@@ -5502,7 +5513,7 @@ int main(int argc, char **argv){
 #endif // !macos(arm)
   
   
-#if defined(FOR_MACOSX) && defined(RELEASE)
+#if 0 //defined(FOR_MACOSX) && defined(RELEASE)
 
   {
     const char *confname = "show_macos_warning_during_startup_v" RADIUM_VERSION;
