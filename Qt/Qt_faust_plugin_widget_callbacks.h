@@ -745,6 +745,7 @@ extern void FAUST2_set_reset_effect_values_on_compile(struct SoundPlugin *plugin
 extern bool FAUST2_set_use_interpreter_backend(struct SoundPlugin *plugin, bool use_interpreter);
 extern bool FAUST2_get_use_interpreter_backend(struct SoundPlugin *plugin);
 extern QStringList FAUST2_lint_faust_code(const struct SoundPlugin *plugin, const QString &code);
+extern QString FAUST2_splice_faust_definitions(const QString &current_code, const QString &fragment);
 
 
 
@@ -881,6 +882,17 @@ public:
   // cancellation.
   QJsonArray _llm_history;
   std::shared_ptr<std::atomic_bool> _llm_cancel;
+
+  // Armed by the "New" menu action: the next generate request is treated as
+  // creation (the current code is NOT embedded and the examples are shown),
+  // whatever the prompt says. Disarmed by the first successful generation
+  // and by manual edits.
+  bool _llm_new_session = false;
+
+  // Incremented by start_llm_request(): each new request owns a new epoch,
+  // and callbacks of superseded requests (fix/cleanup attempts) see the
+  // mismatch and stand down instead of retrying over the newer request.
+  int _llm_request_epoch = 0;
 
   // Prompt input history (like a shell's history): every submitted prompt is
   // remembered so the Up/Down arrow keys can re-insert previous prompts.
@@ -1628,6 +1640,7 @@ public slots:
       if (!_llm_applying_code){
         _llm_fixing_error = false; // A manual edit cancels auto-fixing of LLM code.
         _llm_history = QJsonArray(); // ...and invalidates the conversation history.
+        _llm_new_session = false; // ...and any pending creation context.
       }
 
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
@@ -1663,7 +1676,8 @@ public slots:
 
      const bool is_effect = llm_combo_is_effect();
 
-      const QString code_for_request = radium::llm::is_creation_request(prompt_to_send)
+      const bool creation = _llm_new_session || radium::llm::is_creation_request(prompt_to_send);
+      const QString code_for_request = creation
                                        ? QString()
                                        : current_code;
 
@@ -1742,6 +1756,11 @@ public slots:
         });
         trim_llm_history(result_or_error.size());
 
+        // The next prompt is about the generated code: a modification, not
+        // a creation. (Left armed when the attempt failed or was discarded,
+        // so a retry stays creation.)
+        _llm_new_session = false;
+
         prompt_edit->clear();
         _llm_original_prompt = prompt_to_send;
         _llm_max_fixes = config.max_fixes < 0 ? 0 : config.max_fixes;
@@ -1755,6 +1774,7 @@ public slots:
       else
       {
         // Nothing was appended to the history for this failed attempt.
+        radium::llm::llm_log_note("Generate request failed: " + result_or_error);
         _llm_fixing_error = false;
         show_llm_error(result_or_error);
       }
@@ -1813,12 +1833,17 @@ public slots:
     send_llm_generate_request(prompt);
   }
 
-  // Marks a new in-flight LLM request; cancels any previous one.
+  // Marks a new in-flight LLM request; cancels any previous one. The epoch
+  // lets fix/cleanup callbacks detect that a NEWER request (e.g. a user
+  // prompt) has taken over, so their automatic retries never cancel or
+  // clobber a user request (observed: a cleanup retry chain cancelled an
+  // in-flight generate request).
   std::shared_ptr<std::atomic_bool> start_llm_request(void)
   {
     if (_llm_cancel)
       *_llm_cancel = true;
     _llm_cancel = std::make_shared<std::atomic_bool>(false);
+    _llm_request_epoch++;
     cancel_button->setEnabled(true);
     _llm_last_progress_total = -1;
     _llm_last_progress_thinking = false;
@@ -1928,6 +1953,17 @@ public slots:
      _llm_last_applied_code = _faust_editor->text();
    }
 
+   // Splices the fragment's top-level definitions into the current program
+   // (a definition replaces the same-named one; new names are inserted
+   // before 'process') and applies the merged result. Used by the
+   // partial-fix flow for long programs, where the fix response contains
+   // only the corrected definitions. A fragment that is a complete program
+   // (contains 'process') replaces everything.
+   void apply_llm_code_splice(const QString &fragment){
+     const QString merged = FAUST2_splice_faust_definitions(_faust_editor->text(), fragment);
+     apply_llm_code(merged);
+   }
+
   // Static-analysis findings for 'code': the textual checks (duplicate
   // definitions, JS arrow syntax), plus (when compile_check is true) the
   // exact per-definition compile check from audio/Faust_dev2.cpp. Cached
@@ -1979,6 +2015,13 @@ public slots:
         "example are not defined here. Define each missing name (e.g. as a "
         "slider) or remove every use of it, and change nothing else.";
 
+    // Long programs cannot be fixed by a whole-program response: the model
+    // hits the completion token limit and the code comes back truncated
+    // (observed: an 8K-token program whose fix prompt was 36.7K tokens).
+    // In that regime ask for only the corrected definition(s) and splice
+    // them into the current program.
+    const bool partial_fix = current_code.size() > 24000;
+
     const QString fix_prompt =
       "The Faust compiler reported this error for the code above:\n"
       + radium::llm::summarize_faust_error(error_message) + "\n\n"
@@ -1987,7 +2030,9 @@ public slots:
          : QString("A local static check of the code above found these suspicious lines:\n")
            + lint_findings + "\n\n")
       + "The original request was: " + _llm_original_prompt + "\n\n"
-      "Please fix the compile error and respond with ONLY the complete corrected Faust program.\n\n"
+      + (partial_fix
+         ? QString("The program is very long, so DO NOT return the whole program. Reply with ONLY the corrected top-level definition(s), each written as 'name = ...;' (a definition may span several lines and must end with ';'). The rest of the program is kept unchanged.\n\n")
+         : QString("Please fix the compile error and respond with ONLY the complete corrected Faust program.\n\n"))
       + verification_instruction;
 
     const radium::llm::LLMConfig config = radium::llm::get_config();
@@ -2005,6 +2050,7 @@ public slots:
     radium::llm::llm_log_note(QString("Sending compile-error fix round %1/%2:\n").arg(_llm_compile_attempts).arg(_llm_max_fixes) + radium::llm::truncate_faust_error(error_message));
 
     const std::shared_ptr<std::atomic_bool> cancel = start_llm_request();
+    const int epoch = _llm_request_epoch;
 
     IsAlive is_alive(this);
 
@@ -2028,16 +2074,22 @@ public slots:
     };
 
     auto fix_callback = std::make_shared<std::function<void(bool, QString)>>();
-    *fix_callback = [is_alive, this, cancel, current_code, used_fallback, thinking_enabled, config, fix_prompt, fix_progress, fix_callback, is_effect](bool ok, QString result_or_error)
+    *fix_callback = [is_alive, this, cancel, epoch, current_code, partial_fix, used_fallback, thinking_enabled, config, fix_prompt, fix_progress, fix_callback, is_effect](bool ok, QString result_or_error)
     {
       if (!is_alive)
         return;
+
+      if (_llm_request_epoch != epoch)
+        return; // a newer request (e.g. a user prompt) took over - never apply or retry over it
 
       if (ok && result_or_error.simplified() != current_code.simplified())
       {
         end_llm_request();
         set_llm_status("LLM fix received. Compiling...");
-        apply_llm_code(result_or_error);
+        if (partial_fix)
+          apply_llm_code_splice(result_or_error);
+        else
+          apply_llm_code(result_or_error);
         return;
       }
 
@@ -2071,7 +2123,9 @@ public slots:
             "equivalent construction - for example, drop the dry/wet helper and mix "
             "the dry and wet signals explicitly - and remove any definition that "
             "becomes unused.\n\n"
-            "Respond with a DIFFERENT complete Faust program that fixes the error.";
+          + (partial_fix
+             ? QString("Respond with ONLY the corrected definition(s) (each 'name = ...;').")
+             : QString("Respond with a DIFFERENT complete Faust program that fixes the error."));
         radium::llm::send_prompt(config, current_code, retry_prompt,
                                  *fix_callback,
                                  QJsonArray(), cancel, 0.7,
@@ -2120,6 +2174,19 @@ public slots:
 
     const QString findings_text = findings.join("\n");
 
+    // Unused sliders are cosmetic (the program compiles), and on large
+    // programs the cleanup rounds degenerate: the model fixes the reported
+    // sliders and adds NEW unused ones, exhausting the budget (observed).
+    // Cap the rounds at 2 when every finding is an unused-slider finding.
+    bool only_unused_sliders = true;
+    for (const QString &finding : findings)
+      if (!finding.contains(QStringLiteral("is declared but never used")))
+      {
+        only_unused_sliders = false;
+        break;
+      }
+    const int cleanup_max = only_unused_sliders ? 2 : _llm_max_fixes;
+
     if (findings_text == _llm_last_fix_error)
       _llm_same_error_count++;
     else
@@ -2129,15 +2196,28 @@ public slots:
 
     if (_llm_same_error_count >= 2)
     {
+      // The program compiles - only cosmetic findings remain, and the
+      // cleanup kept producing them. End the loop quietly: the event goes
+      // to the log, and the user sees the success status (an alarming
+      // "gave up" message would suggest the program failed, which is not
+      // true).
       radium::llm::llm_log_note("Cleanup gave up - same findings twice:\n" + findings_text);
-      set_llm_status("Cleanup gave up - the LLM keeps producing: " + findings.first());
+      _llm_compile_attempts = 0;
+      _llm_last_fix_error.clear();
+      _llm_same_error_count = 0;
+      set_llm_status(llm_compile_was_fix ? "Fixed." : "Generated.");
       return;
     }
 
-    if (_llm_compile_attempts >= _llm_max_fixes)
+    if (_llm_compile_attempts >= cleanup_max)
     {
-      radium::llm::llm_log_note(QString("Cleanup gave up - round budget exhausted (%1/%2):\n").arg(_llm_compile_attempts).arg(_llm_max_fixes) + findings_text);
-      set_llm_status("Cleanup round limit reached: " + findings.first());
+      // Same as above: the budget was consumed (possibly by fix rounds),
+      // but the program compiles. Log it, show success.
+      radium::llm::llm_log_note(QString("Cleanup gave up - round budget exhausted (%1/%2):\n").arg(_llm_compile_attempts).arg(cleanup_max) + findings_text);
+      _llm_compile_attempts = 0;
+      _llm_last_fix_error.clear();
+      _llm_same_error_count = 0;
+      set_llm_status(llm_compile_was_fix ? "Fixed." : "Generated.");
       return;
     }
 
@@ -2155,9 +2235,9 @@ public slots:
 
     set_llm_status(QString("%1. Cleaning up (%2/%3)...")
                    .arg(llm_compile_was_fix ? "Fixed" : "Generated")
-                   .arg(_llm_compile_attempts).arg(_llm_max_fixes));
+                   .arg(_llm_compile_attempts).arg(cleanup_max));
 
-    radium::llm::llm_log_note(QString("Sending lint cleanup round %1/%2:\n").arg(_llm_compile_attempts).arg(_llm_max_fixes) + findings_text);
+    radium::llm::llm_log_note(QString("Sending lint cleanup round %1/%2:\n").arg(_llm_compile_attempts).arg(cleanup_max) + findings_text);
 
     const QString cleanup_prompt =
       "The program compiles successfully, but a static check of the code above found these suspicious lines:\n"
@@ -2169,6 +2249,7 @@ public slots:
       + "The original request was: " + _llm_original_prompt;
 
     const std::shared_ptr<std::atomic_bool> cancel = start_llm_request();
+    const int epoch = _llm_request_epoch;
 
     IsAlive is_alive(this);
 
@@ -2190,10 +2271,13 @@ public slots:
     };
 
     auto cleanup_callback = std::make_shared<std::function<void(bool, QString)>>();
-    *cleanup_callback = [is_alive, this, cancel, current_code, used_fallback, thinking_enabled, config, cleanup_prompt, findings_text, cleanup_progress, cleanup_callback, is_effect](bool ok, QString result_or_error)
+    *cleanup_callback = [is_alive, this, cancel, epoch, current_code, used_fallback, thinking_enabled, config, cleanup_prompt, findings_text, cleanup_progress, cleanup_callback, is_effect](bool ok, QString result_or_error)
     {
       if (!is_alive)
         return;
+
+      if (_llm_request_epoch != epoch)
+        return; // a newer request (e.g. a user prompt) took over - never apply or retry over it
 
       if (ok && result_or_error.simplified() != current_code.simplified())
       {
@@ -2282,6 +2366,11 @@ public slots:
     // Replace the code with the default program. Going through the editor
     // triggers the normal text-changed path (undo entry + recompilation).
     set_text_in__faust_editor_widget(FAUST2_get_default_code());
+
+    // Arm the creation context AFTER replacing the code: the text change
+    // above disarms it (it looks like a manual edit). The next generate
+    // request will be treated as creation, whatever the prompt says.
+    _llm_new_session = true;
 
     set_llm_status("New session.");
   }
