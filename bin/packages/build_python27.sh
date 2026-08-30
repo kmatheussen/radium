@@ -70,15 +70,20 @@ END
     CXX=$MY_CPP
     CFLAGS=-Wno-implicit-function-declaration
     CPPCFLAGS=-Wno-implicit-function-declaration
+
+    ARCH_FLAGS=""
+    if uname |grep Darwin > /dev/null ; then
+        ARCH_FLAGS="-arch arm64 -arch x86_64 -mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET:-14.0}"
+    fi
     
-    ./configure CC=$MY_CC CXX=$MY_CPP CFLAGS=-Wno-implicit-function-declaration CPPCFLAGS=-Wno-implicit-function-declaration --prefix=$(realpath `pwd`/../python27_install) --without-gcc --without-threads --disable-ipv6 --without-system-ffi --disable-toolbox-glue --disable-framework --enable-shared
+    ./configure CC=$MY_CC CXX=$MY_CPP CFLAGS="-Wno-implicit-function-declaration $ARCH_FLAGS" CPPCFLAGS="-Wno-implicit-function-declaration $ARCH_FLAGS" LDFLAGS="$ARCH_FLAGS" --prefix=$(realpath `pwd`/../python27_install) --without-gcc --without-threads --disable-ipv6 --without-system-ffi --disable-toolbox-glue --disable-framework --enable-shared
     # 
     # 
     # 
     #
     # --enable-optimizations
 
-    CC=$MY_CC CXX=$MY_CPP CFLAGS=-Wno-implicit-function-declaration CPPCFLAGS=-Wno-implicit-function-declaration make -j`nproc`
+    CC=$MY_CC CXX=$MY_CPP CFLAGS="-Wno-implicit-function-declaration $ARCH_FLAGS" CPPCFLAGS="-Wno-implicit-function-declaration $ARCH_FLAGS" LDFLAGS="$ARCH_FLAGS" make -j`nproc`
 
     make install
     export LD_LIBRARY_PATH="$(realpath `pwd`/../python27_install/lib)"${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
