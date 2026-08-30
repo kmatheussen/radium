@@ -1295,7 +1295,7 @@ public slots:
     if (_is_initing)
       return;
 
-    do_random(0.01f);
+    do_random(0.05f);
   }
 
   void on_info_button_clicked(){
