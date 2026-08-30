@@ -3413,7 +3413,7 @@ QStringList FAUST2_lint_faust_code(const SoundPlugin *plugin, const QString &cod
 		for (const Faust2LintDef &def : defs)
 		{
 			const QString sanitized = faust2_lint_sanitize_strings(def.rhs);
-			QRegularExpressionMatchIterator it = QRegularExpression(QStringLiteral("\\b(de\\.(?:delay|sdelay|ffdelay|fbdelay)|pf\\.flanger_(?:mono|stereo))\\s*\\(([^()]*)\\)")).globalMatch(sanitized);
+			QRegularExpressionMatchIterator it = QRegularExpression(QStringLiteral("\\b(de\\.(?:delay|sdelay|fdelay|ffdelay|fbdelay)|pf\\.flanger_(?:mono|stereo)|ef\\.echo[a-zA-Z0-9_]*)\\s*\\(([^()]*)\\)")).globalMatch(sanitized);
 			while (it.hasNext())
 			{
 				const QRegularExpressionMatch m = it.next();
@@ -3426,7 +3426,7 @@ QStringList FAUST2_lint_faust_code(const SoundPlugin *plugin, const QString &cod
 					if (constant_names.contains(other.name))
 					  continue;
 					if (QRegularExpression(QStringLiteral("\\b%1\\b(?!\\.)").arg(other.name)).match(max_arg).hasMatch())
-					  findings.append(QString("Line %1: the max-length argument of %2 ('%3') is derived from a slider - the compiler cannot prove the delay time stays within it, which gives the 'invalid delay parameter range' error. Use a generous CONSTANT max length instead: e.g. %2(1.0 * ma.SR, %3).").arg(def.line).arg(m.captured(1)).arg(max_arg));
+					  findings.append(QString("Line %1: the max-length argument of %2 ('%3') is derived from a slider or a signal - the compiler cannot prove the delay time stays within it, which gives the 'invalid delay parameter range' error. Use a generous CONSTANT max length instead: e.g. %2(1.0 * ma.SR, %3).").arg(def.line).arg(m.captured(1)).arg(max_arg));
 				}
 			}
 		}
@@ -4199,6 +4199,162 @@ bool FAUST2_try_fix_duplicate_definition(const QString &code,
 	*note = self_referential
 	  ? QString("Auto-fixed duplicate definition: Faust has no assignment, so '%1 = ...; %1 = %1 : ...' was translated into '%2 = ...; %1 = %2 : ...' (the second definition keeps the name; every other reference sees the final value).").arg(name).arg(name + QStringLiteral("_raw"))
 	  : QString("Auto-fixed duplicate definition: removed the first of the two definitions of '%1' (Faust cannot reassign a symbol; the last definition is the effective one).").arg(name);
+	return true;
+}
+
+
+// Local auto-fix for the 'invalid delay parameter range' error: when a
+// SMOOTHED slider is passed as a delay parameter (freeverb spread, or the
+// max-length argument of de.*/pf.*/ef.echo), the smoothing hides the
+// range from the compiler (interval(0, INT_MAX, 0)). The fix is
+// mechanical: strip the smoothing from the slider definition, exactly
+// like the lint recipe says. Returns false when no such pattern is found
+// or the definition is not a single line.
+bool FAUST2_try_fix_smoothed_delay_param(const QString &code,
+                                         QString *fixed_code,
+                                         QString *note)
+{
+	const QList<Faust2LintDef> defs = faust2_lint_collect_defs(code);
+	if (defs.isEmpty())
+	  return false;
+
+	// Smoothed UI-control definitions: 'name = hslider(...) : si.smooth(...);'
+	QSet<QString> smoothed_names;
+	{
+		const QRegularExpression smooth_re(QStringLiteral(":\\s*si\\.(?:smooth\\s*\\(|smoo\\b)"));
+		for (const Faust2LintDef &def : defs)
+		{
+			const QString sanitized = faust2_lint_sanitize_strings(def.rhs);
+			if (QRegularExpression(QStringLiteral("^\\s*(hslider|vslider|nentry)\\s*\\(")).match(sanitized).hasMatch()
+			    && smooth_re.match(sanitized).hasMatch())
+			  smoothed_names.insert(def.name);
+		}
+	}
+	if (smoothed_names.isEmpty())
+	  return false;
+
+	// Which smoothed name is used as a delay parameter?
+	QString culprit;
+	for (const Faust2LintDef &def : defs)
+	{
+		const QString sanitized = faust2_lint_sanitize_strings(def.rhs);
+
+		// Freeverb spread (4th argument).
+		{
+			const QRegularExpression re(QStringLiteral("\\bre\\.(?:mono_freeverb|stereo_freeverb)\\s*\\(([^()]*)\\)"));
+			QRegularExpressionMatchIterator it = re.globalMatch(sanitized);
+			while (it.hasNext())
+			{
+				const QStringList args = it.next().captured(1).split(",", Qt::SkipEmptyParts);
+				if (args.size() == 4)
+				{
+					const QString spread = args[3].trimmed();
+					if (smoothed_names.contains(spread))
+					{
+						culprit = spread;
+						break;
+					}
+				}
+			}
+		}
+		if (!culprit.isEmpty())
+		  break;
+
+		// Max-length argument of de.*/pf.*/ef.echo.
+		{
+			const QRegularExpression re(QStringLiteral("\\b(de\\.(?:delay|sdelay|fdelay|ffdelay|fbdelay)|pf\\.flanger_(?:mono|stereo)|ef\\.echo[a-zA-Z0-9_]*)\\s*\\(([^()]*)\\)"));
+			QRegularExpressionMatchIterator it = re.globalMatch(sanitized);
+			while (it.hasNext())
+			{
+				const QStringList args = it.next().captured(2).split(",", Qt::SkipEmptyParts);
+				if (!args.isEmpty())
+				{
+					const QString max_arg = args[0].trimmed();
+					if (smoothed_names.contains(max_arg))
+					{
+						culprit = max_arg;
+						break;
+					}
+				}
+			}
+		}
+		if (!culprit.isEmpty())
+		  break;
+	}
+	if (culprit.isEmpty())
+	  return false;
+
+	// Find the single-line definition of the culprit and strip the
+	// smoothing suffix (' : si.smooth(...)' or ' : si.smoo').
+	const QList<Faust2DefSpan> spans = faust2_collect_def_spans(code);
+	const Faust2DefSpan *span = NULL;
+	for (const Faust2DefSpan &s : spans)
+	  if (s.name == culprit)
+	  {
+		span = &s;
+		break;
+	  }
+	if (span == NULL || span->start != span->end)
+	  return false;
+
+	const QStringList lines = code.split('\n');
+	QString line = lines.at(span->start);
+
+	const int smooth_pos = line.lastIndexOf(QStringLiteral("si.smooth"));
+	const int smoo_pos = line.lastIndexOf(QStringLiteral("si.smoo"));
+	int pos = -1;
+	{
+		const int a = smooth_pos >= 0 ? smooth_pos : -1;
+		const int b = smoo_pos >= 0 ? smoo_pos : -1;
+		pos = qMax(a, b);
+	}
+	if (pos < 0)
+	  return false;
+
+	// Backward to the ':' that introduces the smoothing.
+	int colon = pos;
+	while (colon > 0 && line.at(colon) != QChar(':'))
+	  colon--;
+	if (line.at(colon) != QChar(':'))
+	  return false;
+
+	// Forward to the end of the smoothing: the matching ')' of si.smooth(...),
+	// or the end of the 'si.smoo' token when there are no parentheses.
+	int end = pos;
+	if (smooth_pos >= 0 && smooth_pos == pos && line.indexOf(QChar('('), pos) >= 0)
+	{
+		int depth = 0;
+		int i = line.indexOf(QChar('('), pos);
+		for (; i < line.size(); i++)
+		{
+			if (line.at(i) == QChar('('))
+			  depth++;
+			else if (line.at(i) == QChar(')'))
+			{
+				depth--;
+				if (depth == 0)
+				{
+					end = i;
+					break;
+				}
+			}
+		}
+	}
+	else
+	{
+		// si.smoo without parentheses: consume the token.
+		end = pos;
+		while (end < line.size() && (line.at(end).isLetterOrNumber() || line.at(end) == QChar('_')))
+		  end++;
+		end--; // last char of the token
+	}
+
+	line.remove(colon, end - colon + 1);
+
+	QStringList result = lines;
+	result[span->start] = line;
+	*fixed_code = result.join('\n');
+	*note = QString("Auto-fixed: removed smoothing from '%1' - delay parameters must stay unsmoothed (the smoothing hides the range from the compiler and gives the 'invalid delay parameter range' error).").arg(culprit);
 	return true;
 }
 

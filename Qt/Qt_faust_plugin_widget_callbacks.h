@@ -748,6 +748,7 @@ extern bool FAUST2_get_use_interpreter_backend(struct SoundPlugin *plugin);
 extern QStringList FAUST2_lint_faust_code(const struct SoundPlugin *plugin, const QString &code);
 extern QString FAUST2_splice_faust_definitions(const QString &current_code, const QString &fragment);
 extern bool FAUST2_try_fix_duplicate_definition(const QString &code, const QString &name, QString *fixed_code, QString *note);
+extern bool FAUST2_try_fix_smoothed_delay_param(const QString &code, QString *fixed_code, QString *note);
 
 
 
@@ -835,6 +836,12 @@ static inline QStringList faust_disp_lint_faust_code(const SoundPlugin *plugin, 
 static inline bool faust_disp_try_fix_duplicate_definition(const SoundPlugin *plugin, const QString &code, const QString &name, QString *fixed_code, QString *note){
   if (!strcmp(plugin->type->type_name, "Faust Dev 2"))
     return FAUST2_try_fix_duplicate_definition(code, name, fixed_code, note);
+  else
+    return false; // only Faust Dev 2 has the LLM prompt bar
+}
+static inline bool faust_disp_try_fix_smoothed_delay_param(const SoundPlugin *plugin, const QString &code, QString *fixed_code, QString *note){
+  if (!strcmp(plugin->type->type_name, "Faust Dev 2"))
+    return FAUST2_try_fix_smoothed_delay_param(code, fixed_code, note);
   else
     return false; // only Faust Dev 2 has the LLM prompt bar
 }
@@ -1307,7 +1314,25 @@ public:
             if (!lint_warnings.isEmpty())
             {
               radium::llm::llm_log_note("LLM code compiled, static check findings:\n" + lint_warnings.join("\n"));
-              request_llm_lint_cleanup(lint_warnings, llm_compile_was_fix); // keeps _llm_fixing_error=true while the cleanup round is in flight
+
+              // In FREE mode a compiling program is final: the relay has a
+              // small request budget, so never spend a request on cleaning
+              // up findings from code that already compiles. Just log the
+              // skip and finish like the no-findings case below.
+              const bool free_mode = radium::llm::get_config().mode == "free";
+              if (free_mode)
+              {
+                radium::llm::llm_log_note("Free mode: cleanup skipped - the program compiles, so it is kept as-is.");
+                if (llm_compile_was_fix)
+                  radium::llm::llm_log_note("Auto-fix/cleanup done - no static-check findings remain.");
+                _llm_compile_attempts = 0;
+                _llm_last_fix_error.clear();
+                _llm_same_error_count = 0;
+                _llm_auto_fix_count = 0;
+                set_llm_status(llm_compile_was_fix ? "Fixed." : "Generated.");
+              }
+              else
+                request_llm_lint_cleanup(lint_warnings, llm_compile_was_fix); // keeps _llm_fixing_error=true while the cleanup round is in flight
             }
             else
             {
@@ -1477,6 +1502,25 @@ public:
                 apply_llm_code(fixed_code); // recompiles; _llm_fixing_error stays true so the loop continues on the next error
                 return;
               }
+            }
+          }
+
+          // Local auto-fix for 'invalid delay parameter range': the model
+          // keeps smoothing sliders that are passed as delay parameters
+          // (freeverb spread, delay max-length) even though the
+          // conventions forbid it. The fix is mechanical (strip the
+          // smoothing), so it never costs an LLM round.
+          if (error_message.contains("invalid delay parameter range")
+              && _llm_auto_fix_count < 3)
+          {
+            QString fixed_code, note;
+            if (faust_disp_try_fix_smoothed_delay_param(plugin, _faust_editor->text(), &fixed_code, &note))
+            {
+              _llm_auto_fix_count++;
+              radium::llm::llm_log_note(note);
+              set_llm_status("Auto-fixed delay parameter. Compiling...");
+              apply_llm_code(fixed_code);
+              return;
             }
           }
 
@@ -2476,7 +2520,13 @@ public slots:
       if (failure_reason.contains("429"))
         show_llm_error("LLM quota exhausted (HTTP 429). Giving up on cleaning up the code.");
       else
-        set_llm_status("Cleanup failed - remaining: " + findings_text.left(200));
+      {
+        // Keep the status line short; the details belong in the log. When
+        // the current program still compiles, the cleanup failure is not
+        // an error - just report that the run is over.
+        radium::llm::llm_log_note("Cleanup failed - remaining findings:\n" + findings_text);
+        set_llm_status(_svg_view_text.isEmpty() ? "Finished" : "Cleaning failed");
+      }
     };
 
     radium::llm::send_prompt(config, current_code, cleanup_prompt,

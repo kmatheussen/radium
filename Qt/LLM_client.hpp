@@ -1757,6 +1757,17 @@ static inline QString summarize_faust_error(const QString &error)
 		  "a symbol that the imported libraries already define (stdfaust.lib "
 		  "defines the library aliases sf, os, ma, fi, ...). Rename it.";
 	}
+	else if (error.contains("invalid delay parameter range"))
+	{
+		hint = "The max-length argument of a de.*/pf.* delay (or the spread "
+		  "argument of re.mono_freeverb/re.stereo_freeverb) must be a "
+		  "provably CONSTANT bound: deriving it from a slider or a signal "
+		  "(or smoothing the freeverb spread slider) makes the compiler "
+		  "unable to prove the delay time stays within it - the error "
+		  "shows 'interval(0, INT_MAX, 0)'. Use a generous constant max "
+		  "length, e.g. de.delay(1.0 * ma.SR, delay_time), and leave "
+		  "freeverb spread sliders unsmoothed.";
+	}
 	else if (error.contains("defined here"))
 	{
 		// "BoxIdent[log2] is defined here : maths.lib:371" - the program
@@ -2589,11 +2600,113 @@ static inline QString lint_faust_code(const QString &code)
 				line_no++;
 			}
 		}
+		// Top-level definition spans (name + full text including 'with'
+		// blocks) and the set of names reachable from 'process': used to
+		// distinguish "never used anywhere" from "used only by dead
+		// definitions".
+		struct Span
+		{
+			QString name;
+			QString text;
+		};
+		QVector<Span> spans;
+		{
+			const QStringList lines = masked.split('\n');
+			const QRegularExpression span_def_re(QStringLiteral("^\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\s*="));
+			int depth = 0;
+			bool collecting = false;
+			QString cur_name, cur_text;
+			for (const QString &line_text : lines)
+			{
+				if (!collecting)
+				{
+					const QRegularExpressionMatch m = span_def_re.match(line_text);
+					if (m.hasMatch()
+					    && m.captured(1) != "import"
+					    && m.captured(1) != "declare")
+					{
+						collecting = true;
+						cur_name = m.captured(1);
+						cur_text = line_text.mid(m.capturedEnd()) + "\n";
+						depth = 0;
+					}
+				}
+				else
+					cur_text += line_text + "\n";
+
+				if (collecting)
+				{
+					for (const QChar &ch : line_text)
+					{
+						if (ch == '(' || ch == '{' || ch == '[')
+						  depth++;
+						else if (ch == ')' || ch == '}' || ch == ']')
+						  depth--;
+						else if (ch == ';' && depth <= 0)
+						{
+							spans.append({cur_name, cur_text});
+							collecting = false;
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		QSet<QString> reachable;
+		reachable.insert(QStringLiteral("process"));
+		for (bool changed = true; changed; )
+		{
+			changed = false;
+			for (const Span &span : spans)
+			{
+				if (reachable.contains(span.name))
+				  continue;
+				for (auto it = reachable.constBegin(); it != reachable.constEnd(); ++it)
+				{
+					if (QRegularExpression(QStringLiteral("(?<!\\.)\\b%1\\b(?!\\.)").arg(*it)).match(span.text).hasMatch())
+					{
+						reachable.insert(span.name);
+						changed = true;
+						break;
+					}
+				}
+			}
+		}
+
 		for (const UiDef &def : ui_defs)
 		{
 			const QRegularExpression use_re(QStringLiteral("\\b%1\\b").arg(def.name));
 			if (masked.count(use_re) <= 1)
+			{
 			  findings.append(QString("Line %1: '%2' is declared but never used anywhere in the program - the knob does nothing. Either use it or remove it.").arg(def.line).arg(def.name));
+			  continue;
+			}
+
+			// The name IS used somewhere: check whether any use is reachable
+			// from 'process'. A slider used only by dead definitions (e.g.
+			// 'delayed_fb' that process never references) is still a dead
+			// knob, but the plain "never used anywhere" message contradicts
+			// the code the model can see, so it refuses to act (observed:
+			// two unchanged echoes on 'delay_feedback'). Report the dead
+			// definition by name instead.
+			bool used_by_reachable = false;
+			QString used_by_dead;
+			for (const Span &span : spans)
+			{
+				if (!QRegularExpression(QStringLiteral("(?<!\\.)\\b%1\\b(?!\\.)").arg(def.name)).match(span.text).hasMatch())
+				  continue;
+				if (reachable.contains(span.name))
+				{
+					used_by_reachable = true;
+					break;
+				}
+				if (used_by_dead.isEmpty())
+				  used_by_dead = span.name;
+			}
+
+			if (!used_by_reachable && !used_by_dead.isEmpty())
+			  findings.append(QString("Line %1: '%2' is only used by '%3', which is never used by process - the knob has no audible effect. Either wire '%3' into process, or remove both '%2' and '%3'.").arg(def.line).arg(def.name).arg(used_by_dead));
 		}
 	}
 
