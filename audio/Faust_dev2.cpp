@@ -2335,7 +2335,7 @@ static QString faust2_lint_mask_call_args(const QString &text)
 			while (j >= 0 && (out.at(j).isLetterOrNumber() || out.at(j) == '_' || out.at(j) == '.'))
 			  j--;
 			const QString name = out.mid(j + 1, name_end - j);
-			if (QRegularExpression(QStringLiteral("^[a-zA-Z_][a-zA-Z0-9_]*\\.[a-zA-Z_][a-zA-Z0-9_]*$|^[a-zA-Z_][a-zA-Z0-9_]*$")).match(name).hasMatch())
+			if (QRegularExpression(QStringLiteral("^[a-zA-Z_][a-zA-Z0-9_]*\\.[a-zA-Z_][a-zA-Z0-9_]*$|^[a-zA-Z_][a-zA-Z0-9_]*$")).match(name).hasMatch()) // [NO_IF_=_WARNING]
 			  is_call = true;
 		}
 
@@ -3490,7 +3490,7 @@ QString FAUST2_splice_faust_definitions(const QString &current_code, const QStri
 	{
 		int process_idx = result.size();
 		for (int i = 0; i < result.size(); i++)
-		  if (QRegularExpression(QStringLiteral("^\\s*process\\s*=")).match(result.at(i)).hasMatch())
+		  if (QRegularExpression(QStringLiteral("^\\s*process\\s*=")).match(result.at(i)).hasMatch()) // [NO_IF_=_WARNING]
 		  {
 		    process_idx = i;
 		    break;
