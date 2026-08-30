@@ -306,7 +306,7 @@ if uname -s |grep Linux ; then
     if ! arch |grep -e arm -e aarch64 ; then
         build_libpds
     fi
-    build_xcb
+    #build_xcb
     echo "finished compiling libpds and xcb" # need this line to avoid script failing if the two lines above are commented out.
 fi
 
