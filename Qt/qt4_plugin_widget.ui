@@ -1564,15 +1564,50 @@ Example:
        </widget>
       </item>
       <item>
-       <widget class="QToolButton" name="random_button">
+       <widget class="QToolButton" name="random1_button">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
+        <property name="toolTip">
+         <string>Change each effect by 1% in a random direction</string>
+        </property>
         <property name="text">
-         <string>Random</string>
+         <string>R1%</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="random10_button">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="toolTip">
+         <string>Change each effect by 10% in a random direction</string>
+        </property>
+        <property name="text">
+         <string>R10%</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="random100_button">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="toolTip">
+         <string>Randomize all effects completely</string>
+        </property>
+        <property name="text">
+         <string>R100%</string>
         </property>
        </widget>
       </item>
