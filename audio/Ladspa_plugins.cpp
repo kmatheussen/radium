@@ -1217,6 +1217,12 @@ static void add_ladspa_plugin_type(QString filename) {
   
   //QString filename = file_info.absoluteFilePath();
   
+  if (!QFileInfo::exists(filename)) {
+    fprintf(stderr, "(skipping missing plugin file \"%s\") ", filename.toUtf8().constData());
+    fflush(stderr);
+    return;
+  }
+  
   printf("\"%s\"... ",filename.toUtf8().constData());
 
   Library *library = new Library(filename);
