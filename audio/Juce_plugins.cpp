@@ -2456,7 +2456,7 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
   if(isFullVersion()==false && num_running_plugins >= 2){
     GFX_Message(NULL,
                 "Using more than 2 VST/VST3/AU plugins is only available to subscribers.<p>"
-                "Subscribe <a href=\"http://users.notam02.no/~kjetism/radium/download.php\">here</a>.");
+                "Subscribe <a href=\"https://radium.dog/download.php\">here</a>.");
     return NULL;
   }
 
