@@ -2244,6 +2244,122 @@ QString faust2_lint_sanitize_strings(const QString &rhs)
 	return out;
 }
 
+// Returns the index of the '(' that opens the parenthesized group whose
+// ')' is the last character before 'before_pos' (the group's content may
+// itself contain parenthesized sub-expressions, e.g.
+// '(dry : par(i, 2, ...), wet : par(...))'). '*close_pos' receives the
+// index of the group's closing ')' (the first ')' met in the backward
+// scan). Returns -1 (with *close_pos = -1) when 'before_pos' is not
+// preceded by a closing ')'.
+static int faust2_lint_find_open_paren(const QString &text, int before_pos, int *close_pos)
+{
+	*close_pos = -1;
+	int depth = 0;
+	for (int i = before_pos - 1; i >= 0; i--)
+	{
+		const QChar ch = text.at(i);
+		if (ch == ')')
+		{
+			if (depth == 0)
+			  *close_pos = i;
+			depth++;
+		}
+		else if (ch == '(')
+		{
+			depth--;
+			if (depth == 0)
+			  return i;
+		}
+	}
+	*close_pos = -1;
+	return -1;
+}
+
+// Splits a parenthesized group's content on top-level commas only: commas
+// inside nested parentheses (function-call arguments, sub-expressions) do
+// not split.
+static QStringList faust2_lint_split_tuple(const QString &content)
+{
+	QStringList members;
+	int depth = 0;
+	int start = 0;
+	for (int i = 0; i < content.size(); i++)
+	{
+		const QChar ch = content.at(i);
+		if (ch == '(')
+		  depth++;
+		else if (ch == ')')
+		  depth--;
+		else if (ch == ',' && depth == 0)
+		{
+			members.append(content.mid(start, i - start));
+			start = i + 1;
+		}
+	}
+	members.append(content.mid(start));
+	return members;
+}
+
+// Returns 'text' with the argument lists of function calls replaced by
+// spaces (the call name and the parentheses are kept). A 'name, name'
+// inside a call - function ARGUMENTS, e.g.
+// 'fi.resonlp(filter_freq, filter_q, 1)' - is then invisible to the
+// tuple heuristics, while a real parallel-composition pair like
+// '(dry, wet)' still matches (its parentheses are not preceded by an
+// identifier). Without this, any definition using a multi-argument
+// function call is mistaken for a tuple and wrongly excluded from the
+// mono classification (observed: 'dry' was classified non-mono because
+// of 'fi.resonlp(filter_freq, filter_q, 1)', hiding the mono-into-par
+// bug from the lint checks). Only parentheses whose previous non-space
+// character ends an identifier (optionally 'mod.name') count as calls.
+static QString faust2_lint_mask_call_args(const QString &text)
+{
+	QString out = text;
+	const int len = out.size();
+
+	for (int i = 0; i < len; i++)
+	{
+		if (out.at(i) != '(')
+		  continue;
+
+		// A function-call paren is preceded by an identifier (optionally
+		// 'mod.name').
+		bool is_call = false;
+		int j = i - 1;
+		while (j >= 0 && out.at(j).isSpace())
+		  j--;
+		if (j >= 0 && (out.at(j).isLetterOrNumber() || out.at(j) == '_'))
+		{
+			const int name_end = j;
+			while (j >= 0 && (out.at(j).isLetterOrNumber() || out.at(j) == '_' || out.at(j) == '.'))
+			  j--;
+			const QString name = out.mid(j + 1, name_end - j);
+			if (QRegularExpression(QStringLiteral("^[a-zA-Z_][a-zA-Z0-9_]*\\.[a-zA-Z_][a-zA-Z0-9_]*$|^[a-zA-Z_][a-zA-Z0-9_]*$")).match(name).hasMatch())
+			  is_call = true;
+		}
+
+		if (!is_call)
+		  continue;
+
+		int depth = 1;
+		int k = i + 1;
+		for (; k < len && depth > 0; k++)
+		{
+			if (out.at(k) == '(')
+			  depth++;
+			else if (out.at(k) == ')')
+			  depth--;
+		}
+		if (depth != 0)
+		  continue;
+
+		for (int m = i + 1; m < k - 1; m++)
+		  out[m] = ' ';
+	}
+
+	return out;
+}
+
 // Returns the output channel count if 'rhs' is a 'soundfile("...", N)'
 // declaration (N is parsed from the trailing numeric argument of the
 // sanitized rhs), else -1. Used to substitute references to soundfile
@@ -2526,14 +2642,17 @@ QStringList FAUST2_lint_faust_code(const SoundPlugin *plugin, const QString &cod
 			{
 				if (mono_names.contains(def.name) || stereo_names.contains(def.name))
 				  continue;
-			const QString sanitized = faust2_lint_sanitize_strings(def.rhs);
-			if (name_pair_re.match(sanitized).hasMatch())
+			// Function-call argument lists are masked out so a 'name, name'
+			// inside a call (arguments) is not mistaken for a parallel-
+			// composition tuple.
+			const QString masked = faust2_lint_mask_call_args(faust2_lint_sanitize_strings(def.rhs));
+			if (name_pair_re.match(masked).hasMatch())
 			  continue;
-			if (has_stereo_construct(sanitized))
+			if (has_stereo_construct(masked))
 			  continue;
 			// 'x = _;' binds the input as a plain identity: 1 channel.
-			bool mono = mono_primitive_re.match(sanitized).hasMatch()
-			         || sanitized.trimmed() == QStringLiteral("_");
+			bool mono = mono_primitive_re.match(masked).hasMatch()
+			         || masked.trimmed() == QStringLiteral("_");
 				if (!mono)
 				{
 					// No mono primitive of its own: mono only if it
@@ -2546,7 +2665,7 @@ QStringList FAUST2_lint_faust_code(const SoundPlugin *plugin, const QString &cod
 						if (other.name == def.name)
 						  continue;
 						const QRegularExpression ref(QStringLiteral("\\b%1\\b(?!\\.)").arg(other.name));
-						if (ref.match(sanitized).hasMatch())
+						if (ref.match(masked).hasMatch())
 						{
 							refs_any = true;
 							if (!mono_names.contains(other.name))
@@ -2596,14 +2715,23 @@ QStringList FAUST2_lint_faust_code(const SoundPlugin *plugin, const QString &cod
 		// A mono signal applied to a stereo effect: e.g. the synthesized
 		// piano's 'chorus = dry : pf.flanger_stereo(...)' (1 channel into a
 		// 2-input effect). The reverse direction (stereo into a mono
-		// effect) has its own finding above.
+		// effect) has its own finding above. ALL occurrences are checked:
+		// the first ':'-composition in the RHS may be legal while a later
+		// one is broken (observed with dry/wet pairs).
 		for (const Faust2LintDef &def : defs)
 		{
 			const QString sanitized = faust2_lint_sanitize_strings(def.rhs);
 			const QRegularExpression re(QStringLiteral("\\b([a-zA-Z_][a-zA-Z0-9_]*)\\s*:\\s*(%1)\\s*\\(").arg(stereo_effects.join("|")));
-			const QRegularExpressionMatch m = re.match(sanitized);
-			if (m.hasMatch() && mono_names.contains(m.captured(1)))
-			  findings.append(QString("Line %1: '%2' is a mono signal applied to the stereo effect %3 - this gives an arity error. Duplicate it first: (%2, %2) : %3(...).").arg(def.line).arg(m.captured(1)).arg(m.captured(2)));
+			QRegularExpressionMatchIterator it = re.globalMatch(sanitized);
+			while (it.hasNext())
+			{
+				const QRegularExpressionMatch m = it.next();
+				if (mono_names.contains(m.captured(1)))
+				{
+					findings.append(QString("Line %1: '%2' is a mono signal applied to the stereo effect %3 - this gives an arity error. Duplicate it first: (%2, %2) : %3(...).").arg(def.line).arg(m.captured(1)).arg(m.captured(2)));
+					break; // one finding per definition
+				}
+			}
 		}
 		// A mono signal applied to a 2-channel par: 'dry : par(i, 2,
 		// *(1 - mix))' where dry is mono - 1 channel into a 2-way par is
@@ -2611,14 +2739,63 @@ QStringList FAUST2_lint_faust_code(const SoundPlugin *plugin, const QString &cod
 		// composition dry:B" (outputs [1] vs inputs [2]) with no recipe.
 		// The model then applies the per-channel idiom to a mono signal
 		// and the fix round only carries the generic per-def finding
-		// (observed). Duplicate the mono signal first.
+		// (observed). Duplicate the mono signal first. ALL occurrences
+		// are checked: '((dryStereo : par(...)), (wet : par(...)))' with
+		// mono wet must flag wet even though the first par is legal.
 		for (const Faust2LintDef &def : defs)
 		{
 			const QString sanitized = faust2_lint_sanitize_strings(def.rhs);
 			const QRegularExpression re(QStringLiteral("\\b([a-zA-Z_][a-zA-Z0-9_]*)\\s*:\\s*par\\s*\\(\\s*i\\s*,\\s*2\\s*,"));
-			const QRegularExpressionMatch m = re.match(sanitized);
-			if (m.hasMatch() && mono_names.contains(m.captured(1)))
-			  findings.append(QString("Line %1: '%2' is a mono signal applied to par(i, 2, ...) - this gives an arity error (1 channel into a 2-channel par). Duplicate it to stereo first: %2Stereo = %2 <: _,_; and use %2Stereo instead.").arg(def.line).arg(m.captured(1)));
+			QRegularExpressionMatchIterator it = re.globalMatch(sanitized);
+			while (it.hasNext())
+			{
+				const QRegularExpressionMatch m = it.next();
+				if (mono_names.contains(m.captured(1)))
+				{
+					findings.append(QString("Line %1: '%2' is a mono signal applied to par(i, 2, ...) - this gives an arity error (1 channel into a 2-channel par). Duplicate it to stereo first: %2Stereo = %2 <: _,_; and use %2Stereo instead.").arg(def.line).arg(m.captured(1)));
+					break; // one finding per definition
+				}
+			}
+		}
+		// A parenthesized pair of mono signals fed into a MONO effect:
+		// '(sound, sound) : de.delay(0.1 * ma.SR, 0.02 * ma.SR)' is 2
+		// channels into a 1-input effect. (Observed: the fix loop
+		// exhausted all three rounds on it - the soundfile-keyed check
+		// above only sees soundfile-derived stereo names, never anonymous
+		// pairs, so the fix prompts carried only the generic finding.)
+		// Only pairs of known-mono names are flagged: the pair is then
+		// exactly 2 channels and the 1-input effect breaks the arity. A
+		// stereo pair into a 2-input effect (pf.flanger_stereo,
+		// re.stereo_freeverb, ...) is legal and never matches here.
+		{
+			static const QStringList mono_effects =
+			{
+				QStringLiteral("ef\\.[a-zA-Z_][a-zA-Z0-9_]*"),
+				QStringLiteral("de\\.[a-zA-Z_][a-zA-Z0-9_]*"),
+				QStringLiteral("fi\\.[a-zA-Z_][a-zA-Z0-9_]*"),
+				QStringLiteral("en\\.[a-zA-Z_][a-zA-Z0-9_]*"),
+				QStringLiteral("co\\.[a-zA-Z_][a-zA-Z0-9_]*"),
+				QStringLiteral("pf\\.flanger_mono"),
+				QStringLiteral("pf\\.vibrato2_mono"),
+				QStringLiteral("pf\\.phaser2_mono"),
+			};
+			for (const Faust2LintDef &def : defs)
+			{
+				const QString sanitized = faust2_lint_sanitize_strings(def.rhs);
+				const QRegularExpression re(QStringLiteral("\\(\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\s*,\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\)\\s*:\\s*(%1)\\s*\\(").arg(mono_effects.join("|")));
+				QRegularExpressionMatchIterator it = re.globalMatch(sanitized);
+				while (it.hasNext())
+				{
+					const QRegularExpressionMatch m = it.next();
+					if (m.captured(3) == QStringLiteral("ef.dryWetMixer")
+					    || m.captured(3) == QStringLiteral("ef.dryWetMixerConstantPower"))
+					  continue; // N-in/N-out bus mixer: a stereo pair in is legal when FX is stereo
+					if (!mono_names.contains(m.captured(1)) || !mono_names.contains(m.captured(2)))
+					  continue;
+					findings.append(QString("Line %1: '(%2, %3)' is a 2-channel signal applied to the mono effect %4 - this gives an arity error. Apply the effect per channel: (%2, %3) : par(i, 2, %4).").arg(def.line).arg(m.captured(1)).arg(m.captured(2)).arg(m.captured(3)));
+					break; // one finding per definition
+				}
+			}
 		}
 		// A mono effect called with a stereo argument: e.g. the chorus
 		// effect's 'process = x : ef.dryWetMixer(wet, chorus)' where chorus
@@ -2681,50 +2858,118 @@ QStringList FAUST2_lint_faust_code(const SoundPlugin *plugin, const QString &cod
 		}
 		// Tuples before ro.interleave(2, 2): the interleave needs 4 input
 		// channels. Flag tuples that mix stereo and mono members (3 or
-		// fewer channels) and all-mono tuples with fewer than 4 members.
+		// fewer channels), all-mono tuples with fewer than 4 members, a
+		// single 2-channel member, and members that are ':'-compositions
+		// not individually parenthesized (the comma binds tighter than ':',
+		// so '(a : f, b : g)' parses as 'a : (f, b) : g' - a different
+		// arity error, observed with '(dry : par(...), wet : par(...)) :
+		// ro.interleave(2, 2)'). The tuple is parsed paren-aware: its
+		// members may contain nested parentheses (function calls).
 		for (const Faust2LintDef &def : defs)
 		{
 			const QString sanitized = faust2_lint_sanitize_strings(def.rhs);
-			const QRegularExpression re(QStringLiteral("\\(([^()]*)\\)\\s*:\\s*ro\\.interleave\\(2\\s*,\\s*2\\)"));
-			const QRegularExpressionMatch m = re.match(sanitized);
-			if (!m.hasMatch())
-			  continue;
-			const QStringList members = m.captured(1).split(",", Qt::SkipEmptyParts);
-			QStringList mono_members;
-			bool has_stereo_member = false;
-			for (const QString &member : members)
+
+			const QRegularExpression interleave_re(QStringLiteral(":\\s*ro\\.interleave\\(2\\s*,\\s*2\\)"));
+			QRegularExpressionMatchIterator it = interleave_re.globalMatch(sanitized);
+			while (it.hasNext())
 			{
-				const QString name = member.trimmed();
-				if (stereo_names.contains(name))
-				  has_stereo_member = true;
-				else if (mono_names.contains(name))
-				  mono_members << name;
-			}
-			if (has_stereo_member && !mono_members.isEmpty())
-			{
-				QString dup = "(";
-				for (int i = 0; i < members.size(); i++)
+				const QRegularExpressionMatch m = it.next();
+				int close = -1;
+				const int open = faust2_lint_find_open_paren(sanitized, m.capturedStart(), &close);
+				if (open < 0 || close <= open)
+				  continue;
+				const QString content = sanitized.mid(open + 1, close - open - 1);
+				const QStringList members = faust2_lint_split_tuple(content);
+
+				if (members.size() == 1)
 				{
-					const QString name = members[i].trimmed();
-					if (i > 0)
-					  dup += ", ";
-					dup += mono_members.contains(name) ? QString("(%1, %1)").arg(name) : name;
+					// A single parenthesized 2-channel expression into a
+					// 4-input interleave (observed: '(wet : par(i, 2,
+					// *(mix))) : ro.interleave(2, 2)' with stereo wet).
+					// A lone member whose channel count is unknown is
+					// left to the generic per-def finding.
+					const QString member = members[0].trimmed();
+					bool stereo = false;
+					for (auto it2 = stereo_names.constBegin(); it2 != stereo_names.constEnd() && !stereo; ++it2)
+					  if (QRegularExpression(QStringLiteral("\\b%1\\b(?!\\.)").arg(*it2)).match(member).hasMatch())
+					    stereo = true;
+					if (stereo)
+					  findings.append(QString("Line %1: '%2' is a 2-channel signal, but ro.interleave(2, 2) needs 4 input channels - this gives an arity error. Mix two stereo signals pairwise instead: (sigA, sigB) : ro.interleave(2, 2) : par(i, 2, +).").arg(def.line).arg(member));
+					break; // one finding per definition
 				}
-				dup += ")";
-				findings.append(QString("Line %1: the parallel composition (%2) mixes mono signal(s) %3 with stereo signals before ro.interleave(2, 2) - this gives an arity error. Duplicate the mono signal(s): %4 : ro.interleave(2, 2) : par(i, 2, +).").arg(def.line).arg(m.captured(1)).arg(mono_members.join(", ")).arg(dup));
-			}
-			else if (!has_stereo_member && members.size() < 4 && mono_members.size() == members.size())
-			{
-				QString dup = "(";
-				for (int i = 0; i < members.size(); i++)
+				if (members.size() < 2)
+				  continue;
+
+				// A member that is a ':'-composition but NOT wrapped in its
+				// own parentheses is misparsed: the comma binds tighter
+				// than ':'.
+				bool unparenthesized_composition = false;
+				for (const QString &member : members)
 				{
-					const QString name = members[i].trimmed();
-					if (i > 0)
-					  dup += ", ";
-					dup += QString("(%1, %1)").arg(name);
+					const QString trimmed = member.trimmed();
+					if (!trimmed.startsWith('(') && trimmed.contains(':'))
+					{
+						unparenthesized_composition = true;
+						break;
+					}
 				}
-				dup += ")";
-				findings.append(QString("Line %1: every signal in (%2) is mono, so the tuple has only %3 channels - ro.interleave(2, 2) needs 4. Duplicate each one: %4 : ro.interleave(2, 2) : par(i, 2, +).").arg(def.line).arg(m.captured(1)).arg(mono_members.size()).arg(dup));
+				if (unparenthesized_composition)
+				{
+					QString dup = "(";
+					for (int i = 0; i < members.size(); i++)
+					{
+						if (i > 0)
+						  dup += ", ";
+						dup += QString("(%1)").arg(members[i].trimmed());
+					}
+					dup += ")";
+					findings.append(QString("Line %1: a tuple member before ro.interleave(2, 2) is a ':'-composition that is not individually parenthesized, and the comma binds tighter than ':' - '(a : f, b : g)' means 'a : (f, b) : g', which gives this arity error. Parenthesize each tuple element: %2 : ro.interleave(2, 2) : par(i, 2, +).").arg(def.line).arg(dup));
+					break; // one finding per definition
+				}
+
+				QStringList mono_members;
+				bool has_stereo_member = false;
+				bool has_unknown_member = false;
+				for (const QString &member : members)
+				{
+					const QString name = member.trimmed();
+					if (stereo_names.contains(name))
+					  has_stereo_member = true;
+					else if (mono_names.contains(name))
+					  mono_members << name;
+					else
+					  has_unknown_member = true; // e.g. a parenthesized sub-composition - its channel count is unknown
+				}
+				if (has_unknown_member)
+				  continue;
+
+				if (has_stereo_member && !mono_members.isEmpty())
+				{
+					QString dup = "(";
+					for (int i = 0; i < members.size(); i++)
+					{
+						const QString name = members[i].trimmed();
+						if (i > 0)
+						  dup += ", ";
+						dup += mono_members.contains(name) ? QString("(%1, %1)").arg(name) : name;
+					}
+					dup += ")";
+					findings.append(QString("Line %1: the parallel composition (%2) mixes mono signal(s) %3 with stereo signals before ro.interleave(2, 2) - this gives an arity error. Duplicate the mono signal(s): %4 : ro.interleave(2, 2) : par(i, 2, +).").arg(def.line).arg(content).arg(mono_members.join(", ")).arg(dup));
+				}
+				else if (!has_stereo_member && members.size() < 4 && mono_members.size() == members.size())
+				{
+					QString dup = "(";
+					for (int i = 0; i < members.size(); i++)
+					{
+						const QString name = members[i].trimmed();
+						if (i > 0)
+						  dup += ", ";
+						dup += QString("(%1, %1)").arg(name);
+					}
+					dup += ")";
+					findings.append(QString("Line %1: every signal in (%2) is mono, so the tuple has only %3 channels - ro.interleave(2, 2) needs 4. Duplicate each one: %4 : ro.interleave(2, 2) : par(i, 2, +).").arg(def.line).arg(content).arg(mono_members.size()).arg(dup));
+				}
+				break; // one finding per definition
 			}
 		}
 		// A tuple containing a stereo signal applied to a stereo effect:
@@ -2734,19 +2979,51 @@ QStringList FAUST2_lint_faust_code(const SoundPlugin *plugin, const QString &cod
 		for (const Faust2LintDef &def : defs)
 		{
 			const QString sanitized = faust2_lint_sanitize_strings(def.rhs);
-			const QRegularExpression re(QStringLiteral("\\(([^()]*)\\)\\s*:\\s*(%1)\\s*\\(").arg(stereo_effects.join("|")));
-			const QRegularExpressionMatch m = re.match(sanitized);
-			if (!m.hasMatch())
-			  continue;
-			const QStringList members = m.captured(1).split(",", Qt::SkipEmptyParts);
-			for (const QString &member : members)
+			const QRegularExpression effect_re(QStringLiteral(":\\s*(%1)\\s*\\(").arg(stereo_effects.join("|")));
+			QRegularExpressionMatchIterator it = effect_re.globalMatch(sanitized);
+			while (it.hasNext())
 			{
-				const QString name = member.trimmed();
-				if (stereo_names.contains(name))
+				const QRegularExpressionMatch m = it.next();
+				int close = -1;
+				const int open = faust2_lint_find_open_paren(sanitized, m.capturedStart(), &close);
+				if (open < 0 || close <= open)
+				  continue;
+				const QString content = sanitized.mid(open + 1, close - open - 1);
+				const QStringList members = faust2_lint_split_tuple(content);
+				for (const QString &member : members)
 				{
-					findings.append(QString("Line %1: (%2) has at least 4 channels but %3 takes only 2 inputs - '%4' is already stereo. Write '%4 : %3(...)' without duplicating.").arg(def.line).arg(m.captured(1)).arg(m.captured(2)).arg(name));
-					break;
+					const QString name = member.trimmed();
+					if (stereo_names.contains(name))
+					{
+						findings.append(QString("Line %1: (%2) has at least 4 channels but %3 takes only 2 inputs - '%4' is already stereo. Write '%4 : %3(...)' without duplicating.").arg(def.line).arg(content).arg(m.captured(1)).arg(name));
+						break;
+					}
 				}
+			}
+		}
+		// A parenthesized parallel pair combined with an INFIX operator:
+		// '(left, right) * gain' feeds the 2-channel pair plus the
+		// coefficient to the operator (3 inputs), so the arity breaks. The
+		// checks below only see operators adjacent to a NAMED stereo
+		// signal; here the pair is anonymous. (Observed: '(left, right) *
+		// gain' gave "outputs [3] vs inputs [2]" and the fix prompt only
+		// carried the generic per-def finding.) A call paren is excluded by
+		// the lookbehind: 'en.adsr(attack, decay, 0.0, release, gate) *
+		// gain' is legal.
+		for (const Faust2LintDef &def : defs)
+		{
+			const QString sanitized = faust2_lint_sanitize_strings(def.rhs);
+			const QRegularExpression re(QStringLiteral("(?<![a-zA-Z0-9_.])\\(\\s*[a-zA-Z_][a-zA-Z0-9_]*\\s*(?:,\\s*[a-zA-Z_][a-zA-Z0-9_]*)+\\s*\\)\\s*([+*/-])"));
+			QRegularExpressionMatchIterator it = re.globalMatch(sanitized);
+			while (it.hasNext())
+			{
+				const QRegularExpressionMatch m = it.next();
+				const QString op = m.captured(1);
+				if (op == "*" || op == "/")
+				  findings.append(QString("Line %1: '%2' is applied to a parenthesized parallel pair - the pair is a multi-channel signal, so the operator receives too many inputs (this gives the arity error). Apply it per channel: sig : par(i, 2, %2(x)).").arg(def.line).arg(op));
+				else
+				  findings.append(QString("Line %1: applying '%2' to a parenthesized parallel pair gives an arity error (the operator receives too many inputs). Apply it per channel: sig : par(i, 2, %2(x)).").arg(def.line).arg(op));
+				break; // one finding per definition
 			}
 		}
 		// Operators do not distribute over multi-channel signals. For every
@@ -2848,7 +3125,8 @@ QStringList FAUST2_lint_faust_code(const SoundPlugin *plugin, const QString &cod
 				bool prefix_stereo =
 					prefix.contains(QStringLiteral("ro.interleave(2, 2)"))
 					|| prefix.contains(QStringLiteral("par(i, 2,"))
-					|| QRegularExpression(QStringLiteral(":\\s*(%1)\\s*\\(").arg(stereo_effects.join("|"))).match(prefix).hasMatch();
+					|| QRegularExpression(QStringLiteral(":\\s*(%1)\\s*\\(").arg(stereo_effects.join("|"))).match(prefix).hasMatch()
+					|| QRegularExpression(QStringLiteral("(?<![a-zA-Z0-9_.])\\([a-zA-Z_][a-zA-Z0-9_]*\\s*,\\s*[a-zA-Z_][a-zA-Z0-9_]*\\)\\s*$")).match(prefix).hasMatch();
 				if (!prefix_stereo)
 				{
 					for (auto sn = stereo_names.constBegin(); sn != stereo_names.constEnd() && !prefix_stereo; ++sn)
@@ -2860,11 +3138,52 @@ QStringList FAUST2_lint_faust_code(const SoundPlugin *plugin, const QString &cod
 
 				const QString op = m.captured(1);
 				if (op == "*" || op == "/")
-				  findings.append(QString("Line %1: '%2' is applied to a stereo signal with ':' - the operator consumes it as one input, so this gives an arity error. Scale each channel instead: sig : par(i, 2, %2(x)) (e.g. write ... : par(i, 2, *(gain)), not ... : *(gain)).").arg(def.line).arg(op == "*" ? "*(x)" : "/(x)"));
+				  findings.append(QString("Line %1: '%2(x)' is applied to a stereo signal with ':' - the operator consumes it as one input, so this gives an arity error. Scale each channel instead: sig : par(i, 2, %2(x)) (e.g. write ... : par(i, 2, *(gain)), not ... : *(gain)).").arg(def.line).arg(op));
 				else
 				  findings.append(QString("Line %1: applying '%2' to a stereo signal gives an arity error. Apply it per channel: sig : par(i, 2, %2(x)).").arg(def.line).arg(op));
 
 				break; // one finding per definition
+			}
+		}
+		// The max-length argument of a delay line must be a provably
+		// CONSTANT bound: deriving it from a slider (or any non-constant
+		// expression) makes the compiler unable to prove that the delay
+		// time stays within it, giving 'invalid delay parameter range:
+		// interval(0, INT_MAX, 0)' with no line number. Observed:
+		// 'delay_samps = delay_time * ma.SR; de.delay(delay_samps,
+		// delay_samps)' - the fix was 'de.delay(1.0 * ma.SR, delay_samps)'.
+		// A max length built from constants is fine
+		// ('de.delay(chorus_delay, ...)' with chorus_delay = 0.03 * ma.SR).
+		// Smoothed sliders INSIDE the delay-time argument are NOT flagged:
+		// e.g. a chorus delay 'const * (1 + smoothed_depth * os.osc(rate))'
+		// compiles (observed).
+		QSet<QString> constant_names;
+		for (const Faust2LintDef &def : defs)
+		{
+			QString stripped = faust2_lint_sanitize_strings(def.rhs);
+			stripped.replace(QStringLiteral("ma.SR"), QStringLiteral(""));
+			stripped.replace(QStringLiteral("_"), QStringLiteral(""));
+			if (QRegularExpression(QStringLiteral("^[\\d\\s.eE+\\-*/()]+$")).match(stripped.trimmed()).hasMatch())
+			  constant_names.insert(def.name);
+		}
+		for (const Faust2LintDef &def : defs)
+		{
+			const QString sanitized = faust2_lint_sanitize_strings(def.rhs);
+			QRegularExpressionMatchIterator it = QRegularExpression(QStringLiteral("\\b(de\\.(?:delay|sdelay|ffdelay|fbdelay)|pf\\.flanger_(?:mono|stereo))\\s*\\(([^()]*)\\)")).globalMatch(sanitized);
+			while (it.hasNext())
+			{
+				const QRegularExpressionMatch m = it.next();
+				const QStringList args = m.captured(2).split(",", Qt::SkipEmptyParts);
+				if (args.isEmpty())
+				  continue;
+				const QString max_arg = args[0].trimmed();
+				for (const Faust2LintDef &other : defs)
+				{
+					if (constant_names.contains(other.name))
+					  continue;
+					if (QRegularExpression(QStringLiteral("\\b%1\\b(?!\\.)").arg(other.name)).match(max_arg).hasMatch())
+					  findings.append(QString("Line %1: the max-length argument of %2 ('%3') is derived from a slider - the compiler cannot prove the delay time stays within it, which gives the 'invalid delay parameter range' error. Use a generous CONSTANT max length instead: e.g. %2(1.0 * ma.SR, %3).").arg(def.line).arg(m.captured(1)).arg(max_arg));
+				}
 			}
 		}
 	}
@@ -3040,6 +3359,150 @@ QStringList FAUST2_lint_faust_code(const SoundPlugin *plugin, const QString &cod
 	}
 
 	return findings;
+}
+
+
+// Splices the top-level definitions of 'fragment' into 'current_code': a
+// definition whose name already exists replaces the existing definition,
+// and a new name is inserted before 'process'. Used by the partial-fix
+// flow: for long programs the fix prompt asks for only the corrected
+// definition(s), so the response no longer needs to fit the whole program
+// into the completion token limit. When the fragment contains a 'process'
+// definition it is a complete program and is returned as-is. 'import'
+// lines in the fragment are dropped (the current program already imports
+// stdfaust.lib).
+QString FAUST2_splice_faust_definitions(const QString &current_code, const QString &fragment)
+{
+	// (name, start_line, end_line) of every top-level definition, 0-based
+	// inclusive lines. Same parsing rules as faust2_lint_collect_defs:
+	// multi-line RHS, delimiters tracked, strings/comments masked.
+	struct DefSpan { QString name; int start; int end; };
+	const auto collect_spans = [](const QString &code) -> QList<DefSpan>
+	{
+		QList<DefSpan> spans;
+		const QStringList lines = code.split('\n');
+		const QRegularExpression def_re(QStringLiteral("^\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\s*=(.*)$"));
+		bool in_block_comment = false;
+		int depth = 0;
+		int start_line = -1;
+		QString name;
+		for (int i = 0; i < lines.size(); i++)
+		{
+			const QString line_text = lines.at(i);
+			const QString masked = faust2_lint_mask_line(line_text, in_block_comment);
+
+			if (start_line < 0)
+			{
+				const QRegularExpressionMatch m = def_re.match(line_text);
+				if (m.hasMatch()
+				    && m.captured(1) != "declare"
+				    && m.captured(1) != "import"
+				    && m.capturedStart(1) < masked.size()
+				    && masked.at(m.capturedStart(1)) != ' ')
+				{
+					name = m.captured(1);
+					start_line = i;
+					depth = 0;
+				}
+			}
+
+			if (start_line >= 0)
+			{
+				bool terminated = false;
+				for (const QChar &ch : masked)
+				{
+					if (ch == '(' || ch == '{' || ch == '[')
+					  depth++;
+					else if (ch == ')' || ch == '}' || ch == ']')
+					  depth--;
+					else if (ch == ';' && depth <= 0)
+					{
+						terminated = true;
+						break;
+					}
+				}
+				if (terminated)
+				{
+					spans.append({name, start_line, i});
+					start_line = -1;
+				}
+			}
+		}
+		return spans;
+	};
+
+	const QList<DefSpan> current_spans = collect_spans(current_code);
+	const QList<DefSpan> fragment_spans = collect_spans(fragment);
+
+	// A complete program: use it wholesale.
+	for (const DefSpan &span : fragment_spans)
+	  if (span.name == QStringLiteral("process"))
+	    return fragment;
+
+	const QStringList current_lines = current_code.split('\n');
+	const QStringList fragment_lines = fragment.split('\n');
+
+	// Which current definitions exist, and their span by start line.
+	QHash<QString, int> current_index;
+	QHash<int, QPair<QString, int>> span_at_start; // start_line -> (name, end_line)
+	for (int i = 0; i < current_spans.size(); i++)
+	{
+		current_index.insert(current_spans[i].name, i);
+		span_at_start.insert(current_spans[i].start, {current_spans[i].name, current_spans[i].end});
+	}
+
+	// Fragment definition texts: by current def name (for replacement) and
+	// as a list of new-name texts (for insertion before 'process').
+	QHash<QString, QStringList> replacement_text;
+	QList<QStringList> insert_texts;
+	for (const DefSpan &fspan : fragment_spans)
+	{
+		QStringList text;
+		for (int i = fspan.start; i <= fspan.end; i++)
+		  text.append(fragment_lines.at(i));
+		if (current_index.contains(fspan.name))
+		  replacement_text.insert(fspan.name, text); // last one wins on duplicates
+		else
+		  insert_texts.append(text);
+	}
+
+	// Rebuild the current program line by line, swapping replaced spans.
+	QStringList result;
+	for (int i = 0; i < current_lines.size(); )
+	{
+		if (span_at_start.contains(i))
+		{
+			const QPair<QString, int> span = span_at_start.value(i);
+			if (replacement_text.contains(span.first))
+			{
+				result.append(replacement_text.value(span.first));
+				i = span.second + 1;
+				continue;
+			}
+		}
+		result.append(current_lines.at(i));
+		i++;
+	}
+
+	// Insert new definitions before 'process' (or at the end).
+	if (!insert_texts.isEmpty())
+	{
+		int process_idx = result.size();
+		for (int i = 0; i < result.size(); i++)
+		  if (QRegularExpression(QStringLiteral("^\\s*process\\s*=")).match(result.at(i)).hasMatch())
+		  {
+		    process_idx = i;
+		    break;
+		  }
+		int insert_at = process_idx;
+		for (const QStringList &text : insert_texts)
+		{
+			for (const QString &line : text)
+			  result.insert(insert_at++, line);
+		}
+	}
+
+	return result.join('\n');
 }
 
 

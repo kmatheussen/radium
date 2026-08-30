@@ -501,6 +501,13 @@ static const char *faust_module_reference =
   "    sig : par(i, 2, *(x))   (or  sig <: *(x), *(x))\n"
   "    To apply an effect to each channel of a stereo signal:\n"
   "    sig : par(i, 2, effect)\n"
+  "    Feeding a MONO signal into a 2-channel par is an arity error:\n"
+  "    'dry : par(i, 2, *(1 - mix))' with mono dry fails. Duplicate the\n"
+  "    mono signal first - dryStereo = dry <: _,_; - and use dryStereo\n"
+  "    everywhere a 2-channel signal is needed. A dry/wet crossfade keeps\n"
+  "    BOTH branches stereo:\n"
+  "    process = ((dryStereo : par(i, 2, *(1 - mix))),\n"
+  "    (wet : par(i, 2, *(mix)))) : ro.interleave(2, 2) : par(i, 2, +);\n"
   "    IMPORTANT precedence rule: the comma (parallel composition) binds\n"
   "    TIGHTER than ':'. '(a : f, b : g)' means 'a : (f, b) : g', NOT the\n"
   "    pair of two compositions. When the elements of a tuple are\n"
@@ -1651,6 +1658,15 @@ static inline QString summarize_faust_error(const QString &error)
 		hint = "Unbalanced parentheses: a long expression has too many or "
 		  "too few closing parentheses. Count them carefully, or better: "
 		  "split the long expression into several named definitions.";
+	}
+	else if (error.contains("unexpected $end") || error.contains("unexpected EOF"))
+	{
+		hint = "The program was cut off mid-expression - almost always "
+		  "because the previous LLM response hit the token limit and the "
+		  "code is incomplete. Return code that FITS the token limit: "
+		  "shorten the program by removing less important sliders and "
+		  "definitions (or, when the request says so, return only the "
+		  "corrected definition(s) instead of the whole program).";
 	}
 	else if (error.contains("unexpected EXP") || error.contains("unexpected LOG")
 	         || error.contains("unexpected SQRT") || error.contains("unexpected SIN")
@@ -3281,6 +3297,14 @@ static inline void send_request_once(const LLMConfig &config,
 		                  .arg(truncated ? "yes" : "no"));
 		const bool can_retry_at_lower_effort = thinking_enabled
 		                                       || (is_openai_reasoning_model(config) && !is_deepseek(config) && effective_effort != "off");
+		if (truncated && !can_retry_at_lower_effort)
+		{
+			// The truncated content will be used as-is: it is almost
+			// certainly cut off mid-program (a syntax error follows, and
+			// the fix loop then repairs it - possibly in partial-fix mode
+			// for long programs). Note it for the log.
+			llm_log_note("LLM response truncated by the token limit - the returned code is probably cut off mid-program.");
+		}
 		if (truncated && can_retry_at_lower_effort)
 		{
 			// The model spent its whole budget on thinking without emitting
