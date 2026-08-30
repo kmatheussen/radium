@@ -5,11 +5,10 @@
 #include "FocusSniffers.h"
 #include <Qsci/qscilexerproperties.h>
 
-
 namespace radium{
 
-class Editor : public FocusSnifferQsciScintilla{
-
+class Editor : public FocusSnifferQsciScintilla
+{
   public:
 
   QString _filename = "";

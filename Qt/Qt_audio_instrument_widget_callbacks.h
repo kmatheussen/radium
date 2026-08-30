@@ -589,6 +589,9 @@ public:
   void calledRegularlyByParent(void){
     
     //printf("hello %p\n", this);
+
+    if (_size_type == SIZETYPE_HALF && !instrumentInMixer())
+      set_half_height();
     
     //SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 
@@ -984,6 +987,10 @@ private:
   QVector<QWidget*> hidden_widgets;
   int height_before_large;
 
+  void set_half_height(void){
+    setFixedHeight(g_main_window->height() / 2);
+  }
+
   // enable for faust and multiband
   void show_large(SizeType new_size_type){
     printf("show_large\n");
@@ -1012,11 +1019,8 @@ private:
 
     if (new_size_type==SIZETYPE_HALF) {
 
-      if (!instrumentInMixer()) {
-        int size = g_main_window->height() / 2;
-        setMinimumHeight(size);
-        setMaximumHeight(size);
-      }
+      if (!instrumentInMixer())
+        set_half_height();
       
     } else {
       setMinimumHeight(0);

@@ -168,7 +168,7 @@
              <string>Set default effect values after compilation</string>
             </property>
             <property name="text">
-             <string>R_FX</string>
+              <string>D_FX</string>
             </property>
            </widget>
           </item>
