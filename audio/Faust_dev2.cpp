@@ -80,6 +80,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/patch_proc.h"
 #include "../common/disk.h"
 #include "../common/OS_rosetta.h"
+#include "../common/OS_vm.h"
 
 #include <sndfile.h>
 
@@ -291,7 +292,7 @@ struct FaustDev2Data
 #if defined(WITHOUT_LLVM_IN_FAUST_DEV)
 	bool use_interpreter_backend = true;
 #else
-	bool use_interpreter_backend = OS_running_under_rosetta();
+	bool use_interpreter_backend = OS_running_under_rosetta() || OS_running_under_vm();
 #endif
 
 	FaustDev2Dsp *dsp_data;   // NULL until compiled
@@ -1756,7 +1757,7 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
 		devdata->options = STRING_get_qstring(STRING_fromBase64(HASH_get_string(state, "options")));
 #if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
 		if (HASH_has_key(state, "use_interpreter_backend"))
-			devdata->use_interpreter_backend = HASH_get_bool(state, "use_interpreter_backend") || OS_running_under_rosetta();
+			devdata->use_interpreter_backend = HASH_get_bool(state, "use_interpreter_backend") || OS_running_under_rosetta() || OS_running_under_vm();
 #endif
 	}else{
 		devdata->code = g_default_faust_dev2_program;
@@ -2024,7 +2025,7 @@ bool FAUST2_set_use_interpreter_backend(SoundPlugin *plugin, bool use_interprete
 	return false;
 #else
 	FaustDev2Data *devdata = (FaustDev2Data*)plugin->data;
-	if (!use_interpreter && OS_running_under_rosetta())
+	if (!use_interpreter && (OS_running_under_rosetta() || OS_running_under_vm()))
 		return false;
 	devdata->use_interpreter_backend = use_interpreter;
 	return true;
