@@ -2,7 +2,7 @@
 # Users and packagers: Edit build_*.sh instead.
 #
 
-RADIUM_VERSION = 7.5.78
+RADIUM_VERSION = 8.0.53
 
 
 SHELL := /usr/bin/env bash
