@@ -1,3 +1,216 @@
+Changes 7.5.78 -> 8.0.53:
+* Instrument window: Make it possible to assign keybindings
+  to the Half and Full checkboxes.
+* Instrument window: Show instrument selector popup menu
+  in Half and Full mode as well.
+* Ladspa: Don't crash if a Ladspa plugin is missing during
+  startup.
+* Faust Dev: Clicking a module in the block diagram now moves
+  the text editor cursor to the corresponding definition in the
+  source code.
+* Faust: Make it possible to select/copy the error message when
+  compilation fails. Patch fopenAt/openArchStream to not use
+  chdir, fixing a crash when the current directory has been
+  deleted. Also makes the code thread safe.
+* Faust Dev: Use "Half" mode by default.
+* Mac/Faust Dev 2: Enforce the interpreter when running on a VM,
+  and never compile under LLVM when running under Rosetta (crash).
+* Mac: Fix stack overflow and crash when loading plugins with
+  64 or more audio channels.
+* Mac: Fix full screen mode, use area on the left and right of
+  "the notch".
+* Mac: Fix reading uninitialized memory in some situations related
+  to keyboard handling, fix the error dialog application
+  sometimes hiding behind other applications when starting
+  up.
+* Mac: Fix the progress window popping up on another
+  workspace when radium is fullscreen.
+* Instrument window: Replace the "Random" button with "R5%",
+  "R10%", and "R100%" buttons. Also add ability to assign
+  keybindings.
+* Instrument window: Fix closing the autosuspend popup menu when
+  clicking outside the menu itself.
+* Modular mixer: Fix closing the direction popup menu when
+  clicking outside the menu itself.
+* Preferences: Change "4X should normally be a good value" to
+  "8X or 4X should normally be good values".
+* Gui: Show the program icon for the error dialog, progress
+  dialog, and crashreporter applications, and enable logging
+  on the crashreporter server.
+* Gui: Let Ctrl + Space always stop playing, even if keyboard
+  focus is in a Qt widget.
+* Plugin manager: Fix creating an instrument when opened from
+  the Windows menu. Also improve where to put the new
+  instrument in the modular mixer.
+* Editor: Play the adjusted volume of notes when editing,
+  i.e. apply velocity and track volume instead of playing at
+  full volume. Also fix resizing a track with the mouse when
+  the mouse pointer is on top of a note.
+* Audio: Fix crash sometimes happening if changing solo right
+  before, or possibly after, loading a new song.
+* GPU rendering: The editor is now rendered using Qt RHI
+  (QRhi), replacing the old OpenGL/VisualizationLibrary-based
+  renderer. QRhi works with OpenGL, Vulkan, Direct3D, and
+  Metal, and the program can now select between those backends.
+* GPU rendering: New GPU backend selection dialog, shown the
+  first time the program is started, or if the program might
+  have crashed the last time while initializing the GPU. Also
+  add a "--set-gpu-backend" command line option.
+* GPU/Preferences: Radiobuttons to select GPU backend. API:
+  GL_get_backend, GL_set_backend.
+* GPU/Preferences: Show supported MSAA values for the current
+  backend, and hook up the "VSync" option. Rename the
+  "multisample" settings keyword to "qrhi_multisample" to reset
+  to 8x multisample for old users (it looks much better than
+  4x and should run okay on all of todays computers).
+* GPU rendering: Many optimizations, including only rendering
+  the currently visible slices, splitting triangles into slices,
+  sharing GPU texture atlases between all instances, optimizing
+  horizontal and vertical line drawing, and various text
+  rendering fixes.
+* GPU rendering: Fix playcursor, gradient triangles, velocity
+  gradient colors, current track borders, static rendering,
+  font scaling on HiDPI screens, and various shutdown issues.
+* Preferences: Remove the "High priority for OpenGL drawer
+  thread" option since there is no drawer thread anymore.
+  Also remove the "Various" group box under GPU. API: rm
+  doHighCpuOpenGlProtection, setHighCpuOpenGlProtection.
+* Qt: Converted the program to Qt6.
+* Build: Removed the VisualizationLibrary dependency.
+* Build: Use precompiled headers for the QTOPT and FAUST_OPTS2
+  files. Cuts clang compilation time by about 50%.
+* Build: Enable automatic dependency tracking.
+* Build: Various fixes for gcc 14, clang, and mac.
+* Build: Add support for QtWebView (the new thing in Qt6) as an
+  alternative to QtWebEngine and QtWebKit. Fix some headers and
+  changed some dynamic casts to qcasts to avoid crashes when
+  using QtWebView.
+* Build: Set USE_QSVGVIEWER to 1 by default. Faust-dev
+  instruments now only use QSvg to render the faust graph, plus
+  support for clicking links and path links at the top.
+* Audio: New "Faust Dev 2" instrument, similar to Faust Dev,
+  except that it uses mydsp_poly in Faust to handle polyphony
+  etc. instead of doing all that stuff manually (Faust Dev 1
+  was made before mydsp_poly was available).
+* Audio: Various Faust Dev 2 fixes, including fixing a race
+  condition that could cause more than one compiler thread to
+  run at the same time, shutting down instruments when stopping
+  to play the song, remembering effect values when recompiling,
+  and a "Show C++" button.
+* Audio: Support full multisample soundfonts, such as
+  percussion. Fixes #1461. Also fix stereo soundfont samples
+  (partial fix for #1461). Soundfont original pitch now uses
+  the MIDI note convention (C4=60) for new instruments; old
+  songs keep the tracker convention (C4=48).
+* Export MIDI: Support exporting the current block or song to
+  MIDI file format 1. Exporting the song exports all seqtracks,
+  and uses timing from seqtrack 0 or the sequencer depending on
+  whether sequencer timing is enabled.
+* Import: Support for importing XM modules. Not completely
+  finished, and some minor stuff sounds wrong, but it's pretty
+  good and approx. a billion times better than the old attempt
+  which was eventually disabled because it was so bad. Also fix
+  importing modules created in OpenMPT.
+* Import: Improved support for XI instruments: support volume
+  envelope and pan envelope, support volume fadeout, etc.
+* Preferences/Colors: Ability to switch between many color
+  configurations, a "snapshot" functionality to support undoing
+  current color or all colors back to the latest snapshot,
+  buttons to set current or all colors to default, and removal
+  of the "Save permanent" button (colors are now saved
+  automatically). Making it much faster to change colors, which
+  also changes style sheets. Also add undo/redo.
+* Preferences: Save font settings as "system_font_qt6" and
+  "font_qt6" to avoid issues caused by different formats in Qt5
+  and Qt6 when serializing QFont. Also fix default fonts.
+* Editor: Support undo/redo for enabling/disabling global swing,
+  and fix global swing enabled/disabled not being saved to disk.
+* Editor: Allow more keys to work when the cursor is in a
+  subtrack. Print "Valid keys: " to the status bar when using
+  keys in subtracks that don't do anything, and don't do
+  anything when pressing invalid keys.
+* Editor: Fix various QRhi regressions: changing mouse pointer
+  shape, auto-scaling new blocks so they fit the window, "Make
+  all blocks fit in window" only working on the first block, the
+  editor not being redrawn when hovering into it to the right of
+  the rightmost track, and text rendering on mac being too
+  crammed.
+* Editor: Change play cursor color from black to red, and don't
+  apply extra alpha, letting the user control how much alpha.
+* Editor: Make it possible to assign a keybinding to the "Drums"
+  entry in the instrument menu.
+* Sequencer: Fix samples not removed from the "Sounds" tab when
+  creating a new song. Fixes #1435.
+* Sequencer: Fix likely incorrect timing for stretched seqblocks
+  with custom end time.
+* Sampler plugin: Fix ping-pong loop when start position is
+  greater than 0, and possibly other things.
+* Modular mixer: Fix moving modules.
+* Menus: Add a "Recent" submenu to the file menu, and add saved
+  songs to the Project -> Recent sub menu (not just loaded
+  songs).
+* Menus: Make the following popup menu entries
+  keyboard-configurable: "Help", "Editor Help", "Reset" (for
+  mute button), "Rename" (for block), and "Configure color..."
+  (for block).
+* Gui/Mac: Fix wrap-around when navigating menus with the
+  keyboard. (The bug was actually caused by MacOS being designed
+  to prevent wraparound, sigh!)
+* Gui: Always give up keyboard focus for Qt widgets (such as
+  the FaustDev2 text editor) when switching keyboard focus
+  between e.g. mixer and editor. FaustDev: Always obtain
+  keyboard focus when mouse enters text editor, and always lose
+  keyboard focus when mouse leaves the text editor.
+* Linux/Keyboard: Fix various problems with keybindings using
+  shift+non_qwerty keys (such as redo), and other modifier key
+  fixes.
+* Crashreporter: Use cloudflare as crash reporter server, since
+  the old one has stopped working. Also fix buttons not working
+  after switching to Qt6.
+* Audio: Disable "Audio using too much CPU." handling during
+  startup, and fix the message showing right after startup.
+* Windows: Close the progress window before opening the GPU
+  selection window (the progress window covered up the GPU
+  selection window).
+* Manual: Include a lot of autogenerated documentation in the
+  manual. Also fix all java-script links, fix the link to
+  pianoroll from the editor, and include information about MIDI
+  recording accuracy for the different audio backends.
+* Progress: Fix text being cut off at the bottom.
+* Editor: Fix a division by zero when the interior end equals
+  the interior start.
+* Editor: Fix a crash, probably rare, in the swing text track.
+* Audio: Fix possible crash in faust-dev instruments with more
+  than 16 channels. Also fix slightly wrong behavior in
+  positioning of the end note when moving a note with the mouse,
+  and fix wrong implementation of RATIO_CEIL and RATIO_floor.
+* Song properties: Note that "Use old/buggy note-release
+  behavior for compatibility with old songs" only applies to the
+  old "Faust Dev" instrument, not "Faust Dev 2".
+* Editor: Disable "From list of most frequently used
+  instruments..." option when there are no such instruments to
+  choose from. Also remove the word "frequently". Fixes #1465.
+* Pd: Fix compilation error.
+* Qt: Fix keyboard focus to the editor after program startup.
+* Preferences: Add option to clamp text in the editor to nearest
+  neighbour. Only for debugging to check that text scaling is
+  done properly.
+* Linux/Dev: Option to not Rill radium in case a popup menu has
+  been visible too long (to avoid locking up the computer during
+  development).
+* API:
+  * New: isIllegalInstrument, getMainSignatureNumerator,
+    getMainSignatureDenominator, getSignaturePlace,
+    getSignatureNumerator, getSignatureDenominator,
+    openFileForBinaryWriting, writeBe32ToFile, writeBe16ToFile,
+    write8ToFile, getStimeFromPlace, getStimeFromPlace2,
+    getConfigPath, legalizeFilename, randomizeInstrumentEffects,
+	toggleInstrumentWidgetSizeType.
+  * Removed: doHighCpuOpenGlProtection,
+    setHighCpuOpenGlProtection.
+
+
+
 Changes 7.5.77 -> 7.5.78:
 * Linux/Keyboard: Fix program using wrong modifier
   keys if starting the program while holding a
