@@ -1027,15 +1027,21 @@ private:
       setMaximumHeight(16777214);//g_main_window->height());
     }
 
-#ifdef WITH_FAUST_DEV
-    // For faust instruments, move the mute/solo/bypass buttons into the
-    // plugin widget header, right next to the "Random" button, so they
-    // remain available in Half/Full mode where the outputs widget (their
-    // normal place) is hidden. Inserting in order is idempotent, so this
-    // also works when switching between Half and Full mode.
-    if (_plugin_widget->_faust_plugin_widget != NULL)
+    // Move the mute/solo/bypass buttons into the plugin widget header,
+    // right next to the "Random" button, so they remain available in
+    // Half/Full mode where the outputs widget (their normal place) is
+    // hidden. Inserting in order is idempotent, so this also works when
+    // switching between Half and Full mode.
     {
       QHBoxLayout *header_layout = _plugin_widget->horizontalLayout_2;
+
+      // Move the instrument selection button (normally placed in the patch
+      // widget header) to the left of the instrument name in the plugin
+      // widget header, since the patch widget is hidden in Half/Full mode.
+      header_layout->insertWidget(header_layout->indexOf(_plugin_widget->info_button),
+                                  _patch_widget->select_instrument);
+      _patch_widget->select_instrument->show();
+
       const int pos = header_layout->indexOf(_plugin_widget->random100_button) + 1;
 
       header_layout->insertWidget(pos, mute_button);
@@ -1046,7 +1052,6 @@ private:
       solo_button->show();
       bypass_button->show();
     }
-#endif
 
     _size_type = new_size_type;
 
@@ -1075,17 +1080,18 @@ private:
     
     hidden_widgets.clear();
 
-#ifdef WITH_FAUST_DEV
     // Move the mute/solo/bypass buttons back to their normal place in the
     // outputs widget. (They become visible again when the outputs widget
     // was re-shown by the loop above.)
-    if (_plugin_widget->_faust_plugin_widget != NULL)
     {
+      // Move the instrument selection button back to the patch widget header.
+      _patch_widget->horizontalLayout->insertWidget(0, _patch_widget->select_instrument);
+      _patch_widget->select_instrument->show();
+
       horizontalLayout_8->insertWidget(0, mute_button);
       horizontalLayout_8->insertWidget(1, solo_button);
       horizontalLayout_8->insertWidget(2, bypass_button);
     }
-#endif
 
     // Refresh the enabled states of all widgets (in normal mode bypass
     // disables the effect widgets again).
@@ -1676,6 +1682,19 @@ Sample_requester_widget *AUDIOWIDGET_get_sample_requester_widget(struct Patch *p
 
 void AUDIOWIDGET_change_height(struct Patch *patch, SizeType type){
   get_audio_instrument_widget(patch)->change_height(type);
+}
+
+void AUDIOWIDGET_toggle_size_type(struct Patch *patch, SizeType type){
+  Audio_instrument_widget *w = get_audio_instrument_widget(patch);
+
+  if (w==NULL || w->_plugin_widget==NULL)
+    return;
+
+  if (type==SIZETYPE_HALF)
+    w->_plugin_widget->half_checkbox->setChecked(!w->_plugin_widget->half_checkbox->isChecked());
+
+  else if (type==SIZETYPE_FULL)
+    w->_plugin_widget->max_checkbox->setChecked(!w->_plugin_widget->max_checkbox->isChecked());
 }
 
 /*

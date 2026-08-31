@@ -399,6 +399,30 @@ public:
       S7CALL2(void_int,"FROM_C-select-instrument-a/b-popup-menu", 1);
     };
 
+    random1_button->_show_popup_menu = [](){
+      S7CALL2(void_charpointer, "FROM_C-randomize-effects-popup-menu", "0.05");
+    };
+
+    random10_button->_show_popup_menu = [](){
+      S7CALL2(void_charpointer, "FROM_C-randomize-effects-popup-menu", "0.1");
+    };
+
+    random100_button->_show_popup_menu = [](){
+      S7CALL2(void_charpointer, "FROM_C-randomize-effects-popup-menu", "1.0");
+    };
+
+    half_checkbox->_show_popup_menu = [](){
+      S7CALL2(void_int, "FROM_C-toggle-instrument-widget-size-type-popup-menu", 1);
+    };
+
+    max_checkbox->_show_popup_menu = [](){
+      S7CALL2(void_int, "FROM_C-toggle-instrument-widget-size-type-popup-menu", 2);
+    };
+
+    reset_button->_show_popup_menu = [](){
+      S7CALL2(void_void, "FROM_C-reset-instrument-effects-popup-menu");
+    };
+
       
     _is_initing = false;
   }
