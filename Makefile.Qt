@@ -470,11 +470,12 @@ ifeq ($(BUILD_OPTIMIZED), RELEASE)
 	DEFAULT_UNDEFINED_SANITIZE_OPTS += -fsanitize=object-size
 endif
 
-# Universal (arm64 + x86_64) binaries are only built in RELEASE mode.
-ifeq ($(BUILDTYPE), RELEASE)
-UNIVERSAL = -arch arm64 -arch x86_64
-else
+# Universal (arm64 + x86_64) binaries are only built in RELEASE mode on mac.
 UNIVERSAL =
+ifeq ($(UNAME), Darwin)
+	ifeq ($(BUILDTYPE), RELEASE)
+		UNIVERSAL = -arch arm64 -arch x86_64
+	endif
 endif
 
 UNDEFINED_SANITIZE_OPTS ?= $(DEFAULT_UNDEFINED_SANITIZE_OPTS)

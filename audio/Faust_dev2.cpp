@@ -149,6 +149,26 @@ QString FAUST2_get_default_code(void)
 }
 
 
+// Diagnostic note writer: appends a note to the LLM session log
+// (~/.radium/llm.log, same file and format as radium::llm::llm_log_note).
+// Always appends and never truncates: the GUI-side log writer owns the
+// clear-on-first-write convention.
+static void faust_dev2_llm_debug_note(const QString &text)
+{
+	const char *env_path = getenv("RADIUM_LLM_LOG");
+	const QString path = (env_path != NULL && env_path[0] != '\0')
+	  ? QString::fromUtf8(env_path)
+	  : QDir::homePath() + QString::fromUtf8("/.radium/llm.log");
+	QDir().mkpath(QFileInfo(path).absolutePath());
+	QFile file(path);
+	if (file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text))
+	{
+		file.write(QString("----- note -----\n" + text + "\n").toUtf8());
+		file.close();
+	}
+}
+
+
 namespace{
 
 struct NoteVoice
@@ -303,7 +323,7 @@ struct FaustDev2Data
 	// When true (default), effect values are reset to the program's default
 	// values after each successful compilation. When false, existing effects
 	// keep their current values. New effects always get their default values.
-	// Set from the GUI (the "R_FX" checkbox), read on the main thread.
+	// Set from the GUI (the "D_FX" checkbox), read on the main thread.
 	bool reset_effect_values_on_compile = true;
 
 	// Fade-out state. When a compile finishes, the current dsp fades out over
@@ -1098,6 +1118,17 @@ static void perform_compile_completion(instrument_t patch_id,
 	devdata->ready.factory_succeeded = true;
 	devdata->ready.svg_is_ready = true;
 	devdata->ready.svg_succeeded = (svg_dir != NULL);
+	devdata->ready.num_inputs = dsp_data->num_inputs;
+
+	// Permanent diagnostic: record what was actually compiled (channel
+	// counts, instrument/effect classification, and the first 400 chars
+	// of the code) so later sessions can be diagnosed from the LLM log
+	// (splice artifacts, wrong-code-compiled, input-count regressions).
+	faust_dev2_llm_debug_note(QString("compile-result: %1 in / %2 out; is_instrument=%3. code:\n%4")
+	                          .arg(dsp_data->num_inputs)
+	                          .arg(dsp_data->num_outputs)
+	                          .arg(dsp_data->is_instrument)
+	                          .arg(QString::fromUtf8(compile_code.toUtf8().constData()).left(400)));
 }
 
 
@@ -2064,6 +2095,7 @@ struct Faust2LintDef
 	QString name;
 	QString rhs;
 	int line;
+	QStringList args; // parameter names when the definition is a function: 'name(a, b) = ...'
 };
 
 // Masks strings and comments in one line so delimiter counting below never
@@ -2122,19 +2154,24 @@ QString faust2_lint_mask_line(const QString &line, bool &in_block_comment)
 	return masked;
 }
 
-// Collects the top-level "name = ...;" definitions of 'code'. The RHS may
-// span several lines ('with { }' blocks included) and ends at the first ';'
-// outside of any bracket. Assumes at most one definition per line.
+// Collects the top-level "name = ...;" definitions of 'code'. Function-style
+// definitions ("name(a, b) = ...;") are collected with their parameter names,
+// and their entire 'with { }' block belongs to their RHS (so with-block
+// locals are NOT collected as separate definitions - they are not top-level
+// and compiling them standalone can only produce bogus 'undefined' findings).
+// The RHS may span several lines and ends at the first ';' outside of any
+// bracket. Assumes at most one definition per line.
 QList<Faust2LintDef> faust2_lint_collect_defs(const QString &code)
 {
 	QList<Faust2LintDef> defs;
 	const QStringList lines = code.split('\n');
-	const QRegularExpression def_re(QStringLiteral("^\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\s*=(.*)$"));
+	const QRegularExpression def_re(QStringLiteral("^\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\s*(\\(\\s*([^)]*)\\s*\\))?\\s*=(.*)$"));
 
 	bool in_block_comment = false;
 	bool collecting = false;
 	QString def_name;
 	QString def_rhs;
+	QStringList def_args;
 	int def_line = 0;
 	int depth = 0; // delimiters inside the statement being collected
 
@@ -2158,7 +2195,14 @@ QList<Faust2LintDef> faust2_lint_collect_defs(const QString &code)
 			    && masked.at(m.capturedStart(1)) != ' ')
 			{
 				def_name = m.captured(1);
-				def_rhs = m.captured(2);
+				def_rhs = m.captured(4);
+				def_args.clear();
+				for (const QString &arg : m.captured(3).split(",", Qt::SkipEmptyParts))
+				{
+					const QString trimmed = arg.trimmed();
+					if (!trimmed.isEmpty())
+					  def_args.append(trimmed);
+				}
 				def_line = i + 1;
 				depth = 0;
 				collecting = true;
@@ -2201,10 +2245,12 @@ QList<Faust2LintDef> faust2_lint_collect_defs(const QString &code)
 				d.name = def_name;
 				d.rhs = def_rhs.trimmed();
 				d.line = def_line;
+				d.args = def_args;
 				defs.append(d);
 
 				def_name.clear();
 				def_rhs.clear();
+				def_args.clear();
 				collecting = false;
 				depth = 0;
 			}
@@ -2214,9 +2260,15 @@ QList<Faust2LintDef> faust2_lint_collect_defs(const QString &code)
 	return defs;
 }
 
-// Replaces the content of every string literal with "x", so the name
-// substitution below can never match (and thereby corrupt) text inside
-// strings. String contents are irrelevant for the arity check.
+// Replaces the content of every string literal with an empty string, so the
+// name substitution below can never match (and thereby corrupt) text inside
+// strings. String contents are irrelevant for the arity check. The
+// placeholder must NOT be an identifier: an earlier version replaced string
+// contents with "x", and when the program defined 'x = _,' (the effect
+// input binding), the \bx\b substitution matched INSIDE the sanitized
+// string literals and injected 'hslider("_l0", ...)' into them, which made
+// every innocent slider def fail its isolated compile with
+// 'syntax error, unexpected IDENT, expecting PAR'.
 QString faust2_lint_sanitize_strings(const QString &rhs)
 {
 	QString out;
@@ -2240,7 +2292,7 @@ QString faust2_lint_sanitize_strings(const QString &rhs)
 			i++;
 		}
 
-		out.append("\"x\"");
+		out.append("\"\"");
 	}
 
 	return out;
@@ -2391,11 +2443,18 @@ bool faust2_lint_is_soundfile_decl(const QString &rhs)
 // soundfile placeholder with the same channel count instead: so.sound()
 // and friends require an actual soundfile signal, and the channel count
 // matters for arity (a stereo file produces 2 outputs, a mono hslider
-// only 1).
+// only 1). Names in 'def_channels' are multi-channel definitions (input
+// bindings like 'x = _,_' and heuristic-stereo names like
+// 'dry = x : par(i, 2, ...)') and are replaced by a TUPLE of sliders with
+// the same number of channels - replacing a 2-channel name with a mono
+// hslider made every par(i, 2, ...)/interleave consumer fail its isolated
+// compile with a bogus arity error.
 QString faust2_lint_substitute(const QString &rhs,
                                const QString &self_name,
                                const QSet<QString> &all_names,
-                               const QHash<QString, int> &soundfile_channels)
+                               const QHash<QString, int> &soundfile_channels,
+                               const QHash<QString, int> &arg_counts,
+                               const QHash<QString, int> &def_channels)
 {
 	QString out = faust2_lint_sanitize_strings(rhs);
 	int placeholder = 0;
@@ -2405,12 +2464,34 @@ QString faust2_lint_substitute(const QString &rhs,
 		if (name == self_name)
 		  continue; // recursive references are left as-is
 
-		// Word-bounded, not followed by '.', so module-qualified names like
-		// 'ma.SR' and partial identifiers like 'freq' inside 'vib_freq' are
-		// never touched.
-		const QRegularExpression re(QStringLiteral("\\b%1\\b(?!\\.)").arg(name));
+		const int nargs = arg_counts.value(name, 0);
 
-		if (soundfile_channels.contains(name))
+		// Word-bounded and not adjacent to '.', so module-qualified names
+		// like 'ma.SR' or 'si.smooth' and partial identifiers like 'freq'
+		// inside 'vib_freq' are never touched. The leading-dot guard
+		// matters as much as the trailing one: a definition named
+		// 'smooth' must NOT replace the 'smooth' inside 'si.smooth'
+		// (observed: it produced 'si.hslider(...)' and bogus 'does not
+		// compile' findings for every slider def).
+		const QRegularExpression re(QStringLiteral("(?<!\\.)\\b%1\\b(?!\\.)").arg(name));
+
+		if (nargs > 0)
+		{
+			// 'name' is a FUNCTION ('name(a, b) = ...'). A call
+			// 'name(expr)' is equivalent to 'expr : name', so with 'name'
+			// replaced by an identity box it is equivalent to 'expr' -
+			// arity-safe whatever the call looks like. A bare point-free
+			// reference gets an identity lambda with one parameter per
+			// formal argument.
+			const QRegularExpression call_re(QStringLiteral("(?<!\\.)\\b%1\\b\\s*\\(([^()]*)\\)").arg(name));
+			out.replace(call_re, QStringLiteral("\\1"));
+
+			QStringList params;
+			for (int i = 1; i <= nargs; i++)
+			  params.append(QStringLiteral("a%1").arg(i));
+			out.replace(re, QStringLiteral("\\(%1).(%2)").arg(params.join(", ")).arg(params[0]));
+		}
+		else if (soundfile_channels.contains(name))
 		{
 			// A soundfile-derived name is either passed to so.sound()/so.loop()
 			// (which expect the raw soundfile signal with its auxiliary
@@ -2427,6 +2508,16 @@ QString faust2_lint_substitute(const QString &rhs,
 			  // top-level comma, which would leak into an enclosing tuple.
 			  out.replace(re, QString("((0, 0) : soundfile(\"_lint[url:{'_lint.wav'}]\", %1) : si.block(2), si.bus(%1))").arg(soundfile_channels.value(name)));
 		}
+		else if (def_channels.contains(name))
+		{
+			const int channels = def_channels.value(name);
+			QStringList sliders;
+			for (int i = 0; i < channels; i++)
+			  sliders.append(QStringLiteral("hslider(\"_l%1\", 0, 0, 1, 0.01)").arg(placeholder++));
+			out.replace(re, channels == 1
+			            ? sliders[0]
+			            : QStringLiteral("(") + sliders.join(", ") + QStringLiteral(")"));
+		}
 		else
 		  out.replace(re, QString("hslider(\"_l%1\", 0, 0, 1, 0.01)").arg(placeholder++));
 	}
@@ -2434,6 +2525,48 @@ QString faust2_lint_substitute(const QString &rhs,
 	return out;
 }
 
+}
+
+// Returns true when 'name' is referenced inside a '<: ... :>' fan-out
+// (the canonical filter-bank idiom: '_ <: band1, band2, ... :> _') or as
+// the body of an iteration construct ('par(i, 2, name)'). Both are CORRECT
+// usages of a value def that has an unbound audio input, so the
+// 'plain value' and 'referenced bare' findings must not fire for them
+// (observed: an autotune effect whose band1..band8 filters were fanned out
+// exactly like the EQ idiom in the system prompt - the lint flagged all
+// eight as bugs and the model, told that its correct code was broken,
+// refused to fix the real error).
+static bool faust2_lint_is_fan_or_iter_body(const QList<Faust2LintDef> &defs,
+                                            const QString &name)
+{
+	for (const Faust2LintDef &user : defs)
+	{
+		if (user.name == name)
+		  continue;
+		const QString sanitized = faust2_lint_sanitize_strings(user.rhs);
+
+		// Name inside a '<: ... :>' region of this definition.
+		{
+			int from = 0;
+			while ((from = sanitized.indexOf(QStringLiteral("<:"), from)) >= 0)
+			{
+				const int end = sanitized.indexOf(QStringLiteral(":>"), from + 2);
+				const QString region = end >= 0
+				  ? sanitized.mid(from + 2, end - from - 2)
+				  : sanitized.mid(from + 2);
+				if (QRegularExpression(QStringLiteral("\\b%1\\b").arg(name)).match(region).hasMatch())
+				  return true;
+				if (end < 0)
+				  break;
+				from = end + 2;
+			}
+		}
+
+		// Name as the body of an iteration construct: 'par(i, 2, name)'.
+		if (QRegularExpression(QStringLiteral("\\b(?:par|sum|prod|seq)\\s*\\([^()]*(?<!\\.)\\b%1\\b[^()]*\\)").arg(name)).match(sanitized).hasMatch())
+		  return true;
+	}
+	return false;
 }
 
 // The LLM auto-fix lint: returns "Line N: ..." findings for the definitions
@@ -2445,8 +2578,6 @@ QString faust2_lint_substitute(const QString &rhs,
 // interpreter-backend compile, ~10-50 ms.
 QStringList FAUST2_lint_faust_code(const SoundPlugin *plugin, const QString &code)
 {
-	(void)plugin;
-
 	const QList<Faust2LintDef> defs = faust2_lint_collect_defs(code);
 	if (defs.isEmpty())
 	  return QStringList();
@@ -2454,6 +2585,70 @@ QStringList FAUST2_lint_faust_code(const SoundPlugin *plugin, const QString &cod
 	QSet<QString> all_names;
 	for (const Faust2LintDef &def : defs)
 	  all_names.insert(def.name);
+
+	// Number of formal parameters per function-style definition
+	// ('name(a, b) = ...'); absent = constant definition. The substitution
+	// replaces references to function definitions with identity lambdas of
+	// matching arity (a bare reference to a 2-parameter function takes 2
+	// inputs).
+	QHash<QString, int> arg_counts;
+	for (const Faust2LintDef &def : defs)
+		if (!def.args.isEmpty())
+		  arg_counts.insert(def.name, def.args.size());
+
+	// Channel count of input bindings ('x = _;' = 1, 'x = _,_;' = 2):
+	// the substitution replaces them with a matching-arity tuple of
+	// sliders, because replacing a 2-channel binding with a mono hslider
+	// makes every par(i, 2, ...) consumer fail its isolated compile with a
+	// bogus 'outputs [1] vs inputs [2]' error.
+	QHash<QString, int> binding_channels;
+	{
+		const QRegularExpression binding_re(QStringLiteral("^\\s*_\\s*(,\\s*_\\s*)*$"));
+		for (const Faust2LintDef &def : defs)
+		{
+			const QRegularExpressionMatch m = binding_re.match(faust2_lint_sanitize_strings(def.rhs).trimmed());
+			if (m.hasMatch())
+			{
+				int count = 0;
+				for (const QChar &ch : m.captured(0))
+					if (ch == QChar('_'))
+					  count++;
+				binding_channels.insert(def.name, count);
+			}
+		}
+	}
+
+	// Names that (transitively) compute a signal from the program input:
+	// the input bindings themselves, every def with a bare '_' in its RHS
+	// (a chain fed directly by the input), and everything referencing one
+	// of those. Used to detect delay parameters derived from the input
+	// signal (see below).
+	QSet<QString> input_derived;
+	{
+		const QRegularExpression bare_re(QStringLiteral("(?<![a-zA-Z0-9_])_(?![a-zA-Z0-9_])"));
+		for (const Faust2LintDef &def : defs)
+			if (bare_re.match(faust2_lint_sanitize_strings(def.rhs)).hasMatch())
+			  input_derived.insert(def.name);
+		for (bool changed = true; changed; )
+		{
+			changed = false;
+			for (const Faust2LintDef &def : defs)
+			{
+				if (input_derived.contains(def.name))
+				  continue;
+				const QString sanitized = faust2_lint_sanitize_strings(def.rhs);
+				for (auto it = input_derived.constBegin(); it != input_derived.constEnd(); ++it)
+				{
+					if (QRegularExpression(QStringLiteral("(?<!\\.)\\b%1\\b(?!\\.)").arg(*it)).match(sanitized).hasMatch())
+					{
+						input_derived.insert(def.name);
+						changed = true;
+						break;
+					}
+				}
+			}
+		}
+	}
 
 	// Soundfile definitions and the definitions derived from them (e.g.
 	// 'dry = so.sound(mysf, 0).play_interp(...)') produce N-channel signals.
@@ -2477,7 +2672,7 @@ QStringList FAUST2_lint_faust_code(const SoundPlugin *plugin, const QString &cod
 			const QString sanitized = faust2_lint_sanitize_strings(def.rhs);
 			for (auto it = soundfile_channels.constBegin(); it != soundfile_channels.constEnd(); ++it)
 			{
-				const QRegularExpression re(QStringLiteral("\\b%1\\b(?!\\.)").arg(it.key()));
+				const QRegularExpression re(QStringLiteral("(?<!\\.)\\b%1\\b(?!\\.)").arg(it.key()));
 				if (re.match(sanitized).hasMatch())
 				{
 					soundfile_channels.insert(def.name, it.value());
@@ -2494,6 +2689,51 @@ QStringList FAUST2_lint_faust_code(const SoundPlugin *plugin, const QString &cod
 	args.push_back(radium_path + "/packages/faust/libraries");
 
 	QStringList findings;
+
+	// The per-definition compile check below creates an interpreter factory
+	// per line, and libfaust serializes ALL factory creation through one
+	// global lock. This function runs on the GUI thread, so it must never
+	// wait on that lock: a pathological program can hold it essentially
+	// forever (observed: an autotune effect with an.pitchTracker(2048, 512)
+	// sent the interpreter evaluator into an unbounded tree expansion, and
+	// the GUI froze on the lock while the compile churned). Skip the
+	// compile-based part when this plugin is compiling, when ANY plugin is
+	// compiling (the lock is global), or when the program itself uses an.*
+	// analysis functions (compiling even a single such definition in
+	// isolation can take minutes or hang the same way).
+	bool compile_check_safe = true;
+	const FaustDev2Data *devdata = (const FaustDev2Data*)plugin->data;
+	if (devdata->is_compiling)
+	{
+		compile_check_safe = false;
+	}
+	else
+	{
+		for (const QPointer<Dev2CompileThread> &thread : g_compile_threads)
+			if (thread != NULL && thread->isRunning())
+			{
+				compile_check_safe = false;
+				break;
+			}
+	}
+
+	// Mask comments and strings before the analyzer test: a COMMENT like
+	// "no an.* functions used" must not trigger the guard (observed: the
+	// model wrote exactly that comment, the guard matched the comment
+	// text, reported a bogus 'uses an.*' finding, and skipped the
+	// compile-based lint that would have localized the real error).
+	QString masked_code;
+	{
+		bool in_block_comment = false;
+		for (const QString &line : code.split('\n'))
+		  masked_code += faust2_lint_mask_line(line, in_block_comment) + "\n";
+	}
+
+	if (compile_check_safe && masked_code.contains(QRegularExpression(QStringLiteral("\\ban\\."))))
+	{
+		compile_check_safe = false;
+		findings.append("The program uses an.* analysis functions (an.pitchTracker, an.fft, an.rfft, an.rtocv, ...) which build enormous signal graphs and can make the Faust compiler run for minutes or hang. The per-line compile check is skipped for this program.");
+	}
 
 	// Mono effects applied directly to stereo (soundfile-derived) signals:
 	// e.g. 'delay = dry : ef.echo(2.0, 0.25, 0.5)' or
@@ -2546,6 +2786,9 @@ QStringList FAUST2_lint_faust_code(const SoundPlugin *plugin, const QString &cod
 	// name the pattern and give the recipe. Also covers tuples whose
 	// members are all mono with fewer than 4 members (2 channels into the
 	// 4-input interleave), and mono signals applied to stereo effects.
+	// (Declared outside the block: the substitution below also uses it to
+	// give stereo names 2-channel slider placeholders.)
+	QSet<QString> stereo_names;
 	{
 		// Which names are stereo: soundfile-derived 2-channel signals (the
 		// propagation above), outputs of known stereo effects, the results
@@ -2557,7 +2800,6 @@ QStringList FAUST2_lint_faust_code(const SoundPlugin *plugin, const QString &cod
 		// coefficient) hides behind 'out' and only the generic per-def
 		// compile finding is reported, which cost two extra fix rounds
 		// (observed).
-		QSet<QString> stereo_names;
 		for (auto it = soundfile_channels.constBegin(); it != soundfile_channels.constEnd(); ++it)
 		  if (it.value() == 2)
 		    stereo_names.insert(it.key());
@@ -3171,7 +3413,7 @@ QStringList FAUST2_lint_faust_code(const SoundPlugin *plugin, const QString &cod
 		for (const Faust2LintDef &def : defs)
 		{
 			const QString sanitized = faust2_lint_sanitize_strings(def.rhs);
-			QRegularExpressionMatchIterator it = QRegularExpression(QStringLiteral("\\b(de\\.(?:delay|sdelay|ffdelay|fbdelay)|pf\\.flanger_(?:mono|stereo))\\s*\\(([^()]*)\\)")).globalMatch(sanitized);
+			QRegularExpressionMatchIterator it = QRegularExpression(QStringLiteral("\\b(de\\.(?:delay|sdelay|fdelay|ffdelay|fbdelay)|pf\\.flanger_(?:mono|stereo)|ef\\.echo[a-zA-Z0-9_]*)\\s*\\(([^()]*)\\)")).globalMatch(sanitized);
 			while (it.hasNext())
 			{
 				const QRegularExpressionMatch m = it.next();
@@ -3184,7 +3426,7 @@ QStringList FAUST2_lint_faust_code(const SoundPlugin *plugin, const QString &cod
 					if (constant_names.contains(other.name))
 					  continue;
 					if (QRegularExpression(QStringLiteral("\\b%1\\b(?!\\.)").arg(other.name)).match(max_arg).hasMatch())
-					  findings.append(QString("Line %1: the max-length argument of %2 ('%3') is derived from a slider - the compiler cannot prove the delay time stays within it, which gives the 'invalid delay parameter range' error. Use a generous CONSTANT max length instead: e.g. %2(1.0 * ma.SR, %3).").arg(def.line).arg(m.captured(1)).arg(max_arg));
+					  findings.append(QString("Line %1: the max-length argument of %2 ('%3') is derived from a slider or a signal - the compiler cannot prove the delay time stays within it, which gives the 'invalid delay parameter range' error. Use a generous CONSTANT max length instead: e.g. %2(1.0 * ma.SR, %3).").arg(def.line).arg(m.captured(1)).arg(max_arg));
 				}
 			}
 		}
@@ -3239,8 +3481,216 @@ QStringList FAUST2_lint_faust_code(const SoundPlugin *plugin, const QString &cod
 		}
 	}
 
+	// Passing a bare input binding as the FX argument of a dry/wet mixer:
+	// the second argument of ef.dryWetMixer (and friends) must be an
+	// EFFECT (a function applied to a signal). 'ef.dryWetMixer(mix, _,_)'
+	// passes a 2-input identity instead, which makes the mixer's internal
+	// split see 2 outputs where 3 inputs are expected - the line-less
+	// 'split composition A<:B' error. The compiler names no line for it,
+	// so name it here.
+	{
+		const QRegularExpression dwm_re(QStringLiteral("\\b(ef\\.(?:dryWetMixer|dryWetMixerConstantPower|dwmEnv))\\s*\\(\\s*([^,()]*)\\s*,\\s*([^()]*)\\)"));
+		const QRegularExpression bare_re(QStringLiteral("(?<![a-zA-Z0-9_])_(?![a-zA-Z0-9_])"));
+		for (const Faust2LintDef &def : defs)
+		{
+			const QString sanitized = faust2_lint_sanitize_strings(def.rhs);
+			QRegularExpressionMatchIterator it = dwm_re.globalMatch(sanitized);
+			while (it.hasNext())
+			{
+				const QRegularExpressionMatch m = it.next();
+				const QString fx_arg = m.captured(3).trimmed();
+				if (bare_re.match(fx_arg).hasMatch())
+				  findings.append(QString("Line %1: the second argument of %2 is a bare input ('%3'), but it must be an EFFECT - a function applied to a signal. Passing '_' or '_,_' makes the mixer's internal split see the wrong number of channels (the 'split composition A<:B' error). Use %2(mix, effect), or drop the second argument entirely: 'sig : %2(mix)' already passes the input through as the dry signal.").arg(def.line).arg(m.captured(1)).arg(fx_arg));
+			}
+		}
+	}
+
+	// '... + _,_ : ...': the comma binds tighter than '+', so this parses
+	// as '((... + _), _) : ...' - a 2-channel signal followed by a 2-input
+	// binding after '+' becomes a 3-tuple, giving the line-less
+	// 'sequential composition A:B - outputs [3] of A vs inputs [2] of B'
+	// error. The compiler names no line, so name it here.
+	{
+		const QRegularExpression plus_binding_re(QStringLiteral("\\+\\s*_,\\s*_"));
+		for (const Faust2LintDef &def : defs)
+		{
+			const QString sanitized = faust2_lint_sanitize_strings(def.rhs);
+			if (plus_binding_re.match(sanitized).hasMatch())
+			  findings.append(QString("Line %1: '%2' writes '+ _,_' - the comma binds tighter than '+', so this parses as '((... + _), _)' with 3 output channels (the 'outputs [3] vs inputs [2]' error). Never add a stereo input binding after '+': mix stereo signals with '(a, b) : ro.interleave(2, 2) : par(i, 2, +)', or crossfade with 'sig : ef.dryWetMixer(mix, effect)'.").arg(def.line).arg(def.name));
+		}
+	}
+
+	// A delay PARAMETER derived from the input signal: when the delay time
+	// of de.* / ef.echo depends (transitively) on a signal computed from
+	// the program input, the faust compiler inlines the input's channels
+	// into the delay-time scalar expression and the arity explodes into a
+	// line-less 'sequential composition x:B - outputs [2] of x vs inputs
+	// [N] of B' error with a huge N (observed: [34], [65], [130] - the
+	// size of the inlined analysis graph). The compiler names no line, so
+	// name the delay parameter here. The SIGNAL argument of the delay is
+	// of course allowed to be input-derived - only the delay PARAMETERS
+	// (n/d/maxDuration/duration) are checked.
+	{
+		// Splits 'a, b, c(...)' on top-level commas (parens respected).
+		const auto split_args = [](const QString &text) -> QStringList
+		{
+			QStringList result;
+			int depth = 0;
+			QString current;
+			for (const QChar &ch : text)
+			{
+				if (ch == QChar('('))
+				  depth++;
+				else if (ch == QChar(')'))
+				  depth--;
+				if (ch == QChar(',') && depth == 0)
+				{
+					result.append(current.trimmed());
+					current.clear();
+				}
+				else
+					current.append(ch);
+			}
+			if (!current.trimmed().isEmpty())
+			  result.append(current.trimmed());
+			return result;
+		};
+
+		// Finds every 'de.<name>(' / 'ef.echo<...>(' call in 'text' and
+		// appends the full call (balanced parens) to 'calls'.
+		const auto collect_delay_calls = [](const QString &text, QStringList &calls)
+		{
+			const QRegularExpression call_re(QStringLiteral("\\b(de\\.[a-zA-Z_][a-zA-Z0-9_]*|ef\\.echo[a-zA-Z0-9_]*)\\s*\\("));
+			int from = 0;
+			QRegularExpressionMatch m;
+			while ((m = call_re.match(text, from)).hasMatch())
+			{
+				int depth = 0;
+				int i = m.capturedEnd();
+				for (; i < text.size(); i++)
+				{
+					const QChar ch = text.at(i);
+					if (ch == QChar('('))
+					  depth++;
+					else if (ch == QChar(')'))
+					{
+						if (depth == 0)
+						{
+							i++;
+							break;
+						}
+						depth--;
+					}
+				}
+				calls.append(text.mid(m.capturedStart(), i - m.capturedStart()));
+				from = i;
+			}
+		};
+
+		for (const Faust2LintDef &def : defs)
+		{
+			const QString sanitized = faust2_lint_sanitize_strings(def.rhs);
+			QStringList calls;
+			collect_delay_calls(sanitized, calls);
+			for (const QString &call : calls)
+			{
+				const int open = call.indexOf(QChar('('));
+				const QString callee = call.left(open).trimmed();
+				const QString args_text = call.mid(open + 1, call.size() - open - 2);
+				const QStringList args_list = split_args(args_text);
+
+				// Which arguments are delay parameters (not the signal).
+				QList<int> delay_param_indexes;
+				if (callee.contains(QStringLiteral("sdelay")))
+				  delay_param_indexes.append(args_list.size() - 1); // (n, it, d) - d is the audio-rate delay
+				else if (callee.startsWith(QStringLiteral("ef.")))
+				  delay_param_indexes << 0 << 1; // echo(maxDuration, duration, feedback)
+				else
+				  delay_param_indexes.append(qMin(1, args_list.size() - 1)); // delay/fdelay/... (n, d, x) - d is the delay
+
+				for (const int idx : delay_param_indexes)
+				{
+					if (idx < 0 || idx >= args_list.size())
+					  continue;
+					const QString &arg = args_list.at(idx);
+					for (auto it = input_derived.constBegin(); it != input_derived.constEnd(); ++it)
+					{
+						if (QRegularExpression(QStringLiteral("(?<!\\.)\\b%1\\b(?!\\.)").arg(*it)).match(arg).hasMatch())
+						{
+							findings.append(QString("Line %1: the delay parameter '%2' of %3 is derived from the program input ('%4' is computed from the input signal) - the faust compiler inlines the input's channels into the delay-time expression and reports a meaningless 'outputs [2] vs inputs [N]' arity error. Derive delay parameters from sliders/constants/LFOs only, never from a signal computed from the program input.")
+							                .arg(def.line).arg(arg).arg(callee).arg(*it));
+							goto next_def; // one finding per definition
+						}
+					}
+				}
+			}
+			next_def:;
+		}
+	}
+
+	// Output channel counts for the substitution placeholders: bindings by
+	// their exact count ('x = _,_' = 2), heuristic-stereo names by 2, and
+	// everything else 1 (the substitution default). Without this, names
+	// like 'dry = x : par(i, 2, *(1 - mix))' (2 channels) were replaced by
+	// a MONO hslider, making every tuple/interleave consumer fail its
+	// isolated compile with a bogus arity error.
+	QHash<QString, int> def_channels = binding_channels;
+	for (auto it = stereo_names.constBegin(); it != stereo_names.constEnd(); ++it)
+		if (!def_channels.contains(*it))
+		  def_channels.insert(*it, 2);
+
+	// A filter bank built with par(i, N, ...) for a LARGE N (observed:
+	// par(i, 37, env(i)) in an autotune effect): wide banks quickly hit
+	// faust's arity limits, produce line-less 'outputs [37] vs inputs
+	// [38]'-style errors, and invite channel-indexing bugs (see the next
+	// check). Give the recipe: a handful of bands with the fan idiom.
+	{
+		const QRegularExpression wide_par_re(QStringLiteral("\\bpar\\s*\\(\\s*[a-zA-Z_]\\s*,\\s*(\\d+)\\s*,"));
+		for (const Faust2LintDef &def : defs)
+		{
+			const QString sanitized = faust2_lint_sanitize_strings(def.rhs);
+			QRegularExpressionMatchIterator it = wide_par_re.globalMatch(sanitized);
+			while (it.hasNext())
+			{
+				const QRegularExpressionMatch m = it.next();
+				const int n = m.captured(1).toInt();
+				if (n > 8)
+				{
+					findings.append(QString("Line %1: '%2' builds a filter bank with par(i, %3, ...) - a bank this wide is very hard to get right in faust (it gives line-less arity errors like 'outputs [%3] vs inputs [%4]', and multi-channel signals cannot be indexed per channel). Use a handful of bands (2-4) with the fan idiom: process = _ <: band1, band2, ... :> _ - and sum their results with a chain of pairwise '+' (mix1 = (a, b) : ro.interleave(2, 2) : par(i, 2, +); mix2 = (mix1, c) : ...).").arg(def.line).arg(def.name).arg(n).arg(n + 1));
+					break;
+				}
+			}
+		}
+	}
+
+	// Indexing a multi-channel signal like an array: 'normw(i)' where
+	// 'normw' is a multi-channel VALUE (not a function) is not valid faust
+	// - signals cannot be indexed per channel. (A function def CAN be
+	// called normally, so only value defs are flagged.)
+	{
+		for (const Faust2LintDef &def : defs)
+		{
+			if (arg_counts.contains(def.name) || def_channels.value(def.name, 1) <= 1)
+			  continue;
+			for (const Faust2LintDef &user : defs)
+			{
+				if (user.name == def.name)
+				  continue;
+				const QString sanitized = faust2_lint_sanitize_strings(user.rhs);
+				if (QRegularExpression(QStringLiteral("(?<!\\.)\\b%1\\b\\s*\\(").arg(def.name)).match(sanitized).hasMatch())
+				{
+					findings.append(QString("Line %1: '%2' is a multi-channel signal, but it is called like a function ('%2(...)') - faust signals cannot be indexed per channel. Apply the whole signal with ':' or restructure with par(i, N, ...) instead.").arg(user.line).arg(def.name));
+					break;
+				}
+			}
+		}
+	}
+
 	for (const Faust2LintDef &def : defs)
 	{
+		if (!compile_check_safe)
+		  break; // guarded at the top of this function: never wait on libfaust's global factory lock here (this runs on the GUI thread)
+
 		// A soundfile declaration cannot be checked standalone: a bare
 		// 'process = soundfile(...)' is not a valid program (the compiler
 		// rejects the unbound part number), so it would always be flagged
@@ -3248,11 +3698,19 @@ QStringList FAUST2_lint_faust_code(const SoundPlugin *plugin, const QString &cod
 		if (faust2_lint_is_soundfile_decl(def.rhs))
 		  continue;
 
-		const QString substituted = faust2_lint_substitute(def.rhs, def.name, all_names, soundfile_channels);
+		const QString substituted = faust2_lint_substitute(def.rhs, def.name, all_names, soundfile_channels, arg_counts, def_channels);
+
+		// A function definition ('name(a, b) = ...') must have its formal
+		// parameters bound in the synthetic program, otherwise every use of
+		// a parameter gives a bogus 'undefined symbol' finding.
+		const QString lambda_open = def.args.isEmpty()
+		  ? QString()
+		  : QStringLiteral("\\(") + def.args.join(", ") + QStringLiteral(").(");
+		const QString lambda_close = def.args.isEmpty() ? QString() : QStringLiteral(")");
 
 		const QString synthetic =
 		  "import(\"stdfaust.lib\");\n"
-		  "process = " + substituted + ";\n";
+		  "process = " + lambda_open + substituted + lambda_close + ";\n";
 
 		std::string error_msg;
 		interpreter_dsp_factory *factory =
@@ -3269,13 +3727,34 @@ QStringList FAUST2_lint_faust_code(const SoundPlugin *plugin, const QString &cod
 			findings.append(QString("Line %1: the definition '%2' does not compile on its own, so it is part of the compile error.")
 			                .arg(def.line).arg(def.name));
 
+			// Sequential composition of a signal with a constant: e.g.
+			// 'zeroCrossRate(x) = x : signChange : ma.SR / max(1, count)'
+			// fails with 'outputs [1] ... inputs [0]' and names no line
+			// (the error only says 'inlined expression omitted'). Attach
+			// the recipe to this definition, which is where the fix goes.
+			const QString error_qstr = QString::fromUtf8(error_msg.c_str());
+			if (error_qstr.contains(QStringLiteral("inputs [0]")))
+			  findings.append(QString("Line %1: the definition '%2' composes a signal with a constant via ':' (the compiler says the last expression has no input). Multiply instead: e.g. write 'x : signChange * (ma.SR / max(1, count))', not 'x : signChange : ma.SR / max(1, count)'.").arg(def.line).arg(def.name));
+
+			// Arity explosion: 'outputs [N] ... inputs [M]' with an
+			// implausibly large M is the signature of a delay parameter
+			// derived from the input signal (the compiler inlines the
+			// input's channels into the delay-time scalar expression).
+			{
+				const QRegularExpression huge_re(QStringLiteral("inputs \\[(\\d+)\\]"));
+				const QRegularExpressionMatch huge_m = huge_re.match(error_qstr);
+				if (huge_m.hasMatch()
+				    && huge_m.captured(1).toInt() >= 4
+				    && error_qstr.contains(QStringLiteral("outputs [")))
+				  findings.append(QString("Line %1: the definition '%2' fails with 'outputs [N] vs inputs [%3]' - this huge-arity shape usually means a delay parameter is derived from the program input (the compiler inlines the input's channels into the delay-time expression). Derive delay parameters from sliders/constants/LFOs only, never from a signal computed from the program input.").arg(def.line).arg(def.name).arg(huge_m.captured(1)));
+			}
+
 			// An 'undefined symbol' failure is the one case where the
 			// compiler names the exact symbol (and this isolated compile
 			// proves it belongs to this definition). Report it precisely:
 			// the generic finding above does not say what to fix, and the
 			// model often copies the name from an example (observed with
 			// 'bend').
-			const QString error_qstr = QString::fromUtf8(error_msg.c_str());
 			if (error_qstr.contains(QStringLiteral("undefined symbol")))
 			{
 				const QRegularExpression sym_re(QStringLiteral("undefined symbol\\s*:?\\s*'?([a-zA-Z_][a-zA-Z0-9_]*)"));
@@ -3327,29 +3806,123 @@ QStringList FAUST2_lint_faust_code(const SoundPlugin *plugin, const QString &cod
 
 			if (num_inputs > 0)
 			{
+				// Classify WHY the isolated compile has unbound inputs by
+				// comparing the measured input count with the bare '_'s in
+				// the RHS text:
+				//  - A chain/binding def ('x = _;', 'zcr = _ : abs : ...')
+				//    has exactly its leading '_'s as inputs: intentional.
+				//  - EXTRA bare '_'s deeper in the expression (e.g.
+				//    'ba.if(_, 1, 0)' inside a chain) consume additional
+				//    hidden process inputs: the real bug, report the count.
+				//  - A def with NO bare '_' but unbound inputs is the
+				//    value-def case ('lp = fi.lowpass(2, fc)'): a filter/
+				//    smoother used as a plain value - the classic bug.
+				// For a FUNCTION def ('band(i) = ...') the synthetic binds
+				// the formal parameters in a lambda, which counts them as
+				// signal inputs - subtract them so the reported count is
+				// the REAL unbound input count.
+				const int effective_inputs = num_inputs - def.args.size();
+				const QString sanitized_rhs = faust2_lint_sanitize_strings(def.rhs);
+
+				// Bare '_' tokens: underscores that are not part of an
+				// identifier (identifiers like 'foo_bar' may contain '_').
+				// '_'s inside a '<: ... :>' fan are bound by the split and
+				// are not process inputs, so blank those regions first.
+				QString bare_count_text = sanitized_rhs;
+				{
+					int from = 0;
+					while ((from = bare_count_text.indexOf(QStringLiteral("<:"), from)) >= 0)
+					{
+						const int end = bare_count_text.indexOf(QStringLiteral(":>"), from + 2);
+						if (end < 0)
+						  break;
+						for (int i = from; i < end + 2; i++)
+						  bare_count_text[i] = ' ';
+						from = end + 2;
+					}
+				}
+				int bare_count = 0;
+				{
+					const QRegularExpression bare_re(QStringLiteral("(?<![a-zA-Z0-9_])_(?![a-zA-Z0-9_])"));
+					QRegularExpressionMatchIterator it = bare_re.globalMatch(bare_count_text);
+					while (it.hasNext())
+					{
+						it.next();
+						bare_count++;
+					}
+				}
+
+				// Leading '_' tuple before the first ':' (the chain input
+				// binding): '_ : ...' or '_,_ : ...'.
+				int leading_count = 0;
+				{
+					const QRegularExpression leading_re(QStringLiteral("^\\s*_\\s*(,\\s*_\\s*)*:"));
+					const QRegularExpressionMatch m = leading_re.match(sanitized_rhs);
+					if (m.hasMatch())
+					{
+						for (const QChar &ch : m.captured(0))
+							if (ch == QChar('_'))
+							  leading_count++;
+					}
+				}
+
+				const QString trimmed_rhs = sanitized_rhs.trimmed();
+				const bool pure_binding = trimmed_rhs == QStringLiteral("_") || trimmed_rhs == QStringLiteral("_,_");
+				const bool pure_chain = leading_count > 0 && leading_count == bare_count;
+				if (pure_binding || pure_chain)
+				  continue; // intentional inputs - not a bug
+
+				if (bare_count > leading_count)
+				{
+					// Hidden extra '_'s inside the expression: every one
+					// consumes a process input channel (observed:
+					// 'ba.if(_, 1, 0)' inside a chain).
+					findings.append(QString("Line %1: the definition '%2' has %3 unbound audio input channel(s) but only %4 come from its own input - it contains %5 extra bare '_' inside the expression (e.g. a 'ba.if(_, 1, 0)' call), and every bare '_' consumes a process input channel. Apply the function to the signal with ':' instead.")
+					                .arg(def.line).arg(def.name).arg(effective_inputs).arg(leading_count).arg(bare_count - leading_count));
+					continue;
+				}
+
+				// A value def whose input is fed by a '<: ... :>' fan-out
+				// (or used as a par body) is the filter-bank EQ idiom - its
+				// unbound input is intentional, not a bug.
+				if (faust2_lint_is_fan_or_iter_body(defs, def.name))
+				  continue;
+
+				// Cap the repetitive 'unbound audio input' findings: a
+				// program with N broken filters needs one recipe, not N
+				// copies of it eating the whole findings budget.
+				{
+					int plain_value_count = 0;
+					for (const QString &f : findings)
+						if (f.contains(QStringLiteral("unbound audio input channel(s)")))
+						  plain_value_count++;
+					if (plain_value_count >= 3)
+					  continue;
+				}
+
 				printf("LLM lint: line %d (%s): expression has %d unbound audio input(s)\n",
-				       def.line, def.name.toUtf8().constData(), num_inputs);
+				       def.line, def.name.toUtf8().constData(), effective_inputs);
 				findings.append(QString("Line %1: the definition '%2' has %3 unbound audio input channel(s): a filter/smoother is probably used as a plain value instead of being applied to a signal with ':'.")
-				                .arg(def.line).arg(def.name).arg(num_inputs));
+				                .arg(def.line).arg(def.name).arg(effective_inputs));
 
 				// If another definition references this unbound-input
-				// definition BARE (not applied with ':'), name that line
-				// too and give the recipe: the model writes
-				// 'lp = fi.lowpass(2, fc) : *(...)' and then sums it bare
-				// ('process = _,_ : par(i, 2, lp + bp1 + ...)'), which
-				// reproduces exactly this unbound input.
+				// definition BARE (not applied with ':' and not called
+				// with '('), name that line too and give the recipe: the
+				// model writes 'lp = fi.lowpass(2, fc) : *(...)' and then
+				// sums it bare ('process = _,_ : par(i, 2, lp + bp1 +
+				// ...)'), which reproduces exactly this unbound input.
 				for (const Faust2LintDef &user : defs)
 				{
 					if (user.name == def.name)
 					  continue;
 					const QString sanitized = faust2_lint_sanitize_strings(user.rhs);
-					const QRegularExpression re(QStringLiteral("(?<!:\\s)\\b%1\\b").arg(def.name));
+					const QRegularExpression re(QStringLiteral("(?<!:\\s)\\b%1\\b(?!\\s*\\()").arg(def.name));
 					if (re.match(sanitized).hasMatch())
 					{
-						if (num_inputs == 1)
+						if (effective_inputs == 1)
 						  findings.append(QString("Line %1: '%2' has an audio input but is referenced as a plain value - apply it to the signal with ':': (_ : %2), or, when summing several filters, fan the input to them with the split: _ <: f1, f2, ... :> _.").arg(user.line).arg(def.name));
 						else
-						  findings.append(QString("Line %1: '%2' has %3 unbound audio input channels and is referenced as a plain value - a bare reference consumes %3 of the process's input channels; the total over ALL bare references must equal the process input count.").arg(user.line).arg(def.name).arg(num_inputs));
+						  findings.append(QString("Line %1: '%2' has %3 unbound audio input channels and is referenced as a plain value - a bare reference consumes %3 of the process's input channels; the total over ALL bare references must equal the process input count.").arg(user.line).arg(def.name).arg(effective_inputs));
 						break;
 					}
 				}
@@ -3364,6 +3937,65 @@ QStringList FAUST2_lint_faust_code(const SoundPlugin *plugin, const QString &cod
 }
 
 
+// (name, start_line, end_line) of every top-level definition, 0-based
+// inclusive lines. Same parsing rules as faust2_lint_collect_defs:
+// multi-line RHS, delimiters tracked, strings/comments masked. Shared by
+// the splice flow and the duplicate-definition auto-fix.
+struct Faust2DefSpan { QString name; int start; int end; };
+static QList<Faust2DefSpan> faust2_collect_def_spans(const QString &code)
+{
+	QList<Faust2DefSpan> spans;
+	const QStringList lines = code.split('\n');
+	const QRegularExpression def_re(QStringLiteral("^\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\s*=(.*)$"));
+	bool in_block_comment = false;
+	int depth = 0;
+	int start_line = -1;
+	QString name;
+	for (int i = 0; i < lines.size(); i++)
+	{
+		const QString line_text = lines.at(i);
+		const QString masked = faust2_lint_mask_line(line_text, in_block_comment);
+
+		if (start_line < 0)
+		{
+			const QRegularExpressionMatch m = def_re.match(line_text);
+			if (m.hasMatch()
+			    && m.captured(1) != "declare"
+			    && m.captured(1) != "import"
+			    && m.capturedStart(1) < masked.size()
+			    && masked.at(m.capturedStart(1)) != ' ')
+			{
+				name = m.captured(1);
+				start_line = i;
+				depth = 0;
+			}
+		}
+
+		if (start_line >= 0)
+		{
+			bool terminated = false;
+			for (const QChar &ch : masked)
+			{
+				if (ch == '(' || ch == '{' || ch == '[')
+				  depth++;
+				else if (ch == ')' || ch == '}' || ch == ']')
+				  depth--;
+				else if (ch == ';' && depth <= 0)
+				{
+					terminated = true;
+					break;
+				}
+			}
+			if (terminated)
+			{
+				spans.append({name, start_line, i});
+				start_line = -1;
+			}
+		}
+	}
+	return spans;
+}
+
 // Splices the top-level definitions of 'fragment' into 'current_code': a
 // definition whose name already exists replaces the existing definition,
 // and a new name is inserted before 'process'. Used by the partial-fix
@@ -3375,69 +4007,11 @@ QStringList FAUST2_lint_faust_code(const SoundPlugin *plugin, const QString &cod
 // stdfaust.lib).
 QString FAUST2_splice_faust_definitions(const QString &current_code, const QString &fragment)
 {
-	// (name, start_line, end_line) of every top-level definition, 0-based
-	// inclusive lines. Same parsing rules as faust2_lint_collect_defs:
-	// multi-line RHS, delimiters tracked, strings/comments masked.
-	struct DefSpan { QString name; int start; int end; };
-	const auto collect_spans = [](const QString &code) -> QList<DefSpan>
-	{
-		QList<DefSpan> spans;
-		const QStringList lines = code.split('\n');
-		const QRegularExpression def_re(QStringLiteral("^\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\s*=(.*)$"));
-		bool in_block_comment = false;
-		int depth = 0;
-		int start_line = -1;
-		QString name;
-		for (int i = 0; i < lines.size(); i++)
-		{
-			const QString line_text = lines.at(i);
-			const QString masked = faust2_lint_mask_line(line_text, in_block_comment);
-
-			if (start_line < 0)
-			{
-				const QRegularExpressionMatch m = def_re.match(line_text);
-				if (m.hasMatch()
-				    && m.captured(1) != "declare"
-				    && m.captured(1) != "import"
-				    && m.capturedStart(1) < masked.size()
-				    && masked.at(m.capturedStart(1)) != ' ')
-				{
-					name = m.captured(1);
-					start_line = i;
-					depth = 0;
-				}
-			}
-
-			if (start_line >= 0)
-			{
-				bool terminated = false;
-				for (const QChar &ch : masked)
-				{
-					if (ch == '(' || ch == '{' || ch == '[')
-					  depth++;
-					else if (ch == ')' || ch == '}' || ch == ']')
-					  depth--;
-					else if (ch == ';' && depth <= 0)
-					{
-						terminated = true;
-						break;
-					}
-				}
-				if (terminated)
-				{
-					spans.append({name, start_line, i});
-					start_line = -1;
-				}
-			}
-		}
-		return spans;
-	};
-
-	const QList<DefSpan> current_spans = collect_spans(current_code);
-	const QList<DefSpan> fragment_spans = collect_spans(fragment);
+	const QList<Faust2DefSpan> current_spans = faust2_collect_def_spans(current_code);
+	const QList<Faust2DefSpan> fragment_spans = faust2_collect_def_spans(fragment);
 
 	// A complete program: use it wholesale.
-	for (const DefSpan &span : fragment_spans)
+	for (const Faust2DefSpan &span : fragment_spans)
 	  if (span.name == QStringLiteral("process"))
 	    return fragment;
 
@@ -3457,7 +4031,7 @@ QString FAUST2_splice_faust_definitions(const QString &current_code, const QStri
 	// as a list of new-name texts (for insertion before 'process').
 	QHash<QString, QStringList> replacement_text;
 	QList<QStringList> insert_texts;
-	for (const DefSpan &fspan : fragment_spans)
+	for (const Faust2DefSpan &fspan : fragment_spans)
 	{
 		QStringList text;
 		for (int i = fspan.start; i <= fspan.end; i++)
@@ -3505,6 +4079,283 @@ QString FAUST2_splice_faust_definitions(const QString &current_code, const QStri
 	}
 
 	return result.join('\n');
+}
+
+
+// Local auto-fix for the "multiple definitions of symbol 'name'" error.
+// Faust has NO assignment, so a second definition of the same symbol is
+// usually the model's imperative attempt to UPDATE a value
+// ('x = ...; x = x : f;'). Translate that intent into legal faust:
+//  - When the SECOND definition references the name itself
+//    ('x = x : fi.lowpass(...)'), the FIRST definition gets a fresh name
+//    ('x_raw = ...') and the second one computes from it. The second
+//    keeps the original name, so every other reference sees the final
+//    value - exactly what the imperative reading means.
+//  - Otherwise (identical or different RHS), the LAST definition is the
+//    effective one in an imperative reading: remove the first.
+// Returns false (leaving *fixed_code untouched) when no safe fix exists
+// (no duplicate found, a reserved name like 'process' or a note control,
+// or the definitions are not plain value defs).
+bool FAUST2_try_fix_duplicate_definition(const QString &code,
+                                         const QString &name,
+                                         QString *fixed_code,
+                                         QString *note)
+{
+	if (name.isEmpty() || name == QStringLiteral("process")
+	    || name == QStringLiteral("declare") || name == QStringLiteral("import")
+	    || name == QStringLiteral("freq") || name == QStringLiteral("gain")
+	    || name == QStringLiteral("gate") || name == QStringLiteral("velocity"))
+	  return false;
+
+	const QList<Faust2DefSpan> spans = faust2_collect_def_spans(code);
+
+	QList<Faust2DefSpan> dups;
+	for (const Faust2DefSpan &span : spans)
+	  if (span.name == name)
+	    dups.append(span);
+
+	if (dups.size() < 2)
+	  return false;
+
+	const Faust2DefSpan first = dups[0];
+	const Faust2DefSpan second = dups[1];
+
+	const QStringList lines = code.split('\n');
+
+	// Text of the SECOND definition's RHS (everything after its header's
+	// '=' on the first line, plus the following lines).
+	QStringList second_rhs_lines;
+	{
+		QString second_rhs = lines.at(second.start);
+		const int eq = second_rhs.indexOf(QChar('='));
+		second_rhs_lines.append(eq >= 0 ? second_rhs.mid(eq + 1) : second_rhs);
+		for (int i = second.start + 1; i <= second.end; i++)
+		  second_rhs_lines.append(lines.at(i));
+	}
+
+	const QRegularExpression name_re(QStringLiteral("(?<!\\.)\\b%1\\b(?!\\.)").arg(name));
+	const bool self_referential = name_re.match(faust2_lint_sanitize_strings(second_rhs_lines.join("\n"))).hasMatch();
+
+	// The fresh name for the FIRST definition (self-referential case).
+	QString fresh;
+	if (self_referential)
+	{
+		QSet<QString> taken;
+		for (const Faust2DefSpan &span : spans)
+		  taken.insert(span.name);
+		fresh = name + QStringLiteral("_raw");
+		for (int n = 2; taken.contains(fresh); n++)
+		  fresh = name + QStringLiteral("_raw%1").arg(n);
+	}
+
+	QStringList result;
+	for (int i = 0; i < lines.size(); i++)
+	{
+		if (i >= first.start && i <= first.end && i >= second.start && i <= second.end)
+		{
+			// overlapping spans (same-line dup) - not expected; give up
+			return false;
+		}
+
+		if (i >= first.start && i <= first.end)
+		{
+			if (self_referential)
+			{
+				// Give the FIRST definition a fresh name.
+				QString line = lines.at(i);
+				if (i == first.start)
+				  line.replace(QRegularExpression(QStringLiteral("^(\\s*)%1\\b").arg(QRegularExpression::escape(name))), QStringLiteral("\\1") + fresh);
+				result.append(line);
+			}
+			else
+			{
+				// Remove the first definition (the last one wins).
+			}
+		}
+		else if (i >= second.start && i <= second.end)
+		{
+			if (self_referential)
+			{
+				QString line = lines.at(i);
+				if (i == second.start)
+				{
+					const int eq = line.indexOf(QChar('='));
+					const QString header = eq >= 0 ? line.left(eq + 1) : QString();
+					const QString rhs = eq >= 0 ? line.mid(eq + 1) : QString();
+					line = header + QString(rhs).replace(name_re, fresh);
+				}
+				else
+					line.replace(name_re, fresh);
+				result.append(line);
+			}
+			else
+				result.append(lines.at(i));
+		}
+		else
+			result.append(lines.at(i));
+	}
+
+	*fixed_code = result.join('\n');
+	*note = self_referential
+	  ? QString("Auto-fixed duplicate definition: Faust has no assignment, so '%1 = ...; %1 = %1 : ...' was translated into '%2 = ...; %1 = %2 : ...' (the second definition keeps the name; every other reference sees the final value).").arg(name).arg(name + QStringLiteral("_raw"))
+	  : QString("Auto-fixed duplicate definition: removed the first of the two definitions of '%1' (Faust cannot reassign a symbol; the last definition is the effective one).").arg(name);
+	return true;
+}
+
+
+// Local auto-fix for the 'invalid delay parameter range' error: when a
+// SMOOTHED slider is passed as a delay parameter (freeverb spread, or the
+// max-length argument of de.*/pf.*/ef.echo), the smoothing hides the
+// range from the compiler (interval(0, INT_MAX, 0)). The fix is
+// mechanical: strip the smoothing from the slider definition, exactly
+// like the lint recipe says. Returns false when no such pattern is found
+// or the definition is not a single line.
+bool FAUST2_try_fix_smoothed_delay_param(const QString &code,
+                                         QString *fixed_code,
+                                         QString *note)
+{
+	const QList<Faust2LintDef> defs = faust2_lint_collect_defs(code);
+	if (defs.isEmpty())
+	  return false;
+
+	// Smoothed UI-control definitions: 'name = hslider(...) : si.smooth(...);'
+	QSet<QString> smoothed_names;
+	{
+		const QRegularExpression smooth_re(QStringLiteral(":\\s*si\\.(?:smooth\\s*\\(|smoo\\b)"));
+		for (const Faust2LintDef &def : defs)
+		{
+			const QString sanitized = faust2_lint_sanitize_strings(def.rhs);
+			if (QRegularExpression(QStringLiteral("^\\s*(hslider|vslider|nentry)\\s*\\(")).match(sanitized).hasMatch()
+			    && smooth_re.match(sanitized).hasMatch())
+			  smoothed_names.insert(def.name);
+		}
+	}
+	if (smoothed_names.isEmpty())
+	  return false;
+
+	// Which smoothed name is used as a delay parameter?
+	QString culprit;
+	for (const Faust2LintDef &def : defs)
+	{
+		const QString sanitized = faust2_lint_sanitize_strings(def.rhs);
+
+		// Freeverb spread (4th argument).
+		{
+			const QRegularExpression re(QStringLiteral("\\bre\\.(?:mono_freeverb|stereo_freeverb)\\s*\\(([^()]*)\\)"));
+			QRegularExpressionMatchIterator it = re.globalMatch(sanitized);
+			while (it.hasNext())
+			{
+				const QStringList args = it.next().captured(1).split(",", Qt::SkipEmptyParts);
+				if (args.size() == 4)
+				{
+					const QString spread = args[3].trimmed();
+					if (smoothed_names.contains(spread))
+					{
+						culprit = spread;
+						break;
+					}
+				}
+			}
+		}
+		if (!culprit.isEmpty())
+		  break;
+
+		// Max-length argument of de.*/pf.*/ef.echo.
+		{
+			const QRegularExpression re(QStringLiteral("\\b(de\\.(?:delay|sdelay|fdelay|ffdelay|fbdelay)|pf\\.flanger_(?:mono|stereo)|ef\\.echo[a-zA-Z0-9_]*)\\s*\\(([^()]*)\\)"));
+			QRegularExpressionMatchIterator it = re.globalMatch(sanitized);
+			while (it.hasNext())
+			{
+				const QStringList args = it.next().captured(2).split(",", Qt::SkipEmptyParts);
+				if (!args.isEmpty())
+				{
+					const QString max_arg = args[0].trimmed();
+					if (smoothed_names.contains(max_arg))
+					{
+						culprit = max_arg;
+						break;
+					}
+				}
+			}
+		}
+		if (!culprit.isEmpty())
+		  break;
+	}
+	if (culprit.isEmpty())
+	  return false;
+
+	// Find the single-line definition of the culprit and strip the
+	// smoothing suffix (' : si.smooth(...)' or ' : si.smoo').
+	const QList<Faust2DefSpan> spans = faust2_collect_def_spans(code);
+	const Faust2DefSpan *span = NULL;
+	for (const Faust2DefSpan &s : spans)
+	  if (s.name == culprit)
+	  {
+		span = &s;
+		break;
+	  }
+	if (span == NULL || span->start != span->end)
+	  return false;
+
+	const QStringList lines = code.split('\n');
+	QString line = lines.at(span->start);
+
+	const int smooth_pos = line.lastIndexOf(QStringLiteral("si.smooth"));
+	const int smoo_pos = line.lastIndexOf(QStringLiteral("si.smoo"));
+	int pos = -1;
+	{
+		const int a = smooth_pos >= 0 ? smooth_pos : -1;
+		const int b = smoo_pos >= 0 ? smoo_pos : -1;
+		pos = qMax(a, b);
+	}
+	if (pos < 0)
+	  return false;
+
+	// Backward to the ':' that introduces the smoothing.
+	int colon = pos;
+	while (colon > 0 && line.at(colon) != QChar(':'))
+	  colon--;
+	if (line.at(colon) != QChar(':'))
+	  return false;
+
+	// Forward to the end of the smoothing: the matching ')' of si.smooth(...),
+	// or the end of the 'si.smoo' token when there are no parentheses.
+	int end = pos;
+	if (smooth_pos >= 0 && smooth_pos == pos && line.indexOf(QChar('('), pos) >= 0)
+	{
+		int depth = 0;
+		int i = line.indexOf(QChar('('), pos);
+		for (; i < line.size(); i++)
+		{
+			if (line.at(i) == QChar('('))
+			  depth++;
+			else if (line.at(i) == QChar(')'))
+			{
+				depth--;
+				if (depth == 0)
+				{
+					end = i;
+					break;
+				}
+			}
+		}
+	}
+	else
+	{
+		// si.smoo without parentheses: consume the token.
+		end = pos;
+		while (end < line.size() && (line.at(end).isLetterOrNumber() || line.at(end) == QChar('_')))
+		  end++;
+		end--; // last char of the token
+	}
+
+	line.remove(colon, end - colon + 1);
+
+	QStringList result = lines;
+	result[span->start] = line;
+	*fixed_code = result.join('\n');
+	*note = QString("Auto-fixed: removed smoothing from '%1' - delay parameters must stay unsmoothed (the smoothing hides the range from the compiler and gives the 'invalid delay parameter range' error).").arg(culprit);
+	return true;
 }
 
 
