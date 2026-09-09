@@ -1,0 +1,10 @@
+--- s7.c
++++ s7.c
+@@ -42727,6 +42727,7 @@
+ static bool op_sort2(s7_scheme *sc)
+ {
+   s7_int j = SORT_J, k = SORT_K1;
++  if (j == k) return(true);
+   if (is_true(sc, sc->value))
+     {
+       s7_pointer lx = SORT_DATA(j);
