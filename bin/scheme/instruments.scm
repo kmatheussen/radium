@@ -983,6 +983,54 @@
    ))
 
 
+(define (FROM_C-randomize-effects-popup-menu how-much)
+  (popup-menu
+   (get-keybinding-configuration-popup-menu-entries "FROM_C-randomize-effects"
+                                                    (list how-much)
+                                                    "FOCUS_MIXER")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
+
+(define (FROM_C-randomize-effects how-much)
+  (define instrument-id (<ra> :get-current-instrument-under-mouse))
+  (when (and (<ra> :is-legal-instrument instrument-id)
+             (<ra> :instrument-is-audio instrument-id))
+    (<ra> :randomize-instrument-effects instrument-id how-much)))
+
+
+(define (FROM_C-toggle-instrument-widget-size-type-popup-menu size-type)
+  (popup-menu
+   (get-keybinding-configuration-popup-menu-entries "FROM_C-toggle-instrument-widget-size-type"
+                                                    (list size-type)
+                                                    "FOCUS_MIXER")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
+
+(define (FROM_C-toggle-instrument-widget-size-type size-type)
+  (define instrument-id (<ra> :get-current-instrument-under-mouse))
+  (when (and (<ra> :is-legal-instrument instrument-id)
+             (<ra> :instrument-is-audio instrument-id))
+    (<ra> :toggle-instrument-widget-size-type instrument-id size-type)))
+
+
+(define (FROM_C-reset-instrument-effects-popup-menu)
+  (popup-menu
+   (get-keybinding-configuration-popup-menu-entries "FROM_C-reset-instrument-effects"
+                                                    '()
+                                                    "FOCUS_MIXER")
+   "-------------"
+   "Help keybindings" show-keybinding-help-window
+   ))
+
+(define (FROM_C-reset-instrument-effects)
+  (define instrument-id (<ra> :get-current-instrument-under-mouse))
+  (when (and (<ra> :is-legal-instrument instrument-id)
+             (<ra> :instrument-is-audio instrument-id))
+    (<ra> :reset-instrument-effects instrument-id)))
+
+
 #!!
 (<ra> :get-path-string (<ra> :create-illegal-filepath))
 !!#

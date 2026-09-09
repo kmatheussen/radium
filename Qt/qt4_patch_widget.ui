@@ -374,7 +374,7 @@
           <property name="sizeHint" stdset="0">
            <size>
             <width>0</width>
-            <height>20</height>
+            <height>0</height>
            </size>
           </property>
          </spacer>
@@ -585,7 +585,7 @@
           <property name="sizeHint" stdset="0">
            <size>
             <width>0</width>
-            <height>20</height>
+            <height>0</height>
            </size>
           </property>
          </spacer>
@@ -796,7 +796,7 @@
           <property name="sizeHint" stdset="0">
            <size>
             <width>0</width>
-            <height>20</height>
+            <height>0</height>
            </size>
           </property>
          </spacer>
@@ -1007,15 +1007,15 @@
           <property name="sizeHint" stdset="0">
            <size>
             <width>0</width>
-            <height>20</height>
+            <height>0</height>
            </size>
           </property>
          </spacer>
         </item>
         <item>
-         <widget class="QDoubleSpinBox" name="t4">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
+          <widget class="QDoubleSpinBox" name="t4">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
@@ -1038,9 +1038,9 @@
          </widget>
         </item>
         <item>
-         <widget class="QSpinBox" name="v4">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
+          <widget class="QSpinBox" name="v4">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
@@ -1063,9 +1063,9 @@
          </widget>
         </item>
         <item>
-         <widget class="QDoubleSpinBox" name="s4">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
+          <widget class="QDoubleSpinBox" name="s4">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
@@ -1091,9 +1091,9 @@
          </widget>
         </item>
         <item>
-         <widget class="QDoubleSpinBox" name="l4">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
+          <widget class="QDoubleSpinBox" name="l4">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
@@ -1144,9 +1144,9 @@
          </widget>
         </item>
         <item>
-         <widget class="QSpinBox" name="c4">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
+          <widget class="QSpinBox" name="c4">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
@@ -1224,9 +1224,9 @@
          </spacer>
         </item>
         <item>
-         <widget class="QDoubleSpinBox" name="t5">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
+          <widget class="QDoubleSpinBox" name="t5">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
@@ -1249,9 +1249,9 @@
          </widget>
         </item>
         <item>
-         <widget class="QSpinBox" name="v5">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
+          <widget class="QSpinBox" name="v5">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
@@ -1274,9 +1274,9 @@
          </widget>
         </item>
         <item>
-         <widget class="QDoubleSpinBox" name="s5">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
+          <widget class="QDoubleSpinBox" name="s5">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
@@ -1302,9 +1302,9 @@
          </widget>
         </item>
         <item>
-         <widget class="QDoubleSpinBox" name="l5">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
+          <widget class="QDoubleSpinBox" name="l5">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
@@ -1426,7 +1426,7 @@
           <property name="sizeHint" stdset="0">
            <size>
             <width>0</width>
-            <height>20</height>
+            <height>0</height>
            </size>
           </property>
          </spacer>
@@ -1634,7 +1634,7 @@
           <property name="sizeHint" stdset="0">
            <size>
             <width>0</width>
-            <height>20</height>
+            <height>0</height>
            </size>
           </property>
          </spacer>

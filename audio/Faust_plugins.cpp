@@ -61,6 +61,7 @@ std::list<GUI*>  GUI::fGuiList;
 #include "../common/visual_proc.h"
 #include "../common/patch_proc.h"
 #include "../common/OS_rosetta.h"
+#include "../common/OS_vm.h"
 
 #include "../Qt/Qt_instruments_proc.h"
 #include "../Qt/EditorWidget.h"
@@ -216,7 +217,7 @@ struct Devdata{
 #if defined(WITHOUT_LLVM_IN_FAUST_DEV)
   bool use_interpreter_backend = true;
 #else
-  bool use_interpreter_backend = OS_running_under_rosetta();
+  bool use_interpreter_backend = OS_running_under_rosetta() || OS_running_under_vm();
 #endif
   
   FFF_Reply reply;
@@ -379,7 +380,7 @@ static void *dev_create_plugin_data(const SoundPluginType *plugin_type, SoundPlu
     devdata->options = STRING_get_qstring(STRING_fromBase64(HASH_get_string(state, "options")));
 #if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
     if(HASH_has_key(state, "use_interpreter_backend"))
-      devdata->use_interpreter_backend = HASH_get_bool(state, "use_interpreter_backend") || OS_running_under_rosetta();
+      devdata->use_interpreter_backend = HASH_get_bool(state, "use_interpreter_backend") || OS_running_under_rosetta() || OS_running_under_vm();
 #endif
   } else
     devdata->code = DEFAULT_FAUST_DEV_PROGRAM;
@@ -851,7 +852,7 @@ bool FAUST_set_use_interpreter_backend(struct SoundPlugin *plugin, bool use_inte
   
   Devdata *devdata = (Devdata*)plugin->data;
 
-  if (!use_interpreter && OS_running_under_rosetta())
+  if (!use_interpreter && (OS_running_under_rosetta() || OS_running_under_vm()))
     return false;
 
   if (use_interpreter != devdata->use_interpreter_backend){

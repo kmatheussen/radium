@@ -299,6 +299,12 @@ FROM_C-load-instrument-preset-popup-menu
 FROM_C-replace-instrument-preset-popup-menu
 FROM_C-show-hide-instrument-gui-popup-menu
 FROM_C-select-instrument-a/b-popup-menu
+FROM_C-randomize-effects-popup-menu
+FROM_C-randomize-effects
+FROM_C-toggle-instrument-widget-size-type-popup-menu
+FROM_C-toggle-instrument-widget-size-type
+FROM_C-reset-instrument-effects-popup-menu
+FROM_C-reset-instrument-effects
 FROM_C-show-mixer-config-settings-menu
 FROM_C-pitch_type_button-pressed
 FROM_C-create-cpu-usage-widget

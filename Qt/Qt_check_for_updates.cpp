@@ -86,14 +86,14 @@ static void maybeInformAboutNewVersion(QString newestversion = "3.5.1"){
   fprintf(stderr,"newestversion: -%s-, VERSION: -%s-, last_informed: -%s-\n",newestversion.toUtf8().constData(), RADIUM_VERSION, last_informed_version().toUtf8().constData());
   //abort();
   if (false || (hasNewer(newestversion, RADIUM_VERSION) && last_informed_version()!=newestversion)) {
-    printf("Version %s of Radium is available for download at http://users.notam02.no/~kjetism/radium (%s)\n", newestversion.toUtf8().constData(), RADIUM_VERSION);
+    printf("Version %s of Radium is available for download at https://radium.dog (%s)\n", newestversion.toUtf8().constData(), RADIUM_VERSION);
     //MyQMessageBox *msgBox = new MyQMessageBox;
     MyQMessageBox *msgBox = MyQMessageBox::create(false, g_main_window);
     msgBox->setAttribute(Qt::WA_DeleteOnClose);
 
     msgBox->setIcon(QMessageBox::Information);
     msgBox->setText("You are running Radium V" RADIUM_VERSION ".<p>"
-                   "A newer version (V" + newestversion + ") is available for download at <A href=\"http://users.notam02.no/~kjetism/radium\">http://users.notam02.no/~kjetism/radium</a>");
+                   "A newer version (V" + newestversion + ") is available for download at <A href=\"https://radium.dog\">https://radium.dog</a>");
     msgBox->setStandardButtons(QMessageBox::Ok);
 
     safeShow(msgBox);
@@ -126,8 +126,8 @@ namespace{
       ATOMIC_SET(gakk, JUCE_download("https://users.notam02.no/~kjetism/radium/demos/windows64/?C=M&O=D"));
       ATOMIC_SET(gakk2, JUCE_download("https://users.notam02.no/~kjetism/radium/demos/unstable/"));
 #else
-      ATOMIC_SET(gakk, JUCE_download("http://users.notam02.no/~kjetism/radium/demos/windows64/?C=M&O=D"));
-      ATOMIC_SET(gakk2, JUCE_download("http://users.notam02.no/~kjetism/radium/demos/unstable/"));
+      ATOMIC_SET(gakk, JUCE_download("https://users.notam02.no/~kjetism/radium/demos/windows64/?C=M&O=D"));
+      ATOMIC_SET(gakk2, JUCE_download("https://users.notam02.no/~kjetism/radium/demos/unstable/"));
 #endif
     }
 

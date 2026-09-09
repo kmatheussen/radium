@@ -2225,7 +2225,7 @@ void openAboutWindow(void){
               "S7 version: " S7_VERSION " / " S7_DATE "<br>"
               "Faust version: \"%s\"<br>"
               "<p>"
-              "<A href=\"https://users.notam02.no/~kjetism/radium/documentation.php#acknowledgment\">Credits</A>"
+              "<A href=\"https://radium.dog/documentation.php#acknowledgment\">Credits</A>"
               "<p>"
               "Audio: %dHz / %.02fms<br>"
               "Monitor refresh rate: %s<br>"
@@ -2233,7 +2233,7 @@ void openAboutWindow(void){
               "<p>"
               "Song length: %02d : %02d : %02d"
               "<p>"
-              "Radium needs more demo songs. If you provide one which is suitable, you will get a free lifetime subscription. More information <A href=\"http://users.notam02.no/~kjetism/radium/songs.php\">here</A>."
+              "Radium needs more demo songs. If you provide one which is suitable, you will get a free lifetime subscription. More information <A href=\"https://radium.dog/songs.php\">here</A>."
               ,
               //ATOMIC_GET(GE_vendor_string)==NULL ? "(null)" : ATOMIC_GET(GE_vendor_string),
               //ATOMIC_GET(GE_renderer_string)==NULL ? "(null)" : ATOMIC_GET(GE_renderer_string),

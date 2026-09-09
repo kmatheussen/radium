@@ -165,10 +165,10 @@
           <item>
            <widget class="QCheckBox" name="reset_effects_checkbox">
             <property name="toolTip">
-             <string>Reset effects on compile</string>
+             <string>Set default effect values after compilation</string>
             </property>
             <property name="text">
-             <string>R_FX</string>
+              <string>D_FX</string>
             </property>
            </widget>
           </item>

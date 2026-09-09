@@ -55,6 +55,7 @@ extern QString SAMPLEREQUESTER_get_path(Sample_requester_widget *w);
 #endif
 
 extern LANGSPEC void AUDIOWIDGET_change_height(struct Patch *patch, SizeType type);
+extern LANGSPEC void AUDIOWIDGET_toggle_size_type(struct Patch *patch, SizeType type);
 extern LANGSPEC void AUDIOWIDGET_set_ab(struct Patch *patch, int ab_num);
 extern LANGSPEC void AUDIOWIDGET_redraw_ab(struct Patch *patch);
 #if 0

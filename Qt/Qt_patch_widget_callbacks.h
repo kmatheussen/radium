@@ -200,6 +200,19 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
       get_o(i)->x2_border=0;
       get_o(i)->y1_border=0;
     }
+
+    {
+      QFontMetrics fm(QApplication::font());
+      const int row_height = fm.height() * 3 / 2;
+
+      for(int i=0;i<NUM_PATCH_VOICES;i++){
+        QWidget *widgets[] = {get_o(i), get_t(i), get_v(i), get_s(i), get_l(i), get_p(i), get_c(i)};
+        for(QWidget *widget : widgets){
+          widget->setMinimumHeight(row_height);
+          widget->setMaximumHeight(row_height);
+        }
+      }
+    }
     
     setup_popup_menus_and_stuff();
 

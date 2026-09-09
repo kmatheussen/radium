@@ -16,6 +16,11 @@ namespace radium{
 
     bool svg_is_ready = false;
     bool svg_succeeded;
+
+    // Set by Faust Dev 2 on a successful compile: the compiled dsp's input
+    // channel count (0 when the compile failed). Used by the LLM effect
+    // check to verify the 2-in/2-out convention.
+    int num_inputs = 0;
   };
 }
 

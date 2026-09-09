@@ -1150,6 +1150,54 @@ void resetInstrumentEffect(instrument_t instrument_id, const char *effect_name){
   post_set_effect(patch, plugin, effect_name);
 }
 
+void randomizeInstrumentEffects(instrument_t instrument_id, float how_much){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("randomizeInstrumentEffects: Instrument #%d has been closed", (int)instrument_id.id);
+    return;
+  }
+
+  PLUGIN_random(plugin, how_much);
+
+  GFX_update_instrument_widget(patch);
+}
+
+void toggleInstrumentWidgetSizeType(instrument_t instrument_id, int size_type){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return;
+
+  if (size_type < 1 || size_type > 2){
+    handleError("toggleInstrumentWidgetSizeType: Unknown size type %d. Must be 1 (half) or 2 (full)", size_type);
+    return;
+  }
+
+  if (InstrumentWidget_get_audio_instrument_widget(patch)==NULL)
+    return;
+
+  AUDIOWIDGET_toggle_size_type(patch, (SizeType)size_type);
+}
+
+void resetInstrumentEffects(instrument_t instrument_id){
+  struct Patch *patch = getAudioPatchFromNum(instrument_id);
+  if(patch==NULL)
+    return;
+
+  struct SoundPlugin *plugin = (struct SoundPlugin*)patch->patchdata;
+  if (plugin==NULL){
+    handleError("resetInstrumentEffects: Instrument #%d has been closed", (int)instrument_id.id);
+    return;
+  }
+
+  PLUGIN_reset(plugin);
+
+  GFX_update_instrument_widget(patch);
+}
+
 void deletePdController(instrument_t instrument_id, const char *effect_name){
   struct Patch *patch = getAudioPatchFromNum(instrument_id);
   if(patch==NULL)

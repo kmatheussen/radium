@@ -258,7 +258,7 @@ extern LANGSPEC bool RT_PLUGIN_can_autosuspend(const SoundPlugin *plugin, int64_
 extern LANGSPEC void PLUGIN_reset(SoundPlugin *plugin);
 extern LANGSPEC void PLUGIN_reset_one_effect(SoundPlugin *plugin, int effect_num);
 
-extern LANGSPEC void PLUGIN_random(SoundPlugin *plugin);
+extern LANGSPEC void PLUGIN_random(SoundPlugin *plugin, float how_much);
 
 extern LANGSPEC void PLUGIN_show_info_window(const SoundPluginType *type, SoundPlugin *plugin, int64_t parentgui);
 

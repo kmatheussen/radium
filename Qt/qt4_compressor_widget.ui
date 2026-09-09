@@ -46,7 +46,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>&lt;A href=&quot;http://users.notam02.no/~kjetism/radium/&quot;&gt;Radium&lt;/A&gt;</string>
+        <string>&lt;A href=&quot;https://radium.dog/&quot;&gt;Radium&lt;/A&gt;</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignCenter</set>

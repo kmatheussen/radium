@@ -729,6 +729,10 @@ static struct Patch *create_audio_patch(const char *type_name, const char *plugi
   patch->instrument=get_audio_instrument();
 
   patch->is_visible = is_visible;
+
+  // Faust instruments have large interfaces. Default to half-size mode.
+  if (type_name != NULL && (!strcmp(type_name, "Faust Dev") || !strcmp(type_name, "Faust Dev 2")))
+    patch->widget_height_type = SIZETYPE_HALF;
   
   if (PATCH_make_active_audio(patch, type_name, plugin_name, state, set_as_current, x, y)==false)
     return NULL;

@@ -27,7 +27,7 @@ static void show_nag_window(const char *message){
                "%sThanks for trying this DEMO version of Radium!<br>"
                "<p>"
                "In this version, only two VST plugins can be used at the same time and soundfile export is disabled.<p>"
-               "Go <a href=\"http://users.notam02.no/~kjetism/radium/download.php\">here</a> to get the full version.<br>",
+               "Go <a href=\"https://radium.dog/download.php\">here</a> to get the full version.<br>",
                message
                );
 #endif // FULL_VERSION==0

@@ -210,7 +210,9 @@ public:
       load_button->hide();
       save_button->hide();
       reset_button->hide();
-      random_button->hide();
+      random100_button->hide();
+      random10_button->hide();
+      random1_button->hide();
       _jack_plugin_widget = new Jack_Plugin_widget(this,_patch.data());
       vertical_layout->insertWidget(1,_jack_plugin_widget);
 
@@ -225,7 +227,9 @@ public:
       faust_options_button->hide();
       faust_interpreted->hide();
       reset_button->hide();
-      random_button->hide();
+      random100_button->hide();
+      random10_button->hide();
+      random1_button->hide();
       _sendreceive_plugin_widget = new SendReceive_Plugin_widget(this,_patch.data());
       vertical_layout->insertWidget(1,_sendreceive_plugin_widget);
 
@@ -393,6 +397,30 @@ public:
 
     ab_b->_show_popup_menu = [](){
       S7CALL2(void_int,"FROM_C-select-instrument-a/b-popup-menu", 1);
+    };
+
+    random1_button->_show_popup_menu = [](){
+      S7CALL2(void_charpointer, "FROM_C-randomize-effects-popup-menu", "0.05");
+    };
+
+    random10_button->_show_popup_menu = [](){
+      S7CALL2(void_charpointer, "FROM_C-randomize-effects-popup-menu", "0.1");
+    };
+
+    random100_button->_show_popup_menu = [](){
+      S7CALL2(void_charpointer, "FROM_C-randomize-effects-popup-menu", "1.0");
+    };
+
+    half_checkbox->_show_popup_menu = [](){
+      S7CALL2(void_int, "FROM_C-toggle-instrument-widget-size-type-popup-menu", 1);
+    };
+
+    max_checkbox->_show_popup_menu = [](){
+      S7CALL2(void_int, "FROM_C-toggle-instrument-widget-size-type-popup-menu", 2);
+    };
+
+    reset_button->_show_popup_menu = [](){
+      S7CALL2(void_void, "FROM_C-reset-instrument-effects-popup-menu");
     };
 
       
@@ -1264,16 +1292,34 @@ public slots:
     GFX_update_instrument_widget(_patch.data());
   }
 
-  void on_random_button_clicked(){
-    if (_is_initing)
-      return;
-
+  void do_random(float how_much){
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     if (plugin==NULL) return;
     
-    PLUGIN_random(plugin);
+    PLUGIN_random(plugin, how_much);
     
     GFX_update_instrument_widget(_patch.data());
+  }
+
+  void on_random100_button_clicked(){
+    if (_is_initing)
+      return;
+
+    do_random(1.0f);
+  }
+
+  void on_random10_button_clicked(){
+    if (_is_initing)
+      return;
+
+    do_random(0.1f);
+  }
+
+  void on_random1_button_clicked(){
+    if (_is_initing)
+      return;
+
+    do_random(0.05f);
   }
 
   void on_info_button_clicked(){
