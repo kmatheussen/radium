@@ -2980,46 +2980,8 @@ endif
 bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o: bin/packages/s7/s7.c
 	$(CC) -c bin/packages/s7/s7.c -o bin/packages/s7/s7_$(TARGET_OS)_$(BUILDTYPE).o `cat buildtype.opt` -Wno-error -Wno-float-equal -Iembedded_scheme $(S7OPTS) $(S7AlignmentSanitize) -DWITH_C_LOADER=0 -DWITH_HISTORY=1 -fPIC $(UNIVERSAL)
 
-bin/packages/s7/s7.c: bin/packages/s7.tar.gz
-	cd bin/packages && rm -fr s7 && tar xvzf s7.tar.gz && touch s7/s7.c && mv s7/s7webserver s7/s7webserver_org # Note: renaming s7webserver to avoid mistakenly using it instead of bin/s7webserver
-
-
-# -Wno-absolute-value
-#-DDEBUGGING=1
-
-sndlib_objectfiles/headers.o: sndlib_built
-	cp bin/packages/sndlib/headers.o sndlib_objectfiles/
-sndlib_objectfiles/io.o: sndlib_built
-	cp bin/packages/sndlib/io.o sndlib_objectfiles/
-sndlib_objectfiles/audio.o: sndlib_built
-	cp bin/packages/sndlib/audio.o sndlib_objectfiles/
-sndlib_objectfiles/sound.o: sndlib_built
-	cp bin/packages/sndlib/sound.o sndlib_objectfiles/
-sndlib_objectfiles/xen.o: sndlib_built
-	cp bin/packages/sndlib/xen.o sndlib_objectfiles/
-sndlib_objectfiles/vct.o: sndlib_built
-	cp bin/packages/sndlib/vct.o sndlib_objectfiles/
-sndlib_objectfiles/sndlib2xen.o: sndlib_built
-	cp bin/packages/sndlib/sndlib2xen.o sndlib_objectfiles/
-sndlib_objectfiles/clm2xen.o: sndlib_built
-	cp bin/packages/sndlib/clm2xen.o sndlib_objectfiles/
-sndlib_objectfiles/clm.o: sndlib_built
-	cp bin/packages/sndlib/clm.o sndlib_objectfiles/
-
-SNDLIBCONF ?=
-
-sndlib_built: bin/packages/sndlib/clm.c
-	cd bin/packages/sndlib && CC="$(CC)" CFLAGS="$(SNDLIBFLAGS) -g $(CPUOPT)" ./configure --without-alsa --without-audio --without-forth --without-gsl --without-jack --without-oss --without-portaudio --without-ruby --without-s7 $(SNDLIBCONF) && $(MAKE) -j3
-	mkdir -p sndlib_objectfiles
-	echo 1 >sndlib_built
-
-bin/packages/sndlib/clm.c: bin/packages/sndlib.tar.gz bin/packages/sndlib.patch
-	cd bin/packages && rm -fr sndlib && tar xvzf sndlib.tar.gz && cd sndlib && patch -p0 <../sndlib.patch && touch clm.c
-
-
-
-#clm.o: audio/clm.h audio/clm.c audio/sndlib.h audio/_sndlib.h audio/xen.h audio/vct.h
-#	$(CC2) $(OPT) audio/clm.c -Iembedded_scheme -I/home/kjetil/snd-17/
+bin/packages/s7/s7.c: bin/packages/s7.tar.gz bin/packages/s7_fix_sort_hang.patch
+	cd bin/packages && rm -fr s7 && tar xvzf s7.tar.gz && cd s7 && patch -p0 <../s7_fix_sort_hang.patch && touch s7.c && mv s7webserver s7webserver_org # Note: renaming s7webserver to avoid mistakenly using it instead of bin/s7webserver
 
 
 $(T)s7webserver.o: bin/s7webserver/s7webserver.h bin/s7webserver/s7webserver.cpp bin/s7webserver/moc_s7webserver.cpp bin/packages/s7/s7.c $(QT_PCH)
