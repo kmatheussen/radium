@@ -122,13 +122,12 @@ namespace{
     }
 
     void run() override {
-#if 0 //defined(FOR_MACOSX)
-      ATOMIC_SET(gakk, JUCE_download("https://users.notam02.no/~kjetism/radium/demos/windows64/?C=M&O=D"));
-      ATOMIC_SET(gakk2, JUCE_download("https://users.notam02.no/~kjetism/radium/demos/unstable/"));
+#if defined(RELEASE)
+      ATOMIC_SET(gakk, JUCE_download("https://download.radium.dog/latest-version"));
 #else
-      ATOMIC_SET(gakk, JUCE_download("https://users.notam02.no/~kjetism/radium/demos/windows64/?C=M&O=D"));
-      ATOMIC_SET(gakk2, JUCE_download("https://users.notam02.no/~kjetism/radium/demos/unstable/"));
+      ATOMIC_SET(gakk, strdup(""));
 #endif
+      ATOMIC_SET(gakk2, JUCE_download("https://download.radium.dog/unstable-versions"));
     }
 
     bool got_gakk1 = false;
@@ -140,22 +139,18 @@ namespace{
 
       if(text != NULL && got_gakk1==false){
 
-        QString all(text);
-        
-        //printf("got %d: -%s-\n", (int)reply->bytesAvailable(), all.conreply->readAll().constData());
-        QString searchString = "radium_64bit_windows-";
-        int startPos = all.indexOf(searchString);
-        
-        if (startPos > 0) {
-          QString versionString = all.remove(0, startPos+searchString.length());
-          int endPos = versionString.indexOf("-demo");
-          if (endPos > 0) {
-            versionString = versionString.left(endPos);
+        QString versionString = QString::fromUtf8(text).trimmed();
+
+        if (versionString != "")
+        {
+          int major, minor, revision;
+          if (getVersionNumbers(versionString, major, minor, revision))
+          {
             printf("versionString: _%s_\n",versionString.toUtf8().constData());
             maybeInformAboutNewVersion(versionString);
           }
         }
-        
+
         got_gakk1 = true;
       }
 
@@ -169,13 +164,13 @@ namespace{
 
         QString all(text2);
 
-        QString searchString = "radium_64bit_windows-" RADIUM_VERSION "-demo";
+        QString searchString = "\"" RADIUM_VERSION "\"";
  
         int startPos = all.indexOf(searchString);
 
         //printf("   TEXT2: -%s-\n\nsearchString: -%s-\nstartPos: %d\n",text2,searchString.toUtf8().constData(), startPos);
         
-        if (startPos > 0) {
+        if (startPos >= 0) {
 
           MyQMessageBox *msgBox = MyQMessageBox::create(false, g_main_window);
           msgBox->setAttribute(Qt::WA_DeleteOnClose);
