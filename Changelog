@@ -1,3 +1,11 @@
+Changes 8.0.53 -> 8.0.54:
+* Editor: Fix rare, but real, freeze when pressing
+  the "(click me)" button.
+* Use new endpoints for checking if current version is last
+  version and if current version is unstable
+
+
+
 Changes 7.5.78 -> 8.0.53:
 * Instrument window: Make it possible to assign keybindings
   to the Half and Full checkboxes.
