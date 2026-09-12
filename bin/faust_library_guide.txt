@@ -8,7 +8,8 @@
 #
 # Core subset: the functions most commonly used in Faust Dev 2 instruments
 # (oscillators, envelopes, filters, basics, noises, signals, maths, delays,
-# effects, reverbs, compressors, flangers, quantizers, interpolators).
+# effects, reverbs, compressors, flangers, quantizers, interpolators,
+# motion sensors, hysteresis).
 
 # --- os. Oscillators ---
 os.osc(freq): Sine oscillator. freq in Hz. The standard go-to oscillator.
@@ -45,6 +46,7 @@ os.polyblep_square(freq): PolyBLEP anti-aliased square. freq in Hz.
 os.polyblep_triangle(freq): PolyBLEP anti-aliased triangle. freq in Hz.
 os.sinwaveform(tablesize): Lookup table of one sine cycle (tablesize samples).
 os.coswaveform(tablesize): Lookup table of one cosine cycle.
+os.twin_osc(f, amt, detune, m): Two detuned sawtooth oscillators; amt = detune amount, detune = spread, m = mix.
 
 # --- en. Envelopes ---
 en.ar(at, rt, gate): Attack/release envelope. at,rt in seconds; gate=1 while held. Ideal for percussive one-shots.
@@ -106,6 +108,14 @@ fi.lptau(tN, x): One-pole lowpass reaching target in tN seconds (tau time consta
 fi.lpt60(tN, x): One-pole lowpass with -60 dB time constant tN seconds.
 fi.lpt19(tN, x): One-pole lowpass with -19 dB time constant tN seconds.
 fi.lptN(N, tN, x): One-pole lowpass with arbitrary dB time constant.
+fi.svf_morph(f, q, _b, x): State-variable filter morphing between lowpass (_b=-1), bandpass (_b=0) and highpass (_b=1).
+fi.svf_notch_morph(f, q, _b, x): State-variable notch/peak filter with morphable response.
+fi.oneEuro(derivativeCutoff, beta, minCutoff): One Euro adaptive filter; smooths noisy signals with low lag. derivativeCutoff in Hz, beta = speed.
+fi.hilbert(N, fc): Hilbert transform filter (quadrature pair); N = order, fc = center frequency in Hz.
+fi.adaptFIR(N, step, x, d): LMS-adaptive FIR filter; N = taps, step = learning rate, d = desired signal.
+fi.lms(N, mu, x, d): LMS adaptive filter; N = taps, mu = step size.
+fi.nlms(N, mu, x, d): Normalized LMS adaptive filter.
+fi.kalman(N, M, B, R, H, Q, F, reset): Kalman filter; N = state dimension, M = measurement dimension (see filters.lib for the other matrices).
 
 # --- ba. Basics ---
 ba.impulsify(x): Outputs 1 for one sample when x rises above 0. Note-on trigger.
@@ -137,6 +147,9 @@ ba.midikey2hz(mk): MIDI note number to frequency in Hz.
 ba.hz2midikey(freq): Frequency in Hz to MIDI note number.
 ba.pianokey2hz(pk): Piano key number (49 = A440) to Hz.
 ba.hz2pianokey(freq): Hz to piano key number.
+ba.hz2mel(freq): Frequency in Hz to Mel scale.
+ba.mel2hz(mel): Mel scale to frequency in Hz.
+ba.mulaw_bitcrusher(mu, nbits, x): mu-law companding bitcrusher; mu = compression factor (e.g. 255), nbits = bit depth.
 ba.semi2ratio(semi): Semitones to frequency ratio.
 ba.ratio2semi(ratio): Frequency ratio to semitones.
 ba.cent2ratio(cent): Cents to frequency ratio.
@@ -183,6 +196,7 @@ no.lfnoiseN(N, freq): LF noise smoothed by Nth-order lowpass.
 no.sparse_noise(f0): Sparse noise: impulses at rate f0.
 no.velvet_noise(amp, f0): Velvet noise: impulses at rate f0 with amplitude amp.
 no.colored_noise(N, alpha): Noise with spectral tilt; alpha = -2..2 (0 = white).
+no.dnoise(t, sx): Dynamic noise bursts; t = trigger, sx = seed multiplier (variation).
 
 # --- si. Signal manipulation ---
 si.smoo: One-pole smoother with 44.1 kHz time constant. Removes clicks on parameter changes.
@@ -274,13 +288,13 @@ ef.gate_stereo(thresh, att, hold, rel, x, y): Noise gate, stereo.
 ef.gate_gain_mono(thresh, att, hold, rel, x): Gate that outputs the gain (0..1) applied.
 ef.stereo_width(w): Stereo width control; w = 0..2.
 ef.transpose(w, x, s, sig): Variable-speed playback transpose effect.
-ef.mixLinearLoop(N, C, m, sounds): Linear crossfade mixer for N buses of C channels each; m = mix position.
-ef.mixLinearClamp(N, C, m, sounds): Linear crossfade mixer, clamped at the ends.
-ef.mixPowerLoop(N, C, m, sounds): Power-complementary (equal power) crossfade mixer.
-ef.mixPowerClamp(N, C, m, sounds): Power-complementary crossfade mixer, clamped.
+ef.mixLinearLoop(N, C, m): Linear crossfade mixer for N buses of C channels each; m = mix position. The bus signal is applied via ':' (e.g. si.bus(N*C) : ef.mixLinearLoop(N, C, m) : si.bus(C)).
+ef.mixLinearClamp(N, C, m): Linear crossfade mixer, clamped at the ends.
+ef.mixPowerLoop(N, C, m): Power-complementary (equal power) crossfade mixer.
+ef.mixPowerClamp(N, C, m): Power-complementary crossfade mixer, clamped.
 ef.mixingEnv: GUI-based crossfade loop envelope.
 ef.wavefold: Wavefolder distortion (GUI sliders).
-ef.softclipQuadratic: Quadratic soft clipper (GUI sliders).
+ef.softclipQuadratic(x): Quadratic soft clipper (soft saturation).
 ef.speakerbp(f1, f2): Speaker-like bandpass; f1, f2 in Hz.
 ef.reverseDelayRamped(delMax, phs): Reverse delay with ramped phase.
 ef.reverseEchoN(N, delMax): Reverse echo with N taps.
@@ -288,6 +302,14 @@ ef.piano_dispersion_filter(M, B, f0): Piano string dispersion filter (for physic
 ef.fibonacci(order): Fibonacci sequence generator.
 ef.fibonacciSeq(N): First N Fibonacci numbers.
 ef.mesh_square(N): NxN mesh of coupled delay lines (physical modeling).
+ef.dither(nbits): Adds dither noise to reduce quantization distortion; nbits = target bit depth.
+ef.dither_shaped(K, nbits): Noise-shaped dither; K = shaping filter order (1 or 2).
+ef.doppler_shift(freq, ratio, sig): Doppler shift effect; freq = modulation rate, ratio = shift depth.
+ef.granular(P, dur, ratio, pos, jit, sig): Granular delay; P = grains, dur = grain duration in seconds, ratio = pitch factor, pos = read position, jit = jitter.
+ef.tapeStop(C, LAGRANGE_ORDER, MAX_TIME_SAMP, crossfade, gainAlpha, stopAlpha, stopTime, stop): Tape-stop effect; playback gradually slows to a halt. C = channels.
+ef.transpose_windowed(P, w, s, sig): Windowed transpose; P = window count, w = window size, s = speed factor.
+ef.ms_enc: Mid/side encoder (stereo in, mid/side out).
+ef.ms_dec: Mid/side decoder (mid/side in, stereo out).
 ba.bypass1(bpc, e): Bypass control for one-channel effect.
 ba.bypass2(bpc, e): Bypass control for two-channel effect.
 
@@ -304,6 +326,8 @@ re.fdnrev0(MAXDELAY, delays, BBSO, freqs, durs, loopgainmax, nonl): Feedback del
 re.zita_rev1_stereo(rdel, f1, f2, t60dc, t60m, fsmax): Zita rev1 stereo reverb (high quality, CPU heavy).
 re.zita_rev1_ambi(rgxyz, rdel, f1, f2, t60dc, t60m, fsmax): Zita rev1 ambisonic version.
 re.zita_rev_fdn(f1, f2, t60dc, t60m, fsmax): Zita FDN reverb.
+re.springreverb(dwell_aux, blend_aux, tone_aux, tension_aux, springs): Spring reverb; dwell = decay time, blend = dry/wet mix, tone = tone color, springs = number of springs.
+re.vital_rev(_prelow, _prehigh, _lowcutoff, _highcutoff, _lowgain, _highgain, _chorus_amt, _chorus_freq, _predelay, _time, _size, _mix): Vital-style reverb with EQ, chorus, predelay and size controls.
 
 # --- co. Compressors ---
 co.compressor_mono: Compressor with GUI sliders (threshold, ratio, attack, release). No input arguments.
@@ -327,10 +351,8 @@ pf.phaser2_stereo(Notches, width, frqmin, fratio, frqmax, speed, depth, fb, inve
 pf.vibrato2_mono(sections, phase01, fb, width, frqmin, fratio, frqmax, speed): Vibrato/pitch shifter.
 
 # --- qu. Quantizers ---
-qu.quantize(rf, nl): Quantizes pitch to a scale. rf = reference frequency, nl = note list.
-qu.quantizeSmoothed(rf, nl): Quantizes with smoothing (glide between notes).
-qu.qLog(x): Logarithmic quantization curve.
-qu.qSmooth(x): Smoothing curve for quantizer.
+qu.quantize(rf, nl, x): Quantizes pitch x to a scale. rf = reference frequency, nl = note list. Also usable as 'sig : qu.quantize(rf, nl)'.
+qu.quantizeSmoothed(rf, nl, x): Quantizes with smoothing (glide between notes).
 
 # --- so. Soundfiles ---
 # The 'soundfile' primitive: soundfile("name[url:{'file.flac';'file2.flac'}]", N)
@@ -365,3 +387,20 @@ it.nointerp: Table reader without interpolation (GUI).
 it.linear: Linear interpolation table reader (GUI).
 it.cosine: Cosine interpolation table reader (GUI).
 it.cubic: Cubic interpolation table reader (GUI).
+it.lerp(x0, x1, y0, y1, x): Linear interpolation mapping x from x0..x1 to y0..y1.
+it.piecewise(xList, yList, x): Piecewise linear interpolation using breakpoint lists.
+it.interpolate_exponential(k, dv, v0, v1): Exponential interpolation; k = curve shape.
+it.interpolate_logarithmic(dv, v0, v1): Logarithmic interpolation.
+it.interpolate_mel(dv, v0, v1): Mel-scale interpolation.
+it.interpolate_power(p, dv, v0, v1): Power-law interpolation; p = exponent.
+it.interpolate_smoothstep(dv, v0, v1): Smoothstep (3rd-order) interpolation.
+it.interpolate_smootherstep(dv, v0, v1): Smootherstep (5th-order) interpolation.
+
+# --- mo. Motion sensors ---
+mo.shockTrigger(hpHz, threshold, debounceMs, sig): Detects shocks/impacts in a signal; outputs a trigger.
+mo.inclinometer(lpHz, sig): Smooths tilt/incline input with a lowpass.
+
+# --- hy. Hysteresis ---
+hy.ja_hysteresis(Ms, a, alpha, k, c): Hysteresis saturation effect (Jiles-Atherton model); Ms = saturation.
+hy.ja_processor(Ms, a, alpha, k, c, drive, trim): Hysteresis effect with drive and output trim.
+hy.ja_processor_stereo(Ms, a, alpha, k, c, drive, trim): Stereo hysteresis effect.

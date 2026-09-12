@@ -97,12 +97,9 @@ PREFIX=`dirname $PWD/$0`
 build_faust() {
 
 	rm -fr faust
-	tar xvzf faust-2.81.2.tar.gz
-	mv faust-2.81.2 faust
+	tar xvzf faust-2.88.0.tar.gz
+	mv faust-2.88.0 faust
 	cd faust
-	rm -fr libraries
-	tar xvzf ../faustlibraries_2024_01_05.tar.gz
-	mv faustlibraries libraries
 	
 	#patch -p0 < ../faust_polydsp_fadeout.patch
 	#patch -p0 < ../faust_soundfiles_clickfix.patch
