@@ -3224,6 +3224,26 @@ static inline void llm_log_note(const QString &text)
 	llm_log_append("----- note -----\n" + text + "\n");
 }
 
+// Appends a note without clearing the log on first write. The GUI-side
+// request logger owns the clear-on-first-write convention; this variant is
+// used by the audio-side compile diagnostics (Faust_dev2.cpp) and by
+// faust_llm_test, where a compile note can be written before the first
+// request.
+static inline void llm_log_note_append(const QString &text)
+{
+	const char *env_path = getenv("RADIUM_LLM_LOG");
+	const QString path = (env_path != NULL && env_path[0] != '\0')
+	  ? QString::fromUtf8(env_path)
+	  : QDir::homePath() + QString::fromUtf8("/.radium/llm.log");
+	QDir().mkpath(QFileInfo(path).absolutePath());
+	QFile file(path);
+	if (file.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text))
+	{
+		file.write(QString("----- note -----\n" + text + "\n").toUtf8());
+		file.close();
+	}
+}
+
 
 
 // One HTTP attempt. Retries are handled internally via retries_left.

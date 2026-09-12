@@ -57,12 +57,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 
 #include "../audio/SoundPlugin_proc.h"
+#include "../audio/Faust_dev2_default.hpp"
 
 #include "Qt_plugin_widget_callbacks_proc.h"
 #include "Qt_MyQScrollBar.hpp"
 #include "Qt_mix_colors.h"
 #include "Editor.hpp"
 #include "LLM_client.hpp"
+#include "LLM_faust_session.hpp"
 
 
 
@@ -735,7 +737,6 @@ extern void FAUST2_set_code(struct SoundPlugin *plugin, QString code);
 extern void FAUST2_set_options(struct SoundPlugin *plugin, QString options);
 extern bool FAUST2_is_compiling(const struct SoundPlugin *plugin);
 extern QString FAUST2_get_code(const struct SoundPlugin *plugin);
-extern QString FAUST2_get_default_code(void);
 extern QString FAUST2_get_options(const struct SoundPlugin *plugin);
 extern void FAUST2_generate_cpp_code(const struct SoundPlugin *plugin, int generation, std::function<void(int, QString)> callback);
 extern QString FAUST2_get_error_message(const struct SoundPlugin *plugin);
@@ -745,10 +746,7 @@ extern void FAUST2_start_compilation(struct SoundPlugin *plugin);
 extern void FAUST2_set_reset_effect_values_on_compile(struct SoundPlugin *plugin, bool reset);
 extern bool FAUST2_set_use_interpreter_backend(struct SoundPlugin *plugin, bool use_interpreter);
 extern bool FAUST2_get_use_interpreter_backend(struct SoundPlugin *plugin);
-extern QStringList FAUST2_lint_faust_code(const struct SoundPlugin *plugin, const QString &code);
-extern QString FAUST2_splice_faust_definitions(const QString &current_code, const QString &fragment);
-extern bool FAUST2_try_fix_duplicate_definition(const QString &code, const QString &name, QString *fixed_code, QString *note);
-extern bool FAUST2_try_fix_smoothed_delay_param(const QString &code, QString *fixed_code, QString *note);
+extern bool FAUST2_lint_compile_check_is_safe(const struct SoundPlugin *plugin);
 
 
 
@@ -829,7 +827,7 @@ static inline bool faust_disp_set_use_interpreter_backend(SoundPlugin *plugin, b
 }
 static inline QStringList faust_disp_lint_faust_code(const SoundPlugin *plugin, const QString &code){
   if (!strcmp(plugin->type->type_name, "Faust Dev 2"))
-    return FAUST2_lint_faust_code(plugin, code);
+    return FAUST2_lint_faust_code(code, FAUST2_lint_compile_check_is_safe(plugin));
   else
     return QStringList(); // only Faust Dev 2 has the LLM prompt bar
 }
@@ -878,21 +876,11 @@ public:
   QDialog *_options_dialog;
   radium::Editor *_options_editor;
 
-  // Auto-fixing of LLM-generated code that fails to compile.
-  bool _llm_fixing_error = false;   // an LLM-generated program is being auto-fixed
-  int _llm_compile_attempts = 0;    // how many fix rounds have been done
-  int _llm_max_fixes = 3;           // from llm_max_fixes setting
-  QString _llm_original_prompt;     // the user's original request (LLM context)
-  QString _llm_last_applied_code;   // last code applied by the LLM (detect manual edits/undo)
   bool _llm_applying_code = false;  // distinguishes LLM-applied edits from user edits
-  QString _llm_last_fix_error;      // last compile error sent to the LLM (detect fix rounds that changed nothing)
-  int _llm_same_error_count = 0;    // consecutive fix rounds ending in the same compile error
-  int _llm_auto_fix_count = 0;      // consecutive local duplicate-definition auto-fixes (loop guard)
-  QString _llm_lint_cache_code;         // code the cached lint findings below belong to
-  bool _llm_lint_cache_compile_check = false; // whether the cached findings include the compile-based check
-  QStringList _llm_lint_cache_findings; // static-analysis findings for that code (shared by the error pane and the LLM fix prompt)
-  int _llm_last_progress_total = -1;      // chars shown in llm_status (throttling)
-  bool _llm_last_progress_thinking = false; // whether llm_status showed "Thinking..."
+
+  // The LLM session state machine (generate -> compile -> fix/cleanup),
+  // shared with faust_llm_test. Created in the constructor.
+  std::unique_ptr<radium::llm::FaustSession> _llm_session;
 
   // Compile watchdog: faust_disp_is_compiling() is polled by
   // calledRegularlyByParent, which records when the current compilation
@@ -902,22 +890,6 @@ public:
   // GUI stays responsive, so the user can edit the code.
   qint64 _compile_started_ms = 0;
   bool _compile_watchdog_flagged = false;
-
-  // Multi-turn conversation history (list of {"role","content"} messages) and
-  // cancellation.
-  QJsonArray _llm_history;
-  std::shared_ptr<std::atomic_bool> _llm_cancel;
-
-  // Armed by the "New" menu action: the next generate request is treated as
-  // creation (the current code is NOT embedded and the examples are shown),
-  // whatever the prompt says. Disarmed by the first successful generation
-  // and by manual edits.
-  bool _llm_new_session = false;
-
-  // Incremented by start_llm_request(): each new request owns a new epoch,
-  // and callbacks of superseded requests (fix/cleanup attempts) see the
-  // mismatch and stand down instead of retrying over the newer request.
-  int _llm_request_epoch = 0;
 
   // Prompt input history (like a shell's history): every submitted prompt is
   // remembered so the Up/Down arrow keys can re-insert previous prompts.
@@ -1030,6 +1002,8 @@ public:
     //connect(_faust_editor, SIGNAL(linesChanged()), this, SLOT(a_on__faust_editor_linesChanged()));
     connect(_faust_editor, SIGNAL(cursorPositionChanged(int,int)), this, SLOT(a_on__faust_editor_cursorPositionChanged(int,int)));
 
+    _llm_session = create_llm_session();
+
     _svg_view = new FaustResultSvgView(this);
     
     //svg_view->setHtml("<object id=\"svg1\" data=\"file:///home/kjetil/radium/audio/faust_multibandcomp-svg/process.svg\" type=\"image/svg+xml\"></object>");
@@ -1085,11 +1059,105 @@ public:
 
   ~Faust_Plugin_widget() {
     g_faust_plugin_widgets.removeAll(this);
+    if (_llm_session != NULL)
+      _llm_session->shutdown();
     /*
     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
     if (plugin!=NULL)
       FAUST_inform_about_instrument_gui(plugin, NULL);
     */
+  }
+
+  std::unique_ptr<radium::llm::FaustSession> create_llm_session(void)
+  {
+    radium::llm::FaustSessionHost host;
+
+    host.get_code = [this]() -> QString
+    {
+      QString code = _faust_editor->text();
+      if (code.isEmpty())
+      {
+        // QScintilla sometimes gives us an empty string (when there shouldn't be).
+        SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+        if (plugin != NULL)
+          code = faust_disp_get_code(plugin);
+      }
+      return code;
+    };
+
+    host.set_code = [this](const QString &code)
+    {
+      apply_llm_code(code);
+    };
+
+    host.compile_error = [this]() -> QString
+    {
+      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+      if (plugin == NULL || _svg_view_text.isEmpty())
+        return QString();
+      return faust_disp_get_error_message(plugin);
+    };
+
+    host.error_is_shown = [this]() -> bool
+    {
+      return !_svg_view_text.isEmpty();
+    };
+
+    host.is_compiling = [this]() -> bool
+    {
+      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+      return plugin != NULL && faust_disp_is_compiling(plugin);
+    };
+
+    host.compile_check_is_safe = [this]() -> bool
+    {
+      SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+      return plugin != NULL
+          && !strcmp(plugin->type->type_name, "Faust Dev 2")
+          && FAUST2_lint_compile_check_is_safe(plugin);
+    };
+
+    host.is_effect = [this]() -> bool
+    {
+      return llm_combo_is_effect();
+    };
+
+    host.radium_path = []() -> QString
+    {
+      return QString();
+    };
+
+    host.default_code = []() -> QString
+    {
+      return FAUST2_get_default_code();
+    };
+
+    host.status = [this](const QString &text)
+    {
+      set_llm_status(text);
+    };
+
+    host.show_error = [this](const QString &message)
+    {
+      show_llm_error(message);
+    };
+
+    host.set_generate_enabled = [this](bool enabled)
+    {
+      generate_button->setEnabled(enabled);
+    };
+
+    host.set_cancel_enabled = [this](bool enabled)
+    {
+      cancel_button->setEnabled(enabled);
+    };
+
+    host.prompt_accepted = [this]()
+    {
+      prompt_edit->clear();
+    };
+
+    return std::unique_ptr<radium::llm::FaustSession>(new radium::llm::FaustSession(host));
   }
 
   // Show/hide the LLM prompt bar (a beta feature; hidden unless explicitly
@@ -1273,78 +1341,7 @@ public:
 
         if (ready.factory_succeeded) {
 
-          const bool llm_compile_done = _llm_fixing_error;
-          const bool llm_compile_was_fix = _llm_compile_attempts > 0;
-          _llm_fixing_error = false;
-
-          // The LLM status label says "...Compiling..." while an
-          // LLM-generated program is being compiled; now that the
-          // compilation succeeded, replace it with the final status.
-          // If the cheap static checks still find suspicious lines
-          // (e.g. a dry/wet expression that cancels out, or a slider
-          // that is declared but never used - compilation succeeds, so
-          // the auto-fix loop never sees them), send the findings back
-          // to the LLM as a cleanup request instead of just warning
-          // about them. The counters are only reset when the loop
-          // truly ends (no findings left).
-          if (llm_compile_done)
-          {
-            QStringList lint_warnings = collect_lint_findings(plugin, _faust_editor->text(), false);
-
-            // An LLM-generated EFFECT must have exactly 2 inputs (or 1 when
-            // the request asked for mono). The model sometimes mis-arranges
-            // the bare '_' bindings so the compiled effect ends up with 0,
-            // 3, or more inputs (observed: an autotune effect with 0
-            // inputs). The input count is only known after compilation, so
-            // report a mismatch as a cleanup finding and let the cleanup
-            // loop repair the bindings.
-            if (llm_combo_is_effect())
-            {
-              const int expected_inputs = _llm_original_prompt.toLower().contains("mono") ? 1 : 2;
-              // Permanent diagnostic: record that the measured input count
-              // and the effect's expected count agree (or disagree) - the
-              // log entry shows the two values next to the compiled
-              // program, so input-binding regressions are diagnosable
-              // from the LLM log alone.
-              radium::llm::llm_log_note(QString("effect-input-check: ready.num_inputs=%1 expected=%2").arg(ready.num_inputs).arg(expected_inputs));
-              if (ready.num_inputs != expected_inputs)
-                lint_warnings.append(QString("The compiled effect has %1 input channel(s), but it must have exactly %2. Bind the input ONCE ('process = %3 : ...') and derive every other signal from that single binding - a bare '_' reference outside the input binding consumes an extra input channel, and references inside par(i, 2, ...) bodies belong to the lambda, not the input.").arg(ready.num_inputs).arg(expected_inputs).arg(expected_inputs == 2 ? "_,_" : "_"));
-            }
-
-            if (!lint_warnings.isEmpty())
-            {
-              radium::llm::llm_log_note("LLM code compiled, static check findings:\n" + lint_warnings.join("\n"));
-
-              // In FREE mode a compiling program is final: the relay has a
-              // small request budget, so never spend a request on cleaning
-              // up findings from code that already compiles. Just log the
-              // skip and finish like the no-findings case below.
-              const bool free_mode = radium::llm::get_config().mode == "free";
-              if (free_mode)
-              {
-                radium::llm::llm_log_note("Free mode: cleanup skipped - the program compiles, so it is kept as-is.");
-                if (llm_compile_was_fix)
-                  radium::llm::llm_log_note("Auto-fix/cleanup done - no static-check findings remain.");
-                _llm_compile_attempts = 0;
-                _llm_last_fix_error.clear();
-                _llm_same_error_count = 0;
-                _llm_auto_fix_count = 0;
-                set_llm_status(llm_compile_was_fix ? "Fixed." : "Generated.");
-              }
-              else
-                request_llm_lint_cleanup(lint_warnings, llm_compile_was_fix); // keeps _llm_fixing_error=true while the cleanup round is in flight
-            }
-            else
-            {
-              if (llm_compile_was_fix)
-                radium::llm::llm_log_note("Auto-fix/cleanup done - no static-check findings remain.");
-              _llm_compile_attempts = 0;
-              _llm_last_fix_error.clear();
-              _llm_same_error_count = 0;
-              _llm_auto_fix_count = 0;
-              set_llm_status(llm_compile_was_fix ? "Fixed." : "Generated.");
-            }
-          }
+          _llm_session->on_compile_succeeded(ready.num_inputs);
 
           _latest_working_code = faust_disp_get_code(plugin);
 
@@ -1431,7 +1428,7 @@ public:
           // Textual findings (duplicate definitions, JS arrow syntax) are
           // cheap and help for every error class; the compile-based check
           // costs ~0.5s, so it runs only for the arity/composition class.
-          const QStringList findings = collect_lint_findings(plugin, _faust_editor->text(), arity_class);
+          const QStringList findings = _llm_session->lint_findings(_faust_editor->text(), arity_class);
           if (!findings.isEmpty())
           {
             QStringList escaped_findings;
@@ -1472,82 +1469,7 @@ public:
         if (_size_type != SIZETYPE_NORMAL && _plugin_widget != NULL)
           _plugin_widget->hide();
 
-        // Feed the compiler error back to the LLM so it can fix the generated code.
-        if (factory_failed
-            && _llm_fixing_error
-            && _llm_compile_attempts < _llm_max_fixes
-            && _llm_last_applied_code == _faust_editor->text()) // code hasn't been manually edited/undone
-        {
-          const QString error_message = faust_disp_get_error_message(plugin);
-
-          // Local auto-fix for "multiple definitions of symbol 'name'":
-          // the model writes imperative faust ('x = ...; x = x : f;') and
-          // the translation into legal faust is mechanical (rename the
-          // first definition / remove it), so it is fixed here without
-          // spending an LLM round or a fix attempt. The recompile then
-          // surfaces the next error, and the LLM loop continues with its
-          // full budget. Guarded by a small counter so pathological
-          // multi-duplicate programs cannot loop forever.
-          {
-            static const QRegularExpression dup_re(QStringLiteral("multiple definitions of symbol\\s+'?([a-zA-Z_][a-zA-Z0-9_]*)")); // [NO_STATIC_ARRAY_WARNING]
-            const QRegularExpressionMatch dup_m = dup_re.match(error_message);
-            if (dup_m.hasMatch() && _llm_auto_fix_count < 3)
-            {
-              QString fixed_code, note;
-              if (faust_disp_try_fix_duplicate_definition(plugin, _faust_editor->text(), dup_m.captured(1), &fixed_code, &note))
-              {
-                _llm_auto_fix_count++;
-                radium::llm::llm_log_note(note);
-                set_llm_status("Auto-fixed duplicate definition. Compiling...");
-                apply_llm_code(fixed_code); // recompiles; _llm_fixing_error stays true so the loop continues on the next error
-                return;
-              }
-            }
-          }
-
-          // Local auto-fix for 'invalid delay parameter range': the model
-          // keeps smoothing sliders that are passed as delay parameters
-          // (freeverb spread, delay max-length) even though the
-          // conventions forbid it. The fix is mechanical (strip the
-          // smoothing), so it never costs an LLM round.
-          if (error_message.contains("invalid delay parameter range")
-              && _llm_auto_fix_count < 3)
-          {
-            QString fixed_code, note;
-            if (faust_disp_try_fix_smoothed_delay_param(plugin, _faust_editor->text(), &fixed_code, &note))
-            {
-              _llm_auto_fix_count++;
-              radium::llm::llm_log_note(note);
-              set_llm_status("Auto-fixed delay parameter. Compiling...");
-              apply_llm_code(fixed_code);
-              return;
-            }
-          }
-
-          // If the error text is unchanged since the previous fix round, the
-          // fix did not touch the failing expression. One identical repeat is
-          // tolerated (the model may need to see the error again); after two
-          // the loop is stopped instead of burning the remaining fix budget.
-          if (error_message == _llm_last_fix_error)
-            _llm_same_error_count++;
-          else
-            _llm_same_error_count = 0;
-
-          if (_llm_same_error_count >= 2)
-          {
-            _llm_fixing_error = false;
-            radium::llm::llm_log_note("Compile-error fix loop stopped - same error twice:\n" + error_message);
-            set_llm_status("LLM fix attempts keep producing the same error. Giving up - edit the code manually.");
-          }
-          else
-          {
-            _llm_last_fix_error = error_message;
-            _llm_compile_attempts++;
-            request_llm_fix(error_message);
-          }
-        }else{
-          _llm_fixing_error = false;
-        }
+        _llm_session->on_compile_failed(factory_failed);
 
       } else if (!_svg_view_text.isEmpty()) {
         
@@ -1775,9 +1697,7 @@ public slots:
     //printf("Text changed. pos: %d\n",0);//_faust_editor->textCursor().position());
     if (!_initing){
       if (!_llm_applying_code){
-        _llm_fixing_error = false; // A manual edit cancels auto-fixing of LLM code.
-        _llm_history = QJsonArray(); // ...and invalidates the conversation history.
-        _llm_new_session = false; // ...and any pending creation context.
+        _llm_session->user_edited_code(); // A manual edit cancels auto-fixing and invalidates the history.
       }
 
       SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
@@ -1800,141 +1720,6 @@ public slots:
 
      return text == "FX";
    }
-
-   void send_llm_generate_request(const QString &prompt_to_send)
-   {
-     SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-
-     QString current_code = _faust_editor->text();
-     if (current_code.isEmpty() && plugin != NULL)
-       current_code = faust_disp_get_code(plugin);
-
-     const radium::llm::LLMConfig config = radium::llm::get_config();
-
-      const bool is_effect = llm_combo_is_effect();
-      // Whether the user asked for a mono effect: derived from the USER'S
-      // request text only (see build_user_content in LLM_client.hpp - the
-      // fix/cleanup prompts contain "mono" in their own boilerplate, so
-      // deriving it from the full prompt text flips fix rounds to a mono
-      // target and the model then rewrites stereo effects as mono).
-      const bool effect_is_mono = is_effect && prompt_to_send.toLower().contains("mono");
-
-      const bool creation = _llm_new_session || radium::llm::is_creation_request(prompt_to_send);
-      const QString code_for_request = creation
-                                       ? QString()
-                                       : current_code;
-
-    // Modification turns embed the current program, so the ~2-3K chars of
-    // examples (pattern-matching help for creation requests) are redundant
-    // there: the system prompt already carries the conventions, and the
-    // library definitions are rebuilt for the current code. Skipping the
-    // examples keeps the history budget for what matters: the programs.
-    const bool skip_examples = !code_for_request.isEmpty();
-
-    // If the current code fails to compile, tell the model why: the same
-    // summarized error and static-analysis findings the fix prompt uses.
-    // Only when the error belongs to the code being sent: the error must be
-    // currently displayed (the last compile failed) and no compile may be
-    // in flight (which would make the displayed error stale).
-    QString compile_error;
-    if (!code_for_request.isEmpty()
-        && !_svg_view_text.isEmpty()
-        && plugin != NULL
-        && !faust_disp_is_compiling(plugin))
-    {
-      const QString error_message = faust_disp_get_error_message(plugin);
-      const bool arity_class = radium::llm::is_arity_error(error_message);
-      const QStringList findings = collect_lint_findings(plugin, current_code, arity_class);
-      compile_error = radium::llm::summarize_faust_error(error_message);
-      if (!findings.isEmpty())
-        compile_error += "\n\nA local static check of the code above found these suspicious lines:\n"
-          + findings.join("\n");
-    }
-
-    // The user message is NOT appended to the history here: send_request_once
-    // adds it to the request itself, so appending it here too would duplicate
-    // it (history + current message) in every request. It is appended below,
-    // together with the assistant answer, only when the request succeeds.
-    const QJsonArray history = _llm_history;
-    const std::shared_ptr<std::atomic_bool> cancel = start_llm_request();
-
-    IsAlive is_alive(this);
-
-    radium::llm::send_prompt(config, code_for_request, prompt_to_send,
-                             [is_alive, this, config, prompt_to_send, code_for_request, compile_error, current_code, is_effect, effect_is_mono, skip_examples](bool ok, QString result_or_error)
-    {
-      if (!is_alive)
-        return;
-
-      end_llm_request();
-
-      if (ok && !current_code.trimmed().isEmpty()
-          && result_or_error.simplified() == current_code.simplified())
-      {
-        // The model echoed the current program instead of answering the
-        // request (possibly with only whitespace differences - simplified()
-        // normalizes those), or recreated it for a creation request. Discard
-        // it: applying would be a no-op, and retrying without the current
-        // program would strip the context modification requests need - the
-        // model then invents a new instrument and replaces the old one
-        // (observed).
-        printf("LLM: The model returned the current program unchanged. Discarding.\n");
-
-        generate_button->setEnabled(true);
-        set_llm_status("The model returned the current program unchanged - please rephrase the request.");
-        return;
-      }
-
-      generate_button->setEnabled(true);
-
-      if (ok)
-      {
-        _llm_history.append(QJsonObject{
-          {QStringLiteral("role"), QStringLiteral("user")},
-          {QStringLiteral("content"), radium::llm::build_full_user_content(code_for_request, prompt_to_send, config.library_context, skip_examples, compile_error, is_effect, effect_is_mono)},
-        });
-        _llm_history.append(QJsonObject{
-          {QStringLiteral("role"), QStringLiteral("assistant")},
-          {QStringLiteral("content"), result_or_error},
-        });
-        trim_llm_history(result_or_error.size());
-
-        // The next prompt is about the generated code: a modification, not
-        // a creation. (Left armed when the attempt failed or was discarded,
-        // so a retry stays creation.)
-        _llm_new_session = false;
-
-        prompt_edit->clear();
-        _llm_original_prompt = prompt_to_send;
-        _llm_max_fixes = config.max_fixes < 0 ? 0 : config.max_fixes;
-        _llm_compile_attempts = 0;
-        _llm_last_fix_error.clear();
-        _llm_same_error_count = 0;
-        _llm_auto_fix_count = 0;
-        _llm_fixing_error = true;
-        set_llm_status("Generated. Compiling...");
-        apply_llm_code(result_or_error);
-      }
-      else
-      {
-        // Nothing was appended to the history for this failed attempt.
-        radium::llm::llm_log_note("Generate request failed: " + result_or_error);
-        _llm_fixing_error = false;
-        show_llm_error(result_or_error);
-      }
-    },
-                             history, cancel, 0.2,
-                             [is_alive, this](int reasoning_chars, int content_chars)
-    {
-      if (!is_alive)
-        return;
-      update_llm_progress(reasoning_chars, content_chars);
-    },
-                             skip_examples, // modification turns skip the examples section
-                             compile_error,
-                             is_effect,
-                             effect_is_mono);
-  }
 
   void a_on_reset_effects_checkbox_toggled(bool checked)
   {
@@ -1974,25 +1759,7 @@ public slots:
 
     generate_button->setEnabled(false);
 
-    set_llm_status("\u2318 Generating...");
-    send_llm_generate_request(prompt);
-  }
-
-  // Marks a new in-flight LLM request; cancels any previous one. The epoch
-  // lets fix/cleanup callbacks detect that a NEWER request (e.g. a user
-  // prompt) has taken over, so their automatic retries never cancel or
-  // clobber a user request (observed: a cleanup retry chain cancelled an
-  // in-flight generate request).
-  std::shared_ptr<std::atomic_bool> start_llm_request(void)
-  {
-    if (_llm_cancel)
-      *_llm_cancel = true;
-    _llm_cancel = std::make_shared<std::atomic_bool>(false);
-    _llm_request_epoch++;
-    cancel_button->setEnabled(true);
-    _llm_last_progress_total = -1;
-    _llm_last_progress_thinking = false;
-    return _llm_cancel;
+    _llm_session->generate(prompt);
   }
 
   // Sets the LLM status text, appending the dollars spent so far in this
@@ -2024,69 +1791,6 @@ public slots:
 	  }
   }
 
-  // Live-updates the status label with how much the LLM has produced so far:
-  // "Thinking..." while the model reasons, "Generating..." once it streams code.
-  void update_llm_progress(int reasoning_chars, int content_chars)
-  {
-    const bool thinking = (reasoning_chars > 0 && content_chars == 0);
-    const int total = reasoning_chars + content_chars;
-    if (total == _llm_last_progress_total && thinking == _llm_last_progress_thinking)
-      return; // throttled; nothing new to show
-    _llm_last_progress_total = total;
-    _llm_last_progress_thinking = thinking;
-    if (thinking)
-      set_llm_status(QString("Thinking... (%1 chars)").arg(reasoning_chars));
-    else if (content_chars > 0)
-      set_llm_status(QString("Generating... (%1 chars)").arg(content_chars));
-  }
-
-  void end_llm_request(void){
-    _llm_cancel.reset();
-    cancel_button->setEnabled(false);
-  }
-
-  // Keeps history bounded: at most ~6 user/assistant pairs and a character
-  // budget that scales with the current program size (each kept turn carries
-  // the program twice - user message and assistant answer - so a large
-  // program legitimately consumes the budget faster). Trimming is atomic:
-  // complete user/assistant pairs are dropped from the front, so the history
-  // never starts with an orphaned assistant message.
-  void trim_llm_history(int current_code_size){
-    const int max_pairs = 6;
-    const int base_budget = 20000;
-    const int max_budget = 60000;
-
-    int char_budget = base_budget + 2 * current_code_size;
-    if (char_budget > max_budget)
-      char_budget = max_budget;
-
-    // Pair cap first: drop complete user/assistant pairs from the front.
-    while (_llm_history.size() > max_pairs * 2)
-    {
-      _llm_history.removeFirst(); // the user message
-      if (!_llm_history.isEmpty() && _llm_history.at(0).toObject().value("role").toString() == QStringLiteral("assistant"))
-        _llm_history.removeFirst();
-    }
-
-    int total = 0;
-    for (const QJsonValue &message : _llm_history)
-      total += message.toObject().value("content").toString().size();
-    while (total > char_budget && _llm_history.size() > 2)
-    {
-      // Drop the oldest complete pair: the leading user message and (when
-      // present) the assistant answer right after it. If the history
-      // starts with an assistant message (should not happen), drop it
-      // alone.
-      total -= _llm_history.at(0).toObject().value("content").toString().size();
-      _llm_history.removeFirst();
-      if (!_llm_history.isEmpty() && _llm_history.at(0).toObject().value("role").toString() == QStringLiteral("assistant"))
-      {
-        total -= _llm_history.at(0).toObject().value("content").toString().size();
-        _llm_history.removeFirst();
-      }
-    }
-  }
-
   // Applies LLM-generated code to the editor. The existing text-changed
   // handler records undo and starts compilation.
    void apply_llm_code(const QString &code){
@@ -2095,496 +1799,25 @@ public slots:
          set_text_in__faust_editor_widget(code);
        }_initing = false;
      }_llm_applying_code = false;
-     _llm_last_applied_code = _faust_editor->text();
    }
-
-   // Splices the fragment's top-level definitions into the current program
-   // (a definition replaces the same-named one; new names are inserted
-   // before 'process') and applies the merged result. Used by the
-   // partial-fix flow for long programs, where the fix response contains
-   // only the corrected definitions. A fragment that is a complete program
-   // (contains 'process') replaces everything.
-   void apply_llm_code_splice(const QString &fragment){
-     const QString merged = FAUST2_splice_faust_definitions(_faust_editor->text(), fragment);
-     apply_llm_code(merged);
-   }
-
-  // Static-analysis findings for 'code': the textual checks (duplicate
-  // definitions, JS arrow syntax), plus (when compile_check is true) the
-  // exact per-definition compile check from audio/Faust_dev2.cpp. Cached
-  // per code and check type so the error pane and the LLM fix prompt don't
-  // run the compile-based check twice for the same failing code.
-  QStringList collect_lint_findings(SoundPlugin *plugin, const QString &code, bool compile_check)
-  {
-    // libfaust serializes ALL factory creation through one global lock. A
-    // pathological program can keep that lock held essentially forever
-    // (observed: an autotune effect with an.pitchTracker(2048, 512) sent the
-    // interpreter evaluator into an unbounded tree expansion), so while any
-    // compilation is in flight the compile-based check below would block
-    // this GUI thread indefinitely. Downgrade to the textual checks, which
-    // do not call into libfaust at all. (FAUST2_lint_faust_code also guards
-    // for compiles of OTHER plugins - it sees all running compile threads.)
-    if (compile_check && faust_disp_is_compiling(plugin))
-      compile_check = false;
-
-    if (_llm_lint_cache_code == code && _llm_lint_cache_compile_check == compile_check)
-      return _llm_lint_cache_findings;
-
-    QStringList findings = radium::llm::lint_faust_code(code).split('\n', Qt::SkipEmptyParts);
-    if (compile_check)
-      findings += faust_disp_lint_faust_code(plugin, code);
-
-    // Correct 'undefined symbol' findings that name a Faust LIBRARY
-    // function: the fix is the module-qualified form (ma.log2), never a
-    // self-made definition (defining the bare name collides with the
-    // library definition - observed with 'log2', which the model then
-    // defined itself and got "BoxIdent[log2] is defined here"). Both
-    // phrasings of the finding are matched: the audio-side compile check
-    // ("uses 'X', which is never defined") and the textual check
-    // ("'X' is used but never defined anywhere in the program").
-    static const QRegularExpression undef_re(QStringLiteral("(?:uses '([a-zA-Z_][a-zA-Z0-9_]*)', which is never defined|'([a-zA-Z_][a-zA-Z0-9_]*)' is used but never defined)")); // [NO_STATIC_ARRAY_WARNING]
-    for (QString &finding : findings)
-    {
-      const QRegularExpressionMatch m = undef_re.match(finding);
-      if (!m.hasMatch())
-        continue;
-      const QString symbol = m.captured(1).isEmpty() ? m.captured(2) : m.captured(1);
-      const QString qualified = radium::llm::llm_library_qualified_name(symbol);
-      if (!qualified.isEmpty())
-        finding += QString(" Note: '%1' is a function in the Faust standard library - use the module-qualified form '%2' instead of defining it yourself (defining the bare name collides with the library definition).").arg(symbol).arg(qualified);
-    }
-
-    _llm_lint_cache_code = code;
-    _llm_lint_cache_compile_check = compile_check;
-    _llm_lint_cache_findings = findings;
-    return findings;
-  }
-
-  // Sends the compiler error back to the LLM so it can fix the code.
-  void request_llm_fix(const QString &error_message)
-  {
-    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-    if (plugin==NULL)
-      return;
-
-    QString current_code = _faust_editor->text();
-    if (current_code.isEmpty())
-      current_code = faust_disp_get_code(plugin);
-
-    const QStringList lint_findings_list = collect_lint_findings(plugin, current_code, true);
-    const QString lint_findings = lint_findings_list.join("\n");
-
-    // Class-specific closing instruction: telling the model to check function
-    // arity for an 'undefined symbol' error (and vice versa) sends it looking
-    // in the wrong place.
-    QString verification_instruction;
-    if (radium::llm::is_arity_error(error_message))
-      verification_instruction =
-        "Before writing the fix, verify that every function call in the program "
-        "has the exact number of arguments given in the library list. An arity "
-        "error means one call has too many or too few arguments; fix that call "
-        "and change nothing else.";
-    else if (error_message.contains("undefined symbol"))
-      verification_instruction =
-        "Before writing the fix, verify that every identifier the program uses "
-        "is defined in the program itself - names that appear only in an "
-        "example are not defined here. Define each missing name (e.g. as a "
-        "slider) or remove every use of it, and change nothing else.";
-
-    // Fix rounds ALWAYS use definition splicing: the model replies with
-    // only the corrected definition(s), which are spliced into the current
-    // program by name (FAUST2_splice_faust_definitions). Whole-program
-    // rewrites keep introducing NEW wiring errors (extra input bindings,
-    // redefined names) that the loop then chases until it exhausts
-    // (observed with autotune and dry/wet effects), and for long programs
-    // the completion token limit truncates them anyway. A response that is
-    // a complete program (contains a 'process' definition) still replaces
-    // everything.
-    const QString fix_prompt =
-      "The Faust compiler reported this error for the code above:\n"
-      + radium::llm::summarize_faust_error(error_message) + "\n\n"
-      + (lint_findings.isEmpty()
-         ? QString()
-         : QString("A local static check of the code above found these suspicious lines:\n")
-           + lint_findings + "\n\n")
-      + "The original request was: " + _llm_original_prompt + "\n\n"
-      + "Reply with ONLY the corrected top-level definition(s), each written as 'name = ...;' (a definition may span several lines and must end with ';'). The rest of the program is kept unchanged. Do NOT re-emit the whole program - change only the definition(s) the error points at.\n\n"
-      + verification_instruction;
-
-    const radium::llm::LLMConfig config = radium::llm::get_config();
-
-    if (config.api_key.isEmpty() && config.mode != "free")
-    {
-      _llm_fixing_error = false;
-      set_llm_status("No API key set. Cannot fix compile error.");
-      return;
-    }
-
-    set_llm_status(QString("Compile error. Asking the LLM to fix it (%1/%2)...")
-                   .arg(_llm_compile_attempts).arg(_llm_max_fixes));
-
-    radium::llm::llm_log_note(QString("Sending compile-error fix round %1/%2:\n").arg(_llm_compile_attempts).arg(_llm_max_fixes) + radium::llm::truncate_faust_error(error_message));
-
-    const std::shared_ptr<std::atomic_bool> cancel = start_llm_request();
-    const int epoch = _llm_request_epoch;
-
-    IsAlive is_alive(this);
-
-    const bool is_effect = llm_combo_is_effect();
-    // From the user's request text only (NOT the fix prompt text, which
-    // contains "mono" in its own boilerplate): a mono request must stay a
-    // mono target across fix/cleanup rounds.
-    const bool effect_is_mono = is_effect && _llm_original_prompt.toLower().contains("mono");
-
-    // One fix attempt is fired. Only when it is useless - it returns the
-    // failing program unchanged, or the request fails - is a second attempt
-    // fired (higher temperature, so different sampling). Firing both in
-    // parallel wasted a full stream on every round: the winner cancelled its
-    // sibling mid-generation. DeepSeek's thinking mode ignores temperature,
-    // so with thinking enabled the second attempt would be identical and is
-    // skipped.
-    const bool thinking_enabled = radium::llm::is_deepseek(config) && config.reasoning_effort != "off";
-    std::shared_ptr<bool> used_fallback = std::make_shared<bool>(false);
-
-    auto fix_progress = [is_alive, this](int reasoning_chars, int content_chars)
-    {
-      if (!is_alive)
-        return;
-      update_llm_progress(reasoning_chars, content_chars);
-    };
-
-    auto fix_callback = std::make_shared<std::function<void(bool, QString)>>();
-    *fix_callback = [is_alive, this, cancel, epoch, current_code, used_fallback, thinking_enabled, config, fix_prompt, fix_progress, fix_callback, is_effect, effect_is_mono](bool ok, QString result_or_error)
-    {
-      if (!is_alive)
-        return;
-
-      if (_llm_request_epoch != epoch)
-        return; // a newer request (e.g. a user prompt) took over - never apply or retry over it
-
-      // The response is spliced into the current program by name. An
-      // "unchanged" response is a splice whose result equals the current
-      // program (e.g. the model returned the definitions verbatim).
-      // Comments and string literals are masked before comparing, so a
-      // response that only rewrites comments counts as unchanged too
-      // (observed: the model stripped all comments and returned the
-      // otherwise-identical failing program).
-      if (ok
-          && radium::llm::faust_lint_mask(FAUST2_splice_faust_definitions(current_code, result_or_error)).simplified()
-             != radium::llm::faust_lint_mask(current_code).simplified())
-      {
-        end_llm_request();
-        set_llm_status("LLM fix received. Compiling...");
-        apply_llm_code_splice(result_or_error);
-        return;
-      }
-
-      const QString failure_reason = ok
-        ? "The LLM returned the failing program unchanged."
-        : result_or_error;
-
-      if (!*used_fallback && !thinking_enabled)
-      {
-        // The first attempt was useless (echo or request failure). One
-        // retry with a higher temperature: different sampling can produce
-        // a different - and working - fix. The prompt is escalated too:
-        // when the model echoed the failing program, a plain re-ask often
-        // just repeats it (observed), so the retry prompt spells out that
-        // the returned code did NOT fix the error and that the fix must
-        // actually change the failing expression.
-        *used_fallback = true;
-        set_llm_status("First fix attempt failed. Trying once more...");
-        radium::llm::llm_log_note("Fix attempt failed (" + failure_reason + "), retrying hotter.");
-        const QString retry_prompt =
-          fix_prompt
-          + "\n\n"
-          + (ok
-             ? QString("Your previous fix attempt returned the failing program UNCHANGED, "
-                       "so the compile error is still present. Do NOT repeat the program "
-                       "above: it does not compile.\n\n")
-             : QString("The previous fix attempt failed. The compile error is still present. "
-                       "Do NOT repeat the program above: it does not compile.\n\n"))
-          + "Locate the exact expression the error message points at and change it. "
-            "If the cause is unclear, replace the failing line(s) with a simpler "
-            "equivalent construction - for example, drop the dry/wet helper and mix "
-            "the dry and wet signals explicitly - and remove any definition that "
-            "becomes unused.\n\n"
-            "Respond with ONLY the corrected definition(s) (each 'name = ...;').";
-        radium::llm::send_prompt(config, current_code, retry_prompt,
-                                 *fix_callback,
-                                 QJsonArray(), cancel, 0.7,
-                                 fix_progress,
-                                 true, // skip the example section: a fix corrects code, it doesn't need program examples
-                                 QString(), // compile_error (already part of fix_prompt)
-                                 is_effect,
-                                 effect_is_mono);
-        return;
-      }
-
-      end_llm_request();
-      _llm_fixing_error = false;
-      radium::llm::llm_log_note("Fix failed: " + failure_reason);
-      if (failure_reason.contains("429"))
-        show_llm_error("LLM quota exhausted (HTTP 429). Giving up on fixing the compile error.");
-      else
-        show_llm_error("LLM could not fix the compile error: " + failure_reason);
-    };
-
-    radium::llm::send_prompt(config, current_code, fix_prompt,
-                             *fix_callback,
-                             QJsonArray(), cancel, 0.2,
-                             fix_progress,
-                             true, // skip the example section: a fix corrects code, it doesn't need program examples
-                             QString(), // compile_error (already part of fix_prompt)
-                             is_effect,
-                             effect_is_mono);
-  }
-
-  // Sends the static-check findings back to the LLM when LLM-generated code
-  // COMPILES but has suspicious lines (dead sliders, cancelling mix math):
-  // compilation succeeds, so the compile-error fix loop never sees them.
-  // Rounds share _llm_compile_attempts / _llm_max_fixes with the
-  // compile-error fix loop, and stop when the findings repeat unchanged
-  // (they contain line numbers, so identical text means nothing changed).
-  // If the cleanup code fails to compile, the regular fix loop takes over
-  // (the compiler error gets priority).
-  void request_llm_lint_cleanup(const QStringList &findings, bool llm_compile_was_fix)
-  {
-    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
-    if (plugin==NULL)
-      return;
-
-    QString current_code = _faust_editor->text();
-    if (current_code.isEmpty())
-      current_code = faust_disp_get_code(plugin);
-
-    const QString findings_text = findings.join("\n");
-
-    // Unused sliders are cosmetic (the program compiles), and on large
-    // programs the cleanup rounds degenerate: the model fixes the reported
-    // sliders and adds NEW unused ones, exhausting the budget (observed).
-    // Cap the rounds at 2 when every finding is an unused-slider finding.
-    bool only_unused_sliders = true;
-    for (const QString &finding : findings)
-      if (!finding.contains(QStringLiteral("is declared but never used")))
-      {
-        only_unused_sliders = false;
-        break;
-      }
-    const int cleanup_max = only_unused_sliders ? 2 : _llm_max_fixes;
-
-    if (findings_text == _llm_last_fix_error)
-      _llm_same_error_count++;
-    else
-      _llm_same_error_count = 0;
-
-    _llm_last_fix_error = findings_text;
-
-    if (_llm_same_error_count >= 2)
-    {
-      // The program compiles - only cosmetic findings remain, and the
-      // cleanup kept producing them. End the loop quietly: the event goes
-      // to the log, and the user sees the success status (an alarming
-      // "gave up" message would suggest the program failed, which is not
-      // true).
-      radium::llm::llm_log_note("Cleanup gave up - same findings twice:\n" + findings_text);
-      _llm_compile_attempts = 0;
-      _llm_last_fix_error.clear();
-      _llm_same_error_count = 0;
-      set_llm_status(llm_compile_was_fix ? "Fixed." : "Generated.");
-      return;
-    }
-
-    if (_llm_compile_attempts >= cleanup_max)
-    {
-      // Same as above: the budget was consumed (possibly by fix rounds),
-      // but the program compiles. Log it, show success.
-      radium::llm::llm_log_note(QString("Cleanup gave up - round budget exhausted (%1/%2):\n").arg(_llm_compile_attempts).arg(cleanup_max) + findings_text);
-      _llm_compile_attempts = 0;
-      _llm_last_fix_error.clear();
-      _llm_same_error_count = 0;
-      set_llm_status(llm_compile_was_fix ? "Fixed." : "Generated.");
-      return;
-    }
-
-    _llm_compile_attempts++;
-    _llm_fixing_error = true;
-
-    const radium::llm::LLMConfig config = radium::llm::get_config();
-
-    if (config.api_key.isEmpty() && config.mode != "free")
-    {
-      _llm_fixing_error = false;
-      set_llm_status("No API key set. Cannot clean up the code.");
-      return;
-    }
-
-    set_llm_status(QString("%1. Cleaning up (%2/%3)...")
-                   .arg(llm_compile_was_fix ? "Fixed" : "Generated")
-                   .arg(_llm_compile_attempts).arg(cleanup_max));
-
-    radium::llm::llm_log_note(QString("Sending lint cleanup round %1/%2:\n").arg(_llm_compile_attempts).arg(cleanup_max) + findings_text);
-
-    const QString cleanup_prompt =
-      "The program compiles successfully, but a static check of the code above found these suspicious lines:\n"
-      + findings_text + "\n\n"
-      + "Fix ONLY the issues listed above and respond with ONLY the complete "
-        "corrected Faust program. For example: remove a UI control that is "
-        "declared but never used, or replace dry/wet mix math that cancels "
-        "out. Do not change anything else.\n\n"
-      + "The original request was: " + _llm_original_prompt;
-
-    const std::shared_ptr<std::atomic_bool> cancel = start_llm_request();
-    const int epoch = _llm_request_epoch;
-
-    IsAlive is_alive(this);
-
-    const bool is_effect = llm_combo_is_effect();
-    // From the user's request text only (NOT the cleanup prompt text, which
-    // contains "mono" in its own boilerplate): a mono request must stay a
-    // mono target across fix/cleanup rounds.
-    const bool effect_is_mono = is_effect && _llm_original_prompt.toLower().contains("mono");
-
-    // Same single-attempt + one hotter retry strategy as request_llm_fix:
-    // an unchanged echo (or a failed request) gets one retry with a higher
-    // temperature and an escalated prompt. DeepSeek's thinking mode ignores
-    // temperature, so with thinking enabled the retry would be identical
-    // and is skipped.
-    const bool thinking_enabled = radium::llm::is_deepseek(config) && config.reasoning_effort != "off";
-    std::shared_ptr<bool> used_fallback = std::make_shared<bool>(false);
-
-    auto cleanup_progress = [is_alive, this](int reasoning_chars, int content_chars)
-    {
-      if (!is_alive)
-        return;
-      update_llm_progress(reasoning_chars, content_chars);
-    };
-
-    auto cleanup_callback = std::make_shared<std::function<void(bool, QString)>>();
-    *cleanup_callback = [is_alive, this, cancel, epoch, current_code, used_fallback, thinking_enabled, config, cleanup_prompt, findings_text, cleanup_progress, cleanup_callback, is_effect, effect_is_mono](bool ok, QString result_or_error)
-    {
-      if (!is_alive)
-        return;
-
-      if (_llm_request_epoch != epoch)
-        return; // a newer request (e.g. a user prompt) took over - never apply or retry over it
-
-      // Comments and strings are masked before comparing: a response that
-      // only rewrites comments is still "unchanged".
-      if (ok
-          && radium::llm::faust_lint_mask(result_or_error).simplified()
-             != radium::llm::faust_lint_mask(current_code).simplified())
-      {
-        end_llm_request();
-        set_llm_status("Cleanup received. Compiling...");
-        apply_llm_code(result_or_error);
-        return;
-      }
-
-      const QString failure_reason = ok
-        ? "The LLM returned the program unchanged."
-        : result_or_error;
-
-      if (!*used_fallback && !thinking_enabled)
-      {
-        *used_fallback = true;
-        set_llm_status("Cleanup attempt failed. Trying once more...");
-        radium::llm::llm_log_note("Cleanup attempt failed (" + failure_reason + "), retrying hotter.");
-
-        const QString retry_prompt =
-          cleanup_prompt
-          + "\n\n"
-          + (ok
-             ? QString("Your previous cleanup attempt returned the program UNCHANGED, "
-                       "so the issues listed above are still present. Do NOT repeat "
-                       "the program above.\n\n")
-             : QString("The previous cleanup attempt failed. The issues listed above "
-                       "are still present. Do NOT repeat the program above.\n\n"))
-          + "Remove or fix the exact suspicious lines listed above, and respond "
-            "with a DIFFERENT complete Faust program.";
-
-        radium::llm::send_prompt(config, current_code, retry_prompt,
-                                 *cleanup_callback,
-                                 QJsonArray(), cancel, 0.7,
-                                 cleanup_progress,
-                                 true, // skip the example section
-                                 QString(), // compile_error
-                                 is_effect,
-                                 effect_is_mono);
-        return;
-      }
-
-      end_llm_request();
-      _llm_fixing_error = false;
-      radium::llm::llm_log_note("Cleanup failed: " + failure_reason);
-      if (failure_reason.contains("429"))
-        show_llm_error("LLM quota exhausted (HTTP 429). Giving up on cleaning up the code.");
-      else
-      {
-        // Keep the status line short; the details belong in the log. When
-        // the current program still compiles, the cleanup failure is not
-        // an error - just report that the run is over.
-        radium::llm::llm_log_note("Cleanup failed - remaining findings:\n" + findings_text);
-        set_llm_status(_svg_view_text.isEmpty() ? "Finished" : "Cleaning failed");
-      }
-    };
-
-    radium::llm::send_prompt(config, current_code, cleanup_prompt,
-                             *cleanup_callback,
-                             QJsonArray(), cancel, 0.2,
-                             cleanup_progress,
-                             true, // skip the example section: a cleanup corrects code, it doesn't need program examples
-                             QString(), // compile_error
-                             is_effect,
-                             effect_is_mono);
-  }
 
   // Resets the LLM prompt to the state of a newly created instrument:
   // cancels any in-flight request, clears the conversation history and all
   // generation state, and replaces the code with the default program.
   void a_on_clear_history_clicked(void){
-    if (_llm_cancel)
-      *_llm_cancel = true;
-    _llm_cancel.reset();
-    cancel_button->setEnabled(false);
-    generate_button->setEnabled(true);
-
-    _llm_history = QJsonArray();
-    _llm_fixing_error = false;
-    _llm_compile_attempts = 0;
-    _llm_last_fix_error.clear();
-    _llm_same_error_count = 0;
-    _llm_last_applied_code.clear();
-    _llm_original_prompt.clear();
-    _llm_lint_cache_code.clear();
-    _llm_lint_cache_findings.clear();
-    _llm_last_progress_total = -1;
-    _llm_last_progress_thinking = false;
-
     prompt_edit->clear();
     _llm_prompt_history_index = -1;
     _llm_prompt_draft.clear();
 
     // Replace the code with the default program. Going through the editor
     // triggers the normal text-changed path (undo entry + recompilation).
-    set_text_in__faust_editor_widget(FAUST2_get_default_code());
-
-    // Arm the creation context AFTER replacing the code: the text change
-    // above disarms it (it looks like a manual edit). The next generate
-    // request will be treated as creation, whatever the prompt says.
-    _llm_new_session = true;
+    _llm_session->clear_history();
 
     set_llm_status("New session.");
   }
 
   void a_on_cancel_clicked(void){
-    if (_llm_cancel)
-      *_llm_cancel = true;
-    _llm_cancel.reset();
-    cancel_button->setEnabled(false);
-    generate_button->setEnabled(true);
-    _llm_fixing_error = false;
-    set_llm_status("Cancelled.");
+    _llm_session->cancel();
   }
 
   void a_on_llm_settings_clicked()

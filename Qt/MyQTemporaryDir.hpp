@@ -8,9 +8,8 @@
 
 #include <QDir>
 
-namespace{
 
-  static inline bool try_temp_path(QString &path, QString &error_string){
+  inline bool try_temp_path(QString &path, QString &error_string){
     QDir base(QDir::root());
     
     if (base.mkdir(path)){
@@ -36,7 +35,7 @@ namespace{
     }
   }
   
-  static inline bool get_new_temp_path(const QString &templatePath, QString &path, QString &error_string){
+  inline bool get_new_temp_path(const QString &templatePath, QString &path, QString &error_string){
 
     if (templatePath.endsWith("XXXXXX")){
 
@@ -60,7 +59,7 @@ namespace{
   }
 
   // http://stackoverflow.com/questions/11050977/removing-a-non-empty-folder-in-qt
-  static inline bool removeDir(const QString & dirName)
+  inline bool removeDir(const QString & dirName)
   {
     bool result = true;
     QDir dir(dirName);
@@ -120,7 +119,6 @@ namespace{
     }
     
   };
-}
 
 
 #endif
