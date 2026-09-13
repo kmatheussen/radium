@@ -1,0 +1,87 @@
+--- compiler/boxes/ppbox.cpp.orig
++++ compiler/boxes/ppbox.cpp
+@@ -162,10 +162,31 @@
+     }
+     return "prim5???";
+ }
++
++// Per-thread budget (in box nodes) for boxpp::print. -1 means unlimited.
++// 'boxpp' walks shared (hash-consed) box graphs as trees, which can be
++// exponential, so 'mBox' bounds the traversal instead of only truncating
++// the resulting string.
++static thread_local int gBoxppBudget = -1;
++
++namespace {
++
++struct BoxppBudgetGuard {
++    int fOld;
++    explicit BoxppBudgetGuard(int budget)
++        : fOld(gBoxppBudget)
++    {
++        gBoxppBudget = budget;
++    }
++    ~BoxppBudgetGuard() { gBoxppBudget = fOld; }
++};
+ 
++}  // namespace
++
+ // Limit the box description string to max_size characters
+ string mBox(Tree b, int max_size)
+ {
++    BoxppBudgetGuard budget(max_size < 0 ? 0 : max_size);
+     stringstream error;
+     error << boxpp(b);
+     string str = error.str();
+@@ -230,6 +251,15 @@
+ // If t has a node of type symbol, return its name, otherwise error
+ ostream& boxpp::print(ostream& fout) const
+ {
++    // Bounded printing (see mBox): stop expanding the box graph when the budget is exhausted.
++    if (gBoxppBudget >= 0) {
++        if (gBoxppBudget == 0) {
++            fout << "...";
++            return fout;
++        }
++        gBoxppBudget--;
++    }
++
+     int    i, id;
+     double r;
+     prim0  p0;
+--- compiler/evaluate/eval.cpp.orig
++++ compiler/evaluate/eval.cpp
+@@ -1224,6 +1224,12 @@
+     }
+     return l;
+ }
++
++// Maximum number of box nodes printed when synthesizing a definition name. This
++// bounds the work on exponentially shared box graphs (the argument is a DAG, and
++// boxpp expands it as a tree), while a large enough budget keeps the names
++// unchanged for normal programs. The name is truncated to gMaxNameSize anyway.
++static const int MAX_NAME_BOX_NODES = 4096;
+ 
+ /**
+  * Apply a function to a list of arguments.
+@@ -1362,7 +1368,7 @@
+             stringstream s;
+             s << tree2str(fname);
+             if (!gGlobal->gSimpleNames) {
+-                s << "(" << boxpp(arg) << ")";
++                s << "(" << mBox(arg, MAX_NAME_BOX_NODES) << ")";
+             }
+             setDefNameProperty(f, s.str());
+         }
+--- compiler/draw/drawschema.cpp.orig
++++ compiler/draw/drawschema.cpp
+@@ -237,7 +237,9 @@
+ 
+     char temp[1024];
+ 
+-    gGlobal->gOccurrences = new Occur(bd);
++    // Don't build the occurrence map here: counting occurrences expands shared
++    // (hash-consed) subtrees, which is exponential on huge graphs, and its only
++    // consumer (the folding test in generateDiagramSchema) is disabled.
+     getBoxType(bd, &ins, &outs);
+ 
+     bool hasname = getDefNameProperty(bd, id);
