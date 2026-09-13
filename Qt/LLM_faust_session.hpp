@@ -47,6 +47,7 @@ struct FaustSessionHost
 	std::function<bool()> compile_check_is_safe;
 	std::function<bool()> is_effect;
 	std::function<bool()> effect_is_mono_override; // optional; used by faust_llm_test's --mono
+	std::function<int()> expected_effect_inputs_override; // optional; -1 = infer from the prompt
 	std::function<QString()> radium_path;
 	std::function<QString()> default_code;
 	std::function<void(const QString &text)> status;
@@ -184,6 +185,7 @@ public:
 				            _llm_original_prompt = prompt_to_send;
 				            _llm_max_fixes = config.max_fixes < 0 ? 0 : config.max_fixes;
 				            _llm_compile_attempts = 0;
+				            _llm_cleanup_attempts = 0;
 				            _llm_last_fix_error.clear();
 				            _llm_same_error_count = 0;
 				            _llm_auto_fix_count = 0;
@@ -236,9 +238,14 @@ public:
 		_llm_history = QJsonArray();
 		_llm_fixing_error = false;
 		_llm_compile_attempts = 0;
+		_llm_cleanup_attempts = 0;
 		_llm_last_fix_error.clear();
 		_llm_same_error_count = 0;
 		_llm_last_applied_code.clear();
+		_llm_last_good_code.clear();
+		_llm_last_compiled_inputs = -1;
+		_llm_last_compiled_outputs = -1;
+		_llm_expected_effect_inputs = -1;
 		_llm_original_prompt.clear();
 		_llm_lint_cache_code.clear();
 		_llm_lint_cache_findings.clear();
@@ -257,6 +264,8 @@ public:
 		_llm_fixing_error = false;
 		_llm_history = QJsonArray();
 		_llm_new_session = false;
+		// The manual edit is the new baseline: never auto-revert over it.
+		_llm_last_good_code.clear();
 	}
 
 	// Static-analysis findings for 'code': the textual checks (duplicate
@@ -304,12 +313,30 @@ public:
 
 	// Called by the host when a compilation of the current program finished
 	// successfully.
-	void on_compile_succeeded(int num_inputs)
+	void on_compile_succeeded(int num_inputs, int num_outputs = -1)
 	{
 		_awaiting_compile = false;
+		_llm_last_compiled_inputs = num_inputs;
+		_llm_last_compiled_outputs = num_outputs;
+
+		// Track the last program that compiled successfully AND has the
+		// expected channel counts, so a failed fix round restores a usable
+		// program. A 4-input program for a 2-input effect prompt compiles
+		// fine, but restoring it would silently keep the wrong shape
+		// (observed: the shimmer reverb cleanup flip-flopped between
+		// 2-in and 4-in programs and the revert restored a 4-in one).
+		const int expected_inputs = _host.is_effect()
+		  ? expected_effect_inputs_for(_llm_original_prompt)
+		  : 0;
+		const int expected_outputs = effect_is_mono_for(_llm_original_prompt) ? 1 : 2;
+		if (num_inputs == expected_inputs
+		    && (num_outputs < 0 || num_outputs == expected_outputs))
+		  _llm_last_good_code = _host.get_code();
 
 		const bool llm_compile_done = _llm_fixing_error;
-		const bool llm_compile_was_fix = _llm_compile_attempts > 0;
+		// A cleanup-only turn (no compile errors) is still a fix: report
+		// "Fixed." and log "Auto-fix/cleanup done" for it too.
+		const bool llm_compile_was_fix = _llm_compile_attempts > 0 || _llm_cleanup_attempts > 0;
 		_llm_fixing_error = false;
 
 		if (!llm_compile_done)
@@ -319,10 +346,38 @@ public:
 
 		if (_host.is_effect())
 		{
-			const int expected_inputs = _llm_original_prompt.toLower().contains("mono") ? 1 : 2;
 			llm_log_note(QString("effect-input-check: ready.num_inputs=%1 expected=%2").arg(num_inputs).arg(expected_inputs));
 			if (num_inputs != expected_inputs)
-			  lint_warnings.append(QString("The compiled effect has %1 input channel(s), but it must have exactly %2. Bind the input ONCE ('process = %3 : ...') and derive every other signal from that single binding - a bare '_' reference outside the input binding consumes an extra input channel, and references inside par(i, 2, ...) bodies belong to the lambda, not the input.").arg(num_inputs).arg(expected_inputs).arg(expected_inputs == 2 ? "_,_" : "_"));
+			{
+				QString input_pattern;
+				for (int c = 0; c < expected_inputs; c++)
+				{
+					if (c > 0)
+					  input_pattern += ",";
+					input_pattern += "_";
+				}
+				const QString lower_prompt = _llm_original_prompt.toLower();
+				if (lower_prompt.contains("sidechain") || lower_prompt.contains("side-chain") || lower_prompt.contains("side chain"))
+				  lint_warnings.append(QString("The compiled effect has %1 input channel(s), but a sidechain effect must have exactly %2 (two sound inputs plus one key input). Bind the inputs as FUNCTION PARAMETERS: 'sidechain(mainL, mainR, key) = ...; process = sidechain;'. Do NOT use top-level 'main = _; key = _;' definitions: the compiler folds them into the same input, and using an input-derived signal inside par(i, 2, ...) duplicates the key input.").arg(num_inputs).arg(expected_inputs));
+				else
+				  lint_warnings.append(QString("The compiled effect has %1 input channel(s), but it must have exactly %2. The input must be bound exactly once. Rewrite the program so that 'process' binds it once at the front ('process = %3 : ...'), remove any top-level bare-input definition such as 'dry = _,_;', and pass the bound signal into helper definitions as a function argument instead of referencing the binding again. Every reference to an input binding consumes its channel count again (a bare '_' outside the single input binding adds a channel, and each reuse of 'dry = _,_;' adds two).").arg(num_inputs).arg(expected_inputs).arg(input_pattern));
+			}
+		}
+
+		// Radium wants stereo out: instruments and stereo effects must have
+		// exactly 2 output channels (a mono effect exactly 1). A mono-output
+		// program compiles but plays only the left channel (observed: a
+		// "make it mono" instrument and a mono sidechain effect ended 1-out).
+		if (num_outputs >= 0)
+		{
+			const int expected_outputs = effect_is_mono_for(_llm_original_prompt) ? 1 : 2;
+			if (num_outputs != expected_outputs)
+			{
+				if (expected_outputs == 2)
+				  lint_warnings.append(QString("The compiled program has %1 output channel(s), but Radium needs exactly 2 (stereo). Duplicate the mono signal to stereo at the end of 'process': 'process = monoSignal <: _,_;' (or make process return a pair '(left, right)').").arg(num_outputs));
+				else
+				  lint_warnings.append(QString("The compiled program has %1 output channel(s), but a mono effect must have exactly 1 output. End 'process' with a single channel.").arg(num_outputs));
+			}
 		}
 
 		if (!lint_warnings.isEmpty())
@@ -425,6 +480,7 @@ public:
 				_llm_fixing_error = false;
 				llm_log_note("Compile-error fix loop stopped - same error twice:\n" + error_message);
 				_host.status("LLM fix attempts keep producing the same error. Giving up - edit the code manually.");
+				restore_last_good_code("the fix loop stopped on the same error");
 			}
 			else
 			{
@@ -435,7 +491,14 @@ public:
 		}
 		else
 		{
+			const bool was_fixing = _llm_fixing_error;
 			_llm_fixing_error = false;
+			// The fix budget is exhausted: never leave a non-compiling
+			// program behind, or the next prompt in a batch builds on it.
+			// (Only when the failure came from an LLM fix - a manual edit
+			// that does not compile must never be reverted over.)
+			if (was_fixing)
+			  restore_last_good_code("the fix budget was exhausted");
 		}
 	}
 
@@ -445,6 +508,68 @@ private:
 		return _host.is_effect()
 		    && (prompt.toLower().contains("mono")
 		        || (_host.effect_is_mono_override && _host.effect_is_mono_override()));
+	}
+
+	// The number of audio inputs the compiled effect must have. A sidechain
+	// request needs three (two sound inputs plus one key input); an explicit
+	// "N inputs"/"N channels" in the request wins; mono means one; the
+	// default is two. Once a prompt explicitly establishes a count it is
+	// REMEMBERED for the rest of the session: follow-up prompts like "Add
+	// many sliders" must not reset a 4-in effect to the default 2 (observed:
+	// the follow-up cleanup converted a correct 4-in/2-out effect back to
+	// 2-in/2-out).
+	int expected_effect_inputs_for(const QString &prompt)
+	{
+		if (_host.expected_effect_inputs_override)
+		{
+			const int overridden = _host.expected_effect_inputs_override();
+			if (overridden >= 0)
+			{
+				_llm_expected_effect_inputs = overridden;
+				return overridden;
+			}
+		}
+
+		// The host's mono flag (a mono effect plugin) applies to the WHOLE
+		// session, not just the prompt that mentioned "mono". Without this,
+		// a follow-up prompt like "Add many sliders" recomputed the
+		// expectation as 2 and a correct 1-in program was flagged as wrong
+		// (observed: a mono tremolo session).
+		if (_host.effect_is_mono_override && _host.effect_is_mono_override())
+		{
+			_llm_expected_effect_inputs = 1;
+			return 1;
+		}
+
+		const QString lower = prompt.toLower();
+		if (lower.contains("sidechain") || lower.contains("side-chain") || lower.contains("side chain"))
+		{
+			_llm_expected_effect_inputs = lower.contains("mono") ? 2 : 3;
+			return _llm_expected_effect_inputs;
+		}
+
+		const QRegularExpression re(QStringLiteral("(\\d+)\\s*(?:audio\\s*)?(?:input|channel)"));
+		const QRegularExpressionMatch m = re.match(lower);
+		if (m.hasMatch())
+		{
+			const int n = m.captured(1).toInt();
+			if (n >= 1 && n <= 16)
+			{
+				_llm_expected_effect_inputs = n;
+				return n;
+			}
+		}
+
+		if (lower.contains("mono"))
+		{
+			_llm_expected_effect_inputs = 1;
+			return 1;
+		}
+
+		if (_llm_expected_effect_inputs > 0)
+		  return _llm_expected_effect_inputs;
+
+		return 2;
 	}
 
 	// Live-updates the status line with how much the LLM has produced so
@@ -467,6 +592,7 @@ private:
 	void reset_loop_state(void)
 	{
 		_llm_compile_attempts = 0;
+		_llm_cleanup_attempts = 0;
 		_llm_last_fix_error.clear();
 		_llm_same_error_count = 0;
 		_llm_auto_fix_count = 0;
@@ -482,6 +608,43 @@ private:
 	void apply_code_splice(const QString &fragment)
 	{
 		apply_code(FAUST2_splice_faust_definitions(_host.get_code(), fragment));
+	}
+
+	// Restores the most recent program that compiled successfully, so a
+	// failed fix round never leaves the session (or the next prompt in a
+	// batch) working from a program that does not compile. Returns true when
+	// a restore was performed.
+	bool restore_last_good_code(const QString &reason)
+	{
+		if (_llm_last_good_code.isEmpty()
+		    || _llm_last_good_code == _host.get_code())
+		  return false;
+
+		llm_log_note(QString("Restoring the last program that compiled successfully (%1).").arg(reason));
+		_host.status("Restored the last working program.");
+		apply_code(_llm_last_good_code);
+		return true;
+	}
+
+	// When the cleanup loop gives up and the current program compiled with
+	// the WRONG channel count (e.g. a 4-in effect for a 2-in prompt), fall
+	// back to the last I/O-correct program instead of keeping the wrong
+	// shape. Cosmetic cleanup failures (dead sliders) on a correctly-shaped
+	// program are NOT reverted - the current program is better than an
+	// older one.
+	bool restore_if_wrong_io(const QString &reason)
+	{
+		const int expected_in = _host.is_effect()
+		  ? expected_effect_inputs_for(_llm_original_prompt)
+		  : 0;
+		const int expected_out = effect_is_mono_for(_llm_original_prompt) ? 1 : 2;
+		const bool wrong_in = _llm_last_compiled_inputs >= 0
+		  && _llm_last_compiled_inputs != expected_in;
+		const bool wrong_out = _llm_last_compiled_outputs >= 0
+		  && _llm_last_compiled_outputs != expected_out;
+		if (wrong_in || wrong_out)
+		  return restore_last_good_code(reason);
+		return false;
 	}
 
 	// Marks a new in-flight LLM request; cancels any previous one. The epoch
@@ -664,10 +827,12 @@ private:
 			end_llm_request();
 			_llm_fixing_error = false;
 			llm_log_note("Fix failed: " + failure_reason);
+			const bool restored = restore_last_good_code("the fix loop gave up");
 			if (failure_reason.contains("429"))
 			  _host.show_error("LLM quota exhausted (HTTP 429). Giving up on fixing the compile error.");
 			else
-			  _host.show_error("LLM could not fix the compile error: " + failure_reason);
+			  _host.show_error("LLM could not fix the compile error: " + failure_reason
+			                   + (restored ? QString(" The last program that compiled successfully was restored.") : QString()));
 		};
 
 		send_prompt(config, current_code, fix_prompt,
@@ -709,24 +874,26 @@ private:
 		if (_llm_same_error_count >= 2)
 		{
 			llm_log_note("Cleanup gave up - same findings twice:\n" + findings_text);
-			_llm_compile_attempts = 0;
+			_llm_cleanup_attempts = 0;
 			_llm_last_fix_error.clear();
 			_llm_same_error_count = 0;
 			_host.status(llm_compile_was_fix ? "Fixed." : "Generated.");
+			restore_if_wrong_io("the cleanup gave up with the wrong channel count");
 			return;
 		}
 
-		if (_llm_compile_attempts >= cleanup_max)
+		if (_llm_cleanup_attempts >= cleanup_max)
 		{
-			llm_log_note(QString("Cleanup gave up - round budget exhausted (%1/%2):\n").arg(_llm_compile_attempts).arg(cleanup_max) + findings_text);
-			_llm_compile_attempts = 0;
+			llm_log_note(QString("Cleanup gave up - round budget exhausted (%1/%2):\n").arg(_llm_cleanup_attempts).arg(cleanup_max) + findings_text);
+			_llm_cleanup_attempts = 0;
 			_llm_last_fix_error.clear();
 			_llm_same_error_count = 0;
 			_host.status(llm_compile_was_fix ? "Fixed." : "Generated.");
+			restore_if_wrong_io("the cleanup budget was exhausted with the wrong channel count");
 			return;
 		}
 
-		_llm_compile_attempts++;
+		_llm_cleanup_attempts++;
 		_llm_fixing_error = true;
 
 		const LLMConfig config = get_config();
@@ -740,9 +907,9 @@ private:
 
 		_host.status(QString("%1. Cleaning up (%2/%3)...")
 		             .arg(llm_compile_was_fix ? "Fixed" : "Generated")
-		             .arg(_llm_compile_attempts).arg(cleanup_max));
+		             .arg(_llm_cleanup_attempts).arg(cleanup_max));
 
-		llm_log_note(QString("Sending lint cleanup round %1/%2:\n").arg(_llm_compile_attempts).arg(cleanup_max) + findings_text);
+		llm_log_note(QString("Sending lint cleanup round %1/%2:\n").arg(_llm_cleanup_attempts).arg(cleanup_max) + findings_text);
 
 		const QString cleanup_prompt =
 		  "The program compiles successfully, but a static check of the code above found these suspicious lines:\n"
@@ -833,6 +1000,11 @@ private:
 			{
 				llm_log_note("Cleanup failed - remaining findings:\n" + findings_text);
 				_host.status((_host.error_is_shown && _host.error_is_shown()) ? "Cleaning failed" : "Finished");
+				// A failed cleanup must not leave a wrong-shaped program in
+				// place: restore the last I/O-correct one (observed: a 4-in
+				// request whose follow-up cleanup kept returning 2-in
+				// programs).
+				restore_if_wrong_io("the cleanup failed with the wrong channel count");
 			}
 		};
 
@@ -856,9 +1028,14 @@ private:
 	// Auto-fixing of LLM-generated code that fails to compile.
 	bool _llm_fixing_error = false;
 	int _llm_compile_attempts = 0;
+	int _llm_cleanup_attempts = 0;
 	int _llm_max_fixes = 3;
 	QString _llm_original_prompt;
 	QString _llm_last_applied_code;
+	QString _llm_last_good_code;
+	int _llm_last_compiled_inputs = -1;
+	int _llm_last_compiled_outputs = -1;
+	int _llm_expected_effect_inputs = -1;
 	QString _llm_last_fix_error;
 	int _llm_same_error_count = 0;
 	int _llm_auto_fix_count = 0;

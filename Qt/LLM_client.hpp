@@ -152,12 +152,15 @@ static const char *example_sine_synth =
   "\n"
   "process = os.osc(freq * bend) * envelope <: _,_;\n";
 
+// Stereo effect base example: the input is bound exactly once, at the
+// front of process, and each channel is processed with par. The helpers
+// take the signal as an argument - never as a second bare input binding.
 static const char *example_lowshelf_filter =
   "import(\"stdfaust.lib\");\n"
   "\n"
   "freq = hslider(\"freq\", 200, 20, 20000, 0.01) : si.smooth(ba.tau2pole(0.010));\n"
   "gain = hslider(\"gain\", 0, -24, 24, 0.1) : si.smooth(ba.tau2pole(0.010));\n"
-  "process = fi.lowshelf(2, gain, freq);\n";
+  "process = _,_ : par(i, 2, fi.lowshelf(2, gain, freq));\n";
 
 // A true stereo chorus: an LFO-modulated short delay (20 ms, no feedback)
 // applied per channel and mixed over the input. de.sdelay takes samples
@@ -172,8 +175,10 @@ static const char *example_chorus =
   "depth = hslider(\"depth\", 0.005, 0.001, 0.02, 0.001) : si.smooth(ba.tau2pole(0.010));\n"
   "del = 0.020 * ma.SR + depth * ma.SR * os.osc(rate);\n"
   "chorus = _,_ : par(i, 2, de.sdelay(0.05 * ma.SR, 1024, del));\n"
-  "process = _ : ef.dryWetMixer(wet, chorus);\n";
+  "process = _,_ : ef.dryWetMixer(wet, chorus);\n";
 
+// Stereo delay/echo: the per-channel helper takes its signal as an
+// argument, so the input is still bound only once (in process).
 static const char *example_delay_echo =
   "import(\"stdfaust.lib\");\n"
   "\n"
@@ -181,20 +186,23 @@ static const char *example_delay_echo =
   "wet = hslider(\"wet\", 0.5, 0, 1, 0.01) : si.smooth(ba.tau2pole(0.010));\n"
   "delayTime = hslider(\"delay\", 0.25, 0, 2, 0.01) : si.smooth(ba.tau2pole(0.010));\n"
   "feedback = hslider(\"feedback\", 0.5, 0, 0.9, 0.01) : si.smooth(ba.tau2pole(0.010));\n"
-  "process = _ * dry + (_ : ef.echo(2.0, delayTime, feedback)) * wet;\n";
+  "echo(x) = x * dry + (x : ef.echo(2.0, delayTime, feedback)) * wet;\n"
+  "process = _,_ : par(i, 2, echo);\n";
 
 static const char *example_reverb =
   "import(\"stdfaust.lib\");\n"
   "\n"
   "dry = hslider(\"dry\", 1, 0, 1, 0.01) : si.smooth(ba.tau2pole(0.010));\n"
   "wet = hslider(\"wet\", 0.5, 0, 1, 0.01) : si.smooth(ba.tau2pole(0.010));\n"
-  "process = _ * dry + (_ : re.mono_freeverb(0.8, 0.8, 0.5, 0.7)) * wet;\n";
+  "verb(x) = x * dry + (x : re.mono_freeverb(0.8, 0.8, 0.5, 0.7)) * wet;\n"
+  "process = _,_ : par(i, 2, verb);\n";
 
 static const char *example_distortion =
   "import(\"stdfaust.lib\");\n"
   "\n"
   "drive = hslider(\"drive\", 2, 0, 10, 0.1) : si.smooth(ba.tau2pole(0.010));\n"
-  "process = _ * drive : ef.cubicnl_nodc(drive, 0);\n";
+  "dist(x) = x * drive : ef.cubicnl_nodc(drive, 0);\n"
+  "process = _,_ : par(i, 2, dist);\n";
 
 // Verified to compile. Plays a pitched sample across the keyboard; the
 // url must be the exact file the user provided. 'ref' (65.41 = C2) is the
@@ -221,11 +229,11 @@ static const FaustExample g_faust_examples[] =
 {
 	{"polyphonic sine tone with ADSR envelope", "synth,sine,oscillator,tone,adsr", example_default_instrument},
 	{"polyphonic sine synth with ADSR envelope", "synth,sine,oscillator,envelope,adsr", example_sine_synth},
-	{"mono low-shelf filter effect", "filter,shelf,lowshelf,eq", example_lowshelf_filter},
+	{"stereo low-shelf filter effect", "filter,shelf,lowshelf,eq", example_lowshelf_filter},
 	{"stereo chorus effect", "chorus,flanger,modulation,effect", example_chorus},
-	{"mono delay/echo effect", "delay,echo", example_delay_echo},
-	{"mono reverb effect", "reverb,reverberation", example_reverb},
-	{"mono distortion effect", "distortion,drive,saturat,overdrive", example_distortion},
+	{"stereo delay/echo effect", "delay,echo", example_delay_echo},
+	{"stereo reverb effect", "reverb,reverberation", example_reverb},
+	{"stereo distortion effect", "distortion,drive,saturat,overdrive", example_distortion},
 	{"polyphonic pitched sampler", "sampler,sample,soundfile,pitch,pitched,playback", example_pitched_sampler},
 };
 
@@ -310,6 +318,10 @@ static const char *faust_module_reference =
   "           fi.resonbp(fc, Q, gain)\n"
   "           Shelving/peak/notch: fi.lowshelf(N, gain_db, fx),\n"
   "           fi.highshelf(N, gain_db, fx), fi.peak_eq, fi.notchw\n"
+  "           Comb/allpass building blocks (applied with ':'):\n"
+  "           fi.allpass_fcomb(maxdel, del, aN) - exactly 3 arguments\n"
+  "           (max delay in samples, delay in samples, allpass gain), e.g.\n"
+  "           sig : fi.allpass_fcomb(2048, 64.5, 0.6); fi.combfilter(N, d, g)\n"
   "           There is NO Chebyshev, Bessel, or Legendre filter in the\n"
   "           library. If one is requested, use the closest available type\n"
   "           (elliptic/Cauer for Chebyshev) and add a one-line code comment\n"
@@ -317,6 +329,8 @@ static const char *faust_module_reference =
   "  en.      Envelopes: en.adsr(atk, dec, sus, rel, gate), en.ar(atk, rel, gate)\n"
   "  no.      Noises: no.noise (white), no.pink_noise\n"
   "  ef.      Effects: ef.echo(max_duration, duration, feedback),\n"
+  "           ef.wavefold(width): wavefolder applied with ':'\n"
+  "           (sig : ef.wavefold(0.5)); there is no one-argument form.\n"
   "           ef.dryWetMixer(wetAmount, FX) - linear dry-wet mixer for an\n"
   "           N-in/N-out effect. The second argument is the EFFECT ITSELF,\n"
   "           a FUNCTION (like re.stereo_freeverb(0.8, 0.8, 0.3, 0.5) or a\n"
@@ -325,17 +339,70 @@ static const char *faust_module_reference =
   "           process = _,_ : ef.dryWetMixer(mix, re.stereo_freeverb(0.8, 0.8, 0.3, 0.5));\n"
   "           It already passes the input through as the dry signal - do\n"
   "           NOT add a separate dry path or the dry signal is doubled.\n"
+  "           ef.transpose_windowed(P, w, s, sig) / ef.transpose(w, x, s, sig):\n"
+  "           pitch shifters; s = shift in SEMITONES (audio-rate, so a\n"
+  "           tracked correction amount can drive it), w = window length in\n"
+  "           samples (e.g. 2048), P = number of overlapping taps (2). Use\n"
+  "           these for pitch shifting/transposing instead of building a\n"
+  "           shifter from de.*: a fixed delay does NOT shift pitch - the\n"
+  "           read pointer must sweep, which these functions do. Apply them\n"
+  "           with THREE arguments: sig : ef.transpose_windowed(2, 2048, shift).\n"
+  "           Do NOT pass '_' as the 4th argument (ef.transpose_windowed(2,\n"
+  "           2048, shift, _)): the parameter is referenced once per internal\n"
+  "           tap, so the explicit '_' becomes 2-4 process inputs and gives\n"
+  "           an arity error ('must be equal to the number of inputs [4] of\n"
+  "           transpose_windowed'). When passing a named signal argument\n"
+  "           (shimmer(x) = ef.transpose_windowed(2, 2048, shift, x)) the\n"
+  "           4th argument is fine because it is one signal expression.\n"
+  "           ef.granular(P, dur, ratio, pos, jit, sig): live granulator on\n"
+  "           the input signal (MONO). P = grain voices (4), dur = grain\n"
+  "           duration in seconds, ratio = playback speed inside each grain\n"
+  "           (1 = unchanged pitch, 2 = octave up), pos = read position in\n"
+  "           seconds behind the write head, jit = random position jitter in\n"
+  "           seconds (latched per grain). Apply with FIVE arguments:\n"
+  "           sig : ef.granular(4, dur, ratio, pos, jit).\n"
+  "           A granular SAMPLER instrument: feed a looping soundfile\n"
+  "           through it per channel (the soundfile is stereo, granular is\n"
+  "           mono):\n"
+  "           src = so.loop(mysf, 0);\n"
+  "           process = src : par(i, 2, ef.granular(4, grain_size, ratio, pos, jit));\n"
+  "           pos + jit + (ratio-1)*dur must stay within the ~1.36 s\n"
+  "           internal delay line.\n"
   "  co.      Compressors: co.compressor_mono(ratio, thresh, att, rel),\n"
   "           co.compressor_stereo(ratio, thresh, att, rel) - both applied\n"
   "           to the signal with ':' (sig : co.compressor_mono(...))\n"
+  "           Limiter: co.limiter_lad_stereo(LD, ceiling, attack, hold, release)\n"
+  "           and co.limiter_lad_N(N, LD, ceiling, attack, hold, release) -\n"
+  "           pass ALL FIVE (or SIX) arguments, then apply with ':'\n"
+  "           (sig : co.limiter_lad_stereo(0.01, 1, 0.01, 0.05, 0.2)).\n"
   "  re.      Reverbs: re.dattorro_rev_default, re.mono_freeverb(fb1, fb2, damp, spread), re.satrev\n"
+  "           re.dattorro_rev(pre_delay, bw, i_diff1, i_diff2, decay, d_diff1,\n"
+  "           d_diff2, damping): pre_delay is in SAMPLES (use\n"
+  "           pre_delay * ma.SR), not seconds.\n"
+  "           re.zita_rev1_stereo(rdel, f1, f2, t60dc, t60m, fsmax): rdel is\n"
+  "           in MILLISECONDS, f1/f2 in Hz, t60dc/t60m in seconds.\n"
   "  ro.      Routes: ro.interleave(R, C) (interleaves R*C channels)\n"
+  "           ro.hadamard(N): an N-in/N-out Hadamard mixer. FDN reverb\n"
+  "           recipe: fdn = par(i, N, +) ~ (par(i, N, de.delay(2 * ma.SR,\n"
+  "           d(i))) : ro.hadamard(N) : par(i, N, *(decay)));\n"
+  "           process = _,_ <: si.bus(N) : fdn :> _,_;\n"
+  "           par(i, N, +) has 2N inputs: N external plus N fed back. Never\n"
+  "           write 'si.bus(N) : + ~ body' - '+' is MONO and only handles a\n"
+  "           1-channel loop. Dry/wet version:\n"
+  "           reverb = (_,_) <: si.bus(N) : fdn :> _,_;\n"
+  "           process = _,_ <: (par(i, 2, *(1 - mix))),\n"
+  "                            (reverb : par(i, 2, *(mix))) :> _,_;\n"
   "  de.      Delays: de.delay(max_delay, delay_time)\n"
   "  pf.      Flangers: pf.flanger_mono(dmax, curdel, depth, fb, invert),\n"
   "           pf.flanger_stereo(dmax, curdel1, curdel2, depth, fb, invert) -\n"
   "           dmax/curdel are in SAMPLES (10-30 ms typical: 0.03 * ma.SR),\n"
   "           NOT seconds; depth and fb are 0..1.\n"
   "  ba.      Basics: ba.db2linear(db), ba.linear2db(x)\n"
+  "           ba.pick(list, index): picks the index-th element of a TUPLE -\n"
+  "           the LIST is the FIRST argument (ba.pick((10, 20, 30), 1) is 20;\n"
+  "           ba.pick(1, (10, 20, 30)) is wrong). The index must be a constant\n"
+  "           numerical expression. To select a value with a dynamic index,\n"
+  "           use ba.if/select2 chains instead.\n"
   "  si.      Signal manipulation: si.polySmooth(gate, smooth, k), si.smoo(x),\n"
   "           si.smooth(ba.tau2pole(tau)) - one-pole smoother with time\n"
   "           constant tau in seconds (10 ms = ba.tau2pole(0.010))\n"
@@ -353,6 +420,23 @@ static const char *faust_module_reference =
   "           so.sound(mysf, part).play_rev(level, gate),\n"
   "           so.sound(mysf, part).play_interp(ref, freq, level, gate, it.cubic),\n"
   "           so.loop(mysf, part), so.loop_speed(mysf, part, speed)\n"
+  "           play_rev takes ONLY (level, gate): it has no speed or start\n"
+  "           offset control, so do not declare playback-speed/position\n"
+  "           sliders for a reverse player (observed: the model switched to\n"
+  "           loop_speed_level to 'use' a playback-speed slider and lost the\n"
+  "           reverse playback the request asked for).\n"
+  "  mi.      Physical modelling (mass-interaction). mi.oscil(m, k, z, grav,\n"
+  "           x0, x1) and mi.mass(m, grav, x0, x1) are 1-in/1-out processors:\n"
+  "           feed the input with ':', e.g. 0.1 : mi.oscil(1.0, 0.5, 0.1, 0.0, 0.1, 0.0).\n"
+  "           mi.spring(k, x1r0, x2r0, x1, x2), mi.damper(z, x1r0, x2r0, x1, x2),\n"
+  "           mi.springDamper(k, z, x1r0, x2r0, x1, x2),\n"
+  "           mi.nlSpringDamper2(k, q, z, x1r0, x2r0, x1, x2),\n"
+  "           mi.nlPluck(k, scale, z, x1r0, x2r0, x1, x2) and\n"
+  "           mi.nlBow(z, scale, type, x1r0, x2r0, x1, x2) return TWO output\n"
+  "           channels (the two mass positions): merge them with ':> _' (e.g.\n"
+  "           mi.nlPluck(2000.0, 1.0, 0.2, 0.0, 0.0, exc, 0.0) :> _)\n"
+  "           or process both outputs. x1/x2 are the input signals (the last\n"
+  "           two arguments); pass ALL arguments.\n"
   "\n"
   "Faust Dev 2 conventions:\n"
   "  - Always import stdfaust.lib and define 'process'.\n"
@@ -433,7 +517,13 @@ static const char *faust_module_reference =
   "  - NEVER use analyzer functions (an.*: an.pitchTracker, an.fft, an.rfft,\n"
   "    an.rtocv, an.filterbank, ...). They expand into enormous internal\n"
   "    signal graphs that can make the Faust compiler run for minutes or\n"
-  "    hang outright. Implement pitch/spectral features without them.\n"
+  "    hang outright. Implement pitch/spectral features without them: simple\n"
+  "    time-domain estimators are allowed and expected. For example, estimate\n"
+  "    a monophonic pitch by counting sign changes (zero crossings) of a\n"
+  "    lowpassed signal over a smoothed window and converting the rate to Hz\n"
+  "    (freq ~= crossings_per_sample * ma.SR / 2), or follow the signal\n"
+  "    envelope (abs : lowpass) for level. Do not give up on a pitch/spectral\n"
+  "    feature just because an.* is unavailable.\n"
   "\n"
   "Faust Dev 2 idioms:\n"
   "  - 'gate' is a held level (1 while the note is down). 'ba.impulsify(gate)'\n"
@@ -465,6 +555,66 @@ static const char *faust_module_reference =
   "    applied to a signal with ':', never used bare in arithmetic.\n"
   "    si.polySmooth(gate, 0.999, 1) * freq is WRONG;\n"
   "    freq : si.polySmooth(gate, 0.999, 1) is right.\n"
+  "  - Feedback/recursion ALWAYS needs the '~' operator: a definition can\n"
+  "    never reference itself ('x = y + feedback * x;' gives 'endless\n"
+  "    evaluation cycle' - definitions are not evaluated in order). Write\n"
+  "    the loop body as a function of the delayed state and close it with\n"
+  "    '~':\n"
+  "    loop = + ~ (de.delay(maxSamples, delaySamples) : *(feedback));\n"
+  "    process = input : loop;\n"
+  "    A modulated feedback delay:\n"
+  "    modDelay(sig) = de.delay(2 * ma.SR, (0.03 + 0.005 * os.osc(0.5)) * ma.SR, sig);\n"
+  "    process = _,_ : par(i, 2, + ~ (modDelay : *(0.7)));\n"
+  "    Cross-coupled loops (A feeds B feeds A) are hard to get right; a\n"
+  "    single delay line with '~' plus a second modulated tap is a safe\n"
+  "    reverb/echo tail.\n"
+  "    A PING-PONG delay cross-couples the two channels (left feeds right\n"
+  "    and vice versa). Recipe:\n"
+  "    swap(inL, inR) = (inR, inL);\n"
+  "    pingpong = par(i, 2, +) ~ (par(i, 2, de.delay(2 * ma.SR, delaySamples))\n"
+  "                               : swap : par(i, 2, *(fb)));\n"
+  "    process = _,_ : pingpong;\n"
+  "    (par(i, 2, +) has 4 inputs: 2 external plus 2 fed back.) Two\n"
+  "    INDEPENDENT '~' loops do not ping-pong - the channels must swap in\n"
+  "    the feedback path.\n"
+  "  - A per-note accumulator (a value that rises or falls while the note\n"
+  "    is held and resets at each note-on) is a feedback loop whose\n"
+  "    feedback is gated by 'gate'. Convert a PER-SECOND rate to a\n"
+  "    per-sample increment with '/ ma.SR':\n"
+  "    rate = hslider(\"rise rate\", 300, 0, 2000, 1);\n"
+  "    ramp = (gate * rate / ma.SR) : + ~ (de.delay(1, 1) * gate);\n"
+  "    swept = freq + ramp;\n"
+  "    'de.delay(1, 1)' is a one-sample delay. Without '/ ma.SR' the ramp\n"
+  "    advances by 'rate' per SAMPLE (44100x too fast: a 300 Hz/s request\n"
+  "    becomes 13 MHz/s). The ' * gate' in the feedback resets the\n"
+  "    accumulator to 0 while the note is off, so every note-on starts\n"
+  "    from 0; do not add a separate reset mechanism.\n"
+  "  - A freeze/hold button (reverb freeze, infinite sustain) must do BOTH\n"
+  "    (1) mute the new input and (2) set the feedback to ~1, otherwise the\n"
+  "    tail is not actually frozen - new notes keep entering and replacing\n"
+  "    it. Recipe:\n"
+  "    freeze = button(\"freeze\");\n"
+  "    loopGain = select2(freeze, fb, 0.999);\n"
+  "    inputGain = select2(freeze, 1.0, 0.0);\n"
+  "    loop = + ~ (de.delay(2 * ma.SR, delaySamples) : *(loopGain));\n"
+  "    process = input * inputGain : loop;\n"
+  "    (select2(sel, x0, x1) picks x0 when sel=0 and x1 when sel=1.)\n"
+  "  - Noise gate: ef.gate_mono(thresh, att, hold, rel, x) gates x itself\n"
+  "    (x is the LAST argument; or apply with ':' - sig : ef.gate_mono(...)).\n"
+  "    To gate the audio with a sidechain KEY, use the gain output:\n"
+  "    gain = ef.gate_gain_mono(thresh, att, hold, rel, key);\n"
+  "    gated = audio * gain;\n"
+  "    Do NOT gate the key and mix it back into the output - the key then\n"
+  "    leaks into the signal and the gate is inaudible at full wet.\n"
+  "  - The ORDER argument of fi.lowpass/fi.highpass/fi.bandpass/fi.bandstop\n"
+  "    MUST be a constant integer (1-4). Never pass a slider or a signal:\n"
+  "    'string_lp_order = hslider(\"lp order\", 2, 1, 4, 1);\n"
+  "     ... fi.lowpass(string_lp_order, fc)' makes the compiler build a\n"
+  "    variable-order filter and it can consume tens of GB of memory and\n"
+  "    never finish (observed: 21 GB, 26 minutes). If the order should be\n"
+  "    adjustable, select between a few CONSTANT-order filters:\n"
+  "    lp = select2(order < 1.5, fi.lowpass(1, fc),\n"
+  "                 select2(order < 2.5, fi.lowpass(2, fc), fi.lowpass(4, fc)));\n"
   "  - An equalizer sums parallel bands. Fan the input to all bands with\n"
   "    the split '<:' and sum the results with the merge ':>':\n"
   "    lp_gain = hslider(\"low gain\", 0, -24, 24, 0.1) : si.smooth(ba.tau2pole(0.010));\n"
@@ -492,13 +642,26 @@ static const char *faust_module_reference =
   "    process = _,_ <: low_band, mid_band, high_band :> _,_;\n"
   "    NEVER duplicate the input with 'par(i, N, _,_)', and never mix the\n"
   "    bands with ro.interleave(R, C) when R or C is not 2.\n"
-  "  - A sidechain computes a control signal from one input channel and\n"
-  "    applies it to another:\n"
-  "    main = _;\n"
-  "    key = _;\n"
-  "    mix = hslider(\"mix\", 1, 0, 1, 0.01) : si.smooth(ba.tau2pole(0.010));\n"
-  "    gain = key : abs : fi.lowpass(2, 30) : co.compressor_mono(ratio, threshold, attack, release);\n"
-  "    process = main <: par(i, 2, *(1 - mix + gain * mix));\n"
+  "  - A sidechain computes a control signal from a separate key input and\n"
+  "    applies it to the main signal. Bind the inputs as FUNCTION\n"
+  "    PARAMETERS, never as top-level 'main = _; key = _;' definitions:\n"
+  "    the compiler folds the two bare '_' definitions into the same input\n"
+  "    (the key then IS the main signal), and referencing an input-derived\n"
+  "    signal inside par(i, 2, ...) duplicates the key input. The\n"
+  "    parameter form gives the separate input and lets the key drive both\n"
+  "    output channels. Stereo sidechain (3 inputs: sound L, sound R, key;\n"
+  "    2 outputs):\n"
+  "    sidechain(mainL, mainR, key) = (mainL * g, mainR * g)\n"
+  "    with {\n"
+  "        g = key : abs : fi.lowpass(2, 30) : co.compressor_mono(ratio, threshold, attack, release);\n"
+  "    };\n"
+  "    process = sidechain;\n"
+  "    Mono sidechain (2 inputs: main, key; 2 outputs):\n"
+  "    sidechain(main, key) = main * g\n"
+  "    with {\n"
+  "        g = key : abs : fi.lowpass(2, 30) : co.compressor_mono(ratio, threshold, attack, release);\n"
+  "    };\n"
+  "    process = sidechain <: _,_;\n"
   "  - Define each name only once (Faust rejects redefinitions). Faust has\n"
   "    NO assignment: a definition is not 'executed' in order, so writing\n"
   "    'x = ...; x = x : f;' is a compile error ('multiple definitions'),\n"
@@ -509,8 +672,55 @@ static const char *faust_module_reference =
   "    and use delay_time_smoothed from then on. To build a\n"
   "    sound from parts, give each part its own name and sum them:\n"
   "    part1 = ...; part2 = ...; combined = part1 + part2;\n"
+  "  - Use descriptive names, never single letters or very short names\n"
+  "    (a, b, x, y, d, f, w, i, ...) for top-level definitions or lambda\n"
+  "    parameters: they collide with symbols inside the inlined Faust\n"
+  "    library code and give the cryptic error 'BoxIdent[...] is defined\n"
+  "    here'. Write \\(prev, cur).(...) instead of \\(a, b).(...), and\n"
+  "    'delay_samples' instead of 'd'.\n"
+  "  - os.sawtooth/os.square/os.triangle are band-limited and can fail with\n"
+  "    'recursive composition A~B' when their frequency argument is an\n"
+  "    audio-rate signal computed from the audio input (a tracked pitch or\n"
+  "    envelope follower). For input-derived frequencies use os.osc(freq),\n"
+  "    which accepts audio-rate frequency, or build the waveform from an\n"
+  "    explicit phasor (os.phasor or a '+ ~ ma.frac' accumulator).\n"
   "  - Vibrato / LFO pitch modulation: freq * (1 + depth * os.osc(rate)),\n"
   "    e.g. freq * (1 + 0.05 * os.osc(6)) for a 6 Hz vibrato.\n"
+  "  - Zero-crossing pitch estimator (the an.*-free way to track a\n"
+  "    monophonic pitch). Count the sign changes per sample, smooth the\n"
+  "    rate, and convert to Hz (two crossings per period):\n"
+  "    pos = sig >= 0;   // comparison directly, NOT 'sig : (>= 0)'\n"
+  "    posPrev = pos : de.delay(1, 1);\n"
+  "    crossings = abs(pos - posPrev);\n"
+  "    rate = crossings : si.smooth(ba.tau2pole(0.05));\n"
+  "    freq = rate * ma.SR / 2;\n"
+  "    Lowpass the signal first (e.g. sig : fi.lowpass(2, 1500)) so\n"
+  "    harmonics do not add spurious crossings. Use a descriptive helper\n"
+  "    that takes the signal as an argument; never a bare input binding.\n"
+  "  - Pitch correction (autotune): after detecting the pitch, snap it to\n"
+  "    the nearest SEMITONE and shift by the difference - never transpose\n"
+  "    to a fixed reference frequency (that turns every note into the same\n"
+  "    pitch and destroys the melody):\n"
+  "    snap(f) = ba.midikey2hz(rint(ba.hz2midikey(f)));\n"
+  "    detected = max(20, trackPitch(sig));\n"
+  "    semitones = 12 * ma.log2(snap(detected) / detected);\n"
+  "    corrected = sig : ef.transpose_windowed(2, 2048, semitones);\n"
+  "    For a musical scale, snap to the nearest ENABLED scale note: compute\n"
+  "    the signed distance to each enabled note and SELECT the one with the\n"
+  "    smallest abs(distance) (see 'Selection vs summation' in the\n"
+  "    conventions) - never add the per-note offsets together.\n"
+  "  - Pitch shifting/transposing a signal: use ef.transpose_windowed(2,\n"
+  "    2048, semitones, sig) (or ef.transpose(w, x, semitones, sig)). A\n"
+  "    fixed delay line does not shift pitch; these sweep the read pointer\n"
+  "    and take the shift in semitones as an audio-rate signal. Apply them\n"
+  "    with ':' and 3 arguments (sig : ef.transpose_windowed(2, 2048, semitones));\n"
+  "    never pass '_' as the 4th argument (see the library entry above).\n"
+  "    For a SHIMMER reverb, put the pitch shifter INSIDE the feedback\n"
+  "    loop so every pass shifts again:\n"
+  "    shimmer = + ~ (de.delay(2 * ma.SR, delaySamples)\n"
+  "                   : ef.transpose_windowed(2, 2048, 12) : *(0.7));\n"
+  "    Applying the shifter only BEFORE the loop shifts the tail once\n"
+  "    instead of accumulating octaves.\n"
   "  - Mix signals with '+'; for stereo out: process = (a + b) <: _,_;\n"
   "    for an effect on a mono signal: process = x : effect with { x = _ * gain; };\n"
   "    Operators do NOT distribute over multi-channel signals: '+', '*', '-'\n"
@@ -540,9 +750,56 @@ static const char *faust_module_reference =
   "    ((a : f), (b : g)) : ro.interleave(2, 2) : par(i, 2, +)\n"
   "    (or hoist the elements into named definitions: p1 = a : f;\n"
   "    p2 = b : g; process = (p1, p2) : ...;)\n"
+  "    The tuple elements of this crossfade are SIGNALS (named defs), not\n"
+  "    FUNCTIONS. A tuple of FUNCTIONS takes the sum of their inputs:\n"
+  "    '(f, g)' where f and g are each 2-in/2-out takes 4 inputs, so\n"
+  "    '_,_ : ((par(i, 2, *(1 - mix))), (par(i, 2, autotune)))' is an\n"
+  "    arity error (2 channels into a 4-input tuple). To apply a function\n"
+  "    to both channels write '_,_ : par(i, 2, fn)' directly; to build a\n"
+  "    dry/wet mix, fan the bound input into named signals first:\n"
+  "    dry = <bound input>; wet = dry : fn;  then tuple dry and wet.\n"
+  "    A function PARAMETER is ONE channel: a stereo helper takes TWO\n"
+  "    parameters ('stereo(inL, inR) = ...'). Never pass the stereo pair\n"
+  "    to a single parameter and then use it with 'par(i, 2, ...)' - that\n"
+  "    feeds 1 channel into a 2-channel consumer ('input_signal : par(i, 2,\n"
+  "    fn)' is an arity error). Call the helper as 'process = _,_ : stereo;'\n"
+  "    or 'stereo(inL, inR)' with the two bound signals.\n"
   "  - Dry/wet mixing: signal : ef.dryWetMixer(wet_amount, effect).\n"
   "  - Conditional selection: ba.if(cond, then_value, else_value) or\n"
   "    select2(cond, else_value, then_value).\n"
+  "  - A checkbox has NO default-value argument: 'checkbox(\"X\")' starts at\n"
+  "    0. To have an option ENABLED by default, invert a checkbox:\n"
+  "    note_c = 1 - checkbox(\"disable C\");  (the control reads 'off' in the\n"
+  "    GUI while the value is 1). Never replace a requested checkbox with a\n"
+  "    hardcoded constant, and keep all previously requested controls when a\n"
+  "    follow-up only changes which options are enabled.\n"
+  "  - Selection vs summation: picking ONE candidate out of several\n"
+  "    ('nearest note', 'only allowed notes', 'closest tap', 'active\n"
+  "    mode') is an ARGMIN - compute each candidate's signed distance and\n"
+  "    keep the ENABLED one with the smallest abs(distance). Never ADD the\n"
+  "    candidates together: '+' is for parallel paths that should all be\n"
+  "    heard (filter banks, layers). Adding selection candidates shifts\n"
+  "    the result by their sum (a 7-note scale summed to ~3 octaves of\n"
+  "    transposition). Faust has no arrays; use an accumulator chain over\n"
+  "    ba.if:\n"
+  "    step(acc, v, on) = ba.if(on & (abs(v) < abs(acc)), v, acc);\n"
+  "    b0 = step(1e9, v0, on0);  b1 = step(b0, v1, on1);  ...  result = bN;\n"
+  "    (1e9 means 'no candidate yet'; '<' keeps the first enabled\n"
+  "    candidate on ties.) If NO candidate is enabled the accumulator keeps\n"
+  "    the sentinel: clamp the result before using it\n"
+  "    (best = select2(best > 1e8, 0, best); or min(best, 6)), otherwise an\n"
+  "    all-off selection yields a huge value (e.g. a million-semitone shift).\n"
+  "    Do NOT select with a nested PRIORITY chain\n"
+  "    (ba.if(on0, v0, ba.if(on1, v1, ba.if(on2, v2, ...)))) - that always\n"
+  "    picks the FIRST enabled candidate, not the nearest one. Compare the\n"
+  "    abs(distance) of every enabled candidate through the accumulator\n"
+  "    chain above.\n"
+  "    Bound check for quantizers/snaps: the\n"
+  "    correction can never exceed HALF the spacing between adjacent\n"
+  "    candidates (<= 6 semitones for semitone snapping). If an expression\n"
+  "    can exceed that bound, the candidates are being aggregated wrongly -\n"
+  "    evaluate the core formula for one concrete input (e.g. m = 60) with\n"
+  "    several candidates enabled before emitting the code.\n"
   "  - Faust lambda syntax is \\(x).(...) or \\(x, y).(...) — NEVER the\n"
   "    JavaScript arrow syntax '(x) => ...' (that is a syntax error).\n"
   "  - Never write expressions nested more than ~3-4 levels — especially\n"
@@ -608,7 +865,12 @@ static inline LLMConfig get_dialog_config(void)
 		                   : "low";
 	}
 	config.reasoning_effort = reasoning_effort;
-	config.max_fixes = (int)SETTINGS_read_int("llm_max_fixes", 3);
+	// 5, not 3: complex programs (feedback loops, pitch shifters, multi-stage
+	// effects) often need one more fix round after the model has fixed the
+	// first error but introduced a second one. The same-error detector and
+	// the "returned unchanged" check still cut the loop short, so the extra
+	// budget is only spent when the program actually changes each round.
+	config.max_fixes = (int)SETTINGS_read_int("llm_max_fixes", 5);
 	config.reasoning_cutoff_high = std::max(LLM_MIN_REASONING_CUTOFF,
 	                                        (int)SETTINGS_read_int("llm_reasoning_cutoff_high", LLM_DEFAULT_REASONING_CUTOFF_HIGH));
 	config.reasoning_cutoff_low = std::max(LLM_MIN_REASONING_CUTOFF,
@@ -654,6 +916,23 @@ static inline LLMConfig get_config(void)
 static inline QString extract_code(const QString &content)
 {
 	QString text = content.trimmed();
+
+	// Some models echo the prompt's data delimiters
+	// (<current_faust_program> ... </current_faust_program>) back into the
+	// response, and then keep writing a reasoning monologue after the
+	// closing delimiter. Both are syntax errors and burned the whole fix
+	// budget (observed). When a delimiter is present, use it as the code
+	// boundary: cut at the closing one, and keep only what follows the
+	// opening one.
+	const QString open_tag = QStringLiteral("<current_faust_program>");
+	const QString close_tag = QStringLiteral("</current_faust_program>");
+	const int close_pos = text.indexOf(close_tag);
+	if (close_pos >= 0)
+	  text = text.left(close_pos);
+	const int open_pos = text.indexOf(open_tag);
+	if (open_pos >= 0)
+	  text = text.mid(open_pos + open_tag.size());
+	text = text.trimmed();
 
 	if (text.startsWith("```"))
 	{
@@ -1637,6 +1916,24 @@ static inline QString truncate_faust_error(const QString &error)
 {
 	QString text = error;
 
+	// A libfaust internal assertion ("please report this message ...") is a
+	// COMPILER CRASH, not a syntax error: the stack trace, thread addresses
+	// and interpreter internals are noise for the LLM (and the retry will
+	// crash again unless the program's structure changes). Replace the whole
+	// message with a short, actionable summary. Observed with a feedback loop
+	// whose body contained ef.transpose_windowed(...) inside a de.delay(...)
+	// chain: the interpreter code generator hit an assert in visitStore.
+	if (error.contains(QStringLiteral("please report this message")))
+	  return QStringLiteral(
+	    "The Faust compiler CRASHED with an internal assertion while compiling this program "
+	    "(a libfaust bug triggered by the program's structure; the stack trace and internal "
+	    "file/line are omitted). This is NOT a syntax error, so a local fix usually does not "
+	    "help: rewriting the same construct crashes again. Restructure the most complex part - "
+	    "typically a feedback loop ('~') that contains a delay/pitch-shift/transpose effect "
+	    "(ef.transpose_windowed, de.delay, ef.echo) - with a simpler equivalent: keep the "
+	    "feedback loop minimal (delay + gain only), move effects OUTSIDE the '~' body, and "
+	    "remove any definition the static check reports as dead or unused.");
+
 	// The dump of the inlined signal graph starts with "Here  <name> ="
 	// where <name> is either the failing definition ('sound') or 'A' for
 	// anonymous signals. It must be found by pattern, not by the literal
@@ -1710,13 +2007,15 @@ static inline QString summarize_faust_error(const QString &error)
 		  "'(dry, dry) : pf.flanger_stereo(...)'. (Duplicate ONLY when the "
 		  "signal is actually mono - oscillator/synth code; a "
 		  "soundfile-derived signal is already stereo and must NOT be "
-		  "duplicated.) For an EFFECT, the host input has 2 channels: bind "
-		  "it as 'x = _,_;' (not 'x = _;'), and apply mono effects per "
-		  "channel with par(i, 2, ...). To use the two input channels "
-		  "separately, bind each with its own def ('main = _; key = _;') - "
-		  "each bare reference consumes its own input channel, and the "
-		  "total over ALL bare references must equal the process input "
-		  "count. Multiplying "
+		  "duplicated.) For an EFFECT, the host input usually has 2 channels: "
+		  "bind it as 'x = _,_;' (not 'x = _;'), and apply mono effects per "
+		  "channel with par(i, 2, ...). A sidechain effect has 3 channels "
+		  "(sound L, sound R, key): bind them as function parameters "
+		  "(sidechain(mainL, mainR, key) = ...; process = sidechain;), "
+		  "never as top-level 'main = _; key = _;' definitions - the "
+		  "compiler folds those into the same input, and using an "
+		  "input-derived signal inside par(i, 2, ...) duplicates the key "
+		  "input. Multiplying "
 		  "a stereo signal by a mono coefficient (a dry/wet mix weight) "
 		  "gives it too; use sig : par(i, 2, *(x)). A postfix operator at "
 		  "the end of a stereo chain gives it too: never write "
@@ -1748,7 +2047,20 @@ static inline QString summarize_faust_error(const QString &error)
 		  "definition contains extra bare '_'s inside its expression "
 		  "(e.g. ba.if(_, 1, 0) inside a chain - every bare '_' consumes "
 		  "a process input channel; apply the function with ':' "
-		  "instead).";
+		  "instead). Two more common causes in this host: (1) a "
+		  "band-limited oscillator (os.sawtooth/os.square/os.triangle) is "
+		  "given a frequency signal computed from the audio input - use "
+		  "os.osc(freq) for input-derived frequencies; (2) a bare-input "
+		  "definition ('x = _;' or 'x = _,_;') is referenced more than "
+		  "once, which multiplies the process input count and entangles "
+		  "the graph - bind the input exactly once inside process and "
+		  "pass the bound signal to helper definitions as a function "
+		  "argument. Also check parenthesized tuples: a tuple of FUNCTIONS "
+		  "takes the sum of their inputs, so '_,_ : ((par(i, 2, f)), "
+		  "(par(i, 2, g)))' passes 2 channels into a 4-input tuple - "
+		  "apply a function to both channels with '_,_ : par(i, 2, f)' "
+		  "instead, and tuple named SIGNALS (not functions) for a "
+		  "dry/wet mix.";
 	}
 	else if (error.contains("multiple definitions")
 	         || error.contains("redefinition of symbols"))
@@ -1768,6 +2080,21 @@ static inline QString summarize_faust_error(const QString &error)
 		  "length, e.g. de.delay(1.0 * ma.SR, delay_time), and leave "
 		  "freeverb spread sliders unsmoothed.";
 	}
+	else if (error.contains("endless evaluation cycle"))
+	{
+		hint = "A definition refers to itself (directly or through other "
+		  "definitions), which Faust treats as an endless evaluation cycle. "
+		  "Feedback ALWAYS needs the '~' operator: write the loop body as a "
+		  "function of the delayed state and close it with '~', e.g. "
+		  "'loop = + ~ (de.delay(maxSamples, delaySamples) : *(feedback));' "
+		  "then 'process = input : loop;'. Never write 'x = ... x ...;' - "
+		  "definitions are not evaluated in order and cannot update "
+		  "themselves. For a modulated feedback delay: "
+		  "'modDelay(sig) = de.delay(2 * ma.SR, (0.03 + 0.005 * os.osc(0.5)) * ma.SR, sig);' "
+		  "with 'process = _,_ : par(i, 2, + ~ (modDelay : *(0.7)));'. If a "
+		  "cross-coupled loop (A feeds B feeds A) is too hard, use a single "
+		  "delay line with '~' plus a second modulated tap.";
+	}
 	else if (error.contains("defined here"))
 	{
 		// "BoxIdent[log2] is defined here : maths.lib:371" - the program
@@ -1779,7 +2106,7 @@ static inline QString summarize_faust_error(const QString &error)
 		const QString name = m.hasMatch() ? m.captured(1) : QString();
 		const QString qualified = !name.isEmpty() ? llm_library_qualified_name(name) : QString();
 		hint = qualified.isEmpty()
-		  ? "A symbol is defined more than once, or a library symbol is redefined. Give each definition a unique name - and never redefine library functions (use the module-qualified form instead)."
+		  ? QString("A name in your program collides with a symbol inside the inlined Faust library code (the error names it: '%1'). This is common with single-letter/short names and lambda parameters. Rename the offending top-level definition or lambda parameter to a longer, descriptive, unique name (e.g. rename \\(a, b) to \\(prev, cur), and 'd' to 'delay_samples') and change nothing else.").arg(name.isEmpty() ? QString("?") : name)
 		  : QString("'%1' is already defined in the Faust standard library - do NOT redefine it. Use the module-qualified function '%2' instead (e.g. %2(...)), and remove your own definition of %1.").arg(name).arg(qualified);
 	}
 	else if (error.contains("ARROW"))
@@ -2001,6 +2328,21 @@ static QString faust_lint_mask(const QString &code)
 	{
 		const QChar c = masked.at(i);
 
+		// Documentation metadata blocks ('<mdoc> ... </mdoc>') are valid
+		// Faust but contain LaTeX markup ('\\section{...}', '\\texttt{...}')
+		// whose words were reported as undefined symbols (observed:
+		// generator/noise.dsp).
+		if (c == '<' && masked.mid(i, 6) == QStringLiteral("<mdoc>"))
+		{
+			const int end = masked.indexOf(QStringLiteral("</mdoc>"), i);
+			const int stop = (end >= 0) ? end + 7 : len;
+			for (; i < stop && i < len; i++)
+			  if (masked.at(i) != '\n')
+			    masked[i] = ' ';
+			i--;
+			continue;
+		}
+
 		if (c == '/' && i + 1 < len && masked.at(i + 1) == '/')
 		{
 			while (i < len && masked.at(i) != '\n')
@@ -2011,32 +2353,42 @@ static QString faust_lint_mask(const QString &code)
 		}
 		else if (c == '/' && i + 1 < len && masked.at(i + 1) == '*')
 		{
-			masked[i] = ' ';
+			if (masked.at(i) != '\n')
+			  masked[i] = ' ';
 			i++;
 			while (i + 1 < len && !(masked.at(i) == '*' && masked.at(i + 1) == '/'))
 			{
-				masked[i] = ' ';
+				// Keep newlines: blanking them shifted every later line
+				// number and joined separate lines into one (observed on
+				// guitarix.dsp / glassHarmonica.dsp).
+				if (masked.at(i) != '\n')
+				  masked[i] = ' ';
 				i++;
 			}
 			if (i + 1 < len)
 			{
-				masked[i] = ' ';
-				masked[i + 1] = ' ';
+				if (masked.at(i) != '\n')
+				  masked[i] = ' ';
+				if (masked.at(i + 1) != '\n')
+				  masked[i + 1] = ' ';
 				i++;
 			}
 		}
 		else if (c == '"')
 		{
-			masked[i] = ' ';
+			if (masked.at(i) != '\n')
+			  masked[i] = ' ';
 			i++;
 			while (i < len && masked.at(i) != '"')
 			{
 				if (masked.at(i) == '\\')
 				{
-					masked[i] = ' ';
+					if (masked.at(i) != '\n')
+					  masked[i] = ' ';
 					i++;
 				}
-				masked[i] = ' ';
+				if (i < len && masked.at(i) != '\n')
+				  masked[i] = ' ';
 				i++;
 			}
 		}
@@ -2089,7 +2441,11 @@ static inline QString lint_faust_code(const QString &code)
 				if (m.hasMatch())
 				{
 					const QString name = m.captured(1);
-					if (library_aliases.contains(name))
+					// Only a collision when the program IMPORTS stdfaust.lib
+					// (its aliases are predefined there). A program that
+					// defines 'ba = library("basics.lib");' itself (no
+					// stdfaust import) is legal (observed: guitarix.dsp).
+					if (library_aliases.contains(name) && masked.contains(QRegularExpression(QStringLiteral("import\\s*\\(\\s*\"stdfaust\\.lib\""))))
 					  findings.append(QString("Line %1: '%2' is already defined by stdfaust.lib (a library alias); use a different name.").arg(line_no).arg(name));
 					else if (first_line.contains(name))
 					  findings.append(QString("Line %1: '%2' is defined more than once (first defined on line %3).").arg(line_no).arg(name).arg(first_line.value(name)));
@@ -2122,7 +2478,19 @@ static inline QString lint_faust_code(const QString &code)
 				const QRegularExpression any_def_re(QStringLiteral("\\b([a-zA-Z_][a-zA-Z0-9_]*)\\s*(\\(\\s*([^)]*)\\s*\\))?\\s*="));
 				QRegularExpressionMatchIterator it = any_def_re.globalMatch(masked);
 				while (it.hasNext())
-				  defined_anywhere.insert(it.next().captured(1));
+				{
+					const QRegularExpressionMatch m = it.next();
+					defined_anywhere.insert(m.captured(1));
+					// Function parameters ('lf_pulsetrain(freq, duty) = ...')
+					// are definitions too (observed: a browser example using
+					// 'freq' as a parameter was told it never defines freq).
+					for (const QString &arg : m.captured(3).split(',', Qt::SkipEmptyParts))
+					{
+						const QString trimmed = arg.trimmed();
+						if (!trimmed.isEmpty())
+						  defined_anywhere.insert(trimmed);
+					}
+				}
 			}
 
 			const QRegularExpression ref_re(QStringLiteral("\\b(freq|gain|gate)\\b"));
@@ -2193,6 +2561,13 @@ static inline QString lint_faust_code(const QString &code)
 				QStringLiteral("merge"), QStringLiteral("delay"),
 				QStringLiteral("assertbounds"), QStringLiteral("crossfade"),
 				QStringLiteral("interpolate"),
+				// lowercase primitives (the uppercase RDtable/RWtable are
+				// above): used by misc/paradigma.dsp ('...:rdtable',
+				// '...:xor<:...').
+				QStringLiteral("rdtable"), QStringLiteral("rwtable"),
+				QStringLiteral("xor"), QStringLiteral("ffunction"),
+				QStringLiteral("fconstant"), QStringLiteral("fvariable"),
+				QStringLiteral("enable"), QStringLiteral("control"),
 			};
 			for (const QString &kw : faust_lint_keywords)
 			  defined.insert(kw);
@@ -2213,6 +2588,22 @@ static inline QString lint_faust_code(const QString &code)
 					const QRegularExpressionMatch m = it.next();
 					defined.insert(m.captured(1));
 					for (const QString &arg : m.captured(3).split(",", Qt::SkipEmptyParts))
+					{
+						const QString trimmed = arg.trimmed();
+						if (!trimmed.isEmpty())
+						  defined.insert(trimmed);
+					}
+				}
+				// Tuple-pattern definitions ('serial((x, y)) = ...') bind the
+				// pattern variables too (observed: old/rewriting/serial.dsp
+				// reported 'y' as undefined).
+				const QRegularExpression tuple_pat_re(QStringLiteral("\\b([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(\\s*\\(([^)]*)\\)\\s*\\)\\s*="));
+				QRegularExpressionMatchIterator tp = tuple_pat_re.globalMatch(masked);
+				while (tp.hasNext())
+				{
+					const QRegularExpressionMatch m = tp.next();
+					defined.insert(m.captured(1));
+					for (const QString &arg : m.captured(2).split(',', Qt::SkipEmptyParts))
 					{
 						const QString trimmed = arg.trimmed();
 						if (!trimmed.isEmpty())
@@ -2273,6 +2664,8 @@ static inline QString lint_faust_code(const QString &code)
 						  continue; // the universal iteration variable
 						const QChar prev = pos > 0 ? line_text.at(pos - 1) : QChar(' ');
 						const QChar next = end < line_text.size() ? line_text.at(end) : QChar(' ');
+						if (prev.isDigit())
+						  continue; // part of a numeric literal such as 1e-9
 						if (prev == QChar('.') || next == QChar('.'))
 						  continue; // module-qualified (os.osc) or qualifier (si.SR)
 						if (next == QChar('('))
@@ -2282,6 +2675,11 @@ static inline QString lint_faust_code(const QString &code)
 						if (name == QStringLiteral("freq") || name == QStringLiteral("gain") || name == QStringLiteral("gate"))
 						  continue; // reported by the note-control check above
 						if (defined.contains(name) || reported.contains(name))
+						  continue;
+						// A name defined by a Faust library (e.g. 'instrReverb'
+						// from instruments.lib) is not undefined. (The library
+						// index is built from all .lib files.)
+						if (get_library_index().definitions.contains(name))
 						  continue;
 
 						findings.append(QString("Line %1: '%2' is used but never defined anywhere in the program - this gives the 'undefined symbol' error. It is probably a leftover from an example or a previous revision: either define it (e.g. %2 = hslider(\"%2\", 0.5, 0, 1, 0.01);) or remove every use of it.").arg(scan_line).arg(name));
@@ -2312,6 +2710,21 @@ static inline QString lint_faust_code(const QString &code)
 			const int arrow = line_text.indexOf(QStringLiteral("=>"));
 			if (arrow >= 0)
 			  findings.append(QString("Line %1: '=>' is JavaScript arrow syntax and is not valid Faust; write lambdas as \\(x).(...) or \\(x, y).(...) instead.").arg(line_no));
+			line_no++;
+		}
+	}
+
+	// 2b) Multiple names on the left of one definition: 'ppL, ppR = f(x);'
+	// is a syntax error ("unexpected PAR, expecting LPAR or DEF") - a Faust
+	// definition defines exactly ONE name. The compiler names the line but
+	// not the fix, so spell it out (observed with a ping-pong delay).
+	{
+		int line_no = 1;
+		static const QRegularExpression multi_def_re(QStringLiteral("^\\s*[a-zA-Z_][a-zA-Z0-9_]*\\s*,\\s*[a-zA-Z_][a-zA-Z0-9_]*\\s*=")); // [NO_STATIC_ARRAY_WARNING]
+		for (const QString &line_text : masked.split('\n'))
+		{
+			if (multi_def_re.match(line_text).hasMatch())
+			  findings.append(QString("Line %1: '%2' is a MULTI-name definition (two names before '='). Faust definitions define exactly ONE name: write one definition per output ('a = ...; b = ...;'), or use the tuple expression directly at the use site.").arg(line_no).arg(line_text.trimmed().left(48)));
 			line_no++;
 		}
 	}
@@ -2447,18 +2860,13 @@ static inline QString lint_faust_code(const QString &code)
 			  continue;
 			const int args = has_content ? commas + 1 : 0;
 
-			if (param_counts.contains(key))
-			{
-				const int named = param_counts.value(key);
-				if (named > 0 && args < named)
-				{
-					int line = 1;
-					for (int i = 0; i < match.capturedStart(); i++)
-					  if (masked.at(i) == '\n')
-					    line++;
-					findings.append(QString("Line %1: %2 is called with %3 argument(s), but its signature has %4 parameters. Pass ALL parameters (see the library list).").arg(line).arg(key).arg(args).arg(named));
-				}
-			}
+			// NOTE: a call with fewer arguments than the signature is NOT
+			// flagged: partial application is the standard Faust idiom
+			// (mi.springDamper(K, Z, x1, x2), en.ar(at, rt), os.phasor(f),
+			// ba.countdown(n), fi.iir(), sy.fm(), ... - all used by the
+			// official examples). A genuinely wrong arity is a compile error
+			// and is caught by the compile-error fix loop.
+			(void)args;
 		}
 	}
 
@@ -2478,7 +2886,11 @@ static inline QString lint_faust_code(const QString &code)
 		for (const QString &line_text : masked.split('\n'))
 		{
 			const QRegularExpressionMatch m = re.match(line_text);
-			if (m.hasMatch() && (m.captured(1) != "2" || m.captured(2) != "2"))
+			if (m.hasMatch() && (m.captured(1) != "2" || m.captured(2) != "2")
+			    // Only the pairwise-sum misuse is flagged: ro.interleave(R, C)
+			    // has legitimate routing uses (observed: gameaudio/door.dsp's
+			    // 'ro.interleave(6, 3) : par(i, 6, flt)').
+			    && QRegularExpression(QStringLiteral("par\\s*\\(\\s*i\\s*,\\s*2\\s*,\\s*\\+")).match(masked).hasMatch())
 			{
 				const bool has_input_fan = QRegularExpression(QStringLiteral("\\bpar\\s*\\(\\s*i\\s*,\\s*[3-9]\\d*\\s*,\\s*_,\\s*_")).match(masked).hasMatch();
 				findings.append(QString("Line %1: ro.interleave(%2, %3) does not perform pairwise sums. To mix more than two stereo signals, chain pairwise mixes into named definitions: mix1 = (a, b) : ro.interleave(2, 2) : par(i, 2, +); mix2 = (mix1, c) : ro.interleave(2, 2) : par(i, 2, +); and REPLACE the whole 'ro.interleave(...) : par(i, 2, +)' composition in 'process' with the last mix definition (e.g. process = mix2;). Do NOT change the R and C arguments to fit the tuple - restructure the tuple into pairwise mixes instead.%4")
@@ -2488,6 +2900,139 @@ static inline QString lint_faust_code(const QString &code)
 				                       : QString()));
 			}
 			line_no++;
+		}
+	}
+
+	// 6b) Two channels into a 4-input interleave: '_,_ : ro.interleave(2, 2)'
+	// is an arity error. To SUM two stereo signals the tuple members must
+	// each be stereo: '(a, b) : ro.interleave(2, 2) : par(i, 2, +)'. To sum
+	// two MONO channels write '_,_ : +' (or 'a + b') - no interleave at all.
+	// (Observed: an 8-input summing mixer whose four pair-mix definitions
+	// were all '_,_ : ro.interleave(2, 2)'.)
+	//
+	// Only an input binding with EXACTLY two '_' counts: '_,_ , _,_ :
+	// ro.interleave(2, 2)' is a valid 4-channel input tuple and was a false
+	// positive (the prefix must END in '= _,_' / '( _,_' / ': _,_', not in
+	// '..., _,_').
+	{
+		const QRegularExpression inter_re(QStringLiteral(":\\s*ro\\.interleave\\s*\\(\\s*2\\s*,\\s*2\\s*\\)"));
+		const QRegularExpression two_binding_re(QStringLiteral("(?:^|[=:(<])\\s*(_\\s*,\\s*_)\\s*$"));
+		int line_no = 1;
+		for (const QString &line_text : masked.split('\n'))
+		{
+			QRegularExpressionMatchIterator it = inter_re.globalMatch(line_text);
+			while (it.hasNext())
+			{
+				const QRegularExpressionMatch m = it.next();
+				const QString prefix = line_text.left(m.capturedStart());
+				if (two_binding_re.match(prefix).hasMatch())
+				{
+					findings.append(QString("Line %1: '_,_ : ro.interleave(2, 2)' feeds 2 channels into a 4-input interleave (an arity error). To SUM two stereo signals write '(a, b) : ro.interleave(2, 2) : par(i, 2, +)'; to sum two MONO channels write '_,_ : +' (or 'a + b').").arg(line_no));
+					break;
+				}
+			}
+			line_no++;
+		}
+	}
+
+	// 6c) An offset built by ADDING several select2(...) terms: if the terms
+	// are candidate corrections (nearest note, closest tap, active mode),
+	// the operation is a SELECTION (argmin), not a sum - adding the
+	// candidates shifts the result by their sum (observed: 12 note
+	// checkboxes summed to ~3 octaves of autotune transposition, so
+	// selecting A-G transposed every note by 2.4-3.8 octaves). Advisory:
+	// summing gated values is legitimate for parallel paths (filter bands,
+	// layers), so the wording asks rather than asserts. The pattern spans
+	// lines ('+ select2(' on the next line), so match the whole code.
+	{
+		const QRegularExpression chain_re(QStringLiteral("\\+(?:[ \\t\\n\\r]*select2\\s*\\()"));
+		QRegularExpressionMatchIterator it = chain_re.globalMatch(masked);
+		int joins = 0;
+		int first_pos = -1;
+		while (it.hasNext())
+		{
+			const QRegularExpressionMatch m = it.next();
+			if (first_pos < 0)
+			  first_pos = m.capturedStart();
+			joins++;
+		}
+		if (joins >= 2 && first_pos >= 0)
+		{
+			int line = 1;
+			for (int i = 0; i < first_pos; i++)
+			  if (masked.at(i) == '\n')
+			    line++;
+			findings.append(QString("Line %1: this expression chains %2 '+' joins between select2(...) terms. If the terms are candidate corrections (nearest note, closest tap, active mode), the operation is a SELECTION: keep the ENABLED candidate with the smallest abs(distance) using a ba.if accumulator chain (step(acc, v, on) = ba.if(on & (abs(v) < abs(acc)), v, acc); b0 = step(1e9, v0, on0); ... result = bN;) instead of summing them - adding the candidates shifts the result by their sum (a 7-note scale summed to ~3 octaves).").arg(line).arg(joins + 1));
+		}
+	}
+
+	// 6d) A zero-crossing pitch estimator whose crossing count is missing
+	// the state DIFFERENCE: 'pos : de.delay(1, 1) : abs' takes abs of the
+	// delayed boolean, which is always 0/1 - so the crossing rate (and the
+	// tracked pitch) is lost and the tracker outputs a duty-cycle level
+	// instead of a frequency. The correct form is
+	// 'crossings = abs(pos - posPrev)'. Only fire when the enclosing
+	// definition also contains a sign comparison (the estimator idiom), so
+	// an unrelated 'delay : abs' is not flagged.
+	{
+		const QRegularExpression bad_zc_re(QStringLiteral(":\\s*de\\.delay\\s*\\(\\s*1\\s*,\\s*1\\s*\\)\\s*:\\s*abs\\b"));
+		const QRegularExpression sign_re(QStringLiteral("(?:>=|>)\\s*0"));
+		QRegularExpressionMatchIterator it = bad_zc_re.globalMatch(masked);
+		while (it.hasNext())
+		{
+			const QRegularExpressionMatch m = it.next();
+			const int def_start = masked.lastIndexOf(';', m.capturedStart()) + 1;
+			int def_end = masked.indexOf(';', m.capturedEnd());
+			if (def_end < 0)
+			  def_end = masked.size();
+			const QString def_text = masked.mid(def_start, def_end - def_start);
+			if (!sign_re.match(def_text).hasMatch())
+			  continue;
+			int line = 1;
+			for (int i = 0; i < m.capturedStart(); i++)
+			  if (masked.at(i) == '\n')
+			    line++;
+			findings.append(QString("Line %1: this zero-crossing estimator takes abs() of the DELAYED sign only ('pos : de.delay(1, 1) : abs'). The delayed boolean is 0/1, so abs() of it is just the delayed boolean - the crossing count and the tracked pitch are lost (the tracker outputs a duty-cycle level instead). Compute the DIFFERENCE of the two states: posPrev = pos : de.delay(1, 1); crossings = abs(pos - posPrev); rate = crossings : si.smooth(ba.tau2pole(0.05));").arg(line));
+			break;
+		}
+	}
+
+	// 6f) A SLIDER or signal passed as the ORDER of fi.lowpass/highpass/
+	// bandpass/bandstop: the order must be a constant integer. A signal
+	// order makes the compiler try to build a variable-order filter and it
+	// can consume tens of GB of memory and never finish (observed: a harp
+	// program with 'string_lp_order = hslider(...) : si.smooth(...)' used as
+	// fi.lowpass(string_lp_order, brightness) allocated 21 GB and ran for
+	// 26 minutes before being killed).
+	{
+		QSet<QString> ui_names;
+		{
+			const QRegularExpression ui_re(QStringLiteral("^\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\s*=\\s*(?:hslider|vslider|nentry|checkbox|button)\\s*\\("));
+			for (const QString &line_text : masked.split('\n'))
+			{
+				const QRegularExpressionMatch m = ui_re.match(line_text);
+				if (m.hasMatch())
+				  ui_names.insert(m.captured(1));
+			}
+		}
+		if (!ui_names.isEmpty())
+		{
+			const QRegularExpression order_re(QStringLiteral("\\bfi\\.(?:lowpass|highpass|bandpass|bandstop)\\s*\\(\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\s*,"));
+			int line_no = 1;
+			for (const QString &line_text : masked.split('\n'))
+			{
+				QRegularExpressionMatchIterator it = order_re.globalMatch(line_text);
+				while (it.hasNext())
+				{
+					const QString name = it.next().captured(1);
+					if (ui_names.contains(name))
+					{
+						findings.append(QString("Line %1: '%2' is a slider/signal but it is passed as the filter ORDER - the order must be a CONSTANT integer (1-4). A signal order makes the compiler build a variable-order filter and it can run out of memory and never finish. Use a constant ('fi.lowpass(2, fc)'), or select between constant orders with select2: lp = select2(order < 1.5, fi.lowpass(1, fc), fi.lowpass(2, fc));").arg(line_no).arg(name));
+						break;
+					}
+				}
+				line_no++;
+			}
 		}
 	}
 
@@ -2506,14 +3051,22 @@ static inline QString lint_faust_code(const QString &code)
 	// each sign lives in its own factor, so no finding is reported.
 	{
 		int line_no = 1;
-		const QRegularExpression times1_re(QStringLiteral("(?:([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\*\\s*1(?![0-9.A-Za-z_]))|(?:(?<![0-9.A-Za-z_])1(?![0-9.])\\s*\\*\\s*([a-zA-Z_][a-zA-Z0-9_]*))"));
-		const QRegularExpression signed_re(QStringLiteral("([+-])\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\b"));
+		const QRegularExpression times1_re(QStringLiteral("(?:([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\*\\s*1(?![0-9.A-Za-z_]))|(?:(?<![0-9.A-Za-z_])1(?![0-9.])\\s*\\*\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\b(?!\\s*[*/]))"));
+		const QRegularExpression signed_re(QStringLiteral("([+-])\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\b(?!\\s*[*/])"));
 		for (const QString &line_text : masked.split('\n'))
 		{
 			// Assign every character position to a parenthesized group:
 			// group id 0 is the line itself, each '(' starts a new group
 			// id that is popped at the matching ')'.
 			QVector<int> group_at(line_text.size() + 1, 0);
+			// Groups that contain a top-level comma are TUPLE-like (a
+			// multi-channel output or a function argument list): the same
+			// name with '+' and '-' there belongs to DIFFERENT channels,
+			// not to a cancelling mix. The mid/side stereo widener
+			// '(mid + side * width, mid - side * width)' is the observed
+			// case - flagging it as a cancelling control is a false
+			// positive.
+			QSet<int> tuple_groups;
 			{
 				int group = 0;
 				int next_group = 1;
@@ -2529,6 +3082,8 @@ static inline QString lint_faust_code(const QString &code)
 					}
 					else if (ch == ')' && !stack.isEmpty())
 						group = stack.takeLast();
+					else if (ch == ',')
+						tuple_groups.insert(group);
 				}
 			}
 
@@ -2538,6 +3093,8 @@ static inline QString lint_faust_code(const QString &code)
 			{
 				const QRegularExpressionMatch m = sit.next();
 				const int group = group_at.value(m.capturedStart(), 0);
+				if (tuple_groups.contains(group))
+				  continue;
 				if (m.captured(1) == "+")
 				  plus_names[group].insert(m.captured(2));
 				else
@@ -2608,14 +3165,20 @@ static inline QString lint_faust_code(const QString &code)
 		{
 			QString name;
 			QString text;
+			int line;
 		};
 		QVector<Span> spans;
 		{
 			const QStringList lines = masked.split('\n');
-			const QRegularExpression span_def_re(QStringLiteral("^\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\s*="));
+			// Function-style definitions ('name(a, b) = ...') are spans too:
+			// their body (including any 'with' block) must be traversed, or
+			// every name used only inside such a function looks dead.
+			const QRegularExpression span_def_re(QStringLiteral("^\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\s*(\\([^)]*\\))?\\s*="));
 			int depth = 0;
 			bool collecting = false;
 			QString cur_name, cur_text;
+			int cur_line = 1;
+			int line_no = 1;
 			for (const QString &line_text : lines)
 			{
 				if (!collecting)
@@ -2628,6 +3191,7 @@ static inline QString lint_faust_code(const QString &code)
 						collecting = true;
 						cur_name = m.captured(1);
 						cur_text = line_text.mid(m.capturedEnd()) + "\n";
+						cur_line = line_no;
 						depth = 0;
 					}
 				}
@@ -2644,12 +3208,13 @@ static inline QString lint_faust_code(const QString &code)
 						  depth--;
 						else if (ch == ';' && depth <= 0)
 						{
-							spans.append({cur_name, cur_text});
+							spans.append({cur_name, cur_text, cur_line});
 							collecting = false;
 							break;
 						}
 					}
 				}
+				line_no++;
 			}
 		}
 
@@ -2658,17 +3223,23 @@ static inline QString lint_faust_code(const QString &code)
 		for (bool changed = true; changed; )
 		{
 			changed = false;
+			// Forward traversal: for every reachable definition, mark every
+			// definition its body references as reachable too. (Checking
+			// only unreachable spans for references to reachable names never
+			// leaves the 'process' definition, so every name used through an
+			// intermediate definition was wrongly reported as dead.)
 			for (const Span &span : spans)
 			{
-				if (reachable.contains(span.name))
+				if (!reachable.contains(span.name))
 				  continue;
-				for (auto it = reachable.constBegin(); it != reachable.constEnd(); ++it)
+				for (const Span &other : spans)
 				{
-					if (QRegularExpression(QStringLiteral("(?<!\\.)\\b%1\\b(?!\\.)").arg(*it)).match(span.text).hasMatch())
+					if (reachable.contains(other.name))
+					  continue;
+					if (QRegularExpression(QStringLiteral("(?<!\\.)\\b%1\\b(?!\\.)").arg(other.name)).match(span.text).hasMatch())
 					{
-						reachable.insert(span.name);
+						reachable.insert(other.name);
 						changed = true;
-						break;
 					}
 				}
 			}
@@ -2707,6 +3278,116 @@ static inline QString lint_faust_code(const QString &code)
 
 			if (!used_by_reachable && !used_by_dead.isEmpty())
 			  findings.append(QString("Line %1: '%2' is only used by '%3', which is never used by process - the knob has no audible effect. Either wire '%3' into process, or remove both '%2' and '%3'.").arg(def.line).arg(def.name).arg(used_by_dead));
+		}
+
+		// Non-UI top-level definitions that are unreachable from 'process'
+		// are dead code (e.g. a detector helper that was replaced but left
+		// behind). UI controls are handled above; the automatic note
+		// controls are host-driven and must never be reported.
+		QSet<QString> ui_names;
+		for (const UiDef &def : ui_defs)
+		  ui_names.insert(def.name);
+		for (const Span &span : spans)
+		{
+			if (span.name == QStringLiteral("process"))
+			  continue;
+			if (reachable.contains(span.name))
+			  continue;
+			if (ui_names.contains(span.name))
+			  continue;
+			if (span.name == QStringLiteral("freq") || span.name == QStringLiteral("gain")
+			    || span.name == QStringLiteral("gate") || span.name == QStringLiteral("velocity"))
+			  continue;
+			findings.append(QString("Line %1: '%2' is defined but never used by process - dead code. Remove it, or wire it into process (pass the signal it needs as an argument).").arg(span.line).arg(span.name));
+		}
+
+		// Unused locals inside 'with' blocks: a local definition that is
+		// never referenced in its enclosing definition (e.g. a computed
+		// 'snapped' value the function body forgot to return, so the
+		// function silently computes something else).
+		for (const Span &span : spans)
+		{
+			const QStringList lines = span.text.split('\n');
+			int depth = 0;
+			for (int i = 0; i < lines.size(); i++)
+			{
+				const QString &line_text = lines.at(i);
+				if (depth > 0)
+				{
+					const QRegularExpression local_re(QStringLiteral("^\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\s*(\\([^)]*\\))?\\s*="));
+					const QRegularExpressionMatch m = local_re.match(line_text);
+					if (m.hasMatch())
+					{
+						const QString name = m.captured(1);
+						if (name != QStringLiteral("freq") && name != QStringLiteral("gain")
+						    && name != QStringLiteral("gate") && name != QStringLiteral("velocity"))
+						{
+							const QRegularExpression ref_re(QStringLiteral("(?<![a-zA-Z0-9_\\.])%1(?![a-zA-Z0-9_\\.])").arg(name));
+							int refs = 0;
+							QRegularExpressionMatchIterator it = ref_re.globalMatch(span.text);
+							while (it.hasNext())
+							{
+								it.next();
+								refs++;
+							}
+							if (refs <= 1)
+							  findings.append(QString("Line %1: '%2' is defined inside a 'with' block but never used - dead code. Remove it, or use it in the function body (e.g. return it) - as written, the function computes something else.").arg(span.line + i).arg(name));
+						}
+					}
+				}
+				for (const QChar &ch : line_text)
+				{
+					if (ch == '{')
+					  depth++;
+					else if (ch == '}')
+					  depth--;
+				}
+			}
+		}
+	}
+
+	// 9) Definitions that bind their own audio inputs ('x = _;' /
+	// 'dry = _,_;' / 'dry = _,_ : ...;') and are referenced more than once:
+	// every reference consumes their input channels again, so
+	// 'dry = _,_ : ...; wet = dry : fx; process = ((dry : ...), (wet :
+	// ...))' silently becomes a 4-input effect instead of a 2-input one.
+	// The input must be bound exactly once, inside process.
+	{
+		const QRegularExpression binding_re(QStringLiteral("^\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\s*=\\s*(_\\s*(,\\s*_\\s*)*)\\s*(;|:|<:)"));
+		const QStringList lines = masked.split('\n');
+		for (int i = 0; i < lines.size(); i++)
+		{
+			const QRegularExpressionMatch m = binding_re.match(lines.at(i));
+			if (!m.hasMatch())
+			  continue;
+			const QString name = m.captured(1);
+			const int channels = m.captured(2).count('_');
+			if (channels <= 0)
+			  continue;
+			const QRegularExpression ref_re(QStringLiteral("(?<![a-zA-Z0-9_\\.])%1(?![a-zA-Z0-9_\\.])").arg(name));
+			int refs = 0;
+			for (int j = 0; j < lines.size(); j++)
+			{
+				if (j == i)
+				  continue;
+				QRegularExpressionMatchIterator it = ref_re.globalMatch(lines.at(j));
+				while (it.hasNext())
+				{
+					it.next();
+					refs++;
+				}
+			}
+			if (refs >= 2)
+			{
+				QString input_pattern;
+				for (int c = 0; c < channels; c++)
+				{
+					if (c > 0)
+					  input_pattern += ",";
+					input_pattern += "_";
+				}
+				findings.append(QString("Line %1: '%2' binds %3 input channel(s) and is referenced %4 times. Every reference consumes %3 more input channel(s), so process gets %5 inputs instead of %3. Bind the input exactly once inside process ('process = %6 : effect;') and derive the other signals from the bound input by passing it as a function argument, instead of referencing '%2' again.").arg(i + 1).arg(name).arg(channels).arg(refs).arg(channels * refs).arg(input_pattern));
+			}
 		}
 	}
 
@@ -3300,7 +3981,7 @@ static inline void send_request_once(const LLMConfig &config,
 		+ "     process = ((dry : par(i, 2, *(1 - mix))), (wet : par(i, 2, *(mix)))) : ro.interleave(2, 2) : par(i, 2, +);\n"
 		+ "NEVER write mix math that cancels out (e.g. '1 - mix + mix' or 'mix * 1'): the knob must actually change the level - the compile check cannot catch a dead knob.\n"
 		+ (is_effect
-		   ? "9) This request asks for an audio EFFECT: an audio processor with no note controls (no freq/gain/gate) and no polyphony. Unless the user specifies otherwise, the effect must have EXACTLY two inputs and two outputs. NEVER create an effect with 3 or more inputs: no matter how many parallel branches it has, bind the input ONLY ONCE (process = _,_ : ...) and derive every other signal from that single binding. Multiple bare input bindings ('dry = _,_; wet = _,_;') consume extra input channels and are forbidden - use 'dry = _,_; wet = dry : effect' or 'dry = _,_ <: a, b :> _,_' instead.\n"
+		   ? "9) This request asks for an audio EFFECT: an audio processor with no note controls (no freq/gain/gate) and no polyphony. Unless the user specifies otherwise, the effect must have EXACTLY two inputs and two outputs. A sidechain request is the exception: it has THREE inputs - two sound inputs plus one key input - and two outputs (bind them as function parameters, see the sidechain idiom; never as separate top-level 'main = _; key = _;' definitions). If the user asks for a different input count, honor it exactly. Otherwise never create an effect with 3 or more inputs: no matter how many parallel branches it has, bind the input ONLY ONCE (process = _,_ : ...) and derive every other signal from that single binding. Multiple bare input bindings ('dry = _,_; wet = _,_;') consume extra input channels and are forbidden - use 'dry = _,_; wet = dry : effect' or 'dry = _,_ <: a, b :> _,_' instead.\n"
 		   : "9) This request asks for an INSTRUMENT: a polyphonic sound generator with no audio inputs, using the automatic note controls freq/gain/gate (and optionally velocity).\n")
 		+ "\n"
 		+ faust_module_reference;

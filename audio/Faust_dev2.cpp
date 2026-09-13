@@ -739,6 +739,7 @@ static void perform_compile_completion(instrument_t patch_id,
 	devdata->ready.svg_is_ready = true;
 	devdata->ready.svg_succeeded = (svg_dir != NULL);
 	devdata->ready.num_inputs = dsp_data->num_inputs;
+	devdata->ready.num_outputs = dsp_data->num_outputs;
 
 	// Permanent diagnostic: record what was actually compiled (channel
 	// counts, instrument/effect classification, and the first 400 chars

@@ -21,6 +21,11 @@ namespace radium{
     // channel count (0 when the compile failed). Used by the LLM effect
     // check to verify the 2-in/2-out convention.
     int num_inputs = 0;
+
+    // The compiled dsp's output channel count (0 when the compile failed).
+    // Used by the LLM check to reject mono-output programs (Radium wants
+    // stereo out for instruments and stereo effects).
+    int num_outputs = 0;
   };
 }
 

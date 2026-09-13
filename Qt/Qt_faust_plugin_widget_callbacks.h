@@ -1341,7 +1341,7 @@ public:
 
         if (ready.factory_succeeded) {
 
-          _llm_session->on_compile_succeeded(ready.num_inputs);
+          _llm_session->on_compile_succeeded(ready.num_inputs, ready.num_outputs);
 
           _latest_working_code = faust_disp_get_code(plugin);
 
