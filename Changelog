@@ -1,3 +1,19 @@
+Changes 8.0.53 -> 8.1.49:
+* FaustDev2: Lots of auto-training fixes, trained both on
+  deepseek flash (no thinking) and chat-gpt 5.6 luna (no
+  thinking). This means that the LLM prompt almost always
+  creates valid and working programs even for larger
+  tasks such as "autotune" when using cheap and
+  non-reasoning/thinking models.
+* Faust: Fix for exponentially increasing compilation time
+  and svg generation time for various faust code.
+* Faust: Add patch to fix endless recursion in some programs.
+* Faust: Add patch to fix hang for programs which has
+  "a function argument is a shared block-diagram DAG".
+* Faust: Upgrade 2.81.2 -> 2.88.0
+
+
+
 Changes 8.0.53 -> 8.0.54:
 * Editor: Fix rare, but real, freeze when pressing
   the "(click me)" button.
