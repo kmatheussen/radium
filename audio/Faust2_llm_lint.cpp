@@ -915,7 +915,7 @@ QStringList FAUST2_lint_faust_code(const QString &code, bool compile_check_safe,
 	// sig : ef.transpose_windowed(P, w, s). (A named signal argument is
 	// fine: shimmer(x) = ef.transpose_windowed(P, w, s, x).)
 	{
-		static const QRegularExpression transpose_re(QStringLiteral("\\bef\\.(transpose_windowed|transpose)\\s*\\(([^()]*)\\)"));
+		static const QRegularExpression transpose_re(QStringLiteral("\\bef\\.(transpose_windowed|transpose)\\s*\\(([^()]*)\\)"));  // [NO_STATIC_ARRAY_WARNING]
 		// 'input_left : ef.transpose_windowed(2, 2048, shift, input_left)':
 		// the signal is passed BOTH as the 4th argument and as the input of
 		// ':', so the (already complete) 0-input processor is applied again

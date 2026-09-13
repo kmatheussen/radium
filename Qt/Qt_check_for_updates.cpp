@@ -124,10 +124,11 @@ namespace{
     void run() override {
 #if defined(RELEASE)
       ATOMIC_SET(gakk, JUCE_download("https://download.radium.dog/latest-version"));
+      ATOMIC_SET(gakk2, JUCE_download("https://download.radium.dog/unstable-versions"));
 #else
       ATOMIC_SET(gakk, strdup(""));
+      ATOMIC_SET(gakk2, strdup(""));
 #endif
-      ATOMIC_SET(gakk2, JUCE_download("https://download.radium.dog/unstable-versions"));
     }
 
     bool got_gakk1 = false;

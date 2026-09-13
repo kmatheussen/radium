@@ -782,7 +782,7 @@ static const char *faust_module_reference =
   "    the result by their sum (a 7-note scale summed to ~3 octaves of\n"
   "    transposition). Faust has no arrays; use an accumulator chain over\n"
   "    ba.if:\n"
-  "    step(acc, v, on) = ba.if(on & (abs(v) < abs(acc)), v, acc);\n"
+  "    step(acc, v, on) = ba.if(on & (abs(v) < abs(acc)), v, acc);\n" // [NO_IF_=_WARNING]
   "    b0 = step(1e9, v0, on0);  b1 = step(b0, v1, on1);  ...  result = bN;\n"
   "    (1e9 means 'no candidate yet'; '<' keeps the first enabled\n"
   "    candidate on ties.) If NO candidate is enabled the accumulator keeps\n"
@@ -2962,7 +2962,7 @@ static inline QString lint_faust_code(const QString &code)
 			for (int i = 0; i < first_pos; i++)
 			  if (masked.at(i) == '\n')
 			    line++;
-			findings.append(QString("Line %1: this expression chains %2 '+' joins between select2(...) terms. If the terms are candidate corrections (nearest note, closest tap, active mode), the operation is a SELECTION: keep the ENABLED candidate with the smallest abs(distance) using a ba.if accumulator chain (step(acc, v, on) = ba.if(on & (abs(v) < abs(acc)), v, acc); b0 = step(1e9, v0, on0); ... result = bN;) instead of summing them - adding the candidates shifts the result by their sum (a 7-note scale summed to ~3 octaves).").arg(line).arg(joins + 1));
+			findings.append(QString("Line %1: this expression chains %2 '+' joins between select2(...) terms. If the terms are candidate corrections (nearest note, closest tap, active mode), the operation is a SELECTION: keep the ENABLED candidate with the smallest abs(distance) using a ba.if accumulator chain (step(acc, v, on) = ba.if(on & (abs(v) < abs(acc)), v, acc); b0 = step(1e9, v0, on0); ... result = bN;) instead of summing them - adding the candidates shifts the result by their sum (a 7-note scale summed to ~3 octaves).").arg(line).arg(joins + 1)); // [NO_IF_=_WARNING]
 		}
 	}
 
