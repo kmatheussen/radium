@@ -1,0 +1,69 @@
+--- compiler/evaluate/eval.cpp.orig
++++ compiler/evaluate/eval.cpp
+@@ -31,6 +31,7 @@
+ 
+ #include <stdio.h>
+ #include <cstdlib>
++#include <map>
+ 
+ #include "boxIdentity.hh"
+ #include "boxModulationImplanter.hh"
+@@ -1230,6 +1231,50 @@
+ // boxpp expands it as a tree), while a large enough budget keeps the names
+ // unchanged for normal programs. The name is truncated to gMaxNameSize anyway.
+ static const int MAX_NAME_BOX_NODES = 4096;
++
++// Maximum nesting depth of recursive applications of a single set of pattern
++// matching rules. Library functions like fi.lowpass(N, fc) are implemented by
++// pattern-matched recursion over N (lphpr(s, O, N, fc) -> lphpr(s, O-2, N, fc)
++// ...). When N is not a constant numerical expression, the recursion never
++// reaches its base cases and the evaluator builds ever-growing expressions
++// until the 256 MB stack overflow detector fires (minutes of compile time,
++// gigabytes of memory). Legitimate recursions (filter orders, physical model
++// chains, FFT stages, ...) are orders of magnitude below this limit, so fail
++// fast with a clear error instead. The limit is kept low because the work per
++// level grows with the depth, so a higher limit would make the diagnostic
++// itself take seconds.
++static const int MAX_PATTERN_MATCHER_DEPTH = 1000;
++
++// Per-thread nesting depth of each set of pattern matching rules, see
++// MAX_PATTERN_MATCHER_DEPTH. The rules tree is used as the key (and not the
++// Automaton, which is rebuilt for every new environment) so that recursive
++// applications of the same function are all counted.
++static thread_local map<Tree, int> gPatternMatcherDepth;
++
++struct PatternMatcherDepthGuard {
++    Tree fRules;
++    explicit PatternMatcherDepthGuard(Tree rules)
++        : fRules(rules)
++    {
++        if (++gPatternMatcherDepth[fRules] > MAX_PATTERN_MATCHER_DEPTH) {
++            if (--gPatternMatcherDepth[fRules] == 0) {
++                gPatternMatcherDepth.erase(fRules);
++            }
++            stringstream error;
++            error << "ERROR : endless recursive pattern matching (more than " << MAX_PATTERN_MATCHER_DEPTH
++                  << " nested applications), most likely a non-constant argument of a recursive library "
++                     "function such as fi.lowpass(N, fc)";
++            throw faustexception(error.str());
++        }
++    }
++    ~PatternMatcherDepthGuard()
++    {
++        map<Tree, int>::iterator it = gPatternMatcherDepth.find(fRules);
++        if (it != gPatternMatcherDepth.end() && --(it->second) == 0) {
++            gPatternMatcherDepth.erase(it);
++        }
++    }
++};
+ 
+ /**
+  * Apply a function to a list of arguments.
+@@ -1292,6 +1337,7 @@
+             if (isClosure(result, body, globalDefEnv, visited, localValEnv)) {
+                 // why ??? return simplifyPattern(eval(body, nil, localValEnv));
+                 // return eval(body, nil, localValEnv);
++                PatternMatcherDepthGuard depth_guard(originalRules);
+                 return applyList(eval(body, gGlobal->nil, localValEnv), tl(larg));
+             } else {
+                 cerr << "ERROR : wrong result from pattern matching (not a closure) : "
