@@ -1,0 +1,176 @@
+--- compiler/boxes/boxcomplexity.cpp.orig
++++ compiler/boxes/boxcomplexity.cpp
+@@ -35,6 +35,18 @@
+ 
+ static int computeBoxComplexity(Tree box);
+ 
++// The complexity of a shared (hash-consed) graph counts the boxes of the
++// *expanded* tree and can therefore exceed INT_MAX (e.g. ma.chebychev(300)).
++// Saturate instead of overflowing, so the folding tests in drawschema.cpp
++// still see a "very complex" value for such graphs.
++static const int MAX_BOX_COMPLEXITY = 1000000000;
++
++static int addBoxComplexity(int a, int b)
++{
++    long long r = (long long)a + (long long)b;
++    return (r > MAX_BOX_COMPLEXITY) ? MAX_BOX_COMPLEXITY : (int)r;
++}
++
+ /**
+  * Return the complexity property of a box expression tree.
+  * If no complexity property exist, it is created and computeBoxComplexity
+@@ -132,20 +144,20 @@
+     else if (isBoxSlot(box)) {
+         return 1;
+     } else if (isBoxSymbolic(box, t1, t2)) {
+-        return 1 + BC(t2);
++        return addBoxComplexity(1, BC(t2));
+     }
+ 
+     // block diagram binary operator
+     else if (isBoxSeq(box, t1, t2)) {
+-        return BC(t1) + BC(t2);
++        return addBoxComplexity(BC(t1), BC(t2));
+     } else if (isBoxSplit(box, t1, t2)) {
+-        return BC(t1) + BC(t2);
++        return addBoxComplexity(BC(t1), BC(t2));
+     } else if (isBoxMerge(box, t1, t2)) {
+-        return BC(t1) + BC(t2);
++        return addBoxComplexity(BC(t1), BC(t2));
+     } else if (isBoxPar(box, t1, t2)) {
+-        return BC(t1) + BC(t2);
++        return addBoxComplexity(BC(t1), BC(t2));
+     } else if (isBoxRec(box, t1, t2)) {
+-        return BC(t1) + BC(t2);
++        return addBoxComplexity(BC(t1), BC(t2));
+     }
+ 
+     // user interface widgets
+--- compiler/draw/drawschema.cpp.orig
++++ compiler/draw/drawschema.cpp
+@@ -149,6 +149,11 @@
+     gGlobal->gDevSuffix   = dev;  // .svg or .ps used to choose output device
+     gGlobal->gFoldingFlag = boxComplexity(bd) > gGlobal->gFoldThreshold;
+ 
++    // Count how many parents each node has in the hash-consed DAG (linear in
++    // the number of distinct nodes), so shared nodes can be folded instead of
++    // expanded (see generateDiagramSchema).
++    gGlobal->gOccurrences = new Occur(bd);
++
+     mkchDir(projname);  // create a directory to store files
+ 
+     scheduleDrawing(bd);  // schedule the initial drawing
+@@ -369,8 +374,19 @@
+         // cerr << t << "\tNAMED : " << s.str() << endl;
+     }
+ 
+-    if (gGlobal->gFoldingFlag && /*(gOccurrences->getCount(t) > 0) &&*/
+-        (boxComplexity(t) >= gGlobal->gFoldComplexity) && getDefNameProperty(t, id)) {
++    bool named = getDefNameProperty(t, id);
++    // A shared node (more than one parent in the hash-consed DAG) must be
++    // folded even when it has no definition name, otherwise the drawing
++    // expands the shared graph as a tree and grows exponentially
++    // (observed: 6 GB of SVG for ma.chebychev(30)).
++    bool shared = (gGlobal->gOccurrences != nullptr) && (gGlobal->gOccurrences->getCount(t) > 1);
++
++    if (gGlobal->gFoldingFlag && (boxComplexity(t) >= gGlobal->gFoldComplexity) && (named || shared)) {
++        if (!named) {
++            // Synthesize a name for the reference label and the scheduled file.
++            id = tree(Node(unique("diagram_")));
++            setDefNameProperty(t, id);
++        }
+         char temp[1024];
+         getBoxType(t, &ins, &outs);
+         stringstream l;
+@@ -378,7 +394,7 @@
+         scheduleDrawing(t);
+         return makeBlockSchema(ins, outs, tree2str(id), linkcolor, l.str());
+ 
+-    } else if (getDefNameProperty(t, id) && !isPureRouting(t)) {
++    } else if (named && !isPureRouting(t)) {
+         // named case : not a slot, with a name
+         // draw a line around the object with its name
+         return makeDecorateSchema(generateInsideSchema(t), 10, tree2str(id));
+--- compiler/generator/occur.cpp.orig
++++ compiler/generator/occur.cpp
+@@ -30,12 +30,17 @@
+ 
+ /**
+  * Count the number of occurrences of each subtree of root
++ *
++ * The count is the number of distinct parents of a node in the (hash-consed)
++ * DAG, the root having none. Counting the occurrences of the *expanded* tree
++ * (the historical implementation) is exponential on shared graphs, which made
++ * the drawing unusable on graphs like ma.chebychev(n).
+  */
+ Occur::Occur(Tree root)
+ {
+     fKey = specificKey(root);
+-    countOccurrences(root);
+-    setCount(root, 0);  // root as no occurrences in itself
++    std::set<Tree, treeorder> visited;
++    countOccurrences(root, visited);
+ }
+ 
+ /**
+@@ -69,12 +74,19 @@
+ }
+ 
+ /**
+- * Increment the occurrences count of t and its subtrees
++ * Increment the occurrences count of the direct subtrees of t, and recurse
++ * once per distinct node (shared nodes are not visited again, so the walk is
++ * linear in the number of distinct nodes instead of exponential in the
++ * expanded tree size).
+  */
+-void Occur::countOccurrences(Tree t)
++void Occur::countOccurrences(Tree t, std::set<Tree, treeorder>& visited)
+ {
+-    setCount(t, getCount(t) + 1);  // increment t occurrences count
++    if (!visited.insert(t).second) {
++        return;
++    }
+     for (int i = 0; i < t->arity(); i++) {
+-        countOccurrences(t->branch(i));
++        Tree b = t->branch(i);
++        setCount(b, getCount(b) + 1);
++        countOccurrences(b, visited);
+     }
+ }
+--- compiler/generator/occur.hh.orig
++++ compiler/generator/occur.hh
+@@ -22,12 +22,20 @@
+ #ifndef __OCCUR__
+ #define __OCCUR__
+ 
++#include <set>
++
+ #include "garbageable.hh"
+ #include "tlib.hh"
+ 
+ /**
+  * Count subtree occurrences
+  * Count the number of occurrences of each subtree of a root tree.
++ *
++ * The count is the number of distinct parents of a node in the (hash-consed)
++ * DAG, the root having none. Counting the occurrences of the *expanded* tree
++ * (the historical implementation) is exponential on shared graphs, which made
++ * the drawing unusable on graphs like ma.chebychev(n); the drawing itself
++ * folds shared nodes, so only sharing needs to be known here.
+  */
+ 
+ class Occur : public Garbageable {
+@@ -38,9 +46,10 @@
+     int getCount(Tree t);  // return the number of occurrences of t in root
+ 
+    private:
+-    Tree specificKey(Tree root);    // specific key for occurrences counting in root
+-    void countOccurrences(Tree t);  // increment the occurrences of t and its subtrees
+-    void setCount(Tree t, int c);   // set the number of occurrences of t
++    Tree specificKey(Tree root);  // specific key for occurrences counting in root
++    void countOccurrences(Tree t,
++                          std::set<Tree, treeorder>& visited);  // count the parents of each subtree
++    void setCount(Tree t, int c);                               // set the number of occurrences of t
+ };
+ 
+ #endif

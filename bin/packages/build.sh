@@ -107,6 +107,9 @@ build_faust() {
 	patch -p0 < ../faust_fopenat_nochdir.patch
 	patch -p0 < ../faust_fix_hang.patch
 	patch -p0 < ../faust_fix_eval_recursion.patch
+	patch -p0 < ../faust_fix_apply_memo.patch
+	patch -p0 < ../faust_fix_svg_folding.patch
+	patch -p0 < ../faust_fix_fft_route.patch
 	
 	### this line is needed to build on artix
 	#export LIBNCURSES_PATH=$(shell find /usr -name libncursesw_g.a)

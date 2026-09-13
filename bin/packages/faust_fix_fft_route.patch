@@ -1,0 +1,23 @@
+--- libraries/analyzers.lib.orig
++++ libraries/analyzers.lib
+@@ -1395,13 +1395,14 @@
+ // * `N`: vector size (must be a power of 2)
+ //---------------------------------------------------
+ // decimation in time does this to the input:
+-bit_reverse_shuffle(N) = si.bus(N) <: par(i,N,bit_reverse_permuter(N,i)) with {
+-    bit_reverse_permuter(N,k) = ba.selector(bit_reverse_selector(N,k),N);
+-};
++// `route` expresses the permutation with one connection per channel, so the
++// graph is O(N); the previous `par(i,N,ba.selector(...,N))` form built N N-way
++// selectors and was O(N^2) (an.fft(1024) needed >2M nodes and ~55s).
++bit_reverse_shuffle(N) = route(N, N, par(i, N, (bit_reverse_selector(N,i)+1, i+1)));
+ 
+-c_bit_reverse_shuffle(N) = si.cbus(N) <: par(i,N,c_bit_reverse_permuter(N,i)) with {
+-    c_bit_reverse_permuter(N,k) = ba.cselector(bit_reverse_selector(N,k),N);
+-};
++c_bit_reverse_shuffle(N) = route(2*N, 2*N,
++                                 par(i, N, (2*bit_reverse_selector(N,i)+1, 2*i+1)),
++                                 par(i, N, (2*bit_reverse_selector(N,i)+2, 2*i+2)));
+ 
+ 
+ //---------------`(an.)fft`, `(an.)fftb`--------------------------
