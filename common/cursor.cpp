@@ -128,8 +128,30 @@ static void make_cursor_visible(struct Tracker_Windows *window,struct WBlocks *w
   }
 }
 
+// Keeps skew_x within the scrollable range, so that the editor is never
+// scrolled past the ends (e.g. when making the rightmost FX subtrack of
+// the last track visible). Same limits as setTrackSliderPos.
+static void clamp_skew_x(struct Tracker_Windows *window, struct WBlocks *wblock)
+{
+  int total_width = WTRACKS_getWidth(window, wblock);
+  int visible_width = (window->width - 1) - wblock->t.x1;
+
+  if (visible_width >= total_width)
+  {
+    wblock->skew_x = 0;
+    return;
+  }
+
+  if (wblock->skew_x > 0)
+    wblock->skew_x = 0;
+
+  if (wblock->skew_x < -(total_width-visible_width))
+    wblock->skew_x = -(total_width-visible_width);
+}
+
 void GFX_adjust_skew_x(struct Tracker_Windows *window,struct WBlocks *wblock, int prevcursorpos){
   make_cursor_visible(window, wblock, prevcursorpos);
+  clamp_skew_x(window, wblock);
 }
 
 
