@@ -61,6 +61,13 @@ extern LANGSPEC bool PLAYER_is_doing_RT_stuff(void);
 extern LANGSPEC bool PLAYER_current_thread_has_lock(void);
 extern LANGSPEC bool PLAYER_someone_has_player_lock(void);
 
+// The old Pd plugin (libpds) allocates/frees memory even while the player lock
+// is held. These functions make it possible to ignore the (ASAN-only)
+// malloc/free checks while executing code from that plugin. See Qt_Main.cpp.
+extern LANGSPEC void PLAYER_push_ignore_malloc_free_checks(void);
+extern LANGSPEC void PLAYER_pop_ignore_malloc_free_checks(void);
+extern LANGSPEC bool PLAYER_ignore_malloc_free_checks(void);
+
 extern LANGSPEC void StartPlayer(void);
 
 extern LANGSPEC void StopPlayer(void);
@@ -246,6 +253,17 @@ struct PlayerLockOnlyIfNeeded{
         PLAYER_unlock();
     }
   }  
+};
+
+// Scoped guard making the (ASAN-only) malloc/free checks ignore allocations
+// and frees done while executing code from the old Pd plugin. Nesting-safe.
+struct ScopedIgnoreMallocFreeChecks{
+  ScopedIgnoreMallocFreeChecks(){
+    PLAYER_push_ignore_malloc_free_checks();
+  }
+  ~ScopedIgnoreMallocFreeChecks(){
+    PLAYER_pop_ignore_malloc_free_checks();
+  }
 };
  
 } // End radium namespace
