@@ -375,6 +375,7 @@ fi
 
 if uname -s |grep -e Linux -e Darwin ; then
     build_libpd
+	echo "Build libpd" # need this line to avoid script failing if the line above is commented out.
 fi
 
 
