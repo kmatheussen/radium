@@ -1181,7 +1181,7 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, struct Sound
 	Data *data = create_data(pdfile, plugin, sample_rate, block_size);
 
 	if(state!=NULL)
-		PD2_put_controllers_to_state(plugin, state);
+		PD2_recreate_controllers_from_state(plugin, state);
 
 	PLAYER_lock();{
 		data->next = g_instances;    

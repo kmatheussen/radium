@@ -12,6 +12,7 @@ Qt/Qt_no_instrument_widget.h
 *~
 a.out
 libpds/tests/libpds_test
+libpds/tests/libpds_gui_test
 */#*
 #*
 bin/protos.conf
