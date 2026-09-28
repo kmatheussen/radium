@@ -1,0 +1,322 @@
+diff -ruN old/pure-data/src/x_vexp.c new/pure-data/src/x_vexp.c
+--- old/pure-data/src/x_vexp.c	2026-09-28 20:22:16.826670544 +0200
++++ new/pure-data/src/x_vexp.c	2026-09-28 20:22:16.827670551 +0200
+@@ -232,6 +232,7 @@
+         int i;
+ 
+         memset(expr->exp_var, 0, EX_MAX_INLETS * sizeof (*expr->exp_var));
++        expr->exp_max_tmpvecs = 0;
+ #ifdef PD
+         b = binbuf_new();
+         binbuf_add(b, ac, av);
+@@ -290,6 +291,7 @@
+                 if (!list) {            /* syntax error */
+                         goto error;
+                 }
++                expr->exp_max_tmpvecs += (int)max_node;
+                 expr->exp_stack[expr->exp_nexpr] =
+                   (struct ex_ex *)fts_malloc(max_node * sizeof (struct ex_ex));
+                 if (!expr->exp_stack[expr->exp_nexpr]) {
+@@ -360,6 +362,82 @@
+ }
+ 
+ /*
++ * ex_tmpvecs_free -- free the pool of temporary vectors used by ex_eval.
++ */
++void
++ex_tmpvecs_free(struct expr *expr)
++{
++        if (expr->exp_tmpvecs != NULL)
++        {
++                fts_free(expr->exp_tmpvecs);
++                expr->exp_tmpvecs = NULL;
++        }
++        expr->exp_num_tmpvecs = 0;
++        expr->exp_tmpvecs_index = 0;
++}
++
++/*
++ * ex_tmpvecs_reset -- prepare the temporary vector pool for a new dsp block.
++ */
++void
++ex_tmpvecs_reset(struct expr *expr)
++{
++        expr->exp_tmpvecs_index = 0;
++}
++
++/*
++ * ex_tmpvecs_realloc -- allocate the pool of temporary vectors used by ex_eval.
++ * This is called from expr_dsp(), i.e. before any dsp evaluation, to make sure
++ * ex_eval() never needs to allocate memory while the dsp is running.
++ */
++void
++ex_tmpvecs_realloc(struct expr *expr)
++{
++        size_t size;
++
++        ex_tmpvecs_free(expr);
++
++        if (expr->exp_max_tmpvecs <= 0 || expr->exp_vsize <= 0)
++                return;
++
++        size = (size_t)expr->exp_max_tmpvecs * (size_t)expr->exp_vsize;
++        expr->exp_tmpvecs = (t_float *)fts_malloc(size * sizeof(t_float));
++        if (expr->exp_tmpvecs != NULL)
++                expr->exp_num_tmpvecs = expr->exp_max_tmpvecs;
++
++        expr->exp_tmpvecs_index = 0;
++}
++
++/*
++ * ex_alloc_tmpvec -- get a temporary vector for ex_eval.
++ * Vectors are taken from the preallocated pool. Falls back to fts_malloc
++ * if the pool is too small (or missing).
++ */
++t_float *
++ex_alloc_tmpvec(struct expr *expr)
++{
++        if (expr->exp_tmpvecs != NULL && expr->exp_tmpvecs_index < expr->exp_num_tmpvecs)
++                return expr->exp_tmpvecs + (size_t)(expr->exp_tmpvecs_index++) * (size_t)expr->exp_vsize;
++
++        return (t_float *)fts_malloc(sizeof(t_float) * (size_t)expr->exp_vsize);
++}
++
++/*
++ * ex_free_tmpvec -- free a temporary vector returned by ex_alloc_tmpvec.
++ * Vectors that belong to the preallocated pool are reused and not freed.
++ */
++void
++ex_free_tmpvec(struct expr *expr, t_float *vec)
++{
++        if (expr->exp_tmpvecs != NULL
++            && vec >= expr->exp_tmpvecs
++            && vec < expr->exp_tmpvecs + (size_t)expr->exp_num_tmpvecs * (size_t)expr->exp_vsize)
++                return;
++
++        fts_free(vec);
++}
++
++/*
+  * ex_lex -- This routine is a bit more than a lexical parser since it will
+  *           also do some syntax checking.  It reads the string s and will
+  *           return a linked list of struct ex_ex.
+@@ -892,8 +970,7 @@
+                                 abort();                                \
+                         }                                               \
+                         optr->ex_type = ET_VEC;                         \
+-                        optr->ex_vec = (t_float *)                      \
+-                          fts_malloc(sizeof (t_float)*expr->exp_vsize); \
++                        optr->ex_vec = ex_alloc_tmpvec(expr);            \
+                 }                                                       \
+                 scalar = left.ex_int;                                   \
+                 rp = right.ex_vec;                                      \
+@@ -943,8 +1020,7 @@
+                                 abort();                                \
+                         }                                               \
+                         optr->ex_type = ET_VEC;                         \
+-                        optr->ex_vec = (t_float *)                      \
+-                          fts_malloc(sizeof (t_float)*expr->exp_vsize); \
++                        optr->ex_vec = ex_alloc_tmpvec(expr);            \
+                 }                                                       \
+                 scalar = left.ex_flt;                                   \
+                 rp = right.ex_vec;                                      \
+@@ -970,8 +1046,7 @@
+                         abort();                                        \
+                 }                                                       \
+                 optr->ex_type = ET_VEC;                                 \
+-                optr->ex_vec = (t_float *)                              \
+-                  fts_malloc(sizeof (t_float)*expr->exp_vsize);         \
++                optr->ex_vec = ex_alloc_tmpvec(expr);                    \
+         }                                                               \
+         op = optr->ex_vec;                                              \
+         lp = left.ex_vec;                                               \
+@@ -1048,8 +1123,7 @@
+                 j = expr->exp_vsize;                                    \
+                 if (optr->ex_type != ET_VEC) {                          \
+                         optr->ex_type = ET_VEC;                         \
+-                        optr->ex_vec = (t_float *)                      \
+-                          fts_malloc(sizeof (t_float)*expr->exp_vsize); \
++                        optr->ex_vec = ex_alloc_tmpvec(expr);            \
+                 }                                                       \
+                 op = optr->ex_vec;                                      \
+                 lp = left.ex_vec;                                       \
+@@ -1406,9 +1480,9 @@
+          * down the chain
+          */
+         if (left.ex_type == ET_VEC)
+-                fts_free(left.ex_vec);
++                ex_free_tmpvec(expr, left.ex_vec);
+         if (right.ex_type == ET_VEC)
+-                fts_free(right.ex_vec);
++                ex_free_tmpvec(expr, right.ex_vec);
+         if (nullret)
+                 return (exNULL);
+         else
+@@ -1464,7 +1538,7 @@
+         }
+         for (i = 0; i < argc; i++) {
+                 if (args[i].ex_type == ET_VEC)
+-                        free(args[i].ex_vec);
++                        ex_free_tmpvec(expr, args[i].ex_vec);
+                 else if (args[i].ex_type == ET_SYM
+                                 && args[i].ex_flags & EX_F_TSYM) {
+                         free(args[i].ex_ptr);
+@@ -1507,7 +1581,7 @@
+                         retp = eptr;
+ 
+                 if (arg.ex_type == ET_VEC)
+-                        fts_free(arg.ex_vec);
++                        ex_free_tmpvec(expr, arg.ex_vec);
+                 return(retp);
+         case ET_TBL:
+                 tbl = (char *) eptr->ex_ptr;
+@@ -1560,7 +1634,7 @@
+         if (!notable || badleft)
+                 (void)max_ex_tab_store(expr, (t_symbol *)tbl, &arg, &rval,optr);
+         if (arg.ex_type == ET_VEC)
+-                fts_free(arg.ex_vec);
++                ex_free_tmpvec(expr, arg.ex_vec);
+         return (eptr);
+ }
+ 
+@@ -1613,7 +1687,7 @@
+         if (!notable)
+                 (void)max_ex_tab(expr, (t_symbol *)tbl, &arg, 0, optr);
+         if (arg.ex_type == ET_VEC)
+-                fts_free(arg.ex_vec);
++                ex_free_tmpvec(expr, arg.ex_vec);
+         return (eptr);
+ }
+ 
+diff -ruN old/pure-data/src/x_vexp_fun.c new/pure-data/src/x_vexp_fun.c
+--- old/pure-data/src/x_vexp_fun.c	2026-09-28 20:22:16.830670571 +0200
++++ new/pure-data/src/x_vexp_fun.c	2026-09-28 20:22:16.830670571 +0200
+@@ -363,8 +363,7 @@
+                                 abort();                                \
+                         }                                               \
+                         optr->ex_type = ET_VEC;                         \
+-                        optr->ex_vec = (t_float *)                      \
+-                          fts_malloc(sizeof (t_float)*e->exp_vsize);    \
++                        optr->ex_vec = ex_alloc_tmpvec(e);              \
+                 }                                                       \
+                 scalar = left->ex_int;                                  \
+                 rp = right->ex_vec;                                     \
+@@ -421,8 +420,7 @@
+                                 abort();                                \
+                         }                                               \
+                         optr->ex_type = ET_VEC;                         \
+-                        optr->ex_vec = (t_float *)                      \
+-                          fts_malloc(sizeof (t_float) * e->exp_vsize);\
++                        optr->ex_vec = ex_alloc_tmpvec(e);              \
+                 }                                                       \
+                 scalar = left->ex_flt;                                  \
+                 rp = right->ex_vec;                                     \
+@@ -449,8 +447,7 @@
+                         abort();                                        \
+                 }                                                       \
+                 optr->ex_type = ET_VEC;                                 \
+-                optr->ex_vec = (t_float *)                              \
+-                  fts_malloc(sizeof (t_float) * e->exp_vsize);  \
++                optr->ex_vec = ex_alloc_tmpvec(e);                      \
+         }                                                               \
+         op = optr->ex_vec;                                              \
+         lp = left->ex_vec;                                              \
+@@ -536,8 +533,7 @@
+ case ET_VEC:                                                    \
+         if (optr->ex_type != ET_VEC) {                          \
+                 optr->ex_type = ET_VEC;                         \
+-                optr->ex_vec = (t_float *)                      \
+-                  fts_malloc(sizeof (t_float)*e->exp_vsize);    \
++                optr->ex_vec = ex_alloc_tmpvec(e);              \
+         }                                                       \
+         op = optr->ex_vec;                                      \
+         lp = left->ex_vec;                                      \
+@@ -1122,8 +1118,7 @@
+                                 return (eptr);
+                         }
+                         optr->ex_type = ET_VEC;
+-                        optr->ex_vec = (t_float *)
+-                                  fts_malloc(sizeof (t_float) * e->exp_vsize);
++                        optr->ex_vec = ex_alloc_tmpvec(e);
+                         if (!optr->ex_vec) {
+                                 post("expr:if: no mem");
+                                 /* pass over the left and right args */
+@@ -1340,8 +1335,7 @@
+                                 return (eptr);
+                         }
+                         optr->ex_type = ET_VEC;
+-                        optr->ex_vec = (t_float *)
+-                                  fts_malloc(sizeof (t_float) * e->exp_vsize);
++                        optr->ex_vec = ex_alloc_tmpvec(e);
+                         if (!optr->ex_vec) {
+                                 post("expr:if: no mem");
+                                 return (eptr);
+diff -ruN old/pure-data/src/x_vexp.h new/pure-data/src/x_vexp.h
+--- old/pure-data/src/x_vexp.h	2026-09-28 20:22:16.827670551 +0200
++++ new/pure-data/src/x_vexp.h	2026-09-28 20:22:16.828670558 +0200
+@@ -237,6 +237,10 @@
+         t_float *exp_p_var[EX_MAX_INLETS];
+         t_float *exp_p_res[EX_MAX_INLETS];   /* the previous evaluation result */
+         t_float *exp_tmpres[EX_MAX_INLETS];  /* temporty result for fexpr~ */
++        t_float *exp_tmpvecs;           /* preallocated temporary vectors used by ex_eval */
++        int     exp_num_tmpvecs;        /* number of vectors in exp_tmpvecs */
++        int     exp_tmpvecs_index;      /* next free vector in exp_tmpvecs */
++        int     exp_max_tmpvecs;        /* maximum number of temporary vectors needed per block */
+         int exp_vsize;                  /* the size of the signal vector */
+         int exp_nivec;                  /* # of vector inlets */
+         t_float exp_f;          /* control value to be transformed to signal */
+@@ -265,6 +269,12 @@
+ extern char *ex_symname(t_symbol *s);
+ void ex_mkvector(t_float *fp, t_float x, int size);
+ 
++void ex_tmpvecs_realloc(struct expr *expr);
++void ex_tmpvecs_reset(struct expr *expr);
++void ex_tmpvecs_free(struct expr *expr);
++t_float *ex_alloc_tmpvec(struct expr *expr);
++void ex_free_tmpvec(struct expr *expr, t_float *vec);
++
+ void ex_error(t_expr *e, const char *fmt, ...);
+ 
+ /* These pragmas are only used for MSVC, not MinGW or Cygwin <hans@at.or.at> */
+diff -ruN old/pure-data/src/x_vexp_if.c new/pure-data/src/x_vexp_if.c
+--- old/pure-data/src/x_vexp_if.c	2026-09-28 20:22:16.828670558 +0200
++++ new/pure-data/src/x_vexp_if.c	2026-09-28 20:22:16.829670564 +0200
+@@ -179,6 +179,7 @@
+                 if (x->exp_tmpres[i])
+                         fts_free(x->exp_tmpres[i]);
+         }
++        ex_tmpvecs_free(x);
+ 
+ 
+ }
+@@ -332,6 +333,10 @@
+                 x->exp_tmpres[i] = (t_float *)0;
+                 x->exp_vsize = 0;
+         }
++        x->exp_tmpvecs = (t_float *)0;
++        x->exp_num_tmpvecs = 0;
++        x->exp_tmpvecs_index = 0;
++        x->exp_max_tmpvecs = 0;
+         x->exp_f = 0; /* save the control value to be transformed to signal */
+ 
+ 
+@@ -447,6 +452,8 @@
+         struct ex_ex res;
+         int n;
+ 
++        ex_tmpvecs_reset(x);
++
+         /* sanity check */
+         if (IS_EXPR(x)) {
+                 post("expr_perform: bad x->exp_flags = %d", x->exp_flags);
+@@ -556,6 +563,10 @@
+         x->exp_error = 0;               /* reset all errors */
+         newsize = (x->exp_vsize !=  sp[0]->s_n);
+         x->exp_vsize = sp[0]->s_n;      /* record the vector size */
++        if (x->exp_tmpvecs == NULL || newsize)
++        {
++                ex_tmpvecs_realloc(x);
++        }
+         for (i = 0; i < x->exp_nexpr; i++) {
+                 x->exp_res[i].ex_type = ET_VEC;
+                 x->exp_res[i].ex_vec =  sp[x->exp_nivec + i]->s_vec;
