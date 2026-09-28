@@ -706,6 +706,66 @@ instrument_t cloneAudioInstrument(instrument_t instrument_id, float x, float y, 
   return new_patch->id;
 }
 
+// Converts an old Pd instrument to the corresponding Pd2 instrument, keeping
+// the full instrument state (pd patch, controllers, effects, etc.).
+// Returns the new instrument, or an illegal instrument if the conversion failed.
+instrument_t convertPd1ToPd2(instrument_t instrument_id, const_char *name)
+{
+  radium::ScopedUndo scoped_undo;
+
+  struct Patch *old_patch = getAudioPatchFromNum(instrument_id);
+  if (old_patch==NULL || old_patch->patchdata==NULL)
+  {
+    return createIllegalInstrument();
+  }
+
+  SoundPlugin *old_plugin = (SoundPlugin*)old_patch->patchdata;
+  if (strcmp(old_plugin->type->type_name,"Pd"))
+  {
+    handleError("Can not convert instrument %d to Pd2: It is a \"%s\" instrument, not a Pd instrument.", (int)instrument_id.id, old_plugin->type->type_name);
+    return createIllegalInstrument();
+  }
+
+  const char *plugin_name = old_plugin->type->name;
+
+  SoundPluginType *pd2_type = PR_get_plugin_type_by_name(NULL, "Pd2", plugin_name);
+  if (pd2_type==NULL || strcmp(pd2_type->type_name,"Pd2") || strcmp(pd2_type->name,plugin_name))
+  {
+    handleError("Can not convert \"%s\" to Pd2: Could not find a Pd2 instrument with that name.", plugin_name);
+    return createIllegalInstrument();
+  }
+
+  hash_t *state = PATCH_get_state(old_patch);
+  hash_t *audio_state = HASH_get_hash(state, "audio");
+  if (audio_state==NULL)
+  {
+    return createIllegalInstrument();
+  }
+
+  // The keys already exist in the state, so remove them first.
+  // (HASH_put_chars asserts when overwriting an existing value in debug mode.)
+  HASH_remove(audio_state, "type_name");
+  HASH_put_chars(audio_state, "type_name", "Pd2");
+
+  HASH_remove(audio_state, "name");
+  HASH_put_chars(audio_state, "name", plugin_name);
+
+  // Same naming behavior as createAudioInstrumentFromDescription: the name is the explicit argument.
+  HASH_remove(state, "name");
+  if (name!=NULL && name[0]==0)
+  {
+    name = NULL;
+  }
+
+  struct Patch *new_patch = PATCH_create_audio(NULL, NULL, name, state, true, true, 0, 0);
+  if (new_patch==NULL)
+  {
+    return createIllegalInstrument();
+  }
+
+  return new_patch->id;
+}
+
 
 
 dyn_t createNewInstrumentConf(float x, float y,

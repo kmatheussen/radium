@@ -197,7 +197,40 @@ public:
       faust_show_button->hide();
       faust_options_button->hide();
       faust_interpreted->hide();
-      
+
+#if defined(WITH_PD) && defined(WITH_PD2)
+      // Add "1->2" conversion button for the old Pd instrument.
+      if(!strcmp(plugin->type->type_name, "Pd"))
+      {
+        SoundPluginType *pd2_type = PR_get_plugin_type_by_name(NULL, "Pd2", plugin->type->name);
+        if (pd2_type != NULL && !strcmp(pd2_type->type_name, "Pd2"))
+        {
+          auto *conv_button = new MyQButton(header);
+          conv_button->setText("1\u21922");
+          conv_button->setToolTip("Convert this Pd 1 instrument to a Pd 2 instrument");
+          horizontalLayout_2->insertWidget(horizontalLayout_2->indexOf(new_pd_controller_button) + 1, conv_button);
+
+          QObject::connect(conv_button, &QPushButton::released, [this]()
+          {
+            SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+            if (plugin==NULL || strcmp(plugin->type->type_name, "Pd"))
+            {
+              return;
+            }
+
+            const instrument_t old_id = _patch.data()->id;
+
+            // Defer via QTimer so the mouse release handler finishes before
+            // this widget is destroyed by the instrument replacement.
+            QTimer::singleShot(0, [old_id]()
+            {
+              S7CALL2(instrument_instrument, "FROM_C-convert-pd1-to-pd2", old_id);
+            });
+          });
+        }
+      }
+#endif
+
       // Jack:
     }else if(!strcmp(plugin->type->type_name, "Jack")) {
       new_pd_controller_button->hide();
