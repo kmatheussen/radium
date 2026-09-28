@@ -49,6 +49,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../api/api_instruments_proc.h"
 
 #include "SoundPluginRegistry_proc.h"
+#include "Pd_plugin2_proc.h"
 
 
 static radium::Vector<SoundPluginType*> g_plugin_types;
@@ -462,7 +463,14 @@ SoundPluginType *PR_get_plugin_type_by_name(const char *container_name, const ch
     }
 
   }else if(!strcmp(type_name,"Pd") && strcmp(plugin_name, "")){ // type_name doesn't mean anything for already saved files. Without this excpetion, plugins would be replaced by pipes if a pd patch file was renamed.
+#ifdef WITH_PD
     return PR_get_plugin_type_by_name("Pd", "");
+#else
+    return PR_get_plugin_type_by_name("Pd2", "");
+#endif
+
+  }else if(!strcmp(type_name,"Pd2") && strcmp(plugin_name, "")){ // Same as above, for the Pd2 instrument.
+    return PR_get_plugin_type_by_name("Pd2", "");
 
   }else{
 
@@ -515,6 +523,7 @@ const QVector<PluginMenuEntry> PR_get_menu_entries(void){
           hepp.type_name == "AU" ||
           hepp.type_name == "Ladspa" ||
           hepp.type_name == "Pd" ||
+          hepp.type_name == "Pd2" ||
           hepp.name.startsWith("STK ")
           )
         {
@@ -839,11 +848,15 @@ void PR_init_plugin_types(void){
   create_modulator_plugin();
   create_sample_plugin(true);
   
-#if defined(WITH_PD) || defined(WITH_FAUST_DEV) || defined(WITH_FAUST_DEV2)
+#if defined(WITH_PD) || defined(WITH_PD2) || defined(WITH_FAUST_DEV) || defined(WITH_FAUST_DEV2)
   PR_add_menu_entry(PluginMenuEntry::separator("Development"));
   
 #ifdef WITH_PD
   create_pd_plugin();
+#endif
+
+#ifdef WITH_PD2
+  create_pd2_plugin();
 #endif
   
 #ifdef WITH_FAUST_DEV

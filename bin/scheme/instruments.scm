@@ -2786,6 +2786,12 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
                                  (<ra> :create-audio-instrument "Faust Dev 2" "Faust Dev 2"))))
 
 ;; Note: Used for shortcut
+(delafina (assign-pd2-simple-midi-synth-instrument-for-track :tracknum -1)
+  (assign-instrument-for-track tracknum
+                               (lambda ()
+                                 (<ra> :create-audio-instrument "Pd2" "Simple Midi Synth"))))
+
+;; Note: Used for shortcut
 (define (assign-new-instrument-for-track type-name plugin-name)
   (assign-instrument-for-track -1
                                (lambda ()
@@ -2889,6 +2895,12 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
          :shortcut assign-faust-dev-2-instrument-for-track
          (lambda ()
            (LOAD (<ra> :create-audio-instrument "Faust Dev 2" "Faust Dev 2"))))
+   (if (not (<ra> :release-mode))
+       (list "Pd2: Simple midi synth"
+             :shortcut assign-pd2-simple-midi-synth-instrument-for-track
+             (lambda ()
+               (LOAD (<ra> :create-audio-instrument "Pd2" "Simple Midi Synth"))))
+       #f)
    ;;(if (<ra> :has-pure-data)
    ;;    (list "<New Pd Instrument>" (lambda ()
    ;;                                  (LOAD (<ra> :create-audio-instrument "Pd" "Simple Midi Synth"))))

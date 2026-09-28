@@ -43,6 +43,14 @@ set_var INCLUDE_PDDEV 1
 
 
 
+########################################################
+# If enabled, include the Pd2 instrument (using current Pd/libpd).
+# Only Linux for now. Other platforms ignore this variable.
+#
+set_var INCLUDE_PD2DEV 1
+
+
+
 
 ########################################################
 # If enabled, include the FaustDev instrument.
@@ -376,6 +384,8 @@ fi
 if ! uname -s |grep -i Linux > /dev/null ; then
     unset INCLUDE_PDDEV
     set_var INCLUDE_PDDEV 0
+    unset INCLUDE_PD2DEV
+    set_var INCLUDE_PD2DEV 0
 fi
 if arch |grep -e arm -e aarch64 ; then
     unset INCLUDE_PDDEV

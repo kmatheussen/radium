@@ -1,0 +1,24 @@
+--- a/pure-data/tcl/pdwindow.tcl	2026-09-27 11:58:43.000000000 +0200
++++ b/pure-data/tcl/pdwindow.tcl	2026-09-27 17:29:37.545451053 +0200
+@@ -375,6 +375,11 @@
+     option add *PdWindow*Entry.background "white" startupFile
+ 
+     toplevel .pdwindow -class PdWindow
++    if {[info exists ::env(RADIUM_PD_GUI_NO_CONSOLE)]} {
++        # Radium only wants the patch editor window. Start the console hidden
++        # instead of showing it and withdrawing it afterwards (avoids a flash).
++        wm withdraw .pdwindow
++    }
+     ::pdwindow::update_title .pdwindow
+ 
+     if {$::windowingsystem eq "x11"} {
+@@ -470,7 +475,8 @@
+ proc ::pdwindow::create_window_finalize {} {
+     # this ought to be called after all elements of the window (including the
+     # menubar!) have been created!
+-    if {![winfo viewable .pdwindow.text]} { tkwait visibility .pdwindow.text }
++    # (don't wait for visibility if the console was deliberately started hidden)
++    if {[wm state .pdwindow] ne "withdrawn" && ![winfo viewable .pdwindow.text]} { tkwait visibility .pdwindow.text }
+     set fontsize [::pd_guiprefs::read menu-fontsize]
+     if {$fontsize != ""} {
+         ::dialog_font::apply .pdwindow $fontsize

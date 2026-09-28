@@ -1091,7 +1091,7 @@ static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, flo
   libpds_add_float(pd, 1.0f);
   libpds_finish_message(pd, "pd", "dsp");
 
-  plugin->data = data; // plugin->data is used before this function ends. (No, only data, seems like. We can send 'data' instead of 'plugin' to the hooks.) (well, PD_recreate_controllers_from_state uses plugin->data)
+  plugin->data = data; // plugin->data is used before this function ends. (No, only data, seems like. We can send 'data' instead of 'plugin' to the hooks.) (well, PD1_recreate_controllers_from_state uses plugin->data)
 
   libpds_bind(pd, "radium_controller", plugin);
   libpds_bind(pd, "radium_send_note_on", plugin);
@@ -1158,7 +1158,7 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, struct Sound
   Data *data = create_data(pdfile, plugin, sample_rate, block_size);
 
   if(state!=NULL)
-    PD_put_controllers_to_state(plugin, state);
+    PD1_put_controllers_to_state(plugin, state);
 
   PLAYER_lock();{
     data->next = g_instances;    
@@ -1234,12 +1234,12 @@ static const char *get_effect_name(const struct SoundPlugin *plugin, int effect_
     return controller->name;
 }
 
-void PD_set_qtgui(SoundPlugin *plugin, void *qtgui){
+void PD1_set_qtgui(SoundPlugin *plugin, void *qtgui){
   Data *data = (Data*)plugin->data;
   ATOMIC_SET(data->qtgui, qtgui);
 }
 
-Pd_Controller *PD_get_controller(SoundPlugin *plugin, int n){
+Pd_Controller *PD1_get_controller(SoundPlugin *plugin, int n){
   Data *data = (Data*)plugin->data;
   return &data->controllers[n];
 }
@@ -1252,7 +1252,7 @@ static bool controller_name_exists(const Data *data, const char *name){
   return false;
 }
 
-const wchar_t *PD_set_controller_name(SoundPlugin *plugin, int n, const wchar_t *wname){
+const wchar_t *PD1_set_controller_name(SoundPlugin *plugin, int n, const wchar_t *wname){
   Data *data = (Data*)plugin->data;
   Pd_Controller *controller = &data->controllers[n];
   const char *name = STRING_get_chars(wname);
@@ -1284,7 +1284,7 @@ const wchar_t *PD_set_controller_name(SoundPlugin *plugin, int n, const wchar_t 
   return wname;
 }
 
-void PD_recreate_controllers_from_state(SoundPlugin *plugin, const hash_t *state){
+void PD1_recreate_controllers_from_state(SoundPlugin *plugin, const hash_t *state){
   Data *data=(Data*)plugin->data;
 
   PDGUI_clear(ATOMIC_GET(data->qtgui));
@@ -1329,7 +1329,7 @@ void PD_recreate_controllers_from_state(SoundPlugin *plugin, const hash_t *state
     GFX_update_instrument_widget((struct Patch*)patch);
 }
 
-void PD_put_controllers_to_state(const SoundPlugin *plugin, hash_t *state){
+void PD1_put_controllers_to_state(const SoundPlugin *plugin, hash_t *state){
   Data *data=(Data*)plugin->data;
 
   int i;
@@ -1352,13 +1352,13 @@ static void create_state(const struct SoundPlugin *plugin, hash_t *state){
   printf("\n\n\n ********** CREATE_STATE ************* \n\n\n");
   Data *data = (Data*)plugin->data;
 
-  PD_put_controllers_to_state(plugin, state);
+  PD1_put_controllers_to_state(plugin, state);
 
   put_pdfile_into_state(plugin, data->pdfile, state);
 }
 
 // Warning! undo is created here (for simplicity). It's not common to call the undo creation function here, so beware of possible circular dependencies in the future.
-void PD_delete_controller(SoundPlugin *plugin, int controller_num){
+void PD1_delete_controller(SoundPlugin *plugin, int controller_num){
   Data *data=(Data*)plugin->data;
 
   R_ASSERT_RETURN_IF_FALSE(plugin->patch!=NULL);
@@ -1388,7 +1388,7 @@ void PD_delete_controller(SoundPlugin *plugin, int controller_num){
   HASH_put_int_at(state, "has_gui", NUM_PD_CONTROLLERS-1, 0);
   HASH_put_int_at(state, "config_dialog_visible", i, 0);
 
-  PD_recreate_controllers_from_state(plugin, state);
+  PD1_recreate_controllers_from_state(plugin, state);
 }
 
 
@@ -1491,15 +1491,5 @@ void create_pd_plugin(void){
 
 void create_pd_plugin(void){
 }
-
-const wchar_t *PD_set_controller_name(SoundPlugin *plugin, int n, const wchar_t *name) {return name;}
-Pd_Controller *PD_get_controller(SoundPlugin *plugin, int n) {return NULL;}
-void PD_set_qtgui(SoundPlugin *plugin, void *qtgui) {}
-void PD_delete_controller(SoundPlugin *plugin, int controller_num) {}
-
-void PD_recreate_controllers_from_state(SoundPlugin *plugin, const hash_t *state) {}
-//void PD_create_controllers_from_state(SoundPlugin *plugin, hash_t *state) {}
-
-void PD_put_controllers_to_state(const SoundPlugin *plugin, hash_t *state){}
 
 #endif // WITH_PD

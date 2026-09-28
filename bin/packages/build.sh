@@ -171,6 +171,38 @@ build_libpds() {
 }
 
 
+# Official libpd (https://github.com/libpd/libpd), tracking current Pd Vanilla.
+# Built with multiple instance support (PDINSTANCE/PDTHREADS) and the vanilla
+# "extra" externals compiled in. We build the static archive directly to avoid
+# having to link a platform-specific shared library.
+build_libpd() {
+
+    rm -fr libpd
+    tar xvzf libpd-0.16.1.tar.gz
+    cd libpd/
+
+    # Apply Radium's patches. (The tarball is a pristine libpd release.)
+    for patch_file in ../libpd_patches/*.patch ; do
+        patch -p1 --batch --forward < "$patch_file"
+    done
+
+    # Always build with debug symbols and frame pointers. ASan captures
+    # malloc/free stack traces with the frame-pointer unwinder, which cannot
+    # walk functions compiled with -fomit-frame-pointer. The Makefile's
+    # OPT_CFLAGS contains -fomit-frame-pointer, but ADDITIONAL_CFLAGS is
+    # appended last, so -fno-omit-frame-pointer overrides it.
+    LIBPD_DEBUG_FLAGS="-g -fno-omit-frame-pointer"
+
+    make clean
+    make -j`nproc` MULTI=true UTIL=true EXTRA=true libs/libpd.a ADDITIONAL_CFLAGS="$LIBPD_DEBUG_FLAGS"
+
+    # Note: Radium's libpds wrapper (libpds/) is compiled directly into the
+    # Radium binary by Makefile.Qt, so there's nothing to build here.
+
+    cd ..
+}
+
+
 build_qhttpserver() {
 
     rm -fr qhttpserver-master
@@ -308,8 +340,9 @@ if uname -s |grep Linux ; then
     if ! arch |grep -e arm -e aarch64 ; then
         build_libpds
     fi
-    #build_xcb
-    echo "finished compiling libpds and xcb" # need this line to avoid script failing if the two lines above are commented out.
+    build_xcb
+    build_libpd
+    echo "finished compiling libpd, libpds and xcb" # need this line to avoid script failing if all the lines above are commented out.
 fi
 
 

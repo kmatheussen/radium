@@ -1,0 +1,77 @@
+--- a/pure-data/src/s_inter.c
++++ b/pure-data/src/s_inter.c
+@@ -1133,6 +1133,19 @@
+     return (didsomething);
+ }
+ 
++    /* Radium: called from realtime (audio) threads. Only sends GUI output
++    that is already buffered; never processes incoming messages and never
++    runs the deferred redraw queue, since both allocate memory and can run
++    arbitrary patch code. Incoming messages are handled by sys_pollgui()
++    called from a non-realtime thread (e.g. the host's GUI thread) instead. */
++void sys_pollguisend(void)
++{
++    if (!INTER->i_havetkproc)
++        return;
++    if (INTER->i_guihead > INTER->i_guitail)
++        sys_flushtogui();
++}
++
+ void sys_init_fdpoll(void)
+ {
+     if (INTER->i_fdpoll)
+--- a/pure-data/src/s_stuff.h
++++ b/pure-data/src/s_stuff.h
+@@ -345,6 +345,9 @@
+ 
+ EXTERN void sys_bail(int exitcode);
+ EXTERN int sys_pollgui(void);
++/* Radium: realtime-safe variant of sys_pollgui(), only flushes
++already-buffered GUI output. */
++EXTERN void sys_pollguisend(void);
+ 
+ EXTERN_STRUCT _socketreceiver;
+ #define t_socketreceiver struct _socketreceiver
+--- a/pure-data/src/m_sched.c
++++ b/pure-data/src/m_sched.c
+@@ -377,7 +377,9 @@
+         if (!countdown--)
+         {
+             countdown = 5000;
+-            (void)sys_pollgui();
++            /* Radium: only flush GUI output here; this runs on a realtime
++            thread. Incoming messages are processed by the GUI thread. */
++            sys_pollguisend();
+         }
+             /* ignore SYS_QUIT_REOPEN and SYS_QUIT_CLOSE! */
+         if (sys_quit == SYS_QUIT_QUIT)
+--- a/libpd_wrapper/z_libpd.c
++++ b/libpd_wrapper/z_libpd.c
+@@ -48,6 +48,9 @@
+ int sys_startgui(const char *libdir);
+ void sys_stopgui(void);
+ int sys_pollgui(void);
++// Radium: flushes already-buffered GUI output without processing incoming
++// messages. This is safe to call from realtime threads, unlike sys_pollgui().
++void sys_pollguisend(void);
+ 
+ // (optional) setup functions for built-in "extra" externals
+ #ifdef LIBPD_EXTRA
+@@ -182,7 +185,7 @@
+   int i, j, k; \
+   t_sample *p0, *p1; \
+   sys_lock(); \
+-  sys_pollgui(); \
++  sys_pollguisend(); \
+   for (i = 0; i < ticks; i++) { \
+     for (j = 0, p0 = STUFF->st_soundin; j < DEFDACBLKSIZE; j++, p0++) { \
+       for (k = 0, p1 = p0; k < STUFF->st_inchannels; k++, p1 += DEFDACBLKSIZE) \
+@@ -221,7 +224,7 @@
+   t_sample *p; \
+   size_t i; \
+   sys_lock(); \
+-  sys_pollgui(); \
++  sys_pollguisend(); \
+   for (p = STUFF->st_soundin, i = 0; i < n_in; i++) { \
+     *p++ = *inBuffer++ _x; \
+   } \
