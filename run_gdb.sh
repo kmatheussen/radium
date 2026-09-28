@@ -49,7 +49,7 @@ if uname -s |grep Linux > /dev/null ; then
     export LD_LIBRARY_PATH=$XCB_LIB_DIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
 fi
 
-export LD_LIBRARY_PATH="$PWD/bin/packages/python27_install/lib:$PWD/bin/packages/faust/build/lib"${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
+export LD_LIBRARY_PATH="$PWD/bin/packages/python27_install/lib:$PWD/bin/packages/faust/build/lib:$PWD/bin/packages/libpd/libs"${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
 
 # To avoid buggy qt plugins from crashing radium (very common).
 unset QT_QPA_PLATFORMTHEME
