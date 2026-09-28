@@ -22,6 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/patch_proc.h"
 #include "../common/undo_patchname_proc.h"
 
+#include "../audio/Pd_plugin_proc.h"
+
 #include "Qt_patch_widget.h"
 
 #ifdef USE_QT5
@@ -104,7 +106,7 @@ class Patch_widget : public QWidget, public GL_PauseCaller, public Ui::Patch_wid
           
           _show_pan = true;
           
-        } else if (!strcmp(plugin->type->type_name, "Pd")) {
+        } else if (PD_is_pd_type(plugin->type->type_name)) {
           
         _show_pan = true;
         

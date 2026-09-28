@@ -1,0 +1,144 @@
+--- a/pure-data/src/s_inter.c	2026-09-27 11:58:43.000000000 +0200
++++ b/pure-data/src/s_inter.c	2026-09-27 17:44:13.508723902 +0200
+@@ -125,6 +125,11 @@
+     struct _guiqueue *gq_next;
+ } t_guiqueue;
+ 
++    /* Size of the per-instance pool of preallocated gui update queue
++       entries. Used to avoid doing any memory allocation when queuing gui
++       updates (which can happen while the host is holding a realtime lock). */
++#define GUIQUEUE_POOL_SIZE 128
++
+ #if PDTHREADS
+ typedef struct _messqueue
+ {
+@@ -143,6 +148,8 @@
+     int i_guisock;
+     t_socketreceiver *i_socketreceiver;
+     t_guiqueue *i_guiqueuehead;
++    t_guiqueue *i_guifreelist;
++    t_guiqueue i_guiqueuepool[GUIQUEUE_POOL_SIZE];
+     t_binbuf *i_inbinbuf;
+     char *i_guibuf;
+     int i_guihead;
+@@ -977,6 +984,32 @@
+     INTER->i_waitingforping = 0;
+ }
+ 
++    /* Get a gui update queue entry. Entries are taken from a per-instance
++    preallocated pool to avoid allocating memory when queuing gui updates
++    (which can happen while the host is holding a realtime lock). */
++static t_guiqueue *sys_allocguiqueue(void)
++{
++    t_guiqueue *gq = INTER->i_guifreelist;
++    if (gq != NULL)
++    {
++        INTER->i_guifreelist = gq->gq_next;
++        return gq;
++    }
++    return t_getbytes(sizeof(*gq));
++}
++
++static void sys_freeguiqueue(t_guiqueue *gq)
++{
++    if (gq >= INTER->i_guiqueuepool
++        && gq < INTER->i_guiqueuepool + GUIQUEUE_POOL_SIZE)
++    {
++        gq->gq_next = INTER->i_guifreelist;
++        INTER->i_guifreelist = gq;
++    }
++    else
++        t_freebytes(gq, sizeof(*gq));
++}
++
+ static int sys_flushqueue(void)
+ {
+     int wherestop = INTER->i_bytessincelastping + GUI_UPDATESLICE;
+@@ -1000,7 +1033,7 @@
+             t_guiqueue *headwas = INTER->i_guiqueuehead;
+             INTER->i_guiqueuehead = headwas->gq_next;
+             (*headwas->gq_fn)(headwas->gq_client, headwas->gq_glist);
+-            t_freebytes(headwas, sizeof(*headwas));
++            sys_freeguiqueue(headwas);
+             if (INTER->i_bytessincelastping >= wherestop)
+                 break;
+         }
+@@ -1038,6 +1071,11 @@
+ void sys_queuegui(void *client, t_glist *glist, t_guicallbackfn f)
+ {
+     t_guiqueue **gqnextptr, *gq;
++
++        /* no GUI, no need to queue a redraw */
++    if (!INTER->i_havetkproc)
++        return;
++
+     if (!INTER->i_guiqueuehead)
+         gqnextptr = &INTER->i_guiqueuehead;
+     else
+@@ -1050,7 +1088,7 @@
+             return;
+         gqnextptr = &gq->gq_next;
+     }
+-    gq = t_getbytes(sizeof(*gq));
++    gq = sys_allocguiqueue();
+     gq->gq_next = 0;
+     gq->gq_client = client;
+     gq->gq_glist = glist;
+@@ -1066,7 +1104,7 @@
+     {
+         gq = INTER->i_guiqueuehead;
+         INTER->i_guiqueuehead = INTER->i_guiqueuehead->gq_next;
+-        t_freebytes(gq, sizeof(*gq));
++        sys_freeguiqueue(gq);
+     }
+     if (!INTER->i_guiqueuehead)
+         return;
+@@ -1074,7 +1112,7 @@
+         if (gq2->gq_client == client)
+         {
+             gq->gq_next = gq2->gq_next;
+-            t_freebytes(gq2, sizeof(*gq2));
++            sys_freeguiqueue(gq2);
+             break;
+         }
+ }
+@@ -1926,6 +1964,15 @@
+     INTER->i_havegui = 0;
+     INTER->i_havetkproc = 0;
+     INTER->i_guisock = -1;
++    INTER->i_guiqueuehead = NULL;
++    INTER->i_guifreelist = NULL;
++    {
++        int i;
++        for (i = 0; i < GUIQUEUE_POOL_SIZE; i++)
++            INTER->i_guiqueuepool[i].gq_next =
++                (i + 1 < GUIQUEUE_POOL_SIZE) ? &INTER->i_guiqueuepool[i + 1] : NULL;
++        INTER->i_guifreelist = &INTER->i_guiqueuepool[0];
++    }
+ }
+ 
+ void s_inter_free(t_instanceinter *inter)
+@@ -1951,6 +1998,23 @@
+     }
+     pthread_mutex_destroy(&inter->i_messqueue_mutex);
+ #endif
++        /* free gui update queue entries not taken from the preallocated pool */
++    while (inter->i_guiqueuehead)
++    {
++        t_guiqueue *gq = inter->i_guiqueuehead;
++        inter->i_guiqueuehead = gq->gq_next;
++        if (gq < inter->i_guiqueuepool
++            || gq >= inter->i_guiqueuepool + GUIQUEUE_POOL_SIZE)
++            freebytes(gq, sizeof(*gq));
++    }
++    while (inter->i_guifreelist)
++    {
++        t_guiqueue *gq = inter->i_guifreelist;
++        inter->i_guifreelist = gq->gq_next;
++        if (gq < inter->i_guiqueuepool
++            || gq >= inter->i_guiqueuepool + GUIQUEUE_POOL_SIZE)
++            freebytes(gq, sizeof(*gq));
++    }
+     freebytes(inter, sizeof(*inter));
+ }
+ 

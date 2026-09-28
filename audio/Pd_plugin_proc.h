@@ -28,6 +28,17 @@ extern LANGSPEC void PD_delete_controller(struct SoundPlugin *plugin, int contro
 extern LANGSPEC void PD_put_controllers_to_state(const struct SoundPlugin *plugin, hash_t *state);
 extern LANGSPEC void PD_recreate_controllers_from_state(struct SoundPlugin *plugin, const hash_t *state);
 
+// Returns true for the "Pd" and "Pd2" instrument types.
+extern LANGSPEC bool PD_is_pd_type(const char *type_name);
+
+// Implementations for the old ("Pd") and new ("Pd2") instruments.
+extern LANGSPEC const wchar_t *PD1_set_controller_name(struct SoundPlugin *plugin, int n, const wchar_t *name);
+extern LANGSPEC Pd_Controller *PD1_get_controller(struct SoundPlugin *plugin, int n);
+extern LANGSPEC void PD1_set_qtgui(struct SoundPlugin *plugin, void *qtgui);
+extern LANGSPEC void PD1_delete_controller(struct SoundPlugin *plugin, int controller_num);
+extern LANGSPEC void PD1_put_controllers_to_state(const struct SoundPlugin *plugin, hash_t *state);
+extern LANGSPEC void PD1_recreate_controllers_from_state(struct SoundPlugin *plugin, const hash_t *state);
+
 extern LANGSPEC void RT_PD_set_absolute_time(int64_t time);
 extern LANGSPEC void RT_PD_set_line(int64_t time, int64_t time_line, int line);
 extern LANGSPEC void RT_PD_set_realline(int64_t time, int64_t time_nextrealline, const Place *p);

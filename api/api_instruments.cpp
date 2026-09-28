@@ -777,7 +777,7 @@ bool instrumentHasBeenUsed(instrument_t instrument_id){
 }
 
 bool hasPureData(void){
-#if WITH_PD
+#if WITH_PD || WITH_PD2
   return true;
 #else
   return false;
@@ -1209,7 +1209,7 @@ void deletePdController(instrument_t instrument_id, const char *effect_name){
     return;
   }
 
-  if (strcmp(plugin->type->type_name, "Pd")){
+  if (!PD_is_pd_type(plugin->type->type_name)){
     handleError("deletePdController: Instrument #%d is not a Pd instrument: \"%s\"", (int)instrument_id.id, plugin->type->type_name);
     return;
   }

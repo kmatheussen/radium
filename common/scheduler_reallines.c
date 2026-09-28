@@ -2,6 +2,7 @@
 #include "nsmtracker.h"
 #include "list_proc.h"
 #include "../audio/Pd_plugin_proc.h"
+#include "../audio/Pd_plugin2_proc.h"
 #include "../OpenGL/Widget_proc.h"
 #include "player_pause_proc.h"
 #include "placement_proc.h"
@@ -57,7 +58,7 @@ static int64_t RT_scheduled_realline(struct SeqTrack *seqtrack, int64_t time, un
   }
   */
   
-#ifdef WITH_PD
+#if defined(WITH_PD) || defined(WITH_PD2)
   bool inserted_pd_realline = false;
   int64_t org_time = time;
   const Place *org_pos = NULL;
@@ -93,10 +94,16 @@ static int64_t RT_scheduled_realline(struct SeqTrack *seqtrack, int64_t time, un
   }
 
     
-#ifdef WITH_PD
+#if defined(WITH_PD) || defined(WITH_PD2)
   if (org_pos != NULL)
-    if(inserted_pd_realline==false)
+    if(inserted_pd_realline==false) {
+#ifdef WITH_PD
       RT_PD_set_realline(org_time, time, org_pos);
+#endif
+#ifdef WITH_PD2
+      RT_PD2_set_realline(org_time, time, org_pos);
+#endif
+    }
 #endif
 
   {

@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "helpers.h"
 
 #include "../audio/Sampler_plugin_proc.h"
+#include "../audio/Pd_plugin_proc.h"
 #include "../audio/undo_pd_controllers_proc.h"
 #include "../audio/Juce_plugins_proc.h"
 #include "../audio/CpuUsage.hpp"
@@ -185,8 +186,8 @@ public:
 
     //instrument->effects_frame->addWidget(PluginWidget_create(NULL, plugin), 0, 3, 2, 1);
 
-    //   Pd:
-    if(!strcmp(plugin->type->type_name, "Pd")) {
+    //   Pd / Pd2:
+    if(PD_is_pd_type(plugin->type->type_name)) {
       _pd_plugin_widget = new Pd_Plugin_widget(this,_patch.data());
       vertical_layout->insertWidget(1,_pd_plugin_widget);
       faust_load_button->hide();

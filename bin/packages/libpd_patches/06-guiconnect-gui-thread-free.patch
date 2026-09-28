@@ -1,0 +1,53 @@
+--- a/pure-data/src/g_guiconnect.c
++++ b/pure-data/src/g_guiconnect.c
+@@ -11,6 +11,7 @@
+ 
+ #include "m_pd.h"
+ #include "g_canvas.h"
++#include "s_stuff.h"
+ 
+ struct _guiconnect
+ {
+@@ -38,13 +39,19 @@
+         pd_unbind(&x->x_obj.ob_pd, x->x_sym);
+     if (x->x_clock)
+         clock_free(x->x_clock);
++        /* Radium: cancel a possibly queued guiconnect_dofree entry, in case
++        guiconnect_signoff() frees us first. */
++    sys_unqueuegui(&x->x_obj.ob_pd);
+ }
+ 
+-    /* this is called when the clock times out to indicate the GUI should
+-    be gone by now. */
+-static void guiconnect_tick(t_guiconnect *x)
++    /* Radium: called from sys_flushqueue (i.e. from sys_pollgui on the
++    host's GUI thread) to indicate the GUI should be gone by now. This must
++    not be done from a scheduler clock callback, since those run on the
++    host's realtime audio thread. */
++static void guiconnect_dofree(t_gobj *client, t_glist *glist)
+ {
+-    pd_free(&x->x_obj.ob_pd);
++    (void)glist;
++    pd_free(&((t_guiconnect *)client)->x_obj.ob_pd);
+ }
+ 
+     /* the target calls this to disconnect.  If the gui has "signed off"
+@@ -59,8 +66,16 @@
+         x->x_who = 0;
+         if (timedelay > 0)
+         {
+-            x->x_clock = clock_new(x, (t_method)guiconnect_tick);
+-            clock_delay(x->x_clock, timedelay);
++                /* Radium: Don't schedule the deferred free on the scheduler
++                clock; those callbacks run on the host's realtime audio
++                thread. Free from the GUI thread instead (sys_queuegui()
++                entries are run by sys_flushqueue(), called from
++                sys_pollgui()). If there is no GUI, we are already on a
++                non-realtime thread, so just free it here. */
++            if (sys_havetkproc())
++                sys_queuegui(&x->x_obj.ob_pd, NULL, guiconnect_dofree);
++            else
++                pd_free(&x->x_obj.ob_pd);
+         }
+     }
+ }

@@ -759,7 +759,12 @@ OBJ14=$(T)disk_midi_fx.o $(T)disk_midi_instrument.o $(T)midi_fx.o $(T)midi_instr
 OBJ_FAUST=$(T)zita_rev.o $(T)stk_flute.o $(T)stk_bowed.o $(T)stk_blow_bottle.o $(T)stk_bass.o $(T)stk_blow_hole.o $(T)stk_brass.o $(T)stk_clarinet.o $(T)stk_flute_stk.o $(T)stk_glass_harmonica.o $(T)stk_harpsi.o $(T)stk_modal_bar.o $(T)stk_NLF_eks.o $(T)stk_NLF_fm.o $(T)stk_piano.o $(T)stk_saxophony.o $(T)stk_sitar.o $(T)stk_tibetan_bowl.o $(T)stk_tuned_bar.o $(T)stk_uni_bar.o $(T)stk_voice_form.o $(T)faust_tapiir.o $(T)faust_system_eq.o $(T)faust_system_tremolo.o $(T)faust_system_lowpass.o $(T)faust_system_highpass.o $(T)faust_system_lowshelf.o $(T)faust_system_highshelf.o $(T)faust_multibandcomp.o
 
 #AUDIO
-OBJ_AUDIO=$(T)audio_instrument.o $(T)SoundProducer.o $(T)AudioBuffer.o $(T)Jack_plugin.o $(T)find_jack_library.o $(T)Faust_plugins.o $(T)Faust_dev2.o $(T)Faust2_compile.o $(T)Faust2_llm_lint.o $(T)Bus_plugins.o $(T)Timeskew_plugin.o $(T)Patchbay_plugin.o $(T)MidiMessages_plugin.o $(T)VST_plugins.o $(T)Ladspa_plugins.o $(T)Sampler_plugin.o $(T)SampleRecorder.o $(T)SampleReader.o $(T)Seqtrack_plugin.o $(T)FluidSynth_plugin.o $(T)Pd_plugin.o $(T)Modulator_plugin.o $(T)SendReceive_plugins.o $(T)SoundPluginRegistry.o $(T)SoundPlugin.o $(T)AudioMeterPeaks.o $(T)Peaks.o $(T)Fade.o $(T)Mixer.o $(T)get_windows_commandlines.o $(T)Envelope.o $(T)Resampler.o $(T)SoundFonts.o $(T)Presets.o $(T)undo_audio_effect.o $(T)undo_connection_enabled.o $(T)undo_audio_connection_gain.o $(T)undo_pd_controllers.o $(T)undo_plugin_state.o $(T)SoundfileSaver.o $(T)system_compressor_wrapper.o $(T)KillJackd.o $(T)SF.o $(T)RIFF.o
+OBJ_AUDIO=$(T)audio_instrument.o $(T)SoundProducer.o $(T)AudioBuffer.o $(T)Jack_plugin.o $(T)find_jack_library.o $(T)Faust_plugins.o $(T)Faust_dev2.o $(T)Faust2_compile.o $(T)Faust2_llm_lint.o $(T)Bus_plugins.o $(T)Timeskew_plugin.o $(T)Patchbay_plugin.o $(T)MidiMessages_plugin.o $(T)VST_plugins.o $(T)Ladspa_plugins.o $(T)Sampler_plugin.o $(T)SampleRecorder.o $(T)SampleReader.o $(T)Seqtrack_plugin.o $(T)FluidSynth_plugin.o $(T)Pd_plugin.o $(T)Pd_plugin2.o $(T)Pd_plugin_common.o $(T)Modulator_plugin.o $(T)SendReceive_plugins.o $(T)SoundPluginRegistry.o $(T)SoundPlugin.o $(T)AudioMeterPeaks.o $(T)Peaks.o $(T)Fade.o $(T)Mixer.o $(T)get_windows_commandlines.o $(T)Envelope.o $(T)Resampler.o $(T)SoundFonts.o $(T)Presets.o $(T)undo_audio_effect.o $(T)undo_connection_enabled.o $(T)undo_audio_connection_gain.o $(T)undo_pd_controllers.o $(T)undo_plugin_state.o $(T)SoundfileSaver.o $(T)system_compressor_wrapper.o $(T)KillJackd.o $(T)SF.o $(T)RIFF.o
+
+# The Pd2 instrument links the libpds wrapper directly into the Radium binary.
+ifneq (,$(findstring -DWITH_PD2,$(OS_OPTS)))
+OBJ_AUDIO+=$(T)libpds.o
+endif
 #$(T)XI_Plugin.o 
 #MultiCore.o $(T)Smooth.o
 
@@ -2427,6 +2432,15 @@ $(T)FluidSynth_plugin.o: audio/FluidSynth_plugin.cpp
 # precompile disabled because of strange error message
 $(T)Pd_plugin.o: audio/Pd_plugin.cpp #$(QT_PCH)
 	$(CCC2) -Ibin/packages/fluidsynth-1.1.6/include $(QTOPT) `$(PKG) --cflags glib-2.0` audio/Pd_plugin.cpp -Ibin/packages/libpd-master/libpds -Ibin/packages/libpd-master/libpd_wrapper -Ibin/packages/libpd-master/pure-data/src #$(QT_PCH_INCLUDE)
+
+$(T)Pd_plugin2.o: audio/Pd_plugin2.cpp #$(QT_PCH)
+	$(CCC2) -Ibin/packages/fluidsynth-1.1.6/include $(QTOPT) `$(PKG) --cflags glib-2.0` audio/Pd_plugin2.cpp -isystem bin/packages/libpd/libpd_wrapper -isystem bin/packages/libpd/pure-data/src #$(QT_PCH_INCLUDE)
+
+$(T)libpds.o: $(BUILD_DEPENDENCIES) libpds/libpds.c libpds/libpds.h
+	$(CC2) libpds/libpds.c $(OPT) -isystem bin/packages/libpd/libpd_wrapper -isystem bin/packages/libpd/pure-data/src
+
+$(T)Pd_plugin_common.o: audio/Pd_plugin_common.cpp #$(QT_PCH)
+	$(CCC2) $(QTOPT) `$(PKG) --cflags glib-2.0` audio/Pd_plugin_common.cpp #$(QT_PCH_INCLUDE)
 
 
 $(T)Modulator_plugin.o: audio/Modulator_plugin.cpp audio/Delay.hpp $(QT_PCH)
