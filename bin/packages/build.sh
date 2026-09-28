@@ -370,8 +370,11 @@ if uname -s |grep Linux ; then
         build_libpds
     fi
     build_xcb
+	echo "finished compiling libpds and xcb" # need this line to avoid script failing if all the lines above are commented out.
+fi
+
+if uname -s |grep -e Linux -e Darwin ; then
     build_libpd
-    echo "finished compiling libpd, libpds and xcb" # need this line to avoid script failing if all the lines above are commented out.
 fi
 
 
