@@ -175,8 +175,8 @@ build_libpds() {
 
 # Official libpd (https://github.com/libpd/libpd), tracking current Pd Vanilla.
 # Built with multiple instance support (PDINSTANCE/PDTHREADS) and the vanilla
-# "extra" externals compiled in. We build the static archive directly to avoid
-# having to link a platform-specific shared library.
+# "extra" externals compiled in. Radium links the shared library, while the
+# libpds tests link the static archive. Both are built from the same objects.
 build_libpd() {
 
     rm -fr libpd
@@ -195,10 +195,19 @@ build_libpd() {
     # appended last, so -fno-omit-frame-pointer overrides it.
     LIBPD_DEBUG_FLAGS="-g -fno-omit-frame-pointer"
 
+    LIBPD_LINK_FLAGS=""
+
     if uname -s |grep Darwin ; then
         # Build universal, same as the other Mac packages. (Debug builds of
         # Radium are arm64 only, while release builds are arm64+x86_64.)
         LIBPD_DEBUG_FLAGS="$LIBPD_DEBUG_FLAGS $DARWIN_ARCH_FLAGS -mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET}"
+        LIBPD_LINK_FLAGS="$DARWIN_ARCH_FLAGS -mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET}"
+
+        # The dylib is placed in the bundled packages directory, both for dev
+        # builds (via the /tmp/radium_bin/packages symlink) and for Radium.app.
+        # Note: don't use @rpath here. fix_dylibs.sh (used when creating
+        # Radium.app) aborts on @rpath dependencies.
+        LIBPD_LINK_FLAGS="$LIBPD_LINK_FLAGS -Wl,-install_name,@executable_path/packages/libpd/libs/libpd.dylib"
 
         # The Mac GUI needs Tcl/Tk 8.6. The system /usr/bin/wish is Tk 8.5,
         # which is killed by newer versions of MacOS, so let sys_startgui()
@@ -209,10 +218,12 @@ build_libpd() {
                 break
             fi
         done
+    else
+        LIBPD_LINK_FLAGS="-Wl,-soname,libpd.so"
     fi
 
     make clean
-    make -j`nproc` MULTI=true UTIL=true EXTRA=true libs/libpd.a ADDITIONAL_CFLAGS="$LIBPD_DEBUG_FLAGS"
+    make -j`nproc` libpd STATIC=true MULTI=true UTIL=true EXTRA=true ADDITIONAL_CFLAGS="$LIBPD_DEBUG_FLAGS" ADDITIONAL_LDFLAGS="$LIBPD_LINK_FLAGS"
 
     # Note: Radium's libpds wrapper (libpds/) is compiled directly into the
     # Radium binary by Makefile.Qt, so there's nothing to build here.

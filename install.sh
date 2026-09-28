@@ -155,12 +155,20 @@ rm -f libpds.o
 cd "$THIS_DIR/bin"
 
 # official libpd (used by the Pd2 instrument).
-# The libraries are linked statically, but the Tcl/Tk GUI and the extra
-# abstractions are needed at runtime.
+# The shared library is linked dynamically, while the Tcl/Tk GUI and the
+# extra abstractions are needed at runtime. (The static archive is only
+# used by libpds/tests.)
 mkdir -p "$TARGET/packages/libpd/pure-data"
 cp -a packages/libpd/pure-data/tcl "$TARGET/packages/libpd/pure-data/"
 cp -a packages/libpd/pure-data/extra "$TARGET/packages/libpd/pure-data/"
 cp -a packages/libpd/pure-data/po "$TARGET/packages/libpd/pure-data/"
+
+mkdir -p "$TARGET/packages/libpd/libs"
+if uname -s |grep Darwin ; then
+    cp -a packages/libpd/libs/libpd.dylib "$TARGET/packages/libpd/libs/"
+else
+    cp -a packages/libpd/libs/libpd.so "$TARGET/packages/libpd/libs/"
+fi
 
 echo "A1"
 # ladspa
