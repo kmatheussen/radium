@@ -309,6 +309,11 @@ extern PlayerClass *pc;
 
 #define NUM_NOTE_IDS (8192*4)
 
+// The old Pd plugin is known to allocate/free memory from libpd even while
+// holding the player lock, so ignore the (ASAN-only) malloc/free checks while
+// running code from this plugin. See common/OS_Player_proc.h.
+#define PD_IGNORE_MALLOC_FREE_CHECKS radium::ScopedIgnoreMallocFreeChecks scoped_ignore_malloc_free_checks
+
 namespace {
   
 struct Data{
@@ -382,6 +387,8 @@ static int RT_get_legal_note_id_pos(Data *data, float ids_pos){
 
 // called from radium
 static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float **inputs, float **outputs){
+  PD_IGNORE_MALLOC_FREE_CHECKS;
+
   Data *data = (Data*)plugin->data;
   pd_t *pd = data->pd;
 
@@ -390,6 +397,7 @@ static void RT_process(SoundPlugin *plugin, int64_t time, int num_frames, float 
 
 // called from radium
 static void RT_play_note(struct SoundPlugin *plugin, int block_delta_time, note_t note){
+  PD_IGNORE_MALLOC_FREE_CHECKS;
 
   Data *data = (Data*)plugin->data;
   pd_t *pd = data->pd;
@@ -410,6 +418,8 @@ static void RT_play_note(struct SoundPlugin *plugin, int block_delta_time, note_
 }
 
 static void RT_stop_note(struct SoundPlugin *plugin, int block_delta_time, note_t note){
+  PD_IGNORE_MALLOC_FREE_CHECKS;
+
   Data *data = (Data*)plugin->data;
   pd_t *pd = data->pd;
   libpds_noteon(pd, note.midi_channel, note.pitch, 0);
@@ -427,6 +437,8 @@ static void RT_stop_note(struct SoundPlugin *plugin, int block_delta_time, note_
 
 // called from radium
 static void RT_set_note_volume(struct SoundPlugin *plugin, int block_delta_time, note_t note){
+  PD_IGNORE_MALLOC_FREE_CHECKS;
+
   Data *data = (Data*)plugin->data;
   pd_t *pd = data->pd;
   libpds_polyaftertouch(pd, note.midi_channel, note.pitch, note.velocity*127);
@@ -445,6 +457,8 @@ static void RT_set_note_volume(struct SoundPlugin *plugin, int block_delta_time,
 
 // called from radium
 static void RT_set_note_pitch(struct SoundPlugin *plugin, int block_delta_time, note_t note){
+  PD_IGNORE_MALLOC_FREE_CHECKS;
+
   Data *data = (Data*)plugin->data;
   pd_t *pd = data->pd;
 
@@ -461,6 +475,8 @@ static void RT_set_note_pitch(struct SoundPlugin *plugin, int block_delta_time, 
 }
 
 static void RT_send_raw_midi_message(struct SoundPlugin *plugin, int block_delta_time, uint32_t msg){
+  PD_IGNORE_MALLOC_FREE_CHECKS;
+
   Data *data = (Data*)plugin->data;
   pd_t *pd = data->pd;
 
@@ -470,6 +486,8 @@ static void RT_send_raw_midi_message(struct SoundPlugin *plugin, int block_delta
 
 // called from radium
 void RT_PD_set_absolute_time(int64_t time){ 
+  PD_IGNORE_MALLOC_FREE_CHECKS;
+
   if(g_instances != NULL) {
     t_atom v[3];
     int sample_rate = MIXER_get_sample_rate();
@@ -488,6 +506,7 @@ void RT_PD_set_absolute_time(int64_t time){
 
 // called from radium
 void RT_PD_set_realline(int64_t time, int64_t time_nextsubline, const Place *p){
+  PD_IGNORE_MALLOC_FREE_CHECKS;
 
   if(g_instances != NULL) {
     t_atom v[8];
@@ -541,6 +560,8 @@ void RT_PD_set_line(int64_t time, int64_t time_nextline, int line){
 
 // called from radium
 static void RT_set_effect_value(struct SoundPlugin *plugin, int block_delta_time, int effect_num, float value, enum ValueFormat value_format, FX_when when) {
+  PD_IGNORE_MALLOC_FREE_CHECKS;
+
   Data *data = (Data*)plugin->data;
   pd_t *pd = data->pd;
   Pd_Controller *controller = &data->controllers[effect_num];
@@ -610,6 +631,8 @@ static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *
 
 // called from radium
 static bool show_gui(struct SoundPlugin *plugin, int64_t parentgui){
+  PD_IGNORE_MALLOC_FREE_CHECKS;
+
   Data *data = (Data*)plugin->data;
   //printf("####################################################### Showing Pd gui\n");
   PLAYER_lock();{
@@ -621,12 +644,16 @@ static bool show_gui(struct SoundPlugin *plugin, int64_t parentgui){
 
 // called from radium
 static void save_file(SoundPlugin *plugin) {
+  PD_IGNORE_MALLOC_FREE_CHECKS;
+
   Data *data=(Data*)plugin->data;
   libpds_request_savefile(data->pd, data->file);
 }
 
 // called from radium
 static void hide_gui(struct SoundPlugin *plugin){
+  PD_IGNORE_MALLOC_FREE_CHECKS;
+
   Data *data = (Data*)plugin->data;
   //printf("####################################################### Showing Pd gui\n");
   PLAYER_lock();{
@@ -997,6 +1024,8 @@ static QTemporaryFile *get_pdfile_from_state(hash_t *state){
 // http://www.java2s.com/Code/Cpp/Qt/Readtextfilelinebyline.htm
 static void put_pdfile_into_state(const SoundPlugin *plugin, QFile *file, hash_t *state)
 {
+	PD_IGNORE_MALLOC_FREE_CHECKS;
+
 	if (file == NULL)
 		return;
 	
@@ -1035,6 +1064,8 @@ static QString get_search_path() {
 
 static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, float sample_rate, int block_size)
 {
+	PD_IGNORE_MALLOC_FREE_CHECKS;
+
 	R_ASSERT(pdfile != NULL);
 	
 	Data *data = (Data*)V_calloc(1,sizeof(Data));
@@ -1172,6 +1203,8 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, struct Sound
 }
 
 static void cleanup_plugin_data(SoundPlugin *plugin){
+  PD_IGNORE_MALLOC_FREE_CHECKS;
+
   Data *data = (Data*)plugin->data;
   printf(">>>>>>>>>>>>>> Cleanup_plugin_data called for %p\n",plugin);
 
@@ -1253,6 +1286,8 @@ static bool controller_name_exists(const Data *data, const char *name){
 }
 
 const wchar_t *PD1_set_controller_name(SoundPlugin *plugin, int n, const wchar_t *wname){
+  PD_IGNORE_MALLOC_FREE_CHECKS;
+
   Data *data = (Data*)plugin->data;
   Pd_Controller *controller = &data->controllers[n];
   const char *name = STRING_get_chars(wname);
@@ -1285,6 +1320,8 @@ const wchar_t *PD1_set_controller_name(SoundPlugin *plugin, int n, const wchar_t
 }
 
 void PD1_recreate_controllers_from_state(SoundPlugin *plugin, const hash_t *state){
+  PD_IGNORE_MALLOC_FREE_CHECKS;
+
   Data *data=(Data*)plugin->data;
 
   PDGUI_clear(ATOMIC_GET(data->qtgui));

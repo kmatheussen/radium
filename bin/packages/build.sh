@@ -5,6 +5,8 @@ set -eEu
 
 export PYTHONEXE_NOT_AVAILABLE_YET=1
 
+export INCLUDE_FAUSTDEV_BUT_NOT_LLVM=1
+
 # Might want to uncomment the line below to make faust build with support for llvm.
 #export RADIUM_USE_CLANG=1
 

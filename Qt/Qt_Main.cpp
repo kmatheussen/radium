@@ -211,6 +211,24 @@ DEFINE_ATOMIC(bool, g_program_has_ended) = false;
 
 #define DEBUG_MEMORY_ALLOC_MORE 0
 
+// See common/OS_Player_proc.h. Used to ignore the (ASAN-only) malloc/free
+// checks when executing code from instruments that are known to allocate/free
+// memory while the player lock is held (currently the old Pd plugin).
+static __thread int g_num_ignore_malloc_free_checks = 0;
+
+void PLAYER_push_ignore_malloc_free_checks(void){
+  g_num_ignore_malloc_free_checks++;
+}
+
+void PLAYER_pop_ignore_malloc_free_checks(void){
+  R_ASSERT(g_num_ignore_malloc_free_checks>0);
+  g_num_ignore_malloc_free_checks--;
+}
+
+bool PLAYER_ignore_malloc_free_checks(void){
+  return g_num_ignore_malloc_free_checks > 0;
+}
+
 #if !defined(RELEASE)
 
 // Comment out line below. Always do this in debug mode since it's useful to catch wrong usage of 'new'.
@@ -411,6 +429,9 @@ extern "C" {
 
 __attribute__((weak))
 void __sanitizer_malloc_hook(const volatile void *ptr, size_t size){
+  if (PLAYER_ignore_malloc_free_checks())
+    return;
+
 #if DEBUG_MEMORY_ALLOC_MORE
   if (g_is_allocating_or_freeing)
     return;
@@ -436,6 +457,9 @@ void __sanitizer_malloc_hook(const volatile void *ptr, size_t size){
 
 __attribute__((weak))
 void __sanitizer_free_hook(const volatile void *ptr){
+  if (PLAYER_ignore_malloc_free_checks())
+    return;
+
 #if DEBUG_MEMORY_ALLOC_MORE
   if (g_is_allocating_or_freeing)
     return;
