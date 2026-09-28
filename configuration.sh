@@ -384,6 +384,8 @@ fi
 if ! uname -s |grep -i Linux > /dev/null ; then
     unset INCLUDE_PDDEV
     set_var INCLUDE_PDDEV 0
+fi
+if ! uname -s |grep -i -e Linux -e Darwin > /dev/null ; then
     unset INCLUDE_PD2DEV
     set_var INCLUDE_PD2DEV 0
 fi

@@ -195,6 +195,22 @@ build_libpd() {
     # appended last, so -fno-omit-frame-pointer overrides it.
     LIBPD_DEBUG_FLAGS="-g -fno-omit-frame-pointer"
 
+    if uname -s |grep Darwin ; then
+        # Build universal, same as the other Mac packages. (Debug builds of
+        # Radium are arm64 only, while release builds are arm64+x86_64.)
+        LIBPD_DEBUG_FLAGS="$LIBPD_DEBUG_FLAGS $DARWIN_ARCH_FLAGS -mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET}"
+
+        # The Mac GUI needs Tcl/Tk 8.6. The system /usr/bin/wish is Tk 8.5,
+        # which is killed by newer versions of MacOS, so let sys_startgui()
+        # try one of these first. WISH must expand to a C string literal.
+        for wish in /opt/local/libexec/tk-quartz/wish8.6 /opt/local/bin/wish8.6 /opt/homebrew/bin/wish8.6 ; do
+            if [ -x "$wish" ] ; then
+                LIBPD_DEBUG_FLAGS="$LIBPD_DEBUG_FLAGS -DWISH='\"$wish\"'"
+                break
+            fi
+        done
+    fi
+
     make clean
     make -j`nproc` MULTI=true UTIL=true EXTRA=true libs/libpd.a ADDITIONAL_CFLAGS="$LIBPD_DEBUG_FLAGS"
 
