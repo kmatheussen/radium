@@ -157,7 +157,7 @@ pd_t *libpds2_create(bool use_gui, const char* libdir)
 
 	// Note: use_gui and libdir are stored, but the GUI is not started here.
 	// It is started lazily by the first call to libpds2_show_gui(), and stopped
-	// again by libpds2_hide_gui(). This way instances that are never edited
+	// again by libpds2_delete(). This way instances that are never edited
 	// don't use an extra Tcl/Tk process.
 
 	return pd;
@@ -290,21 +290,31 @@ static bool executable_in_path(const char *name)
 }
 #endif
 
-// Starts the Pd Tcl/Tk GUI for this instance if it's not already running.
-// Starting the GUI makes all the instance's canvas windows visible (the GUI
-// handshake ends up in sys_doneglobinit(), which calls canvas_vis(x, 1) for
-// all canvases).
-//
-// Note: libpd_start_gui() blocks forever inside accept() if the GUI process
-// never manages to connect, so make sure that a GUI actually can be started
-// before calling it.
+// Starts the Pd Tcl/Tk GUI for this instance if it's not already running, or
+// shows the GUI windows again if they have only been hidden. Starting the GUI
+// makes all the instance's canvas windows visible (the GUI handshake ends up
+// in sys_doneglobinit(), which calls canvas_vis(x, 1) for all canvases).
 void libpds2_show_gui(pd_t *pd)
 {
 	set_instance(pd);
 
-	if (pd->gui_started || !pd->use_gui || pd->libdir == NULL)
+	if (!pd->use_gui || pd->libdir == NULL)
 		return;
 
+	if (pd->gui_started)
+	{
+		// The GUI process is already running, but its windows may have been
+		// hidden (either by the host unchecking the GUI checkbox, or by the
+		// user closing the Pd window). Ask the GUI to show them again. The
+		// windows were only withdrawn, so window positions, scroll positions
+		// and edit states are kept.
+		pdgui_vmess("libpd_show_gui", NULL);
+		return;
+	}
+
+	// Note: libpd_start_gui() blocks forever inside accept() if the GUI process
+	// never manages to connect, so make sure that a GUI actually can be started
+	// before calling it.
 	{
 		char gui_script[1040];
 		snprintf(gui_script, sizeof(gui_script), "%s/tcl/pd-gui.tcl", pd->libdir);
@@ -338,18 +348,16 @@ void libpds2_show_gui(pd_t *pd)
 		set_error("Unable to start the Pd GUI.");
 }
 
-// Stops the GUI process for this instance. Editing state is kept in the Pd
-// canvas, so nothing is lost, but the Tcl/Tk process has to be started again
-// by the next libpds2_show_gui() call.
+// Hides the GUI windows for this instance. The Tcl/Tk process keeps running
+// and connected to Pd, so the windows can be shown again by the next
+// libpds2_show_gui() call. The process is stopped when the instance is
+// deleted, see libpds2_delete().
 void libpds2_hide_gui(pd_t *pd)
 {
 	set_instance(pd);
 
 	if (pd->gui_started)
-	{
-		libpd_stop_gui();
-		pd->gui_started = false;
-	}
+		pdgui_vmess("libpd_hide_gui", NULL);
 }
 
 // Processes incoming GUI/network messages and sends queued GUI updates for

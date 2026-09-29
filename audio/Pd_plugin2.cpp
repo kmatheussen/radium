@@ -594,10 +594,11 @@ static bool show_gui(struct SoundPlugin *plugin, int64_t parentgui)
 	// here since the player lock is held.)
 	libpds2_show_gui(data->pd);
 
-	// Note: The new libpds starts and stops the Pd GUI, so Pd does not send
-	// gui_is_visible when the GUI is shown. Update the checkbox state here
-	// instead. (Pd does send gui_is_hidden when the user closes the Pd window,
-	// see libpd_patches/07-canvas-menuclose-hides.patch.)
+	// Note: libpds only shows or hides the Pd GUI windows here (the Tcl/Tk
+	// process keeps running), so Pd does not send gui_is_visible when the GUI
+	// is shown. Update the checkbox state here instead. (Pd does send
+	// gui_is_hidden when the user closes the Pd window, see
+	// libpd_patches/11-libpd-hide-gui-windows.patch.)
 	PDGUI_is_visible(ATOMIC_GET(data->qtgui));
 
 	return true;
