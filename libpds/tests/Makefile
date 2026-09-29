@@ -6,6 +6,7 @@
 #   make run    - build and run libpds_test (runs audio for 10 seconds)
 #   make run-gui - build and run libpds_gui_test (shows two patch windows for
 #                 15 seconds)
+#   make tsan   - build and run libpds_test with ThreadSanitizer
 #   make clean  - remove build artifacts
 
 LIBPD_DIR = ../../bin/packages/libpd
@@ -13,6 +14,7 @@ LIBPDS_DIR = ..
 LIBPD = $(LIBPD_DIR)/libs/libpd.a
 TARGET = libpds_test
 GUI_TARGET = libpds_gui_test
+TSAN_TARGET = libpds_test_tsan
 
 CC ?= cc
 CXX ?= g++
@@ -22,7 +24,9 @@ CFLAGS = -O2 -Wall -Wextra
 CXXFLAGS = -std=c++17 -O2 -Wall -Wextra
 LDLIBS = -lpthread -ldl -lm
 
-.PHONY: all run run-gui clean
+TSAN_FLAGS = -fsanitize=thread -g -fno-omit-frame-pointer
+
+.PHONY: all run run-gui tsan clean
 
 all: $(TARGET) $(GUI_TARGET)
 
@@ -41,6 +45,15 @@ libpds_test.o: libpds_test.cpp $(LIBPDS_DIR)/libpds.h
 libpds_gui_test.o: libpds_gui_test.cpp $(LIBPDS_DIR)/libpds.h
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
 
+$(TSAN_TARGET): libpds_tsan.o libpds_test_tsan.o $(LIBPD)
+	$(CXX) $(TSAN_FLAGS) -o $@ $^ $(LDLIBS)
+
+libpds_tsan.o: $(LIBPDS_DIR)/libpds.c $(LIBPDS_DIR)/libpds.h
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(TSAN_FLAGS) -c -o $@ $<
+
+libpds_test_tsan.o: libpds_test.cpp $(LIBPDS_DIR)/libpds.h
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(TSAN_FLAGS) -c -o $@ $<
+
 $(LIBPD):
 	cd $(LIBPD_DIR) && make MULTI=true UTIL=true EXTRA=true libs/libpd.a ADDITIONAL_CFLAGS="-g -fno-omit-frame-pointer"
 
@@ -50,5 +63,8 @@ run: $(TARGET)
 run-gui: $(GUI_TARGET)
 	./$(GUI_TARGET) $(LIBPD_DIR)/pure-data
 
+tsan: $(TSAN_TARGET)
+	./$(TSAN_TARGET) $(LIBPD_DIR)/pure-data
+
 clean:
-	rm -f *.o $(TARGET) $(GUI_TARGET)
+	rm -f *.o $(TARGET) $(GUI_TARGET) $(TSAN_TARGET)

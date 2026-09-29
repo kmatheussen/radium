@@ -22,6 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern LANGSPEC const wchar_t *PD2_set_controller_name(struct SoundPlugin *plugin, int n, const wchar_t *name);
 extern LANGSPEC Pd_Controller *PD2_get_controller(struct SoundPlugin *plugin, int n);
+extern LANGSPEC void PD2_set_controller_type(struct SoundPlugin *plugin, int n, int type);
+extern LANGSPEC void PD2_set_controller_min_max(struct SoundPlugin *plugin, int n, float min_value, float max_value);
 extern LANGSPEC void PD2_set_qtgui(struct SoundPlugin *plugin, void *qtgui);
 extern LANGSPEC void PD2_delete_controller(struct SoundPlugin *plugin, int controller_num);
 

@@ -60,6 +60,40 @@ Pd_Controller *PD_get_controller(SoundPlugin *plugin, int n)
 	return NULL;
 }
 
+void PD_set_controller_type(SoundPlugin *plugin, int n, int type)
+{
+#ifdef WITH_PD
+	if (!strcmp(plugin->type->type_name, "Pd")) {
+		Pd_Controller *controller = PD1_get_controller(plugin, n);
+		if (controller != NULL)
+			controller->type = type;
+		return;
+	}
+#endif
+#ifdef WITH_PD2
+	if (!strcmp(plugin->type->type_name, "Pd2"))
+		PD2_set_controller_type(plugin, n, type);
+#endif
+}
+
+void PD_set_controller_min_max(SoundPlugin *plugin, int n, float min_value, float max_value)
+{
+#ifdef WITH_PD
+	if (!strcmp(plugin->type->type_name, "Pd")) {
+		Pd_Controller *controller = PD1_get_controller(plugin, n);
+		if (controller != NULL) {
+			controller->min_value = min_value;
+			controller->max_value = max_value;
+		}
+		return;
+	}
+#endif
+#ifdef WITH_PD2
+	if (!strcmp(plugin->type->type_name, "Pd2"))
+		PD2_set_controller_min_max(plugin, n, min_value, max_value);
+#endif
+}
+
 void PD_set_qtgui(SoundPlugin *plugin, void *qtgui)
 {
 #ifdef WITH_PD

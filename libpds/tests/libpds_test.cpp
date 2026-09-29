@@ -11,6 +11,7 @@
 */
 
 #include <chrono>
+#include <cmath>
 #include <cstdio>
 #include <cstring>
 #include <thread>
@@ -124,6 +125,135 @@ static bool test_savefile(const char *libdir)
 	return found;
 }
 
+static const char *g_concurrency_patch_filename = "libpds_concurrency_test.pd";
+static const char *g_concurrency_patch_dir = "/tmp/";
+
+// Creates an instance with a mono pass-through patch (adc~ -> dac~), so that
+// the output of a process call must equal the input of the same call.
+static pd_t *create_concurrency_instance(const char *libdir, void **file)
+{
+	FILE *f = fopen("/tmp/libpds_concurrency_test.pd", "w");
+	if (f == NULL)
+	{
+		perror("fopen");
+		return NULL;
+	}
+	fprintf(f, "#N canvas 0 0 450 300 12;\n"
+	           "#X obj 100 100 adc~;\n"
+	           "#X obj 100 150 dac~;\n"
+	           "#X connect 0 0 1 0;\n");
+	fclose(f);
+
+	pd_t *pd = libpds2_create(true, libdir);
+	if (pd == NULL)
+	{
+		fprintf(stderr, "libpds2_create failed: %s\n", libpds2_strerror());
+		return NULL;
+	}
+
+	libpds2_init_audio(pd, 1, 1, g_sample_rate);
+
+	libpds2_start_message(pd, 1);
+	libpds2_add_float(pd, 1.0f);
+	libpds2_finish_message(pd, "pd", "dsp");
+
+	*file = libpds2_openfile(pd, g_concurrency_patch_filename, g_concurrency_patch_dir);
+	if (*file == NULL)
+	{
+		fprintf(stderr, "Could not open the concurrency test patch\n");
+		libpds2_delete(pd);
+		return NULL;
+	}
+
+	return pd;
+}
+
+static bool concurrent_process_thread(pd_t *pd, float value, int num_ticks, int iterations)
+{
+	float in_buffer[g_block_size];
+	float out_buffer[g_block_size];
+	const float *in_buffers[1] = { in_buffer };
+	float *out_buffers[1] = { out_buffer };
+
+	for (int i = 0; i < g_block_size; i++)
+		in_buffer[i] = value;
+
+	for (int iter = 0; iter < iterations; iter++)
+	{
+		for (int i = 0; i < g_block_size; i++)
+			out_buffer[i] = -123456.0f;
+
+		libpds2_process_float_noninterleaved(pd, num_ticks, in_buffers, out_buffers);
+
+		for (int i = 0; i < g_block_size; i++)
+			if (fabsf(out_buffer[i] - value) > 0.0001f)
+			{
+				fprintf(stderr, "Concurrent process mismatch: thread value %f, got %f (sample %d)\n", value, out_buffer[i], i);
+				return false;
+			}
+	}
+
+	return true;
+}
+
+// If same_instance is true, all threads process the same instance at the same
+// time. Otherwise, threads alternate between two instances.
+static bool test_concurrent_process(const char *libdir, bool same_instance)
+{
+	void *file1 = NULL;
+	pd_t *pd1 = create_concurrency_instance(libdir, &file1);
+	if (pd1 == NULL)
+		return false;
+
+	void *file2 = NULL;
+	pd_t *pd2 = NULL;
+	if (!same_instance)
+	{
+		pd2 = create_concurrency_instance(libdir, &file2);
+		if (pd2 == NULL)
+		{
+			libpds2_closefile(pd1, file1);
+			libpds2_delete(pd1);
+			return false;
+		}
+	}
+
+	const int num_threads = 4;
+	const int iterations = 2000;
+	const int num_ticks = g_block_size / libpds2_blocksize(pd1);
+
+	bool ok[num_threads];
+	std::thread threads[num_threads];
+
+	for (int i = 0; i < num_threads; i++)
+	{
+		pd_t *pd = pd2 == NULL ? pd1 : ((i % 2) == 0 ? pd1 : pd2);
+		float value = (float)(i + 1);
+		ok[i] = true;
+		threads[i] = std::thread([pd, value, num_ticks, &ok, i](){
+			ok[i] = concurrent_process_thread(pd, value, num_ticks, iterations);
+		});
+	}
+
+	for (int i = 0; i < num_threads; i++)
+		threads[i].join();
+
+	bool ret = true;
+	for (int i = 0; i < num_threads; i++)
+		ret = ret && ok[i];
+
+	libpds2_closefile(pd1, file1);
+	libpds2_delete(pd1);
+
+	if (pd2 != NULL)
+	{
+		libpds2_closefile(pd2, file2);
+		libpds2_delete(pd2);
+	}
+
+	return ret;
+}
+
 static void run_audio(pd_t *pd1, pd_t *pd2)
 {
 	const int num_ticks = g_block_size / libpds2_blocksize(pd1);
@@ -157,6 +287,14 @@ int main(int argc, char **argv)
 
 	printf("Testing patch saving.\n");
 	if (!test_savefile(libdir))
+		return 1;
+
+	printf("Testing concurrent processing of one instance.\n");
+	if (!test_concurrent_process(libdir, true))
+		return 1;
+
+	printf("Testing concurrent processing of two instances.\n");
+	if (!test_concurrent_process(libdir, false))
 		return 1;
 
 	printf("Creating two libpd instances.\n");

@@ -1,5 +1,5 @@
---- a/pure-data/src/s_inter.c	2026-09-27 11:58:43.000000000 +0200
-+++ b/pure-data/src/s_inter.c	2026-09-27 17:44:13.508723902 +0200
+--- a/pure-data/src/s_inter.c
++++ b/pure-data/src/s_inter.c
 @@ -125,6 +125,11 @@
      struct _guiqueue *gq_next;
  } t_guiqueue;
@@ -21,13 +21,14 @@
      t_binbuf *i_inbinbuf;
      char *i_guibuf;
      int i_guihead;
-@@ -977,6 +984,32 @@
+@@ -977,6 +984,33 @@
      INTER->i_waitingforping = 0;
  }
  
 +    /* Get a gui update queue entry. Entries are taken from a per-instance
-+    preallocated pool to avoid allocating memory when queuing gui updates
-+    (which can happen while the host is holding a realtime lock). */
++    preallocated pool. Never allocates memory (this can be called while the
++    host is holding a realtime lock); returns NULL if the pool is empty, in
++    which case the gui update is dropped. */
 +static t_guiqueue *sys_allocguiqueue(void)
 +{
 +    t_guiqueue *gq = INTER->i_guifreelist;
@@ -36,7 +37,7 @@
 +        INTER->i_guifreelist = gq->gq_next;
 +        return gq;
 +    }
-+    return t_getbytes(sizeof(*gq));
++    return NULL;
 +}
 +
 +static void sys_freeguiqueue(t_guiqueue *gq)
@@ -54,7 +55,7 @@
  static int sys_flushqueue(void)
  {
      int wherestop = INTER->i_bytessincelastping + GUI_UPDATESLICE;
-@@ -1000,7 +1033,7 @@
+@@ -1000,7 +1034,7 @@
              t_guiqueue *headwas = INTER->i_guiqueuehead;
              INTER->i_guiqueuehead = headwas->gq_next;
              (*headwas->gq_fn)(headwas->gq_client, headwas->gq_glist);
@@ -63,7 +64,7 @@
              if (INTER->i_bytessincelastping >= wherestop)
                  break;
          }
-@@ -1038,6 +1071,11 @@
+@@ -1038,6 +1072,11 @@
  void sys_queuegui(void *client, t_glist *glist, t_guicallbackfn f)
  {
      t_guiqueue **gqnextptr, *gq;
@@ -75,16 +76,18 @@
      if (!INTER->i_guiqueuehead)
          gqnextptr = &INTER->i_guiqueuehead;
      else
-@@ -1050,7 +1088,7 @@
+@@ -1050,7 +1089,9 @@
              return;
          gqnextptr = &gq->gq_next;
      }
 -    gq = t_getbytes(sizeof(*gq));
 +    gq = sys_allocguiqueue();
++    if (gq == NULL)
++        return;
      gq->gq_next = 0;
      gq->gq_client = client;
      gq->gq_glist = glist;
-@@ -1066,7 +1104,7 @@
+@@ -1066,7 +1107,7 @@
      {
          gq = INTER->i_guiqueuehead;
          INTER->i_guiqueuehead = INTER->i_guiqueuehead->gq_next;
@@ -93,7 +96,7 @@
      }
      if (!INTER->i_guiqueuehead)
          return;
-@@ -1074,7 +1112,7 @@
+@@ -1074,7 +1115,7 @@
          if (gq2->gq_client == client)
          {
              gq->gq_next = gq2->gq_next;
@@ -102,7 +105,7 @@
              break;
          }
  }
-@@ -1926,6 +1964,15 @@
+@@ -1939,6 +1980,15 @@
      INTER->i_havegui = 0;
      INTER->i_havetkproc = 0;
      INTER->i_guisock = -1;
@@ -118,7 +121,7 @@
  }
  
  void s_inter_free(t_instanceinter *inter)
-@@ -1951,6 +1998,23 @@
+@@ -1964,6 +2014,23 @@
      }
      pthread_mutex_destroy(&inter->i_messqueue_mutex);
  #endif

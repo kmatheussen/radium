@@ -58,6 +58,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_settings_proc.h"
 #include "../common/patch_proc.h"
 #include "../common/threading.h"
+#include "../common/spinlock.h"
 //#include "../common/PEQcommon_proc.h"
 #include "../common/playerclass.h"
 extern PlayerClass *pc;
@@ -82,7 +83,18 @@ extern PlayerClass *pc;
 
 namespace
 {
-	
+
+enum { NUM_PENDING_CONTROLLER_DEFINITIONS = 64 };
+
+struct PendingControllerDefinition
+{
+	char name[PD_NAME_LENGTH];
+	int type;
+	float min_value;
+	float value;
+	float max_value;
+};
+
 struct Data
 {
 	pd_t *pd;
@@ -99,6 +111,49 @@ struct Data
 	int largest_used_ids_pos;
 	int ids_pos;
 	int64_t note_ids[NUM_NOTE_IDS]; 
+
+	// Controller values received from Pd while processing incoming GUI/network
+	// messages on the GUI thread. They are applied by PD2_poll_all_guis after
+	// the libpd lock has been released, since PLUGIN_set_effect_value takes
+	// the player lock, which must not be acquired while holding the libpd lock.
+	bool controller_has_pending_value[NUM_PD_CONTROLLERS];
+	float controller_pending_value[NUM_PD_CONTROLLERS];
+
+	// Controller definitions (radium_controller messages) are queued and
+	// applied on the GUI thread (see PD2_apply_pending_controller_definitions),
+	// so that all writes to those controller fields that the controller widgets
+	// read directly (name, type, min_value, max_value, has_gui,
+	// config_dialog_visible) happen on the GUI thread.
+	PendingControllerDefinition pending_controller_definitions[NUM_PENDING_CONTROLLER_DEFINITIONS];
+	int pending_controller_definitions_head;
+	int pending_controller_definitions_tail;
+
+	// Protects all reads and writes of the controllers[] table. The table is
+	// read/written from the player thread (automation), runner threads (Pd
+	// callbacks) and the GUI thread (polling and the controller widgets).
+	// This is the innermost lock: never call into libpd (sys_lock) or take
+	// the PLAYER lock while holding it.
+	SPINLOCK_TYPE controllers_lock;
+};
+
+
+struct ScopedControllersLock
+{
+	Data *data;
+
+	ScopedControllersLock(Data *data)
+		: data(data)
+	{
+		SPINLOCK_OBTAIN(data->controllers_lock);
+	}
+
+	~ScopedControllersLock()
+	{
+		SPINLOCK_RELEASE(data->controllers_lock);
+	}
+
+	ScopedControllersLock(const ScopedControllersLock&) = delete;
+	ScopedControllersLock& operator=(const ScopedControllersLock&) = delete;
 };
 
 }
@@ -114,7 +169,10 @@ static Data *g_instances = NULL; // protected by the player lock
 static const int g_poll_gui_interval = 15;
 
 static void PD2_poll_all_guis(void);
+static void PD2_apply_pending_controller_definitions(Data *data);
 static void RT_bind_pending_receivers(Data *data);
+static void apply_controller_value_from_pd(Pd_Controller *controller, float scaled_value);
+static bool RT_has_player_context(void);
 
 namespace
 {
@@ -180,6 +238,13 @@ static void PD2_poll_all_guis(void)
 				break;
 		}
 
+		// Apply controller definitions queued by RT_add_controller (from
+		// runner threads during processing, and from the loadbang during patch
+		// loading). This is done on the GUI thread so that all writes to the
+		// controller fields that the controller widgets read directly happen
+		// on the GUI thread.
+		PD2_apply_pending_controller_definitions(instances[i]);
+
 		// Bind receivers for controllers added by messages that were just
 		// processed. (Binding allocates memory, so it can't be done from the
 		// player/runner threads. See RT_add_controller.) Only do this if we
@@ -187,6 +252,15 @@ static void PD2_poll_all_guis(void)
 		// block behind a stopped realtime thread.
 		if (polled)
 			RT_bind_pending_receivers(instances[i]);
+
+		// Apply controller values that were received while the libpd lock was
+		// held. This is done here, after libpds2_try_poll_gui has released the
+		// lock, since PLUGIN_set_effect_value takes the player lock.
+		for(int j=0 ; j<NUM_PD_CONTROLLERS ; j++)
+			if (instances[i]->controller_has_pending_value[j]) {
+				instances[i]->controller_has_pending_value[j] = false;
+				apply_controller_value_from_pd(&instances[i]->controllers[j], instances[i]->controller_pending_value[j]);
+			}
 	}
 }
 
@@ -394,44 +468,71 @@ static void RT_set_effect_value(struct SoundPlugin *plugin, int block_delta_time
 	pd_t *pd = data->pd;
 	Pd_Controller *controller = &data->controllers[effect_num];
 	float real_value;
+	bool has_name;
+	bool calling_from_pd;
+	char name[PD_NAME_LENGTH];
+	char fx_when_name[PD_FX_WHEN_NAME_LENGTH];
 
-	if(value_format==EFFECT_FORMAT_SCALED && controller->type!=EFFECT_FORMAT_BOOL)
-		real_value = scale(value, 0.0, 1.0, 
-											 controller->min_value, controller->max_value);
-	else
-		real_value = value;
-
-	safe_float_write(&controller->value, real_value);
-
-	if(strcmp(controller->name, ""))
 	{
-		//printf("####################################################### Setting pd volume to %f / real_value: %f, for -%s-. Coming-from-pd: %d\n",value, real_value,name,controller->calling_from_pd);
-		controller->calling_from_set_effect_value = true; {
+		ScopedControllersLock lock(data);
 
-			if(false==controller->calling_from_pd)
-			{
-				switch(when)
-				{
-				case FX_start:
-					libpds2_bang(pd, controller->fx_when_start_name);
-					break;
-				case FX_middle:
-					libpds2_bang(pd, controller->fx_when_middle_name);
-					break;
-				case FX_end:
-					libpds2_bang(pd, controller->fx_when_end_name);
-					break;
-				case FX_single:
-					libpds2_bang(pd, controller->fx_when_single_name);
-					break;
-				default:
-					RT_message("Unknown when value: %d",when);
-				}
+		if(value_format==EFFECT_FORMAT_SCALED && controller->type!=EFFECT_FORMAT_BOOL)
+			real_value = scale(value, 0.0, 1.0, 
+							   controller->min_value, controller->max_value);
+		else
+			real_value = value;
 
-				libpds2_float(pd, controller->name, real_value);
-			}
+		safe_float_write(&controller->value, real_value);
 
-		} controller->calling_from_set_effect_value = false;
+		has_name = strcmp(controller->name, "") != 0;
+		calling_from_pd = controller->calling_from_pd;
+
+		snprintf(name, sizeof(name), "%s", controller->name);
+
+		switch(when)
+		{
+		case FX_start:
+			snprintf(fx_when_name, sizeof(fx_when_name), "%s", controller->fx_when_start_name);
+			break;
+		case FX_middle:
+			snprintf(fx_when_name, sizeof(fx_when_name), "%s", controller->fx_when_middle_name);
+			break;
+		case FX_end:
+			snprintf(fx_when_name, sizeof(fx_when_name), "%s", controller->fx_when_end_name);
+			break;
+		case FX_single:
+			snprintf(fx_when_name, sizeof(fx_when_name), "%s", controller->fx_when_single_name);
+			break;
+		default:
+			fx_when_name[0] = 0;
+			break;
+		}
+
+		controller->calling_from_set_effect_value = true;
+	}
+
+	if(has_name && false==calling_from_pd)
+	{
+		//printf("####################################################### Setting pd volume to %f / real_value: %f, for -%s-. Coming-from-pd: %d\n",value, real_value,name,calling_from_pd);
+
+		switch(when)
+		{
+		case FX_start:
+		case FX_middle:
+		case FX_end:
+		case FX_single:
+			libpds2_bang(pd, fx_when_name);
+			break;
+		default:
+			RT_message("Unknown when value: %d",when);
+		}
+
+		libpds2_float(pd, name, real_value);
+	}
+
+	{
+		ScopedControllersLock lock(data);
+		controller->calling_from_set_effect_value = false;
 	}
 }
 
@@ -439,11 +540,22 @@ static void RT_set_effect_value(struct SoundPlugin *plugin, int block_delta_time
 static float RT_get_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format)
 {
 	Data *data = (Data*)plugin->data;
-	float raw = data->controllers[effect_num].value;
-	if(value_format==EFFECT_FORMAT_SCALED && data->controllers[effect_num].type!=EFFECT_FORMAT_BOOL)
-		return scale(raw,
-								 data->controllers[effect_num].min_value, data->controllers[effect_num].max_value,
-								 0.0f, 1.0f);
+	float raw;
+	int type;
+	float min_value;
+	float max_value;
+
+	{
+		ScopedControllersLock lock(data);
+		Pd_Controller *controller = &data->controllers[effect_num];
+		raw = controller->value;
+		type = controller->type;
+		min_value = controller->min_value;
+		max_value = controller->max_value;
+	}
+
+	if(value_format==EFFECT_FORMAT_SCALED && type!=EFFECT_FORMAT_BOOL)
+		return scale(raw, min_value, max_value, 0.0f, 1.0f);
 	else
 		return raw;
 }
@@ -452,14 +564,22 @@ static float RT_get_effect_value(struct SoundPlugin *plugin, int effect_num, enu
 static void get_display_value_string(SoundPlugin *plugin, int effect_num, char *buffer, int buffersize)
 {
 	Data *data = (Data*)plugin->data;
-	Pd_Controller *controller = &data->controllers[effect_num];
+	char name[PD_NAME_LENGTH];
+	int type;
+	float value;
 
-	const char *name = controller->name;
+	{
+		ScopedControllersLock lock(data);
+		Pd_Controller *controller = &data->controllers[effect_num];
+		snprintf(name, sizeof(name), "%s", controller->name);
+		type = controller->type;
+		value = safe_float_read(&controller->value);
+	}
 
-	if(controller->type==EFFECT_FORMAT_FLOAT)
-		snprintf(buffer,buffersize-1,"%s: %f",!strcmp(name,"")?"<not set>":name, safe_float_read(&controller->value));
+	if(type==EFFECT_FORMAT_FLOAT)
+		snprintf(buffer,buffersize-1,"%s: %f",!strcmp(name,"")?"<not set>":name, value);
 	else
-		snprintf(buffer,buffersize-1,"%s: %d",!strcmp(name,"")?"<not set>":name, (int)safe_float_read(&controller->value));
+		snprintf(buffer,buffersize-1,"%s: %d",!strcmp(name,"")?"<not set>":name, (int)value);
 }
 
 // called from radium
@@ -514,6 +634,8 @@ static void hide_gui(struct SoundPlugin *plugin)
 // called from Pd
 static Pd_Controller *RT_get_controller_from_receiver(Data *data, const char *receiver_name)
 {
+	ScopedControllersLock lock(data);
+
 	for(int i=0;i<NUM_PD_CONTROLLERS;i++)
 	{
 		Pd_Controller *controller = &data->controllers[i];
@@ -523,6 +645,29 @@ static Pd_Controller *RT_get_controller_from_receiver(Data *data, const char *re
 			return controller;
 	}
 	return NULL;
+}
+
+// Applies a value received from Pd for a controller. Must be called either
+// with player context, or from the GUI thread after the libpd lock has been
+// released (see PD2_poll_all_guis).
+static void apply_controller_value_from_pd(Pd_Controller *controller, float scaled_value)
+{
+	Data *data = (Data*)controller->plugin->data;
+
+	{
+		ScopedControllersLock lock(data);
+		controller->calling_from_pd = true;
+	}
+
+#if !defined(RELEASE)
+	radium::ScopedBoolean scoped(g_calling_set_effect_value_from_pd);
+#endif
+	PLUGIN_set_effect_value(controller->plugin, -1, controller->num, scaled_value, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
+
+	{
+		ScopedControllersLock lock(data);
+		controller->calling_from_pd = false;
+	}
 }
 
 // called from Pd
@@ -540,32 +685,42 @@ static void RT_pdfloathook(const char *sym, float val)
 	if(controller==NULL)
 		return;
 
-	//printf("pdfloathook. calling_from_set_effect_value: %s\n",controller->calling_from_set_effect_value?"true":"false");
+	float scaled_value = 0.0f;
 
-	if( ! controller->calling_from_set_effect_value)
 	{
+		ScopedControllersLock lock(data);
 
-		float scaled_value = scale(val, controller->min_value, controller->max_value,
-															 0.0f, 1.0f);
-		scaled_value = R_BOUNDARIES(0.0f, scaled_value, 1.0f);
+		if (controller->calling_from_set_effect_value)
+			return;
+
+		scaled_value = scale(val, controller->min_value, controller->max_value,
+							 0.0f, 1.0f);
 		
-		// Since the Pd GUI is now polled from the GUI thread (see
-		// PD2_poll_all_guis), this hook can also be called from there. The
-		// player/runner lock is only needed in realtime contexts; the GUI
-		// calls PLUGIN_set_effect_value directly (like it does for sliders).
+		scaled_value = R_BOUNDARIES(0.0f, scaled_value, 1.0f);
+	}
+
+	if (RT_has_player_context()) {
+
 		bool is_player_or_runner_thread = THREADING_is_player_or_runner_thread();
 		if (is_player_or_runner_thread)
 			RT_PLAYER_runner_lock();
 
-		controller->calling_from_pd = true; {
-#if !defined(RELEASE)
-			radium::ScopedBoolean scoped(g_calling_set_effect_value_from_pd);
-#endif
-			PLUGIN_set_effect_value(controller->plugin, -1, controller->num, scaled_value, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
-		} controller->calling_from_pd = false;
+		apply_controller_value_from_pd(controller, scaled_value);
 
 		if (is_player_or_runner_thread)
 			RT_PLAYER_runner_unlock();
+
+	} else {
+
+		// Called from the GUI thread while polling incoming GUI/network
+		// messages, i.e. with the libpd lock held. PLUGIN_set_effect_value
+		// takes the player lock, and the player thread takes this
+		// instance's libpd lock while holding the player lock, so applying
+		// it here could deadlock. Defer until the libpd lock is released.
+		R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
+
+		data->controller_pending_value[controller->num] = scaled_value;
+		data->controller_has_pending_value[controller->num] = true;
 	}
 }
 
@@ -577,17 +732,32 @@ static void RT_bind_receiver(Pd_Controller *controller)
 	Data *data = (Data*)controller->plugin->data;
 
 	char receive_symbol_name[PD_NAME_LENGTH+20];
-	snprintf(receive_symbol_name, PD_NAME_LENGTH+19, "%s-receiver", controller->name);
+	char name[PD_NAME_LENGTH];
+	char fx_when_start_name[PD_FX_WHEN_NAME_LENGTH];
+	char fx_when_middle_name[PD_FX_WHEN_NAME_LENGTH];
+	char fx_when_end_name[PD_FX_WHEN_NAME_LENGTH];
+	char fx_when_single_name[PD_FX_WHEN_NAME_LENGTH];
+
+	{
+		ScopedControllersLock lock(data);
+		snprintf(receive_symbol_name, sizeof(receive_symbol_name), "%s-receiver", controller->name);
+		snprintf(name, sizeof(name), "%s", controller->name);
+		snprintf(fx_when_start_name, sizeof(fx_when_start_name), "%s", controller->fx_when_start_name);
+		snprintf(fx_when_middle_name, sizeof(fx_when_middle_name), "%s", controller->fx_when_middle_name);
+		snprintf(fx_when_end_name, sizeof(fx_when_end_name), "%s", controller->fx_when_end_name);
+		snprintf(fx_when_single_name, sizeof(fx_when_single_name), "%s", controller->fx_when_single_name);
+	}
+
 	controller->pd_binding = libpds2_bind(data->pd, receive_symbol_name, controller);
 
 	// Pre-intern the receiver names used by RT_set_effect_value, so that
 	// gensym() doesn't need to allocate when bang/floats are sent from the
 	// player thread later on.
-	libpds2_exists(data->pd, controller->name);
-	libpds2_exists(data->pd, controller->fx_when_start_name);
-	libpds2_exists(data->pd, controller->fx_when_middle_name);
-	libpds2_exists(data->pd, controller->fx_when_end_name);
-	libpds2_exists(data->pd, controller->fx_when_single_name);
+	libpds2_exists(data->pd, name);
+	libpds2_exists(data->pd, fx_when_start_name);
+	libpds2_exists(data->pd, fx_when_middle_name);
+	libpds2_exists(data->pd, fx_when_end_name);
+	libpds2_exists(data->pd, fx_when_single_name);
 }
 
 // Called from radium (i.e. not from inside a Pd callback, where libpd_bind
@@ -598,7 +768,12 @@ static void RT_bind_pending_receivers(Data *data)
 	for(int i=0;i<NUM_PD_CONTROLLERS;i++)
 	{
 		Pd_Controller *controller = &data->controllers[i];
-		if(controller->name[0] != 0 && controller->pd_binding == NULL)
+		bool has_name;
+		{
+			ScopedControllersLock lock(data);
+			has_name = controller->name[0] != 0;
+		}
+		if(has_name && controller->pd_binding == NULL)
 			RT_bind_receiver(controller);
 	}
 }
@@ -621,54 +796,122 @@ static void RT_intern_global_symbols(Data *data)
 		libpds2_exists(data->pd, names[i]);
 }
 
-// called from Pd
+// Called from Pd (i.e. with the libpd lock held). Only queues the controller
+// definition; it is applied later on the GUI thread by
+// PD2_apply_pending_controller_definitions.
 static void RT_add_controller(SoundPlugin *plugin, Data *data, const char *controller_name, int type, float min_value, float value, float max_value)
 {
-	Pd_Controller *controller;
-	int controller_num;
+	char name[PD_NAME_LENGTH];
+	snprintf(name, sizeof(name), "%s", controller_name);
 
-	for(controller_num=0;controller_num<NUM_PD_CONTROLLERS;controller_num++)
+	ScopedControllersLock lock(data);
+
+	// If the same controller is already queued, update that entry instead of
+	// adding another one. (Keeps the queue small and matches the old behavior
+	// of rewriting an already existing controller.)
+	for(int i = data->pending_controller_definitions_tail ; i != data->pending_controller_definitions_head ; i = (i + 1) % NUM_PENDING_CONTROLLER_DEFINITIONS)
 	{
-		controller = &data->controllers[controller_num];
-
-		if(controller->name[0]!=0 && !strcmp(controller->name, controller_name))
-			break;
-
-		if(controller->name[0] == 0 || !strcmp(controller->name, ""))
-			break;
-	}
-
-	if(controller_num==NUM_PD_CONTROLLERS)
-		return;
-
-	if (fabs(min_value-max_value) < 0.0001f)
-	{
-		if(fabs(min_value) < 0.001f)
-			max_value = 1.0f;
-		else
+		PendingControllerDefinition *def = &data->pending_controller_definitions[i];
+		if(!strcmp(def->name, name))
 		{
-			min_value = value;
-			max_value = value + 1.0f;
+			def->type = type;
+			def->min_value = min_value;
+			def->value = value;
+			def->max_value = max_value;
+			return;
 		}
 	}
 
-	controller->type = type;
-	controller->min_value = min_value;
-	controller->value = value;
-	controller->max_value = max_value;  
+	int head = data->pending_controller_definitions_head;
+	int next_head = (head + 1) % NUM_PENDING_CONTROLLER_DEFINITIONS;
 
-	strlcpy(controller->name, controller_name, PD_NAME_LENGTH-1);
-	snprintf(controller->fx_when_start_name, PD_FX_WHEN_NAME_LENGTH-1, "%s-fx_start", controller_name);
-	snprintf(controller->fx_when_middle_name, PD_FX_WHEN_NAME_LENGTH-1, "%s-fx_middle", controller_name);
-	snprintf(controller->fx_when_end_name, PD_FX_WHEN_NAME_LENGTH-1, "%s-fx_end", controller_name);
-	snprintf(controller->fx_when_single_name, PD_FX_WHEN_NAME_LENGTH-1, "%s-fx_single", controller_name);
+	if (next_head == data->pending_controller_definitions_tail)
+		return; // Queue is full. Drop the definition. (Should not happen.)
 
-	controller->has_gui = true;
+	PendingControllerDefinition *def = &data->pending_controller_definitions[head];
 
-	// Note: The receiver is not bound here. This function is called from a Pd
-	// callback (where the libpd lock is already held), so libpd_bind would
-	// deadlock. It's bound later by RT_bind_pending_receivers.
+	snprintf(def->name, sizeof(def->name), "%s", name);
+	def->type = type;
+	def->min_value = min_value;
+	def->value = value;
+	def->max_value = max_value;
+
+	data->pending_controller_definitions_head = next_head;
+}
+
+static void apply_controller_definition(Data *data, const PendingControllerDefinition *def)
+{
+	{
+		ScopedControllersLock lock(data);
+
+		Pd_Controller *controller = NULL;
+		int controller_num;
+
+		for(controller_num=0;controller_num<NUM_PD_CONTROLLERS;controller_num++)
+		{
+			controller = &data->controllers[controller_num];
+
+			if(controller->name[0]!=0 && !strcmp(controller->name, def->name))
+				break;
+
+			if(controller->name[0] == 0 || !strcmp(controller->name, ""))
+				break;
+		}
+
+		if(controller_num==NUM_PD_CONTROLLERS)
+			return;
+
+		float min_value = def->min_value;
+		float max_value = def->max_value;
+
+		if (fabs(min_value-max_value) < 0.0001f)
+		{
+			if(fabs(min_value) < 0.001f)
+				max_value = 1.0f;
+			else
+			{
+				min_value = def->value;
+				max_value = def->value + 1.0f;
+			}
+		}
+
+		controller->type = def->type;
+		controller->min_value = min_value;
+		controller->value = def->value;
+		controller->max_value = max_value;  
+
+		strlcpy(controller->name, def->name, PD_NAME_LENGTH-1);
+		snprintf(controller->fx_when_start_name, PD_FX_WHEN_NAME_LENGTH-1, "%s-fx_start", def->name);
+		snprintf(controller->fx_when_middle_name, PD_FX_WHEN_NAME_LENGTH-1, "%s-fx_middle", def->name);
+		snprintf(controller->fx_when_end_name, PD_FX_WHEN_NAME_LENGTH-1, "%s-fx_end", def->name);
+		snprintf(controller->fx_when_single_name, PD_FX_WHEN_NAME_LENGTH-1, "%s-fx_single", def->name);
+
+		controller->has_gui = true;
+	}
+
+	// Note: The receiver is not bound here. Binding allocates memory and takes
+	// the libpd lock, so it's deferred to RT_bind_pending_receivers.
 	PDGUI_schedule_clearing(ATOMIC_GET(data->qtgui));
+}
+
+// Called from the GUI thread.
+static void PD2_apply_pending_controller_definitions(Data *data)
+{
+	while(true)
+	{
+		PendingControllerDefinition def;
+		{
+			ScopedControllersLock lock(data);
+
+			if (data->pending_controller_definitions_tail == data->pending_controller_definitions_head)
+				break;
+
+			def = data->pending_controller_definitions[data->pending_controller_definitions_tail];
+			data->pending_controller_definitions_tail = (data->pending_controller_definitions_tail + 1) % NUM_PENDING_CONTROLLER_DEFINITIONS;
+		}
+
+		apply_controller_definition(data, &def);
+	}
 }
 
 
@@ -898,12 +1141,18 @@ static void RT_pdlisthook(const char *recv, int argc, t_atom *argv)
 	}
 }
 
-// called from Pd
-static void RT_noteonhook(int channel, int pitch, int velocity)
+// Schedules a function that needs player context to run on the player thread.
+// Used by hooks that can be called from the GUI thread while polling incoming
+// GUI/network messages (see PD2_poll_all_guis).
+static void RT_schedule_on_player_thread(std::function<void(void)> func)
 {
-	SoundPlugin *plugin = (SoundPlugin*)libpd_get_instancedata();
-	if(plugin==NULL)
-		return;
+	radium::Scheduled_RT_functions rt_functions;
+	rt_functions.add(func);
+	rt_functions.schedule_to_run_on_player_thread();
+}
+
+static void RT_noteonhook_apply(SoundPlugin *plugin, int channel, int pitch, int velocity)
+{
 	volatile struct Patch *patch = plugin->patch;
 	
 	if(patch==NULL)
@@ -924,11 +1173,27 @@ static void RT_noteonhook(int channel, int pitch, int velocity)
 }
 
 // called from Pd
-static void RT_polyaftertouchhook(int channel, int pitch, int velocity)
+static void RT_noteonhook(int channel, int pitch, int velocity)
 {
 	SoundPlugin *plugin = (SoundPlugin*)libpd_get_instancedata();
 	if(plugin==NULL)
 		return;
+
+	if (!RT_has_player_context()) {
+		// Called from the GUI thread while polling incoming GUI/network
+		// messages. Note scheduling has to happen on the player thread.
+		R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
+		RT_schedule_on_player_thread([plugin, channel, pitch, velocity](){
+			RT_noteonhook_apply(plugin, channel, pitch, velocity);
+		});
+		return;
+	}
+
+	RT_noteonhook_apply(plugin, channel, pitch, velocity);
+}
+
+static void RT_polyaftertouchhook_apply(SoundPlugin *plugin, int channel, int pitch, int velocity)
+{
 	volatile struct Patch *patch = plugin->patch;
 	
 	if(patch==NULL)
@@ -946,11 +1211,25 @@ static void RT_polyaftertouchhook(int channel, int pitch, int velocity)
 }
 
 // called from Pd
-static void RT_controlchangehook(int channel, int cc, int value)
+static void RT_polyaftertouchhook(int channel, int pitch, int velocity)
 {
 	SoundPlugin *plugin = (SoundPlugin*)libpd_get_instancedata();
 	if(plugin==NULL)
 		return;
+
+	if (!RT_has_player_context()) {
+		R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
+		RT_schedule_on_player_thread([plugin, channel, pitch, velocity](){
+			RT_polyaftertouchhook_apply(plugin, channel, pitch, velocity);
+		});
+		return;
+	}
+
+	RT_polyaftertouchhook_apply(plugin, channel, pitch, velocity);
+}
+
+static void RT_controlchangehook_apply(SoundPlugin *plugin, int channel, int cc, int value)
+{
 	struct Patch *patch = plugin->patch;
 	
 	//printf("Got MIDI control %x %x %x (%p)\n",channel,cc,value,d);
@@ -961,6 +1240,28 @@ static void RT_controlchangehook(int channel, int cc, int value)
 	if (patch->patchdata==NULL) // Happens when loading song.
 		return;
 
+	if (RT_do_send_MIDI_to_receivers(plugin))
+	{
+		struct SeqTrack *seqtrack = RT_get_curr_seqtrack();
+		RT_PATCH_send_raw_midi_message_to_receivers(seqtrack, patch, MIDI_msg_pack3(0xb0 | channel, cc, value), -1);
+	}
+}
+
+// called from Pd
+static void RT_controlchangehook(int channel, int cc, int value)
+{
+	SoundPlugin *plugin = (SoundPlugin*)libpd_get_instancedata();
+	if(plugin==NULL)
+		return;
+
+	if (!RT_has_player_context()) {
+		R_ASSERT_NON_RELEASE(THREADING_is_main_thread());
+		RT_schedule_on_player_thread([plugin, channel, cc, value](){
+			RT_controlchangehook_apply(plugin, channel, cc, value);
+		});
+		return;
+	}
+
 	bool is_player_or_runner_thread = THREADING_is_player_or_runner_thread();
 	
 	if (is_player_or_runner_thread)
@@ -970,11 +1271,7 @@ static void RT_controlchangehook(int channel, int cc, int value)
 		R_ASSERT_NON_RELEASE(PLAYER_current_thread_has_lock());
 	}
 
-	if (RT_do_send_MIDI_to_receivers(plugin))
-	{
-		struct SeqTrack *seqtrack = RT_get_curr_seqtrack();
-		RT_PATCH_send_raw_midi_message_to_receivers(seqtrack, patch, MIDI_msg_pack3(0xb0 | channel, cc, value), -1);
-	}
+	RT_controlchangehook_apply(plugin, channel, cc, value);
 		
 	if (is_player_or_runner_thread)
 		RT_PLAYER_runner_unlock();
@@ -1055,6 +1352,8 @@ static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, flo
 	
 	data->largest_used_ids_pos = -1;
 
+	SPINLOCK_INIT(data->controllers_lock);
+
 	int i;
 	for(i=0;i<NUM_PD_CONTROLLERS;i++)
 	{
@@ -1128,9 +1427,10 @@ static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, flo
 	if (data->file==NULL)
 		return NULL;
 
-	// Controllers defined by the patch during load (loadbang) were not bound by
-	// RT_add_controller since it's called from inside a Pd callback. Bind them
-	// here, after libpd_openfile has released the libpd lock.
+	// Controllers defined by the patch during load (loadbang) were queued by
+	// RT_add_controller since it's called from inside a Pd callback. Apply and
+	// bind them here, after libpd_openfile has released the libpd lock.
+	PD2_apply_pending_controller_definitions(data);
 	RT_bind_pending_receivers(data);
 	RT_intern_global_symbols(data);
 	
@@ -1242,6 +1542,7 @@ static void cleanup_plugin_data(SoundPlugin *plugin)
 static int get_effect_format(struct SoundPlugin *plugin, int effect_num)
 {
 	Data *data = (Data*)plugin->data;
+	ScopedControllersLock lock(data);
 	Pd_Controller *controller = &data->controllers[effect_num];
 
 	return controller->type;
@@ -1249,23 +1550,28 @@ static int get_effect_format(struct SoundPlugin *plugin, int effect_num)
 
 static const char *get_effect_name(const struct SoundPlugin *plugin, int effect_num)
 {
-	static char **notused_names = NULL;
+	Data *data = (Data*)plugin->data;
 
-	if(notused_names==NULL)
+	// Return a per-thread copy instead of a pointer into the mutable
+	// controllers table. The small ring of buffers makes it safe to use the
+	// result of several calls at the same time on the same thread.
+	static __thread char name_buffers[8][PD_NAME_LENGTH];
+	static __thread int name_buffer_pos = 0;
+
+	char *ret = name_buffers[name_buffer_pos];
+	name_buffer_pos = (name_buffer_pos + 1) % (int)(sizeof(name_buffers)/sizeof(name_buffers[0]));
+
 	{
-		notused_names = (char**)calloc(NUM_PD_CONTROLLERS, sizeof(char*));
-		
-		for(int i=0;i<NUM_PD_CONTROLLERS;i++)
-			notused_names[i] = strdup(talloc_format(" %d",i));
+		ScopedControllersLock lock(data);
+		Pd_Controller *controller = &data->controllers[effect_num];
+
+		if (controller->name[0] == 0)
+			snprintf(ret, PD_NAME_LENGTH, " %d", effect_num);
+		else
+			snprintf(ret, PD_NAME_LENGTH, "%s", controller->name);
 	}
 
-	Data *data = (Data*)plugin->data;
-	Pd_Controller *controller = &data->controllers[effect_num];
-
-	if (!strcmp(controller->name, ""))
-		return notused_names[effect_num];
-	else
-		return controller->name;
+	return ret;
 }
 
 void PD2_set_qtgui(SoundPlugin *plugin, void *qtgui)
@@ -1280,8 +1586,25 @@ Pd_Controller *PD2_get_controller(SoundPlugin *plugin, int n)
 	return &data->controllers[n];
 }
 
-static bool controller_name_exists(const Data *data, const char *name)
+void PD2_set_controller_type(SoundPlugin *plugin, int n, int type)
 {
+	Data *data = (Data*)plugin->data;
+	ScopedControllersLock lock(data);
+	data->controllers[n].type = type;
+}
+
+void PD2_set_controller_min_max(SoundPlugin *plugin, int n, float min_value, float max_value)
+{
+	Data *data = (Data*)plugin->data;
+	ScopedControllersLock lock(data);
+	data->controllers[n].min_value = min_value;
+	data->controllers[n].max_value = max_value;
+}
+
+static bool controller_name_exists(Data *data, const char *name)
+{
+	ScopedControllersLock lock(data);
+
 	for(int i=0;i<NUM_PD_CONTROLLERS;i++)
 		if(!strcmp(name, data->controllers[i].name))
 			return true;
@@ -1295,13 +1618,22 @@ const wchar_t *PD2_set_controller_name(SoundPlugin *plugin, int n, const wchar_t
 	Pd_Controller *controller = &data->controllers[n];
 	const char *name = STRING_get_chars(wname);
 	
-	if(!strcmp(controller->name, name))
-		return wname;
+	{
+		ScopedControllersLock lock(data);
+		if(!strcmp(controller->name, name))
+			return wname;
+	}
 
 	if (controller_name_exists(data, name))
 	{
+		char old_name[PD_NAME_LENGTH];
+		{
+			ScopedControllersLock lock(data);
+			snprintf(old_name, sizeof(old_name), "%s", controller->name);
+		}
+
 		showAsyncMessage(talloc_format("A controller \"%S\" already exists", wname));
-		return STRING_create(controller->name);
+		return STRING_create(old_name);
 	}
 	
 	controller->display_name = wcsdup(wname);
@@ -1310,12 +1642,13 @@ const wchar_t *PD2_set_controller_name(SoundPlugin *plugin, int n, const wchar_t
 
 	ADD_UNDO(PdControllers_CurrPos(const_cast<struct Patch*>(plugin->patch)));
 
-	PLAYER_lock();{
+	{
 		// Only the name is copied here. Unbinding/binding allocates memory
-		// (and libpd_unbind/takes the libpd lock), which is not allowed while
-		// holding the player lock.
+		// (and libpd_unbind takes the libpd lock), which is not allowed while
+		// holding the controllers lock.
+		ScopedControllersLock lock(data);
 		strlcpy(controller->name, name, PD_NAME_LENGTH-1);
-	}PLAYER_unlock();
+	}
 
 	if(controller->pd_binding != NULL)
 		libpds2_unbind(data->pd, controller->pd_binding);
@@ -1335,6 +1668,7 @@ void PD2_recreate_controllers_from_state(SoundPlugin *plugin, const hash_t *stat
 	for(i=0;i<NUM_PD_CONTROLLERS;i++)
 	{
 		Pd_Controller *controller = &data->controllers[i];
+		bool has_name;
 
 		if(controller->pd_binding!=NULL)
 		{
@@ -1348,23 +1682,37 @@ void PD2_recreate_controllers_from_state(SoundPlugin *plugin, const hash_t *stat
 			const wchar_t *name = HASH_get_string_at(state, "name", i);
 			controller->display_name = wcsdup(name);
 		}
-		
+
+		// Read the state outside the controllers lock, so that possible
+		// assertions/messages from the hash functions are not run while
+		// holding a spinlock.
+		const char *name = controller->display_name == NULL ? NULL : STRING_get_chars(controller->display_name);
+		int type = HASH_get_int_at(state, "type", i);
+		float min_value = HASH_get_float_at(state, "min_value", i);
+		float value = HASH_get_float_at(state, "value", i);
+		float max_value = HASH_get_float_at(state, "max_value", i);
+		bool has_gui = HASH_get_int_at(state, "has_gui", i)==1 ? true : false;
+		bool config_dialog_visible = HASH_get_int_at(state, "config_dialog_visible", i)==1 ? true : false;
+
 		{
-			const char *name = controller->display_name == NULL ? NULL : STRING_get_chars(controller->display_name);
+			ScopedControllersLock lock(data);
+
 			if(name==NULL || !strcmp(name,""))
 				controller->name[0] = 0;
 			else
 				strlcpy(controller->name, name, PD_NAME_LENGTH-1);
-		}
 		
-		controller->type      = HASH_get_int_at(state, "type", i);
-		controller->min_value = HASH_get_float_at(state, "min_value", i);
-		controller->value = HASH_get_float_at(state, "value", i);
-		controller->max_value = HASH_get_float_at(state, "max_value", i);
-		controller->has_gui   = HASH_get_int_at(state, "has_gui", i)==1 ? true : false;
-		controller->config_dialog_visible = HASH_get_int_at(state, "config_dialog_visible", i)==1 ? true : false;
+			controller->type      = type;
+			controller->min_value = min_value;
+			controller->value = value;
+			controller->max_value = max_value;
+			controller->has_gui   = has_gui;
+			controller->config_dialog_visible = config_dialog_visible;
 
-		if(controller->name[0] != 0)
+			has_name = controller->name[0] != 0;
+		}
+
+		if(has_name)
 		{
 			RT_bind_receiver(controller);
 		}
@@ -1383,16 +1731,38 @@ void PD2_put_controllers_to_state(const SoundPlugin *plugin, hash_t *state)
 	for(i=0;i<NUM_PD_CONTROLLERS;i++)
 	{
 		Pd_Controller *controller = &data->controllers[i];
-		if (controller->display_name != NULL)
-			HASH_put_string_at(state, "name", i, controller->display_name);
+		const wchar_t *display_name;
+		int type;
+		float min_value;
+		float value;
+		float max_value;
+		int has_gui;
+		int config_dialog_visible;
+		char name[PD_NAME_LENGTH];
+
+		{
+			ScopedControllersLock lock(data);
+
+			display_name = controller->display_name;
+			type = controller->type;
+			min_value = controller->min_value;
+			value = controller->value;
+			max_value = controller->max_value;
+			has_gui = controller->has_gui ? 1 : 0;
+			config_dialog_visible = controller->config_dialog_visible ? 1 : 0;
+			snprintf(name, sizeof(name), "%s", controller->name);
+		}
+
+		if (display_name != NULL)
+			HASH_put_string_at(state, "name", i, display_name);
 		else
-			HASH_put_chars_at(state, "name", i, controller->name);
-		HASH_put_int_at(state, "type", i, controller->type);
-		HASH_put_float_at(state, "min_value", i, controller->min_value);
-		HASH_put_float_at(state, "value", i, controller->value);
-		HASH_put_float_at(state, "max_value", i, controller->max_value);
-		HASH_put_int_at(state, "has_gui", i, controller->has_gui ? 1 : 0);
-		HASH_put_int_at(state, "config_dialog_visible", i, controller->config_dialog_visible ? 1 : 0);
+			HASH_put_chars_at(state, "name", i, name);
+		HASH_put_int_at(state, "type", i, type);
+		HASH_put_float_at(state, "min_value", i, min_value);
+		HASH_put_float_at(state, "value", i, value);
+		HASH_put_float_at(state, "max_value", i, max_value);
+		HASH_put_int_at(state, "has_gui", i, has_gui);
+		HASH_put_int_at(state, "config_dialog_visible", i, config_dialog_visible);
 	}
 }
 
@@ -1422,13 +1792,32 @@ void PD2_delete_controller(SoundPlugin *plugin, int controller_num)
 	{
 		int s = i>=controller_num ? i+1 : i;
 		Pd_Controller *controller = &data->controllers[s];
-		HASH_put_string_at(state, "name", i, controller->display_name == NULL ? L"" : controller->display_name);
-		HASH_put_int_at(state, "type", i, controller->type);
-		HASH_put_float_at(state, "min_value", i, controller->min_value);
-		HASH_put_float_at(state, "value", i, controller->value);
-		HASH_put_float_at(state, "max_value", i, controller->max_value);
-		HASH_put_int_at(state, "has_gui", i, controller->has_gui);
-		HASH_put_int_at(state, "config_dialog_visible", i, controller->config_dialog_visible);
+		const wchar_t *display_name;
+		int type;
+		float min_value;
+		float value;
+		float max_value;
+		int has_gui;
+		int config_dialog_visible;
+
+		{
+			ScopedControllersLock lock(data);
+			display_name = controller->display_name;
+			type = controller->type;
+			min_value = controller->min_value;
+			value = controller->value;
+			max_value = controller->max_value;
+			has_gui = controller->has_gui;
+			config_dialog_visible = controller->config_dialog_visible;
+		}
+
+		HASH_put_string_at(state, "name", i, display_name == NULL ? L"" : display_name);
+		HASH_put_int_at(state, "type", i, type);
+		HASH_put_float_at(state, "min_value", i, min_value);
+		HASH_put_float_at(state, "value", i, value);
+		HASH_put_float_at(state, "max_value", i, max_value);
+		HASH_put_int_at(state, "has_gui", i, has_gui);
+		HASH_put_int_at(state, "config_dialog_visible", i, config_dialog_visible);
 	}
 
 	HASH_put_chars_at(state, "name", NUM_PD_CONTROLLERS-1, "");
