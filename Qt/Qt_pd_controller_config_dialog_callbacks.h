@@ -181,6 +181,9 @@ public:
       return;
     }
 
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if (plugin==NULL) return;
+
     UNDO_OPEN();{
 
       ADD_UNDO(PdControllers_CurrPos(_patch.data()));
@@ -188,8 +191,7 @@ public:
       float old_min = controller->min_value;
       float old_max = controller->max_value;
 
-      controller->min_value = new_min;
-      controller->max_value = new_max;
+      PD_set_controller_min_max(plugin, controller->num, new_min, new_max);
 
       FX_min_max_have_changed_for_patch(_patch.data(), controller->num, old_min, old_max, new_min, new_max);
 
@@ -232,10 +234,13 @@ public slots:
       return;
     }
 
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if (plugin==NULL) return;
+
     if(_is_updating_gui==false)
       if(val!=controller->type) {
         ADD_UNDO(PdControllers_CurrPos(_patch.data()));
-        controller->type = val;
+        PD_set_controller_type(plugin, controller->num, val);
         update_gui();
       }
     //value_slider->update();

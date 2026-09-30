@@ -1,0 +1,69 @@
+diff -ruN old/pure-data/src/g_editor.c new/pure-data/src/g_editor.c
+--- old/pure-data/src/g_editor.c	2026-09-28 21:56:52.186236512 +0200
++++ new/pure-data/src/g_editor.c	2026-09-28 21:57:09.734362257 +0200
+@@ -3477,24 +3477,14 @@
+        the user really wants to discard changes  */
+ void glob_verifyquit(void *dummy, t_floatarg f)
+ {
+-    t_glist *g, *g2;
++    t_glist *g;
+     const char*msg = "really quit?";
+-        /* find all root canvases */
++        /* Radium: don't ask whether to save. Discard the dirty flags of all
++           root canvases instead; the host saves the patches with its own
++           document. */
+     for (g = pd_getcanvaslist(); g; g = g->gl_next)
+-        if ((g2 = glist_finddirty(g)))
+-        {
+-            t_atom backmsg[2];
+-            char buf[40];
+-            sprintf(buf, ".x%lx", g2);
+-            SETSYMBOL(backmsg+0, gensym("menuclose"));
+-            SETFLOAT (backmsg+1, 3);
+-
+-            canvas_vis(g2, 1);
+-            pdgui_vmess("pdtk_canvas_menuclose", "^m",
+-                        canvas_getrootfor(g2),
+-                        gensym(buf), 2, backmsg);
+-            return;
+-        }
++        if (glist_finddirty(g))
++            canvas_dirty(g, 0);
+     if (f == 0 && sys_perf)
+         pdgui_vmess("pdtk_check", "r Sss",
+             ".pdwindow",
+@@ -3531,18 +3521,7 @@
+         canvas_vis(x, 0);   /* if subpatch, just invis it */
+     else if (force == 0)
+     {
+-        g = glist_finddirty(x);
+-        if (g)
+-        {
+-            sprintf(buf, ".x%lx", g);
+-            SETFLOAT(backmsg+1, 2);
+-
+-            vmess(&g->gl_pd, gensym("menu-open"), "");
+-            pdgui_vmess("pdtk_canvas_menuclose", "^m",
+-                canvas_getrootfor(g), gensym(buf), 2, backmsg);
+-            return;
+-        }
+-        else if (sys_perf)
++        if (sys_perf)
+         {
+             const char*msg = "Close this window?";
+             sprintf(buf, ".x%lx", x);
+@@ -3556,8 +3535,12 @@
+         }
+         else
+         {
+-            /* Radium: hide the window instead of freeing the canvas, so
+-               that the host's canvas pointer remains valid. */
++            /* Radium: don't ask whether to save, and hide the window instead
++               of freeing the canvas so that the host's canvas pointer remains
++               valid. Discarding the dirty flag is fine: the host keeps the
++               patch in memory and saves it with its own document. */
++            if (glist_finddirty(x))
++                canvas_dirty(x, 0);
+             canvas_vis(x, 0);
+             libpd_send_gui_is_hidden();
+         }

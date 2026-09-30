@@ -1364,9 +1364,15 @@ static void AUDIO_remove_patchdata(struct Patch *patch){
   
   InstrumentWidget_delete(patch);
     
-  hash_t *state = PLUGIN_get_state(plugin);
-          
   CHIP_delete(patch);
+
+  SP_delete(sound_producer);
+
+  // Note: Save the plugin state after deleting the sound producer, so that a
+  // plugin whose save function blocks (for instance Pd, which does file I/O
+  // while holding its instance lock) is no longer processed concurrently
+  // while the state is created.
+  hash_t *state = PLUGIN_get_state(plugin);
 
   PLAYER_lock();{
     patch->patchdata = NULL;
@@ -1374,7 +1380,6 @@ static void AUDIO_remove_patchdata(struct Patch *patch){
     patch->is_usable = false;
   }PLAYER_unlock();
 
-  SP_delete(sound_producer);
   PLUGIN_delete(plugin);
 
   MW_update_all_chips();

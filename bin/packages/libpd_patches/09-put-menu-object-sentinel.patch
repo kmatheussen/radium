@@ -1,0 +1,25 @@
+diff -ruN old/pure-data/src/g_text.c new/pure-data/src/g_text.c
+--- old/pure-data/src/g_text.c	2026-09-28 21:40:55.597382166 +0200
++++ new/pure-data/src/g_text.c	2026-09-28 21:40:55.598382173 +0200
+@@ -239,7 +239,11 @@
+ void canvas_obj(t_glist *gl, t_symbol *s, int argc, t_atom *argv)
+ {
+     t_text *x;
+-    if (argc >= 2)
++    /* Radium: -16000/-16000 is a sentinel meaning "create the object
++       interactively at the mouse cursor", but with the object text supplied
++       in the message (the same behavior as the old libpd-master). This is
++       used by the Radium entries in the Put menu. */
++    if (argc >= 2 && atom_getintarg(0, argc, argv) != -16000 && atom_getintarg(1, argc, argv) != -16000)
+     {
+         t_binbuf *b = binbuf_new();
+         binbuf_restore(b, argc-2, argv+2);
+@@ -254,6 +258,8 @@
+             /* interactively create new object */
+         t_binbuf *b = binbuf_new();
+         int connectme, xpix, ypix, indx, nobj;
++        if (argc >= 2)
++            binbuf_restore(b, argc-2, argv+2);   /* Radium: use the supplied object text */
+         canvas_howputnew(gl, &connectme, &xpix, &ypix, &indx, &nobj);
+         pd_vmess(&gl->gl_pd, gensym("editmode"), "i", 1);
+         canvas_objtext(gl, xpix, ypix, 0, 1, b);

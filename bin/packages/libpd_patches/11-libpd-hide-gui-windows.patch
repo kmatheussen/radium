@@ -1,0 +1,143 @@
+diff -ruN old/pure-data/src/g_editor.c new/pure-data/src/g_editor.c
+--- old/pure-data/src/g_editor.c	2026-09-29 19:55:19.651192236 +0200
++++ new/pure-data/src/g_editor.c	2026-09-29 19:55:51.516359918 +0200
+@@ -3473,24 +3473,26 @@
+         return (0);
+ }
+ 
++    /* Radium: hide all Pd GUI windows and tell the host that the Pd GUI was
++       hidden. The windows are only withdrawn, not destroyed, so that they can
++       be shown again by libpd_show_gui (see libpds2_show_gui). */
++static void libpd_hide_gui_windows(void)
++{
++    pdgui_vmess("libpd_hide_gui", NULL);
++
++    t_symbol *s = gensym("libpd");
++    if (s->s_thing)
++        pd_anything((t_pd *)s->s_thing, gensym("gui_is_hidden"), 0, NULL);
++}
++
+     /* quit, after calling glist_finddirty() on all toplevels and verifying
+        the user really wants to discard changes  */
+ void glob_verifyquit(void *dummy, t_floatarg f)
+ {
+-    t_glist *g;
+-    const char*msg = "really quit?";
+-        /* Radium: don't ask whether to save. Discard the dirty flags of all
+-           root canvases instead; the host saves the patches with its own
+-           document. */
+-    for (g = pd_getcanvaslist(); g; g = g->gl_next)
+-        if (glist_finddirty(g))
+-            canvas_dirty(g, 0);
+-    if (f == 0 && sys_perf)
+-        pdgui_vmess("pdtk_check", "r Sss",
+-            ".pdwindow",
+-            1, &msg,
+-            "pd quit", "yes");
+-    else glob_exit(0, 0);
++        /* Radium: don't ask whether to save, and don't quit. The host keeps
++           the Pd instance running and saves the patches with its own
++           document, so a quit request from the Pd GUI only hides the GUI. */
++    libpd_hide_gui_windows();
+ }
+ 
+     /* close a window (or possibly quit Pd), checking for dirty flags.
+@@ -3501,14 +3503,6 @@
+        3 - verified - mark this one clean, then verify-and-quit
+     */
+ 
+-    /* Radium: tell the host that the Pd window was closed (hidden). */
+-static void libpd_send_gui_is_hidden(void)
+-{
+-    t_symbol *s = gensym("libpd");
+-    if (s->s_thing)
+-        pd_anything((t_pd *)s->s_thing, gensym("gui_is_hidden"), 0, NULL);
+-}
+-
+ void canvas_menuclose(t_canvas *x, t_floatarg fforce)
+ {
+     int force = fforce;
+@@ -3535,20 +3529,18 @@
+         }
+         else
+         {
+-            /* Radium: don't ask whether to save, and hide the window instead
+-               of freeing the canvas so that the host's canvas pointer remains
+-               valid. Discarding the dirty flag is fine: the host keeps the
+-               patch in memory and saves it with its own document. */
++            /* Radium: don't ask whether to save, and only hide the windows so
++               that the host's canvas pointer remains valid. Discarding the
++               dirty flag is fine: the host keeps the patch in memory and
++               saves it with its own document. */
+             if (glist_finddirty(x))
+                 canvas_dirty(x, 0);
+-            canvas_vis(x, 0);
+-            libpd_send_gui_is_hidden();
++            libpd_hide_gui_windows();
+         }
+     }
+     else if (force == 1)
+     {
+-        canvas_vis(x, 0);
+-        libpd_send_gui_is_hidden();
++        libpd_hide_gui_windows();
+     }
+     else if (force == 2)
+     {
+@@ -3568,8 +3560,7 @@
+         }
+         else
+         {
+-            canvas_vis(x, 0);
+-            libpd_send_gui_is_hidden();
++            libpd_hide_gui_windows();
+         }
+     }
+     else if (force == 3)
+diff -ruN old/pure-data/tcl/pd-gui.tcl new/pure-data/tcl/pd-gui.tcl
+--- old/pure-data/tcl/pd-gui.tcl	2026-09-29 19:55:19.653192247 +0200
++++ new/pure-data/tcl/pd-gui.tcl	2026-09-29 19:56:06.661439615 +0200
+@@ -802,6 +802,43 @@
+ }
+ 
+ # ------------------------------------------------------------------------------
++# libpd / Radium: hide and show all GUI windows without closing or restarting
++# the Tcl/Tk process. Used by libpds2_hide_gui() and libpds2_show_gui() in
++# Radium, and when the user closes a patch window. Windows are only withdrawn,
++# so the same windows (with their position, scroll position and edit state) can
++# be shown again. The console window is hidden by Radium at startup (see
++# RADIUM_PD_GUI_NO_CONSOLE) and stays hidden because its recorded state is
++# "withdrawn".
++
++array set ::libpd_windowstate {}
++set ::libpd_gui_is_shown 1
++
++proc libpd_show_gui {} {
++    foreach x ". [winfo children .]" {
++        if { $x eq [winfo toplevel $x] && [catch {$x cget -tearoff}] } {
++            set state [lindex [array get ::libpd_windowstate $x] 1]
++            if { $state eq "normal" } {
++                wm deiconify $x
++                raise $x
++            }
++        }
++    }
++    set ::libpd_gui_is_shown 1
++}
++
++proc libpd_hide_gui {} {
++    if { $::libpd_gui_is_shown eq 1 } {
++        foreach x ". [winfo children .]" {
++            if { $x eq [winfo toplevel $x] && [catch {$x cget -tearoff}] } {
++                set ::libpd_windowstate($x) [wm state $x]
++                wm withdraw $x
++            }
++        }
++        set ::libpd_gui_is_shown 0
++    }
++}
++
++# ------------------------------------------------------------------------------
+ # main
+ proc main {argc argv} {
+     tk appname pd-gui

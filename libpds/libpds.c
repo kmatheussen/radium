@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 */
 
 #include <stdbool.h>
+#include <stdatomic.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -82,7 +83,24 @@ struct _pd
 	// Scratch buffers used by libpds2_process_float_noninterleaved.
 	float *in_scratch;
 	float *out_scratch;
+
+	// Serializes process calls (and scratch buffer (re)allocation) for this
+	// instance. libpd's own per-instance lock only protects each individual
+	// tick, while the scratch buffers are also accessed outside of it.
+	atomic_flag process_lock;
 };
+
+// lock_process/unlock_process must not be called recursively.
+static void lock_process(pd_t *pd)
+{
+	while (atomic_flag_test_and_set_explicit(&pd->process_lock, memory_order_acquire))
+		;
+}
+
+static void unlock_process(pd_t *pd)
+{
+	atomic_flag_clear_explicit(&pd->process_lock, memory_order_release);
+}
 
 static char error_string[1024] = {0};
 
@@ -122,6 +140,8 @@ pd_t *libpds2_create(bool use_gui, const char* libdir)
 		return NULL;
 	}
 
+	atomic_flag_clear(&pd->process_lock);
+
 	pd->instance = instance;
 	pd->use_gui = use_gui;
 	pd->libdir = libdir != NULL ? strdup(libdir) : NULL;
@@ -137,7 +157,7 @@ pd_t *libpds2_create(bool use_gui, const char* libdir)
 
 	// Note: use_gui and libdir are stored, but the GUI is not started here.
 	// It is started lazily by the first call to libpds2_show_gui(), and stopped
-	// again by libpds2_hide_gui(). This way instances that are never edited
+	// again by libpds2_delete(). This way instances that are never edited
 	// don't use an extra Tcl/Tk process.
 
 	return pd;
@@ -154,6 +174,8 @@ void libpds2_delete(pd_t *pd)
 	if (pd == NULL)
 		return;
 
+	lock_process(pd);
+
 	if (pd->gui_started)
 	{
 		set_instance(pd);
@@ -166,6 +188,10 @@ void libpds2_delete(pd_t *pd)
 	free(pd->in_scratch);
 	free(pd->out_scratch);
 	free(pd->libdir);
+
+	// Note: intentionally not unlocking before freeing pd. It's the host's
+	// responsibility to not call any libpds2 function for this instance after
+	// libpds2_delete returns.
 	free(pd);
 }
 
@@ -264,21 +290,31 @@ static bool executable_in_path(const char *name)
 }
 #endif
 
-// Starts the Pd Tcl/Tk GUI for this instance if it's not already running.
-// Starting the GUI makes all the instance's canvas windows visible (the GUI
-// handshake ends up in sys_doneglobinit(), which calls canvas_vis(x, 1) for
-// all canvases).
-//
-// Note: libpd_start_gui() blocks forever inside accept() if the GUI process
-// never manages to connect, so make sure that a GUI actually can be started
-// before calling it.
+// Starts the Pd Tcl/Tk GUI for this instance if it's not already running, or
+// shows the GUI windows again if they have only been hidden. Starting the GUI
+// makes all the instance's canvas windows visible (the GUI handshake ends up
+// in sys_doneglobinit(), which calls canvas_vis(x, 1) for all canvases).
 void libpds2_show_gui(pd_t *pd)
 {
 	set_instance(pd);
 
-	if (pd->gui_started || !pd->use_gui || pd->libdir == NULL)
+	if (!pd->use_gui || pd->libdir == NULL)
 		return;
 
+	if (pd->gui_started)
+	{
+		// The GUI process is already running, but its windows may have been
+		// hidden (either by the host unchecking the GUI checkbox, or by the
+		// user closing the Pd window). Ask the GUI to show them again. The
+		// windows were only withdrawn, so window positions, scroll positions
+		// and edit states are kept.
+		pdgui_vmess("libpd_show_gui", NULL);
+		return;
+	}
+
+	// Note: libpd_start_gui() blocks forever inside accept() if the GUI process
+	// never manages to connect, so make sure that a GUI actually can be started
+	// before calling it.
 	{
 		char gui_script[1040];
 		snprintf(gui_script, sizeof(gui_script), "%s/tcl/pd-gui.tcl", pd->libdir);
@@ -312,18 +348,16 @@ void libpds2_show_gui(pd_t *pd)
 		set_error("Unable to start the Pd GUI.");
 }
 
-// Stops the GUI process for this instance. Editing state is kept in the Pd
-// canvas, so nothing is lost, but the Tcl/Tk process has to be started again
-// by the next libpds2_show_gui() call.
+// Hides the GUI windows for this instance. The Tcl/Tk process keeps running
+// and connected to Pd, so the windows can be shown again by the next
+// libpds2_show_gui() call. The process is stopped when the instance is
+// deleted, see libpds2_delete().
 void libpds2_hide_gui(pd_t *pd)
 {
 	set_instance(pd);
 
 	if (pd->gui_started)
-	{
-		libpd_stop_gui();
-		pd->gui_started = false;
-	}
+		pdgui_vmess("libpd_hide_gui", NULL);
 }
 
 // Processes incoming GUI/network messages and sends queued GUI updates for
@@ -362,6 +396,8 @@ int libpds2_blocksize(pd_t *pd)
 
 int libpds2_init_audio(pd_t *pd, int inChans, int outChans, int sampleRate)
 {
+	lock_process(pd);
+
 	pd->in_chans = inChans;
 	pd->out_chans = outChans;
 
@@ -378,6 +414,8 @@ int libpds2_init_audio(pd_t *pd, int inChans, int outChans, int sampleRate)
 	if (outChans > 0)
 		pd->out_scratch = (float*)calloc((size_t)outChans * libpd_blocksize(), sizeof(float));
 
+	unlock_process(pd);
+
 	return ret;
 }
 
@@ -391,6 +429,11 @@ int libpds2_process_float_noninterleaved(pd_t *pd, int ticks, const float** inBu
 {
 	const int block = libpd_blocksize();
 
+	// Serialize with other process calls for this instance. libpd's own lock
+	// only protects each tick, while the scratch buffers below are accessed
+	// outside of it. Different instances can be processed in parallel.
+	lock_process(pd);
+
 	// Lazy allocation in case libpds2_init_audio wasn't called. (or if it was called with other channel counts)
 	if (pd->in_scratch == NULL && pd->in_chans > 0)
 		pd->in_scratch = (float*)calloc((size_t)pd->in_chans * block, sizeof(float));
@@ -398,7 +441,10 @@ int libpds2_process_float_noninterleaved(pd_t *pd, int ticks, const float** inBu
 		pd->out_scratch = (float*)calloc((size_t)pd->out_chans * block, sizeof(float));
 	if ((pd->in_chans > 0 && pd->in_scratch == NULL) ||
 			(pd->out_chans > 0 && pd->out_scratch == NULL))
+	{
+		unlock_process(pd);
 		return -1;
+	}
 
 	set_instance(pd);
 
@@ -411,11 +457,16 @@ int libpds2_process_float_noninterleaved(pd_t *pd, int ticks, const float** inBu
 
 		int ret = libpd_process_raw(pd->in_scratch, pd->out_scratch);
 		if (ret != 0)
+		{
+			unlock_process(pd);
 			return ret;
+		}
 
 		for (int ch = 0; ch < pd->out_chans; ch++)
 			memcpy(outBuffer[ch] + i * block, pd->out_scratch + ch * block, block * sizeof(float));
 	}
+
+	unlock_process(pd);
 
 	return 0;
 }
