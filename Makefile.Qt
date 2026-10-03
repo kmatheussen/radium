@@ -703,7 +703,7 @@ QTLINKFLAGS = $(QT_LDFLAGS)
 
 #-------------------OBJECT DEFINITIONS-------------------------------
 
-OBJ1= $(T)windows.o $(T)window_config.o $(T)list.o $(T)vector.o $(T)hashmap.o $(T)Dynvec.o $(T)TimeData.o $(T)song.o $(T)blocks.o $(T)block_insert.o $(T)block_split.o $(T)block_delete.o $(T)block_properties.o $(T)tracks.o $(T)localzooms.o $(T)control.o $(T)lines.o $(T)font.o $(T)track_insert.o $(T)track_onoff.o $(T)settings.o $(T)mmd2load.o $(T)RT_memory_allocator.o
+OBJ1= $(T)windows.o $(T)window_config.o $(T)list.o $(T)vector.o $(T)hashmap.o $(T)Dynvec.o $(T)TimeData.o $(T)song.o $(T)blocks.o $(T)block_insert.o $(T)block_split.o $(T)block_delete.o $(T)block_properties.o $(T)tracks.o $(T)localzooms.o $(T)control.o $(T)lines.o $(T)font.o $(T)track_insert.o $(T)track_onoff.o $(T)settings.o $(T)mmd2load.o $(T)RT_memory_allocator.o $(T)FuzzySearch.o
 
 OBJ2= $(T)notes.o $(T)notes_legalize.o $(T)pitches.o $(T)wblocks.o $(T)wtracks.o $(T)sliders.o $(T)common.o
 
@@ -942,7 +942,7 @@ profile:
 #	operf $(RADIUM_BIN) && opreport -ca |more
 
 check: test
-test: test_vector test_placement test_notes test_path_resolver test_seqautomation test_audiobuffer test_smoothdelay test_threading test_samplereader test_ratio test_refcounttimedata test_rt_memory_allocator test_radium_vector test_timedata test_bdw_gc
+test: test_vector test_placement test_notes test_path_resolver test_seqautomation test_audiobuffer test_smoothdelay test_threading test_samplereader test_ratio test_refcounttimedata test_rt_memory_allocator test_radium_vector test_fuzzysearch test_timedata test_bdw_gc
 	@echo
 	@echo " == All tests succeeded, apparently =="
 
@@ -1018,6 +1018,12 @@ test_radium_vector:
 	cd test && $(CCC) -Wall $(WERROR) test_radium_vector.cpp -DTEST_RADIUM_VECTOR_MAIN -Wall $(STD_CPP) -g -D__STDC_FORMAT_MACROS=1 $(ADDRESS_SANITIZE_OPTS) $(UNDEFINED_SANITIZE_OPTS) $(TEST_DEFS) -I../Qt -Wno-unused-function -O3 -o test_radium_vector
 	ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" gdb -ex='set confirm on' -ex=run -ex=quit test/test_radium_vector
 	ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" test/test_radium_vector
+
+test_fuzzysearch:
+	$(CCC) -Wall $(WERROR) $(filter-out -c, $(QTOPT)) -g $(ADDRESS_SANITIZE_OPTS) $(UNDEFINED_SANITIZE_OPTS) $(TEST_DEFS) -o test/test_fuzzysearch_bin test/test_fuzzysearch.cpp common/FuzzySearch.cpp $(QT_LDFLAGS)
+	ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" test/test_fuzzysearch_bin
+	@echo "=== success: test_fuzzysearch ==="
+	@rm test/test_fuzzysearch_bin
 
 test_samplereader:
 	cd audio && $(CCC) SampleReader.cpp -DTEST_MAIN -Wall $(STD_CPP) -g && ./a.out
@@ -1270,6 +1276,9 @@ $(T)sliders.o:  $(BUILD_DEPENDENCIES) $(CD)sliders.c
 
 $(T)common.o:  $(BUILD_DEPENDENCIES) $(CD)common.c 
 	$(CC2) $(CD)common.c $(OPT)
+
+$(T)FuzzySearch.o:  $(BUILD_DEPENDENCIES) $(CD)FuzzySearch.cpp $(CD)FuzzySearch.h $(QT_PCH)
+	$(CCC2) $(CD)FuzzySearch.cpp $(QTOPT) $(QT_PCH_INCLUDE)
 
 $(T)eventreciever.o:  $(BUILD_DEPENDENCIES) $(CD)eventreciever.c
 	$(CC2) $(CD)eventreciever.c $(OPT)
