@@ -135,14 +135,18 @@ static QIcon llm_stop_icon(int size)
 // How many prompts the prompt history (persisted across sessions) remembers.
 static const int g_llm_prompt_history_max_size = 50;
 
+// The config file parser truncates every line at the first '#' (unless the
+// line contains "color"), and drops lines longer than 16 KB, so both limit
+// how much of the serialized history can be stored in the settings.
+static const int g_llm_prompt_history_max_settings_line_size = 15*1024;
+
 static const char *g_llm_prompt_history_settings_key = "faustdev2_llm_prompt_history";
 
-// The prompt history is stored in the settings as a compact JSON array of
-// strings so that it survives across sessions.
-static QStringList load_llm_prompt_history_from_settings(void)
+// Parses the JSON array format used to store the history. An empty list is
+// returned if the string is not a valid JSON array.
+static QStringList parse_llm_prompt_history(const QString &raw)
 {
 	QStringList history;
-	const QString raw = SETTINGS_read_string(g_llm_prompt_history_settings_key, "");
 
 	if (!raw.isEmpty())
 	{
@@ -154,6 +158,35 @@ static QStringList load_llm_prompt_history_from_settings(void)
 				if (value.isString())
 					history.append(value.toString());
 		}
+	}
+
+	return history;
+}
+
+// The prompt history is stored in the settings as a compact JSON array of
+// strings so that it survives across sessions.
+static QStringList load_llm_prompt_history_from_settings(void)
+{
+	QStringList history = parse_llm_prompt_history(SETTINGS_read_string(g_llm_prompt_history_settings_key, ""));
+
+	if (history.isEmpty())
+	{
+		// Older versions did not escape '#' when saving, and the config
+		// reader truncates a line at the first '#', so such histories come
+		// back as broken JSON. Read the raw config line to recover them.
+		const QString key = g_llm_prompt_history_settings_key;
+		vector_t *lines = SETTINGS_get_all_lines_starting_with(key.toUtf8().constData());
+
+		VECTOR_FOR_EACH(const char *, line_c, lines){
+			const QString line = QString(line_c).trimmed();
+			if (line.startsWith(key)) {
+				QString value = line.mid(key.length()).trimmed();
+				if (value.startsWith("=")) {
+					history = parse_llm_prompt_history(value.remove(0, 1).trimmed());
+					break;
+				}
+			}
+		}END_VECTOR_FOR_EACH;
 	}
 
 	while (history.size() > g_llm_prompt_history_max_size)
@@ -168,8 +201,29 @@ static void save_llm_prompt_history_to_settings(const QStringList &history)
 	while (bounded_history.size() > g_llm_prompt_history_max_size)
 		bounded_history.removeFirst();
 
-	SETTINGS_write_string(g_llm_prompt_history_settings_key,
-	                      QString(QJsonDocument(QJsonArray::fromStringList(bounded_history)).toJson(QJsonDocument::Compact)));
+	// SETTINGS_get_value() truncates every config line at the first '#'
+	// (unless the line contains "color"), which would corrupt the JSON and
+	// make the whole history unreadable. Escape '#' as its JSON unicode
+	// escape; the JSON parser decodes it back to '#' on load.
+	auto serialize = [](const QStringList &list) -> QString
+	{
+		QString json = QString(QJsonDocument(QJsonArray::fromStringList(list)).toJson(QJsonDocument::Compact));
+		json.replace("#", "\\u0023");
+		return json;
+	};
+
+	QString json = serialize(bounded_history);
+
+	// get_lines2() discards config lines longer than 16 KB, which would
+	// silently lose the whole history, so drop the oldest entries until the
+	// serialized history fits.
+	while (!bounded_history.isEmpty() && json.length() > g_llm_prompt_history_max_settings_line_size)
+	{
+		bounded_history.removeFirst();
+		json = serialize(bounded_history);
+	}
+
+	SETTINGS_write_string(g_llm_prompt_history_settings_key, json);
 }
 
 struct FaustResultSvgView
@@ -1741,13 +1795,23 @@ public slots:
       return;
 
     // Remember the submitted prompt for Up/Down arrow key navigation, and
-    // persist the history (the last 50 prompts) across sessions.
-    if (_llm_prompt_history.isEmpty() || _llm_prompt_history.last() != prompt)
-      _llm_prompt_history.append(prompt);
-    while (_llm_prompt_history.size() > g_llm_prompt_history_max_size)
-      _llm_prompt_history.removeFirst();
-    save_llm_prompt_history_to_settings(_llm_prompt_history);
-    _llm_prompt_history_index = -1;
+    // persist the history (the last 50 prompts) across sessions. Reload the
+    // stored history first and merge, since each Faust Dev 2 instrument has
+    // its own widget with its own in-memory copy; otherwise submitting a
+    // prompt here would overwrite prompts submitted from another instrument.
+    {
+      QStringList history = load_llm_prompt_history_from_settings();
+      for (const QString &entry : _llm_prompt_history)
+        if (!history.contains(entry))
+          history.append(entry);
+      if (history.isEmpty() || history.last() != prompt)
+        history.append(prompt);
+      while (history.size() > g_llm_prompt_history_max_size)
+        history.removeFirst();
+      save_llm_prompt_history_to_settings(history);
+      _llm_prompt_history = history;
+      _llm_prompt_history_index = -1;
+    }
 
     const radium::llm::LLMConfig config = radium::llm::get_config();
 

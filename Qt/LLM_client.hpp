@@ -494,6 +494,14 @@ static const char *faust_module_reference =
   "  - Prefer flat top-level definitions over 'with' blocks: the static\n"
   "    analysis used in auto-fix rounds can only see top-level\n"
   "    definitions, so 'with' blocks hide bugs from it.\n"
+  "  - A name defined inside a 'with { ... }' block is only visible in\n"
+  "    that definition. A top-level definition that references a\n"
+  "    with-local (e.g. a top-level 'd1 = step(..., mk, ...)' where 'mk'\n"
+  "    is local to another definition's 'with') gives 'undefined symbol' -\n"
+  "    or the cryptic 'BoxIdent[...] is defined here' when the name\n"
+  "    matches a symbol in the inlined library code. Keep every helper\n"
+  "    that uses a with-local in the SAME 'with' block, or define the\n"
+  "    shared value at top level.\n"
   "  - Soundfiles: only use them when the user has provided a file name/path;\n"
   "    never invent or guess a file name (an invented name plays silence),\n"
   "    and never use soundfiles otherwise. "
@@ -555,6 +563,11 @@ static const char *faust_module_reference =
   "    applied to a signal with ':', never used bare in arithmetic.\n"
   "    si.polySmooth(gate, 0.999, 1) * freq is WRONG;\n"
   "    freq : si.polySmooth(gate, 0.999, 1) is right.\n"
+  "  - Never reference a defined function as a bare value: 'detected =\n"
+  "    max(20, trackPitch);' where 'trackPitch(sig) = ...' is defined\n"
+  "    gives the function phantom inputs and a cryptic '[N] inputs'\n"
+  "    arity error. Always apply it to the signal:\n"
+  "    'detected(sig) = max(20, trackPitch(sig));' or 'sig : trackPitch'.\n"
   "  - Feedback/recursion ALWAYS needs the '~' operator: a definition can\n"
   "    never reference itself ('x = y + feedback * x;' gives 'endless\n"
   "    evaluation cycle' - definitions are not evaluated in order). Write\n"
@@ -673,11 +686,13 @@ static const char *faust_module_reference =
   "    sound from parts, give each part its own name and sum them:\n"
   "    part1 = ...; part2 = ...; combined = part1 + part2;\n"
   "  - Use descriptive names, never single letters or very short names\n"
-  "    (a, b, x, y, d, f, w, i, ...) for top-level definitions or lambda\n"
-  "    parameters: they collide with symbols inside the inlined Faust\n"
-  "    library code and give the cryptic error 'BoxIdent[...] is defined\n"
-  "    here'. Write \\(prev, cur).(...) instead of \\(a, b).(...), and\n"
-  "    'delay_samples' instead of 'd'.\n"
+  "    (a, b, x, y, d, f, w, i, mk, pc, step, best, d0, d1, ...) for\n"
+  "    top-level definitions or lambda parameters: they collide with\n"
+  "    symbols inside the inlined Faust library code (e.g. 'mk' and 'd1'\n"
+  "    are defined in vaeffects.lib, 'step' in tubes.lib) and give the\n"
+  "    cryptic error 'BoxIdent[...] is defined here'. Write \\(prev,\n"
+  "    cur).(...) instead of \\(a, b).(...), and 'delay_samples' instead\n"
+  "    of 'd'.\n"
   "  - os.sawtooth/os.square/os.triangle are band-limited and can fail with\n"
   "    'recursive composition A~B' when their frequency argument is an\n"
   "    audio-rate signal computed from the audio input (a tracked pitch or\n"
@@ -3391,6 +3406,89 @@ static inline QString lint_faust_code(const QString &code)
 		}
 	}
 
+	// 10) A ONE-parameter function whose parameter is referenced more than
+	// once in its RHS (before the 'with { ... }' block) and whose RHS
+	// mixes through ro.interleave(2, 2): every reference to the parameter
+	// consumes its own input channel, so the function's input count no
+	// longer matches what process provides - an arity error. Observed
+	// repeatedly (the model copies a broken recipe and the fix loop
+	// cannot correct it): 'dryWet(sig) = ((sig : *(1 - mix)),
+	// (autotune(sig) : *(mix))) : ro.interleave(2, 2) : par(i, 2, +);
+	// process = _,_ : par(i, 2, dryWet);'.
+	{
+		const QStringList lines = masked.split('\n');
+		const QRegularExpression def_re(QStringLiteral("^\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\(\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\)\\s*=(.*)$"));
+		int depth = 0;
+		bool collecting = false;
+		QString name, param, rhs;
+		int def_line = 0;
+
+		auto finish_def = [&]()
+		{
+			collecting = false;
+
+			// With-locals referencing the parameter are a different (legal)
+			// construction - the verified two-parameter helper uses them.
+			const int with_pos = rhs.indexOf(QRegularExpression(QStringLiteral("\\bwith\\s*\\{")));
+			if (with_pos >= 0)
+			  rhs = rhs.left(with_pos);
+
+			if (!rhs.contains(QStringLiteral("ro.interleave(2, 2)")))
+			  return;
+
+			const QRegularExpression ref_re(QStringLiteral("(?<![a-zA-Z0-9_\\.])%1(?![a-zA-Z0-9_\\.])").arg(param));
+			int refs = 0;
+			QRegularExpressionMatchIterator it = ref_re.globalMatch(rhs);
+			while (it.hasNext())
+			{
+				it.next();
+				refs++;
+			}
+			if (refs >= 2)
+			  findings.append(QString("Line %1: '%2' is a ONE-parameter function, but its parameter '%3' is referenced %4 times in a parallel tuple before ro.interleave(2, 2) - every reference consumes its own input channel, so the function's input count does not match what process provides (an arity error). Use a TWO-parameter helper instead: '%2(inL, inR) = ((dryL, dryR), (wetL, wetR)) : ro.interleave(2, 2) : par(i, 2, +) with { dryL = inL * (1 - mix); dryR = inR * (1 - mix); wetL = inL : effect : *(mix); wetR = inR : effect : *(mix); }; process = _,_ : %2;' - or fan the input out inside process: 'process = _,_ <: dryBranch, wetBranch :> ro.interleave(2, 2) : par(i, 2, +);'.").arg(def_line).arg(name).arg(param).arg(refs));
+		};
+
+		for (int i = 0; i < lines.size(); i++)
+		{
+			const QString line_text = lines.at(i);
+
+			if (!collecting && depth == 0)
+			{
+				const QRegularExpressionMatch m = def_re.match(line_text);
+				if (m.hasMatch())
+				{
+					name = m.captured(1);
+					param = m.captured(2);
+					rhs = m.captured(3);
+					def_line = i + 1;
+					collecting = true;
+				}
+			}
+			else if (collecting)
+				rhs += "\n" + line_text;
+
+			for (int pos = 0; pos < line_text.size(); pos++)
+			{
+				const QChar ch = line_text.at(pos);
+				if (ch == '(' || ch == '[' || ch == '{')
+				  depth++;
+				else if (ch == ')' || ch == ']' || ch == '}')
+				  depth--;
+				else if (ch == ';' && depth <= 0 && collecting)
+				{
+					// Cut the collected RHS at the terminating ';' (anything
+					// after it on the same line belongs to the next
+					// statement).
+					const int cut = rhs.size() - (line_text.size() - pos);
+					if (cut >= 0 && cut < rhs.size())
+					  rhs = rhs.left(cut);
+					finish_def();
+					break;
+				}
+			}
+		}
+	}
+
 	// Deduplicate (one line can trigger both checks) and cap the list so the
 	// injected text stays small.
 	QStringList unique;
@@ -3981,7 +4079,7 @@ static inline void send_request_once(const LLMConfig &config,
 		+ "     process = ((dry : par(i, 2, *(1 - mix))), (wet : par(i, 2, *(mix)))) : ro.interleave(2, 2) : par(i, 2, +);\n"
 		+ "NEVER write mix math that cancels out (e.g. '1 - mix + mix' or 'mix * 1'): the knob must actually change the level - the compile check cannot catch a dead knob.\n"
 		+ (is_effect
-		   ? "9) This request asks for an audio EFFECT: an audio processor with no note controls (no freq/gain/gate) and no polyphony. Unless the user specifies otherwise, the effect must have EXACTLY two inputs and two outputs. A sidechain request is the exception: it has THREE inputs - two sound inputs plus one key input - and two outputs (bind them as function parameters, see the sidechain idiom; never as separate top-level 'main = _; key = _;' definitions). If the user asks for a different input count, honor it exactly. Otherwise never create an effect with 3 or more inputs: no matter how many parallel branches it has, bind the input ONLY ONCE (process = _,_ : ...) and derive every other signal from that single binding. Multiple bare input bindings ('dry = _,_; wet = _,_;') consume extra input channels and are forbidden - use 'dry = _,_; wet = dry : effect' or 'dry = _,_ <: a, b :> _,_' instead.\n"
+		   ? "9) This request asks for an audio EFFECT: an audio processor with no note controls (no freq/gain/gate) and no polyphony. Unless the user specifies otherwise, the effect must have EXACTLY two inputs and two outputs. A sidechain request is the exception: it has THREE inputs - two sound inputs plus one key input - and two outputs (bind them as function parameters, see the sidechain idiom; never as separate top-level 'main = _; key = _;' definitions). If the user asks for a different input count, honor it exactly. Otherwise never create an effect with 3 or more inputs: no matter how many parallel branches it has, bind the input ONLY ONCE (process = _,_ : ...) and derive every other signal from that single binding. Multiple bare input bindings ('dry = _,_; wet = _,_;') consume extra input channels and are forbidden. A top-level input binding ('dry = _,_;') may be referenced AT MOST ONCE in the rest of the program - every reference consumes its channels again ('wet = dry : effect' plus one direct use of 'dry' in process makes the effect take 4 inputs). For parallel branches such as a dry/wet mix, bind once in process and fan out with the split-merge: 'process = _,_ <: par(i, 2, *(1 - mix)), (par(i, 2, effect) : par(i, 2, *(mix))) :> ro.interleave(2, 2) : par(i, 2, +);' - or write a helper with TWO parameters (one per input channel): 'dryWet(inL, inR) = ((dryL, dryR), (wetL, wetR)) : ro.interleave(2, 2) : par(i, 2, +) with { dryL = inL * (1 - mix); dryR = inR * (1 - mix); wetL = inL : effect : *(mix); wetR = inR : effect : *(mix); }; process = _,_ : dryWet;'. NEVER write a ONE-parameter helper whose parameter appears more than once in a parallel tuple ('dryWet(sig) = ((sig : ...), (sig : ...)) : ro.interleave(2, 2) ...'): every reference to the parameter consumes its own input channel, so the helper's input count no longer matches the 2 channels process provides - an arity error.\n"
 		   : "9) This request asks for an INSTRUMENT: a polyphonic sound generator with no audio inputs, using the automatic note controls freq/gain/gate (and optionally velocity).\n")
 		+ "\n"
 		+ faust_module_reference;
