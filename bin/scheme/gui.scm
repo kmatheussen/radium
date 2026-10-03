@@ -568,15 +568,19 @@
                             :is-hovering
                             :automation-slider-value #f
                             :automation-color #f
+                            :rounding 5
+                            :hover-lighter 1.1
+                            :border-width 2
+                            :border-rounding 5
                             )
   (define background (if is-on
                          (<gui> :mix-colors background-color "black" 0.39)
                          (<gui> :mix-colors background-color "white" 0.95)))
 
   (if is-hovering
-      (set! background (<gui> :make-color-lighter background 1.1)))
+      (set! background (<gui> :make-color-lighter background hover-lighter)))
   
-  (<gui> :filled-box gui background x1 y1 x2 y2 5 5 *no-gradient*)
+  (<gui> :filled-box gui background x1 y1 x2 y2 rounding rounding *no-gradient*)
   (define col1 (<gui> :mix-colors "white" background 0.4))
   (define col2 (<gui> :mix-colors "#010101" background 0.5))
 
@@ -584,20 +588,22 @@
   
   (define inner-width/2 (scale 1 0 18 0 (get-fontheight)))
   (define outer-width/2 (* inner-width/2 2))
-  
-  (define middle (scale value -90 90 (+ inner-width/2 outer-width/2) (- width (+ inner-width/2 outer-width/2))))
-  
-  (<gui> :filled-box gui col1 (+ x1 (- middle inner-width/2))               (+ y1 2) (+ x1 middle inner-width/2)               (- y2 3) -1 -1 *no-gradient*)
-  (<gui> :filled-box gui col2 (+ x1 (- middle inner-width/2 outer-width/2)) (+ y1 2) (+ x1 (- middle inner-width/2))           (- y2 3) -1 -1 *no-gradient*)
-  (<gui> :filled-box gui col2 (+ x1 (+ middle inner-width/2))               (+ y1 2) (+ x1 middle inner-width/2 outer-width/2) (- y2 3) -1 -1 *no-gradient*)
-  ;;(<gui> :draw-text gui "white" (<-> value "o") 0 0 width height #t)
 
+  (when is-on
+    (define middle (scale value -90 90 (+ inner-width/2 outer-width/2) (- width (+ inner-width/2 outer-width/2))))
+    
+    (<gui> :filled-box gui col1 (+ x1 (- middle inner-width/2))               (+ y1 2) (+ x1 middle inner-width/2)               (- y2 3) -1 -1 *no-gradient*)
+    (<gui> :filled-box gui col2 (+ x1 (- middle inner-width/2 outer-width/2)) (+ y1 2) (+ x1 (- middle inner-width/2))           (- y2 3) -1 -1 *no-gradient*)
+    (<gui> :filled-box gui col2 (+ x1 (+ middle inner-width/2))               (+ y1 2) (+ x1 middle inner-width/2 outer-width/2) (- y2 3) -1 -1 *no-gradient*)
+    ;;(<gui> :draw-text gui "white" (<-> value "o") 0 0 width height #t)
+    )
+  
   (when (and automation-slider-value
              (> automation-slider-value -100))
     (define middle (scale automation-slider-value -90 90 (+ inner-width/2 outer-width/2) (- width (+ inner-width/2 outer-width/2))))
     (<gui> :draw-line gui automation-color (+ x1 middle) (+ y1 2) (+ x1 middle) (- y2 3) 2.0))
   
-  (<gui> :draw-box gui "#404040" x1 y1 x2 y2 2)
+  (<gui> :draw-box gui "#404040" x1 y1 x2 y2 border-width border-rounding border-rounding)
 
   background
   )

@@ -698,6 +698,7 @@
              ;;                (<ra> :set-instrument-effect instrument-id "System Pan" 0.5)))
              (list "Pan Enabled"
                    :check pan-enabled
+                   :shortcut switch-pan-enabled-for-selected-instruments
                    enable!)
              (get-sequencer-header-popup-menu-entries seqtracknum instrument-id "System Pan" gui))
             #f)))
