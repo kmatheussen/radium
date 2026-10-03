@@ -9,6 +9,8 @@ QMenu *GFX_create_qmenu(const vector_t &v,
 
 void GFX_clear_menu_cache(void);
 
+void GFX_ShowPopupSearchWaitScreen(void);
+
 bool GFX_MenuActive();
 QMenu *GFX_GetActiveMenu(void);
 void GFX_MakeMakeMainMenuActive(void);

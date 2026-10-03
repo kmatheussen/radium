@@ -251,8 +251,7 @@
 
 !!#
 
-(define (get-popup-menu-args args)
-  (define options (parse-popup-menu-options args))
+(define (get-popup-menu-args-from-options options)
   ;;(c-display "bbb")
   ;;(c-display "optinos:\n\n" options "\n\n")
   
@@ -303,6 +302,9 @@
               (if (null? checkboxval)
                   ((get-func n))
                   ((get-func n) (car checkboxval)))))))
+
+(define (get-popup-menu-args args)
+  (get-popup-menu-args-from-options (parse-popup-menu-options args)))
 
 (define (popup-menu-from-args popup-menu-args)
   ;;(c-display "ARGS:") (pretty-print popup-menu-args)

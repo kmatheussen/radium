@@ -1740,13 +1740,17 @@ static inline QAction *safeMenuExec(QMenu *widget, bool program_state_is_valid){
   }
 }
 
-static inline void safeMenuPopup(QMenu *menu){
+static inline void safeMenuPopup(QMenu *menu, QPoint pos){
   R_ASSERT_RETURN_IF_FALSE(g_qt_is_painting==false);
 
   closePopup();
   set_those_menu_variables_when_starting_a_popup_menu(menu);
 
-  menu->popup(QCursor::pos());
+  menu->popup(pos);
+}
+
+static inline void safeMenuPopup(QMenu *menu){
+  safeMenuPopup(menu, QCursor::pos());
 }
 
 static inline void safeShowPopup(QWidget *popup){

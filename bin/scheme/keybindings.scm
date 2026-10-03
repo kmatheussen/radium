@@ -245,12 +245,16 @@
 !!#
 
 
+(define *displayable-keybindings1-cache* (hash-table))
+
 (define (get-displayable-keybindings1 command)
-  (define keybindings (get-keybindings-from-command-without-focus-and-mouse command))
-  ;;(c-display "keybindings2:" keybindings2)
-  ;;(c-display "keybindings3:" (merge-keybindings keybindings2))
-  (remove-duplicates-in-sorted-list equal?  ;; call remove-duplicates again since merge-keybindings may have merged into several equal keybindings
-                                    (merge-keybindings keybindings)))
+  (define cached (*displayable-keybindings1-cache* command))
+  (if cached
+      cached
+      (let ((ret (remove-duplicates-in-sorted-list equal?  ;; call remove-duplicates again since merge-keybindings may have merged into several equal keybindings
+                                                    (merge-keybindings (get-keybindings-from-command-without-focus-and-mouse command)))))
+        (set! (*displayable-keybindings1-cache* command) ret)
+        ret)))
 
 #!!
 (get-displayable-keybindings1 "ra.quantitizeRange")
@@ -455,6 +459,7 @@
                        (loop (cdr callbacks))))))))
 
 (define (FROM_C-keybindings-have-been-reloaded)
+  (set! *displayable-keybindings1-cache* (hash-table))
   (for-each (lambda (func)
               (func))
             (copy *reload-keybindings-callbacks*))) ;; need to make a copy in case the callback removes itself.
@@ -508,8 +513,8 @@
         (ra-funcname-is-in-python-format
          (let* ((command (get-keybindings-command rafuncname args))
                 (keybindings (get-displayable-keybindings command)))
-           (c-display "command:" command)
-           (c-display "keybindings:" keybindings)
+           ;;(c-display "command:" command)
+           ;;(c-display "keybindings:" keybindings)
            (if (null? keybindings)
                ""
                (get-shortest-keybinding keybindings))))

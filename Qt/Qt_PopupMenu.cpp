@@ -90,6 +90,7 @@ static int g_menu_is_open = 0;
 static QStack<QMenu* >g_curr_menu;  
 
 extern QMenuBar *g_main_menu_bar;
+extern QMenuBar *g_main_menu_bar_right;
 
 int g_is_calling_from_menu = 0;
 
@@ -629,9 +630,21 @@ namespace{
     QHash<QMenu*, PopupSearchMenu> menus;
     QSet<QMenu*> all_menus;
     QString query;
+    bool waiting = false;
+    QString waiting_text;
   };
 
   static std::shared_ptr<PopupSearchState> g_popup_search_state;
+
+  // Used when a fuzzy search for all main menu entries is requested from an open main menu.
+  static QString g_pending_popup_search_query;
+  static QPoint g_pending_popup_position;
+  static bool g_has_pending_popup_position = false;
+
+  // Used while showing a temporary wait popup while the search popup is being built.
+  static bool g_force_popup_search_lineedit = false;
+  static QString g_popup_search_waiting_text;
+  static std::shared_ptr<PopupSearchState> g_waiting_popup_search_state;
 
   struct PopupSearchResult
   {
@@ -765,8 +778,10 @@ namespace{
 
     QLineEdit *lineedit = state->lineedit.data();
 
-    if (lineedit->text() != state->query)
-      lineedit->setText(state->query);
+    const QString text = state->waiting ? state->waiting_text : state->query;
+
+    if (lineedit->text() != text)
+      lineedit->setText(text);
 
     lineedit->setCursorPosition(lineedit->text().size());
   }
@@ -779,6 +794,8 @@ namespace{
     int _shortcut_width;
 
     bool _has_g_menu_is_open = false;
+
+    bool _is_part_of_main_menu = false;
 
     // Workaround. Sometimes, aboutToHide and/or aboutToShow is not called.
     struct Workaround : public radium::Timer {
@@ -966,12 +983,98 @@ namespace{
       return true;
     }
 
+	static bool is_search_key(QKeyEvent *event)
+	{
+		if ((event->modifiers() & (Qt::ControlModifier | Qt::AltModifier | Qt::MetaModifier)) != 0)
+			return false;
+
+		switch(event->key())
+		{
+			case Qt::Key_Space:
+			case Qt::Key_Backspace:
+			case Qt::Key_Delete:
+			case Qt::Key_Escape:
+			case Qt::Key_Return:
+			case Qt::Key_Enter:
+			case Qt::Key_Tab:
+			case Qt::Key_Backtab:
+			case Qt::Key_Up:
+			case Qt::Key_Down:
+			case Qt::Key_Left:
+			case Qt::Key_Right:
+			case Qt::Key_PageUp:
+			case Qt::Key_PageDown:
+			case Qt::Key_Home:
+			case Qt::Key_End:
+				return false;
+		}
+
+		const QString text = event->text();
+
+		return !text.isEmpty() && text.at(0).isPrint();
+	}
+
+	MyQMenu *get_root_menu(void)
+	{
+		MyQMenu *menu = this;
+
+		while (true)
+		{
+			MyQMenu *parent = qobject_cast<MyQMenu*>(menu->parentWidget());
+
+			if (parent == NULL)
+				return menu;
+
+			menu = parent;
+		}
+	}
+
+	void close_main_menus(void)
+	{
+		QVector<MyQMenu*> menus;
+		MyQMenu *menu = this;
+
+		while (menu != NULL)
+		{
+			menus.push_back(menu);
+			menu = qobject_cast<MyQMenu*>(menu->parentWidget());
+		}
+
+		// Hide from the deepest menu and upwards. (hiding a submenu does not hide its parent menu)
+		for (MyQMenu *menu2 : menus)
+			menu2->hide();
+
+		if (g_main_menu_bar != NULL)
+			g_main_menu_bar->setActiveAction(NULL);
+
+		if (g_main_menu_bar_right != NULL)
+			g_main_menu_bar_right->setActiveAction(NULL);
+	}
+
     void keyPressEvent(QKeyEvent *event) override {
       
       evalScheme("(set! *last-pressed-menu-entry-widget-mouse-button* -1)"); // To avoid keybindings-configuration menu to pop up when pressing return.
 
       if (handle_search_key(event))
         return;
+
+      if (_is_part_of_main_menu && is_search_key(event))
+      {
+        printf("SEARCHPOPUP hook-start %f\n", TIME_get_ms());
+
+        g_pending_popup_search_query = event->text();
+        g_pending_popup_position = get_root_menu()->mapToGlobal(QPoint(0, 0));
+        g_has_pending_popup_position = true;
+
+        close_main_menus();
+
+        printf("SEARCHPOPUP hook-eval-start %f\n", TIME_get_ms());
+        evalScheme("(popup-search-all-menus)");
+        printf("SEARCHPOPUP hook-eval-done %f\n", TIME_get_ms());
+
+        event->accept();
+        return;
+      }
 
 #if defined(FOR_MACOSX)
 	  //
@@ -1477,6 +1580,7 @@ static QMenu *create_qmenu(
     g_popup_search_state = search_state;
 
   MyMainQMenu *menu = new MyMainQMenu(NULL, "", get_largest_shortcut_width(v, 0), is_async, is_permanent, callback2);
+  menu->_is_part_of_main_menu = is_permanent;
   if (!is_permanent)
     menu->setAttribute(Qt::WA_DeleteOnClose);
 
@@ -1531,6 +1635,7 @@ static QMenu *create_qmenu(
       if (n_submenues==getMaxSubmenuEntries()){
         double t = TIME_get_ms();
         auto *new_menu = new MyQMenu(curr_menu, "Next", get_largest_shortcut_width(v, i));
+        new_menu->_is_part_of_main_menu = is_permanent;
         subdur += TIME_get_ms()-t;
         QAction *next_action = curr_menu->addMenu(new_menu);
         if (search_state != NULL)
@@ -1618,6 +1723,7 @@ static QMenu *create_qmenu(
         parents.push(curr_menu);
         double t = TIME_get_ms();
         auto *new_menu = new MyQMenu(curr_menu, text.right(text.size() - 15), get_largest_shortcut_width(v, i+1));
+        new_menu->_is_part_of_main_menu = is_permanent;
         //new_menu->setStyleSheet("QMenu::item#subMenu{ font : bold ; font-size: 13pt; color: #ff8080;}");
         //new_menu->setStyleSheet("padding-left: 140px");
 
@@ -1812,7 +1918,7 @@ static QMenu *create_qmenu(
     for (PopupSearchMenu &search_menu : search_state->menus)
       num_entries += search_menu.entries.size();
 
-    if (num_entries >= POPUP_SEARCH_MIN_NUM_ENTRIES)
+    if (num_entries >= POPUP_SEARCH_MIN_NUM_ENTRIES || g_force_popup_search_lineedit)
     {
       QLineEdit *lineedit = new QLineEdit;
       lineedit->setFocusPolicy(Qt::NoFocus);
@@ -1850,6 +1956,13 @@ static QMenu *create_qmenu(
       search_state->root_menu = menu;
       search_state->lineedit = lineedit;
       search_state->lineedit_action = lineedit_action;
+
+      if (g_force_popup_search_lineedit)
+      {
+        search_state->waiting = true;
+        search_state->waiting_text = g_popup_search_waiting_text;
+        lineedit->setText(g_popup_search_waiting_text);
+      }
 
       if (menu->actions().isEmpty())
         menu->addAction(lineedit_action);
@@ -1911,7 +2024,19 @@ static QMenu *create_qmenu(
 
   if(0)
     printf("      DUR: %f. clickdur: %f. checkdur: %f, subdur: %f. End: %f %f %f %f. sepdur: %f. callbackdur: %f. setdatadur: %f. Num calls to setStyle: %d / %d\n", TIME_get_ms()-time, clickdur, checkdur, subdur, t2-t,t3-t2,t4-t3,t5-t4, sepdur,callbackdur,setdatadur,0,0 ); //, num_s, num_saved);
-  
+
+  if (search_state != NULL && !search_state->waiting)
+  {
+    const QString pending_search_query = g_pending_popup_search_query;
+    g_pending_popup_search_query.clear();
+
+    if (!pending_search_query.isEmpty() && !search_state->lineedit_action.isNull())
+    {
+      search_state->query = pending_search_query;
+      apply_popup_search_filter();
+    }
+  }
+
   return menu;
 }
 
@@ -1964,6 +2089,64 @@ QMenu *GFX_create_qmenu(const vector_t &v,
 }
 
 
+// Shows a temporary popup containing all top-level main menus, with "Please wait..." in the
+// search field, while the real search popup is being built.
+void GFX_ShowPopupSearchWaitScreen(void)
+{
+  if (g_waiting_popup_search_state != NULL)
+  {
+    if (!g_waiting_popup_search_state->root_menu.isNull())
+      g_waiting_popup_search_state->root_menu->close();
+
+    g_waiting_popup_search_state = NULL;
+  }
+
+  vector_t v = {};
+
+  QMenuBar *menu_bars[2] = {g_main_menu_bar, g_main_menu_bar_right};
+
+  for (QMenuBar *menu_bar : menu_bars)
+  {
+    if (menu_bar == NULL)
+      continue;
+
+    for (QAction *action : menu_bar->actions())
+    {
+      const QString title = action->text();
+
+      VECTOR_push_back(&v, talloc_strdup((QString("[submenu start]") + title).toUtf8().constData()));
+      VECTOR_push_back(&v, talloc_strdup("[submenu end]"));
+    }
+  }
+
+  if (v.num_elements == 0)
+    return;
+
+  g_force_popup_search_lineedit = true;
+  g_popup_search_waiting_text = "Please wait...";
+
+  std::function<void(int,bool)> empty_callback3;
+
+  printf("SEARCHPOPUP wait-create-start %f\n", TIME_get_ms());
+  QMenu *menu = create_qmenu(v, true, NULL, empty_callback3, NULL, false);
+  printf("SEARCHPOPUP wait-create-done %f\n", TIME_get_ms());
+
+  g_force_popup_search_lineedit = false;
+  g_popup_search_waiting_text.clear();
+
+  g_waiting_popup_search_state = g_popup_search_state;
+
+  if (g_has_pending_popup_position)
+    safeMenuPopup(menu, g_pending_popup_position);
+  else
+    safeMenuPopup(menu);
+
+  // Make sure the wait popup is painted before the caller starts doing hard work.
+  processEventsALittleBit();
+
+  printf("SEARCHPOPUP wait-popup-done %f\n", TIME_get_ms());
+}
+
 static int64_t GFX_QtMenu(
                           const vector_t &v,
                           func_t *callback2,
@@ -1986,7 +2169,26 @@ static int64_t GFX_QtMenu(
   
   if (is_async){
 
-    safeMenuPopup(menu);
+    if (g_has_pending_popup_position)
+    {
+      const QPoint pos = g_pending_popup_position;
+      g_has_pending_popup_position = false;
+      safeMenuPopup(menu, pos);
+    }
+    else
+    {
+      safeMenuPopup(menu);
+    }
+
+    if (g_waiting_popup_search_state != NULL)
+    {
+      std::shared_ptr<PopupSearchState> waiting_state = g_waiting_popup_search_state;
+      g_waiting_popup_search_state = NULL;
+
+      if (!waiting_state->root_menu.isNull())
+        waiting_state->root_menu->close();
+    }
+
     return API_get_gui_from_existing_widget(menu);
     
   } else {
