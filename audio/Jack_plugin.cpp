@@ -93,7 +93,7 @@ static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *clie
     }
   }
 
-  if(data->client != NULL && !strcmp(plugin_type->name,"System In") && !nsmIsActive()){
+  if(data->client != NULL && (!strcmp(plugin_type->name,"System In") || !strcmp(plugin_type->name,"System In Mono")) && !nsmIsActive()){
     
     const char **outportnames=jack_get_ports(client,NULL,NULL,JackPortIsPhysical|JackPortIsOutput);
 
@@ -195,7 +195,7 @@ static Data *create_data(const SoundPluginType *plugin_type, jack_client_t *clie
     
   }
 
-  if(data->client!=NULL && !nsmIsActive() && (!strcmp(plugin_type->name,"System Out") || !strcmp(plugin_type->name,"System Out 8"))){
+  if(data->client!=NULL && !nsmIsActive() && (!strcmp(plugin_type->name,"System Out") || !strcmp(plugin_type->name,"System Out 8") || !strcmp(plugin_type->name,"System Out Mono"))){
 
     const char **inportnames=jack_get_ports(client,NULL,NULL,JackPortIsPhysical|JackPortIsInput);
 
@@ -432,14 +432,17 @@ static void cleanup_plugin_data(SoundPlugin *plugin){
   int i;
   Data *data = static_cast<Data*>(plugin->data);
 
-  if(!strcmp(plugin->type->name,"System Out") || !strcmp(plugin->type->name,"System Out 8")){
-    struct SoundPlugin *other_system_out = MIXER_get_soundplugin("Jack", "System Out");
-    if (other_system_out != NULL){
-      GFX_OS_set_system_volume_plugin(other_system_out);
-    } else {
-      struct SoundPlugin *other_system_out = MIXER_get_soundplugin("Jack", "System Out 8");
-      GFX_OS_set_system_volume_plugin(other_system_out); // "other_system_out" might be NULL.
+  if(!strcmp(plugin->type->name,"System Out") || !strcmp(plugin->type->name,"System Out 8") || !strcmp(plugin->type->name,"System Out Mono")){
+    static const char *system_out_names[] = {"System Out", "System Out 8", "System Out Mono"}; // [NO_STATIC_ARRAY_WARNING]
+    struct SoundPlugin *other_system_out = NULL;
+    for(const char *name : system_out_names){
+      if(!strcmp(plugin->type->name, name))
+        continue;
+      other_system_out = MIXER_get_soundplugin("Jack", name);
+      if (other_system_out != NULL)
+        break;
     }
+    GFX_OS_set_system_volume_plugin(other_system_out); // "other_system_out" might be NULL.
   }
 
   if (data->client != NULL) {
@@ -479,17 +482,25 @@ static void create_state(const struct SoundPlugin *plugin, hash_t *state){
   }
 }
 
+static SoundPluginType mono_in_type = {};
+
 static SoundPluginType stereo_in_type = {};
 
 static SoundPluginType stereo_out_type = {};
+
+static SoundPluginType mono_out_type = {};
 
 static SoundPluginType jack8_in_type = {};
 
 static SoundPluginType jack8_out_type = {};
 
+static SoundPluginType system_in_type_mono = {};
+
 static SoundPluginType system_in_type = {};
 
 static SoundPluginType system_in_type8 = {};
+
+static SoundPluginType system_out_type_mono = {};
 
 static SoundPluginType system_out_type = {};
 
@@ -499,6 +510,23 @@ static SoundPluginType system_out_type8 = {};
 static void init_types(void){
 
   
+ mono_in_type.type_name                = "Jack";
+ mono_in_type.name                     = "Jack Mono In";
+ mono_in_type.num_inputs               = 0;
+ mono_in_type.num_outputs              = 1;
+ mono_in_type.is_instrument            = false;
+ mono_in_type.note_handling_is_RT      = false;
+ mono_in_type.num_effects              = 0;
+ mono_in_type.will_never_autosuspend   = true;
+ mono_in_type.create_plugin_data       = create_plugin_data_nonsystem;
+ mono_in_type.cleanup_plugin_data      = cleanup_plugin_data;
+
+ mono_in_type.create_state        = create_state;
+
+ mono_in_type.RT_process       = RT_process;
+
+
+
  stereo_in_type.type_name                = "Jack";
  stereo_in_type.name                     = "Jack Stereo In";
  stereo_in_type.num_inputs               = 0;
@@ -517,6 +545,23 @@ static void init_types(void){
 
 
  
+ mono_out_type.type_name                = "Jack";
+ mono_out_type.name                     = "Jack Mono Out";
+ mono_out_type.num_inputs               = 1;
+ mono_out_type.num_outputs              = 0;
+ mono_out_type.is_instrument            = false;
+ mono_out_type.note_handling_is_RT      = false;
+ mono_out_type.num_effects              = 0;
+ mono_out_type.will_never_autosuspend   = true;
+ mono_out_type.create_plugin_data       = create_plugin_data_nonsystem;
+ mono_out_type.cleanup_plugin_data      = cleanup_plugin_data;
+
+ mono_out_type.create_state        = create_state;
+
+ mono_out_type.RT_process       = RT_process;
+
+
+
  stereo_out_type.type_name                = "Jack";
  stereo_out_type.name                     = "Jack Stereo Out";
  stereo_out_type.num_inputs               = 2;
@@ -571,6 +616,23 @@ static void init_types(void){
 
  
 
+ system_in_type_mono.type_name                = "Jack";
+ system_in_type_mono.name                     = "System In Mono";
+ system_in_type_mono.num_inputs               = 0;
+ system_in_type_mono.num_outputs              = 1;
+ system_in_type_mono.is_instrument            = false;
+ system_in_type_mono.note_handling_is_RT      = false;
+ system_in_type_mono.num_effects              = 0;
+ system_in_type_mono.will_never_autosuspend   = true;
+ system_in_type_mono.create_plugin_data       = create_plugin_data_system;
+ system_in_type_mono.cleanup_plugin_data      = cleanup_plugin_data;
+
+ system_in_type_mono.create_state        = create_state;
+
+ system_in_type_mono.RT_process       = RT_process;
+
+
+
  system_in_type.type_name                = "Jack";
  system_in_type.name                     = "System In";
  system_in_type.num_inputs               = 0;
@@ -608,6 +670,26 @@ static void init_types(void){
 
 
  
+ system_out_type_mono.type_name                = "Jack";
+ system_out_type_mono.name                     = "System Out Mono";
+ system_out_type_mono.num_inputs               = 1;
+ system_out_type_mono.num_outputs              = 0;
+ system_out_type_mono.is_instrument            = false;
+ system_out_type_mono.note_handling_is_RT      = false;
+ system_out_type_mono.num_effects              = 0;
+ system_out_type_mono.will_never_autosuspend   = true;
+ system_out_type_mono.create_plugin_data       = create_plugin_data_system;
+ system_out_type_mono.cleanup_plugin_data      = cleanup_plugin_data;
+
+ system_out_type_mono.called_after_plugin_has_been_created = called_after_system_out_has_been_created;
+ 
+ system_out_type_mono.create_state        = create_state;
+
+ system_out_type_mono.RT_process       = RT_process;
+
+
+ 
+
  system_out_type.type_name                = "Jack";
  system_out_type.name                     = "System Out";
  system_out_type.num_inputs               = 2;
@@ -659,11 +741,17 @@ void create_jack_plugins(void){
   }
 
   if (g_jack_client != NULL) {
+    mono_in_type.data = g_jack_client;
+    PR_add_plugin_type(&mono_in_type);
+    
     stereo_in_type.data = g_jack_client;
     PR_add_plugin_type(&stereo_in_type);
     
     jack8_in_type.data = g_jack_client;
     PR_add_plugin_type(&jack8_in_type);
+    
+    mono_out_type.data = g_jack_client;
+    PR_add_plugin_type(&mono_out_type);
     
     stereo_out_type.data = g_jack_client;
     PR_add_plugin_type(&stereo_out_type);
@@ -674,6 +762,9 @@ void create_jack_plugins(void){
   
   //PR_add_menu_entry(PluginMenuEntry::separator());
   
+  system_in_type_mono.data = g_jack_client;
+  PR_add_plugin_type(&system_in_type_mono);
+
   system_in_type.data = g_jack_client;
   PR_add_plugin_type(&system_in_type);
 
@@ -682,6 +773,9 @@ void create_jack_plugins(void){
 
   PR_add_menu_entry(PluginMenuEntry::separator());
   
+  system_out_type_mono.data = g_jack_client;
+  PR_add_plugin_type(&system_out_type_mono);
+
   system_out_type.data = g_jack_client;
   PR_add_plugin_type(&system_out_type);
 
