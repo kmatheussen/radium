@@ -3007,6 +3007,22 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
     (<ra> :undo-instrument-effect instrument-id "System Pan On/Off")
     (<ra> :set-instrument-effect instrument-id "System Pan On/Off" (if onoff 1.0 0.0))))
 
+;; Note: Used for shortcut.
+;; If the mouse is placed in the sequencer, the pan of the seqtrack under the mouse is switched on/off (similar to switchSeqtrackMute). Otherwise, pan is switched on/off for the selected mixer instruments.
+(define (switch-pan-enabled-for-selected-instruments)
+  (define seqtracknum (<ra> :get-curr-seqtrack-under-mouse))
+  (if (and (>= seqtracknum 0)
+           (<ra> :seqtrack-for-audiofiles seqtracknum))
+      (let ((instrument-id (<ra> :get-seqtrack-instrument seqtracknum)))
+        (when (<ra> :is-legal-instrument instrument-id)
+          (pan-enable! instrument-id (not (pan-enabled? instrument-id)))))
+      (let ((instruments (to-list (<ra> :get-curr-mixer-instruments))))
+        (undo-block
+         (lambda ()
+           (for-each (lambda (instrument-id)
+                       (pan-enable! instrument-id (not (pan-enabled? instrument-id))))
+                     instruments))))))
+
 
 (define (get-instrument-background-color gui instrument-id)
   (if (<ra> :is-legal-instrument instrument-id)

@@ -129,29 +129,39 @@ static const int g_falloff_reset = 5; // 5 seconds between each falloff reset.
 // NOTE. This function can be called from a custom exec().
 void AUDIOMETERPEAKS_call_very_often(int what_to_update){
   
-  static int64_t s_last_mixer_time = MIXER_get_last_used_time();
+	// Decay is based on elapsed real time (not audio blocks) so that meters move smoothly every time this
+	// function is called (i.e. every GUI frame), regardless of the audio block size / soundcard buffer size.
+	static double s_last_time = RT_TIME_get_ms();
 
-  int64_t mixer_time = MIXER_get_last_used_time();
+	double now = RT_TIME_get_ms();
 
-  if (mixer_time <= s_last_mixer_time+RADIUM_BLOCKSIZE) // add radium_bloksize as well to ensure (almost certainly) that a cycle really has had time to run.
-    return;
-  
-  static double time_since_last_reset_falloff = 0;
+	double ms = R_MIN(1000.0, now - s_last_time); // Clamp in case of a long pause (debugger break, system suspend, etc.)
 
-  double ms = 1000.0 * (double)(mixer_time - s_last_mixer_time) / (double)pc->pfreq;
+	//printf("ms: %f\n", ms);
 
-  //printf("ms: %f\n", ms);
-  
-  s_last_mixer_time = mixer_time;
-  
-  time_since_last_reset_falloff += ms;
+	s_last_time = now;
 
-  bool reset_falloff = false;
+	// Whether at least one new audio block has been processed since last time. Peaks (and the falloff reset)
+	// are only applied then, while the decay above is applied on every call.
+	static int64_t s_last_mixer_time = MIXER_get_last_used_time();
 
-  if (time_since_last_reset_falloff >= 1000*g_falloff_reset){
-    time_since_last_reset_falloff = 0;
-    reset_falloff = true;
-  }
+	int64_t mixer_time = MIXER_get_last_used_time();
+
+	bool has_new_peaks = mixer_time != s_last_mixer_time;
+
+	s_last_mixer_time = mixer_time;
+
+	static double time_since_last_reset_falloff = 0;
+
+	time_since_last_reset_falloff += ms;
+
+	bool reset_falloff = false;
+
+	if (has_new_peaks && time_since_last_reset_falloff >= 1000 * g_falloff_reset)
+	{
+		time_since_last_reset_falloff = 0;
+		reset_falloff = true;
+	}
 
   vector_t *audio_patches = &(get_audio_instrument()->patches);
 
@@ -163,7 +173,7 @@ void AUDIOMETERPEAKS_call_very_often(int what_to_update){
 
       bool doit = true;
 
-      int ms_to_use = what_to_update==-1 ? ms : ms*2;
+			float ms_to_use = what_to_update == -1 ? ms : ms * 2;
 
       if (what_to_update==0 || what_to_update==1){
         if (what_to_update==0 && iterator666 >= int(num_patches/2))

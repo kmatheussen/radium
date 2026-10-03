@@ -1705,7 +1705,18 @@ QStringList FAUST2_lint_faust_code(const QString &code, bool compile_check_safe,
 		// legal per-channel recipe.
 		for (const Faust2LintDef &def : defs)
 		{
-			const QString sanitized = faust2_lint_sanitize_strings(def.rhs);
+			QString sanitized = faust2_lint_sanitize_strings(def.rhs);
+
+			// Only scan the part before the 'with { ... }' block: with-locals
+			// are not part of the top-level expression, but the def-level
+			// prefix check below sees the def's own stereo constructs (e.g.
+			// ro.interleave(2, 2) in the main RHS) and would then flag the
+			// legal 'wetL = inL : transpose_windowed(...) : *(mix)' local
+			// (inL is mono) as an operator applied to a stereo signal
+			// (observed on an autotune dry/wet helper).
+			const int with_pos = sanitized.indexOf(QRegularExpression(QStringLiteral("\\bwith\\s*\\{")));
+			if (with_pos >= 0)
+			  sanitized = sanitized.left(with_pos);
 
 			// The colon must be a SEQUENTIAL composition: '<:' is the split
 			// operator, so 'panned <: *(panL), *(panR)' fans the stereo
@@ -2809,9 +2820,27 @@ bool FAUST2_try_fix_duplicate_definition(const QString &code,
 	const QRegularExpression name_re(QStringLiteral("(?<!\\.)\\b%1\\b(?!\\.)").arg(name));
 	const bool self_referential = name_re.match(faust2_lint_sanitize_strings(second_rhs_lines.join("\n"))).hasMatch();
 
-	// The fresh name for the FIRST definition (self-referential case).
+	// Definitions between the two duplicates may also reference the name
+	// (imperative style: 'best = w0; b1 = f(best); ...; best = b4;').
+	// The pure "remove the first definition" fix would then bind those
+	// references to the SECOND definition and create an endless evaluation
+	// cycle ('after 1600 evaluation steps, the compiler has detected an
+	// endless evaluation cycle' - observed). They must keep reading the
+	// first value, so the first definition is renamed and every reference
+	// before the second definition is redirected to the fresh name.
+	bool intervening_reference = false;
+	{
+		QStringList intervening_lines;
+		for (int i = first.end + 1; i < second.start; i++)
+		  intervening_lines.append(lines.at(i));
+		if (!intervening_lines.isEmpty())
+		  intervening_reference = name_re.match(faust2_lint_sanitize_strings(intervening_lines.join("\n"))).hasMatch();
+	}
+	const bool rename_first = self_referential || intervening_reference;
+
+	// The fresh name for the FIRST definition (rename case).
 	QString fresh;
-	if (self_referential)
+	if (rename_first)
 	{
 		QSet<QString> taken;
 		for (const Faust2DefSpan &span : spans)
@@ -2832,7 +2861,7 @@ bool FAUST2_try_fix_duplicate_definition(const QString &code,
 
 		if (i >= first.start && i <= first.end)
 		{
-			if (self_referential)
+			if (rename_first)
 			{
 				// Give the FIRST definition a fresh name.
 				QString line = lines.at(i);
@@ -2845,9 +2874,18 @@ bool FAUST2_try_fix_duplicate_definition(const QString &code,
 				// Remove the first definition (the last one wins).
 			}
 		}
+		else if (i > first.end && i < second.start)
+		{
+			// Definitions between the two duplicates read the ORIGINAL
+			// value - point them at the renamed first definition.
+			QString line = lines.at(i);
+			if (rename_first)
+			  line.replace(name_re, fresh);
+			result.append(line);
+		}
 		else if (i >= second.start && i <= second.end)
 		{
-			if (self_referential)
+			if (rename_first)
 			{
 				QString line = lines.at(i);
 				if (i == second.start)
@@ -2869,9 +2907,12 @@ bool FAUST2_try_fix_duplicate_definition(const QString &code,
 	}
 
 	*fixed_code = result.join('\n');
-	*note = self_referential
-	  ? QString("Auto-fixed duplicate definition: Faust has no assignment, so '%1 = ...; %1 = %1 : ...' was translated into '%2 = ...; %1 = %2 : ...' (the second definition keeps the name; every other reference sees the final value).").arg(name).arg(name + QStringLiteral("_raw"))
-	  : QString("Auto-fixed duplicate definition: removed the first of the two definitions of '%1' (Faust cannot reassign a symbol; the last definition is the effective one).").arg(name);
+	if (self_referential)
+	  *note = QString("Auto-fixed duplicate definition: Faust has no assignment, so '%1 = ...; %1 = %1 : ...' was translated into '%2 = ...; %1 = %2 : ...' (the second definition keeps the name; every other reference sees the final value).").arg(name).arg(fresh);
+	else if (intervening_reference)
+	  *note = QString("Auto-fixed duplicate definition: Faust has no assignment, so the imperative reassignment of '%1' was translated by renaming the first definition to '%2' and pointing the definitions between them at '%2' (the second definition keeps the name; references after it see the final value).").arg(name).arg(fresh);
+	else
+	  *note = QString("Auto-fixed duplicate definition: removed the first of the two definitions of '%1' (Faust cannot reassign a symbol; the last definition is the effective one).").arg(name);
 	return true;
 }
 

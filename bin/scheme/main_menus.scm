@@ -277,16 +277,179 @@
 (define (popup-menu-from-menu-items items)
   (popup-menu (get-popup-menu-items-from-menu-items items)))
 
+(define (get-recently-opened-song-filenames)
+  (let loop ((i 0)
+             (result '()))
+    (if (= i 30)
+        (reverse result)
+        (let ((filename (<ra> :get-settings (<-> "recent_song_" i) "")))
+          (if (string=? filename "")
+              (reverse result)
+              (loop (1+ i)
+                    (cons filename result)))))))
+
+(define (get-recently-opened-songs-popup-items)
+  (define filenames (get-recently-opened-song-filenames))
+  (if (null? filenames)
+      (list "No recently opened songs" :enabled #f (lambda () #f))
+      (map (lambda (filename)
+             (list filename
+                   (lambda ()
+                     (<ra> :load-song (<ra> :get-path filename)))))
+           filenames)))
+
+;; Pure function so it can be tested with ***assert*** below.
+(define (replace-recent-menu items recent-items)
+  (map (lambda (item)
+         (cond ((and (list? item)
+                     (not (null? item))
+                     (string? (car item))
+                     (string=? (car item) "Recent-main-menu-99992222"))
+                (if recent-items
+                    (list "Recently-opened-songs" recent-items)
+                    '()))
+               ((and (list? item)
+                     (not (null? item))
+                     (string? (car item))
+                     (not (null? (cdr item)))
+                     (list? (cadr item)))
+                (list (car item)
+                      (replace-recent-menu (cadr item) recent-items)))
+               (else
+                item)))
+       items))
+
+(***assert*** (replace-recent-menu (list "separator"
+                                         (list "Recent-main-menu-99992222"
+                                               (list "x"))
+                                         (list "Sub"
+                                               (list (list "Recent-main-menu-99992222"
+                                                           (list "y")))))
+                                   (list "recent"))
+              (list "separator"
+                    (list "Recently-opened-songs"
+                          (list "recent"))
+                    (list "Sub"
+                          (list (list "Recently-opened-songs"
+                                      (list "recent"))))))
+
+(define *main-menu-search-popup-args* #f)
+
+(define *main-menu-search-options* #f)
+
+(define *main-menu-items* #f)
+
+;; Shortcuts are part of the cached data, so it must be regenerated when keybindings change.
+(add-reload-keybindings-callback (lambda ()
+                                   (set! *main-menu-search-popup-args* #f)
+                                   (set! *main-menu-search-options* #f)
+                                   (set! *main-menu-items* #f)))
+
+(define (get-main-menu-items)
+  (when (not *main-menu-items*)
+    (set! *main-menu-items* (get-menu-items2)))
+  *main-menu-items*)
+
+;; Removes the "Recent-main-menu-99992222" submenu from a parsed popup menu options list.
+;; (Temporarily disabled while investigating why the popup takes long time to appear.)
+(define (remove-recent-from-options options)
+  (let loop ((options options)
+             (skip-depth 0)
+             (result '()))
+    (if (null? options)
+        (reverse result)
+        (let ((text (car options))
+              (callback (cadr options))
+              (rest (cddr options)))
+          (cond ((> skip-depth 0)
+                 (if (string? text)
+                     (cond ((string-starts-with? text "[submenu start]")
+                            (loop rest (1+ skip-depth) result))
+                           ((string-starts-with? text "[submenu end]")
+                            (loop rest (1- skip-depth) result))
+                           (else
+                            (loop rest skip-depth result)))
+                     (loop rest skip-depth result)))
+                ((and (string? text)
+                      (string=? text "[submenu start]Recent-main-menu-99992222"))
+                 (loop rest 1 result))
+                (else
+                 (loop rest 0 (cons callback (cons text result)))))))))
+
+(define (assemble-main-menu-search-options menus-options)
+  (apply append
+         (map (lambda (menu-options)
+                (append (list (<-> "[submenu start]" (car menu-options))
+                              (lambda () #t))
+                        (cdr menu-options)
+                        (list "[submenu end]"
+                              (lambda () #t))))
+              menus-options)))
+
+(define (open-main-menu-search-popup args)
+  (<ra> :schedule 0
+        (lambda ()
+          (popup-menu-from-args args)
+          #f)))
+
+(define (open-main-menu-search-popup-from-options menus-options)
+  (c-display "SEARCHPOPUP open-from-options" (<ra> :get-ms))
+  (define args (get-popup-menu-args-from-options (assemble-main-menu-search-options menus-options)))
+  (set! *main-menu-search-popup-args* args)
+  (open-main-menu-search-popup args))
+
+;; Builds the options one top-level menu at a time, scheduling a new step between
+;; each menu. Only used if generate-main-menus didn't already build them.
+(define (build-main-menu-search-popup menus chunks)
+  (if (null? menus)
+      (let ((menus-options (reverse chunks)))
+        (set! *main-menu-search-options* menus-options)
+        (open-main-menu-search-popup-from-options menus-options))
+      ;; Schedule the processing of each menu, so that the gui gets a chance
+      ;; to repaint the wait popup between each top-level menu.
+      (<ra> :schedule 0
+            (lambda ()
+              (let* ((menu (car menus))
+                     (menu-options (remove-recent-from-options
+                                    (parse-popup-menu-options
+                                     (get-popup-menu-items-from-menu-items (menu :sub-menu))))))
+                (c-display "SEARCHPOPUP chunk" (menu :text) (<ra> :get-ms))
+                (build-main-menu-search-popup (cdr menus)
+                                              (cons (cons (menu :text) menu-options) chunks)))
+              #f))))
+
+(define (popup-search-all-menus)
+  (if *main-menu-search-popup-args*
+      (open-main-menu-search-popup *main-menu-search-popup-args*)
+      (begin
+        (c-display "SEARCHPOPUP wait-screen-start" (<ra> :get-ms))
+        (<ra> :show-popup-search-wait-screen)
+        (c-display "SEARCHPOPUP wait-screen-shown" (<ra> :get-ms))
+        (<ra> :schedule 1
+              (lambda ()
+                (c-display "SEARCHPOPUP build-start" (<ra> :get-ms))
+                (if *main-menu-search-options*
+                    (open-main-menu-search-popup-from-options *main-menu-search-options*)
+                    (build-main-menu-search-popup (get-main-menu-items) '()))
+                #f)))))
+
 (define (generate-main-menus)
   (<ra> :wait-until-nsm-has-inited)
+  (define menus-options '())
   (for-each (lambda (menu)
-              (apply ra:add-menu-menu2 
+              (define menu-items (get-popup-menu-items-from-menu-items (menu :sub-menu)))
+              (define menu-options (parse-popup-menu-options menu-items))
+              (apply ra:add-menu-menu2
                      (cons (menu :text)
-                           (get-popup-menu-args
-                            (get-popup-menu-items-from-menu-items
-                             (menu :sub-menu)))))
+                           (get-popup-menu-args-from-options menu-options)))
+              ;; Cache the options for the search popup, without the Recent menu.
+              (set! menus-options
+                    (append menus-options
+                            (list (cons (menu :text)
+                                        (remove-recent-from-options menu-options)))))
               (<ra> :go-previous-menu-level))
-            (get-menu-items2)))
+            (get-main-menu-items))
+  (set! *main-menu-search-options* menus-options))
 
 #!!
 

@@ -228,41 +228,61 @@ public:
 
     if (_delay_size >= num_frames)
     {
-	    int io_pos = 0;
-	    
-	    while(true)
+	    const int max_to_copy = _delay_size - IOTA;
+
+	    R_ASSERT_NON_RELEASE(max_to_copy > 0);
+
+	    if (num_frames <= max_to_copy)
 	    {
-		    bool do_continue = false;
-		    
-		    int num_to_copy = num_frames - io_pos;
-		    const int max_to_copy = _delay_size - IOTA;
-		    
-		    R_ASSERT_NON_RELEASE(max_to_copy > 0);
-		    
-		    if (num_to_copy > max_to_copy)
-		    {
-			    num_to_copy = max_to_copy;
-			    do_continue = true;
-		    }
-		    
-		    memcpy(output + io_pos,    _buffer + IOTA,     num_to_copy*sizeof(T));
-		    memcpy(_buffer + IOTA,     input + io_pos,     num_to_copy*sizeof(T));
-			    
-		    IOTA += num_to_copy;
-		    
-		    if (IOTA >= _delay_size)
-		    {
-			    R_ASSERT_NON_RELEASE(IOTA==_delay_size);
+		    // No wraparound.
+		    memcpy(output,     _buffer + IOTA, num_frames*sizeof(T));
+		    memcpy(_buffer+IOTA, input,          num_frames*sizeof(T));
+
+		    IOTA += num_frames;
+
+		    if (IOTA==_delay_size)
 			    IOTA = 0;
+
+		    R_ASSERT_NON_RELEASE(IOTA < _delay_size);
+	    }
+	    else
+	    {
+		    int io_pos = 0;
+		    
+		    while(true)
+		    {
+			    bool do_continue = false;
+			    
+			    int num_to_copy = num_frames - io_pos;
+			    const int max_to_copy2 = _delay_size - IOTA;
+			    
+			    R_ASSERT_NON_RELEASE(max_to_copy2 > 0);
+			    
+			    if (num_to_copy > max_to_copy2)
+			    {
+				    num_to_copy = max_to_copy2;
+				    do_continue = true;
+			    }
+			    
+			    memcpy(output + io_pos,    _buffer + IOTA,     num_to_copy*sizeof(T));
+			    memcpy(_buffer + IOTA,     input + io_pos,     num_to_copy*sizeof(T));
+				    
+			    IOTA += num_to_copy;
+			    
+			    if (IOTA >= _delay_size)
+			    {
+				    R_ASSERT_NON_RELEASE(IOTA==_delay_size);
+				    IOTA = 0;
+			    }
+			    
+			    io_pos += num_to_copy;
+			    
+			    if (!do_continue)
+				    break;
 		    }
 		    
-		    io_pos += num_to_copy;
-		    
-		    if (!do_continue)
-			    break;
+		    R_ASSERT_NON_RELEASE(io_pos == num_frames);
 	    }
-	    
-	    R_ASSERT_NON_RELEASE(io_pos == num_frames);
     }
     else
     {
@@ -315,9 +335,9 @@ public:
     T *temp_output = RT_ALLOC_ARRAY_STACK(T, num_frames);
 
     RT_process_overwrite(num_frames, input, temp_output);
-    _fade_in.RT_fade(num_frames, temp_output);
 
-    JUCE_add_sound(output, temp_output, num_frames);
+    // Fade and add in one pass instead of fading the temporary buffer and then adding it.
+    _fade_in.RT_fade(num_frames, output, temp_output, true);
   }
 
 	
@@ -422,16 +442,11 @@ private:
           SET_STATE(State::PLAIN_DELAY);
         }
 
-        {
-			float *temp = RT_ALLOC_ARRAY_STACK(float, num_frames);
-			memcpy(temp, input, sizeof(float)*num_frames);
-			
-			_fade.RT_fade_out(num_frames, temp);
-			
-			_delay1->RT_process_overwrite_fade_in(num_frames, input, output);
-			
-			JUCE_add_sound(output, temp, num_frames);
-        }
+        _delay1->RT_process_overwrite_fade_in(num_frames, input, output);
+
+        // Add the dry signal, faded out, in one pass instead of copying input to a
+        // temporary buffer, fading it, and then adding it to output.
+        _fade.RT_fade(num_frames, output, input, true);
 
         return true;
 
@@ -483,16 +498,11 @@ private:
           SET_STATE(State::NO_DELAY);
         }
 
-        {
-			float *temp = RT_ALLOC_ARRAY_STACK(float, num_frames);
-			memcpy(temp, input, sizeof(float)*num_frames);
-			
-			_fade.RT_fade_in(num_frames, temp);
-			
-			_delay1->RT_process_overwrite_fade_out(num_frames, input, output);
-			
-			JUCE_add_sound(output, temp, num_frames);
-        }
+        _delay1->RT_process_overwrite_fade_out(num_frames, input, output);
+
+        // Add the dry signal, faded in, in one pass instead of copying input to a
+        // temporary buffer, fading it, and then adding it to output.
+        _fade.RT_fade(num_frames, output, input, true);
 
         return true;
     }
@@ -812,7 +822,8 @@ static void SMOOTHDELAY_test(void){
       {
 	      input[i] = sinf(phase);
 	      phase += phase_add;
-	      phase = fmodf(phase, M_PI2);
+	      if (phase >= M_PI2)
+	        phase -= M_PI2;
       }
       gendata_time += TIME_get_ms() - time5;
       

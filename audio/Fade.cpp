@@ -110,10 +110,29 @@ void Fade::RT_fade(const int num_frames, float *__restrict__ data, const float *
     g_fade_benchmark_time += TIME_get_ms()-time;
 #endif
 
-    if (!_is_fading_in){
-      const int extra = num_frames-how_many;
-      if(extra > 0)
-        memset(data + how_many, 0, extra*sizeof(float));
+    const int extra = num_frames-how_many;
+    if (extra > 0){
+
+      if (_is_fading_in){
+
+        if (add && in != NULL){
+          // The fade has reached full gain (1.0), so the rest of 'in' should be added
+          // without being faded. (When 'add' is false, the caller has already placed
+          // 'in' in 'data', and the rest should just be left alone.)
+          for(int i=how_many;i<num_frames;i++)
+            data[i] += in[i];
+        }
+
+      } else {
+
+        if (add){
+          // The faded-out contribution from 'in' is zero, so 'data' must not be touched.
+        } else {
+          // 'data' contains 'in[i]*fade', which should be zero for the rest.
+          memset(data + how_many, 0, extra*sizeof(float));
+        }
+
+      }
     }
 
     _num_fade_frames_left -= how_many;

@@ -174,23 +174,19 @@ build_libpds() {
 
 
 # Official libpd (https://github.com/libpd/libpd), tracking current Pd Vanilla.
-# Built with multiple instance support (PDINSTANCE/PDTHREADS) and the vanilla
-# "extra" externals compiled in. Radium links the shared library, while the
-# libpds tests link the static archive. Both are built from the same objects.
+# Built with multiple instance support (PDINSTANCE/PDTHREADS).
 build_libpd() {
 
     rm -fr libpd
     tar xvzf libpd-0.16.1.tar.gz
     cd libpd/
 
-    # Apply Radium's patches. (The tarball is a pristine libpd release.)
+    # Apply Radium's patches.
     for patch_file in ../libpd_patches/*.patch ; do
         patch -p1 --batch --forward < "$patch_file"
     done
 
-    # Always build with debug symbols and frame pointers. ASan captures
-    # malloc/free stack traces with the frame-pointer unwinder, which cannot
-    # walk functions compiled with -fomit-frame-pointer. The Makefile's
+    # Always build with debug symbols and frame pointers. The Makefile's
     # OPT_CFLAGS contains -fomit-frame-pointer, but ADDITIONAL_CFLAGS is
     # appended last, so -fno-omit-frame-pointer overrides it.
     LIBPD_DEBUG_FLAGS="-g -fno-omit-frame-pointer"
@@ -205,8 +201,6 @@ build_libpd() {
 
         # The dylib is placed in the bundled packages directory, both for dev
         # builds (via the /tmp/radium_bin/packages symlink) and for Radium.app.
-        # Note: don't use @rpath here. fix_dylibs.sh (used when creating
-        # Radium.app) aborts on @rpath dependencies.
         LIBPD_LINK_FLAGS="$LIBPD_LINK_FLAGS -Wl,-install_name,@executable_path/packages/libpd/libs/libpd.dylib"
 
         # The Mac GUI needs Tcl/Tk 8.6. The system /usr/bin/wish is Tk 8.5,
@@ -225,7 +219,7 @@ build_libpd() {
     make clean
     make -j`nproc` libpd STATIC=true MULTI=true UTIL=true EXTRA=true ADDITIONAL_CFLAGS="$LIBPD_DEBUG_FLAGS" ADDITIONAL_LDFLAGS="$LIBPD_LINK_FLAGS"
 
-    # Note: Radium's libpds wrapper (libpds/) is compiled directly into the
+    # Note: Radium's libpds wrapper (libpds/) for pd2 (not pd1) is compiled directly into the
     # Radium binary by Makefile.Qt, so there's nothing to build here.
 
     cd ..
@@ -370,12 +364,12 @@ if uname -s |grep Linux ; then
         build_libpds
     fi
     build_xcb
-	echo "finished compiling libpds and xcb" # need this line to avoid script failing if all the lines above are commented out.
+	echo "Finished compiling libpds and xcb" # need this line to avoid script failing if all the lines above are commented out.
 fi
 
 if uname -s |grep -e Linux -e Darwin ; then
     build_libpd
-	echo "Build libpd" # need this line to avoid script failing if the line above is commented out.
+	echo "Finishec compiling libpd" # need this line to avoid script failing if the line above is commented out.
 fi
 
 

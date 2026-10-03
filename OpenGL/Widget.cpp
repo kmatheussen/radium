@@ -1346,7 +1346,7 @@ public:
 
 		if (ATOMIC_GET(pc->player_state) != PLAYER_STATE_PLAYING)
 		{
-			R_ASSERT(fabs(scroll_pos - round(scroll_pos)) < 0.001);
+			R_ASSERT_NON_RELEASE(fabs(scroll_pos - round(scroll_pos)) < 0.001);
 			scroll_pos = round(scroll_pos);
 		}
 

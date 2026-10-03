@@ -1795,33 +1795,15 @@
           (define width (<gui> :width slider))
           (define value (get-pan))
           (define is-on (pan-enabled? instrument-id))
-          ;;(<gui> :filled-box slider system-background-color 5 5 width height)
-          (define background (if is-on
-                                 (<gui> :mix-colors background-color "black" 0.39)
-                                 (<gui> :mix-colors background-color "white" 0.95)))
 
-          (if is-hovering
-              (set! background (<gui> :make-color-lighter background 1.2)))
-              
-          (<gui> :filled-box slider background 0 0 width height 2 2 *no-gradient*)
-          (define col1 (<gui> :mix-colors "white" background 0.4))
-          (define col2 (<gui> :mix-colors "#010101" background 0.5))
-
-          (define inner-width/2 (scale 1 0 18 0 (get-fontheight)))
-          (define outer-width/2 (* inner-width/2 2))
-
-          (define middle (scale value -90 90 (+ inner-width/2 outer-width/2) (- width (+ inner-width/2 outer-width/2))))
-
-          (<gui> :filled-box slider col1 (- middle inner-width/2) 2 (+ middle inner-width/2) (- height 3) -1 -1 *no-gradient*)
-          (<gui> :filled-box slider col2 (- middle inner-width/2 outer-width/2) 2 (- middle inner-width/2) (- height 3) -1 -1 *no-gradient*)
-          (<gui> :filled-box slider col2 (+ middle inner-width/2) 2 (+ middle inner-width/2 outer-width/2) (- height 3) -1 -1 *no-gradient*)
-          ;;(<gui> :my-draw-text slider "white" (<-> value "o") 0 0 width height #t)
-
-          (when (> automation-slider-value -100)
-            (define middle (scale automation-slider-value -90 90 (+ inner-width/2 outer-width/2) (- width (+ inner-width/2 outer-width/2))))
-            (<gui> :draw-line slider pan-automation-color middle 2 middle (- height 3) 2.0))
-          
-          (<gui> :draw-box slider "#404040" 0 0 width height 1.5 2 2)
+          (define background (paint-pan-slider slider 0 0 width height value is-on background-color
+                                               :is-hovering is-hovering
+                                               :automation-slider-value automation-slider-value
+                                               :automation-color pan-automation-color
+                                               :rounding 2
+                                               :hover-lighter 1.2
+                                               :border-width 1.5
+                                               :border-rounding 2))
 
           (when (<ra> :instrument-effect-has-midi-learn instrument-id "System Pan")
             (define midi-learn-color (<gui> :mix-colors *text-color* background 0.2))
@@ -1863,7 +1845,10 @@
   (add-safe-mouse-callback
    slider
    (lambda (button state x y)
-     (<ra> :set-statusbar-text (<-> "Pan: " (get-pan)))
+     (define pan-enabled (pan-enabled? instrument-id))
+     (<ra> :set-statusbar-text (if pan-enabled
+                                   (<-> "Pan: " (get-pan))
+                                   (<-> "Pan (disabled)")))
      (set-curr-instrument-in-mouse-callback instrument-id slider)
      (cond ((= state *is-entering*)
             (set! is-hovering #t)
@@ -1891,12 +1876,12 @@
             #t)
            ((and (= button *right-button*)
                  (= state *is-releasing*))
-            (define pan-enabled (pan-enabled? instrument-id))
             (popup-menu ;(list "Reset" (lambda ()
                                         ;                (<ra> :undo-instrument-effect instrument-id "System Pan")
                                         ;                (<ra> :set-instrument-effect instrument-id "System Pan" 0.5)))
              (list "Pan Enabled"
                    :check pan-enabled
+                   :shortcut switch-pan-enabled-for-selected-instruments
                    enable!)                 
              (get-effect-popup-entries instrument-id "System Pan"
                                        :pre-undo-block-callback (lambda ()

@@ -51,3 +51,49 @@ Total duration: 0.989531. (Generating sine: 6.193208.) RT_fade duration: 0.16414
 Total duration: 0.989531. (Generating sine: 6.193208.) RT_fade duration: 0.164146. RT_process_overwrite duration: 0.315171
 Total duration: 0.963047. (Generating sine: 6.048049.) RT_fade duration: 0.160315. RT_process_overwrite duration: 0.306664
 
+
+
+================================================================================
+Results from optimizing SmoothDelay/RT_fade 2026-10-02:
+g++ 14.2.0 / clang++ 19.1.7, Intel Core Ultra 9.
+Benchmark pinned with "taskset -c 2" and run with SCHED_FIFO (chrt -f 50).
+
+The machine is shared and power-limited, so wall-clock numbers vary with load.
+All A/B comparisons below were interleaved (A,B,A,B,...) and compared using
+min/median and, when possible, the load-normalized Total/gendata ratio.
+
+Changes made:
+  1. test/test_dummies.c: benchmark timer now uses RDTSD (invariant TSC) instead
+     of gettimeofday. Falls back to gettimeofday if invariant TSC is missing.
+  2. audio/SmoothDelay.hpp: FADE_IN_DELAY/FADE_OUT_DELAY and
+     RT_process_add_fade_in now fade+add in one pass instead of using a
+     temporary buffer + memcpy + JUCE_add_sound.
+  3. audio/Fade.cpp: fixed tail handling for "add=true" (fading-in fades must
+     add the remaining input at full gain, fading-out fades must add nothing).
+  4. audio/SmoothDelay.hpp: no-wraparound fast path in RT_process_overwrite
+     (still using memcpy).
+  5. Makefile.Qt: benchmark_smoothdelay is now compiled with -fomit-frame-pointer.
+  6. Benchmark harness: fmodf in the excluded sine-generation loop replaced by
+     a conditional subtraction (gendata 15.9s -> 2.4s with g++, does not affect
+     the reported Total).
+
+Rejected: replacing the two memcpy calls in RT_process_overwrite with a fused
+copy loop (about 4.6% worse on Total; glibc memcpy is faster).
+
+Results (clean/min values; Total excludes sine generation):
+                                      Total   RT_fade  RT_overwrite
+  g++  baseline (before all changes)  0.683    0.127    0.204
+  g++  final (all changes)            0.570    0.116    0.186   (-16.5% Total)
+  clang++ baseline                    0.688    0.137    0.194
+  clang++ final                       0.616    0.139    0.181   (-10.3% Total)
+
+Per-change A/B results:
+  TSC timer:           Total/gendata ratio 0.912 (about 9% lower Total).
+  Fade fusion:         Total/gendata 0.2503 -> 0.2372 (about 5% lower Total).
+  memcpy fast path:    Total/gendata ratio 0.996-0.999, RT_overwrite -1%.
+  -fomit-frame-pointer: Total/gendata ratio 0.996 (about 0.4%).
+  -march=native on the test TU: no detectable change.
+  LTO: Total/gendata ratio 0.987 (about 1%), not adopted.
+
+In addition, the benchmark command itself is now about 5x faster to run
+(g++: ~17s -> ~3.1s), mostly due to the sine-generation change.

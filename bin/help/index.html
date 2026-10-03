@@ -3063,18 +3063,22 @@ These objects connect to the soundcard, or to Jack ports:
 
 <UL>
   <LI><b>Jack Stereo In</b>: Receives a stereo sound from an external Jack port (or the soundcard). Has no audio inputs; it is a source.
-  <LI><b>Jack Stereo Out</b>: Sends a stereo sound to an external Jack port (or the soundcard). Has no audio outputs; it is a sink.
+  <LI><b>Jack Mono In</b>: Same as Jack Stereo In, but with 1 channel.
   <LI><b>Jack 8ch In</b>: Same as Jack Stereo In, but with 8 channels.
+  <LI><b>Jack Stereo Out</b>: Sends a stereo sound to an external Jack port (or the soundcard). Has no audio outputs; it is a sink.
+  <LI><b>Jack Mono Out</b>: Same as Jack Stereo Out, but with 1 channel.
   <LI><b>Jack 8ch Out</b>: Same as Jack Stereo Out, but with 8 channels.
   <LI><b>System In</b>: The system input (2 channels). Usually connected to the main soundcard input.
+  <LI><b>System In Mono</b>: The system input with 1 channel.
   <LI><b>System In 8</b>: The system input with 8 channels.
   <LI><b>System Out</b>: The system output (2 channels). Connected to the system volume control in the bottom bar.
+  <LI><b>System Out Mono</b>: The system output with 1 channel.
   <LI><b>System Out 8</b>: The system output with 8 channels.
 </UL>
 
 <p>
 
-When Jack is running, the "Jack Stereo/8ch" objects connect to Jack ports that can be wired up in an external patchbay. The <b>System In</b> and <b>System Out</b> objects are always available, and are used to get audio into and out of Radium when not using Jack.
+When Jack is running, the "Jack Mono/Stereo/8ch" objects connect to Jack ports that can be wired up in an external patchbay. The <b>System In</b> and <b>System Out</b> objects are always available, and are used to get audio into and out of Radium when not using Jack.
 
 <p>
 

@@ -43,6 +43,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #endif
 
 #include <memory>
+#include <functional>
 
 #include <QStack>
 #include <QAction>
@@ -56,9 +57,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QStyleOption>
 #include <QMenuBar>
 #include <QActionGroup>
+#include <QLineEdit>
+#include <QPalette>
+#include <QSet>
 
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"
+#include "../common/FuzzySearch.h"
 #include "../audio/Envelope.hpp"
 
 #include "../embedded_scheme/s7extra_proc.h"
@@ -68,6 +73,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../api/api_proc.h"
 
+#include "Qt_colors_proc.h"
 #include "Timer.hpp"
 #include "EditorWidget.h"
 
@@ -84,6 +90,7 @@ static int g_menu_is_open = 0;
 static QStack<QMenu* >g_curr_menu;  
 
 extern QMenuBar *g_main_menu_bar;
+extern QMenuBar *g_main_menu_bar_right;
 
 int g_is_calling_from_menu = 0;
 
@@ -482,6 +489,7 @@ namespace{
   static void release_clickable_action(ClickableAction *action){    
     action->setParent(NULL);
     action->_callbacker = NULL;
+    action->setVisible(true);
     
     g_clickable_actions.insert(action->_text, action);
 
@@ -496,6 +504,7 @@ namespace{
           g_clickable_actions.remove(text, action);
           action->_callbacker = callbacker;
           action->setEnabled(true); // Might have been set to disabled last time.
+          action->setVisible(true); // Might have been hidden by the popup search filter last time.
           return action;
         }
 
@@ -568,6 +577,215 @@ namespace{
     }
   };
 
+
+  static const int POPUP_SEARCH_MIN_NUM_ENTRIES = 3;
+
+  class PopupSearchAction : public QWidgetAction
+  {
+  public:
+
+    PopupSearchAction(QObject *parent)
+      : QWidgetAction(parent)
+    {
+    }
+
+    bool event(QEvent *event) override
+    {
+      const bool ret = QWidgetAction::event(event);
+
+      QWidget *widget = defaultWidget();
+
+      if (event->type()==QEvent::ActionChanged && widget != NULL && widget->isEnabled()==false)
+        widget->setEnabled(true);
+
+      return ret;
+    }
+  };
+
+  struct PopupSearchEntry
+  {
+    QAction *action;
+    QString folded_text;
+  };
+
+  struct PopupSearchSubmenu
+  {
+    QAction *action;
+    QMenu *menu;
+    QString folded_title;
+  };
+
+  struct PopupSearchMenu
+  {
+    QVector<PopupSearchEntry> entries;
+    QVector<QAction*> separators;
+    QVector<PopupSearchSubmenu> submenus;
+  };
+
+  struct PopupSearchState
+  {
+    QPointer<QMenu> root_menu;
+    QPointer<QLineEdit> lineedit;
+    QPointer<QWidgetAction> lineedit_action;
+    QHash<QMenu*, PopupSearchMenu> menus;
+    QSet<QMenu*> all_menus;
+    QString query;
+    bool waiting = false;
+    QString waiting_text;
+  };
+
+  static std::shared_ptr<PopupSearchState> g_popup_search_state;
+
+  // Used when a fuzzy search for all main menu entries is requested from an open main menu.
+  static QString g_pending_popup_search_query;
+  static QPoint g_pending_popup_position;
+  static bool g_has_pending_popup_position = false;
+
+  // Used while showing a temporary wait popup while the search popup is being built.
+  static bool g_force_popup_search_lineedit = false;
+  static QString g_popup_search_waiting_text;
+  static std::shared_ptr<PopupSearchState> g_waiting_popup_search_state;
+
+  struct PopupSearchResult
+  {
+    bool has_visible_entries;
+    QAction *best_action;
+    int best_score;
+  };
+
+  static void set_active_action_if_necessary(QMenu *menu, QAction *best_action, QAction *lineedit_action)
+  {
+    if (best_action != NULL)
+    {
+      menu->setActiveAction(best_action);
+      return;
+    }
+
+    QAction *active_action = menu->activeAction();
+
+    if (active_action != NULL && active_action != lineedit_action && active_action->isVisible() && active_action->isEnabled())
+      return;
+
+    for (QAction *action : menu->actions())
+    {
+      if (action->isVisible() && !action->isSeparator() && action->isEnabled() && action != lineedit_action)
+      {
+        menu->setActiveAction(action);
+        break;
+      }
+    }
+  }
+
+  static void apply_popup_search_filter(void)
+  {
+    PopupSearchState *state = g_popup_search_state.get();
+
+    if (state == NULL)
+      return;
+
+    if (state->lineedit.isNull() || state->root_menu.isNull() || state->lineedit_action.isNull())
+      return;
+
+    const radium::FuzzySearchQuery search(state->query);
+    const bool filtering = !search.empty();
+
+    std::function<PopupSearchResult(QMenu*,bool)> doit = [&](QMenu *menu, bool force_visible) -> PopupSearchResult
+    {
+      PopupSearchMenu &search_menu = state->menus[menu];
+
+      PopupSearchResult result = {force_visible, NULL, -1};
+
+      for (const PopupSearchEntry &entry : search_menu.entries)
+      {
+        const int score = (force_visible || !filtering) ? 0 : search.score(entry.folded_text);
+        const bool visible = force_visible || !filtering || score >= 0;
+
+        entry.action->setVisible(visible);
+
+        MyQAction *myaction = dynamic_cast<MyQAction*>(entry.action);
+
+        if (myaction != NULL && myaction->_widget != NULL)
+          myaction->_widget->setVisible(visible); // QMenu doesn't hide widgets of hidden QWidgetActions.
+
+        if (visible)
+        {
+          result.has_visible_entries = true;
+
+          if (entry.action->isEnabled() && score > result.best_score)
+          {
+            result.best_score = score;
+            result.best_action = entry.action;
+          }
+        }
+      }
+
+      for (QAction *separator : search_menu.separators)
+        separator->setVisible(!filtering || force_visible);
+
+      QAction *best_own_action = result.best_action;
+
+      for (const PopupSearchSubmenu &submenu : search_menu.submenus)
+      {
+        const bool child_force_visible = force_visible || (filtering && search.matches(submenu.folded_title));
+
+        const PopupSearchResult child_result = doit(submenu.menu, child_force_visible);
+        const bool visible = child_force_visible || child_result.has_visible_entries;
+
+        submenu.action->setVisible(visible);
+
+        if (visible)
+          result.has_visible_entries = true;
+
+        if (child_result.best_action != NULL && child_result.best_score > result.best_score)
+        {
+          result.best_score = child_result.best_score;
+          result.best_action = child_result.best_action;
+        }
+      }
+
+		if (filtering && !force_visible)
+		{
+			QAction *header = NULL;
+
+			for (QAction *action : menu->actions())
+			{
+				if (action == state->lineedit_action.data())
+					continue;
+
+				if (action->isSeparator())
+				{
+					if (!action->text().isEmpty())
+						header = action;
+					continue;
+				}
+
+				if (action->isVisible() && header != NULL)
+				{
+					header->setVisible(true);
+					header = NULL;
+				}
+			}
+		}
+
+      set_active_action_if_necessary(menu, best_own_action, state->lineedit_action.data());
+
+      return result;
+    };
+
+    doit(state->root_menu.data(), false);
+
+    state->lineedit_action->setVisible(true);
+
+    QLineEdit *lineedit = state->lineedit.data();
+
+    const QString text = state->waiting ? state->waiting_text : state->query;
+
+    if (lineedit->text() != text)
+      lineedit->setText(text);
+
+    lineedit->setCursorPosition(lineedit->text().size());
+  }
+
   struct MyQMenu : public QMenu /* , radium::Timer */ {
     Q_OBJECT;
 
@@ -576,6 +794,8 @@ namespace{
     int _shortcut_width;
 
     bool _has_g_menu_is_open = false;
+
+    bool _is_part_of_main_menu = false;
 
     // Workaround. Sometimes, aboutToHide and/or aboutToShow is not called.
     struct Workaround : public radium::Timer {
@@ -650,9 +870,211 @@ namespace{
     
   public:
 
+    void navigate_qt(Qt::Key key)
+    {
+      QKeyEvent event(QEvent::KeyPress, key, Qt::NoModifier);
+      QMenu::keyPressEvent(&event);
+    }
+
+    bool handle_search_key(QKeyEvent *event)
+    {
+      PopupSearchState *state = g_popup_search_state.get();
+
+      if (state == NULL || state->lineedit_action.isNull() || !state->all_menus.contains(this))
+        return false;
+
+      const int key = event->key();
+      const Qt::KeyboardModifiers modifiers = event->modifiers();
+      QAction *lineedit_action = state->lineedit_action.data();
+
+      if (key==Qt::Key_Backspace || key==Qt::Key_Delete)
+      {
+        if (state->query.isEmpty())
+          return false;
+
+        state->query.chop(1);
+        apply_popup_search_filter();
+        event->accept();
+        return true;
+      }
+
+      if (key==Qt::Key_Escape)
+      {
+        if (state->query.isEmpty())
+          return false;
+
+        state->query = "";
+        apply_popup_search_filter();
+        event->accept();
+        return true;
+      }
+
+      if (key==Qt::Key_Up || key==Qt::Key_Down || key==Qt::Key_PageUp || key==Qt::Key_PageDown || key==Qt::Key_Home || key==Qt::Key_End)
+      {
+        QVector<QAction*> selectable_actions;
+
+        for (QAction *action : actions())
+          if (action->isVisible() && !action->isSeparator() && action->isEnabled() && action != lineedit_action)
+            selectable_actions.push_back(action);
+
+        if (selectable_actions.isEmpty())
+          return false;
+
+        if (key==Qt::Key_Home || key==Qt::Key_End)
+        {
+          const int target_index = key==Qt::Key_Home ? 0 : selectable_actions.size()-1;
+          const Qt::Key nav_key = key==Qt::Key_Home ? Qt::Key_Up : Qt::Key_Down;
+
+          for (int i = 0 ; i < selectable_actions.size()+1 ; i++)
+          {
+            if (selectable_actions.indexOf(activeAction()) == target_index)
+              break;
+
+            navigate_qt(nav_key);
+          }
+        }
+        else
+        {
+          int steps = 1;
+
+          if (key==Qt::Key_PageUp || key==Qt::Key_PageDown)
+            steps = 10;
+          else if ((modifiers & Qt::ShiftModifier) != 0)
+            steps = 4;
+
+          const Qt::Key nav_key = (key==Qt::Key_Down || key==Qt::Key_PageDown) ? Qt::Key_Down : Qt::Key_Up;
+
+          for (int i = 0 ; i < steps ; i++)
+            navigate_qt(nav_key);
+        }
+
+        event->accept();
+        return true;
+      }
+
+      if (key==Qt::Key_Return || key==Qt::Key_Enter)
+      {
+        QAction *active_action = activeAction();
+
+        if (active_action != NULL && active_action != lineedit_action && active_action->isVisible() && active_action->isEnabled())
+          return false;
+
+        for (QAction *action : actions())
+          if (action->isVisible() && !action->isSeparator() && action->isEnabled() && action != lineedit_action)
+          {
+            setActiveAction(action);
+            break;
+          }
+
+        return false;
+      }
+
+      if ((modifiers & (Qt::ControlModifier | Qt::AltModifier | Qt::MetaModifier)) != 0)
+        return false;
+
+      const QString text = event->text();
+
+      if (text.isEmpty() || !text.at(0).isPrint())
+        return false;
+
+      state->query += text;
+      apply_popup_search_filter();
+      event->accept();
+      return true;
+    }
+
+	static bool is_search_key(QKeyEvent *event)
+	{
+		if ((event->modifiers() & (Qt::ControlModifier | Qt::AltModifier | Qt::MetaModifier)) != 0)
+			return false;
+
+		switch(event->key())
+		{
+			case Qt::Key_Space:
+			case Qt::Key_Backspace:
+			case Qt::Key_Delete:
+			case Qt::Key_Escape:
+			case Qt::Key_Return:
+			case Qt::Key_Enter:
+			case Qt::Key_Tab:
+			case Qt::Key_Backtab:
+			case Qt::Key_Up:
+			case Qt::Key_Down:
+			case Qt::Key_Left:
+			case Qt::Key_Right:
+			case Qt::Key_PageUp:
+			case Qt::Key_PageDown:
+			case Qt::Key_Home:
+			case Qt::Key_End:
+				return false;
+		}
+
+		const QString text = event->text();
+
+		return !text.isEmpty() && text.at(0).isPrint();
+	}
+
+	MyQMenu *get_root_menu(void)
+	{
+		MyQMenu *menu = this;
+
+		while (true)
+		{
+			MyQMenu *parent = qobject_cast<MyQMenu*>(menu->parentWidget());
+
+			if (parent == NULL)
+				return menu;
+
+			menu = parent;
+		}
+	}
+
+	void close_main_menus(void)
+	{
+		QVector<MyQMenu*> menus;
+		MyQMenu *menu = this;
+
+		while (menu != NULL)
+		{
+			menus.push_back(menu);
+			menu = qobject_cast<MyQMenu*>(menu->parentWidget());
+		}
+
+		// Hide from the deepest menu and upwards. (hiding a submenu does not hide its parent menu)
+		for (MyQMenu *menu2 : menus)
+			menu2->hide();
+
+		if (g_main_menu_bar != NULL)
+			g_main_menu_bar->setActiveAction(NULL);
+
+		if (g_main_menu_bar_right != NULL)
+			g_main_menu_bar_right->setActiveAction(NULL);
+	}
+
     void keyPressEvent(QKeyEvent *event) override {
       
       evalScheme("(set! *last-pressed-menu-entry-widget-mouse-button* -1)"); // To avoid keybindings-configuration menu to pop up when pressing return.
+
+      if (handle_search_key(event))
+        return;
+
+      if (_is_part_of_main_menu && is_search_key(event))
+      {
+        printf("SEARCHPOPUP hook-start %f\n", TIME_get_ms());
+
+        g_pending_popup_search_query = event->text();
+        g_pending_popup_position = get_root_menu()->mapToGlobal(QPoint(0, 0));
+        g_has_pending_popup_position = true;
+
+        close_main_menus();
+
+        printf("SEARCHPOPUP hook-eval-start %f\n", TIME_get_ms());
+        evalScheme("(popup-search-all-menus)");
+        printf("SEARCHPOPUP hook-eval-done %f\n", TIME_get_ms());
+
+        event->accept();
+        return;
+      }
 
 #if defined(FOR_MACOSX)
 	  //
@@ -1152,9 +1574,18 @@ static QMenu *create_qmenu(
 {
   R_ASSERT(is_async==true); // Lots of trouble with non-async menus. (triggers qt bugs)
 
+  std::shared_ptr<PopupSearchState> search_state = is_permanent ? nullptr : std::make_shared<PopupSearchState>();
+
+  if (search_state != NULL)
+    g_popup_search_state = search_state;
+
   MyMainQMenu *menu = new MyMainQMenu(NULL, "", get_largest_shortcut_width(v, 0), is_async, is_permanent, callback2);
+  menu->_is_part_of_main_menu = is_permanent;
   if (!is_permanent)
     menu->setAttribute(Qt::WA_DeleteOnClose);
+
+  if (search_state != NULL)
+    search_state->all_menus.insert(menu);
 
   MyQMenu *curr_menu = menu;
   
@@ -1195,6 +1626,8 @@ static QMenu *create_qmenu(
         }
 
       curr_menu->addAction(separator);
+      if (search_state != NULL)
+        search_state->menus[curr_menu].separators.append(separator);
       sepdur += TIME_get_ms() - t;
       
     } else {
@@ -1202,8 +1635,14 @@ static QMenu *create_qmenu(
       if (n_submenues==getMaxSubmenuEntries()){
         double t = TIME_get_ms();
         auto *new_menu = new MyQMenu(curr_menu, "Next", get_largest_shortcut_width(v, i));
+        new_menu->_is_part_of_main_menu = is_permanent;
         subdur += TIME_get_ms()-t;
-        curr_menu->addMenu(new_menu);
+        QAction *next_action = curr_menu->addMenu(new_menu);
+        if (search_state != NULL)
+        {
+          search_state->all_menus.insert(new_menu);
+          search_state->menus[curr_menu].submenus.append(PopupSearchSubmenu{next_action, new_menu, radium::fuzzy_search_fold(new_menu->title())});
+        }
         curr_menu = new_menu;
         //curr_menu->setStyleSheet("QMenu { menu-scrollable: 1; }");
         n_submenues=0;
@@ -1284,13 +1723,18 @@ static QMenu *create_qmenu(
         parents.push(curr_menu);
         double t = TIME_get_ms();
         auto *new_menu = new MyQMenu(curr_menu, text.right(text.size() - 15), get_largest_shortcut_width(v, i+1));
+        new_menu->_is_part_of_main_menu = is_permanent;
         //new_menu->setStyleSheet("QMenu::item#subMenu{ font : bold ; font-size: 13pt; color: #ff8080;}");
         //new_menu->setStyleSheet("padding-left: 140px");
 
         subdur += TIME_get_ms()-t;
         
-        QAction *action = curr_menu->addMenu(new_menu);
-        (void)action;
+        QAction *submenu_action = curr_menu->addMenu(new_menu);
+        if (search_state != NULL)
+        {
+          search_state->all_menus.insert(new_menu);
+          search_state->menus[curr_menu].submenus.append(PopupSearchSubmenu{submenu_action, new_menu, radium::fuzzy_search_fold(new_menu->title())});
+        }
         //action->setDefaultWidget(new Sep);
         
         curr_menu = new_menu;
@@ -1426,6 +1870,10 @@ static QMenu *create_qmenu(
         double t = TIME_get_ms();
         curr_menu->addAction(action);  // are these actions automatically freed in ~QMenu? (yes, seems so) (they are probably freed because they are children of the qmenu)
 
+        if (search_state != NULL)
+          search_state->menus[curr_menu].entries.append(PopupSearchEntry{action, radium::fuzzy_search_fold(text)});
+
+
 
         /*
         {
@@ -1463,8 +1911,81 @@ static QMenu *create_qmenu(
 
   double t = TIME_get_ms();
 
-  if (menu->actions().size() > 0)
-    menu->setActiveAction(menu->actions().at(0));
+  if (search_state != NULL)
+  {
+    int num_entries = 0;
+
+    for (PopupSearchMenu &search_menu : search_state->menus)
+      num_entries += search_menu.entries.size();
+
+    if (num_entries >= POPUP_SEARCH_MIN_NUM_ENTRIES || g_force_popup_search_lineedit)
+    {
+      QLineEdit *lineedit = new QLineEdit;
+      lineedit->setFocusPolicy(Qt::NoFocus);
+      lineedit->setContextMenuPolicy(Qt::NoContextMenu);
+      lineedit->setFrame(false);
+      lineedit->setPlaceholderText("Search...");
+      lineedit->setMinimumWidth(200);
+
+      const int fontheight = R_MAX(12, get_system_fontheight());
+      const int border_width = R_MAX(1, (int)(fontheight/20.0 + 0.5));
+
+      QFont font = lineedit->font();
+      font.setPixelSize(fontheight);
+      lineedit->setFont(font);
+      lineedit->setMinimumHeight(fontheight + 2*border_width);
+      lineedit->setTextMargins((int)(border_width + 1.1*fontheight), 0, border_width, 0);
+
+      QColor background_color = get_qcolor(LOW_BACKGROUND_COLOR_NUM);
+      QColor text_color = get_qcolor(MENU_TEXT_COLOR_NUM);
+      QColor placeholder_color = text_color;
+      placeholder_color.setAlpha(128);
+
+      QPalette palette = lineedit->palette();
+      palette.setColor(QPalette::Base, background_color);
+      palette.setColor(QPalette::Window, background_color);
+      palette.setColor(QPalette::Text, text_color);
+      palette.setColor(QPalette::PlaceholderText, placeholder_color);
+      lineedit->setPalette(palette);
+
+      auto *lineedit_action = new PopupSearchAction(menu);
+      lineedit_action->setDefaultWidget(lineedit);
+      lineedit_action->setEnabled(false); // So that QMenu's own keyboard navigation skips it.
+      lineedit->setEnabled(true);         // ...but the widget itself should still look and work as normal.
+
+      search_state->root_menu = menu;
+      search_state->lineedit = lineedit;
+      search_state->lineedit_action = lineedit_action;
+
+      if (g_force_popup_search_lineedit)
+      {
+        search_state->waiting = true;
+        search_state->waiting_text = g_popup_search_waiting_text;
+        lineedit->setText(g_popup_search_waiting_text);
+      }
+
+      if (menu->actions().isEmpty())
+        menu->addAction(lineedit_action);
+      else
+        menu->insertAction(menu->actions().at(0), lineedit_action);
+    }
+  }
+
+  {
+    QAction *first_action = NULL;
+
+    for (QAction *action : menu->actions())
+    {
+      if (search_state != NULL && action == search_state->lineedit_action.data())
+        continue;
+
+      first_action = action;
+      break;
+    }
+
+    if (first_action != NULL)
+      menu->setActiveAction(first_action);
+  }
 
   R_ASSERT_NON_RELEASE(radio_buttons==NULL);
   R_ASSERT_NON_RELEASE(radio_buttons2==NULL);
@@ -1503,7 +2024,19 @@ static QMenu *create_qmenu(
 
   if(0)
     printf("      DUR: %f. clickdur: %f. checkdur: %f, subdur: %f. End: %f %f %f %f. sepdur: %f. callbackdur: %f. setdatadur: %f. Num calls to setStyle: %d / %d\n", TIME_get_ms()-time, clickdur, checkdur, subdur, t2-t,t3-t2,t4-t3,t5-t4, sepdur,callbackdur,setdatadur,0,0 ); //, num_s, num_saved);
-  
+
+  if (search_state != NULL && !search_state->waiting)
+  {
+    const QString pending_search_query = g_pending_popup_search_query;
+    g_pending_popup_search_query.clear();
+
+    if (!pending_search_query.isEmpty() && !search_state->lineedit_action.isNull())
+    {
+      search_state->query = pending_search_query;
+      apply_popup_search_filter();
+    }
+  }
+
   return menu;
 }
 
@@ -1556,6 +2089,64 @@ QMenu *GFX_create_qmenu(const vector_t &v,
 }
 
 
+// Shows a temporary popup containing all top-level main menus, with "Please wait..." in the
+// search field, while the real search popup is being built.
+void GFX_ShowPopupSearchWaitScreen(void)
+{
+  if (g_waiting_popup_search_state != NULL)
+  {
+    if (!g_waiting_popup_search_state->root_menu.isNull())
+      g_waiting_popup_search_state->root_menu->close();
+
+    g_waiting_popup_search_state = NULL;
+  }
+
+  vector_t v = {};
+
+  QMenuBar *menu_bars[2] = {g_main_menu_bar, g_main_menu_bar_right};
+
+  for (QMenuBar *menu_bar : menu_bars)
+  {
+    if (menu_bar == NULL)
+      continue;
+
+    for (QAction *action : menu_bar->actions())
+    {
+      const QString title = action->text();
+
+      VECTOR_push_back(&v, talloc_strdup((QString("[submenu start]") + title).toUtf8().constData()));
+      VECTOR_push_back(&v, talloc_strdup("[submenu end]"));
+    }
+  }
+
+  if (v.num_elements == 0)
+    return;
+
+  g_force_popup_search_lineedit = true;
+  g_popup_search_waiting_text = "Please wait...";
+
+  std::function<void(int,bool)> empty_callback3;
+
+  printf("SEARCHPOPUP wait-create-start %f\n", TIME_get_ms());
+  QMenu *menu = create_qmenu(v, true, NULL, empty_callback3, NULL, false);
+  printf("SEARCHPOPUP wait-create-done %f\n", TIME_get_ms());
+
+  g_force_popup_search_lineedit = false;
+  g_popup_search_waiting_text.clear();
+
+  g_waiting_popup_search_state = g_popup_search_state;
+
+  if (g_has_pending_popup_position)
+    safeMenuPopup(menu, g_pending_popup_position);
+  else
+    safeMenuPopup(menu);
+
+  // Make sure the wait popup is painted before the caller starts doing hard work.
+  processEventsALittleBit();
+
+  printf("SEARCHPOPUP wait-popup-done %f\n", TIME_get_ms());
+}
+
 static int64_t GFX_QtMenu(
                           const vector_t &v,
                           func_t *callback2,
@@ -1578,7 +2169,26 @@ static int64_t GFX_QtMenu(
   
   if (is_async){
 
-    safeMenuPopup(menu);
+    if (g_has_pending_popup_position)
+    {
+      const QPoint pos = g_pending_popup_position;
+      g_has_pending_popup_position = false;
+      safeMenuPopup(menu, pos);
+    }
+    else
+    {
+      safeMenuPopup(menu);
+    }
+
+    if (g_waiting_popup_search_state != NULL)
+    {
+      std::shared_ptr<PopupSearchState> waiting_state = g_waiting_popup_search_state;
+      g_waiting_popup_search_state = NULL;
+
+      if (!waiting_state->root_menu.isNull())
+        waiting_state->root_menu->close();
+    }
+
     return API_get_gui_from_existing_widget(menu);
     
   } else {

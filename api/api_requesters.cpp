@@ -47,6 +47,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "api_requesters_proc.h"
 
+#include "../Qt/Qt_PopupMenu_proc.h"
+
 #include "api_common_proc.h"
 
 extern struct Root *root;
@@ -326,6 +328,10 @@ int64_t popupMenu(dynvec_t strings, func_t* callback){
   //printf("   NUM_elements: %d\n", vec.num_elements);
   
   return GFX_Menu2(window, NULL, "", vec, callback, true, true);
+}
+
+void showPopupSearchWaitScreen(void){
+  GFX_ShowPopupSearchWaitScreen();
 }
 
 static radium::ProtectedS7FuncVector g_popupmenu_closed_callbacks(true);

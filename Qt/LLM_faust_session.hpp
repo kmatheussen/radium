@@ -342,6 +342,25 @@ public:
 		if (!llm_compile_done)
 		  return;
 
+		// Keep the conversation history truthful: fix/cleanup rounds do not
+		// append to _llm_history, so after a successful round the last
+		// assistant message is still the buggy original reply. Replace it
+		// with the corrected program, otherwise the next generation request
+		// re-serves the buggy version and the model reintroduces the fixed
+		// bug pattern (observed: a fixed bare-function reference came back
+		// in the very next request).
+		if (llm_compile_was_fix && !_llm_history.isEmpty())
+		{
+			QJsonObject last = _llm_history.at(_llm_history.size() - 1).toObject();
+			if (last.value(QStringLiteral("role")).toString() == QStringLiteral("assistant"))
+			{
+				const QString corrected = _host.get_code();
+				last[QStringLiteral("content")] = corrected;
+				_llm_history.replace(_llm_history.size() - 1, last);
+				trim_llm_history(corrected.size());
+			}
+		}
+
 		QStringList lint_warnings = lint_findings(_host.get_code(), false);
 
 		if (_host.is_effect())
@@ -385,13 +404,37 @@ public:
 			llm_log_note("LLM code compiled, static check findings:\n" + lint_warnings.join("\n"));
 
 			const bool free_mode = get_config().mode == "free";
-			if (free_mode)
+
+			// In Free mode the hosted relay pays for every round, so pure
+			// cosmetics (unused sliders) are not worth a cleanup request.
+			// But correctness findings (wrong input/output channel count,
+			// dead knobs) must not be silently kept: a 4-input effect for
+			// a 2-input prompt compiles fine, yet the plugin is broken
+			// (observed repeatedly: 'dry = _,_;' referenced in both a
+			// helper and process). Same classification as the cleanup
+			// round budget: 'is declared but never used' = cosmetic.
+			bool only_cosmetic = true;
+			for (const QString &finding : lint_warnings)
 			{
-				llm_log_note("Free mode: cleanup skipped - the program compiles, so it is kept as-is.");
+				if (!finding.contains(QStringLiteral("is declared but never used")))
+				{
+					only_cosmetic = false;
+					break;
+				}
+			}
+
+			if (free_mode && only_cosmetic)
+			{
+				// In this branch every finding is an unused-control finding.
+				const int kept = lint_warnings.size();
+				llm_log_note(QString("Free mode: cleanup skipped - the program compiles and the only findings are unused controls (%1), so it is kept as-is.").arg(kept));
 				if (llm_compile_was_fix)
-				  llm_log_note("Auto-fix/cleanup done - no static-check findings remain.");
+				  llm_log_note("Auto-fix/cleanup done - only unused controls remain.");
 				reset_loop_state();
-				_host.status(llm_compile_was_fix ? "Fixed." : "Generated.");
+				_host.status(QString("%1 %2 unused control%3 kept.")
+				             .arg(llm_compile_was_fix ? "Fixed." : "Generated.")
+				             .arg(kept)
+				             .arg(kept == 1 ? "" : "s"));
 			}
 			else
 			{
