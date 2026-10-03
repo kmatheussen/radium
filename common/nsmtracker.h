@@ -1403,12 +1403,14 @@ static inline bool doubles_are_equal(double x, double y){
 
   if (diff <= eps)
     return(true);
+#if !defined(__clang__) || !__FINITE_MATH_ONLY__
 #ifdef __cplusplus
   if ((std::isnan(x)) || (std::isnan(y)))
     return((std::isnan(x)) && (std::isnan(y)));
 #else
   if ((isnan(x)) || (isnan(y)))
     return((isnan(x)) && (isnan(y)));
+#endif
 #endif
   // I don't understand what's happening below here, but I trust Bill.
   

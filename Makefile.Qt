@@ -1100,8 +1100,8 @@ benchmark_smoothdelay:
 	@printf "\033[0;36m!!!! First: ./build_clean.sh && BUILDTYPE=RELEASE ./build_linux.sh + ctrl-c.\n"
 	@printf "!!!! To benchmark using clang: CC=clang CCC=clang++ make benchmark_smoothdelay.\033[0m\n"
 	@echo
-	$(CCC) -g -Wall $(WERROR) test/test_smoothdelay.cpp $(CPPOPT) -UNDEBUG -fPIC $(TEST_DEFS) -DBENCHMARK_SMOOTHDELAY -O3 $(SMOOTHDELAY_OPTS) -ffast-math -ffast-math #-fopt-info-vec-optimized -fopt-info-vec-all
-	$(CCC) -g -Wall $(WERROR) audio/Fade.cpp $(CPPOPT) -UNDEBUG -fPIC $(TEST_DEFS) -DBENCHMARK_SMOOTHDELAY -O3  $(SMOOTHDELAY_OPTS) -DMARCH_NATIVE_ALLOWED=1 -march=native -ffast-math #-fopt-info-vec-optimized -fopt-info-vec-all
+	$(CCC) -g -Wall $(WERROR) test/test_smoothdelay.cpp $(CPPOPT) -UNDEBUG -fPIC $(TEST_DEFS) -DBENCHMARK_SMOOTHDELAY -O3 $(SMOOTHDELAY_OPTS) -ffast-math -ffast-math -fomit-frame-pointer #-fopt-info-vec-optimized -fopt-info-vec-all
+	$(CCC) -g -Wall $(WERROR) audio/Fade.cpp $(CPPOPT) -UNDEBUG -fPIC $(TEST_DEFS) -DBENCHMARK_SMOOTHDELAY -O3  $(SMOOTHDELAY_OPTS) -DMARCH_NATIVE_ALLOWED=1 -march=native -ffast-math -fomit-frame-pointer #-fopt-info-vec-optimized -fopt-info-vec-all
 #-march=native
 
 #-fno-signed-zeros 
