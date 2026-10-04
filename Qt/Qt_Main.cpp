@@ -1401,6 +1401,15 @@ public:
 
   MyApplication(int &argc,char **argv);
 
+  // Called when the main menu search popup takes over from an Alt-opened main menu.
+  // Otherwise the menu bar can be left in "about to navigate menues" mode.
+  void reset_menu_navigation(void){
+    menu_should_be_active = 0;
+    last_key_was_lalt = false;
+    last_released_key_was_lalt = false;
+    menu_was_active_at_least_key_press = false;
+  }
+
 protected:
 
   double _time_of_last_alt = -1;
@@ -2253,10 +2262,14 @@ public slots:
     //OS_SYSTEM_ResetKeysUpDowns();
 #endif
   }
-
 };
+
 } // anon. namespace
 
+void OS_SYSTEM_reset_menu_navigation(void){
+  if (qapplication != NULL)
+    qapplication->reset_menu_navigation();
+}
 
 MyApplication::MyApplication(int &argc,char **argv)
   : QApplication(argc,argv)

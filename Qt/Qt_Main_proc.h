@@ -19,3 +19,5 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern LANGSPEC void Qt_EventHandler(void);
 
+void OS_SYSTEM_reset_menu_navigation(void);
+

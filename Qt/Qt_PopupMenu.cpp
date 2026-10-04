@@ -77,6 +77,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "Timer.hpp"
 #include "EditorWidget.h"
 
+#include "Qt_Main_proc.h"
 #include "Qt_PopupMenu_proc.h"
 
 
@@ -824,6 +825,48 @@ static void schedule_flush_pending_menu_callbacks(void)
     lineedit->setCursorPosition(lineedit->text().size());
   }
 
+  // Fully deactivate the main menu bars, including Qt's internal menu bar keyboard/popup state.
+  // Needed when the main menu search popup takes over from an Alt-opened main menu. Otherwise
+  // QMenuBar can be left in "open" mode, re-opening menus when the mouse hovers over the menu bar.
+  static void deactivate_main_menu_bars(void)
+  {
+    QMenuBar *menu_bars[2] = {g_main_menu_bar, g_main_menu_bar_right};
+
+    for (QMenuBar *menu_bar : menu_bars)
+    {
+      if (menu_bar == NULL)
+        continue;
+
+      menu_bar->setActiveAction(NULL);
+
+      // Qt clears QMenuBarPrivate::popupState and keyboardState when receiving Escape
+      // (the QKeySequence::Cancel path in QMenuBar::keyPressEvent).
+      QKeyEvent *event = new QKeyEvent(QEvent::KeyPress, Qt::Key_Escape, Qt::NoModifier);
+      qApp->postEvent(menu_bar, event);
+    }
+  }
+
+  // Called when the last menu is closed or destroyed.
+  static void menu_state_reached_zero(void)
+  {
+    schedule_flush_pending_menu_callbacks();
+
+    deactivate_main_menu_bars();
+
+    // Move Qt focus away from the main menu bar. Otherwise Qt can keep its internal
+    // menu bar keyboard/popup state, and menus are re-opened when the mouse hovers
+    // over the menu bar.
+    QTimer::singleShot(20, []{
+      if (GFX_MenuActive())
+        return;
+
+      QWidget *focus = QApplication::focusWidget();
+
+      if (focus == NULL || qobject_cast<QMenuBar*>(focus) != NULL)
+        set_editor_focus();
+    });
+  }
+
   struct MyQMenu : public QMenu /* , radium::Timer */ {
     Q_OBJECT;
 
@@ -877,7 +920,7 @@ static void schedule_flush_pending_menu_callbacks(void)
         _has_g_menu_is_open = false;
         g_curr_menu.removeAll(this);
         if (g_menu_is_open==0)
-          schedule_flush_pending_menu_callbacks();
+          menu_state_reached_zero();
       }
 
       QVector<ClickableAction*> to_remove;
@@ -911,7 +954,7 @@ static void schedule_flush_pending_menu_callbacks(void)
         g_curr_menu.removeAll(this);
 
 			if (g_menu_is_open==0)
-				schedule_flush_pending_menu_callbacks();
+				menu_state_reached_zero();
       }
     }
     
@@ -1122,6 +1165,9 @@ static void schedule_flush_pending_menu_callbacks(void)
         g_has_pending_popup_position = true;
 
         close_main_menus();
+        deactivate_main_menu_bars();
+        GFX_stop_making_main_menu_active();
+        OS_SYSTEM_reset_menu_navigation();
 
         printf("SEARCHPOPUP hook-eval-start %f\n", TIME_get_ms());
         evalScheme("(popup-search-all-menus)");
@@ -2379,7 +2425,10 @@ static void make_menu_active(int trynum, int ms){
   QTimer::singleShot(ms, [trynum]{
       
       //printf(" Hepp: %d. trynum: %d\n", g_menu_is_open, trynum);
-      
+
+      if (trying_to_make_menu_active==false) // Stopped, e.g. because the main menu search popup took over.
+        return;
+
       if(g_menu_is_open==0){
 
         //g_main_menu_bar->setFocus(Qt::MenuBarFocusReason);
@@ -2416,6 +2465,10 @@ void GFX_MakeMakeMainMenuActive(void){
 
   trying_to_make_menu_active = true;
   make_menu_active(0, 10);
+}
+
+void GFX_stop_making_main_menu_active(void){
+  trying_to_make_menu_active = false;
 }
 
 bool GFX_MenuActive(void){
