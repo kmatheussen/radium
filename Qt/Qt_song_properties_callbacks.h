@@ -106,6 +106,7 @@ class song_properties : public RememberGeometryQDialog, public Ui::Song_properti
     implicitly_mute_MIDI->setChecked(song->RT_implicitly_mute_plugin_MIDI);
     
     embed_samples->setChecked(g_curr_song_contains_embedded_samples);
+    embed_seqtrack_samples->setChecked(g_curr_song_contains_embedded_seqtrack_samples);
 
     faust_old_buggy_release->setChecked(song->RT_use_old_buggy_faust_note_release_behavior);
   }
@@ -373,6 +374,10 @@ public slots:
   
   void on_embed_samples_toggled(bool val){
     g_curr_song_contains_embedded_samples = val;
+  }
+
+  void on_embed_seqtrack_samples_toggled(bool val){
+    g_curr_song_contains_embedded_seqtrack_samples = val;
   }
 
   void on_faust_old_buggy_release_toggled(bool val){
