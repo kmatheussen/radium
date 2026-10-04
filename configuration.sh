@@ -47,7 +47,7 @@ set_var INCLUDE_PDDEV 1
 # If enabled, include the Pd2 instrument (using current Pd/libpd).
 # Only Linux for now. Other platforms ignore this variable.
 #
-set_var INCLUDE_PD2DEV 1
+set_var INCLUDE_PD2DEV 0
 
 
 
