@@ -162,6 +162,12 @@ mkdir -p "$TARGET/packages/libpd/pure-data"
 cp -a packages/libpd/pure-data/tcl "$TARGET/packages/libpd/pure-data/"
 cp -a packages/libpd/pure-data/extra "$TARGET/packages/libpd/pure-data/"
 cp -a packages/libpd/pure-data/po "$TARGET/packages/libpd/pure-data/"
+cp -a packages/libpd/pure-data/doc "$TARGET/packages/libpd/pure-data/"
+
+# The dynamically loaded Pd externals (OSC and networking objects) are built
+# by bin/packages/build.sh into bin/pd/externals.
+mkdir -p "$TARGET/pd"
+cp -a pd/externals "$TARGET/pd/"
 
 mkdir -p "$TARGET/packages/libpd/libs"
 if uname -s |grep Darwin ; then

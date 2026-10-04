@@ -1385,6 +1385,11 @@ static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, flo
 	QString search_path = get_search_path();
 	libpds2_add_to_search_path(pd, search_path.toUtf8().constData());
 
+	// Radium's dynamically loaded Pd externals (OSC and networking objects)
+	// are placed in a subdirectory of the pd directory.
+	QString externals_path = search_path + OS_get_directory_separator() + "externals";
+	libpds2_add_to_search_path(pd, externals_path.toUtf8().constData());
+
 	libpds2_set_floathook(pd, RT_pdfloathook);
 	libpds2_set_messagehook(pd, RT_pdmessagehook);
 	libpds2_set_listhook(pd, RT_pdlisthook);
