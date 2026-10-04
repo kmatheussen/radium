@@ -77,28 +77,28 @@ can_copy() {
     fi
 }
 
-GENERATED_FILES="radium|radium_linux.bin|radium.bin.exe|radium_check_jack_status|radium_check_jack_status.exe|radium_check_recent_libxcb|radium_crashreporter|radium_crashreporter.exe|radium_error_message|radium_error_message.exe|radium_plugin_scanner|radium_plugin_scanner.exe|radium_progress_window|radium_progress_window.exe|radium_show_message|keybindingsparser.pyc|keysubids.pyc|protoconfparser.pyc|color.frag.qsb|color.vert.qsb|texture_fragment.qsb|texture_vertex.qsb|llvm_math.ll|protos.conf|pd/externals/*|sounds/8067__annannienann__low-d-arh.wav.radium_peaks|scheme/api_protos.scm"
+# I.e. included
+GENERATED_FILES="radium|radium_linux.bin|radium.bin.exe|radium_check_jack_status|radium_check_jack_status.exe|radium_check_recent_libxcb|radium_crashreporter|radium_crashreporter.exe|radium_error_message|radium_error_message.exe|radium_plugin_scanner|radium_plugin_scanner.exe|radium_progress_window|radium_progress_window.exe|radium_show_message|keybindingsparser.pyc|keysubids.pyc|protoconfparser.pyc|color.frag.qsb|color.vert.qsb|texture_fragment.qsb|texture_vertex.qsb|llvm_math.ll|protos.conf|pd/externals/*|sounds/8067__annannienann__low-d-arh.wav.radium_peaks|sounds/711620__joshstovall__cymbal-roll.wav.radium_peaks|scheme/api_protos.scm"
 
-IGNORED_FILES="s7webserver/moc_s7webserver.cpp"
+# I.e. NOT included
+IGNORED_FILES="s7webserver/moc_s7webserver.cpp|*.rej|*.orig|ladspa_macos|*.radium_peaks"
 
-in_allowlist() {
-    local f
-    for f in ${GENERATED_FILES//|/ } ; do
-        if [[ "$1" = "$f" ]]; then
+matches_pattern() {
+    local item="$1" pattern
+    while IFS= read -r pattern; do
+        if [[ "$item" = $pattern ]]; then
             return 0
         fi
-    done
+    done < <(printf '%s\n' "${2//|/$'\n'}")
     return 1
 }
 
+in_allowlist() {
+    matches_pattern "$1" "$GENERATED_FILES"
+}
+
 in_ignored_files() {
-    local f
-    for f in ${IGNORED_FILES//|/ } ; do
-        if [[ "$1" = "$f" ]]; then
-            return 0
-        fi
-    done
-    return 1
+    matches_pattern "$1" "$IGNORED_FILES"
 }
 
 # Copy files which are in the git repository.
@@ -123,7 +123,8 @@ rm -f "$TMP_FILELIST"
 # Copy known generated files.
 for a in ${GENERATED_FILES//|/ } ; do
     if test -e "$a"; then
-        cp -a "$a" "$TARGET/"
+        mkdir -p "$TARGET/$(dirname "$a")"
+        cp -a "$a" "$TARGET/$a"
     fi
 done
 
@@ -271,13 +272,17 @@ while IFS= read -r line; do
     fi
 done <<< "$excluded_files"
 
-if [[ -n "$excluded_files" ]]; then
+while [[ "$unexpected_files" == *$'\n' ]]; do
+    unexpected_files="${unexpected_files%$'\n'}"
+done
+
+if [[ -n "$unexpected_files" ]]; then
     echo "Files not included because they are not in the whitelist (git repository + known generated files). To fix, either add to git (to include), add to GENERATED_FILES (to include), or add to IGNORED_FILES (to exclude, i.e. just silence the warning):"
     RED="$(tput setaf 1 2>/dev/null || printf '\033[31m')"
     RESET="$(tput sgr0 2>/dev/null || printf '\033[0m')"
     while IFS= read -r line; do
         printf '%s%s%s\n' "$RED" "$line" "$RESET"
-    done <<< "$excluded_files"
+    done <<< "$unexpected_files"
 fi
 
 if [[ $warned_about_passwords -eq 0 ]]; then
