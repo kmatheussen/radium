@@ -15,7 +15,7 @@ double g_fade_benchmark_time = 0.0;
 
 #if !defined(RADIUM_IS_TESTING)
 #  ifdef __OPTIMIZE__
-#    if !defined(RADIUM_OMIT_FRAME_POINTERS)
+#    if defined(RELEASE) && !defined(RADIUM_OMIT_FRAME_POINTERS)
 #      error "OPTIMIZE + -fno-omit-frame-pointers"
 #    endif
 #  else
