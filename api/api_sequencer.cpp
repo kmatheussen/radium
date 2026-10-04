@@ -2756,9 +2756,8 @@ int getCurrPlaylistPos(void)
       return getPlaylistPosForSeqblock(g_curr_seqblock_id);
   }
   
-  if (false) { // (is_playing() && pc->playtype==PLAYSONG) {
-
-    
+  if (is_playing() && pc->playtype==PLAYSONG)
+  {
     struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
     
     double current_seq_time;
