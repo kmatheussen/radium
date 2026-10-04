@@ -123,8 +123,14 @@ namespace{
 
     void run() override {
 #if defined(RELEASE)
+#  if defined(FOR_LINUX)
+      // Must use http and not https since JUCE on Linux is built with JUCE_USE_CURL=0
+      ATOMIC_SET(gakk, JUCE_download("http://download.radium.dog/latest-version"));
+      ATOMIC_SET(gakk2, JUCE_download("http://download.radium.dog/unstable-versions"));
+#  else
       ATOMIC_SET(gakk, JUCE_download("https://download.radium.dog/latest-version"));
       ATOMIC_SET(gakk2, JUCE_download("https://download.radium.dog/unstable-versions"));
+#  endif
 #else
       ATOMIC_SET(gakk, strdup(""));
       ATOMIC_SET(gakk2, strdup(""));
