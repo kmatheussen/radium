@@ -1020,7 +1020,7 @@ test_radium_vector:
 	ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" test/test_radium_vector
 
 test_fuzzysearch:
-	$(CCC) -Wall $(WERROR) $(filter-out -c, $(QTOPT)) -g $(ADDRESS_SANITIZE_OPTS) $(UNDEFINED_SANITIZE_OPTS) $(TEST_DEFS) -o test/test_fuzzysearch_bin test/test_fuzzysearch.cpp common/FuzzySearch.cpp $(QT_LDFLAGS)
+	$(CCC) -Wall $(WERROR) -fPIC $(filter-out -c, $(QTOPT)) -g $(ADDRESS_SANITIZE_OPTS) $(UNDEFINED_SANITIZE_OPTS) $(TEST_DEFS) -o test/test_fuzzysearch_bin test/test_fuzzysearch.cpp common/FuzzySearch.cpp $(QT_LDFLAGS)
 	ASAN_OPTIONS="detect_leaks=0,abort_on_error=1" UBSAN_OPTIONS="print_stacktrace=1:abort_on_error=1" test/test_fuzzysearch_bin
 	@echo "=== success: test_fuzzysearch ==="
 	@rm test/test_fuzzysearch_bin

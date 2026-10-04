@@ -367,48 +367,12 @@ echo "...finished"
 echo
 
 
-do_source_sanity_checks() {
-
-    echo
-    echo "Doing some source sanity checks. This might take a few seconds...."
-    echo
-    
-    if grep -n static\  */*.h */*.hpp */*/*.hpp */*/*/*.hpp */*/*/*/*.hpp */*/*.h */*/*/*/*.h */*/*.cpp */*.c */*.cpp */*.m */*/*.c */*/*.cpp */*/*/*.c */*/*/*/*.c */*/*/*.cpp 2>&1 | grep "\[" | grep -v "\[\]"|grep -v static\ void |grep -v Python-2.7.18 |grep -v python2.7/ | grep -v lrdf.c|grep -v unused_files |grep -v GTK |grep -v test\/ |grep -v X11\/ |grep -v amiga |grep -v faust-examples|grep -v temp\/ |grep -v "\[NO_STATIC_ARRAY_WARNING\]" |grep -v backup |grep -v mingw |grep -v Dropbox |grep -v packages |grep -v python-midi |grep -v "No such file or directory" ; then
-	echo
-	echo "ERROR in line(s) above. Static arrays may decrease GC performance notably.";
-	echo
-	exit -1
-    fi
-    
-    if [ -d .git ] ; then
-	if git grep -n R_ASSERT|grep \=|grep -v \=\=|grep -v \!\=|grep -v \>\=|grep -v \<\= |grep -v build_linux_common.sh ; then
-            echo
-            echo "ERROR in line(s) above. An R_ASSERT line is possibly wrongly used.";
-            echo
-            exit -1
-	fi            
-	
-	if git grep -n assert\(|grep -v START_JUCE_APPLICATION |grep -v assert\(\) |grep \=|grep -v \=\=|grep -v \!\=|grep -v \>\=|grep -v \<\= |grep -v build_linux_common.sh ; then
-            echo
-            echo "ERROR in line(s) above. An R_ASSERT line is possibly wrongly used.";
-            echo
-            exit -1
-	fi            
-	
-	if git grep -n -e if\( --or -e if\ \( *|grep \=|grep -v \=\=|grep -v \!\=|grep -v \>\=|grep -v \<\=|grep -v pluginhost|grep -v bin/scheme|grep -v rtmidi|grep -v python|grep -v amiga|grep -v unused_files|grep -v weakjack|grep -v radium_wrap_1.c|grep -v keybindings.conf |grep -v bin/help | grep -v Visualization-Library-master|grep -v "\[NO_IF_=_WARNING\]" |grep -v faust_llm_test ; then
-            echo
-            echo "ERROR in line(s) above. A single '=' can not be placed on the same line as an if.";
-            echo
-            exit -1
-	fi            
-    fi
-}
-
 if [[ $BUILDTYPE == RELEASE ]] ; then
-    do_source_sanity_checks
+    ./do_source_sanity_checks.sh
 elif [ $(($RANDOM % 20)) -eq 0 ]; then
-    do_source_sanity_checks
+    ./do_source_sanity_checks.sh
 fi
+
 
 echo "Build finished."
 

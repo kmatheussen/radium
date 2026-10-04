@@ -153,6 +153,10 @@ pd_t *libpds2_create(bool use_gui, const char* libdir)
 		char extra_path[1040];
 		snprintf(extra_path, sizeof(extra_path), "%s/extra", pd->libdir);
 		libpd_add_to_search_path(extra_path);
+
+		// Set sys_libdir and the help path, so that help patches shipped
+		// with libpd (doc/5.reference) can be found.
+		libpd_set_libdir(pd->libdir);
 	}
 
 	// Note: use_gui and libdir are stored, but the GUI is not started here.

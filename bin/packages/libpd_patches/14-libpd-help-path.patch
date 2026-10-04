@@ -1,0 +1,35 @@
+diff -ruN a/libpd_wrapper/z_libpd.c b/libpd_wrapper/z_libpd.c
+--- a/libpd_wrapper/z_libpd.c	2026-09-29 21:27:28.295435861 +0200
++++ b/libpd_wrapper/z_libpd.c	2026-09-29 21:32:52.016326841 +0200
+@@ -724,3 +724,20 @@
+ void sys_loadpreferences(const char *filename, int startingup) {}
+ int sys_oktoloadfiles(int done) {return 1;}
+ void sys_savepreferences(const char *filename) {} // used in s_path.c
++
++// Radium: set the directory of the libpd distribution at runtime, and add
++// its documentation to the help path. (libpd_init() sets sys_libdir to the
++// empty symbol, and sys_init_paths(), which normally does this, is only
++// called from sys_main().)
++void libpd_set_libdir(const char *path) {
++  char buf[MAXPDSTRING];
++  if (path == NULL)
++    return;
++  sys_lock();
++  sys_libdir = gensym(path);
++  snprintf(buf, MAXPDSTRING, "%s/extra", path);
++  sys_setextrapath(buf);
++  snprintf(buf, MAXPDSTRING, "%s/doc/5.reference", path);
++  STUFF->st_helppath = namelist_append_files(STUFF->st_helppath, buf);
++  sys_unlock();
++}
+diff -ruN a/libpd_wrapper/z_libpd.h b/libpd_wrapper/z_libpd.h
+--- a/libpd_wrapper/z_libpd.h	2026-09-29 21:27:28.295435861 +0200
++++ b/libpd_wrapper/z_libpd.h	2026-09-29 21:32:56.393352411 +0200
+@@ -35,6 +35,7 @@
+ /// relative paths are relative to the current working directory
+ /// unlike desktop pd, *no* search paths are set by default (ie. extra)
+ EXTERN void libpd_add_to_search_path(const char *path);
++EXTERN void libpd_set_libdir(const char *path);
+ 
+ /* opening patches */
+ 
