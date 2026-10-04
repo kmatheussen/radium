@@ -226,6 +226,58 @@ build_libpd() {
 }
 
 
+# Build the dynamically loaded Pd externals used by the Pd2 instrument
+# (OSC and networking objects). They are compiled against the libpd headers
+# with the same multi-instance settings as libpd itself (-DPDINSTANCE
+# -DPDTHREADS), since pd_this is a TLS symbol and the s_float/s_list globals
+# are per-instance macros that are not exported by the MULTI build of libpd.
+build_pd_externals() {
+
+    COMPAT_HEADER="`pwd`/pd_externals_compat.h"
+    LIBPD_INCLUDE="`pwd`/libpd/pure-data/src"
+    EXTERNALS_DIR="`pwd`/../pd/externals"
+
+    if uname -s |grep Darwin ; then
+        PDEXT=pd_darwin
+        # pd-lib-builder's name for the shared support library when both class
+        # sources and shared sources are defined.
+        SHARED_LIB=libiemnet.pd_darwin.dylib
+        # pd-lib-builder builds for the host architecture by default, which is
+        # the architecture Radium itself runs as. (The deployment target is
+        # picked up from cflags by pd-lib-builder.)
+        CFLAGS_EXTERNALS="-DPD -DPDINSTANCE -DPDTHREADS -mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET}"
+    else
+        PDEXT=pd_linux
+        SHARED_LIB=libiemnet.pd_linux.so
+        CFLAGS_EXTERNALS="-DPD -DPDINSTANCE -DPDTHREADS"
+    fi
+
+    rm -rf osc-0.3.1
+    tar xzf osc-0.3.1.tar.gz
+    # OSC_timeTag.c puts the storage class in the wrong order for compilers
+    # where PERTHREAD expands to __thread ("__thread static").
+    sed -i.bak 's/PERTHREAD static/static PERTHREAD/' osc-0.3.1/OSC_timeTag.c
+    make -C osc-0.3.1 -j`nproc` PDINCLUDEDIR="$LIBPD_INCLUDE" \
+        cflags="$CFLAGS_EXTERNALS"
+
+    rm -rf pd-iemnet-0.3.0
+    tar xzf pd-iemnet-0.3.0.tar.gz
+    # The iemnet sources target Pd <= 0.51, which still had the global
+    # error() function (pd_error() is the replacement). Makefile.local is
+    # included by the iemnet Makefile, so the flags can be added without
+    # overriding its own -DVERSION setting.
+    echo "cflags += $CFLAGS_EXTERNALS -include $COMPAT_HEADER" \
+        > pd-iemnet-0.3.0/Makefile.local
+    make -C pd-iemnet-0.3.0 -j`nproc` PDINCLUDEDIR="$LIBPD_INCLUDE"
+
+    rm -rf "$EXTERNALS_DIR"
+    mkdir -p "$EXTERNALS_DIR"
+    cp osc-0.3.1/*.$PDEXT osc-0.3.1/*-help.pd "$EXTERNALS_DIR/"
+    cp pd-iemnet-0.3.0/*.$PDEXT "pd-iemnet-0.3.0/$SHARED_LIB" \
+        pd-iemnet-0.3.0/*-help.pd pd-iemnet-0.3.0/udpsndrcv.pd "$EXTERNALS_DIR/"
+}
+
+
 build_qhttpserver() {
 
     rm -fr qhttpserver-master
@@ -369,7 +421,8 @@ fi
 
 if uname -s |grep -e Linux -e Darwin ; then
     build_libpd
-	echo "Finishec compiling libpd" # need this line to avoid script failing if the line above is commented out.
+    build_pd_externals
+    echo "Finished building libpd and pd externals" # need this line to avoid script failing if the line above is commented out.
 fi
 
 
