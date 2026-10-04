@@ -49,27 +49,34 @@ class Vst_paths_widget : public QWidget, public Ui::Vst_paths_widget{
 #if defined(FOR_MACOSX)
     path_list->addItem("/Library/Audio/Plug-Ins/VST/");
 
-#if 0
+#  if 0
     path_list->setEnabled(false);
     delete_button->setEnabled(false);
     add_button->setEnabled(false);
     open_file_dialog_button->setEnabled(false);
     path_edit->setEnabled(false);
-#else
+#  else
     path_list->hide();
     delete_button->hide();
     add_button->hide();
     open_file_dialog_button->hide();
     path_edit->hide();
     //horizontalLayout->hide();
-    groupBox->setTitle("VST plugins");
-#endif
+#    if !defined(FOR_MACOSX)
+	groupBox->setTitle("VST plugins");
+#    else
+    const int empty_box_height = groupBox->sizeHint().height();
+    groupBox->hide();
+    gridLayout->removeWidget(groupBox);
+    gridLayout->addItem(new QSpacerItem(100, empty_box_height, QSizePolicy::Expanding, QSizePolicy::Expanding), 1, 0);
+#    endif
+#  endif
     
-#else
+#else // MAC -> !MAC
     
     read_settings();
     
-#endif
+#endif // !MAC
 
 #if FOR_WINDOWS
     always_on_top->hide();
