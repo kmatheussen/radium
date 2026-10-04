@@ -16,5 +16,6 @@ void GFX_ShowPopupSearchWaitScreen(void);
 bool GFX_MenuActive();
 QMenu *GFX_GetActiveMenu(void);
 void GFX_MakeMakeMainMenuActive(void);
+void GFX_stop_making_main_menu_active(void);
 
 void GFX_call_when_menus_are_closed(std::function<void(void)> callback);
