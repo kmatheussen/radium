@@ -38,13 +38,6 @@ struct SharedVariables
   const struct STimes *times;
   const struct LocalZooms **reallines;
 
-  // The id of the seqblock that curr_playing_block was taken from. Used to detect that
-  // the painting data is stale for the current seqblock even when the block is the same
-  // (i.e. when the same block is played again in the next seqblock).
-  int64_t curr_playing_seqblock_id;
-
-  uint64_t meas_id = 0;
-
   double seqblock_stretch;
   
   bool block_is_visible;
@@ -130,7 +123,6 @@ static void GE_fill_in_shared_variables(SharedVariables *sv, int opengl_widget_h
     
     const struct SeqBlock *seqblock = seqtrack==NULL ? NULL : (struct SeqBlock*)atomic_pointer_read_relaxed((void**)&seqtrack->curr_seqblock);
     sv->curr_playing_block = seqblock==NULL ? NULL : seqblock->block;
-    sv->curr_playing_seqblock_id = seqblock==NULL ? -1 : seqblock->id;
 
     if(seqblock==NULL)
       sv->seqblock_stretch = 1.0;

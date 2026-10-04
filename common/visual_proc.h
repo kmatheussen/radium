@@ -98,49 +98,32 @@ extern DEFINE_ATOMIC(bool, atomic_must_redraw_editor);
 extern DEFINE_ATOMIC(struct Patch*, atomic_must_redraw_instrument);
 extern DEFINE_ATOMIC(bool, atomic_must_calculate_coordinates);
 
-extern DEFINE_ATOMIC(int, g_sched_n_force_redraw);
-extern DEFINE_ATOMIC(int, g_sched_n_redraw);
-extern DEFINE_ATOMIC(int, g_sched_n_editor_redraw);
-extern DEFINE_ATOMIC(int, g_sched_n_force_editor_redraw);
-extern DEFINE_ATOMIC(int, g_sched_n_calc_coords);
-
-extern void GFX_maybe_print_grayed_banner(void);
-
-extern const char *g_sched_editor_redraw_reason;
-extern DEFINE_ATOMIC(int, g_sched_editor_redraw_effect_num);
-
 extern bool g_rt_do_rerendering;
 
 // RT function.
 static inline void GFX_ForceScheduleRedraw(void){
-  ATOMIC_ADD(g_sched_n_force_redraw, 1);
   ATOMIC_SET(atomic_must_redraw, true);
 }
 
 // RT function.
 static inline void GFX_ScheduleRedraw(void){
-  ATOMIC_ADD(g_sched_n_redraw, 1);
   if(g_rt_do_rerendering)
     ATOMIC_SET(atomic_must_redraw, true);
 }
 
 // RT function.
-static inline void GFX_ScheduleEditorRedraw(const char *reason){
-  ATOMIC_ADD(g_sched_n_editor_redraw, 1);
-  g_sched_editor_redraw_reason = reason;
+static inline void GFX_ScheduleEditorRedraw(void){
   if(g_rt_do_rerendering)
     ATOMIC_SET(atomic_must_redraw_editor, true);
 }
 
 // RT function.
-static inline void GFX_ForceScheduleEditorRedraw(const char *reason){  
-  ATOMIC_ADD(g_sched_n_force_editor_redraw, 1);
-  g_sched_editor_redraw_reason = reason;
+static inline void GFX_ForceScheduleEditorRedraw(void){  
   ATOMIC_SET(atomic_must_redraw_editor, true);
 }
 
 // RT function.
-static inline void GFX_ScheduleEditorRedrawIfPatchIsCurrentlyVisible(const struct Patch *patch, const char *reason){
+static inline void GFX_ScheduleEditorRedrawIfPatchIsCurrentlyVisible(const struct Patch *patch){
   if (ATOMIC_GET(atomic_must_redraw_editor)==true)
     return;
 
@@ -151,7 +134,7 @@ static inline void GFX_ScheduleEditorRedrawIfPatchIsCurrentlyVisible(const struc
   const struct Tracks *track = block->tracks;
   while(track != NULL){
     if (track->patch==patch && track->notes!=NULL){
-      GFX_ScheduleEditorRedraw(reason);
+      GFX_ScheduleEditorRedraw();
       //printf("Updating\n");
       return;
     }
@@ -171,7 +154,6 @@ static inline void GFX_ScheduleInstrumentRedraw(struct Patch *patch){
 }
 
 static inline void GFX_ScheduleCalculateCoordinates(void){
-  ATOMIC_ADD(g_sched_n_calc_coords, 1);
   ATOMIC_SET(atomic_must_calculate_coordinates, true);
   GFX_ScheduleRedraw();
 }

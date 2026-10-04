@@ -841,8 +841,6 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
 	  use_qwerty_09_editor_subtracks->setChecked(useQwerty09EditorSubtracks());
 	  use_qwerty_af_editor_subtracks->setChecked(useQwertyAfEditorSubtracks());
 	  
-      show_grayed_out_blocks->setChecked(GL_get_show_grayed_out_blocks());
-
       colorTracksOnoff->setChecked(GL_get_colored_tracks());
 
       update_waveforms_during_playback->setChecked(SETTINGS_read_bool("enable_editor_rerendering_during_playback",true));
@@ -1143,11 +1141,6 @@ public slots:
 		setUseQwertyAfEditorSubtracks(val);
   }
 	
-  void on_show_grayed_out_blocks_toggled(bool val){
-    if (_initing==false)
-      GL_set_show_grayed_out_blocks(val);
-  }
-
   void on_colorTracksOnoff_toggled(bool val){
     if (_initing==false)
       GL_set_colored_tracks(val);

@@ -16,9 +16,6 @@ extern int g_current_barbeat_block_num;
 extern void GL_set_colored_tracks(bool onoff);
 extern bool GL_get_colored_tracks(void);
 
-extern void GL_set_show_grayed_out_blocks(bool onoff);
-extern bool GL_get_show_grayed_out_blocks(void);
-
 extern DEFINE_ATOMIC(bool, g_is_creating_all_GL_blocks);
 
 extern LANGSPEC void GL_create(const struct Tracker_Windows *window);

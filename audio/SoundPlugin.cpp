@@ -1144,7 +1144,7 @@ static void set_voice_value(struct SoundPlugin *plugin, float *voice_value, floa
     safe_float_write(voice_value, native_value);
     update_instrument_gui(plugin);
     if (plugin->type->get_peaks != NULL)
-      GFX_ScheduleEditorRedrawIfPatchIsCurrentlyVisible(const_cast<Patch*>(plugin->patch), "set_voice_value");
+      GFX_ScheduleEditorRedrawIfPatchIsCurrentlyVisible(const_cast<Patch*>(plugin->patch));
   }
 }
 

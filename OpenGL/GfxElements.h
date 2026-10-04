@@ -301,13 +301,6 @@ bool GE_start_writing(int full_height, bool block_is_visible); // 'full_height' 
 void GE_end_writing(GE_Rgb new_background_color);
 void GE_wait_until_block_is_rendered(void);
 
-// While set, all drawing operations are shifted 'y_offset' pixels down and
-// dimmed (mixed 'dim_how_much' (0-1000) towards the low editor background color,
-// and alpha multiplied by 'alpha'). Only used on the main thread while drawing
-// the grayed out preview of the next/previous block in the editor.
-void GE_set_grayed_block_mode(float y_offset, float dim_how_much, float alpha);
-void GE_unset_grayed_block_mode(void);
-
 GE_Context GE_z(const GE_Rgb rgb, const GE_Conf &conf);
 GE_Context GE_color_z(enum ColorNums colornum, const GE_Conf &conf);
 GE_Context GE_textcolor_z(enum ColorNums colornum, const GE_Conf &conf);

@@ -162,14 +162,10 @@ static void set_current_seqblock_and_block_after_stop_playing(struct Tracker_Win
 }
 
 
-extern bool g_meas_gfx_enabled;
-
 // Simpler version when using opengl
 void P2MUpdateSongPosCallBack(void){
 
   bool isplaying = ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING;
-
-  const double meas_t0 = RT_TIME_get_ms();
         
   struct Tracker_Windows *window=root->song->tracker_windows;
   struct WBlocks *wblock;
@@ -240,10 +236,6 @@ void P2MUpdateSongPosCallBack(void){
       //printf("Bef. w: %d\n",window->curr_block);
       //printf("                 GOT IT\n");
 
-      if (g_meas_gfx_enabled)
-        printf("[meas] P2M_BLOCKCHANGE curr=%d t=%.3f since_switch=%.3f\n",
-               (int)curr_block_num, RT_TIME_get_ms(), RT_TIME_get_ms() - (double)ATOMIC_GET(g_block_switch_time_ms));
-
       if (allowAutomaticallyChangingCurrentBlock())
         SelectWBlock(window, wblock, false);
       
@@ -275,13 +267,6 @@ void P2MUpdateSongPosCallBack(void){
   //GE_set_curr_realline(wblock->curr_realline);
   //  printf("till_curr_realline: %d\n",wblock->till_curr_realline);
   //ScrollEditorToRealLine(window,wblock,wblock->curr_realline);
-
-  {
-    const double meas_dur = RT_TIME_get_ms() - meas_t0;
-    if (meas_dur > 3.0 && g_meas_gfx_enabled)
-      printf("[meas] P2M dur=%.3f t=%.3f since_switch=%.3f\n",
-             meas_dur, meas_t0, RT_TIME_get_ms() - (double)ATOMIC_GET(g_block_switch_time_ms));
-  }
 
   return;
 }

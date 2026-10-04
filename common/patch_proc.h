@@ -120,15 +120,4 @@ extern LANGSPEC int PATCH_get_peaks(struct Patch *patch,
                                     float *min_value, float *max_value
                                     );
 
-extern LANGSPEC void PATCH_get_peaks_slices(struct Patch *patch,
-                                            float notenum, 
-                                            int ch, 
-                                            const struct Tracks *track, 
-                                            const int64_t *start_times,
-                                            const int64_t *end_times,
-                                            int num_slices,
-                                            float *min_values,
-                                            float *max_values
-                                            );
-
 #endif

@@ -107,7 +107,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "TextureAtlas.hpp"
 #include "Timing.hpp"
 #include "Render_proc.h"
-#include "MeasGfxDelay.hpp"
 
 #include "Widget_proc.h"
 
@@ -275,8 +274,6 @@ static double QRHI_find_current_realline_while_playing(const SharedVariables &sv
 	return sv.num_reallines;
 }
 
-static double g_hold_start_time = -1.0;
-
 static bool QRHI_find_scrollpos(const SharedVariables &sv, double &scroll_pos, double &current_realline_while_playing_out)
 {
 	R_ASSERT_NON_RELEASE(THREADING_is_qrhi_thread());
@@ -345,43 +342,6 @@ static bool QRHI_find_scrollpos(const SharedVariables &sv, double &scroll_pos, d
 		is_playing
 		? QRHI_find_current_realline_while_playing(sv, blocktime)
 		: 0.0;
-
-    // When a block switch changes the grayed out block above, keep the previous scroll
-    // position until painting data generated for the currently playing seqblock has
-    // been committed. Otherwise the stale preview of the block above would be shown for
-    // a few frames after the view wraps. (The block above is only visible at the start
-    // of a block, so holding the scroll for a frame or two is barely visible.)
-    {
-      static double held_playing_realline = 0.0;
-
-      const bool hold_condition = is_playing
-        && !ATOMIC_GET_RELAXED(sv.root->play_cursor_onoff)
-        && ATOMIC_GET(g_hold_editor_scroll_until_painting_data_is_fresh)
-        && sv.curr_playing_seqblock_id != ATOMIC_GET(g_curr_playing_seqblock_id);
-
-      bool hold = hold_condition;
-
-      if (hold_condition)
-      {
-        const double now = RT_TIME_get_ms();
-        if (g_hold_start_time < 0.0)
-          g_hold_start_time = now;
-        else if (now - g_hold_start_time > 250.0)
-          hold = false; // Safety valve: don't freeze forever if the editor redraw is stuck.
-      }
-      else
-      {
-        if (g_hold_start_time >= 0.0)
-          printf("[grayed] HOLD-EXIT gen=%lld held=%.3fms\n",
-                 (long long)ATOMIC_GET(g_block_switch_generation), RT_TIME_get_ms() - g_hold_start_time);
-        g_hold_start_time = -1.0;
-      }
-
-      if (hold)
-        current_realline_while_playing = held_playing_realline;
-      else
-        held_playing_realline = current_realline_while_playing;
-    }
     
     R_ASSERT_NON_RELEASE(current_realline_while_playing >= 0);
 
@@ -1339,13 +1299,7 @@ public:
 		QRHI_maybe_check_for_slow_rendering();
 
 		if (_painting_data == nullptr) // Note: Only happens during startup, if at all.
-		{
-			MEAS_GFX("[meas] DROP id=0 t=%.3f since_switch=%.3f reason=no_painting_data\n",
-			       RT_TIME_get_ms(), meas_gfx::since_switch_ms());
 			return;
-		}
-
-		const uint64_t meas_id = _painting_data->shared_variables.meas_id;
 		
 		auto &sv = _painting_data->shared_variables;
 
@@ -1388,11 +1342,7 @@ public:
 		double current_realline_while_playing = 0.0;
 
 		if (!QRHI_find_scrollpos(sv, scroll_pos, current_realline_while_playing))
-		{
-			MEAS_GFX("[meas] DROP id=%llu t=%.3f since_switch=%.3f reason=find_scrollpos\n",
-			       (unsigned long long)meas_id, RT_TIME_get_ms(), meas_gfx::since_switch_ms());
 			return;
-		}
 
 		if (ATOMIC_GET(pc->player_state) != PLAYER_STATE_PLAYING)
 		{
@@ -1602,14 +1552,6 @@ public:
 			_texture_renderer_static.QRHI_render_frame(command_buffer);
 		}		
 		command_buffer->endPass();
-
-		if (meas_id != _meas_last_drawn_painting_id)
-		{
-			_meas_last_drawn_painting_id = meas_id;
-			MEAS_GFX("[meas] FIRST_DRAW id=%llu t=%.3f since_switch=%.3f scroll=%.3f\n",
-			       (unsigned long long)meas_id, RT_TIME_get_ms(), meas_gfx::since_switch_ms(), scroll_pos);
-		}
-		_meas_curr_frame_painting_id = meas_id;
 
 		safe_volatile_float_write(&g_scroll_pos, scroll_pos);
 	}
@@ -2018,7 +1960,7 @@ void GE_set_font(const QFont &font)
 	if (g_window)
 	{
 		g_window->MAIN_setFont(font);
-		GFX_ForceScheduleEditorRedraw("set_font"); // New font will be set before starting new paint.
+		GFX_ForceScheduleEditorRedraw(); // New font will be set before starting new paint.
 	}
 }
 
@@ -2068,22 +2010,8 @@ void GL_set_new_painting_data(r::PaintingData *painting_data, GE_Rgb new_backgro
 		});
 
 	// ---- Phase 2: RHI thread. Atomically commit, swap, and delete ----
-	const uint64_t meas_id = painting_data->shared_variables.meas_id;
-	const double meas_glcreate_start = meas_gfx::glcreate_start_ms;
-	const int64_t meas_gen = meas_gfx::glcreate_gen;
-	const int meas_call = meas_gfx::glcreate_call;
-
-	g_window->MAIN_put_event([painting_data, new_background_color, meas_id, meas_glcreate_start, meas_gen, meas_call](void)
+	g_window->MAIN_put_event([painting_data, new_background_color](void)
 		{
-			MEAS_GFX("[meas] COMMIT id=%llu gen=%lld call=%d t=%.3f since_switch=%.3f glcreate_dur=%.3f matched=%d\n",
-			       (unsigned long long)meas_id,
-			       (long long)meas_gen,
-			       meas_call,
-			       RT_TIME_get_ms(),
-			       meas_gfx::since_switch_ms(),
-			       RT_TIME_get_ms() - meas_glcreate_start,
-			       painting_data->shared_variables.curr_playing_seqblock_id == ATOMIC_GET(g_curr_playing_seqblock_id) ? 1 : 0);
-
 			// Commit all published buffers. Must happen before _painting_data swap
 			// so that QRHI_customRender() always sees consistent vertex data + painting data.
 
@@ -2095,23 +2023,6 @@ void GL_set_new_painting_data(r::PaintingData *painting_data, GE_Rgb new_backgro
 			// Now swap painting data and background color atomically with the buffer commits.
 			auto *old = g_window->_painting_data;
 			g_window->_painting_data = painting_data;
-
-			// Release the scroll hold once painting data generated for the currently
-			// playing seqblock has been committed.
-			if (painting_data->shared_variables.curr_playing_seqblock_id == ATOMIC_GET(g_curr_playing_seqblock_id))
-			{
-				static int64_t gt_last_logged_gen = -1;
-				const double gt_now = RT_TIME_get_ms();
-				const int64_t gt_gen = ATOMIC_GET(g_block_switch_generation);
-				if (gt_gen != gt_last_logged_gen)
-				{
-					gt_last_logged_gen = gt_gen;
-					const double gt_hold = g_hold_start_time < 0.0 ? -1.0 : gt_now - g_hold_start_time;
-					printf("[grayed] COMMIT gen=%lld latency=%.3fms hold=%.3fms\n",
-					       (long long)gt_gen, gt_now - (double)ATOMIC_GET(g_block_switch_time_ms), gt_hold);
-				}
-				ATOMIC_SET(g_hold_editor_scroll_until_painting_data_is_fresh, false);
-			}
 
 			GE_set_curr_realline(painting_data->shared_variables.curr_realline);
 

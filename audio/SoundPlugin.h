@@ -384,11 +384,6 @@ typedef struct SoundPluginType{
   // Returns the number of channels it can provide peaks for. (calling this function with ch=-1 is considered a dummy operation, except that the return value is correct)
   int (*get_peaks)(struct SoundPlugin *plugin, float note_num, int ch, float pan, int64_t start_time, int64_t end_time, float *min_value, float *max_value);
 
-  // Optional. If non-NULL, called instead of looping 'get_peaks' once per time slice.
-  // 'start_times'/'end_times' are sorted in increasing order. Computed min/max values are merged
-  // into 'min_values'/'max_values' (which are pre-initialized to 0).
-  int (*get_peaks_slices)(struct SoundPlugin *plugin, float note_num, int ch, float pan, const int64_t *start_times, const int64_t *end_times, int num_slices, float *min_values, float *max_values);
-
   int (*get_effect_format)(struct SoundPlugin *plugin, int effect_num); // Must return one of the EFFECT_* values above.
 
   const char *(*get_effect_name)(const struct SoundPlugin *plugin, int effect_num); // The effect name is used as effect id. Two effects can not have the same name. The returned name is already stored somewhere in memory so we don't have to care about gc-safety.
