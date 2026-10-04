@@ -864,7 +864,12 @@
                                      parent-instrument-id
                                      instrument-id))
   
-  (popup-menu (<-> "----------Insert")
+  (popup-menu (<-> "----------" (<ra> :get-instrument-name instrument-id))
+              (list "Set as current instrument"
+                    :enabled (not (equal? instrument-id (<ra> :get-current-instrument)))
+                    (lambda ()
+                      (<ra> :set-current-instrument instrument-id #f #f)))
+              (<-> "----------Insert")
               (get-insert-plugin-entry curr-plugin-instrument
                                        #t
                                        is-top-instrument
@@ -1178,9 +1183,11 @@
                                                                   (= state *is-pressing*)))
                                     
                                     (cond ((= state *is-entering*)
+					                       ;;(c-display "GAKKGAKK ENTER " effect-name)
                                            (set! is-hovering #t)
                                            (<gui> :update widget))
                                           ((= state *is-leaving*)
+					                       ;;(c-display "GAKKGAKK LEAVE " effect-name)
                                            (set! is-hovering #f)
                                            (<gui> :update widget)))
                                     
