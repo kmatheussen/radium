@@ -1,4 +1,50 @@
-Changes 8.0.53 -> 8.1.49:
+Changes 8.1.49 -> 8.1.54:
+* Editor: Fix rare undefined behavior in rendering.
+* Editor: Paint pitch lines on top of note background boxes
+  in wide mode.
+* Playlist: Fix current position not updated while playing
+  song.
+* Mixer: Add "Set as current instrument" entry in the top of
+  the main instrument popup menu.
+* Prefs/Mac: Remove unused "VST plugins" box in preferences.
+* Sequencer: Option to embed sequencer audio files in song
+  file.
+* Menus: Ensure menu is closed before running command.
+* Mixer: Don't paint pan position when panning is disabled.
+  This makes it easier to see see whether panning is enabled
+  or not.
+* Mixer: Make it possible to assign keybinding for panning
+  enabled/disabled popup menu entry.
+* Audio: New modules: "System In Mono", "System Out Mono",
+  "Jack Mono In", "Jack Mono Out".
+* Mixer: Fix smooth VU meters in the mixer and the sequencer.
+* Audio: Optimized SmoothDelay and RT_fade. 16.5% improvement
+  for gcc, and 10.3% improvement for clang. These are the
+  most important DSP functions to optimize in Radium. Gcc is
+  still faster than clang.
+* Linux: Add "Copy to clipboard" button to the
+  "radium_show_message" program. ("radium_show_message is
+  used to show error messages when starting up the program,
+  e.g. to inform about missing dependencies.)
+* Main menus: Add search option (including fuzzy-search).
+  After the main menu has opened (e.g. by pressing left alt),
+  you can start searching directly by writing on the
+  keyboard.
+* Gui: Add search field to the top of all popup menus. The
+  search field automatically gets keyboard focus. The feature
+  includes fuzzy search.
+* Faust2: Improve LLM prompt option. Should generate better
+  faust programs.
+* Faust2: Fix saving/loading LLM history between sessions.
+* Editor: Silence an assertion.
+* Editor: Fix flickering when dragging scrollbar to the
+  right.
+* Soundfile saver: Put comment in dialog how to save
+  soundfiles if you can't render faster than realtime.
+
+
+
+Changes 8.0.54 -> 8.1.49:
 * FaustDev2: Lots of auto-training fixes, trained both on
   deepseek flash (no thinking) and chat-gpt 5.6 luna (no
   thinking). This means that the LLM prompt almost always
