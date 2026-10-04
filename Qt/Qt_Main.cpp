@@ -481,6 +481,7 @@ void __sanitizer_free_hook(const volatile void *ptr){
   g_is_allocating_or_freeing = false;
 #endif  
 }
+	
 }
 
 
@@ -624,6 +625,7 @@ void operator delete(void *mem, std::nothrow_t const&)
 
 #include "../OpenGL/Render_proc.h"
 #include "../OpenGL/Widget_proc.h"
+#include "../OpenGL/MeasGfxDelay.hpp"
 
 #include "../embedded_scheme/s7extra_proc.h"
 #include "../embedded_scheme/scheme_proc.h"
@@ -2704,6 +2706,14 @@ protected:
     
     if (g_is_loading==true)
       return;
+
+    {
+      static double meas_last_timer = -1.0;
+      const double meas_now = RT_TIME_get_ms();
+      if (meas_last_timer > 0.0 && meas_now - meas_last_timer > 20.0)
+        MEAS_GFX("[meas] TIMER_GAP gap=%.3f t=%.3f\n", meas_now - meas_last_timer, meas_now);
+      meas_last_timer = meas_now;
+    }
 
     g_main_timer_num_calls++; // Must be placed here since 'is_called_every_ms' depends on it.
 

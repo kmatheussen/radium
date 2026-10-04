@@ -1146,7 +1146,7 @@ struct Sample{
         //printf(" PLAYING SAMPLE. Time: %f\n", (double)curr_start_time / (double)pc->pfreq);
         
         atomic_pointer_write_relaxed((void**)&seqtrack->curr_sample_seqblock, (void*)_seqblock.data()); // bang!
-        GFX_ScheduleEditorRedraw();
+          GFX_ScheduleEditorRedraw("seqtrack_sample_stop");
         
         _is_playing = true;
         
@@ -1157,7 +1157,7 @@ struct Sample{
         
         if (atomic_pointer_read_relaxed((void**)&seqtrack->curr_sample_seqblock)==_seqblock.data()){
           atomic_pointer_write_relaxed((void**)&seqtrack->curr_sample_seqblock, NULL); // For rendering name of sample in editor when this seqtrack is current seqtrack.
-          GFX_ScheduleEditorRedraw();
+        GFX_ScheduleEditorRedraw("seqtrack_sample_start");
         }
 
         //printf("Calling RT_stop_playing\n");

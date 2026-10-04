@@ -400,7 +400,7 @@ public:
               if (ATOMIC_GET(track->is_recording) == false){
                 ATOMIC_SET(track->is_recording, true);
                 if (ATOMIC_GET(g_curr_block)==block)
-                  GFX_ScheduleEditorRedraw();
+                  GFX_ScheduleEditorRedraw("midi_recording_indicator");
               }
             }
           }

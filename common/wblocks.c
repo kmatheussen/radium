@@ -458,6 +458,8 @@ void UpdateWBlocks(struct Tracker_Windows *window){
 }
 
 
+extern bool g_meas_gfx_enabled;
+
 void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock, bool force_select){
         
       if(wblock==NULL) return;
@@ -470,7 +472,12 @@ void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock, bool fo
             //window->must_redraw=true; // At least do this. Just in case. (should probably never return here)
             return;
           }
-      
+
+      const double meas_t0 = RT_TIME_get_ms();
+      if (g_meas_gfx_enabled)
+        printf("[meas] SELECTWBLOCK enter t=%.3f since_switch=%.3f curr=%d force=%d\n",
+               meas_t0, RT_TIME_get_ms() - (double)ATOMIC_GET(g_block_switch_time_ms), (int)wblock->l.num, force_select);
+
       EVENTLOG_add_event("SelectWBlock 1");
       
       g_assert_not_stopping_player++; // A lot of things happens here. Assert that we are not stopping the player.
@@ -541,6 +548,11 @@ void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock, bool fo
       SEQUENCER_update(SEQUPDATE_TIME | SEQUPDATE_PLAYLIST);
       
       window->must_redraw = true;
+
+      if (g_meas_gfx_enabled)
+        printf("[meas] SELECTWBLOCK dur=%.3f t=%.3f since_switch=%.3f curr=%d\n",
+               RT_TIME_get_ms() - meas_t0, meas_t0,
+               RT_TIME_get_ms() - (double)ATOMIC_GET(g_block_switch_time_ms), (int)wblock->l.num);
 
       g_assert_not_stopping_player--;
 }

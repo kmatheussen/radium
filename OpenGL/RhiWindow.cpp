@@ -15,6 +15,7 @@
 #include "../common/nsmtracker.h"
 
 #include "RhiWindow.hpp"
+#include "MeasGfxDelay.hpp"
 #include "Widget_proc.h"
 //#include "Vertices.hpp"
 extern QRhi *g_rhi;
@@ -215,6 +216,8 @@ void radium::RhiWindow::QRHI_handle_thread_events(void)
 
 		//if (g_sem.tryAcquire(1, QDeadlineTimer(16)))
 		//g_sem.acquire();
+		int meas_drained = 0;
+		const double meas_drain_t0 = RT_TIME_get_ms();
 		while (g_sem.tryAcquire())
 		{
 			//printf("1.  Got message that threre is a new event on queue\n");
@@ -235,7 +238,13 @@ void radium::RhiWindow::QRHI_handle_thread_events(void)
 			//printf("2.  Got event from queue: Running now.\n");
 			
 			func();
-		}		
+
+			meas_drained++;
+		}
+
+		if (meas_drained > 0)
+			MEAS_GFX("[meas] DRAIN n=%d dur=%.3f t=%.3f\n",
+			       meas_drained, RT_TIME_get_ms() - meas_drain_t0, meas_drain_t0);
 
 		if (_stop_rendering)
 			QThread::msleep(5);
@@ -565,7 +574,9 @@ void radium::RhiWindow::QRHI_render()
 //! [render-resize]
 
 //! [beginframe]
+    const double meas_begin_t0 = RT_TIME_get_ms();
     QRhi::FrameOpResult result = _rhi->beginFrame(_swap_chain);
+    double meas_begin_t1 = RT_TIME_get_ms();
     if (result == QRhi::FrameOpSwapChainOutOfDate)
 	{
         QRHI_resizeSwapChain();
@@ -573,6 +584,7 @@ void radium::RhiWindow::QRHI_render()
             return;
 		
         result = _rhi->beginFrame(_swap_chain);
+        meas_begin_t1 = RT_TIME_get_ms();
     }
     if (result != QRhi::FrameOpSuccess)
 	{
@@ -584,8 +596,34 @@ void radium::RhiWindow::QRHI_render()
 QRHI_customRender();
 //! [beginframe]
 
+    const double meas_custom_t1 = RT_TIME_get_ms();
+
 //! [request-update]
     _rhi->endFrame(_swap_chain);
+
+    const double meas_end_t1 = RT_TIME_get_ms();
+
+    if (_meas_curr_frame_painting_id != 0 && _meas_curr_frame_painting_id != _meas_last_presented_painting_id)
+    {
+        _meas_last_presented_painting_id = _meas_curr_frame_painting_id;
+        MEAS_GFX("[meas] PRESENT id=%llu t=%.3f since_switch=%.3f begin=%.3f custom=%.3f end=%.3f\n",
+               (unsigned long long)_meas_curr_frame_painting_id,
+               meas_end_t1,
+               meas_gfx::since_switch_ms(),
+               meas_begin_t1 - meas_begin_t0,
+               meas_custom_t1 - meas_begin_t1,
+               meas_end_t1 - meas_custom_t1);
+    }
+    else if (meas_begin_t1 - meas_begin_t0 > 50.0 || meas_custom_t1 - meas_begin_t1 > 50.0 || meas_end_t1 - meas_custom_t1 > 50.0)
+    {
+        MEAS_GFX("[meas] SLOWFRAME id=%llu t=%.3f begin=%.3f custom=%.3f end=%.3f\n",
+               (unsigned long long)_meas_curr_frame_painting_id,
+               meas_end_t1,
+               meas_begin_t1 - meas_begin_t0,
+               meas_custom_t1 - meas_begin_t1,
+               meas_end_t1 - meas_custom_t1);
+    }
+
 
     // Always request the next frame via requestUpdate(). On some platforms this is backed
     // by a platform-specific solution, e.g. CVDisplayLink on macOS, which is potentially

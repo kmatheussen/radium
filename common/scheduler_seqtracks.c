@@ -16,10 +16,18 @@
 
 #define G_NUM_ARGS 6
 
+DEFINE_ATOMIC(int64_t, g_curr_playing_seqblock_id) = -1;
+DEFINE_ATOMIC(bool, g_hold_editor_scroll_until_painting_data_is_fresh) = false;
+DEFINE_ATOMIC(int64_t, g_block_switch_time_ms) = 0;
+DEFINE_ATOMIC(int64_t, g_block_switch_generation) = 0;
+
 static int64_t RT_scheduled_seqblock(struct SeqTrack *seqtrack, int64_t time, union SuperType *args);
 
 static int64_t RT_scheduled_end_of_seqblock(struct SeqTrack *seqtrack, int64_t seqtime, union SuperType *args){
   atomic_pointer_write_relaxed((void**)&seqtrack->curr_seqblock, NULL);
+
+  if (seqtrack == RT_get_curr_seqtrack())
+    ATOMIC_SET(g_curr_playing_seqblock_id, -1);
 
 #if 1
   struct SeqBlock *seqblock = args[0].pointer;
@@ -191,26 +199,55 @@ static int64_t RT_scheduled_seqblock(struct SeqTrack *seqtrack, int64_t seqtime,
     // Any value less than -10 will delay rendering the new block. Instead we wait until player.c is called and a proper player_time value is calculated.
     // To avoid jumpy graphics.
     ATOMIC_DOUBLE_SET(seqblock->block->player_time, -100.0);
+
+    if (seqtrack == RT_get_curr_seqtrack())
+    {
+      ATOMIC_SET(g_curr_playing_seqblock_id, seqblock->id);
+      ATOMIC_SET(g_block_switch_time_ms, (int64_t)RT_TIME_get_ms());
+      ATOMIC_ADD(g_block_switch_generation, 1);
+    }
   }
   
-  // Manually call GFX_ScheduleEditorRedraw() if playing the same block again but with settings in the the seqblocks that would cause editor to be rendered differently.
-  if (prev_seqblock != NULL && seqblock!=prev_seqblock){
+  // When the same block is played again in the next seqblock, the current block does
+  // not change, so the editor is not redrawn automatically, but the grayed out blocks
+  // above/below may still have changed. Force a redraw in that case.
+  //
+  // Also, when the block above changes, hold back the scroll until the new painting
+  // data has been committed, so we don't show the stale block above for a few frames.
+  // (The block above is only visible at the start of a block, so holding the scroll
+  // for a frame or two is barely visible.)
+  if (playtype == PLAYSONG && seqtrack == RT_get_curr_seqtrack() && prev_seqblock != NULL && seqblock != prev_seqblock && seqblock->block == prev_seqblock->block)
+  {
     const struct Blocks *block = seqblock->block;
-    const struct Blocks *prev_block = prev_seqblock->block;
-    if (block == prev_block){
+    const int pos              = VECTOR_find_pos(&seqtrack->seqblocks, seqblock);
+    const int prev_pos         = VECTOR_find_pos(&seqtrack->seqblocks, prev_seqblock);
+
+    // A "block switch" is when the grayed out previous block is different or the
+    // grayed out next block is different. Only then does the editor need to be
+    // re-rendered.
+    const bool neighbors_unknown = pos < 0 || prev_pos < 0;
+    const bool above_changes = neighbors_unknown || get_neighbor_block(seqtrack, pos, -1) != get_neighbor_block(seqtrack, prev_pos, -1);
+    const bool below_changes = neighbors_unknown || get_neighbor_block(seqtrack, pos, +1) != get_neighbor_block(seqtrack, prev_pos, +1);
+
+    // Per-seqblock track-disabled crossing lines.
+    bool disabled_changes = false;
+    {
       const bool *prev_disabled = prev_seqblock->track_is_disabled;
       const bool *disabled = seqblock->track_is_disabled;
-      if (prev_disabled!=NULL && disabled!=NULL){
-        for(int i=0;i<block->num_tracks;i++){
-          if(prev_disabled[i] != disabled[i]){
-#if DO_DEBUG
-            printf("   RT_scheduled_seqblock: Calling GFX_ScheduleEditorRedraw\n");
-#endif
-            GFX_ForceScheduleEditorRedraw();
+      if (prev_disabled != NULL && disabled != NULL)
+        for(int i=0;i<R_MIN(block->num_tracks, MAX_DISABLED_SEQBLOCK_TRACKS);i++)
+          if (prev_disabled[i] != disabled[i])
+          {
+            disabled_changes = true;
             break;
           }
-        }
-      }
+    }
+
+    if (above_changes || below_changes || disabled_changes)
+    {
+      if (above_changes && ATOMIC_GET(g_show_grayed_out_blocks_rt))
+        ATOMIC_SET(g_hold_editor_scroll_until_painting_data_is_fresh, true);
+      GFX_ForceScheduleEditorRedraw("neighbors_changed");
     }
   }
 
@@ -255,6 +292,9 @@ void start_seqtrack_song_scheduling(const player_start_data_t *startdata, int pl
   PLAYER_lock();{
 
     pc->playtype = playtype;
+
+    ATOMIC_SET(g_hold_editor_scroll_until_painting_data_is_fresh, false);
+    ATOMIC_SET(g_curr_playing_seqblock_id, -1);
 
     // Commented out. This can happen when receiving from MIDI input.
     // Play to an instrument that has delayed start of notes (or perhaps sending to an instrument that is delayed because of plugin delay compensation).
@@ -344,6 +384,9 @@ void start_seqtrack_block_scheduling(struct Blocks *block, const Place place, in
     pc->playtype = playtype;
       
     struct SeqTrack *seqtrack = root->song->block_seqtrack;
+
+    ATOMIC_SET(g_hold_editor_scroll_until_painting_data_is_fresh, false);
+    ATOMIC_SET(g_curr_playing_seqblock_id, -1);
 
     SCHEDULER_set_seqtrack_timing(seqtrack, seq_start_time, seq_start_time);
     RT_LPB_call_when_start_playing(seqtrack);

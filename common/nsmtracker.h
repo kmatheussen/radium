@@ -3263,6 +3263,26 @@ extern DEFINE_ATOMIC(bool, g_send_midi_input_to_current_instrument);
 extern DEFINE_ATOMIC(int, g_curr_midi_channel);
 extern DEFINE_ATOMIC(struct Blocks *, g_curr_block);
 
+// The id of the seqblock the player is currently playing. Written by the scheduler
+// (player thread). Used by the graphics code to detect that the painting data was
+// generated for a previous seqblock, even when the block is the same (i.e. when the
+// same block is played again in the next seqblock).
+extern DEFINE_ATOMIC(int64_t, g_curr_playing_seqblock_id);
+
+// When true, the editor should keep showing the last rendered scroll position until
+// painting data generated for g_curr_playing_seqblock_id has been committed. This
+// avoids showing stale grayed-out previous/next block previews when the same block is
+// played again. Set by the scheduler when a block switch changes the grayed blocks,
+// cleared by the graphics code when the new painting data has been committed.
+extern DEFINE_ATOMIC(bool, g_hold_editor_scroll_until_painting_data_is_fresh);
+
+// RT-visible mirror of the "Display grayed-out blocks before and after current block"
+// option, so the scheduler can avoid the scroll hold when the previews are disabled.
+extern DEFINE_ATOMIC(bool, g_show_grayed_out_blocks_rt);
+
+extern DEFINE_ATOMIC(int64_t, g_block_switch_time_ms);
+extern DEFINE_ATOMIC(int64_t, g_block_switch_generation);
+
 
 
 /*********************************************************************
@@ -4006,6 +4026,23 @@ static inline double get_seqtrack_reltempo(struct SeqTrack *seqtrack){
     return 1.0;
   
   return ATOMIC_DOUBLE_GET(seqblock->block->reltempo);
+}
+
+// Returns the block of the nearest seqblock holding a block in 'direction' from
+// 'pos', or NULL if there is none. Sample seqblocks are skipped. (The seqblocks
+// vector is sorted by time, so this is also the block played before/after.)
+//
+// Used by both the scheduler and the graphics code, so that they always agree on
+// which block is the neighbor.
+static inline const struct Blocks *get_neighbor_block(const struct SeqTrack *seqtrack, int pos, int direction)
+{
+	for(int i = pos + direction ; i >= 0 && i < seqtrack->seqblocks.num_elements ; i += direction)
+	{
+		const struct SeqBlock *seqblock = (const struct SeqBlock*)seqtrack->seqblocks.elements[i];
+		if (seqblock->block != NULL)
+			return seqblock->block;
+	}
+	return NULL;
 }
 
 
