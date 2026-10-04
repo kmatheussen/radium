@@ -16,6 +16,7 @@ libpds/tests/libpds_gui_test
 */#*
 #*
 bin/protos.conf
+bin/pd/externals/
 common/keyboard_sub_ids.h
 makescript.sh
 Radium-*.AppImage

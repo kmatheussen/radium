@@ -3,6 +3,9 @@
 set -eEu
 #set -x
 
+source configuration.sh
+
+
 THIS_DIR="$(dirname "$(readlink -f "$0")")"
 
 
@@ -70,7 +73,7 @@ can_copy() {
     fi
 }
 
-GENERATED_FILES="radium|radium_linux.bin|radium.bin.exe|radium_check_jack_status|radium_check_jack_status.exe|radium_check_recent_libxcb|radium_crashreporter|radium_crashreporter.exe|radium_error_message|radium_error_message.exe|radium_plugin_scanner|radium_plugin_scanner.exe|radium_progress_window|radium_progress_window.exe|radium_show_message|keybindingsparser.pyc|keysubids.pyc|protoconfparser.pyc|color.frag.qsb|color.vert.qsb|texture_fragment.qsb|texture_vertex.qsb|llvm_math.ll|protos.conf"
+GENERATED_FILES="radium|radium_linux.bin|radium.bin.exe|radium_check_jack_status|radium_check_jack_status.exe|radium_check_recent_libxcb|radium_crashreporter|radium_crashreporter.exe|radium_error_message|radium_error_message.exe|radium_plugin_scanner|radium_plugin_scanner.exe|radium_progress_window|radium_progress_window.exe|radium_show_message|keybindingsparser.pyc|keysubids.pyc|protoconfparser.pyc|color.frag.qsb|color.vert.qsb|texture_fragment.qsb|texture_vertex.qsb|llvm_math.ll|protos.conf|pd/externals/*|sounds/8067__annannienann__low-d-arh.wav.radium_peaks|scheme/api_protos.scm"
 
 in_allowlist() {
     local f
@@ -147,33 +150,35 @@ rm -fr "$TARGET/python-midi/src/sequencer_osx"
 
 
 
-# pure data
-cp -a packages/libpd-master "$TARGET/packages/"
-cd "$TARGET/packages/libpd-master"
-make clean
-rm -f libpds.o
-cd "$THIS_DIR/bin"
+# Pd1
+if [ ${INCLUDE_PDDEV} -eq 1 ] ; then
+	cp -a packages/libpd-master "$TARGET/packages/"
+	cd "$TARGET/packages/libpd-master"
+	make clean
+	rm -f libpds.o
+	cd "$THIS_DIR/bin"
+fi
 
-# official libpd (used by the Pd2 instrument).
-# The shared library is linked dynamically, while the Tcl/Tk GUI and the
-# extra abstractions are needed at runtime. (The static archive is only
-# used by libpds/tests.)
-mkdir -p "$TARGET/packages/libpd/pure-data"
-cp -a packages/libpd/pure-data/tcl "$TARGET/packages/libpd/pure-data/"
-cp -a packages/libpd/pure-data/extra "$TARGET/packages/libpd/pure-data/"
-cp -a packages/libpd/pure-data/po "$TARGET/packages/libpd/pure-data/"
-cp -a packages/libpd/pure-data/doc "$TARGET/packages/libpd/pure-data/"
 
-# The dynamically loaded Pd externals (OSC and networking objects) are built
-# by bin/packages/build.sh into bin/pd/externals.
-mkdir -p "$TARGET/pd"
-cp -a pd/externals "$TARGET/pd/"
-
-mkdir -p "$TARGET/packages/libpd/libs"
-if uname -s |grep Darwin ; then
-    cp -a packages/libpd/libs/libpd.dylib "$TARGET/packages/libpd/libs/"
-else
-    cp -a packages/libpd/libs/libpd.so "$TARGET/packages/libpd/libs/"
+# Pd2
+if [ ${INCLUDE_PD2DEV} -eq 1 ] ; then
+	mkdir -p "$TARGET/packages/libpd/pure-data"
+	cp -a packages/libpd/pure-data/tcl "$TARGET/packages/libpd/pure-data/"
+	cp -a packages/libpd/pure-data/extra "$TARGET/packages/libpd/pure-data/"
+	cp -a packages/libpd/pure-data/po "$TARGET/packages/libpd/pure-data/"
+	cp -a packages/libpd/pure-data/doc "$TARGET/packages/libpd/pure-data/"
+	
+	# The dynamically loaded Pd externals (OSC and networking objects) are built
+	# by bin/packages/build.sh into bin/pd/externals.
+	mkdir -p "$TARGET/pd"
+	cp -a pd/externals "$TARGET/pd/"
+	
+	mkdir -p "$TARGET/packages/libpd/libs"
+	if uname -s |grep Darwin ; then
+		cp -a packages/libpd/libs/libpd.dylib "$TARGET/packages/libpd/libs/"
+	else
+		cp -a packages/libpd/libs/libpd.so "$TARGET/packages/libpd/libs/"
+	fi
 fi
 
 echo "A1"
