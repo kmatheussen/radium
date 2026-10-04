@@ -3,10 +3,12 @@
 set -eEu
 #set -x
 
-source configuration.sh
-
 
 THIS_DIR="$(dirname "$(readlink -f "$0")")"
+
+pushd $THIS_DIR
+source configuration.sh
+popd
 
 
 PREFIX=$1

@@ -1561,11 +1561,15 @@ static const char *get_effect_name(const struct SoundPlugin *plugin, int effect_
 	// Return a per-thread copy instead of a pointer into the mutable
 	// controllers table. The small ring of buffers makes it safe to use the
 	// result of several calls at the same time on the same thread.
-	static __thread char name_buffers[8][PD_NAME_LENGTH];
+	enum { NUM_NAME_BUFFERS = 8 };
+	static __thread char *name_buffers = NULL;
 	static __thread int name_buffer_pos = 0;
 
-	char *ret = name_buffers[name_buffer_pos];
-	name_buffer_pos = (name_buffer_pos + 1) % (int)(sizeof(name_buffers)/sizeof(name_buffers[0]));
+	if (name_buffers == NULL)
+		name_buffers = (char*)calloc(NUM_NAME_BUFFERS, PD_NAME_LENGTH);
+
+	char *ret = name_buffers + name_buffer_pos * PD_NAME_LENGTH;
+	name_buffer_pos = (name_buffer_pos + 1) % NUM_NAME_BUFFERS;
 
 	{
 		ScopedControllersLock lock(data);

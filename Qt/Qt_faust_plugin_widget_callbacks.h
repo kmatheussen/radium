@@ -181,7 +181,7 @@ static QStringList load_llm_prompt_history_from_settings(void)
 			const QString line = QString(line_c).trimmed();
 			if (line.startsWith(key)) {
 				QString value = line.mid(key.length()).trimmed();
-				if (value.startsWith("=")) {
+				if (value.startsWith("=")) { // [NO_IF_=_WARNING]
 					history = parse_llm_prompt_history(value.remove(0, 1).trimmed());
 					break;
 				}
