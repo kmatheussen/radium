@@ -1,6 +1,7 @@
 (provide 'main_menus.scm)
 
 (my-require 'keybindings.scm)
+(my-require 'popupmenu.scm)
 
 
 (define (include-menu-item? line)

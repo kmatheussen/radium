@@ -100,10 +100,6 @@ namespace{
   static int64_t g_myactions_counter = 0;
   static QHash<int64_t, QPointer<MyQAction>> g_curr_visible_actions;
 
-  static bool _has_keyboard_focus = false; // Must be global since more than one QMenu may open simultaneously. (not supposed to happen, but it does happen)
-
-
-
   struct MyProxyStyle : public QProxyStyle {
     MyProxyStyle(){
       static QStyle *base_style = QStyleFactory::create("Fusion");
@@ -872,6 +868,18 @@ static void schedule_flush_pending_menu_callbacks(void)
 
     ~MyQMenu()
     {
+      // Sometimes aboutToHide is not called before the menu is destroyed (seen for
+      // submenus of the wait popup in the main menu search). Clean up the global menu
+      // state here as well, otherwise g_menu_is_open leaks, GFX_MenuActive() stays
+      // true forever, and all keys are eaten by menu navigation.
+      if (_has_g_menu_is_open){
+        g_menu_is_open--;
+        _has_g_menu_is_open = false;
+        g_curr_menu.removeAll(this);
+        if (g_menu_is_open==0)
+          schedule_flush_pending_menu_callbacks();
+      }
+
       QVector<ClickableAction*> to_remove;
       
       for(auto a : actions()){
@@ -897,8 +905,10 @@ static void schedule_flush_pending_menu_callbacks(void)
       if (_has_g_menu_is_open){
         g_menu_is_open--;
         _has_g_menu_is_open = false;
-        R_ASSERT_RETURN_IF_FALSE(!g_curr_menu.isEmpty());
-        g_curr_menu.pop();
+        // Remove this menu specifically instead of popping the top of the stack.
+        // Menus are not always closed in the reverse order they were opened, and
+        // aboutToHide is sometimes not called at all (handled in the destructor).
+        g_curr_menu.removeAll(this);
 
 			if (g_menu_is_open==0)
 				schedule_flush_pending_menu_callbacks();
@@ -1273,6 +1283,8 @@ static void schedule_flush_pending_menu_callbacks(void)
 
     bool _is_root;
     bool _is_permanent;
+
+    bool _has_keyboard_focus = false; // Per-instance. A global flag caused the wait popup's closeEvent to release the real popup's keyboard focus.
     
     MyMainQMenu(QWidget *parent, QString title, int shortcut_width, bool is_async, bool is_permanent, func_t *callback)
       : MyQMenu(parent, title, shortcut_width)
@@ -1300,6 +1312,11 @@ static void schedule_flush_pending_menu_callbacks(void)
       if(_do_safe_popup)
         stop_safe_popup_process();
 #endif
+
+      if (_has_keyboard_focus){
+        release_keyboard_focus_counting();
+        _has_keyboard_focus = false;
+      }
 
       API_call_me_when_a_popup_menu_has_been_closed();
     }
@@ -1380,7 +1397,7 @@ static void schedule_flush_pending_menu_callbacks(void)
         release_keyboard_focus_counting();
         _has_keyboard_focus = false;
       }
-      
+
       setPaintSequencerGrid(false);
 
       MyQMenu::closeEvent(event);
@@ -2214,6 +2231,17 @@ static int64_t GFX_QtMenu(
   
   if (is_async){
 
+    // Close the "Please wait" popup before opening the real search popup, so the two
+    // popups are never open at the same time.
+    if (g_waiting_popup_search_state != NULL)
+    {
+      std::shared_ptr<PopupSearchState> waiting_state = g_waiting_popup_search_state;
+      g_waiting_popup_search_state = NULL;
+
+      if (!waiting_state->root_menu.isNull())
+        waiting_state->root_menu->close();
+    }
+
     if (g_has_pending_popup_position)
     {
       const QPoint pos = g_pending_popup_position;
@@ -2223,15 +2251,6 @@ static int64_t GFX_QtMenu(
     else
     {
       safeMenuPopup(menu);
-    }
-
-    if (g_waiting_popup_search_state != NULL)
-    {
-      std::shared_ptr<PopupSearchState> waiting_state = g_waiting_popup_search_state;
-      g_waiting_popup_search_state = NULL;
-
-      if (!waiting_state->root_menu.isNull())
-        waiting_state->root_menu->close();
     }
 
     return API_get_gui_from_existing_widget(menu);
