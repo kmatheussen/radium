@@ -63,7 +63,7 @@ if [ -d .git ] ; then
         exit -1
 	fi            
 	
-	if git grep -n -e if\( --or -e if\ \( *|grep \=|grep -v \=\=|grep -v \!\=|grep -v \>\=|grep -v \<\=|grep -v "\[NO_IF_=_WARNING\]" |remove_known_sanity_exceptions ; then
+	if git grep -n -e 'if[(]' --or -e 'if [(] *' |grep \=|grep -v \=\=|grep -v \!\=|grep -v \>\=|grep -v \<\=|grep -v "\[NO_IF_=_WARNING\]" |remove_known_sanity_exceptions ; then
         echo
         echo "ERROR in line(s) above. A single '=' can not be placed on the same line as an if.";
         echo
