@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../api/api_requesters_proc.h"
 
 #include "Qt_Menues_proc.h"
+#include "Qt_PopupMenu_proc.h"
 
 
 extern QApplication *qapplication;
@@ -91,7 +92,12 @@ static void find_and_setup_recent_menu(QMenu *parent)
         {
           QString filename = action->data().toString();
           if (!filename.isEmpty())
-            LoadSong_CurrPos(getWindowFromNum(-1), make_filepath(STRING_create(filename.toUtf8().constData())));
+          {
+            GFX_call_when_menus_are_closed([filename]
+            {
+              LoadSong_CurrPos(getWindowFromNum(-1), make_filepath(STRING_create(filename.toUtf8().constData())));
+            });
+          }
         });
 
         return;

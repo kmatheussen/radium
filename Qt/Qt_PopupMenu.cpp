@@ -317,6 +317,42 @@ namespace{
   };
 
 
+static QVector<std::function<void(void)>> g_pending_menu_callbacks;
+
+static void flush_pending_menu_callbacks(int num_tries)
+{
+	if (g_pending_menu_callbacks.empty())
+		return;
+
+	if (GFX_MenuActive())
+	{
+		if (num_tries < 100)
+			QTimer::singleShot(50, [num_tries]
+			{
+				flush_pending_menu_callbacks(num_tries+1);
+			});
+		return;
+	}
+
+	QVector<std::function<void(void)>> callbacks;
+	
+	callbacks.swap(g_pending_menu_callbacks);
+
+	for (auto &callback : callbacks)
+		callback();
+}
+
+static void schedule_flush_pending_menu_callbacks(void)
+{
+	if (g_pending_menu_callbacks.empty())
+		return;
+
+	QTimer::singleShot(0, []
+	{
+		flush_pending_menu_callbacks(0);
+	});
+}
+
   static QPointer<QWidget> g_last_hovered_widget;
   static QPointer<MyQAction> g_last_hovered_myaction;
   
@@ -479,10 +515,16 @@ namespace{
         return;
       }
 
-      if (_is_permanent)
-        _callbacker->run_callbacks();
-      else
-        _callbacker->run_and_delete_clicked(_callbacker);
+		if (_is_permanent)
+		{
+			std::shared_ptr<Callbacker> callbacker = _callbacker;
+			GFX_call_when_menus_are_closed([callbacker]
+			{
+				callbacker->run_callbacks();
+			});
+		}
+		else
+			_callbacker->run_and_delete_clicked(_callbacker);
     }
   };
 
@@ -857,6 +899,9 @@ namespace{
         _has_g_menu_is_open = false;
         R_ASSERT_RETURN_IF_FALSE(!g_curr_menu.isEmpty());
         g_curr_menu.pop();
+
+			if (g_menu_is_open==0)
+				schedule_flush_pending_menu_callbacks();
       }
     }
     
@@ -2277,6 +2322,14 @@ vector_t GFX_MenuParser(const char *texts, const char *separator){
 
 void GFX_clear_menu_cache(void){
   g_clickable_actions.clear();
+}
+
+void GFX_call_when_menus_are_closed(std::function<void(void)> callback)
+{
+	g_pending_menu_callbacks.push_back(callback);
+
+	if (GFX_MenuActive()==false)
+		schedule_flush_pending_menu_callbacks();
 }
 
 QMenu *GFX_GetActiveMenu(void){
