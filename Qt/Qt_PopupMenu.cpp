@@ -847,11 +847,13 @@ static void schedule_flush_pending_menu_callbacks(void)
   }
 
   // Called when the last menu is closed or destroyed.
+  // Note: Do NOT deactivate the main menu bars here. Menus are deliberately closed
+  // as part of QMenuBar's own left/right navigation (QMenuBarPrivate::setCurrentAction
+  // hides the current menu before opening the next), and deactivating the bar at that
+  // point clears its state and makes the following menu close instead of opening.
   static void menu_state_reached_zero(void)
   {
     schedule_flush_pending_menu_callbacks();
-
-    deactivate_main_menu_bars();
 
     // Move Qt focus away from the main menu bar. Otherwise Qt can keep its internal
     // menu bar keyboard/popup state, and menus are re-opened when the mouse hovers
