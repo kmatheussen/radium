@@ -1466,7 +1466,8 @@
     ;;(c-display "CALLING defined? for" symbol ". is-symbol?" (symbol? symbol))
     ;;(c-display "GLOBALS:" *schemecodeparser-global-declarations*)
     ;;(c-display "varlist:" (schemecodeparser-get-varlist))
-    (or (defined? symbol (rootlet))
+    (or (syntax? symbol)
+	(defined? symbol (rootlet))
         (memq symbol *schemecodeparser-global-declarations*)
         (schemecodeparser-has-varname? symbol)))
 
