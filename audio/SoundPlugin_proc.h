@@ -267,6 +267,7 @@ extern LANGSPEC bool PLUGIN_is_permanent_bus(SoundPluginType *type); // same as 
 extern LANGSPEC const char *PLUGIN_get_bus_plugin_name(int bus_num, int num_ch); // returns plugin->type->name. bus_num can be -1, 0, 1, 2, 3, or 4. num_ch can be 2 or 8.
 
 extern LANGSPEC filepath_t PLUGIN_DISK_get_audio_filename(hash_t *state);
+extern LANGSPEC filepath_t PLUGIN_DISK_create_embedded_audiofile(filepath_t org_filename, const char *audiofile_base64);
 
 // Defined in Qt/Qt_Main.cpp
 extern LANGSPEC void RT_schedule_mixer_strips_remake(instrument_t id); // id==-1: remake all, id==-2: remake none (only strip order may have changed).

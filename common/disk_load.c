@@ -224,6 +224,7 @@ static bool Load(filepath_t filename){
         SEQTRACKPLUGIN_clear_resampler_warning_hashmap();
 
         g_curr_song_contains_embedded_samples = false; // Might be set to true during loading.
+        g_curr_song_contains_embedded_seqtrack_samples = false; // Might be set to true during loading.
         
 	LoadOsStuff();
         

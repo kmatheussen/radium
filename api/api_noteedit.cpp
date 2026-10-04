@@ -528,7 +528,7 @@ void deleteAllStopsInTrack(int tracknum, int blocknum, int windownum){
   
   r::StopTimeData::Writer writer(wtrack->track->stops2, true);
 
-  window->must_redraw_editor=true;
+  window->must_redraw_editor = true;
 }
 
 // notes

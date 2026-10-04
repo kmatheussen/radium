@@ -1415,6 +1415,11 @@ static QSet<int64_t> get_all_seqblock_ids(void){
   return ret;
 }
 
+// Audio files embedded into the song file ("embedded_audiofiles" in the sequencer state), decoded to dc.embedded_files_dirname by SEQUENCER_create_from_state. Maps base64 of the original absolute filename (the same value that is stored in ":sample-base64") to the decoded filename.
+static QHash<QString, QString> g_loaded_embedded_audiofiles;
+
+bool g_curr_song_contains_embedded_seqtrack_samples = false;
+
 // Is static since seqblocks should only be created in this file.
 static struct SeqBlock *SEQBLOCK_create_from_state(const struct SeqTrack *seqtrack, int seqtracknum, const hash_t *state, const QSet<int64_t> &unavailable_ids, enum ShowAssertionOrThrowAPIException error_type, Seqblock_Type type){
   //R_ASSERT(is_gfx==true);
@@ -3967,6 +3972,40 @@ hash_t *SEQUENCER_get_state(void /*bool get_old_format*/){
     HASH_put_hash_at(state, "seqtracks", iterator666, seqtrack_state);
   }END_VECTOR_FOR_EACH;
 
+  // Embed audio files used by audio seqtracks. Only one copy is stored for each file, no matter how many seqblocks it is used in.
+  if (g_is_saving && g_embed_seqtrack_samples)
+    {
+      dynvec_t embedded_audiofiles = {};
+      QSet<QString> seen;
+
+      VECTOR_FOR_EACH(struct SeqTrack *, seqtrack, &root->song->seqtracks){
+        if (seqtrack->for_audiofiles==false || seqtrack->patch==NULL || seqtrack->patch->patchdata==NULL)
+          continue;
+        SoundPlugin *plugin = (SoundPlugin*)seqtrack->patch->patchdata;
+        VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks){
+          if (seqblock->block != NULL)
+            continue;
+          filepath_t filename = SEQTRACKPLUGIN_get_sample_name(plugin, seqblock->sample_id, true);
+          QString key = STRING_get_qstring(filename.id);
+          if (seen.contains(key))
+            continue;
+          seen << key;
+          const char *audiofile = DISK_file_to_base64(filename);
+          if (audiofile != NULL)
+            {
+              hash_t *entry = HASH_create(2);
+              HASH_put_string(entry, "filename", STRING_toBase64(filename.id));
+              HASH_put_chars(entry, "audiofile", audiofile);
+              DYNVEC_push_back(embedded_audiofiles, DYN_create_hash(entry));
+            }
+          else
+            GFX_addMessage("Unable to embed sample \"%S\". Could not read file.", filename.id);
+        }END_VECTOR_FOR_EACH;
+      }END_VECTOR_FOR_EACH;
+
+      HASH_put_dyn(state, "embedded_audiofiles", DYN_create_array(embedded_audiofiles));
+    }
+
   HASH_put_bool(state, "contains_seqtime", false); // Earlier, the sequencer had two types if time formats, seqtime and abstime, which complicated things extremely.
 
   HASH_put_int(state, "curr_seqtracknum", ATOMIC_GET(root->song->curr_seqtracknum));
@@ -4049,6 +4088,30 @@ void SEQUENCER_create_from_state(hash_t *state, struct Song *song){
             prepare_remove_sample_from_seqblock(seqtrack, seqblock, Seqblock_Type::REGULAR);
         }END_VECTOR_FOR_EACH;
       }END_VECTOR_FOR_EACH;
+    }
+
+    // Decode audio files embedded into the song file (saved by SEQUENCER_get_state) so that SEQBLOCK_create_from_state can use them.
+    g_loaded_embedded_audiofiles.clear();
+    if (g_is_loading && HASH_has_key(state, "embedded_audiofiles")){
+      g_curr_song_contains_embedded_seqtrack_samples = true;
+      for(const dyn_t embedded_audiofile : HASH_get_dyn(state, "embedded_audiofiles").array){
+        if (embedded_audiofile.type != HASH_TYPE){
+          R_ASSERT_NON_RELEASE(false);
+          continue;
+        }
+        const wchar_t *filename_base64 = HASH_get_string(embedded_audiofile.hash, "filename");
+        const char *audiofile_base64 = HASH_get_chars(embedded_audiofile.hash, "audiofile");
+        if (filename_base64==NULL || audiofile_base64==NULL){
+          R_ASSERT_NON_RELEASE(false);
+          continue;
+        }
+        filepath_t org_filename = make_filepath(STRING_fromBase64(filename_base64));
+        filepath_t filename = PLUGIN_DISK_create_embedded_audiofile(org_filename, audiofile_base64);
+        if (isLegalFilepath(filename))
+          g_loaded_embedded_audiofiles[STRING_get_qstring(filename_base64)] = STRING_get_qstring(filename.id);
+        else
+          R_ASSERT_NON_RELEASE(false);
+      }
     }
     
     //printf("        CREATING FROM STATE\n");

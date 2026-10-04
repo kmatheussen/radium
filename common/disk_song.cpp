@@ -351,6 +351,9 @@ void DLoadSong(struct Root *newroot,struct Song *song){
           GFX_ShowProgressMessage("Creating instruments", true);
         }
 
+        // The SONGPROPERTIES_update call near the top of this function happens before plugins and seqtracks are created, which are the ones setting the embedded-sample flags. Update again in case the song properties window is open.
+        SONGPROPERTIES_update(song);
+
         DLoadAudioInstrument(newroot, song); // Sets correct effect_num for fx, since mapping between fx name and effect_num was not available when loading fx. (The MIDI instrument doesn't map between name and number since the MIDI standard is not going to change, and therefore it's safe to use the numbers directly.)
         
         DLoadInstrumentGUI(get_MIDI_instrument());

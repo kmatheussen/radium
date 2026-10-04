@@ -585,7 +585,7 @@ static void setCurrSeqtrack2(int seqtracknum, bool called_from_set_curr_seqblock
   if (seqtracknum != old) {
 
     if(root->song != NULL && root->song->tracker_windows!=NULL)
-      root->song->tracker_windows->must_redraw_editor=true;
+      root->song->tracker_windows->must_redraw_editor = true;
     else{
       R_ASSERT_NON_RELEASE(false);
     }
@@ -2744,8 +2744,8 @@ static int get_num_playlist_entries(const struct SeqTrack *seqtrack){
 
 static bool g_curr_playlist_pos_locked_to_seqblock = false;
 
-int getCurrPlaylistPos(void){
-  
+int getCurrPlaylistPos(void)
+{
   if (g_curr_playlist_pos_locked_to_seqblock){
     struct SeqTrack *seqtrack;
     int seqblocknum;

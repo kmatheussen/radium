@@ -271,13 +271,20 @@
        <item>
         <widget class="QGroupBox" name="groupBox_5">
          <property name="title">
-          <string>Audio files in Sample player and Fluidsynth</string>
+          <string>Embedding audio files</string>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_6">
           <item>
            <widget class="QCheckBox" name="embed_samples">
             <property name="text">
-             <string>Embed audio files in song file</string>
+             <string>Embed Sample player / Fluidsynth samples</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="embed_seqtrack_samples">
+            <property name="text">
+             <string>Embed sequencer audio files</string>
             </property>
            </widget>
           </item>

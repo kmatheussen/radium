@@ -3925,6 +3925,42 @@ void PLUGIN_show_info_window(const SoundPluginType *type, SoundPlugin *plugin, i
 
 bool g_curr_song_contains_embedded_samples = false;
 
+// Writes the embedded audio file to a new file in dc.embedded_files_dirname and returns the name of that file.
+filepath_t PLUGIN_DISK_create_embedded_audiofile(filepath_t org_filename, const char *audiofile_base64)
+{
+	if (dc.has_deleted_files_in_embedded_dir==false)
+	{
+		DISK_delete_all_files_in_dir(dc.embedded_files_dirname);
+		dc.has_deleted_files_in_embedded_dir=true;
+	}
+
+	filepath_t filename = createIllegalFilepath();
+
+	if (DISK_create_dir(dc.embedded_files_dirname)==false)
+	{
+		if (dc.has_shown_embedded_files_dirname_warning==false)
+		{
+			GFX_Message(NULL, "Unable to create directory \"%S\"", dc.embedded_files_dirname.id);
+			dc.has_shown_embedded_files_dirname_warning = true;
+		}
+	}
+	else
+	{
+		filepath_t maybe_filename = appendFilePaths(dc.embedded_files_dirname,
+		                                            make_filepath(QFileInfo(STRING_get_qstring(org_filename.id)).fileName())
+		                                            );
+		filename = DISK_create_non_existant_filename(maybe_filename);
+	}
+
+	filename = DISK_base64_to_file(filename, audiofile_base64);
+	if (isIllegalFilepath(filename))
+		filename = DISK_base64_to_file(filename, audiofile_base64);
+
+	R_ASSERT(isLegalFilepath(filename));
+
+	return filename;
+}
+
 filepath_t PLUGIN_DISK_get_audio_filename(hash_t *state){
   /*
   if (HASH_has_key(state, "filename2")){
@@ -3935,37 +3971,18 @@ filepath_t PLUGIN_DISK_get_audio_filename(hash_t *state){
   */
   bool audiodata_is_included = HASH_has_key(state, "audiofile");
 
-  filepath_t filename = createIllegalFilepath();
-  filepath_t org_filename = HASH_get_filepath(state, "filename");
+  filepath_t filename;
 
   if (audiodata_is_included){
 
     g_curr_song_contains_embedded_samples = true;
 
-    if (dc.has_deleted_files_in_embedded_dir==false){
-      DISK_delete_all_files_in_dir(dc.embedded_files_dirname);
-      dc.has_deleted_files_in_embedded_dir=true;
-    }
-    
-    if (DISK_create_dir(dc.embedded_files_dirname)==false){
-      if (dc.has_shown_embedded_files_dirname_warning==false){
-        GFX_Message(NULL, "Unable to create directory \"%S\"", dc.embedded_files_dirname.id);
-        dc.has_shown_embedded_files_dirname_warning = true;
-      }
-    }else{      
-      filename = appendFilePaths(dc.embedded_files_dirname,
-                                 make_filepath(QFileInfo(STRING_get_qstring(org_filename.id)).fileName())
-                                 );
-      filename = DISK_create_non_existant_filename(filename);
-    }
-
-    filename = DISK_base64_to_file(filename, HASH_get_chars(state, "audiofile"));
-    if (isIllegalFilepath(filename))
-      filename = DISK_base64_to_file(filename, HASH_get_chars(state, "audiofile"));
+    filename = PLUGIN_DISK_create_embedded_audiofile(HASH_get_filepath(state, "filename"),
+                                                     HASH_get_chars(state, "audiofile"));
 
   } else {
 
-    filename = org_filename;
+    filename = HASH_get_filepath(state, "filename");
 
   }
   

@@ -4163,6 +4163,8 @@ extern bool g_mouse_is_pressed; // Should work for all widgets. If true, we can 
 
 extern bool g_embed_samples;
 extern bool g_curr_song_contains_embedded_samples;
+extern bool g_embed_seqtrack_samples;
+extern bool g_curr_song_contains_embedded_seqtrack_samples;
 
 static inline struct SeqTrack *SEQUENCER_get_curr_seqtrack(void){
   int curr_seqtracknum = ATOMIC_GET(root->song->curr_seqtracknum);

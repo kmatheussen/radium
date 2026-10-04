@@ -195,11 +195,13 @@ bool SaveAs(struct Root *theroot){
 }
 
 bool g_embed_samples = false;
+bool g_embed_seqtrack_samples = false;
 
 bool SaveWithEmbeddedSamples(filepath_t filename, struct Root *theroot){
   bool ret = false;
   
   g_embed_samples=true;
+  g_embed_seqtrack_samples=true;
   
   if (isIllegalFilepath(filename))
     ret = SaveAs(theroot);
@@ -207,7 +209,9 @@ bool SaveWithEmbeddedSamples(filepath_t filename, struct Root *theroot){
     ret = SaveAs2(filename, theroot);
   
   g_embed_samples=false;
+  g_embed_seqtrack_samples=false;
   g_curr_song_contains_embedded_samples = true;
+  g_curr_song_contains_embedded_seqtrack_samples = true;
   SONGPROPERTIES_update(theroot->song);
 
   return ret;
@@ -215,6 +219,7 @@ bool SaveWithEmbeddedSamples(filepath_t filename, struct Root *theroot){
 
 bool SaveWithoutEmbeddedSamples(filepath_t filename, struct Root *theroot){
   g_embed_samples=false;
+  g_embed_seqtrack_samples=false;
 
   bool ret;
   
@@ -224,6 +229,7 @@ bool SaveWithoutEmbeddedSamples(filepath_t filename, struct Root *theroot){
     ret = SaveAs2(filename, theroot);
     
   g_curr_song_contains_embedded_samples = false;
+  g_curr_song_contains_embedded_seqtrack_samples = false;
   SONGPROPERTIES_update(theroot->song);
 
   return ret;
@@ -239,22 +245,29 @@ bool Save(struct Root *theroot){
   if(isIllegalFilepath(dc.filename)){
     
     g_embed_samples = g_curr_song_contains_embedded_samples;
+    g_embed_seqtrack_samples = g_curr_song_contains_embedded_seqtrack_samples;
 
     ret = SaveAs(theroot);
 
     g_embed_samples=false;
+    g_embed_seqtrack_samples=false;
     
   }else{
     
     bool embed = g_curr_song_contains_embedded_samples;
+    bool embed_seqtrack_samples = g_curr_song_contains_embedded_seqtrack_samples;
     if (embed)
       g_embed_samples=true;
+    if (embed_seqtrack_samples)
+      g_embed_seqtrack_samples=true;
 
     Save_Clean(dc.filename,theroot,false);
     ret = dc.success;
     
     if (embed)
       g_embed_samples=false;
+    if (embed_seqtrack_samples)
+      g_embed_seqtrack_samples=false;
     
   }
 

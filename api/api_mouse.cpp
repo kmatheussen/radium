@@ -1720,7 +1720,7 @@ void setPianonoteLogtype(int logtype, int pianonotenum, dyn_t dynnote, int track
 
   struct Tracks *track = wtrack->track;
 
-  window->must_redraw_editor=true;
+  window->must_redraw_editor = true;
 
   int pitchnum = getPitchNumFromPianonoteNum(pianonotenum, dynnote, tracknum, blocknum, windownum);
   //printf("pitchnum: %d. pianonotenum: %d. wtrack: %d. wblock: %d\n", pitchnum, pianonotenum, wtrack->l.num, wblock->l.num);
@@ -1765,7 +1765,7 @@ dyn_t movePianonoteEnd(int pianonotenum, float value, Place place_arg, dyn_t dyn
   } else {
   
   
-    window->must_redraw_editor=true;
+    window->must_redraw_editor = true;
 
     if (value > 0){
       if(note->pitch_end > 0 || reader.size() > 0) //note->pitches!=NULL)
@@ -1882,7 +1882,7 @@ void deletePianonote(int pianonotenum, dyn_t dynnote, int tracknum, int blocknum
     return;
 
   if (pianonotenum==0) {
-    window->must_redraw_editor=true;
+    window->must_redraw_editor = true;
 
     {
       SCOPED_PLAYER_LOCK_IF_PLAYING();

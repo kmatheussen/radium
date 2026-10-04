@@ -4483,7 +4483,7 @@ void setUseNativeFileRequesters(bool doit){
 static float g_instrument_brightness = DEFAULT_INSTRUMENT_BRIGHTNESS;
 
 static void update_all_instrument_colors_in_editor(void){
-  root->song->tracker_windows->must_redraw_editor=true;
+  root->song->tracker_windows->must_redraw_editor = true;
   SEQUENCER_update(SEQUPDATE_TIMING);
 }
 
