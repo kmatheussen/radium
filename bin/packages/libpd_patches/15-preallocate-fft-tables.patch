@@ -1,0 +1,78 @@
+--- a/pure-data/src/d_fft_fftsg.c
++++ b/pure-data/src/d_fft_fftsg.c
+@@ -77,6 +77,20 @@
+ static PERTHREAD FFTFLT *ooura_costab;
+ static PERTHREAD FFTFLT *ooura_buffer;
+ 
++    /* Radium: the FFT tables and scratch buffer are preallocated per thread,
++    so that ooura_init() never allocates memory when an FFT object (fiddle~,
++    fft~, ...) is used for the first time from a realtime thread. Pages of
++    the static arrays are only committed by the OS when actually touched.
++    Requests larger than OOURA_MAXN fall back to the heap. */
++#define OOURA_MAXN 65536
++#define OOURA_MAXLOG2 16
++#define OOURA_BITREVSIZE (2 + (1 << (OOURA_MAXLOG2/2)))
++
++static PERTHREAD int ooura_bitrev_static[OOURA_BITREVSIZE];
++static PERTHREAD FFTFLT ooura_costab_static[OOURA_MAXN/2];
++static PERTHREAD FFTFLT ooura_buffer_static[OOURA_MAXN];
++static PERTHREAD int ooura_tables_are_static = 0;
++
+ static int ooura_init( int n)
+ {
+     n = (1 << ilog2(n));
+@@ -84,11 +98,29 @@
+         return (0);
+     if (n > ooura_maxn)
+     {
++        if (n <= OOURA_MAXN)
++        {
++            if (!ooura_tables_are_static)
++            {
++                ooura_bitrev = ooura_bitrev_static;
++                ooura_costab = ooura_costab_static;
++                ooura_buffer = ooura_buffer_static;
++                ooura_tables_are_static = 1;
++            }
++            ooura_bitrevsize = sizeof(int) * (2 + (1 << (ilog2(n)/2)));
++            ooura_maxn = n;
++            ooura_bitrev[0] = 0;
++            return (1);
++        }
+         if (ooura_maxn)
+         {
+-            t_freebytes(ooura_bitrev, ooura_bitrevsize);
+-            t_freebytes(ooura_costab, ooura_maxn * sizeof(FFTFLT) / 2);
+-            t_freebytes(ooura_buffer, ooura_maxn * sizeof(FFTFLT));
++            if (!ooura_tables_are_static)
++            {
++                t_freebytes(ooura_bitrev, ooura_bitrevsize);
++                t_freebytes(ooura_costab, ooura_maxn * sizeof(FFTFLT) / 2);
++                t_freebytes(ooura_buffer, ooura_maxn * sizeof(FFTFLT));
++            }
++            ooura_tables_are_static = 0;
+         }
+         ooura_bitrevsize = sizeof(int) * (2 + (1 << (ilog2(n)/2)));
+         ooura_bitrev = (int *)t_getbytes(ooura_bitrevsize);
+@@ -126,13 +158,18 @@
+ {
+     if (!ooura_maxn)
+         return;
+-    t_freebytes(ooura_bitrev, ooura_bitrevsize);
+-    t_freebytes(ooura_costab, ooura_maxn * sizeof(FFTFLT)/2);
+-    t_freebytes(ooura_buffer, ooura_maxn * sizeof(FFTFLT));
++    if (!ooura_tables_are_static)
++    {
++        t_freebytes(ooura_bitrev, ooura_bitrevsize);
++        t_freebytes(ooura_costab, ooura_maxn * sizeof(FFTFLT)/2);
++        t_freebytes(ooura_buffer, ooura_maxn * sizeof(FFTFLT));
++    }
+     ooura_maxn = 0;
+     ooura_bitrev = 0;
+     ooura_bitrevsize = 0;
+     ooura_costab = 0;
++    ooura_buffer = 0;
++    ooura_tables_are_static = 0;
+ }
+ 
+ /* -------- initialization and cleanup -------- */

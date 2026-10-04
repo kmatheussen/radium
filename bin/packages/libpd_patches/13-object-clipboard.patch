@@ -1,0 +1,63 @@
+diff -ruN a/pure-data/src/g_editor.c b/pure-data/src/g_editor.c
+--- a/pure-data/src/g_editor.c	2026-09-29 21:49:33.172163362 +0200
++++ b/pure-data/src/g_editor.c	2026-09-29 21:50:02.516375153 +0200
+@@ -3,6 +3,7 @@
+  * WARRANTIES, see the file, "LICENSE.txt," in this distribution.  */
+ 
+ #include <stdio.h>
++#include <stdlib.h>
+ #include "m_pd.h"
+ #include "m_imp.h"
+ #include "s_stuff.h"
+@@ -53,6 +54,23 @@
+ static void canvas_dopaste(t_canvas *x, t_binbuf *b);
+ static void canvas_paste(t_canvas *x);
+ static void canvas_clearline(t_canvas *x);
++
++    /* Radium: object copy/paste uses a process-global buffer instead of the
++    per-instance copy_binbuf, so that objects can be copied between the
++    different Pd instances hosted by Radium. */
++static char *clipboard_binbuf_text = NULL;
++static int clipboard_binbuf_text_size = 0;
++
++static void clipboard_set_text(const char *buf, int len)
++{
++    char *newbuf = (char *)realloc(clipboard_binbuf_text, len);
++    if (newbuf == NULL)
++        return;
++    clipboard_binbuf_text = newbuf;
++    clipboard_binbuf_text_size = len;
++    memcpy(clipboard_binbuf_text, buf, len);
++}
++
+ static t_glist *glist_finddirty(t_glist *x);
+ static void canvas_zoom(t_canvas *x, t_floatarg zoom);
+ static void canvas_displaceselection(t_canvas *x, int dx, int dy);
+@@ -3885,8 +3903,15 @@
+         return;
+     if (x->gl_editor->e_selection)
+     {
++        char *buf;
++        int bufsize;
+         binbuf_free(THISED->copy_binbuf);
+         THISED->copy_binbuf = canvas_docopy(x);
++            /* Radium: also store the text in the process-global clipboard,
++            so that the objects can be pasted in another Pd instance. */
++        binbuf_gettext(THISED->copy_binbuf, &buf, &bufsize);
++        clipboard_set_text(buf, bufsize);
++        t_freebytes(buf, bufsize);
+     }
+     if (glist_textedfor(x))
+     {
+@@ -4276,6 +4301,11 @@
+         int offset = 0;
+         int x0 = 0, y0 = 0;
+         int foundplace = 0;
++            /* Radium: load the process-global object clipboard, so that
++            objects copied in another Pd instance can be pasted here. */
++        if (clipboard_binbuf_text != NULL)
++            binbuf_text(THISED->copy_binbuf, clipboard_binbuf_text,
++                clipboard_binbuf_text_size);
+         binbuf_getpos(THISED->copy_binbuf, &x0, &y0, 0);
+         do {
+                 /* iterate over all existing objects

@@ -1,0 +1,28 @@
+diff -ruN a/pure-data/tcl/pd_menus.tcl b/pure-data/tcl/pd_menus.tcl
+--- a/pure-data/tcl/pd_menus.tcl	2026-09-29 21:27:28.292435843 +0200
++++ b/pure-data/tcl/pd_menus.tcl	2026-09-29 21:28:03.141639410 +0200
+@@ -330,8 +330,8 @@
+         -variable ::dsp -value 0 -command {::pd_menucommands::scheduleAction pdsend "pd dsp 0"}
+ 
+     $mymenu add  separator
+-    $mymenu add command -label [_ "Test Audio and MIDI..."] \
+-        -command {::pd_menucommands::scheduleAction menu_doc_open doc/7.stuff/tools testtone.pd}
++    # Radium: no "Test Audio and MIDI..." entry. The host manages the audio
++    # and MIDI devices, so the Pd device test/settings are pointless here.
+     $mymenu add command -label [_ "Load Meter"] \
+         -command {::pd_menucommands::scheduleAction menu_doc_open doc/7.stuff/tools load-meter.pd}
+ 
+@@ -353,11 +353,8 @@
+             -command {::pd_menucommands::scheduleAction pdsend "pd midi-setapi $::pd_whichmidiapi"}
+     }
+ 
+-    $mymenu add  separator
+-    $mymenu add command -label [_ "Audio Settings..."] \
+-        -command {::pd_menucommands::scheduleAction pdsend "pd audio-properties"}
+-    $mymenu add command -label [_ "MIDI Settings..."] \
+-        -command {::pd_menucommands::scheduleAction pdsend "pd midi-properties"}
++    # Radium: no Audio Settings/MIDI Settings entries. The host manages the
++    # audio and MIDI devices, and libpd has no settings to configure.
+ }
+ 
+ proc ::pd_menus::build_window_menu {mymenu} {
