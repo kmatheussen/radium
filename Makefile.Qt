@@ -966,7 +966,7 @@ test_refcounttimedata:
 
 test_timedata:
 	$(CCC) common/TimeData.cpp $(TEST_TIMEDATA_OPTS) -o a.out &&	$(TEST_TIMEDATA_RUNNER)
-	cd common && $(CCC) TimeData.cpp $(TEST_TIMEDATA_OPTS) -DTEST_SHARED_PTR=1 -Ofast -o a.out &&	$(TEST_TIMEDATA_RUNNER)
+	cd common && $(CCC) TimeData.cpp $(TEST_TIMEDATA_OPTS) -DTEST_SHARED_PTR=1 -O3 -ffast-math -o a.out &&	$(TEST_TIMEDATA_RUNNER)
 	cd common && $(CCC) TimeData.cpp $(TEST_TIMEDATA_OPTS) -Os -o a.out &&	$(TEST_TIMEDATA_RUNNER)
 	cd common && $(CCC) TimeData.cpp $(TEST_TIMEDATA_OPTS) -DTEST_SHARED_PTR=1 -O3 -o a.out &&	$(TEST_TIMEDATA_RUNNER)
 
