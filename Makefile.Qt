@@ -599,7 +599,7 @@ ifeq ($(BUILD_OPTIMIZED), YES)
 	CPUOPT += -O3
 endif
 
-ifeq ($(BUILD_OPTIMIZED), RELEASE)
+ifeq ($(BUILD_OPTIMIZED), YES)
 	OPTIMIZE_O3=-O3 # SmoothDelay.hpp / Fade.hpp / Granulator.hpp runs faster with -O3.
 else
 	OPTIMIZE_O3=
