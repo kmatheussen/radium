@@ -4658,14 +4658,14 @@ void printMixerTree(void){
   SP_print_tree();
 }
 
-void testCrashreporter(void){
-  //R_ASSERT(false);
-  //return;
+void testCrashreporter(void)
+{
+	//R_ASSERT(false);
+	//return;
 #if !defined(RELEASE)
-  abort(); // The crash below usually doesn't work in non-release mode since we usually compile with fsanitize=address
+	abort(); // The crash below usually doesn't work in non-release mode since we usually compile with fsanitize=address
 #endif
-  int *ai=NULL;
-  ai[0] = 50;
+	CRASHREPORTER_test_crash();
 }
 
 extern bool g_test_crashreporter_in_audio_thread;

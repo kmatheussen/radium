@@ -64,6 +64,8 @@ extern "C"{
   void CRASHREPORTER_do_report(void);
   void CRASHREPORTER_dont_report(void);
 
+  void CRASHREPORTER_test_crash(void);
+
   bool CRASHREPORTER_is_currently_sending_assert_message(void);
 	
   void CRASHREPORTER_close(void);

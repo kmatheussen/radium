@@ -1183,6 +1183,20 @@ void CRASHREPORTER_send_assert_message(Crash_Type crash_type, const char *fmt,..
   ATOMIC_SET(g_is_currently_sending, false);
 }
 
+// Used by the "Test crash reporter" menu options, and the corresponding
+// application programming interface function.
+void CRASHREPORTER_test_crash(void)
+{
+	uintptr_t address = 0;
+
+	// Hide the address from the optimizer. Otherwise the compiler replaces
+	// the read with a trap instruction (SIGTRAP on arm64), and the crash
+	// reporter never runs.
+	__asm__ __volatile__("" : "=r"(address) : "0"(address));
+
+	(void)*(volatile int*)address;
+}
+
 // We don't want the crashreporter to pop up when program exits, or we scan plugins.
 void CRASHREPORTER_do_report(void){
   ATOMIC_SET(g_dont_report, false);

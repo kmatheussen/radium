@@ -360,9 +360,9 @@ fi
 if uname -s |grep Darwin ; then
     
     if ! is_0 $FAUST_USES_LLVM ; then
-	export MACOS_LLVM_TARGET=`${LLVM_CONFIG_BIN} --host-target`
+		export MACOS_LLVM_TARGET=`${LLVM_CONFIG_BIN} --host-target`
     else
-	export MACOS_LLVM_TARGET="Thiscodeisnotsupposedtobecompiled"
+		export MACOS_LLVM_TARGET="Thiscodeisnotsupposedtobecompiled"
     fi
     
 fi

@@ -197,6 +197,12 @@ void CRASHREPORTER_posix_init(void){
 
   setup_callstack_signal_handler(SIGINT);
   setup_callstack_signal_handler(SIGILL);
+  setup_callstack_signal_handler(SIGTRAP);
+
+#if defined(FOR_MACOSX)
+  // Not caught on Linux since the Boehm GC replaces the SIGBUS handler there, without chaining to the previous handler. On macOS the GC uses a Mach exception port for bad accesses instead of a SIGBUS handler.
+  setup_callstack_signal_handler(SIGBUS);
+#endif
 
   // Commented out since NSM terminates clients like this. I guess we should probably not catch SIGTERM here anyway, so just remove it whether NSM is used or not.
   //setup_callstack_signal_handler(SIGTERM);

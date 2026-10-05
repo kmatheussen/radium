@@ -75,6 +75,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Mixer_proc.h"
 
+#include "../crashreporter/crashreporter_proc.h"
+
 volatile bool g_test_crashreporter_in_audio_thread = false;
 
 extern PlayerClass *pc;
@@ -1324,11 +1326,11 @@ struct Mixer{
     }audioblock_variables_protector.write_end();
       
       
-    if(g_test_crashreporter_in_audio_thread){
-      //R_ASSERT(false);
-      int *ai2=NULL;
-      ai2[0] = 50;
-    }
+	if (g_test_crashreporter_in_audio_thread)
+	{
+		//R_ASSERT(false);
+		CRASHREPORTER_test_crash();
+	}
       
     //audioblock_size = num_frames;
 
