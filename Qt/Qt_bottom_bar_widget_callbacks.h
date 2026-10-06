@@ -114,9 +114,6 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
 
     this->system_volume_slider->_patch.set(g_system_out_patch);
     
-    if (this->system_volume_slider->_patch.data() != NULL)
-      this->system_volume_slider->calledRegularlyByParent();
-    
     //SLIDERPAINTER_call_regularly(this->system_volume_slider->_painter);
   }
   
@@ -579,6 +576,14 @@ extern "C"{
       }
     }
       
+  }
+
+  void GFX_OS_call_very_often(void){
+    for(auto *bottom_bar_widget : g_bottom_bars){
+      auto *system_volume_slider = bottom_bar_widget->system_volume_slider;
+      if (system_volume_slider->_patch.data() != NULL)
+        system_volume_slider->calledRegularlyByParent();
+    }
   }
 
   void GFX_OS_UpdateKeyOctave(void){

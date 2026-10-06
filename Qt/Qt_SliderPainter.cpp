@@ -89,6 +89,13 @@ static float iec_scale(float db) {
 //namespace{ // stupid c++ with all this useless syntax necessary to make a program appear to work. C++ is only great if you like a challenge and don't want things done.
 
 namespace{
+
+// The automation and peak indicators in sliders are drawn as this many pixels wide bars, with a
+// horizontal alpha glide: 0.1 at the outer parts, 1.0 in the middle 1 pixel, and a linear
+// interpolation in between.
+static const int g_slider_indicator_width = 5;
+static const float g_slider_indicator_alphas[g_slider_indicator_width] = {0.1f, 0.25f, 1.0f, 0.25f, 0.1f}; // [NO_STATIC_ARRAY_WARNING]
+
 struct AutomationOrPeakData{
 private:
   float *value;
@@ -318,8 +325,7 @@ struct SliderPainter{
 
         if (data->single_line_style)
           data->requested_pos = scale(gain,0.0f,1.0f,
-                                      0.0f,(float)width()-2)
-                                - 1;
+                                      0.0f,(float)R_MAX(0,width()-g_slider_indicator_width));
         else
           data->requested_pos = scale(gain,0.0f,1.0f,
                                       0.0f,(float)width());
@@ -340,12 +346,12 @@ struct SliderPainter{
           //printf("y1: %d, y2: %d, height: %d. req: %d, last: %d\n",y1,y2,height,data->requested_pos,data->last_drawn_pos);
           if (data->single_line_style) {
             
-            update(data->requested_pos-1,
+            update((int)floorf(data->requested_pos)-2,
                    y1,
-                   6,height+1);
-            update(data->last_drawn_pos-1,
+                   g_slider_indicator_width+3,height+1);
+            update((int)floorf(data->last_drawn_pos)-2,
                    y1,
-                   6,height+1);
+                   g_slider_indicator_width+3,height+1);
             
           } else {
             
@@ -467,20 +473,35 @@ struct SliderPainter{
         float y2 = DATA_get_y2(data,height(), _last_num_channels);
         float height = y2-y1;
 
-        if (data->single_line_style) {
-          QRectF f(data->requested_pos+1, y1+1,
-                   2,                     height);
+        if (data->single_line_style)
+        {
+          float x = data->requested_pos;
+          int base = (int)floorf(x);
+          float frac = x - base;
 
-          p->fillRect(f, get_qcolor(data->color));
-        
-          p->setPen(QPen(get_qcolor(HIGH_BACKGROUND_COLOR_NUM).lighter(120),1));
-          const QRectF &f2 = f; //f.adjusted(0, 0, 0, 0);        
-          p->drawRect(f2);
+          QColor color = get_qcolor(data->color);
 
-        } else {
-        
+          for(int j=0;j<g_slider_indicator_width+1;j++)
+          {
+            float alpha = 0.0f;
+
+            if (j-1 >= 0 && j-1 < g_slider_indicator_width)
+              alpha += frac * g_slider_indicator_alphas[j-1];
+
+            if (j < g_slider_indicator_width)
+              alpha += (1.0f-frac) * g_slider_indicator_alphas[j];
+
+            if (alpha > 0.0f)
+            {
+              QColor c = color;
+              c.setAlphaF(R_MIN(alpha, 1.0f));
+              p->fillRect(QRectF(base-1+j, y1+1, 1, height), c);
+            }
+          }
+        }
+        else
+        {
           paint_peaks_non_single_line_style(p, data, y1, y2, height);
-        
         }
       
         data->last_drawn_pos = data->requested_pos;

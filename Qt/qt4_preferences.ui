@@ -14953,6 +14953,20 @@ This option is only useful&lt;br&gt;for debugging Radium. If a key doesn't work,
            </property>
           </widget>
          </item>
+         <item row="13" column="0">
+          <widget class="QCheckBox" name="cpu_friendly_effect_slider_updates">
+           <property name="text">
+            <string>CPU friendly effect slider updates.</string>
+           </property>
+          </widget>
+         </item>
+         <item row="13" column="1">
+          <widget class="QLabel" name="label_effect_slider_updates">
+           <property name="text">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; color:#000000;&quot;&gt;Update automation and peaks in effect sliders every third frame instead of each frame.&lt;br&gt;This reduces CPU usage, but makes the sliders look less smooth.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+          </widget>
+         </item>
          <item row="7" column="1">
           <widget class="Line" name="line_27">
            <property name="palette">

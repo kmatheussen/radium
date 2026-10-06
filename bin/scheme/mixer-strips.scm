@@ -2239,7 +2239,9 @@
           ;; Automation value
           (if (> automation-slider-value 0)
               (let ((automation-y (max 0 (scale automation-slider-value 0 1 height 0))))
-                (<gui> :draw-line volslider volume-automation-color x1 automation-y x2 automation-y 2.0)))
+                (paint-horizontal-slider-indicator volslider volume-automation-color x1
+                                                   (between 1 automation-y (- height 5))
+                                                   x2)))
 
           (when (<ra> :instrument-effect-has-midi-learn instrument-id effect-name)
             (define midi-learn-color (<gui> :mix-colors *text-color* background-color 0.2))

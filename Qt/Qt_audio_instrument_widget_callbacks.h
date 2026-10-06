@@ -586,12 +586,7 @@ public:
   QElapsedTimer time_of_last_minheight_inc;
   int number_of_minheight_incs = 0;
   
-  void calledRegularlyByParent(void){
-    
-    //printf("hello %p\n", this);
-
-    if (_size_type == SIZETYPE_HALF && !instrumentInMixer())
-      set_half_height();
+  void call_regularly_for_painters(void){
     
     //SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
 
@@ -602,7 +597,15 @@ public:
     
     if (_comp_widget->isVisible())
       _comp_widget->calledRegularlyByParent();
+  }
 
+  void calledRegularlyByParent(void){
+    
+    //printf("hello %p\n", this);
+
+    if (_size_type == SIZETYPE_HALF && !instrumentInMixer())
+      set_half_height();
+    
     int curr_minimum_height = minimumHeight();
     
     bool is_visible = scrollArea->verticalScrollBar()->isVisible();

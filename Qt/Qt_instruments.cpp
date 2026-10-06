@@ -74,6 +74,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Qt_instruments_proc.h"
 
+#include "Qt_bottom_bar_widget_proc.h"
+
 
 extern QApplication *qapplication;
 
@@ -811,6 +813,16 @@ void GFX_update_instrument_widget(struct Patch *patch){
 
 void GFX_update_current_instrument_widget(void){
   GFX_update_instrument_widget(PATCH_get_current());
+}
+
+void GFX_effect_sliders_call_very_often(void){
+  if (useCPUFriendlyEffectSliderUpdates() && !is_called_every_ms(45))
+    return;
+
+  if (g_instruments_widget != NULL && g_instruments_widget->isVisible())
+    g_instruments_widget->call_regularly_for_painters();
+
+  GFX_OS_call_very_often();
 }
 /*
 void GFX_force_update_current_instrument_widget(bool force_update){

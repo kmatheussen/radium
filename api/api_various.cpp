@@ -3680,6 +3680,25 @@ void setUseCPUFriendlyAudiometerUpdates(bool val){
 }
 
 
+static bool g_cpu_friendly_effect_slider_updates = false;
+
+bool useCPUFriendlyEffectSliderUpdates(void){
+  static bool has_inited = false;
+
+  if (has_inited==false){
+    g_cpu_friendly_effect_slider_updates = SETTINGS_read_bool("cpu_friendly_effect_slider_updates", g_cpu_friendly_effect_slider_updates);
+    has_inited = true;
+  }
+
+  return g_cpu_friendly_effect_slider_updates;
+}
+
+void setUseCPUFriendlyEffectSliderUpdates(bool val){
+  g_cpu_friendly_effect_slider_updates = val;
+  SETTINGS_write_bool("cpu_friendly_effect_slider_updates", val);
+}
+
+
 static bool g_controlPortOpenForRemoteConnections = false;
 
 bool controlPortOpenForRemoteConnections(void){
