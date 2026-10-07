@@ -38,6 +38,7 @@ extern LANGSPEC void InstrumentWidget_prepare_for_deletion(struct Patch *patch);
 extern LANGSPEC void GFX_set_effect_display_boundaries(struct Patch *patch, int effect_num, int min_value, int max_value); // min_value/max_value are between 0 and 10000.
 extern LANGSPEC void GFX_update_instrument_widget(struct Patch *patch);
 extern LANGSPEC void GFX_update_current_instrument_widget(void);
+extern LANGSPEC void GFX_effect_sliders_call_very_often(void);
 //extern LANGSPEC void GFX_force_update_current_instrument_widget();
 
 extern LANGSPEC bool MIXERSTRIP_is_visible(void);

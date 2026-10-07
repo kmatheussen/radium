@@ -560,6 +560,53 @@
           
           layout)
 
+;; alpha profile for the automation/peak indicator in sliders: 0.1 at the outer parts,
+;; 0.25 next, 1.0 in the middle pixel.
+(define (slider-indicator-profile k)
+  (cond ((= k 0) 0.1)
+        ((= k 1) 0.25)
+        ((= k 2) 1.0)
+        ((= k 3) 0.25)
+        ((= k 4) 0.1)
+        (else 0.0)))
+
+;; subpixel-blended alpha for output pixel column j when the indicator is at the float position pos.
+(define (slider-indicator-alpha pos j)
+  (define base (floor pos))
+  (define frac (- pos base))
+  (+ (if (< j 5)
+         (* (- 1.0 frac) (slider-indicator-profile j))
+         0.0)
+     (if (> j 0)
+         (* frac (slider-indicator-profile (- j 1)))
+         0.0)))
+
+;; draws the 5 pixels wide automation/peak indicator (fading out at the edges) in a slider.
+(define (paint-vertical-slider-indicator gui color x y1 y2)
+  (define base (floor x))
+  (for-each (lambda (j)
+              (define alpha-here (slider-indicator-alpha x j))
+              (when (> alpha-here 0.0)
+                (<gui> :filled-box gui
+                       (<gui> :set-alpha-for-color color alpha-here)
+                       (+ base -1 j) y1
+                       (+ base j)   y2
+                       -1 -1 *no-gradient*)))
+            '(0 1 2 3 4 5)))
+
+;; same, but horizontal (used by the mixer strip volume slider).
+(define (paint-horizontal-slider-indicator gui color x1 y x2)
+  (define base (floor y))
+  (for-each (lambda (j)
+              (define alpha-here (slider-indicator-alpha y j))
+              (when (> alpha-here 0.0)
+                (<gui> :filled-box gui
+                       (<gui> :set-alpha-for-color color alpha-here)
+                       x1 (+ base -1 j)
+                       x2 (+ base j)
+                       -1 -1 *no-gradient*)))
+            '(0 1 2 3 4 5)))
+
 ;; returns actual background color
 (delafina (paint-pan-slider :gui :x1 :y1 :x2 :y2
                             :value ;; -90 -> 90
@@ -601,7 +648,9 @@
   (when (and automation-slider-value
              (> automation-slider-value -100))
     (define middle (scale automation-slider-value -90 90 (+ inner-width/2 outer-width/2) (- width (+ inner-width/2 outer-width/2))))
-    (<gui> :draw-line gui automation-color (+ x1 middle) (+ y1 2) (+ x1 middle) (- y2 3) 2.0))
+    (paint-vertical-slider-indicator gui automation-color
+                                     (between (+ x1 1) (+ x1 middle) (- x2 5))
+                                     (+ y1 2) (- y2 3)))
   
   (<gui> :draw-box gui "#404040" x1 y1 x2 y2 border-width border-rounding border-rounding)
 
@@ -658,12 +707,10 @@
       (get-automation-data
        (lambda (value color)
          (let* ((w (if is-current w3 1))
-                (x (between 0 (scale value 0 1 (+ x1 w) (- x2 w)) x2)))
-           (<gui> :draw-line
-                  widget color
-                  x (+ y1 w)
-                  x (- y2 w)
-                  2.0)))))
+                (x (between (+ x1 1)
+                            (scale value 0 1 (+ x1 w) (- x2 w))
+                            (- x2 5))))
+           (paint-vertical-slider-indicator widget color x (+ y1 w) (- y2 w))))))
   
   
   ;;(if show-tooltip

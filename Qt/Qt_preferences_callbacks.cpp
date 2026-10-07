@@ -715,6 +715,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       // audio meter update
       {
         cpu_friendly_audio_meter_updates->setChecked(useCPUFriendlyAudiometerUpdates());
+        cpu_friendly_effect_slider_updates->setChecked(useCPUFriendlyEffectSliderUpdates());
       }
 
       // NSM
@@ -1265,6 +1266,12 @@ public slots:
     //printf("val: %d\n",val);
     if (_initing==false)
       setUseCPUFriendlyAudiometerUpdates(val);
+  }
+
+  void on_cpu_friendly_effect_slider_updates_toggled(bool val){
+    //printf("val: %d\n",val);
+    if (_initing==false)
+      setUseCPUFriendlyEffectSliderUpdates(val);
   }
 
   void on_nsm_switch_enabled_toggled(bool val){

@@ -72,6 +72,13 @@ public:
     }
   }
 
+  void call_regularly_for_painters(void){
+    Audio_instrument_widget *audio_widget = dynamic_cast<Audio_instrument_widget*>(g_instruments_widget->tabs->currentWidget());
+    if (audio_widget != NULL){
+      audio_widget->call_regularly_for_painters();
+    }
+  }
+
   void showEvent(QShowEvent *event) override {
     GFX_update_current_instrument_widget(); // Fix arrow colors, etc.
   }

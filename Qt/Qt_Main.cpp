@@ -3055,6 +3055,8 @@ protected:
       API_instruments_call_regularly();
     }
 
+    GFX_effect_sliders_call_very_often();
+
     GL_update();
     
     if(doquit==true)

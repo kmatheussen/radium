@@ -4293,6 +4293,8 @@ void API_remove_effect_monitors_for_instrument(struct Patch *patch){
 
 void API_instruments_call_regularly(void){
   int i = 0;
+
+  bool check_automation = !useCPUFriendlyEffectSliderUpdates() || is_called_every_ms(45);
   
   while(i < g_effect_monitors.size()){
     
@@ -4336,7 +4338,7 @@ void API_instruments_call_regularly(void){
         }
       }
 
-      if (effect_monitor->monitor_automation){
+      if (effect_monitor->monitor_automation && check_automation){
         automation_now = safe_float_read(&plugin->slider_automation_values[effect_monitor->effect_num]);
         if (!equal_floats(automation_now, effect_monitor->last_automation_value)){
           effect_monitor->last_automation_value = automation_now;
