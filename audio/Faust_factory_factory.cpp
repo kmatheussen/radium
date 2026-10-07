@@ -349,6 +349,18 @@ namespace{
       }
 #endif
  
+      {
+        QString overlay_error;
+        QString overlay_dir = radium::faust_get_sample_rate_overlay_dir(opts.options.split("\n", Qt::SkipEmptyParts),
+                                                                       QCoreApplication::applicationDirPath(),
+                                                                       (int)MIXER_get_sample_rate(),
+                                                                       overlay_error);
+        if (!overlay_dir.isEmpty()) {
+          args.push_back("-I");
+          args.push_back(overlay_dir);
+        }
+      }
+
       std::string error_message;
 
       //R_ASSERT(OPT_LEVEL==0);

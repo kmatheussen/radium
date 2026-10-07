@@ -760,6 +760,7 @@ class Dev2CompileThread : public QThread
 	QString _options;
 	bool _use_interpreter;
 	int _optlevel;
+	int _sample_rate;
 
 public:
 	Dev2CompileThread(SoundPlugin *plugin,
@@ -771,6 +772,7 @@ public:
 		, _options(options)
 		, _use_interpreter(use_interpreter)
 		, _optlevel(getFaustOptimizationLevel()) // Must be read on the main thread (settings are main-thread only). This constructor runs on the main thread.
+		, _sample_rate((int)MIXER_get_sample_rate())
 	{
 	}
 
@@ -780,6 +782,7 @@ public:
 		config.code = _code;
 		config.options = _options;
 		config.use_interpreter_backend = _use_interpreter;
+		config.sample_rate = _sample_rate;
 
 		QString error_message;
 #if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
@@ -1452,6 +1455,7 @@ static void *create_plugin_data(const SoundPluginType *plugin_type, SoundPlugin 
 		config.code = devdata->code;
 		config.options = devdata->options;
 		config.use_interpreter_backend = devdata->use_interpreter_backend;
+		config.sample_rate = (int)sample_rate;
 
 		dsp_factory *factory = create_factory(config, getFaustOptimizationLevel(), error_message, // main thread, safe to read settings
 #if !defined(WITHOUT_LLVM_IN_FAUST_DEV)

@@ -64,6 +64,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QStringList>
 
 #include "Faust2_compile.hpp"
+#include "Faust_sample_rate_overlay.hpp"
 
 FaustDev2SoundfileData::~FaustDev2SoundfileData()
 {
@@ -333,6 +334,17 @@ dsp_factory *create_factory(const FaustDev2CompileConfig &config,
 	*out_svg_dir = svg_dir;
 
 	QString radium_path = config.radium_path.isEmpty() ? QCoreApplication::applicationDirPath() : config.radium_path;
+
+	if (config.sample_rate > 0)
+	{
+		QString overlay_error;
+		QString overlay_dir = radium::faust_get_sample_rate_overlay_dir(args_list, radium_path, config.sample_rate, overlay_error);
+		if (!overlay_dir.isEmpty())
+		{
+			args_list.push_back("-I");
+			args_list.push_back(overlay_dir);
+		}
+	}
 
 	int argc = args_list.size();
 	const char **argv = (const char**)calloc(argc, sizeof(char*));
