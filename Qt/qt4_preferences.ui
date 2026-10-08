@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1219</width>
-    <height>634</height>
+    <height>567</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -29,7 +29,7 @@
       <enum>QTabWidget::TabShape::Rounded</enum>
      </property>
      <property name="currentIndex">
-      <number>8</number>
+      <number>0</number>
      </property>
      <property name="elideMode">
       <enum>Qt::TextElideMode::ElideNone</enum>
@@ -379,46 +379,23 @@
         </layout>
        </item>
        <item>
+        <widget class="QGroupBox" name="groupBox_alsa">
+         <property name="title">
+          <string>ALSA</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_alsa">
+          <item>
+           <widget class="QCheckBox" name="detect_alsa_xruns">
+            <property name="text">
+             <string>Detect soundcard xruns (restarts audio when toggled)</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
         <spacer name="verticalSpacer_6">
-         <property name="orientation">
-          <enum>Qt::Orientation::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item>
-        <spacer name="verticalSpacer_27">
-         <property name="orientation">
-          <enum>Qt::Orientation::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item>
-        <spacer name="verticalSpacer_28">
-         <property name="orientation">
-          <enum>Qt::Orientation::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item>
-        <spacer name="verticalSpacer_23">
          <property name="orientation">
           <enum>Qt::Orientation::Vertical</enum>
          </property>
@@ -10660,8 +10637,8 @@ that scrolling becomes less smooth.
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>583</width>
-              <height>326</height>
+              <width>398</width>
+              <height>28</height>
              </rect>
             </property>
             <property name="sizePolicy">

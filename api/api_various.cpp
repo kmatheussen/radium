@@ -4821,6 +4821,15 @@ int getNumXruns(void){
   return MIXER_get_num_xruns();
 }
 
+bool alsaXrunDetectionEnabled(void){
+  return SETTINGS_read_bool("detect_alsa_xruns", false);
+}
+
+void setAlsaXrunDetectionEnabled(bool doit){
+  SETTINGS_write_bool("detect_alsa_xruns", doit);
+  JUCE_audio_apply_alsa_xrun_detection(doit);
+}
+
 int64_t g_editor_blocks_generation = 0;
 
 // This number increases every time a block is added or removed, tracks are added or removed, block is renamed, or block duration changes.

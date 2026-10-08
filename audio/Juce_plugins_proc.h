@@ -23,6 +23,12 @@ extern int JUCE_get_num_xruns(void);
 extern void JUCE_audio_open_preferences_window(void);
 extern void JUCE_audio_close_preferences_window(void);
 
+#if defined(FOR_LINUX)
+extern void JUCE_ALSA_set_detect_xruns(bool doit); // Implemented in pluginhost's juce_ALSA_linux.cpp.
+#endif
+
+extern void JUCE_audio_apply_alsa_xrun_detection(bool doit);
+
 #ifdef __cplusplus
 extern bool JUCE_init_audio_device(JUCE_audio_device_callback callback, void *callback_data, std::function<void(int,float)> called_before_starting_audio);
 #endif

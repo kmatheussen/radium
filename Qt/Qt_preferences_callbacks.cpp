@@ -752,6 +752,11 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
 
       use_jack_if_jack_server_is_running->setChecked(SETTINGS_read_bool("use_jack_if_jack_server_is_running", true));
 
+      detect_alsa_xruns->setChecked(SETTINGS_read_bool("detect_alsa_xruns", false));
+#if !defined(FOR_LINUX)
+      groupBox_alsa->setVisible(false);
+#endif
+
       {
         enable_latency_compensation->setChecked(latencyCompensationEnabled());
         
@@ -1456,6 +1461,11 @@ public slots:
   void on_use_jack_if_jack_server_is_running_toggled(bool val){
     if (_initing==false)
       SETTINGS_write_bool("use_jack_if_jack_server_is_running", val);
+  }
+
+  void on_detect_alsa_xruns_toggled(bool val){
+    if (_initing==false)
+      setAlsaXrunDetectionEnabled(val);
   }
   
   void on_check_abnormal_signals_toggled(bool val){
