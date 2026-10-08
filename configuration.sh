@@ -375,6 +375,10 @@ fi
 #
 ########################################################
 
+if ! uname -s |grep Darwin > /dev/null ; then
+    unset MACOSX_DEPLOYMENT_TARGET
+fi
+
 if [[ $RADIUM_USE_CLANG == 1 ]] ; then
     export FULL_CCC_PATH=`which clang++`
 else

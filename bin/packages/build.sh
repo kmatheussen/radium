@@ -37,9 +37,11 @@ if uname -s |grep Darwin ; then
     export COMMON_CFLAGS="$COMMON_CFLAGS -mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET}"
     # Universal binaries. (Used for faust, fluidsynth, qscintilla, etc.)
     export DARWIN_ARCH_FLAGS="-arch arm64 -arch x86_64 "
+    export DARWIN_MIN_FLAGS="-mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET}"
     export DARWIN_CMAKEOPT="-DCMAKE_OSX_ARCHITECTURES=\"arm64;x86_64\" -DCMAKE_OSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET}"
 else
     export DARWIN_ARCH_FLAGS=""
+    export DARWIN_MIN_FLAGS=""
     export DARWIN_CMAKEOPT=""
 fi
    
@@ -196,8 +198,8 @@ build_libpd() {
     if uname -s |grep Darwin ; then
         # Build universal, same as the other Mac packages. (Debug builds of
         # Radium are arm64 only, while release builds are arm64+x86_64.)
-        LIBPD_DEBUG_FLAGS="$LIBPD_DEBUG_FLAGS $DARWIN_ARCH_FLAGS -mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET}"
-        LIBPD_LINK_FLAGS="$DARWIN_ARCH_FLAGS -mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET}"
+        LIBPD_DEBUG_FLAGS="$LIBPD_DEBUG_FLAGS $DARWIN_ARCH_FLAGS $DARWIN_MIN_FLAGS"
+        LIBPD_LINK_FLAGS="$DARWIN_ARCH_FLAGS $DARWIN_MIN_FLAGS"
 
         # The dylib is placed in the bundled packages directory, both for dev
         # builds (via the /tmp/radium_bin/packages symlink) and for Radium.app.
@@ -331,7 +333,7 @@ build_fluidsynth() {
     # so configure is run without arch flags, and arch flags are passed to make instead.
     CFLAGS="-fPIC -fno-strict-aliasing -O3 -DDEFAULT_SOUNDFONT=\\\"\\\"" CPPFLAGS="-fPIC -fno-strict-aliasing -O3" CXXFLAGS="-fPIC -fno-strict-aliasing -O3" LDFLAGS="" CC=$DASCC CXX=$DASCXX ./configure --enable-static --disable-aufile-support --disable-pulse-support --disable-alsa-support --disable-libsndfile-support --disable-portaudio-support --disable-oss-support --disable-midishare --disable-jack-support --disable-coreaudio --disable-coremidi --disable-dart --disable-lash --disable-ladcca --disable-aufile-support --disable-dbus-support --without-readline
     # --enable-debug
-    make -j`nproc` CFLAGS="-fPIC -fno-strict-aliasing -O3 -DDEFAULT_SOUNDFONT=\\\"\\\" -mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET} $DARWIN_ARCH_FLAGS" CPPFLAGS="-fPIC -fno-strict-aliasing -O3 -mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET} $DARWIN_ARCH_FLAGS" CXXFLAGS="-fPIC -fno-strict-aliasing -O3 -mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET} $DARWIN_ARCH_FLAGS" LDFLAGS="-mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET} $DARWIN_ARCH_FLAGS"
+    make -j`nproc` CFLAGS="-fPIC -fno-strict-aliasing -O3 -DDEFAULT_SOUNDFONT=\\\"\\\" $DARWIN_MIN_FLAGS $DARWIN_ARCH_FLAGS" CPPFLAGS="-fPIC -fno-strict-aliasing -O3 $DARWIN_MIN_FLAGS $DARWIN_ARCH_FLAGS" CXXFLAGS="-fPIC -fno-strict-aliasing -O3 $DARWIN_MIN_FLAGS $DARWIN_ARCH_FLAGS" LDFLAGS="$DARWIN_MIN_FLAGS $DARWIN_ARCH_FLAGS"
     cd ..
 }
 
