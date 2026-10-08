@@ -387,52 +387,88 @@
                               (lambda () #t))))
               menus-options)))
 
-(define (open-main-menu-search-popup args)
+(define *main-menu-popup-generation* 0)
+
+;; Called from C++ when the hamburger popup is closed, to cancel any scheduled opening of it.
+(define (FROM_C-cancel-main-menu-popup)
+  (set! *main-menu-popup-generation* (+ *main-menu-popup-generation* 1)))
+
+;; A generation of #f means the popup is not the hamburger popup, and can't be cancelled.
+(define (main-menu-popup-generation-is-current? generation)
+  (or (not generation)
+      (= generation *main-menu-popup-generation*)))
+
+(define (open-main-menu-search-popup args generation)
   (<ra> :schedule 0
         (lambda ()
-          (popup-menu-from-args args)
+          (when (main-menu-popup-generation-is-current? generation)
+            (popup-menu-from-args args))
           #f)))
 
-(define (open-main-menu-search-popup-from-options menus-options)
-  (c-display "SEARCHPOPUP open-from-options" (<ra> :get-ms))
-  (define args (get-popup-menu-args-from-options (assemble-main-menu-search-options menus-options)))
-  (set! *main-menu-search-popup-args* args)
-  (open-main-menu-search-popup args))
+(define (open-main-menu-search-popup-from-options menus-options generation)
+  (when (main-menu-popup-generation-is-current? generation)
+    (c-display "SEARCHPOPUP open-from-options" (<ra> :get-ms))
+    (define args (get-popup-menu-args-from-options (assemble-main-menu-search-options menus-options)))
+    (set! *main-menu-search-popup-args* args)
+    (open-main-menu-search-popup args generation)))
 
 ;; Builds the options one top-level menu at a time, scheduling a new step between
 ;; each menu. Only used if generate-main-menus didn't already build them.
-(define (build-main-menu-search-popup menus chunks)
-  (if (null? menus)
-      (let ((menus-options (reverse chunks)))
-        (set! *main-menu-search-options* menus-options)
-        (open-main-menu-search-popup-from-options menus-options))
-      ;; Schedule the processing of each menu, so that the gui gets a chance
-      ;; to repaint the wait popup between each top-level menu.
-      (<ra> :schedule 0
-            (lambda ()
-              (let* ((menu (car menus))
-                     (menu-options (remove-recent-from-options
-                                    (parse-popup-menu-options
-                                     (get-popup-menu-items-from-menu-items (menu :sub-menu))))))
-                (c-display "SEARCHPOPUP chunk" (menu :text) (<ra> :get-ms))
-                (build-main-menu-search-popup (cdr menus)
-                                              (cons (cons (menu :text) menu-options) chunks)))
-              #f))))
+(define (build-main-menu-search-popup menus chunks generation)
+  (when (main-menu-popup-generation-is-current? generation)
+    (if (null? menus)
+        (let ((menus-options (reverse chunks)))
+          (set! *main-menu-search-options* menus-options)
+          (open-main-menu-search-popup-from-options menus-options generation))
+        ;; Schedule the processing of each menu, so that the gui gets a chance
+        ;; to repaint the wait popup between each top-level menu.
+        (<ra> :schedule 0
+              (lambda ()
+                (when (main-menu-popup-generation-is-current? generation)
+                  (let* ((menu (car menus))
+                         (menu-options (remove-recent-from-options
+                                        (parse-popup-menu-options
+                                         (get-popup-menu-items-from-menu-items (menu :sub-menu))))))
+                    (c-display "SEARCHPOPUP chunk" (menu :text) (<ra> :get-ms))
+                    (build-main-menu-search-popup (cdr menus)
+                                                  (cons (cons (menu :text) menu-options) chunks)
+                                                  generation)))
+                #f)))))
 
-(define (popup-search-all-menus)
+(define* (popup-search-all-menus (generation #f))
   (if *main-menu-search-popup-args*
-      (open-main-menu-search-popup *main-menu-search-popup-args*)
-      (begin
+      (open-main-menu-search-popup *main-menu-search-popup-args* generation)
+      (when (main-menu-popup-generation-is-current? generation)
         (c-display "SEARCHPOPUP wait-screen-start" (<ra> :get-ms))
         (<ra> :show-popup-search-wait-screen)
         (c-display "SEARCHPOPUP wait-screen-shown" (<ra> :get-ms))
         (<ra> :schedule 1
               (lambda ()
-                (c-display "SEARCHPOPUP build-start" (<ra> :get-ms))
-                (if *main-menu-search-options*
-                    (open-main-menu-search-popup-from-options *main-menu-search-options*)
-                    (build-main-menu-search-popup (get-main-menu-items) '()))
+                (when (main-menu-popup-generation-is-current? generation)
+                  (c-display "SEARCHPOPUP build-start" (<ra> :get-ms))
+                  (if *main-menu-search-options*
+                      (open-main-menu-search-popup-from-options *main-menu-search-options* generation)
+                      (build-main-menu-search-popup (get-main-menu-items) '() generation)))
                 #f)))))
+
+;; Called from the hamburger button in the bottom bar and from the left alt key.
+(define (FROM_C-popup-main-menus)
+  (set! *main-menu-popup-generation* (+ *main-menu-popup-generation* 1))
+  (define generation *main-menu-popup-generation*)
+  ;; Must be scheduled since this function can be called from within a native event filter.
+  (<ra> :schedule 0
+        (lambda ()
+          (when (main-menu-popup-generation-is-current? generation)
+            (popup-search-all-menus generation))
+          #f)))
+
+;; Called when right-clicking the hamburger button in the bottom bar.
+(define (FROM_C-show-hamburger-keybinding-popup)
+  (popup-menu (get-keybinding-configuration-popup-menu-entries :ra-funcname "ra:open-main-menu-popup"
+                                                               :args '()
+                                                               :focus-keybinding "FOCUS_EDITOR FOCUS_MIXER FOCUS_SEQUENCER")
+              "-------------"
+              "Help keybindings" show-keybinding-help-window))
 
 (define (generate-main-menus)
   (<ra> :wait-until-nsm-has-inited)

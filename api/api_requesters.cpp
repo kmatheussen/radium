@@ -334,6 +334,11 @@ void showPopupSearchWaitScreen(void){
   GFX_ShowPopupSearchWaitScreen();
 }
 
+void openMainMenuPopup(void)
+{
+	GFX_open_hamburger_popup_menu(NULL);
+}
+
 static radium::ProtectedS7FuncVector g_popupmenu_closed_callbacks(true);
 
 void addPopupMenuClosedCallback(func_t* callback){

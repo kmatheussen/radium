@@ -47,6 +47,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Qt_bottom_bar_widget_proc.h"
 
+#include "Qt_PopupMenu_proc.h"
+
 
 
 class Bottom_bar_widget;
@@ -667,6 +669,24 @@ QWidget *BottomBar_create(QWidget *parent, bool include_editor_elements, bool in
   auto *ret = new Bottom_bar_widget(parent, include_navigator);
   if(!include_editor_elements)
     ret->remove_editor_elements();
+
+  {
+    // Hamburger button opening a popup menu with the main menus. (See FROM_C-popup-main-menus)
+    auto *hamburger_button = new MyQButton("☰", ret);
+    hamburger_button->setObjectName("hamburger_button");
+    hamburger_button->setToolTip("Main menus");
+    hamburger_button->_statusbar_text = "Open main menu. Press left alt to open";
+    hamburger_button->setFocusPolicy(Qt::NoFocus);
+    hamburger_button->setMinimumWidth(QApplication::fontMetrics().height()); // Make it roughly square.
+    QObject::connect(hamburger_button, &MyQButton::clicked, [hamburger_button](){
+      GFX_open_hamburger_popup_menu(hamburger_button);
+    });
+    hamburger_button->_show_popup_menu = [](){
+      S7CALL2(void_void, "FROM_C-show-hamburger-keybinding-popup");
+    };
+    ret->horizontalLayout_2->insertWidget(0, hamburger_button);
+    ret->horizontalLayout_2->insertSpacing(1, 2 * g_gfx_scale); // Some space between the hamburger and the status line.
+  }
   
   {
     const QFontMetrics fn = QFontMetrics(QApplication::font());

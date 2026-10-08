@@ -43,6 +43,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_settings_proc.h"
 #include "../common/OS_visual_input.h"
 #include "../common/settings_proc.h"
+#include "../common/visual_proc.h"
 #include "../common/window_config_proc.h"
 #include "../OpenGL/Widget_proc.h"
 #include "../OpenGL/Render_proc.h"
@@ -919,6 +920,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
 	    
       show_playlist_during_startup->setChecked(showPlaylistDuringStartup());
       show_mixer_strip_during_startup->setChecked(showMixerStripDuringStartup());
+      show_main_menu_bar->setChecked(SETTINGS_read_bool("show_main_menu_bar", false));
 
       if(showMixerStripOnLeftSide())
         show_mixer_strip_on_the_left->setChecked(true);
@@ -1218,6 +1220,18 @@ public slots:
   void on_show_mixer_strip_during_startup_toggled(bool val){
     if (_initing==false)
       setShowMixerStripDuringStartup(val);
+  }
+
+  void on_show_main_menu_bar_toggled(bool val)
+  {
+	if (_initing == false)
+	{
+		SETTINGS_write_bool("show_main_menu_bar", val);
+		if (val)
+			GFX_ShowMenu(NULL);
+		else
+			GFX_HideMenu(NULL);
+	}
   }
 
   void on_show_mixer_strip_on_the_left_toggled(bool val){

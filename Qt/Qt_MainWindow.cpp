@@ -90,6 +90,7 @@ static HWND gtk_hwnd = NULL;
 
 #include "Qt_colors_proc.h"
 #include "Qt_Menues_proc.h"
+#include "Qt_PopupMenu_proc.h"
 #include "FileRequester.hpp"
 
 #if defined(FOR_MACOSX) && defined(USE_QT6)
@@ -513,6 +514,7 @@ class MyQMenuBar : public QMenuBar
 public:
   MyQMenuBar() : QMenuBar(0)
   {
+    setMenuColors(this);
   }
 
 protected:
@@ -901,6 +903,7 @@ void SetupMainWindow(void){
     //QStatusBar *status_bar = main_window->statusBar();
     auto *bottom_bar = BottomBar_create(main_window, true, true);
     mainLayout->addWidget(bottom_bar, 0); // stretch = 1;
+    GFX_set_hamburger_button(bottom_bar->findChild<QWidget*>("hamburger_button")); // So that the popup can be opened with left alt.
     //bottom_bar->show();
     //main_window->statusBar()->addWidget(bottom_bar, 1, true);
     //editor->status_labels.push_back(bottom_bar->status_label);
@@ -940,6 +943,9 @@ void SetupMainWindow(void){
   menubar_layout->addWidget(g_main_menu_bar_right, 0);
 
   mainLayout->insertWidget(0, menubar_container, 0); // position 0, stretch 1.
+
+  if (SETTINGS_read_bool("show_main_menu_bar", false)==false)
+    GFX_HideMenu(NULL);
 
   
 #if 0
