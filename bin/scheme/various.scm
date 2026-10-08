@@ -1027,8 +1027,8 @@
     ;; xruns
     ;;;;;;;;;;;;;;;;;
     (if *xruns-not-available*
-        ;; "N/A " (with a trailing space) has the same width as "X: 00".
-        (draw-text "N/A " dascolor xruns-X-x1 xruns-number-x2 #f)
+        ;; "n/a " (with a trailing space) has the same width as "X: 00".
+        (draw-text "n/a " dascolor xruns-X-x1 xruns-number-x2 #f)
         (begin
           (draw-text "X:" dascolor xruns-X-x1 xruns-X-x2 #f)
           
