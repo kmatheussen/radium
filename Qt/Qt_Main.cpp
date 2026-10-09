@@ -1517,11 +1517,37 @@ protected:
         printf("   Main window has focus: %d. Menu active: %d. Menu visible: %d. Last was alt: %d\n", OS_GFX_main_window_has_focus(), GFX_MenuActive(), GFX_MenuVisible(window), g_last_pressed_key==EVENT_ALT_L);
       */
       
-      if (modifier==EVENT_ALT_L && OS_GFX_main_window_has_focus()){
+      if (modifier==EVENT_ALT_L && GFX_HamburgerPopupIsOpen()) {
+
+        // The hamburger menu is open. Left alt closes it instead of opening it again.
+        last_key_was_lalt = false;
+        last_released_key_was_lalt = false;
+        menu_was_active_at_least_key_press = false;
+        menu_should_be_active = 0;
+        must_return_true = true;
+
+        if (!is_key_press && g_last_pressed_key==EVENT_ALT_L && g_mouse_is_pressed==false){
+          reset_menu_navigation();
+          GFX_CloseHamburgerPopup();
+        }
+
+      } else if (modifier==EVENT_ALT_L && OS_GFX_main_window_has_focus()){
 
         //printf(   " last_key_was_alt: %d. Time now: %f. last time: %f. press: %d. Menu active: %d.  Duration: %f\n", last_released_key_was_lalt, TIME_get_ms(), _time_of_last_alt, is_key_press, GFX_MenuActive(), TIME_get_ms()- _time_of_last_alt);
 
-        if(last_released_key_was_lalt && !is_key_press && menu_was_active_at_least_key_press && g_last_pressed_key==EVENT_ALT_L && g_mouse_is_pressed==false) { //last_key_was_lalt==true && (TIME_get_ms() - _time_of_last_alt) < 200) {
+        if (SETTINGS_read_bool("show_main_menu_bar", false)==false) {
+
+          // The main menu bar is disabled. Left alt opens the hamburger popup menu instead.
+          last_key_was_lalt = false;
+          menu_should_be_active = 0;
+          must_return_true = true;
+
+          if (!is_key_press && g_last_pressed_key==EVENT_ALT_L && g_mouse_is_pressed==false){
+            reset_menu_navigation();
+            GFX_open_hamburger_popup_menu(NULL);
+          }
+
+        } else if(last_released_key_was_lalt && !is_key_press && menu_was_active_at_least_key_press && g_last_pressed_key==EVENT_ALT_L && g_mouse_is_pressed==false) { //last_key_was_lalt==true && (TIME_get_ms() - _time_of_last_alt) < 200) {
 
             // Double-pressed left alt key.
             

@@ -23,6 +23,20 @@
 #define LANGSPEC "C"
 #include "../../../../../common/threading_lowlevel.h"
 
+#include <atomic>
+
+// Radium: When enabled, ALSA is configured to actually enter the XRUN state when the
+// application falls behind (stop_threshold is set to the hw buffer size instead of the
+// boundary, which disables underrun detection completely). The run loop below then
+// counts the recovered xruns. Disabled by default, since it changes underruns from
+// silently replaying stale ring-buffer data to a short (and counted) dropout.
+static std::atomic<bool> g_juce_alsa_detect_xruns { false };
+
+void JUCE_ALSA_set_detect_xruns (bool doit)
+{
+    g_juce_alsa_detect_xruns.store (doit);
+}
+
 namespace juce
 {
 
@@ -287,11 +301,23 @@ public:
         snd_pcm_uframes_t boundary;
 
         if (JUCE_ALSA_FAILED (snd_pcm_sw_params_current (handle, swParams))
-            || JUCE_ALSA_FAILED (snd_pcm_sw_params_get_boundary (swParams, &boundary))
-            || JUCE_ALSA_FAILED (snd_pcm_sw_params_set_silence_threshold (handle, swParams, 0))
+            || JUCE_ALSA_FAILED (snd_pcm_sw_params_get_boundary (swParams, &boundary)))
+        {
+            return false;
+        }
+
+        // Radium: JUCE normally sets stop_threshold to the boundary, which means the kernel
+        // can never put the stream into XRUN, so underruns are never reported. If the
+        // "detect xruns" preference is enabled, use the hw buffer size instead (as JACK does).
+        snd_pcm_uframes_t stopThreshold = boundary;
+
+        if (g_juce_alsa_detect_xruns.load() && frames > 0 && periods > 0)
+            stopThreshold = frames * periods;
+
+        if (JUCE_ALSA_FAILED (snd_pcm_sw_params_set_silence_threshold (handle, swParams, 0))
             || JUCE_ALSA_FAILED (snd_pcm_sw_params_set_silence_size (handle, swParams, boundary))
             || JUCE_ALSA_FAILED (snd_pcm_sw_params_set_start_threshold (handle, swParams, samplesPerPeriod))
-            || JUCE_ALSA_FAILED (snd_pcm_sw_params_set_stop_threshold (handle, swParams, boundary))
+            || JUCE_ALSA_FAILED (snd_pcm_sw_params_set_stop_threshold (handle, swParams, stopThreshold))
             || JUCE_ALSA_FAILED (snd_pcm_sw_params (handle, swParams)))
         {
             return false;
@@ -404,7 +430,7 @@ public:
     snd_pcm_t* handle;
     String error;
     int bitDepth, numChannelsRunning, latency;
-    int underrunCount = 0, overrunCount = 0;
+    std::atomic<int> underrunCount { 0 }, overrunCount { 0 };
 
 private:
     //==============================================================================
@@ -683,7 +709,13 @@ public:
             {
                 if (outputDevice == nullptr || outputDevice->handle == nullptr)
                 {
-                    JUCE_ALSA_FAILED (snd_pcm_wait (inputDevice->handle, 2000));
+                    auto wait_result = snd_pcm_wait (inputDevice->handle, 2000);
+
+                    // Radium: -EPIPE from snd_pcm_wait means the PCM entered XRUN. The counting
+                    // and recovery is done below via snd_pcm_avail_update. Do not pass -EPIPE
+                    // to failed(), which calls snd_strerror and allocates on this realtime thread.
+                    if (wait_result < 0 && wait_result != -EPIPE)
+                        JUCE_ALSA_FAILED (wait_result);
 
                     if (threadShouldExit())
                         break;
@@ -691,7 +723,14 @@ public:
                     auto avail = snd_pcm_avail_update (inputDevice->handle);
 
                     if (avail < 0)
-                        JUCE_ALSA_FAILED (snd_pcm_recover (inputDevice->handle, (int) avail, 0));
+                    {
+                        // Radium: count the overrun here. The recovery below re-prepares the
+                        // stream, so readFromInputDevice would never see the -EPIPE itself.
+                        if (avail == -EPIPE)
+                            ++inputDevice->overrunCount;
+
+                        JUCE_ALSA_FAILED (snd_pcm_recover (inputDevice->handle, (int) avail, 1 /* silent */));
+                    }
                 }
 
                 audioIoInProgress = true;
@@ -730,7 +769,13 @@ public:
 
             if (outputDevice != nullptr && outputDevice->handle != nullptr)
             {
-                JUCE_ALSA_FAILED (snd_pcm_wait (outputDevice->handle, 2000));
+                auto wait_result = snd_pcm_wait (outputDevice->handle, 2000);
+
+                // Radium: -EPIPE from snd_pcm_wait means the PCM entered XRUN. The counting
+                // and recovery is done below via snd_pcm_avail_update. Do not pass -EPIPE
+                // to failed(), which calls snd_strerror and allocates on this realtime thread.
+                if (wait_result < 0 && wait_result != -EPIPE)
+                    JUCE_ALSA_FAILED (wait_result);
 
                 if (threadShouldExit())
                     break;
@@ -738,7 +783,14 @@ public:
                 auto avail = snd_pcm_avail_update (outputDevice->handle);
 
                 if (avail < 0)
-                    JUCE_ALSA_FAILED (snd_pcm_recover (outputDevice->handle, (int) avail, 0));
+                {
+                    // Radium: count the underrun here. The recovery below re-prepares the
+                    // stream, so writeToOutputDevice would never see the -EPIPE itself.
+                    if (avail == -EPIPE)
+                        ++outputDevice->underrunCount;
+
+                    JUCE_ALSA_FAILED (snd_pcm_recover (outputDevice->handle, (int) avail, 1 /* silent */));
+                }
 
                 audioIoInProgress = true;
 

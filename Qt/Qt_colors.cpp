@@ -26,6 +26,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <qapplication.h>
 #include <qpalette.h>
 #include <qcombobox.h>
+#include <qmenubar.h>
+#include <qmenu.h>
 #include <QMap>
 #include <QVector>
 #include <QDir>
@@ -138,6 +140,7 @@ static const ColorConfig g_colorconfig[] = {
   {HIGH_BACKGROUND_COLOR_NUM,                  "high_background", "High Background", false},
   {MENU_TEXT_COLOR_NUM,                  "menu_text", "Menu text", false},
   {MENU_KEYBINDING_TEXT_COLOR_NUM,                  "menu_keybinding_text", "Menu keybinding text", false},
+  {MENU_BACKGROUND_COLOR_NUM,                  "menu_background", "Menu background", false},
   {EDITOR_SLIDERS_COLOR_NUM,                  "color12", "Editor sliders", false},
   {TRACK_SLIDER_COLOR_NUM,     "track_slider", "Track slider (bottom of editor)", false},
   {LINE_SLIDER_COLOR_NUM,     "line_slider", "Line slider (left of editor)", false},
@@ -325,6 +328,7 @@ static ReplacementColor g_replacement_color[] = {
   {TEXT_COLOR_NUM, QColor("#ffffffff")},
   {MENU_TEXT_COLOR_NUM, QColor("#fffffdec")},
   {MENU_KEYBINDING_TEXT_COLOR_NUM, QColor("#e57c12")},
+  {MENU_BACKGROUND_COLOR_NUM, QColor("#ff5b6568")},
 
   {LABEL_COLOR_NUM, QColor("#ffe3e3e3")},
 
@@ -1034,6 +1038,13 @@ static void updatePalette(EditorWidget *my_widget, QWidget *widget, QPalette &pa
 #endif
     }
 
+    if(dynamic_cast<QMenuBar*>(widget)!=NULL || dynamic_cast<QMenu*>(widget)!=NULL){
+      b = get_qcolor(MENU_BACKGROUND_COLOR_NUM);
+      c = b;
+      if(dynamic_cast<QMenu*>(widget)!=NULL)
+        c = b.darker(108);
+    }
+
     pal.setColor( QPalette::Active, QPalette::Window, b);
     pal.setColor( QPalette::Inactive, QPalette::Window, b);
     pal.setColor( QPalette::Disabled, QPalette::Window, b.lighter(95));
@@ -1209,6 +1220,16 @@ void setWidgetColors(QWidget *widget){
   struct Tracker_Windows *window = root->song->tracker_windows;
   EditorWidget *my_widget = static_cast<EditorWidget*>(window->os_visual.widget);
   updateAll(my_widget,widget);
+}
+
+void setMenuColors(QWidget *widget)
+{
+	QPalette pal(widget->palette());
+
+	updatePalette(NULL, widget, pal);
+
+	widget->setPalette(pal);
+	widget->update();
 }
 
 void setApplicationColors(QApplication *app){
@@ -1583,6 +1604,43 @@ void GFX_SetDefaultColors2(struct Tracker_Windows *tvisual){
 
 namespace
 {
+static const char *get_color_snapshot_key(enum ColorNums colornum)
+{
+	const char *config_name = get_color_config(colornum).config_name;
+
+	if (config_name == NULL || config_name[0] == '\0')
+		return NULL;
+
+	return talloc_format("color_%s", config_name);
+}
+
+// Snapshots written before colors were stored by name (Radium 8.1.54 and earlier) store colors
+// by enum value. MENU_BACKGROUND_COLOR_NUM has been moved since then, but it was appended at the
+// end, so walking the current enum with MENU_BACKGROUND_COLOR_NUM deferred to the end reproduces
+// the old enum order.
+static enum ColorNums get_colornum_from_legacy_color_num(int legacy_num)
+{
+	int num = -1;
+
+	for(int pass = 0 ; pass < 2 ; pass++)
+	{
+		for(int i = START_CONFIG_COLOR_NUM ; i < END_CONFIG_COLOR_NUM ; i++)
+		{
+			bool is_menu_background = i == MENU_BACKGROUND_COLOR_NUM;
+
+			if ((pass == 1) != is_menu_background)
+				continue;
+
+			num++;
+
+			if (num == legacy_num)
+				return (enum ColorNums)i;
+		}
+	}
+
+	return ILLEGAL_COLOR_NUM;
+}
+
 struct ColorConfigSnapshot
 {
 	QString name;
@@ -1614,14 +1672,41 @@ struct ColorConfigSnapshot
 		
 		colors = QVector<QColor>(END_CONFIG_COLOR_NUM);
 
+		bool found_color_with_name_key = false;
+
 		for(int i = START_CONFIG_COLOR_NUM ; i < END_CONFIG_COLOR_NUM ; i++)
 		{
-			const char *key = talloc_format("color_%d", i);
-			if (HASH_has_key(state, key))
+			const char *key = get_color_snapshot_key((enum ColorNums)i);
+
+			if (key != NULL && HASH_has_key(state, key))
 			{
 				const char *val = HASH_get_chars(state, key);
 				if (val != NULL && val[0] != '\0')
+				{
 					colors[i] = QColor(val);
+					found_color_with_name_key = true;
+				}
+			}
+		}
+
+		if (found_color_with_name_key == false)
+		{
+			// Snapshot written before colors were stored by name (Radium 8.1.54 and earlier).
+			for(int legacy_num = 1 ; legacy_num < END_CONFIG_COLOR_NUM ; legacy_num++)
+			{
+				const char *key = talloc_format("color_%d", legacy_num);
+
+				if (HASH_has_key(state, key))
+				{
+					const char *val = HASH_get_chars(state, key);
+					if (val != NULL && val[0] != '\0')
+					{
+						enum ColorNums colornum = get_colornum_from_legacy_color_num(legacy_num);
+
+						if (colornum != ILLEGAL_COLOR_NUM)
+							colors[colornum] = QColor(val);
+					}
+				}
 			}
 		}
 
@@ -1664,7 +1749,12 @@ struct ColorConfigSnapshot
 		for(int i = START_CONFIG_COLOR_NUM ; i < END_CONFIG_COLOR_NUM ; i++)
 		{
 			if (colors[i].isValid())
-				HASH_put_chars(hash, talloc_format("color_%d", i), colors[i].name(QColor::HexArgb).toUtf8().constData());
+			{
+				const char *key = get_color_snapshot_key((enum ColorNums)i);
+
+				if (key != NULL)
+					HASH_put_chars(hash, key, colors[i].name(QColor::HexArgb).toUtf8().constData());
+			}
 		}
 
 		HASH_put_float(hash, "instrument_brightness", instrument_brightness);

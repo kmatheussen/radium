@@ -1109,6 +1109,22 @@ benchmark_smoothdelay:
 	./test_smoothdelay
 	@rm test_smoothdelay
 
+FAUST_BENCH_LIB_DIR ?= bin/packages/faust/build/lib
+FAUST_BENCH_LD_LIBRARY_PATH ?=
+FAUST_BENCH_ARGS ?=
+FAUST_BENCH_HAVE_LLVM = $(shell nm -D $(FAUST_BENCH_LIB_DIR)/libfaust.so 2>/dev/null | grep -c 'createDSPFactoryFromString')
+FAUST_BENCH_LLVM_DEF = $(if $(filter 0,$(FAUST_BENCH_HAVE_LLVM)),-DWITHOUT_LLVM_IN_FAUST_DEV,)
+
+bench_faust_iterator bench_faust_sample_rate:
+	@echo
+	@printf "\033[0;36mCompares runtime vs compile-time sample rate for FaustDev programs, LLVM JIT vs interpreter.\033[0m\n"
+	@printf "\033[0;36mUse FAUST_BENCH_LIB_DIR=<dir> to link another libfaust (e.g. an LLVM-enabled build).\033[0m\n"
+	@printf "\033[0;36mUse FAUST_BENCH_ARGS='--backend interp --mode runtime' to limit the run.\033[0m\n"
+	@echo
+	$(CCC) -g -Wall $(WERROR) $(STD_CPP) -O3 $(FAUST_BENCH_LLVM_DEF) -I bin/packages/faust/architecture test/test_faust_sample_rate.cpp -L$(FAUST_BENCH_LIB_DIR) -Wl,-rpath,$(abspath $(FAUST_BENCH_LIB_DIR)) -lfaust -lpthread -o test/test_faust_sample_rate_bin
+	LD_LIBRARY_PATH=$(FAUST_BENCH_LD_LIBRARY_PATH) test/test_faust_sample_rate_bin $(FAUST_BENCH_ARGS)
+	@rm -f test/test_faust_sample_rate_bin
+
 packages: bin/packages/deletemetorebuild
 
 bin/packages/deletemetorebuild: bin/packages/build.sh

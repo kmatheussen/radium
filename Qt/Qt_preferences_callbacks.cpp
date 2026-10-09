@@ -43,6 +43,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/OS_settings_proc.h"
 #include "../common/OS_visual_input.h"
 #include "../common/settings_proc.h"
+#include "../common/visual_proc.h"
 #include "../common/window_config_proc.h"
 #include "../OpenGL/Widget_proc.h"
 #include "../OpenGL/Render_proc.h"
@@ -752,6 +753,11 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
 
       use_jack_if_jack_server_is_running->setChecked(SETTINGS_read_bool("use_jack_if_jack_server_is_running", true));
 
+      detect_alsa_xruns->setChecked(SETTINGS_read_bool("detect_alsa_xruns", false));
+#if !defined(FOR_LINUX)
+      groupBox_alsa->setVisible(false);
+#endif
+
       {
         enable_latency_compensation->setChecked(latencyCompensationEnabled());
         
@@ -914,6 +920,7 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
 	    
       show_playlist_during_startup->setChecked(showPlaylistDuringStartup());
       show_mixer_strip_during_startup->setChecked(showMixerStripDuringStartup());
+      show_main_menu_bar->setChecked(SETTINGS_read_bool("show_main_menu_bar", false));
 
       if(showMixerStripOnLeftSide())
         show_mixer_strip_on_the_left->setChecked(true);
@@ -1215,6 +1222,18 @@ public slots:
       setShowMixerStripDuringStartup(val);
   }
 
+  void on_show_main_menu_bar_toggled(bool val)
+  {
+	if (_initing == false)
+	{
+		SETTINGS_write_bool("show_main_menu_bar", val);
+		if (val)
+			GFX_ShowMenu(NULL);
+		else
+			GFX_HideMenu(NULL);
+	}
+  }
+
   void on_show_mixer_strip_on_the_left_toggled(bool val){
     if (_initing==false) 
       setShowMixerStripOnLeftSide(val);
@@ -1456,6 +1475,11 @@ public slots:
   void on_use_jack_if_jack_server_is_running_toggled(bool val){
     if (_initing==false)
       SETTINGS_write_bool("use_jack_if_jack_server_is_running", val);
+  }
+
+  void on_detect_alsa_xruns_toggled(bool val){
+    if (_initing==false)
+      setAlsaXrunDetectionEnabled(val);
   }
   
   void on_check_abnormal_signals_toggled(bool val){

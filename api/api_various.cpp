@@ -773,6 +773,7 @@ void showHideMixerStrip(int windownum){
 }
 
 void showHideMenuBar(int windownum){
+  if (SETTINGS_read_bool("show_main_menu_bar", false)==false) return; // The main menu bar is disabled. Do nothing.
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   if (GFX_MenuVisible(window))
     GFX_HideMenu(window);
@@ -781,11 +782,13 @@ void showHideMenuBar(int windownum){
 }
 
 void hideMenuBar(int windownum){
+  if (SETTINGS_read_bool("show_main_menu_bar", false)==false) return; // The main menu bar is disabled. Do nothing.
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   GFX_HideMenu(window);
 }
 
 void showMenuBar(int windownum){
+  if (SETTINGS_read_bool("show_main_menu_bar", false)==false) return; // The main menu bar is disabled. Do nothing.
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   GFX_ShowMenu(window);
 }
@@ -4677,8 +4680,32 @@ void printMixerTree(void){
   SP_print_tree();
 }
 
+static bool ask_are_you_sure_you_want_to_crash(const char *question)
+{
+	ReqType reqtype = GFX_OpenReq(root->song->tracker_windows, 200, 100, "");
+
+	if (reqtype == NULL)
+		return false;
+
+	const char *answer = NULL;
+
+	do
+	{
+		answer = GFX_GetString(root->song->tracker_windows, reqtype, question, true);
+	} while (answer != NULL && strcmp("yes", answer) != 0 && strcmp("no", answer) != 0);
+
+	const bool ret = (answer != NULL && strcmp("yes", answer) == 0);
+
+	GFX_CloseReq(root->song->tracker_windows, reqtype);
+
+	return ret;
+}
+
+
 void testCrashreporter(void)
 {
+  if (!ask_are_you_sure_you_want_to_crash("Radium will crash. Any unsaved changes will be lost. Are you sure? (yes/no) > "))
+    return;
 	//R_ASSERT(false);
 	//return;
 #if !defined(RELEASE)
@@ -4689,6 +4716,8 @@ void testCrashreporter(void)
 
 extern bool g_test_crashreporter_in_audio_thread;
 void testCrashreporterInAudioThread(void){
+  if (!ask_are_you_sure_you_want_to_crash("Radium will crash in the audio thread. Any unsaved changes will be lost. Are you sure? (yes/no) > "))
+    return;
   g_test_crashreporter_in_audio_thread = true;
 }
 
@@ -4819,6 +4848,15 @@ dyn_t getCpuUsage(void){
 
 int getNumXruns(void){
   return MIXER_get_num_xruns();
+}
+
+bool alsaXrunDetectionEnabled(void){
+  return SETTINGS_read_bool("detect_alsa_xruns", false);
+}
+
+void setAlsaXrunDetectionEnabled(bool doit){
+  SETTINGS_write_bool("detect_alsa_xruns", doit);
+  JUCE_audio_apply_alsa_xrun_detection(doit);
 }
 
 int64_t g_editor_blocks_generation = 0;

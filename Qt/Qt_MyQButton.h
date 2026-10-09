@@ -52,6 +52,8 @@ struct MyQButton : public QToolButton, public radium::MouseCycleFix {
 
   bool _is_hovered = false;
 
+  QString _statusbar_text;
+
   int x1_border = 1;
   int x2_border = 1;
   int y1_border = 1;
@@ -92,11 +94,15 @@ struct MyQButton : public QToolButton, public radium::MouseCycleFix {
   void enterEvent(QEnterEvent *event) override {
     _is_hovered = true;
     update();
+    if (_statusbar_text != "")
+      GFX_SetStatusBar(_statusbar_text.toUtf8().constData());
   }
 
   void leaveEvent(QEvent *event) override {
     _is_hovered = false;
     update();
+    if (_statusbar_text != "")
+      GFX_SetStatusBar("");
   }
 
   std::function<void(void)> _show_popup_menu;

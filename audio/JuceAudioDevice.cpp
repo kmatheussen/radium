@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/threading_lowlevel.h"
 #include "../common/settings_proc.h"
+#include "Juce_plugins_proc.h"
 
 
 int g_juce_num_input_audio_channels = 0;
@@ -281,6 +282,13 @@ public:
       });
     return ret;
 #endif
+  }
+
+  // Closes and reopens the current audio device. Used to apply settings that are only
+  // read when the device is opened (such as the ALSA xrun detection preference).
+  void restart_audio_device(void){
+    _audio_device_manager.closeAudioDevice();
+    _audio_device_manager.restartLastAudioDevice();
   }
   
 #if 1
@@ -642,6 +650,10 @@ void JUCE_audio_close_preferences_window(void){
 bool JUCE_init_audio_device(JUCE_audio_device_callback callback, void *callback_data, std::function<void(int,float)> called_before_starting_audio){
   const wchar_t *settings_string = SETTINGS_read_wchars("audio_device", L"");
 
+#if defined(FOR_LINUX)
+  JUCE_ALSA_set_detect_xruns(SETTINGS_read_bool("detect_alsa_xruns", false));
+#endif
+
   run_on_message_thread([&](){
     g_juce_player = new radium::JucePlayer(callback, callback_data, settings_string, called_before_starting_audio);
   });
@@ -653,4 +665,21 @@ void JUCE_stop_audio_device(void){
   run_on_message_thread([](){
       delete g_juce_player;
     });
+}
+
+// Sets the ALSA xrun detection preference and, if a JUCE audio device is running,
+// reopens it so the new setting takes effect immediately.
+void JUCE_audio_apply_alsa_xrun_detection(bool doit){
+#if defined(FOR_LINUX)
+  JUCE_ALSA_set_detect_xruns(doit);
+
+  if (g_juce_player != NULL){
+    run_on_message_thread([](){
+        if (g_juce_player != NULL)
+          g_juce_player->restart_audio_device();
+      });
+  }
+#else
+  (void)doit;
+#endif
 }

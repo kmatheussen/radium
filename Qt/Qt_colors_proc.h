@@ -30,6 +30,7 @@ extern QColor get_qcolor(enum ColorNums colornum);
 extern QColor get_custom_qcolor(int colornum);
 extern QColor get_config_qcolor(QString colorname);
 extern void setWidgetColors(QWidget *widget);
+extern void setMenuColors(QWidget *widget);
 extern void setApplicationColors(QApplication *app);
 //extern void setEditorColors(EditorWidget *editor);
 extern void testColorInRealtime(enum ColorNums num, QColor color);

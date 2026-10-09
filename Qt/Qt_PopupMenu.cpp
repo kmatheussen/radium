@@ -679,6 +679,15 @@ static void schedule_flush_pending_menu_callbacks(void)
   static QString g_pending_popup_search_query;
   static QPoint g_pending_popup_position;
   static bool g_has_pending_popup_position = false;
+  // True when g_pending_popup_position is the position of the hamburger button, in which case
+  // the popup menu is placed above it with the bottom edge at the top edge of the button.
+  static bool g_pending_popup_position_is_hamburger = false;
+
+  // The hamburger button in the main window's bottom bar. Used when opening the popup menu with left alt.
+  static QPointer<QWidget> g_hamburger_button;
+
+  // The root menu of the open hamburger popup menu. Used so that left alt can close it.
+  static QPointer<QMenu> g_hamburger_popup;
 
   // Used while showing a temporary wait popup while the search popup is being built.
   static bool g_force_popup_search_lineedit = false;
@@ -907,6 +916,7 @@ static void schedule_flush_pending_menu_callbacks(void)
       , _shortcut_width(shortcut_width)
       , _workaround(this)
     {
+      setMenuColors(this);
       connect(this, SIGNAL(aboutToHide()), this, SLOT(aboutToHide()));
       connect(this, SIGNAL(aboutToShow()), this, SLOT(aboutToShow()));
     }
@@ -1162,9 +1172,9 @@ static void schedule_flush_pending_menu_callbacks(void)
       {
         printf("SEARCHPOPUP hook-start %f\n", TIME_get_ms());
 
+        const QPoint menu_pos = get_root_menu()->mapToGlobal(QPoint(0, 0));
         g_pending_popup_search_query = event->text();
-        g_pending_popup_position = get_root_menu()->mapToGlobal(QPoint(0, 0));
-        g_has_pending_popup_position = true;
+        GFX_set_pending_popup_position(menu_pos.x(), menu_pos.y(), false);
 
         close_main_menus();
         deactivate_main_menu_bars();
@@ -2046,7 +2056,7 @@ static QMenu *create_qmenu(
       lineedit->setMinimumHeight(fontheight + 2*border_width);
       lineedit->setTextMargins((int)(border_width + 1.1*fontheight), 0, border_width, 0);
 
-      QColor background_color = get_qcolor(LOW_BACKGROUND_COLOR_NUM);
+      QColor background_color = get_qcolor(MENU_BACKGROUND_COLOR_NUM);
       QColor text_color = get_qcolor(MENU_TEXT_COLOR_NUM);
       QColor placeholder_color = text_color;
       placeholder_color.setAlpha(128);
@@ -2093,7 +2103,9 @@ static QMenu *create_qmenu(
       break;
     }
 
-    if (first_action != NULL)
+    // Don't activate the first entry of the hamburger menu when it pops up, since the first
+    // entry is a sub menu ("Project"), and activating it would open that sub menu.
+    if (first_action != NULL && g_pending_popup_position_is_hamburger == false)
       menu->setActiveAction(first_action);
   }
 
@@ -2199,6 +2211,98 @@ QMenu *GFX_create_qmenu(const vector_t &v,
 }
 
 
+// Sets the position for the next popup menu. If is_hamburger is true, x/y is the position of
+// the hamburger button, and the popup menu is placed above it with the bottom edge at the top
+// edge of the button, horizontally left-aligned.
+void GFX_set_pending_popup_position(int x, int y, bool is_hamburger)
+{
+	g_pending_popup_position = QPoint(x, y);
+	g_pending_popup_position_is_hamburger = is_hamburger;
+	g_has_pending_popup_position = true;
+}
+
+// Registers the hamburger button in the main window's bottom bar, so that the popup menu
+// can be opened at the same position as when clicking on it.
+void GFX_set_hamburger_button(QWidget *button)
+{
+	g_hamburger_button = button;
+}
+
+// Opens the hamburger popup menu at the position of the provided button, or, if button is
+// NULL, at the position of the registered hamburger button in the main window's bottom bar.
+// Falls back to opening at the mouse position if no button is available.
+void GFX_open_hamburger_popup_menu(QWidget *button)
+{
+	if (GFX_HamburgerPopupIsOpen())
+		return;
+
+	if (button == NULL)
+		button = g_hamburger_button;
+
+	if (button != NULL)
+	{
+		const QPoint pos = button->mapToGlobal(QPoint(0, 0));
+		GFX_set_pending_popup_position(pos.x(), pos.y(), true);
+	}
+
+	S7CALL2(void_void, "FROM_C-popup-main-menus");
+}
+
+// Returns true if the hamburger popup menu (the popup opened when clicking the hamburger
+// button, pressing left alt, or using a keybinding) is currently open.
+bool GFX_HamburgerPopupIsOpen(void)
+{
+	return !g_hamburger_popup.isNull() && g_hamburger_popup->isVisible();
+}
+
+// Closes the hamburger popup menu, including any open sub menu.
+void GFX_CloseHamburgerPopup(void)
+{
+	// Cancel any scheduled opening of the hamburger popup, so it doesn't appear after it was closed.
+	S7CALL2(void_void, "FROM_C-cancel-main-menu-popup");
+
+	if (g_pending_popup_position_is_hamburger)
+	{
+		g_has_pending_popup_position = false;
+		g_pending_popup_position_is_hamburger = false;
+	}
+
+	if (!g_hamburger_popup.isNull())
+		g_hamburger_popup->hide();
+}
+
+// Returns the position to open a popup menu at. (Note that this position is the top-left corner
+// of the menu, not the position of the hamburger button.)
+static QPoint get_popup_menu_position(QMenu *menu)
+{
+	if (g_pending_popup_position_is_hamburger == false)
+		return g_pending_popup_position;
+
+	const QPoint anchor = g_pending_popup_position;
+	const QSize size = menu->sizeHint();
+
+	const QScreen *screen = QApplication::screenAt(anchor);
+	if (screen == NULL)
+		screen = QApplication::primaryScreen();
+	if (screen == NULL)
+		return anchor;
+
+	const QRect available = screen->availableGeometry();
+
+	int x = anchor.x(); // Left-align with the hamburger button.
+	int y = anchor.y() - size.height(); // Place the bottom edge of the menu directly above the hamburger button.
+
+	if (x + size.width() > available.right() + 1)
+		x = available.right() + 1 - size.width();
+	if (x < available.left())
+		x = available.left();
+	if (y < available.top())
+		y = available.top();
+
+	return QPoint(x, y);
+}
+
+
 // Shows a temporary popup containing all top-level main menus, with "Please wait..." in the
 // search field, while the real search popup is being built.
 void GFX_ShowPopupSearchWaitScreen(void)
@@ -2246,8 +2350,11 @@ void GFX_ShowPopupSearchWaitScreen(void)
 
   g_waiting_popup_search_state = g_popup_search_state;
 
+  if (g_pending_popup_position_is_hamburger)
+    g_hamburger_popup = menu;
+
   if (g_has_pending_popup_position)
-    safeMenuPopup(menu, g_pending_popup_position);
+    safeMenuPopup(menu, get_popup_menu_position(menu));
   else
     safeMenuPopup(menu);
 
@@ -2292,8 +2399,12 @@ static int64_t GFX_QtMenu(
 
     if (g_has_pending_popup_position)
     {
-      const QPoint pos = g_pending_popup_position;
+      if (g_pending_popup_position_is_hamburger)
+        g_hamburger_popup = menu;
+
+      const QPoint pos = get_popup_menu_position(menu);
       g_has_pending_popup_position = false;
+      g_pending_popup_position_is_hamburger = false;
       safeMenuPopup(menu, pos);
     }
     else

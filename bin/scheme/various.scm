@@ -886,6 +886,18 @@
 (define *zero-num-xruns* (<ra> :get-num-xruns))
 (define *num-xruns* 0)
 
+(define *is-linux* (string=? (<ra> :get-os-name) "linux"))
+
+;; True on Linux when using the JUCE backend, unless xrun detection has been
+;; enabled in preferences -> audio.
+(define *xruns-not-available* #f)
+
+(define (update-xruns-not-available!)
+  (set! *xruns-not-available*
+        (and *is-linux*
+             (not (<ra> :is-using-jack))
+             (not (<ra> :alsa-xrun-detection-enabled)))))
+
 (define *cpu-usage-guis* '())
 
 (define *cpu-usage* (<ra> :get-cpu-usage))
@@ -900,9 +912,11 @@
   (when (not *cpu-usage-poller-has-started)
     (set! *cpu-usage-poller-has-started #t)
     (reset-cpu-usage!)
+    (update-xruns-not-available!)
     (<ra> :schedule 1000
           (lambda ()
             ;;(c-display "..update")
+            (update-xruns-not-available!)
             (set! *num-xruns* (max 0 (- (<ra> :get-num-xruns) *zero-num-xruns*)))
             (set! *cpu-usage* (<ra> :get-cpu-usage))
             (set! *cpu-usage-guis* (keep (lambda (area)
@@ -954,6 +968,9 @@
                             "<p>3. The <span style=\" font-size:11pt; font-weight:600; text-decoration: underline;\">highest</span> amount of CPU measured for processing an audio block during the last second. (%)</p>"
                             "<p>Note that the sum of average numbers for all instruments is likely to be higher than the average CPU you see in the bottom bar due to processing instruments in parallel.</p>"
                             "<p>The last number shows number of soundcard Xruns. Click to reset.</p>"
+                            (if *xruns-not-available*
+                                "<p>Xrun detection is disabled. It can be enabled under Edit -&gt; Preferences -&gt; Audio.</p>"
+                                "")
                             "</body></html>")
                         )))
 
@@ -1009,18 +1026,22 @@
 
     ;; xruns
     ;;;;;;;;;;;;;;;;;
-    (draw-text "X:" dascolor xruns-X-x1 xruns-X-x2 #f)
-    
-    (let ((xruns *num-xruns*))
-      (draw-text (if (< xruns 10)
-                     (<-> "0" xruns)
-                     (number->string xruns))
-                 (if (> xruns 0)
-                     "red"
-                     dascolor)
-                 xruns-number-x1
-                 xruns-number-x2
-                 (> xruns 99)))
+    (if *xruns-not-available*
+        ;; "n/a " (with a trailing space) has the same width as "X: 00".
+        (draw-text "n/a " dascolor xruns-X-x1 xruns-number-x2 #f)
+        (begin
+          (draw-text "X:" dascolor xruns-X-x1 xruns-X-x2 #f)
+          
+          (let ((xruns *num-xruns*))
+            (draw-text (if (< xruns 10)
+                           (<-> "0" xruns)
+                           (number->string xruns))
+                       (if (> xruns 0)
+                           "red"
+                           dascolor)
+                       xruns-number-x1
+                       xruns-number-x2
+                       (> xruns 99)))))
     )
   )
 

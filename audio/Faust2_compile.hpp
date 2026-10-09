@@ -51,6 +51,7 @@ struct FaustDev2CompileConfig
 	QString options;
 	bool use_interpreter_backend = true;
 	QString radium_path;
+	int sample_rate = 0;
 };
 
 struct Faust2CompileCheckResult
