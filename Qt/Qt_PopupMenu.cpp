@@ -1055,7 +1055,37 @@ static void schedule_flush_pending_menu_callbacks(void)
           const Qt::Key nav_key = (key==Qt::Key_Down || key==Qt::Key_PageDown) ? Qt::Key_Down : Qt::Key_Up;
 
           for (int i = 0 ; i < steps ; i++)
+          {
+            const int index_before = selectable_actions.indexOf(activeAction());
+
             navigate_qt(nav_key);
+
+            if (selectable_actions.indexOf(activeAction()) == index_before)
+            {
+              // Qt doesn't wrap around at the top/bottom (e.g. on macOS), so go the
+              // long way around to select the last/first entry.
+              if (nav_key == Qt::Key_Down)
+              {
+                for (int j = 0 ; j < selectable_actions.size() ; j++)
+                {
+                  if (selectable_actions.indexOf(activeAction()) == 0)
+                    break;
+
+                  navigate_qt(Qt::Key_Up);
+                }
+              }
+              else
+              {
+                for (int j = 0 ; j < selectable_actions.size() ; j++)
+                {
+                  if (selectable_actions.indexOf(activeAction()) == selectable_actions.size()-1)
+                    break;
+
+                  navigate_qt(Qt::Key_Down);
+                }
+              }
+            }
+          }
         }
 
         event->accept();
@@ -1159,6 +1189,24 @@ static void schedule_flush_pending_menu_callbacks(void)
 
 		if (g_main_menu_bar_right != NULL)
 			g_main_menu_bar_right->setActiveAction(NULL);
+	}
+
+	void mouseMoveEvent(QMouseEvent *event) override
+	{
+		PopupSearchState *state = g_popup_search_state.get();
+
+		if (state != NULL
+		    && state->root_menu == this
+		    && state->lineedit_action != NULL
+		    && activeAction() != NULL
+		    && activeAction() != state->lineedit_action.data()
+		    && actionAt(event->position().toPoint()) == state->lineedit_action.data())
+		{
+			// Don't clear the selected entry when the mouse moves over the search field.
+			return;
+		}
+
+		QMenu::mouseMoveEvent(event);
 	}
 
     void keyPressEvent(QKeyEvent *event) override {
@@ -1431,7 +1479,34 @@ static void schedule_flush_pending_menu_callbacks(void)
         obtain_keyboard_focus_counting();
         _has_keyboard_focus = true;
       }
-      MyQMenu::showEvent(event);
+	MyQMenu::showEvent(event);
+
+	// The menu is usually opened with the mouse pointer over the search field, and Qt
+	// clears the active action when the mouse moves over it. Also, the first entry is
+	// not activated at creation time if it is a sub menu (activating it would open the
+	// sub menu). Select the first entry using keyboard navigation in that case, since
+	// keyboard navigation does not open sub menus.
+	PopupSearchState *state = g_popup_search_state.get();
+
+	if (state != NULL
+	    && state->root_menu == this
+	    && state->lineedit_action != NULL
+	    && state->waiting == false)
+	{
+		QPointer<MyMainQMenu> menu = this;
+
+		QTimer::singleShot(0, this, [menu]{
+			PopupSearchState *state2 = g_popup_search_state.get();
+
+			if (menu == NULL || state2 == NULL || state2->root_menu != menu.data() || state2->waiting)
+				return;
+
+			QAction *active = menu->activeAction();
+
+			if (active == NULL || active == state2->lineedit_action.data())
+				menu->navigate_qt(Qt::Key_Down);
+		});
+	}
     }
 
     void hideEvent(QHideEvent *event) override {
@@ -2103,10 +2178,14 @@ static QMenu *create_qmenu(
       break;
     }
 
-    // Don't activate the first entry of the hamburger menu when it pops up, since the first
-    // entry is a sub menu ("Project"), and activating it would open that sub menu.
-    if (first_action != NULL && g_pending_popup_position_is_hamburger == false)
-      menu->setActiveAction(first_action);
+	// Don't activate the first entry of the hamburger menu when it pops up, since the first
+	// entry is a sub menu ("Project"), and activating it would open that sub menu. Don't
+	// activate any first entry which is a sub menu for the same reason; the first entry is
+	// selected after the menu has been shown instead (see MyMainQMenu::showEvent).
+	if (first_action != NULL
+	    && first_action->menu() == NULL // Activating a sub menu entry opens the sub menu.
+	    && g_pending_popup_position_is_hamburger == false)
+		menu->setActiveAction(first_action);
   }
 
   R_ASSERT_NON_RELEASE(radio_buttons==NULL);
