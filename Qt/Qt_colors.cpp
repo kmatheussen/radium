@@ -1389,6 +1389,16 @@ void GFX_reload_qt_stylesheets(bool only_for_testing)
 
 	QString label_sheet = "QLabel { color: " + get_qcolor(LABEL_COLOR_NUM).name(QColor::HexArgb) + "}";
 
+	QString instrument_arrow_sheet =
+		"QLabel#browserArrow, QLabel#controlsArrow, QLabel#arrow2, QLabel#arrow3, QLabel#arrow7 {"
+		" color: #ff686e54; border: 1px solid #ff686e54; border-radius: 3px; }"
+		"QLabel#arrow4, QLabel#arrow5, QLabel#arrow6, QLabel#arrow8, QLabel#arrow9, QLabel#arrow10 {"
+		" color: #ff686e54; }"
+		"QLabel#browserArrow:disabled, QLabel#controlsArrow:disabled, QLabel#arrow2:disabled,"
+		"QLabel#arrow3:disabled, QLabel#arrow7:disabled, QLabel#arrow4:disabled, QLabel#arrow5:disabled,"
+		"QLabel#arrow6:disabled, QLabel#arrow8:disabled, QLabel#arrow9:disabled, QLabel#arrow10:disabled {"
+		" color: #ff6a6864; border-color: #ff6a6864; }";
+
 	static bool s_has_called_qApp = false;
 	static bool s_has_called_with_testing = false;
 
@@ -1398,7 +1408,7 @@ void GFX_reload_qt_stylesheets(bool only_for_testing)
 		{
 			s_has_called_with_testing = false;
 
-		QString full_sheet = pushbutton_sheet + splitter_sheet + tabwidget_sheet + label_sheet
+		QString full_sheet = pushbutton_sheet + splitter_sheet + tabwidget_sheet + label_sheet + instrument_arrow_sheet
 			+ DISK_file_to_qstring(OS_get_full_program_file_path("stylesheet.css"));
 
 		GFX_OpenProgress("Applying stylesheet colors...");
@@ -1421,7 +1431,7 @@ void GFX_reload_qt_stylesheets(bool only_for_testing)
 	{
 		s_has_called_qApp = true;
 
-		QString full_sheet = pushbutton_sheet + splitter_sheet + tabwidget_sheet + label_sheet
+		QString full_sheet = pushbutton_sheet + splitter_sheet + tabwidget_sheet + label_sheet + instrument_arrow_sheet
 			+ DISK_file_to_qstring(OS_get_full_program_file_path("stylesheet.css"));
 	
 		qApp->setStyleSheet(full_sheet);
@@ -1455,7 +1465,7 @@ void GFX_reload_qt_stylesheets(bool only_for_testing)
 		else if (QLabel *w = qobject_cast<QLabel*>(widget)) // [NO_IF_=_WARNING]
 		{
 			if (w->isVisible())
-				w->setStyleSheet(label_sheet);
+				w->setStyleSheet(label_sheet + instrument_arrow_sheet);
 		}
 	}
 }
