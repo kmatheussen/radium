@@ -347,8 +347,12 @@ struct ProtectedS7Extra
     
     ProtectedS7Extra& operator=(const ProtectedS7Extra &another)
 	{
-		_id = another._id;
-		protect(another.v);
+		if (this != &another)
+		{
+			unprotect();
+			_id = another._id;
+			protect(another.v);
+		}
 
 		return *this;
 	}
