@@ -309,9 +309,9 @@ void libpds2_show_gui(pd_t *pd)
 	{
 		// The GUI process is already running, but its windows may have been
 		// hidden (either by the host unchecking the GUI checkbox, or by the
-		// user closing the Pd window). Ask the GUI to show them again. The
-		// windows were only withdrawn, so window positions, scroll positions
-		// and edit states are kept.
+		// user closing the main Pd patch window). Ask the GUI to show them
+		// again. The windows were only withdrawn, so window positions, scroll
+		// positions and edit states are kept.
 		pdgui_vmess("libpd_show_gui", NULL);
 		return;
 	}
