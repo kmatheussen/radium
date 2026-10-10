@@ -340,12 +340,6 @@
 
 (define *main-menu-items* #f)
 
-;; Shortcuts are part of the cached data, so it must be regenerated when keybindings change.
-(add-reload-keybindings-callback (lambda ()
-                                   (set! *main-menu-search-popup-args* #f)
-                                   (set! *main-menu-search-options* #f)
-                                   (set! *main-menu-items* #f)))
-
 (define (get-main-menu-items)
   (when (not *main-menu-items*)
     (set! *main-menu-items* (get-menu-items2)))
@@ -398,6 +392,11 @@
   (or (not generation)
       (= generation *main-menu-popup-generation*)))
 
+(define (make-main-menu-search-popup-args menus-options)
+  (define args (get-popup-menu-args-from-options (assemble-main-menu-search-options menus-options)))
+  (set! *main-menu-search-popup-args* args)
+  args)
+
 (define (open-main-menu-search-popup args generation)
   (<ra> :schedule 0
         (lambda ()
@@ -407,24 +406,20 @@
 
 (define (open-main-menu-search-popup-from-options menus-options generation)
   (when (main-menu-popup-generation-is-current? generation)
-    (c-display "SEARCHPOPUP open-from-options" (<ra> :get-ms))
-    (define args (get-popup-menu-args-from-options (assemble-main-menu-search-options menus-options)))
-    (set! *main-menu-search-popup-args* args)
-    (open-main-menu-search-popup args generation)))
+    (open-main-menu-search-popup (make-main-menu-search-popup-args menus-options) generation)))
 
 ;; Builds the options one top-level menu at a time, scheduling a new step between
-;; each menu. Only used if generate-main-menus didn't already build them.
-(define (build-main-menu-search-popup menus chunks generation)
-  (when (main-menu-popup-generation-is-current? generation)
+;; each menu. generation-is-current? and kont are supplied by the caller.
+(define (build-main-menu-search-popup menus chunks generation-is-current? kont)
+  (when (generation-is-current?)
     (if (null? menus)
         (let ((menus-options (reverse chunks)))
           (set! *main-menu-search-options* menus-options)
-          (open-main-menu-search-popup-from-options menus-options generation))
-        ;; Schedule the processing of each menu, so that the gui gets a chance
-        ;; to repaint the wait popup between each top-level menu.
+          (kont menus-options))
+        ;; Schedule the processing of each menu, so that the gui gets a chance to repaint between each top-level menu.
         (<ra> :schedule 0
               (lambda ()
-                (when (main-menu-popup-generation-is-current? generation)
+                (when (generation-is-current?)
                   (let* ((menu (car menus))
                          (menu-options (remove-recent-from-options
                                         (parse-popup-menu-options
@@ -432,24 +427,63 @@
                     (c-display "SEARCHPOPUP chunk" (menu :text) (<ra> :get-ms))
                     (build-main-menu-search-popup (cdr menus)
                                                   (cons (cons (menu :text) menu-options) chunks)
-                                                  generation)))
+                                                  generation-is-current?
+                                                  kont)))
                 #f)))))
 
 (define* (popup-search-all-menus (generation #f))
   (if *main-menu-search-popup-args*
       (open-main-menu-search-popup *main-menu-search-popup-args* generation)
       (when (main-menu-popup-generation-is-current? generation)
-        (c-display "SEARCHPOPUP wait-screen-start" (<ra> :get-ms))
-        (<ra> :show-popup-search-wait-screen)
-        (c-display "SEARCHPOPUP wait-screen-shown" (<ra> :get-ms))
+        ;; Normally the options and args are built during startup (see generate-main-menus),
+        ;; so this fallback is only used if the popup is opened before they are ready.
         (<ra> :schedule 1
               (lambda ()
                 (when (main-menu-popup-generation-is-current? generation)
-                  (c-display "SEARCHPOPUP build-start" (<ra> :get-ms))
                   (if *main-menu-search-options*
                       (open-main-menu-search-popup-from-options *main-menu-search-options* generation)
-                      (build-main-menu-search-popup (get-main-menu-items) '() generation)))
+                      (build-main-menu-search-popup
+                       (get-main-menu-items)
+                       '()
+                       (lambda ()
+                         (main-menu-popup-generation-is-current? generation))
+                       (lambda (menus-options)
+                         (open-main-menu-search-popup-from-options menus-options generation)))))
                 #f)))))
+
+(define (get-keybindings-as-assoc-list)
+  (hash-table->alist (<ra> :get-keybindings-from-keys)))
+
+;; The keybindings that the cached search popup data (*main-menu-search-options* and
+;; *main-menu-search-popup-args*) was built from. #f means it hasn't been built yet.
+(define *main-menu-search-keybindings* #f)
+
+;; Rebuilds the cached search popup data. Called when the keybindings have changed.
+(define (rebuild-main-menu-search-popup)
+  ;; Must re-parse the menus since shortcuts are part of the parsed data.
+  (set! *main-menu-items* #f)
+  (define menus-options
+    (map (lambda (menu)
+           (cons (menu :text)
+                 (remove-recent-from-options
+                  (parse-popup-menu-options
+                   (get-popup-menu-items-from-menu-items (menu :sub-menu))))))
+         (get-main-menu-items)))
+  (set! *main-menu-search-options* menus-options)
+  (make-main-menu-search-popup-args menus-options)
+  (set! *main-menu-search-keybindings* (get-keybindings-as-assoc-list)))
+
+;; Shortcuts are part of the cached data, so it must be rebuilt if the keybindings changed.
+;; The data is built during program startup (see generate-main-menus), and this callback
+;; only rebuilds it when the keybindings actually changed, so that opening the hamburger
+;; menu never has to wait for it.
+(add-reload-keybindings-callback (lambda ()
+                                   (when (not (equal? (get-keybindings-as-assoc-list)
+                                                      *main-menu-search-keybindings*))
+                                     ;; If the data hasn't been built yet, generate-main-menus
+                                     ;; will build it later using the new keybindings.
+                                     (when *main-menu-search-options*
+                                       (rebuild-main-menu-search-popup)))))
 
 ;; Called from the hamburger button in the bottom bar and from the left alt key.
 (define (FROM_C-popup-main-menus)
@@ -486,7 +520,10 @@
                                         (remove-recent-from-options menu-options)))))
               (<ra> :go-previous-menu-level))
             (get-main-menu-items))
-  (set! *main-menu-search-options* menus-options))
+  (set! *main-menu-search-options* menus-options)
+  ;; Also build the search popup args now, so the first open of the hamburger menu doesn't have to wait.
+  (make-main-menu-search-popup-args menus-options)
+  (set! *main-menu-search-keybindings* (get-keybindings-as-assoc-list)))
 
 #!!
 

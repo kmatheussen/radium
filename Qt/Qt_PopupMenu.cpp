@@ -669,8 +669,6 @@ static void schedule_flush_pending_menu_callbacks(void)
     QHash<QMenu*, PopupSearchMenu> menus;
     QSet<QMenu*> all_menus;
     QString query;
-    bool waiting = false;
-    QString waiting_text;
   };
 
   static std::shared_ptr<PopupSearchState> g_popup_search_state;
@@ -688,11 +686,6 @@ static void schedule_flush_pending_menu_callbacks(void)
 
   // The root menu of the open hamburger popup menu. Used so that left alt can close it.
   static QPointer<QMenu> g_hamburger_popup;
-
-  // Used while showing a temporary wait popup while the search popup is being built.
-  static bool g_force_popup_search_lineedit = false;
-  static QString g_popup_search_waiting_text;
-  static std::shared_ptr<PopupSearchState> g_waiting_popup_search_state;
 
   struct PopupSearchResult
   {
@@ -826,10 +819,8 @@ static void schedule_flush_pending_menu_callbacks(void)
 
     QLineEdit *lineedit = state->lineedit.data();
 
-    const QString text = state->waiting ? state->waiting_text : state->query;
-
-    if (lineedit->text() != text)
-      lineedit->setText(text);
+    if (lineedit->text() != state->query)
+      lineedit->setText(state->query);
 
     lineedit->setCursorPosition(lineedit->text().size());
   }
@@ -923,10 +914,10 @@ static void schedule_flush_pending_menu_callbacks(void)
 
     ~MyQMenu()
     {
-      // Sometimes aboutToHide is not called before the menu is destroyed (seen for
-      // submenus of the wait popup in the main menu search). Clean up the global menu
-      // state here as well, otherwise g_menu_is_open leaks, GFX_MenuActive() stays
-      // true forever, and all keys are eaten by menu navigation.
+      // Sometimes aboutToHide is not called before the menu is destroyed.
+      // Clean up the global menu state here as well, otherwise g_menu_is_open
+      // leaks, GFX_MenuActive() stays true forever, and all keys are eaten by
+      // menu navigation.
       if (_has_g_menu_is_open){
         g_menu_is_open--;
         _has_g_menu_is_open = false;
@@ -1390,7 +1381,7 @@ static void schedule_flush_pending_menu_callbacks(void)
     bool _is_root;
     bool _is_permanent;
 
-    bool _has_keyboard_focus = false; // Per-instance. A global flag caused the wait popup's closeEvent to release the real popup's keyboard focus.
+    bool _has_keyboard_focus = false; // Per-instance. A global flag caused one menu's closeEvent to release another menu's keyboard focus.
     
     MyMainQMenu(QWidget *parent, QString title, int shortcut_width, bool is_async, bool is_permanent, func_t *callback)
       : MyQMenu(parent, title, shortcut_width)
@@ -1490,15 +1481,14 @@ static void schedule_flush_pending_menu_callbacks(void)
 
 	if (state != NULL
 	    && state->root_menu == this
-	    && state->lineedit_action != NULL
-	    && state->waiting == false)
+	    && state->lineedit_action != NULL)
 	{
 		QPointer<MyMainQMenu> menu = this;
 
 		QTimer::singleShot(0, this, [menu]{
 			PopupSearchState *state2 = g_popup_search_state.get();
 
-			if (menu == NULL || state2 == NULL || state2->root_menu != menu.data() || state2->waiting)
+			if (menu == NULL || state2 == NULL || state2->root_menu != menu.data())
 				return;
 
 			QAction *active = menu->activeAction();
@@ -2113,7 +2103,7 @@ static QMenu *create_qmenu(
     for (PopupSearchMenu &search_menu : search_state->menus)
       num_entries += search_menu.entries.size();
 
-    if (num_entries >= POPUP_SEARCH_MIN_NUM_ENTRIES || g_force_popup_search_lineedit)
+    if (num_entries >= POPUP_SEARCH_MIN_NUM_ENTRIES)
     {
       QLineEdit *lineedit = new QLineEdit;
       lineedit->setFocusPolicy(Qt::NoFocus);
@@ -2151,13 +2141,6 @@ static QMenu *create_qmenu(
       search_state->root_menu = menu;
       search_state->lineedit = lineedit;
       search_state->lineedit_action = lineedit_action;
-
-      if (g_force_popup_search_lineedit)
-      {
-        search_state->waiting = true;
-        search_state->waiting_text = g_popup_search_waiting_text;
-        lineedit->setText(g_popup_search_waiting_text);
-      }
 
       if (menu->actions().isEmpty())
         menu->addAction(lineedit_action);
@@ -2226,7 +2209,7 @@ static QMenu *create_qmenu(
   if(0)
     printf("      DUR: %f. clickdur: %f. checkdur: %f, subdur: %f. End: %f %f %f %f. sepdur: %f. callbackdur: %f. setdatadur: %f. Num calls to setStyle: %d / %d\n", TIME_get_ms()-time, clickdur, checkdur, subdur, t2-t,t3-t2,t4-t3,t5-t4, sepdur,callbackdur,setdatadur,0,0 ); //, num_s, num_saved);
 
-  if (search_state != NULL && !search_state->waiting)
+  if (search_state != NULL)
   {
     const QString pending_search_query = g_pending_popup_search_query;
     g_pending_popup_search_query.clear();
@@ -2382,67 +2365,6 @@ static QPoint get_popup_menu_position(QMenu *menu)
 }
 
 
-// Shows a temporary popup containing all top-level main menus, with "Please wait..." in the
-// search field, while the real search popup is being built.
-void GFX_ShowPopupSearchWaitScreen(void)
-{
-  if (g_waiting_popup_search_state != NULL)
-  {
-    if (!g_waiting_popup_search_state->root_menu.isNull())
-      g_waiting_popup_search_state->root_menu->close();
-
-    g_waiting_popup_search_state = NULL;
-  }
-
-  vector_t v = {};
-
-  QMenuBar *menu_bars[2] = {g_main_menu_bar, g_main_menu_bar_right};
-
-  for (QMenuBar *menu_bar : menu_bars)
-  {
-    if (menu_bar == NULL)
-      continue;
-
-    for (QAction *action : menu_bar->actions())
-    {
-      const QString title = action->text();
-
-      VECTOR_push_back(&v, talloc_strdup((QString("[submenu start]") + title).toUtf8().constData()));
-      VECTOR_push_back(&v, talloc_strdup("[submenu end]"));
-    }
-  }
-
-  if (v.num_elements == 0)
-    return;
-
-  g_force_popup_search_lineedit = true;
-  g_popup_search_waiting_text = "Please wait...";
-
-  std::function<void(int,bool)> empty_callback3;
-
-  printf("SEARCHPOPUP wait-create-start %f\n", TIME_get_ms());
-  QMenu *menu = create_qmenu(v, true, NULL, empty_callback3, NULL, false);
-  printf("SEARCHPOPUP wait-create-done %f\n", TIME_get_ms());
-
-  g_force_popup_search_lineedit = false;
-  g_popup_search_waiting_text.clear();
-
-  g_waiting_popup_search_state = g_popup_search_state;
-
-  if (g_pending_popup_position_is_hamburger)
-    g_hamburger_popup = menu;
-
-  if (g_has_pending_popup_position)
-    safeMenuPopup(menu, get_popup_menu_position(menu));
-  else
-    safeMenuPopup(menu);
-
-  // Make sure the wait popup is painted before the caller starts doing hard work.
-  processEventsALittleBit();
-
-  printf("SEARCHPOPUP wait-popup-done %f\n", TIME_get_ms());
-}
-
 static int64_t GFX_QtMenu(
                           const vector_t &v,
                           func_t *callback2,
@@ -2464,17 +2386,6 @@ static int64_t GFX_QtMenu(
   //printf("                CREATED menu %p", menu);
   
   if (is_async){
-
-    // Close the "Please wait" popup before opening the real search popup, so the two
-    // popups are never open at the same time.
-    if (g_waiting_popup_search_state != NULL)
-    {
-      std::shared_ptr<PopupSearchState> waiting_state = g_waiting_popup_search_state;
-      g_waiting_popup_search_state = NULL;
-
-      if (!waiting_state->root_menu.isNull())
-        waiting_state->root_menu->close();
-    }
 
     if (g_has_pending_popup_position)
     {

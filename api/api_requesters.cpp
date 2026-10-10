@@ -330,10 +330,6 @@ int64_t popupMenu(dynvec_t strings, func_t* callback){
   return GFX_Menu2(window, NULL, "", vec, callback, true, true);
 }
 
-void showPopupSearchWaitScreen(void){
-  GFX_ShowPopupSearchWaitScreen();
-}
-
 void openMainMenuPopup(void)
 {
 	GFX_open_hamburger_popup_menu(NULL);

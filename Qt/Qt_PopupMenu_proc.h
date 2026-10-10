@@ -12,8 +12,6 @@ QMenu *GFX_create_qmenu(const vector_t &v,
 
 void GFX_clear_menu_cache(void);
 
-void GFX_ShowPopupSearchWaitScreen(void);
-
 void GFX_set_pending_popup_position(int x, int y, bool is_hamburger);
 void GFX_set_hamburger_button(QWidget *button);
 void GFX_open_hamburger_popup_menu(QWidget *button);
