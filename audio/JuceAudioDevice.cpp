@@ -27,6 +27,23 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/settings_proc.h"
 #include "Juce_plugins_proc.h"
 
+#if !defined(RELEASE)
+// Debug facilities used to test how Radium handles a misbehaving audio driver without
+// having to rely on an actually misbehaving audio system. Set the environment variable
+// to activate the simulation.
+static bool test_simulate_juce_audio_failure(void){
+  static const bool doit = getenv("RADIUM_TEST_JUCE_AUDIO_FAIL")!=NULL;
+  return doit;
+}
+
+// Simulates an audio device that opens and runs fine, but where our callback is never
+// called (like when the audio thread hangs in the first write to the device).
+static bool test_simulate_juce_audio_callback_hang(void){
+  static const bool doit = getenv("RADIUM_TEST_JUCE_AUDIO_CALLBACK_HANG")!=NULL;
+  return doit;
+}
+#endif
+
 
 int g_juce_num_input_audio_channels = 0;
 const float *const* g_juce_input_audio_channels = NULL;
@@ -126,6 +143,7 @@ public:
   double _samplerate;
   int _buffer_size;
   bool _is_running = false;
+  juce::String _last_error;
   
   double _time_cycle_start = 0;
   //DEFINE_ATOMIC(double, _time_cycle_start) = 0;
@@ -199,6 +217,16 @@ public:
   
   bool initJuceAudio(const wchar_t *settings_string){
     
+#if !defined(RELEASE)
+    if (test_simulate_juce_audio_failure()){
+      fprintf(stderr, "TEST: Simulating a JUCE audio device that fails to start (RADIUM_TEST_JUCE_AUDIO_FAIL)\n");
+      _last_error = "Simulated audio device failure";
+      _last_reported_samplerate = 48000;
+      _samplerate = 48000;
+      return false;
+    }
+#endif
+    
     if (wcslen(settings_string) > 0)
       _settings = juce::XmlDocument::parse(juce::String(settings_string));
 
@@ -230,6 +258,13 @@ public:
     }
 #endif
     
+    // Register our callback before initialising the device. The device thread is started
+    // as soon as the device is opened, and the first thing it does is to call the callback,
+    // before the first (in theory quick, but possibly never returning) write to the audio
+    // device. This guarantees that Mixer::_RT_process_has_inited is set before the Mixer
+    // starts waiting for it, even if the write hooking up to the soundcard hangs.
+    _audio_device_manager.addAudioCallback (this);
+
     const juce::String error (_audio_device_manager.initialise (0, /* number of input channels */
                                                                 8, /* number of output channels */
                                                                 _settings.get(),
@@ -237,15 +272,17 @@ public:
                                                                 "",
                                                                 &preferred
                                                                 ));
- 
-    // start the IO device pulling its data from our callback..
-    _audio_device_manager.addAudioCallback (this);
-      
+  
     if (_audio_device_manager.getCurrentAudioDevice()==NULL || error.isNotEmpty()) {
 
-      // We also give error in Mixer.cpp though, but the error message might be useful.
+      // Note: We must not show a message box here since we are currently running in the
+      // JUCE message thread (called via run_on_message_thread), while the main thread is
+      // waiting for us. Showing a message box would block the JUCE message thread.
+      // The error is reported by MIXER_start instead.
+      _last_error = error;
+
       if (error.isNotEmpty())
-        GFX_Message(NULL, "Audio device manager: \"%S\"", error.toWideCharPointer());
+        fprintf(stderr, "JUCE audio device manager: \"%s\"\n", error.toRawUTF8());
 
       _last_reported_samplerate = 48000;
       _samplerate = 48000;
@@ -304,6 +341,13 @@ public:
                                         )
     override
   {    
+#if !defined(RELEASE)
+    if (test_simulate_juce_audio_callback_hang()){
+      // Simulate that our callback is never called even though the device is running.
+      return;
+    }
+#endif
+
     if (numSamples < RADIUM_BLOCKSIZE || MIXER_dummy_driver_is_running()){
 
       if (!MIXER_dummy_driver_is_running()){
@@ -610,6 +654,13 @@ double JUCE_audio_get_sample_rate(void){
 int JUCE_audio_get_buffer_size(void){
   return g_juce_player->_buffer_size;
 };
+
+const char *JUCE_audio_get_last_error(void){
+  if (g_juce_player==NULL)
+    return "";
+  else
+    return g_juce_player->_last_error.toRawUTF8();
+}
 
 int JUCE_get_num_xruns(void){
   if (g_juce_player==NULL){

@@ -1116,8 +1116,12 @@ struct Mixer{
       }
     };
     
-    if (JUCE_init_audio_device(juce_audio_device_callback, this, called_before_starting_audio)==false)
+    if (JUCE_init_audio_device(juce_audio_device_callback, this, called_before_starting_audio)==false) {
+      const char *error = JUCE_audio_get_last_error();
+      if (error[0] != '\0')
+        fprintf(stderr, "Unable to start JUCE audio device: \"%s\"\n", error);
       return false;
+    }
 
 #if !defined(RELEASE)
     {
@@ -1898,9 +1902,41 @@ bool MIXER_start(void){
       //return false;
     }
 
-  while(ATOMIC_GET(g_mixer->_RT_process_has_inited)==false)
-    msleep(50);
-    
+  {
+    // Wait for the audio callback to run at least once. The audio device can, however, be
+    // stuck (for instance if PipeWire/PulseAudio never processes our stream), so don't wait
+    // forever.
+    const double start_time = TIME_get_ms();
+    const double max_wait_time = 5000.0; // ms
+    bool has_timed_out = false;
+
+    while(ATOMIC_GET(g_mixer->_RT_process_has_inited)==false){
+      if (TIME_get_ms()-start_time > max_wait_time){
+        has_timed_out = true;
+        break;
+      }
+      msleep(50);
+    }
+
+    if (has_timed_out) {
+      fprintf(stderr, "Warning: The audio driver did not respond within %d ms. Starting dummy audio driver.\n", (int)max_wait_time);
+
+      // The dummy driver calls RT_process_audio_block, which sets _RT_process_has_inited.
+      if (!MIXER_dummy_driver_is_running())
+        MIXER_start_dummy_driver();
+
+      const double start_time2 = TIME_get_ms();
+      while(ATOMIC_GET(g_mixer->_RT_process_has_inited)==false && (TIME_get_ms()-start_time2) < 2000.0)
+        msleep(10);
+
+      ScopedQPointer<MyQMessageBox> msgBox(MyQMessageBox::create(true));
+      msgBox->setIcon(QMessageBox::Critical);
+      msgBox->setText("The audio device did not start. Radium is running with a dummy audio driver (no sound) until the audio settings are fixed under <b>Edit -> Soundcard preferences</b>");
+      msgBox->setStandardButtons(QMessageBox::Ok);
+      safeExec(msgBox, false);
+    }
+  }
+
   PR_init_plugin_types();
 
   //Sleep(3000);
