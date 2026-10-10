@@ -10,10 +10,10 @@ echo "B2_"
 source $(dirname "${0}")/configuration.sh
 echo "B3_"
 
-export RADIUM_BIN="/tmp/radium_bin/radium_linux.bin"
+export RADIUM_BIN="$RADIUM_TMP_BIN_DIR/radium_linux.bin"
 
-mkdir -p /tmp/radium_bin
-mkdir -p /tmp/radium_objects
+mkdir -p "$RADIUM_TMP_BIN_DIR"
+mkdir -p "$T"
 
 
 # Uncomment next line for debug build.
@@ -84,9 +84,6 @@ export CPUOPT=
 # export GCC_PREFIX=$(dirname `which gcc`)/../
 # REQUIRES_RTTI=1 cmake -DLLVM_ENABLE_PROJECTS="clang;compiler-rt" -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=$GCC_PREFIX/bin/gcc -DCMAKE_CXX_COMPILER=$GCC_PREFIX/bin/g++ -DGCC_INSTALL_PREFIX=$GCC_PREFIX -DCMAKE_INSTALL_PREFIX=/home/kjetil/site -DLLVM_ENABLE_RTTI=ON ../llvm 
 # REQUIRES_RTTI=1 make REQUIRES_RTTI=1 -j2
-
-branch=$(git branch | sed -n -e 's/^\* \(.*\)/\1/p')
-export T=/tmp/radium_objects_$branch/
 
 
 RADIUM_USES_MOLD_OR_LDD=0
@@ -360,8 +357,8 @@ cp -f bin/run_radium_linux.sh bin/radium
 
 ln -sf $RADIUM_BIN bin/
 
-echo "...making symlinks into /tmp/radium/_bin/"
-ln -sf `pwd`/bin/* /tmp/radium_bin/ || true
+echo "...making symlinks into $RADIUM_TMP_BIN_DIR/"
+ln -sf `pwd`/bin/* "$RADIUM_TMP_BIN_DIR/" || true
 echo "...finished"
 
 echo

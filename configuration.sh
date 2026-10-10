@@ -26,6 +26,8 @@ cd $(dirname ${BASH_SOURCE[0]})
 
 source helpers.sh
 
+set_radium_build_dirs
+
 
 
 

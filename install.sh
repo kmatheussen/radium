@@ -128,9 +128,9 @@ for a in ${GENERATED_FILES//|/ } ; do
     fi
 done
 
-if test -f /tmp/radium_bin/radium_linux.bin; then
+if test -f "$RADIUM_TMP_BIN_DIR/radium_linux.bin"; then
     rm -f "$TARGET/radium_linux.bin"
-    cp -f /tmp/radium_bin/radium_linux.bin "$TARGET/"
+    cp -f "$RADIUM_TMP_BIN_DIR/radium_linux.bin" "$TARGET/"
 fi
 
 mkdir -p "$TARGET/packages"
