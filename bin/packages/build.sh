@@ -359,9 +359,13 @@ build_qscintilla() {
     tar xvzf QScintilla_src-2.14.0.tar.gz 
     cd QScintilla_src-2.14.0/src
     echo "CONFIG += staticlib" >> qscintilla.pro
-    $QMAKE QMAKE_CFLAGS+="-arch arm64 -arch x86_64" QMAKE_CXXFLAGS+="-arch arm64 -arch x86_64" QMAKE_LFLAGS+="-arch arm64 -arch x86_64"
-    # install_name_tool can't handle fat archive members. Not needed for a static lib anyway.
-    sed -i '' '/install_name_tool -id/d' Makefile
+    if uname -s |grep Darwin ; then
+	$QMAKE QMAKE_CFLAGS+="$DARWIN_ARCH_FLAGS" QMAKE_CXXFLAGS+="$DARWIN_ARCH_FLAGS" QMAKE_LFLAGS+="$DARWIN_ARCH_FLAGS"
+	# install_name_tool can't handle fat archive members. Not needed for a static lib anyway.
+	sed -i '' '/install_name_tool -id/d' Makefile
+    else
+	$QMAKE
+    fi
     patch -p0 <../../qscintilla.patch
     make -j`nproc`
     cd ../..
