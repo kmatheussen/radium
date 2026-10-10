@@ -623,4 +623,107 @@
 (<ra> :get-keybindings-from-command "ra.toggleCurrWindowFullScreen")
 (<ra> :get-keybindings-from-command "ra.toggleFullScreen")
 !!#
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Help menu: "List of included Pd externals in Pd2"
+;;;
+;;; Scans <program-dir>/pd/externals when the menu entry is clicked, and shows
+;;; the result in the message window. The rules mirror the Pd2 loader
+;;; (ensure_externals_host() in audio/Pd_plugin2.cpp): class binaries
+;;; (.pd_linux/.pd_darwin/.pd_freebsd) and abstractions (.pd, except
+;;; "*-help.pd" and "*-meta.pd"). Alias symlinks (cyclone's Append.pd_linux,
+;;; etc.) are skipped, as the loader does. The monolithic <lib>/<lib>.pd_linux
+;;; binary is reported in its group's header instead of as a class.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (pd-external-classname filename)
+  ;; Mirrors external_class_name() in audio/Pd_plugin2.cpp.
+  (cond ((string-ends-with? filename ".pd_linux")   (string-drop-right filename (string-length ".pd_linux")))
+        ((string-ends-with? filename ".pd_darwin")  (string-drop-right filename (string-length ".pd_darwin")))
+        ((string-ends-with? filename ".pd_freebsd") (string-drop-right filename (string-length ".pd_freebsd")))
+        ((string-ends-with? filename ".pd")         (string-drop-right filename (string-length ".pd")))
+        (else #f)))
+
+(***assert*** (pd-external-classname "accum.pd_linux") "accum")
+(***assert*** (pd-external-classname "acosh~.pd_darwin") "acosh~")
+(***assert*** (pd-external-classname "0x3c0x7e.pd") "0x3c0x7e")
+(***assert*** (pd-external-classname "zexy.pd_freebsd") "zexy")
+(***assert*** (pd-external-classname "libiemnet.pd_linux.so") #f)
+(***assert*** (pd-external-classname "README.md") #f)
+
+;; Returns (list class-binaries abstractions library-binary) for one library dir.
+(define (get-pd-externals-in-libdir libname libpath)
+  (define class-binaries '())
+  (define abstractions '())
+  (define library-binary #f)
+
+  ;; Sync iteration: ~1400 directory entries in total, so a few milliseconds.
+  (<ra> :iterate-directory libpath #f
+        (lambda (is-finished file-info)
+          ;; file_info is uninitialized when is-finished is #t.
+          (when (not is-finished)
+            (define filename (<ra> :get-path-string (file-info :filename)))
+            (define classname (and (not (file-info :is-dir))
+                                   (not (file-info :is-sym-link))
+                                   (pd-external-classname filename)))
+            (when (and classname
+                       (not (string-ends-with? filename "-help.pd"))
+                       (not (string-ends-with? filename "-meta.pd")))
+              (cond ((string=? classname libname) ;; the monolithic <lib>/<lib>.pd_linux
+                     (set! library-binary filename))
+                    ((string-ends-with? filename ".pd")
+                     (set! abstractions (cons classname abstractions)))
+                    (else
+                     (set! class-binaries (cons classname class-binaries))))))
+          #t)) ;; Must return non-#f, otherwise the iteration stops.
+  (list (sort class-binaries string<?)
+        (sort abstractions string<?)
+        library-binary))
+
+;; Returns the whole listing as plain text. Can also be called from the scheme
+;; listener to dump the list to a terminal.
+(define (get-pd2-externals-text)
+  (define externals-path (<ra> :append-file-paths (<ra> :get-program-path)
+                               (<ra> :get-path "pd/externals")))
+  (if (not (<ra> :dir-exists externals-path))
+      (<-> "Could not find the Pd2 externals directory: \""
+           (<ra> :get-path-string externals-path) "\".")
+      (let ((text (<-> "Pd2 externals in \"" (<ra> :get-path-string externals-path) "\":\n"))
+            (libs '()))
+        ;; First pass: just collect the library directories. They must not be
+        ;; iterated from inside the callback below: ra:iterate-directory aborts
+        ;; if it is called again while it is still running.
+        (<ra> :iterate-directory externals-path #f
+              (lambda (is-finished file-info)
+                (when (and (not is-finished)
+                           (file-info :is-dir))
+                  (set! libs (cons (cons (<ra> :get-path-string (file-info :filename))
+                                         (file-info :path))
+                                   libs)))
+                #t))
+        ;; Second pass: one directory per library.
+        (for-each (lambda (lib)
+                    (define libname (car lib))
+                    (define data (get-pd-externals-in-libdir libname (cdr lib)))
+                    (define class-binaries (car data))
+                    (define abstractions (cadr data))
+                    (define library-binary (caddr data))
+                    (set! text (<-> text "\n" libname ": "
+                                    (length class-binaries) " class binaries, "
+                                    (length abstractions) " abstractions"
+                                    (if library-binary
+                                        (<-> " (library binary: " library-binary ")")
+                                        "")
+                                    "\n"))
+                    (for-each (lambda (name)
+                                (set! text (<-> text "  " name "\n")))
+                              (append class-binaries abstractions)))
+                  (sort libs (lambda (a b)
+                               (string<? (car a) (car b)))))
+        (<-> text "\n" (length libs) " libraries.\n"))))
+
+(define (show-pd2-externals-list)
+  ;; Called from the Help menu, "List of included Pd externals in Pd2".
+  (ra:add-message (ra:get-html-from-text (get-pd2-externals-text))))
                      
