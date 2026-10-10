@@ -123,8 +123,8 @@ fi
 
 unameOut="$(uname -s)"
 case "${unameOut}" in
-    Linux*)     EXECUTABLE="/tmp/radium_bin/radium_linux.bin";;
-    Darwin*)    EXECUTABLE="/tmp/radium_bin/radium_macos.bin";;
+    Linux*)     EXECUTABLE="$RADIUM_TMP_BIN_DIR/radium_linux.bin";;
+    Darwin*)    EXECUTABLE="$RADIUM_TMP_BIN_DIR/radium_macos.bin";;
     *)          EXECUTABLE="where_is_radium_for_\"${unameOut}\"?_(change_these_lines_in_run_gdb.sh_to_fix_this)";;
 esac
 
