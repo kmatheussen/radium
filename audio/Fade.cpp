@@ -65,27 +65,36 @@ void Fade::RT_fade(const int num_frames, float *__restrict__ data, const float *
 
       if (in == NULL) {
 
+        float fade = fade_mul;
 #if !defined(RADIUM_USES_UBSAN)
         #pragma clang loop vectorize(enable) interleave(enable)
 #endif
-        for(int i=0;i<how_many;i++)
-          data[i] *= fade_mul + i*fade_inc;
+        for(int i=0;i<how_many;i++) {
+          data[i] *= fade;
+          fade += fade_inc;
+        }
 
       } else {
 
         if (add) {
+          float fade = fade_mul;
 #if !defined(RADIUM_USES_UBSAN)
           #pragma clang loop vectorize(enable) interleave(enable)
 #endif
-          for(int i=0;i<how_many;i++)
-            data[i] += in[i] * (fade_mul + i*fade_inc);
+          for(int i=0;i<how_many;i++) {
+            data[i] += in[i] * fade;
+            fade += fade_inc;
+          }
 
         } else {
+          float fade = fade_mul;
 #if !defined(RADIUM_USES_UBSAN)
            #pragma clang loop vectorize(enable) interleave(enable)
 #endif
-          for(int i=0;i<how_many;i++)
-            data[i] = in[i] * (fade_mul + i*fade_inc);
+          for(int i=0;i<how_many;i++) {
+            data[i] = in[i] * fade;
+            fade += fade_inc;
+          }
           
         }
 
@@ -115,27 +124,39 @@ void Fade::RT_fade(const int num_frames, float *__restrict__ data, const float *
 #endif
 
     const int extra = num_frames-how_many;
-    if (extra > 0){
-
-      if (_is_fading_in){
-
-        if (add && in != NULL){
-          // The fade has reached full gain (1.0), so the rest of 'in' should be added
-          // without being faded. (When 'add' is false, the caller has already placed
-          // 'in' in 'data', and the rest should just be left alone.)
-          for(int i=how_many;i<num_frames;i++)
-            data[i] += in[i];
+    if (extra > 0)
+    {
+      if (_is_fading_in)
+      {
+        if (in != NULL)
+        {
+          if (add)
+          {
+            // The fade has reached full gain (1.0), so the rest of 'in' should be added
+            // without being faded.
+            for(int i=how_many;i<num_frames;i++)
+              data[i] += in[i];
+          }
+          else
+          {
+            // The fade has reached full gain (1.0), so the rest of 'in' should be copied
+            // to 'data' without being faded. (If the caller pre-filled 'data' with 'in',
+            // 'in' is NULL and the rest should just be left alone.)
+            memcpy(data + how_many, in + how_many, extra*sizeof(float));
+          }
         }
-
-      } else {
-
-        if (add){
+      }
+      else
+      {
+        if (add)
+        {
           // The faded-out contribution from 'in' is zero, so 'data' must not be touched.
-        } else {
+        }
+        else
+        {
           // 'data' contains 'in[i]*fade', which should be zero for the rest.
           memset(data + how_many, 0, extra*sizeof(float));
         }
-
       }
     }
 

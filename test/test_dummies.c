@@ -84,6 +84,53 @@ double TIME_get_ms(void){
   return get_ms();
 }
 
+#elif BENCHMARK_SMOOTHDELAY && defined(__aarch64__) && defined(__APPLE__)
+// Same rationale as for x86 above: the benchmark does ~20 million time
+// measurements, and the gettimeofday overhead is significant compared to the
+// code being measured. Read the architectural virtual counter (CNTVCT_EL0)
+// directly instead, and calibrate its frequency using mach_absolute_time,
+// which has a known timebase (24 MHz on Apple Silicon).
+#include <stdint.h>
+#include <mach/mach_time.h>
+
+static double g_benchmark_cntvct_per_ms = 0.0;
+
+static inline uint64_t benchmark_rdcntvct(void){
+  uint64_t v;
+  __asm__ __volatile__("mrs %0, cntvct_el0" : "=r"(v) :: "memory");
+  return v;
+}
+
+static void __attribute__((constructor)) benchmark_init_cntvct_timer(void){
+  mach_timebase_info_data_t timebase;
+
+  if (mach_timebase_info(&timebase) != KERN_SUCCESS)
+    return;
+
+  if (timebase.numer == 0)
+    return;
+
+  const uint64_t start_mach = mach_absolute_time();
+  const uint64_t start_cntvct = benchmark_rdcntvct();
+
+  usleep(20*1000);
+
+  const uint64_t end_cntvct = benchmark_rdcntvct();
+  const uint64_t end_mach = mach_absolute_time();
+
+  const double duration_ms = (double)(end_mach - start_mach) * timebase.numer / timebase.denom / 1000000.0;
+
+  if (duration_ms > 0.0)
+    g_benchmark_cntvct_per_ms = (double)(end_cntvct - start_cntvct) / duration_ms;
+}
+
+double TIME_get_ms(void){
+  if (g_benchmark_cntvct_per_ms > 0.0)
+    return (double)benchmark_rdcntvct() / g_benchmark_cntvct_per_ms;
+
+  return get_ms();
+}
+
 #else
 
 double TIME_get_ms(void){
