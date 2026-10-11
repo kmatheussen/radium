@@ -43,6 +43,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QLabel>
 #include <QLayout>
 #include <QThread>
+#include <QElapsedTimer>
 #include <QProcessEnvironment>
 #include <QOperatingSystemVersion>
 
@@ -562,17 +563,48 @@ static void send_crash_message_to_server(QString message, QString plugin_names, 
 
       QNetworkReply *reply = nam.post(request,data);
 
-      while(reply->isFinished()==false) {
+      QElapsedTimer timer;
+      timer.start();
+
+      while(reply->isFinished()==false && timer.elapsed() < 15000) {
         QCoreApplication::processEvents();
         QThread::msleep(50);
       }
-      
+
+      const bool timed_out = reply->isFinished()==false;
+
+      if (timed_out)
+        reply->abort();
+
+      const int http_status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+      const bool successfully_sent = !timed_out && reply->error()==QNetworkReply::NoError && http_status >= 200 && http_status < 300;
+
 #if 1
       {
         ScopedQPointer<MyQMessageBox> box(MyQMessageBox::create(true));
-        box->setText("Thanks for reporting the bug!");
-        
-        box->setInformativeText("The bug will hopefully be fixed in the next version of Radium.");
+
+        if (successfully_sent) {
+
+          box->setText("Thanks for reporting the bug!");
+          box->setInformativeText("The bug will hopefully be fixed in the next version of Radium.");
+
+        } else {
+
+          QString error;
+
+          if (timed_out)
+            error = "The server did not respond within 15 seconds.";
+          else if (reply->error() != QNetworkReply::NoError)
+            error = reply->errorString();
+          else
+            error = "The server returned HTTP status " + QString::number(http_status) + ".";
+
+          box->setText("Unable to send the crash report");
+          box->setInformativeText(error + "\n\nThe report has not been sent.");
+
+        }
+
+        box->setStandardButtons(QMessageBox::Ok);
         box->exec();
       }
 #endif
