@@ -6,6 +6,10 @@
   If only using "-ffast-math", clang++12 is slightly faster than g++10.
  */
 
+#if !defined(__FAST_MATH__)
+  #error "audio/Fade.cpp must be compiled with -ffast-math (the incremental fade loops rely on reassociation to vectorize)."
+#endif
+
 #if defined(RADIUM_AUDIO_FADE_CPP)
   #error "error. File included twice"
 #endif

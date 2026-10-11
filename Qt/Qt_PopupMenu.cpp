@@ -1508,7 +1508,14 @@ static void schedule_flush_pending_menu_callbacks(void)
         release_keyboard_focus_counting();
         _has_keyboard_focus = false;
       }
+
       MyQMenu::hideEvent(event);
+
+      // Qt hides a popup menu when it is dismissed instead of closing it, so WA_DeleteOnClose
+      // never fires for popups dismissed by clicking outside, pressing escape, or by hide().
+      // Delete the root popup here to avoid leaking its actions, callbacks and entry widgets.
+      if (!_is_permanent && _is_root)
+        deleteLater();
     }
 
     void closeEvent(QCloseEvent *event) override{
