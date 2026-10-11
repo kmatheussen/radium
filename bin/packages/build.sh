@@ -228,6 +228,62 @@ build_libpd() {
 }
 
 
+# Build the self-contained Wish.app that the Pd2 instrument uses to show the
+# Pd GUI (tcl/pd-gui.tcl). It is installed as libpd/Wish.app, next to the
+# pure-data directory, where the patched sys_startgui() looks for it before
+# falling back to a Wish/Tcl-Tk installed on the machine.
+#
+# wish is just the Tk shell, so this bundles both Tcl (interpreter + script
+# library) and Tk (widgets + script library) as frameworks inside the app,
+# built from the pinned tarballs. The "embedded" make targets are the ones
+# pure-data uses (see pure-data/mac/tcltk-wish.sh).
+#
+# The build is universal (x86_64+arm64) with the same macOS deployment target
+# as the rest of Radium, since create_app.sh checks every Mach-O file in the
+# app bundle.
+build_tcltk_wish() {
+
+    # Note: the framework dir is "Versions/8.6" for all 8.6.x releases.
+    TCLTK_VERSION=8.6.17
+    TCLTK_FRAMEWORK_VERSION=8.6
+    WISH_DIR="`pwd`/tcltk-wish-embedded"
+    WISH_APP="`pwd`/libpd/Wish.app"
+
+    if [ ! -e libpd/pure-data/tcl/pd-gui.tcl ]; then
+        echo "build_tcltk_wish: libpd has not been extracted yet (missing libpd/pure-data/tcl/pd-gui.tcl). Run build_libpd first." >&2
+        exit 1
+    fi
+
+    rm -rf tcl$TCLTK_VERSION tk$TCLTK_VERSION "$WISH_DIR" build
+
+    tar xvzf tcl$TCLTK_VERSION-src.tar.gz
+    tar xvzf tk$TCLTK_VERSION-src.tar.gz
+
+    CFLAGS="$DARWIN_ARCH_FLAGS $DARWIN_MIN_FLAGS" make -C tcl$TCLTK_VERSION/macosx embedded
+    CFLAGS="$DARWIN_ARCH_FLAGS $DARWIN_MIN_FLAGS" make -C tk$TCLTK_VERSION/macosx embedded
+    CFLAGS="$DARWIN_ARCH_FLAGS $DARWIN_MIN_FLAGS" make -C tcl$TCLTK_VERSION/macosx install-embedded INSTALL_ROOT="$WISH_DIR"
+    CFLAGS="$DARWIN_ARCH_FLAGS $DARWIN_MIN_FLAGS" make -C tk$TCLTK_VERSION/macosx install-embedded INSTALL_ROOT="$WISH_DIR"
+
+    rm -rf "$WISH_APP"
+    cp -a "$WISH_DIR/Applications/Utilities/Wish.app" "$WISH_APP"
+
+    # Tk's install-embedded is supposed to point the Wish binary to the
+    # frameworks inside the app, but its install_name_tool invocation fails
+    # with current Xcode versions, leaving references to /Library/Frameworks
+    # (where Tcl/Tk normally is not installed) in place. Fix the install
+    # names here instead.
+    chmod -R u+w "$WISH_APP"
+    TCL_FRAMEWORK=/Library/Frameworks/Tcl.framework/Versions/$TCLTK_FRAMEWORK_VERSION/Tcl
+    TK_FRAMEWORK=/Library/Frameworks/Tk.framework/Versions/$TCLTK_FRAMEWORK_VERSION/Tk
+    install_name_tool -change $TCL_FRAMEWORK @executable_path/../Frameworks/Tcl.framework/Versions/$TCLTK_FRAMEWORK_VERSION/Tcl "$WISH_APP/Contents/MacOS/Wish"
+    install_name_tool -change $TK_FRAMEWORK @executable_path/../Frameworks/Tk.framework/Versions/$TCLTK_FRAMEWORK_VERSION/Tk "$WISH_APP/Contents/MacOS/Wish"
+    install_name_tool -id @executable_path/../Frameworks/Tcl.framework/Versions/$TCLTK_FRAMEWORK_VERSION/Tcl "$WISH_APP/Contents/Frameworks/Tcl.framework/Versions/$TCLTK_FRAMEWORK_VERSION/Tcl"
+    install_name_tool -id @executable_path/../Frameworks/Tk.framework/Versions/$TCLTK_FRAMEWORK_VERSION/Tk "$WISH_APP/Contents/Frameworks/Tk.framework/Versions/$TCLTK_FRAMEWORK_VERSION/Tk"
+
+    rm -rf tcl$TCLTK_VERSION tk$TCLTK_VERSION "$WISH_DIR" build
+}
+
+
 # Build the dynamically loaded Pd externals used by the Pd2 instrument.
 # The library list, pinned sources and per-library build options live in
 # pd_externals/pd_externals.list. The externals are compiled against the
@@ -582,6 +638,16 @@ if uname -s |grep -e Linux -e Darwin ; then
     build_libpd
     build_pd_externals
     echo "Finished building libpd and pd externals" # need this line to avoid script failing if the line above is commented out.
+fi
+
+# The Wish.app is only used by the Pd2 instrument (and only on MacOS).
+# build_tcltk_wish installs it next to the pure-data directory, so libpd must
+# have been extracted (run build_libpd) first.
+if uname -s |grep Darwin ; then
+    if ! is_0 $INCLUDE_PD2DEV ; then
+        build_tcltk_wish
+        echo "Finished building the Tcl/Tk Wish.app"
+    fi
 fi
 
 

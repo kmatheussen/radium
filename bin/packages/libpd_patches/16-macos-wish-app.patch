@@ -1,0 +1,35 @@
+--- a/pure-data/src/s_inter.c
++++ b/pure-data/src/s_inter.c
+@@ -1489,7 +1489,9 @@
+             char *homedir = getenv("HOME");
+             char embed_glob[FILENAME_MAX];
+             char home_filename[FILENAME_MAX];
+-            char *wish_paths[11] = {
++            char bundled_wish[FILENAME_MAX];
++            char *wish_paths[12] = {
++ "(no wish bundled with pd)",
+  "(custom wish not defined)",
+  "(did not find a home directory)",
+  "/Applications/Utilities/Wish.app/Contents/MacOS/Wish",
+@@ -1518,12 +1520,19 @@
+             else
+             {
+                 int wish_paths_count = sizeof(wish_paths)/sizeof(*wish_paths);
++                /* Radium: prefer the self-contained Wish.app bundled next to
++                the pure-data directory, i.e. <program>/packages/libpd/Wish.app,
++                so that the Pd2 GUI doesn't need Tcl/Tk installed on the
++                machine. */
++                pd_snprintf(bundled_wish, sizeof(bundled_wish),
++                            "%s/../Wish.app/Contents/MacOS/Wish", libdir);
++                wish_paths[0] = bundled_wish;
+                 #ifdef WISH
+-                    wish_paths[0] = WISH;
++                    wish_paths[1] = WISH;
+                 #endif
+                 sprintf(home_filename,
+                         "%s/Applications/Wish.app/Contents/MacOS/Wish",homedir);
+-                wish_paths[1] = home_filename;
++                wish_paths[2] = home_filename;
+                 for(i=0; i<wish_paths_count; i++)
+                 {
+                     if (sys_verbose)

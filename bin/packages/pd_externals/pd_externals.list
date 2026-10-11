@@ -187,12 +187,15 @@ url = https://github.com/porres/pd-else/archive/refs/tags/%ref%.tar.gz
 
 # --- Small maintained libraries ---------------------------------------------
 
+# markovChains.c and isoWrap~.c include <sys/math.h>, which is not in the
+# macOS SDK; the patch removes it (drand48/seed48 come from stdlib.h and the
+# bundled rand48.h shim).
 [ekext]
 tarball = ekext-v0.3.1.tar.gz
 srcdir = ekext-0.3.1
 flags = --install
 args =
-patches = ekext-license-name.patch
+patches = ekext-license-name.patch ekext-no-sys-math-h.patch
 author = Ed Kelly
 copyright = 2005-2023 Edward Kelly
 license = BSD-3-Clause

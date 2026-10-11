@@ -193,6 +193,14 @@ if [ ${INCLUDE_PD2DEV} -eq 1 ] ; then
 	mkdir -p "$TARGET/packages/libpd/libs"
 	if uname -s |grep Darwin ; then
 		cp -a packages/libpd/libs/libpd.dylib "$TARGET/packages/libpd/libs/"
+
+		# The self-contained Tcl/Tk Wish.app used to show the Pd GUI.
+		# Built by bin/packages/build.sh (build_tcltk_wish).
+		if [ -d packages/libpd/Wish.app ] ; then
+			cp -a packages/libpd/Wish.app "$TARGET/packages/libpd/"
+		else
+			echo "Warning: packages/libpd/Wish.app has not been built. The Pd2 GUI will require Tcl/Tk (wish) to be installed on the machine." >&2
+		fi
 	else
 		cp -a packages/libpd/libs/libpd.so "$TARGET/packages/libpd/libs/"
 	fi

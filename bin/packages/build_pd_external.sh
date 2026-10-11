@@ -38,6 +38,9 @@
 #   PD2_EXTERNALS_DIR   Same as --dest.
 #   PD2_PDLIBBUILDER    Fallback pd-lib-builder directory, copied into source
 #                       trees whose GitHub archive omits the submodule.
+#   DARWIN_ARCH_FLAGS   Architecture flags for macOS externals (default:
+#                       universal "-arch arm64 -arch x86_64"; build.sh exports
+#                       the same flags it uses for the other Mac packages).
 #
 # Extra build args after <source-dir> are forwarded verbatim to make, configure
 # or cmake, for projects that need e.g. --with-pd=... or a specific target.
@@ -187,8 +190,18 @@ run_in_dir() {
 # only when both PDINSTANCE and PDTHREADS are defined, and dropping them makes
 # the external reference s_float/s_symbol/... globals that libpd doesn't have.
 DEFINES="-DPD -DPDINSTANCE -DPDTHREADS"
-if [ "$(uname -s)" = Darwin ] && [ -n "${MACOSX_DEPLOYMENT_TARGET:-}" ]; then
-    DEFINES="$DEFINES -mmacosx-version-min=$MACOSX_DEPLOYMENT_TARGET"
+
+# On macOS the externals are built universal (arm64 + x86_64), like libpd and
+# the other Mac packages. DARWIN_ARCH_FLAGS is set by build.sh; the default
+# covers standalone invocations of this script.
+DARWIN_MIN_FLAG=""
+DARWIN_ARCH_FLAGS=""
+if [ "$(uname -s)" = Darwin ]; then
+    if [ -n "${MACOSX_DEPLOYMENT_TARGET:-}" ]; then
+        DARWIN_MIN_FLAG="-mmacosx-version-min=$MACOSX_DEPLOYMENT_TARGET"
+        DEFINES="$DEFINES $DARWIN_MIN_FLAG"
+    fi
+    DARWIN_ARCH_FLAGS="${DARWIN_ARCH_FLAGS:--arch arm64 -arch x86_64}"
 fi
 
 COMPAT_FLAG=""
@@ -276,17 +289,42 @@ if [ "$BUILD_SYSTEM" = pdlibbuilder ] \
 fi
 
 pdlibbuilder_make() {
+    # pd-lib-builder builds for the native architecture only, and on Darwin
+    # appends a hardcoded -mmacosx-version-min=10.6 (its internal version.flag)
+    # after the flags passed through CPPFLAGS. The last deployment target wins,
+    # and compiling m_pd.h with PDINSTANCE and PDTHREADS needs thread-local
+    # storage (__thread pd_this), which is unsupported below macOS 10.7, so
+    # every compile fails with "thread-local storage is not supported for the
+    # current target". Overriding its architecture variables for the compile
+    # and link steps makes the externals universal (like libpd and the other
+    # Mac packages) with Radium's deployment target. Overriding its cflags
+    # instead would clobber the project's own cflags (e.g. -DVERSION=...).
+    local DARWIN_FLAGS=""
+    if [ -n "$DARWIN_ARCH_FLAGS" ]; then
+        DARWIN_FLAGS="$DARWIN_ARCH_FLAGS"
+        if [ -n "$DARWIN_MIN_FLAG" ]; then
+            DARWIN_FLAGS="$DARWIN_FLAGS $DARWIN_MIN_FLAG"
+        fi
+    fi
+
     # Pass the defines through CPPFLAGS rather than cflags, so that a
     # project's own cflags (e.g. -DVERSION=...) are not clobbered.
     local MAKE_EXTRA=()
     if [ -n "${PD2_CFLAGS:-}" ]; then
-        MAKE_EXTRA=("CFLAGS=$PD2_CFLAGS")
+        # pd-lib-builder treats CFLAGS as a complete override of its default
+        # warning, optimisation and architecture flags; add the architecture
+        # flags back so libraries with extra compiler flags are universal too.
+        MAKE_EXTRA=("CFLAGS=$PD2_CFLAGS $DARWIN_FLAGS")
     fi
     if [ -n "$SYMBOLIC_LDFLAG" ]; then
         # pd-lib-builder appends LDFLAGS to the class and shared library link
         # commands, and arch.ld.flags (which LDFLAGS defaults to) is empty on
         # ELF platforms.
         MAKE_EXTRA+=("LDFLAGS=$SYMBOLIC_LDFLAG")
+    fi
+    if [ -n "$DARWIN_FLAGS" ]; then
+        MAKE_EXTRA+=("arch.c.flags=$DARWIN_FLAGS")
+        MAKE_EXTRA+=("arch.ld.flags=$DARWIN_FLAGS")
     fi
     run env CPPFLAGS="$CPPFLAGS_ALL" \
         make -C "$SRC" -j"$JOBS" PDINCLUDEDIR="$LIBPD_SRC" \
