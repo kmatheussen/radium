@@ -1802,9 +1802,7 @@
 
 (define *last-pressed-menu-entry-widget-mouse-button* 0)
 
-(define (draw-keybinding gui x1 y1 x2 y2 keybinding)
-  (define nonhover-background-color (<gui> :mix-colors "low_background" "#ffffff" 0.97))
-  
+(define* (draw-keybinding gui x1 y1 x2 y2 keybinding (nonhover-background-color (<gui> :mix-colors "low_background" "#ffffff" 0.97)))
   (define is-unassigned (string=? keybinding "unassigned"))
 
   (<gui> :my-draw-text gui
@@ -1881,7 +1879,7 @@
     ;;(c-display "x1/y1:" checkbox-x1 checkbox-y1 (<gui> :width checkbox) before-and-after-width)
     (<gui> :add widget checkbox checkbox-x1 checkbox-y1))
     
-  (define nonhover-background-color (<gui> :mix-colors "low_background" "#ffffff" 0.97))
+  (define nonhover-background-color "menu_entry_background")
   (define hover-background-color "high_background") ;;(<gui> :mix-colors (<gui> :get-background-color widget) "#010101" 0.5))
   (define border-color (<gui> :mix-colors hover-background-color "#010101" 0.5))
   
@@ -1930,7 +1928,7 @@
 
            (when (not (string=? "" shortcut))
              (define shortcut-x1 (- width (+ shortcut-width before-and-after-width b)))
-             (draw-keybinding widget shortcut-x1 b (- width b) (- height b) shortcut)
+             (draw-keybinding widget shortcut-x1 b (- width b) (- height b) shortcut nonhover-background-color)
              )))
 
   (<gui> :add-mouse-callback widget

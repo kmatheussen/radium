@@ -141,6 +141,7 @@ static const ColorConfig g_colorconfig[] = {
   {MENU_TEXT_COLOR_NUM,                  "menu_text", "Menu text", false},
   {MENU_KEYBINDING_TEXT_COLOR_NUM,                  "menu_keybinding_text", "Menu keybinding text", false},
   {MENU_BACKGROUND_COLOR_NUM,                  "menu_background", "Menu background", false},
+  {MENU_ENTRY_BACKGROUND_COLOR_NUM,                  "menu_entry_background", "Menu entry background", false},
   {EDITOR_SLIDERS_COLOR_NUM,                  "color12", "Editor sliders", false},
   {TRACK_SLIDER_COLOR_NUM,     "track_slider", "Track slider (bottom of editor)", false},
   {LINE_SLIDER_COLOR_NUM,     "line_slider", "Line slider (left of editor)", false},
@@ -329,6 +330,7 @@ static ReplacementColor g_replacement_color[] = {
   {MENU_TEXT_COLOR_NUM, QColor("#fffffdec")},
   {MENU_KEYBINDING_TEXT_COLOR_NUM, QColor("#e57c12")},
   {MENU_BACKGROUND_COLOR_NUM, QColor("#ff5b6568")},
+  {MENU_ENTRY_BACKGROUND_COLOR_NUM, QColor("#ff585f61")},
 
   {LABEL_COLOR_NUM, QColor("#ffe3e3e3")},
 
@@ -1624,21 +1626,32 @@ static const char *get_color_snapshot_key(enum ColorNums colornum)
 	return talloc_format("color_%s", config_name);
 }
 
+// Colors added after snapshots started storing colors by name (see below) don't exist in
+// legacy snapshots, so they are deferred (skipped) when reproducing the legacy enum order.
+static int get_legacy_color_pass(enum ColorNums colornum)
+{
+	if (colornum == MENU_BACKGROUND_COLOR_NUM)
+		return 1; // Was appended at the end back then.
+
+	if (colornum == MENU_ENTRY_BACKGROUND_COLOR_NUM)
+		return 2; // Added later, so it comes after MENU_BACKGROUND_COLOR_NUM.
+
+	return 0;
+}
+
 // Snapshots written before colors were stored by name (Radium 8.1.54 and earlier) store colors
-// by enum value. MENU_BACKGROUND_COLOR_NUM has been moved since then, but it was appended at the
-// end, so walking the current enum with MENU_BACKGROUND_COLOR_NUM deferred to the end reproduces
-// the old enum order.
+// by enum value. Colors added after that have been moved into the middle of the enum, but they
+// sat at the end back then, so walking the current enum with those colors deferred to the end
+// reproduces the old enum order.
 static enum ColorNums get_colornum_from_legacy_color_num(int legacy_num)
 {
 	int num = -1;
 
-	for(int pass = 0 ; pass < 2 ; pass++)
+	for(int pass = 0 ; pass < 3 ; pass++)
 	{
 		for(int i = START_CONFIG_COLOR_NUM ; i < END_CONFIG_COLOR_NUM ; i++)
 		{
-			bool is_menu_background = i == MENU_BACKGROUND_COLOR_NUM;
-
-			if ((pass == 1) != is_menu_background)
+			if (get_legacy_color_pass((enum ColorNums)i) != pass)
 				continue;
 
 			num++;
