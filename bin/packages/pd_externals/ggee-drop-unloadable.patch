@@ -1,0 +1,18 @@
+--- a/Makefile
++++ b/Makefile
+@@ -16,7 +16,6 @@
+     control/serial_ms.c \
+     control/sl.c \
+     control/getdir.c \
+-    control/rtout.c \
+     control/serial_mt.c \
+     control/stripdir.c \
+     control/inv.c \
+@@ -29,7 +28,6 @@
+     control/unwonk.c \
+     experimental/fofsynth~.c \
+     experimental/tabwrite4~.c \
+-    experimental/pvocfreq.c \
+     filters/bandpass.c \
+     filters/highpass.c \
+     filters/hlshelf.c \

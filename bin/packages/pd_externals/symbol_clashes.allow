@@ -1,0 +1,17 @@
+# Symbols accepted as intentional/benign clashes by check_symbol_clashes.sh.
+#
+# One symbol per line, optionally followed by whitespace and a reason. Lines
+# starting with # are ignored.
+#
+# This list only suppresses the "external data symbol shadows libpd" failure
+# (the class of bug that made ggee's slider_widgetbehavior crash Pd's built-in
+# [hsl]/[vsl] classes). Function duplicates and external-vs-external
+# duplicates are reported, never failed, so they do not need entries here.
+#
+# Currently empty on purpose: ggee's slider_widgetbehavior is made file-local
+# by ggee-widgetbehavior-static.patch, and the remaining libpd function
+# duplicates (cyclone's and ELSE's u8_* copies) are the exact same upstream
+# code and harmless with -Wl,-Bsymbolic.
+#
+# Example:
+#   some_symbol   comment explaining why the clash is accepted

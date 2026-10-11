@@ -1,0 +1,32 @@
+--- a/Source/Control/lua/pdlua.c	2025-09-01 22:45:11.000000000 +0200
++++ b/Source/Control/lua/pdlua.c	2026-10-10 12:08:58.332484496 +0200
+@@ -73,6 +73,8 @@
+ 
+ #ifdef PDINSTANCE
+ 
++void initialise_lua_state(void);
++
+ typedef struct _lua_Instance {
+     void* pd_instance;
+     lua_State* state;
+@@ -87,6 +89,20 @@
+     while(iter)
+     {
+         if(iter->pd_instance == pd_this)
++        {
++            return iter->state;
++        }
++        iter = iter->next;
++    }
++
++    // Radium: external setup() only runs once per process, in the library
++    // host instance, so new libpd instances have no Lua thread yet. Create
++    // one lazily (it shares the globals of the first state).
++    initialise_lua_state();
++    iter = lua_threads;
++    while(iter)
++    {
++        if(iter->pd_instance == pd_this)
+         {
+             return iter->state;
+         }

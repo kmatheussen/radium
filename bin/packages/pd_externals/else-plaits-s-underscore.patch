@@ -1,0 +1,13 @@
+--- a/Source/Audio/plaits~/plaits~.cpp	2025-09-01 22:45:11.000000000 +0200
++++ b/Source/Audio/plaits~/plaits~.cpp	2026-10-10 11:36:46.083057561 +0200
+@@ -5,6 +5,10 @@
+ 
+ #include <stdint.h>
+ #include <m_pd.h>
++
++// Pd defines `s_` as a per-instance macro when built with PDINSTANCE.
++// Plaits has a member named `s_`, so drop the macro here.
++#undef s_
+ #include "plaits/dsp/dsp.h"
+ #include "plaits/dsp/engine/engine.h"
+ #include "plaits/dsp/voice.h"

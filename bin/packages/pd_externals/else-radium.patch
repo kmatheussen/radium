@@ -1,0 +1,87 @@
+--- a/CMakeLists.txt	2025-09-01 22:45:11.000000000 +0200
++++ b/CMakeLists.txt	2026-10-10 11:39:15.955802216 +0200
+@@ -6,15 +6,6 @@
+     add_compile_definitions(_GLIBCXX_USE_CXX11_ABI=0)
+     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_FORTIFY_SOURCE=2 -O2")
+     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_FORTIFY_SOURCE=2 -O2")
+-
+-    # OpenSSL 3.x configuration
+-    set(OPENSSL_USE_STATIC_LIBS TRUE)
+-    find_package(OpenSSL 3.0.0 REQUIRED)
+-    if(NOT OPENSSL_FOUND)
+-        message(FATAL_ERROR "OpenSSL 3.0.0 or higher is required")
+-    endif()
+-    message(STATUS "Found OpenSSL ${OPENSSL_VERSION}")
+-    add_definitions(-DHAVE_OPENSSL_3_0)
+ endif()
+ 
+ set(CMAKE_CXX_STANDARD 20)
+@@ -51,6 +42,13 @@
+ set(PD_OUTPUT_PATH "${CMAKE_CURRENT_BINARY_DIR}/else" CACHE STRING "Externals binary path")
+ 
+ include(${CMAKE_CURRENT_SOURCE_DIR}/pd.cmake)
++
++# Radium: pd.cmake clears PD_PATH/PD_OUTPUT_PATH with unset normal variables,
++# which shadow the cache values passed on the command line. Restore them.
++set(PD_PATH "$CACHE{PD_PATH}")
++set(PD_SOURCES_PATH ${PD_PATH}/src)
++set(PD_OUTPUT_PATH "$CACHE{PD_OUTPUT_PATH}")
++
+ include(${CMAKE_CURRENT_SOURCE_DIR}/Source/Shared/shared.cmake)
+ 
+ if(NOT CMAKE_BUILD_TYPE)
+@@ -87,39 +85,15 @@
+ add_subdirectory(Source/Audio/circuit~)
+ add_subdirectory(Source/Audio/plaits~)
+ add_subdirectory(Source/Audio/sfont~)
+-add_subdirectory(Source/Audio/sfz~)
+ add_subdirectory(Source/Control/lua)
+ 
+ add_subdirectory(Source/Shared/link)
+-add_subdirectory(Source/Shared/ffmpeg)
+ 
+ if(WIN32)
+     target_compile_definitions(opus PUBLIC FLOAT_APPROX=1 _POSIX_SEM_VALUE_MAX=32767)
+     target_compile_options(opus PRIVATE -msse2)
+ endif()
+ 
+-target_link_libraries(play.file_tilde PRIVATE ffmpeg)
+-target_link_libraries(sfload PRIVATE ffmpeg)
+-target_link_libraries(sfinfo PRIVATE ffmpeg)
+-
+-# Add OpenSSL linking for Linux builds
+-if(UNIX AND NOT APPLE)
+-    foreach(target sfload play.file_tilde sfinfo)
+-        target_link_libraries(${target} PRIVATE
+-            "-Wl,--whole-archive"
+-            OpenSSL::SSL
+-            OpenSSL::Crypto
+-            "-Wl,--no-whole-archive"
+-            pthread
+-            dl
+-        )
+-        target_compile_definitions(${target} PRIVATE
+-            OPENSSL_NO_KRB5
+-            OPENSSL_NO_ENGINE
+-            OPENSSL_API_3_0
+-        )
+-    endforeach()
+-endif()
+ 
+ target_link_libraries(pdlink PUBLIC link)
+ target_link_libraries(pdlink_tilde PUBLIC link opus)
+@@ -145,11 +119,12 @@
+ file(GLOB abstractions ${CMAKE_CURRENT_SOURCE_DIR}/Abstractions/Audio/*.pd ${CMAKE_CURRENT_SOURCE_DIR}/Abstractions/Control/*.pd ${CMAKE_CURRENT_SOURCE_DIR}/Abstractions/Extra/*)
+ file(COPY ${pdf_help} ${extra_files} ${help_files} ${abstractions} ${tcl_files} ${lua_resources} DESTINATION ${PD_OUTPUT_PATH})
+ file(COPY ${merda_files} DESTINATION ${PD_OUTPUT_PATH})
+-file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/Source/Audio/sfz~/sfz" DESTINATION ${PD_OUTPUT_PATH})
+-file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/Documentation/Live-Electronics-Tutorial" DESTINATION ${PD_OUTPUT_PATH})
+ file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE" DESTINATION ${PD_OUTPUT_PATH}/LICENSE)
+ file(REMOVE_RECURSE ${PD_OUTPUT_PATH}/audio)
+ 
++# Radium: install the complete, self-contained else/ directory tree.
++install(DIRECTORY ${PD_OUTPUT_PATH}/ DESTINATION .)
++
+ # Log the object count
+ function(count_files_and_directories dir extension file_count count_dirs)
+     file(GLOB files "${dir}/*")

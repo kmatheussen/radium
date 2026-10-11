@@ -1,0 +1,52 @@
+--- a/Makefile
++++ b/Makefile
+@@ -1,25 +1,11 @@
+ lib.name = unauthorized
+ 
+-# Include paths
+-export CPPFLAGS = -I/opt/homebrew/include
+-
+ # for the MINGW which has the timespec struct defined twice
+ #cflags = -Ishared -DHAVE_STRUCT_TIMESPEC
+ cflags = -Ishared -DHAVE_STRUCT_TIMESPEC -I"$(CURDIR)/src/mpglib"
+ 
+ # For macOS, we need to use specific flags for static linking
+ ifeq ($(shell uname -s), Darwin)
+-    # Use full path to static libraries for mp3 objects
+-    mp3cast~.class.ldlibs = /opt/homebrew/lib/libmp3lame.a -lpthread -lm
+-    mp3fileout~.class.ldlibs = /opt/homebrew/lib/libmp3lame.a -lpthread -lm
+-    mp3streamout~.class.ldlibs = /opt/homebrew/lib/libmp3lame.a -lpthread -lm
+-    mp3streamin~.class.ldlibs = /opt/homebrew/lib/libmp3lame.a -lpthread -lm
+-    mp3write~.class.ldlibs = /opt/homebrew/lib/libmp3lame.a -lpthread -lm
+-    
+-    # Add Speex static library for speex objects
+-    speexin~.class.ldlibs = /opt/homebrew/lib/libspeex.a -lpthread -lm
+-    speexout~.class.ldlibs = /opt/homebrew/lib/libspeex.a -lpthread -lm
+-
+     # Add specific darwin linking flags
+     ldflags = -undefined dynamic_lookup
+ endif
+@@ -39,7 +25,6 @@
+ disto~.class.sources := src/disto~.c
+ exciter.class.sources := src/exciter.c
+ filterbank~.class.sources := src/filterbank~.c
+-filters.class.sources := src/filters.c
+ formant~.class.sources := src/formant~.c
+ grid.class.sources := src/grid.c
+ #mp3amp~.class.sources := src/mp3amp~.c
+@@ -56,15 +41,6 @@
+ vocoder~.class.sources := src/vocoder~.c
+ wahwah~.class.sources := src/wahwah~.c
+ 
+-# classes with homebrew dependencies
+-mp3cast~.class.sources := src/mp3cast~.c
+-mp3fileout~.class.sources := src/mp3fileout~.c
+-mp3streamin~.class.sources := src/mp3streamin~.c
+-mp3streamout~.class.sources := src/mp3streamout~.c
+-mp3write~.class.sources := src/mp3write~.c
+-speexin~.class.sources := src/speexin~.c
+-speexout~.class.sources := src/speexout~.c
+-
+ voc := \
+ src/filters.c \
+ src/tables.c \
