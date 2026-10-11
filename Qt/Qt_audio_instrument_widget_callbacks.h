@@ -20,8 +20,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../audio/SoundPlugin_proc.h"
 #include "../audio/SoundPluginRegistry_proc.h"
+#include "../audio/undo_audio_effect_proc.h"
+#include "../audio/Modulator_plugin_proc.h"
 
 #include "Qt_MyQScrollBar.hpp"
+
+#include "LLM_fx_tune.hpp"
+#include "LLM_fx_tune_widget.hpp"
+#include "Qt_instruments_proc.h"
 
 /*
 class Pd_Plugin_widget;
@@ -58,6 +64,7 @@ public:
   
   Sample_requester_widget *_sample_requester_widget;
   Compressor_widget *_comp_widget;
+  LLM_fx_tune_widget *_fx_tune_widget;
 
   SizeType _size_type;
   SizeType _size_type_before_hidden;
@@ -100,6 +107,7 @@ public:
     , _patch(patch)
     , _plugin_widget(NULL)
     , _sample_requester_widget(NULL)
+    , _fx_tune_widget(NULL)
       //, _is_large(false)
     , _size_type(SIZETYPE_NORMAL) //patch->widget_height_type)
     , _size_type_before_hidden(patch->widget_height_type)
@@ -247,6 +255,272 @@ public:
     filters_widget->setVisible(plugin->show_equalizer_gui);
 
 
+    // LLM effect tuning prompt bar. Placed in the outer grid (row 1, below
+    // the scroll area) so it also stays visible in Half/Full mode, where the
+    // effects_layout widgets are hidden.
+    {
+      auto read_catalog = [this]() -> QVector<radium::llm::FxParamState>
+      {
+        QVector<radium::llm::FxParamState> states;
+
+        struct Patch *patch = _patch.data();
+        if (patch == NULL)
+          return states;
+
+        SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+        if (plugin == NULL)
+          return states;
+
+        for (const radium::llm::FxParam &param : radium::llm::fx_catalog()){
+          radium::llm::FxParamState state;
+          state.param = param;
+          state.current_native = PLUGIN_get_effect_from_name(plugin, param.name.toUtf8().constData(), VALUE_FROM_STORAGE, EFFECT_FORMAT_NATIVE);
+          // Bus sends are linear gains natively, but the catalog (and the
+          // LLM) works in dB.
+          if (param.is_gain_db)
+            state.current_native = gain2db(state.current_native);
+          state.has_modulator = hasModulator(patch->id, param.name.toUtf8().constData());
+          states.append(state);
+        }
+
+        return states;
+      };
+
+      auto apply_changes = [this, read_catalog](QVector<radium::llm::FxChange> &changes) -> bool
+      {
+        struct Patch *patch = _patch.data();
+        if (patch == NULL)
+          return false;
+
+        SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+        if (plugin == NULL)
+          return false;
+
+        // Catalog lookups used below.
+        QSet<QString> gain_db_names;
+        QSet<QString> catalog_names;
+        for (const radium::llm::FxParam &param : radium::llm::fx_catalog()){
+          catalog_names.insert(param.name.toLower());
+          if (param.is_gain_db)
+            gain_db_names.insert(param.name.toLower());
+        }
+
+        const QString mute_name = QString("System Volume On/Off");
+        const QString bypass_name = QString("System Effects On/Off");
+        const QString solo_name = QString("System Solo On/Off");
+
+        auto is_mixer_button = [&mute_name, &bypass_name, &solo_name](const QString &name){
+          return name == mute_name || name == bypass_name || name == solo_name;
+        };
+
+        // Make sure changes are audible: enable the bands that are being
+        // changed, and switch the bypass back on if it is off - but only when
+        // the reply makes sound-shaping changes and does not change the
+        // bypass itself. (These extra changes are appended to 'changes', so
+        // the status summary shows them too.)
+        {
+          const QVector<radium::llm::FxParamState> states = read_catalog();
+
+          for (const radium::llm::FxChange &change : radium::llm::fx_band_enable_changes(states, changes))
+            changes.append(change);
+
+          bool changes_an_effect = false;
+          bool changes_the_bypass = false;
+          for (const radium::llm::FxChange &change : changes){
+            if (change.name == bypass_name)
+              changes_the_bypass = true;
+            else if (!is_mixer_button(change.name))
+              changes_an_effect = true;
+          }
+
+          if (!changes_the_bypass && changes_an_effect
+              && PLUGIN_get_effect_from_name(plugin, "System Effects On/Off", VALUE_FROM_STORAGE, EFFECT_FORMAT_NATIVE) < 0.5f)
+            changes.append(radium::llm::FxChange{bypass_name, 1.0f});
+        }
+
+        // A bus send only has an audible effect when the matching mixer send
+        // connection is enabled. Enable it (via the same path as the bus
+        // on/off checkbox) when a send level is changed while it is off. The
+        // connection gets its own undo entry; it is added before the effects
+        // undo below, so the first undo reverts the effect values and the
+        // second the connection.
+        {
+          const Buses buses = MIXER_get_buses();
+
+          auto bus_for_send_name = [&buses](const QString &name) -> SoundProducer*{
+            if (name == "System Reverb") return buses.bus1;
+            if (name == "System Chorus") return buses.bus2;
+            if (name == "System Aux 1") return buses.bus3;
+            if (name == "System Aux 2") return buses.bus4;
+            if (name == "System Aux 3") return buses.bus5;
+            return NULL;
+          };
+
+          QVector<radium::llm::FxChange> connection_extras;
+
+          for (const radium::llm::FxChange &change : changes){
+            SoundProducer *bus = bus_for_send_name(change.name);
+            if (bus == NULL || change.value <= -39.999f) // -40 dB = no send; no need to connect then.
+              continue;
+
+            struct Patch *bus_patch = const_cast<Patch*>(SP_get_plugin(bus)->patch);
+            if (bus_patch == NULL)
+              continue;
+
+            if (!MW_are_connected(patch, bus_patch)){
+              set_bus_value(bus, true);
+              connection_extras.append(radium::llm::FxChange{change.name + QString(" On/Off"), 1.0f});
+            }
+          }
+
+          for (const radium::llm::FxChange &change : connection_extras)
+            changes.append(change);
+        }
+
+        // One undo entry for the whole batch, so a single undo restores
+        // everything.
+        ADD_UNDO(OnlySystemEffects(patch, AE_NO_FLAGS));
+
+        // Apply the changes. Bus sends are linear gains natively, but the
+        // catalog (and the LLM) works in dB; convert those back first.
+        // Changes whose names are not in the catalog (the summary-only
+        // On/Off entries added above) are not real effects and are skipped.
+        bool changed_mixer_button = false;
+
+        for (const radium::llm::FxChange &change : changes){
+          if (!catalog_names.contains(change.name.toLower()))
+            continue; // Summary-only pseudo entries (bus send connections).
+
+          if (is_mixer_button(change.name))
+            changed_mixer_button = true;
+
+          const float native_value = gain_db_names.contains(change.name.toLower())
+                                     ? db2gain(change.value)
+                                     : change.value;
+          PLUGIN_set_effect_from_name(plugin, change.name.toUtf8().constData(), native_value, EFFECT_FORMAT_NATIVE);
+        }
+
+        GFX_update_instrument_widget(patch);
+
+        // Update the mixer strip immediately when the mute/bypass/solo
+        // buttons changed.
+        if (changed_mixer_button)
+          CHIP_update(plugin);
+
+        return true;
+      };
+
+      // Creates/configures/removes modulators (LFOs) for effect parameters.
+      // Uses the API functions, which add their own undo entries (creating
+      // the modulator patch and adding/removing the target).
+      auto apply_modulations = [this](const QVector<radium::llm::FxModulation> &modulations) -> bool
+      {
+        struct Patch *patch = _patch.data();
+        if (patch == NULL)
+          return false;
+
+        SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+        if (plugin == NULL)
+          return false;
+
+        auto set_modulator_parameters = [](instrument_t modulator_instrument_id, const radium::llm::FxModulation &modulation, bool use_defaults)
+        {
+          const QString type = modulation.type.isEmpty() ? QString("sine") : modulation.type;
+          int type_index = radium::llm::fx_modulator_type_index(type);
+          if (type_index < 0)
+            type_index = 0;
+
+          if (!modulation.type.isEmpty() || use_defaults)
+            setNativeInstrumentEffect(modulator_instrument_id, "Type", (float)type_index);
+          if (modulation.tempo_numerator > 0 || use_defaults)
+            setNativeInstrumentEffect(modulator_instrument_id, "Tempo multiplier", (float)(modulation.tempo_numerator > 0 ? modulation.tempo_numerator : 1));
+          if (modulation.tempo_denominator > 0 || use_defaults)
+            setNativeInstrumentEffect(modulator_instrument_id, "Tempo divisor", (float)(modulation.tempo_denominator > 0 ? modulation.tempo_denominator : 2));
+          if (modulation.min_scaled >= 0.0f || use_defaults)
+            setNativeInstrumentEffect(modulator_instrument_id, "Lower bound", modulation.min_scaled >= 0.0f ? modulation.min_scaled : 0.0f);
+          if (modulation.max_scaled >= 0.0f || use_defaults)
+            setNativeInstrumentEffect(modulator_instrument_id, "Upper bound", modulation.max_scaled >= 0.0f ? modulation.max_scaled : 1.0f);
+        };
+
+        for (const radium::llm::FxModulation &modulation : modulations){
+          const QByteArray effect_name = modulation.effect.toUtf8();
+
+          if (modulation.action == radium::llm::FxModulation::REMOVE){
+            const int effect_num = PLUGIN_get_effect_num_from_name(plugin, effect_name.constData());
+            struct Patch *modulator_patch = effect_num >= 0 ? MODULATOR_get_modulator_patch(patch, effect_num) : NULL;
+
+            removeModulator(patch->id, effect_name.constData());
+
+            // Delete the modulator instrument if nothing uses it anymore.
+            // (LLM-path only; the UI's "Remove modulator" deliberately leaves
+            // the instrument so it can be re-assigned.)
+            if (modulator_patch != NULL && MODULATOR_get_modulator_targets(modulator_patch->id).num_elements == 0)
+              deleteInstrument(modulator_patch->id);
+
+            continue;
+          }
+
+          if (modulation.action == radium::llm::FxModulation::REPLACE){
+            const int effect_num = PLUGIN_get_effect_num_from_name(plugin, effect_name.constData());
+            struct Patch *modulator_patch = effect_num >= 0 ? MODULATOR_get_modulator_patch(patch, effect_num) : NULL;
+
+            if (modulator_patch != NULL){
+              set_modulator_parameters(modulator_patch->id, modulation, false);
+              continue;
+            }
+
+            // No existing modulator (should not normally happen); fall
+            // through and add a new one.
+          }
+
+          instrument_t modulator_id = createModulator();
+          if (!isLegalInstrument(modulator_id))
+            return false;
+
+          set_modulator_parameters(modulator_id, modulation, true);
+          addModulator(patch->id, effect_name.constData(), modulator_id);
+        }
+
+        return true;
+      };
+
+      // Applies the whole reply (effect value changes and modulation actions)
+      // as ONE undo entry: radium::ScopedUndo keeps all the nested ADD_UNDO
+      // calls (patch creation, chip positions, effect values, mixer
+      // connections) inside a single undo record.
+      auto apply_reply = [read_catalog, apply_changes, apply_modulations](QVector<radium::llm::FxChange> &changes, const QVector<radium::llm::FxModulation> &modulations) -> bool
+      {
+        radium::ScopedUndo scoped_undo;
+
+        // A modulated effect must be enabled to be audible (e.g. the
+        // highpass filter, or 'System Pitch type' for the pitch shifter).
+        {
+          QVector<radium::llm::FxChange> modulation_targets;
+          for (const radium::llm::FxModulation &modulation : modulations)
+            if (modulation.action != radium::llm::FxModulation::REMOVE)
+              modulation_targets.append(radium::llm::FxChange{modulation.effect, 0.0f});
+
+          if (!modulation_targets.isEmpty()){
+            const QVector<radium::llm::FxParamState> states = read_catalog();
+            for (const radium::llm::FxChange &enable : radium::llm::fx_band_enable_changes(states, modulation_targets))
+              changes.append(enable);
+          }
+        }
+
+        if (!changes.isEmpty() && !apply_changes(changes))
+          return false;
+
+        if (!modulations.isEmpty() && !apply_modulations(modulations))
+          return false;
+
+        return true;
+      };
+
+      _fx_tune_widget = new LLM_fx_tune_widget(this, read_catalog, apply_reply);
+      gridLayout_3->addWidget(_fx_tune_widget, 1, 0);
+    }
+
+
     // Adjust output widget widths
     {
       QFontMetrics fm(QApplication::font());
@@ -325,6 +599,8 @@ public:
   void prepare_for_deletion(void){
     _comp_widget->prepare_for_deletion();
     _plugin_widget->prepare_for_deletion();
+    if (_fx_tune_widget != NULL)
+      _fx_tune_widget->prepare_for_deletion();
   }
 
   ~Audio_instrument_widget(){

@@ -4050,11 +4050,20 @@ static inline void send_request_once(const LLMConfig &config,
                                      const QString &effort_override = QString(),
                                      const QString &compile_error = QString(),
                                      bool is_effect = false,
-                                     bool effect_is_mono = false)
+                                     bool effect_is_mono = false,
+                                     const QString &system_prompt_override = QString(),
+                                     bool raw_text_response = false)
 {
 	llm_start_price_fetch();
 
-	QString system_prompt =
+	QString system_prompt;
+
+	if (!system_prompt_override.isEmpty())
+	  // Generic chat mode: the caller supplies the complete system prompt
+	  // (no Faust rules, examples or library context are added).
+	  system_prompt = system_prompt_override;
+	else
+	  system_prompt =
 	  QString("You are an expert Faust DSP programmer writing code for Radium's 'Faust Dev 2' instrument. ")
 		+ "Faust is a purely functional signal-processing language. Rules:\n"
 		+ "1) The program must import stdfaust.lib.\n"
@@ -4091,7 +4100,7 @@ static inline void send_request_once(const LLMConfig &config,
 	// into the user message instead: a cache hit requires the persisted
 	// prefix unit to match exactly, so variable content inside the system
 	// message breaks the cache for everything after it.
-	if (config.library_context != "off")
+	if (system_prompt_override.isEmpty() && config.library_context != "off")
 	{
 		const FaustLibraryIndex &index = get_library_index();
 		const QString &symbol_table = (config.library_context == "full")
@@ -4105,11 +4114,12 @@ static inline void send_request_once(const LLMConfig &config,
 	// Placed at the very end of the system message so it is the most recent
 	// instruction the model sees before the user message: long chain-of-
 	// thought deliberation is a known failure mode and is counterproductive.
-	system_prompt +=
-	  "\nFINAL INSTRUCTION: Keep your reasoning very brief - a short design "
-	  "sketch of a few lines, then write the code immediately. Long "
-	  "deliberation and exploring multiple alternative designs are "
-	  "counterproductive.";
+	if (system_prompt_override.isEmpty())
+	  system_prompt +=
+	    "\nFINAL INSTRUCTION: Keep your reasoning very brief - a short design "
+	    "sketch of a few lines, then write the code immediately. Long "
+	    "deliberation and exploring multiple alternative designs are "
+	    "counterproductive.";
 
 	QJsonObject system_msg;
 	// OpenAI's o-series and newer models prefer "developer" messages over
@@ -4119,7 +4129,11 @@ static inline void send_request_once(const LLMConfig &config,
 
 	QJsonObject user_msg;
 	user_msg["role"] = "user";
-	user_msg["content"] = build_full_user_content(current_code, prompt, config.library_context, skip_examples, compile_error, is_effect, effect_is_mono);
+	// In generic chat mode the caller supplies the complete user message as
+	// well (no Faust code/examples/compile-error sections are added).
+	user_msg["content"] = system_prompt_override.isEmpty()
+	  ? build_full_user_content(current_code, prompt, config.library_context, skip_examples, compile_error, is_effect, effect_is_mono)
+	  : prompt;
 
 	QJsonArray messages;
 	messages.append(system_msg);
@@ -4258,7 +4272,7 @@ static inline void send_request_once(const LLMConfig &config,
 		}
 	});
 
-	QObject::connect(reply, &QNetworkReply::finished, [reply, nam, acc, callback, config, current_code, prompt, history, cancel, retries_left, temperature, progress_callback, effective_effort, thinking_enabled, reasoning_loop, skip_examples, error_buffer, compile_error, is_effect]()
+	QObject::connect(reply, &QNetworkReply::finished, [reply, nam, acc, callback, config, current_code, prompt, history, cancel, retries_left, temperature, progress_callback, effective_effort, thinking_enabled, reasoning_loop, skip_examples, error_buffer, compile_error, is_effect, effect_is_mono, system_prompt_override, raw_text_response]()
 	{
 		QString http_status = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toString();
 
@@ -4291,7 +4305,7 @@ static inline void send_request_once(const LLMConfig &config,
 			delete acc;
 			reply->deleteLater();
 			nam->deleteLater();
-			send_request_once(config, current_code, prompt, history, cancel, retries_left, temperature, progress_callback, callback, skip_examples, next_effort, compile_error, is_effect);
+			send_request_once(config, current_code, prompt, history, cancel, retries_left, temperature, progress_callback, callback, skip_examples, next_effort, compile_error, is_effect, effect_is_mono, system_prompt_override, raw_text_response);
 			return;
 		}
 
@@ -4327,7 +4341,7 @@ static inline void send_request_once(const LLMConfig &config,
 				delete acc;
 				reply->deleteLater();
 				nam->deleteLater();
-				send_request_once(config, current_code, prompt, history, cancel, retries_left - 1, temperature, progress_callback, callback, skip_examples, effective_effort, compile_error, is_effect);
+				send_request_once(config, current_code, prompt, history, cancel, retries_left - 1, temperature, progress_callback, callback, skip_examples, effective_effort, compile_error, is_effect, effect_is_mono, system_prompt_override, raw_text_response);
 				return;
 			}
 
@@ -4392,7 +4406,9 @@ static inline void send_request_once(const LLMConfig &config,
 			// certainly cut off mid-program (a syntax error follows, and
 			// the fix loop then repairs it - possibly in partial-fix mode
 			// for long programs). Note it for the log.
-			llm_log_note("LLM response truncated by the token limit - the returned code is probably cut off mid-program.");
+			llm_log_note(raw_text_response
+			             ? "LLM response truncated by the token limit."
+			             : "LLM response truncated by the token limit - the returned code is probably cut off mid-program.");
 		}
 		if (truncated && can_retry_at_lower_effort)
 		{
@@ -4406,21 +4422,23 @@ static inline void send_request_once(const LLMConfig &config,
 			       (long long)acc->reasoning_content.size(),
 			       next_effort.toUtf8().constData());
 			delete acc;
-			send_request_once(config, current_code, prompt, history, cancel, retries_left, temperature, progress_callback, callback, skip_examples, next_effort, compile_error, is_effect);
+			send_request_once(config, current_code, prompt, history, cancel, retries_left, temperature, progress_callback, callback, skip_examples, next_effort, compile_error, is_effect, effect_is_mono, system_prompt_override, raw_text_response);
 			return;
 		}
 
 		if (acc->content.isEmpty())
 		{
 			if (!acc->reasoning_content.isEmpty())
-			  callback(false, "Error: empty response from the LLM (the model produced reasoning/thinking but no code).");
+			  callback(false, raw_text_response
+			           ? "Error: empty response from the LLM (the model produced reasoning/thinking but no content)."
+			           : "Error: empty response from the LLM (the model produced reasoning/thinking but no code).");
 			else
 			  callback(false, "Error: empty response from the LLM.");
 			delete acc;
 			return;
 		}
 
-		const QString code = sanitize_code(acc->content);
+		const QString code = raw_text_response ? acc->content.trimmed() : sanitize_code(acc->content);
 
 		/* Comment out this part. If it doesn't compile, just send it back to the LLM instead.
 		if (!code.contains("process"))
@@ -4462,6 +4480,24 @@ static inline void send_prompt(const LLMConfig &config,
                                bool effect_is_mono = false)
 {
 	send_request_once(config, current_code, prompt, history, cancel, 2, temperature, progress_callback, callback, skip_examples, QString(), compile_error, is_effect, effect_is_mono);
+}
+
+// Generic chat entry point (no Faust code generation involved): sends
+// 'system_prompt' followed by 'history' and 'user_message', and returns the
+// raw assistant text as-is (no code extraction or sanitization). Used by the
+// instrument effect-tuning session. Async; the callback runs on the main
+// thread. All error handling, retries, logging and cost tracking are shared
+// with send_prompt.
+static inline void send_chat(const LLMConfig &config,
+                             const QString &system_prompt,
+                             const QString &user_message,
+                             std::function<void(bool ok, QString result_or_error)> callback,
+                             const QJsonArray &history = QJsonArray(),
+                             std::shared_ptr<std::atomic_bool> cancel = std::shared_ptr<std::atomic_bool>(),
+                             double temperature = 0.2,
+                             std::function<void(int reasoning_chars, int content_chars)> progress_callback = std::function<void(int, int)>())
+{
+	send_request_once(config, QString(), user_message, history, cancel, 2, temperature, progress_callback, callback, true, QString(), QString(), false, false, system_prompt, true);
 }
 
 } // namespace llm
