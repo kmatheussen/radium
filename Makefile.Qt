@@ -822,9 +822,9 @@ endif
 # Note: Precompiled headers can not be used when building universal binaries
 # since clang does not support multiple -arch options when generating PCH files.
 ifneq ($(strip $(UNIVERSAL)),)
-$(QT_PCH) Qt/Qt_precompiled.hpp.d &: ;
+$(QT_PCH): ;
 else
-$(QT_PCH) Qt/Qt_precompiled.hpp.d &: Qt/Qt_precompiled.hpp $(BUILD_DEPENDENCIES)
+$(QT_PCH): Qt/Qt_precompiled.hpp $(BUILD_DEPENDENCIES)
 	$(CCC) -MMD -MP -DNO_PRAGMA_ONCE -x c++-header $(QTOPT) -o $(QT_PCH) -c $<
 endif
 
@@ -2507,9 +2507,9 @@ endif
 # Note: Precompiled headers can not be used when building universal binaries
 # since clang does not support multiple -arch options when generating PCH files.
 ifneq ($(strip $(UNIVERSAL)),)
-$(FAUST_PCH) audio/Faust_plugins_precompiled.hpp.d &: ;
+$(FAUST_PCH): ;
 else
-$(FAUST_PCH) audio/Faust_plugins_precompiled.hpp.d &: audio/Faust_plugins_precompiled.hpp $(BUILD_DEPENDENCIES)
+$(FAUST_PCH): audio/Faust_plugins_precompiled.hpp $(BUILD_DEPENDENCIES)
 	$(CCC) -MMD -MP -DNO_PRAGMA_ONCE $(FAUST_OPTS2) -o $(FAUST_PCH) -c $<
 endif
 
