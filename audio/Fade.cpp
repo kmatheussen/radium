@@ -48,7 +48,7 @@ void Fade::RT_fade(const int num_frames, float *__restrict__ data, const float *
 
     const int how_many = R_MIN(num_frames, _num_fade_frames_left);
 
-    {
+    if (how_many > 0) {
       const float fade_mul = _fade_mul;
 
       const double d_how_many = how_many;
