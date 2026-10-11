@@ -1,0 +1,78 @@
+Radium patch: don't block the ALSA thread when the output device is not writable.
+
+JUCE's ALSA thread calls writeToOutputDevice unconditionally after snd_pcm_wait().
+snd_pcm_wait() returns 0 on timeout, but the following snd_pcm_writei() still blocks
+until there is room in the device. If the backend (PipeWire/PulseAudio) has stopped
+processing our stream, the write blocks forever: our audio callback is then never
+called, Mixer::_RT_process_has_inited stays false, and Radium hangs during startup
+waiting for the first audio callback.
+
+Fix: when snd_pcm_wait() times out, skip the write for this iteration and try again
+in the next one. The ALSA thread then keeps running (and close()/stopThread() can
+complete) even though the backend is stuck.
+
+Note: Must be applied after alsa_drop_rt_priority_before_thread_exit.diff and
+alsa_xrun_detection.diff, since it uses the "wait_result" variable introduced by the
+latter.
+
+diff --git a/pluginhost/JuceLibraryCode/modules/juce_audio_devices/native/juce_ALSA_linux.cpp b/pluginhost/JuceLibraryCode/modules/juce_audio_devices/native/juce_ALSA_linux.cpp
+index 8996b54e8..251478229 100644
+--- a/pluginhost/JuceLibraryCode/modules/juce_audio_devices/native/juce_ALSA_linux.cpp
++++ b/pluginhost/JuceLibraryCode/modules/juce_audio_devices/native/juce_ALSA_linux.cpp
+@@ -780,27 +780,40 @@ public:
+                 if (threadShouldExit())
+                     break;
+ 
+-                auto avail = snd_pcm_avail_update (outputDevice->handle);
+-
+-                if (avail < 0)
++                // Radium: A timeout (0) means the output device did not become writable. This
++                // happens for instance if PipeWire/PulseAudio has stopped processing our
++                // stream. Calling writeToOutputDevice now would block this thread
++                // indefinitely (snd_pcm_writei blocks until there is room), and then Radium
++                // hangs during startup waiting for the first audio callback. Skip this block
++                // instead and try again in the next iteration.
++                if (wait_result == 0)
+                 {
+-                    // Radium: count the underrun here. The recovery below re-prepares the
+-                    // stream, so writeToOutputDevice would never see the -EPIPE itself.
+-                    if (avail == -EPIPE)
+-                        ++outputDevice->underrunCount;
+-
+-                    JUCE_ALSA_FAILED (snd_pcm_recover (outputDevice->handle, (int) avail, 1 /* silent */));
++                    JUCE_ALSA_LOG ("Timed out waiting for output device to become writable");
+                 }
++                else
++                {
++                    auto avail = snd_pcm_avail_update (outputDevice->handle);
+ 
+-                audioIoInProgress = true;
++                    if (avail < 0)
++                    {
++                        // Radium: count the underrun here. The recovery below re-prepares the
++                        // stream, so writeToOutputDevice would never see the -EPIPE itself.
++                        if (avail == -EPIPE)
++                            ++outputDevice->underrunCount;
+ 
+-                if (! outputDevice->writeToOutputDevice (outputChannelBuffer, bufferSize))
+-                {
+-                    JUCE_ALSA_LOG ("write failure");
+-                    break;
+-                }
++                        JUCE_ALSA_FAILED (snd_pcm_recover (outputDevice->handle, (int) avail, 1 /* silent */));
++                    }
+ 
+-                audioIoInProgress = false;
++                    audioIoInProgress = true;
++
++                    if (! outputDevice->writeToOutputDevice (outputChannelBuffer, bufferSize))
++                    {
++                        JUCE_ALSA_LOG ("write failure");
++                        break;
++                    }
++
++                    audioIoInProgress = false;
++                }
+             }
+         }
+ 

@@ -75,6 +75,23 @@ set_var()
     fi
 }
 
+# Sets the per-branch temporary build directories.
+set_radium_build_dirs()
+{
+    local branch
+    branch=$(git branch | sed -n -e 's/^\* \(.*\)/\1/p')
+
+    if [ -z "$branch" ] ; then
+	branch=unknown
+    fi
+
+    branch=${branch//[^A-Za-z0-9_.-]/_}
+
+    set_var RADIUM_TMP_BIN_DIR "/tmp/radium_bin_$branch"
+    set_var RADIUM_TMP_OBJ_DIR "/tmp/radium_objects_$branch"
+    set_var T "$RADIUM_TMP_OBJ_DIR/"
+}
+
 #export GAKK
 #set_var GAKK 4
 #echo "GAKK: -${GAKK}-"

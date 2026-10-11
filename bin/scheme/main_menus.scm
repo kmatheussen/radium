@@ -340,12 +340,6 @@
 
 (define *main-menu-items* #f)
 
-;; Shortcuts are part of the cached data, so it must be regenerated when keybindings change.
-(add-reload-keybindings-callback (lambda ()
-                                   (set! *main-menu-search-popup-args* #f)
-                                   (set! *main-menu-search-options* #f)
-                                   (set! *main-menu-items* #f)))
-
 (define (get-main-menu-items)
   (when (not *main-menu-items*)
     (set! *main-menu-items* (get-menu-items2)))
@@ -398,6 +392,11 @@
   (or (not generation)
       (= generation *main-menu-popup-generation*)))
 
+(define (make-main-menu-search-popup-args menus-options)
+  (define args (get-popup-menu-args-from-options (assemble-main-menu-search-options menus-options)))
+  (set! *main-menu-search-popup-args* args)
+  args)
+
 (define (open-main-menu-search-popup args generation)
   (<ra> :schedule 0
         (lambda ()
@@ -407,24 +406,20 @@
 
 (define (open-main-menu-search-popup-from-options menus-options generation)
   (when (main-menu-popup-generation-is-current? generation)
-    (c-display "SEARCHPOPUP open-from-options" (<ra> :get-ms))
-    (define args (get-popup-menu-args-from-options (assemble-main-menu-search-options menus-options)))
-    (set! *main-menu-search-popup-args* args)
-    (open-main-menu-search-popup args generation)))
+    (open-main-menu-search-popup (make-main-menu-search-popup-args menus-options) generation)))
 
 ;; Builds the options one top-level menu at a time, scheduling a new step between
-;; each menu. Only used if generate-main-menus didn't already build them.
-(define (build-main-menu-search-popup menus chunks generation)
-  (when (main-menu-popup-generation-is-current? generation)
+;; each menu. generation-is-current? and kont are supplied by the caller.
+(define (build-main-menu-search-popup menus chunks generation-is-current? kont)
+  (when (generation-is-current?)
     (if (null? menus)
         (let ((menus-options (reverse chunks)))
           (set! *main-menu-search-options* menus-options)
-          (open-main-menu-search-popup-from-options menus-options generation))
-        ;; Schedule the processing of each menu, so that the gui gets a chance
-        ;; to repaint the wait popup between each top-level menu.
+          (kont menus-options))
+        ;; Schedule the processing of each menu, so that the gui gets a chance to repaint between each top-level menu.
         (<ra> :schedule 0
               (lambda ()
-                (when (main-menu-popup-generation-is-current? generation)
+                (when (generation-is-current?)
                   (let* ((menu (car menus))
                          (menu-options (remove-recent-from-options
                                         (parse-popup-menu-options
@@ -432,24 +427,63 @@
                     (c-display "SEARCHPOPUP chunk" (menu :text) (<ra> :get-ms))
                     (build-main-menu-search-popup (cdr menus)
                                                   (cons (cons (menu :text) menu-options) chunks)
-                                                  generation)))
+                                                  generation-is-current?
+                                                  kont)))
                 #f)))))
 
 (define* (popup-search-all-menus (generation #f))
   (if *main-menu-search-popup-args*
       (open-main-menu-search-popup *main-menu-search-popup-args* generation)
       (when (main-menu-popup-generation-is-current? generation)
-        (c-display "SEARCHPOPUP wait-screen-start" (<ra> :get-ms))
-        (<ra> :show-popup-search-wait-screen)
-        (c-display "SEARCHPOPUP wait-screen-shown" (<ra> :get-ms))
+        ;; Normally the options and args are built during startup (see generate-main-menus),
+        ;; so this fallback is only used if the popup is opened before they are ready.
         (<ra> :schedule 1
               (lambda ()
                 (when (main-menu-popup-generation-is-current? generation)
-                  (c-display "SEARCHPOPUP build-start" (<ra> :get-ms))
                   (if *main-menu-search-options*
                       (open-main-menu-search-popup-from-options *main-menu-search-options* generation)
-                      (build-main-menu-search-popup (get-main-menu-items) '() generation)))
+                      (build-main-menu-search-popup
+                       (get-main-menu-items)
+                       '()
+                       (lambda ()
+                         (main-menu-popup-generation-is-current? generation))
+                       (lambda (menus-options)
+                         (open-main-menu-search-popup-from-options menus-options generation)))))
                 #f)))))
+
+(define (get-keybindings-as-assoc-list)
+  (hash-table->alist (<ra> :get-keybindings-from-keys)))
+
+;; The keybindings that the cached search popup data (*main-menu-search-options* and
+;; *main-menu-search-popup-args*) was built from. #f means it hasn't been built yet.
+(define *main-menu-search-keybindings* #f)
+
+;; Rebuilds the cached search popup data. Called when the keybindings have changed.
+(define (rebuild-main-menu-search-popup)
+  ;; Must re-parse the menus since shortcuts are part of the parsed data.
+  (set! *main-menu-items* #f)
+  (define menus-options
+    (map (lambda (menu)
+           (cons (menu :text)
+                 (remove-recent-from-options
+                  (parse-popup-menu-options
+                   (get-popup-menu-items-from-menu-items (menu :sub-menu))))))
+         (get-main-menu-items)))
+  (set! *main-menu-search-options* menus-options)
+  (make-main-menu-search-popup-args menus-options)
+  (set! *main-menu-search-keybindings* (get-keybindings-as-assoc-list)))
+
+;; Shortcuts are part of the cached data, so it must be rebuilt if the keybindings changed.
+;; The data is built during program startup (see generate-main-menus), and this callback
+;; only rebuilds it when the keybindings actually changed, so that opening the hamburger
+;; menu never has to wait for it.
+(add-reload-keybindings-callback (lambda ()
+                                   (when (not (equal? (get-keybindings-as-assoc-list)
+                                                      *main-menu-search-keybindings*))
+                                     ;; If the data hasn't been built yet, generate-main-menus
+                                     ;; will build it later using the new keybindings.
+                                     (when *main-menu-search-options*
+                                       (rebuild-main-menu-search-popup)))))
 
 ;; Called from the hamburger button in the bottom bar and from the left alt key.
 (define (FROM_C-popup-main-menus)
@@ -486,7 +520,10 @@
                                         (remove-recent-from-options menu-options)))))
               (<ra> :go-previous-menu-level))
             (get-main-menu-items))
-  (set! *main-menu-search-options* menus-options))
+  (set! *main-menu-search-options* menus-options)
+  ;; Also build the search popup args now, so the first open of the hamburger menu doesn't have to wait.
+  (make-main-menu-search-popup-args menus-options)
+  (set! *main-menu-search-keybindings* (get-keybindings-as-assoc-list)))
 
 #!!
 
@@ -623,4 +660,107 @@
 (<ra> :get-keybindings-from-command "ra.toggleCurrWindowFullScreen")
 (<ra> :get-keybindings-from-command "ra.toggleFullScreen")
 !!#
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Help menu: "List of included Pd externals in Pd2"
+;;;
+;;; Scans <program-dir>/pd/externals when the menu entry is clicked, and shows
+;;; the result in the message window. The rules mirror the Pd2 loader
+;;; (ensure_externals_host() in audio/Pd_plugin2.cpp): class binaries
+;;; (.pd_linux/.pd_darwin/.pd_freebsd) and abstractions (.pd, except
+;;; "*-help.pd" and "*-meta.pd"). Alias symlinks (cyclone's Append.pd_linux,
+;;; etc.) are skipped, as the loader does. The monolithic <lib>/<lib>.pd_linux
+;;; binary is reported in its group's header instead of as a class.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (pd-external-classname filename)
+  ;; Mirrors external_class_name() in audio/Pd_plugin2.cpp.
+  (cond ((string-ends-with? filename ".pd_linux")   (string-drop-right filename (string-length ".pd_linux")))
+        ((string-ends-with? filename ".pd_darwin")  (string-drop-right filename (string-length ".pd_darwin")))
+        ((string-ends-with? filename ".pd_freebsd") (string-drop-right filename (string-length ".pd_freebsd")))
+        ((string-ends-with? filename ".pd")         (string-drop-right filename (string-length ".pd")))
+        (else #f)))
+
+(***assert*** (pd-external-classname "accum.pd_linux") "accum")
+(***assert*** (pd-external-classname "acosh~.pd_darwin") "acosh~")
+(***assert*** (pd-external-classname "0x3c0x7e.pd") "0x3c0x7e")
+(***assert*** (pd-external-classname "zexy.pd_freebsd") "zexy")
+(***assert*** (pd-external-classname "libiemnet.pd_linux.so") #f)
+(***assert*** (pd-external-classname "README.md") #f)
+
+;; Returns (list class-binaries abstractions library-binary) for one library dir.
+(define (get-pd-externals-in-libdir libname libpath)
+  (define class-binaries '())
+  (define abstractions '())
+  (define library-binary #f)
+
+  ;; Sync iteration: ~1400 directory entries in total, so a few milliseconds.
+  (<ra> :iterate-directory libpath #f
+        (lambda (is-finished file-info)
+          ;; file_info is uninitialized when is-finished is #t.
+          (when (not is-finished)
+            (define filename (<ra> :get-path-string (file-info :filename)))
+            (define classname (and (not (file-info :is-dir))
+                                   (not (file-info :is-sym-link))
+                                   (pd-external-classname filename)))
+            (when (and classname
+                       (not (string-ends-with? filename "-help.pd"))
+                       (not (string-ends-with? filename "-meta.pd")))
+              (cond ((string=? classname libname) ;; the monolithic <lib>/<lib>.pd_linux
+                     (set! library-binary filename))
+                    ((string-ends-with? filename ".pd")
+                     (set! abstractions (cons classname abstractions)))
+                    (else
+                     (set! class-binaries (cons classname class-binaries))))))
+          #t)) ;; Must return non-#f, otherwise the iteration stops.
+  (list (sort class-binaries string<?)
+        (sort abstractions string<?)
+        library-binary))
+
+;; Returns the whole listing as plain text. Can also be called from the scheme
+;; listener to dump the list to a terminal.
+(define (get-pd2-externals-text)
+  (define externals-path (<ra> :append-file-paths (<ra> :get-program-path)
+                               (<ra> :get-path "pd/externals")))
+  (if (not (<ra> :dir-exists externals-path))
+      (<-> "Could not find the Pd2 externals directory: \""
+           (<ra> :get-path-string externals-path) "\".")
+      (let ((text (<-> "Pd2 externals in \"" (<ra> :get-path-string externals-path) "\":\n"))
+            (libs '()))
+        ;; First pass: just collect the library directories. They must not be
+        ;; iterated from inside the callback below: ra:iterate-directory aborts
+        ;; if it is called again while it is still running.
+        (<ra> :iterate-directory externals-path #f
+              (lambda (is-finished file-info)
+                (when (and (not is-finished)
+                           (file-info :is-dir))
+                  (set! libs (cons (cons (<ra> :get-path-string (file-info :filename))
+                                         (file-info :path))
+                                   libs)))
+                #t))
+        ;; Second pass: one directory per library.
+        (for-each (lambda (lib)
+                    (define libname (car lib))
+                    (define data (get-pd-externals-in-libdir libname (cdr lib)))
+                    (define class-binaries (car data))
+                    (define abstractions (cadr data))
+                    (define library-binary (caddr data))
+                    (set! text (<-> text "\n" libname ": "
+                                    (length class-binaries) " class binaries, "
+                                    (length abstractions) " abstractions"
+                                    (if library-binary
+                                        (<-> " (library binary: " library-binary ")")
+                                        "")
+                                    "\n"))
+                    (for-each (lambda (name)
+                                (set! text (<-> text "  " name "\n")))
+                              (append class-binaries abstractions)))
+                  (sort libs (lambda (a b)
+                               (string<? (car a) (car b)))))
+        (<-> text "\n" (length libs) " libraries.\n"))))
+
+(define (show-pd2-externals-list)
+  ;; Called from the Help menu, "List of included Pd externals in Pd2".
+  (ra:add-message (ra:get-html-from-text (get-pd2-externals-text))))
                      

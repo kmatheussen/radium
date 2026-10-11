@@ -780,27 +780,40 @@ public:
                 if (threadShouldExit())
                     break;
 
-                auto avail = snd_pcm_avail_update (outputDevice->handle);
-
-                if (avail < 0)
+                // Radium: A timeout (0) means the output device did not become writable. This
+                // happens for instance if PipeWire/PulseAudio has stopped processing our
+                // stream. Calling writeToOutputDevice now would block this thread
+                // indefinitely (snd_pcm_writei blocks until there is room), and then Radium
+                // hangs during startup waiting for the first audio callback. Skip this block
+                // instead and try again in the next iteration.
+                if (wait_result == 0)
                 {
-                    // Radium: count the underrun here. The recovery below re-prepares the
-                    // stream, so writeToOutputDevice would never see the -EPIPE itself.
-                    if (avail == -EPIPE)
-                        ++outputDevice->underrunCount;
-
-                    JUCE_ALSA_FAILED (snd_pcm_recover (outputDevice->handle, (int) avail, 1 /* silent */));
+                    JUCE_ALSA_LOG ("Timed out waiting for output device to become writable");
                 }
-
-                audioIoInProgress = true;
-
-                if (! outputDevice->writeToOutputDevice (outputChannelBuffer, bufferSize))
+                else
                 {
-                    JUCE_ALSA_LOG ("write failure");
-                    break;
-                }
+                    auto avail = snd_pcm_avail_update (outputDevice->handle);
 
-                audioIoInProgress = false;
+                    if (avail < 0)
+                    {
+                        // Radium: count the underrun here. The recovery below re-prepares the
+                        // stream, so writeToOutputDevice would never see the -EPIPE itself.
+                        if (avail == -EPIPE)
+                            ++outputDevice->underrunCount;
+
+                        JUCE_ALSA_FAILED (snd_pcm_recover (outputDevice->handle, (int) avail, 1 /* silent */));
+                    }
+
+                    audioIoInProgress = true;
+
+                    if (! outputDevice->writeToOutputDevice (outputChannelBuffer, bufferSize))
+                    {
+                        JUCE_ALSA_LOG ("write failure");
+                        break;
+                    }
+
+                    audioIoInProgress = false;
+                }
             }
         }
 

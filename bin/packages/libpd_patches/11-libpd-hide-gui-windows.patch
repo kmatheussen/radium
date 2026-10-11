@@ -1,10 +1,53 @@
+diff -ruN old/libpd_wrapper/z_hooks.h new/libpd_wrapper/z_hooks.h
+--- old/libpd_wrapper/z_hooks.h	2026-09-27 11:58:35.000000000 +0200
++++ new/libpd_wrapper/z_hooks.h	2026-10-10 09:54:24.454233463 +0200
+@@ -49,6 +49,7 @@
+   void *i_queued;       /* queued data, default NULL */
+   void *i_print_util;   /* print util data, default NULL */
+   void *i_data;         /* user data, default NULL */
++  void *i_main_file;    /* Radium: first opened file, default NULL */
+   t_libpd_freehook i_queued_freehook; /* i_queued free, default NULL */
+   t_libpd_freehook i_data_freehook;   /* i_data free, default NULL */
+ } t_libpdimp;
+diff -ruN old/libpd_wrapper/z_libpd.c new/libpd_wrapper/z_libpd.c
+--- old/libpd_wrapper/z_libpd.c	2026-10-10 09:52:48.526147625 +0200
++++ new/libpd_wrapper/z_libpd.c	2026-10-10 09:54:31.409316848 +0200
+@@ -146,11 +146,22 @@
+   sys_lock();
+   pd_globallock();
+   retval = (void *)glob_evalfile(NULL, gensym(name), gensym(dir));
++  // Radium: remember the first opened file. canvas_menuclose() uses this to
++  // know which canvas is the host's main patch; that canvas must not be freed
++  // when its window is closed, since the host keeps a pointer to it.
++  if (retval != NULL && LIBPDSTUFF->i_main_file == NULL)
++    LIBPDSTUFF->i_main_file = retval;
+   pd_globalunlock();
+   sys_unlock();
+   return retval;
+ }
+ 
++// Radium: the canvas of the file the host opened first, or NULL if no file
++// has been opened in this instance, see libpd_openfile().
++void *libpd_get_main_file(void) {
++  return LIBPDSTUFF->i_main_file;
++}
++
+ void libpd_closefile(void *p) {
+   sys_lock();
+   pd_free((t_pd *)p);
 diff -ruN old/pure-data/src/g_editor.c new/pure-data/src/g_editor.c
---- old/pure-data/src/g_editor.c	2026-09-29 19:55:19.651192236 +0200
-+++ new/pure-data/src/g_editor.c	2026-09-29 19:55:51.516359918 +0200
-@@ -3473,24 +3473,26 @@
+--- old/pure-data/src/g_editor.c	2026-10-10 09:52:48.536147734 +0200
++++ new/pure-data/src/g_editor.c	2026-10-10 09:56:43.114895890 +0200
+@@ -3473,24 +3473,32 @@
          return (0);
  }
  
++    /* Radium: the canvas of the file the host opened first (see
++       libpd_openfile() in libpd_wrapper/z_libpd.c). This is the host's main
++       patch, whose canvas must stay alive when its window is closed since the
++       host keeps a pointer to it. */
++void *libpd_get_main_file(void);
++
 +    /* Radium: hide all Pd GUI windows and tell the host that the Pd GUI was
 +       hidden. The windows are only withdrawn, not destroyed, so that they can
 +       be shown again by libpd_show_gui (see libpds2_show_gui). */
@@ -42,7 +85,7 @@ diff -ruN old/pure-data/src/g_editor.c new/pure-data/src/g_editor.c
  }
  
      /* close a window (or possibly quit Pd), checking for dirty flags.
-@@ -3501,14 +3503,6 @@
+@@ -3501,14 +3509,6 @@
         3 - verified - mark this one clean, then verify-and-quit
      */
  
@@ -57,7 +100,22 @@ diff -ruN old/pure-data/src/g_editor.c new/pure-data/src/g_editor.c
  void canvas_menuclose(t_canvas *x, t_floatarg fforce)
  {
      int force = fforce;
-@@ -3535,20 +3529,18 @@
+@@ -3519,6 +3519,14 @@
+     SETSYMBOL(backmsg+1, 0);
+     if (x->gl_owner && (force == 0 || force == 1))
+         canvas_vis(x, 0);   /* if subpatch, just invis it */
++    else if (libpd_get_main_file() == (void *)(&x->gl_pd))
++    {
++            /* Radium: this is the host's main patch. It must stay alive (the
++               host keeps a pointer to its canvas), so closing its window only
++               hides the GUI. The window of any other patch is closed below,
++               just like in Pd. */
++        libpd_hide_gui_windows();
++    }
+     else if (force == 0)
+     {
+         if (sys_perf)
+@@ -3535,20 +3543,16 @@
          }
          else
          {
@@ -65,47 +123,58 @@ diff -ruN old/pure-data/src/g_editor.c new/pure-data/src/g_editor.c
 -               of freeing the canvas so that the host's canvas pointer remains
 -               valid. Discarding the dirty flag is fine: the host keeps the
 -               patch in memory and saves it with its own document. */
-+            /* Radium: don't ask whether to save, and only hide the windows so
-+               that the host's canvas pointer remains valid. Discarding the
-+               dirty flag is fine: the host keeps the patch in memory and
-+               saves it with its own document. */
++            /* Radium: don't ask whether to save. The host does not manage
++               this patch, so close its window (and free the canvas). */
              if (glist_finddirty(x))
                  canvas_dirty(x, 0);
 -            canvas_vis(x, 0);
 -            libpd_send_gui_is_hidden();
-+            libpd_hide_gui_windows();
++            pd_free(&x->gl_pd);
          }
      }
      else if (force == 1)
      {
 -        canvas_vis(x, 0);
 -        libpd_send_gui_is_hidden();
-+        libpd_hide_gui_windows();
++        pd_free(&x->gl_pd);
      }
      else if (force == 2)
      {
-@@ -3568,8 +3560,7 @@
+@@ -3568,8 +3572,7 @@
          }
          else
          {
 -            canvas_vis(x, 0);
 -            libpd_send_gui_is_hidden();
-+            libpd_hide_gui_windows();
++            pd_free(&x->gl_pd);
          }
      }
      else if (force == 3)
+diff -ruN old/pure-data/tcl/pd_bindings.tcl new/pure-data/tcl/pd_bindings.tcl
+--- old/pure-data/tcl/pd_bindings.tcl	2026-09-27 11:58:43.000000000 +0200
++++ new/pure-data/tcl/pd_bindings.tcl	2026-10-10 09:56:57.699070742 +0200
+@@ -409,6 +409,8 @@
+     array unset ::windowname $mytoplevel
+     array unset ::parentwindows $mytoplevel
+     array unset ::childwindows $mytoplevel
++    # libpd / Radium: forget the recorded window state, see pd-gui.tcl
++    array unset ::libpd_windowstate $mytoplevel
+ }
+ 
+ proc ::pd_bindings::dialog_configure {mytoplevel} {
 diff -ruN old/pure-data/tcl/pd-gui.tcl new/pure-data/tcl/pd-gui.tcl
---- old/pure-data/tcl/pd-gui.tcl	2026-09-29 19:55:19.653192247 +0200
-+++ new/pure-data/tcl/pd-gui.tcl	2026-09-29 19:56:06.661439615 +0200
-@@ -802,6 +802,43 @@
+--- old/pure-data/tcl/pd-gui.tcl	2026-09-27 11:58:43.000000000 +0200
++++ new/pure-data/tcl/pd-gui.tcl	2026-10-10 09:58:08.491918712 +0200
+@@ -802,6 +802,44 @@
  }
  
  # ------------------------------------------------------------------------------
 +# libpd / Radium: hide and show all GUI windows without closing or restarting
 +# the Tcl/Tk process. Used by libpds2_hide_gui() and libpds2_show_gui() in
-+# Radium, and when the user closes a patch window. Windows are only withdrawn,
-+# so the same windows (with their position, scroll position and edit state) can
-+# be shown again. The console window is hidden by Radium at startup (see
++# Radium, and when the user closes the main patch window (closing the window of
++# any other patch only closes that window). Windows are only withdrawn, so the
++# same windows (with their position, scroll position and edit state) can be
++# shown again. The console window is hidden by Radium at startup (see
 +# RADIUM_PD_GUI_NO_CONSOLE) and stays hidden because its recorded state is
 +# "withdrawn".
 +

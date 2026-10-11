@@ -597,7 +597,7 @@ static bool show_gui(struct SoundPlugin *plugin, int64_t parentgui)
 	// Note: libpds only shows or hides the Pd GUI windows here (the Tcl/Tk
 	// process keeps running), so Pd does not send gui_is_visible when the GUI
 	// is shown. Update the checkbox state here instead. (Pd does send
-	// gui_is_hidden when the user closes the Pd window, see
+	// gui_is_hidden when the user closes the main Pd patch window, see
 	// libpd_patches/11-libpd-hide-gui-windows.patch.)
 	PDGUI_is_visible(ATOMIC_GET(data->qtgui));
 
