@@ -710,14 +710,24 @@ static void schedule_flush_pending_menu_callbacks(void)
     if (active_action != NULL && active_action != lineedit_action && active_action->isVisible() && active_action->isEnabled())
       return;
 
-    for (QAction *action : menu->actions())
-    {
-      if (action->isVisible() && !action->isSeparator() && action->isEnabled() && action != lineedit_action)
-      {
-        menu->setActiveAction(action);
-        break;
-      }
-    }
+	for (QAction *action : menu->actions())
+	{
+		// Selecting an entry with a sub menu as active action makes Qt open that sub
+		// menu from within the parent menu's Show event (QMenu::event). The Show event
+		// is sent before the menu is registered in Qt's popup stack, so the sub menu
+		// would be registered before its parent menu, and Qt would then send the
+		// keyboard events to the parent menu instead of to the sub menu. Only menus
+		// that are not shown yet can be affected by this, so don't select a sub menu
+		// entry in those. (The entry is selected when the menu is opened instead.)
+		if (action->menu() != NULL && !menu->isVisible())
+			continue;
+
+		if (action->isVisible() && !action->isSeparator() && action->isEnabled() && action != lineedit_action)
+		{
+			menu->setActiveAction(action);
+			break;
+		}
+	}
   }
 
   static void apply_popup_search_filter(void)
@@ -1605,7 +1615,13 @@ static void schedule_flush_pending_menu_callbacks(void)
         
         g_last_hovered_menu_entry_guinum = myaction->_guinum;
 
-        if (/*isVisible() && hasFocus() && */ !_is_permanent && _is_root && _set_active_action_counter==0 && action!=activeAction()){
+        // The 'hovered' signal is propagated from sub menus as well, but only selections
+        // in this menu itself should change the active action here. Selecting an action
+        // from a sub menu would break keyboard navigation in this menu, and would also
+        // make Qt close the open sub menu (setCurrentAction hides the active sub menu
+        // when the current action changes).
+        if (/*isVisible() && hasFocus() && */ !_is_permanent && _is_root && _set_active_action_counter==0 && action!=activeAction() && actions().contains(action))
+        {
 
           //printf("   Hovered. Action: %s. activeAction: %s\n", action->metaObject()->className(), activeAction()==NULL ? "(null)" : activeAction()->metaObject()->className());
 
@@ -1617,7 +1633,8 @@ static void schedule_flush_pending_menu_callbacks(void)
             IsAlive is_alive2(action);
             
             QTimer::singleShot(20, [is_alive1, is_alive2, this, action]{
-                                     if (is_alive1 && is_alive2 && /*isVisible() && hasFocus() &&*/ !_is_permanent && _is_root && action!=activeAction()) {
+                                     if (is_alive1 && is_alive2 && /*isVisible() && hasFocus() &&*/ !_is_permanent && _is_root && action!=activeAction() && actions().contains(action))
+                                     {
                                        setActiveAction(action);
                                        _set_active_action_counter++;
                                      }
