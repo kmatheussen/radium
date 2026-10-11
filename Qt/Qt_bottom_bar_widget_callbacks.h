@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/Qt_MyQButton.h"
 #include "../Qt/Qt_MyQSpinBox.h"
 #include <QTimer>
+#include <QToolTip>
 
 #ifdef USE_QT5
 #include <QStyleFactory>
@@ -311,6 +312,8 @@ class Bottom_bar_widget : public QWidget, public Ui::Bottom_bar_widget {
   }
 
   QWidget *_navigator_widget = NULL;
+
+  MyQButton *_hamburger_button = NULL;
       
   void remove_editor_elements(void){
 
@@ -651,6 +654,16 @@ struct SoundPlugin *RT_get_system_out_plugin(void){
   return g_system_out_plugin;
 }
 
+// Called when the hamburger popup menu (the main menus) has been opened.
+// Stops the attention drawing of the hamburger buttons.
+void GFX_OS_hamburger_menu_was_opened(void){
+  QToolTip::hideText();
+
+  for(auto *bottom_bar_widget : g_bottom_bars)
+    if (bottom_bar_widget->_hamburger_button != NULL)
+      bottom_bar_widget->_hamburger_button->set_attention(false);
+}
+
 bool EDITOR_switch_drunk_velocity(void){
   drunk_velocity = !drunk_velocity;
   
@@ -686,6 +699,7 @@ QWidget *BottomBar_create(QWidget *parent, bool include_editor_elements, bool in
     };
     ret->horizontalLayout_2->insertWidget(0, hamburger_button);
     ret->horizontalLayout_2->insertSpacing(1, 2 * g_gfx_scale); // Some space between the hamburger and the status line.
+    ret->_hamburger_button = hamburger_button;
   }
   
   {

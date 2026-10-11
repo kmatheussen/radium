@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #define QT_MYQBUTTON_H
 
 #include <QToolButton>
+#include <QTimer>
 
 #include "Qt_mix_colors.h"
 #include "Qt_colors_proc.h"
@@ -34,10 +35,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 struct MyQButton : public QToolButton, public radium::MouseCycleFix {
 
-  MyQButton ( QWidget * parent = 0 ) : QToolButton(parent) {}
+  MyQButton ( QWidget * parent = 0 ) : QToolButton(parent) { init_attention_timer(); }
   MyQButton ( const QString & text, QWidget * parent = 0)
     : QToolButton(parent)
   {
+    init_attention_timer();
     setMouseTracking(true);
     setText(text);
   }
@@ -53,6 +55,35 @@ struct MyQButton : public QToolButton, public radium::MouseCycleFix {
   bool _is_hovered = false;
 
   QString _statusbar_text;
+
+  // When true, the button is drawn with a pulsing highlight. (See draw-button in gui.scm.)
+  // Used by the hamburger button until the main menus have been opened once.
+  bool _attention = false;
+  int _attention_phase = 0;
+  QTimer _attention_timer;
+
+  void init_attention_timer(void){
+    _attention_timer.setInterval(400);
+    QObject::connect(&_attention_timer, &QTimer::timeout, this, [this](){
+      _attention_phase = (_attention_phase + 1) % 4;
+      update();
+    });
+  }
+
+  void set_attention(bool attention){
+    if (_attention == attention)
+      return;
+
+    _attention = attention;
+    _attention_phase = 0;
+
+    if (_attention)
+      _attention_timer.start();
+    else
+      _attention_timer.stop();
+
+    update();
+  }
 
   int x1_border = 1;
   int x2_border = 1;
@@ -181,6 +212,12 @@ struct MyQButton : public QToolButton, public radium::MouseCycleFix {
                                         
                                         DYNVEC_push_back(args, DYN_create_symbol_dont_copy(":is-enabled"));
                                         DYNVEC_push_back(args, DYN_create_bool(isEnabled()));
+
+                                        DYNVEC_push_back(args, DYN_create_symbol_dont_copy(":attention"));
+                                        DYNVEC_push_back(args, DYN_create_bool(_attention));
+
+                                        DYNVEC_push_back(args, DYN_create_symbol_dont_copy(":attention-phase"));
+                                        DYNVEC_push_back(args, DYN_create_int(_attention_phase));
                                                                        
                                         S7EXTRA_GET_FUNC(draw_checkbox_func, "draw-button");
                                         s7extra_applyFunc_void(draw_checkbox_func, args);

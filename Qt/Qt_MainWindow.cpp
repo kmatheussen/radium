@@ -901,9 +901,35 @@ void SetupMainWindow(void){
 #if 1
   {
     //QStatusBar *status_bar = main_window->statusBar();
-    auto *bottom_bar = BottomBar_create(main_window, true, true);
+    auto *bottom_bar = static_cast<Bottom_bar_widget*>(BottomBar_create(main_window, true, true));
     mainLayout->addWidget(bottom_bar, 0); // stretch = 1;
-    GFX_set_hamburger_button(bottom_bar->findChild<QWidget*>("hamburger_button")); // So that the popup can be opened with left alt.
+
+    auto *hamburger_button = bottom_bar->_hamburger_button;
+    GFX_set_hamburger_button(hamburger_button); // So that the popup can be opened with left alt.
+
+    // If the main menu bar is hidden, and the main menus have never been opened, draw the
+    // hamburger button with a pulsing highlight and show a hint pointing at it. This is to
+    // make new (and older) users discover that the program has menus.
+    if (hamburger_button != NULL
+        && SETTINGS_read_bool("show_main_menu_bar", false)==false
+        && SETTINGS_read_bool("main_menu_popup_has_been_opened", false)==false)
+    {
+      hamburger_button->set_attention(true);
+
+      QTimer::singleShot(1500, hamburger_button, [hamburger_button](){
+        if (SETTINGS_read_bool("main_menu_popup_has_been_opened", false)==false
+            && SETTINGS_read_bool("show_main_menu_bar", false)==false
+            && hamburger_button->isVisible())
+        {
+          const QPoint pos = hamburger_button->mapToGlobal(QPoint(0, 0));
+          QToolTip::showText(pos - QPoint(0, 6),
+                             "Open the main menus here. You can also press left alt.",
+                             hamburger_button,
+                             hamburger_button->rect(),
+                             12000);
+        }
+      });
+    }
     //bottom_bar->show();
     //main_window->statusBar()->addWidget(bottom_bar, 1, true);
     //editor->status_labels.push_back(bottom_bar->status_label);

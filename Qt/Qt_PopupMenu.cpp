@@ -63,6 +63,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"
+#include "../common/settings_proc.h"
 #include "../common/FuzzySearch.h"
 #include "../audio/Envelope.hpp"
 
@@ -70,6 +71,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../api/api_gui_proc.h"
 #include "../api/api_requesters_proc.h"
+#include "../api/api_common_proc.h"
 
 #include "../api/api_proc.h"
 
@@ -79,6 +81,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Qt_Main_proc.h"
 #include "Qt_PopupMenu_proc.h"
+#include "Qt_bottom_bar_widget_proc.h"
 
 
 
@@ -2283,6 +2286,36 @@ void GFX_set_pending_popup_position(int x, int y, bool is_hamburger)
 	g_has_pending_popup_position = true;
 }
 
+// Sets the position of the next popup menu to just below the track header name widget
+// ("(click me)") of the given track. tracknum -1 means the current track. Does nothing
+// (i.e. the next popup menu opens at the mouse position) if the position can't be found.
+void GFX_set_track_header_popup_position(int tracknum)
+{
+	struct Tracker_Windows *window = getWindowFromNum(-1);
+	struct WBlocks *wblock = NULL;
+	struct WTracks *wtrack = getWTrackFromNumA(-1, &window, -1, &wblock, tracknum);
+	if (wtrack == NULL)
+		return;
+
+	EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
+	if (editor == NULL || editor->header_widget == NULL)
+		return;
+
+	const QWidget *header_widget = editor->header_widget;
+
+	// The "(click me)" name widget is the top half of the track header.
+	int x = wtrack->x; // Same x as the track header name widget is painted at.
+	const int y = header_widget->height() / 2; // Bottom of the name widget.
+
+	if (x < 0)
+		x = 0;
+	else if (x >= header_widget->width())
+		x = header_widget->width() - 1;
+
+	const QPoint pos = header_widget->mapToGlobal(QPoint(x, y));
+	GFX_set_pending_popup_position(pos.x(), pos.y(), false);
+}
+
 // Registers the hamburger button in the main window's bottom bar, so that the popup menu
 // can be opened at the same position as when clicking on it.
 void GFX_set_hamburger_button(QWidget *button)
@@ -2297,6 +2330,14 @@ void GFX_open_hamburger_popup_menu(QWidget *button)
 {
 	if (GFX_HamburgerPopupIsOpen())
 		return;
+
+	// The main menus have now been opened. Stop the attention drawing and the startup hint
+	// of the hamburger button. (See BottomBar_create and Qt_MainWindow.cpp.)
+	if (SETTINGS_read_bool("main_menu_popup_has_been_opened", false)==false)
+	{
+		SETTINGS_write_bool("main_menu_popup_has_been_opened", true);
+		GFX_OS_hamburger_menu_was_opened();
+	}
 
 	if (button == NULL)
 		button = g_hamburger_button;

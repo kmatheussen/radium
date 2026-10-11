@@ -806,6 +806,8 @@
                        :implicit-border-width 2
                        :box-rounding #f ;; if #f, rounding will be set automatically based on checkbox size.
                        :paint-black-border #f
+                       :attention #f ;; when true, draw with a pulsing highlight. (Used by the hamburger button.)
+                       :attention-phase 0
                        )
 
   (if (not box-rounding)
@@ -839,7 +841,16 @@
       ;;(c-display "DIST: " (<gui> :color-distance background-color selected-color))
       (set! i (+ 1 i))
       (set! selected-color (<gui> :make-color-lighter selected-color 1.1))))
-  
+
+  ;; Draw with a pulsing highlight to make the button (the hamburger button) easier to notice.
+  (when attention
+    ;; How much of the original button color to keep. Lower value means more highlight.
+    (define attention-mix (vector-ref (vector 0.35 0.55 0.75 0.55)
+                                      (modulo attention-phase 4)))
+    (set! background-color (<gui> :mix-colors background-color "menu_keybinding_text" attention-mix))
+    (set! selected-color (<gui> :mix-colors selected-color "menu_keybinding_text" attention-mix)))
+
+
   ;;(if (string=? text "Solo")
   ;;    (c-display "Solo. Bc:" background-color ". is-selected:" is-selected ". selected-color:" selected-color))
   
@@ -905,6 +916,12 @@
   (if (and #f is-hovering)
       (<gui> :do-alpha gui 0.5 paintit)
       (paintit))
+
+  (when attention
+    (<gui> :draw-box gui "keyboard_focus_border"
+           (+ x1 x-border) (+ y1 y-border) (- x2 x-border) (- y2 y-border)
+           1.2
+           box-rounding box-rounding))
 
   
 
