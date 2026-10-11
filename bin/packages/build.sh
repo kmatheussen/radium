@@ -228,55 +228,208 @@ build_libpd() {
 }
 
 
-# Build the dynamically loaded Pd externals used by the Pd2 instrument
-# (OSC and networking objects). They are compiled against the libpd headers
-# with the same multi-instance settings as libpd itself (-DPDINSTANCE
-# -DPDTHREADS), since pd_this is a TLS symbol and the s_float/s_list globals
-# are per-instance macros that are not exported by the MULTI build of libpd.
+# Build the dynamically loaded Pd externals used by the Pd2 instrument.
+# The library list, pinned sources and per-library build options live in
+# pd_externals/pd_externals.list. The externals are compiled against the
+# libpd headers with the same multi-instance settings as libpd itself
+# (-DPDINSTANCE -DPDTHREADS), since pd_this is a TLS symbol and the
+# s_float/s_list globals are per-instance macros that are not exported by
+# the MULTI build of libpd.
+#
+# Each library is installed into its own subdirectory of bin/pd/externals;
+# the Pd2 instrument adds every subdirectory to its search path.
+#
+# The author/copyright/license keys in the manifest are written to
+# pd/externals/pd2-externals-credits.txt, which the Help menu's "List of
+# included Pd externals in Pd2" listing (bin/scheme/main_menus.scm) reads.
 build_pd_externals() {
 
-    COMPAT_HEADER="`pwd`/pd_externals_compat.h"
-    LIBPD_INCLUDE="`pwd`/libpd/pure-data/src"
+    EXTERNALS_SRC="`pwd`/pd_externals"
+    BUILD_EXTERNAL="`pwd`/build_pd_external.sh"
     EXTERNALS_DIR="`pwd`/../pd/externals"
 
-    if uname -s |grep Darwin ; then
-        PDEXT=pd_darwin
-        # pd-lib-builder's name for the shared support library when both class
-        # sources and shared sources are defined.
-        SHARED_LIB=libiemnet.pd_darwin.dylib
-        # pd-lib-builder builds for the host architecture by default, which is
-        # the architecture Radium itself runs as. (The deployment target is
-        # picked up from cflags by pd-lib-builder.)
-        CFLAGS_EXTERNALS="-DPD -DPDINSTANCE -DPDTHREADS -mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET}"
-    else
-        PDEXT=pd_linux
-        SHARED_LIB=libiemnet.pd_linux.so
-        CFLAGS_EXTERNALS="-DPD -DPDINSTANCE -DPDTHREADS"
+    if [ ! -f "$BUILD_EXTERNAL" ]; then
+        echo "Missing $BUILD_EXTERNAL" >&2
+        exit 1
     fi
-
-    rm -rf osc-0.3.1
-    tar xzf osc-0.3.1.tar.gz
-    # OSC_timeTag.c puts the storage class in the wrong order for compilers
-    # where PERTHREAD expands to __thread ("__thread static").
-    sed -i.bak 's/PERTHREAD static/static PERTHREAD/' osc-0.3.1/OSC_timeTag.c
-    make -C osc-0.3.1 -j`nproc` PDINCLUDEDIR="$LIBPD_INCLUDE" \
-        cflags="$CFLAGS_EXTERNALS"
-
-    rm -rf pd-iemnet-0.3.0
-    tar xzf pd-iemnet-0.3.0.tar.gz
-    # The iemnet sources target Pd <= 0.51, which still had the global
-    # error() function (pd_error() is the replacement). Makefile.local is
-    # included by the iemnet Makefile, so the flags can be added without
-    # overriding its own -DVERSION setting.
-    echo "cflags += $CFLAGS_EXTERNALS -include $COMPAT_HEADER" \
-        > pd-iemnet-0.3.0/Makefile.local
-    make -C pd-iemnet-0.3.0 -j`nproc` PDINCLUDEDIR="$LIBPD_INCLUDE"
+    if [ ! -f "$EXTERNALS_SRC/pd_externals.list" ]; then
+        echo "Missing $EXTERNALS_SRC/pd_externals.list" >&2
+        exit 1
+    fi
 
     rm -rf "$EXTERNALS_DIR"
     mkdir -p "$EXTERNALS_DIR"
-    cp osc-0.3.1/*.$PDEXT osc-0.3.1/*-help.pd "$EXTERNALS_DIR/"
-    cp pd-iemnet-0.3.0/*.$PDEXT "pd-iemnet-0.3.0/$SHARED_LIB" \
-        pd-iemnet-0.3.0/*-help.pd pd-iemnet-0.3.0/udpsndrcv.pd "$EXTERNALS_DIR/"
+
+    name=""
+    tarball=""
+    srcdir=""
+    flags=""
+    args=""
+    patches=""
+    exclude=""
+    install_dirs=""
+    cppflags=""
+    cflags=""
+    author=""
+    copyright=""
+    license=""
+    submodule_path=""
+    submodule_tarball=""
+    pd_externals_credits=""
+
+    build_one() {
+        [ -n "$name" ] || return 0
+
+        # For development: build only the named libraries.
+        if [ -n "${PD2_EXTERNALS_ONLY:-}" ]; then
+            case " $PD2_EXTERNALS_ONLY " in
+                *" $name "*) ;;
+                *) return 0 ;;
+            esac
+        fi
+
+        echo
+        echo "==== Building Pd external '$name' ===="
+
+        tarball_path="$EXTERNALS_SRC/$tarball"
+        if [ ! -f "$tarball_path" ]; then
+            echo "Tarball not found: $tarball_path" >&2
+            exit 1
+        fi
+
+        rm -rf "`pwd`/$srcdir"
+        tar xzf "$tarball_path"
+
+        # Directories/files not wanted in the build can be listed in exclude.
+        if [ -n "$exclude" ]; then
+            for exclude_path in $exclude ; do
+                rm -rf "`pwd`/$srcdir/$exclude_path"
+            done
+        fi
+
+        # Some projects use git submodules whose contents GitHub's archive
+        # does not contain. submodule_tarball is a separately pinned archive
+        # that is copied over submodule_path after extraction.
+        if [ -n "$submodule_path" ]; then
+            sub_tarball_path="$EXTERNALS_SRC/$submodule_tarball"
+            if [ ! -f "$sub_tarball_path" ]; then
+                echo "Submodule tarball not found: $sub_tarball_path" >&2
+                exit 1
+            fi
+
+            sub_tmpdir="`pwd`/.pd2-submodule-$$"
+            rm -rf "$sub_tmpdir"
+            mkdir -p "$sub_tmpdir"
+            tar xzf "$sub_tarball_path" -C "$sub_tmpdir"
+            sub_source="`find "$sub_tmpdir" -mindepth 1 -maxdepth 1 -type d | head -n 1`"
+            if [ -z "$sub_source" ]; then
+                echo "Could not find the top-level directory in $submodule_tarball" >&2
+                rm -rf "$sub_tmpdir"
+                exit 1
+            fi
+            rm -rf "`pwd`/$srcdir/$submodule_path"
+            mkdir -p "`pwd`/$srcdir/$submodule_path"
+            cp -a "$sub_source"/. "`pwd`/$srcdir/$submodule_path/"
+            rm -rf "$sub_tmpdir"
+        fi
+
+        for patch_file in $patches ; do
+            patch -p1 -d "$srcdir" --batch --forward < "$EXTERNALS_SRC/$patch_file"
+        done
+
+        # Word splitting of $flags, $args, $cppflags and $cflags is intentional.
+        BUILD_ENV=()
+        if [ -n "$cppflags" ]; then
+            BUILD_ENV+=("PD2_CPPFLAGS=$cppflags")
+        fi
+        if [ -n "$cflags" ]; then
+            BUILD_ENV+=("PD2_CFLAGS=$cflags")
+        fi
+
+        # shellcheck disable=SC2086
+        env ${BUILD_ENV[@]+"${BUILD_ENV[@]}"} \
+            "$BUILD_EXTERNAL" $flags --dest "$EXTERNALS_DIR" --lib-name "$name" \
+            "`pwd`/$srcdir" $args
+
+        # Extra subdirectories (e.g. examples) shipped next to the library.
+        if [ -n "$install_dirs" ]; then
+            for extra_dir in $install_dirs ; do
+                if [ -d "`pwd`/$srcdir/$extra_dir" ]; then
+                    cp -a "`pwd`/$srcdir/$extra_dir" "$EXTERNALS_DIR/$name/"
+                else
+                    echo "install_dirs entry not found: $srcdir/$extra_dir" >&2
+                    exit 1
+                fi
+            done
+        fi
+
+        # Credits for the "List of included Pd externals in Pd2" listing.
+        pd_externals_credits+="$name|$author|$copyright|$license
+"
+    }
+
+    while IFS= read -r line || [ -n "$line" ] ; do
+        line="${line%$'\r'}"
+        case "$line" in
+            ""|\#*)
+                continue
+                ;;
+        esac
+        case "$line" in
+            \[*\])
+                build_one
+                name="${line#[}"
+                name="${name%]}"
+                tarball=""
+                srcdir=""
+                flags=""
+                args=""
+                patches=""
+                exclude=""
+                install_dirs=""
+                cppflags=""
+                cflags=""
+                author=""
+                copyright=""
+                license=""
+                submodule_path=""
+                submodule_tarball=""
+                ;;
+            *=*)
+                key="${line%%=*}"
+                value="${line#*=}"
+                key="`echo "$key" | tr -d '[:space:]'`"
+                value="`echo "$value" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'`"
+                case "$key" in
+                    tarball)          tarball="$value" ;;
+                    srcdir)           srcdir="$value" ;;
+                    flags)            flags="$value" ;;
+                    args)             args="$value" ;;
+                    patches)          patches="$value" ;;
+                    exclude)          exclude="$value" ;;
+                    install_dirs)     install_dirs="$value" ;;
+                    cppflags)         cppflags="$value" ;;
+                    cflags)           cflags="$value" ;;
+                    author)           author="$value" ;;
+                    copyright)        copyright="$value" ;;
+                    license)          license="$value" ;;
+                    submodule_path)   submodule_path="$value" ;;
+                    submodule_tarball) submodule_tarball="$value" ;;
+                esac
+                ;;
+        esac
+    done < "$EXTERNALS_SRC/pd_externals.list"
+    build_one
+
+    printf '%s' "$pd_externals_credits" > "$EXTERNALS_DIR/pd2-externals-credits.txt"
+
+    # Check the dynamic symbol tables of libpd and all installed externals for
+    # clashes. The externals are loaded with dlopen(RTLD_GLOBAL), so an
+    # external data symbol that libpd also defines (ggee's slider_widgetbehavior
+    # used to shadow the built-in [hsl]/[vsl] behavior) and ambiguous undefined
+    # references (load-order dependent) are real bugs. See
+    # pd_externals/check_symbol_clashes.sh.
+    "$EXTERNALS_SRC/check_symbol_clashes.sh" --externals "$EXTERNALS_DIR"
 }
 
 

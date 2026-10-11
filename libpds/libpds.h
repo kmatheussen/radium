@@ -19,6 +19,7 @@ void libpds2_delete(pd_t *pd);
 void libpds2_set_hook_data(pd_t *pd, void* data); 
 void libpds2_clear_search_path(pd_t *pd); 
 void libpds2_add_to_search_path(pd_t *pd, const char* sym); 
+int libpds2_load_lib(pd_t *pd, const char* name); 
 void* libpds2_openfile(pd_t *pd, const char* basename, const char* dirname); 
 void libpds2_closefile(pd_t *pd, void* p); 
 void libpds2_savefile(pd_t *pd, void* p, const char *filename, const char *dirname); 

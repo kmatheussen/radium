@@ -1345,6 +1345,101 @@ static QString get_search_path()
 	return STRING_get_qstring(OS_get_full_program_file_path("pd").id);
 }
 
+// Returns the class name for a Pd external binary file name, or an empty
+// string if the file is not a class binary. Shared support libraries
+// (lib*.so / lib*.dylib) are not classes.
+static QString external_class_name(const QString &filename)
+{
+	static const char *extensions[] = { ".pd_linux", ".pd_darwin", ".pd_freebsd" };
+	for (const char *ext : extensions) {
+		if (filename.endsWith(ext))
+			return filename.left(filename.size() - strlen(ext));
+	}
+
+	// Deken-style architecture-tagged names, e.g. above~.linux-amd64-32.so.
+	for (const char *marker : { ".linux-", ".darwin-", ".windows-" }) {
+		int pos = filename.indexOf(marker);
+		if (pos >= 0 && filename.endsWith(".so"))
+			return filename.left(pos);
+	}
+
+	return QString();
+}
+
+static bool is_shared_library_file(const QString &filename)
+{
+	return filename.startsWith("lib") &&
+		(filename.endsWith(".so") || filename.endsWith(".dylib") || filename.endsWith(".dll"));
+}
+
+// The process-wide instance that hosts the third-party external libraries.
+// Never deleted, see ensure_externals_host().
+static pd_t *g_externals_host = NULL;
+
+// Loads all of Radium's external libraries into one hidden libpd instance.
+//
+// Pd only runs a library's setup() the first time it is loaded in a process
+// (the list of loaded libraries is global, not per instance). The classes
+// themselves are global too, and their methods are copied into new instances
+// when those are created. Because of that, the instance that runs setup()
+// must live for as long as the process: libraries that cache gensym() results
+// in file-scope statics (e.g. cyclone's [zl.*]) would otherwise hold pointers
+// into a deleted instance's symbol table.
+static void ensure_externals_host(const char *puredatapath, const QString &externals_path)
+{
+	if (g_externals_host != NULL)
+		return;
+
+	pd_t *host = libpds2_create(false, puredatapath);
+	if (host == NULL) {
+		RError("Unable to create the Pd externals host instance: %s", libpds2_strerror());
+		return;
+	}
+
+	libpds2_add_to_search_path(host, externals_path.toUtf8().constData());
+
+	QDir externals_dir(externals_path);
+	QStringList libdirs = externals_dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name);
+	for (const QString &libdir : libdirs) {
+		QString libpath = externals_path + OS_get_directory_separator() + libdir;
+		libpds2_add_to_search_path(host, libpath.toUtf8().constData());
+
+		// Monolithic libraries (zexy, iemlib, iemmatrix) are loaded by name.
+		// Some libraries (cyclone) also have a library binary next to their
+		// per-class binaries, so both are loaded.
+		QString blob_linux = libdir + ".pd_linux";
+		QString blob_darwin = libdir + ".pd_darwin";
+		bool has_blob =
+			QFile::exists(libpath + OS_get_directory_separator() + blob_linux) ||
+			QFile::exists(libpath + OS_get_directory_separator() + blob_darwin);
+		if (has_blob)
+			libpds2_load_lib(host, libdir.toUtf8().constData());
+
+		// Load every class binary. Use the namespaced name
+		// (<libdir>/<class>) so that patches referring to e.g.
+		// [mrpeach/slipdec] find the already loaded class.
+		QDir lib_dir(libpath);
+		QStringList files = lib_dir.entryList(QDir::Files | QDir::NoDotAndDotDot, QDir::Name);
+		for (const QString &file : files) {
+			if (file == blob_linux || file == blob_darwin)
+				continue;
+			if (is_shared_library_file(file))
+				continue;
+			// Skip alias symlinks (e.g. cyclone's Append.pd_linux):
+			// running setup() twice would register the class twice.
+			if (QFileInfo(libpath + OS_get_directory_separator() + file).isSymLink())
+				continue;
+			QString classname = external_class_name(file);
+			if (classname.isEmpty())
+				continue;
+			QString loadname = libdir + "/" + classname;
+			libpds2_load_lib(host, loadname.toUtf8().constData());
+		}
+	}
+
+	g_externals_host = host;
+}
+
 static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, float sample_rate, int block_size)
 {
 	R_ASSERT(pdfile != NULL);
@@ -1369,6 +1464,16 @@ static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, flo
 
 	char puredatapath[1024];
 	snprintf(puredatapath,1023,"%s/packages/libpd/pure-data",OS_get_program_path());
+
+	QString search_path = get_search_path();
+
+	// Radium's dynamically loaded Pd externals are placed under
+	// <pd>/externals, one subdirectory per library. They are loaded into the
+	// process-wide host instance before this instance is created, see
+	// ensure_externals_host().
+	QString externals_path = search_path + OS_get_directory_separator() + "externals";
+	ensure_externals_host(puredatapath, externals_path);
+
 	pd = libpds2_create(true, puredatapath);
 	if(pd==NULL)
 	{
@@ -1382,13 +1487,17 @@ static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, flo
 
 	data->pd = pd;
 
-	QString search_path = get_search_path();
 	libpds2_add_to_search_path(pd, search_path.toUtf8().constData());
-
-	// Radium's dynamically loaded Pd externals (OSC and networking objects)
-	// are placed in a subdirectory of the pd directory.
-	QString externals_path = search_path + OS_get_directory_separator() + "externals";
 	libpds2_add_to_search_path(pd, externals_path.toUtf8().constData());
+
+	{
+		QDir externals_dir(externals_path);
+		QStringList libdirs = externals_dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name);
+		for (const QString &libdir : libdirs) {
+			QString libpath = externals_path + OS_get_directory_separator() + libdir;
+			libpds2_add_to_search_path(pd, libpath.toUtf8().constData());
+		}
+	}
 
 	libpds2_set_floathook(pd, RT_pdfloathook);
 	libpds2_set_messagehook(pd, RT_pdmessagehook);
