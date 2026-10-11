@@ -29,6 +29,7 @@
 #  include "../bin/packages/faust/architecture/faust/dsp/llvm-dsp.h"
 #endif
 #include "../bin/packages/faust/architecture/faust/dsp/interpreter-dsp.h"
+#include "../audio/Faust_compiler_fpu.hpp"
 
 namespace
 {
@@ -107,6 +108,9 @@ static const BenchCase g_cases[] =
 	{ "delay",
 	  "import(\"stdfaust.lib\");\n"
 	  "process = de.delay(int(ma.SR), int(ma.SR)/2, _);\n" },
+	{ "filters",
+	  "import(\"stdfaust.lib\");\n"
+	  "process = _ : fi.lowpass(2, 1200) : fi.highpass(2, 80) : fi.lowpass(2, 6000) : fi.highpass(2, 2000);\n" },
 	{ "onepoles",
 	  "import(\"stdfaust.lib\");\n"
 	  "a1 = exp(-2.0*ma.PI*1000.0/ma.SR);\n"
@@ -193,6 +197,8 @@ static std::string create_sr_overlay(const std::string &libraries_dir, int sampl
 
 static Factory compile_program(const std::string &code, const std::vector<std::string> &options, bool use_llvm, int opt_level, std::string &error)
 {
+	radium::ScopedDenormalsDisabled disable_denormals;
+
 	Factory result;
 
 	std::vector<const char*> argv;

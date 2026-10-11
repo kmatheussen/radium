@@ -363,6 +363,8 @@ namespace{
 
       std::string error_message;
 
+      radium::ScopedDenormalsDisabled disable_denormals;
+
       //R_ASSERT(OPT_LEVEL==0);
       
       //printf("\n\n   Starting to create factory %s.  \n\n Optlevel: %d\n\n",code.toUtf8().constData(),optlevel);

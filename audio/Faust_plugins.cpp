@@ -82,6 +82,7 @@ static Data *GET_DATA_FROM_PLUGIN(SoundPlugin *plugin);
 
 #include "Faust_plugins_proc.h"
 #include "Faust_sample_rate_overlay.hpp"
+#include "Faust_compiler_fpu.hpp"
 
 
 #define MAX_CHANNELS 16
