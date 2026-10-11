@@ -405,7 +405,7 @@ static QColor getQColor(const_char* colorname){
     if(g_is_starting_up) {
       static bool has_shown_startup_error = false;
       if (has_shown_startup_error == false){
-        GFX_Message(NULL, "Could not find color \"%s\". Your color configuration is not valid. Try deleting the file .radium/color in your home directory and start Radium again.", colorname);
+        GFX_Message(NULL, "Could not find color \"%s\". Your color configuration is not valid. Try deleting the color_configuration_* files in your home directory and start Radium again.", colorname);
         has_shown_startup_error = true;
       }
     }else
@@ -8165,10 +8165,11 @@ QBrush API_get_gradient(int gradient_num, float x1, float y1, float x2, float y2
   }
 
   float g_gradient = getAmountOfGradient();
-  if (g_gradient > DEFAULT_AMOUNT_OF_GRADIENT) {
-    darkness_factor = scale(g_gradient, DEFAULT_AMOUNT_OF_GRADIENT, 1.0, darkness_factor, 1.0);
+  float default_gradient = GFX_GetDefaultAmountOfGradient();
+  if (g_gradient > default_gradient) {
+    darkness_factor = scale(g_gradient, default_gradient, 1.0, darkness_factor, 1.0);
   } else {
-    darkness_factor = scale(g_gradient, 0.0, DEFAULT_AMOUNT_OF_GRADIENT, 0.0, darkness_factor);
+    darkness_factor = scale(g_gradient, 0.0, default_gradient, 0.0, darkness_factor);
   }
 
   if (darkness_factor < 0.001)

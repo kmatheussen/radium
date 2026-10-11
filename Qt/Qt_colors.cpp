@@ -99,14 +99,6 @@ namespace{
     bool is_separator;
   };
 
-  struct ReplacementColorNum{
-    enum ColorNums num;
-    enum ColorNums replacement_num;
-  };
-  struct ReplacementColor{
-    enum ColorNums num;
-    QColor color;
-  };
 }
 
 static const ColorConfig g_colorconfig[] = {
@@ -295,190 +287,6 @@ static const ColorConfig g_colorconfig[] = {
   
   {END_CONFIG_COLOR_NUM, NULL, NULL, false}
 };
-
-static ReplacementColorNum g_replacement_color_num[] = {
-
-  //{BUTTONS_NOT_ENABLED_COLOR_NUM, BUTTONS_COLOR_NUM},
-  //{CHECK_BOX_NOT_ENABLED_COLOR_NUM, CHECK_BOX_SELECTED_COLOR_NUM},
-    
-  {PIANONOTE_COLOR_NUM, CURSOR_EDIT_ON_COLOR_NUM},
-  
-  //{AUTOMATION_INDICATOR_COLOR_NUM, PORTAMENTO_NOTE_TEXT_COLOR_NUM},
-
-  {BAR_TEXT_COLOR_NUM, INSTRUMENT_NAME_COLOR_NUM},
-  {ZOOMLINE_TEXT_COLOR_NUM1, PORTAMENTO_NOTE_TEXT_COLOR_NUM},
-  {ZOOMLINE_TEXT_COLOR_NUM7, CURSOR_EDIT_ON_COLOR_NUM},
-
-  {PITCH_LINE_COLOR_NUM, CURSOR_EDIT_ON_COLOR_NUM},
-
-  {PIANOROLL_OCTAVE_COLOR_NUM, INSTRUMENT_NAME_COLOR_NUM},
-  {PIANOROLL_NOTE_NAME_COLOR_NUM, INSTRUMENT_NAME_COLOR_NUM},
-  
-  {PORTAMENTO_END_NOTE_TEXT_COLOR_NUM, CURSOR_EDIT_ON_COLOR_NUM},
-
-  {END_CONFIG_COLOR_NUM, ILLEGAL_COLOR_NUM}
-
-};
-
-static ReplacementColor g_replacement_color[] = {
-  {LOW_EDITOR_BACKGROUND_COLOR_NUM, QColor("#ff575d5b")},
-  {HIGH_EDITOR_BACKGROUND_COLOR_NUM, QColor("#ff585d55")},
-  {EDITOR_GRAYED_OUT_COLOR_NUM, QColor(100,100,100,120)},
-  {LOW_BACKGROUND_COLOR_NUM, QColor("#ff4d5558")},
-  {HIGH_BACKGROUND_COLOR_NUM, QColor("#ff23292b")},
-  {TEXT_COLOR_NUM, QColor("#ffffffff")},
-  {MENU_TEXT_COLOR_NUM, QColor("#fffffdec")},
-  {MENU_KEYBINDING_TEXT_COLOR_NUM, QColor("#e57c12")},
-  {MENU_BACKGROUND_COLOR_NUM, QColor("#ff5b6568")},
-  {MENU_ENTRY_BACKGROUND_COLOR_NUM, QColor("#ff585f61")},
-
-  {LABEL_COLOR_NUM, QColor("#ffe3e3e3")},
-
-  {INSTRUMENT_NAME_COLOR_NUM, QColor("#fffdfec8")},
-  {CURSOR_EDIT_ON_COLOR_NUM, QColor("#ff0b186c")},
-  {CURSOR_EDIT_OFF_COLOR_NUM, QColor("#ff434a43")},
-  {EDITOR_SLIDERS_COLOR_NUM, QColor("#ff96a3a7")},
-  {AUTOMATION1_COLOR_NUM, QColor("#ffffffff")},
-  {AUTOMATION2_COLOR_NUM, QColor("#ff71e54e")},
-  {AUTOMATION3_COLOR_NUM, QColor("#fff4ff23")},
-  {AUTOMATION4_COLOR_NUM, QColor("#ff63acd9")},
-  {AUTOMATION5_COLOR_NUM, QColor("#ffff355a")},
-  {AUTOMATION6_COLOR_NUM, QColor("#ff86ffd3")},
-  {AUTOMATION7_COLOR_NUM, QColor("#ffc495c0")},
-  {AUTOMATION8_COLOR_NUM, QColor("#fffe920f")},
-
-  {ZOOMLINE_TEXT_COLOR_NUM2, QColor("#ff000000")},
-  {ZOOMLINE_TEXT_COLOR_NUM3, QColor("#ff98006d")},
-  {ZOOMLINE_TEXT_COLOR_NUM4, QColor("#ff6437a7")},
-  {ZOOMLINE_TEXT_COLOR_NUM5, QColor("#ff434a43")},
-  {ZOOMLINE_TEXT_COLOR_NUM6, QColor("#ff93794f")},
-  
-  {SCROLLBAR_COLOR_NUM, QColor("black")},
-  {SCROLLBAR_BACKGROUND_COLOR_NUM, QColor("#69b8b8b8")},
-  
-  {KEYBOARD_FOCUS_BORDER_COLOR_NUM, QColor("#ff9d00")},
-  {ALTERNATIVE_LABEL_COLOR_NUM, QColor("#000000")},
-
-  {CURSOR_BORDER_COLOR_NUM, QColor("#50000000")},
-  {CURSOR_CURR_COLUMN_BORDER_COLOR_NUM, QColor("#d0ff0000")},
-
-  {VELOCITY1_COLOR_NUM, QColor("#ff1e211e")},
-  {VELOCITY2_COLOR_NUM, QColor("#ffab8d5c")},
-  {VELOCITY_TEXT_COLOR_NUM, QColor("#ffffcf82")},
-  {MIDDLE_VELOCITY_TEXT_COLOR_NUM, QColor("#dbffb8")},
-  {LAST_VELOCITY_TEXT_COLOR_NUM, QColor("#f57676")},
-
-  {SLIDER1_COLOR_NUM, QColor("#c80a6800")},
-  {SLIDER2_COLOR_NUM, QColor("#78d60003")},
-  {SLIDER_BACKGROUND_COLOR_NUM, QColor("#ff0f160d")},
-  {SLIDER_DISABLED_COLOR_NUM, QColor("#ff454d4f")},
-  {TRACK_SLIDER_COLOR_NUM, QColor("#ff939393")},
-  
-  {SLIDER_TEXT_COLOR_NUM, QColor("#fffffbf0")},
-  {SLIDER_POINTER_COLOR_NUM, QColor("#ffa38672")},
-  {SLIDER_RECORDING_COLOR_NUM, QColor("#ffc50003")},
-
-  {PEAKS_COLOR_NUM,     QColor("#ff12fc12")},
-  {PEAKS_0DB_COLOR_NUM, QColor("#ffffe200")},
-  {PEAKS_4DB_COLOR_NUM, QColor("#ffff0707")},
-
-  {TAB_SELECTED_COLOR_NUM,  QColor("green")},
-  {TAB_UNSELECTED_COLOR_NUM,  QColor("#004000")},
-
-  {BUTTONS_COLOR_NUM, QColor("#ff304768")},
-  {BUTTONS_PRESSED_COLOR_NUM, QColor("#ff082441")},
-  {CHECK_BOX_SELECTED_COLOR_NUM,  QColor("#ff146a35")},
-  {CHECK_BOX_UNSELECTED_COLOR_NUM,  QColor("#ff2f473a")},
-  {BUTTONS_TEXT_COLOR_NUM, QColor("#ffe9e9e9")},
-
-  {PORTAMENTO_NOTE_TEXT_COLOR_NUM, QColor("#ffc28963")},
-  {WAVEFORM_COLOR_NUM, QColor("#ff090909")},
-  {PIANONOTE_SELECTED_COLOR_NUM, QColor("#00c8e6")},
-  
-  {PIANOROLL_NOTE_BORDER_COLOR_NUM, QColor("#ff010101")},
-  {PLAY_CURSOR_COLOR_NUM, QColor("#70ff0000")},
-  {LINE_SLIDER_COLOR_NUM, QColor("#ff000000")},
-
-  {CURRENT_BEAT_TEXT_COLOR_NUM, QColor("#ff000000")},
-  {CURRENT_BEAT_RANGE_COLOR_NUM, QColor("#32fa0b43")},
-
-  {RANGE_COLOR_NUM, QColor("#629d75")},
-
-  {TRACK_SEPARATOR1_COLOR_NUM, QColor("#ff0b186c")},
-  {TRACK_SEPARATOR2A_COLOR_NUM, QColor("#ff303030")},
-  {TRACK_SEPARATOR2B_COLOR_NUM, QColor("#ff777e7f")},
-
-  {TEMPOGRAPH_COLOR_NUM, QColor("#ff434a43")},
-  {TEMPO_MULTIPLIER_SLIDER_COLOR_NUM, QColor("#395832")},
-  {TEMPO_MULTIPLIER_SLIDER_TEXT_COLOR_NUM, QColor("#ffe5c4")},
-
-  {SOUNDFONT_COLOR_NUM, QColor("#ff009000")},
-  {SOUNDFILE_COLOR_NUM, QColor("#0000a7")},
-  {CURRENT_SOUNDFILE_COLOR_NUM, QColor("#ff9a9a9a")},
-
-  {MIXER_BACKGROUND_COLOR_NUM, QColor("#ff575d5b")},
-  {MIXER_TEXT_COLOR_NUM, QColor("black")},
-  {MIXER_BORDER_COLOR_NUM, QColor(1,1,1)},
-
-  {MIXER_EVENT_CONNECTION_COLOR_NUM, QColor("#ffff0000")},
-  {MIXER_AUDIO_CONNECTION_COLOR_NUM, QColor("#ff2e0359")},
-  {MIXER_AUDIO_PORT_COLOR_NUM, QColor("#14150f46")},
-  {MIXER_SLOT_INDICATOR_COLOR_NUM, QColor("#14ff0000")},
-  
-  {MIXER_AUTOSUSPENSION_COLOR_NUM, QColor("#3ca6a6a6")},
-  {MIXER_CURRENT_OBJECT_BORDER_COLOR_NUM, QColor("#ff041da7")},
-  {MIXER_SELECTED_OBJECT_BORDER_COLOR_NUM, QColor("#ff81080a")},
-  {MIXERSTRIPS_CURRENT_INSTRUMENT_BORDER_COLOR_NUM, QColor("white")},
-
-  {NOTE_EVENT_INDICATOR_COLOR_NUM, QColor("#ffcadce1")},
-  {NOTE_EVENT_INDICATOR_BORDER_COLOR_NUM, QColor("#ff0b186c")},
-
-  {PLAYLIST_CURRENT_ENTRIES_BORDER_COLOR_NUM, QColor("white")},
-  {SEQUENCER_EDITOR_SEQTRACKS_BACKGROUND_COLOR_NUM, QColor("#ff295924")},
-
-  {INSTRUMENT_BUS_DEFAULT_COLOR_NUM, QColor("#1b5f72")},
-  {SEQTRACK_INSTRUMENT_DEFAULT_COLOR_NUM, QColor("#692426")},
-
-  {SEQUENCER_CURRTRACK_BORDER_COLOR_NUM, QColor("#ffc8c8c8")},
-  {SEQUENCER_CURR_SEQBLOCK_BORDER_COLOR_NUM, QColor("#ffffbc11")},
-  {SEQUENCER_LANES_BACKGROUND_COLOR_NUM, QColor("#ff464d47")},
-  {SEQTRACKS_BACKGROUND_COLOR_NUM, QColor("#ff3a4844")},
-  {SEQUENCER_BORDER_COLOR_NUM, QColor("#ff010101")},
-  {SEQUENCER_TEXT_COLOR_NUM, QColor("#ff010101")},
-  {SEQUENCER_TEXT_CURRENT_BLOCK_COLOR_NUM, QColor("#ffffffff")},
-  {SEQUENCER_NOTE_COLOR_NUM, QColor("#960101c8")},
-  {SEQUENCER_NOTE_START_COLOR_NUM, QColor("#ff000000")},
-
-  {SEQUENCER_CURR_ENTRY_BORDER_COLOR_NUM, QColor("#005a00")},
-  
-  {SEQUENCER_BLOCK_BACKGROUND_COLOR_NUM, QColor("#ff8c8c8c")},
-  {SEQUENCER_BLOCK_BORDER_COLOR_NUM, QColor("#ff321423")},
-  {SEQUENCER_BLOCK_BAR_COLOR_NUM, QColor("#d2000000")},
-  {SEQUENCER_BLOCK_BEAT_COLOR_NUM, QColor("#460a1e17")},
-  {SEQUENCER_BLOCK_SELECTED_COLOR_NUM, QColor("#5400801d")},
-  {SEQUENCER_BLOCK_MULTISELECT_BACKGROUND_COLOR_NUM, QColor("#ffff4811")},
-  {SEQUENCER_BLOCK_AUDIO_FILE_BACKGROUND_COLOR_NUM, QColor("#64eeeeee")},
-  {SEQUENCER_BLOCK_FADE_BOX_COLOR_NUM, QColor("#ff00ff00")},
-  {SEQUENCER_BLOCK_INTERIOR_BOX_COLOR_NUM, QColor("#ff4c73ff")},
-  {SEQUENCER_BLOCK_SPEED_BOX_COLOR_NUM, QColor("#ffff6060")},
-  {SEQUENCER_BLOCK_STRETCH_BOX_COLOR_NUM, QColor("yellow")},
-  {SEQUENCER_WAVEFORM_COLOR_NUM, QColor("#c8000000")},
-  {SEQUENCER_WAVEFORM_BORDER_COLOR_NUM, QColor("#c50c23a5")},
-
-  {SEQUENCER_GRID_COLOR_NUM, QColor("#99281980")},
-  {SEQUENCER_TRACK_BORDER1_COLOR_NUM, QColor("#ff141414")},
-  {SEQUENCER_TRACK_BORDER2_COLOR_NUM, QColor("#80141414")},
-  {SEQUENCER_CURSOR_COLOR_NUM, QColor("#ffc81414")},
-  {SEQUENCER_TIMELINE_BACKGROUND_COLOR_NUM, QColor("#ff8c8c8c")},
-  {SEQUENCER_TIMELINE_ARROW_COLOR_NUM, QColor("#ffb50003")},
-  {SEQUENCER_NAVIGATOR_HANDLER_COLOR_NUM, QColor("#5a141414")},
-  {SEQUENCER_NAVIGATOR_GRAYOUT_COLOR_NUM, QColor("#96323232")},
-  {SEQUENCER_TEMPO_AUTOMATION_COLOR_NUM, QColor("#baab88")},
-  {SEQUENCER_MARKER_COLOR_NUM, QColor("#0a0632")},
-  
-  {END_CONFIG_COLOR_NUM, QColor(1,2,3)}
-};
-
 
 extern struct Root *root;
 
@@ -794,40 +602,6 @@ static int get_colornum(const char *color_config_name){
 }
 */
 
-static enum ColorNums get_replacement_colornum(enum ColorNums colornum){
-  int i=0;
-  while(g_replacement_color_num[i].num != END_CONFIG_COLOR_NUM){
-    if (g_replacement_color_num[i].num==colornum)
-      return g_replacement_color_num[i].replacement_num;
-    i++;
-  }
-
-  return ILLEGAL_COLOR_NUM;
-}
-
-static QColor get_replacement_color(enum ColorNums colornum){
-  int i=0;
-  while(g_replacement_color[i].num != END_CONFIG_COLOR_NUM){
-    if (g_replacement_color[i].num==colornum)
-      return g_replacement_color[i].color;
-    i++;
-  }
-
-  if(g_is_starting_up) {
-    static bool has_shown_startup_error = false;
-    if (has_shown_startup_error == false){
-      GFX_Message(NULL, "Could not find color \"%s\". Your color configuration is not valid. Try deleting the file .radium/color in your home directory and start Radium again.", get_color_config(colornum).config_name);
-      has_shown_startup_error = true;
-    }
-    return QColor(generateNewColor(1.0));
-  }
-
-  RWarning("Unable to find color %s in config file", get_color_config(colornum).config_name);
-
-  QColor ret;  
-  return ret;
-}
-
 static QColor **g_config_colors;
 
 __attribute__((constructor)) static void initialize_g_config_colors(void) {
@@ -845,71 +619,28 @@ static void clear_config_colors(void){
     clear_config_color((enum ColorNums)i);
 }
 
+static void ensure_active_configuration_loaded(void); // defined below
+
 static QColor get_config_qcolor(enum ColorNums colornum){
-  static bool has_inited = false;
-
-  if (has_inited==false){
-    has_inited = true;
-
-    for(int i=START_CONFIG_COLOR_NUM;i<END_CONFIG_COLOR_NUM;i++)
-      if (has_qcolor(i))
-        get_config_qcolor((enum ColorNums)i);    
-  }
+  ensure_active_configuration_loaded();
 
   if (g_config_colors[colornum]!=NULL)
     return *g_config_colors[colornum];
 
-  QColor col;
-
-  const char *colorname = get_color_config(colornum).config_name;
-  if (colorname==NULL)
-    return col;
-
-  if (!QString(colorname).contains("color"))
-    colorname = talloc_format("%s_color", colorname);
-  
-  const char *colorstring = SETTINGS_read_string(colorname, "");
-  
-  if (strlen(colorstring) <= 1) {
-    
-    enum ColorNums replacement_colornum = get_replacement_colornum(colornum);
-    if (replacement_colornum != ILLEGAL_COLOR_NUM)
-      col = get_config_qcolor(replacement_colornum);
-    else
-      col = get_replacement_color(colornum);
-    
-  } else {
-    
-    col = QColor(colorstring);
-
-#if !defined(RELEASE)
-    // Check that the default colors are hardcoded into the program.
-    {
-      static QSet<enum ColorNums> checked;
-
-      if (!checked.contains(colornum)){
-        
-        checked << colornum;
-          
-        enum ColorNums replacement_colornum = get_replacement_colornum(colornum);
-        QColor col2;
-        if (replacement_colornum != ILLEGAL_COLOR_NUM)
-          col2 = get_config_qcolor(replacement_colornum);
-        else
-          col2 = get_replacement_color(colornum);
-        
-        if (col != col2){
-          GFX_addMessage("Wrong colors for %s: %s / %s\n", colorname, colorstring, col2.name(QColor::HexArgb).toUtf8().constData());
-        }
-      }
+  // Should only happen if the program's color_configuration_Default file is missing or invalid.
+  if(g_is_starting_up) {
+    static bool has_shown_startup_error = false;
+    if (has_shown_startup_error == false){
+      GFX_Message(NULL, "Could not find color \"%s\". Your color configuration is not valid. Try deleting the color_configuration_* files in your home directory and start Radium again.", get_color_config(colornum).config_name);
+      has_shown_startup_error = true;
     }
-#endif
-    
+    return QColor(generateNewColor(1.0));
   }
 
-  g_config_colors[colornum] = new QColor(col);
-  
-  return col;
+  RWarning("Unable to find color \"%s\" in the color configurations", get_color_config(colornum).config_name);
+
+  QColor ret;  
+  return ret;
 }
 
 
@@ -1529,87 +1260,6 @@ public slots:
 
 #include "mQt_colors.cpp"
 
-void GFX_ResetColors(void){
-  struct Tracker_Windows *window = root->song->tracker_windows;
-  EditorWidget *editorwidget = static_cast<EditorWidget*>(window->os_visual.widget);
-
-  clear_config_colors();
-
-  //setEditorColors(editorwidget); // read back from file.
-
-  //system_color->setRgb(QColor(SETTINGS_read_qstring("system_color","#d2d0d5")).rgb());
-  //button_color->setRgb(QColor(SETTINGS_read_qstring("button_v2_color","#c1f1e3")).rgb());
-  updateAll(editorwidget);
-  GFX_update_current_instrument_widget();
-
-  window->must_redraw = true;
-}
-
-void GFX_ResetColor(enum ColorNums colornum){
-  struct Tracker_Windows *window = root->song->tracker_windows;
-  EditorWidget *editorwidget = static_cast<EditorWidget*>(window->os_visual.widget);
-
-  clear_config_color(colornum);
-
-  updateAll(editorwidget);
-  GFX_update_current_instrument_widget();
-
-  window->must_redraw = true;
-}
-
-void GFX_SaveColors(filepath_t filename){
-  if (isLegalFilepath(filename)){
-    SETTINGS_set_custom_configfile(filename);
-  }
-  
-  for(int i=START_CONFIG_COLOR_NUM;i<END_CONFIG_COLOR_NUM;i++) {
-    if (is_qcolor_separator(i))
-      continue;
-    
-    const char *colorname = get_color_config((enum ColorNums)i).config_name;
-    
-    if (!QString(colorname).contains("color"))
-      colorname = talloc_format("%s_color", colorname);
-
-    SETTINGS_write_string(colorname, get_qcolor((enum ColorNums)i).name(QColor::HexArgb));
-  }
-
-  if (isLegalFilepath(filename))
-    SETTINGS_unset_custom_configfile();
-}
-  
-
-static void setDefaultColors(struct Tracker_Windows *tvisual, QString configfilename){
-  EditorWidget *editorwidget=(EditorWidget *)tvisual->os_visual.widget;
-
-  clear_config_colors();
-   
-  QFile::remove(STRING_get_qstring(OS_get_config_filename("color0").id) + "_old");
-  QFile::rename(STRING_get_qstring(OS_get_config_filename("color0").id), STRING_get_qstring(OS_get_config_filename("color0").id) + "_old");
-  QFile::copy(STRING_get_qstring(OS_get_full_program_file_path(configfilename).id), STRING_get_qstring(OS_get_config_filename("color0").id));
-
-  //setEditorColors(editorwidget); // read back from file.
-  //system_color->setRgb(QColor(SETTINGS_read_qstring("system_color","#d2d0d5")).rgb());
-  //button_color->setRgb(QColor(SETTINGS_read_qstring("button_v2_color","#c1f1e3")).rgb());
-
-  updateAll(editorwidget);
-  tvisual->must_redraw = true;
-}
-
-
-void GFX_SetDefaultColors1(struct Tracker_Windows *tvisual){
-  setDefaultColors(tvisual,"colors");
-}
-
-
-void GFX_SetDefaultColors2(struct Tracker_Windows *tvisual){
-  setDefaultColors(tvisual,"colors2");
-  printf("hepp\n");
-}
-
-
-
-
 //////////////////////////
 // Color configurations //
 //////////////////////////
@@ -1818,282 +1468,628 @@ static QMap<QString, ColorConfigSnapshot> g_color_configurations;
 static QString g_current_configuration_name;
 static bool g_color_configurations_initialized = false;
 
+// Also set in bin/config.
+#define RADIUM_COLOR_VERSION "8.2.52"
+
+static ColorConfigSnapshot g_program_default_configuration;
+static bool g_active_configuration_loaded = false;
+
+static filepath_t get_configuration_filename(const QString &name){
+  return appendFilePaths(getConfigPath(),
+                         getPath(qUtf8Printable(QString("color_configuration_")
+                                                + legalizeFilename(qUtf8Printable(name)))));
+}
+
+// Installs a color configuration that ships with the program into the user's
+// configuration directory. If overwrite is false, it's only installed if the
+// user doesn't already have a configuration with that name.
+static void install_shipped_color_configuration(const char *shipped_name, const char *dest_name, bool overwrite)
+{
+  filepath_t dest_filename = get_configuration_filename(dest_name);
+
+  if (overwrite==false && DISK_file_exists(dest_filename))
+    return;
+
+  filepath_t shipped_filename = OS_get_full_program_file_path(shipped_name);
+
+  if (DISK_file_exists(shipped_filename)==false)
+    return;
+
+  ColorConfigSnapshot snap(shipped_filename);
+  snap.name = dest_name;
+  snap.saveState(dest_filename);
+}
+
 static void ensure_color_configurations_initialized(void)
 {
-	if (g_color_configurations_initialized == false)
-	{
-		QDir dir(QString::fromStdWString((getConfigPath()).id));
-		QStringList filters;
-		filters << "color_configuration_*";
-		QStringList files = dir.entryList(filters, QDir::Files, QDir::Name);
+  if (g_color_configurations_initialized == false)
+  {
+    install_shipped_color_configuration("color_configuration_Old", "Old", false);
+    install_shipped_color_configuration("color_configuration_Default", "Default", false);
 
-		if (files.isEmpty())
-		{
-			ColorConfigSnapshot snap;
-			snap.name = "Default";
-			snap.colors = QVector<QColor>(END_CONFIG_COLOR_NUM);
-			g_color_configurations[snap.name] = snap;
-			g_current_configuration_name = snap.name;
-		}
-		else
-		{
-			for(const QString &filename : files)
-			{
-				filepath_t wfilename = make_filepath(STRING_create(dir.absoluteFilePath(filename)));
-				ColorConfigSnapshot snap(wfilename);
+    QDir dir(QString::fromStdWString((getConfigPath()).id));
+    QStringList filters;
+    filters << "color_configuration_*";
+    QStringList files = dir.entryList(filters, QDir::Files, QDir::Name);
 
-				if (snap.name.isEmpty())
-				{
-					R_ASSERT_NON_RELEASE(false);
-					snap.name = filename.mid(strlen("color_configuration_"));
-				}
-				
-				g_color_configurations[snap.name] = snap;
-			}
+    if (files.isEmpty())
+    {
+      ColorConfigSnapshot snap;
+      snap.name = "Default";
+      snap.colors = QVector<QColor>(END_CONFIG_COLOR_NUM);
+      g_color_configurations[snap.name] = snap;
+      g_current_configuration_name = snap.name;
+    }
+    else
+    {
+      for(const QString &filename : files)
+      {
+        filepath_t wfilename = make_filepath(STRING_create(dir.absoluteFilePath(filename)));
+        ColorConfigSnapshot snap(wfilename);
 
-			if (g_color_configurations.contains("Default"))
-				g_current_configuration_name = "Default";
-			else
-				g_current_configuration_name = g_color_configurations.begin().key();
-		}
+        if (snap.name.isEmpty())
+        {
+          R_ASSERT_NON_RELEASE(false);
+          snap.name = filename.mid(strlen("color_configuration_"));
+        }
+        
+        g_color_configurations[snap.name] = snap;
+      }
 
-		{
-			const char *saved = SETTINGS_read_string("current_color_configuration", "");
-			if (saved[0] != '\0' && g_color_configurations.contains(saved))
-				g_current_configuration_name = saved;
-		}
+      if (g_color_configurations.contains("Default"))
+        g_current_configuration_name = "Default";
+      else
+        g_current_configuration_name = g_color_configurations.begin().key();
+    }
 
-		g_color_configurations_initialized = true;
-	}
+    {
+      const char *saved = SETTINGS_read_string("current_color_configuration", "");
+      if (saved[0] != '\0' && g_color_configurations.contains(saved))
+        g_current_configuration_name = saved;
+    }
+
+    g_color_configurations_initialized = true;
+  }
+}
+
+static void load_program_default_configuration(void)
+{
+  filepath_t filename = OS_get_full_program_file_path("color_configuration_Default");
+  ColorConfigSnapshot snap(filename);
+
+  if (snap.colors.size()==0){
+    if (g_color_configurations.contains("Default"))
+      snap = g_color_configurations["Default"];
+    snap.name = "Default";
+  }
+
+  g_program_default_configuration = snap;
 }
 
 static void save_current_to_configuration(const QString &name)
 {
-	ColorConfigSnapshot &dest = g_color_configurations[name];
-	dest.name = name;
-	dest.colors.resize(END_CONFIG_COLOR_NUM);
+  ColorConfigSnapshot &dest = g_color_configurations[name];
+  dest.name = name;
+  dest.colors.resize(END_CONFIG_COLOR_NUM);
 
-	for(int i = START_CONFIG_COLOR_NUM ; i < END_CONFIG_COLOR_NUM ; i++)
-	{
-		if (g_config_colors[i] != NULL)
-			dest.colors[i] = *g_config_colors[i];
-	}
+  for(int i = START_CONFIG_COLOR_NUM ; i < END_CONFIG_COLOR_NUM ; i++)
+  {
+    if (g_config_colors[i] != NULL)
+      dest.colors[i] = *g_config_colors[i];
+    else if (g_program_default_configuration.colors.size() > i && g_program_default_configuration.colors[i].isValid())
+      dest.colors[i] = g_program_default_configuration.colors[i];
+  }
 
-	dest.instrument_brightness = getInstrumentBrightness();
-	dest.instrument_saturation = getInstrumentSaturation();
-	dest.instrument_brightness_in_editor = getInstrumentBrightnessInEditor();
-	dest.instrument_saturation_in_editor = getInstrumentSaturationInEditor();
-	dest.block_brightness = getBlockBrightness();
-	dest.block_saturation = getBlockSaturation();
-	dest.amount_of_gradient = getAmountOfGradient();
+  dest.instrument_brightness = getInstrumentBrightness();
+  dest.instrument_saturation = getInstrumentSaturation();
+  dest.instrument_brightness_in_editor = getInstrumentBrightnessInEditor();
+  dest.instrument_saturation_in_editor = getInstrumentSaturationInEditor();
+  dest.block_brightness = getBlockBrightness();
+  dest.block_saturation = getBlockSaturation();
+  dest.amount_of_gradient = getAmountOfGradient();
 }
 
 static void write_current_configuration_name_to_settings(void)
 {
-	SETTINGS_write_string("current_color_configuration", g_current_configuration_name.toUtf8().constData());
+  SETTINGS_write_string("current_color_configuration", g_current_configuration_name.toUtf8().constData());
 }
 
 static void load_configuration(const QString &name)
 {
-	clear_config_colors();
+  clear_config_colors();
 
-	const ColorConfigSnapshot &src = g_color_configurations[name];
+  // Start with the program default palette, then overlay the selected configuration.
+  // This way, colors missing from older configurations still get a value.
+  for(int i = START_CONFIG_COLOR_NUM ; i < END_CONFIG_COLOR_NUM ; i++)
+    if (g_program_default_configuration.colors.size() > i && g_program_default_configuration.colors[i].isValid())
+      g_config_colors[i] = new QColor(g_program_default_configuration.colors[i]);
 
-	for(int i = START_CONFIG_COLOR_NUM ; i < END_CONFIG_COLOR_NUM ; i++)
-	{
-		if (src.colors[i].isValid())
-			g_config_colors[i] = new QColor(src.colors[i]);
-	}
+  if (g_color_configurations.contains(name))
+  {
+    const ColorConfigSnapshot &src = g_color_configurations[name];
 
-	setInstrumentBrightness(src.instrument_brightness);
-	setInstrumentSaturation(src.instrument_saturation);
-	setInstrumentBrightnessInEditor(src.instrument_brightness_in_editor);
-	setInstrumentSaturationInEditor(src.instrument_saturation_in_editor);
-	setBlockBrightness(src.block_brightness);
-	setBlockSaturation(src.block_saturation);
-	setAmountOfGradient(src.amount_of_gradient);
+    for(int i = START_CONFIG_COLOR_NUM ; i < END_CONFIG_COLOR_NUM ; i++)
+    {
+      if (i < src.colors.size() && src.colors[i].isValid())
+      {
+        if (g_config_colors[i] == NULL)
+          g_config_colors[i] = new QColor(src.colors[i]);
+        else
+          *g_config_colors[i] = src.colors[i];
+      }
+    }
+
+    setInstrumentBrightness(src.instrument_brightness);
+    setInstrumentSaturation(src.instrument_saturation);
+    setInstrumentBrightnessInEditor(src.instrument_brightness_in_editor);
+    setInstrumentSaturationInEditor(src.instrument_saturation_in_editor);
+    setBlockBrightness(src.block_brightness);
+    setBlockSaturation(src.block_saturation);
+    setAmountOfGradient(src.amount_of_gradient);
+  }
+  else
+  {
+    setInstrumentBrightness(g_program_default_configuration.instrument_brightness);
+    setInstrumentSaturation(g_program_default_configuration.instrument_saturation);
+    setInstrumentBrightnessInEditor(g_program_default_configuration.instrument_brightness_in_editor);
+    setInstrumentSaturationInEditor(g_program_default_configuration.instrument_saturation_in_editor);
+    setBlockBrightness(g_program_default_configuration.block_brightness);
+    setBlockSaturation(g_program_default_configuration.block_saturation);
+    setAmountOfGradient(g_program_default_configuration.amount_of_gradient);
+  }
+}
+
+static void ensure_active_configuration_loaded(void)
+{
+  if (g_active_configuration_loaded)
+    return;
+
+  g_active_configuration_loaded = true;
+
+  ensure_color_configurations_initialized();
+  load_program_default_configuration();
+  load_configuration(g_current_configuration_name);
+}
+
+// Reads a value from a legacy ~/.radium/colors file.
+static QHash<QString, QString> read_legacy_colors_file(void)
+{
+  QHash<QString, QString> ret;
+
+  filepath_t filename = appendFilePaths(getConfigPath(), getPath("colors"));
+
+  if (DISK_file_exists(filename)==false)
+    return ret;
+
+  QString content = DISK_file_to_qstring(filename);
+
+  for(QString line : content.split('\n')){
+    line = line.trimmed();
+    if (line.isEmpty() || line.startsWith('#'))
+      continue;
+    int pos = line.indexOf('=');
+    if (pos < 0)
+      continue;
+    ret[line.left(pos).trimmed()] = line.mid(pos+1).trimmed();
+  }
+
+  return ret;
+}
+
+static bool snapshots_are_equal(const ColorConfigSnapshot &a, const ColorConfigSnapshot &b)
+{
+  if (a.colors.size() != b.colors.size())
+    return false;
+
+  for(int i=0 ; i<a.colors.size() ; i++)
+    if (a.colors[i] != b.colors[i])
+      return false;
+
+  return equal_floats(a.instrument_brightness, b.instrument_brightness)
+    && equal_floats(a.instrument_saturation, b.instrument_saturation)
+    && equal_floats(a.instrument_brightness_in_editor, b.instrument_brightness_in_editor)
+    && equal_floats(a.instrument_saturation_in_editor, b.instrument_saturation_in_editor)
+    && equal_floats(a.block_brightness, b.block_brightness)
+    && equal_floats(a.block_saturation, b.block_saturation)
+    && equal_floats(a.amount_of_gradient, b.amount_of_gradient);
+}
+
+// The color configurations have changed. Save the colors the user had before the
+// change as the configuration "Previous", rotate the current Default to "Old",
+// install the program's new Default configuration, and make it current.
+static void migrate_to_new_color_configurations(void)
+{
+  // If the user has no legacy colors file, the old default colors are used.
+  load_configuration("Old");
+
+  QHash<QString, QString> legacy = read_legacy_colors_file();
+
+  if (legacy.isEmpty()==false)
+  {
+    for(int i = START_CONFIG_COLOR_NUM ; i < END_CONFIG_COLOR_NUM ; i++)
+    {
+      if (is_qcolor_separator(i))
+        continue;
+
+      QString key = get_color_config((enum ColorNums)i).config_name;
+
+      if (key.isEmpty())
+        continue;
+
+      if (key.contains("color")==false)
+        key += "_color";
+
+      QString val = legacy.value(key);
+
+      if (val.isEmpty())
+        continue;
+
+      QColor color(val);
+
+      if (color.isValid()==false)
+        continue;
+
+      if (g_config_colors[i] == NULL)
+        g_config_colors[i] = new QColor(color);
+      else
+        *g_config_colors[i] = color;
+    }
+
+    struct { const char *key; void (*setter)(float); } sliders[] = {
+      {"color_instrument_brightness_v2", setInstrumentBrightness},
+      {"color_instrument_saturation_v2", setInstrumentSaturation},
+      {"color_instrument_brightness_in_editor_v2", setInstrumentBrightnessInEditor},
+      {"color_instrument_saturation_in_editor_v2", setInstrumentSaturationInEditor},
+      {"color_block_brightness_v2", setBlockBrightness},
+      {"color_block_saturation_v2", setBlockSaturation},
+      {"color_amount_gradient", setAmountOfGradient},
+    };
+
+    for(auto &slider : sliders)
+      if (legacy.contains(slider.key))
+        slider.setter(legacy.value(slider.key).toFloat());
+
+    // These settings used to be stored in the colors file.
+    const char *settings[] = {"override_default_qt_colors", "colored_tracks"};
+    for(auto key : settings)
+      if (legacy.contains(key))
+        SETTINGS_write_string(key, legacy.value(key));
+  }
+
+  if (g_color_configurations.contains("Previous")==false)
+    save_current_to_configuration("Previous");
+
+  // Rotate the current Default to Old. The shipped Old configuration (installed by
+  // ensure_color_configurations_initialized) is already in place if the user has no
+  // Default configuration of his own.
+  if (g_color_configurations.contains("Default")
+      && snapshots_are_equal(g_color_configurations["Default"], g_program_default_configuration)==false)
+  {
+    g_color_configurations["Old"] = g_color_configurations["Default"];
+    g_color_configurations["Old"].name = "Old";
+  }
+
+  // Install the new default configuration.
+  install_shipped_color_configuration("color_configuration_Default", "Default", true);
+
+  {
+    filepath_t default_filename = get_configuration_filename("Default");
+    ColorConfigSnapshot snap(default_filename);
+    if (snap.colors.size() > 0){
+      snap.name = "Default";
+      g_color_configurations["Default"] = snap;
+    }
+  }
+
+  // Files from the old, temporary, migration scheme.
+  g_color_configurations.remove("New");
+  g_color_configurations.remove("__checkpoint");
+  QFile::remove(QString::fromStdWString(get_configuration_filename("New").id));
+  QFile::remove(QString::fromStdWString(get_configuration_filename("__checkpoint").id));
+
+  // The legacy colors file is no longer used.
+  filepath_t legacy_filename = appendFilePaths(getConfigPath(), getPath("colors"));
+  if (DISK_file_exists(legacy_filename))
+  {
+    filepath_t legacy_old_filename = appendFilePaths(getConfigPath(), getPath("colors_old"));
+    QFile::remove(QString::fromStdWString(legacy_old_filename.id));
+    QFile::rename(QString::fromStdWString(legacy_filename.id), QString::fromStdWString(legacy_old_filename.id));
+  }
+
+  g_current_configuration_name = "Default";
+  write_current_configuration_name_to_settings();
+
+  g_active_configuration_loaded = true;
+  load_configuration("Default");
+
+  GFX_SaveAllColorConfigurations();
+
+  SETTINGS_write_string("last_color_version", RADIUM_COLOR_VERSION);
+}
+
+// Must be called before the first color is used. Returns true if the colors were
+// migrated, in which case the caller should tell the user.
+bool GFX_InitColorsAndMigrate(void)
+{
+  ensure_color_configurations_initialized();
+  load_program_default_configuration();
+
+  if (strcmp(SETTINGS_read_string("last_color_version","0.0"), RADIUM_COLOR_VERSION) != 0)
+  {
+    migrate_to_new_color_configurations();
+    return true;
+  }
+
+  g_active_configuration_loaded = true;
+  load_configuration(g_current_configuration_name);
+
+  return false;
 }
 
 QVector<QString> GFX_GetColorConfigurationNames(void)
 {
-	ensure_color_configurations_initialized();
+  ensure_color_configurations_initialized();
 
-	QVector<QString> names;
-	names.reserve(g_color_configurations.size());
+  QVector<QString> names;
+  names.reserve(g_color_configurations.size());
 
-	QMapIterator<QString, ColorConfigSnapshot> it(g_color_configurations);
-	while(it.hasNext()){
-		it.next();
-		if (it.key() != "__checkpoint")
-			names.push_back(it.key());
-	}
+  QMapIterator<QString, ColorConfigSnapshot> it(g_color_configurations);
+  while(it.hasNext()){
+    it.next();
+    if (it.key() != "__checkpoint")
+      names.push_back(it.key());
+  }
 
-	return names;
+  return names;
 }
 
 QString GFX_GetCurrentColorConfigurationName(void){
-	ensure_color_configurations_initialized();
+  ensure_color_configurations_initialized();
 
-	return g_current_configuration_name;
+  return g_current_configuration_name;
 }
 
 void GFX_RenameColorConfiguration(const QString &old_name, const QString &new_name)
 {
-	ensure_color_configurations_initialized();
+  ensure_color_configurations_initialized();
 
-	if (g_color_configurations.contains(old_name)==false)
-		return;
+  if (g_color_configurations.contains(old_name)==false)
+    return;
 
-	if (g_color_configurations.contains(new_name))
-		return;
+  if (g_color_configurations.contains(new_name))
+    return;
 
-	g_color_configurations[new_name] = g_color_configurations[old_name];
-	g_color_configurations.remove(old_name);
+  filepath_t old_filename = get_configuration_filename(old_name);
+  filepath_t new_filename = get_configuration_filename(new_name);
 
-	g_color_configurations[new_name].name = new_name;
-	
-	if (g_current_configuration_name == old_name)
-	{
-		g_current_configuration_name = new_name;
-		write_current_configuration_name_to_settings();
-	}
+  g_color_configurations[new_name] = g_color_configurations[old_name];
+  g_color_configurations.remove(old_name);
+
+  g_color_configurations[new_name].name = new_name;
+
+  if (DISK_file_exists(old_filename))
+  {
+    QFile::remove(QString::fromStdWString(new_filename.id));
+    QFile::rename(QString::fromStdWString(old_filename.id), QString::fromStdWString(new_filename.id));
+  }
+  
+  if (g_current_configuration_name == old_name)
+  {
+    g_current_configuration_name = new_name;
+    write_current_configuration_name_to_settings();
+  }
 }
 
 void GFX_NewColorConfiguration(const QString &name)
 {
-	ensure_color_configurations_initialized();
+  ensure_color_configurations_initialized();
 
-	if (g_color_configurations.contains(name))
-		return;
+  if (g_color_configurations.contains(name))
+    return;
 
-	save_current_to_configuration(g_current_configuration_name);
+  save_current_to_configuration(g_current_configuration_name);
 
-	g_color_configurations[name] = g_color_configurations[g_current_configuration_name];
-	g_color_configurations[name].name = name;
-	
-	g_current_configuration_name = name;
-	write_current_configuration_name_to_settings();
+  g_color_configurations[name] = g_color_configurations[g_current_configuration_name];
+  g_color_configurations[name].name = name;
+  
+  g_current_configuration_name = name;
+  write_current_configuration_name_to_settings();
 }
 
 void GFX_DeleteColorConfiguration(const QString &name)
 {
-	ensure_color_configurations_initialized();
+  ensure_color_configurations_initialized();
 
-	if (g_color_configurations.size() <= 1)
-		return;
+  if (g_color_configurations.size() <= 1)
+    return;
 
-	if (g_color_configurations.contains(name)==false)
-		return;
+  if (g_color_configurations.contains(name)==false)
+    return;
 
-	g_color_configurations.remove(name);
+  g_color_configurations.remove(name);
 
-	if (g_current_configuration_name == name)
-	{
-		if (g_color_configurations.contains("Default"))
-			g_current_configuration_name = "Default";
-		else
-			g_current_configuration_name = g_color_configurations.begin().key();
+  filepath_t filename = get_configuration_filename(name);
+  if (DISK_file_exists(filename))
+    QFile::remove(QString::fromStdWString(filename.id));
 
-		write_current_configuration_name_to_settings();
-	}
+  if (g_current_configuration_name == name)
+  {
+    if (g_color_configurations.contains("Default"))
+      g_current_configuration_name = "Default";
+    else
+      g_current_configuration_name = g_color_configurations.begin().key();
+
+    write_current_configuration_name_to_settings();
+  }
 }
 
 void GFX_SetColorConfiguration(const QString &name)
 {
-	ensure_color_configurations_initialized();
+  ensure_color_configurations_initialized();
 
-	if (g_color_configurations.contains(name)==false)
-		return;
+  if (g_color_configurations.contains(name)==false)
+    return;
 
-	if (g_current_configuration_name == name)
-		return;
+  if (g_current_configuration_name == name)
+    return;
 
-	save_current_to_configuration(g_current_configuration_name);
+  save_current_to_configuration(g_current_configuration_name);
 
-	g_current_configuration_name = name;
-	write_current_configuration_name_to_settings();
+  g_current_configuration_name = name;
+  write_current_configuration_name_to_settings();
 
-	load_configuration(name);
+  load_configuration(name);
 
-	struct Tracker_Windows *window = root->song->tracker_windows;
-	EditorWidget *editorwidget = static_cast<EditorWidget*>(window->os_visual.widget);
+  struct Tracker_Windows *window = root->song->tracker_windows;
+  EditorWidget *editorwidget = static_cast<EditorWidget*>(window->os_visual.widget);
 
-	updateAll(editorwidget);
-	GFX_update_current_instrument_widget();
-	GFX_reload_qt_stylesheets(true);
-	window->must_redraw = true;
+  updateAll(editorwidget);
+  GFX_update_current_instrument_widget();
+  GFX_reload_qt_stylesheets(true);
+  window->must_redraw = true;
 }
 
 void GFX_SaveAllColorConfigurations(void)
 {
-	ensure_color_configurations_initialized();
+  ensure_color_configurations_initialized();
 
-	QMapIterator<QString, ColorConfigSnapshot> it(g_color_configurations);
-	while(it.hasNext())
-	{
-		it.next();
+  save_current_to_configuration(g_current_configuration_name);
 
-		filepath_t wfilename = appendFilePaths(getConfigPath(),
-		                                       getPath(qUtf8Printable(QString("color_configuration_")
-		                                                              + legalizeFilename(qUtf8Printable(it.key())))));
+  QMapIterator<QString, ColorConfigSnapshot> it(g_color_configurations);
+  while(it.hasNext())
+  {
+    it.next();
 
-		g_color_configurations[it.key()].saveState(wfilename);
-	}
+    if (it.key() == "__checkpoint")
+      continue;
+
+    g_color_configurations[it.key()].saveState(get_configuration_filename(it.key()));
+  }
 }
 
 void GFX_StoreCheckpoint(void)
 {
-	ensure_color_configurations_initialized();
+  ensure_color_configurations_initialized();
 
-	save_current_to_configuration(g_current_configuration_name);
+  save_current_to_configuration(g_current_configuration_name);
 
-	g_color_configurations["__checkpoint"] = g_color_configurations[g_current_configuration_name];
-	g_color_configurations["__checkpoint"].name = "__checkpoint";
+  g_color_configurations["__checkpoint"] = g_color_configurations[g_current_configuration_name];
+  g_color_configurations["__checkpoint"].name = "__checkpoint";
 }
 
 void GFX_RevertAllToCheckpoint(void)
 {
-	ensure_color_configurations_initialized();
+  ensure_color_configurations_initialized();
 
-	if (g_color_configurations.contains("__checkpoint")==false)
-		return;
+  if (g_color_configurations.contains("__checkpoint")==false)
+    return;
 
-	save_current_to_configuration(g_current_configuration_name);
+  save_current_to_configuration(g_current_configuration_name);
 
-	load_configuration("__checkpoint");
+  load_configuration("__checkpoint");
 
-	struct Tracker_Windows *window = root->song->tracker_windows;
-	EditorWidget *editorwidget = static_cast<EditorWidget*>(window->os_visual.widget);
+  struct Tracker_Windows *window = root->song->tracker_windows;
+  EditorWidget *editorwidget = static_cast<EditorWidget*>(window->os_visual.widget);
 
-	updateAll(editorwidget);
-	GFX_update_current_instrument_widget();
-	GFX_reload_qt_stylesheets(true);
-	window->must_redraw = true;
+  updateAll(editorwidget);
+  GFX_update_current_instrument_widget();
+  GFX_reload_qt_stylesheets(true);
+  window->must_redraw = true;
 }
 
 void GFX_RevertColorFromCheckpoint(enum ColorNums colornum)
 {
-	ensure_color_configurations_initialized();
+  ensure_color_configurations_initialized();
 
-	if (g_color_configurations.contains("__checkpoint")==false)
-		return;
+  if (g_color_configurations.contains("__checkpoint")==false)
+    return;
 
-	const QVector<QColor> &colors = g_color_configurations["__checkpoint"].colors;
+  const QVector<QColor> &colors = g_color_configurations["__checkpoint"].colors;
 
-	if (colornum >= colors.size())
-		return;
+  if (colornum >= colors.size())
+    return;
 
-	if (colors[colornum].isValid())
-		testColorInRealtime(colornum, colors[colornum]);
+  if (colors[colornum].isValid())
+    testColorInRealtime(colornum, colors[colornum]);
 }
 
 void GFX_SetDefaultColor(enum ColorNums colornum)
 {
-	if (has_qcolor(colornum)==false)
-		return;
+  if (has_qcolor(colornum)==false)
+    return;
 
-	enum ColorNums redirect = get_replacement_colornum(colornum);
+  ensure_active_configuration_loaded();
 
-	testColorInRealtime(colornum,
-	                    get_replacement_color(redirect != ILLEGAL_COLOR_NUM ? redirect : colornum));
+  if (g_program_default_configuration.colors.size() > colornum && g_program_default_configuration.colors[colornum].isValid())
+    testColorInRealtime(colornum, g_program_default_configuration.colors[colornum]);
+}
+
+void GFX_SetDefaultColors1(struct Tracker_Windows *tvisual){
+  ensure_active_configuration_loaded();
+
+  for(int i = START_CONFIG_COLOR_NUM ; i < END_CONFIG_COLOR_NUM ; i++)
+  {
+    if (is_qcolor_separator(i))
+      continue;
+
+    if (i < g_program_default_configuration.colors.size() && g_program_default_configuration.colors[i].isValid())
+    {
+      QColor color = g_program_default_configuration.colors[i];
+
+      if (g_config_colors[i] == NULL)
+        g_config_colors[i] = new QColor(color);
+      else
+        *g_config_colors[i] = color;
+    }
+  }
+
+  setInstrumentBrightness(g_program_default_configuration.instrument_brightness);
+  setInstrumentSaturation(g_program_default_configuration.instrument_saturation);
+  setInstrumentBrightnessInEditor(g_program_default_configuration.instrument_brightness_in_editor);
+  setInstrumentSaturationInEditor(g_program_default_configuration.instrument_saturation_in_editor);
+  setBlockBrightness(g_program_default_configuration.block_brightness);
+  setBlockSaturation(g_program_default_configuration.block_saturation);
+  setAmountOfGradient(g_program_default_configuration.amount_of_gradient);
+
+  EditorWidget *editorwidget = static_cast<EditorWidget*>(tvisual->os_visual.widget);
+
+  updateAll(editorwidget);
+  GFX_update_current_instrument_widget();
+  GFX_reload_qt_stylesheets(true);
+  tvisual->must_redraw = true;
+}
+
+float GFX_GetDefaultInstrumentBrightness(void){
+  ensure_active_configuration_loaded();
+  return g_program_default_configuration.instrument_brightness;
+}
+
+float GFX_GetDefaultInstrumentSaturation(void){
+  ensure_active_configuration_loaded();
+  return g_program_default_configuration.instrument_saturation;
+}
+
+float GFX_GetDefaultInstrumentBrightnessInEditor(void){
+  ensure_active_configuration_loaded();
+  return g_program_default_configuration.instrument_brightness_in_editor;
+}
+
+float GFX_GetDefaultInstrumentSaturationInEditor(void){
+  ensure_active_configuration_loaded();
+  return g_program_default_configuration.instrument_saturation_in_editor;
+}
+
+float GFX_GetDefaultBlockBrightness(void){
+  ensure_active_configuration_loaded();
+  return g_program_default_configuration.block_brightness;
+}
+
+float GFX_GetDefaultBlockSaturation(void){
+  ensure_active_configuration_loaded();
+  return g_program_default_configuration.block_saturation;
+}
+
+float GFX_GetDefaultAmountOfGradient(void){
+  ensure_active_configuration_loaded();
+  return g_program_default_configuration.amount_of_gradient;
 }

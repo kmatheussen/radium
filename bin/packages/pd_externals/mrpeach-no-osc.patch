@@ -1,0 +1,36 @@
+--- a/Makefile	2026-02-18 13:55:30.000000000 +0100
++++ b/Makefile	2026-10-08 17:44:07.950621647 +0200
+@@ -51,12 +51,7 @@
+ 	net/tcpsend.c \
+ 	net/udpsend~.c \
+ 	$(empty)
+-osc_sources = $(wildcard \
+-	osc/unpackOSC.c \
+-	osc/routeOSC.c \
+-	osc/packOSC.c \
+-	osc/pipelist.c \
+-	)
++osc_sources =
+ slip_sources = $(wildcard \
+ 	slip/slipdec.c \
+ 	slip/slipenc.c \
+@@ -118,18 +113,7 @@
+ 	net/udpsndrcv-help.pd \
+ 	net/httpreq-help.pd \
+ 	$(empty)
+-osc_data = $(wildcard \
+-	osc/osc-meta.pd \
+-	osc/README.txt \
+-	osc/packOSC-help.pd \
+-	osc/packOSCstream-help.pd \
+-	osc/packOSCstream.pd \
+-	osc/pipelist-help.pd \
+-	osc/unpackOSC-help.pd \
+-	osc/unpackOSCstream-help.pd \
+-	osc/unpackOSCstream.pd \
+-	osc/routeOSC-help.pd \
+-	)
++osc_data =
+ slip_data = $(wildcard \
+ 	slip/slipdec-help.pd \
+ 	slip/slipenc-help.pd \

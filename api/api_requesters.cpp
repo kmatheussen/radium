@@ -58,10 +58,6 @@ void setDefaultColors1(void){
   GFX_SetDefaultColors1(getWindowFromNum(-1));
 }
 
-void setDefaultColors2(void){
-  GFX_SetDefaultColors2(getWindowFromNum(-1));
-}
-
 void configSystemFont(void){
   GFX_ConfigSystemFont();
 }

@@ -37,10 +37,6 @@ extern void testColorInRealtime(enum ColorNums num, QColor color);
 
 void GFX_SetBrightness(struct Tracker_Windows *tvisual, float how_much);
 
-void GFX_ResetColor(enum ColorNums colornum);
-void GFX_ResetColors(void);
-void GFX_SaveColors(filepath_t filename); // if filename==NULL, save to ~/.radium/colors.
-
 QVector<QString> GFX_GetColorConfigurationNames(void);
 QString GFX_GetCurrentColorConfigurationName(void);
 void GFX_RenameColorConfiguration(const QString &old_name, const QString &new_name);
@@ -48,10 +44,18 @@ void GFX_NewColorConfiguration(const QString &name);
 void GFX_DeleteColorConfiguration(const QString &name);
 void GFX_SetColorConfiguration(const QString &name);
 void GFX_SaveAllColorConfigurations(void);
+bool GFX_InitColorsAndMigrate(void);
 void GFX_StoreCheckpoint(void);
 void GFX_RevertAllToCheckpoint(void);
 void GFX_RevertColorFromCheckpoint(enum ColorNums colornum);
 void GFX_SetDefaultColor(enum ColorNums colornum);
+float GFX_GetDefaultInstrumentBrightness(void);
+float GFX_GetDefaultInstrumentSaturation(void);
+float GFX_GetDefaultInstrumentBrightnessInEditor(void);
+float GFX_GetDefaultInstrumentSaturationInEditor(void);
+float GFX_GetDefaultBlockBrightness(void);
+float GFX_GetDefaultBlockSaturation(void);
+float GFX_GetDefaultAmountOfGradient(void);
 
 #ifdef RADIUM_COMMON_API_PROC_H
 

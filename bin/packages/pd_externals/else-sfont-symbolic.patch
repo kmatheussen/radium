@@ -1,0 +1,15 @@
+--- a/Source/Audio/sfont~/CMakeLists.txt
++++ b/Source/Audio/sfont~/CMakeLists.txt
+@@ -70,8 +70,10 @@
+ # Set compiler flags
+ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DHAVE_STRUCT_TIMESPEC ${EXTRA_INCLUDES}")
+ 
+-# Linker flags
+-set(CMAKE_SHARED_LINKER_FLAGS "${EXTRA_LDFLAGS}")
++# Linker flags. Append to the flags passed in from the build command line
++# (Radium passes -Wl,-Bsymbolic so the external binds its own symbols) instead
++# of replacing them.
++set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${EXTRA_LDFLAGS}")
+ 
+ add_library(fluidsynth STATIC ${FLUIDSYNTH_SOURCES})
+ # Add the Pure Data external library

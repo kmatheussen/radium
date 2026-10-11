@@ -1,0 +1,16 @@
+--- a/src/mp3amp~.c
++++ b/src/mp3amp~.c
+@@ -29,6 +29,13 @@
+ #include "m_imp.h"
+ #include "g_canvas.h"
+ #include "s_stuff.h"
++
++#if PD_VERSION_CODE >= PD_VERSION(0, 55, 0)
++/* Radium: rtext_width() and glist_findrtext() were removed in Pd 0.55.
++   The width is only used to draw the graphical read status. */
++static int rtext_width(t_rtext *x) { (void)x; return 0; }
++#define glist_findrtext(gl, who) glist_getrtext((gl), (who), 0)
++#endif
+ #include "pthread.h"
+ 
+ #include <sys/types.h>

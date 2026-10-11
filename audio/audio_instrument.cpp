@@ -1363,16 +1363,24 @@ static void AUDIO_remove_patchdata(struct Patch *patch){
   ATOMIC_SET(plugin->is_shutting_down, true);
   
   InstrumentWidget_delete(patch);
+
+  // Note: The old Pd plugin's create_state() only completes while the plugin
+  // is still being processed: it asks libpd to save the patch, and the save is
+  // performed when the audio thread polls the Pd GUI. The sound producer must
+  // therefore still exist when the state is created for this plugin. (See
+  // put_pdfile_into_state in Pd_plugin.cpp.)
+  hash_t *state = plugin->type->create_state_requires_processing ? PLUGIN_get_state(plugin) : NULL;
     
   CHIP_delete(patch);
 
   SP_delete(sound_producer);
 
   // Note: Save the plugin state after deleting the sound producer, so that a
-  // plugin whose save function blocks (for instance Pd, which does file I/O
+  // plugin whose save function blocks (for instance Pd2, which does file I/O
   // while holding its instance lock) is no longer processed concurrently
   // while the state is created.
-  hash_t *state = PLUGIN_get_state(plugin);
+  if (state == NULL)
+    state = PLUGIN_get_state(plugin);
 
   PLAYER_lock();{
     patch->patchdata = NULL;

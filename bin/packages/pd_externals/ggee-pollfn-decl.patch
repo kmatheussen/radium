@@ -1,0 +1,11 @@
+--- a/signal/streamin~.c
++++ b/signal/streamin~.c
+@@ -49,7 +49,7 @@
+ extern int close(int);
+ #endif
+ extern void sys_rmpollfn(int fd);
+-extern sys_addpollfn(int fd, void* fn, void *ptr);
++extern void sys_addpollfn(int fd, void* fn, void *ptr);
+ 
+ static void sys_sockerror(char *s)
+ {

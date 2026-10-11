@@ -1441,6 +1441,7 @@ static void add_plugin(const wchar_t *name, QString filename) {
   plugin_type->note_handling_is_RT      = false;
   plugin_type->num_effects              = NUM_PD_CONTROLLERS;
   plugin_type->will_never_autosuspend   = true;
+  plugin_type->create_state_requires_processing = true; // put_pdfile_into_state() waits for the audio thread to poll the Pd GUI and save the patch. See AUDIO_remove_patchdata.
   plugin_type->get_effect_format        = get_effect_format;
   plugin_type->get_effect_name          = get_effect_name;
   plugin_type->effect_is_RT             = NULL;

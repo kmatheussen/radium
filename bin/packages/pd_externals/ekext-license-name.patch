@@ -1,0 +1,11 @@
+--- a/Makefile
++++ b/Makefile
+@@ -85,7 +85,7 @@
+ 	weightonset-help.pd \
+ 	zeroxpos~-help.pd \
+ 	README.txt \
+-	LICENSE.txt \
++	LICENSE \
+ 	$(empty)
+ #
+ PDLIBBUILDER_DIR=pd-lib-builder/

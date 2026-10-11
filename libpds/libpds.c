@@ -47,6 +47,10 @@ extern void sys_lock(void);
 extern void sys_unlock(void);
 extern int sys_pollgui(void);
 
+// Declared in Pd's s_stuff.h. Loads a library (a class binary or a library
+// blob such as zexy.pd_linux) into the current instance.
+extern int sys_load_lib(t_canvas *canvas, const char *classname);
+
 // Tell the Pd GUI (see the Radium patch in pdwindow.tcl) to not open its
 // console window (.pdwindow). Radium only wants the patch editor window. This
 // is done once before main() since the environment must be modified before the
@@ -219,6 +223,24 @@ void libpds2_add_to_search_path(pd_t *pd, const char* sym)
 {
 	set_instance(pd);
 	libpd_add_to_search_path(sym);
+}
+
+// Loads a Pd library into the instance, the same way Pd's "startup" library
+// list does. Needed for libraries that are built as a single binary
+// (<name>.pd_linux, e.g. zexy, iemlib, iemmatrix), since those are not
+// found by class name. Returns nonzero on success.
+int libpds2_load_lib(pd_t *pd, const char* name)
+{
+	if (name == NULL)
+		return 0;
+
+	set_instance(pd);
+
+	sys_lock();
+	int ret = sys_load_lib(NULL, name);
+	sys_unlock();
+
+	return ret;
 }
 
 void* libpds2_openfile(pd_t *pd, const char* basename, const char* dirname)

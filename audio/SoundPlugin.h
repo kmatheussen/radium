@@ -325,6 +325,12 @@ typedef struct SoundPluginType{
   bool will_always_autosuspend; // obviously, it doesn't make sense ...
   bool will_never_autosuspend;  // ... if both of these are true
 
+  // Set to true if type->create_state() only completes while the plugin is
+  // still being processed by its RT_process function. (The old Pd instrument,
+  // whose create_state() waits for the audio thread to poll the Pd GUI and
+  // save the patch. See put_pdfile_into_state in Pd_plugin.cpp.)
+  bool create_state_requires_processing;
+
   const char *category;
   const char *creator;
 

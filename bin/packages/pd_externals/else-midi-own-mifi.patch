@@ -1,0 +1,17 @@
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -79,6 +79,14 @@
+     target_link_libraries(${target_name} PRIVATE else_shared)
+ endforeach()
+ 
++# Radium: [midi] must use ELSE's own mifi implementation. mifi is also compiled
++# into libelse_shared.so, but when something else in the process (cyclone's
++# [seq]) exports the same mifi* symbols first, the dynamic linker resolves
++# [midi]'s references to that copy instead of ELSE's (the global scope comes
++# before the DT_NEEDED dependency). Compile mifi into [midi] itself; with
++# -Wl,-Bsymbolic its references bind to its own copy.
++target_sources(midi PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Source/Shared/mifi.c)
++
+ target_sources(beat_tilde PRIVATE ${aubio_sources})
+ target_link_libraries(else PRIVATE pdlua)
+ 

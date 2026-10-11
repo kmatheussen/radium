@@ -31,6 +31,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../bin/packages/faust/architecture/faust/dsp/dsp.h"
 #include "../bin/packages/faust/architecture/faust/dsp/interpreter-dsp.h"
+#include "Faust_compiler_fpu.hpp"
 
 #if __GNUC__ >= 5
 #  pragma GCC diagnostic push
@@ -816,6 +817,8 @@ QStringList FAUST2_lint_faust_code(const QString &code, bool compile_check_safe,
 	bool whole_program_compiles = false;
 	if (compile_check_safe)
 	{
+		radium::ScopedDenormalsDisabled disable_denormals;
+
 		std::string whole_error;
 		interpreter_dsp_factory *whole_factory =
 		  createInterpreterDSPFactoryFromString("FaustDev2LintWhole",
@@ -2168,6 +2171,7 @@ QStringList FAUST2_lint_faust_code(const QString &code, bool compile_check_safe,
 		  "process = " + lambda_open + substituted + lambda_close + ";\n";
 
 		std::string error_msg;
+		radium::ScopedDenormalsDisabled disable_denormals;
 		interpreter_dsp_factory *factory =
 		  createInterpreterDSPFactoryFromString("FaustDev2Lint",
 		                                        synthetic.toUtf8().constData(),
