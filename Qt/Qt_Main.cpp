@@ -4025,6 +4025,8 @@ int radium_main(const char *arg){
   //QApplication::setGraphicsSystem("raster");
 
 
+  bool colors_were_migrated = GFX_InitColorsAndMigrate();
+
   setApplicationColors(qapplication);
 
   g_qtgui_has_started = true;
@@ -4290,15 +4292,12 @@ int radium_main(const char *arg){
 
   //printf("col: -%s-, font: -%s-\n",SETTINGS_read_string("last_color_version","0.0"),SETTINGS_read_string("last_system_font_version","0.0"));
 
-  const char *last_color_version = "6.9.80";
-  
-  if(strcmp(SETTINGS_read_string("last_color_version","0.0"),last_color_version)){
+  if (colors_were_migrated) {
     GFX_Message(NULL,
                 "Note!\n\n"
-                "The default colors have changed. If you are using the default colors, you might want to go to the Edit menu and select \"Set Default Colors\".\n"
+                "The default colors have changed. Your old colors have been saved as the color configuration \"Previous\".\n"
                 "\n"
                 "You will only see this message once.");
-    SETTINGS_write_string("last_color_version",last_color_version);
   }
 
   if(strcmp(SETTINGS_read_string("last_system_font_version","0.0"),"1.9.21")){

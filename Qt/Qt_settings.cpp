@@ -303,12 +303,7 @@ filepath_t OS_get_program_path2(void){
   return make_filepath(array);
 }
 
-bool OS_config_key_is_color(const char *key){
-  return QString(key).contains("color", Qt::CaseInsensitive);
-}
-
 const QString g_dot_radium_dirname(".radium");
-
 QString OS_get_dot_radium_path(void){
   return OS_get_home_path() + QDir::separator() + g_dot_radium_dirname;
 }
@@ -502,14 +497,12 @@ char *OS_get_menues_conf_filename2(void){
 */
 
 filepath_t OS_get_config_filename(const char *key){
-  bool is_color_config = OS_config_key_is_color(key);
-
   int error;
   QDir dir = get_dot_radium_dir(&error);
   if(error!=0)
     return createIllegalFilepath();
 
-  QFileInfo config_info(dir, is_color_config ? "colors" : "config");
+  QFileInfo config_info(dir, "config");
 
   //printf("dir: \"%s\"\n",config_info.absoluteFilePath().toLocal8Bit().constData());
 

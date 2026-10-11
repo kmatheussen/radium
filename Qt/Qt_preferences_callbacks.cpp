@@ -541,7 +541,6 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
     if (visible==false && isVisible()==true){
       GFX_reload_qt_stylesheets(false);
       GFX_SaveAllColorConfigurations();
-	  GFX_SaveColors(createIllegalFilepath());
       save_color_dialog_custom_colors();
     }
 
@@ -951,9 +950,6 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
 
     // Colors
     {
-      save_color_file->hide();
-      load_color_file->hide();
-      
       instrument_brightness->setValue(getInstrumentBrightness()*1000);
       instrument_saturation->setValue(getInstrumentSaturation()*1000);
       instrument_brightness_in_editor->setValue(getInstrumentBrightnessInEditor()*1000);
@@ -1847,32 +1843,12 @@ public slots:
   void on_color_set_all_default_colors_clicked(){
     GFX_SetDefaultColors1(root->song->tracker_windows);
 
-    instrument_brightness->setValue(1000 * DEFAULT_INSTRUMENT_BRIGHTNESS);
-    instrument_saturation->setValue(1000 * DEFAULT_INSTRUMENT_SATURATION);
-    instrument_brightness_in_editor->setValue(1000 * DEFAULT_INSTRUMENT_BRIGHTNESS_IN_EDITOR);
-    instrument_saturation_in_editor->setValue(1000 * DEFAULT_INSTRUMENT_SATURATION_IN_EDITOR);
-    block_brightness->setValue(1000 * DEFAULT_BLOCK_BRIGHTNESS);
-    block_saturation->setValue(1000 * DEFAULT_BLOCK_SATURATION);
-    gradient_slider->setValue(1000 * DEFAULT_AMOUNT_OF_GRADIENT);
+    update_color_sliders();
 
     _color_dialog.setCurrentColor(get_qcolor(g_current_colornum));
 
     for(auto button : all_buttons)
       button->update();
-  }
-
-
-  void on_save_color_file_clicked(){
-    filepath_t filename = GFX_GetSaveFileName(root->song->tracker_windows,
-                                              NULL,
-                                              "Select file",
-                                              createIllegalFilepath(),
-                                              NULL,
-                                              NULL,
-                                              "",
-                                              true);
-    if (isLegalFilepath(filename))
-      GFX_SaveColors(filename);
   }
 
   void update_color_sliders(void){
@@ -1975,7 +1951,7 @@ public slots:
     g_slider_committed[SLIDER_INSTRUMENT_BRIGHTNESS] = false;
   }
   void on_reset_instrument_brightness_clicked(){
-    instrument_brightness->setValue(1000 * DEFAULT_INSTRUMENT_BRIGHTNESS);
+    instrument_brightness->setValue(1000 * GFX_GetDefaultInstrumentBrightness());
   }
 
   void on_instrument_saturation_sliderPressed(){
@@ -2000,7 +1976,7 @@ public slots:
     g_slider_committed[SLIDER_INSTRUMENT_SATURATION] = false;
   }
   void on_reset_instrument_saturation_clicked(){
-    instrument_saturation->setValue(1000 * DEFAULT_INSTRUMENT_SATURATION);
+    instrument_saturation->setValue(1000 * GFX_GetDefaultInstrumentSaturation());
   }
 
   void on_instrument_brightness_in_editor_sliderPressed(){
@@ -2025,7 +2001,7 @@ public slots:
     g_slider_committed[SLIDER_INSTRUMENT_BRIGHTNESS_IN_EDITOR] = false;
   }
   void on_reset_instrument_brightness_in_editor_clicked(){
-    instrument_brightness_in_editor->setValue(1000 * DEFAULT_INSTRUMENT_BRIGHTNESS_IN_EDITOR);
+    instrument_brightness_in_editor->setValue(1000 * GFX_GetDefaultInstrumentBrightnessInEditor());
   }
 
   void on_instrument_saturation_in_editor_sliderPressed(){
@@ -2050,7 +2026,7 @@ public slots:
     g_slider_committed[SLIDER_INSTRUMENT_SATURATION_IN_EDITOR] = false;
   }
   void on_reset_instrument_saturation_in_editor_clicked(){
-    instrument_saturation_in_editor->setValue(1000 * DEFAULT_INSTRUMENT_SATURATION_IN_EDITOR);
+    instrument_saturation_in_editor->setValue(1000 * GFX_GetDefaultInstrumentSaturationInEditor());
   }
 
   void on_block_brightness_sliderPressed(){
@@ -2075,7 +2051,7 @@ public slots:
     g_slider_committed[SLIDER_BLOCK_BRIGHTNESS] = false;
   }
   void on_reset_block_brightness_clicked(){
-    block_brightness->setValue(1000 * DEFAULT_BLOCK_BRIGHTNESS);
+    block_brightness->setValue(1000 * GFX_GetDefaultBlockBrightness());
   }
 
   void on_block_saturation_sliderPressed(){
@@ -2100,7 +2076,7 @@ public slots:
     g_slider_committed[SLIDER_BLOCK_SATURATION] = false;
   }
   void on_reset_block_saturation_clicked(){
-    block_saturation->setValue(1000 * DEFAULT_BLOCK_SATURATION);
+    block_saturation->setValue(1000 * GFX_GetDefaultBlockSaturation());
   }
 
   void on_gradient_slider_sliderPressed(){
@@ -2125,7 +2101,7 @@ public slots:
     g_slider_committed[SLIDER_GRADIENT] = false;
   }
   void on_reset_gradient_button_clicked(){
-    gradient_slider->setValue(1000 * DEFAULT_AMOUNT_OF_GRADIENT);
+    gradient_slider->setValue(1000 * GFX_GetDefaultAmountOfGradient());
   }
   
   // windows
