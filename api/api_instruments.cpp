@@ -70,6 +70,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../Qt/Qt_instruments_proc.h"
 #include "../Qt/Qt_colors_proc.h"
+#include "../Qt/Qt_PopupMenu_proc.h"
 
 #include "../common/patch_proc.h"
 #include "../common/undo_patchname_proc.h"
@@ -305,6 +306,9 @@ void setUndoBypass(bool doit){
 
 
 void selectInstrumentForTrack(int tracknum){
+  // Open the popup menu just below the "(click me)" widget of the track instead of at the
+  // mouse pointer. tracknum -1 means the current track.
+  GFX_set_track_header_popup_position(tracknum);
   S7CALL2(void_int,"select-track-instrument", tracknum);
 }
 
