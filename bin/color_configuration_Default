@@ -1,5 +1,5 @@
 >> HASH MAP V5 BEGIN
-141
+143
 amount_of_gradient
 0
 FLOAT_TYPE
@@ -172,6 +172,10 @@ color_menu_background
 0
 STRING_TYPE
 #ff0d2542
+color_menu_current_entry
+0
+STRING_TYPE
+#78478244
 color_menu_entry_background
 0
 STRING_TYPE
@@ -180,6 +184,10 @@ color_menu_keybinding_text
 0
 STRING_TYPE
 #ffe57c12
+color_menu_search_color
+0
+STRING_TYPE
+#78aa8448
 color_menu_text
 0
 STRING_TYPE
