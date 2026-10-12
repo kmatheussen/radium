@@ -1532,7 +1532,14 @@ static void ensure_color_configurations_initialized(void)
           R_ASSERT_NON_RELEASE(false);
           snap.name = filename.mid(strlen("color_configuration_"));
         }
-        
+        else
+        {
+          QString expected_filename = QString("color_configuration_") + legalizeFilename(qUtf8Printable(snap.name));
+
+          if (filename != expected_filename)
+            continue;
+        }
+
         g_color_configurations[snap.name] = snap;
       }
 

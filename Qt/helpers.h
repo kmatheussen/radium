@@ -186,7 +186,7 @@ static inline QPoint getCentrePosition(QWidget *parent, int width, int height, Q
     
     if (parent==NULL || parent->isVisible()==false) {
       
-      if (g_main_window != NULL) {
+      if (g_main_window != NULL && g_main_window->isVisible()) {
         
         // Move to middle of main window.
         parentRect = g_main_window->window()->frameGeometry();

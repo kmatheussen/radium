@@ -147,7 +147,7 @@ STRING_TYPE
 color_high_editor
 0
 STRING_TYPE
-#ff415349
+#ff495351
 color_keyboard_focus_border
 0
 STRING_TYPE
@@ -171,11 +171,11 @@ STRING_TYPE
 color_menu_background
 0
 STRING_TYPE
-#ff3c4c50
+#ff0d2542
 color_menu_entry_background
 0
 STRING_TYPE
-#ff3f5054
+#ff102f53
 color_menu_keybinding_text
 0
 STRING_TYPE
