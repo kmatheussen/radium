@@ -700,6 +700,13 @@ static void schedule_flush_pending_menu_callbacks(void)
   // The root menu of the open hamburger popup menu. Used so that left alt can close it.
   static QPointer<QMenu> g_hamburger_popup;
 
+  // True when the next popup menu to open is the instrument-select popup (opened by F12 or by
+  // clicking the track header name). Set by GFX_set_track_header_popup_position.
+  static bool g_next_popup_is_instrument_popup = false;
+
+  // The root menu of the open instrument-select popup. Used so that F12 can close it.
+  static QPointer<QMenu> g_instrument_popup;
+
   struct PopupSearchResult
   {
     bool has_visible_entries;
@@ -2308,7 +2315,7 @@ static QMenu *create_qmenu(
       lineedit->setMinimumHeight(fontheight + 2*border_width);
       lineedit->setTextMargins((int)(border_width + 1.1*fontheight), 0, border_width, 0);
 
-      QColor background_color = get_qcolor(MENU_BACKGROUND_COLOR_NUM);
+      QColor background_color = get_qcolor(MENU_SEARCH_COLOR_NUM);
       QColor text_color = get_qcolor(MENU_TEXT_COLOR_NUM);
       QColor placeholder_color = text_color;
       placeholder_color.setAlpha(128);
@@ -2319,6 +2326,7 @@ static QMenu *create_qmenu(
       palette.setColor(QPalette::Text, text_color);
       palette.setColor(QPalette::PlaceholderText, placeholder_color);
       lineedit->setPalette(palette);
+      lineedit->setStyleSheet(QString("QLineEdit { background-color: %1; }").arg(background_color.name(QColor::HexArgb)));
 
       auto *lineedit_action = new PopupSearchAction(menu);
       lineedit_action->setDefaultWidget(lineedit);
@@ -2496,11 +2504,14 @@ void GFX_set_pending_popup_position(int x, int y, bool is_hamburger)
 	g_has_pending_popup_position = true;
 }
 
-// Sets the position of the next popup menu to just below the track header name widget
-// ("(click me)") of the given track. tracknum -1 means the current track. Does nothing
-// (i.e. the next popup menu opens at the mouse position) if the position can't be found.
+// Sets the position of the next popup menu to the top of the editor, i.e. just below the
+// whole track header (both the name widget ("(click me)") and the slider row below it),
+// for the given track. tracknum -1 means the current track. Does nothing (i.e. the next
+// popup menu opens at the mouse position) if the position can't be found.
 void GFX_set_track_header_popup_position(int tracknum)
 {
+	g_next_popup_is_instrument_popup = true;
+
 	struct Tracker_Windows *window = getWindowFromNum(-1);
 	struct WBlocks *wblock = NULL;
 	struct WTracks *wtrack = getWTrackFromNumA(-1, &window, -1, &wblock, tracknum);
@@ -2513,9 +2524,10 @@ void GFX_set_track_header_popup_position(int tracknum)
 
 	const QWidget *header_widget = editor->header_widget;
 
-	// The "(click me)" name widget is the top half of the track header.
+	// The "(click me)" name widget is the top half of the track header, and the sliders
+	// (volume/pan) are in the row below.
 	int x = wtrack->x; // Same x as the track header name widget is painted at.
-	const int y = header_widget->height() / 2; // Bottom of the name widget.
+	const int y = header_widget->height(); // Bottom of the track header, i.e. y1 of the editor widget.
 
 	if (x < 0)
 		x = 0;
@@ -2584,6 +2596,20 @@ void GFX_CloseHamburgerPopup(void)
 		g_hamburger_popup->hide();
 }
 
+// Returns true if the instrument-select popup (opened by F12 or by clicking the track header
+// name) is currently open.
+bool GFX_InstrumentPopupIsOpen(void)
+{
+	return !g_instrument_popup.isNull() && g_instrument_popup->isVisible();
+}
+
+// Closes the instrument-select popup, including any open sub menu.
+void GFX_CloseInstrumentPopup(void)
+{
+	if (!g_instrument_popup.isNull())
+		g_instrument_popup->hide();
+}
+
 // Returns the position to open a popup menu at. (Note that this position is the top-left corner
 // of the menu, not the position of the hamburger button.)
 static QPoint get_popup_menu_position(QMenu *menu)
@@ -2637,6 +2663,11 @@ static int64_t GFX_QtMenu(
   //printf("                CREATED menu %p", menu);
   
   if (is_async){
+
+    if (g_next_popup_is_instrument_popup){
+      g_instrument_popup = menu;
+      g_next_popup_is_instrument_popup = false;
+    }
 
     if (g_has_pending_popup_position)
     {

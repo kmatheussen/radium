@@ -1880,9 +1880,9 @@
     (<gui> :add widget checkbox checkbox-x1 checkbox-y1))
     
   (define noncurrent-background-color "menu_entry_background")
-  (define current-background-color "high_background")
+  (define current-background-color "menu_current_entry")
   (define current-marker-color "menu_text")
-  (define hover-background-color (<gui> :mix-colors "high_background" "menu_entry_background" 0.5))
+  (define hover-background-color (<gui> :mix-colors "menu_current_entry" "menu_entry_background" 0.5))
   (define border-color (<gui> :mix-colors "high_background" "#010101" 0.5))
   
   (<gui> :add-paint-callback widget

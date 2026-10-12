@@ -306,7 +306,8 @@ void setUndoBypass(bool doit){
 
 
 void selectInstrumentForTrack(int tracknum){
-  // Open the popup menu just below the "(click me)" widget of the track instead of at the
+  // Open the popup menu at the top of the editor, i.e. just below the whole track header
+  // (both the "(click me)" name widget and the slider row below it), instead of at the
   // mouse pointer. tracknum -1 means the current track.
   GFX_set_track_header_popup_position(tracknum);
   S7CALL2(void_int,"select-track-instrument", tracknum);
