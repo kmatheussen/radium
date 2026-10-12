@@ -372,6 +372,11 @@ int64_t getLastHoveredPopupMenuEntry(void){
   return g_last_hovered_menu_entry_guinum;
 }
 
+bool isCurrentPopupMenuEntry(int64_t guinum)
+{
+  return GFX_IsCurrentMenuEntry(guinum);
+}
+
 void hoverPopupMenuEntry(int entryid){
   GFX_HoverMenuEntry(entryid);
 }

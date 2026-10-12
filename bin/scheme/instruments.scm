@@ -2975,7 +2975,28 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
 ;; async
 ;; Note: Used for shortcut
 (delafina (select-track-instrument :tracknum -1)
-  (popup-menu (get-select-track-instrument-popup-entries tracknum)))
+  ;; Move to the previous/next regular track, wrapping around at the ends. (Time tracks, such
+  ;; as the tempo and swing tracks, are skipped since they can not have instruments.)
+  (define (move-to-adjacent-track move-prev?)
+    (define curr-tracknum (if (>= tracknum 0) tracknum (<ra> :get-current-track)))
+    (define num-tracks (<ra> :get-num-tracks))
+    (when (> num-tracks 0)
+      (define new-tracknum (if move-prev?
+                               (if (<= curr-tracknum 0)
+                                   (- num-tracks 1)
+                                   (- curr-tracknum 1))
+                               (if (or (< curr-tracknum 0)
+                                       (>= curr-tracknum (- num-tracks 1)))
+                                   0
+                                   (+ curr-tracknum 1))))
+      (<ra> :set-current-track new-tracknum)
+      (<ra> :select-instrument-for-track)))
+
+  (popup-menu (get-select-track-instrument-popup-entries tracknum)
+              :on-left-key (lambda ()
+                             (move-to-adjacent-track #t))
+              :on-right-key (lambda ()
+                              (move-to-adjacent-track #f))))
      
 #||
 (select-track-instrument 0)

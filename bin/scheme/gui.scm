@@ -1879,19 +1879,42 @@
     ;;(c-display "x1/y1:" checkbox-x1 checkbox-y1 (<gui> :width checkbox) before-and-after-width)
     (<gui> :add widget checkbox checkbox-x1 checkbox-y1))
     
-  (define nonhover-background-color "menu_entry_background")
-  (define hover-background-color "high_background") ;;(<gui> :mix-colors (<gui> :get-background-color widget) "#010101" 0.5))
-  (define border-color (<gui> :mix-colors hover-background-color "#010101" 0.5))
+  (define noncurrent-background-color "menu_entry_background")
+  (define current-background-color "high_background")
+  (define current-marker-color "menu_text")
+  (define hover-background-color (<gui> :mix-colors "high_background" "menu_entry_background" 0.5))
+  (define border-color (<gui> :mix-colors "high_background" "#010101" 0.5))
   
   (<gui> :add-paint-callback widget
          (lambda (width height)
-           ;;(c-display "  paint menu entry. Disabled: " name (<gui> :is-enabled widget) (<gui> :get-background-color widget) ". gui:" widget ". :last-hovered" (<ra> :get-last-hovered-popup-menu-entry))
+           ;;(c-display "  paint menu entry. Disabled: " name (<gui> :is-enabled widget) (<gui> :get-background-color widget) ". gui:" widget ". :current" (<ra> :is-current-popup-menu-entry widget))
+           (define enabled (<gui> :is-enabled widget))
+           (define is-current (and enabled
+                                   (<ra> :is-current-popup-menu-entry widget)))
+           (define is-hovered (and enabled
+                                   (not is-current)
+                                   (= widget (<ra> :get-last-hovered-popup-menu-entry))))
+           (define background-color (cond (is-current current-background-color)
+                                          (is-hovered hover-background-color)
+                                          (else noncurrent-background-color)))
            
-           (let ((background-color (if (and (= widget (<ra> :get-last-hovered-popup-menu-entry))
-                                            (<gui> :is-enabled widget))
-                                       hover-background-color
-                                       nonhover-background-color)))
-             (<gui> :filled-box widget background-color 0 0 width height -1 -1 *no-gradient*))
+           (<gui> :filled-box widget background-color 0 0 width height -1 -1 *no-gradient*)
+
+           ;; Draw a small right-pointing triangle to the left of the name to
+           ;; clearly mark the current entry (the one return/click activates).
+           (when (and is-current
+                      (not is-checkbox))
+             (define marker-width (max 3 (round (* fontheight 0.35))))
+             (define marker-height (max 4 (round (* fontheight 0.45))))
+             (define marker-x (/ (+ (/ b 2.0)
+                                    (+ b before-and-after-width))
+                                 2.0))
+             (define marker-y (/ height 2.0))
+             (<gui> :filled-polygon widget
+                    current-marker-color
+                    (vector (- marker-x (/ marker-width 2.0)) (- marker-y (/ marker-height 2.0))
+                            (- marker-x (/ marker-width 2.0)) (+ marker-y (/ marker-height 2.0))
+                            (+ marker-x (/ marker-width 2.0)) marker-y)))
            
            (if is-first
                (<gui> :draw-line widget
@@ -1917,7 +1940,7 @@
            (<gui> :my-draw-text widget
                   (if (<gui> :is-enabled widget)
                       "menu_text"
-                      (<gui> :mix-colors "menu_text" nonhover-background-color 0.5))
+                      (<gui> :mix-colors "menu_text" noncurrent-background-color 0.5))
                   name
                   (+ b before-and-after-width) b (- width b) (- height b)
                   #f ;; wrap lines
@@ -1928,7 +1951,7 @@
 
            (when (not (string=? "" shortcut))
              (define shortcut-x1 (- width (+ shortcut-width before-and-after-width b)))
-             (draw-keybinding widget shortcut-x1 b (- width b) (- height b) shortcut nonhover-background-color)
+             (draw-keybinding widget shortcut-x1 b (- width b) (- height b) shortcut noncurrent-background-color)
              )))
 
   (<gui> :add-mouse-callback widget
