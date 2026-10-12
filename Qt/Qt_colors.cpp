@@ -134,6 +134,8 @@ static const ColorConfig g_colorconfig[] = {
   {MENU_KEYBINDING_TEXT_COLOR_NUM,                  "menu_keybinding_text", "Menu keybinding text", false},
   {MENU_BACKGROUND_COLOR_NUM,                  "menu_background", "Menu background", false},
   {MENU_ENTRY_BACKGROUND_COLOR_NUM,                  "menu_entry_background", "Menu entry background", false},
+  {MENU_CURRENT_ENTRY_COLOR_NUM,                  "menu_current_entry", "Menu current entry", false},
+  {MENU_SEARCH_COLOR_NUM,                  "menu_search_color", "Menu search color", false},
   {EDITOR_SLIDERS_COLOR_NUM,                  "color12", "Editor sliders", false},
   {TRACK_SLIDER_COLOR_NUM,     "track_slider", "Track slider (bottom of editor)", false},
   {LINE_SLIDER_COLOR_NUM,     "line_slider", "Line slider (left of editor)", false},
@@ -790,7 +792,10 @@ static void updatePalette(EditorWidget *my_widget, QWidget *widget, QPalette &pa
     pal.setColor(QPalette::Inactive, QPalette::Base, c);
     pal.setColor(QPalette::Disabled, QPalette::Base, c.lighter(80));
 
-    pal.setBrush(QPalette::Highlight, (const QBrush&)QBrush(b.lighter(85)));
+    if (dynamic_cast<QMenu*>(widget)!=NULL)
+      pal.setBrush(QPalette::Highlight, (const QBrush&)QBrush(get_qcolor(MENU_CURRENT_ENTRY_COLOR_NUM)));
+    else
+      pal.setBrush(QPalette::Highlight, (const QBrush&)QBrush(b.lighter(85)));
 
     pal.setColor(QPalette::Disabled, QPalette::Light, c.lighter(80));
 
@@ -853,7 +858,6 @@ static void updatePalette(EditorWidget *my_widget, QWidget *widget, QPalette &pa
 static QPalette sys_palette;
 
 static void updateWidget(EditorWidget *my_widget,QWidget *widget){
-  
   QPalette pal(widget->palette());
 
   updatePalette(my_widget,widget,pal);
@@ -1285,6 +1289,12 @@ static int get_legacy_color_pass(enum ColorNums colornum)
 
 	if (colornum == MENU_ENTRY_BACKGROUND_COLOR_NUM)
 		return 2; // Added later, so it comes after MENU_BACKGROUND_COLOR_NUM.
+
+	if (colornum == MENU_CURRENT_ENTRY_COLOR_NUM)
+		return 2; // Added later, comes after MENU_ENTRY_BACKGROUND_COLOR_NUM.
+
+	if (colornum == MENU_SEARCH_COLOR_NUM)
+		return 2; // Added later, comes after MENU_CURRENT_ENTRY_COLOR_NUM.
 
 	return 0;
 }

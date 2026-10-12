@@ -1708,6 +1708,13 @@ protected:
 
     const int keynum = OS_SYSTEM_get_keynum(event);
 
+    // F12 toggles the track instrument popup. Key events are not dispatched to the keybinding
+    // system while a popup is open, so the toggle is handled here.
+    if (is_key_press && keynum==EVENT_F12 && GFX_InstrumentPopupIsOpen()){
+      GFX_CloseInstrumentPopup();
+      return true;
+    }
+
     // Ctrl+Space must always stop playback, even when a text widget (e.g. the
     // Faust Dev 2 editor or the LLM prompt) has keyboard focus: fall through
     // to the normal keybinding dispatch instead of letting Qt handle the key.

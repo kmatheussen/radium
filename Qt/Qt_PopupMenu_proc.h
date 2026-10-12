@@ -20,6 +20,8 @@ void GFX_set_hamburger_button(QWidget *button);
 void GFX_open_hamburger_popup_menu(QWidget *button);
 bool GFX_HamburgerPopupIsOpen(void);
 void GFX_CloseHamburgerPopup(void);
+bool GFX_InstrumentPopupIsOpen(void);
+void GFX_CloseInstrumentPopup(void);
 
 bool GFX_MenuActive();
 QMenu *GFX_GetActiveMenu(void);
