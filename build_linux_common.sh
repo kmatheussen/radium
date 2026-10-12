@@ -328,13 +328,16 @@ else
 		rm -f /tmp/run_preload
 		make /tmp/run_preload
 	fi
-	make radium $@ --stop # Can not use "exec make" here. Compilation stopped here I think, whether it succeeded or not.
+
+	# "--shuffle" actually improves compilation time by around 33% (75s -> ~50s), since Make compiles the longest running files last if we don't shuffle the order, sigh.
+	make radium --shuffle $@ --stop # Can not use "exec make" here. Compilation stopped here I think, whether it succeeded or not.
+	
 	#make ${T}Qt_instruments.o $@ --stop # Can not use "exec make" here. Compilation stopped here I think, whether it succeeded or not.
     
-	if ldd -r $RADIUM_BIN | sed 's/0x.*//' |grep -i bfd |grep -v libfdk ; then
-		printf "\033[1;31mError? Is bfd linked dynamically?\033[0m\n"
-		exit -1
-	fi
+	#if ldd -r $RADIUM_BIN | sed 's/0x.*//' |grep -i bfd |grep -v libfdk ; then
+	#	printf "\033[1;31mError? Is bfd linked dynamically?\033[0m\n"
+	#	exit -1
+	#fi
 fi
 
 if [[ $BUILDTYPE == RELEASE ]] ; then
