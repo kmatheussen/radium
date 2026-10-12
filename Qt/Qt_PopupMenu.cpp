@@ -444,12 +444,16 @@ static void schedule_flush_pending_menu_callbacks(void)
 
   public:
 
+    // Set for radio buttons (the group the entry belongs to), NULL for checkboxes.
+    QActionGroup *_radio_group;
+
     ~CheckableAction(){
       //printf("I was deleted: %s\n",text.toUtf8().constData());
     }
 
-    CheckableAction(const QString & text_b, const QString &shortcut, int shortcut_width, bool is_on, bool is_radiobutton, bool is_first, bool is_last, std::shared_ptr<Callbacker> &callbacker)
-      : MyQAction(text_b, shortcut, shortcut_width, callbacker, true, is_on, is_radiobutton, is_first, is_last, callbacker->qmenu)
+    CheckableAction(const QString & text_b, const QString &shortcut, int shortcut_width, bool is_on, QActionGroup *radio_group, bool is_first, bool is_last, std::shared_ptr<Callbacker> &callbacker)
+      : MyQAction(text_b, shortcut, shortcut_width, callbacker, true, is_on, radio_group != NULL, is_first, is_last, callbacker->qmenu)
+      , _radio_group(radio_group)
     {
       setCheckable(true);
       setChecked(is_on);
@@ -460,6 +464,69 @@ static void schedule_flush_pending_menu_callbacks(void)
       setChecked(!isChecked());
       //toggled(!isChecked());
       return true;  // eat mouse press event
+    }
+
+    // Called when pressing space on this entry. Same as clicking it, except that the
+    // menu stays open, i.e. the callback is not run through run_and_delete_checked().
+    void toggle_without_closing_menu(void)
+    {
+      if (_radio_group != NULL) {
+
+        if (isChecked())
+          return; // A checked radio button can not be unchecked by clicking it.
+
+        // Uncheck the other radio buttons in the group. QActionGroup exclusivity is
+        // signal-based (and the signals are blocked below), so it has to be done manually.
+        QAbstractButton *widget_to_uncheck = NULL;
+
+        for (QAction *action : _radio_group->actions()) {
+          auto *other = dynamic_cast<CheckableAction*>(action);
+
+          if (other != NULL && other != this && other->isChecked()) {
+            {
+              QSignalBlocker blocker(other);
+              other->setChecked(false);
+            }
+            if (other->_checkbox != NULL && other->_checkbox->isChecked())
+              widget_to_uncheck = other->_checkbox;
+          }
+        }
+
+        // Checking the widget below makes its QButtonGroup uncheck widget_to_uncheck.
+        // Its signals must be blocked too, to avoid running the callback-with-close path.
+        QSignalBlocker uncheck_blocker(widget_to_uncheck);
+
+        {
+          QSignalBlocker blocker(this);
+          setChecked(true);
+        }
+
+        if (_checkbox != NULL) {
+          QSignalBlocker blocker(_checkbox);
+          _checkbox->setChecked(true);
+        }
+
+        if (_callbacker != NULL)
+          _callbacker->run_checked(true);
+
+      } else {
+
+        const bool checked = !isChecked();
+
+        // Block the signals so that toggled() (which closes the menu) is not called.
+        {
+          QSignalBlocker blocker(this);
+          setChecked(checked);
+        }
+
+        if (_checkbox != NULL) {
+          QSignalBlocker blocker(_checkbox);
+          _checkbox->setChecked(checked);
+        }
+
+        if (_callbacker != NULL)
+          _callbacker->run_checked(checked);
+      }
     }
 
   public slots:
@@ -1289,6 +1356,24 @@ static void schedule_flush_pending_menu_callbacks(void)
     void keyPressEvent(QKeyEvent *event) override {
       
       evalScheme("(set! *last-pressed-menu-entry-widget-mouse-button* -1)"); // To avoid keybindings-configuration menu to pop up when pressing return.
+
+      // Space toggles/selects the current entry if it is a checkable entry (checkbox or
+      // radio button). Unlike a mouse click, the popup stays open. For all other entries,
+      // space should do nothing. In particular, it must not be added to the popup search
+      // query (see handle_search_key below).
+      if (event->key()==Qt::Key_Space
+          && (event->modifiers() & (Qt::ControlModifier|Qt::AltModifier|Qt::MetaModifier))==0)
+      {
+        QAction *active_action = activeAction();
+        auto *checkable_action = dynamic_cast<CheckableAction*>(active_action);
+
+        event->accept();
+
+        if (checkable_action != NULL && active_action->isVisible() && active_action->isEnabled())
+          checkable_action->toggle_without_closing_menu();
+
+        return;
+      }
 
       if (handle_search_key(event))
         return;
@@ -2201,7 +2286,7 @@ static QMenu *create_qmenu(
           
         } else if (is_checkable) {
 
-          auto *hepp = new CheckableAction(text, shortcut, curr_menu->_shortcut_width, is_checked, radio_buttons != NULL, is_first, is_last, callbacker);
+          auto *hepp = new CheckableAction(text, shortcut, curr_menu->_shortcut_width, is_checked, radio_buttons, is_first, is_last, callbacker);
           
           if (hepp->_success==false){
             radio_buttons=NULL;
