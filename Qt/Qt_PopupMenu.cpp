@@ -1359,20 +1359,31 @@ static void schedule_flush_pending_menu_callbacks(void)
 
       // Space toggles/selects the current entry if it is a checkable entry (checkbox or
       // radio button). Unlike a mouse click, the popup stays open. For all other entries,
-      // space should do nothing. In particular, it must not be added to the popup search
-      // query (see handle_search_key below).
+      // space should do nothing. If a popup search is in progress, space is instead added
+      // to the search query (see handle_search_key below).
       if (event->key()==Qt::Key_Space
           && (event->modifiers() & (Qt::ControlModifier|Qt::AltModifier|Qt::MetaModifier))==0)
       {
-        QAction *active_action = activeAction();
-        auto *checkable_action = dynamic_cast<CheckableAction*>(active_action);
+        PopupSearchState *state = g_popup_search_state.get();
 
-        event->accept();
+        // Same conditions as handle_search_key uses to decide that a key belongs to the search query.
+        const bool search_in_progress = (state != NULL
+                                         && state->lineedit_action != NULL
+                                         && state->all_menus.contains(this)
+                                         && !state->query.isEmpty());
 
-        if (checkable_action != NULL && active_action->isVisible() && active_action->isEnabled())
-          checkable_action->toggle_without_closing_menu();
+        if (!search_in_progress)
+        {
+          QAction *active_action = activeAction();
+          auto *checkable_action = dynamic_cast<CheckableAction*>(active_action);
 
-        return;
+          event->accept();
+
+          if (checkable_action != NULL && active_action->isVisible() && active_action->isEnabled())
+            checkable_action->toggle_without_closing_menu();
+
+          return;
+        }
       }
 
       if (handle_search_key(event))
