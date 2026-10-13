@@ -36,10 +36,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #  define strlcpy g_strlcpy
 #endif
 
+#include <algorithm>
+
 #include <QTemporaryFile>
 #include <QFile>
 #include <QFileInfo>
 #include <QDir>
+#include <QHash>
+#include <QSet>
 #include <QTextStream>
 #include <QVector>
 #include <QCoreApplication>
@@ -64,6 +68,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern PlayerClass *pc;
 
 #include "../Qt/Qt_pd_plugin_widget_callbacks_proc.h"
+
+#include "../Qt/Qt_MainWindow_proc.h"
 
 #include "../Qt/helpers.h"
 
@@ -105,6 +111,13 @@ struct Data
 	QTemporaryFile *pdfile;
 
 	DEFINE_ATOMIC(void *, qtgui);
+
+	// Set when Pd tells us that the user closed the main Pd patch window (or
+	// chose quit from the Pd menu; see libpd_hide_gui_windows in
+	// 11-libpd-hide-gui-windows.patch). PD2_poll_all_guis activates Radium in
+	// that case, since the Pd Tcl/Tk process stays frontmost after hiding its
+	// windows.
+	DEFINE_ATOMIC(bool, gui_was_hidden_by_user);
 
 	struct Data *next;
 
@@ -236,6 +249,16 @@ static void PD2_poll_all_guis(void)
 
 			if (ret == 0)
 				break;
+		}
+
+		// The user closed the main Pd patch window (or quit Pd from its
+		// menu). Pd has hidden all its GUI windows, but its Tcl/Tk process
+		// keeps running and stays frontmost, so bring Radium to the front
+		// again to get the keyboard focus (and the menu bar) back.
+		if (ATOMIC_GET(instances[i]->gui_was_hidden_by_user))
+		{
+			ATOMIC_SET(instances[i]->gui_was_hidden_by_user, false);
+			GFX_activate_main_window();
 		}
 
 		// Apply controller definitions queued by RT_add_controller (from
@@ -932,7 +955,15 @@ static void RT_pdmessagehook(const char *source, const char *controller_name, in
 		if(!strcmp(controller_name, "gui_is_visible"))
 			PDGUI_is_visible(ATOMIC_GET(data->qtgui));
 		else if(!strcmp(controller_name, "gui_is_hidden"))
+		{
+			// The user closed the main Pd patch window (or chose quit from the
+			// Pd menu). Pd hides all its GUI windows, but the Tcl/Tk process
+			// keeps running and stays frontmost, so Radium must be activated
+			// afterwards to get the keyboard focus (and its menu bar) back.
+			// Done on the GUI thread in PD2_poll_all_guis.
+			ATOMIC_SET(data->gui_was_hidden_by_user, true);
 			PDGUI_is_hidden(ATOMIC_GET(data->qtgui));
+		}
 		return;
 	}
 }
@@ -1391,7 +1422,8 @@ static void ensure_externals_host(const char *puredatapath, const QString &exter
 		return;
 
 	pd_t *host = libpds2_create(false, puredatapath);
-	if (host == NULL) {
+	if (host == NULL)
+	{
 		RError("Unable to create the Pd externals host instance: %s", libpds2_strerror());
 		return;
 	}

@@ -24,6 +24,13 @@ extern QFont g_initial_editor_font;
 void add_upper_left_widget(struct Tracker_Windows *tvisual);
 
 void SetupMainWindow(void);
+
+// Brings the main window to the front and makes it the key window again
+// (also activates the Radium application on macOS). Used when another
+// program, such as the Pd GUI Tcl/Tk process, has hidden its windows while
+// being frontmost.
+void GFX_activate_main_window(void);
+
 //extern LANGSPEC void Qt_DisableAllWidgets(QWidget *not_me);
 //extern LANGSPEC void Qt_EnableAllWidgets(void);
 

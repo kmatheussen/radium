@@ -1040,6 +1040,21 @@ void SetupMainWindow(void){
   g_editor = editor;
 }
 
+// Brings the main window to the front and makes it the key window again.
+// Note: On macOS, raise() is what activates the application (Qt calls
+// [NSApp activateIgnoringOtherApps:YES] from QCocoaWindow::raise);
+// activateWindow() alone only makes the window the key window.
+void GFX_activate_main_window(void)
+{
+	if (g_main_window==NULL || g_main_window->isVisible()==false)
+		return;
+
+	g_main_window->raise();
+	g_main_window->activateWindow();
+	if (g_main_window->windowHandle() != NULL)
+		g_main_window->windowHandle()->requestActivate();
+}
+
 void GFX_SetMinimumWindowWidth(struct Tracker_Windows *tvisual, int width){
 #if 0
   EditorWidget *editor=(EditorWidget *)tvisual->os_visual.widget;
