@@ -1897,8 +1897,16 @@
            (define background-color (cond (is-current current-background-color)
                                           (is-hovered hover-background-color)
                                           (else noncurrent-background-color)))
-           
-           (<gui> :filled-box widget background-color 0 0 width height -1 -1 *no-gradient*)
+
+           ;; The entry widget is registered as painting all its pixels itself (see
+           ;; :dont-autofill-background above), so Qt does not paint the menu background
+           ;; beneath it. The current/hover colors are partially transparent, so paint
+           ;; the opaque entry background first; otherwise the entry becomes transparent
+           ;; (visible e.g. on the first entry of a sub menu, which is made current
+           ;; before it is painted).
+           (<gui> :filled-box widget noncurrent-background-color 0 0 width height -1 -1 *no-gradient*)
+           (when (not (string=? background-color noncurrent-background-color))
+             (<gui> :filled-box widget background-color 0 0 width height -1 -1 *no-gradient*))
 
            ;; Draw a small right-pointing triangle to the left of the name to
            ;; clearly mark the current entry (the one return/click activates).
