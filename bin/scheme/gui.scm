@@ -1153,7 +1153,20 @@
                      (<gui> :hide *message-gui*)
                      #f)) ;; close it.
                    
-            (set! *message-gui* gui))
+            (set! *message-gui* gui)
+
+            ;; Escape closes the message window, but only when it has keyboard
+            ;; focus. (When the editor has keyboard focus, the key is handled
+            ;; by the editor instead and never reaches this window.)
+            (<gui> :add-key-callback gui
+                   (lambda (presstype key)
+                     (if (and (= presstype 0) ;; Key press.
+                              (string=? key "Esc"))
+                         (begin
+                           (<gui> :close gui) ;; Same as pressing the "Hide" button.
+                           #t)
+                         #f)))
+            )
           
           (reopen-gui-at-curr-pos :gui *message-gui*
                                   :parentgui -2)
