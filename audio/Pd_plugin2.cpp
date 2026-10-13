@@ -1376,25 +1376,67 @@ static QString get_search_path()
 	return STRING_get_qstring(OS_get_full_program_file_path("pd").id);
 }
 
+// File extensions Pd can load external libraries from on this platform, e.g.
+// .pd_darwin on Mac and .pd_linux on Linux. Filled in by
+// get_library_extensions(), longest extension first.
+static QStringList *g_library_extensions = NULL;
+
+static const QStringList &get_library_extensions()
+{
+	if (g_library_extensions == NULL)
+	{
+		g_library_extensions = new QStringList;
+		for (const char **ext = libpds2_get_library_extensions(); *ext != NULL; ext++)
+			*g_library_extensions << QString::fromUtf8(*ext);
+		std::sort(g_library_extensions->begin(), g_library_extensions->end(),
+			  [](const QString &a, const QString &b)
+			  {
+				  return a.size() > b.size();
+			  });
+	}
+	return *g_library_extensions;
+}
+
 // Returns the class name for a Pd external binary file name, or an empty
-// string if the file is not a class binary. Shared support libraries
-// (lib*.so / lib*.dylib) are not classes.
+// string if Pd can't load the file as an external on this platform.
 static QString external_class_name(const QString &filename)
 {
-	static const char *extensions[] = { ".pd_linux", ".pd_darwin", ".pd_freebsd" };
-	for (const char *ext : extensions) {
-		if (filename.endsWith(ext))
-			return filename.left(filename.size() - strlen(ext));
-	}
-
-	// Deken-style architecture-tagged names, e.g. above~.linux-amd64-32.so.
-	for (const char *marker : { ".linux-", ".darwin-", ".windows-" }) {
-		int pos = filename.indexOf(marker);
-		if (pos >= 0 && filename.endsWith(".so"))
-			return filename.left(pos);
+	for (const QString &extension : get_library_extensions())
+	{
+		if (!extension.isEmpty() && filename.endsWith(extension))
+			return filename.left(filename.size() - extension.size());
 	}
 
 	return QString();
+}
+
+// Returns the object name a file in an external library's directory refers
+// to: "foo-help.pd" -> "foo", "foo.pd_linux" -> "foo". Used to find the
+// monolithic library (zexy, iemlib, iemmatrix, ...) a class that has no
+// binary of its own belongs to, since those classes are usually only
+// identifiable through their help files.
+static QString file_claimed_class_name(const QString &filename)
+{
+	if (filename.endsWith("-meta.pd"))
+		return QString();
+
+	QString name;
+
+	if (filename.endsWith("-help.pd"))
+	{
+		name = filename.left(filename.size() - strlen("-help.pd"));
+	}
+	else
+	{
+		name = external_class_name(filename);
+		if (name.isEmpty() && filename.endsWith(".pd"))
+			name = filename.left(filename.size() - strlen(".pd"));
+	}
+
+	if (name.isEmpty() || name.contains("/"))
+		return QString();
+
+	return name;
 }
 
 static bool is_shared_library_file(const QString &filename)
@@ -1407,7 +1449,128 @@ static bool is_shared_library_file(const QString &filename)
 // Never deleted, see ensure_externals_host().
 static pd_t *g_externals_host = NULL;
 
-// Loads all of Radium's external libraries into one hidden libpd instance.
+// Libraries that have been loaded into the host, and libraries that failed to
+// load, so they are not tried again.
+static QSet<QString> g_loaded_libraries;
+static QSet<QString> g_failed_libraries;
+
+// "class name" and "<libdir>/<class name>" -> the name to load for it, e.g.
+// "zl" and "cyclone/zl" -> "cyclone/zl".
+static QHash<QString, QString> g_class_libraries;
+
+// Names found in the directories of the monolithic libraries (from help
+// files, abstractions, ...) -> the monolithic library. Many classes of those
+// libraries have no binary of their own, so this is used to know which
+// library to load without having to load all of them.
+static QHash<QString, QString> g_blob_claims;
+
+// The monolithic libraries, e.g. "zexy", "iemlib", "iemmatrix". "name" is
+// both the load name and the name used by [declare -lib name].
+static QStringList g_blob_libraries;
+static QSet<QString> g_library_names;
+
+// True when all monolithic libraries have been tried for an unknown class.
+static bool g_all_blobs_tried = false;
+
+static void add_class_library(const QString &name, const QString &loadname)
+{
+	if (!name.isEmpty() && !g_class_libraries.contains(name))
+		g_class_libraries.insert(name, loadname);
+}
+
+static void add_blob_claim(const QString &name, const QString &libdir)
+{
+	if (!name.isEmpty() && !g_blob_claims.contains(name))
+		g_blob_claims.insert(name, libdir);
+}
+
+// Loads 'loadname' into the externals host (if it's not loaded already).
+// Returns true if the library is loaded. Called with Pd's lock held (from the
+// libloadhook), so only _nolock functions can be used.
+static bool ensure_library_loaded(const QString &loadname)
+{
+	if (g_loaded_libraries.contains(loadname))
+		return true;
+	if (g_failed_libraries.contains(loadname))
+		return false;
+
+	if (libpds2_load_lib_nolock(g_externals_host, loadname.toUtf8().constData()))
+	{
+		g_loaded_libraries.insert(loadname);
+		return true;
+	}
+
+	g_failed_libraries.insert(loadname);
+	return false;
+}
+
+// Loads the library that provides 'classname' into the externals host and
+// returns true if 'classname' is registered in the host afterwards.
+static bool load_external_library(const QString &classname, const QString &loadname)
+{
+	if (!ensure_library_loaded(loadname))
+		return false;
+
+	return libpds2_class_is_loaded_nolock(g_externals_host, classname.toUtf8().constData()) != 0;
+}
+
+// Called from inside Pd (sys_set_libloadhook()) when a library that has not
+// been loaded yet is requested. Loading always happens in the externals host,
+// so that a library's setup() never runs in an instance that can be deleted
+// later. See ensure_externals_host() for why that matters.
+static int externals_libloadhook(const char *classname)
+{
+	if (g_externals_host == NULL || classname == NULL)
+		return 0;
+
+	const QString name = QString::fromUtf8(classname);
+
+	// [declare -lib zexy] and friends.
+	if (g_library_names.contains(name))
+		return ensure_library_loaded(name) ? 1 : 0;
+
+	// Class binaries, requested by [zl] or [cyclone/zl].
+	QHash<QString, QString>::const_iterator it = g_class_libraries.constFind(name);
+	if (it != g_class_libraries.constEnd())
+	{
+		if (load_external_library(name, it.value()))
+			return 1;
+	}
+
+	// Classes of monolithic libraries, e.g. zexy's [multiplex~]: load the
+	// library the class name has been linked to (through its file name).
+	it = g_blob_claims.constFind(name);
+	if (it != g_blob_claims.constEnd())
+	{
+		if (load_external_library(name, it.value()))
+			return 1;
+	}
+
+	// Names that are abstractions are loaded by Pd itself, in the instance
+	// that uses them.
+	if (libpds2_abstraction_exists_nolock(classname))
+		return 0;
+
+	// The class has no binary of its own and no file linking it to a
+	// library (e.g. zexy's [sfplay~] or iemlib's [filter~]), but it may
+	// still be a class of a monolithic library, so try the rest of them.
+	// This is done only once; the libraries stay loaded.
+	if (!g_all_blobs_tried)
+	{
+		for (const QString &libdir : g_blob_libraries)
+		{
+			if (load_external_library(name, libdir))
+				return 1;
+		}
+		g_all_blobs_tried = true;
+	}
+
+	return 0;
+}
+
+// Creates the process-wide instance that hosts the third-party external
+// libraries, and builds the name -> library tables used to load a library on
+// demand (see externals_libloadhook()).
 //
 // Pd only runs a library's setup() the first time it is loaded in a process
 // (the list of loaded libraries is global, not per instance). The classes
@@ -1432,44 +1595,61 @@ static void ensure_externals_host(const char *puredatapath, const QString &exter
 
 	QDir externals_dir(externals_path);
 	QStringList libdirs = externals_dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name);
-	for (const QString &libdir : libdirs) {
+	for (const QString &libdir : libdirs)
+	{
 		QString libpath = externals_path + OS_get_directory_separator() + libdir;
 		libpds2_add_to_search_path(host, libpath.toUtf8().constData());
 
-		// Monolithic libraries (zexy, iemlib, iemmatrix) are loaded by name.
-		// Some libraries (cyclone) also have a library binary next to their
-		// per-class binaries, so both are loaded.
-		QString blob_linux = libdir + ".pd_linux";
-		QString blob_darwin = libdir + ".pd_darwin";
-		bool has_blob =
-			QFile::exists(libpath + OS_get_directory_separator() + blob_linux) ||
-			QFile::exists(libpath + OS_get_directory_separator() + blob_darwin);
-		if (has_blob)
-			libpds2_load_lib(host, libdir.toUtf8().constData());
-
-		// Load every class binary. Use the namespaced name
-		// (<libdir>/<class>) so that patches referring to e.g.
-		// [mrpeach/slipdec] find the already loaded class.
 		QDir lib_dir(libpath);
 		QStringList files = lib_dir.entryList(QDir::Files | QDir::NoDotAndDotDot, QDir::Name);
-		for (const QString &file : files) {
-			if (file == blob_linux || file == blob_darwin)
-				continue;
+
+		// Monolithic libraries (zexy, iemlib, iemmatrix, ...) are loaded
+		// by name (or by one of their classes) when needed.
+		bool has_blob = false;
+		for (const QString &file : files)
+		{
 			if (is_shared_library_file(file))
 				continue;
 			// Skip alias symlinks (e.g. cyclone's Append.pd_linux):
 			// running setup() twice would register the class twice.
 			if (QFileInfo(libpath + OS_get_directory_separator() + file).isSymLink())
 				continue;
-			QString classname = external_class_name(file);
-			if (classname.isEmpty())
+			if (external_class_name(file) == libdir)
+				has_blob = true;
+		}
+		if (has_blob)
+		{
+			g_blob_libraries << libdir;
+			g_library_names.insert(libdir);
+			add_class_library(libdir, libdir);
+		}
+
+		for (const QString &file : files)
+		{
+			if (is_shared_library_file(file))
 				continue;
-			QString loadname = libdir + "/" + classname;
-			libpds2_load_lib(host, loadname.toUtf8().constData());
+			if (QFileInfo(libpath + OS_get_directory_separator() + file).isSymLink())
+				continue;
+
+			QString classname = external_class_name(file);
+			if (!classname.isEmpty() && !(has_blob && classname == libdir))
+			{
+				// Load class binaries by their namespaced name
+				// (<libdir>/<class>) so that both [class] and
+				// [libdir/class] find the already loaded class.
+				QString loadname = libdir + "/" + classname;
+				add_class_library(classname, loadname);
+				add_class_library(loadname, loadname);
+			}
+
+			if (has_blob)
+				add_blob_claim(file_claimed_class_name(file), libdir);
 		}
 	}
 
 	g_externals_host = host;
+
+	libpds2_set_libloadhook(externals_libloadhook);
 }
 
 static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, float sample_rate, int block_size)
