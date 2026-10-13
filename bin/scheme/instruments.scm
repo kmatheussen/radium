@@ -2933,10 +2933,13 @@ ra.evalScheme "(pmg-start (ra:create-new-instrument-conf) (lambda (descr) (creat
          (lambda ()
            (pmg-start instr-conf callback)))
    
-   (list "From instrument/effect-menu..."
-         :shortcut assign-instrument-for-track-from-instrument/effect-menu
-         (lambda ()
-           (start-instrument-popup-menu instr-conf callback assign-new-instrument-for-track)))
+   (list "Instruments/effects"
+         (spr-entries->menu-entries (<ra> :get-sound-plugin-registry)
+                                    instr-conf
+                                    (lambda (entry)
+                                      (spr-entry->instrument-description entry instr-conf callback))
+                                    #f
+                                    assign-new-instrument-for-track))
    
    ;;"From list of favourites" (lambda ()
    ;;                            (show-favourites-menu :callback callback :shortcut-func assign-new-instrument-for-track))
