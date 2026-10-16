@@ -3075,13 +3075,13 @@ $(T)http_parser.o: $(QHTTPSERVER_PATH)/http-parser/http_parser.c
 
 LIBGIG_FLAGS=-Wno-sign-compare -Wno-missing-declarations -Wno-unused-result -DPACKAGE="\"libgig\"" -DVERSION="\"4.5.1\"" -D_GNU_SOURCE
 
-$(T)RIFF.o: $(LIBGIG_PATH)/RIFF.cpp $(LIBGIG_PATH)/SF.cpp
+$(T)RIFF.o: $(LIBGIG_PATH)/RIFF.cpp
 	$(CCC2) -c $(LIBGIG_PATH)/RIFF.cpp $(CPPOPT) $(LIBGIG_FLAGS) $(WNO_MAYBE_UNINITIALIZED)
 
 $(T)SF.o: $(LIBGIG_PATH)/SF.cpp
 	$(CCC2) -c $(LIBGIG_PATH)/SF.cpp $(CPPOPT) $(LIBGIG_FLAGS)
 
-$(LIBGIG_PATH)/SF.cpp: bin/packages/libgig-4.5.1.tar.bz2
+ $(LIBGIG_PATH)/RIFF.cpp $(LIBGIG_PATH)/SF.cpp: bin/packages/libgig-4.5.1.tar.bz2
 	cd bin/packages && rm -fr libgig && tar xvjf libgig-4.5.1.tar.bz2 && mv libgig-4.5.1 libgig && touch $(LIBGIG_PATH)/SF.cpp && patch -p0 <libgig_win32.patch && patch -p0 <libgig_dont_check_loops.patch && echo "#define VER_STRING \"4.5.1\"" >$(LIBGIG_PATH)/../win32/libgig_private.h
 
 $(T)radium_s7_wrap.o: api/radium_s7_wrap.c 
