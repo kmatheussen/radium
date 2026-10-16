@@ -3075,7 +3075,7 @@ $(T)http_parser.o: $(QHTTPSERVER_PATH)/http-parser/http_parser.c
 
 LIBGIG_FLAGS=-Wno-sign-compare -Wno-missing-declarations -Wno-unused-result -DPACKAGE="\"libgig\"" -DVERSION="\"4.5.1\"" -D_GNU_SOURCE
 
-$(T)RIFF.o: $(LIBGIG_PATH)/RIFF.cpp
+$(T)RIFF.o: $(LIBGIG_PATH)/RIFF.cpp $(LIBGIG_PATH)/SF.cpp
 	$(CCC2) -c $(LIBGIG_PATH)/RIFF.cpp $(CPPOPT) $(LIBGIG_FLAGS) $(WNO_MAYBE_UNINITIALIZED)
 
 $(T)SF.o: $(LIBGIG_PATH)/SF.cpp
