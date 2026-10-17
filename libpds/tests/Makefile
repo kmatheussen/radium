@@ -7,8 +7,11 @@
 #   make run-gui - build and run libpds_gui_test (shows two patch windows for
 #                 15 seconds)
 #   make run-externals
-#               - build and run the Pd externals load test (requires
-#                 bin/pd/externals to be built)
+#               - build and run both Pd externals tests: lazy loading and
+#                 exhaustive loading/instantiation (requires bin/pd/externals
+#                 to be built)
+#   make run-externals-load
+#               - build and run only the exhaustive externals load test
 #   make tsan   - build and run libpds_test with ThreadSanitizer
 #   make clean  - remove build artifacts
 
@@ -23,6 +26,7 @@ endif
 TARGET = libpds_test
 GUI_TARGET = libpds_gui_test
 EXTERNALS_TARGET = test_pd_externals
+EXTERNALS_LOAD_TARGET = test_pd_externals_load
 TSAN_TARGET = libpds_test_tsan
 
 CC ?= cc
@@ -35,9 +39,9 @@ LDLIBS = -lpthread -ldl -lm
 
 TSAN_FLAGS = -fsanitize=thread -g -fno-omit-frame-pointer
 
-.PHONY: all run run-gui run-externals tsan clean
+.PHONY: all run run-gui run-externals run-externals-load tsan clean
 
-all: $(TARGET) $(GUI_TARGET) $(EXTERNALS_TARGET)
+all: $(TARGET) $(GUI_TARGET) $(EXTERNALS_TARGET) $(EXTERNALS_LOAD_TARGET)
 
 $(TARGET): libpds.o libpds_test.o $(LIBPD)
 	$(CXX) -o $@ $^ $(LDLIBS)
@@ -45,7 +49,7 @@ $(TARGET): libpds.o libpds_test.o $(LIBPD)
 $(GUI_TARGET): libpds.o libpds_gui_test.o $(LIBPD)
 	$(CXX) -o $@ $^ $(LDLIBS)
 
-$(EXTERNALS_TARGET): libpds.o test_pd_externals.o $(LIBPD_SHARED)
+$(EXTERNALS_TARGET) $(EXTERNALS_LOAD_TARGET): %: libpds.o %.o $(LIBPD_SHARED)
 	$(CXX) -o $@ $^ $(LDLIBS) -Wl,-rpath,$(abspath $(LIBPD_DIR)/libs)
 ifeq ($(shell uname -s),Darwin)
 	# libpd.dylib is built for Radium, with an @executable_path install name.
@@ -65,6 +69,9 @@ libpds_gui_test.o: libpds_gui_test.cpp $(LIBPDS_DIR)/libpds.h
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
 
 test_pd_externals.o: test_pd_externals.cpp $(LIBPDS_DIR)/libpds.h
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
+
+test_pd_externals_load.o: test_pd_externals_load.cpp $(LIBPDS_DIR)/libpds.h
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
 
 $(TSAN_TARGET): libpds_tsan.o libpds_test_tsan.o $(LIBPD)
@@ -88,11 +95,15 @@ run: $(TARGET)
 run-gui: $(GUI_TARGET)
 	./$(GUI_TARGET) $(LIBPD_DIR)/pure-data
 
-run-externals: $(EXTERNALS_TARGET)
+run-externals: $(EXTERNALS_TARGET) $(EXTERNALS_LOAD_TARGET)
 	./$(EXTERNALS_TARGET) ../../bin/pd/externals $(LIBPD_DIR)/pure-data
+	./$(EXTERNALS_LOAD_TARGET) ../../bin/pd/externals $(LIBPD_DIR)/pure-data
+
+run-externals-load: $(EXTERNALS_LOAD_TARGET)
+	./$(EXTERNALS_LOAD_TARGET) ../../bin/pd/externals $(LIBPD_DIR)/pure-data
 
 tsan: $(TSAN_TARGET)
 	./$(TSAN_TARGET) $(LIBPD_DIR)/pure-data
 
 clean:
-	rm -f *.o $(TARGET) $(GUI_TARGET) $(EXTERNALS_TARGET) $(TSAN_TARGET)
+	rm -f *.o $(TARGET) $(GUI_TARGET) $(EXTERNALS_TARGET) $(EXTERNALS_LOAD_TARGET) $(TSAN_TARGET)

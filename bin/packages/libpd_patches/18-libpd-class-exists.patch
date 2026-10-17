@@ -1,0 +1,29 @@
+diff -ruN a/libpd_wrapper/z_libpd.c b/libpd_wrapper/z_libpd.c
+--- a/libpd_wrapper/z_libpd.c	2026-10-17 13:20:32.051876797 +0200
++++ b/libpd_wrapper/z_libpd.c	2026-10-17 13:20:32.051876797 +0200
+@@ -468,6 +468,10 @@
+   return retval;
+ }
+ 
++int libpd_class_exists(const char *classname) {
++  return zgetfn(&pd_objectmaker, gensym(classname)) != NULL;
++}
++
+ // when setting hooks, use mainimp if pd is not yet inited
+ #define IMP (s_initialized ? LIBPDSTUFF : &libpd_mainimp)
+ 
+diff -ruN a/libpd_wrapper/z_libpd.h b/libpd_wrapper/z_libpd.h
+--- a/libpd_wrapper/z_libpd.h	2026-10-17 13:20:32.051876797 +0200
++++ b/libpd_wrapper/z_libpd.h	2026-10-17 13:20:32.052876810 +0200
+@@ -257,6 +257,11 @@
+ /// returns 1 if the receiver exists, otherwise 0
+ EXTERN int libpd_exists(const char *recv);
+ 
++/// check if a class has been registered in the current instance
++/// returns 1 if the class exists, otherwise 0
++/// note: call with the Pd lock held, or from a single-threaded program
++EXTERN int libpd_class_exists(const char *classname);
++
+ /// print receive hook signature, s is the string to be printed
+ /// note: default behavior returns individual words and spaces:
+ ///     line "hello 123" is received in 4 parts -> "hello", " ", "123\n"
