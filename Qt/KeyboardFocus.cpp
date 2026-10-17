@@ -5,6 +5,7 @@
 #endif
 
 #include <QApplication>
+#include <QCursor>
 #include <QVector>
 
 #include "../common/nsmtracker.h"
@@ -21,25 +22,32 @@ namespace radium
 
 void KeyboardFocusFrame::set_focus(bool has_focus)
 {
-	//printf("kf::kf::set_focus/%d 1\n",_type==KeyboardFocusFrameType::EDITOR);
-    if (has_focus != _has_focus)
+	if (has_focus == _has_focus && has_focus == false)
+		return;
+
+	if (has_focus != _has_focus)
 	{
-      	//printf("kf::set_focus/%d 2\n",_type==KeyboardFocusFrameType::EDITOR);
 		_has_focus = has_focus;
-      
+
 		if (has_focus)
 			g_curr_focus_type = _type;
 
 		update();
-      
+	}
+
+	// Must also clear the other focus frames when this frame already had
+	// focus. Otherwise, if two frames of different types somehow both have
+	// focus (this can happen if a frame is created while another frame has
+	// focus), neither of them will ever be able to take the focus back.
+	if (has_focus)
+	{
 		for(auto focuses : g_keyboard_focus_frames)
-			for(auto *focus : focuses){
+			for(auto *focus : focuses)
+			{
 				if(focus->_type != _type)
 				{
-					//printf("kf::set_focus/%d 4\n",_type==KeyboardFocusFrameType::EDITOR);
 					if (focus->_has_focus)
 					{
-						//printf("kf::set_focus/%d 5\n",_type==KeyboardFocusFrameType::EDITOR);
 						g_prev_focus_type = focus->_type;
 						focus->_has_focus = false;
 						{
@@ -50,13 +58,12 @@ void KeyboardFocusFrame::set_focus(bool has_focus)
 						focus->update();
 						if(focus->_type==KeyboardFocusFrameType::EDITOR)
 						{
-							//printf("kf::set_focus/%d 6\n",_type==KeyboardFocusFrameType::EDITOR);
 							root->song->tracker_windows->must_redraw_editor = true;
 						}
 					}
 				}
 			}
-    }
+	}
 }
 
 void KeyboardFocusFrame::enterEvent(QEnterEvent * event)
@@ -74,12 +81,12 @@ void KeyboardFocusFrame::enterEvent(QEnterEvent * event)
 QVector<radium::KeyboardFocusFrame*> g_keyboard_focus_frames[(int)radium::KeyboardFocusFrameType::NUM_TYPES] = {};
 
 namespace{
-  
+
   struct Obj : public QObject {
 
     QWidget *_edit_gui = NULL;
     
-    void handle_mouse_pressed_widget(QWidget *w){
+    void handle_mouse_widget(QWidget *w){
       if (w==NULL)
         return;
 
@@ -98,21 +105,38 @@ namespace{
         FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::SEQUENCER, true);
 
       else
-        handle_mouse_pressed_widget(w->parentWidget());
+        handle_mouse_widget(w->parentWidget());
     }
 
     bool eventFilter(QObject *obj, QEvent *event) override {
-      if (event->type()==QEvent::GraphicsSceneMousePress || event->type()==QEvent::MouseButtonPress)
-	  {
-		  QWidget *widget = qobject_cast<QWidget*>(obj);
-		  handle_mouse_pressed_widget(widget);
+      // Note that we set focus on mouse moves as well, and not only on mouse
+      // presses. QEvent::Enter/Leave is not always delivered to the focus
+      // frames (seen when running in full screen on macOS), so we can not rely
+      // on KeyboardFocusFrame::enterEvent() alone.
+      if (event->type()==QEvent::GraphicsSceneMousePress
+          || event->type()==QEvent::MouseButtonPress
+          || event->type()==QEvent::MouseMove)
+      {
+        QWidget *widget = qobject_cast<QWidget*>(obj);
+        handle_mouse_widget(widget);
       }
-	  
+
       return false;
     }
   };
   
   static Obj g_obj;
+}
+
+
+// Sets keyboard focus to the widget under the mouse pointer. Can be called to
+// sync up the focus with the mouse pointer, for instance after the window has
+// been resized or switched to full screen.
+void FOCUSFRAMES_update_from_mouse_pos(void)
+{
+  QWidget *widget = QApplication::widgetAt(QCursor::pos());
+  if (widget != NULL)
+    g_obj.handle_mouse_widget(widget);
 }
 
 

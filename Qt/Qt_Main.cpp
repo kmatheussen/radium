@@ -2817,6 +2817,22 @@ protected:
 
     RETURN_IF_DATA_IS_INACCESSIBLE();
 
+    // Fallback for cases where the platform does not deliver mouse move
+    // events to the widgets. Seen in full screen on macOS when the mouse
+    // pointer was above the window when entering full screen: the mouse
+    // events were then only received by the editor's native window, and the
+    // keyboard focus did not follow the mouse pointer.
+    if (is_called_every_ms(45))
+    {
+      static QPoint last_mouse_pos = QPoint(-1000000, -1000000);
+      QPoint mouse_pos = QCursor::pos();
+      if (mouse_pos != last_mouse_pos)
+      {
+        last_mouse_pos = mouse_pos;
+        FOCUSFRAMES_update_from_mouse_pos();
+      }
+    }
+
     //static int hepp=0; printf("hepp %d\n",hepp++);
     
     if (ATOMIC_GET(rt_message_status) == RT_MESSAGE_READY_FOR_SHOWING) {
@@ -3669,6 +3685,14 @@ static void set_main_window_fullscreen(QWidget *toplevel)
   OS_OSX_show_very_fullscreen((void*)toplevel->winId());
   force_fullscreen_layout(toplevel);
   update_main_menu_notch_gap(true);
+
+  // The window geometry changes, and the layout is not fully updated until
+  // the event loop has been running for a little while. Sync the keyboard
+  // focus with the mouse pointer after the layout has settled, in case Qt
+  // didn't send any enter/leave events when the layout changed under the
+  // mouse pointer.
+  QTimer::singleShot(100, []{ FOCUSFRAMES_update_from_mouse_pos(); });
+  QTimer::singleShot(1000, []{ FOCUSFRAMES_update_from_mouse_pos(); });
 }
 
 static void unset_main_window_fullscreen(QWidget *toplevel)
@@ -3683,6 +3707,9 @@ static void unset_main_window_fullscreen(QWidget *toplevel)
 
   force_fullscreen_layout(toplevel);
   update_main_menu_notch_gap(false);
+
+  QTimer::singleShot(100, []{ FOCUSFRAMES_update_from_mouse_pos(); });
+  QTimer::singleShot(1000, []{ FOCUSFRAMES_update_from_mouse_pos(); });
 }
 
 // Called from the AppKit toggleFullScreen: redirect installed by
