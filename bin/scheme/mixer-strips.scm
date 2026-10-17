@@ -874,21 +874,14 @@
                                        #t
                                        is-top-instrument
                                        parentgui)
-              (list (<-> "Insert send for " (if is-send?
-                                                (<ra> :get-instrument-name parent-instrument-id)
-                                                (<ra> :get-instrument-name instrument-id))
-                         "...")
-                    :enabled (> (<ra> :get-num-output-channels first-instrument-id) 0)
-                    :shortcut (and is-top-instrument
-                                   insert-send-for-instrument)
-                    (lambda ()
-                      (let ((instrument-id (cond (is-send?
-                                                  parent-instrument-id)
-                                                 (else
-                                                  instrument-id))))
-                        (request-send-instrument instrument-id
-                                                 (lambda (create-send-func)
-                                                   (create-send-func 0 '()))))))
+              (let ((send-source-id (if is-send?
+                                        parent-instrument-id
+                                        instrument-id)))
+                (list (<-> "Insert send for " (<ra> :get-instrument-name send-source-id) "...")
+                      (get-send-instrument-menu-entries
+                       send-source-id
+                       (lambda (create-send-func)
+                         (create-send-func 0 '())))))
 
               ;;(and (not is-send?)
               ;;     (list
