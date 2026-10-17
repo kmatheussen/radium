@@ -2270,7 +2270,7 @@ $(T)api_osc.o:  $(BUILD_DEPENDENCIES)  $(API)api_osc.cpp embedded_scheme/s7extra
 $(T)api_midi.o:  $(BUILD_DEPENDENCIES)  $(API)api_midi.cpp $(QT_PCH)
 	$(CCC2) $(API)api_midi.cpp $(QTOPT) $(QT_PCH_INCLUDE) $(BOOST_INCLUDE)
 
-$(T)api_gui.o:  $(BUILD_DEPENDENCIES)  $(API)api_gui.cpp  Qt/ScrollArea.hpp Qt/helpers.h Qt/lzqlineedit.h  Qt/Rational.h Qt/Qt_MyQCheckBox.h embedded_scheme/s7extra_proc.h Qt/Qt_MyQScrollBar.hpp Qt/FileRequester.hpp Qt/Timer.hpp Qt/HashVector.hpp Qt/Qt_MyQCheckBox.h Qt/FocusSniffers.h Qt/Editor.hpp $(QT_PCH)
+$(T)api_gui.o:  $(BUILD_DEPENDENCIES)  $(API)api_gui.cpp  Qt/ScrollArea.hpp Qt/helpers.h Qt/lzqlineedit.h  Qt/Rational.h Qt/Qt_MyQCheckBox.h Qt/Qt_MyQButton.h embedded_scheme/s7extra_proc.h Qt/Qt_MyQScrollBar.hpp Qt/FileRequester.hpp Qt/Timer.hpp Qt/HashVector.hpp Qt/Qt_MyQCheckBox.h Qt/FocusSniffers.h Qt/Editor.hpp $(QT_PCH)
 	$(MOC) $(USE_QWEBENGINE_CFLAGS) $(QT_UI_CFLAGS) $(API)api_gui.cpp > $(API)mapi_gui.cpp
 	$(CCC2) $(API)api_gui.cpp $(QTOPT) $(QT_PCH_INCLUDE) $(QT_UI_CFLAGS) $(QT_SVG_CFLAGS) $(FPIC) -Wno-null-dereference $(NO_ANALYZER) $(WNO_DEPRECATED_DECLARATIONS)
 
