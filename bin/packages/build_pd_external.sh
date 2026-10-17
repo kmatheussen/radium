@@ -36,6 +36,12 @@
 #   PD2_CFLAGS          Extra C compiler flags.
 #   PD2_JOBS            Number of parallel build jobs (default: number of CPUs).
 #   PD2_EXTERNALS_DIR   Same as --dest.
+#   PD2_LIBPD_SRC       Path to the libpd pure-data/src headers to compile
+#                       against (default: libpd next to this script).
+#   PD2_TARGET_OS       Target OS for cross builds (Windows/Darwin/Linux).
+#                       Defaults to the host OS.
+#   PD2_TARGET_TRIPLET  Target triplet passed to autotools' --host.
+#   PD2_CMAKE_ARGS      Extra arguments for the CMake configure step.
 #   PD2_PDLIBBUILDER    Fallback pd-lib-builder directory, copied into source
 #                       trees whose GitHub archive omits the submodule.
 #   DARWIN_ARCH_FLAGS   Architecture flags for macOS externals (default:
@@ -53,8 +59,13 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-LIBPD_SRC="$SCRIPT_DIR/libpd/pure-data/src"
+LIBPD_SRC="${PD2_LIBPD_SRC:-$SCRIPT_DIR/libpd/pure-data/src}"
 COMPAT_HEADER="$SCRIPT_DIR/pd_externals_compat.h"
+
+# Target OS for cross builds. Defaults to the host, so native builds behave
+# exactly as before. 'PD2_TARGET_OS=Windows' or 'Darwin' selects the matching
+# output handling below.
+TARGET_OS="${PD2_TARGET_OS:-$(uname -s)}"
 
 DEST="${PD2_EXTERNALS_DIR:-$REPO_ROOT/bin/pd/externals}"
 PDLIBBUILDER_FALLBACK="${PD2_PDLIBBUILDER:-$SCRIPT_DIR/pd_externals/pd-lib-builder}"
@@ -224,9 +235,9 @@ fi
 # library source (static). Windows PE resolves references within a DLL locally
 # by default.
 SYMBOLIC_LDFLAG=""
-case "$(uname -s)" in
-    Darwin|MINGW*|MSYS*|CYGWIN*) ;;
-    *) SYMBOLIC_LDFLAG="-Wl,-Bsymbolic" ;;
+case "$TARGET_OS" in
+    Linux) SYMBOLIC_LDFLAG="-Wl,-Bsymbolic" ;;
+    *) ;;
 esac
 
 if $USE_PER_THREAD_FIX; then
@@ -371,8 +382,13 @@ case "$BUILD_SYSTEM" in
         if [ -n "$SYMBOLIC_LDFLAG" ]; then
             CONFIGURE_ENV+=("LDFLAGS=${LDFLAGS:-} $SYMBOLIC_LDFLAG")
         fi
+        CONFIGURE_HOST=()
+        if [ "$TARGET_OS" = Windows ] && [ -n "${PD2_TARGET_TRIPLET:-}" ]; then
+            CONFIGURE_HOST=("--host=$PD2_TARGET_TRIPLET")
+        fi
         run_in_dir "$SRC" "${CONFIGURE_ENV[@]}" \
-            ./configure ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"}
+            ./configure ${CONFIGURE_HOST[@]+"${CONFIGURE_HOST[@]}"} \
+            ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"}
         run make -C "$SRC" -j"$JOBS"
         ;;
 
@@ -386,6 +402,17 @@ case "$BUILD_SYSTEM" in
             CMAKE_LD_ARGS=("-DCMAKE_SHARED_LINKER_FLAGS=$SYMBOLIC_LDFLAG"
                            "-DCMAKE_MODULE_LINKER_FLAGS=$SYMBOLIC_LDFLAG")
         fi
+        CMAKE_CROSS_ARGS=()
+        if [ "$TARGET_OS" = Windows ]; then
+            CMAKE_CROSS_ARGS+=("-DCMAKE_SYSTEM_NAME=Windows")
+            if [ -n "${CC:-}" ]; then
+                CMAKE_CROSS_ARGS+=("-DCMAKE_C_COMPILER=$CC")
+            fi
+            if [ -n "${CXX:-}" ]; then
+                CMAKE_CROSS_ARGS+=("-DCMAKE_CXX_COMPILER=$CXX")
+            fi
+        fi
+        # Word splitting of PD2_CMAKE_ARGS is intentional.
         run cmake -S "$SRC" -B "$BUILD_DIR" \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_C_FLAGS="$CPPFLAGS_ALL" \
@@ -394,6 +421,8 @@ case "$BUILD_SYSTEM" in
             -DPD_INCLUDE_DIRS="$LIBPD_SRC" \
             -DPD_SOURCE_DIR="$(dirname "$LIBPD_SRC")" \
             -DPD_PATH="$(dirname "$LIBPD_SRC")" \
+            ${CMAKE_CROSS_ARGS[@]+"${CMAKE_CROSS_ARGS[@]}"} \
+            ${PD2_CMAKE_ARGS:-} \
             ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"} \
             ${CMAKE_LD_ARGS[@]+"${CMAKE_LD_ARGS[@]}"}
         run cmake --build "$BUILD_DIR" -j"$JOBS"
@@ -440,12 +469,16 @@ if ! $DRY_RUN && $INSTALLED && [ ! -d "$INSTALL_DIR" ]; then
     exit 1
 fi
 
-# Filename extensions produced by pd-lib-builder (".pd_linux"/".pd_darwin")
-# and by deken-style builds (".linux-amd64-32.so", ...).
-case "$(uname -s)" in
+# Filename extensions produced by pd-lib-builder (".pd_linux"/".pd_darwin"/
+# ".dll") and by deken-style builds (".linux-amd64-32.so", ...).
+case "$TARGET_OS" in
     Darwin)
         CLASS_GLOBS=( '*.pd_darwin' '*.darwin-amd64-*.so' '*.darwin-arm64-*.so' )
         SHARED_GLOBS=( 'lib*.pd_darwin.dylib' )
+        ;;
+    Windows)
+        CLASS_GLOBS=( '*.dll' )
+        SHARED_GLOBS=( 'lib*.dll' )
         ;;
     *)
         CLASS_GLOBS=( '*.pd_linux' '*.linux-amd64-*.so' '*.linux-arm64-*.so' '*.linux-i386-*.so' '*.linux-arm-*.so' )

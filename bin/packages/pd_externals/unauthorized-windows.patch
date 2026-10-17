@@ -1,0 +1,23 @@
+--- a/Makefile
++++ b/Makefile
+@@ -29,13 +29,20 @@
+ grid.class.sources := src/grid.c
+ #mp3amp~.class.sources := src/mp3amp~.c
+ mp3amp~.class.sources := src/mp3amp~.c src/mpglib/mpglib.c
++ifeq ($(OS),Windows_NT)
++mp3amp~.class.ldlibs += -lws2_32
++endif
+ pianoroll.class.sources := src/pianoroll.c
++ifneq ($(OS),Windows_NT)
+ playlist.class.sources := src/playlist.c
++endif
+ probalizer.class.sources := src/probalizer.c
+ randomblock~.class.sources := src/randomblock~.c
+ samplebox~.class.sources := src/samplebox~.c
+ scratcher~.class.sources := src/scratcher~.c
++ifneq ($(OS),Windows_NT)
+ scrolllist.class.sources := src/scrolllist.c
++endif
+ sonogram~.class.sources := src/sonogram~.c
+ spigot~.class.sources := src/spigot~.c
+ vocoder~.class.sources := src/vocoder~.c

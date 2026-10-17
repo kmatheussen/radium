@@ -1,0 +1,60 @@
+--- a/Source/Shared/link/CMakeLists.txt
++++ b/Source/Shared/link/CMakeLists.txt
+@@ -9,7 +9,7 @@
+ target_include_directories(link PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+ 
+ if(WIN32)
+-    target_link_options(link PUBLIC -static-libgcc -static-libstdc++ -static)
+-    target_link_libraries(link PUBLIC "ws2_32;iphlpapi;stdc++")
++    target_link_options(link PUBLIC -static-libgcc -static-libstdc++)
++    target_link_libraries(link PUBLIC "ws2_32;iphlpapi")
+     target_compile_definitions(link PUBLIC _POSIX_SEM_VALUE_MAX=32767)
+ endif()
+--- a/Source/Control/lua/CMakeLists.txt
++++ b/Source/Control/lua/CMakeLists.txt
+@@ -15,6 +15,6 @@
+ endif()
+ 
+ if(WIN32)
+-    target_link_options(pdlua PUBLIC -static-libgcc -static)
++    target_link_options(pdlua PUBLIC -static-libgcc)
+     target_link_libraries(pdlua PUBLIC "ws2_32;")
+ endif()
+--- a/Source/Audio/plaits~/CMakeLists.txt
++++ b/Source/Audio/plaits~/CMakeLists.txt
+@@ -53,8 +53,8 @@
+ target_include_directories(plaits PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+ 
+ if(WIN32)
+-    target_link_options(plaits PUBLIC -static-libgcc -static-libstdc++ -static)
+-    target_link_libraries(plaits PUBLIC "ws2_32;stdc++")
++    target_link_options(plaits PUBLIC -static-libgcc -static-libstdc++)
++    target_link_libraries(plaits PUBLIC "ws2_32")
+ endif()
+ 
+ # Create the Pure Data external
+--- a/Source/Audio/circuit~/CMakeLists.txt
++++ b/Source/Audio/circuit~/CMakeLists.txt
+@@ -10,8 +10,8 @@
+ target_link_libraries(pd-circuit PRIVATE else_shared)
+ 
+ if(WIN32)
+-    target_link_options(pd-circuit PUBLIC -static-libgcc -static-libstdc++ -static)
+-    target_link_libraries(pd-circuit PUBLIC "ws2_32;stdc++")
++    target_link_options(pd-circuit PUBLIC -static-libgcc -static-libstdc++)
++    target_link_libraries(pd-circuit PUBLIC "ws2_32")
+ endif()
+ 
+ target_include_directories(pd-circuit PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Libraries)
+--- a/Source/Shared/link/udp/udp_socket.hpp
++++ b/Source/Shared/link/udp/udp_socket.hpp
+@@ -11,7 +11,9 @@
+ #include <winsock2.h>
+ #include <ws2tcpip.h>
+ #undef min
++#ifdef _MSC_VER
+ typedef SSIZE_T ssize_t;
++#endif
+ // Unix
+ #else
+ #include <sys/types.h>
