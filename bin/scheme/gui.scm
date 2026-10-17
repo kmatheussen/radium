@@ -1921,21 +1921,23 @@
            (when (not (string=? background-color noncurrent-background-color))
              (<gui> :filled-box widget background-color 0 0 width height -1 -1 *no-gradient*))
 
-           ;; Draw a small right-pointing triangle to the left of the name to
-           ;; clearly mark the current entry (the one return/click activates).
+           ;; Draw a small filled circle to the left of the name to clearly mark
+           ;; the current entry (the one return/click activates). A circle is
+           ;; used instead of a triangle, since a triangle looks like an arrow
+           ;; indicating that the entry opens a sub menu.
            (when (and is-current
                       (not is-checkbox))
-             (define marker-width (max 3 (round (* fontheight 0.35))))
-             (define marker-height (max 4 (round (* fontheight 0.45))))
+             (define marker-radius (/ (max 4 (round (* fontheight 0.4))) 2.0))
              (define marker-x (/ (+ (/ b 2.0)
                                     (+ b before-and-after-width))
                                  2.0))
              (define marker-y (/ height 2.0))
-             (<gui> :filled-polygon widget
+             (<gui> :filled-ellipse widget
                     current-marker-color
-                    (vector (- marker-x (/ marker-width 2.0)) (- marker-y (/ marker-height 2.0))
-                            (- marker-x (/ marker-width 2.0)) (+ marker-y (/ marker-height 2.0))
-                            (+ marker-x (/ marker-width 2.0)) marker-y)))
+                    (- marker-x marker-radius)
+                    (- marker-y marker-radius)
+                    (+ marker-x marker-radius)
+                    (+ marker-y marker-radius)))
            
            (if is-first
                (<gui> :draw-line widget

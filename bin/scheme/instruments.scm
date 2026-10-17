@@ -1742,7 +1742,7 @@
                                      )))
 
 
-(define (request-send-instrument instrument-id callback)
+(define (get-send-instrument-menu-entries instrument-id callback)
   ;;(define is-bus-descendant (<ra> :instrument-is-bus-descendant instrument-id))
   ;;(define pure-buses (get-pure-buses))
   (define buses (get-buses))
@@ -1769,34 +1769,35 @@
                    (call-callback send-id))))
          instrument-ids))
     
-  (define args
-    (run-instrument-data-memoized
-     (lambda()
-       (list
-        (list "Create new bus"
-              (lambda ()
-                (undo-block
-                 (lambda ()
-                   (define seqtracknum (<ra> :append-bus-seqtrack))
-                   (<ra> :set-seqtrack-visible seqtracknum #f)
-                   (define send-id (<ra> :get-seqtrack-instrument seqtracknum))
-                   (call-callback send-id)))))
+  (run-instrument-data-memoized
+   (lambda()
+     (list
+      (list "Create new bus"
+            :enabled (> (<ra> :get-num-output-channels instrument-id) 0)
+            (lambda ()
+              (undo-block
+               (lambda ()
+                 (define seqtracknum (<ra> :append-bus-seqtrack))
+                 (<ra> :set-seqtrack-visible seqtracknum #f)
+                 (define send-id (<ra> :get-seqtrack-instrument seqtracknum))
+                 (call-callback send-id)))))
                             
-        "------------"
+      "------------"
         
-        (create-bus-entries buses)
+      (create-bus-entries buses)
         
-        "------------"
+      "------------"
         
-        ;; audio connections
-        (create-bus-entries (sort-instruments-by-mixer-position-and-connections
-                             (keep (lambda (id)
-                                     (not (member id buses)))
-                                   (begin
-                                     (define ret (get-all-instruments-that-we-might-send-to instrument-id))
-                                     ret))))))))
-  
-  (apply popup-menu args))
+      ;; audio connections
+      (create-bus-entries (sort-instruments-by-mixer-position-and-connections
+                           (keep (lambda (id)
+                                   (not (member id buses)))
+                                 (begin
+                                   (define ret (get-all-instruments-that-we-might-send-to instrument-id))
+                                   ret))))))))
+
+(define (request-send-instrument instrument-id callback)
+  (apply popup-menu (get-send-instrument-menu-entries instrument-id callback)))
 
 
 ;; Note: Used for shortcut
@@ -1857,9 +1858,30 @@
                                    :enabled #t
                                    :is-top-instrument #t
                                    :parentgui -2)
+  (define (get-out-list)
+    (keep (lambda (id)
+            (<ra> :instrument-is-open id))
+          (get-instruments-connecting-from-instrument instrument-id)))
+
+  (define instrconf
+    (make-instrument-conf :must-have-inputs (get-bool instrument-id)
+                          :must-have-outputs (not (null? (get-out-list)))
+                          :parentgui parentgui))
+
+  (define (insert-description descr)
+    (insert-new-instrument-between instrument-id
+                                   (get-instruments-connecting-from-instrument instrument-id)
+                                   #t
+                                   parentgui
+                                   (lambda (conf kont)
+                                     (kont descr))))
+
+  (define favourites (get-favourite-plugin-menu-entries insert-description insert-new-plugin))
+
   (set! enabled
         (and enabled
              (> (<ra> :get-num-output-channels instrument-id) 0)))
+
   (list (if is-top-instrument
             "Insert plugin"
             (<-> "Insert plugin after " (<ra> :get-instrument-name instrument-id)))
@@ -1870,17 +1892,17 @@
                :enabled enabled
                (lambda ()
                  (insert-plugin-for-instrument-from-plugin-manager instrument-id parentgui)))
-         (list "From instrument/effect-menu..."
-               :shortcut (and is-top-instrument
-                              insert-plugin-for-instrument-from-popup-menu)
-               :enabled enabled
-               (lambda ()
-                 (insert-plugin-for-instrument-from-popup-menu instrument-id parentgui)))
-         (list "From list of most used instruments..." ;;"From list of favourites"
-               :shortcut (and is-top-instrument
-                              insert-plugin-for-instrument-from-favourites-menu)
-               (lambda ()
-                 (insert-plugin-for-instrument-from-favourites-menu instrument-id parentgui)))
+         (list "Instruments/effects"
+               (spr-entries->menu-entries (<ra> :get-sound-plugin-registry)
+                                          instrconf
+                                          (lambda (entry)
+                                            (spr-entry->instrument-description entry instrconf insert-description))
+                                          #f
+                                          insert-new-plugin))
+         (list "Most used instruments"
+               (if (null? favourites)
+                   (list (list "(None)" :enabled #f (lambda () #f)))
+                   favourites))
          "----------------"
          (list "From preset file (.rec/.mrec)..."
                :shortcut (and is-top-instrument
@@ -1938,10 +1960,10 @@
 
      (and include-insert-plugin
           (list "Insert send..."
-                :enabled (> (<ra> :get-num-output-channels instrument-id) 0)
-                :shortcut insert-send-for-instrument
-                (lambda ()
-                  (insert-send-for-instrument instrument-id))))
+                (get-send-instrument-menu-entries
+                 instrument-id
+                 (lambda (create-send-func)
+                   (create-send-func 0 '())))))
      "---------------"
      
      (list "Delete"

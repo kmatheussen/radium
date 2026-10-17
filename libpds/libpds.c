@@ -289,7 +289,10 @@ int libpds2_class_is_loaded_nolock(pd_t *pd, const char* classname)
 	t_pdinstance *previous = libpd_this_instance();
 
 	set_instance(pd);
-	int ret = zgetfn(&pd_objectmaker, gensym(classname)) != NULL;
+	// This must be done inside libpd: libpd.so is linked with -Bsymbolic,
+	// so resolving pd_objectmaker (as zgetfn() does) from here would bind
+	// to an uninitialized copy in the executable.
+	int ret = libpd_class_exists(classname);
 	libpd_set_instance(previous);
 
 	return ret;

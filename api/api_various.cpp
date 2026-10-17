@@ -1787,6 +1787,10 @@ void simulateDeleteMouseButton(void){
 #endif
 }
 
+void simulateRightMouseButton(void){
+  MOUSE_CYCLE_right_button_has_been_clicked();
+}
+
 void insertLines(int toinsert,int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   

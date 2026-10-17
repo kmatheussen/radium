@@ -10,9 +10,11 @@
 #   srcdir     Directory the tarball extracts to (removed before extracting).
 #   flags      Options passed to build_pd_external.sh (see its --help).
 #   args       Extra arguments forwarded to make/configure/cmake.
-#   args_darwin / args_linux
-#              Extra arguments appended to args on macOS / Linux. For flags
-#              that differ per platform, e.g. ELSE's output file extension.
+#   args_darwin / args_linux / args_windows
+#              Extra arguments appended to args on macOS / Linux / Windows.
+#              For flags that differ per platform, e.g. ELSE's output file
+#              extension or optional dependencies that are not available for
+#              a cross target.
 #   patches    Space-separated patch files in this directory, applied with
 #              'patch -p1' after extraction.
 #   exclude    Space-separated paths (relative to the extracted tree) removed
@@ -95,6 +97,7 @@ tarball = zexy-v2.4.4.tar.gz
 srcdir = pd-zexy-2.4.4
 flags = --install
 args =
+args_windows = with-regex=no
 patches =
 author = IOhannes m zmölnig and others
 copyright = 1999-2022 IOhannes m zmölnig and others
@@ -128,6 +131,7 @@ tarball = iemmatrix-v0.6.0.tar.gz
 srcdir = pd-iemmatrix-0.6.0
 flags = --install
 args = with-fftw=no with-gsl=no
+args_windows = with-sndfile=no
 patches =
 author = IOhannes m zmoelnig, Thomas Musil, Franz Zotter
 copyright = 2001-2025 IOhannes m zmoelnig, 2004-2006 Thomas Musil, 2005-2025 Franz Zotter
@@ -181,7 +185,8 @@ flags = --install
 # ".pd_darwin" / ".pd_linux", so set those instead.
 args_darwin = -DPD_EXTENSION=.pd_darwin
 args_linux = -DPD_EXTENSION=.pd_linux
-patches = else-radium.patch else-plaits-s-underscore.patch else-pdlua-lazy-instance.patch else-sfont-symbolic.patch else-midi-own-mifi.patch
+args_windows = -DPD_EXTENSION=.dll
+patches = else-radium.patch else-plaits-s-underscore.patch else-pdlua-lazy-instance.patch else-sfont-symbolic.patch else-midi-own-mifi.patch else-windows.patch
 exclude = Source/Audio/sfz~ Source/Shared/ffmpeg Documentation/Live-Electronics-Tutorial Source/Control/sfload.c Source/Control/sfinfo.c Source/Audio/play.file~.c Source/Control/bend.out.c Source/Control/ctl.out.c Source/Control/note.out.c Source/Control/pgm.out.c Source/Control/ptouch.out.c Source/Control/touch.out.c Documentation/Help-files/sfload-help.pd Documentation/Help-files/sfinfo-help.pd Documentation/Help-files/play.file~-help.pd Documentation/Help-files/sfz~-help.pd Documentation/Help-files/bend.out-help.pd Documentation/Help-files/ctl.out-help.pd Documentation/Help-files/note.out-help.pd Documentation/Help-files/pgm.out-help.pd Documentation/Help-files/ptouch.out-help.pd Documentation/Help-files/touch.out-help.pd
 author = Alexandre Torres Porres and others
 copyright = 2017-2025 Alexandre Torres Porres and others
@@ -287,7 +292,7 @@ tarball = unauthorized-cede002160dc.tar.gz
 srcdir = pd-unauthorized-cede002160dc0dbc4c1abaea5e44d23839b8dbd2
 flags = --install --compat
 args =
-patches = unauthorized-no-codecs.patch unauthorized-rtext-compat.patch
+patches = unauthorized-no-codecs.patch unauthorized-rtext-compat.patch unauthorized-windows.patch
 exclude = src/mp3cast~.c src/mp3fileout~.c src/mp3streamin~.c src/mp3streamout~.c src/mp3write~.c src/speexin~.c src/speexout~.c Documentation/help-files/mp3cast~-help.pd Documentation/help-files/mp3fileout~-help.pd Documentation/help-files/mp3streamin~-help.pd Documentation/help-files/mp3streamout~-help.pd Documentation/help-files/mp3write~-help.pd Documentation/help-files/speexin~-help.pd Documentation/help-files/speexout~-help.pd apple-silicon-binaries
 author = Yves Degoyon (PD-extended fork maintained by Alexandre Torres Porres)
 copyright = 2002 Yves Degoyon and others

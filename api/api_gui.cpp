@@ -99,6 +99,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/FocusSniffers.h"
 #include "../Qt/ScrollArea.hpp"
 #include "../Qt/Qt_MyQCheckBox.h"
+#include "../Qt/Qt_MyQButton.h"
 #include "../Qt/flowlayout.h"
 #include "../Qt/lzqlineedit.h"
 #include "../Qt/Timer.hpp"
@@ -3261,6 +3262,29 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     OVERRIDERS(QPushButton);
   };
 
+
+  // Same button as the "select instrument" button in the instrument widget.
+  struct SelectCurrentInstrumentButton : MyQButton, Gui {
+    Q_OBJECT;
+
+  public:
+
+    SelectCurrentInstrumentButton(void)
+      : MyQButton("arrow-down-filled-triangle-svgrepo-com.svg")
+      , Gui(this)
+    {
+      setObjectName("select_instrument");
+
+      _show_popup_menu = [](){
+        S7CALL2(void_void, "FROM_C-show-select-instrument-right-click");
+      };
+
+      QObject::connect(this, &QToolButton::clicked, [](){
+        S7CALL2(void_void, "FROM_C-show-set-current-audio-or-midi-instrument-popup-menu");
+      });
+    }
+  };
+
   
   struct CheckBox : QCheckBox, Gui, public radium::MouseCycleFix {
     Q_OBJECT;
@@ -5430,6 +5454,10 @@ int64_t gui_frame(void){
 
 int64_t gui_button(const_char *text){
   return (new PushButton(text))->get_gui_num();
+}
+
+int64_t gui_selectCurrentInstrumentButton(void){
+  return (new SelectCurrentInstrumentButton())->get_gui_num();
 }
 
 int64_t gui_checkbox(const_char *text, bool is_checked, bool radium_style){

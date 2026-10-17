@@ -3,80 +3,86 @@
 set -eEu
 #set -x
 
-export PYTHONEXE_NOT_AVAILABLE_YET=1
+setup_build_environment() {
 
-# Might want to uncomment the line below to make faust build with support for llvm.
-#export RADIUM_USE_CLANG=1
+	export PYTHONEXE_NOT_AVAILABLE_YET=1
 
-pushd ../../
-source configuration.sh
-popd
+	# Might want to uncomment the line below to make faust build with support for llvm.
+	#export RADIUM_USE_CLANG=1
 
-unset CFLAGS
-unset CFLAGS
-unset CPPFLAGS
-unset LDFLAGS
-unset CXXFLAGS
+	#export INCLUDE_FAUSTDEV_BUT_NOT_LLVM=1 # Don't push!
 
-RELEASE_BUILD=true
-#RELEASE_BUILD=false
+	pushd ../../
+	source configuration.sh
+	popd
 
-if $RELEASE_BUILD ; then
-	export COMMON_CFLAGS="-mtune=generic -fPIC -fno-strict-aliasing -Wno-misleading-indentation "
-else
-	export COMMON_CFLAGS="-ggdb3 -fno-omit-frame-pointer -fPIC -fno-strict-aliasing -Wno-misleading-indentation "
-fi
+	unset CFLAGS
+	unset CFLAGS
+	unset CPPFLAGS
+	unset LDFLAGS
+	unset CXXFLAGS
 
-if uname -s |grep Darwin ; then
-    if [[ -z "${MACOSX_DEPLOYMENT_TARGET}" ]]; then
-	echo "MACOSX_DEPLOYMENT_TARGET not set"
-	exit -1
-    fi
-    export COMMON_CFLAGS="$COMMON_CFLAGS -mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET}"
-    # Universal binaries. (Used for faust, fluidsynth, qscintilla, etc.)
-    export DARWIN_ARCH_FLAGS="-arch arm64 -arch x86_64 "
-    export DARWIN_MIN_FLAGS="-mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET}"
-    export DARWIN_CMAKEOPT="-DCMAKE_OSX_ARCHITECTURES=\"arm64;x86_64\" -DCMAKE_OSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET}"
-else
-    export DARWIN_ARCH_FLAGS=""
-    export DARWIN_MIN_FLAGS=""
-    export DARWIN_CMAKEOPT=""
-fi
-   
-if ! arch |grep -e arm -e aarch64 ; then
-    export COMMON_CFLAGS="$COMMON_CFLAGS -msse2 -mfpmath=sse "
-fi
+	RELEASE_BUILD=true
+	#RELEASE_BUILD=false
 
-if [[ $RADIUM_USE_CLANG == 0 ]] ; then
-    export COMMON_CFLAGS="$COMMON_CFLAGS -fmax-errors=5 "
-fi
+	if $RELEASE_BUILD ; then
+		export COMMON_CFLAGS="-mtune=generic -fPIC -fno-strict-aliasing -Wno-misleading-indentation "
+	else
+		export COMMON_CFLAGS="-ggdb3 -fno-omit-frame-pointer -fPIC -fno-strict-aliasing -Wno-misleading-indentation "
+	fi
 
-set_var QT_CPPFLAGS ""
-set_var QT_LDFLAGS ""
+	if uname -s |grep Darwin ; then
+		if [[ -z "${MACOSX_DEPLOYMENT_TARGET}" ]]; then
+			echo "MACOSX_DEPLOYMENT_TARGET not set"
+			exit -1
+		fi
+		export COMMON_CFLAGS="$COMMON_CFLAGS -mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET}"
+		# Universal binaries. (Used for faust, fluidsynth, qscintilla, etc.)
+		export DARWIN_ARCH_FLAGS="-arch arm64 -arch x86_64 "
+		export DARWIN_MIN_FLAGS="-mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET}"
+		export DARWIN_CMAKEOPT="-DCMAKE_OSX_ARCHITECTURES=\"arm64;x86_64\" -DCMAKE_OSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET}"
+	else
+		export DARWIN_ARCH_FLAGS=""
+		export DARWIN_MIN_FLAGS=""
+		export DARWIN_CMAKEOPT=""
+	fi
+	
+	if ! arch |grep -e arm -e aarch64 ; then
+		export COMMON_CFLAGS="$COMMON_CFLAGS -msse2 -mfpmath=sse "
+	fi
 
-export CFLAGS="$COMMON_CFLAGS "
-export CPPFLAGS="$QT_CPPFLAGS $COMMON_CFLAGS "
-export CXXFLAGS="$QT_CPPFLAGS $COMMON_CFLAGS "
-export LDFLAGS="$QT_LDFLAGS"
+	if [[ $RADIUM_USE_CLANG == 0 ]] ; then
+		export COMMON_CFLAGS="$COMMON_CFLAGS -fmax-errors=5 "
+	fi
 
-DASCC=gcc
-DASCXX=g++
+	set_var QT_CPPFLAGS ""
+	set_var QT_LDFLAGS ""
 
+	export CFLAGS="$COMMON_CFLAGS "
+	export CPPFLAGS="$QT_CPPFLAGS $COMMON_CFLAGS "
+	export CXXFLAGS="$QT_CPPFLAGS $COMMON_CFLAGS "
+	export LDFLAGS="$QT_LDFLAGS"
 
-if ! is_0 $RADIUM_USE_CLANG ; then
-    DASCC=clang
-    DASCXX=clang++
-fi
+	DASCC=gcc
+	DASCXX=g++
 
 
+	if ! is_0 $RADIUM_USE_CLANG ; then
+		DASCC=clang
+		DASCXX=clang++
+	fi
 
 
-#rm -f /tmp/radium
-#ln -s `pwd` /tmp/radium
-PWD=`pwd`
-PREFIX=`dirname $PWD/$0`
-#echo $PREFIX
-#exit
+
+
+	#rm -f /tmp/radium
+	#ln -s `pwd` /tmp/radium
+	PWD=`pwd`
+	PREFIX=`dirname $PWD/$0`
+	#echo $PREFIX
+	#exit
+
+}
 
 #http://www.python.org
 #tar xvzf Python-2.2.2.tgz
@@ -163,8 +169,8 @@ build_libpds() {
 
     GLIBCVERSION=`ldd --version | head -n 1 | awk '{print $NF}'`
     if [[ $GLIBCVERSION > 2.34 ]] ; then
-	sed -i.backup 's/#define fsqrt sqrt/#include <math.h>\nstatic float fsqrt(float val){return sqrt(val);}/g' pure-data/extra/fiddle~/fiddle~.c
-	sed -i.backup 's/fsqrt/myfsqrt/g' pure-data/extra/fiddle~/fiddle~.c
+		sed -i.backup 's/#define fsqrt sqrt/#include <math.h>\nstatic float fsqrt(float val){return sqrt(val);}/g' pure-data/extra/fiddle~/fiddle~.c
+		sed -i.backup 's/fsqrt/myfsqrt/g' pure-data/extra/fiddle~/fiddle~.c
     fi
     
     make clean
@@ -189,7 +195,7 @@ build_libpd() {
     # Always build with debug symbols and frame pointers. The Makefile's
     # OPT_CFLAGS contains -fomit-frame-pointer, but ADDITIONAL_CFLAGS is
     # appended last, so -fno-omit-frame-pointer overrides it.
-    LIBPD_DEBUG_FLAGS="-g -fno-omit-frame-pointer"
+    LIBPD_DEBUG_FLAGS="-g -fno-omit-frame-pointer ${LIBPD_EXTRA_CFLAGS:-}"
 
     LIBPD_LINK_FLAGS=""
 
@@ -213,7 +219,16 @@ build_libpd() {
             fi
         done
     else
-        LIBPD_LINK_FLAGS="-Wl,-soname,libpd.so"
+        LIBPD_TARGET=$(${CC:-cc} -dumpmachine 2>/dev/null || true)
+        case "$LIBPD_TARGET" in
+            *mingw*|*cygwin*|*msys*)
+                # The link flags for the target are set by the Makefile.
+                LIBPD_LINK_FLAGS=""
+                ;;
+            *)
+                LIBPD_LINK_FLAGS="-Wl,-soname,libpd.so"
+                ;;
+        esac
     fi
 
     make clean
@@ -300,7 +315,7 @@ build_pd_externals() {
 
     EXTERNALS_SRC="`pwd`/pd_externals"
     BUILD_EXTERNAL="`pwd`/build_pd_external.sh"
-    EXTERNALS_DIR="`pwd`/../pd/externals"
+    EXTERNALS_DIR="${PD2_EXTERNALS_DIR:-`pwd`/../pd/externals}"
 
     if [ ! -f "$BUILD_EXTERNAL" ]; then
         echo "Missing $BUILD_EXTERNAL" >&2
@@ -321,6 +336,7 @@ build_pd_externals() {
     args=""
     args_darwin=""
     args_linux=""
+    args_windows=""
     patches=""
     exclude=""
     install_dirs=""
@@ -344,10 +360,18 @@ build_pd_externals() {
             esac
         fi
 
+        # Skip libraries that are known not to build for this target.
+        if [ -n "${PD2_EXTERNALS_SKIP:-}" ]; then
+            case " $PD2_EXTERNALS_SKIP " in
+                *" $name "*) return 0 ;;
+            esac
+        fi
+
         # Extra arguments that only apply to one platform.
-        case "$(uname -s)" in
-            Darwin) args="$args $args_darwin" ;;
-            Linux)  args="$args $args_linux" ;;
+        case "${PD2_TARGET_OS:-$(uname -s)}" in
+            Darwin)  args="$args $args_darwin" ;;
+            Linux)   args="$args $args_linux" ;;
+            Windows) args="$args $args_windows" ;;
         esac
 
         echo
@@ -448,6 +472,7 @@ build_pd_externals() {
                 args=""
                 args_darwin=""
                 args_linux=""
+                args_windows=""
                 patches=""
                 exclude=""
                 install_dirs=""
@@ -471,6 +496,7 @@ build_pd_externals() {
                     args)             args="$value" ;;
                     args_darwin)      args_darwin="$value" ;;
                     args_linux)       args_linux="$value" ;;
+                    args_windows)     args_windows="$value" ;;
                     patches)          patches="$value" ;;
                     exclude)          exclude="$value" ;;
                     install_dirs)     install_dirs="$value" ;;
@@ -495,7 +521,9 @@ build_pd_externals() {
     # used to shadow the built-in [hsl]/[vsl] behavior) and ambiguous undefined
     # references (load-order dependent) are real bugs. See
     # pd_externals/check_symbol_clashes.sh.
-    "$EXTERNALS_SRC/check_symbol_clashes.sh" --externals "$EXTERNALS_DIR"
+    if [ -z "${PD2_SKIP_SYMBOL_CLASH_CHECK:-}" ]; then
+        "$EXTERNALS_SRC/check_symbol_clashes.sh" --externals "$EXTERNALS_DIR"
+    fi
 }
 
 
@@ -579,11 +607,11 @@ build_qscintilla() {
     cd QScintilla_src-2.14.0/src
     echo "CONFIG += staticlib" >> qscintilla.pro
     if uname -s |grep Darwin ; then
-	$QMAKE QMAKE_CFLAGS+="$DARWIN_ARCH_FLAGS" QMAKE_CXXFLAGS+="$DARWIN_ARCH_FLAGS" QMAKE_LFLAGS+="$DARWIN_ARCH_FLAGS"
-	# install_name_tool can't handle fat archive members. Not needed for a static lib anyway.
-	sed -i '' '/install_name_tool -id/d' Makefile
+		$QMAKE QMAKE_CFLAGS+="$DARWIN_ARCH_FLAGS" QMAKE_CXXFLAGS+="$DARWIN_ARCH_FLAGS" QMAKE_LFLAGS+="$DARWIN_ARCH_FLAGS"
+		# install_name_tool can't handle fat archive members. Not needed for a static lib anyway.
+		sed -i '' '/install_name_tool -id/d' Makefile
     else
-	$QMAKE
+		$QMAKE
     fi
     patch -p0 <../../qscintilla.patch
     make -j`nproc`
@@ -604,7 +632,7 @@ build_qscintilla() {
 build_xcb() {
     
     if ! is_0 ${RADIUM_BUILD_LIBXCB:-1} ; then
-	
+		
         rm -fr xcb-proto-1.13/
         tar xvjf xcb-proto-1.13.tar.bz2
         cd xcb-proto-1.13/
@@ -623,42 +651,48 @@ build_xcb() {
         CFLAGS="$CFLAGS" CPPFLAGS="$CPPFLAGS" CPPFLAGS="$CXXFLAGS" ./configure PYTHON=$PYTHONEXE
         CFLAGS="$CFLAGS" CPPFLAGS="$CPPFLAGS" CPPFLAGS="$CXXFLAGS" make -j`nproc`
         cd ..
-    
+		
     fi
 }
 
-source ./build_python27.sh
+if [[ "${BASH_SOURCE[0]}" == "$0" ]] ; then
 
-build_faust
-build_qhttpserver
-build_gc
-build_fluidsynth
-build_python27
-build_qscintilla # Note: Linking fails on Mac. Just ignore it.
+	setup_build_environment
 
-if uname -s |grep Linux ; then
-    if ! arch |grep -e arm -e aarch64 ; then
-        build_libpds
-    fi
-    build_xcb
-	echo "Finished compiling libpds and xcb" # need this line to avoid script failing if all the lines above are commented out.
+	source ./build_python27.sh
+
+	build_faust
+	build_qhttpserver
+	build_gc
+	build_fluidsynth
+	build_python27
+	build_qscintilla # Note: Linking fails on Mac. Just ignore it.
+
+	if uname -s |grep Linux ; then
+		if ! arch |grep -e arm -e aarch64 ; then
+		    build_libpds
+		fi
+		build_xcb
+		echo "Finished compiling libpds and xcb" # need this line to avoid script failing if all the lines above are commented out.
+	fi
+
+	if uname -s |grep -e Linux -e Darwin ; then
+		build_libpd
+		build_pd_externals
+		echo "Finished building libpd and pd externals" # need this line to avoid script failing if the line above is commented out.
+	fi
+
+	# The Wish.app is only used by the Pd2 instrument (and only on MacOS).
+	# build_tcltk_wish installs it next to the pure-data directory, so libpd must
+	# have been extracted (run build_libpd) first.
+	if uname -s |grep Darwin ; then
+		if ! is_0 $INCLUDE_PD2DEV ; then
+			build_tcltk_wish
+			echo "Finished building the Tcl/Tk Wish.app"
+		fi
+	fi
+
+
+	touch deletemetorebuild
+
 fi
-
-if uname -s |grep -e Linux -e Darwin ; then
-    build_libpd
-    build_pd_externals
-    echo "Finished building libpd and pd externals" # need this line to avoid script failing if the line above is commented out.
-fi
-
-# The Wish.app is only used by the Pd2 instrument (and only on MacOS).
-# build_tcltk_wish installs it next to the pure-data directory, so libpd must
-# have been extracted (run build_libpd) first.
-if uname -s |grep Darwin ; then
-    if ! is_0 $INCLUDE_PD2DEV ; then
-        build_tcltk_wish
-        echo "Finished building the Tcl/Tk Wish.app"
-    fi
-fi
-
-
-touch deletemetorebuild
