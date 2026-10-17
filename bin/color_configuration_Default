@@ -55,7 +55,7 @@ STRING_TYPE
 color_check_box_unselected_v2
 0
 STRING_TYPE
-#ff2f473a
+#ff2e4337
 color_color1
 0
 STRING_TYPE
@@ -87,7 +87,7 @@ STRING_TYPE
 color_color5
 0
 STRING_TYPE
-#ff1b080c
+#ff5a3734
 color_color6
 0
 STRING_TYPE
@@ -143,11 +143,11 @@ STRING_TYPE
 color_high_background
 0
 STRING_TYPE
-#ff323c3f
+#ff212828
 color_high_editor
 0
 STRING_TYPE
-#ff495351
+#ff455350
 color_keyboard_focus_border
 0
 STRING_TYPE
@@ -163,11 +163,11 @@ STRING_TYPE
 color_low_background
 0
 STRING_TYPE
-#ff495259
+#ff394951
 color_low_editor_background
 0
 STRING_TYPE
-#ff575b5d
+#ff465155
 color_menu_background
 0
 STRING_TYPE
@@ -207,7 +207,7 @@ STRING_TYPE
 color_mixer_background
 0
 STRING_TYPE
-#ff4f575d
+#ff46575b
 color_mixer_border_color
 0
 STRING_TYPE
@@ -307,7 +307,7 @@ STRING_TYPE
 color_seqtracks_background_color
 0
 STRING_TYPE
-#ff3a4844
+#ff2c3c3f
 color_sequencer_background_color
 0
 STRING_TYPE
@@ -471,7 +471,7 @@ STRING_TYPE
 color_soundfile
 0
 STRING_TYPE
-#ff0000a7
+#fffff705
 color_soundfont
 0
 STRING_TYPE
