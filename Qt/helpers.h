@@ -668,6 +668,7 @@ bool MOUSE_CYCLE_register(QObject *widget, QEvent *event);
 bool MOUSE_CYCLE_move(QObject *widget, QEvent *event);
 bool MOUSE_CYCLE_unregister(QObject *widget);
 bool MOUSE_CYCLE_delete_button_has_been_pressed(void);
+bool MOUSE_CYCLE_right_button_has_been_clicked(void);
 void MOUSE_CYCLE_schedule_unregister_all(bool include_mouse_move); // Can safely be called at any moment when we know that the current mouse cycle should not run (schedules a call to mouseReleaseEvent if there is a mouse event).
 bool MOUSE_CYCLE_is_inside_cycle(void);
 Qt::MouseButtons MOUSE_CYCLE_get_mouse_buttons(void); // Use this one instead of QApplication::mouseButtons() to avoid getting false positives. (It will always return Qt::NoButton for non-mousecycle widgets though)

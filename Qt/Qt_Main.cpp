@@ -1203,7 +1203,7 @@ bool MOUSE_CYCLE_move(QObject *widget, QEvent *event){
   return true;
 }
 
-bool MOUSE_CYCLE_delete_button_has_been_pressed(void){
+static bool mouse_button_has_been_clicked(Qt::MouseButton button){
   if (MOUSE_CYCLE_is_inside_cycle())
 	  return false;
     
@@ -1218,14 +1218,14 @@ bool MOUSE_CYCLE_delete_button_has_been_pressed(void){
     QMouseEvent press_event(QEvent::MouseButtonRelease,
                             g_curr_mouse_cycle.local_or_scene_pos,
 							g_curr_mouse_cycle.global_pos,
-                            Qt::BackButton,
-                            Qt::BackButton,
+                            button,
+                            button,
                             g_curr_mouse_cycle.modifiers);
     
     ret = mouse_cycle_fix->cycle_mouse_press_event(g_last_mouse_move_widget.data(), &press_event, false);
  }
 
-  if (g_last_mouse_move_widget.data() != NULL){ // Very often running the delete delete-button event above causes g_last_mouse_move_widget to be set to NULL , and then we don't run the release-button event. And, it might also happen that the delete-event deletes the widget, and we don't want to run the release event then either.
+  if (g_last_mouse_move_widget.data() != NULL){ // Very often running the mouse event above causes g_last_mouse_move_widget to be set to NULL , and then we don't run the release-button event. And, it might also happen that the event deletes the widget, and we don't want to run the release event then either.
     
     R_ASSERT_NON_RELEASE(dynamic_cast<radium::MouseCycleFix*>(g_last_mouse_move_widget.data()) == mouse_cycle_fix); // Should not fail.
     
@@ -1234,8 +1234,8 @@ bool MOUSE_CYCLE_delete_button_has_been_pressed(void){
       QMouseEvent release_event(QEvent::MouseButtonRelease,
                                 g_curr_mouse_cycle.local_or_scene_pos,
 								g_curr_mouse_cycle.global_pos,
-                                Qt::BackButton,
-                                Qt::BackButton,
+                                button,
+                                button,
                                 g_curr_mouse_cycle.modifiers);
       
       if (mouse_cycle_fix->cycle_mouse_release_event(g_last_mouse_move_widget.data(), &release_event, false))
@@ -1257,6 +1257,14 @@ bool MOUSE_CYCLE_delete_button_has_been_pressed(void){
     //gui_rerunLastMouseEvent();
   
   return ret;
+}
+
+bool MOUSE_CYCLE_delete_button_has_been_pressed(void){
+  return mouse_button_has_been_clicked(Qt::BackButton);
+}
+
+bool MOUSE_CYCLE_right_button_has_been_clicked(void){
+  return mouse_button_has_been_clicked(Qt::RightButton);
 }
 
 bool MOUSE_CYCLE_has_moved(void){
