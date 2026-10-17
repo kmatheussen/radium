@@ -61,7 +61,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QPalette>
 #include <QSet>
 #include <QPainter>
-#include <QPolygonF>
+#include <QPointF>
 #include <QPaintEvent>
 
 #include "../common/nsmtracker.h"
@@ -1557,7 +1557,7 @@ static void schedule_flush_pending_menu_callbacks(void)
     }
 
     // Qt paints the entries that open sub menus by itself (they are not widget actions),
-    // so draw the current-entry arrow on those here, matching the arrow that
+    // so draw the current-entry circle on those here, matching the circle that
     // FROM_C-create-menu-entry-widget draws for normal entries.
     void paintEvent(QPaintEvent *event) override
     {
@@ -1574,21 +1574,15 @@ static void schedule_flush_pending_menu_callbacks(void)
         return;
 
       const double fontheight = get_system_fontheight();
-      const double marker_width = R_MAX(3, qRound(fontheight*0.35));
-      const double marker_height = R_MAX(4, qRound(fontheight*0.45));
+      const double marker_radius = R_MAX(2, qRound(fontheight*0.2));
       const double marker_x = rect.left() + fontheight*0.55;
       const double marker_y = rect.center().y() + 0.5;
-
-      QPolygonF triangle;
-      triangle << QPointF(marker_x - marker_width/2.0, marker_y - marker_height/2.0)
-               << QPointF(marker_x - marker_width/2.0, marker_y + marker_height/2.0)
-               << QPointF(marker_x + marker_width/2.0, marker_y);
 
       QPainter painter(this);
       painter.setRenderHint(QPainter::Antialiasing, true);
       painter.setPen(Qt::NoPen);
       painter.setBrush(get_config_qcolor("menu_text"));
-      painter.drawPolygon(triangle);
+      painter.drawEllipse(QPointF(marker_x, marker_y), marker_radius, marker_radius);
     }
     
 
