@@ -1337,6 +1337,10 @@ struct ColorConfigSnapshot
 	float block_saturation;
 	float amount_of_gradient;
 
+	// True when the configuration has been changed in memory and must be written
+	// to disk. Cleared after the file has been successfully written.
+	bool is_dirty = false;
+
 	ColorConfigSnapshot(void)
 		: instrument_brightness(0.0f)
 		, instrument_saturation(0.0f)
@@ -1451,25 +1455,36 @@ struct ColorConfigSnapshot
 		return hash;
 	}
 
-	void saveState(disk_t *disk)
+	bool saveState(disk_t *disk)
 	{
 		hash_t *state = getState();
+
 		if (HASH_save(state, disk) == false)
+		{
 			showAsyncMessage("Failed to save color configuration");
+			return false;
+		}
+
+		return true;
 	}
 
-	void saveState(filepath_t wfilename)
+	// Returns true if the file was successfully written.
+	bool saveState(filepath_t wfilename)
 	{
 		disk_t *file = DISK_open_for_writing(wfilename);
-		if (file != NULL)
-		{
-			saveState(file);
-			DISK_close_and_delete(file);
-		}
-		else
+
+		if (file == NULL)
 		{
 			showAsyncMessage("Failed to open file for writing color configuration");
+			return false;
 		}
+
+		bool ret = saveState(file);
+
+		if (DISK_close_and_delete(file) == false)
+			ret = false;
+
+		return ret;
 	}
 };
 } // anon. namespace
@@ -1527,6 +1542,7 @@ static void ensure_color_configurations_initialized(void)
       ColorConfigSnapshot snap;
       snap.name = "Default";
       snap.colors = QVector<QColor>(END_CONFIG_COLOR_NUM);
+			snap.is_dirty = true; // No file on disk yet.
       g_color_configurations[snap.name] = snap;
       g_current_configuration_name = snap.name;
     }
@@ -1583,27 +1599,47 @@ static void load_program_default_configuration(void)
   g_program_default_configuration = snap;
 }
 
+static bool snapshots_are_equal(const ColorConfigSnapshot &a, const ColorConfigSnapshot &b);
+
+// Saves the current editor colors into the configuration named "name" in memory.
+// Does nothing if the configuration already contains those values.
 static void save_current_to_configuration(const QString &name)
 {
-  ColorConfigSnapshot &dest = g_color_configurations[name];
-  dest.name = name;
-  dest.colors.resize(END_CONFIG_COLOR_NUM);
+	ColorConfigSnapshot state;
+	state.name = name;
+	state.colors.resize(END_CONFIG_COLOR_NUM);
 
-  for(int i = START_CONFIG_COLOR_NUM ; i < END_CONFIG_COLOR_NUM ; i++)
-  {
-    if (g_config_colors[i] != NULL)
-      dest.colors[i] = *g_config_colors[i];
-    else if (g_program_default_configuration.colors.size() > i && g_program_default_configuration.colors[i].isValid())
-      dest.colors[i] = g_program_default_configuration.colors[i];
-  }
+	for(int i = START_CONFIG_COLOR_NUM ; i < END_CONFIG_COLOR_NUM ; i++)
+	{
+		if (g_config_colors[i] != NULL)
+			state.colors[i] = *g_config_colors[i];
+		else if (g_program_default_configuration.colors.size() > i && g_program_default_configuration.colors[i].isValid())
+			state.colors[i] = g_program_default_configuration.colors[i];
+	}
 
-  dest.instrument_brightness = getInstrumentBrightness();
-  dest.instrument_saturation = getInstrumentSaturation();
-  dest.instrument_brightness_in_editor = getInstrumentBrightnessInEditor();
-  dest.instrument_saturation_in_editor = getInstrumentSaturationInEditor();
-  dest.block_brightness = getBlockBrightness();
-  dest.block_saturation = getBlockSaturation();
-  dest.amount_of_gradient = getAmountOfGradient();
+	state.instrument_brightness = getInstrumentBrightness();
+	state.instrument_saturation = getInstrumentSaturation();
+	state.instrument_brightness_in_editor = getInstrumentBrightnessInEditor();
+	state.instrument_saturation_in_editor = getInstrumentSaturationInEditor();
+	state.block_brightness = getBlockBrightness();
+	state.block_saturation = getBlockSaturation();
+	state.amount_of_gradient = getAmountOfGradient();
+
+	QMap<QString, ColorConfigSnapshot>::iterator it = g_color_configurations.find(name);
+
+	if (it == g_color_configurations.end())
+	{
+		state.is_dirty = true;
+		g_color_configurations[name] = state;
+	}
+	else if (snapshots_are_equal(it.value(), state) == false)
+	{
+		state.is_dirty = true;
+		it.value() = state;
+	}
+
+	// If the contents are equal, the existing entry is kept as-is, including a
+	// possible pending dirty flag.
 }
 
 static void write_current_configuration_name_to_settings(void)
@@ -1819,6 +1855,11 @@ static void migrate_to_new_color_configurations(void)
   g_active_configuration_loaded = true;
   load_configuration("Default");
 
+	// Mark every configuration as dirty so that all files are written, also
+	// those that are still in the old color_<number> format.
+	for(auto &snapshot : g_color_configurations)
+		snapshot.is_dirty = true;
+
   GFX_SaveAllColorConfigurations();
 
   SETTINGS_write_string("last_color_version", RADIUM_COLOR_VERSION);
@@ -1883,6 +1924,7 @@ void GFX_RenameColorConfiguration(const QString &old_name, const QString &new_na
   g_color_configurations.remove(old_name);
 
   g_color_configurations[new_name].name = new_name;
+	g_color_configurations[new_name].is_dirty = true; // The file still contains the old name.
 
   if (DISK_file_exists(old_filename))
   {
@@ -1908,6 +1950,7 @@ void GFX_NewColorConfiguration(const QString &name)
 
   g_color_configurations[name] = g_color_configurations[g_current_configuration_name];
   g_color_configurations[name].name = name;
+	g_color_configurations[name].is_dirty = true; // The configuration has no file on disk yet.
   
   g_current_configuration_name = name;
   write_current_configuration_name_to_settings();
@@ -1966,22 +2009,26 @@ void GFX_SetColorConfiguration(const QString &name)
   window->must_redraw = true;
 }
 
+// Writes the configurations that have been changed in memory (dirty) to disk.
+// Configurations that haven't been changed are left alone, including their
+// modification time.
 void GFX_SaveAllColorConfigurations(void)
 {
-  ensure_color_configurations_initialized();
+	ensure_color_configurations_initialized();
 
-  save_current_to_configuration(g_current_configuration_name);
+	save_current_to_configuration(g_current_configuration_name);
 
-  QMapIterator<QString, ColorConfigSnapshot> it(g_color_configurations);
-  while(it.hasNext())
-  {
-    it.next();
+	for(QMap<QString, ColorConfigSnapshot>::iterator it = g_color_configurations.begin() ; it != g_color_configurations.end() ; it++)
+	{
+		if (it.key() == "__checkpoint")
+			continue;
 
-    if (it.key() == "__checkpoint")
-      continue;
+		if (it.value().is_dirty == false)
+			continue;
 
-    g_color_configurations[it.key()].saveState(get_configuration_filename(it.key()));
-  }
+		if (it.value().saveState(get_configuration_filename(it.key())))
+			it.value().is_dirty = false;
+	}
 }
 
 void GFX_StoreCheckpoint(void)
