@@ -15,7 +15,11 @@
 LIBPD_DIR = ../../bin/packages/libpd
 LIBPDS_DIR = ..
 LIBPD = $(LIBPD_DIR)/libs/libpd.a
+ifeq ($(shell uname -s),Darwin)
+LIBPD_SHARED = $(LIBPD_DIR)/libs/libpd.dylib
+else
 LIBPD_SHARED = $(LIBPD_DIR)/libs/libpd.so
+endif
 TARGET = libpds_test
 GUI_TARGET = libpds_gui_test
 EXTERNALS_TARGET = test_pd_externals
@@ -43,6 +47,13 @@ $(GUI_TARGET): libpds.o libpds_gui_test.o $(LIBPD)
 
 $(EXTERNALS_TARGET): libpds.o test_pd_externals.o $(LIBPD_SHARED)
 	$(CXX) -o $@ $^ $(LDLIBS) -Wl,-rpath,$(abspath $(LIBPD_DIR)/libs)
+ifeq ($(shell uname -s),Darwin)
+	# libpd.dylib is built for Radium, with an @executable_path install name.
+	# Point the test binary at the real file instead.
+	install_name_tool -change @executable_path/packages/libpd/libs/libpd.dylib $(abspath $(LIBPD_SHARED)) $@
+else
+	@true
+endif
 
 libpds.o: $(LIBPDS_DIR)/libpds.c $(LIBPDS_DIR)/libpds.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
@@ -69,7 +80,7 @@ $(LIBPD):
 	cd $(LIBPD_DIR) && make MULTI=true UTIL=true EXTRA=true libs/libpd.a ADDITIONAL_CFLAGS="-g -fno-omit-frame-pointer"
 
 $(LIBPD_SHARED):
-	cd $(LIBPD_DIR) && make MULTI=true UTIL=true EXTRA=true libs/libpd.so ADDITIONAL_CFLAGS="-g -fno-omit-frame-pointer"
+	cd $(LIBPD_DIR) && make MULTI=true UTIL=true EXTRA=true libpd ADDITIONAL_CFLAGS="-g -fno-omit-frame-pointer"
 
 run: $(TARGET)
 	./$(TARGET) $(LIBPD_DIR)/pure-data

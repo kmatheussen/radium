@@ -319,6 +319,8 @@ build_pd_externals() {
     srcdir=""
     flags=""
     args=""
+    args_darwin=""
+    args_linux=""
     patches=""
     exclude=""
     install_dirs=""
@@ -341,6 +343,12 @@ build_pd_externals() {
                 *) return 0 ;;
             esac
         fi
+
+        # Extra arguments that only apply to one platform.
+        case "$(uname -s)" in
+            Darwin) args="$args $args_darwin" ;;
+            Linux)  args="$args $args_linux" ;;
+        esac
 
         echo
         echo "==== Building Pd external '$name' ===="
@@ -438,6 +446,8 @@ build_pd_externals() {
                 srcdir=""
                 flags=""
                 args=""
+                args_darwin=""
+                args_linux=""
                 patches=""
                 exclude=""
                 install_dirs=""
@@ -459,6 +469,8 @@ build_pd_externals() {
                     srcdir)           srcdir="$value" ;;
                     flags)            flags="$value" ;;
                     args)             args="$value" ;;
+                    args_darwin)      args_darwin="$value" ;;
+                    args_linux)       args_linux="$value" ;;
                     patches)          patches="$value" ;;
                     exclude)          exclude="$value" ;;
                     install_dirs)     install_dirs="$value" ;;

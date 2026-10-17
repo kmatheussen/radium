@@ -37,6 +37,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #if !defined(_WIN32)
 #include <unistd.h>
+#define libpds2_close close
+#else
+#include <io.h>
+#define libpds2_close _close
 #endif
 
 #include "libpds.h"
@@ -50,6 +54,8 @@ extern int sys_pollgui(void);
 // Declared in Pd's s_stuff.h. Loads a library (a class binary or a library
 // blob such as zexy.pd_linux) into the current instance.
 extern int sys_load_lib(t_canvas *canvas, const char *classname);
+extern void sys_set_libloadhook(int (*hook)(const char *classname));
+extern const char **sys_get_dllextensions(void);
 
 // Tell the Pd GUI (see the Radium patch in pdwindow.tcl) to not open its
 // console window (.pdwindow). Radium only wants the patch editor window. This
@@ -241,6 +247,85 @@ int libpds2_load_lib(pd_t *pd, const char* name)
 	sys_unlock();
 
 	return ret;
+}
+
+// See libpds.h.
+static libpds2_libloadhook_t g_libloadhook = NULL;
+
+static int libpds2_libloadhook(const char *classname)
+{
+	return g_libloadhook != NULL ? g_libloadhook(classname) : 0;
+}
+
+void libpds2_set_libloadhook(libpds2_libloadhook_t hook)
+{
+	g_libloadhook = hook;
+	sys_set_libloadhook(hook != NULL ? libpds2_libloadhook : NULL);
+}
+
+// Like libpds2_load_lib, but for callers that already hold Pd's lock (the
+// libloadhook). The current instance is restored afterwards, so the caller's
+// instance is unchanged.
+int libpds2_load_lib_nolock(pd_t *pd, const char* name)
+{
+	if (pd == NULL || name == NULL)
+		return 0;
+
+	t_pdinstance *previous = libpd_this_instance();
+
+	set_instance(pd);
+	int ret = sys_load_lib(NULL, name);
+	libpd_set_instance(previous);
+
+	return ret;
+}
+
+// See libpds.h.
+int libpds2_class_is_loaded_nolock(pd_t *pd, const char* classname)
+{
+	if (pd == NULL || classname == NULL)
+		return 0;
+
+	t_pdinstance *previous = libpd_this_instance();
+
+	set_instance(pd);
+	int ret = zgetfn(&pd_objectmaker, gensym(classname)) != NULL;
+	libpd_set_instance(previous);
+
+	return ret;
+}
+
+// See libpds.h.
+const char **libpds2_get_library_extensions(void)
+{
+	return sys_get_dllextensions();
+}
+
+// See libpds.h.
+int libpds2_abstraction_exists_nolock(const char *name)
+{
+	if (name == NULL)
+		return 0;
+
+	char dirbuf[MAXPDSTRING], *nameptr;
+
+	int fd = canvas_open(canvas_getcurrent(), name, ".pd",
+			     dirbuf, &nameptr, MAXPDSTRING, 1);
+	if (fd >= 0)
+	{
+		libpds2_close(fd);
+		return 1;
+	}
+
+	fd = canvas_open(canvas_getcurrent(), name, ".pat",
+			 dirbuf, &nameptr, MAXPDSTRING, 1);
+	if (fd >= 0)
+	{
+		libpds2_close(fd);
+		return 1;
+	}
+
+	return 0;
 }
 
 void* libpds2_openfile(pd_t *pd, const char* basename, const char* dirname)

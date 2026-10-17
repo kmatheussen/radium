@@ -10,6 +10,9 @@
 #   srcdir     Directory the tarball extracts to (removed before extracting).
 #   flags      Options passed to build_pd_external.sh (see its --help).
 #   args       Extra arguments forwarded to make/configure/cmake.
+#   args_darwin / args_linux
+#              Extra arguments appended to args on macOS / Linux. For flags
+#              that differ per platform, e.g. ELSE's output file extension.
 #   patches    Space-separated patch files in this directory, applied with
 #              'patch -p1' after extraction.
 #   exclude    Space-separated paths (relative to the extracted tree) removed
@@ -173,7 +176,11 @@ submodule_url = https://github.com/pd-externals/slip/archive/refs/tags/%ref%.tar
 tarball = else-v.1.0-rc14.tar.gz
 srcdir = pd-else-v.1.0-rc14
 flags = --install
-args = -DPD_EXTENSION=.pd_linux
+# ELSE's CMake defaults are ".darwin-fat-32.so" on macOS and ".l_amd64" /
+# ".l_arm64" on Linux (deken names). Radium's other externals use
+# ".pd_darwin" / ".pd_linux", so set those instead.
+args_darwin = -DPD_EXTENSION=.pd_darwin
+args_linux = -DPD_EXTENSION=.pd_linux
 patches = else-radium.patch else-plaits-s-underscore.patch else-pdlua-lazy-instance.patch else-sfont-symbolic.patch else-midi-own-mifi.patch
 exclude = Source/Audio/sfz~ Source/Shared/ffmpeg Documentation/Live-Electronics-Tutorial Source/Control/sfload.c Source/Control/sfinfo.c Source/Audio/play.file~.c Source/Control/bend.out.c Source/Control/ctl.out.c Source/Control/note.out.c Source/Control/pgm.out.c Source/Control/ptouch.out.c Source/Control/touch.out.c Documentation/Help-files/sfload-help.pd Documentation/Help-files/sfinfo-help.pd Documentation/Help-files/play.file~-help.pd Documentation/Help-files/sfz~-help.pd Documentation/Help-files/bend.out-help.pd Documentation/Help-files/ctl.out-help.pd Documentation/Help-files/note.out-help.pd Documentation/Help-files/pgm.out-help.pd Documentation/Help-files/ptouch.out-help.pd Documentation/Help-files/touch.out-help.pd
 author = Alexandre Torres Porres and others

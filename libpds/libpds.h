@@ -20,6 +20,32 @@ void libpds2_set_hook_data(pd_t *pd, void* data);
 void libpds2_clear_search_path(pd_t *pd); 
 void libpds2_add_to_search_path(pd_t *pd, const char* sym); 
 int libpds2_load_lib(pd_t *pd, const char* name); 
+
+// Installs a hook that is called from inside Pd's library loading (see
+// sys_set_libloadhook() in Pd's s_loader.c) when a library has not been
+// loaded yet. It lets the host load the library into another Pd instance
+// than the one that needs it. The hook runs with Pd's locks held, so it must
+// only call the _nolock functions below. Pass NULL to remove the hook.
+typedef int (*libpds2_libloadhook_t)(const char *classname);
+void libpds2_set_libloadhook(libpds2_libloadhook_t hook);
+
+// Same as libpds2_load_lib, but does not take Pd's lock. Only for callers
+// that already run with Pd's lock held (the libloadhook).
+int libpds2_load_lib_nolock(pd_t *pd, const char* name);
+
+// Returns true if a class (object) named 'classname' is registered in 'pd'.
+// Only for callers that already run with Pd's lock held.
+int libpds2_class_is_loaded_nolock(pd_t *pd, const char* classname);
+
+// Returns the file extensions Pd can load external libraries from on this
+// platform, e.g. ".pd_darwin" on Mac and ".pd_linux" on Linux (the same list
+// as sys_get_dllextensions()). The array and the strings are owned by Pd.
+const char **libpds2_get_library_extensions(void);
+
+// Returns true if 'name' is an abstraction (a .pd/.pat file) available to the
+// current instance/canvas. Only for callers that already run with Pd's lock
+// held (the libloadhook).
+int libpds2_abstraction_exists_nolock(const char *name);
 void* libpds2_openfile(pd_t *pd, const char* basename, const char* dirname); 
 void libpds2_closefile(pd_t *pd, void* p); 
 void libpds2_savefile(pd_t *pd, void* p, const char *filename, const char *dirname); 

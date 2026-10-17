@@ -1,0 +1,64 @@
+--- a/pure-data/src/s_loader.c
++++ b/pure-data/src/s_loader.c
+@@ -241,6 +241,25 @@
+     ll->ll_next = sys_loaded;
+     sys_loaded = ll;
+     /* post("put on list %s", classname); */
++}
++
++/* Host hook, installed with sys_set_libloadhook().  It lets a host (Radium's
++Pd2 instrument) load a library into a Pd instance of its own instead of the
++instance that happens to need the class first.  This matters because setup()
++only runs once in a process, and libraries that cache gensym() results in
++file-scope statics must not do so in an instance that can be deleted.
++
++The hook is called from sys_load_lib() with Pd's locks held, so it must not
++call anything that takes sys_lock() or pd_globallock().  It returns nonzero
++if it loaded the library itself, in which case it is also responsible for
++putting the loaded library on the load list of the instance it loaded it
++into. */
++static int (*sys_libloadhook)(const char *classname) = 0;
++static int sys_libloadhook_running = 0;
++
++void sys_set_libloadhook(int (*hook)(const char *classname))
++{
++    sys_libloadhook = hook;
+ }
+ 
+ void class_set_extern_dir(t_symbol *s);
+@@ -494,6 +513,23 @@
+         goto cleanup;
+     }
+ 
++        /* let the host load the library into its own instance, if it wants
++           to.  The names the hook loads are put on the load list by the hook
++           itself (with its own instance current), so the name passed to this
++           function does not have to be added below in that case. */
++    if (sys_libloadhook != 0 && !sys_libloadhook_running)
++    {
++        int hookresult;
++        sys_libloadhook_running = 1;
++        hookresult = (*sys_libloadhook)(classname);
++        sys_libloadhook_running = 0;
++        if (hookresult != 0)
++        {
++            data.ok = 1;
++            goto cleanup;
++        }
++    }
++
+         /* if classname is absolute, try this first */
+     if (sys_isabsolutepath(classname))
+     {
+--- a/pure-data/src/s_stuff.h
++++ b/pure-data/src/s_stuff.h
+@@ -64,6 +64,9 @@
+ EXTERN void sys_register_loader(loader_t loader);
+ EXTERN const char**sys_get_dllextensions(void);
+ 
++/* See sys_load_lib() in s_loader.c. */
++EXTERN void sys_set_libloadhook(int (*hook)(const char *classname));
++
+                         /* s_audio.c */
+ 
+ #define MAXAUDIOINDEV 4
