@@ -398,11 +398,17 @@ void setCurrentTrack(int tracknum, int subtrack, int windownum, bool switch_inst
         subtrack = 0;
       
     } else {
+		
       int current_subtrack = getCurrentSubtrack(windownum);
       int num_tracks = getNumTracks(wblock->l.num);
-      if (tracknum >= num_tracks){
-        handleError("setCurrentTrack: Illegal track #%d in current block", tracknum);
-        return;
+      if (tracknum >= num_tracks)
+	  {
+		  // Ideally we would call handleError here, but we haven't tracked down an underlying
+		  // error yet, and we don't want to show that error to the user in release mode.
+		  R_ASSERT_NON_RELEASE(false);
+		  
+		  //handleError("setCurrentTrack: Illegal track #%d in current block", tracknum);
+		  return;
       }
       int num_subtracks = getNumSubtracks(tracknum, wblock->l.num, windownum);
       if (current_subtrack >= num_subtracks)
@@ -414,9 +420,14 @@ void setCurrentTrack(int tracknum, int subtrack, int windownum, bool switch_inst
   
   //printf("setCurrentTrack: %d / %d. Can move: %d\n", tracknum, subtrack, canCursorMoveToTrack(tracknum, subtrack, -1, windownum));
   
-  if (!canCursorMoveToTrack(tracknum, subtrack, -1, windownum)){
-    handleError("setCurrentTrack: Illegal track #%d, subtrack #%d in current block", tracknum, subtrack);
-    return;
+  if (!canCursorMoveToTrack(tracknum, subtrack, -1, windownum))
+  {
+	  // Ideally we would call handleError here, but we haven't tracked down an underlying
+	  // error yet, and we don't want to show that error to the user in release mode.
+	  R_ASSERT_NON_RELEASE(false);
+	  
+	  //handleError("setCurrentTrack: Illegal track #%d, subtrack #%d in current block", tracknum, subtrack);
+	  return;
   }
 
   int prevcurrtrack = window->curr_track;
