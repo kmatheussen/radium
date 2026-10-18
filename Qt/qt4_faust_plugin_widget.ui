@@ -148,7 +148,7 @@
              <string>Menu</string>
             </property>
             <property name="text">
-             <string>☰</string>
+             <string>hamburger-list-menu-svgrepo-com.svg</string>
             </property>
             <property name="popupMode">
              <enum>QToolButton::ToolButtonPopupMode::InstantPopup</enum>

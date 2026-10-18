@@ -1899,12 +1899,15 @@ public slots:
   // Called by the reset buttons.
   void reset_slider(int slider_id, int new_value)
   {
-    g_pending_old_slider_values[slider_id] = get_slider_value(slider_id);
-    g_slider_committed[slider_id] = false;
-
-    set_slider_value(slider_id, new_value);
-
-    resync_color_interaction_state();
+	  // Need this check to avoid a gcc 15 -Warray-bounds false positive at -O2.
+	  R_ASSERT_RETURN_IF_FALSE(slider_id >= 0 && slider_id < NUM_SLIDERS);
+	  
+	  g_pending_old_slider_values[slider_id] = get_slider_value(slider_id);
+	  g_slider_committed[slider_id] = false;
+	  
+	  set_slider_value(slider_id, new_value);
+	  
+	  resync_color_interaction_state();
   }
 
   void on_color_undo_clicked(){
