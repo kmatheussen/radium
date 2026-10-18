@@ -1,0 +1,122 @@
+--- a/pure-data/src/s_inter.c
++++ b/pure-data/src/s_inter.c
+@@ -1143,7 +1143,11 @@
+     called from a non-realtime thread (e.g. the host's GUI thread) instead. */
+ void sys_pollguisend(void)
+ {
+-    if (!INTER->i_havetkproc)
++    /* Radium: While the GUI process is starting (see sys_do_startgui),
++    i_guisock is -1. Don't try to send to it; send() would fail and
++    sys_bail() would terminate the process. The GUI buffer is reset once
++    the GUI process has connected. */
++    if (!INTER->i_havetkproc || INTER->i_guisock < 0)
+         return;
+     if (INTER->i_guihead > INTER->i_guitail)
+         sys_flushtogui();
+@@ -1378,12 +1382,18 @@
+                  8. * sizeof(t_float));
+ }
+ 
++    /* Radium: Called without the Pd instance lock (see sys_startgui). The
++    blocking parts (DNS lookup, socket setup, fork/exec, waiting for the GUI
++    process to connect) must not hold the lock, since the host's realtime
++    audio thread needs it to process this instance. The lock is taken again
++    after accept(), and is held when this function returns. */
+ static int sys_do_startgui(const char *libdir)
+ {
+     char quotebuf[MAXPDSTRING];
+     char apibuf[256], apibuf2[256];
+     struct addrinfo *ailist = NULL, *ai;
+     int sockfd = -1;
++    int guisock = -1;
+     int portno = -1;
+ #ifndef _WIN32
+     int stdinpipe[2];
+@@ -1395,6 +1405,9 @@
+     if (sys_guisetportnumber)  /* GUI exists and sent us a port number */
+     {
+         int status;
++            /* Radium: This path does not wait for a new GUI process to
++            connect, so it is short. Keep the lock while doing it. */
++        sys_lock();
+ #ifdef __APPLE__
+             /* guisock might be 1 or 2, which will have offensive results
+             if somebody writes to stdout or stderr - so we just open a few
+@@ -1481,6 +1494,7 @@
+             fprintf(stderr,
+                 "localhost not found (inet protocol not installed?)\n%s (%d)",
+                 gai_strerror(status), status);
++            sys_lock();
+             return (1);
+         }
+         /* we prefer the IPv4 addresses because the GUI might not be IPv6 capable. */
+@@ -1522,6 +1536,7 @@
+         if (sockfd < 0)
+         {
+             sys_sockerror("bind");
++            sys_lock();
+             return (1);
+         }
+         /* get the actual port number */
+@@ -1599,6 +1614,7 @@
+                 {
+                     fprintf(stderr, "sys_startgui couldn't find tcl/tk\n");
+                     sys_closesocket(sockfd);
++                    sys_lock();
+                     return (1);
+                 }
+                 sprintf(cmdbuf, "\"%s\" \"%s/%s/pd-gui.tcl\" %d\n",
+@@ -1625,6 +1641,7 @@
+             if (errno) perror("sys_startgui");
+             else fprintf(stderr, "sys_startgui failed\n");
+             sys_closesocket(sockfd);
++            sys_lock();
+             return (1);
+         }
+         else if (!childpid)                     /* we're the child */
+@@ -1676,6 +1693,7 @@
+             char errbuf[MAXPDSTRING];
+             socket_strerror(GetLastError(), errbuf, sizeof(errbuf));
+             fprintf(stderr, "could not start %s: %s\n", wishbuf, errbuf);
++            sys_lock();
+             return (1);
+         }
+ #endif /* NOT _WIN32 */
+@@ -1685,13 +1703,22 @@
+         {
+             sys_sockerror("listen");
+             sys_closesocket(sockfd);
++            sys_lock();
+             return (1);
+         }
+ 
+-        INTER->i_guisock = accept(sockfd, 0, 0);
++            /* Radium: The lock is not held while waiting for the GUI process
++            to connect. Starting Tcl/Tk can take hundreds of milliseconds, and
++            the host's realtime audio thread needs the lock to process this
++            instance. i_guisock is still -1 here, so sys_pollguisend() won't
++            try to send to the not-yet-connected GUI. */
++        guisock = accept(sockfd, 0, 0);
++        sys_lock();
+ 
+         sys_closesocket(sockfd);
+ 
++        INTER->i_guisock = guisock;
++
+         if (INTER->i_guisock < 0)
+         {
+             sys_sockerror("accept");
+@@ -1934,6 +1961,13 @@
+     INTER->i_havetkproc = 1;
+     INTER->i_guihead = INTER->i_guitail = 0;
+     INTER->i_waitingforping = 0;
++
++        /* Radium: Don't hold the Pd instance lock while starting the GUI
++        process. DNS lookup, fork/exec and waiting for the GUI process to
++        connect can take milliseconds to hundreds of milliseconds, and the
++        host's realtime audio thread needs the lock to process this instance.
++        sys_do_startgui() takes the lock again before returning. */
++    sys_unlock();
+     if (sys_do_startgui(libdir))
+     {
+         INTER->i_havetkproc = 0;

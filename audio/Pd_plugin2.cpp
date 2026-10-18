@@ -614,7 +614,10 @@ static bool show_gui(struct SoundPlugin *plugin, int64_t parentgui)
 	// Note: Not called while holding the player lock. Starting the Pd GUI
 	// allocates memory, and libpd's own lock makes this safe with regards to
 	// the player thread. (Otherwise Radium's debug allocator check would stop
-	// here since the player lock is held.)
+	// here since the player lock is held.) libpd does not hold that lock while
+	// waiting for the Tcl/Tk process to connect (see the Radium patch in
+	// pure-data/src/s_inter.c), so the audio thread is not blocked while the
+	// GUI starts.
 	libpds2_show_gui(data->pd);
 
 	// Note: libpds only shows or hides the Pd GUI windows here (the Tcl/Tk
