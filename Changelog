@@ -1,3 +1,113 @@
+Changes 8.1.54 -> 8.2.52:
+* Gui: When searching in a menu, and there is only one hit, open
+  all sub menus automatically so that the menu entry for the hit
+  is shown.
+* Demo songs: Use the Pd2 instrument in the BlowFish song instead
+  of the Pd1 instrument. Also enable the Blowfish song in the
+  main menu for macOS since Pd2 is available for macOS. (Windows
+  should be enabled soon as well.)
+* Editor: Silence an error message about illegal track sometimes
+  popping up when switching block while playing.
+* Keybindings: Let the following keys simulate right-mouse
+  button, in addition to MENU: MR3 SHIFT_R, F10 SHIFT_L, and
+  F10 SHIFT_R.
+* Gui: Let the MENU key be the same as pressing right mouse
+  button. This is convenient for opening popup menu when
+  navigating menus with keyboard.
+* Gui: Paint filled circle in the currently selected menu entry.
+* Gui: Make Esc close the message window.
+* Plugin manager: Fix Esc/Home/End/Return keys when the search
+  field has keyboard focus. Fix regression from 2017-11-02.
+* Editor: F12: Make the "Instruments/effects" into a direct
+  submenu to enable searching from the top menu.
+* Menus: Fix search string containing space.
+* Mac: Fix menu entries something becoming transparent.
+* Menus: Pressing the space key on a checkbox or radio button
+  toggles the current checkbox/radio button and does not close
+  the menu.
+* Editor: Let F12 close instrument selection menu if open.
+* Editor: Move F12 menu further down below the volume slider.
+* Gui: New default colors.
+* Editor: After pressing F12, let left and right key move F12
+  menu to the prev or next track.
+* Gui: Adjust default colors
+* Build: Use "--shuffle" option on call to make. This sometimes
+  decreases compilation time by 30%.
+* Gui: Open dialog windows in the middle of the screen when main
+  window is not visible.
+* Preferences: Fix saving colors.
+* Mac: Fix building pd externals and include wish8.6 in packages.
+* Linux: Fix crashreporter.
+* Build: Fix compiling precompiled headers in parallel.
+* Pd2: A new instrument based on latest version of libpd (Pd1 used
+  libpds instead of libpd, but libpds hasn't been updated in
+  approx. 10 years). The included version of libpd has also been
+  patched to support everything that libpds supports. In addition,
+  patches written for Pd1 seems to work fine with Pd2, so Pd1
+  will probably be removed soon. Also included: cyclone, ekext,
+  else, ggee, hcs, iemlib, iemmatrix, iemnet, list-abs, mrpeach,
+  osc, slip, unauthorized, windowing, and zexy.
+* Preferences: New colors "Menu background" and
+  "Menu entry background".
+* Popup menu: Fix key up/down sometimes not working after
+  searching.
+* Audio: Improve SmoothDelay/Fade performance by another ~16%.
+* Popup menus: Delete non-permanent root menus when hidden.
+* Gui: Make hamburger button slowly blink first time the
+  hambburger icon is shown, to draw attention to it now that the
+  main menus are turned off by default.
+* Editor: Open up the "(click me)" popup menu directly under
+  "(click me)" instead of next to the mouse pointer.
+* Build: Use /tmp/radium_bin_<branchname> instead of
+  /tmp/radium_bin to make it easier to work on more than one
+  branch at the same time.
+* Gui: Remove "Please wait..." from the main menu search field.
+  Instead, initialize during program startup.
+* Audio: Show error message and switch over to dummy audio driver
+  if the audio device couldn"t open during program startup. This
+  reduces chance of hang during startup if audio device couldn't
+  be opened.
+* s7: Fix mem-leak
+* Instrument: Fix color of the arrows, and also draw rounded
+  border.
+* Menus: Fix first entry after the "search" entry being
+  selected after startup.
+* Menus: Fix keyboard wrap-around on Mac (Apple has explicitly
+  disallowed wrap-around, so it had to be implemented manually!)
+* Packages: Fix building fluidsynth on linux.
+* Status bar: "N/A" -> "n/a".
+* Help->Debug menu: Ask "are you sure" when selecting one of the
+  "crash" menu entries.
+* Linux/Audio: Optionally detect xruns when not using Jack.
+  Earlier the program gave the impression that it was detecting
+  xruns when not using Jack, but it never did (JUCE doesn't
+  support it). By default it is turned off (to be backwards
+  compatible, since detecting xruns may increase audio artifacts
+  when xruns happen), but it will probably turned on by default
+  in the future.
+* Preferences: Change snapshot color format. Use key/value
+  instead of index. Note: new snapshots can not be loaded into
+  older V8 versions of Radium.
+* Faust(1+2): Make samplerate (SR) a constant. This often leads
+  to a 3X reduction of memory usage in most instruments. The
+  interpreter backend may also see lower CPU usage because of
+  this. The LLVM backend should not see lower CPU usage though.
+* Mixer: Draw smoother effect slider automation values and effect
+  slider volume. Also change design slightly.
+* Crashreporter: Trap SIGTRAP on linux/mac, and SIGBUS only on
+  Mac.
+* Crashreporter/Mac: Fix the "test crash reporter" entries in the
+  main menus on Mac.
+* Build: Files which were supposed to be compiled with -O3
+  instead of -O2 weren't. There were no difference in performance
+  for the test_smoothdelay benchmark after this change though, so
+  this probably makes extremely little difference in general
+  performance.
+* API: simulateRightMouseButton, isCurrentPopupMenuEntry,
+  alsaXrunDetectionEnabled, setAlsaXrunDetectionEnabled
+
+
+
 Changes 8.1.49 -> 8.1.54:
 * Editor: Fix rare undefined behavior in rendering.
 * Editor: Paint pitch lines on top of note background boxes
