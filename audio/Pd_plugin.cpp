@@ -1467,7 +1467,7 @@ static void add_plugin(const wchar_t *name, QString filename) {
   plugin_type->data                = (void*)new QString(filename);
 
   //PR_add_menu_entry(PluginMenuEntry::normal(plugin_type));
-  if(STRING_equals(name,""))
+  if(true || STRING_equals(name,""))
     PR_add_plugin_type_no_menu(plugin_type);
   else
     PR_add_plugin_type(plugin_type);
@@ -1475,7 +1475,8 @@ static void add_plugin(const wchar_t *name, QString filename) {
 
 static void build_plugins(QDir dir){
   printf(">> dir: -%s-\n",dir.absolutePath().toUtf8().constData());
-  PR_add_menu_entry(PluginMenuEntry::level_up(dir.dirName().toUtf8().constData()));
+
+  //PR_add_menu_entry(PluginMenuEntry::level_up(dir.dirName().toUtf8().constData()));
 
   dir.setSorting(QDir::Name);
 
@@ -1509,7 +1510,7 @@ static void build_plugins(QDir dir){
   }
 
   printf("<< dir: -%s-\n",dir.absolutePath().toUtf8().constData());
-  PR_add_menu_entry(PluginMenuEntry::level_down());
+  //PR_add_menu_entry(PluginMenuEntry::level_down());
 }
 
 void create_pd_plugin(void){
