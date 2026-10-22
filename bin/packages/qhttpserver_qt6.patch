@@ -64,7 +64,7 @@ diff --git a/src/qhttprequest.h b/src/qhttprequest.h
 index 4f9cc3b..03ee0e4 100644
 --- a/src/qhttprequest.h
 +++ b/src/qhttprequest.h
-@@ -46,7 +46,7 @@ class QHTTPSERVER_API QHttpRequest : public QObject
+@@ -46,12 +46,11 @@
      Q_PROPERTY(HeaderHash headers READ headers)
      Q_PROPERTY(QString remoteAddress READ remoteAddress)
      Q_PROPERTY(quint16 remotePort READ remotePort)
@@ -73,3 +73,16 @@ index 4f9cc3b..03ee0e4 100644
      Q_PROPERTY(QUrl url READ url)
      Q_PROPERTY(QString path READ path)
      Q_PROPERTY(QString httpVersion READ httpVersion)
+ 
+-    Q_ENUMS(HttpMethod)
+ 
+     /// @cond nodoc
+     friend class QHttpConnection;
+@@ -95,6 +94,7 @@
+         HTTP_PATCH,
+         HTTP_PURGE
+     };
++    Q_ENUM(HttpMethod)
+ 
+     /// The method used for the request.
+     HttpMethod method() const;
