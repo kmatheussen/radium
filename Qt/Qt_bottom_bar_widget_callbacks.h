@@ -685,12 +685,15 @@ QWidget *BottomBar_create(QWidget *parent, bool include_editor_elements, bool in
 
   {
     // Hamburger button opening a popup menu with the main menus. (See FROM_C-popup-main-menus)
-    auto *hamburger_button = new MyQButton("☰", ret);
+    auto *hamburger_button = new MyQButton("hamburger-list-menu-svgrepo-com.svg", ret);
     hamburger_button->setObjectName("hamburger_button");
     hamburger_button->setToolTip("Main menus");
     hamburger_button->_statusbar_text = "Open main menu. Press left alt to open";
     hamburger_button->setFocusPolicy(Qt::NoFocus);
-    hamburger_button->setMinimumWidth(QApplication::fontMetrics().height()); // Make it roughly square.
+    // The button text is an SVG filename, so make the button square instead of letting
+    // its width be based on the length of the text.
+    const int hamburger_size = ret->minimumHeight();
+    hamburger_button->setFixedSize(hamburger_size, hamburger_size);
     QObject::connect(hamburger_button, &MyQButton::clicked, [hamburger_button](){
       GFX_open_hamburger_popup_menu(hamburger_button);
     });

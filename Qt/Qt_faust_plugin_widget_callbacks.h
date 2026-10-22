@@ -1001,6 +1001,11 @@ public:
         a_on_llm_settings_clicked();
       });
       llm_menu_button->setMenu(menu);
+
+      // The button text is an SVG filename, so make the button square instead of
+      // letting its width be based on the length of the text.
+      const int hamburger_size = llm_menu_button->sizeHint().height();
+      llm_menu_button->setFixedSize(hamburger_size, hamburger_size);
     }
 
     // The Instr./FX combo. The selection is compared by item text; if the
