@@ -330,7 +330,7 @@ if ! is_0 $FAUST_USES_LLVM ; then
 		export LLVM_CONFIG_BIN=$(which llvm-config)
 	fi
 
-	assert_exe_exists $LLVM_CONFIG_BIN
+	assert_exe_exists "$LLVM_CONFIG_BIN"
 
 	if uname -s |grep Linux > /dev/null ; then
 		
