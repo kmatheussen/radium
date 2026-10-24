@@ -114,6 +114,10 @@ protected:
 	bool _hasSwapChain = false;
     QMatrix4x4 _viewProjection;
 
+	uint64_t _meas_last_drawn_painting_id = 0;
+	uint64_t _meas_last_presented_painting_id = 0;
+	uint64_t _meas_curr_frame_painting_id = 0;
+
 private:
     void MAIN_init(const QFont &font);
     void QRHI_resizeSwapChain();

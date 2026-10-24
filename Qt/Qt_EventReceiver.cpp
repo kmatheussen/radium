@@ -61,6 +61,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../OpenGL/Render_proc.h"
 #include "../OpenGL/Widget_proc.h"
+#include "../OpenGL/MeasGfxDelay.hpp"
 
 #include "../api/api_proc.h"
 #include "../api/api_gui_proc.h"
@@ -91,6 +92,44 @@ DEFINE_ATOMIC(bool, atomic_must_redraw_editor) = false;
 DEFINE_ATOMIC(struct Patch*, atomic_must_redraw_instrument) = NULL;
 DEFINE_ATOMIC(bool, atomic_must_calculate_coordinates) = false;
 
+DEFINE_ATOMIC(int, g_sched_n_force_redraw) = 0;
+DEFINE_ATOMIC(int, g_sched_n_redraw) = 0;
+DEFINE_ATOMIC(int, g_sched_n_editor_redraw) = 0;
+DEFINE_ATOMIC(int, g_sched_n_force_editor_redraw) = 0;
+DEFINE_ATOMIC(int, g_sched_n_calc_coords) = 0;
+
+const char *g_sched_editor_redraw_reason = "-";
+DEFINE_ATOMIC(int, g_sched_editor_redraw_effect_num) = -999;
+
+static int64_t s_banner_gen = -1;
+static bool s_banner_open = false;
+static double s_banner_last_activity = -1.0;
+
+void GFX_maybe_print_grayed_banner(void)
+{
+	const int64_t gen = ATOMIC_GET(g_block_switch_generation);
+	if (s_banner_open && gen == s_banner_gen)
+	{
+		s_banner_last_activity = RT_TIME_get_ms();
+		return;
+	}
+	if (s_banner_open)
+		printf("==============================END\n\n\n\n\n");
+	printf("\n\n\n\n===========g_hold_editor_scroll_until_painting_data_is_fresh=========== START\n");
+	s_banner_gen = gen;
+	s_banner_open = true;
+	s_banner_last_activity = RT_TIME_get_ms();
+}
+
+static void maybe_close_grayed_banner(void)
+{
+	if (s_banner_open && (RT_TIME_get_ms() - s_banner_last_activity) > 3000.0)
+	{
+		printf("==============================END\n\n\n\n\n");
+		s_banner_open = false;
+	}
+}
+
 bool g_rt_do_rerendering = true;
 
 static void transfer_atomic_must_redraws(struct Tracker_Windows *window)
@@ -106,6 +145,21 @@ static void transfer_atomic_must_redraws(struct Tracker_Windows *window)
   bool a_must_calculate = ATOMIC_COMPARE_AND_SET_BOOL(atomic_must_calculate_coordinates, true, false);
   if (a_must_calculate)
     window->must_calculate_coordinates = true;
+
+  if (a_must_redraw || a_must_redraw_editor || a_must_calculate)
+  {
+    GFX_maybe_print_grayed_banner();
+    printf("[grayed] REQ gen=%lld redraw=%d editor=%d calc=%d | forceR=%d schedR=%d schedE=%d forceE=%d calcC=%d why=%s eff=%d\n",
+           (long long)ATOMIC_GET(g_block_switch_generation),
+           a_must_redraw, a_must_redraw_editor, a_must_calculate,
+           ATOMIC_GET(g_sched_n_force_redraw),
+           ATOMIC_GET(g_sched_n_redraw),
+           ATOMIC_GET(g_sched_n_editor_redraw),
+           ATOMIC_GET(g_sched_n_force_editor_redraw),
+           ATOMIC_GET(g_sched_n_calc_coords),
+           g_sched_editor_redraw_reason,
+           ATOMIC_GET(g_sched_editor_redraw_effect_num));
+  }
 }
 
 
@@ -129,6 +183,13 @@ static void update_seqtracks_with_current_editor_block(void){
 void EditorWidget::updateEditor(void) const {
   if(g_is_starting_up==true)
     return;
+
+  const bool meas_active = this->window->must_redraw || this->window->must_redraw_editor || this->window->must_calculate_coordinates
+    || ATOMIC_GET(atomic_must_redraw) || ATOMIC_GET(atomic_must_redraw_editor) || ATOMIC_GET(atomic_must_calculate_coordinates);
+  if (meas_active)
+    MEAS_GFX("[meas] UPDATE_ENTER t=%.3f since_switch=%.3f redraw=%d editor=%d calc=%d\n",
+           RT_TIME_get_ms(), meas_gfx::since_switch_ms(),
+           this->window->must_redraw, this->window->must_redraw_editor, this->window->must_calculate_coordinates);
 
   if (ATOMIC_GET_RELAXED(atomic_must_redraw_instrument)!=NULL) {
 
@@ -172,7 +233,9 @@ void EditorWidget::updateEditor(void) const {
     printf("   Must_redraw: %d. Must redraw editor: %d\n", this->window->must_redraw, this->window->must_redraw_editor);
 #endif
   
+  double meas_reconfig_t0 = 0.0;
   if (this->window->must_redraw) {
+    meas_reconfig_t0 = RT_TIME_get_ms();
     /*
     int x2_before = getReltempoSliderX2();
     int skew_before = this->window->wblock->skew_x;
@@ -181,6 +244,10 @@ void EditorWidget::updateEditor(void) const {
     UpdateWBlockCoordinates(this->window, this->window->wblock);
     GFX_UpdateUpperLeft(window, window->wblock);
     //UpdateAllPianoRollHeaders(window, window->wblock);
+
+    MEAS_GFX("[meas] UPDATE_WCOORD dur=%.3f t=%.3f since_switch=%.3f\n",
+           RT_TIME_get_ms() - meas_reconfig_t0, meas_reconfig_t0, meas_gfx::since_switch_ms());
+    const double meas_scheme_t0 = RT_TIME_get_ms();
 
     /*
     if (x2_before != getReltempoSliderX2() || skew_before != this->window->wblock->skew_x)
@@ -194,18 +261,30 @@ void EditorWidget::updateEditor(void) const {
     
     update_seqtracks_with_current_editor_block();
 
+    MEAS_GFX("[meas] UPDATE_SCHEME dur=%.3f t=%.3f since_switch=%.3f\n",
+           RT_TIME_get_ms() - meas_scheme_t0, meas_scheme_t0, meas_gfx::since_switch_ms());
+
     //update();
     
-    this->window->must_redraw_editor=true;
+    this->window->must_redraw_editor = true;
     this->window->must_redraw=false;
   }
 
+  if (meas_reconfig_t0 > 0.0)
+    MEAS_GFX("[meas] UPDATE_RECONFIG dur=%.3f t=%.3f since_switch=%.3f\n",
+           RT_TIME_get_ms() - meas_reconfig_t0, meas_reconfig_t0, meas_gfx::since_switch_ms());
+
   if (this->window->must_redraw_editor==true){
+    const double meas_gl_t0 = RT_TIME_get_ms();
     GL_create(this->window);
     if (!is_playing())
       update_seqtracks_with_current_editor_block();
     this->window->must_redraw_editor=false;
+    MEAS_GFX("[meas] UPDATE_GL dur=%.3f t=%.3f since_switch=%.3f\n",
+           RT_TIME_get_ms() - meas_gl_t0, meas_gl_t0, meas_gfx::since_switch_ms());
   }
+
+  maybe_close_grayed_banner();
 }
 
   /*

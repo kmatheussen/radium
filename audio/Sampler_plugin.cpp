@@ -129,7 +129,24 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 const char *g_click_name = "Click";
 
-static void update_editor_graphics(SoundPlugin *plugin){
+static bool s_suppress_editor_graphics = false;
+static double s_last_editor_graphics_arm = -1.0;
+
+static void update_editor_graphics2(SoundPlugin *plugin, const char *reason);
+
+#define update_editor_graphics(plugin) update_editor_graphics2(plugin, __func__)
+
+static void update_editor_graphics2(SoundPlugin *plugin, const char *reason){
+  if (s_suppress_editor_graphics)
+    return;
+
+  if (!THREADING_is_main_thread()){
+    const double now = RT_TIME_get_ms();
+    if (s_last_editor_graphics_arm >= 0.0 && (now - s_last_editor_graphics_arm) < 50.0)
+      return;
+    s_last_editor_graphics_arm = now;
+  }
+
 #if 0
   struct Tracker_Windows *window=root->song->tracker_windows;
   struct WBlocks *wblock=window->wblock;
@@ -138,7 +155,7 @@ static void update_editor_graphics(SoundPlugin *plugin){
 #endif
 
 #if USE_OPENGL
-  GFX_ScheduleEditorRedrawIfPatchIsCurrentlyVisible(plugin->patch);
+  GFX_ScheduleEditorRedrawIfPatchIsCurrentlyVisible(plugin->patch, reason);
 
 #else
   if(plugin->patch!=NULL)
@@ -2332,6 +2349,86 @@ static int get_peaks(struct SoundPlugin *plugin,
   return 2;
 }
 
+static int get_peaks_slices(struct SoundPlugin *plugin,
+                            float note_num,
+                            int ch,
+                            float das_pan,
+                            const int64_t *start_times,
+                            const int64_t *end_times,
+                            int num_slices,
+                            float *min_values,
+                            float *max_values
+                            )
+{
+  Data *data = (Data*)plugin->data;
+
+  if (data->min_recording_peaks[0].size() > 0) {
+    for(int i=0;i<num_slices;i++)
+      get_peaks(plugin, note_num, ch, das_pan, start_times[i], end_times[i], &min_values[i], &max_values[i]);
+    return 2;
+  }
+
+  const Note *note = data->notes[R_BOUNDARIES(0, (int)note_num, 127)];
+
+  if (!note_has_sample(note))
+    return 2;
+
+  TimeToFrame time_to_frame(data, note_num);
+
+  for(int i=0;i<num_slices;i++){
+
+    const int64_t start_time = start_times[i];
+    const int64_t end_time = end_times[i];
+
+    const int64_t start_frame = time_to_frame.get(start_time);
+    const int64_t end_frame = time_to_frame.get(end_time);
+
+    if (start_frame>=end_frame)
+      continue;
+
+    radium::Peak peak;
+
+    for(const Sample *sample : note->samples){
+
+      Panvals pan = get_pan_vals_vector(das_pan, sample->ch==-1 ? 1 : 2);
+      int input_channel = sample->ch==-1 ? 0 : sample->ch;
+      float panval = pan.vals[input_channel][ch];
+
+      if (panval<=0.0f)
+        continue;
+
+      radium::Peak new_peak = get_peak_from_sample(data, sample, start_frame, end_frame-start_frame,0);
+
+      if (new_peak.has_data()){
+        new_peak.scale(panval);
+      }else{
+#if !defined(RELEASE)
+        if (start_frame < sample->num_frames)
+          abort();
+#endif
+      }
+
+      peak.merge(new_peak);
+    }
+
+    if (peak.has_data()) {
+
+      if (data->p.ahdsr_onoff)
+        apply_adsr_to_peak(data, (start_time+end_time)/2, peak);
+
+      const float min_value = peak.get_min();
+      const float max_value = peak.get_max();
+
+      if (min_value < min_values[i])
+        min_values[i] = min_value;
+      if (max_value > max_values[i])
+        max_values[i] = max_value;
+    }
+  }
+
+  return 2;
+}
+
 
 /************* Granulation *****************/
 
@@ -2545,6 +2642,61 @@ static bool can_crossfade(Data *data){
 
 static float get_effect_value(struct SoundPlugin *plugin, int effect_num, enum ValueFormat value_format);
 
+static bool effect_num_affects_peak_display(int effect_num)
+{
+	switch(effect_num)
+	{
+	case EFF_PORTAMENTO:
+	case EFF_VIBRATO_SPEED:
+	case EFF_VIBRATO_DEPTH:
+	case EFF_TREMOLO_SPEED:
+	case EFF_TREMOLO_DEPTH:
+	case EFF_GRAN_onoff:
+	case EFF_GRAN_coarse_stretch:
+	case EFF_GRAN_fine_stretch:
+	case EFF_GRAN_overlap:
+	case EFF_GRAN_length:
+	case EFF_GRAN_ramp:
+	case EFF_GRAN_jitter:
+	case EFF_GRAN_strict_no_jitter:
+	case EFF_GRAN_volume:
+		return false;
+	default:
+		return true;
+	}
+}
+
+struct ScopedEditorGraphicsUpdateOnEffectChange
+{
+	SoundPlugin *plugin;
+	int effect_num;
+	enum ValueFormat value_format;
+	float prev;
+	bool prev_suppress;
+
+	ScopedEditorGraphicsUpdateOnEffectChange(SoundPlugin *p, int e, enum ValueFormat f)
+		: plugin(p), effect_num(e), value_format(f)
+	{
+		prev = get_effect_value(plugin, effect_num, value_format);
+		prev_suppress = s_suppress_editor_graphics;
+		s_suppress_editor_graphics = true;
+	}
+
+	~ScopedEditorGraphicsUpdateOnEffectChange()
+	{
+		const float now = get_effect_value(plugin, effect_num, value_format);
+		const bool changed = memcmp(&now, &prev, sizeof(float)) != 0;
+		s_suppress_editor_graphics = prev_suppress;
+		if (changed && effect_num_affects_peak_display(effect_num))
+		{
+			s_suppress_editor_graphics = false;
+			ATOMIC_SET(g_sched_editor_redraw_effect_num, effect_num);
+			update_editor_graphics2(plugin, "set_effect_value");
+			s_suppress_editor_graphics = prev_suppress;
+		}
+	}
+};
+
 static void maybe_update_loop_slider_boundaries(struct SoundPlugin *plugin, const Sample &sample){
   if (plugin->curr_storeit_type!=STORE_VALUE)
     return;
@@ -2575,6 +2727,8 @@ static void maybe_update_loop_slider_boundaries(struct SoundPlugin *plugin, cons
 
 static void set_effect_value(struct SoundPlugin *plugin, int time, int effect_num, float value, enum ValueFormat value_format, FX_when when){
   Data *data = (Data*)plugin->data;
+
+  ScopedEditorGraphicsUpdateOnEffectChange update_editor_graphics_on_change(plugin, effect_num, value_format);
 
   switch(effect_num){
     case EFF_AHDSR_ONOFF:
@@ -4617,6 +4771,7 @@ static void init_plugin_type(void){
  plugin_type.called_after_plugin_has_been_created = called_after_plugin_has_been_created;
   
  plugin_type.get_peaks        = get_peaks;
+ plugin_type.get_peaks_slices = get_peaks_slices;
  plugin_type.set_effect_value = set_effect_value;
  plugin_type.get_effect_value = get_effect_value;
  plugin_type.get_display_value_string = get_display_value_string;

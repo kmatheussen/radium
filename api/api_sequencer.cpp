@@ -44,6 +44,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/player_proc.h"
 #include "../common/block_properties_proc.h"
 
+#include "../OpenGL/MeasGfxDelay.hpp"
+
 #include "../Qt/Qt_colors_proc.h"
 
 #include "../embedded_scheme/s7extra_proc.h"
@@ -2812,7 +2814,11 @@ void API_setCurrPlaylistPos_while_playing(void){
   
   g_curr_playlist_pos = new_pos;
 
+  const double meas_t0 = RT_TIME_get_ms();
   S7CALL2(void_void, "FROM_C-update-playlist-area");
+  MEAS_GFX("[meas] PLAYLIST_UPDATE dur=%.3f t=%.3f since_switch=%.3f pos=%d\n",
+         RT_TIME_get_ms() - meas_t0, meas_t0,
+         RT_TIME_get_ms() - (double)ATOMIC_GET(g_block_switch_time_ms), new_pos);
 }
 
 static void set_curr_seqblock(int64_t seqblockid, bool update_playlist);
@@ -2881,7 +2887,11 @@ static void set_curr_playlist_pos(int new_pos, bool update_seqblock, bool also_s
   if (also_set_new_song_pos)
     PLAYER_set_song_pos(time_at_pos, -1, false, false);
   
+  const double meas_t0 = RT_TIME_get_ms();
   S7CALL2(void_void, "FROM_C-update-playlist-area");
+  MEAS_GFX("[meas] PLAYLIST_SET dur=%.3f t=%.3f since_switch=%.3f pos=%d\n",
+         RT_TIME_get_ms() - meas_t0, meas_t0,
+         RT_TIME_get_ms() - (double)ATOMIC_GET(g_block_switch_time_ms), new_pos);
 }
 
 void setCurrPlaylistPos(int new_pos, bool also_set_curr_seqblock, bool also_set_new_song_pos){

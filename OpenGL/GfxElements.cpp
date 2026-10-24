@@ -48,6 +48,32 @@ double g_opengl_scale_ratio = 1.0;
 
 #include "Vertices.hpp"
 
+#include "MeasGfxDelay.hpp"
+
+extern "C" bool g_meas_gfx_enabled = true;
+
+namespace
+{
+struct MeasGfxEnvInit
+{
+	MeasGfxEnvInit()
+	{
+		const char *e = getenv("MEAS_GFX");
+		if (e != NULL && e[0] == '0')
+			g_meas_gfx_enabled = false;
+	}
+};
+MeasGfxEnvInit meas_gfx_env_init;
+}
+
+namespace meas_gfx
+{
+uint64_t next_painting_id = 0;
+double glcreate_start_ms = 0.0;
+int64_t glcreate_gen = 0;
+int glcreate_call = 0;
+}
+
 
 #define DEBUG_PRINT 0
 
@@ -105,6 +131,50 @@ GE_Rgb GE_get_rgb(const GE_Context &c){
   return c.color.c;
 }
 
+// Only used by the main thread while building up a new r::PaintingData.
+// While set, all drawing operations are shifted down and dimmed. Used to draw
+// the grayed out preview of the next/previous block next to the current block in
+// the editor.
+static float g_grayed_block_y_offset = 0.0f;
+static float g_grayed_block_dim_how_much = 0.0f;
+static float g_grayed_block_alpha = 1.0f;
+static GE_Rgb g_grayed_block_background_color = {0,0,0,255};
+
+void GE_set_grayed_block_mode(float y_offset, float dim_how_much, float alpha)
+{
+	g_grayed_block_y_offset = y_offset;
+	g_grayed_block_dim_how_much = dim_how_much;
+	g_grayed_block_alpha = alpha;
+	g_grayed_block_background_color = GE_get_rgb(LOW_EDITOR_BACKGROUND_COLOR_NUM);
+}
+
+void GE_unset_grayed_block_mode(void)
+{
+	g_grayed_block_y_offset = 0.0f;
+	g_grayed_block_dim_how_much = 0.0f;
+	g_grayed_block_alpha = 1.0f;
+}
+
+static inline float grayed_block_y(float y)
+{
+	return y + g_grayed_block_y_offset;
+}
+
+static inline int grayed_block_y(int y)
+{
+	return y + (int)g_grayed_block_y_offset;
+}
+
+static GE_Rgb grayed_block_dimmed_rgb(const GE_Rgb rgb)
+{
+	if (g_grayed_block_dim_how_much <= 0.0f)
+		return rgb;
+
+	GE_Rgb ret = GE_mix(rgb, g_grayed_block_background_color, g_grayed_block_dim_how_much);
+	ret.a = (unsigned char)(ret.a * g_grayed_block_alpha);
+	return ret;
+}
+
 // This variable is only accessed by the main thread while building up a new r::PaintingData.
 // It is not necessary for this variable to be global, and the code is more confusing because of that.
 // However, by letting it be global, we don't have to send it around everywhere.
@@ -124,6 +194,8 @@ bool GE_start_writing(int full_height, bool block_is_visible)
 
   {
 	  g_painting_data = new r::PaintingData(full_height, block_is_visible);
+
+	  g_painting_data->shared_variables.meas_id = ++meas_gfx::next_painting_id;
 	  
 	  g_main_thread_slice_size = g_painting_data->slice_size;
 	  
@@ -178,7 +250,15 @@ static GE_Context get_context(const GE_Context::Color &color, const GE_Conf &con
   //if(g_painting_data->contexts[conf.z][slice][conf.use_scissors].contains(color.key))
   // return g_painting_data->contexts[conf.z][slice][conf.use_scissors][color.key].get();
 
-  GE_Context c(color, conf);
+  GE_Context::Color color2 = color;
+
+  if (g_grayed_block_dim_how_much > 0.0f)
+  {
+    color2.c          = grayed_block_dimmed_rgb(color.c);
+    color2.c_gradient = grayed_block_dimmed_rgb(color.c_gradient);
+  }
+
+  GE_Context c(color2, conf);
 
   //g_painting_data->contexts[conf.z][slice][conf.use_scissors][color.key] = c;
   //g_painting_data->_contexts.push_back(c);
@@ -191,6 +271,7 @@ GE_Context GE_z(const GE_Rgb rgb, const GE_Conf &conf){
 
   //color.key = 0;
   color.c = rgb;
+  color.c_gradient = rgb; // Avoid reading uninitialized memory when dimming the grayed block preview.
 
   return get_context(color, conf);
 }
@@ -327,6 +408,8 @@ static void GE_line_lowlevel(const GE_Context &c, float x1, float y1, float x2, 
 	if (equal_floats(x1, x2) && equal_floats(y1, y2))
 		return;
 
+	y1 = grayed_block_y(y1);
+	y2 = grayed_block_y(y2);
 
 	const float h = pen_width * 0.5f;
 
@@ -455,7 +538,7 @@ void GE_line(const GE_Context &c, float x1, float y1, float x2, float y2, float 
 void GE_text(const GE_Context &c, const char *text, int x, int y){
 	//c.textbitmaps.addCharBoxes(text, x, y+1);
 
-	c.add_text(text, x, y);
+	c.add_text(text, x, grayed_block_y(y));
 		
 #if 0
 	const GE_Rgb &rgb = c.color.c;
@@ -469,18 +552,18 @@ void GE_text(const GE_Context &c, const char *text, int x, int y){
 }
 
 void GE_text2(const GE_Context &c, QString text, int x, int y){
-	c.add_text(text, x, y);
+	c.add_text(text, x, grayed_block_y(y));
 	//c.textbitmaps.addCharBoxes(text, x, y+1);
 }
 
 void GE_text_halfsize(const GE_Context &c, const char *text, int x, int y){
 	//c.textbitmaps_halfsize.addCharBoxes(text, x, y+1);
-	c.add_text_halfsize(text, x, y);
+	c.add_text_halfsize(text, x, grayed_block_y(y));
 }
 
 void GE_text_halfsize2(const GE_Context &c, QString text, int x, int y){
 	//c.textbitmaps_halfsize.addCharBoxes(text, x, y+1);
-	c.add_text_halfsize(text, x, y);
+	c.add_text_halfsize(text, x, grayed_block_y(y));
 }
 
 void GE_box(const GE_Context &c, float x1, float y1, float x2, float y2, float pen_width){
@@ -491,6 +574,9 @@ void GE_box(const GE_Context &c, float x1, float y1, float x2, float y2, float p
 }
 
 void GE_filledBox(const GE_Context &c, float x1, float y1, float x2, float y2){
+
+	y1 = grayed_block_y(y1);
+	y2 = grayed_block_y(y2);
 
 	c.add_triangle(r::Triangle({x1, y1},
 							   {x2, y1},
@@ -528,9 +614,9 @@ void GE_trianglestrip(const GE_Context &c, int num_points, const APoint *points)
   if(num_points>0){
     for(int i=0; i<num_points-2; i++)
 	{
-		c.add_triangle(r::Triangle({points[i].x, points[i].y},
-								   {points[i+1].x, points[i+1].y},
-								   {points[i+2].x, points[i+2].y}));
+		c.add_triangle(r::Triangle({points[i].x, grayed_block_y(points[i].y)},
+								   {points[i+1].x, grayed_block_y(points[i+1].y)},
+								   {points[i+2].x, grayed_block_y(points[i+2].y)}));
 
 		/*
 		c._triangles.push_back(r::fvec2(points[i].x, points[i].y));
@@ -551,6 +637,8 @@ void GE_trianglestrip_start(void){
 void GE_trianglestrip_add(GE_Context &c, float x, float y){
   static float y2,y1;
   static float x2,x1;
+
+  y = grayed_block_y(y);
 
   num_trianglestrips++;
 
@@ -592,6 +680,8 @@ void GE_gradient_triangle_start(r2::GradientType::Type type)
 void GE_gradient_triangle_add(GE_Context &c, float x, float y){
 	static float y2,y1;
 	static float x2,x1;
+
+	y = grayed_block_y(y);
 
 	// TODO: Fix this, probably not correct. Look at original code.
 	
