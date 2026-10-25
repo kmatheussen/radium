@@ -408,12 +408,17 @@ static bool executable_in_path(const char *name)
 // shows the GUI windows again if they have only been hidden. Starting the GUI
 // makes all the instance's canvas windows visible (the GUI handshake ends up
 // in sys_doneglobinit(), which calls canvas_vis(x, 1) for all canvases).
-void libpds2_show_gui(pd_t *pd)
+//
+// Returns false if the GUI could not be started (libpds2_strerror() then
+// explains why), true if it is running. Starting the GUI process allocates
+// memory and may block while waiting for it to connect, so this must not be
+// called while holding Radium's player lock.
+bool libpds2_show_gui(pd_t *pd)
 {
 	set_instance(pd);
 
 	if (!pd->use_gui || pd->libdir == NULL)
-		return;
+		return false;
 
 	if (pd->gui_started)
 	{
@@ -423,7 +428,7 @@ void libpds2_show_gui(pd_t *pd)
 		// again. The windows were only withdrawn, so window positions, scroll
 		// positions and edit states are kept.
 		pdgui_vmess("libpd_show_gui", NULL);
-		return;
+		return true;
 	}
 
 	// Note: libpd_start_gui() blocks forever inside accept() if the GUI process
@@ -435,7 +440,7 @@ void libpds2_show_gui(pd_t *pd)
 		if (access(gui_script, R_OK) != 0)
 		{
 			set_error("Unable to start the Pd GUI: can't find the tcl/pd-gui.tcl file.");
-			return;
+			return false;
 		}
 	}
 
@@ -445,21 +450,48 @@ void libpds2_show_gui(pd_t *pd)
 		if (display == NULL || display[0] == 0)
 		{
 			set_error("Unable to start the Pd GUI: DISPLAY is not set.");
-			return;
+			return false;
 		}
 
 		if (!executable_in_path("wish"))
 		{
 			set_error("Unable to start the Pd GUI: the \"wish\" program (Tcl/Tk) was not found in PATH.");
-			return;
+			return false;
+		}
+	}
+#elif defined(_WIN32)
+	{
+		// sys_startgui() on Windows runs <libdir>/bin/wish86.exe (see
+		// PDBINDIR/WISH in pure-data/src/s_inter.c). Check the program and
+		// its Tcl script library up front: if wish86.exe starts but cannot
+		// find its library, it exits without connecting and
+		// libpd_start_gui() would block forever in accept().
+		char wish_path[1040];
+		snprintf(wish_path, sizeof(wish_path), "%s/bin/wish86.exe", pd->libdir);
+		if (access(wish_path, R_OK) != 0)
+		{
+			set_error("Unable to start the Pd GUI: can't find bin/wish86.exe (Tcl/Tk is not installed).");
+			return false;
+		}
+
+		char tcl_init[1040];
+		snprintf(tcl_init, sizeof(tcl_init), "%s/lib/tcl8.6/init.tcl", pd->libdir);
+		if (access(tcl_init, R_OK) != 0)
+		{
+			set_error("Unable to start the Pd GUI: can't find the Tcl script library (lib/tcl8.6).");
+			return false;
 		}
 	}
 #endif
 
 	if (libpd_start_gui(pd->libdir) == 0)
+	{
 		pd->gui_started = true;
-	else
-		set_error("Unable to start the Pd GUI.");
+		return true;
+	}
+
+	set_error("Unable to start the Pd GUI.");
+	return false;
 }
 
 // Hides the GUI windows for this instance. The Tcl/Tk process keeps running

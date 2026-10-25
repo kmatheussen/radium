@@ -74,6 +74,8 @@ API=api/
 
 MAKEFILE=Makefile.Qt
 
+PD2_LIBPD_DIR ?= bin/packages/libpd
+
 MAX_NUM_UNDOS=800
 
 CD=common/
@@ -2459,10 +2461,10 @@ $(T)Pd_plugin.o: audio/Pd_plugin.cpp #$(QT_PCH)
 	$(CCC2) -Ibin/packages/fluidsynth-1.1.6/include $(QTOPT) `$(PKG) --cflags glib-2.0` audio/Pd_plugin.cpp -Ibin/packages/libpd-master/libpds -Ibin/packages/libpd-master/libpd_wrapper -Ibin/packages/libpd-master/pure-data/src #$(QT_PCH_INCLUDE)
 
 $(T)Pd_plugin2.o: audio/Pd_plugin2.cpp #$(QT_PCH)
-	$(CCC2) -Ibin/packages/fluidsynth-1.1.6/include $(QTOPT) `$(PKG) --cflags glib-2.0` audio/Pd_plugin2.cpp -isystem bin/packages/libpd/libpd_wrapper -isystem bin/packages/libpd/pure-data/src #$(QT_PCH_INCLUDE)
+	$(CCC2) -Ibin/packages/fluidsynth-1.1.6/include $(QTOPT) `$(PKG) --cflags glib-2.0` audio/Pd_plugin2.cpp -isystem $(PD2_LIBPD_DIR)/libpd_wrapper -isystem $(PD2_LIBPD_DIR)/pure-data/src #$(QT_PCH_INCLUDE)
 
 $(T)libpds.o: $(BUILD_DEPENDENCIES) libpds/libpds.c libpds/libpds.h
-	$(CC2) libpds/libpds.c $(OPT) -isystem bin/packages/libpd/libpd_wrapper -isystem bin/packages/libpd/pure-data/src
+	$(CC2) libpds/libpds.c $(OPT) -isystem $(PD2_LIBPD_DIR)/libpd_wrapper -isystem $(PD2_LIBPD_DIR)/pure-data/src
 
 $(T)Pd_plugin_common.o: audio/Pd_plugin_common.cpp #$(QT_PCH)
 	$(CCC2) $(QTOPT) `$(PKG) --cflags glib-2.0` audio/Pd_plugin_common.cpp #$(QT_PCH_INCLUDE)
@@ -2881,7 +2883,7 @@ $(T)Resampler.o: audio/Resampler.cpp audio/SampleInterpolator.cpp
 	$(CCC2) audio/Resampler.cpp $(CPPOPT) $(CPUOPT) `$(PKG) --cflags samplerate` 
 
 $(T)SoundFonts.o: audio/SoundFonts.cpp $(LIBGIG_PATH)/SF.cpp $(QT_PCH)
-	$(CCC2) audio/SoundFonts.cpp $(QTOPT) $(QT_PCH_INCLUDE) -Ibin/packages/libgig/src/
+	$(CCC2) audio/SoundFonts.cpp $(QTOPT) $(QT_PCH_INCLUDE) -Ibin/packages/libgig/src/ -Wno-error
 # `$(PKG) --cflags glib-2.0`
 
 $(T)audio_instrument.o: audio/audio_instrument.cpp $(CD)disk.h audio/SoundPluginRegistry_proc.h mixergui/QM_chip.h $(QT_PCH)
@@ -3076,10 +3078,10 @@ $(T)http_parser.o: $(QHTTPSERVER_PATH)/http-parser/http_parser.c
 LIBGIG_FLAGS=-Wno-sign-compare -Wno-missing-declarations -Wno-unused-result -DPACKAGE="\"libgig\"" -DVERSION="\"4.5.1\"" -D_GNU_SOURCE
 
 $(T)RIFF.o: $(LIBGIG_PATH)/RIFF.cpp
-	$(CCC2) -c $(LIBGIG_PATH)/RIFF.cpp $(CPPOPT) $(LIBGIG_FLAGS) $(WNO_MAYBE_UNINITIALIZED)
+	$(CCC2) -c $(LIBGIG_PATH)/RIFF.cpp $(CPPOPT) $(LIBGIG_FLAGS) $(WNO_MAYBE_UNINITIALIZED) -Wno-error
 
 $(T)SF.o: $(LIBGIG_PATH)/SF.cpp
-	$(CCC2) -c $(LIBGIG_PATH)/SF.cpp $(CPPOPT) $(LIBGIG_FLAGS)
+	$(CCC2) -c $(LIBGIG_PATH)/SF.cpp $(CPPOPT) $(LIBGIG_FLAGS) -Wno-error
 
  $(LIBGIG_PATH)/RIFF.cpp $(LIBGIG_PATH)/SF.cpp: bin/packages/libgig-4.5.1.tar.bz2
 	cd bin/packages && rm -fr libgig && tar xvjf libgig-4.5.1.tar.bz2 && mv libgig-4.5.1 libgig && touch $(LIBGIG_PATH)/SF.cpp && patch -p0 <libgig_win32.patch && patch -p0 <libgig_dont_check_loops.patch && echo "#define VER_STRING \"4.5.1\"" >$(LIBGIG_PATH)/../win32/libgig_private.h
