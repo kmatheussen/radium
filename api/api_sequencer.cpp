@@ -2767,7 +2767,7 @@ int getCurrPlaylistPos(void)
     else
       current_seq_time = ATOMIC_DOUBLE_GET(pc->song_abstime);
     
-    printf("Current time: %f  (%f)\n", current_seq_time / (double)pc->pfreq, current_seq_time);
+    //printf("Current time: %f  (%f)\n", current_seq_time / (double)pc->pfreq, current_seq_time);
     
     int64_t last_end_seq_time = 0;
 

@@ -874,21 +874,14 @@
                                        #t
                                        is-top-instrument
                                        parentgui)
-              (list (<-> "Insert send for " (if is-send?
-                                                (<ra> :get-instrument-name parent-instrument-id)
-                                                (<ra> :get-instrument-name instrument-id))
-                         "...")
-                    :enabled (> (<ra> :get-num-output-channels first-instrument-id) 0)
-                    :shortcut (and is-top-instrument
-                                   insert-send-for-instrument)
-                    (lambda ()
-                      (let ((instrument-id (cond (is-send?
-                                                  parent-instrument-id)
-                                                 (else
-                                                  instrument-id))))
-                        (request-send-instrument instrument-id
-                                                 (lambda (create-send-func)
-                                                   (create-send-func 0 '()))))))
+              (let ((send-source-id (if is-send?
+                                        parent-instrument-id
+                                        instrument-id)))
+                (list (<-> "Insert send for " (<ra> :get-instrument-name send-source-id) "...")
+                      (get-send-instrument-menu-entries
+                       send-source-id
+                       (lambda (create-send-func)
+                         (create-send-func 0 '())))))
 
               ;;(and (not is-send?)
               ;;     (list
@@ -2516,6 +2509,18 @@
   (add-safe-resize-callback gui (lambda (width height)
                                   (rubberband-resize 0 0 width height))))
 
+(define (get-select-current-instrument-button-size)
+  (max 1 (floor (/ (* 4 (<gui> :get-system-fontheight)) 3))))
+
+;; If width is #f, the button is stretched to fill the layout width.
+(define (create-select-current-instrument-button width)
+  (define button (<gui> :select-current-instrument-button))
+  (if width
+      (set-fixed-width button width)
+      (<gui> :set-min-width button 1))
+  (set-fixed-height button (get-select-current-instrument-button-size))
+  button)
+
   
 (define (create-mixer-strip-minimized instrument-id strips-config is-standalone-mixer-strip)
   (define color (<ra> :get-instrument-color instrument-id))
@@ -2539,13 +2544,17 @@
   (<gui> :set-background-color gui color)
   
   ;;(define gui (<gui> :widget))
-  (set-fixed-width gui (+ (* bsize)
-                          (max (floor (<gui> :text-width "-14.2"))
-                               (get-fontheight))))
+  (define strip-width (+ (* bsize)
+                         (max (floor (<gui> :text-width "-14.2"))
+                              (get-fontheight))))
+  (set-fixed-width gui strip-width)
 
   (define label (create-mixer-strip-name instrument-id strips-config #t is-standalone-mixer-strip))
 
   (define mutesolo-height (ceiling (* 0.9 (get-fontheight) *pan-mutesolo-voltext-scale-factor*)))
+
+  (when is-standalone-mixer-strip
+    (<gui> :add gui (create-select-current-instrument-button strip-width)))
 
   (<gui> :add gui label 1)
   (<gui> :add gui (create-mixer-strip-mutesolo instrument-id
@@ -2654,8 +2663,11 @@
   ;;(define total-fixed-height-with-pan (+ total-fixed-height-without-pan pan-height))
   
   (define name (create-mixer-strip-name instrument-id strips-config #f is-standalone-mixer-strip))
-  (set-fixed-height name name-height)
 
+  (when is-standalone-mixer-strip
+    (<gui> :add gui (create-select-current-instrument-button #f)))
+
+  (set-fixed-height name name-height)
   (<gui> :add gui name)
 
   (define mixer-strip-path-gui (<gui> :vertical-scroll #f))

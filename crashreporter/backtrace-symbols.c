@@ -69,6 +69,8 @@ Downloaded from http://opensource.apple.com/source/X11libs/X11libs-40.2/cairo/ca
 
 #include <dlfcn.h>
 #include <link.h>
+#include <unistd.h>
+#include <limits.h>
 #if 0
 
 void (*dbfd_init)(void);
@@ -120,7 +122,7 @@ static void slurp_symtab(bfd * abfd)
 						(void **) & syms, &size);
 
 	if (symcount < 0)
-		bfd_fatal(bfd_get_filename(abfd));
+		syms = NULL;
 }
 
 /* These global variables are used to pass information between
@@ -219,7 +221,19 @@ static void translate_addresses(bfd * abfd, char (*addr)[PTRSTR_LEN], int naddr)
 }
 #endif
 
-static char** translate_addresses_buf(bfd * abfd, bfd_vma *addr, int naddr)
+static const char *base_name(const char *path)
+{
+	const char *slash;
+
+	if (path == NULL)
+		return "??";
+
+	slash = strrchr(path, '/');
+
+	return slash != NULL ? slash + 1 : path;
+}
+
+static char** translate_addresses_buf(bfd * abfd, const char *module_name, bfd_vma *addr, int naddr)
 {
 	int naddr_orig = naddr;
 	char b;
@@ -243,26 +257,21 @@ static char** translate_addresses_buf(bfd * abfd, bfd_vma *addr, int naddr)
 		pc2 = addr[naddr-1];
 
 		found = false;
-		bfd_map_over_sections(abfd, find_address_in_section,
-		(void **) NULL);
+		if (abfd != NULL)
+			bfd_map_over_sections(abfd, find_address_in_section,
+			(void **) NULL);
 
 		if (!found) {
-			total += snprintf(buf, len, "[0x%llx] \?\?() \?\?:0",(long long unsigned int) addr[naddr-1]) + 1;
+			total += snprintf(buf, len, "??:0\t\?\?() [%s+0x%llx]", base_name(module_name), (long long unsigned int) addr[naddr-1]) + 1;
 		} else {
 			const char *name;
 
 			name = functionname;
 			if (name == NULL || *name == '\0')
 				name = "??";
-			if (filename != NULL) {
-				char *h;
 
-				h = strrchr(filename, '/');
-				if (h != NULL)
-					filename = h + 1;
-			}
-			total += snprintf(buf, len, "%s:%u\t%s()", filename ? filename : "??",
-			       line, name) + 1;
+			total += snprintf(buf, len, "%s:%u\t%s() [%s+0x%llx]", (filename != NULL && filename[0] != '\0') ? base_name(filename) : "??",
+			       line, name, base_name(module_name), (long long unsigned int) addr[naddr-1]) + 1;
 
 		}
 		if (state == Print) {
@@ -286,28 +295,24 @@ static char **process_file(const char *file_name, bfd_vma *addr, int naddr)
 	abfd = bfd_openr(file_name, NULL);
 
 	if (abfd == NULL)
-		bfd_fatal(file_name);
+		return translate_addresses_buf(NULL, file_name, addr, naddr);
 
-	if (bfd_check_format(abfd, bfd_archive))
-		fatal("%s: can not get addresses from archive", file_name);
+	if (bfd_check_format(abfd, bfd_archive)) {
+		bfd_close(abfd);
+		return translate_addresses_buf(NULL, file_name, addr, naddr);
+	}
 
 	if (!bfd_check_format_matches(abfd, bfd_object, &matching)) {
-		bfd_nonfatal(bfd_get_filename(abfd));
 		if (bfd_get_error() ==
-		    bfd_error_file_ambiguously_recognized) {
-			list_matching_formats(matching);
+		    bfd_error_file_ambiguously_recognized)
 			free(matching);
-		}
-#if 1 //defined(FOR_MACOSX)
-		exit(1);
-#else
-		xexit(1);
-#endif
+		bfd_close(abfd);
+		return translate_addresses_buf(NULL, file_name, addr, naddr);
 	}
 
 	slurp_symtab(abfd);
 
-	ret_buf = translate_addresses_buf(abfd, addr, naddr);
+	ret_buf = translate_addresses_buf(abfd, file_name, addr, naddr);
 
 	if (syms != NULL) {
 		free(syms);
@@ -342,6 +347,7 @@ static int find_matching_file(struct dl_phdr_info *info, size_t size, void *data
 				/* we found a match */
 				match->file = info->dlpi_name;
 				match->base = (void*)info->dlpi_addr;
+				break;
 			}
 		}
 	}
@@ -358,8 +364,16 @@ char **backtrace_symbols(void *const *buffer, int size)
 	char ***locations;
 	char **final;
 	char *f_strings;
+	char exe_path[PATH_MAX];
+	ssize_t exe_path_len;
 
 	locations = malloc(sizeof(char**) * (stack_depth+1));
+
+	exe_path_len = readlink("/proc/self/exe", exe_path, sizeof(exe_path) - 1);
+	if (exe_path_len > 0)
+		exe_path[exe_path_len] = '\0';
+	else
+		strcpy(exe_path, "/proc/self/exe");
 
 	bfd_init();
 	for(x=stack_depth, y=0; x>=0; x--, y++){
@@ -368,10 +382,15 @@ char **backtrace_symbols(void *const *buffer, int size)
 		bfd_vma addr;
 		dl_iterate_phdr(find_matching_file, &match);
 		addr = buffer[x] - match.base;
+		/* Return addresses point to the instruction after the call.
+		 * Look up the call instruction instead, so that the address
+		 * does not end up in the wrong function or line. */
+		if (x > 0 && addr > 0)
+			addr--;
 		if (match.file && strlen(match.file))
 			ret_buf = process_file(match.file, &addr, 1);
 		else
-			ret_buf = process_file("/proc/self/exe", &addr, 1);
+			ret_buf = process_file(exe_path, &addr, 1);
 		locations[x] = ret_buf;
 		total += strlen(ret_buf[0]) + 1;
 	}

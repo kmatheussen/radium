@@ -58,10 +58,6 @@ void setDefaultColors1(void){
   GFX_SetDefaultColors1(getWindowFromNum(-1));
 }
 
-void setDefaultColors2(void){
-  GFX_SetDefaultColors2(getWindowFromNum(-1));
-}
-
 void configSystemFont(void){
   GFX_ConfigSystemFont();
 }
@@ -374,6 +370,11 @@ void API_call_me_when_a_popup_menu_has_been_closed(void){
 
 int64_t getLastHoveredPopupMenuEntry(void){
   return g_last_hovered_menu_entry_guinum;
+}
+
+bool isCurrentPopupMenuEntry(int64_t guinum)
+{
+  return GFX_IsCurrentMenuEntry(guinum);
 }
 
 void hoverPopupMenuEntry(int entryid){

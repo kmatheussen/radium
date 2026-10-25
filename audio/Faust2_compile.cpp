@@ -65,6 +65,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Faust2_compile.hpp"
 #include "Faust_sample_rate_overlay.hpp"
+#include "Faust_compiler_fpu.hpp"
 
 FaustDev2SoundfileData::~FaustDev2SoundfileData()
 {
@@ -353,6 +354,9 @@ dsp_factory *create_factory(const FaustDev2CompileConfig &config,
 
 	std::string error_msg;
 
+	//radium::ScopedDenormalsDisabled disable_denormals;
+	//_mm_setcsr(_mm_getcsr() | 0x8040);
+	
 	dsp_factory *factory = NULL;
 #if !defined(WITHOUT_LLVM_IN_FAUST_DEV)
 	llvm_dsp_factory *llvm_factory = NULL;

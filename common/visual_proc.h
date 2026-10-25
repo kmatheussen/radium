@@ -112,18 +112,18 @@ static inline void GFX_ScheduleRedraw(void){
 }
 
 // RT function.
-static inline void GFX_ScheduleEditorRedraw(void){
+static inline void GFX_ScheduleEditorRedraw(const char *reason){
   if(g_rt_do_rerendering)
     ATOMIC_SET(atomic_must_redraw_editor, true);
 }
 
 // RT function.
-static inline void GFX_ForceScheduleEditorRedraw(void){  
+static inline void GFX_ForceScheduleEditorRedraw(const char *reason){  
   ATOMIC_SET(atomic_must_redraw_editor, true);
 }
 
 // RT function.
-static inline void GFX_ScheduleEditorRedrawIfPatchIsCurrentlyVisible(const struct Patch *patch){
+static inline void GFX_ScheduleEditorRedrawIfPatchIsCurrentlyVisible(const struct Patch *patch, const char *reason){
   if (ATOMIC_GET(atomic_must_redraw_editor)==true)
     return;
 
@@ -134,7 +134,7 @@ static inline void GFX_ScheduleEditorRedrawIfPatchIsCurrentlyVisible(const struc
   const struct Tracks *track = block->tracks;
   while(track != NULL){
     if (track->patch==patch && track->notes!=NULL){
-      GFX_ScheduleEditorRedraw();
+      GFX_ScheduleEditorRedraw(reason);
       //printf("Updating\n");
       return;
     }
@@ -201,7 +201,13 @@ extern LANGSPEC void GFX_ConfigFonts(struct Tracker_Windows *tvisual);
 extern LANGSPEC void GFX_reload_qt_stylesheets(bool only_for_testing);
 
 extern LANGSPEC void GFX_SetDefaultColors1(struct Tracker_Windows *tvisual);
-extern LANGSPEC void GFX_SetDefaultColors2(struct Tracker_Windows *tvisual);
+extern LANGSPEC float GFX_GetDefaultInstrumentBrightness(void);
+extern LANGSPEC float GFX_GetDefaultInstrumentSaturation(void);
+extern LANGSPEC float GFX_GetDefaultInstrumentBrightnessInEditor(void);
+extern LANGSPEC float GFX_GetDefaultInstrumentSaturationInEditor(void);
+extern LANGSPEC float GFX_GetDefaultBlockBrightness(void);
+extern LANGSPEC float GFX_GetDefaultBlockSaturation(void);
+extern LANGSPEC float GFX_GetDefaultAmountOfGradient(void);
 
 extern LANGSPEC unsigned int GFX_mix_colors(unsigned int c1, unsigned int c2, float how_much);
 extern LANGSPEC unsigned int GFX_get_color(enum ColorNums colornum);

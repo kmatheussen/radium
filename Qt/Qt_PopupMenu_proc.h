@@ -13,10 +13,15 @@ QMenu *GFX_create_qmenu(const vector_t &v,
 void GFX_clear_menu_cache(void);
 
 void GFX_set_pending_popup_position(int x, int y, bool is_hamburger);
+// Set the position of the next popup menu to just below the track header name widget
+// ("(click me)") of the given track. tracknum -1 means the current track.
+void GFX_set_track_header_popup_position(int tracknum);
 void GFX_set_hamburger_button(QWidget *button);
 void GFX_open_hamburger_popup_menu(QWidget *button);
 bool GFX_HamburgerPopupIsOpen(void);
 void GFX_CloseHamburgerPopup(void);
+bool GFX_InstrumentPopupIsOpen(void);
+void GFX_CloseInstrumentPopup(void);
 
 bool GFX_MenuActive();
 QMenu *GFX_GetActiveMenu(void);

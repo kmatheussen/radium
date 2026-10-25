@@ -120,16 +120,10 @@ static QVector<QString> get_lines2(QFile &file){
   return ret;
 }
 
-static filepath_t get_program_configuration_filename(bool is_color_config){
-  return OS_get_full_program_file_path(is_color_config ? "colors" : "config");
-}
-
 // Warning, called before GC_init, so it cannot allocate with talloc or talloc_atomic.
 static QVector<QString> get_lines(const char* key){
   R_ASSERT(THREADING_is_main_thread());
   
-  bool is_color_config = OS_config_key_is_color(key);
-
   QVector<QString> ret;
 
   //const char *filename = custom_configuration_filename==NULL ? OS_get_config_filename(key) : custom_configuration_filename;
@@ -164,7 +158,7 @@ static QVector<QString> get_lines(const char* key){
     file = fopen(filename,"r");
 #endif
     
-    QString bin_filename = STRING_get_qstring(get_program_configuration_filename(is_color_config).id);
+    QString bin_filename = STRING_get_qstring(OS_get_full_program_file_path("config").id);
     
     file.setFileName(bin_filename);
     if (file.open(QIODevice::ReadOnly | QIODevice::Text)==false){
@@ -671,9 +665,14 @@ void SETTINGS_delete_configuration(const radium::ResetSettings &rs){
   }
 
   if (rs.reset_color_config_file){
-    filepath_t color = OS_get_config_filename("color5");
-    if (DISK_file_exists(color) && !DISK_delete_file(color))
-      GFX_Message(NULL, "Error: Unable to delete file \"%S\". You should try to delete it manually.", color.id);
+    QDir dir(OS_get_dot_radium_path());
+    QStringList files = dir.entryList(QStringList() << "color_configuration_*" << "colors" << "colors_old", QDir::Files);
+
+    for(const QString &filename : files){
+      QString path = dir.absoluteFilePath(filename);
+      if (!QFile::remove(path))
+        GFX_Message(NULL, "Error: Unable to delete file \"%s\". You should try to delete it manually.", path.toUtf8().constData());
+    }
   }
   
   filepath_t dotradiumpath = make_filepath(OS_get_dot_radium_path());

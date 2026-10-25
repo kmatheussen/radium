@@ -77,7 +77,7 @@ inline QString faust_get_sample_rate_overlay_dir(
 	bool replaced = false;
 	for (QByteArray &line : lines)
 	{
-		if (!replaced && line.startsWith("SR = "))
+		if (!replaced && line.startsWith("SR = ")) // [NO_IF_=_WARNING]
 		{
 			line = QString("SR = %1;").arg(sample_rate).toUtf8();
 			replaced = true;

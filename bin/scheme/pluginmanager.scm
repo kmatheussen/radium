@@ -276,6 +276,30 @@
          (lambda (val)           
            (set! last-time-we-pressed-return-in-search-field (time))))
   
+  ;; Handle keys on the window level as well, so that they work no matter
+  ;; which widget has keyboard focus (for instance the search text field).
+  ;; Keys that a focused widget handles itself (e.g. the table) never get
+  ;; here since Qt propagates unhandled keys up to the window.
+  (<gui> :add-key-callback *pluginmanager-gui*
+         (lambda (presstype key)
+           (cond ((= 1 presstype) ;; Key release.
+                  #f)
+                 ((string=? key "Home")
+                  (<gui> :set-value *pmg-table* 0)
+                  #t)
+                 ((string=? key "End")
+                  (<gui> :set-value *pmg-table* (1- (<gui> :get-num-table-rows *pmg-table*)))
+                  #t)
+                 ((or (string=? key "Return")
+                      (string=? key "Enter"))
+                  (made-selection)
+                  #t)
+                 ((string=? key "Esc")
+                  (pmg-hide)
+                  #t)
+                 (else
+                  #f))))
+  
   (<gui> :add-callback *pmg-add-button* made-selection)
   
   (<gui> :add-callback *pmg-cancel-button* pmg-hide)

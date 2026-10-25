@@ -325,6 +325,12 @@ typedef struct SoundPluginType{
   bool will_always_autosuspend; // obviously, it doesn't make sense ...
   bool will_never_autosuspend;  // ... if both of these are true
 
+  // Set to true if type->create_state() only completes while the plugin is
+  // still being processed by its RT_process function. (The old Pd instrument,
+  // whose create_state() waits for the audio thread to poll the Pd GUI and
+  // save the patch. See put_pdfile_into_state in Pd_plugin.cpp.)
+  bool create_state_requires_processing;
+
   const char *category;
   const char *creator;
 
@@ -383,6 +389,11 @@ typedef struct SoundPluginType{
   
   // Returns the number of channels it can provide peaks for. (calling this function with ch=-1 is considered a dummy operation, except that the return value is correct)
   int (*get_peaks)(struct SoundPlugin *plugin, float note_num, int ch, float pan, int64_t start_time, int64_t end_time, float *min_value, float *max_value);
+
+  // Optional. If non-NULL, called instead of looping 'get_peaks' once per time slice.
+  // 'start_times'/'end_times' are sorted in increasing order. Computed min/max values are merged
+  // into 'min_values'/'max_values' (which are pre-initialized to 0).
+  int (*get_peaks_slices)(struct SoundPlugin *plugin, float note_num, int ch, float pan, const int64_t *start_times, const int64_t *end_times, int num_slices, float *min_values, float *max_values);
 
   int (*get_effect_format)(struct SoundPlugin *plugin, int effect_num); // Must return one of the EFFECT_* values above.
 

@@ -32,6 +32,7 @@ extern QVector<radium::KeyboardFocusFrame*> g_keyboard_focus_frames[(int)radium:
 void FOCUSFRAMES_init(void);
 void FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType type, bool has_focus);
 void FOCUSFRAMES_set_focus_best_guess(void);
+void FOCUSFRAMES_update_from_mouse_pos(void);
 bool FOCUSFRAMES_has_focus(radium::KeyboardFocusFrameType type);
 
 

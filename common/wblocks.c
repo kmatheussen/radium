@@ -470,7 +470,7 @@ void SelectWBlock(struct Tracker_Windows *window,struct WBlocks *wblock, bool fo
             //window->must_redraw=true; // At least do this. Just in case. (should probably never return here)
             return;
           }
-      
+
       EVENTLOG_add_event("SelectWBlock 1");
       
       g_assert_not_stopping_player++; // A lot of things happens here. Assert that we are not stopping the player.

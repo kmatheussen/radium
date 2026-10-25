@@ -1,0 +1,20 @@
+--- a/markovChains.c
++++ b/markovChains.c
+@@ -6,7 +6,6 @@
+ #ifdef __APPLE__
+ #include <sys/types.h>
+ #include <sys/time.h>
+-#include <sys/math.h>
+ #endif
+ 
+ #include <stdlib.h>
+--- a/isoWrap~.c
++++ b/isoWrap~.c
+@@ -6,7 +6,6 @@
+ #ifdef __APPLE__
+ #include <sys/types.h>
+ #include <sys/time.h>
+-#include <sys/math.h>
+ #endif
+ 
+ #include <stdlib.h>

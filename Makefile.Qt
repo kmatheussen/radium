@@ -2,7 +2,7 @@
 # Users and packagers: Edit build_*.sh instead.
 #
 
-RADIUM_VERSION = 8.1.54
+RADIUM_VERSION = 8.2.52
 
 
 SHELL := /usr/bin/env bash
@@ -73,6 +73,8 @@ P=Qt/
 API=api/
 
 MAKEFILE=Makefile.Qt
+
+PD2_LIBPD_DIR ?= bin/packages/libpd
 
 MAX_NUM_UNDOS=800
 
@@ -822,9 +824,9 @@ endif
 # Note: Precompiled headers can not be used when building universal binaries
 # since clang does not support multiple -arch options when generating PCH files.
 ifneq ($(strip $(UNIVERSAL)),)
-$(QT_PCH) Qt/Qt_precompiled.hpp.d &: ;
+$(QT_PCH): ;
 else
-$(QT_PCH) Qt/Qt_precompiled.hpp.d &: Qt/Qt_precompiled.hpp $(BUILD_DEPENDENCIES)
+$(QT_PCH): Qt/Qt_precompiled.hpp $(BUILD_DEPENDENCIES)
 	$(CCC) -MMD -MP -DNO_PRAGMA_ONCE -x c++-header $(QTOPT) -o $(QT_PCH) -c $<
 endif
 
@@ -2270,7 +2272,7 @@ $(T)api_osc.o:  $(BUILD_DEPENDENCIES)  $(API)api_osc.cpp embedded_scheme/s7extra
 $(T)api_midi.o:  $(BUILD_DEPENDENCIES)  $(API)api_midi.cpp $(QT_PCH)
 	$(CCC2) $(API)api_midi.cpp $(QTOPT) $(QT_PCH_INCLUDE) $(BOOST_INCLUDE)
 
-$(T)api_gui.o:  $(BUILD_DEPENDENCIES)  $(API)api_gui.cpp  Qt/ScrollArea.hpp Qt/helpers.h Qt/lzqlineedit.h  Qt/Rational.h Qt/Qt_MyQCheckBox.h embedded_scheme/s7extra_proc.h Qt/Qt_MyQScrollBar.hpp Qt/FileRequester.hpp Qt/Timer.hpp Qt/HashVector.hpp Qt/Qt_MyQCheckBox.h Qt/FocusSniffers.h Qt/Editor.hpp $(QT_PCH)
+$(T)api_gui.o:  $(BUILD_DEPENDENCIES)  $(API)api_gui.cpp  Qt/ScrollArea.hpp Qt/helpers.h Qt/lzqlineedit.h  Qt/Rational.h Qt/Qt_MyQCheckBox.h Qt/Qt_MyQButton.h embedded_scheme/s7extra_proc.h Qt/Qt_MyQScrollBar.hpp Qt/FileRequester.hpp Qt/Timer.hpp Qt/HashVector.hpp Qt/Qt_MyQCheckBox.h Qt/FocusSniffers.h Qt/Editor.hpp $(QT_PCH)
 	$(MOC) $(USE_QWEBENGINE_CFLAGS) $(QT_UI_CFLAGS) $(API)api_gui.cpp > $(API)mapi_gui.cpp
 	$(CCC2) $(API)api_gui.cpp $(QTOPT) $(QT_PCH_INCLUDE) $(QT_UI_CFLAGS) $(QT_SVG_CFLAGS) $(FPIC) -Wno-null-dereference $(NO_ANALYZER) $(WNO_DEPRECATED_DECLARATIONS)
 
@@ -2459,10 +2461,10 @@ $(T)Pd_plugin.o: audio/Pd_plugin.cpp #$(QT_PCH)
 	$(CCC2) -Ibin/packages/fluidsynth-1.1.6/include $(QTOPT) `$(PKG) --cflags glib-2.0` audio/Pd_plugin.cpp -Ibin/packages/libpd-master/libpds -Ibin/packages/libpd-master/libpd_wrapper -Ibin/packages/libpd-master/pure-data/src #$(QT_PCH_INCLUDE)
 
 $(T)Pd_plugin2.o: audio/Pd_plugin2.cpp #$(QT_PCH)
-	$(CCC2) -Ibin/packages/fluidsynth-1.1.6/include $(QTOPT) `$(PKG) --cflags glib-2.0` audio/Pd_plugin2.cpp -isystem bin/packages/libpd/libpd_wrapper -isystem bin/packages/libpd/pure-data/src #$(QT_PCH_INCLUDE)
+	$(CCC2) -Ibin/packages/fluidsynth-1.1.6/include $(QTOPT) `$(PKG) --cflags glib-2.0` audio/Pd_plugin2.cpp -isystem $(PD2_LIBPD_DIR)/libpd_wrapper -isystem $(PD2_LIBPD_DIR)/pure-data/src #$(QT_PCH_INCLUDE)
 
 $(T)libpds.o: $(BUILD_DEPENDENCIES) libpds/libpds.c libpds/libpds.h
-	$(CC2) libpds/libpds.c $(OPT) -isystem bin/packages/libpd/libpd_wrapper -isystem bin/packages/libpd/pure-data/src
+	$(CC2) libpds/libpds.c $(OPT) -isystem $(PD2_LIBPD_DIR)/libpd_wrapper -isystem $(PD2_LIBPD_DIR)/pure-data/src
 
 $(T)Pd_plugin_common.o: audio/Pd_plugin_common.cpp #$(QT_PCH)
 	$(CCC2) $(QTOPT) `$(PKG) --cflags glib-2.0` audio/Pd_plugin_common.cpp #$(QT_PCH_INCLUDE)
@@ -2507,9 +2509,9 @@ endif
 # Note: Precompiled headers can not be used when building universal binaries
 # since clang does not support multiple -arch options when generating PCH files.
 ifneq ($(strip $(UNIVERSAL)),)
-$(FAUST_PCH) audio/Faust_plugins_precompiled.hpp.d &: ;
+$(FAUST_PCH): ;
 else
-$(FAUST_PCH) audio/Faust_plugins_precompiled.hpp.d &: audio/Faust_plugins_precompiled.hpp $(BUILD_DEPENDENCIES)
+$(FAUST_PCH): audio/Faust_plugins_precompiled.hpp $(BUILD_DEPENDENCIES)
 	$(CCC) -MMD -MP -DNO_PRAGMA_ONCE $(FAUST_OPTS2) -o $(FAUST_PCH) -c $<
 endif
 
@@ -2881,7 +2883,7 @@ $(T)Resampler.o: audio/Resampler.cpp audio/SampleInterpolator.cpp
 	$(CCC2) audio/Resampler.cpp $(CPPOPT) $(CPUOPT) `$(PKG) --cflags samplerate` 
 
 $(T)SoundFonts.o: audio/SoundFonts.cpp $(LIBGIG_PATH)/SF.cpp $(QT_PCH)
-	$(CCC2) audio/SoundFonts.cpp $(QTOPT) $(QT_PCH_INCLUDE) -Ibin/packages/libgig/src/
+	$(CCC2) audio/SoundFonts.cpp $(QTOPT) $(QT_PCH_INCLUDE) -Ibin/packages/libgig/src/ -Wno-error
 # `$(PKG) --cflags glib-2.0`
 
 $(T)audio_instrument.o: audio/audio_instrument.cpp $(CD)disk.h audio/SoundPluginRegistry_proc.h mixergui/QM_chip.h $(QT_PCH)
@@ -2966,7 +2968,7 @@ $(T)GfxElements.o: OpenGL/GfxElements.cpp $(VISUALIZATION_HEADERS) common/Mutex.
 $(T)Render.o: OpenGL/Render.cpp $(VISUALIZATION_HEADERS) common/spinlock.h common/time_proc.h common/Beats_proc.h common/TimeData.hpp $(QT_PCH)
 	$(CCC2) OpenGL/Render.cpp $(QTOPT) $(QT_PCH_INCLUDE) $(VISUALIZATION_OPTIONS)
 
-$(T)Widget.o: OpenGL/Widget.cpp $(VISUALIZATION_HEADERS) OpenGL/TextureAtlas.hpp common/Mutex.hpp common/spinlock.h common/MovingAverage.hpp common/Vector.hpp Qt/Timer.hpp # OpenGL/Qt6ThreadedWidget.hpp $(QT_PCH)
+$(T)Widget.o: OpenGL/Widget.cpp $(VISUALIZATION_HEADERS) OpenGL/TextureAtlas.hpp common/Mutex.hpp common/spinlock.h common/MovingAverage.hpp common/Vector.hpp Qt/Timer.hpp $(QT_PCH) # OpenGL/Qt6ThreadedWidget.hpp
 	$(CCC2) OpenGL/Widget.cpp $(QTOPT) $(QT_PCH_INCLUDE) $(VISUALIZATION_OPTIONS) 
 
 $(T)RhiWindow.o: OpenGL/RhiWindow.cpp $(VISUALIZATION_HEADERS) $(QT_PCH)
@@ -3076,12 +3078,12 @@ $(T)http_parser.o: $(QHTTPSERVER_PATH)/http-parser/http_parser.c
 LIBGIG_FLAGS=-Wno-sign-compare -Wno-missing-declarations -Wno-unused-result -DPACKAGE="\"libgig\"" -DVERSION="\"4.5.1\"" -D_GNU_SOURCE
 
 $(T)RIFF.o: $(LIBGIG_PATH)/RIFF.cpp
-	$(CCC2) -c $(LIBGIG_PATH)/RIFF.cpp $(CPPOPT) $(LIBGIG_FLAGS) $(WNO_MAYBE_UNINITIALIZED)
+	$(CCC2) -c $(LIBGIG_PATH)/RIFF.cpp $(CPPOPT) $(LIBGIG_FLAGS) $(WNO_MAYBE_UNINITIALIZED) -Wno-error
 
 $(T)SF.o: $(LIBGIG_PATH)/SF.cpp
-	$(CCC2) -c $(LIBGIG_PATH)/SF.cpp $(CPPOPT) $(LIBGIG_FLAGS)
+	$(CCC2) -c $(LIBGIG_PATH)/SF.cpp $(CPPOPT) $(LIBGIG_FLAGS) -Wno-error
 
-$(LIBGIG_PATH)/SF.cpp: bin/packages/libgig-4.5.1.tar.bz2
+ $(LIBGIG_PATH)/RIFF.cpp $(LIBGIG_PATH)/SF.cpp: bin/packages/libgig-4.5.1.tar.bz2
 	cd bin/packages && rm -fr libgig && tar xvjf libgig-4.5.1.tar.bz2 && mv libgig-4.5.1 libgig && touch $(LIBGIG_PATH)/SF.cpp && patch -p0 <libgig_win32.patch && patch -p0 <libgig_dont_check_loops.patch && echo "#define VER_STRING \"4.5.1\"" >$(LIBGIG_PATH)/../win32/libgig_private.h
 
 $(T)radium_s7_wrap.o: api/radium_s7_wrap.c 

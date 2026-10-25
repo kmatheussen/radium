@@ -99,6 +99,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../Qt/FocusSniffers.h"
 #include "../Qt/ScrollArea.hpp"
 #include "../Qt/Qt_MyQCheckBox.h"
+#include "../Qt/Qt_MyQButton.h"
 #include "../Qt/flowlayout.h"
 #include "../Qt/lzqlineedit.h"
 #include "../Qt/Timer.hpp"
@@ -405,7 +406,7 @@ static QColor getQColor(const_char* colorname){
     if(g_is_starting_up) {
       static bool has_shown_startup_error = false;
       if (has_shown_startup_error == false){
-        GFX_Message(NULL, "Could not find color \"%s\". Your color configuration is not valid. Try deleting the file .radium/color in your home directory and start Radium again.", colorname);
+        GFX_Message(NULL, "Could not find color \"%s\". Your color configuration is not valid. Try deleting the color_configuration_* files in your home directory and start Radium again.", colorname);
         has_shown_startup_error = true;
       }
     }else
@@ -3261,6 +3262,29 @@ static QQueue<Gui*> g_delayed_resized_guis; // ~Gui removes itself from this one
     OVERRIDERS(QPushButton);
   };
 
+
+  // Same button as the "select instrument" button in the instrument widget.
+  struct SelectCurrentInstrumentButton : MyQButton, Gui {
+    Q_OBJECT;
+
+  public:
+
+    SelectCurrentInstrumentButton(void)
+      : MyQButton("arrow-down-filled-triangle-svgrepo-com.svg")
+      , Gui(this)
+    {
+      setObjectName("select_instrument");
+
+      _show_popup_menu = [](){
+        S7CALL2(void_void, "FROM_C-show-select-instrument-right-click");
+      };
+
+      QObject::connect(this, &QToolButton::clicked, [](){
+        S7CALL2(void_void, "FROM_C-show-set-current-audio-or-midi-instrument-popup-menu");
+      });
+    }
+  };
+
   
   struct CheckBox : QCheckBox, Gui, public radium::MouseCycleFix {
     Q_OBJECT;
@@ -5430,6 +5454,10 @@ int64_t gui_frame(void){
 
 int64_t gui_button(const_char *text){
   return (new PushButton(text))->get_gui_num();
+}
+
+int64_t gui_selectCurrentInstrumentButton(void){
+  return (new SelectCurrentInstrumentButton())->get_gui_num();
 }
 
 int64_t gui_checkbox(const_char *text, bool is_checked, bool radium_style){
@@ -8165,10 +8193,11 @@ QBrush API_get_gradient(int gradient_num, float x1, float y1, float x2, float y2
   }
 
   float g_gradient = getAmountOfGradient();
-  if (g_gradient > DEFAULT_AMOUNT_OF_GRADIENT) {
-    darkness_factor = scale(g_gradient, DEFAULT_AMOUNT_OF_GRADIENT, 1.0, darkness_factor, 1.0);
+  float default_gradient = GFX_GetDefaultAmountOfGradient();
+  if (g_gradient > default_gradient) {
+    darkness_factor = scale(g_gradient, default_gradient, 1.0, darkness_factor, 1.0);
   } else {
-    darkness_factor = scale(g_gradient, 0.0, DEFAULT_AMOUNT_OF_GRADIENT, 0.0, darkness_factor);
+    darkness_factor = scale(g_gradient, 0.0, default_gradient, 0.0, darkness_factor);
   }
 
   if (darkness_factor < 0.001)

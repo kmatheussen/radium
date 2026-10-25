@@ -1441,6 +1441,7 @@ static void add_plugin(const wchar_t *name, QString filename) {
   plugin_type->note_handling_is_RT      = false;
   plugin_type->num_effects              = NUM_PD_CONTROLLERS;
   plugin_type->will_never_autosuspend   = true;
+  plugin_type->create_state_requires_processing = true; // put_pdfile_into_state() waits for the audio thread to poll the Pd GUI and save the patch. See AUDIO_remove_patchdata.
   plugin_type->get_effect_format        = get_effect_format;
   plugin_type->get_effect_name          = get_effect_name;
   plugin_type->effect_is_RT             = NULL;
@@ -1466,7 +1467,7 @@ static void add_plugin(const wchar_t *name, QString filename) {
   plugin_type->data                = (void*)new QString(filename);
 
   //PR_add_menu_entry(PluginMenuEntry::normal(plugin_type));
-  if(STRING_equals(name,""))
+  if(true || STRING_equals(name,""))
     PR_add_plugin_type_no_menu(plugin_type);
   else
     PR_add_plugin_type(plugin_type);
@@ -1474,7 +1475,8 @@ static void add_plugin(const wchar_t *name, QString filename) {
 
 static void build_plugins(QDir dir){
   printf(">> dir: -%s-\n",dir.absolutePath().toUtf8().constData());
-  PR_add_menu_entry(PluginMenuEntry::level_up(dir.dirName().toUtf8().constData()));
+
+  //PR_add_menu_entry(PluginMenuEntry::level_up(dir.dirName().toUtf8().constData()));
 
   dir.setSorting(QDir::Name);
 
@@ -1508,7 +1510,7 @@ static void build_plugins(QDir dir){
   }
 
   printf("<< dir: -%s-\n",dir.absolutePath().toUtf8().constData());
-  PR_add_menu_entry(PluginMenuEntry::level_down());
+  //PR_add_menu_entry(PluginMenuEntry::level_down());
 }
 
 void create_pd_plugin(void){

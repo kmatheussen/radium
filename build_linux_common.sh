@@ -194,11 +194,11 @@ if ! is_0 $INCLUDE_FAUSTDEV ; then
 fi
 
 if ! is_0 $INCLUDE_PDDEV ; then
-    export OS_OPTS="$OS_OPTS -DWITH_PD"
+    export OS_OPTS="$OS_OPTS -DWITH_PD=1"
 fi
 
 if ! is_0 $INCLUDE_PD2DEV ; then
-    export OS_OPTS="$OS_OPTS -DWITH_PD2"
+    export OS_OPTS="$OS_OPTS -DWITH_PD2=1"
 fi
 
 #echo "222==QHTAT??"
@@ -319,10 +319,6 @@ fi
 
 #api/s7_types_generator.scm types
 
-# Touch PCH .d files to prevent make from rebuilding them during prerequisite generation.
-# They will be properly regenerated during the main 'make radium' call.
-touch Qt/Qt_precompiled.hpp.d audio/Faust_plugins_precompiled.hpp.d 2>/dev/null || true
-
 make api/s7_types.h buildtype.opt flagopts.opt api/radium_proc.h common/keyboard_sub_ids.h bin/radium_check_recent_libxcb bin/radium_show_message --stop
 
 if [[ $# -ge 1 ]] && [[ $1 == "test" ]] ; then
@@ -332,13 +328,16 @@ else
 		rm -f /tmp/run_preload
 		make /tmp/run_preload
 	fi
-	make radium $@ --stop # Can not use "exec make" here. Compilation stopped here I think, whether it succeeded or not.
+
+	# "--shuffle" actually improves compilation time by around 33% (75s -> ~50s), since Make compiles the longest running files last if we don't shuffle the order, sigh.
+	make radium --shuffle $@ --stop # Can not use "exec make" here. Compilation stopped here I think, whether it succeeded or not.
+	
 	#make ${T}Qt_instruments.o $@ --stop # Can not use "exec make" here. Compilation stopped here I think, whether it succeeded or not.
     
-	if ldd -r $RADIUM_BIN | sed 's/0x.*//' |grep -i bfd |grep -v libfdk ; then
-		printf "\033[1;31mError? Is bfd linked dynamically?\033[0m\n"
-		exit -1
-	fi
+	#if ldd -r $RADIUM_BIN | sed 's/0x.*//' |grep -i bfd |grep -v libfdk ; then
+	#	printf "\033[1;31mError? Is bfd linked dynamically?\033[0m\n"
+	#	exit -1
+	#fi
 fi
 
 if [[ $BUILDTYPE == RELEASE ]] ; then

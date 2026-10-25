@@ -196,7 +196,7 @@ void EditorWidget::updateEditor(void) const {
 
     //update();
     
-    this->window->must_redraw_editor=true;
+    this->window->must_redraw_editor = true;
     this->window->must_redraw=false;
   }
 

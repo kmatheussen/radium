@@ -13,6 +13,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
+
 #ifdef WITH_PD2
 
 #include <inttypes.h>
@@ -34,12 +35,28 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #if defined(FOR_LINUX)
 #  include <glib.h>
 #  define strlcpy g_strlcpy
+#elif defined(_WIN32)
+// mingw has no strlcpy. Same semantics as the BSD function: at most size-1
+// characters are copied, and the result is always NUL-terminated.
+static inline void pd2_strlcpy(char *dst, const char *src, size_t size){
+	if (size == 0)
+		return;
+	size_t i;
+	for(i = 0 ; i < size - 1 && src[i] != '\0' ; i++)
+		dst[i] = src[i];
+	dst[i] = '\0';
+}
+#  define strlcpy pd2_strlcpy
 #endif
+
+#include <algorithm>
 
 #include <QTemporaryFile>
 #include <QFile>
 #include <QFileInfo>
 #include <QDir>
+#include <QHash>
+#include <QSet>
 #include <QTextStream>
 #include <QVector>
 #include <QCoreApplication>
@@ -64,6 +81,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern PlayerClass *pc;
 
 #include "../Qt/Qt_pd_plugin_widget_callbacks_proc.h"
+
+#include "../Qt/Qt_MainWindow_proc.h"
 
 #include "../Qt/helpers.h"
 
@@ -105,6 +124,13 @@ struct Data
 	QTemporaryFile *pdfile;
 
 	DEFINE_ATOMIC(void *, qtgui);
+
+	// Set when Pd tells us that the user closed the main Pd patch window (or
+	// chose quit from the Pd menu; see libpd_hide_gui_windows in
+	// 11-libpd-hide-gui-windows.patch). PD2_poll_all_guis activates Radium in
+	// that case, since the Pd Tcl/Tk process stays frontmost after hiding its
+	// windows.
+	DEFINE_ATOMIC(bool, gui_was_hidden_by_user);
 
 	struct Data *next;
 
@@ -236,6 +262,16 @@ static void PD2_poll_all_guis(void)
 
 			if (ret == 0)
 				break;
+		}
+
+		// The user closed the main Pd patch window (or quit Pd from its
+		// menu). Pd has hidden all its GUI windows, but its Tcl/Tk process
+		// keeps running and stays frontmost, so bring Radium to the front
+		// again to get the keyboard focus (and the menu bar) back.
+		if (ATOMIC_GET(instances[i]->gui_was_hidden_by_user))
+		{
+			ATOMIC_SET(instances[i]->gui_was_hidden_by_user, false);
+			GFX_activate_main_window();
 		}
 
 		// Apply controller definitions queued by RT_add_controller (from
@@ -591,8 +627,17 @@ static bool show_gui(struct SoundPlugin *plugin, int64_t parentgui)
 	// Note: Not called while holding the player lock. Starting the Pd GUI
 	// allocates memory, and libpd's own lock makes this safe with regards to
 	// the player thread. (Otherwise Radium's debug allocator check would stop
-	// here since the player lock is held.)
-	libpds2_show_gui(data->pd);
+	// here since the player lock is held.) libpd does not hold that lock while
+	// waiting for the Tcl/Tk process to connect (see the Radium patch in
+	// pure-data/src/s_inter.c), so the audio thread is not blocked while the
+	// GUI starts.
+	if (!libpds2_show_gui(data->pd)) {
+		RError("Unable to show the Pd GUI: %s", libpds2_strerror());
+		// Keep the GUI checkbox unchecked. The widget reads _gui_is_visible
+		// regularly, see PDGUI_is_visible/PDGUI_is_hidden.
+		PDGUI_is_hidden(ATOMIC_GET(data->qtgui));
+		return false;
+	}
 
 	// Note: libpds only shows or hides the Pd GUI windows here (the Tcl/Tk
 	// process keeps running), so Pd does not send gui_is_visible when the GUI
@@ -932,7 +977,15 @@ static void RT_pdmessagehook(const char *source, const char *controller_name, in
 		if(!strcmp(controller_name, "gui_is_visible"))
 			PDGUI_is_visible(ATOMIC_GET(data->qtgui));
 		else if(!strcmp(controller_name, "gui_is_hidden"))
+		{
+			// The user closed the main Pd patch window (or chose quit from the
+			// Pd menu). Pd hides all its GUI windows, but the Tcl/Tk process
+			// keeps running and stays frontmost, so Radium must be activated
+			// afterwards to get the keyboard focus (and its menu bar) back.
+			// Done on the GUI thread in PD2_poll_all_guis.
+			ATOMIC_SET(data->gui_was_hidden_by_user, true);
 			PDGUI_is_hidden(ATOMIC_GET(data->qtgui));
+		}
 		return;
 	}
 }
@@ -1345,6 +1398,282 @@ static QString get_search_path()
 	return STRING_get_qstring(OS_get_full_program_file_path("pd").id);
 }
 
+// File extensions Pd can load external libraries from on this platform, e.g.
+// .pd_darwin on Mac and .pd_linux on Linux. Filled in by
+// get_library_extensions(), longest extension first.
+static QStringList *g_library_extensions = NULL;
+
+static const QStringList &get_library_extensions()
+{
+	if (g_library_extensions == NULL)
+	{
+		g_library_extensions = new QStringList;
+		for (const char **ext = libpds2_get_library_extensions(); *ext != NULL; ext++)
+			*g_library_extensions << QString::fromUtf8(*ext);
+		std::sort(g_library_extensions->begin(), g_library_extensions->end(),
+			  [](const QString &a, const QString &b)
+			  {
+				  return a.size() > b.size();
+			  });
+	}
+	return *g_library_extensions;
+}
+
+// Returns the class name for a Pd external binary file name, or an empty
+// string if Pd can't load the file as an external on this platform.
+static QString external_class_name(const QString &filename)
+{
+	for (const QString &extension : get_library_extensions())
+	{
+		if (!extension.isEmpty() && filename.endsWith(extension))
+			return filename.left(filename.size() - extension.size());
+	}
+
+	return QString();
+}
+
+// Returns the object name a file in an external library's directory refers
+// to: "foo-help.pd" -> "foo", "foo.pd_linux" -> "foo". Used to find the
+// monolithic library (zexy, iemlib, iemmatrix, ...) a class that has no
+// binary of its own belongs to, since those classes are usually only
+// identifiable through their help files.
+static QString file_claimed_class_name(const QString &filename)
+{
+	if (filename.endsWith("-meta.pd"))
+		return QString();
+
+	QString name;
+
+	if (filename.endsWith("-help.pd"))
+	{
+		name = filename.left(filename.size() - strlen("-help.pd"));
+	}
+	else
+	{
+		name = external_class_name(filename);
+		if (name.isEmpty() && filename.endsWith(".pd"))
+			name = filename.left(filename.size() - strlen(".pd"));
+	}
+
+	if (name.isEmpty() || name.contains("/"))
+		return QString();
+
+	return name;
+}
+
+static bool is_shared_library_file(const QString &filename)
+{
+	return filename.startsWith("lib") &&
+		(filename.endsWith(".so") || filename.endsWith(".dylib") || filename.endsWith(".dll"));
+}
+
+// The process-wide instance that hosts the third-party external libraries.
+// Never deleted, see ensure_externals_host().
+static pd_t *g_externals_host = NULL;
+
+// Libraries that have been loaded into the host, and libraries that failed to
+// load, so they are not tried again.
+static QSet<QString> g_loaded_libraries;
+static QSet<QString> g_failed_libraries;
+
+// "class name" and "<libdir>/<class name>" -> the name to load for it, e.g.
+// "zl" and "cyclone/zl" -> "cyclone/zl".
+static QHash<QString, QString> g_class_libraries;
+
+// Names found in the directories of the monolithic libraries (from help
+// files, abstractions, ...) -> the monolithic library. Many classes of those
+// libraries have no binary of their own, so this is used to know which
+// library to load without having to load all of them.
+static QHash<QString, QString> g_blob_claims;
+
+// The monolithic libraries, e.g. "zexy", "iemlib", "iemmatrix". "name" is
+// both the load name and the name used by [declare -lib name].
+static QStringList g_blob_libraries;
+static QSet<QString> g_library_names;
+
+// True when all monolithic libraries have been tried for an unknown class.
+static bool g_all_blobs_tried = false;
+
+static void add_class_library(const QString &name, const QString &loadname)
+{
+	if (!name.isEmpty() && !g_class_libraries.contains(name))
+		g_class_libraries.insert(name, loadname);
+}
+
+static void add_blob_claim(const QString &name, const QString &libdir)
+{
+	if (!name.isEmpty() && !g_blob_claims.contains(name))
+		g_blob_claims.insert(name, libdir);
+}
+
+// Loads 'loadname' into the externals host (if it's not loaded already).
+// Returns true if the library is loaded. Called with Pd's lock held (from the
+// libloadhook), so only _nolock functions can be used.
+static bool ensure_library_loaded(const QString &loadname)
+{
+	if (g_loaded_libraries.contains(loadname))
+		return true;
+	if (g_failed_libraries.contains(loadname))
+		return false;
+
+	if (libpds2_load_lib_nolock(g_externals_host, loadname.toUtf8().constData()))
+	{
+		g_loaded_libraries.insert(loadname);
+		return true;
+	}
+
+	g_failed_libraries.insert(loadname);
+	return false;
+}
+
+// Loads the library that provides 'classname' into the externals host and
+// returns true if 'classname' is registered in the host afterwards.
+static bool load_external_library(const QString &classname, const QString &loadname)
+{
+	if (!ensure_library_loaded(loadname))
+		return false;
+
+	return libpds2_class_is_loaded_nolock(g_externals_host, classname.toUtf8().constData()) != 0;
+}
+
+// Called from inside Pd (sys_set_libloadhook()) when a library that has not
+// been loaded yet is requested. Loading always happens in the externals host,
+// so that a library's setup() never runs in an instance that can be deleted
+// later. See ensure_externals_host() for why that matters.
+static int externals_libloadhook(const char *classname)
+{
+	if (g_externals_host == NULL || classname == NULL)
+		return 0;
+
+	const QString name = QString::fromUtf8(classname);
+
+	// [declare -lib zexy] and friends.
+	if (g_library_names.contains(name))
+		return ensure_library_loaded(name) ? 1 : 0;
+
+	// Class binaries, requested by [zl] or [cyclone/zl].
+	QHash<QString, QString>::const_iterator it = g_class_libraries.constFind(name);
+	if (it != g_class_libraries.constEnd())
+	{
+		if (load_external_library(name, it.value()))
+			return 1;
+	}
+
+	// Classes of monolithic libraries, e.g. zexy's [multiplex~]: load the
+	// library the class name has been linked to (through its file name).
+	it = g_blob_claims.constFind(name);
+	if (it != g_blob_claims.constEnd())
+	{
+		if (load_external_library(name, it.value()))
+			return 1;
+	}
+
+	// Names that are abstractions are loaded by Pd itself, in the instance
+	// that uses them.
+	if (libpds2_abstraction_exists_nolock(classname))
+		return 0;
+
+	// The class has no binary of its own and no file linking it to a
+	// library (e.g. zexy's [sfplay~] or iemlib's [filter~]), but it may
+	// still be a class of a monolithic library, so try the rest of them.
+	// This is done only once; the libraries stay loaded.
+	if (!g_all_blobs_tried)
+	{
+		for (const QString &libdir : g_blob_libraries)
+		{
+			if (load_external_library(name, libdir))
+				return 1;
+		}
+		g_all_blobs_tried = true;
+	}
+
+	return 0;
+}
+
+// Creates the process-wide instance that hosts the third-party external
+// libraries, and builds the name -> library tables used to load a library on
+// demand (see externals_libloadhook()).
+//
+// Pd only runs a library's setup() the first time it is loaded in a process
+// (the list of loaded libraries is global, not per instance). The classes
+// themselves are global too, and their methods are copied into new instances
+// when those are created. Because of that, the instance that runs setup()
+// must live for as long as the process: libraries that cache gensym() results
+// in file-scope statics (e.g. cyclone's [zl.*]) would otherwise hold pointers
+// into a deleted instance's symbol table.
+static void ensure_externals_host(const char *puredatapath, const QString &externals_path)
+{
+	if (g_externals_host != NULL)
+		return;
+
+	pd_t *host = libpds2_create(false, puredatapath);
+	if (host == NULL)
+	{
+		RError("Unable to create the Pd externals host instance: %s", libpds2_strerror());
+		return;
+	}
+
+	libpds2_add_to_search_path(host, externals_path.toUtf8().constData());
+
+	QDir externals_dir(externals_path);
+	QStringList libdirs = externals_dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name);
+	for (const QString &libdir : libdirs)
+	{
+		QString libpath = externals_path + OS_get_directory_separator() + libdir;
+		libpds2_add_to_search_path(host, libpath.toUtf8().constData());
+
+		QDir lib_dir(libpath);
+		QStringList files = lib_dir.entryList(QDir::Files | QDir::NoDotAndDotDot, QDir::Name);
+
+		// Monolithic libraries (zexy, iemlib, iemmatrix, ...) are loaded
+		// by name (or by one of their classes) when needed.
+		bool has_blob = false;
+		for (const QString &file : files)
+		{
+			if (is_shared_library_file(file))
+				continue;
+			// Skip alias symlinks (e.g. cyclone's Append.pd_linux):
+			// running setup() twice would register the class twice.
+			if (QFileInfo(libpath + OS_get_directory_separator() + file).isSymLink())
+				continue;
+			if (external_class_name(file) == libdir)
+				has_blob = true;
+		}
+		if (has_blob)
+		{
+			g_blob_libraries << libdir;
+			g_library_names.insert(libdir);
+			add_class_library(libdir, libdir);
+		}
+
+		for (const QString &file : files)
+		{
+			if (is_shared_library_file(file))
+				continue;
+			if (QFileInfo(libpath + OS_get_directory_separator() + file).isSymLink())
+				continue;
+
+			QString classname = external_class_name(file);
+			if (!classname.isEmpty() && !(has_blob && classname == libdir))
+			{
+				// Load class binaries by their namespaced name
+				// (<libdir>/<class>) so that both [class] and
+				// [libdir/class] find the already loaded class.
+				QString loadname = libdir + "/" + classname;
+				add_class_library(classname, loadname);
+				add_class_library(loadname, loadname);
+			}
+
+			if (has_blob)
+				add_blob_claim(file_claimed_class_name(file), libdir);
+		}
+	}
+
+	g_externals_host = host;
+
+	libpds2_set_libloadhook(externals_libloadhook);
+}
+
 static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, float sample_rate, int block_size)
 {
 	R_ASSERT(pdfile != NULL);
@@ -1369,6 +1698,16 @@ static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, flo
 
 	char puredatapath[1024];
 	snprintf(puredatapath,1023,"%s/packages/libpd/pure-data",OS_get_program_path());
+
+	QString search_path = get_search_path();
+
+	// Radium's dynamically loaded Pd externals are placed under
+	// <pd>/externals, one subdirectory per library. They are loaded into the
+	// process-wide host instance before this instance is created, see
+	// ensure_externals_host().
+	QString externals_path = search_path + OS_get_directory_separator() + "externals";
+	ensure_externals_host(puredatapath, externals_path);
+
 	pd = libpds2_create(true, puredatapath);
 	if(pd==NULL)
 	{
@@ -1382,13 +1721,17 @@ static Data *create_data(QTemporaryFile *pdfile, struct SoundPlugin *plugin, flo
 
 	data->pd = pd;
 
-	QString search_path = get_search_path();
 	libpds2_add_to_search_path(pd, search_path.toUtf8().constData());
-
-	// Radium's dynamically loaded Pd externals (OSC and networking objects)
-	// are placed in a subdirectory of the pd directory.
-	QString externals_path = search_path + OS_get_directory_separator() + "externals";
 	libpds2_add_to_search_path(pd, externals_path.toUtf8().constData());
+
+	{
+		QDir externals_dir(externals_path);
+		QStringList libdirs = externals_dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name);
+		for (const QString &libdir : libdirs) {
+			QString libpath = externals_path + OS_get_directory_separator() + libdir;
+			libpds2_add_to_search_path(pd, libpath.toUtf8().constData());
+		}
+	}
 
 	libpds2_set_floathook(pd, RT_pdfloathook);
 	libpds2_set_messagehook(pd, RT_pdmessagehook);

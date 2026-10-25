@@ -60,9 +60,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QLineEdit>
 #include <QPalette>
 #include <QSet>
+#include <QPainter>
+#include <QPointF>
+#include <QPaintEvent>
 
 #include "../common/nsmtracker.h"
 #include "../common/visual_proc.h"
+#include "../common/settings_proc.h"
 #include "../common/FuzzySearch.h"
 #include "../audio/Envelope.hpp"
 
@@ -70,6 +74,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "../api/api_gui_proc.h"
 #include "../api/api_requesters_proc.h"
+#include "../api/api_common_proc.h"
 
 #include "../api/api_proc.h"
 
@@ -79,6 +84,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Qt_Main_proc.h"
 #include "Qt_PopupMenu_proc.h"
+#include "Qt_bottom_bar_widget_proc.h"
 
 
 
@@ -100,6 +106,7 @@ namespace{
   class MyQAction;
   static int64_t g_myactions_counter = 0;
   static QHash<int64_t, QPointer<MyQAction>> g_curr_visible_actions;
+  static QHash<int64_t, QPointer<MyQAction>> g_actions_by_guinum;
 
   struct MyProxyStyle : public QProxyStyle {
     MyProxyStyle(){
@@ -360,8 +367,9 @@ static void schedule_flush_pending_menu_callbacks(void)
 
     std::shared_ptr<Callbacker> _callbacker;
     
-    int64_t _guinum;
+    int64_t _guinum = -1;
     QWidget *_widget = NULL;
+    QPointer<QMenu> _menu = NULL; // The menu this entry is currently in. Can be a sub menu.
     
     QAbstractButton *_checkbox = NULL; // can be either QCheckBox or QRadioButton
     
@@ -391,6 +399,8 @@ static void schedule_flush_pending_menu_callbacks(void)
 
       if (_guinum > 0){
         
+        g_actions_by_guinum[_guinum] = this;
+
         _widget = API_gui_get_widget(_guinum);
         setDefaultWidget(_widget);
         //_widget->setStyle(&g_my_proxy_style);
@@ -410,6 +420,8 @@ static void schedule_flush_pending_menu_callbacks(void)
     ~MyQAction(){
       //printf("   ...Removing %p/%p from cache. C: %ld\n", this, _callbacker.get(), _callbacker.use_count());
       g_curr_visible_actions.remove(_entry_id);
+      if (_guinum > 0)
+        g_actions_by_guinum.remove(_guinum);
       //delete _widget;
     }
     
@@ -432,12 +444,16 @@ static void schedule_flush_pending_menu_callbacks(void)
 
   public:
 
+    // Set for radio buttons (the group the entry belongs to), NULL for checkboxes.
+    QActionGroup *_radio_group;
+
     ~CheckableAction(){
       //printf("I was deleted: %s\n",text.toUtf8().constData());
     }
 
-    CheckableAction(const QString & text_b, const QString &shortcut, int shortcut_width, bool is_on, bool is_radiobutton, bool is_first, bool is_last, std::shared_ptr<Callbacker> &callbacker)
-      : MyQAction(text_b, shortcut, shortcut_width, callbacker, true, is_on, is_radiobutton, is_first, is_last, callbacker->qmenu)
+    CheckableAction(const QString & text_b, const QString &shortcut, int shortcut_width, bool is_on, QActionGroup *radio_group, bool is_first, bool is_last, std::shared_ptr<Callbacker> &callbacker)
+      : MyQAction(text_b, shortcut, shortcut_width, callbacker, true, is_on, radio_group != NULL, is_first, is_last, callbacker->qmenu)
+      , _radio_group(radio_group)
     {
       setCheckable(true);
       setChecked(is_on);
@@ -448,6 +464,69 @@ static void schedule_flush_pending_menu_callbacks(void)
       setChecked(!isChecked());
       //toggled(!isChecked());
       return true;  // eat mouse press event
+    }
+
+    // Called when pressing space on this entry. Same as clicking it, except that the
+    // menu stays open, i.e. the callback is not run through run_and_delete_checked().
+    void toggle_without_closing_menu(void)
+    {
+      if (_radio_group != NULL) {
+
+        if (isChecked())
+          return; // A checked radio button can not be unchecked by clicking it.
+
+        // Uncheck the other radio buttons in the group. QActionGroup exclusivity is
+        // signal-based (and the signals are blocked below), so it has to be done manually.
+        QAbstractButton *widget_to_uncheck = NULL;
+
+        for (QAction *action : _radio_group->actions()) {
+          auto *other = dynamic_cast<CheckableAction*>(action);
+
+          if (other != NULL && other != this && other->isChecked()) {
+            {
+              QSignalBlocker blocker(other);
+              other->setChecked(false);
+            }
+            if (other->_checkbox != NULL && other->_checkbox->isChecked())
+              widget_to_uncheck = other->_checkbox;
+          }
+        }
+
+        // Checking the widget below makes its QButtonGroup uncheck widget_to_uncheck.
+        // Its signals must be blocked too, to avoid running the callback-with-close path.
+        QSignalBlocker uncheck_blocker(widget_to_uncheck);
+
+        {
+          QSignalBlocker blocker(this);
+          setChecked(true);
+        }
+
+        if (_checkbox != NULL) {
+          QSignalBlocker blocker(_checkbox);
+          _checkbox->setChecked(true);
+        }
+
+        if (_callbacker != NULL)
+          _callbacker->run_checked(true);
+
+      } else {
+
+        const bool checked = !isChecked();
+
+        // Block the signals so that toggled() (which closes the menu) is not called.
+        {
+          QSignalBlocker blocker(this);
+          setChecked(checked);
+        }
+
+        if (_checkbox != NULL) {
+          QSignalBlocker blocker(_checkbox);
+          _checkbox->setChecked(checked);
+        }
+
+        if (_callbacker != NULL)
+          _callbacker->run_checked(checked);
+      }
     }
 
   public slots:
@@ -528,6 +607,7 @@ static void schedule_flush_pending_menu_callbacks(void)
   static void release_clickable_action(ClickableAction *action){    
     action->setParent(NULL);
     action->_callbacker = NULL;
+    action->_menu = NULL;
     action->setVisible(true);
     
     g_clickable_actions.insert(action->_text, action);
@@ -663,12 +743,15 @@ static void schedule_flush_pending_menu_callbacks(void)
 
   struct PopupSearchState
   {
-    QPointer<QMenu> root_menu;
-    QPointer<QLineEdit> lineedit;
-    QPointer<QWidgetAction> lineedit_action;
-    QHash<QMenu*, PopupSearchMenu> menus;
-    QSet<QMenu*> all_menus;
-    QString query;
+	  QPointer<QMenu> root_menu;
+	  QPointer<QLineEdit> lineedit;
+	  QPointer<QWidgetAction> lineedit_action;
+	  QHash<QMenu*, PopupSearchMenu> menus;
+	  QSet<QMenu*> all_menus;
+	  QString query;
+	  // Sub menus opened automatically to show the result of the search, in the order they
+	  // were opened (from the root menu and downwards).
+	  QVector<QPointer<QMenu>> auto_opened_menus;
   };
 
   static std::shared_ptr<PopupSearchState> g_popup_search_state;
@@ -687,12 +770,21 @@ static void schedule_flush_pending_menu_callbacks(void)
   // The root menu of the open hamburger popup menu. Used so that left alt can close it.
   static QPointer<QMenu> g_hamburger_popup;
 
+  // True when the next popup menu to open is the instrument-select popup (opened by F12 or by
+  // clicking the track header name). Set by GFX_set_track_header_popup_position.
+  static bool g_next_popup_is_instrument_popup = false;
+
+  // The root menu of the open instrument-select popup. Used so that F12 can close it.
+  static QPointer<QMenu> g_instrument_popup;
+
   struct PopupSearchResult
   {
     bool has_visible_entries;
     QAction *best_action;
     int best_score;
   };
+
+static void schedule_auto_open_search_result_path(void);
 
   static void set_active_action_if_necessary(QMenu *menu, QAction *best_action, QAction *lineedit_action)
   {
@@ -707,14 +799,24 @@ static void schedule_flush_pending_menu_callbacks(void)
     if (active_action != NULL && active_action != lineedit_action && active_action->isVisible() && active_action->isEnabled())
       return;
 
-    for (QAction *action : menu->actions())
-    {
-      if (action->isVisible() && !action->isSeparator() && action->isEnabled() && action != lineedit_action)
-      {
-        menu->setActiveAction(action);
-        break;
-      }
-    }
+	for (QAction *action : menu->actions())
+	{
+		// Selecting an entry with a sub menu as active action makes Qt open that sub
+		// menu from within the parent menu's Show event (QMenu::event). The Show event
+		// is sent before the menu is registered in Qt's popup stack, so the sub menu
+		// would be registered before its parent menu, and Qt would then send the
+		// keyboard events to the parent menu instead of to the sub menu. Only menus
+		// that are not shown yet can be affected by this, so don't select a sub menu
+		// entry in those. (The entry is selected when the menu is opened instead.)
+		if (action->menu() != NULL && !menu->isVisible())
+			continue;
+
+		if (action->isVisible() && !action->isSeparator() && action->isEnabled() && action != lineedit_action)
+		{
+			menu->setActiveAction(action);
+			break;
+		}
+	}
   }
 
   static void apply_popup_search_filter(void)
@@ -823,6 +925,10 @@ static void schedule_flush_pending_menu_callbacks(void)
       lineedit->setText(state->query);
 
     lineedit->setCursorPosition(lineedit->text().size());
+
+	// Applied on the next event loop iteration, so the popup is visible and so that we never
+	// open (or close) a sub menu from within a key press event handler.
+	schedule_auto_open_search_result_path();
   }
 
   // Fully deactivate the main menu bars, including Qt's internal menu bar keyboard/popup state.
@@ -869,6 +975,45 @@ static void schedule_flush_pending_menu_callbacks(void)
     });
   }
 
+  // Left/right arrow navigation in the instrument popup closes the current popup and opens a new
+  // one. Normally the keyboard focus counting drops to zero when the old menu hides (un-greying
+  // the editor) and goes back to one when the new menu shows (greying it again), which triggers
+  // two unnecessary editor redraws. Hold an extra keyboard focus reference over the transition
+  // instead, so the editor is left untouched.
+  static int g_pending_keyboard_focus_holds = 0;
+
+  static void release_pending_keyboard_focus_holds(void){
+    if (g_pending_keyboard_focus_holds==0)
+      return;
+
+    if (g_radium_runs_custom_exec){
+      // The keyboard focus counting functions don't do anything while running custom exec.
+      QTimer::singleShot(100, release_pending_keyboard_focus_holds);
+      return;
+    }
+
+    while (g_pending_keyboard_focus_holds > 0){
+      g_pending_keyboard_focus_holds--;
+      release_keyboard_focus_counting();
+    }
+  }
+
+  // Called just before the current popup is closed, if a new popup is going to be opened
+  // immediately after (i.e. by the value of the :on-left-key/:on-right-key options).
+  static void hold_keyboard_focus_for_next_popup(void){
+    if (g_radium_runs_custom_exec)
+      return;
+
+    obtain_keyboard_focus_counting();
+    g_pending_keyboard_focus_holds++;
+
+    // In case the new popup is never opened (for instance if there is no track to move to).
+    QTimer::singleShot(500, []{
+        if (g_pending_keyboard_focus_holds > 0)
+          release_pending_keyboard_focus_holds();
+      });
+  }
+
   struct MyQMenu : public QMenu /* , radium::Timer */ {
     Q_OBJECT;
 
@@ -879,6 +1024,20 @@ static void schedule_flush_pending_menu_callbacks(void)
     bool _has_g_menu_is_open = false;
 
     bool _is_part_of_main_menu = false;
+
+    // Set when the popup menu contains an "[on-left-key]"/"[on-right-key]" entry (see
+    // popupmenu.scm and create_qmenu). Only set on the root menu of a popup, never on sub menus.
+    std::shared_ptr<Callbacker> _on_left_key_callbacker;
+    std::shared_ptr<Callbacker> _on_right_key_callbacker;
+
+    // Set to true when the mouse has moved after this menu was shown. Used to avoid that the
+    // entry under the mouse pointer becomes current when the menu is opened, like Qt does.
+    bool _mouse_has_moved = false;
+
+    // The menu's current action the last time we updated the entry widgets. The entry widgets
+    // paint the current-entry marker based on the menu's active action, so the widget for the
+    // previous current entry must be repainted when the current entry changes.
+    QPointer<QAction> _last_current_action;
 
     // Workaround. Sometimes, aboutToHide and/or aboutToShow is not called.
     struct Workaround : public radium::Timer {
@@ -910,6 +1069,7 @@ static void schedule_flush_pending_menu_callbacks(void)
       setMenuColors(this);
       connect(this, SIGNAL(aboutToHide()), this, SLOT(aboutToHide()));
       connect(this, SIGNAL(aboutToShow()), this, SLOT(aboutToShow()));
+      connect(this, SIGNAL(hovered(QAction*)), this, SLOT(hovered(QAction*)));
     }
 
     ~MyQMenu()
@@ -1184,6 +1344,8 @@ static void schedule_flush_pending_menu_callbacks(void)
 
 	void mouseMoveEvent(QMouseEvent *event) override
 	{
+		_mouse_has_moved = true;
+
 		PopupSearchState *state = g_popup_search_state.get();
 
 		if (state != NULL
@@ -1204,8 +1366,62 @@ static void schedule_flush_pending_menu_callbacks(void)
       
       evalScheme("(set! *last-pressed-menu-entry-widget-mouse-button* -1)"); // To avoid keybindings-configuration menu to pop up when pressing return.
 
+      // Space toggles/selects the current entry if it is a checkable entry (checkbox or
+      // radio button). Unlike a mouse click, the popup stays open. For all other entries,
+      // space should do nothing. If a popup search is in progress, space is instead added
+      // to the search query (see handle_search_key below).
+      if (event->key()==Qt::Key_Space
+          && (event->modifiers() & (Qt::ControlModifier|Qt::AltModifier|Qt::MetaModifier))==0)
+      {
+        PopupSearchState *state = g_popup_search_state.get();
+
+        // Same conditions as handle_search_key uses to decide that a key belongs to the search query.
+        const bool search_in_progress = (state != NULL
+                                         && state->lineedit_action != NULL
+                                         && state->all_menus.contains(this)
+                                         && !state->query.isEmpty());
+
+        if (!search_in_progress)
+        {
+          QAction *active_action = activeAction();
+          auto *checkable_action = dynamic_cast<CheckableAction*>(active_action);
+
+          event->accept();
+
+          if (checkable_action != NULL && active_action->isVisible() && active_action->isEnabled())
+            checkable_action->toggle_without_closing_menu();
+
+          return;
+        }
+      }
+
       if (handle_search_key(event))
         return;
+
+      // Entries added with the :on-left-key/:on-right-key options (see popupmenu.scm).
+      if (event->key()==Qt::Key_Left || event->key()==Qt::Key_Right) {
+        std::shared_ptr<Callbacker> callbacker = event->key()==Qt::Key_Left ? _on_left_key_callbacker
+                                                                             : _on_right_key_callbacker;
+        if (callbacker != NULL) {
+          QAction *active_action = activeAction();
+
+          // Right on an enabled sub menu entry must open the sub menu. Let the event fall
+          // through to QMenu::keyPressEvent below in that case. (Left inside an open sub menu
+          // navigates back to the parent menu, but sub menus never have these callbacks, so
+          // that case is handled by Qt by itself.)
+          const bool right_opens_submenu = (event->key()==Qt::Key_Right
+                                            && active_action != NULL
+                                            && active_action->isEnabled()
+                                            && active_action->menu() != NULL);
+
+          if (!right_opens_submenu) {
+            event->accept();
+            hold_keyboard_focus_for_next_popup();
+            callbacker->run_and_delete_clicked(callbacker);
+            return;
+          }
+        }
+      }
 
       if (_is_part_of_main_menu && is_search_key(event))
       {
@@ -1348,6 +1564,35 @@ static void schedule_flush_pending_menu_callbacks(void)
 
       QMenu::keyPressEvent(event);
     }
+
+    // Qt paints the entries that open sub menus by itself (they are not widget actions),
+    // so draw the current-entry circle on those here, matching the circle that
+    // FROM_C-create-menu-entry-widget draws for normal entries.
+    void paintEvent(QPaintEvent *event) override
+    {
+      QMenu::paintEvent(event);
+
+      QAction *active = activeAction();
+
+      if (active==NULL || active->menu()==NULL || active->isVisible()==false || active->isEnabled()==false)
+        return;
+
+      const QRect rect = actionGeometry(active);
+
+      if (rect.isValid()==false)
+        return;
+
+      const double fontheight = get_system_fontheight();
+      const double marker_radius = R_MAX(2, qRound(fontheight*0.2));
+      const double marker_x = rect.left() + fontheight*0.55;
+      const double marker_y = rect.center().y() + 0.5;
+
+      QPainter painter(this);
+      painter.setRenderHint(QPainter::Antialiasing, true);
+      painter.setPen(Qt::NoPen);
+      painter.setBrush(get_config_qcolor("menu_text"));
+      painter.drawEllipse(QPointF(marker_x, marker_y), marker_radius, marker_radius);
+    }
     
 
   public slots:
@@ -1357,7 +1602,79 @@ static void schedule_flush_pending_menu_callbacks(void)
     }
     void 	aboutToShow(){
       setopen();
-  }
+
+      // A sub menu object can be shown several times, so reset for each showing.
+      _mouse_has_moved = false;
+
+      // Give sub menus a current entry right away, like normal Qt menus do.
+      if (activeAction()==NULL)
+        for (QAction *action : actions())
+          if (action->isVisible() && !action->isSeparator() && action->isEnabled() && action->menu()==NULL){
+            setActiveAction(action);
+            break;
+          }
+    }
+
+    // Makes hovering an entry select (make current) that entry, so that the
+    // current entry is highlighted, also in sub menus.
+    void hovered(QAction *action)
+    {
+      // The entry widgets paint the current-entry marker based on the menu's active action, so
+      // repaint the widget of the previous current entry when the current entry changes.
+      QAction *current = activeAction();
+
+      if (current != _last_current_action) {
+        MyQAction *previous = dynamic_cast<MyQAction*>(_last_current_action.data());
+        if (previous != NULL && previous->_widget != NULL)
+          previous->_widget->update();
+        _last_current_action = current;
+      }
+
+      MyQAction *myaction = dynamic_cast<MyQAction*>(action);
+
+      if (myaction == NULL)
+      {
+        if (g_last_hovered_widget.data() != NULL)
+          g_last_hovered_widget->update();
+
+        g_last_hovered_menu_entry_guinum = -1;
+        g_last_hovered_widget = NULL;
+        g_last_hovered_myaction = NULL;
+
+        return;
+      }
+
+      if (g_last_hovered_widget.data() != NULL)
+        g_last_hovered_widget->update();
+
+      myaction->_widget->update();
+
+      g_last_hovered_menu_entry_guinum = myaction->_guinum;
+      g_last_hovered_widget = myaction->_widget;
+
+      if (myaction->isEnabled())
+        g_last_hovered_myaction = myaction;
+      else
+        g_last_hovered_myaction = NULL;
+
+      if (_is_part_of_main_menu || action==activeAction() || actions().contains(action)==false)
+        return;
+
+      // Only let hovering change the current entry after the mouse has actually moved. Otherwise
+      // the entry under the mouse pointer would become current right away when a menu is opened.
+      if (!_mouse_has_moved)
+        return;
+
+      if (activeAction()==NULL || strcmp(activeAction()->metaObject()->className(), "QAction")){ // Don't do this if activeAction() is a sub menu.
+        IsAlive is_alive1(this);
+        IsAlive is_alive2(action);
+
+        QTimer::singleShot(20, [is_alive1, is_alive2, this, action]{
+          if (is_alive1 && is_alive2 && !_is_part_of_main_menu && action!=activeAction() && actions().contains(action))
+            setActiveAction(action);
+        });
+      }
+    }
     
   };
 
@@ -1397,8 +1714,6 @@ static void schedule_flush_pending_menu_callbacks(void)
       
       //if(_callback!=NULL)
       //  s7extra_protect(_callback);
-
-      connect(this, SIGNAL(hovered(QAction*)), this, SLOT(hovered(QAction*)));      
     }
     
     ~MyMainQMenu(){
@@ -1470,6 +1785,11 @@ static void schedule_flush_pending_menu_callbacks(void)
         obtain_keyboard_focus_counting();
         _has_keyboard_focus = true;
       }
+
+      // If this popup replaced another popup (left/right arrow navigation), release the keyboard
+      // focus reference that was kept over the transition.
+      release_pending_keyboard_focus_holds();
+
 	MyQMenu::showEvent(event);
 
 	// The menu is usually opened with the mouse pointer over the search field, and Qt
@@ -1508,7 +1828,14 @@ static void schedule_flush_pending_menu_callbacks(void)
         release_keyboard_focus_counting();
         _has_keyboard_focus = false;
       }
+
       MyQMenu::hideEvent(event);
+
+      // Qt hides a popup menu when it is dismissed instead of closing it, so WA_DeleteOnClose
+      // never fires for popups dismissed by clicking outside, pressing escape, or by hide().
+      // Delete the root popup here to avoid leaking its actions, callbacks and entry widgets.
+      if (!_is_permanent && _is_root)
+        deleteLater();
     }
 
     void closeEvent(QCloseEvent *event) override{
@@ -1581,68 +1908,119 @@ static void schedule_flush_pending_menu_callbacks(void)
       }
     }
 
-  public slots:
-
-    void hovered(QAction *action){
-      MyQAction *myaction = dynamic_cast<MyQAction*>(action);
-      
-      if (g_last_hovered_widget.data() != NULL)
-        g_last_hovered_widget->update();
-      
-      if (myaction!=NULL){
-        
-        myaction->_widget->update();
-        
-        g_last_hovered_menu_entry_guinum = myaction->_guinum;
-
-        if (/*isVisible() && hasFocus() && */ !_is_permanent && _is_root && _set_active_action_counter==0 && action!=activeAction()){
-
-          //printf("   Hovered. Action: %s. activeAction: %s\n", action->metaObject()->className(), activeAction()==NULL ? "(null)" : activeAction()->metaObject()->className());
-
-          if (activeAction()==NULL || strcmp(activeAction()->metaObject()->className(), "QAction")){ // Don't do this if activeAction() is a sub menu.
-            
-            // We do this to fix keyboard up/down keys selecting correct prev/next entry right after opening a popup menu.
-            
-            IsAlive is_alive1(this);
-            IsAlive is_alive2(action);
-            
-            QTimer::singleShot(20, [is_alive1, is_alive2, this, action]{
-                                     if (is_alive1 && is_alive2 && /*isVisible() && hasFocus() &&*/ !_is_permanent && _is_root && action!=activeAction()) {
-                                       setActiveAction(action);
-                                       _set_active_action_counter++;
-                                     }
-                                   });
-          }
-        }
-        
-        _my_last_hovered_menu_entry_guinum = -1;
-        
-        g_last_hovered_widget = myaction->_widget;
-
-        if (myaction->isEnabled())
-          g_last_hovered_myaction = myaction;
-        else
-          g_last_hovered_myaction = NULL;
-
-        //printf("  Hovered ON: %d\n", (int)g_last_hovered_menu_entry_guinum);
-
-      } else {
-        
-        //printf("  Hovered OFF: %d\n", (int)g_last_hovered_menu_entry_guinum);
-        
-        g_last_hovered_menu_entry_guinum = -1;
-        _my_last_hovered_menu_entry_guinum = -1;
-
-        g_last_hovered_widget = NULL;
-
-        g_last_hovered_myaction = NULL;
-      }
-
-      //if (myaction!=NULL) printf("  QMENU::HOVERED action: %p. myaction: \"%s\" (%p). Is separator: %d\n", action, myaction->_text.toUtf8().constData(), myaction, action->isSeparator());
-    }
 
 
   };
+
+// If a menu only has a single visible selectable entry, and that entry opens a sub menu,
+// open the sub menu. This is repeated down the menu hierarchy. The result is that when
+// searching for e.g. "Blowfish", the Project -> Demo Songs sub menus are opened
+// automatically so the matching entry becomes visible instead of just highlighting the
+// top-level Project menu.
+static void auto_open_search_result_path(void)
+{
+	PopupSearchState *state = g_popup_search_state.get();
+
+	if (state == NULL || state->root_menu.isNull() || state->lineedit_action.isNull())
+		return;
+
+	QVector<QMenu*> desired_path;
+
+	const radium::FuzzySearchQuery search(state->query);
+
+	if (!search.empty() && state->root_menu->isVisible())
+	{
+		QMenu *menu = state->root_menu.data();
+
+		while (true)
+		{
+			QAction *only_action = NULL;
+			int num_selectable_actions = 0;
+
+			for (QAction *action : menu->actions())
+			{
+				if (action == state->lineedit_action.data())
+					continue;
+
+				if (!action->isVisible() || action->isSeparator() || !action->isEnabled())
+					continue;
+
+				only_action = action;
+				num_selectable_actions++;
+			}
+
+			if (num_selectable_actions != 1 || only_action->menu() == NULL)
+				break;
+
+			QMenu *submenu = only_action->menu();
+
+			desired_path.push_back(submenu);
+			menu = submenu;
+		}
+	}
+
+	// Close sub menus that were opened by a previous search, but which are no longer part
+	// of the path to the current search result. Close the deepest menus first.
+	for (int i = state->auto_opened_menus.size()-1 ; i >= 0 ; i--)
+	{
+		QMenu *auto_opened_menu = state->auto_opened_menus[i].data();
+
+		if (auto_opened_menu == NULL || !desired_path.contains(auto_opened_menu))
+		{
+			if (auto_opened_menu != NULL)
+				auto_opened_menu->hide();
+
+			state->auto_opened_menus.removeAt(i);
+		}
+	}
+
+	if (state->root_menu.isNull() || !state->root_menu->isVisible())
+		return;
+
+	QMenu *parent_menu = state->root_menu.data();
+
+	for (QMenu *submenu : desired_path)
+	{
+		QAction *submenu_action = submenu->menuAction();
+
+		if (submenu_action == NULL || !submenu_action->isVisible() || !submenu_action->isEnabled())
+			break;
+
+		if (!submenu->isVisible())
+		{
+			MyQMenu *my_parent_menu = dynamic_cast<MyQMenu*>(parent_menu);
+
+			if (my_parent_menu == NULL)
+				break;
+
+			parent_menu->setActiveAction(submenu_action);
+			my_parent_menu->navigate_qt(Qt::Key_Right);
+
+			if (!submenu->isVisible())
+				break;
+
+			if (!state->auto_opened_menus.contains(submenu))
+				state->auto_opened_menus.push_back(submenu);
+		}
+
+		parent_menu = submenu;
+	}
+}
+
+static void schedule_auto_open_search_result_path(void)
+{
+	PopupSearchState *state = g_popup_search_state.get();
+
+	if (state == NULL || state->root_menu.isNull())
+		return;
+
+	QPointer<QMenu> root_menu = state->root_menu;
+
+	// The root menu is the context object, so the timer is canceled if the popup is deleted.
+	QTimer::singleShot(0, root_menu.data(), []{
+		auto_open_search_result_path();
+	});
+}
 
 
 }
@@ -1788,6 +2166,19 @@ static QMenu *create_qmenu(
   for(int i=0;i<v.num_elements;i++) {
     
     QString text = (const char*)v.elements[i];
+
+    // Special entries only providing a callback for the left/right arrow keys. Handled here so
+    // they don't create menu entries, popup-search entries, or sub menu splitting. Stored on the
+    // root menu only, so arrow keys inside sub menus keep their normal Qt behavior.
+    if (text == "[on-left-key]" || text == "[on-right-key]") {
+      auto callbacker = std::make_shared<Callbacker>(menu, i, is_async, text, callback2, callback3, result, false);
+      if (text == "[on-left-key]")
+        menu->_on_left_key_callbacker = callbacker;
+      else
+        menu->_on_right_key_callbacker = callbacker;
+      n_submenues++;
+      continue;
+    }
     
     if (text.startsWith("----")) {
 
@@ -1990,10 +2381,18 @@ static QMenu *create_qmenu(
         bool is_last = n_submenues==v.num_elements-1 || n_submenues==getMaxSubmenuEntries()-1;
 
         if (!is_last){
-          if (i < v.num_elements-1){
-            QString text = (const char*)v.elements[i+1];
-            if(text.startsWith("[submenu end]"))
-              is_last=true;
+          // Skip our own "[on-left-key]"/"[on-right-key]" entries (they are only added at the end
+          // of the entries, after the real menu entries), so they don't affect the styling of the
+          // last real entry.
+          is_last = true;
+          for(int j=i+1 ; j<v.num_elements ; j++){
+            QString next_text = (const char*)v.elements[j];
+            if (next_text=="[on-left-key]" || next_text=="[on-right-key]")
+              continue;
+            if (next_text.startsWith("[submenu end]"))
+              break;
+            is_last = false;
+            break;
           }
         }
 
@@ -2011,7 +2410,7 @@ static QMenu *create_qmenu(
           
         } else if (is_checkable) {
 
-          auto *hepp = new CheckableAction(text, shortcut, curr_menu->_shortcut_width, is_checked, radio_buttons != NULL, is_first, is_last, callbacker);
+          auto *hepp = new CheckableAction(text, shortcut, curr_menu->_shortcut_width, is_checked, radio_buttons, is_first, is_last, callbacker);
           
           if (hepp->_success==false){
             radio_buttons=NULL;
@@ -2054,6 +2453,10 @@ static QMenu *create_qmenu(
         //action->setData(i);
         double t = TIME_get_ms();
         curr_menu->addAction(action);  // are these actions automatically freed in ~QMenu? (yes, seems so) (they are probably freed because they are children of the qmenu)
+
+        MyQAction *myaction = dynamic_cast<MyQAction*>(action);
+        if (myaction != NULL)
+          myaction->_menu = curr_menu;
 
         if (search_state != NULL)
           search_state->menus[curr_menu].entries.append(PopupSearchEntry{action, radium::fuzzy_search_fold(text)});
@@ -2121,7 +2524,7 @@ static QMenu *create_qmenu(
       lineedit->setMinimumHeight(fontheight + 2*border_width);
       lineedit->setTextMargins((int)(border_width + 1.1*fontheight), 0, border_width, 0);
 
-      QColor background_color = get_qcolor(MENU_BACKGROUND_COLOR_NUM);
+      QColor background_color = get_qcolor(MENU_SEARCH_COLOR_NUM);
       QColor text_color = get_qcolor(MENU_TEXT_COLOR_NUM);
       QColor placeholder_color = text_color;
       placeholder_color.setAlpha(128);
@@ -2132,6 +2535,7 @@ static QMenu *create_qmenu(
       palette.setColor(QPalette::Text, text_color);
       palette.setColor(QPalette::PlaceholderText, placeholder_color);
       lineedit->setPalette(palette);
+      lineedit->setStyleSheet(QString("QLineEdit { background-color: %1; }").arg(background_color.name(QColor::HexArgb)));
 
       auto *lineedit_action = new PopupSearchAction(menu);
       lineedit_action->setDefaultWidget(lineedit);
@@ -2242,6 +2646,32 @@ void GFX_HoverMenuEntry(int entryid){
   }
 }
 
+// Returns true if the entry is the active (currently selected) entry of its own menu,
+// i.e. the entry that Qt will activate if the user presses return or clicks it.
+bool GFX_IsCurrentMenuEntry(int64_t guinum)
+{
+  MyQAction *action = g_actions_by_guinum.value(guinum).data();
+
+  if (action == NULL)
+    return false;
+
+  // Note: callbacker->qmenu is the root popup menu, while the action might
+  // be in a sub menu (e.g. in the hamburger/search popup). _menu is the menu
+  // the action is actually in.
+  if (action->_menu != NULL)
+    return action->_menu->activeAction() == action;
+
+  for (QWidget *widget : action->associatedWidgets())
+  {
+    QMenu *menu = qobject_cast<QMenu*>(widget);
+
+    if (menu != NULL && menu->activeAction() == action)
+      return true;
+  }
+
+  return false;
+}
+
 // This function is only needed on Windows, for some reason, but we do it on all platforms to faster discover bugs caused by this function.
 void GFX_RightclickMenuEntry(int entryid){
   if (g_curr_visible_actions.contains(entryid)){
@@ -2283,6 +2713,40 @@ void GFX_set_pending_popup_position(int x, int y, bool is_hamburger)
 	g_has_pending_popup_position = true;
 }
 
+// Sets the position of the next popup menu to the top of the editor, i.e. just below the
+// whole track header (both the name widget ("(click me)") and the slider row below it),
+// for the given track. tracknum -1 means the current track. Does nothing (i.e. the next
+// popup menu opens at the mouse position) if the position can't be found.
+void GFX_set_track_header_popup_position(int tracknum)
+{
+	g_next_popup_is_instrument_popup = true;
+
+	struct Tracker_Windows *window = getWindowFromNum(-1);
+	struct WBlocks *wblock = NULL;
+	struct WTracks *wtrack = getWTrackFromNumA(-1, &window, -1, &wblock, tracknum);
+	if (wtrack == NULL)
+		return;
+
+	EditorWidget *editor = static_cast<EditorWidget*>(window->os_visual.widget);
+	if (editor == NULL || editor->header_widget == NULL)
+		return;
+
+	const QWidget *header_widget = editor->header_widget;
+
+	// The "(click me)" name widget is the top half of the track header, and the sliders
+	// (volume/pan) are in the row below.
+	int x = wtrack->x; // Same x as the track header name widget is painted at.
+	const int y = header_widget->height(); // Bottom of the track header, i.e. y1 of the editor widget.
+
+	if (x < 0)
+		x = 0;
+	else if (x >= header_widget->width())
+		x = header_widget->width() - 1;
+
+	const QPoint pos = header_widget->mapToGlobal(QPoint(x, y));
+	GFX_set_pending_popup_position(pos.x(), pos.y(), false);
+}
+
 // Registers the hamburger button in the main window's bottom bar, so that the popup menu
 // can be opened at the same position as when clicking on it.
 void GFX_set_hamburger_button(QWidget *button)
@@ -2297,6 +2761,14 @@ void GFX_open_hamburger_popup_menu(QWidget *button)
 {
 	if (GFX_HamburgerPopupIsOpen())
 		return;
+
+	// The main menus have now been opened. Stop the attention drawing and the startup hint
+	// of the hamburger button. (See BottomBar_create and Qt_MainWindow.cpp.)
+	if (SETTINGS_read_bool("main_menu_popup_has_been_opened", false)==false)
+	{
+		SETTINGS_write_bool("main_menu_popup_has_been_opened", true);
+		GFX_OS_hamburger_menu_was_opened();
+	}
 
 	if (button == NULL)
 		button = g_hamburger_button;
@@ -2331,6 +2803,20 @@ void GFX_CloseHamburgerPopup(void)
 
 	if (!g_hamburger_popup.isNull())
 		g_hamburger_popup->hide();
+}
+
+// Returns true if the instrument-select popup (opened by F12 or by clicking the track header
+// name) is currently open.
+bool GFX_InstrumentPopupIsOpen(void)
+{
+	return !g_instrument_popup.isNull() && g_instrument_popup->isVisible();
+}
+
+// Closes the instrument-select popup, including any open sub menu.
+void GFX_CloseInstrumentPopup(void)
+{
+	if (!g_instrument_popup.isNull())
+		g_instrument_popup->hide();
 }
 
 // Returns the position to open a popup menu at. (Note that this position is the top-left corner
@@ -2386,6 +2872,11 @@ static int64_t GFX_QtMenu(
   //printf("                CREATED menu %p", menu);
   
   if (is_async){
+
+    if (g_next_popup_is_instrument_popup){
+      g_instrument_popup = menu;
+      g_next_popup_is_instrument_popup = false;
+    }
 
     if (g_has_pending_popup_position)
     {

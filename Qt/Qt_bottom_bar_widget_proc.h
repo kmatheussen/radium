@@ -3,6 +3,8 @@
 
 extern LANGSPEC bool EDITOR_switch_drunk_velocity(void);
 
+extern LANGSPEC void GFX_OS_hamburger_menu_was_opened(void);
+
 extern LANGSPEC void GFX_OS_call_very_often(void);
   
 #if USE_QT4

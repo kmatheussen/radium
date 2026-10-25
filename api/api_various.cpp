@@ -1787,6 +1787,10 @@ void simulateDeleteMouseButton(void){
 #endif
 }
 
+void simulateRightMouseButton(void){
+  MOUSE_CYCLE_right_button_has_been_clicked();
+}
+
 void insertLines(int toinsert,int windownum){
   struct Tracker_Windows *window=getWindowFromNum(windownum);if(window==NULL) return;
   
@@ -4502,165 +4506,128 @@ void setUseNativeFileRequesters(bool doit){
 
 
 
-static float g_instrument_brightness = DEFAULT_INSTRUMENT_BRIGHTNESS;
+static float g_instrument_brightness = -1.0f;
 
 static void update_all_instrument_colors_in_editor(void){
+  if (root==NULL || root->song==NULL || root->song->tracker_windows==NULL)
+    return;
+
   root->song->tracker_windows->must_redraw_editor = true;
   SEQUENCER_update(SEQUPDATE_TIMING);
 }
 
 static void update_all_instrument_colors(void){
+  if (root==NULL || root->song==NULL || root->song->tracker_windows==NULL)
+    return;
+
   root->song->tracker_windows->must_redraw=true;
   redrawMixerStrips(false);
   MW_update_all_chips();
   SEQUENCER_update(SEQUPDATE_HEADERS);
 }
 
+// The slider values are stored in the color configurations. The get_default
+// functions receive their values from the program's default color configuration.
+static float get_slider_value(float *value, float (*get_default)(void)){
+  if (*value < 0.0f)
+    *value = get_default();
+
+  return *value;
+}
+
 float getInstrumentBrightness(void){
-  static bool has_inited = false;
-
-  if (has_inited==false){
-    g_instrument_brightness = SETTINGS_read_double("color_instrument_brightness_v2", g_instrument_brightness);
-    has_inited = true;
-  }
-
-  return g_instrument_brightness;
+  return get_slider_value(&g_instrument_brightness, GFX_GetDefaultInstrumentBrightness);
 }
 
 void setInstrumentBrightness(float val){
   if (!equal_floats(val, g_instrument_brightness)){
     g_instrument_brightness = val;
     update_all_instrument_colors();
-    SETTINGS_write_double("color_instrument_brightness_v2", val);
   }
 }
 
 
-static float g_instrument_brightness_in_editor = DEFAULT_INSTRUMENT_BRIGHTNESS_IN_EDITOR;
+static float g_instrument_brightness_in_editor = -1.0f;
 
 float getInstrumentBrightnessInEditor(void){
-  static bool has_inited = false;
-
-  if (has_inited==false){
-    g_instrument_brightness_in_editor = SETTINGS_read_double("color_instrument_brightness_in_editor_v2", g_instrument_brightness_in_editor);
-    has_inited = true;
-  }
-
-  return g_instrument_brightness_in_editor;
+  return get_slider_value(&g_instrument_brightness_in_editor, GFX_GetDefaultInstrumentBrightnessInEditor);
 }
 
 void setInstrumentBrightnessInEditor(float val){
   if (!equal_floats(val, g_instrument_brightness_in_editor)){
     g_instrument_brightness_in_editor = val;
     update_all_instrument_colors_in_editor();
-    SETTINGS_write_double("color_instrument_brightness_in_editor_v2", val);
   }
 }
 
 
-static float g_instrument_saturation = DEFAULT_INSTRUMENT_SATURATION;
+static float g_instrument_saturation = -1.0f;
 
 float getInstrumentSaturation(void){
-  static bool has_inited = false;
-
-  if (has_inited==false){
-    g_instrument_saturation = SETTINGS_read_double("color_instrument_saturation_v2", g_instrument_saturation);
-    has_inited = true;
-  }
-
-  return g_instrument_saturation;
+  return get_slider_value(&g_instrument_saturation, GFX_GetDefaultInstrumentSaturation);
 }
 
 void setInstrumentSaturation(float val){
   if (!equal_floats(val, g_instrument_saturation)){
     g_instrument_saturation = val;
     update_all_instrument_colors();
-    SETTINGS_write_double("color_instrument_saturation_v2", val);
   }
 }
 
 
-static float g_instrument_saturation_in_editor = DEFAULT_INSTRUMENT_SATURATION_IN_EDITOR;
+static float g_instrument_saturation_in_editor = -1.0f;
 
 float getInstrumentSaturationInEditor(void){
-  static bool has_inited = false;
-
-  if (has_inited==false){
-    g_instrument_saturation_in_editor = SETTINGS_read_double("color_instrument_saturation_in_editor_v2", g_instrument_saturation_in_editor);
-    has_inited = true;
-  }
-
-  return g_instrument_saturation_in_editor;
+  return get_slider_value(&g_instrument_saturation_in_editor, GFX_GetDefaultInstrumentSaturationInEditor);
 }
 
 void setInstrumentSaturationInEditor(float val){
   if (!equal_floats(val, g_instrument_saturation_in_editor)){
     g_instrument_saturation_in_editor = val;
     update_all_instrument_colors_in_editor();
-    SETTINGS_write_double("color_instrument_saturation_in_editor_v2", val);
   }
 }
 
 
-static float g_block_brightness = DEFAULT_BLOCK_BRIGHTNESS;
+static float g_block_brightness = -1.0f;
 
 static void update_all_block_colors(void){
+  if (root==NULL || root->song==NULL)
+    return;
+
   SEQUENCER_update(SEQUPDATE_EVERYTHING);
 }
 
 float getBlockBrightness(void){
-  static bool has_inited = false;
-
-  if (has_inited==false){
-    g_block_brightness = SETTINGS_read_double("color_block_brightness_v2", g_block_brightness);
-    has_inited = true;
-  }
-
-  return g_block_brightness;
+  return get_slider_value(&g_block_brightness, GFX_GetDefaultBlockBrightness);
 }
 
 void setBlockBrightness(float val){
   if (!equal_floats(val, g_block_brightness)){
     g_block_brightness = val;
     update_all_block_colors();
-    SETTINGS_write_double("color_block_brightness_v2", val);
   }
 }
 
 
-static float g_block_saturation = DEFAULT_BLOCK_SATURATION;
+static float g_block_saturation = -1.0f;
 
 float getBlockSaturation(void){
-  static bool has_inited = false;
-
-  if (has_inited==false){
-    g_block_saturation = SETTINGS_read_double("color_block_saturation_v2", g_block_saturation);
-    has_inited = true;
-  }
-
-  return g_block_saturation;
+  return get_slider_value(&g_block_saturation, GFX_GetDefaultBlockSaturation);
 }
 
 void setBlockSaturation(float val){
   if (!equal_floats(val, g_block_saturation)){
     g_block_saturation = val;
     update_all_block_colors();
-    SETTINGS_write_double("color_block_saturation_v2", val);
   }
 }
 
 
-static float g_amount_gradient = DEFAULT_AMOUNT_OF_GRADIENT;
+static float g_amount_gradient = -1.0f;
 
 float getAmountOfGradient(void){
-  static bool has_inited = false;
-
-  if (has_inited==false){
-    g_amount_gradient = SETTINGS_read_double("color_amount_gradient", g_amount_gradient);
-    has_inited = true;
-  }
-
-  return g_amount_gradient;
+  return get_slider_value(&g_amount_gradient, GFX_GetDefaultAmountOfGradient);
 }
 
 void setAmountOfGradient(float val){
@@ -4669,11 +4636,8 @@ void setAmountOfGradient(float val){
 
     for(auto *window : QApplication::topLevelWidgets())
       updateWidgetRecursively(window);
-
-    SETTINGS_write_double("color_amount_gradient", val);
   }
 }
-
 
 
 void printMixerTree(void){

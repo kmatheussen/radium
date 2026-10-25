@@ -2324,6 +2324,13 @@
         </widget>
        </item>
        <item>
+        <widget class="QCheckBox" name="show_grayed_out_blocks">
+         <property name="text">
+          <string>Display grayed-out blocks before and after current block</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QCheckBox" name="colorTracksOnoff">
          <property name="enabled">
           <bool>true</bool>
@@ -11178,24 +11185,6 @@ that scrolling becomes less smooth.
             </item>
            </layout>
           </widget>
-         </item>
-         <item>
-          <layout class="QHBoxLayout" name="colorlayout_right_2">
-           <item>
-            <widget class="QPushButton" name="load_color_file">
-             <property name="text">
-              <string>Load from file</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="save_color_file">
-             <property name="text">
-              <string>Save to file</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
          </item>
         </layout>
        </item>

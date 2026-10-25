@@ -43,13 +43,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 extern struct Root *root;
 
-struct WLPBs *WLPBs_get(
-                        const struct Tracker_Windows*window,
-                        const struct WBlocks *wblock
-                        )
+static void WLPBs_fill(
+                       const struct Tracker_Windows *window,
+                       const struct WBlocks *wblock,
+                       struct WLPBs *wlpbs
+                       )
 {
-        struct WLPBs *wlpbs=(struct WLPBs *)talloc_atomic_clean(sizeof(struct WLPBs)*wblock->num_reallines);
-
 	int realline=0;
 
 	struct LPBs *lpb=wblock->block->lpbs;
@@ -70,9 +69,33 @@ struct WLPBs *WLPBs_get(
 
 		lpb=NextLPB(lpb);
 	}
+}
+
+struct WLPBs *WLPBs_get(
+                        const struct Tracker_Windows*window,
+                        const struct WBlocks *wblock
+                        )
+{
+        struct WLPBs *wlpbs=(struct WLPBs *)talloc_atomic_clean(sizeof(struct WLPBs)*wblock->num_reallines);
+
+        WLPBs_fill(window, wblock, wlpbs);
 
         return wlpbs;
 }
+
+#if USE_QT4
+QVector<WLPBs> WLPBs_get_qt(
+                            const struct Tracker_Windows *window,
+                            const struct WBlocks *wblock
+                            )
+{
+  QVector<WLPBs> wlpbs(wblock->num_reallines, WLPBs{0, LPB_NORMAL});
+
+  WLPBs_fill(window, wblock, wlpbs.data());
+
+  return wlpbs;
+}
+#endif
 
 QVector<LPBs*> LPBs_get(const struct WBlocks *wblock, int realline){
   QVector<LPBs*> ret;

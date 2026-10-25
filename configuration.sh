@@ -47,9 +47,8 @@ set_var INCLUDE_PDDEV 1
 
 ########################################################
 # If enabled, include the Pd2 instrument (using current Pd/libpd).
-# Only Linux for now. Other platforms ignore this variable.
 #
-set_var INCLUDE_PD2DEV 0
+set_var INCLUDE_PD2DEV 1
 
 
 
@@ -330,7 +329,7 @@ if ! is_0 $FAUST_USES_LLVM ; then
 		export LLVM_CONFIG_BIN=$(which llvm-config)
 	fi
 
-	assert_exe_exists $LLVM_CONFIG_BIN
+	assert_exe_exists "$LLVM_CONFIG_BIN"
 
 	if uname -s |grep Linux > /dev/null ; then
 		
@@ -387,14 +386,14 @@ else
     export FULL_CCC_PATH=`which g++`
 fi
 
-if ! uname -s |grep -i Linux > /dev/null ; then
+if [ "${TARGET_OS:-linux}" != "linux" ] || ! uname -s |grep -i Linux > /dev/null ; then
     unset INCLUDE_PDDEV
     set_var INCLUDE_PDDEV 0
 fi
-if ! uname -s |grep -i -e Linux -e Darwin > /dev/null ; then
-    unset INCLUDE_PD2DEV
-    set_var INCLUDE_PD2DEV 0
-fi
+#if ! uname -s |grep -i -e Linux -e Darwin > /dev/null ; then
+#    unset INCLUDE_PD2DEV
+#    set_var INCLUDE_PD2DEV 0
+#fi
 if arch |grep -e arm -e aarch64 ; then
     unset INCLUDE_PDDEV
     set_var INCLUDE_PDDEV 0

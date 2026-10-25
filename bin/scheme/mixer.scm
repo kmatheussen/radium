@@ -283,6 +283,32 @@
   (<ra> :create-instrument-description-popup-menu descr))
 
 
+(define (get-insert-sound-object-submenu-entries x y)
+  (define instrconf (make-instrument-conf :x x
+                                          :y y
+                                          :connect-to-main-pipe #f
+                                          :do-autoconnect #t
+                                          :include-load-preset #t
+                                          :must-have-inputs #f
+                                          :must-have-outputs #f
+                                          :parentgui (<gui> :get-main-mixer-gui)))
+  (define (create descr)
+    (create-instrument-from-description instrconf descr))
+  (define favourites (get-favourite-plugin-menu-entries create create-instrument))
+  (list
+   (list "Instruments/effects"
+         (spr-entries->menu-entries (<ra> :get-sound-plugin-registry)
+                                    instrconf
+                                    (lambda (entry)
+                                      (spr-entry->instrument-description entry instrconf create))
+                                    #f
+                                    create-instrument))
+   (list "Most used instruments"
+         (if (null? favourites)
+             (list (list "(None)" :enabled #f (lambda () #f)))
+             favourites))))
+
+
 ;; Note: Used for shortcut
 (delafina (insert-new-bus-in-mixer :x (<ra> :get-curr-mixer-slot-x)
                                    :y (<ra> :get-curr-mixer-slot-y))
@@ -482,14 +508,7 @@
           :shortcut new-instrument-from-plugin-manager
           (lambda ()
             (new-instrument-from-plugin-manager -2 x y)))
-    (list "From instrument/effect menu" ;;New instrument or effect"
-          :shortcut insert-new-sound-object-in-mixer
-          (lambda ()
-            (insert-new-sound-object-in-mixer x y)))
-    (list "From list of most frequently used instruments" ;;"From list of favourites"
-          :shortcut show-favourites-menu
-          (lambda ()
-            (show-favourites-menu x y)))
+    (get-insert-sound-object-submenu-entries x y)
     "---------------"
     (list "From preset file (.rec/.mrec)"
           :shortcut new-instrument-from-preset

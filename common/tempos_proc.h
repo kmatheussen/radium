@@ -25,6 +25,11 @@ extern LANGSPEC struct WBPMs *WBPMs_get(
                                         );
 
 #if USE_QT4
+#  include <QVector>
+QVector<WBPMs> WBPMs_get_qt(
+                            const struct Tracker_Windows *window,
+                            const struct WBlocks *wblock
+                            );
 QVector<Tempos*> BPMs_get(const struct WBlocks *wblock, int realline);
 #endif
 

@@ -148,12 +148,27 @@ enum {
   NUM_SLIDERS
 };
 
-struct PreferencesUndoEntry {
-  bool is_slider;
-  enum ColorNums colornum;
-  QColor color;
-  int slider_id;
-  float slider_value;
+struct PreferencesUndoEntry
+{
+	bool is_slider;
+	enum ColorNums colornum;
+	QColor color;
+	int slider_id;
+	float slider_value;
+
+	// If all_colors is non-empty, the entry restores all colors and all
+	// sliders instead of a single color or slider.
+	QVector<QColor> all_colors;
+	QVector<float> all_slider_values;
+
+	PreferencesUndoEntry(bool is_slider, enum ColorNums colornum, QColor color, int slider_id, float slider_value)
+		: is_slider(is_slider)
+		, colornum(colornum)
+		, color(color)
+		, slider_id(slider_id)
+		, slider_value(slider_value)
+	{
+	}
 };
 
 static QVector<PreferencesUndoEntry> g_color_undo_stack;
@@ -163,6 +178,26 @@ static bool g_pending_change_committed = false;
 static bool g_slider_committed[NUM_SLIDERS] = {false}; // [NO_STATIC_ARRAY_WARNING]
 static int g_pending_old_slider_values[NUM_SLIDERS] = {0}; // [NO_STATIC_ARRAY_WARNING]
 static bool g_in_undo_redo = false;
+
+// While an object of this class is alive, changes to colors and sliders are
+// not added to the undo history. Used when the program changes colors or
+// sliders by itself, for instance when undoing, redoing, reverting colors,
+// or switching color configuration.
+struct Scoped_ignore_color_changes
+{
+	bool _old_value;
+
+	Scoped_ignore_color_changes(void)
+		: _old_value(g_in_undo_redo)
+	{
+		g_in_undo_redo = true;
+	}
+
+	~Scoped_ignore_color_changes(void)
+	{
+		g_in_undo_redo = _old_value;
+	}
+};
 
 struct Separator : public QWidget{
   QString _text;
@@ -541,7 +576,6 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
     if (visible==false && isVisible()==true){
       GFX_reload_qt_stylesheets(false);
       GFX_SaveAllColorConfigurations();
-	  GFX_SaveColors(createIllegalFilepath());
       save_color_dialog_custom_colors();
     }
 
@@ -848,6 +882,8 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
 	  use_qwerty_09_editor_subtracks->setChecked(useQwerty09EditorSubtracks());
 	  use_qwerty_af_editor_subtracks->setChecked(useQwertyAfEditorSubtracks());
 	  
+      show_grayed_out_blocks->setChecked(GL_get_show_grayed_out_blocks());
+
       colorTracksOnoff->setChecked(GL_get_colored_tracks());
 
       update_waveforms_during_playback->setChecked(SETTINGS_read_bool("enable_editor_rerendering_during_playback",true));
@@ -951,9 +987,8 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
 
     // Colors
     {
-      save_color_file->hide();
-      load_color_file->hide();
-      
+      Scoped_ignore_color_changes scoped_ignore;
+
       instrument_brightness->setValue(getInstrumentBrightness()*1000);
       instrument_saturation->setValue(getInstrumentSaturation()*1000);
       instrument_brightness_in_editor->setValue(getInstrumentBrightnessInEditor()*1000);
@@ -962,6 +997,8 @@ class Preferences : public RememberGeometryQDialog, public Ui::Preferences {
       block_saturation->setValue(getBlockSaturation()*1000);
       gradient_slider->setValue(getAmountOfGradient()*1000);
     }
+
+    resync_color_interaction_state();
     
     // MIDI
     {
@@ -1149,6 +1186,11 @@ public slots:
 		setUseQwertyAfEditorSubtracks(val);
   }
 	
+  void on_show_grayed_out_blocks_toggled(bool val){
+    if (_initing==false)
+      GL_set_show_grayed_out_blocks(val);
+  }
+
   void on_colorTracksOnoff_toggled(bool val){
     if (_initing==false)
       GL_set_colored_tracks(val);
@@ -1743,6 +1785,138 @@ public slots:
     color_redo->setEnabled(g_color_redo_stack.isEmpty()==false);
   }
 
+  void clear_color_undo_history(void)
+  {
+    g_color_undo_stack.clear();
+    g_color_redo_stack.clear();
+    update_color_undo_redo_buttons();
+  }
+
+  // The "pending" values are the values to restore to if the user changes a
+  // color or a slider. They must be in sync with the current values whenever
+  // the program has changed a color or a slider by itself, otherwise the undo
+  // history will record wrong values.
+  void resync_color_interaction_state(void)
+  {
+    g_pending_old_color = get_qcolor(g_current_colornum);
+    g_pending_change_committed = false;
+
+    for(int i=0;i<NUM_SLIDERS;i++)
+    {
+      g_pending_old_slider_values[i] = get_slider_value(i);
+      g_slider_committed[i] = false;
+    }
+  }
+
+  // Adds an undo step that brings back old_color for colornum. Does nothing
+  // if the color didn't change.
+  void add_color_undo_step(enum ColorNums colornum, const QColor &old_color)
+  {
+    if (old_color == get_qcolor(colornum))
+      return;
+
+    g_color_undo_stack.push_back({false, colornum, old_color, 0, 0.0f});
+    g_color_redo_stack.clear();
+    update_color_undo_redo_buttons();
+  }
+
+  // Returns an undo entry that restores all colors and all sliders.
+  PreferencesUndoEntry make_all_colors_undo_entry(void)
+  {
+    PreferencesUndoEntry entry(false, (enum ColorNums)0, QColor(), 0, 0.0f);
+
+    for(int i=START_CONFIG_COLOR_NUM;i<END_CONFIG_COLOR_NUM;i++)
+    {
+      enum ColorNums colornum = (enum ColorNums)i;
+      entry.all_colors.push_back(is_qcolor_separator(colornum) ? QColor() : get_qcolor(colornum));
+    }
+
+    for(int i=0;i<NUM_SLIDERS;i++)
+      entry.all_slider_values.push_back((float)get_slider_value(i));
+
+    return entry;
+  }
+
+  bool all_colors_undo_entry_is_current(const PreferencesUndoEntry &entry)
+  {
+    for(int i=0;i<entry.all_colors.size();i++)
+    {
+      enum ColorNums colornum = (enum ColorNums)(START_CONFIG_COLOR_NUM+i);
+
+      if (entry.all_colors[i].isValid() && entry.all_colors[i] != get_qcolor(colornum))
+        return false;
+    }
+
+    for(int i=0;i<entry.all_slider_values.size() && i<NUM_SLIDERS;i++)
+      if ((int)entry.all_slider_values[i] != get_slider_value(i))
+        return false;
+
+    return true;
+  }
+
+  void apply_all_colors_undo_entry(const PreferencesUndoEntry &entry)
+  {
+    Scoped_ignore_color_changes scoped_ignore;
+
+    for(int i=0;i<entry.all_colors.size();i++)
+    {
+      enum ColorNums colornum = (enum ColorNums)(START_CONFIG_COLOR_NUM+i);
+
+      if (entry.all_colors[i].isValid())
+        testColorInRealtime(colornum, entry.all_colors[i]);
+    }
+
+    for(int i=0;i<entry.all_slider_values.size() && i<NUM_SLIDERS;i++)
+      set_slider_value(i, (int)entry.all_slider_values[i]);
+
+    _color_dialog.setCurrentColor(get_qcolor(g_current_colornum));
+  }
+
+  // Adds an undo step that restores all colors and all sliders. Does nothing
+  // if nothing changed.
+  void add_all_colors_undo_step(const PreferencesUndoEntry &old_state)
+  {
+    if (all_colors_undo_entry_is_current(old_state))
+      return;
+
+    g_color_undo_stack.push_back(old_state);
+    g_color_redo_stack.clear();
+    update_color_undo_redo_buttons();
+  }
+
+  // Called when the user has changed a slider. Adds the change to the undo
+  // history, unless it was the program changing the slider.
+  void record_slider_change(int slider_id)
+  {
+    if (g_in_undo_redo)
+      return;
+
+    if (g_slider_committed[slider_id]==false && get_slider_value(slider_id)!=g_pending_old_slider_values[slider_id])
+    {
+      g_color_undo_stack.push_back({true, (enum ColorNums)0, QColor(), slider_id, (float)g_pending_old_slider_values[slider_id]});
+      g_slider_committed[slider_id] = true;
+    }
+
+    // A change invalidates the redo history, even if it was merged into the
+    // previous undo step.
+    g_color_redo_stack.clear();
+    update_color_undo_redo_buttons();
+  }
+
+  // Called by the reset buttons.
+  void reset_slider(int slider_id, int new_value)
+  {
+	  // Need this check to avoid a gcc 15 -Warray-bounds false positive at -O2.
+	  R_ASSERT_RETURN_IF_FALSE(slider_id >= 0 && slider_id < NUM_SLIDERS);
+	  
+	  g_pending_old_slider_values[slider_id] = get_slider_value(slider_id);
+	  g_slider_committed[slider_id] = false;
+	  
+	  set_slider_value(slider_id, new_value);
+	  
+	  resync_color_interaction_state();
+  }
+
   void on_color_undo_clicked(){
     printf("UNDO clicked: undo_stack=%d  redo_stack=%d\n", (int)g_color_undo_stack.size(), (int)g_color_redo_stack.size());
     if (g_color_undo_stack.isEmpty())
@@ -1751,30 +1925,41 @@ public slots:
     PreferencesUndoEntry entry = g_color_undo_stack.last();
     g_color_undo_stack.pop_back();
 
-    if (entry.is_slider) {
+    if (entry.all_colors.isEmpty()==false){
+      // Restore all colors and all sliders.
+      g_color_redo_stack.push_back(make_all_colors_undo_entry());
+
+      apply_all_colors_undo_entry(entry);
+
+      for(auto button : all_buttons)
+        button->update();
+    } else if (entry.is_slider) {
       int current_value = get_slider_value(entry.slider_id);
       printf("UNDO slider: slider_id=%d  restoring=%d  was=%d\n", entry.slider_id, (int)entry.slider_value, current_value);
       g_color_redo_stack.push_back({true, (enum ColorNums)0, QColor(), entry.slider_id, (float)current_value});
 
-      g_in_undo_redo = true;
+      Scoped_ignore_color_changes scoped_ignore;
       set_slider_value(entry.slider_id, (int)entry.slider_value);
-      g_in_undo_redo = false;
-    } else {    
+    } else {
       QColor current_value = get_qcolor(entry.colornum);
       printf("UNDO: colornum=%d  restoring=%s  was=%s\n", entry.colornum, entry.color.name().toUtf8().constData(), current_value.name().toUtf8().constData());
       g_color_redo_stack.push_back({false, entry.colornum, current_value, 0, 0.0f});
 
-      g_in_undo_redo = true;
-      testColorInRealtime(entry.colornum, entry.color);
+      {
+        Scoped_ignore_color_changes scoped_ignore;
+        testColorInRealtime(entry.colornum, entry.color);
 
-      if (g_current_colornum==entry.colornum)
-        _color_dialog.setCurrentColor(entry.color);
-
-      g_in_undo_redo = false;
+        if (g_current_colornum==entry.colornum)
+          _color_dialog.setCurrentColor(entry.color);
+      }
 
       for(auto button : all_buttons)
         button->update();
     }
+
+    // Since the values were changed by the program, make sure the next user
+    // change records the correct "previous" values.
+    resync_color_interaction_state();
 
     update_color_undo_redo_buttons();
   }
@@ -1787,30 +1972,41 @@ public slots:
     PreferencesUndoEntry entry = g_color_redo_stack.last();
     g_color_redo_stack.pop_back();
 
-    if (entry.is_slider) {
+    if (entry.all_colors.isEmpty()==false){
+      // Restore all colors and all sliders.
+      g_color_undo_stack.push_back(make_all_colors_undo_entry());
+
+      apply_all_colors_undo_entry(entry);
+
+      for(auto button : all_buttons)
+        button->update();
+    } else if (entry.is_slider) {
       int current_value = get_slider_value(entry.slider_id);
       printf("REDO slider: slider_id=%d  restoring=%d  was=%d\n", entry.slider_id, (int)entry.slider_value, current_value);
       g_color_undo_stack.push_back({true, (enum ColorNums)0, QColor(), entry.slider_id, (float)current_value});
 
-      g_in_undo_redo = true;
+      Scoped_ignore_color_changes scoped_ignore;
       set_slider_value(entry.slider_id, (int)entry.slider_value);
-      g_in_undo_redo = false;
     } else {
       QColor current_value = get_qcolor(entry.colornum);
       printf("REDO: colornum=%d  restoring=%s  was=%s\n", entry.colornum, entry.color.name().toUtf8().constData(), current_value.name().toUtf8().constData());
       g_color_undo_stack.push_back({false, entry.colornum, current_value, 0, 0.0f});
 
-      g_in_undo_redo = true;
-      testColorInRealtime(entry.colornum, entry.color);
+      {
+        Scoped_ignore_color_changes scoped_ignore;
+        testColorInRealtime(entry.colornum, entry.color);
 
-      if (g_current_colornum==entry.colornum)
-        _color_dialog.setCurrentColor(entry.color);
-
-      g_in_undo_redo = false;
+        if (g_current_colornum==entry.colornum)
+          _color_dialog.setCurrentColor(entry.color);
+      }
 
       for(auto button : all_buttons)
         button->update();
     }
+
+    // Since the values were changed by the program, make sure the next user
+    // change records the correct "previous" values.
+    resync_color_interaction_state();
 
     update_color_undo_redo_buttons();
   }
@@ -1820,59 +2016,73 @@ public slots:
   }
 
   void on_color_revert_color_clicked(){
-    GFX_RevertColorFromCheckpoint(g_current_colornum);
-    _color_dialog.setCurrentColor(get_qcolor(g_current_colornum));
+    QColor old_color = get_qcolor(g_current_colornum);
+
+    {
+      Scoped_ignore_color_changes scoped_ignore;
+
+      GFX_RevertColorFromCheckpoint(g_current_colornum);
+      _color_dialog.setCurrentColor(get_qcolor(g_current_colornum));
+    }
+
+    add_color_undo_step(g_current_colornum, old_color);
+    resync_color_interaction_state();
 
     for(auto button : all_buttons)
       button->update();
   }
 
   void on_color_revert_all_colors_clicked(){
-    GFX_RevertAllToCheckpoint();
-    _color_dialog.setCurrentColor(get_qcolor(g_current_colornum));
-    update_color_sliders();
+    PreferencesUndoEntry old_state = make_all_colors_undo_entry();
+
+    {
+      Scoped_ignore_color_changes scoped_ignore;
+
+      GFX_RevertAllToCheckpoint();
+      update_color_sliders();
+      _color_dialog.setCurrentColor(get_qcolor(g_current_colornum));
+    }
+
+    add_all_colors_undo_step(old_state);
+    resync_color_interaction_state();
 
     for(auto button : all_buttons)
       button->update();
   }
 
   void on_color_set_default_color_clicked(){
-    GFX_SetDefaultColor(g_current_colornum);
-    _color_dialog.setCurrentColor(get_qcolor(g_current_colornum));
+    QColor old_color = get_qcolor(g_current_colornum);
+
+    {
+      Scoped_ignore_color_changes scoped_ignore;
+
+      GFX_SetDefaultColor(g_current_colornum);
+      _color_dialog.setCurrentColor(get_qcolor(g_current_colornum));
+    }
+
+    add_color_undo_step(g_current_colornum, old_color);
+    resync_color_interaction_state();
 
     for(auto button : all_buttons)
       button->update();
   }
 
   void on_color_set_all_default_colors_clicked(){
-    GFX_SetDefaultColors1(root->song->tracker_windows);
+    PreferencesUndoEntry old_state = make_all_colors_undo_entry();
 
-    instrument_brightness->setValue(1000 * DEFAULT_INSTRUMENT_BRIGHTNESS);
-    instrument_saturation->setValue(1000 * DEFAULT_INSTRUMENT_SATURATION);
-    instrument_brightness_in_editor->setValue(1000 * DEFAULT_INSTRUMENT_BRIGHTNESS_IN_EDITOR);
-    instrument_saturation_in_editor->setValue(1000 * DEFAULT_INSTRUMENT_SATURATION_IN_EDITOR);
-    block_brightness->setValue(1000 * DEFAULT_BLOCK_BRIGHTNESS);
-    block_saturation->setValue(1000 * DEFAULT_BLOCK_SATURATION);
-    gradient_slider->setValue(1000 * DEFAULT_AMOUNT_OF_GRADIENT);
+    {
+      Scoped_ignore_color_changes scoped_ignore;
 
-    _color_dialog.setCurrentColor(get_qcolor(g_current_colornum));
+      GFX_SetDefaultColors1(root->song->tracker_windows);
+      update_color_sliders();
+      _color_dialog.setCurrentColor(get_qcolor(g_current_colornum));
+    }
+
+    add_all_colors_undo_step(old_state);
+    resync_color_interaction_state();
 
     for(auto button : all_buttons)
       button->update();
-  }
-
-
-  void on_save_color_file_clicked(){
-    filepath_t filename = GFX_GetSaveFileName(root->song->tracker_windows,
-                                              NULL,
-                                              "Select file",
-                                              createIllegalFilepath(),
-                                              NULL,
-                                              NULL,
-                                              "",
-                                              true);
-    if (isLegalFilepath(filename))
-      GFX_SaveColors(filename);
   }
 
   void update_color_sliders(void){
@@ -1905,26 +2115,59 @@ public slots:
     const char *name = GFX_GetString(root->song->tracker_windows, NULL, "New color configuration:", true);
 
     if (name != NULL && strlen(name) > 0){
-      GFX_NewColorConfiguration(name);
-      populate_color_selector();
-      update_color_sliders();
-      _color_dialog.setCurrentColor(get_qcolor(g_current_colornum));
+      QString old_name = GFX_GetCurrentColorConfigurationName();
+
+      {
+        Scoped_ignore_color_changes scoped_ignore;
+
+        GFX_NewColorConfiguration(name);
+        populate_color_selector();
+        update_color_sliders();
+        _color_dialog.setCurrentColor(get_qcolor(g_current_colornum));
+      }
+
+      // The undo history belongs to the previous color configuration.
+      if (GFX_GetCurrentColorConfigurationName() != old_name)
+        clear_color_undo_history();
+
+      resync_color_interaction_state();
     }
   }
 
   void on_delete_color_clicked(){
     QString name = GFX_GetCurrentColorConfigurationName();
-    GFX_DeleteColorConfiguration(name);
-    populate_color_selector();
-    update_color_sliders();
-    _color_dialog.setCurrentColor(get_qcolor(g_current_colornum));
+
+    {
+      Scoped_ignore_color_changes scoped_ignore;
+
+      GFX_DeleteColorConfiguration(name);
+      populate_color_selector();
+      update_color_sliders();
+      _color_dialog.setCurrentColor(get_qcolor(g_current_colornum));
+    }
+
+    // The undo history belongs to the deleted color configuration.
+    clear_color_undo_history();
+    resync_color_interaction_state();
   }
 
   void on_color_selector_activated(int index){
     QString name = color_selector->itemText(index);
-    GFX_SetColorConfiguration(name);
-    update_color_sliders();
-    _color_dialog.setCurrentColor(get_qcolor(g_current_colornum));
+    QString old_name = GFX_GetCurrentColorConfigurationName();
+
+    {
+      Scoped_ignore_color_changes scoped_ignore;
+
+      GFX_SetColorConfiguration(name);
+      update_color_sliders();
+      _color_dialog.setCurrentColor(get_qcolor(g_current_colornum));
+    }
+
+    // The undo history belongs to the previous color configuration.
+    if (GFX_GetCurrentColorConfigurationName() != old_name)
+      clear_color_undo_history();
+
+    resync_color_interaction_state();
   }
 
 
@@ -1962,12 +2205,7 @@ public slots:
   void on_instrument_brightness_valueChanged(int val){
     if (_initing==false){
       setInstrumentBrightness((float)val/1000.0);
-      if (!g_in_undo_redo && !g_slider_committed[SLIDER_INSTRUMENT_BRIGHTNESS] && val!=g_pending_old_slider_values[SLIDER_INSTRUMENT_BRIGHTNESS]){
-        g_color_undo_stack.push_back({true, (enum ColorNums)0, QColor(), SLIDER_INSTRUMENT_BRIGHTNESS, (float)g_pending_old_slider_values[SLIDER_INSTRUMENT_BRIGHTNESS]});
-        g_color_redo_stack.clear();
-        g_slider_committed[SLIDER_INSTRUMENT_BRIGHTNESS] = true;
-        update_color_undo_redo_buttons();
-      }
+      record_slider_change(SLIDER_INSTRUMENT_BRIGHTNESS);
     }
   }
   void on_instrument_brightness_sliderReleased(){
@@ -1975,7 +2213,7 @@ public slots:
     g_slider_committed[SLIDER_INSTRUMENT_BRIGHTNESS] = false;
   }
   void on_reset_instrument_brightness_clicked(){
-    instrument_brightness->setValue(1000 * DEFAULT_INSTRUMENT_BRIGHTNESS);
+    reset_slider(SLIDER_INSTRUMENT_BRIGHTNESS, 1000 * GFX_GetDefaultInstrumentBrightness());
   }
 
   void on_instrument_saturation_sliderPressed(){
@@ -1987,12 +2225,7 @@ public slots:
   void on_instrument_saturation_valueChanged(int val){
     if (_initing==false){
       setInstrumentSaturation((float)val/1000.0);
-      if (!g_in_undo_redo && !g_slider_committed[SLIDER_INSTRUMENT_SATURATION] && val!=g_pending_old_slider_values[SLIDER_INSTRUMENT_SATURATION]){
-        g_color_undo_stack.push_back({true, (enum ColorNums)0, QColor(), SLIDER_INSTRUMENT_SATURATION, (float)g_pending_old_slider_values[SLIDER_INSTRUMENT_SATURATION]});
-        g_color_redo_stack.clear();
-        g_slider_committed[SLIDER_INSTRUMENT_SATURATION] = true;
-        update_color_undo_redo_buttons();
-      }
+      record_slider_change(SLIDER_INSTRUMENT_SATURATION);
     }
   }
   void on_instrument_saturation_sliderReleased(){
@@ -2000,7 +2233,7 @@ public slots:
     g_slider_committed[SLIDER_INSTRUMENT_SATURATION] = false;
   }
   void on_reset_instrument_saturation_clicked(){
-    instrument_saturation->setValue(1000 * DEFAULT_INSTRUMENT_SATURATION);
+    reset_slider(SLIDER_INSTRUMENT_SATURATION, 1000 * GFX_GetDefaultInstrumentSaturation());
   }
 
   void on_instrument_brightness_in_editor_sliderPressed(){
@@ -2012,12 +2245,7 @@ public slots:
   void on_instrument_brightness_in_editor_valueChanged(int val){
     if (_initing==false){
       setInstrumentBrightnessInEditor((float)val/1000.0);
-      if (!g_in_undo_redo && !g_slider_committed[SLIDER_INSTRUMENT_BRIGHTNESS_IN_EDITOR] && val!=g_pending_old_slider_values[SLIDER_INSTRUMENT_BRIGHTNESS_IN_EDITOR]){
-        g_color_undo_stack.push_back({true, (enum ColorNums)0, QColor(), SLIDER_INSTRUMENT_BRIGHTNESS_IN_EDITOR, (float)g_pending_old_slider_values[SLIDER_INSTRUMENT_BRIGHTNESS_IN_EDITOR]});
-        g_color_redo_stack.clear();
-        g_slider_committed[SLIDER_INSTRUMENT_BRIGHTNESS_IN_EDITOR] = true;
-        update_color_undo_redo_buttons();
-      }
+      record_slider_change(SLIDER_INSTRUMENT_BRIGHTNESS_IN_EDITOR);
     }
   }
   void on_instrument_brightness_in_editor_sliderReleased(){
@@ -2025,7 +2253,7 @@ public slots:
     g_slider_committed[SLIDER_INSTRUMENT_BRIGHTNESS_IN_EDITOR] = false;
   }
   void on_reset_instrument_brightness_in_editor_clicked(){
-    instrument_brightness_in_editor->setValue(1000 * DEFAULT_INSTRUMENT_BRIGHTNESS_IN_EDITOR);
+    reset_slider(SLIDER_INSTRUMENT_BRIGHTNESS_IN_EDITOR, 1000 * GFX_GetDefaultInstrumentBrightnessInEditor());
   }
 
   void on_instrument_saturation_in_editor_sliderPressed(){
@@ -2037,12 +2265,7 @@ public slots:
   void on_instrument_saturation_in_editor_valueChanged(int val){
     if (_initing==false){
       setInstrumentSaturationInEditor((float)val/1000.0);
-      if (!g_in_undo_redo && !g_slider_committed[SLIDER_INSTRUMENT_SATURATION_IN_EDITOR] && val!=g_pending_old_slider_values[SLIDER_INSTRUMENT_SATURATION_IN_EDITOR]){
-        g_color_undo_stack.push_back({true, (enum ColorNums)0, QColor(), SLIDER_INSTRUMENT_SATURATION_IN_EDITOR, (float)g_pending_old_slider_values[SLIDER_INSTRUMENT_SATURATION_IN_EDITOR]});
-        g_color_redo_stack.clear();
-        g_slider_committed[SLIDER_INSTRUMENT_SATURATION_IN_EDITOR] = true;
-        update_color_undo_redo_buttons();
-      }
+      record_slider_change(SLIDER_INSTRUMENT_SATURATION_IN_EDITOR);
     }
   }
   void on_instrument_saturation_in_editor_sliderReleased(){
@@ -2050,7 +2273,7 @@ public slots:
     g_slider_committed[SLIDER_INSTRUMENT_SATURATION_IN_EDITOR] = false;
   }
   void on_reset_instrument_saturation_in_editor_clicked(){
-    instrument_saturation_in_editor->setValue(1000 * DEFAULT_INSTRUMENT_SATURATION_IN_EDITOR);
+    reset_slider(SLIDER_INSTRUMENT_SATURATION_IN_EDITOR, 1000 * GFX_GetDefaultInstrumentSaturationInEditor());
   }
 
   void on_block_brightness_sliderPressed(){
@@ -2062,12 +2285,7 @@ public slots:
   void on_block_brightness_valueChanged(int val){
     if (_initing==false){
       setBlockBrightness((float)val/1000.0);
-      if (!g_in_undo_redo && !g_slider_committed[SLIDER_BLOCK_BRIGHTNESS] && val!=g_pending_old_slider_values[SLIDER_BLOCK_BRIGHTNESS]){
-        g_color_undo_stack.push_back({true, (enum ColorNums)0, QColor(), SLIDER_BLOCK_BRIGHTNESS, (float)g_pending_old_slider_values[SLIDER_BLOCK_BRIGHTNESS]});
-        g_color_redo_stack.clear();
-        g_slider_committed[SLIDER_BLOCK_BRIGHTNESS] = true;
-        update_color_undo_redo_buttons();
-      }
+      record_slider_change(SLIDER_BLOCK_BRIGHTNESS);
     }
   }
   void on_block_brightness_sliderReleased(){
@@ -2075,7 +2293,7 @@ public slots:
     g_slider_committed[SLIDER_BLOCK_BRIGHTNESS] = false;
   }
   void on_reset_block_brightness_clicked(){
-    block_brightness->setValue(1000 * DEFAULT_BLOCK_BRIGHTNESS);
+    reset_slider(SLIDER_BLOCK_BRIGHTNESS, 1000 * GFX_GetDefaultBlockBrightness());
   }
 
   void on_block_saturation_sliderPressed(){
@@ -2087,12 +2305,7 @@ public slots:
   void on_block_saturation_valueChanged(int val){
     if (_initing==false){
       setBlockSaturation((float)val/1000.0);
-      if (!g_in_undo_redo && !g_slider_committed[SLIDER_BLOCK_SATURATION] && val!=g_pending_old_slider_values[SLIDER_BLOCK_SATURATION]){
-        g_color_undo_stack.push_back({true, (enum ColorNums)0, QColor(), SLIDER_BLOCK_SATURATION, (float)g_pending_old_slider_values[SLIDER_BLOCK_SATURATION]});
-        g_color_redo_stack.clear();
-        g_slider_committed[SLIDER_BLOCK_SATURATION] = true;
-        update_color_undo_redo_buttons();
-      }
+      record_slider_change(SLIDER_BLOCK_SATURATION);
     }
   }
   void on_block_saturation_sliderReleased(){
@@ -2100,7 +2313,7 @@ public slots:
     g_slider_committed[SLIDER_BLOCK_SATURATION] = false;
   }
   void on_reset_block_saturation_clicked(){
-    block_saturation->setValue(1000 * DEFAULT_BLOCK_SATURATION);
+    reset_slider(SLIDER_BLOCK_SATURATION, 1000 * GFX_GetDefaultBlockSaturation());
   }
 
   void on_gradient_slider_sliderPressed(){
@@ -2112,12 +2325,7 @@ public slots:
   void on_gradient_slider_valueChanged(int val){
     if (_initing==false){
       setAmountOfGradient((float)val/1000.0);
-      if (!g_in_undo_redo && !g_slider_committed[SLIDER_GRADIENT] && val!=g_pending_old_slider_values[SLIDER_GRADIENT]){
-        g_color_undo_stack.push_back({true, (enum ColorNums)0, QColor(), SLIDER_GRADIENT, (float)g_pending_old_slider_values[SLIDER_GRADIENT]});
-        g_color_redo_stack.clear();
-        g_slider_committed[SLIDER_GRADIENT] = true;
-        update_color_undo_redo_buttons();
-      }
+      record_slider_change(SLIDER_GRADIENT);
     }
   }
   void on_gradient_slider_sliderReleased(){
@@ -2125,7 +2333,7 @@ public slots:
     g_slider_committed[SLIDER_GRADIENT] = false;
   }
   void on_reset_gradient_button_clicked(){
-    gradient_slider->setValue(1000 * DEFAULT_AMOUNT_OF_GRADIENT);
+    reset_slider(SLIDER_GRADIENT, 1000 * GFX_GetDefaultAmountOfGradient());
   }
   
   // windows

@@ -37,6 +37,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #if !defined(_WIN32)
 #include <unistd.h>
+#define libpds2_close close
+#else
+#include <io.h>
+#define libpds2_close _close
 #endif
 
 #include "libpds.h"
@@ -46,6 +50,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 extern void sys_lock(void);
 extern void sys_unlock(void);
 extern int sys_pollgui(void);
+
+// Declared in Pd's s_stuff.h. Loads a library (a class binary or a library
+// blob such as zexy.pd_linux) into the current instance.
+extern int sys_load_lib(t_canvas *canvas, const char *classname);
+extern void sys_set_libloadhook(int (*hook)(const char *classname));
+extern const char **sys_get_dllextensions(void);
 
 // Tell the Pd GUI (see the Radium patch in pdwindow.tcl) to not open its
 // console window (.pdwindow). Radium only wants the patch editor window. This
@@ -221,6 +231,106 @@ void libpds2_add_to_search_path(pd_t *pd, const char* sym)
 	libpd_add_to_search_path(sym);
 }
 
+// Loads a Pd library into the instance, the same way Pd's "startup" library
+// list does. Needed for libraries that are built as a single binary
+// (<name>.pd_linux, e.g. zexy, iemlib, iemmatrix), since those are not
+// found by class name. Returns nonzero on success.
+int libpds2_load_lib(pd_t *pd, const char* name)
+{
+	if (name == NULL)
+		return 0;
+
+	set_instance(pd);
+
+	sys_lock();
+	int ret = sys_load_lib(NULL, name);
+	sys_unlock();
+
+	return ret;
+}
+
+// See libpds.h.
+static libpds2_libloadhook_t g_libloadhook = NULL;
+
+static int libpds2_libloadhook(const char *classname)
+{
+	return g_libloadhook != NULL ? g_libloadhook(classname) : 0;
+}
+
+void libpds2_set_libloadhook(libpds2_libloadhook_t hook)
+{
+	g_libloadhook = hook;
+	sys_set_libloadhook(hook != NULL ? libpds2_libloadhook : NULL);
+}
+
+// Like libpds2_load_lib, but for callers that already hold Pd's lock (the
+// libloadhook). The current instance is restored afterwards, so the caller's
+// instance is unchanged.
+int libpds2_load_lib_nolock(pd_t *pd, const char* name)
+{
+	if (pd == NULL || name == NULL)
+		return 0;
+
+	t_pdinstance *previous = libpd_this_instance();
+
+	set_instance(pd);
+	int ret = sys_load_lib(NULL, name);
+	libpd_set_instance(previous);
+
+	return ret;
+}
+
+// See libpds.h.
+int libpds2_class_is_loaded_nolock(pd_t *pd, const char* classname)
+{
+	if (pd == NULL || classname == NULL)
+		return 0;
+
+	t_pdinstance *previous = libpd_this_instance();
+
+	set_instance(pd);
+	// This must be done inside libpd: libpd.so is linked with -Bsymbolic,
+	// so resolving pd_objectmaker (as zgetfn() does) from here would bind
+	// to an uninitialized copy in the executable.
+	int ret = libpd_class_exists(classname);
+	libpd_set_instance(previous);
+
+	return ret;
+}
+
+// See libpds.h.
+const char **libpds2_get_library_extensions(void)
+{
+	return sys_get_dllextensions();
+}
+
+// See libpds.h.
+int libpds2_abstraction_exists_nolock(const char *name)
+{
+	if (name == NULL)
+		return 0;
+
+	char dirbuf[MAXPDSTRING], *nameptr;
+
+	int fd = canvas_open(canvas_getcurrent(), name, ".pd",
+			     dirbuf, &nameptr, MAXPDSTRING, 1);
+	if (fd >= 0)
+	{
+		libpds2_close(fd);
+		return 1;
+	}
+
+	fd = canvas_open(canvas_getcurrent(), name, ".pat",
+			 dirbuf, &nameptr, MAXPDSTRING, 1);
+	if (fd >= 0)
+	{
+		libpds2_close(fd);
+		return 1;
+	}
+
+	return 0;
+}
+
 void* libpds2_openfile(pd_t *pd, const char* basename, const char* dirname)
 {
 	set_instance(pd);
@@ -298,12 +408,17 @@ static bool executable_in_path(const char *name)
 // shows the GUI windows again if they have only been hidden. Starting the GUI
 // makes all the instance's canvas windows visible (the GUI handshake ends up
 // in sys_doneglobinit(), which calls canvas_vis(x, 1) for all canvases).
-void libpds2_show_gui(pd_t *pd)
+//
+// Returns false if the GUI could not be started (libpds2_strerror() then
+// explains why), true if it is running. Starting the GUI process allocates
+// memory and may block while waiting for it to connect, so this must not be
+// called while holding Radium's player lock.
+bool libpds2_show_gui(pd_t *pd)
 {
 	set_instance(pd);
 
 	if (!pd->use_gui || pd->libdir == NULL)
-		return;
+		return false;
 
 	if (pd->gui_started)
 	{
@@ -313,7 +428,7 @@ void libpds2_show_gui(pd_t *pd)
 		// again. The windows were only withdrawn, so window positions, scroll
 		// positions and edit states are kept.
 		pdgui_vmess("libpd_show_gui", NULL);
-		return;
+		return true;
 	}
 
 	// Note: libpd_start_gui() blocks forever inside accept() if the GUI process
@@ -325,7 +440,7 @@ void libpds2_show_gui(pd_t *pd)
 		if (access(gui_script, R_OK) != 0)
 		{
 			set_error("Unable to start the Pd GUI: can't find the tcl/pd-gui.tcl file.");
-			return;
+			return false;
 		}
 	}
 
@@ -335,21 +450,48 @@ void libpds2_show_gui(pd_t *pd)
 		if (display == NULL || display[0] == 0)
 		{
 			set_error("Unable to start the Pd GUI: DISPLAY is not set.");
-			return;
+			return false;
 		}
 
 		if (!executable_in_path("wish"))
 		{
 			set_error("Unable to start the Pd GUI: the \"wish\" program (Tcl/Tk) was not found in PATH.");
-			return;
+			return false;
+		}
+	}
+#elif defined(_WIN32)
+	{
+		// sys_startgui() on Windows runs <libdir>/bin/wish86.exe (see
+		// PDBINDIR/WISH in pure-data/src/s_inter.c). Check the program and
+		// its Tcl script library up front: if wish86.exe starts but cannot
+		// find its library, it exits without connecting and
+		// libpd_start_gui() would block forever in accept().
+		char wish_path[1040];
+		snprintf(wish_path, sizeof(wish_path), "%s/bin/wish86.exe", pd->libdir);
+		if (access(wish_path, R_OK) != 0)
+		{
+			set_error("Unable to start the Pd GUI: can't find bin/wish86.exe (Tcl/Tk is not installed).");
+			return false;
+		}
+
+		char tcl_init[1040];
+		snprintf(tcl_init, sizeof(tcl_init), "%s/lib/tcl8.6/init.tcl", pd->libdir);
+		if (access(tcl_init, R_OK) != 0)
+		{
+			set_error("Unable to start the Pd GUI: can't find the Tcl script library (lib/tcl8.6).");
+			return false;
 		}
 	}
 #endif
 
 	if (libpd_start_gui(pd->libdir) == 0)
+	{
 		pd->gui_started = true;
-	else
-		set_error("Unable to start the Pd GUI.");
+		return true;
+	}
+
+	set_error("Unable to start the Pd GUI.");
+	return false;
 }
 
 // Hides the GUI windows for this instance. The Tcl/Tk process keeps running

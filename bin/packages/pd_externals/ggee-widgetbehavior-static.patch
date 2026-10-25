@@ -1,0 +1,11 @@
+--- a/gui/slider.c
++++ b/gui/slider.c
+@@ -25,7 +25,7 @@
+ }
+ 
+ 
+-t_widgetbehavior   slider_widgetbehavior;
++static t_widgetbehavior   slider_widgetbehavior;
+ 
+ 
+ void slider_setup() {

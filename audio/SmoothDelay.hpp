@@ -314,8 +314,47 @@ public:
     R_ASSERT_NON_RELEASE(_state==State::FADE_IN_DELAY || _state==State::CROSSFADE);
     R_ASSERT_NON_RELEASE(_is_fading_in);
 
-    RT_process_overwrite(num_frames, input, output);
-    _fade_in.RT_fade(num_frames, output);
+    if (_delay_size >= num_frames)
+    {
+      // Fade the delayed sound directly into 'output', instead of first copying
+      // the delay buffer to 'output' and then fading 'output' in place.
+      const int max_to_copy = _delay_size - IOTA;
+
+      R_ASSERT_NON_RELEASE(max_to_copy > 0);
+
+      if (num_frames <= max_to_copy)
+      {
+        _fade_in.RT_fade(num_frames, output, _buffer + IOTA, false);
+        memcpy(_buffer + IOTA, input, num_frames*sizeof(T));
+
+        IOTA += num_frames;
+
+        if (IOTA==_delay_size)
+          IOTA = 0;
+      }
+      else
+      {
+        const int num_to_copy1 = max_to_copy;
+        const int num_to_copy2 = num_frames - num_to_copy1;
+
+        _fade_in.RT_fade(num_to_copy1, output, _buffer + IOTA, false);
+        memcpy(_buffer + IOTA, input, num_to_copy1*sizeof(T));
+
+        _fade_in.RT_fade(num_to_copy2, output + num_to_copy1, _buffer, false);
+        memcpy(_buffer, input + num_to_copy1, num_to_copy2*sizeof(T));
+
+        IOTA = num_to_copy2;
+      }
+
+      R_ASSERT_NON_RELEASE(IOTA < _delay_size);
+    }
+    else
+    {
+      // The delay is shorter than the block, so the ring buffer is partially
+      // overwritten during this call. Falling back to the old (slower) way.
+      RT_process_overwrite(num_frames, input, output);
+      _fade_in.RT_fade(num_frames, output);
+    }
   }
 
 	
@@ -323,8 +362,47 @@ public:
     R_ASSERT_NON_RELEASE(_state==State::FADE_OUT_DELAY || _state==State::CROSSFADE);
     R_ASSERT_NON_RELEASE(!_is_fading_in);
 
-    RT_process_overwrite(num_frames, input, output);
-    _fade_out.RT_fade(num_frames, output);
+    if (_delay_size >= num_frames)
+    {
+      // Fade the delayed sound directly into 'output', instead of first copying
+      // the delay buffer to 'output' and then fading 'output' in place.
+      const int max_to_copy = _delay_size - IOTA;
+
+      R_ASSERT_NON_RELEASE(max_to_copy > 0);
+
+      if (num_frames <= max_to_copy)
+      {
+        _fade_out.RT_fade(num_frames, output, _buffer + IOTA, false);
+        memcpy(_buffer + IOTA, input, num_frames*sizeof(T));
+
+        IOTA += num_frames;
+
+        if (IOTA==_delay_size)
+          IOTA = 0;
+      }
+      else
+      {
+        const int num_to_copy1 = max_to_copy;
+        const int num_to_copy2 = num_frames - num_to_copy1;
+
+        _fade_out.RT_fade(num_to_copy1, output, _buffer + IOTA, false);
+        memcpy(_buffer + IOTA, input, num_to_copy1*sizeof(T));
+
+        _fade_out.RT_fade(num_to_copy2, output + num_to_copy1, _buffer, false);
+        memcpy(_buffer, input + num_to_copy1, num_to_copy2*sizeof(T));
+
+        IOTA = num_to_copy2;
+      }
+
+      R_ASSERT_NON_RELEASE(IOTA < _delay_size);
+    }
+    else
+    {
+      // The delay is shorter than the block, so the ring buffer is partially
+      // overwritten during this call. Falling back to the old (slower) way.
+      RT_process_overwrite(num_frames, input, output);
+      _fade_out.RT_fade(num_frames, output);
+    }
   }
 
 	
@@ -332,12 +410,49 @@ public:
     R_ASSERT_NON_RELEASE(_state==State::FADE_IN_DELAY || _state==State::CROSSFADE);
     R_ASSERT_NON_RELEASE(_is_fading_in);
 
-    T *temp_output = RT_ALLOC_ARRAY_STACK(T, num_frames);
+    if (_delay_size >= num_frames)
+    {
+      // Fade and add the delayed sound directly into 'output', instead of copying
+      // the delay buffer to a temporary buffer first.
+      const int max_to_copy = _delay_size - IOTA;
 
-    RT_process_overwrite(num_frames, input, temp_output);
+      R_ASSERT_NON_RELEASE(max_to_copy > 0);
 
-    // Fade and add in one pass instead of fading the temporary buffer and then adding it.
-    _fade_in.RT_fade(num_frames, output, temp_output, true);
+      if (num_frames <= max_to_copy)
+      {
+        _fade_in.RT_fade(num_frames, output, _buffer + IOTA, true);
+        memcpy(_buffer + IOTA, input, num_frames*sizeof(T));
+
+        IOTA += num_frames;
+
+        if (IOTA==_delay_size)
+          IOTA = 0;
+      }
+      else
+      {
+        const int num_to_copy1 = max_to_copy;
+        const int num_to_copy2 = num_frames - num_to_copy1;
+
+        _fade_in.RT_fade(num_to_copy1, output, _buffer + IOTA, true);
+        memcpy(_buffer + IOTA, input, num_to_copy1*sizeof(T));
+
+        _fade_in.RT_fade(num_to_copy2, output + num_to_copy1, _buffer, true);
+        memcpy(_buffer, input + num_to_copy1, num_to_copy2*sizeof(T));
+
+        IOTA = num_to_copy2;
+      }
+
+      R_ASSERT_NON_RELEASE(IOTA < _delay_size);
+    }
+    else
+    {
+      // The delay is shorter than the block, so the ring buffer is partially
+      // overwritten during this call. Falling back to the old (slower) way.
+      T *temp_output = RT_ALLOC_ARRAY_STACK(T, num_frames);
+
+      RT_process_overwrite(num_frames, input, temp_output);
+      _fade_in.RT_fade(num_frames, output, temp_output, true);
+    }
   }
 
 	
