@@ -22,6 +22,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <math.h>
 
+#include <QVarLengthArray>
+
 #include "../common/nsmtracker.h"
 #include "../common/TimeData.hpp"
 #include "../common/placement_proc.h"
@@ -65,10 +67,48 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 static bool g_colored_tracks = false;
 
+// Whether to display the block played before/after the current block, grayed
+// out. Controlled by the "Display grayed-out blocks before and after current
+// block" option in Preferences -> Editor. Since it costs extra performance, it
+// can be turned off there.
+static bool g_show_grayed_out_blocks = true;
+
+// RT-visible mirror of g_show_grayed_out_blocks, so the scheduler (player thread)
+// can avoid holding the editor scroll when the previews are disabled.
+DEFINE_ATOMIC(bool, g_show_grayed_out_blocks_rt) = true;
+
 static bool g_is_creating_all_GL_blocks = false; // When true, we must create as many gradients as might be shown later, to avoid linking gradients when playing.
 
+// Set while drawing a grayed out preview (next or previous block) in the editor.
+static bool g_is_rendering_grayed_block = false;
+static int g_grayed_block_first_realline = 0;  // First realline to draw.
+static int g_grayed_block_last_realline = -1;  // Never draw anything at or below this realline. -1 means no limit.
+
+static inline bool realline_is_before_grayed_block(int realline)
+{
+	return g_is_rendering_grayed_block && realline < g_grayed_block_first_realline;
+}
+
+static inline bool realline_is_beyond_grayed_block(int realline)
+{
+	return g_is_rendering_grayed_block && g_grayed_block_last_realline >= 0 && realline >= g_grayed_block_last_realline;
+}
+
+static inline void get_grayed_block_realline_range(const struct WBlocks *wblock, int *first, int *last)
+{
+	if (g_is_rendering_grayed_block)
+	{
+		*first = R_BOUNDARIES(0, g_grayed_block_first_realline, wblock->num_reallines);
+		*last = g_grayed_block_last_realline >= 0 ? R_MIN(wblock->num_reallines, g_grayed_block_last_realline) : wblock->num_reallines;
+	}
+	else
+	{
+		*first = 0;
+		*last = wblock->num_reallines;
+	}
+}
+
 void GL_set_colored_tracks(bool onoff){
-  printf("setting safe mode to %d\n",onoff);
   SETTINGS_write_bool("colored_tracks", onoff);
   g_colored_tracks = onoff;
 
@@ -85,6 +125,29 @@ static void init_g_colored_tracks_if_necessary(void){
 
   if (!has_inited){
     g_colored_tracks = GL_get_colored_tracks();
+    has_inited = true;
+  }
+}
+
+void GL_set_show_grayed_out_blocks(bool onoff){
+  SETTINGS_write_bool("show_grayed_out_blocks", onoff);
+  g_show_grayed_out_blocks = onoff;
+  ATOMIC_SET(g_show_grayed_out_blocks_rt, onoff);
+
+  struct Tracker_Windows *window = root->song->tracker_windows;
+  window->must_redraw = true;
+}
+
+bool GL_get_show_grayed_out_blocks(void){
+  return SETTINGS_read_bool("show_grayed_out_blocks", true);
+}
+
+static void init_g_show_grayed_out_blocks_if_necessary(void){
+  static bool has_inited = false;
+
+  if (!has_inited){
+    g_show_grayed_out_blocks = GL_get_show_grayed_out_blocks();
+    ATOMIC_SET(g_show_grayed_out_blocks_rt, g_show_grayed_out_blocks);
     has_inited = true;
   }
 }
@@ -584,7 +647,7 @@ static void create_background_realline(const struct Tracker_Windows *window, con
 				);
 
 
-            if (has_keyboard_focus && wtrack==curr_wtrack){
+            if (has_keyboard_focus && !g_is_rendering_grayed_block && wtrack==curr_wtrack){
               float width = 1; // must be same width as in create_curr_track_border
               GE_filledBox(c,x1+width,y1,x2-width,y2);
 
@@ -704,11 +767,15 @@ static void create_curr_track_border(const struct Tracker_Windows *window, const
 
 static void create_background(const struct Tracker_Windows *window, const struct WBlocks *wblock, const WSignature_trss &wsignatures_trss)
 {
-	for(int realline = 0 ; realline<wblock->num_reallines ; realline++)
+	int first_realline, last_realline;
+	get_grayed_block_realline_range(wblock, &first_realline, &last_realline);
+
+	for(int realline = first_realline ; realline<last_realline ; realline++)
 		create_background_realline(window, wblock, wsignatures_trss[realline], realline);
 
-	if (FOCUSFRAMES_has_focus(radium::KeyboardFocusFrameType::EDITOR))
-		create_curr_track_border(window, wblock);		   
+	if (!g_is_rendering_grayed_block)
+		if (FOCUSFRAMES_has_focus(radium::KeyboardFocusFrameType::EDITOR))
+			create_curr_track_border(window, wblock);		   
 }
 
 
@@ -751,7 +818,7 @@ static void draw_linenumber(const struct Tracker_Windows *window, const struct W
     const int barnum = wsignature.bar_num;
     const int beatnum = wsignature.beat_num;
       
-    const bool is_current_bar = g_current_barbeat_block_num==wblock->l.num && g_current_bar_num==barnum;
+    const bool is_current_bar = !g_is_rendering_grayed_block && g_current_barbeat_block_num==wblock->l.num && g_current_bar_num==barnum;
     const bool is_current_beat = is_current_bar && g_current_beat_num==beatnum;
 
     if (is_barnum) {
@@ -825,8 +892,11 @@ static void draw_linenumber(const struct Tracker_Windows *window, const struct W
 }
 
 static void create_linenumbers(const struct Tracker_Windows *window, const struct WBlocks *wblock, const WSignature_trss &wsignatures){
+  int first_realline, last_realline;
+  get_grayed_block_realline_range(wblock, &first_realline, &last_realline);
+
   int realline;
-  for(realline = 0 ; realline<wblock->num_reallines ; realline++)
+  for(realline = first_realline ; realline<last_realline ; realline++)
     draw_linenumber(window, wblock, wsignatures[realline], realline);
 
 #if 0
@@ -852,7 +922,8 @@ struct TempoGraph{
   int num_points;
   STime *times; // delta values
   float min;
-  float max;  
+  float max;
+  int first_realline; // The first realline the graph covers.
 };
 
 static const struct TempoGraph create_TempoGraph(const struct Tracker_Windows *window, const struct WBlocks *wblock){
@@ -860,10 +931,17 @@ static const struct TempoGraph create_TempoGraph(const struct Tracker_Windows *w
   
   static int times_size = 0;
   static STime *times = NULL;
+
+  int first_realline, last_realline;
+  get_grayed_block_realline_range(wblock, &first_realline, &last_realline);
+
+  tg.first_realline = first_realline;
+
+  int num_reallines = R_MAX(0, last_realline - first_realline);
   
   int TEMPOGRAPH_POINTS_PER_REALLINE = window->fontheight / 2;
   tg.line_period = window->fontheight / (float)TEMPOGRAPH_POINTS_PER_REALLINE;
-  tg.num_points  = (wblock->num_reallines * TEMPOGRAPH_POINTS_PER_REALLINE) + 1;
+  tg.num_points  = (num_reallines * TEMPOGRAPH_POINTS_PER_REALLINE) + 1;
 
   if (tg.num_points>times_size){
     times = (STime*)V_realloc(times, tg.num_points*sizeof(STime));
@@ -874,12 +952,20 @@ static const struct TempoGraph create_TempoGraph(const struct Tracker_Windows *w
   STime last_time = -1;
   int pos=0;
 
-  for(int realline = 0 ; realline < wblock->num_reallines ; realline++){
+  for(int realline = first_realline ; realline < last_realline ; realline++)
+  {
     float fp1=GetfloatFromPlace(&wblock->reallines[realline]->l.p);
     float fp2;
-    if(realline<wblock->num_reallines-1){
+    if(realline<last_realline-1)
+    {
       fp2=GetfloatFromPlace(&wblock->reallines[realline+1]->l.p);
-    }else{
+    }
+    else if(last_realline<wblock->num_reallines)
+    {
+      fp2=GetfloatFromPlace(&wblock->reallines[last_realline]->l.p);
+    }
+    else
+    {
       fp2=(float)wblock->block->num_lines;
     }
 
@@ -892,7 +978,7 @@ static const struct TempoGraph create_TempoGraph(const struct Tracker_Windows *w
       //float floatplace = scale(n,0,TEMPOGRAPH_POINTS_PER_REALLINE,fp1,fp2);
       //STime time = Place2STime_from_times2(stimes, floatplace);
       
-      if(realline>0 || n>0){
+      if(realline>first_realline || n>0){
         STime val = time-last_time;
         //printf("%d.%d: Time: %f. Dur: %f\n", realline, n, (double)time/pc->pfreq, (double)val/pc->pfreq);
         if(tg.min<val || pos==0)
@@ -907,7 +993,13 @@ static const struct TempoGraph create_TempoGraph(const struct Tracker_Windows *w
     }
   }
   {
-    STime val = getBlockSTimeLength(wblock->block) - last_time;
+    STime end_time;
+    if (last_realline < wblock->num_reallines)
+      end_time = Place2STime(wblock->block, &wblock->reallines[last_realline]->l.p, EDITOR_CURR_TRACK_SWINGING_MODE);
+    else
+      end_time = getBlockSTimeLength(wblock->block);
+
+    STime val = end_time - last_time;
     tg.times[pos++] = val;
     tg.times[pos++] = val;
     if(tg.min<val)
@@ -949,17 +1041,19 @@ static void create_tempograph(const struct Tracker_Windows *window, const struct
     
   if(fabs(tg.min - tg.max)<20) {
     float middle = (wblock->tempocolorarea.x+wblock->tempocolorarea.x2) / 2.0f;
-    float y1 = get_realline_y1(window, 0);
+    float y1 = get_realline_y1(window, tg.first_realline);
+    float y2 = y1 + (tg.num_points-1) * tg.line_period;
     if (c.isNull())
 		c = GE_color_z(TEMPOGRAPH_COLOR_NUM, GE_Conf(Z_ZERO, NO_SCISSORS));
     GE_line(c,
             middle, y1,
-            middle, get_realline_y2(window, wblock->num_reallines-1),
+            middle, y2,
             width);
   }else{
+    float y_start = tg.first_realline * window->fontheight;
     for(int n=0;n<tg.num_points-1;n++){
-      float y1 = n * tg.line_period;
-      float y2 = (n+1) * tg.line_period;
+      float y1 = y_start + n * tg.line_period;
+      float y2 = y_start + (n+1) * tg.line_period;
       if (c.isNull())
 		  c = GE_color_z(TEMPOGRAPH_COLOR_NUM, GE_Conf(Z_ZERO, NO_SCISSORS));
       GE_line(c, 
@@ -1004,8 +1098,11 @@ static void create_signaturetrack(const struct Tracker_Windows *window, const st
   const struct WTracks *last_wtrack = (const struct WTracks*)ListLast1(&wblock->wtracks->l);
   int x2 = last_wtrack->x2;
 
+  int first_realline, last_realline;
+  get_grayed_block_realline_range(wblock, &first_realline, &last_realline);
+
   int realline;
-  for(realline = 0 ; realline<wblock->num_reallines ; realline++)
+  for(realline = first_realline ; realline<last_realline ; realline++)
     create_signature(window, wblock, wsignatures_trss[realline], realline, x2);
 }
 
@@ -1056,11 +1153,14 @@ static void create_lpb(const struct Tracker_Windows *window, const struct WBlock
 
 static void create_lpbtrack(const struct Tracker_Windows *window, const struct WBlocks *wblock){
 
-  struct WLPBs *wlpbs = WLPBs_get(window, wblock);
+  QVector<WLPBs> wlpbs = WLPBs_get_qt(window, wblock);
+
+  int first_realline, last_realline;
+  get_grayed_block_realline_range(wblock, &first_realline, &last_realline);
 
   int realline;
-  for(realline = 0 ; realline<wblock->num_reallines ; realline++)
-    create_lpb(window, wblock, wlpbs, realline);
+  for(realline = first_realline ; realline<last_realline ; realline++)
+    create_lpb(window, wblock, wlpbs.data(), realline);
 }
 
 
@@ -1070,6 +1170,9 @@ static void create_lpbtrack(const struct Tracker_Windows *window, const struct W
  ************************************/
 
 static void create_swing(const struct Tracker_Windows *window, const struct WBlocks *wblock, int realline, int weight, enum WSwingType type, int logtype, bool autogenerated, bool swingtext_fits_reallines, int x, enum UseScissors use_scissors){
+
+  if (realline_is_before_grayed_block(realline) || realline_is_beyond_grayed_block(realline))
+    return;
 
   const int y    = get_realline_y1(window, realline);
 
@@ -1133,6 +1236,9 @@ static void create_swingtrack(const struct Tracker_Windows *window, const struct
   bool curr_autogenerated = false;
   
   for(int i = 0; i < barswings->num_elements ; i++){
+    if (realline_is_beyond_grayed_block(realline))
+      return;
+
     R_ASSERT_RETURN_IF_FALSE(barswings->elements[i].type==HASH_TYPE);
     
     const hash_t *barswing = barswings->elements[i].hash;
@@ -1148,6 +1254,9 @@ static void create_swingtrack(const struct Tracker_Windows *window, const struct
     R_ASSERT_RETURN_IF_FALSE(beats!=NULL);
 
     for(int swingnum = 0 ; swingnum < swings->num_elements ; swingnum++){
+      if (realline_is_beyond_grayed_block(realline))
+        return;
+
       R_ASSERT_RETURN_IF_FALSE(swings->elements[swingnum].type==ARRAY_TYPE);
       
       const dynvec_t *swing = swings->elements[swingnum].array;
@@ -1255,11 +1364,14 @@ static void create_bpm(const struct Tracker_Windows *window, const struct WBlock
 
 static void create_bpmtrack(const struct Tracker_Windows *window, const struct WBlocks *wblock){
 
-  struct WBPMs *wbpms = WBPMs_get(window, wblock);
+  QVector<WBPMs> wbpms = WBPMs_get_qt(window, wblock);
+
+  int first_realline, last_realline;
+  get_grayed_block_realline_range(wblock, &first_realline, &last_realline);
 
   int realline;
-  for(realline = 0 ; realline<wblock->num_reallines ; realline++)
-    create_bpm(window, wblock, wbpms, realline);
+  for(realline = first_realline ; realline<last_realline ; realline++)
+    create_bpm(window, wblock, wbpms.data(), realline);
 }
 
 
@@ -1272,7 +1384,7 @@ static void create_reltempotrack(const struct Tracker_Windows *window, struct WB
 
   const struct NodeLine *nodelines = GetTempoNodeLines(window, wblock);
   
-  bool is_current = wblock->mouse_track==TEMPONODETRACK;
+  bool is_current = !g_is_rendering_grayed_block && wblock->mouse_track==TEMPONODETRACK;
 
   drawNodeLines(window, nodelines, AUTOMATION2_COLOR_NUM, is_current, 0.6, 0.9, false, NO_SCISSORS);
   
@@ -1280,7 +1392,7 @@ static void create_reltempotrack(const struct Tracker_Windows *window, struct WB
     const vector_t *nodes = get_nodeline_nodes(nodelines, wblock->t.y1);
 
     VECTOR_FOR_EACH(const Node *, node, nodes) {
-      if(wblock->mouse_track==TEMPONODETRACK)
+      if(!g_is_rendering_grayed_block && wblock->mouse_track==TEMPONODETRACK)
         draw_skewed_box(window, node->element, TEXT_COLOR_NUM, node->x, node->y - wblock->t.y1, NO_SCISSORS);
       if (node->element==g_indicator_node)
         schedule_node_indicator(node->x, node->y - wblock->t.y1, AUTOMATION2_COLOR_NUM);
@@ -1692,6 +1804,9 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
 
     //printf("highlight: %d %p %p\n",highlight,trackrealline->daspitch,trackrealline->dasnote);
     //printf("g_current_node: %p\n\n",g_current_node);
+
+    if (g_is_rendering_grayed_block)
+      highlight = false;
       
 
     // Only paint background for real notes. (129-131=mur/---/mul)
@@ -1703,7 +1818,7 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
     if (trs.size() > 1)
       paint_multinotes(wtrack, trs, NotesTexts, y1, y2);
 
-    else if ((g_is_creating_all_GL_blocks==false && wblock->mouse_track == wtrack->l.num)
+    else if ((g_is_creating_all_GL_blocks==false && !g_is_rendering_grayed_block && wblock->mouse_track == wtrack->l.num)
              || cents!=0
              || wtrack->is_wide==true
              ){
@@ -1737,7 +1852,8 @@ static void create_track_text(const struct Tracker_Windows *window, const struct
     }
   }
 
-  if (!wtrack->centtext_on && wtrack->notesonoff==1 && !equal_doubles(cents_d, 0.0)) {
+  if (!g_is_rendering_grayed_block && !wtrack->centtext_on && wtrack->notesonoff==1 && !equal_doubles(cents_d, 0.0))
+  {
     if (wtrack->chancetext_on || wtrack->veltext_on || wtrack->fxtext_on){
       //printf("     %d: cents_d: %f\n",wtrack->l.num, cents_d);
 
@@ -1788,7 +1904,7 @@ static void create_pitches(const struct Tracker_Windows *window, const struct WB
 
     for(const struct NodeLine2 *nodeline=nodelines ; nodeline!=NULL ; nodeline=nodeline->next) {
       bool vertical_line = equal_floats(nodeline->x1, nodeline->x2);
-      bool continues_next_block = nodeline->next==NULL && note_continues_next_block(wblock->block, note);
+      bool continues_next_block = nodeline->next==NULL && !g_is_rendering_grayed_block && note_continues_next_block(wblock->block, note);
     
       if(true || !vertical_line) {
         int logtype = nodeline->logtype;
@@ -2001,6 +2117,14 @@ static void create_pianoroll_notes(const struct Tracker_Windows *window, const s
   struct Notes ghost_note;
   
   const struct Notes *note = notes;
+  float reallineF = 0.0f;
+  const Place *grayed_first_place = NULL;
+  if (g_is_rendering_grayed_block)
+  {
+    int first_realline, last_realline;
+    get_grayed_block_realline_range(wblock, &first_realline, &last_realline);
+    grayed_first_place = &wblock->reallines[first_realline]->l.p;
+  }
   
   while(true) {
 
@@ -2031,6 +2155,21 @@ static void create_pianoroll_notes(const struct Tracker_Windows *window, const s
 
     }
 
+    // Notes are sorted by start place, but a note starting before the range may
+    // still sound inside it, so the range is applied to the note end.
+    if (grayed_first_place != NULL && p_Less_Than(ratio2place(note->end), *grayed_first_place))
+    {
+      note = NextNote(note);
+      continue;
+    }
+
+    if (g_is_rendering_grayed_block && g_grayed_block_last_realline >= 0)
+    {
+      reallineF = FindReallineForF(wblock, reallineF, &note->l.p);
+      if (realline_is_beyond_grayed_block((int)reallineF))
+        break;
+    }
+
     r::PitchTimeData::Reader reader(note->_pitches);
     
     const struct NodeLine2 *nodelines = GetPianorollNodeLines2(window,
@@ -2047,7 +2186,7 @@ static void create_pianoroll_notes(const struct Tracker_Windows *window, const s
       bool is_continuing = false;
       
       if (nodeline->next==NULL)
-        if (note_continues_next_block(wblock->block, note))
+        if (!g_is_rendering_grayed_block && note_continues_next_block(wblock->block, note))
           is_continuing = true;
 
       if (nodeline->is_node)
@@ -2293,17 +2432,20 @@ static void create_pianoroll(const struct Tracker_Windows *window, const struct 
 
   create_pianoroll_notes(window, wblock, wtrack);
 
-  maybe_create_pianoroll_rectangle(window, wblock, wtrack,
-                                   g_current_pianobar_rubber,
-                                   GE_rgba(1, 30, 60, 128),
-                                   GE_rgba(0xff,0xff,0xff,0x80)
-                                   );
-    
-  maybe_create_pianoroll_rectangle(window, wblock, wtrack,
-                                   g_current_pianobar_selection_rectangle,
-                                   GE_rgba(120, 30, 60, 128),
-                                   GE_alpha(GE_get_rgb(SEQUENCER_TEMPO_AUTOMATION_COLOR_NUM), 0.5)
-                                   );
+  if (!g_is_rendering_grayed_block)
+  {
+    maybe_create_pianoroll_rectangle(window, wblock, wtrack,
+                                     g_current_pianobar_rubber,
+                                     GE_rgba(1, 30, 60, 128),
+                                     GE_rgba(0xff,0xff,0xff,0x80)
+                                     );
+      
+    maybe_create_pianoroll_rectangle(window, wblock, wtrack,
+                                     g_current_pianobar_selection_rectangle,
+                                     GE_rgba(120, 30, 60, 128),
+                                     GE_alpha(GE_get_rgb(SEQUENCER_TEMPO_AUTOMATION_COLOR_NUM), 0.5)
+                                     );
+  }
 }
 
 
@@ -2341,125 +2483,134 @@ static void create_track_peaks(const struct Tracker_Windows *window,
   //GE_Context c = GE_mix_alpha_z(GE_get_rgb(0), GE_get_rgb(2), 250, 0.9, Z_ZERO);
 
 
-  for(int ch=0;ch<num_channels;ch++){
+  int visible_first_realline, visible_last_realline;
+  get_grayed_block_realline_range(wblock, &visible_first_realline, &visible_last_realline);
+  const float visible_y1 = window->fontheight * visible_first_realline;
+  const float visible_y2 = window->fontheight * visible_last_realline;
 
-    GE_ScopedTrianglestrip trianglestrip;
+	for(int ch=0;ch<num_channels;ch++){
 
-    for(const struct NodeLine2 *ns = nodelines ; ns!=NULL ; ns=ns->next){
-      int logtype = ns->logtype;
-      float x1 = ns->x1;
-      float x2 = logtype==LOGTYPE_HOLD ? ns->x1 : ns->x2;
-      float y1 = ns->y1;
-      float y2 = ns->y2;
+		GE_ScopedTrianglestrip trianglestrip;
 
-      //printf("y1/y2: %f, %f\n", y1, y2);
+		QVarLengthArray<int64_t, 64> peak_starts;
+		QVarLengthArray<int64_t, 64> peak_ends;
+		QVarLengthArray<float, 64> peak_ys;
+		QVarLengthArray<float, 64> peak_velocities;
+		QVarLengthArray<float, 64> peak_mins;
+		QVarLengthArray<float, 64> peak_maxs;
 
-	  if (c.isNull())
-		  c = GE_mix_color_z(GE_get_rgb(LOW_EDITOR_BACKGROUND_COLOR_NUM),
-							 GE_get_rgb(WAVEFORM_COLOR_NUM),
-							 100,
-							 GE_Conf(Z_ABOVE(Z_ZERO)));
+		for(const struct NodeLine2 *ns = nodelines ; ns!=NULL ; ns=ns->next){
+			int logtype = ns->logtype;
+			float x1 = ns->x1;
+			float x2 = logtype==LOGTYPE_HOLD ? ns->x1 : ns->x2;
+			float y1 = ns->y1;
+			float y2 = ns->y2;
 
-      const STime time1 = Ratio2STime2(wblock->block, ns->time1, wtrack->track) - note_time;
-      const STime time2 = Ratio2STime2(wblock->block, ns->time2, wtrack->track) - note_time;
+			if (y2 <= visible_y1 || y1 >= visible_y2)
+				continue;
 
-      R_ASSERT_NON_RELEASE(time2 >= time1);
-      
-      if (time1>=time2)
-        continue;
-          
-      float velocity1 = scale(x1, subtrack_x1, subtrack_x2, 0, 1);
-      float velocity2 = scale(x2, subtrack_x1, subtrack_x2, 0, 1);
-      
-      int num_peaks = R_MAX(2, (y2-y1) / num_lines_per_peak); // Must have at least two points in time to draw a waveform.
+			if (c.isNull())
+				c = GE_mix_color_z(GE_get_rgb(LOW_EDITOR_BACKGROUND_COLOR_NUM),
+				                   GE_get_rgb(WAVEFORM_COLOR_NUM),
+				                   100,
+				                   GE_Conf(Z_ABOVE(Z_ZERO)));
 
-      int64_t last_end_time = time1;
-                                
-      for(int n=0; n < num_peaks ; n++){
+			const STime time1 = Ratio2STime2(wblock->block, ns->time1, wtrack->track) - note_time;
+			const STime time2 = Ratio2STime2(wblock->block, ns->time2, wtrack->track) - note_time;
 
-        float min,max;
-        
-        int64_t start_time = last_end_time;
+			R_ASSERT_NON_RELEASE(time2 >= time1);
 
-        int64_t end_time   = R_MIN(time2,
-                                   scale(n+1,
-                                         0, num_peaks-1+1,
-                                         time1, time2)
-                                   );
-        
-        
-        //printf("  %d/%d: %d -> %d (diff: %d) (full: %d -> %d)\n", n, num_peaks, (int)start_time, (int)end_time, (int)(end_time-start_time), (int)time1, (int)time2);
+			if (time1>=time2)
+				continue;
 
-        R_ASSERT_NON_RELEASE(end_time >= start_time);
+			float velocity1 = scale(x1, subtrack_x1, subtrack_x2, 0, 1);
+			float velocity2 = scale(x2, subtrack_x1, subtrack_x2, 0, 1);
 
-        int64_t reltempo_start_time = start_time / reltempo;
-        int64_t reltempo_end_time = end_time / reltempo;
-        
-        if (reltempo_start_time>=reltempo_end_time)
-          continue; // Playing too fast. No audio data. (note that the current value of 'last_end_time' is kept in the next iteration)
-        
-        //if (n==0)
-        //printf("start_time: %d, time1: %d. end_time: %d, time2: %d\n",(int)start_time, (int)time1, (int)end_time, (int)time2);
-        
+			int num_peaks = R_MAX(2, (y2-y1) / num_lines_per_peak); // Must have at least two points in time to draw a waveform.
 
-        PATCH_get_peaks(patch, 
-                        note->note,
-                        ch,
-                        wtrack->track,
-                        reltempo_start_time,
-                        reltempo_end_time,
-                        &min,
-                        &max);
+			// Collect the same windows as before, but fetch all min/max values in one call.
+			peak_starts.clear();
+			peak_ends.clear();
+			peak_ys.clear();
+			peak_velocities.clear();
 
-        float velocity = (float)scale(n,
-                                      0,num_peaks-1,
-                                      velocity1, velocity2);
+			int64_t last_end_time = time1;
 
-        float bound_x1 = scale(scale(ch,
-                                     0,num_channels,
-                                     0.0f,velocity),
-                               0, 1,
-                               subtrack_x1, subtrack_x2);
-        float bound_x2 = scale(scale(ch+1,
-                                     0,num_channels,
-                                     0.0f,velocity),
-                               0, 1,
-                               subtrack_x1, subtrack_x2);
+			for(int n=0; n < num_peaks ; n++){
 
-        float x1 = scale(min*track_volume, -1,1, bound_x1, bound_x2);
-        float x2 = scale(max*track_volume, -1,1, bound_x1, bound_x2);
-          
-        //float y = y1 + n*NUM_LINES_PER_PEAK;
-        float y = scale(n,
-                        0, num_peaks-1,
-                        y1, y2);
+				const float peak_y = scale(n, 0, num_peaks-1, y1, y2);
+				if (peak_y < visible_y1 || peak_y >= visible_y2)
+					continue;
 
-        //auto *old_c = c;
+				int64_t start_time = last_end_time;
 
-        /*
-        if (c != old_c){
-          printf("Changing C at %f\n", y);
-        }
-        */
-#if 0
-        printf("Adding %f,%f at %f. min/max: %f/%f. vel1/vel2: %f/%f. time1/time2: %f/%f\n",x1,x2,y,min,max,
-               scale(n,0,num_peaks,velocity1->velocity, velocity2->velocity),
-               scale(n+NUM_LINES_PER_PEAK,0,num_peaks,velocity1->velocity, velocity2->velocity),
-               scale(n,0,num_peaks,time1,time2) / reltempo,
-               scale(n+NUM_LINES_PER_PEAK,0,num_peaks,time1,time2) / reltempo);
-#endif
+				int64_t end_time = R_MIN(time2,
+				                         scale(n+1,
+				                               0, num_peaks-1+1,
+				                               time1, time2)
+				                         );
 
-        //printf("   tr.y: %f\n", y);
-        trianglestrip.add(c, R_MAX(subtrack_x1, x1-min_width), y); // Subtract a little bit (min_width) so that we see a thin line instead of nothing when there's no sound
-        trianglestrip.add(c, R_MIN(subtrack_x2, x2+min_width), y); // Same here.
-        
-        last_end_time = end_time;
-        
-      } // end num peaks iteration
+				R_ASSERT_NON_RELEASE(end_time >= start_time);
 
-    } // end node iteration
+				int64_t reltempo_start_time = start_time / reltempo;
+				int64_t reltempo_end_time = end_time / reltempo;
 
-  } // end ch iteration
+				if (reltempo_start_time>=reltempo_end_time)
+					continue; // Playing too fast. No audio data. (note that the current value of 'last_end_time' is kept in the next iteration)
+
+				peak_starts.append(reltempo_start_time);
+				peak_ends.append(reltempo_end_time);
+				peak_ys.append(peak_y);
+				peak_velocities.append((float)scale(n, 0, num_peaks-1, velocity1, velocity2));
+
+				last_end_time = end_time;
+			}
+
+			const int num_slices = (int)peak_starts.size();
+
+			if (num_slices==0)
+				continue;
+
+			peak_mins.resize(num_slices);
+			peak_maxs.resize(num_slices);
+
+			PATCH_get_peaks_slices(patch,
+			                       note->note,
+			                       ch,
+			                       wtrack->track,
+			                       peak_starts.constData(),
+			                       peak_ends.constData(),
+			                       num_slices,
+			                       peak_mins.data(),
+			                       peak_maxs.data());
+
+			for(int i=0;i<num_slices;i++){
+
+				const float velocity = peak_velocities[i];
+
+				float bound_x1 = scale(scale(ch,
+				                             0,num_channels,
+				                             0.0f,velocity),
+				                       0, 1,
+				                       subtrack_x1, subtrack_x2);
+				float bound_x2 = scale(scale(ch+1,
+				                             0,num_channels,
+				                             0.0f,velocity),
+				                       0, 1,
+				                       subtrack_x1, subtrack_x2);
+
+				float scaled_x1 = scale(peak_mins[i]*track_volume, -1,1, bound_x1, bound_x2);
+				float scaled_x2 = scale(peak_maxs[i]*track_volume, -1,1, bound_x1, bound_x2);
+
+				float y = peak_ys[i];
+
+				trianglestrip.add(c, R_MAX(subtrack_x1, scaled_x1-min_width), y); // Subtract a little bit (min_width) so that we see a thin line instead of nothing when there's no sound
+				trianglestrip.add(c, R_MIN(subtrack_x2, scaled_x2+min_width), y); // Same here.
+			}
+
+		} // end node iteration
+
+	} // end ch iteration
 }
 
 static void create_velocity_gradient_background(
@@ -2672,21 +2823,22 @@ static void create_track_velocities(const struct Tracker_Windows *window, const 
 
   // peaks
   if(TRACK_has_peaks(wtrack->track))
+  {
     create_track_peaks(window, wblock, wtrack, note, nodelines);
+  }
 
   //if (wtrack->l.num==0)
   //  printf("  is current: %d. indicator node id: %d\n", is_current, (int)g_indicator_node_id);
 
   int currvelnum = -1;
   if (g_indicator_node == &note->l) {
-    if (g_indicator_velocity_num >= nodes->num_elements)
-      printf("g_indicator_velocity_node_num(%d) >= nodes->num_elements(%d)\n",g_indicator_velocity_num,nodes->num_elements); // TODO: Find out why this happens so often.
-    else
+    if (g_indicator_velocity_num < nodes->num_elements)
       currvelnum = g_indicator_velocity_num;
   }
   
   // nodes
   if (is_current || g_indicator_node_id!=NODETYPE_NO_NODE)
+  {
     VECTOR_FOR_EACH(const Node2 *, node, nodes){
       
       //printf("%d: %d\n", iterator666, (int)node->id);
@@ -2698,6 +2850,7 @@ static void create_track_velocities(const struct Tracker_Windows *window, const 
         schedule_node_indicator(node->x, node->y - wblock->t.y1, VELOCITY_TEXT_COLOR_NUM);
       
     }END_VECTOR_FOR_EACH;
+  }
 }
 
 
@@ -2724,12 +2877,27 @@ static void create_track_fxs(const struct Tracker_Windows *window, const struct 
 static void create_track_stops(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack){
 
   float reallineF = 0.0f;
+  const Place *grayed_first_place = NULL;
+  if (g_is_rendering_grayed_block)
+  {
+    int first_realline, last_realline;
+    get_grayed_block_realline_range(wblock, &first_realline, &last_realline);
+    grayed_first_place = &wblock->reallines[first_realline]->l.p;
+  }
 
 #if 1
   r::StopTimeData::Reader reader(wtrack->track->stops2);
   for(const r::Stop &stop : reader) {
     Place place = ratio2place(stop._time);
+    if (grayed_first_place != NULL)
+    {
+      if (p_Less_Than(place, *grayed_first_place))
+        continue;
+      grayed_first_place = NULL;
+    }
     reallineF = FindReallineForF(wblock, reallineF, &place);
+    if (realline_is_beyond_grayed_block((int)reallineF))
+      break;
     float y = get_realline_y(window, reallineF); 
     GE_Context c = GE_color_alpha(TEXT_COLOR_NUM, 0.19);
     GE_line(c,
@@ -2884,43 +3052,81 @@ static void create_track_fxtext(const struct Tracker_Windows *window, const stru
   create_track_fxtext2(window, wblock, wtrack, realline, vt.fx->color, column, v1, v2, v3);
 }
 
-static void create_track(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack){
-  create_track_borders(window, wblock, wtrack);
+static void create_track(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack)
+{
+  if (!g_is_rendering_grayed_block)
+	  create_track_borders(window, wblock, wtrack);
 
   // FIX: after changing notes to TimeData, SetNotePolyphonyAttributes should only assert that everything is already done.
   SetNotePolyphonyAttributes(wtrack->track);
   
   float track_pitch_min, track_pitch_max;
   TRACK_get_min_and_max_pitches(wtrack->track, &track_pitch_min, &track_pitch_max);
-  
+
   // note/pitch names / cents
   if( (wtrack->notesonoff==1) || wtrack->centtext_on) {
 
     bool show_notes = wtrack->notesonoff==1;
-    
-    const Trss &trss = TRSS_get(wblock, wtrack);
 
+    const Trss &trss = TRSS_get(wblock, wtrack);
+	
     auto i = trss.constBegin();
-    while (i != trss.constEnd()) {
-      create_track_text(window, wblock, wtrack, i.value(), i.key(), show_notes);
-      ++i;
+	
+    if (g_is_rendering_grayed_block)
+		i = trss.lowerBound(g_grayed_block_first_realline);
+
+    while (i != trss.constEnd())
+	{
+		if (realline_is_beyond_grayed_block(i.key()))
+			break;
+		
+		create_track_text(window, wblock, wtrack, i.value(), i.key(), show_notes);
+		
+		i++;
     }
   }
 
   // velocities and pitches
   {  
     const struct Notes *note=wtrack->track->gfx_notes!=NULL ? wtrack->track->gfx_notes : wtrack->track->notes;
-    while(note != NULL){
+    float reallineF = 0.0f;
+    const Place *grayed_first_place = NULL;
+    if (g_is_rendering_grayed_block)
+    {
+		int first_realline, last_realline;
+		get_grayed_block_realline_range(wblock, &first_realline, &last_realline);
+		grayed_first_place = &wblock->reallines[first_realline]->l.p;
+    }
 
-      const r::PitchTimeData::Reader pitch_reader(note->_pitches);
-      
-      const struct NodeLine2 *pitch_nodelines = GetPitchNodeLines2(window, wblock, wtrack, note,track_pitch_min, track_pitch_max, pitch_reader);
+    while(note != NULL)
+	{
+		// Notes are sorted by start place, but a note starting before the range may
+		// still sound inside it, so the range is applied to the note end.
+		if (grayed_first_place != NULL && p_Less_Than(ratio2place(note->end), *grayed_first_place))
+		{
+			note = NextNote(note);
+			continue;
+		}
+		
+		if (g_is_rendering_grayed_block && g_grayed_block_last_realline >= 0)
+		{
+			reallineF = FindReallineForF(wblock, reallineF, &note->l.p);
+			if (realline_is_beyond_grayed_block((int)reallineF))
+			{
+				break;
+			}
+		}
 
-      if (wtrack->notesonoff==1)
-        create_pitches(window, wblock, wtrack, note, pitch_nodelines);
-      
-      create_track_velocities(window, wblock, wtrack, note, pitch_nodelines, pitch_reader, track_pitch_min, track_pitch_max);
-      note = NextNote(note);
+		const r::PitchTimeData::Reader pitch_reader(note->_pitches);
+
+		const struct NodeLine2 *pitch_nodelines = GetPitchNodeLines2(window, wblock, wtrack, note,track_pitch_min, track_pitch_max, pitch_reader);
+		
+		if (wtrack->notesonoff==1)
+			create_pitches(window, wblock, wtrack, note, pitch_nodelines);
+
+		create_track_velocities(window, wblock, wtrack, note, pitch_nodelines, pitch_reader, track_pitch_min, track_pitch_max);
+		
+		note = NextNote(note);
     }
   }
 
@@ -2933,7 +3139,11 @@ static void create_track(const struct Tracker_Windows *window, const struct WBlo
     const VelText_trss &veltexts = VELTEXTS_get(wblock, wtrack);
 
     auto i = veltexts.constBegin();
+    if (g_is_rendering_grayed_block)
+      i = veltexts.lowerBound(g_grayed_block_first_realline);
     while (i != veltexts.constEnd()){
+      if (realline_is_beyond_grayed_block(i.key()))
+        break;
       create_track_veltext(window, wblock, wtrack, i.value(), i.key());
       ++i;
     }
@@ -2947,7 +3157,11 @@ static void create_track(const struct Tracker_Windows *window, const struct WBlo
       if (fxs->fx->is_enabled){
         const FXText_trss &fxtexts = FXTEXTS_get(wblock, wtrack, fxs);
         auto i = fxtexts.constBegin();
+        if (g_is_rendering_grayed_block)
+          i = fxtexts.lowerBound(g_grayed_block_first_realline);
         while (i != fxtexts.constEnd()){
+          if (realline_is_beyond_grayed_block(i.key()))
+            break;
           create_track_fxtext(window, wblock, wtrack, i.value(), i.key(), column);
           ++i;
         }
@@ -2969,21 +3183,24 @@ static void create_track(const struct Tracker_Windows *window, const struct WBlo
   // piano roll
   create_pianoroll(window, wblock, wtrack);
 
-  // rec.
-  if (ATOMIC_GET(wtrack->track->is_recording))
-    create_track_is_recording(window, wblock, wtrack);
+  if (!g_is_rendering_grayed_block)
+  {
+    // rec.
+    if (ATOMIC_GET(wtrack->track->is_recording))
+      create_track_is_recording(window, wblock, wtrack);
 
-  // disabled in seqblock (two white crossing diagonal lines)
-  if (wtrack->l.num < MAX_DISABLED_SEQBLOCK_TRACKS){
-    if (is_playing() && pc->playtype==PLAYSONG){
-      struct SeqBlock *seqblock = RT_get_curr_seqblock();
-      
-      if(seqblock!=NULL && seqblock->block!=NULL){
+    // disabled in seqblock (two white crossing diagonal lines)
+    if (wtrack->l.num < MAX_DISABLED_SEQBLOCK_TRACKS){
+      if (is_playing() && pc->playtype==PLAYSONG){
+        struct SeqBlock *seqblock = RT_get_curr_seqblock();
         
-        R_ASSERT_NON_RELEASE(seqblock->track_is_disabled!=NULL);
-        
-        if (seqblock->track_is_disabled[wtrack->l.num])
-          create_track_is_disabled_in_seqblock(window, wblock, wtrack);
+        if(seqblock!=NULL && seqblock->block!=NULL){
+          
+          R_ASSERT_NON_RELEASE(seqblock->track_is_disabled!=NULL);
+          
+          if (seqblock->track_is_disabled[wtrack->l.num])
+            create_track_is_disabled_in_seqblock(window, wblock, wtrack);
+        }
       }
     }
   }
@@ -3220,11 +3437,195 @@ static void create_lacking_keyboard_focus_greyed_out(const struct Tracker_Window
    block
  ************************************/
 
-#include <thread>
+#define GRAYED_BLOCK_DIM 550.0f   // How much the preview colors are mixed towards the low editor background color.
+#define GRAYED_BLOCK_ALPHA 0.65f  // Alpha multiplied with the preview colors.
+
+// Returns the seqblock in the currently selected seqtrack that the grayed out
+// preview should be relative to, or NULL if there is none.
+static struct SeqBlock *get_ref_seqblock(struct SeqTrack *seqtrack, const struct Blocks *curr_block)
+{
+	if (is_playing_song())
+	{
+		struct SeqBlock *playing = RT_get_curr_seqblock2(seqtrack);
+		if (playing != NULL && playing->block == curr_block)
+			return playing;
+	}
+
+	VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks)
+	{
+		if (seqblock->block == curr_block && seqblock->is_selected)
+			return seqblock;
+	}
+	END_VECTOR_FOR_EACH;
+
+	VECTOR_FOR_EACH(struct SeqBlock *, seqblock, &seqtrack->seqblocks)
+	{
+		if (seqblock->block == curr_block)
+			return seqblock;
+	}
+	END_VECTOR_FOR_EACH;
+
+	return NULL;
+}
+
+// Returns the block that is played before (direction=-1) or after (direction=+1)
+// 'curr_block' in the currently selected seqtrack, or NULL if there is none.
+// Sample seqblocks are skipped.
+static const struct Blocks *get_neighbor_seqtrack_block(const struct Blocks *curr_block, int direction)
+{
+	// When playing a block, the block that is played before/after is the same block (it loops).
+	if (is_playing() && pc->playtype == PLAYBLOCK)
+		return curr_block;
+
+	struct SeqTrack *seqtrack = SEQUENCER_get_curr_seqtrack();
+	if (seqtrack == NULL)
+		return NULL;
+
+	struct SeqBlock *ref = get_ref_seqblock(seqtrack, curr_block);
+	if (ref == NULL)
+		return NULL;
+
+	int pos = VECTOR_find_pos(&seqtrack->seqblocks, ref);
+	if (pos < 0)
+		return NULL; // Should not happen.
+
+	return get_neighbor_block(seqtrack, pos, direction);
+}
+
+// Returns the WBlocks to use as the grayed out preview of the block played
+// before (direction=-1) or after (direction=+1) 'block', or NULL if there is
+// none. '*first_realline' and '*last_realline' are set to the range of reallines
+// that fit on screen ('last_realline' < 0 means no limit).
+static struct WBlocks *find_preview_wblock(const struct Tracker_Windows *window, const struct Blocks *block, int direction, int *first_realline, int *last_realline)
+{
+	*first_realline = 0;
+	*last_realline = -1;
+
+	const struct Blocks *neighbor = get_neighbor_seqtrack_block(block, direction);
+	if (neighbor == NULL)
+		return NULL;
+
+	struct WBlocks *candidate = (struct WBlocks*)ListFindElement1(&window->wblocks->l, neighbor->l.num);
+	if (candidate == NULL)
+		return NULL;
+
+	const int max_reallines = (GE_get_height() + window->fontheight - 1) / window->fontheight + 1;
+	const int num_reallines = R_MIN(candidate->num_reallines, max_reallines);
+	if (num_reallines <= 0)
+		return NULL;
+
+	// The preview of the previous block is drawn above the current block, so its
+	// *last* reallines are the visible ones. The preview of the next block is
+	// drawn below the current block, so its *first* reallines are visible.
+	if (direction < 0)
+		*first_realline = candidate->num_reallines - num_reallines;
+	else
+		*last_realline = num_reallines;
+
+	return candidate;
+}
+
+// While in scope, state belonging to the current block is cleared, to avoid
+// drawing current block highlights, ghosts, rubber bands, etc. in the grayed out
+// preview of another block. The state is restored on destruction.
+struct HideCurrentBlockState
+{
+	struct WBlocks *wblock;
+	const struct ListHeader3 *old_current_node;
+	const struct ListHeader3 *old_indicator_node;
+	int64_t old_indicator_node_id;
+	int old_piano_tracknum;
+	int old_ghost_tracknum;
+	int old_mouse_track;
+	struct Notes *old_mouse_note;
+
+	HideCurrentBlockState(struct WBlocks *wblock_)
+		: wblock(wblock_)
+		, old_current_node(g_current_node)
+		, old_indicator_node(g_indicator_node)
+		, old_indicator_node_id(g_indicator_node_id)
+		, old_piano_tracknum(g_current_piano_note.tracknum)
+		, old_ghost_tracknum(g_current_piano_ghost_note.tracknum)
+		, old_mouse_track(wblock_->mouse_track)
+		, old_mouse_note(wblock_->mouse_note)
+	{
+		g_current_node = NULL;
+		g_indicator_node = NULL;
+		g_indicator_node_id = NODETYPE_NO_NODE;
+		g_current_piano_note.tracknum = -1;
+		g_current_piano_ghost_note.tracknum = -1;
+		wblock->mouse_track = NOTRACK;
+		wblock->mouse_note = NULL;
+	}
+
+	~HideCurrentBlockState()
+	{
+		g_current_node = old_current_node;
+		g_indicator_node = old_indicator_node;
+		g_indicator_node_id = old_indicator_node_id;
+		g_current_piano_note.tracknum = old_piano_tracknum;
+		g_current_piano_ghost_note.tracknum = old_ghost_tracknum;
+		wblock->mouse_track = old_mouse_track;
+		wblock->mouse_note = old_mouse_note;
+	}
+};
+
+// Draws 'wblock' (the next or previous block in the current seqtrack) in a
+// slightly grayed out color, shifted 'y_offset' pixels. Only the reallines in
+// [first_realline, last_realline) are drawn. 'last_realline' < 0 means no limit.
+static void create_grayed_block(const struct Tracker_Windows *window, struct WBlocks *wblock, int y_offset, int first_realline, int last_realline)
+{
+	g_is_rendering_grayed_block = true;
+	g_grayed_block_first_realline = first_realline;
+	g_grayed_block_last_realline = last_realline;
+
+	GE_set_grayed_block_mode(y_offset, GRAYED_BLOCK_DIM, GRAYED_BLOCK_ALPHA);
+
+	{
+		HideCurrentBlockState hide_current_block_state(wblock);
+
+		const WSignature_trss wsignatures_trss = WSignatures_get(window, wblock);
+
+		create_background(window, wblock, wsignatures_trss);
+		create_linenumbers(window, wblock, wsignatures_trss);
+		create_tempograph(window, wblock);
+		if(window->show_signature_track)
+			create_signaturetrack(window, wblock, wsignatures_trss);
+		if(window->show_swing_track)
+			create_swingtrack(window, wblock, wblock->block->filledout_swings.array, wblock->swingtext_fits_reallines, wblock->swingTypearea.x, NO_SCISSORS);
+		if(window->show_lpb_track)
+			create_lpbtrack(window, wblock);
+		if(window->show_bpm_track)
+			create_bpmtrack(window, wblock);
+		if(window->show_reltempo_track)
+			create_reltempotrack(window, wblock);
+		create_tracks(window, wblock);
+	}
+
+	GE_unset_grayed_block_mode();
+	g_grayed_block_first_realline = 0;
+	g_grayed_block_last_realline = -1;
+	g_is_rendering_grayed_block = false;
+}
+
+namespace {
+struct ScopedGCPause {
+  ScopedGCPause(void) {
+    Threadsafe_GC_disable();
+  }
+
+  ~ScopedGCPause(void) {
+    Threadsafe_GC_enable();
+  }
+};
+}
 
 static void GL_create2(const struct Tracker_Windows *window, struct WBlocks *wblock)
 {
+  ScopedGCPause scoped_gc_pause;
+
   init_g_colored_tracks_if_necessary();
+  init_g_show_grayed_out_blocks_if_necessary();
   
   //static int n=0; printf("GL_create called %d\n",n++);
 
@@ -3232,10 +3633,35 @@ static void GL_create2(const struct Tracker_Windows *window, struct WBlocks *wbl
   
   int y2 = wblock==NULL ? -1 : get_realline_y2(window, wblock->num_reallines-1);
 
+  struct WBlocks *prev_wblock = NULL;
+  int prev_first_realline = 0, prev_last_realline = -1;
+  struct WBlocks *next_wblock = NULL;
+  int next_first_realline = 0, next_last_realline = -1;
+  const int block_end_y = y2;
+
+  if (g_show_grayed_out_blocks && wblock != NULL && !g_is_creating_all_GL_blocks)
+  {
+    // Note: the previews are always generated, even when currently scrolled out
+    // of view. The vertices are only regenerated when the editor is redrawn
+    // (scrolling is transform-only), so skipping them when not visible would
+    // make them missing until the next redraw.
+
+    prev_wblock = find_preview_wblock(window, wblock->block, -1, &prev_first_realline, &prev_last_realline);
+    next_wblock = find_preview_wblock(window, wblock->block, +1, &next_first_realline, &next_last_realline);
+
+    if (next_wblock != NULL)
+      y2 = block_end_y + (next_last_realline - next_first_realline) * window->fontheight;
+  }
+
   if (GE_start_writing(y2, block_is_visible)==false) return; else {
 
     if (block_is_visible) {
       const WSignature_trss wsignatures_trss = WSignatures_get(window, wblock);
+
+      if (prev_wblock != NULL)
+      {
+        create_grayed_block(window, prev_wblock, -prev_wblock->num_reallines * window->fontheight, prev_first_realline, prev_last_realline);
+      }
       
       create_left_slider(window, wblock);
 	  create_background(window, wblock, wsignatures_trss);
@@ -3258,6 +3684,11 @@ static void GL_create2(const struct Tracker_Windows *window, struct WBlocks *wbl
       create_playcursor(window, wblock);
       create_current_barbeat_mark(wsignatures_trss, window, wblock);
       create_node_indicator();
+
+      if (next_wblock != NULL)
+      {
+        create_grayed_block(window, next_wblock, block_end_y, next_first_realline, next_last_realline);
+      }
     }
 
     {
@@ -3332,14 +3763,7 @@ void GL_create(const struct Tracker_Windows *window){
 	}
   }
 
-#if 1 //defined(RELEASE)
   GL_create2(window, window->curr_block < 0 ? NULL : window->wblock);
-#else
-  static int num=0;
-  double start = TIME_get_ms();
-  GL_create2(window, window->curr_block < 0 ? NULL : window->wblock);
-  printf("   GL_create %d. dur: %f\n", num++, TIME_get_ms() - start);
-#endif
 }
 
 #else // !RENDER_IN_SEPARATE_THREAD -> RENDER_IN_SEPARATE_THREAD
@@ -3373,6 +3797,8 @@ static void gl_create_thread(){
 }
 
 #include <gc.h>
+#include <thread>
+
 
 extern bool g_qtgui_has_started,g_qtgui_has_stopped;
 
@@ -3402,12 +3828,9 @@ void GL_create(const struct Tracker_Windows *window)
     g_window = window;
     g_wblock = window->wblock;
 
-    double start = TIME_get_ms();
     g_sem_req.signal();
 
     g_sem_finished.wait();
-
-    printf("   dur: %f\n", TIME_get_ms() - start);
     /*
     do{
       processEventsALittleBit();

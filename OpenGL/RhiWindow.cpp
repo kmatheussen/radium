@@ -235,7 +235,7 @@ void radium::RhiWindow::QRHI_handle_thread_events(void)
 			//printf("2.  Got event from queue: Running now.\n");
 			
 			func();
-		}		
+		}
 
 		if (_stop_rendering)
 			QThread::msleep(5);
@@ -586,6 +586,7 @@ QRHI_customRender();
 
 //! [request-update]
     _rhi->endFrame(_swap_chain);
+
 
     // Always request the next frame via requestUpdate(). On some platforms this is backed
     // by a platform-specific solution, e.g. CVDisplayLink on macOS, which is potentially

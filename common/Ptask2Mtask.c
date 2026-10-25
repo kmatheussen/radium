@@ -166,7 +166,7 @@ static void set_current_seqblock_and_block_after_stop_playing(struct Tracker_Win
 void P2MUpdateSongPosCallBack(void){
 
   bool isplaying = ATOMIC_GET(pc->player_state)==PLAYER_STATE_PLAYING;
-        
+
   struct Tracker_Windows *window=root->song->tracker_windows;
   struct WBlocks *wblock;
 

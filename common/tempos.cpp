@@ -35,15 +35,14 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 
-struct WBPMs *WBPMs_get(
-                        const struct Tracker_Windows *window,
-                        const struct WBlocks *wblock
-                        )
+static void WBPMs_fill(
+                       const struct Tracker_Windows *window,
+                       const struct WBlocks *wblock,
+                       struct WBPMs *wbpms
+                       )
 {
 	int realline=0;
 	struct BPMs *bpm=wblock->block->tempos;
-
-	struct WBPMs *wbpms=(struct WBPMs*)talloc_atomic_clean(sizeof(struct WBPMs)*wblock->num_reallines);
 
 	while(bpm!=NULL){
 		realline=FindRealLineFor(wblock,realline,&bpm->l.p);
@@ -62,9 +61,33 @@ struct WBPMs *WBPMs_get(
 		//wbpms[realline].Tempo=tempo;
 		bpm=NextBPM(bpm);
 	}
+}
+
+struct WBPMs *WBPMs_get(
+                        const struct Tracker_Windows *window,
+                        const struct WBlocks *wblock
+                        )
+{
+	struct WBPMs *wbpms=(struct WBPMs*)talloc_atomic_clean(sizeof(struct WBPMs)*wblock->num_reallines);
+
+	WBPMs_fill(window, wblock, wbpms);
 
         return wbpms;
 }
+
+#if USE_QT4
+QVector<WBPMs> WBPMs_get_qt(
+                            const struct Tracker_Windows *window,
+                            const struct WBlocks *wblock
+                            )
+{
+  QVector<WBPMs> wbpms(wblock->num_reallines, WBPMs{0, 0, TempoType::TEMPO_NORMAL, 0});
+
+  WBPMs_fill(window, wblock, wbpms.data());
+
+  return wbpms;
+}
+#endif
 
 QVector<Tempos*> BPMs_get(const struct WBlocks *wblock, int realline){
   QVector<Tempos*> ret;
