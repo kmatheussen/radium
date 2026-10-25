@@ -194,11 +194,11 @@ if ! is_0 $INCLUDE_FAUSTDEV ; then
 fi
 
 if ! is_0 $INCLUDE_PDDEV ; then
-    export OS_OPTS="$OS_OPTS -DWITH_PD"
+    export OS_OPTS="$OS_OPTS -DWITH_PD=1"
 fi
 
 if ! is_0 $INCLUDE_PD2DEV ; then
-    export OS_OPTS="$OS_OPTS -DWITH_PD2"
+    export OS_OPTS="$OS_OPTS -DWITH_PD2=1"
 fi
 
 #echo "222==QHTAT??"

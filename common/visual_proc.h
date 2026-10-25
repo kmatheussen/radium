@@ -112,18 +112,18 @@ static inline void GFX_ScheduleRedraw(void){
 }
 
 // RT function.
-static inline void GFX_ScheduleEditorRedraw(void){
+static inline void GFX_ScheduleEditorRedraw(const char *reason){
   if(g_rt_do_rerendering)
     ATOMIC_SET(atomic_must_redraw_editor, true);
 }
 
 // RT function.
-static inline void GFX_ForceScheduleEditorRedraw(void){  
+static inline void GFX_ForceScheduleEditorRedraw(const char *reason){  
   ATOMIC_SET(atomic_must_redraw_editor, true);
 }
 
 // RT function.
-static inline void GFX_ScheduleEditorRedrawIfPatchIsCurrentlyVisible(const struct Patch *patch){
+static inline void GFX_ScheduleEditorRedrawIfPatchIsCurrentlyVisible(const struct Patch *patch, const char *reason){
   if (ATOMIC_GET(atomic_must_redraw_editor)==true)
     return;
 
@@ -134,7 +134,7 @@ static inline void GFX_ScheduleEditorRedrawIfPatchIsCurrentlyVisible(const struc
   const struct Tracks *track = block->tracks;
   while(track != NULL){
     if (track->patch==patch && track->notes!=NULL){
-      GFX_ScheduleEditorRedraw();
+      GFX_ScheduleEditorRedraw(reason);
       //printf("Updating\n");
       return;
     }

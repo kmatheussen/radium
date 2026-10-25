@@ -50,7 +50,10 @@ void* libpds2_openfile(pd_t *pd, const char* basename, const char* dirname);
 void libpds2_closefile(pd_t *pd, void* p); 
 void libpds2_savefile(pd_t *pd, void* p, const char *filename, const char *dirname); 
 int libpds2_getdollarzero(pd_t *pd, void* p); 
-void libpds2_show_gui(pd_t *pd); 
+// Starts the Pd Tcl/Tk GUI (or shows it again if it is only hidden).
+// Returns false, with an explanation in libpds2_strerror(), if it could not
+// be started. Must not be called while holding Radium's player lock.
+bool libpds2_show_gui(pd_t *pd); 
 void libpds2_hide_gui(pd_t *pd); 
 int libpds2_poll_gui(pd_t *pd); 
 int libpds2_try_poll_gui(pd_t *pd); 

@@ -39,6 +39,9 @@ mkdir -p "$TARGET"
 
 cd "$THIS_DIR/bin"
 
+LIBPD_PACKAGES_DIR="${LIBPD_PACKAGES_DIR:-packages/libpd}"
+PD2_EXTERNALS_DIR="${PD2_EXTERNALS_DIR:-pd/externals}"
+
 touch all_my_passwords.txt
 
 can_copy() {
@@ -180,29 +183,45 @@ fi
 # Pd2
 if [ ${INCLUDE_PD2DEV} -eq 1 ] ; then
 	mkdir -p "$TARGET/packages/libpd/pure-data"
-	cp -a packages/libpd/pure-data/tcl "$TARGET/packages/libpd/pure-data/"
-	cp -a packages/libpd/pure-data/extra "$TARGET/packages/libpd/pure-data/"
-	cp -a packages/libpd/pure-data/po "$TARGET/packages/libpd/pure-data/"
-	cp -a packages/libpd/pure-data/doc "$TARGET/packages/libpd/pure-data/"
+	cp -a "$LIBPD_PACKAGES_DIR/pure-data/tcl" "$TARGET/packages/libpd/pure-data/"
+	cp -a "$LIBPD_PACKAGES_DIR/pure-data/extra" "$TARGET/packages/libpd/pure-data/"
+	cp -a "$LIBPD_PACKAGES_DIR/pure-data/po" "$TARGET/packages/libpd/pure-data/"
+	cp -a "$LIBPD_PACKAGES_DIR/pure-data/doc" "$TARGET/packages/libpd/pure-data/"
+
+	if [ -d "$LIBPD_PACKAGES_DIR/pure-data/bin" ] ; then
+		cp -a "$LIBPD_PACKAGES_DIR/pure-data/bin" "$TARGET/packages/libpd/pure-data/"
+		if [ -d "$LIBPD_PACKAGES_DIR/pure-data/font" ] ; then
+			cp -a "$LIBPD_PACKAGES_DIR/pure-data/font" "$TARGET/packages/libpd/pure-data/"
+		fi
+	fi
+	if [ -d "$LIBPD_PACKAGES_DIR/pure-data/lib" ] ; then
+		cp -a "$LIBPD_PACKAGES_DIR/pure-data/lib" "$TARGET/packages/libpd/pure-data/"
+	fi
 	
 	# The dynamically loaded Pd externals (OSC and networking objects) are built
 	# by bin/packages/build.sh into bin/pd/externals.
 	mkdir -p "$TARGET/pd"
-	cp -a pd/externals "$TARGET/pd/"
+	if [ "$PD2_EXTERNALS_DIR" != "pd/externals" ] ; then
+		rm -fr "$TARGET/pd/externals"
+	fi
+	cp -a "$PD2_EXTERNALS_DIR" "$TARGET/pd/"
 	
 	mkdir -p "$TARGET/packages/libpd/libs"
 	if uname -s |grep Darwin ; then
-		cp -a packages/libpd/libs/libpd.dylib "$TARGET/packages/libpd/libs/"
+		cp -a "$LIBPD_PACKAGES_DIR/libs/libpd.dylib" "$TARGET/packages/libpd/libs/"
 
 		# The self-contained Tcl/Tk Wish.app used to show the Pd GUI.
 		# Built by bin/packages/build.sh (build_tcltk_wish).
-		if [ -d packages/libpd/Wish.app ] ; then
-			cp -a packages/libpd/Wish.app "$TARGET/packages/libpd/"
+		if [ -d "$LIBPD_PACKAGES_DIR/Wish.app" ] ; then
+			cp -a "$LIBPD_PACKAGES_DIR/Wish.app" "$TARGET/packages/libpd/"
 		else
 			echo "Warning: packages/libpd/Wish.app has not been built. The Pd2 GUI will require Tcl/Tk (wish) to be installed on the machine." >&2
 		fi
+	elif [ -f "$LIBPD_PACKAGES_DIR/libs/pd.dll" ] ; then
+		# Windows: pd.dll must be next to radium.bin.exe.
+		cp -a "$LIBPD_PACKAGES_DIR/libs/pd.dll" "$TARGET/"
 	else
-		cp -a packages/libpd/libs/libpd.so "$TARGET/packages/libpd/libs/"
+		cp -a "$LIBPD_PACKAGES_DIR/libs/libpd.so" "$TARGET/packages/libpd/libs/"
 	fi
 fi
 

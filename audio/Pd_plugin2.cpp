@@ -13,6 +13,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
+
 #ifdef WITH_PD2
 
 #include <inttypes.h>
@@ -34,6 +35,18 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #if defined(FOR_LINUX)
 #  include <glib.h>
 #  define strlcpy g_strlcpy
+#elif defined(_WIN32)
+// mingw has no strlcpy. Same semantics as the BSD function: at most size-1
+// characters are copied, and the result is always NUL-terminated.
+static inline void pd2_strlcpy(char *dst, const char *src, size_t size){
+	if (size == 0)
+		return;
+	size_t i;
+	for(i = 0 ; i < size - 1 && src[i] != '\0' ; i++)
+		dst[i] = src[i];
+	dst[i] = '\0';
+}
+#  define strlcpy pd2_strlcpy
 #endif
 
 #include <algorithm>
@@ -618,7 +631,13 @@ static bool show_gui(struct SoundPlugin *plugin, int64_t parentgui)
 	// waiting for the Tcl/Tk process to connect (see the Radium patch in
 	// pure-data/src/s_inter.c), so the audio thread is not blocked while the
 	// GUI starts.
-	libpds2_show_gui(data->pd);
+	if (!libpds2_show_gui(data->pd)) {
+		RError("Unable to show the Pd GUI: %s", libpds2_strerror());
+		// Keep the GUI checkbox unchecked. The widget reads _gui_is_visible
+		// regularly, see PDGUI_is_visible/PDGUI_is_hidden.
+		PDGUI_is_hidden(ATOMIC_GET(data->qtgui));
+		return false;
+	}
 
 	// Note: libpds only shows or hides the Pd GUI windows here (the Tcl/Tk
 	// process keeps running), so Pd does not send gui_is_visible when the GUI

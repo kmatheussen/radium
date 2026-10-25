@@ -696,3 +696,5 @@ if [[ "${BASH_SOURCE[0]}" == "$0" ]] ; then
 
 	touch deletemetorebuild
 fi
+
+echo "Success"

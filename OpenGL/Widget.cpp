@@ -274,6 +274,8 @@ static double QRHI_find_current_realline_while_playing(const SharedVariables &sv
 	return sv.num_reallines;
 }
 
+static double g_hold_start_time = -1.0;
+
 static bool QRHI_find_scrollpos(const SharedVariables &sv, double &scroll_pos, double &current_realline_while_playing_out)
 {
 	R_ASSERT_NON_RELEASE(THREADING_is_qrhi_thread());
@@ -342,6 +344,40 @@ static bool QRHI_find_scrollpos(const SharedVariables &sv, double &scroll_pos, d
 		is_playing
 		? QRHI_find_current_realline_while_playing(sv, blocktime)
 		: 0.0;
+
+    // When a block switch changes the grayed out block above, keep the previous scroll
+    // position until painting data generated for the currently playing seqblock has
+    // been committed. Otherwise the stale preview of the block above would be shown for
+    // a few frames after the view wraps. (The block above is only visible at the start
+    // of a block, so holding the scroll for a frame or two is barely visible.)
+    {
+      static double held_playing_realline = 0.0;
+
+      const bool hold_condition = is_playing
+        && !ATOMIC_GET_RELAXED(sv.root->play_cursor_onoff)
+        && ATOMIC_GET(g_hold_editor_scroll_until_painting_data_is_fresh)
+        && sv.curr_playing_seqblock_id != ATOMIC_GET(g_curr_playing_seqblock_id);
+
+      bool hold = hold_condition;
+
+      if (hold_condition)
+      {
+        const double now = RT_TIME_get_ms();
+        if (g_hold_start_time < 0.0)
+          g_hold_start_time = now;
+        else if (now - g_hold_start_time > 250.0)
+          hold = false; // Safety valve: don't freeze forever if the editor redraw is stuck.
+      }
+      else
+      {
+        g_hold_start_time = -1.0;
+      }
+
+      if (hold)
+        current_realline_while_playing = held_playing_realline;
+      else
+        held_playing_realline = current_realline_while_playing;
+    }
     
     R_ASSERT_NON_RELEASE(current_realline_while_playing >= 0);
 
@@ -891,16 +927,6 @@ struct TriangleRenderer
 	}
 };
 
-#if !defined(RELEASE)
-// Profiling: count opaque vs transparent triangle draws per frame
-static int g_profile_opaque = 0;
-static int g_profile_transparent = 0;
-static int g_profile_solid = 0;
-static int g_profile_gradient = 0;
-static int g_profile_slice_dups = 0;
-static int g_profile_frame_count = 0;
-#endif
-
 static bool g_render_window_has_been_deleted = false;
 
 class RenderWindow : public radium::RhiWindow, public radium::MouseCycleFix
@@ -1299,50 +1325,21 @@ public:
 		QRHI_maybe_check_for_slow_rendering();
 
 		if (_painting_data == nullptr) // Note: Only happens during startup, if at all.
+		{
 			return;
-		
+		}
+
 		auto &sv = _painting_data->shared_variables;
 
-#if !defined(RELEASE)
-		// Profile: print opaque/transparent triangle counts
-		{
-			g_profile_frame_count++;
-			if (g_profile_frame_count % 60 == 0) {
-				int total = g_profile_opaque + g_profile_transparent;
-				if(0)
-				printf("--- TRI PROFILE frame #%d: %d triangles (%d opaque %.0f%%, %d transparent %.0f%%), "
-					   "%d solid %d gradient, %d slice duplications (avg %.1f/tri)\n",
-					   g_profile_frame_count, total,
-					   g_profile_opaque, total > 0 ? 100.0 * g_profile_opaque / total : 0.0,
-					   g_profile_transparent, total > 0 ? 100.0 * g_profile_transparent / total : 0.0,
-					   g_profile_solid, g_profile_gradient,
-					   g_profile_slice_dups, total > 0 ? (float)g_profile_slice_dups / total : 0.0f);
-				
-				int opaque_verts = 0, transp_verts = 0;
-				for (int i = 0; i < MAX_NUM_SLICES; ++i) {
-					transp_verts += _triangle_renderers[i]._vertices.QRHI_has_vertices() ? 1 : 0;
-					transp_verts += _triangle_renderer_scissors[i]._vertices.QRHI_has_vertices() ? 1 : 0;
-				}
-				if(0)
-					printf("  Renderer slices: %d opaque, %d transparent\n",
-						   opaque_verts, transp_verts);
-				
-				g_profile_opaque = 0;
-				g_profile_transparent = 0;
-				g_profile_solid = 0;
-				g_profile_gradient = 0;
-				g_profile_slice_dups = 0;
-			}
-		}
-#endif
-		
 		const QSize outputSizeInPixels = _swap_chain->currentPixelSize();
 		
 		double scroll_pos = 0.0;
 		double current_realline_while_playing = 0.0;
 
 		if (!QRHI_find_scrollpos(sv, scroll_pos, current_realline_while_playing))
+		{
 			return;
+		}
 
 		if (ATOMIC_GET(pc->player_state) != PLAYER_STATE_PLAYING)
 		{
@@ -1853,21 +1850,6 @@ void GE_Context::add_triangle(const r::Triangle &triangle, r2::GradientType::Typ
 	if (g_rhi == NULL)
 		return;
 
-#if !defined(RELEASE)
-	// Opaque pass: only Z_BACKGROUND objects (lowest z-layer, nothing behind them)
-	bool is_opaque = (_conf.z == Z_BACKGROUND);
-
-	if (is_opaque)
-		g_profile_opaque++;
-	else
-		g_profile_transparent++;
-	
-	if (gradient_type == r2::GradientType::Type::NOTYPE)
-		g_profile_solid++;
-	else
-		g_profile_gradient++;
-#endif
-	
 	if (_conf.z == Z_PLAYCURSOR)
 	{
 		g_window->_triangle_renderer_playcursor.MAIN_add_triangle(*this, triangle, gradient_type);
@@ -1898,10 +1880,6 @@ void GE_Context::add_triangle(const r::Triangle &triangle, r2::GradientType::Typ
 
 	const int slice_size = g_main_thread_slice_size;
 
-#if !defined(RELEASE)
-	int num_slices = 0;
-#endif
-	
 	for(int slice = R_BOUNDARIES(0, triangle.get_y1() / slice_size, MAX_NUM_SLICES-1) ; slice < MAX_NUM_SLICES ; slice++)
 	{
 		TriangleRenderer *triangle_renderer;
@@ -1913,17 +1891,9 @@ void GE_Context::add_triangle(const r::Triangle &triangle, r2::GradientType::Typ
 
 		triangle_renderer->MAIN_add_triangle(*this, triangle, gradient_type);
 
-#if !defined(RELEASE)
-		num_slices++;
-#endif
-		
 		if (slice * slice_size >= triangle.get_y3())
 			break;
 	}
-
-#if !defined(RELEASE)
-	g_profile_slice_dups += (num_slices - 1); // duplications beyond the first
-#endif
 }
 
 void GE_Context::add_text(const QString &text, int x, int y) const
@@ -1960,7 +1930,7 @@ void GE_set_font(const QFont &font)
 	if (g_window)
 	{
 		g_window->MAIN_setFont(font);
-		GFX_ForceScheduleEditorRedraw(); // New font will be set before starting new paint.
+		GFX_ForceScheduleEditorRedraw("set_font"); // New font will be set before starting new paint.
 	}
 }
 
@@ -2012,6 +1982,7 @@ void GL_set_new_painting_data(r::PaintingData *painting_data, GE_Rgb new_backgro
 	// ---- Phase 2: RHI thread. Atomically commit, swap, and delete ----
 	g_window->MAIN_put_event([painting_data, new_background_color](void)
 		{
+
 			// Commit all published buffers. Must happen before _painting_data swap
 			// so that QRHI_customRender() always sees consistent vertex data + painting data.
 
@@ -2023,6 +1994,13 @@ void GL_set_new_painting_data(r::PaintingData *painting_data, GE_Rgb new_backgro
 			// Now swap painting data and background color atomically with the buffer commits.
 			auto *old = g_window->_painting_data;
 			g_window->_painting_data = painting_data;
+
+			// Release the scroll hold once painting data generated for the currently
+			// playing seqblock has been committed.
+			if (painting_data->shared_variables.curr_playing_seqblock_id == ATOMIC_GET(g_curr_playing_seqblock_id))
+			{
+				ATOMIC_SET(g_hold_editor_scroll_until_painting_data_is_fresh, false);
+			}
 
 			GE_set_curr_realline(painting_data->shared_variables.curr_realline);
 
@@ -2080,7 +2058,6 @@ const char *GL_get_supported_msaa_samples(void)
 }
 
 void GL_set_safe_mode(bool onoff){
-  printf("setting safe mode to %d\n",onoff);
   SETTINGS_write_bool("safe_mode", onoff);
 }
 
@@ -2141,7 +2118,6 @@ bool GL_get_high_render_thread_priority(void){
 }
 
 void GL_set_high_render_thread_priority(bool onoff){
-  printf("setting high render thread priority to %d\n",onoff);
   SETTINGS_write_bool("high_render_thread_priority", onoff);
   g_high_render_thread_priority = onoff;
   radium::RhiWindow::QRHI_set_thread_priority(onoff);
