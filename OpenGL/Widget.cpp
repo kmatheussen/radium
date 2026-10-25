@@ -107,7 +107,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "TextureAtlas.hpp"
 #include "Timing.hpp"
 #include "Render_proc.h"
-#include "MeasGfxDelay.hpp"
 
 #include "Widget_proc.h"
 
@@ -371,9 +370,6 @@ static bool QRHI_find_scrollpos(const SharedVariables &sv, double &scroll_pos, d
       }
       else
       {
-        if (g_hold_start_time >= 0.0)
-          printf("[grayed] HOLD-EXIT gen=%lld held=%.3fms\n",
-                 (long long)ATOMIC_GET(g_block_switch_generation), RT_TIME_get_ms() - g_hold_start_time);
         g_hold_start_time = -1.0;
       }
 
@@ -931,16 +927,6 @@ struct TriangleRenderer
 	}
 };
 
-#if !defined(RELEASE)
-// Profiling: count opaque vs transparent triangle draws per frame
-static int g_profile_opaque = 0;
-static int g_profile_transparent = 0;
-static int g_profile_solid = 0;
-static int g_profile_gradient = 0;
-static int g_profile_slice_dups = 0;
-static int g_profile_frame_count = 0;
-#endif
-
 static bool g_render_window_has_been_deleted = false;
 
 class RenderWindow : public radium::RhiWindow, public radium::MouseCycleFix
@@ -1340,48 +1326,11 @@ public:
 
 		if (_painting_data == nullptr) // Note: Only happens during startup, if at all.
 		{
-			MEAS_GFX("[meas] DROP id=0 t=%.3f since_switch=%.3f reason=no_painting_data\n",
-			       RT_TIME_get_ms(), meas_gfx::since_switch_ms());
 			return;
 		}
 
-		const uint64_t meas_id = _painting_data->shared_variables.meas_id;
-		
 		auto &sv = _painting_data->shared_variables;
 
-#if !defined(RELEASE)
-		// Profile: print opaque/transparent triangle counts
-		{
-			g_profile_frame_count++;
-			if (g_profile_frame_count % 60 == 0) {
-				int total = g_profile_opaque + g_profile_transparent;
-				if(0)
-				printf("--- TRI PROFILE frame #%d: %d triangles (%d opaque %.0f%%, %d transparent %.0f%%), "
-					   "%d solid %d gradient, %d slice duplications (avg %.1f/tri)\n",
-					   g_profile_frame_count, total,
-					   g_profile_opaque, total > 0 ? 100.0 * g_profile_opaque / total : 0.0,
-					   g_profile_transparent, total > 0 ? 100.0 * g_profile_transparent / total : 0.0,
-					   g_profile_solid, g_profile_gradient,
-					   g_profile_slice_dups, total > 0 ? (float)g_profile_slice_dups / total : 0.0f);
-				
-				int opaque_verts = 0, transp_verts = 0;
-				for (int i = 0; i < MAX_NUM_SLICES; ++i) {
-					transp_verts += _triangle_renderers[i]._vertices.QRHI_has_vertices() ? 1 : 0;
-					transp_verts += _triangle_renderer_scissors[i]._vertices.QRHI_has_vertices() ? 1 : 0;
-				}
-				if(0)
-					printf("  Renderer slices: %d opaque, %d transparent\n",
-						   opaque_verts, transp_verts);
-				
-				g_profile_opaque = 0;
-				g_profile_transparent = 0;
-				g_profile_solid = 0;
-				g_profile_gradient = 0;
-				g_profile_slice_dups = 0;
-			}
-		}
-#endif
-		
 		const QSize outputSizeInPixels = _swap_chain->currentPixelSize();
 		
 		double scroll_pos = 0.0;
@@ -1389,8 +1338,6 @@ public:
 
 		if (!QRHI_find_scrollpos(sv, scroll_pos, current_realline_while_playing))
 		{
-			MEAS_GFX("[meas] DROP id=%llu t=%.3f since_switch=%.3f reason=find_scrollpos\n",
-			       (unsigned long long)meas_id, RT_TIME_get_ms(), meas_gfx::since_switch_ms());
 			return;
 		}
 
@@ -1602,14 +1549,6 @@ public:
 			_texture_renderer_static.QRHI_render_frame(command_buffer);
 		}		
 		command_buffer->endPass();
-
-		if (meas_id != _meas_last_drawn_painting_id)
-		{
-			_meas_last_drawn_painting_id = meas_id;
-			MEAS_GFX("[meas] FIRST_DRAW id=%llu t=%.3f since_switch=%.3f scroll=%.3f\n",
-			       (unsigned long long)meas_id, RT_TIME_get_ms(), meas_gfx::since_switch_ms(), scroll_pos);
-		}
-		_meas_curr_frame_painting_id = meas_id;
 
 		safe_volatile_float_write(&g_scroll_pos, scroll_pos);
 	}
@@ -1911,21 +1850,6 @@ void GE_Context::add_triangle(const r::Triangle &triangle, r2::GradientType::Typ
 	if (g_rhi == NULL)
 		return;
 
-#if !defined(RELEASE)
-	// Opaque pass: only Z_BACKGROUND objects (lowest z-layer, nothing behind them)
-	bool is_opaque = (_conf.z == Z_BACKGROUND);
-
-	if (is_opaque)
-		g_profile_opaque++;
-	else
-		g_profile_transparent++;
-	
-	if (gradient_type == r2::GradientType::Type::NOTYPE)
-		g_profile_solid++;
-	else
-		g_profile_gradient++;
-#endif
-	
 	if (_conf.z == Z_PLAYCURSOR)
 	{
 		g_window->_triangle_renderer_playcursor.MAIN_add_triangle(*this, triangle, gradient_type);
@@ -1956,10 +1880,6 @@ void GE_Context::add_triangle(const r::Triangle &triangle, r2::GradientType::Typ
 
 	const int slice_size = g_main_thread_slice_size;
 
-#if !defined(RELEASE)
-	int num_slices = 0;
-#endif
-	
 	for(int slice = R_BOUNDARIES(0, triangle.get_y1() / slice_size, MAX_NUM_SLICES-1) ; slice < MAX_NUM_SLICES ; slice++)
 	{
 		TriangleRenderer *triangle_renderer;
@@ -1971,17 +1891,9 @@ void GE_Context::add_triangle(const r::Triangle &triangle, r2::GradientType::Typ
 
 		triangle_renderer->MAIN_add_triangle(*this, triangle, gradient_type);
 
-#if !defined(RELEASE)
-		num_slices++;
-#endif
-		
 		if (slice * slice_size >= triangle.get_y3())
 			break;
 	}
-
-#if !defined(RELEASE)
-	g_profile_slice_dups += (num_slices - 1); // duplications beyond the first
-#endif
 }
 
 void GE_Context::add_text(const QString &text, int x, int y) const
@@ -2068,21 +1980,8 @@ void GL_set_new_painting_data(r::PaintingData *painting_data, GE_Rgb new_backgro
 		});
 
 	// ---- Phase 2: RHI thread. Atomically commit, swap, and delete ----
-	const uint64_t meas_id = painting_data->shared_variables.meas_id;
-	const double meas_glcreate_start = meas_gfx::glcreate_start_ms;
-	const int64_t meas_gen = meas_gfx::glcreate_gen;
-	const int meas_call = meas_gfx::glcreate_call;
-
-	g_window->MAIN_put_event([painting_data, new_background_color, meas_id, meas_glcreate_start, meas_gen, meas_call](void)
+	g_window->MAIN_put_event([painting_data, new_background_color](void)
 		{
-			MEAS_GFX("[meas] COMMIT id=%llu gen=%lld call=%d t=%.3f since_switch=%.3f glcreate_dur=%.3f matched=%d\n",
-			       (unsigned long long)meas_id,
-			       (long long)meas_gen,
-			       meas_call,
-			       RT_TIME_get_ms(),
-			       meas_gfx::since_switch_ms(),
-			       RT_TIME_get_ms() - meas_glcreate_start,
-			       painting_data->shared_variables.curr_playing_seqblock_id == ATOMIC_GET(g_curr_playing_seqblock_id) ? 1 : 0);
 
 			// Commit all published buffers. Must happen before _painting_data swap
 			// so that QRHI_customRender() always sees consistent vertex data + painting data.
@@ -2100,16 +1999,6 @@ void GL_set_new_painting_data(r::PaintingData *painting_data, GE_Rgb new_backgro
 			// playing seqblock has been committed.
 			if (painting_data->shared_variables.curr_playing_seqblock_id == ATOMIC_GET(g_curr_playing_seqblock_id))
 			{
-				static int64_t gt_last_logged_gen = -1;
-				const double gt_now = RT_TIME_get_ms();
-				const int64_t gt_gen = ATOMIC_GET(g_block_switch_generation);
-				if (gt_gen != gt_last_logged_gen)
-				{
-					gt_last_logged_gen = gt_gen;
-					const double gt_hold = g_hold_start_time < 0.0 ? -1.0 : gt_now - g_hold_start_time;
-					printf("[grayed] COMMIT gen=%lld latency=%.3fms hold=%.3fms\n",
-					       (long long)gt_gen, gt_now - (double)ATOMIC_GET(g_block_switch_time_ms), gt_hold);
-				}
 				ATOMIC_SET(g_hold_editor_scroll_until_painting_data_is_fresh, false);
 			}
 
@@ -2169,7 +2058,6 @@ const char *GL_get_supported_msaa_samples(void)
 }
 
 void GL_set_safe_mode(bool onoff){
-  printf("setting safe mode to %d\n",onoff);
   SETTINGS_write_bool("safe_mode", onoff);
 }
 
@@ -2230,7 +2118,6 @@ bool GL_get_high_render_thread_priority(void){
 }
 
 void GL_set_high_render_thread_priority(bool onoff){
-  printf("setting high render thread priority to %d\n",onoff);
   SETTINGS_write_bool("high_render_thread_priority", onoff);
   g_high_render_thread_priority = onoff;
   radium::RhiWindow::QRHI_set_thread_priority(onoff);

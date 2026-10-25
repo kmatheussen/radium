@@ -3284,9 +3284,6 @@ extern DEFINE_ATOMIC(bool, g_hold_editor_scroll_until_painting_data_is_fresh);
 // option, so the scheduler can avoid the scroll hold when the previews are disabled.
 extern DEFINE_ATOMIC(bool, g_show_grayed_out_blocks_rt);
 
-extern DEFINE_ATOMIC(int64_t, g_block_switch_time_ms);
-extern DEFINE_ATOMIC(int64_t, g_block_switch_generation);
-
 
 
 /*********************************************************************

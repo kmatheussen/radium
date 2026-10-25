@@ -2690,7 +2690,6 @@ struct ScopedEditorGraphicsUpdateOnEffectChange
 		if (changed && effect_num_affects_peak_display(effect_num))
 		{
 			s_suppress_editor_graphics = false;
-			ATOMIC_SET(g_sched_editor_redraw_effect_num, effect_num);
 			update_editor_graphics2(plugin, "set_effect_value");
 			s_suppress_editor_graphics = prev_suppress;
 		}

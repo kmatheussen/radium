@@ -43,8 +43,6 @@ struct SharedVariables
   // (i.e. when the same block is played again in the next seqblock).
   int64_t curr_playing_seqblock_id;
 
-  uint64_t meas_id = 0;
-
   double seqblock_stretch;
   
   bool block_is_visible;

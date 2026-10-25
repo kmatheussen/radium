@@ -62,8 +62,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "Render_proc.h"
 
-#include "MeasGfxDelay.hpp"
-
 
 // Functions in this file are called from the main thread.
 
@@ -110,27 +108,7 @@ static inline void get_grayed_block_realline_range(const struct WBlocks *wblock,
 	}
 }
 
-static double s_gt_curr_wsig, s_gt_prev, s_gt_curr, s_gt_next;
-static double s_gt_grayed_wsig, s_gt_grayed_tracks;
-static double s_gt_snpa, s_gt_minmax, s_gt_trss, s_gt_veltexts, s_gt_fxtexts, s_gt_wlpbs, s_gt_wbpms;
-static double s_gt_track_grayed, s_gt_track_curr;
-static double s_gt_text_loop, s_gt_notes_loop, s_gt_notes_filt, s_gt_nodelines, s_gt_pitches, s_gt_velocities;
-static double s_gt_fxs, s_gt_stops, s_gt_pianoroll;
-static double s_gt_vel_x, s_gt_vel_nl, s_gt_vel_bg, s_gt_vel_line, s_gt_vel_find, s_gt_vel_peaks, s_gt_vel_nodes;
-
-static void grayed_timing_reset(void)
-{
-	s_gt_curr_wsig = s_gt_prev = s_gt_curr = s_gt_next = 0;
-	s_gt_grayed_wsig = s_gt_grayed_tracks = 0;
-	s_gt_snpa = s_gt_minmax = s_gt_trss = s_gt_veltexts = s_gt_fxtexts = s_gt_wlpbs = s_gt_wbpms = 0;
-	s_gt_track_grayed = s_gt_track_curr = 0;
-	s_gt_text_loop = s_gt_notes_loop = s_gt_notes_filt = s_gt_nodelines = s_gt_pitches = s_gt_velocities = 0;
-	s_gt_fxs = s_gt_stops = s_gt_pianoroll = 0;
-	s_gt_vel_x = s_gt_vel_nl = s_gt_vel_bg = s_gt_vel_line = s_gt_vel_find = s_gt_vel_peaks = s_gt_vel_nodes = 0;
-}
-
 void GL_set_colored_tracks(bool onoff){
-  printf("setting safe mode to %d\n",onoff);
   SETTINGS_write_bool("colored_tracks", onoff);
   g_colored_tracks = onoff;
 
@@ -1175,16 +1153,14 @@ static void create_lpb(const struct Tracker_Windows *window, const struct WBlock
 
 static void create_lpbtrack(const struct Tracker_Windows *window, const struct WBlocks *wblock){
 
-  const double gt_t0 = RT_TIME_get_ms();
-  struct WLPBs *wlpbs = WLPBs_get(window, wblock);
-  s_gt_wlpbs += RT_TIME_get_ms() - gt_t0;
+  QVector<WLPBs> wlpbs = WLPBs_get_qt(window, wblock);
 
   int first_realline, last_realline;
   get_grayed_block_realline_range(wblock, &first_realline, &last_realline);
 
   int realline;
   for(realline = first_realline ; realline<last_realline ; realline++)
-    create_lpb(window, wblock, wlpbs, realline);
+    create_lpb(window, wblock, wlpbs.data(), realline);
 }
 
 
@@ -1388,16 +1364,14 @@ static void create_bpm(const struct Tracker_Windows *window, const struct WBlock
 
 static void create_bpmtrack(const struct Tracker_Windows *window, const struct WBlocks *wblock){
 
-  const double gt_t0 = RT_TIME_get_ms();
-  struct WBPMs *wbpms = WBPMs_get(window, wblock);
-  s_gt_wbpms += RT_TIME_get_ms() - gt_t0;
+  QVector<WBPMs> wbpms = WBPMs_get_qt(window, wblock);
 
   int first_realline, last_realline;
   get_grayed_block_realline_range(wblock, &first_realline, &last_realline);
 
   int realline;
   for(realline = first_realline ; realline<last_realline ; realline++)
-    create_bpm(window, wblock, wbpms, realline);
+    create_bpm(window, wblock, wbpms.data(), realline);
 }
 
 
@@ -2786,22 +2760,17 @@ static void create_velocities_gradient_background(
 static void create_track_velocities(const struct Tracker_Windows *window, const struct WBlocks *wblock, const struct WTracks *wtrack, const struct Notes *note, const struct NodeLine2 *pitch_nodelines, const r::PitchTimeData::Reader &reader, const float track_pitch_min, const float track_pitch_max) {
 
   //printf("Note: %s, pointer: %p, subtrack: %d\n",NotesTexts3[(int)note->note],note,note->subtrack);
-  const double gt_t_x = RT_TIME_get_ms();
   subtrack_x1 = GetNoteX1(wtrack,note);
   subtrack_x2 = GetNoteX2(wtrack,note);
-  s_gt_vel_x += RT_TIME_get_ms() - gt_t_x;
 
   if(equal_floats(subtrack_x1, subtrack_x2))
     return;
   
-  const double gt_t_nl = RT_TIME_get_ms();
   const struct NodeLine2 *nodelines = GetVelocityNodeLines2(window, wblock, wtrack, note);
   const vector_t *nodes = get_nodeline_nodes2(nodelines, wblock->t.y1);
-  s_gt_vel_nl += RT_TIME_get_ms() - gt_t_nl;
 
   // background
   {
-    const double gt_t_bg = RT_TIME_get_ms();
 
     const bool paint_vertical_velocity_gradient = false;
     //const bool paint_vertical_velocity_gradient = true;
@@ -2834,7 +2803,6 @@ static void create_track_velocities(const struct Tracker_Windows *window, const 
                                             track_pitch_min, track_pitch_max
                                             );
     }
-    s_gt_vel_bg += RT_TIME_get_ms() - gt_t_bg;
   }
 
   
@@ -2843,14 +2811,10 @@ static void create_track_velocities(const struct Tracker_Windows *window, const 
   // border
   {
 
-    const double gt_t_line = RT_TIME_get_ms();
     GE_Context c2 = drawNodeLines(window, nodelines, BLACK_COLOR_NUM, is_current, 0.3, 0.6, false);
-    s_gt_vel_line += RT_TIME_get_ms() - gt_t_line;
 
     // draw horizontal line where note starts, if it doesn't start on the start of a realline.
-    const double gt_t_find = RT_TIME_get_ms();
     int realline = FindRealLineForNote(wblock, 0, note);
-    s_gt_vel_find += RT_TIME_get_ms() - gt_t_find;
     if (PlaceNotEqual(&wblock->reallines[realline]->l.p, &note->l.p)) {
       GE_Context c = c2;
       GE_line(c, subtrack_x1, nodelines->y1, nodelines->x1, nodelines->y1, get_nodeline_width(is_current));
@@ -2860,9 +2824,7 @@ static void create_track_velocities(const struct Tracker_Windows *window, const 
   // peaks
   if(TRACK_has_peaks(wtrack->track))
   {
-    const double gt_t_peaks = RT_TIME_get_ms();
     create_track_peaks(window, wblock, wtrack, note, nodelines);
-    s_gt_vel_peaks += RT_TIME_get_ms() - gt_t_peaks;
   }
 
   //if (wtrack->l.num==0)
@@ -2870,16 +2832,13 @@ static void create_track_velocities(const struct Tracker_Windows *window, const 
 
   int currvelnum = -1;
   if (g_indicator_node == &note->l) {
-    if (g_indicator_velocity_num >= nodes->num_elements)
-      printf("g_indicator_velocity_node_num(%d) >= nodes->num_elements(%d)\n",g_indicator_velocity_num,nodes->num_elements); // TODO: Find out why this happens so often.
-    else
+    if (g_indicator_velocity_num < nodes->num_elements)
       currvelnum = g_indicator_velocity_num;
   }
   
   // nodes
   if (is_current || g_indicator_node_id!=NODETYPE_NO_NODE)
   {
-    const double gt_t_nodes = RT_TIME_get_ms();
     VECTOR_FOR_EACH(const Node2 *, node, nodes){
       
       //printf("%d: %d\n", iterator666, (int)node->id);
@@ -2891,7 +2850,6 @@ static void create_track_velocities(const struct Tracker_Windows *window, const 
         schedule_node_indicator(node->x, node->y - wblock->t.y1, VELOCITY_TEXT_COLOR_NUM);
       
     }END_VECTOR_FOR_EACH;
-    s_gt_vel_nodes += RT_TIME_get_ms() - gt_t_nodes;
   }
 }
 
@@ -3096,37 +3054,27 @@ static void create_track_fxtext(const struct Tracker_Windows *window, const stru
 
 static void create_track(const struct Tracker_Windows *window, const struct WBlocks *wblock, struct WTracks *wtrack)
 {
-  const double gt_t_start = RT_TIME_get_ms();
   if (!g_is_rendering_grayed_block)
 	  create_track_borders(window, wblock, wtrack);
 
   // FIX: after changing notes to TimeData, SetNotePolyphonyAttributes should only assert that everything is already done.
-  const double gt_t0 = RT_TIME_get_ms();
   SetNotePolyphonyAttributes(wtrack->track);
-  s_gt_snpa += RT_TIME_get_ms() - gt_t0;
   
   float track_pitch_min, track_pitch_max;
-  const double gt_t1 = RT_TIME_get_ms();
   TRACK_get_min_and_max_pitches(wtrack->track, &track_pitch_min, &track_pitch_max);
 
-  s_gt_minmax += RT_TIME_get_ms() - gt_t1;
-  
   // note/pitch names / cents
   if( (wtrack->notesonoff==1) || wtrack->centtext_on) {
 
     bool show_notes = wtrack->notesonoff==1;
 
-	const double gt_t2 = RT_TIME_get_ms();
     const Trss &trss = TRSS_get(wblock, wtrack);
-	s_gt_trss += RT_TIME_get_ms() - gt_t2;
 	
     auto i = trss.constBegin();
 	
     if (g_is_rendering_grayed_block)
 		i = trss.lowerBound(g_grayed_block_first_realline);
 
-	const double gt_tt = RT_TIME_get_ms();
-	
     while (i != trss.constEnd())
 	{
 		if (realline_is_beyond_grayed_block(i.key()))
@@ -3136,8 +3084,6 @@ static void create_track(const struct Tracker_Windows *window, const struct WBlo
 		
 		i++;
     }
-
-	s_gt_text_loop += RT_TIME_get_ms() - gt_tt;
   }
 
   // velocities and pitches
@@ -3152,16 +3098,12 @@ static void create_track(const struct Tracker_Windows *window, const struct WBlo
 		grayed_first_place = &wblock->reallines[first_realline]->l.p;
     }
 
-    const double gt_tl = RT_TIME_get_ms();
     while(note != NULL)
 	{
-		const double gt_tf0 = RT_TIME_get_ms();
-		
 		// Notes are sorted by start place, but a note starting before the range may
 		// still sound inside it, so the range is applied to the note end.
 		if (grayed_first_place != NULL && p_Less_Than(ratio2place(note->end), *grayed_first_place))
 		{
-			s_gt_notes_filt += RT_TIME_get_ms() - gt_tf0;
 			note = NextNote(note);
 			continue;
 		}
@@ -3171,29 +3113,21 @@ static void create_track(const struct Tracker_Windows *window, const struct WBlo
 			reallineF = FindReallineForF(wblock, reallineF, &note->l.p);
 			if (realline_is_beyond_grayed_block((int)reallineF))
 			{
-				s_gt_notes_filt += RT_TIME_get_ms() - gt_tf0;
 				break;
 			}
 		}
-		s_gt_notes_filt += RT_TIME_get_ms() - gt_tf0;
 
 		const r::PitchTimeData::Reader pitch_reader(note->_pitches);
 
-		const double gt_tn = RT_TIME_get_ms();
 		const struct NodeLine2 *pitch_nodelines = GetPitchNodeLines2(window, wblock, wtrack, note,track_pitch_min, track_pitch_max, pitch_reader);
-		s_gt_nodelines += RT_TIME_get_ms() - gt_tn;
 		
 		if (wtrack->notesonoff==1)
 			create_pitches(window, wblock, wtrack, note, pitch_nodelines);
 
-		const double gt_tv = RT_TIME_get_ms();
 		create_track_velocities(window, wblock, wtrack, note, pitch_nodelines, pitch_reader, track_pitch_min, track_pitch_max);
-		s_gt_velocities += RT_TIME_get_ms() - gt_tv;
 		
 		note = NextNote(note);
     }
-
-	s_gt_notes_loop += RT_TIME_get_ms() - gt_tl;
   }
 
   if (wtrack->swingtext_on){
@@ -3202,9 +3136,7 @@ static void create_track(const struct Tracker_Windows *window, const struct WBlo
   
   // velocity text
   if (wtrack->veltext_on){
-    const double gt_t3 = RT_TIME_get_ms();
     const VelText_trss &veltexts = VELTEXTS_get(wblock, wtrack);
-    s_gt_veltexts += RT_TIME_get_ms() - gt_t3;
 
     auto i = veltexts.constBegin();
     if (g_is_rendering_grayed_block)
@@ -3223,9 +3155,7 @@ static void create_track(const struct Tracker_Windows *window, const struct WBlo
     int column = 0;
     VECTOR_FOR_EACH(const struct FXs *, fxs, &wtrack->track->fxs){
       if (fxs->fx->is_enabled){
-        const double gt_t4 = RT_TIME_get_ms();
         const FXText_trss &fxtexts = FXTEXTS_get(wblock, wtrack, fxs);
-        s_gt_fxtexts += RT_TIME_get_ms() - gt_t4;
         auto i = fxtexts.constBegin();
         if (g_is_rendering_grayed_block)
           i = fxtexts.lowerBound(g_grayed_block_first_realline);
@@ -3242,28 +3172,16 @@ static void create_track(const struct Tracker_Windows *window, const struct WBlo
   }
   
   // fxs
-  {
-    const double gt_t5 = RT_TIME_get_ms();
-    VECTOR_FOR_EACH(const struct FXs *, fxs, &wtrack->track->fxs){
-      if(fxs->fx->is_enabled)
-        create_track_fxs(window, wblock, wtrack, fxs);
-    }END_VECTOR_FOR_EACH;
-    s_gt_fxs += RT_TIME_get_ms() - gt_t5;
-  }
+  VECTOR_FOR_EACH(const struct FXs *, fxs, &wtrack->track->fxs){
+    if(fxs->fx->is_enabled)
+      create_track_fxs(window, wblock, wtrack, fxs);
+  }END_VECTOR_FOR_EACH;
 
   // stop lines
-  {
-    const double gt_t6 = RT_TIME_get_ms();
-    create_track_stops(window, wblock, wtrack);
-    s_gt_stops += RT_TIME_get_ms() - gt_t6;
-  }
+  create_track_stops(window, wblock, wtrack);
 
   // piano roll
-  {
-    const double gt_t7 = RT_TIME_get_ms();
-    create_pianoroll(window, wblock, wtrack);
-    s_gt_pianoroll += RT_TIME_get_ms() - gt_t7;
-  }
+  create_pianoroll(window, wblock, wtrack);
 
   if (!g_is_rendering_grayed_block)
   {
@@ -3286,12 +3204,6 @@ static void create_track(const struct Tracker_Windows *window, const struct WBlo
       }
     }
   }
-
-  const double gt_dur = RT_TIME_get_ms() - gt_t_start;
-  if (g_is_rendering_grayed_block)
-    s_gt_track_grayed += gt_dur;
-  else
-    s_gt_track_curr += gt_dur;
 }
 
 
@@ -3672,9 +3584,7 @@ static void create_grayed_block(const struct Tracker_Windows *window, struct WBl
 	{
 		HideCurrentBlockState hide_current_block_state(wblock);
 
-		const double gt_t0 = RT_TIME_get_ms();
 		const WSignature_trss wsignatures_trss = WSignatures_get(window, wblock);
-		s_gt_grayed_wsig += RT_TIME_get_ms() - gt_t0;
 
 		create_background(window, wblock, wsignatures_trss);
 		create_linenumbers(window, wblock, wsignatures_trss);
@@ -3689,9 +3599,7 @@ static void create_grayed_block(const struct Tracker_Windows *window, struct WBl
 			create_bpmtrack(window, wblock);
 		if(window->show_reltempo_track)
 			create_reltempotrack(window, wblock);
-		const double gt_t1 = RT_TIME_get_ms();
 		create_tracks(window, wblock);
-		s_gt_grayed_tracks += RT_TIME_get_ms() - gt_t1;
 	}
 
 	GE_unset_grayed_block_mode();
@@ -3700,9 +3608,22 @@ static void create_grayed_block(const struct Tracker_Windows *window, struct WBl
 	g_is_rendering_grayed_block = false;
 }
 
+namespace {
+struct ScopedGCPause {
+  ScopedGCPause(void) {
+    Threadsafe_GC_disable();
+  }
+
+  ~ScopedGCPause(void) {
+    Threadsafe_GC_enable();
+  }
+};
+}
+
 static void GL_create2(const struct Tracker_Windows *window, struct WBlocks *wblock)
 {
-  grayed_timing_reset();
+  ScopedGCPause scoped_gc_pause;
+
   init_g_colored_tracks_if_necessary();
   init_g_show_grayed_out_blocks_if_necessary();
   
@@ -3735,18 +3656,13 @@ static void GL_create2(const struct Tracker_Windows *window, struct WBlocks *wbl
   if (GE_start_writing(y2, block_is_visible)==false) return; else {
 
     if (block_is_visible) {
-      const double gt_t_wsig = RT_TIME_get_ms();
       const WSignature_trss wsignatures_trss = WSignatures_get(window, wblock);
-      s_gt_curr_wsig += RT_TIME_get_ms() - gt_t_wsig;
 
       if (prev_wblock != NULL)
       {
-        const double gt_t_prev = RT_TIME_get_ms();
         create_grayed_block(window, prev_wblock, -prev_wblock->num_reallines * window->fontheight, prev_first_realline, prev_last_realline);
-        s_gt_prev += RT_TIME_get_ms() - gt_t_prev;
       }
       
-      const double gt_t_curr = RT_TIME_get_ms();
       create_left_slider(window, wblock);
 	  create_background(window, wblock, wsignatures_trss);
       create_block_borders(window, wblock);
@@ -3768,13 +3684,10 @@ static void GL_create2(const struct Tracker_Windows *window, struct WBlocks *wbl
       create_playcursor(window, wblock);
       create_current_barbeat_mark(wsignatures_trss, window, wblock);
       create_node_indicator();
-      s_gt_curr += RT_TIME_get_ms() - gt_t_curr;
 
       if (next_wblock != NULL)
       {
-        const double gt_t_next = RT_TIME_get_ms();
         create_grayed_block(window, next_wblock, block_end_y, next_first_realline, next_last_realline);
-        s_gt_next += RT_TIME_get_ms() - gt_t_next;
       }
     }
 
@@ -3850,55 +3763,7 @@ void GL_create(const struct Tracker_Windows *window){
 	}
   }
 
-  {
-    static int64_t gt_last_gen = -1;
-    static int gt_callnum = 0;
-    const int64_t gt_gen = ATOMIC_GET(g_block_switch_generation);
-    if (gt_gen != gt_last_gen)
-    {
-      gt_last_gen = gt_gen;
-      gt_callnum = 0;
-    }
-    gt_callnum++;
-
-    const double gt_start = RT_TIME_get_ms();
-
-    meas_gfx::glcreate_start_ms = gt_start;
-    meas_gfx::glcreate_gen = gt_gen;
-    meas_gfx::glcreate_call = gt_callnum;
-
-    MEAS_GFX("[meas] GEN_START gen=%lld call=%d t=%.3f since_switch=%.3f\n",
-           (long long)gt_gen, gt_callnum, gt_start, meas_gfx::since_switch_ms());
-
-    GL_create2(window, window->curr_block < 0 ? NULL : window->wblock);
-    const double gt_dur = RT_TIME_get_ms() - gt_start;
-
-    MEAS_GFX("[meas] GEN_END gen=%lld call=%d dur=%.3f t=%.3f since_switch=%.3f\n",
-           (long long)gt_gen, gt_callnum, gt_dur, RT_TIME_get_ms(), meas_gfx::since_switch_ms());
-
-    const double gt_grayed_other = (s_gt_prev + s_gt_next) - s_gt_grayed_wsig - s_gt_grayed_tracks;
-    const double gt_track_total = s_gt_track_grayed + s_gt_track_curr;
-    const double gt_track_other = gt_track_total - (s_gt_snpa + s_gt_minmax + s_gt_trss + s_gt_veltexts + s_gt_fxtexts
-                                                    + s_gt_text_loop + s_gt_notes_loop + s_gt_fxs + s_gt_stops + s_gt_pianoroll);
-
-    GFX_maybe_print_grayed_banner();
-    printf("[grayed] GL_create gen=%lld call=%d grayed=%d dur=%.3fms curr_wsig=%.3f prev=%.3f curr=%.3f next=%.3f\n",
-           (long long)gt_gen, gt_callnum, g_show_grayed_out_blocks ? 1 : 0, gt_dur,
-           s_gt_curr_wsig, s_gt_prev, s_gt_curr, s_gt_next);
-    printf("[grayed]   grayed_wsig=%.3f grayed_tracks=%.3f grayed_other=%.3f\n",
-           s_gt_grayed_wsig, s_gt_grayed_tracks, gt_grayed_other);
-    printf("[grayed]   build: snpa=%.3f minmax=%.3f trss=%.3f veltext=%.3f fxtext=%.3f wlpbs=%.3f wbpms=%.3f\n",
-           s_gt_snpa, s_gt_minmax, s_gt_trss, s_gt_veltexts, s_gt_fxtexts, s_gt_wlpbs, s_gt_wbpms);
-    printf("[grayed]   draw: text=%.3f notes=%.3f filt=%.3f nl=%.3f pitch=%.3f vel=%.3f fxs=%.3f stops=%.3f piano=%.3f other=%.3f track_g=%.3f track_c=%.3f\n",
-           s_gt_text_loop, s_gt_notes_loop, s_gt_notes_filt, s_gt_nodelines, s_gt_pitches, s_gt_velocities,
-           s_gt_fxs, s_gt_stops, s_gt_pianoroll, gt_track_other, s_gt_track_grayed, s_gt_track_curr);
-    {
-      const double gt_vel_sum = s_gt_vel_x + s_gt_vel_nl + s_gt_vel_bg + s_gt_vel_line + s_gt_vel_find + s_gt_vel_peaks + s_gt_vel_nodes;
-      printf("[grayed]   vel: x=%.3f nl=%.3f bg=%.3f line=%.3f find=%.3f peaks=%.3f nodes=%.3f other=%.3f\n",
-             s_gt_vel_x, s_gt_vel_nl, s_gt_vel_bg, s_gt_vel_line, s_gt_vel_find, s_gt_vel_peaks, s_gt_vel_nodes,
-             s_gt_velocities - gt_vel_sum);
-    }
-  }
+  GL_create2(window, window->curr_block < 0 ? NULL : window->wblock);
 }
 
 #else // !RENDER_IN_SEPARATE_THREAD -> RENDER_IN_SEPARATE_THREAD
@@ -3963,12 +3828,9 @@ void GL_create(const struct Tracker_Windows *window)
     g_window = window;
     g_wblock = window->wblock;
 
-    double start = TIME_get_ms();
     g_sem_req.signal();
 
     g_sem_finished.wait();
-
-    printf("   dur: %f\n", TIME_get_ms() - start);
     /*
     do{
       processEventsALittleBit();

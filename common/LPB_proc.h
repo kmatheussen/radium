@@ -23,6 +23,11 @@ extern LANGSPEC struct WLPBs *WLPBs_get(
                                         );
 
 #if USE_QT4
+#  include <QVector>
+QVector<WLPBs> WLPBs_get_qt(
+                            const struct Tracker_Windows *window,
+                            const struct WBlocks *wblock
+                            );
 QVector<LPBs*> LPBs_get(const struct WBlocks *wblock, int realline);
 #endif
   

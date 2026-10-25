@@ -48,32 +48,6 @@ double g_opengl_scale_ratio = 1.0;
 
 #include "Vertices.hpp"
 
-#include "MeasGfxDelay.hpp"
-
-extern "C" bool g_meas_gfx_enabled = true;
-
-namespace
-{
-struct MeasGfxEnvInit
-{
-	MeasGfxEnvInit()
-	{
-		const char *e = getenv("MEAS_GFX");
-		if (e != NULL && e[0] == '0')
-			g_meas_gfx_enabled = false;
-	}
-};
-MeasGfxEnvInit meas_gfx_env_init;
-}
-
-namespace meas_gfx
-{
-uint64_t next_painting_id = 0;
-double glcreate_start_ms = 0.0;
-int64_t glcreate_gen = 0;
-int glcreate_call = 0;
-}
-
 
 #define DEBUG_PRINT 0
 
@@ -195,8 +169,6 @@ bool GE_start_writing(int full_height, bool block_is_visible)
   {
 	  g_painting_data = new r::PaintingData(full_height, block_is_visible);
 
-	  g_painting_data->shared_variables.meas_id = ++meas_gfx::next_painting_id;
-	  
 	  g_main_thread_slice_size = g_painting_data->slice_size;
 	  
 	  GE_fill_in_shared_variables(&g_painting_data->shared_variables, g_height);

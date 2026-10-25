@@ -18,8 +18,6 @@
 
 DEFINE_ATOMIC(int64_t, g_curr_playing_seqblock_id) = -1;
 DEFINE_ATOMIC(bool, g_hold_editor_scroll_until_painting_data_is_fresh) = false;
-DEFINE_ATOMIC(int64_t, g_block_switch_time_ms) = 0;
-DEFINE_ATOMIC(int64_t, g_block_switch_generation) = 0;
 
 static int64_t RT_scheduled_seqblock(struct SeqTrack *seqtrack, int64_t time, union SuperType *args);
 
@@ -203,8 +201,6 @@ static int64_t RT_scheduled_seqblock(struct SeqTrack *seqtrack, int64_t seqtime,
     if (seqtrack == RT_get_curr_seqtrack())
     {
       ATOMIC_SET(g_curr_playing_seqblock_id, seqblock->id);
-      ATOMIC_SET(g_block_switch_time_ms, (int64_t)RT_TIME_get_ms());
-      ATOMIC_ADD(g_block_switch_generation, 1);
     }
   }
   
