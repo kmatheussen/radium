@@ -255,7 +255,7 @@ public:
     filters_widget->setVisible(plugin->show_equalizer_gui);
 
 
-    // LLM effect tuning prompt bar. Placed in the outer grid (row 1, below
+    // LLM effect tuning terminal. Placed in the outer grid (row 1, below
     // the scroll area) so it also stays visible in Half/Full mode, where the
     // effects_layout widgets are hidden.
     {

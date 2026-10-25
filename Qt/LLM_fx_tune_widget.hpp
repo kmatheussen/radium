@@ -16,12 +16,22 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include <QEvent>
+#include <QColor>
+#include <QFontMetrics>
+#include <QFrame>
 #include <QHBoxLayout>
 #include <QKeyEvent>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMenu>
+#include <QPlainTextEdit>
 #include <QPushButton>
+#include <QScrollBar>
+#include <QTextCharFormat>
+#include <QTextCursor>
+#include <QTextDocument>
+#include <QTextOption>
+#include <QTimer>
 #include <QToolButton>
 #include <QVBoxLayout>
 #include <QWidget>
@@ -33,6 +43,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 #include "FocusSniffers.h"
 #include "Qt_MyQButton.h"
+#include "Qt_MyQCheckBox.h"
 
 #include "LLM_fx_tune.hpp"
 #include "LLM_prompt_history.hpp"
@@ -43,10 +54,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 static const char *LLM_FX_PROMPT_HISTORY_SETTINGS_KEY = "instrument_llm_prompt_history";
 
 
-// The LLM effect tuning prompt bar shown at the bottom of the audio
-// instrument widget: a menu button, a prompt entry, Tune/Cancel buttons and
-// a status line. Owns the FxTuneSession; the catalog reading and change
-// applying is supplied by the instrument widget.
+// The LLM effect tuning terminal shown at the bottom of the audio instrument
+// widget. It has two modes: compact (one control row with a prompt) and
+// transcript (the control row plus a scrollable 10-line transcript). The
+// "Transcript" checkbox switches between them. Owns the FxTuneSession; the
+// catalog reading and change applying is supplied by the instrument widget.
 class LLM_fx_tune_widget : public QWidget
 {
 public:
@@ -64,15 +76,43 @@ public:
 	{
 		_prompt_history = radium::llm::load_prompt_history(LLM_FX_PROMPT_HISTORY_SETTINGS_KEY);
 
+		_prompt_format.setFontWeight(QFont::Bold);
+		_error_format.setForeground(QColor(200, 60, 60));
+
 		QVBoxLayout *main_layout = new QVBoxLayout(this);
 		main_layout->setContentsMargins(2, 1, 2, 1);
 		main_layout->setSpacing(0);
+
+		QFrame *frame = new QFrame(this);
+		frame->setFrameShape(QFrame::Panel);
+		frame->setFrameShadow(QFrame::Sunken);
+		frame->setLineWidth(1);
+		main_layout->addWidget(frame);
+
+		QVBoxLayout *frame_layout = new QVBoxLayout(frame);
+		frame_layout->setContentsMargins(2, 1, 2, 1);
+		frame_layout->setSpacing(0);
+
+		_transcript = new QPlainTextEdit(frame);
+		_transcript->setReadOnly(true);
+		_transcript->setFrameShape(QFrame::NoFrame);
+		_transcript->setLineWrapMode(QPlainTextEdit::WidgetWidth);
+		_transcript->setWordWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
+		_transcript->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+		_transcript->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+		_transcript->setTextInteractionFlags(Qt::TextSelectableByMouse | Qt::TextSelectableByKeyboard);
+		_transcript->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+		_transcript->setMinimumWidth(0);
+		_transcript->setFixedHeight(terminal_output_height());
+		_transcript->setToolTip("Conversation with the LLM. Scroll to see previous replies; click and drag to select text.");
+		_transcript->installEventFilter(this);
+		frame_layout->addWidget(_transcript);
 
 		QHBoxLayout *controls_layout = new QHBoxLayout;
 		controls_layout->setContentsMargins(0, 0, 0, 0);
 		controls_layout->setSpacing(2);
 
-		_menu_button = new MyQButton(this);
+		_menu_button = new MyQButton(frame);
 		_menu_button->setText(QString::fromUtf8("\xe2\x98\xb0")); // ☰
 		_menu_button->setToolTip("Menu");
 		_menu_button->setPopupMode(QToolButton::InstantPopup);
@@ -81,6 +121,7 @@ public:
 			menu->addAction("Clear conversation", this, [this]()
 			{
 				_session.clear_history();
+				_transcript->clear();
 				set_status("Cleared the conversation.");
 			});
 			menu->addAction("LLM settings", this, [this]()
@@ -89,33 +130,54 @@ public:
 			});
 			_menu_button->setMenu(menu);
 		}
-		controls_layout->addWidget(_menu_button);
 
-		_prompt_edit = new FocusSnifferQLineEdit(this);
+		_transcript_checkbox = new MyQCheckBox("Transcript", frame);
+		_transcript_checkbox->setToolTip("Show the 10-line LLM conversation. Unchecked = compact one-line mode.");
+		controls_layout->addWidget(_transcript_checkbox);
+
+		QLabel *prompt_marker = new QLabel(">", frame);
+		prompt_marker->setToolTip("Prompt");
+		{
+			QFont marker_font = prompt_marker->font();
+			marker_font.setBold(true);
+			prompt_marker->setFont(marker_font);
+
+			// Blend the prompt marker with the transcript/input background.
+			prompt_marker->setAutoFillBackground(true);
+			QPalette marker_palette = prompt_marker->palette();
+			marker_palette.setColor(QPalette::Window, marker_palette.color(QPalette::Base));
+			prompt_marker->setPalette(marker_palette);
+		}
+		controls_layout->addWidget(prompt_marker);
+
+		_prompt_edit = new FocusSnifferQLineEdit(frame);
+		_prompt_edit->setFrame(false);
 		_prompt_edit->setPlaceholderText("Tune effects. E.g. \"make it sound harsher\" / \"wider\" / \"add an octave layer\" / \"more reverb\"");
 		_prompt_edit->setToolTip("Describe the sound you want, and the LLM adjusts the instrument's system effects (EQ, filters, compressor, pitch, pan/width, reverb/chorus sends and the note duplicator).\n"
 		                         "The changes are applied immediately; one undo step restores them all. Follow-up requests refine the result.");
 		_prompt_edit->installEventFilter(this);
 		controls_layout->addWidget(_prompt_edit, 1);
 
-		_tune_button = new QPushButton("Tune", this);
+		_tune_button = new QPushButton("Tune", frame);
 		_tune_button->setToolTip("Ask the LLM to tune the effects");
 		controls_layout->addWidget(_tune_button);
 
-		_cancel_button = new QPushButton("Cancel", this);
+		_cancel_button = new QPushButton("Cancel", frame);
 		_cancel_button->setEnabled(false);
 		controls_layout->addWidget(_cancel_button);
 
-		main_layout->addLayout(controls_layout);
+		controls_layout->addWidget(_menu_button);
 
-		_status_label = new QLabel(this);
-		_status_label->setWordWrap(false);
-		_status_label->setTextInteractionFlags(Qt::TextSelectableByMouse);
-		main_layout->addWidget(_status_label);
+		frame_layout->addLayout(controls_layout);
 
 		QObject::connect(_tune_button, &QPushButton::clicked, [this](){ submit_prompt(); });
 		QObject::connect(_cancel_button, &QPushButton::clicked, [this](){ _session.cancel(); });
 		QObject::connect(_prompt_edit, &QLineEdit::returnPressed, [this](){ submit_prompt(); });
+		QObject::connect(_transcript_checkbox, &QCheckBox::toggled, [this](bool visible){ set_transcript_visible(visible); });
+
+		// Start in compact mode.
+		_transcript_checkbox->setChecked(false);
+		set_transcript_visible(false);
 	}
 
 	~LLM_fx_tune_widget()
@@ -138,22 +200,42 @@ public:
 protected:
 	bool eventFilter(QObject *watched, QEvent *event) override
 	{
-		if (watched == _prompt_edit && event->type() == QEvent::KeyPress)
+		if (event->type() == QEvent::KeyPress)
 		{
 			QKeyEvent *key_event = static_cast<QKeyEvent*>(event);
-			if (key_event->key() == Qt::Key_Up)
+
+			if (watched == _prompt_edit)
 			{
-				navigate_prompt_history(true);
-				return true;
+				if (key_event->key() == Qt::Key_Up)
+				{
+					navigate_prompt_history(true);
+					return true;
+				}
+				if (key_event->key() == Qt::Key_Down)
+				{
+					navigate_prompt_history(false);
+					return true;
+				}
 			}
-			if (key_event->key() == Qt::Key_Down)
+
+			// Clicking the transcript is useful for selecting/copying output,
+			// but typing there does nothing. Escape returns to the input line.
+			if (watched == _transcript && key_event->key() == Qt::Key_Escape)
 			{
-				navigate_prompt_history(false);
+				_prompt_edit->setFocus();
 				return true;
 			}
 		}
 
 		return QWidget::eventFilter(watched, event);
+	}
+
+	void changeEvent(QEvent *event) override
+	{
+		if (event->type() == QEvent::FontChange && _transcript != NULL)
+			_transcript->setFixedHeight(terminal_output_height());
+
+		QWidget::changeEvent(event);
 	}
 
 private:
@@ -163,6 +245,7 @@ private:
 		if (prompt.isEmpty() || _session.is_busy())
 			return;
 
+		append_terminal_text("> " + prompt, _prompt_format);
 		remember_prompt(prompt);
 		_prompt_edit->clear();
 		_prompt_history_index = -1;
@@ -214,16 +297,58 @@ private:
 			_prompt_edit->setText(_prompt_history.at(_prompt_history_index));
 	}
 
+	int terminal_output_height(void) const
+	{
+		const QFontMetrics fm(_transcript->font());
+		return fm.lineSpacing() * LLM_FX_TERMINAL_OUTPUT_LINES
+		     + (int)(_transcript->document()->documentMargin() * 2)
+		     + _transcript->frameWidth() * 2
+		     + 2;
+	}
+
+	// Appends one conversation entry to the terminal. The entries wrap at
+	// the widget width, so neither the text nor the widget can widen the
+	// instrument window.
+	void append_terminal_text(const QString &text, const QTextCharFormat &format)
+	{
+		QScrollBar *scroll_bar = _transcript->verticalScrollBar();
+		const bool was_at_bottom = scroll_bar->value() >= scroll_bar->maximum() - 2;
+
+		QTextCursor cursor(_transcript->document());
+		cursor.movePosition(QTextCursor::End);
+		if (!_transcript->document()->isEmpty())
+			cursor.insertBlock();
+
+		const QStringList lines = text.split('\n');
+		for (int i = 0; i < lines.size(); i++)
+		{
+			if (i > 0)
+				cursor.insertBlock();
+			cursor.insertText(lines.at(i), format);
+		}
+
+		if (was_at_bottom)
+			QTimer::singleShot(0, this, [this]()
+			{
+				QScrollBar *bar = _transcript->verticalScrollBar();
+				bar->setValue(bar->maximum());
+			});
+	}
+
+	void set_transcript_visible(bool visible)
+	{
+		_transcript->setVisible(visible);
+	}
+
 	void set_status(const QString &text)
 	{
-		_status_label->setText(text);
-		_status_label->setToolTip(text);
+		if (!text.isEmpty())
+			append_terminal_text(text, _status_format);
 	}
 
 	void show_error(const QString &message)
 	{
-		set_status("");
-		showAsyncMessage(message.toUtf8().constData());
+		append_terminal_text("Error: " + message, _error_format);
 	}
 
 	void set_busy(bool busy)
@@ -234,13 +359,22 @@ private:
 		_cancel_button->setEnabled(busy);
 	}
 
+	// The transcript shows 9 text rows; the prompt entry row below counts as
+	// the 10th row. Compact mode shows only that row.
+	static constexpr int LLM_FX_TERMINAL_OUTPUT_LINES = 9;
+
 	radium::llm::FxTuneSession _session;
 
-	MyQButton *_menu_button;
-	FocusSnifferQLineEdit *_prompt_edit;
-	QPushButton *_tune_button;
-	QPushButton *_cancel_button;
-	QLabel *_status_label;
+	MyQButton *_menu_button = NULL;
+	MyQCheckBox *_transcript_checkbox = NULL;
+	QPlainTextEdit *_transcript = NULL;
+	FocusSnifferQLineEdit *_prompt_edit = NULL;
+	QPushButton *_tune_button = NULL;
+	QPushButton *_cancel_button = NULL;
+
+	QTextCharFormat _prompt_format;
+	QTextCharFormat _status_format;
+	QTextCharFormat _error_format;
 
 	QStringList _prompt_history;
 	int _prompt_history_index = -1;
