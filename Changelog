@@ -1,3 +1,17 @@
+Changes 8.2.52 -> 8.2.55:
+* Windows: Support the Pd2 instrument.
+* Linux: Include missing OpenGL libraries in binary builds.
+  OpenGL backend should work now, in addition to Vulkan.
+* Editor: Paint grayed-out prev and next block above and below
+  current block.
+* Editor: Optimize rendering.
+* Windows: Made the binaries less likely to be blocked by virus
+  killers and so forth by including manifests, versions, credits,
+  copyrights, etc. into the executable resources.
+* Gui: Change look on the hamburger menu button.
+
+
+
 Changes 8.1.54 -> 8.2.52:
 * Gui: When searching in a menu, and there is only one hit, open
   all sub menus automatically so that the menu entry for the hit
