@@ -31,6 +31,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include <QMap>
 #include <QVector>
 #include <QDir>
+#include <QByteArray>
+#include <QCryptographicHash>
 #include <QPushButton>
 #include <QSplitter>
 #include <QTabWidget>
@@ -1455,6 +1457,31 @@ struct ColorConfigSnapshot
 		return hash;
 	}
 
+	// Identifies the colors and the slider values in a configuration. Used to detect
+	// whether the user has modified a configuration that was installed by the program.
+	QString getSignature(void) const
+	{
+		QByteArray data;
+
+		for(int i = START_CONFIG_COLOR_NUM ; i < END_CONFIG_COLOR_NUM ; i++)
+		{
+			if (i < colors.size() && colors[i].isValid())
+				data += colors[i].name(QColor::HexArgb).toUtf8();
+
+			data += ';';
+		}
+
+		data += QByteArray::number((double)instrument_brightness, 'g', 16) + ';';
+		data += QByteArray::number((double)instrument_saturation, 'g', 16) + ';';
+		data += QByteArray::number((double)instrument_brightness_in_editor, 'g', 16) + ';';
+		data += QByteArray::number((double)instrument_saturation_in_editor, 'g', 16) + ';';
+		data += QByteArray::number((double)block_brightness, 'g', 16) + ';';
+		data += QByteArray::number((double)block_saturation, 'g', 16) + ';';
+		data += QByteArray::number((double)amount_of_gradient, 'g', 16);
+
+		return QString::fromLatin1(QCryptographicHash::hash(data, QCryptographicHash::Sha1).toHex());
+	}
+
 	bool saveState(disk_t *disk)
 	{
 		hash_t *state = getState();
@@ -1747,6 +1774,57 @@ static bool snapshots_are_equal(const ColorConfigSnapshot &a, const ColorConfigS
     && equal_floats(a.amount_of_gradient, b.amount_of_gradient);
 }
 
+// The signature stored in the settings identifies the shipped default palette that
+// the user's "Default" configuration is based on. It's written when the default is
+// installed or first seen.
+static QString get_installed_default_color_signature(void)
+{
+  return SETTINGS_read_string("installed_default_color_signature", "");
+}
+
+static void write_installed_default_color_signature(void)
+{
+  if (g_program_default_configuration.colors.size()==0)
+    return;
+
+  const QString signature = g_program_default_configuration.getSignature();
+
+  if (signature != get_installed_default_color_signature())
+    SETTINGS_write_string("installed_default_color_signature", signature);
+}
+
+// The shipped default palette can change without RADIUM_COLOR_VERSION being bumped
+// (e.g. for minor color adjustments). Replace the user's "Default" configuration in
+// that case, but only if it hasn't been modified since it was installed. If the user
+// has changed any color or slider, the configuration is left alone.
+static void refresh_unmodified_default_configuration(void)
+{
+  if (g_program_default_configuration.colors.size()==0)
+    return;
+
+  if (g_color_configurations.contains("Default")==false)
+    return;
+
+  const QString shipped_signature = g_program_default_configuration.getSignature();
+  const QString user_signature = g_color_configurations["Default"].getSignature();
+
+  if (user_signature == shipped_signature)
+    return; // Already up to date.
+
+  const QString installed_signature = get_installed_default_color_signature();
+
+  if (installed_signature.isEmpty() || user_signature != installed_signature)
+    return; // The user has modified the configuration. Leave it alone.
+
+  install_shipped_color_configuration("color_configuration_Default", "Default", true);
+
+  ColorConfigSnapshot snap(get_configuration_filename("Default"));
+  if (snap.colors.size() > 0){
+    snap.name = "Default";
+    g_color_configurations["Default"] = snap;
+  }
+}
+
 // The color configurations have changed. Save the colors the user had before the
 // change as the configuration "Previous", rotate the current Default to "Old",
 // install the program's new Default configuration, and make it current.
@@ -1875,8 +1953,12 @@ bool GFX_InitColorsAndMigrate(void)
   if (strcmp(SETTINGS_read_string("last_color_version","0.0"), RADIUM_COLOR_VERSION) != 0)
   {
     migrate_to_new_color_configurations();
+    write_installed_default_color_signature();
     return true;
   }
+
+  refresh_unmodified_default_configuration();
+  write_installed_default_color_signature();
 
   g_active_configuration_loaded = true;
   load_configuration(g_current_configuration_name);
