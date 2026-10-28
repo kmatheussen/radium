@@ -4,6 +4,20 @@
 ;;;;;;;;;; popup menu
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; A sub menu whose entries have already been run through parse-popup-menu-options.
+;; Used to cache expensive sub menus (such as the plugin registry) without having to
+;; parse all their entries again every time the parent menu is opened.
+(define (make-parsed-submenu contents)
+  (vector 'parsed-submenu contents))
+
+(define (parsed-submenu? something)
+  (and (vector? something)
+       (= 2 (vector-length something))
+       (eq? 'parsed-submenu (vector-ref something 0))))
+
+(define (parsed-submenu-contents something)
+  (vector-ref something 1))
+
 
 (define (parse-popup-menu-options args)
   ;;(c-display "\n\n\n>>----- args:")
@@ -156,6 +170,13 @@
                                      keybinding-func)
                               ,@(loop (cddr args)
                                       #f)))))
+                       ((parsed-submenu? arg2)
+                        (append (list (<-> "[submenu start]" text)
+                                      (lambda () #t))
+                                (parsed-submenu-contents arg2)
+                                (list "[submenu end]"
+                                      (lambda () #t))
+                                (loop (cddr args) keybinding-func)))
                        ((list? arg2)
                         (append (list (<-> "[submenu start]" text)
                                       (lambda () #t))

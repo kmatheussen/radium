@@ -1854,6 +1854,56 @@
 ;;                (<ra> :set-current-instrument instrument-id))
 ;;              (<ra> :set-current-instrument-locked #f)))))
 
+(define *plugin-registry-submenu-cache-generation* -1)
+(define *plugin-registry-submenu-cache* '())
+
+;; The plugin registry sub menu can be reused by several instruments: the entries and
+;; keybindings are the same, only the instrument to insert after differs. The target is
+;; therefore read from these variables when a menu entry is selected. There is only one
+;; fully expanded plugin-registry sub menu in a popup menu at a time (the other "Insert
+;; plugin" entries in a mixer strip menu use the lightweight version).
+(define *plugin-registry-target-instrument-id* #f)
+(define *plugin-registry-target-parentgui* -2)
+
+(define (plugin-registry-insert-description descr)
+  (insert-new-instrument-between *plugin-registry-target-instrument-id*
+                                 (get-instruments-connecting-from-instrument *plugin-registry-target-instrument-id*)
+                                 #t
+                                 *plugin-registry-target-parentgui*
+                                 (lambda (conf kont)
+                                   (kont descr))))
+
+;; Parsing all plugin-registry entries (including looking up keybindings) takes a
+;; noticeable amount of time. Cache the already-parsed sub menu per filter combination,
+;; so opening the popup menu again is fast. The cache is invalidated when the plugin
+;; registry or the preset clipboard changes.
+(define (get-cached-plugin-registry-submenu instrconf)
+  (define generation (<ra> :get-sound-plugin-registry-generation))
+  (when (not (= generation *plugin-registry-submenu-cache-generation*))
+    (set! *plugin-registry-submenu-cache-generation* generation)
+    (set! *plugin-registry-submenu-cache* '()))
+
+  (define key (list (instrconf :include-load-preset)
+                     (instrconf :must-have-inputs)
+                     (instrconf :must-have-outputs)
+                     (instrconf :parentgui)
+                     (<ra> :instrument-preset-in-clipboard)))
+
+  (define cached (assoc key *plugin-registry-submenu-cache*))
+  (if cached
+      (cadr cached)
+      (let ((parsed (parse-popup-menu-options
+                     (spr-entries->menu-entries (<ra> :get-sound-plugin-registry)
+                                                instrconf
+                                                (lambda (entry)
+                                                  (spr-entry->instrument-description entry instrconf plugin-registry-insert-description))
+                                                #f
+                                                insert-new-plugin))))
+        (when (>= (length *plugin-registry-submenu-cache*) 16)
+          (set! *plugin-registry-submenu-cache* (take *plugin-registry-submenu-cache* 15)))
+        (push-back! *plugin-registry-submenu-cache* (list key parsed))
+        parsed)))
+
 (delafina (get-insert-plugin-entry :instrument-id
                                    :enabled #t
                                    :is-top-instrument #t
@@ -1878,6 +1928,9 @@
 
   (define favourites (get-favourite-plugin-menu-entries insert-description insert-new-plugin))
 
+  (set! *plugin-registry-target-instrument-id* instrument-id)
+  (set! *plugin-registry-target-parentgui* parentgui)
+
   (set! enabled
         (and enabled
              (> (<ra> :get-num-output-channels instrument-id) 0)))
@@ -1893,12 +1946,7 @@
                (lambda ()
                  (insert-plugin-for-instrument-from-plugin-manager instrument-id parentgui)))
          (list "Instruments/effects"
-               (spr-entries->menu-entries (<ra> :get-sound-plugin-registry)
-                                          instrconf
-                                          (lambda (entry)
-                                            (spr-entry->instrument-description entry instrconf insert-description))
-                                          #f
-                                          insert-new-plugin))
+               (make-parsed-submenu (get-cached-plugin-registry-submenu instrconf)))
          (list "Most used instruments"
                (if (null? favourites)
                    (list (list "(None)" :enabled #f (lambda () #f)))
@@ -1920,6 +1968,8 @@
                                         :must-have-inputs #f :must-have-outputs #f
                                         :include-insert-plugin #t
                                         :put-in-submenu #f
+                                        :send-menu-entries #f
+                                        :insert-plugin-entry #f
                                         )
 
   (define plain
@@ -1956,14 +2006,16 @@
      (and include-insert-plugin
           "------------------")
      (and include-insert-plugin
-          (get-insert-plugin-entry instrument-id))
+          (or insert-plugin-entry
+              (get-insert-plugin-entry instrument-id)))
 
      (and include-insert-plugin
           (list "Insert send..."
-                (get-send-instrument-menu-entries
-                 instrument-id
-                 (lambda (create-send-func)
-                   (create-send-func 0 '())))))
+                (or send-menu-entries
+                    (get-send-instrument-menu-entries
+                     instrument-id
+                     (lambda (create-send-func)
+                       (create-send-func 0 '()))))))
      "---------------"
      
      (list "Delete"

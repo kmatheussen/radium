@@ -1174,6 +1174,10 @@ int64_t MIXERSTRIP_get_curr_mixerstrip_guinum(void){
   return mixerstrip_guinum;
 }
 
+int64_t MIXERSTRIP_create_instrument_widget(instrument_t instrument_id, int width, int height){
+  return S7CALL2(int_instrument_int_int, "FROM_C-create-instrument-widget-mixer-strip", instrument_id, width, height);
+}
+
 void MIXERSTRIP_call_regularly(void){
   static struct Patch *last_patch = NULL;
 
