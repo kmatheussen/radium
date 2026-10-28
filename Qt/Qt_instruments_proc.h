@@ -46,6 +46,7 @@ extern LANGSPEC void MIXERSTRIP_show(void);
 extern LANGSPEC void MIXERSTRIP_hide(void);
 extern LANGSPEC int64_t MIXERSTRIP_get_curr_mixerstrip_guinum(void);
 extern LANGSPEC void MIXERSTRIP_call_regularly(void);
+extern LANGSPEC int64_t MIXERSTRIP_create_instrument_widget(instrument_t instrument_id, int width, int height);
 
 #ifdef USE_QT4
 //static Audio_instrument_widget *get_audio_instrument_widget(struct Patch *patch);

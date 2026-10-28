@@ -84,8 +84,6 @@
   (if (not wide-mode-instrument-id)
       (set! wide-mode-instrument-id instrument-id))
 
-  (display (and strips-config (strips-config :parent-gui)))
-  (newline)
   (define is-standalone (or (not strips-config) (strips-config :is-standalone)))
   ;;(c-display "num-instruments:" is-standalone strips-config)
 
@@ -863,8 +861,36 @@
   (define curr-plugin-instrument (if is-send?
                                      parent-instrument-id
                                      instrument-id))
-  
-  (popup-menu (<-> "----------" (<ra> :get-instrument-name instrument-id))
+
+  ;; The same "Insert send" menu is included both at the top level and inside the
+  ;; "Mixer strip objects" sub menu for each instrument in the strip path. Build it
+  ;; only once per instrument while constructing this popup menu.
+  (define send-menu-entries-cache '())
+
+  (define (get-cached-send-menu-entries instrument-id)
+    (let ((cached (assoc instrument-id send-menu-entries-cache)))
+      (if cached
+          (cadr cached)
+          (let ((entries (get-send-instrument-menu-entries
+                          instrument-id
+                          (lambda (create-send-func)
+                            (create-send-func 0 '())))))
+            (push-back! send-menu-entries-cache (list instrument-id entries))
+            entries))))
+
+  ;; Do not embed a complete copy of the plugin registry sub menu for every instrument
+  ;; in the strip path. That makes the popup menu contain hundreds (or thousands) of
+  ;; entries, and parsing/keybinding-lookup for all those entries can take seconds.
+  ;; Open the regular cached instrument popup menu instead when this entry is selected.
+  (define (get-path-insert-plugin-entry instrument-id)
+    (list (<-> "Insert plugin after " (<ra> :get-instrument-name instrument-id) "...")
+          :enabled (> (<ra> :get-num-output-channels instrument-id) 0)
+          (lambda ()
+            (insert-plugin-for-instrument-from-popup-menu :instrument-id instrument-id))))
+
+  (run-instrument-data-memoized
+   (lambda ()
+     (popup-menu (<-> "----------" (<ra> :get-instrument-name instrument-id))
               (list "Set as current instrument"
                     :enabled (not (equal? instrument-id (<ra> :get-current-instrument)))
                     (lambda ()
@@ -878,10 +904,7 @@
                                         parent-instrument-id
                                         instrument-id)))
                 (list (<-> "Insert send for " (<ra> :get-instrument-name send-source-id) "...")
-                      (get-send-instrument-menu-entries
-                       send-source-id
-                       (lambda (create-send-func)
-                         (create-send-func 0 '())))))
+                      (get-cached-send-menu-entries send-source-id)))
 
               ;;(and (not is-send?)
               ;;     (list
@@ -978,12 +1001,14 @@
                                                          :must-have-inputs effect-name
                                                          :must-have-outputs effect-name
                                                          :include-insert-plugin #t
-                                                         :put-in-submenu #t))
+                                                         :put-in-submenu #t
+                                                         :send-menu-entries (get-cached-send-menu-entries instrument-id)
+                                                         :insert-plugin-entry (get-path-insert-plugin-entry instrument-id)))
                          (cons first-instrument-id
                                (get-list-of-mixer-strip-path-instruments first-instrument-id))))
 
               (get-global-mixer-strips-popup-entries first-instrument-id strips-config parent-instrument-id :mixer-in-sub-menu #t)
-              )
+              )))
 
   ;;(when (and strips-config (not (strips-config :is-standalone)))
   ;;  (<ra> :set-current-instrument instrument-id #f #t))
@@ -1526,6 +1551,8 @@
 
   (define slider #f)
 
+  (define update-slider-value-is-scheduled #f)
+
   (define (update-slider-value new-slider-value)
     (when (> (abs (- new-slider-value (<gui> :get-value slider)))
              0.001)
@@ -1536,14 +1563,28 @@
       (<gui> :update slider)
       (set! doit #t)))
 
+  ;; The send monitor doesn't cover changing values by undo/redo, so we check whether the
+  ;; slider needs to be updated whenever it is painted or queried. Do not schedule an update
+  ;; when the values already match, and never keep more than one update pending. Scheduling
+  ;; an update on every paint (as was done before) could fill the scheduler with no-op
+  ;; callbacks and delay things such as opening the popup menu.
+  (define (schedule-update-slider-value)
+    (when (not update-slider-value-is-scheduled)
+      (set! update-slider-value-is-scheduled #t)
+      (<ra> :schedule 0
+            (lambda ()
+              (set! update-slider-value-is-scheduled #f)
+              (update-slider-value (db-to-slider (get-db-value)))
+              #f))))
+
   (define (get-scaled-value)
     (let ((scaled-value (db-to-slider (get-db-value))))
       ;;(c-display "   scaled: " scaled-value)
-      (if scaled-value
-          (<ra> :schedule 0 ;; The send monitor doesn't cover changing values by undo/redo, so we do this thing. (if not slider jumps after trying to move it after undo/redo).
-                (lambda ()
-                  (update-slider-value (db-to-slider (get-db-value)))
-                  #f)))
+      (when (and slider
+                 scaled-value
+                 (> (abs (- scaled-value (<gui> :get-value slider)))
+                    0.001))
+        (schedule-update-slider-value))
       scaled-value))
   
   (set! slider (strip-slider first-instrument-id
@@ -2522,7 +2563,7 @@
   button)
 
   
-(define (create-mixer-strip-minimized instrument-id strips-config is-standalone-mixer-strip)
+(define (create-mixer-strip-minimized instrument-id strips-config is-standalone-mixer-strip is-in-instrument-widget)
   (define color (<ra> :get-instrument-color instrument-id))
 
   ;;(define gui (<gui> :vertical-layout)) ;; min-width height))
@@ -2549,14 +2590,17 @@
                               (get-fontheight))))
   (set-fixed-width gui strip-width)
 
-  (define label (create-mixer-strip-name instrument-id strips-config #t is-standalone-mixer-strip))
+  (define label (if is-in-instrument-widget
+                    #f
+                    (create-mixer-strip-name instrument-id strips-config #t is-standalone-mixer-strip)))
 
   (define mutesolo-height (ceiling (* 0.9 (get-fontheight) *pan-mutesolo-voltext-scale-factor*)))
 
-  (when is-standalone-mixer-strip
+  (when (and is-standalone-mixer-strip (not is-in-instrument-widget))
     (<gui> :add gui (create-select-current-instrument-button strip-width)))
 
-  (<gui> :add gui label 1)
+  (when label
+    (<gui> :add gui label 1))
   (<gui> :add gui (create-mixer-strip-mutesolo instrument-id
                                                strips-config
                                                background-color
@@ -2576,7 +2620,8 @@
   (if strips-config
       (let ((vert-ratio (strips-config :vert-ratio)))
         (cond ((> vert-ratio 1)
-               (<gui> :set-layout-stretch gui label (floor vert-ratio)))
+               (when label
+                 (<gui> :set-layout-stretch gui label (floor vert-ratio))))
               ((< vert-ratio 1)
                (<gui> :set-layout-stretch gui volume-gui (floor (/ 1 vert-ratio)))))))
   
@@ -2633,7 +2678,7 @@
                                               (else
                                                result-so-far))))))
 
-(define (create-mixer-strip-wide instrument-id strips-config is-standalone-mixer-strip)
+(define (create-mixer-strip-wide instrument-id strips-config is-standalone-mixer-strip is-in-instrument-widget)
   (define gui (<gui> :vertical-layout)) ;; min-width height))  
   (<gui> :set-min-width gui (get-min-mixer-strip-width instrument-id))
   ;;(<gui> :set-max-width gui width)
@@ -2662,13 +2707,13 @@
   ;;(define total-fixed-height-without-pan (+ name-height mutesolo-height (if (<ra> :mixer-strip-comments-visible) comment-height 0)))
   ;;(define total-fixed-height-with-pan (+ total-fixed-height-without-pan pan-height))
   
-  (define name (create-mixer-strip-name instrument-id strips-config #f is-standalone-mixer-strip))
+  (when (not is-in-instrument-widget)
+    (define name (create-mixer-strip-name instrument-id strips-config #f is-standalone-mixer-strip))
+    (set-fixed-height name name-height)
+    (<gui> :add gui name))
 
-  (when is-standalone-mixer-strip
+  (when (and is-standalone-mixer-strip (not is-in-instrument-widget))
     (<gui> :add gui (create-select-current-instrument-button #f)))
-
-  (set-fixed-height name name-height)
-  (<gui> :add gui name)
 
   (define mixer-strip-path-gui (<gui> :vertical-scroll #f))
   ;;(<gui> :set-layout-spacing mixer-strip-path-gui 5 5 5 5 5)
@@ -2723,7 +2768,8 @@
   (define volume (create-mixer-strip-volume instrument-id meter-instrument-id strips-config background-color #f))
   (<gui> :add gui volume 1)
 
-  (when (<ra> :mixer-strip-comments-visible)
+  (when (and (not is-in-instrument-widget)
+             (<ra> :mixer-strip-comments-visible))
     (define comment (create-mixer-strip-comment instrument-id strips-config comment-height))
     (<gui> :add gui comment))
 
@@ -2754,13 +2800,17 @@
 
 (delafina (create-mixer-strip :instrument-id
                               :strips-config #f
-                              :is-standalone-mixer-strip #f)
-  (define is-wide (if is-standalone-mixer-strip
-                      *current-mixer-strip-is-wide*
-                      (<ra> :has-wide-instrument-strip instrument-id)))
+                              :is-standalone-mixer-strip #f
+                              :force-wide #f
+                              :is-in-instrument-widget #f)
+  (define is-wide (if force-wide
+                      #t
+                      (if is-standalone-mixer-strip
+                          *current-mixer-strip-is-wide*
+                          (<ra> :has-wide-instrument-strip instrument-id))))
   (if is-wide
-      (create-mixer-strip-wide instrument-id strips-config is-standalone-mixer-strip)
-      (create-mixer-strip-minimized instrument-id strips-config is-standalone-mixer-strip)))
+      (create-mixer-strip-wide instrument-id strips-config is-standalone-mixer-strip is-in-instrument-widget)
+      (create-mixer-strip-minimized instrument-id strips-config is-standalone-mixer-strip is-in-instrument-widget)))
 
 
 ;; Stored mixer strips.
@@ -2795,7 +2845,7 @@
 
 (define *standalone-mixer-strip-ratio* 1)
 
-(define (FROM_C-create-standalone-mixer-strip instrument-id width height)
+(define* (FROM_C-create-standalone-mixer-strip instrument-id width height (force-wide #f) (is-in-instrument-widget #f))
   ;;(define parent (<gui> :horizontal-layout))
   ;;(<gui> :set-layout-spacing parent 0 0 0 0 0)
 
@@ -2838,8 +2888,8 @@
            (set! das-mixer-strip-gui #f))
          
          (when instrument-is-open                
-           (set! das-mixer-strip-gui (create-mixer-strip instrument-id strips-config :is-standalone-mixer-strip #t))
-           (if *current-mixer-strip-is-wide*
+           (set! das-mixer-strip-gui (create-mixer-strip instrument-id strips-config :is-standalone-mixer-strip #t :force-wide force-wide :is-in-instrument-widget is-in-instrument-widget))
+           (if (or force-wide *current-mixer-strip-is-wide*)
                (set! width org-width)
                (set! width (<gui> :width das-mixer-strip-gui)))
            (set-fixed-width parent width)         
@@ -2893,6 +2943,8 @@
 
   parent)
 
+(define (FROM_C-create-instrument-widget-mixer-strip instrument-id width height)
+  (FROM_C-create-standalone-mixer-strip instrument-id width height #t #t))
 
 
 #!

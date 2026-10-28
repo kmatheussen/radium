@@ -356,6 +356,7 @@ const char *system_effect_names[NUM_SYSTEM_EFFECTS] = {
   
   "System Sample Browser On/Off",
   "System Controls On/Off",
+  "System Show Mixer Strip GUI",
 
   "System On/Off Voice 1",
   "System On/Off Voice 2",
@@ -574,6 +575,7 @@ SoundPlugin *PLUGIN_create(struct Patch *patch, SoundPluginType *plugin_type, ha
 
   plugin->show_browser_gui = true;
   plugin->show_controls_gui = true;
+  plugin->show_mixer_strip_gui = false;
   plugin->show_equalizer_gui = true;
   plugin->show_compressor_gui = false;
 
@@ -775,6 +777,7 @@ int PLUGIN_get_effect_format(struct SoundPlugin *plugin, int effect_num){
       system_effect==EFFNUM_COMP_SHOW_GUI ||
       system_effect==EFFNUM_BROWSER_SHOW_GUI ||
       system_effect==EFFNUM_CONTROLS_SHOW_GUI ||
+      system_effect==EFFNUM_MIXER_STRIP_SHOW_GUI ||
       system_effect==EFFNUM_VOICE1_ONOFF ||
       system_effect==EFFNUM_VOICE2_ONOFF ||
       system_effect==EFFNUM_VOICE3_ONOFF ||
@@ -2008,6 +2011,13 @@ static void PLUGIN_set_effect_value2(struct SoundPlugin *plugin, const int time,
       }
       break;
 
+    case EFFNUM_MIXER_STRIP_SHOW_GUI:
+      if ( (value >= 0.5f) != plugin->show_mixer_strip_gui){
+        plugin->show_mixer_strip_gui = value >= 0.5f;
+        update_instrument_gui(plugin);
+      }
+      break;
+
       // fix. Must call GUI function, and then the GUI function calls COMPRESSOR_set_parameter.
     case EFFNUM_COMP_RATIO:
       //printf("Setting ratio to %f\n",value);
@@ -2298,6 +2308,8 @@ float PLUGIN_get_effect_value2(struct SoundPlugin *plugin, int effect_num, enum 
     return plugin->show_browser_gui==true ? 1.0 : 0.0f;
   case EFFNUM_CONTROLS_SHOW_GUI:
     return plugin->show_controls_gui==true ? 1.0 : 0.0f;
+  case EFFNUM_MIXER_STRIP_SHOW_GUI:
+    return plugin->show_mixer_strip_gui==true ? 1.0 : 0.0f;
 
   case EFFNUM_COMP_RATIO:
     return COMPRESSOR_get_parameter(plugin->compressor, COMP_EFF_RATIO);

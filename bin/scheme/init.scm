@@ -168,6 +168,7 @@ FROM-C-show-sequencer-gui
 FROM-C-hide-sequencer-gui
 FROM-C-sequencer-gui-is-visible
 FROM_C-create-standalone-mixer-strip
+FROM_C-create-instrument-widget-mixer-strip
 select-track-instrument
 async-replace-instrument
 async-load-instrument-preset

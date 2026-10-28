@@ -21,6 +21,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../audio/SoundPlugin_proc.h"
 #include "../audio/SoundPluginRegistry_proc.h"
 
+#include "../api/api_gui_proc.h"
+#include "../api/api_proc.h"
+
 #include "Qt_MyQScrollBar.hpp"
 
 /*
@@ -30,6 +33,8 @@ static Pd_Plugin_widget *AUDIOWIDGET_get_pd_plugin_widget(Audio_instrument_widge
 */
 
 #include "Qt_audio_instrument_widget.h"
+
+#include "Qt_instruments_proc.h"
 
 #include "mQt_sample_requester_widget_callbacks.h"
 #include "mQt_plugin_widget_callbacks.h"
@@ -58,6 +63,8 @@ public:
   
   Sample_requester_widget *_sample_requester_widget;
   Compressor_widget *_comp_widget;
+
+  int64_t _mixerstrip_guinum = -1;
 
   SizeType _size_type;
   SizeType _size_type_before_hidden;
@@ -229,7 +236,7 @@ public:
     {
       _comp_widget = new Compressor_widget(patch, this);
       _comp_widget->setMinimumWidth(150 * g_gfx_scale);
-      effects_layout->insertWidget(effects_layout->count()-2, _comp_widget);
+      effects_layout->insertWidget(effects_layout->indexOf(equalizerWidget), _comp_widget);
 
       // these widgets are only used in the standalone version
       _comp_widget->load_button->hide();
@@ -323,6 +330,7 @@ public:
   }
   
   void prepare_for_deletion(void){
+    close_mixer_strip();
     _comp_widget->prepare_for_deletion();
     _plugin_widget->prepare_for_deletion();
   }
@@ -719,6 +727,7 @@ public:
     set_arrow_style(arrow10);
     set_arrow_style(arrow7, false);
     set_arrow_style(browserArrow, false);
+    set_arrow_style(mixerstripArrow, false);
     if(pipe_label!=NULL)
       set_arrow_style(pipe_label,false);
 
@@ -729,6 +738,7 @@ public:
     controlsWidget->setFixedWidth(fontheight);
     compressorWidget->setFixedWidth(fontheight);
     equalizerWidget->setFixedWidth(fontheight);
+    mixerstripWidget->setFixedWidth(fontheight);
     
     /*
     show_compressor->setFixedWidth(fontheight);
@@ -904,6 +914,9 @@ public:
     show_controls->setChecked(plugin->show_controls_gui);
     show_equalizer->setChecked(plugin->show_equalizer_gui);
     show_compressor->setChecked(plugin->show_compressor_gui);
+    show_mixer_strip->setChecked(plugin->show_mixer_strip_gui);
+
+    update_mixer_strip(plugin->show_mixer_strip_gui);
 
     switch(plugin->pitch_type){
       case SPT_DISABLED:
@@ -986,7 +999,50 @@ public:
   }
   
 private:
-  
+
+  void close_mixer_strip(void){
+    if (_mixerstrip_guinum >= 0){
+      int64_t guinum = _mixerstrip_guinum;
+      _mixerstrip_guinum = -1;
+      if (gui_isOpen(guinum))
+        gui_close(guinum);
+    }
+  }
+
+  void update_mixer_strip(bool should_be_visible){
+    if (should_be_visible){
+      if (_mixerstrip_guinum < 0 || !gui_isOpen(_mixerstrip_guinum)){
+        _mixerstrip_guinum = -1;
+
+        if (instrumentIsOpenAndAudio(_patch->id)){
+          int strip_height = height();
+          if (strip_height < 100)
+            strip_height = 400;
+
+          int64_t guinum = MIXERSTRIP_create_instrument_widget(_patch->id, 100 * g_gfx_scale, strip_height);
+          if (guinum >= 0){
+            QWidget *mixer_strip_widget = API_gui_get_widget(guinum);
+            if (mixer_strip_widget != NULL){
+              mixer_strip_layout->addWidget(mixer_strip_widget);
+              _mixerstrip_guinum = guinum;
+            }else{
+              gui_close(guinum);
+            }
+          }
+        }
+      }
+
+      if (_mixerstrip_guinum >= 0)
+        mixer_strip_container->setVisible(_size_type == SIZETYPE_NORMAL);
+      else
+        mixer_strip_container->hide();
+
+    }else{
+      close_mixer_strip();
+      mixer_strip_container->hide();
+    }
+  }
+
   QVector<QWidget*> hidden_widgets;
   int height_before_large;
 
@@ -1421,6 +1477,19 @@ public slots:
     int effect_num = type->num_effects + EFFNUM_COMP_SHOW_GUI;
     PLUGIN_set_effect_value(plugin, -1, effect_num, val==true?1.0:0.0, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
     _comp_widget->setVisible(val);
+  }
+
+  void on_show_mixer_strip_toggled(bool val){
+    if (_is_updating > 0)
+      return;
+
+    SoundPlugin *plugin = (SoundPlugin*)_patch->patchdata;
+    if (plugin==NULL) return;
+
+    const SoundPluginType *type = plugin->type;
+    int effect_num = type->num_effects + EFFNUM_MIXER_STRIP_SHOW_GUI;
+    PLUGIN_set_effect_value(plugin, -1, effect_num, val==true?1.0:0.0, STORE_VALUE, FX_single, EFFECT_FORMAT_SCALED);
+    update_mixer_strip(val);
   }
 
   void on_input_volume_onoff_toggled(bool val){
