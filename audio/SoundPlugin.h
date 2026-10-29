@@ -182,6 +182,7 @@ enum{
   
   EFFNUM_BROWSER_SHOW_GUI,
   EFFNUM_CONTROLS_SHOW_GUI,
+  EFFNUM_MIXER_STRIP_SHOW_GUI,
 
   // Add new effects here, or earlier.
   
@@ -596,6 +597,7 @@ typedef struct SoundPlugin{
   
   bool show_browser_gui;
   bool show_controls_gui;
+  bool show_mixer_strip_gui;
 
   bool show_equalizer_gui;
 
