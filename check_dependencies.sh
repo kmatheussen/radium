@@ -36,6 +36,22 @@ fi
 
 if [[ $1 == "test_packages" ]] ; then
     echo "testing packages"
+
+    # The Pd2 GUI uses the antialiased Tk build made by
+    # bin/packages/build_tcltk_wish_linux.sh, which needs the Cairo/X11
+    # development files.
+    if [ `uname` == "Linux" ] && ! is_0 $INCLUDE_PD2DEV ; then
+        for pkg in cairo xft fontconfig x11 ; do
+            if ! pkg-config --exists $pkg ; then
+                echo "Missing Tcl/Tk build dependency: $pkg" >&2
+                echo "Install the Cairo/X11 development files, e.g. on Debian/Ubuntu:" >&2
+                echo "  sudo apt install libcairo2-dev libxft-dev libfontconfig1-dev libx11-dev" >&2
+                echo "or on Fedora/RHEL:" >&2
+                echo "  sudo dnf install cairo-devel libXft-devel fontconfig-devel libX11-devel" >&2
+                exit 5
+            fi
+        done
+    fi
 fi
 
 if [[ $1 == "test_build" ]] ; then

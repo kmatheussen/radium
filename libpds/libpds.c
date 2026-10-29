@@ -368,42 +368,6 @@ int libpds2_getdollarzero(pd_t *pd, void* p)
 	return libpd_getdollarzero(p);
 }
 
-#if defined(__linux__)
-// Returns true if "name" is an executable file found in PATH.
-// (The Pd GUI on Linux runs the "wish" command found in PATH.)
-static bool executable_in_path(const char *name)
-{
-	const char *path = getenv("PATH");
-	if (path == NULL)
-		return false;
-
-	const char *p = path;
-	while (true)
-	{
-		const char *end = strchr(p, ':');
-		size_t len = end != NULL ? (size_t)(end - p) : strlen(p);
-
-		char filename[4096];
-		if (len < sizeof(filename))
-		{
-			if (len == 0)
-				snprintf(filename, sizeof(filename), "%s", name);
-			else
-				snprintf(filename, sizeof(filename), "%.*s/%s", (int)len, p, name);
-
-			if (access(filename, X_OK) == 0)
-				return true;
-		}
-
-		if (end == NULL)
-			break;
-		p = end + 1;
-	}
-
-	return false;
-}
-#endif
-
 // Starts the Pd Tcl/Tk GUI for this instance if it's not already running, or
 // shows the GUI windows again if they have only been hidden. Starting the GUI
 // makes all the instance's canvas windows visible (the GUI handshake ends up
@@ -453,9 +417,16 @@ bool libpds2_show_gui(pd_t *pd)
 			return false;
 		}
 
-		if (!executable_in_path("wish"))
+		// Radium bundles a self-contained Tcl/Tk wish at <libdir>/bin/wish
+		// (see bin/packages/build_tcltk_wish_linux.sh), so no Tcl/Tk
+		// installation is needed on the machine. Check it up front: if it
+		// starts but exits without connecting, libpd_start_gui() would block
+		// forever in accept().
+		char wish_path[1040];
+		snprintf(wish_path, sizeof(wish_path), "%s/bin/wish", pd->libdir);
+		if (access(wish_path, X_OK) != 0)
 		{
-			set_error("Unable to start the Pd GUI: the \"wish\" program (Tcl/Tk) was not found in PATH.");
+			set_error("Unable to start the Pd GUI: can't find bin/wish (Tcl/Tk is not bundled).");
 			return false;
 		}
 	}
@@ -463,7 +434,7 @@ bool libpds2_show_gui(pd_t *pd)
 	{
 		// sys_startgui() on Windows runs <libdir>/bin/wish86.exe (see
 		// PDBINDIR/WISH in pure-data/src/s_inter.c). Check the program and
-		// its Tcl script library up front: if wish86.exe starts but cannot
+		// its Tcl/Tk script library up front: if wish86.exe starts but cannot
 		// find its library, it exits without connecting and
 		// libpd_start_gui() would block forever in accept().
 		char wish_path[1040];
@@ -474,11 +445,20 @@ bool libpds2_show_gui(pd_t *pd)
 			return false;
 		}
 
+		// Tcl/Tk 8.6 keeps its script library in lib/tcl8.6 (with init.tcl).
+		// The antialiased Tk 9.1 wish embeds Tcl's script library in tcl91.dll
+		// (zipfs) and keeps Tk's in lib/tk9.1, so accept either layout.
 		char tcl_init[1040];
 		snprintf(tcl_init, sizeof(tcl_init), "%s/lib/tcl8.6/init.tcl", pd->libdir);
-		if (access(tcl_init, R_OK) != 0)
+		char tcl91_dll[1040];
+		snprintf(tcl91_dll, sizeof(tcl91_dll), "%s/bin/tcl91.dll", pd->libdir);
+		char tk91_tcl[1040];
+		snprintf(tk91_tcl, sizeof(tk91_tcl), "%s/lib/tk9.1/tk.tcl", pd->libdir);
+
+		if (access(tcl_init, R_OK) != 0 &&
+		    (access(tcl91_dll, R_OK) != 0 || access(tk91_tcl, R_OK) != 0))
 		{
-			set_error("Unable to start the Pd GUI: can't find the Tcl script library (lib/tcl8.6).");
+			set_error("Unable to start the Pd GUI: can't find the Tcl/Tk script library.");
 			return false;
 		}
 	}

@@ -255,7 +255,7 @@ build_libpd() {
 # The build is universal (x86_64+arm64) with the same macOS deployment target
 # as the rest of Radium, since create_app.sh checks every Mach-O file in the
 # app bundle.
-build_tcltk_wish() {
+build_tcltk_wish_darwin() {
 
     # Note: the framework dir is "Versions/8.6" for all 8.6.x releases.
     TCLTK_VERSION=8.6.17
@@ -295,6 +295,30 @@ build_tcltk_wish() {
     install_name_tool -id @executable_path/../Frameworks/Tk.framework/Versions/$TCLTK_FRAMEWORK_VERSION/Tk "$WISH_APP/Contents/Frameworks/Tk.framework/Versions/$TCLTK_FRAMEWORK_VERSION/Tk"
 
     rm -rf tcl$TCLTK_VERSION tk$TCLTK_VERSION "$WISH_DIR" build
+}
+
+
+# Build/install the self-contained antialiased Tcl/Tk wish that the Pd2
+# instrument uses to show the Pd GUI on Linux. It is installed as
+# libpd/pure-data/bin/wish, where libpd patch 20-linux-bundled-wish.patch makes
+# sys_startgui() look for it.
+#
+# install_tcltk_aa_linux.sh installs a prebuilt wish from ~/tlc_tk_antialiased
+# when one is available (a development shortcut). Otherwise the sources
+# vendored in this directory are built by build_tcltk_wish_linux.sh, so a
+# fresh clone works without any local Tcl/Tk build.
+build_tcltk_wish_linux() {
+
+    TCLTK_DEST="`pwd`/libpd/pure-data"
+
+    if [ ! -e "$TCLTK_DEST/tcl/pd-gui.tcl" ]; then
+        echo "build_tcltk_wish_linux: libpd has not been extracted yet (missing $TCLTK_DEST/tcl/pd-gui.tcl). Run build_libpd first." >&2
+        exit 1
+    fi
+
+    if ! "`pwd`/install_tcltk_aa_linux.sh" --dest "$TCLTK_DEST" ; then
+        "`pwd`/build_tcltk_wish_linux.sh" --dest "$TCLTK_DEST"
+    fi
 }
 
 
@@ -677,18 +701,18 @@ if [[ "${BASH_SOURCE[0]}" == "$0" ]] ; then
 		echo "Finished compiling libpds and xcb" # need this line to avoid script failing if all the lines above are commented out.
 	fi
 
-	if uname -s |grep -e Linux -e Darwin ; then
-		build_libpd
-		build_pd_externals
-		echo "Finished building libpd and pd externals" # need this line to avoid script failing if the line above is commented out.
-	fi
-
-	# The Wish.app is only used by the Pd2 instrument (and only on MacOS).
-	# build_tcltk_wish installs it next to the pure-data directory, so libpd must
-	# have been extracted (run build_libpd) first.
-	if uname -s |grep Darwin ; then
+	build_libpd
+	build_pd_externals
+	echo "Finished building libpd and pd externals" # need this line to avoid script failing if the line above is commented out.
+	
+	if uname -s |grep Linux ; then
 		if ! is_0 $INCLUDE_PD2DEV ; then
-			build_tcltk_wish
+			build_tcltk_wish_linux
+			echo "Finished installing the antialiased Tcl/Tk wish"
+		fi
+	elif uname -s |grep Darwin ; then
+		if ! is_0 $INCLUDE_PD2DEV ; then
+			build_tcltk_wish_darwin
 			echo "Finished building the Tcl/Tk Wish.app"
 		fi
 	fi
