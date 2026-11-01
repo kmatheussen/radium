@@ -1742,6 +1742,31 @@ public slots:
     _llm_session->generate(prompt);
   }
 
+  // Starts a Faust generation on this widget from outside the widget (the
+  // instrument widget's effect prompt uses this when the user accepts
+  // creating a Faust Dev 2 effect). The session is armed as a new creation
+  // and the Instr./FX combo is switched to FX.
+  bool generate_effect_from_prompt(const QString &prompt)
+  {
+    if (_llm_session == NULL || _llm_session->is_busy())
+      return false;
+
+    const radium::llm::LLMConfig config = radium::llm::get_config();
+    if (config.api_key.isEmpty() && config.mode != "free")
+    {
+      set_llm_status("No API key set. Click \"LLM settings\" to configure.");
+      return false;
+    }
+
+    const int fx_index = llm_instr_fx_combo->findText("FX", Qt::MatchExactly);
+    if (fx_index >= 0)
+      llm_instr_fx_combo->setCurrentIndex(fx_index);
+
+    _llm_session->set_new_session();
+    _llm_session->generate(prompt);
+    return true;
+  }
+
   // Sets the LLM status text, appending the dollars spent so far in this
   // Radium session. The dollar display is only shown while token prices are
   // available (fetched from the relay); otherwise the cost is unknown and
@@ -1808,6 +1833,22 @@ public slots:
 };
 
 } // anon. namespace
+
+
+#ifdef WITH_FAUST_DEV
+// Starts a Faust Dev 2 generation for the Faust widget belonging to
+// 'patch_id'. Used by the instrument effect prompt when the user accepts
+// creating an effect with Faust Dev 2.
+static inline bool FAUSTWIDGET_generate_effect(instrument_t patch_id, const QString &prompt)
+{
+  for (const QPointer<Faust_Plugin_widget> &widget : g_faust_plugin_widgets){
+    if (widget != NULL && widget->_patch.data() != NULL && widget->_patch->id == patch_id)
+      return widget->generate_effect_from_prompt(prompt);
+  }
+
+  return false;
+}
+#endif
 
 
 #if 0

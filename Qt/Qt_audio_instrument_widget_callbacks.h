@@ -17,9 +17,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 
 
 #include "../common/sequencer_proc.h"
+#include "../common/dyn_type.h"
+#include "../common/hashmap_proc.h"
 
 #include "../audio/SoundPlugin_proc.h"
 #include "../audio/SoundPluginRegistry_proc.h"
+#include "../audio/audio_instrument_proc.h"
 #include "../audio/undo_audio_effect_proc.h"
 #include "../audio/Modulator_plugin_proc.h"
 
@@ -47,6 +50,8 @@ static Pd_Plugin_widget *AUDIOWIDGET_get_pd_plugin_widget(Audio_instrument_widge
 #include "mQt_compressor_widget_callbacks.h"
 
 #include "../mixergui/QM_chip.h"
+#include "../mixergui/QM_MixerWidget.h"
+#include "../mixergui/undo_mixer_connections_proc.h"
 #include "../audio/Bus_plugins_proc.h"
 
 
@@ -54,6 +59,173 @@ static Pd_Plugin_widget *AUDIOWIDGET_get_pd_plugin_widget(Audio_instrument_widge
 
 
 namespace{
+
+// A plugin type that makes sense as an insert effect: it processes audio and
+// is not an instrument, router or internal system plugin.
+static bool is_instrument_category(const char *category)
+{
+  if (category == NULL)
+    return false;
+
+  const QString lower = QString::fromUtf8(category).toLower();
+  return lower.contains("instrument") || lower.contains("synth");
+}
+
+static bool is_excluded_effect_type(const QString &type_name, const QString &name)
+{
+  // Internal routing/system plugins are not useful as insert effects.
+  if (type_name == "Bus" || type_name == "Send" || type_name == "Receive"
+      || type_name == "Patchbay" || type_name == "Jack" || type_name == "Seqtrack"
+      || type_name == "MIDI Messages" || type_name == "Timeskew")
+    return true;
+  if (name.startsWith("System "))
+    return true;
+  return false;
+}
+
+static bool is_insertable_effect_type(const SoundPluginType *type)
+{
+  if (type == NULL || type->type_name == NULL || type->name == NULL)
+    return false;
+
+  // For direct/built-in plugins 'is_instrument' is reliable. For container
+  // plugins (VST/VST3/AU/LV2) it is initially true and later becomes
+  // 'acceptsMidi()', which is wrong for MIDI-controlled effects such as
+  // autotune. Use audio I/O and the category for those instead.
+  if (type->container == NULL && type->is_instrument)
+    return false;
+
+  if (type->num_inputs <= 0 || type->num_outputs <= 0)
+    return false;
+
+  const QString type_name = QString::fromUtf8(type->type_name);
+  const QString name = QString::fromUtf8(type->name);
+
+  if (is_excluded_effect_type(type_name, name))
+    return false;
+
+  if (type->category != NULL && is_instrument_category(type->category))
+    return false;
+
+  return true;
+}
+
+static void add_catalog_plugin(QVector<radium::llm::FxPlugin> &plugins,
+                               QSet<QString> &seen,
+                               const QString &type_name,
+                               const QString &name,
+                               const QString &container_name)
+{
+  const QString key = radium::llm::fx_normalize_plugin_key(container_name)
+                    + "\n" + radium::llm::fx_normalize_plugin_key(type_name)
+                    + "\n" + radium::llm::fx_normalize_plugin_key(name);
+  if (seen.contains(key))
+    return;
+  seen.insert(key);
+  plugins.append(radium::llm::FxPlugin{type_name, name, container_name});
+}
+
+struct InsertedEffectPlugin{
+  radium::llm::FxPlugin fx;
+  instrument_t instrument_id;
+};
+
+// Finds the effect plugins inserted after 'patch', in signal-chain order.
+// Traversal stops at the main pipe, buses, instruments and routing plugins,
+// so only plugins that are actually part of this instrument's insert chain
+// are returned.
+static void find_inserted_effect_plugins_recursive(struct Patch *patch,
+                                                   QVector<InsertedEffectPlugin> &ret,
+                                                   QSet<instrument_t> &visited)
+{
+  if (patch == NULL || visited.contains(patch->id))
+    return;
+  visited.insert(patch->id);
+
+  const int num_out_connections = CHIP_get_num_out_connections(patch);
+  for (int i = 0; i < num_out_connections; i++){
+    struct Patch *dest = CHIP_get_dest(patch, i);
+    if (dest == NULL || AUDIO_is_permanent_patch(dest))
+      continue;
+
+    SoundPlugin *dest_plugin = (SoundPlugin*)dest->patchdata;
+    if (dest_plugin == NULL || !is_insertable_effect_type(dest_plugin->type))
+      continue;
+
+    InsertedEffectPlugin inserted;
+    inserted.fx.type_name = QString::fromUtf8(dest_plugin->type->type_name);
+    inserted.fx.name = QString::fromUtf8(dest_plugin->type->name);
+    inserted.fx.container_name = dest_plugin->type->container == NULL
+                               ? QString()
+                               : QString::fromUtf8(dest_plugin->type->container->name);
+    inserted.instrument_id = dest->id;
+    ret.append(inserted);
+
+    find_inserted_effect_plugins_recursive(dest, ret, visited);
+  }
+}
+
+static QVector<InsertedEffectPlugin> find_inserted_effect_plugins(struct Patch *patch)
+{
+  QVector<InsertedEffectPlugin> ret;
+  QSet<instrument_t> visited;
+  find_inserted_effect_plugins_recursive(patch, ret, visited);
+  return ret;
+}
+
+static QVector<radium::llm::FxPlugin> get_inserted_effect_plugin_catalog(struct Patch *patch)
+{
+  QVector<radium::llm::FxPlugin> ret;
+
+  for (const InsertedEffectPlugin &inserted : find_inserted_effect_plugins(patch)){
+    bool already_added = false;
+    for (const radium::llm::FxPlugin &existing : ret)
+      if (radium::llm::fx_plugin_matches(existing, inserted.fx)){
+        already_added = true;
+        break;
+      }
+    if (!already_added)
+      ret.append(inserted.fx);
+  }
+
+  return ret;
+}
+
+// Inserts 'new_patch' directly after 'insert_after': all of insert_after's
+// current destinations are rewired through the new patch. Used for both
+// regular effect plugins and the auto-created Faust Dev 2 effect.
+static struct Patch *insert_effect_patch_after(struct Patch *insert_after, struct Patch *new_patch)
+{
+  if (insert_after == NULL || new_patch == NULL)
+    return NULL;
+
+  struct Patch *main_pipe_patch = get_main_pipe_patch();
+  R_ASSERT_RETURN_IF_FALSE2(main_pipe_patch != NULL, NULL);
+
+  QVector<struct Patch*> destinations;
+  const int num_out_connections = CHIP_get_num_out_connections(insert_after);
+  for (int i = 0; i < num_out_connections; i++){
+    struct Patch *dest = CHIP_get_dest(insert_after, i);
+    if (dest != NULL)
+      destinations.append(dest);
+  }
+
+  ADD_UNDO(MixerConnections_CurrPos());
+
+  MW_connect(insert_after, new_patch, ConnectionType::IS_SEND);
+
+  if (destinations.isEmpty()){
+    MW_connect(new_patch, main_pipe_patch, ConnectionType::IS_SEND);
+  } else {
+    for (struct Patch *dest : destinations){
+      MW_disconnect(insert_after, dest);
+      MW_connect(new_patch, dest, ConnectionType::IS_SEND);
+    }
+  }
+
+  return new_patch;
+}
+
   
 class Audio_instrument_widget : public QWidget, public Ui::Audio_instrument_widget{
   Q_OBJECT;
@@ -293,6 +465,93 @@ public:
         return states;
       };
 
+      // Available effect plugins (plugins with both audio inputs and outputs
+      // that are not instruments). The LLM picks one of these when the user
+      // asks for an effect the system effects cannot make (e.g. wah,
+      // distortion or delay); the host creates it and inserts it into the
+      // signal path.
+      auto read_plugin_catalog = []() -> QVector<radium::llm::FxPlugin>
+      {
+        QVector<radium::llm::FxPlugin> plugins;
+        QSet<QString> seen;
+
+        // 1. Plugin types that are already registered directly. This covers
+        // built-in effects, LADSPA and compiled-in Faust effects, plus
+        // container children that have already been populated.
+        const int num_types = PR_get_num_plugin_types();
+        for (int i = 0; i < num_types; i++){
+          SoundPluginType *type = PR_get_plugin_type(i);
+          if (!is_insertable_effect_type(type))
+            continue;
+
+          const QString type_name = QString::fromUtf8(type->type_name);
+          const QString name = QString::fromUtf8(type->name);
+
+          // These are development instruments. They are created by the
+          // dedicated create_faust flow instead of being listed as effects.
+          if (type_name == "Faust Dev" || type_name == "Faust Dev 2")
+            continue;
+
+          const QString container_name = type->container == NULL
+                                       ? QString()
+                                       : QString::fromUtf8(type->container->name);
+          add_catalog_plugin(plugins, seen, type_name, name, container_name);
+        }
+
+        // 2. Container children (VST/VST3/AU/LV2) from the plugin registry
+        // cache. These are normally not in g_plugin_types until the user has
+        // opened the container's menu or loaded a song using one of them.
+        // The cache store has the name, type, container and audio channel
+        // counts, so we can list them without instantiating every plugin.
+        const dynvec_t registry = getSoundPluginRegistry(false);
+        for (int i = 0; i < registry.num_elements; i++){
+          const dyn_t &entry = registry.elements[i];
+          if (entry.type != HASH_TYPE || entry.hash == NULL)
+            continue;
+
+          hash_t *hash = entry.hash;
+
+          const char *entry_type = HASH_get_chars(hash, ":type");
+          if (entry_type == NULL || strcmp(entry_type, "NORMAL") != 0)
+            continue;
+
+          const char *container_name = HASH_get_chars(hash, ":container-name");
+          if (container_name == NULL || container_name[0] == 0)
+            continue; // Directly registered plugins were handled above.
+
+          const char *type_name = HASH_get_chars(hash, ":type-name");
+          const char *name = HASH_get_chars(hash, ":name");
+          if (type_name == NULL || name == NULL || name[0] == 0)
+            continue;
+
+          const QString qtype_name = QString::fromUtf8(type_name);
+          const QString qname = QString::fromUtf8(name);
+
+          if (is_excluded_effect_type(qtype_name, qname))
+            continue;
+
+          const int64_t num_inputs = HASH_has_key(hash, ":num-inputs") ? HASH_get_int(hash, ":num-inputs") : -1;
+          const int64_t num_outputs = HASH_has_key(hash, ":num-outputs") ? HASH_get_int(hash, ":num-outputs") : -1;
+          if (num_inputs <= 0 || num_outputs <= 0)
+            continue;
+
+          const char *category = HASH_get_chars(hash, ":category");
+          if (category != NULL && is_instrument_category(category))
+            continue;
+
+          add_catalog_plugin(plugins, seen, qtype_name, qname, QString::fromUtf8(container_name));
+        }
+
+        return plugins;
+      };
+
+      // Effect plugins currently inserted after this instrument, for the
+      // remove_plugins part of the prompt.
+      auto read_inserted_plugins = [this]() -> QVector<radium::llm::FxPlugin>
+      {
+        return get_inserted_effect_plugin_catalog(_patch.data());
+      };
+
       auto apply_changes = [this, read_catalog](QVector<radium::llm::FxChange> &changes) -> bool
       {
         struct Patch *patch = _patch.data();
@@ -491,13 +750,150 @@ public:
         return true;
       };
 
-      // Applies the whole reply (effect value changes and modulation actions)
-      // as ONE undo entry: radium::ScopedUndo keeps all the nested ADD_UNDO
-      // calls (patch creation, chip positions, effect values, mixer
-      // connections) inside a single undo record.
-      auto apply_reply = [read_catalog, apply_changes, apply_modulations](QVector<radium::llm::FxChange> &changes, const QVector<radium::llm::FxModulation> &modulations) -> bool
+      // Creates the requested effect plugins and inserts them, in order,
+      // directly after this instrument. The instrument (and any previously
+      // inserted plugin) is disconnected from its old destinations, connected
+      // to the new plugin, and the new plugin is connected to those same
+      // destinations. This keeps the instrument's existing routing (including
+      // its bus sends) but processes it through the new plugin.
+      auto apply_plugins = [this](const QVector<radium::llm::FxPlugin> &plugins) -> bool
+      {
+        struct Patch *insert_after = _patch.data();
+        if (insert_after == NULL)
+          return false;
+        if (plugins.isEmpty())
+          return true;
+
+        for (const radium::llm::FxPlugin &request : plugins){
+          double x,y;
+          MW_set_autopos(&x, &y);
+
+          instrument_t new_id;
+
+          if (request.container_name.isEmpty()){
+            new_id = createAudioInstrument(request.type_name.toUtf8().constData(),
+                                           request.name.toUtf8().constData(),
+                                           NULL, x, y, false, true);
+          } else {
+            // VST/VST3/AU/LV2 plugins live in containers that might not have
+            // been populated yet. The description path populates the
+            // container on demand and then creates the plugin.
+            const char *description = getAudioInstrumentDescription(request.container_name.toUtf8().constData(),
+                                                                    request.type_name.toUtf8().constData(),
+                                                                    request.name.toUtf8().constData());
+            new_id = createAudioInstrumentFromDescription(description, NULL, x, y, false, true);
+          }
+
+          if (!isLegalInstrument(new_id))
+            return false;
+
+          struct Patch *new_patch = PATCH_get_from_id(new_id);
+          if (new_patch == NULL)
+            return false;
+
+          SoundPlugin *new_plugin = (SoundPlugin*)new_patch->patchdata;
+          if (new_plugin == NULL)
+            return false;
+
+          if (insert_effect_patch_after(insert_after, new_patch) == NULL)
+            return false;
+
+          insert_after = new_patch;
+        }
+
+        return true;
+      };
+
+      // Removes effect plugins that are part of this instrument's insert
+      // chain. The plugin is bypassed first (its sources are connected to its
+      // destinations), so removing it does not break the signal path, and is
+      // then deleted as one undo entry together with the rest of the reply.
+      auto apply_remove_plugins = [this](const QVector<radium::llm::FxPlugin> &plugins) -> bool
+      {
+        if (plugins.isEmpty())
+          return true;
+
+        struct Patch *source_patch = _patch.data();
+        if (source_patch == NULL)
+          return false;
+
+        const QVector<InsertedEffectPlugin> inserted = find_inserted_effect_plugins(source_patch);
+
+        QVector<instrument_t> instrument_ids;
+        for (const radium::llm::FxPlugin &request : plugins){
+          for (const InsertedEffectPlugin &entry : inserted){
+            if (radium::llm::fx_plugin_matches(request, entry.fx)
+                && !instrument_ids.contains(entry.instrument_id))
+              instrument_ids.append(entry.instrument_id);
+          }
+        }
+
+        for (instrument_t instrument_id : instrument_ids){
+          struct Patch *patch = PATCH_get_from_id(instrument_id);
+          if (patch == NULL)
+            continue;
+
+          SoundPlugin *plugin = (SoundPlugin*)patch->patchdata;
+          if (plugin == NULL)
+            continue;
+
+          // Never remove the main pipe, buses or other permanent patches.
+          if (AUDIO_is_permanent_patch(patch))
+            continue;
+
+          QVector<struct Patch*> sources;
+          QVector<struct Patch*> destinations;
+
+          const int num_in_connections = CHIP_get_num_in_connections(patch);
+          for (int i = 0; i < num_in_connections; i++){
+            struct Patch *source = CHIP_get_source(patch, i);
+            if (source != NULL)
+              sources.append(source);
+          }
+
+          const int num_out_connections = CHIP_get_num_out_connections(patch);
+          for (int i = 0; i < num_out_connections; i++){
+            struct Patch *dest = CHIP_get_dest(patch, i);
+            if (dest != NULL)
+              destinations.append(dest);
+          }
+
+          ADD_UNDO(MixerConnections_CurrPos());
+
+          // Bypass the plugin.
+          for (struct Patch *source : sources){
+            for (struct Patch *dest : destinations){
+              if (!MW_are_connected(source, dest))
+                MW_connect(source, dest, ConnectionType::IS_SEND);
+            }
+          }
+
+          for (struct Patch *source : sources)
+            MW_disconnect(source, patch);
+          for (struct Patch *dest : destinations)
+            MW_disconnect(patch, dest);
+
+          deleteInstrument(instrument_id);
+        }
+
+        return true;
+      };
+
+      // Applies the whole reply (effect value changes, modulation actions and
+      // plugin insertions/removals) as ONE undo entry: radium::ScopedUndo
+      // keeps all the nested ADD_UNDO calls (patch creation, chip positions,
+      // effect values, mixer connections) inside a single undo record.
+      auto apply_reply = [read_catalog, apply_changes, apply_modulations, apply_plugins, apply_remove_plugins](QVector<radium::llm::FxChange> &changes,
+                                                                                                                const QVector<radium::llm::FxModulation> &modulations,
+                                                                                                                const QVector<radium::llm::FxPlugin> &add_plugins,
+                                                                                                                const QVector<radium::llm::FxPlugin> &remove_plugins) -> bool
       {
         radium::ScopedUndo scoped_undo;
+
+        // Remove first, so a reply can replace an effect plugin by removing
+        // the old one and adding the new one.
+        if (!remove_plugins.isEmpty() && !apply_remove_plugins(remove_plugins))
+          return false;
 
         // A modulated effect must be enabled to be audible (e.g. the
         // highpass filter, or 'System Pitch type' for the pitch shifter).
@@ -520,10 +916,80 @@ public:
         if (!modulations.isEmpty() && !apply_modulations(modulations))
           return false;
 
+        if (!add_plugins.isEmpty() && !apply_plugins(add_plugins))
+          return false;
+
         return true;
       };
 
-      _fx_tune_widget = new LLM_fx_tune_widget(this, read_catalog, apply_reply);
+      // Asks the user whether to create a Faust Dev 2 effect, and starts the
+      // existing Faust Dev 2 LLM generation flow on the new instrument if the
+      // user accepts.
+      auto create_faust_effect = [this](const QString &description, const QString &requested_name) -> bool
+      {
+        struct Patch *source_patch = _patch.data();
+        if (source_patch == NULL)
+          return false;
+
+        const QString instrument_name = radium::llm::fx_make_faust_instrument_name(requested_name.isEmpty() ? description : requested_name);
+
+        {
+          MyQMessageBox *msg_box = MyQMessageBox::create(false, this);
+          msg_box->setAttribute(Qt::WA_DeleteOnClose);
+          msg_box->setWindowTitle("Create Faust Dev 2 effect");
+          msg_box->setText(QString("No matching effect plugin is available.\n\n"
+                                   "Should I create a Faust Dev 2 effect named \"%1\" for \"%2\"?").arg(instrument_name, description));
+          msg_box->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+          msg_box->setDefaultButton(QMessageBox::Yes);
+          if (safeExec(msg_box, false) != QMessageBox::Yes)
+            return true; // The user declined. This is not an error.
+        }
+
+        radium::ScopedUndo scoped_undo;
+
+        double x,y;
+        MW_set_autopos(&x, &y);
+
+        instrument_t new_id = createAudioInstrument("Faust Dev 2", "Faust Dev 2", instrument_name.toUtf8().constData(), x, y, false, true);
+        if (!isLegalInstrument(new_id))
+          return false;
+
+        struct Patch *new_patch = PATCH_get_from_id(new_id);
+        if (new_patch == NULL)
+          return false;
+
+#if defined(WITH_FAUST_DEV) && defined(WITH_FAUST_DEV2)
+        {
+          // Start with an inaudible/neutral passthrough until the LLM has
+          // generated the real effect. This avoids briefly inserting the
+          // default Faust synth into the signal path.
+          SoundPlugin *new_plugin = (SoundPlugin*)new_patch->patchdata;
+          if (new_plugin != NULL){
+            FAUST2_set_code(new_plugin, QString("process = _,_;\n"));
+            FAUST2_start_compilation(new_plugin);
+          }
+        }
+#endif
+
+        if (insert_effect_patch_after(source_patch, new_patch) == NULL)
+          return false;
+
+#if defined(WITH_FAUST_DEV) && defined(WITH_FAUST_DEV2)
+        if (!FAUSTWIDGET_generate_effect(new_id, description)){
+          GFX_addMessage("Could not start the Faust Dev 2 generation.");
+          return false;
+        }
+
+        GFX_addMessage("Creating a Faust Dev 2 effect for \"%s\".", description.toUtf8().constData());
+#else
+        GFX_addMessage("Faust Dev 2 is not available in this build.");
+        return false;
+#endif
+
+        return true;
+      };
+
+      _fx_tune_widget = new LLM_fx_tune_widget(this, read_catalog, read_plugin_catalog, read_inserted_plugins, apply_reply, create_faust_effect);
       gridLayout_3->addWidget(_fx_tune_widget, 1, 0);
     }
 

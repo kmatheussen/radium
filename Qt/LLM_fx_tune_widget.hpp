@@ -64,11 +64,20 @@ class LLM_fx_tune_widget : public QWidget
 public:
 	LLM_fx_tune_widget(QWidget *parent,
 	                   std::function<QVector<radium::llm::FxParamState>()> read_catalog,
-	                   std::function<bool(QVector<radium::llm::FxChange> &changes, const QVector<radium::llm::FxModulation> &modulations)> apply_reply)
+	                   std::function<QVector<radium::llm::FxPlugin>()> read_plugin_catalog,
+	                   std::function<QVector<radium::llm::FxPlugin>()> read_inserted_plugins,
+	                   std::function<bool(QVector<radium::llm::FxChange> &changes,
+	                                      const QVector<radium::llm::FxModulation> &modulations,
+	                                      const QVector<radium::llm::FxPlugin> &add_plugins,
+	                                      const QVector<radium::llm::FxPlugin> &remove_plugins)> apply_reply,
+	                   std::function<bool(const QString &description, const QString &name)> create_faust_effect)
 		: QWidget(parent)
 		, _session(radium::llm::FxTuneSessionHost{
 			std::move(read_catalog),
+			std::move(read_plugin_catalog),
+			std::move(read_inserted_plugins),
 			std::move(apply_reply),
+			std::move(create_faust_effect),
 			[this](const QString &text){ set_status(text); },
 			[this](const QString &message){ show_error(message); },
 			[this](bool busy){ set_busy(busy); },
@@ -152,8 +161,9 @@ public:
 
 		_prompt_edit = new FocusSnifferQLineEdit(frame);
 		_prompt_edit->setFrame(false);
-		_prompt_edit->setPlaceholderText("Tune effects. E.g. \"make it sound harsher\" / \"wider\" / \"add an octave layer\" / \"more reverb\"");
+		_prompt_edit->setPlaceholderText("Tune effects. E.g. \"make it sound harsher\" / \"wider\" / \"add a wah wah effect\" / \"more reverb\"");
 		_prompt_edit->setToolTip("Describe the sound you want, and the LLM adjusts the instrument's system effects (EQ, filters, compressor, pitch, pan/width, reverb/chorus sends and the note duplicator).\n"
+		                         "For effects the instrument cannot make itself (distortion, wah, phaser, delay, ...), it can insert an available effect plugin after the instrument, and remove it again on request.\n"
 		                         "The changes are applied immediately; one undo step restores them all. Follow-up requests refine the result.");
 		_prompt_edit->installEventFilter(this);
 		controls_layout->addWidget(_prompt_edit, 1);

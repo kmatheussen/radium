@@ -72,6 +72,17 @@ struct FxChange
 	float value;
 };
 
+// An effect plugin that can be inserted into the instrument's signal path.
+// The names are the exact type/name pair from the plugin registry (for
+// example "Ladspa" / "Auto Wah"), so the host can create the plugin without
+// having to parse a menu entry.
+struct FxPlugin
+{
+	QString type_name;      // "Ladspa", "VST", "VST3", "AU", "LV2", "Faust", ...
+	QString name;           // plugin name shown in the plugin menu
+	QString container_name; // container/file name for VST/AU/LV2 plugins, empty otherwise
+};
+
 // One modulation action proposed by the LLM. A modulator is an LFO-like
 // controller that continuously moves one numeric effect parameter. Fields
 // that are "not provided" (-1 / empty) keep their defaults for 'add' and
@@ -322,6 +333,31 @@ static inline QString fx_format_range(const FxParam &param)
 	return QString("%1 to %2").arg(param.min_native, 0, 'f', 2).arg(param.max_native, 0, 'f', 2);
 }
 
+// Case/punctuation/spacing-insensitive key for matching plugin names the LLM
+// copied slightly differently (for example "Auto-Wah" vs "Auto Wah").
+static inline QString fx_normalize_plugin_key(const QString &text)
+{
+	QString ret;
+	for (const QChar c : text)
+		if (c.isLetterOrNumber())
+			ret.append(c.toLower());
+	return ret;
+}
+
+static inline bool fx_plugin_matches(const FxPlugin &a, const FxPlugin &b)
+{
+	if (fx_normalize_plugin_key(a.type_name) != fx_normalize_plugin_key(b.type_name)
+	    || fx_normalize_plugin_key(a.name) != fx_normalize_plugin_key(b.name))
+		return false;
+
+	// Only compare the container when both sides have one. Built-in plugins
+	// have no container, and the LLM is not required to repeat it.
+	if (!a.container_name.isEmpty() && !b.container_name.isEmpty())
+		return fx_normalize_plugin_key(a.container_name) == fx_normalize_plugin_key(b.container_name);
+
+	return true;
+}
+
 // The system prompt is stable (no per-request data), so the LLM provider's
 // prompt cache can reuse it.
 static inline QString build_fx_system_prompt(void)
@@ -336,7 +372,12 @@ static inline QString build_fx_system_prompt(void)
 	  "Schema:\n"
 	  "{\"changes\":[{\"name\":\"<exact effect name>\",\"value\":<number>}, ...], "
 	  "\"modulators\":[{\"action\":\"add|replace|remove\",\"effect\":\"<exact effect name>\",\"type\":\"sine|triangle|square|saw|inverted saw|random\","
-	  "\"tempo_numerator\":1,\"tempo_denominator\":2,\"min\":0.0,\"max\":1.0}, ...], \"explanation\":\"<one or two sentences>\"}\n"
+	  "\"tempo_numerator\":1,\"tempo_denominator\":2,\"min\":0.0,\"max\":1.0}, ...], "
+	  "\"add_plugins\":[{\"name\":\"<exact plugin name>\",\"type\":\"<exact plugin type>\",\"container\":\"<container name, only if needed>\"}, ...], "
+	  "\"remove_plugins\":[{\"name\":\"<exact plugin name>\",\"type\":\"<exact plugin type>\",\"container\":\"<container name, only if needed>\"}, ...], "
+	  "\"create_faust\":\"<short description of the effect to create, or empty>\", "
+	  "\"create_faust_name\":\"<short instrument name, e.g. Autotune, or empty>\", "
+	  "\"explanation\":\"<one or two sentences>\"}\n"
 	  "\n"
 	  "Rules:\n"
 	  "1) Use only effect names from the provided list, copied exactly.\n"
@@ -348,10 +389,13 @@ static inline QString build_fx_system_prompt(void)
 	  "boosts or cuts unless the request explicitly asks for something drastic.\n"
 	  "5) The built-in system effects can shape EQ/filtering, compressor dynamics, pitch, panning and Haas width, "
 	  "note duplication (the 'voice' effects) and the send levels to the Reverb and Chorus mixer buses. They cannot "
-	  "create distortion, saturation or modulation effects themselves, and the Reverb/Chorus buses only have an "
-	  "audible effect if those buses are set up in the mixer. If the request needs distortion or saturation, return "
-	  "an empty \"changes\" array and explain briefly what is not possible, suggesting the 'Faust Dev 2' "
-	  "instrument/effect or an external plugin instead.\n"
+	  "create distortion, saturation, wah, phaser/flanger, delay/echo, amp simulation or other effects that need a "
+	  "dedicated plugin. For those requests, insert one of the effect plugins from the 'Available effect plugins' "
+	  "list in the user message with the \"add_plugins\" array. If no suitable plugin is listed, do not invent one: "
+	  "set \"create_faust\" to a short description of the requested effect (for example \"an autotune effect\") "
+	  "and explain briefly that the effect is not currently available. The host will ask the user whether to "
+	  "create it with the 'Faust Dev 2' instrument by generating Faust code. Do not claim it has already been "
+	  "created. The Reverb/Chorus buses only have an audible effect if those buses are set up in the mixer.\n"
 	  "6) The 'explanation' is one or two short sentences, in plain language, no lists.\n"
 	  "7) Signal flow: the note duplicator voices (voice 1 = the original note, voices 2-7 = extra copies) are mixed "
 	  "into ONE instrument signal. Every effect in the list - including the Reverb/Chorus sends - processes that "
@@ -378,6 +422,31 @@ static inline QString build_fx_system_prompt(void)
 	  "0.4..0.6, for a subtle effect; min > max inverts the LFO). Only numeric effects can be modulated, not "
 	  "On/Off effects. Use at most 2 modulator actions per reply. (A modulator added to 'System Pitch' also "
 	  "switches on the pitch shifter automatically.)\n"
+	  "11) Effect plugins: \"add_plugins\" inserts an external effect plugin directly after this instrument in the "
+	  "signal graph (the instrument, and everything already inserted after it, now feeds the new plugin, which "
+	  "feeds the instrument's old destinations). Use it when the user asks for an effect the built-in system "
+	  "effects cannot provide, such as 'add a wah wah effect', 'make it distorted', 'add a phaser' or 'add a "
+	  "delay'. Use the exact name and type from the 'Available effect plugins' list in the user message; never "
+	  "invent a plugin. If the list shows a container for the plugin, include it as \"container\" only when "
+	  "needed to distinguish plugins with the same name and type. Do not add a plugin when the request can be "
+	  "handled by the listed system effects (for "
+	  "example 'more reverb' -> 'System Reverb', 'wider' -> 'System Width'). Add at most one plugin per reply "
+	  "unless the user explicitly asks for several. Plugin parameters are not changed by this reply; the user "
+	  "can adjust them in the plugin's mixer strip.\n"
+	  "12) Removing effect plugins: use \"remove_plugins\" with the exact name and type from the 'Effect plugins "
+	  "currently inserted after this instrument' list in the user message; include \"container\" when the list "
+	  "shows one and it is needed to distinguish same-named plugins. Use it for requests like 'remove the "
+	  "wah wah' or 'take off the distortion'. Only plugins in that list can be removed; never remove instruments, "
+	  "system effects or plugins that are not listed. Removal bypasses the plugin (reconnecting its input to its "
+	  "output) and deletes it. If the same plugin is inserted several times, all its instances are removed. Do not "
+	  "list the same plugin in both \"add_plugins\" and \"remove_plugins\" unless the user asks to replace it; "
+	  "removals are applied before additions.\n"
+	  "13) \"create_faust\" is only for effects that cannot be provided by the built-in system effects or any "
+	  "listed effect plugin. Give a short, concrete description of the effect (including important character, "
+	  "e.g. \"a smooth autotune effect with medium retune speed\", not just \"an effect\"). Also set "
+	  "\"create_faust_name\" to a very short instrument name (one to three words, e.g. \"Autotune\") that will "
+	  "be used as the new instrument's name. Leave both empty in all other replies. The host shows a confirmation "
+	  "prompt; you never create the instrument yourself.\n"
 	  "\n"
 	  "Frequency guide for subjective terms (use the peaking EQ bands and the shelves):\n"
 	  "- rumble/sub: below 60 Hz; warmth/weight: 100-400 Hz; mud/boxiness: 200-500 Hz; honk/nasal: 500-1000 Hz.\n"
@@ -404,9 +473,9 @@ static inline QString build_fx_system_prompt(void)
 	  "The current values in the list are context only; you do not need to repeat effects that should stay unchanged.");
 }
 
-static inline QString build_fx_user_message(const QVector<FxParamState> &states, const QString &prompt)
+static inline QString build_fx_user_message(const QVector<FxParamState> &states, const QVector<FxPlugin> &plugins, const QVector<FxPlugin> &inserted_plugins, const QString &prompt)
 {
-	QString ret = "Tune the system effects of the current instrument.\n\n";
+	QString ret = "Tune the system effects of the current instrument, or add/remove an effect plugin when the request needs it.\n\n";
 	ret += "User request: " + fx_quote(prompt) + "\n\n";
 	ret += "Effect parameters (exact name; unit; allowed range; current value):\n";
 
@@ -454,8 +523,55 @@ static inline QString build_fx_user_message(const QVector<FxParamState> &states,
 		    + param.description + "\n";
 	}
 
+	ret += "\nAvailable effect plugins (exact name; type) that can be inserted after this instrument:\n";
+	if (plugins.isEmpty())
+	{
+		ret += "(no effect plugins are currently available)\n";
+	}
+	else
+	{
+		for (const FxPlugin &plugin : plugins)
+		{
+			ret += "- " + plugin.name + " [" + plugin.type_name + "]";
+			if (!plugin.container_name.isEmpty())
+				ret += " (container: " + plugin.container_name + ")";
+			ret += "\n";
+		}
+	}
+
+	ret += "\nEffect plugins currently inserted after this instrument (exact name; type):\n";
+	if (inserted_plugins.isEmpty())
+	{
+		ret += "(none)\n";
+	}
+	else
+	{
+		for (const FxPlugin &plugin : inserted_plugins)
+		{
+			ret += "- " + plugin.name + " [" + plugin.type_name + "]";
+			if (!plugin.container_name.isEmpty())
+				ret += " (container: " + plugin.container_name + ")";
+			ret += "\n";
+		}
+	}
+
+	ret += "\nThe container is only for disambiguation; include it in your reply only when needed for same-named plugins.";
+	ret += "\nIf no listed plugin can provide the requested effect, do not invent one. Leave \"add_plugins\" empty, set "
+	       "\"create_faust\" to a short description of the effect and \"create_faust_name\" to a short instrument name "
+	       "(e.g. \"Autotune\"), and explain that it is not currently available; the host will ask whether to create it "
+	       "with the 'Faust Dev 2' instrument.";
 	ret += "\nRemember: reply with only the JSON object. Values are absolute.";
 	return ret;
+}
+
+static inline QString build_fx_user_message(const QVector<FxParamState> &states, const QVector<FxPlugin> &plugins, const QString &prompt)
+{
+	return build_fx_user_message(states, plugins, QVector<FxPlugin>(), prompt);
+}
+
+static inline QString build_fx_user_message(const QVector<FxParamState> &states, const QString &prompt)
+{
+	return build_fx_user_message(states, QVector<FxPlugin>(), QVector<FxPlugin>(), prompt);
 }
 
 struct FxParseResult
@@ -465,13 +581,141 @@ struct FxParseResult
 	QString explanation;
 	QVector<FxChange> changes;
 	QVector<FxModulation> modulations;
+	QVector<FxPlugin> plugins;
+	QVector<FxPlugin> removed_plugins;
+	QString create_faust;
+	QString create_faust_name;
 	QStringList warnings;
 };
 
+// Parses one "add_plugins"/"remove_plugins" array and validates the entries
+// against 'catalog'. Type can be omitted when the name is unambiguous.
+// Matching ignores case, spaces and punctuation, so "Auto-Wah" finds
+// "Auto Wah".
+static inline void fx_parse_plugin_array(const QJsonValue &value,
+                                         const QVector<FxPlugin> &catalog,
+                                         const QString &array_name,
+                                         bool is_remove,
+                                         QVector<FxPlugin> &out,
+                                         QStringList &warnings)
+{
+	QHash<QString, const FxPlugin*> by_full_key;
+	QHash<QString, QVector<const FxPlugin*>> by_type_and_name;
+	QHash<QString, QVector<const FxPlugin*>> by_name;
+
+	auto get_type_and_name_key = [](const QString &type_name, const QString &name)
+	{
+		return fx_normalize_plugin_key(type_name) + "\n" + fx_normalize_plugin_key(name);
+	};
+
+	auto get_full_key = [&get_type_and_name_key](const FxPlugin &plugin)
+	{
+		return fx_normalize_plugin_key(plugin.container_name) + "\n" + get_type_and_name_key(plugin.type_name, plugin.name);
+	};
+
+	for (const FxPlugin &plugin : catalog)
+	{
+		by_full_key.insert(get_full_key(plugin), &plugin);
+		by_type_and_name[get_type_and_name_key(plugin.type_name, plugin.name)].append(&plugin);
+		by_name[fx_normalize_plugin_key(plugin.name)].append(&plugin);
+	}
+
+	QSet<QString> added;
+
+	for (const QJsonValue &plugin_value : value.toArray())
+	{
+		if (!plugin_value.isObject())
+		{
+			warnings.append(QString("Ignored a %1 entry that is not an object.").arg(array_name));
+			continue;
+		}
+
+		const QJsonObject plugin_object = plugin_value.toObject();
+		const QString name = plugin_object.value("name").toString().trimmed();
+		const QString type_name = plugin_object.value("type").toString().trimmed();
+		const QString container_name = plugin_object.value("container").toString().trimmed();
+		if (name.isEmpty())
+		{
+			warnings.append(QString("Ignored a %1 entry without a plugin name.").arg(array_name));
+			continue;
+		}
+
+		const FxPlugin *plugin = NULL;
+
+		if (!container_name.isEmpty())
+		{
+			FxPlugin requested;
+			requested.type_name = type_name;
+			requested.name = name;
+			requested.container_name = container_name;
+			plugin = by_full_key.value(get_full_key(requested), NULL);
+			if (plugin == NULL)
+			{
+				warnings.append(is_remove
+				                ? QString("Ignored '%1' (type '%2', container '%3'): no such effect plugin is inserted after this instrument.").arg(name, type_name, container_name)
+				                : QString("Ignored unknown effect plugin '%1' (type '%2', container '%3').").arg(name, type_name, container_name));
+				continue;
+			}
+		}
+		else if (!type_name.isEmpty())
+		{
+			const QVector<const FxPlugin*> matches = by_type_and_name.value(get_type_and_name_key(type_name, name));
+			if (matches.size() == 1)
+			{
+				plugin = matches.at(0);
+			}
+			else if (matches.isEmpty())
+			{
+				warnings.append(is_remove
+				                ? QString("Ignored '%1' (type '%2'): no such effect plugin is inserted after this instrument.").arg(name, type_name)
+				                : QString("Ignored unknown effect plugin '%1' (type '%2').").arg(name, type_name));
+				continue;
+			}
+			else
+			{
+				warnings.append(QString("Ignored effect plugin '%1' (type '%2'): several containers provide it; the container must be provided.").arg(name, type_name));
+				continue;
+			}
+		}
+		else
+		{
+			const QVector<const FxPlugin*> matches = by_name.value(fx_normalize_plugin_key(name));
+
+			if (matches.size() == 1)
+			{
+				plugin = matches.at(0);
+			}
+			else if (matches.isEmpty())
+			{
+				warnings.append(is_remove
+				                ? QString("Ignored '%1': no such effect plugin is inserted after this instrument.").arg(name)
+				                : QString("Ignored unknown effect plugin '%1'.").arg(name));
+				continue;
+			}
+			else
+			{
+				warnings.append(QString("Ignored effect plugin '%1': several plugins have that name; the type/container must be provided.").arg(name));
+				continue;
+			}
+		}
+
+		const QString key = get_full_key(*plugin);
+		if (added.contains(key))
+			continue;
+
+		added.insert(key);
+		out.append(*plugin);
+	}
+}
+
 // Parses and validates an LLM reply. Unknown effect names, non-numeric
 // values and out-of-range values are dropped or clamped (reported in
-// 'warnings'); all changes are converted to native units.
-static inline FxParseResult parse_fx_response(const QString &raw, const QVector<FxParamState> &states)
+// 'warnings'); all changes are converted to native units. Plugins must be
+// in the supplied catalogs; unknown plugins are dropped with a warning.
+static inline FxParseResult parse_fx_response(const QString &raw,
+                                              const QVector<FxParamState> &states,
+                                              const QVector<FxPlugin> &plugins,
+                                              const QVector<FxPlugin> &inserted_plugins)
 {
 	FxParseResult result;
 
@@ -495,9 +739,15 @@ static inline FxParseResult parse_fx_response(const QString &raw, const QVector<
 	const QJsonObject root = doc.object();
 	const QJsonValue changes_value = root.value("changes");
 	const QJsonValue modulators_value = root.value("modulators");
-	if (changes_value.isUndefined() && modulators_value.isUndefined())
+	const QJsonValue plugins_value = root.value("add_plugins");
+	const QJsonValue remove_plugins_value = root.value("remove_plugins");
+	const QJsonValue create_faust_value = root.value("create_faust");
+	const QJsonValue create_faust_name_value = root.value("create_faust_name");
+	if (changes_value.isUndefined() && modulators_value.isUndefined()
+	    && plugins_value.isUndefined() && remove_plugins_value.isUndefined()
+	    && create_faust_value.isUndefined())
 	{
-		result.error = "The JSON object has neither a 'changes' nor a 'modulators' array.";
+		result.error = "The JSON object has no action ('changes', 'modulators', 'add_plugins', 'remove_plugins' or 'create_faust').";
 		return result;
 	}
 	if (!changes_value.isUndefined() && !changes_value.isArray())
@@ -508,6 +758,26 @@ static inline FxParseResult parse_fx_response(const QString &raw, const QVector<
 	if (!modulators_value.isUndefined() && !modulators_value.isArray())
 	{
 		result.error = "'modulators' is not an array.";
+		return result;
+	}
+	if (!plugins_value.isUndefined() && !plugins_value.isArray())
+	{
+		result.error = "'add_plugins' is not an array.";
+		return result;
+	}
+	if (!remove_plugins_value.isUndefined() && !remove_plugins_value.isArray())
+	{
+		result.error = "'remove_plugins' is not an array.";
+		return result;
+	}
+	if (!create_faust_value.isUndefined() && !create_faust_value.isNull() && !create_faust_value.isString())
+	{
+		result.error = "'create_faust' is not a string.";
+		return result;
+	}
+	if (!create_faust_name_value.isUndefined() && !create_faust_name_value.isNull() && !create_faust_name_value.isString())
+	{
+		result.error = "'create_faust_name' is not a string.";
 		return result;
 	}
 
@@ -582,6 +852,14 @@ static inline FxParseResult parse_fx_response(const QString &raw, const QVector<
 		  order.append(key);
 		resolved.insert(key, change);
 	}
+
+	// Effect plugins to insert/remove ("add_plugins"/"remove_plugins").
+	// Matching ignores case, spacing and punctuation, so "Auto-Wah" works.
+	if (!plugins_value.isUndefined())
+		fx_parse_plugin_array(plugins_value, plugins, "add_plugins", false, result.plugins, result.warnings);
+
+	if (!remove_plugins_value.isUndefined())
+		fx_parse_plugin_array(remove_plugins_value, inserted_plugins, "remove_plugins", true, result.removed_plugins, result.warnings);
 
 	// Modulation actions ("modulators" array).
 	auto read_optional_double = [&result](const QJsonObject &object, const char *key, double *out) -> bool
@@ -681,12 +959,26 @@ static inline FxParseResult parse_fx_response(const QString &raw, const QVector<
 	}
 
 	result.explanation = root.value("explanation").toString().trimmed();
+	result.create_faust = create_faust_value.toString().trimmed();
+	result.create_faust_name = create_faust_name_value.toString().trimmed();
 
 	for (const QString &key : order)
 	  result.changes.append(resolved.value(key));
 
 	result.ok = true;
 	return result;
+}
+
+static inline FxParseResult parse_fx_response(const QString &raw,
+                                              const QVector<FxParamState> &states,
+                                              const QVector<FxPlugin> &plugins)
+{
+	return parse_fx_response(raw, states, plugins, QVector<FxPlugin>());
+}
+
+static inline FxParseResult parse_fx_response(const QString &raw, const QVector<FxParamState> &states)
+{
+	return parse_fx_response(raw, states, QVector<FxPlugin>(), QVector<FxPlugin>());
 }
 
 // If a band parameter is changed while its band is off, the change would be
@@ -770,16 +1062,118 @@ static inline QString fx_summarize_changes(const QVector<FxParamState> &states, 
 	return parts.join(", ");
 }
 
+static inline QString fx_plugin_display_name(const FxPlugin &plugin)
+{
+	QString ret = plugin.name + " (" + plugin.type_name;
+	if (!plugin.container_name.isEmpty())
+		ret += ", " + plugin.container_name;
+	ret += ")";
+	return ret;
+}
+
+// Turns a Faust effect description ("a smooth autotune effect with medium
+// retune speed") into a short instrument name ("Smooth autotune").
+static inline QString fx_make_faust_instrument_name(const QString &description)
+{
+	QString name = description.simplified();
+	if (name.isEmpty())
+		return "Faust Effect";
+
+	const QStringList articles = {"a ", "an ", "the "};
+	for (const QString &article : articles)
+	{
+		if (name.startsWith(article, Qt::CaseInsensitive))
+		{
+			name = name.mid(article.size());
+			break;
+		}
+	}
+
+	const QStringList cut_markers = {" with ", " using ", " for ", " that "};
+	for (const QString &marker : cut_markers)
+	{
+		const int pos = name.indexOf(marker, 0, Qt::CaseInsensitive);
+		if (pos > 0)
+		{
+			name = name.left(pos);
+			break;
+		}
+	}
+
+	const QStringList suffixes = {" effect", " plugin", " processor", " fx"};
+	for (const QString &suffix : suffixes)
+	{
+		if (name.endsWith(suffix, Qt::CaseInsensitive))
+		{
+			name.chop(suffix.size());
+			break;
+		}
+	}
+
+	name = name.trimmed();
+	while (!name.isEmpty() && (name.endsWith('.') || name.endsWith(',') || name.endsWith(';') || name.endsWith(':')))
+		name.chop(1);
+
+	name = name.trimmed();
+	if (name.isEmpty() || name.compare("effect", Qt::CaseInsensitive) == 0)
+		return "Faust Effect";
+
+	if (name.size() > 48)
+		name = name.left(48).trimmed();
+
+	name[0] = name[0].toUpper();
+	return name;
+}
+
+// A short summary of the effect plugins inserted by the reply.
+static inline QString fx_summarize_plugins(const QVector<FxPlugin> &plugins)
+{
+	QStringList names;
+	for (const FxPlugin &plugin : plugins)
+		names.append(fx_plugin_display_name(plugin));
+
+	if (names.isEmpty())
+		return QString();
+
+	return "Inserted " + names.join(", ");
+}
+
+// A short summary of the effect plugins removed by the reply.
+static inline QString fx_summarize_removed_plugins(const QVector<FxPlugin> &plugins)
+{
+	QStringList names;
+	for (const FxPlugin &plugin : plugins)
+		names.append(fx_plugin_display_name(plugin));
+
+	if (names.isEmpty())
+		return QString();
+
+	return "Removed " + names.join(", ");
+}
+
 // The GUI/instrument operations the session needs. Implemented by the
 // instrument widget.
 struct FxTuneSessionHost
 {
 	std::function<QVector<FxParamState>()> read_catalog;
-	// Applies the whole reply (effect value changes and modulation actions)
-	// as ONE undo step. May extend 'changes' with the extra changes it makes
-	// itself (e.g. enabling a band that was off), so the final status
-	// summary includes them.
-	std::function<bool(QVector<FxChange> &changes, const QVector<FxModulation> &modulations)> apply_reply;
+	// Effect plugins that can be inserted into the signal path. The host
+	// reads this from the plugin registry.
+	std::function<QVector<FxPlugin>()> read_plugin_catalog;
+	// Effect plugins currently inserted after this instrument, in chain
+	// order. The host reads this from the mixer graph.
+	std::function<QVector<FxPlugin>()> read_inserted_plugins;
+	// Applies the whole reply (effect value changes, modulation actions and
+	// plugin insertions/removals) as ONE undo step. May extend 'changes' with
+	// the extra changes it makes itself (e.g. enabling a band that was off),
+	// so the final status summary includes them.
+	std::function<bool(QVector<FxChange> &changes,
+	                   const QVector<FxModulation> &modulations,
+	                   const QVector<FxPlugin> &add_plugins,
+	                   const QVector<FxPlugin> &remove_plugins)> apply_reply;
+	// Asks the user whether to create a Faust Dev 2 instrument for an effect
+	// that no plugin can provide. Returns true if the user was asked (and the
+	// creation was started or declined), false on failure.
+	std::function<bool(const QString &description, const QString &name)> create_faust_effect;
 	std::function<void(const QString &text)> status;
 	std::function<void(const QString &message)> show_error;
 	std::function<void(bool busy)> set_busy;
@@ -853,7 +1247,10 @@ public:
 			return;
 		}
 
-		_user_message = build_fx_user_message(_states, trimmed);
+		_plugins = _host.read_plugin_catalog ? _host.read_plugin_catalog() : QVector<FxPlugin>();
+		_inserted_plugins = _host.read_inserted_plugins ? _host.read_inserted_plugins() : QVector<FxPlugin>();
+
+		_user_message = build_fx_user_message(_states, _plugins, _inserted_plugins, trimmed);
 		_repair_attempted = false;
 		request(_user_message, false);
 	}
@@ -898,7 +1295,7 @@ private:
 				          return;
 			          }
 
-			          FxParseResult parsed = parse_fx_response(result_or_error, _states);
+			          FxParseResult parsed = parse_fx_response(result_or_error, _states, _plugins, _inserted_plugins);
 
 			          if (!parsed.ok)
 			          {
@@ -908,8 +1305,8 @@ private:
 					          _repair_attempted = true;
 					          request(QString("Your previous reply could not be parsed: %1\n\n"
 					                          "Reply with ONLY a single valid JSON object using the schema "
-					                          "{\"changes\":[{\"name\":\"...\",\"value\":0}],\"explanation\":\"...\"} "
-					                          "and nothing else.").arg(parsed.error),
+					                          "{\"changes\":[{\"name\":\"...\",\"value\":0}],\"add_plugins\":[{\"name\":\"...\",\"type\":\"...\"}],"
+					                          "\"remove_plugins\":[{\"name\":\"...\",\"type\":\"...\"}],\"create_faust\":\"...\",\"explanation\":\"...\"} and nothing else.").arg(parsed.error),
 					                  true);
 					          return;
 				          }
@@ -924,7 +1321,9 @@ private:
 			          // requests have the full context.
 			          remember_turn(_user_message, result_or_error);
 
-			          if (parsed.changes.isEmpty() && parsed.modulations.isEmpty())
+			          if (parsed.changes.isEmpty() && parsed.modulations.isEmpty()
+			              && parsed.plugins.isEmpty() && parsed.removed_plugins.isEmpty()
+			              && parsed.create_faust.isEmpty())
 			          {
 				          if (_host.status)
 					          _host.status(parsed.explanation.isEmpty() ? QString("No changes made.") : parsed.explanation);
@@ -933,11 +1332,19 @@ private:
 
 			          QStringList summary_parts;
 
-			          if (_host.apply_reply && !_host.apply_reply(parsed.changes, parsed.modulations))
+			          if (_host.apply_reply && !_host.apply_reply(parsed.changes, parsed.modulations, parsed.plugins, parsed.removed_plugins))
 			          {
 				          if (_host.show_error)
 					          _host.show_error("Failed to apply the changes.");
 				          return;
+			          }
+
+			          if (!parsed.create_faust.isEmpty()){
+				          if (_host.create_faust_effect && !_host.create_faust_effect(parsed.create_faust, parsed.create_faust_name)){
+					          if (_host.show_error)
+						          _host.show_error("Failed to create the Faust Dev 2 effect.");
+					          return;
+				          }
 			          }
 
 			          if (!parsed.changes.isEmpty())
@@ -946,9 +1353,19 @@ private:
 			          if (!parsed.modulations.isEmpty())
 				          summary_parts.append(fx_summarize_modulations(parsed.modulations));
 
+			          if (!parsed.removed_plugins.isEmpty())
+				          summary_parts.append(fx_summarize_removed_plugins(parsed.removed_plugins));
+
+			          if (!parsed.plugins.isEmpty())
+				          summary_parts.append(fx_summarize_plugins(parsed.plugins));
+
 			          QString summary = summary_parts.join(". ");
 			          if (!parsed.explanation.isEmpty())
-				          summary += " - " + parsed.explanation;
+			          {
+				          if (!summary.isEmpty())
+					          summary += " - ";
+				          summary += parsed.explanation;
+			          }
 			          if (_host.status)
 				          _host.status(summary);
 		          },
@@ -970,6 +1387,8 @@ private:
 	std::shared_ptr<std::atomic_bool> _cancel;
 	QJsonArray _history;
 	QVector<FxParamState> _states;
+	QVector<FxPlugin> _plugins;
+	QVector<FxPlugin> _inserted_plugins;
 	QString _user_message;
 	bool _busy = false;
 	bool _repair_attempted = false;
