@@ -5,8 +5,9 @@
 #
 #     pure-data/bin/wish
 #
-# This is the Linux counterpart of build_tcltk_wish() in build.sh (macOS
-# Wish.app) and build_tcltk_wish_mingw.sh (Windows wish86.exe).
+# This is the Linux counterpart of build_tcltk_wish_darwin() in build.sh
+# (macOS Wish.app). Both build from the same two tarballs, so Linux and macOS
+# run the same Tcl/Tk version.
 #
 # The sources are vendored in this directory:
 #
@@ -16,6 +17,10 @@
 #                               which adds antialiased canvas lines (Cairo on
 #                               X11, GDI+ on Windows)
 #
+# The version is RADIUM_TCLTK_VERSION (default 9.1.1, set by build.sh), and the
+# tarball names above follow it. The macOS Wish.app is built from the very same
+# two tarballs, so bump them together.
+
 # Tcl/Tk are built statically (--disable-shared), so the installed wish only
 # depends on normal system libraries (Cairo, Xft, fontconfig, X11, ...). Tcl
 # and Tk's script libraries are embedded in zipfs, so only the wish executable
@@ -45,7 +50,7 @@ set -eEu
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-TCLTK_VERSION=9.1.1
+TCLTK_VERSION="${RADIUM_TCLTK_VERSION:-9.1.1}"
 TCL_DIR="tcl$TCLTK_VERSION"
 TK_DIR="tk$TCLTK_VERSION"
 TCL_TARBALL="$SCRIPT_DIR/tcl$TCLTK_VERSION-src.tar.gz"

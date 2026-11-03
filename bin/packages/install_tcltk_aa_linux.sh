@@ -37,6 +37,8 @@ is_antialiased_wish() {
 SRC="${PD2_TCLTK_AA_DIR:-${RADIUM_TCLTK_AA_DIR:-$HOME/tlc_tk_antialiased}}"
 WISH="${PD2_TCLTK_AA_WISH:-${RADIUM_TCLTK_AA_WISH:-}}"
 DEST="${PD2_LIBPD_DIR:+$PD2_LIBPD_DIR/pure-data}"
+TCLTK_VERSION="${RADIUM_TCLTK_VERSION:-9.1.1}"
+TCLTK_MAJOR_MINOR="${TCLTK_VERSION%.*}"
 
 while [ $# -gt 0 ] ; do
     case "$1" in
@@ -80,7 +82,7 @@ fi
 if [ -z "$WISH" ] ; then
     # Prefer the installed copy: it is stripped and is what "make install"
     # produced, while tk/unix/wish may be an older in-tree build.
-    for candidate in "$SRC/install/bin/wish9.1" "$SRC/tk/unix/wish" ; do
+    for candidate in "$SRC/install/bin/wish$TCLTK_MAJOR_MINOR" "$SRC/tk/unix/wish" ; do
         if [ -x "$candidate" ] ; then
             WISH="$candidate"
             break
@@ -117,7 +119,7 @@ chmod 755 "$DEST/bin/wish"
 
 # Remove a versioned copy left over from an earlier layout, so nothing
 # accidentally loads a different Tcl/Tk.
-rm -f "$DEST/bin/wish9.1"
+rm -f "$DEST/bin/wish$TCLTK_MAJOR_MINOR"
 
 echo "Installed:"
 echo "  $DEST/bin/wish"

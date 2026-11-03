@@ -3,6 +3,13 @@
 set -eEu
 #set -x
 
+# Version of the vendored Tcl/Tk sources in this directory. The Linux wish
+# (build_tcltk_wish_linux.sh) and the macOS Wish.app (build_tcltk_wish_darwin)
+# are both built from the same tarballs, so both platforms run the same Tcl/Tk.
+# Sources: tcl$RADIUM_TCLTK_VERSION-src.tar.gz and
+#          tk$RADIUM_TCLTK_VERSION-aa-src.tar.gz
+export RADIUM_TCLTK_VERSION=9.1.1
+
 setup_build_environment() {
 
 	export PYTHONEXE_NOT_AVAILABLE_YET=1
@@ -210,15 +217,10 @@ build_libpd() {
         # builds (via the /tmp/radium_bin/packages symlink) and for Radium.app.
         LIBPD_LINK_FLAGS="$LIBPD_LINK_FLAGS -Wl,-install_name,@executable_path/packages/libpd/libs/libpd.dylib"
 
-        # The Mac GUI needs Tcl/Tk 8.6. The system /usr/bin/wish is Tk 8.5,
-        # which is killed by newer versions of MacOS, so let sys_startgui()
-        # try one of these first. WISH must expand to a C string literal.
-        for wish in /opt/local/libexec/tk-quartz/wish8.6 /opt/local/bin/wish8.6 /opt/homebrew/bin/wish8.6 ; do
-            if [ -x "$wish" ] ; then
-                LIBPD_DEBUG_FLAGS="$LIBPD_DEBUG_FLAGS -DWISH='\"$wish\"'"
-                break
-            fi
-        done
+        # The Mac GUI only runs the self-contained Tcl/Tk 9.1 Wish.app built by
+        # build_tcltk_wish_darwin (see libpd patch 16-macos-wish-app.patch).
+        # Never fall back to a wish installed on the machine: the system
+        # /usr/bin/wish is Tk 8.5, which is killed by newer versions of MacOS.
     else
         LIBPD_TARGET=$(${CC:-cc} -dumpmachine 2>/dev/null || true)
         case "$LIBPD_TARGET" in
@@ -244,22 +246,30 @@ build_libpd() {
 
 # Build the self-contained Wish.app that the Pd2 instrument uses to show the
 # Pd GUI (tcl/pd-gui.tcl). It is installed as libpd/Wish.app, next to the
-# pure-data directory, where the patched sys_startgui() looks for it before
-# falling back to a Wish/Tcl-Tk installed on the machine.
+# pure-data directory, and is the only wish the Pd2 GUI is allowed to run
+# (see libpd patch 16-macos-wish-app.patch).
 #
 # wish is just the Tk shell, so this bundles both Tcl (interpreter + script
 # library) and Tk (widgets + script library) as frameworks inside the app,
 # built from the pinned tarballs. The "embedded" make targets are the ones
 # pure-data uses (see pure-data/mac/tcltk-wish.sh).
 #
+# The same Tcl/Tk version (RADIUM_TCLTK_VERSION, see the top of this file) is
+# used by the Linux wish, and the Tk tarball is the antialiased Radium fork;
+# its Cairo/GDI+ canvas code is not compiled on macOS, so Aqua builds the
+# stock Tk rendering.
+#
 # The build is universal (x86_64+arm64) with the same macOS deployment target
 # as the rest of Radium, since create_app.sh checks every Mach-O file in the
 # app bundle.
 build_tcltk_wish_darwin() {
 
-    # Note: the framework dir is "Versions/8.6" for all 8.6.x releases.
-    TCLTK_VERSION=8.6.17
-    TCLTK_FRAMEWORK_VERSION=8.6
+    # Same Tcl/Tk version as the Linux wish. Note: the framework dir is
+    # "Versions/9.1" for all 9.1.x releases, hence the major.minor version.
+    TCLTK_VERSION="${RADIUM_TCLTK_VERSION:-9.1.1}"
+    TCLTK_FRAMEWORK_VERSION="${TCLTK_VERSION%.*}"
+    TCL_TARBALL="`pwd`/tcl$TCLTK_VERSION-src.tar.gz"
+    TK_TARBALL="`pwd`/tk$TCLTK_VERSION-aa-src.tar.gz"
     WISH_DIR="`pwd`/tcltk-wish-embedded"
     WISH_APP="`pwd`/libpd/Wish.app"
 
@@ -270,8 +280,8 @@ build_tcltk_wish_darwin() {
 
     rm -rf tcl$TCLTK_VERSION tk$TCLTK_VERSION "$WISH_DIR" build
 
-    tar xvzf tcl$TCLTK_VERSION-src.tar.gz
-    tar xvzf tk$TCLTK_VERSION-src.tar.gz
+    tar xvzf "$TCL_TARBALL"
+    tar xvzf "$TK_TARBALL"
 
     CFLAGS="$DARWIN_ARCH_FLAGS $DARWIN_MIN_FLAGS" make -C tcl$TCLTK_VERSION/macosx embedded
     CFLAGS="$DARWIN_ARCH_FLAGS $DARWIN_MIN_FLAGS" make -C tk$TCLTK_VERSION/macosx embedded
@@ -280,6 +290,16 @@ build_tcltk_wish_darwin() {
 
     rm -rf "$WISH_APP"
     cp -a "$WISH_DIR/Applications/Utilities/Wish.app" "$WISH_APP"
+
+    # Fail here instead of producing a bundle whose frameworks Tcl/Tk cannot
+    # load, e.g. after a version bump that forgets to update the framework
+    # version above.
+    for framework in Tcl Tk ; do
+        if [ ! -d "$WISH_APP/Contents/Frameworks/$framework.framework/Versions/$TCLTK_FRAMEWORK_VERSION" ]; then
+            echo "build_tcltk_wish: $framework.framework/Versions/$TCLTK_FRAMEWORK_VERSION is missing from $WISH_APP" >&2
+            exit 1
+        fi
+    done
 
     # Tk's install-embedded is supposed to point the Wish binary to the
     # frameworks inside the app, but its install_name_tool invocation fails

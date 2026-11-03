@@ -430,6 +430,22 @@ bool libpds2_show_gui(pd_t *pd)
 			return false;
 		}
 	}
+#elif defined(__APPLE__)
+	{
+		// The Pd GUI on macOS only runs the self-contained Wish.app bundled
+		// next to the pure-data directory (see libpd patch
+		// 16-macos-wish-app.patch and build_tcltk_wish_darwin in
+		// bin/packages/build.sh). Never fall back to a Tcl/Tk installed on the
+		// machine. Check it up front: if it starts but exits without
+		// connecting, libpd_start_gui() would block forever in accept().
+		char wish_path[1040];
+		snprintf(wish_path, sizeof(wish_path), "%s/../Wish.app/Contents/MacOS/Wish", pd->libdir);
+		if (access(wish_path, X_OK) != 0)
+		{
+			set_error("Unable to start the Pd GUI: can't find the bundled Wish.app (run bin/packages/build.sh).");
+			return false;
+		}
+	}
 #elif defined(_WIN32)
 	{
 		// sys_startgui() on Windows runs <libdir>/bin/wish86.exe (see
