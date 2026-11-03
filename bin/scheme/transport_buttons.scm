@@ -119,6 +119,38 @@
          (assert #f))))
 
 
+;; Returns the ra commands a transport button can invoke. Used to add the
+;; common keybinding configuration entries to the button's popup menu.
+(define (transport-get-keybinding-funcnames kind)
+  (cond ((eq? kind 'stop)
+         '("ra:play-stop"))
+        ((eq? kind 'block-start)
+         '("ra:play-block-from-start"))
+        ((eq? kind 'song-start)
+         '("ra:play-song-from-start"))
+        ((eq? kind 'block-current)
+         '("ra:play-block-from-current"
+           "ra:pause-playing"
+           "ra:continue-playing"))
+        ((eq? kind 'song-current)
+         '("ra:play-song-from-current-sequencer-position"
+           "ra:pause-playing"
+           "ra:continue-playing"))
+        (else
+         (assert #f))))
+
+;; The common popup menu entries used for buttons: keybinding configuration
+;; for the commands the button runs, followed by the keybinding help.
+(define (show-transport-button-popup-menu kind)
+  (popup-menu
+   (apply append
+          (map (lambda (funcname)
+                 (get-keybinding-configuration-popup-menu-entries funcname '() ""))
+               (transport-get-keybinding-funcnames kind)))
+   "-------------"
+   "Help keybindings" show-keybinding-help-window))
+
+
 (def-area-subclass (<transport-buttons-area> :gui :x1 :y1 :x2 :y2
                                              :paint-border #f
                                              :background-color *transport-background-color*)
@@ -231,6 +263,8 @@
              :text ""
              :background-color *transport-button-color*
              :statusbar-text statusbar-text
+             :right-mouse-clicked-callback (lambda ()
+                                             (show-transport-button-popup-menu kind))
              :callback-release (lambda ()
                                  (click kind))))
     (add-sub-area-plain! transport-button)
