@@ -1028,6 +1028,7 @@ FROM_C-show-select-instrument-right-click
   (my-require 'sequencer_upper_part.scm)
   (my-require 'seqtrack-headers.scm)
   (my-require 'seqtracks_config.scm)
+  (my-require 'transport_buttons.scm)
   (my-require 'sequencer_right_part.scm)
   (my-require 'seqblock-paint.scm)
   (my-require 'seqblock_audio.scm)

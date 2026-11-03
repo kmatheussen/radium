@@ -769,16 +769,37 @@
   
 (def-area-subclass (<block-and-playlist-area> :gui :x1 :y1 :x2 :y2 :state)
 
-  (define button-height (round (min (/ height 4)
+  (define button-height (round (min (/ height 5)
                                     (* 0.8 (get-fontheight)))))
 
   (define button-mid (average x1 x2))
+
+  (define transport-gap-height (max 1 (round (* button-height 0.15))))
+
+  (define transport-margin (max 1 (round (* button-height 0.1))))
+  (define transport-row-height (* 2 button-height))
+  (define transport-height (+ (* 3 transport-row-height)
+                              (* 2 *transport-button-gap*)
+                              (* 2 *transport-border-padding*)))
   
-  (define list-height (/ (- height
-                            (* button-height 2))
-                         2))
+  (define list-height (max 1
+                          (/ (- height
+                                transport-margin
+                                transport-height
+                                (* button-height 2)
+                                transport-gap-height
+                                1)
+                             2)))
+
+  (define transport-x1 (+ x1 transport-margin))
+  (define transport-x2 (- x2 transport-margin))
+  (define transport-y1 (+ y1 transport-margin))
+  (define transport-y2 (+ transport-y1 transport-height))
+
+  (define transport-gap-y1 transport-y2)
+  (define transport-gap-y2 (+ transport-gap-y1 transport-gap-height))
   
-  (define blocklist-y1 y1)
+  (define blocklist-y1 transport-gap-y2)
   (define blocklist-y2 (+ blocklist-y1 list-height))
   
   (define insert/remove-y1 blocklist-y2)
@@ -804,6 +825,11 @@
 
   (define playlist (create-playlist-area gui x1 playlist-y1 x2 playlist-y2 #f))
   (set! *playlist-area* playlist)
+
+  (define transport (<new> :transport-buttons-area gui
+                           transport-x1 transport-y1
+                           transport-x2 transport-y2
+                           :paint-border #t))
 
   ;;(c-display blocklist-y1 blocklist-y2 playlist-y1 playlist-y2 "button-height:" button-height ". list-height:" list-height ". y1/y2:" y1 y2)
 
@@ -851,6 +877,7 @@
 
   
   (add-sub-area-plain! blocklist)
+  (add-sub-area-plain! transport)
   (add-sub-area-plain! playlist)
 
   ;;(<gui> :set-background-color gui "low_background") doesn't work on osx. (really strange)

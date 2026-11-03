@@ -24,6 +24,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "OS_Player_proc.h"
 #include "threading.h"
 #include "placement_proc.h"
+#include "wblocks_proc.h"
+
+#include "../api/api_common_proc.h"
 
 #include "player_pause_proc.h"
 
@@ -46,6 +49,13 @@ static bool g_was_playing_range = false;
 static DEFINE_ATOMIC(int, g_pause_realline) = 0;
 static DEFINE_ATOMIC(int, g_pause_blocknum) = 0;
 static int64_t g_pause_song_abstime = 0;
+
+static bool g_transport_paused = false;
+static int g_transport_paused_playtype = 0;
+static double g_transport_paused_song_abstime = 0.0;
+static bool g_transport_paused_was_range = false;
+static int g_transport_paused_realline = 0;
+static int g_transport_paused_blocknum = 0;
 
 // Called from the realtime thread.
 void PC_Pause_set_pos(int blocknum, int realline){
@@ -181,4 +191,62 @@ void PC_StopPauseAtCurrCursorPos(struct Tracker_Windows *window){
 
 void PC_StopPause_ForcePlayBlock(struct Tracker_Windows *window){
   stop_pause(window, false, true);
+}
+
+
+bool PC_isTransportPaused(void){
+  return g_transport_paused;
+}
+
+int PC_getTransportPausedPlaytype(void){
+  return g_transport_paused_playtype;
+}
+
+void PC_clearTransportPaused(void){
+  g_transport_paused = false;
+}
+
+void PC_PauseTransport(void){
+  R_ASSERT(THREADING_is_main_thread());
+
+  if (!is_playing() || g_transport_paused)
+    return;
+
+  g_transport_paused_playtype = pc->playtype;
+  g_transport_paused_was_range = pc->is_playing_range;
+  g_transport_paused_song_abstime = ATOMIC_DOUBLE_GET(pc->song_abstime);
+  g_transport_paused_realline = ATOMIC_GET(g_pause_realline);
+  g_transport_paused_blocknum = ATOMIC_GET(g_pause_blocknum);
+
+  PlayStop();
+
+  g_transport_paused = true;
+}
+
+void PC_ContinueTransport(void){
+  R_ASSERT(THREADING_is_main_thread());
+
+  if (!g_transport_paused)
+    return;
+
+  g_transport_paused = false;
+
+  if (g_transport_paused_playtype == PLAYSONG) {
+    PlaySong(g_transport_paused_song_abstime);
+  } else {
+    struct Tracker_Windows *window;
+    struct WBlocks *wblock = getWBlockFromNumA(-1, &window, g_transport_paused_blocknum);
+    if (wblock == NULL)
+      return;
+
+    if (window->wblock != wblock)
+      SelectWBlock(window, wblock, false);
+
+    const Place *place = get_place_from_realline(wblock, g_transport_paused_realline);
+
+    if (g_transport_paused_was_range)
+      PlayRangeCurrPos2(window, place);
+    else
+      PlayBlockCurrPos2(window, place);
+  }
 }

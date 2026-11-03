@@ -1249,6 +1249,7 @@
 
 (def-area-subclass (<button> :gui :x1 :y1 :x2 :y2
                              :paint-func #f
+                             :icon-paint-func #f
                              :text ""
                              :background-color #f
                              :statusbar-text #f
@@ -1335,7 +1336,9 @@
   (define-override (paint)
     (if paint-func
         (paint-func gui x1 y1 x2 y2)
-        (mypaint)))
+        (mypaint))
+    (if icon-paint-func
+        (icon-paint-func gui x1 y1 x2 y2 is-hovering (is-pressing?))))
 
   (if statusbar-text
       (add-statusbar-text-handler statusbar-text))

@@ -1,3 +1,14 @@
+Changes 8.2.55 -> 8.2.57:
+* Pd2: Include AA-patched versions of Tcl/Tk on Linux and Windows
+  to support antialiased graphics, similar to macOS.
+* Colors: Ensure the default colors follow the shipped palette.
+* Mixer: Decrease startup time of the "instruments/effects" sub
+  menu. It's still slow the first time though.
+* Instrument widget: Add a "Mixer strip visible" section all the
+  way to the right. Disabled by default.
+  
+
+
 Changes 8.2.52 -> 8.2.55:
 * Windows: Support the Pd2 instrument.
 * Linux: Include missing OpenGL libraries in binary builds.

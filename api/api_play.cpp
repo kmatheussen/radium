@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA. */
 #include "../common/nsmtracker.h"
 #include "../common/playerclass.h"
 #include "../common/player_proc.h"
+#include "../common/player_pause_proc.h"
 #include "../common/OS_Player_proc.h"
 #include "../common/time_proc.h"
 #include "../common/realline_calc_proc.h"
@@ -129,6 +130,26 @@ void playStop(void){
   PlayStop();
 }
 
+void pausePlaying(void){
+  PC_PauseTransport();
+}
+
+void continuePlaying(void){
+  PC_ContinueTransport();
+}
+
+bool isPaused(void){
+  return PC_isTransportPaused();
+}
+
+bool isPausedBlock(void){
+  return PC_isTransportPaused() && PC_getTransportPausedPlaytype()==PLAYBLOCK;
+}
+
+bool isPausedSong(void){
+  return PC_isTransportPaused() && PC_getTransportPausedPlaytype()==PLAYSONG;
+}
+
 void volumeUp(void){
   PLAYER_volumeUp(1);
 }
@@ -152,6 +173,14 @@ bool isPlayingBlock(void){
 
 bool isPlayingSong(void){
   return isPlaying() && pc->playtype==PLAYSONG;
+}
+
+bool lastPlayWasBlock(void){
+  return pc->playtype==PLAYBLOCK;
+}
+
+bool lastPlayWasSong(void){
+  return pc->playtype==PLAYSONG;
 }
 
 double lineDuration(int line, int tracknum, int blocknum, int windownum){

@@ -1104,8 +1104,16 @@
    "Help keybindings" show-keybinding-help-window
    ))
 
+(define (show-undo-history)
+  (<ra> :add-message
+        (<-> "<pre>"
+             (<ra> :get-html-from-text (<ra> :get-undo-history))
+             "</pre>")))
+
 (define (FROM_C-show-bottom-bar-undo-popup-menu)
   (popup-menu
+   "Show undo history" show-undo-history
+   "-------------"
    (get-keybinding-configuration-popup-menu-entries "ra:undo"
                                                     '()
                                                     "")
@@ -1115,6 +1123,8 @@
 
 (define (FROM_C-show-bottom-bar-redo-popup-menu)
   (popup-menu
+   "Show undo history" show-undo-history
+   "-------------"
    (get-keybinding-configuration-popup-menu-entries "ra:redo"
                                                     '()
                                                     "")
