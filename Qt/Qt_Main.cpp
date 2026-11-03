@@ -5286,6 +5286,17 @@ static QString W_getApplicationDirectory(void)
 #endif // defined(RELEASE) && defined(FOR_WINDOWS)
 
 
+static void radium_atexit_handler(void)
+{
+	// We can get here from exit() in the middle of startup (e.g. when a data
+	// directory is missing). The static DiskPeaksThread destructor must not
+	// find the thread running (QThread would qFatal), and message boxes must
+	// not be spawned while Qt's statics are being torn down.
+	g_qt_is_running = false;
+	DISKPEAKS_stop();
+}
+
+
 int main(int argc, char **argv){
   //return 0;
 
@@ -5549,6 +5560,8 @@ int main(int argc, char **argv){
   R_ASSERT(THREADING_is_main_thread());
   
   g_qt_is_running = true;
+
+  atexit(radium_atexit_handler);
 
   determine_dpi_and_gfx_scale();
 
