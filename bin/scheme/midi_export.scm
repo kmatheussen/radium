@@ -19,6 +19,14 @@
   :tick
   :bpm)
 
+;; Convert tempo tick-map entries to Set Tempo MIDI events.
+(define (tick-map->tempo-events tick-map)
+  (map (lambda (entry)
+         (make-midi-event :stime (entry :stime)
+                          :type 'tempo
+                          :data (list (entry :bpm))))
+       tick-map))
+
   
 ;; ============================================================
 ;; MIDI channel clash detection
@@ -213,7 +221,10 @@
                (points '()))
       (if (>= i (<ra> :num-bpms blocknum))
           (if (or (null? points)
-                  (> ((car points) :stime) start-stime))
+                  ;; 'points' is reversed, so 'last' is the earliest point.
+                  ;; A point exactly at start-stime is already there when the
+                  ;; block has a tempo node at its start.
+                  (not (= ((last points) :stime) start-stime)))
               (cons (make-tempo-point :stime start-stime  ;; Ensure a tempo point at start-stime
                                       :bpm (* (<ra> :get-main-bpm)
                                               (<ra> :get-reltempo blocknum)))
@@ -325,6 +336,138 @@
                         tempos))
 
   (cons tempo-events tick-map))
+
+
+;; Returns the earliest song start time of the current block among all its
+;; seqblock placements, or #f if the block is not placed in the sequencer.
+(define (get-current-block-seqblock-start-stime)
+  (define blocknum (<ra> :current-block))
+  (let outer ((seqtracknum 0)
+              (best #f))
+    (if (>= seqtracknum (<ra> :get-num-seqtracks))
+        best
+        (let inner ((seqblocknum 0)
+                    (best best))
+          (if (>= seqblocknum (<ra> :get-num-seqblocks seqtracknum))
+              (outer (1+ seqtracknum) best)
+              (let ((start (<ra> :get-seqblock-start-time seqblocknum seqtracknum)))
+                (inner (1+ seqblocknum)
+                       (if (and (= (<ra> :get-seqblock-blocknum seqblocknum seqtracknum)
+                                   blocknum)
+                                (or (not best)
+                                    (< start best)))
+                           start
+                           best))))))))
+
+
+;; Build a tempo tick map for the current block from the sequencer timing
+;; track, anchored at the block's earliest seqblock position: tick 0 is the
+;; block start, and only tempo changes within the block are kept.
+;; Returns (tempo-events . tempo-tick-map).
+(define (build-anchored-sequencer-tempo-map pfreq start-stime block-length)
+  ;; ra:get-all-sequencer-tempos returns a dynvec, which s7 hands us as a
+  ;; vector, so convert it before walking it with car/cdr.
+  (define tempos (vector->list (<ra> :get-all-sequencer-tempos)))
+
+  ;; The tempo node active at start-stime, and the cumulative tick there.
+  (define anchor
+    (let loop ((remaining tempos)
+               (prev #f))
+      (if (null? remaining)
+          prev
+          (if (<= ((car remaining) :time) start-stime)
+              (loop (cdr remaining) (car remaining))
+              prev))))
+  (define anchor-bpm (if anchor
+                         (anchor :bpm)
+                         (<ra> :get-main-bpm)))
+  (define anchor-tick-exact
+    (if anchor
+        (+ (* (anchor :num_quarters) *midi-pulses-per-quarter-note*)
+           (/ (* (- start-stime (anchor :time))
+                 (anchor :bpm)
+                 *midi-pulses-per-quarter-note*)
+              (* 60 pfreq)))
+        0))
+
+  ;; Anchored tick map entries, clipped to the block length.
+  (define tick-map
+    (keep (lambda (entry)
+            (<= (entry :stime) block-length))
+          (let loop ((tempos (keep (lambda (tempo)
+                                     (>= (tempo :time) start-stime))
+                                   tempos))
+                     (entries '()))
+            (if (null? tempos)
+                (reverse entries)
+                (let* ((tempo (car tempos))
+                       (tick-exact (- (* (tempo :num_quarters) *midi-pulses-per-quarter-note*)
+                                      anchor-tick-exact)))
+                  (loop (cdr tempos)
+                        (cons (make-tick-map-entry :stime (- (tempo :time) start-stime)
+                                                   :tick tick-exact
+                                                   :bpm (tempo :bpm))
+                              entries)))))))
+
+  ;; Ensure an entry at tick 0 (needed by stime-to-ticks for stimes before
+  ;; the first sequencer tempo change after the block start).
+  (define tick-map-with-start
+    (if (and (not (null? tick-map))
+             (= ((car tick-map) :stime) 0))
+        tick-map
+        (cons (make-tick-map-entry :stime 0
+                                   :tick 0
+                                   :bpm anchor-bpm)
+              tick-map)))
+
+  (define tempo-events (tick-map->tempo-events tick-map-with-start))
+
+  (cons tempo-events tick-map-with-start))
+
+
+;; Build signature events for the current block from the sequencer timing
+;; track, anchored at the block's earliest seqblock position and clipped to
+;; the block length.
+(define (build-anchored-sequencer-signature-events start-stime block-length)
+  ;; ra:get-all-sequencer-signatures returns a dynvec, which s7 hands us as a
+  ;; vector, so convert it before walking it with car/cdr.
+  (define signatures (vector->list (<ra> :get-all-sequencer-signatures)))
+
+  ;; The signature active at start-stime.
+  (define anchor-sig
+    (let loop ((remaining signatures)
+               (prev #f))
+      (if (null? remaining)
+          prev
+          (if (<= ((car remaining) :time) start-stime)
+              (loop (cdr remaining) (car remaining))
+              prev))))
+
+  (define anchored-signatures
+    (keep (lambda (sig)
+            (and (>= (sig :time) start-stime)
+                 (<= (- (sig :time) start-stime) block-length)))
+          signatures))
+
+  (define events
+    (map (lambda (sig)
+           (make-midi-event :stime (- (sig :time) start-stime)
+                            :type 'signature
+                            :data (list (sig :numerator) (sig :denominator))))
+         anchored-signatures))
+
+  ;; Ensure a signature at the block start.
+  (if (and (not (null? anchored-signatures))
+           (= ((car anchored-signatures) :time) start-stime))
+      events
+      (cons (make-midi-event :stime 0
+                             :type 'signature
+                             :data (if anchor-sig
+                                       (list (anchor-sig :numerator)
+                                             (anchor-sig :denominator))
+                                       (list (<ra> :get-main-signature-numerator)
+                                             (<ra> :get-main-signature-denominator))))
+            events)))
 
 #!!
 (build-song-tempo-tick-map-from-sequencer-timing (<ra> :get-sample-rate))
@@ -779,22 +922,57 @@
   (define use-sequencer (<ra> :is-using-sequencer-timing))
   (define include-conductor (not use-sequencer))
 
-  ;; Song-wide tempo tick map
-  (define song-tempo-result (if use-sequencer
-                                (build-song-tempo-tick-map-from-sequencer-timing pfreq)
-                                (build-song-tempo-tick-map seqtracknum pfreq)))
+  ;; For current block export, the block's earliest seqblock position
+  ;; anchors the sequencer timing curve (the block's own tempo nodes are
+  ;; ignored in sequencer timing mode). #f if the block is not placed in
+  ;; the sequencer, in which case tick 0 means song start.
+  (define current-block-start-stime
+    (and *midi-export-current-block*
+         (get-current-block-seqblock-start-stime)))
+
+  ;; Length of the current block (unused for song export).
+  (define current-block-length
+    (and *midi-export-current-block*
+         (<ra> :get-block-length -1)))
+
+  ;; Tempo tick map. Song export: song-wide (seqtrack 0 blocks, or the
+  ;; sequencer timing track). Current block export: the block's own tempo
+  ;; nodes (non-sequencer mode), or the sequencer tempo curve anchored at
+  ;; the block's position (sequencer mode), since its notes are
+  ;; block-relative. If the block is not placed in the sequencer, the
+  ;; sequencer curve is anchored at song start instead, so the notes still
+  ;; get a block-relative tempo curve.
+  (define song-tempo-result
+    (cond ((and use-sequencer *midi-export-current-block*)
+           (build-anchored-sequencer-tempo-map pfreq
+                                               (or current-block-start-stime 0)
+                                               current-block-length))
+          (use-sequencer
+           (build-song-tempo-tick-map-from-sequencer-timing pfreq))
+          (*midi-export-current-block*
+           (let ((tick-map (build-tempo-tick-map -1 pfreq 0)))
+             (cons (tick-map->tempo-events tick-map)
+                   tick-map)))
+          (else
+           (build-song-tempo-tick-map seqtracknum pfreq))))
   (define song-tempo-events (car song-tempo-result))
   (define song-tempo-tick-map (cdr song-tempo-result))
 
-  ;; Song-wide signature events from sequencer timing
+  ;; Signature events from sequencer timing. Song export: song-wide.
+  ;; Current block export: anchored at the block's position (or song start
+  ;; if it is not placed in the sequencer) and clipped to the block length.
   (define song-signature-events
-    (if use-sequencer
-        (map (lambda (sig)
-               (make-midi-event :stime (sig :time)
-                                :type 'signature
-                                :data (list (sig :numerator) (sig :denominator))))
-             (<ra> :get-all-sequencer-signatures))
-        '()))
+    (cond ((and use-sequencer *midi-export-current-block*)
+           (build-anchored-sequencer-signature-events (or current-block-start-stime 0)
+                                                      current-block-length))
+          (use-sequencer
+           (map (lambda (sig)
+                  (make-midi-event :stime (sig :time)
+                                   :type 'signature
+                                   :data (list (sig :numerator) (sig :denominator))))
+                (<ra> :get-all-sequencer-signatures)))
+          (else
+           '())))
 
   ;; Define blocknums
   (define blocknums (if *midi-export-current-block*
