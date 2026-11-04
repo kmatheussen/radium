@@ -1,3 +1,18 @@
+Changes 8.2.57 -> 8.2.59:
+* Pd2: Only use included tcl/tk. Also use tcl/tl 9.1 on macos.
+* Some export MIDI file adjustments.
+* Fix possible crash if program couldn't finish initialization.
+* Audio: Fix seemingly rare crash during startup introduced
+  in V8.2.52.
+* Gui: Add "Show undo history" entry to the undo/redo button
+  popup menus.
+* Gui: Add a transport bar above the playlist.
+* API: pausePlaying, continuePlaying, lastPlayWasBlock,
+  lastPlayWasSong, isPaused, isPausedBlock, isPausedSong,
+  refreshGraphics.
+
+
+
 Changes 8.2.55 -> 8.2.57:
 * Pd2: Include AA-patched versions of Tcl/Tk on Linux and Windows
   to support antialiased graphics, similar to macOS.
