@@ -2707,13 +2707,13 @@
   ;;(define total-fixed-height-without-pan (+ name-height mutesolo-height (if (<ra> :mixer-strip-comments-visible) comment-height 0)))
   ;;(define total-fixed-height-with-pan (+ total-fixed-height-without-pan pan-height))
   
+  (when (and is-standalone-mixer-strip (not is-in-instrument-widget))
+    (<gui> :add gui (create-select-current-instrument-button #f)))
+
   (when (not is-in-instrument-widget)
     (define name (create-mixer-strip-name instrument-id strips-config #f is-standalone-mixer-strip))
     (set-fixed-height name name-height)
     (<gui> :add gui name))
-
-  (when (and is-standalone-mixer-strip (not is-in-instrument-widget))
-    (<gui> :add gui (create-select-current-instrument-button #f)))
 
   (define mixer-strip-path-gui (<gui> :vertical-scroll #f))
   ;;(<gui> :set-layout-spacing mixer-strip-path-gui 5 5 5 5 5)
