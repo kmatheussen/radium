@@ -140,6 +140,7 @@ FROM_C-create-editor-lower-part-gui
 FROM_C-reconfigure-sequencer-left-part
 FROM_C-reconfigure-sequencer-right-part
 FROM_C-reconfigure-sequencer-timing-part
+FROM_C-set-transport-bar-top-gap
 mid-horizontal-layout
 FROM_C-create-mixer-strips-gui
 FROM_C-mixer-strips-get-num-rows

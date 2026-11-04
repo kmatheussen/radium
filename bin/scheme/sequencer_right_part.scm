@@ -766,7 +766,18 @@
        (<ra> :set-curr-playlist-pos new-pos)
        #f))))
 
-  
+;; Extra empty space above the transport bar. Set by C++ when the main window
+;; is full screen on a mac display with a notch that would otherwise cover
+;; the transport bar.
+(define *transport-bar-top-gap* 0)
+
+(define (FROM_C-set-transport-bar-top-gap gap)
+  (when (not (equal? gap *transport-bar-top-gap*))
+    (set! *transport-bar-top-gap* gap)
+    (when *block-and-playlist-area*
+      (*block-and-playlist-area* :recreate))))
+
+
 (def-area-subclass (<block-and-playlist-area> :gui :x1 :y1 :x2 :y2 :state)
 
   (define button-height (round (min (/ height 5)
@@ -785,6 +796,7 @@
   (define list-height (max 1
                           (/ (- height
                                 transport-margin
+                                *transport-bar-top-gap*
                                 transport-height
                                 (* button-height 2)
                                 transport-gap-height
@@ -793,7 +805,7 @@
 
   (define transport-x1 (+ x1 transport-margin))
   (define transport-x2 (- x2 transport-margin))
-  (define transport-y1 (+ y1 transport-margin))
+  (define transport-y1 (+ y1 transport-margin *transport-bar-top-gap*))
   (define transport-y2 (+ transport-y1 transport-height))
 
   (define transport-gap-y1 transport-y2)
