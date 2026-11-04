@@ -94,6 +94,13 @@ struct FaustDev2PolyVoice : public MapUI, public decorator_dsp
 		}
 	}
 
+	// Write the gain/vel|velocity control zones.
+	void setGain(double gain)
+	{
+		for (size_t i = 0; i < fGainPath.size(); i++)
+			setParamValue(fGainPath[i], gain);
+	}
+
 	// KeyOn with normalized MIDI velocity [0..1]
 	void keyOn(double pitch, double velocity)
 	{
@@ -103,10 +110,18 @@ struct FaustDev2PolyVoice : public MapUI, public decorator_dsp
 		for (size_t i = 0; i < fGatePath.size(); i++)
 			setParamValue(fGatePath[i], FAUSTFLOAT(1));
 
-		for (size_t i = 0; i < fGainPath.size(); i++)
-			setParamValue(fGainPath[i], velocity);
+		setGain(velocity);
 
 		fCurNote = pitch;
+	}
+
+	// Change the volume of the playing note (velocity / aftertouch
+	// automation). 'velocity' is a MIDI velocity [0..127], converted the
+	// same way as the velocity passed to nonstealing_microtonal_poly_dsp's
+	// keyOn, so the result matches a note-on with this velocity.
+	void setVolume(double velocity)
+	{
+		setGain(fVelFun(velocity));
 	}
 
 	// Change the pitch of the playing note (glide / pitch-line automation).
