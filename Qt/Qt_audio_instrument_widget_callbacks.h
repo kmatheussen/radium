@@ -242,6 +242,7 @@ public:
   Sample_requester_widget *_sample_requester_widget;
   Compressor_widget *_comp_widget;
   LLM_fx_tune_widget *_fx_tune_widget;
+  MyQCheckBox *_llm_checkbox;
 
   int64_t _mixerstrip_guinum = -1;
 
@@ -287,6 +288,7 @@ public:
     , _plugin_widget(NULL)
     , _sample_requester_widget(NULL)
     , _fx_tune_widget(NULL)
+    , _llm_checkbox(NULL)
       //, _is_large(false)
     , _size_type(SIZETYPE_NORMAL) //patch->widget_height_type)
     , _size_type_before_hidden(patch->widget_height_type)
@@ -991,6 +993,30 @@ public:
 
       _fx_tune_widget = new LLM_fx_tune_widget(this, read_catalog, read_plugin_catalog, read_inserted_plugins, apply_reply, create_faust_effect);
       gridLayout_3->addWidget(_fx_tune_widget, 1, 0);
+
+      // Checkbox in the instrument header, to the right of the "Configure
+      // Auto-suspend" button, which shows/hides the LLM effect tuning
+      // terminal. The terminal starts hidden so it does not take up space
+      // unless it is used.
+      _llm_checkbox = new MyQCheckBox("LLM", _plugin_widget);
+      _llm_checkbox->setToolTip("Show the LLM effect tuning terminal.");
+      _plugin_widget->horizontalLayout_2->insertWidget(_plugin_widget->horizontalLayout_2->indexOf(_plugin_widget->auto_bypass_menu_button) + 1,
+                                                       _llm_checkbox);
+      _llm_checkbox->setChecked(false);
+      _fx_tune_widget->setVisible(false);
+      QObject::connect(_llm_checkbox, &QCheckBox::toggled, [this](bool visible){
+        if (_fx_tune_widget != NULL)
+          _fx_tune_widget->setVisible(visible);
+
+        // When hiding the LLM prompt, shrink the instrument widget to its
+        // minimum height without changing its size type. Dropping the minimum
+        // height is needed because the LLM terminal may have raised it.
+        if (!visible) {
+          setMinimumHeight(10);
+          updateGeometry();
+          S7CALL2(void_void,"FROM_C-minimize-lowertab");
+        }
+      });
     }
 
 

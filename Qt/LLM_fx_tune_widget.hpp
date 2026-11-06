@@ -55,10 +55,10 @@ static const char *LLM_FX_PROMPT_HISTORY_SETTINGS_KEY = "instrument_llm_prompt_h
 
 
 // The LLM effect tuning terminal shown at the bottom of the audio instrument
-// widget. It has two modes: compact (one control row with a prompt) and
-// transcript (the control row plus a scrollable 10-line transcript). The
-// "Transcript" checkbox switches between them. Owns the FxTuneSession; the
-// catalog reading and change applying is supplied by the instrument widget.
+// widget: a scrollable 10-line transcript above a control row with a prompt.
+// The widget is shown/hidden by the "LLM" checkbox in the instrument header.
+// Owns the FxTuneSession; the catalog reading and change applying is supplied
+// by the instrument widget.
 class LLM_fx_tune_widget : public QWidget
 {
 public:
@@ -140,10 +140,6 @@ public:
 			_menu_button->setMenu(menu);
 		}
 
-		_transcript_checkbox = new MyQCheckBox("Transcript", frame);
-		_transcript_checkbox->setToolTip("Show the 10-line LLM conversation. Unchecked = compact one-line mode.");
-		controls_layout->addWidget(_transcript_checkbox);
-
 		QLabel *prompt_marker = new QLabel(">", frame);
 		prompt_marker->setToolTip("Prompt");
 		{
@@ -183,11 +179,6 @@ public:
 		QObject::connect(_tune_button, &QPushButton::clicked, [this](){ submit_prompt(); });
 		QObject::connect(_cancel_button, &QPushButton::clicked, [this](){ _session.cancel(); });
 		QObject::connect(_prompt_edit, &QLineEdit::returnPressed, [this](){ submit_prompt(); });
-		QObject::connect(_transcript_checkbox, &QCheckBox::toggled, [this](bool visible){ set_transcript_visible(visible); });
-
-		// Start in compact mode.
-		_transcript_checkbox->setChecked(false);
-		set_transcript_visible(false);
 	}
 
 	~LLM_fx_tune_widget()
@@ -345,11 +336,6 @@ private:
 			});
 	}
 
-	void set_transcript_visible(bool visible)
-	{
-		_transcript->setVisible(visible);
-	}
-
 	void set_status(const QString &text)
 	{
 		if (!text.isEmpty())
@@ -370,13 +356,12 @@ private:
 	}
 
 	// The transcript shows 9 text rows; the prompt entry row below counts as
-	// the 10th row. Compact mode shows only that row.
+	// the 10th row.
 	static constexpr int LLM_FX_TERMINAL_OUTPUT_LINES = 9;
 
 	radium::llm::FxTuneSession _session;
 
 	MyQButton *_menu_button = NULL;
-	MyQCheckBox *_transcript_checkbox = NULL;
 	QPlainTextEdit *_transcript = NULL;
 	FocusSnifferQLineEdit *_prompt_edit = NULL;
 	QPushButton *_tune_button = NULL;

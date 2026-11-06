@@ -1226,20 +1226,6 @@ public:
 		if (trimmed.isEmpty())
 		  return;
 
-		// The hosted "free" relay only accepts Faust Dev 2 generation
-		// requests, so effect tuning needs a custom provider for now. If a
-		// dedicated free FX-tuning relay is added later, allow free mode
-		// here (get_config() then points base_url at that relay).
-		const LLMConfig config = get_config();
-		if (config.mode == "free")
-		{
-			_host.show_error("Effect tuning needs a custom LLM provider.\n\n"
-			                 "Open the LLM settings (the menu button) and choose Custom, then enter "
-			                 "your provider's base URL, model and API key. (The Free relay is only "
-			                 "for Faust Dev 2 generation.)");
-			return;
-		}
-
 		_states = _host.read_catalog();
 		if (_states.isEmpty())
 		{
@@ -1258,7 +1244,9 @@ public:
 private:
 	void request(const QString &user_message, bool is_repair)
 	{
-		const LLMConfig config = get_config();
+		// Free mode points at the dedicated effect-tuning relay (see
+		// get_fx_config); custom mode uses the user's own provider.
+		const LLMConfig config = get_fx_config();
 
 		_busy = true;
 		if (_host.set_busy)

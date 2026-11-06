@@ -88,6 +88,15 @@ static inline QString free_base_url(void)
 	return "https://radium.dog/api/v1/faustdev2-llm";
 }
 
+// The hosted try-out relay for the instrument effect-tuning prompt. Same
+// trust model as the Faust Dev 2 relay: no API key, anonymous access, and
+// the server only accepts effect-tuning requests and only returns a valid
+// effect-tuning JSON object.
+static inline QString free_fx_base_url(void)
+{
+	return "https://radium.dog/api/v1/fx-tune-llm";
+}
+
 static inline QString default_model(void)
 {
 	return "deepseek-v4-flash";
@@ -920,6 +929,21 @@ static inline LLMConfig get_config(void)
 		// The hosted relay holds the API key and only accepts the flash
 		// model, so ignore any custom base URL, model, and key.
 		config.base_url = free_base_url();
+		config.model = default_model();
+		config.api_key = "";
+	}
+	return config;
+}
+
+// Like get_config(), but for the instrument effect-tuning session: Free mode
+// points at the dedicated effect-tuning relay instead of the Faust Dev 2
+// relay. Custom mode is untouched (the user's own provider).
+static inline LLMConfig get_fx_config(void)
+{
+	LLMConfig config = get_dialog_config();
+	if (config.mode == "free")
+	{
+		config.base_url = free_fx_base_url();
 		config.model = default_model();
 		config.api_key = "";
 	}
