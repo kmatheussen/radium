@@ -288,13 +288,21 @@
                          (add-sub-area! sub-area x1 y2))))
      
      (define (remove-sub-area! sub-area)
-       (sub-area :about-to-be-removed-internal!)
-       (set! sub-areas (delete sub-area sub-areas eq?))
-       (set! top-area
-	     (if (null? sub-areas)
-		 #f
-		 (last sub-areas)))
-       )
+       ;; The area might already have been removed, for instance if a mouse
+       ;; drag is still in progress while the area tree was rebuilt.
+       (define is-present? (any? (lambda (area)
+                                   (eq? area sub-area))
+                                 sub-areas))
+       (if is-present?
+           (begin
+             (sub-area :about-to-be-removed-internal!)
+             (set! sub-areas (delete sub-area sub-areas eq?))
+             (set! top-area
+                   (if (null? sub-areas)
+                       #f
+                       (last sub-areas))))
+           (if (not (<ra> :release-mode))
+               (assert #f))))
 
      (define (lift-sub-area! sub-area)
        (when (not (eq? sub-area top-area))
@@ -1893,7 +1901,7 @@
             ;;(c-display "     apply-state!. Position dy:" dy)
             (scrollbar :set-slider-pos! (state :slider-pos) #t)))))
 
-  (define (position-areas! start-y1)
+  (define (position-areas-internal! start-y1)
 
     (set! start-y1 (round start-y1))
     
@@ -1942,8 +1950,25 @@
             (when (< num num-sub-areas)
               (remove! num)
               (loop (+ 1 num)))))))
-          
-  
+
+  ;; A scrollbar drag may continue delivering events after the area itself
+  ;; has been removed. Do not try to reposition/remove areas in that case.
+  (define (position-areas! start-y1)
+    (when is-alive
+      (position-areas-internal! start-y1)))
+
+  ;; Drop the cached area references when the area tree is removed. Otherwise
+  ;; a late scrollbar callback could try to remove a cached area that is no
+  ;; longer in sub-areas.
+  (define-override (remove-sub-areas!)
+    (let loop ((num 0))
+      (when (< num num-sub-areas)
+        (set! (areas num) #f)
+        (set! (areas-used num) #f)
+        (set! (area-heights num) #f)
+        (loop (+ num 1))))
+    (super:remove-sub-areas!))
+ 
   (position-areas! y1)
 
   (define (get-largest-area-y1)
