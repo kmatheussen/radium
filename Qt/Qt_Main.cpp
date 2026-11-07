@@ -246,25 +246,39 @@ bool PLAYER_ignore_malloc_free_checks(void){
   extern "C" void __sanitizer_free_hook(const volatile void *ptr);
 #endif
 
+static void report_plugin_rt_memory_error(bool is_alloc);
+
 static void handle_RT_malloc_free_error(bool is_alloc, const char *message, bool force_abort = false){
   static __thread int s_num_visitors = 0;
 
   s_num_visitors++;
 
   if (s_num_visitors==1){ // If not, we end up in an endless recursive loop.
-    
-    printf("\n\n\n==========================================================\n"
-           "  %s: %s.\n"
-           "==============================================================\n\n\n",
-           is_alloc ? "__sanitizer_malloc_hook" : "__sanitizer_free_hook",
-           message);
-    
-    if (force_abort) {
-      //abort();
+
+    if (CRASHREPORTER_is_processing_plugin()){
+
+      // Plugin hosts are outside our control and may allocate/free on RT
+      // threads. Print an error instead of blocking in getchar().
+      report_plugin_rt_memory_error(is_alloc);
+
     } else {
-      //abort();
-      //printf("   (press return)\n");
-      //getchar();
+
+      getchar();
+	  
+      printf("\n\n\n==========================================================\n"
+             "  %s: %s.\n"
+             "==============================================================\n\n\n",
+             is_alloc ? "__sanitizer_malloc_hook" : "__sanitizer_free_hook",
+             message);
+      
+      if (force_abort) {
+        //abort();
+      } else {
+        //abort();
+        //printf("   (press return)\n");
+        //getchar();
+      }
+
     }
     
   }
@@ -425,12 +439,39 @@ static void handle_RT_malloc_free(bool is_alloc, void *mem, int size){
 #endif // DEBUG_MEMORY_ALLOC_MORE
 
 
+static void report_plugin_rt_memory_error(bool is_alloc)
+{
+#if 0	
+  // Only report once per thread to avoid flooding the terminal, since many
+  // plugins allocate on every processBlock.
+  static __thread bool has_reported = false;
+
+  if (has_reported)
+    return;
+
+  has_reported = true;
+#endif
+  
+  fprintf(stderr,
+          "\033[31m"
+          "Error: Memory %s from a plugin while running on an RT thread.\n"
+          "This is not allowed in Radium, but the operation was done by the plugin.\n"
+          "\033[0m",
+          is_alloc ? "allocation" : "free");
+}
+
+
 extern "C" {
 
 __attribute__((weak))
 void __sanitizer_malloc_hook(const volatile void *ptr, size_t size){
   if (PLAYER_ignore_malloc_free_checks())
     return;
+
+  if (CRASHREPORTER_is_processing_plugin()){
+    report_plugin_rt_memory_error(true);
+    return;
+  }
 
 #if DEBUG_MEMORY_ALLOC_MORE
   if (g_is_allocating_or_freeing)
@@ -459,6 +500,11 @@ __attribute__((weak))
 void __sanitizer_free_hook(const volatile void *ptr){
   if (PLAYER_ignore_malloc_free_checks())
     return;
+
+  if (CRASHREPORTER_is_processing_plugin()){
+    report_plugin_rt_memory_error(false);
+    return;
+  }
 
 #if DEBUG_MEMORY_ALLOC_MORE
   if (g_is_allocating_or_freeing)
