@@ -241,6 +241,7 @@ static bool g_is_drawing_sequencer_gfx_block = false;
 
 bool myDrawText(QPainter &p, QRectF rect, const QString &text, int flags, bool wrap_lines, int rotate, bool scale_font_size, bool cut_text_to_fit){
   QFont font;
+  const QFont old_font = p.font();
 
   rect.adjust(0,-1,0,0); // strange.
 
@@ -341,7 +342,7 @@ bool myDrawText(QPainter &p, QRectF rect, const QString &text, int flags, bool w
     p.restore();
   
   if(scale_font_size)
-    p.setFont(QFont());
+    p.setFont(old_font);
 
   return org_text==draw_text;
 }
@@ -4425,7 +4426,8 @@ struct Sequencer_widget : public MouseTrackerQWidget {
   }
 
   int get_sequencer_left_part_width(void) const {
-    return 1.5 * GFX_get_text_width(root->song->tracker_windows, "S Seqtrack 0.... H+R+M+S|");
+    // 1.5 * 1.5 = 2.25: 50% wider than before, to make room for the mixer strip path.
+    return 1.5 * 1.5 * GFX_get_text_width(root->song->tracker_windows, "S Seqtrack 0.... H+R+M+S|");
   }
 
   int get_sequencer_right_part_width(int systemfontheight) const {

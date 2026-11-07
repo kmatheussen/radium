@@ -783,6 +783,8 @@ public:
       GFX_update_current_instrument_widget(); // Fix arrow colors, etc.
 
     FOCUSFRAMES_set_focus(radium::KeyboardFocusFrameType::MIXER, true);
+
+    GFX_update_main_x_splitter_grow_widget();
   }
 
 public slots:

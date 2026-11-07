@@ -4322,6 +4322,7 @@ int radium_main(const char *arg){
         auto *grow_widget = new Gakk;
         grow_widget->setSizePolicy(QSizePolicy::Minimum,QSizePolicy::MinimumExpanding);
         xsplitter->addWidget(grow_widget);
+        editor->xsplitter_grow_widget = grow_widget;
       }
       
       
