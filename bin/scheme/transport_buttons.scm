@@ -16,6 +16,27 @@
 (define *transport-icon-border-width* 2)
 
 
+;; Whether the transport bar is shown at the top of the blocklist/playlist
+;; panel. Stored in the configuration file.
+(define *show-transport-bar*
+  (not (string=? (<ra> :get-settings "show_transport_bar" "true") "false")))
+
+(define (set-show-playlist-transport-bar! doit)
+  (set! *show-transport-bar* doit)
+  (<ra> :put-settings "show_transport_bar" (if doit "true" "false"))
+  (<ra> :schedule 0
+        (lambda ()
+          (when *block-and-playlist-area*
+            (*block-and-playlist-area* :recreate))
+          #f)))
+
+(define (hide-playlist-transport-bar)
+  (set-show-playlist-transport-bar! #f))
+
+(define (show-hide-playlist-transport-bar)
+  (set-show-playlist-transport-bar! (not *show-transport-bar*)))
+
+
 (define (transport-draw-outlined-box gui color x1 y1 x2 y2 round-x round-y)
   (define b *transport-icon-border-width*)
   (<gui> :filled-box gui *transport-icon-border-color*
@@ -139,10 +160,18 @@
         (else
          (assert #f))))
 
+(define (show-transport-empty-area-popup-menu)
+  (popup-menu
+   "Hide transport bar" show-hide-playlist-transport-bar
+   "-------------"
+   "Help keybindings" show-keybinding-help-window))
+
 ;; The common popup menu entries used for buttons: keybinding configuration
 ;; for the commands the button runs, followed by the keybinding help.
 (define (show-transport-button-popup-menu kind)
   (popup-menu
+   "Hide transport bar" show-hide-playlist-transport-bar
+   "-------------"
    (apply append
           (map (lambda (funcname)
                  (get-keybinding-configuration-popup-menu-entries funcname '() ""))
@@ -285,6 +314,14 @@
   (create-button stop-x1 (get-y1 2) stop-x2 (get-y2 2)
                  'stop
                  (list #t "Stop"))
+
+  ;; The buttons consume their own right-clicks, so this handler is only
+  ;; reached when the right-click is in an empty part of the bar.
+  (add-mouse-cycle! (lambda (button x* y*)
+                      (and (= button *right-button*)
+                           (begin
+                             (show-transport-empty-area-popup-menu)
+                             #t))))
 
   (define last-state #f)
 
