@@ -78,6 +78,7 @@ static HWND gtk_hwnd = NULL;
 #include <vector>
 
 #include "EditorWidget.h"
+#include "../mixergui/QM_MixerWidget.h"
 #include "../common/threading.h"
 
 #if USE_GTK_VISUAL
@@ -388,6 +389,21 @@ bool GFX_EditorIsVisible(void){
   return !g_editor->editor_layout_widget->isHidden();
 }
 
+// The grow widget is only needed to make the lower tabs use all horizontal
+// space when neither the editor nor the mixer is visible. When the mixer is
+// visible, it should get the space instead. Otherwise Qt gives the space
+// freed up by a hidden editor to the grow widget, leaving an empty gap to the
+// right of the mixer.
+void GFX_update_main_x_splitter_grow_widget(void){
+  if (g_editor==NULL || g_editor->xsplitter_grow_widget==NULL)
+    return;
+
+  bool mixer_is_in_xsplitter = g_mixer_widget != NULL && get_qwidget(g_mixer_widget)->parentWidget()==g_editor->xsplitter;
+  bool mixer_takes_available_space = mixer_is_in_xsplitter && !get_qwidget(g_mixer_widget)->isHidden();
+
+  g_editor->xsplitter_grow_widget->setVisible(!GFX_EditorIsVisible() && !mixer_takes_available_space);
+}
+
 void GFX_ShowEditor(void){
   if (sequencerInFullMode() && !sequencerInWindow()){
     setSequencerInFullMode(false);    
@@ -399,12 +415,14 @@ void GFX_ShowEditor(void){
   }GL_unlock();
 
   set_editor_focus();
+  GFX_update_main_x_splitter_grow_widget();
 }
 
 void GFX_HideEditor(void){
   g_editor->editor_layout_widget->hide();
   set_editor_focus();
   FOCUSFRAMES_set_focus_best_guess();
+  GFX_update_main_x_splitter_grow_widget();
 }
 
 void GFX_showHideEditor(void){
@@ -439,6 +457,7 @@ void GFX_showHideEditor(void){
   }GL_unlock();
   
   set_editor_focus();
+  GFX_update_main_x_splitter_grow_widget();
 }
 
 static int get_track_from_x(float x){
