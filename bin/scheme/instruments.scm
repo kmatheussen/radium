@@ -1873,10 +1873,18 @@
                                  (lambda (conf kont)
                                    (kont descr))))
 
+(define (set-instrconf-parentgui! instrconf parentgui)
+  (set! (instrconf :parentgui) parentgui))
+
 ;; Parsing all plugin-registry entries (including looking up keybindings) takes a
 ;; noticeable amount of time. Cache the already-parsed sub menu per filter combination,
 ;; so opening the popup menu again is fast. The cache is invalidated when the plugin
 ;; registry or the preset clipboard changes.
+;;
+;; parentgui is not part of the key. It is only used to parent dialogs opened from the
+;; menu (such as "From preset file"), so the cached menu can be reused for all windows.
+;; The instrument-conf captured by the cached menu is updated to the current parentgui
+;; when the menu is reused.
 (define (get-cached-plugin-registry-submenu instrconf)
   (define generation (<ra> :get-sound-plugin-registry-generation))
   (when (not (= generation *plugin-registry-submenu-cache-generation*))
@@ -1886,12 +1894,13 @@
   (define key (list (instrconf :include-load-preset)
                      (instrconf :must-have-inputs)
                      (instrconf :must-have-outputs)
-                     (instrconf :parentgui)
                      (<ra> :instrument-preset-in-clipboard)))
 
   (define cached (assoc key *plugin-registry-submenu-cache*))
   (if cached
-      (cadr cached)
+      (begin
+        (set-instrconf-parentgui! (caddr cached) (instrconf :parentgui))
+        (cadr cached))
       (let ((parsed (parse-popup-menu-options
                      (spr-entries->menu-entries (<ra> :get-sound-plugin-registry)
                                                 instrconf
@@ -1901,7 +1910,7 @@
                                                 insert-new-plugin))))
         (when (>= (length *plugin-registry-submenu-cache*) 16)
           (set! *plugin-registry-submenu-cache* (take *plugin-registry-submenu-cache* 15)))
-        (push-back! *plugin-registry-submenu-cache* (list key parsed))
+        (push-back! *plugin-registry-submenu-cache* (list key parsed instrconf))
         parsed)))
 
 (define *track-instrument-plugin-submenu-cache-generation* -1)
